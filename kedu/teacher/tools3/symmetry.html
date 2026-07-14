@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>케이랩 · 대칭 — 스튜디오</title>
+<!--
+  케이랩 v3 · B트랙 양산 14호 — 대칭 (2026-07-14) · 셸 = clock 계보 (circle·area·graph 자매 = 같은 방안지 제도판)
+  SPEC = handoff/klab/designs3/SPEC_symmetry.md (도면=정답)
+  v2(engine/tools/symmetry.js 375줄) 콘텐츠 무손실 이식:
+    학년칸(저 선대칭 세로축만 / 중 +가로축+퀴즈 / 고 +점대칭) · 미션 저2·중3·고4(문구·판정식 그대로)
+    퀴즈 5문(classify·concept · 문구·정답·보기 그대로) · 와우 🪞 접어보기(거의 대칭 → 짝 없는 칸 빨강)
+    mirror 규칙 그대로(point [n-1-c,n-1-r] · line·v [n-1-c,r] · line·h [c,n-1-r])
+  ⚠️ v2 라이브 버그(§6-1): 이 도구도 퀴즈 보기를 «셔플하지 않는다»(ratio·area·angle에 이어 4번째).
+    전 문항 정답이 choices[0]('선대칭'·'점대칭'·'접으면 겹침'·'격자 가운데'·'아래쪽' 모두 첫 자리)
+    → 위치로 찍을 수 있었다. → shuffled(choices, rand).
+  ★ 와우 🪞 접어보기(v2 승격): 거의 대칭을 두고 「접으면 딱 겹칠까?」 예측 → 접기 → 짝 없는 칸이 빨강.
+    v3 추가: 한쪽 절반이 축을 경첩으로 실제로 접혀 넘어오는 연출 + 접힌 주름선.
+  ★ 자동 반사: 한쪽 칸(src)을 색칠하면 반대편은 ref{}로 «자동 반사»(호박색). src만 상태·ref는 render마다 재계산.
+  config: ?grade= & mode= & n= & axis=v|h
+-->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
+<style id="kedu-title-font">
+@font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
+:root{--kedu-title:'Hakgyoansim Moheomga','Gowun Dodum',sans-serif}
+</style>
+<link rel="stylesheet" href="/kedu/teacher/engine3/klab3-ui.css">
+<style>
+  #root{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;
+    background:var(--studio);overflow:hidden}
+  #root::after{content:'';position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(120% 90% at 50% 8%, transparent 55%, rgba(0,0,0,.4) 100%)}
+  .hudrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;
+    margin-top:52px;z-index:21}
+  .barslot{min-height:8px;z-index:21;width:min(720px,94vw);margin-top:8px}
+  .stagewrap{flex:1;display:flex;align-items:center;justify-content:center;width:100%;
+    min-height:0;z-index:2;padding:6px 0}
+  .ctrlslot{z-index:21;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;
+    padding:2px 10px;max-width:96vw}
+  .statusrow{z-index:21;text-align:center;padding:6px 12px 14px}
+  .seg{display:flex;gap:4px;background:var(--hud);backdrop-filter:blur(8px);
+    border:1px solid var(--hudline);border-radius:999px;padding:4px}
+  .seg button{font-family:'Gowun Dodum';font-size:13.5px;color:#c6d4e2;background:transparent;
+    border:none;border-radius:999px;padding:7px 13px;cursor:pointer;transition:all .15s}
+  .seg button.on{background:rgba(91,155,240,.28);color:#fff;
+    box-shadow:0 0 0 1.5px rgba(91,155,240,.55), 0 0 18px -4px #5B9BF0}
+  .sndbtn{background:var(--hud);border:1px solid var(--hudline);border-radius:999px;
+    color:#c6d4e2;font-size:15px;padding:7px 12px;cursor:pointer}
+  .sndbtn.off{opacity:.45}
+  .k3bar{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(8px);
+    border-radius:16px;padding:11px 16px;color:#e6eef7;font-size:15px;line-height:1.6;
+    display:flex;align-items:center;gap:12px}
+  .k3bar .prog{margin-left:auto;flex:0 0 auto;font-size:12.5px;color:var(--mut);white-space:nowrap}
+  .k3bar b{color:#BCA7FF}
+  .k3bar.done{border-color:rgba(18,184,134,.5);box-shadow:0 0 24px -8px #12B886}
+  .desk{position:relative;border-radius:30px;padding:min(2.4vh,18px) min(2.6vw,20px);
+    background:
+      radial-gradient(90% 70% at 50% 26%, rgba(255,240,214,.10), transparent 62%),
+      repeating-linear-gradient(94deg, rgba(46,28,12,.16) 0 2px, transparent 2px 9px),
+      linear-gradient(150deg,#8a5a34 0%,#77492a 52%,#63391f 100%);
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.14),
+               inset -3px -5px 14px rgba(0,0,0,.38),
+               0 26px 60px -18px rgba(0,0,0,.75);
+    border:1px solid rgba(255,255,255,.07)}
+  .desk::before{content:'';position:absolute;inset:0;border-radius:30px;pointer-events:none;
+    background-image:var(--noise, none);opacity:.5;mix-blend-mode:overlay}
+  .ck-btn{font-family:'Gowun Dodum';font-size:15.5px;font-weight:700;color:#fff;border:none;
+    border-radius:13px;padding:10px 15px;cursor:pointer;position:relative;line-height:1;
+    background:linear-gradient(145deg, var(--c1), var(--c2));
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.3),
+               inset -2px -3px 6px rgba(0,0,0,.25),
+               0 6px 14px rgba(0,0,0,.4);
+    transition:transform .1s, box-shadow .1s}
+  .ck-btn:active{transform:translateY(3px);
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.3),
+               inset -2px -3px 6px rgba(0,0,0,.25),
+               0 2px 6px rgba(0,0,0,.4)}
+  .ck-btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+  .ck-choice{font-family:'Gowun Dodum';font-size:16px;font-weight:700;color:var(--card-ink);
+    background:linear-gradient(160deg,#ffffff,#eef2f7);border:2px solid #d5dee9;border-radius:14px;
+    padding:13px 18px;cursor:pointer;min-width:110px;
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.9), 0 6px 14px rgba(0,0,0,.4);
+    transition:transform .1s}
+  .ck-choice:active{transform:translateY(2px)}
+  .hint{font-size:13.5px;color:var(--mut);margin-top:4px;line-height:1.6}
+  .hint b{color:#cfe0f2} .hint .grabline{color:#FFB27A}
+
+  /* ── 대칭 도구 전용 ── */
+  .sy-board{position:relative;border-radius:14px;padding:6px;
+    background:
+      repeating-linear-gradient(0deg, rgba(90,120,150,.12) 0 1px, transparent 1px 22px),
+      repeating-linear-gradient(90deg, rgba(90,120,150,.12) 0 1px, transparent 1px 22px),
+      linear-gradient(170deg,#F7FAFD 0%,#E6EEF6 100%);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.6), 0 10px 26px -8px rgba(0,0,0,.55)}
+  .sy-tg{font-family:'Gowun Dodum';font-size:14px;font-weight:700;color:#C9B8FF;
+    background:rgba(155,123,245,.12);border:1.5px solid rgba(155,123,245,.42);border-radius:999px;
+    padding:9px 14px;cursor:pointer;line-height:1;transition:all .15s}
+  .sy-tg.on{background:rgba(155,123,245,.42);color:#fff;
+    box-shadow:0 0 0 1.5px rgba(201,184,255,.6), 0 0 18px -4px #9B7BF5}
+  .sy-ax{font-family:'Gowun Dodum';font-size:14px;font-weight:700;color:#8FD6E0;
+    background:rgba(11,114,133,.16);border:1.5px solid rgba(11,114,133,.5);border-radius:999px;
+    padding:9px 14px;cursor:pointer;line-height:1;transition:all .15s}
+  .sy-ax.on{background:rgba(11,114,133,.6);color:#fff;box-shadow:0 0 0 1.5px rgba(143,214,224,.6)}
+  .sy-cell{cursor:pointer}
+  .sy-cell.dead{cursor:default}
+  .sy-pop{animation:syPop .18s cubic-bezier(.2,1.5,.4,1) both;transform-origin:center;transform-box:fill-box}
+  @keyframes syPop{0%{transform:scale(1.15)}100%{transform:scale(1)}}
+  /* 접어보기 — 한쪽 절반이 축을 경첩으로 넘어온다 */
+  .sy-fold{animation:syFold .6s cubic-bezier(.35,.9,.4,1) both;transform-box:view-box}
+  @keyframes syFold{from{opacity:.3}to{opacity:1}}
+  /* 짝 없는 칸이 빨강으로 깜빡인다 */
+  .sy-miss{animation:syMiss 1.2s ease both}
+  @keyframes syMiss{0%,100%{opacity:1}30%{opacity:.35}60%{opacity:1}80%{opacity:.35}}
+  .sy-crease{animation:syCrease .5s ease-out both}
+  @keyframes syCrease{from{stroke-dashoffset:var(--len,600)}to{stroke-dashoffset:0}}
+  .sy-flash,.sy-flash-magic{position:absolute;left:50%;top:12px;transform:translateX(-50%);
+    z-index:6;max-width:92%;text-align:center;padding:11px 18px;border-radius:16px;
+    font-family:'Gowun Dodum';font-weight:700;font-size:15.5px;line-height:1.5;color:#fff;
+    box-shadow:0 10px 28px rgba(0,0,0,.35);animation:syBan .26s ease-out}
+  .sy-flash{background:linear-gradient(150deg,#3f77d8,#2a56ab)}
+  .sy-flash-magic{background:linear-gradient(150deg,#8f6ef2,#6b47d8)}
+  @keyframes syBan{from{opacity:0;transform:translate(-50%,-9px) scale(.95)}
+    to{opacity:1;transform:translate(-50%,0) scale(1)}}
+</style>
+</head>
+<body class="k3">
+<div id="root">
+  <div class="k3-topbar">
+    <span class="title" style="font-family:var(--kedu-title)">🪞 케이랩 · 대칭</span>
+    <span class="badge">STUDIO</span>
+  </div>
+  <div class="hudrow">
+    <div class="seg" id="gradeSeg"></div>
+    <div class="seg" id="modeSeg"></div>
+    <button class="sndbtn" id="sndBtn" title="효과음">🔊</button>
+  </div>
+  <div class="barslot" id="barSlot"></div>
+  <div class="stagewrap"><div class="desk" id="desk"></div></div>
+  <div class="ctrlslot" id="ctrlSlot"></div>
+  <div class="statusrow" id="statusRow"></div>
+</div>
+
+<script src="/kedu/teacher/engine3/klab3-2d.js"></script>
+
+<!-- ═══ 순수 로직 (node/jsdom 테스트 대상 · DOM 무의존) ═══ -->
+<script>
+(function(){
+  'use strict';
+
+  var GRADES={
+    low:  { modes:['free','mission'],        point:false, hAxis:false, quiz:false },
+    mid:  { modes:['free','mission','quiz'], point:false, hAxis:true,  quiz:true  },
+    high: { modes:['free','mission','quiz'], point:true,  hAxis:true,  quiz:true  }
+  };
+  var GRADE_LABEL={ low:'저학년', mid:'중학년', high:'고학년' };
+  var MODE_LABEL={ free:'자유탐구', mission:'미션', quiz:'퀴즈' };
+
+  /* mirror — v2 그대로 */
+  function mirror(c,r,n,symMode,axis){
+    if(symMode==='point') return [n-1-c, n-1-r];
+    return (axis==='v') ? [n-1-c, r] : [c, n-1-r];
+  }
+  function countSrc(src){ var k, n=0; for(k in src) if(src[k]) n++; return n; }
+  /* 반사 칸 — src에서 render마다 재계산. src만 상태. */
+  function reflect(src,n,symMode,axis){
+    var ref={};
+    for(var k in src){
+      if(!src[k]) continue;
+      var p=k.split(','), m=mirror(+p[0],+p[1],n,symMode,axis);
+      ref[m[0]+','+m[1]]=true;
+    }
+    return ref;
+  }
+
+  /* 접어보기 — 씨앗으로 완전대칭을 만들고, foldSym=false면 짝 없는 한 칸 추가 */
+  var FOLD_SEEDS=[
+    [[1,1],[2,2],[1,3]],
+    [[2,1],[1,2],[3,3]],
+    [[1,2],[2,2],[1,4]],
+    [[2,1],[2,2],[1,3],[3,4]],
+    [[1,1],[1,2],[2,4]]
+  ];
+  function foldMake(seedIdx, foldSym, n, rand){
+    rand=rand||Math.random;
+    var cells={};
+    var seeds=FOLD_SEEDS[seedIdx % FOLD_SEEDS.length];
+    seeds.forEach(function(p){
+      var c=Math.min(p[0],n-1), r=Math.min(p[1],n-1);
+      cells[c+','+r]=true;
+      var m=mirror(c,r,n,'line','v');
+      cells[m[0]+','+m[1]]=true;
+    });
+    if(!foldSym){
+      var placed=false, t=0;
+      while(t++<80 && !placed){
+        var c=Math.floor(rand()*n), r=Math.floor(rand()*n);
+        var k=c+','+r, m=mirror(c,r,n,'line','v'), mk=m[0]+','+m[1];
+        if(k===mk) continue;             /* 축 위 칸(자기 짝) 제외 */
+        if(!cells[k]&&!cells[mk]){ cells[k]=true; placed=true; }
+      }
+    }
+    return cells;
+  }
+  /* 접기 판정 — 반대편에 짝이 없는 칸 */
+  function foldCheck(cells,n,symMode,axis){
+    var miss=[];
+    for(var k in cells){
+      if(!cells[k]) continue;
+      var p=k.split(','), m=mirror(+p[0],+p[1],n,symMode,axis), mk=m[0]+','+m[1];
+      if(!cells[mk]) miss.push(k);
+    }
+    return miss;
+  }
+
+  /* 미션 — 문구·판정식 v2 그대로 (s = {symMode, axis, src}) */
+  function missionsFor(grade){
+    var v3={ text:'<b>선대칭(세로축)</b>! 왼쪽에 <b>3칸 이상</b> 색칠해 봐요 — 반대편이 똑같이 채워져요!',
+      check:function(s){ return s.symMode==='line'&&s.axis==='v'&&countSrc(s.src)>=3; } };
+    var low5={ text:'<b>5칸 이상</b> 색칠해서 양쪽이 똑같은 대칭 도형을 만들어 봐요!',
+      check:function(s){ return countSrc(s.src)>=5; } };
+    var h4={ text:'<b>선대칭(가로축)</b> 모드로 바꾸고 위쪽에 <b>4칸 이상</b> 색칠해 봐요!',
+      check:function(s){ return s.symMode==='line'&&s.axis==='h'&&countSrc(s.src)>=4; } };
+    var free6={ text:'자유탐구! <b>6칸 이상</b> 색칠해서 아름다운 대칭 도형을 만들어 봐요!',
+      check:function(s){ return countSrc(s.src)>=6; } };
+    var pt3={ text:'<b>점대칭</b> 모드로 바꾸고 <b>3칸 이상</b> 색칠해 봐요!',
+      check:function(s){ return s.symMode==='point'&&countSrc(s.src)>=3; } };
+    if(grade==='low') return [v3, low5];
+    if(grade==='mid') return [v3, h4, free6];
+    return [v3, h4, pt3, free6];
+  }
+
+  /* 퀴즈 — v2 문항·정답·보기 그대로 */
+  var QUIZ_POOL=[
+    { q:'이 도형은 어떤 대칭인가요?', type:'classify', symMode:'line', axis:'v',
+      preset:{'1,1':1,'1,2':1,'1,3':1}, answer:'선대칭', choices:['선대칭','점대칭','둘 다','대칭 아님'] },
+    { q:'이 도형은 어떤 대칭인가요?', type:'classify', symMode:'point', axis:'v',
+      preset:{'0,0':1,'1,1':1,'2,2':1}, answer:'점대칭', choices:['선대칭','점대칭','둘 다','대칭 아님'] },
+    { q:'선대칭(세로축)에서 축의 역할은?', type:'concept', symMode:'line', axis:'v', preset:{'0,1':1,'0,2':1},
+      answer:'접으면 겹침', choices:['접으면 겹침','뒤집어도 같음','가운데서 돌려도 같음','칸 수가 같음'] },
+    { q:'점대칭의 중심은 어디인가요?', type:'concept', symMode:'point', axis:'v', preset:{'0,0':1,'1,0':1},
+      answer:'격자 가운데', choices:['왼쪽 위','격자 가운데','오른쪽 아래','어느 칸이든'] },
+    { q:'선대칭(가로축)으로 위쪽 칸을 색칠하면 반사 칸은?', type:'concept', symMode:'line', axis:'h', preset:{'2,0':1,'3,0':1},
+      answer:'아래쪽', choices:['위쪽','왼쪽','아래쪽','오른쪽'] }
+  ];
+  function quizPool(grade){
+    return (grade==='mid') ? [QUIZ_POOL[0],QUIZ_POOL[2],QUIZ_POOL[4]] : QUIZ_POOL.slice();
+  }
+  function shuffled(arr,rand){
+    rand=rand||Math.random;
+    var c=arr.slice();
+    for(var i=c.length-1;i>0;i--){ var j=Math.floor(rand()*(i+1)); var t=c[i]; c[i]=c[j]; c[j]=t; }
+    return c;
+  }
+  function shuffleQuiz(grade,rand){ return shuffled(quizPool(grade),rand); }
+  function applyQuizState(q){
+    var src={};
+    if(q.preset) for(var k in q.preset) if(q.preset[k]) src[k]=true;
+    return { symMode:q.symMode, axis:q.axis||'v', src:src };
+  }
+
+  function statusText(grade,symMode,axis){
+    var G=GRADES[grade]||GRADES.high;
+    if(symMode==='point') return '칸을 누르면 가운데 점 기준 반대편에 채워져요';
+    if(!G.hAxis) return '한쪽 칸을 누르면 반대편이 똑같이 채워져요 — 접으면 양쪽이 딱 맞아요!';
+    return '한쪽 칸을 누르면 '+(axis==='v'?'세로':'가로')+'축 반대편에 대칭으로 채워져요';
+  }
+
+  var API={ GRADES:GRADES, GRADE_LABEL:GRADE_LABEL, MODE_LABEL:MODE_LABEL,
+            mirror:mirror, countSrc:countSrc, reflect:reflect,
+            FOLD_SEEDS:FOLD_SEEDS, foldMake:foldMake, foldCheck:foldCheck,
+            missionsFor:missionsFor, quizPool:quizPool, shuffled:shuffled,
+            shuffleQuiz:shuffleQuiz, applyQuizState:applyQuizState, statusText:statusText };
+  if(typeof window!=='undefined') window.SymmetryCore=API;
+  if(typeof module!=='undefined'&&module.exports) module.exports=API;
+})();
+</script>
+
+<!-- ═══ 앱 ═══ -->
+<script>
+(function(){
+  'use strict';
+  var SC=window.SymmetryCore, K3=window.K3;
+  var $=function(id){ return document.getElementById(id); };
+  document.documentElement.style.setProperty('--noise','url("'+K3.NOISE+'")');
+
+  var Q=new URLSearchParams(location.search);
+  var grade=(['low','mid','high'].indexOf(Q.get('grade'))>=0)?Q.get('grade'):'high';
+  var locked=!!Q.get('grade');
+  function G(){ return SC.GRADES[grade]; }
+
+  var rand=window.__K3_RAND || Math.random;
+
+  var n=Math.max(4,Math.min(+Q.get('n')||8,12));
+  var mode=(G().modes.indexOf(Q.get('mode'))>=0)?Q.get('mode'):'free';
+  var symMode='line';
+  var axis=(G().hAxis&&Q.get('axis')==='h')?'h':'v';
+  var src={};
+
+  var mStep=0, mDone=false, mLock=false;
+  var qList=[], qIdx=0, qScore=0, qCount=0, qLock=false;
+  /* 접어보기 */
+  var foldOn=false, foldCells={}, foldResult='ready', missKeys=[], foldSym=true, seedIdx=0;
+  var magicShown=false, pred=null, busy=false;
+  var fxPop=null, fxFold=false;
+
+  var STEP_MS=window.__K3_FAST?60:1500;
+  var QUIZ_MS=window.__K3_FAST?60:1400;
+  var FOLD_MS=window.__K3_FAST?60:600;
+  var FLASH_MS=window.__K3_FAST?400:2600;
+  var CARD_MS=window.__K3_FAST?60:900;
+
+  function snd(n){ K3.sound.play(n); }
+  function state(){ return { symMode:symMode, axis:axis, src:src }; }
+  function curMissions(){ return SC.missionsFor(grade); }
+  function shuffleQuiz(){ qList=SC.shuffleQuiz(grade,rand); qIdx=0; qScore=0; qCount=0; qLock=false; }
+  function foldAvail(){ return mode==='free' && G().hAxis; }   /* 중·고 자유탐구만 */
+
+  function clearFlash(){
+    var d=$('desk'); if(!d)return;
+    d.querySelectorAll('.sy-flash,.sy-flash-magic').forEach(function(x){ x.remove(); });
+  }
+  function banner(cls,html,ms){
+    var d=$('desk'); if(!d)return;
+    clearFlash();
+    var e=document.createElement('div'); e.className=cls; e.innerHTML=html;
+    d.appendChild(e);
+    setTimeout(function(){ if(e.parentNode)e.parentNode.removeChild(e); }, ms);
+  }
+
+  function tapCell(c,r){
+    if(mode==='quiz'||foldOn||busy) return;
+    if(c<0||c>=n||r<0||r>=n) return;
+    var k=c+','+r;
+    if(src[k]) delete src[k]; else src[k]=true;
+    fxPop=src[k]?k:null;
+    snd('tap');
+    render();
+    if(mode==='mission') checkMission();
+  }
+
+  function setSymMode(m){
+    if(symMode===m) return;
+    symMode=m; src={}; snd('select'); build();
+  }
+  function setAxis(a){
+    if(axis===a) return;
+    axis=a; src={}; snd('select'); build();
+    if(mode==='mission') checkMission();
+  }
+  function reset(){
+    src={}; snd('pop'); render();
+    /* §6-6 — ↺는 checkMission 호출 안 함 */
+  }
+
+  /* ── 와우 🪞 접어보기 ── */
+  function enterFold(){
+    if(!foldAvail()||busy) return;
+    /* 예측 카드는 첫 진입 «접기 직전»에. 여기선 도형만 세팅 */
+    foldOn=true; foldResult='ready'; missKeys=[];
+    symMode='line'; axis='v';
+    foldSym=(rand()<0.5);
+    seedIdx=Math.floor(rand()*SC.FOLD_SEEDS.length);
+    foldCells=SC.foldMake(seedIdx,foldSym,n,rand);
+    snd('select'); build();
+  }
+  function newFold(){
+    foldResult='ready'; missKeys=[];
+    foldSym=(rand()<0.5);
+    seedIdx=Math.floor(rand()*SC.FOLD_SEEDS.length);
+    foldCells=SC.foldMake(seedIdx,foldSym,n,rand);
+    snd('pop'); build();
+  }
+  function exitFold(){
+    foldOn=false; foldResult='ready'; missKeys=[]; foldCells={}; src={};
+    snd('select'); build();
+  }
+  function doFoldStep(){
+    missKeys=SC.foldCheck(foldCells,n,'line','v');
+    foldResult='done';
+    fxFold=true;
+    if(missKeys.length>0){
+      snd('whoosh');
+      banner('sy-flash-magic','🔎 한 칸이 <b>짝이 없어요</b>! 거의 닮았지만 — <b>선대칭이 아니에요</b>', FLASH_MS);
+    } else {
+      snd('chime');
+      banner('sy-flash','✅ 딱 겹쳤어요! 이 모양은 <b>선대칭이 맞아요</b>', FLASH_MS);
+    }
+    build();
+  }
+  function doFold(){
+    if(busy) return;
+    /* 와우B — 접기 «직전» 예측 카드 (1회 가드) */
+    if(!magicShown){
+      magicShown=true; busy=true;
+      snd('charge');
+      K3.cards.predict(
+        '이 모양을 반으로 <b>접으면</b> — 양쪽이 <b>딱 겹칠까요</b>?',
+        [{id:'yes', label:'① 딱 겹친다'},
+         {id:'no',  label:'② 한 칸이 안 맞는다'}]
+      ).then(function(id){
+        pred=id; busy=false;
+        doFoldStep();
+        setTimeout(resultCard, FLASH_MS+CARD_MS);
+      });
+      return;
+    }
+    doFoldStep();
+  }
+  function resultCard(){
+    var isSym=(missKeys.length===0);
+    var okP=(pred==='yes')===isSym;
+    var head, body;
+    if(isSym){
+      head=okP?'✨ 맞혔어요!':'🤔 다시 보세요';
+      body='접으면 <b>모든 칸이 짝을 만나요</b> — 이 모양은 <b>선대칭</b>이에요.';
+    } else {
+      head=okP?'✨ 맞혔어요!':'🤔 빨강 칸을 보세요';
+      body='딱 한 칸이 <b>짝이 없어요</b>. <b>닮았다고 다 선대칭은 아니에요</b> — 접어봐야 알 수 있죠.';
+    }
+    K3.cards.result(
+      '<h3 style="color:'+(okP?'#0d7a5c':'#B9522F')+'">'+head+'</h3>'
+      +'<p style="font-size:13.5px;line-height:1.75;color:#41546a">'+body
+      +'<br>🔄 <b>새 도전</b>으로 다른 모양도 접어 봐요.</p>',
+      [{label:'좋아, 새 도전', cls:'pri', value:'done'}]
+    );
+  }
+
+  function answer(v){
+    if(qLock) return;
+    qLock=true; qCount++;
+    var q=qList[qIdx];
+    var okA=(String(v)===String(q.answer));
+    if(okA){ qScore++; snd('chime'); K3.toast('🎉 정답! <b>'+q.answer+'</b>'); }
+    else { snd('fail'); K3.toast('🤔 정답은 <b>'+q.answer+'</b>', true); }
+    setTimeout(function(){
+      qIdx++;
+      if(qIdx>=qList.length) shuffleQuiz();
+      qLock=false;
+      build();
+    }, QUIZ_MS);
+  }
+
+  function checkMission(){
+    if(mode!=='mission'||mDone||mLock) return;
+    var M=curMissions();
+    if(mStep>=M.length) return;
+    if(M[mStep].check(state())){
+      mLock=true; snd('chime');
+      K3.toast('🎉 참 잘했어요!');
+      setTimeout(function(){
+        mStep++;
+        if(mStep>=curMissions().length){ mStep=curMissions().length-1; mDone=true; build(); return; }
+        mLock=false;
+        /* 다음 단계 진입 상태 세팅 (v2) */
+        if(grade==='mid'){ if(mStep===1){ symMode='line'; axis='h'; } src={}; }
+        else if(grade==='high'){
+          if(mStep===1){ symMode='line'; axis='h'; }
+          else if(mStep===2){ symMode='point'; }
+          src={};
+        } else src={};
+        build();
+      }, STEP_MS);
+    }
+  }
+
+  function build(){
+    var gs=$('gradeSeg');
+    if(locked){ gs.style.display='none'; }
+    else{
+      gs.innerHTML=['low','mid','high'].map(function(g){
+        return '<button data-g="'+g+'" class="'+(g===grade?'on':'')+'">'+SC.GRADE_LABEL[g]+'</button>';
+      }).join('');
+      gs.querySelectorAll('button').forEach(function(bt){
+        bt.addEventListener('click',function(){ if(bt.dataset.g!==grade) setGrade(bt.dataset.g); });
+      });
+    }
+    var ms=$('modeSeg');
+    ms.innerHTML=G().modes.map(function(m){
+      return '<button data-m="'+m+'" class="'+(m===mode?'on':'')+'">'+SC.MODE_LABEL[m]+'</button>';
+    }).join('');
+    ms.querySelectorAll('button').forEach(function(bt){
+      bt.addEventListener('click',function(){ if(bt.dataset.m!==mode) setMode(bt.dataset.m); });
+    });
+
+    var bar=$('barSlot');
+    if(mode==='mission'){
+      var M=curMissions();
+      if(mStep>=M.length) mStep=M.length-1;
+      bar.innerHTML=mDone
+        ? '<div class="k3bar done">🎉 미션을 모두 해냈어요! 자유탐구에서 마음껏 만들어 봐요.</div>'
+        : '<div class="k3bar"><span>'+M[mStep].text+'</span><span class="prog">'+(mStep+1)+' / '+M.length+'</span></div>';
+    } else if(mode==='quiz'){
+      var q=qList[qIdx]||qList[0];
+      var st=SC.applyQuizState(q);
+      symMode=st.symMode; axis=st.axis; src=st.src;
+      bar.innerHTML='<div class="k3bar"><span>❓ '+q.q+'</span><span class="prog">점수 '+qScore+' / '+qCount+'</span></div>';
+    } else bar.innerHTML='';
+
+    var ct=$('ctrlSlot'), s='';
+    if(mode==='quiz'){
+      var qq=qList[qIdx]||qList[0];
+      /* ★ §6-1 — 보기 셔플 (v2는 이 도구도 셔플을 안 해 전 문항 정답이 첫 자리였다) */
+      s=SC.shuffled(qq.choices,rand).map(function(v){
+        return '<button class="ck-choice" data-v="'+v+'">'+v+'</button>';
+      }).join('');
+    } else if(foldOn){
+      s+=(foldResult==='ready')
+        ? '<button class="ck-btn" data-act="dofold" style="--c1:#e8890c;--c2:#c06806">🪞 접기!</button>'
+        : '<button class="ck-btn" data-act="newfold" style="--c1:#8f6ef2;--c2:#6b47d8">🔄 새 도전</button>';
+      s+='<button class="ck-btn" data-act="foldout" style="--c1:#5a6675;--c2:#3d4653">↩ 나가기</button>';
+    } else {
+      s+='<button class="sy-tg'+(symMode==='line'?' on':'')+'" data-sym="line">선대칭</button>';
+      if(G().point) s+='<button class="sy-tg'+(symMode==='point'?' on':'')+'" data-sym="point">점대칭</button>';
+      if(symMode==='line'&&G().hAxis){
+        s+='<button class="sy-ax'+(axis==='v'?' on':'')+'" data-axis="v">세로축</button>'
+          +'<button class="sy-ax'+(axis==='h'?' on':'')+'" data-axis="h">가로축</button>';
+      }
+      s+='<button class="ck-btn" data-act="reset" style="--c1:#5a6675;--c2:#3d4653">↺ 지우기</button>';
+      if(foldAvail()) s+='<button class="ck-btn" data-act="foldenter" style="--c1:#e8890c;--c2:#c06806">🪞 접어보기 도전</button>';
+    }
+    ct.innerHTML=s;
+    ct.querySelectorAll('.sy-tg').forEach(function(bt){
+      bt.addEventListener('click',function(){ setSymMode(bt.dataset.sym); });
+    });
+    ct.querySelectorAll('.sy-ax').forEach(function(bt){
+      bt.addEventListener('click',function(){ setAxis(bt.dataset.axis); });
+    });
+    ct.querySelectorAll('[data-act]').forEach(function(bt){
+      bt.addEventListener('click',function(){
+        var a=bt.dataset.act;
+        if(a==='reset') reset();
+        else if(a==='foldenter') enterFold();
+        else if(a==='dofold') doFold();
+        else if(a==='newfold') newFold();
+        else if(a==='foldout') exitFold();
+      });
+    });
+    ct.querySelectorAll('.ck-choice').forEach(function(bt){
+      bt.addEventListener('click',function(){ answer(bt.dataset.v); });
+    });
+
+    render();
+  }
+
+  function setGrade(g){
+    grade=g; snd('select');
+    if(G().modes.indexOf(mode)<0) mode='free';
+    symMode='line'; axis='v'; src={};
+    foldOn=false; foldResult='ready'; missKeys=[]; foldCells={};
+    mStep=0; mDone=false; mLock=false;
+    magicShown=false; pred=null;
+    clearFlash();
+    if(mode==='quiz') shuffleQuiz();
+    build();
+  }
+  function setMode(m){
+    mode=m; snd('select');
+    symMode='line'; axis='v'; src={};
+    foldOn=false; foldResult='ready'; missKeys=[]; foldCells={};
+    mStep=0; mDone=false; mLock=false;
+    magicShown=false; pred=null;
+    clearFlash();
+    if(m==='quiz') shuffleQuiz();
+    build();
+  }
+
+  /* ═══ 무대 ═══ */
+  var VBW=460, VBH=460;
+  function svgEl(t,at){ var e=document.createElementNS('http://www.w3.org/2000/svg',t); for(var k in at)e.setAttribute(k,at[k]); return e; }
+
+  function render(){
+    var desk=$('desk');
+    var pop=fxPop; fxPop=null;
+    var ff=fxFold; fxFold=false;
+
+    var wrap=document.createElement('div');
+    wrap.className='sy-board';
+    var svg=svgEl('svg',{ viewBox:'0 0 '+VBW+' '+VBH, id:'sySvg',
+      style:'display:block;width:min(70vh,440px);height:auto;max-height:'+(mode==='quiz'?'40vh':'50vh') });
+    var d=svgEl('defs',{});
+    d.innerHTML=
+      '<linearGradient id="syTile" x1="0" y1="0" x2="0" y2="1">'
+      +'<stop offset="0" stop-color="#63E6BE"/><stop offset="1" stop-color="#12B886"/></linearGradient>'
+      +'<linearGradient id="syRef" x1="0" y1="0" x2="0" y2="1">'
+      +'<stop offset="0" stop-color="#FFD8A8"/><stop offset="1" stop-color="#FFB066"/></linearGradient>';
+    svg.appendChild(d);
+
+    var cell=Math.min(VBW,VBH)/(n+0.5), x0=(VBW-cell*n)/2, y0=(VBH-cell*n)/2;
+    var quiz=(mode==='quiz');
+
+    if(foldOn){
+      /* 접어보기 — 자동 반사 없이 모양 그대로 + 접기 결과 */
+      var missSet={}; missKeys.forEach(function(k){ missSet[k]=true; });
+      for(var fr=0;fr<n;fr++) for(var fc=0;fc<n;fc++){
+        var fk=fc+','+fr, on=!!foldCells[fk];
+        var isMiss=(foldResult==='done'&&missSet[fk]);
+        var fill=isMiss?'#FF5252':(on?(foldResult==='done'?'url(#syTile)':'#9775FA'):'#F4F9FF');
+        var rc=svgEl('rect',{ x:x0+fc*cell, y:y0+fr*cell, width:cell, height:cell,
+          fill:fill, stroke:'#B8CFE8', 'stroke-width':1.2, 'data-fc':fc, 'data-fr':fr,
+          'data-miss':isMiss?'1':'0' });
+        if(isMiss) rc.setAttribute('class','sy-cell dead sy-miss');
+        else if(on&&ff&&foldResult==='done') rc.setAttribute('class','sy-cell dead sy-fold');
+        svg.appendChild(rc);
+      }
+      var fax=x0+cell*n/2;
+      var axl=svgEl('line',{ x1:fax, y1:y0-6, x2:fax, y2:y0+cell*n+6,
+        stroke:'#9B7BF5', 'stroke-width':4, 'stroke-dasharray':'10 7', id:'syAxis' });
+      svg.appendChild(axl);
+      /* 접힌 주름선 */
+      if(foldResult==='done'){
+        var crease=svgEl('line',{ x1:fax, y1:y0, x2:fax, y2:y0+cell*n,
+          stroke:'#6b47d8', 'stroke-width':2.5, id:'syCrease', class:'sy-crease' });
+        crease.setAttribute('style','--len:'+(cell*n)+';');
+        svg.appendChild(crease);
+      }
+    } else {
+      var ref=SC.reflect(src,n,symMode,axis);
+      for(var r=0;r<n;r++) for(var c=0;c<n;c++){
+        var key=c+','+r, isSrc=!!src[key], isRef=(!!ref[key]&&!isSrc);
+        var f=isSrc?'url(#syTile)':(isRef?'url(#syRef)':'#F4F9FF');
+        var cls=['sy-cell'];
+        if(quiz) cls.push('dead');
+        if(isSrc&&pop===key) cls.push('sy-pop');
+        var rc2=svgEl('rect',{ x:x0+c*cell, y:y0+r*cell, width:cell, height:cell,
+          fill:f, stroke:'#B8CFE8', 'stroke-width':1.2, 'data-c':c, 'data-r':r,
+          'data-src':isSrc?'1':'0', 'data-ref':isRef?'1':'0', class:cls.join(' ') });
+        svg.appendChild(rc2);
+      }
+      if(symMode==='line'){
+        if(axis==='v'){
+          var ax=x0+cell*n/2;
+          svg.appendChild(svgEl('line',{ x1:ax, y1:y0-6, x2:ax, y2:y0+cell*n+6,
+            stroke:'#9B7BF5', 'stroke-width':4, 'stroke-dasharray':'10 7', id:'syAxis', 'data-axis':'v' }));
+        } else {
+          var ay=y0+cell*n/2;
+          svg.appendChild(svgEl('line',{ x1:x0-6, y1:ay, x2:x0+cell*n+6, y2:ay,
+            stroke:'#9B7BF5', 'stroke-width':4, 'stroke-dasharray':'10 7', id:'syAxis', 'data-axis':'h' }));
+        }
+      } else {
+        svg.appendChild(svgEl('circle',{ cx:x0+cell*n/2, cy:y0+cell*n/2, r:9,
+          fill:'#9B7BF5', id:'syCenter' }));
+      }
+    }
+
+    wrap.appendChild(svg);
+    var keep=[];
+    desk.querySelectorAll('.sy-flash,.sy-flash-magic').forEach(function(e){ keep.push(e); });
+    desk.innerHTML=''; desk.appendChild(wrap);
+    keep.forEach(function(e){ desk.appendChild(e); });
+
+    if(mode!=='quiz'&&!foldOn){
+      svg.querySelectorAll('.sy-cell').forEach(function(p){
+        p.addEventListener('click',function(){ tapCell(+p.dataset.c, +p.dataset.r); });
+      });
+    }
+    updateStatus();
+  }
+
+  function updateStatus(){
+    var st=$('statusRow');
+    if(mode==='quiz'){
+      st.innerHTML='<div class="hint">도형을 보고 아래에서 선택하세요!</div>';
+      return;
+    }
+    if(foldOn){
+      if(foldResult==='ready'){
+        st.innerHTML='<div class="hint">접으면 양쪽이 <b>딱 겹칠까요?</b> 🤔 예상해 보고 <span class="grabline">🪞 접기!</span>를 눌러요</div>';
+      } else if(missKeys.length>0){
+        st.innerHTML='<div class="hint"><b style="color:#FF8787">빨강 칸은 접어도 짝이 없어요</b> — 닮았다고 다 선대칭은 아니에요!</div>';
+      } else {
+        st.innerHTML='<div class="hint">✅ 딱 겹쳤어요! 이 모양은 <b style="color:#3EE6B0">선대칭이 맞아요</b></div>';
+      }
+      return;
+    }
+    st.innerHTML='<div class="hint">'+SC.statusText(grade,symMode,axis)+'</div>';
+  }
+
+  $('sndBtn').addEventListener('click',function(){
+    K3.sound.setOn(!K3.sound.on);
+    this.textContent=K3.sound.on?'🔊':'🔇';
+    this.classList.toggle('off',!K3.sound.on);
+    if(K3.sound.on)snd('select');
+  });
+
+  shuffleQuiz();
+  build();
+
+  window.SymmetryApp={
+    get grade(){return grade;}, get mode(){return mode;},
+    get symMode(){return symMode;}, get axis(){return axis;}, get n(){return n;},
+    get src(){var c={};for(var k in src)c[k]=src[k];return c;},
+    get filledCount(){return SC.countSrc(src);},
+    get foldOn(){return foldOn;}, get foldResult(){return foldResult;},
+    get missKeys(){return missKeys.slice();}, get foldSym(){return foldSym;},
+    get mStep(){return mStep;}, get mDone(){return mDone;},
+    get qIdx(){return qIdx;}, get qList(){return qList.slice();}, get quiz(){return qList[qIdx];},
+    get qScore(){return qScore;}, get qCount(){return qCount;},
+    get magicShown(){return magicShown;}, get pred(){return pred;}, get busy(){return busy;},
+    get rand(){return rand;}, set rand(fn){rand=fn;},
+    setGrade:setGrade, setMode:setMode, setSymMode:setSymMode, setAxis:setAxis,
+    tapCell:tapCell, enterFold:enterFold, doFold:doFold, newFold:newFold, exitFold:exitFold,
+    answer:answer, build:build
+  };
+})();
+</script>
+</body>
+</html>
