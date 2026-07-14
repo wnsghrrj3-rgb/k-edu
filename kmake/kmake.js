@@ -82,17 +82,36 @@ let undoStack = [], redoStack = [], lockHistory = false, imgTarget = null;
 /* ============ 시작 화면 ============ */
 const startEl = document.getElementById('start');
 const grid = document.getElementById('presetGrid');
+let tplCat = 'all', tplLang = 'all';
 function renderTemplates() {
   const wrap = document.getElementById('tplWrap');
-  const tpls = Object.entries(KM_TEMPLATES).filter(([k, t]) => t.aud === audience);
-  if (!tpls.length) { wrap.classList.add('hidden'); return; }
+  const legacy = Object.entries(KM_TEMPLATES).filter(([k, t]) => t.aud === audience)
+    .map(([k, t]) => ({ id: k, name: t.name, svg: t.svg, cat: t.cat || '초대·스토리', langName: null }));
+  const idx = (window.KM_TPL_INDEX || []).filter(t => t.aud === audience);
+  let all = [...idx, ...legacy];
+  if (!all.length) { wrap.classList.add('hidden'); return; }
   wrap.classList.remove('hidden');
-  wrap.querySelector('.tpl-grid').innerHTML = tpls.map(([k, t]) =>
-    `<button class="tpl-card" data-tpl="${k}">
+  const cats = [...new Set(all.map(t => t.cat))];
+  const langs = [...new Set(all.map(t => t.langName).filter(Boolean))];
+  if (tplCat !== 'all' && !cats.includes(tplCat)) tplCat = 'all';
+  if (tplLang !== 'all' && !langs.includes(tplLang)) tplLang = 'all';
+  let chips = '';
+  if (cats.length > 1) chips += `<div class="tpl-chips">` + [['all', '전체'], ...cats.map(c => [c, c])].map(([v, n]) =>
+    `<button class="tchip ${tplCat === v ? 'on' : ''}" data-k="cat" data-v="${v}">${n}</button>`).join('') + `</div>`;
+  if (langs.length > 1) chips += `<div class="tpl-chips">` + [['all', '스타일 전체'], ...langs.map(l => [l, l])].map(([v, n]) =>
+    `<button class="tchip ${tplLang === v ? 'on' : ''}" data-k="lang" data-v="${v}">${n}</button>`).join('') + `</div>`;
+  if (tplCat !== 'all') all = all.filter(t => t.cat === tplCat);
+  if (tplLang !== 'all') all = all.filter(t => t.langName === tplLang);
+  wrap.innerHTML = `<div class="sec-title">✨ 바로 쓰는 템플릿 <span>고르면 이름·날짜만 바꿔서 인쇄</span></div>${chips}<div class="tpl-grid">` +
+    all.map(t => `<button class="tpl-card" data-tpl="${t.id}">
       <div class="tpl-thumb">${t.svg}</div>
       <div class="tpl-name">${t.name}</div>
-      <div class="tpl-badge">✨ 바로 쓰기</div>
-    </button>`).join('');
+      <div class="tpl-badge">${t.langName ? t.langName + ' · ' : ''}✨ 바로 쓰기</div>
+    </button>`).join('') + `</div>`;
+  wrap.querySelectorAll('.tchip').forEach(c => c.onclick = () => {
+    if (c.dataset.k === 'cat') tplCat = c.dataset.v; else tplLang = c.dataset.v;
+    renderTemplates();
+  });
   wrap.querySelectorAll('.tpl-card').forEach(c => c.onclick = () => openTemplate(c.dataset.tpl));
 }
 function renderPresets() {
@@ -138,7 +157,17 @@ function openEditor(w, h) {
   try { history.pushState({ kmake: 'editor' }, ''); } catch (e) {}
 }
 function openTemplate(key) {
-  const t = KM_TEMPLATES[key]; if (!t) return;
+  const t = KM_TEMPLATES[key];
+  if (!t) { // 신규 레지스트리 — 본문 지연 로드 (templates/docs/{id}.json)
+    if (!(window.KM_TPL_INDEX || []).some(x => x.id === key)) return;
+    fetch('templates/docs/' + key + '.json?v=' + (window.KM_TPL_V || '')).then(r => {
+      if (!r.ok) throw 0; return r.json();
+    }).then(d => {
+      openEditor(d.baseW, d.baseH);
+      KM_SCENE.loadDoc(d, () => { zoomFit(); toast('템플릿 열림 — 글자를 눌러 내용만 바꾸면 완성! 재생 ▶으로 미리 봐요'); });
+    }).catch(() => toast('템플릿을 불러오지 못했어요 — 잠시 후 다시 시도해 주세요'));
+    return;
+  }
   if (t.doc) { // v4 다중 씬 doc형 템플릿 (라이프 청첩장 등)
     const d = JSON.parse(JSON.stringify(t.doc)); // 원본 보호 깊은 복사
     openEditor(d.baseW, d.baseH);
