@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>초대장 | 케이메이커</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;500;700&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{ --ink:#1c1c22; --line:#e3e0da; --gold:#a8894e; --paper:#faf9f6; }
+  *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  body{ font-family:'Noto Sans KR',sans-serif; background:var(--paper); color:var(--ink); min-height:100vh; display:flex; justify-content:center; }
+  .wrap{ width:min(720px,100%); padding:36px 20px 60px; }
+  h1{ font-family:'Noto Serif KR'; font-weight:500; font-size:clamp(24px,4.5vw,30px); text-align:center; letter-spacing:-.01em; }
+  .sub{ text-align:center; color:#8a877f; font-size:14px; font-weight:300; margin:10px 0 34px; letter-spacing:.02em; }
+  .field{ border-top:1px solid var(--line); padding:22px 2px; }
+  .field:last-of-type{ border-bottom:1px solid var(--line); }
+  .flabel{ font-size:12px; letter-spacing:.14em; color:#9a958a; margin-bottom:14px; font-weight:500; }
+  .chips{ display:flex; flex-wrap:wrap; gap:8px; }
+  .chip{ font-size:15px; font-weight:400; padding:10px 20px; border-radius:2px; border:1px solid var(--line); background:#fff; color:#55524b; cursor:pointer; transition:.18s; }
+  .chip.on{ border-color:var(--ink); background:var(--ink); color:#fff; }
+  input[type=text]{ width:100%; font-family:'Noto Serif KR'; font-weight:500; font-size:21px; padding:6px 2px 10px; border:none; border-bottom:1px solid var(--line); background:transparent; color:var(--ink); border-radius:0; }
+  input[type=text]:focus{ outline:none; border-bottom-color:var(--gold); }
+  input::placeholder{ color:#c5c1b8; font-weight:300; }
+  .hint{ font-size:12px; color:#a8a49a; margin-top:10px; font-weight:300; }
+  .go{ display:block; width:100%; font-weight:500; font-size:16px; letter-spacing:.16em; color:#fff; background:var(--ink); border:none; border-radius:2px; padding:19px; cursor:pointer; margin-top:36px; transition:.18s; }
+  .go:hover{ background:#000; } .go:active{ transform:scale(.99); }
+  #stage{ display:none; }
+  .cvBox{ position:relative; border-radius:4px; overflow:hidden; box-shadow:0 24px 60px rgba(20,18,30,.28); background:#000; }
+  canvas{ display:block; width:100%; height:auto; }
+  .toolRow{ display:flex; gap:8px; margin-top:18px; flex-wrap:wrap; }
+  .tool{ flex:1 1 120px; font-size:14px; font-weight:400; letter-spacing:.06em; padding:14px 10px; border-radius:2px; border:1px solid var(--line); cursor:pointer; background:#fff; color:var(--ink); transition:.15s; }
+  .tool.primary{ background:var(--ink); color:#fff; border-color:var(--ink); }
+  .tool:active{ transform:scale(.97); }
+  #recBadge{ position:absolute; top:14px; left:14px; background:rgba(0,0,0,.55); color:#fff; font-size:12px; letter-spacing:.08em; padding:7px 14px; border-radius:2px; display:none; backdrop-filter:blur(4px); }
+  .back{ display:inline-block; font-size:13px; color:#9a958a; text-decoration:none; letter-spacing:.06em; margin-bottom:18px; }
+</style>
+<script src="/kedu_gate.js"></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div id="form">
+    <a class="back" href="/kmake/">← 케이메이커</a>
+    <h1>초대장</h1>
+    <div class="sub">행사만 적으세요 &nbsp;·&nbsp; 초대장이 영상으로 나옵니다</div>
+
+    <div class="field">
+      <div class="flabel">EVENT &nbsp;—&nbsp; 어떤 자리인가요</div>
+      <div class="chips" id="occasionChips">
+        <button class="chip on" data-k="recital">학예회</button>
+        <button class="chip" data-k="openclass">공개수업</button>
+        <button class="chip" data-k="exhibit">전시회</button>
+        <button class="chip" data-k="classevent">학급 행사</button>
+        <button class="chip" data-k="party">생일 파티</button>
+        <button class="chip" data-k="gathering">모임</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <div class="flabel">TITLE &nbsp;—&nbsp; 행사 이름</div>
+      <input type="text" id="titleIn" maxlength="16" placeholder="1학년 2반 가을 학예회">
+    </div>
+
+    <div class="field">
+      <div class="flabel">WHEN &nbsp;—&nbsp; 일시</div>
+      <input type="text" id="whenIn" maxlength="22" placeholder="10월 24일 금요일 오후 2시">
+    </div>
+
+    <div class="field">
+      <div class="flabel">WHERE &nbsp;—&nbsp; 장소</div>
+      <input type="text" id="whereIn" maxlength="20" placeholder="본관 3층 시청각실">
+    </div>
+
+    <div class="field">
+      <div class="flabel">MESSAGE &nbsp;—&nbsp; 한마디 <span style="letter-spacing:0;color:#c0bcb2">(비워 두면 어울리는 문장이)</span></div>
+      <input type="text" id="msgIn" maxlength="28" placeholder="">
+    </div>
+
+    <button class="go" id="makeBtn">초대장 만들기</button>
+  </div>
+
+  <div id="stage">
+    <a class="back" href="/kmake/">← 케이메이커</a>
+    <h1>완성</h1>
+    <div class="sub">저장해서 알림장·단체방에 보내세요</div>
+    <div class="cvBox">
+      <canvas id="cv" width="1280" height="720"></canvas>
+      <div id="recBadge">● RECORDING</div>
+    </div>
+    <div class="toolRow">
+      <button class="tool" id="replayBtn">다시 재생</button>
+      <button class="tool" id="pngBtn">이미지 저장</button>
+      <button class="tool primary" id="webmBtn">영상 저장</button>
+      <button class="tool" id="backBtn">수정</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* 케이메이커 · 멸치 엔진 — 2호 초대장 (v0.1) */
+const THEMES = {
+  recital:{ en:'GRAND RECITAL', bgA:'#33202b', bgB:'#180f14', accent:'#d8b26e', dust:'#e8cf9a',
+    presets:['아이들이 준비한 무대에 초대합니다','귀한 걸음으로 자리를 빛내 주세요'] },
+  openclass:{ en:'OPEN CLASS', bgA:'#18243c', bgB:'#0c1424', accent:'#b9cfe8', dust:'#d5e4f4',
+    presets:['아이들의 배움을 함께 봐 주세요','교실의 하루를 열어 보입니다'] },
+  exhibit:{ en:'EXHIBITION', bgA:'#1b1d24', bgB:'#0d0e12', accent:'#d8b26e', dust:'#e8cf9a',
+    presets:['작품 하나하나에 마음을 담았습니다','천천히 둘러봐 주세요'] },
+  classevent:{ en:'CLASS DAY', bgA:'#1c2b23', bgB:'#101b15', accent:'#e2d3ac', dust:'#efe4c4',
+    presets:['우리 반의 특별한 하루에 초대합니다','함께여서 더 빛나는 날'] },
+  party:{ en:'BIRTHDAY PARTY', bgA:'#2b1e3e', bgB:'#171126', accent:'#e3c186', dust:'#f0d9a8',
+    presets:['함께라서 더 즐거운 날','당신이 와야 완성되는 자리'] },
+  gathering:{ en:'GATHERING', bgA:'#2e2118', bgB:'#19110c', accent:'#e4b87e', dust:'#f1d4a4',
+    presets:['오랜만에 얼굴 봐요','같이 밥 한 끼 해요'] }
+};
+const LOOP = 8;
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+const W = cv.width, H = cv.height;
+const state = { occ:'recital', title:'', when:'', where:'', msg:'' };
+
+const chipBox = document.getElementById('occasionChips');
+chipBox.addEventListener('click', e=>{
+  const b = e.target.closest('.chip'); if(!b) return;
+  chipBox.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+  b.classList.add('on'); state.occ = b.dataset.k;
+  document.getElementById('msgIn').placeholder = THEMES[state.occ].presets[0];
+});
+
+let startT=0, playing=false;
+document.getElementById('makeBtn').onclick = async ()=>{
+  const th = THEMES[state.occ];
+  state.title = document.getElementById('titleIn').value.trim() || '우리의 작은 행사';
+  state.when  = document.getElementById('whenIn').value.trim()  || '곧, 좋은 날에';
+  state.where = document.getElementById('whereIn').value.trim() || '우리 교실';
+  state.msg   = document.getElementById('msgIn').value.trim()
+             || th.presets[Math.floor(Math.random()*th.presets.length)];
+  try{
+    await document.fonts.load("700 100px 'Noto Serif KR'");
+    await document.fonts.load("300 40px 'Noto Serif KR'");
+    await document.fonts.load("400 30px 'Noto Sans KR'");
+  }catch(e){}
+  document.getElementById('form').style.display='none';
+  document.getElementById('stage').style.display='block';
+  buildParticles(); play();
+  window.scrollTo({top:0,behavior:'smooth'});
+};
+document.getElementById('backBtn').onclick = ()=>{
+  playing=false;
+  document.getElementById('stage').style.display='none';
+  document.getElementById('form').style.display='block';
+};
+document.getElementById('replayBtn').onclick = ()=>{ buildParticles(); play(); };
+function play(){ startT=performance.now(); if(!playing){ playing=true; requestAnimationFrame(tick);} }
+function tick(now){ if(!playing) return; drawScene(((now-startT)/1000)%LOOP); requestAnimationFrame(tick); }
+
+const eoc=x=>1-Math.pow(1-x,3);
+const eio=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+const clamp01=x=>Math.max(0,Math.min(1,x));
+const seg=(t,a,b)=>clamp01((t-a)/(b-a));
+
+let dust=[], bokeh=[];
+function buildParticles(){
+  dust = Array.from({length:70},()=>({ x:Math.random()*W, y:Math.random()*H,
+    vy:8+Math.random()*16, ph:Math.random()*6.28, size:.8+Math.random()*1.8, tw:1.5+Math.random()*2.5 }));
+  bokeh = Array.from({length:9},()=>({ x:Math.random()*W, y:Math.random()*H,
+    r:40+Math.random()*90, ph:Math.random()*6.28, spd:.05+Math.random()*.1 }));
+}
+
+/* 타임라인:
+   0.0 배경·보케 / 0.5 모서리 금선 4개가 스스로 그어짐
+   1.1 소제 INVITATION / 1.7 행사명 세리프 상승
+   2.6 디바이더 / 3.0 WHEN 라벨·값 / 3.7 WHERE 라벨·값
+   4.6 한마디 스태거 / 6.0 시머 */
+function drawScene(t){
+  const th = THEMES[state.occ];
+  const inb = eoc(seg(t,0,1.0));
+
+  const g = ctx.createLinearGradient(0,0,W*.3,H);
+  g.addColorStop(0,th.bgA); g.addColorStop(1,th.bgB);
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+
+  bokeh.forEach(b=>{
+    const bx=b.x+Math.sin(t*b.spd+b.ph)*30, by=b.y+Math.cos(t*b.spd*.8+b.ph)*20;
+    const rg=ctx.createRadialGradient(bx,by,0,bx,by,b.r);
+    rg.addColorStop(0,hexA(th.accent,.05*inb)); rg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(bx,by,b.r,0,6.28); ctx.fill();
+  });
+  dust.forEach(p=>{
+    const y=(p.y-t*p.vy)%(H+20); const yy=y<-10?y+H+20:y;
+    ctx.globalAlpha=(Math.sin(t*p.tw+p.ph)+1)/2*.8*inb; ctx.fillStyle=th.dust;
+    ctx.beginPath(); ctx.arc(p.x+Math.sin(t*.4+p.ph)*12,yy,p.size,0,6.28); ctx.fill();
+  });
+  ctx.globalAlpha=1;
+
+  const v=ctx.createRadialGradient(W/2,H/2,H*.32,W/2,H/2,H*.9);
+  v.addColorStop(0,'rgba(0,0,0,0)'); v.addColorStop(1,'rgba(0,0,0,.42)');
+  ctx.fillStyle=v; ctx.fillRect(0,0,W,H);
+
+  /* 모서리 금선 — 4귀퉁이 L자가 스스로 그어짐 */
+  const cp = eio(seg(t,0.5,1.4)), L=86*cp, m=46;
+  if(cp>0){
+    ctx.strokeStyle=hexA(th.accent,.85); ctx.lineWidth=1.4; ctx.lineCap='round';
+    [[m,m,1,1],[W-m,m,-1,1],[m,H-m,1,-1],[W-m,H-m,-1,-1]].forEach(([x,y,dx,dy])=>{
+      ctx.beginPath(); ctx.moveTo(x+L*dx,y); ctx.lineTo(x,y); ctx.lineTo(x,y+L*dy); ctx.stroke();
+    });
+  }
+
+  const cx=W/2;
+
+  /* 소제 */
+  const lp = eoc(seg(t,1.1,1.7));
+  if(lp>0){
+    ctx.globalAlpha=lp*.85; ctx.fillStyle=th.accent;
+    ctx.font="400 22px 'Noto Sans KR'"; ctx.textBaseline='alphabetic';
+    drawSpaced('INVITATION · '+th.en, cx, 168+(1-lp)*10, 7);
+    ctx.globalAlpha=1;
+  }
+
+  /* 행사명 */
+  const np = eoc(seg(t,1.7,2.6));
+  if(np>0){
+    ctx.globalAlpha=np; ctx.fillStyle='#f4f1ea';
+    ctx.font="700 72px 'Noto Serif KR'"; ctx.textAlign='center';
+    ctx.fillText(state.title, cx, 278+(1-np)*24);
+    ctx.globalAlpha=1;
+  }
+
+  /* 디바이더 */
+  const dp = eio(seg(t,2.6,3.2));
+  if(dp>0){
+    ctx.strokeStyle=hexA(th.accent,.9); ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(cx-120*dp,322); ctx.lineTo(cx+120*dp,322); ctx.stroke();
+    if(dp>.5){ ctx.fillStyle=th.accent; ctx.beginPath(); ctx.arc(cx,322,2.2,0,6.28); ctx.fill(); }
+  }
+
+  /* WHEN / WHERE */
+  drawInfo(t, 3.0, 'WHEN',  state.when,  398, th);
+  drawInfo(t, 3.7, 'WHERE', state.where, 508, th);
+
+  /* 한마디 — 스태거 */
+  if(t>4.6){
+    ctx.font="300 36px 'Noto Serif KR'"; ctx.textAlign='left';
+    const full=state.msg, totalW=ctx.measureText(full).width;
+    let x=cx-totalW/2;
+    for(let i=0;i<full.length;i++){
+      const a=eoc(seg(t,4.6+i*.04,5.1+i*.04));
+      ctx.globalAlpha=a*.95; ctx.fillStyle='#e9e4d8';
+      ctx.fillText(full[i],x,622+(1-a)*8);
+      x+=ctx.measureText(full[i]).width;
+    }
+    ctx.globalAlpha=1;
+  }
+
+  /* 시머 */
+  const sp=seg(t,6.0,7.2);
+  if(sp>0&&sp<1){
+    const sx=-300+(W+600)*eio(sp);
+    const sg=ctx.createLinearGradient(sx-130,0,sx+130,0);
+    sg.addColorStop(0,'rgba(255,255,255,0)'); sg.addColorStop(.5,hexA('#ffffff',.07)); sg.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.save(); ctx.translate(W/2,H/2); ctx.rotate(-.35); ctx.translate(-W/2,-H/2);
+    ctx.fillStyle=sg; ctx.fillRect(sx-320,-200,640,H+400); ctx.restore();
+  }
+
+  ctx.globalAlpha=.34; ctx.fillStyle='#fff';
+  ctx.font="300 17px 'Noto Sans KR'"; ctx.textAlign='right';
+  ctx.fillText('K-MAKER · keduclass.com', W-26, H-22);
+  ctx.globalAlpha=1;
+}
+function drawInfo(t, at, label, value, y, th){
+  const p = eoc(seg(t, at, at+.7)); if(p<=0) return;
+  const cx=W/2;
+  ctx.globalAlpha=p*.8; ctx.fillStyle=th.accent;
+  ctx.font="500 15px 'Noto Sans KR'";
+  drawSpaced(label, cx, y, 5);
+  ctx.globalAlpha=p; ctx.fillStyle='#f0ece2';
+  ctx.font="500 40px 'Noto Serif KR'"; ctx.textAlign='center';
+  ctx.fillText(value, cx, y+52+(1-p)*10);
+  ctx.globalAlpha=1;
+}
+function drawSpaced(s,cx,y,sp){
+  let w=0; for(const ch of s) w+=ctx.measureText(ch).width+sp;
+  let x=cx-(w-sp)/2; const prev=ctx.textAlign; ctx.textAlign='left';
+  for(const ch of s){ ctx.fillText(ch,x,y); x+=ctx.measureText(ch).width+sp; }
+  ctx.textAlign=prev;
+}
+function hexA(hex,a){ const n=parseInt(hex.slice(1),16);
+  return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`; }
+
+document.getElementById('pngBtn').onclick = ()=>{
+  drawScene(5.9);
+  const a=document.createElement('a');
+  a.download='초대장_'+state.title+'.png'; a.href=cv.toDataURL('image/png'); a.click();
+  play();
+};
+document.getElementById('webmBtn').onclick = ()=>{
+  const stream=cv.captureStream(30);
+  const mime=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'].find(m=>MediaRecorder.isTypeSupported(m));
+  if(!mime){ alert('이 기기에서는 영상 저장이 지원되지 않습니다. 이미지 저장을 이용해 주세요.'); return; }
+  const rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:7_000_000});
+  const chunks=[]; rec.ondataavailable=e=>chunks.push(e.data);
+  rec.onstop=()=>{
+    const a=document.createElement('a');
+    a.download='초대장_'+state.title+'.webm';
+    a.href=URL.createObjectURL(new Blob(chunks,{type:'video/webm'})); a.click();
+    document.getElementById('recBadge').style.display='none';
+  };
+  document.getElementById('recBadge').style.display='block';
+  buildParticles(); play(); rec.start();
+  setTimeout(()=>rec.stop(), LOOP*1000);
+};
+buildParticles();
+</script>
+</body>
+</html>
