@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>케이랩 · 글자 조립 — 스튜디오</title>
+<!--
+  케이랩 v3 · B트랙 양산 15호 — 글자 조립 (2026-07-14) · 셸 = clock 계보
+  SPEC = handoff/klab/designs3/SPEC_hangul_build.md (도면=정답)
+  v2(engine/tools/hangul_build.js 279줄) 콘텐츠 무손실 이식:
+    유니코드 합성 산식 (초성*21+중성)*28+종성 — 신성불가침 · 11,172자 전량 정확
+    학년칸(저 받침없음·미션2 / 중 받침·미션3·퀴즈3 / 고 미션4·퀴즈5)
+    미션 문구·판정식 그대로(가 → 고 → 곰|노 → 산|수) · 퀴즈 5문(조합식 보고 글자 고르기·결과 가림)
+  ✅ v2가 «잘한 것» 2가지 — 깨지 않고 유지:
+    ① 미션 진입 시드 = '나'(cons[1]) — 미션①이 〈가〉라서 '가'로 시작하면 즉시 자동달성. v3는 ↺에도 같은 시드 적용.
+    ② 퀴즈 보기 셔플 — v2에 이미 있음. rand 주입으로 순수화하되 «제거하지 않음».
+  ★ 와우 🔎 받침 마법 (v3 신설 · 중·고 자유탐구 · 예측 카드 1회 가드):
+    「감」에서 받침 ㅁ→ㅇ 예측(감/강/곰) → 받침 블록을 «직접 눌러야» 해소(조작 게이트) → 감 → 강.
+    다른 받침(ㄴ·ㄹ)도 눌러 볼 수 있음(간·갈) — 단 예측 해소는 ㅇ을 실제로 누른 순간.
+    저학년은 와우 숨김(받침 자체가 없음 · 조립 쾌감이 닻).
+  ⚠️ §6-1 섀도잉 금지 — 상태 = jong / 학년 게이트 = useJong(). 같은 이름 재사용 금지(v2 사고 지점).
+  config: ?grade= & mode= & consonant= & vowel= & batchim= & batchims=off
+-->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
+<style id="kedu-title-font">
+@font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
+:root{--kedu-title:'Hakgyoansim Moheomga','Gowun Dodum',sans-serif}
+</style>
+<link rel="stylesheet" href="/kedu/teacher/engine3/klab3-ui.css">
+<style>
+  #root{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;
+    background:var(--studio);overflow:hidden}
+  #root::after{content:'';position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(120% 90% at 50% 8%, transparent 55%, rgba(0,0,0,.4) 100%)}
+  .hudrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;
+    margin-top:52px;z-index:21}
+  .barslot{min-height:8px;z-index:21;width:min(720px,94vw);margin-top:8px}
+  .stagewrap{flex:1;display:flex;align-items:center;justify-content:center;width:100%;
+    min-height:0;z-index:2;padding:6px 0}
+  .ctrlslot{z-index:21;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;
+    padding:2px 10px;max-width:96vw}
+  .statusrow{z-index:21;text-align:center;padding:6px 12px 14px}
+  .seg{display:flex;gap:4px;background:var(--hud);backdrop-filter:blur(8px);
+    border:1px solid var(--hudline);border-radius:999px;padding:4px}
+  .seg button{font-family:'Gowun Dodum';font-size:13.5px;color:#c6d4e2;background:transparent;
+    border:none;border-radius:999px;padding:7px 13px;cursor:pointer;transition:all .15s}
+  .seg button.on{background:rgba(91,155,240,.28);color:#fff;
+    box-shadow:0 0 0 1.5px rgba(91,155,240,.55), 0 0 18px -4px #5B9BF0}
+  .sndbtn{background:var(--hud);border:1px solid var(--hudline);border-radius:999px;
+    color:#c6d4e2;font-size:15px;padding:7px 12px;cursor:pointer}
+  .sndbtn.off{opacity:.45}
+  .k3bar{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(8px);
+    border-radius:16px;padding:11px 16px;color:#e6eef7;font-size:15px;line-height:1.6;
+    display:flex;align-items:center;gap:12px}
+  .k3bar .prog{margin-left:auto;flex:0 0 auto;font-size:12.5px;color:var(--mut);white-space:nowrap}
+  .k3bar b{color:#BCA7FF}
+  .k3bar.done{border-color:rgba(18,184,134,.5);box-shadow:0 0 24px -8px #12B886}
+  .desk{position:relative;border-radius:30px;padding:min(2.4vh,18px) min(2.6vw,20px);
+    background:
+      radial-gradient(90% 70% at 50% 26%, rgba(255,240,214,.10), transparent 62%),
+      repeating-linear-gradient(94deg, rgba(46,28,12,.16) 0 2px, transparent 2px 9px),
+      linear-gradient(150deg,#8a5a34 0%,#77492a 52%,#63391f 100%);
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.14),
+               inset -3px -5px 14px rgba(0,0,0,.38),
+               0 26px 60px -18px rgba(0,0,0,.75);
+    border:1px solid rgba(255,255,255,.07)}
+  .desk::before{content:'';position:absolute;inset:0;border-radius:30px;pointer-events:none;
+    background-image:var(--noise, none);opacity:.5;mix-blend-mode:overlay}
+  .ck-btn{font-family:'Gowun Dodum';font-size:15.5px;font-weight:700;color:#fff;border:none;
+    border-radius:13px;padding:10px 15px;cursor:pointer;position:relative;line-height:1;
+    background:linear-gradient(145deg, var(--c1), var(--c2));
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.3),
+               inset -2px -3px 6px rgba(0,0,0,.25),
+               0 6px 14px rgba(0,0,0,.4);
+    transition:transform .1s, box-shadow .1s}
+  .ck-btn:active{transform:translateY(3px);
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.3),
+               inset -2px -3px 6px rgba(0,0,0,.25),
+               0 2px 6px rgba(0,0,0,.4)}
+  .ck-btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+  .ck-choice{font-family:var(--kedu-title);font-size:30px;font-weight:700;color:var(--card-ink);
+    background:linear-gradient(160deg,#ffffff,#eef2f7);border:2px solid #d5dee9;border-radius:14px;
+    padding:10px 20px;cursor:pointer;min-width:104px;line-height:1.2;
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.9), 0 6px 14px rgba(0,0,0,.4);
+    transition:transform .1s}
+  .ck-choice:active{transform:translateY(2px)}
+  .hint{font-size:13.5px;color:var(--mut);margin-top:4px;line-height:1.6}
+  .hint b{color:#cfe0f2} .hint .grabline{color:#FFB27A}
+
+  /* ── 글자 조립 도구 전용 ── */
+  .hb-rig{display:flex;flex-direction:column;align-items:center;gap:min(2vh,14px)}
+
+  /* 결과 유리판 — 조립된 글자가 크게 뜨는 무대 */
+  .hb-glass{position:relative;border-radius:20px;
+    width:min(74vw,470px);padding:min(1.6vh,12px) 18px min(2vh,16px);
+    background:linear-gradient(168deg, rgba(238,247,255,.97) 0%, rgba(214,229,244,.94) 100%);
+    box-shadow:inset 0 2px 0 rgba(255,255,255,.95),
+               inset 0 -6px 16px rgba(90,120,150,.22),
+               0 16px 38px -12px rgba(0,0,0,.66);
+    border:1px solid rgba(255,255,255,.5);overflow:hidden}
+  .hb-glass::before{content:'';position:absolute;left:0;right:0;top:0;height:42%;pointer-events:none;
+    background:linear-gradient(180deg, rgba(255,255,255,.72), rgba(255,255,255,0));
+    border-radius:20px 20px 40% 40%}
+  .hb-break{position:relative;display:flex;align-items:center;justify-content:center;gap:7px;
+    font-family:var(--kedu-title);font-size:clamp(19px,3vw,27px);line-height:1;
+    min-height:30px;color:#41546a}
+  .hb-break .op{color:#9fb0c2;font-size:.82em}
+  .hb-stagebox{position:relative;display:flex;align-items:center;justify-content:center;
+    height:min(30vh,196px)}
+  .hb-glyph{font-family:var(--kedu-title);font-size:min(26vh,168px);line-height:1;color:#22303d;
+    text-shadow:0 3px 0 rgba(255,255,255,.85), 0 10px 22px rgba(40,60,80,.30)}
+  .hb-glyph.mask{color:#B3C4D6;text-shadow:none}
+  .hb-ghost{position:absolute;left:50%;top:50%;opacity:0;pointer-events:none;
+    font-family:var(--kedu-title);font-size:min(13vh,84px);line-height:1;
+    transform:translate(-50%,-50%)}
+  .hb-gc{color:#1E88A8} .hb-gv{color:#E07A2C} .hb-gj{color:#12B886}
+  .hb-anim .hb-gc{animation:hbInC .36s cubic-bezier(.3,1,.4,1) both}
+  .hb-anim .hb-gv{animation:hbInV .36s cubic-bezier(.3,1,.4,1) both}
+  .hb-anim .hb-gj{animation:hbInJ .38s .04s cubic-bezier(.3,1,.4,1) both}
+  .hb-anim .hb-glyph{animation:hbPop .40s .17s cubic-bezier(.2,1.5,.4,1) both}
+  @keyframes hbInC{0%{opacity:.95;transform:translate(-215%,-72%) scale(.72)}
+    68%{opacity:.55}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}
+  @keyframes hbInV{0%{opacity:.95;transform:translate(115%,-28%) scale(.72)}
+    68%{opacity:.55}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}
+  @keyframes hbInJ{0%{opacity:.95;transform:translate(-50%,105%) scale(.72)}
+    68%{opacity:.55}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}
+  @keyframes hbPop{0%{transform:scale(.52);opacity:0}100%{transform:scale(1);opacity:1}}
+
+  /* 아크릴 글자 블록 */
+  .hb-keys{display:flex;flex-direction:column;gap:min(1.4vh,10px);width:min(76vw,500px)}
+  .hb-row{display:flex;flex-direction:column;gap:5px}
+  .hb-lab{font-family:'Gowun Dodum';font-size:12.5px;font-weight:700;letter-spacing:.3px;
+    padding-left:4px}
+  .hb-lab.cho{color:#6FD8EE} .hb-lab.jung{color:#FFB27A} .hb-lab.jong{color:#63E6BE}
+  .hb-pad{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+  .hb-key{font-family:var(--kedu-title);font-size:clamp(19px,2.7vw,25px);line-height:1;
+    min-width:clamp(40px,5.4vw,50px);padding:11px 5px;cursor:pointer;border-radius:12px;
+    background:linear-gradient(160deg, rgba(255,255,255,.13), rgba(255,255,255,.03));
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.34), inset -2px -3px 7px rgba(0,0,0,.3),
+               0 5px 12px rgba(0,0,0,.34);
+    transition:transform .09s, box-shadow .14s, background .14s}
+  .hb-key:active{transform:translateY(3px);box-shadow:inset 1px 1px 0 rgba(255,255,255,.3),
+               0 1px 4px rgba(0,0,0,.4)}
+  .hb-key[data-kind="cho"]{border:1.5px solid rgba(56,182,214,.5);color:#9CE6F7}
+  .hb-key[data-kind="jung"]{border:1.5px solid rgba(242,162,84,.5);color:#FFCE9E}
+  .hb-key[data-kind="jong"]{border:1.5px solid rgba(61,217,164,.5);color:#9CF0D2}
+  .hb-key[data-kind="cho"].on{background:linear-gradient(160deg,#38B6D6,#166C86);color:#F2FEFF;
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.5), 0 0 20px -3px #38B6D6, 0 6px 14px rgba(0,0,0,.4)}
+  .hb-key[data-kind="jung"].on{background:linear-gradient(160deg,#F2A254,#B45B18);color:#FFF6EC;
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.5), 0 0 20px -3px #F2A254, 0 6px 14px rgba(0,0,0,.4)}
+  .hb-key[data-kind="jong"].on{background:linear-gradient(160deg,#3DD9A4,#0C8C66);color:#EFFFF8;
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.5), 0 0 20px -3px #3DD9A4, 0 6px 14px rgba(0,0,0,.4)}
+  .hb-key.none{font-family:'Gowun Dodum';font-size:14px;font-weight:700}
+  .hb-key.dim{opacity:.28;cursor:default}
+  .hb-key.aim{animation:hbAim 1.15s ease-in-out infinite}
+  @keyframes hbAim{0%,100%{box-shadow:inset 1px 1px 0 rgba(255,255,255,.34), 0 0 6px -1px #3DD9A4}
+    50%{box-shadow:inset 1px 1px 0 rgba(255,255,255,.34), 0 0 22px 2px #3DD9A4}}
+
+  .hb-flash,.hb-flash-magic{position:absolute;left:50%;top:12px;transform:translateX(-50%);
+    z-index:6;max-width:92%;text-align:center;padding:11px 18px;border-radius:16px;
+    font-family:'Gowun Dodum';font-weight:700;font-size:15.5px;line-height:1.5;color:#fff;
+    box-shadow:0 10px 28px rgba(0,0,0,.35);animation:hbBan .26s ease-out}
+  .hb-flash{background:linear-gradient(150deg,#3f77d8,#2a56ab)}
+  .hb-flash-magic{background:linear-gradient(150deg,#0e9a6f,#0a6d50)}
+  @keyframes hbBan{from{opacity:0;transform:translate(-50%,-9px) scale(.95)}
+    to{opacity:1;transform:translate(-50%,0) scale(1)}}
+</style>
+</head>
+<body class="k3">
+<div id="root">
+  <div class="k3-topbar">
+    <span class="title" style="font-family:var(--kedu-title)">🔤 케이랩 · 글자 조립</span>
+    <span class="badge">STUDIO</span>
+  </div>
+  <div class="hudrow">
+    <div class="seg" id="gradeSeg"></div>
+    <div class="seg" id="modeSeg"></div>
+    <button class="sndbtn" id="sndBtn" title="효과음">🔊</button>
+  </div>
+  <div class="barslot" id="barSlot"></div>
+  <div class="stagewrap"><div class="desk" id="desk"></div></div>
+  <div class="ctrlslot" id="ctrlSlot"></div>
+  <div class="statusrow" id="statusRow"></div>
+</div>
+
+<script src="/kedu/teacher/engine3/klab3-2d.js"></script>
+
+<!-- ═══ 순수 로직 (node/jsdom 테스트 대상 · DOM 무의존) ═══ -->
+<script>
+(function(){
+  'use strict';
+
+  /* ── 유니코드 표준 배열 — 한 글자도 바꾸지 말 것 (SPEC §6-3) ── */
+  var CHO=['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+  var JUNG=['ㅏ','ㅐ','ㅑ','ㅒ','ㅓ','ㅔ','ㅕ','ㅖ','ㅗ','ㅘ','ㅙ','ㅚ','ㅛ','ㅜ','ㅝ','ㅞ','ㅟ','ㅠ','ㅡ','ㅢ','ㅣ'];
+  var JONG=['ㄱ','ㄲ','ㄳ','ㄴ','ㄵ','ㄶ','ㄷ','ㄹ','ㄺ','ㄻ','ㄼ','ㄽ','ㄾ','ㄿ','ㅀ','ㅁ','ㅂ','ㅄ','ㅅ','ㅆ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+  var BASE=0xAC00, LAST=0xD7A3;
+
+  var DEF_CONS=['ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];   /* 기본자음 14 */
+  var DEF_VOWS=['ㅏ','ㅑ','ㅓ','ㅕ','ㅗ','ㅛ','ㅜ','ㅠ','ㅡ','ㅣ'];                        /* 기본모음 10 */
+  var DEF_JONGS=['ㄱ','ㄴ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㄲ','ㅆ'];                            /* 받침 9 */
+
+  /* 합성 — (초성*21 + 중성)*28 + 종성. 종성 인덱스는 +1(0 = 받침 없음) */
+  function compose(c,j,b){
+    var ci=CHO.indexOf(c), ji=JUNG.indexOf(j);
+    if(ci<0||ji<0) return '';
+    var bi=b?JONG.indexOf(b)+1:0;
+    if(bi<0) bi=0;
+    return String.fromCharCode(BASE + (ci*21 + ji)*28 + bi);
+  }
+  /* 분해 — v3 신설(퀴즈 검증·와우·하니스 왕복). 완성형 한글이 아니면 null */
+  function decompose(g){
+    if(typeof g!=='string'||g.length!==1) return null;
+    var code=g.charCodeAt(0);
+    if(code<BASE||code>LAST) return null;
+    var x=code-BASE;
+    var bi=x%28, ji=((x-bi)/28)%21, ci=Math.floor(((x-bi)/28)/21);
+    return { cho:CHO[ci], jung:JUNG[ji], jong:bi?JONG[bi-1]:'' };
+  }
+
+  /* ── 학년칸 (헌법 3장) ── */
+  var GRADES={
+    low:  { modes:['free','mission'],        jong:false, quiz:false, missionN:2 },
+    mid:  { modes:['free','mission','quiz'], jong:true,  quiz:true,  missionN:3 },
+    high: { modes:['free','mission','quiz'], jong:true,  quiz:true,  missionN:4 }
+  };
+  var GRADE_LABEL={ low:'저학년', mid:'중학년', high:'고학년' };
+  var MODE_LABEL={ free:'자유탐구', mission:'미션', quiz:'퀴즈' };
+  /* ⚠️ 게이트 함수 — 상태 변수 jong 과 이름을 겹치지 말 것(SPEC §6-1 섀도잉 사고) */
+  function useJong(grade, batchimsOff){
+    var G=GRADES[grade]||GRADES.high;
+    return !!G.jong && !batchimsOff;
+  }
+
+  /* ── 미션 — v2 문구·판정식 그대로 (s = {cho,jung,jong}) ──
+     ★ 미션③은 문구가 「받침 ㅁ을 끼워 〈곰〉」이고 판정식도 compose === '곰'.
+       미션②에서 〈고〉(ㄱ+ㅗ)를 만든 «다음»이라 받침 ㅁ만 끼우면 곰이 된다 — 흐름상 정확. */
+  function missionsFor(grade, hasJong){
+    var G=GRADES[grade]||GRADES.high;
+    var M=[
+      { text:'ㄱ과 ㅏ를 골라 <b>〈가〉</b>를 만들어 봐요!',
+        target:'가', check:function(s){ return compose(s.cho,s.jung,s.jong)==='가'; } },
+      { text:'모음만 바꿔 <b>〈고〉</b>를 만들어 봐요!',
+        target:'고', check:function(s){ return compose(s.cho,s.jung,s.jong)==='고'; } },
+      hasJong
+        ? { text:'받침 ㅁ을 끼워 <b>〈곰〉</b>! 받침은 글자 아래에 들어가요!',
+            target:'곰', check:function(s){ return compose(s.cho,s.jung,s.jong)==='곰'; } }
+        : { text:'자음을 바꿔 <b>〈노〉</b>를 만들어 봐요!',
+            target:'노', check:function(s){ return compose(s.cho,s.jung,s.jong)==='노'; } },
+      hasJong
+        ? { text:'자음·모음·받침을 바꿔 <b>〈산〉</b>을 만들어 봐요!',
+            target:'산', check:function(s){ return compose(s.cho,s.jung,s.jong)==='산'; } }
+        : { text:'<b>〈수〉</b>를 만들어 봐요!',
+            target:'수', check:function(s){ return compose(s.cho,s.jung,s.jong)==='수'; } }
+    ];
+    return M.slice(0, G.missionN);
+  }
+
+  /* ── 퀴즈 — v2 문항·정답·보기 그대로 (조합식을 보고 글자 고르기 · 결과 가림) ── */
+  var ALL_QUIZ=[
+    { cho:'ㄱ', jung:'ㅏ', jong:'',  answer:'가', choices:['가','거','기'] },
+    { cho:'ㄴ', jung:'ㅗ', jong:'',  answer:'노', choices:['노','누','나'] },
+    { cho:'ㄱ', jung:'ㅏ', jong:'ㅁ', answer:'감', choices:['감','강','곰'] },
+    { cho:'ㅂ', jung:'ㅏ', jong:'ㅂ', answer:'밥', choices:['밥','법','봅'] },
+    { cho:'ㅎ', jung:'ㅏ', jong:'ㄴ', answer:'한', choices:['한','함','혼'] }
+  ];
+  function quizPool(grade, hasJong){
+    var base=ALL_QUIZ.filter(function(q){ return hasJong || !q.jong; });
+    return (grade==='mid') ? base.slice(0,3) : base.slice();
+  }
+  /* ✅ v2가 이미 하던 것 — 셔플 유지. rand 주입으로 순수화만. */
+  function shuffled(arr, rand){
+    rand=rand||Math.random;
+    var c=arr.slice();
+    for(var i=c.length-1;i>0;i--){ var j=Math.floor(rand()*(i+1)); var t=c[i]; c[i]=c[j]; c[j]=t; }
+    return c;
+  }
+  function shuffleQuiz(grade, hasJong, rand){ return shuffled(quizPool(grade,hasJong), rand); }
+  function quizQText(q){
+    return '<span style="color:#6FD8EE">'+q.cho+'</span> ＋ <span style="color:#FFB27A">'+q.jung+'</span>'
+      + (q.jong ? ' ＋ <span style="color:#63E6BE">'+q.jong+'</span>' : '')
+      + ' ＝ 무슨 글자일까요?';
+  }
+
+  /* ── 와우 🔎 받침 마법 — 감(ㄱ+ㅏ+ㅁ)에서 받침만 바꾼다 ── */
+  var WOW_SEED={ cho:'ㄱ', jung:'ㅏ', jong:'ㅁ' };      /* = 감 */
+  var WOW_TARGET='ㅇ';                                   /* ㅁ → ㅇ = 강 */
+  var WOW_JONGS=['ㅁ','ㅇ','ㄴ','ㄹ'];                    /* 감 · 강 · 간 · 갈 */
+  function wowGlyphs(){
+    return WOW_JONGS.map(function(b){ return compose(WOW_SEED.cho, WOW_SEED.jung, b); });
+  }
+  function wowOptions(){
+    return [{ id:'감', label:'① 감' }, { id:'강', label:'② 강' }, { id:'곰', label:'③ 곰' }];
+  }
+  function wowAnswer(){ return compose(WOW_SEED.cho, WOW_SEED.jung, WOW_TARGET); }   /* '강' */
+
+  function statusText(grade, hasJong, mode){
+    if(mode==='quiz') return '조합식을 보고 <b>무슨 글자</b>가 될지 골라 보세요!';
+    if(!hasJong) return '자음과 모음을 골라 봐요 — 글자가 «짠» 하고 만들어져요!';
+    return '자음 · 모음 · <b>받침</b>을 골라 글자를 만들어요 — 받침은 글자 <b>아래</b>에 들어가요';
+  }
+
+  var API={ CHO:CHO, JUNG:JUNG, JONG:JONG, BASE:BASE, LAST:LAST,
+            DEF_CONS:DEF_CONS, DEF_VOWS:DEF_VOWS, DEF_JONGS:DEF_JONGS,
+            GRADES:GRADES, GRADE_LABEL:GRADE_LABEL, MODE_LABEL:MODE_LABEL,
+            compose:compose, decompose:decompose, useJong:useJong,
+            missionsFor:missionsFor, ALL_QUIZ:ALL_QUIZ, quizPool:quizPool,
+            shuffled:shuffled, shuffleQuiz:shuffleQuiz, quizQText:quizQText,
+            WOW_SEED:WOW_SEED, WOW_TARGET:WOW_TARGET, WOW_JONGS:WOW_JONGS,
+            wowGlyphs:wowGlyphs, wowOptions:wowOptions, wowAnswer:wowAnswer,
+            statusText:statusText };
+  if(typeof window!=='undefined') window.HangulCore=API;
+  if(typeof module!=='undefined'&&module.exports) module.exports=API;
+})();
+</script>
+
+<!-- ═══ 앱 ═══ -->
+<script>
+(function(){
+  'use strict';
+  var HC=window.HangulCore, K3=window.K3;
+  var $=function(id){ return document.getElementById(id); };
+  document.documentElement.style.setProperty('--noise','url("'+K3.NOISE+'")');
+
+  var Q=new URLSearchParams(location.search);
+  var grade=(['low','mid','high'].indexOf(Q.get('grade'))>=0)?Q.get('grade'):'high';
+  var locked=!!Q.get('grade');
+  var batchimsOff=(Q.get('batchims')==='off');
+  function G(){ return HC.GRADES[grade]; }
+  function useJong(){ return HC.useJong(grade, batchimsOff); }
+
+  var rand=window.__K3_RAND || Math.random;
+
+  var cons=HC.DEF_CONS, vows=HC.DEF_VOWS, jongs=HC.DEF_JONGS;
+  var mode=(G().modes.indexOf(Q.get('mode'))>=0)?Q.get('mode'):'free';
+
+  function startCho(){ return (Q.get('consonant')&&HC.CHO.indexOf(Q.get('consonant'))>=0)?Q.get('consonant'):cons[0]; }
+  function startJung(){ return (Q.get('vowel')&&HC.JUNG.indexOf(Q.get('vowel'))>=0)?Q.get('vowel'):vows[0]; }
+  function startJong(){ return (useJong()&&Q.get('batchim')&&HC.JONG.indexOf(Q.get('batchim'))>=0)?Q.get('batchim'):''; }
+  /* ✅ v2가 잘한 것 ① — 미션 시드는 '나'. '가'로 시작하면 미션①이 즉시 자동달성된다. */
+  function seedMission(){ return { cho:cons[1]||cons[0], jung:vows[0], jong:'' }; }
+
+  var cho=startCho(), jung=startJung(), jong=startJong();
+
+  var mStep=0, mDone=false, mLock=false;
+  var qList=[], qIdx=0, qScore=0, qCount=0, qLock=false, qReveal=false;
+  /* 와우 */
+  var wowOn=false, wowResult='ready', magicShown=false, pred=null, busy=false;
+  var fxAsm=false;
+
+  var STEP_MS=window.__K3_FAST?60:1500;
+  var QUIZ_MS=window.__K3_FAST?60:1400;
+  var FLASH_MS=window.__K3_FAST?400:2600;
+  var CARD_MS=window.__K3_FAST?60:900;
+
+  function snd(n){ K3.sound.play(n); }
+  function state(){ return { cho:cho, jung:jung, jong:jong }; }
+  function glyph(){ return HC.compose(cho, jung, jong); }
+  function curMissions(){ return HC.missionsFor(grade, useJong()); }
+  function shuffleQuiz(){ qList=HC.shuffleQuiz(grade, useJong(), rand); qIdx=0; qScore=0; qCount=0; qLock=false; qReveal=false; }
+  function wowAvail(){ return mode==='free' && useJong(); }   /* 중·고 자유탐구만 · 저학년 숨김 */
+
+  function clearFlash(){
+    var d=$('desk'); if(!d)return;
+    d.querySelectorAll('.hb-flash,.hb-flash-magic').forEach(function(x){ x.remove(); });
+  }
+  function banner(cls, html, ms){
+    var d=$('desk'); if(!d)return;
+    clearFlash();
+    var e=document.createElement('div'); e.className=cls; e.innerHTML=html;
+    d.appendChild(e);
+    setTimeout(function(){ if(e.parentNode)e.parentNode.removeChild(e); }, ms);
+  }
+
+  /* ── 블록 집기 ── */
+  function pick(kind, ch){
+    if(mode==='quiz'||busy) return;
+    if(wowOn && kind!=='jong') return;                 /* 와우 중엔 받침만 만진다 */
+    if(kind==='cho'){ if(HC.CHO.indexOf(ch)<0) return; cho=ch; }
+    else if(kind==='jung'){ if(HC.JUNG.indexOf(ch)<0) return; jung=ch; }
+    else {
+      if(!useJong()) return;
+      if(ch!=='' && HC.JONG.indexOf(ch)<0) return;
+      jong=ch;
+    }
+    fxAsm=true;
+    snd('tap');
+    if(kind==='jong' && ch!=='') snd('select');         /* 받침이 «끼워져» 글자가 완성 */
+    if(wowOn){ wowSwap(ch); return; }
+    render();
+    if(mode==='mission') checkMission();
+  }
+
+  function reset(){
+    if(wowOn||busy) return;
+    if(mode==='mission'){ var s=seedMission(); cho=s.cho; jung=s.jung; jong=s.jong; }  /* 시드 '나' 유지 */
+    else { cho=startCho(); jung=startJung(); jong=startJong(); }
+    fxAsm=true; snd('pop');
+    render();      /* ↺ 는 미션 판정을 호출하지 않는다 */
+  }
+
+  /* ── 와우 🔎 받침 마법 ── */
+  function wow(){
+    if(!wowAvail()||busy) return;
+    wowOn=true; wowResult='ready';
+    cho=HC.WOW_SEED.cho; jung=HC.WOW_SEED.jung; jong=HC.WOW_SEED.jong;   /* = 감 */
+    fxAsm=true; snd('charge');
+    build();
+    if(!magicShown){
+      magicShown=true; busy=true;
+      K3.cards.predict(
+        '지금 글자는 <b>감</b>이에요. 받침 <b>ㅁ</b>을 <b>ㅇ</b>으로 바꾸면 — 무슨 글자가 될까요?',
+        HC.wowOptions()
+      ).then(function(id){
+        pred=id; busy=false;
+        build();
+      });
+    }
+  }
+  function wowSwap(ch){
+    /* 받침 블록을 «직접 눌러야» 해소된다 = 조작 게이트 */
+    var g=glyph();
+    if(ch===HC.WOW_TARGET){
+      wowResult='done';
+      snd('whoosh'); snd('ting');
+      banner('hb-flash-magic','🔎 감 → <b>'+g+'</b>! 받침 하나가 <b>소리를 바꿔요</b>', FLASH_MS);
+      build();
+      setTimeout(resultCard, CARD_MS);
+      return;
+    }
+    if(ch===''){
+      banner('hb-flash','받침을 빼면 다시 <b>'+g+'</b> — 받침 자리가 비었어요', FLASH_MS);
+    } else {
+      snd('whoosh');
+      banner('hb-flash','받침을 <b>'+ch+'</b>으로! 감 → <b>'+g+'</b> — 또 달라졌어요', FLASH_MS);
+    }
+    build();
+  }
+  function newWow(){
+    wowResult='ready';
+    cho=HC.WOW_SEED.cho; jung=HC.WOW_SEED.jung; jong=HC.WOW_SEED.jong;
+    fxAsm=true; snd('pop'); clearFlash(); build();
+  }
+  function exitWow(){
+    wowOn=false; wowResult='ready';
+    cho=startCho(); jung=startJung(); jong=startJong();
+    fxAsm=true; snd('select'); clearFlash(); build();
+  }
+  function resultCard(){
+    var ans=HC.wowAnswer();                 /* '강' */
+    var okP=(pred===ans);
+    K3.cards.result(
+      '<h3 style="color:'+(okP?'#0d7a5c':'#B9522F')+'">'+(okP?'✨ 맞혔어요!':'🤔 이렇게 돼요')+'</h3>'
+      +'<p style="font-size:13.5px;line-height:1.75;color:#41546a">'
+      +'자음도 모음도 그대로인데, <b>받침 한 글자</b>만 ㅁ → ㅇ 으로 바뀌었어요. '
+      +'그런데 <b>감</b>이 <b>강</b>이 됐죠 — 소리도 뜻도 완전히 달라져요.'
+      +'<br>받침 <b>ㄴ</b>을 넣으면 <b>간</b>, <b>ㄹ</b>을 넣으면 <b>갈</b> — 눌러서 확인해 봐요!</p>',
+      [{ label:'좋아, 더 해볼래', cls:'pri', value:'done' }]
+    );
+  }
+
+  function answer(v){
+    if(qLock) return;
+    qLock=true; qCount++;
+    var q=qList[qIdx];
+    var okA=(String(v)===String(q.answer));
+    if(okA){
+      qScore++; qReveal=true; snd('chime');
+      K3.toast('🎉 정답! <b>'+q.answer+'</b>');
+    } else {
+      snd('fail');
+      K3.toast('🤔 정답은 <b>'+q.answer+'</b>', true);
+    }
+    render();
+    setTimeout(function(){
+      qIdx++; qReveal=false;
+      if(qIdx>=qList.length) shuffleQuiz();
+      qLock=false;
+      build();
+    }, QUIZ_MS);
+  }
+
+  function checkMission(){
+    if(mode!=='mission'||mDone||mLock) return;
+    var M=curMissions();
+    if(mStep>=M.length) return;
+    if(M[mStep].check(state())){
+      mLock=true; snd('chime');
+      K3.toast('🎉 참 잘했어요!');
+      setTimeout(function(){
+        mStep++;
+        if(mStep>=curMissions().length){ mStep=curMissions().length-1; mDone=true; build(); return; }
+        mLock=false;
+        build();
+      }, STEP_MS);
+    }
+  }
+
+  /* ═══ 빌드 ═══ */
+  function build(){
+    var gs=$('gradeSeg');
+    if(locked){ gs.style.display='none'; }
+    else{
+      gs.innerHTML=['low','mid','high'].map(function(g){
+        return '<button data-g="'+g+'" class="'+(g===grade?'on':'')+'">'+HC.GRADE_LABEL[g]+'</button>';
+      }).join('');
+      gs.querySelectorAll('button').forEach(function(bt){
+        bt.addEventListener('click',function(){ if(bt.dataset.g!==grade) setGrade(bt.dataset.g); });
+      });
+    }
+    var ms=$('modeSeg');
+    ms.innerHTML=G().modes.map(function(m){
+      return '<button data-m="'+m+'" class="'+(m===mode?'on':'')+'">'+HC.MODE_LABEL[m]+'</button>';
+    }).join('');
+    ms.querySelectorAll('button').forEach(function(bt){
+      bt.addEventListener('click',function(){ if(bt.dataset.m!==mode) setMode(bt.dataset.m); });
+    });
+
+    var bar=$('barSlot');
+    if(mode==='mission'){
+      var M=curMissions();
+      if(mStep>=M.length) mStep=M.length-1;
+      bar.innerHTML=mDone
+        ? '<div class="k3bar done">🎉 미션을 모두 해냈어요! 자유탐구에서 마음껏 글자를 만들어 봐요.</div>'
+        : '<div class="k3bar"><span>'+M[mStep].text+'</span><span class="prog">'+(mStep+1)+' / '+M.length+'</span></div>';
+    } else if(mode==='quiz'){
+      var q=qList[qIdx]||qList[0];
+      cho=q.cho; jung=q.jung; jong=q.jong;
+      bar.innerHTML='<div class="k3bar"><span>❓ '+HC.quizQText(q)+'</span><span class="prog">점수 '+qScore+' / '+qCount+'</span></div>';
+    } else if(wowOn){
+      bar.innerHTML='<div class="k3bar"><span>🔎 <b>받침 마법</b> — 자음·모음은 그대로 두고 <b>받침만</b> 바꿔 봐요</span></div>';
+    } else bar.innerHTML='';
+
+    var ct=$('ctrlSlot'), s='';
+    if(mode==='quiz'){
+      var qq=qList[qIdx]||qList[0];
+      /* ✅ v2가 잘한 것 ② — 보기 셔플 유지(rand 주입) */
+      s=HC.shuffled(qq.choices, rand).map(function(v){
+        return '<button class="ck-choice" data-v="'+v+'">'+v+'</button>';
+      }).join('');
+    } else if(wowOn){
+      if(wowResult==='done') s+='<button class="ck-btn" data-act="newwow" style="--c1:#0e9a6f;--c2:#0a6d50">🔄 처음(감)으로</button>';
+      s+='<button class="ck-btn" data-act="wowout" style="--c1:#5a6675;--c2:#3d4653">↩ 나가기</button>';
+    } else {
+      s+='<button class="ck-btn" data-act="reset" style="--c1:#5a6675;--c2:#3d4653">↺ 처음으로</button>';
+      if(wowAvail()) s+='<button class="ck-btn" data-act="wow" style="--c1:#0e9a6f;--c2:#0a6d50">🔎 받침 마법</button>';
+    }
+    ct.innerHTML=s;
+    ct.querySelectorAll('[data-act]').forEach(function(bt){
+      bt.addEventListener('click',function(){
+        var a=bt.dataset.act;
+        if(a==='reset') reset();
+        else if(a==='wow') wow();
+        else if(a==='newwow') newWow();
+        else if(a==='wowout') exitWow();
+      });
+    });
+    ct.querySelectorAll('.ck-choice').forEach(function(bt){
+      bt.addEventListener('click',function(){ answer(bt.dataset.v); });
+    });
+
+    render();
+  }
+
+  function setGrade(g){
+    grade=g; snd('select');
+    if(G().modes.indexOf(mode)<0) mode='free';
+    cho=startCho(); jung=startJung(); jong=startJong();
+    if(mode==='mission'){ var sd=seedMission(); cho=sd.cho; jung=sd.jung; jong=sd.jong; }
+    mStep=0; mDone=false; mLock=false;
+    wowOn=false; wowResult='ready'; magicShown=false; pred=null;
+    clearFlash();
+    if(mode==='quiz') shuffleQuiz();
+    build();
+  }
+  function setMode(m){
+    mode=m; snd('select');
+    cho=startCho(); jung=startJung(); jong=startJong();
+    if(m==='mission'){ var sd=seedMission(); cho=sd.cho; jung=sd.jung; jong=sd.jong; }  /* '나' */
+    mStep=0; mDone=false; mLock=false;
+    wowOn=false; wowResult='ready'; magicShown=false; pred=null;
+    clearFlash();
+    if(m==='quiz') shuffleQuiz();
+    build();
+  }
+
+  /* ═══ 무대 ═══ */
+  function render(){
+    var desk=$('desk');
+    var asm=fxAsm; fxAsm=false;
+    var quiz=(mode==='quiz');
+    var g=glyph();
+
+    var rig=document.createElement('div');
+    rig.className='hb-rig';
+
+    /* 결과 유리판 */
+    var glass=document.createElement('div');
+    glass.className='hb-glass';
+    var brk='<div class="hb-break" id="hbBreak">'
+      + '<span style="color:#1E88A8">'+cho+'</span><span class="op">＋</span>'
+      + '<span style="color:#E07A2C">'+jung+'</span>'
+      + (jong ? '<span class="op">＋</span><span style="color:#12B886">'+jong+'</span>' : '')
+      + '<span class="op">＝</span>'
+      + '<span style="color:#22303d" id="hbEq">'+((quiz&&!qReveal)?'?':g)+'</span>'
+      + '</div>';
+    var showMask=(quiz&&!qReveal);
+    var box='<div class="hb-stagebox'+(asm&&!showMask?' hb-anim':'')+'" id="hbBox">'
+      + '<div class="hb-ghost hb-gc">'+cho+'</div>'
+      + '<div class="hb-ghost hb-gv">'+jung+'</div>'
+      + (jong ? '<div class="hb-ghost hb-gj">'+jong+'</div>' : '')
+      + '<div class="hb-glyph'+(showMask?' mask':'')+'" id="hbGlyph" data-g="'+(showMask?'?':g)+'">'
+      + (showMask?'?':g)+'</div>'
+      + '</div>';
+    glass.innerHTML=(quiz?'':brk)+box;
+    rig.appendChild(glass);
+
+    /* 아크릴 블록 키패드 — 퀴즈에선 숨김 */
+    if(!quiz){
+      var keys=document.createElement('div');
+      keys.className='hb-keys';
+      keys.innerHTML=
+        rowHTML('cho','자음 (닿소리)', cons, cho, wowOn)
+        + rowHTML('jung','모음 (홀소리)', vows, jung, wowOn)
+        + (useJong() ? rowHTML('jong','받침 (글자 아래에 끼워요)', [''].concat(jongs), jong, false) : '');
+      rig.appendChild(keys);
+    }
+
+    var keep=[];
+    desk.querySelectorAll('.hb-flash,.hb-flash-magic').forEach(function(e){ keep.push(e); });
+    desk.innerHTML=''; desk.appendChild(rig);
+    keep.forEach(function(e){ desk.appendChild(e); });
+
+    desk.querySelectorAll('.hb-key').forEach(function(b){
+      if(b.classList.contains('dim')) return;
+      b.addEventListener('click',function(){ pick(b.dataset.kind, b.dataset.ch); });
+    });
+    updateStatus();
+  }
+
+  function rowHTML(kind, label, list, cur, dim){
+    var aimOn=(wowOn && wowResult==='ready' && kind==='jong');
+    var pad=list.map(function(ch){
+      var on=(ch===cur);
+      var cls='hb-key'+(on?' on':'')+(ch===''?' none':'')+(dim?' dim':'')
+        +(aimOn&&ch===HC.WOW_TARGET&&!on?' aim':'');
+      return '<button class="'+cls+'" data-kind="'+kind+'" data-ch="'+ch+'">'
+        +(ch===''?'없음':ch)+'</button>';
+    }).join('');
+    return '<div class="hb-row" data-row="'+kind+'">'
+      + '<div class="hb-lab '+kind+'">'+label+'</div>'
+      + '<div class="hb-pad">'+pad+'</div></div>';
+  }
+
+  function updateStatus(){
+    var st=$('statusRow');
+    if(wowOn){
+      if(wowResult==='ready'){
+        st.innerHTML='<div class="hint">받침 <span class="grabline">ㅇ</span> 블록을 <b>직접 눌러</b> 확인해 봐요 — 예상한 글자가 나올까요?</div>';
+      } else {
+        st.innerHTML='<div class="hint">받침 하나로 <b style="color:#63E6BE">감 · 강 · 간 · 갈</b> — 다른 받침도 눌러 봐요!</div>';
+      }
+      return;
+    }
+    st.innerHTML='<div class="hint">'+HC.statusText(grade, useJong(), mode)+'</div>';
+  }
+
+  $('sndBtn').addEventListener('click',function(){
+    K3.sound.setOn(!K3.sound.on);
+    this.textContent=K3.sound.on?'🔊':'🔇';
+    this.classList.toggle('off',!K3.sound.on);
+    if(K3.sound.on)snd('select');
+  });
+
+  if(mode==='mission'){ var sd0=seedMission(); cho=sd0.cho; jung=sd0.jung; jong=sd0.jong; }
+  shuffleQuiz();
+  build();
+
+  window.HangulApp={
+    get grade(){return grade;}, get mode(){return mode;},
+    get cho(){return cho;}, get jung(){return jung;}, get jong(){return jong;},
+    get glyph(){return glyph();},
+    get hasJong(){return useJong();},
+    get mStep(){return mStep;}, get mDone(){return mDone;},
+    get qIdx(){return qIdx;}, get qList(){return qList.slice();}, get quiz(){return qList[qIdx];},
+    get qScore(){return qScore;}, get qCount(){return qCount;}, get qReveal(){return qReveal;},
+    get wowOn(){return wowOn;}, get wowResult(){return wowResult;},
+    get magicShown(){return magicShown;}, get pred(){return pred;}, get busy(){return busy;},
+    get rand(){return rand;}, set rand(fn){rand=fn;},
+    setGrade:setGrade, setMode:setMode, pick:pick, reset:reset,
+    wow:wow, newWow:newWow, exitWow:exitWow, answer:answer, build:build
+  };
+})();
+</script>
+</body>
+</html>
