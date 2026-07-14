@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>케이랩 · 식물의 한살이 — 스튜디오</title>
+<!--
+  케이랩 v3 · B트랙 양산 16호 — 식물의 한살이 (2026-07-15) · 셸 = clock 계보
+  SPEC = handoff/klab/designs3/SPEC_plant.md (도면=정답)
+  v2(engine/tools/plant.js 361줄) 콘텐츠 무손실 이식:
+    학년칸(저 화분1·일상어 닻·미션2 / 중 비교실험·와우·미션3·퀴즈3문 / 고 미션4·퀴즈5문)
+    미션 문구·판정식·keep 플래그 그대로 · 퀴즈 문항·보기·정답 그대로 · 상태줄 문구 전부
+  ★ 성장 모델 신성불가침(SPEC §0·§6-2): tickDay —
+    물X → wilt++·정지 / 물O → wilt-- · 빛O → g+1·etio-0.5 / 빛X → etio+1 · g<10이면 g+=0.6
+    (마지막 분기가 「빛 없이도 발아」의 물리 — 이걸 「빛 없으면 정지」로 바꾸면 와우가 죽는다)
+  ★ 와우 즉시성(SPEC §6-3): wowReveal = setTimeout 없는 for 루프(tickDay ≤8회) = jsdom 즉시 단언 가능.
+  ★ disarm 규칙(SPEC §6-1): 물/빛 토글·▶재생·+1일·↺리셋 어느 조작이든 disarm()이 먼저 —
+    「깜깜 셋업」이 남은 채 상태가 꼬이는 것을 차단. 하니스가 각 조작 후 germArmed=false 단언.
+  ⚠️ §6-4 수정: v2 퀴즈는 정답 인덱스 a가 «전부 0»인데 셔플이 Math.random 직접 호출 —
+    v3는 rand 주입(window.__K3_RAND)으로 순수화. 셔플 자체는 유지(제거 금지).
+  ⚠️ §6-2 계열: v2 wowReveal의 snd('success')는 목록에 없는 이름(무음 버그) → chime으로 매핑
+    (pattern·probability·circle과 같은 사안).
+  v3 질감: 다크 스튜디오 + 원목 관찰대 위 아이보리 테 「관찰 창」 — 새벽빛 하늘 그라데이션 아래
+    유약 테라코타 화분. 웃자람 = 줄기가 길고 가늘게 + 잎 황화 / 시들음 = 고개 숙임 (§6-6: 두 축 분리).
+  와우:
+    A 🌑 빛 없이도 싹이 틀까(v2 승격) — 무장(물O·빛X 깜깜 셋업 · 하늘이 밤으로) → ⏩ 며칠 → 깜깜한데도 발아.
+    B 🔮 예측 카드(v3 신설 · 1회 가드 · 중고 자유탐구) — ⏩ 첫 실행 «직전» 「싹틀까요, 못 틀까요?」
+      2지선다 → 목격 → 결과 카드(오답 「못 튼다」= 물·온도·공기 / 정답 「싹튼다」= 웃자람 이야기).
+      ↺·학년/모드 전환 시 재무장. 이후 반복 = 배너만(반복이 학습).
+    C 저학년 닻 — 화분 1개 · 일상어(웃자람/황화/비교 용어 없이) · 와우 숨김.
+  config: ?grade= & mode=
+-->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
+<style id="kedu-title-font">
+@font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
+:root{--kedu-title:'Hakgyoansim Moheomga','Gowun Dodum',sans-serif}
+</style>
+<link rel="stylesheet" href="/kedu/teacher/engine3/klab3-ui.css">
+<style>
+  /* ── 페이지 골격 (황금 샘플 clock 셸 · 변경 금지) ── */
+  #root{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;
+    background:var(--studio);overflow:hidden}
+  #root::after{content:'';position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(120% 90% at 50% 8%, transparent 55%, rgba(0,0,0,.4) 100%)}
+  .hudrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;
+    margin-top:52px;z-index:21}
+  .barslot{min-height:8px;z-index:21;width:min(720px,94vw);margin-top:8px}
+  .stagewrap{flex:1;display:flex;align-items:center;justify-content:center;width:100%;
+    min-height:0;z-index:2;padding:6px 0}
+  .ctrlslot{z-index:21;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;
+    padding:2px 10px;max-width:96vw}
+  .statusrow{z-index:21;text-align:center;padding:6px 12px 14px}
+  .seg{display:flex;gap:4px;background:var(--hud);backdrop-filter:blur(8px);
+    border:1px solid var(--hudline);border-radius:999px;padding:4px}
+  .seg button{font-family:'Gowun Dodum';font-size:13.5px;color:#c6d4e2;background:transparent;
+    border:none;border-radius:999px;padding:7px 13px;cursor:pointer;transition:all .15s}
+  .seg button.on{background:rgba(91,155,240,.28);color:#fff;
+    box-shadow:0 0 0 1.5px rgba(91,155,240,.55), 0 0 18px -4px #5B9BF0}
+  .sndbtn{background:var(--hud);border:1px solid var(--hudline);border-radius:999px;
+    color:#c6d4e2;font-size:15px;padding:7px 12px;cursor:pointer}
+  .sndbtn.off{opacity:.45}
+  .k3bar{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(8px);
+    border-radius:16px;padding:11px 16px;color:#e6eef7;font-size:15px;line-height:1.6;
+    display:flex;align-items:center;gap:12px}
+  .k3bar .prog{margin-left:auto;flex:0 0 auto;font-size:12.5px;color:var(--mut);white-space:nowrap}
+  .k3bar b{color:#BCA7FF}
+  .k3bar b.or{color:#FFB27A} .k3bar b.gr{color:#3EE6B0}
+  .k3bar.done{border-color:rgba(18,184,134,.5);box-shadow:0 0 24px -8px #12B886}
+  .desk{position:relative;border-radius:30px;padding:min(2.4vh,18px) min(2.6vw,20px);
+    background:
+      radial-gradient(90% 70% at 50% 26%, rgba(255,240,214,.10), transparent 62%),
+      repeating-linear-gradient(94deg, rgba(46,28,12,.16) 0 2px, transparent 2px 9px),
+      linear-gradient(150deg,#8a5a34 0%,#77492a 52%,#63391f 100%);
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.14),
+               inset -3px -5px 14px rgba(0,0,0,.38),
+               0 26px 60px -18px rgba(0,0,0,.75);
+    border:1px solid rgba(255,255,255,.07)}
+  .desk::before{content:'';position:absolute;inset:0;border-radius:30px;pointer-events:none;
+    background-image:var(--noise, none);opacity:.5;mix-blend-mode:overlay}
+  .ck-btn{font-family:'Gowun Dodum';font-size:15.5px;font-weight:700;color:#fff;border:none;
+    border-radius:13px;padding:10px 15px;cursor:pointer;position:relative;line-height:1;
+    background:linear-gradient(145deg, var(--c1), var(--c2));
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.3),
+               inset -2px -3px 6px rgba(0,0,0,.25),
+               0 6px 14px rgba(0,0,0,.4);
+    transition:transform .1s, box-shadow .1s}
+  .ck-btn:active{transform:translateY(3px);
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.3),
+               inset -2px -3px 6px rgba(0,0,0,.25),
+               0 2px 6px rgba(0,0,0,.4)}
+  .ck-btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+  .ck-choice{font-family:'Gowun Dodum';font-size:16.5px;font-weight:700;color:var(--card-ink);
+    background:linear-gradient(160deg,#ffffff,#eef2f7);border:2px solid #d5dee9;border-radius:14px;
+    padding:13px 18px;cursor:pointer;min-width:110px;max-width:min(88vw,340px);line-height:1.45;
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.9), 0 6px 14px rgba(0,0,0,.4);
+    transition:transform .1s}
+  .ck-choice:active{transform:translateY(2px)}
+  .hint{font-size:13.5px;color:var(--mut);margin-top:4px;line-height:1.6}
+  .hint b{color:#cfe0f2} .hint .go{color:#3EE6B0} .hint .grabline{color:#FFB27A}
+
+  /* ── 식물 도구 전용 ── */
+  /* 관찰 창 — 아이보리 테 안에 새벽빛 하늘·흙밭 (다크 스튜디오와의 대비 = 디오라마) */
+  .pl-paper{position:relative;border-radius:16px;padding:7px;
+    background:linear-gradient(170deg,#FBF7EE 0%,#EDE4CF 100%);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.5), 0 12px 30px -8px rgba(0,0,0,.55)}
+  /* 화분 토글 — 물(파랑)·빛(금빛) 켜짐/꺼짐 */
+  .pl-tg{font-family:'Gowun Dodum';font-size:14px;font-weight:700;border-radius:999px;
+    padding:9px 14px;cursor:pointer;line-height:1;transition:all .15s;border-width:1.5px;border-style:solid}
+  .pl-tg[data-k="water"]{color:#9CC4FA;background:rgba(91,155,240,.10);border-color:rgba(91,155,240,.45)}
+  .pl-tg[data-k="water"].on{background:rgba(91,155,240,.42);color:#fff;
+    box-shadow:0 0 0 1.5px rgba(156,196,250,.6), 0 0 18px -4px #5B9BF0}
+  .pl-tg[data-k="light"]{color:#FFD98A;background:rgba(255,190,90,.10);border-color:rgba(255,190,90,.45)}
+  .pl-tg[data-k="light"].on{background:rgba(255,170,60,.44);color:#fff;
+    box-shadow:0 0 0 1.5px rgba(255,217,138,.6), 0 0 18px -4px #FFB84D}
+  .pl-lab{font-family:'Gowun Dodum';font-size:13px;font-weight:700;color:#9fb2c6;align-self:center}
+  .pl-day{font-family:var(--kedu-title);font-size:19px;color:#FFE3B3;align-self:center;
+    min-width:64px;text-align:center;text-shadow:0 0 14px rgba(255,190,90,.35)}
+  .pl-wow{font-family:'Gowun Dodum';font-size:14px;font-weight:700;border-radius:13px;
+    padding:10px 14px;cursor:pointer;line-height:1;transition:transform .1s}
+  .pl-wow:active{transform:translateY(2px)}
+  .pl-wow[data-wow="arm"]{color:#C9B8FF;background:rgba(155,123,245,.12);
+    border:1.5px solid rgba(155,123,245,.5)}
+  .pl-wow[data-wow="reveal"]{color:#fff;border:none;
+    background:linear-gradient(145deg,#8f6ef2,#6b47d8);
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.3), inset -2px -3px 6px rgba(0,0,0,.25),
+               0 6px 14px rgba(0,0,0,.4)}
+  /* 물방울 — CSS 낙하 루프(raf 재렌더 불필요) */
+  .pl-drip{animation:plDrip 1.4s linear infinite}
+  @keyframes plDrip{0%{transform:translateY(0);opacity:0}12%{opacity:.85}
+    88%{opacity:.85}100%{transform:translateY(120px);opacity:0}}
+  /* 발아 순간 — 새 단계가 폭 하고 자란다 */
+  .pl-grow{animation:plGrow .5s cubic-bezier(.2,1.4,.4,1) both;
+    transform-origin:bottom center;transform-box:fill-box}
+  @keyframes plGrow{0%{transform:scaleY(.55);opacity:.4}100%{transform:scaleY(1);opacity:1}}
+  /* 해 — 은은한 맥동 */
+  .pl-sun{animation:plSun 3.2s ease-in-out infinite;transform-origin:center;transform-box:fill-box}
+  @keyframes plSun{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+  /* 무대 배너 (v2 pl-flash 계보) */
+  .pl-flash,.pl-flash-magic,.pl-nudge{position:absolute;left:50%;top:12px;transform:translateX(-50%);
+    z-index:6;max-width:92%;text-align:center;padding:11px 18px;border-radius:16px;
+    font-family:'Gowun Dodum';font-weight:700;font-size:15.5px;line-height:1.5;
+    box-shadow:0 10px 28px rgba(0,0,0,.35);animation:plPop .26s ease-out}
+  .pl-flash{background:linear-gradient(150deg,#3f77d8,#2a56ab);color:#fff}
+  .pl-flash-magic{background:linear-gradient(150deg,#8f6ef2,#6b47d8);color:#fff}
+  .pl-nudge{background:#FFF3CD;color:#7a5b00;border:2px solid #F3C969}
+  @keyframes plPop{from{opacity:0;transform:translate(-50%,-9px) scale(.95)}
+    to{opacity:1;transform:translate(-50%,0) scale(1)}}
+  .pl-hold{display:inline-block;animation:plHold 1.1s ease-in-out infinite;color:#C9B8FF}
+  @keyframes plHold{0%,100%{opacity:1}50%{opacity:.45}}
+</style>
+</head>
+<body class="k3">
+<div id="root">
+  <div class="k3-topbar">
+    <span class="title" style="font-family:var(--kedu-title)">🌱 케이랩 · 식물의 한살이</span>
+    <span class="badge">STUDIO</span>
+  </div>
+  <div class="hudrow">
+    <div class="seg" id="gradeSeg"></div>
+    <div class="seg" id="modeSeg"></div>
+    <button class="sndbtn" id="sndBtn" title="효과음">🔊</button>
+  </div>
+  <div class="barslot" id="barSlot"></div>
+  <div class="stagewrap"><div class="desk" id="desk"></div></div>
+  <div class="ctrlslot" id="ctrlSlot"></div>
+  <div class="statusrow" id="statusRow"></div>
+</div>
+
+<script src="/kedu/teacher/engine3/klab3-2d.js"></script>
+
+<!-- ═══ 순수 로직 (node/jsdom 테스트 대상 · DOM 무의존) ═══ -->
+<script>
+(function(){
+  'use strict';
+  var GRADES={
+    low:  { modes:['free','mission'],        compare:false, quiz:false, missionN:2, showWow:false },
+    mid:  { modes:['free','mission','quiz'], compare:true,  quiz:true,  missionN:3, showWow:true  },
+    high: { modes:['free','mission','quiz'], compare:true,  quiz:true,  missionN:4, showWow:true  }
+  };
+  var GRADE_LABEL={ low:'저학년', mid:'중학년', high:'고학년' };
+  var MODE_LABEL={ free:'자유탐구', mission:'미션', quiz:'퀴즈' };
+  var STAGES=[['seed','씨앗'],['sprout','싹(떡잎)'],['leaf','잎·줄기'],['flower','꽃'],['fruit','열매(꼬투리)'],['seedDone','다시 씨앗!']];
+
+  function clamp(v,a,b){ return Math.max(a,Math.min(v,b)); }
+  function newPot(){ return { water:true, light:true, g:0, wilt:0, etio:0 }; }
+  function stageOf(g){
+    if(g<2)return 0; if(g<6)return 1; if(g<12)return 2; if(g<18)return 3; if(g<24)return 4; return 5;
+  }
+  /* ★ 성장 모델 — SPEC §0 신성불가침. 순수: 새 상태를 돌려준다.
+     물X → wilt++·정지 / 물O → wilt-- · 빛O → g+1·etio-0.5
+     / 빛X → etio+1 · g<10이면 g+=0.6 (← 「빛 없이도 발아」의 물리. 절대 수정 금지) */
+  function tickDay(pots,day){
+    var out=pots.map(function(p){ return { water:p.water, light:p.light, g:p.g, wilt:p.wilt, etio:p.etio }; });
+    for(var i=0;i<out.length;i++){ var p=out[i];
+      if(!p.water){ p.wilt=clamp(p.wilt+1,0,5); continue; }
+      p.wilt=clamp(p.wilt-1,0,5);
+      if(p.light){ p.g=clamp(p.g+1,0,24); p.etio=clamp(p.etio-0.5,0,6); }
+      else { p.etio=clamp(p.etio+1,0,6); if(p.g<10)p.g+=0.6; }
+    }
+    return { pots:out, day:day+1 };
+  }
+
+  /* 미션 — v2 문구·판정식·keep 플래그 그대로 (판정은 pots 인자를 받는 순수식) */
+  var MISSIONS=[
+    { text:'💧물과 ☀️빛을 주고 시간을 흘려 <b>싹(떡잎)</b>을 틔워 봐요!',
+      keep:false, check:function(pots){ return stageOf(pots[0].g)>=1; } },
+    { text:'계속 잘 보살펴서 <b>꽃</b>을 피워 봐요!',
+      keep:true,  check:function(pots){ return stageOf(pots[0].g)>=3; } },
+    { text:'열매(꼬투리) 속 <b>씨앗</b>까지! 씨앗에서 씨앗으로 — <b>한살이 완성</b>!',
+      keep:true,  check:function(pots){ return stageOf(pots[0].g)>=5; } },
+    { text:'🔬 비교 실험! 두 화분 모두 물은 주고, <b>오른쪽만 빛을 꺼서</b> 며칠 키워 차이를 확인해요!',
+      keep:false, check:function(pots){ return pots[0].water&&pots[1].water&&pots[0].light&&!pots[1].light&&pots[0].g>=6&&pots[1].etio>=3; } }
+  ];
+  function missionsFor(grade){ return MISSIONS.slice(0, GRADES[grade].missionN); }
+
+  /* 퀴즈 — v2 문항·보기·정답 그대로. ★ 정답 인덱스 a 전부 0 → 보기 셔플 필수(§6-4) */
+  var QUIZ=[
+    { q:'강낭콩 한살이의 순서로 맞는 것은?',
+      ch:['씨앗→싹→잎·줄기→꽃→열매','꽃→씨앗→열매→싹','열매→꽃→씨앗→싹'], a:0 },
+    { q:'씨앗이 싹 트는 데 꼭 필요한 것은?',
+      ch:['적당한 물과 알맞은 온도','아주 큰 화분','시끄러운 소리'], a:0 },
+    { q:'빛을 받지 못하고 자란 식물은 어떻게 될까요?',
+      ch:['가늘고 길게 웃자라고 잎이 노래져요','더 굵고 튼튼해져요','꽃이 더 빨리 펴요'], a:0 },
+    { q:'두 화분으로 비교 실험을 할 때, 다르게 해야 하는 조건은?',
+      ch:['알아보려는 한 가지만','모든 조건','아무거나 두세 가지'], a:0 },
+    { q:'열매(꼬투리) 속에 들어 있는 것은?',
+      ch:['씨앗 — 한살이가 다시 시작돼요','물','뿌리'], a:0 }
+  ];
+  /* 중학년 = 기본 개념 3문(한살이 순서·싹트는 조건·열매 속 씨앗) */
+  function quizPool(grade){ return (grade==='mid') ? [0,1,4] : [0,1,2,3,4]; }
+  function shuffleQuiz(pool,rand){
+    rand=rand||Math.random;
+    var a=pool.slice();
+    for(var i=a.length-1;i>0;i--){ var j=Math.floor(rand()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; }
+    return a;
+  }
+  function newQuizIdx(pool,used,rand){
+    rand=rand||Math.random;
+    if(used.length>=pool.length) used=[];
+    var cand=[]; for(var i=0;i<pool.length;i++) if(used.indexOf(pool[i])<0) cand.push(pool[i]);
+    var idx=cand[Math.floor(rand()*cand.length)];
+    return { idx:idx, used:used.concat([idx]) };
+  }
+  function shuffleChoices(n,rand){
+    rand=rand||Math.random;
+    var a=[]; for(var i=0;i<n;i++)a.push(i);
+    for(var k=a.length-1;k>0;k--){ var j=Math.floor(rand()*(k+1)); var t=a[k]; a[k]=a[j]; a[j]=t; }
+    return a;
+  }
+
+  /* 상태줄 — v2 문구 그대로 · 학년칸별 (순수 문자열 {main,sub}) */
+  function statusText(grade,pots,day,compare){
+    var p0=pots[0], p1=pots[1];
+    if(!compare){
+      /* 저학년: 화분 1개·일상어 닻(웃자람/황화/비교실험 용어 없이) */
+      if(day===0)return { main:'🌱 씨앗을 심었어요 — ▶로 시간을 흘려 봐요!',
+        sub:'💧물과 ☀️빛을 주면 씨앗이 무럭무럭 자라요.' };
+      if(!p0.water)return { main:'물이 없으면 자라지 못해요',
+        sub:'💧를 다시 켜 주세요 — 식물에게 물은 꼭 필요해요.' };
+      if(!p0.light)return { main:'빛이 없으면 잘 자라지 못해요',
+        sub:'☀️를 켜 주세요 — 식물은 빛을 받아야 튼튼하게 자라요.' };
+      var stl=stageOf(p0.g);
+      var tipsL=['곧 싹이 터요!','떡잎이 나왔어요 — 곧 잎이 더 나와요.','잎과 줄기가 쑥쑥 자라요!',
+        '예쁜 꽃이 피었어요!','꽃이 진 자리에 열매가 생겼어요.',
+        '씨앗에서 시작해 다시 씨앗으로 — 한살이를 다 봤어요! ↺로 새 씨앗을 심어 봐요.'];
+      return { main:day+'일째 — '+STAGES[stl][1], sub:tipsL[stl] };
+    }
+    var diff=(p0.water!==p1.water)||(p0.light!==p1.light);
+    if(day===0)return { main:'🌱 씨앗을 심었어요 — ▶로 시간을 흘려 봐요!',
+      sub:'두 화분의 💧물·☀️빛을 다르게 해서 <b>비교 실험</b>도 할 수 있어요. 다르게 하는 조건은 꼭 한 가지만!' };
+    if(diff)return { main:'🔬 비교 실험 중 — 두 화분이 어떻게 달라질까요?',
+      sub:(p0.light!==p1.light
+        ?'빛을 못 받는 쪽은 가늘고 길게 <b>웃자라고</b> 잎이 노래져요(황화).'
+        :'물을 못 받는 쪽은 자라지 못하고 <b>시들어요</b>. 다시 주면 살아나요!') };
+    if(!p0.water)return { main:'물이 없으면 자라지 못하고 시들어요',
+      sub:'💧를 다시 켜면 천천히 살아나요. 식물에게 물은 꼭 필요해요.' };
+    if(!p0.light)return { main:'빛이 없으면 가늘고 길게 웃자라요',
+      sub:'빛을 찾아 키만 커지고 잎은 노래져요. 꽃도 못 피워요 — ☀️를 켜 주세요!' };
+    var st0=stageOf(p0.g);
+    var tips=['곧 싹이 터요!','떡잎이 나왔어요 — 떡잎 사이에서 본잎이 나올 거예요.',
+      '잎과 줄기가 쑥쑥! 잎이 점점 많아져요.','꽃이 피었어요 — 꽃이 진 자리에 열매가 생겨요.',
+      '꼬투리(열매) 속에서 씨앗이 자라고 있어요.',
+      '씨앗에서 시작해 다시 씨앗으로 — 이게 <b>한살이</b>예요! ↺로 새 씨앗을 심어 봐요.'];
+    return { main:day+'일째 — '+STAGES[st0][1], sub:tips[st0] };
+  }
+
+  var API={ GRADES:GRADES, GRADE_LABEL:GRADE_LABEL, MODE_LABEL:MODE_LABEL, STAGES:STAGES,
+            newPot:newPot, tickDay:tickDay, stageOf:stageOf,
+            missionsFor:missionsFor, QUIZ:QUIZ, quizPool:quizPool,
+            shuffleQuiz:shuffleQuiz, newQuizIdx:newQuizIdx, shuffleChoices:shuffleChoices,
+            statusText:statusText };
+  if(typeof window!=='undefined') window.PlantCore=API;
+  if(typeof module!=='undefined'&&module.exports) module.exports=API;
+})();
+</script>
+
+<!-- ═══ 앱 ═══ -->
+<script>
+(function(){
+  'use strict';
+  var PC=window.PlantCore, K3=window.K3;
+  var $=function(id){ return document.getElementById(id); };
+  document.documentElement.style.setProperty('--noise','url("'+K3.NOISE+'")');
+
+  var Q=new URLSearchParams(location.search);
+  var grade=(['low','mid','high'].indexOf(Q.get('grade'))>=0)?Q.get('grade'):'high';
+  var locked=!!Q.get('grade');
+  function G(){ return PC.GRADES[grade]; }
+  var mode=(G().modes.indexOf(Q.get('mode'))>=0)?Q.get('mode'):'free';
+
+  /* §6-4 — 모든 난수는 이 rand를 통과(퀴즈 뽑기·보기 셔플). Math.random 직접 호출 0. */
+  var rand=window.__K3_RAND || Math.random;
+
+  var day=0, playing=false, pots=[PC.newPot(),PC.newPot()];
+  var germArmed=false, germRevealed=false, magicShown=false, pred=null, revealing=false;
+  var mStep=0, mDone=false, mLock=false;
+  var qIdx=0, qScore=0, qCount=0, qLock=false, qUsed=[];
+  var prevStage=[0,0];   /* 발아 순간 pl-grow 연출용 */
+
+  var STEP_MS =window.__K3_FAST?60:1500;
+  var QUIZ_MS =window.__K3_FAST?60:1500;
+  var PLAY_MS =window.__K3_FAST?40:900;     /* ▶ 하루의 길이 */
+  var CARD_MS =window.__K3_FAST?60:900;
+  var FLASH_MS=window.__K3_FAST?400:4200;
+  var MAGIC_MS=window.__K3_FAST?400:5200;
+
+  function snd(n){ K3.sound.play(n); }
+  function curMissions(){ return PC.missionsFor(grade); }
+  function reset(){ day=0; playing=false; pots=[PC.newPot(),PC.newPot()]; prevStage=[0,0]; }
+
+  /* ── 무대 배너 (v2 pl-flash 계보 · desk 직속 absolute) ── */
+  function clearFlash(){
+    var d=$('desk'); if(!d)return;
+    d.querySelectorAll('.pl-flash,.pl-flash-magic,.pl-nudge').forEach(function(n){ n.remove(); });
+  }
+  function flash(cls,html,ms){
+    var d=$('desk'); if(!d)return;
+    clearFlash();
+    var e=document.createElement('div');
+    e.className=cls; e.innerHTML=html;
+    d.appendChild(e);
+    setTimeout(function(){ if(e.parentNode)e.parentNode.removeChild(e); }, ms);
+  }
+
+  /* ── §6-1 disarm — 어떤 조작이든 와우 무장을 먼저 푼다 ── */
+  function disarm(){ germArmed=false; germRevealed=false; clearFlash(); }
+
+  /* ── 하루 진행 ── */
+  function tick(){
+    var r=PC.tickDay(pots,day);
+    pots=r.pots; day=r.day;
+    render();
+    if(mode==='mission') checkMission();
+  }
+  function step(){ disarm(); snd('tap'); tick(); }
+  function play(){ disarm(); playing=!playing; snd('select'); build(); }
+  function doReset(){ disarm(); reset();
+    magicShown=false; pred=null;          /* ↺ = 와우B 재무장 (§3) */
+    snd('pop'); build(); }
+  function toggleWater(i){ disarm(); if(!G().compare)i=0; pots[i].water=!pots[i].water; snd('select'); build(); }
+  function toggleLight(i){ disarm(); if(!G().compare)i=0; pots[i].light=!pots[i].light; snd('select'); build(); }
+
+  /* ── 재생 루프 (raf · __K3_FAST 스위치) ── */
+  var lastTick=0;
+  function loop(){
+    var now=Date.now();
+    if(playing && mode!=='quiz' && now-lastTick>=PLAY_MS){ lastTick=now; tick(); }
+    requestAnimationFrame(loop);
+  }
+
+  /* ── 와우 🌑 빛 없이도 싹이 틀까 (중·고 자유탐구 · SPEC §1·§3) ── */
+  function wowOn(){ return G().showWow && mode==='free'; }
+  function wowArm(){
+    if(!wowOn())return;
+    reset(); germRevealed=false;
+    pots[0].water=true; pots[0].light=false;
+    if(G().compare){ pots[1].water=true; pots[1].light=false; }
+    germArmed=true; snd('charge');
+    build();
+    flash('pl-flash',
+      '🌑 💧물은 주고 ☀️빛은 껐어요 — 깜깜한 곳이에요.<br>이대로 며칠 지나면 씨앗이 <b>싹틀까요</b>, 빛이 없어 <b>못 틀까요</b>? 예상해 봐요!', FLASH_MS);
+  }
+  /* 드러냄 본체 — setTimeout 없는 for 루프 = 즉시 마법(§6-3 · jsdom 단언 가능) */
+  function doReveal(){
+    snd('whoosh'); snd('chime');   /* §6-2 계열: v2 success(무음 버그) → chime */
+    var r={pots:pots,day:day};
+    for(var d2=0; d2<8 && PC.stageOf(r.pots[0].g)<1; d2++){ r=PC.tickDay(r.pots,r.day); }
+    pots=r.pots; day=r.day;
+    germRevealed=true;
+    render();
+    flash('pl-flash-magic',
+      '🌱 깜깜한데도 <b>싹이 텄어요!</b> 씨앗은 빛이 없어도 <b>물·온도·공기</b>만 있으면 싹터요 —<br>'
+      +'빛은 <b>싹이 튼 뒤 잎이 자랄 때</b> 필요해요. (그래서 빛 없이 자란 싹은 가늘고 노랗게 웃자라요)', MAGIC_MS);
+  }
+  function wowReveal(){
+    if(!wowOn()||revealing)return;
+    if(!germArmed){ snd('select');
+      flash('pl-nudge','먼저 <b>🌑 버튼</b>으로 “싹틀까, 못 틀까” 예상부터 해 봐요!', FLASH_MS); return; }
+    /* 와우B — 첫 실행 «직전» 예측 카드 (1회 가드 · v2 2단 버튼의 승격) */
+    if(!magicShown){
+      magicShown=true; revealing=true;
+      snd('charge');
+      K3.cards.predict('💧물은 주고 <b>☀️빛은 껐어요</b>. 며칠 지나면 씨앗이 — 어떻게 될까요?',
+        [{id:'no',  label:'① 빛이 없어 싹이 못 터요'},
+         {id:'yes', label:'② 깜깜해도 싹이 터요'}]
+      ).then(function(id){
+        pred=id; revealing=false;
+        doReveal();
+        setTimeout(function(){
+          var okP=(pred==='yes');
+          K3.cards.result(
+            '<h3 style="color:'+(okP?'#0d7a5c':'#6b47d8')+'">'+(okP?'✨ 맞아요! 깜깜해도 싹이 터요':'🌱 깜깜한데도 싹이 텄어요!')+'</h3>'
+            +'<p style="font-size:13.5px;line-height:1.75;color:#41546a">'
+            +(okP
+              ?'다만 빛 없이 자란 싹은 <b>가늘고 노랗게 웃자라요</b> — 빛은 <b>싹이 튼 뒤</b> 잎이 자랄 때 필요해요.<br>'
+              :'씨앗은 빛이 없어도 <b>물·온도·공기</b>만 있으면 싹터요. 빛은 <b>싹이 튼 뒤</b> 잎이 자랄 때 필요해요.<br>')
+            +'씨앗 속엔 싹틔울 양분이 이미 들어 있답니다. ☀️빛을 켜서 이 싹이 어떻게 달라지는지도 봐요!</p>',
+            [{label:'좋아, 계속 탐구', cls:'pri', value:'done'}]
+          );
+        }, CARD_MS);
+      });
+      return;
+    }
+    doReveal();   /* 이후로는 v2 그대로 — 배너만. 몇 번이고 반복(반복이 학습) */
+  }
+
+  /* ── 미션 ── */
+  function checkMission(){
+    if(mode!=='mission'||mDone||mLock) return;
+    var M=curMissions();
+    if(mStep>=M.length) return;
+    if(M[mStep].check(pots)){
+      mLock=true; playing=false; snd('chime');
+      K3.toast('🎉 참 잘했어요!');
+      setTimeout(function(){
+        mLock=false;
+        if(mStep<M.length-1){ mStep++; if(!M[mStep].keep)reset(); }
+        else mDone=true;
+        build();
+      }, STEP_MS);
+    }
+  }
+
+  /* ── 퀴즈 ── */
+  function newQuiz(){
+    var r=PC.newQuizIdx(PC.quizPool(grade), qUsed, rand);
+    qIdx=r.idx; qUsed=r.used; qLock=false;
+  }
+  function answer(v){
+    if(qLock) return;
+    qLock=true; qCount++;
+    var q=PC.QUIZ[qIdx];
+    var okA=(+v===q.a);
+    if(okA){ qScore++; snd('chime'); K3.toast('🎉 정답! <b>'+q.ch[q.a]+'</b>'); }
+    else { snd('fail'); K3.toast('🤔 정답은 <b>'+q.ch[q.a]+'</b>', true); }
+    setTimeout(function(){ newQuiz(); build(); }, QUIZ_MS);
+  }
+
+  /* ── 빌드 ── */
+  function build(){
+    var gs=$('gradeSeg');
+    if(locked){ gs.style.display='none'; }
+    else{
+      gs.innerHTML=['low','mid','high'].map(function(g){
+        return '<button data-g="'+g+'" class="'+(g===grade?'on':'')+'">'+PC.GRADE_LABEL[g]+'</button>';
+      }).join('');
+      gs.querySelectorAll('button').forEach(function(b){
+        b.addEventListener('click',function(){ if(b.dataset.g!==grade) setGrade(b.dataset.g); });
+      });
+    }
+    var ms=$('modeSeg');
+    ms.innerHTML=G().modes.map(function(m){
+      return '<button data-m="'+m+'" class="'+(m===mode?'on':'')+'">'+PC.MODE_LABEL[m]+'</button>';
+    }).join('');
+    ms.querySelectorAll('button').forEach(function(b){
+      b.addEventListener('click',function(){ if(b.dataset.m!==mode) setMode(b.dataset.m); });
+    });
+
+    var bar=$('barSlot');
+    if(mode==='mission'){
+      var M=curMissions();
+      if(mStep>=M.length) mStep=M.length-1;
+      bar.innerHTML=mDone
+        ? '<div class="k3bar done">🎉 미션을 모두 해냈어요! 자유탐구에서 마음껏 키워 봐요.</div>'
+        : '<div class="k3bar"><span>'+M[mStep].text+'</span><span class="prog">'+(mStep+1)+' / '+M.length+'</span></div>';
+    } else if(mode==='quiz'){
+      var q=PC.QUIZ[qIdx];
+      bar.innerHTML='<div class="k3bar"><span>❓ '+q.q+'</span><span class="prog">점수 '+qScore+' / '+qCount+'</span></div>';
+    } else bar.innerHTML='';
+
+    var ct=$('ctrlSlot'), s='';
+    if(mode==='quiz'){
+      var qq=PC.QUIZ[qIdx];
+      s=PC.shuffleChoices(qq.ch.length,rand).map(function(i){
+        return '<button class="ck-choice" data-v="'+i+'">'+qq.ch[i]+'</button>';
+      }).join('');
+    } else {
+      s+=potCtrl(0);
+      s+='<button class="ck-btn" data-act="play" style="--c1:'+(playing?'#8f6ef2':'#3f77d8')+';--c2:'+(playing?'#6b47d8':'#2a56ab')+'">'+(playing?'⏸ 멈춤':'▶ 시간 흐르기')+'</button>'
+        +'<button class="ck-btn" data-act="step" style="--c1:#4b5c72;--c2:#334052">+1일</button>'
+        +'<span class="pl-day" id="plDay">'+day+'일째</span>'
+        +'<button class="ck-btn" data-act="reset" style="--c1:#5a6675;--c2:#3d4653">↺ 다시 심기</button>';
+      if(G().compare) s+=potCtrl(1);
+      if(wowOn()){
+        s+='<button class="pl-wow" data-wow="arm">🌑 빛 없이도 싹이 틀까?</button>'
+          +'<button class="pl-wow" data-wow="reveal">⏩ 며칠 지내보기</button>';
+      }
+    }
+    ct.innerHTML=s;
+    ct.querySelectorAll('.pl-tg').forEach(function(b){
+      b.addEventListener('click',function(){
+        var i=+b.dataset.i;
+        if(b.dataset.k==='water') toggleWater(i); else toggleLight(i);
+      });
+    });
+    ct.querySelectorAll('[data-act]').forEach(function(b){
+      b.addEventListener('click',function(){
+        var a=b.dataset.act;
+        if(a==='play')play(); else if(a==='step')step(); else if(a==='reset')doReset();
+      });
+    });
+    ct.querySelectorAll('.pl-wow').forEach(function(b){
+      b.addEventListener('click',function(){ if(b.dataset.wow==='arm')wowArm(); else wowReveal(); });
+    });
+    ct.querySelectorAll('.ck-choice').forEach(function(b){
+      b.addEventListener('click',function(){ answer(b.dataset.v); });
+    });
+
+    render();
+  }
+  function potCtrl(i){
+    var p=pots[i];
+    var lab=G().compare?('<span class="pl-lab">'+(i===0?'왼쪽':'오른쪽')+'</span>'):'';
+    return lab
+      +'<button class="pl-tg'+(p.water?' on':'')+'" data-k="water" data-i="'+i+'">💧 물</button>'
+      +'<button class="pl-tg'+(p.light?' on':'')+'" data-k="light" data-i="'+i+'">☀️ 빛</button>';
+  }
+  function setGrade(g){
+    grade=g; snd('select');
+    if(G().modes.indexOf(mode)<0) mode='free';
+    mStep=0; mDone=false; mLock=false;
+    disarm(); reset();
+    magicShown=false; pred=null;          /* 학년 전환 = 와우B 재무장 */
+    if(mode==='quiz'){ qScore=0; qCount=0; qUsed=[]; newQuiz(); }
+    build();
+  }
+  function setMode(m){
+    mode=m; snd('select');
+    mStep=0; mDone=false; mLock=false;
+    disarm(); reset();
+    magicShown=false; pred=null;          /* 모드 전환 = 와우B 재무장 */
+    if(m==='quiz'){ qScore=0; qCount=0; qUsed=[]; newQuiz(); }
+    build();
+  }
+
+  /* ═══ 무대 — 아이보리 테 관찰 창 · 유약 테라코타 화분 ═══ */
+  var VBW=900, VBH=460;
+  function svgEl(t,a){ var e=document.createElementNS('http://www.w3.org/2000/svg',t); for(var k in a)e.setAttribute(k,a[k]); return e; }
+  function mix(a,b,k){
+    var pa=parseInt(a.slice(1),16), pb=parseInt(b.slice(1),16), o='#';
+    for(var s=16;s>=0;s-=8){ var va=(pa>>s)&255, vb=(pb>>s)&255, v=Math.round(va+(vb-va)*k);
+      o+=('0'+v.toString(16)).slice(-2); } return o;
+  }
+
+  function drawPlant(svg,cx,gy,p,grew){
+    var g=svgEl('g',{});
+    var st2=PC.stageOf(p.g);
+    var paleK=p.etio/6, wiltK=p.wilt/5;
+    var leafCol=mix(mix('#2F9E44','#C9C13B',paleK),'#A07855',wiltK);
+    var stemCol=mix(mix('#37B24D','#C9C13B',paleK),'#A07855',wiltK);
+
+    /* 해(빛 켜짐) / 구름(빛 꺼짐) */
+    if(p.light){
+      var sg=svgEl('g',{class:'pl-sun'});
+      sg.appendChild(svgEl('circle',{cx:cx+126,cy:88,r:44,fill:'url(#plHalo)'}));
+      sg.appendChild(svgEl('circle',{cx:cx+126,cy:88,r:27,fill:'url(#plSun)',stroke:'#E8920A','stroke-width':2}));
+      g.appendChild(sg);
+    } else {
+      g.appendChild(svgEl('ellipse',{cx:cx+126,cy:88,rx:46,ry:22,fill:'#8B98A8',filter:'url(#plSh)'}));
+      g.appendChild(svgEl('ellipse',{cx:cx+94,cy:98,rx:34,ry:18,fill:'#A8B4C2'}));
+      g.appendChild(svgEl('ellipse',{cx:cx+150,cy:100,rx:26,ry:14,fill:'#9AA7B6'}));
+    }
+    /* 물방울(물 켜짐 · CSS 낙하 루프) */
+    if(p.water){
+      var wt=svgEl('text',{x:cx-96,y:gy-168,'font-size':26}); wt.textContent='💧'; g.appendChild(wt);
+      for(var w2=0;w2<3;w2++){
+        var c=svgEl('circle',{cx:cx-92+w2*16,cy:gy-150,r:5,fill:'#339AF0','fill-opacity':0.75,class:'pl-drip'});
+        c.setAttribute('style','animation-delay:'+(w2*0.45)+'s');
+        g.appendChild(c);
+      }
+    }
+    /* 유약 테라코타 화분 + 흙무늬가 보이는 흙 */
+    g.appendChild(svgEl('path',{d:'M '+(cx-78)+' '+gy+' L '+(cx+78)+' '+gy+' L '+(cx+58)+' '+(gy+58)+' L '+(cx-58)+' '+(gy+58)+' Z',
+      fill:'url(#plPot)',stroke:'#8F4A22','stroke-width':3,filter:'url(#plSh)'}));
+    g.appendChild(svgEl('path',{d:'M '+(cx-70)+' '+(gy+8)+' L '+(cx-56)+' '+(gy+46),
+      stroke:'rgba(255,255,255,.4)','stroke-width':7,'stroke-linecap':'round',fill:'none'}));
+    g.appendChild(svgEl('ellipse',{cx:cx,cy:gy,rx:78,ry:14,fill:'url(#plSoil)',stroke:'#5E3A1E','stroke-width':3}));
+    for(var sl=0;sl<4;sl++)
+      g.appendChild(svgEl('path',{d:'M '+(cx-52+sl*30)+' '+(gy-2)+' q 10 4 22 1',
+        stroke:'rgba(60,36,16,.5)','stroke-width':2,fill:'none','stroke-linecap':'round'}));
+
+    /* 식물 본체 (v2 기하 그대로 — 웃자람=길고 가늘게 / 시들음=고개 숙임) */
+    var h=Math.min(p.g,24)/24*230*(1+paleK*0.45);
+    var sw=9*(1-paleK*0.45);
+    var bend=wiltK*42;
+    var body=svgEl('g',{class:grew?'pl-grow':''});
+    if(st2===0){
+      body.appendChild(svgEl('ellipse',{cx:cx,cy:gy-6,rx:11,ry:8,fill:'#B5651D',stroke:'#8B4513','stroke-width':2}));
+    } else {
+      var topX=cx+bend, topY=gy-h;
+      body.appendChild(svgEl('path',{d:'M '+cx+' '+gy+' Q '+cx+' '+(gy-h*0.55)+' '+topX+' '+topY,
+        fill:'none',stroke:stemCol,'stroke-width':sw,'stroke-linecap':'round'}));
+      if(st2===1){
+        body.appendChild(svgEl('ellipse',{cx:topX-16,cy:topY,rx:17,ry:11,fill:leafCol,transform:'rotate(-24 '+(topX-16)+' '+topY+')'}));
+        body.appendChild(svgEl('ellipse',{cx:topX+16,cy:topY,rx:17,ry:11,fill:leafCol,transform:'rotate(24 '+(topX+16)+' '+topY+')'}));
+      } else {
+        var nL=Math.min(6,Math.floor(p.g/3));
+        for(var L2=0;L2<nL;L2++){ var f2=(L2+1)/(nL+1), ly=gy-h*f2, side=(L2%2?1:-1);
+          var lx=cx+bend*f2*f2;
+          body.appendChild(svgEl('ellipse',{cx:lx+side*24,cy:ly,rx:24,ry:13,fill:leafCol,transform:'rotate('+(side*22)+' '+(lx+side*24)+' '+ly+')'}));
+        }
+        if(st2>=3){
+          for(var pt=0;pt<5;pt++){ var an=pt/5*6.283;
+            body.appendChild(svgEl('circle',{cx:topX+Math.cos(an)*15,cy:topY+Math.sin(an)*15,r:10,fill:'#FAA2C1'})); }
+          body.appendChild(svgEl('circle',{cx:topX,cy:topY,r:9,fill:'#FFD43B'}));
+        } else {
+          body.appendChild(svgEl('ellipse',{cx:topX,cy:topY,rx:13,ry:9,fill:leafCol}));
+        }
+        if(st2>=4){
+          for(var pd=0;pd<3;pd++){ var py=gy-h*(0.55+pd*0.12), px=cx+bend*0.4+(pd%2?28:-28);
+            body.appendChild(svgEl('path',{d:'M '+px+' '+py+' q 9 26 0 44 q -9 -18 0 -44',fill:'#69B34C',stroke:'#4F8A36','stroke-width':2}));
+            if(st2>=5){ for(var sd=0;sd<3;sd++)body.appendChild(svgEl('circle',{cx:px,cy:py+12+sd*11,r:4.5,fill:'#B5651D'})); }
+          }
+        }
+        if(st2>=5){
+          var t5=svgEl('text',{x:cx,y:gy-h-34,'text-anchor':'middle','font-family':'var(--kedu-title)','font-size':23,'font-weight':800,fill:'#12B886'});
+          t5.textContent='🌱 다시 씨앗! 한살이 완성'; body.appendChild(t5);
+        }
+      }
+    }
+    g.appendChild(body);
+    /* 단계 라벨 */
+    var lb=svgEl('text',{x:cx,y:gy+88,'text-anchor':'middle','font-family':'var(--kedu-title)','font-size':21,'font-weight':800,fill:'#2B3E52',class:'pl-stlabel'});
+    lb.textContent=PC.STAGES[st2][1]+(p.wilt>=2?' · 시들시들':'')+(p.etio>=3?' · 웃자람':'');
+    g.appendChild(lb);
+    svg.appendChild(g);
+  }
+
+  function render(){
+    var desk=$('desk');
+    var nPot=G().compare?2:1;
+    var dark=germArmed && !pots[0].light;   /* 깜깜 셋업 = 밤하늘 */
+
+    var wrap=document.createElement('div');
+    wrap.className='pl-paper';
+    var svg=svgEl('svg',{ viewBox:'0 0 '+VBW+' '+VBH, id:'plSvg',
+      style:'display:block;width:min(88vw,780px);height:auto;max-height:'+(mode==='quiz'?'36vh':'46vh') });
+    var d=svgEl('defs',{});
+    d.innerHTML=
+      '<filter id="plSh" x="-20%" y="-20%" width="140%" height="150%">'
+      +'<feDropShadow dx="0" dy="3" stdDeviation="3.5" flood-color="#20364d" flood-opacity="0.3"/></filter>'
+      +'<linearGradient id="plSky" x1="0" y1="0" x2="0" y2="1">'
+      +(dark
+        ?'<stop offset="0" stop-color="#1A2434"/><stop offset="1" stop-color="#26344A"/>'
+        :'<stop offset="0" stop-color="#DFF1FF"/><stop offset="1" stop-color="#F2FADF"/>')
+      +'</linearGradient>'
+      +'<radialGradient id="plSun" cx="0.38" cy="0.32" r="0.95">'
+      +'<stop offset="0" stop-color="#FFE29A"/><stop offset="1" stop-color="#F59F00"/></radialGradient>'
+      +'<radialGradient id="plHalo" cx="0.5" cy="0.5" r="0.5">'
+      +'<stop offset="0" stop-color="rgba(255,205,90,.5)"/><stop offset="1" stop-color="rgba(255,205,90,0)"/></radialGradient>'
+      +'<linearGradient id="plPot" x1="0" y1="0" x2="0.3" y2="1">'
+      +'<stop offset="0" stop-color="#D98550"/><stop offset="1" stop-color="#A9562A"/></linearGradient>'
+      +'<radialGradient id="plSoil" cx="0.45" cy="0.35" r="0.9">'
+      +'<stop offset="0" stop-color="#8B5E3C"/><stop offset="1" stop-color="#6E4226"/></radialGradient>';
+    svg.appendChild(d);
+    /* 관찰 창 하늘 */
+    svg.appendChild(svgEl('rect',{x:0,y:0,width:VBW,height:VBH,rx:12,fill:'url(#plSky)'}));
+    if(dark){ /* 밤 — 별 몇 점 */
+      [[120,60],[240,110],[430,52],[610,96],[780,64],[700,150]].forEach(function(s){
+        svg.appendChild(svgEl('circle',{cx:s[0],cy:s[1],r:2.4,fill:'#DCE8FA','fill-opacity':.85}));
+      });
+    }
+    /* 선반(관찰대 널) */
+    svg.appendChild(svgEl('rect',{x:0,y:438,width:VBW,height:22,fill:'rgba(99,57,31,.28)'}));
+
+    var xs=(nPot===2)?[260,640]:[450];
+    for(var i=0;i<nPot;i++){
+      var stNow=PC.stageOf(pots[i].g);
+      drawPlant(svg,xs[i],380,pots[i],stNow>prevStage[i]);
+      prevStage[i]=stNow;
+    }
+
+    wrap.appendChild(svg);
+    var keep=[];
+    desk.querySelectorAll('.pl-flash,.pl-flash-magic,.pl-nudge').forEach(function(e){ keep.push(e); });
+    desk.innerHTML=''; desk.appendChild(wrap);
+    keep.forEach(function(e){ desk.appendChild(e); });
+
+    var dEl=$('plDay'); if(dEl)dEl.textContent=day+'일째';
+    updateStatus();
+  }
+
+  function updateStatus(){
+    var st=$('statusRow');
+    if(germArmed){
+      if(germRevealed){
+        st.innerHTML='<div class="hint" style="font-size:15px"><span class="go" style="font-size:17px">🌱 '
+          +day+'일째 — 빛 없이도 싹이 텄어요!</span>'
+          +'<br><span class="pl-hold">빛 없이 자란 싹은 가늘고 노랗게 웃자라요 — 빛은 싹튼 뒤 자람에 필요해요</span></div>';
+      } else {
+        st.innerHTML='<div class="hint" style="font-size:15px"><b style="font-size:17px;color:#9CC4FA">🌑 깜깜한 곳 · '
+          +day+'일째 — 싹이 틀까요, 안 틀까요?</b>'
+          +'<br><span class="pl-hold">씨앗 속엔 싹틔울 양분이 들어 있어요 — 빛은 그 다음 이야기</span></div>';
+      }
+      return;
+    }
+    if(mode==='quiz'){
+      st.innerHTML='<div class="hint">키워 본 걸 떠올리며 답을 골라요</div>';
+      return;
+    }
+    var t=PC.statusText(grade,pots,day,G().compare);
+    st.innerHTML='<div class="hint" style="font-size:15px"><b style="font-size:17px;color:#FFE3B3">'+t.main+'</b>'
+      +'<br><span>'+t.sub+'</span></div>';
+  }
+
+  $('sndBtn').addEventListener('click',function(){
+    K3.sound.setOn(!K3.sound.on);
+    this.textContent=K3.sound.on?'🔊':'🔇';
+    this.classList.toggle('off',!K3.sound.on);
+    if(K3.sound.on)snd('select');
+  });
+
+  if(mode==='quiz')newQuiz();
+  build(); loop();
+
+  window.PlantApp={
+    get grade(){return grade;}, get mode(){return mode;},
+    get day(){return day;}, get playing(){return playing;},
+    get pots(){return pots.map(function(p){ return {water:p.water,light:p.light,g:p.g,wilt:p.wilt,etio:p.etio}; });},
+    get compare(){return G().compare;},
+    get mStep(){return mStep;}, get mDone(){return mDone;},
+    get qIdx(){return qIdx;}, get quiz(){return PC.QUIZ[qIdx];},
+    get qScore(){return qScore;}, get qCount(){return qCount;},
+    get magicShown(){return magicShown;}, get pred(){return pred;},
+    get germArmed(){return germArmed;}, get germRevealed(){return germRevealed;},
+    get rand(){return rand;}, set rand(fn){rand=fn;},
+    setGrade:setGrade, setMode:setMode,
+    toggleWater:toggleWater, toggleLight:toggleLight,
+    step:step, play:play, reset:doReset,
+    wowArm:wowArm, wowReveal:wowReveal,
+    answer:answer, build:build
+  };
+})();
+</script>
+</body>
+</html>
