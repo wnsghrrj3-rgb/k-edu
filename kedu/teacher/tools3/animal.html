@@ -17,6 +17,8 @@
   ★ 와우 즉시성(SPEC §5-2·§6-2): wowReveal = setTimeout 없는 for 루프 → jsdom 즉시 단언.
     어른 나비 크기 상수 — day 무관(애벌레만 grow). 「작은 곤충=아기」 오개념 직격.
   ★ 미션④ = 클릭 판정(SPEC §6-3): day 아니라 picked. 잠자리(df) 클릭 = 즉시 오답 토스트(fail).
+  ⚠️ ④ 자동달성 방지 하드닝(보드 버그패턴 #1 「미션 자동달성」): 단계 advance마다 picked 초기화 →
+     ①~③ 중에 눌러 둔 스테일 picked='bf'로 ④가 +1일에 저절로 달성되던 갭을 막음(하니스 8b probe가 실측·자가검증).
   ★ disarm 규칙(SPEC §6-1): 재생/+1일/리셋 어느 조작이든 growArmed 해제.
   ⚠️ §6-5 수정: v2 퀴즈 정답 인덱스 a 전부 0인데 셔플이 Math.random 직접 → rand 주입 순수화(셔플 유지).
   ⚠️ §6-2 계열: v2 wowReveal snd('success')는 목록에 없는 이름(무음) → whoosh+chime 매핑.
@@ -390,7 +392,7 @@
       K3.toast('🎉 참 잘했어요!');
       setTimeout(function(){
         mLock=false;
-        if(mStep<M.length-1){ mStep++; if(!M[mStep].keep)reset(); }
+        if(mStep<M.length-1){ mStep++; picked=''; if(!M[mStep].keep)reset(); }  /* ★picked 초기화 = ④ 스테일 클릭 자동달성 방지 */
         else mDone=true;
         build();
       }, STEP_MS);
