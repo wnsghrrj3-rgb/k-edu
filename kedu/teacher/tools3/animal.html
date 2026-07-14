@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>케이랩 · 동물의 한살이 — 스튜디오</title>
+<!--
+  케이랩 v3 · B트랙 양산 17호 — 동물의 한살이 (2026-07-15) · 셸 = plant 계보(clock 셸)
+  SPEC = handoff/klab/designs3/SPEC_animal.md (도면=정답)
+  v2(engine/tools/animal.js 340줄) 콘텐츠 무손실 이식:
+    학년칸(저 나비1·변태 용어 없이·미션2·와우숨김 / 중 비교·와우·미션3·퀴즈3문 / 고 terms·미션4·퀴즈5문)
+    미션 문구·판정식·keep 플래그 그대로(번데기→나비→잠자리 차이→이름표 클릭)
+    퀴즈 문항·보기·정답 그대로 · 상태줄 문구 전부
+  ★ 단계 배열 신성불가침(SPEC §0):
+    BF=[[0,알],[3,애벌레],[10,번데기],[15,어른(나비)],[20,다시 알]]  (완전변태 5단계)
+    DF=[[0,알],[4,애벌레(약충)],[14,어른(잠자리)],[20,다시 알]]        (불완전변태 4단계 — 번데기 없음)
+  ★ 와우 즉시성(SPEC §5-2·§6-2): wowReveal = setTimeout 없는 for 루프 → jsdom 즉시 단언.
+    어른 나비 크기 상수 — day 무관(애벌레만 grow). 「작은 곤충=아기」 오개념 직격.
+  ★ 미션④ = 클릭 판정(SPEC §6-3): day 아니라 picked. 잠자리(df) 클릭 = 즉시 오답 토스트(fail).
+  ★ disarm 규칙(SPEC §6-1): 재생/+1일/리셋 어느 조작이든 growArmed 해제.
+  ⚠️ §6-5 수정: v2 퀴즈 정답 인덱스 a 전부 0인데 셔플이 Math.random 직접 → rand 주입 순수화(셔플 유지).
+  ⚠️ §6-2 계열: v2 wowReveal snd('success')는 목록에 없는 이름(무음) → whoosh+chime 매핑.
+  v3 질감: 다크 스튜디오 + 원목 관찰대 위 아이보리 테 「나란한 관찰 상자 2개」 —
+    왼쪽 배춧잎 상자(나비) · 오른쪽 연못 단면 상자(잠자리) · 가운데 점선 비교선.
+  와우:
+    A 🔮 어른이 되면 더 클까(v2 승격) — 무장(갓 나온 어른 나비 · 크기 그대로 자) → 🍃 며칠 → 안 커짐.
+    B 🔮 예측 카드(v3 신설 · 1회 가드 · 중고 자유탐구) — 🍃 첫 실행 «직전» 「더 커질까요, 그대로일까요?」
+      2지선다 → 목격 → 결과 카드(오답 「커진다」= 크기고정 / 정답 「그대로」= 탈피 끝).
+      ↺·학년/모드 전환 시 재무장. 이후 반복 = 배너만(반복이 학습).
+    C 저학년 닻 — 나비 1개 · 순서 일상어(변태 용어·비교 없이) · 와우 숨김.
+  config: ?grade= & mode=
+-->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
+<style id="kedu-title-font">
+@font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
+:root{--kedu-title:'Hakgyoansim Moheomga','Gowun Dodum',sans-serif}
+</style>
+<link rel="stylesheet" href="/kedu/teacher/engine3/klab3-ui.css">
+<style>
+  /* ── 페이지 골격 (황금 샘플 clock 셸 · plant 계보 · 변경 금지) ── */
+  #root{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;
+    background:var(--studio);overflow:hidden}
+  #root::after{content:'';position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(120% 90% at 50% 8%, transparent 55%, rgba(0,0,0,.4) 100%)}
+  .hudrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;
+    margin-top:52px;z-index:21}
+  .barslot{min-height:8px;z-index:21;width:min(720px,94vw);margin-top:8px}
+  .stagewrap{flex:1;display:flex;align-items:center;justify-content:center;width:100%;
+    min-height:0;z-index:2;padding:6px 0}
+  .ctrlslot{z-index:21;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;
+    padding:2px 10px;max-width:96vw}
+  .statusrow{z-index:21;text-align:center;padding:6px 12px 14px}
+  .seg{display:flex;gap:4px;background:var(--hud);backdrop-filter:blur(8px);
+    border:1px solid var(--hudline);border-radius:999px;padding:4px}
+  .seg button{font-family:'Gowun Dodum';font-size:13.5px;color:#c6d4e2;background:transparent;
+    border:none;border-radius:999px;padding:7px 13px;cursor:pointer;transition:all .15s}
+  .seg button.on{background:rgba(91,155,240,.28);color:#fff;
+    box-shadow:0 0 0 1.5px rgba(91,155,240,.55), 0 0 18px -4px #5B9BF0}
+  .sndbtn{background:var(--hud);border:1px solid var(--hudline);border-radius:999px;
+    color:#c6d4e2;font-size:15px;padding:7px 12px;cursor:pointer}
+  .sndbtn.off{opacity:.45}
+  .k3bar{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(8px);
+    border-radius:16px;padding:11px 16px;color:#e6eef7;font-size:15px;line-height:1.6;
+    display:flex;align-items:center;gap:12px}
+  .k3bar .prog{margin-left:auto;flex:0 0 auto;font-size:12.5px;color:var(--mut);white-space:nowrap}
+  .k3bar b{color:#BCA7FF}
+  .k3bar b.or{color:#FFB27A} .k3bar b.gr{color:#3EE6B0}
+  .k3bar.done{border-color:rgba(18,184,134,.5);box-shadow:0 0 24px -8px #12B886}
+  .desk{position:relative;border-radius:30px;padding:min(2.4vh,18px) min(2.6vw,20px);
+    background:
+      radial-gradient(90% 70% at 50% 26%, rgba(255,240,214,.10), transparent 62%),
+      repeating-linear-gradient(94deg, rgba(46,28,12,.16) 0 2px, transparent 2px 9px),
+      linear-gradient(150deg,#8a5a34 0%,#77492a 52%,#63391f 100%);
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.14),
+               inset -3px -5px 14px rgba(0,0,0,.38),
+               0 26px 60px -18px rgba(0,0,0,.75);
+    border:1px solid rgba(255,255,255,.07)}
+  .desk::before{content:'';position:absolute;inset:0;border-radius:30px;pointer-events:none;
+    background-image:var(--noise, none);opacity:.5;mix-blend-mode:overlay}
+  .ck-btn{font-family:'Gowun Dodum';font-size:15.5px;font-weight:700;color:#fff;border:none;
+    border-radius:13px;padding:10px 15px;cursor:pointer;position:relative;line-height:1;
+    background:linear-gradient(145deg, var(--c1), var(--c2));
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.3),
+               inset -2px -3px 6px rgba(0,0,0,.25),
+               0 6px 14px rgba(0,0,0,.4);
+    transition:transform .1s, box-shadow .1s}
+  .ck-btn:active{transform:translateY(3px);
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.3),
+               inset -2px -3px 6px rgba(0,0,0,.25),
+               0 2px 6px rgba(0,0,0,.4)}
+  .ck-btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+  .ck-choice{font-family:'Gowun Dodum';font-size:16.5px;font-weight:700;color:var(--card-ink);
+    background:linear-gradient(160deg,#ffffff,#eef2f7);border:2px solid #d5dee9;border-radius:14px;
+    padding:13px 18px;cursor:pointer;min-width:110px;max-width:min(88vw,340px);line-height:1.45;
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.9), 0 6px 14px rgba(0,0,0,.4);
+    transition:transform .1s}
+  .ck-choice:active{transform:translateY(2px)}
+  .hint{font-size:13.5px;color:var(--mut);margin-top:4px;line-height:1.6}
+  .hint b{color:#cfe0f2} .hint .go{color:#3EE6B0} .hint .grabline{color:#FFB27A}
+
+  /* ── 동물 도구 전용 ── */
+  /* 관찰 창 — 아이보리 테 안에 나란한 관찰 상자 2개 */
+  .an-paper{position:relative;border-radius:16px;padding:7px;
+    background:linear-gradient(170deg,#FBF7EE 0%,#EDE4CF 100%);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.5), 0 12px 30px -8px rgba(0,0,0,.55)}
+  .an-day{font-family:var(--kedu-title);font-size:19px;color:#FFE3B3;align-self:center;
+    min-width:64px;text-align:center;text-shadow:0 0 14px rgba(255,190,90,.35)}
+  .an-wow{font-family:'Gowun Dodum';font-size:14px;font-weight:700;border-radius:13px;
+    padding:10px 14px;cursor:pointer;line-height:1;transition:transform .1s}
+  .an-wow:active{transform:translateY(2px)}
+  .an-wow[data-wow="arm"]{color:#C9B8FF;background:rgba(155,123,245,.12);
+    border:1.5px solid rgba(155,123,245,.5)}
+  .an-wow[data-wow="reveal"]{color:#fff;border:none;
+    background:linear-gradient(145deg,#8f6ef2,#6b47d8);
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.3), inset -2px -3px 6px rgba(0,0,0,.25),
+               0 6px 14px rgba(0,0,0,.4)}
+  /* 관찰 상자 클릭 커서(이름표 클릭) */
+  .an-pane{cursor:pointer}
+  /* 우화 순간 — 어른이 폭 나타난다 */
+  .an-emerge{animation:anEmerge .5s cubic-bezier(.2,1.4,.4,1) both;
+    transform-origin:bottom center;transform-box:fill-box}
+  @keyframes anEmerge{0%{transform:scale(.5);opacity:.35}100%{transform:scale(1);opacity:1}}
+  /* 날갯짓은 v2 frame sin 유지 — CSS는 은은한 상하 부유만 */
+  .an-fly{animation:anFly 2.4s ease-in-out infinite;transform-origin:center;transform-box:fill-box}
+  @keyframes anFly{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  /* 무대 배너 (v2 an-flash 계보 · plant와 동일 문법) */
+  .an-flash,.an-flash-magic,.an-nudge{position:absolute;left:50%;top:12px;transform:translateX(-50%);
+    z-index:6;max-width:92%;text-align:center;padding:11px 18px;border-radius:16px;
+    font-family:'Gowun Dodum';font-weight:700;font-size:15.5px;line-height:1.5;
+    box-shadow:0 10px 28px rgba(0,0,0,.35);animation:anPop .26s ease-out}
+  .an-flash{background:linear-gradient(150deg,#3f77d8,#2a56ab);color:#fff}
+  .an-flash-magic{background:linear-gradient(150deg,#8f6ef2,#6b47d8);color:#fff}
+  .an-nudge{background:#FFF3CD;color:#7a5b00;border:2px solid #F3C969}
+  @keyframes anPop{from{opacity:0;transform:translate(-50%,-9px) scale(.95)}
+    to{opacity:1;transform:translate(-50%,0) scale(1)}}
+  .an-hold{display:inline-block;animation:anHold 1.1s ease-in-out infinite;color:#C9B8FF}
+  @keyframes anHold{0%,100%{opacity:1}50%{opacity:.45}}
+</style>
+</head>
+<body class="k3">
+<div id="root">
+  <div class="k3-topbar">
+    <span class="title" style="font-family:var(--kedu-title)">🦋 케이랩 · 동물의 한살이</span>
+    <span class="badge">STUDIO</span>
+  </div>
+  <div class="hudrow">
+    <div class="seg" id="gradeSeg"></div>
+    <div class="seg" id="modeSeg"></div>
+    <button class="sndbtn" id="sndBtn" title="효과음">🔊</button>
+  </div>
+  <div class="barslot" id="barSlot"></div>
+  <div class="stagewrap"><div class="desk" id="desk"></div></div>
+  <div class="ctrlslot" id="ctrlSlot"></div>
+  <div class="statusrow" id="statusRow"></div>
+</div>
+
+<script src="/kedu/teacher/engine3/klab3-2d.js"></script>
+
+<!-- ═══ 순수 로직 (node/jsdom 테스트 대상 · DOM 무의존) ═══ -->
+<script>
+(function(){
+  'use strict';
+  var GRADES={
+    low:  { modes:['free','mission'],        compare:false, quiz:false, missionN:2, terms:false, showWow:false },
+    mid:  { modes:['free','mission','quiz'], compare:true,  quiz:true,  missionN:3, terms:false, showWow:true  },
+    high: { modes:['free','mission','quiz'], compare:true,  quiz:true,  missionN:4, terms:true,  showWow:true  }
+  };
+  var GRADE_LABEL={ low:'저학년', mid:'중학년', high:'고학년' };
+  var MODE_LABEL={ free:'자유탐구', mission:'미션', quiz:'퀴즈' };
+
+  /* ★ 단계 배열 신성불가침 — [시작일, 이름] (SPEC §0)
+     BF(배추흰나비·완전변태 5단계) / DF(잠자리·불완전변태 4단계 — 번데기 없음) */
+  var BF=[[0,'알'],[3,'애벌레'],[10,'번데기'],[15,'어른벌레(나비)'],[20,'다시 알!']];
+  var DF=[[0,'알'],[4,'애벌레(약충)'],[14,'어른벌레(잠자리)'],[20,'다시 알!']];
+
+  /* stageOf(T,day): day가 넘어선 가장 큰 단계 인덱스 */
+  function stageOf(T,day){ var s=0; for(var i=0;i<T.length;i++)if(day>=T[i][0])s=i; return s; }
+
+  /* 미션 — v2 문구·판정식·keep 플래그 그대로 (판정은 day 인자를 받는 순수식 · slice) */
+  var MISSIONS=[
+    { text:'▶ 시간을 흘려 배추흰나비의 <b>번데기</b> 단계를 봐요!',
+      keep:false, check:function(day){ return stageOf(BF,day)>=2; } },
+    { text:'계속 흘려 <b>나비(어른벌레)</b>가 되는 순간까지!',
+      keep:true,  check:function(day){ return stageOf(BF,day)>=3; } },
+    { text:'잠자리도 <b>어른벌레</b>가 됐어요 — 나비와 달리 <b>없었던 단계</b>는 뭘까요? 끝까지 지켜봐요!',
+      keep:true,  check:function(day){ return stageOf(DF,day)>=2; } },
+    { text:'🔍 <b>번데기 단계를 거친 동물</b>의 그림(이름표)을 클릭해요!',
+      keep:true,  check:function(day,picked){ return picked==='bf'; } }
+  ];
+  function missionsFor(grade){ return MISSIONS.slice(0, GRADES[grade].missionN); }
+
+  /* 퀴즈 — v2 문항·보기·정답 그대로. ★ 정답 인덱스 a 전부 0 → 보기 셔플 필수(§6-5) */
+  var QUIZ=[
+    { q:'배추흰나비 한살이의 순서로 맞는 것은?',
+      ch:['알→애벌레→번데기→어른벌레','알→번데기→애벌레→어른벌레','애벌레→알→어른벌레'], a:0 },
+    { q:'완전 변태와 불완전 변태의 차이는?',
+      ch:['번데기 단계가 있고 없고','날개가 있고 없고','알을 낳고 안 낳고'], a:0 },
+    { q:'잠자리의 한살이는 어느 쪽일까요?',
+      ch:['불완전 변태 — 번데기가 없어요','완전 변태 — 번데기가 있어요','한살이가 없어요'], a:0 },
+    { q:'애벌레는 어떻게 몸이 커질까요?',
+      ch:['허물을 벗으면서 자라요','몸이 풍선처럼 부풀어요','크기가 변하지 않아요'], a:0 },
+    { q:'동물의 한살이란 무엇일까요?',
+      ch:['태어나 자라서 다시 자손을 남기기까지의 과정','하루 동안 하는 일','겨울잠을 자는 것'], a:0 }
+  ];
+  /* 중학년 = 기본 3문(한살이 순서·허물 벗기·한살이 뜻), 고학년 = 전체 5문(완전/불완전 변태 용어 포함) */
+  function quizPool(grade){ return (grade==='mid') ? [0,3,4] : [0,1,2,3,4]; }
+  function newQuizIdx(pool,used,rand){
+    rand=rand||Math.random;
+    if(used.length>=pool.length) used=[];
+    var cand=[]; for(var i=0;i<pool.length;i++) if(used.indexOf(pool[i])<0) cand.push(pool[i]);
+    var idx=cand[Math.floor(rand()*cand.length)];
+    return { idx:idx, used:used.concat([idx]) };
+  }
+  function shuffleChoices(n,rand){
+    rand=rand||Math.random;
+    var a=[]; for(var i=0;i<n;i++)a.push(i);
+    for(var k=a.length-1;k>0;k--){ var j=Math.floor(rand()*(k+1)); var t=a[k]; a[k]=a[j]; a[j]=t; }
+    return a;
+  }
+
+  /* 상태줄 — v2 문구 그대로 · 학년칸별 (순수 문자열 {main,sub}) */
+  function statusText(grade,day,compare,terms){
+    var sb=stageOf(BF,day), sd=stageOf(DF,day);
+    if(!compare){
+      /* 저학년: 나비 한살이 순서 일상어 닻(변태 용어·비교 없이) */
+      var tipsB=['🥚 알에서 시작해요 — ▶로 시간을 흘려 봐요!','애벌레가 잎을 먹고 무럭무럭 자라요.',
+        '번데기 속에서 몸이 바뀌고 있어요.','예쁜 나비가 됐어요! 🦋',
+        '나비가 다시 알을 낳았어요 — 알→애벌레→번데기→나비, 한살이 완성!'];
+      return { main:day+'일째 — '+BF[sb][1], sub:tipsB[sb], good:(sb>=3) };
+    }
+    if(day===0)return { main:'🥚 두 동물이 알에서 출발해요 — ▶로 시간을 흘려 봐요!',
+      sub:'나비와 잠자리의 한살이가 <b>어디가 같고 어디가 다른지</b> 나란히 비교해요.' };
+    if(sb===2&&sd<2)return { main:'나비는 번데기 속에서 몸이 바뀌는 중!',
+      sub:'잠자리 애벌레(약충)는 번데기 없이 물속에서 점점 어른을 닮아 가요 — 차이가 보이나요?', vio:true };
+    if(sb>=3&&sd>=2)return { main:'둘 다 어른벌레! 그런데 길이 달랐어요',
+      sub:(terms?'나비처럼 <b>번데기를 거치면 완전 변태</b>, 잠자리처럼 <b>번데기 없이 자라면 불완전 변태</b>예요.'
+                :'나비는 <b>번데기를 거쳐서</b>, 잠자리는 <b>번데기 없이</b> 어른이 됐어요!'), good:true };
+    return { main:day+'일째 — 나비: '+BF[sb][1]+' / 잠자리: '+DF[sd][1],
+      sub:(sb===1?'애벌레는 허물을 벗으며 자라요. 잠자리 약충은 물속에서 살아요!'
+                :'두 동물을 잘 지켜봐요 — 단계가 어떻게 다른가요?') };
+  }
+
+  var API={ GRADES:GRADES, GRADE_LABEL:GRADE_LABEL, MODE_LABEL:MODE_LABEL,
+            BF:BF, DF:DF, stageOf:stageOf,
+            missionsFor:missionsFor, QUIZ:QUIZ, quizPool:quizPool,
+            newQuizIdx:newQuizIdx, shuffleChoices:shuffleChoices,
+            statusText:statusText };
+  if(typeof window!=='undefined') window.AnimalCore=API;
+  if(typeof module!=='undefined'&&module.exports) module.exports=API;
+})();
+</script>
+
+<!-- ═══ 앱 ═══ -->
+<script>
+(function(){
+  'use strict';
+  var AC=window.AnimalCore, K3=window.K3;
+  var $=function(id){ return document.getElementById(id); };
+  document.documentElement.style.setProperty('--noise','url("'+K3.NOISE+'")');
+
+  var Q=new URLSearchParams(location.search);
+  var grade=(['low','mid','high'].indexOf(Q.get('grade'))>=0)?Q.get('grade'):'high';
+  var locked=!!Q.get('grade');
+  function G(){ return AC.GRADES[grade]; }
+  var mode=(G().modes.indexOf(Q.get('mode'))>=0)?Q.get('mode'):'free';
+
+  /* §6-5 — 모든 난수는 이 rand를 통과(퀴즈 뽑기·보기 셔플). Math.random 직접 호출 0. */
+  var rand=window.__K3_RAND || Math.random;
+
+  var day=0, playing=false, picked='';
+  var growArmed=false, growRevealed=false, magicShown=false, pred=null, revealing=false;
+  var mStep=0, mDone=false, mLock=false;
+  var qIdx=0, qScore=0, qCount=0, qLock=false, qUsed=[];
+  var prevStageBF=0, prevStageDF=0, frame=0;   /* 우화 순간 an-emerge · 날갯짓 frame */
+
+  var STEP_MS =window.__K3_FAST?60:1500;
+  var QUIZ_MS =window.__K3_FAST?60:1500;
+  var PLAY_MS =window.__K3_FAST?40:900;     /* ▶ 하루의 길이 */
+  var CARD_MS =window.__K3_FAST?60:900;
+  var FLASH_MS=window.__K3_FAST?400:4200;
+  var MAGIC_MS=window.__K3_FAST?400:5200;
+
+  function snd(n){ K3.sound.play(n); }
+  function curMissions(){ return AC.missionsFor(grade); }
+  function reset(){ day=0; playing=false; picked=''; prevStageBF=0; prevStageDF=0; }
+
+  /* ── 무대 배너 (v2 an-flash 계보 · desk 직속 absolute) ── */
+  function clearFlash(){
+    var d=$('desk'); if(!d)return;
+    d.querySelectorAll('.an-flash,.an-flash-magic,.an-nudge').forEach(function(n){ n.remove(); });
+  }
+  function flash(cls,html,ms){
+    var d=$('desk'); if(!d)return;
+    clearFlash();
+    var e=document.createElement('div');
+    e.className=cls; e.innerHTML=html;
+    d.appendChild(e);
+    setTimeout(function(){ if(e.parentNode)e.parentNode.removeChild(e); }, ms);
+  }
+
+  /* ── §6-1 disarm — 어떤 조작이든 와우 무장을 먼저 푼다 ── */
+  function disarm(){ growArmed=false; growRevealed=false; clearFlash(); }
+
+  /* ── 하루 진행 ── */
+  function tickDay(){ day=Math.min(24,day+1); render(); if(mode==='mission') checkMission(); }
+  function step(){ disarm(); snd('tap'); tickDay(); }
+  function play(){ disarm(); playing=!playing; snd('select'); build(); }
+  function doReset(){ disarm(); reset();
+    magicShown=false; pred=null;          /* ↺ = 와우B 재무장 (§3) */
+    snd('pop'); build(); }
+
+  /* ── 이름표 클릭 → picked (미션④ 판정 · 잠자리 오답 즉시 피드백) ── */
+  function pick(which){
+    picked=which; snd('tap'); render();
+    if(mode==='mission'&&mStep===3&&!mLock&&which!=='bf') snd('fail');
+    if(mode==='mission') checkMission();
+  }
+
+  /* ── 재생 루프 (raf · __K3_FAST 스위치) ── */
+  var lastTick=0;
+  function loop(){
+    frame++;
+    var now=Date.now();
+    if(playing && mode!=='quiz' && now-lastTick>=PLAY_MS){ lastTick=now; tickDay(); }
+    else if(mode!=='quiz' && frame%4===0) render();   /* 날갯짓 등 애니 갱신 */
+    requestAnimationFrame(loop);
+  }
+
+  /* ── 와우 🔮 어른이 되면 더 클까 (중·고 자유탐구 · SPEC §1·§3) ── */
+  function wowOn(){ return G().showWow && mode==='free'; }
+  function wowArm(){
+    if(!wowOn())return;
+    reset(); growRevealed=false;
+    day=15;                                 /* 배추흰나비가 막 어른벌레(나비)가 된 직후 BF[3]=15 */
+    growArmed=true; snd('charge');
+    build();
+    flash('an-flash',
+      '🦋 방금 번데기에서 나온 <b>어른 나비</b>예요.<br>며칠 더 지나면 — 강아지처럼 <b>몸이 더 커질까요</b>, <b>그대로일까요</b>? 예상해 봐요!', FLASH_MS);
+  }
+  /* 드러냄 본체 — setTimeout 없는 for 루프 = 즉시 마법(§6-2 · jsdom 단언 가능)
+     어른 나비 구간(15~19일)을 흘려도 크기 상수(무대 자 길이 64 고정) */
+  function doReveal(){
+    snd('whoosh'); snd('chime');            /* §6-2 계열: v2 success(무음) → whoosh+chime */
+    for(var d2=0; d2<4 && day<19; d2++){ day=Math.min(19,day+1); }
+    growRevealed=true;
+    render();
+    flash('an-flash-magic',
+      '🦋 며칠이 지나도 나비는 <b>조금도 더 자라지 않았어요!</b> 곤충은 <b>애벌레 때 다 자라고</b>,<br>'
+      +'어른벌레가 되면 <b>크기가 고정</b>돼요 — 그러니 <b>작은 곤충도 아기가 아니라 다 자란 어른</b>이에요.', MAGIC_MS);
+  }
+  function wowReveal(){
+    if(!wowOn()||revealing)return;
+    if(!growArmed){ snd('select');
+      flash('an-nudge','먼저 <b>🔮 버튼</b>으로 “더 클까, 그대로일까” 예상부터 해 봐요!', FLASH_MS); return; }
+    /* 와우B — 첫 실행 «직전» 예측 카드 (1회 가드 · v2 2단 버튼의 승격) */
+    if(!magicShown){
+      magicShown=true; revealing=true;
+      snd('charge');
+      K3.cards.predict('방금 번데기에서 나온 <b>어른 나비</b>. 며칠 더 지나면 — 강아지처럼 어떻게 될까요?',
+        [{id:'big', label:'① 몸이 더 커져요'},
+         {id:'same',label:'② 크기는 그대로예요'}]
+      ).then(function(id){
+        pred=id; revealing=false;
+        doReveal();
+        setTimeout(function(){
+          var okP=(pred==='same');
+          K3.cards.result(
+            '<h3 style="color:'+(okP?'#0d7a5c':'#6b47d8')+'">'+(okP?'✨ 맞아요! 크기는 그대로예요':'🦋 조금도 안 자랐어요!')+'</h3>'
+            +'<p style="font-size:13.5px;line-height:1.75;color:#41546a">'
+            +(okP
+              ?'애벌레는 허물을 벗으며 컸지만, <b>어른벌레는 탈피가 끝나 크기가 고정</b>돼요.<br>'
+              :'곤충은 <b>애벌레 때 다 자라고</b> 어른은 크기가 고정돼요 — <b>작은 곤충도 아기가 아니라 다 자란 어른</b>이에요.<br>')
+            +'그래서 작은 나비를 「아기 나비」라고 부를 수 없답니다. 애벌레로 돌아가 「허물 벗으며 크는」 모습도 봐요!</p>',
+            [{label:'좋아, 계속 탐구', cls:'pri', value:'done'}]
+          );
+        }, CARD_MS);
+      });
+      return;
+    }
+    doReveal();   /* 이후로는 v2 그대로 — 배너만. 몇 번이고 반복(반복이 학습) */
+  }
+
+  /* ── 미션 ── */
+  function checkMission(){
+    if(mode!=='mission'||mDone||mLock) return;
+    var M=curMissions();
+    if(mStep>=M.length) return;
+    if(M[mStep].check(day,picked)){
+      mLock=true; playing=false; snd('chime');
+      K3.toast('🎉 참 잘했어요!');
+      setTimeout(function(){
+        mLock=false;
+        if(mStep<M.length-1){ mStep++; if(!M[mStep].keep)reset(); }
+        else mDone=true;
+        build();
+      }, STEP_MS);
+    }
+  }
+
+  /* ── 퀴즈 ── */
+  function newQuiz(){
+    var r=AC.newQuizIdx(AC.quizPool(grade), qUsed, rand);
+    qIdx=r.idx; qUsed=r.used; qLock=false;
+  }
+  function answer(v){
+    if(qLock) return;
+    qLock=true; qCount++;
+    var q=AC.QUIZ[qIdx];
+    var okA=(+v===q.a);
+    if(okA){ qScore++; snd('chime'); K3.toast('🎉 정답! <b>'+q.ch[q.a]+'</b>'); }
+    else { snd('fail'); K3.toast('🤔 정답은 <b>'+q.ch[q.a]+'</b>', true); }
+    setTimeout(function(){ newQuiz(); build(); }, QUIZ_MS);
+  }
+
+  /* ── 빌드 ── */
+  function build(){
+    var gs=$('gradeSeg');
+    if(locked){ gs.style.display='none'; }
+    else{
+      gs.innerHTML=['low','mid','high'].map(function(g){
+        return '<button data-g="'+g+'" class="'+(g===grade?'on':'')+'">'+AC.GRADE_LABEL[g]+'</button>';
+      }).join('');
+      gs.querySelectorAll('button').forEach(function(b){
+        b.addEventListener('click',function(){ if(b.dataset.g!==grade) setGrade(b.dataset.g); });
+      });
+    }
+    var ms=$('modeSeg');
+    ms.innerHTML=G().modes.map(function(m){
+      return '<button data-m="'+m+'" class="'+(m===mode?'on':'')+'">'+AC.MODE_LABEL[m]+'</button>';
+    }).join('');
+    ms.querySelectorAll('button').forEach(function(b){
+      b.addEventListener('click',function(){ if(b.dataset.m!==mode) setMode(b.dataset.m); });
+    });
+
+    var bar=$('barSlot');
+    if(mode==='mission'){
+      var M=curMissions();
+      if(mStep>=M.length) mStep=M.length-1;
+      bar.innerHTML=mDone
+        ? '<div class="k3bar done">🎉 미션을 모두 해냈어요! 자유탐구에서 마음껏 키워 봐요.</div>'
+        : '<div class="k3bar"><span>'+M[mStep].text+'</span><span class="prog">'+(mStep+1)+' / '+M.length+'</span></div>';
+    } else if(mode==='quiz'){
+      var q=AC.QUIZ[qIdx];
+      bar.innerHTML='<div class="k3bar"><span>❓ '+q.q+'</span><span class="prog">점수 '+qScore+' / '+qCount+'</span></div>';
+    } else bar.innerHTML='';
+
+    var ct=$('ctrlSlot'), s='';
+    if(mode==='quiz'){
+      var qq=AC.QUIZ[qIdx];
+      s=AC.shuffleChoices(qq.ch.length,rand).map(function(i){
+        return '<button class="ck-choice" data-v="'+i+'">'+qq.ch[i]+'</button>';
+      }).join('');
+    } else {
+      s+='<button class="ck-btn" data-act="play" style="--c1:'+(playing?'#8f6ef2':'#3f77d8')+';--c2:'+(playing?'#6b47d8':'#2a56ab')+'">'+(playing?'⏸ 멈춤':'▶ 시간 흐르기')+'</button>'
+        +'<button class="ck-btn" data-act="step" style="--c1:#4b5c72;--c2:#334052">+1일</button>'
+        +'<span class="an-day" id="anDay">'+day+'일째</span>'
+        +'<button class="ck-btn" data-act="reset" style="--c1:#5a6675;--c2:#3d4653">↺ 다시 알부터</button>';
+      if(wowOn()){
+        s+='<button class="an-wow" data-wow="arm">🔮 어른이 되면 더 클까?</button>'
+          +'<button class="an-wow" data-wow="reveal">🍃 며칠 더 키워보기</button>';
+      }
+    }
+    ct.innerHTML=s;
+    ct.querySelectorAll('[data-act]').forEach(function(b){
+      b.addEventListener('click',function(){
+        var a=b.dataset.act;
+        if(a==='play')play(); else if(a==='step')step(); else if(a==='reset')doReset();
+      });
+    });
+    ct.querySelectorAll('.an-wow').forEach(function(b){
+      b.addEventListener('click',function(){ if(b.dataset.wow==='arm')wowArm(); else wowReveal(); });
+    });
+    ct.querySelectorAll('.ck-choice').forEach(function(b){
+      b.addEventListener('click',function(){ answer(b.dataset.v); });
+    });
+
+    render();
+  }
+  function setGrade(g){
+    grade=g; snd('select');
+    if(G().modes.indexOf(mode)<0) mode='free';
+    mStep=0; mDone=false; mLock=false;
+    disarm(); reset();
+    magicShown=false; pred=null;          /* 학년 전환 = 와우B 재무장 */
+    if(mode==='quiz'){ qScore=0; qCount=0; qUsed=[]; newQuiz(); }
+    build();
+  }
+  function setMode(m){
+    mode=m; snd('select');
+    mStep=0; mDone=false; mLock=false;
+    disarm(); reset();
+    magicShown=false; pred=null;          /* 모드 전환 = 와우B 재무장 */
+    if(m==='quiz'){ qScore=0; qCount=0; qUsed=[]; newQuiz(); }
+    build();
+  }
+
+  /* ═══ 무대 — 아이보리 테 관찰 창 · 나란한 관찰 상자 2개 ═══ */
+  var VBW=900, VBH=460;
+  function svgEl(t,a){ var e=document.createElementNS('http://www.w3.org/2000/svg',t); for(var k in a)e.setAttribute(k,a[k]); return e; }
+
+  /* 좌 패널 — 배추흰나비(완전 변태) · 배춧잎 상자 */
+  function drawButterfly(host,cx,grew){
+    var g=svgEl('g',{'class':'an-pane','data-pick':'bf'});
+    var BF=AC.BF, s=AC.stageOf(BF,day), gy=380;
+    /* 배춧잎 상자 바닥 */
+    g.appendChild(svgEl('rect',{x:cx-200,y:gy,width:400,height:80,fill:'#B2F2BB'}));
+    g.appendChild(svgEl('ellipse',{cx:cx,cy:gy-4,rx:120,ry:34,fill:'#51CF66',stroke:'#2F9E44','stroke-width':3}));
+    g.appendChild(svgEl('path',{d:'M '+(cx-110)+' '+(gy-4)+' Q '+cx+' '+(gy-26)+' '+(cx+110)+' '+(gy-4),fill:'none',stroke:'#2F9E44','stroke-width':2.5}));
+
+    var body=svgEl('g',{'class':(grew&&s>=3)?'an-emerge':''});
+    if(s===0){ /* 알 */
+      for(var e2=0;e2<4;e2++)body.appendChild(svgEl('ellipse',{cx:cx-24+e2*16,cy:gy-16,rx:5,ry:7,fill:'#FFE066',stroke:'#E6B400','stroke-width':1.5}));
+    } else if(s===1){ /* 애벌레 — 허물 벗으며 grow (★크기 변하는 유일한 단계) */
+      var grow=Math.min(1,(day-3)/6), segs=4+Math.round(grow*3), r=9+grow*6;
+      for(var sg=0;sg<segs;sg++)body.appendChild(svgEl('circle',{cx:cx-segs*r*0.8+sg*r*1.6,cy:gy-14-r,r:r,fill:'#69DB7C',stroke:'#2F9E44','stroke-width':2.5}));
+      body.appendChild(svgEl('circle',{cx:cx-segs*r*0.8-r*0.4,cy:gy-14-r-2,r:r*0.6,fill:'#2F9E44'}));
+      if(grow>0.3)for(var m2=0;m2<Math.floor(grow*3);m2++){ /* 벗어 놓은 허물 */
+        var ht=svgEl('text',{x:cx+90+m2*26,y:gy-10,'font-size':16,opacity:0.55}); ht.textContent='〰️'; body.appendChild(ht); }
+    } else if(s===2){ /* 번데기 — 가지에 매달림 */
+      body.appendChild(svgEl('line',{x1:cx-90,y1:gy-160,x2:cx+90,y2:gy-180,stroke:'#8D6E63','stroke-width':6,'stroke-linecap':'round'}));
+      body.appendChild(svgEl('line',{x1:cx,y1:gy-170,x2:cx,y2:gy-150,stroke:'#A07855','stroke-width':3}));
+      body.appendChild(svgEl('path',{d:'M '+cx+' '+(gy-150)+' q 20 18 14 50 q -5 26 -14 32 q -9 -6 -14 -32 q -6 -32 14 -50',fill:'#C8B08A',stroke:'#9C7E54','stroke-width':2.5,'data-pupa':'1'}));
+    } else { /* 어른벌레 나비 — 날갯짓 · ★크기 상수(day 무관) */
+      var fl=Math.abs(Math.sin(frame/7)), wx=26+fl*16, by2=gy-190+Math.sin(frame/16)*10;
+      var fg=svgEl('g',{'class':'an-fly'});
+      fg.appendChild(svgEl('ellipse',{cx:cx-wx,cy:by2-12,rx:30,ry:20,fill:'#fff',stroke:'#495057','stroke-width':2.5,transform:'rotate(-22 '+(cx-wx)+' '+(by2-12)+')'}));
+      fg.appendChild(svgEl('ellipse',{cx:cx+wx,cy:by2-12,rx:30,ry:20,fill:'#fff',stroke:'#495057','stroke-width':2.5,transform:'rotate(22 '+(cx+wx)+' '+(by2-12)+')'}));
+      fg.appendChild(svgEl('circle',{cx:cx-wx-6,cy:by2-16,r:4.5,fill:'#343A40'}));
+      fg.appendChild(svgEl('circle',{cx:cx+wx+6,cy:by2-16,r:4.5,fill:'#343A40'}));
+      fg.appendChild(svgEl('ellipse',{cx:cx,cy:by2,rx:7,ry:22,fill:'#495057'}));
+      body.appendChild(fg);
+      /* 와우: 어른 나비 크기 고정 눈금(day 무관 상수 = "며칠 지나도 안 커짐"을 가시화) */
+      if(growArmed||growRevealed){
+        var mkY0=gy-232, mkY1=gy-168, mkX=cx+72;   /* 나비 몸 높이 기준 64px 고정(sin 흔들림 제외) */
+        body.appendChild(svgEl('line',{x1:mkX,y1:mkY0,x2:mkX,y2:mkY1,stroke:'#7048E8','stroke-width':3,'stroke-linecap':'round','data-bfsize':'64'}));
+        body.appendChild(svgEl('line',{x1:mkX-9,y1:mkY0,x2:mkX+9,y2:mkY0,stroke:'#7048E8','stroke-width':3,'stroke-linecap':'round'}));
+        body.appendChild(svgEl('line',{x1:mkX-9,y1:mkY1,x2:mkX+9,y2:mkY1,stroke:'#7048E8','stroke-width':3,'stroke-linecap':'round'}));
+        var lbl=svgEl('text',{x:mkX+15,y:(mkY0+mkY1)/2+6,'font-family':'var(--kedu-title)','font-size':16,'font-weight':800,fill:'#7048E8'}); lbl.textContent='크기 그대로'; body.appendChild(lbl);
+      }
+      if(s>=4){ for(var e3=0;e3<3;e3++)body.appendChild(svgEl('ellipse',{cx:cx-16+e3*16,cy:gy-16,rx:5,ry:7,fill:'#FFE066',stroke:'#E6B400','stroke-width':1.5}));
+        var t4=svgEl('text',{x:cx,y:gy-60,'text-anchor':'middle','font-family':'var(--kedu-title)','font-size':22,'font-weight':800,fill:'#12B886'}); t4.textContent='🥚 다시 알! 한살이 완성'; body.appendChild(t4); }
+    }
+    g.appendChild(body);
+    /* 이름표 + 단계 라벨 */
+    var nm=svgEl('text',{x:cx,y:62,'text-anchor':'middle','font-family':'var(--kedu-title)','font-size':25,'font-weight':800,fill:(picked==='bf'?'#7048E8':'#1B3A57')}); nm.textContent='🦋 배추흰나비'; g.appendChild(nm);
+    var st=svgEl('text',{x:cx,y:444,'text-anchor':'middle','font-family':'var(--kedu-title)','font-size':21,'font-weight':800,fill:'#5a7894','class':'an-bfstage','data-bfstage':s}); st.textContent=BF[s][1]; g.appendChild(st);
+    host.appendChild(g);
+  }
+
+  /* 우 패널 — 잠자리(불완전 변태) · 연못 단면 상자 */
+  function drawDragonfly(host,cx){
+    var g=svgEl('g',{'class':'an-pane','data-pick':'df'});
+    var DF=AC.DF, s=AC.stageOf(DF,day), wy=300;
+    /* 연못 */
+    g.appendChild(svgEl('rect',{x:cx-200,y:wy,width:400,height:160,fill:'#74C0FC','fill-opacity':0.5}));
+    g.appendChild(svgEl('path',{d:'M '+(cx-190)+' '+(wy+6)+' q 30 -10 60 0 q 30 10 60 0 q 30 -10 60 0 q 30 10 60 0 q 30 -10 60 0',fill:'none',stroke:'#fff','stroke-width':3,'stroke-opacity':0.6}));
+    /* 갈대 */
+    g.appendChild(svgEl('line',{x1:cx-140,y1:wy+10,x2:cx-150,y2:wy-130,stroke:'#2F9E44','stroke-width':6,'stroke-linecap':'round'}));
+
+    var body=svgEl('g',{'class':(prevStageDF<2&&s>=2)?'an-emerge':''});
+    if(s===0){ /* 알 (물속) */
+      for(var e2=0;e2<5;e2++)body.appendChild(svgEl('circle',{cx:cx-30+e2*14,cy:wy+70,r:4.5,fill:'#FFE066',stroke:'#E6B400','stroke-width':1.5}));
+    } else if(s===1){ /* 약충 (물속, 번데기 없이 점점 어른 닮아 감) */
+      var grow=Math.min(1,(day-4)/9), len=34+grow*26, ny=wy+70;
+      body.appendChild(svgEl('ellipse',{cx:cx,cy:ny,rx:len/2,ry:11+grow*3,fill:'#A9845C',stroke:'#7B5E3C','stroke-width':2.5,'data-nymph':'1'}));
+      body.appendChild(svgEl('circle',{cx:cx-len/2-7,cy:ny-2,r:9,fill:'#7B5E3C'}));
+      for(var l2=0;l2<3;l2++){ body.appendChild(svgEl('line',{x1:cx-12+l2*12,y1:ny+9,x2:cx-18+l2*12,y2:ny+22,stroke:'#7B5E3C','stroke-width':2.5})); }
+      if(grow>0.5){ body.appendChild(svgEl('ellipse',{cx:cx+6,cy:ny-10,rx:12,ry:5,fill:'#C8B08A','fill-opacity':0.8})); } /* 날개싹 */
+    } else { /* 어른 잠자리 (물 위) — 날갯짓 */
+      var by2=wy-110+Math.sin(frame/13)*9, fl=Math.abs(Math.sin(frame/5));
+      var fg=svgEl('g',{'class':'an-fly'});
+      for(var w2=0;w2<2;w2++){ var sx=(w2?1:-1);
+        fg.appendChild(svgEl('ellipse',{cx:cx+sx*34,cy:by2-8,rx:38,ry:6+fl*3,fill:'#D0EBFF','fill-opacity':0.85,stroke:'#74C0FC','stroke-width':2,transform:'rotate('+(sx*10)+' '+(cx+sx*34)+' '+(by2-8)+')'}));
+        fg.appendChild(svgEl('ellipse',{cx:cx+sx*30,cy:by2+4,rx:32,ry:5+fl*3,fill:'#D0EBFF','fill-opacity':0.85,stroke:'#74C0FC','stroke-width':2,transform:'rotate('+(sx*-8)+' '+(cx+sx*30)+' '+(by2+4)+')'}));
+      }
+      fg.appendChild(svgEl('rect',{x:cx-5,y:by2-6,width:10,height:64,rx:5,fill:'#1098AD'}));
+      fg.appendChild(svgEl('circle',{cx:cx,cy:by2-14,r:9,fill:'#0B7285'}));
+      body.appendChild(fg);
+      if(s>=3){ for(var e3=0;e3<4;e3++)body.appendChild(svgEl('circle',{cx:cx-24+e3*14,cy:wy+70,r:4.5,fill:'#FFE066',stroke:'#E6B400','stroke-width':1.5}));
+        var t4=svgEl('text',{x:cx,y:wy-30,'text-anchor':'middle','font-family':'var(--kedu-title)','font-size':22,'font-weight':800,fill:'#12B886'}); t4.textContent='🥚 다시 알! 한살이 완성'; body.appendChild(t4); }
+    }
+    g.appendChild(body);
+    var nm=svgEl('text',{x:cx,y:62,'text-anchor':'middle','font-family':'var(--kedu-title)','font-size':25,'font-weight':800,fill:(picked==='df'?'#7048E8':'#1B3A57')}); nm.textContent='🜲 잠자리'; g.appendChild(nm);
+    var st=svgEl('text',{x:cx,y:444,'text-anchor':'middle','font-family':'var(--kedu-title)','font-size':21,'font-weight':800,fill:'#5a7894','class':'an-dfstage','data-dfstage':s});
+    st.textContent=DF[s][1]+(s>=2?' — 번데기 없이!':''); g.appendChild(st);
+    host.appendChild(g);
+  }
+
+  function render(){
+    var desk=$('desk');
+
+    var wrap=document.createElement('div');
+    wrap.className='an-paper';
+    var svg=svgEl('svg',{ viewBox:'0 0 '+VBW+' '+VBH, id:'anSvg',
+      style:'display:block;width:min(88vw,780px);height:auto;max-height:'+(mode==='quiz'?'36vh':'46vh') });
+    var d=svgEl('defs',{});
+    d.innerHTML=
+      '<linearGradient id="anSky" x1="0" y1="0" x2="0" y2="1">'
+      +'<stop offset="0" stop-color="#E7F5FF"/><stop offset="1" stop-color="#F4FCE3"/></linearGradient>';
+    svg.appendChild(d);
+    /* 관찰 창 하늘 */
+    svg.appendChild(svgEl('rect',{x:0,y:0,width:VBW,height:VBH,rx:12,fill:'url(#anSky)'}));
+
+    var sBF=AC.stageOf(AC.BF,day), sDF=AC.stageOf(AC.DF,day);
+    if(!G().compare){
+      /* 저학년: 나비 한 가지만 가운데 */
+      drawButterfly(svg,450,sBF>prevStageBF);
+    } else {
+      svg.appendChild(svgEl('line',{x1:450,y1:30,x2:450,y2:440,stroke:'#B6C9DC','stroke-width':3,'stroke-dasharray':'8 8'}));
+      drawButterfly(svg,225,sBF>prevStageBF);
+      drawDragonfly(svg,675);
+    }
+    prevStageBF=sBF; prevStageDF=sDF;
+
+    /* 이름표 클릭 바인딩 */
+    svg.querySelectorAll('.an-pane').forEach(function(g2){
+      g2.addEventListener('click',function(){ pick(g2.getAttribute('data-pick')); });
+    });
+
+    wrap.appendChild(svg);
+    var keep=[];
+    desk.querySelectorAll('.an-flash,.an-flash-magic,.an-nudge').forEach(function(e){ keep.push(e); });
+    desk.innerHTML=''; desk.appendChild(wrap);
+    keep.forEach(function(e){ desk.appendChild(e); });
+
+    var dEl=$('anDay'); if(dEl)dEl.textContent=day+'일째';
+    updateStatus();
+  }
+
+  function updateStatus(){
+    var st=$('statusRow');
+    if(growArmed){
+      if(growRevealed){
+        st.innerHTML='<div class="hint" style="font-size:15px"><span class="go" style="font-size:17px">🦋 '
+          +day+'일째 — 며칠이 지나도 크기 그대로!</span>'
+          +'<br><span class="an-hold">애벌레 때 다 자라고 어른은 크기 고정 — 작은 곤충도 다 자란 어른</span></div>';
+      } else {
+        st.innerHTML='<div class="hint" style="font-size:15px"><b style="font-size:17px;color:#9CC4FA">🦋 갓 나온 어른 나비 · '
+          +day+'일째 — 더 커질까요, 그대로일까요?</b>'
+          +'<br><span class="an-hold">애벌레는 허물 벗으며 쑥쑥 컸지요 — 어른벌레가 되면?</span></div>';
+      }
+      return;
+    }
+    if(mode==='quiz'){
+      st.innerHTML='<div class="hint">키워 본 걸 떠올리며 답을 골라요</div>';
+      return;
+    }
+    var t=AC.statusText(grade,day,G().compare,G().terms);
+    var col=t.good?'#3EE6B0':(t.vio?'#C9B8FF':'#FFE3B3');
+    st.innerHTML='<div class="hint" style="font-size:15px"><b style="font-size:17px;color:'+col+'">'+t.main+'</b>'
+      +'<br><span>'+t.sub+'</span></div>';
+  }
+
+  $('sndBtn').addEventListener('click',function(){
+    K3.sound.setOn(!K3.sound.on);
+    this.textContent=K3.sound.on?'🔊':'🔇';
+    this.classList.toggle('off',!K3.sound.on);
+    if(K3.sound.on)snd('select');
+  });
+
+  if(mode==='quiz')newQuiz();
+  build(); loop();
+
+  window.AnimalApp={
+    get grade(){return grade;}, get mode(){return mode;},
+    get day(){return day;}, get playing(){return playing;}, get picked(){return picked;},
+    get compare(){return G().compare;}, get terms(){return G().terms;},
+    get mStep(){return mStep;}, get mDone(){return mDone;},
+    get qIdx(){return qIdx;}, get quiz(){return AC.QUIZ[qIdx];},
+    get qScore(){return qScore;}, get qCount(){return qCount;},
+    get magicShown(){return magicShown;}, get pred(){return pred;},
+    get growArmed(){return growArmed;}, get growRevealed(){return growRevealed;},
+    get rand(){return rand;}, set rand(fn){rand=fn;},
+    setGrade:setGrade, setMode:setMode,
+    step:step, play:play, reset:doReset, pick:pick,
+    wowArm:wowArm, wowReveal:wowReveal,
+    answer:answer, build:build
+  };
+})();
+</script>
+</body>
+</html>
