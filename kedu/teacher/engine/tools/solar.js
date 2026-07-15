@@ -49,6 +49,7 @@
     function snd(n){ if(window.KLab&&window.KLab.sound) window.KLab.sound.play(n); }
     /* ── v2 자유탐구 변수 (탐구 표준 v2 1층) ── */
     var grabOrb=false, auV=1.00, ratioT=0, spdV=1, viewE=false;
+    var heatArmed=false;   // 와우(예측 빗나감형): 가장 뜨거운 행성 예측→확인 무장 상태
     /* ── v2 만약에 신규(태양 소멸) 상태 ── */
     var sunGone=false, escT=0, escBase=null;
     /* ── v2 예측 노트 (3층) — 세션 메모리 칩 ── */
@@ -61,13 +62,13 @@
        1차: 저=태양+행성 공전 관찰 / 중=행성 위치 관계+지구 궤도 드래그 / 고=연속 비율·속도·시점·태양소멸 풀버전.
        ※ 후속: 저학년 교과 닻 '낮과 밤'(지구 자전 클로즈업) 전용 장면은 정교화 대기. */
     var GRADES={
-      low:  { showReal:false, mIdx:[],              wif:['stopspin'],                  v2:{},                                        hint:'🌞 하루 돌리기로 지구를 돌려, 낮과 밤이 어떻게 생기는지 봐요.' },
-      mid:  { showReal:false, mIdx:[0,1,2,5],       wif:['mer','nep'],                 v2:{grab:true},                               hint:'행성을 골라 보고, 🌍 지구 잡기로 궤도를 옮기면 어떻게 될지 봐요.' },
-      high: { showReal:true,  mIdx:[0,1,2,3,4,5],   wif:['mer','nep','stopo','sunoff'],v2:{grab:true,ratio:true,spd:true,view:true}, hint:'🔭 비율 슬라이더를 스르륵 당겨 진짜 거리·크기를 봐요.' }
+      low:  { showReal:false, showWow:false, mIdx:[],              wif:['stopspin'],                  v2:{},                                        hint:'🌞 하루 돌리기로 지구를 돌려, 낮과 밤이 어떻게 생기는지 봐요.' },
+      mid:  { showReal:false, showWow:false, mIdx:[0,1,2,5],       wif:['mer','nep'],                 v2:{grab:true},                               hint:'행성을 골라 보고, 🌍 지구 잡기로 궤도를 옮기면 어떻게 될지 봐요.' },
+      high: { showReal:true,  showWow:true,  mIdx:[0,1,2,3,4,5],   wif:['mer','nep','stopo','sunoff'],v2:{grab:true,ratio:true,spd:true,view:true}, hint:'🔭 비율 슬라이더를 스르륵 당겨 진짜 거리·크기를 봐요.' }
     };
     var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
     var bands=ui.gradeBands({grade:grade,locked:!!config.grade,onChange:function(g){
-      grade=g; wif.reset(); mode='free'; mStep=0;mDone=false;mLock=false; sel=null; real=false; playing=false; fallF=1; v2reset();
+      grade=g; wif.reset(); mode='free'; mStep=0;mDone=false;mLock=false; sel=null; real=false; playing=false; fallF=1; v2reset(); heatArmed=false;
       makeWif(); buildUI();
     }});
     function curMissions(){ return (grade==='low') ? LOW_MISSIONS : GRADES[grade].mIdx.map(function(i){return MISSIONS[i];}); }
@@ -313,10 +314,19 @@
       if(mode==='quiz'){ ctrl=''; plRow=''; v2row=''; }
       if(grade==='low'){ plRow=''; }
       if(mode==='whatif'){ plRow=''; if(!wif.active())ctrl=''; if(wif.active()&&(wif.state.key==='stopo'||wif.state.key==='sunoff'))ctrl=''; }
-      el.innerHTML='<style>.so-btn:active,.so-pl:active,.kl-choice:active{transform:translateY(2px);}'
+      /* ── 와우 버튼 (예측 빗나감형 — 고학년·자유탐구 전용, 「가까울수록 뜨겁다」 선형 오개념 직격) ── */
+      var wowRow='';
+      if(mode==='free' && GRADES[grade].showWow){
+        wowRow='<div class="so-wowrow" style="display:flex;gap:12px;align-items:center;justify-content:center;margin-bottom:9px;flex-wrap:wrap;">'
+          +'<button class="so-wow" data-wow="arm" style="'+btn+'background:#fff;color:#7048E8;border-color:#7048E8;">🔮 가장 뜨거운 행성은?</button>'
+          +'<button class="so-wow" data-wow="reveal" style="'+btn+'background:#7048E8;color:#fff;border-color:#7048E8;">🌡️ 온도 재보기</button>'
+        +'</div>';
+      }
+      el.innerHTML='<style>.so-btn:active,.so-pl:active,.kl-choice:active,.so-wow:active{transform:translateY(2px);}'
+        +'@keyframes soHold{0%,100%{opacity:1;}50%{opacity:0.42;}}.so-hold{animation:soHold 1.1s ease-in-out infinite;}'
         +'.kl-choice{min-width:auto !important;padding:14px 18px !important;}'
         +'.so-real.on{background:#7048E8 !important;color:#fff !important;border-color:#7048E8 !important;}</style>'
-        + top + '<div class="so-bars">'+bar+'</div>' + v2row + ctrl
+        + top + '<div class="so-bars">'+bar+'</div>' + v2row + ctrl + wowRow
         +'<div class="kl-stage-host" style="position:relative;"><div class="so-stage" style="width:100%;height:'+(mode==='quiz'?'34vh':'42vh')+';min-height:'+(mode==='quiz'?'250':'320')+'px;background:radial-gradient(120% 120% at 50% 45%,#0E1330 0%,#070B1E 60%,#03060F 100%);border-radius:26px;overflow:hidden;cursor:grab;touch-action:none;box-shadow:inset 0 0 0 3px rgba(92,124,250,0.18);">'
           +(mode==='quiz'?'':'<div class="so-texlab" style="position:absolute;top:12px;left:12px;font-size:12px;font-weight:800;color:#9fb6e6;background:rgba(8,12,26,0.55);padding:4px 9px;border-radius:9px;pointer-events:none;z-index:3;font-family:inherit;"></div>')
         +'</div></div>'
@@ -326,7 +336,7 @@
         +((mode==='free'||mode==='whatif')?'<div class="so-chips" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:8px;"></div>':'');
       ui.bindModeTabs(el,function(m){
         wif.reset();
-        mode=m; mStep=0;mDone=false;mLock=false; sel=null; real=false; playing=false; fallF=1; v2reset();
+        mode=m; mStep=0;mDone=false;mLock=false; sel=null; real=false; playing=false; fallF=1; v2reset(); heatArmed=false;
         if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
         buildUI();
       });
@@ -565,7 +575,8 @@
       if(sel){ var p=PL.filter(function(x){return x.k===sel;})[0], idx=PL.map(function(x){return x.k;}).indexOf(sel);
         s.innerHTML='<div style="font-size:23px;color:#FFF3BF;">'+p.nm+' — 태양에서 '+(idx+1)+'번째</div>'
           +'<div style="font-size:17px;color:#cdd6e6;margin-top:4px;">'+p.desc+'</div>'
-          +'<div style="font-size:15px;color:#8aa0b6;margin-top:4px;">태양까지 거리 약 '+p.au+'AU · 크기(지구=1) 약 '+p.r+'배</div>';
+          +'<div style="font-size:15px;color:#8aa0b6;margin-top:4px;">태양까지 거리 약 '+p.au+'AU · 크기(지구=1) 약 '+p.r+'배</div>'
+          +((mode==='free'&&heatArmed)?'<div class="so-hold" style="font-size:17px;color:#7048E8;margin-top:8px;font-weight:800;">가까울수록 더 뜨거울까요? 정말 그럴까요? 🌡️</div>':'');
       } else if(effT()>=0.999){
         s.innerHTML='<div style="font-size:21px;color:#A9C4FF;">실제 비율로 보는 중 🔭</div><div style="font-size:16px;color:#8aa0b6;margin-top:4px;">안쪽 4행성은 태양 가까이 다닥, 바깥 행성은 까마득히 멀어요. 행성 사이는 거의 텅 비어 있어요.</div>';
       } else {
@@ -573,19 +584,76 @@
       }
     }
 
+    /* ───── 와우(예측 빗나감형) — 가장 뜨거운 행성은 수성이 아니라 금성(대기 온실효과) ─────
+       라이브가 이미 가르치는 것(자전 낮밤·행성 위치·실제 비율·공전 느림/해왕성 165년)이 아니라,
+       mer 만약에·grab 뜨거운 띠가 「가까울수록 뜨겁다」를 심어놓고 안 푼 긴장을 정조준.
+       씬(THREE) 무손상 — 버튼·배너·온도 비교 SVG(배너 안 순수 SVG)만 stage-host에 얹음. */
+    function soHost(){ return el.querySelector('.kl-stage-host'); }
+    function clearSoFlash(){ var h=soHost(); if(!h)return;
+      ['.so-flash','.so-flash-magic','.so-nudge'].forEach(function(s){ var n=h.querySelector(s); if(n&&n.parentNode)n.parentNode.removeChild(n); }); }
+    function soFlash(cls,html,ms){ var h=soHost(); if(!h)return; clearSoFlash();
+      var bg=cls==='so-flash-magic'?'#F3F0FF':(cls==='so-nudge'?'#FFF4E6':'#E7F5FF');
+      var bd=cls==='so-flash-magic'?'#7048E8':(cls==='so-nudge'?'#FF8A3D':'#1565C0');
+      var fg=cls==='so-flash-magic'?'#5f3dc4':(cls==='so-nudge'?'#E8590C':'#1565C0');
+      var d=document.createElement('div'); d.className=cls;
+      d.style.cssText='position:absolute;left:50%;top:12px;transform:translateX(-50%);max-width:92%;'
+        +'background:'+bg+';border:3px solid '+bd+';color:'+fg+';border-radius:16px;padding:11px 18px;'
+        +'font-family:inherit;font-weight:800;font-size:17px;line-height:1.42;text-align:center;z-index:6;'
+        +'box-shadow:0 6px 18px rgba(0,0,0,0.14);';
+      d.innerHTML=html; h.appendChild(d);
+      setTimeout(function(){ if(d.parentNode)d.parentNode.removeChild(d); }, ms||2800); }
+    /* 온도 비교 막대 — 금성(늘 465°C) vs 수성(낮 430 / 밤 -170): 0°C 기준선 왼쪽=추움(파랑)·오른쪽=뜨거움(빨강) */
+    function heatBarsSVG(){
+      var x0=150, span=130, tmax=480;
+      function bx(t){ return x0 + (t/tmax)*span; }
+      function w(t){ return (Math.abs(t)/tmax)*span; }
+      return '<svg viewBox="0 0 300 96" width="292" height="94" style="margin:8px auto 4px;display:block;">'
+        +'<line x1="'+x0+'" y1="10" x2="'+x0+'" y2="90" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="3 3"/>'
+        +'<text x="'+x0+'" y="8" font-size="9" font-weight="800" fill="#94a3b8" font-family="inherit" text-anchor="middle">0°C</text>'
+        +'<text x="4" y="24" font-size="11" font-weight="800" fill="#C2410C" font-family="inherit">☁️ 금성</text>'
+        +'<rect x="'+x0+'" y="17" width="'+w(465)+'" height="12" rx="4" fill="#E8590C"/>'
+        +'<text x="'+(bx(465)+4)+'" y="27" font-size="11" font-weight="800" fill="#C2410C" font-family="inherit">465°C 늘</text>'
+        +'<text x="4" y="50" font-size="11" font-weight="800" fill="#E8590C" font-family="inherit">☀️ 수성 낮</text>'
+        +'<rect x="'+x0+'" y="43" width="'+w(430)+'" height="12" rx="4" fill="#FF922B"/>'
+        +'<text x="'+(bx(430)+4)+'" y="53" font-size="11" font-weight="800" fill="#E8590C" font-family="inherit">430°C</text>'
+        +'<text x="4" y="76" font-size="11" font-weight="800" fill="#1565C0" font-family="inherit">🌙 수성 밤</text>'
+        +'<rect x="'+bx(-170)+'" y="69" width="'+w(170)+'" height="12" rx="4" fill="#4C6EF5"/>'
+        +'<text x="'+(bx(-170)-4)+'" y="79" font-size="11" font-weight="800" fill="#1565C0" font-family="inherit" text-anchor="end">-170°C</text>'
+        +'</svg>';
+    }
+    function wowArm(){
+      heatArmed=true;
+      /* 가장 가까운 수성을 골라 「가까움=뜨거움?」 앵커 셋업 (씬 무손상 — 선택만) */
+      if(playing){ playing=false; var pb=el.querySelector('[data-act="play"]'); if(pb){ pb.textContent=(grade==='low'?'🌞 하루 돌리기':'▶ 공전 재생'); pb.style.background='#fff'; pb.style.color='#1565C0'; } }
+      sel='mer';
+      el.querySelectorAll('.so-pl').forEach(function(x){var on=x.dataset.k===sel;x.classList.toggle('on',on);x.style.background=on?'#1565C0':'#fff';x.style.color=on?'#fff':'#1565C0';});
+      render(); renderStatus();
+      snd('charge');
+      soFlash('so-flash','☀️ 태양에서 <b>가장 가까운 행성은 수성</b>이에요. 그럼 태양계에서 <b>가장 뜨거운 행성</b>도 수성일까요? 예상해 봐요!',4600);
+    }
+    function wowReveal(){
+      if(!heatArmed){ snd('select'); soFlash('so-nudge','먼저 🔮 버튼으로 <b>예상부터</b> 해 봐요.',2600); return; }
+      snd('whoosh'); snd('success');
+      soFlash('so-flash-magic','🌡️ 온도를 재봤어요!'+heatBarsSVG()
+        +'가장 뜨거운 건 수성이 아니라 <b>금성</b>이에요! 수성은 공기(대기)가 없어 낮엔 430°C, 밤엔 영하 170°C로 <b>널뛰지만</b>, 금성은 <b>두꺼운 대기가 열을 담요처럼 가둬</b>(온실효과) 밤낮없이 465°C — 태양에서 <b>더 먼데도</b> 수성보다 뜨거워요. 온도는 <b>거리만이 아니라 ‘대기’가 정해요!</b>',7400);
+    }
+    /* 직접 조작 시 무장 해제(예측→확인 구조 보호) */
+    function clearHeat(){ if(!heatArmed)return; heatArmed=false; clearSoFlash(); renderStatus(); }
+
     var _mv,_up;
     function bind(){
-      var pb=el.querySelector('[data-act="play"]'); if(pb)pb.addEventListener('click',function(){ playing=!playing; last=0;
+      el.querySelectorAll('.so-wow').forEach(function(b){ b.addEventListener('click',function(){ if(b.dataset.wow==='arm')wowArm(); else wowReveal(); }); });
+      var pb=el.querySelector('[data-act="play"]'); if(pb)pb.addEventListener('click',function(){ clearHeat(); playing=!playing; last=0;
         pb.textContent=playing?'■ 멈춤':(grade==='low'?'🌞 하루 돌리기':'▶ 공전 재생');
         pb.style.background=playing?'#1565C0':'#fff'; pb.style.color=playing?'#fff':'#1565C0'; });
-      var rb=el.querySelector('[data-act="real"]'); if(rb)rb.addEventListener('click',function(){ real=!real;
+      var rb=el.querySelector('[data-act="real"]'); if(rb)rb.addEventListener('click',function(){ clearHeat(); real=!real;
         layout(); render(); buildUIKeepState(); checkMission(); });
       el.querySelectorAll('.so-pl').forEach(function(b){b.addEventListener('click',function(){
-        sel=b.dataset.k;
+        clearHeat(); sel=b.dataset.k;
         el.querySelectorAll('.so-pl').forEach(function(x){var on=x.dataset.k===sel;x.classList.toggle('on',on);x.style.background=on?'#1565C0':'#fff';x.style.color=on?'#fff':'#1565C0';});
         renderStatus(); checkMission(); });});
       var drag=false,px=0,py=0;
-      function dn(e){drag=true;stage.style.cursor='grabbing';var p=e.touches?e.touches[0]:e;px=p.clientX;py=p.clientY;}
+      function dn(e){drag=true;clearHeat();stage.style.cursor='grabbing';var p=e.touches?e.touches[0]:e;px=p.clientX;py=p.clientY;}
       function mv(e){if(!drag)return;var p=e.touches?e.touches[0]:e;
         if(grabOrb&&mode==='free'){   // v2 1층: 지구 잡기 — 가로 드래그 = 궤도 반지름(지수 스케일, 0.39~30.1AU)
           auV=Math.min(30.1,Math.max(0.39,auV*Math.exp((p.clientX-px)*0.004)));
@@ -602,22 +670,22 @@
     /* ── v2 변수 행 바인딩 (1층) ── */
     function bindV2(){
       var gb=el.querySelector('.so-grab'); if(gb)gb.addEventListener('click',function(){
-        grabOrb=!grabOrb; snd('select');
+        clearHeat(); grabOrb=!grabOrb; snd('select');
         gb.textContent=grabOrb?'✅ 지구 놓기':'🌍 지구 잡기';
         gb.style.background=grabOrb?'#0B7285':'#fff'; gb.style.color=grabOrb?'#fff':'#0B7285';
         layout(); render(); renderStatus();
       });
       var rs=el.querySelector('.so-ratio'); if(rs)rs.addEventListener('input',function(){
-        ratioT=+rs.value; predArm('ratio');
+        clearHeat(); ratioT=+rs.value; predArm('ratio');
         var lb=el.querySelector('.so-ratlab'); if(lb)lb.textContent='🔭 실제 '+Math.round(ratioT*100)+'%';
         layout(); render(); renderStatus(); checkPred();
       });
       var sp=el.querySelector('.so-spd'); if(sp)sp.addEventListener('input',function(){
-        spdV=+sp.value;
+        clearHeat(); spdV=+sp.value;
         var lb=el.querySelector('.so-spdlab'); if(lb)lb.textContent=spdV+'×';
       });
       var vb=el.querySelector('.so-view'); if(vb)vb.addEventListener('click',function(){
-        viewE=!viewE; snd('select');
+        clearHeat(); viewE=!viewE; snd('select');
         vb.textContent=viewE?'🛰 위에서 보기':'👁 지구에서 보기';
         vb.style.background=viewE?'#845EF7':'#fff'; vb.style.color=viewE?'#fff':'#5F3DC4';
         camPos(); render(); renderStatus();
