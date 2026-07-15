@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>케이랩 · 먹이사슬·먹이그물 — 스튜디오</title>
+<!--
+  케이랩 v3 · B트랙 양산 18호 — 먹이사슬·먹이그물 (foodchain) · 셸 = animal 계보(clock 골든샘플)
+  SPEC = handoff/klab/designs3/SPEC_foodchain.md (도면=정답)
+  v2(engine/tools/foodchain.js 400줄) 콘텐츠 무손실 이식:
+    학년칸(저 사슬만·역할 없음·미션2·와우숨김 / 중 그물·역할·퀴즈3문·미션3 / 고 제거·와우·퀴즈5문·미션4)
+    ORG 9종 좌표·역할·이모지 그대로 · CHAIN/WEB 관계 그대로 · 화살표=먹히는→먹는(에너지 이동)
+    미션 문구·판정식 그대로(저: 벼먹는동물→개구리먹는동물 / 기본: 생산자→뱀→그물전환→그물서 메뚜기 제거)
+    퀴즈 5문·보기·정답 그대로(정답 전부 0 → 셔플 필수) · 상태줄 문구 전부
+  ★ SPEC §6 연쇄 setTimeout 계약: 와우 A(매 제거 → 5단계 trophic cascade)가 setTimeout 1150ms 체인.
+    → cascadeStep(i)를 «순수 함수»로 Core에 분리({pop,msg,done}) · setTimeout은 그걸 1150ms마다 «표시»만.
+    하니스는 cascadeStep(0..4)를 직접 호출해 즉시 검증 + 페이크타이머로 체인 통합 검증(§5-2·§5-3).
+  ★ 와우 A(연쇄·v2 승격) — 🔮 매를 없애면 → ⏩ 시간이 흐르면 → 뱀·개구리 폭증 → 메뚜기 바닥 → 벼까지 → 모두 붕괴.
+  ★ 와우 B(예측 카드·v3 신설·1회 가드·고 자유탐구) — reveal 첫 실행 «직전» 「다 잘 산다 / 처음엔 늘다 무너진다」
+    2지선다 → 연쇄 목격 → 결과 카드. ↺·학년/모드 전환 시 재무장. 이후 반복 = 배너만(반복이 학습).
+  ⚠️ 미션④ 자동달성 방지(보드 버그패턴 #1): ③→④ 진입 시 removed='' 초기화(v2 계승) → 스테일 removed로 저절로 달성 봉인.
+  ⚠️ v2 erupt/rumble 사운드 없음 → chime 매핑(§6-4). success 없음 → whoosh+chime.
+  ⚠️ 퀴즈 정답 인덱스 a 전부 0 → shuffleChoices(rand 주입)로 셔플 유지(§6-5).
+  v3 질감: 다크 스튜디오 + 원목 관찰대 위 아이보리 테 「생태계 지도」 — 역할색 원노드 + 주황 화살표.
+  config: ?grade= & mode=
+-->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
+<style id="kedu-title-font">
+@font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
+:root{--kedu-title:'Hakgyoansim Moheomga','Gowun Dodum',sans-serif}
+</style>
+<link rel="stylesheet" href="/kedu/teacher/engine3/klab3-ui.css">
+<style>
+  /* ── 페이지 골격 (황금 샘플 clock 셸 · animal 계보 · 변경 금지) ── */
+  #root{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;
+    background:var(--studio);overflow:hidden}
+  #root::after{content:'';position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(120% 90% at 50% 8%, transparent 55%, rgba(0,0,0,.4) 100%)}
+  .hudrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;
+    margin-top:52px;z-index:21}
+  .barslot{min-height:8px;z-index:21;width:min(720px,94vw);margin-top:8px}
+  .stagewrap{flex:1;display:flex;align-items:center;justify-content:center;width:100%;
+    min-height:0;z-index:2;padding:6px 0}
+  .ctrlslot{z-index:21;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;
+    padding:2px 10px;max-width:96vw}
+  .statusrow{z-index:21;text-align:center;padding:6px 12px 14px}
+  .seg{display:flex;gap:4px;background:var(--hud);backdrop-filter:blur(8px);
+    border:1px solid var(--hudline);border-radius:999px;padding:4px}
+  .seg button{font-family:'Gowun Dodum';font-size:13.5px;color:#c6d4e2;background:transparent;
+    border:none;border-radius:999px;padding:7px 13px;cursor:pointer;transition:all .15s}
+  .seg button.on{background:rgba(91,155,240,.28);color:#fff;
+    box-shadow:0 0 0 1.5px rgba(91,155,240,.55), 0 0 18px -4px #5B9BF0}
+  .sndbtn{background:var(--hud);border:1px solid var(--hudline);border-radius:999px;
+    color:#c6d4e2;font-size:15px;padding:7px 12px;cursor:pointer}
+  .sndbtn.off{opacity:.45}
+  .k3bar{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(8px);
+    border-radius:16px;padding:11px 16px;color:#e6eef7;font-size:15px;line-height:1.6;
+    display:flex;align-items:center;gap:12px}
+  .k3bar .prog{margin-left:auto;flex:0 0 auto;font-size:12.5px;color:var(--mut);white-space:nowrap}
+  .k3bar b{color:#BCA7FF}
+  .k3bar.done{border-color:rgba(18,184,134,.5);box-shadow:0 0 24px -8px #12B886}
+  .desk{position:relative;border-radius:30px;padding:min(2.4vh,18px) min(2.6vw,20px);
+    background:
+      radial-gradient(90% 70% at 50% 26%, rgba(255,240,214,.10), transparent 62%),
+      repeating-linear-gradient(94deg, rgba(46,28,12,.16) 0 2px, transparent 2px 9px),
+      linear-gradient(150deg,#8a5a34 0%,#77492a 52%,#63391f 100%);
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.14),
+               inset -3px -5px 14px rgba(0,0,0,.38),
+               0 26px 60px -18px rgba(0,0,0,.75);
+    border:1px solid rgba(255,255,255,.07)}
+  .desk::before{content:'';position:absolute;inset:0;border-radius:30px;pointer-events:none;
+    background-image:var(--noise, none);opacity:.5;mix-blend-mode:overlay}
+  .ck-btn{font-family:'Gowun Dodum';font-size:15.5px;font-weight:700;color:#fff;border:none;
+    border-radius:13px;padding:10px 15px;cursor:pointer;position:relative;line-height:1;
+    background:linear-gradient(145deg, var(--c1), var(--c2));
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.3),
+               inset -2px -3px 6px rgba(0,0,0,.25),
+               0 6px 14px rgba(0,0,0,.4);
+    transition:transform .1s, box-shadow .1s}
+  .ck-btn:active{transform:translateY(3px)}
+  .ck-btn.on{box-shadow:inset 1px 1px 0 rgba(255,255,255,.3),0 0 0 2px rgba(91,155,240,.7),0 6px 14px rgba(0,0,0,.4)}
+  .ck-choice{font-family:'Gowun Dodum';font-size:16.5px;font-weight:700;color:var(--card-ink);
+    background:linear-gradient(160deg,#ffffff,#eef2f7);border:2px solid #d5dee9;border-radius:14px;
+    padding:13px 18px;cursor:pointer;min-width:110px;max-width:min(88vw,340px);line-height:1.45;
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.9), 0 6px 14px rgba(0,0,0,.4);
+    transition:transform .1s}
+  .ck-choice:active{transform:translateY(2px)}
+  .hint{font-size:13.5px;color:var(--mut);margin-top:4px;line-height:1.6}
+  .hint b{color:#cfe0f2}
+
+  /* ── 먹이사슬 도구 전용 ── */
+  .fc-paper{position:relative;border-radius:16px;padding:7px;
+    background:linear-gradient(170deg,#FBF7EE 0%,#EDE4CF 100%);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.5), 0 12px 30px -8px rgba(0,0,0,.55)}
+  .fc-org{cursor:pointer}
+  .fc-wow{font-family:'Gowun Dodum';font-size:14px;font-weight:700;border-radius:13px;
+    padding:10px 14px;cursor:pointer;line-height:1;transition:transform .1s}
+  .fc-wow:active{transform:translateY(2px)}
+  .fc-wow[data-wow="arm"]{color:#C9B8FF;background:rgba(155,123,245,.12);
+    border:1.5px solid rgba(155,123,245,.5)}
+  .fc-wow[data-wow="reveal"]{color:#fff;border:none;
+    background:linear-gradient(145deg,#8f6ef2,#6b47d8);
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.3), inset -2px -3px 6px rgba(0,0,0,.25),
+               0 6px 14px rgba(0,0,0,.4)}
+  .fc-legend{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;
+    width:100%;margin:2px 0 -2px}
+  .fc-legend span{font-family:'Gowun Dodum';font-size:14px;font-weight:800}
+  /* 무대 배너 (v2 fc-flash 계보 · animal과 동일 문법) */
+  .fc-flash,.fc-flash-magic,.fc-nudge{position:absolute;left:50%;top:12px;transform:translateX(-50%);
+    z-index:6;max-width:92%;text-align:center;padding:11px 18px;border-radius:16px;
+    font-family:'Gowun Dodum';font-weight:700;font-size:15.5px;line-height:1.5;
+    box-shadow:0 10px 28px rgba(0,0,0,.35);animation:fcPop .26s ease-out}
+  .fc-flash{background:linear-gradient(150deg,#3f77d8,#2a56ab);color:#fff}
+  .fc-flash-magic{background:linear-gradient(150deg,#8f6ef2,#6b47d8);color:#fff}
+  .fc-nudge{background:#FFF3CD;color:#7a5b00;border:2px solid #F3C969}
+  @keyframes fcPop{from{opacity:0;transform:translate(-50%,-9px) scale(.95)}
+    to{opacity:1;transform:translate(-50%,0) scale(1)}}
+  .fc-hold{display:inline-block;animation:fcHold 1.1s ease-in-out infinite;color:#C9B8FF}
+  @keyframes fcHold{0%,100%{opacity:1}50%{opacity:.45}}
+</style>
+</head>
+<body class="k3">
+<div id="root">
+  <div class="k3-topbar">
+    <span class="title" style="font-family:var(--kedu-title)">🕸 케이랩 · 먹이사슬·먹이그물</span>
+    <span class="badge">STUDIO</span>
+  </div>
+  <div class="hudrow">
+    <div class="seg" id="gradeSeg"></div>
+    <div class="seg" id="modeSeg"></div>
+    <button class="sndbtn" id="sndBtn" title="효과음">🔊</button>
+  </div>
+  <div class="barslot" id="barSlot"></div>
+  <div class="stagewrap"><div class="desk" id="desk"></div></div>
+  <div class="ctrlslot" id="ctrlSlot"></div>
+  <div class="statusrow" id="statusRow"></div>
+</div>
+
+<script src="/kedu/teacher/engine3/klab3-2d.js"></script>
+
+<!-- ═══ 순수 로직 (node/jsdom 테스트 대상 · DOM 무의존) ═══ -->
+<script>
+(function(){
+  'use strict';
+  /* ── 학년 칸 (헌법 3장) — v2 GRADES 그대로 ── */
+  var GRADES={
+    low:  { modes:['free','mission'],        web:false, roles:false, remove:false, quiz:false, missionN:2 },
+    mid:  { modes:['free','mission','quiz'], web:true,  roles:true,  remove:false, quiz:true,  missionN:3 },
+    high: { modes:['free','mission','quiz'], web:true,  roles:true,  remove:true,  quiz:true,  missionN:4 }
+  };
+  var GRADE_LABEL={ low:'저학년', mid:'중학년', high:'고학년' };
+  var MODE_LABEL={ free:'자유탐구', mission:'미션', quiz:'퀴즈' };
+
+  /* 생물 정의 — 종류 role(prod 생산자 / cons 소비자 / dec 분해자), 좌표(viewBox 700x440) · v2 그대로 신성불가침 */
+  var ORG={
+    rice:   { nm:'벼',     emo:'🌾', role:'prod', x:90,  y:230 },
+    grass:  { nm:'풀',     emo:'🌱', role:'prod', x:90,  y:110 },
+    hopper: { nm:'메뚜기', emo:'🦗', role:'cons', x:240, y:170 },
+    rabbit: { nm:'토끼',   emo:'🐰', role:'cons', x:240, y:320 },
+    frog:   { nm:'개구리', emo:'🐸', role:'cons', x:390, y:170 },
+    snake:  { nm:'뱀',     emo:'🐍', role:'cons', x:540, y:230 },
+    hawk:   { nm:'매',     emo:'🦅', role:'cons', x:650, y:150 },
+    fox:    { nm:'여우',   emo:'🦊', role:'cons', x:540, y:360 },
+    mush:   { nm:'곰팡이', emo:'🍄', role:'dec',  x:360, y:400 }
+  };
+  var ROLE={ prod:{ nm:'생산자', col:'#37B24D', desc:'햇빛으로 스스로 양분을 만들어요' },
+             cons:{ nm:'소비자', col:'#1565C0', desc:'다른 생물을 먹어 양분을 얻어요' },
+             dec: { nm:'분해자', col:'#9C6ADE', desc:'죽은 생물·배설물을 분해해 흙으로 돌려보내요' } };
+  function roleOf(k){ return ORG[k] ? ORG[k].role : ''; }
+
+  /* 먹이 관계 (먹히는 쪽 → 먹는 쪽). chain=한 줄, web=얽힘 · v2 그대로 */
+  var CHAIN=[['rice','hopper'],['hopper','frog'],['frog','snake'],['snake','hawk']];
+  var WEB=[
+    ['rice','hopper'],['grass','hopper'],['grass','rabbit'],
+    ['hopper','frog'],['frog','snake'],['snake','hawk'],
+    ['rabbit','fox'],['rabbit','hawk'],['frog','fox']
+  ];
+  function chainOrgs(){ return ['rice','hopper','frog','snake','hawk']; }
+  function webOrgs(){ return ['rice','grass','hopper','rabbit','frog','snake','hawk','fox','mush']; }
+
+  /* affected — removed를 «먹던»(=화살표가 removed에서 나가는 대상) 생물 집합. 순수(rel,removed). */
+  function affected(rel,removed){
+    var out={}; if(!removed) return out;
+    rel.forEach(function(e){ if(e[0]===removed) out[e[1]]=true; });
+    return out;
+  }
+
+  /* ── 와우 연쇄(trophic cascade) — 각 단계 { up:폭증, down:줄어듦, msg } · v2 CASCADE_STEPS 그대로 ── */
+  var CASCADE_STEPS=[
+    { up:['snake','frog'],           down:[],                            msg:'매가 없어지니 뱀·개구리가 마음 놓고 불어나요…' },
+    { up:['snake','frog','hopper'],  down:[],                            msg:'그 뱀·개구리가 메뚜기를 마구 잡아먹어… 처음엔 메뚜기도 잠깐 늘고' },
+    { up:['snake','frog'],           down:['hopper'],                    msg:'곧 메뚜기가 싹쓸이돼 확 줄어들어요' },
+    { up:['snake','frog'],           down:['hopper','rice'],             msg:'메뚜기가 없어지자 이번엔 벼(생산자)까지… 먹이가 바닥나요' },
+    { up:[],                         down:['hopper','rice','frog','snake'], msg:'결국 먹이가 다 떨어져 뱀·개구리도 굶어요 — 모두 무너졌어요!' }
+  ];
+  /* ★ SPEC §6-1 순수 stepper — setTimeout에서 분리. i단계의 {pop, msg, done} 즉시 반환. */
+  function cascadeStep(i){
+    var s=CASCADE_STEPS[i], pop={};
+    s.up.forEach(function(k){ pop[k]=2; });     // 폭증 = 배율 2
+    s.down.forEach(function(k){ pop[k]=0; });   // 바닥 = 배율 0
+    return { pop:pop, msg:s.msg, done:(i===CASCADE_STEPS.length-1) };
+  }
+
+  /* ── 미션 (학년칸별 풀) — v2 문구·판정식 그대로 · check(state{view,sel,removed}) ── */
+  var LOW_MISSIONS=[
+    { text:'🌾 화살표를 따라가요 — <b style="color:#BCA7FF;">벼를 먹는 동물</b>을 찾아 눌러요! (메뚜기)',
+      check:function(s){ return s.view==='chain' && s.sel==='hopper'; } },
+    { text:'🐍 이번엔 <b style="color:#BCA7FF;">개구리를 먹는 동물</b>을 찾아 눌러요! (화살표가 개구리에서 나가는 쪽)',
+      check:function(s){ return s.view==='chain' && s.sel==='snake'; } }
+  ];
+  var BASE_MISSIONS=[
+    { text:'🌱 먹이사슬에서 <b style="color:#BCA7FF;">스스로 양분을 만드는 생산자</b>를 찾아 눌러요!',
+      check:function(s){ return s.view==='chain' && s.sel && roleOf(s.sel)==='prod'; } },
+    { text:'🐍 <b style="color:#BCA7FF;">개구리를 먹는 동물</b>을 찾아 눌러요! (화살표가 개구리에서 나가는 쪽)',
+      check:function(s){ return s.view==='chain' && s.sel==='snake'; } },
+    { text:'🕸 <b style="color:#BCA7FF;">먹이그물</b>로 바꿔 봐요 — 여러 사슬이 얽혀 있어요!',
+      check:function(s){ return s.view==='web'; } },
+    { text:'❓ 먹이그물에서 <b style="color:#BCA7FF;">메뚜기를 눌러 사라지게</b> 해봐요 — 누가 먹이를 잃을까요?',
+      check:function(s){ return s.view==='web' && s.removed==='hopper'; } }
+  ];
+  function missionsFor(grade){ return (grade==='low') ? LOW_MISSIONS.slice() : BASE_MISSIONS.slice(0, GRADES[grade].missionN); }
+
+  /* ── 퀴즈 — v2 문항·보기·정답 그대로. ★ 정답 인덱스 a 전부 0 → 셔플 필수(§6-5) ── */
+  var QUIZ=[
+    { q:'먹이사슬 화살표(→)는 무엇을 나타낼까요?',
+      ch:['먹히는 생물 → 먹는 생물(에너지 이동)','먹는 생물 → 먹히는 생물','사는 곳의 방향'], a:0 },
+    { q:'햇빛으로 스스로 양분을 만드는 생물을 무엇이라 할까요?',
+      ch:['생산자','소비자','분해자'], a:0 },
+    { q:'죽은 생물을 분해해 흙으로 돌려보내는 곰팡이·세균은?',
+      ch:['분해자','생산자','소비자'], a:0 },
+    { q:'여러 먹이사슬이 얽혀 그물처럼 이어진 것을 무엇이라 할까요?',
+      ch:['먹이그물','먹이사슬','먹이피라미드'], a:0 },
+    { q:'먹이그물에서 메뚜기가 갑자기 사라지면 가장 먼저 곤란해지는 동물은?',
+      ch:['메뚜기를 먹던 개구리','풀','곰팡이'], a:0 }
+  ];
+  /* 중학년 = 기본 3문(화살표 방향·생산자·먹이그물), 고학년 = 전체 5문(분해자·사라지면 영향 포함) */
+  function quizPool(grade){ return (grade==='mid') ? [0,1,3] : [0,1,2,3,4]; }
+  function newQuizIdx(pool,used,rand){
+    rand=rand||Math.random;
+    if(used.length>=pool.length) used=[];
+    var cand=[]; for(var i=0;i<pool.length;i++) if(used.indexOf(pool[i])<0) cand.push(pool[i]);
+    var idx=cand[Math.floor(rand()*cand.length)];
+    return { idx:idx, used:used.concat([idx]) };
+  }
+  function shuffleChoices(n,rand){
+    rand=rand||Math.random;
+    var a=[]; for(var i=0;i<n;i++)a.push(i);
+    for(var k=a.length-1;k>0;k--){ var j=Math.floor(rand()*(k+1)); var t=a[k]; a[k]=a[j]; a[j]=t; }
+    return a;
+  }
+
+  /* ── 상태줄 — v2 renderStatus 로직 그대로(순수). {main, sub, tone} 반환 ── */
+  function statusText(grade,view,sel,removed){
+    var roles=GRADES[grade].roles;
+    var rel=(view==='chain')?CHAIN:WEB;
+    if(removed){
+      var aff=affected(rel,removed);
+      var names=Object.keys(aff).map(function(k){ return ORG[k].nm; });
+      return { tone:'warn',
+        main:ORG[removed].nm+'이(가) 사라졌어요!',
+        sub:(names.length ? '<b>'+names.join('·')+'</b>이(가) 먹이를 잃어 어려워져요. 먹이그물에선 한 생물이 사라지면 이렇게 여러 생물이 영향을 받아요.'
+                          : '이 생물을 직접 먹던 동물이 사슬에서 영향을 받아요.') };
+    }
+    if(sel){
+      var o=ORG[sel], role=ROLE[o.role], eats=[], eaten=[];
+      rel.forEach(function(e){ if(e[1]===sel) eats.push(ORG[e[0]].nm); if(e[0]===sel) eaten.push(ORG[e[1]].nm); });
+      if(!roles){
+        return { tone:'ink',
+          main:o.emo+' '+o.nm,
+          sub:(eats.length ? '🍽️ '+o.nm+'은(는) <b>'+eats.join('·')+'</b>을(를) 먹어요.   ' : (o.role==='prod' ? '🌞 햇빛을 받아 스스로 자라요.   ' : ''))
+             +(eaten.length ? '⚠️ <b>'+eaten.join('·')+'</b>에게 먹혀요.' : '') };
+      }
+      return { tone:'role', col:role.col,
+        main:o.emo+' '+o.nm+' — '+role.nm,
+        sub:role.desc
+           +(eats.length ? '<br>먹이: '+eats.join('·')+'   ' : '<br>')
+           +(eaten.length ? '천적: '+eaten.join('·') : (o.role==='prod' ? '햇빛으로 스스로 양분을 만들어요' : '')) };
+    }
+    return { tone:'ink',
+      main:(view==='chain' ? '🔗 먹이사슬' : '🕸 먹이그물'),
+      sub:'생물을 눌러'+(roles ? ' 역할과' : '')+' 먹이 관계를 봐요. 화살표는 <b>먹히는 생물 → 먹는 생물</b>로, '
+         +(roles ? '에너지가 옮겨가는 방향이에요.' : '누가 누구를 먹는지 알려줘요.') };
+  }
+
+  var API={ GRADES:GRADES, GRADE_LABEL:GRADE_LABEL, MODE_LABEL:MODE_LABEL,
+            ORG:ORG, ROLE:ROLE, roleOf:roleOf,
+            CHAIN:CHAIN, WEB:WEB, chainOrgs:chainOrgs, webOrgs:webOrgs, affected:affected,
+            CASCADE_STEPS:CASCADE_STEPS, cascadeStep:cascadeStep,
+            missionsFor:missionsFor, QUIZ:QUIZ, quizPool:quizPool,
+            newQuizIdx:newQuizIdx, shuffleChoices:shuffleChoices, statusText:statusText };
+  if(typeof window!=='undefined') window.FoodchainCore=API;
+  if(typeof module!=='undefined'&&module.exports) module.exports=API;
+})();
+</script>
+
+<!-- ═══ 앱 ═══ -->
+<script>
+(function(){
+  'use strict';
+  var FC=window.FoodchainCore, K3=window.K3;
+  var $=function(id){ return document.getElementById(id); };
+  document.documentElement.style.setProperty('--noise','url("'+K3.NOISE+'")');
+
+  var Q=new URLSearchParams(location.search);
+  var grade=(['low','mid','high'].indexOf(Q.get('grade'))>=0)?Q.get('grade'):'high';
+  var locked=!!Q.get('grade');
+  function G(){ return FC.GRADES[grade]; }
+  var mode=(G().modes.indexOf(Q.get('mode'))>=0)?Q.get('mode'):'free';
+
+  /* §6-5 — 모든 난수는 이 rand를 통과(퀴즈 뽑기·보기 셔플). Math.random 직접 호출 0. */
+  var rand=window.__K3_RAND || Math.random;
+
+  var view=(G().web && Q.get('view')==='web')?'web':'chain';
+  var sel='', removed='', curPop={};
+  var cascadeArmed=false, cascadeRevealed=false, cascadeSeq=null, cascStep=0, cascMsg='', cascadeActive=false, revealing=false;
+  var magicShown=false, pred=null;
+  var mStep=0, mDone=false, mLock=false;
+  var qIdx=0, qScore=0, qCount=0, qLock=false, qUsed=[];
+
+  var STEP_MS   =window.__K3_FAST?60:1500;
+  var QUIZ_MS   =window.__K3_FAST?60:1500;
+  var CARD_MS   =window.__K3_FAST?60:900;
+  var CASCADE_MS=window.__K3_FAST?60:1150;
+  var FLASH_MS  =window.__K3_FAST?400:4200;
+  var MAGIC_MS  =window.__K3_FAST?400:7200;
+
+  function snd(n){ K3.sound.play(n); }
+  function curMissions(){ return FC.missionsFor(grade); }
+  function state(){ return { view:view, sel:sel, removed:removed }; }
+
+  /* ── 무대 배너 (v2 fc-flash 계보 · desk 직속 absolute) ── */
+  function clearFlash(){
+    var d=$('desk'); if(!d)return;
+    d.querySelectorAll('.fc-flash,.fc-flash-magic,.fc-nudge').forEach(function(n){ n.remove(); });
+  }
+  function flash(cls,html,ms){
+    var d=$('desk'); if(!d)return;
+    clearFlash();
+    var e=document.createElement('div');
+    e.className=cls; e.innerHTML=html;
+    d.appendChild(e);
+    if(ms) setTimeout(function(){ if(e.parentNode)e.parentNode.removeChild(e); }, ms);
+  }
+
+  /* ── 연쇄 무장 해제 — 손으로 무엇이든 만지면 먼저 푼다(v2 clearCascade) ── */
+  function clearCascade(){
+    cascadeArmed=false; cascadeRevealed=false; cascadeActive=false; curPop={}; cascStep=0; cascMsg='';
+    if(cascadeSeq){ clearTimeout(cascadeSeq); cascadeSeq=null; }
+    clearFlash();
+  }
+
+  /* ── 조작 ── */
+  function setView(v){
+    if(view===v) { /* 재클릭도 선택/제거 초기화 */ }
+    snd('select'); view=v; sel=''; removed=''; clearCascade();
+    if(mode==='mission') { render(); checkMission(); } else render();
+  }
+  function pick(k){
+    if(mode==='mission' && mStep===3){                 // 미션④(그물서 메뚜기 제거): 클릭으로 제거 토글
+      removed=(removed===k)?'':k; snd('tap');
+    } else {
+      if(cascadeArmed||cascadeRevealed) clearCascade();  // 손으로 만지면 무장 해제
+      sel=k; snd('tap');
+    }
+    render();
+    if(mode==='mission') checkMission();
+  }
+  function doReset(){
+    sel=''; removed=''; clearCascade();
+    magicShown=false; pred=null;                        // ↺ = 와우B 재무장(§3)
+    snd('pop'); render();
+  }
+
+  /* ── 와우 A(연쇄) — 무장 ── */
+  function wowOn(){ return G().remove && mode==='free'; }
+  function wowArm(){
+    if(!wowOn())return;
+    clearCascade();
+    view='chain'; sel=''; removed='hawk';               // 사슬에서 매 제거 셋업
+    cascadeArmed=true; curPop={};
+    snd('charge'); build();
+    flash('fc-flash', '🦅 <b>매</b>가 사라졌어요. 매에게 잡아먹히던 뱀·개구리는<br>이제 마음 놓고 <b>잘 살까요?</b> 시간이 흐르면 어떻게 될지 예상해 봐요!', FLASH_MS);
+  }
+  /* 연쇄 재생 — setTimeout 1150ms 체인이 순수 stepper 결과를 «표시»만(§6-1). done 콜백. */
+  function runCascade(onDone){
+    cascadeRevealed=true; cascadeActive=true; snd('whoosh');
+    var i=0;
+    function stepOne(){
+      if(i>=FC.CASCADE_STEPS.length){
+        cascadeActive=false; cascadeSeq=null;
+        snd('chime');                                   // §6-4: v2 erupt → chime
+        flash('fc-flash-magic',
+          '💥 매가 없어지자 뱀·개구리가 불어나 <b>메뚜기를 싹쓸이</b>하고,<br>메뚜기가 사라지자 <b>벼(생산자)까지 초토화</b> — 결국 먹이가 바닥나 <b>모두 굶어요!</b><br>최상위 포식자는 아래 생물의 수를 조절해 <b>먹이그물의 균형</b>을 지켜요(연쇄 효과).', MAGIC_MS);
+        if(onDone) onDone();
+        return;
+      }
+      var r=FC.cascadeStep(i);
+      curPop=r.pop; cascStep=i; cascMsg=r.msg;
+      snd(r.done ? 'chime' : 'pop');                     // §6-4: v2 rumble → chime
+      render();
+      i++;
+      cascadeSeq=setTimeout(stepOne, CASCADE_MS);
+    }
+    stepOne();
+  }
+  /* ── 와우 A/B — 드러냄 ── */
+  function wowReveal(){
+    if(!wowOn()||revealing)return;
+    if(!cascadeArmed){                                   // 무장 없이 누르면 넛지(마법음 차단)
+      snd('select');
+      flash('fc-nudge','먼저 🔮 <b>매를 없애면?</b> 버튼으로 예상부터 해 봐요.', FLASH_MS);
+      return;
+    }
+    /* 와우B — 첫 실행 «직전» 예측 카드(1회 가드 · v3 신설) */
+    if(!magicShown){
+      magicShown=true; revealing=true; snd('charge');
+      K3.cards.predict('매(최상위 포식자)가 사라지면 — 아래 생물들은 <b>어떻게 될까요</b>?',
+        [{id:'thrive',  label:'① 아래 생물들이 다 잘 살아요'},
+         {id:'collapse',label:'② 처음엔 늘다가 결국 무너져요'}]
+      ).then(function(id){
+        pred=id; revealing=false;
+        runCascade(function(){
+          setTimeout(function(){
+            var okP=(pred==='collapse');
+            K3.cards.result(
+              '<h3 style="color:'+(okP?'#0d7a5c':'#6b47d8')+'">'+(okP?'✨ 맞아요 — 연쇄 효과예요!':'💥 다 잘 살 것 같지만…')+'</h3>'
+              +'<p style="font-size:13.5px;line-height:1.75;color:#41546a">'
+              +(okP
+                ?'매를 없애면 뱀·개구리가 폭증 → 메뚜기 싹쓸이 → 벼까지 초토화 → 결국 <b>모두 굶어요</b>.<br>이렇게 한 생물의 변화가 사슬을 타고 번지는 걸 <b>연쇄 효과(생태계 평형)</b>라고 해요.'
+                :'피식자가 폭증해 먹이를 싹쓸이하고, 결국 <b>모두 굶어요</b>.<br>최상위 포식자는 아래 생물의 수를 조절해 <b>먹이그물의 균형</b>을 지켜요.')
+              +'</p>',
+              [{label:'좋아, 계속 탐구', cls:'pri', value:'done'}]
+            );
+          }, CARD_MS);
+        });
+      });
+      return;
+    }
+    runCascade();   // 이후 반복 = 배너만(반복이 학습)
+  }
+
+  /* ── 미션 ── */
+  function checkMission(){
+    if(mode!=='mission'||mDone||mLock) return;
+    var M=curMissions();
+    if(mStep>=M.length) return;
+    if(M[mStep].check(state())){
+      mLock=true; snd('chime'); K3.toast('🎉 참 잘했어요!');
+      setTimeout(function(){
+        mLock=false;
+        if(mStep<M.length-1){
+          mStep++;
+          if(grade!=='low' && mStep===2){ sel=''; }                       // ③ 진입 = 선택 초기화
+          if(grade!=='low' && mStep===3){ view='web'; sel=''; removed=''; } // ④ 진입 = 그물+제거 초기화(자동달성 방지)
+        } else mDone=true;
+        build();
+      }, STEP_MS);
+    }
+  }
+
+  /* ── 퀴즈 ── */
+  function newQuiz(){
+    var r=FC.newQuizIdx(FC.quizPool(grade), qUsed, rand);
+    qIdx=r.idx; qUsed=r.used; qLock=false;
+  }
+  function answer(v){
+    if(qLock) return;
+    qLock=true; qCount++;
+    var q=FC.QUIZ[qIdx], okA=(+v===q.a);
+    if(okA){ qScore++; snd('chime'); K3.toast('🎉 정답! <b>'+q.ch[q.a]+'</b>'); }
+    else { snd('fail'); K3.toast('🤔 정답은 <b>'+q.ch[q.a]+'</b>', true); }
+    setTimeout(function(){ newQuiz(); build(); }, QUIZ_MS);
+  }
+
+  /* ── 빌드 ── */
+  function build(){
+    var gs=$('gradeSeg');
+    if(locked){ gs.style.display='none'; }
+    else{
+      gs.innerHTML=['low','mid','high'].map(function(g){
+        return '<button data-g="'+g+'" class="'+(g===grade?'on':'')+'">'+FC.GRADE_LABEL[g]+'</button>';
+      }).join('');
+      gs.querySelectorAll('button').forEach(function(b){
+        b.addEventListener('click',function(){ if(b.dataset.g!==grade) setGrade(b.dataset.g); });
+      });
+    }
+    var ms=$('modeSeg');
+    ms.innerHTML=G().modes.map(function(m){
+      return '<button data-m="'+m+'" class="'+(m===mode?'on':'')+'">'+FC.MODE_LABEL[m]+'</button>';
+    }).join('');
+    ms.querySelectorAll('button').forEach(function(b){
+      b.addEventListener('click',function(){ if(b.dataset.m!==mode) setMode(b.dataset.m); });
+    });
+
+    var bar=$('barSlot');
+    if(mode==='mission'){
+      var M=curMissions();
+      if(mStep>=M.length) mStep=M.length-1;
+      bar.innerHTML=mDone
+        ? '<div class="k3bar done">🎉 미션을 모두 해냈어요! 자유탐구에서 마음껏 탐구해 봐요.</div>'
+        : '<div class="k3bar"><span>'+M[mStep].text+'</span><span class="prog">'+(mStep+1)+' / '+M.length+'</span></div>';
+    } else if(mode==='quiz'){
+      var q=FC.QUIZ[qIdx];
+      bar.innerHTML='<div class="k3bar"><span>❓ '+q.q+'</span><span class="prog">점수 '+qScore+' / '+qCount+'</span></div>';
+    } else bar.innerHTML='';
+
+    var ct=$('ctrlSlot'), s='';
+    if(mode==='quiz'){
+      var qq=FC.QUIZ[qIdx];
+      s=FC.shuffleChoices(qq.ch.length,rand).map(function(i){
+        return '<button class="ck-choice" data-v="'+i+'">'+qq.ch[i]+'</button>';
+      }).join('');
+    } else {
+      s+='<button class="ck-btn fc-view'+(view==='chain'?' on':'')+'" data-view="chain" style="--c1:#3f77d8;--c2:#2a56ab">🔗 먹이사슬</button>';
+      if(G().web) s+='<button class="ck-btn fc-view'+(view==='web'?' on':'')+'" data-view="web" style="--c1:#3f77d8;--c2:#2a56ab">🕸 먹이그물</button>';
+      s+='<button class="ck-btn" data-act="reset" style="--c1:#5a6675;--c2:#3d4653">↺ 처음으로</button>';
+      if(wowOn()){
+        s+='<button class="fc-wow" data-wow="arm">🔮 매를 없애면?</button>'
+          +'<button class="fc-wow" data-wow="reveal">⏩ 시간이 흐르면?</button>';
+      }
+      if(G().roles){
+        s+='<div class="fc-legend">'+Object.keys(FC.ROLE).map(function(r){
+          return '<span style="color:'+FC.ROLE[r].col+'">● '+FC.ROLE[r].nm+'</span>'; }).join('')+'</div>';
+      }
+    }
+    ct.innerHTML=s;
+    ct.querySelectorAll('.fc-view').forEach(function(b){
+      b.addEventListener('click',function(){ setView(b.dataset.view); });
+    });
+    ct.querySelectorAll('[data-act="reset"]').forEach(function(b){
+      b.addEventListener('click',function(){ doReset(); });
+    });
+    ct.querySelectorAll('.fc-wow').forEach(function(b){
+      b.addEventListener('click',function(){ if(b.dataset.wow==='arm')wowArm(); else wowReveal(); });
+    });
+    ct.querySelectorAll('.ck-choice').forEach(function(b){
+      b.addEventListener('click',function(){ answer(b.dataset.v); });
+    });
+
+    render();
+  }
+
+  /* ═══ 무대 — 아이보리 테 「생태계 지도」(viewBox 700x440 · v2 좌표 그대로) ═══ */
+  var VBW=700, VBH=440;
+  function svgEl(t,a){ var e=document.createElementNS('http://www.w3.org/2000/svg',t); for(var k in a)e.setAttribute(k,a[k]); return e; }
+
+  function render(){
+    var desk=$('desk'); if(!desk)return;
+    var wrap=document.createElement('div');
+    wrap.className='fc-paper';
+    var svg=svgEl('svg',{ viewBox:'0 0 '+VBW+' '+VBH, id:'fcSvg',
+      style:'display:block;width:min(90vw,760px);height:auto;max-height:'+(mode==='quiz'?'34vh':'46vh') });
+    var d=svgEl('defs',{});
+    d.innerHTML=
+      '<linearGradient id="fcSky" x1="0" y1="0" x2="0" y2="1">'
+      +'<stop offset="0" stop-color="#F4FCE3"/><stop offset="1" stop-color="#E7F5FF"/></linearGradient>'
+      +'<marker id="fcArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">'
+      +'<path d="M 0 0 L 10 5 L 0 10 z" fill="#FF8A3D"/></marker>'
+      +'<marker id="fcArrowDim" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">'
+      +'<path d="M 0 0 L 10 5 L 0 10 z" fill="#C9D7E6"/></marker>';
+    svg.appendChild(d);
+    svg.appendChild(svgEl('rect',{x:0,y:0,width:VBW,height:VBH,rx:12,fill:'url(#fcSky)'}));
+
+    var g=svgEl('g',{});
+    var rel=(view==='chain')?FC.CHAIN:FC.WEB;
+    var orgs=(view==='chain')?FC.chainOrgs():FC.webOrgs();
+    var aff=FC.affected(rel,removed);
+
+    /* 화살표(먹히는→먹는) */
+    rel.forEach(function(e){
+      var a=FC.ORG[e[0]], b=FC.ORG[e[1]];
+      var dim=(removed && (e[0]===removed || e[1]===removed));
+      var dx=b.x-a.x, dy=b.y-a.y, len=Math.sqrt(dx*dx+dy*dy)||1, ux=dx/len, uy=dy/len, pad=30;
+      g.appendChild(svgEl('line',{
+        x1:a.x+ux*pad, y1:a.y+uy*pad, x2:b.x-ux*pad, y2:b.y-uy*pad,
+        stroke:dim?'#C9D7E6':'#FF8A3D', 'stroke-width':dim?2.5:4,
+        'marker-end':dim?'url(#fcArrowDim)':'url(#fcArrow)', opacity:dim?0.6:1
+      }));
+    });
+    /* 생물 노드 */
+    orgs.forEach(function(k){
+      var o=FC.ORG[k], role=FC.ROLE[o.role];
+      var isRemoved=(removed===k), isAff=aff[k], pv=curPop[k];
+      var boom=(pv>1), gone=(pv===0), rr=boom?40:(gone?18:30);
+      g.appendChild(svgEl('circle',{
+        cx:o.x, cy:o.y, r:rr,
+        fill:isRemoved?'#E9ECEF':(gone?'#F1F3F5':(boom?'#FFE8CC':(sel===k?'#fff':role.col))),
+        stroke:boom?'#E8590C':(gone?'#ADB5BD':(isAff?'#E8590C':role.col)), 'stroke-width':(boom||isAff)?5:4,
+        opacity:isRemoved?0.4:(gone?0.5:1), 'class':'fc-org', 'data-k':k
+      }));
+      var emo=svgEl('text',{ x:o.x, y:o.y+(boom?12:(gone?6:9)), 'text-anchor':'middle',
+        'font-size':boom?34:(gone?16:26), 'pointer-events':'none', opacity:isRemoved?0.4:(gone?0.5:1) });
+      emo.textContent=o.emo; g.appendChild(emo);
+      if(boom){ var up=svgEl('text',{x:o.x+rr-4,y:o.y-rr+12,'text-anchor':'middle','font-size':22,'font-weight':800,fill:'#E8590C','pointer-events':'none'}); up.textContent='⬆⬆'; g.appendChild(up); }
+      else if(gone){ var dn=svgEl('text',{x:o.x+rr,y:o.y-rr+6,'text-anchor':'middle','font-size':18,'font-weight':800,fill:'#868E96','pointer-events':'none'}); dn.textContent='⬇'; g.appendChild(dn); }
+      var lab=svgEl('text',{ x:o.x, y:o.y+(boom?58:48), 'text-anchor':'middle', 'font-family':'var(--kedu-title)',
+        'font-size':16, 'font-weight':800, fill:boom?'#E8590C':(gone?'#868E96':(isAff?'#E8590C':'#1B3A57')), 'pointer-events':'none' });
+      lab.textContent=o.nm+(isRemoved?' (사라짐)':(boom?' 폭증!':(gone?' 바닥':(isAff?' ⚠':''))));
+      g.appendChild(lab);
+    });
+    svg.appendChild(g);
+    svg.querySelectorAll('.fc-org').forEach(function(c){ c.addEventListener('click',function(){ pick(c.dataset.k); }); });
+
+    wrap.appendChild(svg);
+    var keep=[];
+    desk.querySelectorAll('.fc-flash,.fc-flash-magic,.fc-nudge').forEach(function(e){ keep.push(e); });
+    desk.innerHTML=''; desk.appendChild(wrap);
+    keep.forEach(function(e){ desk.appendChild(e); });
+
+    updateStatus();
+  }
+
+  function updateStatus(){
+    var st=$('statusRow'); if(!st)return;
+    if(cascadeActive){
+      st.innerHTML='<div class="hint" style="font-size:15px"><b style="font-size:17px;color:#FFB27A">⏩ 시간이 흐르면…</b>'
+        +'<br><span class="fc-hold">'+cascMsg+'</span></div>';
+      return;
+    }
+    if(cascadeRevealed && !cascadeActive){
+      st.innerHTML='<div class="hint" style="font-size:15px"><b style="font-size:17px;color:#FF8A3D">💥 최상위 포식자를 없애면 → 피식자 폭증 → 그 먹이 초토화 → 모두 붕괴</b></div>';
+      return;
+    }
+    if(cascadeArmed){
+      st.innerHTML='<div class="hint" style="font-size:15px"><b class="fc-hold" style="font-size:17px">🦅 최상위 포식자가 사라지면 아래 생물들은 늘기만 할까요?</b></div>';
+      return;
+    }
+    if(mode==='quiz'){
+      st.innerHTML='<div class="hint">화살표 방향(먹히는 쪽→먹는 쪽)과 생물의 역할을 떠올리며 답을 골라요!</div>';
+      return;
+    }
+    var t=FC.statusText(grade,view,sel,removed);
+    var col=t.tone==='warn'?'#FF8A3D':(t.tone==='role'?t.col:'#FFE3B3');
+    st.innerHTML='<div class="hint" style="font-size:15px"><b style="font-size:17px;color:'+col+'">'+t.main+'</b>'
+      +'<br><span>'+t.sub+'</span></div>';
+  }
+
+  function setGrade(g){
+    grade=g; snd('select');
+    if(G().modes.indexOf(mode)<0) mode='free';
+    mStep=0; mDone=false; mLock=false;
+    view=(G().web && view==='web')?'web':'chain'; sel=''; removed=''; clearCascade();
+    magicShown=false; pred=null;
+    if(mode==='quiz'){ qScore=0; qCount=0; qUsed=[]; newQuiz(); }
+    build();
+  }
+  function setMode(m){
+    mode=m; snd('select');
+    mStep=0; mDone=false; mLock=false;
+    sel=''; removed=''; clearCascade();
+    magicShown=false; pred=null;
+    if(m==='quiz'){ qScore=0; qCount=0; qUsed=[]; newQuiz(); }
+    build();
+  }
+
+  $('sndBtn').addEventListener('click',function(){
+    K3.sound.setOn(!K3.sound.on);
+    this.textContent=K3.sound.on?'🔊':'🔇';
+    this.classList.toggle('off',!K3.sound.on);
+    if(K3.sound.on)snd('select');
+  });
+
+  if(mode==='quiz')newQuiz();
+  build();
+
+  window.FoodchainApp={
+    get grade(){return grade;}, get mode(){return mode;},
+    get view(){return view;}, get sel(){return sel;}, get removed(){return removed;},
+    get pop(){return curPop;},
+    get mStep(){return mStep;}, get mDone(){return mDone;},
+    get qIdx(){return qIdx;}, get quiz(){return FC.QUIZ[qIdx];},
+    get qScore(){return qScore;}, get qCount(){return qCount;},
+    get magicShown(){return magicShown;}, get pred(){return pred;},
+    get cascadeArmed(){return cascadeArmed;}, get cascadeRevealed(){return cascadeRevealed;},
+    get cascadeStep(){return cascStep;}, get cascadeActive(){return cascadeActive;},
+    get rand(){return rand;}, set rand(fn){rand=fn;},
+    setGrade:setGrade, setMode:setMode, setView:setView,
+    pick:pick, reset:doReset, wowArm:wowArm, wowReveal:wowReveal,
+    answer:answer, build:build
+  };
+})();
+</script>
+</body>
+</html>
