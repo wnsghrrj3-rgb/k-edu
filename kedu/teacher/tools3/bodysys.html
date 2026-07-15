@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>케이랩 · 우리 몸 기관계 — 스튜디오</title>
+<!--
+  케이랩 v3 · B트랙 양산 19호 — 우리 몸 기관계 (bodysys) · 셸 = foodchain 계보(clock 골든샘플)
+  SPEC = handoff/klab/designs3/SPEC_bodysys.md (도면=정답)
+  v2(engine/tools/bodysys.js 415줄) 콘텐츠 무손실 이식:
+    학년칸(저 소화·호흡 2기관계·퀴즈X·와우X·미션2 / 중 4기관계·퀴즈3·미션3 / 고 와우·퀴즈5·미션4)
+    SYS 4기관계·ORGAN 16기관 좌표·하는일 그대로 신성불가침(viewBox 360x520)
+    미션 문구·판정식 그대로(소화길→폐→순환길→콩팥) · 퀴즈 5문·보기·정답 그대로 · 상태줄 문구 전부
+  ★ SPEC §6-1 연쇄 setTimeout 계약: 와우(4기관계가 심장 허브로 이어짐)가 setTimeout 1250ms 체인.
+    → crossStep(i)를 «순수 함수»로 Core에 분리({organ,label,msg,done}) · setTimeout은 그걸 «표시»만.
+    하니스는 crossStep(0..3)을 직접 호출해 즉시 검증 + 페이크타이머로 체인 통합 검증(§5-2·§5-3).
+  ★ 와우 A(연결·v2 승격·강화) — 🔮 각 기관계는 따로 놀까? → ⏩ 4단계 연결(작은창자→폐→심장→콩팥이 모두 피로 이어짐).
+  ★ 와우 B(예측 카드·v3 신설·1회 가드·고 자유탐구) — reveal 첫 실행 «직전» 「따로 논다 / 하나로 이어져 있다」
+    2지선다 → 연결 목격 → 결과 카드. ↺·학년/모드 전환 시 재무장. 이후 반복 = 배너만(반복이 학습).
+  ⚠️ 미션 진입 시드(sys=첫 기관계·sel=''·flowIdx=-1) = 자동달성 안 함(보드 버그패턴 #1 봉인).
+  ⚠️ v2 snd 미보유 이력 — 원본에 효과음 헬퍼가 나중에 추가. v3는 모든 조작에 klab3 사운드 전면 배선(§6-4).
+     v2 success 없음 → chime · v2 select/tap/pop 재사용 · 길 따라가기 각 단계 tick.
+  ⚠️ 퀴즈 정답 인덱스 a 전부 0 → shuffleChoices(rand 주입)로 셔플 유지(§6-5).
+  ⚠️ heart·heart2 = 순환 path에 심장 두 번(나감·돌아옴). 같은 좌표·다른 job → 렌더 시 중복 제거(seen).
+  v3 질감: 다크 스튜디오 + 원목 관찰대 위 「반투명 인체 모형」 — 유리 실루엣 위 빛나는 장기.
+  config: ?grade= & mode= & system=(digest|breath|blood|excrete)
+-->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
+<style id="kedu-title-font">
+@font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
+:root{--kedu-title:'Hakgyoansim Moheomga','Gowun Dodum',sans-serif}
+</style>
+<link rel="stylesheet" href="/kedu/teacher/engine3/klab3-ui.css">
+<style>
+  /* ── 페이지 골격 (황금 샘플 clock 셸 · foodchain 계보 · 변경 금지) ── */
+  #root{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;
+    background:var(--studio);overflow:hidden}
+  #root::after{content:'';position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(120% 90% at 50% 8%, transparent 55%, rgba(0,0,0,.4) 100%)}
+  .hudrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;
+    margin-top:52px;z-index:21}
+  .barslot{min-height:8px;z-index:21;width:min(720px,94vw);margin-top:8px}
+  .stagewrap{flex:1;display:flex;align-items:center;justify-content:center;width:100%;
+    min-height:0;z-index:2;padding:6px 0}
+  .ctrlslot{z-index:21;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;
+    padding:2px 10px;max-width:96vw}
+  .statusrow{z-index:21;text-align:center;padding:6px 12px 14px}
+  .seg{display:flex;gap:4px;background:var(--hud);backdrop-filter:blur(8px);
+    border:1px solid var(--hudline);border-radius:999px;padding:4px}
+  .seg button{font-family:'Gowun Dodum';font-size:13.5px;color:#c6d4e2;background:transparent;
+    border:none;border-radius:999px;padding:7px 13px;cursor:pointer;transition:all .15s}
+  .seg button.on{background:rgba(91,155,240,.28);color:#fff;
+    box-shadow:0 0 0 1.5px rgba(91,155,240,.55), 0 0 18px -4px #5B9BF0}
+  .sndbtn{background:var(--hud);border:1px solid var(--hudline);border-radius:999px;
+    color:#c6d4e2;font-size:15px;padding:7px 12px;cursor:pointer}
+  .sndbtn.off{opacity:.45}
+  .k3bar{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(8px);
+    border-radius:16px;padding:11px 16px;color:#e6eef7;font-size:15px;line-height:1.6;
+    display:flex;align-items:center;gap:12px}
+  .k3bar .prog{margin-left:auto;flex:0 0 auto;font-size:12.5px;color:var(--mut);white-space:nowrap}
+  .k3bar b{color:#BCA7FF}
+  .k3bar.done{border-color:rgba(18,184,134,.5);box-shadow:0 0 24px -8px #12B886}
+  .desk{position:relative;border-radius:30px;padding:min(2.4vh,18px) min(2.6vw,20px);
+    background:
+      radial-gradient(90% 70% at 50% 26%, rgba(255,240,214,.10), transparent 62%),
+      repeating-linear-gradient(94deg, rgba(46,28,12,.16) 0 2px, transparent 2px 9px),
+      linear-gradient(150deg,#8a5a34 0%,#77492a 52%,#63391f 100%);
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.14),
+               inset -3px -5px 14px rgba(0,0,0,.38),
+               0 26px 60px -18px rgba(0,0,0,.75);
+    border:1px solid rgba(255,255,255,.07)}
+  .desk::before{content:'';position:absolute;inset:0;border-radius:30px;pointer-events:none;
+    background-image:var(--noise, none);opacity:.5;mix-blend-mode:overlay}
+  .ck-btn{font-family:'Gowun Dodum';font-size:15.5px;font-weight:700;color:#fff;border:none;
+    border-radius:13px;padding:10px 15px;cursor:pointer;position:relative;line-height:1;
+    background:linear-gradient(145deg, var(--c1), var(--c2));
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.3),
+               inset -2px -3px 6px rgba(0,0,0,.25),
+               0 6px 14px rgba(0,0,0,.4);
+    transition:transform .1s, box-shadow .1s}
+  .ck-btn:active{transform:translateY(3px)}
+  .ck-btn.on{box-shadow:inset 1px 1px 0 rgba(255,255,255,.3),0 0 0 2px rgba(91,155,240,.7),0 6px 14px rgba(0,0,0,.4)}
+  .ck-choice{font-family:'Gowun Dodum';font-size:16.5px;font-weight:700;color:var(--card-ink);
+    background:linear-gradient(160deg,#ffffff,#eef2f7);border:2px solid #d5dee9;border-radius:14px;
+    padding:13px 18px;cursor:pointer;min-width:110px;max-width:min(88vw,340px);line-height:1.45;
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.9), 0 6px 14px rgba(0,0,0,.4);
+    transition:transform .1s}
+  .ck-choice:active{transform:translateY(2px)}
+  .hint{font-size:13.5px;color:var(--mut);margin-top:4px;line-height:1.6}
+  .hint b{color:#cfe0f2}
+
+  /* ── 기관계 도구 전용 — 반투명 인체 모형 ── */
+  .bs-paper{position:relative;border-radius:16px;padding:7px;
+    background:radial-gradient(120% 90% at 50% 20%, rgba(120,150,190,.16), rgba(20,30,48,.72) 78%);
+    box-shadow:inset 0 0 0 1px rgba(160,190,230,.22), 0 12px 30px -8px rgba(0,0,0,.6)}
+  .bs-organ{cursor:pointer}
+  .bs-tab{font-family:'Gowun Dodum';font-size:15px;font-weight:700;color:#fff;border:none;
+    border-radius:13px;padding:10px 15px;cursor:pointer;line-height:1;transition:transform .1s;
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.28), inset -2px -3px 6px rgba(0,0,0,.28),
+               0 6px 14px rgba(0,0,0,.4)}
+  .bs-tab:active{transform:translateY(2px)}
+  .bs-tab.on{box-shadow:inset 1px 1px 0 rgba(255,255,255,.28), 0 0 0 2px rgba(255,255,255,.7), 0 6px 14px rgba(0,0,0,.4)}
+  .bs-wow{font-family:'Gowun Dodum';font-size:14px;font-weight:700;border-radius:13px;
+    padding:10px 14px;cursor:pointer;line-height:1;transition:transform .1s}
+  .bs-wow:active{transform:translateY(2px)}
+  .bs-wow[data-wow="arm"]{color:#C9B8FF;background:rgba(155,123,245,.12);
+    border:1.5px solid rgba(155,123,245,.5)}
+  .bs-wow[data-wow="reveal"]{color:#fff;border:none;
+    background:linear-gradient(145deg,#8f6ef2,#6b47d8);
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.3), inset -2px -3px 6px rgba(0,0,0,.25),
+               0 6px 14px rgba(0,0,0,.4)}
+  /* 무대 배너 (foodchain fc-flash 계보와 동일 문법) */
+  .bs-flash,.bs-flash-magic,.bs-nudge{position:absolute;left:50%;top:12px;transform:translateX(-50%);
+    z-index:6;max-width:92%;text-align:center;padding:11px 18px;border-radius:16px;
+    font-family:'Gowun Dodum';font-weight:700;font-size:15.5px;line-height:1.5;
+    box-shadow:0 10px 28px rgba(0,0,0,.35);animation:bsPop .26s ease-out}
+  .bs-flash{background:linear-gradient(150deg,#3f77d8,#2a56ab);color:#fff}
+  .bs-flash-magic{background:linear-gradient(150deg,#8f6ef2,#6b47d8);color:#fff}
+  .bs-nudge{background:#FFF3CD;color:#7a5b00;border:2px solid #F3C969}
+  @keyframes bsPop{from{opacity:0;transform:translate(-50%,-9px) scale(.95)}
+    to{opacity:1;transform:translate(-50%,0) scale(1)}}
+  .bs-hold{display:inline-block;animation:bsHold 1.1s ease-in-out infinite;color:#C9B8FF}
+  @keyframes bsHold{0%,100%{opacity:1}50%{opacity:.45}}
+</style>
+</head>
+<body class="k3">
+<div id="root">
+  <div class="k3-topbar">
+    <span class="title" style="font-family:var(--kedu-title)">🫀 케이랩 · 우리 몸 기관계</span>
+    <span class="badge">STUDIO</span>
+  </div>
+  <div class="hudrow">
+    <div class="seg" id="gradeSeg"></div>
+    <div class="seg" id="modeSeg"></div>
+    <button class="sndbtn" id="sndBtn" title="효과음">🔊</button>
+  </div>
+  <div class="barslot" id="barSlot"></div>
+  <div class="stagewrap"><div class="desk" id="desk"></div></div>
+  <div class="ctrlslot" id="ctrlSlot"></div>
+  <div class="statusrow" id="statusRow"></div>
+</div>
+
+<script src="/kedu/teacher/engine3/klab3-2d.js"></script>
+
+<!-- ═══ 순수 로직 (node/jsdom 테스트 대상 · DOM 무의존) ═══ -->
+<script>
+(function(){
+  'use strict';
+  /* ── 학년 칸 (헌법 3장) — v2 GRADES 그대로 ── */
+  var GRADES={
+    low:  { modes:['free','mission'],        systems:['digest','breath'],                    quiz:false, missionN:2, showWow:false },
+    mid:  { modes:['free','mission','quiz'], systems:['digest','breath','blood','excrete'], quiz:true,  missionN:3, showWow:false },
+    high: { modes:['free','mission','quiz'], systems:['digest','breath','blood','excrete'], quiz:true,  missionN:4, showWow:true  }
+  };
+  var GRADE_LABEL={ low:'저학년', mid:'중학년', high:'고학년' };
+  var MODE_LABEL={ free:'자유탐구', mission:'미션', quiz:'퀴즈' };
+
+  /* 기관계 정의 — 색·이름·기관 목록(좌표는 사람 실루엣 viewBox 360x520) · v2 그대로 신성불가침 */
+  var SYS={
+    digest:  { nm:'소화 기관계', emo:'🍚', col:'#F59F00', flow:'음식',   path:['mouth','esoph','stomach','sintest','lintest'] },
+    breath:  { nm:'호흡 기관계', emo:'💨', col:'#4DABF7', flow:'공기',   path:['nose','trachea','lungL','lungR'] },
+    blood:   { nm:'순환 기관계', emo:'❤️', col:'#FA5252', flow:'피',     path:['heart','vesselU','vesselD','heart2'] },
+    excrete: { nm:'배설 기관계', emo:'💧', col:'#22B8CF', flow:'노폐물', path:['kidneyL','kidneyR','bladder'] }
+  };
+  var ORGAN={
+    mouth:   { nm:'입',        x:180, y:70,  job:'음식을 이로 잘게 부수고 침과 섞어요.' },
+    esoph:   { nm:'식도',      x:180, y:120, job:'입에서 받은 음식을 위로 내려보내요.' },
+    stomach: { nm:'위',        x:150, y:175, job:'음식을 잘게 으깨고 소화액과 섞어요.' },
+    sintest: { nm:'작은창자',  x:185, y:250, job:'영양분을 흡수해 몸으로 보내요.' },
+    lintest: { nm:'큰창자',    x:185, y:320, job:'남은 찌꺼기에서 물을 흡수하고 똥을 만들어요.' },
+    nose:    { nm:'코',        x:180, y:55,  job:'공기가 드나드는 곳. 먼지를 걸러요.' },
+    trachea: { nm:'기관',      x:180, y:115, job:'코에서 받은 공기를 폐로 보내는 길이에요.' },
+    lungL:   { nm:'폐(왼쪽)',  x:145, y:165, job:'공기 속 산소를 받아 피로 보내요.' },
+    lungR:   { nm:'폐(오른쪽)', x:215, y:165, job:'공기 속 산소를 받아 피로 보내요.' },
+    heart:   { nm:'심장',      x:175, y:175, job:'쉬지 않고 뛰며 온몸으로 피를 보내요(펌프).' },
+    heart2:  { nm:'심장',      x:175, y:175, job:'온몸을 돈 피가 다시 심장으로 돌아와요.' },
+    vesselU: { nm:'혈관(위)',  x:180, y:95,  job:'피가 흐르는 길. 산소·영양분을 실어 날라요.' },
+    vesselD: { nm:'혈관(아래)', x:180, y:300, job:'피가 흐르는 길. 온몸 구석구석까지 이어져요.' },
+    kidneyL: { nm:'콩팥(왼쪽)', x:145, y:255, job:'피 속 노폐물을 걸러 오줌을 만들어요.' },
+    kidneyR: { nm:'콩팥(오른쪽)', x:215, y:255, job:'피 속 노폐물을 걸러 오줌을 만들어요.' },
+    bladder: { nm:'방광',      x:180, y:340, job:'오줌을 모아 두었다가 몸 밖으로 내보내요.' }
+  };
+  function pathOf(sys){ return SYS[sys] ? SYS[sys].path.slice() : []; }
+  function organJob(k){ return ORGAN[k] ? ORGAN[k].job : ''; }
+
+  /* ── 와우 연결(cross-link) — 4기관계가 심장(피)을 허브로 하나로 이어짐 · v2 CROSS_STEPS 그대로 ──
+     ★교훈: 도구가 이미 가르치는 것(기관계 구분)이 아니라, 도구가 구조적으로 심는 오개념
+       (4개를 완전히 따로 토글=따로 논다)을 정조준. 5학년 「여러 기관계가 관련 맺으며 생명 활동 유지」. */
+  var CROSS_STEPS=[
+    { organ:'sintest', col:SYS.digest.col,  label:'🍚 영양분', msg:'소화 기관계 — 작은창자가 얻은 <b>영양분</b>을 피(순환)로 넘겨요.' },
+    { organ:'lungL',   col:SYS.breath.col,  label:'💨 산소',   msg:'호흡 기관계 — 폐가 받은 <b>산소</b>도 피(순환)로 넘겨요.' },
+    { organ:'heart',   col:SYS.blood.col,   label:'❤️ 피',     msg:'순환 기관계 — 피가 영양분과 산소를 <b>온몸 구석구석</b> 실어 날라요.' },
+    { organ:'kidneyL', col:SYS.excrete.col, label:'💧 노폐물', msg:'배설 기관계 — 몸에서 생긴 <b>노폐물</b>을 피가 콩팥으로 보내 오줌으로 걸러요.' }
+  ];
+  /* ★ SPEC §6-1 순수 stepper — setTimeout에서 분리. i단계의 {organ,label,col,msg,done} 즉시 반환. */
+  function crossStep(i){
+    var s=CROSS_STEPS[i];
+    return { organ:s.organ, label:s.label, col:s.col, msg:s.msg, done:(i===CROSS_STEPS.length-1) };
+  }
+
+  /* ── 미션 (학년칸별 풀) — v2 문구·판정식 그대로 · check(state{sys,sel,flowIdx}) ──
+     ★ 미션 진입 시드(sys=첫 기관계·sel=''·flowIdx=-1) = 자동달성 안 함. */
+  var MISSIONS=[
+    { text:'🍚 <b style="color:#BCA7FF;">소화 기관계</b>에서 ▶ 길 따라가기로 음식이 <b style="color:#BCA7FF;">큰창자까지</b> 가게 해봐요!',
+      check:function(s){ return s.sys==='digest' && s.flowIdx>=SYS.digest.path.length; } },
+    { text:'💨 <b style="color:#BCA7FF;">호흡 기관계</b>로 바꾸고 <b style="color:#BCA7FF;">폐</b>를 눌러 하는 일을 봐요!',
+      check:function(s){ return s.sys==='breath' && (s.sel==='lungL'||s.sel==='lungR'); } },
+    { text:'❤️ <b style="color:#BCA7FF;">순환 기관계</b>에서 ▶ 길 따라가기로 피가 한 바퀴 돌게 해봐요!',
+      check:function(s){ return s.sys==='blood' && s.flowIdx>=SYS.blood.path.length; } },
+    { text:'💧 <b style="color:#BCA7FF;">배설 기관계</b>에서 노폐물을 걸러 오줌을 만드는 <b style="color:#BCA7FF;">콩팥</b>을 찾아 눌러요!',
+      check:function(s){ return s.sys==='excrete' && (s.sel==='kidneyL'||s.sel==='kidneyR'); } }
+  ];
+  function missionsFor(grade){ return MISSIONS.slice(0, GRADES[grade].missionN); }
+
+  /* ── 퀴즈 — v2 문항·보기·정답 그대로. ★ 정답 인덱스 a 전부 0 → 셔플 필수(§6-5) ── */
+  var QUIZ=[
+    { q:'음식의 영양분을 흡수하는 기관은?', ch:['작은창자','폐','콩팥'], a:0 },
+    { q:'온몸으로 피를 보내는 펌프 역할을 하는 기관은?', ch:['심장','위','코'], a:0 },
+    { q:'공기 속 산소를 받아들이는 기관은?', ch:['폐','큰창자','방광'], a:0 },
+    { q:'피 속 노폐물을 걸러 오줌을 만드는 기관은?', ch:['콩팥','심장','식도'], a:0 },
+    { q:'음식이 지나가는 순서로 맞는 것은?', ch:['입→식도→위→작은창자','입→위→식도→폐','코→위→큰창자'], a:0 }
+  ];
+  /* 중학년 = 기본 3문(작은창자·심장·폐), 고학년 = 전체 5문(콩팥·소화 순서 포함) */
+  function quizPool(grade){ return (grade==='mid') ? [0,1,2] : [0,1,2,3,4]; }
+  function newQuizIdx(pool,used,rand){
+    rand=rand||Math.random;
+    if(used.length>=pool.length) used=[];
+    var cand=[]; for(var i=0;i<pool.length;i++) if(used.indexOf(pool[i])<0) cand.push(pool[i]);
+    var idx=cand[Math.floor(rand()*cand.length)];
+    return { idx:idx, used:used.concat([idx]) };
+  }
+  function shuffleChoices(n,rand){
+    rand=rand||Math.random;
+    var a=[]; for(var i=0;i<n;i++)a.push(i);
+    for(var k=a.length-1;k>0;k--){ var j=Math.floor(rand()*(k+1)); var t=a[k]; a[k]=a[j]; a[j]=t; }
+    return a;
+  }
+
+  /* ── 상태줄 — v2 renderStatus 로직 그대로(순수). {main, sub, tone, col} 반환 ── */
+  function statusText(sys,sel,flowIdx){
+    var s=SYS[sys];
+    if(sel){
+      return { tone:'ink', col:s.col, main:'🫁 '+ORGAN[sel].nm, sub:ORGAN[sel].job };
+    }
+    if(flowIdx>=0 && flowIdx<s.path.length){
+      return { tone:'flow', col:s.col, main:s.emo+' '+s.nm,
+        sub:s.flow+'이(가) <b>'+ORGAN[s.path[flowIdx]].nm+'</b>을(를) 지나가요.' };
+    }
+    if(flowIdx>=s.path.length){
+      return { tone:'good', col:s.col, main:s.emo+' '+s.nm,
+        sub:s.flow+'이(가) '+s.nm+'을(를) 끝까지 지나갔어요! ✨' };
+    }
+    return { tone:'ink', col:s.col, main:s.emo+' '+s.nm,
+      sub:'기관을 눌러 하는 일을 보고, ▶ 길 따라가기로 '+s.flow+'의 길을 따라가 봐요.' };
+  }
+
+  var API={ GRADES:GRADES, GRADE_LABEL:GRADE_LABEL, MODE_LABEL:MODE_LABEL,
+            SYS:SYS, ORGAN:ORGAN, pathOf:pathOf, organJob:organJob,
+            CROSS_STEPS:CROSS_STEPS, crossStep:crossStep,
+            missionsFor:missionsFor, MISSIONS:MISSIONS, QUIZ:QUIZ, quizPool:quizPool,
+            newQuizIdx:newQuizIdx, shuffleChoices:shuffleChoices, statusText:statusText };
+  if(typeof window!=='undefined') window.BodysysCore=API;
+  if(typeof module!=='undefined'&&module.exports) module.exports=API;
+})();
+</script>
+
+<!-- ═══ 앱 ═══ -->
+<script>
+(function(){
+  'use strict';
+  var BC=window.BodysysCore, K3=window.K3;
+  var $=function(id){ return document.getElementById(id); };
+  document.documentElement.style.setProperty('--noise','url("'+K3.NOISE+'")');
+
+  var Q=new URLSearchParams(location.search);
+  var grade=(['low','mid','high'].indexOf(Q.get('grade'))>=0)?Q.get('grade'):'high';
+  var locked=!!Q.get('grade');
+  function G(){ return BC.GRADES[grade]; }
+  var mode=(G().modes.indexOf(Q.get('mode'))>=0)?Q.get('mode'):'free';
+
+  /* §6-5 — 모든 난수는 이 rand를 통과(퀴즈 뽑기·보기 셔플). Math.random 직접 호출 0. */
+  var rand=window.__K3_RAND || Math.random;
+
+  /* 기관계 초기값 — config.system이 현재 학년칸에 허용될 때만 */
+  function firstSys(){ return G().systems[0]; }
+  var qsys=Q.get('system');
+  var sys=(BC.SYS[qsys] && G().systems.indexOf(qsys)>=0) ? qsys : firstSys();
+  var sel='', flowIdx=-1;
+  var flowSeq=null;                                     // 길 따라가기 setTimeout 핸들
+  /* 와우(연결) 상태 */
+  var linkArmed=false, linkActive=false, linkRevealed=false, linkStep=-1, linkSeq=null, holdMsg='';
+  var magicShown=false, pred=null, revealing=false;
+  var mStep=0, mDone=false, mLock=false;
+  var qIdx=0, qScore=0, qCount=0, qLock=false, qUsed=[];
+
+  var STEP_MS   =window.__K3_FAST?60:1500;              // 미션 성공 후 다음 단계
+  var QUIZ_MS   =window.__K3_FAST?60:1500;
+  var CARD_MS   =window.__K3_FAST?60:900;
+  var FLOW_MS   =window.__K3_FAST?40:750;               // 길 따라가기 한 칸
+  var CROSS_MS  =window.__K3_FAST?60:1250;              // 연결 한 단계
+  var FLASH_MS  =window.__K3_FAST?400:4200;
+  var MAGIC_MS  =window.__K3_FAST?400:7200;
+
+  function snd(n){ K3.sound.play(n); }
+  function curMissions(){ return BC.missionsFor(grade); }
+  function state(){ return { sys:sys, sel:sel, flowIdx:flowIdx }; }
+
+  /* ── 무대 배너 (foodchain fc-flash 계보 · desk 직속 absolute) ── */
+  function clearFlash(){
+    var d=$('desk'); if(!d)return;
+    d.querySelectorAll('.bs-flash,.bs-flash-magic,.bs-nudge').forEach(function(n){ n.remove(); });
+  }
+  function flash(cls,html,ms){
+    var d=$('desk'); if(!d)return;
+    clearFlash();
+    var e=document.createElement('div');
+    e.className=cls; e.innerHTML=html;
+    d.appendChild(e);
+    if(ms) setTimeout(function(){ if(e.parentNode)e.parentNode.removeChild(e); }, ms);
+  }
+
+  /* ── 길 따라가기 정지 ── */
+  function stopFlow(){ if(flowSeq){ clearTimeout(flowSeq); flowSeq=null; } }
+
+  /* ── 연결 무장 해제 — 손으로 무엇이든 만지면 먼저 푼다(v2 clearLink) ── */
+  function clearLink(){
+    linkArmed=false; linkActive=false; linkRevealed=false; linkStep=-1; holdMsg='';
+    if(linkSeq){ clearTimeout(linkSeq); linkSeq=null; }
+    clearFlash();
+  }
+
+  /* ── 조작 ── */
+  function setSys(s){
+    if(linkArmed||linkActive||linkRevealed) clearLink();
+    stopFlow(); snd('select'); sys=s; sel=''; flowIdx=-1;
+    if(mode==='mission') { render(); checkMission(); } else render();
+  }
+  function pickOrgan(k){
+    if(linkArmed||linkActive||linkRevealed){ clearLink(); build(); return; }
+    snd('tap'); sel=k; render();
+    if(mode==='mission') checkMission();
+  }
+  /* 길 따라가기 — setTimeout 750ms 체인이 flowIdx를 한 칸씩 표시. 순수 상태는 flowIdx 하나. */
+  function tickFlow(){
+    if(flowSeq) return;
+    if(linkArmed||linkActive||linkRevealed){ clearLink(); build(); return; }
+    snd('select');
+    var p=BC.SYS[sys].path; flowIdx=-1;
+    function stepOne(){
+      flowIdx++; snd('tick');                            // §6-4: 각 단계 tick
+      render();
+      if(flowIdx>=p.length){ flowSeq=null; if(mode==='mission') checkMission(); return; }
+      flowSeq=setTimeout(stepOne, FLOW_MS);
+    }
+    stepOne();
+  }
+  function doReset(){
+    stopFlow(); clearLink();
+    sel=''; flowIdx=-1;
+    magicShown=false; pred=null;                          // ↺ = 와우B 재무장(§3)
+    snd('pop'); render();
+  }
+
+  /* ── 와우 A(연결) — 무장 ── */
+  function wowOn(){ return G().showWow && mode==='free'; }
+  function wowArm(){
+    if(!wowOn())return;
+    stopFlow(); clearLink();
+    sys='digest'; sel=''; flowIdx=-1;                     // 소화 기관계 하나만 켠 셋업
+    linkArmed=true; linkStep=-1;
+    snd('charge'); build();
+    holdMsg='한 기관계만 멈춰도 온몸이 괜찮을까요?';
+    flash('bs-flash', '지금 켜진 건 <b>소화 기관계</b> 하나예요.<br>소화·호흡·순환·배설은 서로 <b>상관없이 따로따로</b> 일할까요? 예상해 봐요!', FLASH_MS);
+  }
+  /* 연결 재생 — setTimeout 1250ms 체인이 순수 stepper 결과를 «표시»만(§6-1). done 콜백. */
+  function runCross(onDone){
+    linkActive=true; linkRevealed=false; linkStep=-1; snd('whoosh');
+    var i=0;
+    function stepOne(){
+      if(i>=BC.CROSS_STEPS.length){
+        linkActive=false; linkRevealed=true; linkArmed=false; holdMsg='';
+        snd('chime');                                     // §6-4: v2 success → chime
+        render();
+        flash('bs-flash-magic',
+          '💗 4개 기관계는 따로 노는 게 아니라 <b>하나로 이어져</b> 있어요!<br>소화가 얻은 영양분과 호흡이 얻은 산소를 <b>순환(피)</b>이 온몸에 실어 나르고,<br>생긴 노폐물을 다시 순환이 콩팥으로 보내 배설해요 — 한 곳이 멈추면 온몸이 멈춰요.', MAGIC_MS);
+        if(onDone) onDone();
+        return;
+      }
+      var r=BC.crossStep(i);
+      linkStep=i; holdMsg=r.msg;
+      snd(r.done ? 'chime' : 'pop');
+      render();
+      i++;
+      linkSeq=setTimeout(stepOne, CROSS_MS);
+    }
+    stepOne();
+  }
+  /* ── 와우 A/B — 드러냄 ── */
+  function wowReveal(){
+    if(!wowOn()||revealing)return;
+    if(!linkArmed){                                       // 무장 없이 누르면 넛지(마법음 차단)
+      snd('select');
+      flash('bs-nudge','먼저 🔮 <b>따로 놀까?</b> 버튼으로 예상부터 해 봐요.', FLASH_MS);
+      return;
+    }
+    /* 와우B — 첫 실행 «직전» 예측 카드(1회 가드 · v3 신설) */
+    if(!magicShown){
+      magicShown=true; revealing=true; snd('charge');
+      K3.cards.predict('소화·호흡·순환·배설 — 이 기관계들은 서로 <b>상관없이 따로 일할까요</b>?',
+        [{id:'apart', label:'① 서로 따로따로 일해요'},
+         {id:'linked',label:'② 하나로 이어져 함께 일해요'}]
+      ).then(function(id){
+        pred=id; revealing=false;
+        runCross(function(){
+          setTimeout(function(){
+            var okP=(pred==='linked');
+            K3.cards.result(
+              '<h3 style="color:'+(okP?'#0d7a5c':'#6b47d8')+'">'+(okP?'✨ 맞아요 — 하나의 팀이에요!':'💗 따로 노는 것 같지만…')+'</h3>'
+              +'<p style="font-size:13.5px;line-height:1.75;color:#41546a">'
+              +(okP
+                ?'영양분·산소·노폐물이 전부 <b>피(순환)</b>를 타고 오가요.<br>4개 기관계는 <b>심장을 허브로 하나로 이어져</b> 함께 생명 활동을 유지해요.'
+                :'모두 <b>심장(피)을 통해 이어져</b> 있어요. 한 기관계만 멈춰도 온몸이 영향받아요 — 우리 몸은 <b>하나의 팀</b>이에요.')
+              +'</p>',
+              [{label:'좋아, 계속 탐구', cls:'pri', value:'done'}]
+            );
+          }, CARD_MS);
+        });
+      });
+      return;
+    }
+    runCross();   // 이후 반복 = 배너만(반복이 학습)
+  }
+
+  /* ── 미션 ── */
+  function checkMission(){
+    if(mode!=='mission'||mDone||mLock) return;
+    var M=curMissions();
+    if(mStep>=M.length) return;
+    if(M[mStep].check(state())){
+      mLock=true; stopFlow(); snd('chime'); K3.toast('🎉 참 잘했어요!');
+      setTimeout(function(){
+        mLock=false;
+        if(mStep<M.length-1){
+          mStep++;
+          var order=['digest','breath','blood','excrete'];
+          var nextSys=order[mStep];
+          if(G().systems.indexOf(nextSys)<0) nextSys=firstSys();
+          sys=nextSys; sel=''; flowIdx=-1;                // 다음 단계 진입 = 시드 초기화(자동달성 방지)
+        } else mDone=true;
+        build();
+      }, STEP_MS);
+    }
+  }
+
+  /* ── 퀴즈 ── */
+  function newQuiz(){
+    var r=BC.newQuizIdx(BC.quizPool(grade), qUsed, rand);
+    qIdx=r.idx; qUsed=r.used; qLock=false;
+  }
+  function answer(v){
+    if(qLock) return;
+    qLock=true; qCount++;
+    var q=BC.QUIZ[qIdx], okA=(+v===q.a);
+    if(okA){ qScore++; snd('chime'); K3.toast('🎉 정답! <b>'+q.ch[q.a]+'</b>'); }
+    else { snd('fail'); K3.toast('🤔 정답은 <b>'+q.ch[q.a]+'</b>', true); }
+    setTimeout(function(){ newQuiz(); build(); }, QUIZ_MS);
+  }
+
+  /* ── 빌드 ── */
+  function build(){
+    var gs=$('gradeSeg');
+    if(locked){ gs.style.display='none'; }
+    else{
+      gs.innerHTML=['low','mid','high'].map(function(g){
+        return '<button data-g="'+g+'" class="'+(g===grade?'on':'')+'">'+BC.GRADE_LABEL[g]+'</button>';
+      }).join('');
+      gs.querySelectorAll('button').forEach(function(b){
+        b.addEventListener('click',function(){ if(b.dataset.g!==grade) setGrade(b.dataset.g); });
+      });
+    }
+    var ms=$('modeSeg');
+    ms.innerHTML=G().modes.map(function(m){
+      return '<button data-m="'+m+'" class="'+(m===mode?'on':'')+'">'+BC.MODE_LABEL[m]+'</button>';
+    }).join('');
+    ms.querySelectorAll('button').forEach(function(b){
+      b.addEventListener('click',function(){ if(b.dataset.m!==mode) setMode(b.dataset.m); });
+    });
+
+    var bar=$('barSlot');
+    if(mode==='mission'){
+      var M=curMissions();
+      if(mStep>=M.length) mStep=M.length-1;
+      bar.innerHTML=mDone
+        ? '<div class="k3bar done">🎉 미션을 모두 해냈어요! 자유탐구에서 마음껏 탐구해 봐요.</div>'
+        : '<div class="k3bar"><span>'+M[mStep].text+'</span><span class="prog">'+(mStep+1)+' / '+M.length+'</span></div>';
+    } else if(mode==='quiz'){
+      var q=BC.QUIZ[qIdx];
+      bar.innerHTML='<div class="k3bar"><span>❓ '+q.q+'</span><span class="prog">점수 '+qScore+' / '+qCount+'</span></div>';
+    } else bar.innerHTML='';
+
+    var ct=$('ctrlSlot'), s='';
+    if(mode==='quiz'){
+      var qq=BC.QUIZ[qIdx];
+      s=BC.shuffleChoices(qq.ch.length,rand).map(function(i){
+        return '<button class="ck-choice" data-v="'+i+'">'+qq.ch[i]+'</button>';
+      }).join('');
+    } else {
+      /* 기관계 토글 (학년칸 systems만) */
+      G().systems.forEach(function(k){
+        var on=(k===sys);
+        s+='<button class="bs-tab bs-sys'+(on?' on':'')+'" data-sys="'+k+'" '
+          +'style="--c1:'+BC.SYS[k].col+';--c2:'+BC.SYS[k].col+';'
+          +(on?'':'filter:saturate(.55) brightness(.9);')+'">'+BC.SYS[k].emo+' '+BC.SYS[k].nm+'</button>';
+      });
+      s+='<button class="ck-btn" data-act="flow" style="--c1:#8f6ef2;--c2:#6b47d8">▶ '+BC.SYS[sys].flow+' 길 따라가기</button>';
+      s+='<button class="ck-btn" data-act="reset" style="--c1:#5a6675;--c2:#3d4653">↺ 처음으로</button>';
+      if(wowOn()){
+        s+='<button class="bs-wow" data-wow="arm">🔮 기관계는 따로 놀까?</button>'
+          +'<button class="bs-wow" data-wow="reveal">⏩ 몸속을 이어보기</button>';
+      }
+    }
+    ct.innerHTML=s;
+    ct.querySelectorAll('.bs-sys').forEach(function(b){
+      b.addEventListener('click',function(){ setSys(b.dataset.sys); });
+    });
+    ct.querySelectorAll('[data-act="flow"]').forEach(function(b){
+      b.addEventListener('click',function(){ tickFlow(); });
+    });
+    ct.querySelectorAll('[data-act="reset"]').forEach(function(b){
+      b.addEventListener('click',function(){ doReset(); });
+    });
+    ct.querySelectorAll('.bs-wow').forEach(function(b){
+      b.addEventListener('click',function(){ if(b.dataset.wow==='arm')wowArm(); else wowReveal(); });
+    });
+    ct.querySelectorAll('.ck-choice').forEach(function(b){
+      b.addEventListener('click',function(){ answer(b.dataset.v); });
+    });
+
+    render();
+  }
+
+  /* ═══ 무대 — 반투명 인체 모형(viewBox 360x520 · v2 좌표 그대로) ═══ */
+  var VBW=360, VBH=520;
+  function svgEl(t,a){ var e=document.createElementNS('http://www.w3.org/2000/svg',t); for(var k in a)e.setAttribute(k,a[k]); return e; }
+
+  function bodyOutline(g){
+    /* 반투명 유리 인체 실루엣 (머리+몸통) */
+    g.appendChild(svgEl('ellipse',{ cx:180, cy:48, rx:38, ry:42, fill:'rgba(180,205,235,.14)', stroke:'rgba(150,180,220,.5)', 'stroke-width':2 }));
+    g.appendChild(svgEl('path',{
+      d:'M 130 95 Q 180 78 230 95 L 250 200 Q 252 300 235 400 L 215 470 L 145 470 L 125 400 Q 108 300 110 200 Z',
+      fill:'rgba(180,205,235,.12)', stroke:'rgba(150,180,220,.5)', 'stroke-width':2 }));
+  }
+
+  /* 연결(와우) 렌더 — 심장 허브 ↔ 각 기관계 대표 기관 · 진행 단계까지 진하게 */
+  function renderLink(g){
+    var HUB=BC.ORGAN.heart;
+    var spokes=[
+      { k:'sintest', col:BC.SYS.digest.col,  step:0 },
+      { k:'lungL',   col:BC.SYS.breath.col,  step:1 },
+      { k:'kidneyL', col:BC.SYS.excrete.col, step:3 }
+    ];
+    spokes.forEach(function(n){
+      var o=BC.ORGAN[n.k];
+      var on=(linkRevealed || linkStep>=n.step);
+      g.appendChild(svgEl('line',{ x1:o.x, y1:o.y, x2:HUB.x, y2:HUB.y, stroke:n.col,
+        'stroke-width':(on?6:3), 'stroke-linecap':'round', opacity:(on?0.9:0.24) }));
+    });
+    /* 순환이 온몸으로 배달(step2) — 심장에서 몸통 아래로 */
+    var bodyOn=(linkRevealed || linkStep>=2);
+    g.appendChild(svgEl('line',{ x1:HUB.x, y1:HUB.y, x2:HUB.x, y2:345, stroke:BC.SYS.blood.col,
+      'stroke-width':(bodyOn?6:3), 'stroke-linecap':'round', opacity:(bodyOn?0.75:0.2) }));
+    /* 노드 (심장=허브 크게) */
+    var drawn={};
+    function node(k,col,big){
+      var o=BC.ORGAN[k]; if(drawn[o.nm]) return; drawn[o.nm]=true;
+      var r=big?24:18;
+      g.appendChild(svgEl('circle',{ cx:o.x, cy:o.y, r:r, fill:col, stroke:'#fff', 'stroke-width':3, 'class':'bs-organ', 'data-k':k }));
+      var t=svgEl('text',{ x:o.x, y:o.y+5, 'text-anchor':'middle', 'font-family':'var(--kedu-title)',
+        'font-size':12, 'font-weight':800, fill:'#fff', 'pointer-events':'none' });
+      t.textContent=o.nm.replace(/\(.*\)/,''); g.appendChild(t);
+    }
+    node('sintest', BC.SYS.digest.col, false);
+    node('lungL',   BC.SYS.breath.col, false);
+    node('kidneyL', BC.SYS.excrete.col, false);
+    node('bladder', BC.SYS.excrete.col, false);
+    node('heart',   BC.SYS.blood.col, true);              // 허브
+    /* 현재 이동 중인 물질 라벨 */
+    if(linkActive && linkStep>=0 && linkStep<BC.CROSS_STEPS.length){
+      var cs=BC.CROSS_STEPS[linkStep], hd=BC.ORGAN[cs.organ];
+      g.appendChild(svgEl('circle',{ cx:hd.x, cy:hd.y, r:29, fill:'none', stroke:'#BCA7FF', 'stroke-width':3, 'stroke-dasharray':'5 5', opacity:0.9 }));
+      var lbl=svgEl('text',{ x:180, y:502, 'text-anchor':'middle', 'font-family':'var(--kedu-title)', 'font-size':22, 'font-weight':800, fill:'#C9B8FF' });
+      lbl.textContent=cs.label+' 이동!';
+      g.appendChild(lbl);
+    }
+  }
+
+  function render(){
+    var desk=$('desk'); if(!desk)return;
+    var wrap=document.createElement('div');
+    wrap.className='bs-paper';
+    var svg=svgEl('svg',{ viewBox:'0 0 '+VBW+' '+VBH, id:'bsSvg',
+      style:'display:block;width:auto;height:auto;max-height:'+(mode==='quiz'?'34vh':'46vh')+';margin:0 auto' });
+
+    var g=svgEl('g',{});
+    bodyOutline(g);
+
+    if(linkActive||linkRevealed){
+      renderLink(g); svg.appendChild(g);
+    } else {
+      var s=BC.SYS[sys], path=s.path;
+      /* 기관계 연결선(경로) */
+      var prev=null;
+      path.forEach(function(k){
+        var o=BC.ORGAN[k];
+        if(prev) g.appendChild(svgEl('line',{ x1:prev.x, y1:prev.y, x2:o.x, y2:o.y, stroke:s.col, 'stroke-width':5, 'stroke-linecap':'round', opacity:0.5 }));
+        prev=o;
+      });
+      /* 기관(빛나는 장기) — 중복(heart2 등) 제거해 표시 */
+      var seen={};
+      path.forEach(function(k,i){
+        var o=BC.ORGAN[k], key=o.nm;
+        var isFlowHead=(i===flowIdx);
+        var passed=(flowIdx>=0 && i<flowIdx);
+        var rr=isFlowHead?22:17;
+        if(!seen[key]){
+          seen[key]=true;
+          g.appendChild(svgEl('circle',{
+            cx:o.x, cy:o.y, r:rr, fill:(sel===k?'#fff':s.col),
+            stroke:'#fff', 'stroke-width':(isFlowHead?4:3),
+            opacity:(flowIdx<0||isFlowHead||passed)?1:0.55,
+            'class':'bs-organ', 'data-k':k }));
+          var lab=svgEl('text',{ x:o.x, y:o.y+5, 'text-anchor':'middle', 'font-family':'var(--kedu-title)',
+            'font-size':12, 'font-weight':800, fill:(sel===k?s.col:'#fff'), 'pointer-events':'none' });
+          lab.textContent=o.nm.replace(/\(.*\)/,'');
+          g.appendChild(lab);
+        }
+      });
+      /* 흐르는 입자(현재 위치 강조) */
+      if(flowIdx>=0 && flowIdx<path.length){
+        var head=BC.ORGAN[path[flowIdx]];
+        g.appendChild(svgEl('circle',{ cx:head.x, cy:head.y, r:28, fill:'none', stroke:s.col, 'stroke-width':3, 'stroke-dasharray':'5 5', opacity:0.85 }));
+      }
+      svg.appendChild(g);
+    }
+    svg.querySelectorAll('.bs-organ').forEach(function(c){ c.addEventListener('click',function(){ pickOrgan(c.dataset.k); }); });
+
+    wrap.appendChild(svg);
+    var keep=[];
+    desk.querySelectorAll('.bs-flash,.bs-flash-magic,.bs-nudge').forEach(function(e){ keep.push(e); });
+    desk.innerHTML=''; desk.appendChild(wrap);
+    keep.forEach(function(e){ desk.appendChild(e); });
+
+    updateStatus();
+  }
+
+  function updateStatus(){
+    var st=$('statusRow'); if(!st)return;
+    if(linkActive){
+      st.innerHTML='<div class="hint" style="font-size:15px"><b style="font-size:17px;color:#C9B8FF">🔗 몸속은 하나로 이어져요</b>'
+        +'<br><span class="bs-hold">'+holdMsg+'</span></div>';
+      return;
+    }
+    if(linkRevealed && !linkActive){
+      st.innerHTML='<div class="hint" style="font-size:15px"><b style="font-size:17px;color:#8f6ef2">💗 소화·호흡·순환·배설이 심장(피)을 통해 하나로 이어졌어요!</b></div>';
+      return;
+    }
+    if(linkArmed){
+      st.innerHTML='<div class="hint" style="font-size:15px"><b class="bs-hold" style="font-size:17px">🫀 '+holdMsg+'</b></div>';
+      return;
+    }
+    if(mode==='quiz'){
+      st.innerHTML='<div class="hint">사람 그림 속 기관과 하는 일을 떠올리며 답을 골라요!</div>';
+      return;
+    }
+    var t=BC.statusText(sys,sel,flowIdx);
+    var col=t.tone==='good'?'#7CE0B8':(t.tone==='flow'?'#BCD4F0':t.col);
+    st.innerHTML='<div class="hint" style="font-size:15px"><b style="font-size:17px;color:'+col+'">'+t.main+'</b>'
+      +'<br><span>'+t.sub+'</span>'
+      +(holdMsg && !linkActive && !linkRevealed && !linkArmed ? '<br><span class="bs-hold">💡 '+holdMsg+'</span>' : '')
+      +'</div>';
+  }
+
+  function setGrade(g){
+    grade=g; snd('select');
+    if(G().modes.indexOf(mode)<0) mode='free';
+    mStep=0; mDone=false; mLock=false;
+    stopFlow(); clearLink();
+    sys=firstSys(); sel=''; flowIdx=-1;
+    magicShown=false; pred=null;
+    if(mode==='quiz'){ qScore=0; qCount=0; qUsed=[]; newQuiz(); }
+    build();
+  }
+  function setMode(m){
+    mode=m; snd('select');
+    mStep=0; mDone=false; mLock=false;
+    stopFlow(); clearLink();
+    sys=firstSys(); sel=''; flowIdx=-1;
+    magicShown=false; pred=null;
+    if(m==='quiz'){ qScore=0; qCount=0; qUsed=[]; newQuiz(); }
+    build();
+  }
+
+  $('sndBtn').addEventListener('click',function(){
+    K3.sound.setOn(!K3.sound.on);
+    this.textContent=K3.sound.on?'🔊':'🔇';
+    this.classList.toggle('off',!K3.sound.on);
+    if(K3.sound.on)snd('select');
+  });
+
+  if(mode==='quiz')newQuiz();
+  build();
+
+  window.BodysysApp={
+    get grade(){return grade;}, get mode(){return mode;},
+    get sys(){return sys;}, get sel(){return sel;}, get flowIdx(){return flowIdx;},
+    get mStep(){return mStep;}, get mDone(){return mDone;},
+    get qIdx(){return qIdx;}, get quiz(){return BC.QUIZ[qIdx];},
+    get qScore(){return qScore;}, get qCount(){return qCount;},
+    get magicShown(){return magicShown;}, get pred(){return pred;},
+    get linkArmed(){return linkArmed;}, get linkRevealed(){return linkRevealed;},
+    get linkActive(){return linkActive;}, get linkStep(){return linkStep;},
+    get rand(){return rand;}, set rand(fn){rand=fn;},
+    setGrade:setGrade, setMode:setMode, setSys:setSys,
+    pickOrgan:pickOrgan, tickFlow:tickFlow, reset:doReset,
+    wowArm:wowArm, wowReveal:wowReveal, answer:answer, build:build
+  };
+})();
+</script>
+</body>
+</html>
