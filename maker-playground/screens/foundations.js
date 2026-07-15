@@ -89,61 +89,45 @@ window.MK_SCREENS.foundations = (() => {
     PG.render();
   }
 
-  /* ================= Live Preview 6탭 ================= */
+  /* ================= Live Preview 6탭 — 실제 화면 축소 투영 ================= */
+  /* frame(): 실화면 렌더러 출력을 원본 폭 그대로 그린 뒤 scale로 패널에 맞춤 (검수용, 조작 불가) */
+  const frame = (html, w, h, cap) =>
+    `<div class="fd-frame"><div class="fd-frame-in" data-fw="${w}" ${h ? `data-fh="${h}"` : ''} style="width:${w}px;${h ? `height:${h}px;` : ''}">${html}</div></div>
+     <div class="fd-frame-cap"><span>${cap}</span><span>실화면 축소 · 검수용</span></div>`;
+
+  function fitFrames() {
+    document.querySelectorAll('.fd-frame').forEach((f) => {
+      const inner = f.querySelector('.fd-frame-in');
+      if (!inner || !f.clientWidth) return;
+      const w = +inner.dataset.fw, sc = f.clientWidth / w;
+      inner.style.transform = `scale(${sc})`;
+      const ih = inner.dataset.fh ? +inner.dataset.fh : inner.offsetHeight;
+      if (ih) f.style.height = Math.ceil(ih * sc) + 'px';
+    });
+  }
+  if (!window.__fdResize) { window.__fdResize = true; window.addEventListener('resize', () => { if (PG.state.screen === 'foundations') fitFrames(); }); }
+
   const PV = {
-    Home() {
-      const T = window.MK_SAMPLE.TYPES.slice(0, 6);
-      return `<div style="text-align:center;padding:var(--mk-sp-6) 0 var(--mk-sp-5)">
-          <div style="font:var(--mk-t-display)">오늘 무엇을 만들어 볼까요?</div>
-          <div style="font:var(--mk-t-body);color:var(--mk-text-secondary);margin-top:6px">만들 것을 고르면 템플릿과 AI가 도와요</div></div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--mk-sp-3)">
-          ${T.map((t) => `<div class="home-type"><span class="ico" style="font-size:22px">${t.ico}</span><b>${t.name}</b><small>${t.desc}</small></div>`).join('')}</div>`;
-    },
+    Home()     { return frame(window.MK_SCREENS.home.render('A'), 1160, null, 'Home · variant A (실제 렌더러)'); },
     Hero() {
       return `<div style="background:var(--mk-surface);border:1px solid var(--mk-border);border-radius:var(--mk-r-large);padding:var(--mk-sp-8) var(--mk-sp-6);text-align:center;box-shadow:var(--mk-sh-subtle)">
           <span style="display:inline-block;font:var(--mk-t-caption);color:var(--mk-teal);background:var(--mk-teal-soft);border-radius:var(--mk-r-pill);padding:5px 12px;margin-bottom:var(--mk-sp-4)">K-MAKER</span>
           <div style="font:var(--mk-t-display)">만들기가 쉬워지는<br>우리 반 디자인 도구</div>
           <div style="font:var(--mk-t-body);color:var(--mk-text-secondary);margin:var(--mk-sp-4) 0 var(--mk-sp-6)">발표자료부터 영상까지, 템플릿을 고르고 글자만 바꾸세요.</div>
           <div style="display:flex;gap:10px;justify-content:center">${MK.Button({ label: '시작하기', kind: 'accent' })}${MK.Button({ label: '둘러보기', kind: 'secondary' })}</div></div>
-        <div style="display:flex;gap:8px;margin-top:var(--mk-sp-4);justify-content:center">${MK.Chip({ label: '행사', on: true })}${MK.Chip({ label: '알림' })}${MK.Chip({ label: '수업' })}</div>`;
+        <div class="fd-frame-cap"><span>Hero 컴포넌트 (실물 크기)</span></div>`;
     },
     Card() {
-      return `<div class="mk-card" style="margin-bottom:var(--mk-sp-4)"><b style="font:var(--mk-t-h2)">기본 카드</b>
-          <p style="font:var(--mk-t-body);color:var(--mk-text-secondary);margin-top:8px">서피스·테두리·반경·그림자 토큰이 적용된 카드입니다.</p>
-          <div style="margin-top:var(--mk-sp-4);display:flex;gap:8px">${MK.Button({ label: '확인', size: 'sm' })}${MK.Button({ label: '취소', kind: 'ghost', size: 'sm' })}</div></div>
-        <div class="mk-card" style="background:var(--mk-cream);margin-bottom:var(--mk-sp-4)"><b style="font:var(--mk-t-h3)">크림 카드</b>
-          <p style="font:var(--mk-t-body-sm);color:var(--mk-text-secondary);margin-top:6px">강조 배경 변형.</p></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--mk-sp-3)">
-          <div class="mk-card"><div style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">캡션</div><div style="font:var(--mk-t-h1)">128</div><div style="font:var(--mk-t-body-sm);color:var(--mk-success)">▲ 12%</div></div>
-          <div class="mk-card"><div style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">경고</div><div style="font:var(--mk-t-h1);color:var(--mk-danger)">3</div><div style="font:var(--mk-t-body-sm);color:var(--mk-text-secondary)">확인 필요</div></div></div>`;
-    },
-    Template() {
       const S = window.MK_SAMPLE;
-      return `<div style="display:flex;gap:8px;margin-bottom:var(--mk-sp-4)">${MK.Chip({ label: '전체', on: true })}${MK.Chip({ label: '발표자료' })}${MK.Chip({ label: '영상' })}</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--mk-sp-3)">${MK.TemplateCard(S.TEMPLATES[0])}${MK.TemplateCard(S.TEMPLATES[2])}</div>
-        <div style="display:flex;gap:10px;margin-top:var(--mk-sp-4)">${MK.SceneCard(S.TEMPLATES[0].scenes[0], 0, true)}${MK.SceneCard(S.TEMPLATES[0].scenes[1], 1, false)}</div>`;
+      return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--mk-sp-3);margin-bottom:var(--mk-sp-4)">${MK.TemplateCard(S.TEMPLATES[0])}${MK.TemplateCard(S.TEMPLATES[2])}</div>
+        <div class="mk-card"><b style="font:var(--mk-t-h2)">기본 카드</b>
+          <p style="font:var(--mk-t-body);color:var(--mk-text-secondary);margin-top:8px">서피스·테두리·반경·그림자 토큰 적용.</p>
+          <div style="margin-top:var(--mk-sp-4);display:flex;gap:8px">${MK.Button({ label: '확인', size: 'sm' })}${MK.Button({ label: '취소', kind: 'ghost', size: 'sm' })}${MK.Badge({ label: '샘플', tone: 'teal' })}</div></div>
+        <div class="fd-frame-cap"><span>Template Card · 기본 카드 (실물 크기)</span></div>`;
     },
-    Editor() {
-      return `<div style="border:1px solid var(--mk-border);border-radius:var(--mk-r-medium);overflow:hidden;box-shadow:var(--mk-sh-subtle)">
-        <div style="display:flex;align-items:center;gap:8px;background:var(--mk-surface);border-bottom:1px solid var(--mk-border);padding:8px 12px">
-          ${MK.IconButton({ icon: '←' })}<b style="font:var(--mk-t-h3)">문서 제목</b><span style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">저장됨</span>
-          <span style="flex:1"></span>${MK.Tabs({ items: ['Design', 'Video'], on: 'Design' })}${MK.Button({ label: '내보내기', kind: 'accent', size: 'sm' })}</div>
-        <div style="display:grid;grid-template-columns:44px 1fr 96px;background:var(--mk-surface-muted)">
-          <div style="background:var(--mk-surface);border-right:1px solid var(--mk-border);display:flex;flex-direction:column;align-items:center;padding:8px 0;gap:4px">
-            ${['가', '⬡', '🖼'].map((i, x) => `<span class="mk-iconbtn ${x === 0 ? 'on' : ''}" style="width:30px;height:30px">${i}</span>`).join('')}</div>
-          <div style="display:flex;align-items:center;justify-content:center;padding:var(--mk-sp-5)">
-            <div style="width:82%;aspect-ratio:16/9;background:#fff;box-shadow:var(--mk-sh-floating);padding:10%">
-              <div style="font:var(--mk-t-h1)">슬라이드 제목</div><div style="font:var(--mk-t-body-sm);color:var(--mk-text-secondary);margin-top:6px">본문 내용</div></div></div>
-          <div style="background:var(--mk-surface);border-left:1px solid var(--mk-border);padding:10px"><div style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">속성</div>
-            <div style="height:8px;background:var(--mk-surface-muted);border-radius:4px;margin:8px 0"></div>
-            <div style="height:8px;background:var(--mk-surface-muted);border-radius:4px;width:70%"></div></div></div></div>`;
-    },
-    Video() {
-      const sc = window.MK_SAMPLE.TEMPLATES[2].scenes;
-      return `<div class="ed-playbar" style="margin-bottom:var(--mk-sp-3)">${MK.IconButton({ icon: '▶', on: true })}<div class="track"><i></i></div><span style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">0:03 / 0:15</span></div>
-        <div class="ed-timeline">${sc.map((s, i) => `<div class="ed-tl-block ${i === 0 ? 'on' : ''}" style="width:${Math.max(64, s.duration * 26)}px"><b>${i + 1}. ${MK.esc(s.name)}</b><span class="dur">⏱ ${s.duration}초</span></div>${i < sc.length - 1 ? '<span class="ed-tl-trans">⇄</span>' : ''}`).join('')}</div>
-        <div style="display:flex;gap:8px;margin-top:var(--mk-sp-4)">${MK.Button({ label: '배경음악', kind: 'secondary', size: 'sm' })}${MK.Button({ label: '전환 효과', kind: 'secondary', size: 'sm' })}${MK.Button({ label: 'MP4 내보내기', kind: 'accent', size: 'sm' })}</div>`;
-    },
+    Template() { return frame(window.MK_SCREENS.templates.render('A'), 1160, null, 'Templates · variant A (실제 렌더러)'); },
+    Editor()   { return frame(window.MK_SCREENS.editor.render('Design'), 1240, 660, 'Editor · Design 모드 (실제 렌더러)'); },
+    Video()    { return frame(window.MK_SCREENS.editor.render('Video'), 1240, 660, 'Editor · Video 모드 (실제 렌더러)'); },
   };
   const PV_TABS = Object.keys(PV);
 
@@ -199,6 +183,7 @@ window.MK_SCREENS.foundations = (() => {
       rootEl.querySelector('.fd-preview').innerHTML = preview();
       bindPreviewTabs(rootEl);
       refreshMeta();
+      fitFrames();
     });
   }
 
@@ -214,7 +199,7 @@ window.MK_SCREENS.foundations = (() => {
         <div class="fd-layout"><div class="fd-controls">${controls()}</div><div class="fd-preview">${preview()}</div></div>`;
     },
     mount(rootEl) {
-      applyKnobs(); refreshMeta();
+      applyKnobs(); refreshMeta(); requestAnimationFrame(fitFrames);
       rootEl.querySelector('[data-fd="copy"]').onclick = copyCSS;
       rootEl.querySelector('[data-fd="reset"]').onclick = resetAll;
       bindPreviewTabs(rootEl);

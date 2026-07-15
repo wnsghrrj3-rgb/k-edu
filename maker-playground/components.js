@@ -13,6 +13,9 @@ window.MK = (() => {
   const IconButton = ({ icon, tip = '', on = false, attrs = '' }) =>
     `<button class="mk-iconbtn ${on ? 'on' : ''} ${tip ? 'mk-tooltip' : ''}" ${tip ? `data-tip="${esc(tip)}"` : ''} ${attrs}>${icon}</button>`;
 
+  /* MakerBadge */
+  const Badge = ({ label, tone = '' }) => `<span class="mk-badge ${tone}">${esc(label)}</span>`;
+
   /* MakerChip */
   const Chip = ({ label, on = false, attrs = '' }) =>
     `<button class="mk-chip ${on ? 'on' : ''}" ${attrs}>${esc(label)}</button>`;
@@ -74,5 +77,5 @@ window.MK = (() => {
     close() { document.getElementById('mkModal')?.remove(); },
   };
 
-  return { esc, Button, IconButton, Chip, Tabs, sceneThumb, TemplateCard, SceneCard, Modal };
+  return { esc, Button, IconButton, Badge, Chip, Tabs, sceneThumb, TemplateCard, SceneCard, Modal };
 })();

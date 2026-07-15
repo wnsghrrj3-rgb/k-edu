@@ -3,10 +3,13 @@
    ============================================================ */
 window.PG = (() => {
   const NAV = [
-    ['foundations', '🎛', 'Foundations'], ['components', '🧩', 'Components'], ['patterns', '🧬', 'Patterns'],
-    ['screens', '🗺', 'Screens'], ['home', '🏠', 'Home'],
-    ['templates', '🗂', 'Templates'], ['editor', '✏️', 'Editor'], ['video', '🎬', 'Video'],
-    ['photo', '🖼', 'Photo'], ['ai', '✨', 'AI'], ['export', '⤴', 'Export'],
+    ['foundations', '🎨', 'Foundations'], ['components', '🧩', 'Components'],
+    ['patterns', '📐', 'Patterns'], ['screens', '🖥', 'Screens'],
+    ['--div'], 
+    ['home', '🏠', 'Home'], ['templates', '📂', 'Templates'], ['editor', '✏️', 'Editor'],
+    ['video', '🎬', 'Video'], ['photo', '🖼', 'Photo'], ['ai', '🤖', 'AI'],
+    ['--div'],
+    ['export', '📤', 'Export'],
   ];
 
   const state = {
@@ -39,6 +42,7 @@ window.PG = (() => {
     const scr = window.MK_SCREENS[state.screen];
     /* 내비 */
     document.getElementById('pgNav').innerHTML = NAV.map(([k, ico, n]) =>
+      k === '--div' ? `<div class="pg-nav-div"></div>` :
       `<button class="pg-nav-item ${state.screen === k ? 'on' : ''}" data-nav="${k}"><span class="ico">${ico}</span><span class="txt">${n}</span></button>`).join('');
     document.querySelectorAll('[data-nav]').forEach((b) => b.onclick = () => go(b.dataset.nav));
     /* 헤더 + variant 전환 */
