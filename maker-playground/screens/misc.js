@@ -3,38 +3,6 @@
    ============================================================ */
 window.MK_SCREENS = window.MK_SCREENS || {};
 
-/* ---------- Foundations: 토큰 시각화 ---------- */
-window.MK_SCREENS.foundations = {
-  title: 'Foundations', variants: ['A'],
-  render() {
-    const colors = [
-      ['background', '--mk-background'], ['surface', '--mk-surface'], ['surfaceMuted', '--mk-surface-muted'],
-      ['textPrimary', '--mk-text-primary'], ['textSecondary', '--mk-text-secondary'], ['border', '--mk-border'],
-      ['coral', '--mk-coral'], ['coralSoft', '--mk-coral-soft'], ['teal', '--mk-teal'], ['tealSoft', '--mk-teal-soft'],
-      ['cream', '--mk-cream'], ['danger', '--mk-danger'], ['success', '--mk-success'],
-    ];
-    const css = getComputedStyle(document.documentElement);
-    const sw = colors.map(([n, v]) =>
-      `<div class="swatch"><div class="chip" style="background:var(${v})"></div><span class="lab">${n}</span><span class="val">${css.getPropertyValue(v).trim()}</span></div>`).join('');
-    const sps = [1,2,3,4,5,6,7,8,9,10].map((i) =>
-      `<div class="swatch"><div class="sp-bar" style="width:var(--mk-sp-${i})"></div><span class="val">--mk-sp-${i} · ${css.getPropertyValue('--mk-sp-'+i).trim()}</span></div>`).join('');
-    const radii = ['small','medium','large','pill'].map((r) =>
-      `<div style="width:64px;height:44px;background:var(--mk-teal-soft);border:1.5px solid var(--mk-teal);border-radius:var(--mk-r-${r})" class="mk-tooltip" data-tip="--mk-r-${r}"></div>`).join('');
-    const shadows = ['subtle','floating','modal'].map((s) =>
-      `<div style="width:100px;height:64px;background:var(--mk-surface);border-radius:var(--mk-r-medium);box-shadow:var(--mk-sh-${s});display:flex;align-items:center;justify-content:center" ><small style="color:var(--mk-text-secondary)">${s}</small></div>`).join('');
-    const typo = [['display','디스플레이 30'],['h1','제목1 22'],['h2','제목2 17'],['h3','제목3 14.5'],['body','본문 14.5'],['body-sm','본문 작게 13'],['caption','캡션 11.5'],['button','버튼 13.5']]
-      .map(([k, n]) => `<div class="type-item"><div style="font:var(--mk-t-${k})">가나다라 ABC 123 — 만들기를 시작해요</div><small>--mk-t-${k} · ${n}</small></div>`).join('');
-    return `<span class="pg-note">⚠ 임시 중립 토큰 — ChatGPT 시안 도착 시 tokens.css 값만 교체</span>
-      <div class="spec-grid">
-        <div class="spec"><div class="spec-name">색상 <code>tokens.css</code></div>${sw}</div>
-        <div class="spec"><div class="spec-name">간격</div>${sps}</div>
-        <div class="spec"><div class="spec-name">반경</div><div class="spec-row">${radii}</div>
-          <div class="spec-name" style="margin-top:var(--mk-sp-5)">그림자</div><div class="spec-row">${shadows}</div></div>
-        <div class="spec"><div class="spec-name">타이포그래피</div>${typo}</div>
-      </div>`;
-  },
-};
-
 /* ---------- Components: 컴포넌트 갤러리 ---------- */
 window.MK_SCREENS.components = {
   title: 'Components', variants: ['A'],
