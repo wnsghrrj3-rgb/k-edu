@@ -41,13 +41,20 @@
     var vol, qk;
     function volReset(){ vol={ press:0, erupting:false, style:'', t:0, seen:{lava:false,ash:false,gas:false}, made:{basalt:false,granite:false} }; }
     function qkReset(){ qk={ stress:0, broken:false, pushes:0, t:0 }; }
-    function resetAll(){ exp='volcano'; volReset(); qkReset(); }
+    function resetAll(){ exp='volcano'; volReset(); qkReset(); benefitArmed=false; }
     resetAll();
     var v3d=null; // 3D 화산 무대 컨트롤러
     var cutView=false; // 단면 보기 토글
     /* ── v2 1층 변수 — 점성(묽음~끈적)·지진 힘 세기(약~강). 기본값 = 기존 라이브와 동일 거동 ── */
     var visc=0.5, qforce=0.5, sealed=false;
     function v2reset(){ visc=0.5; qforce=0.5; sealed=false; }
+
+    /* ── 와우(예측 빗나감형) — 화산 이로움: "화산은 해롭기만 할까?" 오개념 반증 ──
+       ★라이브 volcano는 분출·피해·대처(퀴즈5)만 가르치고, 4-2 성취기준의 *이로움*
+       (비옥한 땅·온천·지열)은 아예 없음 → 그 묻힌 쪽을 예측→확인 2단으로 전면화.
+       씬(3D/SVG)은 손대지 않고 stage-host 위 배너·오버레이만 얹음(헌법 6장). */
+    function snd(n){ if(window.KLab&&window.KLab.sound) window.KLab.sound.play(n); }
+    var benefitArmed=false;
     function thrOf(){ return sealed?160:Math.round(60+visc*80); }      // 한계 압력: 묽음60·중간100·끈적140·밀봉160
     function styleOf(){ return sealed?'mega':(visc>=0.7?'boom':(visc<0.35?'quiet':'normal')); }
     function pushInc(){ return 8+Math.round(qforce*24); }              // 한 번에 쌓이는 힘: 약+8·중+20(기존)·강+32
@@ -125,9 +132,9 @@
         check:function(){ return exp==='quake' && qk.broken; } }
     ];
     var GRADES={
-      low:  { modes:['free','mission'],                  missions:LOW_MISSIONS, exps:['volcano'],         cool:'none',   cut:false, ejecta:false, wif:[],                               v2:false },
-      mid:  { modes:['free','mission','quiz','whatif'],  missions:MID_MISSIONS, exps:['volcano','quake'], cool:'basalt', cut:false, ejecta:true,  wif:['slowforce'],                    v2:false },
-      high: { modes:['free','mission','quiz','whatif'],  missions:MISSIONS,     exps:['volcano','quake'], cool:'all',    cut:true,  ejecta:true,  wif:['sticky','gasblock','slowforce'], v2:true }
+      low:  { modes:['free','mission'],                  missions:LOW_MISSIONS, exps:['volcano'],         cool:'none',   cut:false, ejecta:false, wif:[],                               v2:false, showWow:false },
+      mid:  { modes:['free','mission','quiz','whatif'],  missions:MID_MISSIONS, exps:['volcano','quake'], cool:'basalt', cut:false, ejecta:true,  wif:['slowforce'],                    v2:false, showWow:false },
+      high: { modes:['free','mission','quiz','whatif'],  missions:MISSIONS,     exps:['volcano','quake'], cool:'all',    cut:true,  ejecta:true,  wif:['sticky','gasblock','slowforce'], v2:true,  showWow:true }
     };
     var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
     function G(){ return GRADES[grade]; }
@@ -292,6 +299,63 @@
           +'<span style="'+sl+'">💪 강</span>'
           +'<span class="vc-qflab" style="font-size:15px;font-weight:800;color:'+C.vio+';min-width:128px;font-family:inherit;">'+qfName()+'</span></div>';
     }
+    /* ── 와우 버튼 행 (고학년·자유탐구·화산 전용) ── */
+    function benefitRow(){
+      if(mode!=='free' || !G().showWow || exp!=='volcano') return '';
+      return '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">'
+        +'<button class="vc-wow" data-wow="arm" style="'+btn+'background:#fff;color:'+C.hot+';border-color:'+C.hot+';">🔮 화산이 터지면 나쁜 일만?</button>'
+        +'<button class="vc-wow" data-wow="reveal" style="'+btn+'background:#fff;color:'+C.good+';border-color:'+C.good+';">🌱 몇 해 뒤 가 보기</button>'
+        +'</div>';
+    }
+
+    /* ── 와우 배너 머신 (stage-host 위 오버레이 · 씬 무손상) ── */
+    function host(){ return el.querySelector('.kl-stage-host'); }
+    function clearVcFlash(){ var h=host(); if(!h)return;
+      ['.vc-flash','.vc-flash-magic','.vc-nudge'].forEach(function(sel){ var n=h.querySelector(sel); if(n&&n.parentNode)n.parentNode.removeChild(n); }); }
+    function vcFlash(cls,html,ms){ var h=host(); if(!h)return; clearVcFlash();
+      var bg=cls==='vc-flash-magic'?'#F3F0FF':(cls==='vc-nudge'?'#FFF4E6':'#E7F5FF');
+      var bd=cls==='vc-flash-magic'?C.vio:(cls==='vc-nudge'?'#FF8A3D':'#1565C0');
+      var fg=cls==='vc-flash-magic'?'#5f3dc4':(cls==='vc-nudge'?'#E8590C':'#1565C0');
+      var d=window.document.createElement('div'); d.className=cls;
+      d.setAttribute('style','position:absolute;left:12px;right:12px;bottom:12px;z-index:6;background:'+bg+';border:3px solid '+bd+';color:'+fg
+        +';border-radius:16px;padding:13px 15px;font-weight:800;font-size:17px;line-height:1.4;font-family:inherit;box-shadow:0 8px 22px rgba(8,12,26,0.18);');
+      d.innerHTML=html; h.appendChild(d);
+      if(ms)setTimeout(function(){ if(d&&d.parentNode)d.parentNode.removeChild(d); },ms);
+    }
+    /* ── 이로움 씬 SVG(배너 안에 삽입) — phase 'ash'(재로 덮인 마을) / 'rich'(기름진 땅·온천·지열) ── */
+    function benefitSceneSVG(phase){
+      var rich=(phase==='rich');
+      var sky=rich?'#DFF3E6':'#C9CDD2', ground=rich?'#8CE0A6':'#B0B4B8', cone=rich?'#7A5A44':'#7A7E82';
+      var s='<svg viewBox="0 0 300 118" width="100%" height="112" style="display:block;margin:8px auto 2px;border-radius:12px;background:'+sky+';" xmlns="http://www.w3.org/2000/svg">';
+      s+='<rect x="0" y="82" width="300" height="36" fill="'+ground+'"/>';              // 땅
+      s+='<path d="M120 82 L150 30 L180 82 Z" fill="'+cone+'"/>';                        // 화산
+      s+='<circle cx="150" cy="34" r="5" fill="'+(rich?'#FF922B':'#495057')+'"/>';      // 분화구
+      if(rich){
+        s+='<text x="34" y="76" font-size="20">🌾</text><text x="60" y="78" font-size="18">🌱</text><text x="88" y="76" font-size="20">🌾</text>';
+        s+='<text x="212" y="72" font-size="22">♨️</text><text x="206" y="52" font-size="14" fill="#adb5bd">～</text>'; // 온천 김
+        s+='<text x="246" y="76" font-size="22">⚡</text>';                              // 지열
+        s+='<text x="150" y="112" font-size="13" font-weight="800" fill="#1a7a44" text-anchor="middle">몇 해 뒤 — 기름진 땅</text>';
+      } else {
+        s+='<text x="40" y="78" font-size="18">🏚️</text><text x="66" y="78" font-size="18">🏚️</text>';
+        s+='<text x="210" y="76" font-size="20">🌫️</text><text x="238" y="76" font-size="18">🌫️</text>'; // 재
+        s+='<text x="150" y="112" font-size="13" font-weight="800" fill="#495057" text-anchor="middle">재로 덮인 마을</text>';
+      }
+      return s+'</svg>';
+    }
+    function wowArm(){
+      benefitArmed=true; exp='volcano'; snd('charge');
+      vcFlash('vc-flash', benefitSceneSVG('ash')
+        +'🌋 화산이 터져 마을이 잿빛 재로 뒤덮였어요. 몇 해가 지나면 — 이 땅엔 <b>나쁜 일만</b> 남을까요, <b>좋은 일도</b> 생길까요? 예상해 봐요!', 4600);
+      renderStatus();
+    }
+    function wowReveal(){
+      if(!benefitArmed){ snd('select'); vcFlash('vc-nudge','먼저 🔮 버튼으로 <b>예상부터</b> 해 봐요.',2600); return; }
+      snd('whoosh'); snd('success');
+      vcFlash('vc-flash-magic', benefitSceneSVG('rich')
+        +'🌱 몇 해가 지나자 잿빛 땅이 <b>기름진 밭</b>으로! 화산재에는 식물이 잘 자라는 양분이 많아 농사가 잘 되고, 땅속 열은 <b>♨️ 온천</b>과 <b>⚡ 지열 발전</b>까지 줘요. 화산은 무섭지만 <b>이로움도</b> 준답니다.', 7200);
+    }
+    function clearBenefit(){ if(!benefitArmed)return; benefitArmed=false; clearVcFlash(); renderStatus(); }
+
     function ctrlRow(){
       var wifOn=(mode==='whatif');
       if(exp==='volcano'){
@@ -319,7 +383,7 @@
       if(mode==='mission'){ bar=mDone?ui.doneBar():ui.missionBar(M[mStep].text,mStep,M.length); body=ctrlRow(); }
       else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); foot=ui.choices(quizChoices()); }
       else if(mode==='whatif'){ bar=wif.barHTML(); body=(wif.active()?ctrlRow():''); }
-      else body=expTabs()+v2Row()+ctrlRow();
+      else body=expTabs()+v2Row()+benefitRow()+ctrlRow();
       /* ── v2 3층 — 만약에 정리 화면 도달 시 칩 1개 자동 기록 ── */
       if(mode==='whatif'&&wif.state.key){
         if(wif.state.phase==='reveal'&&!chipDone){
@@ -329,7 +393,7 @@
           chipToast(); if(window.KLab.sound)window.KLab.sound.play(wif.state.choice===cw.a?'success':'pop');
         } else if(wif.state.phase!=='reveal'){ chipDone=false; }
       }
-      el.innerHTML='<style>.vc-btn:active,.vc-exp:active,.kl-choice:active{transform:translateY(2px);}.kl-choice{min-width:auto !important;padding:14px 20px !important;}@keyframes vcShake{0%,100%{transform:translate(0,0);}20%{transform:translate(-7px,3px);}40%{transform:translate(6px,-3px);}60%{transform:translate(-5px,2px);}80%{transform:translate(4px,-2px);}}</style>'
+      el.innerHTML='<style>.vc-btn:active,.vc-exp:active,.kl-choice:active{transform:translateY(2px);}.kl-choice{min-width:auto !important;padding:14px 20px !important;}@keyframes vcShake{0%,100%{transform:translate(0,0);}20%{transform:translate(-7px,3px);}40%{transform:translate(6px,-3px);}60%{transform:translate(-5px,2px);}80%{transform:translate(4px,-2px);}}.vc-wow:active{transform:translateY(2px);}@keyframes vcHold{0%,100%{opacity:1;}50%{opacity:0.45;}}.vc-hold{animation:vcHold 1.1s ease-in-out infinite;}</style>'
         + top + bar + body
         +'<div class="kl-stage-host" style="position:relative;"><div class="vc-stage" style="width:100%;height:'+(mode==='quiz'?'34vh':'44vh')+';min-height:'+(mode==='quiz'?'240':'320')+'px;background:radial-gradient(120% 120% at 50% 20%,#FCFEFF 0%,#EAF3FB 75%,#DCEAF6 100%);border-radius:26px;overflow:hidden;box-shadow:inset 0 0 0 3px rgba(21,101,192,0.10);"></div>'
           +(mode==='quiz'?'':'<div class="vc-texlab" style="position:absolute;top:12px;right:14px;font-size:12px;font-weight:800;color:#9fb6e6;background:rgba(8,12,26,0.55);padding:4px 9px;border-radius:9px;pointer-events:none;z-index:3;font-family:inherit;"></div>')
@@ -902,7 +966,7 @@
         if(qk.broken) msg='<span style="color:'+C.hot+';font-size:19px;">'+(qforce<=0.3?'약한 힘도 쌓이면 결국 우지끈! 힘의 크기가 아니라 쌓인 양이 지진을 정해요':'땅이 큰 힘을 오래 받으면 끊어지면서 지진이 나요')+'</span>';
         else msg='<span style="color:'+C.sub+';font-size:19px;">➡️ 양쪽에서 미는 힘을 계속 가해 봐요 (쌓인 힘 '+qk.stress+'%'+(mode==='free'&&G().v2?' · '+qk.pushes+'번':'')+')</span>';
       }
-      s.innerHTML=msg;
+      s.innerHTML=msg+((mode==='free'&&benefitArmed)?'<div class="vc-hold" style="font-size:18px;color:'+C.vio+';margin-top:8px;font-weight:800;">화산은 무섭기만 할까요? 재가 쌓인 땅은 나중에 어떻게 될까요? 🌱</div>':'');
       /* ── v2 검증 관측점 — jsdom에서 물리 상태를 단언할 수 있게 dataset 기록 ── */
       var stg=el.querySelector('.vc-stage');
       if(stg){
@@ -916,10 +980,14 @@
     /* ───────────── 바인딩 ───────────── */
     function bind(){
       el.querySelectorAll('.vc-exp').forEach(function(b){
-        b.addEventListener('click',function(){ exp=b.dataset.e; build(); });
+        b.addEventListener('click',function(){ clearBenefit(); exp=b.dataset.e; build(); });
+      });
+      el.querySelectorAll('.vc-wow').forEach(function(b){
+        b.addEventListener('click',function(){ if(b.dataset.wow==='arm')wowArm(); else wowReveal(); });
       });
       el.querySelectorAll('.vc-btn').forEach(function(b){
         b.addEventListener('click',function(){
+          clearBenefit();
           var a=b.dataset.act;
           if(a==='pump')pump();
           else if(a==='basalt')cool('basalt');
@@ -932,7 +1000,7 @@
       });
       el.addEventListener('click',function(ev){
         var c=ev.target.closest?ev.target.closest('.vc-chip'):null;
-        if(c)seeEjecta(c.dataset.k);
+        if(c){ clearBenefit(); seeEjecta(c.dataset.k); }
       });
       el.querySelectorAll('.kl-choice').forEach(function(b){
         b.addEventListener('click',function(){
@@ -948,12 +1016,12 @@
     /* ── v2 변수 행 바인딩 (1층) — 첫 조작 = 🔮 예측 무장 ── */
     function bindV2(){
       var vs=el.querySelector('.vc-visc'); if(vs)vs.addEventListener('input',function(){
-        visc=+vs.value; predArm('visc');
+        clearBenefit(); visc=+vs.value; predArm('visc');
         var lb=el.querySelector('.vc-visclab'); if(lb)lb.textContent=viscName();
         renderStatus();
       });
       var qs=el.querySelector('.vc-qf'); if(qs)qs.addEventListener('input',function(){
-        qforce=+qs.value; predArm('qf');
+        clearBenefit(); qforce=+qs.value; predArm('qf');
         var lb=el.querySelector('.vc-qflab'); if(lb)lb.textContent=qfName();
         renderStatus();
       });
