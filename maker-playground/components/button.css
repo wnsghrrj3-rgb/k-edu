@@ -1,0 +1,99 @@
+/* ============================================================
+   K-MAKER Button  (components/button.css)
+   ------------------------------------------------------------
+   Button의 단일 소유 파일 — 규격·색·모션 전부 --mkb-* 토큰.
+   ChatGPT 시안 확정 시 이 파일의 :root 토큰 값만 교체하면
+   서비스 전 화면의 버튼이 갈아입는다. 구조 셀렉터는 불변.
+   상태 우선순위: disabled/loading > pressed > hover.
+   .is-hover/.is-pressed/.is-focus = 갤러리 매트릭스용 상태 고정 클래스
+   (실 인터랙션 :hover/:active/:focus-visible 과 동일 선언 공유).
+   ============================================================ */
+:root {
+  /* ---- 규격 ---- */
+  --mkb-h-sm: 32px;  --mkb-h-md: 38px;  --mkb-h-lg: 46px;          /* Height */
+  --mkb-pad-sm: 0 12px; --mkb-pad-md: 0 16px; --mkb-pad-lg: 0 22px; /* Padding */
+  --mkb-fs-sm: 12.5px; --mkb-fs-md: 13.5px; --mkb-fs-lg: 14.5px;   /* Font Size */
+  --mkb-weight: 600;                                               /* Weight */
+  --mkb-radius: var(--mk-r-small);                                 /* Radius (전역 토큰 상속) */
+  --mkb-icon-sm: 13px; --mkb-icon-md: 15px; --mkb-icon-lg: 17px;   /* Icon Size */
+  --mkb-border-w: 1.5px;                                           /* Border */
+  --mkb-shadow: none;                                              /* Shadow */
+  --mkb-gap: 7px;
+
+  /* ---- 모션 ---- */
+  --mkb-transition: background-color .15s ease, color .15s ease, border-color .15s ease,
+                    opacity .15s ease, transform .1s ease, box-shadow .15s ease;
+  --mkb-hover-lift: 0px;        /* Hover Animation: 상승량 (시안에서 1~2px 가능) */
+  --mkb-pressed-scale: .98;
+  --mkb-focus-ring: 0 0 0 3px var(--mk-teal-soft);
+
+  /* ---- Variant 색 ---- */
+  --mkb-primary-bg: var(--mk-text-primary); --mkb-primary-fg: #FFFFFF; --mkb-primary-hover: #2C3646;
+  --mkb-secondary-bg: var(--mk-surface); --mkb-secondary-fg: var(--mk-text-primary); --mkb-secondary-border: var(--mk-border); --mkb-secondary-hover: var(--mk-surface-muted);
+  --mkb-outline-fg: var(--mk-text-primary); --mkb-outline-border: var(--mk-text-primary); --mkb-outline-hover: rgba(31, 39, 51, .06);
+  --mkb-ghost-fg: var(--mk-text-secondary); --mkb-ghost-hover: var(--mk-surface-muted);
+  --mkb-danger-bg: var(--mk-danger); --mkb-danger-hover: #C23D33;
+  --mkb-success-bg: var(--mk-success); --mkb-success-hover: #28904F;
+  --mkb-accent-bg: var(--mk-coral); --mkb-accent-hover: #D9603F;   /* 기존 화면 호환 */
+}
+
+/* ---- 골격 (Medium 기본) ---- */
+.mk-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--mkb-gap);
+  height: var(--mkb-h-md); padding: var(--mkb-pad-md);
+  font-family: var(--mk-font); font-size: var(--mkb-fs-md); font-weight: var(--mkb-weight); line-height: 1;
+  border-radius: var(--mkb-radius); border: var(--mkb-border-w) solid transparent;
+  box-shadow: var(--mkb-shadow); transition: var(--mkb-transition);
+  cursor: pointer; user-select: none; white-space: nowrap;
+  background: var(--mkb-primary-bg); color: var(--mkb-primary-fg);
+}
+.mk-btn .ic { font-size: var(--mkb-icon-md); line-height: 1; }
+
+/* ---- Sizes ---- */
+.mk-btn.sm { height: var(--mkb-h-sm); padding: var(--mkb-pad-sm); font-size: var(--mkb-fs-sm); }
+.mk-btn.sm .ic { font-size: var(--mkb-icon-sm); }
+.mk-btn.lg { height: var(--mkb-h-lg); padding: var(--mkb-pad-lg); font-size: var(--mkb-fs-lg); }
+.mk-btn.lg .ic { font-size: var(--mkb-icon-lg); }
+.mk-btn.icon-only { width: var(--mkb-h-md); padding: 0; }
+.mk-btn.icon-only.sm { width: var(--mkb-h-sm); }
+.mk-btn.icon-only.lg { width: var(--mkb-h-lg); }
+
+/* ---- Variants ---- */
+.mk-btn.secondary { background: var(--mkb-secondary-bg); color: var(--mkb-secondary-fg); border-color: var(--mkb-secondary-border); }
+.mk-btn.outline { background: transparent; color: var(--mkb-outline-fg); border-color: var(--mkb-outline-border); }
+.mk-btn.ghost { background: transparent; color: var(--mkb-ghost-fg); }
+.mk-btn.danger { background: var(--mkb-danger-bg); color: #fff; }
+.mk-btn.success { background: var(--mkb-success-bg); color: #fff; }
+.mk-btn.accent { background: var(--mkb-accent-bg); color: #fff; }
+
+/* ---- State: Hover (실 인터랙션 + 고정 클래스 + 갤러리 전역) ---- */
+.mk-btn:hover:not(:disabled):not(.is-loading), .mk-btn.is-hover, .cg-hover .mk-btn:not(:disabled):not(.is-loading), .sim-hover .mk-btn {
+  transform: translateY(calc(-1 * var(--mkb-hover-lift)));
+  background: var(--mkb-primary-hover);
+}
+.mk-btn.secondary:hover:not(:disabled), .mk-btn.secondary.is-hover, .cg-hover .mk-btn.secondary, .sim-hover .mk-btn.secondary { background: var(--mkb-secondary-hover); }
+.mk-btn.outline:hover:not(:disabled), .mk-btn.outline.is-hover, .cg-hover .mk-btn.outline, .sim-hover .mk-btn.outline { background: var(--mkb-outline-hover); }
+.mk-btn.ghost:hover:not(:disabled), .mk-btn.ghost.is-hover, .cg-hover .mk-btn.ghost, .sim-hover .mk-btn.ghost { background: var(--mkb-ghost-hover); color: var(--mk-text-primary); }
+.mk-btn.danger:hover:not(:disabled), .mk-btn.danger.is-hover, .cg-hover .mk-btn.danger, .sim-hover .mk-btn.danger { background: var(--mkb-danger-hover); }
+.mk-btn.success:hover:not(:disabled), .mk-btn.success.is-hover, .cg-hover .mk-btn.success, .sim-hover .mk-btn.success { background: var(--mkb-success-hover); }
+.mk-btn.accent:hover:not(:disabled), .mk-btn.accent.is-hover, .cg-hover .mk-btn.accent, .sim-hover .mk-btn.accent { background: var(--mkb-accent-hover); }
+
+/* ---- State: Pressed ---- */
+.mk-btn:active:not(:disabled):not(.is-loading), .mk-btn.is-pressed, .cg-pressed .mk-btn:not(:disabled), .sim-pressed .mk-btn {
+  transform: scale(var(--mkb-pressed-scale)); opacity: .92;
+}
+
+/* ---- State: Focus ---- */
+.mk-btn:focus-visible, .mk-btn.is-focus, .cg-focus .mk-btn, .sim-focus .mk-btn {
+  outline: none; box-shadow: var(--mkb-focus-ring);
+}
+
+/* ---- State: Disabled ---- */
+.mk-btn:disabled, .mk-btn.is-disabled {
+  opacity: .42; cursor: not-allowed; transform: none; pointer-events: none;
+}
+
+/* ---- State: Loading ---- */
+.mk-btn.is-loading { pointer-events: none; opacity: .85; }
+.mk-btn.is-loading .mk-spin { width: 1em; height: 1em; }
+.mk-btn.secondary .mk-spin, .mk-btn.outline .mk-spin, .mk-btn.ghost .mk-spin { border-color: var(--mk-border); border-top-color: var(--mk-text-primary); }

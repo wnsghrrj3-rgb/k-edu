@@ -31,25 +31,41 @@ window.MK_SCREENS.components = (() => {
   const reg = (name, def) => { CAT[name] = def; };
 
   reg('Button', {
-    variants: ['Primary', 'Secondary', 'Accent', 'Ghost', 'Outline', 'Danger', 'Success'],
+    variants: ['Primary', 'Secondary', 'Outline', 'Ghost', 'Danger', 'Success'],
     gallery(v) {
       const B = M().Button, I = M().IconButton;
-      const all = { Primary: B({ label: 'Primary' }), Secondary: B({ label: 'Secondary', kind: 'secondary' }), Accent: B({ label: 'Accent', kind: 'accent' }), Ghost: B({ label: 'Ghost', kind: 'ghost' }), Outline: B({ label: 'Outline', kind: 'outline' }), Danger: B({ label: 'Danger', kind: 'danger' }), Success: B({ label: 'Success', kind: 'success' }) };
-      const pick = v === '전체' ? Object.entries(all) : Object.entries(all).filter(([k]) => k === v);
-      return sub('Button', 'MK.Button')
-        + sec('Variants', pick.map(([k, h]) => it(k, h)).join(''))
+      const VAR = [['Primary', ''], ['Secondary', 'secondary'], ['Outline', 'outline'], ['Ghost', 'ghost'], ['Danger', 'danger'], ['Success', 'success']];
+      const rows = (v === '전체' ? VAR : VAR.filter(([n]) => n === v));
+      const STATES = [['Default', {}], ['Hover', { sim: 'hover' }], ['Pressed', { sim: 'pressed' }], ['Focus', { sim: 'focus' }], ['Disabled', { disabled: true }], ['Loading', { loading: true }]];
+      const matrix = `<div class="btn-matrix" style="--bm-cols:${STATES.length}">
+        <span></span>${STATES.map(([n]) => `<small>${n}</small>`).join('')}
+        ${rows.map(([name, kind]) => `<small class="rowh">${name}</small>` + STATES.map(([, o]) => `<span>${B(Object.assign({ label: name, kind }, o))}</span>`).join('')).join('')}</div>`;
+      return `<div class="cg-sec"><small>Variant × State 매트릭스 — 전 조합 동시 비교</small>${matrix}</div>`
         + sec('Sizes', it('Small', B({ label: 'Small', size: 'sm' })) + it('Medium', B({ label: 'Medium' })) + it('Large', B({ label: 'Large', size: 'lg' })))
-        + sec('Icon', it('Icon Left', B({ label: '재생', icon: '▶' })) + it('Icon Right', B({ label: '다음', iconRight: '→' })) + it('Icon Only', `<button class="mk-btn icon-only">▶</button>`))
-        + sec('States', it('Hover', `<span class="sim-hover">${B({ label: 'Hover' })}</span>`) + it('Focus', `<span class="sim-focus">${B({ label: 'Focus' })}</span>`) + it('Pressed', `<span class="sim-pressed">${B({ label: 'Pressed' })}</span>`)
-          + it('Disabled', `<button class="mk-btn" disabled>Disabled</button>`) + it('Loading', `<button class="mk-btn"><span class="mk-spin"></span> 저장 중</button>`))
+        + sec('Icon', it('Text Only', B({ label: '만들기' })) + it('Icon Left', B({ label: '재생', icon: '▶' })) + it('Icon Right', B({ label: '다음', iconRight: '→' })) + it('Icon Only', B({ label: '재생', icon: '▶', iconOnly: true })))
+        + sec('실제 인터랙션 (마우스로 확인)', `${B({ label: 'Hover · Press 해보기' })}${B({ label: '보조', kind: 'secondary' })}${B({ label: '삭제', kind: 'danger' })}`)
         + sub('Icon Button', 'MK.IconButton')
-        + sec('기본 · 상태', it('기본', I({ icon: '✏️', tip: '편집' })) + it('활성', I({ icon: '▶', on: true })) + it('Hover', `<span class="sim-hover">${I({ icon: '🗑' })}</span>`) + it('Disabled', `<span class="sim-disabled">${I({ icon: '⧉' })}</span>`));
+        + sec('기본 · 상태', it('기본', I({ icon: '✏️', tip: '편집' })) + it('활성', I({ icon: '▶', on: true })) + it('Disabled', `<span class="sim-disabled">${I({ icon: '⧉' })}</span>`));
     },
-    insp: { desc: '행동을 실행하는 기본 컨트롤. 화면의 위계는 Primary→Secondary→Ghost 순으로 낮아지며, Accent는 화면당 1개가 원칙.',
-      usage: `MK.Button({ label: '시작하기', kind: 'accent',\n  size: 'sm', icon: '▶' })`,
-      dos: ['화면당 강조(Accent) 1개', '동사로 시작하는 짧은 라벨', '파괴적 행동엔 Danger'], donts: ['한 줄에 Primary 2개', 'Danger를 일반 확인에 사용', '아이콘만으로 주요 행동 표기'],
-      tokens: ['--mk-text-primary', '--mk-coral', '--mk-danger', '--mk-success', '--mk-r-small', '--mk-t-button'],
-      radius: 'r-small · 6px', shadow: '없음 (플랫)', spacing: '패딩 0 16px · 아이콘 간격 7px · 높이 38px', typography: 't-button · 600 13.5px' },
+    insp(g) {
+      const cs = getComputedStyle(document.documentElement);
+      const t = (n) => (cs.getPropertyValue(n) || '').trim() || '—';
+      const sz = g.size === 'sm' ? 'sm' : g.size === 'lg' ? 'lg' : 'md';
+      const radius = t('--mkb-radius').startsWith('var') || !t('--mkb-radius') ? t('--mk-r-small') : t('--mkb-radius');
+      return {
+        desc: '서비스 전 화면(Home·Template·Editor·AI·Export) 공통 버튼. 규격·색·모션 전부 --mkb-* 토큰 — 시안 확정 시 components/button.css 토큰만 교체. 상태 우선순위: Disabled/Loading > Pressed > Hover.',
+        usage: `MK.Button({ label: '시작하기', kind: 'danger',\n  size: 'sm', icon: '▶', loading: true,\n  disabled: true, iconOnly: true })`,
+        dos: ['화면당 강조 1개 원칙', '파괴적 행동엔 Danger', 'Loading 중 클릭 차단(자동)'],
+        donts: ['한 줄에 Primary 2개', '아이콘만으로 주요 행동', '시안 반영 시 셀렉터 구조 수정'],
+        colorTokens: ['--mkb-primary-bg/hover', '--mkb-secondary-bg/border', '--mkb-outline-border', '--mkb-ghost-hover', '--mkb-danger-bg/hover', '--mkb-success-bg/hover', '--mkb-focus-ring'],
+        compTokens: ['--mkb-h-*', '--mkb-pad-*', '--mkb-fs-*', '--mkb-icon-*', '--mkb-radius', '--mkb-border-w', '--mkb-shadow', '--mkb-transition', '--mkb-hover-lift', '--mkb-pressed-scale'],
+        metrics: [
+          ['Height (' + sz + ')', t('--mkb-h-' + sz)], ['Radius', radius], ['Padding (' + sz + ')', t('--mkb-pad-' + sz)],
+          ['Font Size (' + sz + ')', t('--mkb-fs-' + sz)], ['Weight', t('--mkb-weight')], ['Shadow', t('--mkb-shadow')],
+          ['Border', t('--mkb-border-w') + ' solid'], ['Transition', t('--mkb-transition').split(',')[0] + ' 외'], ['Hover Lift', t('--mkb-hover-lift')],
+        ],
+      };
+    },
   });
 
   reg('Input', {
@@ -239,7 +255,7 @@ window.MK_SCREENS.components = (() => {
       const stageStyle = (rOvr ? `--mk-r-small:${rOvr[0]}px;--mk-r-medium:${rOvr[1]}px;--mk-r-large:${rOvr[2]}px;` : '')
         + (shOvr ? `--mk-sh-subtle:${shOvr[0]};--mk-sh-floating:${shOvr[1]};--mk-sh-modal:${shOvr[2]};` : '')
         + (THEME_OVR[g.theme] || '');
-      const i = c.insp;
+      const i = typeof c.insp === 'function' ? c.insp(g) : c.insp;
       return `<div class="cg2-layout">
         <div class="cg-nav">${KEYS.map((k) => `<button class="${k === g.sel ? 'on' : ''}" data-cg-sel="${k}">${k}</button>`).join('')}</div>
         <div class="cg2-mid">
@@ -265,11 +281,12 @@ window.MK_SCREENS.components = (() => {
             <h4>Do / Don't</h4><div class="cg-dd">${i.dos.map((d) => `<span class="do">${d}</span>`).join('')}${i.donts.map((d) => `<span class="dont">${d}</span>`).join('')}</div>
             <h4>Color Token</h4>${(i.colorTokens || (i.tokens || []).filter((t) => !/-r-|-t-|-sh-|pill/.test(t))).map((t) => `<span class="tok">${t}</span>`).join('')}
             <h4>Component Token</h4>${(i.compTokens || (i.tokens || []).filter((t) => /-r-|-t-|-sh-|pill/.test(t))).map((t) => `<span class="tok">${t}</span>`).join('')}
-            <h4>Metrics</h4>
-            <div class="kv"><small>Radius</small><b>${i.radius}</b></div>
+            <h4>${typeof c.insp === 'function' ? 'Button Spec (라이브 계측)' : 'Metrics'}</h4>
+            ${i.metrics ? i.metrics.map(([k2, v2]) => `<div class="kv"><small>${k2}</small><b>${v2}</b></div>`).join('') :
+            `<div class="kv"><small>Radius</small><b>${i.radius}</b></div>
             <div class="kv"><small>Shadow</small><b>${i.shadow}</b></div>
             <div class="kv"><small>Padding</small><b>${i.padding || i.spacing}</b></div>
-            <div class="kv"><small>Typography</small><b>${i.typography}</b></div>
+            <div class="kv"><small>Typography</small><b>${i.typography}</b></div>`}
           </div>
         </div>
       </div>`;

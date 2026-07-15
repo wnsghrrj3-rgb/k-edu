@@ -6,8 +6,13 @@ window.MK = (() => {
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
   /* MakerButton */
-  const Button = ({ label, kind = '', size = '', icon = '', iconRight = '', attrs = '' }) =>
-    `<button class="mk-btn ${kind} ${size}" ${attrs}>${icon ? icon + ' ' : ''}${esc(label)}${iconRight ? ' ' + iconRight : ''}</button>`;
+  /* 서비스급 Button — kind: ''(primary)|secondary|outline|ghost|danger|success|accent
+     sim: hover|pressed|focus|disabled (갤러리 상태 고정용) */
+  const Button = ({ label = '', kind = '', size = '', icon = '', iconRight = '', iconOnly = false, loading = false, disabled = false, sim = '', attrs = '' }) =>
+    `<button class="mk-btn ${kind} ${size} ${iconOnly ? 'icon-only' : ''} ${loading ? 'is-loading' : ''} ${sim ? 'is-' + sim : ''}"` +
+    `${disabled || sim === 'disabled' ? ' disabled' : ''}${iconOnly ? ` aria-label="${esc(label)}"` : ''} ${attrs}>` +
+    `${loading ? '<span class="mk-spin"></span>' : ''}${icon && !loading ? `<span class="ic">${icon}</span>` : ''}` +
+    `${iconOnly ? '' : esc(label)}${iconRight && !iconOnly ? `<span class="ic">${iconRight}</span>` : ''}</button>`;
 
   /* MakerIconButton */
   const IconButton = ({ icon, tip = '', on = false, attrs = '' }) =>
