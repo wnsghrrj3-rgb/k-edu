@@ -6,8 +6,8 @@ window.MK = (() => {
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
   /* MakerButton */
-  const Button = ({ label, kind = '', size = '', icon = '', attrs = '' }) =>
-    `<button class="mk-btn ${kind} ${size}" ${attrs}>${icon ? icon + ' ' : ''}${esc(label)}</button>`;
+  const Button = ({ label, kind = '', size = '', icon = '', iconRight = '', attrs = '' }) =>
+    `<button class="mk-btn ${kind} ${size}" ${attrs}>${icon ? icon + ' ' : ''}${esc(label)}${iconRight ? ' ' + iconRight : ''}</button>`;
 
   /* MakerIconButton */
   const IconButton = ({ icon, tip = '', on = false, attrs = '' }) =>
