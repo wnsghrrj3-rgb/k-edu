@@ -92,22 +92,37 @@ window.MK_SCREENS.components = (() => {
   });
 
   reg('Card', {
-    gallery() {
+    variants: ['Basic', 'Outlined', 'Elevated', 'Interactive', 'Selected', 'Disabled'],
+    gallery(v) {
       const T = M().TemplateCard, SC = M().SceneCard, s = S().TEMPLATES;
+      const inner = `<b style="font:var(--mk-t-h3)">카드 제목</b><p style="font:var(--mk-t-body-sm);color:var(--mk-text-secondary);margin-top:6px">정보 묶음 단위.</p>`;
+      const all = {
+        Basic: `<div class="mk-card" style="width:210px">${inner}</div>`,
+        Outlined: `<div class="mk-card outlined" style="width:210px">${inner}</div>`,
+        Elevated: `<div class="mk-card elevated" style="width:210px">${inner}</div>`,
+        Interactive: `<div class="mk-card interactive" style="width:210px">${inner}<div style="margin-top:10px;font:var(--mk-t-caption);color:var(--mk-teal)">클릭 가능 →</div></div>`,
+        Selected: `<div class="mk-card selected" style="width:210px">${inner}</div>`,
+        Disabled: `<div class="mk-card" style="width:210px;opacity:.45;pointer-events:none">${inner}</div>`,
+      };
+      const pick = v === '전체' ? Object.entries(all) : Object.entries(all).filter(([k]) => k === v);
       return sub('Card', '.mk-card')
-        + sec('Variants', it('기본', `<div class="mk-card" style="width:250px"><b style="font:var(--mk-t-h3)">카드 제목</b><p style="font:var(--mk-t-body-sm);color:var(--mk-text-secondary);margin-top:6px">정보 묶음 단위로만 사용.</p></div>`)
-          + it('강조 배경', `<div class="mk-card" style="width:250px;background:var(--mk-cream)"><b style="font:var(--mk-t-h3)">크림 카드</b><p style="font:var(--mk-t-body-sm);color:var(--mk-text-secondary);margin-top:6px">배경 변형.</p></div>`)
-          + it('통계', `<div class="mk-card" style="width:140px"><div style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">완성 작품</div><div style="font:var(--mk-t-h1)">128</div><div style="font:var(--mk-t-body-sm);color:var(--mk-success)">▲ 12%</div></div>`))
-        + sub('Template Card', 'MK.TemplateCard')
-        + sec('판형별 · Hover', `<div style="display:grid;grid-template-columns:repeat(3,200px);gap:14px">${T(s[0])}${T(s[3])}<span class="sim-hover" style="display:block">${T(s[2])}</span></div>`)
-        + sub('Scene Card', 'MK.SceneCard')
-        + sec('선택 상태', `<div style="display:flex;gap:12px">${SC(s[0].scenes[0], 0, true)}${SC(s[0].scenes[1], 1, false)}</div>`);
+        + sec('Variants', pick.map(([k, h]) => it(k, h)).join(''))
+        + sec('Hover (Interactive)', `<span class="sim-hover" style="display:inline-block">${all.Interactive}</span>`)
+        + sub('Template Card', 'MK.TemplateCard — 썸네일·제목·카테고리·비율·난이도·즐겨찾기')
+        + sec('실전 사양', `<div style="display:grid;grid-template-columns:repeat(3,205px);gap:14px">${T(s[0], '', { fav: true })}${T(s[2], '', { fav: false })}<span class="sim-hover" style="display:block">${T(s[3], '', { fav: true })}</span></div>`)
+        + sub('Scene Card', 'MK.SceneCard — 썸네일·번호·이름·Duration·선택·Active')
+        + sec('상태 전수', `<div style="display:flex;gap:14px;align-items:flex-start">
+            ${it('기본', SC(s[2].scenes[1], 1, false))}
+            ${it('선택됨', SC(s[2].scenes[0], 0, true))}
+            ${it('Active (재생)', SC(s[2].scenes[2], 2, false, '', { active: true }))}
+            ${it('Hover', `<span class="sim-hover" style="display:inline-block">${SC(s[2].scenes[3], 3, false)}</span>`)}</div>`);
     },
-    insp: { desc: '정보 묶음 컨테이너와 K-MAKER 고유 카드(템플릿·씬). 선택 표시는 코랄 테두리 하나로 통일.',
-      usage: `MK.TemplateCard(tpl, attrs)\nMK.SceneCard(scene, i, selected)`,
-      dos: ['정보 묶음 1개 = 카드 1장', '썸네일은 실제 1장면 렌더'], donts: ['카드 남발 (§20 금지)', '카드 안 카드 중첩', '색만 다른 카드 반복'],
-      tokens: ['--mk-surface', '--mk-border', '--mk-coral (선택)', '--mk-r-medium', '--mk-sh-subtle'],
-      radius: 'r-medium · 10px', shadow: 'subtle · hover 시 floating', spacing: '내부 패딩 sp-5 (20px)', typography: 't-h3 제목 · t-body-sm 본문' },
+    insp: { desc: '정보 컨테이너와 K-MAKER 고유 카드. Interactive만 커서·호버 부상을 가지며, 선택은 코랄 테두리+링으로 통일. Scene Card의 Active는 재생 중 표시(틸)로 선택(코랄)과 구분.',
+      usage: `MK.TemplateCard(tpl, attrs, { fav: true })\nMK.SceneCard(scene, i, selected, attrs,\n  { active: true })`,
+      dos: ['정보 묶음 1개 = 카드 1장', '선택=코랄 · 재생=틸 구분 유지', '난이도는 배지 하나로'], donts: ['카드 남발 (§20)', '카드 안 카드 중첩', 'Selected와 Active 동일 표현'],
+      colorTokens: ['--mk-surface', '--mk-border', '--mk-coral (선택)', '--mk-teal (Active)', '--mk-coral-soft (링)'],
+      compTokens: ['--mk-r-medium', '--mk-r-small (씬)', '--mk-sh-subtle', '--mk-sh-floating (부상)', '--mk-t-h3'],
+      radius: 'r-medium 10px · 씬 r-small 6px', shadow: 'subtle → floating (부상)', padding: '카드 sp-5 (20px) · 메타 12-14px', typography: 't-h3 제목 · t-caption 메타·배지' },
   });
 
   reg('Navigation', {
@@ -205,7 +220,8 @@ window.MK_SCREENS.components = (() => {
 
   /* ---------------- 화면 ---------------- */
   const stg = () => {
-    if (!PG.state.cg2) PG.state.cg2 = { sel: 'Button', variant: '전체', size: 'md', radius: '기본', shadow: '기본', theme: 'Light' };
+    if (!PG.state.cg2) PG.state.cg2 = { sel: 'Button', variant: '전체', state: '기본', size: 'md', radius: '기본', shadow: '기본', theme: 'Light', density: '기본' };
+    if (!PG.state.cg2.state) { PG.state.cg2.state = '기본'; PG.state.cg2.density = '기본'; }
     return PG.state.cg2;
   };
   const seg = (key, items, on) => `<span class="seg">${items.map((x) => `<button class="${x === on ? 'on' : ''}" data-cg-${key}="${x}">${x}</button>`).join('')}</span>`;
@@ -215,7 +231,10 @@ window.MK_SCREENS.components = (() => {
     render() {
       const g = stg(), c = CAT[g.sel];
       if (c.variants && g.variant !== '전체' && !c.variants.includes(g.variant)) g.variant = '전체';
-      const stageCls = ['cg-stage', g.size === 'sm' && 'cg-sm', g.size === 'lg' && 'cg-lg'].filter(Boolean).join(' ');
+      const stageCls = ['cg-stage',
+        g.state === 'Hover' && 'cg-hover', g.state === 'Focus' && 'cg-focus', g.state === 'Pressed' && 'cg-pressed', g.state === 'Disabled' && 'cg-disabled',
+        g.size === 'sm' && 'cg-sm', g.size === 'lg' && 'cg-lg',
+        g.density === '촘촘' && 'cg-dense', g.density === '여유' && 'cg-relax'].filter(Boolean).join(' ');
       const rOvr = RADIUS_OVR[g.radius], shOvr = SHADOW_OVR[g.shadow];
       const stageStyle = (rOvr ? `--mk-r-small:${rOvr[0]}px;--mk-r-medium:${rOvr[1]}px;--mk-r-large:${rOvr[2]}px;` : '')
         + (shOvr ? `--mk-sh-subtle:${shOvr[0]};--mk-sh-floating:${shOvr[1]};--mk-sh-modal:${shOvr[2]};` : '')
@@ -226,10 +245,12 @@ window.MK_SCREENS.components = (() => {
         <div class="cg2-mid">
           <div class="cg-controls">
             ${c.variants ? `<span class="cg-ctl"><small>Variant</small>${seg('variant', ['전체', ...c.variants], g.variant)}</span>` : ''}
+            <span class="cg-ctl"><small>State</small>${seg('state', ['기본', 'Hover', 'Focus', 'Pressed', 'Disabled'], g.state)}</span>
             <span class="cg-ctl"><small>Size</small>${seg('size', ['sm', 'md', 'lg'], g.size)}</span>
+            <span class="cg-ctl"><small>Theme</small>${seg('theme', Object.keys(THEME_OVR), g.theme)}</span>
             <span class="cg-ctl"><small>Radius</small>${seg('radius', Object.keys(RADIUS_OVR), g.radius)}</span>
             <span class="cg-ctl"><small>Shadow</small>${seg('shadow', Object.keys(SHADOW_OVR), g.shadow)}</span>
-            <span class="cg-ctl"><small>Theme</small>${seg('theme', Object.keys(THEME_OVR), g.theme)}</span>
+            <span class="cg-ctl"><small>Density</small>${seg('density', ['촘촘', '기본', '여유'], g.density)}</span>
           </div>
           <div class="${stageCls}" style="${stageStyle}${g.theme === 'Dark' ? 'background:var(--mk-background);' : ''}">
             <div class="cg-stage-h"><b>${g.sel}</b><small>디자인 검토용 · Figma Component 페이지형</small><span style="flex:1"></span>${window.MK.Badge({ label: '중립 임시 스타일' })}</div>
@@ -242,11 +263,12 @@ window.MK_SCREENS.components = (() => {
             <h4>Description</h4><p>${i.desc}</p>
             <h4>Usage</h4><pre>${window.MK.esc(i.usage)}</pre>
             <h4>Do / Don't</h4><div class="cg-dd">${i.dos.map((d) => `<span class="do">${d}</span>`).join('')}${i.donts.map((d) => `<span class="dont">${d}</span>`).join('')}</div>
-            <h4>Token</h4>${i.tokens.map((t) => `<span class="tok">${t}</span>`).join('')}
+            <h4>Color Token</h4>${(i.colorTokens || (i.tokens || []).filter((t) => !/-r-|-t-|-sh-|pill/.test(t))).map((t) => `<span class="tok">${t}</span>`).join('')}
+            <h4>Component Token</h4>${(i.compTokens || (i.tokens || []).filter((t) => /-r-|-t-|-sh-|pill/.test(t))).map((t) => `<span class="tok">${t}</span>`).join('')}
             <h4>Metrics</h4>
             <div class="kv"><small>Radius</small><b>${i.radius}</b></div>
             <div class="kv"><small>Shadow</small><b>${i.shadow}</b></div>
-            <div class="kv"><small>Spacing</small><b>${i.spacing}</b></div>
+            <div class="kv"><small>Padding</small><b>${i.padding || i.spacing}</b></div>
             <div class="kv"><small>Typography</small><b>${i.typography}</b></div>
           </div>
         </div>
@@ -255,7 +277,7 @@ window.MK_SCREENS.components = (() => {
     mount(root) {
       const g = stg();
       root.querySelectorAll('[data-cg-sel]').forEach((b) => b.onclick = () => { g.sel = b.dataset.cgSel; g.variant = '전체'; PG.render(); });
-      for (const k of ['variant', 'size', 'radius', 'shadow', 'theme'])
+      for (const k of ['variant', 'state', 'size', 'radius', 'shadow', 'theme', 'density'])
         root.querySelectorAll(`[data-cg-${k}]`).forEach((b) => b.onclick = () => { g[k] = b.dataset['cg' + k[0].toUpperCase() + k.slice(1)]; PG.render(); });
     },
   };

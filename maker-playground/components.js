@@ -44,19 +44,20 @@ window.MK = (() => {
     return out + `</svg>`;
   };
 
-  /* MakerTemplateCard */
-  const TemplateCard = (tpl, attrs = '') =>
+  /* MakerTemplateCard — opts: { fav: 즐겨찾기 여부 } */
+  const TemplateCard = (tpl, attrs = '', opts = {}) =>
     `<button class="mk-tplcard" ${attrs}>
       <div class="thumb"><span class="type">${esc(tpl.category)}</span>
+        <span class="fav ${opts.fav ? 'on' : ''}">${opts.fav ? '★' : '☆'}</span>
         <svg viewBox="0 0 160 ${Math.round(160 * tpl.scenes[0].height / tpl.scenes[0].width)}" style="aspect-ratio:${tpl.scenes[0].width}/${tpl.scenes[0].height};background:#fff">${sceneThumb(tpl.scenes[0]).replace(/^<svg[^>]*>|<\/svg>$/g, '')}</svg>
       </div>
-      <div class="meta"><b>${esc(tpl.title)}</b><small>${esc(tpl.style)} · ${esc(tpl.ratio)} · 장면 ${tpl.scenes.length}</small></div>
+      <div class="meta"><b>${esc(tpl.title)}</b><small>${esc(tpl.style)} · ${esc(tpl.ratio)} · 장면 ${tpl.scenes.length}${tpl.difficulty ? '</small><span class="diff">' + esc(tpl.difficulty) + '</span><small>' : ''}</small></div>
     </button>`;
 
-  /* MakerSceneCard */
-  const SceneCard = (scene, i, on, attrs = '') =>
-    `<div class="mk-scenecard ${on ? 'on' : ''}">
-      <button class="frame" ${attrs}><span class="num">${i + 1}</span>${sceneThumb(scene)}</button>
+  /* MakerSceneCard — opts: { active: 재생 중 표시 } */
+  const SceneCard = (scene, i, on, attrs = '', opts = {}) =>
+    `<div class="mk-scenecard ${on ? 'on' : ''} ${opts.active ? 'active' : ''}">
+      <button class="frame" ${attrs}><span class="num">${i + 1}</span>${opts.active ? '<span class="playing">▶</span>' : ''}${scene.duration ? `<span class="dur">⏱ ${scene.duration}초</span>` : ''}${sceneThumb(scene)}</button>
       <span class="nm">${esc(scene.name)}</span>
       <div class="ed-sceneops">
         <button data-op="dup" data-i="${i}">⧉ 복제</button>

@@ -14,7 +14,7 @@ window.MK_SAMPLE = (() => {
   const TEMPLATES = [
     {
       templateId: 'smp-pres-01', title: '단원 발표 (샘플)', description: '수업·발표용 기본 4장 구성',
-      contentType: 'presentation', category: '발표자료', style: '모던', ratio: '16:9',
+      contentType: 'presentation', category: '발표자료', style: '모던', ratio: '16:9', difficulty: '쉬움',
       targetUser: 'teacher', gradeRange: '3-6', tags: ['수업', '발표'],
       scenes: [
         { id: 's1', name: '표지', width: 1280, height: 720, duration: 5, background: '#FFFFFF', transition: 'fade', order: 0,
@@ -42,7 +42,7 @@ window.MK_SAMPLE = (() => {
     },
     {
       templateId: 'smp-vid-01', title: '학교 행사 안내 영상 (샘플)', description: '사진·문구만 바꾸는 15초 안내 영상',
-      contentType: 'video', category: '영상', style: '행사', ratio: '16:9',
+      contentType: 'video', category: '영상', style: '행사', ratio: '16:9', difficulty: '보통',
       targetUser: 'teacher', gradeRange: '전학년', tags: ['행사', '안내'], musicPreset: 'bright-01', animationPreset: 'fade-up',
       scenes: [
         { id: 'v1', name: '인트로', width: 1280, height: 720, duration: 3, background: '#1F2733', transition: 'fade', order: 0,
@@ -57,7 +57,7 @@ window.MK_SAMPLE = (() => {
     },
     {
       templateId: 'smp-post-01', title: '독서 주간 포스터 (샘플)', description: 'A4 단일 장면 포스터',
-      contentType: 'poster', category: '포스터', style: '페이퍼', ratio: 'A4',
+      contentType: 'poster', category: '포스터', style: '페이퍼', ratio: 'A4', difficulty: '쉬움',
       targetUser: 'teacher', gradeRange: '전학년', tags: ['독서', '행사'],
       scenes: [
         { id: 'p1', name: '단일 장면', width: 794, height: 1123, duration: 0, background: '#FAF7F0', transition: 'none', order: 0,
