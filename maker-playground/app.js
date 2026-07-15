@@ -3,7 +3,8 @@
    ============================================================ */
 window.PG = (() => {
   const NAV = [
-    ['foundations', '🎛', 'Foundations'], ['components', '🧩', 'Components'], ['home', '🏠', 'Home'],
+    ['foundations', '🎛', 'Foundations'], ['components', '🧩', 'Components'], ['patterns', '🧬', 'Patterns'],
+    ['screens', '🗺', 'Screens'], ['home', '🏠', 'Home'],
     ['templates', '🗂', 'Templates'], ['editor', '✏️', 'Editor'], ['video', '🎬', 'Video'],
     ['photo', '🖼', 'Photo'], ['ai', '✨', 'AI'], ['export', '⤴', 'Export'],
   ];
@@ -20,10 +21,13 @@ window.PG = (() => {
     state.editor.doc = JSON.parse(JSON.stringify(tpl)); // 원본 보호 — 샘플 편집은 메모리에서만
     state.editor.sceneIdx = 0; state.editor.selEl = null;
     state.editor.mode = tpl.contentType === 'video' ? 'video' : 'design';
-    state.variants.editor = state.editor.mode === 'video' ? 'Video' : 'Design';
   }
 
-  function openEditor(templateId) { loadEditorDoc(templateId); go('editor'); }
+  function openEditor(templateId) {
+    loadEditorDoc(templateId);
+    state.variants.editor = state.editor.mode === 'video' ? 'Video' : 'Design'; // 템플릿 유형이 모드 결정
+    go('editor');
+  }
 
   function go(screen) {
     state.screen = screen;
