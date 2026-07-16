@@ -86,10 +86,10 @@ window.MK_SCREENS.home = (() => {
 
     mount(root) {
       const M2 = window.MK, S2 = window.MK_SAMPLE;
-      /* 유형 → Templates 필터 */
+      /* 유형 → Create Flow (종류 선택 완료 상태로 Step 2 진입) */
       root.querySelectorAll('[data-go-type]').forEach((b) => b.onclick = () => {
-        PG.state.browser.type = b.dataset.goType === 'all' ? 'all' : b.dataset.goType;
-        PG.go('templates');
+        if (b.dataset.goType === 'all') { window.MK_SCREENS.create.enter(null); return; }
+        window.MK_SCREENS.create.enter(b.dataset.goType);
       });
       /* 추천 템플릿 → 미리보기 모달 → 편집 */
       root.querySelectorAll('[data-hv-tpl]').forEach((b) => b.onclick = () => {

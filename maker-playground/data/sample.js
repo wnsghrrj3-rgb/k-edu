@@ -13,7 +13,7 @@ window.MK_SAMPLE = (() => {
   /* 좌표는 캔버스 기준 % (디자인 검토용 단순화) */
   const TEMPLATES = [
     {
-      templateId: 'smp-pres-01', title: '단원 발표 (샘플)', description: '수업·발표용 기본 4장 구성',
+      templateId: 'smp-pres-01', styleEn: 'Modern', recent: true, uses: '수업 도입·단원 발표·학예회 소개', title: '단원 발표 (샘플)', description: '수업·발표용 기본 4장 구성',
       contentType: 'presentation', category: '발표자료', style: '모던', ratio: '16:9', difficulty: '쉬움',
       targetUser: 'teacher', gradeRange: '3-6', tags: ['수업', '발표'],
       scenes: [
@@ -28,7 +28,7 @@ window.MK_SAMPLE = (() => {
       ],
     },
     {
-      templateId: 'smp-card-01', title: '학급 소식 카드 (샘플)', description: '알림·소식 3장 카드뉴스',
+      templateId: 'smp-card-01', styleEn: 'Kids', recent: false, uses: '학급 알림·주간 소식·안내 카드', title: '학급 소식 카드 (샘플)', description: '알림·소식 3장 카드뉴스',
       contentType: 'cardnews', category: '카드뉴스', style: '소프트', ratio: '1:1',
       targetUser: 'teacher', gradeRange: '전학년', tags: ['알림', '소식'],
       scenes: [
@@ -41,7 +41,7 @@ window.MK_SAMPLE = (() => {
       ],
     },
     {
-      templateId: 'smp-vid-01', title: '학교 행사 안내 영상 (샘플)', description: '사진·문구만 바꾸는 15초 안내 영상',
+      templateId: 'smp-vid-01', styleEn: 'Creative', recent: true, uses: '행사 안내·하이라이트·학급 소개 영상', title: '학교 행사 안내 영상 (샘플)', description: '사진·문구만 바꾸는 15초 안내 영상',
       contentType: 'video', category: '영상', style: '행사', ratio: '16:9', difficulty: '보통',
       targetUser: 'teacher', gradeRange: '전학년', tags: ['행사', '안내'], musicPreset: 'bright-01', animationPreset: 'fade-up',
       scenes: [
@@ -56,7 +56,7 @@ window.MK_SAMPLE = (() => {
       ],
     },
     {
-      templateId: 'smp-post-01', title: '독서 주간 포스터 (샘플)', description: 'A4 단일 장면 포스터',
+      templateId: 'smp-post-01', styleEn: 'Magazine', recent: false, uses: '행사 포스터·게시판 부착물', title: '독서 주간 포스터 (샘플)', description: 'A4 단일 장면 포스터',
       contentType: 'poster', category: '포스터', style: '페이퍼', ratio: 'A4', difficulty: '쉬움',
       targetUser: 'teacher', gradeRange: '전학년', tags: ['독서', '행사'],
       scenes: [
@@ -65,7 +65,7 @@ window.MK_SAMPLE = (() => {
       ],
     },
     {
-      templateId: 'smp-work-01', title: '받아쓰기 학습지 (샘플)', description: 'A4 학습지 머리판 + 문항',
+      templateId: 'smp-work-01', styleEn: 'Minimal', recent: false, uses: '받아쓰기·연산 연습·평가지', title: '받아쓰기 학습지 (샘플)', description: 'A4 학습지 머리판 + 문항',
       contentType: 'worksheet', category: '학습지', style: '에듀', ratio: 'A4',
       targetUser: 'teacher', gradeRange: '1-2', tags: ['국어', '학습'],
       scenes: [
@@ -74,7 +74,7 @@ window.MK_SAMPLE = (() => {
       ],
     },
     {
-      templateId: 'smp-thumb-01', title: '수업 영상 썸네일 (샘플)', description: '유튜브형 썸네일',
+      templateId: 'smp-thumb-01', styleEn: 'Premium', recent: false, uses: '수업 영상 표지·채널 썸네일', title: '수업 영상 썸네일 (샘플)', description: '유튜브형 썸네일',
       contentType: 'thumbnail', category: '썸네일', style: '볼드', ratio: '16:9',
       targetUser: 'student', gradeRange: '3-6', tags: ['영상', '썸네일'],
       scenes: [
