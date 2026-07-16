@@ -19,11 +19,7 @@ window.MK_SCREENS.photo = ph('Photo', [
   ['배경 제거', '클라이언트 사이드 누끼 — 미구현 (단독 과제)'],
   ['프레임·그림자', '속성 패널 확장 자리'],
 ]);
-window.MK_SCREENS.ai = ph('AI', [
-  ['AI 제작 시작', '"발표자료 만들어줘" 류 프롬프트 → Scene 구성 생성. UI·상태 구조만 선행, API 연결은 후속'],
-  ['문장 다듬기', '짧게 / 1학년 수준으로 / 교사용·학생용 전환'],
-  ['추천', '제목·이미지·색상 조합·스타일 변경·애니메이션·Scene 추가'],
-]);
+/* AI 화면은 screens/ai.js (AI Studio v1)로 승격 */
 window.MK_SCREENS.export = ph('Export', [
   ['내보내기 대상', 'PNG · PDF · PPT · MP4 — kmake 기존 내보내기 엔진 이식 예정'],
   ['공유 링크', '뷰어 링크(라이프 카드 방식) 확장 자리'],

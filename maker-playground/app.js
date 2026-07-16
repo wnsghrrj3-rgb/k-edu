@@ -26,6 +26,15 @@ window.PG = (() => {
     state.editor.mode = tpl.contentType === 'video' ? 'video' : 'design';
   }
 
+  /* AI 등 외부에서 만든 doc 객체를 그대로 실어 Editor 진입 */
+  function openEditorDoc(doc) {
+    state.editor.doc = doc;
+    state.editor.sceneIdx = 0; state.editor.selEl = null;
+    state.editor.mode = doc.contentType === 'video' ? 'video' : 'design';
+    state.variants.editor = state.editor.mode === 'video' ? 'Video' : 'Design';
+    go('editor');
+  }
+
   function openEditor(templateId) {
     loadEditorDoc(templateId);
     state.variants.editor = state.editor.mode === 'video' ? 'Video' : 'Design'; // 템플릿 유형이 모드 결정
@@ -68,6 +77,6 @@ window.PG = (() => {
     render();
   }
 
-  return { state, go, render, boot, openEditor, loadEditorDoc };
+  return { state, go, render, boot, openEditor, openEditorDoc, loadEditorDoc };
 })();
 document.addEventListener('DOMContentLoaded', () => PG.boot());
