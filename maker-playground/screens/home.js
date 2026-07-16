@@ -41,7 +41,7 @@ window.MK_SCREENS.home = (() => {
       const header = `<div class="hv-header">
         <span class="hv-logo">K-MAKER</span>
         <div class="hv-search"><input class="mk-input" placeholder="템플릿·내 작품 검색"></div>
-        <nav class="hv-nav"><a>최근 작업</a><a>내 프로젝트</a></nav>
+        <nav class="hv-nav"><a data-hv-proj>최근 작업</a><a data-hv-proj>내 프로젝트</a></nav>
         <button class="mk-iconbtn mk-tooltip hv-bell" data-tip="알림">🔔<i></i></button>
         <span class="mk-avatar sm">준</span>
       </div>`;
@@ -85,6 +85,7 @@ window.MK_SCREENS.home = (() => {
     },
 
     mount(root) {
+      root.querySelectorAll('[data-hv-proj]').forEach((a) => a.onclick = () => PG.go('projects'));
       const M2 = window.MK, S2 = window.MK_SAMPLE;
       /* 유형 → Create Flow (종류 선택 완료 상태로 Step 2 진입) */
       root.querySelectorAll('[data-go-type]').forEach((b) => b.onclick = () => {

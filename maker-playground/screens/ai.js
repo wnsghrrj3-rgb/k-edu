@@ -159,7 +159,8 @@ window.MK_AI = (() => {
           </div>
         </div>`);
       card.querySelector('[data-ai-open]').onclick = () => {
-        if (opts.onDone) opts.onDone(doc, intent);
+        if (opts.onDone) opts.onDone(doc, intent, prompt);
+        else if (window.MK_PROJ) { const p = window.MK_PROJ.createFromDoc(doc, doc.title, { prompt, action: '초안 생성' }); window.MK_PROJ.open(p.projectId); }
         else { PG.openEditorDoc(doc); }
       };
       card.querySelector('[data-ai-redo]').onclick = () => run(prompt);
@@ -247,9 +248,10 @@ window.MK_AI = (() => {
 
       const chat = AI.mountChat(root.querySelector('#aiMid'), {
         onIntent(intent) { S.intent = intent; rRight(); },
-        onDone(doc, intent) {
+        onDone(doc, intent, prompt) {
           S.recents = [{ title: doc.title, typeName: intent.typeName }, ...S.recents].slice(0, 6);
-          PG.openEditorDoc(doc);
+          if (window.MK_PROJ) { const p = window.MK_PROJ.createFromDoc(doc, doc.title, { prompt, action: '초안 생성' }); window.MK_PROJ.open(p.projectId); }
+          else PG.openEditorDoc(doc);
         },
       });
 

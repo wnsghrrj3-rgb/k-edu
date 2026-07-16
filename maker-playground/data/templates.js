@@ -117,6 +117,12 @@ window.MK_TPL = (() => {
       animationId: r.template.animationId, animation: r.animation,
       assetIds: r.template.assetIds, ai: r.ai,
     };
+    /* Project System 연동 — 템플릿 사용 = 새 프로젝트 생성 후 열기 */
+    if (window.MK_PROJ) {
+      const p = window.MK_PROJ.createFromDoc(doc, doc.title.replace(' (샘플)', ''));
+      window.MK_PROJ.open(p.projectId);
+      return p.doc;
+    }
     PG.openEditorDoc(doc);
     return doc;
   }

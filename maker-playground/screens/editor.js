@@ -157,7 +157,7 @@ window.MK_SCREENS.editor = (() => {
         PG.render();
       });
       /* Toolbar 동작 */
-      root.querySelector('[data-ed="save"]').onclick = () => { e.savedAt = '방금'; document.getElementById('edSave').textContent = '저장됨 · 방금'; };
+      root.querySelector('[data-ed="save"]').onclick = () => { e.savedAt = '방금'; document.getElementById('edSave').textContent = '저장됨 · 방금'; const cur = window.MK_PROJ && window.MK_PROJ.current(); if (cur) window.MK_PROJ.rename(cur.projectId, cur.name); /* rename=touch 겸용 — 수정일 갱신 */ };
       root.querySelector('[data-ed="preview"]').onclick = () => M2.Modal.open(`<h2>미리보기</h2>
         <div style="border:1px solid var(--mk-border);border-radius:8px;overflow:hidden;margin:12px 0">${M2.sceneThumb(doc.scenes[e.sceneIdx])}</div>
         <p style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">전체 장면 재생은 후속 단계 (kmake 엔진 이식)</p>
