@@ -135,7 +135,9 @@ window.MK_PROJ = (() => {
     if (!p) return null;
     currentId = pid;
     touch(pid);
-    PG.openEditorDoc(p.doc); /* 같은 객체 참조 — Editor 편집이 곧 프로젝트 작업본 */
+    /* Workspace가 핵심 작업 공간 — Editor는 그 안의 기능 (미로드 시 폴백) */
+    if (window.MK_WS) window.MK_WS.enter(pid);
+    else PG.openEditorDoc(p.doc);
     return p;
   }
   const current = () => currentId ? get(currentId) : null;
