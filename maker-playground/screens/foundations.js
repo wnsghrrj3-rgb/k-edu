@@ -108,7 +108,7 @@ window.MK_SCREENS.foundations = (() => {
   if (!window.__fdResize) { window.__fdResize = true; window.addEventListener('resize', () => { if (PG.state.screen === 'foundations') fitFrames(); }); }
 
   const PV = {
-    Home()     { return frame(window.MK_SCREENS.home.render('A'), 1160, null, 'Home · variant A (실제 렌더러)'); },
+    Home()     { return frame(window.MK_SCREENS.home.render('v1'), 1160, null, 'Home v1 (실제 렌더러)'); },
     Hero() {
       return `<div style="background:var(--mk-surface);border:1px solid var(--mk-border);border-radius:var(--mk-r-large);padding:var(--mk-sp-8) var(--mk-sp-6);text-align:center;box-shadow:var(--mk-sh-subtle)">
           <span style="display:inline-block;font:var(--mk-t-caption);color:var(--mk-teal);background:var(--mk-teal-soft);border-radius:var(--mk-r-pill);padding:5px 12px;margin-bottom:var(--mk-sp-4)">K-MAKER</span>

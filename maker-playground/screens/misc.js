@@ -65,7 +65,7 @@ window.MK_SCREENS.screens = {
   title: 'Screens', variants: ['A'],
   render() {
     const items = [
-      ['Home', 'home', ['A','B','C'], '목적 우선 시작 화면'],
+      ['Home', 'home', ['v1'], '목적 우선 시작 화면 (Header·Hero·제작시작·추천·최근·AI추천)'],
       ['Templates', 'templates', ['A','B'], '템플릿 탐색'],
       ['Editor · Design', 'editor', ['Design'], '문서형 편집'],
       ['Editor · Video', 'editor', ['Video'], '영상형 편집 (타임라인)'],
