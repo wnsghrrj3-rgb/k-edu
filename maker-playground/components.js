@@ -49,14 +49,15 @@ window.MK = (() => {
     return out + `</svg>`;
   };
 
-  /* MakerTemplateCard — opts: { fav: 즐겨찾기 여부 } */
+  /* MakerTemplateCard — opts: { fav: 즐겨찾기, aiRec: AI 추천 배지, target: 추천 대상 표기 } */
   const TemplateCard = (tpl, attrs = '', opts = {}) =>
     `<button class="mk-tplcard" ${attrs}>
       <div class="thumb"><span class="type">${esc(tpl.category)}</span>
+        ${opts.aiRec ? '<span class="airec">✦ AI 추천</span>' : ''}
         <span class="fav ${opts.fav ? 'on' : ''}">${opts.fav ? '★' : '☆'}</span>
         <svg viewBox="0 0 160 ${Math.round(160 * tpl.scenes[0].height / tpl.scenes[0].width)}" style="aspect-ratio:${tpl.scenes[0].width}/${tpl.scenes[0].height};background:#fff">${sceneThumb(tpl.scenes[0]).replace(/^<svg[^>]*>|<\/svg>$/g, '')}</svg>
       </div>
-      <div class="meta"><b>${esc(tpl.title)}</b><small>${esc(tpl.style)} · ${esc(tpl.ratio)} · 장면 ${tpl.scenes.length}${tpl.difficulty ? '</small><span class="diff">' + esc(tpl.difficulty) + '</span><small>' : ''}</small></div>
+      <div class="meta"><b>${esc(tpl.title)}</b><small>${esc(tpl.style)} · ${esc(tpl.ratio)} · 장면 ${tpl.scenes.length}${opts.target ? ' · ' + esc(opts.target) : ''}${tpl.difficulty ? '</small><span class="diff">' + esc(tpl.difficulty) + '</span><small>' : ''}</small></div>
     </button>`;
 
   /* MakerSceneCard — opts: { active: 재생 중 표시 } */

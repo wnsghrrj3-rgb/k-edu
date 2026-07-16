@@ -82,6 +82,28 @@ window.MK_SAMPLE = (() => {
           elements: [t(6, 26, 64, 12, '큰 제목', 700), img(70, 18, 26, 64, '인물/사진'), t(6, 66, 50, 4, '부제 한 줄')] },
       ],
     },
+  {
+      templateId: 'smp-act-01', styleEn: 'Kids', recent: false, uses: '학급 이름표·자리 배치·사물함', title: '학급 이름표 세트 (샘플)', description: '이름표 2장 구성 활동자료',
+      contentType: 'activity', category: '활동자료', style: '에듀', ratio: '4:3', difficulty: '쉬움',
+      targetUser: 'teacher', gradeRange: '1-2', tags: ['이름표', '학급운영'],
+      scenes: [
+        { id: 'a1', name: '이름표 A', width: 800, height: 600, duration: 0, background: '#E3F1EE', transition: 'none', order: 0,
+          elements: [t(12, 18, 76, 8, '이름', 700), t(12, 52, 76, 4.5, '1학년 0반'), img(70, 12, 20, 26, '아이콘')] },
+        { id: 'a2', name: '이름표 B', width: 800, height: 600, duration: 0, background: '#FBE9E4', transition: 'none', order: 1,
+          elements: [t(12, 18, 76, 8, '이름', 700), t(12, 52, 76, 4.5, '내가 좋아하는 것'), img(70, 12, 20, 26, '아이콘')] },
+      ],
+    },
+    {
+      templateId: 'smp-sns-01', styleEn: 'Modern', recent: false, uses: '학급 밴드·알림장 공지·행사 후기', title: '학급 SNS 공지 (샘플)', description: '밴드·SNS용 정방형 2장',
+      contentType: 'sns', category: 'SNS', style: '모던', ratio: '1:1', difficulty: '쉬움',
+      targetUser: 'teacher', gradeRange: '전학년', tags: ['SNS', '공지'],
+      scenes: [
+        { id: 'n1', name: '공지', width: 1080, height: 1080, duration: 4, background: '#1F2733', transition: 'fade', order: 0,
+          elements: [t(10, 16, 80, 4, 'NOTICE'), t(10, 30, 80, 9, '알려드립니다', 700), t(10, 70, 80, 3.6, '자세한 내용은 알림장을 확인해 주세요')] },
+        { id: 'n2', name: '내용', width: 1080, height: 1080, duration: 5, background: '#FFFFFF', transition: 'slide', order: 1,
+          elements: [t(10, 12, 80, 6, '이번 주 안내', 700), t(10, 32, 80, 3.8, '· 준비물을 확인해 주세요'), img(10, 50, 80, 36, '사진 영역')] },
+      ],
+    },
   ];
 
   /* 제작 유형 (Home) — §4 */
