@@ -62,6 +62,7 @@ window.MK_SCREENS.screens = {
   render() {
     const items = [
       ['Create Flow', 'create', ['Flow'], '종류→스타일→템플릿→미리보기→Editor 깔때기'],
+      ['Animation Studio', 'animation', ['v1'], '프리셋 9종 교체·조절 — Scene 3슬롯·Element 5속성·Timeline·Play 실재생'],
       ['Template Builder', 'builder', ['운영자'], '운영자 도구 — Explorer·Editable/Lock 지정·Preview·Publish 파이프라인'],
       ['Workspace', 'workspace', ['v1'], '핵심 작업 공간 — 좌 내비 6·Canvas·Context Panel·AI Dock·모드 4종'],
       ['My Projects', 'projects', ['v1'], '최상위 단위 — 최근·즐겨찾기·공유·휴지통 / Detail·액션 6종'],
