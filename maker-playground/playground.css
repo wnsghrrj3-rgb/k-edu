@@ -963,3 +963,209 @@ select.mk-input { padding-right: 8px; }
 .mka-loop-wipe{animation-name:mkaWipeLR}
 .mka-loop-blur{animation-name:mkaBlurIn}
 .mka-loop-rotate{animation-name:mkaRotateIn}
+
+/* ============================================================
+   Home v2 (h2-*) — Sprint 02 "Quiet Confidence" 구현
+   프레임 1120 · 시선축 680 · Hero 상하 72 · 섹션 간 40~56
+   구 hv-*는 create.js 공유로 유지 — h2는 독립.
+   ============================================================ */
+.h2 { max-width: 1120px; margin: 0 auto; padding: 0 32px; }
+
+/* ---- Header : 높이 56 · 배경 동일 · 스크롤 시에만 하단 보더 ---- */
+.h2-header { height: 56px; display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; background: var(--mk-background); z-index: var(--mk-z-panel);
+  border-bottom: 1px solid transparent; transition: border-color var(--mk-mo-base) var(--mk-mo-ease); }
+.h2-header.elev { border-bottom-color: var(--mk-border); }
+.h2-logo { font: var(--mk-t-h2); letter-spacing: .2px; background: none; border: 0; cursor: pointer; color: var(--mk-text-primary); padding: 0; }
+.h2-nav { display: flex; align-items: center; gap: var(--mk-sp-6); }
+.h2-link { font: var(--mk-t-body-sm); font-weight: 500; color: var(--mk-text-secondary); background: none; border: 0; cursor: pointer; padding: 4px 0;
+  transition: color var(--mk-mo-fast) var(--mk-mo-ease); }
+.h2-link:hover { color: var(--mk-text-primary); }
+.h2-icon { width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center;
+  background: none; border: 0; border-radius: var(--mk-r-small); cursor: pointer; color: var(--mk-text-secondary); opacity: var(--mk-op-secondary);
+  transition: opacity var(--mk-mo-fast) var(--mk-mo-ease); position: relative; }
+.h2-icon::after { content: ''; position: absolute; inset: -5px; }        /* 터치 44 확장 */
+.h2-icon:hover { opacity: 1; }
+.h2-avatar { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--mk-border);
+  display: inline-flex; align-items: center; justify-content: center; font: var(--mk-t-caption); background: var(--mk-surface); }
+
+/* ---- 진입 모션 (이동 ≤8px · stagger) ---- */
+@keyframes h2in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.h2-hero { animation: h2in var(--mk-mo-base) var(--mk-mo-ease) both; }
+.h2-sec  { animation: h2in var(--mk-mo-base) var(--mk-mo-ease) both; }
+.h2-sec:nth-of-type(2) { animation-delay: 60ms; }
+.h2-sec:nth-of-type(3) { animation-delay: 120ms; }
+.h2-sec:nth-of-type(4) { animation-delay: 180ms; }
+
+/* ---- Hero : 질문 1회 display · 입력창 680 ---- */
+.h2-hero { text-align: center; padding: var(--mk-sp-18) 0 0; }
+.h2-q { font: var(--mk-t-display); font-size: 32px; line-height: 40px; margin: 0 0 var(--mk-sp-4); }
+.h2-input { position: relative; max-width: 680px; margin: 0 auto; display: flex; align-items: center;
+  background: var(--mk-surface); border: 1px solid var(--mk-border); border-radius: var(--mk-r-large); height: 56px;
+  padding: 0 8px 0 24px; transition: border-color var(--mk-mo-fast) var(--mk-mo-ease), box-shadow var(--mk-mo-fast) var(--mk-mo-ease),
+  transform var(--mk-mo-slow) var(--mk-mo-ease); }
+.h2-input:focus-within { border-color: var(--mk-teal); box-shadow: 0 0 0 3px var(--mk-teal-soft), inset 0 0 0 .5px var(--mk-teal); }
+.h2-hero.composing .h2-input { transform: translateY(-8px); }
+.h2-input input { flex: 1; border: 0; outline: 0; background: none; font: var(--mk-t-body); color: var(--mk-text-primary); min-width: 0; }
+.h2-input input::placeholder { color: var(--mk-text-secondary); transition: opacity var(--mk-mo-base) var(--mk-mo-ease); }
+.h2-input input.ph-swap::placeholder { opacity: 0; }
+.h2-make { height: 40px; padding: 0 20px; border: 0; border-radius: var(--mk-r-pill); background: var(--mk-teal); color: #fff;
+  font: var(--mk-t-button); cursor: pointer; transition: background var(--mk-mo-fast) var(--mk-mo-ease), transform 80ms; }
+.h2-make:hover { background: var(--mk-teal-hover); }
+.h2-make:active { transform: scale(.98); }
+.h2-make .ic { display: none; }
+
+/* ---- AI 흐름 (단계 = 로딩 UI · 결과 카드 spring 1곳) ---- */
+.h2-flow { max-width: 680px; margin: 0 auto; text-align: left; }
+.h2-steps { list-style: none; margin: var(--mk-sp-4) 0 0; padding: 0; }
+.h2-steps li { font: var(--mk-t-body-sm); color: var(--mk-text-secondary); padding: 5px 0 5px 20px; position: relative;
+  animation: h2in var(--mk-mo-base) var(--mk-mo-ease) both; }
+.h2-steps li::before { content: '·'; position: absolute; left: 6px; color: var(--mk-teal); }
+@keyframes h2pop { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+.h2-result { display: flex; gap: var(--mk-sp-4); align-items: center; margin-top: var(--mk-sp-4);
+  background: var(--mk-surface); border: 1px solid var(--mk-border); border-radius: var(--mk-r-medium); padding: var(--mk-sp-5);
+  animation: h2pop var(--mk-mo-slow) var(--mk-mo-spring) both; }
+.h2-result-row { display: flex; gap: var(--mk-sp-2); margin-top: var(--mk-sp-3); }
+
+/* ---- Quick Create : 칩 6 · 입력창의 절반 이하 무게 ---- */
+.h2-chips { display: flex; justify-content: center; gap: var(--mk-sp-2); margin-top: var(--mk-sp-4); }
+.h2-chip { height: 34px; padding: 0 14px; border-radius: var(--mk-r-pill); background: none;
+  border: 1px solid var(--mk-border); color: var(--mk-text-secondary); font: var(--mk-t-body-sm); font-weight: 500; cursor: pointer;
+  transition: color var(--mk-mo-fast) var(--mk-mo-ease), border-color var(--mk-mo-fast) var(--mk-mo-ease), transform 80ms;
+  position: relative; }
+.h2-chip::after { content: ''; position: absolute; inset: -5px 0; }      /* 터치 44 확장 */
+.h2-chip:hover { border-color: var(--mk-teal); color: var(--mk-teal); }
+.h2-chip:active { transform: scale(.98); }
+
+/* ---- 섹션 리듬 : Hero 다음 56 · 이후 40~56 ---- */
+.h2-sec { margin-top: var(--mk-sp-8); }
+.h2-continue-wrap { margin-top: var(--mk-sp-14); }
+.h2-main { padding-bottom: var(--mk-sp-18); }
+.h2-sec-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: var(--mk-sp-4); }
+.h2-sec-head h2 { font: var(--mk-t-h2); margin: 0; }
+.h2-season { font: var(--mk-t-caption); color: var(--mk-text-secondary); }
+.h2-meta { font: var(--mk-t-caption); color: var(--mk-text-secondary); }
+
+/* ---- Continue Editing : 단일 카드 680 (시선 축 = 입력창) ---- */
+.h2-continue { display: flex; align-items: center; gap: var(--mk-sp-4); width: 100%; max-width: 680px; margin: 0 auto; text-align: left;
+  background: var(--mk-surface); border: 1px solid var(--mk-border); border-radius: var(--mk-r-medium); padding: var(--mk-sp-5);
+  cursor: pointer; transition: border-color var(--mk-mo-fast) var(--mk-mo-ease), box-shadow var(--mk-mo-fast) var(--mk-mo-ease); }
+.h2-continue:hover { border-color: var(--mk-teal); box-shadow: var(--mk-sh-subtle); }
+.h2-continue:hover .h2-arrow { transform: translateX(4px); }
+.h2-cthumb { flex: none; width: 160px; height: 100px; border-radius: var(--mk-r-small); overflow: hidden;
+  background: var(--mk-surface-muted); display: block; position: relative; }
+.h2-cbody { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.h2-cap { font: var(--mk-t-caption); color: var(--mk-teal); }
+.h2-ctitle { font: var(--mk-t-h2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.h2-arrow { color: var(--mk-text-secondary); font-size: 18px; transition: transform var(--mk-mo-fast) var(--mk-mo-ease); }
+
+/* ---- 그리드 카드 : 무보더 · 썸네일만 프레임 ---- */
+.h2-row { display: grid; gap: var(--mk-sp-4); }
+.h2-row.cards5 { grid-template-columns: repeat(5, 1fr); }
+.h2-row.cards6 { grid-template-columns: repeat(6, 1fr); }
+.h2-card { background: none; border: 0; padding: 0; text-align: left; cursor: pointer; min-width: 0; }
+.h2-cardthumb { display: block; position: relative; aspect-ratio: 16/10; border-radius: var(--mk-r-medium);
+  border: 1px solid var(--mk-border); background: var(--mk-surface); overflow: hidden;
+  transition: box-shadow var(--mk-mo-fast) var(--mk-mo-ease), transform var(--mk-mo-fast) var(--mk-mo-ease); }
+.h2-card:hover .h2-cardthumb { box-shadow: var(--mk-sh-subtle); transform: scale(1.02); }
+.h2-card:active .h2-cardthumb { transform: scale(.99); }
+.h2-cardtitle { display: block; font: var(--mk-t-h3); margin-top: 8px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.h2-thumb-fit { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.h2-thumb-fit svg { width: 100%; height: 100%; object-fit: cover; display: block; }
+.h2-thumb-empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font: var(--mk-t-h1); color: var(--mk-text-secondary); background: var(--mk-surface-muted); }
+.h2-badge-ai { position: absolute; top: 8px; left: 8px; font: var(--mk-t-caption); color: var(--mk-teal);
+  background: var(--mk-teal-soft); border-radius: var(--mk-r-pill); padding: 3px 8px; }
+.h2-badge-ai.in { position: static; margin-left: 6px; vertical-align: 2px; }
+.h2-badge-ratio { position: absolute; bottom: 8px; left: 8px; font: var(--mk-t-caption); color: var(--mk-text-secondary);
+  background: rgba(255, 255, 255, .85); border-radius: var(--mk-r-small); padding: 2px 6px; }
+
+/* ---- Empty State : 초대장 (일러스트 금지 — 타이포·여백만) ---- */
+.h2-empty { text-align: center; margin-top: var(--mk-sp-14); }
+.h2-empty-t { font: var(--mk-t-h2); margin: 0 0 var(--mk-sp-5); }
+.h2-empty-list { max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--mk-sp-2); }
+.h2-empty-row { height: 48px; display: flex; align-items: center; gap: var(--mk-sp-3); padding: 0 var(--mk-sp-4);
+  background: var(--mk-surface); border: 1px solid var(--mk-border); border-radius: var(--mk-r-medium);
+  font: var(--mk-t-body); color: var(--mk-text-primary); cursor: pointer; text-align: left;
+  transition: border-color var(--mk-mo-fast) var(--mk-mo-ease); animation: h2in var(--mk-mo-base) var(--mk-mo-ease) both; }
+.h2-empty-row:nth-child(2) { animation-delay: 60ms; }
+.h2-empty-row:nth-child(3) { animation-delay: 120ms; }
+.h2-empty-row:hover { border-color: var(--mk-teal); }
+.h2-empty-row .glyph { color: var(--mk-teal); }
+
+/* ---- 검색 팔레트 : Home 위 유일한 레이어 ---- */
+#h2Pal { position: fixed; inset: 0; z-index: var(--mk-z-modal); }
+.h2-pal-dim { position: absolute; inset: 0; background: var(--mk-overlay);
+  animation: h2dim var(--mk-mo-slow) var(--mk-mo-ease) both; }
+@keyframes h2dim { from { opacity: 0; } to { opacity: 1; } }
+.h2-pal { position: absolute; top: 20vh; left: 50%; transform: translateX(-50%); width: 560px; max-width: calc(100vw - 32px);
+  background: var(--mk-surface); border-radius: var(--mk-r-large); box-shadow: var(--mk-sh-floating);
+  animation: h2pal var(--mk-mo-slow) var(--mk-mo-ease) both; overflow: hidden; display: flex; flex-direction: column; }
+@keyframes h2pal { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+.h2-pal input { height: 52px; border: 0; outline: 0; border-bottom: 1px solid var(--mk-border); padding: 0 var(--mk-sp-4);
+  font: var(--mk-t-body); background: none; }
+.h2-pal-list { max-height: calc(44px * 8 + 40px); overflow-y: auto; padding: var(--mk-sp-2) 0; }
+.h2-pal-g { display: block; font: var(--mk-t-caption); color: var(--mk-text-secondary); padding: 8px var(--mk-sp-4) 4px; }
+.h2-pal-row { display: flex; align-items: center; gap: var(--mk-sp-3); width: 100%; height: 44px; padding: 0 var(--mk-sp-4);
+  background: none; border: 0; border-left: 2px solid transparent; cursor: pointer; text-align: left; }
+.h2-pal-row .ic { color: var(--mk-text-secondary); width: 16px; text-align: center; }
+.h2-pal-row b { font: var(--mk-t-body-sm); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.h2-pal-row small { font: var(--mk-t-caption); color: var(--mk-text-secondary); margin-left: auto; flex: none; }
+.h2-pal-row.on { background: var(--mk-teal-soft); border-left-color: var(--mk-teal); }
+.h2-pal-none { padding: var(--mk-sp-6) var(--mk-sp-4); font: var(--mk-t-body-sm); color: var(--mk-text-secondary); text-align: center; }
+.h2-pal-hint { font: var(--mk-t-caption); color: var(--mk-text-disabled); padding: 8px var(--mk-sp-4); border-top: 1px solid var(--mk-border); }
+
+/* ---- Preview 모달 내부 ---- */
+.h2-pv h2 { font: var(--mk-t-h1); margin: 0 0 6px; }
+.h2-pv-strip { display: flex; gap: var(--mk-sp-3); overflow-x: auto; margin: var(--mk-sp-4) 0; padding-bottom: 4px; }
+.h2-pv-sc { flex: 0 0 120px; }
+.h2-pv-sc .h2-thumb-fit.box { position: relative; display: block; aspect-ratio: 16/10; border: 1px solid var(--mk-border);
+  border-radius: var(--mk-r-small); overflow: hidden; }
+.h2-pv-sc small { font: var(--mk-t-caption); color: var(--mk-text-secondary); display: block; margin-top: 4px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.h2-pv-act { display: flex; gap: var(--mk-sp-2); justify-content: flex-end; margin-top: var(--mk-sp-4); }
+
+/* ---- 포커스 (키보드만) ---- */
+.h2 button:focus-visible, .h2-pal-row:focus-visible, .h2-pal input:focus-visible {
+  outline: 2px solid var(--mk-teal); outline-offset: 2px; }
+.h2-input input:focus-visible { outline: none; }                          /* 컨테이너 링이 대체 */
+
+/* ---- Responsive : 1024 / 768 / 480 ---- */
+@media (max-width: 1024px) {
+  .h2 { padding: 0 24px; }
+  .h2-row.cards5, .h2-row.cards6 { grid-template-columns: repeat(4, 1fr); }
+  .h2-row.cards5 .h2-card:nth-child(n+5), .h2-row.cards6 .h2-card:nth-child(n+5) { display: none; }
+}
+@media (max-width: 768px) {
+  .h2-nav .h2-link:first-child { display: none; }
+  .h2-input { max-width: 90%; }
+  .h2-chips { justify-content: flex-start; overflow-x: auto; scrollbar-width: none; padding: 0 2px; }
+  .h2-chips::-webkit-scrollbar { display: none; }
+  .h2-chip { flex: none; }
+  .h2-row.cards5, .h2-row.cards6 { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding-bottom: 6px; }
+  .h2-row.cards5::-webkit-scrollbar, .h2-row.cards6::-webkit-scrollbar { display: none; }
+  .h2-row .h2-card { flex: 0 0 44%; scroll-snap-align: start; display: block !important; }
+}
+@media (max-width: 480px) {
+  .h2 { padding: 0 16px; }
+  .h2-q { font-size: 24px; line-height: 32px; }
+  .h2-input { max-width: 100%; height: 52px; padding-left: 16px; }
+  .h2-make { padding: 0; width: 40px; }
+  .h2-make .tx { display: none; }
+  .h2-make .ic { display: inline; font-size: 16px; }
+  .h2-continue { flex-direction: column; align-items: stretch; }
+  .h2-cthumb { width: 100%; height: auto; aspect-ratio: 16/10; }
+  .h2-arrow { display: none; }
+  .h2-pal { top: 0; left: 0; transform: none; width: 100%; max-width: none; border-radius: 0 0 var(--mk-r-large) var(--mk-r-large); }
+  .h2-pal-hint { display: none; }
+}
+
+/* ---- Reduced Motion : 이동·스케일 제거, 페이드만 ---- */
+@media (prefers-reduced-motion: reduce) {
+  .h2-hero, .h2-sec, .h2-steps li, .h2-result, .h2-empty-row, .h2-pal, .h2-pal-dim {
+    animation-duration: 1ms !important; animation-delay: 0ms !important; }
+  .h2-input, .h2-continue, .h2-card .h2-cardthumb, .h2-arrow, .h2-chip, .h2-make { transition: none !important; }
+  .h2-hero.composing .h2-input { transform: none; }
+  .h2-card:hover .h2-cardthumb { transform: none; }
+}

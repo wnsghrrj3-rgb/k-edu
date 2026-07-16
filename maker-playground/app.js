@@ -68,6 +68,8 @@ window.PG = (() => {
   }
 
   function boot() {
+    if (boot._done) return;                      /* 이중 발화 방어 */
+    boot._done = true;
     const h = (location.hash || '').replace('#/', '');
     if (window.MK_SCREENS[h]) state.screen = h;
     window.addEventListener('hashchange', () => {
