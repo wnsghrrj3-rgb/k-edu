@@ -53,3 +53,22 @@ export function makeCards() {
   }
   return { showPredict, showCard, hide: () => el.classList.add('hide') };
 }
+
+
+/* ── v2↔v3 전환 칩 (2026-07-16) — tools3 페이지 상단바에 "클래식 판" 링크 ── */
+(function(){try{
+  if(typeof window==='undefined'||typeof document==='undefined') return;
+  function put(){try{
+    var m=(location.pathname||'').match(/tools3\/([a-z0-9_]+)\.html/); if(!m) return;
+    var bar=document.querySelector('.k3-topbar'); if(!bar||bar.querySelector('.k3-verswap')) return;
+    var a=document.createElement('a');
+    a.className='k3-verswap'; a.textContent='🧭 클래식 판';
+    a.href='/kedu/teacher/klab.html?tool='+m[1];
+    a.style.cssText='margin-left:auto;font-size:11.5px;padding:4px 11px;border-radius:999px;'
+      +'border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.78);text-decoration:none;'
+      +'background:rgba(255,255,255,.07);white-space:nowrap';
+    bar.appendChild(a);
+  }catch(e){}}
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',put);
+  else put();
+}catch(e){}})();
