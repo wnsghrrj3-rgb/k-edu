@@ -263,7 +263,27 @@ function mount(tool,cfg){
   if(cleanup){try{cleanup();}catch(e){}cleanup=null;}
   mountEl.innerHTML='';
   cleanup=window.KLab.mount(mountEl,tool,cfg||{})||null;
-  curTool=tool; curCfg=cfg||{}; renderShare();
+  curTool=tool; curCfg=cfg||{}; renderShare(); updateVerSwap(tool);
+}
+
+/* v2↔v3 전환 칩 (2026-07-16) — 지금 보는 교구의 스튜디오 판으로. 딥링크·카드 클릭 진입 모두 갱신 */
+var V3T=["angle","animal","area","array","bodysys","circle","circuit","clock","constellation","cubes","decimal","division","earth","foodchain","fraction","graph","hangul_build","light","magnet","market","moon","motion","net","pattern","place_value","plant","probability","ratio","season","shape3d","solar","sound","space_journey","strata","symmetry","tenframe","volcano"];
+function updateVerSwap(tool){
+  try {
+    var sw=document.getElementById('ver-swap');
+    if(!tool || V3T.indexOf(tool)<0){ if(sw)sw.style.display='none'; return; }
+    if(!sw){
+      sw=document.createElement('a');
+      sw.id='ver-swap'; sw.textContent='✨ 스튜디오 판';
+      sw.style.cssText='position:fixed;right:14px;bottom:14px;z-index:9000;'
+        +'font-size:13px;font-weight:800;padding:9px 15px;border-radius:999px;text-decoration:none;'
+        +'color:#fff;background:linear-gradient(145deg,#2b3340,#12161c);border:1.5px solid rgba(255,255,255,.28);'
+        +'box-shadow:0 6px 18px rgba(0,0,0,.35)';
+      document.body.appendChild(sw);
+    }
+    sw.href='/kedu/teacher/tools3/'+tool+'.html';
+    sw.style.display='';
+  } catch(e) {}
 }
 
 /* ===== 집중 화면 (교구 하나만 보기) =====
@@ -285,7 +305,7 @@ function exitFocus(){
   inFocus=false; focusPushed=false;
   if(cleanup){try{cleanup();}catch(e){}cleanup=null;}
   mountEl.innerHTML='<div class="ph">위에서 교구를 골라 주세요</div>';
-  curTool=null; curCfg=null; renderShare();
+  curTool=null; curCfg=null; renderShare(); updateVerSwap(null);
   document.getElementById('back-bar').style.display='none';
   document.getElementById('grades').style.display='';
   document.getElementById('gradeRow').style.display='';
@@ -412,6 +432,7 @@ renderCards();
   enterFocus(label, fromLesson);
   if (window.KLab && window.KLab.has(tool)) mount(tool, cfg);
   else mountEl.innerHTML = '<div class="ph">준비 중인 교구입니다: ' + label + '</div>';
+  updateVerSwap(tool);
 
   document.getElementById('back-to-lesson').addEventListener('click', function(){
     window.close();
@@ -419,20 +440,6 @@ renderCards();
     setTimeout(function(){ try { history.back(); } catch(e){} }, 150);
   });
 
-  /* v2↔v3 전환 칩 (2026-07-16) — 같은 실험을 스튜디오 판으로 */
-  try {
-    var V3T=["angle","animal","area","array","bodysys","circle","circuit","clock","constellation","cubes","decimal","division","earth","foodchain","fraction","graph","hangul_build","light","magnet","market","moon","motion","net","pattern","place_value","plant","probability","ratio","season","shape3d","solar","sound","space_journey","strata","symmetry","tenframe","volcano"];
-    if (V3T.indexOf(tool) >= 0) {
-      var sw=document.createElement('a');
-      sw.textContent='✨ 스튜디오 판';
-      sw.href='/kedu/teacher/tools3/'+tool+'.html';
-      sw.style.cssText='position:fixed;right:14px;bottom:14px;z-index:9000;'
-        +'font-size:13px;font-weight:800;padding:9px 15px;border-radius:999px;text-decoration:none;'
-        +'color:#fff;background:linear-gradient(145deg,#2b3340,#12161c);border:1.5px solid rgba(255,255,255,.28);'
-        +'box-shadow:0 6px 18px rgba(0,0,0,.35)';
-      document.body.appendChild(sw);
-    }
-  } catch(e) {}
 })();
 </script>
 </body>
