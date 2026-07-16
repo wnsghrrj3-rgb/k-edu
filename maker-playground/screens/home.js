@@ -38,7 +38,7 @@ window.MK_SCREENS.home = (() => {
   const typeName = (key) => safe(() => window.MK_SAMPLE.TYPES.find((t) => t.key === key).name, key);
   const recoTpls = () => safe(() => {
     const l = window.MK_TPL.list();
-    return [...l].sort((a, b) => (b.ai.recommended ? 1 : 0) - (a.ai.recommended ? 1 : 0)).slice(0, 6);
+    return [...l].sort((a, b) => (b.ai.recommended ? 1 : 0) - (a.ai.recommended ? 1 : 0)).slice(0, 5);
   }, []);
 
   /* ---- 조각 렌더러 ---- */
@@ -47,7 +47,8 @@ window.MK_SCREENS.home = (() => {
   const thumb = (doc, ratioBox) => {
     const s = doc && doc.scenes && doc.scenes[0];
     if (!s) return `<span class="h2-thumb-empty" aria-hidden="true">${esc((doc && doc.title || '·').slice(0, 1))}</span>`;
-    return `<span class="h2-thumb-fit${ratioBox ? ' box' : ''}" aria-hidden="true">${M().sceneThumb(s)}</span>`;
+    const svg = M().sceneThumb(s).replace('<svg ', '<svg preserveAspectRatio="xMidYMid slice" ');
+    return `<span class="h2-thumb-fit${ratioBox ? ' box' : ''}" aria-hidden="true">${svg}</span>`;
   };
 
   const rHeader = () => `<header class="h2-header" id="h2Header">
@@ -117,10 +118,10 @@ window.MK_SCREENS.home = (() => {
     const m = new Date().getMonth() + 1;
     return `<section class="h2-sec" aria-labelledby="h2RecoT">
     <div class="h2-sec-head">
-      <h2 id="h2RecoT">이런 걸 만들어 보세요</h2>
-      <small class="h2-season">${m}월 · ${SEASON[m] || '추천'}</small>
+      <h2 id="h2RecoT">이런 걸 만들어 보세요 <small class="h2-season">${m}월 · ${SEASON[m] || '추천'}</small></h2>
+      <button class="h2-link" data-h2-go="templates">템플릿 더 보기 →</button>
     </div>
-    <div class="h2-row cards6">
+    <div class="h2-row cards5">
       ${list.map((t) => `<button class="h2-card" data-h2-tpl="${t.templateId}"
           aria-label="${esc(t.title)}, ${esc(t.ratio)}${t.ai.recommended ? ', AI 추천' : ''}">
         <span class="h2-cardthumb">${thumb(t, true)}
@@ -206,6 +207,8 @@ window.MK_SCREENS.home = (() => {
         <small class="h2-pal-hint">↑↓ 이동 · Enter 열기 · Esc 닫기</small>
       </div>`;
     document.body.appendChild(wrap);
+    const scroller = document.querySelector('#pgBody') || document.body;
+    const prevOv = scroller.style.overflow; scroller.style.overflow = 'hidden';
     const inp = wrap.querySelector('#h2PalIn');
     const list = wrap.querySelector('#h2PalList');
     const prevFocus = document.activeElement;
@@ -242,6 +245,7 @@ window.MK_SCREENS.home = (() => {
     const refresh = () => { rows = collect(inp.value.trim()); active = 0; paint(); };
     const close = () => {
       wrap.remove();
+      scroller.style.overflow = prevOv;
       document.removeEventListener('keydown', keys, true);
       if (prevFocus && prevFocus.focus) prevFocus.focus();
     };
