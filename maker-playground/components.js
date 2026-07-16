@@ -70,6 +70,26 @@ window.MK = (() => {
       </div>
     </div>`;
 
+  /* Asset placeholder 썸네일 — tone 색면 + 유형 심볼 (실이미지 자리표시) */
+  const assetThumb = (asset) => {
+    const [bg, fg] = (window.MK_ASSETS?.TONES[asset.tone]) || ['#E7EAEF', '#5B6472'];
+    const icon = (window.MK_ASSETS?.CATEGORIES.find((c) => c.key === asset.category) || {}).icon || '▦';
+    return `<div class="mk-assetthumb" style="aspect-ratio:${asset.ratio};background:${bg};color:${fg}">
+      <span class="sym">${icon}</span><span class="tp">${esc(asset.type)}</span></div>`;
+  };
+
+  /* MakerAssetCard — mode: grid|list / opts: { fav, selected } */
+  const AssetCard = (asset, mode = 'grid', opts = {}, attrs = '') =>
+    `<div class="mk-assetcard ${mode} ${opts.selected ? 'on' : ''}" draggable="true" data-asset="${asset.id}" ${attrs}>
+      ${assetThumb(asset)}
+      <div class="meta">
+        <b title="${esc(asset.name)}">${esc(asset.name)}</b>
+        <small>${esc(asset.type)} · ${esc(asset.size)}</small>
+      </div>
+      <button class="fav ${opts.fav ? 'on' : ''}" data-fav="${asset.id}" aria-label="즐겨찾기">${opts.fav ? '♥' : '♡'}</button>
+      <button class="more" data-more="${asset.id}" aria-label="더 보기">⋯</button>
+    </div>`;
+
   /* MakerModal — open(내용) / close() */
   const Modal = {
     open(html) {
@@ -83,5 +103,5 @@ window.MK = (() => {
     close() { document.getElementById('mkModal')?.remove(); },
   };
 
-  return { esc, Button, IconButton, Badge, Chip, Tabs, sceneThumb, TemplateCard, SceneCard, Modal };
+  return { esc, Button, IconButton, Badge, Chip, Tabs, sceneThumb, TemplateCard, SceneCard, Modal, assetThumb, AssetCard };
 })();

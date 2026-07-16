@@ -66,6 +66,7 @@ window.MK_SCREENS.screens = {
   render() {
     const items = [
       ['Create Flow', 'create', ['Flow'], '종류→스타일→템플릿→미리보기→Editor 깔때기'],
+      ['Asset Browser', 'assets', ['v1'], '리소스 13 카테고리 · 검색·필터·정렬·Grid/List · Preview · 드래그 구조'],
       ['Home', 'home', ['v1'], '목적 우선 시작 화면 (Header·Hero·제작시작·추천·최근·AI추천)'],
       ['Templates', 'templates', ['A','B'], '템플릿 탐색'],
       ['Editor · Design', 'editor', ['Design'], '문서형 편집'],
