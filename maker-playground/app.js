@@ -72,6 +72,7 @@ window.PG = (() => {
     boot._done = true;
     const h = (location.hash || '').replace('#/', '');
     if (window.MK_SCREENS[h]) state.screen = h;
+    if (/[?&]review=true/.test(location.search)) state.screen = 'review';   /* 쿼리 진입 지원 */
     window.addEventListener('hashchange', () => {
       const k = (location.hash || '').replace('#/', '');
       if (window.MK_SCREENS[k] && k !== state.screen) { state.screen = k; render(); }

@@ -146,7 +146,7 @@ window.MK_SCREENS.editor = (() => {
     mount(root) {
       const e = ed(), doc = e.doc, M2 = window.MK;
       root.querySelector('[data-ed="back"]').onclick = () => PG.go(PG.state.create && PG.state.create.tpl ? 'create' : 'templates');
-      root.querySelectorAll('[data-tab]').forEach((b) => b.onclick = () => { PG.state.variants.editor = b.dataset.tab; PG.render(); });
+      root.querySelectorAll('[data-tab]').forEach((b) => b.onclick = () => { PG.state.variants[PG.state.screen] = b.dataset.tab; PG.render(); });
       root.querySelectorAll('[data-menu]').forEach((b) => b.onclick = () => { e.menu = b.dataset.menu; PG.render(); });
       root.querySelectorAll('[data-scene]').forEach((b) => b.onclick = () => { e.sceneIdx = +b.dataset.scene; e.selEl = null; PG.render(); });
       root.querySelectorAll('[data-el]').forEach((b) => b.onclick = (ev) => { ev.stopPropagation(); e.selEl = +b.dataset.el; PG.render(); });
