@@ -13,7 +13,8 @@
  *    실패하면 그대로 낙하 → crash. "들어갈까?!" 의 긴장이 전부 여기서 나온다.
  *
  * 튜닝 근거 (C.R=0.10 → 이웃 중심거리 d0=√3·R≈0.1732m, g=9.81):
- *   대포     D=3·d0=0.520m, 45°, boost 2.05, wallR 0.15 → 진입 0.37~1.57 성공
+ *   대포     D=3·d0=0.520m, 45°, boost 1.95, wallR 0.15 → 진입 0.58~1.66 성공
+ *   (v2.1 실기기 피드백: 비행이 '아주 조금' 길다 → boost 2.05→1.95, 착지점 앞당김)
  *   트램펄린 D=2·d0=0.346m, 50°, boost 1.44, wallR 0.26 → 진입 0~1.96 성공
  *
  * ⚠ 실측 기반 (v1 튜닝 실패 교훈):
@@ -51,7 +52,7 @@
   }
 
   const BALLISTIC = {
-    cannon:     { span: 3, angle: Math.PI / 4,          boost: 2.05, catchR: 0.088, wallR: 0.15, wallH: 0.05, arcN: 20 },
+    cannon:     { span: 3, angle: Math.PI / 4,          boost: 1.95, catchR: 0.088, wallR: 0.15, wallH: 0.05, arcN: 20 },
     trampoline: { span: 2, angle: (50 * Math.PI) / 180, boost: 1.44, catchR: 0.088, wallR: 0.26, wallH: 0.05, arcN: 16 },
   };
 
