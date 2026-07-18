@@ -18,7 +18,7 @@ window.MK_SAMPLE = (() => {
       targetUser: 'teacher', gradeRange: '3-6', tags: ['수업', '발표'],
       scenes: [
         { id: 's1', name: '표지', width: 1280, height: 720, duration: 5, background: '#FFFFFF', transition: 'fade', order: 0,
-          elements: [t(8, 16, 60, 13, '단원 제목이 들어갑니다', 700), t(8, 46, 55, 4.2, '부제목 · 한 줄 설명'), t(8, 82, 40, 3, '발표자 이름 · 날짜')] },
+          elements: [t(8, 18, 84, 11, '단원 제목이 들어갑니다', 700), t(8, 34, 60, 4.2, '부제목 · 한 줄 설명'), t(8, 82, 40, 3, '발표자 이름 · 날짜')] },
         { id: 's2', name: '목차', width: 1280, height: 720, duration: 5, background: '#FFFFFF', transition: 'fade', order: 1,
           elements: [t(8, 12, 30, 7, '목차', 700), t(8, 34, 50, 4, '1. 첫 번째 주제'), t(8, 48, 50, 4, '2. 두 번째 주제'), t(8, 62, 50, 4, '3. 세 번째 주제')] },
         { id: 's3', name: '본문', width: 1280, height: 720, duration: 6, background: '#FFFFFF', transition: 'slide', order: 2,

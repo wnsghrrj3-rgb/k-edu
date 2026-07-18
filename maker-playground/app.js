@@ -61,6 +61,7 @@ window.PG = (() => {
       ? scr.variants.map((x) => `<button class="pg-variant ${x === v ? 'on' : ''}" data-var="${x}">${x}</button>`).join('') : '';
     document.querySelectorAll('[data-var]').forEach((b) => b.onclick = () => { state.variants[state.screen] = b.dataset.var; render(); });
     /* 본문 */
+    document.body.classList.toggle('pg-chromeless', !!scr.chromeless);
     const body = document.getElementById('pgBody');
     body.className = 'pg-body' + (scr.flush ? ' flush' : '');
     body.innerHTML = scr.render(v);

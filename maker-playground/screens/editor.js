@@ -17,16 +17,19 @@ window.MK_SCREENS.editor = (() => {
     const e = ed();
     return `<div class="ed-toolbar">
       ${M().IconButton({ icon: "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M14.5 5.5L8 12l6.5 6.5'/></svg>", tip: '나가기', attrs: 'data-ed="back"' })}
-      <span class="fname">${M().esc(e.doc.title)}</span>
-      <span class="savestate" id="edSave">${e.savedAt ? '저장됨 · ' + e.savedAt : '저장 안 함'}</span>
+      <span class="ed-tb-file">
+        <span class="fname">${M().esc(e.doc.title)}</span>
+        <span class="savestate" id="edSave">${e.savedAt ? '저장됨 · ' + e.savedAt : '저장 안 함'}</span>
+        ${M().Button({ label: '저장', kind: 'secondary', size: 'sm', attrs: 'data-ed="save"' })}
+      </span>
       <span class="grow"></span>
-      ${M().IconButton({ icon: "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M8 7L4.5 10.5 8 14'/><path d='M4.5 10.5H15a4.5 4.5 0 0 1 0 9h-3'/></svg>", tip: '실행 취소 (더미)' })}
-      ${M().IconButton({ icon: "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M16 7l3.5 3.5L16 14'/><path d='M19.5 10.5H9a4.5 4.5 0 0 0 0 9h3'/></svg>", tip: '다시 실행 (더미)' })}
-      <i class="ed-tb-div" aria-hidden="true"></i>
-      ${M().Button({ label: '저장', kind: 'secondary', size: 'sm', attrs: 'data-ed="save"' })}
+      <span class="ed-tb-hist">
+        ${M().IconButton({ icon: "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M8 7L4.5 10.5 8 14'/><path d='M4.5 10.5H15a4.5 4.5 0 0 1 0 9h-3'/></svg>", tip: '실행 취소 (준비 중)', attrs: 'disabled' })}
+        ${M().IconButton({ icon: "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M16 7l3.5 3.5L16 14'/><path d='M19.5 10.5H9a4.5 4.5 0 0 0 0 9h-3'/></svg>", tip: '다시 실행 (준비 중)', attrs: 'disabled' })}
+      </span>
       ${M().Tabs({ items: ['Design', 'Video'], on: mode === 'video' ? 'Video' : 'Design', attrs: 'data-ed="mode"' })}
+      <span class="grow"></span>
       ${M().Button({ label: '미리보기', kind: 'secondary', size: 'sm', attrs: 'data-ed="preview"' })}
-      <i class="ed-tb-div" aria-hidden="true"></i>
       ${M().Button({ label: '공유', kind: 'secondary', size: 'sm', attrs: 'data-ed="share"' })}
       ${M().Button({ label: '내보내기', kind: 'accent', size: 'sm', attrs: 'data-ed="export"' })}
     </div>`;
@@ -60,9 +63,11 @@ window.MK_SCREENS.editor = (() => {
       const sel = e.selEl === i ? 'sel' : '';
       if (el.kind === 'text') {
         const fs = (el.size / 100 * CH).toFixed(1);
-        return `<div class="ed-el ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight};line-height:1.25;color:${scene.background === '#1F2733' ? '#F2F5F9' : '#1F2733'};white-space:pre-wrap">${M().esc(el.text)}</div>`;
+        const hd = e.selEl === i ? '<i class="hd tl"></i><i class="hd tr"></i><i class="hd bl"></i><i class="hd br"></i>' : '';
+        return `<div class="ed-el ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight};line-height:1.25;color:${scene.background === '#1F2733' ? '#F2F5F9' : '#1F2733'};white-space:pre-wrap">${M().esc(el.text)}${hd}</div>`;
       }
-      return `<div class="ed-el img-ph ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%">${M().esc(el.label)}</div>`;
+      const hd2 = e.selEl === i ? '<i class="hd tl"></i><i class="hd tr"></i><i class="hd bl"></i><i class="hd br"></i>' : '';
+      return `<div class="ed-el img-ph ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%">${M().esc(el.label)}${hd2}</div>`;
     }).join('');
     return `<div class="ed-canvaswrap">
       <div class="ed-canvas" style="width:${CW}px;height:${CH}px;background:${scene.background}">${els}</div>
@@ -113,21 +118,43 @@ window.MK_SCREENS.editor = (() => {
     return `<div class="ed-props"><small class="ed-zone-cap">속성</small>${body}</div>`;
   };
 
+
+  /* 실캔버스 축소 미리보기 — Strip·Timeline 공용 */
+  const MiniScene = (scene, W = 108) => {
+    const H = Math.round(W * scene.height / scene.width);
+    const dark = scene.background === '#1F2733';
+    const els = scene.elements.map((el) => {
+      if (el.kind === 'text') {
+        const fs = Math.max(3, el.size / 100 * H);
+        return `<span style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight || 400};color:${dark ? '#F2F5F9' : '#1F2733'}">${M().esc(el.text)}</span>`;
+      }
+      return `<i style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%"></i>`;
+    }).join('');
+    return `<div class="ed-mini" style="background:${scene.background}" aria-hidden="true">${els}</div>`;
+  };
   /* ================= Bottom: Scene Strip / Timeline ================= */
   const BottomBar = (mode) => {
     const e = ed(), doc = e.doc;
     if (mode === 'video') {
       const total = doc.scenes.reduce((a, s) => a + s.duration, 0);
       const blocks = doc.scenes.map((s, i) =>
-        `<button class="ed-tl-block ${i === e.sceneIdx ? 'on' : ''}" data-scene="${i}" style="width:${Math.max(70, s.duration * 34)}px"><b>${i + 1}. ${M().esc(s.name)}</b><span class="dur">⏱ ${s.duration}초</span></button>` +
-        (i < doc.scenes.length - 1 ? `<span class="ed-tl-trans">⇄ ${M().esc(s.transition)}</span>` : '')).join('');
+        `<button class="ed-tl-block ${i === e.sceneIdx ? 'on' : ''}" data-scene="${i}" style="width:${Math.max(84, s.duration * 34)}px">${MiniScene(s)}<span class="tx"><b>${i + 1}. ${M().esc(s.name)}</b><span class="dur">${s.duration}초</span></span></button>` +
+        (i < doc.scenes.length - 1 ? `<span class="ed-tl-tr mk-tooltip" data-tip="전환: ${M().esc(s.transition)}" aria-label="전환 ${M().esc(s.transition)}">⇄</span>` : '')).join('');
       return `<div class="ed-bottom">
         <div class="ed-playbar">${M().IconButton({ icon: '▶', tip: '재생 (외형만)' })}<div class="track"><i></i></div><span style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">0:00 / 0:${String(total).padStart(2, '0')} · 총 ${doc.scenes.length}장면</span></div>
         <div class="ed-timeline">${blocks}<button class="ed-strip-add" data-ed="add" style="height:52px">＋</button></div></div>`;
     }
     return `<div class="ed-bottom"><div class="ed-strip">
-      ${doc.scenes.map((s, i) => M().SceneCard(s, i, i === e.sceneIdx, `data-scene="${i}"`)).join('')}
-      <button class="ed-strip-add" data-ed="add">＋<br>Scene</button></div></div>`;
+      ${doc.scenes.map((s, i) => `<div class="ed-sc ${i === e.sceneIdx ? 'on' : ''}">
+        <button class="frame" data-scene="${i}" aria-label="장면 ${i + 1} ${M().esc(s.name)}">
+          <span class="num">${i + 1}</span><span class="dur">${s.duration}초</span>${MiniScene(s)}</button>
+        <span class="nm">${M().esc(s.name)}</span>
+        <div class="ed-sceneops">
+          <button data-op="dup" data-i="${i}">⧉ 복제</button>
+          <button data-op="del" data-i="${i}">✕ 삭제</button>
+        </div>
+      </div>`).join('')}
+      <button class="ed-strip-add" data-ed="add" aria-label="장면 추가">＋</button></div></div>`;
   };
 
   /* ================= 화면 ================= */
@@ -141,11 +168,17 @@ window.MK_SCREENS.editor = (() => {
       const scene = e.doc.scenes[e.sceneIdx];
       return `<div class="ed">${Toolbar(e.mode)}
         <div class="ed-mid">${MainMenu()}${DetailPanel()}${CanvasArea(scene)}${PropsPanel(scene, e.mode)}</div>
-        ${BottomBar(e.mode)}</div>`;
+        ${BottomBar(e.mode)}
+        <div class="ed-mobile-guard" role="note">
+          <b>K-MAKER Editor</b>
+          <p>데스크톱 또는 태블릿 가로 화면에 최적화되어 있습니다.<br>PC에서 계속 작업해 주세요.</p>
+          <button class="mk-btn accent" data-ed="guard-home">홈으로 이동</button>
+        </div></div>`;
     },
     mount(root) {
       const e = ed(), doc = e.doc, M2 = window.MK;
       root.querySelector('[data-ed="back"]').onclick = () => PG.go(PG.state.create && PG.state.create.tpl ? 'create' : 'templates');
+      const gh = root.querySelector('[data-ed="guard-home"]'); if (gh) gh.onclick = () => PG.go('home');
       root.querySelectorAll('[data-tab]').forEach((b) => b.onclick = () => { PG.state.variants[PG.state.screen] = b.dataset.tab; PG.render(); });
       root.querySelectorAll('[data-menu]').forEach((b) => b.onclick = () => { e.menu = b.dataset.menu; PG.render(); });
       root.querySelectorAll('[data-scene]').forEach((b) => b.onclick = () => { e.sceneIdx = +b.dataset.scene; e.selEl = null; PG.render(); });
@@ -209,7 +242,7 @@ window.MK_SCREENS.editor = (() => {
 window.MK_SCREENS.review = (() => {
   const E = () => window.MK_SCREENS.editor;
   return {
-    title: 'Editor — Review Mode', variants: ['Design', 'Video'], flush: true,
+    title: 'Editor — Review Mode', variants: ['Design', 'Video'], flush: true, chromeless: true,
     render(v) {
       const e = PG.state.editor;
       if (!e.doc || !e.review) {
@@ -222,6 +255,7 @@ window.MK_SCREENS.review = (() => {
     },
     mount(root) {
       E().mount(root);
+      root.querySelector('.ed').classList.add('ed--review');
       /* 저장 차단 — 리뷰 모드의 유일한 제약 */
       const save = root.querySelector('[data-ed="save"]');
       const state = root.querySelector('#edSave');
@@ -235,7 +269,7 @@ window.MK_SCREENS.review = (() => {
         const b = document.createElement('span');
         b.className = 'ed-review-badge';
         b.textContent = 'REVIEW';
-        tb.insertBefore(b, tb.querySelector('.fname'));
+        tb.insertBefore(b, tb.querySelector('.ed-tb-file'));
       }
       /* 나가기 → 리뷰 홈이 아닌 Home으로 (검수 동선 단순화) */
       const back = root.querySelector('[data-ed="back"]');
