@@ -19,6 +19,10 @@
   #mr-title { position: absolute; top: max(14px, env(safe-area-inset-top)); left: 18px; }
   #mr-title .park { font-size: 12px; letter-spacing: 3px; color: var(--dim); }
   #mr-title .ride { font-size: 22px; font-weight: 800; }
+  #mr-track { display: block; margin-top: 8px; font: inherit; font-size: 14px; font-weight: 700;
+    color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 8px 12px; backdrop-filter: blur(8px); pointer-events: auto; cursor: pointer; }
+  #mr-desc { margin-top: 5px; font-size: 12px; color: var(--dim); max-width: 46vw; }
   #mr-title .tag { font-size: 11px; font-weight: 600; color: var(--accent); border: 1px solid var(--accent);
     border-radius: 20px; padding: 2px 8px; vertical-align: middle; margin-left: 6px; opacity: 0.85; }
 
@@ -62,6 +66,7 @@
 <script src="core/graph.js"></script>
 <script src="core/sim.js"></script>
 <script src="core/serialize.js"></script>
+<script src="core/tracks.js"></script>
 
 <script type="importmap">
 {
@@ -81,57 +86,71 @@ import { createUI } from './stage/ui.js';
 
 const NS = window.MarbleSim;
 const C = NS.CONST;
-
-// ── 골든 트랙 (tests/sim.spec.js와 동일 정의) ──
-const GOLDEN = [
-  { type: 'start',    q: 0, r: 0, h: 2, rot: 0 },
-  { type: 'slope',    q: 1, r: 0, h: 1, rot: 3 },
-  { type: 'slope',    q: 2, r: 0, h: 0, rot: 3 },
-  { type: 'straight', q: 3, r: 0, h: 0, rot: 3 },
-  { type: 'curve_l',  q: 4, r: 0, h: 0, rot: 3 },
-  { type: 'goal',     q: 4, r: 1, h: 0, rot: 2 },
-];
-
-const track = NS.buildTrack(GOLDEN);
-if (!track.ok) {
-  const el = document.getElementById('err');
-  el.style.display = 'block';
-  el.textContent = '트랙 오류: ' + track.errors.map(e => e.msg).join(' / ');
-  throw new Error('track build failed');
-}
-const pathData = NS.buildPathData(track.points, track.bowlIndexRanges);
-const sim = new NS.Sim(pathData);
+const TRACKS = NS.TRACKS;
 
 // ── 스테이지 ──
 const canvas = document.getElementById('stage');
 const { renderer, scene } = createRenderer(canvas);
-const { group, marble } = buildTrackMeshes(GOLDEN, track, C);
-scene.add(group);
-const bellMesh = group.getObjectByName('bell');
-
-// 트랙 중심으로 카메라
-const box = { x: 0, z: 0 };
-GOLDEN.forEach(p => { const c = NS.hexgrid.tileCenter(p.q, p.r, C.R); box.x += c.x; box.z += c.z; });
-box.x /= GOLDEN.length; box.z /= GOLDEN.length;
-const cams = createCameras(renderer, box);
-
 const confetti = createConfetti(scene);
+
+// ── 현재 트랙 상태 ──
+let cur = null; // { pieces, track, pathData, sim, group, marble, bellMesh }
+
+function trackCenter(pieces) {
+  const box = { x: 0, z: 0 };
+  pieces.forEach(p => { const c = NS.hexgrid.tileCenter(p.q, p.r, C.R); box.x += c.x; box.z += c.z; });
+  box.x /= pieces.length; box.z /= pieces.length;
+  return box;
+}
+
+function disposeGroup(group) {
+  group.traverse(o => {
+    if (o.geometry) o.geometry.dispose();
+    if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.dispose());
+  });
+  scene.remove(group);
+}
+
+function loadTrack(i) {
+  const pieces = TRACKS[i].pieces;
+  const track = NS.buildTrack(pieces);
+  if (!track.ok) {
+    const el = document.getElementById('err');
+    el.style.display = 'block';
+    el.textContent = '트랙 오류: ' + track.errors.map(e => e.msg).join(' / ');
+    throw new Error('track build failed');
+  }
+  if (cur) disposeGroup(cur.group);
+  const pathData = NS.buildPathData(track.points, track.bowlIndexRanges);
+  const sim = new NS.Sim(pathData);
+  const { group, marble } = buildTrackMeshes(pieces, track, C);
+  scene.add(group);
+  cur = { pieces, track, pathData, sim, group, marble, bellMesh: group.getObjectByName('bell') };
+  if (cams) cams.setCenter(trackCenter(pieces));
+  const p = sim.pos();
+  marble.position.set(p.x, p.y, p.z);
+}
+
+let cams = null;
+loadTrack(0);
+cams = createCameras(renderer, trackCenter(cur.pieces));
 
 // ── UI ──
 let vMax = 0, startTick = 0;
 const ui = createUI(document.getElementById('ui'), {
   onRelease() {
-    sim.release(0);
+    cur.sim.release(0);
     vMax = 0;
-    startTick = sim.tick;
+    startTick = cur.sim.tick;
   },
-  onReset() { sim.reset(); },
+  onReset() { cur.sim.reset(); },
   onToggleCamera() {
     const next = cams.getMode() === 'orbit' ? 'follow' : 'orbit';
     cams.setMode(next);
     return next;
   },
-});
+  onSelectTrack(i) { loadTrack(i); vMax = 0; },
+}, TRACKS);
 
 // ── 리사이즈 ──
 function resize() {
@@ -147,7 +166,7 @@ resize();
 const PLAYBACK = 0.28;
 let last = performance.now();
 let acc = 0;
-const DT = sim.P.dt;
+const DT = cur.sim.P.dt;
 
 function frame(now) {
   requestAnimationFrame(frame);
@@ -156,34 +175,34 @@ function frame(now) {
   acc += dtReal * PLAYBACK;
 
   while (acc >= DT) {
-    const events = sim.step();
+    const events = cur.sim.step();
     for (const ev of events) {
-      if (ev.type === 'bell') { ringBell(); animateBell(bellMesh); }
+      if (ev.type === 'bell') { ringBell(); animateBell(cur.bellMesh); }
       if (ev.type === 'goal') {
-        const p = sim.pos();
+        const p = cur.sim.pos();
         confetti.burst({ x: p.x, y: p.y + 0.04, z: p.z });
         ui.showResult({
-          time: (sim.tick - startTick) * DT,
+          time: (cur.sim.tick - startTick) * DT,
           vMax,
-          length: pathData.total,
+          length: cur.pathData.total,
         });
       }
     }
-    if (Math.abs(sim.v) > vMax) vMax = Math.abs(sim.v);
+    if (Math.abs(cur.sim.v) > vMax) vMax = Math.abs(cur.sim.v);
     acc -= DT;
   }
 
   // 구슬 위치·회전
-  const p = sim.pos();
-  marble.position.set(p.x, p.y, p.z);
-  const t = sim.tangent();
+  const p = cur.sim.pos();
+  cur.marble.position.set(p.x, p.y, p.z);
+  const t = cur.sim.tangent();
   const axis = new THREE.Vector3(t.z, 0, -t.x);
-  if (axis.lengthSq() > 1e-12) marble.rotateOnWorldAxis(axis.normalize(), (sim.v * dtReal * PLAYBACK) / C.MR);
+  if (axis.lengthSq() > 1e-12) cur.marble.rotateOnWorldAxis(axis.normalize(), (cur.sim.v * dtReal * PLAYBACK) / C.MR);
 
-  updateBell(bellMesh, dtReal);
+  updateBell(cur.bellMesh, dtReal);
   confetti.update(dtReal);
   cams.update(p);
-  ui.update(sim);
+  ui.update(cur.sim);
   renderer.render(scene, cams.cam);
 }
 requestAnimationFrame(frame);

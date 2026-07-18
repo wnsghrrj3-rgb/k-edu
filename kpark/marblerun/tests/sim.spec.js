@@ -7,6 +7,7 @@ require('../core/parts/basic.js');
 require('../core/graph.js');
 require('../core/sim.js');
 require('../core/serialize.js');
+require('../core/tracks.js');
 const NS = globalThis.MarbleSim;
 
 let pass = 0, fail = 0;
@@ -37,15 +38,8 @@ T('반대 포트 왕복 = 제자리', () => {
   }
 });
 
-// ---------- 골든 트랙 정의 (index.html과 동일해야 함) ----------
-const GOLDEN = [
-  { type: 'start',    q: 0, r: 0, h: 2, rot: 0 },
-  { type: 'slope',    q: 1, r: 0, h: 1, rot: 3 },
-  { type: 'slope',    q: 2, r: 0, h: 0, rot: 3 },
-  { type: 'straight', q: 3, r: 0, h: 0, rot: 3 },
-  { type: 'curve_l',  q: 4, r: 0, h: 0, rot: 3 },
-  { type: 'goal',     q: 4, r: 1, h: 0, rot: 2 },
-];
+// ---------- 골든 트랙 = TRACKS[0] (core/tracks.js 단일 소스) ----------
+const GOLDEN = NS.TRACKS[0].pieces;
 
 // ---------- 2. graph ----------
 console.log('[graph]');
@@ -175,7 +169,21 @@ T('에너지 비증가 (골든 전 구간, 오일러 이산화 허용치 1e-3)',
   assert(sim.energy() < E0, '총 에너지가 줄지 않음');
 });
 
-// ---------- 5. serialize ----------
+// ---------- 5. 프리셋 트랙 전체 ----------
+console.log('[프리셋 트랙]');
+for (const tr of NS.TRACKS) {
+  T('「' + tr.name + '」 빌드 성공 + 완주 (bell→goal)', () => {
+    const t = NS.buildTrack(tr.pieces);
+    assert(t.ok, JSON.stringify(t.errors));
+    const sim = new NS.Sim(NS.buildPathData(t.points, t.bowlIndexRanges));
+    sim.release(0);
+    const ev = sim.runToEnd(60);
+    assert(ev.some(e => e.type === 'goal'),
+      '완주 실패 (status=' + sim.status + ', s=' + sim.s.toFixed(3) + '/' + sim.pd.total.toFixed(3) + ')');
+  });
+}
+
+// ---------- 6. serialize ----------
 console.log('[serialize]');
 T('저장 → 로드 왕복 + 빌드 성공', () => {
   const json = NS.serialize.saveTrack('골든 샘플', GOLDEN);

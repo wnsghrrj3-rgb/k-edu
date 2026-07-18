@@ -37,10 +37,16 @@ export function createCameras(renderer, center) {
     }
   }
 
+  function setCenter(center) {
+    orbit.target.set(center.x, 0.08, center.z);
+    cam.position.set(center.x + 0.55, 0.5, center.z + 0.65);
+    orbit.update();
+  }
+
   function resize(w, h) {
     cam.aspect = w / h;
     cam.updateProjectionMatrix();
   }
 
-  return { cam, setMode, getMode: () => mode, update, resize };
+  return { cam, setMode, getMode: () => mode, update, resize, setCenter };
 }

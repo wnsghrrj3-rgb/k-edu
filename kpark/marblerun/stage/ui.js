@@ -2,11 +2,14 @@
  * DOM UI: 방출/리셋/카메라 버튼, 실시간 속도, 완주 기록 카드.
  * 기록은 자기 트랙 안에서만 의미 — 랭킹·비교 없음.
  */
-export function createUI(root, handlers) {
+export function createUI(root, handlers, tracks) {
+  const options = tracks.map((t, i) => '<option value="' + i + '">' + t.name + '</option>').join('');
   root.innerHTML = `
     <div id="mr-title">
       <div class="park">케이파크</div>
-      <div class="ride">마블런 <span class="tag">M0 골든 샘플</span></div>
+      <div class="ride">마블런 <span class="tag">M0</span></div>
+      <select id="mr-track">${options}</select>
+      <div id="mr-desc"></div>
     </div>
     <div id="mr-hud">
       <span id="mr-speed">0.00 m/s</span>
@@ -30,6 +33,16 @@ export function createUI(root, handlers) {
   const camBtn = $('#mr-cam');
   const resultEl = $('#mr-result');
   const resultBody = resultEl.querySelector('.result-body');
+
+  const trackSel = $('#mr-track');
+  const descEl = $('#mr-desc');
+  descEl.textContent = tracks[0].desc;
+  trackSel.addEventListener('change', () => {
+    const i = parseInt(trackSel.value, 10);
+    descEl.textContent = tracks[i].desc;
+    hideResult();
+    handlers.onSelectTrack(i);
+  });
 
   $('#mr-release').addEventListener('click', handlers.onRelease);
   $('#mr-reset').addEventListener('click', () => { hideResult(); handlers.onReset(); });
