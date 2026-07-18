@@ -143,6 +143,8 @@ window.addEventListener('resize', resize);
 resize();
 
 // ── 메인 루프: 고정 틱 120Hz 시뮬 + rAF 렌더 ──
+// PLAYBACK: 재생 배속 (물리 불변·재생만 감속 — 테스트·결정론 무영향)
+const PLAYBACK = 0.5;
 let last = performance.now();
 let acc = 0;
 const DT = sim.P.dt;
@@ -151,7 +153,7 @@ function frame(now) {
   requestAnimationFrame(frame);
   const dtReal = Math.min((now - last) / 1000, 0.1);
   last = now;
-  acc += dtReal;
+  acc += dtReal * PLAYBACK;
 
   while (acc >= DT) {
     const events = sim.step();
@@ -176,7 +178,7 @@ function frame(now) {
   marble.position.set(p.x, p.y, p.z);
   const t = sim.tangent();
   const axis = new THREE.Vector3(t.z, 0, -t.x);
-  if (axis.lengthSq() > 1e-12) marble.rotateOnWorldAxis(axis.normalize(), (sim.v * dtReal) / C.MR);
+  if (axis.lengthSq() > 1e-12) marble.rotateOnWorldAxis(axis.normalize(), (sim.v * dtReal * PLAYBACK) / C.MR);
 
   updateBell(bellMesh, dtReal);
   confetti.update(dtReal);
