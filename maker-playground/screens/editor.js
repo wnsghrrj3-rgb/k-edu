@@ -22,9 +22,11 @@ window.MK_SCREENS.editor = (() => {
       <span class="grow"></span>
       ${M().IconButton({ icon: '↺', tip: '실행 취소 (더미)' })}
       ${M().IconButton({ icon: '↻', tip: '다시 실행 (더미)' })}
+      <i class="ed-tb-div" aria-hidden="true"></i>
       ${M().Button({ label: '저장', kind: 'secondary', size: 'sm', attrs: 'data-ed="save"' })}
       ${M().Tabs({ items: ['Design', 'Video'], on: mode === 'video' ? 'Video' : 'Design', attrs: 'data-ed="mode"' })}
       ${M().Button({ label: '미리보기', kind: 'secondary', size: 'sm', attrs: 'data-ed="preview"' })}
+      <i class="ed-tb-div" aria-hidden="true"></i>
       ${M().Button({ label: '공유', kind: 'secondary', size: 'sm', attrs: 'data-ed="share"' })}
       ${M().Button({ label: '내보내기', kind: 'accent', size: 'sm', attrs: 'data-ed="export"' })}
     </div>`;
@@ -47,7 +49,7 @@ window.MK_SCREENS.editor = (() => {
     const name = (MENUS.find((m) => m[0] === ed().menu) || [])[2] || '';
     return `<div class="ed-detail"><h3>${name}</h3>
       <div class="ph-list">${(DETAIL[ed().menu] || []).map((d) => `<button class="ph-item">${d}</button>`).join('')}</div>
-      <p style="font:var(--mk-t-caption);color:var(--mk-text-secondary);margin-top:12px">⚠ 자리표시 — 시안 반영 대상</p></div>`;
+      <p class="ed-note">콘텐츠 연결 예정 — 외형 검토용</p></div>`;
   };
 
   /* ================= Center: Canvas (편집) — 확대/축소 ================= */
