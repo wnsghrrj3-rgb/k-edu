@@ -46,6 +46,63 @@ export function thudSound() {
   } catch (e) { /* 무시 */ }
 }
 
+/* 대포 발사: 노이즈 버스트 + 저역 펀치 */
+export function boomSound() {
+  try {
+    const ac = ctx();
+    const t0 = ac.currentTime;
+    const len = Math.floor(ac.sampleRate * 0.18);
+    const buf = ac.createBuffer(1, len, ac.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.2);
+    const src = ac.createBufferSource(); src.buffer = buf;
+    const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900;
+    const gn = ac.createGain(); gn.gain.value = 0.34;
+    src.connect(lp).connect(gn).connect(ac.destination);
+    src.start(t0);
+    const o = ac.createOscillator(); const g2 = ac.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(200, t0);
+    o.frequency.exponentialRampToValueAtTime(55, t0 + 0.16);
+    g2.gain.setValueAtTime(0.32, t0);
+    g2.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.2);
+    o.connect(g2).connect(ac.destination);
+    o.start(t0); o.stop(t0 + 0.2);
+  } catch (e) { /* 무시 */ }
+}
+
+/* 트램펄린 튕김: 상승 글리산도 */
+export function boingSound() {
+  try {
+    const ac = ctx();
+    const t0 = ac.currentTime;
+    const o = ac.createOscillator(); const gn = ac.createGain();
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(180, t0);
+    o.frequency.exponentialRampToValueAtTime(680, t0 + 0.13);
+    gn.gain.setValueAtTime(0.22, t0);
+    gn.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.22);
+    o.connect(gn).connect(ac.destination);
+    o.start(t0); o.stop(t0 + 0.22);
+  } catch (e) { /* 무시 */ }
+}
+
+/* 착지대 포획: 톡 — 깔때기(맑음) / 백보드(둔탁) */
+export function catchSound(wall) {
+  try {
+    const ac = ctx();
+    const t0 = ac.currentTime;
+    const o = ac.createOscillator(); const gn = ac.createGain();
+    o.type = wall ? 'square' : 'sine';
+    o.frequency.setValueAtTime(wall ? 300 : 660, t0);
+    o.frequency.exponentialRampToValueAtTime(wall ? 150 : 990, t0 + 0.09);
+    gn.gain.setValueAtTime(wall ? 0.16 : 0.20, t0);
+    gn.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.16);
+    o.connect(gn).connect(ac.destination);
+    o.start(t0); o.stop(t0 + 0.16);
+  } catch (e) { /* 무시 */ }
+}
+
 export function placeClick() {
   try {
     const ac = ctx();

@@ -22,6 +22,8 @@
     /* node 단독 로드 대비 */
     const hx = require('./hexgrid.js');
     const pt = require('./parts/basic.js');
+    require('./parts/action.js');
+    require('./parts/ballistic.js');
     return Object.assign({}, hx, pt);
   }
 
@@ -44,12 +46,13 @@
     if (starts.length !== 1) {
       errors.push({ code: 'START_COUNT', msg: '시작탑은 정확히 1개여야 함 (현재 ' + starts.length + ')' });
     }
-    if (errors.length) return { ok: false, errors, points: [], bowlIndexRanges: [], order: [], pieceRanges: [] };
+    if (errors.length) return { ok: false, errors, points: [], bowlIndexRanges: [], airIndexRanges: [], boostIndexRanges: [], launchMarks: [], order: [], pieceRanges: [] };
 
     const points = [];
     const bowlIndexRanges = [];
     const airIndexRanges = [];
     const boostIndexRanges = [];
+    const launchMarks = [];
     const pieceRanges = [];
     const order = [];
     const visited = new Set();
@@ -77,13 +80,18 @@
         const g = { i0: i0 + m.i0, i1: i0 + m.i1 };
         if (m.kind === 'air') airIndexRanges.push(g);
         else if (m.kind === 'boost') boostIndexRanges.push(g);
+        else if (m.kind === 'launch') launchMarks.push({
+          i: i0 + m.i, iLand: i0 + m.iLand, angle: m.angle, boost: m.boost,
+          catchR: m.catchR, wallR: m.wallR, wallH: m.wallH,
+        });
       }
 
       const exitPort = spec.exitPort(cur);
       if (exitPort === null || exitPort === undefined) break; // goal 도달
 
-      // 다음 부품 탐색
-      const n = hx.neighborOf(cur.q, cur.r, exitPort);
+      // 다음 부품 탐색 — 스팬 부품(대포·트램펄린)은 착지대 타일에서 이어진다
+      const et = spec.exitTile ? spec.exitTile(cur) : { q: cur.q, r: cur.r };
+      const n = hx.neighborOf(et.q, et.r, exitPort);
       const nk = hx.key(n.q, n.r);
       if (!byTile.has(nk)) {
         if (!(opts && opts.allowNoGoal)) errors.push({ code: 'DISCONNECTED', msg: '출구 다음 타일 비어있음: ' + nk, piece: curIdx });
@@ -112,7 +120,7 @@
       errors.push({ code: 'NO_GOAL', msg: '골 벨에 도달하지 못함' });
     }
 
-    return { ok: errors.length === 0, errors, points, bowlIndexRanges, airIndexRanges, boostIndexRanges, order, pieceRanges };
+    return { ok: errors.length === 0, errors, points, bowlIndexRanges, airIndexRanges, boostIndexRanges, launchMarks, order, pieceRanges };
   }
 
   return { buildTrack };

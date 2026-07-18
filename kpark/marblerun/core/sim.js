@@ -25,6 +25,8 @@
     bowlDamp: 7.0, // 골 그릇 선형 감쇠 (1/s)
     boost: 3.0,    // 부스터 추진력 (단위질량, m/s²)
     floorY: 0.012, // 이탈 낙하 착지 높이 (구슬 반지름)
+    catchKeep: 0.85, // 착지대 깔때기 포획 시 수평속도 유지율
+    wallKeep: 0.45,  // 백보드(뒷벽) 맞고 떨어진 경우 유지율
     dt: 1 / 120,   // 고정 틱
   };
 
@@ -82,7 +84,24 @@
     const bowlRanges = toS(bowlIndexRanges);
     const airRanges = toS(opts && opts.airIndexRanges);
     const boostRanges = toS(opts && opts.boostIndexRanges);
-    return { points, segs, cum, total, bowlRanges, airRanges, boostRanges };
+    // 발사 지점: 인덱스 → 호길이 s + 실제 좌표 (탄도 부품)
+    const launches = ((opts && opts.launchMarks) || []).map(m => ({
+      sLaunch: cum[m.i],
+      sLand: cum[m.iLand],
+      from: points[m.i],
+      to: points[m.iLand],
+      angle: m.angle,
+      boost: m.boost,
+      catchR: m.catchR,
+      wallR: m.wallR || m.catchR,
+      wallH: m.wallH || 0,
+      u: (function () {
+        const A = points[m.i], B = points[m.iLand];
+        const dx = B.x - A.x, dz = B.z - A.z, dl = Math.hypot(dx, dz) || 1;
+        return { x: dx / dl, z: dz / dl };
+      })(),
+    })).sort((a, b) => a.sLaunch - b.sLaunch);
+    return { points, segs, cum, total, bowlRanges, airRanges, boostRanges, launches };
   }
 
   function segIndexAt(pd, s) {
@@ -136,6 +155,8 @@
       this._restTicks = 0;
       this._lastDir = 0;
       this._fall = null; // 이탈 낙하 { p:{x,y,z}, v:{x,y,z} }
+      this._air = null;  // 탄도 비행 { p, v, L }  (L = 발사 정의)
+      this._missed = false;
     }
     release(v0) {
       this.reset();
@@ -145,21 +166,119 @@
     }
     energy() {
       // 단위질량 역학적 에너지 (진단·테스트용)
+      const f = this._air || this._fall;
+      if (f) return 0.5 * (f.v.x * f.v.x + f.v.y * f.v.y + f.v.z * f.v.z) + this.P.g * f.p.y;
       return 0.5 * this.v * this.v + this.P.g * posAt(this.pd, this.s).y;
     }
-    pos() { return this._fall ? this._fall.p : posAt(this.pd, this.s); }
-    tangent() { return tangentAt(this.pd, this.s); }
+    pos() {
+      if (this._air) return this._air.p;
+      if (this._fall) return this._fall.p;
+      return posAt(this.pd, this.s);
+    }
+    tangent() {
+      const f = this._air || this._fall;
+      if (f) {
+        const L = Math.hypot(f.v.x, f.v.y, f.v.z) || 1;
+        return { x: f.v.x / L, y: f.v.y / L, z: f.v.z / L };
+      }
+      return tangentAt(this.pd, this.s);
+    }
+    speed() {
+      const f = this._air || this._fall;
+      if (f) return Math.hypot(f.v.x, f.v.y, f.v.z);
+      return Math.abs(this.v);
+    }
+
+    /* 발사: 진입 속도 + 부품 부스트 → 지정 각도로 사출.
+     * v_out = √(v_in² + 2·boost),  방향 = (발사→착지) 수평 단위벡터를 angle 만큼 들어올림. */
+    _launch(L, ev) {
+      const P = this.P;
+      const vin = Math.abs(this.v);
+      const sp = Math.sqrt(vin * vin + 2 * L.boost);
+      let dx = L.to.x - L.from.x, dz = L.to.z - L.from.z;
+      const dl = Math.hypot(dx, dz) || 1;
+      dx /= dl; dz /= dl;
+      const ch = Math.cos(L.angle), sh = Math.sin(L.angle);
+      this._air = {
+        p: { x: L.from.x, y: L.from.y, z: L.from.z },
+        v: { x: dx * sp * ch, y: sp * sh, z: dz * sp * ch },
+        L,
+      };
+      this.status = 'air';
+      this.v = 0;
+      ev.push({ type: 'launch', speed: sp, s: L.sLaunch });
+      // 사거리 예보 (진단·힌트용, 물리에 영향 없음)
+      this._airRange = (sp * sp * Math.sin(2 * L.angle)) / P.g;
+      this._missed = false;
+      return ev;
+    }
+
+    /* 비행 1틱: 포물선 적분 → 착지대 평면 하강 통과 시 포획 판정 */
+    _airStep(ev) {
+      const P = this.P, dt = P.dt, a = this._air, L = a.L;
+      const yPrev = a.p.y;
+      // 등가속 정확 적분 — 비행 중 역학적 에너지가 정확히 보존된다
+      a.p.x += a.v.x * dt;
+      a.p.y += a.v.y * dt - 0.5 * P.g * dt * dt;
+      a.p.z += a.v.z * dt;
+      a.v.y -= P.g * dt;
+
+      // 착지대 판정 — 깔때기 / 백보드 / 빗나감
+      const dx = a.p.x - L.to.x, dz = a.p.z - L.to.z;
+      const along = dx * L.u.x + dz * L.u.z;              // + = 착지대를 지나침
+      const lat = Math.abs(dx * L.u.z - dz * L.u.x);      // 좌우 편차
+      const capture = (keep, kind, miss) => {
+        this.s = L.sLand;
+        this.v = Math.hypot(a.v.x, a.v.z) * keep;
+        this.status = 'rolling';
+        this._air = null;
+        this._restTicks = 0;
+        this._lastDir = 1;
+        ev.push({ type: 'catch', miss, wall: kind === 'wall', v: this.v });
+      };
+
+      if (a.v.y < 0 && lat <= L.catchR) {
+        // 1) 깔때기: 착지 평면을 하강 통과하며 오차 이내
+        if (yPrev > L.to.y && a.p.y <= L.to.y && Math.abs(along) <= L.catchR) {
+          capture(P.catchKeep, 'clean', Math.abs(along));
+          return ev;
+        }
+        // 2) 백보드: 낮게 날아온 오버슛이 뒷벽 안쪽 면에 맞고 떨어짐
+        if (along > L.catchR && along <= L.wallR && a.p.y <= L.to.y + L.wallH) {
+          capture(P.wallKeep, 'wall', along);
+          return ev;
+        }
+      }
+      if (a.v.y < 0 && yPrev > L.to.y && a.p.y <= L.to.y && !this._missed) {
+        this._missed = true;
+        ev.push({ type: 'miss', miss: Math.hypot(dx, dz), over: along > 0 });
+      }
+
+      if (a.p.y <= P.floorY) {
+        a.p.y = P.floorY;
+        this._fall = a;
+        this._air = null;
+        this.status = 'fallen';
+        ev.push({ type: 'crash' });
+      }
+      return ev;
+    }
 
     step() {
       // 에너지 스테핑: E' = E − 손실·|Δs|,  v' = ±√(max(0, 2(E' − g·h(s'))))
       // → 구조적으로 에너지 비증가 보장 (설계서 §2-1)
       const ev = [];
+      // 탄도 비행: 진짜 포물선 적분 + 착지대 포획 판정
+      if (this.status === 'air') { this._airStep(ev); this.tick++; return ev; }
       // 이탈 낙하: 포물선 적분 → 바닥 충돌
       if (this.status === 'falling') {
         const P = this.P, dt = P.dt;
         const f = this._fall;
+        // 등가속 정확 적분: y += v·dt − ½g·dt²  (심플렉틱 오일러의 계통 오차 제거)
+        f.p.x += f.v.x * dt;
+        f.p.y += f.v.y * dt - 0.5 * P.g * dt * dt;
+        f.p.z += f.v.z * dt;
         f.v.y -= P.g * dt;
-        f.p.x += f.v.x * dt; f.p.y += f.v.y * dt; f.p.z += f.v.z * dt;
         if (f.p.y <= P.floorY) {
           f.p.y = P.floorY;
           this.status = 'fallen';
@@ -187,6 +306,19 @@
       const ds = vE * dt;
       const sNew = Math.min(Math.max(this.s + ds, 0), pd.total);
       const dsActual = sNew - this.s;
+
+      // ── 탄도 발사 (캐논·트램펄린): 발사 지점 통과 → AIR 상태 ──
+      if (vE > 0 && pd.launches && pd.launches.length) {
+        for (const L of pd.launches) {
+          if (this.s < L.sLaunch && sNew >= L.sLaunch) {
+            this.s = L.sLaunch;
+            this._launch(L, ev);
+            this.tick++;
+            return ev;
+          }
+        }
+      }
+
       const yNew = posAt(pd, sNew).y;
 
       // 손실 일 (실제 이동 거리 기준)
@@ -272,7 +404,7 @@
     runToEnd(maxSec) {
       const maxTicks = Math.round((maxSec || 30) / this.P.dt);
       const all = [];
-      while ((this.status === 'rolling' || this.status === 'falling') && this.tick < maxTicks) {
+      while ((this.status === 'rolling' || this.status === 'falling' || this.status === 'air') && this.tick < maxTicks) {
         all.push(...this.step());
       }
       return all;

@@ -17,6 +17,9 @@ const COLOR = {
   goalBase: 0xffb020,
   bell: 0xffd35c,
   marble: 0x4de1ff,
+  cannon: 0xff6b6b,
+  tramp: 0x5cff9d,
+  catcher: 0x9d84ff,
 };
 
 export function createRenderer(canvas) {
@@ -85,7 +88,24 @@ export function buildTrackMeshes(pieces, track, C) {
   const pillarGeo = new THREE.CylinderGeometry(C.R * 0.28, C.R * 0.32, C.H, 6);
   const pillarMat = new THREE.MeshStandardMaterial({ color: COLOR.pillar, roughness: 0.7 });
 
+  // 스팬 부품(대포·트램펄린)의 착지대 타일도 바닥·기둥·판을 세운다 (비행 타일은 일부러 빈 공간)
+  const BAL = NS.BALLISTIC || {};
+  function tileAhead(p, n) {
+    const dir = (p.rot + 3) % 6;
+    let q = p.q, r = p.r;
+    for (let i = 0; i < n; i++) { const t = hx.neighborOf(q, r, dir); q = t.q; r = t.r; }
+    return { q, r, dir };
+  }
+  const stacks = [];
   for (const p of pieces) {
+    stacks.push({ q: p.q, r: p.r, h: p.h, type: p.type });
+    if (BAL[p.type]) {
+      const t = tileAhead(p, BAL[p.type].span);
+      stacks.push({ q: t.q, r: t.r, h: p.h, type: 'catcher' });
+    }
+  }
+
+  for (const p of stacks) {
     const c = hx.tileCenter(p.q, p.r, C.R);
     // 베이스판 (지면)
     const base = new THREE.Mesh(tileGeo, tileMat);
@@ -140,6 +160,11 @@ export function buildTrackMeshes(pieces, track, C) {
     if (piece.type === 'start') group.add(makeTower(piece, C, hx));
     if (piece.type === 'goal') group.add(makeGoal(piece, C, hx));
     if (piece.type === 'gyro') group.add(makeGyroPole(piece, C, hx));
+    if (piece.type === 'cannon' || piece.type === 'trampoline') {
+      group.add(makeBallistic(piece, C, hx, NS));
+      const arc = track.points.slice(rg.i0 + 1, rg.i1); // 설계 조준 궤적
+      if (arc.length >= 2) group.add(makeAimArc(arc));
+    }
   }
 
   // 구슬
@@ -202,6 +227,98 @@ function buildRails(rawPts, C, railMat, tieMat, baseIdx, airSet) {
     tie.rotation.y = -Math.atan2(dz, dx);
     tie.castShadow = true;
     g.add(tie);
+  }
+  return g;
+}
+
+/* 대포 포신 / 트램펄린 매트 + 착지대(깔때기 + 백보드) */
+function makeBallistic(piece, C, hx, NS) {
+  const g = new THREE.Group();
+  const spec = NS.BALLISTIC[piece.type];
+  const dir = (piece.rot + 3) % 6;
+  let q = piece.q, r = piece.r;
+  for (let i = 0; i < spec.span; i++) { const t = hx.neighborOf(q, r, dir); q = t.q; r = t.r; }
+  const A = hx.tileCenter(piece.q, piece.r, C.R);
+  const B = hx.tileCenter(q, r, C.R);
+  const y = piece.h * C.H;
+  let ux = B.x - A.x, uz = B.z - A.z;
+  const ul = Math.hypot(ux, uz) || 1; ux /= ul; uz /= ul;
+  const yaw = Math.atan2(ux, uz);
+
+  if (piece.type === 'cannon') {
+    const mount = new THREE.Mesh(
+      new THREE.CylinderGeometry(C.R * 0.30, C.R * 0.36, 0.012, 12),
+      new THREE.MeshStandardMaterial({ color: 0x3a2a5a, roughness: 0.6 })
+    );
+    mount.position.set(A.x, y + 0.006, A.z);
+    g.add(mount);
+    const barrel = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.011, 0.014, 0.055, 14, 1, true),
+      new THREE.MeshStandardMaterial({
+        color: COLOR.cannon, emissive: 0x8a1f1f, emissiveIntensity: 0.55,
+        side: THREE.DoubleSide, roughness: 0.3, metalness: 0.6,
+      })
+    );
+    // 포신을 발사각(45°)으로 눕혀 착지대 방향으로 조준
+    barrel.position.set(A.x + ux * 0.012, y + 0.028, A.z + uz * 0.012);
+    barrel.rotation.order = 'YXZ';
+    barrel.rotation.y = yaw;
+    barrel.rotation.x = spec.angle;
+    barrel.castShadow = true;
+    g.add(barrel);
+  } else {
+    const frame = new THREE.Mesh(
+      new THREE.TorusGeometry(C.R * 0.5, 0.0035, 8, 20),
+      new THREE.MeshStandardMaterial({ color: 0x2a3568, roughness: 0.6 })
+    );
+    frame.rotation.x = Math.PI / 2;
+    frame.position.set(A.x, y + 0.010, A.z);
+    g.add(frame);
+    const mat = new THREE.Mesh(
+      new THREE.CircleGeometry(C.R * 0.5, 24),
+      new THREE.MeshStandardMaterial({
+        color: COLOR.tramp, emissive: 0x1f8a4a, emissiveIntensity: 0.5,
+        side: THREE.DoubleSide, roughness: 0.5, transparent: true, opacity: 0.85,
+      })
+    );
+    mat.rotation.x = -Math.PI / 2;
+    mat.position.set(A.x, y + 0.010, A.z);
+    g.add(mat);
+  }
+
+  // 착지대: 깔때기
+  const funnel = new THREE.Mesh(
+    new THREE.CylinderGeometry(C.R * 0.82, C.R * 0.30, 0.026, 20, 1, true),
+    new THREE.MeshStandardMaterial({
+      color: COLOR.catcher, emissive: 0x4a2fb8, emissiveIntensity: 0.5,
+      side: THREE.DoubleSide, roughness: 0.35,
+    })
+  );
+  funnel.position.set(B.x, y + 0.013, B.z);
+  g.add(funnel);
+  // 백보드(뒷벽): 오버슛을 받아내는 판
+  const wall = new THREE.Mesh(
+    new THREE.BoxGeometry(C.R * 1.35, spec.wallH, 0.005),
+    new THREE.MeshStandardMaterial({
+      color: 0xffd35c, emissive: 0x8a5200, emissiveIntensity: 0.45, roughness: 0.4, metalness: 0.3,
+    })
+  );
+  wall.position.set(B.x + ux * spec.wallR, y + spec.wallH / 2 + 0.004, B.z + uz * spec.wallR);
+  wall.rotation.y = yaw + Math.PI / 2;
+  wall.castShadow = true;
+  g.add(wall);
+  return g;
+}
+
+/* 설계 조준 궤적: 얇은 점선 아크 (실제 비행은 물리가 결정) */
+function makeAimArc(pts) {
+  const g = new THREE.Group();
+  const mat = new THREE.MeshBasicMaterial({ color: 0x8a93c8, transparent: true, opacity: 0.30 });
+  const geo = new THREE.SphereGeometry(0.0022, 6, 4);
+  for (let i = 0; i < pts.length; i += 2) {
+    const d = new THREE.Mesh(geo, mat);
+    d.position.set(pts[i].x, pts[i].y, pts[i].z);
+    g.add(d);
   }
   return g;
 }

@@ -41,6 +41,10 @@ export function createUI(root, handlers, tracks) {
           <button data-part="booster" title="지나가면 슝 — 가속!">🚀<span>부스터</span></button>
           <button data-part="zigzag" title="좌우 물결 — 커브 마찰로 살짝 감속">〰<span>지그재그</span></button>
         </div>
+        <div class="prow">
+          <button data-part="cannon" title="3칸 건너 착지대로 발사! 속도가 모자라면 못 건넌다">💥<span>대포</span></button>
+          <button data-part="trampoline" title="2칸 건너 착지대로 튕겨 보낸다">🤸<span>트램펄린</span></button>
+        </div>
       </div>
       <div id="mr-buildops">
         <div id="mr-height">
@@ -106,11 +110,11 @@ export function createUI(root, handlers, tracks) {
   });
 
   // ---- 표시 갱신 ----
-  const STATE_LABEL = { ready: '대기 중', rolling: '주행 중', goal: '완주!', rest: '멈춤', falling: '이탈!', fallen: '추락' };
+  const STATE_LABEL = { ready: '대기 중', rolling: '주행 중', goal: '완주!', rest: '멈춤', air: '비행 중 ✈', falling: '이탈!', fallen: '추락' };
 
   function update(sim, mode) {
     if (mode === 'run') {
-      speedEl.textContent = Math.abs(sim.v).toFixed(2) + ' m/s';
+      speedEl.textContent = (sim.speed ? sim.speed() : Math.abs(sim.v)).toFixed(2) + ' m/s';
       stateEl.textContent = STATE_LABEL[sim.status] || sim.status;
     }
   }

@@ -53,6 +53,27 @@
       startH: 2,
       seq: ['slope', 'booster', 'booster', 'loop', 'slope', 'straight', 'goal'],
     },
+    {
+      id: 'cannonrange',
+      name: '대포 발사대',
+      desc: '3칸을 날아 착지대에 꽂힌다 — 속도가 모자라면 못 건넌다',
+      startH: 5,
+      seq: ['slope', 'slope', 'straight', 'cannon', 'slope', 'booster', 'loop', 'slope', 'goal'],
+    },
+    {
+      id: 'trampolinepark',
+      name: '트램펄린 파크',
+      desc: '통통 두 번 튕겨서 건너가는 코스',
+      startH: 3,
+      seq: ['slope', 'trampoline', 'curve_l', 'trampoline', 'straight', 'goal'],
+    },
+    {
+      id: 'skyroute',
+      name: '공중 대탐험',
+      desc: '대포로 날고 트램펄린으로 튕기고 — 땅에 거의 안 닿는 코스',
+      startH: 5,
+      seq: ['slope', 'slope', 'straight', 'cannon', 'slope', 'trampoline', 'curve_r', 'goal'],
+    },
   ];
 
   return { TRACKS };
