@@ -23,11 +23,12 @@
     c_d: 0.020,    // 속도² 저항 (1/m)
     k_c: 0.004,    // 곡률 페널티 (무차원·m)
     bowlDamp: 7.0, // 골 그릇 선형 감쇠 (1/s)
+    boost: 3.0,    // 부스터 추진력 (단위질량, m/s²)
     dt: 1 / 120,   // 고정 틱
   };
 
   // 웨이포인트 → 세그먼트 데이터 (길이·기울기·cosθ·곡률·누적 s)
-  function buildPathData(points, bowlIndexRanges) {
+  function buildPathData(points, bowlIndexRanges, opts) {
     const n = points.length;
     if (n < 2) throw new Error('경로 웨이포인트 부족');
     const segs = [];
@@ -56,8 +57,11 @@
       segs[i + 1].kappa += k / 2;
     }
     const total = cum[cum.length - 1];
-    const bowlRanges = (bowlIndexRanges || []).map(r => ({ s0: cum[r.i0], s1: cum[Math.min(r.i1, n - 1)] }));
-    return { points, segs, cum, total, bowlRanges };
+    const toS = (rs) => (rs || []).map(r => ({ s0: cum[r.i0], s1: cum[Math.min(r.i1, n - 1)] }));
+    const bowlRanges = toS(bowlIndexRanges);
+    const airRanges = toS(opts && opts.airIndexRanges);
+    const boostRanges = toS(opts && opts.boostIndexRanges);
+    return { points, segs, cum, total, bowlRanges, airRanges, boostRanges };
   }
 
   function segIndexAt(pd, s) {
@@ -88,10 +92,13 @@
     return pd.segs[segIndexAt(pd, s)].dir;
   }
 
-  function inBowl(pd, s) {
-    for (const r of pd.bowlRanges) if (s >= r.s0 && s <= r.s1) return true;
+  function inRange(ranges, s) {
+    for (const r of ranges) if (s >= r.s0 && s <= r.s1) return true;
     return false;
   }
+  function inBowl(pd, s) { return inRange(pd.bowlRanges, s); }
+  function inAir(pd, s) { return inRange(pd.airRanges || [], s); }
+  function inBoost(pd, s) { return inRange(pd.boostRanges || [], s); }
 
   class Sim {
     constructor(pathData, phys) {
@@ -147,8 +154,11 @@
       const yNew = posAt(pd, sNew).y;
 
       // 손실 일 (실제 이동 거리 기준)
-      let fMag = P.mu_r * P.g * seg.cos + (P.c_d + P.k_c * seg.kappa) * vE * vE;
+      // air: 공중 — 구름마찰·저항 없음 / boost: 추진 — 음의 마찰 (에너지 주입)
+      const air = inAir(pd, this.s);
+      let fMag = air ? 0 : P.mu_r * P.g * seg.cos + (P.c_d + P.k_c * seg.kappa) * vE * vE;
       if (bowl) fMag += P.bowlDamp * Math.abs(vE);
+      if (inBoost(pd, this.s)) fMag -= P.boost;
       const lossWork = fMag * Math.abs(dsActual);
 
       // 에너지 보존 보정

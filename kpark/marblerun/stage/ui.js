@@ -26,11 +26,21 @@ export function createUI(root, handlers, tracks) {
     <!-- 건설 모드 -->
     <div id="mr-build">
       <div id="mr-palette">
-        <button data-part="straight" title="직선 레일">➖<span>직선</span></button>
-        <button data-part="curve_l" title="왼쪽으로 도는 커브">⤴<span>커브 L</span></button>
-        <button data-part="curve_r" title="오른쪽으로 도는 커브">⤵<span>커브 R</span></button>
-        <button data-part="slope" title="한 칸 내려가는 경사">⛰<span>경사</span></button>
-        <button data-part="goal" title="트랙의 끝, 골 벨">🔔<span>골 벨</span></button>
+        <div class="prow">
+          <button data-part="straight" title="직선 레일">➖<span>직선</span></button>
+          <button data-part="curve_l" title="왼쪽으로 도는 커브">⤴<span>커브 L</span></button>
+          <button data-part="curve_r" title="오른쪽으로 도는 커브">⤵<span>커브 R</span></button>
+          <button data-part="slope" title="한 칸 내려가는 경사">↘<span>경사</span></button>
+          <button data-part="goal" title="트랙의 끝, 골 벨">🔔<span>골 벨</span></button>
+        </div>
+        <div class="prow">
+          <button data-part="hill" title="봉우리를 넘어라 — 속도가 부족하면 되돌아온다!">⛰<span>언덕</span></button>
+          <button data-part="loop" title="360° 수직 루프 — 빠르게 진입해야 넘는다">➰<span>루프</span></button>
+          <button data-part="gyro" title="나선 2회전 급강하 (높이 2칸 필요)">🌀<span>자이로</span></button>
+          <button data-part="jump" title="레일이 끊긴 공중 구간!">🛫<span>점프</span></button>
+          <button data-part="booster" title="지나가면 슝 — 가속!">🚀<span>부스터</span></button>
+          <button data-part="zigzag" title="좌우 물결 — 커브 마찰로 살짝 감속">〰<span>지그재그</span></button>
+        </div>
       </div>
       <div id="mr-buildops">
         <div id="mr-height">

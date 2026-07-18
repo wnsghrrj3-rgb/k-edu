@@ -11,7 +11,10 @@ export function createCameras(renderer, center) {
   const orbit = new OrbitControls(cam, renderer.domElement);
   orbit.target.set(center.x, 0.08, center.z);
   orbit.enableDamping = true;
-  orbit.dampingFactor = 0.08;
+  orbit.dampingFactor = 0.055;   // 부드러운 관성
+  orbit.rotateSpeed = 0.45;      // 휙휙 방지 — 회전 감도 절반 이하
+  orbit.zoomSpeed = 0.5;
+  orbit.panSpeed = 0.5;
   orbit.minDistance = 0.15;
   orbit.maxDistance = 2.5;
   orbit.maxPolarAngle = Math.PI * 0.49;

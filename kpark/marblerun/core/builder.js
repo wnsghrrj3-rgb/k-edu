@@ -23,7 +23,9 @@
     return require('./hexgrid.js').hexgrid;
   }
 
-  const APPENDABLE = ['straight', 'curve_l', 'curve_r', 'slope', 'goal'];
+  const APPENDABLE = ['straight', 'curve_l', 'curve_r', 'slope', 'goal',
+                      'hill', 'loop', 'gyro', 'jump', 'booster', 'zigzag'];
+  const DROPS = { slope: 1, gyro: 2 }; // 부품별 하강 칸수 (그 외 0)
 
   function compile(state) {
     const hx = hex();
@@ -46,20 +48,19 @@
       if (occupied.has(k)) { errors.push({ code: 'COLLISION', msg: '자리가 이미 차 있음: ' + k, at: i }); break; }
 
       const entry = hx.opposite(exitPort);
-      let h, newExit;
-      if (t === 'slope') {
-        if (exitH < 1) { errors.push({ code: 'TOO_LOW', msg: '바닥(높이 0)에서는 경사를 놓을 수 없음', at: i }); break; }
-        h = exitH - 1;
-        newExit = (entry + 3) % 6;
-      } else if (t === 'straight') { h = exitH; newExit = (entry + 3) % 6; }
-      else if (t === 'curve_l')    { h = exitH; newExit = (entry + 2) % 6; }
-      else if (t === 'curve_r')    { h = exitH; newExit = (entry + 4) % 6; }
-      else /* goal */              { h = exitH; newExit = null; }
+      const drop = DROPS[t] || 0;
+      if (exitH < drop) { errors.push({ code: 'TOO_LOW', msg: '높이가 부족해 ' + t + '를 놓을 수 없음 (필요 ' + drop + '칸)', at: i }); break; }
+      const h = exitH - drop;
+      let newExit;
+      if (t === 'curve_l')      newExit = (entry + 2) % 6;
+      else if (t === 'curve_r') newExit = (entry + 4) % 6;
+      else if (t === 'goal')    newExit = null;
+      else                      newExit = (entry + 3) % 6;
 
       pieces.push({ type: t, q: n.q, r: n.r, h, rot: entry });
       occupied.add(k);
       q = n.q; r = n.r;
-      if (t === 'slope') exitH = h;
+      if (drop > 0) exitH = h;
       if (newExit === null) { ended = true; }
       else exitPort = newExit;
     }
@@ -77,7 +78,7 @@
   function canPlace(comp, type) {
     if (comp.ended || !comp.ok) return false;
     if (!comp.next || comp.next.blocked) return false;
-    if (type === 'slope' && comp.exitH < 1) return false;
+    if ((DROPS[type] || 0) > comp.exitH) return false;
     return APPENDABLE.indexOf(type) >= 0;
   }
 

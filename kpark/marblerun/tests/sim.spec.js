@@ -4,6 +4,7 @@
 'use strict';
 require('../core/hexgrid.js');
 require('../core/parts/basic.js');
+require('../core/parts/action.js');
 require('../core/graph.js');
 require('../core/sim.js');
 require('../core/serialize.js');
@@ -205,13 +206,88 @@ for (const tr of NS.TRACKS) {
     assert(c.ok && c.ended, '컴파일 실패: ' + JSON.stringify(c.errors));
     const t = NS.buildTrack(c.pieces);
     assert(t.ok, JSON.stringify(t.errors));
-    const sim = new NS.Sim(NS.buildPathData(t.points, t.bowlIndexRanges));
+    const sim = new NS.Sim(NS.buildPathData(t.points, t.bowlIndexRanges,
+      { airIndexRanges: t.airIndexRanges, boostIndexRanges: t.boostIndexRanges }));
     sim.release(0);
-    const ev = sim.runToEnd(60);
+    const ev = sim.runToEnd(120);
     assert(ev.some(e => e.type === 'goal'),
       '완주 실패 (status=' + sim.status + ', s=' + sim.s.toFixed(3) + '/' + sim.pd.total.toFixed(3) + ')');
   });
 }
+
+// ---------- 6.5 액션 부품 물리 ----------
+console.log('[액션 부품]');
+function runSeq(startH, seq, maxSec) {
+  const c = NS.compile({ startH, seq });
+  if (!c.ok) return { compileErrors: c.errors };
+  const t = NS.buildTrack(c.pieces, null, { allowNoGoal: true });
+  const sim = new NS.Sim(NS.buildPathData(t.points, t.bowlIndexRanges,
+    { airIndexRanges: t.airIndexRanges, boostIndexRanges: t.boostIndexRanges }));
+  sim.release(0);
+  let vMax = 0;
+  const evs = [];
+  const maxTicks = Math.round((maxSec || 60) / sim.P.dt);
+  while (sim.status === 'rolling' && sim.tick < maxTicks) {
+    evs.push(...sim.step());
+    if (Math.abs(sim.v) > vMax) vMax = Math.abs(sim.v);
+  }
+  return { sim, evs, vMax };
+}
+T('언덕: 낙차 부족(시작 1)이면 역행, 골 미도달', () => {
+  const r = runSeq(1, ['hill', 'straight', 'goal'], 30);
+  assert(r.evs.some(e => e.type === 'reverse'), 'reverse 없음');
+  assert(!r.evs.some(e => e.type === 'goal'), '넘으면 안 되는데 완주함');
+});
+T('언덕: 낙차 충분(시작 3, 경사 2개)이면 통과', () => {
+  const r = runSeq(3, ['slope', 'slope', 'hill', 'goal'], 30);
+  assert(r.evs.some(e => e.type === 'goal'), '통과 실패 (s=' + r.sim.s.toFixed(3) + ')');
+});
+T('루프: 저속(시작 1)이면 역행, 부스터 붙이면 통과', () => {
+  const slow = runSeq(1, ['loop', 'goal'], 30);
+  assert(slow.evs.some(e => e.type === 'reverse') && !slow.evs.some(e => e.type === 'goal'), '저속인데 루프 통과');
+  const boosted = runSeq(1, ['booster', 'booster', 'loop', 'goal'], 30);
+  assert(boosted.evs.some(e => e.type === 'goal'), '부스터로도 실패');
+});
+T('부스터: 같은 트랙에서 직선 대비 최고 속도 증가', () => {
+  const plain = runSeq(2, ['slope', 'slope', 'straight', 'straight', 'goal'], 30);
+  const boost = runSeq(2, ['slope', 'slope', 'booster', 'straight', 'goal'], 30);
+  assert(boost.vMax > plain.vMax + 0.1, '가속 없음: ' + plain.vMax.toFixed(2) + ' → ' + boost.vMax.toFixed(2));
+});
+T('자이로: 높이 2 미만이면 TOO_LOW, 2 이상이면 2칸 하강 완주', () => {
+  const low = NS.compile({ startH: 1, seq: ['gyro'] });
+  assert(!low.ok && low.errors.some(e => e.code === 'TOO_LOW'), '저높이 자이로 허용됨');
+  const r = runSeq(2, ['gyro', 'goal'], 30);
+  assert(r.evs.some(e => e.type === 'goal'), '자이로 완주 실패');
+  const c = NS.compile({ startH: 2, seq: ['gyro', 'goal'] });
+  assert(c.exitH === 0, '2칸 하강 아님 (exitH=' + c.exitH + ')');
+});
+T('점프: air 구간에서 마찰 손실 없음 (에너지 보존)', () => {
+  const c = NS.compile({ startH: 3, seq: ['slope', 'jump', 'goal'] });
+  const t = NS.buildTrack(c.pieces);
+  assert(t.airIndexRanges.length === 1, 'air 구간 없음');
+  const pd = NS.buildPathData(t.points, t.bowlIndexRanges,
+    { airIndexRanges: t.airIndexRanges, boostIndexRanges: t.boostIndexRanges });
+  const sim = new NS.Sim(pd);
+  sim.release(0);
+  const air = pd.airRanges[0];
+  let E0 = null, E1 = null;
+  while (sim.status === 'rolling' && sim.tick < 120 * 30) {
+    const wasIn = sim.s >= air.s0 && sim.s <= air.s1;
+    sim.step();
+    const isIn = sim.s >= air.s0 && sim.s <= air.s1;
+    if (E0 === null && isIn) E0 = sim.energy();
+    if (E0 !== null && E1 === null && wasIn && !isIn) E1 = sim.energy();
+  }
+  assert(E0 !== null && E1 !== null, '공중 구간 미통과');
+  near(E1, E0, 5e-4, '공중에서 에너지 변화');
+});
+T('지그재그: 곡률 마찰로 직선보다 감속', () => {
+  const plain = runSeq(2, ['slope', 'slope', 'straight', 'goal'], 30);
+  const zig = runSeq(2, ['slope', 'slope', 'zigzag', 'goal'], 30);
+  assert(zig.evs.some(e => e.type === 'goal'), '지그재그 완주 실패');
+  const vP = Math.abs(plain.vMax), vZ = Math.abs(zig.vMax);
+  assert(vZ <= vP + 1e-9, '지그재그가 더 빠름?');
+});
 
 // ---------- 7. serialize ----------
 console.log('[serialize]');

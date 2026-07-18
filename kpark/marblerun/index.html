@@ -50,12 +50,13 @@
   /* ── 건설 모드 ── */
   #mr-build { position: absolute; bottom: max(16px, env(safe-area-inset-bottom)); left: 50%;
     transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; align-items: center; width: min(94vw, 640px); }
-  #mr-palette { display: flex; gap: 8px; justify-content: center; width: 100%; }
-  #mr-palette button { pointer-events: auto; flex: 1; max-width: 110px; font: inherit; color: var(--text);
-    background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 10px 4px 8px;
-    backdrop-filter: blur(8px); cursor: pointer; font-size: 22px; line-height: 1.1;
+  #mr-palette { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+  #mr-palette .prow { display: flex; gap: 6px; justify-content: center; width: 100%; }
+  #mr-palette button { pointer-events: auto; flex: 1; max-width: 100px; font: inherit; color: var(--text);
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 8px 2px 6px;
+    backdrop-filter: blur(8px); cursor: pointer; font-size: 19px; line-height: 1.1;
     display: flex; flex-direction: column; align-items: center; gap: 2px; transition: transform .08s, border-color .15s; }
-  #mr-palette button span { font-size: 12px; font-weight: 700; }
+  #mr-palette button span { font-size: 11px; font-weight: 700; }
   #mr-palette button:active:not(:disabled) { transform: scale(0.92); border-color: var(--accent); }
   #mr-palette button:disabled { opacity: 0.32; cursor: default; }
   #mr-buildops { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; }
@@ -80,7 +81,7 @@
   #mr-run button:active { transform: scale(0.94); }
 
   /* ── 안내 ── */
-  #mr-hint { position: absolute; bottom: 132px; left: 50%; transform: translateX(-50%);
+  #mr-hint { position: absolute; bottom: 176px; left: 50%; transform: translateX(-50%);
     font-size: 13px; font-weight: 700; padding: 8px 16px; border-radius: 20px;
     background: var(--panel); border: 1px solid var(--line); backdrop-filter: blur(8px); white-space: nowrap; }
   #mr-hint.good { color: #8dff7a; border-color: #8dff7a; }
@@ -101,6 +102,7 @@
 <!-- 코어: 순수 로직 (window.MarbleSim) -->
 <script src="core/hexgrid.js"></script>
 <script src="core/parts/basic.js"></script>
+<script src="core/parts/action.js"></script>
 <script src="core/graph.js"></script>
 <script src="core/sim.js"></script>
 <script src="core/serialize.js"></script>
@@ -164,7 +166,8 @@ function rebuild(recenter) {
   comp = NS.compile(builderState);
   const track = NS.buildTrack(comp.pieces, null, { allowNoGoal: true });
   if (cur) disposeGroup(cur.group);
-  const pathData = NS.buildPathData(track.points, track.bowlIndexRanges);
+  const pathData = NS.buildPathData(track.points, track.bowlIndexRanges,
+    { airIndexRanges: track.airIndexRanges, boostIndexRanges: track.boostIndexRanges });
   const { group, marble } = buildTrackMeshes(comp.pieces, track, C);
   scene.add(group);
   cur = {

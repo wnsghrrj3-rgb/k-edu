@@ -48,6 +48,8 @@
 
     const points = [];
     const bowlIndexRanges = [];
+    const airIndexRanges = [];
+    const boostIndexRanges = [];
     const pieceRanges = [];
     const order = [];
     const visited = new Set();
@@ -61,14 +63,21 @@
       visited.add(curIdx);
       order.push(curIdx);
 
-      // 경로 이어붙이기 (연결점 중복 제거)
-      const pts = spec.path(cur, C);
+      // 경로 이어붙이기 (연결점 중복 제거) — marks(air/boost) 오프셋 반영
+      const res = spec.path(cur, C);
+      const pts = Array.isArray(res) ? res : res.points;
+      const marks = Array.isArray(res) ? [] : (res.marks || []);
       const i0 = points.length === 0 ? 0 : points.length - 1;
       if (points.length === 0) points.push(...pts);
       else points.push(...pts.slice(1));
       const i1 = points.length - 1;
       pieceRanges.push({ i0, i1, pieceIndex: curIdx });
       if (spec.bowl) bowlIndexRanges.push({ i0, i1 });
+      for (const m of marks) {
+        const g = { i0: i0 + m.i0, i1: i0 + m.i1 };
+        if (m.kind === 'air') airIndexRanges.push(g);
+        else if (m.kind === 'boost') boostIndexRanges.push(g);
+      }
 
       const exitPort = spec.exitPort(cur);
       if (exitPort === null || exitPort === undefined) break; // goal 도달
@@ -103,7 +112,7 @@
       errors.push({ code: 'NO_GOAL', msg: '골 벨에 도달하지 못함' });
     }
 
-    return { ok: errors.length === 0, errors, points, bowlIndexRanges, order, pieceRanges };
+    return { ok: errors.length === 0, errors, points, bowlIndexRanges, airIndexRanges, boostIndexRanges, order, pieceRanges };
   }
 
   return { buildTrack };

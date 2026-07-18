@@ -39,6 +39,20 @@
       startH: 2,
       seq: ['slope', 'slope', 'straight', 'straight', 'curve_l', 'curve_l', 'straight', 'straight', 'curve_r', 'goal'],
     },
+    {
+      id: 'fullcourse',
+      name: '풀코스 스페셜',
+      desc: '자이로·언덕·루프·점프·부스터 총출동 — 전 부품 시연',
+      startH: 5,
+      seq: ['slope', 'gyro', 'curve_l', 'slope', 'hill', 'booster', 'curve_r', 'loop', 'slope', 'jump', 'zigzag', 'goal'],
+    },
+    {
+      id: 'loopchallenge',
+      name: '루프 챌린지',
+      desc: '루프를 넘으려면 속도가 필요해 — 부스터의 힘',
+      startH: 2,
+      seq: ['slope', 'booster', 'loop', 'slope', 'straight', 'goal'],
+    },
   ];
 
   return { TRACKS };

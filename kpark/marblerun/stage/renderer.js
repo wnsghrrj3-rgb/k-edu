@@ -125,12 +125,21 @@ export function buildTrackMeshes(pieces, track, C) {
     color: COLOR.rail, emissive: COLOR.railEmissive, emissiveIntensity: 0.5, roughness: 0.25, metalness: 0.5,
   });
   const tieMat = new THREE.MeshStandardMaterial({ color: 0x2a3568, roughness: 0.7 });
+  const boostMat = new THREE.MeshStandardMaterial({
+    color: 0xffb020, emissive: 0xff7a00, emissiveIntensity: 0.9, roughness: 0.25, metalness: 0.5,
+  });
+  const airSet = new Set();
+  for (const ar of (track.airIndexRanges || [])) {
+    for (let i = ar.i0 + 1; i < ar.i1; i++) airSet.add(i); // 내부만 (팁·착지는 레일에 포함)
+  }
   for (const rg of track.pieceRanges) {
     const piece = pieces[rg.pieceIndex];
     const raw = track.points.slice(rg.i0, rg.i1 + 1);
-    if (raw.length >= 2) group.add(buildRails(raw, C, railMat, tieMat));
+    const mat = piece.type === 'booster' ? boostMat : railMat;
+    if (raw.length >= 2) group.add(buildRails(raw, C, mat, tieMat, rg.i0, airSet));
     if (piece.type === 'start') group.add(makeTower(piece, C, hx));
     if (piece.type === 'goal') group.add(makeGoal(piece, C, hx));
+    if (piece.type === 'gyro') group.add(makeGyroPole(piece, C, hx));
   }
 
   // 구슬
@@ -149,11 +158,11 @@ export function buildTrackMeshes(pieces, track, C) {
 
 /* 두 줄 레일 + 침목: 구슬이 레일 사이에 얹혀 내려가는 게 읽히도록.
  * 각 웨이포인트에서 진행방향의 수평 법선으로 ±offset. */
-function buildRails(rawPts, C, railMat, tieMat) {
+function buildRails(rawPts, C, railMat, tieMat, baseIdx, airSet) {
   const g = new THREE.Group();
   const offset = C.MR * 0.62;          // 레일 중심 간격의 절반
   const drop = C.MR * 0.42;            // 구슬 중심 대비 레일 높이 (사이에 얹힘)
-  const left = [], right = [], center = [];
+  const left = [], right = [];
   for (let i = 0; i < rawPts.length; i++) {
     const a = rawPts[Math.max(0, i - 1)], b = rawPts[Math.min(rawPts.length - 1, i + 1)];
     let nx = b.z - a.z, nz = -(b.x - a.x);
@@ -162,17 +171,29 @@ function buildRails(rawPts, C, railMat, tieMat) {
     const p = rawPts[i];
     left.push(new THREE.Vector3(p.x + nx * offset, p.y - drop, p.z + nz * offset));
     right.push(new THREE.Vector3(p.x - nx * offset, p.y - drop, p.z - nz * offset));
-    center.push(new THREE.Vector3(p.x, p.y, p.z));
   }
-  for (const pts of [left, right]) {
-    const curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.1);
-    const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, Math.max(pts.length * 3, 12), 0.0032, 8, false), railMat);
-    tube.castShadow = true;
-    g.add(tube);
+  // air 구간(점프 공중)은 레일을 끊는다 — 연속 구간별 서브 튜브
+  const runs = [];
+  let run = [];
+  for (let i = 0; i < rawPts.length; i++) {
+    const inAir = airSet && airSet.has((baseIdx || 0) + i);
+    if (inAir) { if (run.length >= 2) runs.push(run); run = []; }
+    else run.push(i);
   }
-  // 침목: 3포인트마다 좌우 레일 연결 (경사 인지 보조)
+  if (run.length >= 2) runs.push(run);
+  for (const r of runs) {
+    for (const side of [left, right]) {
+      const pts = r.map(i => side[i]);
+      const curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.1);
+      const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, Math.max(pts.length * 3, 12), 0.0032, 8, false), railMat);
+      tube.castShadow = true;
+      g.add(tube);
+    }
+  }
+  // 침목: 3포인트마다 (air 구간 제외)
   const tieGeo = new THREE.CylinderGeometry(0.0018, 0.0018, offset * 2.3, 6);
   for (let i = 1; i < rawPts.length - 1; i += 3) {
+    if (airSet && airSet.has((baseIdx || 0) + i)) continue;
     const l = left[i], r = right[i];
     const tie = new THREE.Mesh(tieGeo, tieMat);
     tie.position.set((l.x + r.x) / 2, (l.y + r.y) / 2 - 0.0035, (l.z + r.z) / 2);
@@ -183,6 +204,19 @@ function buildRails(rawPts, C, railMat, tieMat) {
     g.add(tie);
   }
   return g;
+}
+
+/* 자이로 중앙 기둥 */
+function makeGyroPole(piece, C, hx) {
+  const c = hx.tileCenter(piece.q, piece.r, C.R);
+  const y0 = piece.h * C.H;
+  const pole = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.006, 0.008, 2 * C.H + 0.02, 10),
+    new THREE.MeshStandardMaterial({ color: 0x7c5cff, emissive: 0x35208f, emissiveIntensity: 0.5, roughness: 0.4 })
+  );
+  pole.position.set(c.x, y0 + C.H + 0.01, c.z);
+  pole.castShadow = true;
+  return pole;
 }
 
 function makeTower(piece, C, hx) {
