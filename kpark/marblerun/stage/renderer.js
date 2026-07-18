@@ -124,16 +124,11 @@ export function buildTrackMeshes(pieces, track, C) {
   const railMat = new THREE.MeshStandardMaterial({
     color: COLOR.rail, emissive: COLOR.railEmissive, emissiveIntensity: 0.5, roughness: 0.25, metalness: 0.5,
   });
+  const tieMat = new THREE.MeshStandardMaterial({ color: 0x2a3568, roughness: 0.7 });
   for (const rg of track.pieceRanges) {
     const piece = pieces[rg.pieceIndex];
-    const pts = track.points.slice(rg.i0, rg.i1 + 1)
-      .map(p => new THREE.Vector3(p.x, p.y - C.MR * 0.75, p.z));
-    if (pts.length >= 2) {
-      const curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.1);
-      const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, Math.max(pts.length * 3, 12), 0.005, 10, false), railMat);
-      tube.castShadow = true;
-      group.add(tube);
-    }
+    const raw = track.points.slice(rg.i0, rg.i1 + 1);
+    if (raw.length >= 2) group.add(buildRails(raw, C, railMat, tieMat));
     if (piece.type === 'start') group.add(makeTower(piece, C, hx));
     if (piece.type === 'goal') group.add(makeGoal(piece, C, hx));
   }
@@ -150,6 +145,44 @@ export function buildTrackMeshes(pieces, track, C) {
 
   const bellMesh = group.getObjectByName('bell') || null;
   return { group, marble, bellMesh };
+}
+
+/* 두 줄 레일 + 침목: 구슬이 레일 사이에 얹혀 내려가는 게 읽히도록.
+ * 각 웨이포인트에서 진행방향의 수평 법선으로 ±offset. */
+function buildRails(rawPts, C, railMat, tieMat) {
+  const g = new THREE.Group();
+  const offset = C.MR * 0.62;          // 레일 중심 간격의 절반
+  const drop = C.MR * 0.42;            // 구슬 중심 대비 레일 높이 (사이에 얹힘)
+  const left = [], right = [], center = [];
+  for (let i = 0; i < rawPts.length; i++) {
+    const a = rawPts[Math.max(0, i - 1)], b = rawPts[Math.min(rawPts.length - 1, i + 1)];
+    let nx = b.z - a.z, nz = -(b.x - a.x);
+    const L = Math.hypot(nx, nz) || 1;
+    nx /= L; nz /= L;
+    const p = rawPts[i];
+    left.push(new THREE.Vector3(p.x + nx * offset, p.y - drop, p.z + nz * offset));
+    right.push(new THREE.Vector3(p.x - nx * offset, p.y - drop, p.z - nz * offset));
+    center.push(new THREE.Vector3(p.x, p.y, p.z));
+  }
+  for (const pts of [left, right]) {
+    const curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.1);
+    const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, Math.max(pts.length * 3, 12), 0.0032, 8, false), railMat);
+    tube.castShadow = true;
+    g.add(tube);
+  }
+  // 침목: 3포인트마다 좌우 레일 연결 (경사 인지 보조)
+  const tieGeo = new THREE.CylinderGeometry(0.0018, 0.0018, offset * 2.3, 6);
+  for (let i = 1; i < rawPts.length - 1; i += 3) {
+    const l = left[i], r = right[i];
+    const tie = new THREE.Mesh(tieGeo, tieMat);
+    tie.position.set((l.x + r.x) / 2, (l.y + r.y) / 2 - 0.0035, (l.z + r.z) / 2);
+    const dx = r.x - l.x, dz = r.z - l.z;
+    tie.rotation.z = Math.PI / 2;
+    tie.rotation.y = -Math.atan2(dz, dx);
+    tie.castShadow = true;
+    g.add(tie);
+  }
+  return g;
 }
 
 function makeTower(piece, C, hx) {
