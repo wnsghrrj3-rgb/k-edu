@@ -63,10 +63,10 @@ window.MK_SCREENS.editor = (() => {
       const sel = e.selEl === i ? 'sel' : '';
       if (el.kind === 'text') {
         const fs = (el.size / 100 * CH).toFixed(1);
-        const hd = e.selEl === i ? '<i class="hd tl"></i><i class="hd tr"></i><i class="hd bl"></i><i class="hd br"></i>' : '';
+        const hd = e.selEl === i ? '<i class="hd tl"></i><i class="hd tr"></i><i class="hd bl"></i><i class="hd br"></i><i class="hd tm"></i><i class="hd bm"></i><i class="hd ml"></i><i class="hd mr"></i>' : '';
         return `<div class="ed-el ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight};line-height:1.25;color:${scene.background === '#1F2733' ? '#F2F5F9' : '#1F2733'};white-space:pre-wrap">${M().esc(el.text)}${hd}</div>`;
       }
-      const hd2 = e.selEl === i ? '<i class="hd tl"></i><i class="hd tr"></i><i class="hd bl"></i><i class="hd br"></i>' : '';
+      const hd2 = e.selEl === i ? '<i class="hd tl"></i><i class="hd tr"></i><i class="hd bl"></i><i class="hd br"></i><i class="hd tm"></i><i class="hd bm"></i><i class="hd ml"></i><i class="hd mr"></i>' : '';
       return `<div class="ed-el img-ph ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%">${M().esc(el.label)}${hd2}</div>`;
     }).join('');
     return `<div class="ed-canvaswrap">
@@ -137,17 +137,19 @@ window.MK_SCREENS.editor = (() => {
     const e = ed(), doc = e.doc;
     if (mode === 'video') {
       const total = doc.scenes.reduce((a, s) => a + s.duration, 0);
+      const done = doc.scenes.slice(0, e.sceneIdx).reduce((a, s) => a + s.duration, 0);
+      const pct = total ? Math.round(done / total * 100) : 0;
       const blocks = doc.scenes.map((s, i) =>
-        `<button class="ed-tl-block ${i === e.sceneIdx ? 'on' : ''}" data-scene="${i}" style="width:${Math.max(84, s.duration * 34)}px">${MiniScene(s)}<span class="tx"><b>${i + 1}. ${M().esc(s.name)}</b><span class="dur">${s.duration}초</span></span></button>` +
+        `<button class="ed-tl-block ${i === e.sceneIdx ? 'on' : ''}" data-scene="${i}" style="width:${Math.max(118, s.duration * 40)}px">${MiniScene(s, 132)}<span class="tx"><b>${i + 1}. ${M().esc(s.name)}</b><span class="dur">${s.duration}초</span></span></button>` +
         (i < doc.scenes.length - 1 ? `<span class="ed-tl-tr mk-tooltip" data-tip="전환: ${M().esc(s.transition)}" aria-label="전환 ${M().esc(s.transition)}">⇄</span>` : '')).join('');
       return `<div class="ed-bottom">
-        <div class="ed-playbar">${M().IconButton({ icon: '▶', tip: '재생 (외형만)' })}<div class="track"><i></i></div><span style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">0:00 / 0:${String(total).padStart(2, '0')} · 총 ${doc.scenes.length}장면</span></div>
+        <div class="ed-playbar">${M().IconButton({ icon: '▶', tip: '재생 (외형만)' })}<div class="track"><i style="width:${pct}%"></i></div><span style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">0:${String(done).padStart(2, '0')} / 0:${String(total).padStart(2, '0')} · 총 ${doc.scenes.length}장면</span></div>
         <div class="ed-timeline">${blocks}<button class="ed-strip-add" data-ed="add" style="height:52px">＋</button></div></div>`;
     }
-    return `<div class="ed-bottom"><div class="ed-strip">
+    return `<div class="ed-bottom"><div class="ed-strip-head"><span class="cap">장면</span><span class="prg"><b>${e.sceneIdx + 1}</b> / ${doc.scenes.length}</span></div><div class="ed-strip">
       ${doc.scenes.map((s, i) => `<div class="ed-sc ${i === e.sceneIdx ? 'on' : ''}">
         <button class="frame" data-scene="${i}" aria-label="장면 ${i + 1} ${M().esc(s.name)}">
-          <span class="num">${i + 1}</span><span class="dur">${s.duration}초</span>${MiniScene(s)}</button>
+          <span class="num">${i + 1}</span><span class="dur">${s.duration}초</span>${MiniScene(s, 148)}</button>
         <span class="nm">${M().esc(s.name)}</span>
         <div class="ed-sceneops">
           <button data-op="dup" data-i="${i}">⧉ 복제</button>
