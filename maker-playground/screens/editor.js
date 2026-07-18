@@ -64,9 +64,10 @@ window.MK_SCREENS.editor = (() => {
       if (el.kind === 'text') {
         const fs = (el.size / 100 * CH).toFixed(1);
         const hd = e.selEl === i ? '<i class="hd tl"></i><i class="hd tr"></i><i class="hd bl"></i><i class="hd br"></i><i class="hd tm"></i><i class="hd bm"></i><i class="hd ml"></i><i class="hd mr"></i><i class="hd rot"></i>' : '';
-        const dark = scene.background === '#1F2733';
-        const col = dark ? ((el.weight || 400) >= 600 ? '#F2F5F9' : '#C7CFDA') : ((el.weight || 400) >= 600 ? '#1F2733' : '#525C6A');
-        return `<div class="ed-el ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight};line-height:1.3;color:${col};white-space:pre-wrap">${M().esc(el.text)}${hd}</div>`;
+        const dark = MK_SEC ? MK_SEC.isDark(scene.background) : scene.background === '#1F2733';
+        const col = el.color || (dark ? ((el.weight || 400) >= 600 ? '#F2F5F9' : '#B7C0CD') : ((el.weight || 400) >= 600 ? '#1F2733' : '#525C6A'));
+        const al = el.align ? `;text-align:${el.align}` : '';
+        return `<div class="ed-el ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight};line-height:1.3;color:${col}${al};white-space:pre-wrap">${M().esc(el.text)}${hd}</div>`;
       }
       const hd2 = e.selEl === i ? '<i class="hd tl"></i><i class="hd tr"></i><i class="hd bl"></i><i class="hd br"></i><i class="hd tm"></i><i class="hd bm"></i><i class="hd ml"></i><i class="hd mr"></i><i class="hd rot"></i>' : '';
       const fillCls = el.fill ? 'has-fill' : '', fillSty = el.fill ? `;background:${el.fill}` : '';
@@ -125,12 +126,13 @@ window.MK_SCREENS.editor = (() => {
   /* 실캔버스 축소 미리보기 — Strip·Timeline 공용 */
   const MiniScene = (scene, W = 108) => {
     const H = Math.round(W * scene.height / scene.width);
-    const dark = scene.background === '#1F2733';
+    const dark = window.MK_SEC ? MK_SEC.isDark(scene.background) : scene.background === '#1F2733';
     const els = scene.elements.map((el) => {
       if (el.kind === 'text') {
         const fs = Math.max(3, el.size / 100 * H);
-        const col = dark ? ((el.weight || 400) >= 600 ? '#F2F5F9' : '#C7CFDA') : ((el.weight || 400) >= 600 ? '#1F2733' : '#525C6A');
-        return `<span style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight || 400};color:${col}">${M().esc(el.text)}</span>`;
+        const col = el.color || (dark ? ((el.weight || 400) >= 600 ? '#F2F5F9' : '#B7C0CD') : ((el.weight || 400) >= 600 ? '#1F2733' : '#525C6A'));
+        const al = el.align ? `;text-align:${el.align}` : '';
+        return `<span style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight || 400};color:${col}${al}">${M().esc(el.text)}</span>`;
       }
       return `<i style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%${el.fill ? ';background:' + el.fill + ';opacity:1' : ''}"></i>`;
     }).join('');
@@ -252,7 +254,7 @@ window.MK_SCREENS.review = (() => {
     render(v) {
       const e = PG.state.editor;
       if (!e.doc || !e.review) {
-        PG.loadEditorDoc('smp-pres-01');
+        PG.loadEditorDoc('tpl-pr-presentation-01');
         e.review = true;
         const firstText = PG.state.editor.doc.scenes[0].elements.findIndex((el) => el.kind === 'text');
         e.selEl = firstText >= 0 ? firstText : 0;    /* 제목 선택 상태로 시작 — 우측 속성 폼 즉시 노출 */
