@@ -53,6 +53,8 @@ export function createUI(root, handlers, tracks) {
           <b id="mr-h-val">3</b>
           <button id="mr-h-plus">＋</button>
         </div>
+        <button id="mr-recenter" title="짓고 있는 자리로 화면 되돌리기">🎯</button>
+        <button id="mr-frameall" title="트랙 전체 보기">🗺</button>
         <button id="mr-undo">↩ 되돌리기</button>
         <button id="mr-clear">🗑 처음부터</button>
         <button id="mr-gorun" class="primary">▶ 실행하기</button>
@@ -77,6 +79,7 @@ export function createUI(root, handlers, tracks) {
   const $ = (sel) => root.querySelector(sel);
   const speedEl = $('#mr-speed'), stateEl = $('#mr-state');
   const camBtn = $('#mr-cam');
+  const recenterBtn = $('#mr-recenter');
   const resultEl = $('#mr-result'), resultBody = resultEl.querySelector('.result-body');
   const hintEl = $('#mr-hint');
   const buildEl = $('#mr-build'), runEl = $('#mr-run');
@@ -95,6 +98,8 @@ export function createUI(root, handlers, tracks) {
     }
   });
   paletteBtns.forEach(b => b.addEventListener('click', () => handlers.onAppend(b.dataset.part)));
+  recenterBtn.addEventListener('click', () => { recenterBtn.classList.remove('lit'); handlers.onRecenter(); });
+  $('#mr-frameall').addEventListener('click', handlers.onFrameAll);
   $('#mr-undo').addEventListener('click', handlers.onUndo);
   $('#mr-clear').addEventListener('click', () => { trackSel.value = '-1'; descEl.textContent = ''; handlers.onClear(); });
   $('#mr-h-minus').addEventListener('click', () => handlers.onStartH(-1));
@@ -181,7 +186,13 @@ export function createUI(root, handlers, tracks) {
   }
   function hideResult() { resultEl.classList.add('hidden'); }
 
+  /* 카메라가 사용자 조작으로 잠기면 🎯 버튼에 불이 들어온다 */
+  function setCamLocked(locked) {
+    recenterBtn.classList.toggle('lit', !!locked);
+    recenterBtn.title = locked ? '화면을 직접 옮겼어 — 짓는 자리로 되돌리기' : '짓고 있는 자리로 화면 되돌리기';
+  }
+
   wireLockedRunFeedback();
 
-  return { update, setMode, setBuildState, showResult, hideResult, showHint, hideHint };
+  return { update, setMode, setBuildState, showResult, hideResult, showHint, hideHint, setCamLocked };
 }

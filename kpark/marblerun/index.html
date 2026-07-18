@@ -74,6 +74,9 @@
     80% { transform: translateX(4px); }
   }
   #mr-gorun.shake { animation: mr-shake 0.36s ease-in-out; }
+  /* 카메라 조작 버튼 */
+  #mr-recenter, #mr-frameall { font-size: 17px; padding: 10px 12px; line-height: 1; }
+  #mr-recenter.lit { border-color: #4de1ff; color: #4de1ff; box-shadow: 0 0 0 2px rgba(77, 225, 255, 0.22); }
   #mr-buildops button:disabled { cursor: help; }
   #mr-buildops { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; }
   #mr-buildops button { pointer-events: auto; font: inherit; font-size: 14px; font-weight: 700; color: var(--text);
@@ -97,7 +100,7 @@
   #mr-run button:active { transform: scale(0.94); }
 
   /* ── 안내 ── */
-  #mr-hint { position: absolute; bottom: 176px; left: 50%; transform: translateX(-50%);
+  #mr-hint { position: absolute; top: 104px; left: 50%; transform: translateX(-50%); z-index: 5;
     font-size: 13px; font-weight: 700; padding: 8px 16px; border-radius: 20px;
     background: var(--panel); border: 1px solid var(--line); backdrop-filter: blur(8px); white-space: nowrap; }
   #mr-hint.good { color: #8dff7a; border-color: #8dff7a; }
@@ -164,6 +167,27 @@ let ghostWait = 0;
 let vMax = 0, startTick = 0;
 let launchTypes = [], launchIdx = 0, lastLaunchType = 'cannon';
 
+/* 건설 프론티어 = 다음 부품이 놓일 자리. 시선이 따라가야 할 지점. */
+function frontierPoint() {
+  if (!comp) return { x: 0, y: 0.08, z: 0 };
+  const H = C.H;
+  if (comp.next && !comp.ended) {
+    const c = NS.hexgrid.tileCenter(comp.next.q, comp.next.r, C.R);
+    return { x: c.x, y: comp.exitH * H + 0.02, z: c.z };
+  }
+  const last = comp.pieces[comp.pieces.length - 1];
+  const c = NS.hexgrid.tileCenter(last.q, last.r, C.R);
+  return { x: c.x, y: last.h * H + 0.02, z: c.z };
+}
+
+function allTilePoints() {
+  if (!comp) return [];
+  return comp.pieces.map(p => {
+    const c = NS.hexgrid.tileCenter(p.q, p.r, C.R);
+    return { x: c.x, y: p.h * C.H, z: c.z };
+  });
+}
+
 function trackCenter(pieces) {
   const box = { x: 0, z: 0 };
   pieces.forEach(p => { const c = NS.hexgrid.tileCenter(p.q, p.r, C.R); box.x += c.x; box.z += c.z; });
@@ -203,7 +227,11 @@ function rebuild(recenter) {
   launchTypes = comp.pieces.filter(p => p.type === 'cannon' || p.type === 'trampoline').map(p => p.type);
   launchIdx = 0;
   ui.setBuildState(comp, NS.canPlace);
-  if (recenter && cams) cams.setCenter(trackCenter(comp.pieces));
+  if (cams) {
+    // 각도·줌은 건드리지 않는다. 시선만 짓고 있는 끝으로 미끄러진다.
+    if (recenter) cams.recenter(frontierPoint());
+    else cams.focus(frontierPoint());
+  }
 }
 
 function setMode(m) {
@@ -265,7 +293,18 @@ const ui = createUI(document.getElementById('ui'), {
   onToggleCamera() {
     const next = cams.getMode() === 'orbit' ? 'follow' : 'orbit';
     cams.setMode(next);
+    if (next === 'orbit') cams.frameAll(cur ? cur.track.points : allTilePoints());
     return next;
+  },
+  /* 🎯 시점 되돌리기 — 손으로 옮겨둔 화면을 짓고 있는 끝으로 되돌린다 */
+  onRecenter() {
+    if (!cams) return;
+    if (mode === 'run') cams.frameAll(cur ? cur.track.points : allTilePoints());
+    else cams.recenter(frontierPoint());
+  },
+  /* 🗺 트랙 전체 보기 */
+  onFrameAll() {
+    if (cams) cams.frameAll(allTilePoints());
   },
 }, TRACKS);
 
@@ -273,6 +312,8 @@ const ui = createUI(document.getElementById('ui'), {
 let cams = null;
 rebuild(false);
 cams = createCameras(renderer, trackCenter(comp.pieces));
+cams.recenter(frontierPoint());
+cams.onLockChange((locked) => ui.setCamLocked(locked));
 setMode('build');
 
 // ── 리사이즈 ──
