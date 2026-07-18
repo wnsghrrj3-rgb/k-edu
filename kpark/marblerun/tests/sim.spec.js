@@ -242,11 +242,31 @@ T('언덕: 낙차 충분(시작 3, 경사 2개)이면 통과', () => {
   const r = runSeq(3, ['slope', 'slope', 'hill', 'goal'], 30);
   assert(r.evs.some(e => e.type === 'goal'), '통과 실패 (s=' + r.sim.s.toFixed(3) + ')');
 });
-T('루프: 저속(시작 1)이면 역행, 부스터 붙이면 통과', () => {
-  const slow = runSeq(1, ['loop', 'goal'], 30);
-  assert(slow.evs.some(e => e.type === 'reverse') && !slow.evs.some(e => e.type === 'goal'), '저속인데 루프 통과');
-  const boosted = runSeq(1, ['booster', 'booster', 'loop', 'goal'], 30);
-  assert(boosted.evs.some(e => e.type === 'goal'), '부스터로도 실패');
+T('루프 접촉 물리: 저속 이탈(detach→crash), 고속 완주', () => {
+  // 접촉 조건: 꼭대기에서 v²κ ≥ g. 느리면 안쪽 벽에서 떨어져 낙하한다.
+  const c = NS.compile({ startH: 1, seq: ['loop', 'goal'] });
+  const t = NS.buildTrack(c.pieces);
+  const pd = NS.buildPathData(t.points, t.bowlIndexRanges, {});
+  const slow = new NS.Sim(pd);
+  slow.release(1.0);
+  const evS = slow.runToEnd(30);
+  assert(evS.some(e => e.type === 'detach'), '저속인데 이탈 없음');
+  assert(evS.some(e => e.type === 'crash'), '낙하 착지(crash) 없음');
+  assert(slow.status === 'fallen', 'fallen 상태 아님: ' + slow.status);
+  assert(!evS.some(e => e.type === 'goal'), '저속인데 완주');
+  const fast = new NS.Sim(pd);
+  fast.release(1.8);
+  const evF = fast.runToEnd(30);
+  assert(evF.some(e => e.type === 'goal'), '고속인데 완주 실패');
+  assert(!evF.some(e => e.type === 'detach'), '고속인데 이탈');
+});
+T('루프: 이탈 낙하는 결정론 (2회 동일 착지점)', () => {
+  const c = NS.compile({ startH: 1, seq: ['loop', 'goal'] });
+  const t = NS.buildTrack(c.pieces);
+  const pd = NS.buildPathData(t.points, t.bowlIndexRanges, {});
+  const run = () => { const s = new NS.Sim(pd); s.release(1.0); s.runToEnd(30); return s.pos(); };
+  const a = run(), b = run();
+  near(a.x, b.x, 0, '착지 x'); near(a.y, b.y, 0, '착지 y'); near(a.z, b.z, 0, '착지 z');
 });
 T('부스터: 같은 트랙에서 직선 대비 최고 속도 증가', () => {
   const plain = runSeq(2, ['slope', 'slope', 'straight', 'straight', 'goal'], 30);

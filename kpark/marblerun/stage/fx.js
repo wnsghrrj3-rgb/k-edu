@@ -30,6 +30,22 @@ export function ringBell() {
   } catch (e) { /* 오디오 미지원 무시 */ }
 }
 
+export function thudSound() {
+  try {
+    const ac = ctx();
+    const t0 = ac.currentTime;
+    const o = ac.createOscillator();
+    const gn = ac.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(160, t0);
+    o.frequency.exponentialRampToValueAtTime(48, t0 + 0.22);
+    gn.gain.setValueAtTime(0.28, t0);
+    gn.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.3);
+    o.connect(gn).connect(ac.destination);
+    o.start(t0); o.stop(t0 + 0.3);
+  } catch (e) { /* 무시 */ }
+}
+
 export function placeClick() {
   try {
     const ac = ctx();

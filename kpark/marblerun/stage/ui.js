@@ -106,7 +106,7 @@ export function createUI(root, handlers, tracks) {
   });
 
   // ---- 표시 갱신 ----
-  const STATE_LABEL = { ready: '대기 중', rolling: '주행 중', goal: '완주!', rest: '멈춤' };
+  const STATE_LABEL = { ready: '대기 중', rolling: '주행 중', goal: '완주!', rest: '멈춤', falling: '이탈!', fallen: '추락' };
 
   function update(sim, mode) {
     if (mode === 'run') {

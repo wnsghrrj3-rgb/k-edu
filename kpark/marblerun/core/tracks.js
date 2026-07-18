@@ -49,9 +49,9 @@
     {
       id: 'loopchallenge',
       name: '루프 챌린지',
-      desc: '루프를 넘으려면 속도가 필요해 — 부스터의 힘',
+      desc: '느리면 꼭대기에서 떨어진다! 부스터 2개의 힘',
       startH: 2,
-      seq: ['slope', 'booster', 'loop', 'slope', 'straight', 'goal'],
+      seq: ['slope', 'booster', 'booster', 'loop', 'slope', 'straight', 'goal'],
     },
   ];
 

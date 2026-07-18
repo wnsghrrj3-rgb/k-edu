@@ -24,6 +24,7 @@
     k_c: 0.004,    // 곡률 페널티 (무차원·m)
     bowlDamp: 7.0, // 골 그릇 선형 감쇠 (1/s)
     boost: 3.0,    // 부스터 추진력 (단위질량, m/s²)
+    floorY: 0.012, // 이탈 낙하 착지 높이 (구슬 반지름)
     dt: 1 / 120,   // 고정 틱
   };
 
@@ -48,6 +49,7 @@
       cum.push(cum[i] + len);
     }
     // 곡률: 인접 세그먼트 방향 사이 각 / 평균 길이 → 양쪽 세그먼트에 절반씩
+    // + 곡률 중심 방향(cdir): 접선 변화 방향 (구심 방향)
     for (let i = 0; i < segs.length - 1; i++) {
       const d0 = segs[i].dir, d1 = segs[i + 1].dir;
       const dot = Math.max(-1, Math.min(1, d0.x * d1.x + d0.y * d1.y + d0.z * d1.z));
@@ -55,6 +57,25 @@
       const k = ang / ((segs[i].len + segs[i + 1].len) / 2 || 1);
       segs[i].kappa += k / 2;
       segs[i + 1].kappa += k / 2;
+      let cx = d1.x - d0.x, cy = d1.y - d0.y, cz = d1.z - d0.z;
+      const cl = Math.hypot(cx, cy, cz);
+      if (cl > 1e-9) {
+        const cd = { x: cx / cl, y: cy / cl, z: cz / cl };
+        segs[i].cdir = segs[i].cdir || cd;
+        segs[i + 1].cdir = cd;
+      }
+    }
+    // 지지 법선(supp): 레일이 구슬을 미는 방향. +y에서 출발, 접선에 수직 유지하며 평행이동
+    // → 루프에서는 한 바퀴 돌며 뒤집힘 (꼭대기에서 supp = -y)
+    let sx = 0, sy = 1, sz = 0;
+    for (let i = 0; i < segs.length; i++) {
+      const d = segs[i].dir;
+      const dp = sx * d.x + sy * d.y + sz * d.z;
+      sx -= dp * d.x; sy -= dp * d.y; sz -= dp * d.z;
+      const sl = Math.hypot(sx, sy, sz);
+      if (sl > 1e-6) { sx /= sl; sy /= sl; sz /= sl; }
+      else { sx = 0; sy = 1; sz = 0; }
+      segs[i].supp = { x: sx, y: sy, z: sz };
     }
     const total = cum[cum.length - 1];
     const toS = (rs) => (rs || []).map(r => ({ s0: cum[r.i0], s1: cum[Math.min(r.i1, n - 1)] }));
@@ -114,6 +135,7 @@
       this._belled = false;
       this._restTicks = 0;
       this._lastDir = 0;
+      this._fall = null; // 이탈 낙하 { p:{x,y,z}, v:{x,y,z} }
     }
     release(v0) {
       this.reset();
@@ -125,13 +147,27 @@
       // 단위질량 역학적 에너지 (진단·테스트용)
       return 0.5 * this.v * this.v + this.P.g * posAt(this.pd, this.s).y;
     }
-    pos() { return posAt(this.pd, this.s); }
+    pos() { return this._fall ? this._fall.p : posAt(this.pd, this.s); }
     tangent() { return tangentAt(this.pd, this.s); }
 
     step() {
       // 에너지 스테핑: E' = E − 손실·|Δs|,  v' = ±√(max(0, 2(E' − g·h(s'))))
       // → 구조적으로 에너지 비증가 보장 (설계서 §2-1)
       const ev = [];
+      // 이탈 낙하: 포물선 적분 → 바닥 충돌
+      if (this.status === 'falling') {
+        const P = this.P, dt = P.dt;
+        const f = this._fall;
+        f.v.y -= P.g * dt;
+        f.p.x += f.v.x * dt; f.p.y += f.v.y * dt; f.p.z += f.v.z * dt;
+        if (f.p.y <= P.floorY) {
+          f.p.y = P.floorY;
+          this.status = 'fallen';
+          ev.push({ type: 'crash' });
+        }
+        this.tick++;
+        return ev;
+      }
       if (this.status !== 'rolling') return ev;
       const P = this.P, pd = this.pd, dt = P.dt;
       const seg = pd.segs[segIndexAt(pd, this.s)];
@@ -166,6 +202,34 @@
       const v2 = 2 * (E - lossWork - P.g * yNew);
       this.v = v2 > 0 ? Math.sign(vE || 1) * Math.sqrt(v2) : 0;
       this.s = sNew;
+
+      // 접촉 조건 (수직 곡면 역학): 레일은 supp 방향으로만 밀 수 있다.
+      // 힘 균형 구심 성분: N·(supp·cdir) = v²κ + g·cdir_y  →  N < 0 이면 이탈.
+      // 루프 꼭대기: cdir=(0,-1,0), supp=(0,-1,0) → N = v²κ − g  (v²κ < g 이면 낙하)
+      // supp·cdir ≤ 0.3 (평지 커브·언덕류)은 검사 제외 — 언덕 이탈은 M2b AIR 캡처와 함께.
+      {
+        const seg2 = pd.segs[segIndexAt(pd, this.s)];
+        if (seg2.kappa > 4 && seg2.cdir && seg2.supp && !inAir(pd, this.s)) {
+          const denom = seg2.supp.x * seg2.cdir.x + seg2.supp.y * seg2.cdir.y + seg2.supp.z * seg2.cdir.z;
+          if (denom > 0.3) {
+            const N = (this.v * this.v * seg2.kappa + P.g * seg2.cdir.y) / denom;
+            if (N < 0) {
+              const p = posAt(pd, this.s);
+              const t = seg2.dir;
+              const sp = Math.abs(this.v);
+              const sg = Math.sign(this.v || 1);
+              this._fall = {
+                p: { x: p.x, y: p.y, z: p.z },
+                v: { x: t.x * sp * sg, y: t.y * sp * sg, z: t.z * sp * sg },
+              };
+              this.status = 'falling';
+              ev.push({ type: 'detach', s: this.s });
+              this.tick++;
+              return ev;
+            }
+          }
+        }
+      }
 
       // 역행 감지: 마지막 진행 방향 기준 (v=0 경유 반전 포함)
       const dir = this.v > 1e-6 ? 1 : this.v < -1e-6 ? -1 : 0;
@@ -208,7 +272,7 @@
     runToEnd(maxSec) {
       const maxTicks = Math.round((maxSec || 30) / this.P.dt);
       const all = [];
-      while (this.status === 'rolling' && this.tick < maxTicks) {
+      while ((this.status === 'rolling' || this.status === 'falling') && this.tick < maxTicks) {
         all.push(...this.step());
       }
       return all;

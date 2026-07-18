@@ -122,7 +122,7 @@
 import * as THREE from 'three';
 import { createRenderer, buildTrackMeshes, makeSlotMarker, updateSlotMarker, makeGhostMarble } from './stage/renderer.js';
 import { createCameras } from './stage/cameras.js';
-import { ringBell, animateBell, updateBell, createConfetti, placeClick } from './stage/fx.js';
+import { ringBell, animateBell, updateBell, createConfetti, placeClick, thudSound } from './stage/fx.js';
 import { createUI } from './stage/ui.js';
 
 const NS = window.MarbleSim;
@@ -234,11 +234,12 @@ const ui = createUI(document.getElementById('ui'), {
     setMode(m);
   },
   onRelease() {
+    ui.hideHint();
     cur.sim.release(0);
     vMax = 0;
     startTick = cur.sim.tick;
   },
-  onReset() { cur.sim.reset(); },
+  onReset() { ui.hideHint(); cur.sim.reset(); },
   onToggleCamera() {
     const next = cams.getMode() === 'orbit' ? 'follow' : 'orbit';
     cams.setMode(next);
@@ -281,6 +282,8 @@ function frame(now) {
       const events = cur.sim.step();
       for (const ev of events) {
         if (ev.type === 'bell') { ringBell(); animateBell(cur.bellMesh); }
+        if (ev.type === 'detach') ui.showHint('앗! 구슬이 레일에서 떨어졌어 — 속도가 부족해!', 'warn');
+        if (ev.type === 'crash') { thudSound(); }
         if (ev.type === 'goal') {
           const p = cur.sim.pos();
           confetti.burst({ x: p.x, y: p.y + 0.04, z: p.z });
