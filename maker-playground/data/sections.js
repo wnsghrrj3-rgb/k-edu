@@ -85,7 +85,8 @@ window.MK_SEC = (() => {
   ];
 
   /* 04 Content Split — 좌 텍스트 · 우 이미지 */
-  const contentSplit = (P, { label, title, body, bullets, imgLabel }) => {
+  const contentSplit = (P, { label, title, body, bullets, imgLabel }, common = {}) => {
+    const wide = common.image === false;
     const els = [
       t(8, 12, 40, 2.2, label, 700, P.accent),
       t(8, 18, 42, 5.5, title, 700),
@@ -94,9 +95,9 @@ window.MK_SEC = (() => {
     (bullets || []).slice(0, 3).forEach((b, i) => {
       const y = 54 + i * 10;
       els.push(box(8, y + 1.2, 1.4, 2.5, P.accent));
-      els.push(t(11.5, y, 36, 2.7, b, 500));
+      els.push(t(11.5, y, wide ? 78 : 36, 2.7, b, 500));
     });
-    els.push(box(54, 0, 46, 100, opts_ph(P)));
+    if (!wide) els.push(box(54, 0, 46, 100, common.photo ? PH[common.photo] : opts_ph(P)));
     return els;
   };
   const opts_ph = (P) => (P === PALETTES['pl-noir'] ? PH.b : P === PALETTES['pl-cobalt'] ? PH.c : PH.a);
@@ -209,11 +210,10 @@ window.MK_SEC = (() => {
   };
 
   /* 13 CTA — 마무리 행동 유도 (다크) */
-  const cta = (P, { title, sub, button }) => [
+  const cta = (P, { title, sub, button }, common = {}) => [
     t(8, 30, 84, 8, title, 700, undefined, 'center'),
     t(8, 48, 84, 3, sub, 400, P.mutedOnDark, 'center'),
-    box(40, 60, 20, 9, P.accent),
-    t(40, 62.8, 20, 2.9, button, 700, '#FFFFFF', 'center'),
+    ...(common.button === false ? [] : [box(40, 60, 20, 9, P.accent), t(40, 62.8, 20, 2.9, button, 700, '#FFFFFF', 'center')]),
   ];
 
   /* 14 Table — 헤더 + 3행 */
@@ -260,13 +260,12 @@ window.MK_SEC = (() => {
   ];
 
   /* 18 Hero (Landing) — 라이트 히어로 + CTA 버튼 */
-  const hero = (P, { label, title, sub, button }) => [
+  const hero = (P, { label, title, sub, button }, common = {}) => [
     t(8, 16, 84, 2.4, label, 700, P.accent, 'center'),
     t(8, 24, 84, 9, title, 700, undefined, 'center'),
     t(16, 46, 68, 3, sub, 400, P.mutedOnLight, 'center'),
-    box(40, 58, 20, 9, P.dark),
-    t(40, 60.8, 20, 2.9, button, 700, '#FFFFFF', 'center'),
-    img(24, 74, 52, 20, ''),
+    ...(common.button === false ? [] : [box(40, 58, 20, 9, P.dark), t(40, 60.8, 20, 2.9, button, 700, '#FFFFFF', 'center')]),
+    ...(common.image === false ? [] : [box(24, 74, 52, 20, PH.c)]),
   ];
 
   /* 19 Features — 카드 3 (아이콘 자리 + 제목 + 설명) */
@@ -296,6 +295,75 @@ window.MK_SEC = (() => {
     return els;
   };
 
+  /* ============================================================
+     STEP 2·3·4·5 — Template Engine
+     Section Registry → buildSection → Template JSON → Builder
+     ============================================================ */
+
+  /* 공통 옵션(common): theme 'light'|'dark' · bg 오버라이드 · padding
+     'compact'|'normal'|'roomy' · image true/false · button true/false ·
+     photo 'a'|'b'|'c'|'d' */
+  const shiftY = (els, dy) => els.map((e) => ({ ...e, y: Math.max(2, Math.min(96, (e.y || 0) + dy)) }));
+
+  const SECTIONS = {
+    cover:          { name: 'Cover',            theme: 'dark',  variants: ['standard'],            build: cover },
+    agenda:         { name: 'Agenda',           theme: 'light', variants: ['numbered'],            build: agenda },
+    'section-header': { name: 'Section Header', theme: 'dark',  variants: ['big-number'],          build: sectionDivider },
+    'two-column':   { name: 'Two Column',       theme: 'light', variants: ['image-right', 'text-only'], build: contentSplit },
+    gallery:        { name: 'Gallery',          theme: 'light', variants: ['3col'],                build: gallery },
+    chart:          { name: 'Chart',            theme: 'light', variants: ['bar'],                 build: chart },
+    timeline:       { name: 'Timeline',         theme: 'light', variants: ['nodes'],               build: timeline },
+    statistics:     { name: 'Statistics',       theme: 'light', variants: ['cards'],               build: stats },
+    quote:          { name: 'Quote',            theme: 'light', variants: ['big'],                 build: quote },
+    team:           { name: 'Team',             theme: 'light', variants: ['3col'],                build: team },
+    pricing:        { name: 'Pricing',          theme: 'light', variants: ['3plan'],               build: pricing },
+    faq:            { name: 'FAQ',              theme: 'light', variants: ['qa3'],                 build: faq },
+    cta:            { name: 'CTA',              theme: 'dark',  variants: ['center'],              build: cta },
+    table:          { name: 'Table',            theme: 'light', variants: ['zebra'],               build: table },
+    'logo-grid':    { name: 'Logo Grid',        theme: 'light', variants: ['3x2'],                 build: logoGrid },
+    footer:         { name: 'Footer',           theme: 'dark',  variants: ['contact'],             build: ending },
+    statement:      { name: 'Statement',        theme: 'light', variants: ['huge'],                build: statement },
+    hero:           { name: 'Hero',             theme: 'light', variants: ['center'],              build: hero },
+    'feature-grid': { name: 'Feature Grid',     theme: 'light', variants: ['3card'],               build: features },
+    summary:        { name: 'Summary',          theme: 'light', variants: ['numbered'],            build: summary },
+  };
+
+  /* STEP 5 Builder — 섹션 id + props + common → { name, bg, els } */
+  function buildSection(id, P, props = {}, common = {}) {
+    const def = SECTIONS[id];
+    if (!def) throw new Error('unknown section: ' + id);
+    const theme = common.theme || def.theme;
+    const bg = common.bg || (theme === 'dark' ? P.dark : P.light);
+    let els = def.build(P, props, common);
+    if (common.padding === 'compact') els = shiftY(els, -2.5);
+    if (common.padding === 'roomy') els = shiftY(els, 2.5);
+    return { name: props.name || def.name, bg, els };
+  }
+
+  /* STEP 4 Template JSON → 완성 템플릿 (Builder 본체)
+     json = { template, palette, meta{templateId,title,...},
+              sections: [ 'id' | { id, name?, theme?, bg?, padding?,
+                                   image?, button?, photo?, duration?, props } ] } */
+  function buildTemplate(json) {
+    const P = PALETTES[json.palette] || PALETTES['pl-ink'];
+    const scenes = (json.sections || []).map((sd, i) => {
+      const d = typeof sd === 'string' ? { id: sd } : sd;
+      const sec = buildSection(d.id, P, d.props || {}, d);
+      const s2 = scene(d.name || sec.name, sec.bg, sec.els, d.duration);
+      s2.order = i;
+      return s2;
+    });
+    return { ...(json.meta || {}), scenes };
+  }
+
+  /* 등재 — 브라우저·에디터·리뷰 전 경로 자동 노출 */
+  function registerTemplate(json, overlay) {
+    const tpl = buildTemplate(json);
+    tpl._overlay = overlay || { styleId: 'st-modern', animationId: 'an-seq', assetIds: [], ai: { recommended: false, tags: tpl.tags || [], hints: [] } };
+    window.MK_SAMPLE.TEMPLATES.push(tpl);
+    return tpl;
+  }
+
   /* ---------- Scene 조립 ---------- */
   let SCN = 0;
   const scene = (name, background, elements, duration) =>
@@ -305,33 +373,38 @@ window.MK_SEC = (() => {
   /* ============================================================
      첫 번째 Premium Project — Presentation (10씬)
      ============================================================ */
-  const P = PALETTES['pl-ink'];
-  const PRESENTATION = {
-    templateId: 'tpl-pr-presentation-01', styleEn: 'Premium', recent: true,
-    uses: '발표 전반 · 수업 · 세미나 · 보고', title: 'Presentation — Ink & Teal',
-    description: '표지부터 엔딩까지 10장 완성형 프리미엄 발표 템플릿',
-    contentType: 'presentation', category: '발표자료', style: '프리미엄', ratio: '16:9', difficulty: '쉬움',
-    targetUser: 'all', gradeRange: '전체', tags: ['프리미엄', '발표', '완성형'],
-    scenes: compose([
-      { name: '01 Cover', bg: P.dark, els: cover(P, { label: 'PRESENTATION · 2026', title: '제목을 입력하세요\n두 줄까지 좋습니다', subtitle: '발표의 핵심 메시지를 한 문장으로 요약합니다', meta: '발표자 이름 · 소속 · 날짜' }) },
-      { name: '02 Agenda', bg: P.light, els: agenda(P, { title: 'Agenda', items: ['배경과 문제 정의', '핵심 내용', '데이터로 보는 근거', '앞으로의 계획', '요약과 질의응답'] }) },
-      { name: '03 Section', bg: P.dark, els: sectionDivider(P, { num: '01', title: '첫 번째 주제', sub: '이 장에서 다룰 내용을 한 줄로 소개합니다' }) },
-      { name: '04 Content', bg: P.light, els: contentSplit(P, { label: 'KEY POINT', title: '핵심 내용을\n명확하게 전달합니다', body: '한 슬라이드에는 하나의 메시지만 담습니다.\n설명은 세 줄을 넘기지 않습니다.', bullets: ['첫 번째 근거를 짧게', '두 번째 근거를 짧게', '세 번째 근거를 짧게'], ph: true }) },
-      { name: '05 Gallery', bg: P.light, els: gallery(P, { title: '한눈에 보기', captions: ['현장 사진 · 캡션', '과정 사진 · 캡션', '결과 사진 · 캡션'] }) },
-      { name: '06 Chart', bg: P.light, els: chart(P, { title: '데이터로 보는 변화', insight: '마지막 분기에 가장 큰 성장이 있었습니다 — 강조 막대가 핵심입니다.', bars: [{ k: '1분기', v: 32 }, { k: '2분기', v: 41 }, { k: '3분기', v: 56 }, { k: '4분기', v: 78 }] }) },
-      { name: '07 Timeline', bg: P.light, els: timeline(P, { title: '앞으로의 계획', steps: [{ k: 'NOW', title: '준비', desc: '기반 정리' }, { k: 'Q3', title: '실행', desc: '핵심 과제 착수' }, { k: 'Q4', title: '확장', desc: '범위 확대' }, { k: '2027', title: '완성', desc: '목표 달성' }] }) },
-      { name: '08 Summary', bg: P.light, els: stats(P, { title: '숫자로 요약', items: [{ v: '3×', k: '성장' }, { v: '92%', k: '만족도' }, { v: '10일', k: '단축' }], note: '핵심 수치 세 개면 충분합니다 — 나머지는 부록으로 보냅니다.' }) },
-      { name: '09 Q&A', bg: P.light, els: statement(P, { title: 'Q&A', sub: '질문을 환영합니다' }) },
-      { name: '10 Ending', bg: P.dark, els: ending(P, { title: '감사합니다', lines: ['이름 · 소속', 'email@example.com', '자료는 공유 링크로 전달됩니다'] }) },
-    ]),
+  /* ============================================================
+     첫 번째 Premium Project — Presentation (Engine 기반 재구성)
+     ============================================================ */
+  const PRESENTATION_JSON = {
+    template: 'Presentation', palette: 'pl-ink',
+    meta: {
+      templateId: 'tpl-pr-presentation-01', styleEn: 'Premium', recent: true,
+      uses: '발표 전반 · 수업 · 세미나 · 보고', title: 'Presentation — Ink & Teal',
+      description: '표지부터 엔딩까지 10장 완성형 프리미엄 발표 템플릿',
+      contentType: 'presentation', category: '발표자료', style: '프리미엄', ratio: '16:9', difficulty: '쉬움',
+      targetUser: 'all', gradeRange: '전체', tags: ['프리미엄', '발표', '완성형'],
+    },
+    sections: [
+      { id: 'cover', name: '01 Cover', props: { label: 'PRESENTATION · 2026', title: '제목을 입력하세요\n두 줄까지 좋습니다', subtitle: '발표의 핵심 메시지를 한 문장으로 요약합니다', meta: '발표자 이름 · 소속 · 날짜' } },
+      { id: 'agenda', name: '02 Agenda', props: { title: 'Agenda', items: ['배경과 문제 정의', '핵심 내용', '데이터로 보는 근거', '앞으로의 계획', '요약과 질의응답'] } },
+      { id: 'section-header', name: '03 Section', props: { num: '01', title: '첫 번째 주제', sub: '이 장에서 다룰 내용을 한 줄로 소개합니다' } },
+      { id: 'two-column', name: '04 Content', photo: 'a', props: { label: 'KEY POINT', title: '핵심 내용을\n명확하게 전달합니다', body: '한 슬라이드에는 하나의 메시지만 담습니다.\n설명은 세 줄을 넘기지 않습니다.', bullets: ['첫 번째 근거를 짧게', '두 번째 근거를 짧게', '세 번째 근거를 짧게'] } },
+      { id: 'gallery', name: '05 Gallery', props: { title: '한눈에 보기', captions: ['현장 사진 · 캡션', '과정 사진 · 캡션', '결과 사진 · 캡션'] } },
+      { id: 'chart', name: '06 Chart', duration: 6, props: { title: '데이터로 보는 변화', insight: '마지막 분기에 가장 큰 성장이 있었습니다 — 강조 막대가 핵심입니다.', bars: [{ k: '1분기', v: 32 }, { k: '2분기', v: 41 }, { k: '3분기', v: 56 }, { k: '4분기', v: 78 }] } },
+      { id: 'timeline', name: '07 Timeline', props: { title: '앞으로의 계획', steps: [{ k: 'NOW', title: '준비', desc: '기반 정리' }, { k: 'Q3', title: '실행', desc: '핵심 과제 착수' }, { k: 'Q4', title: '확장', desc: '범위 확대' }, { k: '2027', title: '완성', desc: '목표 달성' }] } },
+      { id: 'statistics', name: '08 Summary', props: { title: '숫자로 요약', items: [{ v: '3×', k: '성장' }, { v: '92%', k: '만족도' }, { v: '10일', k: '단축' }], note: '핵심 수치 세 개면 충분합니다 — 나머지는 부록으로 보냅니다.' } },
+      { id: 'statement', name: '09 Q&A', duration: 4, props: { title: 'Q&A', sub: '질문을 환영합니다' } },
+      { id: 'footer', name: '10 Ending', duration: 4, props: { title: '감사합니다', lines: ['이름 · 소속', 'email@example.com', '자료는 공유 링크로 전달됩니다'] } },
+    ],
   };
-  PRESENTATION._overlay = {
+  registerTemplate(PRESENTATION_JSON, {
     styleId: 'st-modern', animationId: 'an-seq', assetIds: ['as-011', 'as-017'],
     ai: { recommended: true, tags: ['프리미엄', '발표', '완성형'], hints: ['표지 제목만 바꿔도 완성', '섹션 장 복제로 확장'] },
-  };
-  window.MK_SAMPLE.TEMPLATES.push(PRESENTATION);
+  });
 
   return { PALETTES, PH, isDark, t, box, img, compose,
+    SECTIONS, buildSection, buildTemplate, registerTemplate, PRESENTATION_JSON,
     cover, agenda, sectionDivider, contentSplit, gallery, chart, timeline, stats, quote,
     team, pricing, faq, cta, table, logoGrid, ending, statement, hero, features, summary };
 })();
