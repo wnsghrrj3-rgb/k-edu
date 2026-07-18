@@ -134,18 +134,17 @@ export function createUI(root, handlers, tracks) {
   function setBuildState(comp, canPlaceFn) {
     for (const b of paletteBtns) b.disabled = !canPlaceFn(comp, b.dataset.part);
     hVal.textContent = String(comp.pieces[0].h);
-    goRunBtn.disabled = !comp.ended;
     speedEl.textContent = comp.pieces.length + '개 부품';
 
-    // 골 벨을 놓아야만 실행이 열린다 — 잠긴 이유를 항상 화면에 남긴다
+    // 실행은 골 벨이 이미 있거나, 자동으로 놓아줄 수 있으면 열린다.
+    const goalOk = canPlaceFn(comp, 'goal');
+    goRunBtn.disabled = !(comp.ended || goalOk);
     const goalBtn = paletteBtns.find(b => b.dataset.part === 'goal');
-    const needGoal = !comp.ended && !!(goalBtn && !goalBtn.disabled);
-    if (goalBtn) goalBtn.classList.toggle('nudge', needGoal && comp.pieces.length >= 2);
+    if (goalBtn) goalBtn.classList.remove('nudge');
 
     if (comp.ended) showHint('트랙 완성! ▶ 실행하기를 눌러봐', 'good');
     else if (comp.next && comp.next.blocked) showHint('막다른 길! ↩ 되돌리기로 물러나자', 'warn');
     else if (comp.exitH < 1) showHint('바닥에 닿았어 — 경사는 더 못 놓아', 'info');
-    else if (needGoal) showHint('🔔 마지막에 골 벨을 놓아야 실행할 수 있어', 'info');
     else hideHint();
   }
 
@@ -157,7 +156,7 @@ export function createUI(root, handlers, tracks) {
       if (!goRunBtn.disabled) return;
       const r = goRunBtn.getBoundingClientRect();
       if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return;
-      showHint('🔔 아직 골 벨이 없어! 골 벨을 놓으면 실행할 수 있어', 'warn');
+      showHint('앞이 막혀서 골 벨을 놓을 자리가 없어 — ↩ 되돌리기로 물러나자', 'warn');
       goRunBtn.classList.remove('shake');
       void goRunBtn.offsetWidth;
       goRunBtn.classList.add('shake');

@@ -228,9 +228,9 @@ function rebuild(recenter) {
   launchIdx = 0;
   ui.setBuildState(comp, NS.canPlace);
   if (cams) {
-    // 각도·줌은 건드리지 않는다. 시선만 짓고 있는 끝으로 미끄러진다.
-    if (recenter) cams.recenter(frontierPoint());
-    else cams.focus(frontierPoint());
+    // 평소엔 카메라를 건드리지 않는다. 새 부품이 화면 밖일 때만 시선을 옮긴다.
+    if (recenter) cams.frameAll(allTilePoints());
+    else cams.ensureVisible(frontierPoint());
   }
 }
 
@@ -279,7 +279,16 @@ const ui = createUI(document.getElementById('ui'), {
     if (mode === 'run') setMode('run'); // 실행 중 프리셋 교체 시 시뮬 리셋
   },
   onMode(m) {
-    if (m === 'run' && !comp.ended) return;
+    if (m === 'run' && !comp.ended) {
+      // 골 벨이 없어도 실행을 막지 않는다 — 놓을 수 있으면 자동으로 놓아준다.
+      if (!NS.canPlace(comp, 'goal')) {
+        ui.showHint('앞이 막혀서 골 벨을 놓을 자리가 없어 — ↩ 되돌리기로 물러나자', 'warn');
+        return;
+      }
+      builderState.seq.push('goal');
+      rebuild(false);
+      ui.showHint('🔔 골 벨을 끝에 놓아줬어!', 'good');
+    }
     setMode(m);
   },
   onRelease() {
@@ -312,7 +321,7 @@ const ui = createUI(document.getElementById('ui'), {
 let cams = null;
 rebuild(false);
 cams = createCameras(renderer, trackCenter(comp.pieces));
-cams.recenter(frontierPoint());
+cams.frameAll(allTilePoints());
 cams.onLockChange((locked) => ui.setCamLocked(locked));
 setMode('build');
 

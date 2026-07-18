@@ -8,15 +8,13 @@
  *     오직 **바라보는 점(target)만 부드럽게 옮기고**, 카메라는 상대 오프셋을 그대로 유지한다.
  *     → 한 번 잡은 각도·거리가 건설 내내 살아 있다.
  *
- *  2. **시선은 "짓고 있는 끝"을 따라간다.**
- *     v1의 타겟은 전체 부품의 무게중심이었다. 트랙이 길어질수록 시선은 한복판에 묶이고
- *     정작 다음 부품을 놓는 프론티어는 화면 밖으로 밀려났다.
- *     v2는 프론티어를 따라간다. 트랙이 어디로 뻗든 시선이 같이 간다.
+ *  2. **평소에는 카메라가 스스로 움직이지 않는다.** (v2.1)
+ *     v2는 부품을 놓을 때마다 시선을 프론티어로 옮겼다. 결과: 회전 축이 트랙 끝에 박혀
+ *     모든 조작이 끝을 중심으로 돌았고, 사용자가 잡은 구도가 계속 흔들렸다.
+ *     v2.1의 규칙은 하나다 — **새 부품이 화면 밖으로 나갔을 때만** 시선을 옮긴다.
+ *     화면 안에 있는 동안 카메라는 완전히 사용자 것이다. (ensureVisible)
  *
- *  3. **직접 옮기면 따라가기를 멈춘다.**
- *     손으로 화면을 끌어 옮기면(pan) 자동 추종을 잠근다. 자동 카메라가 손을 이겨버리면
- *     "화면이 안 움직인다"가 된다. 잠금은 🎯 버튼으로 언제든 푼다.
- *     회전·줌은 타겟을 안 건드리므로 잠그지 않는다 — 마음껏 돌려도 추종은 살아 있다.
+ *  3. 수동 조작 버튼: 🎯 = 짓는 자리로, 🗺 = 트랙 전체 담기.
  */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -42,22 +40,14 @@ export function createCameras(renderer, center) {
   const tmpTarget = new THREE.Vector3();
 
   const desired = orbit.target.clone();
-  let userPanned = false;
-  const lockListeners = [];
-  const emitLock = () => lockListeners.forEach(fn => fn(userPanned));
 
-  /* pan 조작만 잠금으로 취급한다 (회전·줌은 타겟을 안 옮긴다) */
+  /* 사용자가 pan하면 desired를 손 위치에 동기화 — 자동 글라이드가 손을 되감지 않게 */
   orbit.addEventListener('start', () => {
     const before = orbit.target.clone();
-    let panned = false;
-    const probe = () => { if (!orbit.target.equals(before)) panned = true; };
+    const probe = () => { if (!orbit.target.equals(before)) desired.copy(orbit.target); };
     const off = () => {
       orbit.removeEventListener('change', probe);
       orbit.removeEventListener('end', off);
-      if (panned) {
-        desired.copy(orbit.target);
-        if (!userPanned) { userPanned = true; emitLock(); }
-      }
     };
     orbit.addEventListener('change', probe);
     orbit.addEventListener('end', off);
@@ -68,10 +58,9 @@ export function createCameras(renderer, center) {
     orbit.enabled = m === 'orbit';
   }
 
-  /* 바라볼 점 지정. 카메라 위치는 건드리지 않는다. */
+  /* 바라볼 점 지정. 카메라 위치는 건드리지 않는다 (상대 오프셋 유지). */
   function focus(point, opts) {
     const o = opts || {};
-    if (userPanned && !o.force) return;
     desired.set(point.x, point.y != null ? point.y : 0.08, point.z);
     if (o.snap) {
       const off = cam.position.clone().sub(orbit.target);
@@ -81,15 +70,25 @@ export function createCameras(renderer, center) {
     }
   }
 
-  /* 🎯 잠금 해제 + 되돌리기 */
+  /* 🎯 짓는 자리로 되돌리기 */
   function recenter(point) {
-    userPanned = false;
-    emitLock();
-    if (point) focus(point, { force: true });
+    if (point) focus(point);
   }
 
-  function isLocked() { return userPanned; }
-  function onLockChange(fn) { lockListeners.push(fn); fn(userPanned); }
+  /* 지점이 화면 밖(또는 가장자리 바깥 margin)이면 그때만 시선을 옮긴다.
+   * 화면 안에 있는 동안엔 절대 카메라를 움직이지 않는다 — 조작감 보존의 핵심. */
+  const projTmp = new THREE.Vector3();
+  function ensureVisible(point, margin) {
+    const m = margin != null ? margin : 0.78;
+    cam.updateMatrixWorld();
+    projTmp.set(point.x, point.y != null ? point.y : 0.08, point.z).project(cam);
+    const off = projTmp.z > 1 || projTmp.z < -1 || Math.abs(projTmp.x) > m || Math.abs(projTmp.y) > m;
+    if (off) focus(point);
+    return off;
+  }
+
+  function isLocked() { return false; }              // 호환 스텁
+  function onLockChange(fn) { fn(false); }           // 호환 스텁
 
   /* 여러 점을 한 화면에 담는다 — 각도는 유지, 거리만 조절 */
   function frameAll(points) {
@@ -104,8 +103,6 @@ export function createCameras(renderer, center) {
     const dir = cam.position.clone().sub(orbit.target);
     if (dir.lengthSq() < 1e-8) dir.set(0.55, 0.42, 0.65);
     dir.normalize();
-    userPanned = false;
-    emitLock();
     desired.copy(c);
     orbit.target.copy(c);
     cam.position.copy(c).add(dir.multiplyScalar(dist));
@@ -131,8 +128,6 @@ export function createCameras(renderer, center) {
 
   /* 첫 진입·초기화에서만 각도까지 리셋한다 */
   function setCenter(center) {
-    userPanned = false;
-    emitLock();
     desired.set(center.x, 0.08, center.z);
     orbit.target.copy(desired);
     cam.position.set(center.x + 0.55, 0.5, center.z + 0.65);
@@ -145,5 +140,5 @@ export function createCameras(renderer, center) {
   }
 
   return { cam, orbit, setMode, getMode: () => mode, update, resize,
-           setCenter, focus, recenter, frameAll, isLocked, onLockChange };
+           setCenter, focus, recenter, frameAll, ensureVisible, isLocked, onLockChange };
 }
