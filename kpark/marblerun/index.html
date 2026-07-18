@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>케이파크 · 마블런</title>
+<style>
+  :root {
+    --bg: #0a0f2c; --panel: rgba(16, 22, 54, 0.82); --line: #3b4a8f;
+    --text: #e8ecff; --dim: #8a93c8; --accent: #4de1ff; --gold: #ffd35c;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); }
+  body { font-family: 'Pretendard', -apple-system, 'Noto Sans KR', sans-serif; color: var(--text); }
+  #stage { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  #ui { position: fixed; inset: 0; pointer-events: none; }
+  #ui button { pointer-events: auto; }
+
+  #mr-title { position: absolute; top: max(14px, env(safe-area-inset-top)); left: 18px; }
+  #mr-title .park { font-size: 12px; letter-spacing: 3px; color: var(--dim); }
+  #mr-title .ride { font-size: 22px; font-weight: 800; }
+  #mr-title .tag { font-size: 11px; font-weight: 600; color: var(--accent); border: 1px solid var(--accent);
+    border-radius: 20px; padding: 2px 8px; vertical-align: middle; margin-left: 6px; opacity: 0.85; }
+
+  #mr-hud { position: absolute; top: max(18px, env(safe-area-inset-top)); right: 18px; text-align: right;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 8px 14px;
+    backdrop-filter: blur(8px); }
+  #mr-speed { display: block; font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--accent); }
+  #mr-state { font-size: 12px; color: var(--dim); }
+
+  #mr-controls { position: absolute; bottom: max(20px, env(safe-area-inset-bottom)); left: 50%;
+    transform: translateX(-50%); display: flex; gap: 10px; }
+  #mr-controls button, #mr-result button {
+    font: inherit; font-size: 15px; font-weight: 700; color: var(--text);
+    background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
+    padding: 13px 20px; backdrop-filter: blur(8px); cursor: pointer; transition: transform .08s, background .15s; }
+  #mr-controls button:active { transform: scale(0.94); }
+  button.primary { background: linear-gradient(135deg, #2a6dff, #4de1ff); border: none; color: #04122e; }
+
+  #mr-result { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: var(--panel); border: 1px solid var(--gold); border-radius: 20px;
+    padding: 24px 30px; text-align: center; backdrop-filter: blur(12px);
+    box-shadow: 0 0 40px rgba(255, 211, 92, 0.25); pointer-events: auto; }
+  #mr-result.hidden { display: none; }
+  #mr-result .result-title { font-size: 24px; font-weight: 800; color: var(--gold); margin-bottom: 12px; }
+  #mr-result .result-body { font-size: 14px; line-height: 2; color: var(--text); margin-bottom: 16px; }
+  #mr-result .result-body b { color: var(--accent); }
+
+  #err { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); color: #ff7a7a;
+    background: var(--panel); border: 1px solid #ff7a7a; border-radius: 12px; padding: 16px 22px;
+    font-size: 14px; display: none; max-width: 80vw; }
+</style>
+</head>
+<body>
+<canvas id="stage"></canvas>
+<div id="ui"></div>
+<div id="err"></div>
+
+<!-- 코어: 순수 로직 (window.MarbleSim) -->
+<script src="core/hexgrid.js"></script>
+<script src="core/parts/basic.js"></script>
+<script src="core/graph.js"></script>
+<script src="core/sim.js"></script>
+<script src="core/serialize.js"></script>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.185.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.185.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { createRenderer, buildTrackMeshes } from './stage/renderer.js';
+import { createCameras } from './stage/cameras.js';
+import { ringBell, animateBell, updateBell, createConfetti } from './stage/fx.js';
+import { createUI } from './stage/ui.js';
+
+const NS = window.MarbleSim;
+const C = NS.CONST;
+
+// ── 골든 트랙 (tests/sim.spec.js와 동일 정의) ──
+const GOLDEN = [
+  { type: 'start',    q: 0, r: 0, h: 2, rot: 0 },
+  { type: 'slope',    q: 1, r: 0, h: 1, rot: 3 },
+  { type: 'slope',    q: 2, r: 0, h: 0, rot: 3 },
+  { type: 'straight', q: 3, r: 0, h: 0, rot: 3 },
+  { type: 'curve_l',  q: 4, r: 0, h: 0, rot: 3 },
+  { type: 'goal',     q: 4, r: 1, h: 0, rot: 2 },
+];
+
+const track = NS.buildTrack(GOLDEN);
+if (!track.ok) {
+  const el = document.getElementById('err');
+  el.style.display = 'block';
+  el.textContent = '트랙 오류: ' + track.errors.map(e => e.msg).join(' / ');
+  throw new Error('track build failed');
+}
+const pathData = NS.buildPathData(track.points, track.bowlIndexRanges);
+const sim = new NS.Sim(pathData);
+
+// ── 스테이지 ──
+const canvas = document.getElementById('stage');
+const { renderer, scene } = createRenderer(canvas);
+const { group, marble } = buildTrackMeshes(GOLDEN, track, C);
+scene.add(group);
+const bellMesh = group.getObjectByName('bell');
+
+// 트랙 중심으로 카메라
+const box = { x: 0, z: 0 };
+GOLDEN.forEach(p => { const c = NS.hexgrid.tileCenter(p.q, p.r, C.R); box.x += c.x; box.z += c.z; });
+box.x /= GOLDEN.length; box.z /= GOLDEN.length;
+const cams = createCameras(renderer, box);
+
+const confetti = createConfetti(scene);
+
+// ── UI ──
+let vMax = 0, startTick = 0;
+const ui = createUI(document.getElementById('ui'), {
+  onRelease() {
+    sim.release(0);
+    vMax = 0;
+    startTick = sim.tick;
+  },
+  onReset() { sim.reset(); },
+  onToggleCamera() {
+    const next = cams.getMode() === 'orbit' ? 'follow' : 'orbit';
+    cams.setMode(next);
+    return next;
+  },
+});
+
+// ── 리사이즈 ──
+function resize() {
+  const w = window.innerWidth, h = window.innerHeight;
+  renderer.setSize(w, h, false);
+  cams.resize(w, h);
+}
+window.addEventListener('resize', resize);
+resize();
+
+// ── 메인 루프: 고정 틱 120Hz 시뮬 + rAF 렌더 ──
+let last = performance.now();
+let acc = 0;
+const DT = sim.P.dt;
+
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dtReal = Math.min((now - last) / 1000, 0.1);
+  last = now;
+  acc += dtReal;
+
+  while (acc >= DT) {
+    const events = sim.step();
+    for (const ev of events) {
+      if (ev.type === 'bell') { ringBell(); animateBell(bellMesh); }
+      if (ev.type === 'goal') {
+        const p = sim.pos();
+        confetti.burst({ x: p.x, y: p.y + 0.04, z: p.z });
+        ui.showResult({
+          time: (sim.tick - startTick) * DT,
+          vMax,
+          length: pathData.total,
+        });
+      }
+    }
+    if (Math.abs(sim.v) > vMax) vMax = Math.abs(sim.v);
+    acc -= DT;
+  }
+
+  // 구슬 위치·회전
+  const p = sim.pos();
+  marble.position.set(p.x, p.y, p.z);
+  const t = sim.tangent();
+  const axis = new THREE.Vector3(t.z, 0, -t.x);
+  if (axis.lengthSq() > 1e-12) marble.rotateOnWorldAxis(axis.normalize(), (sim.v * dtReal) / C.MR);
+
+  updateBell(bellMesh, dtReal);
+  confetti.update(dtReal);
+  cams.update(p);
+  ui.update(sim);
+  renderer.render(scene, cams.cam);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
