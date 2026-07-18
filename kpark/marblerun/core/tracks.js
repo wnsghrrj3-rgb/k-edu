@@ -56,9 +56,9 @@
     {
       id: 'cannonrange',
       name: '대포 발사대',
-      desc: '3칸을 날아 착지대에 꽂힌다 — 속도가 모자라면 못 건넌다',
+      desc: '3칸을 날아 착지대에 꽂힌다 — 대포는 스스로 밀어준다',
       startH: 5,
-      seq: ['slope', 'slope', 'straight', 'cannon', 'slope', 'booster', 'loop', 'slope', 'goal'],
+      seq: ['straight', 'cannon', 'slope', 'booster', 'loop', 'slope', 'goal'],
     },
     {
       id: 'trampolinepark',
@@ -72,7 +72,7 @@
       name: '공중 대탐험',
       desc: '대포로 날고 트램펄린으로 튕기고 — 땅에 거의 안 닿는 코스',
       startH: 5,
-      seq: ['slope', 'slope', 'straight', 'cannon', 'slope', 'trampoline', 'curve_r', 'goal'],
+      seq: ['straight', 'cannon', 'slope', 'trampoline', 'curve_r', 'goal'],
     },
   ];
 

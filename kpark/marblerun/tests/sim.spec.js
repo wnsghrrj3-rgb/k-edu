@@ -358,16 +358,42 @@ T('빌더: 스팬 자리가 막히면 SPAN_BLOCKED', () => {
   assert(!c.ok && c.errors[0].code === 'SPAN_BLOCKED', '기대: SPAN_BLOCKED, 실제: ' + JSON.stringify(c.errors));
 });
 
-T('대포: 진입 속도 부족 → 착지대 못 미치고 추락', () => {
-  const r = runBallistic(3, ['cannon', 'straight', 'goal'], 30);
-  assert(evTypes(r).includes('launch'), '발사 안 함');
-  const miss = r.evs.find(e => e.type === 'miss');
+T('대포: 진입 속도가 극단적으로 낮으면 못 미치고 추락 (부족 분기)', () => {
+  // 대포는 자체 추진이라 정상 배치에서는 부족 실패가 나지 않는다(의도된 관대함).
+  // 부족 분기 자체는 살아 있어야 하므로 발사 직전 속도를 강제로 낮춰 검증한다.
+  const c = NS.compile({ startH: 3, seq: ['straight', 'cannon', 'straight', 'goal'] });
+  assert(c.ok, JSON.stringify(c.errors));
+  const t = NS.buildTrack(c.pieces);
+  const pd = NS.buildPathData(t.points, t.bowlIndexRanges,
+    { airIndexRanges: t.airIndexRanges, boostIndexRanges: t.boostIndexRanges, launchMarks: t.launchMarks });
+  const sim = new NS.Sim(pd);
+  sim.release(0);
+  const sLaunch = pd.launches[0].sLaunch;
+  const evs = [];
+  let damped = false;
+  while ((sim.status === 'rolling' || sim.status === 'air' || sim.status === 'falling') && sim.tick < 60 * 30) {
+    if (!damped && sim.status === 'rolling' && sim.s > sLaunch - 0.0035) { sim.v = 0.20; damped = true; }
+    evs.push(...sim.step());
+  }
+  assert(damped, '발사 지점에 도달하지 못함');
+  assert(evs.some(e => e.type === 'launch'), '발사 안 함');
+  const miss = evs.find(e => e.type === 'miss');
   assert(miss && !miss.over, '부족 빗나감이 아님: ' + JSON.stringify(miss));
-  assert(r.sim.status === 'fallen', '추락하지 않음: ' + r.sim.status);
+  assert(sim.status === 'fallen', '추락하지 않음: ' + sim.status);
+});
+
+T('대포: 평지에 그냥 이어붙여도 건너간다 (기본 배치 보장)', () => {
+  // v1 회귀 방지 — 낙차 없는 체인의 실제 진입 속도(≈0.75)에서 반드시 성공해야 한다.
+  for (const h of [2, 3, 5, 8]) {
+    const r = runBallistic(h, ['cannon', 'straight', 'goal'], 30);
+    const cat = r.evs.find(e => e.type === 'catch');
+    assert(cat && !cat.wall, 'startH ' + h + ': 깔때기 포획 실패 (' + JSON.stringify(evTypes(r)) + ')');
+    assert(evTypes(r).includes('goal'), 'startH ' + h + ': 완주 실패');
+  }
 });
 
 T('대포: 적정 속도 → 깔때기 포획 후 완주', () => {
-  const r = runBallistic(4, ['slope', 'slope', 'straight', 'cannon', 'slope', 'goal'], 60);
+  const r = runBallistic(4, ['straight', 'cannon', 'slope', 'goal'], 60);
   const cat = r.evs.find(e => e.type === 'catch');
   assert(cat && !cat.wall, '깔때기 포획 실패: ' + JSON.stringify(r.evs.map(e => e.type)));
   assert(evTypes(r).includes('goal'), '완주 실패');
@@ -388,7 +414,7 @@ T('대포: 지나친 과속 → 백보드도 넘겨 추락', () => {
 });
 
 T('탄도: 비행 중 역학적 에너지 보존 (마찰 없음)', () => {
-  const r0 = runBallistic(4, ['slope', 'slope', 'straight', 'cannon', 'slope', 'goal'], 60);
+  const r0 = runBallistic(4, ['straight', 'cannon', 'slope', 'goal'], 60);
   assert(r0.sim, '빌드 실패');
   // 재실행하며 발사 직후 / 포획 직전 에너지 비교
   const t = r0.t;
@@ -414,16 +440,50 @@ T('탄도: 발사 속도 = √(v_in² + 2·boost)', () => {
   near(L.speed, Math.sqrt(r.vAtLaunch * r.vAtLaunch + 2 * boost), 5e-3, '발사 속도 공식 불일치');
 });
 
-T('트램펄린: 저속에서도 건너간다 (대포보다 관대)', () => {
-  const tr = runBallistic(3, ['trampoline', 'straight', 'goal'], 40);
-  assert(evTypes(tr).includes('catch') && evTypes(tr).includes('goal'), '트램펄린 저속 완주 실패');
-  const cn = runBallistic(3, ['cannon', 'straight', 'goal'], 40);
-  assert(!evTypes(cn).includes('goal'), '같은 조건에서 대포도 완주해버림 (난이도 역전)');
+T('부품 성격: 대포는 좁은 착지대(과속에 엄격), 트램펄린은 넓은 매트(관대)', () => {
+  const BAL = NS.BALLISTIC;
+  const d0 = Math.sqrt(3) * C.R;
+  // 같은 진입 속도에서 대포는 성공하고 트램펄린은 못 미치는 저속 구간이 존재해야 한다.
+  const outcome = (key, vIn) => {
+    const sp = BAL[key];
+    const D = sp.span * d0;
+    const vOut = Math.sqrt(vIn * vIn + 2 * sp.boost);
+    const err = (vOut * vOut * Math.sin(2 * sp.angle)) / 9.81 - D;
+    if (Math.abs(err) <= sp.catchR) return 'catch';
+    if (err > 0 && err <= sp.wallR) return 'wall';
+    return err < 0 ? 'short' : 'over';
+  };
+  // 기본 배치 속도(≈0.75)에서는 둘 다 깨끗이 성공해야 한다.
+  assert(outcome('cannon', 0.75) === 'catch', '대포 기본 배치 실패');
+  assert(outcome('trampoline', 0.75) === 'catch', '트램펄린 기본 배치 실패');
+  // 차이는 과속 허용치: 대포가 먼저 넘겨야 한다.
+  assert(outcome('cannon', 1.70) === 'over', '대포가 과속(1.70)에서 안 넘어감');
+  assert(outcome('trampoline', 1.70) !== 'over', '트램펄린이 대포와 같이 넘어감 (성격 차이 소실)');
+  assert(outcome('trampoline', 2.10) === 'over', '트램펄린이 극과속에서도 안 넘어감');
+});
+
+T('트램펄린: 매트가 넓어 아주 느려도 받아낸다 (입문용 보장)', () => {
+  const c = NS.compile({ startH: 3, seq: ['straight', 'trampoline', 'straight', 'goal'] });
+  assert(c.ok, JSON.stringify(c.errors));
+  const t = NS.buildTrack(c.pieces);
+  const pd = NS.buildPathData(t.points, t.bowlIndexRanges,
+    { airIndexRanges: t.airIndexRanges, boostIndexRanges: t.boostIndexRanges, launchMarks: t.launchMarks });
+  const sim = new NS.Sim(pd);
+  sim.release(0);
+  const sLaunch = pd.launches[0].sLaunch;
+  const evs = [];
+  let damped = false;
+  while ((sim.status === 'rolling' || sim.status === 'air' || sim.status === 'falling') && sim.tick < 60 * 30) {
+    if (!damped && sim.status === 'rolling' && sim.s > sLaunch - 0.0035) { sim.v = 0.20; damped = true; }
+    evs.push(...sim.step());
+  }
+  const cat = evs.find(e => e.type === 'catch');
+  assert(cat, '저속 포획 실패: ' + JSON.stringify(evs.map(e => e.type)));
 });
 
 T('탄도: 결정론 — 같은 트랙 두 번 = 같은 이벤트열·같은 tick', () => {
-  const a = runBallistic(5, ['slope', 'slope', 'straight', 'cannon', 'slope', 'trampoline', 'curve_r', 'goal'], 60);
-  const b = runBallistic(5, ['slope', 'slope', 'straight', 'cannon', 'slope', 'trampoline', 'curve_r', 'goal'], 60);
+  const a = runBallistic(5, ['straight', 'cannon', 'slope', 'trampoline', 'curve_r', 'goal'], 60);
+  const b = runBallistic(5, ['straight', 'cannon', 'slope', 'trampoline', 'curve_r', 'goal'], 60);
   assert(a.sim.tick === b.sim.tick, 'tick 불일치');
   assert(JSON.stringify(evTypes(a)) === JSON.stringify(evTypes(b)), '이벤트열 불일치');
 });
