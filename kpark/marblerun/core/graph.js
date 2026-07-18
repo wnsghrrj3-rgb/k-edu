@@ -27,7 +27,7 @@
 
   const EPS_Y = 1e-6;
 
-  function buildTrack(pieces, Copt) {
+  function buildTrack(pieces, Copt, opts) {
     const { hexgrid: hx, PARTS, CONST } = NS();
     const C = Object.assign({}, CONST, Copt || {});
     const errors = [];
@@ -77,7 +77,7 @@
       const n = hx.neighborOf(cur.q, cur.r, exitPort);
       const nk = hx.key(n.q, n.r);
       if (!byTile.has(nk)) {
-        errors.push({ code: 'DISCONNECTED', msg: '출구 다음 타일 비어있음: ' + nk, piece: curIdx });
+        if (!(opts && opts.allowNoGoal)) errors.push({ code: 'DISCONNECTED', msg: '출구 다음 타일 비어있음: ' + nk, piece: curIdx });
         break;
       }
       const nextIdx = byTile.get(nk);
@@ -99,7 +99,7 @@
 
     const last = pieces[order[order.length - 1]];
     const reachedGoal = last && last.type === 'goal';
-    if (!reachedGoal && errors.length === 0) {
+    if (!reachedGoal && errors.length === 0 && !(opts && opts.allowNoGoal)) {
       errors.push({ code: 'NO_GOAL', msg: '골 벨에 도달하지 못함' });
     }
 

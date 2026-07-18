@@ -32,13 +32,10 @@
   #mr-speed { display: block; font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--accent); }
   #mr-state { font-size: 12px; color: var(--dim); }
 
-  #mr-controls { position: absolute; bottom: max(20px, env(safe-area-inset-bottom)); left: 50%;
-    transform: translateX(-50%); display: flex; gap: 10px; }
-  #mr-controls button, #mr-result button {
+  #mr-result button {
     font: inherit; font-size: 15px; font-weight: 700; color: var(--text);
     background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
     padding: 13px 20px; backdrop-filter: blur(8px); cursor: pointer; transition: transform .08s, background .15s; }
-  #mr-controls button:active { transform: scale(0.94); }
   button.primary { background: linear-gradient(135deg, #2a6dff, #4de1ff); border: none; color: #04122e; }
 
   #mr-result { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -49,6 +46,47 @@
   #mr-result .result-title { font-size: 24px; font-weight: 800; color: var(--gold); margin-bottom: 12px; }
   #mr-result .result-body { font-size: 14px; line-height: 2; color: var(--text); margin-bottom: 16px; }
   #mr-result .result-body b { color: var(--accent); }
+
+  /* ── 건설 모드 ── */
+  #mr-build { position: absolute; bottom: max(16px, env(safe-area-inset-bottom)); left: 50%;
+    transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; align-items: center; width: min(94vw, 640px); }
+  #mr-palette { display: flex; gap: 8px; justify-content: center; width: 100%; }
+  #mr-palette button { pointer-events: auto; flex: 1; max-width: 110px; font: inherit; color: var(--text);
+    background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 10px 4px 8px;
+    backdrop-filter: blur(8px); cursor: pointer; font-size: 22px; line-height: 1.1;
+    display: flex; flex-direction: column; align-items: center; gap: 2px; transition: transform .08s, border-color .15s; }
+  #mr-palette button span { font-size: 12px; font-weight: 700; }
+  #mr-palette button:active:not(:disabled) { transform: scale(0.92); border-color: var(--accent); }
+  #mr-palette button:disabled { opacity: 0.32; cursor: default; }
+  #mr-buildops { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; }
+  #mr-buildops button { pointer-events: auto; font: inherit; font-size: 14px; font-weight: 700; color: var(--text);
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px;
+    backdrop-filter: blur(8px); cursor: pointer; }
+  #mr-buildops button:disabled { opacity: 0.32; cursor: default; }
+  #mr-buildops button.primary { background: linear-gradient(135deg, #2a6dff, #4de1ff); border: none; color: #04122e; }
+  #mr-height { pointer-events: auto; display: flex; gap: 6px; align-items: center;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 5px 10px; backdrop-filter: blur(8px); }
+  #mr-height .lbl { font-size: 12px; color: var(--dim); }
+  #mr-height b { min-width: 18px; text-align: center; font-size: 16px; color: var(--accent); }
+  #mr-height button { font-size: 16px; font-weight: 800; width: 30px; height: 30px; padding: 0; border-radius: 10px;
+    color: var(--text); background: transparent; border: 1px solid var(--line); cursor: pointer; }
+
+  /* ── 실행 모드 ── */
+  #mr-run { position: absolute; bottom: max(20px, env(safe-area-inset-bottom)); left: 50%;
+    transform: translateX(-50%); display: flex; gap: 10px; }
+  #mr-run button { pointer-events: auto; font: inherit; font-size: 15px; font-weight: 700; color: var(--text);
+    background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 13px 20px;
+    backdrop-filter: blur(8px); cursor: pointer; transition: transform .08s; }
+  #mr-run button:active { transform: scale(0.94); }
+
+  /* ── 안내 ── */
+  #mr-hint { position: absolute; bottom: 132px; left: 50%; transform: translateX(-50%);
+    font-size: 13px; font-weight: 700; padding: 8px 16px; border-radius: 20px;
+    background: var(--panel); border: 1px solid var(--line); backdrop-filter: blur(8px); white-space: nowrap; }
+  #mr-hint.good { color: #8dff7a; border-color: #8dff7a; }
+  #mr-hint.warn { color: #ff9a5c; border-color: #ff9a5c; }
+  #mr-hint.info { color: var(--dim); }
+  .hidden { display: none !important; }
 
   #err { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); color: #ff7a7a;
     background: var(--panel); border: 1px solid #ff7a7a; border-radius: 12px; padding: 16px 22px;
@@ -67,6 +105,7 @@
 <script src="core/sim.js"></script>
 <script src="core/serialize.js"></script>
 <script src="core/tracks.js"></script>
+<script src="core/builder.js"></script>
 
 <script type="importmap">
 {
@@ -79,9 +118,9 @@
 
 <script type="module">
 import * as THREE from 'three';
-import { createRenderer, buildTrackMeshes } from './stage/renderer.js';
+import { createRenderer, buildTrackMeshes, makeSlotMarker, updateSlotMarker, makeGhostMarble } from './stage/renderer.js';
 import { createCameras } from './stage/cameras.js';
-import { ringBell, animateBell, updateBell, createConfetti } from './stage/fx.js';
+import { ringBell, animateBell, updateBell, createConfetti, placeClick } from './stage/fx.js';
 import { createUI } from './stage/ui.js';
 
 const NS = window.MarbleSim;
@@ -92,9 +131,18 @@ const TRACKS = NS.TRACKS;
 const canvas = document.getElementById('stage');
 const { renderer, scene } = createRenderer(canvas);
 const confetti = createConfetti(scene);
+const slotMarker = makeSlotMarker(C);
+scene.add(slotMarker);
+const ghostMarble = makeGhostMarble(C);
+scene.add(ghostMarble);
 
-// ── 현재 트랙 상태 ──
-let cur = null; // { pieces, track, pathData, sim, group, marble, bellMesh }
+// ── 상태 ──
+let mode = 'build';                       // 'build' | 'run'
+let builderState = { startH: 3, seq: [] }; // 빌더 = 단일 소스
+let comp = null;                           // compile 결과
+let cur = null;                            // { track, pathData, sim, ghostSim, group, marble, bellMesh }
+let ghostWait = 0;
+let vMax = 0, startTick = 0;
 
 function trackCenter(pieces) {
   const box = { x: 0, z: 0 };
@@ -111,33 +159,77 @@ function disposeGroup(group) {
   scene.remove(group);
 }
 
-function loadTrack(i) {
-  const pieces = TRACKS[i].pieces;
-  const track = NS.buildTrack(pieces);
-  if (!track.ok) {
-    const el = document.getElementById('err');
-    el.style.display = 'block';
-    el.textContent = '트랙 오류: ' + track.errors.map(e => e.msg).join(' / ');
-    throw new Error('track build failed');
-  }
+/* 빌더 상태 → 컴파일 → 씬 재구성. 편집의 유일한 통로. */
+function rebuild(recenter) {
+  comp = NS.compile(builderState);
+  const track = NS.buildTrack(comp.pieces, null, { allowNoGoal: true });
   if (cur) disposeGroup(cur.group);
   const pathData = NS.buildPathData(track.points, track.bowlIndexRanges);
-  const sim = new NS.Sim(pathData);
-  const { group, marble } = buildTrackMeshes(pieces, track, C);
+  const { group, marble } = buildTrackMeshes(comp.pieces, track, C);
   scene.add(group);
-  cur = { pieces, track, pathData, sim, group, marble, bellMesh: group.getObjectByName('bell') };
-  if (cams) cams.setCenter(trackCenter(pieces));
-  const p = sim.pos();
+  cur = {
+    track, pathData,
+    sim: new NS.Sim(pathData),
+    ghostSim: new NS.Sim(pathData),
+    group, marble,
+    bellMesh: group.getObjectByName('bell'),
+  };
+  const p = cur.sim.pos();
   marble.position.set(p.x, p.y, p.z);
+  cur.ghostSim.release(0);
+  ghostWait = 0;
+  ui.setBuildState(comp, NS.canPlace);
+  if (recenter && cams) cams.setCenter(trackCenter(comp.pieces));
 }
 
-let cams = null;
-loadTrack(0);
-cams = createCameras(renderer, trackCenter(cur.pieces));
+function setMode(m) {
+  mode = m;
+  ui.setMode(mode, comp);
+  slotMarker.visible = false;
+  ghostMarble.visible = false;
+  if (mode === 'run') {
+    cur.sim.reset();
+    const p = cur.sim.pos();
+    cur.marble.position.set(p.x, p.y, p.z);
+    cur.marble.visible = true;
+  } else {
+    cur.marble.visible = false;
+    cur.ghostSim.release(0);
+  }
+}
 
 // ── UI ──
-let vMax = 0, startTick = 0;
 const ui = createUI(document.getElementById('ui'), {
+  onAppend(type) {
+    if (!NS.canPlace(comp, type)) return;
+    builderState.seq.push(type);
+    placeClick();
+    rebuild(false);
+  },
+  onUndo() {
+    if (builderState.seq.length > 0) { builderState.seq.pop(); rebuild(false); }
+  },
+  onClear() {
+    builderState = { startH: builderState.startH, seq: [] };
+    rebuild(true);
+  },
+  onStartH(delta) {
+    const h = builderState.startH + delta;
+    if (h < 1 || h > 6) return;
+    const trial = NS.compile({ startH: h, seq: builderState.seq });
+    if (!trial.ok) { ui.showHint('이 높이로 낮추면 경사가 바닥을 뚫어 — 안 돼', 'warn'); return; }
+    builderState.startH = h;
+    rebuild(false);
+  },
+  onSelectPreset(i) {
+    builderState = { startH: TRACKS[i].startH, seq: TRACKS[i].seq.slice() };
+    rebuild(true);
+    if (mode === 'run') setMode('run'); // 실행 중 프리셋 교체 시 시뮬 리셋
+  },
+  onMode(m) {
+    if (m === 'run' && !comp.ended) return;
+    setMode(m);
+  },
   onRelease() {
     cur.sim.release(0);
     vMax = 0;
@@ -149,8 +241,13 @@ const ui = createUI(document.getElementById('ui'), {
     cams.setMode(next);
     return next;
   },
-  onSelectTrack(i) { loadTrack(i); vMax = 0; },
 }, TRACKS);
+
+// ── 초기화 ──
+let cams = null;
+rebuild(false);
+cams = createCameras(renderer, trackCenter(comp.pieces));
+setMode('build');
 
 // ── 리사이즈 ──
 function resize() {
@@ -166,43 +263,61 @@ resize();
 const PLAYBACK = 0.28;
 let last = performance.now();
 let acc = 0;
-const DT = cur.sim.P.dt;
+let clock = 0;
+const DT = NS.PHYS.dt;
 
 function frame(now) {
   requestAnimationFrame(frame);
   const dtReal = Math.min((now - last) / 1000, 0.1);
   last = now;
+  clock += dtReal;
   acc += dtReal * PLAYBACK;
 
   while (acc >= DT) {
-    const events = cur.sim.step();
-    for (const ev of events) {
-      if (ev.type === 'bell') { ringBell(); animateBell(cur.bellMesh); }
-      if (ev.type === 'goal') {
-        const p = cur.sim.pos();
-        confetti.burst({ x: p.x, y: p.y + 0.04, z: p.z });
-        ui.showResult({
-          time: (cur.sim.tick - startTick) * DT,
-          vMax,
-          length: cur.pathData.total,
-        });
+    if (mode === 'run') {
+      const events = cur.sim.step();
+      for (const ev of events) {
+        if (ev.type === 'bell') { ringBell(); animateBell(cur.bellMesh); }
+        if (ev.type === 'goal') {
+          const p = cur.sim.pos();
+          confetti.burst({ x: p.x, y: p.y + 0.04, z: p.z });
+          ui.showResult({
+            time: (cur.sim.tick - startTick) * DT,
+            vMax,
+            length: cur.pathData.total,
+          });
+        }
+      }
+      if (Math.abs(cur.sim.v) > vMax) vMax = Math.abs(cur.sim.v);
+    } else {
+      // 고스트 구슬: 조용히 반복 주행 (벨·연출 없음)
+      if (cur.ghostSim.status === 'rolling') cur.ghostSim.step();
+      else {
+        ghostWait += DT;
+        if (ghostWait > 0.35) { cur.ghostSim.release(0); ghostWait = 0; }
       }
     }
-    if (Math.abs(cur.sim.v) > vMax) vMax = Math.abs(cur.sim.v);
     acc -= DT;
   }
 
-  // 구슬 위치·회전
-  const p = cur.sim.pos();
-  cur.marble.position.set(p.x, p.y, p.z);
-  const t = cur.sim.tangent();
-  const axis = new THREE.Vector3(t.z, 0, -t.x);
-  if (axis.lengthSq() > 1e-12) cur.marble.rotateOnWorldAxis(axis.normalize(), (cur.sim.v * dtReal * PLAYBACK) / C.MR);
+  if (mode === 'run') {
+    const p = cur.sim.pos();
+    cur.marble.position.set(p.x, p.y, p.z);
+    const t = cur.sim.tangent();
+    const axis = new THREE.Vector3(t.z, 0, -t.x);
+    if (axis.lengthSq() > 1e-12) cur.marble.rotateOnWorldAxis(axis.normalize(), (cur.sim.v * dtReal * PLAYBACK) / C.MR);
+    updateBell(cur.bellMesh, dtReal);
+    cams.update(p);
+  } else {
+    const gp = cur.ghostSim.pos();
+    ghostMarble.position.set(gp.x, gp.y, gp.z);
+    ghostMarble.visible = cur.ghostSim.status === 'rolling';
+    updateSlotMarker(slotMarker, C, comp.ended ? null : comp.next, comp.exitH, clock);
+    cams.update(null);
+  }
 
-  updateBell(cur.bellMesh, dtReal);
   confetti.update(dtReal);
-  cams.update(p);
-  ui.update(cur.sim);
+  ui.update(cur.sim, mode);
   renderer.render(scene, cams.cam);
 }
 requestAnimationFrame(frame);

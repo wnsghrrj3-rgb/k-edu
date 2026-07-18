@@ -8,6 +8,7 @@ require('../core/graph.js');
 require('../core/sim.js');
 require('../core/serialize.js');
 require('../core/tracks.js');
+require('../core/builder.js');
 const NS = globalThis.MarbleSim;
 
 let pass = 0, fail = 0;
@@ -38,8 +39,8 @@ T('반대 포트 왕복 = 제자리', () => {
   }
 });
 
-// ---------- 골든 트랙 = TRACKS[0] (core/tracks.js 단일 소스) ----------
-const GOLDEN = NS.TRACKS[0].pieces;
+// ---------- 골든 트랙 = TRACKS[0] 컴파일 (core/tracks.js 단일 소스) ----------
+const GOLDEN = NS.compile(NS.TRACKS[0]).pieces;
 
 // ---------- 2. graph ----------
 console.log('[graph]');
@@ -169,11 +170,40 @@ T('에너지 비증가 (골든 전 구간, 오일러 이산화 허용치 1e-3)',
   assert(sim.energy() < E0, '총 에너지가 줄지 않음');
 });
 
-// ---------- 5. 프리셋 트랙 전체 ----------
+// ---------- 5. 빌더 (건설 컴파일러) ----------
+console.log('[빌더]');
+T('빈 트랙(시작탑만) 컴파일 + 부분 트랙 빌드 허용', () => {
+  const c = NS.compile({ startH: 3, seq: [] });
+  assert(c.ok && !c.ended && c.next && !c.next.blocked, JSON.stringify(c.errors));
+  const t = NS.buildTrack(c.pieces, null, { allowNoGoal: true });
+  assert(t.ok, '부분 트랙 빌드 실패: ' + JSON.stringify(t.errors));
+});
+T('바닥(높이 0)에서 경사 거부 (TOO_LOW)', () => {
+  const c = NS.compile({ startH: 1, seq: ['slope', 'slope'] });
+  assert(!c.ok && c.errors.some(e => e.code === 'TOO_LOW'), JSON.stringify(c.errors));
+});
+T('커브 6연속 → 시작탑 자리 충돌 감지 (COLLISION)', () => {
+  const c = NS.compile({ startH: 2, seq: ['curve_l', 'curve_l', 'curve_l', 'curve_l', 'curve_l', 'curve_l'] });
+  assert(!c.ok && c.errors.some(e => e.code === 'COLLISION'), JSON.stringify(c.errors));
+});
+T('골 벨 뒤 배치 거부 (AFTER_GOAL)', () => {
+  const c = NS.compile({ startH: 2, seq: ['goal', 'straight'] });
+  assert(!c.ok && c.errors.some(e => e.code === 'AFTER_GOAL'), JSON.stringify(c.errors));
+});
+T('canPlace: 막다른 길에서 전부 거부', () => {
+  const c = NS.compile({ startH: 2, seq: ['curve_l', 'curve_l', 'curve_l', 'curve_l', 'curve_l'] });
+  assert(c.ok, '5연속 커브는 유효해야 함');
+  assert(c.next && c.next.blocked, '다음 자리(시작탑)가 막혀 있어야 함');
+  for (const t of NS.APPENDABLE) assert(!NS.canPlace(c, t), t + ' 놓기가 허용됨');
+});
+
+// ---------- 6. 프리셋 트랙 전체 (컴파일 → 빌드 → 완주) ----------
 console.log('[프리셋 트랙]');
 for (const tr of NS.TRACKS) {
-  T('「' + tr.name + '」 빌드 성공 + 완주 (bell→goal)', () => {
-    const t = NS.buildTrack(tr.pieces);
+  T('「' + tr.name + '」 컴파일 + 빌드 + 완주 (bell→goal)', () => {
+    const c = NS.compile(tr);
+    assert(c.ok && c.ended, '컴파일 실패: ' + JSON.stringify(c.errors));
+    const t = NS.buildTrack(c.pieces);
     assert(t.ok, JSON.stringify(t.errors));
     const sim = new NS.Sim(NS.buildPathData(t.points, t.bowlIndexRanges));
     sim.release(0);
@@ -183,7 +213,7 @@ for (const tr of NS.TRACKS) {
   });
 }
 
-// ---------- 6. serialize ----------
+// ---------- 7. serialize ----------
 console.log('[serialize]');
 T('저장 → 로드 왕복 + 빌드 성공', () => {
   const json = NS.serialize.saveTrack('골든 샘플', GOLDEN);

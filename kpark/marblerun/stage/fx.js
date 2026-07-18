@@ -30,6 +30,22 @@ export function ringBell() {
   } catch (e) { /* 오디오 미지원 무시 */ }
 }
 
+export function placeClick() {
+  try {
+    const ac = ctx();
+    const t0 = ac.currentTime;
+    const o = ac.createOscillator();
+    const gn = ac.createGain();
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(520, t0);
+    o.frequency.exponentialRampToValueAtTime(760, t0 + 0.06);
+    gn.gain.setValueAtTime(0.12, t0);
+    gn.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.12);
+    o.connect(gn).connect(ac.destination);
+    o.start(t0); o.stop(t0 + 0.12);
+  } catch (e) { /* 무시 */ }
+}
+
 export function rollTickSound(v) {
   // M3에서 굴림음 본격 구현 — M0는 벨만.
 }

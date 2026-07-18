@@ -232,4 +232,37 @@ function makeGoal(piece, C, hx) {
   return g;
 }
 
+/* 다음 부품이 놓일 자리 마커: 발광 육각 링 (초록=가능 / 빨강=막힘) */
+export function makeSlotMarker(C) {
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(C.R * 0.8, 0.004, 8, 6),
+    new THREE.MeshBasicMaterial({ color: 0x4dff88, transparent: true, opacity: 0.9 })
+  );
+  ring.rotation.x = Math.PI / 2;
+  ring.rotation.z = Math.PI / 6;
+  ring.visible = false;
+  return ring;
+}
+export function updateSlotMarker(marker, C, next, exitH, time) {
+  if (!next) { marker.visible = false; return; }
+  const NS = window.MarbleSim;
+  const c = NS.hexgrid.tileCenter(next.q, next.r, C.R);
+  marker.position.set(c.x, exitH * C.H + 0.012, c.z);
+  marker.material.color.setHex(next.blocked ? 0xff5c5c : 0x4dff88);
+  const pulse = 0.72 + 0.28 * Math.sin(time * 5);
+  marker.material.opacity = pulse;
+  marker.scale.setScalar(0.94 + 0.06 * Math.sin(time * 5));
+  marker.visible = true;
+}
+
+/* 고스트 구슬: 건설 중 상시 미리보기용 반투명 구슬 */
+export function makeGhostMarble(C) {
+  const m = new THREE.Mesh(
+    new THREE.SphereGeometry(C.MR, 20, 14),
+    new THREE.MeshStandardMaterial({ color: 0xbfe9ff, transparent: true, opacity: 0.38, roughness: 0.2, depthWrite: false })
+  );
+  m.visible = false;
+  return m;
+}
+
 export { COLOR, THREE };
