@@ -277,6 +277,10 @@ window.MK_SCREENS.review = (() => {
         b.className = 'ed-review-badge';
         b.textContent = 'REVIEW';
         tb.insertBefore(b, tb.querySelector('.ed-tb-file'));
+        const wm = document.createElement('span');
+        wm.className = 'ed-brandmark';
+        wm.textContent = 'K-MAKER';
+        tb.insertBefore(wm, b);
       }
       /* 나가기 → 리뷰 홈이 아닌 Home으로 (검수 동선 단순화) */
       const back = root.querySelector('[data-ed="back"]');
