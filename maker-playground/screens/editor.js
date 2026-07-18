@@ -56,7 +56,7 @@ window.MK_SCREENS.editor = (() => {
   };
 
   /* ================= Center: Canvas (편집) — 확대/축소 ================= */
-  const BASE_W = 620;
+  const BASE_W = 680;
   const CanvasArea = (scene) => {
     const e = ed(), CW = Math.round(BASE_W * e.zoom), CH = Math.round(CW * scene.height / scene.width);
     const els = scene.elements.map((el, i) => {
@@ -69,7 +69,8 @@ window.MK_SCREENS.editor = (() => {
         return `<div class="ed-el ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight};line-height:1.3;color:${col};white-space:pre-wrap">${M().esc(el.text)}${hd}</div>`;
       }
       const hd2 = e.selEl === i ? '<i class="hd tl"></i><i class="hd tr"></i><i class="hd bl"></i><i class="hd br"></i><i class="hd tm"></i><i class="hd bm"></i><i class="hd ml"></i><i class="hd mr"></i><i class="hd rot"></i>' : '';
-      return `<div class="ed-el img-ph ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%">${M().esc(el.label)}${hd2}</div>`;
+      const fillCls = el.fill ? 'has-fill' : '', fillSty = el.fill ? `;background:${el.fill}` : '';
+      return `<div class="ed-el img-ph ${fillCls} ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%${fillSty}">${M().esc(el.label)}${hd2}</div>`;
     }).join('');
     return `<div class="ed-canvaswrap">
       <div class="ed-canvas" style="width:${CW}px;height:${CH}px;background:${scene.background}">${els}</div>
@@ -131,7 +132,7 @@ window.MK_SCREENS.editor = (() => {
         const col = dark ? ((el.weight || 400) >= 600 ? '#F2F5F9' : '#C7CFDA') : ((el.weight || 400) >= 600 ? '#1F2733' : '#525C6A');
         return `<span style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight || 400};color:${col}">${M().esc(el.text)}</span>`;
       }
-      return `<i style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%"></i>`;
+      return `<i style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%${el.fill ? ';background:' + el.fill + ';opacity:1' : ''}"></i>`;
     }).join('');
     return `<div class="ed-mini" style="background:${scene.background}" aria-hidden="true">${els}</div>`;
   };
@@ -253,7 +254,8 @@ window.MK_SCREENS.review = (() => {
       if (!e.doc || !e.review) {
         PG.loadEditorDoc('smp-pres-01');
         e.review = true;
-        e.selEl = 0;                                 /* 우측 속성 폼까지 즉시 노출 */
+        const firstText = PG.state.editor.doc.scenes[0].elements.findIndex((el) => el.kind === 'text');
+        e.selEl = firstText >= 0 ? firstText : 0;    /* 제목 선택 상태로 시작 — 우측 속성 폼 즉시 노출 */
         e.menu = e.menu || 'text';
       }
       return E().render(v);
