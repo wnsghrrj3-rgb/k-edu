@@ -200,3 +200,46 @@ window.MK_SCREENS.editor = (() => {
     },
   };
 })();
+
+/* ============================================================
+   Review Mode — #/review (디자인 검수 전용)
+   무로그인·더미 데이터·읽기 전용(세션 내 조작 가능, 저장만 차단).
+   샘플 자동 로드 + 전 패널 노출 + 요소 선택 상태로 시작 + 고급 펼침.
+   ============================================================ */
+window.MK_SCREENS.review = (() => {
+  const E = () => window.MK_SCREENS.editor;
+  return {
+    title: 'Editor — Review Mode', variants: ['Design', 'Video'], flush: true,
+    render(v) {
+      const e = PG.state.editor;
+      if (!e.doc || !e.review) {
+        PG.loadEditorDoc('smp-pres-01');
+        e.review = true;
+        e.selEl = 0;                                 /* 우측 속성 폼까지 즉시 노출 */
+        e.menu = e.menu || 'text';
+      }
+      return E().render(v);
+    },
+    mount(root) {
+      E().mount(root);
+      /* 저장 차단 — 리뷰 모드의 유일한 제약 */
+      const save = root.querySelector('[data-ed="save"]');
+      const state = root.querySelector('#edSave');
+      if (state) { state.textContent = '리뷰 모드 · 저장되지 않음'; state.style.color = 'var(--mk-coral)'; }
+      if (save) save.onclick = () => { if (state) state.textContent = '리뷰 모드 — 저장하지 않습니다'; };
+      /* 검수 편의 — 고급 섹션 펼침 */
+      root.querySelectorAll('details.ed-adv').forEach((d) => { d.open = true; });
+      /* 배지 */
+      const tb = root.querySelector('.ed-toolbar');
+      if (tb && !tb.querySelector('.ed-review-badge')) {
+        const b = document.createElement('span');
+        b.className = 'ed-review-badge';
+        b.textContent = 'REVIEW';
+        tb.insertBefore(b, tb.querySelector('.fname'));
+      }
+      /* 나가기 → 리뷰 홈이 아닌 Home으로 (검수 동선 단순화) */
+      const back = root.querySelector('[data-ed="back"]');
+      if (back) back.onclick = () => PG.go('home');
+    },
+  };
+})();
