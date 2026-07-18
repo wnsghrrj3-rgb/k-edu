@@ -63,18 +63,20 @@ window.MK_SCREENS.editor = (() => {
       const sel = e.selEl === i ? 'sel' : '';
       if (el.kind === 'text') {
         const fs = (el.size / 100 * CH).toFixed(1);
-        const hd = e.selEl === i ? '<i class="hd tl"></i><i class="hd tr"></i><i class="hd bl"></i><i class="hd br"></i><i class="hd tm"></i><i class="hd bm"></i><i class="hd ml"></i><i class="hd mr"></i>' : '';
-        return `<div class="ed-el ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight};line-height:1.25;color:${scene.background === '#1F2733' ? '#F2F5F9' : '#1F2733'};white-space:pre-wrap">${M().esc(el.text)}${hd}</div>`;
+        const hd = e.selEl === i ? '<i class="hd tl"></i><i class="hd tr"></i><i class="hd bl"></i><i class="hd br"></i><i class="hd tm"></i><i class="hd bm"></i><i class="hd ml"></i><i class="hd mr"></i><i class="hd rot"></i>' : '';
+        const dark = scene.background === '#1F2733';
+        const col = dark ? ((el.weight || 400) >= 600 ? '#F2F5F9' : '#C7CFDA') : ((el.weight || 400) >= 600 ? '#1F2733' : '#525C6A');
+        return `<div class="ed-el ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight};line-height:1.3;color:${col};white-space:pre-wrap">${M().esc(el.text)}${hd}</div>`;
       }
-      const hd2 = e.selEl === i ? '<i class="hd tl"></i><i class="hd tr"></i><i class="hd bl"></i><i class="hd br"></i><i class="hd tm"></i><i class="hd bm"></i><i class="hd ml"></i><i class="hd mr"></i>' : '';
+      const hd2 = e.selEl === i ? '<i class="hd tl"></i><i class="hd tr"></i><i class="hd bl"></i><i class="hd br"></i><i class="hd tm"></i><i class="hd bm"></i><i class="hd ml"></i><i class="hd mr"></i><i class="hd rot"></i>' : '';
       return `<div class="ed-el img-ph ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%">${M().esc(el.label)}${hd2}</div>`;
     }).join('');
     return `<div class="ed-canvaswrap">
       <div class="ed-canvas" style="width:${CW}px;height:${CH}px;background:${scene.background}">${els}</div>
       <div class="ed-zoom">
-        <button data-zoom="out">−</button>
+        <button data-zoom="out" aria-label="축소"><svg viewBox='0 0 24 24' width='13' height='13' fill='none' stroke='currentColor' stroke-width='1.9' stroke-linecap='round' aria-hidden='true'><path d='M5.5 12h13'/></svg></button>
         <button data-zoom="fit">${Math.round(e.zoom * 100)}%</button>
-        <button data-zoom="in">＋</button>
+        <button data-zoom="in" aria-label="확대"><svg viewBox='0 0 24 24' width='13' height='13' fill='none' stroke='currentColor' stroke-width='1.9' stroke-linecap='round' aria-hidden='true'><path d='M12 5.5v13M5.5 12h13'/></svg></button>
       </div>
     </div>`;
   };
@@ -126,7 +128,8 @@ window.MK_SCREENS.editor = (() => {
     const els = scene.elements.map((el) => {
       if (el.kind === 'text') {
         const fs = Math.max(3, el.size / 100 * H);
-        return `<span style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight || 400};color:${dark ? '#F2F5F9' : '#1F2733'}">${M().esc(el.text)}</span>`;
+        const col = dark ? ((el.weight || 400) >= 600 ? '#F2F5F9' : '#C7CFDA') : ((el.weight || 400) >= 600 ? '#1F2733' : '#525C6A');
+        return `<span style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight || 400};color:${col}">${M().esc(el.text)}</span>`;
       }
       return `<i style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%"></i>`;
     }).join('');
@@ -141,9 +144,9 @@ window.MK_SCREENS.editor = (() => {
       const pct = total ? Math.round(done / total * 100) : 0;
       const blocks = doc.scenes.map((s, i) =>
         `<button class="ed-tl-block ${i === e.sceneIdx ? 'on' : ''}" data-scene="${i}" style="width:${Math.max(118, s.duration * 40)}px">${MiniScene(s, 132)}<span class="tx"><b>${i + 1}. ${M().esc(s.name)}</b><span class="dur">${s.duration}초</span></span></button>` +
-        (i < doc.scenes.length - 1 ? `<span class="ed-tl-tr mk-tooltip" data-tip="전환: ${M().esc(s.transition)}" aria-label="전환 ${M().esc(s.transition)}">⇄</span>` : '')).join('');
+        (i < doc.scenes.length - 1 ? `<span class="ed-tl-tr mk-tooltip" data-tip="전환: ${M().esc(s.transition)}" aria-label="전환 ${M().esc(s.transition)}"><svg viewBox='0 0 24 24' width='11' height='11' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M4 8.5h13M14 5l3.5 3.5L14 12M20 15.5H7M10 12l-3.5 3.5L10 19'/></svg></span>` : '')).join('');
       return `<div class="ed-bottom">
-        <div class="ed-playbar">${M().IconButton({ icon: '▶', tip: '재생 (외형만)' })}<div class="track"><i style="width:${pct}%"></i></div><span style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">0:${String(done).padStart(2, '0')} / 0:${String(total).padStart(2, '0')} · 총 ${doc.scenes.length}장면</span></div>
+        <div class="ed-playbar">${M().IconButton({ icon: "<svg viewBox='0 0 24 24' width='12' height='12' fill='currentColor' aria-hidden='true'><path d='M8 5.5v13l11-6.5z'/></svg>", tip: '재생 (외형만)' })}<div class="track"><i style="width:${pct}%"></i></div><span style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">0:${String(done).padStart(2, '0')} / 0:${String(total).padStart(2, '0')} · 총 ${doc.scenes.length}장면</span></div>
         <div class="ed-timeline">${blocks}<button class="ed-strip-add" data-ed="add" style="height:52px">＋</button></div></div>`;
     }
     return `<div class="ed-bottom"><div class="ed-strip-head"><span class="cap">장면</span><span class="prg"><b>${e.sceneIdx + 1}</b> / ${doc.scenes.length}</span></div><div class="ed-strip">
@@ -152,8 +155,8 @@ window.MK_SCREENS.editor = (() => {
           <span class="num">${i + 1}</span><span class="dur">${s.duration}초</span>${MiniScene(s, 148)}</button>
         <span class="nm">${M().esc(s.name)}</span>
         <div class="ed-sceneops">
-          <button data-op="dup" data-i="${i}">⧉ 복제</button>
-          <button data-op="del" data-i="${i}">✕ 삭제</button>
+          <button data-op="dup" data-i="${i}"><svg viewBox='0 0 24 24' width='13' height='13' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><rect x='8.5' y='8.5' width='12' height='12' rx='2'/><path d='M15.5 5.5h-10a2 2 0 0 0-2 2v10'/></svg> 복제</button>
+          <button data-op="del" data-i="${i}"><svg viewBox='0 0 24 24' width='13' height='13' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M4.5 6.5h15M9.5 6.5v-2h5v2M6.5 6.5l1 13h9l1-13M10 10.5v5.5M14 10.5v5.5'/></svg> 삭제</button>
         </div>
       </div>`).join('')}
       <button class="ed-strip-add" data-ed="add" aria-label="장면 추가">＋</button></div></div>`;
