@@ -16,12 +16,12 @@ window.MK_SCREENS.editor = (() => {
   const Toolbar = (mode) => {
     const e = ed();
     return `<div class="ed-toolbar">
-      ${M().IconButton({ icon: '←', tip: '나가기', attrs: 'data-ed="back"' })}
+      ${M().IconButton({ icon: "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M14.5 5.5L8 12l6.5 6.5'/></svg>", tip: '나가기', attrs: 'data-ed="back"' })}
       <span class="fname">${M().esc(e.doc.title)}</span>
       <span class="savestate" id="edSave">${e.savedAt ? '저장됨 · ' + e.savedAt : '저장 안 함'}</span>
       <span class="grow"></span>
-      ${M().IconButton({ icon: '↺', tip: '실행 취소 (더미)' })}
-      ${M().IconButton({ icon: '↻', tip: '다시 실행 (더미)' })}
+      ${M().IconButton({ icon: "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M8 7L4.5 10.5 8 14'/><path d='M4.5 10.5H15a4.5 4.5 0 0 1 0 9h-3'/></svg>", tip: '실행 취소 (더미)' })}
+      ${M().IconButton({ icon: "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M16 7l3.5 3.5L16 14'/><path d='M19.5 10.5H9a4.5 4.5 0 0 0 0 9h3'/></svg>", tip: '다시 실행 (더미)' })}
       <i class="ed-tb-div" aria-hidden="true"></i>
       ${M().Button({ label: '저장', kind: 'secondary', size: 'sm', attrs: 'data-ed="save"' })}
       ${M().Tabs({ items: ['Design', 'Video'], on: mode === 'video' ? 'Video' : 'Design', attrs: 'data-ed="mode"' })}
@@ -33,8 +33,8 @@ window.MK_SCREENS.editor = (() => {
   };
 
   /* ================= Left: Main Menu (추가) ================= */
-  const MENUS = [['tpl', '📐', '템플릿'], ['ai', '✨', 'AI'], ['text', '가', '텍스트'], ['el', '⬡', '요소'],
-    ['photo', '🖼', '사진'], ['video', '🎬', '영상'], ['audio', '🎵', '오디오'], ['bg', '🎨', '배경'], ['up', '⤴', '업로드']];
+  const MENUS = [['tpl', "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><rect x='3.5' y='3.5' width='17' height='17' rx='2.5'/><path d='M3.5 9.5h17M9.5 9.5v11'/></svg>", '템플릿'], ['ai', "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M12 3.5l1.8 4.7 4.7 1.8-4.7 1.8L12 16.5l-1.8-4.7-4.7-1.8 4.7-1.8zM18.5 15.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z'/></svg>", 'AI'], ['text', '<span class="txtico">가</span>', '텍스트'], ['el', "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><rect x='3.5' y='3.5' width='8' height='8' rx='1.5'/><circle cx='16.5' cy='16.5' r='4.2'/><path d='M12.5 7.5h4a3 3 0 0 1 3 3v1'/></svg>", '요소'],
+    ['photo', "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><rect x='3.5' y='4.5' width='17' height='15' rx='2.5'/><circle cx='9' cy='10' r='1.7'/><path d='M4.5 17l4.5-4.5 3.5 3.5 3-3 4 4'/></svg>", '사진'], ['video', "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><rect x='3' y='5.5' width='13' height='13' rx='2.5'/><path d='M16 10l5-2.8v9.6L16 14z'/></svg>", '영상'], ['audio', "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M9.5 17.5V6.5l9-2v11'/><circle cx='7' cy='17.5' r='2.6'/><circle cx='16' cy='15.5' r='2.6'/></svg>", '오디오'], ['bg', "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><rect x='3.5' y='3.5' width='17' height='17' rx='2.5'/><path d='M3.5 14.5l5-5 6 6M13 12l3-3 4.5 4.5'/></svg>", '배경'], ['up', "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M12 15.5v-11M7.5 8.5L12 4l4.5 4.5M4.5 19.5h15'/></svg>", '업로드']];
   const MainMenu = () => `<div class="ed-mainmenu"><small class="ed-zone-cap">추가</small>` +
     MENUS.map(([k, i, n]) => `<button class="${ed().menu === k ? 'on' : ''}" data-menu="${k}"><span class="ico">${i}</span>${n}</button>`).join('') + `</div>`;
 
