@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>케이파크 · 밤의 놀이공원</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+@font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
+:root{
+  --bg:#0a0f2c; --panel:rgba(16,22,54,.82); --line:#3b4a8f;
+  --text:#e8ecff; --dim:#8a93c8; --accent:#4de1ff; --gold:#ffd35c;
+  --title:'Hakgyoansim Moheomga','Jua',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{min-height:100%}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:'Pretendard',-apple-system,'Noto Sans KR',sans-serif;
+  overflow-x:hidden;
+}
+/* 밤하늘 별 */
+.sky{position:fixed;inset:0;pointer-events:none;z-index:0}
+.sky i{position:absolute;width:2px;height:2px;border-radius:50%;background:#cdd6ff;opacity:.55}
+.sky i:nth-child(2n){width:1.5px;height:1.5px;opacity:.35}
+.sky i:nth-child(3n){background:var(--gold);opacity:.45}
+@media (prefers-reduced-motion:no-preference){
+  .sky i{animation:tw 4s ease-in-out infinite}
+  .sky i:nth-child(2n){animation-duration:5.5s;animation-delay:1.2s}
+  .sky i:nth-child(3n){animation-duration:6.5s;animation-delay:.6s}
+  @keyframes tw{0%,100%{opacity:.25}50%{opacity:.75}}
+}
+main{position:relative;z-index:1;max-width:880px;margin:0 auto;padding:0 20px 64px}
+
+/* ── 입구 게이트: 전구 마퀴 간판 ── */
+.gate{text-align:center;padding-top:clamp(48px,9vh,88px)}
+.pennants{display:flex;justify-content:center;gap:6px;margin-bottom:26px}
+.pennants b{width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-top:14px solid var(--line)}
+.pennants b:nth-child(3n+1){border-top-color:#5661b8}
+.pennants b:nth-child(4n+2){border-top-color:var(--gold);opacity:.8}
+.pennants b:nth-child(5n+3){border-top-color:var(--accent);opacity:.7}
+.marquee{
+  display:inline-block;position:relative;
+  padding:26px 44px 22px;border:2px solid var(--line);border-radius:22px;
+  background:linear-gradient(180deg,rgba(22,30,72,.9),rgba(12,17,44,.9));
+  box-shadow:0 0 0 6px rgba(16,22,54,.6), 0 18px 50px rgba(0,0,0,.45);
+}
+/* 간판 테두리 전구 */
+.bulbs{position:absolute;inset:8px;pointer-events:none}
+.bulbs i{position:absolute;width:7px;height:7px;border-radius:50%;
+  background:var(--gold);box-shadow:0 0 8px 2px rgba(255,211,92,.55)}
+@media (prefers-reduced-motion:no-preference){
+  .bulbs i{animation:blink 2.4s ease-in-out infinite}
+  .bulbs i:nth-child(2n){animation-delay:1.2s}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.3;box-shadow:0 0 3px 1px rgba(255,211,92,.2)}}
+}
+.gate .park-en{font-size:12px;letter-spacing:6px;color:var(--dim);font-weight:600}
+.gate h1{font-family:var(--title);font-weight:400;font-size:clamp(44px,9vw,68px);
+  line-height:1.1;margin-top:6px;color:var(--text);
+  text-shadow:0 0 24px rgba(77,225,255,.35)}
+.gate h1 em{font-style:normal;color:var(--accent)}
+.gate .sub{margin-top:14px;font-size:15px;color:var(--dim)}
+.gate .creed{display:inline-flex;gap:10px;margin-top:18px;font-size:13px;font-weight:700;color:var(--gold);
+  border:1px dashed rgba(255,211,92,.45);border-radius:999px;padding:8px 18px;background:rgba(255,211,92,.06)}
+
+/* ── 어트락션 ── */
+.rides{margin-top:clamp(44px,7vh,64px)}
+.rides h2{font-size:13px;letter-spacing:4px;color:var(--dim);font-weight:700;text-align:center;margin-bottom:20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
+.ride{
+  position:relative;display:block;text-decoration:none;color:inherit;
+  background:var(--panel);border:1px solid var(--line);border-radius:18px;
+  padding:22px 22px 20px;transition:transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+a.ride:hover{transform:translateY(-3px);border-color:var(--accent);
+  box-shadow:0 10px 34px rgba(77,225,255,.16)}
+a.ride:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.ride .ic{font-size:38px;line-height:1}
+.ride h3{font-family:var(--title);font-weight:400;font-size:26px;margin-top:12px}
+.ride p{margin-top:7px;font-size:13.5px;color:var(--dim);line-height:1.6}
+.badge{position:absolute;top:16px;right:16px;font-size:11px;font-weight:800;letter-spacing:1px;
+  padding:5px 11px;border-radius:999px}
+.badge.open{color:#062033;background:var(--accent);box-shadow:0 0 14px rgba(77,225,255,.5)}
+.badge.soon{color:var(--dim);border:1px dashed var(--line);background:rgba(58,70,140,.15)}
+.ride.wip{border-style:dashed;opacity:.75}
+.ride.wip h3{color:var(--dim)}
+.go{display:inline-block;margin-top:14px;font-size:13px;font-weight:800;color:var(--accent)}
+
+footer{position:relative;z-index:1;text-align:center;padding:26px 16px 40px;font-size:12px;color:var(--dim)}
+footer a{color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="sky" id="sky"></div>
+
+<main>
+  <section class="gate">
+    <div class="pennants" aria-hidden="true"><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b></div>
+    <div class="marquee">
+      <span class="bulbs" aria-hidden="true" id="bulbs"></span>
+      <div class="park-en">K - P A R K</div>
+      <h1>케이<em>파크</em></h1>
+    </div>
+    <p class="sub">동아리·방과후 시간의 밤의 놀이공원 — 야간개장 중</p>
+    <div class="creed"><span>정답 없음</span><span>·</span><span>점수 없음</span><span>·</span><span>그냥 놀기</span></div>
+  </section>
+
+  <section class="rides">
+    <h2>어트락션</h2>
+    <div class="grid">
+      <a class="ride" href="./marblerun/">
+        <span class="badge open">운행 중</span>
+        <div class="ic">🎢</div>
+        <h3>마블런</h3>
+        <p>구슬 트랙을 직접 짓고 굴리는 3D 놀이터. 루프를 돌고, 대포로 날고, 신호기로 길을 바꾼다.</p>
+        <span class="go">입장하기 →</span>
+      </a>
+      <div class="ride wip" aria-disabled="true">
+        <span class="badge soon">공사 중</span>
+        <div class="ic">🚧</div>
+        <h3>다음 어트락션</h3>
+        <p>새 놀이기구를 짓고 있어요. 펜스 너머로 망치 소리가 들린다…</p>
+      </div>
+      <div class="ride wip" aria-disabled="true">
+        <span class="badge soon">공사 중</span>
+        <div class="ic">🏗️</div>
+        <h3>다음다음 어트락션</h3>
+        <p>이 자리엔 아직 도면만 있어요. 어떤 놀이기구가 어울릴까?</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  K-edu 놀이구역 · <a href="/">keduclass.com</a>
+</footer>
+
+<script>
+// 별 뿌리기 (결정적 배치 — 새로고침마다 동일)
+(function(){
+  const sky=document.getElementById('sky'); let s=42;
+  const rnd=()=> (s=(s*1103515245+12345)&0x7fffffff)/0x7fffffff;
+  for(let i=0;i<70;i++){const d=document.createElement('i');
+    d.style.left=(rnd()*100)+'%'; d.style.top=(rnd()*100)+'%'; sky.appendChild(d);}
+})();
+// 마퀴 전구 배치 (간판 테두리 따라)
+(function(){
+  const box=document.getElementById('bulbs');
+  const put=(x,y)=>{const i=document.createElement('i');i.style.left=`calc(${x}% - 3px)`;i.style.top=`calc(${y}% - 3px)`;box.appendChild(i);};
+  const N=9;
+  for(let k=0;k<=N;k++){put(k*100/N,0);put(k*100/N,100);}
+  for(let k=1;k<4;k++){put(0,k*25);put(100,k*25);}
+})();
+</script>
+</body>
+</html>
