@@ -50,6 +50,7 @@
         airIndexRanges: track.airIndexRanges,
         boostIndexRanges: track.boostIndexRanges,
         convexIndexRanges: track.convexIndexRanges,
+        motorIndexRanges: track.motorIndexRanges,
         launchMarks: track.launchMarks,
       });
       const switches = (track.decideMarks || [])

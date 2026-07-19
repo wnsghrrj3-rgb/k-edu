@@ -12,7 +12,7 @@ global.window = dom.window;
 global.document = dom.window.document;
 
 // 코어 로드 (window에 부착)
-for (const f of ['core/hexgrid.js','core/parts/basic.js','core/parts/action.js','core/parts/ballistic.js','core/parts/switchpart.js','core/parts/splitter.js','core/parts/mergepart.js','core/graph.js','core/sim.js','core/serialize.js','core/tracks.js','core/builder.js','core/multisim.js']) {
+for (const f of ['core/hexgrid.js','core/parts/basic.js','core/parts/action.js','core/parts/ballistic.js','core/parts/switchpart.js','core/parts/splitter.js','core/parts/mergepart.js','core/parts/lifter.js','core/graph.js','core/sim.js','core/serialize.js','core/tracks.js','core/builder.js','core/multisim.js']) {
   const code = fs.readFileSync(path.join(BASE, f), 'utf8');
   dom.window.eval(code);
 }
@@ -25,6 +25,15 @@ function assert(c, m) { if (!c) throw new Error(m || 'assert'); }
 let uiCode = fs.readFileSync(path.join(BASE, 'stage/ui.js'), 'utf8').replace('export function createUI', 'window.__createUI = function createUI');
 dom.window.eval(uiCode);
 const createUI = dom.window.__createUI;
+
+
+function stubHandlers() {
+  const noop = () => {};
+  return { onSelectPreset: noop, onAppend: noop, onRecenter: noop, onFrameAll: noop, onUndo: noop,
+    onBranch: noop, onMerge: noop, onMarbleCount: noop, onClear: noop, onStartH: noop, onMode: noop,
+    onRelease: noop, onReset: noop, onToggleCamera: () => 'orbit', onSlomo: () => false,
+    onShareOpen: noop, onLoadCode: noop, onSlotSave: noop, onSlotOpen: noop, onSlotDelete: noop };
+}
 
 T('UI 생성: 스위치 버튼·갈래 버튼·구슬 수 세그먼트 존재', () => {
   const calls = [];
@@ -163,6 +172,54 @@ T('M3: 카메라 버튼 3모드 순환 라벨 (전경→추적→마블캠)', ()
   assert(btn.textContent.includes('전경'), '전경 복귀 라벨');
   ui.setCamLabel('orbit');
   assert(btn.textContent.includes('전경'), 'setCamLabel 실패');
+});
+
+
+// ---------- M4 공유·저장 스모크 ----------
+T('M4: 리프터 팔레트 버튼 + 공유 버튼 존재', () => {
+  const root = document.createElement('div');
+  const ui = createUI(root, stubHandlers(), NS.TRACKS);
+  assert(root.querySelector('button[data-part="lifter"]'), '리프터 버튼 없음');
+  assert(root.querySelector('#mr-share'), '공유 버튼 없음');
+  assert(root.querySelector('#mr-sharepanel'), '공유 패널 없음');
+});
+T('M4: openShare → 코드 표시 + 슬롯 3개 렌더 + 닫기', () => {
+  const root = document.createElement('div');
+  const ui = createUI(root, stubHandlers(), NS.TRACKS);
+  const code = NS.serialize.encodeCode({ startH: 2, seq: ['slope', 'slope', 'goal'] });
+  ui.openShare(code, [null, { name: '내 트랙', code, date: '2026. 7. 20.' }, null]);
+  const panel = root.querySelector('#mr-sharepanel');
+  assert(!panel.classList.contains('hidden'), '패널이 안 열림');
+  assert(root.querySelector('#mr-mycode').value === code, '코드 미표시');
+  assert(root.querySelectorAll('.share-slot').length === 3, '슬롯 3개 아님');
+  assert(root.querySelector('button[data-open="1"]'), '저장된 슬롯에 열기 버튼 없음');
+  ui.closeShare();
+  assert(panel.classList.contains('hidden'), '닫기 실패');
+});
+T('M4: 슬롯 버튼 → 핸들러 라우팅 (save/open/delete)', () => {
+  const calls = [];
+  const root = document.createElement('div');
+  const h = stubHandlers();
+  h.onSlotSave = (i) => calls.push(['save', i]);
+  h.onSlotOpen = (i) => calls.push(['open', i]);
+  h.onSlotDelete = (i) => calls.push(['del', i]);
+  const ui = createUI(root, h, NS.TRACKS);
+  const code = NS.serialize.encodeCode({ startH: 2, seq: ['goal'] });
+  ui.openShare(code, [{ name: 'A', code, date: '' }, null, null]);
+  root.querySelector('button[data-save="1"]').click();
+  root.querySelector('button[data-open="0"]').click();
+  root.querySelector('button[data-del="0"]').click();
+  assert(JSON.stringify(calls) === JSON.stringify([['save', 1], ['open', 0], ['del', 0]]), JSON.stringify(calls));
+});
+T('M4: 코드 붙여넣기 → 불러오기 핸들러에 값 전달', () => {
+  let got = null;
+  const root = document.createElement('div');
+  const h = stubHandlers();
+  h.onLoadCode = (v) => { got = v; };
+  const ui = createUI(root, h, NS.TRACKS);
+  root.querySelector('#mr-pastecode').value = 'K12DDG.xx';
+  root.querySelector('#mr-loadcode').click();
+  assert(got === 'K12DDG.xx', '전달값: ' + got);
 });
 
 console.log('\nUI 스모크: ' + pass + ' 통과, ' + fail + ' 실패');

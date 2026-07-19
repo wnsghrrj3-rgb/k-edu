@@ -46,6 +46,7 @@ export function createUI(root, handlers, tracks) {
           <button data-part="trampoline" title="2칸 건너 착지대로 튕겨 보낸다">🤸<span>트램펄린</span></button>
           <button data-part="switch" title="갈림길! 구슬이 지날 때마다 방향이 딸깍 바뀐다">🔀<span>스위치</span></button>
           <button data-part="splitter" title="네가 정한 길로만 보내는 갈림길 — 실행 중에 탭해서 바꿔!">🚦<span>신호기</span></button>
+          <button data-part="lifter" title="구슬을 두 칸 들어올리는 엘리베이터 — 다시 높은 곳에서!">🛗<span>리프터</span></button>
         </div>
       </div>
       <div id="mr-buildops">
@@ -61,6 +62,7 @@ export function createUI(root, handlers, tracks) {
         <button id="mr-merge" class="hidden" title="두 갈래가 같은 자리를 바라보면 하나로 합칠 수 있어!">🤝 합류</button>
         <button id="mr-undo">↩ 되돌리기</button>
         <button id="mr-clear">🗑 처음부터</button>
+        <button id="mr-share" title="트랙 코드로 저장하고 친구와 나누자">🔗 공유·저장</button>
         <button id="mr-gorun" class="primary">▶ 실행하기</button>
       </div>
     </div>
@@ -75,6 +77,16 @@ export function createUI(root, handlers, tracks) {
       <button id="mr-cam" title="전경 → 추적 → 마블캠(구슬 눈으로!)">📷 전경</button>
       <button id="mr-slomo" title="슬로모션 — 구슬의 움직임을 자세히 보자">🐌 슬로모</button>
       <button id="mr-gobuild">🔨 다시 만들기</button>
+    </div>
+
+    <div id="mr-sharepanel" class="hidden">
+      <div class="share-title">🔗 트랙 코드 &amp; 저장 슬롯</div>
+      <div class="share-row"><span class="share-label">내 트랙 코드</span>
+        <input id="mr-mycode" readonly><button id="mr-copycode">📋 복사</button></div>
+      <div class="share-row"><span class="share-label">코드 붙여넣기</span>
+        <input id="mr-pastecode" placeholder="친구가 준 코드를 여기에"><button id="mr-loadcode" class="primary">📥 불러오기</button></div>
+      <div id="mr-slots"></div>
+      <button id="mr-shareclose">닫기</button>
     </div>
 
     <div id="mr-result" class="hidden">
@@ -127,6 +139,38 @@ export function createUI(root, handlers, tracks) {
   $('#mr-h-minus').addEventListener('click', () => handlers.onStartH(-1));
   $('#mr-h-plus').addEventListener('click', () => handlers.onStartH(1));
   goRunBtn.addEventListener('click', () => handlers.onMode('run'));
+  const sharePanel = $('#mr-sharepanel'), myCodeEl = $('#mr-mycode'), pasteEl = $('#mr-pastecode'), slotsEl = $('#mr-slots');
+  $('#mr-share').addEventListener('click', () => { handlers.onShareOpen(); });
+  $('#mr-shareclose').addEventListener('click', () => sharePanel.classList.add('hidden'));
+  $('#mr-copycode').addEventListener('click', () => {
+    myCodeEl.select();
+    try { navigator.clipboard.writeText(myCodeEl.value); } catch (e) { document.execCommand('copy'); }
+    showHint('📋 코드 복사 완료 — 친구에게 붙여넣어 줘!', 'good');
+  });
+  $('#mr-loadcode').addEventListener('click', () => handlers.onLoadCode(pasteEl.value));
+  function openShare(code, slots) {
+    myCodeEl.value = code || '';
+    pasteEl.value = '';
+    renderSlots(slots);
+    sharePanel.classList.remove('hidden');
+  }
+  function closeShare() { sharePanel.classList.add('hidden'); }
+  function renderSlots(slots) {
+    slotsEl.innerHTML = (slots || []).map((sl, i) => {
+      const has = sl && sl.code;
+      return '<div class="share-slot"><span class="slot-name">' +
+        (has ? '💾 ' + (sl.name || '슬롯 ' + (i + 1)) + ' <small>' + (sl.date || '') + '</small>' : '⬜ 비어 있음') +
+        '</span><span class="slot-btns">' +
+        '<button data-save="' + i + '">여기 저장</button>' +
+        (has ? '<button data-open="' + i + '" class="primary">열기</button><button data-del="' + i + '">지우기</button>' : '') +
+        '</span></div>';
+    }).join('');
+    Array.from(slotsEl.querySelectorAll('button')).forEach(b => b.addEventListener('click', () => {
+      if (b.dataset.save !== undefined) handlers.onSlotSave(parseInt(b.dataset.save, 10));
+      else if (b.dataset.open !== undefined) handlers.onSlotOpen(parseInt(b.dataset.open, 10));
+      else if (b.dataset.del !== undefined) handlers.onSlotDelete(parseInt(b.dataset.del, 10));
+    }));
+  }
   $('#mr-gobuild').addEventListener('click', () => { hideResult(); handlers.onMode('build'); });
   $('#mr-release').addEventListener('click', handlers.onRelease);
   $('#mr-reset').addEventListener('click', () => { hideResult(); handlers.onReset(); });
@@ -247,5 +291,5 @@ export function createUI(root, handlers, tracks) {
   wireLockedRunFeedback();
 
   setMarbleCount(1);
-  return { update, setMode, setBuildState, showResult, hideResult, showHint, hideHint, setCamLocked, setMarbleCount, setSlomo, setCamLabel };
+  return { update, setMode, setBuildState, showResult, hideResult, showHint, hideHint, setCamLocked, setMarbleCount, setSlomo, setCamLabel, openShare, closeShare, renderSlots };
 }

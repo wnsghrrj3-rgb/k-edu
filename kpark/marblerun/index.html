@@ -43,6 +43,21 @@
     padding: 24px 30px; text-align: center; backdrop-filter: blur(12px);
     box-shadow: 0 0 40px rgba(255, 211, 92, 0.25); pointer-events: auto; }
   #mr-result.hidden { display: none; }
+  #mr-sharepanel { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: rgba(13, 18, 48, 0.96); border: 1px solid rgba(255, 211, 92, 0.35);
+    border-radius: 16px; padding: 20px 22px; min-width: 320px; max-width: 92vw; z-index: 30;
+    box-shadow: 0 12px 40px rgba(0,0,0,.55); }
+  #mr-sharepanel.hidden { display: none; }
+  #mr-sharepanel .share-title { font-size: 18px; font-weight: 800; color: var(--gold); margin-bottom: 14px; }
+  #mr-sharepanel .share-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  #mr-sharepanel .share-label { font-size: 12px; color: var(--dim); min-width: 84px; }
+  #mr-sharepanel input { flex: 1; min-width: 140px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18);
+    border-radius: 8px; color: var(--text); padding: 7px 9px; font-size: 13px; font-family: monospace; }
+  #mr-sharepanel .share-slot { display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 7px 0; border-top: 1px dashed rgba(255,255,255,.12); font-size: 13px; color: var(--text); flex-wrap: wrap; }
+  #mr-sharepanel .share-slot small { color: var(--dim); margin-left: 6px; }
+  #mr-sharepanel .slot-btns { display: flex; gap: 6px; }
+  #mr-shareclose { margin-top: 12px; width: 100%; }
   #mr-result .result-title { font-size: 24px; font-weight: 800; color: var(--gold); margin-bottom: 12px; }
   #mr-result .result-body { font-size: 14px; line-height: 2; color: var(--text); margin-bottom: 16px; }
   #mr-result .result-body b { color: var(--accent); }
@@ -134,6 +149,7 @@
 <script src="core/parts/switchpart.js"></script>
 <script src="core/parts/splitter.js"></script>
 <script src="core/parts/mergepart.js"></script>
+<script src="core/parts/lifter.js"></script>
 <script src="core/graph.js"></script>
 <script src="core/sim.js"></script>
 <script src="core/multisim.js"></script>
@@ -433,6 +449,36 @@ const ui = createUI(document.getElementById('ui'), {
     if (mode === 'run') setMode('run');
   },
   onBranch() { cycleBranch(); },
+  onShareOpen() {
+    let code = '';
+    try { code = NS.serialize.encodeCode(builderState); }
+    catch (e) { ui.showHint('아직 코드로 만들 수 없어 — ' + e.message, 'warn'); return; }
+    ui.openShare(code, loadSlots());
+  },
+  onLoadCode(text) { applyCode(text, '📥 친구의 트랙을 불러왔어!'); },
+  onSlotSave(i) {
+    let code = '';
+    try { code = NS.serialize.encodeCode(builderState); }
+    catch (e) { ui.showHint('저장할 수 없어 — ' + e.message, 'warn'); return; }
+    const slots = loadSlots();
+    const name = (window.prompt('트랙 이름을 지어줘!', slots[i] && slots[i].name || '내 트랙 ' + (i + 1)) || '').trim();
+    if (!name) return;
+    slots[i] = { name, code, date: new Date().toLocaleDateString('ko-KR') };
+    saveSlots(slots);
+    ui.renderSlots(slots);
+    ui.showHint('💾 "' + name + '" 저장 완료!', 'good');
+  },
+  onSlotOpen(i) {
+    const sl = loadSlots()[i];
+    if (sl && sl.code) applyCode(sl.code, '💾 "' + (sl.name || '트랙') + '" 불러왔어!');
+  },
+  onSlotDelete(i) {
+    const slots = loadSlots();
+    if (!window.confirm('정말 지울까?')) return;
+    slots[i] = null;
+    saveSlots(slots);
+    ui.renderSlots(slots);
+  },
   onMerge() {
     const t = NS.tryMerge(builderState);
     if (!t.ok) { ui.showHint('아직 합칠 수 없어 — 두 갈래가 같은 자리를 같은 높이로 바라봐야 해', 'warn'); return; }
@@ -528,6 +574,33 @@ canvas.addEventListener('pointerup', (e) => {
   }
 });
 
+// ── 공유 유틸 (M4) ──
+const SLOT_KEY = 'kpark.marblerun.slots.v1';
+function loadSlots() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(SLOT_KEY) || '[]');
+    return [raw[0] || null, raw[1] || null, raw[2] || null];
+  } catch (e) { return [null, null, null]; }
+}
+function saveSlots(slots) {
+  try { localStorage.setItem(SLOT_KEY, JSON.stringify(slots)); } catch (e) { /* 사생활 모드 등 */ }
+}
+function applyCode(text, okMsg) {
+  let st = null;
+  try { st = NS.serialize.decodeCode(text); }
+  catch (e) { ui.showHint('❌ ' + e.message, 'warn'); return false; }
+  const trial = NS.compile(st);
+  if (!trial.ok) { ui.showHint('❌ 이 코드의 트랙은 세울 수 없어 — ' + (trial.errors[0] && trial.errors[0].msg || ''), 'warn'); return false; }
+  builderState = st;
+  editLog = rebuildLog(builderState.seq, []);
+  activeDecisions = [];
+  ui.closeShare();
+  rebuild(true);
+  if (mode === 'run') setMode('build');
+  ui.showHint(okMsg || '트랙을 불러왔어!', 'good');
+  return true;
+}
+
 // ── 초기화 ──
 let cams = null;
 rebuild(false);
@@ -535,6 +608,12 @@ cams = createCameras(renderer, trackCenter(comp.pieces));
 cams.frameAll(allTilePoints());
 cams.onLockChange((locked) => ui.setCamLocked(locked));
 setMode('build');
+
+// URL로 받은 트랙 코드 자동 로드 (?t=CODE)
+{
+  const t = new URLSearchParams(location.search).get('t');
+  if (t) applyCode(t, '🔗 링크의 트랙을 불러왔어!');
+}
 
 // ── 리사이즈 ──
 function resize() {

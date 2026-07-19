@@ -15,6 +15,7 @@ require('../core/parts/switchpart.js');
 require('../core/parts/splitter.js');
 require('../core/parts/mergepart.js');
 require('../core/multisim.js');
+require('../core/parts/lifter.js');
 const NS = globalThis.MarbleSim;
 
 let pass = 0, fail = 0;
@@ -224,7 +225,7 @@ for (const tr of NS.TRACKS) {
     assert(t.ok, JSON.stringify(t.errors));
     const sim = new NS.Sim(NS.buildPathData(t.points, t.bowlIndexRanges,
       { airIndexRanges: t.airIndexRanges, boostIndexRanges: t.boostIndexRanges,
-        convexIndexRanges: t.convexIndexRanges, launchMarks: t.launchMarks }));
+        convexIndexRanges: t.convexIndexRanges, motorIndexRanges: t.motorIndexRanges, launchMarks: t.launchMarks }));
     sim.release(0);
     const ev = sim.runToEnd(120);
     assert(ev.some(e => e.type === 'goal'),
@@ -337,7 +338,7 @@ function runBallistic(startH, seq, maxSec) {
   if (!t.ok) return { buildErrors: t.errors };
   const sim = new NS.Sim(NS.buildPathData(t.points, t.bowlIndexRanges,
     { airIndexRanges: t.airIndexRanges, boostIndexRanges: t.boostIndexRanges,
-      convexIndexRanges: t.convexIndexRanges, launchMarks: t.launchMarks }));
+      convexIndexRanges: t.convexIndexRanges, motorIndexRanges: t.motorIndexRanges, launchMarks: t.launchMarks }));
   sim.release(0);
   const evs = [];
   let vIn = 0, vAtLaunch = null;
@@ -884,6 +885,127 @@ T('잘못된 포맷 거부', () => {
   let threw = false;
   try { NS.serialize.loadTrack('{"format":"other"}'); } catch (e) { threw = true; }
   assert(threw, '거부 안 함');
+});
+
+
+// ---------- M4. 🛗 리프터 ----------
+console.log('[M4 리프터]');
+T('빌더: 리프터는 출구 높이를 +2 올린다', () => {
+  const c = NS.compile({ startH: 2, seq: ['slope', 'slope', 'lifter'] });
+  assert(c.ok, JSON.stringify(c.errors));
+  assert(c.exitH === 2, 'exitH=' + c.exitH); // 2 → 0 → +2
+});
+T('빌더: 최대 높이(8) 초과 배치는 거부된다', () => {
+  const c = NS.compile({ startH: 6, seq: ['lifter', 'lifter'] }); // 6→8→10 시도
+  assert(!c.ok && c.errors.some(e => e.code === 'TOO_HIGH'), '차단 안 됨');
+});
+T('그래프: 리프터 경로에 motor 구간이 있고 높이 계약(+2H)이 맞다', () => {
+  const c = NS.compile({ startH: 1, seq: ['slope', 'lifter', 'slope', 'slope', 'goal'] });
+  assert(c.ok, JSON.stringify(c.errors));
+  const tr = NS.buildTrack(c.pieces);
+  assert(tr.ok, JSON.stringify(tr.errors));
+  assert(tr.motorIndexRanges.length === 1, 'motor 구간 수=' + tr.motorIndexRanges.length);
+});
+T('물리: 모터 구간에서 v = liftSpeed 고정 상승, 꼭대기 방출', () => {
+  const c = NS.compile({ startH: 1, seq: ['slope', 'lifter', 'slope', 'slope', 'straight', 'goal'] });
+  const tr = NS.buildTrack(c.pieces);
+  const pd = NS.buildPathData(tr.points, tr.bowlIndexRanges, {
+    airIndexRanges: tr.airIndexRanges, boostIndexRanges: tr.boostIndexRanges,
+    convexIndexRanges: tr.convexIndexRanges, motorIndexRanges: tr.motorIndexRanges,
+  });
+  const sim = new NS.Sim(pd);
+  sim.release();
+  let sawLift = false, yMin = Infinity, yMaxAfter = -Infinity;
+  const m0 = tr.motorIndexRanges[0];
+  const sM0 = pd.cum[m0.i0], sM1 = pd.cum[m0.i1];
+  for (let k = 0; k < 120 * 30 && sim.status === 'rolling'; k++) {
+    sim.step();
+    if (sim.s > sM0 && sim.s < sM1) {
+      sawLift = true;
+      near(sim.v, NS.PHYS.liftSpeed, 1e-9, '모터 속도');
+    }
+    const y = sim.pos().y;
+    if (sim.s < sM0) yMin = Math.min(yMin, y);
+    if (sim.s > sM1) yMaxAfter = Math.max(yMaxAfter, y);
+  }
+  assert(sawLift, '모터 구간 미통과');
+  assert(yMaxAfter > yMin + 1.8 * C.H, '상승량 부족: ' + (yMaxAfter - yMin));
+});
+T('물리: 모터는 에너지를 주입한다 (진입 전 < 방출 후 총에너지) — 유일한 예외', () => {
+  const c = NS.compile({ startH: 1, seq: ['slope', 'lifter', 'slope', 'slope', 'straight', 'goal'] });
+  const tr = NS.buildTrack(c.pieces);
+  const pd = NS.buildPathData(tr.points, tr.bowlIndexRanges, { motorIndexRanges: tr.motorIndexRanges });
+  const sim = new NS.Sim(pd);
+  sim.release();
+  const m0 = tr.motorIndexRanges[0];
+  const sM0 = pd.cum[m0.i0], sM1 = pd.cum[m0.i1];
+  let eBefore = null, eAfter = null;
+  for (let k = 0; k < 120 * 30 && sim.status === 'rolling'; k++) {
+    sim.step();
+    const E = 0.5 * sim.v * sim.v + NS.PHYS.g * sim.pos().y;
+    if (sim.s < sM0) eBefore = E;
+    if (sim.s > sM1 && eAfter === null) eAfter = E;
+  }
+  assert(eBefore !== null && eAfter !== null, '에너지 표본 수집 실패');
+  assert(eAfter > eBefore, '주입 없음: ' + eBefore + ' → ' + eAfter);
+});
+T('프리셋 두둥실 리프트: 바닥 찍고 올라가 완주한다', () => {
+  const t = NS.TRACKS.find(x => x.id === 'skyelevator');
+  assert(t, '프리셋 없음');
+  const c = NS.compile({ startH: t.startH, seq: t.seq });
+  assert(c.ok, JSON.stringify(c.errors));
+  const tr = NS.buildTrack(c.pieces);
+  assert(tr.ok, JSON.stringify(tr.errors));
+  const pd = NS.buildPathData(tr.points, tr.bowlIndexRanges, {
+    airIndexRanges: tr.airIndexRanges, boostIndexRanges: tr.boostIndexRanges,
+    convexIndexRanges: tr.convexIndexRanges, motorIndexRanges: tr.motorIndexRanges,
+  });
+  const sim = new NS.Sim(pd);
+  sim.release();
+  const evs = sim.runToEnd(40);
+  assert(sim.status === 'goal', '완주 실패: ' + sim.status);
+  assert(evs.some(e => e.type === 'bell'), '벨 없음');
+});
+
+// ---------- M4. 🔗 공유 코드 ----------
+console.log('[M4 공유 코드]');
+T('전 프리셋 왕복: encode → decode → compile pieces 동일', () => {
+  for (const t of NS.TRACKS) {
+    const st = { startH: t.startH, seq: JSON.parse(JSON.stringify(t.seq)) };
+    const code = NS.serialize.encodeCode(st);
+    const back = NS.serialize.decodeCode(code);
+    const a = NS.compile(st), b = NS.compile(back);
+    assert(a.ok && b.ok, t.id + ' 컴파일 실패');
+    assert(JSON.stringify(a.pieces) === JSON.stringify(b.pieces), t.id + ' pieces 불일치 (' + code + ')');
+  }
+});
+T('합류(DAG) 트랙 왕복 보존 (merged + tail 재귀)', () => {
+  const st = { startH: 3, seq: ['slope', {
+    type: 'switch', left: ['straight'], right: ['curve_l', 'curve_r'], merged: true,
+    tail: ['slope', { type: 'splitter', left: ['straight', 'goal'], right: ['curve_r', 'goal'] }],
+  }] };
+  const code = NS.serialize.encodeCode(st);
+  const back = NS.serialize.decodeCode(code);
+  assert(JSON.stringify(back) === JSON.stringify(st), '왕복 불일치: ' + code);
+});
+T('체크섬 훼손 감지', () => {
+  const code = NS.serialize.encodeCode({ startH: 2, seq: ['slope', 'slope', 'goal'] });
+  let threw = false;
+  try { NS.serialize.decodeCode(code.slice(0, 4) + 'X' + code.slice(5)); } catch (e) { threw = true; }
+  assert(threw, '훼손 코드 통과됨');
+});
+T('쓰레기 입력·모르는 글자 거부', () => {
+  for (const bad of ['', '안녕', 'K12Q.aa', 'K12SD']) {
+    let threw = false;
+    try { NS.serialize.decodeCode(bad); } catch (e) { threw = true; }
+    assert(threw, '거부 안 됨: ' + bad);
+  }
+});
+T('공백·소문자 섞인 코드도 관대하게 읽는다', () => {
+  const code = NS.serialize.encodeCode({ startH: 2, seq: ['slope', 'straight', 'goal'] });
+  const messy = ' ' + code.slice(0, 3).toLowerCase() + ' ' + code.slice(3) + ' ';
+  const back = NS.serialize.decodeCode(messy);
+  assert(back.startH === 2 && back.seq.length === 3, '관대 파싱 실패');
 });
 
 console.log('\n결과: ' + pass + ' 통과, ' + fail + ' 실패');

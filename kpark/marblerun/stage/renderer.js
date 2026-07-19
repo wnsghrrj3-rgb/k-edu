@@ -169,6 +169,7 @@ export function buildTrackMeshes(pieces, entries, C) {
       bells.set(en.globalIdx, g.getObjectByName('bell'));
     }
     if (piece.type === 'gyro') group.add(makeGyroPole(piece, C, hx));
+    if (piece.type === 'lifter') group.add(makeLifterTower(piece, C, hx));
     if (piece.type === 'switch' || piece.type === 'splitter') {
       const f = makeSwitch(piece, C, hx, piece.type === 'splitter');
       group.add(f);
@@ -481,6 +482,35 @@ function makeAimArc(pts) {
 }
 
 /* 자이로 중앙 기둥 */
+function makeLifterTower(piece, C, hx) {
+  // 🛗 리프터: 중앙 모터 기둥 + 상단 회전 원반 + 상승 링 3개 (나선 레일은 경로가 그린다)
+  const g = new THREE.Group();
+  const c = hx.tileCenter(piece.q, piece.r, C.R);
+  const y0 = piece.h * C.H;
+  const rise = 2 * C.H;
+  const pole = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.007, 0.010, rise + 0.024, 12),
+    new THREE.MeshStandardMaterial({ color: 0x2fd4c8, emissive: 0x0f6f68, emissiveIntensity: 0.6, roughness: 0.35 })
+  );
+  pole.position.set(c.x, y0 + rise / 2 + 0.012, c.z);
+  pole.castShadow = true;
+  g.add(pole);
+  const cap = new THREE.Mesh(
+    new THREE.CylinderGeometry(C.R * 0.20, C.R * 0.24, 0.006, 14),
+    new THREE.MeshStandardMaterial({ color: 0xffd35c, emissive: 0x8f6a12, emissiveIntensity: 0.5, roughness: 0.3 })
+  );
+  cap.position.set(c.x, y0 + rise + 0.022, c.z);
+  g.add(cap);
+  const ringMat = new THREE.MeshStandardMaterial({ color: 0x2fd4c8, emissive: 0x0f6f68, emissiveIntensity: 0.45, roughness: 0.4 });
+  for (let i = 0; i < 3; i++) {
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(C.R * 0.34, 0.0022, 8, 24), ringMat);
+    ring.rotation.x = Math.PI / 2;
+    ring.position.set(c.x, y0 + rise * (i + 1) / 3.5, c.z);
+    g.add(ring);
+  }
+  return g;
+}
+
 function makeGyroPole(piece, C, hx) {
   const c = hx.tileCenter(piece.q, piece.r, C.R);
   const y0 = piece.h * C.H;

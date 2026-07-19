@@ -36,8 +36,10 @@
 
   const APPENDABLE = ['straight', 'curve_l', 'curve_r', 'slope', 'goal',
                       'hill', 'loop', 'gyro', 'jump', 'booster', 'zigzag',
-                      'cannon', 'trampoline', 'switch', 'splitter'];
+                      'cannon', 'trampoline', 'switch', 'splitter', 'lifter'];
   const DROPS = { slope: 1, gyro: 2 };
+  const RISES = { lifter: 2 };
+  const MAX_H = 8;
   const SPANS = { cannon: 3, trampoline: 2 };
 
   function aheadTiles(hx, q, r, dir, n) {
@@ -75,6 +77,8 @@
         const entry = hx.opposite(exitPort);
         const drop = DROPS[t] || 0;
         if (exitH < drop) { errors.push({ code: 'TOO_LOW', msg: '높이가 부족해 ' + t + '를 놓을 수 없음 (필요 ' + drop + '칸)', at: i }); return []; }
+        const rise = RISES[t] || 0;
+        if (rise && exitH + rise > MAX_H) { errors.push({ code: 'TOO_HIGH', msg: '너무 높아 ' + t + '를 놓을 수 없음 (최대 ' + MAX_H + '칸)', at: i }); return []; }
         const h = exitH - drop;
 
         const span = SPANS[t] || 0;
@@ -94,6 +98,7 @@
         q = n.q; r = n.r;
         for (const st of spanTiles) { occupied.add(hx.key(st.q, st.r)); q = st.q; r = st.r; }
         if (drop > 0) exitH = h;
+        if (rise > 0) exitH = exitH + rise;
 
         if (t === 'switch' || t === 'splitter') {
           // 갈림길: 왼길 먼저 (DFS) — 스위치 뒤 항목은 갈래 안에 있어야 함
@@ -211,6 +216,7 @@
     if (!comp.ok || !route || route.ended) return false;
     if (!route.next || route.next.blocked) return false;
     if ((DROPS[type] || 0) > route.exitH) return false;
+    if ((RISES[type] || 0) && route.exitH + RISES[type] > MAX_H) return false;
     if (APPENDABLE.indexOf(type) < 0) return false;
     const span = SPANS[type] || 0;
     if (span > 0 && comp.occupied) {
@@ -277,5 +283,5 @@
     return true;
   }
 
-  return { compile, canPlace, canPlaceRoute, leafPieces, tryMerge, canMerge, unMerge, APPENDABLE, SPANS, DROPS };
+  return { compile, canPlace, canPlaceRoute, leafPieces, tryMerge, canMerge, unMerge, APPENDABLE, SPANS, DROPS, RISES };
 });

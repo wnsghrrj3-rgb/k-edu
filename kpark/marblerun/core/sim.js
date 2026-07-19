@@ -29,6 +29,7 @@
     wallKeep: 0.45,  // 백보드(뒷벽) 맞고 떨어진 경우 유지율
     railCatchR: 0.028,   // 이탈 낙하 중 레일 재포획 반경 (m)
     railCatchKeep: 0.80, // 재포획 시 접선 성분 속도 유지율 (법선 성분은 흡수)
+    liftSpeed: 0.50,     // 🛗 리프터 모터 상승 속도 (m/s) — 구간 내 v 고정, 유일한 에너지 주입원
     convexGrip: 4.5,     // 두 줄 레일 채널이 볼록 마루에서 구슬을 잡아주는 배수
                          // (v²κ > grip·g·|cdir_y| 일 때만 이탈 — 경사 기세는 굴러 넘고, 부스터 기세는 난다)
     dt: 1 / 120,   // 고정 틱
@@ -89,6 +90,7 @@
     const airRanges = toS(opts && opts.airIndexRanges);
     const boostRanges = toS(opts && opts.boostIndexRanges);
     const convexRanges = toS(opts && opts.convexIndexRanges);
+    const motorRanges = toS(opts && opts.motorIndexRanges);
     // 발사 지점: 인덱스 → 호길이 s + 실제 좌표 (탄도 부품)
     const launches = ((opts && opts.launchMarks) || []).map(m => ({
       sLaunch: cum[m.i],
@@ -106,7 +108,7 @@
         return { x: dx / dl, z: dz / dl };
       })(),
     })).sort((a, b) => a.sLaunch - b.sLaunch);
-    return { points, segs, cum, total, bowlRanges, airRanges, boostRanges, convexRanges, launches };
+    return { points, segs, cum, total, bowlRanges, airRanges, boostRanges, convexRanges, motorRanges, launches };
   }
 
   function segIndexAt(pd, s) {
@@ -145,6 +147,7 @@
   function inAir(pd, s) { return inRange(pd.airRanges || [], s); }
   function inBoost(pd, s) { return inRange(pd.boostRanges || [], s); }
   function inConvex(pd, s) { return inRange(pd.convexRanges || [], s); }
+  function inMotor(pd, s) { return inRange(pd.motorRanges || [], s); }
 
   class Sim {
     constructor(pathData, phys) {
@@ -328,6 +331,16 @@
       }
       if (this.status !== 'rolling') return ev;
       const P = this.P, pd = this.pd, dt = P.dt;
+
+      // 🛗 모터 구간: 물리 대신 모터가 잡는다 — v = liftSpeed 고정 전진 (에너지 주입)
+      if (inMotor(pd, this.s)) {
+        this.v = P.liftSpeed;
+        this.s = Math.min(this.s + this.v * dt, pd.total);
+        this._lastDir = 1;
+        this._restTicks = 0;
+        this.tick++;
+        return ev;
+      }
       const seg = pd.segs[segIndexAt(pd, this.s)];
       const bowl = inBowl(pd, this.s);
 
@@ -373,6 +386,15 @@
       const v2 = 2 * (E - lossWork - P.g * yNew);
       this.v = v2 > 0 ? Math.sign(vE || 1) * Math.sqrt(v2) : 0;
       this.s = sNew;
+
+      // 🛗 방금 모터 구간에 진입 — 즉시 모터가 잡는다 (이탈 판정·역행 없음)
+      if (inMotor(pd, this.s)) {
+        this.v = P.liftSpeed;
+        this._lastDir = 1;
+        this._restTicks = 0;
+        this.tick++;
+        return ev;
+      }
 
       // 접촉 조건 (수직 곡면 역학): 레일은 supp 방향으로만 밀 수 있다.
       // 힘 균형 구심 성분: N·(supp·cdir) = v²κ + g·cdir_y  →  N < 0 이면 이탈.

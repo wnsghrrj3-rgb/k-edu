@@ -27,6 +27,7 @@
     require('./parts/switchpart.js');
     require('./parts/splitter.js');
     require('./parts/mergepart.js');
+    require('./parts/lifter.js');
     return Object.assign({}, hx, pt);
   }
 
@@ -49,13 +50,14 @@
     if (starts.length !== 1) {
       errors.push({ code: 'START_COUNT', msg: '시작탑은 정확히 1개여야 함 (현재 ' + starts.length + ')' });
     }
-    if (errors.length) return { ok: false, errors, points: [], bowlIndexRanges: [], airIndexRanges: [], convexIndexRanges: [], boostIndexRanges: [], launchMarks: [], decideMarks: [], order: [], pieceRanges: [] };
+    if (errors.length) return { ok: false, errors, points: [], bowlIndexRanges: [], airIndexRanges: [], convexIndexRanges: [], boostIndexRanges: [], motorIndexRanges: [], launchMarks: [], decideMarks: [], order: [], pieceRanges: [] };
 
     const points = [];
     const bowlIndexRanges = [];
     const airIndexRanges = [];
     const convexIndexRanges = [];
     const boostIndexRanges = [];
+    const motorIndexRanges = [];
     const launchMarks = [];
     const decideMarks = [];
     const pieceRanges = [];
@@ -86,6 +88,7 @@
         if (m.kind === 'air') airIndexRanges.push(g);
         else if (m.kind === 'convex') convexIndexRanges.push(g);
         else if (m.kind === 'boost') boostIndexRanges.push(g);
+        else if (m.kind === 'motor') motorIndexRanges.push(g);
         else if (m.kind === 'launch') launchMarks.push({
           i: i0 + m.i, iLand: i0 + m.iLand, angle: m.angle, boost: m.boost,
           catchR: m.catchR, wallR: m.wallR, wallH: m.wallH,
@@ -127,7 +130,7 @@
       errors.push({ code: 'NO_GOAL', msg: '골 벨에 도달하지 못함' });
     }
 
-    return { ok: errors.length === 0, errors, points, bowlIndexRanges, airIndexRanges, convexIndexRanges, boostIndexRanges, launchMarks, decideMarks, order, pieceRanges };
+    return { ok: errors.length === 0, errors, points, bowlIndexRanges, airIndexRanges, convexIndexRanges, boostIndexRanges, motorIndexRanges, launchMarks, decideMarks, order, pieceRanges };
   }
 
   return { buildTrack };

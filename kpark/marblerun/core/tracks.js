@@ -130,6 +130,13 @@
           left:  ['curve_l', 'slope', 'straight', 'goal'],
           right: ['curve_r', 'slope', 'straight', 'goal'] }],
     },
+    {
+      id: 'skyelevator',
+      name: '두둥실 리프트',
+      desc: '바닥까지 내려온 구슬을 리프터가 2칸 들어올린다 — 두 번째 활강!',
+      startH: 2,
+      seq: ['slope', 'slope', 'straight', 'lifter', 'curve_l', 'slope', 'curve_r', 'slope', 'straight', 'goal'],
+    },
   ];
 
   return { TRACKS };
