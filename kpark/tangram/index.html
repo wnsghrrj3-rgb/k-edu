@@ -317,7 +317,7 @@ function startPuzzle(id){
     board.appendChild(gG);
   }
   G.slots=slots;
-  G.gHint=svgEl('g',{}); board.appendChild(G.gHint);
+  G.gHint=svgEl('g',{}); board.appendChild(G.gHint); G.hoverEl=null;
 
   // 조각 7개 — 쟁반 배치
   const gP=svgEl('g',{}); board.appendChild(gP); G.gPieces=gP;
@@ -346,6 +346,7 @@ function startPuzzle(id){
   renderAll(true);
   startAnim();
   updateBtns();
+  if(!window.__tgGuide){window.__tgGuide=1;setTimeout(()=>toast('조각을 끌어다 놓고, 탭하면 빙글 돌아! 🌀'),500);}
 }
 
 /* 자유 만들기 */
@@ -365,7 +366,7 @@ function startFree(){
   const t=svgEl('text',{x:FW/2,y:FH/2,'text-anchor':'middle',fill:'rgba(138,147,200,0.5)',
     'font-size':1.05,'font-family':'inherit'}); t.textContent='조각으로 나만의 그림을 만들어 봐';
   board.appendChild(t);
-  G.slots=[]; G.gHint=svgEl('g',{}); board.appendChild(G.gHint);
+  G.slots=[]; G.gHint=svgEl('g',{}); board.appendChild(G.gHint); G.hoverEl=null;
   const gP=svgEl('g',{}); board.appendChild(gP); G.gPieces=gP;
   const cellW=(G.vb[2]-3.2)/4, x0=G.vb[0]+1.6+cellW/2;
   const shapeIdx={}; G.pieces=[];
@@ -439,25 +440,16 @@ function startAnim(){
 }
 
 /* ── 포인터 ── */
-let drag=null, lastTap={t:0,i:-1};
+let drag=null;
 function svgPoint(ev){
   const pt=board.createSVGPoint(); pt.x=ev.clientX; pt.y=ev.clientY;
   const m=board.getScreenCTM(); if(!m)return{x:0,y:0};
   const p=pt.matrixTransform(m.inverse()); return{x:p.x,y:p.y};
 }
-function pieceAt(x,y){
-  for(let i=G.pieces.length-1;i>=0;i--){
-    const pc=G.pieces[i];
-    const poly=T.pieceWorldPoly(pc.sh,pc.cx,pc.cy,pc.rot,pc.f);
-    if(T.pointIn(poly,x,y))return i;
-  }
-  return -1;
-}
 function attachPointer(){
   board.onpointerdown=ev=>{
     if(G.doneFlag)return;
     const p=svgPoint(ev);
-    // z순서 무시하고 화면 위 조각 우선: G.gPieces의 DOM 순서 역방향으로 탐색
     let hit=-1;
     const els=Array.from(G.gPieces.children);
     for(let k=els.length-1;k>=0;k--){
@@ -468,10 +460,11 @@ function attachPointer(){
     }
     if(hit<0)return;
     const pc=G.pieces[hit];
+    const wasSel=(G.sel===hit);
     select(hit);
     Snd.pick();
     G.gPieces.appendChild(pc.el); // 맨 위로
-    drag={i:hit,offx:pc.cx-p.x,offy:pc.cy-p.y,sx:ev.clientX,sy:ev.clientY,moved:false};
+    drag={i:hit,offx:pc.cx-p.x,offy:pc.cy-p.y,sx:ev.clientX,sy:ev.clientY,moved:false,wasSel};
     pc.el.setAttribute('filter','url(#dragSh)');
     board.setPointerCapture(ev.pointerId);
   };
@@ -482,20 +475,18 @@ function attachPointer(){
     const p=svgPoint(ev);
     pc.cx=clamp(p.x+drag.offx,G.vb[0]+0.8,G.vb[0]+G.vb[2]-0.8);
     pc.cy=clamp(p.y+drag.offy,G.vb[1]+0.8,G.vb[1]+G.vb[3]-0.8);
+    if(drag.moved)hoverUpdate(pc);
   };
   board.onpointerup=ev=>{
     if(!drag)return;
     const pc=G.pieces[drag.i];
     pc.el.removeAttribute('filter');
-    const i=drag.i, moved=drag.moved; drag=null;
-    if(!moved){
-      const now=Date.now();
-      if(lastTap.i===i&&now-lastTap.t<320){rotateSel(1);lastTap={t:0,i:-1};return;}
-      lastTap={t:now,i};
-    }
+    const i=drag.i, moved=drag.moved, wasSel=drag.wasSel; drag=null;
+    hoverClear();
+    if(!moved&&wasSel){rotateSel(1);return;} // 선택된 조각 다시 탭 = 45° 회전
     if(G.mode==='puzzle')trySnap(i);
   };
-  board.onpointercancel=()=>{if(drag){G.pieces[drag.i].el.removeAttribute('filter');drag=null;}};
+  board.onpointercancel=()=>{if(drag){G.pieces[drag.i].el.removeAttribute('filter');drag=null;hoverClear();}};
 }
 function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
 
@@ -530,30 +521,101 @@ function flipSel(){
   if(G.mode==='puzzle')setTimeout(()=>trySnap(G.sel),260);
 }
 
-/* ── 스냅 ── */
+/* ── 스냅 ──
+ * 위치 허용치 = 조각 크기 비례 (큰 조각일수록 관대) — 아이 손 기준.
+ * 회전이 한 칸(±45°) 어긋나면 자동으로 착 돌아가며 스냅 (어시스트).
+ * 후보 슬롯이 여럿이면 가장 가까운 슬롯 선택. */
+const POS_TOL={L:2.1,M:1.6,S:1.15,Q:1.45,P:1.6};
+function posTolFor(sh){return POS_TOL[sh]||1.3;}
+
+function snapCandidate(pc){
+  const posTol=posTolFor(pc.sh)*(G.pz&&G.pz.stars>=3?0.9:1);
+  const rotQ=((pc.rot%360)+360)%360;
+  let best=null;
+  for(const s of G.slots){
+    if(s.filled||s.sh!==pc.sh)continue;
+    const d=Math.hypot(pc.cx-s.cc[0],pc.cy-s.cc[1]);
+    if(d>posTol)continue;
+    for(const dr of [0,-45,45]){
+      const poly=T.pieceWorldPoly(pc.sh,pc.cx,pc.cy,rotQ+dr,pc.f);
+      if(T.shapeMatch(poly,s.poly,0.4)){
+        if(!best||d<best.d)best={slot:s,d,dr};
+        break;
+      }
+    }
+  }
+  return best;
+}
+function flipWouldFit(pc){
+  if(pc.sh!=='P')return false;
+  const posTol=posTolFor('P');
+  const rotQ=((pc.rot%360)+360)%360;
+  for(const s of G.slots){
+    if(s.filled||s.sh!=='P')continue;
+    if(Math.hypot(pc.cx-s.cc[0],pc.cy-s.cc[1])>posTol)continue;
+    for(const dr of [0,-45,45])
+      if(T.shapeMatch(T.pieceWorldPoly('P',pc.cx,pc.cy,rotQ+dr,pc.f?0:1),s.poly,0.4))return true;
+  }
+  return false;
+}
 function trySnap(i){
   const pc=G.pieces[i];
   if(pc.locked||G.mode!=='puzzle')return;
-  const posTol=G.pz.stars>=3?0.85:1.15, shapeTol=0.4;
-  const rotQ=((pc.rot%360)+360)%360;
-  const poly=T.pieceWorldPoly(pc.sh,pc.cx,pc.cy,rotQ,pc.f);
+  const hit=snapCandidate(pc);
+  if(hit){
+    const s=hit.slot;
+    s.filled=true; pc.locked=true;
+    if(hit.dr!==0){pc.rot+=hit.dr;Snd.tick();} // 어시스트: 한 칸 착 돌아가며
+    pc.cx=s.cc[0]; pc.cy=s.cc[1];
+    pc.el.setAttribute('stroke','rgba(0,0,0,0.28)');
+    pc.el.style.cursor='default';
+    pc.pulseT=0;
+    G.lockedCount++;
+    Snd.snap(G.lockedCount-1);
+    const dots=$('dots').children;
+    if(dots[G.lockedCount-1])dots[G.lockedCount-1].classList.add('on');
+    if(G.sel===i){G.sel=-1;updateBtns();}
+    hoverClear();
+    if(G.lockedCount===7)setTimeout(finishPuzzle,650);
+    return;
+  }
+  if(flipWouldFit(pc)){toast('↔ 뒤집어 볼까?');pulseBtn($('btnFlip'));}
+}
+function pulseBtn(b){b.style.transition='transform .12s';let n=0;
+  const iv=setInterval(()=>{b.style.transform=(n%2?'scale(1)':'scale(1.16)');if(++n>5){clearInterval(iv);b.style.transform='';}},130);}
+
+/* 드래그 중 실시간 자리 안내: 근처 미점유 동일 조각 슬롯 표시.
+ * 지금 회전(±45° 어시스트 포함)으로 들어갈 자리 = 초록 불. */
+function hoverUpdate(pc){
+  if(G.mode!=='puzzle'){return;}
+  const posTol=posTolFor(pc.sh)*(G.pz&&G.pz.stars>=3?0.9:1);
+  let nearest=null;
   for(const s of G.slots){
     if(s.filled||s.sh!==pc.sh)continue;
-    if(T.slotMatch(poly,s.poly,posTol,shapeTol)){
-      s.filled=true; pc.locked=true;
-      pc.cx=s.cc[0]; pc.cy=s.cc[1];
-      pc.el.setAttribute('stroke','rgba(0,0,0,0.28)');
-      pc.el.style.cursor='default';
-      pc.pulseT=0;
-      G.lockedCount++;
-      Snd.snap(G.lockedCount-1);
-      const dots=$('dots').children;
-      if(dots[G.lockedCount-1])dots[G.lockedCount-1].classList.add('on');
-      if(G.sel===i){G.sel=-1;updateBtns();}
-      if(G.lockedCount===7)setTimeout(finishPuzzle,650);
-      return;
-    }
+    const d=Math.hypot(pc.cx-s.cc[0],pc.cy-s.cc[1]);
+    if(d<=posTol*1.6&&(!nearest||d<nearest.d))nearest={slot:s,d};
   }
+  if(!nearest){hoverClear();return;}
+  const fits=!!snapCandidate(pc);
+  if(!G.hoverEl){
+    G.hoverEl=svgEl('polygon',{fill:'none','stroke-linejoin':'round'});
+    G.gHint.appendChild(G.hoverEl);
+  }
+  G.hoverEl.setAttribute('points',ptsAttr(nearest.slot.poly));
+  if(fits){
+    G.hoverEl.setAttribute('stroke','#3ee6a8');
+    G.hoverEl.setAttribute('stroke-width','0.18');
+    G.hoverEl.setAttribute('stroke-dasharray','');
+    G.hoverEl.setAttribute('fill','rgba(62,230,168,0.13)');
+  }else{
+    G.hoverEl.setAttribute('stroke','rgba(232,236,255,0.4)');
+    G.hoverEl.setAttribute('stroke-width','0.11');
+    G.hoverEl.setAttribute('stroke-dasharray','0.5 0.4');
+    G.hoverEl.setAttribute('fill','none');
+  }
+}
+function hoverClear(){
+  if(G.hoverEl){G.hoverEl.remove();G.hoverEl=null;}
 }
 
 /* ── 힌트 ── */

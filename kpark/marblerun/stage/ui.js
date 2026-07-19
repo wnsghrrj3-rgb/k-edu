@@ -10,7 +10,7 @@ export function createUI(root, handlers, tracks) {
 
   root.innerHTML = `
     <div id="mr-title">
-      <div class="park">케이파크</div>
+      <a class="park" href="../" style="display:block;pointer-events:auto;text-decoration:none;color:inherit">← 케이파크</a>
       <div class="ride">마블런</div>
       <select id="mr-track">${options}</select>
       <div id="mr-desc"></div>
