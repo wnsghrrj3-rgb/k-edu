@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>계산 여행 · 케이파크 보드게임</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+@font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
+:root{--bg:#0a0f2c;--panel:rgba(16,22,54,.85);--line:#3b4a8f;--text:#e8ecff;--dim:#8a93c8;
+  --accent:#4de1ff;--gold:#ffd35c;--moon:#7ea8ff;--title:'Hakgyoansim Moheomga','Jua',sans-serif}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);font-family:'Jua',sans-serif;min-height:100vh;overflow-x:hidden}
+.sky{position:fixed;inset:0;pointer-events:none;z-index:0}
+.sky i{position:absolute;width:2px;height:2px;border-radius:50%;background:#cdd6ff;opacity:.5;animation:tw 5s ease-in-out infinite}
+.sky i:nth-child(3n){background:var(--gold)}
+@keyframes tw{0%,100%{opacity:.2}50%{opacity:.7}}
+main{position:relative;z-index:1;max-width:560px;margin:0 auto;padding:14px 14px 40px}
+header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+header a{color:var(--dim);text-decoration:none;font-size:14px}
+h1{font-family:var(--title);font-size:23px}h1 em{font-style:normal;color:var(--gold)}
+.spacer{flex:1}
+.setup{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px;text-align:center}
+.setup h2{font-family:var(--title);font-size:20px;margin-bottom:6px}
+.setup p{color:var(--dim);font-size:13.5px;margin-bottom:16px;line-height:1.7}
+.opts{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:14px}
+.opt{border:2px solid var(--line);background:rgba(24,32,74,.6);color:var(--text);border-radius:14px;
+  padding:12px 18px;font-family:'Jua';font-size:15px;cursor:pointer;transition:.15s}
+.opt.sel{border-color:var(--gold);box-shadow:0 0 16px rgba(255,211,92,.35);transform:translateY(-2px)}
+.lv{display:none}.lv.show{display:flex}
+.start{background:linear-gradient(180deg,#ffd35c,#f5a623);color:#3a2a00;border:none;border-radius:999px;
+  padding:13px 36px;font-family:'Jua';font-size:17px;cursor:pointer;box-shadow:0 4px 18px rgba(255,211,92,.4)}
+#game{display:none}
+.status{display:flex;justify-content:space-between;font-size:14.5px;margin-bottom:6px}
+.status b{font-size:16px}
+.banner{text-align:center;min-height:26px;font-size:15px;margin-bottom:6px}
+.boardWrap{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:6px;box-shadow:0 8px 40px rgba(0,0,0,.45)}
+svg{display:block;width:100%;height:auto}
+.diceRow{display:flex;gap:14px;justify-content:center;align-items:center;margin-top:10px;min-height:66px}
+.dchip{width:60px;height:60px;border-radius:15px;background:linear-gradient(180deg,#fff,#dfe6ff);color:#1a1030;
+  font-size:36px;display:flex;align-items:center;justify-content:center;box-shadow:0 5px 16px rgba(255,255,255,.18)}
+.dchip.rolling{animation:roll .4s linear infinite}
+@keyframes roll{to{transform:rotate(360deg)}}
+.rollBtn{background:linear-gradient(180deg,#7dffb0,#37c977);color:#00340f;border:none;border-radius:999px;
+  padding:14px 30px;font-family:'Jua';font-size:17px;cursor:pointer;box-shadow:0 4px 16px rgba(125,255,176,.35)}
+.rollBtn:disabled{opacity:.4;cursor:default}
+.decide{display:none;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px}
+.decide.show{display:flex}
+.dbtn{background:rgba(24,32,74,.8);border:2px solid var(--line);color:var(--text);border-radius:14px;
+  padding:10px 14px;font-family:'Jua';font-size:14px;cursor:pointer}
+.dbtn.go{border-color:#7dffb0}
+.dbtn:disabled{opacity:.35;cursor:default}
+.ctrl{display:flex;gap:8px;justify-content:center;margin-top:12px}
+.cbtn{background:rgba(24,32,74,.7);border:1.5px solid var(--line);color:var(--text);border-radius:999px;
+  padding:9px 18px;font-family:'Jua';font-size:14px;cursor:pointer}
+#over{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:30;background:rgba(5,8,26,.72);backdrop-filter:blur(3px)}
+#over .card{background:var(--panel);border:1.5px solid var(--gold);border-radius:22px;padding:30px 38px;text-align:center;box-shadow:0 0 60px rgba(255,211,92,.25);animation:pop .35s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{from{transform:scale(.7);opacity:0}}
+#over h2{font-family:var(--title);font-size:28px;margin-bottom:8px}
+#over p{color:var(--dim);margin-bottom:18px;line-height:1.7}
+.confetti{position:fixed;top:-12px;width:9px;height:14px;z-index:29;pointer-events:none;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(105vh) rotate(720deg)}}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:rgba(16,22,54,.95);border:1px solid var(--line);border-radius:999px;padding:9px 20px;font-size:14px;opacity:0;transition:.3s;z-index:40;pointer-events:none}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="sky" id="sky"></div>
+<main>
+  <header>
+    <a href="../">← 보드게임 코너</a><div class="spacer"></div>
+    <h1>🎡 계산 <em>여행</em></h1>
+  </header>
+
+  <section class="setup" id="setup">
+    <h2>케이파크 세 바퀴 — 코인 왕은 누구?</h2>
+    <p>주사위 <b>두 개의 합</b>만큼 놀이공원을 돌아요. 🏁을 지나면 +3, 세 바퀴 돌면 골인 +5!<br>
+    굴린 다음 <b style="color:var(--accent)">코인 2개를 내면 주사위 하나를 다시</b> 굴릴 수 있어요.<br>
+    어디에 떨어질지 <b>미리 계산</b>하는 사람이 코인 왕! 👑</p>
+    <div class="opts" id="modeOpts">
+      <button class="opt sel" data-m="ai">🤖 컴퓨터랑</button>
+      <button class="opt" data-m="hot">👫 짝꿍이랑</button>
+    </div>
+    <div class="opts lv show" id="lvOpts">
+      <button class="opt" data-l="1">🐣 아장아장</button>
+      <button class="opt sel" data-l="2">🙂 제법인데</button>
+      <button class="opt" data-l="3">🧠 계산왕</button>
+    </div>
+    <button class="start" id="btnStart">여행 출발!</button>
+  </section>
+
+  <section id="game">
+    <div class="status">
+      <span>⭐ <b id="c1">10</b>코인 · <span id="l1">0</span>바퀴</span>
+      <span><span id="l2">0</span>바퀴 · <b id="c2">10</b>코인 🌙</span>
+    </div>
+    <div class="banner" id="banner"></div>
+    <div class="boardWrap"><svg id="board" viewBox="0 0 520 520" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    <div class="diceRow" id="diceRow">
+      <button class="rollBtn" id="btnRoll">🎲 굴리기!</button>
+    </div>
+    <div class="decide" id="decide">
+      <button class="dbtn go" id="dKeep">그대로 간다 ➡️</button>
+      <button class="dbtn" id="dR1"></button>
+      <button class="dbtn" id="dR2"></button>
+    </div>
+    <div class="ctrl">
+      <button class="cbtn" id="btnRe">🔄 다시</button>
+      <button class="cbtn" id="btnHome">🎪 다른 놀이</button>
+    </div>
+  </section>
+</main>
+<div id="over"><div class="card"><h2 id="ovT"></h2><p id="ovS"></p><button class="start" id="btnAgain">한 판 더!</button></div></div>
+<div class="toast" id="toast"></div>
+
+<script src="./core.js"></script>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+(function(){const sky=$('sky');let s=23;const rnd=()=>(s=(s*1103515245+12345)&0x7fffffff)/0x7fffffff;
+for(let i=0;i<55;i++){const d=document.createElement('i');d.style.left=(rnd()*100)+'%';d.style.top=(rnd()*100)+'%';d.style.animationDelay=(rnd()*4)+'s';sky.appendChild(d);}})();
+const Snd=(function(){let ctx;function t(f,d,type,g0){try{ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();
+const o=ctx.createOscillator(),g=ctx.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,ctx.currentTime);
+g.gain.setValueAtTime(g0||.1,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+d);
+o.connect(g);g.connect(ctx.destination);o.start();o.stop(ctx.currentTime+d);}catch(e){}}
+return{step(){t(430,.06,'triangle',.06);},coin(){[880,1175].forEach((f,i)=>setTimeout(()=>t(f,.12,'sine',.12),i*80));},
+loss(){t(240,.25,'sawtooth',.06);},bridge(){[392,523,659,784].forEach((f,i)=>setTimeout(()=>t(f,.1,'sine',.1),i*60));},
+win(){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>t(f,.28,'sine',.15),i*110));},
+click(){t(600,.05,'square',.05);}};})();
+
+const C=TravelCore;
+const G={mode:'ai',level:2,human:1,st:null,turn:1,busy:false,over:false,d1:0,d2:0,rerolled:false};
+const NAMES={1:['⭐ 별팀','#ffd35c'],2:['🌙 달팀','#7ea8ff']};
+const DIE=['','⚀','⚁','⚂','⚃','⚄','⚅'];
+
+document.querySelectorAll('#modeOpts .opt').forEach(b=>b.onclick=()=>{Snd.click();
+  document.querySelectorAll('#modeOpts .opt').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');
+  G.mode=b.dataset.m;$('lvOpts').classList.toggle('show',G.mode==='ai');});
+document.querySelectorAll('#lvOpts .opt').forEach(b=>b.onclick=()=>{Snd.click();
+  document.querySelectorAll('#lvOpts .opt').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');G.level=+b.dataset.l;});
+$('btnStart').onclick=start;$('btnRe').onclick=start;$('btnAgain').onclick=()=>{$('over').style.display='none';start();};
+$('btnHome').onclick=()=>location.href='../';
+$('btnRoll').onclick=humanRoll;
+$('dKeep').onclick=()=>decide('keep');
+$('dR1').onclick=()=>decide('r1');
+$('dR2').onclick=()=>decide('r2');
+
+function tilePos(i){
+  // 24칸 원형 배치 — 0번(출발)을 아래 가운데에
+  const a=Math.PI/2+(i/C.N)*Math.PI*2;
+  return[260+Math.cos(a)*212,260+Math.sin(a)*212];
+}
+function start(){
+  Snd.click();
+  G.st=C.newState();G.turn=1;G.busy=false;G.over=false;G.d1=0;G.d2=0;G.rerolled=false;
+  $('setup').style.display='none';$('game').style.display='block';$('over').style.display='none';
+  $('decide').classList.remove('show');
+  resetDice();render();banner();
+}
+function resetDice(){
+  $('diceRow').innerHTML='<button class="rollBtn" id="btnRoll">🎲 굴리기!</button>';
+  $('btnRoll').onclick=humanRoll;
+  $('btnRoll').disabled=G.over||G.busy||(G.mode==='ai'&&G.turn!==G.human);
+}
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(t._x);t._x=setTimeout(()=>t.classList.remove('on'),1900);}
+function banner(txt){
+  if(txt){$('banner').innerHTML=txt;return;}
+  const[nm,col]=NAMES[G.turn];
+  const isAi=G.mode==='ai'&&G.turn!==G.human;
+  $('banner').innerHTML='<b style="color:'+col+'">'+nm+'</b> 차례!'+(isAi?' <span style="color:var(--dim);font-size:13px">(컴퓨터가 계산 중…)</span>':'');
+}
+function render(){
+  const svg=$('board');let s='';
+  // 중앙 관람차 장식
+  s+='<circle cx="260" cy="260" r="150" fill="none" stroke="#232c60" stroke-width="2" stroke-dasharray="4 8"/>';
+  s+='<text x="260" y="245" text-anchor="middle" font-size="56">🎡</text>';
+  s+='<text x="260" y="285" text-anchor="middle" font-size="15" fill="#5b66a8" font-family="Jua">케이파크</text>';
+  s+='<text x="260" y="308" text-anchor="middle" font-size="13" fill="#3f4a8a" font-family="Jua">'+C.LAPS+'바퀴 여행</text>';
+  // 다리 연결선
+  for(let i=0;i<C.N;i++){const t=C.TILES[i];if(t.t!=='bridge')continue;
+    const[x1,y1]=tilePos(i),[x2,y2]=tilePos(t.to);
+    s+='<path d="M'+x1+' '+y1+' Q 260 260 '+x2+' '+y2+'" fill="none" stroke="#4de1ff" stroke-width="3" opacity=".35" stroke-dasharray="6 6"/>';}
+  // 칸
+  for(let i=0;i<C.N;i++){
+    const t=C.TILES[i],[x,y]=tilePos(i);
+    let ring='#3b4a8f';
+    if(t.t==='coin'&&t.v>0)ring='#4fae7c';if(t.t==='coin'&&t.v<0)ring='#d05a7c';
+    if(t.t==='evenodd')ring='#ffd35c';if(t.t==='bridge')ring='#4de1ff';if(t.t==='start')ring='#ffd35c';
+    s+='<circle cx="'+x+'" cy="'+y+'" r="24" fill="#141c46" stroke="'+ring+'" stroke-width="2.5"/>';
+    s+='<text x="'+x+'" y="'+(y+2)+'" text-anchor="middle" font-size="18">'+t.em+'</text>';
+    if(t.t==='coin')s+='<text x="'+x+'" y="'+(y+17)+'" text-anchor="middle" font-size="10" fill="'+(t.v>0?'#7dffb0':'#ff8aa5')+'" font-family="Jua">'+(t.v>0?'+':'')+t.v+'</text>';
+    if(t.t==='start')s+='<text x="'+x+'" y="'+(y+17)+'" text-anchor="middle" font-size="10" fill="#ffd35c" font-family="Jua">+3</text>';
+  }
+  // 말
+  for(const p of [1,2]){
+    const[x,y]=tilePos(G.st.pos[p]);
+    const off=p===1?-10:10;
+    s+='<circle cx="'+(x+off)+'" cy="'+(y-26)+'" r="12" fill="'+(p===1?'#ffd35c':'#7ea8ff')+'" stroke="'+(p===1?'#b98700':'#3d6bd6')+'" stroke-width="3"/>';
+    s+='<text x="'+(x+off)+'" y="'+(y-21)+'" text-anchor="middle" font-size="11">'+(p===1?'⭐':'🌙')+'</text>';
+  }
+  svg.innerHTML=s;
+  $('c1').textContent=G.st.coins[1];$('c2').textContent=G.st.coins[2];
+  $('l1').textContent=G.st.laps[1];$('l2').textContent=G.st.laps[2];
+}
+function humanRoll(){
+  if(G.over||G.busy)return;
+  if(G.mode==='ai'&&G.turn!==G.human)return;
+  rollBoth(()=>{
+    if(G.st.coins[G.turn]>=C.REROLL_COST){showDecide();}
+    else decide('keep');
+  });
+}
+function rollBoth(cb){
+  G.busy=true;G.rerolled=false;
+  $('diceRow').innerHTML='<div class="dchip rolling">🎲</div><div class="dchip rolling">🎲</div>';
+  setTimeout(()=>{
+    G.d1=C.rollDie();G.d2=C.rollDie();
+    showDice();G.busy=false;cb();
+  },600);
+}
+function showDice(){
+  $('diceRow').innerHTML='<div class="dchip" id="chip1">'+DIE[G.d1]+'</div>'+
+    '<div style="font-size:22px;color:var(--dim)">=</div>'+
+    '<div style="font-family:var(--title);font-size:30px;color:var(--gold)">'+(G.d1+G.d2)+'</div>';
+  $('diceRow').insertBefore(Object.assign(document.createElement('div'),{className:'dchip',id:'chip2',textContent:DIE[G.d2]}),$('diceRow').children[1]);
+}
+function showDecide(){
+  const t=landPreview(G.d1+G.d2);
+  banner('합 <b style="color:var(--gold)">'+(G.d1+G.d2)+'</b> — 그러면 <b>'+t+'</b>에 떨어져!');
+  $('dR1').textContent=DIE[G.d1]+' 다시 (−2코인)';
+  $('dR2').textContent=DIE[G.d2]+' 다시 (−2코인)';
+  $('dR1').disabled=$('dR2').disabled=G.rerolled;
+  $('decide').classList.add('show');
+}
+function landPreview(sum){
+  const r=C.step(G.st.pos[G.turn],sum);
+  const t=C.TILES[r.pos];
+  return t.em+' '+t.nm+(r.passed?' (🏁 통과 +3!)':'');
+}
+function decide(what){
+  $('decide').classList.remove('show');
+  if(what!=='keep'&&!G.rerolled){
+    C.addCoins(G.st,G.turn,-C.REROLL_COST);
+    G.rerolled=true;render();
+    Snd.click();
+    G.busy=true;
+    setTimeout(()=>{
+      if(what==='r1')G.d1=C.rollDie();else G.d2=C.rollDie();
+      showDice();G.busy=false;
+      toast('🎲 다시 굴렸다! 합 '+(G.d1+G.d2));
+      // 재굴림은 한 번 — 바로 이동
+      setTimeout(()=>moveNow(),700);
+    },550);
+    return;
+  }
+  moveNow();
+}
+function moveNow(){
+  G.busy=true;
+  const sum=G.d1+G.d2;
+  const from=G.st.pos[G.turn];
+  const r=C.step(from,sum);
+  // 한 칸씩 애니
+  let walked=0,p=from;
+  const iv=setInterval(()=>{
+    walked++;p=(p+1)%C.N;
+    G.st.pos[G.turn]=p;Snd.step();render();
+    if(p===0&&walked<=sum){toast('🏁 출발점 통과! +3코인');}
+    if(walked>=sum){
+      clearInterval(iv);
+      if(r.passed){G.st.laps[G.turn]+=r.passed;C.addCoins(G.st,G.turn,C.PASS_BONUS*r.passed);Snd.coin();render();}
+      setTimeout(()=>landHere(r.pos),300);
+    }
+  },180);
+}
+function landHere(pos){
+  const evs=C.land(G.st,G.turn,pos);
+  let delay=0;
+  for(const e of evs){
+    setTimeout(()=>{
+      if(e.type==='coin'){
+        const t=C.TILES[e.at];
+        if(e.v>0){Snd.coin();toast(t.em+' '+t.nm+': +'+e.v+'코인!');}
+        else{Snd.loss();toast(t.em+' '+t.nm+': '+e.v+'코인…');}
+        render();
+      }else if(e.type==='bridge'){
+        Snd.bridge();toast('🌉 다리를 건너 순간이동!');render();
+      }else if(e.type==='evenodd'){
+        banner('🎢 마블런! 주사위 하나 — <b>짝수면 +4, 홀수면 +1</b>');
+        setTimeout(()=>{
+          const d=C.rollDie();
+          const v=C.evenOddResult(G.st,G.turn,d);
+          Snd.coin();toast('🎢 '+DIE[d]+' = '+(d%2===0?'짝수! +4':'홀수! +1')+'코인');render();
+        },900);
+      }
+    },delay);
+    delay+=e.type==='evenodd'?1900:850;
+  }
+  setTimeout(()=>endTurn(),delay+400);
+}
+function endTurn(){
+  if(G.st.laps[G.turn]>=C.LAPS){
+    C.addCoins(G.st,G.turn,C.GOAL_BONUS);render();
+    finish(G.turn);return;
+  }
+  G.turn=3-G.turn;G.busy=false;G.rerolled=false;
+  resetDice();banner();render();
+  if(G.mode==='ai'&&G.turn!==G.human)setTimeout(aiTurn,900);
+}
+function aiTurn(){
+  rollBoth(()=>{
+    const dec=C.aiDecide(G.st.pos[G.turn],G.d1,G.d2,G.st.coins[G.turn],G.level);
+    if(dec==='keep'){setTimeout(()=>moveNow(),700);}
+    else{
+      toast('🤖 컴퓨터: "음… 다시 굴려야겠어!" (−2코인)');
+      setTimeout(()=>decide(dec),900);
+    }
+  });
+}
+function finish(finisher){
+  G.over=true;G.busy=false;
+  const a=G.st.coins[1],b=G.st.coins[2];
+  setTimeout(()=>{
+    let t,s2,meWin=false;
+    if(a===b){t='🤝 무승부!';s2='둘 다 '+a+'코인 — 막상막하 여행!';}
+    else{
+      const w=a>b?1:2;const[nm]=NAMES[w];
+      meWin=G.mode!=='ai'||w===G.human;
+      t=meWin?'👑 '+nm+' 코인 왕!':'🤖 컴퓨터가 코인 왕!';
+      s2='⭐ '+a+'코인 vs 🌙 '+b+'코인<br>'+
+        (finisher===w?'세 바퀴 골인 보너스까지 야무지게 챙겼어요!':'골인은 늦었지만 코인으로 역전!')+
+        (meWin?'':'<br>다음엔 나쁜 칸 앞에서 다시 굴려 봐요!');
+    }
+    $('ovT').textContent=t;$('ovS').innerHTML=s2;
+    if(meWin){Snd.win();confetti();}
+    $('over').style.display='flex';
+  },600);
+}
+function confetti(){
+  const cols=['#ffd35c','#7ea8ff','#ff7ab8','#7dffb0','#c9a3ff'];
+  for(let i=0;i<60;i++){const d=document.createElement('div');d.className='confetti';
+    d.style.left=(Math.random()*100)+'vw';d.style.background=cols[i%5];
+    d.style.animationDuration=(1.6+Math.random()*1.6)+'s';d.style.animationDelay=(Math.random()*.5)+'s';
+    document.body.appendChild(d);setTimeout(()=>d.remove(),3600);}
+}
+</script>
+</body>
+</html>

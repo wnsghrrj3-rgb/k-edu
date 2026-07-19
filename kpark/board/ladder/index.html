@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>숫자 사다리 원정 · 케이파크 보드게임</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+@font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
+:root{--bg:#0a0f2c;--panel:rgba(16,22,54,.85);--line:#3b4a8f;--text:#e8ecff;--dim:#8a93c8;
+  --accent:#4de1ff;--gold:#ffd35c;--moon:#7ea8ff;--title:'Hakgyoansim Moheomga','Jua',sans-serif}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);font-family:'Jua',sans-serif;min-height:100vh;overflow-x:hidden}
+.sky{position:fixed;inset:0;pointer-events:none;z-index:0}
+.sky i{position:absolute;width:2px;height:2px;border-radius:50%;background:#cdd6ff;opacity:.5;animation:tw 5s ease-in-out infinite}
+.sky i:nth-child(3n){background:var(--gold)}
+@keyframes tw{0%,100%{opacity:.2}50%{opacity:.7}}
+main{position:relative;z-index:1;max-width:560px;margin:0 auto;padding:14px 14px 40px}
+header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+header a{color:var(--dim);text-decoration:none;font-size:14px}
+h1{font-family:var(--title);font-size:22px}h1 em{font-style:normal;color:var(--gold)}
+.spacer{flex:1}
+.setup{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px;text-align:center}
+.setup h2{font-family:var(--title);font-size:20px;margin-bottom:6px}
+.setup p{color:var(--dim);font-size:13.5px;margin-bottom:16px;line-height:1.7}
+.opts{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:14px}
+.opt{border:2px solid var(--line);background:rgba(24,32,74,.6);color:var(--text);border-radius:14px;
+  padding:12px 18px;font-family:'Jua';font-size:15px;cursor:pointer;transition:.15s}
+.opt.sel{border-color:var(--gold);box-shadow:0 0 16px rgba(255,211,92,.35);transform:translateY(-2px)}
+.start{background:linear-gradient(180deg,#ffd35c,#f5a623);color:#3a2a00;border:none;border-radius:999px;
+  padding:13px 36px;font-family:'Jua';font-size:17px;cursor:pointer;box-shadow:0 4px 18px rgba(255,211,92,.4)}
+#game{display:none}
+.banner{text-align:center;min-height:28px;font-size:15.5px;margin:2px 0 8px}
+.boardWrap{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:8px;box-shadow:0 8px 40px rgba(0,0,0,.45)}
+svg{display:block;width:100%;height:auto}
+.dieRow{display:flex;gap:12px;justify-content:center;align-items:center;margin-top:12px}
+.die{width:72px;height:72px;border-radius:18px;background:linear-gradient(180deg,#fff,#dfe6ff);color:#1a1030;
+  font-family:'Jua';font-size:34px;border:none;cursor:pointer;box-shadow:0 6px 20px rgba(255,255,255,.2);transition:.15s}
+.die:active{transform:scale(.94)}
+.die:disabled{opacity:.4;cursor:default}
+.die.rolling{animation:roll .5s linear infinite}
+@keyframes roll{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+.legend{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--dim)}
+.ctrl{display:flex;gap:8px;justify-content:center;margin-top:10px}
+.cbtn{background:rgba(24,32,74,.7);border:1.5px solid var(--line);color:var(--text);border-radius:999px;
+  padding:9px 18px;font-family:'Jua';font-size:14px;cursor:pointer}
+#quiz{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:25;background:rgba(5,8,26,.78);backdrop-filter:blur(3px)}
+#quiz .card{background:var(--panel);border:1.5px solid var(--accent);border-radius:22px;padding:26px 30px;text-align:center;
+  box-shadow:0 0 60px rgba(77,225,255,.25);animation:pop .3s cubic-bezier(.2,1.6,.4,1);min-width:280px}
+#quiz h3{font-size:15px;color:var(--accent);margin-bottom:8px}
+#quiz .q{font-family:var(--title);font-size:38px;margin-bottom:16px}
+#quiz .ch{display:flex;gap:10px;justify-content:center}
+#quiz .ch button{flex:1;background:rgba(24,32,74,.8);border:2px solid var(--line);color:var(--text);border-radius:14px;
+  padding:14px 0;font-family:'Jua';font-size:22px;cursor:pointer}
+#quiz .ch button.right{border-color:#7dffb0;background:rgba(50,160,90,.35)}
+#quiz .ch button.wrong{border-color:#ff6b8a;background:rgba(160,50,80,.35)}
+#over{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:30;background:rgba(5,8,26,.72);backdrop-filter:blur(3px)}
+#over .card{background:var(--panel);border:1.5px solid var(--gold);border-radius:22px;padding:30px 38px;text-align:center;box-shadow:0 0 60px rgba(255,211,92,.25);animation:pop .35s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{from{transform:scale(.7);opacity:0}}
+#over h2{font-family:var(--title);font-size:28px;margin-bottom:8px}
+#over p{color:var(--dim);margin-bottom:18px;line-height:1.7}
+.confetti{position:fixed;top:-12px;width:9px;height:14px;z-index:29;pointer-events:none;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(105vh) rotate(720deg)}}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:rgba(16,22,54,.95);border:1px solid var(--line);border-radius:999px;padding:9px 20px;font-size:14px;opacity:0;transition:.3s;z-index:40;pointer-events:none}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="sky" id="sky"></div>
+<main>
+  <header>
+    <a href="../">← 보드게임 코너</a><div class="spacer"></div>
+    <h1>🪜 숫자 사다리 <em>원정</em></h1>
+  </header>
+
+  <section class="setup" id="setup">
+    <h2>100번 칸에 먼저 도착하라!</h2>
+    <p>🪜 사다리는 슝 올라가고, 🛝 미끄럼틀은 쭉 내려가요.<br>
+    🚀 로켓 = 5칸 앞으로 · ⭐ 별 = 한 번 더 · ✨ 반짝 = 암산 맞히면 3칸 보너스!</p>
+    <div class="opts" id="modeOpts">
+      <button class="opt sel" data-m="ai">🤖 컴퓨터랑</button>
+      <button class="opt" data-m="hot">👫 짝꿍이랑</button>
+    </div>
+    <button class="start" id="btnStart">원정 출발!</button>
+  </section>
+
+  <section id="game">
+    <div class="banner" id="banner"></div>
+    <div class="boardWrap"><svg id="board" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    <div class="dieRow">
+      <div style="font-size:14px;color:var(--dim)" id="posInfo"></div>
+      <button class="die" id="die">🎲</button>
+    </div>
+    <div class="legend"><span>🪜 사다리</span><span>🛝 미끄럼틀</span><span>🚀 +5</span><span>⭐ 한 번 더</span><span>✨ 암산 반짝</span></div>
+    <div class="ctrl">
+      <button class="cbtn" id="btnRe">🔄 다시</button>
+      <button class="cbtn" id="btnHome">🎪 다른 놀이</button>
+    </div>
+  </section>
+</main>
+
+<div id="quiz"><div class="card"><h3>✨ 암산 반짝! 맞히면 3칸 보너스</h3><div class="q" id="qText"></div><div class="ch" id="qCh"></div></div></div>
+<div id="over"><div class="card"><h2 id="ovT"></h2><p id="ovS"></p><button class="start" id="btnAgain">한 판 더!</button></div></div>
+<div class="toast" id="toast"></div>
+
+<script src="./core.js"></script>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+(function(){const sky=$('sky');let s=17;const rnd=()=>(s=(s*1103515245+12345)&0x7fffffff)/0x7fffffff;
+for(let i=0;i<55;i++){const d=document.createElement('i');d.style.left=(rnd()*100)+'%';d.style.top=(rnd()*100)+'%';d.style.animationDelay=(rnd()*4)+'s';sky.appendChild(d);}})();
+const Snd=(function(){let ctx;function t(f,d,type,g0){try{ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();
+const o=ctx.createOscillator(),g=ctx.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,ctx.currentTime);
+g.gain.setValueAtTime(g0||.1,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+d);
+o.connect(g);g.connect(ctx.destination);o.start();o.stop(ctx.currentTime+d);}catch(e){}}
+return{step(){t(430,.06,'triangle',.06);},up(){[392,494,587,698].forEach((f,i)=>setTimeout(()=>t(f,.12,'sine',.1),i*70));},
+down(){[587,494,392,330].forEach((f,i)=>setTimeout(()=>t(f,.12,'sine',.08),i*70));},
+right(){[659,880].forEach((f,i)=>setTimeout(()=>t(f,.15,'sine',.12),i*90));},
+wrong(){t(200,.3,'sawtooth',.06);},
+win(){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>t(f,.28,'sine',.15),i*110));},
+click(){t(600,.05,'square',.05);}};})();
+
+const C=LadderCore, CELL=50;
+const G={mode:'ai',human:1,pos:{1:0,2:0},turn:1,busy:false,over:false};
+const NAMES={1:['⭐ 별팀','#ffd35c'],2:['🌙 달팀','#7ea8ff']};
+
+document.querySelectorAll('#modeOpts .opt').forEach(b=>b.onclick=()=>{Snd.click();
+  document.querySelectorAll('#modeOpts .opt').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');G.mode=b.dataset.m;});
+$('btnStart').onclick=start;$('btnRe').onclick=start;$('btnAgain').onclick=()=>{$('over').style.display='none';start();};
+$('btnHome').onclick=()=>location.href='../';
+$('die').onclick=humanRoll;
+
+function start(){
+  Snd.click();
+  G.pos={1:0,2:0};G.turn=1;G.busy=false;G.over=false;
+  $('setup').style.display='none';$('game').style.display='block';$('over').style.display='none';$('quiz').style.display='none';
+  render();banner();
+}
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(t._x);t._x=setTimeout(()=>t.classList.remove('on'),1800);}
+function banner(txt){
+  if(txt){$('banner').innerHTML=txt;return;}
+  const[nm,col]=NAMES[G.turn];
+  const isAi=G.mode==='ai'&&G.turn!==G.human;
+  $('banner').innerHTML='<b style="color:'+col+'">'+nm+'</b> 차례!'+(isAi?' <span style="color:var(--dim);font-size:13px">(컴퓨터가 굴려요…)</span>':' 주사위를 굴려 봐!');
+  $('die').disabled=G.over||G.busy||isAi;
+  $('posInfo').innerHTML='⭐ '+G.pos[1]+'번 · 🌙 '+G.pos[2]+'번';
+}
+function xy(n){ // n=0은 출발점(판 밖 왼쪽 아래)
+  if(n<=0)return[-24,475];
+  const[c,r]=C.tileXY(n);
+  return[c*CELL+25,(9-r)*CELL+25];
+}
+function render(){
+  const svg=$('board');let s='<rect width="500" height="500" rx="14" fill="#10173d"/>';
+  for(let n=1;n<=100;n++){
+    const[c,r]=C.tileXY(n);
+    const x=c*CELL,y=(9-r)*CELL;
+    const t=C.tileType(n);
+    let fill=(c+r)%2===0?'#171f4d':'#1c2559';
+    if(t==='ladder')fill='#1d3a2c';if(t==='slide')fill='#3a1d2c';
+    if(t==='rocket')fill='#2c2a1d';if(t==='star')fill='#33301a';if(t==='spark')fill='#1d2c3a';
+    if(n===100)fill='#3a3413';
+    s+='<rect x="'+(x+1.5)+'" y="'+(y+1.5)+'" width="47" height="47" rx="7" fill="'+fill+'"/>';
+    s+='<text x="'+(x+6)+'" y="'+(y+15)+'" font-size="10" fill="#5b66a8" font-family="Jua">'+n+'</text>';
+    const em=t==='ladder'?'🪜':t==='slide'?'🛝':t==='rocket'?'🚀':t==='star'?'⭐':t==='spark'?'✨':(n===100?'🏁':'');
+    if(em)s+='<text x="'+(x+25)+'" y="'+(y+36)+'" text-anchor="middle" font-size="17">'+em+'</text>';
+  }
+  // 사다리·미끄럼틀 연결선
+  for(const[f2,t2]of Object.entries(C.LADDERS)){const[x1,y1]=xy(+f2),[x2,y2]=xy(t2);
+    s+='<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="#4fae7c" stroke-width="5" opacity=".5" stroke-linecap="round"/>';}
+  for(const[f2,t2]of Object.entries(C.SLIDES)){const[x1,y1]=xy(+f2),[x2,y2]=xy(t2);
+    s+='<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="#d05a7c" stroke-width="5" opacity=".5" stroke-linecap="round" stroke-dasharray="2 8"/>';}
+  // 말
+  for(const p of [1,2]){
+    if(G.pos[p]<=0)continue;
+    const[x,y]=xy(G.pos[p]);
+    const off=p===1?-9:9;
+    s+='<circle cx="'+(x+off)+'" cy="'+(y-4)+'" r="13" fill="'+(p===1?'#ffd35c':'#7ea8ff')+'" stroke="'+(p===1?'#b98700':'#3d6bd6')+'" stroke-width="3"/>';
+    s+='<text x="'+(x+off)+'" y="'+(y+1)+'" text-anchor="middle" font-size="12">'+(p===1?'⭐':'🌙')+'</text>';
+  }
+  svg.innerHTML=s;
+}
+function humanRoll(){
+  if(G.over||G.busy)return;
+  if(G.mode==='ai'&&G.turn!==G.human)return;
+  doRoll();
+}
+function doRoll(){
+  G.busy=true;$('die').disabled=true;$('die').classList.add('rolling');$('die').textContent='🎲';
+  const die=C.rollDie();
+  setTimeout(()=>{
+    $('die').classList.remove('rolling');
+    $('die').textContent=['','⚀','⚁','⚂','⚃','⚄','⚅'][die];
+    const r=C.move(G.pos[G.turn],die);
+    playEvents(r);
+  },650);
+}
+function playEvents(r){
+  const evs=r.events.slice();
+  function next(){
+    const e=evs.shift();
+    if(!e){after(r);return;}
+    if(e.type==='roll'){
+      // 한 칸씩 이동 애니
+      let p=e.from;
+      const iv=setInterval(()=>{
+        p++;if(p>e.to){clearInterval(iv);next();return;}
+        G.pos[G.turn]=p;Snd.step();render();
+        if(p===e.to){clearInterval(iv);setTimeout(next,150);}
+      },170);
+    }else{
+      G.pos[G.turn]=e.to;render();
+      if(e.type==='ladder'){Snd.up();toast('🪜 사다리 슝! '+e.from+' → '+e.to);}
+      else if(e.type==='slide'){Snd.down();toast('🛝 미끄럼틀 쭈욱… '+e.from+' → '+e.to);}
+      else if(e.type==='rocket'){Snd.up();toast('🚀 로켓 발사! +5');}
+      else if(e.type==='star'){Snd.right();toast('⭐ 별을 잡았다! 한 번 더!');}
+      else if(e.type==='spark'){toast('✨ 암산 반짝!');}
+      else if(e.type==='bonus'){Snd.right();toast('🎉 정답! +3칸');}
+      setTimeout(next,750);
+    }
+  }
+  next();
+}
+function after(r){
+  if(G.pos[G.turn]>=C.GOAL){finish(G.turn);return;}
+  if(r.spark){askSpark();return;}
+  if(r.extraRoll){
+    G.busy=false;banner();
+    if(G.mode==='ai'&&G.turn!==G.human)setTimeout(doRoll,800);
+    return;
+  }
+  G.turn=3-G.turn;G.busy=false;banner();
+  if(G.mode==='ai'&&G.turn!==G.human)setTimeout(doRoll,900);
+}
+function askSpark(){
+  const q=C.genQuestion();
+  const isAi=G.mode==='ai'&&G.turn!==G.human;
+  if(isAi){
+    // 컴퓨터는 75% 확률로 정답
+    const okA=Math.random()<0.75;
+    banner('🤖 컴퓨터 암산 중… <b>'+q.q+' = ?</b>');
+    setTimeout(()=>{
+      if(okA){toast('🤖 컴퓨터 정답! +3');const r=C.sparkBonus(G.pos[G.turn]);playEvents(r);}
+      else{toast('🤖 컴퓨터가 틀렸어요!');const r={pos:G.pos[G.turn],events:[],extraRoll:false,spark:false};after(r);}
+    },1400);
+    return;
+  }
+  $('qText').textContent=q.q+' = ?';
+  const ch=$('qCh');ch.innerHTML='';
+  for(const v of q.choices){
+    const b=document.createElement('button');b.textContent=v;
+    b.onclick=()=>{
+      if(v===q.answer){
+        b.classList.add('right');Snd.right();
+        setTimeout(()=>{$('quiz').style.display='none';const r=C.sparkBonus(G.pos[G.turn]);playEvents(r);},550);
+      }else{
+        b.classList.add('wrong');Snd.wrong();
+        setTimeout(()=>{$('quiz').style.display='none';toast('아깝다! 다음 기회에 ✨');after({pos:G.pos[G.turn],events:[],extraRoll:false,spark:false});},650);
+      }
+      ch.querySelectorAll('button').forEach(x=>x.disabled=true);
+    };
+    ch.appendChild(b);
+  }
+  $('quiz').style.display='flex';
+}
+function finish(winner){
+  G.over=true;G.busy=false;render();
+  setTimeout(()=>{
+    const[nm]=NAMES[winner];
+    const meWin=G.mode!=='ai'||winner===G.human;
+    $('ovT').textContent=meWin?'🏁 '+nm+' 도착!':'🤖 컴퓨터 도착!';
+    $('ovS').innerHTML=meWin?'100번 칸 정복! 원정 성공이에요 🎉':'아깝다! 사다리 운이 다음엔 올 거예요.';
+    if(meWin){Snd.win();confetti();}else Snd.wrong();
+    $('over').style.display='flex';
+  },500);
+}
+function confetti(){
+  const cols=['#ffd35c','#7ea8ff','#ff7ab8','#7dffb0','#c9a3ff'];
+  for(let i=0;i<60;i++){const d=document.createElement('div');d.className='confetti';
+    d.style.left=(Math.random()*100)+'vw';d.style.background=cols[i%5];
+    d.style.animationDuration=(1.6+Math.random()*1.6)+'s';d.style.animationDelay=(Math.random()*.5)+'s';
+    document.body.appendChild(d);setTimeout(()=>d.remove(),3600);}
+}
+</script>
+</body>
+</html>

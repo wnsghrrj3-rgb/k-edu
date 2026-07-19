@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>수학 땅따먹기 · 케이파크 보드게임</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+@font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
+:root{--bg:#0a0f2c;--panel:rgba(16,22,54,.85);--line:#3b4a8f;--text:#e8ecff;--dim:#8a93c8;
+  --accent:#4de1ff;--gold:#ffd35c;--moon:#7ea8ff;--title:'Hakgyoansim Moheomga','Jua',sans-serif}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);font-family:'Jua',sans-serif;min-height:100vh;overflow-x:hidden}
+.sky{position:fixed;inset:0;pointer-events:none;z-index:0}
+.sky i{position:absolute;width:2px;height:2px;border-radius:50%;background:#cdd6ff;opacity:.5;animation:tw 5s ease-in-out infinite}
+.sky i:nth-child(3n){background:var(--gold)}
+@keyframes tw{0%,100%{opacity:.2}50%{opacity:.7}}
+main{position:relative;z-index:1;max-width:560px;margin:0 auto;padding:14px 14px 40px}
+header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+header a{color:var(--dim);text-decoration:none;font-size:14px}
+h1{font-family:var(--title);font-size:23px}h1 em{font-style:normal;color:var(--gold)}
+.spacer{flex:1}
+.setup{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px;text-align:center}
+.setup h2{font-family:var(--title);font-size:20px;margin-bottom:6px}
+.setup p{color:var(--dim);font-size:13.5px;margin-bottom:16px;line-height:1.7}
+.opts{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:14px}
+.opt{border:2px solid var(--line);background:rgba(24,32,74,.6);color:var(--text);border-radius:14px;
+  padding:12px 18px;font-family:'Jua';font-size:15px;cursor:pointer;transition:.15s}
+.opt.sel{border-color:var(--gold);box-shadow:0 0 16px rgba(255,211,92,.35);transform:translateY(-2px)}
+.lv{display:none}.lv.show{display:flex}
+.start{background:linear-gradient(180deg,#ffd35c,#f5a623);color:#3a2a00;border:none;border-radius:999px;
+  padding:13px 36px;font-family:'Jua';font-size:17px;cursor:pointer;box-shadow:0 4px 18px rgba(255,211,92,.4)}
+#game{display:none}
+.score{display:flex;justify-content:space-between;align-items:center;margin:2px 0 8px;font-size:15px}
+.score .side{display:flex;align-items:center;gap:7px}
+.score .sq{width:16px;height:16px;border-radius:4px;display:inline-block}
+.banner{text-align:center;min-height:30px;font-size:16px;margin-bottom:8px}
+.boardWrap{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:10px;box-shadow:0 8px 40px rgba(0,0,0,.45)}
+svg{display:block;width:100%;height:auto;touch-action:manipulation}
+/* 손패 */
+.hand{display:flex;gap:8px;overflow-x:auto;padding:10px 4px 6px;-webkit-overflow-scrolling:touch}
+.hp{flex:0 0 auto;background:rgba(24,32,74,.7);border:2px solid var(--line);border-radius:12px;padding:6px;cursor:pointer}
+.hp.sel{border-color:var(--gold);box-shadow:0 0 14px rgba(255,211,92,.45)}
+.hp svg{width:52px;height:52px}
+.ctrl{display:flex;gap:8px;justify-content:center;margin-top:8px;flex-wrap:wrap}
+.cbtn{background:rgba(24,32,74,.7);border:1.5px solid var(--line);color:var(--text);border-radius:999px;
+  padding:9px 18px;font-family:'Jua';font-size:14px;cursor:pointer}
+.cbtn.go{background:linear-gradient(180deg,#7dffb0,#37c977);color:#00340f;border:none;font-size:15px;padding:9px 26px}
+.cbtn:disabled{opacity:.35;cursor:default}
+#over{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:20;background:rgba(5,8,26,.72);backdrop-filter:blur(3px)}
+#over .card{background:var(--panel);border:1.5px solid var(--gold);border-radius:22px;padding:30px 38px;text-align:center;box-shadow:0 0 60px rgba(255,211,92,.25);animation:pop .35s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{from{transform:scale(.7);opacity:0}}
+#over h2{font-family:var(--title);font-size:28px;margin-bottom:8px}
+#over p{color:var(--dim);margin-bottom:18px;line-height:1.7}
+.confetti{position:fixed;top:-12px;width:9px;height:14px;z-index:19;pointer-events:none;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(105vh) rotate(720deg)}}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:rgba(16,22,54,.95);border:1px solid var(--line);border-radius:999px;padding:9px 20px;font-size:14px;opacity:0;transition:.3s;z-index:30;pointer-events:none}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="sky" id="sky"></div>
+<main>
+  <header>
+    <a href="../">← 보드게임 코너</a><div class="spacer"></div>
+    <h1>🟦 수학 <em>땅따먹기</em></h1>
+  </header>
+
+  <section class="setup" id="setup">
+    <h2>조각을 이어 붙여 땅을 넓혀라!</h2>
+    <p>첫 조각은 <b>내 별자리</b>를 덮고, 그다음부턴 <b>내 땅에 붙여서</b>만 놓을 수 있어요.<br>
+    둘 다 못 놓게 되면 끝 — <b style="color:var(--gold)">칸 수가 많은 팀</b> 승리!</p>
+    <div class="opts" id="modeOpts">
+      <button class="opt sel" data-m="ai">🤖 컴퓨터랑</button>
+      <button class="opt" data-m="hot">👫 짝꿍이랑</button>
+    </div>
+    <div class="opts lv show" id="lvOpts">
+      <button class="opt" data-l="1">🐣 아장아장</button>
+      <button class="opt sel" data-l="2">🙂 제법인데</button>
+      <button class="opt" data-l="3">🧠 땅부자</button>
+    </div>
+    <button class="start" id="btnStart">놀이 시작!</button>
+  </section>
+
+  <section id="game">
+    <div class="score">
+      <div class="side"><span class="sq" style="background:#ffd35c"></span>⭐ 별팀 <b id="sc1">0</b>칸</div>
+      <div class="side"><b id="sc2">0</b>칸 달팀 🌙<span class="sq" style="background:#7ea8ff"></span></div>
+    </div>
+    <div class="banner" id="banner"></div>
+    <div class="boardWrap"><svg id="board" viewBox="0 0 450 450" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    <div class="hand" id="hand"></div>
+    <div class="ctrl">
+      <button class="cbtn" id="btnRot">↻ 돌리기</button>
+      <button class="cbtn" id="btnFlip">↔ 뒤집기</button>
+      <button class="cbtn go" id="btnPut" disabled>여기 놓기!</button>
+    </div>
+    <div class="ctrl">
+      <button class="cbtn" id="btnRe">🔄 다시</button>
+      <button class="cbtn" id="btnHome">🎪 다른 놀이</button>
+    </div>
+  </section>
+</main>
+<div id="over"><div class="card"><h2 id="ovT"></h2><p id="ovS"></p><button class="start" id="btnAgain">한 판 더!</button></div></div>
+<div class="toast" id="toast"></div>
+
+<script src="./core.js"></script>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+(function(){const sky=$('sky');let s=11;const rnd=()=>(s=(s*1103515245+12345)&0x7fffffff)/0x7fffffff;
+for(let i=0;i<55;i++){const d=document.createElement('i');d.style.left=(rnd()*100)+'%';d.style.top=(rnd()*100)+'%';d.style.animationDelay=(rnd()*4)+'s';sky.appendChild(d);}})();
+const Snd=(function(){let ctx;function t(f,d,type,g0){try{ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();
+const o=ctx.createOscillator(),g=ctx.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,ctx.currentTime);
+g.gain.setValueAtTime(g0||.1,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+d);
+o.connect(g);g.connect(ctx.destination);o.start();o.stop(ctx.currentTime+d);}catch(e){}}
+return{put(){t(420,.1,'triangle');setTimeout(()=>t(560,.12,'triangle'),60);},
+win(){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>t(f,.28,'sine',.15),i*110));},
+lose(){t(220,.4,'sawtooth',.06);},no(){t(160,.15,'square',.06);},click(){t(600,.05,'square',.05);}};})();
+
+const C=LandCore, CELL=50;
+const COLS={1:'#ffd35c',2:'#7ea8ff'},EDGE={1:'#b98700',2:'#3d6bd6'};
+const G={mode:'ai',level:2,human:1,board:null,hands:null,turn:1,sel:null,r:0,f:0,ghost:null,busy:false,over:false,passes:0};
+
+document.querySelectorAll('#modeOpts .opt').forEach(b=>b.onclick=()=>{Snd.click();
+  document.querySelectorAll('#modeOpts .opt').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');
+  G.mode=b.dataset.m;$('lvOpts').classList.toggle('show',G.mode==='ai');});
+document.querySelectorAll('#lvOpts .opt').forEach(b=>b.onclick=()=>{Snd.click();
+  document.querySelectorAll('#lvOpts .opt').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');G.level=+b.dataset.l;});
+$('btnStart').onclick=start;$('btnRe').onclick=start;$('btnAgain').onclick=()=>{$('over').style.display='none';start();};
+$('btnHome').onclick=()=>location.href='../';
+$('btnRot').onclick=()=>{Snd.click();G.r=(G.r+1)%4;refreshGhost();};
+$('btnFlip').onclick=()=>{Snd.click();G.f=1-G.f;refreshGhost();};
+$('btnPut').onclick=confirmPut;
+
+function start(){
+  Snd.click();
+  G.board=C.newBoard();G.hands={1:C.newHand(),2:C.newHand()};
+  G.turn=1;G.sel=null;G.r=0;G.f=0;G.ghost=null;G.busy=false;G.over=false;G.passes=0;
+  $('setup').style.display='none';$('game').style.display='block';$('over').style.display='none';
+  renderAll();banner();
+}
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(t._x);t._x=setTimeout(()=>t.classList.remove('on'),1600);}
+function banner(txt){
+  if(txt){$('banner').innerHTML=txt;return;}
+  const nm=G.turn===1?'⭐ 별팀':'🌙 달팀';
+  $('banner').innerHTML='<b style="color:'+COLS[G.turn]+'">'+nm+'</b> 차례!'+
+    (G.mode==='ai'&&G.turn!==G.human?' <span style="color:var(--dim);font-size:13px">(컴퓨터 궁리 중…)</span>':' <span style="color:var(--dim);font-size:13px">조각을 고르고 판을 눌러 봐</span>');
+}
+function renderAll(){renderBoard();renderHand();renderScore();}
+function renderScore(){$('sc1').textContent=C.count(G.board,1);$('sc2').textContent=C.count(G.board,2);}
+function renderBoard(){
+  const svg=$('board');let s='<rect width="450" height="450" rx="14" fill="#10173d"/>';
+  for(let y=0;y<9;y++)for(let x=0;x<9;x++){
+    const v=G.board[y][x];
+    s+='<rect x="'+(x*CELL+2)+'" y="'+(y*CELL+2)+'" width="'+(CELL-4)+'" height="'+(CELL-4)+'" rx="8" fill="'+
+      (v===0?'#1a2354':COLS[v])+'"'+(v?' stroke="'+EDGE[v]+'" stroke-width="3"':'')+' data-x="'+x+'" data-y="'+y+'"/>';
+  }
+  // 시작 별자리 표시
+  for(const p of [1,2]){const[sx,sy]=C.STARTS[p];
+    if(G.board[sy][sx]===0)s+='<text x="'+(sx*CELL+25)+'" y="'+(sy*CELL+33)+'" text-anchor="middle" font-size="24">'+(p===1?'⭐':'🌙')+'</text>';}
+  // 고스트
+  if(G.ghost){
+    const legal=G.ghost.legal;
+    for(const[dx,dy]of G.ghost.cells){
+      const x=G.ghost.ox+dx,y=G.ghost.oy+dy;
+      if(x<0||x>=9||y<0||y>=9)continue;
+      s+='<rect x="'+(x*CELL+2)+'" y="'+(y*CELL+2)+'" width="'+(CELL-4)+'" height="'+(CELL-4)+'" rx="8" fill="'+
+        (legal?'#7dffb0':'#ff6b8a')+'" opacity=".55"/>';
+    }
+  }
+  svg.innerHTML=s;
+  svg.onclick=e=>{
+    if(G.over||G.busy)return;
+    if(G.mode==='ai'&&G.turn!==G.human)return;
+    if(!G.sel){toast('먼저 아래에서 조각을 골라 봐!');return;}
+    const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;
+    const p=pt.matrixTransform(svg.getScreenCTM().inverse());
+    const x=Math.floor(p.x/CELL),y=Math.floor(p.y/CELL);
+    if(x<0||x>=9||y<0||y>=9)return;
+    setGhost(x,y);
+  };
+}
+function setGhost(x,y){
+  const cells=C.orient(C.PIECE_MAP[G.sel].cells,G.r,G.f);
+  // 탭한 칸이 조각 중앙 근처가 되도록 오프셋
+  let w=0,h=0;for(const[cx,cy]of cells){if(cx>w)w=cx;if(cy>h)h=cy;}
+  const ox=x-Math.floor(w/2),oy=y-Math.floor(h/2);
+  G.ghost={cells,ox,oy,legal:C.canPlace(G.board,G.turn,cells,ox,oy)};
+  $('btnPut').disabled=!G.ghost.legal;
+  renderBoard();
+}
+function refreshGhost(){
+  if(G.ghost){const cx=G.ghost.ox,cy=G.ghost.oy;
+    const cells=C.orient(C.PIECE_MAP[G.sel].cells,G.r,G.f);
+    G.ghost={cells,ox:cx,oy:cy,legal:C.canPlace(G.board,G.turn,cells,cx,cy)};
+    $('btnPut').disabled=!G.ghost.legal;}
+  renderBoard();renderHand();
+}
+function renderHand(){
+  const w=$('hand');w.innerHTML='';
+  const hand=G.hands[G.turn];
+  const showFor=(G.mode==='ai')?G.human:G.turn;
+  const list=G.hands[showFor];
+  for(const pid of list){
+    const d=document.createElement('div');d.className='hp'+(G.sel===pid&&G.turn===showFor?' sel':'');
+    const cells=C.orient(C.PIECE_MAP[pid].cells,G.sel===pid?G.r:0,G.sel===pid?G.f:0);
+    let w2=0,h2=0;for(const[x,y]of cells){if(x>w2)w2=x;if(y>h2)h2=y;}
+    const u=44/Math.max(w2+1,h2+1);
+    let sv='<svg viewBox="0 0 48 48">';
+    for(const[x,y]of cells)sv+='<rect x="'+(x*u+2)+'" y="'+(y*u+2)+'" width="'+(u-3)+'" height="'+(u-3)+'" rx="4" fill="'+COLS[showFor]+'"/>';
+    sv+='</svg>';d.innerHTML=sv;
+    d.onclick=()=>{if(G.over||G.busy)return;if(G.mode==='ai'&&G.turn!==G.human)return;
+      Snd.click();G.sel=pid;G.r=0;G.f=0;G.ghost=null;$('btnPut').disabled=true;renderBoard();renderHand();};
+    w.appendChild(d);
+  }
+  if(list.length===0)w.innerHTML='<div style="color:var(--dim);font-size:13px;padding:12px">조각을 다 썼어요!</div>';
+}
+function confirmPut(){
+  if(!G.ghost||!G.ghost.legal)return;
+  C.place(G.board,G.turn,G.ghost.cells,G.ghost.ox,G.ghost.oy);
+  const i=G.hands[G.turn].indexOf(G.sel);G.hands[G.turn].splice(i,1);
+  Snd.put();
+  G.sel=null;G.ghost=null;$('btnPut').disabled=true;G.passes=0;
+  nextTurn();
+}
+function nextTurn(){
+  renderAll();
+  if(G.over)return;
+  const nxt=3-G.turn;
+  if(C.canMove(G.board,nxt,G.hands[nxt])){
+    G.turn=nxt;banner();renderHand();
+    if(G.mode==='ai'&&G.turn!==G.human){G.busy=true;setTimeout(aiTurn,600+Math.random()*500);}
+  }else if(C.canMove(G.board,G.turn,G.hands[G.turn])){
+    toast((nxt===1?'⭐ 별팀':'🌙 달팀')+'은 놓을 곳이 없어 쉬어요!');
+    banner();
+    if(G.mode==='ai'&&G.turn!==G.human){G.busy=true;setTimeout(aiTurn,700);}
+  }else finish();
+}
+function aiTurn(){
+  const m=C.aiPick(G.board,G.turn,G.hands[G.turn],G.level);
+  if(!m){G.busy=false;finish();return;}
+  C.place(G.board,G.turn,m.cells,m.ox,m.oy);
+  const i=G.hands[G.turn].indexOf(m.pid);G.hands[G.turn].splice(i,1);
+  Snd.put();G.busy=false;
+  nextTurn();
+}
+function finish(){
+  G.over=true;
+  const a=C.count(G.board,1),b=C.count(G.board,2);
+  renderAll();
+  setTimeout(()=>{
+    let t,s2,meWin=false;
+    if(a===b){t='🤝 무승부!';s2='둘 다 '+a+'칸 — 완벽한 균형!';}
+    else{const w=a>b?1:2;const nm=w===1?'⭐ 별팀':'🌙 달팀';
+      meWin=G.mode!=='ai'||w===G.human;
+      t=meWin?'🎉 '+nm+' 승리!':'🤖 컴퓨터 승리!';
+      s2='⭐ '+a+'칸 vs 🌙 '+b+'칸<br>'+(meWin?'땅을 야무지게 넓혔어요!':'다음엔 가운데를 먼저 노려 봐요!');}
+    $('ovT').textContent=t;$('ovS').innerHTML=s2;
+    if(meWin){Snd.win();confetti();}else if(a!==b)Snd.lose();
+    $('over').style.display='flex';
+  },300);
+}
+function confetti(){
+  const cols=['#ffd35c','#7ea8ff','#ff7ab8','#7dffb0','#c9a3ff'];
+  for(let i=0;i<60;i++){const d=document.createElement('div');d.className='confetti';
+    d.style.left=(Math.random()*100)+'vw';d.style.background=cols[i%5];
+    d.style.animationDuration=(1.6+Math.random()*1.6)+'s';d.style.animationDelay=(Math.random()*.5)+'s';
+    document.body.appendChild(d);setTimeout(()=>d.remove(),3600);}
+}
+</script>
+</body>
+</html>
