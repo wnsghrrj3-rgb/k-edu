@@ -49,7 +49,8 @@
       const t = i / N;
       pts.push({ x: lerp(e.x, x.x, t), z: lerp(e.z, x.z, t), y: y + bump * (1 - Math.cos(2 * Math.PI * t)) / 2 });
     }
-    return pts;
+    // 마루(t≈0.3~0.7)는 볼록 접촉 구간 — 고속이면 이탈해 날아간다 (M2b-3)
+    return { points: pts, marks: [{ kind: 'convex', i0: 4, i1: 10 }] };
   }
 
   // ---- ➰ 루프 ----

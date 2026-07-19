@@ -45,6 +45,7 @@ export function createUI(root, handlers, tracks) {
           <button data-part="cannon" title="3칸 건너 착지대로 발사! 속도가 모자라면 못 건넌다">💥<span>대포</span></button>
           <button data-part="trampoline" title="2칸 건너 착지대로 튕겨 보낸다">🤸<span>트램펄린</span></button>
           <button data-part="switch" title="갈림길! 구슬이 지날 때마다 방향이 딸깍 바뀐다">🔀<span>스위치</span></button>
+          <button data-part="splitter" title="네가 정한 길로만 보내는 갈림길 — 실행 중에 탭해서 바꿔!">🚦<span>신호기</span></button>
         </div>
       </div>
       <div id="mr-buildops">

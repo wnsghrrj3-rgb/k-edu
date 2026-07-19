@@ -78,7 +78,7 @@ function makeStars() {
 
 /** 트랙 전체 빌드 (M2b-2: 잎 합집합 entries 기반).
  * entries: [{ piece, pts, airLocal:Set, globalIdx }] — 스위치는 좌/우 두 entry (Y 분기 레일)
- * 반환: { group, bells: Map(pieceIdx→벨), switches: Map(pieceIdx→플리퍼) } */
+ * 반환: { group, bells, switches: Map(pieceIdx→플리퍼), levers: Map(pieceIdx→신호기 탭 패드) } */
 export function buildTrackMeshes(pieces, entries, C) {
   const NS = window.MarbleSim;
   const hx = NS.hexgrid;
@@ -152,6 +152,7 @@ export function buildTrackMeshes(pieces, entries, C) {
   });
   const bells = new Map();
   const switches = new Map();
+  const levers = new Map();
   const decorated = new Set(); // 부품 장식(탑·벨·플리퍼 등)은 전역 인덱스당 한 번만
 
   for (const en of entries) {
@@ -168,10 +169,12 @@ export function buildTrackMeshes(pieces, entries, C) {
       bells.set(en.globalIdx, g.getObjectByName('bell'));
     }
     if (piece.type === 'gyro') group.add(makeGyroPole(piece, C, hx));
-    if (piece.type === 'switch') {
-      const f = makeSwitch(piece, C, hx);
+    if (piece.type === 'switch' || piece.type === 'splitter') {
+      const f = makeSwitch(piece, C, hx, piece.type === 'splitter');
       group.add(f);
       switches.set(en.globalIdx, f.getObjectByName('flipper'));
+      const pad = f.getObjectByName('leverpad');
+      if (pad) { pad.userData.pieceIdx = en.globalIdx; levers.set(en.globalIdx, pad); }
     }
     if (piece.type === 'cannon' || piece.type === 'trampoline') {
       group.add(makeBallistic(piece, C, hx, NS));
@@ -180,7 +183,7 @@ export function buildTrackMeshes(pieces, entries, C) {
     }
   }
 
-  return { group, bells, switches };
+  return { group, bells, switches, levers };
 }
 
 /* 구슬 생성 — 다중 구슬용. colorHex 지정 시 발광도 맞춰 물들인다. */
@@ -199,22 +202,24 @@ export function makeMarble(C, colorHex, emissiveHex) {
   return marble;
 }
 
-/* 🔀 스위치: 분기 원판 + 플리퍼 암.
- * 플리퍼는 중심에서 현재 방향의 출구 포트를 가리킨다. userData.yaw = {0: 왼, 1: 오} */
-function makeSwitch(piece, C, hx) {
+/* 🔀 스위치 / 🚦 신호기: 분기 원판 + 플리퍼(레버) 암.
+ * 암은 중심에서 현재 방향의 출구 포트를 가리킨다. userData.yaw = {0: 왼, 1: 오}
+ * splitter=true면 에메랄드 림 + 은색 레버 + 신호등 기둥 + 탭 패드(leverpad). */
+function makeSwitch(piece, C, hx, splitter) {
   const g = new THREE.Group();
   const c = hx.tileCenter(piece.q, piece.r, C.R);
   const y = piece.h * C.H;
   // 분기 원판 (발광 링)
   const disc = new THREE.Mesh(
     new THREE.CylinderGeometry(C.R * 0.34, C.R * 0.38, 0.006, 24),
-    new THREE.MeshStandardMaterial({ color: 0x22306b, emissive: 0x4de1ff, emissiveIntensity: 0.22, roughness: 0.4, metalness: 0.3 })
+    new THREE.MeshStandardMaterial({ color: 0x22306b, emissive: splitter ? 0x2effa8 : 0x4de1ff, emissiveIntensity: 0.22, roughness: 0.4, metalness: 0.3 })
   );
   disc.position.set(c.x, y + 0.003, c.z);
   g.add(disc);
+  const rimColor = splitter ? 0x2effa8 : 0xb84dff;
   const rim = new THREE.Mesh(
     new THREE.TorusGeometry(C.R * 0.36, 0.0022, 8, 24),
-    new THREE.MeshStandardMaterial({ color: 0xb84dff, emissive: 0xb84dff, emissiveIntensity: 0.8, roughness: 0.3 })
+    new THREE.MeshStandardMaterial({ color: rimColor, emissive: rimColor, emissiveIntensity: 0.8, roughness: 0.3 })
   );
   rim.rotation.x = Math.PI / 2;
   rim.position.set(c.x, y + 0.007, c.z);
@@ -231,7 +236,9 @@ function makeSwitch(piece, C, hx) {
   // 플리퍼 암: 중심 피벗, 화살촉 모양으로 출구를 가리킨다
   const flipper = new THREE.Group();
   flipper.name = 'flipper';
-  const armMat = new THREE.MeshStandardMaterial({ color: 0xffd35c, emissive: 0xb87400, emissiveIntensity: 0.7, roughness: 0.25, metalness: 0.6 });
+  const armMat = splitter
+    ? new THREE.MeshStandardMaterial({ color: 0xdfe9f5, emissive: 0x7f96b0, emissiveIntensity: 0.5, roughness: 0.2, metalness: 0.85 })
+    : new THREE.MeshStandardMaterial({ color: 0xffd35c, emissive: 0xb87400, emissiveIntensity: 0.7, roughness: 0.25, metalness: 0.6 });
   const arm = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.005, C.R * 0.52), armMat);
   arm.position.z = C.R * 0.26;
   arm.castShadow = true;
@@ -247,6 +254,30 @@ function makeSwitch(piece, C, hx) {
   flipper.userData.yaw = { 0: yawL, 1: yawR };
   flipper.userData.targetDir = 0;
   g.add(flipper);
+
+  if (splitter) {
+    // 신호등 기둥: 초록 램프 — "여긴 사람이 조종하는 분기"라는 표식
+    const pole = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.0022, 0.0022, 0.055, 8),
+      new THREE.MeshStandardMaterial({ color: 0x3a4668, roughness: 0.6, metalness: 0.5 })
+    );
+    pole.position.set(c.x - C.R * 0.42, y + 0.0275, c.z);
+    g.add(pole);
+    const lamp = new THREE.Mesh(
+      new THREE.SphereGeometry(0.007, 12, 8),
+      new THREE.MeshStandardMaterial({ color: 0x2effa8, emissive: 0x2effa8, emissiveIntensity: 1.2, roughness: 0.3 })
+    );
+    lamp.position.set(c.x - C.R * 0.42, y + 0.058, c.z);
+    g.add(lamp);
+    // 탭 패드: 넉넉한 투명 히트 실린더 — 실행 중 탭하면 레버 전환
+    const pad = new THREE.Mesh(
+      new THREE.CylinderGeometry(C.R * 0.55, C.R * 0.55, 0.05, 12),
+      new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })
+    );
+    pad.name = 'leverpad';
+    pad.position.set(c.x, y + 0.025, c.z);
+    g.add(pad);
+  }
   return g;
 }
 

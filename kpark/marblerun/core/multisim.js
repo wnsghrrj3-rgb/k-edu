@@ -49,10 +49,14 @@
       const pd = ns.buildPathData(track.points, track.bowlIndexRanges, {
         airIndexRanges: track.airIndexRanges,
         boostIndexRanges: track.boostIndexRanges,
+        convexIndexRanges: track.convexIndexRanges,
         launchMarks: track.launchMarks,
       });
       const switches = (track.decideMarks || [])
-        .map(dm => ({ id: rt.pieceIdxs[dm.piece], s: pd.cum[dm.i] }))
+        .map(dm => {
+          const gid = rt.pieceIdxs[dm.piece];
+          return { id: gid, s: pd.cum[dm.i], flip: comp.pieces[gid].type !== 'splitter' };
+        })
         .sort((a, b) => a.s - b.s);
       const lastGlobal = rt.pieceIdxs[rt.pieceIdxs.length - 1];
       routesData.push({
@@ -78,13 +82,20 @@
       this.count = Math.max(1, Math.min(8, o.count || 1));
       this.stagger = o.staggerTicks != null ? o.staggerTicks : 60;
       this.phys = o.phys || null;
+      this.levers = new Map(); // 신호기(flip=false) 레버 — 리셋해도 유지 (사람이 정한 방향)
+      this.flips = new Map();  // id → flip 여부
+      for (const rt of this.routes) for (const sw of rt.switches) this.flips.set(sw.id, sw.flip !== false);
       this.reset();
     }
 
     reset() {
       this.tick = 0;
-      this.states = new Map(); // 스위치 id → 0(왼) | 1(오) — 초기 전부 왼길
-      for (const rt of this.routes) for (const sw of rt.switches) if (!this.states.has(sw.id)) this.states.set(sw.id, 0);
+      this.states = new Map(); // 분기 id → 0(왼) | 1(오) — 스위치는 왼길, 신호기는 레버 기억값
+      for (const rt of this.routes) for (const sw of rt.switches) {
+        if (!this.states.has(sw.id)) {
+          this.states.set(sw.id, this.flips.get(sw.id) === false && this.levers.has(sw.id) ? this.levers.get(sw.id) : 0);
+        }
+      }
       this.marbles = [];
       for (let i = 0; i < this.count; i++) {
         this.marbles.push({
@@ -134,6 +145,11 @@
         if (TERMINAL[M.sim.status]) continue;
         allDone = false;
 
+        // 재포획 상한: 아직 결정하지 않은 다음 분기점을 공중에서 건너뛰지 못하게
+        {
+          const nextSw = this.routes[M.routeIdx].switches[M.decided.length];
+          M.sim._captureMaxS = nextSw ? nextSw.s : Infinity;
+        }
         for (const e of M.sim.step()) ev.push(Object.assign({ m }, e));
 
         // ── 분기점 통과/후퇴 판정 (RAIL 상태에서만 s가 유효) ──
@@ -151,7 +167,8 @@
             const nextSw = this.routes[M.routeIdx].switches[M.decided.length];
             if (!nextSw || M.sim.s < nextSw.s) break;
             const dir = this.states.get(nextSw.id) || 0;
-            this.states.set(nextSw.id, dir ^ 1); // 딸깍 — 다음 구슬은 반대쪽
+            const flip = this.flips.get(nextSw.id) !== false;
+            if (flip) this.states.set(nextSw.id, dir ^ 1); // 스위치: 딸깍 — 다음 구슬은 반대쪽
             M.decided.push({ id: nextSw.id, dir });
             M.sim.s = nextSw.s; // 기하 공유점으로 클램프 → 경로 교체 무결
             const ri = this._routeFor(M.decided);
@@ -159,7 +176,7 @@
               M.routeIdx = ri;
               M.sim.pd = this.routes[ri].pd;
             }
-            ev.push({ type: 'switch', id: nextSw.id, dir, next: dir ^ 1, m });
+            ev.push({ type: 'switch', id: nextSw.id, dir, next: flip ? dir ^ 1 : dir, flip, m });
           }
         }
         if (TERMINAL[M.sim.status]) {
@@ -169,6 +186,18 @@
       this.tick++;
       if (allDone && !this.done) { this.done = true; ev.push({ type: 'alldone' }); }
       return ev;
+    }
+
+    /* 신호기 레버 설정/토글 (실행 중 탭). 스위치(flip)는 물리가 관리하므로 무시. */
+    setLever(id, dir) {
+      if (this.flips.get(id) !== false) return null;
+      this.levers.set(id, dir);
+      this.states.set(id, dir);
+      return dir;
+    }
+    toggleLever(id) {
+      if (this.flips.get(id) !== false) return null;
+      return this.setLever(id, (this.states.get(id) || 0) ^ 1);
     }
 
     runToEnd(maxSec) {

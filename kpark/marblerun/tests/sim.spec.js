@@ -12,6 +12,7 @@ require('../core/serialize.js');
 require('../core/tracks.js');
 require('../core/builder.js');
 require('../core/parts/switchpart.js');
+require('../core/parts/splitter.js');
 require('../core/multisim.js');
 const NS = globalThis.MarbleSim;
 
@@ -221,7 +222,8 @@ for (const tr of NS.TRACKS) {
     const t = NS.buildTrack(c.pieces);
     assert(t.ok, JSON.stringify(t.errors));
     const sim = new NS.Sim(NS.buildPathData(t.points, t.bowlIndexRanges,
-      { airIndexRanges: t.airIndexRanges, boostIndexRanges: t.boostIndexRanges, launchMarks: t.launchMarks }));
+      { airIndexRanges: t.airIndexRanges, boostIndexRanges: t.boostIndexRanges,
+        convexIndexRanges: t.convexIndexRanges, launchMarks: t.launchMarks }));
     sim.release(0);
     const ev = sim.runToEnd(120);
     assert(ev.some(e => e.type === 'goal'),
@@ -265,8 +267,8 @@ T('루프 접촉 물리: 저속 이탈(detach→crash), 고속 완주', () => {
   slow.release(1.0);
   const evS = slow.runToEnd(30);
   assert(evS.some(e => e.type === 'detach'), '저속인데 이탈 없음');
-  assert(evS.some(e => e.type === 'crash'), '낙하 착지(crash) 없음');
-  assert(slow.status === 'fallen', 'fallen 상태 아님: ' + slow.status);
+  // M2b-3: 이탈한 구슬은 아래 레일에 재포획되거나(railcatch) 바닥에 추락한다(crash)
+  assert(evS.some(e => e.type === 'crash' || e.type === 'railcatch'), '낙하 결말(crash/railcatch) 없음');
   assert(!evS.some(e => e.type === 'goal'), '저속인데 완주');
   const fast = new NS.Sim(pd);
   fast.release(1.8);
@@ -333,7 +335,8 @@ function runBallistic(startH, seq, maxSec) {
   const t = NS.buildTrack(c.pieces);
   if (!t.ok) return { buildErrors: t.errors };
   const sim = new NS.Sim(NS.buildPathData(t.points, t.bowlIndexRanges,
-    { airIndexRanges: t.airIndexRanges, boostIndexRanges: t.boostIndexRanges, launchMarks: t.launchMarks }));
+    { airIndexRanges: t.airIndexRanges, boostIndexRanges: t.boostIndexRanges,
+      convexIndexRanges: t.convexIndexRanges, launchMarks: t.launchMarks }));
   sim.release(0);
   const evs = [];
   let vIn = 0, vAtLaunch = null;
@@ -610,6 +613,129 @@ T('canPlaceRoute: 잎별 독립 배치 판정', () => {
   const closed = c.routes.find(rt => rt.ended);
   assert(NS.canPlaceRoute(c, open, 'straight'), '열린 잎에 직선 가능해야 함');
   assert(!NS.canPlaceRoute(c, closed, 'straight'), '골로 닫힌 잎은 불가');
+});
+
+// ---------- 6.8 신호기(스플리터) + 언덕 비행 (M2b-3) ----------
+console.log('[신호기 분기]');
+T('신호기 트리 컴파일: 잎 2개, 기하는 스위치와 동일', () => {
+  const c = NS.compile({ startH: 3, seq: ['slope',
+    { type: 'splitter', left: ['curve_l', 'goal'], right: ['curve_r', 'goal'] }] });
+  assert(c.ok && c.routes.length === 2, '잎 수 ' + c.routes.length);
+  const sp = c.pieces.findIndex(p => p.type === 'splitter');
+  assert(sp >= 0, '신호기 부품 없음');
+  const mk = (ri) => NS.buildTrack(NS.leafPieces(c, c.routes[ri]));
+  const A = mk(0), B = mk(1);
+  assert(A.ok && B.ok, '잎 빌드 실패');
+  assert(A.decideMarks.length === 1 && B.decideMarks.length === 1, '분기 마크 수');
+  const iA = A.decideMarks[0].i, iB = B.decideMarks[0].i;
+  assert(iA === iB, '분기점 인덱스 불일치');
+  for (let i = 0; i <= iA; i++) {
+    near(A.points[i].x, B.points[i].x, 1e-12, 'x@' + i);
+    near(A.points[i].y, B.points[i].y, 1e-12, 'y@' + i);
+    near(A.points[i].z, B.points[i].z, 1e-12, 'z@' + i);
+  }
+});
+T('신호기는 반전 없음: 구슬 3개 전부 초기 방향(왼길)으로', () => {
+  const c = NS.compile({ startH: 3, seq: ['slope', 'straight',
+    { type: 'splitter', left: ['curve_l', 'slope', 'goal'], right: ['curve_r', 'slope', 'goal'] }] });
+  const cr = NS.compileRoutes(c);
+  assert(cr.ok, JSON.stringify(cr.errors));
+  const ms = new NS.MultiSim(cr.routesData, { count: 3 });
+  ms.release();
+  const ev = ms.runToEnd(60);
+  const sw = ev.filter(e => e.type === 'switch');
+  assert(sw.length === 3, '분기 통과 ' + sw.length + '회');
+  assert(sw.every(e => e.dir === 0 && e.flip === false), '신호기가 반전함: ' + JSON.stringify(sw));
+  assert(ev.filter(e => e.type === 'finish').every(f => f.routeIdx === 0), '왼길 잎이 아님');
+});
+T('신호기 레버: 토글 후 방출하면 오른길, 리셋해도 레버 유지', () => {
+  const c = NS.compile({ startH: 3, seq: ['slope', 'straight',
+    { type: 'splitter', left: ['curve_l', 'slope', 'goal'], right: ['curve_r', 'slope', 'goal'] }] });
+  const cr = NS.compileRoutes(c);
+  const ms = new NS.MultiSim(cr.routesData, { count: 2 });
+  const spId = c.pieces.findIndex(p => p.type === 'splitter');
+  const d = ms.toggleLever(spId);
+  assert(d === 1, '토글 결과 ' + d);
+  ms.release();
+  const ev = ms.runToEnd(60);
+  const sw = ev.filter(e => e.type === 'switch');
+  assert(sw.length === 2 && sw.every(e => e.dir === 1), '오른길 아님: ' + JSON.stringify(sw));
+  const c2 = NS.compile({ startH: 3, seq: ['slope', 'straight',
+    { type: 'switch', left: ['curve_l', 'slope', 'goal'], right: ['curve_r', 'slope', 'goal'] }] });
+  const ms2 = new NS.MultiSim(NS.compileRoutes(c2).routesData, { count: 1 });
+  assert(ms2.toggleLever(c2.pieces.findIndex(p => p.type === 'switch')) === null, '스위치에 레버가 먹힘');
+});
+T('신호기 결정론: 같은 레버 설정 = 2회 실행 동일 이벤트열', () => {
+  const c = NS.compile({ startH: 3, seq: ['slope', 'straight',
+    { type: 'splitter', left: ['curve_l', 'slope', 'goal'], right: ['curve_r', 'slope', 'goal'] }] });
+  const cr = NS.compileRoutes(c);
+  const runOnce = () => {
+    const ms = new NS.MultiSim(cr.routesData, { count: 3 });
+    ms.toggleLever(c.pieces.findIndex(p => p.type === 'splitter'));
+    ms.release();
+    return ms.runToEnd(60).map(e => e.type + (e.m != null ? e.m : '') + (e.dir != null ? e.dir : '')).join('|');
+  };
+  assert(runOnce() === runOnce(), '이벤트열 불일치');
+});
+
+console.log('[언덕 비행]');
+T('언덕 고속 이탈: 볼록 마루에서 붕(conv) → 레일 재포획 → 완주', () => {
+  const c = NS.compile({ startH: 4, seq: ['slope', 'booster', 'booster', 'hill', 'straight', 'straight', 'goal'] });
+  const t = NS.buildTrack(c.pieces);
+  const pd = NS.buildPathData(t.points, t.bowlIndexRanges, {
+    boostIndexRanges: t.boostIndexRanges, convexIndexRanges: t.convexIndexRanges });
+  const sim = new NS.Sim(pd);
+  sim.release(0);
+  const ev = sim.runToEnd(40);
+  const d = ev.find(e => e.type === 'detach');
+  assert(d && d.conv === true, '볼록 이탈 없음');
+  const rc = ev.find(e => e.type === 'railcatch');
+  assert(rc, '재포획 없음');
+  assert(rc.s > d.s + 0.1, '비행 거리 부족: ' + (rc.s - d.s).toFixed(3));
+  assert(ev.some(e => e.type === 'goal'), '완주 실패');
+});
+T('재포획 에너지 비증가: 이탈 직전 E ≥ 포획 직후 E', () => {
+  const c = NS.compile({ startH: 4, seq: ['slope', 'booster', 'booster', 'hill', 'straight', 'straight', 'goal'] });
+  const t = NS.buildTrack(c.pieces);
+  const pd = NS.buildPathData(t.points, t.bowlIndexRanges, {
+    boostIndexRanges: t.boostIndexRanges, convexIndexRanges: t.convexIndexRanges });
+  const sim = new NS.Sim(pd);
+  sim.release(0);
+  let eBefore = null, checked = false;
+  while (sim.status === 'rolling' || sim.status === 'falling') {
+    const eNow = sim.energy();
+    const ev = sim.step();
+    if (ev.some(e => e.type === 'detach')) eBefore = eNow;
+    if (ev.some(e => e.type === 'railcatch')) {
+      assert(sim.energy() <= eBefore + 1e-9, 'E 증가: ' + eBefore + ' → ' + sim.energy());
+      checked = true;
+    }
+    if (sim.tick > 6000) break;
+  }
+  assert(checked, '재포획 미발생');
+});
+T('언덕 비행 결정론: 2회 실행 = 동일 이탈·포획 지점', () => {
+  const c = NS.compile({ startH: 5, seq: ['slope', 'slope', 'booster', 'hill', 'straight', 'straight', 'straight', 'goal'] });
+  const t = NS.buildTrack(c.pieces);
+  const pd = NS.buildPathData(t.points, t.bowlIndexRanges, {
+    boostIndexRanges: t.boostIndexRanges, convexIndexRanges: t.convexIndexRanges });
+  const one = () => {
+    const sim = new NS.Sim(pd); sim.release(0);
+    return sim.runToEnd(40).filter(e => e.type === 'detach' || e.type === 'railcatch')
+      .map(e => e.type + '@' + e.s.toFixed(9)).join('|');
+  };
+  const a = one();
+  assert(a.length > 0 && a === one(), '불일치: ' + a);
+});
+T('저속 언덕은 이탈 없이 통과/역행 (기존 물리 회귀 없음)', () => {
+  const c = NS.compile({ startH: 3, seq: ['slope', 'slope', 'hill', 'goal'] });
+  const t = NS.buildTrack(c.pieces);
+  const pd = NS.buildPathData(t.points, t.bowlIndexRanges, { convexIndexRanges: t.convexIndexRanges });
+  const sim = new NS.Sim(pd);
+  sim.release(0);
+  const ev = sim.runToEnd(30);
+  assert(!ev.some(e => e.type === 'detach'), '저속인데 이탈');
+  assert(ev.some(e => e.type === 'goal'), '완주 실패');
 });
 
 // ---------- 7. serialize ----------

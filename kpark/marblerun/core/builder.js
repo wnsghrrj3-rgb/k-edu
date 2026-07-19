@@ -34,7 +34,7 @@
 
   const APPENDABLE = ['straight', 'curve_l', 'curve_r', 'slope', 'goal',
                       'hill', 'loop', 'gyro', 'jump', 'booster', 'zigzag',
-                      'cannon', 'trampoline', 'switch'];
+                      'cannon', 'trampoline', 'switch', 'splitter'];
   const DROPS = { slope: 1, gyro: 2 };
   const SPANS = { cannon: 3, trampoline: 2 };
 
@@ -45,7 +45,7 @@
     return out;
   }
 
-  function isSwitchNode(t) { return t && typeof t === 'object' && t.type === 'switch'; }
+  function isBranchNode(t) { return t && typeof t === 'object' && (t.type === 'switch' || t.type === 'splitter'); }
 
   function compile(state, activeDecisions) {
     const hx = hex();
@@ -62,7 +62,7 @@
 
       for (let i = 0; i < seqArr.length; i++) {
         const item = seqArr[i];
-        const t = isSwitchNode(item) ? 'switch' : item;
+        const t = isBranchNode(item) ? item.type : item;
         if (ended) { errors.push({ code: 'AFTER_GOAL', msg: '골 벨 뒤에는 부품을 놓을 수 없음', at: i }); return; }
         if (APPENDABLE.indexOf(t) < 0) { errors.push({ code: 'UNKNOWN_TYPE', msg: '알 수 없는 부품: ' + t, at: i }); return; }
 
@@ -93,10 +93,10 @@
         for (const st of spanTiles) { occupied.add(hx.key(st.q, st.r)); q = st.q; r = st.r; }
         if (drop > 0) exitH = h;
 
-        if (t === 'switch') {
+        if (t === 'switch' || t === 'splitter') {
           // 갈림길: 왼길 먼저 (DFS) — 남은 seqArr는 존재할 수 없음 (스위치 뒤 항목은 갈래 안에 있어야 함)
           if (i !== seqArr.length - 1) {
-            errors.push({ code: 'AFTER_SWITCH', msg: '스위치 뒤 부품은 갈래(left/right) 안에 있어야 함', at: i });
+            errors.push({ code: 'AFTER_SWITCH', msg: '갈림길 뒤 부품은 갈래(left/right) 안에 있어야 함', at: i });
             return;
           }
           walk(item.left || [], { q, r, exitPort: (entry + 2) % 6, exitH },

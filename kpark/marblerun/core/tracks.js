@@ -99,6 +99,24 @@
               right: ['curve_r', 'straight', 'goal'] }],
           right: ['curve_r', 'slope', 'zigzag', 'goal'] }],
     },
+    {
+      id: 'flyinghill',
+      name: '날아라 언덕',
+      desc: '부스터 기세로 마루에서 붕 — 날아서 레일에 착지한다!',
+      startH: 4,
+      seq: ['slope', 'booster', 'booster', 'hill', 'straight', 'straight', 'goal'],
+    },
+    {
+      id: 'signaltower',
+      name: '신호기 관제탑',
+      desc: '🚦 신호기는 네가 정한 길로만 보낸다 — 실행 중에 탭해서 길을 바꿔봐!',
+      startH: 3,
+      marbles: 3,
+      seq: ['slope', 'straight',
+        { type: 'splitter',
+          left:  ['curve_l', 'slope', 'straight', 'goal'],
+          right: ['curve_r', 'slope', 'straight', 'goal'] }],
+    },
   ];
 
   return { TRACKS };

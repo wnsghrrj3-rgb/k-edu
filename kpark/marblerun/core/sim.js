@@ -27,6 +27,10 @@
     floorY: 0.012, // 이탈 낙하 착지 높이 (구슬 반지름)
     catchKeep: 0.85, // 착지대 깔때기 포획 시 수평속도 유지율
     wallKeep: 0.45,  // 백보드(뒷벽) 맞고 떨어진 경우 유지율
+    railCatchR: 0.028,   // 이탈 낙하 중 레일 재포획 반경 (m)
+    railCatchKeep: 0.80, // 재포획 시 접선 성분 속도 유지율 (법선 성분은 흡수)
+    convexGrip: 4.5,     // 두 줄 레일 채널이 볼록 마루에서 구슬을 잡아주는 배수
+                         // (v²κ > grip·g·|cdir_y| 일 때만 이탈 — 경사 기세는 굴러 넘고, 부스터 기세는 난다)
     dt: 1 / 120,   // 고정 틱
   };
 
@@ -84,6 +88,7 @@
     const bowlRanges = toS(bowlIndexRanges);
     const airRanges = toS(opts && opts.airIndexRanges);
     const boostRanges = toS(opts && opts.boostIndexRanges);
+    const convexRanges = toS(opts && opts.convexIndexRanges);
     // 발사 지점: 인덱스 → 호길이 s + 실제 좌표 (탄도 부품)
     const launches = ((opts && opts.launchMarks) || []).map(m => ({
       sLaunch: cum[m.i],
@@ -101,7 +106,7 @@
         return { x: dx / dl, z: dz / dl };
       })(),
     })).sort((a, b) => a.sLaunch - b.sLaunch);
-    return { points, segs, cum, total, bowlRanges, airRanges, boostRanges, launches };
+    return { points, segs, cum, total, bowlRanges, airRanges, boostRanges, convexRanges, launches };
   }
 
   function segIndexAt(pd, s) {
@@ -139,6 +144,7 @@
   function inBowl(pd, s) { return inRange(pd.bowlRanges, s); }
   function inAir(pd, s) { return inRange(pd.airRanges || [], s); }
   function inBoost(pd, s) { return inRange(pd.boostRanges || [], s); }
+  function inConvex(pd, s) { return inRange(pd.convexRanges || [], s); }
 
   class Sim {
     constructor(pathData, phys) {
@@ -155,6 +161,9 @@
       this._restTicks = 0;
       this._lastDir = 0;
       this._fall = null; // 이탈 낙하 { p:{x,y,z}, v:{x,y,z} }
+      this._fallTicks = 0;
+      this._sDetach = -1;
+      this._captureMaxS = Infinity; // 재포획 s 상한 (MultiSim이 분기점 이전으로 제한)
       this._air = null;  // 탄도 비행 { p, v, L }  (L = 발사 정의)
       this._missed = false;
     }
@@ -279,6 +288,36 @@
         f.p.y += f.v.y * dt - 0.5 * P.g * dt * dt;
         f.p.z += f.v.z * dt;
         f.v.y -= P.g * dt;
+        this._fallTicks++;
+
+        // ── 레일 재포획: 하강 중 경로 웨이포인트에 충분히 가까우면 다시 얹힌다 ──
+        // 접선 성분만 살아남는다 (법선 충돌 성분 흡수 → 에너지 비증가 보장)
+        if (f.v.y < 0 && this._fallTicks >= 8) {
+          const pd = this.pd;
+          let best = -1, bestD = P.railCatchR;
+          for (let i = 0; i < pd.points.length; i++) {
+            const sC = pd.cum[i];
+            if (Math.abs(sC - this._sDetach) < 0.05) continue; // 이탈 지점 재부착 방지
+            if (sC > this._captureMaxS) break;                 // 미결정 분기점 너머 금지
+            const q = pd.points[i];
+            const d = Math.hypot(f.p.x - q.x, f.p.y - q.y, f.p.z - q.z);
+            if (d < bestD) { bestD = d; best = i; }
+          }
+          if (best >= 0) {
+            const t = pd.segs[Math.min(best, pd.segs.length - 1)].dir;
+            const vAlong = f.v.x * t.x + f.v.y * t.y + f.v.z * t.z;
+            this.s = pd.cum[best];
+            this.v = vAlong * P.railCatchKeep;
+            this.status = 'rolling';
+            this._fall = null;
+            this._restTicks = 0;
+            this._lastDir = Math.sign(this.v || 1);
+            ev.push({ type: 'railcatch', s: this.s, v: this.v });
+            this.tick++;
+            return ev;
+          }
+        }
+
         if (f.p.y <= P.floorY) {
           f.p.y = P.floorY;
           this.status = 'fallen';
@@ -337,15 +376,25 @@
 
       // 접촉 조건 (수직 곡면 역학): 레일은 supp 방향으로만 밀 수 있다.
       // 힘 균형 구심 성분: N·(supp·cdir) = v²κ + g·cdir_y  →  N < 0 이면 이탈.
-      // 루프 꼭대기: cdir=(0,-1,0), supp=(0,-1,0) → N = v²κ − g  (v²κ < g 이면 낙하)
-      // supp·cdir ≤ 0.3 (평지 커브·언덕류)은 검사 제외 — 언덕 이탈은 M2b AIR 캡처와 함께.
+      // 오목(루프 꼭대기, denom>0): 저속이면 이탈 → 낙하.
+      // 볼록(언덕 마루, denom<0): N = (v²κ − g·|cdir_y|)/denom → 고속이면 이탈 → 붕 떠서 비행!
+      // |denom| ≤ 0.3 (수평 커브류)은 수직 이탈 없음 — 검사 제외.
       {
         const seg2 = pd.segs[segIndexAt(pd, this.s)];
         if (seg2.kappa > 4 && seg2.cdir && seg2.supp && !inAir(pd, this.s)) {
           const denom = seg2.supp.x * seg2.cdir.x + seg2.supp.y * seg2.cdir.y + seg2.supp.z * seg2.cdir.z;
+          // 오목(denom>0)은 전역 검사(루프): N<0 저속 이탈 → 낙하.
+          // 볼록(denom<0)은 부품이 선언한 마루 구간에서만: v²κ > grip·g·|cdir_y| 고속 이탈 → 비행!
+          //   (직선↔경사 이음새의 이산 꺾임 오인 방지 + 두 줄 레일 채널이 grip배로 잡아준다
+          //    → 경사 기세는 굴러 넘고, 부스터 기세는 날아오른다)
+          let out = false;
           if (denom > 0.3) {
-            const N = (this.v * this.v * seg2.kappa + P.g * seg2.cdir.y) / denom;
-            if (N < 0) {
+            out = (this.v * this.v * seg2.kappa + P.g * seg2.cdir.y) / denom < 0;
+          } else if (denom < -0.3 && inConvex(pd, this.s)) {
+            out = this.v * this.v * seg2.kappa > P.convexGrip * P.g * Math.abs(seg2.cdir.y);
+          }
+          {
+            if (out) {
               const p = posAt(pd, this.s);
               const t = seg2.dir;
               const sp = Math.abs(this.v);
@@ -355,7 +404,9 @@
                 v: { x: t.x * sp * sg, y: t.y * sp * sg, z: t.z * sp * sg },
               };
               this.status = 'falling';
-              ev.push({ type: 'detach', s: this.s });
+              this._fallTicks = 0;
+              this._sDetach = this.s;
+              ev.push({ type: 'detach', s: this.s, conv: denom < 0 });
               this.tick++;
               return ev;
             }

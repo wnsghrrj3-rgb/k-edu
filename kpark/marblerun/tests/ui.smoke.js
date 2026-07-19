@@ -1,5 +1,5 @@
 /* 케이파크 · 마블런 — tests/ui.smoke.js
- * jsdom UI 스모크 (M2b-2). 실행: jsdom 설치된 위치에서 node ui.smoke.js
+ * jsdom UI 스모크 (M2b-2 → M2b-3 신호기 포함). 실행: jsdom 설치된 위치에서 node ui.smoke.js
  * (jsdom은 임시 설치·제거 관례 — package.json 공용 파일 불변 유지) */
 'use strict';
 const { JSDOM } = require('jsdom');
@@ -12,7 +12,7 @@ global.window = dom.window;
 global.document = dom.window.document;
 
 // 코어 로드 (window에 부착)
-for (const f of ['core/hexgrid.js','core/parts/basic.js','core/parts/action.js','core/parts/ballistic.js','core/parts/switchpart.js','core/graph.js','core/sim.js','core/serialize.js','core/tracks.js','core/builder.js','core/multisim.js']) {
+for (const f of ['core/hexgrid.js','core/parts/basic.js','core/parts/action.js','core/parts/ballistic.js','core/parts/switchpart.js','core/parts/splitter.js','core/graph.js','core/sim.js','core/serialize.js','core/tracks.js','core/builder.js','core/multisim.js']) {
   const code = fs.readFileSync(path.join(BASE, f), 'utf8');
   dom.window.eval(code);
 }
@@ -73,10 +73,20 @@ T('결과 카드: 다중 구슬 표시', () => {
   assert(/🔔A/.test(body) && /🔔B/.test(body) && /3.21/.test(body), body);
 });
 
-T('프리셋 셀렉터에 갈림길 광장·세 갈래 종탑 포함', () => {
+T('프리셋 셀렉터에 갈림길 광장·세 갈래 종탑·신호기 관제탑·날아라 언덕 포함', () => {
   createUI(document.getElementById('ui'), new Proxy({}, { get: () => () => {} }), NS.TRACKS);
   const html = document.getElementById('mr-track').innerHTML;
   assert(/갈림길 광장/.test(html) && /세 갈래 종탑/.test(html), '프리셋 누락');
+  assert(/신호기 관제탑/.test(html) && /날아라 언덕/.test(html), 'M2b-3 프리셋 누락');
+});
+
+T('신호기 버튼 존재 + 배치 시 갈래 트리 생성', () => {
+  createUI(document.getElementById('ui'), new Proxy({}, { get: () => () => {} }), NS.TRACKS);
+  const btn = document.querySelector('#mr-palette button[data-part="splitter"]');
+  assert(btn, '신호기 버튼 없음');
+  const c = NS.compile({ startH: 3, seq: ['slope',
+    { type: 'splitter', left: ['goal'], right: ['goal'] }] });
+  assert(c.ok && c.routes.length === 2 && c.ended, '신호기 트리 컴파일 실패');
 });
 
 console.log('\nUI 스모크: ' + pass + ' 통과, ' + fail + ' 실패');
