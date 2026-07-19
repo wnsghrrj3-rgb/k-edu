@@ -53,9 +53,10 @@ console.log('[스냅 판정]');
   ok(!T.slotMatch(T.pieceWorldPoly('M', cs[0] + 2.5, cs[1], 90, 0), slot, 0.9, 0.35), '회전 맞아도 멀면 → 스냅 안 됨');
 }
 
-console.log('[퍼즐 10종 무결성]');
+console.log('[퍼즐 22종 무결성]');
 {
-  ok(T.PUZZLES.length === 10, '퍼즐 10종');
+  ok(T.PUZZLES.length === 22, '퍼즐 22종');
+  ok(T.PUZZLES.filter(function(p){return p.stars===4;}).length === 12, '🧭 스스로 찾기 12종');
   for (const pz of T.PUZZLES) {
     const slots = T.puzzleSlots(pz);
     const set = slots.map(s => s.sh).sort().join('');

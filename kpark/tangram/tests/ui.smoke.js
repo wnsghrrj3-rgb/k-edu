@@ -17,11 +17,11 @@ function ok(c, m) { if (c) { pass++; console.log('  ✓ ' + m); } else { fail++;
 
   console.log('[고르기 화면]');
   const cards = doc.querySelectorAll('.pcard');
-  ok(cards.length === 11, '카드 11개 (퍼즐 10 + 자유 만들기)');
-  ok(doc.querySelectorAll('.pcard svg').length === 10, '미니 실루엣 10개');
+  ok(cards.length === 23, '카드 23개 (퍼즐 22 + 자유 만들기)');
+  ok(doc.querySelectorAll('.pcard svg').length === 22, '미니 실루엣 22개');
   const names = Array.from(doc.querySelectorAll('.pcard .nm')).map(e => e.textContent);
   ok(names.includes('네모') && names.includes('나무'), '⭐1 이름 공개 (네모·나무)');
-  ok(names.filter(n => n === '? ? ?').length === 7, '⭐2·⭐3 이름 가림 7개');
+  ok(names.filter(n => n === '? ? ?').length === 19, '⭐2·⭐3·🧭 이름 가림 19개');
 
   console.log('[퍼즐 입장]');
   cards[0].dispatchEvent(new window.Event('click', { bubbles: true }));
@@ -53,6 +53,20 @@ function ok(c, m) { if (c) { pass++; console.log('  ✓ ' + m); } else { fail++;
   ok(doc.getElementById('btnHint').style.display === 'none', '자유 모드 힌트 숨김');
   const g2 = board.querySelectorAll('g');
   ok(g2[g2.length - 1].querySelectorAll('polygon').length === 7, '자유 모드 조각 7개');
+
+  console.log('[🧭 스스로 찾기]');
+  doc.getElementById('btnBack').dispatchEvent(new window.Event('click', { bubbles: true }));
+  await new Promise(r => setTimeout(r, 200));
+  const exCard = doc.querySelectorAll('.pcard')[10]; // 11번째 = 첫 🧭 카드(오리)
+  exCard.dispatchEvent(new window.Event('click', { bubbles: true }));
+  await new Promise(r => setTimeout(r, 250));
+  ok(doc.getElementById('pname').textContent === '? ? ?', '🧭 제목 가림');
+  ok(doc.getElementById('pstars').textContent.indexOf('🧭') === 0, '🧭 표기');
+  const gEx = board.querySelectorAll('g');
+  ok(gEx[0].querySelectorAll('polygon').length === 7, '🧭 실루엣 7개');
+  // ⭐1식 안내선 g가 없어야: 실루엣 g + (빈 힌트 g) + 조각 g = 3
+  ok(gEx.length === 3, '🧭 안내선 레이어 없음 (g 3개)');
+  ok(gEx[1].querySelectorAll('polygon').length === 0, '🧭 자리 안내 폴리곤 0개');
 
   console.log('\n결과: ' + pass + ' 통과 / ' + fail + ' 실패');
   window.close();

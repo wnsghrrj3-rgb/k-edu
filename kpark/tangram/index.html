@@ -224,7 +224,7 @@ function miniSVG(pz,color){
 function buildSelect(){
   const wrap=$('sections'); wrap.innerHTML='';
   const done=stamps();
-  const groups=[[1,'또박또박','⭐'],[2,'제법인데','⭐⭐'],[3,'모양 장인','⭐⭐⭐']];
+  const groups=[[1,'또박또박','⭐'],[2,'제법인데','⭐⭐'],[3,'모양 장인','⭐⭐⭐'],[4,'스스로 찾기','🧭']];
   groups.forEach(([st,label,ic])=>{
     const sec=document.createElement('div'); sec.className='diffsec';
     sec.innerHTML='<h2><span class="st">'+ic+'</span>'+label+'</h2>';
@@ -294,7 +294,7 @@ function startPuzzle(id){
   const showName=(pz.stars===1)||solved;
   const pn=$('pname'); pn.textContent=showName?pz.name:'? ? ?';
   pn.classList.toggle('q',!showName);
-  $('pstars').textContent='⭐'.repeat(pz.stars);
+  $('pstars').textContent=pz.stars>=4?'🧭 스스로 찾기':'⭐'.repeat(pz.stars);
   $('btnSave').style.display='none'; $('btnHint').style.display='';
   const dots=$('dots'); dots.innerHTML=''; for(let i=0;i<7;i++)dots.appendChild(document.createElement('b'));
 
@@ -579,6 +579,7 @@ function trySnap(i){
     if(G.lockedCount===7)setTimeout(finishPuzzle,650);
     return;
   }
+  if(G.pz&&G.pz.stars>=4)return; // 🧭 스스로 찾기: 귀띔 없음
   if(flipWouldFit(pc)){toast('↔ 뒤집어 볼까?');pulseBtn($('btnFlip'));}
 }
 function pulseBtn(b){b.style.transition='transform .12s';let n=0;
@@ -588,6 +589,7 @@ function pulseBtn(b){b.style.transition='transform .12s';let n=0;
  * 지금 회전(±45° 어시스트 포함)으로 들어갈 자리 = 초록 불. */
 function hoverUpdate(pc){
   if(G.mode!=='puzzle'){return;}
+  if(G.pz&&G.pz.stars>=4){hoverClear();return;} // 🧭 스스로 찾기: 자리 안내 없음
   const posTol=posTolFor(pc.sh)*(G.pz&&G.pz.stars>=3?0.9:1);
   let nearest=null;
   for(const s of G.slots){
@@ -624,6 +626,11 @@ function showHint(){
   const slot=G.slots.find(s=>!s.filled);
   if(!slot)return;
   Snd.hint();
+  if(G.pz&&G.pz.stars>=4){ // 🧭 스스로 찾기: 자리는 안 알려주고 조각만 짚어준다
+    const pc4=G.pieces.find(q=>!q.locked&&q.sh===slot.sh);
+    if(pc4){pc4.wigT=0;select(G.pieces.indexOf(pc4));toast('이 조각을 이리저리 돌려 봐! 🌀');}
+    return;
+  }
   G.gHint.innerHTML='';
   const o=svgEl('polygon',{points:ptsAttr(slot.poly),fill:'rgba(77,225,255,0.12)',
     stroke:'var(--accent)','stroke-width':0.14,'stroke-dasharray':'0.55 0.4','stroke-linejoin':'round'});
@@ -658,7 +665,7 @@ function finishPuzzle(){
     $('pname').textContent=G.pz.name; $('pname').classList.remove('q');
     $('doneName').textContent=G.pz.name;
     $('doneT').textContent='짜잔! 이건…';
-    $('doneSub').textContent='⭐'.repeat(G.pz.stars)+' · '+fmtTime(secs)+' 만에 완성 🌟 도장 콱!';
+    $('doneSub').textContent=(G.pz.stars>=4?'🧭 혼자 힘으로':'⭐'.repeat(G.pz.stars))+' · '+fmtTime(secs)+' 만에 완성 🌟 도장 콱!';
     $('doneov').classList.add('show');
   },1100);
 }
