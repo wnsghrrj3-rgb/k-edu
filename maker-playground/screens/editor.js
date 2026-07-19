@@ -24,8 +24,8 @@ window.MK_SCREENS.editor = (() => {
       </span>
       <span class="grow"></span>
       <span class="ed-tb-hist">
-        ${M().IconButton({ icon: "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M8 7L4.5 10.5 8 14'/><path d='M4.5 10.5H15a4.5 4.5 0 0 1 0 9h-3'/></svg>", tip: '실행 취소 (준비 중)', attrs: 'disabled' })}
-        ${M().IconButton({ icon: "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M16 7l3.5 3.5L16 14'/><path d='M19.5 10.5H9a4.5 4.5 0 0 0 0 9h-3'/></svg>", tip: '다시 실행 (준비 중)', attrs: 'disabled' })}
+        ${M().IconButton({ icon: "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M8 7L4.5 10.5 8 14'/><path d='M4.5 10.5H15a4.5 4.5 0 0 1 0 9h-3'/></svg>", tip: '실행 취소 (⌘Z)', attrs: 'data-ed="undo"' + (window.MK_HIST && MK_HIST.canUndo() ? '' : ' disabled') })}
+        ${M().IconButton({ icon: "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M16 7l3.5 3.5L16 14'/><path d='M19.5 10.5H9a4.5 4.5 0 0 0 0 9h-3'/></svg>", tip: '다시 실행 (⇧⌘Z)', attrs: 'data-ed="redo"' + (window.MK_HIST && MK_HIST.canRedo() ? '' : ' disabled') })}
       </span>
       ${M().Tabs({ items: ['Design', 'Video'], on: mode === 'video' ? 'Video' : 'Design', attrs: 'data-ed="mode"' })}
       <span class="grow"></span>
@@ -48,33 +48,124 @@ window.MK_SCREENS.editor = (() => {
     photo: ['사진 검색', '내 사진'], video: ['영상 클립 검색', '배경 영상'], audio: ['배경음악', '효과음'],
     bg: ['단색 배경', '이미지 배경', '움직이는 배경'], up: ['파일 올리기', '업로드 목록'],
   };
+  /* ---- AI Dock (STEP 1·10) — Context 배지 + 대화 로그 + 빠른 명령 + 입력 ---- */
+  const QUICK = [['이 제목을 더 고급스럽게', '고급'], ['배경을 어둡게', '배경'], ['색상 통일', '색통일'], ['여백 늘려', '여백'],
+    ['표를 차트로', '표→차트'], ['원형 그래프로', '원형'], ['FAQ 페이지 추가', 'FAQ'], ['고객 후기 추가', '후기'],
+    ['슬라이드를 8장으로 줄여', '8장'], ['투자자용으로 수정', '투자자'], ['다크 모드', '다크'], ['Apple 스타일', 'Apple']];
+
+  const AIDock = () => {
+    const e = ed(), ctx = window.MK_AIED ? MK_AIED.context() : null;
+    if (!ctx) return '<div class="ed-detail"><h3>AI</h3><p class="ed-note">문서를 먼저 열어 주세요.</p></div>';
+    const sel = ctx.selected
+      ? (ctx.selectedKind === 'text' ? `텍스트 "${M().esc(String(ctx.selected.text).split('\n')[0].slice(0, 10))}"` : ctx.selectedKind === 'chart' ? '차트' : ctx.selectedKind === 'table' ? '표' : '이미지')
+      : '선택 없음';
+    const log = (e.aiLog || []).map((m) =>
+      `<div class="aid-msg ${m.role}${m.err ? ' err' : ''}">${m.role === 'ai' ? '<span class="aid-dot"></span>' : ''}<span>${M().esc(m.text)}</span></div>`).join('')
+      || '<div class="aid-empty">캔버스를 이해하는 AI 편집기예요.<br>아래 명령을 눌러 보거나 직접 말해 주세요.</div>';
+    const hist = window.MK_HIST ? MK_HIST.list() : [];
+    return `<div class="ed-detail ed-aidock"><h3>AI 편집</h3>
+      <div class="aid-ctx" data-ed="aictx">
+        <span title="현재 프로젝트">${M().esc(ctx.project)}</span>
+        <b>씬 ${ctx.sceneIdx + 1}/${ctx.sceneCount} · ${M().esc(ctx.sceneName)}</b>
+        <em>선택: ${M().esc(sel)} · 테마 ${M().esc(ctx.theme.paletteName)}${ctx.theme.dark ? ' (다크)' : ''}</em>
+      </div>
+      <div class="aid-log" id="aidLog">${log}</div>
+      <div class="aid-quick">${QUICK.map(([c, l]) => `<button class="aid-chip" data-cmd="${M().esc(c)}" title="${M().esc(c)}">${l}</button>`).join('')}</div>
+      <div class="aid-input">
+        <input class="mk-input" data-ed="ai-in" placeholder="예) 이 카드 3개를 정렬" aria-label="AI 명령 입력">
+        <button class="mk-btn accent" data-ed="ai-run">실행</button>
+      </div>
+      ${hist.length ? `<details class="aid-hist"><summary>AI 작업 기록 (${hist.length})</summary><ol>${hist.map((h) => `<li>${M().esc(h)}</li>`).join('')}</ol></details>` : ''}
+      <p class="ed-note">규칙 기반 파서 — LLM 미연결. 명령은 실제 캔버스를 변형하고 Undo로 되돌릴 수 있어요.</p></div>`;
+  };
+
   const DetailPanel = () => {
+    if (ed().menu === 'ai') return AIDock();
     const name = (MENUS.find((m) => m[0] === ed().menu) || [])[2] || '';
     return `<div class="ed-detail"><h3>${name}</h3>
       <div class="ph-list">${(DETAIL[ed().menu] || []).map((d) => `<button class="ph-item">${d}</button>`).join('')}</div>
       <p class="ed-note">콘텐츠 연결 예정 — 외형 검토용</p></div>`;
   };
 
+
+  /* ================= Chart / Table 렌더러 (Canvas·MiniScene 공용) ================= */
+  const esc2 = (v) => window.MK.esc(String(v));
+  const ChartSVG = (el, dark, mini) => {
+    const S = el.series || [], ac = el.accent || '#2E8C7F';
+    const muted = dark ? '#8A97A8' : '#8E97A3', grid = dark ? 'rgba(255,255,255,.14)' : 'rgba(31,39,51,.10)';
+    const max = Math.max(1, ...S.map((d) => Math.abs(+d.v) || 0));
+    const W = 100, H = 62, PADB = mini ? 6 : 11, TOP = el.title && !mini ? 12 : 4;
+    let body = '';
+    if (el.chartType === 'pie') {
+      const total = S.reduce((a, d) => a + (+d.v || 0), 0) || 1;
+      const cx = 30, cy = (H + TOP) / 2, r = Math.min(20, (H - TOP) / 2 - 2);
+      let acc = -Math.PI / 2;
+      body = S.map((d, i) => {
+        const ang = (+d.v || 0) / total * Math.PI * 2, e2 = acc + ang;
+        const x1 = cx + r * Math.cos(acc), y1 = cy + r * Math.sin(acc), x2 = cx + r * Math.cos(e2), y2 = cy + r * Math.sin(e2);
+        const large = ang > Math.PI ? 1 : 0, op = (1 - i * 0.19).toFixed(2);
+        acc = e2;
+        return `<path d="M${cx} ${cy} L${x1.toFixed(2)} ${y1.toFixed(2)} A${r} ${r} 0 ${large} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z" fill="${ac}" opacity="${op}"/>`;
+      }).join('');
+      if (!mini) body += S.map((d, i) => `<rect x="60" y="${TOP + 3 + i * 11}" width="4" height="4" rx="1" fill="${ac}" opacity="${(1 - i * 0.19).toFixed(2)}"/><text x="67" y="${TOP + 6.6 + i * 11}" font-size="4.4" fill="${muted}">${esc2(d.k)} · ${esc2(d.v)}</text>`).join('');
+    } else if (el.chartType === 'line') {
+      const n = S.length || 1, step = 84 / Math.max(1, n - 1);
+      const pts = S.map((d, i) => [8 + i * step, H - PADB - ((+d.v || 0) / max) * (H - PADB - TOP - 3)]);
+      body = `<path d="M${pts.map((p) => p[0].toFixed(2) + ' ' + p[1].toFixed(2)).join(' L')}" fill="none" stroke="${ac}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>`
+        + pts.map((p, i) => `<circle cx="${p[0].toFixed(2)}" cy="${p[1].toFixed(2)}" r="${i === pts.length - 1 ? 2.4 : 1.5}" fill="${ac}"/>`).join('')
+        + (mini ? '' : S.map((d, i) => `<text x="${pts[i][0].toFixed(2)}" y="${H - 2}" font-size="3.8" fill="${muted}" text-anchor="middle">${esc2(d.k)}</text>`).join(''));
+    } else {
+      const n = S.length || 1, bw = Math.min(14, 84 / n - 3), gap = (84 - bw * n) / Math.max(1, n - 1);
+      body = S.map((d, i) => {
+        const h = ((+d.v || 0) / max) * (H - PADB - TOP - 3), x = 8 + i * (bw + gap), y = H - PADB - h;
+        const last = i === S.length - 1;
+        return `<rect x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${bw.toFixed(2)}" height="${Math.max(0.6, h).toFixed(2)}" rx="0.8" fill="${ac}" opacity="${last ? 1 : 0.42}"/>`
+          + (mini ? '' : `<text x="${(x + bw / 2).toFixed(2)}" y="${H - 2}" font-size="3.8" fill="${muted}" text-anchor="middle">${esc2(d.k)}</text>`
+            + `<text x="${(x + bw / 2).toFixed(2)}" y="${(y - 1.6).toFixed(2)}" font-size="4" font-weight="700" fill="${last ? ac : muted}" text-anchor="middle">${esc2(d.v)}</text>`);
+      }).join('');
+    }
+    const axis = el.chartType === 'pie' ? '' : `<path d="M6 ${H - PADB + 0.5}H94" stroke="${grid}" stroke-width="0.6"/>`;
+    const title = (el.title && !mini) ? `<text x="6" y="7" font-size="5" font-weight="700" fill="${dark ? '#F2F5F9' : '#1F2733'}">${esc2(el.title)}</text>` : '';
+    return `<svg viewBox="0 0 100 ${H}" preserveAspectRatio="none" style="width:100%;height:100%;display:block">${title}${axis}${body}</svg>`;
+  };
+  const TableHTML = (el, dark, mini) => {
+    const line = dark ? 'rgba(255,255,255,.16)' : '#E1E5EC', head = dark ? '#F2F5F9' : '#1F2733', mut = dark ? '#B7C0CD' : '#525C6A';
+    const fs = mini ? 'font-size:3px' : 'font-size:inherit';
+    const rows = (el.rows || []).map((r, ri) => `<tr>${r.map((c, ci) => `<td style="padding:${mini ? '1px 2px' : '4px 8px'};border-top:1px solid ${line};color:${ci === 0 ? head : mut};font-weight:${ci === 0 ? 600 : 400};text-align:${ci ? 'right' : 'left'}">${esc2(c)}</td>`).join('')}</tr>`).join('');
+    const cols = (el.cols || []).map((c, ci) => `<th style="padding:${mini ? '1px 2px' : '4px 8px'};color:${mut};font-weight:600;text-align:${ci ? 'right' : 'left'}">${esc2(c)}</th>`).join('');
+    return `<div class="ed-tbl" style="${fs}">${el.title && !mini ? `<b style="color:${head}">${esc2(el.title)}</b>` : ''}<table style="width:100%;border-collapse:collapse"><thead><tr>${cols}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  };
+  const HANDLES = '<i class="hd tl"></i><i class="hd tr"></i><i class="hd bl"></i><i class="hd br"></i><i class="hd tm"></i><i class="hd bm"></i><i class="hd ml"></i><i class="hd mr"></i><i class="hd rot"></i>';
+
   /* ================= Center: Canvas (편집) — 확대/축소 ================= */
   const BASE_W = 680;
   const CanvasArea = (scene) => {
     const e = ed(), CW = Math.round(BASE_W * e.zoom), CH = Math.round(CW * scene.height / scene.width);
+    const dk = MK_SEC ? MK_SEC.isDark(scene.background) : scene.background === '#1F2733';
     const els = scene.elements.map((el, i) => {
       const sel = e.selEl === i ? 'sel' : '';
+      if (el.kind === 'chart' || el.kind === 'table') {
+        const inner = el.kind === 'chart' ? ChartSVG(el, dk, false) : TableHTML(el, dk, false);
+        const hd3 = e.selEl === i ? HANDLES : '';
+        return `<div class="ed-el ed-data ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;font-size:${(2.6 / 100 * CH).toFixed(1)}px">${inner}${hd3}</div>`;
+      }
       if (el.kind === 'text') {
         const fs = (el.size / 100 * CH).toFixed(1);
         const hd = e.selEl === i ? '<i class="hd tl"></i><i class="hd tr"></i><i class="hd bl"></i><i class="hd br"></i><i class="hd tm"></i><i class="hd bm"></i><i class="hd ml"></i><i class="hd mr"></i><i class="hd rot"></i>' : '';
         const dark = MK_SEC ? MK_SEC.isDark(scene.background) : scene.background === '#1F2733';
         const col = el.color || (dark ? ((el.weight || 400) >= 600 ? '#F2F5F9' : '#B7C0CD') : ((el.weight || 400) >= 600 ? '#1F2733' : '#525C6A'));
         const al = el.align ? `;text-align:${el.align}` : '';
-        return `<div class="ed-el ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight};line-height:1.3;color:${col}${al};white-space:pre-wrap">${M().esc(el.text)}${hd}</div>`;
+        const tr = el.tracking ? `;letter-spacing:${el.tracking}em` : '';
+        return `<div class="ed-el ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight};line-height:1.3;color:${col}${al}${tr};white-space:pre-wrap">${M().esc(el.text)}${hd}</div>`;
       }
       const hd2 = e.selEl === i ? '<i class="hd tl"></i><i class="hd tr"></i><i class="hd bl"></i><i class="hd br"></i><i class="hd tm"></i><i class="hd bm"></i><i class="hd ml"></i><i class="hd mr"></i><i class="hd rot"></i>' : '';
-      const fillCls = el.fill ? 'has-fill' : '', fillSty = el.fill ? `;background:${el.fill}` : '';
-      return `<div class="ed-el img-ph ${fillCls} ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%${fillSty}">${M().esc(el.label)}${hd2}</div>`;
+      const fillCls = el.fill && el.fill !== 'none' ? 'has-fill' : '', fillSty = el.fill && el.fill !== 'none' ? `;background:${el.fill}` : '';
+      const rad = el.radius ? `;border-radius:${el.radius > 100 ? '50%' : el.radius + 'px'}` : '';
+      const cut = el.cutout ? ';background:none;border:1px dashed var(--mk-border)' : '';
+      return `<div class="ed-el img-ph ${fillCls} ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%${fillSty}${rad}${cut}">${M().esc(el.label)}${hd2}</div>`;
     }).join('');
     return `<div class="ed-canvaswrap">
-      <div class="ed-canvas" style="width:${CW}px;height:${CH}px;background:${scene.background}">${els}</div>
+      <div class="ed-canvas" style="width:${CW}px;height:${CH}px;background:${scene.background}${e.doc.fontFamily ? `;font-family:'${e.doc.fontFamily}',Pretendard,sans-serif` : ''}">${els}</div>
       <div class="ed-zoom">
         <button data-zoom="out" aria-label="축소"><svg viewBox='0 0 24 24' width='13' height='13' fill='none' stroke='currentColor' stroke-width='1.9' stroke-linecap='round' aria-hidden='true'><path d='M5.5 12h13'/></svg></button>
         <button data-zoom="fit">${Math.round(e.zoom * 100)}%</button>
@@ -91,7 +182,15 @@ window.MK_SCREENS.editor = (() => {
   const PropsPanel = (scene, mode) => {
     const e = ed(), s = e.selEl != null ? scene.elements[e.selEl] : null;
     let body;
-    if (s && s.kind === 'text') {
+    if (s && (s.kind === 'chart' || s.kind === 'table')) {
+      const isCh = s.kind === 'chart';
+      body = `<h3>${isCh ? '차트' : '표'} 속성</h3>
+        ${fld('제목', num(M().esc(s.title || ''), 'data-ed="data-title"'))}
+        ${isCh ? fld('유형', `<select class="mk-input" data-ed="chart-type">${['bar', 'line', 'pie'].map((o) => `<option value="${o}" ${o === s.chartType ? 'selected' : ''}>${o === 'bar' ? '막대' : o === 'line' ? '라인' : '원형'}</option>`).join('')}</select>`) : fld('열', num(M().esc((s.cols || []).join(' · '))))}
+        ${fld('데이터', `<textarea class="mk-input" style="height:64px;padding:8px" data-ed="data-edit">${M().esc((isCh ? s.series.map((d) => `${d.k}, ${d.v}`) : s.rows.map((r) => r.join(', '))).join('\n'))}</textarea>`)}
+        ${fld('', M().Button({ label: isCh ? '표로 바꾸기' : '차트로 바꾸기', kind: 'secondary', attrs: `data-ed="data-conv" style="width:100%"` }))}
+        <p class="hint">제목·유형·데이터 전부 실동작 — AI 명령("막대그래프로", "표를 차트로")과 같은 엔진</p>`;
+    } else if (s && s.kind === 'text') {
       body = `<h3>텍스트 속성</h3>
         ${fld('내용', `<textarea class="mk-input" style="height:60px;padding:8px" data-ed="text-edit">${M().esc(s.text)}</textarea>`)}
         <div class="fld row2"><span><label>Font</label>${sel2(['기본 (임시)'], '기본 (임시)')}</span><span><label>Size</label>${num(s.size)}</span></div>
@@ -128,6 +227,9 @@ window.MK_SCREENS.editor = (() => {
     const H = Math.round(W * scene.height / scene.width);
     const dark = window.MK_SEC ? MK_SEC.isDark(scene.background) : scene.background === '#1F2733';
     const els = scene.elements.map((el) => {
+      if (el.kind === 'chart' || el.kind === 'table') {
+        return `<span style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;overflow:hidden">${el.kind === 'chart' ? ChartSVG(el, dark, true) : TableHTML(el, dark, true)}</span>`;
+      }
       if (el.kind === 'text') {
         const fs = Math.max(3, el.size / 100 * H);
         const col = el.color || (dark ? ((el.weight || 400) >= 600 ? '#F2F5F9' : '#B7C0CD') : ((el.weight || 400) >= 600 ? '#1F2733' : '#525C6A'));
@@ -185,6 +287,52 @@ window.MK_SCREENS.editor = (() => {
     },
     mount(root) {
       const e = ed(), doc = e.doc, M2 = window.MK;
+      const H = window.MK_HIST;
+      /* --- History --- */
+      const undoBtn = root.querySelector('[data-ed="undo"]'), redoBtn = root.querySelector('[data-ed="redo"]');
+      if (undoBtn) undoBtn.onclick = () => { if (H.undo()) PG.render(); };
+      if (redoBtn) redoBtn.onclick = () => { if (H.redo()) PG.render(); };
+      if (!root._kbd) {
+        root._kbd = true;
+        root.addEventListener('keydown', (ev) => {
+          if (!(ev.metaKey || ev.ctrlKey) || ev.key.toLowerCase() !== 'z') return;
+          ev.preventDefault();
+          if (ev.shiftKey ? H.redo() : H.undo()) PG.render();
+        });
+      }
+      /* --- AI Dock --- */
+      const say = (role, text, err) => { e.aiLog = (e.aiLog || []).concat([{ role, text, err: !!err }]).slice(-14); };
+      const runAI = (cmd) => {
+        const c = String(cmd || '').trim(); if (!c) return;
+        say('me', c);
+        const res = window.MK_AIED.run(c);
+        say('ai', res.msg, !res.ok);
+        PG.render();
+        const lg = document.getElementById('aidLog'); if (lg) lg.scrollTop = lg.scrollHeight;
+      };
+      root.querySelectorAll('[data-cmd]').forEach((b) => b.onclick = () => runAI(b.dataset.cmd));
+      const aiIn = root.querySelector('[data-ed="ai-in"]'), aiRun = root.querySelector('[data-ed="ai-run"]');
+      if (aiRun) aiRun.onclick = () => runAI(aiIn && aiIn.value);
+      if (aiIn) { aiIn.onkeydown = (ev) => { if (ev.key === 'Enter') runAI(aiIn.value); }; }
+      /* --- Chart/Table 속성 실동작 --- */
+      const ct = root.querySelector('[data-ed="chart-type"]');
+      if (ct) ct.onchange = () => { H.push('차트 유형 변경'); doc.scenes[e.sceneIdx].elements[e.selEl].chartType = ct.value; PG.render(); };
+      const dt = root.querySelector('[data-ed="data-title"]');
+      if (dt) dt.onchange = () => { H.push('데이터 제목'); doc.scenes[e.sceneIdx].elements[e.selEl].title = dt.value; PG.render(); };
+      const de = root.querySelector('[data-ed="data-edit"]');
+      if (de) de.onchange = () => {
+        H.push('데이터 수정');
+        const el = doc.scenes[e.sceneIdx].elements[e.selEl];
+        const rows = de.value.split('\n').map((l) => l.split(',').map((x) => x.trim())).filter((r) => r[0]);
+        if (el.kind === 'chart') el.series = rows.map((r) => ({ k: r[0], v: parseFloat(r[1]) || 0 }));
+        else el.rows = rows;
+        PG.render();
+      };
+      const dc = root.querySelector('[data-ed="data-conv"]');
+      if (dc) dc.onclick = () => {
+        const el = doc.scenes[e.sceneIdx].elements[e.selEl];
+        runAI(el.kind === 'chart' ? '차트를 표로' : '표를 차트로');
+      };
       root.querySelector('[data-ed="back"]').onclick = () => PG.go(PG.state.create && PG.state.create.tpl ? 'create' : 'templates');
       const gh = root.querySelector('[data-ed="guard-home"]'); if (gh) gh.onclick = () => PG.go('home');
       root.querySelectorAll('[data-tab]').forEach((b) => b.onclick = () => { PG.state.variants[PG.state.screen] = b.dataset.tab; PG.render(); });
@@ -217,25 +365,27 @@ window.MK_SCREENS.editor = (() => {
       root.querySelectorAll('[data-op]').forEach((b) => b.onclick = (ev) => {
         ev.stopPropagation();
         const i = +b.dataset.i, sc = doc.scenes;
+        H.push(b.dataset.op === 'dup' ? '장면 복제' : '장면 삭제');
         if (b.dataset.op === 'dup') { const c = JSON.parse(JSON.stringify(sc[i])); c.name += ' 복제'; sc.splice(i + 1, 0, c); e.sceneIdx = i + 1; }
         else if (sc.length > 1) { sc.splice(i, 1); e.sceneIdx = Math.min(e.sceneIdx, sc.length - 1); }
         e.selEl = null; PG.render();
       });
       const add = root.querySelector('[data-ed="add"]');
       if (add) add.onclick = () => {
+        H.push('장면 추가');
         const base = doc.scenes[doc.scenes.length - 1];
         doc.scenes.push({ ...JSON.parse(JSON.stringify(base)), name: '새 장면', elements: [{ kind: 'text', x: 10, y: 40, w: 80, size: 6, text: '내용을 입력하세요', weight: 700 }] });
         e.sceneIdx = doc.scenes.length - 1; e.selEl = null; PG.render();
       };
       /* 더미 편집 */
       const te = root.querySelector('[data-ed="text-edit"]');
-      if (te) te.oninput = () => {
+      if (te) { te.onfocus = () => H.push('텍스트 편집'); te.oninput = () => {
         doc.scenes[e.sceneIdx].elements[e.selEl].text = te.value;
         const cv = root.querySelector(`.ed-el[data-el="${e.selEl}"]`);
         if (cv) cv.textContent = te.value;
-      };
+      }; }
       const sw = root.querySelector('[data-ed="img-swap"]');
-      if (sw) sw.onclick = () => { doc.scenes[e.sceneIdx].elements[e.selEl].label = '교체된 이미지 ✓'; PG.render(); };
+      if (sw) sw.onclick = () => { window.MK_AIED.run('이미지 교체'); PG.render(); };
       const dur = root.querySelector('[data-ed="dur"]');
       if (dur) dur.onchange = () => { doc.scenes[e.sceneIdx].duration = Math.max(1, Math.min(30, +dur.value || 1)); PG.render(); };
     },
