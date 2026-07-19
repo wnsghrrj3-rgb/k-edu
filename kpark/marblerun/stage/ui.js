@@ -72,7 +72,8 @@ export function createUI(root, handlers, tracks) {
       </div>
       <button id="mr-release" class="primary">🔵 방출</button>
       <button id="mr-reset">다시</button>
-      <button id="mr-cam">📷 전경</button>
+      <button id="mr-cam" title="전경 → 추적 → 마블캠(구슬 눈으로!)">📷 전경</button>
+      <button id="mr-slomo" title="슬로모션 — 구슬의 움직임을 자세히 보자">🐌 슬로모</button>
       <button id="mr-gobuild">🔨 다시 만들기</button>
     </div>
 
@@ -130,9 +131,16 @@ export function createUI(root, handlers, tracks) {
   $('#mr-release').addEventListener('click', handlers.onRelease);
   $('#mr-reset').addEventListener('click', () => { hideResult(); handlers.onReset(); });
   $('#mr-again').addEventListener('click', () => { hideResult(); handlers.onRelease(); });
+  const CAM_LABEL = { orbit: '📷 전경', follow: '📷 추적', marble: '🎥 마블캠' };
   camBtn.addEventListener('click', () => {
     const m = handlers.onToggleCamera();
-    camBtn.textContent = m === 'orbit' ? '📷 전경' : '📷 추적';
+    camBtn.textContent = CAM_LABEL[m] || '📷 전경';
+    if (m === 'marble') showHint('🎥 마블캠! 구슬의 눈으로 달린다', 'good');
+  });
+  const slomoBtn = $('#mr-slomo');
+  slomoBtn.addEventListener('click', () => {
+    const on = handlers.onSlomo();
+    slomoBtn.classList.toggle('on', !!on);
   });
 
   // ---- 표시 갱신 ----
@@ -226,6 +234,10 @@ export function createUI(root, handlers, tracks) {
   }
   function hideResult() { resultEl.classList.add('hidden'); }
 
+  /* 슬로모·카메라 표시를 바깥에서 리셋 (건설 모드 복귀 시) */
+  function setSlomo(on) { slomoBtn.classList.toggle('on', !!on); }
+  function setCamLabel(m) { camBtn.textContent = CAM_LABEL[m] || '📷 전경'; }
+
   /* 카메라가 사용자 조작으로 잠기면 🎯 버튼에 불이 들어온다 */
   function setCamLocked(locked) {
     recenterBtn.classList.toggle('lit', !!locked);
@@ -235,5 +247,5 @@ export function createUI(root, handlers, tracks) {
   wireLockedRunFeedback();
 
   setMarbleCount(1);
-  return { update, setMode, setBuildState, showResult, hideResult, showHint, hideHint, setCamLocked, setMarbleCount };
+  return { update, setMode, setBuildState, showResult, hideResult, showHint, hideHint, setCamLocked, setMarbleCount, setSlomo, setCamLabel };
 }

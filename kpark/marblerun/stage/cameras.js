@@ -1,5 +1,5 @@
 /* 케이파크 · 마블런 — stage/cameras.js
- * 전경(궤도) / 추적 카메라. 마블캠은 M3.
+ * 전경(궤도) / 추적 / 마블캠(M3, 구슬 1인칭).
  *
  * ── 카메라 설계 원칙 (v2, 실기기 피드백 반영) ──
  *  1. **사용자 시점을 빼앗지 않는다.**
@@ -39,6 +39,15 @@ export function createCameras(renderer, center) {
   const followOffset = new THREE.Vector3(0.22, 0.16, 0.22);
   const tmpTarget = new THREE.Vector3();
 
+  /* ── 마블캠 상태 ──
+   * 구슬 위치·진행방향을 지수 평활로 따라간다. 웨이포인트 꺾임·역행 반전에서
+   * 화면이 홱 돌지 않게 forward를 천천히 섞고, 카메라는 진행방향 뒤·살짝 위. */
+  const mFwd = new THREE.Vector3(1, 0, 0);
+  const mPos = new THREE.Vector3();
+  const mTmpF = new THREE.Vector3();
+  const mLook = new THREE.Vector3();
+  let mInit = false;
+
   const desired = orbit.target.clone();
 
   /* 사용자가 pan하면 desired를 손 위치에 동기화 — 자동 글라이드가 손을 되감지 않게 */
@@ -56,6 +65,7 @@ export function createCameras(renderer, center) {
   function setMode(m) {
     mode = m;
     orbit.enabled = m === 'orbit';
+    if (m === 'marble') mInit = false; // 진입 시 구슬 위치로 재초기화
   }
 
   /* 바라볼 점 지정. 카메라 위치는 건드리지 않는다 (상대 오프셋 유지). */
@@ -109,7 +119,7 @@ export function createCameras(renderer, center) {
     orbit.update();
   }
 
-  function update(marblePos) {
+  function update(marblePos, forward) {
     if (mode === 'orbit') {
       if (!orbit.target.equals(desired)) {
         const off = cam.position.clone().sub(orbit.target);
@@ -118,11 +128,32 @@ export function createCameras(renderer, center) {
         cam.position.copy(orbit.target).add(off);
       }
       orbit.update();
-    } else if (marblePos) {
+    } else if (mode === 'follow' && marblePos) {
       tmpTarget.set(marblePos.x, marblePos.y, marblePos.z);
       const want = tmpTarget.clone().add(followOffset);
       cam.position.lerp(want, 0.08);
       cam.lookAt(tmpTarget);
+    } else if (mode === 'marble' && marblePos) {
+      mTmpF.set(0, 0, 0);
+      if (forward) mTmpF.set(forward.x, forward.y || 0, forward.z);
+      if (mTmpF.lengthSq() < 1e-8) mTmpF.copy(mFwd);
+      mTmpF.normalize();
+      if (!mInit) {
+        mPos.set(marblePos.x, marblePos.y, marblePos.z);
+        mFwd.copy(mTmpF);
+        mInit = true;
+      }
+      mFwd.lerp(mTmpF, 0.09).normalize();          // 방향은 느긋하게
+      tmpTarget.set(marblePos.x, marblePos.y, marblePos.z);
+      mPos.lerp(tmpTarget, 0.38);                  // 위치는 바짝
+
+      // 카메라: 진행방향 뒤 8.5cm, 위 4.5cm — 바닥 아래로는 안 들어간다
+      cam.position.copy(mPos).addScaledVector(mFwd, -0.085);
+      cam.position.y = Math.max(mPos.y + 0.045, 0.02);
+      // 시선: 구슬 조금 앞 — 다음에 올 레일이 화면에 먼저 들어온다
+      mLook.copy(mPos).addScaledVector(mFwd, 0.16);
+      mLook.y += 0.006;
+      cam.lookAt(mLook);
     }
   }
 

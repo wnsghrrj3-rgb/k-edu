@@ -104,6 +104,8 @@
     background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 13px 20px;
     backdrop-filter: blur(8px); cursor: pointer; transition: transform .08s; }
   #mr-run button:active { transform: scale(0.94); }
+  #mr-slomo.on { border-color: var(--gold); color: var(--gold);
+    box-shadow: 0 0 0 2px rgba(255, 211, 92, 0.22); }
 
   /* ── 안내 ── */
   #mr-hint { position: absolute; top: 104px; left: 50%; transform: translateX(-50%); z-index: 5;
@@ -152,7 +154,7 @@
 import * as THREE from 'three';
 import { createRenderer, buildTrackMeshes, makeSlotMarker, updateSlotMarker, makeGhostMarble, makeMarble, updateSwitchFlipper } from './stage/renderer.js';
 import { createCameras } from './stage/cameras.js';
-import { ringBell, animateBell, updateBell, createConfetti, placeClick, thudSound, boomSound, boingSound, catchSound, flipSound } from './stage/fx.js';
+import { ringBell, animateBell, updateBell, createConfetti, placeClick, thudSound, boomSound, boingSound, catchSound, flipSound, createRollSound } from './stage/fx.js';
 import { createUI } from './stage/ui.js';
 
 const NS = window.MarbleSim;
@@ -332,6 +334,12 @@ function armRun() {
 }
 
 function setMode(m) {
+  if (m === 'build') {
+    slomo = false; ceremonyHold = 0; ui.setSlomo(false); roll.stop();
+    if (cams && cams.getMode() !== 'orbit') {   // 마블캠·추적으로 못 돌아가는 화면 방지
+      cams.setMode('orbit'); cams.frameAll(allTilePoints()); ui.setCamLabel('orbit');
+    }
+  }
   mode = m;
   ui.setMode(mode, comp);
   slotMarker.visible = false;
@@ -457,12 +465,15 @@ const ui = createUI(document.getElementById('ui'), {
   },
   onRelease() {
     ui.hideHint();
+    ceremonyHold = 0;
     armRun();
     multi.release();
   },
-  onReset() { ui.hideHint(); armRun(); },
+  onReset() { ui.hideHint(); ceremonyHold = 0; roll.stop(); armRun(); },
+  onSlomo() { slomo = !slomo; return slomo; },
   onToggleCamera() {
-    const next = cams.getMode() === 'orbit' ? 'follow' : 'orbit';
+    const order = ['orbit', 'follow', 'marble'];   // 전경 → 추적 → 마블캠
+    const next = order[(order.indexOf(cams.getMode()) + 1) % order.length];
     cams.setMode(next);
     if (next === 'orbit') cams.frameAll(allTilePoints());
     return next;
@@ -554,7 +565,26 @@ function leadMarble() {
 }
 
 // ── 메인 루프: 고정 틱 120Hz 시뮬 + rAF 렌더 ──
-const PLAYBACK = 0.28;
+const PLAYBACK = 0.28;          // 검수 확정 기준선 (불변)
+const SLOMO = 0.35;             // 🐌 수동 슬로모 배율
+const CEREMONY = 0.45;          // 골 직전 자동 드라마 배율
+let slomo = false;
+let ceremonyHold = 0;           // 골 세리머니 잔여 시간(초)
+let curRate = PLAYBACK;
+const roll = createRollSound();
+
+/* 골 직전 자동 슬로모 — 달리는 구슬이 결승 9cm 안에 들어오면 시간이 늘어진다.
+ * 시뮬은 그대로(결정론 불변), 화면·소리만 늘어난다. */
+function finishNear() {
+  if (!multi) return false;
+  for (const M of multi.marbles) {
+    if (!M.released || M.sim.status !== 'rolling' || M.sim.v <= 0) continue;
+    const rem = M.sim.pd.total - M.sim.s;
+    if (rem > 0 && rem < 0.09) return true;
+  }
+  return false;
+}
+
 let last = performance.now();
 let acc = 0;
 let clock = 0;
@@ -565,7 +595,10 @@ function frame(now) {
   const dtReal = Math.min((now - last) / 1000, 0.1);
   last = now;
   clock += dtReal;
-  acc += dtReal * PLAYBACK;
+  if (ceremonyHold > 0) ceremonyHold -= dtReal;
+  const drama = mode === 'run' && (ceremonyHold > 0 || finishNear());
+  curRate = mode === 'run' && slomo ? PLAYBACK * SLOMO : drama ? PLAYBACK * CEREMONY : PLAYBACK;
+  acc += dtReal * curRate;
 
   while (acc >= DT) {
     if (mode === 'run' && multi) {
@@ -615,7 +648,16 @@ function frame(now) {
           finishes.push({ m: ev.m, time: ev.ticks * DT, routeIdx: ev.routeIdx });
           const M = multi.marbles[ev.m];
           const p = M.sim.pos();
-          confetti.burst({ x: p.x, y: p.y + 0.04, z: p.z });
+          // 골 세리머니: 색종이 두 발 + 벨로 시선 글라이드 + 0.7초 여운 슬로모
+          confetti.burst({ x: p.x, y: p.y + 0.04, z: p.z }, 130);
+          confetti.burst({ x: p.x, y: p.y + 0.10, z: p.z }, 70);
+          ceremonyHold = 0.7;
+          const bellMesh = cur.bells.get(cur.routesData[ev.routeIdx].goalPieceIdx);
+          if (bellMesh && cams.getMode() === 'orbit') {
+            const wp = new THREE.Vector3();
+            bellMesh.getWorldPosition(wp);
+            cams.focus({ x: wp.x, y: wp.y, z: wp.z });   // 각도·줌 유지, 시선만 벨로
+          }
         }
         if (ev.type === 'alldone') {
           if (finishes.length > 0) {
@@ -656,13 +698,28 @@ function frame(now) {
       mesh.position.set(p.x, p.y, p.z);
       const t = M.sim.tangent();
       const axis = new THREE.Vector3(t.z, 0, -t.x);
-      if (axis.lengthSq() > 1e-12) mesh.rotateOnWorldAxis(axis.normalize(), (M.sim.speed() * dtReal * PLAYBACK) / C.MR);
+      if (axis.lengthSq() > 1e-12) mesh.rotateOnWorldAxis(axis.normalize(), (M.sim.speed() * dtReal * curRate) / C.MR);
     }
     for (const bell of cur.bells.values()) updateBell(bell, dtReal);
     // 플리퍼: 현재 스위치 상태를 가리킨다
     for (const [id, flipper] of cur.switches) updateSwitchFlipper(flipper, multi.states.get(id) || 0, dtReal);
     const lead = leadMarble();
-    cams.update(lead ? lead.sim.pos() : null);
+    let fwd = null;
+    if (lead) {
+      const t = lead.sim.tangent();
+      const sgn = lead.sim.status === 'rolling' && lead.sim.v < 0 ? -1 : 1;
+      fwd = { x: t.x * sgn, y: (t.y || 0) * sgn, z: t.z * sgn };
+    }
+    cams.update(lead ? lead.sim.pos() : null, fwd);
+    // 굴림음: 달리는 구슬 중 최고 속도 기준, 선두가 공중이면 바람 소리
+    let vNow = 0, airborne = false;
+    for (const M of multi.marbles) {
+      if (!M.released) continue;
+      const st = M.sim.status;
+      if (st === 'rolling' || st === 'air' || st === 'falling') vNow = Math.max(vNow, M.sim.speed());
+    }
+    if (lead) airborne = lead.sim.status === 'air' || lead.sim.status === 'falling';
+    if (vNow > 0) roll.update(vNow, airborne, curRate / PLAYBACK); else roll.stop();
     ui.update(lead ? lead.sim : { speed: () => 0, status: 'ready', v: 0 }, mode);
   } else {
     if (cur.ghostSim) {

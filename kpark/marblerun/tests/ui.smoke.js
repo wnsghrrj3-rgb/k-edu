@@ -1,5 +1,5 @@
 /* 케이파크 · 마블런 — tests/ui.smoke.js
- * jsdom UI 스모크 (M2b-2 → M2b-3 신호기 포함). 실행: jsdom 설치된 위치에서 node ui.smoke.js
+ * jsdom UI 스모크 (M2b 분기·합류 + M3 마블캠·슬로모). 실행: jsdom 설치된 위치에서 node ui.smoke.js
  * (jsdom은 임시 설치·제거 관례 — package.json 공용 파일 불변 유지) */
 'use strict';
 const { JSDOM } = require('jsdom');
@@ -121,6 +121,48 @@ T('🤝 합류 후 상태: 공유 꼬리에 이어 짓기 + 다시 만나는 길
   comp = NS.compile(st, [0]);
   assert(comp.ok && comp.ended && comp.routes.every(rt => rt.ended), '꼬리 이어 짓기 실패');
   assert(NS.unMerge(st.seq[1]) === false, '꼬리가 찼는데 unMerge 허용됨');
+});
+
+
+// ── M3 연출층 ──
+T('M3: 슬로모 버튼 존재 + 토글 시 on 클래스', () => {
+  let slomoOn = false;
+  const h = new Proxy({}, { get: (_, k) => {
+    if (k === 'onSlomo') return () => { slomoOn = !slomoOn; return slomoOn; };
+    return () => 'orbit';
+  } });
+  const ui = createUI(document.getElementById('ui'), h, NS.TRACKS);
+  const btn = document.querySelector('#mr-slomo');
+  assert(btn, '슬로모 버튼 없음');
+  btn.dispatchEvent(new dom.window.Event('click'));
+  assert(btn.classList.contains('on'), '켜짐 표시 없음');
+  btn.dispatchEvent(new dom.window.Event('click'));
+  assert(!btn.classList.contains('on'), '꺼짐 표시 실패');
+  ui.setSlomo(true);
+  assert(btn.classList.contains('on'), 'setSlomo(true) 실패');
+  ui.setSlomo(false);
+  assert(!btn.classList.contains('on'), 'setSlomo(false) 실패');
+});
+
+T('M3: 카메라 버튼 3모드 순환 라벨 (전경→추적→마블캠)', () => {
+  const modes = ['follow', 'marble', 'orbit'];   // 클릭마다 핸들러가 반환할 다음 모드
+  let i = 0;
+  const h = new Proxy({}, { get: (_, k) => {
+    if (k === 'onToggleCamera') return () => modes[i++ % modes.length];
+    if (k === 'onSlomo') return () => false;
+    return () => {};
+  } });
+  const ui = createUI(document.getElementById('ui'), h, NS.TRACKS);
+  const btn = document.querySelector('#mr-cam');
+  assert(btn.textContent.includes('전경'), '초기 라벨');
+  btn.dispatchEvent(new dom.window.Event('click'));
+  assert(btn.textContent.includes('추적'), '추적 라벨');
+  btn.dispatchEvent(new dom.window.Event('click'));
+  assert(btn.textContent.includes('마블캠'), '마블캠 라벨');
+  btn.dispatchEvent(new dom.window.Event('click'));
+  assert(btn.textContent.includes('전경'), '전경 복귀 라벨');
+  ui.setCamLabel('orbit');
+  assert(btn.textContent.includes('전경'), 'setCamLabel 실패');
 });
 
 console.log('\nUI 스모크: ' + pass + ' 통과, ' + fail + ' 실패');

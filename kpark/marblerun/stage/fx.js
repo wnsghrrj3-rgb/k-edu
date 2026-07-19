@@ -134,8 +134,48 @@ export function flipSound(dir) {
   o.start(t); o.stop(t + 0.08);
 }
 
-export function rollTickSound(v) {
-  // M3에서 굴림음 본격 구현 — M0는 벨만.
+/* ── 굴림음 (M3) ──
+ * 루프 노이즈 → 밴드패스 → 게인. 속도가 필터 주파수와 크기를 민다.
+ * 공중(air/falling)에선 높고 가는 바람 소리로 바뀐다.
+ * 슬로모 중엔 rateScale로 낮고 묵직해진다 — 귀로도 슬로모. */
+export function createRollSound() {
+  let started = false, gain = null, filt = null;
+  function ensure() {
+    const ac = ctx();
+    const len = Math.floor(ac.sampleRate * 1.4);
+    const buf = ac.createBuffer(1, len, ac.sampleRate);
+    const d = buf.getChannelData(0);
+    let lp = 0;
+    for (let i = 0; i < len; i++) {           // 갈색 잡음 근사 — 구르는 질감
+      lp = lp * 0.94 + (Math.random() * 2 - 1) * 0.06;
+      d[i] = lp * 6;
+    }
+    const src = ac.createBufferSource();
+    src.buffer = buf; src.loop = true;
+    filt = ac.createBiquadFilter();
+    filt.type = 'bandpass'; filt.Q.value = 0.9; filt.frequency.value = 260;
+    gain = ac.createGain(); gain.gain.value = 0;
+    src.connect(filt).connect(gain).connect(ac.destination);
+    src.start();
+    started = true;
+  }
+  function update(speed, airborne, rateScale) {
+    if (!started) {
+      if (speed < 0.02) return;
+      try { ensure(); } catch (e) { return; }
+    }
+    const ac = audioCtx;
+    const r = rateScale != null ? rateScale : 1;
+    const g = airborne ? 0.018 : Math.min(speed * 0.15, 0.12) * (0.55 + 0.45 * r);
+    const f = airborne ? 1400 + speed * 500 : (200 + speed * 620) * (0.6 + 0.4 * r);
+    gain.gain.setTargetAtTime(g, ac.currentTime, 0.06);
+    filt.frequency.setTargetAtTime(Math.max(80, f), ac.currentTime, 0.09);
+  }
+  function stop() {
+    if (!started) return;
+    gain.gain.setTargetAtTime(0.0001, audioCtx.currentTime, 0.1);
+  }
+  return { update, stop };
 }
 
 // ---- 타종 애니메이션 ----
