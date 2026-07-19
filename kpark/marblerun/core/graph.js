@@ -24,6 +24,7 @@
     const pt = require('./parts/basic.js');
     require('./parts/action.js');
     require('./parts/ballistic.js');
+    require('./parts/switchpart.js');
     return Object.assign({}, hx, pt);
   }
 
@@ -46,13 +47,14 @@
     if (starts.length !== 1) {
       errors.push({ code: 'START_COUNT', msg: '시작탑은 정확히 1개여야 함 (현재 ' + starts.length + ')' });
     }
-    if (errors.length) return { ok: false, errors, points: [], bowlIndexRanges: [], airIndexRanges: [], boostIndexRanges: [], launchMarks: [], order: [], pieceRanges: [] };
+    if (errors.length) return { ok: false, errors, points: [], bowlIndexRanges: [], airIndexRanges: [], boostIndexRanges: [], launchMarks: [], decideMarks: [], order: [], pieceRanges: [] };
 
     const points = [];
     const bowlIndexRanges = [];
     const airIndexRanges = [];
     const boostIndexRanges = [];
     const launchMarks = [];
+    const decideMarks = [];
     const pieceRanges = [];
     const order = [];
     const visited = new Set();
@@ -84,6 +86,7 @@
           i: i0 + m.i, iLand: i0 + m.iLand, angle: m.angle, boost: m.boost,
           catchR: m.catchR, wallR: m.wallR, wallH: m.wallH,
         });
+        else if (m.kind === 'decide') decideMarks.push({ i: i0 + m.i, piece: curIdx });
       }
 
       const exitPort = spec.exitPort(cur);
@@ -120,7 +123,7 @@
       errors.push({ code: 'NO_GOAL', msg: '골 벨에 도달하지 못함' });
     }
 
-    return { ok: errors.length === 0, errors, points, bowlIndexRanges, airIndexRanges, boostIndexRanges, launchMarks, order, pieceRanges };
+    return { ok: errors.length === 0, errors, points, bowlIndexRanges, airIndexRanges, boostIndexRanges, launchMarks, decideMarks, order, pieceRanges };
   }
 
   return { buildTrack };

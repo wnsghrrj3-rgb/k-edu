@@ -93,7 +93,13 @@
 
   /* ── 실행 모드 ── */
   #mr-run { position: absolute; bottom: max(20px, env(safe-area-inset-bottom)); left: 50%;
-    transform: translateX(-50%); display: flex; gap: 10px; }
+    transform: translateX(-50%); display: flex; gap: 10px; align-items: center; }
+  #mr-count { pointer-events: auto; display: flex; gap: 4px; background: var(--panel);
+    border: 1px solid var(--line); border-radius: 16px; padding: 5px 7px; backdrop-filter: blur(8px); }
+  #mr-count button { font: inherit; font-size: 17px; width: 38px; height: 38px; padding: 0;
+    color: var(--dim); background: transparent; border: 1px solid transparent; border-radius: 12px; cursor: pointer; }
+  #mr-count button.on { color: #04122e; background: linear-gradient(135deg, #2a6dff, #4de1ff); font-weight: 800; }
+  #mr-branch { border-color: #b84dff !important; color: #e2b8ff !important; }
   #mr-run button { pointer-events: auto; font: inherit; font-size: 15px; font-weight: 700; color: var(--text);
     background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 13px 20px;
     backdrop-filter: blur(8px); cursor: pointer; transition: transform .08s; }
@@ -123,8 +129,10 @@
 <script src="core/parts/basic.js"></script>
 <script src="core/parts/action.js"></script>
 <script src="core/parts/ballistic.js"></script>
+<script src="core/parts/switchpart.js"></script>
 <script src="core/graph.js"></script>
 <script src="core/sim.js"></script>
+<script src="core/multisim.js"></script>
 <script src="core/serialize.js"></script>
 <script src="core/tracks.js"></script>
 <script src="core/builder.js"></script>
@@ -140,14 +148,21 @@
 
 <script type="module">
 import * as THREE from 'three';
-import { createRenderer, buildTrackMeshes, makeSlotMarker, updateSlotMarker, makeGhostMarble } from './stage/renderer.js';
+import { createRenderer, buildTrackMeshes, makeSlotMarker, updateSlotMarker, makeGhostMarble, makeMarble, updateSwitchFlipper } from './stage/renderer.js';
 import { createCameras } from './stage/cameras.js';
-import { ringBell, animateBell, updateBell, createConfetti, placeClick, thudSound, boomSound, boingSound, catchSound } from './stage/fx.js';
+import { ringBell, animateBell, updateBell, createConfetti, placeClick, thudSound, boomSound, boingSound, catchSound, flipSound } from './stage/fx.js';
 import { createUI } from './stage/ui.js';
 
 const NS = window.MarbleSim;
 const C = NS.CONST;
 const TRACKS = NS.TRACKS;
+
+// 구슬 팔레트 (다중 방출 순서대로)
+const MARBLE_STYLES = [
+  { emoji: '🔵', color: 0x4de1ff, emissive: 0x0a6fa0 },
+  { emoji: '🩷', color: 0xff6bd6, emissive: 0x8a1560 },
+  { emoji: '🟡', color: 0xffd35c, emissive: 0x8a6200 },
+];
 
 // ── 스테이지 ──
 const canvas = document.getElementById('stage');
@@ -158,16 +173,25 @@ scene.add(slotMarker);
 const ghostMarble = makeGhostMarble(C);
 scene.add(ghostMarble);
 
-// ── 상태 ──
-let mode = 'build';                       // 'build' | 'run'
-let builderState = { startH: 3, seq: [] }; // 빌더 = 단일 소스
-let comp = null;                           // compile 결과
-let cur = null;                            // { track, pathData, sim, ghostSim, group, marble, bellMesh }
-let ghostWait = 0;
-let vMax = 0, startTick = 0;
-let launchTypes = [], launchIdx = 0, lastLaunchType = 'cannon';
+// 비활성 갈래 마커 (탭하면 그 갈래로 전환)
+let dimMarkers = new THREE.Group();
+scene.add(dimMarkers);
 
-/* 건설 프론티어 = 다음 부품이 놓일 자리. 시선이 따라가야 할 지점. */
+// ── 상태 ──
+let mode = 'build';                        // 'build' | 'run'
+let builderState = { startH: 3, seq: [] }; // 빌더 = 단일 소스 (seq 항목: 문자열 | 스위치 노드)
+let editLog = [];                          // 배치 이력: push된 배열 참조 목록 (undo용)
+let activeDecisions = [];                  // 활성 갈래 (스위치 선택 0/1 나열)
+let comp = null;                           // compile 결과
+let cur = null;                            // { routesData, group, bells, switches, activeRD, ghostSim }
+let multi = null;                          // MultiSim (실행 모드)
+let marbleMeshes = [];                     // 실행 중 구슬 메쉬
+let marbleCount = 1;
+let ghostWait = 0;
+let vMax = 0;
+let finishes = [];                         // [{m, time, routeIdx}]
+
+/* 건설 프론티어 = 활성 갈래의 다음 자리 */
 function frontierPoint() {
   if (!comp) return { x: 0, y: 0.08, z: 0 };
   const H = C.H;
@@ -203,35 +227,100 @@ function disposeGroup(group) {
   scene.remove(group);
 }
 
-/* 빌더 상태 → 컴파일 → 씬 재구성. 편집의 유일한 통로. */
+/* 잎 빌드 결과 → 렌더 entries (부품×방향 중복 제거, air 로컬 인덱스) */
+function computeRenderEntries(comp, routesData) {
+  const seen = new Set();
+  const entries = [];
+  for (const rd of routesData) {
+    for (const rg of rd.track.pieceRanges) {
+      const piece = rd.leafPieces[rg.pieceIndex];
+      const globalIdx = comp.routes[rd.routeIdx].pieceIdxs[rg.pieceIndex];
+      const key = globalIdx + ':' + (piece.dir != null ? piece.dir : '');
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const airLocal = new Set();
+      for (const ar of (rd.track.airIndexRanges || [])) {
+        const i0 = Math.max(ar.i0 + 1, rg.i0), i1 = Math.min(ar.i1 - 1, rg.i1);
+        for (let i = i0; i <= i1; i++) airLocal.add(i - rg.i0);
+      }
+      entries.push({ piece, pts: rd.track.points.slice(rg.i0, rg.i1 + 1), airLocal, globalIdx });
+    }
+  }
+  return entries;
+}
+
+/* 비활성 갈래 마커 재구성 */
+function rebuildDimMarkers() {
+  disposeGroup(dimMarkers);
+  dimMarkers = new THREE.Group();
+  scene.add(dimMarkers);
+  if (!comp || comp.routes.length < 2) return;
+  comp.routes.forEach((rt, ri) => {
+    if (ri === comp.activeRoute || rt.ended || !rt.next) return;
+    const c = NS.hexgrid.tileCenter(rt.next.q, rt.next.r, C.R);
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(C.R * 0.8, 0.0035, 8, 6),
+      new THREE.MeshBasicMaterial({ color: 0x4de1ff, transparent: true, opacity: 0.35 })
+    );
+    ring.rotation.x = Math.PI / 2;
+    ring.rotation.z = Math.PI / 6;
+    ring.position.set(c.x, rt.exitH * C.H + 0.012, c.z);
+    ring.userData.decisions = rt.decisions.map(d => d.dir);
+    dimMarkers.add(ring);
+  });
+}
+
+/* 빌더 상태 → 컴파일 → 잎 빌드 → 씬 재구성. 편집의 유일한 통로. */
 function rebuild(recenter) {
-  comp = NS.compile(builderState);
-  const track = NS.buildTrack(comp.pieces, null, { allowNoGoal: true });
+  comp = NS.compile(builderState, activeDecisions);
+  activeDecisions = comp.routes[comp.activeRoute] ? comp.routes[comp.activeRoute].decisions.map(d => d.dir) : [];
+  const cr = NS.compileRoutes(comp, { allowNoGoal: true });
+  const routesData = cr.routesData;
   if (cur) disposeGroup(cur.group);
-  const pathData = NS.buildPathData(track.points, track.bowlIndexRanges,
-    { airIndexRanges: track.airIndexRanges, boostIndexRanges: track.boostIndexRanges,
-      launchMarks: track.launchMarks });
-  const { group, marble } = buildTrackMeshes(comp.pieces, track, C);
+  const entries = computeRenderEntries(comp, routesData);
+  const { group, bells, switches } = buildTrackMeshes(comp.pieces, entries, C);
   scene.add(group);
+  // 발사 지점 s → 부품 타입 (대포/트램펄린 사운드 구분)
+  for (const rd of routesData) {
+    rd.launchTypeAt = (rd.track.launchMarks || []).map(mk => {
+      const rg = rd.track.pieceRanges.find(r => mk.i >= r.i0 && mk.i <= r.i1);
+      return { s: rd.pd.cum[mk.i], type: rg ? rd.leafPieces[rg.pieceIndex].type : 'cannon' };
+    });
+  }
+  const activeRD = routesData.find(rd => rd.routeIdx === comp.activeRoute) || routesData[0];
   cur = {
-    track, pathData,
-    sim: new NS.Sim(pathData),
-    ghostSim: new NS.Sim(pathData),
-    group, marble,
-    bellMesh: group.getObjectByName('bell'),
+    routesData, group, bells, switches, activeRD,
+    ghostSim: activeRD ? new NS.Sim(activeRD.pd) : null,
   };
-  const p = cur.sim.pos();
-  marble.position.set(p.x, p.y, p.z);
-  cur.ghostSim.release(0);
+  if (cur.ghostSim) cur.ghostSim.release(0);
   ghostWait = 0;
-  launchTypes = comp.pieces.filter(p => p.type === 'cannon' || p.type === 'trampoline').map(p => p.type);
-  launchIdx = 0;
+  rebuildDimMarkers();
   ui.setBuildState(comp, NS.canPlace);
   if (cams) {
-    // 평소엔 카메라를 건드리지 않는다. 새 부품이 화면 밖일 때만 시선을 옮긴다.
     if (recenter) cams.frameAll(allTilePoints());
     else cams.ensureVisible(frontierPoint());
   }
+}
+
+/* 실행 준비: MultiSim + 구슬 메쉬 */
+function armRun() {
+  multi = new NS.MultiSim(cur.routesData, { count: marbleCount });
+  multi.reset();
+  for (const m of marbleMeshes) {
+    cur.group.remove(m);
+    if (m.geometry) m.geometry.dispose();
+    if (m.material) m.material.dispose();
+  }
+  marbleMeshes = [];
+  for (let i = 0; i < marbleCount; i++) {
+    const st = MARBLE_STYLES[i % MARBLE_STYLES.length];
+    const mesh = makeMarble(C, st.color, st.emissive);
+    mesh.visible = false;
+    cur.group.add(mesh);
+    marbleMeshes.push(mesh);
+  }
+  vMax = 0;
+  finishes = [];
 }
 
 function setMode(m) {
@@ -239,30 +328,63 @@ function setMode(m) {
   ui.setMode(mode, comp);
   slotMarker.visible = false;
   ghostMarble.visible = false;
+  dimMarkers.visible = mode === 'build';
   if (mode === 'run') {
-    cur.sim.reset();
-    const p = cur.sim.pos();
-    cur.marble.position.set(p.x, p.y, p.z);
-    cur.marble.visible = true;
+    armRun();
   } else {
-    cur.marble.visible = false;
-    cur.ghostSim.release(0);
+    for (const mm of marbleMeshes) mm.visible = false;
+    multi = null;
+    if (cur.ghostSim) cur.ghostSim.release(0);
   }
+}
+
+/* 갈래 리스트에서 다음 열린 갈래로 순환 */
+function cycleBranch() {
+  const open = comp.routes.filter(rt => !rt.ended);
+  if (open.length < 2) return;
+  const curIdx = open.findIndex(rt => rt === comp.routes[comp.activeRoute]);
+  const next = open[(curIdx + 1) % open.length];
+  activeDecisions = next.decisions.map(d => d.dir);
+  rebuild(false);
+  cams.ensureVisible(frontierPoint());
+}
+
+/* 프리셋 seq(중첩 포함) 딥카피 + 편집 로그 재구성 (DFS) */
+function cloneSeq(seq) { return JSON.parse(JSON.stringify(seq)); }
+function rebuildLog(seq, log) {
+  for (const item of seq) {
+    log.push(seq);
+    if (item && typeof item === 'object' && item.type === 'switch') {
+      rebuildLog(item.left || [], log);
+      rebuildLog(item.right || [], log);
+    }
+  }
+  return log;
 }
 
 // ── UI ──
 const ui = createUI(document.getElementById('ui'), {
   onAppend(type) {
     if (!NS.canPlace(comp, type)) return;
-    builderState.seq.push(type);
+    const route = comp.routes[comp.activeRoute];
+    const item = type === 'switch' ? { type: 'switch', left: [], right: [] } : type;
+    route.seqRef.push(item);
+    editLog.push(route.seqRef);
+    if (type === 'switch') activeDecisions = activeDecisions.concat([0]); // 왼길부터
     placeClick();
     rebuild(false);
+    if (type === 'switch') ui.showHint('🔀 갈림길! 왼길부터 짓자 — 오른길은 갈래 버튼으로', 'good');
   },
   onUndo() {
-    if (builderState.seq.length > 0) { builderState.seq.pop(); rebuild(false); }
+    if (editLog.length === 0) return;
+    const arr = editLog.pop();
+    arr.pop();
+    rebuild(false);
   },
   onClear() {
     builderState = { startH: builderState.startH, seq: [] };
+    editLog = [];
+    activeDecisions = [];
     rebuild(true);
   },
   onStartH(delta) {
@@ -274,48 +396,78 @@ const ui = createUI(document.getElementById('ui'), {
     rebuild(false);
   },
   onSelectPreset(i) {
-    builderState = { startH: TRACKS[i].startH, seq: TRACKS[i].seq.slice() };
+    builderState = { startH: TRACKS[i].startH, seq: cloneSeq(TRACKS[i].seq) };
+    editLog = rebuildLog(builderState.seq, []);
+    activeDecisions = [];
+    marbleCount = TRACKS[i].marbles || 1;
+    ui.setMarbleCount(marbleCount);
     rebuild(true);
-    if (mode === 'run') setMode('run'); // 실행 중 프리셋 교체 시 시뮬 리셋
+    if (mode === 'run') setMode('run');
+  },
+  onBranch() { cycleBranch(); },
+  onMarbleCount(n) {
+    marbleCount = n;
+    if (mode === 'run') armRun();
   },
   onMode(m) {
     if (m === 'run' && !comp.ended) {
-      // 골 벨이 없어도 실행을 막지 않는다 — 놓을 수 있으면 자동으로 놓아준다.
-      if (!NS.canPlace(comp, 'goal')) {
-        ui.showHint('앞이 막혀서 골 벨을 놓을 자리가 없어 — ↩ 되돌리기로 물러나자', 'warn');
+      // 열린 갈래 전부에 골 벨을 자동으로 놓아줄 수 있으면 놓아준다.
+      const open = comp.routes.filter(rt => !rt.ended);
+      if (open.some(rt => !NS.canPlaceRoute(comp, rt, 'goal'))) {
+        ui.showHint('앞이 막힌 갈래가 있어서 골 벨을 못 놓아 — ↩ 되돌리기로 물러나자', 'warn');
         return;
       }
-      builderState.seq.push('goal');
+      for (const rt of open) { rt.seqRef.push('goal'); editLog.push(rt.seqRef); }
       rebuild(false);
-      ui.showHint('🔔 골 벨을 끝에 놓아줬어!', 'good');
+      ui.showHint(open.length > 1 ? '🔔 갈래마다 골 벨을 놓아줬어!' : '🔔 골 벨을 끝에 놓아줬어!', 'good');
     }
     setMode(m);
   },
   onRelease() {
     ui.hideHint();
-    cur.sim.release(0);
-    vMax = 0;
-    launchIdx = 0;
-    startTick = cur.sim.tick;
+    armRun();
+    multi.release();
   },
-  onReset() { ui.hideHint(); cur.sim.reset(); },
+  onReset() { ui.hideHint(); armRun(); },
   onToggleCamera() {
     const next = cams.getMode() === 'orbit' ? 'follow' : 'orbit';
     cams.setMode(next);
-    if (next === 'orbit') cams.frameAll(cur ? cur.track.points : allTilePoints());
+    if (next === 'orbit') cams.frameAll(allTilePoints());
     return next;
   },
-  /* 🎯 시점 되돌리기 — 손으로 옮겨둔 화면을 짓고 있는 끝으로 되돌린다 */
   onRecenter() {
     if (!cams) return;
-    if (mode === 'run') cams.frameAll(cur ? cur.track.points : allTilePoints());
+    if (mode === 'run') cams.frameAll(allTilePoints());
     else cams.recenter(frontierPoint());
   },
-  /* 🗺 트랙 전체 보기 */
   onFrameAll() {
     if (cams) cams.frameAll(allTilePoints());
   },
 }, TRACKS);
+
+// ── 갈래 마커 탭 전환 (드래그와 구분: 6px 이동 이내) ──
+const raycaster = new THREE.Raycaster();
+let downXY = null;
+canvas.addEventListener('pointerdown', (e) => { downXY = { x: e.clientX, y: e.clientY }; });
+canvas.addEventListener('pointerup', (e) => {
+  if (!downXY || mode !== 'build') { downXY = null; return; }
+  const moved = Math.hypot(e.clientX - downXY.x, e.clientY - downXY.y);
+  downXY = null;
+  if (moved > 6 || dimMarkers.children.length === 0) return;
+  const ndc = new THREE.Vector2(
+    (e.clientX / window.innerWidth) * 2 - 1,
+    -(e.clientY / window.innerHeight) * 2 + 1
+  );
+  raycaster.setFromCamera(ndc, cams.cam);
+  raycaster.params.Line = raycaster.params.Line || {};
+  const hits = raycaster.intersectObjects(dimMarkers.children, false);
+  if (hits.length > 0) {
+    activeDecisions = hits[0].object.userData.decisions.slice();
+    rebuild(false);
+    cams.ensureVisible(frontierPoint());
+    ui.showHint('이 갈래를 이어서 짓자!', 'good');
+  }
+});
 
 // ── 초기화 ──
 let cams = null;
@@ -334,8 +486,26 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
+/* 벨 라벨: 골 부품 등장 순서대로 A·B·C… */
+function bellLabel(goalPieceIdx) {
+  const goals = [...cur.bells.keys()].sort((a, b) => a - b);
+  const i = goals.indexOf(goalPieceIdx);
+  return '🔔' + (goals.length > 1 ? String.fromCharCode(65 + Math.max(0, i)) : '');
+}
+
+/* 선두 구슬 = 방출된 것 중 아직 달리는 첫 구슬 (없으면 마지막 방출) */
+function leadMarble() {
+  if (!multi) return null;
+  let lastReleased = null;
+  for (const M of multi.marbles) {
+    if (!M.released) continue;
+    lastReleased = M;
+    if (M.sim.status === 'rolling' || M.sim.status === 'air' || M.sim.status === 'falling') return M;
+  }
+  return lastReleased;
+}
+
 // ── 메인 루프: 고정 틱 120Hz 시뮬 + rAF 렌더 ──
-// PLAYBACK: 재생 배속 (물리 불변·재생만 감속 — 테스트·결정론 무영향)
 const PLAYBACK = 0.28;
 let last = performance.now();
 let acc = 0;
@@ -350,13 +520,27 @@ function frame(now) {
   acc += dtReal * PLAYBACK;
 
   while (acc >= DT) {
-    if (mode === 'run') {
-      const events = cur.sim.step();
+    if (mode === 'run' && multi) {
+      const events = multi.step();
       for (const ev of events) {
-        if (ev.type === 'launch') { lastLaunchType = launchTypes[launchIdx] || 'cannon'; launchIdx++; }
-        if (ev.type === 'bell') { ringBell(); animateBell(cur.bellMesh); }
-        if (ev.type === 'detach') ui.showHint('앗! 구슬이 레일에서 떨어졌어 — 속도가 부족해!', 'warn');
-        if (ev.type === 'launch') { (lastLaunchType === 'trampoline' ? boingSound : boomSound)(); ui.hideHint(); }
+        if (ev.type === 'bell') {
+          ringBell();
+          const M = multi.marbles[ev.m];
+          const bell = cur.bells.get(cur.routesData[M.routeIdx].goalPieceIdx);
+          if (bell) animateBell(bell);
+        }
+        if (ev.type === 'switch') {
+          flipSound(ev.dir);
+          const st = MARBLE_STYLES[ev.m % MARBLE_STYLES.length];
+          ui.showHint(st.emoji + ' ' + (ev.dir === 0 ? '왼길로! 스위치가 딸깍 — 다음은 오른길' : '오른길로! 스위치가 딸깍 — 다음은 왼길'), 'good');
+        }
+        if (ev.type === 'launch') {
+          const M = multi.marbles[ev.m];
+          const rd = cur.routesData[M.routeIdx];
+          const hit = (rd.launchTypeAt || []).find(L => Math.abs(L.s - ev.s) < 1e-6);
+          ((hit && hit.type === 'trampoline') ? boingSound : boomSound)();
+          ui.hideHint();
+        }
         if (ev.type === 'catch') {
           catchSound(ev.wall);
           ui.showHint(ev.wall ? '🧱 뒷벽에 맞고 툭! 아슬아슬하게 들어갔다' : '🎯 착지대에 쏙! 완벽한 발사', 'good');
@@ -364,20 +548,33 @@ function frame(now) {
         if (ev.type === 'miss') {
           ui.showHint(ev.over ? '💨 너무 빨라서 착지대를 훌쩍 넘어버렸어!' : '💧 속도가 모자라 착지대에 못 미쳤어!', 'warn');
         }
-        if (ev.type === 'crash') { thudSound(); }
-        if (ev.type === 'goal') {
-          const p = cur.sim.pos();
+        if (ev.type === 'detach') ui.showHint('앗! 구슬이 레일에서 떨어졌어 — 속도가 부족해!', 'warn');
+        if (ev.type === 'crash') thudSound();
+        if (ev.type === 'finish') {
+          finishes.push({ m: ev.m, time: ev.ticks * DT, routeIdx: ev.routeIdx });
+          const M = multi.marbles[ev.m];
+          const p = M.sim.pos();
           confetti.burst({ x: p.x, y: p.y + 0.04, z: p.z });
-          ui.showResult({
-            time: (cur.sim.tick - startTick) * DT,
-            vMax,
-            length: cur.pathData.total,
-          });
+        }
+        if (ev.type === 'alldone') {
+          if (finishes.length > 0) {
+            if (multi.count === 1) {
+              ui.showResult({ time: finishes[0].time, vMax, length: cur.routesData[finishes[0].routeIdx].pd.total });
+            } else {
+              ui.showResult({
+                marbles: finishes.slice().sort((a, b) => a.m - b.m).map(f => ({
+                  emoji: MARBLE_STYLES[f.m % MARBLE_STYLES.length].emoji,
+                  bell: bellLabel(cur.routesData[f.routeIdx].goalPieceIdx),
+                  time: f.time,
+                })),
+                vMax,
+              });
+            }
+          }
         }
       }
-      if (cur.sim.speed() > vMax) vMax = cur.sim.speed();
-    } else {
-      // 고스트 구슬: 조용히 반복 주행 (벨·연출 없음)
+      for (const M of multi.marbles) if (M.released && M.sim.speed() > vMax) vMax = M.sim.speed();
+    } else if (mode === 'build' && cur.ghostSim) {
       if (cur.ghostSim.status === 'rolling') cur.ghostSim.step();
       else {
         ghostWait += DT;
@@ -387,24 +584,38 @@ function frame(now) {
     acc -= DT;
   }
 
-  if (mode === 'run') {
-    const p = cur.sim.pos();
-    cur.marble.position.set(p.x, p.y, p.z);
-    const t = cur.sim.tangent();
-    const axis = new THREE.Vector3(t.z, 0, -t.x);
-    if (axis.lengthSq() > 1e-12) cur.marble.rotateOnWorldAxis(axis.normalize(), (cur.sim.speed() * dtReal * PLAYBACK) / C.MR);
-    updateBell(cur.bellMesh, dtReal);
-    cams.update(p);
+  if (mode === 'run' && multi) {
+    for (let i = 0; i < multi.marbles.length; i++) {
+      const M = multi.marbles[i];
+      const mesh = marbleMeshes[i];
+      if (!mesh) continue;
+      mesh.visible = M.released;
+      if (!M.released) continue;
+      const p = M.sim.pos();
+      mesh.position.set(p.x, p.y, p.z);
+      const t = M.sim.tangent();
+      const axis = new THREE.Vector3(t.z, 0, -t.x);
+      if (axis.lengthSq() > 1e-12) mesh.rotateOnWorldAxis(axis.normalize(), (M.sim.speed() * dtReal * PLAYBACK) / C.MR);
+    }
+    for (const bell of cur.bells.values()) updateBell(bell, dtReal);
+    // 플리퍼: 현재 스위치 상태를 가리킨다
+    for (const [id, flipper] of cur.switches) updateSwitchFlipper(flipper, multi.states.get(id) || 0, dtReal);
+    const lead = leadMarble();
+    cams.update(lead ? lead.sim.pos() : null);
+    ui.update(lead ? lead.sim : { speed: () => 0, status: 'ready', v: 0 }, mode);
   } else {
-    const gp = cur.ghostSim.pos();
-    ghostMarble.position.set(gp.x, gp.y, gp.z);
-    ghostMarble.visible = cur.ghostSim.status === 'rolling';
+    if (cur.ghostSim) {
+      const gp = cur.ghostSim.pos();
+      ghostMarble.position.set(gp.x, gp.y, gp.z);
+      ghostMarble.visible = cur.ghostSim.status === 'rolling';
+    }
     updateSlotMarker(slotMarker, C, comp.ended ? null : comp.next, comp.exitH, clock);
+    for (const [, flipper] of cur.switches) updateSwitchFlipper(flipper, 0, dtReal);
+    dimMarkers.children.forEach(m => { m.material.opacity = 0.28 + 0.14 * Math.sin(clock * 3); });
     cams.update(null);
   }
 
   confetti.update(dtReal);
-  ui.update(cur.sim, mode);
   renderer.render(scene, cams.cam);
 }
 requestAnimationFrame(frame);

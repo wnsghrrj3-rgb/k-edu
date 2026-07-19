@@ -76,8 +76,10 @@ function makeStars() {
   return new THREE.Points(g, new THREE.PointsMaterial({ color: 0xaebbff, size: 0.012, sizeAttenuation: true, transparent: true, opacity: 0.8 }));
 }
 
-/** 트랙 전체 빌드. 반환: { group, marble, bellMesh } */
-export function buildTrackMeshes(pieces, track, C) {
+/** 트랙 전체 빌드 (M2b-2: 잎 합집합 entries 기반).
+ * entries: [{ piece, pts, airLocal:Set, globalIdx }] — 스위치는 좌/우 두 entry (Y 분기 레일)
+ * 반환: { group, bells: Map(pieceIdx→벨), switches: Map(pieceIdx→플리퍼) } */
+export function buildTrackMeshes(pieces, entries, C) {
   const NS = window.MarbleSim;
   const hx = NS.hexgrid;
   const group = new THREE.Group();
@@ -148,37 +150,115 @@ export function buildTrackMeshes(pieces, track, C) {
   const boostMat = new THREE.MeshStandardMaterial({
     color: 0xffb020, emissive: 0xff7a00, emissiveIntensity: 0.9, roughness: 0.25, metalness: 0.5,
   });
-  const airSet = new Set();
-  for (const ar of (track.airIndexRanges || [])) {
-    for (let i = ar.i0 + 1; i < ar.i1; i++) airSet.add(i); // 내부만 (팁·착지는 레일에 포함)
-  }
-  for (const rg of track.pieceRanges) {
-    const piece = pieces[rg.pieceIndex];
-    const raw = track.points.slice(rg.i0, rg.i1 + 1);
+  const bells = new Map();
+  const switches = new Map();
+  const decorated = new Set(); // 부품 장식(탑·벨·플리퍼 등)은 전역 인덱스당 한 번만
+
+  for (const en of entries) {
+    const piece = en.piece;
+    const raw = en.pts;
     const mat = piece.type === 'booster' ? boostMat : railMat;
-    if (raw.length >= 2) group.add(buildRails(raw, C, mat, tieMat, rg.i0, airSet));
+    if (raw.length >= 2) group.add(buildRails(raw, C, mat, tieMat, 0, en.airLocal));
+    if (decorated.has(en.globalIdx)) continue;
+    decorated.add(en.globalIdx);
     if (piece.type === 'start') group.add(makeTower(piece, C, hx));
-    if (piece.type === 'goal') group.add(makeGoal(piece, C, hx));
+    if (piece.type === 'goal') {
+      const g = makeGoal(piece, C, hx);
+      group.add(g);
+      bells.set(en.globalIdx, g.getObjectByName('bell'));
+    }
     if (piece.type === 'gyro') group.add(makeGyroPole(piece, C, hx));
+    if (piece.type === 'switch') {
+      const f = makeSwitch(piece, C, hx);
+      group.add(f);
+      switches.set(en.globalIdx, f.getObjectByName('flipper'));
+    }
     if (piece.type === 'cannon' || piece.type === 'trampoline') {
       group.add(makeBallistic(piece, C, hx, NS));
-      const arc = track.points.slice(rg.i0 + 1, rg.i1); // 설계 조준 궤적
+      const arc = raw.slice(1, raw.length - 1); // 설계 조준 궤적
       if (arc.length >= 2) group.add(makeAimArc(arc));
     }
   }
 
-  // 구슬
+  return { group, bells, switches };
+}
+
+/* 구슬 생성 — 다중 구슬용. colorHex 지정 시 발광도 맞춰 물들인다. */
+export function makeMarble(C, colorHex, emissiveHex) {
   const marble = new THREE.Mesh(
     new THREE.SphereGeometry(C.MR, 24, 16),
-    new THREE.MeshStandardMaterial({ color: COLOR.marble, emissive: 0x0a6fa0, emissiveIntensity: 0.6, roughness: 0.15, metalness: 0.3 })
+    new THREE.MeshStandardMaterial({
+      color: colorHex != null ? colorHex : COLOR.marble,
+      emissive: emissiveHex != null ? emissiveHex : 0x0a6fa0,
+      emissiveIntensity: 0.6, roughness: 0.15, metalness: 0.3,
+    })
   );
   marble.castShadow = true;
-  const glow = new THREE.PointLight(0x4de1ff, 0.5, 0.25);
+  const glow = new THREE.PointLight(colorHex != null ? colorHex : 0x4de1ff, 0.5, 0.25);
   marble.add(glow);
-  group.add(marble);
+  return marble;
+}
 
-  const bellMesh = group.getObjectByName('bell') || null;
-  return { group, marble, bellMesh };
+/* 🔀 스위치: 분기 원판 + 플리퍼 암.
+ * 플리퍼는 중심에서 현재 방향의 출구 포트를 가리킨다. userData.yaw = {0: 왼, 1: 오} */
+function makeSwitch(piece, C, hx) {
+  const g = new THREE.Group();
+  const c = hx.tileCenter(piece.q, piece.r, C.R);
+  const y = piece.h * C.H;
+  // 분기 원판 (발광 링)
+  const disc = new THREE.Mesh(
+    new THREE.CylinderGeometry(C.R * 0.34, C.R * 0.38, 0.006, 24),
+    new THREE.MeshStandardMaterial({ color: 0x22306b, emissive: 0x4de1ff, emissiveIntensity: 0.22, roughness: 0.4, metalness: 0.3 })
+  );
+  disc.position.set(c.x, y + 0.003, c.z);
+  g.add(disc);
+  const rim = new THREE.Mesh(
+    new THREE.TorusGeometry(C.R * 0.36, 0.0022, 8, 24),
+    new THREE.MeshStandardMaterial({ color: 0xb84dff, emissive: 0xb84dff, emissiveIntensity: 0.8, roughness: 0.3 })
+  );
+  rim.rotation.x = Math.PI / 2;
+  rim.position.set(c.x, y + 0.007, c.z);
+  g.add(rim);
+
+  // 좌/우 출구 방향 yaw (Three.js yaw = atan2(x, z))
+  const yawOf = (port) => {
+    const d = hx.portDir(piece.q, piece.r, port, C.R);
+    return Math.atan2(d.x, d.z);
+  };
+  const yawL = yawOf((piece.rot + 2) % 6);
+  const yawR = yawOf((piece.rot + 4) % 6);
+
+  // 플리퍼 암: 중심 피벗, 화살촉 모양으로 출구를 가리킨다
+  const flipper = new THREE.Group();
+  flipper.name = 'flipper';
+  const armMat = new THREE.MeshStandardMaterial({ color: 0xffd35c, emissive: 0xb87400, emissiveIntensity: 0.7, roughness: 0.25, metalness: 0.6 });
+  const arm = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.005, C.R * 0.52), armMat);
+  arm.position.z = C.R * 0.26;
+  arm.castShadow = true;
+  flipper.add(arm);
+  const tip = new THREE.Mesh(new THREE.ConeGeometry(0.0075, 0.016, 4), armMat);
+  tip.rotation.x = Math.PI / 2;
+  tip.rotation.y = Math.PI / 4;
+  tip.position.z = C.R * 0.52 + 0.006;
+  tip.castShadow = true;
+  flipper.add(tip);
+  flipper.position.set(c.x, y + 0.011, c.z);
+  flipper.rotation.y = yawL; // 초기 = 왼길
+  flipper.userData.yaw = { 0: yawL, 1: yawR };
+  flipper.userData.targetDir = 0;
+  g.add(flipper);
+  return g;
+}
+
+/* 플리퍼를 목표 방향으로 러프 회전 (프레임 루프에서 호출) */
+export function updateSwitchFlipper(flipper, dir, dt) {
+  if (!flipper) return;
+  flipper.userData.targetDir = dir;
+  const target = flipper.userData.yaw[dir];
+  let diff = target - flipper.rotation.y;
+  while (diff > Math.PI) diff -= Math.PI * 2;
+  while (diff < -Math.PI) diff += Math.PI * 2;
+  flipper.rotation.y += diff * Math.min(1, dt * 14);
 }
 
 /* 두 줄 레일 + 침목: 구슬이 레일 사이에 얹혀 내려가는 게 읽히도록.

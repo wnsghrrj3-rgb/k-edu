@@ -44,6 +44,7 @@ export function createUI(root, handlers, tracks) {
         <div class="prow">
           <button data-part="cannon" title="3칸 건너 착지대로 발사! 속도가 모자라면 못 건넌다">💥<span>대포</span></button>
           <button data-part="trampoline" title="2칸 건너 착지대로 튕겨 보낸다">🤸<span>트램펄린</span></button>
+          <button data-part="switch" title="갈림길! 구슬이 지날 때마다 방향이 딸깍 바뀐다">🔀<span>스위치</span></button>
         </div>
       </div>
       <div id="mr-buildops">
@@ -55,6 +56,7 @@ export function createUI(root, handlers, tracks) {
         </div>
         <button id="mr-recenter" title="짓고 있는 자리로 화면 되돌리기">🎯</button>
         <button id="mr-frameall" title="트랙 전체 보기">🗺</button>
+        <button id="mr-branch" class="hidden" title="다른 갈래로 전환 — 초록 링을 직접 눌러도 돼">🔀 갈래</button>
         <button id="mr-undo">↩ 되돌리기</button>
         <button id="mr-clear">🗑 처음부터</button>
         <button id="mr-gorun" class="primary">▶ 실행하기</button>
@@ -63,6 +65,9 @@ export function createUI(root, handlers, tracks) {
 
     <!-- 실행 모드 -->
     <div id="mr-run" class="hidden">
+      <div id="mr-count" title="구슬 몇 개를 굴릴까?">
+        <button data-n="1">①</button><button data-n="2">②</button><button data-n="3">③</button>
+      </div>
       <button id="mr-release" class="primary">🔵 방출</button>
       <button id="mr-reset">다시</button>
       <button id="mr-cam">📷 전경</button>
@@ -101,6 +106,18 @@ export function createUI(root, handlers, tracks) {
   recenterBtn.addEventListener('click', () => { recenterBtn.classList.remove('lit'); handlers.onRecenter(); });
   $('#mr-frameall').addEventListener('click', handlers.onFrameAll);
   $('#mr-undo').addEventListener('click', handlers.onUndo);
+  const branchBtn = $('#mr-branch');
+  branchBtn.addEventListener('click', handlers.onBranch);
+  const countBtns = Array.from(root.querySelectorAll('#mr-count button'));
+  countBtns.forEach(b => b.addEventListener('click', () => {
+    setMarbleCount(parseInt(b.dataset.n, 10));
+    handlers.onMarbleCount(parseInt(b.dataset.n, 10));
+  }));
+  function setMarbleCount(n) {
+    countBtns.forEach(b => b.classList.toggle('on', parseInt(b.dataset.n, 10) === n));
+    const rel = $('#mr-release');
+    rel.textContent = n === 1 ? '🔵 방출' : '🔵'.repeat(Math.min(n, 3)) + ' 방출';
+  }
   $('#mr-clear').addEventListener('click', () => { trackSel.value = '-1'; descEl.textContent = ''; handlers.onClear(); });
   $('#mr-h-minus').addEventListener('click', () => handlers.onStartH(-1));
   $('#mr-h-plus').addEventListener('click', () => handlers.onStartH(1));
@@ -142,9 +159,14 @@ export function createUI(root, handlers, tracks) {
     const goalBtn = paletteBtns.find(b => b.dataset.part === 'goal');
     if (goalBtn) goalBtn.classList.remove('nudge');
 
-    if (comp.ended) showHint('트랙 완성! ▶ 실행하기를 눌러봐', 'good');
+    const multi = comp.routes && comp.routes.length > 1;
+    branchBtn.classList.toggle('hidden', !multi);
+    const openCnt = multi ? comp.routes.filter(rt => !rt.ended).length : 0;
+
+    if (comp.ended) showHint(multi ? '갈래 전부 완성! 구슬 여러 개로 굴려봐 🔀' : '트랙 완성! ▶ 실행하기를 눌러봐', 'good');
     else if (comp.next && comp.next.blocked) showHint('막다른 길! ↩ 되돌리기로 물러나자', 'warn');
     else if (comp.exitH < 1) showHint('바닥에 닿았어 — 경사는 더 못 놓아', 'info');
+    else if (multi && openCnt > 1) showHint('갈래가 ' + openCnt + '개 열려 있어 — 🔀 갈래 버튼이나 초록 링으로 오가며 짓자', 'info');
     else hideHint();
   }
 
@@ -177,10 +199,17 @@ export function createUI(root, handlers, tracks) {
   function hideHint() { hintEl.classList.add('hidden'); }
 
   function showResult(stats) {
-    resultBody.innerHTML =
-      '⏱ 완주 시간 <b>' + stats.time.toFixed(2) + '초</b><br>' +
-      '🚀 최고 속도 <b>' + stats.vMax.toFixed(2) + ' m/s</b><br>' +
-      '📏 트랙 길이 <b>' + (stats.length * 100).toFixed(0) + ' cm</b>';
+    if (stats.marbles && stats.marbles.length > 1) {
+      const rows = stats.marbles.map(mb =>
+        mb.emoji + ' ' + mb.bell + ' 도착 <b>' + mb.time.toFixed(2) + '초</b>').join('<br>');
+      resultBody.innerHTML = rows +
+        '<br>🚀 최고 속도 <b>' + stats.vMax.toFixed(2) + ' m/s</b>';
+    } else {
+      resultBody.innerHTML =
+        '⏱ 완주 시간 <b>' + stats.time.toFixed(2) + '초</b><br>' +
+        '🚀 최고 속도 <b>' + stats.vMax.toFixed(2) + ' m/s</b><br>' +
+        '📏 트랙 길이 <b>' + (stats.length * 100).toFixed(0) + ' cm</b>';
+    }
     resultEl.classList.remove('hidden');
   }
   function hideResult() { resultEl.classList.add('hidden'); }
@@ -193,5 +222,6 @@ export function createUI(root, handlers, tracks) {
 
   wireLockedRunFeedback();
 
-  return { update, setMode, setBuildState, showResult, hideResult, showHint, hideHint, setCamLocked };
+  setMarbleCount(1);
+  return { update, setMode, setBuildState, showResult, hideResult, showHint, hideHint, setCamLocked, setMarbleCount };
 }

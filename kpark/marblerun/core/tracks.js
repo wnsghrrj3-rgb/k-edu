@@ -74,6 +74,31 @@
       startH: 5,
       seq: ['straight', 'cannon', 'slope', 'trampoline', 'curve_r', 'goal'],
     },
+    {
+      id: 'forkplaza',
+      name: '갈림길 광장',
+      desc: '구슬 3개를 굴려봐 — 스위치가 딸깍딸깍 번갈아 보낸다!',
+      startH: 3,
+      marbles: 3,
+      seq: ['slope', 'straight',
+        { type: 'switch',
+          left:  ['curve_l', 'slope', 'straight', 'goal'],
+          right: ['curve_r', 'slope', 'straight', 'goal'] }],
+    },
+    {
+      id: 'triplebell',
+      name: '세 갈래 종탑',
+      desc: '갈래 속의 갈래 — 벨 3개가 누구를 먼저 맞이할까?',
+      startH: 4,
+      marbles: 3,
+      seq: ['slope',
+        { type: 'switch',
+          left: ['curve_l', 'slope',
+            { type: 'switch',
+              left:  ['curve_l', 'goal'],
+              right: ['curve_r', 'straight', 'goal'] }],
+          right: ['curve_r', 'slope', 'zigzag', 'goal'] }],
+    },
   ];
 
   return { TRACKS };

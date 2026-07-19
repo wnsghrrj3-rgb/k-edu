@@ -119,6 +119,21 @@ export function placeClick() {
   } catch (e) { /* 무시 */ }
 }
 
+/* 스위치 플리퍼 딸깍 — 두 음 높이로 방향을 귀로 구분 (왼=높, 오=낮) */
+export function flipSound(dir) {
+  const c = ctx();
+  const t = c.currentTime;
+  const o = c.createOscillator();
+  const g = c.createGain();
+  o.type = 'square';
+  o.frequency.setValueAtTime(dir === 1 ? 620 : 880, t);
+  o.frequency.exponentialRampToValueAtTime(dir === 1 ? 470 : 660, t + 0.05);
+  g.gain.setValueAtTime(0.09, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
+  o.connect(g).connect(c.destination);
+  o.start(t); o.stop(t + 0.08);
+}
+
 export function rollTickSound(v) {
   // M3에서 굴림음 본격 구현 — M0는 벨만.
 }

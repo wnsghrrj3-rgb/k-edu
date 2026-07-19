@@ -1,0 +1,83 @@
+/* 케이파크 · 마블런 — tests/ui.smoke.js
+ * jsdom UI 스모크 (M2b-2). 실행: jsdom 설치된 위치에서 node ui.smoke.js
+ * (jsdom은 임시 설치·제거 관례 — package.json 공용 파일 불변 유지) */
+'use strict';
+const { JSDOM } = require('jsdom');
+const fs = require('fs');
+const path = require('path');
+const BASE = path.join(__dirname, '..');
+
+const dom = new JSDOM('<!DOCTYPE html><body><div id="ui"></div></body>', { runScripts: 'outside-only' });
+global.window = dom.window;
+global.document = dom.window.document;
+
+// 코어 로드 (window에 부착)
+for (const f of ['core/hexgrid.js','core/parts/basic.js','core/parts/action.js','core/parts/ballistic.js','core/parts/switchpart.js','core/graph.js','core/sim.js','core/serialize.js','core/tracks.js','core/builder.js','core/multisim.js']) {
+  const code = fs.readFileSync(path.join(BASE, f), 'utf8');
+  dom.window.eval(code);
+}
+const NS = dom.window.MarbleSim;
+let pass = 0, fail = 0;
+function T(name, fn) { try { fn(); pass++; console.log('  ✓ ' + name); } catch (e) { fail++; console.log('  ✗ ' + name + ' — ' + e.message); } }
+function assert(c, m) { if (!c) throw new Error(m || 'assert'); }
+
+// ui.js는 ESM — CJS 변환해 평가
+let uiCode = fs.readFileSync(path.join(BASE, 'stage/ui.js'), 'utf8').replace('export function createUI', 'window.__createUI = function createUI');
+dom.window.eval(uiCode);
+const createUI = dom.window.__createUI;
+
+T('UI 생성: 스위치 버튼·갈래 버튼·구슬 수 세그먼트 존재', () => {
+  const calls = [];
+  const h = new Proxy({}, { get: (_, k) => (...a) => { calls.push([k, a]); return 'orbit'; } });
+  const ui = createUI(document.getElementById('ui'), h, NS.TRACKS);
+  assert(document.querySelector('[data-part="switch"]'), '스위치 팔레트 버튼 없음');
+  assert(document.querySelector('#mr-branch'), '갈래 버튼 없음');
+  assert(document.querySelectorAll('#mr-count button').length === 3, '구슬 수 버튼');
+  assert(typeof ui.setMarbleCount === 'function', 'setMarbleCount 누락');
+});
+
+T('건설 흐름: 스위치 배치 → 갈래 버튼 노출 + 왼길 활성', () => {
+  const state = { startH: 3, seq: [] };
+  let comp = NS.compile(state, []);
+  // 경사 → 스위치
+  state.seq.push('slope');
+  comp = NS.compile(state, []);
+  assert(NS.canPlace(comp, 'switch'), '스위치 배치 가능해야 함');
+  state.seq.push({ type: 'switch', left: [], right: [] });
+  comp = NS.compile(state, [0]);
+  assert(comp.routes.length === 2, '갈래 2개');
+  assert(comp.activeRoute === 0, '왼길 활성');
+  const ui = createUI(document.getElementById('ui'), new Proxy({}, { get: () => () => {} }), NS.TRACKS);
+  ui.setBuildState(comp, NS.canPlace);
+  assert(!document.querySelector('#mr-branch').classList.contains('hidden'), '갈래 버튼 노출');
+});
+
+T('양 갈래 골 종결 → ended + 완성 힌트', () => {
+  const state = { startH: 3, seq: ['slope',
+    { type: 'switch', left: ['curve_l','goal'], right: ['curve_r','goal'] }] };
+  const comp = NS.compile(state, []);
+  assert(comp.ok && comp.ended, JSON.stringify(comp.errors));
+  const ui = createUI(document.getElementById('ui'), new Proxy({}, { get: () => () => {} }), NS.TRACKS);
+  ui.setBuildState(comp, NS.canPlace);
+  const hint = document.getElementById('mr-hint');
+  assert(!hint.classList.contains('hidden') && /완성/.test(hint.textContent), '완성 힌트: ' + hint.textContent);
+});
+
+T('결과 카드: 다중 구슬 표시', () => {
+  const ui = createUI(document.getElementById('ui'), new Proxy({}, { get: () => () => {} }), NS.TRACKS);
+  ui.showResult({ marbles: [
+    { emoji: '🔵', bell: '🔔A', time: 3.21 },
+    { emoji: '🩷', bell: '🔔B', time: 3.87 },
+  ], vMax: 1.9 });
+  const body = document.querySelector('#mr-result .result-body').innerHTML;
+  assert(/🔔A/.test(body) && /🔔B/.test(body) && /3.21/.test(body), body);
+});
+
+T('프리셋 셀렉터에 갈림길 광장·세 갈래 종탑 포함', () => {
+  createUI(document.getElementById('ui'), new Proxy({}, { get: () => () => {} }), NS.TRACKS);
+  const html = document.getElementById('mr-track').innerHTML;
+  assert(/갈림길 광장/.test(html) && /세 갈래 종탑/.test(html), '프리셋 누락');
+});
+
+console.log('\nUI 스모크: ' + pass + ' 통과, ' + fail + ' 실패');
+process.exit(fail === 0 ? 0 : 1);

@@ -11,6 +11,8 @@ require('../core/sim.js');
 require('../core/serialize.js');
 require('../core/tracks.js');
 require('../core/builder.js');
+require('../core/parts/switchpart.js');
+require('../core/multisim.js');
 const NS = globalThis.MarbleSim;
 
 let pass = 0, fail = 0;
@@ -205,6 +207,17 @@ for (const tr of NS.TRACKS) {
   T('「' + tr.name + '」 컴파일 + 빌드 + 완주 (bell→goal)', () => {
     const c = NS.compile(tr);
     assert(c.ok && c.ended, '컴파일 실패: ' + JSON.stringify(c.errors));
+    if (c.routes.length > 1) {
+      // 갈래 트랙: 잎별 빌드 + MultiSim으로 전 구슬 완주
+      const cr = NS.compileRoutes(c);
+      assert(cr.ok && cr.routesData.length === c.routes.length, '잎 빌드 실패: ' + JSON.stringify(cr.errors));
+      const ms = new NS.MultiSim(cr.routesData, { count: tr.marbles || 3 });
+      ms.release();
+      const ev = ms.runToEnd(180);
+      const fin = ev.filter(e => e.type === 'finish');
+      assert(fin.length === (tr.marbles || 3), '완주 ' + fin.length + '/' + (tr.marbles || 3));
+      return;
+    }
     const t = NS.buildTrack(c.pieces);
     assert(t.ok, JSON.stringify(t.errors));
     const sim = new NS.Sim(NS.buildPathData(t.points, t.bowlIndexRanges,
@@ -490,10 +503,113 @@ T('탄도: 결정론 — 같은 트랙 두 번 = 같은 이벤트열·같은 tic
 
 T('프리셋 전 종목 완주 (탄도 3종 포함 총 ' + NS.TRACKS.length + '종)', () => {
   for (const tk of NS.TRACKS) {
+    if (NS.compile(tk).routes.length > 1) continue; // 갈래 트랙은 [프리셋 트랙]의 MultiSim 케이스가 커버
     const r = runBallistic(tk.startH, tk.seq, 90);
     assert(r.sim, tk.name + ' 빌드 실패: ' + JSON.stringify(r.compileErrors || r.buildErrors));
     assert(r.sim.status === 'goal', tk.name + ' 완주 실패 (' + r.sim.status + ')');
   }
+});
+
+// ---------- 6.7 스위치 분기 + MultiSim ----------
+console.log('[스위치 분기]');
+
+const FORK = {
+  startH: 3,
+  seq: ['slope', 'straight',
+    { type: 'switch',
+      left:  ['curve_l', 'slope', 'straight', 'goal'],
+      right: ['curve_r', 'slope', 'straight', 'goal'] }],
+};
+
+T('트리 컴파일: 잎 2개, 전 잎 골 종결, 부품 합집합', () => {
+  const c = NS.compile(FORK);
+  assert(c.ok, JSON.stringify(c.errors));
+  assert(c.routes.length === 2, '잎 수 ' + c.routes.length);
+  assert(c.ended, '전 잎 종결이어야 함');
+  // 트렁크 3개(start·slope·straight) + 스위치 1 + 갈래 4×2 = 12
+  assert(c.pieces.length === 12, '부품 수 ' + c.pieces.length);
+  const sw = c.pieces.findIndex(p => p.type === 'switch');
+  assert(c.routes[0].decisions[0].id === sw && c.routes[0].decisions[0].dir === 0, '왼길 결정');
+  assert(c.routes[1].decisions[0].dir === 1, '오른길 결정');
+});
+
+T('갈래 간 충돌 감지 (COLLISION)', () => {
+  // 오른길이 왼쪽으로 세 번 감아 돌아 왼길이 이미 차지한 타일로 향한다
+  const c = NS.compile({ startH: 3, seq: [
+    { type: 'switch',
+      left:  ['curve_r', 'straight'],
+      right: ['curve_l', 'curve_l', 'curve_l', 'straight'] }] });
+  assert(!c.ok && c.errors.some(e => e.code === 'COLLISION'), JSON.stringify(c.errors));
+});
+
+T('잎별 빌드: 포트·높이 정합 + 진입 절반 기하 공유', () => {
+  const c = NS.compile(FORK);
+  const cr = NS.compileRoutes(c);
+  assert(cr.ok && cr.routesData.length === 2, JSON.stringify(cr.errors));
+  const [A, B] = cr.routesData;
+  assert(A.switches.length === 1 && B.switches.length === 1, '스위치 마크 수');
+  near(A.switches[0].s, B.switches[0].s, 1e-9, '분기점 호길이 불일치');
+  // 분기점까지 웨이포인트가 완전히 동일해야 경로 교체가 무결하다
+  const iA = A.track.decideMarks[0].i;
+  for (let i = 0; i <= iA; i++) {
+    near(A.pd.points[i].x, B.pd.points[i].x, 1e-12, 'x@' + i);
+    near(A.pd.points[i].y, B.pd.points[i].y, 1e-12, 'y@' + i);
+    near(A.pd.points[i].z, B.pd.points[i].z, 1e-12, 'z@' + i);
+  }
+  // 좌/우 스위치 경로 길이 동일 (거울 대칭)
+  near(A.pd.total, B.pd.total, 1e-9, '잎 총길이 (대칭 트랙)');
+});
+
+T('교대 분기: 구슬 3개 → 왼·오·왼, 전원 완주', () => {
+  const c = NS.compile(FORK);
+  const cr = NS.compileRoutes(c);
+  const ms = new NS.MultiSim(cr.routesData, { count: 3 });
+  ms.release();
+  const ev = ms.runToEnd(120);
+  const sw = ev.filter(e => e.type === 'switch').sort((a, b) => a.m - b.m);
+  assert(sw.length === 3, '스위치 통과 ' + sw.length + '회');
+  assert(sw[0].dir === 0 && sw[1].dir === 1 && sw[2].dir === 0, '교대 순서: ' + sw.map(e => e.dir).join(','));
+  const fin = ev.filter(e => e.type === 'finish');
+  assert(fin.length === 3, '완주 ' + fin.length + '/3');
+  const routesTaken = fin.sort((a, b) => a.m - b.m).map(e => e.routeIdx);
+  assert(routesTaken[0] === 0 && routesTaken[1] === 1 && routesTaken[2] === 0, '잎 배정: ' + routesTaken.join(','));
+});
+
+T('MultiSim 결정론: 두 번 실행 = 같은 이벤트열·틱', () => {
+  const run = () => {
+    const cr = NS.compileRoutes(NS.compile(FORK));
+    const ms = new NS.MultiSim(cr.routesData, { count: 3 });
+    ms.release();
+    const ev = ms.runToEnd(120);
+    return { tick: ms.tick, sig: ev.map(e => e.type + (e.m != null ? e.m : '')).join('|') };
+  };
+  const a = run(), b = run();
+  assert(a.tick === b.tick, '틱 불일치');
+  assert(a.sig === b.sig, '이벤트열 불일치');
+});
+
+T('중첩 스위치 (세 갈래 종탑): 잎 3개, 구슬 3개 서로 다른 벨', () => {
+  const tk = NS.TRACKS.find(t => t.id === 'triplebell');
+  const c = NS.compile(tk);
+  assert(c.ok && c.routes.length === 3, '잎 수 ' + c.routes.length);
+  const cr = NS.compileRoutes(c);
+  const ms = new NS.MultiSim(cr.routesData, { count: 3 });
+  ms.release();
+  const ev = ms.runToEnd(180);
+  const fin = ev.filter(e => e.type === 'finish');
+  assert(fin.length === 3, '완주 ' + fin.length + '/3');
+  const goals = new Set(fin.map(e => cr.routesData[e.routeIdx].goalPieceIdx));
+  assert(goals.size === 3, '벨 배정 겹침: ' + [...goals].join(','));
+});
+
+T('canPlaceRoute: 잎별 독립 배치 판정', () => {
+  const c = NS.compile({ startH: 2, seq: [
+    { type: 'switch', left: ['straight'], right: ['goal'] }] });
+  assert(c.ok, JSON.stringify(c.errors));
+  const open = c.routes.find(rt => !rt.ended);
+  const closed = c.routes.find(rt => rt.ended);
+  assert(NS.canPlaceRoute(c, open, 'straight'), '열린 잎에 직선 가능해야 함');
+  assert(!NS.canPlaceRoute(c, closed, 'straight'), '골로 닫힌 잎은 불가');
 });
 
 // ---------- 7. serialize ----------
