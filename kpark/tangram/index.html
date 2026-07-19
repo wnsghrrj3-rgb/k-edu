@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<title>케이파크 · 칠교놀이</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+@font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
+:root{
+  --bg:#0a0f2c; --panel:rgba(16,22,54,.82); --line:#3b4a8f;
+  --text:#e8ecff; --dim:#8a93c8; --accent:#4de1ff; --gold:#ffd35c;
+  --title:'Hakgyoansim Moheomga','Jua',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--text);font-family:'Pretendard',-apple-system,'Noto Sans KR',sans-serif;overflow-x:hidden;touch-action:manipulation}
+.sky{position:fixed;inset:0;pointer-events:none;z-index:0}
+.sky i{position:absolute;width:2px;height:2px;border-radius:50%;background:#cdd6ff;opacity:.5}
+.sky i:nth-child(2n){width:1.5px;height:1.5px;opacity:.3}
+.sky i:nth-child(3n){background:var(--gold);opacity:.4}
+@media (prefers-reduced-motion:no-preference){
+  .sky i{animation:tw 4.5s ease-in-out infinite}
+  .sky i:nth-child(2n){animation-delay:1.3s;animation-duration:6s}
+  @keyframes tw{0%,100%{opacity:.2}50%{opacity:.7}}
+}
+main{position:relative;z-index:1;max-width:920px;margin:0 auto;padding:0 14px 40px}
+
+/* ── 공통 ── */
+.topbar{display:flex;align-items:center;gap:12px;padding:16px 2px 6px}
+.backbtn{display:inline-flex;align-items:center;gap:6px;color:var(--dim);text-decoration:none;font-size:13.5px;font-weight:700;
+  border:1px solid var(--line);border-radius:999px;padding:8px 14px;background:var(--panel);cursor:pointer}
+.backbtn:active{transform:scale(.97)}
+.toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(20px);z-index:50;
+  background:rgba(20,27,66,.95);border:1px solid var(--line);border-radius:999px;color:var(--text);
+  font-size:14px;font-weight:700;padding:10px 20px;opacity:0;pointer-events:none;transition:all .25s ease;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── 고르기 화면 ── */
+#selectView .gate{text-align:center;padding-top:clamp(20px,4vh,44px)}
+#selectView .park-en{font-size:11px;letter-spacing:5px;color:var(--dim);font-weight:600}
+#selectView h1{font-family:var(--title);font-weight:400;font-size:clamp(38px,8vw,56px);line-height:1.1;margin-top:4px;
+  text-shadow:0 0 22px rgba(255,211,92,.3)}
+#selectView h1 em{font-style:normal;color:var(--gold)}
+#selectView .sub{margin-top:10px;font-size:14px;color:var(--dim)}
+.diffsec{margin-top:34px}
+.diffsec h2{font-size:13px;letter-spacing:3px;color:var(--dim);font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:10px}
+.diffsec h2 .st{color:var(--gold);letter-spacing:1px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.pcard{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 12px 12px;
+  cursor:pointer;text-align:center;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease}
+.pcard:hover{transform:translateY(-3px);border-color:var(--gold);box-shadow:0 10px 30px rgba(255,211,92,.13)}
+.pcard:active{transform:scale(.97)}
+.pcard svg{width:100%;height:88px;display:block}
+.pcard .nm{margin-top:8px;font-family:var(--title);font-size:19px;color:var(--text)}
+.pcard .nm.q{color:var(--dim);letter-spacing:3px}
+.pcard .stamp{position:absolute;top:-8px;right:-6px;font-size:24px;filter:drop-shadow(0 0 8px rgba(255,211,92,.7));transform:rotate(12deg)}
+.pcard.freec{border-style:dashed}
+.pcard.freec .big{font-size:44px;line-height:88px}
+
+/* ── 놀이 화면 ── */
+#playView{display:none}
+.playhead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 2px 4px}
+.playhead .mid{text-align:center;flex:1;min-width:0}
+.playhead .pname{font-family:var(--title);font-size:clamp(22px,5vw,30px);line-height:1.15}
+.playhead .pname.q{color:var(--dim);letter-spacing:4px}
+.playhead .pstars{font-size:13px;color:var(--gold);letter-spacing:2px;margin-top:2px}
+.dots{display:flex;gap:7px;justify-content:center;margin-top:8px}
+.dots b{width:9px;height:9px;border-radius:50%;background:rgba(59,74,143,.55);border:1px solid var(--line);transition:all .3s ease}
+.dots b.on{background:var(--gold);border-color:var(--gold);box-shadow:0 0 8px rgba(255,211,92,.7)}
+.stagewrap{position:relative;margin-top:8px;background:linear-gradient(180deg,rgba(14,19,48,.55),rgba(10,15,44,.2));
+  border:1px solid rgba(59,74,143,.55);border-radius:20px;overflow:hidden}
+#board{display:block;width:100%;height:auto;touch-action:none;user-select:none}
+.ctrls{display:flex;justify-content:center;gap:10px;margin-top:14px;flex-wrap:wrap}
+.cbtn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--panel);color:var(--text);
+  font-family:inherit;font-size:14.5px;font-weight:800;border-radius:999px;padding:12px 18px;cursor:pointer;transition:transform .12s ease,border-color .12s ease}
+.cbtn:active{transform:scale(.94)}
+.cbtn .ic{font-size:17px}
+.cbtn[disabled]{opacity:.35;pointer-events:none}
+.cbtn.acc{border-color:rgba(77,225,255,.6);color:var(--accent)}
+.cbtn.gold{border-color:rgba(255,211,92,.6);color:var(--gold)}
+
+/* 완성 오버레이 */
+.doneov{position:absolute;inset:0;display:none;align-items:center;justify-content:center;z-index:5;
+  background:radial-gradient(ellipse at center,rgba(10,15,44,.25),rgba(10,15,44,.86));backdrop-filter:blur(2px)}
+.doneov.show{display:flex}
+.donecard{text-align:center;animation:pop .5s cubic-bezier(.2,1.6,.4,1) both}
+@keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+.donecard .dt{font-size:14px;letter-spacing:4px;color:var(--accent);font-weight:800}
+.donecard .dn{font-family:var(--title);font-size:clamp(44px,11vw,72px);color:var(--gold);
+  text-shadow:0 0 30px rgba(255,211,92,.55);margin-top:4px}
+.donecard .ds{font-size:15px;color:var(--text);margin-top:8px}
+.donecard .btns{display:flex;gap:10px;justify-content:center;margin-top:20px}
+.confetti{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:4}
+.confetti i{position:absolute;top:-12px;width:9px;height:13px;border-radius:2px;animation:cfall linear forwards}
+@keyframes cfall{to{transform:translateY(115vh) rotate(720deg)}}
+
+footer{position:relative;z-index:1;text-align:center;padding:22px 16px 36px;font-size:12px;color:var(--dim)}
+footer a{color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="sky" id="sky"></div>
+
+<main>
+  <!-- 그림 고르기 -->
+  <section id="selectView">
+    <div class="topbar"><a class="backbtn" href="../">← 케이파크</a></div>
+    <div class="gate">
+      <div class="park-en">K - P A R K</div>
+      <h1>칠교<em>놀이</em></h1>
+      <p class="sub">일곱 조각으로 그림자를 채워 봐 · 정답 없음 · 점수 없음</p>
+    </div>
+    <div id="sections"></div>
+  </section>
+
+  <!-- 놀이판 -->
+  <section id="playView">
+    <div class="playhead">
+      <button class="backbtn" id="btnBack">← 그림 고르기</button>
+      <div class="mid">
+        <div class="pname" id="pname"></div>
+        <div class="pstars" id="pstars"></div>
+        <div class="dots" id="dots"></div>
+      </div>
+      <button class="backbtn" id="btnNext" title="다음 그림">다음 →</button>
+    </div>
+    <div class="stagewrap" id="stagewrap">
+      <svg id="board" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="confetti" id="confetti"></div>
+      <div class="doneov" id="doneov">
+        <div class="donecard">
+          <div class="dt" id="doneT">완성!</div>
+          <div class="dn" id="doneName"></div>
+          <div class="ds" id="doneSub"></div>
+          <div class="btns">
+            <button class="cbtn" id="btnAgain"><span class="ic">↺</span>다시 하기</button>
+            <button class="cbtn gold" id="btnPick"><span class="ic">🧩</span>다른 그림</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ctrls">
+      <button class="cbtn" id="btnCCW"><span class="ic">⟲</span>왼쪽</button>
+      <button class="cbtn" id="btnCW"><span class="ic">⟳</span>오른쪽</button>
+      <button class="cbtn" id="btnFlip"><span class="ic">↔</span>뒤집기</button>
+      <button class="cbtn acc" id="btnHint"><span class="ic">💡</span>힌트</button>
+      <button class="cbtn" id="btnReset"><span class="ic">↺</span>처음부터</button>
+      <button class="cbtn gold" id="btnSave" style="display:none"><span class="ic">📷</span>작품 저장</button>
+    </div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+<footer>케이파크 어트락션 2호 · <a href="../">밤의 놀이공원으로</a></footer>
+
+<script src="./core.js"></script>
+<script>
+(function(){
+'use strict';
+const T = window.TangramCore;
+const $ = id => document.getElementById(id);
+const SVGNS = 'http://www.w3.org/2000/svg';
+
+/* ── 별하늘 (결정적) ── */
+(function(){
+  const sky=$('sky'); let s=77;
+  const rnd=()=> (s=(s*1103515245+12345)&0x7fffffff)/0x7fffffff;
+  for(let i=0;i<60;i++){const d=document.createElement('i');
+    d.style.left=(rnd()*100)+'%'; d.style.top=(rnd()*100)+'%'; sky.appendChild(d);}
+})();
+
+/* ── 사운드 (WebAudio, 첫 터치에 해제) ── */
+const Snd=(function(){
+  let ctx=null;
+  function ac(){ if(!ctx){ try{ctx=new (window.AudioContext||window.webkitAudioContext)();}catch(e){} }
+    if(ctx&&ctx.state==='suspended')ctx.resume(); return ctx; }
+  function tone(f,t0,dur,type,vol,slide){
+    const c=ac(); if(!c)return;
+    const o=c.createOscillator(),g=c.createGain();
+    o.type=type||'triangle'; o.frequency.setValueAtTime(f,c.currentTime+t0);
+    if(slide)o.frequency.exponentialRampToValueAtTime(slide,c.currentTime+t0+dur);
+    g.gain.setValueAtTime(0.0001,c.currentTime+t0);
+    g.gain.exponentialRampToValueAtTime(vol||0.14,c.currentTime+t0+0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+t0+dur);
+    o.connect(g).connect(c.destination); o.start(c.currentTime+t0); o.stop(c.currentTime+t0+dur+0.05);
+  }
+  const PENTA=[523.25,587.33,659.25,783.99,880,1046.5,1318.5];
+  return {
+    unlock(){ac();},
+    pick(){tone(240,0,0.07,'sine',0.08);},
+    tick(){tone(920,0,0.045,'square',0.05);},
+    whoosh(){tone(300,0,0.12,'sine',0.07,90);},
+    snap(i){const f=PENTA[Math.min(i,PENTA.length-1)];tone(f,0,0.16,'triangle',0.16);tone(f*2,0.02,0.1,'sine',0.06);},
+    win(){[523.25,659.25,783.99,1046.5,1318.5].forEach((f,i)=>tone(f,i*0.09,0.22,'triangle',0.15));
+      tone(2093,0.5,0.35,'sine',0.08);},
+    hint(){tone(1046,0,0.1,'sine',0.07);tone(1318,0.09,0.12,'sine',0.07);}
+  };
+})();
+window.addEventListener('pointerdown',()=>Snd.unlock(),{once:true});
+
+/* ── 조각 색 (밤의 보석톤) ── */
+const COLORS={L0:'#ff6b81',L1:'#4d79ff',M0:'#b06bff',S0:'#ffd35c',S1:'#3ee6a8',Q0:'#4de1ff',P0:'#ff9a4d'};
+function pieceColor(sh,idxOfShape){return COLORS[sh+idxOfShape]||'#fff';}
+
+/* ── 도장 (완성 기록 — 점수 아님, 스티커) ── */
+const ST_KEY='kpark_tangram_stamps';
+function stamps(){try{return JSON.parse(localStorage.getItem(ST_KEY)||'[]');}catch(e){return[];}}
+function addStamp(id){const s=stamps(); if(!s.includes(id)){s.push(id);try{localStorage.setItem(ST_KEY,JSON.stringify(s));}catch(e){}}}
+
+/* ── 토스트 ── */
+let toastT=null;
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1700);}
+
+/* ══════════ 고르기 화면 ══════════ */
+function miniSVG(pz,color){
+  const slots=T.puzzleSlots(pz);
+  const pad=1, vb=[-pad,-pad,pz.w+2*pad,pz.h+2*pad];
+  let s='<svg viewBox="'+vb.join(' ')+'" preserveAspectRatio="xMidYMid meet">';
+  slots.forEach(sl=>{s+='<polygon points="'+sl.poly.map(p=>p[0].toFixed(3)+','+p[1].toFixed(3)).join(' ')+'" fill="'+color+'"/>';});
+  return s+'</svg>';
+}
+function buildSelect(){
+  const wrap=$('sections'); wrap.innerHTML='';
+  const done=stamps();
+  const groups=[[1,'또박또박','⭐'],[2,'제법인데','⭐⭐'],[3,'모양 장인','⭐⭐⭐']];
+  groups.forEach(([st,label,ic])=>{
+    const sec=document.createElement('div'); sec.className='diffsec';
+    sec.innerHTML='<h2><span class="st">'+ic+'</span>'+label+'</h2>';
+    const grid=document.createElement('div'); grid.className='cards';
+    T.PUZZLES.filter(p=>p.stars===st).forEach(pz=>{
+      const c=document.createElement('div'); c.className='pcard';
+      const solved=done.includes(pz.id);
+      const showName=(st===1)||solved;
+      c.innerHTML=miniSVG(pz,'#39447f')
+        +'<div class="nm'+(showName?'':' q')+'">'+(showName?pz.name:'? ? ?')+'</div>'
+        +(solved?'<div class="stamp">🌟</div>':'');
+      c.addEventListener('click',()=>startPuzzle(pz.id));
+      grid.appendChild(c);
+    });
+    sec.appendChild(grid); wrap.appendChild(sec);
+  });
+  const sec=document.createElement('div'); sec.className='diffsec';
+  sec.innerHTML='<h2><span class="st">🎨</span>내 마음대로</h2>';
+  const grid=document.createElement('div'); grid.className='cards';
+  const c=document.createElement('div'); c.className='pcard freec';
+  c.innerHTML='<div class="big">🧩</div><div class="nm">자유 만들기</div>';
+  c.addEventListener('click',()=>startFree());
+  grid.appendChild(c); sec.appendChild(grid); wrap.appendChild(sec);
+}
+
+/* ══════════ 놀이판 ══════════ */
+const G={ // 현재 게임 상태
+  mode:null, pz:null, slots:[], pieces:[], sel:-1, lockedCount:0,
+  vb:null, trayY:0, startTs:0, doneFlag:false, anim:null
+};
+const board=$('board');
+
+function svgEl(tag,attrs){const e=document.createElementNS(SVGNS,tag);
+  for(const k in attrs)e.setAttribute(k,attrs[k]); return e;}
+function ptsAttr(poly){return poly.map(p=>p[0].toFixed(3)+','+p[1].toFixed(3)).join(' ');}
+
+function layoutBoard(pzW,pzH,hasSil){
+  const pad=1.6, minW=19.5, trayGap=1.8, trayH=10.6;
+  const Wc=Math.max(pzW,minW);
+  const ox=-(pad+(Wc-pzW)/2), oy=-pad;
+  const W=Wc+2*pad, H=pzH+trayGap+trayH+2*pad;
+  G.vb=[ox,oy,W,H]; G.trayY=pzH+trayGap;
+  board.setAttribute('viewBox',G.vb.join(' '));
+  const px=Math.min(920,window.innerWidth-28);
+  board.style.height=(px*H/W)+'px';
+}
+
+function clearBoard(){while(board.firstChild)board.removeChild(board.firstChild);}
+
+function makeDefs(){
+  const defs=svgEl('defs',{});
+  defs.innerHTML=
+   '<filter id="silGlow" x="-30%" y="-30%" width="160%" height="160%">'
+  +'<feGaussianBlur stdDeviation="0.7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
+  +'<filter id="dragSh" x="-40%" y="-40%" width="180%" height="180%">'
+  +'<feDropShadow dx="0" dy="0.35" stdDeviation="0.4" flood-color="#000" flood-opacity="0.5"/></filter>';
+  board.appendChild(defs);
+}
+
+/* 퍼즐 시작 */
+function startPuzzle(id){
+  const pz=T.PUZZLES.find(p=>p.id===id);
+  G.mode='puzzle'; G.pz=pz; G.sel=-1; G.lockedCount=0; G.doneFlag=false; G.startTs=Date.now();
+  $('selectView').style.display='none'; $('playView').style.display='block';
+  $('doneov').classList.remove('show'); $('confetti').innerHTML='';
+  const solved=stamps().includes(pz.id);
+  const showName=(pz.stars===1)||solved;
+  const pn=$('pname'); pn.textContent=showName?pz.name:'? ? ?';
+  pn.classList.toggle('q',!showName);
+  $('pstars').textContent='⭐'.repeat(pz.stars);
+  $('btnSave').style.display='none'; $('btnHint').style.display='';
+  const dots=$('dots'); dots.innerHTML=''; for(let i=0;i<7;i++)dots.appendChild(document.createElement('b'));
+
+  clearBoard(); makeDefs();
+  layoutBoard(pz.w,pz.h,true);
+
+  // 그림자(실루엣)
+  const gS=svgEl('g',{filter:'url(#silGlow)'});
+  const slots=T.puzzleSlots(pz).map(s=>({sh:s.sh,poly:s.poly,cc:T.centroid(s.poly),filled:false,el:null}));
+  slots.forEach(s=>{
+    const p=svgEl('polygon',{points:ptsAttr(s.poly),fill:'#161d4d',stroke:'#161d4d','stroke-width':0.06});
+    gS.appendChild(p);
+  });
+  board.appendChild(gS);
+  // ⭐1: 조각 안내선
+  if(pz.stars===1){
+    const gG=svgEl('g',{});
+    slots.forEach(s=>{gG.appendChild(svgEl('polygon',{points:ptsAttr(s.poly),fill:'none',
+      stroke:'rgba(232,236,255,0.22)','stroke-width':0.09,'stroke-dasharray':'0.5 0.42','stroke-linejoin':'round'}));});
+    board.appendChild(gG);
+  }
+  G.slots=slots;
+  G.gHint=svgEl('g',{}); board.appendChild(G.gHint);
+
+  // 조각 7개 — 쟁반 배치
+  const gP=svgEl('g',{}); board.appendChild(gP); G.gPieces=gP;
+  const order=T.PIECE_SET.slice();
+  if(pz.stars>=2)shuffle(order);
+  const cellW=(G.vb[2]-3.2)/4, x0=G.vb[0]+1.6+cellW/2;
+  const rows=[[0,1,2,3],[4,5,6]];
+  const shapeIdx={};
+  G.pieces=[];
+  order.forEach((sh,i)=>{
+    const k=(shapeIdx[sh]=shapeIdx[sh]===undefined?0:shapeIdx[sh]+1);
+    const row=i<4?0:1, col=row===0?i:i-4;
+    const cx=x0+col*cellW+(row===1?cellW/2:0);
+    const cy=G.trayY+2.6+row*5.2;
+    let rot=0,f=0;
+    if(pz.stars>=2)rot=45*(Math.floor(Math.random()*8));
+    if(pz.stars>=3&&sh==='P')f=Math.random()<0.5?1:0;
+    const pc={sh,cx,cy,rot,f,locked:false,
+      dx:cx,dy:cy,dr:rot,squash:1,pulse:0,wiggle:0,
+      color:pieceColor(sh,k),el:null,home:[cx,cy]};
+    const el=svgEl('polygon',{points:'','fill':pc.color,stroke:'rgba(0,0,0,0.35)',
+      'stroke-width':0.14,'stroke-linejoin':'round',style:'cursor:grab'});
+    pc.el=el; gP.appendChild(el); G.pieces.push(pc);
+  });
+  attachPointer();
+  renderAll(true);
+  startAnim();
+  updateBtns();
+}
+
+/* 자유 만들기 */
+function startFree(){
+  G.mode='free'; G.pz=null; G.sel=-1; G.lockedCount=0; G.doneFlag=false;
+  $('selectView').style.display='none'; $('playView').style.display='block';
+  $('doneov').classList.remove('show'); $('confetti').innerHTML='';
+  $('pname').textContent='자유 만들기'; $('pname').classList.remove('q');
+  $('pstars').textContent='🎨 마음껏!';
+  $('dots').innerHTML='';
+  $('btnSave').style.display=''; $('btnHint').style.display='none';
+  clearBoard(); makeDefs();
+  const FW=22, FH=13;
+  layoutBoard(FW,FH,false);
+  board.appendChild(svgEl('rect',{x:-0.4,y:-0.4,width:FW+0.8,height:FH+0.8,rx:1,fill:'rgba(22,29,77,0.35)',
+    stroke:'rgba(59,74,143,0.7)','stroke-width':0.1,'stroke-dasharray':'0.7 0.55'}));
+  const t=svgEl('text',{x:FW/2,y:FH/2,'text-anchor':'middle',fill:'rgba(138,147,200,0.5)',
+    'font-size':1.05,'font-family':'inherit'}); t.textContent='조각으로 나만의 그림을 만들어 봐';
+  board.appendChild(t);
+  G.slots=[]; G.gHint=svgEl('g',{}); board.appendChild(G.gHint);
+  const gP=svgEl('g',{}); board.appendChild(gP); G.gPieces=gP;
+  const cellW=(G.vb[2]-3.2)/4, x0=G.vb[0]+1.6+cellW/2;
+  const shapeIdx={}; G.pieces=[];
+  T.PIECE_SET.forEach((sh,i)=>{
+    const k=(shapeIdx[sh]=shapeIdx[sh]===undefined?0:shapeIdx[sh]+1);
+    const row=i<4?0:1, col=row===0?i:i-4;
+    const cx=x0+col*cellW+(row===1?cellW/2:0);
+    const cy=G.trayY+2.6+row*5.2;
+    const pc={sh,cx,cy,rot:0,f:0,locked:false,dx:cx,dy:cy,dr:0,squash:1,pulse:0,wiggle:0,
+      color:pieceColor(sh,k),el:null,home:[cx,cy]};
+    const el=svgEl('polygon',{points:'',fill:pc.color,stroke:'rgba(0,0,0,0.35)',
+      'stroke-width':0.14,'stroke-linejoin':'round',style:'cursor:grab'});
+    pc.el=el; gP.appendChild(el); G.pieces.push(pc);
+  });
+  attachPointer();
+  renderAll(true);
+  startAnim();
+  updateBtns();
+}
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}}
+
+/* ── 렌더 루프 ── */
+function renderPiece(pc){
+  let poly=T.pieceWorldPoly(pc.sh,pc.dx,pc.dy,pc.dr+pc.wiggle,pc.f);
+  if(pc.squash!==1||pc.pulse>0){
+    const cc=T.centroid(poly), sc=(1+pc.pulse);
+    poly=poly.map(p=>[cc[0]+(p[0]-cc[0])*pc.squash*sc, cc[1]+(p[1]-cc[1])*sc]);
+  }
+  pc.el.setAttribute('points',ptsAttr(poly));
+}
+function renderAll(force){G.pieces.forEach(pc=>renderPiece(pc));}
+function startAnim(){
+  if(G.anim)cancelAnimationFrame(G.anim);
+  let last=performance.now();
+  function frame(now){
+    const dt=Math.min(0.05,(now-last)/1000); last=now;
+    let moving=false;
+    G.pieces.forEach(pc=>{
+      const k=1-Math.pow(0.0001,dt); // 부드러운 추적
+      const ndx=pc.dx+(pc.cx-pc.dx)*k, ndy=pc.dy+(pc.cy-pc.dy)*k;
+      let dr=pc.rot-pc.dr; // 최단 회전
+      while(dr>180)dr-=360; while(dr<-180)dr+=360;
+      const ndr=pc.dr+dr*(1-Math.pow(0.00005,dt));
+      if(Math.abs(ndx-pc.dx)>1e-4||Math.abs(ndy-pc.dy)>1e-4||Math.abs(ndr-pc.dr)>1e-3||pc.squash!==1||pc.pulse>0||pc.wiggle!==0)moving=true;
+      pc.dx=ndx;pc.dy=ndy;pc.dr=ndr;
+      if(pc.squashT!==undefined){ // 뒤집기 스쿼시
+        pc.squashT+=dt*7;
+        if(pc.squashT<1)pc.squash=Math.abs(Math.cos(pc.squashT*Math.PI));
+        else{pc.squash=1;delete pc.squashT;}
+        if(pc.squashT>=0.5&&!pc.flApplied){pc.f=pc.fNext;pc.flApplied=true;}
+        moving=true;
+      }
+      if(pc.pulseT!==undefined){
+        pc.pulseT+=dt*4.2;
+        pc.pulse=Math.sin(Math.min(pc.pulseT,1)*Math.PI)*0.14;
+        if(pc.pulseT>=1){pc.pulse=0;delete pc.pulseT;}
+        moving=true;
+      }
+      if(pc.wigT!==undefined){
+        pc.wigT+=dt*10;
+        pc.wiggle=Math.sin(pc.wigT*Math.PI*2)*8*Math.max(0,1-pc.wigT/2);
+        if(pc.wigT>=2){pc.wiggle=0;delete pc.wigT;}
+        moving=true;
+      }
+      renderPiece(pc);
+    });
+    G.anim=requestAnimationFrame(frame);
+  }
+  G.anim=requestAnimationFrame(frame);
+}
+
+/* ── 포인터 ── */
+let drag=null, lastTap={t:0,i:-1};
+function svgPoint(ev){
+  const pt=board.createSVGPoint(); pt.x=ev.clientX; pt.y=ev.clientY;
+  const m=board.getScreenCTM(); if(!m)return{x:0,y:0};
+  const p=pt.matrixTransform(m.inverse()); return{x:p.x,y:p.y};
+}
+function pieceAt(x,y){
+  for(let i=G.pieces.length-1;i>=0;i--){
+    const pc=G.pieces[i];
+    const poly=T.pieceWorldPoly(pc.sh,pc.cx,pc.cy,pc.rot,pc.f);
+    if(T.pointIn(poly,x,y))return i;
+  }
+  return -1;
+}
+function attachPointer(){
+  board.onpointerdown=ev=>{
+    if(G.doneFlag)return;
+    const p=svgPoint(ev);
+    // z순서 무시하고 화면 위 조각 우선: G.gPieces의 DOM 순서 역방향으로 탐색
+    let hit=-1;
+    const els=Array.from(G.gPieces.children);
+    for(let k=els.length-1;k>=0;k--){
+      const pc=G.pieces.find(q=>q.el===els[k]);
+      if(!pc||pc.locked)continue;
+      const poly=T.pieceWorldPoly(pc.sh,pc.cx,pc.cy,pc.rot,pc.f);
+      if(T.pointIn(poly,p.x,p.y)){hit=G.pieces.indexOf(pc);break;}
+    }
+    if(hit<0)return;
+    const pc=G.pieces[hit];
+    select(hit);
+    Snd.pick();
+    G.gPieces.appendChild(pc.el); // 맨 위로
+    drag={i:hit,offx:pc.cx-p.x,offy:pc.cy-p.y,sx:ev.clientX,sy:ev.clientY,moved:false};
+    pc.el.setAttribute('filter','url(#dragSh)');
+    board.setPointerCapture(ev.pointerId);
+  };
+  board.onpointermove=ev=>{
+    if(!drag)return;
+    const pc=G.pieces[drag.i];
+    if(Math.hypot(ev.clientX-drag.sx,ev.clientY-drag.sy)>6)drag.moved=true;
+    const p=svgPoint(ev);
+    pc.cx=clamp(p.x+drag.offx,G.vb[0]+0.8,G.vb[0]+G.vb[2]-0.8);
+    pc.cy=clamp(p.y+drag.offy,G.vb[1]+0.8,G.vb[1]+G.vb[3]-0.8);
+  };
+  board.onpointerup=ev=>{
+    if(!drag)return;
+    const pc=G.pieces[drag.i];
+    pc.el.removeAttribute('filter');
+    const i=drag.i, moved=drag.moved; drag=null;
+    if(!moved){
+      const now=Date.now();
+      if(lastTap.i===i&&now-lastTap.t<320){rotateSel(1);lastTap={t:0,i:-1};return;}
+      lastTap={t:now,i};
+    }
+    if(G.mode==='puzzle')trySnap(i);
+  };
+  board.onpointercancel=()=>{if(drag){G.pieces[drag.i].el.removeAttribute('filter');drag=null;}};
+}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+
+function select(i){
+  if(G.sel>=0&&G.pieces[G.sel])G.pieces[G.sel].el.setAttribute('stroke','rgba(0,0,0,0.35)');
+  G.sel=i;
+  const pc=G.pieces[i];
+  pc.el.setAttribute('stroke','#ffffff');
+  updateBtns();
+}
+function updateBtns(){
+  const pc=G.sel>=0?G.pieces[G.sel]:null;
+  $('btnFlip').disabled=!(pc&&pc.sh==='P'&&!pc.locked);
+  $('btnCW').disabled=$('btnCCW').disabled=!(pc&&!pc.locked);
+}
+
+/* ── 회전·뒤집기 ── */
+function rotateSel(dir){
+  if(G.sel<0)return toast('조각을 먼저 골라줘!');
+  const pc=G.pieces[G.sel];
+  if(pc.locked)return;
+  pc.rot+=45*dir;
+  Snd.tick();
+  if(G.mode==='puzzle')setTimeout(()=>trySnap(G.sel),160);
+}
+function flipSel(){
+  if(G.sel<0)return toast('조각을 먼저 골라줘!');
+  const pc=G.pieces[G.sel];
+  if(pc.locked||pc.sh!=='P')return;
+  pc.fNext=pc.f?0:1; pc.flApplied=false; pc.squashT=0;
+  Snd.whoosh();
+  if(G.mode==='puzzle')setTimeout(()=>trySnap(G.sel),260);
+}
+
+/* ── 스냅 ── */
+function trySnap(i){
+  const pc=G.pieces[i];
+  if(pc.locked||G.mode!=='puzzle')return;
+  const posTol=G.pz.stars>=3?0.85:1.15, shapeTol=0.4;
+  const rotQ=((pc.rot%360)+360)%360;
+  const poly=T.pieceWorldPoly(pc.sh,pc.cx,pc.cy,rotQ,pc.f);
+  for(const s of G.slots){
+    if(s.filled||s.sh!==pc.sh)continue;
+    if(T.slotMatch(poly,s.poly,posTol,shapeTol)){
+      s.filled=true; pc.locked=true;
+      pc.cx=s.cc[0]; pc.cy=s.cc[1];
+      pc.el.setAttribute('stroke','rgba(0,0,0,0.28)');
+      pc.el.style.cursor='default';
+      pc.pulseT=0;
+      G.lockedCount++;
+      Snd.snap(G.lockedCount-1);
+      const dots=$('dots').children;
+      if(dots[G.lockedCount-1])dots[G.lockedCount-1].classList.add('on');
+      if(G.sel===i){G.sel=-1;updateBtns();}
+      if(G.lockedCount===7)setTimeout(finishPuzzle,650);
+      return;
+    }
+  }
+}
+
+/* ── 힌트 ── */
+function showHint(){
+  if(G.mode!=='puzzle')return;
+  const slot=G.slots.find(s=>!s.filled);
+  if(!slot)return;
+  Snd.hint();
+  G.gHint.innerHTML='';
+  const o=svgEl('polygon',{points:ptsAttr(slot.poly),fill:'rgba(77,225,255,0.12)',
+    stroke:'var(--accent)','stroke-width':0.14,'stroke-dasharray':'0.55 0.4','stroke-linejoin':'round'});
+  G.gHint.appendChild(o);
+  let on=true,n=0;
+  const iv=setInterval(()=>{on=!on;o.setAttribute('opacity',on?1:0.15);if(++n>6){clearInterval(iv);G.gHint.innerHTML='';}},260);
+  const pc=G.pieces.find(q=>!q.locked&&q.sh===slot.sh);
+  if(pc){pc.wigT=0;select(G.pieces.indexOf(pc));}
+}
+
+/* ── 완성 ── */
+function finishPuzzle(){
+  G.doneFlag=true;
+  addStamp(G.pz.id);
+  Snd.win();
+  // 조각 순차 펄스
+  G.pieces.forEach((pc,i)=>setTimeout(()=>{pc.pulseT=0;},i*110));
+  // 색종이
+  const cf=$('confetti'); cf.innerHTML='';
+  const cols=['#ffd35c','#4de1ff','#ff6b81','#3ee6a8','#b06bff','#ff9a4d'];
+  for(let i=0;i<60;i++){
+    const d=document.createElement('i');
+    d.style.left=(Math.random()*100)+'%';
+    d.style.background=cols[i%cols.length];
+    d.style.animationDuration=(1.6+Math.random()*1.6)+'s';
+    d.style.animationDelay=(Math.random()*0.9)+'s';
+    d.style.transform='rotate('+(Math.random()*360)+'deg)';
+    cf.appendChild(d);
+  }
+  const secs=Math.round((Date.now()-G.startTs)/1000);
+  setTimeout(()=>{
+    $('pname').textContent=G.pz.name; $('pname').classList.remove('q');
+    $('doneName').textContent=G.pz.name;
+    $('doneT').textContent='짜잔! 이건…';
+    $('doneSub').textContent='⭐'.repeat(G.pz.stars)+' · '+fmtTime(secs)+' 만에 완성 🌟 도장 콱!';
+    $('doneov').classList.add('show');
+  },1100);
+}
+function fmtTime(s){return s<60?(s+'초'):(Math.floor(s/60)+'분 '+(s%60)+'초');}
+
+/* ── 자유 만들기 저장 (SVG → PNG) ── */
+function saveArt(){
+  try{
+    const clone=board.cloneNode(true);
+    clone.setAttribute('xmlns',SVGNS);
+    const bg=svgEl('rect',{x:G.vb[0],y:G.vb[1],width:G.vb[2],height:G.vb[3],fill:'#0a0f2c'});
+    clone.insertBefore(bg,clone.firstChild);
+    const xml=new XMLSerializer().serializeToString(clone);
+    const img=new Image();
+    const scale=48;
+    img.onload=function(){
+      const cv=document.createElement('canvas');
+      cv.width=G.vb[2]*scale; cv.height=G.vb[3]*scale;
+      const cx=cv.getContext('2d');
+      cx.drawImage(img,0,0,cv.width,cv.height);
+      const a=document.createElement('a');
+      a.download='칠교작품.png'; a.href=cv.toDataURL('image/png'); a.click();
+      toast('작품을 저장했어! 📷');
+    };
+    img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(xml);
+  }catch(e){toast('저장이 안 됐어. 다시 한 번!');}
+}
+
+/* ── 내비게이션 ── */
+function toSelect(){
+  $('playView').style.display='none';
+  $('selectView').style.display='block';
+  if(G.anim)cancelAnimationFrame(G.anim);
+  buildSelect();
+  try{window.scrollTo({top:0});}catch(e){}
+}
+function nextPuzzle(){
+  if(G.mode!=='puzzle')return toSelect();
+  const idx=T.PUZZLES.findIndex(p=>p.id===G.pz.id);
+  const nx=T.PUZZLES[(idx+1)%T.PUZZLES.length];
+  startPuzzle(nx.id);
+}
+
+$('btnBack').addEventListener('click',toSelect);
+$('btnPick').addEventListener('click',toSelect);
+$('btnNext').addEventListener('click',nextPuzzle);
+$('btnAgain').addEventListener('click',()=>startPuzzle(G.pz.id));
+$('btnCW').addEventListener('click',()=>rotateSel(1));
+$('btnCCW').addEventListener('click',()=>rotateSel(-1));
+$('btnFlip').addEventListener('click',flipSel);
+$('btnHint').addEventListener('click',showHint);
+$('btnReset').addEventListener('click',()=>{G.mode==='puzzle'?startPuzzle(G.pz.id):startFree();});
+$('btnSave').addEventListener('click',saveArt);
+window.addEventListener('keydown',e=>{
+  if($('playView').style.display==='none')return;
+  if(e.key==='r'||e.key==='R')rotateSel(1);
+  if(e.key==='f'||e.key==='F')flipSel();
+});
+window.addEventListener('resize',()=>{
+  if($('playView').style.display!=='none'&&G.vb){
+    const px=Math.min(920,window.innerWidth-28);
+    board.style.height=(px*G.vb[3]/G.vb[2])+'px';
+  }
+});
+
+buildSelect();
+})();
+</script>
+</body>
+</html>
