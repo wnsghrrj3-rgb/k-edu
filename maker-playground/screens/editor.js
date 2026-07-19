@@ -67,8 +67,12 @@ window.MK_SCREENS.editor = (() => {
       <div class="aid-ctx" data-ed="aictx">
         <span title="현재 프로젝트">${M().esc(ctx.project)}</span>
         <b>씬 ${ctx.sceneIdx + 1}/${ctx.sceneCount} · ${M().esc(ctx.sceneName)}</b>
-        <em>선택: ${M().esc(sel)} · 테마 ${M().esc(ctx.theme.paletteName)}${ctx.theme.dark ? ' (다크)' : ''}</em>
+        <em>선택: ${M().esc(sel)} · 테마 ${M().esc(ctx.theme.paletteName)}${ctx.theme.dark ? ' (다크)' : ''}${ctx.brand ? ` · 🏷 ${M().esc(ctx.brand.name)}` : ''}</em>
       </div>
+      ${window.MK_BRAND ? `<div class="aid-brand"><small>브랜드</small><select class="mk-input" data-ed="brand-sel">
+        <option value="">(미지정)</option>
+        ${MK_BRAND.list().map((b) => `<option value="${b.id}" ${ctx.brand && ctx.brand.id === b.id ? 'selected' : ''}>${M().esc(b.name)}</option>`).join('')}
+      </select></div>` : ''}
       <div class="aid-log" id="aidLog">${log}</div>
       <div class="aid-quick">${QUICK.map(([c, l]) => `<button class="aid-chip" data-cmd="${M().esc(c)}" title="${M().esc(c)}">${l}</button>`).join('')}</div>
       <div class="aid-input">
@@ -90,9 +94,14 @@ window.MK_SCREENS.editor = (() => {
 
   /* ================= Chart / Table 렌더러 (Canvas·MiniScene 공용) ================= */
   const esc2 = (v) => window.MK.esc(String(v));
+  const brandOf = () => (window.MK_BRAND && PG.state.editor.doc) ? MK_BRAND.of(PG.state.editor.doc) : null;
   const ChartSVG = (el, dark, mini) => {
-    const S = el.series || [], ac = el.accent || '#2E8C7F';
-    const muted = dark ? '#8A97A8' : '#8E97A3', grid = dark ? 'rgba(255,255,255,.14)' : 'rgba(31,39,51,.10)';
+    const S = el.series || [], B = brandOf();
+    const ac = (B ? B.palette.accent : el.accent) || el.accent || '#2E8C7F';
+    const seriesColor = (i) => B ? B.chart.colors[i % B.chart.colors.length] : ac;   /* 브랜드 차트 색 순환 */
+    const corner = B ? B.components.chart.corner : 0.8, barOp = B ? B.components.chart.barOpacity : 0.42;
+    const muted = B ? (dark ? B.palette.mutedOnDark : B.palette.mutedOnLight) : (dark ? '#8A97A8' : '#8E97A3');
+    const grid = B && B.chart.grid === 'none' ? 'transparent' : dark ? 'rgba(255,255,255,.14)' : 'rgba(31,39,51,.10)';
     const max = Math.max(1, ...S.map((d) => Math.abs(+d.v) || 0));
     const W = 100, H = 62, PADB = mini ? 6 : 11, TOP = el.title && !mini ? 12 : 4;
     let body = '';
@@ -105,9 +114,9 @@ window.MK_SCREENS.editor = (() => {
         const x1 = cx + r * Math.cos(acc), y1 = cy + r * Math.sin(acc), x2 = cx + r * Math.cos(e2), y2 = cy + r * Math.sin(e2);
         const large = ang > Math.PI ? 1 : 0, op = (1 - i * 0.19).toFixed(2);
         acc = e2;
-        return `<path d="M${cx} ${cy} L${x1.toFixed(2)} ${y1.toFixed(2)} A${r} ${r} 0 ${large} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z" fill="${ac}" opacity="${op}"/>`;
+        return `<path d="M${cx} ${cy} L${x1.toFixed(2)} ${y1.toFixed(2)} A${r} ${r} 0 ${large} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z" fill="${B ? seriesColor(i) : ac}" opacity="${B ? 1 : op}"/>`;
       }).join('');
-      if (!mini) body += S.map((d, i) => `<rect x="60" y="${TOP + 3 + i * 11}" width="4" height="4" rx="1" fill="${ac}" opacity="${(1 - i * 0.19).toFixed(2)}"/><text x="67" y="${TOP + 6.6 + i * 11}" font-size="4.4" fill="${muted}">${esc2(d.k)} · ${esc2(d.v)}</text>`).join('');
+      if (!mini && !(B && B.chart.legend === false)) body += S.map((d, i) => `<rect x="60" y="${TOP + 3 + i * 11}" width="4" height="4" rx="1" fill="${B ? seriesColor(i) : ac}" opacity="${B ? 1 : (1 - i * 0.19).toFixed(2)}"/><text x="67" y="${TOP + 6.6 + i * 11}" font-size="4.4" fill="${muted}">${esc2(d.k)} · ${esc2(d.v)}</text>`).join('');
     } else if (el.chartType === 'line') {
       const n = S.length || 1, step = 84 / Math.max(1, n - 1);
       const pts = S.map((d, i) => [8 + i * step, H - PADB - ((+d.v || 0) / max) * (H - PADB - TOP - 3)]);
@@ -119,20 +128,22 @@ window.MK_SCREENS.editor = (() => {
       body = S.map((d, i) => {
         const h = ((+d.v || 0) / max) * (H - PADB - TOP - 3), x = 8 + i * (bw + gap), y = H - PADB - h;
         const last = i === S.length - 1;
-        return `<rect x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${bw.toFixed(2)}" height="${Math.max(0.6, h).toFixed(2)}" rx="0.8" fill="${ac}" opacity="${last ? 1 : 0.42}"/>`
+        return `<rect x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${bw.toFixed(2)}" height="${Math.max(0.6, h).toFixed(2)}" rx="${corner}" fill="${ac}" opacity="${last ? 1 : barOp}"/>`
           + (mini ? '' : `<text x="${(x + bw / 2).toFixed(2)}" y="${H - 2}" font-size="3.8" fill="${muted}" text-anchor="middle">${esc2(d.k)}</text>`
             + `<text x="${(x + bw / 2).toFixed(2)}" y="${(y - 1.6).toFixed(2)}" font-size="4" font-weight="700" fill="${last ? ac : muted}" text-anchor="middle">${esc2(d.v)}</text>`);
       }).join('');
     }
-    const axis = el.chartType === 'pie' ? '' : `<path d="M6 ${H - PADB + 0.5}H94" stroke="${grid}" stroke-width="0.6"/>`;
+    const axis = (el.chartType === 'pie' || (B && B.chart.axis === false)) ? '' : `<path d="M6 ${H - PADB + 0.5}H94" stroke="${grid}" stroke-width="0.6"/>`;
     const title = (el.title && !mini) ? `<text x="6" y="7" font-size="5" font-weight="700" fill="${dark ? '#F2F5F9' : '#1F2733'}">${esc2(el.title)}</text>` : '';
     return `<svg viewBox="0 0 100 ${H}" preserveAspectRatio="none" style="width:100%;height:100%;display:block">${title}${axis}${body}</svg>`;
   };
   const TableHTML = (el, dark, mini) => {
+    const B = brandOf(), T = B ? B.components.table : null;
     const line = dark ? 'rgba(255,255,255,.16)' : '#E1E5EC', head = dark ? '#F2F5F9' : '#1F2733', mut = dark ? '#B7C0CD' : '#525C6A';
     const fs = mini ? 'font-size:3px' : 'font-size:inherit';
-    const rows = (el.rows || []).map((r, ri) => `<tr>${r.map((c, ci) => `<td style="padding:${mini ? '1px 2px' : '4px 8px'};border-top:1px solid ${line};color:${ci === 0 ? head : mut};font-weight:${ci === 0 ? 600 : 400};text-align:${ci ? 'right' : 'left'}">${esc2(c)}</td>`).join('')}</tr>`).join('');
-    const cols = (el.cols || []).map((c, ci) => `<th style="padding:${mini ? '1px 2px' : '4px 8px'};color:${mut};font-weight:600;text-align:${ci ? 'right' : 'left'}">${esc2(c)}</th>`).join('');
+    const zebra = (ri) => (T && T.zebra && ri % 2) ? `;background:${dark ? 'rgba(255,255,255,.05)' : (B.ramps.neutral[50])}` : '';
+    const rows = (el.rows || []).map((r, ri) => `<tr>${r.map((c, ci) => `<td style="padding:${mini ? '1px 2px' : '4px 8px'};border-top:1px solid ${line};color:${ci === 0 ? head : mut};font-weight:${ci === 0 ? (T ? T.headWeight : 600) : 400};text-align:${ci ? 'right' : 'left'}${zebra(ri)}">${esc2(c)}</td>`).join('')}</tr>`).join('');
+    const cols = (el.cols || []).map((c, ci) => `<th style="padding:${mini ? '1px 2px' : '4px 8px'};color:${mut};font-weight:${T ? T.headWeight : 600};text-align:${ci ? 'right' : 'left'}${T ? `;border-bottom:1.5px solid ${B.palette.accent}` : ''}">${esc2(c)}</th>`).join('');
     return `<div class="ed-tbl" style="${fs}">${el.title && !mini ? `<b style="color:${head}">${esc2(el.title)}</b>` : ''}<table style="width:100%;border-collapse:collapse"><thead><tr>${cols}</tr></thead><tbody>${rows}</tbody></table></div>`;
   };
   const HANDLES = '<i class="hd tl"></i><i class="hd tr"></i><i class="hd bl"></i><i class="hd br"></i><i class="hd tm"></i><i class="hd bm"></i><i class="hd ml"></i><i class="hd mr"></i><i class="hd rot"></i>';
@@ -151,12 +162,14 @@ window.MK_SCREENS.editor = (() => {
       }
       if (el.kind === 'text') {
         const fs = (el.size / 100 * CH).toFixed(1);
+        const maxSize = Math.max(...scene.elements.filter((x) => x.kind === 'text').map((x) => x.size || 0));
+        const hfont = (e.doc.headingFont && el.size === maxSize) ? `;font-family:'${e.doc.headingFont}','${e.doc.fontFamily || 'Pretendard'}',sans-serif` : '';
         const hd = e.selEl === i ? '<i class="hd tl"></i><i class="hd tr"></i><i class="hd bl"></i><i class="hd br"></i><i class="hd tm"></i><i class="hd bm"></i><i class="hd ml"></i><i class="hd mr"></i><i class="hd rot"></i>' : '';
         const dark = MK_SEC ? MK_SEC.isDark(scene.background) : scene.background === '#1F2733';
         const col = el.color || (dark ? ((el.weight || 400) >= 600 ? '#F2F5F9' : '#B7C0CD') : ((el.weight || 400) >= 600 ? '#1F2733' : '#525C6A'));
         const al = el.align ? `;text-align:${el.align}` : '';
         const tr = el.tracking ? `;letter-spacing:${el.tracking}em` : '';
-        return `<div class="ed-el ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight};line-height:1.3;color:${col}${al}${tr};white-space:pre-wrap">${M().esc(el.text)}${hd}</div>`;
+        return `<div class="ed-el ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight};line-height:1.3;color:${col}${al}${tr}${hfont};white-space:pre-wrap">${M().esc(el.text)}${hd}</div>`;
       }
       const hd2 = e.selEl === i ? '<i class="hd tl"></i><i class="hd tr"></i><i class="hd bl"></i><i class="hd br"></i><i class="hd tm"></i><i class="hd bm"></i><i class="hd ml"></i><i class="hd mr"></i><i class="hd rot"></i>' : '';
       const fillCls = el.fill && el.fill !== 'none' ? 'has-fill' : '', fillSty = el.fill && el.fill !== 'none' ? `;background:${el.fill}` : '';
@@ -311,6 +324,14 @@ window.MK_SCREENS.editor = (() => {
         const lg = document.getElementById('aidLog'); if (lg) lg.scrollTop = lg.scrollHeight;
       };
       root.querySelectorAll('[data-cmd]').forEach((b) => b.onclick = () => runAI(b.dataset.cmd));
+      const brSel = root.querySelector('[data-ed="brand-sel"]');
+      if (brSel) brSel.onchange = () => {
+        if (!brSel.value) return;
+        H.push('브랜드 전환');
+        window.MK_BRAND.apply(doc, brSel.value);
+        say('ai', `브랜드 「${window.MK_BRAND.get(brSel.value).name}」 적용 — 전 씬 토큰 치환 완료`);
+        PG.render();
+      };
       const aiIn = root.querySelector('[data-ed="ai-in"]'), aiRun = root.querySelector('[data-ed="ai-run"]');
       if (aiRun) aiRun.onclick = () => runAI(aiIn && aiIn.value);
       if (aiIn) { aiIn.onkeydown = (ev) => { if (ev.key === 'Enter') runAI(aiIn.value); }; }

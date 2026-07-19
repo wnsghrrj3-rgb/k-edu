@@ -99,6 +99,7 @@ window.MK_AIED = (() => {
       sceneId: scene.id, sceneName: scene.name, sceneIdx: e.sceneIdx, sceneCount: doc.scenes.length,
       selectedIdx: e.selEl, selected: sel, selectedKind: sel ? sel.kind : null,
       theme: { paletteId: paletteId(doc), paletteName: P.name, dark, background: scene.background, accent: P.accent, accent2: P.accent2 },
+      brand: (() => { const b = window.MK_BRAND && MK_BRAND.of(doc); return b ? { id: b.id, name: b.name } : null; })(),
       typography: { font: doc.fontFamily || '기본 (Pretendard)', headingSize: heading ? heading.size : null, count: texts.length },
       colors: [...new Set(els.map((x) => x.color || x.fill).filter(Boolean))].slice(0, 8),
       layer: els.map((x, i) => ({ i, kind: x.kind, name: x.kind === 'text' ? String(x.text).split('\n')[0].slice(0, 18) : (x.label || (x.kind === 'chart' ? '차트' : x.kind === 'table' ? '표' : '도형')) })),
@@ -490,11 +491,27 @@ window.MK_AIED = (() => {
     doc.fontFamily = args.font;
     return { msg: `폰트 ${args.font} 적용 — 캔버스 전체` };
   };
-  A['theme.brand'] = (doc, ctx) => {
-    applyPalette(doc, 'pl-ink');
-    doc.fontFamily = 'Pretendard';
-    doc.scenes.forEach((s) => { const h = headingOf(s); if (h) { h.weight = 700; h.tracking = -0.02; } });
-    return { msg: 'K-MAKER 브랜드 적용 — Ink & Teal 팔레트 + Pretendard + 제목 트래킹' };
+  A['theme.brand'] = (doc, ctx) => A['brand.apply'](doc, ctx, { brandId: 'br-kmaker' });
+  /* ---------- Round 13: Brand System ---------- */
+  A['brand.apply'] = (doc, ctx, args) => {
+    const BR = window.MK_BRAND; if (!BR) return { err: '브랜드 시스템이 로드되지 않았어요' };
+    const id = args && args.brandId, b = BR.get(id);
+    if (!b) return { err: '해당 브랜드를 찾지 못했어요 — Brand 화면에서 목록을 확인해 주세요' };
+    BR.apply(doc, id);
+    return { msg: `브랜드 「${b.name}」 적용 — 색·폰트·컴포넌트·차트가 브랜드 토큰으로 치환됐어요` };
+  };
+  A['brand.validate'] = (doc, ctx, args) => {
+    const BR = window.MK_BRAND; if (!BR) return { err: '브랜드 시스템이 로드되지 않았어요' };
+    const r = BR.validate(doc);
+    if (!r.brand) return { err: '문서에 브랜드가 지정되지 않았어요 — "우리 회사 스타일로" 등으로 먼저 적용해 주세요' };
+    if (r.ok) return { msg: `브랜드 「${r.brand}」 규칙 위반 없음 — 색·폰트·차트·대비 모두 통과`, noop: true };
+    if (args && args.fix) {
+      const n = BR.fix(doc);
+      const after = BR.validate(doc);
+      return { msg: `위반 ${n}건을 브랜드 토큰으로 되돌렸어요${after.ok ? ' — 이제 전부 통과' : ` (남은 ${after.violations.length}건은 수동 확인 필요)`}` };
+    }
+    const top = r.violations.slice(0, 3).map((v) => `${v.type}: ${v.detail}`).join(' / ');
+    return { msg: `위반 ${r.violations.length}건 — ${top}${r.violations.length > 3 ? ' 외' : ''}. "브랜드 규칙 유지"라고 하면 자동으로 되돌려요`, noop: true };
   };
   A['style.apple'] = (doc, ctx) => {
     const P = ctx.palette;
@@ -531,6 +548,17 @@ window.MK_AIED = (() => {
 
     /* Theme — 우선순위 상단(오해 소지 적음) */
     if (has(p, 'apple', '애플')) return { action: 'style.apple' };
+    /* ---- Round 13: Brand ---- */
+    if (has(p, '브랜드 규칙 유지', '브랜드 유지', '브랜드에 맞게 고쳐', '브랜드로 정리')) return { action: 'brand.validate', args: { fix: true } };
+    if (has(p, '브랜드 검사', '브랜드 점검', '브랜드 위반')) return { action: 'brand.validate', args: {} };
+    if (has(p, '회사 스타일', '우리 회사', '회사 브랜드')) return { action: 'brand.apply', args: { brandId: has(p, '시그널', 'signal', 'b사', '회사 b', '회사b') ? 'br-signal' : 'br-kmaker' } };
+    if (has(p, '학교 스타일', '학교 브랜드', '금성초')) return { action: 'brand.apply', args: { brandId: 'br-school' } };
+    if (has(p, '시그널 스타일', '시그널 브랜드', 'signal 스타일')) return { action: 'brand.apply', args: { brandId: 'br-signal' } };
+    if (has(p, '퍼스널 브랜드', '개인 브랜드', '내 스타일로')) return { action: 'brand.apply', args: { brandId: 'br-personal' } };
+    if (has(p, '브랜드 적용', '브랜드로')) {
+      const hit = (window.MK_BRAND ? MK_BRAND.list() : []).find((b) => has(p, b.name.toLowerCase()));
+      return { action: 'brand.apply', args: { brandId: hit ? hit.id : (window.MK_BRAND ? MK_BRAND.DEFAULT : 'br-kmaker') } };
+    }
     if (has(p, '다크 모드', '다크모드', 'dark mode')) return { action: 'theme.darkmode', args: { on: !has(p, '끄', '해제') } };
     if (has(p, '라이트 모드', '라이트모드')) return { action: 'theme.darkmode', args: { on: false } };
     if (has(p, '브랜드')) {

@@ -180,7 +180,7 @@ ok('라이트 모드 복귀', r.ok && doc().scenes.every((s) => !window.MK_SEC.i
 r = AI.run('폰트 Pretendard');
 ok('폰트 적용', r.ok && doc().fontFamily === 'Pretendard');
 r = AI.run('브랜드 컬러 적용');
-ok('브랜드 적용', r.ok && doc().paletteId === 'pl-ink');
+ok('브랜드 적용', r.ok && doc().paletteId === 'pl-brand-kmaker'); /* R13: theme.brand → Brand System 경유로 승격 */
 reset(); r = AI.run('Apple 스타일');
 ok('Apple 스타일 — 중앙정렬·초대형 제목', r.ok && doc().scenes[1].elements.filter((e) => e.kind === 'text').every((e) => e.align === 'center'), r.msg);
 

@@ -6,7 +6,7 @@ window.PG = (() => {
     ['foundations', '🎨', 'Foundations'], ['components', '🧩', 'Components'],
     ['patterns', '📐', 'Patterns'], ['screens', '🖥', 'Screens'],
     ['--div'], 
-    ['home', '🏠', 'Home'], ['library', '🗂', 'Library'], ['templates', '📂', 'Templates'], ['editor', '✏️', 'Editor'],
+    ['home', '🏠', 'Home'], ['library', '🗂', 'Library'], ['templates', '📂', 'Templates'], ['brand', '🏷', 'Brand'], ['editor', '✏️', 'Editor'],
     ['video', '🎬', 'Video'], ['photo', '🖼', 'Photo'], ['ai', '🤖', 'AI'],
     ['--div'],
     ['export', '📤', 'Export'],

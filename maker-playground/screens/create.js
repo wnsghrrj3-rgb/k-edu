@@ -17,7 +17,7 @@ window.MK_SCREENS.create = (() => {
   ];
 
   const st = () => {
-    if (!PG.state.create) PG.state.create = { step: 1, type: null, style: null, tpl: null };
+    if (!PG.state.create) PG.state.create = { step: 1, type: null, style: null, tpl: null, brand: '' };
     return PG.state.create;
   };
   /* 외부 진입점: Home 제작 시작 카드 → 종류 선택 완료 상태로 Step 2 */
@@ -88,6 +88,11 @@ window.MK_SCREENS.create = (() => {
           <div class="kv"><small>비율</small><b>${tpl.ratio} · ${tpl.styleEn}</b></div>
           <div class="kv"><small>추천 용도</small><b>${tpl.uses}</b></div>
         </div>
+        ${window.MK_BRAND ? `<small style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">브랜드 — 고르면 시작과 동시에 전체가 브랜드 토큰으로</small>
+        <div class="cf-brands">
+          <button class="cf-brand ${!st().brand ? 'on' : ''}" data-cf-brand="">템플릿 원본</button>
+          ${MK_BRAND.list().map((b) => `<button class="cf-brand ${st().brand === b.id ? 'on' : ''}" data-cf-brand="${b.id}"><span class="bw-dot" style="background:${b.colors.primary}"></span>${M().esc(b.name)}</button>`).join('')}
+        </div>` : ''}
         <div class="cf-pv-cta">
           ${M().Button({ label: '이 템플릿 사용', kind: 'accent', size: 'lg', attrs: `data-cf-use="${tpl.templateId}" style="width:100%"` })}
           ${M().Button({ label: '다른 템플릿 보기', kind: 'ghost', size: 'sm', attrs: 'data-cf-back="3" style="width:100%;margin-top:8px"' })}
@@ -114,7 +119,11 @@ window.MK_SCREENS.create = (() => {
       root.querySelectorAll('[data-cf-style]').forEach((b) => b.onclick = () => { s.style = b.dataset.cfStyle; s.step = 3; PG.render(); });
       root.querySelectorAll('[data-cf-tpl]').forEach((b) => b.onclick = () => { s.tpl = b.dataset.cfTpl; s.step = 4; PG.render(); });
       root.querySelectorAll('[data-cf-back]').forEach((b) => b.onclick = () => { s.step = +b.dataset.cfBack; PG.render(); });
-      const use = root.querySelector('[data-cf-use]'); if (use) use.onclick = () => PG.openEditor(use.dataset.cfUse);
+      root.querySelectorAll('[data-cf-brand]').forEach((b) => b.onclick = () => { s.brand = b.dataset.cfBrand; PG.render(); });
+      const use = root.querySelector('[data-cf-use]'); if (use) use.onclick = () => {
+        PG.openEditor(use.dataset.cfUse);
+        if (s.brand && window.MK_BRAND) { MK_BRAND.apply(PG.state.editor.doc, s.brand); PG.render(); }
+      };
     },
   };
 })();
