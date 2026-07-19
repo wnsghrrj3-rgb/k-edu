@@ -131,6 +131,7 @@
 <script src="core/parts/ballistic.js"></script>
 <script src="core/parts/switchpart.js"></script>
 <script src="core/parts/splitter.js"></script>
+<script src="core/parts/mergepart.js"></script>
 <script src="core/graph.js"></script>
 <script src="core/sim.js"></script>
 <script src="core/multisim.js"></script>
@@ -236,7 +237,7 @@ function computeRenderEntries(comp, routesData) {
     for (const rg of rd.track.pieceRanges) {
       const piece = rd.leafPieces[rg.pieceIndex];
       const globalIdx = comp.routes[rd.routeIdx].pieceIdxs[rg.pieceIndex];
-      const key = globalIdx + ':' + (piece.dir != null ? piece.dir : '');
+      const key = globalIdx + ':' + (piece.dir != null ? piece.dir : '') + ':' + (piece.arm != null ? piece.arm : '');
       if (seen.has(key)) continue;
       seen.add(key);
       const airLocal = new Set();
@@ -256,8 +257,12 @@ function rebuildDimMarkers() {
   dimMarkers = new THREE.Group();
   scene.add(dimMarkers);
   if (!comp || comp.routes.length < 2) return;
+  const activeRef = comp.routes[comp.activeRoute] && comp.routes[comp.activeRoute].seqRef;
+  const seenRef = new Set();
   comp.routes.forEach((rt, ri) => {
     if (ri === comp.activeRoute || rt.ended || !rt.next) return;
+    if (rt.seqRef === activeRef || seenRef.has(rt.seqRef)) return; // 합류된 형제 갈래 = 같은 끝
+    seenRef.add(rt.seqRef);
     const c = NS.hexgrid.tileCenter(rt.next.q, rt.next.r, C.R);
     const ring = new THREE.Mesh(
       new THREE.TorusGeometry(C.R * 0.8, 0.0035, 8, 6),
@@ -289,14 +294,16 @@ function rebuild(recenter) {
     });
   }
   const activeRD = routesData.find(rd => rd.routeIdx === comp.activeRoute) || routesData[0];
+  const mergeGems = [];
+  group.traverse(o => { if (o.name === 'mergegem') mergeGems.push(o); });
   cur = {
-    routesData, group, bells, switches, levers, activeRD,
+    routesData, group, bells, switches, levers, activeRD, mergeGems,
     ghostSim: activeRD ? new NS.Sim(activeRD.pd) : null,
   };
   if (cur.ghostSim) cur.ghostSim.release(0);
   ghostWait = 0;
   rebuildDimMarkers();
-  ui.setBuildState(comp, NS.canPlace);
+  ui.setBuildState(comp, NS.canPlace, comp.ok && NS.canMerge(builderState));
   if (cams) {
     if (recenter) cams.frameAll(allTilePoints());
     else cams.ensureVisible(frontierPoint());
@@ -341,7 +348,11 @@ function setMode(m) {
 
 /* 갈래 리스트에서 다음 열린 갈래로 순환 */
 function cycleBranch() {
-  const open = comp.routes.filter(rt => !rt.ended);
+  const seenRef = new Set();
+  const open = comp.routes.filter(rt => {
+    if (rt.ended || seenRef.has(rt.seqRef)) return false;
+    seenRef.add(rt.seqRef); return true;
+  });
   if (open.length < 2) return;
   const curIdx = open.findIndex(rt => rt === comp.routes[comp.activeRoute]);
   const next = open[(curIdx + 1) % open.length];
@@ -358,6 +369,7 @@ function rebuildLog(seq, log) {
     if (item && typeof item === 'object' && (item.type === 'switch' || item.type === 'splitter')) {
       rebuildLog(item.left || [], log);
       rebuildLog(item.right || [], log);
+      if (item.merged) { log.push({ mergeNode: item }); rebuildLog(item.tail || [], log); }
     }
   }
   return log;
@@ -380,8 +392,13 @@ const ui = createUI(document.getElementById('ui'), {
   },
   onUndo() {
     if (editLog.length === 0) return;
-    const arr = editLog.pop();
-    arr.pop();
+    const rec = editLog.pop();
+    if (rec && rec.mergeNode) {
+      NS.unMerge(rec.mergeNode);
+      ui.showHint('합류를 풀었어 — 갈래가 다시 둘로', 'info');
+    } else {
+      rec.pop();
+    }
     rebuild(false);
   },
   onClear() {
@@ -408,6 +425,14 @@ const ui = createUI(document.getElementById('ui'), {
     if (mode === 'run') setMode('run');
   },
   onBranch() { cycleBranch(); },
+  onMerge() {
+    const t = NS.tryMerge(builderState);
+    if (!t.ok) { ui.showHint('아직 합칠 수 없어 — 두 갈래가 같은 자리를 같은 높이로 바라봐야 해', 'warn'); return; }
+    editLog.push({ mergeNode: t.node });
+    placeClick();
+    rebuild(false);
+    ui.showHint('🤝 두 갈래가 하나로! 이제 꼬리는 같이 쓴다', 'good');
+  },
   onMarbleCount(n) {
     marbleCount = n;
     if (mode === 'run') armRun();
@@ -415,7 +440,11 @@ const ui = createUI(document.getElementById('ui'), {
   onMode(m) {
     if (m === 'run' && !comp.ended) {
       // 열린 갈래 전부에 골 벨을 자동으로 놓아줄 수 있으면 놓아준다.
-      const open = comp.routes.filter(rt => !rt.ended);
+      const seenRef = new Set();
+      const open = comp.routes.filter(rt => {
+        if (rt.ended || seenRef.has(rt.seqRef)) return false;
+        seenRef.add(rt.seqRef); return true;
+      });
       if (open.some(rt => !NS.canPlaceRoute(comp, rt, 'goal'))) {
         ui.showHint('앞이 막힌 갈래가 있어서 골 벨을 못 놓아 — ↩ 되돌리기로 물러나자', 'warn');
         return;
@@ -647,6 +676,10 @@ function frame(now) {
     cams.update(null);
   }
 
+  if (cur && cur.mergeGems) for (const gem of cur.mergeGems) {
+    gem.rotation.y += dtReal * 1.6;
+    gem.position.y += Math.sin(clock * 2.2) * 0.00003;
+  }
   confetti.update(dtReal);
   renderer.render(scene, cams.cam);
 }

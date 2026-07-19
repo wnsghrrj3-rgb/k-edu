@@ -58,6 +58,7 @@ export function createUI(root, handlers, tracks) {
         <button id="mr-recenter" title="짓고 있는 자리로 화면 되돌리기">🎯</button>
         <button id="mr-frameall" title="트랙 전체 보기">🗺</button>
         <button id="mr-branch" class="hidden" title="다른 갈래로 전환 — 초록 링을 직접 눌러도 돼">🔀 갈래</button>
+        <button id="mr-merge" class="hidden" title="두 갈래가 같은 자리를 바라보면 하나로 합칠 수 있어!">🤝 합류</button>
         <button id="mr-undo">↩ 되돌리기</button>
         <button id="mr-clear">🗑 처음부터</button>
         <button id="mr-gorun" class="primary">▶ 실행하기</button>
@@ -109,6 +110,8 @@ export function createUI(root, handlers, tracks) {
   $('#mr-undo').addEventListener('click', handlers.onUndo);
   const branchBtn = $('#mr-branch');
   branchBtn.addEventListener('click', handlers.onBranch);
+  const mergeBtn = $('#mr-merge');
+  mergeBtn.addEventListener('click', handlers.onMerge);
   const countBtns = Array.from(root.querySelectorAll('#mr-count button'));
   countBtns.forEach(b => b.addEventListener('click', () => {
     setMarbleCount(parseInt(b.dataset.n, 10));
@@ -149,7 +152,7 @@ export function createUI(root, handlers, tracks) {
   }
 
   /* 팔레트·버튼 활성화 + 상황 안내 */
-  function setBuildState(comp, canPlaceFn) {
+  function setBuildState(comp, canPlaceFn, canMergeNow) {
     for (const b of paletteBtns) b.disabled = !canPlaceFn(comp, b.dataset.part);
     hVal.textContent = String(comp.pieces[0].h);
     speedEl.textContent = comp.pieces.length + '개 부품';
@@ -162,11 +165,19 @@ export function createUI(root, handlers, tracks) {
 
     const multi = comp.routes && comp.routes.length > 1;
     branchBtn.classList.toggle('hidden', !multi);
-    const openCnt = multi ? comp.routes.filter(rt => !rt.ended).length : 0;
+    mergeBtn.classList.toggle('hidden', !canMergeNow);
+    mergeBtn.classList.toggle('nudge', !!canMergeNow);
+    // 열린 끝 수 = seqRef 기준 (합류된 갈래는 꼬리 하나를 공유)
+    const seenRef = new Set();
+    const openCnt = multi ? comp.routes.filter(rt => {
+      if (rt.ended || seenRef.has(rt.seqRef)) return false;
+      seenRef.add(rt.seqRef); return true;
+    }).length : 0;
 
     if (comp.ended) showHint(multi ? '갈래 전부 완성! 구슬 여러 개로 굴려봐 🔀' : '트랙 완성! ▶ 실행하기를 눌러봐', 'good');
     else if (comp.next && comp.next.blocked) showHint('막다른 길! ↩ 되돌리기로 물러나자', 'warn');
     else if (comp.exitH < 1) showHint('바닥에 닿았어 — 경사는 더 못 놓아', 'info');
+    else if (canMergeNow) showHint('🤝 두 갈래가 마주 보고 있어 — 합류 버튼으로 하나로 합쳐봐!', 'good');
     else if (multi && openCnt > 1) showHint('갈래가 ' + openCnt + '개 열려 있어 — 🔀 갈래 버튼이나 초록 링으로 오가며 짓자', 'info');
     else hideHint();
   }

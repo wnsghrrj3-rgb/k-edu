@@ -13,6 +13,7 @@ require('../core/tracks.js');
 require('../core/builder.js');
 require('../core/parts/switchpart.js');
 require('../core/parts/splitter.js');
+require('../core/parts/mergepart.js');
 require('../core/multisim.js');
 const NS = globalThis.MarbleSim;
 
@@ -736,6 +737,140 @@ T('저속 언덕은 이탈 없이 통과/역행 (기존 물리 회귀 없음)', 
   const ev = sim.runToEnd(30);
   assert(!ev.some(e => e.type === 'detach'), '저속인데 이탈');
   assert(ev.some(e => e.type === 'goal'), '완주 실패');
+});
+
+
+// ---------- 8. 🤝 합류 (M2b-4) ----------
+console.log('[merge]');
+const MERGED_STATE = { startH: 3, seq: ['slope', { type: 'switch',
+  left:  ['curve_r', 'slope', 'curve_r'],
+  right: ['curve_l', 'slope', 'curve_l'],
+  merged: true, tail: ['slope', 'goal'] }] };
+
+T('합류 컴파일: 잎 2, 꼬리·merge 부품 공유, 전부 골 종결', () => {
+  const c = NS.compile(MERGED_STATE);
+  assert(c.ok, JSON.stringify(c.errors));
+  assert(c.routes.length === 2, '잎 수 ' + c.routes.length);
+  assert(c.ended, '미종결');
+  const mIdx = c.pieces.findIndex(pp => pp.type === 'merge');
+  assert(mIdx >= 0, 'merge 부품 없음');
+  assert(c.routes.every(rt => rt.pieceIdxs.includes(mIdx)), '잎이 merge를 안 지남');
+  const tail0 = c.routes[0].pieceIdxs.slice(c.routes[0].pieceIdxs.indexOf(mIdx));
+  const tail1 = c.routes[1].pieceIdxs.slice(c.routes[1].pieceIdxs.indexOf(mIdx));
+  assert(tail0.join(',') === tail1.join(','), '꼬리 사슬 불일치');
+  const arms = c.routes.map(rt => rt.merges[0].arm).sort().join(',');
+  assert(arms === '0,1', '팔 각인 오류: ' + arms);
+});
+T('합류 기하: 중심 이후 꼬리 웨이포인트 완전 일치 + 팔 등길이', () => {
+  const c = NS.compile(MERGED_STATE);
+  const cr = NS.compileRoutes(c);
+  assert(cr.ok, '루트 빌드 실패');
+  const EN = require('../core/parts/mergepart.js').MERGE_ENTRY_N;
+  const cut = (rd) => {
+    const ri = rd.leafPieces.findIndex(pp => pp.type === 'merge');
+    const rg = rd.track.pieceRanges.find(r => r.pieceIndex === ri);
+    return { tail: rd.track.points.slice(rg.i0 + EN),
+             arm: rd.track.points.slice(rg.i0, rg.i0 + EN + 1) };
+  };
+  const A = cut(cr.routesData[0]), B = cut(cr.routesData[1]);
+  assert(A.tail.length === B.tail.length &&
+    A.tail.every((pt, i) => Math.abs(pt.x - B.tail[i].x) < 1e-12 &&
+      Math.abs(pt.y - B.tail[i].y) < 1e-12 && Math.abs(pt.z - B.tail[i].z) < 1e-12), '꼬리 기하 불일치');
+  const len = (pts) => pts.reduce((L, pt, i) => i ? L + Math.hypot(pt.x - pts[i-1].x, pt.z - pts[i-1].z) : 0, 0);
+  near(len(A.arm), len(B.arm), 1e-9, '팔 길이');
+});
+T('합류 조건 검증: 높이 불일치·각도 불일치·미완 갈래 거부', () => {
+  const bad1 = NS.compile({ startH: 3, seq: [{ type: 'switch',
+    left: ['curve_r', 'slope', 'curve_r'], right: ['curve_l', 'curve_l'], merged: true, tail: [] }] });
+  assert(!bad1.ok && bad1.errors.some(e => e.code.startsWith('MERGE')), '높이/자리 불일치 통과됨');
+  const bad2 = NS.compile({ startH: 3, seq: [{ type: 'switch',
+    left: ['curve_r'], right: ['curve_l'], merged: true, tail: [] }] });
+  assert(!bad2.ok && bad2.errors.some(e => e.code.startsWith('MERGE')), '엇갈린 갈래 통과됨');
+  const bad3 = NS.compile({ startH: 3, seq: [{ type: 'switch',
+    left: ['curve_r', 'slope', 'curve_r', 'goal'], right: ['curve_l', 'slope', 'curve_l'], merged: true, tail: [] }] });
+  assert(!bad3.ok && bad3.errors.some(e => e.code === 'MERGE_OPEN'), '골로 끝난 갈래 합류 통과됨');
+});
+T('canMerge/tryMerge: 마주 보면 참, 상태 비파괴, 적용 후 컴파일 통과', () => {
+  const st = { startH: 3, seq: ['slope', { type: 'switch',
+    left: ['curve_r', 'slope', 'curve_r'], right: ['curve_l', 'slope', 'curve_l'] }] };
+  assert(NS.canMerge(st), 'canMerge 거짓');
+  assert(!st.seq[1].merged, 'canMerge가 상태를 바꿈');
+  const t = NS.tryMerge(st);
+  assert(t.ok && st.seq[1].merged && Array.isArray(st.seq[1].tail), 'tryMerge 실패');
+  st.seq[1].tail.push('slope', 'goal');
+  assert(NS.compile(st).ok, '합류 후 컴파일 실패');
+  const st2 = { startH: 3, seq: ['slope', { type: 'switch', left: ['curve_r'], right: ['curve_l'] }] };
+  assert(!NS.canMerge(st2), '엇갈린 갈래인데 canMerge 참');
+});
+T('합류 다중 구슬: 3개 교대 방출 → 전부 같은 벨 완주', () => {
+  const c = NS.compile(MERGED_STATE);
+  const cr = NS.compileRoutes(c);
+  const m = new NS.MultiSim(cr.routesData, { count: 3 });
+  m.release();
+  const ev = m.runToEnd(60);
+  const fins = ev.filter(e => e.type === 'finish');
+  assert(fins.length === 3, '완주 ' + fins.length + '/3');
+  const goals = new Set(fins.map(f => cr.routesData[f.routeIdx].goalPieceIdx));
+  assert(goals.size === 1, '벨이 여러 개: ' + [...goals]);
+  const dirs = ev.filter(e => e.type === 'switch').map(e => e.dir).join(',');
+  assert(dirs === '0,1,0', '교대 순서: ' + dirs);
+});
+T('합류 결정론: 2회 실행 = 동일 이벤트열·틱', () => {
+  const c = NS.compile(MERGED_STATE);
+  const cr = NS.compileRoutes(c);
+  const one = () => {
+    const m = new NS.MultiSim(cr.routesData, { count: 3 });
+    m.release();
+    return m.runToEnd(60).filter(e => e.type === 'switch' || e.type === 'finish')
+      .map(e => e.type + ':' + (e.m != null ? e.m : '') + ':' + (e.ticks != null ? e.ticks : e.dir)).join('|');
+  };
+  const a = one();
+  assert(a.length > 0 && a === one(), '불일치');
+});
+T('합류 에너지: 통과 전후 에너지 비증가 (수평 합류 = 보존 구조)', () => {
+  const c = NS.compile(MERGED_STATE);
+  const cr = NS.compileRoutes(c);
+  const m = new NS.MultiSim(cr.routesData, { count: 1 });
+  m.release();
+  let prev = null;
+  while (!m.done && m.tick < 8000) {
+    m.step();
+    const M = m.marbles[0];
+    if (M.released && M.sim.status === 'rolling') {
+      const e = M.sim.energy();
+      if (prev != null) assert(e <= prev + 1e-9, 'E 증가 @tick ' + m.tick);
+      prev = e;
+    }
+  }
+});
+T('꼬리 속 갈림길 (DAG 재귀): 합류 뒤 스위치 → 잎 4, 전부 완주', () => {
+  const st = { startH: 4, seq: ['slope', { type: 'switch',
+    left:  ['curve_r', 'slope', 'curve_r'],
+    right: ['curve_l', 'slope', 'curve_l'],
+    merged: true,
+    tail: ['slope', { type: 'switch',
+      left:  ['curve_l', 'goal'],
+      right: ['curve_r', 'goal'] }] }] };
+  const c = NS.compile(st);
+  assert(c.ok, JSON.stringify(c.errors));
+  assert(c.routes.length === 4, '잎 수 ' + c.routes.length);
+  assert(c.ended, '미종결');
+  const cr = NS.compileRoutes(c);
+  assert(cr.ok, '루트 빌드 실패');
+  const m = new NS.MultiSim(cr.routesData, { count: 3 });
+  m.release();
+  const fins = m.runToEnd(80).filter(e => e.type === 'finish');
+  assert(fins.length === 3, '완주 ' + fins.length + '/3');
+});
+T('프리셋 다시 만나는 길: 빌드 + 3구슬 완주', () => {
+  const tr = NS.TRACKS.find(t => t.id === 'reunion');
+  assert(tr, '프리셋 없음');
+  const c = NS.compile({ startH: tr.startH, seq: tr.seq });
+  assert(c.ok && c.ended, '컴파일 실패');
+  const cr = NS.compileRoutes(c);
+  const m = new NS.MultiSim(cr.routesData, { count: tr.marbles });
+  m.release();
+  assert(m.runToEnd(60).filter(e => e.type === 'finish').length === tr.marbles, '완주 실패');
 });
 
 // ---------- 7. serialize ----------

@@ -12,7 +12,7 @@ global.window = dom.window;
 global.document = dom.window.document;
 
 // 코어 로드 (window에 부착)
-for (const f of ['core/hexgrid.js','core/parts/basic.js','core/parts/action.js','core/parts/ballistic.js','core/parts/switchpart.js','core/parts/splitter.js','core/graph.js','core/sim.js','core/serialize.js','core/tracks.js','core/builder.js','core/multisim.js']) {
+for (const f of ['core/hexgrid.js','core/parts/basic.js','core/parts/action.js','core/parts/ballistic.js','core/parts/switchpart.js','core/parts/splitter.js','core/parts/mergepart.js','core/graph.js','core/sim.js','core/serialize.js','core/tracks.js','core/builder.js','core/multisim.js']) {
   const code = fs.readFileSync(path.join(BASE, f), 'utf8');
   dom.window.eval(code);
 }
@@ -87,6 +87,40 @@ T('신호기 버튼 존재 + 배치 시 갈래 트리 생성', () => {
   const c = NS.compile({ startH: 3, seq: ['slope',
     { type: 'splitter', left: ['goal'], right: ['goal'] }] });
   assert(c.ok && c.routes.length === 2 && c.ended, '신호기 트리 컴파일 실패');
+});
+
+
+T('🤝 합류 버튼: 마주 본 갈래에서 노출 + 힌트, 평소엔 숨김', () => {
+  const ui = createUI(document.getElementById('ui'), new Proxy({}, { get: () => () => {} }), NS.TRACKS);
+  const btn = document.querySelector('#mr-merge');
+  assert(btn, '합류 버튼 없음');
+  const stFar = { startH: 3, seq: ['slope', { type: 'switch', left: ['curve_r'], right: ['curve_l'] }] };
+  ui.setBuildState(NS.compile(stFar, [0]), NS.canPlace, NS.canMerge(stFar));
+  assert(btn.classList.contains('hidden'), '엇갈린 갈래인데 합류 버튼 노출');
+  const stMeet = { startH: 3, seq: ['slope', { type: 'switch',
+    left: ['curve_r', 'slope', 'curve_r'], right: ['curve_l', 'slope', 'curve_l'] }] };
+  ui.setBuildState(NS.compile(stMeet, [0]), NS.canPlace, NS.canMerge(stMeet));
+  assert(!btn.classList.contains('hidden'), '마주 본 갈래인데 합류 버튼 숨김');
+  const hint = document.getElementById('mr-hint');
+  assert(/합류|합쳐/.test(hint.textContent), '합류 힌트 없음: ' + hint.textContent);
+});
+
+T('🤝 합류 후 상태: 공유 꼬리에 이어 짓기 + 다시 만나는 길 프리셋 포함', () => {
+  createUI(document.getElementById('ui'), new Proxy({}, { get: () => () => {} }), NS.TRACKS);
+  assert(/다시 만나는 길/.test(document.getElementById('mr-track').innerHTML), '프리셋 누락');
+  const st = { startH: 3, seq: ['slope', { type: 'switch',
+    left: ['curve_r', 'slope', 'curve_r'], right: ['curve_l', 'slope', 'curve_l'] }] };
+  const t = NS.tryMerge(st);
+  assert(t.ok, 'tryMerge 실패');
+  let comp = NS.compile(st, [0]);
+  assert(comp.ok && comp.routes.length === 2, '합류 후 잎 수');
+  // 활성 잎의 seqRef = 공유 꼬리 → 부품 하나 놓으면 두 잎 모두에 반영
+  const route = comp.routes[comp.activeRoute];
+  assert(route.seqRef === st.seq[1].tail, '활성 seqRef가 꼬리가 아님');
+  route.seqRef.push('slope', 'goal');
+  comp = NS.compile(st, [0]);
+  assert(comp.ok && comp.ended && comp.routes.every(rt => rt.ended), '꼬리 이어 짓기 실패');
+  assert(NS.unMerge(st.seq[1]) === false, '꼬리가 찼는데 unMerge 허용됨');
 });
 
 console.log('\nUI 스모크: ' + pass + ' 통과, ' + fail + ' 실패');

@@ -176,6 +176,7 @@ export function buildTrackMeshes(pieces, entries, C) {
       const pad = f.getObjectByName('leverpad');
       if (pad) { pad.userData.pieceIdx = en.globalIdx; levers.set(en.globalIdx, pad); }
     }
+    if (piece.type === 'merge') group.add(makeMerge(piece, C, hx));
     if (piece.type === 'cannon' || piece.type === 'trampoline') {
       group.add(makeBallistic(piece, C, hx, NS));
       const arc = raw.slice(1, raw.length - 1); // 설계 조준 궤적
@@ -278,6 +279,51 @@ function makeSwitch(piece, C, hx, splitter) {
     pad.position.set(c.x, y + 0.025, c.z);
     g.add(pad);
   }
+  return g;
+}
+
+/* 🤝 합류: 금색 림 원판 + 두 팔에서 중심으로 모이는 화살촉 + 중심 보석.
+ * 분기 원판(스위치·신호기)과 짝을 이루되 "여긴 만나는 곳"으로 읽히도록. */
+function makeMerge(piece, C, hx) {
+  const g = new THREE.Group();
+  const c = hx.tileCenter(piece.q, piece.r, C.R);
+  const y = piece.h * C.H;
+  const disc = new THREE.Mesh(
+    new THREE.CylinderGeometry(C.R * 0.34, C.R * 0.38, 0.006, 24),
+    new THREE.MeshStandardMaterial({ color: 0x22306b, emissive: 0xffd35c, emissiveIntensity: 0.18, roughness: 0.4, metalness: 0.3 })
+  );
+  disc.position.set(c.x, y + 0.003, c.z);
+  g.add(disc);
+  const rim = new THREE.Mesh(
+    new THREE.TorusGeometry(C.R * 0.36, 0.0022, 8, 24),
+    new THREE.MeshStandardMaterial({ color: 0xffd35c, emissive: 0xffd35c, emissiveIntensity: 0.8, roughness: 0.3 })
+  );
+  rim.rotation.x = Math.PI / 2;
+  rim.position.set(c.x, y + 0.007, c.z);
+  g.add(rim);
+  // 두 진입 팔: 포트 쪽에서 중심을 가리키는 화살촉 (안으로 모인다)
+  const armMat = new THREE.MeshStandardMaterial({ color: 0xffd35c, emissive: 0xb87400, emissiveIntensity: 0.7, roughness: 0.25, metalness: 0.6 });
+  for (const port of [(piece.rot + 2) % 6, (piece.rot + 4) % 6]) {
+    const d = hx.portDir(piece.q, piece.r, port, C.R);
+    const yaw = Math.atan2(-d.x, -d.z); // 포트 → 중심 방향
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.0065, 0.014, 4), armMat);
+    tip.rotation.x = Math.PI / 2;
+    tip.rotation.y = Math.PI / 4;
+    const holder = new THREE.Group();
+    holder.add(tip);
+    tip.position.z = -C.R * 0.44; // holder 앞쪽(포트 쪽)에 배치, 중심을 향해 조준
+    holder.position.set(c.x, y + 0.011, c.z);
+    holder.rotation.y = yaw + Math.PI;
+    g.add(holder);
+  }
+  // 중심 보석: 만남의 점
+  const gem = new THREE.Mesh(
+    new THREE.OctahedronGeometry(0.0075),
+    new THREE.MeshStandardMaterial({ color: 0xfff3c8, emissive: 0xffd35c, emissiveIntensity: 1.0, roughness: 0.2, metalness: 0.4 })
+  );
+  gem.position.set(c.x, y + 0.017, c.z);
+  gem.name = 'mergegem';
+  g.add(gem);
   return g;
 }
 

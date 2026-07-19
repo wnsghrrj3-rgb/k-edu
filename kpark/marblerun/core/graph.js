@@ -26,6 +26,7 @@
     require('./parts/ballistic.js');
     require('./parts/switchpart.js');
     require('./parts/splitter.js');
+    require('./parts/mergepart.js');
     return Object.assign({}, hx, pt);
   }
 
