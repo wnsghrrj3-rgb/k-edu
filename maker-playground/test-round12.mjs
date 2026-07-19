@@ -180,7 +180,8 @@ ok('라이트 모드 복귀', r.ok && doc().scenes.every((s) => !window.MK_SEC.i
 r = AI.run('폰트 Pretendard');
 ok('폰트 적용', r.ok && doc().fontFamily === 'Pretendard');
 r = AI.run('브랜드 컬러 적용');
-ok('브랜드 적용', r.ok && doc().paletteId === 'pl-ink');
+/* Round 13: 'K-MAKER 브랜드'의 정의 주체가 MK_BRAND로 이관됨 — 팔레트 id가 pl-bd-bd-kmaker로 바뀐다(색 값은 동일 계열) */
+ok('브랜드 적용', r.ok && (doc().paletteId === 'pl-ink' || doc().paletteId === 'pl-bd-bd-kmaker'), doc().paletteId);
 reset(); r = AI.run('Apple 스타일');
 ok('Apple 스타일 — 중앙정렬·초대형 제목', r.ok && doc().scenes[1].elements.filter((e) => e.kind === 'text').every((e) => e.align === 'center'), r.msg);
 

@@ -491,10 +491,43 @@ window.MK_AIED = (() => {
     return { msg: `폰트 ${args.font} 적용 — 캔버스 전체` };
   };
   A['theme.brand'] = (doc, ctx) => {
+    const B = window.MK_BRAND, b = B && (B.active() || B.get('bd-kmaker'));
+    if (b) {
+      B.apply(doc, b.brandId);
+      doc.scenes.forEach((s) => { const h = headingOf(s); if (h) { h.weight = 700; h.tracking = -0.02; } });
+      return { msg: `${b.name} 브랜드 컬러 적용 — 팔레트·폰트·차트 일괄 전환` };
+    }
     applyPalette(doc, 'pl-ink');
     doc.fontFamily = 'Pretendard';
     doc.scenes.forEach((s) => { const h = headingOf(s); if (h) { h.weight = 700; h.tracking = -0.02; } });
     return { msg: 'K-MAKER 브랜드 적용 — Ink & Teal 팔레트 + Pretendard + 제목 트래킹' };
+  };
+
+  /* ---- Round 13. Brand System 연동 ---- */
+  A['brand.apply'] = (doc, ctx, args) => {
+    const B = window.MK_BRAND; if (!B) return { err: '브랜드 시스템을 사용할 수 없어요.' };
+    const b = B.get(args.brandId);
+    if (!b) return { err: `브랜드를 못 찾았어요. 보유: ${B.list().map((x) => x.name).join(' · ')}` };
+    B.apply(doc, b.brandId);
+    return { msg: `"${b.name}" 브랜드 적용 — ${doc.scenes.length}장 색·폰트·차트 전체 전환` };
+  };
+  A['brand.keep'] = (doc) => {
+    const B = window.MK_BRAND; if (!B) return { err: '브랜드 시스템을 사용할 수 없어요.' };
+    const id = doc.brandId || (B.active() && B.active().brandId);
+    if (!id) return { err: '적용된 브랜드가 없어요. "학교 스타일로"처럼 브랜드를 먼저 지정해 주세요.' };
+    const before = B.validate(doc, id);
+    if (!before.length) return { msg: `브랜드 규칙 준수 중 — 위반 0건 (${B.get(id).name})`, noop: true };
+    const n = B.fix(doc, id);
+    return { msg: `브랜드 규칙 유지 — 위반 ${before.length}건 중 ${n}건 자동 수정 (${B.get(id).name})` };
+  };
+  A['brand.check'] = (doc) => {
+    const B = window.MK_BRAND; if (!B) return { err: '브랜드 시스템을 사용할 수 없어요.' };
+    const id = doc.brandId || (B.active() && B.active().brandId) || 'bd-kmaker';
+    const v = B.validate(doc, id);
+    const e = v.filter((x) => x.level === 'error').length;
+    return { noop: true, msg: v.length
+      ? `브랜드 위반 ${e}건 · 주의 ${v.length - e}건 — ${v.slice(0, 3).map((x) => x.msg).join(' / ')}${v.length > 3 ? ' …' : ''}`
+      : `브랜드 위반 없음 — 색·폰트·대비 모두 ${B.get(id).name} 규칙 준수` };
   };
   A['style.apple'] = (doc, ctx) => {
     const P = ctx.palette;
@@ -533,6 +566,16 @@ window.MK_AIED = (() => {
     if (has(p, 'apple', '애플')) return { action: 'style.apple' };
     if (has(p, '다크 모드', '다크모드', 'dark mode')) return { action: 'theme.darkmode', args: { on: !has(p, '끄', '해제') } };
     if (has(p, '라이트 모드', '라이트모드')) return { action: 'theme.darkmode', args: { on: false } };
+    if (window.MK_BRAND) {
+      if (has(p, '브랜드 규칙', '브랜드규칙', '브랜드 유지', '브랜드에 맞게', '브랜드 맞춰')) return { action: 'brand.keep' };
+      if (has(p, '브랜드 검사', '브랜드 위반', '브랜드 체크', '브랜드 확인', '브랜드 점검')) return { action: 'brand.check' };
+      if (!/#[0-9a-f]{6}/.test(p) && !has(p, '컬러', '색상', '색깔')) {
+        const hit = window.MK_BRAND.resolve(p);
+        if (hit && has(p, '스타일로', '스타일 적용', '브랜드 적용', '브랜드로', '브랜드 입혀')) {
+          return { action: 'brand.apply', args: { brandId: hit.brandId } };
+        }
+      }
+    }
     if (has(p, '브랜드')) {
       const hex = (p.match(/#[0-9a-f]{6}/) || [])[0];
       if (hex) return { action: 'theme.accent', args: { hex } };
@@ -626,7 +669,7 @@ window.MK_AIED = (() => {
   /* ============================================================
      5) run() — 파싱 → 스냅샷 → 실행 → 결과
      ============================================================ */
-  const HINTS = ['이 제목을 더 고급스럽게', '배경을 어둡게', '색상 통일', '여백 늘려', '표를 차트로', '막대그래프로', 'FAQ 페이지 추가', '슬라이드를 8장으로 줄여', '투자자용으로 수정', '다크 모드', '폰트 Pretendard', 'Apple 스타일'];
+  const HINTS = ['이 제목을 더 고급스럽게', '배경을 어둡게', '색상 통일', '여백 늘려', '표를 차트로', '막대그래프로', 'FAQ 페이지 추가', '슬라이드를 8장으로 줄여', '투자자용으로 수정', '다크 모드', '폰트 Pretendard', 'Apple 스타일', '학교 스타일로', '브랜드 규칙 유지'];
 
   function run(raw) {
     const ctx = context();

@@ -240,6 +240,7 @@ window.MK_SCREENS.editor = (() => {
     }).join('');
     return `<div class="ed-mini" style="background:${scene.background}" aria-hidden="true">${els}</div>`;
   };
+  window.MK_MINI = MiniScene;   /* Round 13 — Brand Preview 등 외부 화면 공용 렌더러 */
   /* ================= Bottom: Scene Strip / Timeline ================= */
   const BottomBar = (mode) => {
     const e = ed(), doc = e.doc;
