@@ -127,5 +127,14 @@ window.MK_TPL = (() => {
     return doc;
   }
 
-  return { STYLES, ANIMATIONS, CATEGORIES, get, list, register, duplicate, resolve, load };
+  /* Round 15 — Asset Reference 수정 경로 (DAM Replace Everywhere용).
+     템플릿은 파일이 아니라 assetIds Reference만 가진다. */
+  function setAssetIds(templateId, ids) {
+    if (OVERLAY[templateId]) { OVERLAY[templateId].assetIds = ids.slice(); return true; }
+    const ex = EXTRA.find((t) => t.templateId === templateId);
+    if (ex && ex._overlay) { ex._overlay.assetIds = ids.slice(); return true; }
+    return false;
+  }
+
+  return { STYLES, ANIMATIONS, CATEGORIES, get, list, register, duplicate, resolve, load, setAssetIds };
 })();
