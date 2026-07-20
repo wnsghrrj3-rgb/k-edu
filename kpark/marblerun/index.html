@@ -209,6 +209,8 @@ let marbleMeshes = [];                     // 실행 중 구슬 메쉬
 let marbleCount = 1;
 let ghostWait = 0;
 let vMax = 0;
+let sceneC = new THREE.Vector3(0, 0.1, 0);   // 트랙 중심 (안개 스케일링용)
+let sceneR = 0.6;                             // 트랙 반지름
 let finishes = [];                         // [{m, time, routeIdx}]
 
 /* 건설 프론티어 = 활성 갈래의 다음 자리 */
@@ -321,6 +323,17 @@ function rebuild(recenter) {
   if (cur.ghostSim) cur.ghostSim.release(0);
   ghostWait = 0;
   rebuildDimMarkers();
+  { // 안개 스케일링용 트랙 지오메트리 갱신
+    const pts = allTilePoints();
+    if (pts.length) {
+      let sx = 0, sy = 0, sz = 0;
+      for (const p of pts) { sx += p.x; sy += p.y; sz += p.z; }
+      sceneC.set(sx / pts.length, sy / pts.length, sz / pts.length);
+      let r2 = 0.35;
+      for (const p of pts) r2 = Math.max(r2, Math.hypot(p.x - sceneC.x, p.y - sceneC.y, p.z - sceneC.z));
+      sceneR = r2;
+    }
+  }
   ui.setBuildState(comp, NS.canPlace, comp.ok && NS.canMerge(builderState));
   if (cams) {
     if (recenter) cams.frameAll(allTilePoints());
@@ -820,6 +833,12 @@ function frame(now) {
     gem.position.y += Math.sin(clock * 2.2) * 0.00003;
   }
   confetti.update(dtReal);
+  // 밤안개를 카메라 거리·트랙 크기에 맞춰 늘인다 — 큰 트랙이 안개 너머로 사라지지 않게
+  if (scene.fog) {
+    const d = cams.cam.position.distanceTo(sceneC);
+    scene.fog.near = Math.max(1.2, d - sceneR * 0.4);
+    scene.fog.far = d + sceneR * 1.8 + 0.8;
+  }
   renderer.render(scene, cams.cam);
 }
 requestAnimationFrame(frame);
