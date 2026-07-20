@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>👑 케이마블 — 케이파크</title>
+<style>
+:root{
+  --bg:#070b22; --panel:rgba(16,22,52,.86); --panel2:rgba(22,30,66,.9);
+  --line:rgba(140,165,255,.22); --ink:#eef2ff; --dim:#9aa6cc;
+  --gold:#ffd35c; --go:#7dffb0; --bad:#ff9a9a;
+  --p0:#ffd35c; --p1:#c58aff; --p2:#ff8a5c; --p3:#7dffb0;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--ink);font-family:'Segoe UI','Apple SD Gothic Neo','Malgun Gothic',sans-serif;user-select:none}
+#stage{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+
+/* ---------- 공통 ---------- */
+button{font-family:inherit;cursor:pointer;border:none}
+.glass{background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(10px);border-radius:18px}
+
+/* ---------- 상단 ---------- */
+#topbar{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;gap:8px;padding:8px 10px;z-index:20;pointer-events:none}
+#topbar>*{pointer-events:auto}
+.qbtn{width:38px;height:38px;border-radius:12px;background:var(--panel);border:1px solid var(--line);color:var(--ink);font-size:17px}
+#roundLbl{font-size:12px;color:var(--dim);background:var(--panel);border:1px solid var(--line);padding:7px 12px;border-radius:12px}
+#chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;margin-left:auto}
+.pchip{display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:6px 10px;font-size:13px;transition:box-shadow .3s,transform .3s}
+.pchip .pf{font-size:17px}
+.pchip b{font-variant-numeric:tabular-nums;color:var(--gold);min-width:44px;text-align:right}
+.pchip.dead{opacity:.35;filter:grayscale(1)}
+.pchip.act0{box-shadow:0 0 16px rgba(255,211,92,.55);border-color:var(--p0);transform:scale(1.06)}
+.pchip.act1{box-shadow:0 0 16px rgba(197,138,255,.55);border-color:var(--p1);transform:scale(1.06)}
+.pchip.act2{box-shadow:0 0 16px rgba(255,138,92,.55);border-color:var(--p2);transform:scale(1.06)}
+.pchip.act3{box-shadow:0 0 16px rgba(125,255,176,.55);border-color:var(--p3);transform:scale(1.06)}
+
+/* ---------- 배너·토스트 ---------- */
+#banner{position:fixed;top:56px;left:50%;transform:translateX(-50%);z-index:19;font-size:15px;padding:8px 20px;border-radius:999px;background:var(--panel);border:1px solid var(--line);white-space:nowrap;max-width:94vw;overflow:hidden;text-overflow:ellipsis}
+.toast{position:fixed;left:50%;bottom:104px;transform:translate(-50%,20px);background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:10px 18px;font-size:14px;opacity:0;transition:.28s;z-index:40;pointer-events:none;max-width:92vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.float{position:fixed;z-index:30;font-weight:900;font-size:19px;pointer-events:none;text-shadow:0 2px 8px rgba(0,0,0,.7);animation:floatUp 1.15s ease-out forwards}
+@keyframes floatUp{0%{opacity:0;transform:translate(-50%,6px) scale(.7)}18%{opacity:1;transform:translate(-50%,-6px) scale(1.12)}100%{opacity:0;transform:translate(-50%,-52px) scale(1)}}
+.coinfly{position:fixed;z-index:35;font-size:20px;pointer-events:none;transition:all .62s cubic-bezier(.3,.6,.4,1)}
+
+/* ---------- 굴리기 ---------- */
+#diceRow{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:22;display:flex;align-items:center;gap:10px}
+.rollBtn{padding:15px 34px;border-radius:999px;font-size:19px;font-weight:900;color:#1b1230;background:linear-gradient(135deg,#ffd35c,#ffb02e);box-shadow:0 6px 24px rgba(255,176,46,.45),inset 0 1px 0 rgba(255,255,255,.55);transition:transform .12s}
+.rollBtn:active{transform:scale(.94)}
+.rollBtn:disabled{opacity:.4;pointer-events:none}
+#diceResult{position:fixed;bottom:96px;left:50%;transform:translateX(-50%);z-index:22;display:none;gap:10px;font-size:15px;font-weight:800;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:8px 18px}
+#diceResult.dbl{border-color:var(--gold);box-shadow:0 0 18px rgba(255,211,92,.5)}
+
+/* ---------- 결정 시트 ---------- */
+#sheet{position:fixed;left:50%;bottom:-40vh;transform:translateX(-50%);width:min(480px,94vw);z-index:45;background:var(--panel2);border:1px solid var(--line);border-radius:22px 22px 18px 18px;padding:18px 18px 16px;transition:bottom .32s cubic-bezier(.2,.9,.3,1.1);box-shadow:0 -8px 40px rgba(0,0,0,.5)}
+#sheet.show{bottom:16px}
+#sheet .q{font-size:17px;font-weight:800;margin-bottom:6px}
+#sheet .info{font-size:13px;color:var(--dim);margin-bottom:12px;line-height:1.5}
+#sheet .btns{display:flex;gap:10px}
+.dbtn{flex:1;padding:14px 8px;border-radius:14px;font-size:15px;font-weight:800;background:rgba(140,165,255,.12);border:1px solid var(--line);color:var(--ink);transition:transform .1s}
+.dbtn:active{transform:scale(.95)}
+.dbtn.go{background:linear-gradient(135deg,#7dffb0,#3fd88a);color:#0b2417;border:none;box-shadow:0 4px 18px rgba(125,255,176,.35)}
+
+/* ---------- 황금열쇠 카드 ---------- */
+#keycard{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:60;background:rgba(4,6,18,.55);perspective:900px}
+.kc{width:min(310px,84vw);background:linear-gradient(160deg,#2a2350,#141233);border:2px solid var(--gold);border-radius:22px;padding:30px 22px;text-align:center;box-shadow:0 0 60px rgba(255,211,92,.35);animation:kflip .55s cubic-bezier(.2,.8,.3,1.1)}
+@keyframes kflip{0%{transform:rotateY(95deg) scale(.8);opacity:0}100%{transform:rotateY(0) scale(1);opacity:1}}
+.kc .kem{font-size:58px;filter:drop-shadow(0 4px 14px rgba(255,211,92,.5))}
+.kc .knm{font-size:21px;font-weight:900;color:var(--gold);margin:10px 0 8px}
+.kc .ktx{font-size:14px;color:var(--ink);line-height:1.55}
+
+/* ---------- 설정 화면 ---------- */
+#setup{position:fixed;inset:0;z-index:70;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:radial-gradient(ellipse at 50% 20%,#141c48 0%,#070b22 70%);overflow-y:auto;padding:24px 16px}
+#setup .logo{font-size:44px;font-weight:900;letter-spacing:2px;background:linear-gradient(135deg,#ffe9a8,#ffd35c 45%,#ff9e3d);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 4px 22px rgba(255,211,92,.35))}
+#setup .tag{color:var(--dim);font-size:14px;margin-top:-8px}
+.opts{display:flex;gap:8px}
+.opt{padding:10px 20px;border-radius:14px;font-size:15px;font-weight:800;background:rgba(140,165,255,.1);border:1px solid var(--line);color:var(--ink)}
+.opt.sel{background:linear-gradient(135deg,#ffd35c,#ffb02e);color:#1b1230;border-color:transparent;box-shadow:0 4px 18px rgba(255,176,46,.4)}
+.slots{display:flex;flex-direction:column;gap:8px;width:min(360px,92vw)}
+.slot{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:10px 14px;opacity:.35;transition:.25s}
+.slot.on{opacity:1}
+.slot .face{font-size:26px}
+.slot .who{flex:1;display:flex;flex-direction:column}
+.slot .who small{color:var(--dim);font-size:11px}
+.slot .kind{padding:8px 14px;border-radius:12px;font-size:13px;font-weight:800;background:rgba(197,138,255,.16);border:1px solid rgba(197,138,255,.4);color:#dfc8ff}
+.slot .kind.human{background:rgba(125,255,176,.14);border-color:rgba(125,255,176,.4);color:#a8ffcd}
+.start{padding:15px 40px;border-radius:999px;font-size:18px;font-weight:900;color:#1b1230;background:linear-gradient(135deg,#ffd35c,#ffb02e);box-shadow:0 8px 30px rgba(255,176,46,.45)}
+.howlink{color:var(--dim);font-size:13px;text-decoration:underline;cursor:pointer}
+
+/* ---------- 놀이 방법 ---------- */
+#howto{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:80;background:rgba(4,6,18,.72)}
+.hcard{width:min(420px,92vw);max-height:84vh;overflow-y:auto;background:var(--panel2);border:1px solid var(--line);border-radius:22px;padding:24px}
+.hcard h2{font-size:20px;margin-bottom:12px}
+.hcard p{font-size:14px;line-height:1.7;color:var(--ink);margin-bottom:10px}
+.hcard p b{color:var(--gold)}
+.hok{width:100%;margin-top:6px}
+
+/* ---------- 게임 오버 ---------- */
+#over{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:75;background:rgba(4,6,18,.6)}
+#over .card{background:var(--panel2);border:2px solid var(--gold);border-radius:24px;padding:34px 30px;text-align:center;box-shadow:0 0 70px rgba(255,211,92,.3);animation:kflip .5s cubic-bezier(.2,.8,.3,1.1)}
+#over h2{font-size:26px;color:var(--gold);margin-bottom:10px}
+#over p{font-size:14px;color:var(--ink);line-height:1.8;margin-bottom:18px}
+.confetti{position:fixed;top:-14px;width:9px;height:14px;z-index:90;pointer-events:none;animation:cfall linear forwards}
+@keyframes cfall{to{transform:translateY(105vh) rotate(660deg)}}
+</style>
+</head>
+<body>
+<canvas id="stage"></canvas>
+
+<div id="topbar" style="display:none">
+  <button class="qbtn" id="btnHome2" title="다른 놀이">🎪</button>
+  <button class="qbtn" id="btnHow">❓</button>
+  <span id="roundLbl">라운드 1/30</span>
+  <div id="chips"></div>
+</div>
+<div id="banner" style="display:none"></div>
+
+<div id="diceRow" style="display:none"><button class="rollBtn" id="btnRoll">🎲 굴리기!</button></div>
+<div id="diceResult"></div>
+
+<div id="sheet">
+  <div class="q" id="shQ"></div>
+  <div class="info" id="shI"></div>
+  <div class="btns" id="shB"></div>
+</div>
+
+<div id="keycard"><div class="kc"><div class="kem" id="kEm"></div><div class="knm" id="kNm"></div><div class="ktx" id="kTx"></div></div></div>
+
+<section id="setup">
+  <div class="logo">👑 케이마블</div>
+  <p class="tag">주사위 굴려 세계 도시를 사고, 건물을 올리고, 통행료를 걷어라!</p>
+  <div class="opts" id="cntOpts">
+    <button class="opt" data-c="2">2명</button>
+    <button class="opt sel" data-c="3">3명</button>
+    <button class="opt" data-c="4">4명</button>
+  </div>
+  <div class="slots" id="slots"></div>
+  <button class="start" id="btnStart">여행 출발! 🎲</button>
+  <span class="howlink" id="howLink">👀 처음이야? 놀이 방법 보기</span>
+</section>
+
+<div id="howto"><div class="hcard">
+  <h2>👑 케이마블 놀이 방법</h2>
+  <p>🎲 <b>주사위 두 개</b>를 굴려 나온 수만큼 세계 도시를 여행해.</p>
+  <p>🚩 빈 도시에 도착하면 <b>살 수 있어</b>. 내 도시에 또 오면 🏠빌라 → 🏢빌딩 → 🏰랜드마크로 <b>공사</b>! 커질수록 통행료가 쑥쑥.</p>
+  <p>💸 남의 도시에 도착하면 <b>통행료</b>를 내야 해. 돈이 있으면 <b>인수</b>해서 뺏을 수도! (🏰랜드마크는 아무도 못 뺏어)</p>
+  <p>✨ <b>더블</b>이 나오면 한 번 더! 세 번 연속이면 무인도로…</p>
+  <p>🏝️ 무인도는 두 번 쉬기 — 더블을 굴리거나 💰100을 내면 탈출. 🚀 우주여행은 원하는 칸으로 슝!</p>
+  <p>👑 <b>이기는 법</b>: 한 줄 독점 · 색깔 3세트 · 관광지 3곳 독점 · 상대 전원 파산 · 30라운드 뒤 재산왕!</p>
+  <button class="start hok" id="btnHowOk">알겠어! 시작하자</button>
+</div></div>
+
+<div id="over"><div class="card"><h2 id="ovT"></h2><p id="ovS"></p><button class="start" id="btnAgain">한 판 더!</button></div></div>
+<div class="toast" id="toast"></div>
+
+<script src="./core.js"></script>
+<script src="./stage/dice.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.185.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.185.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+'use strict';
+import * as THREE from 'three';
+import { createStage, buildBoard, tileCenter, makeToken, makeBuilding, makeDie, setDieFaces, createDirector, GCOLORS, TS } from './stage/board3d.js';
+import { snd, createParticles } from './stage/fx.js';
+
+const $ = id => document.getElementById(id);
+const C = window.KMarbleCore;
+const DICE = window.KMarbleDice;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const PCOLORS = [0xffd35c, 0xc58aff, 0xff8a5c, 0x7dffb0];
+const PCSS = ['var(--p0)', 'var(--p1)', 'var(--p2)', 'var(--p3)'];
+
+/* ================== 설정 화면 ================== */
+const CHARS = [{ em: '⭐', nm: '별' }, { em: '🌙', nm: '달' }, { em: '☀️', nm: '해' }, { em: '🌈', nm: '무지개' }];
+const KINDS = [{ t: '🧑 사람', ai: false, lv: 0 }, { t: '🤖 아장아장', ai: true, lv: 1 }, { t: '🤖 제법인데', ai: true, lv: 2 }, { t: '🤖 도사급', ai: true, lv: 3 }];
+let cnt = 3, slotKind = [0, 2, 2, 2];
+function buildSlots() {
+  const box = $('slots'); box.innerHTML = '';
+  CHARS.forEach((c, i) => {
+    const d = document.createElement('div'); d.className = 'slot' + (i < cnt ? ' on' : '');
+    d.innerHTML = `<span class="face">${c.em}</span><span class="who"><b>${c.nm}</b><small>${i + 1}번 여행자</small></span>`;
+    const b = document.createElement('button'); b.className = 'kind' + (KINDS[slotKind[i]].ai ? '' : ' human');
+    b.textContent = KINDS[slotKind[i]].t;
+    b.onclick = () => { slotKind[i] = (slotKind[i] + 1) % 4; b.textContent = KINDS[slotKind[i]].t; b.className = 'kind' + (KINDS[slotKind[i]].ai ? '' : ' human'); snd.tick(); };
+    d.appendChild(b); box.appendChild(d);
+  });
+}
+buildSlots();
+$('cntOpts').addEventListener('click', e => {
+  const b = e.target.closest('.opt'); if (!b) return;
+  cnt = +b.dataset.c;
+  [...$('cntOpts').children].forEach(x => x.classList.toggle('sel', x === b));
+  buildSlots(); snd.tick();
+});
+function showHow() { $('howto').style.display = 'flex'; }
+$('btnHow').onclick = showHow; $('howLink').onclick = showHow;
+$('btnHowOk').onclick = () => { $('howto').style.display = 'none'; try { localStorage.setItem('kpark.kmarble.howto', '1'); } catch (e) { } };
+try { if (!localStorage.getItem('kpark.kmarble.howto')) setTimeout(showHow, 600); } catch (e) { }
+$('btnHome2').onclick = () => location.href = '../';
+
+/* ================== 무대 ================== */
+const stage = createStage($('stage'));
+const director = createDirector(stage.camera, $('stage'));
+const parts = createParticles(stage.scene);
+const board = buildBoard(stage.scene, C.TILES);
+addEventListener('resize', stage.resize);
+
+/* 애니메이션 목록 — u(dt)가 false를 돌려주면 제거 */
+const anims = [];
+function addAnim(u) { anims.push(u); }
+
+/* 말 */
+const tokens = [];
+function buildTokens() {
+  tokens.forEach(t => stage.scene.remove(t));
+  tokens.length = 0;
+  S.players.forEach(p => {
+    const tk = makeToken(p.em, PCOLORS[p.id]);
+    stage.scene.add(tk);
+    tokens.push(tk);
+  });
+  placeTokens(true);
+}
+function tokenSlot(i, pid) {
+  const c = tileCenter(i);
+  const out = outwardOf(c);
+  const here = S.players.filter(p => p.alive && p.pos === i);
+  const k = Math.max(0, here.findIndex(p => p.id === pid));
+  const n = Math.max(1, here.length);
+  const perp = new THREE.Vector3(out.z, 0, -out.x);
+  return c.clone().addScaledVector(out, -0.13).addScaledVector(perp, (k - (n - 1) / 2) * 0.26);
+}
+function outwardOf(c) {
+  const ax = Math.abs(c.x), az = Math.abs(c.z);
+  const v = new THREE.Vector3(ax >= az - 0.01 ? Math.sign(c.x) : 0, 0, az >= ax - 0.01 ? Math.sign(c.z) : 0);
+  return v.lengthSq() ? v.normalize() : new THREE.Vector3(0, 0, 1);
+}
+function placeTokens(instant) {
+  S.players.forEach(p => {
+    const tk = tokens[p.id];
+    tk.visible = p.alive;
+    if (!p.alive) return;
+    const t = tokenSlot(p.pos, p.id);
+    if (instant) tk.position.copy(t);
+    else { const from = tk.position.clone(); let a = 0; addAnim(dt => { a = Math.min(1, a + dt / 0.25); tk.position.lerpVectors(from, t, 1 - Math.pow(1 - a, 3)); return a < 1; }); }
+  });
+}
+/* 한 칸 폴짝 */
+function hopToken(pid, toTile, noteIdx) {
+  const tk = tokens[pid];
+  const from = tk.position.clone();
+  const to = tokenSlot(toTile, pid);
+  snd.hop(noteIdx);
+  return new Promise(res => {
+    let a = 0;
+    addAnim(dt => {
+      a = Math.min(1, a + dt / 0.19);
+      const e = a;
+      tk.position.lerpVectors(from, to, e);
+      tk.position.y = Math.sin(e * Math.PI) * 0.5;
+      const sq = 1 + Math.sin(e * Math.PI) * 0.12;
+      tk.scale.set(1 / Math.sqrt(sq), sq, 1 / Math.sqrt(sq));
+      if (a >= 1) { tk.position.copy(to); tk.scale.set(1, 1, 1); parts.dust(to); res(); return false; }
+      return true;
+    });
+  });
+}
+
+/* 소유·건물 동기화 */
+const shown = new Map();   // i → { p, lv, mesh }
+function syncBoard() {
+  for (let i = 0; i < C.N; i++) {
+    const T = board.tiles.get(i);
+    const o = S.owner[i];
+    /* 네온 프레임 */
+    if (o) { T.frame.material.color.setHex(PCOLORS[o.p]); T.frame.material.opacity = Math.max(T.frame.material.opacity, 0.001); T.frame.userData.on = true; }
+    else { T.frame.userData.on = false; }
+    /* 건물 */
+    const want = o && C.TILES[i].t === 'city' && o.lv > 0 ? o.p * 10 + o.lv : (o && C.TILES[i].t === 'tourist' ? -1 : 0);
+    const cur = shown.get(i);
+    if ((cur ? cur.key : 0) !== want) {
+      if (cur && cur.mesh) { stage.scene.remove(cur.mesh); }
+      if (cur && cur.beam) { stage.scene.remove(cur.beam); }
+      let rec = { key: want, mesh: null, beam: null };
+      if (want > 0) {
+        const m = makeBuilding(o.lv, PCOLORS[o.p]);
+        const c = tileCenter(i);
+        m.position.copy(c).addScaledVector(outwardOf(c), 0.28);
+        m.traverse(x => { if (x.isMesh) x.castShadow = true; });
+        stage.scene.add(m);
+        rec.mesh = m;
+        /* 팝 애니 */
+        m.scale.set(1, 0.01, 1);
+        let a = 0;
+        addAnim(dt => {
+          a = Math.min(1, a + dt / 0.4);
+          const e = 1 + 0.5 * Math.sin(a * Math.PI * 0.9) * (1 - a);
+          m.scale.set(1, Math.min(1, a * 1.4) * e, 1);
+          if (a >= 1) { m.scale.set(1, 1, 1); return false; }
+          return true;
+        });
+        /* 랜드마크 빛기둥 */
+        if (o.lv === 3) {
+          const beam = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.1, 0.16, 3.2, 10, 1, true),
+            new THREE.MeshBasicMaterial({ color: 0xffe9a8, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })
+          );
+          beam.position.copy(m.position).setY(1.7);
+          stage.scene.add(beam);
+          rec.beam = beam;
+        }
+      }
+      shown.set(i, rec);
+    }
+    /* 축제 */
+    if (S.festival === i && !T.festival) {
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: emojiTex('🎉'), transparent: true, depthWrite: false }));
+      sp.scale.set(0.5, 0.5, 1);
+      const c = tileCenter(i); sp.position.set(c.x, 0.75, c.z);
+      stage.scene.add(sp); T.festival = sp;
+    } else if (S.festival !== i && T.festival) {
+      stage.scene.remove(T.festival); T.festival = null;
+    }
+  }
+}
+const emCache = {};
+function emojiTex(em) {
+  if (emCache[em]) return emCache[em];
+  const cv = document.createElement('canvas'); cv.width = cv.height = 96;
+  const ctx = cv.getContext('2d');
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '68px serif';
+  ctx.fillText(em, 48, 52);
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace;
+  emCache[em] = t; return t;
+}
+
+/* ================== 주사위 3D ================== */
+const dieMeshes = [makeDie([1, 6, 2, 5, 3, 4]), makeDie([1, 6, 2, 5, 3, 4])];
+dieMeshes.forEach(m => { m.visible = false; stage.scene.add(m); });
+let diceRun = null;   // { frames, i, t0 }
+
+function rollDice3D(d1, d2, quick) {
+  const seed = Math.floor(Math.random() * 0x7fffffff);
+  const R = DICE.throwPair(d1, d2, seed);
+  setDieFaces(dieMeshes[0], R.faceValues[0]);
+  setDieFaces(dieMeshes[1], R.faceValues[1]);
+  dieMeshes.forEach(m => m.visible = true);
+  stage.dish.material.opacity = 0.55;
+  director.dice();
+  snd.whoosh();
+  snd.diceEvents(R.events);
+  return new Promise(res => {
+    diceRun = { R, t: 0, done: () => { res(); } , quick };
+  });
+}
+function updateDice(dt) {
+  if (!diceRun) {
+    stage.dish.material.opacity = Math.max(0, stage.dish.material.opacity - dt * 0.8);
+    return;
+  }
+  diceRun.t += dt * (diceRun.quick ? 1.35 : 1);
+  const F = diceRun.R.frames;
+  let i = Math.min(F.length - 1, Math.floor(diceRun.t / (1 / 60)));
+  const f = F[i];
+  for (let k = 0; k < 2; k++) {
+    const d = f.dice[k];
+    dieMeshes[k].position.set(d.p[0], d.p[1], d.p[2]);
+    dieMeshes[k].quaternion.set(d.q[0], d.q[1], d.q[2], d.q[3]);
+  }
+  if (i >= F.length - 1) {
+    const done = diceRun.done; diceRun = null;
+    setTimeout(done, 160);
+  }
+}
+function hideDice() {
+  dieMeshes.forEach(m => { m.visible = false; });
+  $('diceResult').style.display = 'none';
+}
+function showDiceResult(d1, d2, dbl) {
+  const E = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+  const el = $('diceResult');
+  el.innerHTML = `<span style="font-size:22px">${E[d1]} ${E[d2]}</span> <span style="color:var(--gold)">${d1 + d2}</span>` + (dbl ? ' ✨더블!' : '');
+  el.classList.toggle('dbl', !!dbl);
+  el.style.display = 'flex';
+}
+
+/* ================== 오버레이 유틸 ================== */
+let S = null, busy = false, toastT = 0;
+function banner(t) { $('banner').innerHTML = t; }
+function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 1900); }
+function worldToScreen(v) {
+  const p = v.clone().project(stage.camera);
+  return { x: (p.x * 0.5 + 0.5) * innerWidth, y: (-p.y * 0.5 + 0.5) * innerHeight };
+}
+function floatText(i, txt, col) {
+  const c = tileCenter(i).clone().setY(0.6);
+  const s = worldToScreen(c);
+  const d = document.createElement('div');
+  d.className = 'float'; d.textContent = txt; d.style.color = col || '#fff';
+  d.style.left = s.x + 'px'; d.style.top = s.y + 'px';
+  document.body.appendChild(d); setTimeout(() => d.remove(), 1150);
+}
+/* 동전이 칸에서 칩으로 날아간다 */
+function flyCoins(i, toPid, n) {
+  const from = worldToScreen(tileCenter(i).clone().setY(0.4));
+  const chip = document.querySelector('#chip' + toPid + ' b');
+  if (!chip) return;
+  const r = chip.getBoundingClientRect();
+  for (let k = 0; k < Math.min(n, 5); k++) {
+    const d = document.createElement('div');
+    d.className = 'coinfly'; d.textContent = '🪙';
+    d.style.left = (from.x + (Math.random() - 0.5) * 30) + 'px';
+    d.style.top = (from.y + (Math.random() - 0.5) * 20) + 'px';
+    document.body.appendChild(d);
+    setTimeout(() => { d.style.left = (r.x + 8) + 'px'; d.style.top = r.y + 'px'; d.style.opacity = '0'; d.style.transform = 'scale(.5)'; }, 30 + k * 70);
+    setTimeout(() => d.remove(), 800 + k * 70);
+  }
+  snd.coins(n);
+}
+function domConfetti(n) {
+  const cols = ['#ffd35c', '#4de1ff', '#ff8a5c', '#c58aff', '#7dffb0'];
+  for (let i = 0; i < n; i++) {
+    const d = document.createElement('div'); d.className = 'confetti';
+    d.style.left = Math.random() * 100 + 'vw'; d.style.background = cols[i % 5];
+    d.style.animationDuration = (1.4 + Math.random() * 1.6) + 's';
+    d.style.animationDelay = (Math.random() * .5) + 's';
+    document.body.appendChild(d); setTimeout(() => d.remove(), 3400);
+  }
+}
+
+/* 칩 (돈 굴러가는 숫자) */
+const cashShown = [];
+function buildChips() {
+  const box = $('chips'); box.innerHTML = '';
+  S.players.forEach(p => {
+    const d = document.createElement('div'); d.className = 'pchip'; d.id = 'chip' + p.id;
+    d.innerHTML = `<span class="pf">${p.em}</span>${p.name}<span id="sh${p.id}"></span><b id="cash${p.id}">${p.cash}</b>`;
+    box.appendChild(d);
+    cashShown[p.id] = p.cash;
+  });
+}
+function refresh() {
+  $('roundLbl').textContent = '라운드 ' + Math.min(S.round, C.MAX_ROUNDS) + '/' + C.MAX_ROUNDS;
+  S.players.forEach(p => {
+    const ch = $('chip' + p.id);
+    $('sh' + p.id).textContent = p.shield ? '🛡️' : (p.island > 0 ? '🏝️' : (p.fly ? '🚀' : ''));
+    ch.classList.toggle('dead', !p.alive);
+    ch.classList.remove('act0', 'act1', 'act2', 'act3');
+    if (p.id === S.turn && p.alive && !S.winner) ch.classList.add('act' + p.id);
+    tokens[p.id] && (tokens[p.id].userData.ring.material.opacity = (p.id === S.turn && p.alive && !S.winner) ? 0.001 : 0, tokens[p.id].userData.ring.userData.on = (p.id === S.turn && p.alive && !S.winner));
+  });
+  syncBoard();
+  $('btnRoll').disabled = busy || (S.players[S.turn] && S.players[S.turn].ai);
+}
+
+/* ================== 결정 시트 ================== */
+function ask(q, info, btns) {
+  return new Promise(res => {
+    $('shQ').innerHTML = q; $('shI').innerHTML = info || '';
+    const box = $('shB'); box.innerHTML = '';
+    btns.forEach(b => {
+      const el = document.createElement('button');
+      el.className = 'dbtn ' + (b.cls || ''); el.innerHTML = b.t;
+      el.onclick = () => { $('sheet').classList.remove('show'); snd.tick(); res(b.v); };
+      box.appendChild(el);
+    });
+    $('sheet').classList.add('show');
+  });
+}
+/* 판 위 칸을 직접 탭 — 레이캐스트 */
+const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
+function pickTile(cands, q, info) {
+  return new Promise(res => {
+    $('shQ').innerHTML = q; $('shI').innerHTML = info || '초록으로 반짝이는 칸을 눌러 봐!'; $('shB').innerHTML = '';
+    $('sheet').classList.add('show');
+    cands.forEach(i => { board.tiles.get(i).pick.userData.on = true; });
+    const canvas = $('stage');
+    const h = e => {
+      const rct = canvas.getBoundingClientRect();
+      ptr.x = ((e.clientX - rct.left) / rct.width) * 2 - 1;
+      ptr.y = -((e.clientY - rct.top) / rct.height) * 2 + 1;
+      ray.setFromCamera(ptr, stage.camera);
+      const hits = ray.intersectObjects([...board.tiles.values()].map(t => t.mesh));
+      if (!hits.length) return;
+      const i = hits[0].object.userData.tile;
+      if (!cands.includes(i)) return;
+      cands.forEach(j => { board.tiles.get(j).pick.userData.on = false; board.tiles.get(j).pick.material.opacity = 0; });
+      canvas.removeEventListener('click', h);
+      $('sheet').classList.remove('show');
+      snd.tick(); res(i);
+    };
+    canvas.addEventListener('click', h);
+  });
+}
+function landFlash(i) {
+  const T = board.tiles.get(i);
+  let a = 0;
+  addAnim(dt => {
+    a += dt / 0.5;
+    const o = Math.max(0, Math.sin(Math.min(1, a) * Math.PI)) * 0.75;
+    T.pick.material.color.setHex(0xffffff);
+    T.pick.material.opacity = T.pick.userData.on ? T.pick.material.opacity : o;
+    if (a >= 1) { if (!T.pick.userData.on) T.pick.material.opacity = 0; T.pick.material.color.setHex(0x7dffb0); return false; }
+    return true;
+  });
+}
+
+/* ================== 이벤트 연출 ================== */
+async function showEvents(evs, pid) {
+  const pl = S.players[pid];
+  for (const e of evs) {
+    if (e.e === 'salary') { snd.coin(); toast('🏁 월급 +' + e.v); floatText(0, '+' + e.v, '#7dffb0'); }
+    else if (e.e === 'salaryLand') { snd.coin(); toast('🏁 출발점 도착! 월급 +' + e.v); floatText(0, '+' + e.v, '#7dffb0'); }
+    else if (e.e === 'fountain') { snd.coin(); toast('⛲ 행운의 분수 +' + e.v); floatText(pl.pos, '+' + e.v, '#7dffb0'); parts.sparkle(tileCenter(pl.pos), 0x5ccfe0); }
+    else if (e.e === 'festivalNone') { snd.coin(); toast('내 도시가 없어서 위로금 +' + e.v); }
+    else if (e.e === 'tax') { snd.pay(); toast('🧾 세금 −' + e.v); floatText(pl.pos, '−' + e.v, '#ff9a9a'); }
+    else if (e.e === 'rent') {
+      snd.pay();
+      const o = S.players[e.to];
+      toast('💸 ' + C.TILES[e.i].nm + ' 통행료 ' + e.v + ' → ' + o.em + o.name);
+      floatText(e.i, '−' + e.v, '#ff9a9a');
+      flyCoins(e.i, e.to, Math.min(5, 1 + Math.floor(e.v / 120)));
+      await sleep(620);
+    }
+    else if (e.e === 'shieldUsed') { snd.shield(); toast('🛡️ 방패가 통행료 ' + e.rent + '을 막았다!'); parts.sparkle(tileCenter(pl.pos), 0x8fd0ff); await sleep(420); }
+    else if (e.e === 'island') { snd.island(); toast('🏝️ 무인도에 갇혔다! 두 번 쉬기…'); }
+    else if (e.e === 'escape') { snd.fly(); toast(e.how === 'double' ? '🎲 더블! 무인도 탈출!' : e.how === 'pay' ? '💰 ' + e.v + ' 내고 탈출!' : '🏝️ 이제 자유다!'); }
+    else if (e.e === 'islandSkip') { toast('🏝️ 무인도… 앞으로 ' + e.left + '번 더 쉬어야 해'); }
+    else if (e.e === 'space') { snd.fly(); toast('🚀 우주여행! 다음 차례에 원하는 칸으로!'); }
+    else if (e.e === 'teleport') { snd.fly(); placeTokens(); director.follow(tileCenter(pl.pos)); await sleep(360); }
+    else if (e.e === 'tripleDouble') { snd.island(); toast('😵 더블 세 번! 너무 신나서 무인도로…'); placeTokens(); await sleep(420); }
+    else if (e.e === 'bankrupt') {
+      snd.sad();
+      const b = S.players[e.pid];
+      toast('💥 ' + b.em + ' ' + b.name + ' 파산!');
+      banner('💥 ' + b.em + ' ' + b.name + ' 파산! 땅은 모두 빈 땅으로');
+      refresh(); placeTokens(); await sleep(900);
+    }
+    else if (e.e === 'key') { snd.card(); await showKeyCard(e.card); }
+    else if (e.e === 'again') { toast('🎲 한 번 더 굴린다!'); }
+    else if (e.e === 'tooPoor') { toast('💸 돈이 모자라서 살 수 없어…'); }
+    refresh();
+  }
+}
+function showKeyCard(card) {
+  return new Promise(res => {
+    $('kEm').textContent = card.em; $('kNm').textContent = card.nm; $('kTx').textContent = card.tx;
+    $('keycard').style.display = 'flex';
+    const close = () => { $('keycard').style.display = 'none'; $('keycard').onclick = null; res(); };
+    $('keycard').onclick = close; setTimeout(close, 2100);
+  });
+}
+
+/* ================== 선택 처리 (사람/🤖 공용) ================== */
+async function handleChoice(pid, choice) {
+  if (!choice) return;
+  const pl = S.players[pid], t = choice.i != null ? C.TILES[choice.i] : null;
+  if (choice.i != null) director.peek(tileCenter(choice.i));
+  let evs = [];
+  if (pl.ai) {
+    await sleep(700);
+    evs = C.aiResolve(S, pid, choice, Math.random);
+  } else if (choice.type === 'buy') {
+    const rent = C.r10(t.t === 'tourist' ? t.p / 2 : t.p * 0.4);
+    const yes = await ask(t.em + ' <b>' + t.nm + '</b> 살까? <b style="color:var(--gold)">' + choice.price + '</b>',
+      '통행료 ' + rent + '부터 시작 · 내 돈 ' + pl.cash + (t.t === 'tourist' ? ' · 관광지 3곳 모으면 승리!' : ''),
+      [{ t: '💰 산다!', cls: 'go', v: true }, { t: '그냥 갈래', v: false }]);
+    evs = C.applyChoice(S, pid, choice, yes);
+  } else if (choice.type === 'upgrade') {
+    const nextRent = C.r10(t.p * [0.4, 1, 2, 4][choice.toLv]);
+    const yes = await ask(t.em + ' ' + t.nm + ' 공사할까? ' + C.LV_EM[choice.toLv] + ' <b>' + C.LV_NM[choice.toLv] + '</b>',
+      '공사비 ' + choice.cost + ' → 통행료가 <b style="color:var(--gold)">' + nextRent + '</b>으로!' + (choice.toLv === 3 ? ' 랜드마크는 아무도 못 뺏어!' : ''),
+      [{ t: '🔨 공사하자!', cls: 'go', v: true }, { t: '다음에', v: false }]);
+    evs = C.applyChoice(S, pid, choice, yes);
+  } else if (choice.type === 'takeover') {
+    const o = S.players[S.owner[choice.i].p];
+    const yes = await ask('😎 ' + t.em + ' ' + t.nm + '을(를) 인수할까?',
+      o.em + ' ' + o.name + '에게 <b style="color:var(--gold)">' + choice.cost + '</b>을 주면 내 도시가 된다! · 내 돈 ' + pl.cash,
+      [{ t: '🤝 인수한다!', cls: 'go', v: true }, { t: '참는다', v: false }]);
+    evs = C.applyChoice(S, pid, choice, yes);
+  } else if (choice.type === 'festival') {
+    const i = await pickTile(choice.options, '🎪 어느 도시에서 축제를 열까?', '축제 도시는 통행료가 <b>2배</b>!');
+    evs = C.applyChoice(S, pid, choice, true, i);
+  } else if (choice.type === 'freeUpgrade') {
+    const i = await pickTile(choice.options, '🆙 어느 도시를 공짜로 공사할까?', '');
+    evs = C.applyChoice(S, pid, choice, true, i);
+  }
+  for (const e of evs) {
+    if (e.e === 'buy') {
+      snd.buy(); toast(pl.em + ' ' + C.TILES[e.i].nm + ' 구입! −' + e.v);
+      floatText(e.i, pl.em + ' 내 땅!', '#ffd35c');
+      parts.confetti(tileCenter(e.i), 16);
+    }
+    if (e.e === 'upgrade') {
+      if (e.lv === 3) { snd.landmark(); parts.confetti(tileCenter(e.i), 30); toast('🏰 ' + C.TILES[e.i].nm + ' 랜드마크 완공! 아무도 못 뺏는다!'); }
+      else { snd.build(); toast(C.TILES[e.i].nm + ' ' + C.LV_EM[e.lv] + ' ' + C.LV_NM[e.lv] + ' 완공!'); parts.dust(tileCenter(e.i)); }
+      floatText(e.i, C.LV_EM[e.lv], '#7dffb0');
+    }
+    if (e.e === 'takeover') { snd.take(); toast('😎 ' + pl.em + ' ' + pl.name + '이(가) ' + C.TILES[e.i].nm + ' 인수!'); floatText(e.i, '인수!', '#ff8a5c'); parts.sparkle(tileCenter(e.i), 0xff8a5c); }
+    if (e.e === 'festival') { snd.card(); toast('🎪 ' + C.TILES[e.i].nm + ' 축제 개막! 통행료 2배'); floatText(e.i, '🎉×2', '#ffd35c'); }
+    if (e.e === 'bankrupt') { snd.sad(); const b = S.players[e.pid]; toast('💥 ' + b.em + ' ' + b.name + ' 파산!'); }
+  }
+  refresh();
+}
+
+/* ================== 한 차례 ================== */
+async function playTurn() {
+  if (busy || !S || S.winner) return;
+  busy = true; refresh();
+  const pid = S.turn, pl = S.players[pid];
+  banner((pl.ai ? '🤖 ' : '') + pl.em + ' <b>' + pl.name + '</b> 차례!');
+  director.follow(tokens[pid].position);
+
+  try {
+    /* 우주여행 예약 */
+    if (pl.fly) {
+      let dest;
+      if (pl.ai) { await sleep(800); dest = C.aiFly(S, pid, Math.random); }
+      else {
+        director.over();
+        const all = []; for (let i = 0; i < C.N; i++) if (i !== pl.pos) all.push(i);
+        dest = await pickTile(all, '🚀 어디로 날아갈까?', '아무 칸이나 골라 봐 — 앞으로 가서 출발점을 넘으면 월급도!');
+      }
+      snd.fly();
+      const r = C.flyTo(S, pid, dest);
+      placeTokens(); director.follow(tileCenter(pl.pos));
+      await sleep(450);
+      landFlash(pl.pos);
+      await showEvents(r.ev, pid);
+      await handleChoice(pid, r.choice);
+      return endTurn();
+    }
+
+    /* 무인도 — 돈 내고 나갈래? */
+    if (pl.island > 0) {
+      let pay = false;
+      if (pl.ai) { await sleep(700); pay = C.aiIslandPay(S, pid); }
+      else if (pl.cash >= C.ISLAND_ESCAPE) {
+        pay = await ask('🏝️ 무인도 ' + pl.island + '번 남음', '💰 ' + C.ISLAND_ESCAPE + ' 내고 바로 탈출할까, 🎲 더블에 도전할까?',
+          [{ t: '💰 100 내고 탈출', cls: 'go', v: true }, { t: '🎲 더블 도전!', v: false }]);
+      }
+      if (pay) { await showEvents(C.islandPay(S, pid), pid); refresh(); }
+    }
+
+    let rolls = 0;
+    while (pl.alive && !S.winner) {
+      rolls++;
+      /* 🎲 3D 물리 굴림 */
+      $('diceRow').style.display = 'none';
+      const d1 = C.rollDie(Math.random), d2 = C.rollDie(Math.random);
+      await rollDice3D(d1, d2, pl.ai);
+      const dbl = d1 === d2;
+      showDiceResult(d1, d2, dbl);
+      if (dbl) { snd.fanfareDbl(); toast('✨ 더블 ' + d1 + '·' + d2 + '!'); parts.sparkle(new THREE.Vector3(0, 0.4, 0), 0xffd35c); }
+      await sleep(dbl ? 650 : 450);
+
+      /* 무인도 탈출 시도 */
+      if (pl.island > 0) {
+        const r = C.islandTry(S, pid, d1, d2);
+        await showEvents(r.ev, pid);
+        if (!r.free) { hideDice(); return endTurn(); }
+      }
+
+      if (dbl) S.doubles++;
+      if (S.doubles >= 3) {
+        pl.pos = 7; pl.island = 2;
+        await showEvents([{ e: 'tripleDouble' }, { e: 'island' }], pid);
+        hideDice(); return endTurn();
+      }
+
+      /* 이동 — 카메라가 말을 따라간다 */
+      hideDice();
+      const w = C.walk(pl.pos, d1 + d2);
+      for (let k = 0; k < w.path.length; k++) {
+        pl.pos = w.path[k];
+        director.follow(tokens[pid].position);
+        await hopToken(pid, pl.pos, k);
+        if (pl.pos === 0 && k < w.path.length - 1) {
+          snd.coin(); C.gain(S, pid, C.SALARY_PASS);
+          toast('🏁 출발점 통과! 월급 +' + C.SALARY_PASS);
+          floatText(0, '+' + C.SALARY_PASS, '#7dffb0'); refresh();
+        }
+      }
+      landFlash(pl.pos);
+      await sleep(260);
+
+      /* 착지 */
+      const r = C.land(S, pid, {});
+      await showEvents(r.ev, pid);
+      await handleChoice(pid, r.choice);
+      const again = r.ev.some(x => x.e === 'again');
+
+      if (checkWinAndShow()) return;
+      if (!((dbl || again) && pl.alive && pl.island === 0 && !pl.fly) || rolls >= 5) break;
+      banner('✨ ' + pl.em + ' ' + pl.name + ' 한 번 더!');
+      if (!pl.ai) {
+        $('diceRow').style.display = ''; $('btnRoll').disabled = false;
+        await new Promise(res => { $('btnRoll').onclick = () => { $('btnRoll').onclick = () => { if (!busy) playTurn(); }; res(); }; });
+      } else await sleep(500);
+    }
+    endTurn();
+  } catch (err) { console.error(err); busy = false; }
+}
+function endTurn() {
+  hideDice();
+  if (S.winner) { busy = false; return; }
+  if (checkWinAndShow()) { busy = false; return; }
+  const over = C.nextTurn(S);
+  if (over) { finish(C.roundsEndWinner(S)); busy = false; return; }
+  busy = false; refresh();
+  const pl = S.players[S.turn];
+  banner((pl.ai ? '🤖 ' : '📱 ') + pl.em + ' <b>' + pl.name + '</b> 차례!' + (pl.ai ? '' : ' — 🎲 굴리기를 눌러!'));
+  $('diceRow').style.display = pl.ai ? 'none' : '';
+  director.follow(tokens[S.turn].position);
+  nextIfAI();
+}
+function nextIfAI() {
+  const pl = S.players[S.turn];
+  if (pl.ai && !S.winner) setTimeout(() => { if (!busy) playTurn(); }, 900);
+}
+function checkWinAndShow() {
+  const w = C.checkWin(S);
+  if (w) { finish(w); busy = false; return true; }
+  return false;
+}
+function finish(w) {
+  S.winner = w;
+  const p = S.players[w.pid];
+  refresh();
+  snd.win(); domConfetti(160); setTimeout(() => domConfetti(80), 700);
+  /* 3D 불꽃놀이 */
+  let bursts = 0;
+  const fw = setInterval(() => {
+    snd.firework();
+    parts.firework(new THREE.Vector3((Math.random() - 0.5) * 6, 2.5 + Math.random() * 2, (Math.random() - 0.5) * 6), PCOLORS[w.pid]);
+    if (++bursts >= 6) clearInterval(fw);
+  }, 550);
+  director.over();
+  $('ovT').textContent = p.em + ' ' + p.name + ' 승리!';
+  let detail = w.tx;
+  if (w.type === 'rich') detail += ' (재산 ' + C.assets(S, w.pid) + ')';
+  $('ovS').innerHTML = detail + '<br>' + S.players.map(q => q.em + ' ' + (q.alive ? C.assets(S, q.id) : '💥')).join(' · ');
+  setTimeout(() => { $('over').style.display = 'flex'; }, 1400);
+}
+
+/* ================== 시작 ================== */
+function startGame() {
+  const cfgs = [];
+  for (let i = 0; i < cnt; i++) cfgs.push({ name: CHARS[i].nm, em: CHARS[i].em, ai: KINDS[slotKind[i]].ai, level: KINDS[slotKind[i]].lv });
+  S = C.newGame(cfgs, Math.random);
+  shown.forEach(rec => { if (rec.mesh) stage.scene.remove(rec.mesh); if (rec.beam) stage.scene.remove(rec.beam); });
+  shown.clear();
+  board.tiles.forEach(T => { T.frame.userData.on = false; T.frame.material.opacity = 0; if (T.festival) { stage.scene.remove(T.festival); T.festival = null; } });
+  $('setup').style.display = 'none';
+  $('topbar').style.display = ''; $('banner').style.display = '';
+  $('over').style.display = 'none';
+  buildChips(); buildTokens(); refresh();
+  director.over();
+  const pl = S.players[S.turn];
+  banner((pl.ai ? '🤖 ' : '📱 ') + pl.em + ' <b>' + pl.name + '</b> 차례!' + (pl.ai ? '' : ' — 🎲 굴리기를 눌러!'));
+  $('diceRow').style.display = pl.ai ? 'none' : '';
+  nextIfAI();
+}
+$('btnStart').onclick = () => { snd.tick(); startGame(); };
+$('btnRoll').onclick = () => { if (!busy) playTurn(); };
+$('btnAgain').onclick = () => { $('over').style.display = 'none'; $('setup').style.display = 'flex'; $('topbar').style.display = 'none'; $('banner').style.display = 'none'; $('diceRow').style.display = 'none'; };
+
+/* ================== 프레임 루프 ================== */
+let last = performance.now();
+function loop(now) {
+  requestAnimationFrame(loop);
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  director.update(dt);
+  parts.update(dt);
+  updateDice(dt);
+  /* 애니 목록 */
+  for (let i = anims.length - 1; i >= 0; i--) if (!anims[i](dt)) anims.splice(i, 1);
+  /* 반복 연출: 프레임 펄스·픽 링·축제·빛기둥·활성 링·별 반짝 */
+  const t = now / 1000;
+  board.tiles.forEach(T => {
+    if (T.frame.userData.on) T.frame.material.opacity = 0.5 + Math.sin(t * 2.2) * 0.14;
+    else if (T.frame.material.opacity > 0) T.frame.material.opacity = Math.max(0, T.frame.material.opacity - dt * 2);
+    if (T.pick.userData.on) T.pick.material.opacity = 0.5 + Math.sin(t * 5) * 0.3;
+    if (T.festival) T.festival.position.y = 0.75 + Math.sin(t * 3) * 0.06;
+  });
+  shown.forEach(rec => {
+    if (rec.beam) rec.beam.material.opacity = 0.12 + Math.sin(t * 1.7) * 0.06;
+    if (rec.mesh && rec.mesh.userData.orb) rec.mesh.userData.orb.material.emissiveIntensity = 1.1 + Math.sin(t * 2.4) * 0.5;
+  });
+  tokens.forEach(tk => {
+    if (tk.userData.ring.userData.on) tk.userData.ring.material.opacity = 0.45 + Math.sin(t * 3.2) * 0.2;
+  });
+  stage.starMat.opacity = 0.75 + Math.sin(t * 0.7) * 0.15;
+  /* 돈 굴러가는 숫자 */
+  if (S) S.players.forEach(p => {
+    const el = $('cash' + p.id);
+    if (!el) return;
+    const target = p.cash;
+    if (cashShown[p.id] !== target) {
+      const diff = target - cashShown[p.id];
+      cashShown[p.id] += Math.abs(diff) < 2 ? diff : Math.round(diff * Math.min(1, dt * 7));
+      el.textContent = Math.round(cashShown[p.id]);
+    }
+  });
+  stage.renderer.render(stage.scene, stage.camera);
+}
+requestAnimationFrame(loop);
+
+/* 스모크 테스트용 디버그 훅 */
+window.__KM = {
+  get S() { return S; }, startGame, playTurn,
+  setPlayers: (c, kinds) => { cnt = c; kinds.forEach((k, i) => slotKind[i] = k); buildSlots(); }
+};
+</script>
+</body>
+</html>
