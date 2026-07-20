@@ -9,7 +9,7 @@ window.PG = (() => {
     ['home', '🏠', 'Home'], ['library', '🗂', 'Library'], ['templates', '📂', 'Templates'], ['assets', '🗄', 'Assets'], ['brand', '🏷', 'Brand'], ['team', '👥', 'Team'], ['editor', '✏️', 'Editor'],
     ['video', '🎬', 'Video'], ['photo', '🖼', 'Photo'], ['ai', '🤖', 'AI'],
     ['--div'],
-    ['export', '📤', 'Export'], ['plugins', '🔌', 'Plugins'], ['market', '🛒', 'Market'], ['admin', '🛡', 'Admin'], ['dev', '📡', 'Dev'],
+    ['export', '📤', 'Export'], ['plugins', '🔌', 'Plugins'], ['market', '🛒', 'Market'], ['admin', '🛡', 'Admin'], ['dev', '📡', 'Dev'], ['mobile', '📱', 'Mobile'],
   ];
 
   const state = {

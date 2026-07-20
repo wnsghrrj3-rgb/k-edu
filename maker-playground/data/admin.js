@@ -16,7 +16,11 @@ window.MK_ADMIN = (() => {
 
   /* ============ 0. 유틸 ============ */
   let CLOCK = 0;
-  const now = () => Date.now() + CLOCK;
+  /* 오늘 정오 앵커 — ±11h 틱이 실행 시각에 따라 자정을 넘어
+     일일 한도 창이 리셋되던 비결정론 제거 (R21 세션에서 수정) */
+  const _B0 = Date.now();
+  const ANCHOR = _B0 - (_B0 % 864e5) + 12 * 3600e3;
+  const now = () => ANCHOR + CLOCK;
   const _tick = (ms) => { CLOCK += ms; ORGS.forEach((o) => runAutoBackup(o)); };
   let seq = 0;
   const id = (p) => p + '-' + (++seq).toString(36);
