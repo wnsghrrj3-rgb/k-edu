@@ -199,14 +199,16 @@ scene.add(dimMarkers);
 
 // ── 상태 ──
 let mode = 'build';                        // 'build' | 'run'
-let builderState = { startH: 3, seq: [] }; // 빌더 = 단일 소스 (seq 항목: 문자열 | 스위치 노드)
+// 첫 화면부터 구슬이 굴러가도록 골든 샘플 트랙으로 시작 (빈 판은 🧹 지우기로)
+const INIT_TRACK = TRACKS[0];
+let builderState = { startH: INIT_TRACK.startH, seq: JSON.parse(JSON.stringify(INIT_TRACK.seq)) }; // 빌더 = 단일 소스 (seq 항목: 문자열 | 스위치 노드)
 let editLog = [];                          // 배치 이력: push된 배열 참조 목록 (undo용)
 let activeDecisions = [];                  // 활성 갈래 (스위치 선택 0/1 나열)
 let comp = null;                           // compile 결과
 let cur = null;                            // { routesData, group, bells, switches, activeRD, ghostSim }
 let multi = null;                          // MultiSim (실행 모드)
 let marbleMeshes = [];                     // 실행 중 구슬 메쉬
-let marbleCount = 1;
+let marbleCount = INIT_TRACK.marbles || 1;
 let ghostWait = 0;
 let vMax = 0;
 let finishes = [];                         // [{m, time, routeIdx}]
@@ -603,11 +605,14 @@ function applyCode(text, okMsg) {
 
 // ── 초기화 ──
 let cams = null;
+editLog = rebuildLog(builderState.seq, []);   // 시작 트랙도 ↩ 되돌리기 가능
+ui.setMarbleCount(marbleCount);
 rebuild(false);
 cams = createCameras(renderer, trackCenter(comp.pieces));
 cams.frameAll(allTilePoints());
 cams.onLockChange((locked) => ui.setCamLocked(locked));
 setMode('build');
+ui.showHint('🎢 길이 미리 깔려 있어 — ▶ 실행을 눌러 구슬을 굴려봐! 새로 만들려면 🧹 지우기', 'good');
 
 // URL로 받은 트랙 코드 자동 로드 (?t=CODE)
 {
