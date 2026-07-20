@@ -16,6 +16,7 @@ require('../core/parts/splitter.js');
 require('../core/parts/mergepart.js');
 require('../core/multisim.js');
 require('../core/parts/lifter.js');
+require('../core/parts/special.js');
 const NS = globalThis.MarbleSim;
 
 let pass = 0, fail = 0;
@@ -1006,6 +1007,165 @@ T('공백·소문자 섞인 코드도 관대하게 읽는다', () => {
   const messy = ' ' + code.slice(0, 3).toLowerCase() + ' ' + code.slice(3) + ' ';
   const back = NS.serialize.decodeCode(messy);
   assert(back.startH === 2 && back.seq.length === 3, '관대 파싱 실패');
+});
+
+
+// ---------- 12. M5 특수 부품 (색 게이트·레이스·도미노·오르골) ----------
+console.log('[M5 특수 부품]');
+
+function runMulti(state, count, maxSec) {
+  const comp = NS.compile(state);
+  assert(comp.ok, '컴파일 실패: ' + JSON.stringify(comp.errors));
+  const cr = NS.compileRoutes(comp);
+  assert(cr.ok, '잎 빌드 실패');
+  const M = new NS.MultiSim(cr.routesData, { count });
+  M.release();
+  const evs = M.runToEnd(maxSec || 60);
+  return { comp, cr, M, evs };
+}
+
+T('색 게이트: 다른 색은 팅! (반사·에너지 비증가), 같은 색은 통과', () => {
+  // 구슬 0 = 🔵(색0), 게이트 색 1(🩷) → 반사되어 골 못 감
+  const stBlock = { startH: 2, seq: ['slope', { type: 'colorgate', color: 1 }, 'goal'] };
+  const A = runMulti(stBlock, 1, 30);
+  const bounce = A.evs.filter(e => e.type === 'gatebounce');
+  assert(bounce.length >= 1, '반사 이벤트 없음');
+  assert(A.evs.filter(e => e.type === 'finish').length === 0, '막힌 구슬이 완주함');
+  assert(A.evs.filter(e => e.type === 'gatepass').length === 0, '막힌 구슬이 통과 이벤트를 냄');
+  // 같은 색이면 통과
+  const stPass = { startH: 2, seq: ['slope', { type: 'colorgate', color: 0 }, 'goal'] };
+  const B = runMulti(stPass, 1, 30);
+  assert(B.evs.filter(e => e.type === 'gatepass').length === 1, '통과 이벤트 1회여야');
+  assert(B.evs.filter(e => e.type === 'finish').length === 1, '같은 색인데 완주 못 함');
+});
+
+T('색 게이트 반사 = 에너지 비증가 (매 틱 감시)', () => {
+  const comp = NS.compile({ startH: 2, seq: ['slope', { type: 'colorgate', color: 2 }, 'goal'] });
+  const cr = NS.compileRoutes(comp);
+  const M = new NS.MultiSim(cr.routesData, { count: 1 });
+  M.release();
+  let prevE = Infinity;
+  for (let i = 0; i < 120 * 20 && !M.done; i++) {
+    M.step();
+    const sim = M.marbles[0].sim;
+    if (!M.marbles[0].released) continue;
+    const E = sim.energy();
+    assert(E <= prevE + 1e-9, '에너지 증가: ' + prevE + ' → ' + E);
+    prevE = E;
+  }
+});
+
+T('🎨 자동 색 분류기 (창발): 3색 중첩 — 구슬 셋이 스스로 제 색 문을 찾는다', () => {
+  const st = { startH: 3, seq: ['slope', 'slope', { type: 'switch',
+    left:  [{ type: 'colorgate', color: 1 }, 'curve_l', 'goal'],
+    right: [{ type: 'switch',
+      left:  [{ type: 'colorgate', color: 0 }, 'goal'],
+      right: [{ type: 'colorgate', color: 2 }, 'curve_r', 'goal'] }] }] };
+  const { cr, evs } = runMulti(st, 3, 60);
+  const fin = evs.filter(e => e.type === 'finish');
+  assert(fin.length === 3, '완주 3개 아님: ' + fin.length);
+  for (const f of fin) {
+    const gate = cr.routesData[f.routeIdx].gates[0];
+    assert(gate && gate.color === f.m % 3, '구슬 ' + f.m + '이 다른 색 문으로 들어감');
+  }
+  assert(evs.filter(e => e.type === 'gatebounce').length > 0, '반사 없이는 분류가 아님');
+});
+
+T('색 게이트 결정론: 같은 트랙 = 같은 이벤트열', () => {
+  const st = { startH: 3, seq: ['slope', 'slope', { type: 'switch',
+    left:  [{ type: 'colorgate', color: 1 }, 'goal'],
+    right: [{ type: 'colorgate', color: 0 }, 'goal'] }] };
+  const sig = () => runMulti(st, 3, 60).evs.map(e => e.type + (e.m != null ? e.m : '') + (e.s != null ? e.s.toFixed(6) : '')).join('|');
+  assert(sig() === sig(), '결정론 위반');
+});
+
+T('setGateColor: 색을 바꾸면 다음 방출부터 새 문 (레버처럼 리셋 유지)', () => {
+  const comp = NS.compile({ startH: 2, seq: ['slope', { type: 'colorgate', color: 0 }, 'goal'] });
+  const gateId = comp.pieces.findIndex(pp => pp.type === 'colorgate');
+  const cr = NS.compileRoutes(comp);
+  const M = new NS.MultiSim(cr.routesData, { count: 1 });
+  M.release();
+  M.runToEnd(30);
+  assert(M.marbles[0].sim.status === 'goal', '색0 문인데 🔵이 못 지나감');
+  const c = M.cycleGateColor(gateId);
+  assert(c === 1, '순환 결과가 1이어야: ' + c);
+  M.release(); // reset을 넘어 유지
+  M.runToEnd(30);
+  assert(M.marbles[0].sim.status !== 'goal', '색을 바꿨는데 🔵이 지나감');
+});
+
+T('🏁 레이스 게이트: 구슬별 자기 출발 기준 통과 시간, 1회씩, 결정론', () => {
+  const st = { startH: 3, seq: ['slope', { type: 'switch',
+    left:  ['curve_r', 'zigzag', 'curve_r'],
+    right: ['curve_l', 'booster', 'curve_l'],
+    merged: true, tail: ['racegate', 'slope', 'goal'] }] };
+  const A = runMulti(st, 2, 40);
+  const fg = A.evs.filter(e => e.type === 'finishgate');
+  assert(fg.length === 2, '결승 통과 2회여야: ' + fg.length);
+  assert(fg.every(f => f.ticks > 0), '시간 기록 이상');
+  assert(new Set(fg.map(f => f.m)).size === 2, '구슬별 1회씩이어야');
+  // 부스터 길(구슬1)이 지그재그 길(구슬0)보다 빠르다 — 물리가 판정한다
+  const t0 = fg.find(f => f.m === 0).ticks, t1 = fg.find(f => f.m === 1).ticks;
+  assert(t1 < t0, '부스터 길이 느림? ' + t1 + ' vs ' + t0);
+  const B = runMulti(st, 2, 40);
+  assert(JSON.stringify(A.evs.filter(e => e.type === 'finishgate')) === JSON.stringify(B.evs.filter(e => e.type === 'finishgate')), '레이스 결정론 위반');
+});
+
+T('🁢 도미노: 구슬마다 1회 트리거, 물리 무영향 (통과 시간 동일)', () => {
+  const plain  = { startH: 2, seq: ['slope', 'straight', 'goal'] };
+  const dom    = { startH: 2, seq: ['slope', 'domino', 'goal'] };
+  const A = runMulti(plain, 1, 30), B = runMulti(dom, 1, 30);
+  assert(B.evs.filter(e => e.type === 'domino').length === 1, '도미노 이벤트 1회여야');
+  const tA = A.evs.find(e => e.type === 'finish').ticks;
+  const tB = B.evs.find(e => e.type === 'finish').ticks;
+  assert(tA === tB, '도미노가 물리에 영향: ' + tA + ' vs ' + tB);
+});
+
+T('🎼 오르골: 골의 자매 — 터미널 인정·그릇 감쇠·goalType', () => {
+  const st = { startH: 2, seq: ['slope', 'slope', 'orgol'] };
+  const comp = NS.compile(st);
+  assert(comp.ok && comp.ended, '오르골이 트랙을 못 끝냄');
+  const { cr, evs, M } = runMulti(st, 3, 40);
+  assert(cr.routesData[0].goalType === 'orgol', 'goalType 아님');
+  assert(evs.filter(e => e.type === 'bell').length === 3, '도착 벨 3회여야 (멜로디 3음)');
+  assert(evs.filter(e => e.type === 'finish').length === 3, '완주 3 아님');
+  assert(M.marbles.every(mm => mm.sim.status === 'goal'), '그릇 정착 실패');
+});
+
+T('오르골 뒤에는 부품 금지 (AFTER_GOAL)', () => {
+  const comp = NS.compile({ startH: 2, seq: ['slope', 'orgol', 'straight'] });
+  assert(!comp.ok && comp.errors.some(e => e.code === 'AFTER_GOAL'), 'AFTER_GOAL이어야');
+});
+
+T('M5 코덱: 색 게이트 A1~A3·레이스 F·도미노 M·오르골 Q 왕복', () => {
+  const st = { startH: 3, seq: ['slope', { type: 'colorgate', color: 2 }, 'racegate', 'domino',
+    { type: 'switch', left: [{ type: 'colorgate', color: 0 }, 'orgol'], right: [{ type: 'colorgate', color: 1 }, 'orgol'] }] };
+  const code = NS.serialize.encodeCode(st);
+  const back = NS.serialize.decodeCode(code);
+  assert(JSON.stringify(back) === JSON.stringify(st), '왕복 불일치: ' + code);
+  let threw = false;
+  try { NS.serialize.decodeCode('K13A9.' + '00'); } catch (e) { threw = true; }
+  assert(threw, '잘못된 게이트 색 통과됨');
+});
+
+T('M5 프리셋 3종: 컴파일 + 구슬 전원 완주 (분류소는 제 색 문으로)', () => {
+  for (const id of ['sortery', 'photofinish', 'orgolnight']) {
+    const t = NS.TRACKS.find(x => x.id === id);
+    assert(t, id + ' 프리셋 없음');
+    const st = { startH: t.startH, seq: JSON.parse(JSON.stringify(t.seq)) };
+    const { cr, evs } = runMulti(st, t.marbles || 1, 80);
+    const fin = evs.filter(e => e.type === 'finish');
+    assert(fin.length === (t.marbles || 1), id + ' 완주 부족: ' + fin.length);
+    if (id === 'sortery') for (const f of fin) {
+      const gate = cr.routesData[f.routeIdx].gates[0];
+      assert(gate && gate.color === f.m % 3, '분류소에서 잘못 분류');
+    }
+    if (id === 'photofinish') assert(evs.filter(e => e.type === 'finishgate').length === 2, '포토피니시 기록 없음');
+    if (id === 'orgolnight') {
+      assert(evs.filter(e => e.type === 'domino').length === 10, '도미노 2×5 아님');
+      assert(evs.filter(e => e.type === 'bell').length === 5, '멜로디 5음 아님');
+    }
+  }
 });
 
 console.log('\n결과: ' + pass + ' 통과, ' + fail + ' 실패');

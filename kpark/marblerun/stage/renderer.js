@@ -153,6 +153,9 @@ export function buildTrackMeshes(pieces, entries, C) {
   const bells = new Map();
   const switches = new Map();
   const levers = new Map();
+  const gates = new Map();    // 🎨 색 게이트: pieceIdx → { pad, mats:[archMat, fieldMat, lampMat] }
+  const dominoes = new Map(); // 🁢 도미노: pieceIdx → tiles[] (홀더 그룹)
+  const orgols = new Map();   // 🎼 오르골: pieceIdx → 실린더
   const decorated = new Set(); // 부품 장식(탑·벨·플리퍼 등)은 전역 인덱스당 한 번만
 
   for (const en of entries) {
@@ -178,6 +181,24 @@ export function buildTrackMeshes(pieces, entries, C) {
       if (pad) { pad.userData.pieceIdx = en.globalIdx; levers.set(en.globalIdx, pad); }
     }
     if (piece.type === 'merge') group.add(makeMerge(piece, C, hx));
+    if (piece.type === 'colorgate') {
+      const cg = makeColorGate(piece, C, hx);
+      group.add(cg.group);
+      cg.pad.userData.pieceIdx = en.globalIdx;
+      gates.set(en.globalIdx, cg);
+    }
+    if (piece.type === 'racegate') group.add(makeRaceGate(piece, C, hx));
+    if (piece.type === 'domino') {
+      const d = makeDominoSet(piece, C, hx);
+      group.add(d.group);
+      dominoes.set(en.globalIdx, d.tiles);
+    }
+    if (piece.type === 'orgol') {
+      const o = makeOrgol(piece, C, hx);
+      group.add(o.group);
+      bells.set(en.globalIdx, o.box);   // 완주 카드 라벨·시선 글라이드 재사용
+      orgols.set(en.globalIdx, o.cyl);
+    }
     if (piece.type === 'cannon' || piece.type === 'trampoline') {
       group.add(makeBallistic(piece, C, hx, NS));
       const arc = raw.slice(1, raw.length - 1); // 설계 조준 궤적
@@ -185,7 +206,201 @@ export function buildTrackMeshes(pieces, entries, C) {
     }
   }
 
-  return { group, bells, switches, levers };
+  return { group, bells, switches, levers, gates, dominoes, orgols };
+}
+
+/* 🎨 색 게이트: 두 기둥 + 발광 아치 + 반투명 빛의 장막 + 색 램프. 탭 패드로 색 순환. */
+export const GATE_STYLE = [
+  { hex: 0x4de1ff, em: 0x0a6fa0 },   // 🔵
+  { hex: 0xff6bd6, em: 0x8a1560 },   // 🩷
+  { hex: 0xffd35c, em: 0x8a6200 },   // 🟡
+];
+
+function makeColorGate(piece, C, hx) {
+  const g = new THREE.Group();
+  const c = hx.tileCenter(piece.q, piece.r, C.R);
+  const y = piece.h * C.H;
+  const st = GATE_STYLE[(piece.color || 0) % 3];
+  // 레일 진행 방향 (진입 포트 → 반대)
+  const d = hx.portDir(piece.q, piece.r, (piece.rot + 3) % 6, C.R);
+  const yaw = Math.atan2(d.x, d.z);
+
+  const postMat = new THREE.MeshStandardMaterial({ color: 0x3a4668, roughness: 0.55, metalness: 0.5 });
+  const archMat = new THREE.MeshStandardMaterial({ color: st.hex, emissive: st.hex, emissiveIntensity: 0.9, roughness: 0.3, metalness: 0.4 });
+  const fieldMat = new THREE.MeshBasicMaterial({ color: st.hex, transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false });
+  const lampMat = new THREE.MeshStandardMaterial({ color: st.hex, emissive: st.hex, emissiveIntensity: 1.3, roughness: 0.3 });
+
+  const holder = new THREE.Group();
+  holder.position.set(c.x, 0, c.z);
+  holder.rotation.y = yaw;
+  const W = C.MR * 1.7;               // 기둥 좌우 간격 절반
+  for (const sx of [-W, W]) {
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.0028, 0.0034, 0.05, 10), postMat);
+    post.position.set(sx, y + 0.025, 0);
+    post.castShadow = true;
+    holder.add(post);
+  }
+  // 아치 (반원 토러스)
+  const arch = new THREE.Mesh(new THREE.TorusGeometry(W, 0.0028, 8, 20, Math.PI), archMat);
+  arch.position.set(0, y + 0.05, 0);
+  holder.add(arch);
+  // 빛의 장막 — "여긴 문이야"
+  const field = new THREE.Mesh(new THREE.PlaneGeometry(W * 2, 0.045), fieldMat);
+  field.position.set(0, y + 0.0265, 0);
+  holder.add(field);
+  // 색 램프 (아치 꼭대기)
+  const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.006, 12, 8), lampMat);
+  lamp.position.set(0, y + 0.058, 0);
+  holder.add(lamp);
+  // 탭 패드
+  const pad = new THREE.Mesh(
+    new THREE.CylinderGeometry(C.R * 0.55, C.R * 0.55, 0.06, 12),
+    new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })
+  );
+  pad.name = 'gatepad';
+  pad.position.set(0, y + 0.03, 0);
+  holder.add(pad);
+  g.add(holder);
+  return { group: g, pad, mats: [archMat, fieldMat, lampMat] };
+}
+
+/* 게이트 색 즉시 갱신 (탭 순환) */
+export function updateGateColor(gate, color) {
+  const st = GATE_STYLE[color % 3];
+  for (const m of gate.mats) {
+    m.color.setHex(st.hex);
+    if (m.emissive) m.emissive.setHex(st.hex);
+  }
+}
+
+/* 🏁 레이스 게이트: 결승 아치 — 체커 배너 + 깃발 */
+function makeRaceGate(piece, C, hx) {
+  const g = new THREE.Group();
+  const c = hx.tileCenter(piece.q, piece.r, C.R);
+  const y = piece.h * C.H;
+  const d = hx.portDir(piece.q, piece.r, (piece.rot + 3) % 6, C.R);
+  const yaw = Math.atan2(d.x, d.z);
+  const holder = new THREE.Group();
+  holder.position.set(c.x, 0, c.z);
+  holder.rotation.y = yaw;
+
+  const W = C.MR * 1.8;
+  const postMat = new THREE.MeshStandardMaterial({ color: 0xdfe9f5, roughness: 0.3, metalness: 0.7 });
+  for (const sx of [-W, W]) {
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.0026, 0.0032, 0.055, 10), postMat);
+    post.position.set(sx, y + 0.0275, 0);
+    post.castShadow = true;
+    holder.add(post);
+  }
+  // 체커 배너: 흑백 교대 8칸 × 2줄
+  const cw = (W * 2) / 8, ch = 0.006;
+  const blk = new THREE.MeshStandardMaterial({ color: 0x14162e, roughness: 0.6 });
+  const wht = new THREE.MeshStandardMaterial({ color: 0xf2f5ff, emissive: 0x555a77, emissiveIntensity: 0.25, roughness: 0.5 });
+  for (let row = 0; row < 2; row++) {
+    for (let i = 0; i < 8; i++) {
+      const sq = new THREE.Mesh(new THREE.BoxGeometry(cw, ch, 0.0016), (i + row) % 2 === 0 ? blk : wht);
+      sq.position.set(-W + cw * (i + 0.5), y + 0.055 - ch * (row + 0.5) + ch, 0);
+      holder.add(sq);
+    }
+  }
+  // 깃발 두 개
+  const flagMat = new THREE.MeshStandardMaterial({ color: 0xffd35c, emissive: 0x8a6200, emissiveIntensity: 0.6, side: THREE.DoubleSide, roughness: 0.5 });
+  for (const sx of [-W, W]) {
+    const flag = new THREE.Mesh(new THREE.PlaneGeometry(0.012, 0.008), flagMat);
+    flag.position.set(sx + (sx > 0 ? -0.007 : 0.007), y + 0.061, 0);
+    holder.add(flag);
+  }
+  g.add(holder);
+  return g;
+}
+
+/* 🁢 도미노: 레일 양옆 두 줄 — 구슬이 지나가면 와르르 (연출 전용, 물리 무영향).
+ * 각 도미노 = 홀더 그룹 (바닥 피벗) — 애니는 홀더.rotation.x 로. */
+function makeDominoSet(piece, C, hx) {
+  const g = new THREE.Group();
+  const c = hx.tileCenter(piece.q, piece.r, C.R);
+  const y = piece.h * C.H;
+  const d = hx.portDir(piece.q, piece.r, (piece.rot + 3) % 6, C.R);
+  const yaw = Math.atan2(d.x, d.z);
+  const holder = new THREE.Group();
+  holder.position.set(c.x, 0, c.z);
+  holder.rotation.y = yaw;
+
+  const PALETTE = [0xff6b6b, 0xffb020, 0x5cff9d, 0x4de1ff, 0xb56bff];
+  const tiles = [];
+  const N = 6;                    // 한 줄 6개 × 양옆
+  const gap = 0.013;              // 진행 방향 간격
+  const side = C.MR * 1.55;       // 레일에서 옆으로
+  for (const sx of [-side, side]) {
+    for (let i = 0; i < N; i++) {
+      const col = PALETTE[i % PALETTE.length];
+      const mat = new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.25, roughness: 0.45 });
+      const tile = new THREE.Mesh(new THREE.BoxGeometry(0.0035, 0.02, 0.009), mat);
+      tile.position.y = 0.01;     // 홀더(바닥 피벗) 위로 반높이
+      tile.castShadow = true;
+      const h = new THREE.Group();
+      h.add(tile);
+      h.position.set(sx, y, (i - (N - 1) / 2) * gap);
+      h.userData.order = i;       // 넘어지는 순서 (진행 방향)
+      holder.add(h);
+      tiles.push(h);
+    }
+  }
+  g.add(holder);
+  return { group: g, tiles };
+}
+
+/* 🎼 종착 오르골: 골 그릇 + 회전 실린더(핀) + 빗(comb) — 트랙이 악기가 된다 */
+function makeOrgol(piece, C, hx) {
+  const g = new THREE.Group();
+  const c = hx.tileCenter(piece.q, piece.r, C.R);
+  const y = piece.h * C.H;
+  // 그릇 (골과 동일 계약 — 자장가빛 보라·금)
+  const bowl = new THREE.Mesh(
+    new THREE.CylinderGeometry(C.R * 0.5, C.R * 0.36, 0.016, 16, 1, true),
+    new THREE.MeshStandardMaterial({ color: 0x7c5cff, emissive: 0x3a2a8a, emissiveIntensity: 0.45, side: THREE.DoubleSide, roughness: 0.4, metalness: 0.4 })
+  );
+  bowl.position.set(c.x, y + 0.006, c.z);
+  g.add(bowl);
+
+  // 오르골 상자 (그릇 옆): 로즈우드 받침 + 금핀 실린더 + 빗
+  const box = new THREE.Group();
+  const bx = c.x + C.R * 0.48, bz = c.z;
+  const base = new THREE.Mesh(
+    new THREE.BoxGeometry(0.036, 0.01, 0.026),
+    new THREE.MeshStandardMaterial({ color: 0x5a2e1e, emissive: 0x2a0f08, emissiveIntensity: 0.3, roughness: 0.5 })
+  );
+  base.position.set(bx, y + 0.005, bz);
+  base.castShadow = true;
+  box.add(base);
+  const cyl = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.008, 0.008, 0.026, 14),
+    new THREE.MeshStandardMaterial({ color: 0xffd35c, emissive: 0xa87400, emissiveIntensity: 0.55, roughness: 0.25, metalness: 0.85 })
+  );
+  cyl.rotation.x = Math.PI / 2;
+  cyl.position.set(bx, y + 0.019, bz);
+  box.add(cyl);
+  // 핀: 실린더 표면 작은 돌기 8개
+  for (let i = 0; i < 8; i++) {
+    const th = (i / 8) * Math.PI * 2;
+    const pin = new THREE.Mesh(
+      new THREE.SphereGeometry(0.0012, 6, 4),
+      new THREE.MeshStandardMaterial({ color: 0xfff3c8, emissive: 0xffd35c, emissiveIntensity: 0.8 })
+    );
+    pin.position.set(Math.cos(th) * 0.0086, 0, ((i % 4) - 1.5) * 0.005);
+    pin.position.y = Math.sin(th) * 0.0086;
+    cyl.add(pin);
+  }
+  // 빗 (comb)
+  const comb = new THREE.Mesh(
+    new THREE.BoxGeometry(0.014, 0.0015, 0.024),
+    new THREE.MeshStandardMaterial({ color: 0xdfe9f5, roughness: 0.25, metalness: 0.9 })
+  );
+  comb.position.set(bx - 0.012, y + 0.013, bz);
+  box.add(comb);
+  box.getObjectByProperty('type', 'Group');
+  g.add(box);
+  return { group: g, box: cyl, cyl };
 }
 
 /* 구슬 생성 — 다중 구슬용. colorHex 지정 시 발광도 맞춰 물들인다. */

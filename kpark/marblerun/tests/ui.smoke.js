@@ -12,7 +12,7 @@ global.window = dom.window;
 global.document = dom.window.document;
 
 // 코어 로드 (window에 부착)
-for (const f of ['core/hexgrid.js','core/parts/basic.js','core/parts/action.js','core/parts/ballistic.js','core/parts/switchpart.js','core/parts/splitter.js','core/parts/mergepart.js','core/parts/lifter.js','core/graph.js','core/sim.js','core/serialize.js','core/tracks.js','core/builder.js','core/multisim.js']) {
+for (const f of ['core/hexgrid.js','core/parts/basic.js','core/parts/action.js','core/parts/ballistic.js','core/parts/switchpart.js','core/parts/splitter.js','core/parts/mergepart.js','core/parts/lifter.js','core/parts/special.js','core/graph.js','core/sim.js','core/serialize.js','core/tracks.js','core/builder.js','core/multisim.js']) {
   const code = fs.readFileSync(path.join(BASE, f), 'utf8');
   dom.window.eval(code);
 }
@@ -41,7 +41,7 @@ T('UI 생성: 스위치 버튼·갈래 버튼·구슬 수 세그먼트 존재', 
   const ui = createUI(document.getElementById('ui'), h, NS.TRACKS);
   assert(document.querySelector('[data-part="switch"]'), '스위치 팔레트 버튼 없음');
   assert(document.querySelector('#mr-branch'), '갈래 버튼 없음');
-  assert(document.querySelectorAll('#mr-count button').length === 3, '구슬 수 버튼');
+  assert(document.querySelectorAll('#mr-count button').length === 5, '구슬 수 버튼');
   assert(typeof ui.setMarbleCount === 'function', 'setMarbleCount 누락');
 });
 
@@ -220,6 +220,43 @@ T('M4: 코드 붙여넣기 → 불러오기 핸들러에 값 전달', () => {
   root.querySelector('#mr-pastecode').value = 'K12DDG.xx';
   root.querySelector('#mr-loadcode').click();
   assert(got === 'K12DDG.xx', '전달값: ' + got);
+});
+
+
+// ---------- M5 특수 부품 스모크 ----------
+T('M5: 팔레트에 색 게이트·레이스·도미노·오르골 버튼', () => {
+  const root = document.createElement('div');
+  createUI(root, stubHandlers(), NS.TRACKS);
+  for (const t of ['colorgate', 'racegate', 'domino', 'orgol']) {
+    assert(root.querySelector('button[data-part="' + t + '"]'), t + ' 버튼 없음');
+  }
+});
+T('M5: 구슬 개수 ⑤까지 + 방출 버튼 5색', () => {
+  const root = document.createElement('div');
+  createUI(root, stubHandlers(), NS.TRACKS);
+  const btns = root.querySelectorAll('#mr-count button');
+  assert(btns.length === 5, '개수 버튼 5개 아님: ' + btns.length);
+  btns[4].click();
+  assert(root.querySelector('#mr-release').textContent.includes('🟣'), '5색 방출 라벨 아님');
+});
+T('M5: 완주 카드 레이스 섹션 (빠른 순 메달)', () => {
+  const root = document.createElement('div');
+  const ui = createUI(root, stubHandlers(), NS.TRACKS);
+  ui.showResult({
+    marbles: [{ emoji: '🔵', bell: '🔔', time: 2.5 }, { emoji: '🩷', bell: '🔔', time: 2.9 }],
+    vMax: 1.2,
+    race: [{ emoji: '🩷', time: 1.191 }, { emoji: '🔵', time: 1.383 }],
+  });
+  const body = root.querySelector('#mr-result .result-body').innerHTML;
+  assert(body.includes('🏁'), '레이스 블록 없음');
+  assert(body.indexOf('🥇') >= 0 && body.indexOf('🥇') < body.indexOf('🥈'), '메달 순서 이상');
+  assert(body.includes('1.191'), '천분의 일초 기록 없음');
+});
+T('M5: 프리셋 목록에 분류소·결승선·오르골', () => {
+  const root = document.createElement('div');
+  createUI(root, stubHandlers(), NS.TRACKS);
+  const html = root.querySelector('#mr-track').innerHTML;
+  for (const nm of ['마법 분류소', '번개 결승선', '오르골의 밤']) assert(html.includes(nm), nm + ' 없음');
 });
 
 console.log('\nUI 스모크: ' + pass + ' 통과, ' + fail + ' 실패');

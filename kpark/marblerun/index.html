@@ -150,6 +150,7 @@
 <script src="core/parts/splitter.js"></script>
 <script src="core/parts/mergepart.js"></script>
 <script src="core/parts/lifter.js"></script>
+<script src="core/parts/special.js"></script>
 <script src="core/graph.js"></script>
 <script src="core/sim.js"></script>
 <script src="core/multisim.js"></script>
@@ -168,9 +169,9 @@
 
 <script type="module">
 import * as THREE from 'three';
-import { createRenderer, buildTrackMeshes, makeSlotMarker, updateSlotMarker, makeGhostMarble, makeMarble, updateSwitchFlipper } from './stage/renderer.js';
+import { createRenderer, buildTrackMeshes, makeSlotMarker, updateSlotMarker, makeGhostMarble, makeMarble, updateSwitchFlipper, updateGateColor } from './stage/renderer.js';
 import { createCameras } from './stage/cameras.js';
-import { ringBell, animateBell, updateBell, createConfetti, placeClick, thudSound, boomSound, boingSound, catchSound, flipSound, createRollSound } from './stage/fx.js';
+import { ringBell, animateBell, updateBell, createConfetti, placeClick, thudSound, boomSound, boingSound, catchSound, flipSound, createRollSound, gateBounceSound, gatePassSound, dominoClack, shutterSound, orgolNote } from './stage/fx.js';
 import { createUI } from './stage/ui.js';
 
 const NS = window.MarbleSim;
@@ -182,7 +183,17 @@ const MARBLE_STYLES = [
   { emoji: '🔵', color: 0x4de1ff, emissive: 0x0a6fa0 },
   { emoji: '🩷', color: 0xff6bd6, emissive: 0x8a1560 },
   { emoji: '🟡', color: 0xffd35c, emissive: 0x8a6200 },
+  { emoji: '🟢', color: 0x6bff9d, emissive: 0x0a8a4a },
+  { emoji: '🟣', color: 0xb56bff, emissive: 0x4a0a8a },
 ];
+// 🎨 게이트 색 (구슬 색 m%3과 같은 순서)
+const GATE_EMOJI = ['🔵', '🩷', '🟡'];
+const GATE_NAME = ['파랑', '분홍', '노랑'];
+// 🎼 오르골 멜로디: 비행기 (전래) — 미레도레 미미미 레레레 미솔솔 …
+const NOTE = { C5: 523.25, D5: 587.33, E5: 659.25, G5: 783.99 };
+const ORGOL_MELODY = [NOTE.E5, NOTE.D5, NOTE.C5, NOTE.D5, NOTE.E5, NOTE.E5, NOTE.E5,
+  NOTE.D5, NOTE.D5, NOTE.D5, NOTE.E5, NOTE.G5, NOTE.G5,
+  NOTE.E5, NOTE.D5, NOTE.C5, NOTE.D5, NOTE.E5, NOTE.E5, NOTE.E5, NOTE.E5, NOTE.D5, NOTE.D5, NOTE.E5, NOTE.D5, NOTE.C5];
 
 // ── 스테이지 ──
 const canvas = document.getElementById('stage');
@@ -212,6 +223,9 @@ let vMax = 0;
 let sceneC = new THREE.Vector3(0, 0.1, 0);   // 트랙 중심 (안개 스케일링용)
 let sceneR = 0.6;                             // 트랙 반지름
 let finishes = [];                         // [{m, time, routeIdx}]
+let raceTimes = [];                        // 🏁 [{m, id, time}]
+let orgolIdx = 0;                          // 🎼 이번 방출에서 연주된 음 수
+let dominoAnims = [];                      // 🁢 [{tiles, t}] — 진행 중 넘어짐
 
 /* 건설 프론티어 = 활성 갈래의 다음 자리 */
 function frontierPoint() {
@@ -304,7 +318,7 @@ function rebuild(recenter) {
   const routesData = cr.routesData;
   if (cur) disposeGroup(cur.group);
   const entries = computeRenderEntries(comp, routesData);
-  const { group, bells, switches, levers } = buildTrackMeshes(comp.pieces, entries, C);
+  const { group, bells, switches, levers, gates, dominoes, orgols } = buildTrackMeshes(comp.pieces, entries, C);
   scene.add(group);
   // 발사 지점 s → 부품 타입 (대포/트램펄린 사운드 구분)
   for (const rd of routesData) {
@@ -317,7 +331,7 @@ function rebuild(recenter) {
   const mergeGems = [];
   group.traverse(o => { if (o.name === 'mergegem') mergeGems.push(o); });
   cur = {
-    routesData, group, bells, switches, levers, activeRD, mergeGems,
+    routesData, group, bells, switches, levers, gates, dominoes, orgols, activeRD, mergeGems,
     ghostSim: activeRD ? new NS.Sim(activeRD.pd) : null,
   };
   if (cur.ghostSim) cur.ghostSim.release(0);
@@ -360,6 +374,10 @@ function armRun() {
   }
   vMax = 0;
   finishes = [];
+  raceTimes = [];
+  orgolIdx = 0;
+  dominoAnims = [];
+  if (cur.dominoes) for (const tiles of cur.dominoes.values()) for (const h of tiles) h.rotation.x = 0;
 }
 
 function setMode(m) {
@@ -418,7 +436,9 @@ const ui = createUI(document.getElementById('ui'), {
     if (!NS.canPlace(comp, type)) return;
     const route = comp.routes[comp.activeRoute];
     const branch = type === 'switch' || type === 'splitter';
-    const item = branch ? { type, left: [], right: [] } : type;
+    const item = branch ? { type, left: [], right: [] }
+      : type === 'colorgate' ? { type: 'colorgate', color: 0 }
+      : type;
     route.seqRef.push(item);
     editLog.push(route.seqRef);
     if (branch) activeDecisions = activeDecisions.concat([0]); // 왼길부터
@@ -426,6 +446,10 @@ const ui = createUI(document.getElementById('ui'), {
     rebuild(false);
     if (type === 'switch') ui.showHint('🔀 갈림길! 왼길부터 짓자 — 오른길은 갈래 버튼으로', 'good');
     if (type === 'splitter') ui.showHint('🚦 신호기! 왼길부터 짓자 — 실행 중에 탭하면 길이 바뀐다', 'good');
+    if (type === 'colorgate') ui.showHint('🎨 색 게이트! 탭해서 색을 바꿔 — 같은 색 구슬만 지나간다', 'good');
+    if (type === 'racegate') ui.showHint('🏁 결승 아치! 구슬마다 통과 시간을 잰다', 'good');
+    if (type === 'domino') ui.showHint('🁢 도미노! 구슬이 지나가면 와르르', 'good');
+    if (type === 'orgol') ui.showHint('🎼 오르골 골! 도착 순서대로 멜로디가 연주된다', 'good');
   },
   onUndo() {
     if (editLog.length === 0) return;
@@ -562,6 +586,27 @@ canvas.addEventListener('pointerup', (e) => {
   );
   raycaster.setFromCamera(ndc, cams.cam);
   raycaster.params.Line = raycaster.params.Line || {};
+
+  // 🎨 색 게이트 탭 → 색 순환 (건설·실행 공통 — 코드·공유에도 반영되는 '설정')
+  if (cur.gates && cur.gates.size > 0) {
+    const pads = [...cur.gates.values()].map(gt => gt.pad);
+    const ghits = raycaster.intersectObjects(pads, false);
+    if (ghits.length > 0) {
+      const id = ghits[0].object.userData.pieceIdx;
+      const item = comp.seqItemOf && comp.seqItemOf.get(id);
+      if (item) {
+        const c = ((item.color || 0) + 1) % 3;
+        item.color = c;
+        updateGateColor(cur.gates.get(id), c);
+        if (mode === 'run' && multi) multi.setGateColor(id, c);
+        // routesData 초기색도 항상 맞춘다 (다음 armRun이 여기서 읽는다)
+        for (const rd of cur.routesData) for (const g of (rd.gates || [])) if (g.id === id) g.color = c;
+        placeClick();
+        ui.showHint('🎨 게이트를 ' + GATE_NAME[c] + '으로! ' + GATE_EMOJI[c] + ' 구슬만 통과한다', 'good');
+      }
+      return;
+    }
+  }
 
   // 실행 모드: 신호기 탭 → 레버 전환 (다음 구슬부터 새 길)
   if (mode === 'run' && multi && cur.levers && cur.levers.size > 0) {
@@ -700,10 +745,46 @@ function frame(now) {
       const events = multi.step();
       for (const ev of events) {
         if (ev.type === 'bell') {
-          ringBell();
           const M = multi.marbles[ev.m];
-          const bell = cur.bells.get(cur.routesData[M.routeIdx].goalPieceIdx);
-          if (bell) animateBell(bell);
+          const rd = cur.routesData[M.routeIdx];
+          if (rd.goalType === 'orgol') {
+            // 🎼 도착 순서대로 멜로디 한 음 — 트랙이 악기가 된다
+            orgolNote(ORGOL_MELODY[orgolIdx % ORGOL_MELODY.length]);
+            orgolIdx++;
+            const cylMesh = cur.orgols && cur.orgols.get(rd.goalPieceIdx);
+            if (cylMesh) cylMesh.userData.spin = 6.0;   // 한 음만큼 실린더가 확 돈다
+            const p = M.sim.pos();
+            confetti.burst({ x: p.x, y: p.y + 0.05, z: p.z }, 24);
+          } else {
+            ringBell();
+            const bell = cur.bells.get(rd.goalPieceIdx);
+            if (bell) animateBell(bell);
+          }
+        }
+        if (ev.type === 'gatebounce') {
+          gateBounceSound();
+          const st = MARBLE_STYLES[ev.m % MARBLE_STYLES.length];
+          ui.showHint(st.emoji + ' 팅! 색이 달라서 못 지나가 — 되돌아간다!', 'warn');
+        }
+        if (ev.type === 'gatepass') {
+          gatePassSound();
+          const st = MARBLE_STYLES[ev.m % MARBLE_STYLES.length];
+          const M = multi.marbles[ev.m];
+          const p = M.sim.pos();
+          confetti.burst({ x: p.x, y: p.y + 0.04, z: p.z }, 18);
+          ui.showHint(st.emoji + ' ✨ ' + GATE_NAME[ev.color] + ' 문을 통과!', 'good');
+        }
+        if (ev.type === 'finishgate') {
+          shutterSound();
+          const st = MARBLE_STYLES[ev.m % MARBLE_STYLES.length];
+          const t = ev.ticks * DT;
+          raceTimes.push({ m: ev.m, id: ev.id, time: t });
+          ceremonyHold = Math.max(ceremonyHold, 0.4);   // 포토피니시 순간 살짝 드라마
+          ui.showHint('🏁 ' + st.emoji + ' 결승 통과 — ' + t.toFixed(3) + '초!', 'good');
+        }
+        if (ev.type === 'domino') {
+          const tiles = cur.dominoes && cur.dominoes.get(ev.id);
+          if (tiles) dominoAnims.push({ tiles, t: 0 });
         }
         if (ev.type === 'switch') {
           flipSound(ev.dir);
@@ -755,9 +836,11 @@ function frame(now) {
           }
         }
         if (ev.type === 'alldone') {
+          const raceSorted = raceTimes.slice().sort((a, b) => a.time - b.time)
+            .map(r => ({ emoji: MARBLE_STYLES[r.m % MARBLE_STYLES.length].emoji, time: r.time }));
           if (finishes.length > 0) {
             if (multi.count === 1) {
-              ui.showResult({ time: finishes[0].time, vMax, length: cur.routesData[finishes[0].routeIdx].pd.total });
+              ui.showResult({ time: finishes[0].time, vMax, length: cur.routesData[finishes[0].routeIdx].pd.total, race: raceSorted });
             } else {
               ui.showResult({
                 marbles: finishes.slice().sort((a, b) => a.m - b.m).map(f => ({
@@ -766,6 +849,7 @@ function frame(now) {
                   time: f.time,
                 })),
                 vMax,
+                race: raceSorted,
               });
             }
           }
@@ -826,6 +910,28 @@ function frame(now) {
     for (const [, flipper] of cur.switches) updateSwitchFlipper(flipper, 0, dtReal);
     dimMarkers.children.forEach(m => { m.material.opacity = 0.28 + 0.14 * Math.sin(clock * 3); });
     cams.update(null);
+  }
+
+  // 🁢 도미노 넘어짐: 순서대로 스르륵 (와르르 클랙)
+  if (dominoAnims.length) {
+    const FALL = 0.055;    // 도미노 하나가 넘어지는 데 걸리는 시간(초)
+    for (const an of dominoAnims) {
+      const tPrev = an.t;
+      an.t += dtReal;
+      for (const h of an.tiles) {
+        const start = h.userData.order * FALL;
+        const u = Math.min(1, Math.max(0, (an.t - start) / FALL));
+        if (u > 0) h.rotation.x = -u * 1.42;      // ~81°
+        if (tPrev < start && an.t >= start) dominoClack(h.userData.order);
+      }
+    }
+    dominoAnims = dominoAnims.filter(an => an.t < an.tiles.length * 0.06 + 0.4);
+  }
+  // 🎼 오르골 실린더: 평소엔 잔잔히, 음이 울리면 확 돈다
+  if (cur && cur.orgols) for (const cyl of cur.orgols.values()) {
+    const spin = cyl.userData.spin || 0;
+    cyl.rotation.y += dtReal * (0.7 + spin);
+    if (spin > 0) cyl.userData.spin = Math.max(0, spin - dtReal * 9);
   }
 
   if (cur && cur.mergeGems) for (const gem of cur.mergeGems) {

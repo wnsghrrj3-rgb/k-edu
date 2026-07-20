@@ -48,6 +48,12 @@ export function createUI(root, handlers, tracks) {
           <button data-part="splitter" title="네가 정한 길로만 보내는 갈림길 — 실행 중에 탭해서 바꿔!">🚦<span>신호기</span></button>
           <button data-part="lifter" title="구슬을 두 칸 들어올리는 엘리베이터 — 다시 높은 곳에서!">🛗<span>리프터</span></button>
         </div>
+        <div class="prow">
+          <button data-part="colorgate" title="같은 색 구슬만 통과! 다른 색은 팅 — 탭해서 색을 바꿔">🎨<span>색 게이트</span></button>
+          <button data-part="racegate" title="결승 아치 — 구슬마다 통과 시간을 잰다, 포토피니시!">🏁<span>레이스</span></button>
+          <button data-part="domino" title="구슬이 지나가면 도미노가 와르르!">🁢<span>도미노</span></button>
+          <button data-part="orgol" title="골의 자매 — 도착할 때마다 멜로디 한 음씩, 트랙이 악기가 된다">🎼<span>오르골</span></button>
+        </div>
       </div>
       <div id="mr-buildops">
         <div id="mr-height">
@@ -70,7 +76,7 @@ export function createUI(root, handlers, tracks) {
     <!-- 실행 모드 -->
     <div id="mr-run" class="hidden">
       <div id="mr-count" title="구슬 몇 개를 굴릴까?">
-        <button data-n="1">①</button><button data-n="2">②</button><button data-n="3">③</button>
+        <button data-n="1">①</button><button data-n="2">②</button><button data-n="3">③</button><button data-n="4">④</button><button data-n="5">⑤</button>
       </div>
       <button id="mr-release" class="primary">🔵 방출</button>
       <button id="mr-reset">다시</button>
@@ -133,7 +139,8 @@ export function createUI(root, handlers, tracks) {
   function setMarbleCount(n) {
     countBtns.forEach(b => b.classList.toggle('on', parseInt(b.dataset.n, 10) === n));
     const rel = $('#mr-release');
-    rel.textContent = n === 1 ? '🔵 방출' : '🔵'.repeat(Math.min(n, 3)) + ' 방출';
+    const EMO = ['🔵', '🩷', '🟡', '🟢', '🟣'];
+    rel.textContent = n === 1 ? '🔵 방출' : EMO.slice(0, Math.min(n, 5)).join('') + ' 방출';
   }
   $('#mr-clear').addEventListener('click', () => { trackSel.value = '-1'; descEl.textContent = ''; handlers.onClear(); });
   $('#mr-h-minus').addEventListener('click', () => handlers.onStartH(-1));
@@ -263,10 +270,22 @@ export function createUI(root, handlers, tracks) {
   function hideHint() { hintEl.classList.add('hidden'); }
 
   function showResult(stats) {
+    // 🏁 레이스 게이트 기록: 빠른 순 (메달은 구슬끼리의 놀이 — 사람 랭킹 아님)
+    let raceHtml = '';
+    if (stats.race && stats.race.length) {
+      const MEDAL = ['🥇', '🥈', '🥉', '4위', '5위'];
+      raceHtml = '<div class="race-block">🏁 결승 아치<br>' +
+        stats.race.map((r, i) => (MEDAL[i] || (i + 1) + '위') + ' ' + r.emoji + ' <b>' + r.time.toFixed(3) + '초</b>').join('<br>') +
+        '</div>';
+    }
     if (stats.marbles && stats.marbles.length > 1) {
       const rows = stats.marbles.map(mb =>
         mb.emoji + ' ' + mb.bell + ' 도착 <b>' + mb.time.toFixed(2) + '초</b>').join('<br>');
-      resultBody.innerHTML = rows +
+      resultBody.innerHTML = rows + raceHtml +
+        '<br>🚀 최고 속도 <b>' + stats.vMax.toFixed(2) + ' m/s</b>';
+    } else if (raceHtml) {
+      resultBody.innerHTML =
+        '⏱ 완주 시간 <b>' + stats.time.toFixed(2) + '초</b>' + raceHtml +
         '<br>🚀 최고 속도 <b>' + stats.vMax.toFixed(2) + ' m/s</b>';
     } else {
       resultBody.innerHTML =

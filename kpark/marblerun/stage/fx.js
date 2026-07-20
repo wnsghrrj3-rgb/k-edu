@@ -179,6 +179,114 @@ export function createRollSound() {
 }
 
 // ---- 타종 애니메이션 ----
+
+/* 🎨 색 게이트 반사: 팅! — 금속 현 튕김 (높은 삼진동 급강하 + 클릭) */
+export function gateBounceSound() {
+  try {
+    const ac = ctx();
+    const t0 = ac.currentTime;
+    const o = ac.createOscillator();
+    const gn = ac.createGain();
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(1900, t0);
+    o.frequency.exponentialRampToValueAtTime(620, t0 + 0.11);
+    gn.gain.setValueAtTime(0.22, t0);
+    gn.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.16);
+    o.connect(gn).connect(ac.destination);
+    o.start(t0); o.stop(t0 + 0.16);
+  } catch (e) { /* 무시 */ }
+}
+
+/* 🎨 색 게이트 통과: 반짝 — 짧은 상행 두 음 */
+export function gatePassSound() {
+  try {
+    const ac = ctx();
+    const t0 = ac.currentTime;
+    [[1046.5, 0], [1568, 0.06]].forEach(([f, dt]) => {
+      const o = ac.createOscillator();
+      const gn = ac.createGain();
+      o.type = 'sine';
+      o.frequency.value = f;
+      gn.gain.setValueAtTime(0.001, t0 + dt);
+      gn.gain.exponentialRampToValueAtTime(0.14, t0 + dt + 0.015);
+      gn.gain.exponentialRampToValueAtTime(0.0001, t0 + dt + 0.22);
+      o.connect(gn).connect(ac.destination);
+      o.start(t0 + dt); o.stop(t0 + dt + 0.24);
+    });
+  } catch (e) { /* 무시 */ }
+}
+
+/* 🁢 도미노 클랙 (넘어질 때마다) — 살짝씩 다른 높이 (인덱스 결정론) */
+export function dominoClack(i) {
+  try {
+    const ac = ctx();
+    const t0 = ac.currentTime;
+    const len = 0.05;
+    const buf = ac.createBuffer(1, ac.sampleRate * len, ac.sampleRate);
+    const ch = buf.getChannelData(0);
+    for (let k = 0; k < ch.length; k++) ch[k] = (Math.random() * 2 - 1) * Math.pow(1 - k / ch.length, 3);
+    const src = ac.createBufferSource();
+    src.buffer = buf;
+    const bp = ac.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 1400 + ((i * 137) % 5) * 180;
+    bp.Q.value = 4;
+    const gn = ac.createGain();
+    gn.gain.setValueAtTime(0.22, t0);
+    gn.gain.exponentialRampToValueAtTime(0.0001, t0 + len);
+    src.connect(bp).connect(gn).connect(ac.destination);
+    src.start(t0);
+  } catch (e) { /* 무시 */ }
+}
+
+/* 🏁 포토피니시: 카메라 셔터 — 틱 + 저역 콩 */
+export function shutterSound() {
+  try {
+    const ac = ctx();
+    const t0 = ac.currentTime;
+    const buf = ac.createBuffer(1, ac.sampleRate * 0.03, ac.sampleRate);
+    const ch = buf.getChannelData(0);
+    for (let k = 0; k < ch.length; k++) ch[k] = (Math.random() * 2 - 1) * Math.pow(1 - k / ch.length, 2);
+    const src = ac.createBufferSource();
+    src.buffer = buf;
+    const hp = ac.createBiquadFilter();
+    hp.type = 'highpass'; hp.frequency.value = 2400;
+    const gn = ac.createGain();
+    gn.gain.setValueAtTime(0.3, t0);
+    gn.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.03);
+    src.connect(hp).connect(gn).connect(ac.destination);
+    src.start(t0);
+    const o = ac.createOscillator();
+    const g2 = ac.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(320, t0 + 0.02);
+    o.frequency.exponentialRampToValueAtTime(140, t0 + 0.1);
+    g2.gain.setValueAtTime(0.12, t0 + 0.02);
+    g2.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.12);
+    o.connect(g2).connect(ac.destination);
+    o.start(t0 + 0.02); o.stop(t0 + 0.12);
+  } catch (e) { /* 무시 */ }
+}
+
+/* 🎼 오르골 한 음 — 뮤직박스 음색 (기본음 + 4배음, 날카로운 어택, 긴 잔향) */
+export function orgolNote(freq) {
+  try {
+    const ac = ctx();
+    const t0 = ac.currentTime;
+    [[freq, 0.20, 1.4], [freq * 4, 0.05, 0.5]].forEach(([f, g, dur]) => {
+      const o = ac.createOscillator();
+      const gn = ac.createGain();
+      o.type = 'sine';
+      o.frequency.value = f;
+      gn.gain.setValueAtTime(0.001, t0);
+      gn.gain.exponentialRampToValueAtTime(g, t0 + 0.008);
+      gn.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      o.connect(gn).connect(ac.destination);
+      o.start(t0); o.stop(t0 + dur);
+    });
+  } catch (e) { /* 무시 */ }
+}
+
 export function animateBell(bellMesh) {
   if (!bellMesh) return;
   bellMesh.userData.swing = 1.0;

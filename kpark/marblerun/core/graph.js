@@ -28,6 +28,7 @@
     require('./parts/splitter.js');
     require('./parts/mergepart.js');
     require('./parts/lifter.js');
+    require('./parts/special.js');
     return Object.assign({}, hx, pt);
   }
 
@@ -50,7 +51,7 @@
     if (starts.length !== 1) {
       errors.push({ code: 'START_COUNT', msg: '시작탑은 정확히 1개여야 함 (현재 ' + starts.length + ')' });
     }
-    if (errors.length) return { ok: false, errors, points: [], bowlIndexRanges: [], airIndexRanges: [], convexIndexRanges: [], boostIndexRanges: [], motorIndexRanges: [], launchMarks: [], decideMarks: [], order: [], pieceRanges: [] };
+    if (errors.length) return { ok: false, errors, points: [], bowlIndexRanges: [], airIndexRanges: [], convexIndexRanges: [], boostIndexRanges: [], motorIndexRanges: [], launchMarks: [], decideMarks: [], gateMarks: [], finishMarks: [], dominoMarks: [], order: [], pieceRanges: [] };
 
     const points = [];
     const bowlIndexRanges = [];
@@ -60,6 +61,9 @@
     const motorIndexRanges = [];
     const launchMarks = [];
     const decideMarks = [];
+    const gateMarks = [];    // 🎨 색 게이트 (M5) — {i, piece}
+    const finishMarks = [];  // 🏁 레이스 게이트 (M5) — {i, piece}
+    const dominoMarks = [];  // 🁢 도미노 (M5) — {i, piece}
     const pieceRanges = [];
     const order = [];
     const visited = new Set();
@@ -94,6 +98,9 @@
           catchR: m.catchR, wallR: m.wallR, wallH: m.wallH,
         });
         else if (m.kind === 'decide') decideMarks.push({ i: i0 + m.i, piece: curIdx });
+        else if (m.kind === 'gate') gateMarks.push({ i: i0 + m.i, piece: curIdx });
+        else if (m.kind === 'finish') finishMarks.push({ i: i0 + m.i, piece: curIdx });
+        else if (m.kind === 'domino') dominoMarks.push({ i: i0 + m.i, piece: curIdx });
       }
 
       const exitPort = spec.exitPort(cur);
@@ -125,12 +132,12 @@
     }
 
     const last = pieces[order[order.length - 1]];
-    const reachedGoal = last && last.type === 'goal';
+    const reachedGoal = last && (last.type === 'goal' || last.type === 'orgol');
     if (!reachedGoal && errors.length === 0 && !(opts && opts.allowNoGoal)) {
       errors.push({ code: 'NO_GOAL', msg: '골 벨에 도달하지 못함' });
     }
 
-    return { ok: errors.length === 0, errors, points, bowlIndexRanges, airIndexRanges, convexIndexRanges, boostIndexRanges, motorIndexRanges, launchMarks, decideMarks, order, pieceRanges };
+    return { ok: errors.length === 0, errors, points, bowlIndexRanges, airIndexRanges, convexIndexRanges, boostIndexRanges, motorIndexRanges, launchMarks, decideMarks, gateMarks, finishMarks, dominoMarks, order, pieceRanges };
   }
 
   return { buildTrack };

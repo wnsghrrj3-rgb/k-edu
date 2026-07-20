@@ -36,7 +36,9 @@
 
   const APPENDABLE = ['straight', 'curve_l', 'curve_r', 'slope', 'goal',
                       'hill', 'loop', 'gyro', 'jump', 'booster', 'zigzag',
-                      'cannon', 'trampoline', 'switch', 'splitter', 'lifter'];
+                      'cannon', 'trampoline', 'switch', 'splitter', 'lifter',
+                      'colorgate', 'racegate', 'domino', 'orgol'];
+  const TERMINAL = { goal: 1, orgol: 1 }; // 트랙을 끝내는 부품
   const DROPS = { slope: 1, gyro: 2 };
   const RISES = { lifter: 2 };
   const MAX_H = 8;
@@ -57,6 +59,7 @@
     const errors = [];
     const pieces = [{ type: 'start', q: 0, r: 0, h: startH, rot: 0 }];
     const occupied = new Set([hx.key(0, 0)]);
+    const seqItemOf = new Map(); // pieceIdx → seq 항목 (색 게이트 색 편집용)
 
     /* 한 갈래(seq 배열)를 걷고 끝점(endpoint) 목록을 돌려준다.
      * endpoint = { q, r, exitPort, exitH, ended, decisions, merges, chain, next, seqRef } */
@@ -66,7 +69,8 @@
 
       for (let i = 0; i < seqArr.length; i++) {
         const item = seqArr[i];
-        const t = isBranchNode(item) ? item.type : item;
+        const isObj = item && typeof item === 'object';
+        const t = isObj ? item.type : item;
         if (ended) { errors.push({ code: 'AFTER_GOAL', msg: '골 벨 뒤에는 부품을 놓을 수 없음', at: i }); return []; }
         if (APPENDABLE.indexOf(t) < 0) { errors.push({ code: 'UNKNOWN_TYPE', msg: '알 수 없는 부품: ' + t, at: i }); return []; }
 
@@ -92,7 +96,9 @@
         }
 
         const pieceIdx = pieces.length;
-        pieces.push({ type: t, q: n.q, r: n.r, h, rot: entry });
+        const pc = { type: t, q: n.q, r: n.r, h, rot: entry };
+        if (t === 'colorgate') { pc.color = (isObj && item.color) || 0; seqItemOf.set(pieceIdx, item); }
+        pieces.push(pc);
         occupied.add(k);
         chain = chain.concat([pieceIdx]);
         q = n.q; r = n.r;
@@ -166,7 +172,7 @@
 
         if (t === 'curve_l')      exitPort = (entry + 2) % 6;
         else if (t === 'curve_r') exitPort = (entry + 4) % 6;
-        else if (t === 'goal')    { ended = true; }
+        else if (TERMINAL[t])     { ended = true; }
         else                      exitPort = (entry + 3) % 6;
       }
 
@@ -207,7 +213,7 @@
     return {
       ok: errors.length === 0, errors, pieces, routes, ended,
       activeRoute, next: act.next, exitH: act.exitH, exitPort: act.exitPort,
-      occupied,
+      occupied, seqItemOf,
     };
   }
 

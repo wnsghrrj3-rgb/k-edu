@@ -59,13 +59,27 @@
           return { id: gid, s: pd.cum[dm.i], flip: comp.pieces[gid].type !== 'splitter' };
         })
         .sort((a, b) => a.s - b.s);
+      // 🎨 색 게이트: {id, s, color} — color는 초기값 (실행 중 탭으로 바뀔 수 있다)
+      const gates = (track.gateMarks || [])
+        .map(gm => {
+          const gid = rt.pieceIdxs[gm.piece];
+          return { id: gid, s: pd.cum[gm.i], color: comp.pieces[gid].color || 0 };
+        })
+        .sort((a, b) => a.s - b.s);
+      // 🏁·🁢 통과 마크: 지나가면 이벤트 (물리 영향 없음)
+      const passMarks = []
+        .concat((track.finishMarks || []).map(fm => ({ id: rt.pieceIdxs[fm.piece], s: pd.cum[fm.i], kind: 'finish' })))
+        .concat((track.dominoMarks || []).map(dm => ({ id: rt.pieceIdxs[dm.piece], s: pd.cum[dm.i], kind: 'domino' })))
+        .sort((a, b) => a.s - b.s);
       const lastGlobal = rt.pieceIdxs[rt.pieceIdxs.length - 1];
+      const lastType = comp.pieces[lastGlobal] && comp.pieces[lastGlobal].type;
       routesData.push({
-        pd, track, switches,
+        pd, track, switches, gates, passMarks,
         decisions: rt.decisions,
         leafPieces: lp,
         routeIdx: ri,
-        goalPieceIdx: comp.pieces[lastGlobal] && comp.pieces[lastGlobal].type === 'goal' ? lastGlobal : null,
+        goalPieceIdx: (lastType === 'goal' || lastType === 'orgol') ? lastGlobal : null,
+        goalType: (lastType === 'goal' || lastType === 'orgol') ? lastType : null,
       });
     });
     return { ok: errors.length === 0, errors, routesData };
@@ -86,6 +100,10 @@
       this.levers = new Map(); // 신호기(flip=false) 레버 — 리셋해도 유지 (사람이 정한 방향)
       this.flips = new Map();  // id → flip 여부
       for (const rt of this.routes) for (const sw of rt.switches) this.flips.set(sw.id, sw.flip !== false);
+      this.gateColors = new Map(); // 🎨 게이트 id → 색 (0🔵 1🩷 2🟡) — 리셋해도 유지
+      for (const rt of this.routes) for (const g of (rt.gates || [])) {
+        if (!this.gateColors.has(g.id)) this.gateColors.set(g.id, g.color || 0);
+      }
       this.reset();
     }
 
@@ -106,6 +124,8 @@
           released: false,
           delay: i * this.stagger,
           releaseTick: 0,
+          passed: new Set(),  // 통과한 마크 id (레이스·도미노·게이트 반짝 — 한 번씩만)
+          prevS: 0,
         });
       }
       this.done = false;
@@ -151,7 +171,40 @@
           const nextSw = this.routes[M.routeIdx].switches[M.decided.length];
           M.sim._captureMaxS = nextSw ? nextSw.s : Infinity;
         }
+        // 🎨 이 구슬이 못 지나는 문 (색 불일치) — 매 틱 현재 잎·현재 색 기준
+        {
+          const gates = this.routes[M.routeIdx].gates;
+          if (gates && gates.length) {
+            const col = m % 3;
+            const stops = [];
+            for (const g of gates) if ((this.gateColors.get(g.id) || 0) !== col) stops.push(g.s);
+            M.sim.gateStops = stops.length ? stops : null;
+          } else M.sim.gateStops = null;
+        }
+        M.prevS = M.sim.status === 'rolling' ? M.sim.s : null;
         for (const e of M.sim.step()) ev.push(Object.assign({ m }, e));
+
+        // 🏁🁢🎨 통과 마크 스캔: 앞으로 지나가는 순간 한 번씩 이벤트
+        if (M.prevS !== null && (M.sim.status === 'rolling' || M.sim.status === 'goal')) {
+          const route = this.routes[M.routeIdx];
+          const sNow = M.sim.s;
+          if (sNow > M.prevS) {
+            for (const pm of (route.passMarks || [])) {
+              if (M.prevS < pm.s && sNow >= pm.s && !M.passed.has(pm.kind + pm.id)) {
+                M.passed.add(pm.kind + pm.id);
+                if (pm.kind === 'finish') ev.push({ type: 'finishgate', id: pm.id, m, ticks: this.tick - M.releaseTick });
+                else ev.push({ type: 'domino', id: pm.id, m });
+              }
+            }
+            for (const g of (route.gates || [])) {
+              // 주의: 반사 시 s가 정확히 g.s에 클램프됨 — 통과는 엄격히 '너머'여야 한다
+              if (M.prevS < g.s && sNow > g.s && !M.passed.has('gate' + g.id)) {
+                M.passed.add('gate' + g.id);
+                ev.push({ type: 'gatepass', id: g.id, m, color: this.gateColors.get(g.id) || 0 });
+              }
+            }
+          }
+        }
 
         // ── 분기점 통과/후퇴 판정 (RAIL 상태에서만 s가 유효) ──
         if (M.sim.status === 'rolling') {
@@ -187,6 +240,18 @@
       this.tick++;
       if (allDone && !this.done) { this.done = true; ev.push({ type: 'alldone' }); }
       return ev;
+    }
+
+    /* 🎨 게이트 색 설정/순환 (탭). 레버처럼 리셋을 넘어 유지 — 사람이 정한 설정. */
+    setGateColor(id, color) {
+      if (!this.gateColors.has(id)) return null;
+      const c = ((color % 3) + 3) % 3;
+      this.gateColors.set(id, c);
+      return c;
+    }
+    cycleGateColor(id) {
+      if (!this.gateColors.has(id)) return null;
+      return this.setGateColor(id, (this.gateColors.get(id) || 0) + 1);
     }
 
     /* 신호기 레버 설정/토글 (실행 중 탭). 스위치(flip)는 물리가 관리하므로 무시. */

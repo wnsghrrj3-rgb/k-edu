@@ -30,6 +30,7 @@
     railCatchR: 0.028,   // 이탈 낙하 중 레일 재포획 반경 (m)
     railCatchKeep: 0.80, // 재포획 시 접선 성분 속도 유지율 (법선 성분은 흡수)
     liftSpeed: 0.50,     // 🛗 리프터 모터 상승 속도 (m/s) — 구간 내 v 고정, 유일한 에너지 주입원
+    gateRest: 0.94,      // 🎨 색 게이트 반발 계수 — 다른 색 구슬은 팅! (|v'| = rest·|v| < |v| → 에너지 비증가)
     convexGrip: 4.5,     // 두 줄 레일 채널이 볼록 마루에서 구슬을 잡아주는 배수
                          // (v²κ > grip·g·|cdir_y| 일 때만 이탈 — 경사 기세는 굴러 넘고, 부스터 기세는 난다)
     dt: 1 / 120,   // 고정 틱
@@ -167,6 +168,7 @@
       this._fallTicks = 0;
       this._sDetach = -1;
       this._captureMaxS = Infinity; // 재포획 s 상한 (MultiSim이 분기점 이전으로 제한)
+      this.gateStops = null; // 🎨 닫힌 색 게이트 s 목록 (MultiSim이 매 틱 설정 — 이 구슬이 못 지나는 문)
       this._air = null;  // 탄도 비행 { p, v, L }  (L = 발사 정의)
       this._missed = false;
     }
@@ -344,6 +346,7 @@
       const seg = pd.segs[segIndexAt(pd, this.s)];
       const bowl = inBowl(pd, this.s);
 
+      const sPrev = this.s;
       const vPrev = this.v;
       const yOld = posAt(pd, this.s).y;
 
@@ -386,6 +389,23 @@
       const v2 = 2 * (E - lossWork - P.g * yNew);
       this.v = v2 > 0 ? Math.sign(vE || 1) * Math.sqrt(v2) : 0;
       this.s = sNew;
+
+      // 🎨 색 게이트: 닫힌 문의 s를 (어느 방향으로든) 넘으려 하면 문에서 팅! 반사
+      //    |v'| = gateRest·|v| → 구조적 에너지 비증가. 역행 반사 = 스위치 결정 해제와 만나
+      //    "다른 길을 다시 시도"하는 자동 분류기가 된다.
+      if (this.gateStops && this.gateStops.length) {
+        for (const gs of this.gateStops) {
+          if ((sPrev < gs - 1e-12 && this.s >= gs) || (sPrev > gs + 1e-12 && this.s <= gs)) {
+            this.s = gs;
+            this.v = -this.v * P.gateRest;
+            this._lastDir = Math.sign(this.v || -1);
+            this._restTicks = 0;
+            ev.push({ type: 'gatebounce', s: gs });
+            this.tick++;
+            return ev;
+          }
+        }
+      }
 
       // 🛗 방금 모터 구간에 진입 — 즉시 모터가 잡는다 (이탈 판정·역행 없음)
       if (inMotor(pd, this.s)) {

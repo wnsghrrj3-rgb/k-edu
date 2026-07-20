@@ -38,7 +38,9 @@
     straight: 'S', curve_l: 'L', curve_r: 'R', slope: 'D', goal: 'G',
     hill: 'H', loop: 'O', gyro: 'Y', jump: 'J', booster: 'B', zigzag: 'Z',
     cannon: 'C', trampoline: 'T', lifter: 'U',
+    racegate: 'F', domino: 'M', orgol: 'Q',
   };
+  // 🎨 색 게이트: 'A' + 색 숫자 (1=🔵 2=🩷 3=🟡)
   const C2P = {};
   for (const k in P2C) C2P[P2C[k]] = k;
 
@@ -55,6 +57,8 @@
         const ch = P2C[item];
         if (!ch) throw new Error('코드로 만들 수 없는 부품: ' + item);
         out += ch;
+      } else if (item && item.type === 'colorgate') {
+        out += 'A' + (((item.color || 0) % 3) + 1);
       } else if (item && (item.type === 'switch' || item.type === 'splitter')) {
         const open = item.type === 'switch' ? '(' : '[';
         const close = item.type === 'switch' ? ')' : ']';
@@ -96,6 +100,13 @@
         const ch = payload[i];
         if (stopChars.indexOf(ch) >= 0) return seq;
         i++;
+        if (ch === 'A') {
+          const d = parseInt(payload[i], 10);
+          if (!(d >= 1 && d <= 3)) throw new Error('색 게이트의 색을 읽을 수 없어');
+          i++;
+          seq.push({ type: 'colorgate', color: d - 1 });
+          continue;
+        }
         if (C2P[ch]) { seq.push(C2P[ch]); continue; }
         if (ch === '(' || ch === '[') {
           const type = ch === '(' ? 'switch' : 'splitter';
