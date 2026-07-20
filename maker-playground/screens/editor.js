@@ -29,6 +29,7 @@ window.MK_SCREENS.editor = (() => {
       </span>
       ${M().Tabs({ items: ['Design', 'Video'], on: mode === 'video' ? 'Video' : 'Design', attrs: 'data-ed="mode"' })}
       <span class="grow"></span>
+      ${window.MK_PLUGIN ? window.MK_PLUGIN.contributions('topToolbar').map((c) => M().IconButton({ icon: c.icon, tip: c.title + ' · ' + c.plugin, attrs: `data-plugcmd="${c.command}"` })).join('') : ''}
       ${M().Button({ label: '미리보기', kind: 'secondary', size: 'sm', attrs: 'data-ed="preview"' })}
       ${M().Button({ label: '공유', kind: 'secondary', size: 'sm', attrs: 'data-ed="share"' })}
       ${M().Button({ label: '내보내기', kind: 'accent', size: 'sm', attrs: 'data-ed="export"' })}
@@ -290,6 +291,10 @@ window.MK_SCREENS.editor = (() => {
       const e = ed(), doc = e.doc, M2 = window.MK;
       const H = window.MK_HIST;
       /* --- History --- */
+      root.querySelectorAll('[data-plugcmd]').forEach((b) => b.onclick = () => {
+        try { window.MK_PLUGIN.execCommand(b.dataset.plugcmd); } catch (err) { alert('플러그인: ' + err.message); }
+        PG.render();
+      });
       const undoBtn = root.querySelector('[data-ed="undo"]'), redoBtn = root.querySelector('[data-ed="redo"]');
       if (undoBtn) undoBtn.onclick = () => { if (H.undo()) PG.render(); };
       if (redoBtn) redoBtn.onclick = () => { if (H.redo()) PG.render(); };
