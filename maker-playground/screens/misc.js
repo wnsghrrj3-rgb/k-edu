@@ -20,10 +20,7 @@ window.MK_SCREENS.photo = ph('Photo', [
   ['프레임·그림자', '속성 패널 확장 자리'],
 ]);
 /* AI 화면은 screens/ai.js (AI Studio v1)로 승격 */
-window.MK_SCREENS.export = ph('Export', [
-  ['내보내기 대상', 'PNG · PDF · PPT · MP4 — kmake 기존 내보내기 엔진 이식 예정'],
-  ['공유 링크', '뷰어 링크(라이프 카드 방식) 확장 자리'],
-]);
+/* Export 화면은 screens/export.js (Universal Render Engine 콘솔)로 승격 */
 
 /* ---------- Patterns: 컴포넌트 조합 패턴 ---------- */
 window.MK_SCREENS.patterns = {
