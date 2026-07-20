@@ -46,8 +46,8 @@ T('반대 포트 왕복 = 제자리', () => {
   }
 });
 
-// ---------- 골든 트랙 = TRACKS[0] 컴파일 (core/tracks.js 단일 소스) ----------
-const GOLDEN = NS.compile(NS.TRACKS[0]).pieces;
+// ---------- 골든 트랙 = id 'golden' 컴파일 (core/tracks.js 단일 소스) ----------
+const GOLDEN = NS.compile(NS.TRACKS.find(t => t.id === 'golden')).pieces;
 
 // ---------- 2. graph ----------
 console.log('[graph]');

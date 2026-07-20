@@ -12,6 +12,19 @@
 
   const TRACKS = [
     {
+      id: 'showcase',
+      name: '✨ 별빛 대서커스',
+      desc: '자이로·하늘 비행·루프 2번·대포·트램펄린·리프터 총출동 — 구슬 3개의 대공연!',
+      startH: 6,
+      marbles: 3,
+      seq: ['slope', 'gyro', 'slope', 'booster', 'hill', 'straight', 'straight', 'curve_l', 'loop',
+        'slope', 'straight', 'cannon', 'slope', 'trampoline', 'curve_r', 'zigzag',
+        'lifter', 'curve_l', 'slope', 'booster', 'booster', 'loop', 'slope',
+        { type: 'switch',
+          left:  ['curve_l', 'goal'],
+          right: ['curve_r', 'goal'] }],
+    },
+    {
       id: 'golden',
       name: '골든 샘플',
       desc: '기본 코스 — 탑에서 내려와 커브 돌고 벨까지',
