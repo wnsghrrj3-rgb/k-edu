@@ -9,7 +9,7 @@ window.PG = (() => {
     ['home', '🏠', 'Home'], ['library', '🗂', 'Library'], ['templates', '📂', 'Templates'], ['assets', '🗄', 'Assets'], ['brand', '🏷', 'Brand'], ['team', '👥', 'Team'], ['editor', '✏️', 'Editor'],
     ['video', '🎬', 'Video'], ['photo', '🖼', 'Photo'], ['ai', '🤖', 'AI'],
     ['--div'],
-    ['export', '📤', 'Export'], ['plugins', '🔌', 'Plugins'], ['market', '🛒', 'Market'], ['admin', '🛡', 'Admin'], ['dev', '📡', 'Dev'], ['mobile', '📱', 'Mobile'], ['agent', '🧠', 'Agent'], ['flow', '🌊', 'Flow'], ['dls', '🧭', 'DLS'], ['ops', '⚙️', 'Ops'],
+    ['export', '📤', 'Export'], ['plugins', '🔌', 'Plugins'], ['market', '🛒', 'Market'], ['admin', '🛡', 'Admin'], ['dev', '📡', 'Dev'], ['mobile', '📱', 'Mobile'], ['agent', '🧠', 'Agent'], ['flow', '🌊', 'Flow'], ['dls', '🧭', 'DLS'], ['ops', '⚙️', 'Ops'], ['simple', '🌱', 'Simple'],
   ];
 
   const state = {
@@ -17,6 +17,7 @@ window.PG = (() => {
     variants: { home: 'A', templates: 'A', editor: 'Design' },
     browser: { type: 'all', style: '전체' },
     editor: { doc: null, sceneIdx: 0, selEl: null, menu: 'text', mode: 'design' },
+    navMode: 'full',
   };
 
   function loadEditorDoc(templateId) {
@@ -47,13 +48,24 @@ window.PG = (() => {
     render();
   }
 
+  /* Round 27 — 🌱 단순 모드: MK_SIMPLE 판정으로 내비를 초보자 시야로 필터.
+     검수 환경 기본값은 'full' — 기존 화면·테스트 무영향. */
+  function toggleNavMode() { state.navMode = state.navMode === 'simple' ? 'full' : 'simple'; render(); }
+  function navList() {
+    if (state.navMode !== 'simple' || !window.MK_SIMPLE) return NAV;
+    const vis = window.MK_SIMPLE.navFor({ edits: 0 });
+    return NAV.filter(([k]) => k !== '--div' && (vis.includes(k) || k === 'simple'));
+  }
+
   function render() {
     const scr = window.MK_SCREENS[state.screen];
     /* 내비 */
-    document.getElementById('pgNav').innerHTML = NAV.map(([k, ico, n]) =>
+    const modeBtn = window.MK_SIMPLE ? `<div class="pg-nav-div"></div><button class="pg-nav-item" data-navmode><span class="ico">${state.navMode === 'simple' ? '🗂' : '🌱'}</span><span class="txt">${state.navMode === 'simple' ? '전체 보기' : '단순 모드'}</span></button>` : '';
+    document.getElementById('pgNav').innerHTML = navList().map(([k, ico, n]) =>
       k === '--div' ? `<div class="pg-nav-div"></div>` :
-      `<button class="pg-nav-item ${state.screen === k ? 'on' : ''}" data-nav="${k}"><span class="ico">${ico}</span><span class="txt">${n}</span></button>`).join('');
+      `<button class="pg-nav-item ${state.screen === k ? 'on' : ''}" data-nav="${k}"><span class="ico">${ico}</span><span class="txt">${n}</span></button>`).join('') + modeBtn;
     document.querySelectorAll('[data-nav]').forEach((b) => b.onclick = () => go(b.dataset.nav));
+    const mb = document.querySelector('[data-navmode]'); if (mb) mb.onclick = toggleNavMode;
     /* 헤더 + variant 전환 */
     const v = state.variants[state.screen] || scr.variants[0];
     document.getElementById('pgTitle').textContent = scr.title;
@@ -81,6 +93,6 @@ window.PG = (() => {
     render();
   }
 
-  return { state, go, render, boot, openEditor, openEditorDoc, loadEditorDoc };
+  return { state, go, render, boot, openEditor, openEditorDoc, loadEditorDoc, toggleNavMode };
 })();
 document.addEventListener('DOMContentLoaded', () => PG.boot());
