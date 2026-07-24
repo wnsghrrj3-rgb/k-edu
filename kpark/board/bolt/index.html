@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>번개 퍼즐 · 케이파크 보드게임</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+@font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
+:root{--bg:#0a0f2c;--panel:rgba(16,22,54,.85);--line:#3b4a8f;--text:#e8ecff;--dim:#8a93c8;
+  --accent:#4de1ff;--gold:#ffd35c;--moon:#7ea8ff;--title:'Hakgyoansim Moheomga','Jua',sans-serif}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);font-family:'Jua',sans-serif;min-height:100vh;overflow-x:hidden}
+.sky{position:fixed;inset:0;pointer-events:none;z-index:0}
+.sky i{position:absolute;width:2px;height:2px;border-radius:50%;background:#cdd6ff;opacity:.5;animation:tw 5s ease-in-out infinite}
+.sky i:nth-child(3n){background:var(--gold)}
+@keyframes tw{0%,100%{opacity:.2}50%{opacity:.7}}
+main{position:relative;z-index:1;max-width:560px;margin:0 auto;padding:14px 14px 40px}
+header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+header a{color:var(--dim);text-decoration:none;font-size:14px}
+h1{font-family:var(--title);font-size:23px}h1 em{font-style:normal;color:var(--gold)}
+.spacer{flex:1}
+.setup{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px;text-align:center}
+.setup h2{font-family:var(--title);font-size:20px;margin-bottom:6px}
+.setup p{color:var(--dim);font-size:13.5px;margin-bottom:16px;line-height:1.7}
+.opts{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:14px}
+.opt{border:2px solid var(--line);background:rgba(24,32,74,.6);color:var(--text);border-radius:14px;
+  padding:12px 18px;font-family:'Jua';font-size:15px;cursor:pointer;transition:.15s}
+.opt.sel{border-color:var(--gold);box-shadow:0 0 16px rgba(255,211,92,.35);transform:translateY(-2px)}
+.start{background:linear-gradient(180deg,#ffd35c,#f5a623);color:#3a2a00;border:none;border-radius:999px;
+  padding:13px 36px;font-family:'Jua';font-size:17px;cursor:pointer;box-shadow:0 4px 18px rgba(255,211,92,.4)}
+#game{display:none}
+.score{display:flex;justify-content:space-between;align-items:center;margin:2px 0 8px;font-size:15px;gap:8px}
+.score .side{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px 10px;min-height:34px;flex:1}
+.score .side b{letter-spacing:1px}
+#roundNo{font-family:var(--title);color:var(--gold);white-space:nowrap}
+.banner{text-align:center;min-height:30px;font-size:16px;margin-bottom:6px}
+.timerBox{height:12px;background:rgba(24,32,74,.8);border:1px solid var(--line);border-radius:99px;overflow:hidden;margin-bottom:10px}
+#timerBar{height:100%;width:100%;background:linear-gradient(90deg,#4de1ff,#ffd35c,#ff8a5c);transition:width .1s linear}
+.boardWrap{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:10px;box-shadow:0 8px 40px rgba(0,0,0,.45)}
+svg{display:block;width:100%;height:auto;touch-action:manipulation}
+.aiRow{display:flex;gap:10px;align-items:center;margin-top:10px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:8px 10px}
+.aiRow svg{width:110px;flex:0 0 auto}
+.aiRow .msg{font-size:13.5px;color:var(--dim);line-height:1.5}
+.hand{display:flex;gap:8px;overflow-x:auto;padding:10px 4px 6px;-webkit-overflow-scrolling:touch}
+.hp{flex:0 0 auto;background:rgba(24,32,74,.7);border:2px solid var(--line);border-radius:12px;padding:6px;cursor:pointer}
+.hp.sel{border-color:var(--gold);box-shadow:0 0 14px rgba(255,211,92,.45)}
+.hp.done{opacity:.25}
+.hp svg{width:52px;height:52px}
+.ctrl{display:flex;gap:8px;justify-content:center;margin-top:8px;flex-wrap:wrap}
+.cbtn{border:1px solid var(--line);background:rgba(24,32,74,.7);color:var(--text);border-radius:12px;
+  padding:10px 14px;font-family:'Jua';font-size:14px;cursor:pointer}
+.cbtn.go{background:linear-gradient(180deg,#7dffb0,#3ec97a);color:#06331a;border:none}
+.cbtn:disabled{opacity:.4}
+#over{position:fixed;inset:0;background:rgba(5,8,24,.8);display:none;align-items:center;justify-content:center;z-index:20}
+#over .card{background:var(--panel);border:2px solid var(--gold);border-radius:22px;padding:30px 34px;text-align:center;max-width:88vw}
+#over h2{font-family:var(--title);font-size:24px;margin-bottom:8px}
+#over p{color:var(--dim);margin-bottom:18px;font-size:15px;line-height:1.7}
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,16px);background:rgba(16,22,54,.95);border:1px solid var(--line);
+  border-radius:14px;padding:10px 18px;font-size:14px;opacity:0;transition:.25s;z-index:30;pointer-events:none;white-space:nowrap}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.confetti{position:fixed;top:-12px;width:9px;height:14px;z-index:19;pointer-events:none;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(105vh) rotate(680deg)}}
+</style>
+</head>
+<body>
+<div class="sky" id="sky"></div>
+<main>
+  <header>
+    <a href="../">← 보드게임 코너</a><div class="spacer"></div>
+    <h1>⚡ 번개 <em>퍼즐</em></h1>
+  </header>
+
+  <section class="setup" id="setup">
+    <h2>같은 그림자를 누가 먼저 채우나!</h2>
+    <p>조각을 <b>돌리고 뒤집어</b> 그림자를 빈틈없이 채워요.<br>
+    먼저 완성한 쪽이 <b style="color:var(--gold)">보석 💎</b> — 5라운드, 보석 많은 팀 승리!</p>
+    <div class="opts" id="modeOpts">
+      <button class="opt sel" data-m="ai">🤖 컴퓨터랑</button>
+      <button class="opt" data-m="hot">👫 짝꿍이랑</button>
+    </div>
+    <div class="opts lv show" id="lvOpts">
+      <button class="opt" data-l="1">🐣 아장아장</button>
+      <button class="opt sel" data-l="2">🙂 제법인데</button>
+      <button class="opt" data-l="3">⚡ 번개손</button>
+    </div>
+    <button class="start" id="btnStart">놀이 시작!</button>
+  </section>
+
+  <section id="game">
+    <div class="score">
+      <div class="side">⭐ <b id="gem1"></b></div>
+      <div id="roundNo">1 / 5</div>
+      <div class="side" style="text-align:right"><b id="gem2"></b> 🌙</div>
+    </div>
+    <div class="banner" id="banner"></div>
+    <div class="timerBox"><div id="timerBar"></div></div>
+    <div class="boardWrap"><svg id="board" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    <div class="aiRow" id="aiRow">
+      <svg id="aiBoard" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="msg" id="aiMsg">🤖 나도 푼다!</div>
+    </div>
+    <div class="hand" id="hand"></div>
+    <div class="ctrl">
+      <button class="cbtn" id="btnRot">↻ 돌리기</button>
+      <button class="cbtn" id="btnFlip">↔ 뒤집기</button>
+      <button class="cbtn go" id="btnPut" disabled>여기 놓기!</button>
+    </div>
+    <div class="ctrl">
+      <button class="cbtn" id="btnHint">💡 살짝 힌트 (+5초)</button>
+      <button class="cbtn" id="btnRe">🔄 다시</button>
+      <button class="cbtn" id="btnHome">🎪 다른 놀이</button>
+    </div>
+  </section>
+</main>
+<div id="over"><div class="card"><h2 id="ovT"></h2><p id="ovS"></p><button class="start" id="btnAgain">한 판 더!</button></div></div>
+<div class="toast" id="toast"></div>
+
+<script src="./core.js"></script>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+(function(){const sky=$('sky');let s=13;const rnd=()=>(s=(s*1103515245+12345)&0x7fffffff)/0x7fffffff;
+for(let i=0;i<55;i++){const d=document.createElement('i');d.style.left=(rnd()*100)+'%';d.style.top=(rnd()*100)+'%';d.style.animationDelay=(rnd()*4)+'s';sky.appendChild(d);}})();
+const Snd=(function(){let ctx;function t(f,d,type,g0){try{ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();
+const o=ctx.createOscillator(),g=ctx.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,ctx.currentTime);
+g.gain.setValueAtTime(g0||.1,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+d);
+o.connect(g);g.connect(ctx.destination);o.start();o.stop(ctx.currentTime+d);}catch(e){}}
+return{put(){t(420,.1,'triangle');setTimeout(()=>t(560,.12,'triangle'),60);},
+zap(){t(1200,.08,'sawtooth',.06);t(1700,.1,'sawtooth',.05);},
+solve(){[659,784,1047,1319].forEach((f,i)=>setTimeout(()=>t(f,.22,'triangle',.13),i*90));},
+win(){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>t(f,.28,'sine',.15),i*110));},
+lose(){t(220,.4,'sawtooth',.06);},no(){t(160,.15,'square',.06);},click(){t(600,.05,'square',.05);},
+tick(){t(880,.05,'square',.04);}};})();
+
+const C=BoltCore;
+const PCOLS={i3:'#4de1ff',v3:'#7dffb0',i4:'#ffd35c',o4:'#ff8a5c',t4:'#c58aff',s4:'#f06292',
+  z4:'#7ea8ff',l4:'#ffe066',u5:'#66e0c2',p5:'#ff9e3d',w5:'#b0ff7d',n5:'#e08aff'};
+const G={mode:'ai',level:2,busy:false};
+
+document.querySelectorAll('#modeOpts .opt').forEach(b=>b.onclick=()=>{Snd.click();
+  document.querySelectorAll('#modeOpts .opt').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');
+  G.mode=b.dataset.m;});
+document.querySelectorAll('#lvOpts .opt').forEach(b=>b.onclick=()=>{Snd.click();
+  document.querySelectorAll('#lvOpts .opt').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');
+  G.level=+b.dataset.l;});
+$('btnStart').onclick=startMatch;$('btnRe').onclick=startMatch;
+$('btnAgain').onclick=()=>{$('over').style.display='none';startMatch();};
+$('btnHome').onclick=()=>location.href='../';
+$('btnRot').onclick=()=>{if(!G.sel)return;Snd.click();G.r=(G.r+1)%4;refreshGhost();};
+$('btnFlip').onclick=()=>{if(!G.sel)return;Snd.click();G.f=1-G.f;refreshGhost();};
+$('btnHint').onclick=hint;
+$('btnPut').onclick=putPiece;
+
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),1700);}
+
+function startMatch(){
+  Snd.click();
+  G.match=C.newMatch();
+  $('setup').style.display='none';$('game').style.display='block';
+  $('aiRow').style.display=G.mode==='ai'?'flex':'none';
+  startRound();
+}
+function startRound(){
+  G.puz=C.genPuzzle(G.level,(Date.now()+G.match.round*331)|0);
+  G.placed={};G.sel=null;G.r=0;G.f=0;G.ghost=null;
+  G.t=0;G.playerDone=null;G.aiDone=null;G.aiShown=0;
+  G.who=G.mode==='hot'?(G.roundHalf?2:1):1;
+  if(G.mode==='ai'){
+    const plan=C.aiPlan(G.level,G.puz.pieces.length);
+    G.plan=plan;
+    $('aiMsg').textContent='🤖 나도 푼다! 두고 봐~';
+  }
+  $('roundNo').textContent=G.match.round+' / '+C.ROUNDS;
+  renderGems();
+  banner(G.mode==='hot'
+    ? '<b style="color:'+(G.who===1?'#ffd35c':'#7ea8ff')+'">'+(G.who===1?'⭐ 별팀':'🌙 달팀')+'</b> 차례! 준비되면 바로 시작~'
+    : '⚡ 준비… 시작! 그림자를 채워라!');
+  renderBoard();renderHand();renderAiBoard();
+  clearInterval(G.tm);
+  G.tm=setInterval(tickTimer,100);
+}
+function tickTimer(){
+  G.t+=0.1;
+  const left=Math.max(0,C.T_LIMIT-G.t);
+  $('timerBar').style.width=(left/C.T_LIMIT*100)+'%';
+  if(left<=10&&Math.abs(left-Math.round(left))<0.05)Snd.tick();
+  /* 컴퓨터 진행 공개 */
+  if(G.mode==='ai'&&!G.aiDone){
+    while(G.aiShown<G.plan.reveals.length&&G.t>=G.plan.reveals[G.aiShown]){G.aiShown++;renderAiBoard();}
+    if(G.t>=G.plan.total){G.aiDone=G.plan.total;
+      $('aiMsg').textContent='🤖 다 풀었다! ('+G.plan.total.toFixed(1)+'초) 그래도 끝까지!';Snd.zap();}
+    else if(G.plan.total===Infinity&&G.aiShown>=G.plan.reveals.length)
+      $('aiMsg').textContent='🤖 으윽… 마지막 조각이 이상해…';
+  }
+  if(left<=0)roundOver('timeout');
+}
+function hint(){
+  if(G.busy||!G.puz)return;
+  const rest=G.puz.solution.filter(s=>!G.placed[s.pid]);
+  if(!rest.length)return;
+  Snd.zap();G.t+=5;toast('💡 +5초! 반짝 보여줄게');
+  G.hint=rest[0];renderBoard();
+  setTimeout(()=>{G.hint=null;renderBoard();},2500);
+}
+
+/* ---------- 렌더 ---------- */
+const CELL=46,PAD=6;
+function renderGems(){
+  $('gem1').textContent=G.match.gems[1].join('')||'—';
+  $('gem2').textContent=G.match.gems[2].join('')||'—';
+}
+function banner(html){$('banner').innerHTML=html;}
+function svgRect(x,y,w,h,rx,fill,extra){return '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="'+rx+'" fill="'+fill+'" '+(extra||'')+'/>';}
+function renderBoard(){
+  const p=G.puz,W=p.W*CELL+PAD*2,H=p.H*CELL+PAD*2;
+  const svg=$('board');svg.setAttribute('viewBox','0 0 '+W+' '+H);
+  let s='';
+  for(const k in p.sil){const[x,y]=k.split(',').map(Number);
+    s+=svgRect(PAD+x*CELL+2,PAD+y*CELL+2,CELL-4,CELL-4,8,'rgba(24,32,74,.9)','stroke="#2c3a77" stroke-width="2" data-c="'+x+','+y+'" class="slot"');}
+  for(const pid in G.placed){const pl=G.placed[pid];
+    for(const[dx,dy]of pl.cells)s+=svgRect(PAD+(pl.ox+dx)*CELL+3,PAD+(pl.oy+dy)*CELL+3,CELL-6,CELL-6,9,PCOLS[pid],'stroke="rgba(0,0,0,.3)" stroke-width="2" data-pid="'+pid+'" class="pp"');}
+  if(G.hint){for(const[dx,dy]of G.hint.cells)
+    s+=svgRect(PAD+(G.hint.ox+dx)*CELL+6,PAD+(G.hint.oy+dy)*CELL+6,CELL-12,CELL-12,7,'none','stroke="#ffd35c" stroke-width="3" stroke-dasharray="6 5" opacity=".9"');}
+  if(G.ghost){const ok=G.ghost.ok;
+    for(const[dx,dy]of G.ghost.cells)
+      s+=svgRect(PAD+(G.ghost.ox+dx)*CELL+4,PAD+(G.ghost.oy+dy)*CELL+4,CELL-8,CELL-8,8,
+        ok?PCOLS[G.sel]:'#e0443e','opacity=".55" stroke="'+(ok?'#fff':'#ff9a96')+'" stroke-width="2"');}
+  svg.innerHTML=s;
+  svg.onclick=e=>{
+    if(G.busy)return;
+    const t=e.target;
+    if(t.classList&&t.classList.contains('pp')){Snd.click();delete G.placed[t.dataset.pid];renderBoard();renderHand();return;}
+    if(!G.sel)return;
+    const r=svg.getBoundingClientRect();
+    const sx=(e.clientX-r.left)/r.width*(p.W*CELL+PAD*2),sy=(e.clientY-r.top)/r.height*(p.H*CELL+PAD*2);
+    const cx=Math.floor((sx-PAD)/CELL),cy=Math.floor((sy-PAD)/CELL);
+    placeGhost(cx,cy);
+  };
+}
+function pieceSvg(pid,col){
+  const cs=C.PIECE_MAP[pid].cells;let mx=0,my=0;
+  for(const[x,y]of cs){mx=Math.max(mx,x);my=Math.max(my,y);}
+  const u=48/Math.max(mx+1,my+1);
+  let s='<svg viewBox="0 0 52 52" xmlns="http://www.w3.org/2000/svg">';
+  for(const[x,y]of cs)s+=svgRect(2+x*u+1,2+y*u+1,u-2,u-2,4,col);
+  return s+'</svg>';
+}
+function renderHand(){
+  const h=$('hand');h.innerHTML='';
+  for(const pid of G.puz.pieces){
+    const d=document.createElement('div');
+    d.className='hp'+(G.placed[pid]?' done':'')+(G.sel===pid?' sel':'');
+    d.innerHTML=pieceSvg(pid,PCOLS[pid]);
+    d.onclick=()=>{if(G.busy)return;
+      if(G.placed[pid]){Snd.click();delete G.placed[pid];renderBoard();renderHand();return;}
+      Snd.click();G.sel=pid;G.r=0;G.f=0;G.ghost=null;$('btnPut').disabled=true;renderBoard();renderHand();};
+    h.appendChild(d);
+  }
+}
+function orientCells(){return C.orient(C.PIECE_MAP[G.sel].cells,G.r,G.f);}
+function placeGhost(cx,cy){
+  const cells=orientCells();
+  G.ghost={cells,ox:cx,oy:cy,ok:C.canPlace(G.puz,G.placed,cells,cx,cy)};
+  $('btnPut').disabled=!G.ghost.ok;
+  if(!G.ghost.ok)Snd.no();
+  renderBoard();
+}
+function refreshGhost(){if(G.ghost)placeGhost(G.ghost.ox,G.ghost.oy);else renderBoard();}
+function putPiece(){
+  if(!G.ghost||!G.ghost.ok)return;
+  Snd.put();
+  G.placed[G.sel]={cells:G.ghost.cells,ox:G.ghost.ox,oy:G.ghost.oy};
+  G.sel=null;G.ghost=null;$('btnPut').disabled=true;
+  renderBoard();renderHand();
+  if(C.isSolved(G.puz,G.placed)){G.playerDone=G.t;Snd.solve();roundOver('solved');}
+}
+function renderAiBoard(){
+  if(G.mode!=='ai')return;
+  const p=G.puz,W=p.W*CELL+PAD*2,H=p.H*CELL+PAD*2;
+  const svg=$('aiBoard');svg.setAttribute('viewBox','0 0 '+W+' '+H);
+  let s='';
+  for(const k in p.sil){const[x,y]=k.split(',').map(Number);
+    s+=svgRect(PAD+x*CELL+2,PAD+y*CELL+2,CELL-4,CELL-4,8,'rgba(24,32,74,.9)','stroke="#2c3a77" stroke-width="2"');}
+  for(let i=0;i<G.aiShown&&i<p.solution.length;i++){const pl=p.solution[i];
+    for(const[dx,dy]of pl.cells)s+=svgRect(PAD+(pl.ox+dx)*CELL+3,PAD+(pl.oy+dy)*CELL+3,CELL-6,CELL-6,9,PCOLS[pl.pid],'opacity=".9"');}
+  svg.innerHTML=s;
+}
+
+/* ---------- 라운드 종료 ---------- */
+function roundOver(why){
+  clearInterval(G.tm);
+  G.busy=true;
+  if(G.mode==='hot'&&!G.roundHalf){
+    /* 별팀 끝 → 달팀 차례 (새 퍼즐, 같은 난이도) */
+    G.time1=why==='solved'?G.playerDone:Infinity;
+    G.roundHalf=1;
+    banner(why==='solved'?'⭐ '+G.time1.toFixed(1)+'초 완성! 이제 🌙 달팀에게 넘겨줘!':'⭐ 시간 초과… 이제 🌙 달팀 차례!');
+    setTimeout(()=>{G.busy=false;startRound();},1900);
+    return;
+  }
+  let winner=0,msg='';
+  if(G.mode==='hot'){
+    G.roundHalf=0;
+    const t2=why==='solved'?G.playerDone:Infinity;
+    if(G.time1===Infinity&&t2===Infinity){winner=0;msg='둘 다 시간 초과! 보석은 없음 😅';}
+    else if(t2<G.time1){winner=2;msg='🌙 달팀이 '+t2.toFixed(1)+'초로 승리!';}
+    else if(G.time1<t2){winner=1;msg='⭐ 별팀이 '+G.time1.toFixed(1)+'초로 승리!';}
+    else{winner=0;msg='똑같다! 무승부';}
+  }else{
+    const pt=why==='solved'?G.playerDone:Infinity;
+    const at=G.plan.total;
+    if(pt===Infinity&&at===Infinity){winner=0;msg='둘 다 못 풀었다! 이런 날도 있지 😅';}
+    else if(pt<at){winner=1;msg='⚡ '+pt.toFixed(1)+'초 — 컴퓨터보다 빨랐어!';}
+    else if(pt!==Infinity){winner=2;msg='완성! 하지만 컴퓨터가 '+at.toFixed(1)+'초로 먼저…';}
+    else{winner=2;msg='시간 초과! 컴퓨터는 '+at.toFixed(1)+'초에 완성';}
+  }
+  const gem=C.roundResult(G.match,winner);
+  renderGems();
+  const me=G.mode==='ai'?1:winner;
+  if(winner!==0){banner(msg+(gem?' → '+gem:''));if(winner===me||G.mode==='hot')Snd.win();else Snd.lose();}
+  else banner(msg);
+  if(winner===1&&G.mode==='ai')confetti(30);
+  setTimeout(()=>{
+    G.busy=false;
+    if(G.match.over)matchOver();else startRound();
+  },2300);
+}
+function matchOver(){
+  const w=C.matchWinner(G.match);
+  const a=G.match.gems[1].length,b=G.match.gems[2].length;
+  $('ovT').textContent=w===1?'⭐ 별팀 우승!':w===2?(G.mode==='ai'?'🤖 컴퓨터 우승!':'🌙 달팀 우승!'):'무승부!';
+  $('ovS').innerHTML='보석 '+a+' : '+b+'<br>'+(w===1?'번개 같은 손이었어! ⚡':w===2?'다음엔 더 빨리 맞춰 보자!':'막상막하!');
+  $('over').style.display='flex';
+  if(w===1){Snd.win();confetti(70);}else if(w===2&&G.mode==='hot'){Snd.win();confetti(70);}
+}
+function confetti(n){
+  const cols=['#ffd35c','#7dffb0','#4de1ff','#f06292','#c58aff'];
+  for(let i=0;i<n;i++){const d=document.createElement('div');d.className='confetti';
+    d.style.left=Math.random()*100+'vw';d.style.background=cols[i%cols.length];
+    d.style.animationDuration=(1.5+Math.random()*1.5)+'s';d.style.animationDelay=(Math.random()*.4)+'s';
+    document.body.appendChild(d);setTimeout(()=>d.remove(),3400);}
+}
+</script>
+</body>
+</html>
