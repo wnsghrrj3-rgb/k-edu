@@ -998,6 +998,32 @@ function estWays(n, d, ways, opts){
   return s;
 }
 
+// ─── sumCards : 항목 카드 + 합계 (08차 신규) ─────────────────
+// items = [{name:'시금치나물', v:136, emoji:'🥬'}, ...]
+// opts: unit('g') · hideSum · label · pickable(고른 것 강조 인덱스 배열)
+function sumCards(items, opts){
+  opts = opts || {};
+  const unit = opts.unit || 'g';
+  const W = 420, CW = Math.floor((W-28-(items.length-1)*8)/items.length), CH = 88;
+  const H = 26 + CH + 42 + (opts.label?20:0);
+  let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" width="100%">`;
+  s += `<rect x="0" y="0" width="${W}" height="${H}" fill="${PAPER}" rx="12"/>`;
+  let total = 0;
+  items.forEach((it,i)=>{
+    total += it.v;
+    const x = 14 + i*(CW+8), on = !opts.pickable || opts.pickable.indexOf(i)>=0;
+    s += `<rect x="${x}" y="22" width="${CW}" height="${CH}" rx="11" fill="${on?'rgba(31,168,160,.12)':'#F3F3F1'}" stroke="${on?TEALD:'#D8D8D2'}" stroke-width="${on?1.8:1.2}"/>`;
+    if(it.emoji) s += `<text x="${x+CW/2}" y="${50}" text-anchor="middle" font-size="22">${it.emoji}</text>`;
+    s += `<text x="${x+CW/2}" y="${it.emoji?70:52}" text-anchor="middle" font-size="12" font-family="${KOR}" fill="${INK}">${it.name}</text>`;
+    s += `<text x="${x+CW/2}" y="${it.emoji?90:76}" text-anchor="middle" font-size="15" font-family="${NUM}" font-weight="800" fill="${on?TEALD:'#A8A8A2'}">${it.v}${unit}</text>`;
+  });
+  const expr = items.map(it=>it.v).join(' + ') + ' = ' + (opts.hideSum ? '?' : total+unit);
+  s += `<text x="${W/2}" y="${22+CH+30}" text-anchor="middle" font-size="17" font-family="${NUM}" font-weight="800" fill="${opts.hideSum?EMPH:INK}">${expr}</text>`;
+  if(opts.label) s += `<text x="${W/2}" y="${H-6}" text-anchor="middle" font-size="13" font-family="${KOR}" fill="${INKS}">${opts.label}</text>`;
+  s += `</svg>`;
+  return s;
+}
+
 
 (function renderModels(){
   const $=id=>document.getElementById(id);
