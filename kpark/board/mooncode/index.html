@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>달빛 암호 · 케이파크 보드게임</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+@font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
+:root{--bg:#0a0f2c;--panel:rgba(16,22,54,.85);--line:#3b4a8f;--text:#e8ecff;--dim:#8a93c8;
+  --accent:#4de1ff;--gold:#ffd35c;--red:#ff6b7d;--green:#7dffb0;
+  --title:'Hakgyoansim Moheomga','Jua',sans-serif}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+body{background:var(--bg);color:var(--text);font-family:'Jua',sans-serif;min-height:100vh;overflow-x:hidden}
+.sky{position:fixed;inset:0;pointer-events:none;z-index:0}
+.sky i{position:absolute;width:2px;height:2px;border-radius:50%;background:#cdd6ff;opacity:.5;animation:tw 5s ease-in-out infinite}
+.sky i:nth-child(3n){background:var(--gold)}
+@keyframes tw{0%,100%{opacity:.2}50%{opacity:.7}}
+main{position:relative;z-index:1;max-width:680px;margin:0 auto;padding:14px 14px 40px}
+header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+header a{color:var(--dim);text-decoration:none;font-size:14px}
+h1{font-family:var(--title);font-size:24px}h1 em{font-style:normal;color:var(--gold)}
+.spacer{flex:1}
+.scene{display:none}.scene.show{display:block;animation:fadein .3s}
+@keyframes fadein{from{opacity:0;transform:translateY(8px)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px;text-align:center}
+.panel h2{font-family:var(--title);font-size:21px;margin-bottom:6px}
+.panel p.desc{color:var(--dim);font-size:13.5px;margin-bottom:16px;line-height:1.7}
+.opts{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:8px}
+.opt{border:2px solid var(--line);background:rgba(24,32,74,.6);color:var(--text);border-radius:14px;
+  padding:14px 20px;font-family:'Jua';font-size:15px;cursor:pointer;transition:.15s;line-height:1.5}
+.opt small{display:block;color:var(--dim);font-size:12px}
+.opt.sel{border-color:var(--gold);box-shadow:0 0 16px rgba(255,211,92,.35);transform:translateY(-2px)}
+.start{margin-top:14px;background:linear-gradient(180deg,#ffd35c,#f5a623);color:#3a2a00;border:none;border-radius:999px;
+  padding:13px 38px;font-family:'Jua';font-size:17px;cursor:pointer;box-shadow:0 4px 18px rgba(255,211,92,.4)}
+/* 놀이판 */
+.rowLab{font-size:13.5px;color:var(--dim);margin:10px 0 6px;text-align:left}
+.tiles{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;min-height:64px;
+  background:rgba(10,15,44,.55);border:1px solid var(--line);border-radius:14px;padding:10px}
+.tile{width:44px;height:60px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+  font-family:var(--title);font-size:24px;position:relative;transition:transform .15s;cursor:default}
+.tile.b{background:linear-gradient(180deg,#232a55,#12173a);border:2px solid #3b4a8f;color:var(--gold)}
+.tile.w{background:linear-gradient(180deg,#f2f0e6,#cfcaba);border:2px solid #a49e8a;color:#1a1c33}
+.tile.secret::after{content:'🌙';position:absolute;top:2px;right:3px;font-size:10px}
+.tile.hid{cursor:pointer}
+.tile.hid span{opacity:.35;font-size:20px}
+.tile.hid.sel{transform:translateY(-6px);box-shadow:0 0 18px rgba(77,225,255,.6);border-color:var(--accent)}
+.tile.open{box-shadow:0 0 12px rgba(255,211,92,.35)}
+.tile.pop{animation:pop .4s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{from{transform:scale(.5) rotate(-8deg)}}
+.banner{min-height:52px;display:flex;align-items:center;justify-content:center;gap:8px;margin:12px 0;
+  font-size:16.5px;text-align:center;line-height:1.5}
+.banner .red{color:var(--red)}.banner .green{color:var(--green)}.banner .gd{color:var(--gold)}
+.heldBox{display:inline-flex;align-items:center;gap:10px;background:rgba(24,32,74,.7);border:1.5px dashed var(--line);
+  border-radius:14px;padding:8px 16px;margin:4px 0;font-size:14px;color:var(--dim)}
+/* 숫자 패드 */
+.pad{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;max-width:340px;margin:10px auto}
+.pad button{height:46px;border-radius:12px;border:2px solid var(--line);background:rgba(24,32,74,.7);
+  color:var(--text);font-family:var(--title);font-size:20px;cursor:pointer}
+.pad button:active{border-color:var(--gold)}
+.bigBtn{background:linear-gradient(180deg,#ffd35c,#f5a623);color:#3a2a00;border:none;border-radius:999px;
+  padding:12px 32px;font-family:'Jua';font-size:16px;cursor:pointer;margin:8px 5px 0;box-shadow:0 4px 18px rgba(255,211,92,.4)}
+.bigBtn:disabled{opacity:.35;box-shadow:none}
+.ghostBtn{background:rgba(24,32,74,.7);border:1.5px solid var(--line);color:var(--text);border-radius:999px;
+  padding:11px 24px;font-family:'Jua';font-size:15px;cursor:pointer;margin:8px 5px 0}
+/* 커튼(짝꿍 모드) */
+#curtain{position:fixed;inset:0;background:rgba(6,9,28,.97);z-index:30;display:none;align-items:center;justify-content:center;text-align:center}
+#curtain .in{padding:30px}
+#curtain h2{font-family:var(--title);font-size:30px;margin-bottom:10px}
+#curtain p{color:var(--dim);margin-bottom:22px;line-height:1.7}
+/* 종료 */
+#over{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:20;background:rgba(5,8,26,.72);backdrop-filter:blur(3px)}
+#over .card{background:var(--panel);border:1.5px solid var(--gold);border-radius:22px;padding:30px 38px;text-align:center;
+  box-shadow:0 0 60px rgba(255,211,92,.25);animation:pop2 .35s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop2{from{transform:scale(.7);opacity:0}}
+#over h2{font-family:var(--title);font-size:30px;margin-bottom:8px}
+#over p{color:var(--dim);margin-bottom:18px}
+.confetti{position:fixed;top:-12px;width:9px;height:14px;z-index:19;pointer-events:none;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(105vh) rotate(720deg)}}
+</style>
+</head>
+<body>
+<div class="sky" id="sky"></div>
+<main>
+  <header>
+    <a href="../../">← 케이파크</a>
+    <div class="spacer"></div>
+    <h1>🌙 달빛 <em>암호</em></h1>
+  </header>
+
+  <!-- 설정 -->
+  <section class="scene show" id="sSetup">
+    <div class="panel">
+      <h2>비밀 타일 추리 대결</h2>
+      <p class="desc">흑·백 타일 0~11이 작은 수부터 몰래 줄을 서 있어요. (같은 수면 흑이 왼쪽!)<br>
+        상대 타일의 <b style="color:var(--gold)">색과 자리</b>를 힌트로 숫자를 추리하세요.<br>
+        맞히면 계속, 틀리면 내가 뽑은 타일이 들통! 상대를 전부 밝히면 승리 🌙</p>
+      <div class="opts">
+        <button class="opt sel" data-m="easy" onclick="pickMode(this)">🤖 컴퓨터<small>쉬움</small></button>
+        <button class="opt" data-m="hard" onclick="pickMode(this)">🤖 컴퓨터<small>어려움 · 진짜 추리함</small></button>
+        <button class="opt" data-m="pvp" onclick="pickMode(this)">👥 짝꿍 대결<small>기기 넘겨가며</small></button>
+      </div>
+      <button class="start" onclick="startGame()">게임 시작 →</button>
+    </div>
+  </section>
+
+  <!-- 놀이판 -->
+  <section class="scene" id="sGame">
+    <div class="rowLab" id="labTop"></div>
+    <div class="tiles" id="rowTop"></div>
+    <div class="banner" id="banner"></div>
+    <div style="text-align:center" id="ctl"></div>
+    <div class="rowLab" id="labBot"></div>
+    <div class="tiles" id="rowBot"></div>
+    <p style="text-align:center;color:var(--dim);font-size:12.5px;margin-top:10px">더미: <b id="poolN" style="color:var(--gold)"></b>장 · 🌙 표시는 아직 비밀인 내 타일</p>
+  </section>
+</main>
+
+<div id="curtain"><div class="in">
+  <h2 id="curTitle"></h2><p id="curSub"></p>
+  <button class="bigBtn" onclick="curtainGo()">준비됐어요!</button>
+</div></div>
+
+<div id="over"><div class="card">
+  <div style="font-size:56px" id="ovIc"></div>
+  <h2 id="ovTitle"></h2><p id="ovSub"></p>
+  <button class="bigBtn" onclick="location.reload()">다시 하기 🔄</button>
+</div></div>
+
+<script src="./core.js"></script>
+<script>
+'use strict';
+(function(){const s=document.getElementById('sky');for(let i=0;i<55;i++){const d=document.createElement('i');
+d.style.left=Math.random()*100+'%';d.style.top=Math.random()*100+'%';d.style.animationDelay=Math.random()*5+'s';s.appendChild(d);}})();
+let AC=null;
+function beep(f,dur,type,vol,when){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+const o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.value=f;
+g.gain.setValueAtTime(vol||.12,AC.currentTime+(when||0));g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+(when||0)+dur);
+o.connect(g);g.connect(AC.destination);o.start(AC.currentTime+(when||0));o.stop(AC.currentTime+(when||0)+dur);}catch(e){}}
+const sndOk=()=>{beep(659,.12,'triangle',.14);beep(880,.2,'triangle',.14,.1);};
+const sndNo=()=>{beep(196,.3,'sawtooth',.09);};
+const sndTap=()=>beep(880,.06,'square',.05);
+const sndWin=()=>{[523,659,784,1047].forEach((f,i)=>beep(f,.22,'triangle',.13,i*.14));};
+
+const C=MoonCodeCore, $=id=>document.getElementById(id);
+let mode='easy', g=null, me=1, selIdx=null, busy=false;
+
+function pickMode(el){document.querySelectorAll('.opt').forEach(o=>o.classList.remove('sel'));el.classList.add('sel');mode=el.dataset.m;sndTap();}
+function show(id){document.querySelectorAll('.scene').forEach(s=>s.classList.remove('show'));$(id).classList.add('show');}
+
+function startGame(){
+  g=C.newGame((Date.now()^(Math.random()*1e9))>>>0);
+  me=1;show('sGame');
+  if(mode==='pvp')curtain(1,()=>paint());
+  else paint();
+}
+
+/* ── 렌더 ── */
+function nameOf(p){return mode==='pvp'?(p===1?'1번 친구':'2번 친구'):(p===1?'나':'컴퓨터');}
+function paint(msg){
+  const foe=C.opp(me);
+  $('labTop').textContent='🔎 '+nameOf(foe)+'의 줄 — 색과 자리를 보고 추리!';
+  $('labBot').textContent='🙌 '+nameOf(me)+'의 줄';
+  renderRow($('rowTop'),g.rows[foe],false);
+  renderRow($('rowBot'),g.rows[me],true);
+  $('poolN').textContent=g.pool.length;
+  if(msg!==undefined)$('banner').innerHTML=msg;
+  paintCtl();
+}
+function renderRow(el,row,mine){
+  el.innerHTML='';
+  row.forEach((t,i)=>{
+    const d=document.createElement('div');
+    d.className='tile '+t.c;
+    if(t.open){d.classList.add('open');d.textContent=t.n;}
+    else if(mine){d.classList.add('secret');d.textContent=t.n;}
+    else{d.classList.add('hid');d.innerHTML='<span>?</span>';
+      if(i===selIdx)d.classList.add('sel');
+      d.onclick=()=>{if(busy||g.phase!=='guess'||isAiTurn())return;selIdx=i;sndTap();paint();};}
+    el.appendChild(d);
+  });
+}
+const isAiTurn=()=>mode!=='pvp'&&g.turn===2;
+
+function paintCtl(){
+  const c=$('ctl');
+  if(g.phase==='over'){c.innerHTML='';return;}
+  if(isAiTurn()){c.innerHTML='';return;}
+  if(g.phase==='draw'){
+    selIdx=null;
+    c.innerHTML='<button class="bigBtn" onclick="doDraw()">🀄 타일 뽑기</button>';
+    if(!g.pool.length)c.innerHTML='<button class="bigBtn" onclick="doDraw()">추리 시작 (더미 없음 — 틀리면 내 타일 공개!)</button>';
+    return;}
+  if(g.phase==='guess'){
+    let h='';
+    if(g.held)h+='<div class="heldBox">뽑은 타일: <div class="tile '+g.held.c+'" style="width:36px;height:48px;font-size:19px">'+g.held.n+'</div><span>추리 후 내려놓아요</span></div><br>';
+    if(selIdx===null)h+='<span style="color:var(--dim);font-size:14px">👆 위에서 추리할 타일(?)을 골라 주세요</span>';
+    else{
+      h+='<div class="pad">';
+      for(let n=0;n<=11;n++)h+='<button onclick="doGuess('+n+')">'+n+'</button>';
+      h+='</div>';
+    }
+    if(canStop())h+='<button class="ghostBtn" onclick="doStop()">여기서 멈추기 (뽑은 타일 비밀로 두기)</button>';
+    c.innerHTML=h;
+  }
+}
+let guessedOnce=false;
+const canStop=()=>guessedOnce;
+
+/* ── 플레이어 행동 ── */
+function doDraw(){
+  if(busy)return;
+  C.draw(g);guessedOnce=false;sndTap();
+  paint('🀄 타일을 뽑았어요. 이제 상대 타일을 추리!');
+}
+function doGuess(n){
+  if(busy||selIdx===null)return;
+  const idx=selIdx;selIdx=null;
+  const r=C.guess(g,idx,n);
+  if(r.correct){
+    sndOk();guessedOnce=true;
+    flash($('rowTop').children[idx]);
+    if(r.win)return gameOver(me);
+    paint('<span class="green">🎉 정답! '+n+'이었어요.</span> 이어서 추리하거나 멈출 수 있어요.');
+  }else{
+    sndNo();
+    paint('<span class="red">😵 땡! 아니에요.</span> 뽑은 타일이 공개된 채 줄에 들어갔어요…');
+    afterMyTurn();
+  }
+}
+function doStop(){
+  if(busy)return;
+  C.stop(g);sndTap();
+  paint('🌙 뽑은 타일을 비밀로 내려놓았어요.');
+  afterMyTurn();
+}
+function flash(el){if(el){el.classList.add('pop');setTimeout(()=>el.classList.remove('pop'),450);}}
+function afterMyTurn(){
+  const w=C.winner(g);if(w)return gameOver(w);
+  if(mode==='pvp'){me=g.turn;curtain(me,()=>paint(nameOf(me)+' 차례예요!'));}
+  else aiPlay();
+}
+
+/* ── AI 차례 연출 ── */
+function aiPlay(){
+  busy=true;
+  setTimeout(()=>{
+    paint('🤖 컴퓨터가 골똘히 생각 중…');
+    setTimeout(()=>{
+      const moves=C.aiTurn(g,mode==='hard'?'hard':'easy');
+      replay(moves,0);
+    },900);
+  },1400);
+}
+function replay(moves,i){
+  if(i>=moves.length){
+    busy=false;
+    const w=C.winner(g);if(w)return gameOver(w);
+    paint('내 차례! 타일을 뽑아요.');
+    return;
+  }
+  const m=moves[i];
+  const pos=m.idx+1;
+  if(m.correct){
+    sndNo();
+    paint('🤖 "'+pos+'번째 타일… <b class="gd">'+m.n+'</b>!" <span class="red">맞혔어요!</span>');
+    flash($('rowBot').children[m.idx]);
+  }else{
+    sndOk();
+    paint('🤖 "'+pos+'번째 타일… <b class="gd">'+m.n+'</b>!" <span class="green">틀렸어요! 컴퓨터 타일이 공개됐어요 🎉</span>');
+  }
+  setTimeout(()=>replay(moves,i+1),1300);
+}
+
+/* ── 짝꿍 커튼 ── */
+let curCb=null;
+function curtain(p,cb){
+  curCb=cb;
+  $('curTitle').textContent=nameOf(p)+' 차례';
+  $('curSub').innerHTML='다른 친구는 잠깐 고개를 돌려 주세요!<br>준비되면 눌러요.';
+  $('curtain').style.display='flex';
+}
+function curtainGo(){$('curtain').style.display='none';if(curCb){const f=curCb;curCb=null;f();}}
+
+/* ── 종료 ── */
+function gameOver(w){
+  g.phase='over';
+  /* 전체 공개 */
+  g.rows[1].forEach(t=>t.open=true);g.rows[2].forEach(t=>t.open=true);
+  paint('');
+  const iWin=(mode==='pvp')?true:(w===1);
+  $('ovIc').textContent=iWin?'🏆':'🤖';
+  $('ovTitle').textContent=mode==='pvp'?(nameOf(w)+' 승리!'):(iWin?'승리! 명탐정이에요':'컴퓨터 승리…');
+  $('ovSub').textContent=iWin?'상대의 암호를 모두 풀었어요! 달빛처럼 빛나는 추리 🌙':'다음엔 색과 자리를 더 꼼꼼히! 다시 도전해요.';
+  $('over').style.display='flex';
+  if(iWin){sndWin();
+    for(let i=0;i<60;i++){const c=document.createElement('div');c.className='confetti';
+      c.style.left=Math.random()*100+'vw';c.style.background=['#ffd35c','#4de1ff','#ff6fae','#7dffb0','#c58aff'][i%5];
+      c.style.animationDuration=(2.2+Math.random()*1.8)+'s';c.style.animationDelay=Math.random()*.8+'s';
+      document.body.appendChild(c);setTimeout(()=>c.remove(),4500);}}
+}
+</script>
+</body>
+</html>
