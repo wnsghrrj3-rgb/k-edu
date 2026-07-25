@@ -138,6 +138,16 @@ window.MK_SCREENS.editor = (() => {
   };
   const HANDLES = '<i class="hd tl"></i><i class="hd tr"></i><i class="hd bl"></i><i class="hd br"></i><i class="hd tm"></i><i class="hd bm"></i><i class="hd ml"></i><i class="hd mr"></i><i class="hd rot"></i>';
 
+  /* Round 35 — 선택 시 빠른동작 알약 4개 (MK_EASY) — 새 패널 아님, 캔버스 위 부유 */
+  const QuickPill = (scene) => {
+    const e = ed();
+    if (!window.MK_EASY || e.selEl == null || !scene.elements[e.selEl]) return '';
+    const el = scene.elements[e.selEl];
+    const top = Math.max(0, el.y - 7);
+    return `<div class="ed-quickpill" style="left:${Math.min(el.x, 78)}%;top:${top}%">${
+      MK_EASY.quickFor(el).map((q) => `<button data-easyq="${q.id}" title="${q.label}">${q.icon} ${q.label}</button>`).join('')}</div>`;
+  };
+
   /* ================= Center: Canvas (편집) — 확대/축소 ================= */
   const BASE_W = 680;
   const CanvasArea = (scene) => {
@@ -166,7 +176,7 @@ window.MK_SCREENS.editor = (() => {
       return `<div class="ed-el img-ph ${fillCls} ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%${fillSty}${rad}${cut}">${M().esc(el.label)}${hd2}</div>`;
     }).join('');
     return `<div class="ed-canvaswrap">
-      <div class="ed-canvas" style="width:${CW}px;height:${CH}px;background:${scene.background}${e.doc.fontFamily ? `;font-family:'${e.doc.fontFamily}',Pretendard,sans-serif` : ''}">${els}</div>
+      <div class="ed-canvas" style="width:${CW}px;height:${CH}px;background:${scene.background}${e.doc.fontFamily ? `;font-family:'${e.doc.fontFamily}',Pretendard,sans-serif` : ''}">${els}${QuickPill(scene)}</div>
       <div class="ed-zoom">
         <button data-zoom="out" aria-label="축소"><svg viewBox='0 0 24 24' width='13' height='13' fill='none' stroke='currentColor' stroke-width='1.9' stroke-linecap='round' aria-hidden='true'><path d='M5.5 12h13'/></svg></button>
         <button data-zoom="fit">${Math.round(e.zoom * 100)}%</button>
@@ -312,6 +322,13 @@ window.MK_SCREENS.editor = (() => {
         const c = String(cmd || '').trim(); if (!c) return;
         say('me', c);
         const res = window.MK_AIED.run(c);
+        /* Round 35 — 못 알아들으면 자연어 타임라인(MK_EASY)이 이어받는다: 같은 입력창, 패널 추가 0 */
+        if (!res.ok && res.unknown && window.MK_EASY) {
+          H.push('자연어 모션');
+          const t = MK_EASY.timeline(c, doc, e.sceneIdx);
+          if (t.ok) { say('ai', t.msg); PG.render(); const lg0 = document.getElementById('aidLog'); if (lg0) lg0.scrollTop = lg0.scrollHeight; return; }
+          window.MK_HIST.undo();
+        }
         say('ai', res.msg, !res.ok);
         PG.render();
         const lg = document.getElementById('aidLog'); if (lg) lg.scrollTop = lg.scrollHeight;
@@ -394,6 +411,66 @@ window.MK_SCREENS.editor = (() => {
       if (sw) sw.onclick = () => { window.MK_AIED.run('이미지 교체'); PG.render(); };
       const dur = root.querySelector('[data-ed="dur"]');
       if (dur) dur.onchange = () => { doc.scenes[e.sceneIdx].duration = Math.max(1, Math.min(30, +dur.value || 1)); PG.render(); };
+
+      /* ================= Round 35 — MK_EASY 라이브 배선 (전부 가드·추가만) ================= */
+      if (window.MK_EASY) {
+        /* F2 — 빠른동작 알약 */
+        root.querySelectorAll('[data-easyq]').forEach((b) => b.onclick = (ev) => {
+          ev.stopPropagation();
+          H.push('빠른동작 — ' + b.dataset.easyq);
+          const r = MK_EASY.quickRun(doc, e.sceneIdx, e.selEl, b.dataset.easyq);
+          if (r.deselect) e.selEl = null;
+          PG.render();
+          if (r.edit) { const te2 = document.querySelector('[data-ed="text-edit"]'); if (te2) te2.focus(); }
+        });
+        /* F5 — 호버 칩 */
+        const cv = root.querySelector('.ed-canvas');
+        let chip = null;
+        const hideChip = () => { if (chip) { chip.remove(); chip = null; } };
+        root.querySelectorAll('.ed-el').forEach((elDom) => {
+          elDom.addEventListener('mouseenter', () => {
+            const i = +elDom.dataset.el;
+            if (i === e.selEl) return;
+            hideChip();
+            const el = doc.scenes[e.sceneIdx].elements[i]; if (!el) return;
+            chip = document.createElement('div');
+            chip.className = 'ed-hoverchip';
+            chip.innerHTML = MK_EASY.hoverFor(el).map((h2) => `<button data-easyh="${h2.id}" data-i="${i}">${h2.icon} ${h2.label}</button>`).join('');
+            chip.style.left = el.x + '%'; chip.style.top = Math.max(0, el.y - 6) + '%';
+            cv.appendChild(chip);
+            chip.querySelectorAll('[data-easyh]').forEach((b) => b.onclick = (ev) => {
+              ev.stopPropagation();
+              const idx = +b.dataset.i;
+              H.push('호버 — ' + b.dataset.easyh);
+              if (b.dataset.easyh === 'edit') { e.selEl = idx; PG.render(); const te2 = document.querySelector('[data-ed="text-edit"]'); if (te2) te2.focus(); return; }
+              MK_EASY.quickRun(doc, e.sceneIdx, idx, b.dataset.easyh === 'replace' ? 'replace' : 'delete');
+              if (b.dataset.easyh === 'delete' && e.selEl === idx) e.selEl = null;
+              PG.render();
+            });
+          });
+          elDom.addEventListener('mouseleave', (ev) => {
+            if (chip && ev.relatedTarget && chip.contains(ev.relatedTarget)) return;
+            setTimeout(hideChip, 150);
+          });
+        });
+        /* F1 — 캔버스 드롭 스마트 교체 (파일·자산 드래그 공용) */
+        if (cv) {
+          cv.addEventListener('dragover', (ev) => { ev.preventDefault(); cv.classList.add('ed-dropping'); });
+          cv.addEventListener('dragleave', () => cv.classList.remove('ed-dropping'));
+          cv.addEventListener('drop', (ev) => {
+            ev.preventDefault(); cv.classList.remove('ed-dropping');
+            const f = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0];
+            const media = f ? { name: f.name.replace(/\.[^.]+$/, ''), kind: /^video\//.test(f.type) ? 'video' : 'image' }
+              : { name: '드롭한 미디어', kind: 'image' };
+            const hit = ev.target.closest && ev.target.closest('[data-el]');
+            H.push('드롭 교체');
+            const r = hit ? MK_EASY.replace(doc, e.sceneIdx, +hit.dataset.el, media)
+                          : MK_EASY.insertMedia(doc, e.sceneIdx, media);
+            if (!r.ok && hit) MK_EASY.insertMedia(doc, e.sceneIdx, media);   /* 텍스트 위 드롭 → 옆에 삽입 */
+            PG.render();
+          });
+        }
+      }
     },
   };
 })();
