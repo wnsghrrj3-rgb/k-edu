@@ -153,12 +153,13 @@ window.MK_SCREENS.editor = (() => {
   const CanvasArea = (scene) => {
     const e = ed(), CW = Math.round(BASE_W * e.zoom), CH = Math.round(CW * scene.height / scene.width);
     const dk = MK_SEC ? MK_SEC.isDark(scene.background) : scene.background === '#1F2733';
+    const rotSty = (el) => el.rot ? `;transform:rotate(${el.rot}deg)` : '';   /* R36 회전 */
     const els = scene.elements.map((el, i) => {
       const sel = e.selEl === i ? 'sel' : '';
       if (el.kind === 'chart' || el.kind === 'table') {
         const inner = el.kind === 'chart' ? ChartSVG(el, dk, false) : TableHTML(el, dk, false);
         const hd3 = e.selEl === i ? HANDLES : '';
-        return `<div class="ed-el ed-data ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;font-size:${(2.6 / 100 * CH).toFixed(1)}px">${inner}${hd3}</div>`;
+        return `<div class="ed-el ed-data ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;font-size:${(2.6 / 100 * CH).toFixed(1)}px${rotSty(el)}">${inner}${hd3}</div>`;
       }
       if (el.kind === 'text') {
         const fs = (el.size / 100 * CH).toFixed(1);
@@ -167,13 +168,17 @@ window.MK_SCREENS.editor = (() => {
         const col = el.color || (dark ? ((el.weight || 400) >= 600 ? '#F2F5F9' : '#B7C0CD') : ((el.weight || 400) >= 600 ? '#1F2733' : '#525C6A'));
         const al = el.align ? `;text-align:${el.align}` : '';
         const tr = el.tracking ? `;letter-spacing:${el.tracking}em` : '';
-        return `<div class="ed-el ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight};line-height:1.3;color:${col}${al}${tr};white-space:pre-wrap">${M().esc(el.text)}${hd}</div>`;
+        return `<div class="ed-el ${sel}" data-el="${i}" data-editable="1" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight};line-height:1.3;color:${col}${al}${tr};white-space:pre-wrap${rotSty(el)}"><span class="ed-txt">${M().esc(el.text)}</span>${hd}</div>`;
       }
       const hd2 = e.selEl === i ? '<i class="hd tl"></i><i class="hd tr"></i><i class="hd bl"></i><i class="hd br"></i><i class="hd tm"></i><i class="hd bm"></i><i class="hd ml"></i><i class="hd mr"></i><i class="hd rot"></i>' : '';
       const fillCls = el.fill && el.fill !== 'none' ? 'has-fill' : '', fillSty = el.fill && el.fill !== 'none' ? `;background:${el.fill}` : '';
       const rad = el.radius ? `;border-radius:${el.radius > 100 ? '50%' : el.radius + 'px'}` : '';
       const cut = el.cutout ? ';background:none;border:1px dashed var(--mk-border)' : '';
-      return `<div class="ed-el img-ph ${fillCls} ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%${fillSty}${rad}${cut}">${M().esc(el.label)}${hd2}</div>`;
+      if (el.src) {                                    /* R36 실이미지 — dataURL 실표시, 라벨은 걷는다 */
+        const fit = el.fit === 'contain' ? 'contain' : 'cover';
+        return `<div class="ed-el img-ph has-src ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%${rad}${rotSty(el)}"><img class="ed-imgreal" src="${el.src}" alt="${M().esc(el.label || '')}" draggable="false" style="object-fit:${fit}">${hd2}</div>`;
+      }
+      return `<div class="ed-el img-ph ${fillCls} ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%${fillSty}${rad}${cut}${rotSty(el)}">${M().esc(el.label)}${hd2}</div>`;
     }).join('');
     return `<div class="ed-canvaswrap">
       <div class="ed-canvas" style="width:${CW}px;height:${CH}px;background:${scene.background}${e.doc.fontFamily ? `;font-family:'${e.doc.fontFamily}',Pretendard,sans-serif` : ''}">${els}${QuickPill(scene)}</div>
@@ -247,6 +252,7 @@ window.MK_SCREENS.editor = (() => {
         const al = el.align ? `;text-align:${el.align}` : '';
         return `<span style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight || 400};color:${col}${al}">${M().esc(el.text)}</span>`;
       }
+      if (el.src) return `<i style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;background-image:url('${el.src}');background-size:${el.fit === 'contain' ? 'contain' : 'cover'};background-position:center;background-repeat:no-repeat;opacity:1"></i>`;   /* R36 실이미지 미니 */
       return `<i style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%${el.fill ? ';background:' + el.fill + ';opacity:1' : ''}"></i>`;
     }).join('');
     return `<div class="ed-mini" style="background:${scene.background}" aria-hidden="true">${els}</div>`;
@@ -371,7 +377,12 @@ window.MK_SCREENS.editor = (() => {
         PG.render();
       });
       /* Toolbar 동작 */
-      root.querySelector('[data-ed="save"]').onclick = () => { e.savedAt = '방금'; document.getElementById('edSave').textContent = '저장됨 · 방금'; const cur = window.MK_PROJ && window.MK_PROJ.current(); if (cur) window.MK_PROJ.rename(cur.projectId, cur.name); /* rename=touch 겸용 — 수정일 갱신 */ };
+      root.querySelector('[data-ed="save"]').onclick = () => {
+        const cur = window.MK_PROJ && window.MK_PROJ.current(); if (cur) window.MK_PROJ.rename(cur.projectId, cur.name); /* rename=touch 겸용 — 수정일 갱신 */
+        let real = false;
+        if (window.MK_LIVE && !e.review) { real = MK_LIVE.saveDoc(doc); MK_LIVE.saveProjects(); }   /* R36 — 실저장 */
+        e.savedAt = '방금'; document.getElementById('edSave').textContent = e.review ? '리뷰 모드 · 저장되지 않음' : (real ? '저장됨 · 방금' : '저장됨 · 방금(세션)');
+      };
       root.querySelector('[data-ed="preview"]').onclick = () => M2.Modal.open(`<h2>미리보기</h2>
         <div style="border:1px solid var(--mk-border);border-radius:8px;overflow:hidden;margin:12px 0">${M2.sceneThumb(doc.scenes[e.sceneIdx])}</div>
         <p style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">전체 장면 재생은 후속 단계 (kmake 엔진 이식)</p>
@@ -404,11 +415,27 @@ window.MK_SCREENS.editor = (() => {
       const te = root.querySelector('[data-ed="text-edit"]');
       if (te) { te.onfocus = () => H.push('텍스트 편집'); te.oninput = () => {
         doc.scenes[e.sceneIdx].elements[e.selEl].text = te.value;
-        const cv = root.querySelector(`.ed-el[data-el="${e.selEl}"]`);
+        const cv = root.querySelector(`.ed-el[data-el="${e.selEl}"] .ed-txt`) || root.querySelector(`.ed-el[data-el="${e.selEl}"]`);
         if (cv) cv.textContent = te.value;
       }; }
       const sw = root.querySelector('[data-ed="img-swap"]');
-      if (sw) sw.onclick = () => { window.MK_AIED.run('이미지 교체'); PG.render(); };
+      if (sw) sw.onclick = () => {
+        if (window.MK_LIVE) {                            /* R36 — 진짜 파일 선택 → 실이미지 교체 */
+          const inp = document.createElement('input');
+          inp.type = 'file'; inp.accept = 'image/*,video/*';
+          inp.onchange = () => MK_LIVE.fileToSrc(inp.files && inp.files[0], (src, err) => {
+            if (err) return alert(err);
+            if (!src) return;
+            const f = inp.files[0];
+            H.push('이미지 교체');
+            MK_LIVE.replaceWithSrc(doc, e.sceneIdx, e.selEl, { name: f.name.replace(/\.[^.]+$/, ''), kind: /^video\//.test(f.type) ? 'video' : 'image', src });
+            PG.render();
+          });
+          inp.click();
+          return;
+        }
+        window.MK_AIED.run('이미지 교체'); PG.render();
+      };
       const dur = root.querySelector('[data-ed="dur"]');
       if (dur) dur.onchange = () => { doc.scenes[e.sceneIdx].duration = Math.max(1, Math.min(30, +dur.value || 1)); PG.render(); };
 
@@ -460,14 +487,213 @@ window.MK_SCREENS.editor = (() => {
           cv.addEventListener('drop', (ev) => {
             ev.preventDefault(); cv.classList.remove('ed-dropping');
             const f = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0];
-            const media = f ? { name: f.name.replace(/\.[^.]+$/, ''), kind: /^video\//.test(f.type) ? 'video' : 'image' }
-              : { name: '드롭한 미디어', kind: 'image' };
             const hit = ev.target.closest && ev.target.closest('[data-el]');
-            H.push('드롭 교체');
-            const r = hit ? MK_EASY.replace(doc, e.sceneIdx, +hit.dataset.el, media)
-                          : MK_EASY.insertMedia(doc, e.sceneIdx, media);
-            if (!r.ok && hit) MK_EASY.insertMedia(doc, e.sceneIdx, media);   /* 텍스트 위 드롭 → 옆에 삽입 */
+            const hitIdx = hit ? +hit.dataset.el : null;
+            const apply = (media) => {
+              H.push('드롭 교체');
+              const rep = (window.MK_LIVE && media.src) ? MK_LIVE.replaceWithSrc : MK_EASY.replace;
+              const ins = (window.MK_LIVE && media.src) ? MK_LIVE.insertWithSrc : MK_EASY.insertMedia;
+              const r = hitIdx != null ? rep(doc, e.sceneIdx, hitIdx, media) : ins(doc, e.sceneIdx, media);
+              if (!r.ok && hitIdx != null) ins(doc, e.sceneIdx, media);   /* 텍스트 위 드롭 → 옆에 삽입 */
+              PG.render();
+            };
+            if (f && window.MK_LIVE) {                    /* R36 — 실파일: dataURL로 읽어 실표시 */
+              MK_LIVE.fileToSrc(f, (src, err) => {
+                apply({ name: f.name.replace(/\.[^.]+$/, ''), kind: /^video\//.test(f.type) ? 'video' : 'image', src: src || undefined });
+                if (err) alert(err);
+              });
+              return;
+            }
+            apply(f ? { name: f.name.replace(/\.[^.]+$/, ''), kind: /^video\//.test(f.type) ? 'video' : 'image' }
+                    : { name: '드롭한 미디어', kind: 'image' });
+          });
+        }
+      }
+
+      /* ================= R36 이식 라운드 — 실편집·영속 (MK_LIVE, 전부 가드·추가만) ================= */
+      if (window.MK_LIVE) {
+        const L = window.MK_LIVE;
+        const cv2 = root.querySelector('.ed-canvas');
+        const scene2 = () => doc.scenes[e.sceneIdx];
+        const nowStr = () => { const d2 = new Date(); return String(d2.getHours()).padStart(2, '0') + ':' + String(d2.getMinutes()).padStart(2, '0'); };
+        const markSaved = (t) => { const n = document.getElementById('edSave'); if (n) n.textContent = t; };
+        if (!doc.id) doc.id = doc.templateId || doc.projectId || 'local-doc';   /* 영속 키 보장 */
+
+        /* --- 자동저장 훅: 모든 편집 경로(H.push·undo·redo)가 지나가는 길목 1곳 --- */
+        if (!H._liveHook) {
+          H._liveHook = true;
+          ['push', 'undo', 'redo'].forEach((k) => {
+            const orig = H[k].bind(H);
+            H[k] = (...a) => {
+              const r = orig(...a);
+              const ee = PG.state.editor;
+              if (ee && ee.doc && !ee.review) {
+                markSaved('저장 중…');
+                L.autosave(ee.doc, { review: false, onSaved: () => { ee.savedAt = nowStr(); markSaved('저장됨 · ' + ee.savedAt); } });
+              }
+              return r;
+            };
+          });
+        }
+
+        /* --- 복원: 같은 doc을 다시 열면 저장본에서 이어서 (리뷰·프로젝트 열람 제외, doc당 1회) --- */
+        if (!e.review && doc.id && e._restoredFor !== doc.id && !(window.MK_PROJ && MK_PROJ.current())) {
+          e._restoredFor = doc.id;
+          const sv = L.loadDoc(doc.id);
+          if (sv && sv.doc && sv.doc.scenes && JSON.stringify(sv.doc) !== JSON.stringify(doc)) {
+            e.doc = sv.doc;
+            e.sceneIdx = Math.min(e.sceneIdx, sv.doc.scenes.length - 1);
+            e.selEl = null;
+            e.savedAt = nowStr();
             PG.render();
+            return;
+          }
+        }
+
+        if (cv2 && !cv2._live) {
+          cv2._live = true;
+
+          /* --- 스냅 가이드 라인 --- */
+          const gV = document.createElement('i'); gV.className = 'ed-guide gv';
+          const gH = document.createElement('i'); gH.className = 'ed-guide gh';
+          const showG = (g) => {
+            if (g.v != null) { gV.style.left = g.v + '%'; if (!gV.parentNode) cv2.appendChild(gV); } else if (gV.parentNode) gV.remove();
+            if (g.h != null) { gH.style.top = g.h + '%'; if (!gH.parentNode) cv2.appendChild(gH); } else if (gH.parentNode) gH.remove();
+          };
+          const hideG = () => { if (gV.parentNode) gV.remove(); if (gH.parentNode) gH.remove(); };
+
+          const GEO = ['x', 'y', 'w', 'h', 'size', 'rot'];
+          const pickGeo = (el) => { const o = {}; GEO.forEach((k) => { if (el[k] != null) o[k] = el[k]; }); return o; };
+          const putGeo = (el, g) => { GEO.forEach((k) => { if (g[k] != null) el[k] = g[k]; else delete el[k]; }); };
+          const paint = (n, el) => {
+            n.style.left = el.x + '%'; n.style.top = el.y + '%'; n.style.width = el.w + '%';
+            if (el.kind !== 'text' && el.h != null) n.style.height = el.h + '%';
+            n.style.transform = el.rot ? `rotate(${el.rot}deg)` : '';
+            if (el.kind === 'text' && el.size != null) n.style.fontSize = (el.size / 100 * cv2.clientHeight).toFixed(1) + 'px';
+          };
+
+          let ges = null;   /* {type, i, handle, start, sx, sy, rect, moved} */
+          cv2.addEventListener('pointerdown', (ev) => {
+            if (ev.button !== undefined && ev.button !== 0) return;
+            const t = ev.target;
+            if (t.isContentEditable || (t.closest && t.closest('[contenteditable]'))) return;
+            const hd = t.closest && t.closest('.hd');
+            const elDom = t.closest && t.closest('[data-el]');
+            if (!elDom || (t.closest && t.closest('.ed-quickpill'))) return;
+            const i = +elDom.dataset.el;
+            const el = scene2().elements[i]; if (!el) return;
+            e.selEl = i;
+            const rect = cv2.getBoundingClientRect();
+            const base = { type: 'move', i, start: pickGeo(el), sx: ev.clientX, sy: ev.clientY, rect, moved: false };
+            if (hd) {
+              const cls = [...hd.classList].find((c) => c !== 'hd');
+              ges = { ...base, type: cls === 'rot' ? 'rotate' : 'resize', handle: cls };
+            } else ges = base;
+            if (cv2.setPointerCapture && ev.pointerId != null) { try { cv2.setPointerCapture(ev.pointerId); } catch (_) {} }
+            ev.preventDefault();
+          });
+
+          const onMove = (ev) => {
+            if (!ges) return;
+            const el = scene2().elements[ges.i]; if (!el) { ges = null; return; }
+            const rw = ges.rect.width || 1, rh = ges.rect.height || 1;
+            const dx = (ev.clientX - ges.sx) / rw * 100;
+            const dy = (ev.clientY - ges.sy) / rh * 100;
+            if (Math.abs(dx) + Math.abs(dy) > 0.15) ges.moved = true;
+            if (ges.type === 'move') {
+              L.dragTo(el, ges.start.x, ges.start.y, dx, dy);
+              showG(L.snap(el, scene2().elements.filter((_, j) => j !== ges.i)));
+            } else if (ges.type === 'resize') {
+              L.resizeTo(el, ges.handle, ges.start, dx, dy, { aspect: ev.shiftKey });
+            } else {
+              const cx = ges.rect.left + (el.x + (el.w || 10) / 2) / 100 * rw;
+              const cy = ges.rect.top + (el.y + (el.h || 8) / 2) / 100 * rh;
+              L.rotateTo(el, cx, cy, ev.clientX, ev.clientY);
+            }
+            const n = cv2.querySelector(`[data-el="${ges.i}"]`);
+            if (n) paint(n, el);
+          };
+          const onUp = () => {
+            if (!ges) return;
+            hideG();
+            const g0 = ges; ges = null;
+            const el = scene2().elements[g0.i];
+            if (!el) { PG.render(); return; }
+            if (g0.moved) {
+              const post = pickGeo(el);
+              putGeo(el, g0.start);                      /* 되돌릴 지점 = 제스처 시작 상태 */
+              H.push(g0.type === 'move' ? '이동' : g0.type === 'resize' ? '크기 조절' : '회전');
+              putGeo(el, post);
+            }
+            PG.render();                                  /* 선택 상태·핸들·알약 반영 */
+          };
+          cv2.addEventListener('pointermove', onMove);
+          cv2.addEventListener('pointerup', onUp);
+          cv2.addEventListener('pointercancel', onUp);
+          window.addEventListener('pointermove', onMove);
+          window.addEventListener('pointerup', onUp);
+
+          /* --- 더블클릭 = 인라인 텍스트 편집 (캔버스에서 바로) --- */
+          cv2.addEventListener('dblclick', (ev) => {
+            const n = ev.target.closest && ev.target.closest('[data-editable]');
+            if (!n) return;
+            const i = +n.dataset.el;
+            const el = scene2().elements[i]; if (!el || el.kind !== 'text') return;
+            const span = n.querySelector('.ed-txt'); if (!span) return;
+            e.selEl = i;
+            try { span.contentEditable = 'plaintext-only'; } catch (_) {}
+            if (span.contentEditable !== 'plaintext-only') { try { span.contentEditable = 'true'; } catch (_) {} }
+            span.setAttribute('contenteditable', span.contentEditable === 'plaintext-only' ? 'plaintext-only' : 'true');   /* 속성 반영 보장 */
+            span.focus();
+            try { const r = document.createRange(); r.selectNodeContents(span); const s = window.getSelection(); s.removeAllRanges(); s.addRange(r); } catch (_) {}
+            let done = false;
+            const finish = (cancel) => {
+              if (done) return; done = true;
+              span.removeAttribute('contenteditable');
+              const t2 = cancel ? el.text : (span.innerText != null ? span.innerText : span.textContent);
+              if (!cancel && t2 !== el.text) { H.push('텍스트 편집'); L.editText(el, t2); }
+              PG.render();
+            };
+            span.onblur = () => finish(false);
+            span.onkeydown = (ke) => {
+              ke.stopPropagation();
+              if (ke.key === 'Enter' && !ke.shiftKey) { ke.preventDefault(); finish(false); }
+              if (ke.key === 'Escape') { ke.preventDefault(); finish(true); }
+            };
+          });
+        }
+
+        /* --- 키보드: 화살표 이동(Shift=크게)·Delete 삭제·Ctrl/Cmd+D 복제 --- */
+        if (!document._liveKbd) {
+          document._liveKbd = true;
+          document.addEventListener('keydown', (ev) => {
+            if (PG.state.screen !== 'editor' && PG.state.screen !== 'review') return;
+            const ee = PG.state.editor; if (!ee || !ee.doc || ee.selEl == null) return;
+            const tg = ev.target;
+            if (tg && (/^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName) || tg.isContentEditable)) return;
+            const sc = ee.doc.scenes[ee.sceneIdx];
+            const el = sc && sc.elements[ee.selEl]; if (!el) return;
+            if ((ev.metaKey || ev.ctrlKey) && ev.key.toLowerCase() === 'd') {
+              ev.preventDefault();
+              H.push('복제');
+              ee.selEl = L.dupEl(sc, ee.selEl);
+              PG.render(); return;
+            }
+            if (ev.key === 'Delete' || ev.key === 'Backspace') {
+              ev.preventDefault();
+              H.push('삭제');
+              L.removeEl(sc, ee.selEl); ee.selEl = null;
+              PG.render(); return;
+            }
+            if (/^Arrow(Left|Right|Up|Down)$/.test(ev.key)) {
+              ev.preventDefault();
+              if (!ee._nudging) { H.push('이동'); ee._nudging = true; setTimeout(() => { ee._nudging = false; }, 900); }
+              L.nudge(el, ev.key, ev.shiftKey);
+              const n = document.querySelector(`.ed-canvas [data-el="${ee.selEl}"]`);
+              if (n) { n.style.left = el.x + '%'; n.style.top = el.y + '%'; }
+              const ee2 = PG.state.editor;
+              L.autosave(ee2.doc, { review: !!ee2.review, onSaved: () => markSaved('저장됨 · ' + nowStr()) });
+            }
           });
         }
       }

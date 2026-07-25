@@ -142,5 +142,18 @@ window.MK_PROJ = (() => {
   }
   const current = () => currentId ? get(currentId) : null;
 
-  return { ago, list, get, createFromTemplate, createFromDoc, rename, toggleFav, toggleShare, trash, restore, purge, duplicate, logAI, logExport, open, current };
+  /* ---- R36 영속 브리지 — MK_LIVE가 localStorage 왕복에 사용 ---- */
+  const serialize = () => { ensure(); return JSON.stringify(STORE); };
+  const hydrate = (raw) => {
+    try {
+      const arr = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      if (!Array.isArray(arr) || !arr.length) return false;
+      seeded = true;                                   /* 시드 대신 저장본이 정답 */
+      STORE.splice(0, STORE.length);
+      arr.forEach((p) => { if (p && p.projectId && p.doc) STORE.push(p); });
+      return STORE.length > 0;
+    } catch (_) { return false; }
+  };
+
+  return { ago, list, get, createFromTemplate, createFromDoc, rename, toggleFav, toggleShare, trash, restore, purge, duplicate, logAI, logExport, open, current, serialize, hydrate };
 })();
