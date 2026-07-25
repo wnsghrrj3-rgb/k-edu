@@ -950,12 +950,15 @@ function trialRow(n, d, guesses, opts){
     const y = 34 + i*RH;
     const prod = d*q, rem = n - prod;
     let verdict, vcol, mark;
-    if(prod > n){ verdict = `${prod}${J(prod,'은','는')} ${n}보다 커요 → 몫을 1 작게`; vcol = EMPH; mark='✗'; }
-    else if(rem >= d){ verdict = `남는 ${rem}${J(rem,'이','가')} ${d}보다 커요 → 몫을 1 크게`; vcol = EMPH; mark='✗'; }
+    const by = opts.by || 1;
+    if(prod > n){ verdict = `${prod}${J(prod,'은','는')} ${n}보다 커요 → 몫을 ${by} 작게`; vcol = EMPH; mark='✗'; }
+    else if(by>1){ verdict = `${prod}${J(prod,'은','는')} ${n}보다 작아요 → ${q}번은 나눌 수 있어요`; vcol = OK; mark='✓'; }
+    else if(rem === d){ verdict = `남는 ${rem}${J(rem,'이','가')} ${d}${J(d,'과','와')} 같아요 → 한 번 더 나눌 수 있어요`; vcol = EMPH; mark='✗'; }
+    else if(rem > d){ verdict = `남는 ${rem}${J(rem,'이','가')} ${d}보다 커요 → 몫을 ${by} 크게`; vcol = EMPH; mark='✗'; }
     else if(rem === 0){ verdict = `딱 나누어떨어져요`; vcol = OK; mark='✓'; }
     else { verdict = `남는 ${rem}${J(rem,'이','가')} ${d}보다 작아요`; vcol = OK; mark='✓'; }
     const last = (i===guesses.length-1);
-    const good = (prod<=n && rem<d);
+    const good = opts.by>1 ? (prod<=n) : (prod<=n && rem<d);
 
     s += `<rect x="12" y="${y}" width="${W-24}" height="${RH-8}" rx="9" fill="${good?'rgba(21,128,61,.08)':'rgba(240,69,31,.06)'}" stroke="${good?OK:EMPH}" stroke-width="${good?2:1.4}" ${good?'':'stroke-dasharray="5 3"'}/>`;
     s += `<text x="24" y="${y+23}" font-size="17" font-family="${NUM}" font-weight="800" fill="${INK}">${d} × ${q} = ${(opts.hideLast&&last)?'?':prod}</text>`;
@@ -965,6 +968,30 @@ function trialRow(n, d, guesses, opts){
     }
   });
   if(opts.label) s += `<text x="${W/2}" y="${H-7}" text-anchor="middle" font-size="13.5" font-family="${KOR}" fill="${INK}">${opts.label}</text>`;
+  s += `</svg>`;
+  return s;
+}
+
+// ─── estWays : 어림 방법 여러 가지 (06차 신규) ───────────────
+// ways = [{expr:'300÷52', q:5}, ...] · opts: pickIdx(강조), real, label
+function estWays(n, d, ways, opts){
+  opts = opts || {};
+  const W = 420, CH = 52;
+  const H = 30 + ways.length*CH + (opts.real!==undefined?34:0) + (opts.label?22:8);
+  let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" width="100%">`;
+  s += `<rect x="0" y="0" width="${W}" height="${H}" fill="${PAPER}" rx="12"/>`;
+  s += `<text x="14" y="20" font-size="13" font-family="${KOR}" fill="${INKS}">${n} ÷ ${d} 의 몫을 어림하는 방법</text>`;
+  ways.forEach((w,i)=>{
+    const y = 30 + i*CH, on = (opts.pickIdx===i);
+    s += `<rect x="12" y="${y}" width="${W-24}" height="${CH-10}" rx="10" fill="${on?'rgba(246,181,38,.20)':'rgba(31,168,160,.10)'}" stroke="${on?GOLDD:TEALD}" stroke-width="${on?2.2:1.4}"/>`;
+    s += `<text x="26" y="${y+27}" font-size="16.5" font-family="${NUM}" font-weight="800" fill="${on?GOLDD:TEALD}">${w.expr}</text>`;
+    s += `<text x="${W-26}" y="${y+27}" text-anchor="end" font-size="15" font-family="${KOR}" fill="${INK}">몫을 ${w.q}쯤으로 어림</text>`;
+  });
+  if(opts.real!==undefined){
+    const y = 30 + ways.length*CH + 14;
+    s += `<text x="${W/2}" y="${y}" text-anchor="middle" font-size="16" font-family="${NUM}" font-weight="800" fill="${INK}">실제 계산 → ${opts.real}</text>`;
+  }
+  if(opts.label) s += `<text x="${W/2}" y="${H-6}" text-anchor="middle" font-size="13" font-family="${KOR}" fill="${INKS}">${opts.label}</text>`;
   s += `</svg>`;
   return s;
 }
