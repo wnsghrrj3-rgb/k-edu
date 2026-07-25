@@ -5,8 +5,9 @@
    MK_PLAY 등장 계획(enterPlan)을 수치 보간(stateAt)해 캔버스 합성 →
    VideoFrame → VideoEncoder(H.264, 배압 관리) → Mp4Muxer. 전부 브라우저 안 —
    서버 0원, 실시간 녹화가 아니라 프레임 드랍 0. 장면 전환 = 크로스페이드.
-   순수 계층(easeAt·stateAt·framePlan)은 jsdom 완전 검증, 인코딩은 실브라우저 몫.
-   미탑재(정직): 오디오 트랙 먹싱·삽입 영상의 프레임 재생 — 다음 몫.
+   순수 계층(easeAt·stateAt·framePlan·fitRect·musicTimeline)은 jsdom 완전 검증,
+   인코딩·시킹은 실브라우저 몫. R39: 삽입 영상 프레임 시킹 합성 + 장면 music
+   오디오 트랙(AAC 모노) 먹싱 — 같은 음악은 장면을 넘어 이어짐(플레이어 규약 동일).
    ============================================================ */
 window.MK_VIDEO = (() => {
   'use strict';
@@ -62,6 +63,36 @@ window.MK_VIDEO = (() => {
     return st;
   }
 
+  /* ---------- R39 순수 계층 — 영상 기하·음악 타임라인 ---------- */
+  const isVideoEl = (el) => !!(el && el.src && (el.video === true || el.kind === 'video' || /^data:video\//.test(el.src)));
+  const secondsInto = (t, dur) => (dur > 0 && isFinite(dur) ? ((t % dur) + dur) % dur : 0);
+  /* 소스(vw×vh)를 틀(fw×fh)에 맞추는 기하 — cover=소스 크롭, contain=목적지 축소 */
+  function fitRect(vw, vh, fw, fh, fit) {
+    vw = Math.max(1, vw || 1); vh = Math.max(1, vh || 1);
+    if (fit === 'contain') {
+      const s = Math.min(fw / vw, fh / vh), dw = vw * s, dh = vh * s;
+      return { mode: 'contain', dx: (fw - dw) / 2, dy: (fh - dh) / 2, dw, dh };
+    }
+    const s = Math.max(fw / vw, fh / vh), sw = fw / s, sh = fh / s;
+    return { mode: 'cover', sx: (vw - sw) / 2, sy: (vh - sh) / 2, sw, sh };
+  }
+  /* 장면 music → 시간 구간 — MK_PLAY 규약 그대로: 같은 음악은 장면을 넘어 이어짐 */
+  function musicTimeline(doc, planIn) {
+    const plan = planIn || framePlan(doc, {});
+    const segments = []; let t = 0;
+    plan.scenes.forEach((ps) => {
+      const sc = doc.scenes[ps.sceneIdx], m = sc && sc.music;
+      const key = m ? (m.src ? 'src:' + String(m.src).slice(0, 64) : (m.synth ? 'synth:' + m.synth : null)) : null;
+      if (key) {
+        const last = segments[segments.length - 1];
+        if (last && last.key === key && Math.abs(last.end - t) < 1e-6) last.end = t + ps.durSec;
+        else segments.push({ key, start: t, end: t + ps.durSec, music: m });
+      }
+      t += ps.durSec;
+    });
+    return { totalSec: plan.totalSec, segments };
+  }
+
   /* ---------- 프레임 플랜 — 순수 (MK_PLAY.sequence 기준 그대로) ---------- */
   function framePlan(doc, o) {
     o = o || {};
@@ -91,13 +122,89 @@ window.MK_VIDEO = (() => {
     const R = window.MK_RENDER;
     const bgOut = await R.toRaster(R.renderScene({ ...scene, elements: [] }, {}), { format: 'png', scale });
     const bg = await rasterToImage(bgOut.dataUrl);
-    const els = [];
+    const els = [], vids = [];
     for (let i = 0; i < scene.elements.length; i++) {
+      if (isVideoEl(scene.elements[i])) {                 /* R39 — 영상은 스프라이트 대신 프레임 시킹 */
+        els.push(null);
+        vids.push(await loadVideo(scene.elements[i].src));
+        continue;
+      }
+      vids.push(null);
       const only = { ...scene, background: 'rgba(0,0,0,0)', elements: [scene.elements[i]] };
       const out = await R.toRaster(R.renderScene(only, {}), { format: 'png', scale, transparent: true });
       els.push(await rasterToImage(out.dataUrl));
     }
-    return { bg, els };
+    return { bg, els, vids };
+  }
+
+  /* ---------- R39 — 삽입 영상 프레임 재생 (시킹 기반 — 실시간 아님, 드랍 0) ---------- */
+  function loadVideo(src) {
+    return new Promise((res) => {
+      const v = document.createElement('video');
+      v.muted = true; v.playsInline = true; v.preload = 'auto';
+      let done = false;
+      const fin = (val) => { if (!done) { done = true; res(val); } };
+      v.onloadeddata = () => fin(v);
+      v.onerror = () => fin(null);
+      try { v.src = src; } catch (_) { fin(null); }
+      setTimeout(() => fin(v.readyState >= 2 ? v : null), 5000);
+    });
+  }
+  function seekTo(v, t) {
+    return new Promise((res) => {
+      if (!v || !(v.duration > 0) || !isFinite(v.duration)) return res();
+      const target = secondsInto(t, v.duration);
+      if (Math.abs(v.currentTime - target) < 1 / (2 * FPS)) return res();
+      let done = false;
+      const fin = () => { if (!done) { done = true; v.removeEventListener('seeked', fin); res(); } };
+      v.addEventListener('seeked', fin);
+      try { v.currentTime = target; } catch (_) { fin(); }
+      setTimeout(fin, 400);                               /* 시킹 지연 상한 — 프레임은 마지막 디코드분 사용 */
+    });
+  }
+
+  /* ---------- R39 — 소리 트랙 준비: 타임라인 → 모노 PCM 마스터 ---------- */
+  async function buildMasterPCM(timeline, sr) {
+    const n = Math.max(1, Math.round(timeline.totalSec * sr));
+    const master = new Float32Array(n);
+    const FADE = Math.round(0.06 * sr);                   /* 구간 경계 클릭 방지 */
+    for (const seg of timeline.segments) {
+      const st = Math.round(seg.start * sr), en = Math.min(n, Math.round(seg.end * sr));
+      const len = en - st;
+      if (len <= 0) continue;
+      let pcm = null;
+      if (seg.music.synth && window.MK_AUDIO) {
+        pcm = window.MK_AUDIO.renderPattern(seg.music.synth, len / sr, sr);
+      } else if (seg.music.src) {
+        pcm = await decodeToPCM(seg.music.src, len, sr);  /* 실패 시 null → 그 구간만 무음(정직) */
+      }
+      if (!pcm) continue;
+      for (let i = 0; i < len; i++) {
+        let g = 0.85;
+        if (i < FADE) g *= i / FADE;
+        if (len - i < FADE) g *= (len - i) / FADE;
+        master[st + i] += (pcm[i] || 0) * g;
+      }
+    }
+    for (let i = 0; i < n; i++) master[i] = clamp(master[i], -1, 1);
+    return master;
+  }
+  async function decodeToPCM(src, lenSamples, sr) {
+    try {
+      const buf = await (await fetch(src)).arrayBuffer();
+      const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+      if (!OAC) return null;
+      const ab = await new OAC(1, 1, sr).decodeAudioData(buf);   /* 컨텍스트 sr 로 리샘플 */
+      const chs = []; for (let c = 0; c < ab.numberOfChannels; c++) chs.push(ab.getChannelData(c));
+      const src0 = ab.length;
+      const out = new Float32Array(lenSamples);
+      for (let i = 0; i < lenSamples; i++) {
+        const j = i % src0;                               /* 루프 — 플레이어 loop 규약과 동일 */
+        let s = 0; for (const ch of chs) s += ch[j];
+        out[i] = s / chs.length;
+      }
+      return out;
+    } catch (_) { return null; }
   }
 
   function loadMuxer() {
@@ -133,9 +240,22 @@ window.MK_VIDEO = (() => {
       const out = document.createElement('canvas'); out.width = W; out.height = H;
       const ctx = out.getContext('2d');
 
+      /* R39 — 소리 트랙: 장면 music 이 있고 AudioEncoder 지원 시에만 */
+      const SR = 48000;
+      const timeline = musicTimeline(doc, plan);
+      const wantAudio = timeline.segments.length > 0;
+      const canAudio = wantAudio && typeof AudioEncoder !== 'undefined';
+      let masterPCM = null, audioMsg = '';
+      if (wantAudio && !canAudio) audioMsg = '이 브라우저는 소리 저장을 지원하지 않아 무음으로 저장했어요';
+      if (canAudio) {
+        say('소리 준비 중…');
+        masterPCM = await buildMasterPCM(timeline, SR);
+      }
+
       const muxer = new Mp4Muxer.Muxer({
         target: new Mp4Muxer.ArrayBufferTarget(),
         video: { codec: 'avc', width: W, height: H },
+        ...(canAudio ? { audio: { codec: 'aac', sampleRate: SR, numberOfChannels: 1 } } : {}),
         fastStart: 'in-memory',
       });
       encoder = new VideoEncoder({
@@ -155,24 +275,42 @@ window.MK_VIDEO = (() => {
         for (let f = 0; f < frames; f++) {
           if (encError) throw encError;
           const t = f / FPS;
+          /* R39 — 영상 요소 프레임 시킹 (그리기 전에 완료) */
+          for (let i = 0; i < scene.elements.length; i++) {
+            if (sp.vids[i]) await seekTo(sp.vids[i], t);
+          }
           ctx.globalAlpha = 1; ctx.filter = 'none';
           ctx.clearRect(0, 0, W, H);
           ctx.drawImage(sp.bg, 0, 0, W, H);
           scene.elements.forEach((el, i) => {
             const st = stateAt(plans[i], el, t);
             if (st.alpha <= 0.001) return;
+            if (!sp.els[i] && !sp.vids[i]) return;         /* 영상 로드 실패 — 정직하게 비움 */
             ctx.save();
             ctx.globalAlpha = clamp(st.alpha, 0, 1);
             const ex = el.x / 100 * W, ew = el.w / 100 * W;
+            const ey = el.y / 100 * H;
             const eh = (el.h != null ? el.h / 100 * H : H * 0.2);
-            const cx = ex + ew / 2, cy = el.y / 100 * H + eh / 2;
+            const cx = ex + ew / 2, cy = ey + eh / 2;
             if (st.clipW != null) { ctx.beginPath(); ctx.rect(ex, 0, ew * st.clipW, H); ctx.clip(); }
             if (st.blur > 0.2) { try { ctx.filter = `blur(${(st.blur * pxu).toFixed(1)}px)`; } catch (_) {} }
             ctx.translate(cx, cy);
             if (st.rot) ctx.rotate(st.rot * Math.PI / 180);
             if (st.scale !== 1) ctx.scale(st.scale, st.scale);
             ctx.translate(-cx + st.dx * pxu, -cy + st.dy * pxu);
-            ctx.drawImage(sp.els[i], 0, 0, W, H);
+            if (sp.vids[i]) {                              /* R39 — 영상: radius 클립 + fit 기하 */
+              const v = sp.vids[i];
+              const rr = el.radius ? (el.radius > 100 ? Math.min(ew, eh) / 2 : Math.min(el.radius * pxu, Math.min(ew, eh) / 2)) : 0;
+              ctx.beginPath();
+              if (rr > 0 && ctx.roundRect) ctx.roundRect(ex, ey, ew, eh, rr);
+              else ctx.rect(ex, ey, ew, eh);
+              ctx.clip();
+              const fr = fitRect(v.videoWidth, v.videoHeight, ew, eh, el.fit);
+              if (fr.mode === 'cover') ctx.drawImage(v, fr.sx, fr.sy, fr.sw, fr.sh, ex, ey, ew, eh);
+              else ctx.drawImage(v, ex + fr.dx, ey + fr.dy, fr.dw, fr.dh);
+            } else {
+              ctx.drawImage(sp.els[i], 0, 0, W, H);
+            }
             ctx.restore();
           });
           /* 크로스페이드 — 이전 장면 마지막 프레임을 걷어냄 (kmake 방식) */
@@ -192,10 +330,33 @@ window.MK_VIDEO = (() => {
         }
         if (lastBitmap && lastBitmap.close) lastBitmap.close();
         lastBitmap = await createImageBitmap(out);
+        sp.vids.forEach((v) => { if (v) { try { v.src = ''; v.load && v.load(); } catch (_) {} } });
       }
       say('인코딩 마무리 중…');
       await encoder.flush();
       if (encError) throw encError;
+      /* R39 — 소리 트랙 인코딩 (AAC 모노) */
+      if (canAudio && masterPCM) {
+        say('소리 입히는 중…');
+        const aenc = new AudioEncoder({
+          output: (chunk, meta) => muxer.addAudioChunk(chunk, meta),
+          error: (e) => { encError = e; },
+        });
+        aenc.configure({ codec: 'mp4a.40.2', sampleRate: SR, numberOfChannels: 1, bitrate: 128000 });
+        const CH = 1024;
+        for (let off = 0; off < masterPCM.length; off += CH) {
+          const nF = Math.min(CH, masterPCM.length - off);
+          const ad = new AudioData({
+            format: 'f32-planar', sampleRate: SR, numberOfFrames: nF, numberOfChannels: 1,
+            timestamp: Math.round(off / SR * 1e6),
+            data: masterPCM.slice(off, off + nF),
+          });
+          aenc.encode(ad); ad.close();
+          if ((off / CH) % 64 === 0) await new Promise((r) => setTimeout(r, 0));
+        }
+        await aenc.flush(); aenc.close();
+        if (encError) throw encError;
+      }
       muxer.finalize();
       const blob = new Blob([muxer.target.buffer], { type: 'video/mp4' });
       const a = document.createElement('a');
@@ -203,7 +364,8 @@ window.MK_VIDEO = (() => {
       a.download = `${(doc.title || '케이메이커').replace(/[^\w가-힣 _-]/g, '')}.mp4`;
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-      return { ok: true, sec: Math.round(plan.totalSec), w: W, h: H, frames: plan.totalFrames };
+      return { ok: true, sec: Math.round(plan.totalSec), w: W, h: H, frames: plan.totalFrames,
+        audio: !!(canAudio && masterPCM), audioMsg };
     } catch (e) {
       return { ok: false, msg: (e && e.message) || '영상 저장에 실패했어요' };
     } finally {
@@ -234,8 +396,26 @@ window.MK_VIDEO = (() => {
     const p = framePlan(doc, {});
     if (p.totalFrames !== 60 + 90 || p.scenes[1].transIn !== TRANS_DUR || p.scenes[0].transIn !== 0) v.push('프레임 플랜 위반');
     if (!framePlan({ scenes: [{ duration: 999, elements: [] }] }, {}).capped) v.push('길이 상한 미작동');
+    /* R39 — 영상 기하: cover 소스 크롭·contain 목적지 축소 */
+    const cv = fitRect(1920, 1080, 100, 100, 'cover');
+    if (!(Math.abs(cv.sw - 1080) < 1e-6 && Math.abs(cv.sx - 420) < 1e-6)) v.push('cover 기하 위반');
+    const cn = fitRect(1920, 1080, 100, 100, 'contain');
+    if (!(Math.abs(cn.dw - 100) < 1e-6 && Math.abs(cn.dh - 56.25) < 1e-6 && Math.abs(cn.dy - 21.875) < 1e-6)) v.push('contain 기하 위반');
+    if (secondsInto(5.5, 2) !== 1.5 || secondsInto(3, 0) !== 0) v.push('루프 시각 위반');
+    if (!isVideoEl({ kind: 'video', src: 'data:video/mp4;base64,x' }) || isVideoEl({ kind: 'image', src: 'data:image/png;base64,x' })) v.push('영상 판별 위반');
+    /* R39 — 음악 타임라인: 같은 음악 병합·다른 음악 분리·무음 장면 공백 */
+    const md = { scenes: [
+      { duration: 2, elements: [], music: { synth: 'piano' } },
+      { duration: 3, elements: [], music: { synth: 'piano' } },
+      { duration: 2, elements: [] },
+      { duration: 2, elements: [], music: { synth: 'beat' } },
+    ] };
+    const tl = musicTimeline(md);
+    if (tl.segments.length !== 2) v.push('타임라인 병합·분리 위반');
+    else if (!(tl.segments[0].start === 0 && tl.segments[0].end === 5 && tl.segments[1].start === 7 && tl.segments[1].end === 9)) v.push('타임라인 경계 위반');
     return { ok: v.length === 0, violations: v };
   }
 
-  return { FPS, TRANS_DUR, MAX_SEC, easeAt, stateAt, framePlan, exportMP4, videoAudit, busy: () => busy };
+  return { FPS, TRANS_DUR, MAX_SEC, easeAt, stateAt, framePlan, exportMP4, videoAudit, busy: () => busy,
+    isVideoEl, secondsInto, fitRect, musicTimeline };
 })();

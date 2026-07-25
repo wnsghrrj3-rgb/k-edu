@@ -4,7 +4,7 @@
    진행바 실움직임·자동/수동 넘김. 하단 재생 버튼·미리보기 버튼 공용.
    순수 로직(sequence·animCss·sceneHTML)은 전부 jsdom 검증 가능,
    타이머는 주입식. R38: 장면 music 은 MK_AUDIO 로 실재생(파일·합성).
-   영상 프레임 실재생은 미구현(정직) — 다음 이식 몫.
+   R39: 삽입 영상은 <video> 무음 루프로 프레임 실재생.
    ============================================================ */
 window.MK_PLAY = (() => {
   'use strict';
@@ -89,7 +89,10 @@ window.MK_PLAY = (() => {
       const rad = el.radius ? `;border-radius:${el.radius > 100 ? '50%' : el.radius + 'px'}` : '';
       if (el.src) {
         const fit = el.fit === 'contain' ? 'contain' : 'cover';
-        return `<div class="mkp-el mkp-img" style="${pos}height:${el.h}%${rad};overflow:hidden${rot}${an}"><img src="${el.src}" alt="" style="width:100%;height:100%;object-fit:${fit};display:block"></div>`;
+        const media = (el.video === true || el.kind === 'video' || /^data:video\//.test(el.src))
+          ? `<video src="${el.src}" muted autoplay loop playsinline style="width:100%;height:100%;object-fit:${fit};display:block;pointer-events:none"></video>`   /* R39 — 영상 프레임 실재생 */
+          : `<img src="${el.src}" alt="" style="width:100%;height:100%;object-fit:${fit};display:block">`;
+        return `<div class="mkp-el mkp-img" style="${pos}height:${el.h}%${rad};overflow:hidden${rot}${an}">${media}</div>`;
       }
       if (el.fill && el.fill !== 'none') return `<div class="mkp-el" style="${pos}height:${el.h}%;background:${el.fill}${rad}${rot}${an}"></div>`;
       return `<div class="mkp-el mkp-ph" style="${pos}height:${el.h}%${rad}${rot}${an}">${esc(el.label || '')}</div>`;

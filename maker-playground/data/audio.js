@@ -4,7 +4,7 @@
             ② 내장 합성 3종(WebAudio 실합성 — 음원 파일 0개, 서버 0원)
    패턴은 순수 데이터(jsdom 완전 검증), 실발성은 AudioContext 주입식.
    MK_PLAY(슬라이드쇼)가 장면 music 을 이 엔진으로 실재생한다.
-   MP4 오디오 트랙 먹싱은 미탑재(정직) — 다음 몫.
+   R39: renderPattern(오프라인 PCM) — MK_VIDEO 가 MP4 소리 트랙에 먹싱.
    ============================================================ */
 window.MK_AUDIO = (() => {
   'use strict';
@@ -151,6 +151,44 @@ window.MK_AUDIO = (() => {
     S.playing = false; S.paused = false; S.key = null; S.kind = null; S.name = null; S.engine = 'none';
   }
 
+  /* ---------- R39 — 오프라인 PCM 렌더 (MP4 소리 트랙용, 순수 수학) ----------
+     scheduleLoop 와 같은 패턴을 실시간 대신 샘플 배열로 그린다 — jsdom 완전 검증. */
+  function waveAt(type, phaseCycles) {
+    const p = phaseCycles - Math.floor(phaseCycles);
+    if (type === 'square') return p < 0.5 ? 1 : -1;
+    if (type === 'triangle') return 4 * Math.abs(p - 0.5) - 1;
+    return Math.sin(2 * Math.PI * p);                       /* sine 기본 */
+  }
+  function envAt(tin, d, g) {
+    /* scheduleLoop 의 지수 램프 근사: 0.0001 → g (0.02s 어택) → 0.0001 (d 끝) */
+    const A = 0.02, lo = 0.0001, gg = clamp(g, 0.02, 1);
+    if (tin < 0 || tin > d + 0.03) return 0;
+    if (tin < A) return lo * Math.pow(gg / lo, tin / A);
+    const r = clamp((tin - A) / Math.max(d - A, 1e-6), 0, 1);
+    return gg * Math.pow(lo / gg, r);
+  }
+  function renderPattern(id, seconds, sr) {
+    const s = synth(id);
+    if (!s || !(seconds > 0)) return null;
+    sr = sr || 48000;
+    const n = Math.max(1, Math.round(seconds * sr));
+    const out = new Float32Array(n);
+    const loops = Math.ceil(seconds / s.loopSec);
+    for (let li = 0; li < loops; li++) {
+      const base = li * s.loopSec;
+      for (const nt of s.notes) {
+        const st = Math.max(0, Math.round((base + nt.t) * sr));
+        const en = Math.min(n, Math.round((base + nt.t + nt.d + 0.03) * sr));
+        for (let i = st; i < en; i++) {
+          const t = i / sr;
+          out[i] += waveAt(nt.type, nt.f * t) * envAt(t - (base + nt.t), nt.d, nt.g) * s.master;
+        }
+      }
+    }
+    for (let i = 0; i < n; i++) out[i] = clamp(out[i], -1, 1);
+    return out;
+  }
+
   /* 내 음악 파일 → dataURL (오디오 전용 — MK_LIVE 이미지 규약과 분리, 8MB) */
   function fileToSrc(file, cb, ReaderCls) {
     if (!file) return cb(null);
@@ -181,9 +219,18 @@ window.MK_AUDIO = (() => {
     if (!state().playing || state().engine !== 'none') v.push('미지원 환경 상태 유지 실패');
     stop();
     if (state().playing) v.push('정지 실패');
+    /* R39 — 오프라인 PCM: 길이 정확·무음 아님·클리핑 없음·없는 id 거절 */
+    const pcm = renderPattern('piano', 1, 48000);
+    if (!pcm || pcm.length !== 48000) v.push('PCM 길이 위반');
+    else {
+      let peak = 0; for (let i = 0; i < pcm.length; i++) peak = Math.max(peak, Math.abs(pcm[i]));
+      if (!(peak > 0.05)) v.push('PCM 무음');
+      if (peak > 1) v.push('PCM 클리핑');
+    }
+    if (renderPattern('없는음악', 1) !== null) v.push('없는 패턴 미거절');
     return { ok: v.length === 0, violations: v };
   }
 
   const state = () => ({ playing: S.playing, paused: S.paused, kind: S.kind, name: S.name, engine: S.engine });
-  return { SYNTHS, patternPlan, play, pause, resume, stop, fileToSrc, state, audioAudit };
+  return { SYNTHS, patternPlan, play, pause, resume, stop, fileToSrc, state, audioAudit, waveAt, envAt, renderPattern };
 })();

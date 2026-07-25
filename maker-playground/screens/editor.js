@@ -195,7 +195,10 @@ window.MK_SCREENS.editor = (() => {
       const cut = el.cutout ? ';background:none;border:1px dashed var(--mk-border)' : '';
       if (el.src) {                                    /* R36 실이미지 — dataURL 실표시, 라벨은 걷는다 */
         const fit = el.fit === 'contain' ? 'contain' : 'cover';
-        return `<div class="ed-el img-ph has-src ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%${rad}${rotSty(el)}"><img class="ed-imgreal" src="${el.src}" alt="${M().esc(el.label || '')}" draggable="false" style="object-fit:${fit}">${hd2}</div>`;
+        const media = (el.video === true || el.kind === 'video' || /^data:video\//.test(el.src))
+          ? `<video class="ed-imgreal" src="${el.src}" muted autoplay loop playsinline style="object-fit:${fit}"></video>`   /* R39 — 영상 프레임 실표시 */
+          : `<img class="ed-imgreal" src="${el.src}" alt="${M().esc(el.label || '')}" draggable="false" style="object-fit:${fit}">`;
+        return `<div class="ed-el img-ph has-src ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%${rad}${rotSty(el)}">${media}${hd2}</div>`;
       }
       return `<div class="ed-el img-ph ${fillCls} ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%${fillSty}${rad}${cut}${rotSty(el)}">${M().esc(el.label)}${hd2}</div>`;
     }).join('');
@@ -271,6 +274,7 @@ window.MK_SCREENS.editor = (() => {
         const al = el.align ? `;text-align:${el.align}` : '';
         return `<span style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight || 400};color:${col}${al}">${M().esc(el.text)}</span>`;
       }
+      if (el.src && (el.video === true || el.kind === 'video' || /^data:video\//.test(el.src))) return `<video src="${el.src}" muted preload="metadata" aria-hidden="true" style="position:absolute;left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;object-fit:${el.fit === 'contain' ? 'contain' : 'cover'};pointer-events:none"></video>`;   /* R39 — 영상 첫 프레임 미니 */
       if (el.src) return `<i style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;background-image:url('${el.src}');background-size:${el.fit === 'contain' ? 'contain' : 'cover'};background-position:center;background-repeat:no-repeat;opacity:1"></i>`;   /* R36 실이미지 미니 */
       return `<i style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%${el.fill ? ';background:' + el.fill + ';opacity:1' : ''}"></i>`;
     }).join('');
@@ -505,7 +509,7 @@ window.MK_SCREENS.editor = (() => {
               exMsg(`PPTX 저장 완료 — 슬라이드 ${r.slides}장${r.media ? ' · 사진 ' + r.media + '장 포함' : ''}`);
             } else if (b.dataset.ex === 'mp4') {                  /* R38 — MP4 실출력 (WebCodecs) */
               const r = await window.MK_VIDEO.exportMP4(doc, { onProgress: exMsg });
-              exMsg(r.ok ? `MP4 저장 완료 — ${r.sec}초 · ${r.w}×${r.h}` : r.msg);
+              exMsg(r.ok ? `MP4 저장 완료 — ${r.sec}초 · ${r.w}×${r.h}${r.audio ? ' · 🎵 소리 포함' : (r.audioMsg ? ' · ' + r.audioMsg : '')}` : r.msg);
             } else if (b.dataset.ex === 'svg') {
               const svg = window.MK_RENDER.toSVG(window.MK_RENDER.renderScene(doc.scenes[e.sceneIdx], {}));
               dl(exName(e.sceneIdx, 'svg'), 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg));
