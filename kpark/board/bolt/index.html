@@ -30,6 +30,8 @@ h1{font-family:var(--title);font-size:23px}h1 em{font-style:normal;color:var(--g
 .start{background:linear-gradient(180deg,#ffd35c,#f5a623);color:#3a2a00;border:none;border-radius:999px;
   padding:13px 36px;font-family:'Jua';font-size:17px;cursor:pointer;box-shadow:0 4px 18px rgba(255,211,92,.4)}
 #game{display:none}
+.gameGrid{display:flex;flex-direction:column}
+.gcol{display:flex;flex-direction:column;min-width:0}
 .score{display:flex;justify-content:space-between;align-items:center;margin:2px 0 8px;font-size:15px;gap:8px}
 .score .side{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px 10px;min-height:34px;flex:1}
 .score .side b{letter-spacing:1px}
@@ -61,6 +63,17 @@ svg{display:block;width:100%;height:auto;touch-action:manipulation}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 .confetti{position:fixed;top:-12px;width:9px;height:14px;z-index:19;pointer-events:none;animation:fall linear forwards}
 @keyframes fall{to{transform:translateY(105vh) rotate(680deg)}}
+
+/* 넓은 화면(크롬북·PC·태블릿 가로): 판은 왼쪽, 조작은 오른쪽 */
+@media (min-width:900px){
+  main{max-width:960px}
+  .gameGrid{flex-direction:row;gap:18px;align-items:flex-start}
+  .gcol.left{flex:1 1 auto;min-width:0}
+  .gcol.right{flex:0 0 300px;position:sticky;top:14px}
+  .gcol.right .hand{flex-wrap:wrap;overflow-x:visible;justify-content:center}
+  .gcol.right .ctrl{margin-top:12px}
+  .aiRow{margin-top:14px}
+}
 </style>
 </head>
 <body>
@@ -93,23 +106,29 @@ svg{display:block;width:100%;height:auto;touch-action:manipulation}
       <div id="roundNo">1 / 5</div>
       <div class="side" style="text-align:right"><b id="gem2"></b> 🌙</div>
     </div>
-    <div class="banner" id="banner"></div>
-    <div class="timerBox"><div id="timerBar"></div></div>
-    <div class="boardWrap"><svg id="board" xmlns="http://www.w3.org/2000/svg"></svg></div>
-    <div class="aiRow" id="aiRow">
-      <svg id="aiBoard" xmlns="http://www.w3.org/2000/svg"></svg>
-      <div class="msg" id="aiMsg">🤖 나도 푼다!</div>
-    </div>
-    <div class="hand" id="hand"></div>
-    <div class="ctrl">
-      <button class="cbtn" id="btnRot">↻ 돌리기</button>
-      <button class="cbtn" id="btnFlip">↔ 뒤집기</button>
-      <button class="cbtn go" id="btnPut" disabled>여기 놓기!</button>
-    </div>
-    <div class="ctrl">
-      <button class="cbtn" id="btnHint">💡 살짝 힌트 (+5초)</button>
-      <button class="cbtn" id="btnRe">🔄 다시</button>
-      <button class="cbtn" id="btnHome">🎪 다른 놀이</button>
+    <div class="gameGrid">
+      <div class="gcol left">
+        <div class="banner" id="banner"></div>
+        <div class="timerBox"><div id="timerBar"></div></div>
+        <div class="boardWrap"><svg id="board" xmlns="http://www.w3.org/2000/svg"></svg></div>
+      </div>
+      <div class="gcol right">
+        <div class="hand" id="hand"></div>
+        <div class="ctrl">
+          <button class="cbtn" id="btnRot">↻ 돌리기</button>
+          <button class="cbtn" id="btnFlip">↔ 뒤집기</button>
+          <button class="cbtn go" id="btnPut" disabled>여기 놓기!</button>
+        </div>
+        <div class="aiRow" id="aiRow">
+          <svg id="aiBoard" xmlns="http://www.w3.org/2000/svg"></svg>
+          <div class="msg" id="aiMsg">🤖 나도 푼다!</div>
+        </div>
+        <div class="ctrl">
+          <button class="cbtn" id="btnHint">💡 살짝 힌트 (+5초)</button>
+          <button class="cbtn" id="btnRe">🔄 다시</button>
+          <button class="cbtn" id="btnHome">🎪 다른 놀이</button>
+        </div>
+      </div>
     </div>
   </section>
 </main>
