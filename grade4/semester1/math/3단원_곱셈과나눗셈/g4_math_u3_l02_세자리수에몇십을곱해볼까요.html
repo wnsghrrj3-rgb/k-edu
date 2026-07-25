@@ -745,6 +745,187 @@ function groupPack(per, times, opts){
 }
 
 
+// ══════════════════════════════════════════════════════════════
+// v2 추가 — 나눗셈 계열 (04차~)
+// ══════════════════════════════════════════════════════════════
+
+// 긴 나눗셈 단계 추출 (몫 두 자리까지 동일 로직)
+function longDivSteps(n, d){
+  const ds = String(n).split('');
+  let rem = 0, steps = [], q = '', started = false;
+  for(let i=0;i<ds.length;i++){
+    rem = rem*10 + (+ds[i]);
+    const qd = Math.floor(rem/d);
+    if(qd>0 || started){
+      started = true; q += qd;
+      steps.push({idx:i, cur:rem, mul:qd*d, sub:rem-qd*d, qd:qd});
+      rem = rem - qd*d;
+    }
+  }
+  return { q: q===''?'0':q, rem: rem, steps: steps };
+}
+
+// ─── vertDiv : 세로 나눗셈 ────────────────────────────────────
+// opts: step(전개 단계 수) · ask(몫 자리 ?) · hideQ · annot(← 28×2) ·
+//       remBox(나머지 강조) · bug('rem') · label
+function vertDiv(n, d, opts){
+  opts = opts || {};
+  const R = longDivSteps(n, d);
+  const nStr = String(n), cols = nStr.length;
+  const CW = 30, RH = 34;
+  const dW = String(d).length * 20 + 26;      // 나누는 수 자리
+  const x0 = dW + 16;
+  const padR = opts.annot ? 118 : 14;
+  const W = x0 + cols*CW + padR;
+
+  const maxStep = opts.step === undefined ? R.steps.length : Math.min(opts.step, R.steps.length);
+  let y = 34;
+  const yQ = y;  y += RH;                      // 몫
+  const yN = y;  y += 10;                      // 나누어지는 수
+  const rowsY = [];
+  for(let k=0;k<maxStep;k++){
+    rowsY.push({mul:y}); y += RH;
+    rowsY[k].line = y - 6; y += 6;
+    rowsY[k].next = y; y += RH;
+  }
+  const H = y + (opts.label ? 18 : 2);
+
+  let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" width="100%" style="max-width:${Math.min(W,420)}px">`;
+  s += `<rect x="0" y="0" width="${W}" height="${H}" fill="${PAPER}" rx="12"/>`;
+
+  // 나눗셈 기호 ( ⌐ 모양 ) : 세로선 + 나누어지는 수 위 가로선
+  s += `<path d="M ${P(x0-10)} ${P(yN-24)} q 10 12 0 24" fill="none" stroke="${INK}" stroke-width="2.5"/>`;
+  s += `<line x1="${P(x0-10)}" y1="${P(yN-24)}" x2="${P(x0+cols*CW)}" y2="${P(yN-24)}" stroke="${INK}" stroke-width="2.5"/>`;
+  s += `<text x="${P(x0-26)}" y="${yN}" text-anchor="end" font-size="23" font-family="${NUM}" font-weight="800" fill="${INK}">${d}</text>`;
+  s += digits(n, cols, x0, yN, CW, INK, 23);
+
+  // 몫
+  if(opts.ask){
+    R.steps.forEach(st=>{
+      const cx = x0 + (st.idx+0.5)*CW;
+      s += `<text x="${P(cx)}" y="${yQ}" text-anchor="middle" font-size="26" font-family="${NUM}" font-weight="800" fill="${EMPH}">?</text>`;
+    });
+  } else if(!opts.hideQ){
+    R.steps.forEach((st,k)=>{
+      if(k>=maxStep) return;
+      const cx = x0 + (st.idx+0.5)*CW;
+      s += `<text x="${P(cx)}" y="${yQ}" text-anchor="middle" font-size="24" font-family="${NUM}" font-weight="800" fill="${TEALD}">${st.qd}</text>`;
+    });
+  }
+
+  // 단계 전개
+  for(let k=0;k<maxStep;k++){
+    const st = R.steps[k], ry = rowsY[k];
+    // 지도서 표기: 몫의 자릿값을 살려 쓴다 (31×20 = 620, 12×30 = 360)
+    const place = Math.pow(10, cols-1-st.idx);
+    const qFull = st.qd * place, mulFull = qFull * d;
+    const endCol = cols-1;                                   // mul 의 오른쪽 끝 = 마지막 열
+    const mulStr = String(mulFull);
+    const offX = x0 + (endCol+1-mulStr.length)*CW;
+    s += digits(mulStr, mulStr.length, offX, ry.mul, CW, GOLDD, 22);
+    if(opts.annot) s += `<text x="${P(x0+cols*CW+10)}" y="${ry.mul-2}" font-size="12.5" font-family="${KOR}" fill="${GOLDD}">← ${d}×${qFull}</text>`;
+    const lineL = offX - 4, lineR = x0 + (endCol+1)*CW;
+    s += `<line x1="${P(lineL)}" y1="${ry.line}" x2="${P(lineR)}" y2="${ry.line}" stroke="${INK}" stroke-width="2"/>`;
+
+    const nx = R.steps[k+1];
+    if(nx && k+1 < maxStep){
+      const cs = String(nx.cur), ox = x0 + (nx.idx+1-cs.length)*CW;
+      s += digits(cs, cs.length, ox, ry.next, CW, INK, 22);
+    } else {
+      // 마지막 → 나머지
+      const remV = (opts.bug==='rem') ? st.sub + d : st.sub;
+      const rs = String(remV), ox = x0 + (cols-rs.length)*CW;
+      const col = (opts.bug==='rem') ? EMPH : (st.sub>0 ? EMPH : INK);
+      s += digits(rs, rs.length, ox, ry.next, CW, col, 22);
+      if(st.sub>0 && opts.remBox){
+        s += `<rect x="${P(ox-4)}" y="${P(ry.next-23)}" width="${P(rs.length*CW+8)}" height="30" fill="none" stroke="${EMPH}" stroke-width="1.8" stroke-dasharray="4 3" rx="6"/>`;
+        s += `<text x="${P(x0+cols*CW+10)}" y="${ry.next-2}" font-size="12.5" font-family="${KOR}" fill="${EMPH}">← 나머지</text>`;
+      }
+    }
+  }
+
+  if(opts.bug) s += `<text x="${W-8}" y="18" text-anchor="end" font-size="12.5" font-family="${KOR}" fill="${EMPH}">✗ 잘못 계산한 것</text>`;
+  if(opts.label) s += `<text x="${W/2}" y="${H-4}" text-anchor="middle" font-size="13.5" font-family="${KOR}" fill="${INK}">${opts.label}</text>`;
+  s += `</svg>`;
+  return s;
+}
+
+// ─── baseTen : 수 모형 (백·십·일) ────────────────────────────
+// opts: bundleOf(십 모형을 n개씩 묶기) · label · asTens(백을 십으로 바꿔 표시)
+function baseTen(h, t, o, opts){
+  opts = opts || {};
+  let H100 = h, T = t;
+  if(opts.asTens){ T = t + h*10; H100 = 0; }
+  const bw = 46, tw = 13, th = 46, gap = 7;
+  const perRow = opts.perRow || 10;
+  const bundleOf = opts.bundleOf || 0;
+  const rows = Math.ceil(T/perRow) || 1;
+  const W = 420;
+  let y = 30;
+  let s = '';
+
+  // 백 모형
+  if(H100>0){
+    for(let i=0;i<H100;i++){
+      const x = 16 + i*(bw+gap);
+      s += `<rect x="${x}" y="${y}" width="${bw}" height="${bw}" fill="rgba(31,168,160,.18)" stroke="${TEALD}" stroke-width="1.8" rx="4"/>`;
+      for(let k=1;k<10;k++){
+        s += `<line x1="${x+k*bw/10}" y1="${y}" x2="${x+k*bw/10}" y2="${y+bw}" stroke="${TEALD}" stroke-width=".5" opacity=".5"/>`;
+        s += `<line x1="${x}" y1="${y+k*bw/10}" x2="${x+bw}" y2="${y+k*bw/10}" stroke="${TEALD}" stroke-width=".5" opacity=".5"/>`;
+      }
+    }
+    y += bw + 16;
+  }
+
+  // 십 모형 (묶음 표시)
+  const groups = bundleOf ? Math.floor(T/bundleOf) : 0;
+  const gGap = bundleOf ? 14 : 0;
+  let gx = 16, gy = y, drawn = 0, maxRowW = W - 24;
+  for(let g=0; g<(bundleOf?groups:1); g++){
+    const cnt = bundleOf ? bundleOf : T;
+    const gw = cnt*(tw+3) + 10;
+    if(gx + gw > maxRowW){ gx = 16; gy += th + 26; }
+    if(bundleOf) s += `<rect x="${gx-3}" y="${gy-6}" width="${gw}" height="${th+12}" fill="rgba(246,181,38,.14)" stroke="${GOLDD}" stroke-width="1.6" rx="8"/>`;
+    for(let i=0;i<cnt;i++){
+      s += `<rect x="${gx+2+i*(tw+3)}" y="${gy}" width="${tw}" height="${th}" fill="rgba(31,168,160,.20)" stroke="${TEALD}" stroke-width="1.4" rx="3"/>`;
+    }
+    if(bundleOf) s += `<text x="${P(gx+gw/2-3)}" y="${gy+th+22}" text-anchor="middle" font-size="12.5" font-family="${NUM}" font-weight="800" fill="${GOLDD}">${g+1}</text>`;
+    drawn += cnt; gx += gw + gGap;
+  }
+  const remT = T - drawn;
+  if(bundleOf && remT>0){
+    if(gx + remT*(tw+3)+10 > maxRowW){ gx = 16; gy += th + 26; }
+    for(let i=0;i<remT;i++) s += `<rect x="${gx+2+i*(tw+3)}" y="${gy}" width="${tw}" height="${th}" fill="#F2F2F2" stroke="${INKS}" stroke-width="1.2" rx="3"/>`;
+  }
+  y = gy + th + (bundleOf ? 30 : 14);
+
+  const HH = y + (opts.label ? 22 : 6);
+  let out = `<svg viewBox="0 0 ${W} ${HH}" xmlns="http://www.w3.org/2000/svg" role="img" width="100%">`;
+  out += `<rect x="0" y="0" width="${W}" height="${HH}" fill="${PAPER}" rx="12"/>` + s;
+  if(bundleOf) out += `<text x="${W/2}" y="${y+2}" text-anchor="middle" font-size="15.5" font-family="${NUM}" font-weight="800" fill="${INK}">십 모형 ${T}개를 ${bundleOf}개씩 → ${groups}묶음</text>`;
+  if(opts.label) out += `<text x="${W/2}" y="${HH-6}" text-anchor="middle" font-size="13.5" font-family="${KOR}" fill="${INKS}">${opts.label}</text>`;
+  out += `</svg>`;
+  return out;
+}
+
+// ─── checkEq : 검산식 (나누는 수)×(몫)+(나머지) ──────────────
+function checkEq(d, q, r, n, opts){
+  opts = opts || {};
+  const W = 420, H = r>0 ? 128 : 104;
+  let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" width="100%">`;
+  s += `<rect x="0" y="0" width="${W}" height="${H}" fill="${PAPER}" rx="12"/>`;
+  const rTxt = opts.hideRem ? '?' : r;
+  s += `<text x="${W/2}" y="34" text-anchor="middle" font-size="13.5" font-family="${KOR}" fill="${INKS}">${n} ÷ ${d} = ${q}${r>0?' … '+rTxt:''}</text>`;
+  const expr = r>0 ? `${d} × ${q} + ${rTxt} = ${opts.hideResult?'?':n}` : `${d} × ${q} = ${opts.hideResult?'?':n}`;
+  s += `<rect x="46" y="48" width="${W-92}" height="40" fill="rgba(31,168,160,.13)" stroke="${TEALD}" stroke-width="2" rx="10"/>`;
+  s += `<text x="${W/2}" y="76" text-anchor="middle" font-size="21" font-family="${NUM}" font-weight="800" fill="${TEALD}">${expr}</text>`;
+  if(r>0 && !opts.hideRem) s += `<text x="${W/2}" y="${H-14}" text-anchor="middle" font-size="13.5" font-family="${KOR}" fill="${EMPH}">나머지 ${r} 은(는) 나누는 수 ${d} 보다 작아야 해요</text>`;
+  if(r>0 && opts.hideRem) s += `<text x="${W/2}" y="${H-14}" text-anchor="middle" font-size="13.5" font-family="${KOR}" fill="${INKS}">검산식을 거꾸로 보면 나머지를 알 수 있어요</text>`;
+  s += `</svg>`;
+  return s;
+}
+
+
 (function renderModels(){
   const $=id=>document.getElementById(id);
   $('m-r1').innerHTML  = vertMul(134,2,{label:'3학년에 배운 (세 자리)×(몇)'});
