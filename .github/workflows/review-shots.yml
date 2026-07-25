@@ -1,0 +1,53 @@
+name: 검수 캡처
+
+on:
+  workflow_dispatch:
+    inputs:
+      screens:
+        description: '캡처할 화면 (비우면 기본 세트 / all 이면 전체 / 예: home,editor,ftue 또는 /kpark/,/kmake/)'
+        required: false
+        default: ''
+        type: string
+
+jobs:
+  shots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: 소스 받기
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Node 준비
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 의존성 설치
+        working-directory: maker-playground
+        run: npm install --no-audit --no-fund
+
+      - name: 로컬 서버 켜기
+        run: |
+          python3 -m http.server 8913 --bind 127.0.0.1 > /dev/null 2>&1 &
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8913/maker-playground/index.html > /dev/null && break
+            sleep 1
+          done
+
+      - name: 캡처 실행
+        working-directory: maker-playground
+        env:
+          SHOT_ORIGIN: http://127.0.0.1:8913
+        run: node shot-review.mjs "${{ inputs.screens }}"
+
+      - name: 결과 묶기
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: 검수캡처
+          path: maker-playground/shots/review/
+          retention-days: 14
+          if-no-files-found: error
