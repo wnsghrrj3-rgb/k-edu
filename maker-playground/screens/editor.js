@@ -258,6 +258,7 @@ window.MK_SCREENS.editor = (() => {
     return `<div class="ed-mini" style="background:${scene.background}" aria-hidden="true">${els}</div>`;
   };
   window.MK_MINI = MiniScene;   /* Round 13 — Brand Preview 등 외부 화면 공용 렌더러 */
+  window.MK_EDPARTS = { ChartSVG, TableHTML };   /* R37 — 플레이어 공용 부품 */
   /* ================= Bottom: Scene Strip / Timeline ================= */
   const BottomBar = (mode) => {
     const e = ed(), doc = e.doc;
@@ -269,7 +270,7 @@ window.MK_SCREENS.editor = (() => {
         `<button class="ed-tl-block ${i === e.sceneIdx ? 'on' : ''}" data-scene="${i}" style="width:${Math.max(118, s.duration * 40)}px">${MiniScene(s, 132)}<span class="tx"><b>${i + 1}. ${M().esc(s.name)}</b><span class="dur">${s.duration}초</span></span></button>` +
         (i < doc.scenes.length - 1 ? `<span class="ed-tl-tr mk-tooltip" data-tip="전환: ${M().esc(s.transition)}" aria-label="전환 ${M().esc(s.transition)}"><svg viewBox='0 0 24 24' width='11' height='11' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M4 8.5h13M14 5l3.5 3.5L14 12M20 15.5H7M10 12l-3.5 3.5L10 19'/></svg></span>` : '')).join('');
       return `<div class="ed-bottom">
-        <div class="ed-playbar">${M().IconButton({ icon: "<svg viewBox='0 0 24 24' width='12' height='12' fill='currentColor' aria-hidden='true'><path d='M8 5.5v13l11-6.5z'/></svg>", tip: '재생 (외형만)' })}<div class="track"><i style="width:${pct}%"></i></div><span style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">0:${String(done).padStart(2, '0')} / 0:${String(total).padStart(2, '0')} · 총 ${doc.scenes.length}장면</span></div>
+        <div class="ed-playbar"><span data-ed="play">${M().IconButton({ icon: "<svg viewBox='0 0 24 24' width='12' height='12' fill='currentColor' aria-hidden='true'><path d='M8 5.5v13l11-6.5z'/></svg>", tip: '재생' })}</span><div class="track"><i style="width:${pct}%"></i></div><span style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">0:${String(done).padStart(2, '0')} / 0:${String(total).padStart(2, '0')} · 총 ${doc.scenes.length}장면</span></div>
         <div class="ed-timeline">${blocks}<button class="ed-strip-add" data-ed="add" style="height:52px">＋</button></div></div>`;
     }
     return `<div class="ed-bottom"><div class="ed-strip-head"><span class="cap">장면</span><span class="prg"><b>${e.sceneIdx + 1}</b> / ${doc.scenes.length}</span></div><div class="ed-strip">
@@ -383,18 +384,51 @@ window.MK_SCREENS.editor = (() => {
         if (window.MK_LIVE && !e.review) { real = MK_LIVE.saveDoc(doc); MK_LIVE.saveProjects(); }   /* R36 — 실저장 */
         e.savedAt = '방금'; document.getElementById('edSave').textContent = e.review ? '리뷰 모드 · 저장되지 않음' : (real ? '저장됨 · 방금' : '저장됨 · 방금(세션)');
       };
-      root.querySelector('[data-ed="preview"]').onclick = () => M2.Modal.open(`<h2>미리보기</h2>
-        <div style="border:1px solid var(--mk-border);border-radius:8px;overflow:hidden;margin:12px 0">${M2.sceneThumb(doc.scenes[e.sceneIdx])}</div>
-        <p style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">전체 장면 재생은 후속 단계 (kmake 엔진 이식)</p>
-        <div style="text-align:right;margin-top:10px">${M2.Button({ label: '닫기', attrs: 'onclick="MK.Modal.close()"' })}</div>`);
+      /* R37 — 미리보기 = 실슬라이드쇼 (장면 순차·애니 실재생) */
+      root.querySelector('[data-ed="preview"]').onclick = () => window.MK_PLAY.open(doc, { startIdx: 0 });
+      const playBtn = root.querySelector('[data-ed="play"]');
+      if (playBtn) playBtn.onclick = () => window.MK_PLAY.open(doc, { startIdx: e.sceneIdx });
       root.querySelector('[data-ed="share"]').onclick = () => M2.Modal.open(`<h2>공유</h2>
         <p style="font:var(--mk-t-body-sm);color:var(--mk-text-secondary)">보기 전용 링크 (Placeholder)</p>
         <div style="display:flex;gap:8px;margin:12px 0"><input class="mk-input" value="kmaker.app/v/abc123" readonly>${M2.Button({ label: '복사', kind: 'secondary' })}</div>
         <div style="text-align:right">${M2.Button({ label: '닫기', attrs: 'onclick="MK.Modal.close()"' })}</div>`);
+      /* R37 — 내보내기 실동작: MK_RENDER 파이프라인 → PNG·SVG 실파일 다운로드 */
+      const dl = (name, href) => { const a = document.createElement('a'); a.download = name; a.href = href; document.body.appendChild(a); a.click(); a.remove(); };
+      const exName = (i, ext) => `${(doc.title || '케이메이커').replace(/[^\w가-힣 _-]/g, '')}-${i + 1}.${ext}`;
+      const exMsg = (t) => { const m2 = document.getElementById('exMsg'); if (m2) m2.textContent = t; };
+      const exportPng = async (si, scale) => {
+        const dlist = window.MK_RENDER.renderScene(doc.scenes[si], {});
+        const out = await window.MK_RENDER.toRaster(dlist, { format: 'png', scale });
+        if (out && out.dataUrl) { dl(exName(si, 'png'), out.dataUrl); return true; }
+        return false;
+      };
       root.querySelector('[data-ed="export"]').onclick = () => M2.Modal.open(`<h2>내보내기</h2>
-        <div class="ph-list" style="margin:12px 0">${['PNG 이미지', 'PDF 문서', 'PPT 파일', 'MP4 영상'].map((n) => `<button class="ph-item">${n}</button>`).join('')}</div>
-        <p style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">실제 출력은 후속 단계 (kmake 내보내기 엔진 이식)</p>
-        <div style="text-align:right;margin-top:10px">${M2.Button({ label: '닫기', attrs: 'onclick="MK.Modal.close()"' })}</div>`);
+        <div class="ph-list" style="margin:12px 0">
+          <button class="ph-item" data-ex="png1">PNG — 현재 장면</button>
+          <button class="ph-item" data-ex="png2">PNG 2x — 현재 장면 (고해상도)</button>
+          <button class="ph-item" data-ex="pngall">PNG — 전체 ${doc.scenes.length}장면</button>
+          <button class="ph-item" data-ex="svg">SVG — 현재 장면 (벡터)</button>
+        </div>
+        <p id="exMsg" style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">PPT·PDF·MP4 실출력은 다음 이식 몫이에요.</p>
+        <div style="text-align:right;margin-top:10px">${M2.Button({ label: '닫기', attrs: 'onclick="MK.Modal.close()"' })}</div>`,
+      ) || setTimeout(() => {
+        document.querySelectorAll('[data-ex]').forEach((b) => b.onclick = async () => {
+          try {
+            exMsg('만드는 중…');
+            if (b.dataset.ex === 'svg') {
+              const svg = window.MK_RENDER.toSVG(window.MK_RENDER.renderScene(doc.scenes[e.sceneIdx], {}));
+              dl(exName(e.sceneIdx, 'svg'), 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg));
+              exMsg('SVG 저장 완료');
+            } else if (b.dataset.ex === 'pngall') {
+              for (let i = 0; i < doc.scenes.length; i++) { await exportPng(i, 2); exMsg(`저장 중… ${i + 1}/${doc.scenes.length}`); }
+              exMsg(`전체 ${doc.scenes.length}장면 저장 완료`);
+            } else {
+              await exportPng(e.sceneIdx, b.dataset.ex === 'png2' ? 2 : 1);
+              exMsg('PNG 저장 완료');
+            }
+          } catch (err) { exMsg('실패: ' + err.message); }
+        });
+      }, 0);
       /* Scene 조작 */
       root.querySelectorAll('[data-op]').forEach((b) => b.onclick = (ev) => {
         ev.stopPropagation();

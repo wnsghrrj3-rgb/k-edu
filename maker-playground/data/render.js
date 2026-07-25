@@ -419,6 +419,10 @@ window.MK_RENDER = (() => {
         base.opacity = R2(base.opacity * anim.opacity);
         if (anim.dx || anim.dy || anim.scale !== 1 || anim.rotate) base.transform = `translate(${R2(anim.dx || 0)} ${R2(anim.dy || 0)}) rotate(${R2(anim.rotate || 0)} ${R2(f.x + f.w / 2)} ${R2(f.y + f.h / 2)}) scale(${R2(anim.scale)})`;
       }
+      if (el.rot) {                                    /* R37 — 편집 회전을 출력에도 동일 반영 */
+        const rt = `rotate(${R2(el.rot)} ${R2(f.x + f.w / 2)} ${R2(f.y + f.h / 2)})`;
+        base.transform = base.transform ? base.transform + ' ' + rt : rt;
+      }
       if (el.rotate) base.transform = (base.transform || '') + ` rotate(${el.rotate} ${R2(f.x + f.w / 2)} ${R2(f.y + f.h / 2)})`;
 
       if (el.kind === 'text') {
@@ -445,7 +449,7 @@ window.MK_RENDER = (() => {
           const mf = el.crop ? { x: f.x + f.w * el.crop.x, y: f.y + f.h * el.crop.y, w: f.w * el.crop.w, h: f.h * el.crop.h } : f;
           defs.push(`<clipPath id="${clipId}"><path d="${el.mask ? shapePath({ shape: el.mask }, f) : VEC.rect(mf.x, mf.y, mf.w, mf.h, 0)}"/></clipPath>`);
         }
-        ops.push({ op: 'image', frame: f, asset, label: el.label != null ? el.label : (asset && asset.label) || '', clip: clipId, cssFilter: filter, style: { fill: (asset && asset.fill) || '#E6ECF2', ...base } });
+        ops.push({ op: 'image', frame: f, asset, src: el.src || (asset && asset.src) || null, fit: el.fit || 'cover', radius: el.radius, label: el.label != null ? el.label : (asset && asset.label) || '', clip: clipId, cssFilter: filter, style: { fill: (asset && asset.fill) || '#E6ECF2', ...base } });
         return;
       }
       /* 순수 도형 */
@@ -492,6 +496,14 @@ window.MK_RENDER = (() => {
         parts.push(`<path d="${op.d}"${attr('fill', st.fill)}${attr('stroke', st.stroke)}${attr('stroke-width', st['stroke-width'])}${common}/>`);
       } else if (op.op === 'image') {
         const f = op.frame;
+        if (op.src) {                                  /* R37 — 실이미지 출력 */
+          const rr = op.radius ? Math.min(op.radius, Math.min(f.w, f.h) / 2) : 0;
+          const cid = 'ci' + Math.random().toString(36).slice(2, 8);
+          const pre = op.fit === 'contain' ? 'xMidYMid meet' : 'xMidYMid slice';
+          parts.push(`<g${common}><clipPath id="${cid}"><rect x="${R2(f.x)}" y="${R2(f.y)}" width="${R2(f.w)}" height="${R2(f.h)}" rx="${R2(rr)}"/></clipPath>` +
+            `<image href="${escX(op.src)}" x="${R2(f.x)}" y="${R2(f.y)}" width="${R2(f.w)}" height="${R2(f.h)}" preserveAspectRatio="${pre}" clip-path="url(#${cid})"${op.cssFilter ? ` style="filter:${escX(op.cssFilter)}"` : ''}/></g>`);
+          return;
+        }
         parts.push(`<g${op.clip ? ` clip-path="url(#${op.clip})"` : ''}${common}>` +
           `<path d="${VEC.rect(f.x, f.y, f.w, f.h, 10)}" fill="${escX(st.fill)}"${op.cssFilter ? ` style="filter:${escX(op.cssFilter)}"` : ''}/>` +
           (op.label ? `<text x="${R2(f.x + f.w / 2)}" y="${R2(f.y + f.h / 2)}" text-anchor="middle" dominant-baseline="middle" fill="#8895A5" font-size="${R2(Math.min(f.h * 0.16, 15))}" font-family="Pretendard, sans-serif">${escX(op.label)}</text>` : '') + `</g>`);
