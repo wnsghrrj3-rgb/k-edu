@@ -77,11 +77,30 @@ window.MK_SCREENS.editor = (() => {
         <button class="mk-btn accent" data-ed="ai-run">실행</button>
       </div>
       ${hist.length ? `<details class="aid-hist"><summary>AI 작업 기록 (${hist.length})</summary><ol>${hist.map((h) => `<li>${M().esc(h)}</li>`).join('')}</ol></details>` : ''}
-      <p class="ed-note">규칙 기반 파서 — LLM 미연결. 명령은 실제 캔버스를 변형하고 Undo로 되돌릴 수 있어요.</p></div>`;
+      <p class="ed-note">${window.MK_AILIVE && MK_AILIVE.hasKey()
+        ? '실 AI 연결됨 · Claude — 못 알아듣는 명령은 진짜 AI가 이어받아요. <button class="mk-btn sm" data-ed="ai-key">관리</button>'
+        : '규칙 파서로 동작 중 — 명령은 캔버스를 실변형(Undo 가능). <button class="mk-btn sm" data-ed="ai-key">실 AI 연결</button>'}</p></div>`;
   };
 
+  /* R38 — 오디오 패널: 합성 3종 실재생 + 내 음악 파일 → 장면 배경음 */
+  const AudioPanel = () => {
+    const e = ed(), doc = e.doc;
+    const sc = doc && doc.scenes[e.sceneIdx];
+    const cur = sc && sc.music ? sc.music.name || '배경음' : null;
+    const rows = (window.MK_AUDIO ? MK_AUDIO.SYNTHS : []).map((sy) =>
+      `<div class="ph-item" style="display:flex;align-items:center;gap:6px"><span style="flex:1">🎵 ${M().esc(sy.name)} <em style="opacity:.6">· ${sy.mood}</em></span>
+        <button class="mk-btn sm" data-au="pre" data-id="${sy.id}">듣기</button>
+        <button class="mk-btn sm accent" data-au="set" data-id="${sy.id}">씬에 넣기</button></div>`).join('');
+    return `<div class="ed-detail"><h3>오디오</h3>
+      <p class="ed-note" style="margin-top:0">이 장면 배경음: <b>${cur ? '🎵 ' + M().esc(cur) : '없음'}</b>${cur ? ` <button class="mk-btn sm" data-au="clear">빼기</button>` : ''}</p>
+      <div class="ph-list">${rows}
+        <button class="ph-item" data-au="file">내 음악 파일 넣기 (mp3 등 · 8MB)</button>
+        <button class="ph-item" data-au="stop">미리듣기 멈추기</button></div>
+      <p class="ed-note">배경음은 미리보기·재생에서 실재생돼요. MP4 오디오 트랙은 다음 몫이에요.</p></div>`;
+  };
   const DetailPanel = () => {
     if (ed().menu === 'ai') return AIDock();
+    if (ed().menu === 'audio' && window.MK_AUDIO && ed().doc) return AudioPanel();
     const name = (MENUS.find((m) => m[0] === ed().menu) || [])[2] || '';
     return `<div class="ed-detail"><h3>${name}</h3>
       <div class="ph-list">${(DETAIL[ed().menu] || []).map((d) => `<button class="ph-item">${d}</button>`).join('')}</div>
@@ -323,6 +342,30 @@ window.MK_SCREENS.editor = (() => {
           if (ev.shiftKey ? H.redo() : H.undo()) PG.render();
         });
       }
+      /* --- R38 오디오 패널 배선 --- */
+      root.querySelectorAll('[data-au]').forEach((b) => b.onclick = () => {
+        const A = window.MK_AUDIO, sc = doc.scenes[e.sceneIdx];
+        if (!A) return;
+        const k = b.dataset.au;
+        if (k === 'pre') { const sy = A.SYNTHS.find((x) => x.id === b.dataset.id); A.play({ name: sy.name, synth: sy.id }); }
+        else if (k === 'set') {
+          const sy = A.SYNTHS.find((x) => x.id === b.dataset.id);
+          H.push('배경음 넣기'); sc.music = { name: sy.name, synth: sy.id }; A.stop(); PG.render();
+        } else if (k === 'clear') { H.push('배경음 빼기'); delete sc.music; A.stop(); PG.render(); }
+        else if (k === 'stop') A.stop();
+        else if (k === 'file') {
+          const inp = document.createElement('input');
+          inp.type = 'file'; inp.accept = 'audio/*';
+          inp.onchange = () => A.fileToSrc(inp.files && inp.files[0], (src, err2) => {
+            if (err2) return alert(err2);
+            if (!src) return;
+            H.push('배경음 넣기');
+            sc.music = { name: inp.files[0].name.replace(/\.[^.]+$/, ''), src };
+            PG.render();
+          });
+          inp.click();
+        }
+      });
       /* --- AI Dock --- */
       const say = (role, text, err) => { e.aiLog = (e.aiLog || []).concat([{ role, text, err: !!err }]).slice(-14); };
       const runAI = (cmd) => {
@@ -336,6 +379,23 @@ window.MK_SCREENS.editor = (() => {
           if (t.ok) { say('ai', t.msg); PG.render(); const lg0 = document.getElementById('aidLog'); if (lg0) lg0.scrollTop = lg0.scrollHeight; return; }
           window.MK_HIST.undo();
         }
+        /* R38 — 실 AI: 규칙 파서·타임라인이 못 알아들은 명령은 (키가 연결돼 있으면) 진짜 Claude가 이어받는다 */
+        if (!res.ok && res.unknown && window.MK_AILIVE && MK_AILIVE.hasKey()) {
+          say('ai', 'Claude 생각 중…');
+          PG.render();
+          const cp = MK_AILIVE.contextPrompt(doc, e.sceneIdx, e.selEl);
+          MK_AILIVE.ask(`${cp.context}\n\n요청: ${c}`, { system: cp.system }).then((r2) => {
+            e.aiLog = (e.aiLog || []).filter((m) => m.text !== 'Claude 생각 중…');
+            if (r2.ok && cp.selText != null && /바꿔|다듬|고쳐|써\s*줘|줄여|늘려|번역/.test(c) && r2.text.length <= 400) {
+              H.push('AI 글다듬기');                    /* 실교체 — Undo 가능 */
+              doc.scenes[e.sceneIdx].elements[e.selEl].text = r2.text;
+              say('ai', '고쳤어요 — "' + r2.text.split('\n')[0].slice(0, 40) + '"');
+            } else say('ai', r2.ok ? r2.text : r2.msg, !r2.ok);
+            PG.render();
+            const lg2 = document.getElementById('aidLog'); if (lg2) lg2.scrollTop = lg2.scrollHeight;
+          });
+          return;
+        }
         say('ai', res.msg, !res.ok);
         PG.render();
         const lg = document.getElementById('aidLog'); if (lg) lg.scrollTop = lg.scrollHeight;
@@ -344,6 +404,24 @@ window.MK_SCREENS.editor = (() => {
       const aiIn = root.querySelector('[data-ed="ai-in"]'), aiRun = root.querySelector('[data-ed="ai-run"]');
       if (aiRun) aiRun.onclick = () => runAI(aiIn && aiIn.value);
       if (aiIn) { aiIn.onkeydown = (ev) => { if (ev.key === 'Enter') runAI(aiIn.value); }; }
+      /* R38 — 실 AI 키 연결/해제 (키는 이 기기 브라우저에만 저장) */
+      const aiKey = root.querySelector('[data-ed="ai-key"]');
+      if (aiKey) aiKey.onclick = () => {
+        const has = window.MK_AILIVE && MK_AILIVE.hasKey();
+        M2.Modal.open(`<h2>실 AI 연결</h2>
+          <p style="font:var(--mk-t-body-sm);color:var(--mk-text-secondary)">Anthropic API 키를 넣으면 AI 편집 입력창이 진짜 Claude로 이어져요.<br>키는 <b>이 기기 브라우저에만</b> 저장되고 어디로도 전송되지 않아요 (호출은 브라우저 → Anthropic 직행).</p>
+          <div style="display:flex;gap:8px;margin:12px 0"><input class="mk-input" id="aiKeyIn" type="password" placeholder="sk-ant-…" value=""></div>
+          <div style="display:flex;justify-content:space-between">
+            ${has ? M2.Button({ label: '연결 해제', kind: 'secondary', attrs: 'data-aik="clear"' }) : '<span></span>'}
+            <span>${M2.Button({ label: '닫기', attrs: 'onclick="MK.Modal.close()"' })} ${M2.Button({ label: '저장', kind: 'accent', attrs: 'data-aik="save"' })}</span>
+          </div>`);
+        setTimeout(() => {
+          const sv = document.querySelector('[data-aik="save"]');
+          if (sv) sv.onclick = () => { const v = document.getElementById('aiKeyIn').value; if (MK_AILIVE.setKey(v)) { M2.Modal.close(); PG.render(); } };
+          const clx = document.querySelector('[data-aik="clear"]');
+          if (clx) clx.onclick = () => { MK_AILIVE.clearKey(); M2.Modal.close(); PG.render(); };
+        }, 0);
+      };
       /* --- Chart/Table 속성 실동작 --- */
       const ct = root.querySelector('[data-ed="chart-type"]');
       if (ct) ct.onchange = () => { H.push('차트 유형 변경'); doc.scenes[e.sceneIdx].elements[e.selEl].chartType = ct.value; PG.render(); };
@@ -408,14 +486,27 @@ window.MK_SCREENS.editor = (() => {
           <button class="ph-item" data-ex="png2">PNG 2x — 현재 장면 (고해상도)</button>
           <button class="ph-item" data-ex="pngall">PNG — 전체 ${doc.scenes.length}장면</button>
           <button class="ph-item" data-ex="svg">SVG — 현재 장면 (벡터)</button>
+          <button class="ph-item" data-ex="pptx">PPTX — 전체 장면 (파워포인트)</button>
+          <button class="ph-item" data-ex="mp4">MP4 영상 — 전체 장면 (애니 포함)</button>
         </div>
-        <p id="exMsg" style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">PPT·PDF·MP4 실출력은 다음 이식 몫이에요.</p>
+        <p id="exMsg" style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">MP4는 크롬·엣지에서 돼요. PDF 한글·영상 오디오 트랙은 다음 몫이에요.</p>
         <div style="text-align:right;margin-top:10px">${M2.Button({ label: '닫기', attrs: 'onclick="MK.Modal.close()"' })}</div>`,
       ) || setTimeout(() => {
         document.querySelectorAll('[data-ex]').forEach((b) => b.onclick = async () => {
           try {
             exMsg('만드는 중…');
-            if (b.dataset.ex === 'svg') {
+            if (b.dataset.ex === 'pptx') {                       /* R38 — PPTX 실출력 (이미지 실임베드) */
+              const pages = doc.scenes.map((sc2) => window.MK_RENDER.renderScene(sc2, {}));
+              const r = window.MK_RENDER.toPPTX(pages, {});
+              const blob = new Blob([r.bytes], { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
+              const u = URL.createObjectURL(blob);
+              dl(`${(doc.title || '케이메이커').replace(/[^\w가-힣 _-]/g, '')}.pptx`, u);
+              setTimeout(() => URL.revokeObjectURL(u), 4000);
+              exMsg(`PPTX 저장 완료 — 슬라이드 ${r.slides}장${r.media ? ' · 사진 ' + r.media + '장 포함' : ''}`);
+            } else if (b.dataset.ex === 'mp4') {                  /* R38 — MP4 실출력 (WebCodecs) */
+              const r = await window.MK_VIDEO.exportMP4(doc, { onProgress: exMsg });
+              exMsg(r.ok ? `MP4 저장 완료 — ${r.sec}초 · ${r.w}×${r.h}` : r.msg);
+            } else if (b.dataset.ex === 'svg') {
               const svg = window.MK_RENDER.toSVG(window.MK_RENDER.renderScene(doc.scenes[e.sceneIdx], {}));
               dl(exName(e.sceneIdx, 'svg'), 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg));
               exMsg('SVG 저장 완료');

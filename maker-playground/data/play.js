@@ -3,7 +3,8 @@
    미리보기 모달 = 진짜 슬라이드쇼 — 장면 순차 재생·요소 등장 애니 실재생·
    진행바 실움직임·자동/수동 넘김. 하단 재생 버튼·미리보기 버튼 공용.
    순수 로직(sequence·animCss·sceneHTML)은 전부 jsdom 검증 가능,
-   타이머는 주입식. 오디오·영상 프레임 실재생은 미구현(정직) — 2차 이식 몫.
+   타이머는 주입식. R38: 장면 music 은 MK_AUDIO 로 실재생(파일·합성).
+   영상 프레임 실재생은 미구현(정직) — 다음 이식 몫.
    ============================================================ */
 window.MK_PLAY = (() => {
   'use strict';
@@ -106,7 +107,7 @@ window.MK_PLAY = (() => {
     const sc = doc.scenes[idx];
     return `
       <div class="mkp-top"><div class="mkp-segs">${segs}</div>
-        <span class="mkp-cap">${idx + 1} / ${doc.scenes.length} · ${esc(sc.name || '')}${sc.music ? ' · 🎵 ' + esc(sc.music.name || '배경음') + ' <em>(오디오 재생은 다음 이식)</em>' : ''}</span>
+        <span class="mkp-cap">${idx + 1} / ${doc.scenes.length} · ${esc(sc.name || '')}${sc.music ? ' · 🎵 ' + esc(sc.music.name || '배경음') : ''}</span>
         <button class="mkp-x" data-mkp="close" aria-label="닫기">✕</button></div>
       <div class="mkp-stagewrap" data-mkp="next">${sceneHTML(sc)}</div>
       <div class="mkp-ctl">
@@ -126,7 +127,7 @@ window.MK_PLAY = (() => {
       if (k === 'close') close();
       else if (k === 'prev') go(P.idx - 1);
       else if (k === 'next' || k === 'next2') go(P.idx + 1);
-      else if (k === 'pause') { P.paused = !P.paused; if (P.paused) stopTimer(); else arm(); paintStage(); }
+      else if (k === 'pause') { P.paused = !P.paused; const A = window.MK_AUDIO; if (P.paused) { stopTimer(); if (A) A.pause(); } else { arm(); if (A) A.resume(); } paintStage(); }
     });
   }
   const stopTimer = () => { if (P.timer != null) { (P.clearT || clearTimeout)(P.timer); P.timer = null; } };
@@ -135,11 +136,18 @@ window.MK_PLAY = (() => {
     if (P.paused) return;
     P.timer = (P.setT || ((f, t) => setTimeout(f, t)))(() => { P.timer = null; go(P.idx + 1); }, P.seq[P.idx].durMs);
   }
+  /* R38 — 장면 배경음 실재생 (같은 음악이면 끊김 없이 이어감) */
+  function syncAudio() {
+    const A = window.MK_AUDIO; if (!A) return;
+    const sc = P.doc && P.doc.scenes[P.idx];
+    if (sc && sc.music) A.play(sc.music); else A.stop();
+  }
   function go(idx) {
     if (!P.on) return;
     if (idx >= P.seq.length) return close();
     P.idx = Math.max(0, idx);
     paintStage();
+    syncAudio();
     arm();
   }
   function onKey(ev) {
@@ -163,11 +171,13 @@ window.MK_PLAY = (() => {
     document.body.appendChild(back);
     document.addEventListener('keydown', onKey, true);
     paintStage();
+    syncAudio();
     arm();
     return { ok: true, scenes: P.seq.length };
   }
   function close() {
     stopTimer();
+    if (window.MK_AUDIO) window.MK_AUDIO.stop();
     P.on = false;
     document.removeEventListener('keydown', onKey, true);
     const n = document.getElementById('mkPlayer'); if (n) n.remove();

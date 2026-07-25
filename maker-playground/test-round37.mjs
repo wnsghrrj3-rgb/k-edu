@@ -90,7 +90,8 @@ sec('4. 에디터 배선');
   P.close();
   PG.state.variants.editor = 'Design'; PG.render();
   root.querySelector('[data-ed="export"]').click();
-  T('내보내기 모달 — 실옵션 4종', root.querySelectorAll('[data-ex]').length === 4);
+  const exKinds = [...root.querySelectorAll('[data-ex]')].map((b) => b.dataset.ex);
+  T('내보내기 모달 — R37 실옵션 4종 존재(이후 라운드 추가 허용)', ['png1', 'png2', 'pngall', 'svg'].every((k) => exKinds.includes(k)));
   T('가짜 항목("PPT 파일" 버튼) 제거', ![...root.querySelectorAll('.ph-item')].some((b) => b.textContent === 'PPT 파일'));
   window.MK.Modal.close();
 }

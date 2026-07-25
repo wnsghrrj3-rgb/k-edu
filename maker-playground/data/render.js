@@ -663,12 +663,12 @@ window.MK_RENDER = (() => {
   const crc32 = (buf) => { let c = 0xFFFFFFFF; for (let i = 0; i < buf.length; i++) c = CRC_T[(c ^ buf[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
   const utf8 = (s) => { if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(s); const a = []; for (const ch of s) { const c = ch.codePointAt(0); if (c < 128) a.push(c); else if (c < 2048) a.push(192 | c >> 6, 128 | c & 63); else if (c < 65536) a.push(224 | c >> 12, 128 | c >> 6 & 63, 128 | c & 63); else a.push(240 | c >> 18, 128 | c >> 12 & 63, 128 | c >> 6 & 63, 128 | c & 63); } return new Uint8Array(a); };
 
-  function zipStore(entries) { /* entries: [{name, text}] — 무압축 ZIP */
+  function zipStore(entries) { /* entries: [{name, text}] 또는 [{name, bin:Uint8Array}] — 무압축 ZIP */
     const chunks = []; const central = []; let offset = 0;
     const u16 = (n) => [n & 255, n >> 8 & 255];
     const u32 = (n) => [n & 255, n >> 8 & 255, n >> 16 & 255, n >>> 24 & 255];
     entries.forEach((e) => {
-      const name = utf8(e.name), data = utf8(e.text), crc = crc32(data);
+      const name = utf8(e.name), data = e.bin || utf8(e.text), crc = crc32(data);
       const local = new Uint8Array([0x50, 0x4B, 3, 4, ...u16(20), ...u16(0x800), ...u16(0), ...u16(0x21), ...u16(0x54), ...u32(crc), ...u32(data.length), ...u32(data.length), ...u16(name.length), ...u16(0)]);
       chunks.push(local, name, data);
       central.push(new Uint8Array([0x50, 0x4B, 1, 2, ...u16(20), ...u16(20), ...u16(0x800), ...u16(0), ...u16(0x21), ...u16(0x54), ...u32(crc), ...u32(data.length), ...u32(data.length), ...u16(name.length), ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u32(0), ...u32(offset)]), name);
@@ -682,6 +682,25 @@ window.MK_RENDER = (() => {
     return out;
   }
 
+  /* dataURL → {ext, bin} — R38 이미지 실임베드용 (자체 base64 디코더, atob 무의존) */
+  const B64C = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  function dataUrlBytes(src) {
+    const m = /^data:image\/(png|jpe?g|gif|webp);base64,([A-Za-z0-9+/=\s]+)$/.exec(String(src || ''));
+    if (!m) return null;
+    const ext = m[1] === 'jpeg' ? 'jpg' : m[1];
+    const b = m[2].replace(/[=\s]/g, '');
+    const out = new Uint8Array(Math.floor(b.length * 3 / 4));
+    let o = 0;
+    for (let i = 0; i + 1 < b.length; i += 4) {
+      const n = (B64C.indexOf(b[i]) << 18) | (B64C.indexOf(b[i + 1]) << 12) |
+        ((B64C.indexOf(b[i + 2]) & 63) << 6) | (B64C.indexOf(b[i + 3]) & 63);
+      out[o++] = n >> 16 & 255;
+      if (i + 2 < b.length) out[o++] = n >> 8 & 255;
+      if (i + 3 < b.length) out[o++] = n & 255;
+    }
+    return { ext, bin: out.subarray(0, o), mime: ext === 'jpg' ? 'image/jpeg' : 'image/' + ext };
+  }
+
   const EMU = 914400; /* per inch */
   function toPPTX(pages, o) {
     o = o || {};
@@ -691,18 +710,31 @@ window.MK_RENDER = (() => {
     const hex6 = (c) => (typeof c === 'string' && c[0] === '#' ? (c.length === 4 ? c.slice(1).split('').map((x) => x + x).join('') : c.slice(1)).toUpperCase() : '1F2733');
     const warnAll = [];
     let shapeId = 1;
+    const media = [];                            /* R38 — 실이미지 실임베드: {name, bin, mime} */
 
-    const slideXml = (dl) => {
+    const slideXml = (dl, imgRels) => {
       const sps = [];
       dl.ops.forEach((op) => {
         const f = op.frame; const id = ++shapeId;
         const xfrm = `<a:xfrm><a:off x="${emuX(f.x, dl)}" y="${emuY(f.y, dl)}"/><a:ext cx="${Math.max(1, emuX(f.w, dl))}" cy="${Math.max(1, emuY(f.h, dl))}"/></a:xfrm>`;
+        if (op.op === 'image' && op.src) {        /* R38 — dataURL 이미지 = 진짜 그림으로 */
+          const db = dataUrlBytes(op.src);
+          if (db) {
+            const mName = `image${media.length + 1}.${db.ext}`;
+            media.push({ name: mName, bin: db.bin, mime: db.mime });
+            const rId = 'rIdImg' + (imgRels.length + 2);
+            imgRels.push({ rId, target: '../media/' + mName });
+            sps.push(`<p:pic><p:nvPicPr><p:cNvPr id="${id}" name="p${id}"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="${rId}"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr>${xfrm}<a:prstGeom prst="${op.radius ? 'roundRect' : 'rect'}"><a:avLst/></a:prstGeom></p:spPr></p:pic>`);
+            return;
+          }
+          warnAll.push({ code: 'unsupported-effect', msg: '이미지 원본 해석 불가 — 라벨 도형 폴백' });
+        }
         if (op.op === 'shape' || op.op === 'image') {
           const fill = (op.style && op.style.fill) || '#E6ECF2';
           if (typeof fill === 'string' && fill.startsWith('url(')) warnAll.push({ code: 'unsupported-effect', msg: 'PPTX 그라디언트 → 단색 근사' });
           if (fill === 'none' && !op.label) return;
           const geom = op.op === 'image' ? 'roundRect' : (op.d && op.d.includes('A') ? 'ellipse' : 'rect');
-          if (op.op === 'image') warnAll.push({ code: 'unsupported-effect', msg: `이미지 "${op.label || op.asset && op.asset.name || ''}" — 미디어 임베드 미탑재, 라벨 도형 폴백` });
+          if (op.op === 'image') warnAll.push({ code: 'unsupported-effect', msg: `이미지 "${op.label || op.asset && op.asset.name || ''}" — 라벨 도형 폴백` });
           sps.push(`<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="s${id}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr>${xfrm}<a:prstGeom prst="${geom}"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="${hex6(fill.startsWith && fill.startsWith('url(') ? '#DDE6EE' : fill)}"/></a:solidFill></p:spPr>` +
             (op.label ? `<p:txBody><a:bodyPr anchor="ctr"/><a:p><a:pPr algn="ctr"/><a:r><a:rPr lang="ko-KR" sz="1100"><a:solidFill><a:srgbClr val="8895A5"/></a:solidFill></a:rPr><a:t>${escX(op.label)}</a:t></a:r></a:p></p:txBody>` : '<p:txBody><a:bodyPr/><a:p/></p:txBody>') + `</p:sp>`);
         } else if (op.op === 'text') {
@@ -727,10 +759,21 @@ window.MK_RENDER = (() => {
       { name: 'ppt/slideLayouts/_rels/slideLayout1.xml.rels', text: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/></Relationships>` },
       { name: 'ppt/theme/theme1.xml', text: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="KMAKER"><a:themeElements><a:clrScheme name="KMAKER"><a:dk1><a:srgbClr val="1F2733"/></a:dk1><a:lt1><a:srgbClr val="FFFFFF"/></a:lt1><a:dk2><a:srgbClr val="26303C"/></a:dk2><a:lt2><a:srgbClr val="F5F7FA"/></a:lt2><a:accent1><a:srgbClr val="2E8C7F"/></a:accent1><a:accent2><a:srgbClr val="E8735A"/></a:accent2><a:accent3><a:srgbClr val="5B7FDB"/></a:accent3><a:accent4><a:srgbClr val="F0B429"/></a:accent4><a:accent5><a:srgbClr val="8895A5"/></a:accent5><a:accent6><a:srgbClr val="B072D6"/></a:accent6><a:hlink><a:srgbClr val="2E8C7F"/></a:hlink><a:folHlink><a:srgbClr val="8895A5"/></a:folHlink></a:clrScheme><a:fontScheme name="KMAKER"><a:majorFont><a:latin typeface="Pretendard"/><a:ea typeface="Pretendard"/><a:cs typeface=""/></a:majorFont><a:minorFont><a:latin typeface="Pretendard"/><a:ea typeface="Pretendard"/><a:cs typeface=""/></a:minorFont></a:fontScheme><a:fmtScheme name="Office"><a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:fillStyleLst><a:lnStyleLst><a:ln><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln><a:ln><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln><a:ln><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln></a:lnStyleLst><a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst><a:bgFillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:bgFillStyleLst></a:fmtScheme></a:themeElements></a:theme>` },
     ];
-    pages.forEach((dl, i) => entries.push({ name: `ppt/slides/slide${i + 1}.xml`, text: slideXml(dl) }));
-    pages.forEach((_, i) => entries.push({ name: `ppt/slides/_rels/slide${i + 1}.xml.rels`, text: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/></Relationships>` }));
+    const slideRels = [];
+    pages.forEach((dl, i) => {
+      const imgRels = [];
+      entries.push({ name: `ppt/slides/slide${i + 1}.xml`, text: slideXml(dl, imgRels) });
+      slideRels.push(imgRels);
+    });
+    pages.forEach((_, i) => entries.push({ name: `ppt/slides/_rels/slide${i + 1}.xml.rels`, text: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>${slideRels[i].map((r) => `<Relationship Id="${r.rId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="${r.target}"/>`).join('')}</Relationships>` }));
+    if (media.length) {                          /* R38 — 미디어 실엔트리 + 콘텐츠 타입 등재 */
+      media.forEach((m) => entries.push({ name: 'ppt/media/' + m.name, bin: m.bin }));
+      const exts = [...new Set(media.map((m) => m.name.split('.').pop()))];
+      entries[0].text = entries[0].text.replace('<Default Extension="rels"',
+        exts.map((x) => `<Default Extension="${x}" ContentType="${x === 'jpg' ? 'image/jpeg' : 'image/' + x}"/>`).join('') + '<Default Extension="rels"');
+    }
 
-    return { bytes: zipStore(entries), slides: N, entries: entries.map((e) => e.name), warnings: warnAll };
+    return { bytes: zipStore(entries), slides: N, media: media.length, entries: entries.map((e) => e.name), warnings: warnAll };
   }
 
   /* ================================================================
