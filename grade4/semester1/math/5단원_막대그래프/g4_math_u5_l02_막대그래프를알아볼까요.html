@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<!--
+  g4_math_u5_l02 — 막대그래프를 알아볼까요 [4학년 5단원 02차시, 단일 40분]
+  단원: 4학년 1학기 5단원 「막대그래프」 / 지도서 수학 108~109, 익힘 62~63
+  base: g4_math_u4_l08(엔진·채점부·CSS 계승) / 부품은 전면 신규 도메인(bar_parts v1)
+  성격: 막대그래프 도입 — 그림그래프와 비교 · 구성 요소 · 세로형/가로형 [4수04-01]
+  부품: barChart(단원 시그니처) · picGraph · dataTable
+  ★ 수량을 나타내는 것은 막대의 "길이" — 그림그래프의 "그림 개수"와 대비시킨다
+  ★ 오개념 직격(q13): 막대의 폭이 달라도 나타내는 자료는 같다 (수량은 길이로만)
+  ⚠️ 지도서 372쪽 — 용어를 약속하기 전(슬5)까지는 "막대그래프"라는 말을 쓰지 않는다
+  ⚠️ 도입 차시이므로 눈금 한 칸의 크기는 1로 고정(지도서 372쪽)
+  학습목표: 막대그래프를 보고 막대그래프의 구성 요소와 편리한 점을 알 수 있다.
+  점수: 기본 4x10(q8~11) + 응용 4x15(q12~15) = 100 / v14 teal
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g4_math_u5_l02_v1">
+<title>막대그래프를 알아볼까요 · K-edu 4학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#FBF7F1; --ink:#243043; --ink-soft:#62708A;
+  --coral:#1FA8A0; --coral-deep:#147F79; --coral-soft:#D6F1EF;
+  --teal:#1FA8A0; --teal-deep:#147F79; --teal-soft:#D6F1EF;
+  --gold:#F6B526; --emph:#F0451F; --line:#ECE3D6; --mark:#FFE08A;
+  --f-title:'Jua',sans-serif; --f-body:'Gowun Dodum',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:0 14px 34px -18px rgba(36,48,67,.4);
+  --fs-title: clamp(28px, 4.6vw, 52px);
+  --fs-heading: clamp(24px, 3.7vw, 37px);
+  --fs-body: clamp(21px, 3.2vw, 31px);
+  --fs-caption: clamp(19px, 2.9vw, 27px);
+  --fs-label: clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --em-md: clamp(44px, 7vw, 80px);
+  --em-lg: clamp(66px, 10vw, 122px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(760px, 96vw);
+  --mw-lg: min(840px, 96vw);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+@keyframes ka-swap-r { 0%{transform:translateX(0); opacity:1;} 50%{transform:translateX(20px); opacity:.3;} 100%{transform:translateX(0); opacity:1;} }
+@keyframes ka-mark { from{background-size:0 100%;} to{background-size:100% 100%;} }
+
+/* ───── 컨테이너 ───── */
+.ka { background:var(--paper); width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; color:var(--ink); position:relative; overflow:hidden; }
+
+/* ───── 상단바 (topbar) ───── */
+.ka-h { display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); padding:clamp(11px,1.7vw,15px) clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:hover { transform:translateY(-1px); }
+.ka-pill { font-family:var(--f-title); background:var(--coral); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-where { font-size:clamp(14px,1.6vw,18px); color:var(--ink-soft); flex-shrink:1; }
+.ka-where b { color:var(--ink); }
+.ka-bar { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:46vw; }
+.ka-dot { width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s, background .2s; }
+.ka-dot:hover { transform:scale(1.2); }
+.ka-dot.active { background:var(--coral); transform:scale(1.3); }
+.ka-dot.done { background:var(--teal); }
+.ka-score { font-family:var(--f-title); background:#FFF8E1; color:#F57F17; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); padding:0; border-radius:50%; cursor:pointer; flex-shrink:0; color:var(--coral-deep); font-size:clamp(13px,2vw,16px); width:clamp(32px,4.5vw,38px); height:clamp(32px,4.5vw,38px); display:flex; align-items:center; justify-content:center; }
+
+/* ───── 본문 ───── */
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; gap:clamp(7px,1.3vw,12px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(8px,1.4vh,16px) clamp(16px,4vw,48px); overflow:hidden; }
+.slide.active { display:flex; }
+.slide-title { font-family:var(--f-title); font-size:var(--fs-title); margin:0; line-height:1.18; color:var(--ink); font-weight:400; text-align:center; flex-shrink:0; }
+.slide-sub { font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(10px,1.6vw,16px); left:clamp(16px,4vw,40px); font-family:var(--f-title); color:var(--coral); font-size:clamp(13px,1.9vw,18px); letter-spacing:.4px; z-index:5; }
+
+/* ───── 하단 내비 ───── */
+.ka-f { display:flex; justify-content:flex-end; gap:12px; padding:clamp(12px,1.7vw,16px) clamp(16px,4vw,40px); background:linear-gradient(to top, var(--paper) 62%, transparent); flex-shrink:0; }
+.ka-prev, .ka-hint, .ka-next { font-family:var(--f-title); font-size:clamp(15px,1.9vw,22px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(10px,1.4vw,15px) clamp(20px,2.8vw,38px); cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translateY(-2px); }
+.ka-prev { margin-right:auto; }
+.ka-hint { color:#F57F17; border-color:#FFE08A; }
+.ka-next { background:var(--coral); color:#fff; border-color:var(--coral); }
+.ka-prev:disabled, .ka-next:disabled { opacity:.35; cursor:default; transform:none; }
+.ka-hint:disabled { opacity:.4; cursor:default; }
+
+/* ───── 공통 콘텐츠 ───── */
+.concept-box { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,18px) clamp(18px,2.8vw,28px); border-radius:20px; font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); text-align:center; line-height:1.5; box-shadow:var(--shadow); }
+.concept-box strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.big-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-lg); line-height:1; }
+.intro-q { font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; }
+.intro-q strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.goal-list { display:flex; flex-direction:column; gap:clamp(7px,1.4vw,11px); font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); }
+.goal-list li { background:#fff; border:2px solid var(--line); padding:clamp(8px,1.5vw,12px) clamp(14px,2.6vw,20px); border-radius:16px; list-style:none; box-shadow:var(--shadow); }
+.goal-list li strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+.recall-box { background:var(--teal-soft); padding:clamp(14px,2.8vw,22px) clamp(20px,3.6vw,30px); border-radius:22px; font-size:var(--fs-body); color:var(--teal-deep); max-width:var(--mw-sm); text-align:center; line-height:1.6; }
+.recall-box strong { color:var(--teal-deep); font-family:var(--f-title); font-weight:400; }
+.scene { background:#fff; border:3px solid var(--coral-soft); border-radius:28px; padding:clamp(18px,3.4vw,30px) clamp(22px,4.2vw,38px); display:flex; flex-direction:column; gap:clamp(10px,2vw,16px); align-items:center; min-width:clamp(280px,50vw,460px); box-shadow:0 6px 0 var(--coral-soft); }
+.pencil-row { display:flex; gap:clamp(4px,0.8vw,8px); font-size:var(--em-sm); flex-wrap:wrap; justify-content:center; max-width:var(--mw-sm); color:var(--ink); }
+
+/* ───── place_value_block (모형) ───── */
+.pv-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.pv-row { display:flex; gap:clamp(10px,2.2vw,20px); align-items:flex-end; justify-content:center; flex-wrap:wrap; }
+.pv-group { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,0.8vw,7px); }
+.pv-label { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.pv-block svg { display:block; }
+.swap-arrow { font-size:var(--em-sm); color:var(--coral); animation:ka-swap-r 1.6s ease-in-out infinite; }
+.exchange-eq { font-size:var(--fs-heading); color:var(--ink); display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); flex-wrap:wrap; justify-content:center; }
+
+/* ───── number_line ───── */
+.nl-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(12px,2.4vw,20px); max-width:var(--mw-lg); width:100%; }
+.nl-svg { width:min(760px,94vw); height:auto; }
+.nl-svg .nl-tick text { font-family:var(--f-num); font-weight:800; fill:var(--ink-soft); }
+.nl-pick { cursor:pointer; }
+.nl-pick:hover circle { fill:var(--coral-soft); }
+.nl-pick.correct circle { fill:var(--teal); }
+.nl-pick.wrong circle { fill:var(--coral-soft); }
+
+/* ───── 100의 여러 의미 ───── */
+.mean-grid { display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-sm); width:100%; }
+.mean-item { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,17px) clamp(16px,3vw,24px); border-radius:18px; font-size:var(--fs-body); color:var(--ink); text-align:center; box-shadow:var(--shadow); }
+.mean-item strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+
+/* ───── 문제 공통 ───── */
+.q-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; font-weight:400; }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:20px; padding:clamp(8px,1.6vw,14px) clamp(24px,4.6vw,44px); min-width:clamp(120px,22vw,200px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.q-pad { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(6px,1.2vw,10px); max-width:clamp(280px,56vw,460px); }
+.q-key { background:#fff; border:2px solid var(--line); border-radius:14px; padding:clamp(7px,1.5vw,12px) 0; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, background .15s, border-color .15s; box-shadow:0 4px 0 var(--line); }
+.q-key:hover { background:var(--coral-soft); border-color:var(--coral); }
+.q-key:active { transform:translateY(3px); box-shadow:none; }
+.q-key.fn { background:#FFF8E1; color:#F57F17; font-family:var(--f-title); font-size:var(--fs-body); border-color:#FFE08A; box-shadow:0 4px 0 #FFE08A; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); color:var(--teal-deep); min-height:1.4em; text-align:center; }
+.q-fb.wrong { color:var(--emph); }
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-sm); }
+.mcq-opt { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,15px); font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .2s; box-shadow:0 6px 0 var(--coral-soft); font-weight:400; }
+.mcq-opt:hover { border-color:var(--coral); }
+.mcq-opt:active { transform:translateY(4px); box-shadow:none; }
+.mcq-opt.correct { border-color:var(--teal-deep); background:var(--teal); color:#fff; box-shadow:0 6px 0 var(--teal-deep); animation:ka-pop .5s ease; }
+.mcq-opt.wrong { border-color:var(--emph); background:#FFE0DA; color:var(--coral-deep); animation:ka-shake .35s; }
+.mcq-hint { font-family:var(--f-title); font-size:var(--fs-body); color:#F57F17; background:#FFF8E1; border-radius:16px; padding:clamp(8px,1.6vw,12px) clamp(14px,2.6vw,20px); max-width:var(--mw-sm); text-align:center; display:none; }
+.mcq-hint.show { display:block; }
+
+/* ───── trace ───── */
+.trace-row { display:flex; gap:clamp(12px,2.4vw,22px); justify-content:center; flex-wrap:wrap; }
+.trace-cell { width:clamp(64px,12vw,110px); height:clamp(84px,16vw,150px); border:5px dashed var(--coral-soft); border-radius:20px; display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:#D8C4B8; cursor:pointer; transition:all .2s; background:#fff; }
+.trace-cell.done { color:var(--coral-deep); border-style:solid; border-color:var(--coral); background:var(--coral-soft); }
+
+/* ───── match ───── */
+.match-stage { display:flex; flex-direction:column; gap:clamp(8px,1.5vw,13px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.match-cols { display:flex; gap:clamp(20px,4vw,48px); }
+.match-col { display:flex; flex-direction:column; gap:clamp(6px,1.1vw,9px); }
+.match-card { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(16px,3vw,26px); font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .15s; min-width:clamp(70px,13vw,108px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.match-card:hover { border-color:var(--coral); }
+.match-card.sel { border-color:var(--gold); background:var(--mark); }
+.match-card.matched { border-color:var(--teal-deep); background:var(--teal); color:#fff; cursor:default; box-shadow:0 5px 0 var(--teal-deep); }
+
+/* ───── multi judge ───── */
+.judge-grid { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); max-width:var(--mw-sm); width:100%; }
+.judge-item { display:flex; align-items:center; gap:clamp(10px,2vw,16px); background:#fff; border:3px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(14px,2.6vw,20px); box-shadow:0 5px 0 var(--coral-soft); }
+.judge-text { flex:1; font-size:var(--fs-body); color:var(--ink); text-align:left; }
+.judge-text strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.judge-btns { display:flex; gap:clamp(6px,1.2vw,10px); }
+.judge-btn { border:3px solid var(--line); border-radius:14px; padding:clamp(6px,1.2vw,10px) clamp(12px,2.4vw,18px); font-family:var(--f-title); font-size:var(--fs-heading); cursor:pointer; background:#fff; color:var(--ink-soft); transition:transform .1s; }
+.judge-btn:active { transform:translateY(3px); }
+.judge-btn.pick-o { background:var(--teal-soft); color:var(--teal-deep); border-color:var(--teal); }
+.judge-btn.pick-x { background:var(--coral-soft); color:var(--coral-deep); border-color:var(--coral); }
+.judge-item.right { border-color:var(--teal-deep); box-shadow:0 5px 0 var(--teal-deep); }
+.judge-item.miss { border-color:var(--emph); animation:ka-shake .35s; }
+
+/* ───── 정리/자기평가/다음 ───── */
+.summary-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.summary-card { background:#fff; border:2px solid var(--line); border-radius:22px; padding:clamp(18px,3.4vw,30px); font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; box-shadow:var(--shadow); }
+.summary-card strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.wrap-msg { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--coral-deep); }
+.self-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(14px,2.6vw,22px); }
+.self-row { display:flex; gap:clamp(12px,2.4vw,20px); flex-wrap:wrap; justify-content:center; }
+.self-btn { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,16px) clamp(14px,2.8vw,22px); cursor:pointer; display:flex; flex-direction:column; gap:clamp(3px,0.7vw,6px); align-items:center; transition:transform .12s, border-color .15s; box-shadow:0 6px 0 var(--coral-soft); }
+.self-btn:hover { border-color:var(--coral); }
+.self-btn:active { transform:translateY(4px); box-shadow:none; }
+.self-btn.selected { border-color:var(--gold); background:var(--mark); }
+.self-btn-stars { font-size:var(--em-sm); color:var(--gold); }
+.self-btn-name { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.next-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-md); }
+.next-card { background:var(--teal-soft); border-radius:22px; padding:clamp(20px,3.8vw,32px); display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); align-items:center; }
+.next-emojis { font-size:var(--em-md); }
+.next-label { font-size:var(--fs-body); color:var(--teal-deep); text-align:center; }
+.home-prompt { font-size:var(--fs-caption); color:var(--coral-deep); background:var(--coral-soft); border-radius:18px; padding:clamp(12px,2.4vw,18px) clamp(18px,3.4vw,28px); text-align:center; }
+
+
+  /* 세로셈 (3학년 덧셈·뺄셈) */
+  .vadd { display:inline-grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:clamp(2px,0.6vw,4px) clamp(8px,1.6vw,14px); font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--ink); justify-items:center; align-items:center; background:#fff; border:2px solid var(--line); border-radius:18px; padding:clamp(12px,2vw,20px) clamp(18px,3vw,30px); box-shadow:var(--shadow); }
+  .vadd .op { color:var(--coral-deep); }
+  .vadd .ln { grid-column:1/-1; width:100%; height:3px; background:var(--ink); border-radius:2px; }
+  .vadd .sum { color:var(--coral-deep); }
+  .pv-sum-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-md); }
+
+/* ───── 부품 스테이지 (각도 단원) ───── */
+.pvc-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(10px,2vw,16px); max-width:var(--mw-lg); width:100%; }
+.pvc { display:flex; gap:clamp(4px,1vw,8px); }
+.pvc-col { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,0.9vw,7px); }
+.pvc-head { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); }
+.pvc-cell { width:clamp(46px,9.2vw,74px); height:clamp(56px,11vw,88px); display:flex; align-items:center; justify-content:center; border:3px solid var(--line); border-radius:14px; font-family:var(--f-num); font-weight:800; font-size:var(--em-sm); background:#fff; color:var(--ink); box-shadow:0 4px 0 var(--line); }
+.pvc-cell.on { color:#fff; background:var(--coral); border-color:var(--coral-deep); box-shadow:0 4px 0 var(--coral-deep); }
+.pvc-cell.zero { color:#C7CEDA; }
+/* ───── billRow (1000원 지폐) ───── */
+.bill-row { display:flex; flex-wrap:wrap; gap:clamp(4px,0.9vw,7px); justify-content:center; max-width:var(--mw-sm); }
+.bill { background:#E7F3EA; border:2px solid var(--coral-soft); border-radius:10px; padding:clamp(5px,1vw,8px) clamp(8px,1.6vw,12px); font-family:var(--f-title); font-size:var(--fs-label); color:var(--coral-deep); display:flex; flex-direction:column; align-items:center; gap:2px; }
+.bill .bem { font-size:var(--fs-body); line-height:1; }
+/* ───── bigLine (큰 수 수직선) ───── */
+.bl-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(12px,2.4vw,20px); max-width:var(--mw-lg); width:100%; }
+.bl-svg { width:min(760px,94vw); height:auto; }
+.bl-svg text { font-family:var(--f-num); font-weight:800; }
+.pvc-stage svg{width:100%;height:auto;display:block;max-width:460px;margin:0 auto;}
+</style>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 목록</button>
+    <span class="ka-pill">2차시</span>
+    <span class="ka-where">수학 4-1 · <b>5. 막대그래프</b></span>
+    <div class="ka-bar" id="dots"></div>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+  <div class="ka-m">
+
+    <!-- 슬 1 도입 -->
+    <div class="slide active" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">진로 체험관에 다녀왔어요</h2>
+      <div class="intro-q">우리 반 친구들이 <strong>어떤 체험</strong>을 했는지 조사했어요.<br>참여한 학생 수를 <strong>한눈에 비교</strong>하려면<br>어떻게 나타내는 것이 좋을까요?</div>
+    </div>
+
+    <!-- 슬 2 목표 -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">이번 시간에 할 일</h2>
+      <ul class="goal-list">
+        <li>같은 자료를 <strong>두 가지 그래프</strong>로 견주어 봐요</li>
+        <li>새로운 그래프의 <strong>이름과 구성 요소</strong>를 알아봐요</li>
+        <li>이 그래프의 <strong>편리한 점</strong>을 찾아봐요</li>
+      </ul>
+    </div>
+
+    <!-- 슬 3 표 -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입 · 살펴보기</div>
+      <h2 class="slide-title">조사해서 표로 정리했어요</h2>
+      <div class="pvc-stage">
+        <div id="m-c1"></div>
+        <div class="concept-box">표를 보면 <strong>정확한 수</strong>를 알 수 있어요.<br>그런데 어느 체험이 <strong>얼마나 더 많은지</strong>는<br>숫자를 하나하나 견주어 봐야 알겠네요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 4 전개1 · 그림그래프 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · ① 그림그래프</div>
+      <h2 class="slide-title">3학년에서 배운 그림그래프</h2>
+      <div class="pvc-stage">
+        <div id="m-c2"></div>
+        <div class="concept-box">수를 <strong>그림의 크기와 개수</strong>로 나타냈어요.<br>무엇에 대한 자료인지 한눈에 알기 좋지요.<br>그런데 <strong>얼마나 더 많은지</strong>는 그림을 세어야 해요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 5 전개2 · 막대그래프 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · ② 새로운 그래프</div>
+      <h2 class="slide-title">막대의 <strong>길이</strong>로 나타내면</h2>
+      <div class="pvc-stage">
+        <div id="m-c3"></div>
+        <div class="concept-box">조사한 수량을 <strong>막대 모양</strong>으로 나타낸 그래프를<br><strong>막대그래프</strong>라고 해요.<br>가로는 <strong>체험 활동</strong>, 세로는 <strong>학생 수</strong>, 세로 눈금 한 칸은 <strong>1명</strong>이에요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 6 전개3 · 비교 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · ③ 견주어 보기</div>
+      <h2 class="slide-title">두 그래프의 같은 점과 다른 점</h2>
+      <div class="pvc-stage">
+        <div id="m-c4"></div>
+        <div class="concept-box"><strong>같은 점</strong> — 둘 다 체험 활동별 학생 수를 나타내요.<br><strong>다른 점</strong> — 그림그래프는 <strong>그림</strong>으로, 막대그래프는 <strong>막대의 길이</strong>로 나타내요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 7 전개4 · 가로형 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · ④ 눕혀도 돼요</div>
+      <h2 class="slide-title">막대를 가로로 눕히면</h2>
+      <div class="pvc-stage">
+        <div id="m-c5"></div>
+        <div class="concept-box">같은 자료를 막대만 <strong>가로로 눕혔어요.</strong><br>가로가 <strong>학생 수</strong>, 세로가 <strong>체험 활동</strong>으로 <strong>자리가 바뀌었지요.</strong><br>막대의 길이가 수량을 나타내는 것은 <strong>똑같아요.</strong></div>
+      </div>
+    </div>
+
+    <!-- 슬 8 기본 q8 (10점) MCQ -->
+    <div class="slide" data-stage="기본문제" data-q-id="q8" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">이 막대그래프에서 <strong>막대의 길이</strong>는<br>무엇을 나타낼까요?</div>
+        <div class="pvc-stage"><div id="m-q8"></div></div>
+        <div class="mcq-opts" id="q8-opts">
+          <button class="mcq-opt" data-correct="0">체험 활동의 종류</button>
+          <button class="mcq-opt" data-correct="1">참여한 체험 활동별 학생 수</button>
+          <button class="mcq-opt" data-correct="0">체험 활동을 한 시간</button>
+          <button class="mcq-opt" data-correct="0">체험 활동의 순서</button>
+        </div>
+        <div class="mcq-hint" data-hints='["세로에 무엇이 쓰여 있는지 살펴봐요.","막대가 길수록 그 체험을 한 학생이 많아요."]'></div>
+        <div class="q-fb" id="q8-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 9 기본 q9 (10점) -->
+    <div class="slide" data-stage="기본문제" data-q-id="q9" data-q-points="10" data-answer="1">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">이 막대그래프에서 <strong>세로 눈금 한 칸</strong>은<br>몇 명을 나타낼까요?</div>
+        <div class="pvc-stage"><div id="m-q9"></div></div>
+        <div class="q-display" id="q9-display">?</div>
+        <div class="q-pad" id="q9-pad"></div>
+        <div class="mcq-hint" data-hints='["0에서 5까지 칸이 몇 개인지 세어 봐요.","5칸이 5명이니 한 칸은 5 ÷ 5 명이에요."]'></div>
+        <div class="q-fb" id="q9-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 10 기본 q10 (10점) -->
+    <div class="slide" data-stage="기본문제" data-q-id="q10" data-q-points="10" data-answer="9">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt"><strong>미디어 콘텐츠 창작자</strong> 체험을 한 학생은<br>몇 명일까요?</div>
+        <div class="pvc-stage"><div id="m-q10"></div></div>
+        <div class="q-display" id="q10-display">?</div>
+        <div class="q-pad" id="q10-pad"></div>
+        <div class="mcq-hint" data-hints='["막대의 끝이 어느 눈금에 닿았는지 봐요.","눈금 한 칸이 1명이니 칸 수를 세면 돼요."]'></div>
+        <div class="q-fb" id="q10-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 11 기본 q11 (10점) MCQ -->
+    <div class="slide" data-stage="기본문제" data-q-id="q11" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">자료를 <strong>막대그래프</strong>로 나타내면<br>무엇이 편리할까요?</div>
+        <div class="mcq-opts" id="q11-opts">
+          <button class="mcq-opt" data-correct="0">자료의 정확한 수를 적지 않아도 돼요</button>
+          <button class="mcq-opt" data-correct="0">그림을 예쁘게 그릴 수 있어요</button>
+          <button class="mcq-opt" data-correct="0">조사를 하지 않아도 결과를 알 수 있어요</button>
+          <button class="mcq-opt" data-correct="1">막대의 길이만 보고 수량의 많고 적음을 한눈에 비교할 수 있어요</button>
+        </div>
+        <div class="mcq-hint" data-hints='["표와 견주면 무엇이 더 빠른가요?","숫자를 하나씩 읽지 않아도 길이로 바로 알 수 있어요."]'></div>
+        <div class="q-fb" id="q11-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 12 응용 q12 (15점) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q12" data-q-points="15" data-answer="6">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">학생이 <strong>가장 많은</strong> 체험과 <strong>가장 적은</strong> 체험의<br>학생 수의 <strong>차</strong>는 몇 명일까요?</div>
+        <div class="pvc-stage"><div id="m-q12"></div></div>
+        <div class="q-display" id="q12-display">?</div>
+        <div class="q-pad" id="q12-pad"></div>
+        <div class="mcq-hint" data-hints='["막대가 가장 긴 것과 가장 짧은 것을 찾아요.","캐릭터 디자이너 10명, 노인 전문 간호사 4명."]'></div>
+        <div class="q-fb" id="q12-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 13 응용 q13 (15점) MCQ ★오개념 -->
+    <div class="slide" data-stage="응용문제" data-q-id="q13" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">막대의 <strong>굵기(폭)</strong>만 다르게 그린 두 그래프예요.<br>두 그래프가 나타내는 자료는 어떨까요?</div>
+        <div class="pvc-stage"><div id="m-q13"></div></div>
+        <div class="mcq-opts" id="q13-opts">
+          <button class="mcq-opt" data-correct="0">막대가 굵은 왼쪽이 더 많은 자료를 나타내요</button>
+          <button class="mcq-opt" data-correct="0">막대가 가는 오른쪽이 더 많은 자료를 나타내요</button>
+          <button class="mcq-opt" data-correct="1">두 그래프가 나타내는 자료는 같아요 — 수량은 막대의 길이로만 나타내기 때문이에요</button>
+          <button class="mcq-opt" data-correct="0">굵기가 다르면 서로 견줄 수 없어요</button>
+        </div>
+        <div class="mcq-hint" data-hints='["두 그래프에서 막대의 길이를 견주어 봐요.","길이가 똑같지요? 굵기는 수량과 상관이 없어요."]'></div>
+        <div class="q-fb" id="q13-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 14 응용 q14 (15점) MCQ -->
+    <div class="slide" data-stage="응용문제" data-q-id="q14" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">막대를 <strong>가로로 눕힌</strong> 그래프예요.<br>세로형과 견주었을 때 <strong>달라진 점</strong>은 무엇일까요?</div>
+        <div class="pvc-stage"><div id="m-q14"></div></div>
+        <div class="mcq-opts" id="q14-opts">
+          <button class="mcq-opt" data-correct="1">학생 수와 체험 활동을 나타내는 자리가 서로 바뀌었어요</button>
+          <button class="mcq-opt" data-correct="0">학생 수가 모두 줄어들었어요</button>
+          <button class="mcq-opt" data-correct="0">막대의 길이가 수량을 나타내지 않게 되었어요</button>
+          <button class="mcq-opt" data-correct="0">체험 활동의 개수가 달라졌어요</button>
+        </div>
+        <div class="mcq-hint" data-hints='["가로와 세로에 무엇이 쓰여 있는지 봐요.","수량을 길이로 나타내는 것은 그대로예요."]'></div>
+        <div class="q-fb" id="q14-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 15 응용 q15 (15점) MCQ -->
+    <div class="slide" data-stage="응용문제" data-q-id="q15" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt"><strong>그림그래프</strong>와 <strong>막대그래프</strong>의 <strong>다른 점</strong>은<br>무엇일까요?</div>
+        <div class="mcq-opts" id="q15-opts">
+          <button class="mcq-opt" data-correct="0">그림그래프는 항목을 나타내고 막대그래프는 나타내지 않아요</button>
+          <button class="mcq-opt" data-correct="1">수량을 그림그래프는 그림으로, 막대그래프는 막대의 길이로 나타내요</button>
+          <button class="mcq-opt" data-correct="0">그림그래프는 제목이 없고 막대그래프는 제목이 있어요</button>
+          <button class="mcq-opt" data-correct="0">두 그래프는 서로 다른 자료만 나타낼 수 있어요</button>
+        </div>
+        <div class="mcq-hint" data-hints='["두 그래프 모두 같은 자료를 나타냈었지요.","달랐던 건 수량을 무엇으로 나타내느냐였어요."]'></div>
+        <div class="q-fb" id="q15-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 16 정리 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 배운 것</h2>
+      <div class="summary-stage">
+        <div class="summary-card">조사한 수량을 <strong>막대 모양</strong>으로 나타낸 그래프를 <strong>막대그래프</strong>라고 해요.<br>수량은 <strong>막대의 길이</strong>로만 나타내요 — 굵기는 상관없어요.<br>막대를 <strong>세로로도 가로로도</strong> 나타낼 수 있답니다.</div>
+        <div class="wrap-msg" id="wrap-msg"></div>
+      </div>
+    </div>
+
+    <!-- 슬 17 자기 평가 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 학습은 어땠나요?</h2>
+      <div class="self-stage">
+        <div class="self-row">
+          <button class="self-btn"><div class="self-btn-stars">★</div><div class="self-btn-name">조금 어려웠어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★</div><div class="self-btn-name">잘 했어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★★</div><div class="self-btn-name">아주 잘 했어요</div></button>
+        </div>
+        <div class="q-fb" id="self-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 18 다음 차시 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">다음 차시</h2>
+      <div class="next-stage">
+        <div class="next-card">
+          <div class="next-emojis">📊✏️</div>
+          <div class="next-label">이번엔 <strong>직접</strong> 막대그래프를 그려 봐요</div>
+        </div>
+        <div class="home-prompt">신문이나 뉴스에서 막대그래프를 하나만 찾아보세요!</div>
+      </div>
+    </div>
+
+  </div>
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+<script>
+const TOTAL = 18;
+const LESSON_ID = 'g4_math_u5_l02';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.querySelectorAll('#dots .ka-dot').forEach((d, i) => { d.classList.toggle('active', i === cur); d.classList.toggle('done', i < cur); });
+  document.getElementById('prev').disabled = cur === 0;
+
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.solved || st.hintLevel >= 2; }
+  else { hintBtn.disabled = true; }
+
+  if (cur === TOTAL - 1) { document.getElementById('next').textContent = '마치기 →'; saveProgress(true); }
+  else { document.getElementById('next').textContent = '다음 →'; }
+
+  if (cur === 15) { document.getElementById('wrap-msg').textContent = wrapMsg(score); }
+}
+
+function saveProgress(done) {
+  const data = { cur, score, done, startedAt, finishedAt: done ? Date.now() : null, qState };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function wrapMsg(s) {
+  if (s >= 100) return '완벽해요!';
+  if (s >= 80) return '정말 잘했어요!';
+  if (s >= 60) return '잘했어요!';
+  return '다시 해도 좋아요!';
+}
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+function showHint() {
+  const qid = currentQId(); if (!qid) return;
+  const st = getQState(qid); if (st.solved || st.hintLevel >= 2) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint'); if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[st.hintLevel - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= 2;
+}
+function pointsForQ(qid) {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  const base = parseInt(slide.dataset.qPoints || '0', 10);
+  const st = getQState(qid);
+  if (st.hintLevel === 2) return Math.max(0, base - 5);
+  if (st.hintLevel === 1) return Math.max(0, base - 2);
+  return base;
+}
+
+// ══════════════════════════════════════════════════════════════
+// 4-1 수학 5단원 「막대그래프」 부품 라이브러리 v1
+//   - barChart(data, opts)  : 막대그래프 (단원 시그니처). 세로형/가로형·눈금 크기·막대 숨김
+//   - picGraph(data, opts)  : 그림그래프 (02차 비교용)
+//   - dataTable(data, opts) : 표 (항목·수량·합계)
+//   - groupedBar(series,o)  : 두 계열을 한 그래프에 (08차)
+//   ★ 막대 길이는 값에 정확히 비례한다. 픽셀에서 값을 역산할 수 있어야 한다.
+// ══════════════════════════════════════════════════════════════
+const INK='#243043', INKS='#62708A', TEAL='#1FA8A0', TEALD='#147F79',
+      EMPH='#F0451F', GOLD='#F6B526', GOLDD='#B07A00', LINE='#ECE3D6',
+      OK='#15803D', PAPER='#FFFDF8', BLUE='#2F6FD0', PINK='#E86A9A';
+
+const NUM = "Nunito,sans-serif";
+const KOR = "Gowun Dodum,sans-serif";
+const P2  = (n)=>Math.round(n*100)/100;
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+// 자료 최댓값을 담을 수 있는 눈금 최댓값 (step의 배수로 올림)
+function niceMax(values, step){
+  const mx = Math.max(...values);
+  return Math.ceil(mx/step)*step;
+}
+// 자료에 적절한 눈금 한 칸 후보 (칸 수가 4~12가 되도록)
+function suggestStep(values){
+  const mx = Math.max(...values);
+  const cands = [1,2,5,10,20,25,50,100,200,500,1000,2000,5000,10000];
+  for(const s of cands){ const n = Math.ceil(mx/s); if(n>=4 && n<=12) return s; }
+  return cands[cands.length-1];
+}
+
+// ───── barChart : 단원 시그니처 ──────────────────────────────
+// data: [{label:'게임 기획자', value:5}]
+// opts: W,H · title · xName(가로 이름) · yName(세로 이름) · unit('명')
+//       step(눈금 한 칸) · max(눈금 최댓값) · horizontal(가로형)
+//       hide(true=전부 / [i,...]=일부 막대 숨김) · showValue(막대 끝 수치)
+//       highlight(index) · barW · noAxisName
+function barChart(data, opts){
+  opts = opts || {};
+  const vals = data.map(d=>d.value);
+  const step = opts.step || suggestStep(vals);
+  const max  = opts.max  || niceMax(vals, step);
+  const horiz = !!opts.horizontal;
+  const unit = opts.unit || '';
+  const W = opts.W || 320, H = opts.H || 250;
+  const titleH = opts.title ? 26 : 6;
+  // 여백: 세로형은 왼쪽에 눈금숫자, 아래에 항목명 / 가로형은 왼쪽에 항목명, 아래에 눈금숫자
+  const padL = horiz ? 78 : 46, padR = 14, padT = titleH + 12, padB = horiz ? 34 : 40;
+  const plotL = padL, plotT = padT, plotW = W - padL - padR, plotH = H - padT - padB;
+  const n = data.length, nTick = max/step;
+
+  let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" width="100%">`;
+  s += `<rect x="0" y="0" width="${W}" height="${H}" fill="${PAPER}" rx="12"/>`;
+  if(opts.title) s += `<text x="${W/2}" y="19" text-anchor="middle" font-size="14.5" font-family="${KOR}" font-weight="700" fill="${INK}">${esc(opts.title)}</text>`;
+
+  // 눈금선
+  for(let k=0;k<=nTick;k++){
+    const v = k*step;
+    if(horiz){
+      const x = P2(plotL + plotW*(v/max));
+      s += `<line x1="${x}" y1="${plotT}" x2="${x}" y2="${P2(plotT+plotH)}" stroke="${k===0?INK:LINE}" stroke-width="${k===0?2:1.2}"/>`;
+      s += `<text x="${x}" y="${P2(plotT+plotH+15)}" text-anchor="middle" font-size="11" font-family="${NUM}" fill="${INKS}">${v}</text>`;
+    } else {
+      const y = P2(plotT + plotH*(1 - v/max));
+      s += `<line x1="${plotL}" y1="${y}" x2="${P2(plotL+plotW)}" y2="${y}" stroke="${k===0?INK:LINE}" stroke-width="${k===0?2:1.2}"/>`;
+      s += `<text x="${P2(plotL-6)}" y="${P2(y+4)}" text-anchor="end" font-size="11" font-family="${NUM}" fill="${INKS}">${v}</text>`;
+    }
+  }
+  // 축
+  if(horiz) s += `<line x1="${plotL}" y1="${P2(plotT+plotH)}" x2="${plotL}" y2="${plotT}" stroke="${INK}" stroke-width="2"/>`;
+  else      s += `<line x1="${plotL}" y1="${P2(plotT+plotH)}" x2="${P2(plotL+plotW)}" y2="${P2(plotT+plotH)}" stroke="${INK}" stroke-width="2"/>`;
+
+  // 막대 (★길이는 값에 정확히 비례 · 폭은 모두 동일)
+  const slot = (horiz ? plotH : plotW)/n;
+  const barW = opts.barW || Math.min(30, slot*0.56);
+  const hideAll = opts.hide === true;
+  const hideList = Array.isArray(opts.hide) ? opts.hide : [];
+  data.forEach((d,i)=>{
+    const hidden = hideAll || hideList.indexOf(i) >= 0;
+    const col = (opts.highlight === i) ? GOLD : (opts.barColor || TEAL);
+    const colD= (opts.highlight === i) ? GOLDD : (opts.barColorD || TEALD);
+    if(horiz){
+      const cy = P2(plotT + slot*(i+0.5));
+      const len = P2(plotW*(d.value/max));
+      if(!hidden) s += `<rect x="${plotL}" y="${P2(cy-barW/2)}" width="${len}" height="${P2(barW)}" fill="${col}" stroke="${colD}" stroke-width="1.4"/>`;
+      s += `<text x="${P2(plotL-8)}" y="${P2(cy+4)}" text-anchor="end" font-size="11" font-family="${KOR}" fill="${INK}">${esc(d.label)}</text>`;
+      if(!hidden && opts.showValue) s += `<text x="${P2(plotL+len+6)}" y="${P2(cy+4)}" font-size="11" font-family="${NUM}" font-weight="800" fill="${colD}">${d.value}</text>`;
+    } else {
+      const cx = P2(plotL + slot*(i+0.5));
+      const len = P2(plotH*(d.value/max));
+      if(!hidden) s += `<rect x="${P2(cx-barW/2)}" y="${P2(plotT+plotH-len)}" width="${P2(barW)}" height="${len}" fill="${col}" stroke="${colD}" stroke-width="1.4"/>`;
+      s += `<text x="${cx}" y="${P2(plotT+plotH+15)}" text-anchor="middle" font-size="10.5" font-family="${KOR}" fill="${INK}">${esc(d.label)}</text>`;
+      if(!hidden && opts.showValue) s += `<text x="${cx}" y="${P2(plotT+plotH-len-5)}" text-anchor="middle" font-size="11" font-family="${NUM}" font-weight="800" fill="${colD}">${d.value}</text>`;
+    }
+  });
+  // 축 이름 (교과서 형식: 세로형이면 좌상단에 세로 이름, 우하단에 가로 이름)
+  if(!opts.noAxisName){
+    const yN = opts.yName || '', xN = opts.xName || '';
+    if(horiz){
+      if(yN) s += `<text x="4" y="${P2(plotT+plotH+15)}" font-size="10.5" font-family="${KOR}" fill="${INKS}">${esc(yN)}</text>`;
+      if(xN) s += `<text x="${W-6}" y="${H-6}" text-anchor="end" font-size="10.5" font-family="${KOR}" fill="${INKS}">${esc(xN)}${unit?'('+unit+')':''}</text>`;
+    } else {
+      if(unit) s += `<text x="${P2(plotL-4)}" y="${P2(plotT-4)}" text-anchor="end" font-size="10.5" font-family="${NUM}" fill="${INKS}">(${unit})</text>`;
+      if(yN) s += `<text x="4" y="${P2(plotT+plotH+15)}" font-size="10.5" font-family="${KOR}" fill="${INKS}">${esc(yN)}</text>`;
+      if(xN) s += `<text x="${W-6}" y="${H-6}" text-anchor="end" font-size="10.5" font-family="${KOR}" fill="${INKS}">${esc(xN)}</text>`;
+    }
+  }
+  s += `</svg>`;
+  return s;
+}
+
+// ───── picGraph : 그림그래프 ────────────────────────────────
+// data: [{label, value}] · opts: big(10단위), small(1단위), title, unitName
+function picGraph(data, opts){
+  opts = opts || {};
+  const big = opts.big || 5, R = 9, r = 4.5;
+  const W = opts.W || 320, H = (opts.title?26:6) + data.length*30 + 30;
+  const padL = 84, padT = (opts.title?26:6)+8;
+  let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" width="100%">`;
+  s += `<rect x="0" y="0" width="${W}" height="${H}" fill="${PAPER}" rx="12"/>`;
+  if(opts.title) s += `<text x="${W/2}" y="19" text-anchor="middle" font-size="14.5" font-family="${KOR}" font-weight="700" fill="${INK}">${esc(opts.title)}</text>`;
+  data.forEach((d,i)=>{
+    const y = P2(padT + i*30 + 15);
+    s += `<line x1="${padL-6}" y1="${P2(y+15)}" x2="${W-10}" y2="${P2(y+15)}" stroke="${LINE}" stroke-width="1.2"/>`;
+    s += `<text x="${padL-12}" y="${P2(y+4)}" text-anchor="end" font-size="10.5" font-family="${KOR}" fill="${INK}">${esc(d.label)}</text>`;
+    const nb = Math.floor(d.value/big), ns = d.value - nb*big;
+    let x = padL + 6;
+    for(let k=0;k<nb;k++){ s += `<circle cx="${P2(x)}" cy="${y}" r="${R}" fill="${GOLD}" stroke="${GOLDD}" stroke-width="1.4"/>`; x += R*2+5; }
+    for(let k=0;k<ns;k++){ s += `<circle cx="${P2(x)}" cy="${y}" r="${r}" fill="${GOLD}" stroke="${GOLDD}" stroke-width="1.2"/>`; x += r*2+4; }
+  });
+  const ly = H-9;
+  s += `<circle cx="${padL+6}" cy="${P2(ly-4)}" r="${R}" fill="${GOLD}" stroke="${GOLDD}" stroke-width="1.4"/>`;
+  s += `<text x="${padL+22}" y="${P2(ly)}" font-size="11" font-family="${KOR}" fill="${INKS}">${big}${opts.unitName||''}</text>`;
+  s += `<circle cx="${padL+66}" cy="${P2(ly-4)}" r="${r}" fill="${GOLD}" stroke="${GOLDD}" stroke-width="1.2"/>`;
+  s += `<text x="${padL+78}" y="${P2(ly)}" font-size="11" font-family="${KOR}" fill="${INKS}">1${opts.unitName||''}</text>`;
+  s += `</svg>`;
+  return s;
+}
+
+// ───── dataTable : 표 ───────────────────────────────────────
+// data: [{label, value}] · opts: title, rowName(항목행 이름), valName(수량행 이름), total, hide([i,...]), hideTotal
+function dataTable(data, opts){
+  opts = opts || {};
+  const cols = data.length + 2;                      // 이름칸 + 항목들 + 합계
+  const cw = opts.cw || 62, nameW = opts.nameW || 78, rh = 30;
+  const W = nameW + cw*(data.length+1), H = (opts.title?26:6) + rh*2 + 8;
+  const top = (opts.title?26:6);
+  const hideList = Array.isArray(opts.hide) ? opts.hide : [];
+  const total = data.reduce((a,b)=>a+b.value,0);
+  let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" width="100%">`;
+  s += `<rect x="0" y="0" width="${W}" height="${H}" fill="${PAPER}" rx="12"/>`;
+  if(opts.title) s += `<text x="${W/2}" y="19" text-anchor="middle" font-size="14.5" font-family="${KOR}" font-weight="700" fill="${INK}">${esc(opts.title)}</text>`;
+  const cell=(x,y,w,h,fill)=>`<rect x="${P2(x)}" y="${P2(y)}" width="${P2(w)}" height="${h}" fill="${fill}" stroke="${LINE}" stroke-width="1.3"/>`;
+  s += cell(0, top, nameW, rh, 'rgba(31,168,160,.14)');
+  s += `<text x="${nameW/2}" y="${top+19}" text-anchor="middle" font-size="11.5" font-family="${KOR}" font-weight="700" fill="${TEALD}">${esc(opts.rowName||'항목')}</text>`;
+  s += cell(0, top+rh, nameW, rh, 'rgba(31,168,160,.14)');
+  s += `<text x="${nameW/2}" y="${top+rh+19}" text-anchor="middle" font-size="11.5" font-family="${KOR}" font-weight="700" fill="${TEALD}">${esc(opts.valName||'수')}</text>`;
+  data.forEach((d,i)=>{
+    const x = nameW + cw*i;
+    s += cell(x, top, cw, rh, '#fff');
+    s += `<text x="${P2(x+cw/2)}" y="${top+19}" text-anchor="middle" font-size="11" font-family="${KOR}" fill="${INK}">${esc(d.label)}</text>`;
+    s += cell(x, top+rh, cw, rh, '#fff');
+    const hidden = hideList.indexOf(i)>=0;
+    s += `<text x="${P2(x+cw/2)}" y="${top+rh+19}" text-anchor="middle" font-size="12.5" font-family="${NUM}" font-weight="800" fill="${hidden?EMPH:INK}">${hidden?'?':d.value}</text>`;
+  });
+  const xt = nameW + cw*data.length;
+  s += cell(xt, top, cw, rh, 'rgba(246,181,38,.16)');
+  s += `<text x="${P2(xt+cw/2)}" y="${top+19}" text-anchor="middle" font-size="11" font-family="${KOR}" font-weight="700" fill="${GOLDD}">합계</text>`;
+  s += cell(xt, top+rh, cw, rh, 'rgba(246,181,38,.16)');
+  s += `<text x="${P2(xt+cw/2)}" y="${top+rh+19}" text-anchor="middle" font-size="12.5" font-family="${NUM}" font-weight="800" fill="${opts.hideTotal?EMPH:GOLDD}">${opts.hideTotal?'?':total}</text>`;
+  s += `</svg>`;
+  return s;
+}
+
+// ───── groupedBar : 두 계열을 한 그래프에 (08차) ───────────
+// series: [{name:'2022년', data:[{label,value}], color}]
+// opts: groupBy 'item'(항목별 묶기) | 'series'(계열별 묶기) · step · max · title · unit
+function groupedBar(series, opts){
+  opts = opts || {};
+  const allVals = series.reduce((a,s)=>a.concat(s.data.map(d=>d.value)), []);
+  const step = opts.step || suggestStep(allVals);
+  const max  = opts.max  || niceMax(allVals, step);
+  const W = opts.W || 340, H = opts.H || 264;
+  const titleH = opts.title ? 26 : 6;
+  const padL = 52, padR = 12, padT = titleH + 12, padB = 52;
+  const plotL = padL, plotT = padT, plotW = W-padL-padR, plotH = H-padT-padB;
+  const COLS = [TEAL, GOLD, BLUE, PINK];
+  const CDS  = [TEALD, GOLDD, '#1E4FA0', '#B34870'];
+  const byItem = (opts.groupBy || 'item') === 'item';
+  const nItem = series[0].data.length, nSer = series.length;
+  const groups = byItem ? nItem : nSer, per = byItem ? nSer : nItem;
+
+  let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" width="100%">`;
+  s += `<rect x="0" y="0" width="${W}" height="${H}" fill="${PAPER}" rx="12"/>`;
+  if(opts.title) s += `<text x="${W/2}" y="19" text-anchor="middle" font-size="14" font-family="${KOR}" font-weight="700" fill="${INK}">${esc(opts.title)}</text>`;
+  for(let k=0;k<=max/step;k++){
+    const v=k*step, y=P2(plotT+plotH*(1-v/max));
+    s += `<line x1="${plotL}" y1="${y}" x2="${P2(plotL+plotW)}" y2="${y}" stroke="${k===0?INK:LINE}" stroke-width="${k===0?2:1.2}"/>`;
+    s += `<text x="${P2(plotL-5)}" y="${P2(y+4)}" text-anchor="end" font-size="10" font-family="${NUM}" fill="${INKS}">${v}</text>`;
+  }
+  const gW = plotW/groups, bW = Math.min(20, gW/(per+1));
+  for(let g=0; g<groups; g++){
+    for(let p=0; p<per; p++){
+      const si = byItem ? p : g, di = byItem ? g : p;
+      const v = series[si].data[di].value;
+      const cx = plotL + gW*g + gW/2 + (p - (per-1)/2)*(bW+2);
+      const len = P2(plotH*(v/max));
+      const col = series[si].color || COLS[si%4], cd = CDS[si%4];
+      s += `<rect x="${P2(cx-bW/2)}" y="${P2(plotT+plotH-len)}" width="${P2(bW)}" height="${len}" fill="${col}" stroke="${cd}" stroke-width="1.2"/>`;
+    }
+    const lab = byItem ? series[0].data[g].label : series[g].name;
+    s += `<text x="${P2(plotL+gW*g+gW/2)}" y="${P2(plotT+plotH+15)}" text-anchor="middle" font-size="10.5" font-family="${KOR}" fill="${INK}">${esc(lab)}</text>`;
+  }
+  // 범례
+  const legend = byItem ? series.map((x,i)=>({t:x.name,c:x.color||COLS[i%4],d:CDS[i%4]}))
+                        : series[0].data.map((x,i)=>({t:x.label,c:COLS[i%4],d:CDS[i%4]}));
+  let lx = plotL, ly = H-16;
+  legend.forEach(L=>{
+    s += `<rect x="${P2(lx)}" y="${P2(ly-8)}" width="11" height="11" fill="${L.c}" stroke="${L.d}" stroke-width="1.2"/>`;
+    s += `<text x="${P2(lx+15)}" y="${P2(ly+1)}" font-size="10.5" font-family="${KOR}" fill="${INKS}">${esc(L.t)}</text>`;
+    lx += 22 + String(L.t).length*10;
+  });
+  if(opts.unit) s += `<text x="${P2(plotL-4)}" y="${P2(plotT-4)}" text-anchor="end" font-size="10" font-family="${NUM}" fill="${INKS}">(${opts.unit})</text>`;
+  s += `</svg>`;
+  return s;
+}
+
+// ───── 검증 보조: 렌더된 막대 픽셀에서 값 역산 ─────────────
+function readBars(svg, opts){
+  opts = opts || {};
+  const horiz = !!opts.horizontal;
+  const re = /<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)" fill="(#[0-9A-Fa-f]{6})" stroke="(#[0-9A-Fa-f]{6})" stroke-width="1\.[24]"\/>/g;
+  const out = []; let m;
+  while((m = re.exec(svg)) !== null){
+    out.push({x:+m[1], y:+m[2], w:+m[3], h:+m[4], fill:m[5]});
+  }
+  return out;
+}
+
+
+(function renderModels(){
+  const $=id=>document.getElementById(id);
+  // 교과서 108쪽 자료 (합계 28)
+  const D=[{label:'게임 기획자',value:5},{label:'노인 전문 간호사',value:4},
+           {label:'미디어 콘텐츠 창작자',value:9},{label:'캐릭터 디자이너',value:10}];
+  const T='참여한 체험 활동별 학생 수';
+  $('m-c1').innerHTML = dataTable(D,{title:T, rowName:'체험 활동', valName:'학생 수(명)', cw:74, nameW:80});
+  $('m-c2').innerHTML = picGraph(D,{title:T, big:5, unitName:'명', W:330});
+  $('m-c3').innerHTML = barChart(D,{title:T, step:1, max:10, unit:'명',
+    xName:'체험 활동', yName:'학생 수', W:330, H:262});
+  $('m-c4').innerHTML = picGraph(D,{big:5, unitName:'명', W:330})
+                      + barChart(D,{step:1, max:10, unit:'명', xName:'체험 활동', yName:'학생 수', W:330, H:250});
+  $('m-c5').innerHTML = barChart(D,{title:T, step:1, max:10, unit:'명', horizontal:true,
+    xName:'학생 수', yName:'체험 활동', W:330, H:236});
+
+  $('m-q8').innerHTML  = barChart(D,{title:T, step:1, max:10, unit:'명', xName:'체험 활동', yName:'학생 수', W:320, H:246});
+  $('m-q9').innerHTML  = barChart(D,{step:1, max:10, unit:'명', xName:'체험 활동', yName:'학생 수', W:320, H:238});
+  $('m-q10').innerHTML = barChart(D,{step:1, max:10, unit:'명', xName:'체험 활동', yName:'학생 수', W:320, H:238});
+  $('m-q12').innerHTML = barChart(D,{step:1, max:10, unit:'명', xName:'체험 활동', yName:'학생 수', W:320, H:238});
+  // ★오개념: 폭만 다르고 길이는 완전히 같은 두 그래프
+  $('m-q13').innerHTML = barChart(D,{step:1, max:10, barW:30, noAxisName:true, W:320, H:210})
+                       + barChart(D,{step:1, max:10, barW:13, noAxisName:true, W:320, H:210});
+  $('m-q14').innerHTML = barChart(D,{step:1, max:10, unit:'명', horizontal:true,
+    xName:'학생 수', yName:'체험 활동', W:320, H:230});
+})();
+
+function setupPad(qid, correct, padId, displayId, fbId, doneMsg, maxLen) {
+  maxLen = maxLen || 6;
+  const pad = document.getElementById(padId);
+  const display = document.getElementById(displayId);
+  const fb = document.getElementById(fbId);
+  let buf = '';
+  const keys = ['1','2','3','4','5','6','7','8','9','0'];
+  keys.forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'q-key'; b.textContent = k;
+    b.addEventListener('click', () => {
+      const st = getQState(qid); if (st.solved) return;
+      if (buf.length < maxLen) { buf += k; display.textContent = buf; }
+    });
+    pad.appendChild(b);
+  });
+  const del = document.createElement('button');
+  del.className = 'q-key fn'; del.textContent = '지움';
+  del.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    buf = buf.slice(0, -1); display.textContent = buf || '?';
+  });
+  pad.appendChild(del);
+  const ok = document.createElement('button');
+  ok.className = 'q-key fn'; ok.textContent = '확인'; ok.style.gridColumn = 'span 4';
+  ok.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    st.attempts++;
+    if (parseInt(buf, 10) === correct) {
+      st.solved = true;
+      const earn = pointsForQ(qid); addScore(earn);
+      fb.classList.remove('wrong');
+      fb.textContent = (doneMsg || '정답이에요!') + ' +' + earn + '점';
+      updateUI();
+    } else {
+      st.wrongCount++;
+      fb.classList.add('wrong'); fb.textContent = '다시 한번 생각해 볼까요?';
+    }
+  });
+  pad.appendChild(ok);
+}
+
+function setupMcq(qid, doneMsg){
+  document.querySelectorAll('#'+qid+'-opts .mcq-opt').forEach(o=>{
+    o.addEventListener('click', ()=>{
+      const st=getQState(qid); if(st.solved) return;
+      st.attempts++;
+      const fb=document.getElementById(qid+'-fb');
+      if(o.dataset.correct==='1'){
+        st.solved=true; o.classList.add('correct');
+        const earn=pointsForQ(qid); addScore(earn);
+        fb.classList.remove('wrong'); fb.textContent=(doneMsg||'정답이에요!')+' +'+earn+'점';
+        updateUI();
+      } else {
+        st.wrongCount++; o.classList.add('wrong');
+        fb.classList.add('wrong'); fb.textContent='다시 골라 보세요';
+        setTimeout(()=>o.classList.remove('wrong'),500);
+      }
+    });
+  });
+}
+
+setupMcq('q8','맞아요! 막대의 길이가 체험 활동별 학생 수를 나타내요');
+setupPad('q9', 1, 'q9-pad','q9-display','q9-fb','맞아요! 5칸이 5명이니 한 칸은 1명이에요', 6);
+setupPad('q10', 9, 'q10-pad','q10-display','q10-fb','맞아요! 막대가 9칸이니 9명이에요', 6);
+setupMcq('q11','맞아요! 길이만 보고 한눈에 견줄 수 있는 것이 막대그래프의 힘이에요');
+setupPad('q12', 6, 'q12-pad','q12-display','q12-fb','맞아요! 10 − 4 = 6명', 6);
+setupMcq('q13','맞아요! 굵기는 수량과 아무 상관이 없어요');
+setupMcq('q14','맞아요! 자리만 바뀌었을 뿐 나타내는 자료는 같아요');
+setupMcq('q15','맞아요! 그림이냐 막대의 길이냐가 두 그래프의 차이예요');
+
+
+// ───── 슬17 자기 평가 ─────
+document.querySelectorAll('.self-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.self-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('self-fb').textContent = '응답이 기록됐어요. 다음 차시에서 만나요!';
+  });
+});
+
+// ───── 진도 복원 ─────
+(function restore() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data.cur != null) cur = Math.min(data.cur, TOTAL - 1);
+    if (data.score != null) score = data.score;
+    document.getElementById('score').textContent = '⭐ ' + score;
+  } catch(e) {}
+})();
+
+(function buildDots(){ const w=document.getElementById('dots'); for(let i=0;i<TOTAL;i++){ const d=document.createElement('div'); d.className='ka-dot'; d.onclick=()=>{ cur=i; saveProgress(false); updateUI(); }; w.appendChild(d); } })();
+
+updateUI();
+</script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+</body>
+</html>
