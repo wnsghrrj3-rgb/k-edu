@@ -156,7 +156,7 @@ window.MK_COLLAB = (() => {
     let bar = host.querySelector('.cw-presence');
     if (!bar) {
       bar = document.createElement('div'); bar.className = 'cw-presence';
-      wrap.parentElement.insertBefore(bar, wrap);
+      wrap.appendChild(bar);                       /* R36 수리 — 그리드 형제로 끼면 캔버스가 속성 칸으로 밀린다: 캔버스랩 내부 부유 오버레이로 */
     }
     /* 커서 레이어 */
     let layer = canvas.querySelector('.cw-cursors');
