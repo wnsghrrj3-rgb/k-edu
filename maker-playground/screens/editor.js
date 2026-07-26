@@ -96,12 +96,41 @@ window.MK_SCREENS.editor = (() => {
       <div class="ph-list">${rows}
         <button class="ph-item" data-au="file">내 음악 파일 넣기 (mp3 등 · 8MB)</button>
         <button class="ph-item" data-au="stop">미리듣기 멈추기</button></div>
-      <p class="ed-note">배경음은 미리보기·재생에서 실재생돼요. MP4 오디오 트랙은 다음 몫이에요.</p></div>`;
+      <p class="ed-note">배경음은 미리보기·재생에서 실재생되고, MP4 내보내기에도 소리 트랙으로 실려요.</p></div>`;
+  };
+  /* ================= Left: Detail Panel — R41 실배선 =================
+     실동작 버튼 = data-pane, 미연결 항목 = disabled + 정직 표기(가짜 버튼 0) */
+  const offBtn = (label, why) => `<button class="ph-item" disabled style="opacity:.45;cursor:not-allowed" title="${why}">${label} <em style="opacity:.7">· ${why}</em></button>`;
+  const DETAIL_R41 = {
+    tpl: () => `<button class="ph-item" data-pane="go-templates">템플릿 둘러보기 → (Templates 화면)</button>
+      <button class="ph-item" data-pane="go-ai">스타일 바꾸기 → AI 편집에서 (색·테마 명령)</button>`,
+    text: () => `<button class="ph-item" data-pane="add-title">제목 추가</button>
+      <button class="ph-item" data-pane="add-sub">부제목 추가</button>
+      <button class="ph-item" data-pane="add-body">본문 추가</button>
+      ${offBtn('글꼴 스타일 목록', '다음 몫')}`,
+    el: () => `<button class="ph-item" data-pane="add-box">도형 넣기 (색 상자)</button>
+      <button class="ph-item" data-pane="add-table">표 넣기</button>
+      <button class="ph-item" data-pane="add-chart">차트 넣기 (막대)</button>
+      ${offBtn('아이콘·스티커', '재료 미입고')}`,
+    photo: () => `<button class="ph-item" data-pane="ins-image">내 사진 파일 넣기 (8MB)</button>
+      ${offBtn('사진 검색', '검색 소스 미연결')}`,
+    video: () => `<button class="ph-item" data-pane="ins-video">내 영상 파일 넣기 (8MB)</button>
+      ${offBtn('영상 클립 검색·배경 영상', '소스 미연결')}`,
+    bg: () => { const sc = ed().doc && ed().doc.scenes[ed().sceneIdx]; const cur = (sc && sc.background) || '#FFFFFF';
+      return `<div class="ph-item" style="display:flex;align-items:center;gap:8px"><span style="flex:1">단색 배경</span>
+        <input type="color" data-pane="bg-color" value="${/^#[0-9A-Fa-f]{6}$/.test(cur) ? cur : '#FFFFFF'}" aria-label="배경색"></div>
+      <div class="ph-item" style="display:flex;gap:6px">${['#FFFFFF', '#1F2733', '#FFF7E8', '#EAF3F0'].map((c) =>
+        `<button data-pane="bg-set" data-c="${c}" title="${c}" style="width:26px;height:26px;border-radius:6px;border:1px solid var(--mk-border);background:${c};cursor:pointer"></button>`).join('')}</div>
+      ${offBtn('이미지·움직이는 배경', '다음 몫')}`; },
+    up: () => `<button class="ph-item" data-pane="ins-any">파일 올리기 (사진·영상 → 장면에 삽입)</button>
+      <p class="ed-note" style="margin:6px 0 0">올린 파일은 요소로 장면에 들어가고, 저장 시 이 기기(localStorage)에 함께 저장돼요.</p>`,
   };
   const DetailPanel = () => {
     if (ed().menu === 'ai') return AIDock();
     if (ed().menu === 'audio' && window.MK_AUDIO && ed().doc) return AudioPanel();
     const name = (MENUS.find((m) => m[0] === ed().menu) || [])[2] || '';
+    const body = DETAIL_R41[ed().menu];
+    if (body && ed().doc) return `<div class="ed-detail"><h3>${name}</h3><div class="ph-list">${body()}</div></div>`;
     return `<div class="ed-detail"><h3>${name}</h3>
       <div class="ph-list">${(DETAIL[ed().menu] || []).map((d) => `<button class="ph-item">${d}</button>`).join('')}</div>
       <p class="ed-note">콘텐츠 연결 예정 — 외형 검토용</p></div>`;
@@ -449,6 +478,42 @@ window.MK_SCREENS.editor = (() => {
       const gh = root.querySelector('[data-ed="guard-home"]'); if (gh) gh.onclick = () => PG.go('home');
       root.querySelectorAll('[data-tab]').forEach((b) => b.onclick = () => { PG.state.variants[PG.state.screen] = b.dataset.tab; PG.render(); });
       root.querySelectorAll('[data-menu]').forEach((b) => b.onclick = () => { e.menu = b.dataset.menu; PG.render(); });
+      /* ---- R41: 좌측 패널 실동작 ---- */
+      const paneAddEl = (label, el) => { H.push(label); const s = doc.scenes[e.sceneIdx]; s.elements.push(el); e.selEl = s.elements.length - 1; PG.render(); };
+      const paneStack = () => 18 + (doc.scenes[e.sceneIdx].elements.length * 7) % 55; /* 겹침 방지 계단 배치 */
+      const paneFile = (accept, kindHint) => {
+        const inp = document.createElement('input');
+        inp.type = 'file'; inp.accept = accept;
+        inp.onchange = () => window.MK_LIVE.fileToSrc(inp.files && inp.files[0], (src, err) => {
+          if (err) return alert(err);
+          if (!src) return;
+          const f = inp.files[0];
+          const kind = /^video\//.test(f.type) ? 'video' : 'image';
+          H.push((kind === 'video' ? '영상' : '사진') + ' 넣기');
+          const r = window.MK_LIVE.insertWithSrc(doc, e.sceneIdx, { name: f.name.replace(/\.[^.]+$/, ''), kind, src });
+          if (r && r.ok) e.selEl = doc.scenes[e.sceneIdx].elements.length - 1;
+          PG.render();
+        });
+        inp.click();
+      };
+      root.querySelectorAll('[data-pane]').forEach((b) => {
+        const act = b.dataset.pane;
+        if (act === 'bg-color') { b.onchange = () => { H.push('배경색 변경'); doc.scenes[e.sceneIdx].background = b.value; PG.render(); }; return; }
+        b.onclick = () => {
+          if (act === 'go-templates') return PG.go('templates');
+          if (act === 'go-ai') { e.menu = 'ai'; return PG.render(); }
+          if (act === 'add-title') return paneAddEl('제목 추가', { kind: 'text', x: 10, y: paneStack(), w: 80, size: 8, text: '제목을 입력하세요', weight: 800 });
+          if (act === 'add-sub') return paneAddEl('부제목 추가', { kind: 'text', x: 10, y: paneStack(), w: 80, size: 5, text: '부제목을 입력하세요', weight: 600 });
+          if (act === 'add-body') return paneAddEl('본문 추가', { kind: 'text', x: 10, y: paneStack(), w: 80, size: 3.6, text: '내용을 입력하세요', weight: 400 });
+          if (act === 'add-box') return paneAddEl('도형 넣기', { kind: 'image', x: 32, y: paneStack(), w: 30, h: 20, label: '', fill: '#2E8C7F' });
+          if (act === 'add-table') return paneAddEl('표 넣기', { kind: 'table', x: 10, y: 24, w: 80, h: 46, title: '표', cols: ['구분', '값'], rows: [['항목 1', '10'], ['항목 2', '20'], ['항목 3', '30']] });
+          if (act === 'add-chart') return paneAddEl('차트 넣기', { kind: 'chart', x: 10, y: 24, w: 80, h: 54, chartType: 'bar', title: '차트', accent: '#2E8C7F', series: [{ k: 'A', v: 3 }, { k: 'B', v: 5 }, { k: 'C', v: 4 }] });
+          if (act === 'bg-set') { H.push('배경색 변경'); doc.scenes[e.sceneIdx].background = b.dataset.c; return PG.render(); }
+          if (act === 'ins-image') return paneFile('image/*');
+          if (act === 'ins-video') return paneFile('video/*');
+          if (act === 'ins-any') return paneFile('image/*,video/*');
+        };
+      });
       root.querySelectorAll('[data-scene]').forEach((b) => b.onclick = () => { e.sceneIdx = +b.dataset.scene; e.selEl = null; PG.render(); });
       root.querySelectorAll('[data-el]').forEach((b) => b.onclick = (ev) => { ev.stopPropagation(); e.selEl = +b.dataset.el; PG.render(); });
       root.querySelector('.ed-canvas').onclick = (ev) => { if (ev.target.classList.contains('ed-canvas')) { e.selEl = null; PG.render(); } };
