@@ -101,6 +101,17 @@ window.MK_SCREENS.editor = (() => {
   /* ================= Left: Detail Panel — R41 실배선 =================
      실동작 버튼 = data-pane, 미연결 항목 = disabled + 정직 표기(가짜 버튼 0) */
   const offBtn = (label, why) => `<button class="ph-item" disabled style="opacity:.45;cursor:not-allowed" title="${why}">${label} <em style="opacity:.7">· ${why}</em></button>`;
+  const stockGridHTML = (tag) => {
+    if (!window.MK_STOCK) return '';
+    const hits = MK_STOCK.search(ed().stockQ || '').slice(0, 12);
+    return hits.map((h2) => `<button data-stock="${h2.id}" data-stocktag="${tag}" title="${h2.name} · ${h2.cat}" style="padding:0;border:1px solid var(--mk-border);border-radius:8px;overflow:hidden;cursor:pointer;background:none"><img src="${MK_STOCK.srcOf(h2.id)}" alt="${h2.name}" style="width:100%;aspect-ratio:16/9;display:block;object-fit:cover"></button>`).join('')
+      || '<span class="ed-note">검색 결과 없음 — 예) 벚꽃·별밤·격자·노을</span>';
+  };
+  const stockBlock = (tag, label) => window.MK_STOCK ? `<div class="ph-item" style="display:block;cursor:default">
+      <b style="display:block;margin-bottom:6px">${label}</b>
+      <input class="mk-input" data-stockq="${tag}" value="${(ed().stockQ || '').replace(/"/g, '&quot;')}" placeholder="재료 검색 — 벚꽃·별밤·격자·노을·뱃지…" style="width:100%" aria-label="재료 검색">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px" data-stockgrid="${tag}">${stockGridHTML(tag)}</div>
+      <p class="ed-note" style="margin:6px 0 0">내장 생성 그래픽 ${MK_STOCK.LIB.length}종 — 저작권 걱정 0</p></div>` : '';
   const DETAIL_R41 = {
     tpl: () => `<button class="ph-item" data-pane="go-templates">템플릿 둘러보기 → (Templates 화면)</button>
       <button class="ph-item" data-pane="go-ai">스타일 바꾸기 → AI 편집에서 (색·테마 명령)</button>`,
@@ -113,7 +124,8 @@ window.MK_SCREENS.editor = (() => {
       <button class="ph-item" data-pane="add-chart">차트 넣기 (막대)</button>
       ${offBtn('아이콘·스티커', '재료 미입고')}`,
     photo: () => `<button class="ph-item" data-pane="ins-image">내 사진 파일 넣기 (8MB)</button>
-      ${offBtn('사진 검색', '검색 소스 미연결')}`,
+      ${stockBlock('P', '🎨 재료 검색 (내장 생성)')}
+      ${offBtn('실사 스톡 사진', '외부 소스 미연결')}`,
     video: () => `<button class="ph-item" data-pane="ins-video">내 영상 파일 넣기 (8MB)</button>
       ${offBtn('영상 클립 검색·배경 영상', '소스 미연결')}`,
     bg: () => { const sc = ed().doc && ed().doc.scenes[ed().sceneIdx]; const cur = (sc && sc.background) || '#FFFFFF';
@@ -121,7 +133,8 @@ window.MK_SCREENS.editor = (() => {
         <input type="color" data-pane="bg-color" value="${/^#[0-9A-Fa-f]{6}$/.test(cur) ? cur : '#FFFFFF'}" aria-label="배경색"></div>
       <div class="ph-item" style="display:flex;gap:6px">${['#FFFFFF', '#1F2733', '#FFF7E8', '#EAF3F0'].map((c) =>
         `<button data-pane="bg-set" data-c="${c}" title="${c}" style="width:26px;height:26px;border-radius:6px;border:1px solid var(--mk-border);background:${c};cursor:pointer"></button>`).join('')}</div>
-      ${offBtn('이미지·움직이는 배경', '다음 몫')}`; },
+      ${stockBlock('B', '🖼 이미지 배경 (내장 생성 — 클릭 = 이 장면 배경으로)')}
+      ${offBtn('움직이는 배경', '다음 몫')}`; },
     up: () => `<button class="ph-item" data-pane="ins-any">파일 올리기 (사진·영상 → 장면에 삽입)</button>
       <p class="ed-note" style="margin:6px 0 0">올린 파일은 요소로 장면에 들어가고, 저장 시 이 기기(localStorage)에 함께 저장돼요.</p>`,
   };
@@ -496,6 +509,27 @@ window.MK_SCREENS.editor = (() => {
         });
         inp.click();
       };
+      /* ---- R44: 재료 검색 (내장 생성) ---- */
+      const bindStock = (scope) => scope.querySelectorAll('[data-stock]').forEach((b) => b.onclick = () => {
+        const it = window.MK_STOCK.get(b.dataset.stock); if (!it) return;
+        const src = window.MK_STOCK.srcOf(it.id);
+        if (b.dataset.stocktag === 'B') {                        /* 배경으로 — 맨 뒤 층 */
+          H.push('이미지 배경 — ' + it.name);
+          doc.scenes[e.sceneIdx].elements.unshift({ kind: 'image', x: 0, y: 0, w: 100, h: 100, label: it.name, src });
+          e.selEl = 0;
+        } else {                                                 /* 요소로 삽입 */
+          H.push('재료 넣기 — ' + it.name);
+          const r = window.MK_LIVE.insertWithSrc(doc, e.sceneIdx, { name: it.name, kind: 'image', src });
+          if (r && r.ok) e.selEl = doc.scenes[e.sceneIdx].elements.length - 1;
+        }
+        PG.render();
+      });
+      bindStock(root);
+      root.querySelectorAll('[data-stockq]').forEach((inp) => inp.oninput = () => {
+        e.stockQ = inp.value;                                    /* 그리드만 부분 갱신 — 입력 포커스 유지 */
+        const grid = root.querySelector(`[data-stockgrid="${inp.dataset.stockq}"]`);
+        if (grid) { grid.innerHTML = stockGridHTML(inp.dataset.stockq); bindStock(grid); }
+      });
       root.querySelectorAll('[data-pane]').forEach((b) => {
         const act = b.dataset.pane;
         if (act === 'bg-color') { b.onchange = () => { H.push('배경색 변경'); doc.scenes[e.sceneIdx].background = b.value; PG.render(); }; return; }
