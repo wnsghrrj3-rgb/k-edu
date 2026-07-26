@@ -3,22 +3,30 @@
    ============================================================ */
 window.MK_SCREENS = window.MK_SCREENS || {};
 
-/* ---------- 후속 단계 플레이스홀더 ---------- */
-const ph = (title, blocks) => ({
-  title, variants: ['A'],
-  render: () => `<span class="pg-note">⚠ 후속 단계 화면 — 구조 자리만 잡아둔 상태 (미구현)</span>
-    <div class="ph-screen">` + blocks.map(([b, d]) => `<div class="ph-block"><b>${b}</b>${d}</div>`).join('') + `</div>`,
-});
-window.MK_SCREENS.video = ph('Video', [
-  ['영상 템플릿 목록', '멸치형 — 사진·문구 교체 영역이 명확한 템플릿 (Editor의 Video 모드에서 골격 확인 가능)'],
-  ['재생 미리보기', 'Scene 순차 재생 UI. 실제 렌더링은 kmake video.js(WebCodecs) 이식 예정'],
-  ['배경음악 선택', 'musicPreset 데이터 자리만 확보됨'],
-]);
-window.MK_SCREENS.photo = ph('Photo', [
-  ['사진 편집 모드', '자르기·회전·밝기·대비·채도·필터 — kmake photo.js(마스크 9종·보정 7종) 이식 예정'],
-  ['배경 제거', '클라이언트 사이드 누끼 — 미구현 (단독 과제)'],
-  ['프레임·그림자', '속성 패널 확장 자리'],
-]);
+/* ---------- 후속 단계 플레이스홀더 (ph 헬퍼는 R40 안내판 전환으로 소멸) ---------- */
+/* ---------- Video: R37~R39 이식 완료 — 실기능은 Editor에 라이브 ---------- */
+window.MK_SCREENS.video = {
+  title: 'Video', variants: ['A'],
+  render: () => `<span class="pg-note">✅ 영상 기능은 이식 완료 — 실사용은 <b>Editor</b> 화면에서 (이 화면은 안내판)</span>
+    <div class="ph-screen">
+      <div class="ph-block"><b>재생 미리보기 — 라이브 (R37)</b>Editor 상단 「미리보기」 = 진짜 슬라이드쇼. 애니 9종 실재생·진행바·클릭/→ 다음·Esc 닫기</div>
+      <div class="ph-block"><b>MP4 내보내기 — 라이브 (R38·R39)</b>Editor 「내보내기 → MP4」 = WebCodecs 실인코딩(1080p·30fps). 삽입 영상 프레임 합성 + 배경음악 소리 트랙(AAC) 포함. 크롬·엣지 전용</div>
+      <div class="ph-block"><b>배경음악 — 라이브 (R38)</b>Editor 오디오 패널 = 내장 합성 3종(피아노·파도·비트) + 내 음악 파일. 같은 음악은 장면을 넘어 이어짐</div>
+      <div class="ph-block"><b>삽입 영상 재생 — 라이브 (R39)</b>이미지 교체로 영상 파일을 넣으면 캔버스·미리보기에서 실재생</div>
+    </div>
+    <div style="margin-top:14px">${window.MK.Button({ label: 'Editor에서 써보기 →', kind: 'accent', attrs: 'onclick="PG.go(\'editor\')"' })}</div>`,
+};
+/* ---------- Photo: 미이식(정직) — 기본 사진 삽입·교체만 Editor에 라이브 ---------- */
+window.MK_SCREENS.photo = {
+  title: 'Photo', variants: ['A'],
+  render: () => `<span class="pg-note">⚠ 사진 <b>보정</b>은 아직 미이식 — 사진 <b>삽입·교체</b>는 Editor에 라이브 (R36)</span>
+    <div class="ph-screen">
+      <div class="ph-block"><b>사진 삽입·교체 — 라이브 (R36)</b>Editor에서 이미지 요소 선택 → 교체 = 진짜 파일 선택·실표시·저장 영속</div>
+      <div class="ph-block"><b>사진 편집 모드 — 미이식</b>자르기·마스크 9종·보정 7종(kmake photo.js) — 이식 후보, 다음 라운드 몫</div>
+      <div class="ph-block"><b>배경 제거 — 미구현</b>클라이언트 사이드 누끼 (단독 과제)</div>
+    </div>
+    <div style="margin-top:14px">${window.MK.Button({ label: 'Editor에서 써보기 →', kind: 'accent', attrs: 'onclick="PG.go(\'editor\')"' })}</div>`,
+};
 /* AI 화면은 screens/ai.js (AI Studio v1)로 승격 */
 /* Export 화면은 screens/export.js (Universal Render Engine 콘솔)로 승격 */
 
