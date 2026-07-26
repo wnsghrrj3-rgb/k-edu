@@ -36,15 +36,51 @@
   var fromTeacher = false;
   try { fromTeacher = sessionStorage.getItem(KEY) === '1'; } catch (e) {}
 
-  var label = fromTeacher ? '← 선생님 도구' : '🏠 케이에듀로 가기';
-  var href  = fromTeacher ? '/?role=teacher' : '/';
+  /* 1.5) 발자국 트레일 — 같은 탭에서 들어온 길을 그대로 한 층씩 되짚어 나간다.
+     · 페이지 로드마다 현재 URL push (연속 중복 제외 · 되짚기 도착이면 제외)
+     · 나가기 = pop 후 이전 발자국으로 이동. 발자국이 없으면 홈(또는 선생님 도구). */
+  var TRAIL = 'kedu_back_trail_v1', BACKFLAG = 'kedu_back_going_v1', CAP = 40;
+  function readTrail() { try { var t = JSON.parse(sessionStorage.getItem(TRAIL)); return Array.isArray(t) ? t : []; } catch (e) { return []; } }
+  function writeTrail(t) { try { sessionStorage.setItem(TRAIL, JSON.stringify(t.slice(-CAP))); } catch (e) {} }
+  var here = location.pathname + location.search;
+  var trail = readTrail();
+  var arrivedByBack = false;
+  try { arrivedByBack = sessionStorage.getItem(BACKFLAG) === '1'; sessionStorage.removeItem(BACKFLAG); } catch (e) {}
+  if (!arrivedByBack && trail[trail.length - 1] !== here) { trail.push(here); writeTrail(trail); }
+
+  var prev = null;
+  for (var ti = trail.length - 2; ti >= 0; ti--) {          // 바로 아래 발자국(자기 자신 제외)
+    if (trail[ti] !== here) { prev = trail[ti]; break; }
+  }
+
+  function goBack() {
+    var t = readTrail();
+    while (t.length && t[t.length - 1] === here) t.pop();   // 현재 층 제거
+    var target = null;
+    while (t.length) {                                       // 혹시 남은 중복도 걷어냄
+      var cand = t[t.length - 1];
+      if (cand !== here) { target = cand; break; }
+      t.pop();
+    }
+    if (target) {
+      t.pop(); t.push(target); writeTrail(t);                // 트레일 = 도착지까지
+      try { sessionStorage.setItem(BACKFLAG, '1'); } catch (e) {}
+      location.href = target;
+    } else {
+      writeTrail([]);
+      location.href = fromTeacher ? '/?role=teacher' : '/';
+    }
+  }
+
+  var label = prev ? '← 나가기' : (fromTeacher ? '← 선생님 도구' : '🏠 케이에듀로 가기');
+  var href  = prev ? prev : (fromTeacher ? '/?role=teacher' : '/');
 
   var script = document.currentScript ||
     (function () { var s = document.getElementsByTagName('script'); return s[s.length - 1]; })();
   var mode  = script && script.getAttribute('data-mode');
   var mount = script && script.getAttribute('data-mount');
 
-  window.KEDU_BACK = { el: null, label: label, href: href, fromTeacher: fromTeacher };
+  window.KEDU_BACK = { el: null, label: label, href: href, fromTeacher: fromTeacher, go: goBack };
   if (mode === 'context') return; /* 버튼 없이 맥락만 제공 (케이뮤지엄·케이메이크처럼 자체 버튼이 있는 화면) */
 
   /* 2) 공용 스타일 (1회 주입) */
@@ -73,7 +109,8 @@
     a.id = 'kedu-back';
     a.href = href;
     a.textContent = label;
-    a.title = fromTeacher ? '선생님 도구로 돌아가기' : '케이에듀 시작 화면으로';
+    a.title = prev ? '한 층 나가기' : (fromTeacher ? '선생님 도구로 돌아가기' : '케이에듀 시작 화면으로');
+    a.onclick = function (e) { e.preventDefault(); goBack(); };
     var target = mount ? document.querySelector(mount) : null;
     if (target) { a.className = 'kb-inline'; target.insertBefore(a, target.firstChild); }
     else { a.className = 'kb-fixed'; document.body.appendChild(a); }
