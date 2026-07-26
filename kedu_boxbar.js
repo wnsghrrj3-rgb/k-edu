@@ -39,10 +39,18 @@
     if (/^\/kple\//.test(p)) return 'kple';
     if (/^\/kmake\//.test(p)) return 'kmake';
     if (/^\/english\//.test(p)) return 'english';
+    if (/^\/kedu\/activities\//.test(p)) return 'activity';
     return 'link';
   }
-  var KIND_LABEL = { kteacher: '케이티처', selfstudy: '자기주도', klab: '케이랩', kple: '케이플', kmake: '케이메이커', english: '영어', quiz: '케이퀴즈', link: '링크' };
-  var KIND_HEX = { kteacher: '#FF85A1', selfstudy: '#7E57C2', klab: '#3BAB72', kple: '#FFB347', kmake: '#5B8EF8', english: '#B7791F', quiz: '#5B8EF8', link: '#94A3B8' };
+  var KIND_LABEL = { kteacher: '케이티처', selfstudy: '자기주도', klab: '케이랩', kple: '케이플', kmake: '케이메이커', english: '영어', quiz: '케이퀴즈', activity: '활동', link: '링크' };
+  var KIND_HEX = { kteacher: '#FF85A1', selfstudy: '#7E57C2', klab: '#3BAB72', kple: '#FFB347', kmake: '#5B8EF8', english: '#B7791F', quiz: '#5B8EF8', activity: '#7E57C2', link: '#94A3B8' };
+  // 결과봉투 훅이 실제 배선된 도구 = 제출·자동채점이 케이박스로 모임 (정직 표기 §7-2)
+  var HOOKED = { selfstudy: 1, quiz: 1, activity: 1, english: 1, klab: 1 };
+  function hookLabel(kind) {
+    if (HOOKED[kind]) return { t: '✅ 제출·자동채점이 케이박스로 모여요', ok: true };
+    if (kind === 'kteacher') return { t: '🎬 수업 진행용 화면이에요', ok: false };
+    return { t: '🔗 함께 열어보는 링크예요 (제출은 모이지 않아요)', ok: false };
+  }
 
   // 현재 페이지 자기소개 (도구 훅 CTX 우선)
   function currentItem() {
@@ -82,6 +90,86 @@
   function myTeacherId(d) {
     return d.rpc('cw_my_teacher_id').then(function (r) { return (r && r.data) || null; })
       .catch(function () { return null; });
+  }
+
+  // ── 초대하기(§7): 학급 목록·최근 반 기억 ─────────────────────────────────
+  var LASTCLASS = 'kedu_boxbar_lastclass_v1';   // {id,label,at}
+  var RESENT = 'kedu_boxbar_lastinvite_v1';     // {url,classId,at} — 재발송 실수 가드
+  var _classes = null;
+  function lastClass() { try { return JSON.parse(localStorage.getItem(LASTCLASS)); } catch (e) { return null; } }
+  function rememberClass(c) { try { localStorage.setItem(LASTCLASS, JSON.stringify({ id: c.id, label: c.label, at: Date.now() })); } catch (e) {} }
+  function loadClasses(d, tid) {
+    if (_classes) return Promise.resolve(_classes);
+    return d.from('class_codes').select('id,label').eq('teacher_id', tid).eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .then(function (r) { _classes = r.data || []; return _classes; });
+  }
+
+  // 교사 세션 확정(공용): resolve → {d, tid}
+  function withTeacher() {
+    return loadSupabase().then(function () {
+      var d = db(); if (!d) throw new Error('no db');
+      return d.auth.getSession().then(function (s) {
+        if (!s.data.session) { clearCache(); hide(); throw new Error('no session'); }
+        if (_teacherId) return { d: d, tid: _teacherId };
+        return myTeacherId(d).then(function (tid) {
+          if (!tid) { clearCache(); hide(); throw new Error('not teacher'); }
+          _teacherId = tid;
+          return { d: d, tid: tid };
+        });
+      });
+    });
+  }
+
+  // 바로 초대: 박스 자동 생성(sent) + 항목 1개 + 반 발송 — 기존 수합·채점 파이프라인 그대로
+  function inviteCurrent(cls) {
+    var item = currentItem();
+    // 재발송 실수 가드: 같은 페이지·같은 반 3분 내 = 한 번 더 눌러야 재발송
+    var last = null; try { last = JSON.parse(localStorage.getItem(RESENT)); } catch (e) {}
+    if (last && last.url === item.url && last.classId === cls.id && Date.now() - last.at < 180000 && !inviteCurrent._again) {
+      inviteCurrent._again = true;
+      toast('방금 ' + cls.label + '에 보냈어요 — 한 번 더 누르면 다시 보내요');
+      setTimeout(function () { inviteCurrent._again = false; }, 4000);
+      return Promise.resolve(null);
+    }
+    inviteCurrent._again = false;
+    setBusy(true);
+    return withTeacher().then(function (ctx) {
+      var d = ctx.d;
+      return d.from('cw_bundles').insert({
+        teacher_id: ctx.tid, title: item.title, description: '',
+        status: 'sent', sent_at: new Date().toISOString()
+      }).select('id').single().then(function (ins) {
+        if (ins.error || !ins.data) throw new Error('bundle');
+        var bid = ins.data.id;
+        return d.from('cw_items').insert({
+          bundle_id: bid, kind: item.kind, title: item.title, url: item.url,
+          config: item.config || {}, sort_order: 0
+        }).then(function (ir) {
+          if (ir.error) throw new Error('item');
+          return d.from('cw_sends').upsert(
+            { bundle_id: bid, class_code_id: cls.id },
+            { onConflict: 'bundle_id,class_code_id' }
+          ).then(function (sr) {
+            if (sr.error) throw new Error('send');
+            return bid;
+          });
+        });
+      });
+    }).then(function (bid) {
+      setBusy(false);
+      rememberClass(cls);
+      try { localStorage.setItem(RESENT, JSON.stringify({ url: item.url, classId: cls.id, at: Date.now() })); } catch (e) {}
+      closePanel();
+      toast('📨 ' + cls.label + '에 초대장을 보냈어요! 받은박스에 바로 떠요');
+      return bid;
+    }).catch(function (e) {
+      setBusy(false);
+      if (String(e.message).indexOf('session') < 0 && String(e.message).indexOf('teacher') < 0) {
+        toast('보내기에 실패했어요 — 잠시 후 다시 눌러 주세요');
+      }
+      return null;
+    });
   }
 
   // 담기함(draft) 확보 → id
@@ -144,8 +232,8 @@
     fab = document.createElement('div');
     fab.className = 'kbx-fab';
     fab.innerHTML = '<span class="kbx-ico">📦</span><span class="kbx-badge" style="display:none">0</span>';
-    fab.title = '이 콘텐츠를 케이박스에 담기';
-    fab.onclick = function (e) { if (e.target.classList.contains('kbx-badge')) { goBox(); } else { addCurrent(); } };
+    fab.title = '학생 초대 · 케이박스에 담기';
+    fab.onclick = function (e) { if (e.target.classList.contains('kbx-badge')) { goBox(); } else { openPanel(); } };
     // 길게 누르면 케이박스로
     var pressT;
     fab.onmousedown = fab.ontouchstart = function () { pressT = setTimeout(goBox, 550); };
@@ -155,6 +243,67 @@
     // 오프라인 큐 flush 시도
     flushQueue();
   }
+
+  // ── 초대 패널(§7) ────────────────────────────────────────────────────────
+  var panel = null, selClass = null;
+  function openPanel() {
+    if (busy) return;
+    if (panel) { closePanel(); return; }
+    var item = currentItem();
+    var hook = hookLabel(item.kind);
+    panel = document.createElement('div');
+    panel.className = 'kbx-panel';
+    panel.innerHTML =
+      '<div class="kbx-p-head"><span class="kbx-p-kind" style="background:' + (KIND_HEX[item.kind] || '#94A3B8') + '">' + (KIND_LABEL[item.kind] || '링크') + '</span>' +
+      '<span class="kbx-p-title"></span></div>' +
+      '<div class="kbx-p-hook ' + (hook.ok ? 'ok' : '') + '">' + hook.t + '</div>' +
+      '<div class="kbx-p-classes"><span class="kbx-p-loading">우리 반 불러오는 중…</span></div>' +
+      '<button class="kbx-p-invite" disabled>📤 바로 초대</button>' +
+      '<div class="kbx-p-row"><button class="kbx-p-add">📦 담기</button><button class="kbx-p-go">케이박스 열기 →</button></div>';
+    panel.querySelector('.kbx-p-title').textContent = item.title;
+    panel.querySelector('.kbx-p-add').onclick = function () { closePanel(); addCurrent(); };
+    panel.querySelector('.kbx-p-go').onclick = goBox;
+    var inviteBtn = panel.querySelector('.kbx-p-invite');
+    inviteBtn.onclick = function () { if (selClass) inviteCurrent(selClass); };
+    document.body.appendChild(panel);
+    // 바깥 탭으로 닫기
+    setTimeout(function () { document.addEventListener('click', outsideClose, true); }, 0);
+    // 학급 로드 → 칩 렌더 (최근 반 자동 선택 = 두 번째부터 진짜 원클릭)
+    withTeacher().then(function (ctx) { return loadClasses(ctx.d, ctx.tid); })
+      .then(function (cs) { if (panel) renderClassChips(cs); })
+      .catch(function () { if (panel) panel.querySelector('.kbx-p-classes').innerHTML = '<span class="kbx-p-loading">학급을 불러오지 못했어요</span>'; });
+  }
+  function renderClassChips(cs) {
+    var box = panel.querySelector('.kbx-p-classes');
+    var inviteBtn = panel.querySelector('.kbx-p-invite');
+    if (!cs.length) { box.innerHTML = '<span class="kbx-p-loading">활성화된 학급 코드가 없어요 — 케이박스에서 만들 수 있어요</span>'; return; }
+    box.innerHTML = '';
+    var last = lastClass();
+    selClass = null;
+    cs.forEach(function (c) {
+      var chip = document.createElement('button');
+      chip.className = 'kbx-p-chip';
+      chip.textContent = c.label;
+      chip.onclick = function () {
+        panel.querySelectorAll('.kbx-p-chip').forEach(function (x) { x.classList.remove('sel'); });
+        chip.classList.add('sel');
+        selClass = c;
+        inviteBtn.disabled = false;
+        inviteBtn.textContent = '📤 ' + c.label + '에 바로 초대';
+      };
+      box.appendChild(chip);
+      if ((last && last.id === c.id) || (!last && cs.length === 1)) chip.onclick();  // 최근 반(또는 유일 반) 자동 선택
+    });
+  }
+  function outsideClose(e) {
+    if (panel && !panel.contains(e.target) && !(fab && fab.contains(e.target))) closePanel();
+  }
+  function closePanel() {
+    if (!panel) return;
+    document.removeEventListener('click', outsideClose, true);
+    panel.remove(); panel = null; selClass = null;
+  }
+
   function hide() { if (fab) fab.style.display = 'none'; }
   function goBox() { location.href = '/classwork/'; }
   function bumpBadge(n) { if (badgeEl) { badgeEl.textContent = n; badgeEl.style.display = ''; } }
@@ -184,7 +333,24 @@
       '.kbx-ico{font-size:26px;line-height:1}',
       '.kbx-badge{position:absolute;top:-4px;right:-4px;min-width:22px;height:22px;padding:0 6px;border-radius:50px;background:#E5484D;color:#fff;font:700 12px/22px "Noto Sans KR",sans-serif;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.2)}',
       '.kbx-toast{position:fixed;left:50%;bottom:88px;transform:translateX(-50%) translateY(10px);background:#243B53;color:#fff;font:600 14px/1 "Noto Sans KR",sans-serif;padding:12px 20px;border-radius:50px;z-index:9001;opacity:0;transition:all .3s;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.25)}',
-      '.kbx-toast.on{opacity:1;transform:translateX(-50%) translateY(0)}'
+      '.kbx-toast.on{opacity:1;transform:translateX(-50%) translateY(0)}',
+      '.kbx-panel{position:fixed;right:18px;bottom:calc(84px + env(safe-area-inset-bottom,0px));width:min(320px,calc(100vw - 36px));background:#fff;border-radius:18px;box-shadow:0 18px 50px rgba(33,52,94,.28);padding:16px;z-index:9002;font-family:"Noto Sans KR",sans-serif;animation:kbxUp .18s ease}',
+      '@keyframes kbxUp{from{opacity:0;transform:translateY(10px)}}',
+      '.kbx-p-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}',
+      '.kbx-p-kind{flex-shrink:0;color:#fff;font:700 11px/1 "Noto Sans KR";padding:5px 10px;border-radius:50px}',
+      '.kbx-p-title{font:700 14px/1.35 "Noto Sans KR";color:#1A202C;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}',
+      '.kbx-p-hook{font:500 12px/1.5 "Noto Sans KR";color:#718096;background:#F4F6FB;border-radius:10px;padding:8px 11px;margin-bottom:11px}',
+      '.kbx-p-hook.ok{color:#22A06B;background:#EAF8F1}',
+      '.kbx-p-classes{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px;min-height:34px}',
+      '.kbx-p-loading{font:500 12.5px/34px "Noto Sans KR";color:#A0AEC0}',
+      '.kbx-p-chip{border:1.5px solid #E7ECF3;background:#fff;color:#1A202C;font:600 13px/1 "Noto Sans KR";padding:9px 15px;border-radius:50px;cursor:pointer;transition:all .12s}',
+      '.kbx-p-chip.sel{border-color:#5B8EF8;background:#EBF4FF;color:#3B6FD8;box-shadow:0 2px 8px rgba(91,142,248,.25)}',
+      '.kbx-p-invite{width:100%;height:48px;border:none;border-radius:13px;background:linear-gradient(120deg,#5B8EF8,#7AA6FF);color:#fff;font:700 15px "Noto Sans KR";cursor:pointer;box-shadow:0 6px 18px rgba(91,142,248,.35);transition:transform .12s}',
+      '.kbx-p-invite:hover{transform:translateY(-1px)}',
+      '.kbx-p-invite:disabled{background:#E7ECF3;color:#A0AEC0;box-shadow:none;cursor:default;transform:none}',
+      '.kbx-p-row{display:flex;gap:8px;margin-top:9px}',
+      '.kbx-p-add,.kbx-p-go{flex:1;height:40px;border:1.5px solid #E7ECF3;background:#fff;border-radius:11px;font:600 13px "Noto Sans KR";color:#718096;cursor:pointer}',
+      '.kbx-p-add:hover,.kbx-p-go:hover{border-color:#5B8EF8;color:#3B6FD8;background:#EBF4FF}'
     ].join('\n');
     document.head.appendChild(s);
   }
@@ -234,8 +400,12 @@
   window.KeduBoxbar = {
     markTeacher: markTeacher,        // 교사 페이지가 세션 확인 후 호출
     boot: boot,                      // 캐시 있으면 바 표시
+    openPanel: openPanel,            // 초대 패널 열기(§7)
+    invite: inviteCurrent,           // 바로 초대 실행 — invite({id,label})
+    closePanel: closePanel,
     detectKind: detectKind,          // 테스트용
     currentItem: currentItem,        // 테스트용
+    hookLabel: hookLabel,            // 테스트용
     _clear: clearCache
   };
 
