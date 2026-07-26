@@ -42,6 +42,7 @@
     var questions = (ctx.config.questions && ctx.config.questions.length)
       ? ctx.config.questions.filter(function (q) { return KBQ.validate(q).length === 0; })
       : KBQ.SAMPLE;
+    if (!questions.length) questions = KBQ.SAMPLE;   // 전량 필터 시 빈 판(즉시 종료) 방지
 
     var phase = 'lobby';
     var qi = -1;
@@ -84,10 +85,14 @@
       if (phase === 'lobby') {
         el.innerHTML = head +
           '<div class="kb-stage">' +
-            '<div class="kb-big">참가자 ' + roster.length + '명</div>' +
+            '<div class="kb-dim" style="font-size:19px;">학생은 <b style="color:#fff">keduclass.com/kbattle/play.html</b> 에서</div>' +
+            '<div style="font-family:inherit;font-weight:900;font-size:min(22vw,150px);letter-spacing:.18em;color:var(--kb-gold,#ffd23f);line-height:1.15;margin:6px 0 2px;">' + esc(ctx.roomCode) + '</div>' +
+            '<div class="kb-dim" style="font-size:19px;margin-bottom:22px;">이 <b style="color:#fff">방코드</b>를 넣으면 들어와요 📱</div>' +
+            '<div class="kb-big" style="font-size:34px;">참가자 ' + roster.length + '명</div>' +
             '<div class="kb-roster">' + roster.map(function (n) {
               return '<span class="kb-chip">' + esc(n) + '</span>'; }).join('') + '</div>' +
             '<button class="kb-btn" id="kbStart"' + (roster.length ? '' : ' disabled') + '>시작 ▶</button>' +
+            (roster.length ? '' : '<div class="kb-dim" style="margin-top:14px;font-size:15px;">한 명이라도 들어오면 시작할 수 있어요</div>') +
           '</div>';
         var b = el.querySelector('#kbStart'); if (b) b.onclick = next;
 
