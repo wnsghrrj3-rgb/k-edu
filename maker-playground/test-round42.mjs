@@ -125,6 +125,18 @@ sec('5. Template Browser 노출');
   T('AI 추천 배지 실장', /AI/.test(html2) && TPL.list({}).filter((t2) => /^pk-/.test(t2.templateId) && t2.aiRecommended !== false).length >= 4);
 }
 
+/* ============ 6. 실렌더 썸네일 (R42 후속) ============ */
+sec('6. 실렌더 썸네일');
+{
+  PG.go('templates');
+  const cards = [...window.document.querySelectorAll('.mk-tplcard')];
+  T('전 카드 실타이포 썸네일', cards.length === 28 && cards.every((c) => /<text/.test(c.innerHTML)), 'n=' + cards.length);
+  T('팩 팔레트 실색 노출', cards.filter((c) => /#2F6B54|#182230|#FFD166/i.test(c.innerHTML)).length >= 3);
+  const pk = cards.find((c) => /개념 한 장/.test(c.textContent)); pk.click();
+  T('모달 스테이지 실렌더', /<text/.test((window.document.querySelector('.stage') || { innerHTML: '' }).innerHTML));
+  if (window.MK && window.MK.Modal) window.MK.Modal.close();
+}
+
 /* ============ 결과 ============ */
 console.log(`\nR42 검증: ${pass}/${pass + fail} 통과${fail ? ' — 실패 ' + fail : ''}`);
 if (fail) process.exit(1);

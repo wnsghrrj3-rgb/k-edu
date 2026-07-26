@@ -33,6 +33,14 @@ window.MK = (() => {
   /* 씬 축약 썸네일 (Scene 요소를 미니 SVG로) */
   const sceneThumb = (scene) => {
     const W = 160, H = Math.round(160 * scene.height / scene.width);
+    /* R42 후속 — 실렌더 썸네일: 카드에서 진짜 디자인(색·타이포·차트)이 보인다.
+       MK_RENDER 부재·오류 시 아래 스켈레톤 폴백(기존 경로 무손). */
+    if (window.MK_RENDER) {
+      try {
+        const svg = window.MK_RENDER.toSVG(window.MK_RENDER.renderScene(scene, {}), { size: { w: W, h: H } });
+        if (/^<svg/.test(svg)) return svg.replace('<svg ', '<svg style="width:100%;height:100%;display:block" ');
+      } catch (_) { /* 폴백으로 */ }
+    }
     let out = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:100%;background:${scene.background}">`;
     for (const el of scene.elements) {
       const x = el.x / 100 * W, y = el.y / 100 * H, w = el.w / 100 * W;
@@ -55,7 +63,7 @@ window.MK = (() => {
       <div class="thumb"><span class="type">${esc(tpl.category)}</span>
         ${opts.aiRec ? '<span class="airec">✦ AI 추천</span>' : ''}
         <span class="fav ${opts.fav ? 'on' : ''}">${opts.fav ? '★' : '☆'}</span>
-        <svg viewBox="0 0 160 ${Math.round(160 * tpl.scenes[0].height / tpl.scenes[0].width)}" style="aspect-ratio:${tpl.scenes[0].width}/${tpl.scenes[0].height};background:#fff">${sceneThumb(tpl.scenes[0]).replace(/^<svg[^>]*>|<\/svg>$/g, '')}</svg>
+        <span class="thumbwrap" style="display:block;aspect-ratio:${tpl.scenes[0].width}/${tpl.scenes[0].height};background:#fff;overflow:hidden">${sceneThumb(tpl.scenes[0])}</span>
       </div>
       <div class="meta"><b>${esc(tpl.title)}</b><small>${esc(tpl.style)} · ${esc(tpl.ratio)} · 장면 ${tpl.scenes.length}${opts.target ? ' · ' + esc(opts.target) : ''}${tpl.difficulty ? '</small><span class="diff">' + esc(tpl.difficulty) + '</span><small>' : ''}</small></div>
     </button>`;
