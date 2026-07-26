@@ -4,28 +4,55 @@
 window.MK_SCREENS = window.MK_SCREENS || {};
 
 /* ---------- 후속 단계 플레이스홀더 (ph 헬퍼는 R40 안내판 전환으로 소멸) ---------- */
-/* ---------- Video: R37~R39 이식 완료 — 실기능은 Editor에 라이브 ---------- */
+/* ---------- Video: 즉시 시작 (R43) — 클릭 = 영상 프로젝트가 열린다 ---------- */
 window.MK_SCREENS.video = {
   title: 'Video', variants: ['A'],
-  render: () => `<span class="pg-note">✅ 영상 기능은 이식 완료 — 실사용은 <b>Editor</b> 화면에서 (이 화면은 안내판)</span>
+  render: () => `<span class="pg-note">클릭 한 번으로 시작 — 만든 뒤 상단 「미리보기」·「내보내기 → MP4」</span>
     <div class="ph-screen">
-      <div class="ph-block"><b>재생 미리보기 — 라이브 (R37)</b>Editor 상단 「미리보기」 = 진짜 슬라이드쇼. 애니 9종 실재생·진행바·클릭/→ 다음·Esc 닫기</div>
-      <div class="ph-block"><b>MP4 내보내기 — 라이브 (R38·R39)</b>Editor 「내보내기 → MP4」 = WebCodecs 실인코딩(1080p·30fps). 삽입 영상 프레임 합성 + 배경음악 소리 트랙(AAC) 포함. 크롬·엣지 전용</div>
-      <div class="ph-block"><b>배경음악 — 라이브 (R38)</b>Editor 오디오 패널 = 내장 합성 3종(피아노·파도·비트) + 내 음악 파일. 같은 음악은 장면을 넘어 이어짐</div>
-      <div class="ph-block"><b>삽입 영상 재생 — 라이브 (R39)</b>이미지 교체로 영상 파일을 넣으면 캔버스·미리보기에서 실재생</div>
+      <button class="ph-block st-act" data-st="vid-files" style="text-align:left;cursor:pointer">
+        <b>📁 내 사진·영상으로 15초 영상 만들기</b>
+        사진 여러 장을 고르면 장면·배경음·애니가 자동으로 붙어요. 글자만 바꾸면 끝.
+        <em id="stMsgV" style="display:block;margin-top:6px;color:var(--mk-text-secondary)"></em></button>
+      <button class="ph-block st-act" data-st="vid-tpl" style="text-align:left;cursor:pointer">
+        <b>🎬 템플릿로 시작 — 행사 하이라이트 15초</b>
+        사진 2장 + 문구 4개만 바꾸는 완성형. 배경음 포함.</button>
+      <button class="ph-block st-act" data-st="go-projects" style="text-align:left;cursor:pointer">
+        <b>▶ 하던 작업 이어서</b>
+        내 프로젝트 목록에서 열어요.</button>
     </div>
-    <div style="margin-top:14px">${window.MK.Button({ label: 'Editor에서 써보기 →', kind: 'accent', attrs: 'onclick="PG.go(\'editor\')"' })}</div>`,
+    <p class="ed-note" style="margin-top:12px">MP4 내보내기는 크롬·엣지에서 돼요 (소리 포함).</p>`,
+  mount(root) {
+    root.querySelectorAll('[data-st]').forEach((b) => b.onclick = () => {
+      if (b.dataset.st === 'vid-files') return window.MK_START.pickAndStart('video', (m) => { const el = root.querySelector('#stMsgV'); if (el) el.textContent = m; });
+      if (b.dataset.st === 'vid-tpl') return window.MK_TPL.load('pk-vid-01');
+      if (b.dataset.st === 'go-projects') return window.PG.go('projects');
+    });
+  },
 };
-/* ---------- Photo: 미이식(정직) — 기본 사진 삽입·교체만 Editor에 라이브 ---------- */
+/* ---------- Photo: 즉시 시작 (R43) — 사진을 고르면 편집이 열린다 ---------- */
 window.MK_SCREENS.photo = {
   title: 'Photo', variants: ['A'],
-  render: () => `<span class="pg-note">⚠ 사진 <b>보정</b>은 아직 미이식 — 사진 <b>삽입·교체</b>는 Editor에 라이브 (R36)</span>
+  render: () => `<span class="pg-note">사진을 고르는 순간 편집 화면이 열려요 — 장당 1장면, 제목 자막 포함</span>
     <div class="ph-screen">
-      <div class="ph-block"><b>사진 삽입·교체 — 라이브 (R36)</b>Editor에서 이미지 요소 선택 → 교체 = 진짜 파일 선택·실표시·저장 영속</div>
-      <div class="ph-block"><b>사진 편집 모드 — 미이식</b>자르기·마스크 9종·보정 7종(kmake photo.js) — 이식 후보, 다음 라운드 몫</div>
-      <div class="ph-block"><b>배경 제거 — 미구현</b>클라이언트 사이드 누끼 (단독 과제)</div>
+      <button class="ph-block st-act" data-st="ph-files" style="text-align:left;cursor:pointer">
+        <b>🖼 사진 골라서 바로 시작</b>
+        여러 장을 고르면 장면이 장수만큼 생겨요. 첫 장면엔 제목 자막이 붙어요.
+        <em id="stMsgP" style="display:block;margin-top:6px;color:var(--mk-text-secondary)"></em></button>
+      <button class="ph-block st-act" data-st="ph-sns" style="text-align:left;cursor:pointer">
+        <b>📱 템플릿로 시작 — 학급 계정 소식 (4:5)</b>
+        커버·사진·엔딩 3장 세트. 사진만 갈아 끼우세요.</button>
+      <button class="ph-block st-act" data-st="go-projects" style="text-align:left;cursor:pointer">
+        <b>▶ 하던 작업 이어서</b>
+        내 프로젝트 목록에서 열어요.</button>
     </div>
-    <div style="margin-top:14px">${window.MK.Button({ label: 'Editor에서 써보기 →', kind: 'accent', attrs: 'onclick="PG.go(\'editor\')"' })}</div>`,
+    <p class="ed-note" style="margin-top:12px">자르기·필터 같은 사진 보정은 아직 이식 전이에요 — 배치·크기·교체는 편집에서 돼요.</p>`,
+  mount(root) {
+    root.querySelectorAll('[data-st]').forEach((b) => b.onclick = () => {
+      if (b.dataset.st === 'ph-files') return window.MK_START.pickAndStart('photo', (m) => { const el = root.querySelector('#stMsgP'); if (el) el.textContent = m; });
+      if (b.dataset.st === 'ph-sns') return window.MK_TPL.load('pk-sns-01');
+      if (b.dataset.st === 'go-projects') return window.PG.go('projects');
+    });
+  },
 };
 /* AI 화면은 screens/ai.js (AI Studio v1)로 승격 */
 /* Export 화면은 screens/export.js (Universal Render Engine 콘솔)로 승격 */
