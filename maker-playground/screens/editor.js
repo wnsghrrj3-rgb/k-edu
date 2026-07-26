@@ -491,9 +491,10 @@ window.MK_SCREENS.editor = (() => {
           <button class="ph-item" data-ex="pngall">PNG — 전체 ${doc.scenes.length}장면</button>
           <button class="ph-item" data-ex="svg">SVG — 현재 장면 (벡터)</button>
           <button class="ph-item" data-ex="pptx">PPTX — 전체 장면 (파워포인트)</button>
+          <button class="ph-item" data-ex="pdf">PDF — 전체 장면 (인쇄·문서, 한글 그대로)</button>
           <button class="ph-item" data-ex="mp4">MP4 영상 — 전체 장면 (애니 포함)</button>
         </div>
-        <p id="exMsg" style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">MP4는 크롬·엣지에서 돼요. PDF 한글·영상 오디오 트랙은 다음 몫이에요.</p>
+        <p id="exMsg" style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">MP4는 크롬·엣지에서 돼요. PDF는 인쇄용 고해상(장면 그대로)이에요.</p>
         <div style="text-align:right;margin-top:10px">${M2.Button({ label: '닫기', attrs: 'onclick="MK.Modal.close()"' })}</div>`,
       ) || setTimeout(() => {
         document.querySelectorAll('[data-ex]').forEach((b) => b.onclick = async () => {
@@ -507,6 +508,26 @@ window.MK_SCREENS.editor = (() => {
               dl(`${(doc.title || '케이메이커').replace(/[^\w가-힣 _-]/g, '')}.pptx`, u);
               setTimeout(() => URL.revokeObjectURL(u), 4000);
               exMsg(`PPTX 저장 완료 — 슬라이드 ${r.slides}장${r.media ? ' · 사진 ' + r.media + '장 포함' : ''}`);
+            } else if (b.dataset.ex === 'pdf') {                  /* R40 — PDF 실출력 (래스터 — 한글 그대로) */
+              const imgs = [];
+              for (let i = 0; i < doc.scenes.length; i++) {
+                exMsg(`장면 그리는 중… ${i + 1}/${doc.scenes.length}`);
+                const dlist = window.MK_RENDER.renderScene(doc.scenes[i], {});
+                const out = await window.MK_RENDER.toRaster(dlist, { format: 'jpg', scale: 2, quality: 0.92 });
+                if (!out || !out.dataUrl) throw new Error('장면 래스터 실패 — 크롬·엣지에서 시도해 주세요');
+                const jb = window.MK_RENDER.dataUrlBytes(out.dataUrl);
+                if (!jb) throw new Error('JPEG 변환 실패');
+                imgs.push({ bin: jb.bin, w: out.plan.width, h: out.plan.height });
+              }
+              const r = window.MK_RENDER.toPDFRaster(imgs, {});
+              if (!r.pages) throw new Error('PDF 페이지 생성 실패');
+              const u8 = new Uint8Array(r.bytes.length);
+              for (let i = 0; i < r.bytes.length; i++) u8[i] = r.bytes.charCodeAt(i) & 255;
+              const blob = new Blob([u8], { type: 'application/pdf' });
+              const u = URL.createObjectURL(blob);
+              dl(`${(doc.title || '케이메이커').replace(/[^\w가-힣 _-]/g, '')}.pdf`, u);
+              setTimeout(() => URL.revokeObjectURL(u), 4000);
+              exMsg(`PDF 저장 완료 — ${r.pages}쪽 (인쇄용 고해상)`);
             } else if (b.dataset.ex === 'mp4') {                  /* R38 — MP4 실출력 (WebCodecs) */
               const r = await window.MK_VIDEO.exportMP4(doc, { onProgress: exMsg });
               exMsg(r.ok ? `MP4 저장 완료 — ${r.sec}초 · ${r.w}×${r.h}${r.audio ? ' · 🎵 소리 포함' : (r.audioMsg ? ' · ' + r.audioMsg : '')}` : r.msg);

@@ -655,6 +655,62 @@ window.MK_RENDER = (() => {
   }
 
   /* ================================================================
+     12b. PDF Raster Adapter (R40) — 한글 실출력
+     · 장면을 JPEG로 실래스터한 뒤 DCTDecode XObject 전면 배치
+       → 폰트 임베드 없이도 편집한 그대로(한글 포함) 인쇄용 PDF
+     · jpegSize = SOF 마커 스캔 순수 파서(치수 자동 판독)
+     · 벡터 텍스트(CID 폰트 임베드)는 여전히 미탑재(정직) — toPDF 몫
+     ================================================================ */
+  function jpegSize(u8) { /* SOFn(C0~CF, C4/C8/CC 제외) 스캔 — 순수 */
+    if (!u8 || u8.length < 10 || u8[0] !== 0xFF || u8[1] !== 0xD8) return null;
+    let i = 2;
+    while (i + 9 <= u8.length) {
+      if (u8[i] !== 0xFF) { i++; continue; }
+      const m = u8[i + 1];
+      if (m === 0xFF) { i++; continue; }
+      if (m === 0x01 || (m >= 0xD0 && m <= 0xD9)) { i += 2; continue; } /* 독립 마커 */
+      const len = (u8[i + 2] << 8) | u8[i + 3];
+      if (len < 2) return null;
+      if (m >= 0xC0 && m <= 0xCF && m !== 0xC4 && m !== 0xC8 && m !== 0xCC) {
+        if (i + 9 > u8.length) return null;
+        return { h: (u8[i + 5] << 8) | u8[i + 6], w: (u8[i + 7] << 8) | u8[i + 8], progressive: m === 0xC2 };
+      }
+      i += 2 + len;
+    }
+    return null;
+  }
+  const binStr = (u8) => { let s = ''; for (let i = 0; i < u8.length; i += 8192) s += String.fromCharCode.apply(null, u8.subarray(i, Math.min(i + 8192, u8.length))); return s; };
+
+  function toPDFRaster(images, o) { /* images: [{bin:Uint8Array(JPEG), w?, h?}] */
+    o = o || {};
+    const objs = []; const addObj = (body) => { objs.push(body); return objs.length; };
+    const pageRefs = []; const warnAll = [];
+    (images || []).forEach((im, idx) => {
+      const size = (im && im.w > 0 && im.h > 0) ? { w: im.w, h: im.h } : jpegSize(im && im.bin);
+      if (!im || !im.bin || !size || !size.w || !size.h) { warnAll.push({ code: 'bad-jpeg', msg: `페이지 ${idx + 1} JPEG 판독 실패 — 건너뜀` }); return; }
+      const S = 595.28 / size.w; /* A4 폭 기준 — 장면 비율 그대로 */
+      const PW = R2(size.w * S), PH = R2(size.h * S);
+      const xObj = addObj(`<< /Type /XObject /Subtype /Image /Width ${size.w} /Height ${size.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${im.bin.length} >>\nstream\n${binStr(im.bin)}\nendstream`);
+      const stream = `q ${PW} 0 0 ${PH} 0 0 cm /Im0 Do Q`;
+      const cObj = addObj(`<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`);
+      const pObj = addObj(`<< /Type /Page /Parent PAGES_REF /MediaBox [0 0 ${PW} ${PH}] /Contents ${cObj} 0 R /Resources << /XObject << /Im0 ${xObj} 0 R >> >> >>`);
+      pageRefs.push(pObj);
+    });
+    const pagesObj = addObj(`<< /Type /Pages /Kids [${pageRefs.map((r) => r + ' 0 R').join(' ')}] /Count ${pageRefs.length} >>`);
+    const catObj = addObj(`<< /Type /Catalog /Pages ${pagesObj} 0 R >>`);
+    let out = '%PDF-1.4\n%\u00e2\u00e3\u00cf\u00d3\n'; const offs = [0]; /* 바이너리 힌트 주석 — 뷰어 호환 */
+    objs.forEach((body, i) => {
+      offs.push(out.length);
+      out += `${i + 1} 0 obj\n${body.replace(/PAGES_REF/g, pagesObj + ' 0 R')}\nendobj\n`;
+    });
+    const xref = out.length;
+    out += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n` +
+      offs.slice(1).map((of) => String(of).padStart(10, '0') + ' 00000 n \n').join('') +
+      `trailer\n<< /Size ${objs.length + 1} /Root ${catObj} 0 R >>\nstartxref\n${xref}\n%%EOF`;
+    return { bytes: out, pages: pageRefs.length, warnings: warnAll, raster: true };
+  }
+
+  /* ================================================================
      13. PPTX Adapter — 자체 ZIP(STORE)+OOXML 라이터. 실제 열리는 .pptx
      · 도형(prstGeom rect/ellipse) · 텍스트(txBody 멀티라인 run) ·
        그룹/테마/마스터 최소 구성 · 이미지 = 라벨 도형 폴백(정직)
@@ -872,7 +928,7 @@ window.MK_RENDER = (() => {
     /* 서브엔진(테스트·확장용) */
     wrap, measure, layoutText, resolveFont, resolveAsset, VEC, buildTimeline, sampleTrack,
     /* 어댑터 */
-    toSVG, toHTML, toPDF, toPPTX, toRaster, toVideoPlan, registerAdapter, ADAPTERS,
+    toSVG, toHTML, toPDF, toPDFRaster, jpegSize, dataUrlBytes, toPPTX, toRaster, toVideoPlan, registerAdapter, ADAPTERS,
     /* 프리셋·큐 */
     PRESETS, enqueue, step, runAll, cancel, retry, batch,
     queue: () => Q.jobs.map((j) => ({ ...j })), onQueue: (f) => Q.listeners.push(f), clearQueue: () => { Q.jobs = []; emit(); },

@@ -137,7 +137,7 @@ sec('6. 에디터 배선');
   const root = window.document;
   root.querySelector('[data-ed="export"]').click();
   const exs = [...root.querySelectorAll('[data-ex]')].map((b) => b.dataset.ex);
-  T('내보내기 — PPTX·MP4 실버튼 등재', exs.includes('pptx') && exs.includes('mp4') && exs.length === 6);
+  T('내보내기 — PPTX·MP4 실버튼 등재', exs.includes('pptx') && exs.includes('mp4') && exs.length >= 6); /* R40에서 pdf 추가 — 고정 수 → 존재검증 보정 */
   T('가짜 문구("다음 이식 몫") 제거', !/다음 이식 몫이에요/.test(root.getElementById('exMsg').textContent));
   window.MK.Modal.close();
   /* 오디오 패널 */
