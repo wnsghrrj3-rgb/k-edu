@@ -14,6 +14,13 @@
 (function () {
   var KEY = 'kedu_from_teacher';
 
+  /* 0) 전면 롤아웃 가드 — 중복 로드 / iframe 임베드 / 홈 자체에서는 조용히 물러남 */
+  try {
+    if (document.getElementById('kedu-back')) return;              // 이미 버튼 있음
+    if (window.top !== window) return;                             // 도구가 오버레이/iframe 으로 박힌 경우
+    if (location.pathname === '/' || location.pathname === '/index.html') return;  // 홈에서 홈으로는 무의미
+  } catch (e) {}
+
   /* 1) 진입 맥락 갱신 — 케이에듀 홈에서 넘어온 순간에만 기록을 덮어쓴다 */
   try {
     var ref = document.referrer || '';
