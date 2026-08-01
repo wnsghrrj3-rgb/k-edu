@@ -120,7 +120,17 @@
       const on = WS.sel && WS.sel.idx === i && WS.sel.type !== 'scene' ? 'sel' : '';
       if (el.kind === 'text') {
         const fs = (el.size / 100 * CH).toFixed(1);
-        return `<div class="ws-el text ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight || 400}">${M().esc(el.text).replace(/\n/g, '<br>')}</div>`;
+        return `<div class="ws-el text ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight || 400}${el.color ? `;color:${el.color}` : ''}">${M().esc(el.text).replace(/\n/g, '<br>')}</div>`;
+      }
+      if (el.src) {                                    /* R45 — Workspace도 실이미지·실영상 표시 (R36 editor와 동일) */
+        const fit = el.fit === 'contain' ? 'contain' : 'cover';
+        const media = (el.video === true || el.kind === 'video' || /^data:video\//.test(el.src))
+          ? `<video class="ws-media" src="${el.src}" muted autoplay loop playsinline style="width:100%;height:100%;object-fit:${fit};display:block"></video>`
+          : `<img class="ws-media" src="${el.src}" alt="${M().esc(el.label || '')}" draggable="false" style="width:100%;height:100%;object-fit:${fit};display:block">`;
+        return `<div class="ws-el media ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;overflow:hidden">${media}</div>`;
+      }
+      if (el.fill) {                                   /* R45 — 색 채움 요소 (자막 바 등) 실표시 */
+        return `<div class="ws-el media ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;background:${el.fill}"></div>`;
       }
       return `<div class="ws-el box ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%"><span>${M().esc(el.label || '요소')}</span></div>`;
     }).join('');

@@ -262,12 +262,14 @@ T('사용 시점 상한 게이트(초과 기록 자체가 불가)', (() => {
   return no(A.recordAI('t-ai', u.userId, { tokens: 1000001 }), '플랜 월');
 })());
 T('AI 초과분 과금 산식(플랜 강등 시)', (() => {
-  /* enterprise 상한에서 1,009,000 기록 후 pro 강등 → 초과 9,000tok × ₩2/1000 */
-  A.updateOrg('t-ai', { plan: 'enterprise' });
-  const u = A.listUsers('t-ai')[0];
-  A.recordAI('t-ai', u.userId, { tokens: 1009000 });
-  A.updateOrg('t-ai', { plan: 'pro' });
-  const line = A.computeBill('t-ai').lines.find((l) => l.item.includes('AI 초과'));
+  /* enterprise 상한에서 1,009,000 기록 후 pro 강등 → 초과 9,000tok × ₩2/1000
+     (R45: t-ai 재사용 시 앞 테스트의 49,000tok이 실행 날짜에 따라 같은 달에
+      합산되던 캘린더 플레이크 → 전용 조직으로 결정론화) */
+  A.createOrg({ orgId: 't-bill', name: '과금검증', plan: 'enterprise' });
+  const u = A.createUser('t-bill', { email: 'b@t.kr' });
+  A.recordAI('t-bill', u.userId, { tokens: 1009000 });
+  A.updateOrg('t-bill', { plan: 'pro' });
+  const line = A.computeBill('t-bill').lines.find((l) => l.item.includes('AI 초과'));
   return line && line.amount === Math.round(9000 / 1000) * 2;
 })());
 
