@@ -102,5 +102,30 @@ window.MK_ANIM = (() => {
     return () => timers.forEach(clearTimeout);
   }
 
-  return { PRESETS, IDLES, EASES, DIRECTIONS, preset, ensure, play };
+  /* R57 — 단일 위상 즉시 데모: 프리셋 클릭 피드백용.
+     phase: 'in' | 'out' | 'idle'. enter/exit는 duration 뒤 클래스 정리, idle은 루프 유지. */
+  function playPhase(stageEl, scene, phase) {
+    if (!stageEl) return () => {};
+    const timers = [];
+    const els = [...stageEl.querySelectorAll('[data-mka]')];
+    const A = scene.anim;
+    const clear = (el) => { el.className = el.className.replace(/\bmka-(in|idle|out)-\S+/g, '').trim(); };
+    if (phase === 'idle') {
+      els.forEach((el) => { clear(el); if (A.idle.preset !== 'none') el.classList.add(`mka-idle-${A.idle.preset}`); });
+      return () => els.forEach(clear);
+    }
+    const slot = phase === 'in' ? A.enter : A.exit;
+    els.forEach((el) => {
+      el.style.setProperty('--mka-dur', slot.duration + 's');
+      el.style.setProperty('--mka-delay', '0s');
+      el.style.setProperty('--mka-ease', slot.ease || 'ease-out');
+      el.style.setProperty('--mka-repeat', 1);
+      clear(el);
+      el.classList.add(`mka-${phase}-${slot.preset}`, `mka-dir-${slot.direction || 'up'}`);
+    });
+    timers.push(setTimeout(() => els.forEach(clear), slot.duration * 1000 + 120));
+    return () => { timers.forEach(clearTimeout); els.forEach(clear); };
+  }
+
+  return { PRESETS, IDLES, EASES, DIRECTIONS, preset, ensure, play, playPhase };
 })();

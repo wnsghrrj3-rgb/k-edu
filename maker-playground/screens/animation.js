@@ -50,8 +50,17 @@
       const on = ST.selEl === i ? 'sel' : '';
       if (el.kind === 'text') {
         const fs = (el.size / 100 * CH).toFixed(1);
-        return `<div class="an-el ${on}" data-mka data-an-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight || 400}">${m.esc(el.text).replace(/\n/g, '<br>')}</div>`;
+        const ts = window.MK_TEXTSTYLE ? window.MK_TEXTSTYLE.css(el) : ''; /* R56 스타일 동률 */
+        return `<div class="an-el ${on}" data-mka data-an-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight || 400}${el.color ? `;color:${el.color}` : ''}${el.align ? `;text-align:${el.align}` : ''}${ts}">${m.esc(el.text).replace(/\n/g, '<br>')}</div>`;
       }
+      if (el.src) { /* R57 — 실이미지·실영상 (R45 Workspace 동일) */
+        const fit = el.fit === 'contain' ? 'contain' : 'cover';
+        const media = (el.video === true || el.kind === 'video' || /^data:video\//.test(el.src))
+          ? `<video class="an-media" src="${el.src}" muted autoplay loop playsinline style="width:100%;height:100%;object-fit:${fit};display:block"></video>`
+          : `<img class="an-media" src="${el.src}" alt="${m.esc(el.label || '')}" draggable="false" style="width:100%;height:100%;object-fit:${fit};display:block">`;
+        return `<div class="an-el media ${on}" data-mka data-an-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;overflow:hidden">${media}</div>`;
+      }
+      if (el.fill) return `<div class="an-el media ${on}" data-mka data-an-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;background:${el.fill}${el.radius ? `;border-radius:${el.radius > 100 ? '50%' : el.radius + 'px'}` : ''}"></div>`;
       return `<div class="an-el box ${on}" data-mka data-an-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%"><span>${m.esc(el.label || '요소')}</span></div>`;
     }).join('');
     return `<div class="an-stagewrap">
@@ -139,11 +148,17 @@
         });
       });
 
-      /* Preset 적용 (현재 슬롯) */
+      /* Preset 적용 (현재 슬롯) — R57: 적용 즉시 스테이지에서 데모 재생 */
       root.querySelectorAll('[data-an-preset]').forEach((b) => b.onclick = () => {
         stopPlay();
         scene().anim[ST.slot].preset = b.dataset.anPreset;
         R();
+        setTimeout(() => {
+          const stage = document.getElementById('anStage');
+          if (!stage) return;
+          if (ST.cancel) ST.cancel();
+          ST.cancel = AN().playPhase(stage, scene(), ST.slot === 'idle' ? 'idle' : ST.slot === 'enter' ? 'in' : 'out');
+        }, 30);
       });
 
       /* 슬롯 선택·슬롯 duration */
