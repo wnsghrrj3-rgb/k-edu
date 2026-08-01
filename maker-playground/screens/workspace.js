@@ -120,7 +120,7 @@
       const on = WS.sel && WS.sel.idx === i && WS.sel.type !== 'scene' ? 'sel' : '';
       if (el.kind === 'text') {
         const fs = (el.size / 100 * CH).toFixed(1);
-        return `<div class="ws-el text ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight || 400}${el.color ? `;color:${el.color}` : ''}">${M().esc(el.text).replace(/\n/g, '<br>')}</div>`;
+        return `<div class="ws-el text ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight || 400}${el.color ? `;color:${el.color}` : ''}${el.align ? `;text-align:${el.align}` : ''}">${M().esc(el.text).replace(/\n/g, '<br>')}</div>`;
       }
       if (el.src) {                                    /* R45 — Workspace도 실이미지·실영상 표시 (R36 editor와 동일) */
         const fit = el.fit === 'contain' ? 'contain' : 'cover';
@@ -129,8 +129,9 @@
           : `<img class="ws-media" src="${el.src}" alt="${M().esc(el.label || '')}" draggable="false" style="width:100%;height:100%;object-fit:${fit};display:block">`;
         return `<div class="ws-el media ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;overflow:hidden">${media}</div>`;
       }
-      if (el.fill) {                                   /* R45 — 색 채움 요소 (자막 바 등) 실표시 */
-        return `<div class="ws-el media ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;background:${el.fill}"></div>`;
+      if (el.fill) {                                   /* R45 — 색 채움 요소 (자막 바 등) 실표시 · R49 radius */
+        const rad = el.radius ? `;border-radius:${(el.radius * CW / sc.width).toFixed(1)}px` : '';
+        return `<div class="ws-el media ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;background:${el.fill}${rad}"></div>`;
       }
       return `<div class="ws-el box ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%"><span>${M().esc(el.label || '요소')}</span></div>`;
     }).join('');
@@ -148,6 +149,15 @@
         <button data-ws-fit="contain" data-ws-fitidx="${idx}" style="flex:1;padding:7px 4px;border-radius:8px;border:1.5px solid ${cur === 'contain' ? 'var(--mk-teal)' : 'var(--mk-border)'};background:${cur === 'contain' ? 'var(--mk-teal-soft)' : 'transparent'};cursor:pointer;font:var(--mk-t-caption)">원본 전체</button>
       </div>`;
   };
+  /* R49 — 자막 디자인 선택 (MK_CAPTION 프리셋) */
+  const capCtl = (sc) => {
+    if (!window.MK_CAPTION) return '';
+    const cur = window.MK_CAPTION.detect(sc).preset;
+    return `<label class="cx-field"><span>자막 디자인</span></label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:-4px 0 8px">
+        ${window.MK_CAPTION.PRESETS.map((p) => `<button data-ws-cap="${p.id}" title="${M().esc(p.hint)}" style="padding:8px 4px;border-radius:8px;border:1.5px solid ${cur === p.id ? 'var(--mk-teal)' : 'var(--mk-border)'};background:${cur === p.id ? 'var(--mk-teal-soft)' : 'transparent'};cursor:pointer;font:var(--mk-t-caption)">${M().esc(p.name)}</button>`).join('')}
+      </div>`;
+  };
   const ContextPanel = () => {
     const m = M(), sc = scene(), p = proj();
     let title = '프로젝트', body = '';
@@ -162,6 +172,7 @@
       title = 'Scene';
       body = field('이름', sc.name) + field('크기', sc.width + '×' + sc.height) + field('배경', sc.background) +
         (WS.mode === 'video' || WS.mode === 'presentation' ? field('길이', (sc.duration || 0) + '초') + field('전환', sc.transition || 'none') : '') +
+        capCtl(sc) +
         `<button class="cx-scenebtn" data-ws-anim>✨ 애니메이션 편집 →</button>`;
     } else {
       const el = sc.elements[sel.idx];
@@ -418,6 +429,13 @@
         const el = scene().elements[+b.dataset.wsFitidx];
         if (!el) return;
         snap(); el.fit = b.dataset.wsFit; R();
+      });
+      /* R49 — 자막 디자인 */
+      root.querySelectorAll('[data-ws-cap]').forEach((b) => b.onclick = () => {
+        if (!window.MK_CAPTION) return;
+        snap();
+        window.MK_CAPTION.apply(scene(), b.dataset.wsCap);
+        WS.sel = { type: 'scene' }; R();
       });
       const sb = root.querySelector('[data-ws-selscene]'); if (sb) sb.onclick = () => { WS.sel = { type: 'scene' }; R(); };
       const pb = root.querySelector('[data-ws-selproj]'); if (pb) pb.onclick = () => { WS.sel = null; R(); };
