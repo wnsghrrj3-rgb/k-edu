@@ -86,4 +86,336 @@
         ] },
     ],
   });
+  /* ================= Composition 2 · Title + Media Story ================= */
+  /* 항목 수만큼 미디어+설명 복제 · 사진 없는 항목=그래픽 중심 · CTA 없으면 생략 */
+  C.registerComposition({
+    id: 'cx-story', name: '소개 스토리', category: '홍보',
+    purpose: '제품·기업·행사·수업 내용을 항목별로 소개',
+    recommendedMediaCount: { min: 1, max: 12, ideal: 5 },
+    recommendedDuration: { min: 15, max: 90, default: 40 },
+    defaultRatio: '16:9', audio: { synth: 'calm' },
+    sampleItems: [{ head: '특징 하나', body: '설명입니다' }, { head: '특징 둘', body: '설명입니다' }, { head: '특징 셋', body: '설명입니다' }],
+    scenes: [
+      { id: 'st-title', role: 'title', name: '메인 제목', required: true, bg: 'accent',
+        duration: { default: 2.5, min: 2, max: 3.5, mode: 'content-aware' },
+        textSlots: [
+          { id: 't1', role: 'headline', bind: 'title', defaultText: '제목을 입력하세요', maxCh: 12, maxLines: 2, frame: { x: 8, y: 34, w: 84 }, align: 'center' },
+          { id: 't2', role: 'body', bind: 'subtitle', required: false, maxCh: 22, maxLines: 1, frame: { x: 8, y: 62, w: 84 }, align: 'center' },
+        ] },
+      { id: 'st-item', role: 'media-text', name: '소개', required: true, repeatable: true, consumes: 'items',
+        variants: ['base', 'mirror'], mediaAnim: 'slide',
+        duration: { default: 3.5, min: 2.5, max: 6, mode: 'content-aware' },
+        singleFrame: { x: 52, y: 10, w: 42, h: 80, radius: 12 },
+        mediaSlots: [{ id: 'm1', required: false, frame: { x: 52, y: 10, w: 42, h: 80, radius: 12 } }],
+        layoutByRatio: { '9:16': {
+          mediaSlots: [{ id: 'm1', required: false, frame: { x: 6, y: 8, w: 88, h: 42, radius: 12 } }],
+          textSlots: [
+            { id: 't1', role: 'subheadline', bind: 'head', maxCh: 12, maxLines: 2, frame: { x: 8, y: 56, w: 84 } },
+            { id: 't2', role: 'body', bind: 'body', required: false, maxCh: 18, maxLines: 3, frame: { x: 8, y: 70, w: 84 } },
+          ] } },
+        textSlots: [
+          { id: 't1', role: 'subheadline', bind: 'head', maxCh: 14, maxLines: 2, frame: { x: 7, y: 26, w: 40 } },
+          { id: 't2', role: 'body', bind: 'body', required: false, maxCh: 20, maxLines: 4, frame: { x: 7, y: 46, w: 40 } },
+        ] },
+      { id: 'st-sum', role: 'section', name: '정리', required: false, needs: 'summary', bg: 'paper',
+        duration: { default: 3, min: 2, max: 5, mode: 'content-aware' },
+        textSlots: [{ id: 't1', role: 'subheadline', bind: 'summary', maxCh: 18, maxLines: 3, frame: { x: 10, y: 38, w: 80 }, align: 'center' }] },
+      { id: 'st-cta', role: 'call-to-action', name: 'CTA', required: false, needs: 'cta', bg: 'dark',
+        duration: { default: 2.5, min: 2, max: 3.5, mode: 'fixed' },
+        textSlots: [{ id: 't1', role: 'cta', bind: 'cta', maxCh: 14, maxLines: 2, frame: { x: 8, y: 42, w: 84 }, align: 'center' }] },
+    ],
+  });
+
+  /* ================= Composition 3 · Card News ================= */
+  /* 항목당 카드 1장 · 긴 텍스트 자동 분할(엔진 overflow) · 진행 번호 표시 */
+  C.registerComposition({
+    id: 'cx-cardnews', name: '카드뉴스', category: 'SNS',
+    purpose: '공지·정보·캠페인을 카드 단위로 전달',
+    recommendedMediaCount: { min: 0, max: 8, ideal: 0 },
+    recommendedDuration: { min: 15, max: 60, default: 30 },
+    defaultRatio: '4:5', needsMedia: false, audio: { synth: 'calm' },
+    sampleItems: [{ body: '첫 번째 소식' }, { body: '두 번째 소식' }, { body: '세 번째 소식' }],
+    scenes: [
+      { id: 'cn-cover', role: 'intro', name: '표지', required: true, bg: 'accent',
+        duration: { default: 2.5, min: 2, max: 3.5, mode: 'content-aware' },
+        textSlots: [
+          { id: 't1', role: 'headline', bind: 'title', defaultText: '카드뉴스 제목', maxCh: 10, maxLines: 2, frame: { x: 8, y: 34, w: 84 }, align: 'center' },
+          { id: 't2', role: 'caption', bind: 'subtitle', required: false, maxCh: 18, maxLines: 1, frame: { x: 8, y: 62, w: 84 }, align: 'center' },
+        ] },
+      { id: 'cn-card', role: 'list-item', name: '카드', required: true, repeatable: true, consumes: 'items',
+        variants: ['base'], mediaAnim: 'fade',
+        duration: { default: 3.5, min: 2.5, max: 6, mode: 'content-aware' },
+        singleFrame: { x: 12, y: 8, w: 76, h: 38, radius: 12 },
+        mediaSlots: [{ id: 'm1', required: false, frame: { x: 12, y: 8, w: 76, h: 38, radius: 12 } }],
+        textSlots: [
+          { id: 'num', role: 'caption', autoNum: 'asc', maxCh: 4, maxLines: 1, frame: { x: 8, y: 6, w: 10 } },
+          { id: 't1', role: 'body', bind: 'body', maxCh: 16, maxLines: 4, frame: { x: 10, y: 52, w: 80 }, align: 'center' },
+        ] },
+      { id: 'cn-emph', role: 'highlight', name: '강조', required: false, needs: 'emphasis', bg: 'dark',
+        duration: { default: 3, min: 2.5, max: 4, mode: 'content-aware' },
+        textSlots: [{ id: 't1', role: 'subheadline', bind: 'emphasis', maxCh: 12, maxLines: 3, frame: { x: 10, y: 38, w: 80 }, align: 'center' }] },
+      { id: 'cn-cta', role: 'call-to-action', name: '마무리', required: true, bg: 'accent',
+        duration: { default: 2.5, min: 2, max: 3, mode: 'fixed' },
+        textSlots: [{ id: 't1', role: 'cta', bind: 'cta', defaultText: '팔로우하고 소식 받아 보세요', maxCh: 14, maxLines: 2, frame: { x: 8, y: 42, w: 84 }, align: 'center' }] },
+    ],
+  });
+
+  /* ================= Composition 4 · Before & After ================= */
+  /* 미디어 2장 = 1쌍 · 좌우(16:9)/상하(9:16) 비교 · 홀수 장 = 단독 축소 */
+  C.registerComposition({
+    id: 'cx-beforeafter', name: '비포 & 애프터', category: '비교',
+    purpose: '변화·개선·학습 결과를 전후로 비교',
+    recommendedMediaCount: { min: 2, max: 12, ideal: 6 },
+    recommendedDuration: { min: 10, max: 60, default: 25 },
+    defaultRatio: '16:9', audio: { synth: 'beat' },
+    scenes: [
+      { id: 'ba-intro', role: 'intro', name: '인트로', required: true, bg: 'dark',
+        duration: { default: 2, min: 1.5, max: 2.5, mode: 'fixed' },
+        textSlots: [{ id: 't1', role: 'headline', bind: 'title', defaultText: '변화의 순간', maxCh: 12, maxLines: 2, frame: { x: 8, y: 40, w: 84 }, align: 'center' }] },
+      { id: 'ba-pair', role: 'comparison', name: '비교', required: true, repeatable: true,
+        mediaPerScene: 2, variants: ['base'], mediaAnim: 'wipe',
+        duration: { default: 4, min: 3, max: 5, mode: 'fixed' },
+        singleFrame: { x: 15, y: 8, w: 70, h: 74, radius: 10 },
+        mediaSlots: [
+          { id: 'before', frame: { x: 1.5, y: 8, w: 47.5, h: 74, radius: 10 } },
+          { id: 'after', required: false, frame: { x: 51, y: 8, w: 47.5, h: 74, radius: 10 } },
+        ],
+        layoutByRatio: { '9:16': { mediaSlots: [
+          { id: 'before', frame: { x: 5, y: 4, w: 90, h: 44, radius: 10 } },
+          { id: 'after', required: false, frame: { x: 5, y: 50, w: 90, h: 44, radius: 10 } },
+        ],
+          textSlots: [
+            { id: 'lb', role: 'caption', defaultText: '전', maxCh: 4, maxLines: 1, frame: { x: 8, y: 5.5, w: 12 } },
+            { id: 'la', role: 'caption', defaultText: '후', maxCh: 4, maxLines: 1, frame: { x: 8, y: 51.5, w: 12 } },
+          ] } },
+        textSlots: [
+          { id: 'lb', role: 'caption', defaultText: '전', maxCh: 4, maxLines: 1, frame: { x: 4, y: 86, w: 20 } },
+          { id: 'la', role: 'caption', defaultText: '후', maxCh: 4, maxLines: 1, frame: { x: 53, y: 86, w: 20 } },
+        ] },
+      { id: 'ba-result', role: 'highlight', name: '결과', required: false, needs: 'result', bg: 'accent',
+        duration: { default: 3, min: 2, max: 4, mode: 'content-aware' },
+        textSlots: [{ id: 't1', role: 'subheadline', bind: 'result', maxCh: 14, maxLines: 2, frame: { x: 8, y: 42, w: 84 }, align: 'center' }] },
+      { id: 'ba-outro', role: 'outro', name: '아웃트로', required: true, bg: 'dark',
+        duration: { default: 2, min: 1.5, max: 2.5, mode: 'fixed' },
+        textSlots: [{ id: 't1', role: 'caption', bind: 'credit', defaultText: 'K-MAKER로 만들었어요', maxCh: 20, maxLines: 1, frame: { x: 8, y: 46, w: 84 }, align: 'center' }] },
+    ],
+  });
+
+  /* ================= Composition 5 · Ranking / List ================= */
+  /* 항목 역순 카운트다운 · 1위 하이라이트 별도 씬 */
+  C.registerComposition({
+    id: 'cx-ranking', name: '랭킹 · 리스트', category: '리뷰',
+    purpose: 'Top N·추천 목록·체크리스트',
+    recommendedMediaCount: { min: 0, max: 10, ideal: 5 },
+    recommendedDuration: { min: 15, max: 60, default: 35 },
+    defaultRatio: '9:16', needsMedia: false, audio: { synth: 'beat' },
+    sampleItems: [{ head: '삼위', body: '설명' }, { head: '이위', body: '설명' }, { head: '일위', body: '설명' }],
+    scenes: [
+      { id: 'rk-hook', role: 'intro', name: '훅', required: true, bg: 'dark',
+        duration: { default: 2, min: 1.5, max: 3, mode: 'content-aware' },
+        textSlots: [{ id: 't1', role: 'headline', bind: 'title', defaultText: '오늘의 Top 리스트', maxCh: 10, maxLines: 2, frame: { x: 8, y: 38, w: 84 }, align: 'center' }] },
+      { id: 'rk-item', role: 'list-item', name: '순위', required: true, repeatable: true, consumes: 'items',
+        variants: ['base', 'mirror'], mediaAnim: 'slide',
+        duration: { default: 3, min: 2.5, max: 5, mode: 'content-aware' },
+        singleFrame: { x: 10, y: 26, w: 80, h: 40, radius: 12 },
+        mediaSlots: [{ id: 'm1', required: false, frame: { x: 10, y: 26, w: 80, h: 40, radius: 12 } }],
+        textSlots: [
+          { id: 'num', role: 'number', autoNum: 'desc', maxCh: 3, maxLines: 1, frame: { x: 6, y: 6, w: 20 } },
+          { id: 't1', role: 'subheadline', bind: 'head', maxCh: 12, maxLines: 2, frame: { x: 8, y: 70, w: 84 } },
+          { id: 't2', role: 'body', bind: 'body', required: false, maxCh: 16, maxLines: 2, frame: { x: 8, y: 82, w: 84 } },
+        ] },
+      { id: 'rk-top', role: 'highlight', name: '1위 하이라이트', required: false, needs: 'top', bg: 'accent',
+        duration: { default: 4, min: 3, max: 5, mode: 'content-aware' },
+        textSlots: [
+          { id: 'n1', role: 'number', defaultText: '1', maxCh: 2, maxLines: 1, frame: { x: 8, y: 10, w: 20 } },
+          { id: 't1', role: 'headline', bind: 'top', maxCh: 10, maxLines: 2, frame: { x: 8, y: 40, w: 84 }, align: 'center' },
+        ] },
+      { id: 'rk-out', role: 'outro', name: '마무리', required: true, bg: 'dark',
+        duration: { default: 2, min: 1.5, max: 3, mode: 'fixed' },
+        textSlots: [{ id: 't1', role: 'cta', bind: 'cta', defaultText: '여러분의 1위는?', maxCh: 12, maxLines: 2, frame: { x: 8, y: 42, w: 84 }, align: 'center' }] },
+    ],
+  });
+
+  /* ================= Composition 6 · Timeline / Progress ================= */
+  C.registerComposition({
+    id: 'cx-timeline', name: '타임라인', category: '스토리',
+    purpose: '과정·성장·일정·제작기를 순서대로',
+    recommendedMediaCount: { min: 2, max: 15, ideal: 6 },
+    recommendedDuration: { min: 15, max: 90, default: 40 },
+    defaultRatio: '16:9', audio: { synth: 'calm' },
+    scenes: [
+      { id: 'tl-title', role: 'title', name: '제목', required: true, bg: 'accent',
+        duration: { default: 2.5, min: 2, max: 3, mode: 'content-aware' },
+        textSlots: [{ id: 't1', role: 'headline', bind: 'title', defaultText: '우리의 여정', maxCh: 12, maxLines: 2, frame: { x: 8, y: 38, w: 84 }, align: 'center' }] },
+      { id: 'tl-item', role: 'timeline-item', name: '단계', required: true, repeatable: true,
+        mediaPerScene: 1, variants: ['base', 'mirror'], mediaAnim: 'slide',
+        duration: { default: 3, min: 2.5, max: 4.5, mode: 'media-aware' },
+        singleFrame: { x: 34, y: 8, w: 60, h: 80, radius: 12 },
+        mediaSlots: [{ id: 'm1', frame: { x: 34, y: 8, w: 60, h: 80, radius: 12 } }],
+        layoutByRatio: { '9:16': {
+          mediaSlots: [{ id: 'm1', frame: { x: 6, y: 16, w: 88, h: 56, radius: 12 } }],
+          textSlots: [
+            { id: 'num', role: 'caption', autoNum: 'asc', maxCh: 3, maxLines: 1, frame: { x: 6, y: 5, w: 12 } },
+            { id: 't1', role: 'subheadline', bind: 'step', defaultText: '이 단계의 이야기', maxCh: 14, maxLines: 2, frame: { x: 6, y: 76, w: 88 } },
+          ] } },
+        textSlots: [
+          { id: 'num', role: 'number', autoNum: 'asc', maxCh: 3, maxLines: 1, frame: { x: 6, y: 8, w: 14 } },
+          { id: 't1', role: 'subheadline', bind: 'step', defaultText: '이 단계의 이야기', maxCh: 10, maxLines: 3, frame: { x: 6, y: 42, w: 24 } },
+        ] },
+      { id: 'tl-final', role: 'highlight', name: '결실', required: false, needs: 'media', bg: 'dark',
+        duration: { default: 4, min: 3, max: 5, mode: 'fixed' },
+        mediaSlots: [{ id: 'm1', frame: { x: 10, y: 10, w: 80, h: 62, radius: 12 } }],
+        textSlots: [{ id: 't1', role: 'subheadline', bind: 'finale', defaultText: '그리고 지금', maxCh: 14, maxLines: 1, frame: { x: 8, y: 80, w: 84 }, align: 'center' }] },
+    ],
+    reserveTail: 1,
+  });
+
+  /* ================= Composition 7 · Interview / Q&A ================= */
+  /* 질문·답변 = 1쌍 1씬 · 긴 답변은 엔진이 다음 씬으로 자동 분할 */
+  C.registerComposition({
+    id: 'cx-qa', name: '인터뷰 · Q&A', category: '교육',
+    purpose: '인터뷰·후기·FAQ·교육 문답',
+    recommendedMediaCount: { min: 0, max: 6, ideal: 1 },
+    recommendedDuration: { min: 15, max: 90, default: 40 },
+    defaultRatio: '16:9', needsMedia: false, audio: { synth: 'calm' },
+    sampleItems: [{ q: '질문 하나?', a: '답변입니다' }, { q: '질문 둘?', a: '답변입니다' }],
+    scenes: [
+      { id: 'qa-intro', role: 'intro', name: '소개', required: true, bg: 'accent',
+        duration: { default: 2.5, min: 2, max: 3.5, mode: 'content-aware' },
+        singleFrame: { x: 62, y: 14, w: 30, h: 72, radius: 999 },
+        mediaSlots: [{ id: 'm1', required: false, frame: { x: 62, y: 14, w: 30, h: 72, radius: 999 } }],
+        textSlots: [
+          { id: 't1', role: 'headline', bind: 'title', defaultText: '인터뷰', maxCh: 10, maxLines: 2, frame: { x: 8, y: 34, w: 48 } },
+          { id: 't2', role: 'caption', bind: 'guest', required: false, maxCh: 16, maxLines: 1, frame: { x: 8, y: 60, w: 48 } },
+        ] },
+      { id: 'qa-pair', role: 'media-text', name: '문답', required: true, repeatable: true, consumes: 'items',
+        variants: ['base'], mediaAnim: 'fade',
+        duration: { default: 4, min: 3, max: 7, mode: 'content-aware' },
+        singleFrame: { x: 70, y: 60, w: 22, h: 34, radius: 999 },
+        mediaSlots: [{ id: 'm1', required: false, frame: { x: 70, y: 60, w: 22, h: 34, radius: 999 } }],
+        textSlots: [
+          { id: 'q', role: 'subheadline', bind: 'q', maxCh: 16, maxLines: 2, frame: { x: 8, y: 14, w: 84 } },
+          { id: 'a', role: 'body', bind: 'a', maxCh: 20, maxLines: 4, frame: { x: 8, y: 40, w: 84 } },
+        ] },
+      { id: 'qa-quote', role: 'quote', name: '핵심 문장', required: false, needs: 'quote', bg: 'dark',
+        duration: { default: 3.5, min: 3, max: 5, mode: 'content-aware' },
+        textSlots: [{ id: 't1', role: 'subheadline', bind: 'quote', maxCh: 14, maxLines: 3, frame: { x: 10, y: 36, w: 80 }, align: 'center' }] },
+      { id: 'qa-out', role: 'outro', name: '마무리', required: true, bg: 'accent',
+        duration: { default: 2, min: 1.5, max: 3, mode: 'fixed' },
+        textSlots: [{ id: 't1', role: 'caption', bind: 'credit', defaultText: '함께해 주셔서 고마워요', maxCh: 18, maxLines: 1, frame: { x: 8, y: 46, w: 84 }, align: 'center' }] },
+    ],
+  });
+
+  /* ================= Composition 8 · Problem → Solution ================= */
+  /* 문제(어두움)→해결(밝음) 분위기 전환 · 없는 단계 자동 생략 */
+  C.registerComposition({
+    id: 'cx-problem', name: '문제 → 해결', category: '비즈니스',
+    purpose: '광고·제안·수업 설명의 논리 흐름',
+    recommendedMediaCount: { min: 0, max: 8, ideal: 2 },
+    recommendedDuration: { min: 15, max: 60, default: 30 },
+    defaultRatio: '16:9', needsMedia: false, audio: { synth: 'beat' },
+    scenes: [
+      { id: 'ps-hook', role: 'intro', name: '훅', required: true, bg: 'dark',
+        duration: { default: 2, min: 1.5, max: 3, mode: 'content-aware' },
+        textSlots: [{ id: 't1', role: 'headline', bind: 'hook', defaultText: '이런 적 있나요?', maxCh: 12, maxLines: 2, frame: { x: 8, y: 40, w: 84 }, align: 'center' }] },
+      { id: 'ps-problem', role: 'section', name: '문제', required: true, bg: 'dark',
+        duration: { default: 3.5, min: 2.5, max: 6, mode: 'content-aware' },
+        singleFrame: { x: 54, y: 12, w: 40, h: 76, radius: 12 },
+        mediaSlots: [{ id: 'm1', required: false, frame: { x: 54, y: 12, w: 40, h: 76, radius: 12 } }],
+        textSlots: [
+          { id: 'l', role: 'caption', defaultText: '문제', maxCh: 4, maxLines: 1, frame: { x: 8, y: 12, w: 20 } },
+          { id: 't1', role: 'subheadline', bind: 'problem', defaultText: '무엇이 불편한가요', maxCh: 14, maxLines: 3, frame: { x: 8, y: 30, w: 42 } },
+        ] },
+      { id: 'ps-solution', role: 'section', name: '해결', required: true, bg: 'accent',
+        duration: { default: 3.5, min: 2.5, max: 6, mode: 'content-aware' },
+        singleFrame: { x: 54, y: 12, w: 40, h: 76, radius: 12 },
+        mediaSlots: [{ id: 'm1', required: false, frame: { x: 54, y: 12, w: 40, h: 76, radius: 12 } }],
+        textSlots: [
+          { id: 'l', role: 'caption', defaultText: '해결', maxCh: 4, maxLines: 1, frame: { x: 8, y: 12, w: 20 } },
+          { id: 't1', role: 'subheadline', bind: 'solution', defaultText: '이렇게 해결해요', maxCh: 14, maxLines: 3, frame: { x: 8, y: 30, w: 42 } },
+        ] },
+      { id: 'ps-result', role: 'highlight', name: '결과 수치', required: false, needs: 'metric', bg: 'paper',
+        duration: { default: 3, min: 2.5, max: 4, mode: 'fixed' },
+        textSlots: [
+          { id: 'n', role: 'number', bind: 'metric', maxCh: 6, maxLines: 1, frame: { x: 8, y: 26, w: 84 }, align: 'center' },
+          { id: 't1', role: 'body', bind: 'metricDesc', required: false, maxCh: 18, maxLines: 2, frame: { x: 8, y: 58, w: 84 }, align: 'center' },
+        ] },
+      { id: 'ps-cta', role: 'call-to-action', name: 'CTA', required: false, needs: 'cta', bg: 'dark',
+        duration: { default: 2.5, min: 2, max: 3.5, mode: 'fixed' },
+        textSlots: [{ id: 't1', role: 'cta', bind: 'cta', maxCh: 14, maxLines: 2, frame: { x: 8, y: 42, w: 84 }, align: 'center' }] },
+    ],
+  });
+
+  /* ================= Composition 9 · Review / Testimonial ================= */
+  C.registerComposition({
+    id: 'cx-review', name: '리뷰 · 후기', category: '리뷰',
+    purpose: '제품·장소·서비스 경험 공유',
+    recommendedMediaCount: { min: 1, max: 12, ideal: 6 },
+    recommendedDuration: { min: 20, max: 90, default: 40 },
+    defaultRatio: '9:16', audio: { synth: 'calm' },
+    sampleItems: [{ head: '장점 하나', body: '좋았어요' }, { head: '장점 둘', body: '좋았어요' }],
+    scenes: [
+      { id: 'rv-intro', role: 'intro', name: '소개', required: true, bg: 'dark',
+        duration: { default: 2.5, min: 2, max: 3.5, mode: 'content-aware' },
+        singleFrame: { x: 0, y: 0, w: 100, h: 100 },
+        mediaSlots: [{ id: 'm1', frame: { x: 0, y: 0, w: 100, h: 100 } }],
+        textSlots: [{ id: 't1', role: 'headline', bind: 'title', defaultText: '오늘의 리뷰', maxCh: 12, maxLines: 2, frame: { x: 8, y: 74, w: 84 } }] },
+      { id: 'rv-point', role: 'media-text', name: '장점', required: true, repeatable: true, consumes: 'items',
+        variants: ['base', 'mirror'], mediaAnim: 'slide',
+        duration: { default: 3, min: 2.5, max: 5, mode: 'content-aware' },
+        singleFrame: { x: 8, y: 8, w: 84, h: 48, radius: 12 },
+        mediaSlots: [{ id: 'm1', required: false, frame: { x: 8, y: 8, w: 84, h: 48, radius: 12 } }],
+        textSlots: [
+          { id: 't1', role: 'subheadline', bind: 'head', maxCh: 12, maxLines: 2, frame: { x: 8, y: 62, w: 84 } },
+          { id: 't2', role: 'body', bind: 'body', required: false, maxCh: 18, maxLines: 3, frame: { x: 8, y: 76, w: 84 } },
+        ] },
+      { id: 'rv-weak', role: 'section', name: '아쉬운 점', required: false, needs: 'weakness', bg: 'paper',
+        duration: { default: 3, min: 2.5, max: 4.5, mode: 'content-aware' },
+        textSlots: [
+          { id: 'l', role: 'caption', defaultText: '아쉬운 점 · 팁', maxCh: 10, maxLines: 1, frame: { x: 8, y: 16, w: 60 } },
+          { id: 't1', role: 'body', bind: 'weakness', maxCh: 18, maxLines: 4, frame: { x: 8, y: 32, w: 84 } },
+        ] },
+      { id: 'rv-rating', role: 'highlight', name: '평점', required: false, needs: 'rating', bg: 'accent',
+        duration: { default: 3, min: 2.5, max: 4, mode: 'fixed' },
+        textSlots: [
+          { id: 'n', role: 'number', bind: 'rating', maxCh: 5, maxLines: 1, frame: { x: 8, y: 30, w: 84 }, align: 'center' },
+          { id: 't1', role: 'caption', defaultText: '나의 평점', maxCh: 8, maxLines: 1, frame: { x: 8, y: 58, w: 84 }, align: 'center' },
+        ] },
+      { id: 'rv-out', role: 'call-to-action', name: '추천', required: true, bg: 'dark',
+        duration: { default: 2.5, min: 2, max: 3.5, mode: 'content-aware' },
+        textSlots: [{ id: 't1', role: 'cta', bind: 'recommend', defaultText: '이런 분께 추천해요', maxCh: 14, maxLines: 2, frame: { x: 8, y: 42, w: 84 }, align: 'center' }] },
+    ],
+  });
+
+  /* ================= Composition 10 · Narrative Story ================= */
+  /* 내용 적으면 3단 축소 · 많으면 전개 반복 · 전환점 강조 */
+  C.registerComposition({
+    id: 'cx-narrative', name: '이야기', category: '스토리',
+    purpose: '시작·전개·전환·결말이 있는 짧은 이야기',
+    recommendedMediaCount: { min: 2, max: 15, ideal: 7 },
+    recommendedDuration: { min: 20, max: 120, default: 50 },
+    defaultRatio: '16:9', audio: { synth: 'calm' },
+    reserveTail: 2, /* 전환점 1 + 결말 1 */
+    scenes: [
+      { id: 'nr-open', role: 'intro', name: '시작', required: true,
+        duration: { default: 3, min: 2, max: 4, mode: 'content-aware' },
+        singleFrame: { x: 0, y: 0, w: 100, h: 100 },
+        mediaSlots: [{ id: 'm1', frame: { x: 0, y: 0, w: 100, h: 100 } }],
+        textSlots: [{ id: 't1', role: 'headline', bind: 'title', defaultText: '이야기의 시작', maxCh: 12, maxLines: 2, frame: { x: 8, y: 72, w: 84 } }] },
+      { id: 'nr-dev', role: 'media', name: '전개', required: true, repeatable: true,
+        mediaPerScene: 1, variants: ['base', 'mirror'], mediaAnim: 'fade',
+        duration: { default: 3, min: 2, max: 4.5, mode: 'media-aware' },
+        singleFrame: { x: 0, y: 0, w: 100, h: 100 },
+        mediaSlots: [{ id: 'm1', frame: { x: 0, y: 0, w: 100, h: 100 } }] },
+      { id: 'nr-turn', role: 'highlight', name: '전환점', required: false, needs: 'media', bg: 'dark',
+        duration: { default: 4, min: 3, max: 5, mode: 'fixed' },
+        mediaSlots: [{ id: 'm1', frame: { x: 8, y: 8, w: 84, h: 62, radius: 12 } }],
+        textSlots: [{ id: 't1', role: 'subheadline', bind: 'turning', defaultText: '그때, 모든 것이 달라졌다', maxCh: 16, maxLines: 2, frame: { x: 8, y: 78, w: 84 }, align: 'center' }] },
+      { id: 'nr-end', role: 'outro', name: '결말', required: true, bg: 'dark',
+        duration: { default: 3, min: 2, max: 4, mode: 'content-aware' },
+        singleFrame: { x: 26, y: 10, w: 48, h: 56, radius: 12 },
+        mediaSlots: [{ id: 'm1', required: false, frame: { x: 26, y: 10, w: 48, h: 56, radius: 12 } }],
+        textSlots: [{ id: 't1', role: 'subheadline', bind: 'ending', defaultText: '이야기는 계속됩니다', maxCh: 14, maxLines: 2, frame: { x: 8, y: 76, w: 84 }, align: 'center' }] },
+    ],
+  });
 })();

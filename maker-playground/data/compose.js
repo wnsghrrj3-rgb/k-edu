@@ -84,11 +84,9 @@ window.MK_COMPOSE = (() => {
     for (const spec of comp.scenes) {
       /* ① 선택 씬 생략 — 콘텐츠 없으면 */
       if (!spec.required && spec.needs) {
-        const has = spec.needs === 'title' ? !!(texts.title && String(texts.title).trim())
-          : spec.needs === 'cta' ? !!(texts.cta && String(texts.cta).trim())
-          : spec.needs === 'media' ? mi < n
+        const has = spec.needs === 'media' ? mi < n
           : spec.needs === 'items' ? !!(items && items.length)
-          : true;
+          : !!(texts[spec.needs] != null && String(texts[spec.needs]).trim());
         if (!has) { notes.push('생략: ' + spec.id + ' (' + spec.needs + ' 없음)'); continue; }
       }
       /* ② 반복 씬 복제 */
@@ -98,21 +96,31 @@ window.MK_COMPOSE = (() => {
         const per = spec.mediaPerScene || 1;
         /* 과다 대응 — multiThreshold 이상이면 분할 레이아웃 variant 사용 */
         const useMulti = !source && spec.multiSlots && spec.multiThreshold && total >= spec.multiThreshold;
+        const normM = (m) => ({ name: m.name || '', kind: m.kind === 'video' ? 'video' : 'image', src: m.src, orient: 'unknown', ...(m.duration ? { duration: +m.duration } : {}) });
         let idx = 0;
         while (source ? idx < total : mi < n - (comp.reserveTail || 0) || (idx === 0 && spec.required)) {
-          const take = useMulti && (idx % 3 === 2) ? Math.min(spec.multiSlots || 2, n - mi) : per;
-          const slice = source ? [source[idx]] : media.items.slice(mi, mi + Math.max(1, take));
-          if (!source && !slice.length) break;
-          plan.push({ spec, variantIdx: idx, medias: slice, item: source ? source[idx] : null });
-          if (!source) mi += slice.length;
+          let slice;
+          if (source) {
+            const it = source[idx];
+            if (it && it.media && it.media.src) slice = [normM(it.media)];
+            else if ((spec.mediaSlots || []).length && mi < n) slice = [media.items[mi++]];
+            else slice = []; /* 미디어 없는 항목 = 그래픽 중심 (지시서 §5-2) */
+          } else {
+            const take = useMulti && (idx % 3 === 2) ? Math.min(spec.multiSlots || 2, n - mi) : per;
+            slice = media.items.slice(mi, mi + Math.max(1, take));
+            if (!slice.length) break;
+            mi += slice.length;
+          }
+          plan.push({ spec, variantIdx: idx, medias: slice, item: source ? source[idx] : null, totalItems: source ? total : 0 });
           idx++;
           if (idx > 200) break; /* 안전핀 */
         }
         continue;
       }
       /* ③ 단일 씬 — 미디어 슬롯 요구 시 소비 */
+      const capSlots = (spec.mediaSlots || []).length;
       const need = (spec.mediaSlots || []).filter((s) => s.required !== false).length;
-      const slice = need ? media.items.slice(mi, mi + need) : [];
+      const slice = capSlots ? media.items.slice(mi, mi + capSlots) : [];
       if (need && slice.length < need && spec.required) {
         /* 부족 우선순위: 다슬롯→단일 축소 (지시서 §7) */
         if (slice.length > 0) { notes.push('축소: ' + spec.id + ' 슬롯 ' + need + '→' + slice.length); }
@@ -125,14 +133,20 @@ window.MK_COMPOSE = (() => {
     }
     /* 잔여 미디어 → 마지막 반복 스펙에 흡수 (버리지 않는다 — 지시서 §7) */
     if (mi < n) {
-      const rep = [...comp.scenes].reverse().find((s) => s.repeatable && s.consumes !== 'items');
+      const rep = [...comp.scenes].reverse().find((s) => s.repeatable && s.consumes !== 'items')
+        || [...comp.scenes].reverse().find((s) => s.repeatable && (s.mediaSlots || []).length);
       if (rep) {
-        let idx = plan.filter((p) => p.spec === rep).length;
-        while (mi < n) { plan.push({ spec: rep, variantIdx: idx++, medias: [media.items[mi++]], item: null }); }
-        notes.push('잔여 미디어 ' + (n - mi + plan.length) + '건 흡수');
-      } else notes.push('경고: 잔여 미디어 ' + (n - mi) + '건 미배치');
+        const absorbed = n - mi;
+        let idx = plan.filter((p2) => p2.spec === rep).length;
+        let at = -1; plan.forEach((p2, i2) => { if (p2.spec === rep) at = i2; });
+        const extra = [];
+        while (mi < n) { extra.push({ spec: rep, variantIdx: idx++, medias: [media.items[mi++]], item: null, totalItems: 0 }); }
+        plan.splice(at + 1, 0, ...extra); /* 같은 흐름 자리에 삽입 — 구조 순서 유지 */
+        notes.push('잔여 미디어 ' + absorbed + '건 흡수');
+      } else { notes.push('초과: 미디어 ' + (n - mi) + '장은 이 구조에 자리가 없어 사용되지 않아요 — 편집 화면에서 직접 추가할 수 있어요'); }
     }
-    return { ok: true, plan, media, notes };
+    const used = plan.reduce((a, p2) => a + p2.medias.length, 0);
+    return { ok: true, plan, media, notes, unusedMedia: Math.max(0, n - used) };
   }
 
   /* ================= 씬 duration ================= */
@@ -190,10 +204,11 @@ window.MK_COMPOSE = (() => {
     tslots = applyVariant(tslots.map((s) => ({ slot: s, frame: s.frame })), spec, p.variantIdx).map((f) => ({ ...f.slot, frame: f.frame }));
     const overflowRest = [];
     tslots.forEach((s, i) => {
-      const raw = p.item && p.item[s.bind] != null ? p.item[s.bind]
+      const raw = s.autoNum ? String(s.autoNum === 'desc' ? (p.totalItems || 0) - p.variantIdx : p.variantIdx + 1)
+        : p.item && p.item[s.bind] != null ? p.item[s.bind]
         : s.bind && p.texts && p.texts[s.bind] != null ? p.texts[s.bind]
-        : (s.seq && seq != null ? String(seq) : s.defaultText || '');
-      if (!String(raw).trim() && s.required === false) return; /* 선택 텍스트 생략 */
+        : s.defaultText || '';
+      if (!String(raw).trim()) return; /* 빈 텍스트 노출 금지 — 내용 없으면 그 슬롯은 그리지 않는다 */
       const fit = fitText(raw, s);
       if (fit.rest) overflowRest.push({ slot: s, rest: fit.rest });
       textsUsed.push(fit.text);
@@ -249,7 +264,7 @@ window.MK_COMPOSE = (() => {
       scenes,
     };
     const total = scenes.reduce((a, s) => a + s.duration, 0);
-    return { ok: true, doc, total: R1(total), notes: planned.notes, sceneCount: scenes.length };
+    return { ok: true, doc, total: R1(total), notes: planned.notes, sceneCount: scenes.length, unusedMedia: planned.unusedMedia || 0 };
   }
 
   /* ================= 감사 — 결정론·스키마 호환·규칙 실동작 ================= */
@@ -282,7 +297,10 @@ window.MK_COMPOSE = (() => {
         }
         /* 전 미디어 배치 (버림 금지) */
         const placed = a.doc.scenes.reduce((c, s) => c + s.elements.filter((e) => e.src).length, 0);
-        if (placed < n) violations.push(comp.id + ':' + n + ':media-dropped:' + placed);
+        if (placed < n) {
+          const honest = a.unusedMedia === n - placed && a.notes.some((x) => /초과/.test(x));
+          if (!honest) violations.push(comp.id + ':' + n + ':media-dropped:' + placed);
+        }
       }
     }
     return { ok: !violations.length, compositions: COMPS.length, themes: THEMES.length, violations };
