@@ -139,6 +139,15 @@
 
   /* ================= 우: Context Panel — 선택 대상별 전환 ================= */
   const field = (label, val) => `<label class="cx-field"><span>${label}</span><input type="text" value="${M().esc(String(val))}" readonly></label>`;
+  /* R47 — 채우기 방식 컨트롤 (cover=꽉 채우기·잘림 / contain=원본 전체) */
+  const fitCtl = (el, idx) => {
+    const cur = el.fit === 'contain' ? 'contain' : 'cover';
+    return `<label class="cx-field"><span>채우기</span></label>
+      <div style="display:flex;gap:6px;margin:-4px 0 8px">
+        <button data-ws-fit="cover" data-ws-fitidx="${idx}" style="flex:1;padding:7px 4px;border-radius:8px;border:1.5px solid ${cur === 'cover' ? 'var(--mk-teal)' : 'var(--mk-border)'};background:${cur === 'cover' ? 'var(--mk-teal-soft)' : 'transparent'};cursor:pointer;font:var(--mk-t-caption)">꽉 채우기</button>
+        <button data-ws-fit="contain" data-ws-fitidx="${idx}" style="flex:1;padding:7px 4px;border-radius:8px;border:1.5px solid ${cur === 'contain' ? 'var(--mk-teal)' : 'var(--mk-border)'};background:${cur === 'contain' ? 'var(--mk-teal-soft)' : 'transparent'};cursor:pointer;font:var(--mk-t-caption)">원본 전체</button>
+      </div>`;
+  };
   const ContextPanel = () => {
     const m = M(), sc = scene(), p = proj();
     let title = '프로젝트', body = '';
@@ -163,14 +172,13 @@
           `<div class="cx-hint">글꼴·색·정렬·행간 — 시안 반영 대상</div>`;
       } else if (sel.type === 'video') {
         title = '영상';
-        body = field('클립', el.label || '영상') + field('길이', '자동') + field('볼륨', '100%') + `<div class="cx-hint">트리밍·속도 — 후속</div>`;
+        body = field('클립', el.label || '영상') + fitCtl(el, sel.idx) + field('볼륨', '100%') + `<div class="cx-hint">트리밍·속도 — 후속</div>`;
       } else if (sel.type === 'shape') {
         title = '도형';
         body = field('종류', el.label || '도형') + field('채움', '단색') + field('테두리', '없음');
       } else {
         title = '이미지';
-        body = field('이름', el.label || '이미지') + field('크기', el.w + '×' + el.h + '%') +
-          `${m.Button({ label: '이미지 교체 (placeholder)', kind: 'secondary', size: 'sm', attrs: 'style="width:100%;justify-content:center;margin-top:6px"' })}` +
+        body = field('이름', el.label || '이미지') + field('크기', el.w + '×' + el.h + '%') + fitCtl(el, sel.idx) +
           `<div class="cx-hint">자르기·보정·필터 — Photo 모드/후속</div>`;
       }
     }
@@ -244,9 +252,61 @@
         preview: () => m.Modal.open(`<h2>미리보기</h2><div style="margin:14px 0;border:1px solid var(--mk-border);border-radius:8px;overflow:hidden">${m.sceneThumb(scene())}</div><p style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">전체 재생 미리보기는 후속 단계</p><div style="display:flex;justify-content:flex-end;margin-top:12px">${m.Button({ label: '닫기', size: 'sm', attrs: 'onclick="MK.Modal.close()"' })}</div>`),
         share: () => { window.MK_PROJ.toggleShare(WS.projectId); R(); },
         export: () => {
-          m.Modal.open(`<h2>내보내기</h2><p style="font:var(--mk-t-body-sm);color:var(--mk-text-secondary);margin:6px 0 12px">형식을 고르세요 — 실렌더링은 후속(기록만 남아요)</p>
-            <div style="display:flex;gap:8px">${['PNG', 'PDF', 'PPT', 'MP4'].map((f) => m.Button({ label: f, kind: 'secondary', size: 'sm', attrs: `data-ws-ex="${f}"` })).join('')}</div>`);
-          document.querySelectorAll('[data-ws-ex]').forEach((b) => b.onclick = () => { window.MK_PROJ.logExport(WS.projectId, b.dataset.wsEx); m.Modal.close(); R(); });
+          /* R47 — 실출력 배선 (#/editor R37~40과 동일 엔진: MK_RENDER·MK_VIDEO) */
+          if (!window.MK_RENDER) {
+            m.Modal.open(`<h2>내보내기</h2><p style="font:var(--mk-t-body-sm);color:var(--mk-text-secondary)">렌더 엔진이 로드되지 않았어요 — 새로고침 후 다시 시도해 주세요</p>`);
+            return;
+          }
+          m.Modal.open(`<h2>내보내기</h2><p style="font:var(--mk-t-body-sm);color:var(--mk-text-secondary);margin:6px 0 12px">형식을 고르세요</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">${[['png', 'PNG (현재 장면)'], ['pptx', 'PPTX'], ['pdf', 'PDF'], ['mp4', 'MP4 영상']].map(([f, l]) => m.Button({ label: l, kind: 'secondary', size: 'sm', attrs: `data-ws-ex="${f}"` })).join('')}</div>
+            <div id="wsExMsg" style="font:var(--mk-t-body-sm);color:var(--mk-text-secondary);margin-top:12px;min-height:20px"></div>`);
+          const exMsg = (t) => { const d2 = document.querySelector('#wsExMsg'); if (d2) d2.textContent = t; };
+          const dl = (name, href) => { const a = document.createElement('a'); a.href = href; a.download = name; document.body.appendChild(a); a.click(); a.remove(); };
+          const safeName = () => (doc().title || '케이메이커').replace(/[^\w가-힣 _-]/g, '');
+          document.querySelectorAll('[data-ws-ex]').forEach((b) => b.onclick = async () => {
+            const f = b.dataset.wsEx;
+            try {
+              exMsg('만드는 중…');
+              if (f === 'mp4') {
+                if (!window.MK_VIDEO) throw new Error('영상 엔진 미로드 — 새로고침 후 시도');
+                const r = await window.MK_VIDEO.exportMP4(doc(), { onProgress: exMsg });
+                exMsg(r.ok ? `MP4 저장 완료 — ${r.sec}초 · ${r.w}×${r.h}${r.audio ? ' · 🎵 소리 포함' : (r.audioMsg ? ' · ' + r.audioMsg : '')}` : r.msg);
+              } else if (f === 'pptx') {
+                const pages = doc().scenes.map((sc2) => window.MK_RENDER.renderScene(sc2, {}));
+                const r = window.MK_RENDER.toPPTX(pages, {});
+                const blob = new Blob([r.bytes], { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
+                const u = URL.createObjectURL(blob);
+                dl(`${safeName()}.pptx`, u); setTimeout(() => URL.revokeObjectURL(u), 4000);
+                exMsg(`PPTX 저장 완료 — 슬라이드 ${r.slides}장${r.media ? ' · 사진 ' + r.media + '장 포함' : ''}`);
+              } else if (f === 'pdf') {
+                const imgs = [];
+                for (let i = 0; i < doc().scenes.length; i++) {
+                  exMsg(`장면 그리는 중… ${i + 1}/${doc().scenes.length}`);
+                  const dlist = window.MK_RENDER.renderScene(doc().scenes[i], {});
+                  const out = await window.MK_RENDER.toRaster(dlist, { format: 'jpg', scale: 2, quality: 0.92 });
+                  if (!out || !out.dataUrl) throw new Error('장면 래스터 실패 — 크롬·엣지에서 시도해 주세요');
+                  const jb = window.MK_RENDER.dataUrlBytes(out.dataUrl);
+                  if (!jb) throw new Error('JPEG 변환 실패');
+                  imgs.push({ bin: jb.bin, w: out.plan.width, h: out.plan.height });
+                }
+                const r = window.MK_RENDER.toPDFRaster(imgs, {});
+                if (!r.pages) throw new Error('PDF 페이지 생성 실패');
+                const u8 = new Uint8Array(r.bytes.length);
+                for (let i = 0; i < r.bytes.length; i++) u8[i] = r.bytes.charCodeAt(i) & 255;
+                const blob = new Blob([u8], { type: 'application/pdf' });
+                const u = URL.createObjectURL(blob);
+                dl(`${safeName()}.pdf`, u); setTimeout(() => URL.revokeObjectURL(u), 4000);
+                exMsg(`PDF 저장 완료 — ${r.pages}쪽`);
+              } else {
+                const dlist = window.MK_RENDER.renderScene(scene(), {});
+                const out = await window.MK_RENDER.toRaster(dlist, { format: 'png', scale: 2 });
+                if (!out || !out.dataUrl) throw new Error('래스터 실패 — 크롬·엣지에서 시도해 주세요');
+                dl(`${safeName()}_${WS.sceneIdx + 1}.png`, out.dataUrl);
+                exMsg('PNG 저장 완료');
+              }
+              window.MK_PROJ.logExport(WS.projectId, f.toUpperCase());
+            } catch (err) { exMsg('실패: ' + err.message); }
+          });
         },
       };
       root.querySelectorAll('[data-ws]').forEach((b) => b.onclick = () => act[b.dataset.ws]?.());
@@ -325,6 +385,12 @@
         txt.onchange = () => R();
       }
       const ab = root.querySelector('[data-ws-anim]'); if (ab) ab.onclick = () => PG.go('animation');
+      /* R47 — 채우기 방식 */
+      root.querySelectorAll('[data-ws-fit]').forEach((b) => b.onclick = () => {
+        const el = scene().elements[+b.dataset.wsFitidx];
+        if (!el) return;
+        snap(); el.fit = b.dataset.wsFit; R();
+      });
       const sb = root.querySelector('[data-ws-selscene]'); if (sb) sb.onclick = () => { WS.sel = { type: 'scene' }; R(); };
       const pb = root.querySelector('[data-ws-selproj]'); if (pb) pb.onclick = () => { WS.sel = null; R(); };
 
