@@ -93,7 +93,8 @@ window.MK_PLAY = (() => {
       }
       if (el.kind === 'text') {
         const col = el.color || (dark ? ((el.weight || 400) >= 600 ? '#F2F5F9' : '#B7C0CD') : ((el.weight || 400) >= 600 ? '#1F2733' : '#525C6A'));
-        return `<div class="mkp-el" style="${pos}font-size:${el.size}cqh;font-weight:${el.weight || 400};line-height:1.3;color:${col}${el.align ? ';text-align:' + el.align : ''}${el.tracking ? ';letter-spacing:' + el.tracking + 'em' : ''};white-space:pre-wrap${rot}${an}">${esc(el.text)}</div>`;
+        const ts = window.MK_TEXTSTYLE ? window.MK_TEXTSTYLE.css(el) : ''; /* R56 — 글꼴·배경·외곽선·그림자 (lineHeight는 css가 뒤에서 override) */
+        return `<div class="mkp-el" style="${pos}font-size:${el.size}cqh;font-weight:${el.weight || 400};line-height:1.3;color:${col}${el.align ? ';text-align:' + el.align : ''}${el.tracking ? ';letter-spacing:' + el.tracking + 'em' : ''};white-space:pre-wrap${rot}${an}${ts}">${esc(el.text)}</div>`;
       }
       const rad = el.radius ? `;border-radius:${el.radius > 100 ? '50%' : el.radius + 'px'}` : '';
       if (el.src) {

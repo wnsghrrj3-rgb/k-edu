@@ -38,7 +38,7 @@ window.MK_RENDER = (() => {
      ================================================================ */
   const FONT_SOURCES = {
     local: ['Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', 'sans-serif'],
-    google: ['Noto Sans KR', 'Nanum Gothic', 'Gowun Dodum', 'Jua', 'Black Han Sans'],
+    google: ['Noto Sans KR', 'Nanum Gothic', 'Gowun Dodum', 'Jua', 'Black Han Sans', 'Gowun Batang', 'Nanum Pen Script', 'Gaegu', 'Do Hyeon'],
   };
   const FALLBACK_CHAIN = ['Pretendard', 'Noto Sans KR', 'sans-serif'];
 
@@ -432,7 +432,9 @@ window.MK_RENDER = (() => {
         if (CACHE.text.has(tkey)) { T = CACHE.text.get(tkey); CACHE.stats.hit++; }
         else { T = layoutText({ ...el, sizePx }, f, warn); CACHE.text.set(tkey, T); CACHE.stats.miss++; }
         const align = el.align || 'left';
-        ops.push({ op: 'text', frame: f, lines: T.lines, size: R2(T.size), lineHeight: T.lineHeight, letterSpacing: R2(T.letterSpacing), align, weight: el.weight || 400, font: T.font, style: { fill: el.color || (isDark(bg) ? '#FFFFFF' : '#1F2733'), ...base } });
+        ops.push({ op: 'text', frame: f, lines: T.lines, size: R2(T.size), lineHeight: T.lineHeight, letterSpacing: R2(T.letterSpacing), align, weight: el.weight || 400, font: T.font, textW: R2(T.textW),
+          bg: el.bg || null, outline: el.outline || null, shadow: el.shadow || null, /* R56 — 텍스트 배경·외곽선·그림자 */
+          style: { fill: el.color || (isDark(bg) ? '#FFFFFF' : '#1F2733'), ...base } });
         return;
       }
       if (el.kind === 'image') {
@@ -512,8 +514,23 @@ window.MK_RENDER = (() => {
         const anchor = op.align === 'center' ? 'middle' : op.align === 'right' ? 'end' : 'start';
         const tx = op.align === 'center' ? f.x + f.w / 2 : op.align === 'right' ? f.x + f.w : f.x;
         const lineH = op.size * op.lineHeight;
+        /* R56 — 배경 pill: 실측 textW + em 패딩(BG_PAD 규약) */
+        if (op.bg && op.bg.color) {
+          const px2 = op.size * 0.5, py2 = op.size * 0.22;
+          const bw = Math.min((op.textW || f.w) + px2 * 2, f.w + px2 * 2);
+          const bx = op.align === 'center' ? f.x + f.w / 2 - bw / 2 : op.align === 'right' ? f.x + f.w - bw + px2 : f.x - px2;
+          const bh = op.lines.length * lineH + py2 * 2 - (lineH - op.size);
+          parts.push(`<rect x="${R2(bx)}" y="${R2(f.y - py2)}" width="${R2(bw)}" height="${R2(Math.max(bh, op.size + py2 * 2))}" rx="${R2((op.bg.radius || 0) * op.size)}" fill="${escX(op.bg.color)}"/>`);
+        }
+        let fdef = '';
+        if (op.shadow && op.shadow.color) {
+          const fid = 'tsh' + parts.length; /* toSVG 로컬 — 인라인 defs (SVG는 위치 무관) */
+          parts.push(`<defs><filter id="${fid}" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="${R2((op.shadow.x || 0) * op.size)}" dy="${R2((op.shadow.y || 0) * op.size)}" stdDeviation="${R2((op.shadow.blur || 0) * op.size / 2)}" flood-color="${escX(op.shadow.color)}"/></filter></defs>`);
+          fdef = ` filter="url(#${fid})"`;
+        }
+        const stroke = op.outline && op.outline.color ? ` stroke="${escX(op.outline.color)}" stroke-width="${R2((op.outline.w || 0.05) * op.size * 2)}" paint-order="stroke fill"` : '';
         const spans = op.lines.map((l, i) => `<tspan x="${R2(tx)}" y="${R2(f.y + op.size * 0.9 + i * lineH)}">${escX(l)}</tspan>`).join('');
-        parts.push(`<text text-anchor="${anchor}" font-family="${escX(op.font.stack)}" font-size="${op.size}" font-weight="${op.weight}"${op.letterSpacing ? ` letter-spacing="${op.letterSpacing}"` : ''} fill="${escX(st.fill)}"${common}>${spans}</text>`);
+        parts.push(`<text text-anchor="${anchor}" font-family="${escX(op.font.stack)}" font-size="${op.size}" font-weight="${op.weight}"${op.letterSpacing ? ` letter-spacing="${op.letterSpacing}"` : ''} fill="${escX(st.fill)}"${stroke}${fdef}${common}>${spans}</text>`);
       }
     });
     parts.push('</svg>');
@@ -553,14 +570,60 @@ window.MK_RENDER = (() => {
       tiles: tilePlan(dl.width * scale, dl.height * scale, 1024).length,
     };
     if (typeof document === 'undefined' || !document.createElement('canvas').getContext || o.planOnly) return { plan, svg: toSVG(dl) };
+    /* R56 — 텍스트 충실도: SVG-in-Image는 페이지 웹폰트를 못 쓴다 →
+       텍스트 op는 SVG에서 빼고 canvas 2D로 직접 그린다(document.fonts 실적용).
+       배경 pill·외곽선·그림자·자간까지 DOM과 동률. 폰트 로드 전이면 기존 경로 폴백. */
+    const fontsReady = typeof document.fonts !== 'undefined';
+    const textOps = fontsReady ? dl.ops.filter((op2) => op2.op === 'text') : [];
+    const dlDraw = textOps.length ? { ...dl, ops: dl.ops.filter((op2) => op2.op !== 'text') } : dl;
+    const drawTextOps = (cx, S) => {
+      textOps.forEach((op2) => {
+        const f = op2.frame, size = op2.size * S, lineH = op2.size * op2.lineHeight * S;
+        const tx0 = op2.align === 'center' ? (f.x + f.w / 2) * S : op2.align === 'right' ? (f.x + f.w) * S : f.x * S;
+        cx.save();
+        cx.font = `${op2.weight || 400} ${size}px ${op2.font.stack}`;
+        cx.textAlign = op2.align === 'center' ? 'center' : op2.align === 'right' ? 'right' : 'left';
+        cx.textBaseline = 'alphabetic';
+        try { cx.letterSpacing = (op2.letterSpacing || 0) * S + 'px'; } catch (_) {}
+        if (op2.bg && op2.bg.color) {
+          const px2 = size * 0.5, py2 = size * 0.22;
+          const tw = Math.max(...op2.lines.map((l) => cx.measureText(l).width), 0);
+          const bw = Math.min(tw + px2 * 2, f.w * S + px2 * 2);
+          const bx = op2.align === 'center' ? tx0 - bw / 2 : op2.align === 'right' ? tx0 - bw + px2 : tx0 - px2;
+          const bh = Math.max(op2.lines.length * lineH + py2 * 2 - (lineH - size), size + py2 * 2);
+          cx.fillStyle = op2.bg.color;
+          const r2 = (op2.bg.radius || 0) * size;
+          if (cx.roundRect) { cx.beginPath(); cx.roundRect(bx, f.y * S - py2, bw, bh, r2); cx.fill(); }
+          else cx.fillRect(bx, f.y * S - py2, bw, bh);
+        }
+        if (op2.shadow && op2.shadow.color) {
+          cx.shadowColor = op2.shadow.color;
+          cx.shadowOffsetX = (op2.shadow.x || 0) * size; cx.shadowOffsetY = (op2.shadow.y || 0) * size;
+          cx.shadowBlur = (op2.shadow.blur || 0) * size;
+        }
+        op2.lines.forEach((line, i) => {
+          const ty = (f.y + op2.size * 0.9) * S + i * lineH;
+          if (op2.outline && op2.outline.color) {
+            cx.strokeStyle = op2.outline.color;
+            cx.lineWidth = (op2.outline.w || 0.05) * size * 2;
+            cx.lineJoin = 'round';
+            cx.strokeText(line, tx0, ty);
+          }
+          cx.fillStyle = (op2.style && op2.style.fill) || '#1F2733';
+          cx.fillText(line, tx0, ty);
+        });
+        cx.restore();
+      });
+    };
     return new Promise((resolve) => {
-      const svg = toSVG(dl, { size: { w: plan.width, h: plan.height } });
+      const svg = toSVG(dlDraw, { size: { w: plan.width, h: plan.height } });
       const img = new Image();
       img.onload = () => {
         const cv = document.createElement('canvas'); cv.width = plan.width; cv.height = plan.height;
         const cx = cv.getContext('2d');
         if (!plan.transparent) { cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height); }
         cx.drawImage(img, 0, 0, cv.width, cv.height);
+        if (textOps.length) drawTextOps(cx, plan.width / dl.width);
         resolve({ plan, dataUrl: cv.toDataURL(plan.format === 'jpg' ? 'image/jpeg' : 'image/png', plan.quality || undefined) });
       };
       img.onerror = () => resolve({ plan, svg, error: 'raster-failed' });
@@ -794,6 +857,7 @@ window.MK_RENDER = (() => {
           sps.push(`<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="s${id}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr>${xfrm}<a:prstGeom prst="${geom}"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="${hex6(fill.startsWith && fill.startsWith('url(') ? '#DDE6EE' : fill)}"/></a:solidFill></p:spPr>` +
             (op.label ? `<p:txBody><a:bodyPr anchor="ctr"/><a:p><a:pPr algn="ctr"/><a:r><a:rPr lang="ko-KR" sz="1100"><a:solidFill><a:srgbClr val="8895A5"/></a:solidFill></a:rPr><a:t>${escX(op.label)}</a:t></a:r></a:p></p:txBody>` : '<p:txBody><a:bodyPr/><a:p/></p:txBody>') + `</p:sp>`);
         } else if (op.op === 'text') {
+          if (op.bg || op.outline || op.shadow) warnAll.push({ code: 'unsupported-effect', msg: '텍스트 배경·외곽선·그림자 — PPTX 미지원(글꼴·색·정렬만 반영, 정직 표기)' }); /* R56 */
           const sz = Math.round(op.size * 0.75 * 100); /* px→pt→OOXML */
           const algn = op.align === 'center' ? 'ctr' : op.align === 'right' ? 'r' : 'l';
           const paras = op.lines.map((l) => `<a:p><a:pPr algn="${algn}"/><a:r><a:rPr lang="ko-KR" sz="${sz}" b="${op.weight >= 600 ? 1 : 0}"><a:solidFill><a:srgbClr val="${hex6((op.style && op.style.fill) || '#1F2733')}"/></a:solidFill><a:latin typeface="${escX(op.font.family)}"/></a:rPr><a:t>${escX(l)}</a:t></a:r></a:p>`).join('');

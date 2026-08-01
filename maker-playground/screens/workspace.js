@@ -123,7 +123,8 @@
       const hd = on ? WSHD : '';
       if (el.kind === 'text') {
         const fs = (el.size / 100 * CH).toFixed(1);
-        return `<div class="ws-el text ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight || 400}${el.color ? `;color:${el.color}` : ''}${el.align ? `;text-align:${el.align}` : ''}">${M().esc(el.text).replace(/\n/g, '<br>')}${hd}</div>`;
+        const ts = window.MK_TEXTSTYLE ? window.MK_TEXTSTYLE.css(el) : ''; /* R56 — 글꼴·배경·외곽선·그림자 */
+        return `<div class="ws-el text ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight || 400}${el.color ? `;color:${el.color}` : ''}${el.align ? `;text-align:${el.align}` : ''}${ts}">${M().esc(el.text).replace(/\n/g, '<br>')}${hd}</div>`;
       }
       if (el.src) {                                    /* R45 — Workspace도 실이미지·실영상 표시 (R36 editor와 동일) */
         const fit = el.fit === 'contain' ? 'contain' : 'cover';
@@ -182,9 +183,34 @@
       const el = sc.elements[sel.idx];
       if (el.kind === 'text') {
         title = '텍스트';
+        /* R56 — 텍스트 스타일 실컨트롤 (MK_TEXTSTYLE) */
+        const TS = window.MK_TEXTSTYLE;
+        let styleCtl = '';
+        if (TS) {
+          const presets = TS.PRESETS.map((p) => {
+            const st2 = p.style;
+            const prev = `font-family:'${st2.font || 'Pretendard'}',sans-serif;color:${st2.color || 'var(--mk-text)'};` +
+              (st2.bg && st2.bg.color ? `background:${st2.bg.color};` : '') +
+              (st2.outline && st2.outline.color ? `-webkit-text-stroke:.045em ${st2.outline.color};paint-order:stroke fill;` : '') +
+              (st2.shadow && st2.shadow.color ? `text-shadow:${st2.shadow.x || 0}em ${st2.shadow.y || 0}em ${(st2.shadow.blur || 0) / 2}em ${st2.shadow.color};` : '');
+            return `<button class="cx-tsp" data-ws-tsp="${p.id}" title="${m.esc(p.hint)}"><span style="${prev}">가나</span><small>${m.esc(p.name)}</small></button>`;
+          }).join('');
+          const fonts = TS.FONTS.map((f2) => `<option value="${f2.family}"${el.font === f2.family || (!el.font && f2.family === 'Pretendard') ? ' selected' : ''}>${m.esc(f2.name)}</option>`).join('');
+          const cols = TS.COLORS.map((c2) => `<button class="cx-swb${el.color === c2 ? ' on' : ''}" data-ws-tcol="${c2}" style="background:${c2}"></button>`).join('');
+          const bgs = TS.BGS.map((b2, bi) => b2 === null
+            ? `<button class="cx-swb none${!el.bg ? ' on' : ''}" data-ws-tbg="none" title="배경 없음">∅</button>`
+            : `<button class="cx-swb${el.bg && el.bg.color === b2 ? ' on' : ''}" data-ws-tbg="${bi}" style="background:${b2}"></button>`).join('');
+          const alignBtn = (a2, ic) => `<button class="cx-alb${(el.align || 'left') === a2 ? ' on' : ''}" data-ws-tal="${a2}">${ic}</button>`;
+          styleCtl =
+            `<label class="cx-field"><span>스타일</span></label><div class="cx-tsps">${presets}</div>` +
+            `<label class="cx-field"><span>글꼴</span><select data-ws-tfont>${fonts}</select></label>` +
+            `<label class="cx-field"><span>글자색</span></label><div class="cx-sws">${cols}</div>` +
+            `<label class="cx-field"><span>배경</span></label><div class="cx-sws">${bgs}</div>` +
+            `<label class="cx-field"><span>정렬</span></label><div class="cx-als">${alignBtn('left', '⯇')}${alignBtn('center', '≡')}${alignBtn('right', '⯈')}</div>` +
+            `<button class="cx-scenebtn" data-ws-tsall>✨ 이 스타일을 모든 장면 글자에</button>`;
+        }
         body = `<label class="cx-field"><span>내용</span><textarea data-ws-txt="${sel.idx}" rows="3">${m.esc(el.text)}</textarea></label>` +
-          field('크기', el.size) + field('굵기', el.weight || 400) + field('폭', el.w + '%') +
-          `<div class="cx-hint">글꼴·색·정렬·행간 — 시안 반영 대상</div>`;
+          field('크기', el.size) + field('굵기', el.weight || 400) + field('폭', el.w + '%') + styleCtl;
       } else if (sel.type === 'video') {
         title = '영상';
         body = field('클립', el.label || '영상') + fitCtl(el, sel.idx) + field('볼륨', '100%') + `<div class="cx-hint">트리밍·속도 — 후속</div>`;
@@ -502,6 +528,45 @@
         window.MK_CAPTION.apply(scene(), b.dataset.wsCap);
         WS.sel = { type: 'scene' }; R();
       });
+      /* R56 — 텍스트 스타일: 프리셋·글꼴·색·배경·정렬·전 씬 적용 */
+      const TS = window.MK_TEXTSTYLE;
+      const selEl = () => WS.sel && WS.sel.idx != null ? scene().elements[WS.sel.idx] : null;
+      if (TS) {
+        root.querySelectorAll('[data-ws-tsp]').forEach((b) => b.onclick = () => {
+          const el = selEl(); if (!el || el.kind !== 'text') return;
+          snap(); TS.applyPreset(el, b.dataset.wsTsp); R();
+        });
+        const fsel = root.querySelector('[data-ws-tfont]');
+        if (fsel) fsel.onchange = () => {
+          const el = selEl(); if (!el || el.kind !== 'text') return;
+          snap();
+          if (fsel.value === 'Pretendard') delete el.font; else el.font = fsel.value;
+          R();
+        };
+        root.querySelectorAll('[data-ws-tcol]').forEach((b) => b.onclick = () => {
+          const el = selEl(); if (!el || el.kind !== 'text') return;
+          snap(); el.color = b.dataset.wsTcol; R();
+        });
+        root.querySelectorAll('[data-ws-tbg]').forEach((b) => b.onclick = () => {
+          const el = selEl(); if (!el || el.kind !== 'text') return;
+          snap();
+          if (b.dataset.wsTbg === 'none') delete el.bg;
+          else el.bg = { color: TS.BGS[+b.dataset.wsTbg], radius: 0.22 };
+          R();
+        });
+        root.querySelectorAll('[data-ws-tal]').forEach((b) => b.onclick = () => {
+          const el = selEl(); if (!el || el.kind !== 'text') return;
+          snap(); el.align = b.dataset.wsTal; R();
+        });
+        const allBtn = root.querySelector('[data-ws-tsall]');
+        if (allBtn) allBtn.onclick = () => {
+          const el = selEl(); if (!el || el.kind !== 'text') return;
+          snap();
+          const r = TS.applyAll(doc(), TS.styleOf(el));
+          if (typeof window.alert === 'function') window.alert(`모든 장면의 글자 ${r.count}개에 이 스타일을 적용했어요.`);
+          R();
+        };
+      }
       const sb = root.querySelector('[data-ws-selscene]'); if (sb) sb.onclick = () => { WS.sel = { type: 'scene' }; R(); };
       const pb = root.querySelector('[data-ws-selproj]'); if (pb) pb.onclick = () => { WS.sel = null; R(); };
 
