@@ -262,6 +262,18 @@
           n.id = 's' + Date.now(); n.name = '새 장면'; n.elements = [{ kind: 'text', x: 10, y: 40, w: 80, size: 8, text: '새 장면', weight: 700 }];
           doc().scenes.splice(WS.sceneIdx + 1, 0, n); WS.sceneIdx++;
         } else if (k === 'text') sc.elements.push({ kind: 'text', x: 12, y: 70, w: 60, size: 4, text: '새 텍스트', weight: 400 });
+        else if ((k === 'image' || k === 'video') && window.MK_LIVE) {   /* R46 — 실파일 선택·실삽입 (#/editor R41과 동일 경로) */
+          const inp = document.createElement('input');
+          inp.type = 'file'; inp.accept = k === 'video' ? 'video/*' : 'image/*';
+          inp.onchange = () => window.MK_LIVE.fileToSrc(inp.files && inp.files[0], (src, err) => {
+            if (!src) { if (err && typeof alert === 'function') alert(err); return; }
+            const f = inp.files[0];
+            const r = window.MK_LIVE.insertWithSrc(doc(), WS.sceneIdx, { name: f.name.replace(/\.[^.]+$/, ''), kind: k === 'video' ? 'video' : 'image', src });
+            if (r && r.ok) { WS.sel = { type: k, idx: scene().elements.length - 1 }; R(); }
+          });
+          inp.click();
+          return;                                                       /* 파일 고르기 전엔 아무것도 안 넣는다 — 취소 = 변화 0 */
+        }
         else sc.elements.push({ kind: 'image', x: 60, y: 60, w: 28, h: 24, label: k === 'video' ? '영상 클립' : k === 'shape' ? '도형' : '이미지' });
         WS.sel = k === 'scene' ? { type: 'scene' } : { type: k, idx: sc.elements.length - 1 };
         R();
