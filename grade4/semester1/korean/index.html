@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4학년 1학기 국어 | K-edu</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans KR',sans-serif;background:#F5F7FA;min-height:100vh;color:#1A202C}
+
+/* TOP BAR */
+.top-bar{background:#fff;border-bottom:1px solid #E2E8F0;height:52px;display:flex;align-items:center;padding:0 24px;gap:12px}
+.back-link{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:#718096;text-decoration:none;font-weight:500;transition:color .15s}
+.back-link:hover{color:#1A202C}
+.top-title{font-family:'Jua',sans-serif;font-size:16px;color:#1A202C}
+
+/* MAIN */
+main{max-width:800px;margin:0 auto;padding:28px 20px 60px}
+
+/* HEADER */
+.page-header{display:flex;align-items:center;gap:14px;margin-bottom:32px}
+.subject-badge{display:inline-flex;align-items:center;gap:6px;padding:8px 20px;border-radius:50px;font-family:'Jua',sans-serif;font-size:18px;color:#fff;background:#FF85A1}
+.page-title{font-family:'Jua',sans-serif;font-size:26px}
+
+/* UNIT SECTION */
+.unit-section{margin-bottom:28px}
+.unit-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:8px;border-bottom:2px solid #E2E8F0}
+.unit-num{width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Jua',sans-serif;font-size:16px;color:#fff}
+.unit-name{font-family:'Jua',sans-serif;font-size:18px;color:#1A202C}
+.unit-count{font-size:13px;color:#A0AEC0;margin-left:auto}
+
+/* LESSON LIST */
+.lesson-list{display:flex;flex-direction:column;gap:8px}
+.lesson-card{display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:14px 18px;box-shadow:0 1px 8px rgba(0,0,0,.05);cursor:pointer;text-decoration:none;color:#1A202C;border:2px solid transparent;transition:transform .15s,border-color .15s,box-shadow .15s}
+.lesson-card:hover{transform:translateY(-2px);border-color:var(--uc);box-shadow:0 6px 20px rgba(0,0,0,.1)}
+.lesson-num{min-width:38px;height:30px;padding:0 9px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'Jua',sans-serif;font-size:13px;color:#fff;background:var(--uc);flex-shrink:0;white-space:nowrap}
+.lesson-num small{font-size:10px;font-weight:400;margin-left:2px}
+.lesson-title{font-size:14px;font-weight:500;flex:1}
+.lesson-arrow{color:#CBD5E0;font-size:16px}
+
+/* FOOTER */
+footer{text-align:center;padding:18px 24px;border-top:1px solid #E2E8F0;background:#fff}
+.footer-text{font-size:12px;color:#A0AEC0}
+.footer-text strong{color:#718096;font-weight:500}
+.footer-text a{color:#5B8EF8;text-decoration:none;margin-left:10px}
+.footer-text a:hover{text-decoration:underline}
+
+@media(max-width:600px){
+  .page-header{flex-direction:column;align-items:flex-start;gap:8px}
+  .page-title{font-size:22px}
+  .lesson-card{padding:12px 14px}
+}
+</style>
+  <script src="/kedu_gate.js"></script>
+<script src="/kedu_boxbar.js"></script>
+</head>
+<body>
+
+<div class="top-bar">
+  <a class="back-link" href="/?view=subject">← 홈</a>
+  <span style="color:#E2E8F0">|</span>
+  <span class="top-title">📖 4학년 1학기 국어</span>
+</div>
+
+<main>
+  <div class="page-header">
+    <div class="subject-badge">🌱 4학년 · 1학기</div>
+    <div class="page-title">📖 국어</div>
+  </div>
+
+  <div id="content"></div>
+</main>
+
+<footer>
+  <p class="footer-text">Copyright © 2025 <strong>K-edu</strong> · Developed by Choe Jun-ho (Kumsung Elementary School) · All rights reserved.
+  <a href="/privacy/">개인정보 처리방침</a>
+  <a href="/terms/">서비스 이용약관</a></p>
+</footer>
+
+<script>
+// 4학년 1학기 국어 — 교과서 단원 차시 순서대로 구성 (1단원, 2026-08-01)
+const UNITS = [
+  {
+    num: 1, name: "깊이 있게 읽어요", color: "#4A90D9",
+    lessons: [
+      {n:"1",     file:"1단원_깊이있게읽어요/g4_kor_u1_l01.html",    title:"단원 시작 — 배울 내용 살펴보기 (인물 관계·내용 짐작)"},
+      {n:"2",     file:"1단원_깊이있게읽어요/g4_kor_u1_l02.html",    title:"인물들의 관계를 파악하는 방법 알기"},
+      {n:"3·4",   file:"1단원_깊이있게읽어요/g4_kor_u1_l03_04.html", title:"이야기의 흐름을 파악하는 방법 알기"},
+      {n:"5·6",   file:"1단원_깊이있게읽어요/g4_kor_u1_l05_06.html", title:"인물들의 관계를 중심으로 이야기의 흐름 파악하기"},
+      {n:"7·8",   file:"1단원_깊이있게읽어요/g4_kor_u1_l07_08.html", title:"내용을 짐작하기 위한 질문을 만드는 방법 알기"},
+      {n:"9·10",  file:"1단원_깊이있게읽어요/g4_kor_u1_l09_10.html", title:"질문을 만들어 내용을 짐작하며 글 읽기"},
+      {n:"11·12", file:"1단원_깊이있게읽어요/g4_kor_u1_l11_12.html", title:"배운 내용 실천하기 (장면 카드 이야기·누구일까 놀이)"},
+      {n:"13",    file:"1단원_깊이있게읽어요/g4_kor_u1_l13.html",    title:"단원 마무리하기 (구개음화·감정 낱말)"}
+    ]
+  }
+];const content = document.getElementById('content');
+UNITS.forEach((unit) => {
+  const first = unit.lessons[0].n.replace(/[·~].*/,'');
+  const last = unit.lessons[unit.lessons.length-1].n.replace(/.*[·~]/,'');
+  const section = document.createElement('div');
+  section.className = 'unit-section';
+  section.innerHTML = `
+    <div class="unit-header">
+      <div class="unit-num" style="background:${unit.color}">${unit.num}</div>
+      <div class="unit-name">${unit.name}</div>
+      <div class="unit-count">${first}~${last}차시</div>
+    </div>
+    <div class="lesson-list">
+      ${unit.lessons.map(l => `
+        <a class="lesson-card" href="${l.file}" style="--uc:${unit.color}">
+          <div class="lesson-num" style="background:${unit.color}">${l.n}<small>차시</small></div>
+          <div class="lesson-title">${l.title}</div>
+          <div class="lesson-arrow">›</div>
+        </a>
+      `).join('')}
+    </div>
+  `;
+  content.appendChild(section);
+});
+</script>
+<script src="/kedu_back.js"></script>
+</body>
+</html>
