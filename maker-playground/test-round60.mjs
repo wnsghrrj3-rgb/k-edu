@@ -140,7 +140,7 @@ T('결정론 — Pair 모드 같은 입력 = 같은 doc', () => {
 
 T('전체 감사 — 10종 규약 유지 (audit ok)', () => {
   const a = C.audit();
-  A(a.ok && a.compositions === 10, JSON.stringify(a.violations.slice(0, 4)));
+  A(a.ok && a.compositions >= 10, JSON.stringify(a.violations.slice(0, 4))); /* R63: Manifest 등록으로 증가 가능 */
 });
 
 console.log('');

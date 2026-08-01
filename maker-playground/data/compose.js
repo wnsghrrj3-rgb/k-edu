@@ -523,7 +523,7 @@ window.MK_COMPOSE = (() => {
   }
 
   return { RATIOS, registerComposition, registerTheme, getComposition, getTheme,
-    listCompositions: () => COMPS.map((c) => ({ id: c.id, name: c.name, purpose: c.purpose, category: c.category,
+    listCompositions: () => COMPS.filter((c) => !c.hidden).map((c) => ({ id: c.id, name: c.name, purpose: c.purpose, category: c.category,
       recommendedMediaCount: c.recommendedMediaCount, recommendedDuration: c.recommendedDuration,
       supportedRatios: Object.keys(RATIOS), defaultRatio: c.defaultRatio || '16:9' })),
     listThemes: () => THEMES.map((t) => ({ id: t.id, name: t.name, mood: t.mood })),
