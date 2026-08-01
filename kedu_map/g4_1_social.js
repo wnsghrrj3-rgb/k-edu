@@ -278,124 +278,134 @@ window.KEDU_MAP["g4_1_social"] = {
    "kind": "unit",
    "lessons": [
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_social_u3_l01",
+     "lessonId": "g4_social_u3_l01_선택의문제",
      "n": "1",
      "title": "경제활동에서 일어나는 선택의 문제를 알아볼까요",
      "sub": "① 경제활동과 합리적 선택",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester1/social/3단원_경제활동과지역간교류/g4_social_u3_l01_선택의문제.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_social_u3_l02",
+     "lessonId": "g4_social_u3_l02_합리적선택",
      "n": "2",
      "title": "합리적 선택이 필요한 까닭을 알아볼까요",
      "sub": "① 경제활동과 합리적 선택",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester1/social/3단원_경제활동과지역간교류/g4_social_u3_l02_합리적선택.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_social_u3_l03",
+     "lessonId": "g4_social_u3_l03_선택의방법",
      "n": "3",
      "title": "합리적 선택의 방법을 알아볼까요",
      "sub": "① 경제활동과 합리적 선택",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester1/social/3단원_경제활동과지역간교류/g4_social_u3_l03_선택의방법.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_social_u3_l04",
+     "lessonId": "g4_social_u3_l04_합리적선택실천",
      "n": "4",
      "title": "일상생활에서 합리적 선택을 실천해 볼까요",
      "sub": "① 경제활동과 합리적 선택",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester1/social/3단원_경제활동과지역간교류/g4_social_u3_l04_합리적선택실천.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_social_u3_l05",
+     "lessonId": "g4_social_u3_l05_선택기준실습",
      "n": "5",
      "title": "[할 수 있어요] 선택 기준에 따라 합리적으로 선택하기",
      "sub": "① 경제활동과 합리적 선택",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester1/social/3단원_경제활동과지역간교류/g4_social_u3_l05_선택기준실습.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_social_u3_l06",
+     "lessonId": "g4_social_u3_l06_주제①정리",
      "n": "6",
      "title": "[생각을 펼쳐요] 경제활동과 합리적 선택 정리",
      "sub": "① 경제활동과 합리적 선택",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester1/social/3단원_경제활동과지역간교류/g4_social_u3_l06_주제①정리.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_social_u3_l07",
+     "lessonId": "g4_social_u3_l07_생산과소비",
      "n": "1",
      "title": "생산과 소비가 무엇인지 알아볼까요",
      "sub": "② 교류하며 발전하는 우리 지역",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester1/social/3단원_경제활동과지역간교류/g4_social_u3_l07_생산과소비.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_social_u3_l08",
+     "lessonId": "g4_social_u3_l08_생산소비활동찾기",
      "n": "2",
      "title": "우리 주변에서 생산 활동과 소비 활동을 찾아볼까요",
      "sub": "② 교류하며 발전하는 우리 지역",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester1/social/3단원_경제활동과지역간교류/g4_social_u3_l08_생산소비활동찾기.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_social_u3_l09",
+     "lessonId": "g4_social_u3_l09_교류필요까닭",
      "n": "3",
      "title": "지역 간 교류가 필요한 까닭을 알아볼까요",
      "sub": "② 교류하며 발전하는 우리 지역",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester1/social/3단원_경제활동과지역간교류/g4_social_u3_l09_교류필요까닭.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_social_u3_l10",
+     "lessonId": "g4_social_u3_l10_다양한교류사례",
      "n": "4",
      "title": "지역 간 다양한 교류 사례를 알아볼까요",
      "sub": "② 교류하며 발전하는 우리 지역",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester1/social/3단원_경제활동과지역간교류/g4_social_u3_l10_다양한교류사례.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_social_u3_l11",
+     "lessonId": "g4_social_u3_l11_교류지도만들기",
      "n": "5",
+     "title": "[할 수 있어요] 우리 지역의 교류 사례를 조사해 교류 지도를 만들어 볼까요",
+     "sub": "② 교류하며 발전하는 우리 지역",
+     "url": "/grade4/semester1/social/3단원_경제활동과지역간교류/g4_social_u3_l11_교류지도만들기.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_social_u3_l12",
+     "lessonId": "g4_social_u3_l12_주제②정리",
+     "n": "6",
      "title": "[생각을 펼쳐요] 교류하며 발전하는 우리 지역 정리",
      "sub": "② 교류하며 발전하는 우리 지역",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester1/social/3단원_경제활동과지역간교류/g4_social_u3_l12_주제②정리.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
-     "n": "6",
+     "key": "g4_social_u3_l13",
+     "lessonId": "g4_social_u3_l13_단원정리",
+     "n": "7",
      "title": "3단원 경제활동과 지역 간 교류 정리",
      "sub": "② 교류하며 발전하는 우리 지역",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester1/social/3단원_경제활동과지역간교류/g4_social_u3_l13_단원정리.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }

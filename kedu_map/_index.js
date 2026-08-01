@@ -50,14 +50,20 @@ window.KEDU_MAP_INDEX = [
  },
  {
   "key": "g4_1_math",
-  "units": 2,
-  "lessons": 18,
-  "ready": 10
+  "units": 6,
+  "lessons": 54,
+  "ready": 54
  },
  {
   "key": "g4_1_social",
   "units": 3,
-  "lessons": 37,
-  "ready": 25
+  "lessons": 38,
+  "ready": 38
+ },
+ {
+  "key": "g5_1_math",
+  "units": 6,
+  "lessons": 53,
+  "ready": 1
  }
 ];
