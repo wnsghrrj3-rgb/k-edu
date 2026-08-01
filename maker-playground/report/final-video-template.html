@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>K-MAKER 비디오 템플릿 엔진 — 최종 보고 (R50~R54)</title>
+<style>
+  :root { --bg:#0f1117; --card:#171a23; --line:#262b38; --tx:#e2e8f0; --sub:#94a3b8; --ok:#22d3a5; --warn:#f0b429; --acc:#6ea8fe; }
+  * { box-sizing:border-box; margin:0; }
+  body { background:var(--bg); color:var(--tx); font:15px/1.7 Pretendard,-apple-system,'Noto Sans KR',sans-serif; padding:40px 20px; }
+  main { max-width:880px; margin:0 auto; }
+  h1 { font-size:26px; margin-bottom:6px; }
+  h2 { font-size:18px; margin:36px 0 12px; color:var(--acc); }
+  .sub { color:var(--sub); margin-bottom:28px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th,td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--sub); font-weight:600; }
+  code { background:#232837; border-radius:5px; padding:1px 6px; font-size:13px; color:#c9d6f0; }
+  .ok { color:var(--ok); font-weight:700; }
+  .warn { color:var(--warn); font-weight:700; }
+  ul { padding-left:20px; }
+  li { margin:4px 0; }
+  a { color:var(--acc); }
+  .badge { display:inline-block; background:#1d2b26; color:var(--ok); border:1px solid #245446; border-radius:999px; padding:2px 12px; font-size:13px; font-weight:700; margin-left:8px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>비디오 템플릿 엔진 — 최종 보고<span class="badge">R50~R54 완결</span></h1>
+  <p class="sub">"사진·텍스트만 넣으면 완성 영상" — MK_COMPOSE 엔진 5라운드 완주 보고. 지시서 §25 형식(원문 유실 → 정본 계보 스코프 기준). 2026-08-01.</p>
+
+  <h2>1. 라운드별 산출 요약</h2>
+  <div class="card"><table>
+    <tr><th style="width:70px">라운드</th><th>내용</th><th style="width:130px">검증</th><th style="width:90px">커밋</th></tr>
+    <tr><td><b>R50</b></td><td>MK_COMPOSE 엔진 코어 — Composition(구조)×Theme(디자인) 분리, automationRules(복제·생략·2분할·variant 순환·잔여 흡수), 텍스트 fit(축소→씬 분할), 4비율+layoutByRatio, 기존 doc 스키마 완전 호환</td><td class="ok">16/16</td><td><code>3d74abb</code></td></tr>
+    <tr><td><b>R51</b></td><td>Composition 10종 실구현 — 슬라이드쇼·소개 스토리·카드뉴스(4:5)·비포&애프터·랭킹(카운트다운)·타임라인·Q&A(답변 분할)·문제→해결·리뷰·이야기 + 엔진 보강(needs 게이트·빈 텍스트 미노출·autoNum·초과 정직 안내). 10종×테마 2종 20조합 전부 실렌더</td><td class="ok">14/14</td><td><code>8463948</code> <code>2215477</code></td></tr>
+    <tr><td><b>R52</b></td><td>Ken Burns idle 8종(과도 확대 ≤1.1·인접 반복 금지·작은 슬롯 이동형 제외·영상 제외·끄기 가능) + play CSS↔video 수치 동률 + 전환 변형(인접 동일 교체) + 오디오 fit(loop·trim·끝 fadeOut 1.2s)</td><td class="ok">17/17</td><td><code>b086d9a</code></td></tr>
+    <tr><td><b>R53</b></td><td>Video 허브 UI 배선 — 구조 카드 10종(권장 미디어 수·예상 길이·비율 정직 표시)→테마·제목→업로드→buildProject→에디터. 남는 미디어·자동 조정 정직 알림, 제목 비우면 제목 씬 자동 생략, 빠른 시작 존속</td><td class="ok">16/16</td><td><code>ecde3e9</code></td></tr>
+    <tr><td><b>R54</b></td><td>9:16 안전영역(텍스트만 클램프, 이미지 풀블리드) + 비율 override 칩(추천·쇼츠 라벨) + 시나리오 F(비율 전환) 검증 + 캡처 3종</td><td class="ok">12/12</td><td>본 커밋</td></tr>
+  </table></div>
+
+  <h2>2. 시나리오 검증 (A~F)</h2>
+  <div class="card"><ul>
+    <li><b>A~E</b> (R51): 사진 수 부족·과다·텍스트 초과·미디어 없음·항목형 입력 — 복제·생략·분할·흡수·정직 안내로 전부 유효 doc 생성</li>
+    <li><b>F</b> (R54): 같은 입력 16:9↔9:16 전환 — 캔버스·doc.ratio 정확, layoutByRatio 실적용(프레임 실변화), 10종 전 Composition 텍스트 전량 안전영역(x 6~94·y 12~86) 내, 켄번즈·전환 규약 유지, 결정론 유지, audit ok</li>
+  </ul></div>
+
+  <h2>3. 불변 규약 (전 라운드 공통 검증)</h2>
+  <div class="card"><ul>
+    <li><b>add-only</b> — MK_PLAY·MK_VIDEO·MK_CAPTION·에디터·MK_START 무손상, 기존 doc 스키마 완전 호환</li>
+    <li><b>결정론</b> — 같은 입력은 언제나 같은 doc (audit()이 상시 검증)</li>
+    <li><b>가짜 성공 0</b> — 미구현·자동 조정·잔여 미디어 전부 사용자에게 정직 표기</li>
+    <li><b>빈 프레임 0 · 빈 텍스트 노출 0 · 미디어 무버림</b></li>
+  </ul></div>
+
+  <h2>4. 정직 미구현 목록</h2>
+  <div class="card"><ul>
+    <li class="warn">beatSync — 음악 비트에 장면 전환 동기화: 미구현, UI에 "준비 중" 정직 표기 (오디오 fit의 loop·trim·fadeOut만 실동작)</li>
+    <li class="warn">16:9·1:1·4:5 안전영역 — 미정의 (플랫폼 UI 오버레이가 없는 비율이라 의도적 무변 통과). 필요 시 SAFE 맵에 추가만 하면 됨</li>
+    <li class="warn">작업물 서버 저장(Supabase kmake 버킷) — 설계 이월 사안, 현재 localStorage</li>
+  </ul></div>
+
+  <h2>5. 확인 방법</h2>
+  <div class="card"><ul>
+    <li>라이브: <a href="https://keduclass.com/maker-playground/#/video">keduclass.com/maker-playground/#/video</a> — 구조 카드 선택 → 화면 비율에서 <b>9:16 · 쇼츠</b> 선택 → 사진 고르고 만들기</li>
+    <li>전체 검증 리포트: <a href="https://keduclass.com/maker-playground/report/">/maker-playground/report/</a> — 스위트 45 ALL PASS · 엔진 49</li>
+    <li>캡처: <code>shots/round54-hub.png</code> · <code>round54-panel.png</code> · <code>round54-safe916.png</code>(안전영역 가이드 데모)</li>
+  </ul></div>
+</main>
+</body>
+</html>

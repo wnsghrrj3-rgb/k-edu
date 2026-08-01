@@ -20,6 +20,27 @@ window.MK_COMPOSE = (() => {
     '1:1': { w: 1080, h: 1080 }, '4:5': { w: 1080, h: 1350 },
   };
 
+  /* ================= 안전영역 (R54) =================
+     9:16 세로(쇼츠)에서 플랫폼 UI(상단 상태·하단 자막/버튼)에 텍스트가
+     가리지 않도록 텍스트 요소만 안전영역 안으로 클램프한다.
+     이미지·영상은 풀블리드 유지(배경은 가려져도 된다). */
+  const SAFE = { '9:16': { x: 6, y: 12, w: 88, h: 74 } }; /* x 6~94 · y 12~86 (%) */
+  function applySafeZone(scenes, ratio) {
+    const z = SAFE[ratio];
+    if (!z) return scenes; /* 안전영역 미정의 비율은 무변 통과 — 정직 */
+    for (const sc of scenes) {
+      for (const el of (sc.elements || [])) {
+        if (el.kind !== 'text') continue;
+        if (el.w > z.w) el.w = z.w;
+        if (el.x < z.x) el.x = z.x;
+        if (el.x + el.w > z.x + z.w) el.x = z.x + z.w - el.w;
+        if (el.y < z.y) el.y = z.y;
+        if (el.y > z.y + z.h) el.y = z.y + z.h;
+      }
+    }
+    return scenes;
+  }
+
   /* ================= 레지스트리 ================= */
   const COMPS = [];   /* Composition — 영상 구조 */
   const THEMES = [];  /* Theme — 시각 디자인 */
@@ -311,6 +332,7 @@ window.MK_COMPOSE = (() => {
     if (!scenes.length) return { ok: false, why: 'empty-plan', guide: '만들 장면이 없어요 — 내용을 추가해 주세요.' };
     assignKenburns(scenes, input.kenburns); /* R52 — 기본 켬, input.kenburns === false 로 끄기 */
     varyTransitions(scenes, theme);
+    applySafeZone(scenes, ratio); /* R54 — 9:16 텍스트 안전영역 */
     const doc = {
       templateId: 'compose:' + comp.id + ':' + theme.id,
       title: (input.texts && input.texts.title) || input.title || comp.name,
@@ -375,6 +397,6 @@ window.MK_COMPOSE = (() => {
       recommendedMediaCount: c.recommendedMediaCount, recommendedDuration: c.recommendedDuration,
       supportedRatios: Object.keys(RATIOS), defaultRatio: c.defaultRatio || '16:9' })),
     listThemes: () => THEMES.map((t) => ({ id: t.id, name: t.name, mood: t.mood })),
-    KENBURNS, kbState, assignKenburns, varyTransitions,
+    KENBURNS, kbState, assignKenburns, varyTransitions, SAFE, applySafeZone,
     analyzeMedia, fitText, textLen, planScenes, buildProject, audit };
 })();

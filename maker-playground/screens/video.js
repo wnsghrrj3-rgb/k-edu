@@ -11,7 +11,7 @@
 window.MK_SCREENS = window.MK_SCREENS || {};
 
 window.MK_VIDHUB = (() => {
-  const st = { comp: null, theme: null, title: '', sub: '', msg: '' };
+  const st = { comp: null, theme: null, ratio: null, title: '', sub: '', msg: '' };
 
   const comps = () => (window.MK_COMPOSE ? window.MK_COMPOSE.listCompositions() : []);
   const themes = () => (window.MK_COMPOSE ? window.MK_COMPOSE.listThemes() : []);
@@ -34,6 +34,11 @@ window.MK_VIDHUB = (() => {
     st.comp = st.comp === compId ? null : compId;
     st.msg = '';
     if (st.comp && !st.theme) { const t = themes(); st.theme = t.length ? t[0].id : null; }
+    /* R54 — 비율 override: 선택 시 구조 기본 비율, 해제 시 초기화 */
+    if (st.comp && window.MK_COMPOSE) {
+      const c = window.MK_COMPOSE.listCompositions().find((x) => x.id === st.comp);
+      st.ratio = c ? c.defaultRatio : null;
+    } else st.ratio = null;
   }
 
   /* 본체 — 미디어 배열로 프로젝트 생성 후 에디터 진입 (테스트 시임) */
@@ -42,7 +47,7 @@ window.MK_VIDHUB = (() => {
     const texts = {};
     if (st.title.trim()) texts.title = st.title.trim();
     if (st.sub.trim()) texts.subtitle = st.sub.trim();
-    const r = window.MK_COMPOSE.buildProject(st.comp, st.theme, { medias: medias || [], texts });
+    const r = window.MK_COMPOSE.buildProject(st.comp, st.theme, { medias: medias || [], texts, ...(st.ratio ? { ratio: st.ratio } : {}) });
     if (!r.ok) { st.msg = r.guide || '만들 수 없어요 — 입력을 확인해 주세요.'; return r; }
     /* 정직 안내 — 남은 미디어·자동 조정 내역을 열기 전에 알린다 */
     const notes = (r.notes || []).slice();
@@ -93,9 +98,15 @@ window.MK_SCREENS.video = {
       const c = cards.find((x) => x.id === H.st.comp);
       const chips = (window.MK_COMPOSE.listThemes()).map((t) =>
         `<button class="vh-chip${H.st.theme === t.id ? ' on' : ''}" data-vh-theme="${t.id}">${esc(t.name)}</button>`).join('');
+      /* R54 — 비율 칩: 기본 비율에 추천, 9:16에 쇼츠 라벨 정직 표기 */
+      const ratioChips = (c ? c.supportedRatios : []).map((r) => {
+        const label = r + (c.defaultRatio === r ? ' · 추천' : '') + (r === '9:16' ? ' · 쇼츠' : '');
+        return `<button class="vh-chip${H.st.ratio === r ? ' on' : ''}" data-vh-ratio="${r}">${esc(label)}</button>`;
+      }).join('');
       panel = `<div class="vh-panel" id="vhPanel">
         <b style="font:var(--mk-t-h3)">${esc(c ? c.name : '')} 만들기</b>
         <div style="margin-top:10px"><small style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">분위기</small><div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">${chips}</div></div>
+        <div style="margin-top:10px"><small style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">화면 비율</small><div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">${ratioChips}</div></div>
         <input class="vh-input" id="vhTitle" placeholder="제목 (비우면 제목 장면이 자동으로 빠져요)" value="${esc(H.st.title)}" maxlength="24">
         <input class="vh-input" id="vhSub" placeholder="부제 (선택)" value="${esc(H.st.sub)}" maxlength="30">
         <button class="vh-go" data-vh-pick>📁 사진·영상 고르고 만들기</button>
@@ -132,6 +143,7 @@ window.MK_SCREENS.video = {
     });
     root.querySelectorAll('[data-vh-comp]').forEach((b) => b.onclick = () => { H.select(b.dataset.vhComp); redraw(); });
     root.querySelectorAll('[data-vh-theme]').forEach((b) => b.onclick = () => { H.st.theme = b.dataset.vhTheme; redraw(); });
+    root.querySelectorAll('[data-vh-ratio]').forEach((b) => b.onclick = () => { H.st.ratio = b.dataset.vhRatio; redraw(); });
     const ti = root.querySelector('#vhTitle'); if (ti) ti.oninput = () => { H.st.title = ti.value; };
     const su = root.querySelector('#vhSub'); if (su) su.oninput = () => { H.st.sub = su.value; };
     const go = root.querySelector('[data-vh-pick]'); if (go) go.onclick = () => H.pick((m) => { const el = root.querySelector('#vhMsg'); if (el) el.textContent = m; });
