@@ -285,74 +285,74 @@ window.KEDU_MAP["g5_1_math"] = {
    "kind": "unit",
    "lessons": [
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u4_l01",
+     "lessonId": "g5_math_u4_l01_v1",
      "n": "1",
      "title": "대응 관계를 만나 보자",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/4단원_대응관계/g5_math_u4_l01_대응관계를만나보자.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u4_l02",
+     "lessonId": "g5_math_u4_l02_v1",
      "n": "2",
      "title": "두 양 사이의 관계를 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/4단원_대응관계/g5_math_u4_l02_두양사이의관계를알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u4_l03",
+     "lessonId": "g5_math_u4_l03_v1",
      "n": "3",
      "title": "대응 관계를 식으로 나타내요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/4단원_대응관계/g5_math_u4_l03_대응관계를식으로나타내요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u4_l04",
+     "lessonId": "g5_math_u4_l04_v1",
      "n": "4",
      "title": "식으로 문제를 해결해요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/4단원_대응관계/g5_math_u4_l04_식으로문제를해결해요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u4_l05",
+     "lessonId": "g5_math_u4_l05_v1",
      "n": "5",
      "title": "생활 속에서 대응 관계를 찾아 식으로 나타내요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/4단원_대응관계/g5_math_u4_l05_생활속에서대응관계를찾아식으로나타내요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u4_l06",
+     "lessonId": "g5_math_u4_l06_v1",
      "n": "6",
      "title": "룰루랄라 친구들 선물 사기",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/4단원_대응관계/g5_math_u4_l06_룰루랄라친구들선물사기.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u4_l07",
+     "lessonId": "g5_math_u4_l07_v1",
      "n": "7",
      "title": "스스로 마무리해요 (단원 평가)",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/4단원_대응관계/g5_math_u4_l07_스스로마무리해요.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   },
