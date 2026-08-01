@@ -111,84 +111,84 @@ window.KEDU_MAP["g5_1_math"] = {
    "kind": "unit",
    "lessons": [
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u2_l01",
+     "lessonId": "g5_math_u2_l01_v1",
      "n": "1",
      "title": "약수와 배수를 만나 보자",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/2단원_약수와배수/g5_math_u2_l01_약수와배수를만나보자.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u2_l02",
+     "lessonId": "g5_math_u2_l02_v1",
      "n": "2",
      "title": "약수를 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/2단원_약수와배수/g5_math_u2_l02_약수를알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u2_l03",
+     "lessonId": "g5_math_u2_l03_v1",
      "n": "3",
      "title": "배수를 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/2단원_약수와배수/g5_math_u2_l03_배수를알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u2_l04",
+     "lessonId": "g5_math_u2_l04_v1",
      "n": "4",
      "title": "약수와 배수의 관계를 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/2단원_약수와배수/g5_math_u2_l04_약수와배수의관계를알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u2_l05",
+     "lessonId": "g5_math_u2_l05_v1",
      "n": "5",
      "title": "공약수와 최대공약수를 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/2단원_약수와배수/g5_math_u2_l05_공약수와최대공약수를알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u2_l06",
+     "lessonId": "g5_math_u2_l06_v1",
      "n": "6",
      "title": "공배수와 최소공배수를 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/2단원_약수와배수/g5_math_u2_l06_공배수와최소공배수를알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u2_l07",
+     "lessonId": "g5_math_u2_l07_v1",
      "n": "7",
      "title": "오순도순 동물과 함께하는 삶",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/2단원_약수와배수/g5_math_u2_l07_오순도순동물과함께하는삶.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u2_l08",
+     "lessonId": "g5_math_u2_l08_v1",
      "n": "8",
      "title": "스스로 마무리해요 (단원 평가)",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/2단원_약수와배수/g5_math_u2_l08_스스로마무리해요.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   },

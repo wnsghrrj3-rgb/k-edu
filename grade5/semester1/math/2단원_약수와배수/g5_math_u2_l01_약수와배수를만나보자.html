@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<!--
+  g5_math_u2_l01 — 약수와 배수를 만나 보자 [5학년 2단원 01차시, 단일 40분]
+  단원: 5학년 1학기 2단원 「약수와 배수」 / 지도서 159~198 · 교과서 29~31
+  base: g4_math_u6_l04(엔진·채점부·공통 CSS 계승) / 부품 numChips·divisorBoard·multiTrack·vennFactor·orderBar v1
+  성격: 단원 도입 — 남김없이 똑같이 나누기와 몇 배로 늘어나기, 두 방향을 함께 만난다
+  ★ 오개념 훅: 약수와 배수를 서로 다른 두 개념으로만 보고 짝이라는 것을 놓치는 경향
+  ★ 왜 그럴까 슬롯 = 슬7 : 약수와 배수는 곱셈식 하나에 함께 들어 있는 앞뒤 관계
+  ⛔ 규약: 문자식 금지 / 권유형 종결 어미 금지(고학년 톤 v1 §1-3) / 이모지 슬라이드당 ≤2 / 항 4개 이내
+  점수: 기본 4×10 + 응용 4×15 = 100 / mcq 정답 위치 q8=3 · q10=1 · q12=4 · q14=2 · q15=3 / pad 정답 q9=3 · q11=24 · q13=4
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g5_math_u2_l01_v1">
+<title>약수와 배수를 만나 보자 · K-edu 5학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#FBF7F1; --ink:#243043; --ink-soft:#62708A;
+  --coral:#1D4ED8; --coral-deep:#153FA6; --coral-soft:#DCE6FB;
+  --teal:#0F766E; --teal-deep:#0B5A54; --teal-soft:#D3EDE9;
+  --gold:#F6B526; --emph:#F0451F; --line:#E4DACB; --mark:#FFE08A;
+  --f-title:'Do Hyeon',sans-serif; --f-body:'Gowun Dodum',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:0 14px 34px -18px rgba(36,48,67,.4);
+  --fs-title: clamp(26px, 4.2vw, 46px);
+  --fs-heading: clamp(24px, 3.7vw, 37px);
+  --fs-body: clamp(20px, 3.0vw, 29px);
+  --fs-caption: clamp(19px, 2.9vw, 27px);
+  --fs-label: clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --em-md: clamp(44px, 7vw, 80px);
+  --em-lg: clamp(66px, 10vw, 122px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(760px, 96vw);
+  --mw-lg: min(840px, 96vw);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+@keyframes ka-swap-r { 0%{transform:translateX(0); opacity:1;} 50%{transform:translateX(20px); opacity:.3;} 100%{transform:translateX(0); opacity:1;} }
+@keyframes ka-mark { from{background-size:0 100%;} to{background-size:100% 100%;} }
+
+/* ───── 컨테이너 ───── */
+.ka { background:var(--paper); width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; color:var(--ink); position:relative; overflow:hidden; }
+
+/* ───── 상단바 (topbar) ───── */
+.ka-h { display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); padding:clamp(11px,1.7vw,15px) clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:hover { transform:translateY(-1px); }
+.ka-pill { font-family:var(--f-title); background:var(--coral); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-where { font-size:clamp(14px,1.6vw,18px); color:var(--ink-soft); flex-shrink:1; }
+.ka-where b { color:var(--ink); }
+.ka-bar { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:46vw; }
+.ka-dot { width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s, background .2s; }
+.ka-dot:hover { transform:scale(1.2); }
+.ka-dot.active { background:var(--coral); transform:scale(1.3); }
+.ka-dot.done { background:var(--teal); }
+.ka-score { font-family:var(--f-title); background:#FFF8E1; color:#F57F17; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); padding:0; border-radius:50%; cursor:pointer; flex-shrink:0; color:var(--coral-deep); font-size:clamp(13px,2vw,16px); width:clamp(32px,4.5vw,38px); height:clamp(32px,4.5vw,38px); display:flex; align-items:center; justify-content:center; }
+
+/* ───── 본문 ───── */
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; gap:clamp(7px,1.3vw,12px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(8px,1.4vh,16px) clamp(16px,4vw,48px); overflow:hidden; }
+.slide.active { display:flex; }
+.slide-title { font-family:var(--f-title); font-size:var(--fs-title); margin:0; line-height:1.18; color:var(--ink); font-weight:400; text-align:center; flex-shrink:0; }
+.slide-sub { font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(10px,1.6vw,16px); left:clamp(16px,4vw,40px); font-family:var(--f-title); color:var(--coral); font-size:clamp(13px,1.9vw,18px); letter-spacing:.4px; z-index:5; }
+
+/* ───── 하단 내비 ───── */
+.ka-f { display:flex; justify-content:flex-end; gap:12px; padding:clamp(12px,1.7vw,16px) clamp(16px,4vw,40px); background:linear-gradient(to top, var(--paper) 62%, transparent); flex-shrink:0; }
+.ka-prev, .ka-hint, .ka-next { font-family:var(--f-title); font-size:clamp(15px,1.9vw,22px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(10px,1.4vw,15px) clamp(20px,2.8vw,38px); cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translateY(-2px); }
+.ka-prev { margin-right:auto; }
+.ka-hint { color:#F57F17; border-color:#FFE08A; }
+.ka-next { background:var(--coral); color:#fff; border-color:var(--coral); }
+.ka-prev:disabled, .ka-next:disabled { opacity:.35; cursor:default; transform:none; }
+.ka-hint:disabled { opacity:.4; cursor:default; }
+
+/* ───── 공통 콘텐츠 ───── */
+.concept-box { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,18px) clamp(18px,2.8vw,28px); border-radius:20px; font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); text-align:center; line-height:1.5; box-shadow:var(--shadow); }
+.concept-box strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.big-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-lg); line-height:1; }
+.intro-q { font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; }
+.intro-q strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.goal-list { display:flex; flex-direction:column; gap:clamp(7px,1.4vw,11px); font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); }
+.goal-list li { background:#fff; border:2px solid var(--line); padding:clamp(8px,1.5vw,12px) clamp(14px,2.6vw,20px); border-radius:16px; list-style:none; box-shadow:var(--shadow); }
+.goal-list li strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+.recall-box { background:var(--teal-soft); padding:clamp(14px,2.8vw,22px) clamp(20px,3.6vw,30px); border-radius:22px; font-size:var(--fs-body); color:var(--teal-deep); max-width:var(--mw-sm); text-align:center; line-height:1.6; }
+.recall-box strong { color:var(--teal-deep); font-family:var(--f-title); font-weight:400; }
+.scene { background:#fff; border:3px solid var(--coral-soft); border-radius:28px; padding:clamp(18px,3.4vw,30px) clamp(22px,4.2vw,38px); display:flex; flex-direction:column; gap:clamp(10px,2vw,16px); align-items:center; min-width:clamp(280px,50vw,460px); box-shadow:0 6px 0 var(--coral-soft); }
+.pencil-row { display:flex; gap:clamp(4px,0.8vw,8px); font-size:var(--em-sm); flex-wrap:wrap; justify-content:center; max-width:var(--mw-sm); color:var(--ink); }
+
+/* ───── place_value_block (모형) ───── */
+.pv-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.pv-row { display:flex; gap:clamp(10px,2.2vw,20px); align-items:flex-end; justify-content:center; flex-wrap:wrap; }
+.pv-group { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,0.8vw,7px); }
+.pv-label { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.pv-block svg { display:block; }
+.swap-arrow { font-size:var(--em-sm); color:var(--coral); animation:ka-swap-r 1.6s ease-in-out infinite; }
+.exchange-eq { font-size:var(--fs-heading); color:var(--ink); display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); flex-wrap:wrap; justify-content:center; }
+
+/* ───── number_line ───── */
+.nl-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(12px,2.4vw,20px); max-width:var(--mw-lg); width:100%; }
+.nl-svg { width:min(760px,94vw); height:auto; }
+.nl-svg .nl-tick text { font-family:var(--f-num); font-weight:800; fill:var(--ink-soft); }
+.nl-pick { cursor:pointer; }
+.nl-pick:hover circle { fill:var(--coral-soft); }
+.nl-pick.correct circle { fill:var(--teal); }
+.nl-pick.wrong circle { fill:var(--coral-soft); }
+
+/* ───── 100의 여러 의미 ───── */
+.mean-grid { display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-sm); width:100%; }
+.mean-item { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,17px) clamp(16px,3vw,24px); border-radius:18px; font-size:var(--fs-body); color:var(--ink); text-align:center; box-shadow:var(--shadow); }
+.mean-item strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+
+/* ───── 문제 공통 ───── */
+.q-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; font-weight:400; }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:20px; padding:clamp(8px,1.6vw,14px) clamp(24px,4.6vw,44px); min-width:clamp(120px,22vw,200px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.q-pad { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(6px,1.2vw,10px); max-width:clamp(280px,56vw,460px); }
+.q-key { background:#fff; border:2px solid var(--line); border-radius:14px; padding:clamp(7px,1.5vw,12px) 0; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, background .15s, border-color .15s; box-shadow:0 4px 0 var(--line); }
+.q-key:hover { background:var(--coral-soft); border-color:var(--coral); }
+.q-key:active { transform:translateY(3px); box-shadow:none; }
+.q-key.fn { background:#FFF8E1; color:#F57F17; font-family:var(--f-title); font-size:var(--fs-body); border-color:#FFE08A; box-shadow:0 4px 0 #FFE08A; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); color:var(--teal-deep); min-height:1.4em; text-align:center; }
+.q-fb.wrong { color:var(--emph); }
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-sm); }
+.mcq-opt { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,15px); font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .2s; box-shadow:0 6px 0 var(--coral-soft); font-weight:400; }
+.mcq-opt:hover { border-color:var(--coral); }
+.mcq-opt:active { transform:translateY(4px); box-shadow:none; }
+.mcq-opt.correct { border-color:var(--teal-deep); background:var(--teal); color:#fff; box-shadow:0 6px 0 var(--teal-deep); animation:ka-pop .5s ease; }
+.mcq-opt.wrong { border-color:var(--emph); background:#FFE0DA; color:var(--coral-deep); animation:ka-shake .35s; }
+.mcq-hint { font-family:var(--f-title); font-size:var(--fs-body); color:#F57F17; background:#FFF8E1; border-radius:16px; padding:clamp(8px,1.6vw,12px) clamp(14px,2.6vw,20px); max-width:var(--mw-sm); text-align:center; display:none; }
+.mcq-hint.show { display:block; }
+
+/* ───── trace ───── */
+.trace-row { display:flex; gap:clamp(12px,2.4vw,22px); justify-content:center; flex-wrap:wrap; }
+.trace-cell { width:clamp(64px,12vw,110px); height:clamp(84px,16vw,150px); border:5px dashed var(--coral-soft); border-radius:20px; display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:#D8C4B8; cursor:pointer; transition:all .2s; background:#fff; }
+.trace-cell.done { color:var(--coral-deep); border-style:solid; border-color:var(--coral); background:var(--coral-soft); }
+
+/* ───── match ───── */
+.match-stage { display:flex; flex-direction:column; gap:clamp(8px,1.5vw,13px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.match-cols { display:flex; gap:clamp(20px,4vw,48px); }
+.match-col { display:flex; flex-direction:column; gap:clamp(6px,1.1vw,9px); }
+.match-card { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(16px,3vw,26px); font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .15s; min-width:clamp(70px,13vw,108px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.match-card:hover { border-color:var(--coral); }
+.match-card.sel { border-color:var(--gold); background:var(--mark); }
+.match-card.matched { border-color:var(--teal-deep); background:var(--teal); color:#fff; cursor:default; box-shadow:0 5px 0 var(--teal-deep); }
+
+/* ───── multi judge ───── */
+.judge-grid { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); max-width:var(--mw-sm); width:100%; }
+.judge-item { display:flex; align-items:center; gap:clamp(10px,2vw,16px); background:#fff; border:3px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(14px,2.6vw,20px); box-shadow:0 5px 0 var(--coral-soft); }
+.judge-text { flex:1; font-size:var(--fs-body); color:var(--ink); text-align:left; }
+.judge-text strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.judge-btns { display:flex; gap:clamp(6px,1.2vw,10px); }
+.judge-btn { border:3px solid var(--line); border-radius:14px; padding:clamp(6px,1.2vw,10px) clamp(12px,2.4vw,18px); font-family:var(--f-title); font-size:var(--fs-heading); cursor:pointer; background:#fff; color:var(--ink-soft); transition:transform .1s; }
+.judge-btn:active { transform:translateY(3px); }
+.judge-btn.pick-o { background:var(--teal-soft); color:var(--teal-deep); border-color:var(--teal); }
+.judge-btn.pick-x { background:var(--coral-soft); color:var(--coral-deep); border-color:var(--coral); }
+.judge-item.right { border-color:var(--teal-deep); box-shadow:0 5px 0 var(--teal-deep); }
+.judge-item.miss { border-color:var(--emph); animation:ka-shake .35s; }
+
+/* ───── 정리/자기평가/다음 ───── */
+.summary-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.summary-card { background:#fff; border:2px solid var(--line); border-radius:22px; padding:clamp(18px,3.4vw,30px); font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; box-shadow:var(--shadow); }
+.summary-card strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.wrap-msg { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--coral-deep); }
+.self-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(14px,2.6vw,22px); }
+.self-row { display:flex; gap:clamp(12px,2.4vw,20px); flex-wrap:wrap; justify-content:center; }
+.self-btn { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,16px) clamp(14px,2.8vw,22px); cursor:pointer; display:flex; flex-direction:column; gap:clamp(3px,0.7vw,6px); align-items:center; transition:transform .12s, border-color .15s; box-shadow:0 6px 0 var(--coral-soft); }
+.self-btn:hover { border-color:var(--coral); }
+.self-btn:active { transform:translateY(4px); box-shadow:none; }
+.self-btn.selected { border-color:var(--gold); background:var(--mark); }
+.self-btn-stars { font-size:var(--em-sm); color:var(--gold); }
+.self-btn-name { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.next-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-md); }
+.next-card { background:var(--teal-soft); border-radius:22px; padding:clamp(20px,3.8vw,32px); display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); align-items:center; }
+.next-emojis { font-size:var(--em-md); }
+.next-label { font-size:var(--fs-body); color:var(--teal-deep); text-align:center; }
+.home-prompt { font-size:var(--fs-caption); color:var(--coral-deep); background:var(--coral-soft); border-radius:18px; padding:clamp(12px,2.4vw,18px) clamp(18px,3.4vw,28px); text-align:center; }
+
+
+  /* 세로셈 (3학년 덧셈·뺄셈) */
+  .vadd { display:inline-grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:clamp(2px,0.6vw,4px) clamp(8px,1.6vw,14px); font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--ink); justify-items:center; align-items:center; background:#fff; border:2px solid var(--line); border-radius:18px; padding:clamp(12px,2vw,20px) clamp(18px,3vw,30px); box-shadow:var(--shadow); }
+  .vadd .op { color:var(--coral-deep); }
+  .vadd .ln { grid-column:1/-1; width:100%; height:3px; background:var(--ink); border-radius:2px; }
+  .vadd .sum { color:var(--coral-deep); }
+  .pv-sum-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-md); }
+
+/* ───── 약수와 배수 부품 ───── */
+.ef-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(9px,1.8vw,16px); width:100%; }
+.fv-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(9px,1.8vw,16px); width:100%; }
+.fv-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); width:100%; max-width:var(--mw-lg); }
+.fv-svg { width:100%; height:auto; display:block; max-width:min(720px,94vw); margin:0 auto; }
+.fv-svg text { font-family:'Nunito',sans-serif; font-weight:800; }
+.fv-svg text.kor { font-family:'Do Hyeon',sans-serif; font-weight:400; }
+.fv-note { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; }
+.fv-chips { display:flex; flex-wrap:wrap; gap:clamp(5px,1vw,9px); justify-content:center; max-width:var(--mw-md); }
+.fv-chip { font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); background:#fff; border:3px solid var(--line); border-radius:14px; padding:clamp(3px,0.8vw,7px) clamp(9px,1.8vw,16px); box-shadow:0 4px 0 var(--line); }
+.fv-chip.hi { color:#fff; background:var(--coral); border-color:var(--coral-deep); box-shadow:0 4px 0 var(--coral-deep); }
+.fv-chip.hi2 { color:#fff; background:var(--teal); border-color:var(--teal-deep); box-shadow:0 4px 0 var(--teal-deep); }
+.fv-chip.both { color:var(--ink); background:var(--mark); border-color:var(--gold); box-shadow:0 4px 0 var(--gold); }
+.fv-chip.dim { color:#C7CEDA; }
+.fv-pair { display:flex; gap:clamp(14px,3vw,34px); flex-wrap:wrap; justify-content:center; align-items:flex-start; }
+.fv-col { display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.2vw,10px); background:#fff; border:2px solid var(--line); border-radius:20px; padding:clamp(10px,2vw,18px) clamp(12px,2.4vw,22px); box-shadow:var(--shadow); }
+.fv-col.bad { border-color:#F3C4B7; background:#FFF6F3; }
+.fv-col.good { border-color:var(--teal-soft); background:#F5FBFA; }
+.fv-caph { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); }
+.fv-col.bad .fv-caph { color:var(--emph); }
+.fv-col.good .fv-caph { color:var(--teal-deep); }
+.fv-lines { display:flex; flex-direction:column; gap:clamp(5px,1vw,9px); align-items:center; }
+.fv-line { display:flex; align-items:center; gap:clamp(8px,1.6vw,14px); font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); }
+.fv-line .fv-lead { font-family:var(--f-title); font-size:var(--fs-label); color:var(--ink-soft); min-width:3.4em; text-align:right; }
+.fv-line.final { color:var(--coral-deep); }
+.fv-line.bad { color:var(--emph); }
+.fv-line.bad .fv-lead { color:var(--emph); }
+</style>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 목록</button>
+    <span class="ka-pill">1차시</span>
+    <span class="ka-where">수학 5-1 · <b>2. 약수와 배수</b></span>
+    <div class="ka-bar" id="dots"></div>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+  <div class="ka-m">
+    <div class="slide active" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">남김없이 똑같이</h2>
+      <div class="intro-q">사탕 <strong>12개</strong>를 친구들과 <strong>남김없이 똑같이</strong> 나누려고 해요.<br>몇 명이면 딱 맞게 나눌 수 있을까?<br>5명이면 어떻게 될까?</div>
+    </div>
+
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">12는 여러 모양으로 놓여요</h2>
+      <div class="ef-stage">
+        <div id="m-i2"></div>
+        <div class="concept-box">12개를 직사각형으로 늘어놓으면<br><strong>1 × 12</strong>, <strong>2 × 6</strong>, <strong>3 × 4</strong> — 세 가지 모양이 나와요.<br>여기 쓰인 수들이 12를 <strong>남김없이 나누는 수</strong>예요.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">오늘의 질문</h2>
+      <div class="intro-q">어떤 수를 <strong>남김없이 나누는 수</strong>는 무엇이라 부를까?<br>거꾸로, 어떤 수를 <strong>몇 배 한 수</strong>는 무엇일까?<br>이 둘은 서로 무슨 사이일까?</div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 나누는 쪽</div>
+      <h2 class="slide-title">나누어떨어지게 하는 수</h2>
+      <div class="ef-stage">
+        <div id="m-e1"></div>
+        <div class="concept-box">12를 <strong>1, 2, 3, 4, 6, 12</strong> 로 나누면 남는 것이 없어요.<br>이런 수를 12의 <strong>약수</strong>라고 해요.<br>5로 나누면 2개가 남으니 5는 약수가 아니지요.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 늘리는 쪽</div>
+      <h2 class="slide-title">몇 배 한 수</h2>
+      <div class="ef-stage">
+        <div id="m-e2"></div>
+        <div class="concept-box">3을 <strong>1배, 2배, 3배…</strong> 하면 3, 6, 9, 12, 15 …<br>이런 수를 3의 <strong>배수</strong>라고 해요.<br>배수는 <strong>끝없이</strong> 이어져요.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 짝</div>
+      <h2 class="slide-title">약수와 배수는 짝이에요</h2>
+      <div class="ef-stage">
+        <div id="m-e3"></div>
+        <div class="concept-box"><strong>3 × 4 = 12</strong> 라는 식 하나에<br>"3과 4는 12의 <strong>약수</strong>"와<br>"12는 3과 4의 <strong>배수</strong>"가 함께 들어 있어요.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · ★왜 그럴까</div>
+      <h2 class="slide-title">왜 이걸 배울까</h2>
+      <div class="ef-stage">
+        <div id="m-e4"></div>
+        <div class="concept-box">약수는 <strong>분수를 간단히</strong> 할 때,<br>배수는 <strong>분모를 같게</strong> 만들 때 쓰여요.<br>다음 단원에서 바로 만나게 될 도구예요.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q8" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">사탕 <strong>12개</strong>를 남김없이 똑같이 나눌 때<br>가능한 인원수가 <strong>아닌</strong> 것은?</div>
+        <div class="ef-stage"><div id="m-q8"></div></div>
+        <div class="mcq-opts" id="q8-opts">
+          <button class="mcq-opt" data-correct="0">2명</button>
+          <button class="mcq-opt" data-correct="0">3명</button>
+          <button class="mcq-opt" data-correct="1">5명</button>
+          <button class="mcq-opt" data-correct="0">6명</button>
+        </div>
+        <div class="mcq-hint" data-hints='["12를 그 수로 나누어 남는 것이 없어야 해요.","12 ÷ 5 는 2개가 남아요."]'></div>
+        <div class="q-fb" id="q8-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q9" data-q-points="10" data-answer="3">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">사탕 <strong>12개</strong>를 <strong>4명</strong>이 똑같이 나누면<br>한 사람이 몇 개씩 받을까?</div>
+        <div class="ef-stage"><div id="m-q9"></div></div>
+        <div class="q-display" id="q9-display">?</div>
+        <div class="q-pad" id="q9-pad"></div>
+        <div class="mcq-hint" data-hints='["12를 4로 나누어요.","12 ÷ 4 를 계산해요."]'></div>
+        <div class="q-fb" id="q9-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q10" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt"><strong>6의 배수</strong>를 작은 것부터 세 개 쓴 것은?</div>
+        <div class="ef-stage"><div id="m-q10"></div></div>
+        <div class="mcq-opts" id="q10-opts">
+          <button class="mcq-opt" data-correct="1">6, 12, 18</button>
+          <button class="mcq-opt" data-correct="0">1, 2, 3</button>
+          <button class="mcq-opt" data-correct="0">6, 7, 8</button>
+          <button class="mcq-opt" data-correct="0">2, 3, 6</button>
+        </div>
+        <div class="mcq-hint" data-hints='["6을 1배, 2배, 3배 해요.","6 × 1, 6 × 2, 6 × 3 이에요."]'></div>
+        <div class="q-fb" id="q10-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q11" data-q-points="10" data-answer="24">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt"><strong>8의 배수</strong>를 작은 것부터 썼을 때<br><strong>셋째</strong> 수는 무엇일까?</div>
+        <div class="ef-stage"><div id="m-q11"></div></div>
+        <div class="q-display" id="q11-display">?</div>
+        <div class="q-pad" id="q11-pad"></div>
+        <div class="mcq-hint" data-hints='["8, 16 다음이에요.","8 × 3 을 계산해요."]'></div>
+        <div class="q-fb" id="q11-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q12" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <!-- 오답① = 방향 혼동 / 오답② = 배수 유한 오개념 -->
+      <div class="q-stage">
+        <div class="q-prompt"><strong>3 × 4 = 12</strong> 를 보고<br>바르게 말한 것은?</div>
+        <div class="ef-stage"><div id="m-q12"></div></div>
+        <div class="mcq-opts" id="q12-opts">
+          <button class="mcq-opt" data-correct="0">12는 3의 약수다</button>
+          <button class="mcq-opt" data-correct="0">3의 배수는 4개뿐이다</button>
+          <button class="mcq-opt" data-correct="0">4는 12의 배수다</button>
+          <button class="mcq-opt" data-correct="1">3과 4는 12의 약수다</button>
+        </div>
+        <div class="mcq-hint" data-hints='["곱해서 12가 되는 두 수를 살펴봐요.","곱하는 쪽이 약수, 곱해서 나온 쪽이 배수예요."]'></div>
+        <div class="q-fb" id="q12-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q13" data-q-points="15" data-answer="4">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt"><strong>15</strong>를 남김없이 나누는 수는<br>모두 몇 개일까?</div>
+        <div class="ef-stage"><div id="m-q13"></div></div>
+        <div class="q-display" id="q13-display">?</div>
+        <div class="q-pad" id="q13-pad"></div>
+        <div class="mcq-hint" data-hints='["1부터 15까지 하나씩 나누어 봐요.","1, 3, 5, 15 로 나누어떨어져요."]'></div>
+        <div class="q-fb" id="q13-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q14" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">어떤 수의 <strong>약수 중 가장 큰 수</strong>는<br>언제나 무엇일까?</div>
+        <div class="ef-stage"><div id="m-q14"></div></div>
+        <div class="mcq-opts" id="q14-opts">
+          <button class="mcq-opt" data-correct="0">1</button>
+          <button class="mcq-opt" data-correct="1">그 수 자신</button>
+          <button class="mcq-opt" data-correct="0">그 수의 절반</button>
+          <button class="mcq-opt" data-correct="0">정해져 있지 않다</button>
+        </div>
+        <div class="mcq-hint" data-hints='["12의 약수는 1, 2, 3, 4, 6, 12 예요.","가장 큰 약수가 무엇인지 살펴봐요."]'></div>
+        <div class="q-fb" id="q14-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q15" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">약수와 배수를 배우면<br>다음 단원에서 무엇에 쓰일까?</div>
+        <div class="ef-stage"><div id="m-q15"></div></div>
+        <div class="mcq-opts" id="q15-opts">
+          <button class="mcq-opt" data-correct="0">큰 수를 읽는 데</button>
+          <button class="mcq-opt" data-correct="0">도형의 넓이를 구하는 데</button>
+          <button class="mcq-opt" data-correct="1">분수를 약분하고 통분하는 데</button>
+          <button class="mcq-opt" data-correct="0">각도를 재는 데</button>
+        </div>
+        <div class="mcq-hint" data-hints='["다음 단원은 「약분과 통분」이에요.","약분은 나누고, 통분은 분모를 같게 만들어요."]'></div>
+        <div class="q-fb" id="q15-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 배운 것</h2>
+      <div class="summary-stage">
+        <div class="summary-card">어떤 수를 <strong>남김없이 나누는 수</strong>가 약수,<br>어떤 수를 <strong>몇 배 한 수</strong>가 배수예요.<br>둘은 <strong>곱셈식 하나에 함께 들어 있는 짝</strong>이지요.</div>
+        <div class="wrap-msg" id="wrap-msg"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 공부는 어땠나요?</h2>
+      <div class="self-stage">
+        <div class="self-row">
+          <button class="self-btn"><div class="self-btn-stars">★</div><div class="self-btn-name">조금 어려웠어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★</div><div class="self-btn-name">잘 했어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★★</div><div class="self-btn-name">아주 잘 했어요</div></button>
+        </div>
+        <div class="q-fb" id="self-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">다음 시간</h2>
+      <div class="next-stage">
+        <div class="next-card">
+          <div class="next-emojis">🔷1️⃣</div>
+          <div class="next-label">다음 시간에는 <strong>약수</strong>를 자세히 알아봐요</div>
+        </div>
+        <div class="home-prompt">집에 있는 물건을 세어 보고, 남김없이 똑같이 나눌 수 있는 인원수를 모두 찾아보자.</div>
+      </div>
+    </div>
+
+  </div>
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+<script>
+const TOTAL = 18;
+const LESSON_ID = 'g5_math_u2_l01';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.querySelectorAll('#dots .ka-dot').forEach((d, i) => { d.classList.toggle('active', i === cur); d.classList.toggle('done', i < cur); });
+  document.getElementById('prev').disabled = cur === 0;
+
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.solved || st.hintLevel >= 2; }
+  else { hintBtn.disabled = true; }
+
+  if (cur === TOTAL - 1) { document.getElementById('next').textContent = '마치기 →'; saveProgress(true); }
+  else { document.getElementById('next').textContent = '다음 →'; }
+
+  if (cur === 15) { document.getElementById('wrap-msg').textContent = wrapMsg(score); }
+}
+
+function saveProgress(done) {
+  const data = { cur, score, done, startedAt, finishedAt: done ? Date.now() : null, qState };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function wrapMsg(s) {
+  if (s >= 100) return '완벽해요!';
+  if (s >= 80) return '정말 잘했어요!';
+  if (s >= 60) return '잘했어요!';
+  return '다시 해도 좋아요!';
+}
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+function showHint() {
+  const qid = currentQId(); if (!qid) return;
+  const st = getQState(qid); if (st.solved || st.hintLevel >= 2) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint'); if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[st.hintLevel - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= 2;
+}
+function pointsForQ(qid) {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  const base = parseInt(slide.dataset.qPoints || '0', 10);
+  const st = getQState(qid);
+  if (st.hintLevel === 2) return Math.max(0, base - 5);
+  if (st.hintLevel === 1) return Math.max(0, base - 2);
+  return base;
+}
+
+// ══════════════════════════════════════════════════════════════
+// 5-1 수학 2단원 「약수와 배수」 부품 라이브러리 v1
+//   - numChips(nums, o)        : 수 칩 나열. o.hi / o.hi2 / o.both / o.dim
+//   - divisorBoard(n, pairs, o): n개 타일을 여러 직사각형 배열로 → 약수 쌍 시각화
+//   - multiTrack(a, b, max, o) : 수직선 두 트랙에 배수 마킹, 공배수 세로 강조
+//   - vennFactor(a, b, o)      : 두 수의 약수(또는 배수) 벤 다이어그램
+//   - orderBar(g, a, b, l)     : ★최대공약수 ≤ 두 수 ≤ 최소공배수 — 단원 대표 오개념 직격
+//   - factorLines(rows, o)     : 곱셈식·나눗셈식 줄 나열
+//   ★ 모든 부품은 data-* 로 값을 심어 검증기가 역산한다.
+// ══════════════════════════════════════════════════════════════
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+function divisors(n){ const r=[]; for(let i=1;i<=n;i++){ if(n%i===0) r.push(i); } return r; }
+function gcd(a,b){ while(b){ const t=a%b; a=b; b=t; } return a; }
+function lcm(a,b){ return a/gcd(a,b)*b; }
+
+function numChips(nums, o){
+  o = o || {};
+  const cls = (v) => 'fv-chip'
+    + (o.both && o.both.indexOf(v)!==-1 ? ' both'
+      : o.hi && o.hi.indexOf(v)!==-1 ? ' hi'
+      : o.hi2 && o.hi2.indexOf(v)!==-1 ? ' hi2' : '')
+    + (o.dim && o.dim.indexOf(v)!==-1 ? ' dim' : '');
+  const body = nums.map(v => '<div class="'+cls(v)+'">'+esc(v)+'</div>').join('');
+  const note = o.note ? '<div class="fv-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="fv-wrap" data-chips="'+esc(nums.join(','))+'">'
+       + '<div class="fv-chips">'+body+'</div>'+note+'</div>';
+}
+
+// n개의 타일을 r행 c열 직사각형으로 — 약수 쌍이 곧 배열의 가로·세로
+function divisorBoard(n, pairs, o){
+  o = o || {};
+  const CELL = 15, GAP = 3, PAD = 26, LABEL = 30, MAXW = 700;
+  // 누적 폭이 MAXW 를 넘으면 다음 줄로 접는다 (약수가 많은 수 대비)
+  const lines = [[]]; let x = 0;
+  for(const [r, c] of pairs){
+    const w = c*CELL + (c-1)*GAP, h = r*CELL + (r-1)*GAP;
+    const step = Math.max(w, 74) + PAD;
+    if(x > 0 && x + step - PAD > MAXW){ lines.push([]); x = 0; }
+    lines[lines.length-1].push({r, c, w, h, x});
+    x += step;
+  }
+  const lineW = lines.map(ln => ln.length ? ln[ln.length-1].x + Math.max(ln[ln.length-1].w, 74) : 10);
+  const totalW = Math.max.apply(null, lineW);
+  const lineH = lines.map(ln => Math.max.apply(null, ln.map(b => b.h)));
+  let g = '', yBase = 0;
+  const tops = [];
+  for(let k=0;k<lines.length;k++){ tops.push(yBase); yBase += lineH[k] + LABEL + 10; }
+  const H = yBase - 10 + 6;
+  for(let k=0;k<lines.length;k++){
+    const maxH = lineH[k], top = tops[k];
+    for(const b of lines[k]){
+      for(let i=0;i<b.r;i++){
+        for(let j=0;j<b.c;j++){
+          g += '<rect x="'+(b.x + j*(CELL+GAP))+'" y="'+(top + maxH - b.h + i*(CELL+GAP))+'" '
+            +  'width="'+CELL+'" height="'+CELL+'" rx="3" fill="var(--coral-soft)" stroke="var(--coral-deep)" stroke-width="1.5"/>';
+        }
+      }
+      g += '<text x="'+(b.x + b.w/2)+'" y="'+(top + maxH + 24)+'" text-anchor="middle" '
+        +  'font-size="17" fill="var(--ink)">'+b.r+' × '+b.c+'</text>';
+    }
+  }
+  const note = o.note ? '<div class="fv-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="fv-wrap" data-n="'+n+'" data-pairs="'+pairs.map(p=>p.join('x')).join(' ')+'">'
+       + '<svg class="fv-svg" viewBox="0 0 '+totalW+' '+H+'" xmlns="http://www.w3.org/2000/svg">'+g+'</svg>'
+       + note + '</div>';
+}
+
+// 수직선 두 트랙 — a의 배수(위) · b의 배수(아래) · 공배수(세로 강조)
+function multiTrack(a, b, max, o){
+  o = o || {};
+  const W = 700, L = 54, R = 660, YA = 40, YB = 118, YL = 79;
+  const px = (v) => L + (R - L) * v / max;
+  let g = '';
+  // 공배수 세로 강조 먼저(뒤에 깔기)
+  const commons = [];
+  for(let v=lcm(a,b); v<=max; v+=lcm(a,b)) commons.push(v);
+  for(const v of commons){
+    g += '<rect x="'+(px(v)-15)+'" y="18" width="30" height="122" rx="10" fill="var(--mark)" opacity="0.85"/>';
+  }
+  g += '<line x1="'+L+'" y1="'+YL+'" x2="'+R+'" y2="'+YL+'" stroke="var(--line)" stroke-width="3"/>';
+  for(let v=1; v<=max; v++){
+    const isA = v % a === 0, isB = v % b === 0;
+    if(isA) g += '<circle cx="'+px(v)+'" cy="'+YA+'" r="9" fill="var(--coral)" stroke="var(--coral-deep)" stroke-width="2"/>';
+    if(isB) g += '<circle cx="'+px(v)+'" cy="'+YB+'" r="9" fill="var(--teal)" stroke="var(--teal-deep)" stroke-width="2"/>';
+    if(isA || isB || v % 5 === 0)
+      g += '<text x="'+px(v)+'" y="'+(YL+6)+'" text-anchor="middle" font-size="15" fill="'
+        + ((isA&&isB)?'var(--emph)':'var(--ink-soft)') + '">'+v+'</text>';
+  }
+  g += '<text x="14" y="'+(YA+6)+'" font-size="16" fill="var(--coral-deep)" class="kor">'+a+'의 배수</text>';
+  g += '<text x="14" y="'+(YB+6)+'" font-size="16" fill="var(--teal-deep)" class="kor">'+b+'의 배수</text>';
+  const note = o.note ? '<div class="fv-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="fv-wrap" data-a="'+a+'" data-b="'+b+'" data-lcm="'+lcm(a,b)+'">'
+       + '<svg class="fv-svg" viewBox="0 0 '+W+' 158" xmlns="http://www.w3.org/2000/svg">'+g+'</svg>'
+       + note + '</div>';
+}
+
+// 두 수의 약수 벤 다이어그램 (o.mode='multiple' 이면 주어진 목록을 그대로 배치)
+function vennFactor(a, b, o){
+  o = o || {};
+  const A = o.listA || divisors(a), B = o.listB || divisors(b);
+  const only = (X, Y) => X.filter(v => Y.indexOf(v) === -1);
+  const both = A.filter(v => B.indexOf(v) !== -1);
+  const lo = only(A, B), ro = only(B, A);
+  const W = 640, H = 250, CY = 128, R = 106, C1 = 232, C2 = 408;
+  const rows = (arr, cx, startY) => arr.map((v, i) =>
+    '<text x="'+cx+'" y="'+(startY + i*26)+'" text-anchor="middle" font-size="20" fill="var(--ink)">'+v+'</text>').join('');
+  const cy0 = (arr) => CY - (arr.length - 1) * 13 + 7;
+  let g = '';
+  g += '<circle cx="'+C1+'" cy="'+CY+'" r="'+R+'" fill="var(--coral-soft)" fill-opacity="0.7" stroke="var(--coral-deep)" stroke-width="2.5"/>';
+  g += '<circle cx="'+C2+'" cy="'+CY+'" r="'+R+'" fill="var(--teal-soft)" fill-opacity="0.7" stroke="var(--teal-deep)" stroke-width="2.5"/>';
+  g += '<text x="'+(C1-58)+'" y="22" text-anchor="middle" font-size="18" fill="var(--coral-deep)" class="kor">'+esc(o.labelA || (a+'의 약수'))+'</text>';
+  g += '<text x="'+(C2+58)+'" y="22" text-anchor="middle" font-size="18" fill="var(--teal-deep)" class="kor">'+esc(o.labelB || (b+'의 약수'))+'</text>';
+  g += rows(lo, C1 - 62, cy0(lo));
+  g += rows(ro, C2 + 62, cy0(ro));
+  g += rows(both, (C1 + C2) / 2, cy0(both));
+  if(o.markBoth)
+    g += '<text x="'+((C1+C2)/2)+'" y="'+(H-8)+'" text-anchor="middle" font-size="17" fill="var(--emph)" class="kor">'+esc(o.markBoth)+'</text>';
+  const note = o.note ? '<div class="fv-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="fv-wrap" data-both="'+both.join(',')+'">'
+       + '<svg class="fv-svg" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">'+g+'</svg>'
+       + note + '</div>';
+}
+
+// ★ 최대공약수 ≤ 두 수 ≤ 최소공배수 — 용어 착시 직격
+function orderBar(a, b, o){
+  o = o || {};
+  const g0 = gcd(a, b), l0 = lcm(a, b);
+  const lo = Math.min(a, b), hi = Math.max(a, b);
+  const W = 700, Y = 92, L = 60, R = 640;
+  const px = (v) => L + (R - L) * v / l0;
+  const mark = (v, label, color, up) => {
+    const x = px(v);
+    return '<line x1="'+x+'" y1="'+(Y-16)+'" x2="'+x+'" y2="'+(Y+16)+'" stroke="'+color+'" stroke-width="4" stroke-linecap="round"/>'
+      + '<text x="'+x+'" y="'+(up ? Y-28 : Y+40)+'" text-anchor="middle" font-size="21" fill="'+color+'">'+v+'</text>'
+      + '<text x="'+x+'" y="'+(up ? Y-50 : Y+62)+'" text-anchor="middle" font-size="15" fill="'+color+'" class="kor">'+esc(label)+'</text>';
+  };
+  let g = '<line x1="'+L+'" y1="'+Y+'" x2="'+R+'" y2="'+Y+'" stroke="var(--line)" stroke-width="4"/>';
+  g += '<rect x="'+px(g0)+'" y="'+(Y-8)+'" width="'+(px(l0)-px(g0))+'" height="16" rx="8" fill="var(--mark)" opacity="0.7"/>';
+  g += mark(g0, '최대공약수', 'var(--coral-deep)', true);
+  g += mark(lo, '', 'var(--ink-soft)', false);
+  g += mark(hi, '', 'var(--ink-soft)', false);
+  g += mark(l0, '최소공배수', 'var(--teal-deep)', true);
+  g += '<text x="'+((px(lo)+px(hi))/2)+'" y="'+(Y+84)+'" text-anchor="middle" font-size="15" fill="var(--ink-soft)" class="kor">두 수</text>';
+  const note = o.note ? '<div class="fv-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="fv-wrap" data-gcd="'+g0+'" data-lcm="'+l0+'">'
+       + '<svg class="fv-svg" viewBox="0 0 '+W+' 178" xmlns="http://www.w3.org/2000/svg">'+g+'</svg>'
+       + note + '</div>';
+}
+
+function factorLines(rows, o){
+  o = o || {};
+  const body = rows.map(r => '<div class="fv-line '+(r.cls||'')+'">'
+      + '<span class="fv-lead">'+esc(r.lead||'')+'</span><span>'+esc(r.expr)+'</span></div>').join('');
+  const note = o.note ? '<div class="fv-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="fv-wrap"><div class="fv-lines">'+body+'</div>'+note+'</div>';
+}
+
+function fvPair(a, b){
+  const col = (c) => '<div class="fv-col '+(c.kind||'')+'">'
+      + '<div class="fv-caph">'+esc(c.cap)+'</div>' + c.body + '</div>';
+  return '<div class="fv-pair">' + col(a) + col(b) + '</div>';
+}
+
+(function renderModels(){
+  document.getElementById('m-i2').innerHTML =
+    divisorBoard(12, [[1,12],[2,6],[3,4]], {note:'12개를 놓는 세 가지 직사각형'});
+  document.getElementById('m-e1').innerHTML =
+    numChips([1,2,3,4,5,6,12], {hi:[1,2,3,4,6,12], dim:[5], note:'12를 나누어떨어지게 하는 수 — 5는 아니에요'});
+  document.getElementById('m-e2').innerHTML =
+    numChips([3,6,9,12,15,18,'…'], {hi2:[3,6,9,12,15,18], note:'3의 배수 — 끝없이 이어져요'});
+  document.getElementById('m-e3').innerHTML =
+    factorLines([{lead:'식', expr:'3 × 4 = 12'},{lead:'약수', expr:'3과 4는 12의 약수'},{lead:'배수', expr:'12는 3과 4의 배수', cls:'final'}], {note:'한 식에 두 이름이 함께'});
+  document.getElementById('m-e4').innerHTML =
+    factorLines([{lead:'약분', expr:'분모와 분자를 공통인 약수로 나누기'},{lead:'통분', expr:'분모를 공통인 배수로 같게 만들기'},{lead:'다음 단원', expr:'약분과 통분', cls:'final'}]);
+  document.getElementById('m-q8').innerHTML =
+    divisorBoard(12, [[2,6],[3,4]], {note:'12개를 남김없이 놓을 수 있을까'});
+  document.getElementById('m-q9').innerHTML =
+    divisorBoard(12, [[4,3]], {note:'4명이 나누어 가지면'});
+  document.getElementById('m-q10').innerHTML =
+    numChips([6,12,18,'…'], {hi2:[6,12,18]});
+  document.getElementById('m-q11').innerHTML =
+    numChips([8,16,'?'], {hi2:[8,16]});
+  document.getElementById('m-q12').innerHTML =
+    factorLines([{lead:'식', expr:'3 × 4 = 12'}], {note:'곱하는 쪽과 나온 쪽을 살펴보자'});
+  document.getElementById('m-q13').innerHTML =
+    divisorBoard(15, [[1,15],[3,5]], {note:'15개를 놓는 직사각형'});
+  document.getElementById('m-q14').innerHTML =
+    numChips([1,2,3,4,6,12], {hi:[12], note:'12의 약수'});
+  document.getElementById('m-q15').innerHTML =
+    factorLines([{lead:'약수', expr:'나누는 도구'},{lead:'배수', expr:'같게 만드는 도구'}]);
+})();
+
+function setupPad(qid, correct, padId, displayId, fbId, doneMsg, maxLen) {
+  maxLen = maxLen || 6;
+  const pad = document.getElementById(padId);
+  const display = document.getElementById(displayId);
+  const fb = document.getElementById(fbId);
+  let buf = '';
+  const keys = ['1','2','3','4','5','6','7','8','9','0'];
+  keys.forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'q-key'; b.textContent = k;
+    b.addEventListener('click', () => {
+      const st = getQState(qid); if (st.solved) return;
+      if (buf.length < maxLen) { buf += k; display.textContent = buf; }
+    });
+    pad.appendChild(b);
+  });
+  const del = document.createElement('button');
+  del.className = 'q-key fn'; del.textContent = '지움';
+  del.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    buf = buf.slice(0, -1); display.textContent = buf || '?';
+  });
+  pad.appendChild(del);
+  const ok = document.createElement('button');
+  ok.className = 'q-key fn'; ok.textContent = '확인'; ok.style.gridColumn = 'span 4';
+  ok.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    st.attempts++;
+    if (parseInt(buf, 10) === correct) {
+      st.solved = true;
+      const earn = pointsForQ(qid); addScore(earn);
+      fb.classList.remove('wrong');
+      fb.textContent = (doneMsg || '정답이에요!') + ' +' + earn + '점';
+      updateUI();
+    } else {
+      st.wrongCount++;
+      fb.classList.add('wrong'); fb.textContent = '다시 계산해 보자';
+    }
+  });
+  pad.appendChild(ok);
+}
+
+function setupMcq(qid, doneMsg){
+  document.querySelectorAll('#'+qid+'-opts .mcq-opt').forEach(o=>{
+    o.addEventListener('click', ()=>{
+      const st=getQState(qid); if(st.solved) return;
+      st.attempts++;
+      const fb=document.getElementById(qid+'-fb');
+      if(o.dataset.correct==='1'){
+        st.solved=true; o.classList.add('correct');
+        const earn=pointsForQ(qid); addScore(earn);
+        fb.classList.remove('wrong'); fb.textContent=(doneMsg||'정답이에요!')+' +'+earn+'점';
+        updateUI();
+      } else {
+        st.wrongCount++; o.classList.add('wrong');
+        fb.classList.add('wrong'); fb.textContent='다시 골라 보세요';
+        setTimeout(()=>o.classList.remove('wrong'),500);
+      }
+    });
+  });
+}
+
+setupMcq('q8','맞아요! 12 ÷ 5 는 2개가 남아 나누어떨어지지 않아요');
+setupPad('q9', 3, 'q9-pad','q9-display','q9-fb','맞아요! 12 ÷ 4 = 3개씩이에요', 6);
+setupMcq('q10','맞아요! 6 × 1, 6 × 2, 6 × 3 = 6, 12, 18');
+setupPad('q11', 24, 'q11-pad','q11-display','q11-fb','맞아요! 8 × 3 = 24', 6);
+setupMcq('q12','맞아요! 곱하는 쪽 3과 4가 12의 약수예요');
+setupPad('q13', 4, 'q13-pad','q13-display','q13-fb','맞아요! 1, 3, 5, 15 — 모두 4개예요', 6);
+setupMcq('q14','맞아요! 어떤 수든 자기 자신이 가장 큰 약수예요');
+setupMcq('q15','맞아요! 약분과 통분의 바탕이 되는 도구예요');
+
+
+// ───── 슬17 자기 평가 ─────
+document.querySelectorAll('.self-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.self-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('self-fb').textContent = '응답이 기록됐어요. 다음 차시에서 만나요!';
+  });
+});
+
+// ───── 진도 복원 ─────
+(function restore() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data.cur != null) cur = Math.min(data.cur, TOTAL - 1);
+    if (data.score != null) score = data.score;
+    document.getElementById('score').textContent = '⭐ ' + score;
+  } catch(e) {}
+})();
+
+(function buildDots(){ const w=document.getElementById('dots'); for(let i=0;i<TOTAL;i++){ const d=document.createElement('div'); d.className='ka-dot'; d.onclick=()=>{ cur=i; saveProgress(false); updateUI(); }; w.appendChild(d); } })();
+
+updateUI();
+</script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+</body>
+</html>
