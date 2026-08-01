@@ -4,15 +4,15 @@
 <script src="/kedu_config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/kedu_tracker.js"></script>
-<meta name="kedu-lesson-id" content="g4_kor_u1_l11_12_v1">
+<meta name="kedu-lesson-id" content="g4_kor_u2_l09_10_v1">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>배운 내용 실천하기</title>
+<title>글쓴이의 의견 평가하기</title>
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
 <style>
-/* ===== 4학년 국어 1단원 「깊이 있게 읽어요」 · 자기주도 통합 엔진 (디자인 v14) =====
+/* ===== 4학년 국어 2단원 「서로 다른 의견」 · 자기주도 통합 엔진 (디자인 v14) =====
    풀스크린 · 따뜻한 톤(크림+산호/청록) · 다색 형광 강조 · dots 진행 · 실DB 배선.
-   "말차례/경청/소개" 개념어=청록(.mc), 상황·행동 강조=산호빨강(.emph). 정답=청록, 오답=흔들림. */
+   "토의/의견/이유/사실" 개념어=청록(.mc), 상황·행동 강조=산호빨강(.emph). 정답=청록, 오답=흔들림. */
 :root{
   --paper:#FBF7F1; --ink:#243043; --ink-soft:#62708A;
   --coral:#FF6B4A; --coral-deep:#E0512E; --coral-soft:#FFE3DA;
@@ -152,8 +152,8 @@ body{font-family:var(--f-body); background:var(--paper); color:var(--ink); -webk
 
 <div class="topbar">
   <button class="lb" onclick="location.href='../index.html'">📚 차시 목록</button>
-  <span class="pill">11~12차시</span>
-  <span class="where">국어 4-1 · <b>1. 깊이 있게 읽어요</b></span>
+  <span class="pill">9~10차시</span>
+  <span class="where">국어 4-1 · <b>2. 서로 다른 의견</b></span>
   <div class="dots" id="dots"></div>
   <span class="score">⭐ <b id="score">0</b></span>
 </div>
@@ -168,96 +168,144 @@ body{font-family:var(--f-body); background:var(--paper); color:var(--ink); -webk
 </div>
 
 <script>
-/* ===== 11~12차시(실천 — 배운 내용 실천하기) 12슬 =====
-   학습 목표: 이야기의 흐름과 질문 만들기를 생활 속 활동으로 옮겨 본다.
-   정답 로깅 4슬(첫 장면 고르기·장면 차례 잇기·인물 짐작·놀이 규칙 모으기) = 40점.
-   ★ 저작권: 지도서 그림 카드·위인전 차례 미인용 → 자체 장면 카드·자체 차례로 구성.
-   ※ 장영실 관련 서술은 널리 알려진 역사 정보 범위. */
+/* ===== 9~10차시(소2 통합 — 글을 읽고 글쓴이의 의견 평가하기 · 가치 탐구 학습 모형) 16슬 =====
+   학습 목표: 평가 기준에 따라 글쓴이의 의견이 알맞은지 평가하고, 다른 의견의 글과 견주어 재평가한다.
+   정답 로깅 5슬(평가해야 하는 까닭·낱말 뜻 잇기·평가 기준 모으기·반대 글의 의견·찬반 뒷받침 잇기) = 50점.
+   ★ 저작권: 교과서 제재(문화유산 개방 찬·반 두 편)·유홍준/박찬승 인용문 미인용
+     → 자체 창작 찬반 두 편(주말 학교 운동장 개방 소재)으로 대체. 실제 통계·기관명·기사 인용 없음.
+     이솝 우화(당나귀를 팔러 가는 아버지와 아들)는 공유 자산이나 지도서 문장 미인용, 자체 서술로 다시 씀.
+   ※ 표준 지식: 평가 기준 3가지(뒷받침 타당·출처 믿을 만·의견대로 했을 때 다른 문제 없음). [4국02-04] */
 const slides=[
-  {tag:'① 만나기', t:'배운 것을 직접 해 봐요',
-   html:`<div class="scene"><div class="scene-pic">🎴🎲</div></div>
-    <div class="ka-bub">지금까지 배운 <b class="emph">이야기의 흐름</b>과<br><b class="emph">질문 만들기</b>를<br>두 가지 활동으로 직접 해 봐요! 😄</div>`},
+  {tag:'① 만나기', t:'의견을 평가해요',
+   html:`<div class="scene"><div class="scene-pic">🧐⚖️</div></div>
+    <div class="ka-bub">남의 의견을 <b class="emph">그대로 따르기만</b> 하면<br>어떤 일이 벌어질까요?<br>오늘은 의견이 알맞은지<br><b class="mc">따져 보는 방법</b>을 배워요. 😄</div>`},
 
-  {tag:'② 활동 하나', t:'장면 카드로 이야기 만들기',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🎒</span>가방을 메고 집을 나선다</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">😲</span>교실에서 놀란 얼굴을 한다</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">📖</span>책을 펼쳐 든다</div>
-      <div class="recap-item" style="animation-delay:.5s"><span class="recap-ic">😊</span>웃으며 친구에게 이야기한다</div>
-    </div>`},
+  {tag:'② 옛이야기', t:'당나귀를 팔러 간 아버지와 아들',
+   html:`<div class="read-lines">
+      <div class="read-line"><span class="rl-num">1</span>아버지와 아들이 당나귀를 끌고 장으로 가고 있었다.</div>
+      <div class="read-line"><span class="rl-num">2</span>"당나귀를 두고 걸어가다니 어리석구나." 지나가던 사람이 말했다.</div>
+      <div class="read-line"><span class="rl-num">3</span>말을 들을 때마다 둘은 타고, 바꾸어 타고, 함께 타기를 되풀이했다.</div>
+      <div class="read-line"><span class="rl-num">4</span>끝내 당나귀를 메고 다리를 건너다 당나귀를 물에 빠뜨리고 말았다.</div>
+    </div><div class="fb" id="readFb"></div>`},
 
-  {tag:'③ 첫 장면 고르기', t:'가장 먼저 놓으면 좋은 장면은?', log:true, okMsg:'맞아요! 하루가 시작되는 장면이 앞에 와야 자연스러워요. 🎉', hint:'시간의 흐름을 생각해 봐요. 하루는 어디에서 시작하나요?',
+  {tag:'③ 까닭 찾기', t:'왜 이런 일이 벌어졌을까요?', log:true, okMsg:'맞아요! 따져 보지 않고 남의 말을 그대로 따랐기 때문이에요. 🎉', hint:'두 사람은 남의 말을 들을 때마다 무엇을 하지 않았을까요?',
    html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-pic">🎒</div><div class="wc-word">가방을 메고 집을 나선다</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">😊</div><div class="wc-word">웃으며 친구에게 이야기한다</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">📖</div><div class="wc-word">책을 펼쳐 든다</div></div>
+      <div class="wcard" data-ok="1"><div class="wc-pic">🙉</div><div class="wc-word">남의 의견이 알맞은지 따져 보지 않았기 때문</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-pic">🌉</div><div class="wc-word">다리가 너무 좁았기 때문</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-pic">🐴</div><div class="wc-word">당나귀가 힘이 세지 않았기 때문</div></div>
     </div><div class="fb"></div>`},
 
-  {tag:'③ 차례 잇기', t:'남은 장면의 차례를 이어요', log:true, matchMsg:'모두 이었어요! 이야기의 흐름이 자연스러워졌어요. 🎉', hint:'놀란 일이 먼저 생기고, 그 까닭을 알아본 뒤에 이야기하겠지요.',
+  {tag:'② 글 읽기 ①', t:'주말에는 운동장을 열어요',
+   html:`<div class="read-lines">
+      <div class="read-line"><span class="rl-num">1</span>주말에도 학교 운동장을 마을 사람들에게 열었으면 좋겠습니다.</div>
+      <div class="read-line"><span class="rl-num">2</span>우리 마을에는 아이들이 마음 놓고 뛸 만한 넓은 터가 없습니다.</div>
+      <div class="read-line"><span class="rl-num">3</span>운동장을 열면 마을 사람들이 함께 운동할 곳이 생깁니다.</div>
+      <div class="read-line"><span class="rl-num">4</span>사람이 자주 드나드는 곳은 오히려 눈길이 닿아 잘 살펴집니다.</div>
+    </div><div class="fb" id="readFb"></div>`},
+
+  {tag:'② 글 읽기 ②', t:'함께 쓰면 더 아껴요',
+   html:`<div class="read-lines">
+      <div class="read-line"><span class="rl-num">1</span>학교를 마을과 함께 쓰면 학교를 아끼는 사람이 늘어납니다.</div>
+      <div class="read-line"><span class="rl-num">2</span>직접 써 본 곳에는 남다른 정이 들기 때문입니다.</div>
+      <div class="read-line"><span class="rl-num">3</span>주말마다 굳게 닫힌 운동장은 마을에 도움이 되지 못합니다.</div>
+      <div class="read-line"><span class="rl-num">4</span>운동장을 여는 일은 학교와 마을이 함께 사는 길입니다.</div>
+    </div><div class="fb" id="readFb"></div>`},
+
+  {tag:'③ 낱말 알기', t:'낱말과 뜻을 이어요', log:true, matchMsg:'모두 이었어요! 낱말 뜻을 알면 글이 또렷해져요. 🎉', hint:'글에서 그 낱말이 나온 문장을 다시 떠올려 봐요.',
    html:`<div class="match" id="match">
       <div class="match-col">
-        <div class="match-col-h">장면</div>
-        <div class="match-card" data-k="a" data-pair="x">😲 교실에서 놀란다</div>
-        <div class="match-card" data-k="b" data-pair="y">📖 책을 펼쳐 든다</div>
-        <div class="match-card" data-k="c" data-pair="z">😊 웃으며 이야기한다</div>
+        <div class="match-col-h">낱말</div>
+        <div class="match-card" data-k="a" data-pair="x">개방</div>
+        <div class="match-card" data-k="b" data-pair="y">보존</div>
+        <div class="match-card" data-k="c" data-pair="z">훼손</div>
       </div>
       <div class="match-col">
-        <div class="match-col-h">차례</div>
-        <div class="match-card" data-k="y" data-pair="b"><span class="mc-ic">3️⃣</span>세 번째</div>
-        <div class="match-card" data-k="z" data-pair="c"><span class="mc-ic">4️⃣</span>네 번째</div>
-        <div class="match-card" data-k="x" data-pair="a"><span class="mc-ic">2️⃣</span>두 번째</div>
+        <div class="match-col-h">뜻</div>
+        <div class="match-card" data-k="y" data-pair="b"><span class="mc-ic">🧺</span>잘 보살펴 그대로 남기는 것</div>
+        <div class="match-card" data-k="z" data-pair="c"><span class="mc-ic">💥</span>헐거나 상하게 해서 못 쓰게 만드는 것</div>
+        <div class="match-card" data-k="x" data-pair="a"><span class="mc-ic">🚪</span>드나들고 쓸 수 있게 여는 것</div>
       </div>
     </div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'② 이야기 쓰기', t:'차례를 정했으면 이야기를 써 봐요',
-   html:`<div class="ka-bub">정한 차례대로<br>먼저 일어난 일과 나중에 일어난 일을 이어<br><b class="emph">짧은 이야기</b>를 만들어 봐요.<br>인물의 <b class="mc">말과 행동</b>을 넣으면<br>이야기가 살아나요. ✍️</div>`},
-
-  {tag:'② 활동 둘', t:'누구일까 놀이',
-   html:`<div class="ka-bub">책의 <b class="emph">제목</b>과 <b class="emph">차례</b>만 보고<br>누구에 대한 이야기인지 알아맞히는 놀이예요.<br>인물의 이름이 나오면 <b class="mc">□</b>로 가려요. 🕵️</div>`},
-
-  {tag:'② 차례 살펴보기', t:'이런 차례를 만났어요',
+  {tag:'② 의견 정리', t:'글쓴이의 의견과 뒷받침 내용',
    html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">1️⃣</span>궁궐에 불려 간 젊은이</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">2️⃣</span>스스로 시간을 알리는 물시계</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">3️⃣</span>하늘의 별을 살피는 기구</div>
-      <div class="recap-item" style="animation-delay:.5s"><span class="recap-ic">4️⃣</span>비의 양을 재는 그릇</div>
+      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">💬</span><b>의견</b> · 주말에 학교 운동장을 마을에 열자</div>
+      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🏃</span>마을에 넓은 터가 없어 함께 운동할 곳이 생긴다</div>
+      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">👀</span>사람이 드나들면 오히려 눈길이 닿아 잘 살펴진다</div>
+      <div class="recap-item" style="animation-delay:.5s"><span class="recap-ic">💗</span>직접 써 본 곳에 정이 들어 아끼는 사람이 늘어난다</div>
     </div>`},
 
-  {tag:'③ 인물 짐작', t:'이 차례는 누구에 대한 이야기일까요?', log:true, okMsg:'맞아요! 물시계와 측우기를 만든 조선의 과학자예요. 🎉', hint:'물시계와 비의 양을 재는 기구를 만든 사람을 떠올려 봐요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-pic">⏱️</div><div class="wc-word">장영실</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">🚢</div><div class="wc-word">이순신</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">🗺️</div><div class="wc-word">김정호</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 평가 기준', t:'의견은 이렇게 평가해요',
+   html:`<div class="recap">
+      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🧱</span>뒷받침하는 내용이 <b>알맞은가</b></div>
+      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🔍</span>뒷받침하는 내용을 <b>믿을 수 있는가</b></div>
+      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">⚠️</span>그대로 했을 때 <b>다른 문제가 생기지 않는가</b></div>
+    </div>`},
 
-  {tag:'③ 놀이 규칙 모으기', t:'놀이를 하는 방법을 모두 찾아요', log:true, collectMsg:'잘 찾았어요! 이대로 하면 놀이가 재미있어요. 🎉', hint:'답을 미리 알려 주면 짐작할 것이 없어지겠지요.',
+  {tag:'③ 기준 모으기', t:'평가할 때 살필 점을 모두 찾아요', log:true, collectMsg:'잘 찾았어요! 이 세 가지로 의견을 따져 봐요. 🎉', hint:'글이 길고 짧은 것은 의견이 알맞은지와 상관없어요.',
    html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">차례에 인물의 이름이 나오면 □로 가린다</div>
-      <div class="chip" data-hit="0">시작하기 전에 정답을 먼저 알려 준다</div>
-      <div class="chip" data-hit="1">책의 차례나 그림을 보여 준다</div>
-      <div class="chip" data-hit="1">한 사람씩 돌아가며 문제를 낸다</div>
-      <div class="chip" data-hit="0">책의 마지막 쪽을 펴서 보여 준다</div>
+      <div class="chip" data-hit="1">뒷받침하는 내용이 의견과 이어지는가</div>
+      <div class="chip" data-hit="0">글이 얼마나 길게 쓰였는가</div>
+      <div class="chip" data-hit="1">뒷받침하는 내용을 믿을 수 있는가</div>
+      <div class="chip" data-hit="1">그대로 했을 때 다른 문제가 생기지 않는가</div>
+      <div class="chip" data-hit="0">글쓴이가 나와 친한 사이인가</div>
     </div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'② 나누기', t:'만든 것을 함께 나눠요',
-   html:`<div class="ka-bub">내가 만든 이야기와 문제를<br>친구들 앞에서 나눠 봐요.<br>친구가 만든 것에도<br><b class="emph">질문</b>을 던져 보면<br>더 재미있어요. 💬</div>`},
+  {tag:'② 다른 글 읽기', t:'다르게 생각하는 글도 읽어요',
+   html:`<div class="read-lines">
+      <div class="read-line"><span class="rl-num">1</span>주말에 학교 운동장을 함부로 열면 안 됩니다.</div>
+      <div class="read-line"><span class="rl-num">2</span>사람이 많이 드나들면 시설이 상하거나 쓰레기가 늘어납니다.</div>
+      <div class="read-line"><span class="rl-num">3</span>한번 망가진 시설을 되돌리는 데에는 많은 시간과 힘이 듭니다.</div>
+      <div class="read-line"><span class="rl-num">4</span>여는 날과 시간을 정하고 살필 사람을 둔 뒤에 열어야 합니다.</div>
+    </div><div class="fb" id="readFb"></div>`},
 
-  {tag:'④ 정리', t:'오늘 해 본 것',
+  {tag:'③ 다른 글의 의견', t:'이 글쓴이의 의견은 무엇인가요?', log:true, okMsg:'맞아요! 아예 막자는 것이 아니라 준비를 갖춘 뒤에 열자는 의견이에요. 🎉', hint:'마지막 문장을 다시 읽어 봐요. 무엇을 갖춘 뒤에 열자고 했나요?',
+   html:`<div class="wordpick">
+      <div class="wcard" data-ok="1"><div class="wc-pic">🗓️</div><div class="wc-word">날과 시간을 정하고 살필 사람을 둔 뒤에 열자</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-pic">🔒</div><div class="wc-word">운동장을 영원히 잠가 두자</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-pic">🏗️</div><div class="wc-word">운동장을 없애고 다른 건물을 세우자</div></div>
+    </div><div class="fb"></div>`},
+
+  {tag:'③ 뒷받침 잇기', t:'두 글의 뒷받침 내용을 이어요', log:true, matchMsg:'모두 이었어요! 같은 일을 두고 서로 다르게 볼 수 있어요. 🎉', hint:'사람이 드나드는 일을 두 글은 어떻게 다르게 보았나요?',
+   html:`<div class="match" id="match">
+      <div class="match-col">
+        <div class="match-col-h">글</div>
+        <div class="match-card" data-k="a" data-pair="x">열자는 글</div>
+        <div class="match-card" data-k="b" data-pair="y">준비한 뒤 열자는 글</div>
+      </div>
+      <div class="match-col">
+        <div class="match-col-h">사람이 드나드는 일을 보는 눈</div>
+        <div class="match-card" data-k="y" data-pair="b"><span class="mc-ic">⚠️</span>시설이 상하고 쓰레기가 늘어날 수 있다</div>
+        <div class="match-card" data-k="x" data-pair="a"><span class="mc-ic">👀</span>눈길이 닿아 오히려 잘 살펴진다</div>
+      </div>
+    </div><div class="fb" id="matchFb"></div>`},
+
+  {tag:'② 재평가', t:'두 글을 읽고 다시 따져 봐요',
+   html:`<div class="ka-bub">같은 일도 <b class="emph">보는 눈</b>에 따라<br>평가가 달라질 수 있어요.<br>답이 하나로 정해져 있지 않아요.<br>내가 <b class="mc">어떤 까닭</b>으로 그렇게<br>보았는지가 더 중요해요. 🧐</div>`},
+
+  {tag:'② 세상과 연결', t:'열면서도 지키는 방법',
    html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🎴</span>장면의 <b>차례</b>를 정해 이야기를 만들었어요</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🕵️</span>제목과 차례로 <b>내용을 짐작</b>했어요</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">💬</span>친구와 <b>묻고 답하며</b> 나눴어요</div>
+      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🗓️</span>여는 날과 시간을 정해 놓기</div>
+      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🧹</span>쓴 사람이 함께 치우기로 약속하기</div>
+      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">🙋</span>마을 사람들이 돌아가며 살피기</div>
+    </div>`},
+
+  {tag:'④ 정리', t:'오늘 배운 것',
+   html:`<div class="recap">
+      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🧱</span>뒷받침 내용이 <b>알맞은지</b> 따져요</div>
+      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🔍</span>그 내용을 <b>믿을 수 있는지</b> 살펴요</div>
+      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">⚠️</span>그대로 했을 때 <b>다른 문제</b>가 없는지 봐요</div>
     </div>`},
 
   {tag:'④ 마무리', t:'잘했어요',
-   html:`<div class="ka-bub">배운 것을 직접 해 보니<br>훨씬 잘 알게 됐지요?<br>다음 시간에는 단원을<br><b class="mc">마무리</b>해 봐요! 🎉👏</div>`}
+   html:`<div class="ka-bub">이제 남의 말을 그대로 따르지 않고<br><b class="emph">스스로 따져 볼</b> 수 있어요.<br>다음 시간에는 배운 것을<br><b class="mc">생활 속에서</b> 써 봐요! 🎉👏</div>`}
 ];
 const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-const LESSON_ID='g4_kor_u1_l11_12_v1';
-const LESSON_MAX=40;
+const LESSON_ID='g4_kor_u2_l09_10_v1';
+const LESSON_MAX=50;
 let cur=0, score=0;
 const stage=document.getElementById('stage');
 const main=document.getElementById('main');

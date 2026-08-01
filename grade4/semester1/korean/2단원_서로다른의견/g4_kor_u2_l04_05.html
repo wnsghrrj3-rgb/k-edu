@@ -4,15 +4,15 @@
 <script src="/kedu_config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/kedu_tracker.js"></script>
-<meta name="kedu-lesson-id" content="g4_kor_u1_l11_12_v1">
+<meta name="kedu-lesson-id" content="g4_kor_u2_l04_05_v1">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>배운 내용 실천하기</title>
+<title>절차에 따라 토의하기</title>
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
 <style>
-/* ===== 4학년 국어 1단원 「깊이 있게 읽어요」 · 자기주도 통합 엔진 (디자인 v14) =====
+/* ===== 4학년 국어 2단원 「서로 다른 의견」 · 자기주도 통합 엔진 (디자인 v14) =====
    풀스크린 · 따뜻한 톤(크림+산호/청록) · 다색 형광 강조 · dots 진행 · 실DB 배선.
-   "말차례/경청/소개" 개념어=청록(.mc), 상황·행동 강조=산호빨강(.emph). 정답=청록, 오답=흔들림. */
+   "토의/의견/이유/사실" 개념어=청록(.mc), 상황·행동 강조=산호빨강(.emph). 정답=청록, 오답=흔들림. */
 :root{
   --paper:#FBF7F1; --ink:#243043; --ink-soft:#62708A;
   --coral:#FF6B4A; --coral-deep:#E0512E; --coral-soft:#FFE3DA;
@@ -152,8 +152,8 @@ body{font-family:var(--f-body); background:var(--paper); color:var(--ink); -webk
 
 <div class="topbar">
   <button class="lb" onclick="location.href='../index.html'">📚 차시 목록</button>
-  <span class="pill">11~12차시</span>
-  <span class="where">국어 4-1 · <b>1. 깊이 있게 읽어요</b></span>
+  <span class="pill">4~5차시</span>
+  <span class="where">국어 4-1 · <b>2. 서로 다른 의견</b></span>
   <div class="dots" id="dots"></div>
   <span class="score">⭐ <b id="score">0</b></span>
 </div>
@@ -168,96 +168,125 @@ body{font-family:var(--f-body); background:var(--paper); color:var(--ink); -webk
 </div>
 
 <script>
-/* ===== 11~12차시(실천 — 배운 내용 실천하기) 12슬 =====
-   학습 목표: 이야기의 흐름과 질문 만들기를 생활 속 활동으로 옮겨 본다.
-   정답 로깅 4슬(첫 장면 고르기·장면 차례 잇기·인물 짐작·놀이 규칙 모으기) = 40점.
-   ★ 저작권: 지도서 그림 카드·위인전 차례 미인용 → 자체 장면 카드·자체 차례로 구성.
-   ※ 장영실 관련 서술은 널리 알려진 역사 정보 범위. */
+/* ===== 4~5차시(소1 통합 — 절차에 따라 토의하기) 15슬 =====
+   학습 목표: 토의 절차를 알고 절차를 지키며 토의에 참여한다.
+   정답 로깅 5슬(절차↔하는 일·사회자 역할·바람직한 태도 모으기·의견 결정 기준·적절성 판단 항목 모으기) = 50점.
+   ★ 저작권: 교과서 토의 장면·인물명 미인용 → 자체 창작 상황(일인일역 운영)·자체 인물명으로 대체.
+   ※ 표준 지식만 사용: 토의 절차 4단계(주제 정하기→의견 마련하기→의견 모으기→의견 결정하기),
+     사회자·참여자 역할, 의견 결정 기준. [4국01-06]·[4국01-04] */
 const slides=[
-  {tag:'① 만나기', t:'배운 것을 직접 해 봐요',
-   html:`<div class="scene"><div class="scene-pic">🎴🎲</div></div>
-    <div class="ka-bub">지금까지 배운 <b class="emph">이야기의 흐름</b>과<br><b class="emph">질문 만들기</b>를<br>두 가지 활동으로 직접 해 봐요! 😄</div>`},
+  {tag:'① 만나기', t:'절차를 지키며 토의해요',
+   html:`<div class="scene"><div class="scene-pic">🪧🗣️</div></div>
+    <div class="ka-bub">토의에도 <b class="emph">차례</b>가 있어요.<br>차례를 지키면 의견이 뒤섞이지 않고<br>모두가 <b class="mc">말할 기회</b>를 얻어요.<br>오늘은 그 차례를 따라가 봐요! 😄</div>`},
 
-  {tag:'② 활동 하나', t:'장면 카드로 이야기 만들기',
+  {tag:'② 토의 절차', t:'토의는 네 단계로 이루어져요',
    html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🎒</span>가방을 메고 집을 나선다</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">😲</span>교실에서 놀란 얼굴을 한다</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">📖</span>책을 펼쳐 든다</div>
-      <div class="recap-item" style="animation-delay:.5s"><span class="recap-ic">😊</span>웃으며 친구에게 이야기한다</div>
+      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">1️⃣</span><b>토의 주제 정하기</b> · 함께 해결할 일을 고른다</div>
+      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">2️⃣</span><b>의견 마련하기</b> · 주제에 맞는 의견과 이유를 준비한다</div>
+      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">3️⃣</span><b>의견 모으기</b> · 차례로 말하고 서로의 의견을 듣는다</div>
+      <div class="recap-item" style="animation-delay:.5s"><span class="recap-ic">4️⃣</span><b>의견 결정하기</b> · 기준을 세워 알맞은 의견을 정한다</div>
     </div>`},
 
-  {tag:'③ 첫 장면 고르기', t:'가장 먼저 놓으면 좋은 장면은?', log:true, okMsg:'맞아요! 하루가 시작되는 장면이 앞에 와야 자연스러워요. 🎉', hint:'시간의 흐름을 생각해 봐요. 하루는 어디에서 시작하나요?',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-pic">🎒</div><div class="wc-word">가방을 메고 집을 나선다</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">😊</div><div class="wc-word">웃으며 친구에게 이야기한다</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">📖</div><div class="wc-word">책을 펼쳐 든다</div></div>
-    </div><div class="fb"></div>`},
-
-  {tag:'③ 차례 잇기', t:'남은 장면의 차례를 이어요', log:true, matchMsg:'모두 이었어요! 이야기의 흐름이 자연스러워졌어요. 🎉', hint:'놀란 일이 먼저 생기고, 그 까닭을 알아본 뒤에 이야기하겠지요.',
+  {tag:'③ 절차 잇기', t:'단계와 하는 일을 이어요', log:true, matchMsg:'모두 이었어요! 이 차례대로 토의가 이루어져요. 🎉', hint:'무엇을 먼저 하고 무엇을 나중에 하는지 떠올려 봐요.',
    html:`<div class="match" id="match">
       <div class="match-col">
-        <div class="match-col-h">장면</div>
-        <div class="match-card" data-k="a" data-pair="x">😲 교실에서 놀란다</div>
-        <div class="match-card" data-k="b" data-pair="y">📖 책을 펼쳐 든다</div>
-        <div class="match-card" data-k="c" data-pair="z">😊 웃으며 이야기한다</div>
+        <div class="match-col-h">단계</div>
+        <div class="match-card" data-k="a" data-pair="x">토의 주제 정하기</div>
+        <div class="match-card" data-k="b" data-pair="y">의견 모으기</div>
+        <div class="match-card" data-k="c" data-pair="z">의견 결정하기</div>
       </div>
       <div class="match-col">
-        <div class="match-col-h">차례</div>
-        <div class="match-card" data-k="y" data-pair="b"><span class="mc-ic">3️⃣</span>세 번째</div>
-        <div class="match-card" data-k="z" data-pair="c"><span class="mc-ic">4️⃣</span>네 번째</div>
-        <div class="match-card" data-k="x" data-pair="a"><span class="mc-ic">2️⃣</span>두 번째</div>
+        <div class="match-col-h">하는 일</div>
+        <div class="match-card" data-k="y" data-pair="b"><span class="mc-ic">👂</span>차례로 말하고 친구의 의견을 정리한다</div>
+        <div class="match-card" data-k="z" data-pair="c"><span class="mc-ic">✅</span>기준을 세워 가장 알맞은 의견을 고른다</div>
+        <div class="match-card" data-k="x" data-pair="a"><span class="mc-ic">🎯</span>함께 해결해야 할 일을 찾아 정한다</div>
       </div>
     </div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'② 이야기 쓰기', t:'차례를 정했으면 이야기를 써 봐요',
-   html:`<div class="ka-bub">정한 차례대로<br>먼저 일어난 일과 나중에 일어난 일을 이어<br><b class="emph">짧은 이야기</b>를 만들어 봐요.<br>인물의 <b class="mc">말과 행동</b>을 넣으면<br>이야기가 살아나요. ✍️</div>`},
-
-  {tag:'② 활동 둘', t:'누구일까 놀이',
-   html:`<div class="ka-bub">책의 <b class="emph">제목</b>과 <b class="emph">차례</b>만 보고<br>누구에 대한 이야기인지 알아맞히는 놀이예요.<br>인물의 이름이 나오면 <b class="mc">□</b>로 가려요. 🕵️</div>`},
-
-  {tag:'② 차례 살펴보기', t:'이런 차례를 만났어요',
+  {tag:'② 계획하기', t:'주제를 정하고 의견을 준비해요',
    html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">1️⃣</span>궁궐에 불려 간 젊은이</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">2️⃣</span>스스로 시간을 알리는 물시계</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">3️⃣</span>하늘의 별을 살피는 기구</div>
-      <div class="recap-item" style="animation-delay:.5s"><span class="recap-ic">4️⃣</span>비의 양을 재는 그릇</div>
+      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🎯</span>주제 · 학급 일인일역을 어떻게 정하면 좋을까</div>
+      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">❓</span>까닭 · 모두가 자기에게 맞는 일을 맡아야 하기 때문</div>
+      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">💬</span>내 의견 · 하루씩 해 본 뒤에 하고 싶은 일에 지원하자</div>
     </div>`},
 
-  {tag:'③ 인물 짐작', t:'이 차례는 누구에 대한 이야기일까요?', log:true, okMsg:'맞아요! 물시계와 측우기를 만든 조선의 과학자예요. 🎉', hint:'물시계와 비의 양을 재는 기구를 만든 사람을 떠올려 봐요.',
+  {tag:'② 사회자', t:'사회자가 토의를 이끌어요',
+   html:`<div class="ka-bub">사회자는 <b class="emph">말할 차례</b>를 정해 주고,<br>이야기가 <b class="mc">주제에서 벗어나지</b> 않게 해요.<br>말이 적은 친구에게도<br>말할 기회를 나누어 주어야 해요. 🎤</div>`},
+
+  {tag:'③ 사회자 역할', t:'사회자가 해야 할 일은?', log:true, okMsg:'맞아요! 모두에게 말할 기회를 고르게 나누어 주어야 해요. 🎉', hint:'토의는 한 사람만 말하는 자리가 아니에요.',
    html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-pic">⏱️</div><div class="wc-word">장영실</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">🚢</div><div class="wc-word">이순신</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">🗺️</div><div class="wc-word">김정호</div></div>
+      <div class="wcard" data-ok="1"><div class="wc-pic">🎤</div><div class="wc-word">아직 말하지 않은 친구에게 말할 기회를 준다</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-pic">👑</div><div class="wc-word">자기 의견을 가장 좋은 의견으로 정해 버린다</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-pic">⏭️</div><div class="wc-word">시간이 걸리니 의견 모으기를 건너뛴다</div></div>
     </div><div class="fb"></div>`},
 
-  {tag:'③ 놀이 규칙 모으기', t:'놀이를 하는 방법을 모두 찾아요', log:true, collectMsg:'잘 찾았어요! 이대로 하면 놀이가 재미있어요. 🎉', hint:'답을 미리 알려 주면 짐작할 것이 없어지겠지요.',
+  {tag:'② 의견 모으기', t:'친구들의 의견을 정리해요',
+   html:`<div class="read-lines">
+      <div class="read-line"><span class="rl-num">1</span>서준: 일인일역을 가장 열심히 한 친구를 뽑아 칭찬하면 좋겠습니다.</div>
+      <div class="read-line"><span class="rl-num">2</span>서준: 왜냐하면 칭찬을 받으면 보람이 생겨 더 열심히 하기 때문입니다.</div>
+      <div class="read-line"><span class="rl-num">3</span>나윤: 학급에 필요한 일을 적어 두고 신청을 받으면 좋겠습니다.</div>
+      <div class="read-line"><span class="rl-num">4</span>나윤: 왜냐하면 모두가 스스로 고른 일을 맡을 수 있기 때문입니다.</div>
+    </div><div class="fb" id="readFb"></div>`},
+
+  {tag:'③ 태도 모으기', t:'바람직한 토의 태도를 모두 찾아요', log:true, collectMsg:'잘 찾았어요! 존중하며 듣는 태도가 토의를 살려요. 🎉', hint:'내 의견만 앞세우는 행동은 토의를 막아요.',
    html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">차례에 인물의 이름이 나오면 □로 가린다</div>
-      <div class="chip" data-hit="0">시작하기 전에 정답을 먼저 알려 준다</div>
-      <div class="chip" data-hit="1">책의 차례나 그림을 보여 준다</div>
-      <div class="chip" data-hit="1">한 사람씩 돌아가며 문제를 낸다</div>
-      <div class="chip" data-hit="0">책의 마지막 쪽을 펴서 보여 준다</div>
+      <div class="chip" data-hit="1">말할 기회를 얻어 차례를 지켜 말한다</div>
+      <div class="chip" data-hit="0">친구가 말하는 중간에 끼어들어 반박한다</div>
+      <div class="chip" data-hit="1">나와 생각이 달라도 끝까지 듣는다</div>
+      <div class="chip" data-hit="0">내 의견이 아니면 무조건 반대한다</div>
+      <div class="chip" data-hit="1">궁금한 점은 예의를 지켜 물어본다</div>
     </div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'② 나누기', t:'만든 것을 함께 나눠요',
-   html:`<div class="ka-bub">내가 만든 이야기와 문제를<br>친구들 앞에서 나눠 봐요.<br>친구가 만든 것에도<br><b class="emph">질문</b>을 던져 보면<br>더 재미있어요. 💬</div>`},
+  {tag:'② 적절성 판단', t:'친구의 의견도 살펴봐요',
+   html:`<div class="ka-bub">모은 의견이 <b class="emph">알맞은지</b> 따져 봐요.<br>알맞지 않다고 생각하면<br>그렇게 생각한 <b class="mc">까닭</b>도 함께 말해요.<br>이것은 흠을 잡는 것이 아니라<br>더 좋은 답을 찾는 일이에요. ⚖️</div>`},
 
-  {tag:'④ 정리', t:'오늘 해 본 것',
+  {tag:'③ 판단 항목 모으기', t:'의견을 판단할 때 살필 점을 모두 찾아요', log:true, collectMsg:'잘 찾았어요! 이 네 가지로 의견을 따져 봐요. 🎉', hint:'누가 낸 의견인지는 판단 기준이 될 수 없어요.',
+   html:`<div class="collect" id="collect">
+      <div class="chip" data-hit="1">토의 주제에 알맞은 의견인가요</div>
+      <div class="chip" data-hit="1">우리 모두가 실천할 수 있는 의견인가요</div>
+      <div class="chip" data-hit="0">목소리가 큰 친구가 낸 의견인가요</div>
+      <div class="chip" data-hit="1">의견을 뒷받침하는 이유가 알맞은가요</div>
+      <div class="chip" data-hit="1">의견의 단점도 생각해 보았나요</div>
+    </div><div class="fb" id="collectFb"></div>`},
+
+  {tag:'② 의견 결정하기', t:'기준을 세워 정해요',
    html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🎴</span>장면의 <b>차례</b>를 정해 이야기를 만들었어요</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🕵️</span>제목과 차례로 <b>내용을 짐작</b>했어요</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">💬</span>친구와 <b>묻고 답하며</b> 나눴어요</div>
+      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">⏳</span>시간이나 힘이 너무 많이 들지 않는가</div>
+      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">👥</span>모든 친구가 실천할 수 있는가</div>
+      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">⚖️</span>단점보다 좋은 점이 더 큰가</div>
+    </div>`},
+
+  {tag:'③ 결정 기준', t:'의견을 결정할 때 알맞은 방법은?', log:true, okMsg:'맞아요! 좋은 의견이 여러 개면 합쳐서 새 의견을 만들 수도 있어요. 🎉', hint:'꼭 한 가지 의견만 골라야 하는 것은 아니에요.',
+   html:`<div class="wordpick">
+      <div class="wcard" data-ok="1"><div class="wc-pic">🧩</div><div class="wc-word">좋은 의견을 합쳐 새로운 의견으로 정해도 된다</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-pic">🥇</div><div class="wc-word">가장 먼저 말한 의견으로 정해야 한다</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-pic">🎲</div><div class="wc-word">까닭 없이 뽑기로 정해야 한다</div></div>
+    </div><div class="fb"></div>`},
+
+  {tag:'② 점검하기', t:'내 모습을 되돌아봐요',
+   html:`<div class="selfcheck">
+      <div class="sc-row"><span class="sc-box"></span>토의 주제에 알맞은 의견과 이유를 말했나요?</div>
+      <div class="sc-row"><span class="sc-box"></span>말차례를 지키며 토의에 참여했나요?</div>
+      <div class="sc-row"><span class="sc-box"></span>친구들의 의견을 존중하며 들었나요?</div>
+      <div class="sc-row"><span class="sc-box"></span>토의에 즐겁게 참여했나요?</div>
+    </div>`},
+
+  {tag:'④ 정리', t:'오늘 배운 것',
+   html:`<div class="recap">
+      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🪧</span>토의는 <b>주제→의견 마련→의견 모으기→결정</b>의 차례로</div>
+      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">👂</span>다른 의견도 <b>끝까지 듣고 존중</b>해요</div>
+      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">⚖️</span>의견은 <b>기준</b>을 세워 결정해요</div>
     </div>`},
 
   {tag:'④ 마무리', t:'잘했어요',
-   html:`<div class="ka-bub">배운 것을 직접 해 보니<br>훨씬 잘 알게 됐지요?<br>다음 시간에는 단원을<br><b class="mc">마무리</b>해 봐요! 🎉👏</div>`}
+   html:`<div class="ka-bub">여럿이 모이면<br>혼자보다 <b class="emph">지혜로워져요</b>.<br>다음 시간부터는 글 속에 담긴<br><b class="mc">글쓴이의 의견</b>을 찾아봐요! 🎉👏</div>`}
 ];
 const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-const LESSON_ID='g4_kor_u1_l11_12_v1';
-const LESSON_MAX=40;
+const LESSON_ID='g4_kor_u2_l04_05_v1';
+const LESSON_MAX=50;
 let cur=0, score=0;
 const stage=document.getElementById('stage');
 const main=document.getElementById('main');
