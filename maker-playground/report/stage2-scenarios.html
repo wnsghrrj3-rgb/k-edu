@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>K-MAKER 2단계 — §19 시나리오 동작표 (R60~R62)</title>
+<style>
+  :root { --bg:#0f1117; --card:#171a23; --line:#262b38; --tx:#e2e8f0; --sub:#94a3b8; --ok:#22d3a5; --warn:#f0b429; --acc:#6ea8fe; }
+  * { box-sizing:border-box; margin:0; }
+  body { background:var(--bg); color:var(--tx); font:15px/1.7 Pretendard,-apple-system,'Noto Sans KR',sans-serif; padding:40px 20px; }
+  main { max-width:880px; margin:0 auto; }
+  h1 { font-size:26px; margin-bottom:6px; }
+  h2 { font-size:18px; margin:36px 0 12px; color:var(--acc); }
+  .sub { color:var(--sub); margin-bottom:28px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th,td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--sub); font-weight:600; }
+  code { background:#232837; border-radius:5px; padding:1px 6px; font-size:13px; color:#c9d6f0; }
+  .ok { color:var(--ok); font-weight:700; }
+  .warn { color:var(--warn); font-weight:700; }
+  ul { padding-left:20px; }
+  li { margin:4px 0; }
+  a { color:var(--acc); }
+  .badge { display:inline-block; background:#1d2b26; color:var(--ok); border:1px solid #245446; border-radius:999px; padding:2px 12px; font-size:13px; font-weight:700; margin-left:8px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>2단계 — §19 시나리오 동작표<span class="badge">R60~R62</span></h1>
+  <p class="sub">슬라이드쇼 variant·비포애프터 Pair 심화(2단계 지시서 §8·§9·§13·§14·§16·§17·§19) 검증 보고. 전 판정은 <code>test-round60~62.mjs</code>가 jsdom에서 실제 실행해 산출 — 시뮬 값 없음. 2026-08-01.</p>
+
+  <h2>1. 라운드별 산출 요약</h2>
+  <div class="card"><table>
+    <tr><th style="width:70px">라운드</th><th>내용</th><th style="width:110px">검증</th><th style="width:90px">커밋</th></tr>
+    <tr><td><b>R60</b></td><td>슬라이드쇼 variant 8종(full-bleed·framed-center·캡션 좌/우·highlight-zoom·split/stacked-two·collage-three, 비율별 프레임) + mediaPlan(미디어 수별 규칙·같은 레이아웃 3연속 금지·16+ 2분할·콜라주 리듬) + 미디어별 캡션(빈 캡션=빈 박스 0) + estimate(만들기 전 예상=실생성 동일) + 비포애프터 Pair 플래너(쌍 순서 유지·누락 경고·완성 위장 금지) + 비교 방식 6종 비율별 실작동분만(slider-reveal 정직 미지원) + 변신 씬(wipe/fade 리빌·KB 제외) + 세로 wipe 재생↔MP4 동률</td><td class="ok">15/15</td><td><code>0b88ce0</code></td></tr>
+    <tr><td><b>R61</b></td><td>Video 허브 시작 화면 — 슬라이드쇼 스테이징(미디어 목록·드래그+▲▼ 정렬·행 빼기·미디어별 캡션·마무리 문구·실시간 예상치=estimate 동일), 비포애프터 쌍 입력(전·후 슬롯 분리·쌍 추가/삭제/정렬·쌍 이름·결과 문구·비교 방식 칩·누락 쌍 ⚠경고·만들기 전 confirm). 기존 Composition·빠른 시작·R53 API 무손상</td><td class="ok">14/14</td><td><code>5aff5dc</code></td></tr>
+    <tr><td><b>R62</b></td><td>§19 시나리오 1~7 전량 자동 검증 + §16 미리보기 동기화 + §17 저장·재진입 왕복 — 본 페이지</td><td class="ok">8/8</td><td>본 커밋</td></tr>
+  </table></div>
+
+  <h2>2. §19 시나리오 동작표 (test-round62 실판정)</h2>
+  <div class="card"><table>
+    <tr><th style="width:36px">#</th><th>시나리오</th><th>판정 항목</th><th style="width:70px">결과</th></tr>
+    <tr><td>1</td><td>슬라이드쇼 · 사진 1장 · 9:16 · Minimal</td><td>같은 사진 무분별 반복 0 · 빈 씬 0 · 전체 ≤12초로 짧고 자연스럽게 · 단일 사진 subtle 모션(Ken Burns) 실배정 · 전 씬 실렌더</td><td class="ok">PASS</td></tr>
+    <tr><td>2</td><td>슬라이드쇼 · 사진 8장 · 16:9 · Bold</td><td>씬 자동 구성(≥10) · 8장 전량 배치 · variant 프레임 2종 이상 순환 · 전 씬 전환 실배정 · 캡션 있는 사진만 캡션 노출</td><td class="ok">PASS</td></tr>
+    <tr><td>3</td><td>슬라이드쇼 · 사진 16 + 영상 4 혼합 20개 · 9:16</td><td>누락 0(20/20) · 생성 1.5초 내(§20) · 몽타주(3장+) 씬 존재 · 짧은 영상(2.2s) 씬 길이 실반영(§8-6) · 영상 요소 Ken Burns 미적용(§8-6)</td><td class="ok">PASS</td></tr>
+    <tr><td>4</td><td>비포애프터 · 1쌍 · 16:9 · side-by-side</td><td>전·후 동일 프레임(크기·y 일치, §9-6) · 전/후 라벨 실존 · 실렌더</td><td class="ok">PASS</td></tr>
+    <tr><td>5</td><td>비포애프터 · 3쌍 · 9:16 · wipe-vertical</td><td>변신+비교 묶음 3회 반복 · 쌍 순서 유지(A0→A1→A2) · 세로 wipe(preset=wipe·down) · <b>§17 저장→serialize→hydrate→재진입 doc 완전 동일</b></td><td class="ok">PASS</td></tr>
+    <tr><td>6</td><td>비포애프터 · 전(before)만 업로드</td><td>완성 비교로 위장 0(comparison·transform 씬 미생성) · "후 사진 추가" 명확 안내 · 단독 씬 라벨·미완성 정직 표기</td><td class="ok">PASS</td></tr>
+    <tr><td>7</td><td>같은 입력 16:9 ↔ 9:16 전환(§12)</td><td>캔버스 1280↔1080 · 단순 스케일 아님(% 프레임 재계산) · 9:16 텍스트 전량 안전영역 내 · 미디어·캡션 무손실</td><td class="ok">PASS</td></tr>
+  </table></div>
+
+  <h2>3. §16 미리보기 동기화 · §17 저장</h2>
+  <div class="card"><ul>
+    <li class="ok">§16 — 씬 duration·전환이 재생 계획(<code>MK_PLAY.sequence</code> durMs)과 MP4 프레임 플랜(<code>MK_VIDEO.framePlan</code>)에 수치 동률로 실반영. 씬 수·총 길이 일치 판정 PASS.</li>
+    <li class="ok">§17 — <code>MK_START.open → MK_PROJ.serialize → hydrate</code> 왕복 후 doc(씬 수·순서·미디어·전환·비율) 바이트 동일. 자동 저장은 R59의 700ms 디바운스 autosave 경유.</li>
+  </ul></div>
+
+  <h2>4. 현재 미구현 (정직 표기)</h2>
+  <div class="card"><ul>
+    <li class="warn">slider-reveal 비교 방식 — 미지원 정직 표기(억지 적용 거부, R60 규약 유지).</li>
+    <li class="warn">beatSync — 음악 박자 동기화 미구현(R52 정직 표기 유지).</li>
+    <li>실브라우저 시각 확인(스테이징 드래그 손맛·9:16 실기기)은 준호 몫 — jsdom 판정 범위 밖.</li>
+  </ul></div>
+
+  <h2>5. 확인 방법</h2>
+  <div class="card"><ul>
+    <li>자동 판정: <code>node test-round62.mjs</code> → 8/8 · 전 스위트 53 ALL PASS.</li>
+    <li>종합 리포트: <a href="./index.html">report/index.html</a> · <a href="./report.json">report.json</a></li>
+    <li>실사용: <a href="https://keduclass.com/maker-playground/#/video">#/video</a> — 슬라이드쇼/비포애프터 카드 → 스테이징 → 만들기.</li>
+  </ul></div>
+</main>
+</body>
+</html>

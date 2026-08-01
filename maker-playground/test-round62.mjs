@@ -18,7 +18,7 @@ const A = (c, m) => { if (!c) throw new Error(m || 'assert'); };
 const img = (i) => ({ name: 'p' + i, kind: 'image', src: 'data:image/png;base64,' + i, w: i % 2 ? 800 : 600, h: i % 2 ? 600 : 800 });
 const vid = (i, dur) => ({ name: 'v' + i, kind: 'video', src: 'data:video/mp4;base64,' + i, w: 1280, h: 720, duration: dur });
 const mk = (n) => Array.from({ length: n }, (_, i) => img(i));
-const renderAll = (r) => r.doc.scenes.forEach((s) => { const svg = R.toSVG(s); A(/^<svg/.test(svg), '렌더 실패 ' + s.id); });
+const renderAll = (r) => r.doc.scenes.forEach((s) => { const svg = R.toSVG(R.renderScene(s, { noCache: true })); A(/^<svg/.test(svg), '렌더 실패 ' + s.id); });
 
 /* ---------- Test 1 — 슬라이드쇼 · 사진 1 · 9:16 · Minimal ---------- */
 T('시나리오 1 — 사진 1장: 무분별 반복 0·빈 씬 0·짧고 자연스럽게', () => {
@@ -133,9 +133,11 @@ T('시나리오 7 — 비율 전환: 단순 스케일 아님·텍스트 안전�
 /* ---------- §16 미리보기 동기화 — 재생 계획이 doc과 동률 ---------- */
 T('§16 — 씬 길이·전환이 재생 계획(durMs)·MP4 프레임 플랜에 실반영', () => {
   const r = C.buildProject('cx-slideshow', 'th-minimal', { medias: mk(3), texts: { title: 'T' } });
-  const plan = window.MK_VIDEO.framePlan(r.doc.scenes.map((s) => ({ duration: s.duration })), 30);
-  const totalSec = r.doc.scenes.reduce((x, s) => x + s.duration, 0);
-  A(Math.abs(plan.totalSec - Math.min(totalSec, window.MK_VIDEO.MAX_SEC)) < 0.2, 'MP4 플랜 불일치');
+  const plan = window.MK_VIDEO.framePlan(r.doc, {});
+  const seq = window.MK_PLAY.sequence(r.doc);
+  const totalSec = seq.reduce((x, s) => x + s.durMs / 1000, 0);
+  A(Math.abs(plan.totalSec - totalSec) < 0.2, 'MP4 플랜 불일치 plan=' + plan.totalSec + ' seq=' + totalSec);
+  A(plan.scenes.length === r.doc.scenes.length, '플랜 씬 수 불일치');
   const html2 = window.MK_PLAY.sceneHTML(r.doc.scenes[2]);
   A(/mkp-/.test(html2), '재생 애니 미배선');
 });
