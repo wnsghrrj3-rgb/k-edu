@@ -198,84 +198,84 @@ window.KEDU_MAP["g5_1_math"] = {
    "kind": "unit",
    "lessons": [
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u3_l01",
+     "lessonId": "g5_math_u3_l01_v1",
      "n": "1",
      "title": "약분과 통분을 만나 보자",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/3단원_약분과통분/g5_math_u3_l01_약분과통분을만나보자.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u3_l02",
+     "lessonId": "g5_math_u3_l02_v1",
      "n": "2",
      "title": "크기가 같은 분수를 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/3단원_약분과통분/g5_math_u3_l02_크기가같은분수를알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u3_l03",
+     "lessonId": "g5_math_u3_l03_v1",
      "n": "3",
      "title": "약분을 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/3단원_약분과통분/g5_math_u3_l03_약분을알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u3_l04",
+     "lessonId": "g5_math_u3_l04_v1",
      "n": "4",
      "title": "통분을 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/3단원_약분과통분/g5_math_u3_l04_통분을알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u3_l05",
+     "lessonId": "g5_math_u3_l05_v1",
      "n": "5",
      "title": "분수의 크기를 비교해요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/3단원_약분과통분/g5_math_u3_l05_분수의크기를비교해요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u3_l06",
+     "lessonId": "g5_math_u3_l06_v1",
      "n": "6",
      "title": "분수와 소수의 크기를 비교해요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/3단원_약분과통분/g5_math_u3_l06_분수와소수의크기를비교해요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u3_l07",
+     "lessonId": "g5_math_u3_l07_v1",
      "n": "7",
      "title": "삐비빅 충전량 비교하기",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/3단원_약분과통분/g5_math_u3_l07_삐비빅충전량비교하기.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u3_l08",
+     "lessonId": "g5_math_u3_l08_v1",
      "n": "8",
      "title": "스스로 마무리해요 (단원 평가)",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/3단원_약분과통분/g5_math_u3_l08_스스로마무리해요.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   },
