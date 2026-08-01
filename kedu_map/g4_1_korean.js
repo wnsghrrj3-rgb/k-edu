@@ -181,6 +181,93 @@ window.KEDU_MAP["g4_1_korean"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 3,
+   "name": "자세하게 살펴요",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g4_korean_u3_l01",
+     "lessonId": "g4_kor_u3_l01_v1",
+     "n": "1",
+     "title": "단원 시작 — 배울 내용 살펴보기 (낱말 관계·관찰 기록)",
+     "sub": null,
+     "url": "/grade4/semester1/korean/3단원_자세하게살펴요/g4_kor_u3_l01.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_korean_u3_l02_03",
+     "lessonId": "g4_kor_u3_l02_03_v1",
+     "n": "2·3",
+     "title": "낱말의 의미 관계 알기",
+     "sub": null,
+     "url": "/grade4/semester1/korean/3단원_자세하게살펴요/g4_kor_u3_l02_03.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_korean_u3_l04_05",
+     "lessonId": "g4_kor_u3_l04_05_v1",
+     "n": "4·5",
+     "title": "낱말 사이의 관계를 파악하며 글 읽기",
+     "sub": null,
+     "url": "/grade4/semester1/korean/3단원_자세하게살펴요/g4_kor_u3_l04_05.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_korean_u3_l06_07",
+     "lessonId": "g4_kor_u3_l06_07_v1",
+     "n": "6·7",
+     "title": "보고하는 글에 대해 알기",
+     "sub": null,
+     "url": "/grade4/semester1/korean/3단원_자세하게살펴요/g4_kor_u3_l06_07.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_korean_u3_l08_09",
+     "lessonId": "g4_kor_u3_l08_09_v1",
+     "n": "8·9",
+     "title": "관찰 계획을 세우고 관찰한 내용을 정리하는 방법 알기",
+     "sub": null,
+     "url": "/grade4/semester1/korean/3단원_자세하게살펴요/g4_kor_u3_l08_09.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_korean_u3_l10_11",
+     "lessonId": "g4_kor_u3_l10_11_v1",
+     "n": "10·11",
+     "title": "관찰한 내용을 바탕으로 보고하는 글 쓰기",
+     "sub": null,
+     "url": "/grade4/semester1/korean/3단원_자세하게살펴요/g4_kor_u3_l10_11.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_korean_u3_l12_13",
+     "lessonId": "g4_kor_u3_l12_13_v1",
+     "n": "12·13",
+     "title": "배운 내용 실천하기 (낱말 카드 뒤집기·우리 반 관찰왕)",
+     "sub": null,
+     "url": "/grade4/semester1/korean/3단원_자세하게살펴요/g4_kor_u3_l12_13.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_korean_u3_l14",
+     "lessonId": "g4_kor_u3_l14_v1",
+     "n": "14",
+     "title": "단원 마무리하기 (애·얘·제·쟤, 반대인 낱말, 글씨 쓰기)",
+     "sub": null,
+     "url": "/grade4/semester1/korean/3단원_자세하게살펴요/g4_kor_u3_l14.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };
