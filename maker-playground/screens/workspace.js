@@ -249,8 +249,36 @@
         zout: () => { WS.zoom = Math.max(40, WS.zoom - 10); R(); },
         prev: () => { WS.sceneIdx = Math.max(0, WS.sceneIdx - 1); WS.sel = { type: 'scene' }; R(); },
         next: () => { WS.sceneIdx = Math.min(doc().scenes.length - 1, WS.sceneIdx + 1); WS.sel = { type: 'scene' }; R(); },
-        preview: () => m.Modal.open(`<h2>미리보기</h2><div style="margin:14px 0;border:1px solid var(--mk-border);border-radius:8px;overflow:hidden">${m.sceneThumb(scene())}</div><p style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">전체 재생 미리보기는 후속 단계</p><div style="display:flex;justify-content:flex-end;margin-top:12px">${m.Button({ label: '닫기', size: 'sm', attrs: 'onclick="MK.Modal.close()"' })}</div>`),
-        share: () => { window.MK_PROJ.toggleShare(WS.projectId); R(); },
+        preview: () => {
+          /* R48 — 실재생 (#/editor R37과 동일 엔진: 장면 순차·애니·배경음·영상 프레임) */
+          if (window.MK_PLAY) { window.MK_PLAY.open(doc(), { startIdx: 0 }); return; }
+          m.Modal.open(`<h2>미리보기</h2><p style="font:var(--mk-t-body-sm);color:var(--mk-text-secondary)">재생 엔진이 로드되지 않았어요 — 새로고침 후 다시 시도해 주세요</p>`);
+        },
+        share: () => {
+          /* R48 — 케이에듀 생태계 공유: 케이박스 「바로 초대」 파이프라인 연결 */
+          const hasBox = !!(window.KeduBoxbar && document.querySelector('.kbx-fab'));
+          m.Modal.open(`<h2>공유</h2>
+            <div style="display:flex;flex-direction:column;gap:8px;margin:12px 0">
+              <button data-ws-sh="invite" ${hasBox ? '' : 'disabled'} style="height:46px;border:none;border-radius:12px;background:${hasBox ? 'linear-gradient(120deg,#5B8EF8,#7AA6FF)' : 'var(--mk-border)'};color:#fff;font:700 14px/1 inherit;cursor:${hasBox ? 'pointer' : 'not-allowed'}">📤 우리 반에 바로 초대 (케이박스)</button>
+              ${hasBox ? '' : `<small style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">교사 로그인 상태의 케이에듀에서 열면 활성화돼요</small>`}
+              <button data-ws-sh="link" style="height:42px;border:1.5px solid var(--mk-border);border-radius:12px;background:transparent;cursor:pointer;font:var(--mk-t-body-sm)">🔗 케이메이커 링크 복사</button>
+            </div>
+            <p style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">작업물 파일을 보내려면 「내보내기」로 MP4·PNG·PPTX 저장 후 공유하세요. 작업물 자체를 링크로 여는 기능은 서버 저장(후속)이 필요해요.</p>
+            <div id="wsShMsg" style="font:var(--mk-t-caption);color:var(--mk-text-secondary);margin-top:8px;min-height:16px"></div>`);
+          const msg = (t) => { const d2 = document.querySelector('#wsShMsg'); if (d2) d2.textContent = t; };
+          const iv = document.querySelector('[data-ws-sh="invite"]');
+          if (iv && hasBox) iv.onclick = () => {
+            window.KEDU_BOXBAR_CTX = { kind: 'kmake', title: '케이메이커: ' + (doc().title || '내 작업'), url: '/maker-playground/' };
+            m.Modal.close(); window.KeduBoxbar.openPanel();
+          };
+          const lk = document.querySelector('[data-ws-sh="link"]');
+          if (lk) lk.onclick = () => {
+            const u = location.origin + '/maker-playground/';
+            if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(() => msg('복사됨: ' + u), () => msg(u));
+            else msg(u);
+          };
+          window.MK_PROJ.toggleShare(WS.projectId);
+        },
         export: () => {
           /* R47 — 실출력 배선 (#/editor R37~40과 동일 엔진: MK_RENDER·MK_VIDEO) */
           if (!window.MK_RENDER) {
