@@ -59,6 +59,12 @@ window.MK_VIDEO = (() => {
     if (el && el.anim && t >= endT) {
       if (el.anim.idle === 'float') { const fr = ((t - endT) % 3.2) / 3.2; st.dy += -5 * (1 - Math.cos(2 * Math.PI * fr)) / 2; }
       else if (el.anim.idle === 'pulse') { const fr = ((t - endT) % 2.6) / 2.6; st.scale *= 1 + 0.02 * (1 - Math.cos(2 * Math.PI * fr)) / 2; }
+      else if (/^kb-/.test(el.anim.idle || '') && window.MK_COMPOSE) {
+        /* R52 켄번즈 — CSS(linear forwards)와 동일 수치: enter 종료 후 잔여 씬 길이 동안 진행 */
+        const span = Math.max(0.8, (el.anim.idleDur || 4) - endT);
+        const kb = window.MK_COMPOSE.kbState(el.anim.idle, (t - endT) / span);
+        st.scale *= kb.scale; st.dx += kb.dx; st.dy += kb.dy;
+      }
     }
     return st;
   }
@@ -179,10 +185,13 @@ window.MK_VIDEO = (() => {
         pcm = await decodeToPCM(seg.music.src, len, sr);  /* 실패 시 null → 그 구간만 무음(정직) */
       }
       if (!pcm) continue;
+      /* R52 — 영상 끝에 닿는 구간은 fadeOut(1.2s), 아니면 경계 클릭 방지만 */
+      const atEnd = Math.abs(seg.end - timeline.totalSec) < 0.05;
+      const OUT = atEnd ? Math.min(len, Math.round(1.2 * sr)) : FADE;
       for (let i = 0; i < len; i++) {
         let g = 0.85;
         if (i < FADE) g *= i / FADE;
-        if (len - i < FADE) g *= (len - i) / FADE;
+        if (len - i < OUT) g *= (len - i) / OUT;
         master[st + i] += (pcm[i] || 0) * g;
       }
     }
@@ -391,6 +400,15 @@ window.MK_VIDEO = (() => {
     if (!(stateAt(mk('mkp-blur'), {}, 0.25).blur > 0)) v.push('blur 산출 실패');
     const idle = stateAt(mk('mkp-fade'), { anim: { idle: 'float' } }, 0.8 + 1.6);   /* 반주기 → 최저점 */
     if (!(idle.dy < -4.9)) v.push('idle float 미적용');
+    /* R52 — 켄번즈 수치판: 시작 1.0 → 끝 1.08 (과도 확대 금지 ≤1.1) · static 모션 0 */
+    if (window.MK_COMPOSE) {
+      const ke = { anim: { idle: 'kb-zoom-in', idleDur: 4 } };
+      const k0 = stateAt(mk('mkp-fade'), ke, 0.8), k1 = stateAt(mk('mkp-fade'), ke, 4);
+      if (!(Math.abs(k0.scale - 1) < 1e-6 && Math.abs(k1.scale - 1.08) < 1e-6)) v.push('켄번즈 zoom-in 수치 위반');
+      if (window.MK_COMPOSE.KENBURNS.some((k) => Math.max(k.scale[0], k.scale[1]) > 1.1)) v.push('켄번즈 과도 확대');
+      const ks = stateAt(mk('mkp-fade'), { anim: { idle: 'kb-static', idleDur: 4 } }, 3);
+      if (!(ks.scale === 1 && ks.dx === 0 && ks.dy === 0)) v.push('켄번즈 static 모션 발생');
+    }
     /* 프레임 플랜 — MK_PLAY.sequence와 동일 시간축 */
     const doc = { scenes: [{ duration: 2, elements: [] }, { duration: 3, elements: [] }] };
     const p = framePlan(doc, {});

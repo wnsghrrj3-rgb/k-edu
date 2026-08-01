@@ -27,6 +27,13 @@ window.MK_PLAY = (() => {
 @keyframes mkp-rotate { from { opacity:0; transform:rotate(-7deg) scale(.94) } to { opacity:1; transform:none } }
 @keyframes mkp-idle-float { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-5px) } }
 @keyframes mkp-idle-pulse { 0%,100% { transform:scale(1) } 50% { transform:scale(1.02) } }
+@keyframes mkp-kb-zoom-in { from { transform:scale(1) } to { transform:scale(1.08) } }
+@keyframes mkp-kb-zoom-out { from { transform:scale(1.08) } to { transform:scale(1) } }
+@keyframes mkp-kb-pan-left { from { transform:scale(1.06) translateX(12px) } to { transform:scale(1.06) translateX(-12px) } }
+@keyframes mkp-kb-pan-right { from { transform:scale(1.06) translateX(-12px) } to { transform:scale(1.06) translateX(12px) } }
+@keyframes mkp-kb-pan-up { from { transform:scale(1.06) translateY(12px) } to { transform:scale(1.06) translateY(-12px) } }
+@keyframes mkp-kb-pan-down { from { transform:scale(1.06) translateY(-12px) } to { transform:scale(1.06) translateY(12px) } }
+@keyframes mkp-kb-diagonal { from { transform:scale(1.04) translate(-8px,-8px) } to { transform:scale(1.1) translate(8px,8px) } }
 @keyframes mkp-bar { from { width:0 } to { width:100% } }`;
 
   const PRESET_KEYS = ['fade', 'slide', 'scale', 'zoom', 'pop', 'bounce', 'wipe', 'blur', 'rotate'];
@@ -50,8 +57,10 @@ window.MK_PLAY = (() => {
   const animCss = (el, i, sceneAnim) => {
     const p = enterPlan(el, i, sceneAnim);
     if (!p) return '';
-    const idle = el.anim && el.anim.idle === 'float' ? ',mkp-idle-float 3.2s ease-in-out infinite'
-      : el.anim && el.anim.idle === 'pulse' ? ',mkp-idle-pulse 2.6s ease-in-out infinite' : '';
+    const kb = el.anim && /^kb-/.test(el.anim.idle || '') && el.anim.idle !== 'kb-static'
+      ? `,mkp-${el.anim.idle} ${Math.max(0.8, (el.anim.idleDur || 4) - p.delay - p.dur).toFixed(1)}s linear forwards` : '';
+    const idle = kb || (el.anim && el.anim.idle === 'float' ? ',mkp-idle-float 3.2s ease-in-out infinite'
+      : el.anim && el.anim.idle === 'pulse' ? ',mkp-idle-pulse 2.6s ease-in-out infinite' : '');
     return `;opacity:0;animation:${p.name} ${p.dur}s ${p.ease} ${p.delay}s both${idle ? idle.replace(',', ` ${p.delay + p.dur}s,`) : ''}`;
   };
 
@@ -201,6 +210,9 @@ window.MK_PLAY = (() => {
     if (!/mkp-slide-left/.test(h1) || !/<img src="data:image\/png;base64,A"/.test(h1)) v.push('slide 방향·실이미지 재생 미방출');
     if (sceneHTML(doc.scenes[0], { still: true }).includes('animation:')) v.push('정지 렌더에 애니 섞임');
     if (!/mkp-idle-float/.test(KEYFRAMES) || PRESET_KEYS.length !== 9) v.push('프리셋 9종 미충족');
+    if (['zoom-in', 'zoom-out', 'pan-left', 'pan-right', 'pan-up', 'pan-down', 'diagonal'].some((k) => !KEYFRAMES.includes('mkp-kb-' + k))) v.push('R52 켄번즈 키프레임 미충족');
+    const hk = sceneHTML({ duration: 4, elements: [{ kind: 'image', src: 'data:image/png;base64,K', x: 0, y: 0, w: 100, h: 100, anim: { preset: 'fade', idle: 'kb-zoom-in', idleDur: 4 } }] });
+    if (!/mkp-kb-zoom-in [\d.]+s linear forwards/.test(hk)) v.push('켄번즈 재생 미방출');
     return { ok: v.length === 0, violations: v };
   }
 

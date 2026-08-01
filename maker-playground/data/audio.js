@@ -189,6 +189,33 @@ window.MK_AUDIO = (() => {
     return out;
   }
 
+  /* ---------- R52 — 오디오 fit (순수) ----------
+     음악을 영상 길이에 맞춘다: 길면 자르고, 짧으면 loop. 끝은 fadeOut.
+     beatSync(박자 동기화)는 아직 미구현 — 정직 표기. */
+  function fitPlan(musicSec, videoSec) {
+    if (!(videoSec > 0)) return null;
+    const m = musicSec > 0 ? musicSec : videoSec;
+    const loops = Math.max(1, Math.ceil(videoSec / m));
+    return {
+      mode: m >= videoSec ? 'trim' : 'loop',
+      loops, playSec: videoSec,
+      trimSec: Math.max(0, m * loops - videoSec),
+      fadeOutSec: Math.min(1.2, videoSec * 0.25),
+      beatSync: { supported: false, msg: '박자 맞춤은 아직 준비 중이에요' },
+    };
+  }
+  function fitPcm(pcm, sr, targetSec, opts) {
+    if (!pcm || !pcm.length || !(targetSec > 0)) return null;
+    sr = sr || 48000; opts = opts || {};
+    const n = Math.max(1, Math.round(targetSec * sr));
+    const out = new Float32Array(n);
+    for (let i = 0; i < n; i++) out[i] = pcm[i % pcm.length];      /* loop + trim */
+    const fade = Math.round(Math.min(1.2, targetSec * 0.25) * sr); /* fadeOut */
+    if (opts.fadeOut !== false) for (let i = 0; i < fade; i++) out[n - 1 - i] *= i / fade;
+    return out;
+  }
+  const beatSync = () => ({ supported: false, msg: '박자 맞춤은 아직 준비 중이에요' });
+
   /* 내 음악 파일 → dataURL (오디오 전용 — MK_LIVE 이미지 규약과 분리, 8MB) */
   function fileToSrc(file, cb, ReaderCls) {
     if (!file) return cb(null);
@@ -228,9 +255,23 @@ window.MK_AUDIO = (() => {
       if (peak > 1) v.push('PCM 클리핑');
     }
     if (renderPattern('없는음악', 1) !== null) v.push('없는 패턴 미거절');
+    /* R52 — fit: 짧은 음악 loop 계산·목표 길이 정확·끝 fadeOut·beatSync 정직 */
+    const fp = fitPlan(3.2, 10);
+    if (!fp || fp.mode !== 'loop' || fp.loops !== 4 || fp.beatSync.supported !== false) v.push('fitPlan 위반');
+    if (fitPlan(20, 10).mode !== 'trim') v.push('fitPlan trim 위반');
+    const base = renderPattern('piano', 2, 48000);
+    const ft = base && fitPcm(base, 48000, 5);
+    if (!ft || ft.length !== 240000) v.push('fitPcm 길이 위반');
+    else {
+      if (Math.abs(ft[100000] - base[100000 % base.length]) > 1e-9) v.push('fitPcm 루프 위반');
+      if (Math.abs(ft[ft.length - 1]) > 1e-6) v.push('fitPcm 끝 무음 아님');
+      let mid = 0; for (let i = 0; i < 48000; i++) mid = Math.max(mid, Math.abs(ft[i]));
+      if (!(mid > 0.05)) v.push('fitPcm 본문 무음');
+    }
+    if (beatSync().supported !== false) v.push('beatSync 거짓 지원 표기');
     return { ok: v.length === 0, violations: v };
   }
 
   const state = () => ({ playing: S.playing, paused: S.paused, kind: S.kind, name: S.name, engine: S.engine });
-  return { SYNTHS, patternPlan, play, pause, resume, stop, fileToSrc, state, audioAudit, waveAt, envAt, renderPattern };
+  return { SYNTHS, patternPlan, play, pause, resume, stop, fileToSrc, state, audioAudit, waveAt, envAt, renderPattern, fitPlan, fitPcm, beatSync };
 })();

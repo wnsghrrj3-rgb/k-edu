@@ -173,6 +173,59 @@ window.MK_COMPOSE = (() => {
   }
   const ALT_DIR = ['up', 'left', 'right', 'down']; /* 애니 방향 교차 */
 
+  /* ================= R52 — Ken Burns idle 8종 ================= */
+  /* 과도 확대 금지: scale 최대 1.1 · pan 이동은 scale 여유 안(빈 가장자리 0) */
+  const KENBURNS = [
+    { id: 'kb-zoom-in',  scale: [1, 1.08],    dx: [0, 0],    dy: [0, 0] },
+    { id: 'kb-zoom-out', scale: [1.08, 1],    dx: [0, 0],    dy: [0, 0] },
+    { id: 'kb-pan-left', scale: [1.06, 1.06], dx: [12, -12], dy: [0, 0] },
+    { id: 'kb-pan-right',scale: [1.06, 1.06], dx: [-12, 12], dy: [0, 0] },
+    { id: 'kb-pan-up',   scale: [1.06, 1.06], dx: [0, 0],    dy: [12, -12] },
+    { id: 'kb-pan-down', scale: [1.06, 1.06], dx: [0, 0],    dy: [-12, 12] },
+    { id: 'kb-diagonal', scale: [1.04, 1.1],  dx: [-8, 8],   dy: [-8, 8] },
+    { id: 'kb-static',   scale: [1, 1],       dx: [0, 0],    dy: [0, 0] },
+  ];
+  const KB_SMALL = ['kb-zoom-in', 'kb-zoom-out', 'kb-static']; /* 작은 슬롯 = 이동 없는 것만 */
+  const kbSpec = (id) => KENBURNS.find((k) => k.id === id) || null;
+  /* 진행률 p(0~1) → {scale, dx, dy}(px@720) — play·video 공용 수치 정의 */
+  function kbState(id, p) {
+    const k = kbSpec(id);
+    if (!k) return { scale: 1, dx: 0, dy: 0 };
+    const q = Math.max(0, Math.min(1, p)), L = (a) => a[0] + (a[1] - a[0]) * q;
+    return { scale: L(k.scale), dx: L(k.dx), dy: L(k.dy) };
+  }
+  /* 씬 배열 후처리 — 미디어(이미지)에 KB 배정. 인접 씬 같은 종류 반복 금지 · 영상 제외 · 끄기 가능 */
+  function assignKenburns(scenes, on) {
+    if (on === false) return scenes;
+    const ROT = ['kb-zoom-in', 'kb-pan-left', 'kb-zoom-out', 'kb-pan-right', 'kb-diagonal', 'kb-pan-up', 'kb-pan-down'];
+    const ROT_S = ['kb-zoom-in', 'kb-zoom-out']; /* 작은 슬롯 씬 = 이동 없는 것만(빈 가장자리 0) */
+    let cursor = 0, prev = null;
+    scenes.forEach((sc) => {
+      const imgs = (sc.elements || []).filter((e) => e.kind === 'image' && e.src && !e.video);
+      if (!imgs.length) { prev = null; return; }
+      const small = imgs.some((el) => !((el.w || 0) >= 60 && (el.h || 0) >= 60));
+      const pool = small ? ROT_S : ROT;
+      let pick = pool[cursor % pool.length];
+      if (pick === prev) pick = pool[(cursor + 1) % pool.length]; /* 인접 반복 금지 — 실배정 기준 */
+      cursor++;
+      imgs.forEach((el) => { el.anim = { ...(el.anim || {}), idle: pick, idleDur: sc.duration }; });
+      prev = pick;
+    });
+    return scenes;
+  }
+  /* 전환 변형 — 인접 씬 동일 전환 교체(테마 전환이 1종뿐이면 정직하게 그대로) */
+  function varyTransitions(scenes, theme) {
+    const list = (theme.transitions || []).filter((t, i, a) => a.indexOf(t) === i);
+    if (list.length < 2) return scenes;
+    for (let i = 1; i < scenes.length; i++) {
+      if (scenes[i].transition === scenes[i - 1].transition) {
+        const alt = list.find((t) => t !== scenes[i - 1].transition);
+        if (alt) scenes[i].transition = alt;
+      }
+    }
+    return scenes;
+  }
+
   /* ================= 씬 빌드 → 기존 doc 씬 스키마 ================= */
   function buildScene(p, theme, comp, ratio, seq) {
     const spec = p.spec, T2 = theme.tokens;
@@ -256,6 +309,8 @@ window.MK_COMPOSE = (() => {
       }
     }
     if (!scenes.length) return { ok: false, why: 'empty-plan', guide: '만들 장면이 없어요 — 내용을 추가해 주세요.' };
+    assignKenburns(scenes, input.kenburns); /* R52 — 기본 켬, input.kenburns === false 로 끄기 */
+    varyTransitions(scenes, theme);
     const doc = {
       templateId: 'compose:' + comp.id + ':' + theme.id,
       title: (input.texts && input.texts.title) || input.title || comp.name,
@@ -295,6 +350,15 @@ window.MK_COMPOSE = (() => {
             if (el.kind === 'text' && !String(el.text).trim() && el.required !== false) violations.push(comp.id + ':empty-text');
           }
         }
+        /* R52 — KB 배정: 인접 씬 종류 중복 0 · 영상 요소 미배정 · 끄기 시 0 */
+        let pv = null;
+        for (const s2 of a.doc.scenes) {
+          const ks = s2.elements.filter((e) => e.kind === 'image' && e.src && !e.video).map((e) => e.anim && e.anim.idle).filter((x) => x && /^kb-/.test(x));
+          if (ks.length) { if (ks[0] === pv) violations.push(comp.id + ':' + n + ':kb-adjacent-repeat'); pv = ks[0]; } else pv = null;
+          if (s2.elements.some((e) => e.video && e.anim && /^kb-/.test(e.anim.idle || ''))) violations.push(comp.id + ':kb-on-video');
+        }
+        const off = buildProject(comp.id, theme.id, { ...clone(inp), kenburns: false });
+        if (off.ok && off.doc.scenes.some((s2) => s2.elements.some((e) => e.anim && /^kb-/.test(e.anim.idle || '')))) violations.push(comp.id + ':kb-off-fail');
         /* 전 미디어 배치 (버림 금지) */
         const placed = a.doc.scenes.reduce((c, s) => c + s.elements.filter((e) => e.src).length, 0);
         if (placed < n) {
@@ -311,5 +375,6 @@ window.MK_COMPOSE = (() => {
       recommendedMediaCount: c.recommendedMediaCount, recommendedDuration: c.recommendedDuration,
       supportedRatios: Object.keys(RATIOS), defaultRatio: c.defaultRatio || '16:9' })),
     listThemes: () => THEMES.map((t) => ({ id: t.id, name: t.name, mood: t.mood })),
+    KENBURNS, kbState, assignKenburns, varyTransitions,
     analyzeMedia, fitText, textLen, planScenes, buildProject, audit };
 })();
