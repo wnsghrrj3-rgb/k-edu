@@ -55,10 +55,10 @@ window.MK_COMPOSE = (() => {
     const list = Array.isArray(medias) ? medias.filter((m) => m && m.src) : [];
     return {
       count: list.length,
-      items: list.map((m) => {
+      items: list.map((m, i) => {
         const w = +m.w || 0, h = +m.h || 0;
         const orient = w && h ? (w / h > 1.15 ? 'landscape' : h / w > 1.15 ? 'portrait' : 'square') : 'unknown';
-        return { name: m.name || '', kind: m.kind === 'video' ? 'video' : 'image', src: m.src, orient,
+        return { name: m.name || '', kind: m.kind === 'video' ? 'video' : 'image', src: m.src, orient, _i: i,
           ...(m.duration ? { duration: +m.duration } : {}) };
       }),
     };
@@ -88,9 +88,87 @@ window.MK_COMPOSE = (() => {
     return { text: str.slice(0, cut).trim(), scale: minScale, rest: str.slice(cut).trim() || null };
   }
 
+  /* ================= R60 — 전후 비교 Pair 플래너 ================= */
+  /* 지시서 §9 — Before/After는 평면 배열 순서 추론이 아니라 쌍 단위로 관리.
+     비교 방식은 비율별 실작동분만 (slider-reveal = 영상 비대화형이라 정직 미지원 — wipe가 그 역할) */
+  const METHODS_BY_RATIO = {
+    '16:9': ['side-by-side', 'wipe-horizontal', 'sequential', 'fade-between'],
+    '9:16': ['top-bottom', 'wipe-vertical', 'sequential', 'fade-between'],
+    '1:1':  ['side-by-side', 'fade-between', 'sequential', 'wipe-horizontal'],
+    '4:5':  ['top-bottom', 'wipe-vertical', 'sequential', 'fade-between'],
+  };
+  const METHOD_NAMES = { 'side-by-side': '좌우 비교', 'top-bottom': '상하 비교', 'sequential': '차례로',
+    'wipe-horizontal': '가로 닦아내기', 'wipe-vertical': '세로 닦아내기', 'fade-between': '서서히 겹침' };
+  const normPairMedia = (m) => (!m || !m.src) ? null
+    : { name: m.name || '', kind: m.kind === 'video' ? 'video' : 'image', src: m.src, orient: 'unknown',
+        ...(m.duration ? { duration: +m.duration } : {}) };
+
+  function planPairs(comp, input) {
+    const notes = [], warnings = [];
+    const ratio = RATIOS[input.ratio] ? input.ratio : (comp.defaultRatio || '16:9');
+    /* ① Pair 입력 — 없으면 평면 미디어를 순서대로 2장씩 묶되 정직하게 알린다 */
+    let pairs;
+    if (Array.isArray(input.pairs) && input.pairs.length) {
+      pairs = input.pairs.map((p) => ({ before: normPairMedia(p.before), after: normPairMedia(p.after),
+        title: String(p.title || '').trim(), resultText: String(p.resultText || p.result || '').trim() }));
+    } else {
+      const media = analyzeMedia(input.medias);
+      if (!media.count) return { ok: false, why: 'no-media', guide: '전·후 사진을 먼저 골라 주세요 — 쌍을 지어 비교 영상이 만들어져요.', notes };
+      pairs = [];
+      for (let i = 0; i < media.count; i += 2) pairs.push({ before: media.items[i], after: media.items[i + 1] || null, title: '', resultText: '' });
+      notes.push('업로드 순서대로 전·후 쌍을 묶었어요 — 만들기 화면에서 쌍을 직접 지정할 수 있어요');
+    }
+    pairs = pairs.filter((p) => p.before || p.after);
+    if (!pairs.length) return { ok: false, why: 'no-media', guide: '전·후 사진을 먼저 골라 주세요.', notes };
+    /* ② 비교 방식 — 비율별 지원 목록 검증 (억지 적용 금지 — 지시서 §9-5) */
+    const allow = METHODS_BY_RATIO[ratio] || METHODS_BY_RATIO['16:9'];
+    const method = input.method && allow.includes(input.method) ? input.method : allow[0];
+    if (input.method && method !== input.method)
+      notes.push('「' + (METHOD_NAMES[input.method] || input.method) + '」는 ' + ratio + '에서 지원하지 않아 「' + METHOD_NAMES[method] + '」로 만들었어요');
+    /* ③ 씬 묶음 조립 */
+    const specOf = (id) => comp.scenes.find((s) => s.id === id) || null;
+    const plan = [];
+    const push = (id, medias, item, vi, slotAnims) => {
+      const sp = specOf(id); if (!sp) return;
+      plan.push({ spec: sp, variantIdx: vi || 0, medias, item: item || null, totalItems: pairs.length, ...(slotAnims ? { slotAnims } : {}) });
+    };
+    const texts = input.texts || {};
+    if (specOf('ba-intro') && String(texts.title || '').trim()) push('ba-intro', [], null, 0);
+    else if (specOf('ba-intro')) notes.push('생략: ba-intro (title 없음)');
+    const splitId = /vertical|top-bottom/.test(method) || (method !== 'side-by-side' && /^(9:16|4:5)$/.test(ratio)) ? 'ba-split-v' : 'ba-split-h';
+    const A_REVEAL = {
+      'wipe-horizontal': { preset: 'wipe', direction: 'right', delay: 0.5, duration: 1.6, ease: 'ease-in-out', repeat: 1 },
+      'wipe-vertical':   { preset: 'wipe', direction: 'down',  delay: 0.5, duration: 1.6, ease: 'ease-in-out', repeat: 1 },
+      'fade-between':    { preset: 'fade', delay: 0.5, duration: 1.8, ease: 'ease-in-out', repeat: 1 },
+    };
+    const A_BASE = { preset: 'fade', delay: 0, duration: 0.05, ease: 'linear', repeat: 1 };
+    pairs.forEach((pr, pi) => {
+      if (!pr.before || !pr.after) {
+        /* 미디어 누락 — 완성 비교로 위장하지 않는다 (지시서 §9-4) */
+        const side = pr.before ? '전' : '후', missing = pr.before ? '후' : '전';
+        warnings.push('쌍 ' + (pi + 1) + ': ' + missing + ' 사진이 없어요 — 추가하면 비교 장면이 완성돼요');
+        push('ba-solo', [pr.before || pr.after], { label: side, pairTitle: pr.title, incomplete: '(' + missing + ' 없음)' }, pi * 4);
+        return;
+      }
+      push('ba-solo', [pr.before], { label: '전', pairTitle: pr.title }, pi * 4);
+      if (method === 'sequential' || method === 'side-by-side' || method === 'top-bottom') {
+        push('ba-solo', [pr.after], { label: '후' }, pi * 4 + 1);
+      } else {
+        push('ba-transform', [pr.before, pr.after], { label: '후' }, pi * 4 + 1, [A_BASE, A_REVEAL[method]]);
+      }
+      if (method !== 'sequential' && method !== 'fade-between')
+        push(splitId, [pr.before, pr.after], { pairResult: pr.resultText }, pi * 4 + 2);
+    });
+    if (specOf('ba-result') && String(texts.result || '').trim()) push('ba-result', [], null, 0);
+    if (specOf('ba-outro')) push('ba-outro', [], null, 0);
+    if (!plan.some((p) => p.medias.length)) return { ok: false, why: 'no-media', guide: '전·후 사진을 먼저 골라 주세요.', notes };
+    return { ok: true, plan, media: { count: pairs.length * 2 }, notes, warnings, unusedMedia: 0, method };
+  }
+
   /* ================= 씬 계획(automationRules 실행기) ================= */
   /* 지시서 §6·§7 — 필수/반복/선택 씬 · 복제·생략·분할 · 부족/과다 우선순위 */
   function planScenes(comp, input) {
+    if (comp.pairMode) return planPairs(comp, input); /* R60 — 전후 비교는 쌍 단위 */
     const media = analyzeMedia(input.medias);
     const n = media.count;
     const texts = input.texts || {};
@@ -112,6 +190,21 @@ window.MK_COMPOSE = (() => {
       }
       /* ② 반복 씬 복제 */
       if (spec.repeatable) {
+        /* R60 — 구조가 자체 배치 계획을 갖는 경우 (variant 8종·미디어 수별 규칙) */
+        if (spec.usePlan && typeof comp.mediaPlan === 'function') {
+          const reserve = comp.reserveTail || 0;
+          const r = Math.max(spec.required ? Math.min(1, n - mi) : 0, Math.min(n - mi - reserve, n - mi));
+          const ratio2 = RATIOS[input.ratio] ? input.ratio : (comp.defaultRatio || '16:9');
+          const seq2 = comp.mediaPlan(r, ratio2, input.mediaCaptions || [], mi) || [];
+          let idx2 = 0;
+          for (const step of seq2) {
+            if (mi >= n) break;
+            const take = Math.max(1, Math.min(step.take || 1, n - mi));
+            const slice = media.items.slice(mi, mi + take); mi += slice.length;
+            plan.push({ spec, variantIdx: idx2++, medias: slice, item: null, totalItems: 0, variant: step.variant });
+          }
+          continue;
+        }
         const source = spec.consumes === 'items' && items ? items : null;
         const total = source ? source.length : Math.max(0, n - mi - (comp.reserveTail || 0));
         const per = spec.mediaPerScene || 1;
@@ -181,6 +274,9 @@ window.MK_COMPOSE = (() => {
       const tl = (built.textsUsed || []).reduce((a, t2) => a + textLen(t2), 0);
       return clamp(R1(d.default + tl / 22), d.min, d.max);
     }
+    /* R60 — 다중 미디어 씬은 볼 시간을 더 준다 (§11: 2장 3~5s · 3장 3.5~5.5s) */
+    const mc = (built.medias || []).length;
+    if (mc >= 2 && d.mode === 'media-aware') return clamp(R1(d.default + (mc >= 3 ? 1 : 0.5)), d.min, (d.max || 5) + (mc >= 3 ? 1.5 : 1));
     return d.default;
   }
 
@@ -222,6 +318,7 @@ window.MK_COMPOSE = (() => {
     const ROT_S = ['kb-zoom-in', 'kb-zoom-out']; /* 작은 슬롯 씬 = 이동 없는 것만(빈 가장자리 0) */
     let cursor = 0, prev = null;
     scenes.forEach((sc) => {
+      if (sc.role === 'transform') { prev = null; return; } /* R60 — 리빌 연출 씬은 KB 제외 */
       const imgs = (sc.elements || []).filter((e) => e.kind === 'image' && e.src && !e.video);
       if (!imgs.length) { prev = null; return; }
       const small = imgs.some((el) => !((el.w || 0) >= 60 && (el.h || 0) >= 60));
@@ -254,10 +351,21 @@ window.MK_COMPOSE = (() => {
     const layout = (spec.layoutByRatio && spec.layoutByRatio[ratio]) || null;
     const els = [];
     const textsUsed = [];
+    /* R60 — 이름 있는 variant 레이아웃 (full-bleed·framed-center·캡션형·분할형…) */
+    let vdef = p.variant && comp.variantDefs ? comp.variantDefs[p.variant] || null : null;
+    let capText = '';
+    if (vdef) {
+      const gi = p.medias[0] ? p.medias[0]._i : -1;
+      capText = gi >= 0 && p.captions ? String(p.captions[gi] || '').trim() : '';
+      if (vdef.needsCaption && !capText) vdef = comp.variantDefs['full-bleed'] || vdef; /* 빈 캡션 박스 미노출 — 대체 */
+    }
+    const vfr = vdef ? (vdef.byRatio && vdef.byRatio[ratio]) || vdef.base : null;
     /* 배경 */
-    const bg = spec.bg === 'accent' ? T2.accent : spec.bg === 'dark' ? T2.dark : T2.paper;
+    const bgKey = (vdef && vdef.bg) || spec.bg;
+    const bg = bgKey === 'accent' ? T2.accent : bgKey === 'dark' ? T2.dark : T2.paper;
     /* 미디어 슬롯 */
-    let slots = (layout && layout.mediaSlots) || spec.mediaSlots || [];
+    let slots = (vfr && vfr.m && vfr.m.map((f, j) => ({ id: 'm' + (j + 1), frame: f, ...(j > 0 ? { required: false } : {}) })))
+      || (layout && layout.mediaSlots) || spec.mediaSlots || [];
     /* 미디어 수 < 슬롯 수 → 있는 만큼만, 1개면 풀블리드 축소 */
     if (p.medias.length && p.medias.length < slots.filter((s) => s.required !== false).length) {
       slots = p.medias.length === 1 ? [{ id: slots[0].id, frame: spec.singleFrame || { x: 0, y: 0, w: 100, h: 100 } }] : slots.slice(0, p.medias.length);
@@ -270,9 +378,21 @@ window.MK_COMPOSE = (() => {
       els.push({ kind: 'image', x: f.frame.x, y: f.frame.y, w: f.frame.w, h: f.frame.h,
         label: m.name || '사진', src: m.src, ...(m.kind === 'video' ? { video: true } : {}),
         ...(f.frame.radius ? { radius: f.frame.radius } : {}),
-        anim: { preset: spec.mediaAnim || 'fade', delay: 0.05 + i * 0.12, duration: 0.5,
-          direction: ALT_DIR[(p.variantIdx + i) % ALT_DIR.length], ease: 'ease-out', repeat: 1 } });
+        anim: (p.slotAnims && p.slotAnims[i]) ? { ...p.slotAnims[i] }
+          : { preset: spec.mediaAnim || 'fade', delay: 0.05 + i * 0.12, duration: 0.5,
+              direction: ALT_DIR[(p.variantIdx + i) % ALT_DIR.length], ease: 'ease-out', repeat: 1 } });
     });
+    /* R60 — variant 캡션 (미디어별 문구 — 없으면 슬롯 자체를 그리지 않는다) */
+    if (vfr && vfr.cap && capText) {
+      const fit = fitText(capText, { maxCh: vfr.cap.maxCh || 18, maxLines: vfr.cap.maxLines || 2 });
+      textsUsed.push(fit.text);
+      const roleT = T2.type.caption || T2.type.body;
+      els.push({ kind: 'text', x: vfr.cap.x, y: vfr.cap.y, w: vfr.cap.w,
+        size: R1(roleT.size * fit.scale), text: fit.text, weight: roleT.weight,
+        color: bgKey === 'dark' || bgKey === 'accent' ? T2.onDark : roleT.color || T2.ink,
+        ...(vfr.cap.align ? { align: vfr.cap.align } : {}),
+        anim: { preset: 'fade', delay: 0.4, duration: 0.5, direction: 'up', ease: 'ease-out', repeat: 1 } });
+    }
     /* 텍스트 슬롯 */
     let tslots = (layout && layout.textSlots) || spec.textSlots || [];
     tslots = applyVariant(tslots.map((s) => ({ slot: s, frame: s.frame })), spec, p.variantIdx).map((f) => ({ ...f.slot, frame: f.frame }));
@@ -289,7 +409,7 @@ window.MK_COMPOSE = (() => {
       const roleT = T2.type[s.role] || T2.type.body;
       els.push({ kind: 'text', x: s.frame.x, y: s.frame.y, w: s.frame.w,
         size: R1(roleT.size * fit.scale), text: fit.text, weight: roleT.weight,
-        color: spec.bg === 'dark' || spec.bg === 'accent' ? T2.onDark : roleT.color || T2.ink,
+        color: bgKey === 'dark' || bgKey === 'accent' ? T2.onDark : roleT.color || T2.ink,
         ...(s.align ? { align: s.align } : {}),
         anim: { preset: 'fade', delay: 0.25 + i * 0.15, duration: 0.5, direction: 'up', ease: 'ease-out', repeat: 1 } });
     });
@@ -319,6 +439,7 @@ window.MK_COMPOSE = (() => {
     let seq = 0;
     for (const p of planned.plan) {
       p.texts = input.texts || {};
+      p.captions = input.mediaCaptions || null; /* R60 — 미디어별 캡션 */
       let cur = p;
       let guard = 0;
       while (cur && guard++ < 6) { /* 텍스트 overflow → 다음 씬 분리 (지시서 §8-4) */
@@ -341,7 +462,16 @@ window.MK_COMPOSE = (() => {
       scenes,
     };
     const total = scenes.reduce((a, s) => a + s.duration, 0);
-    return { ok: true, doc, total: R1(total), notes: planned.notes, sceneCount: scenes.length, unusedMedia: planned.unusedMedia || 0 };
+    return { ok: true, doc, total: R1(total), notes: planned.notes, sceneCount: scenes.length,
+      unusedMedia: planned.unusedMedia || 0, warnings: planned.warnings || [], ...(planned.method ? { method: planned.method } : {}) };
+  }
+
+  /* ================= R60 — 예상치 사전 계산 (지시서 §8-1: 미디어 N → 예상 씬·길이) ================= */
+  /* buildProject가 순수 함수라 그대로 드라이런한다 — UI가 만들기 전에 정직한 예상치를 보여준다 */
+  function estimate(compositionId, themeId, input) {
+    const r = buildProject(compositionId, themeId, input);
+    return r.ok ? { ok: true, sceneCount: r.sceneCount, total: r.total, notes: r.notes, warnings: r.warnings || [] }
+      : { ok: false, why: r.why, guide: r.guide, warnings: r.warnings || [] };
   }
 
   /* ================= 감사 — 결정론·스키마 호환·규칙 실동작 ================= */
@@ -398,5 +528,6 @@ window.MK_COMPOSE = (() => {
       supportedRatios: Object.keys(RATIOS), defaultRatio: c.defaultRatio || '16:9' })),
     listThemes: () => THEMES.map((t) => ({ id: t.id, name: t.name, mood: t.mood })),
     KENBURNS, kbState, assignKenburns, varyTransitions, SAFE, applySafeZone,
+    METHODS_BY_RATIO, METHOD_NAMES, estimate,
     analyzeMedia, fitText, textLen, planScenes, buildProject, audit };
 })();

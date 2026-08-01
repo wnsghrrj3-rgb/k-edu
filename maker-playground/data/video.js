@@ -28,7 +28,7 @@ window.MK_VIDEO = (() => {
   /* ---------- 요소의 시각 t 상태 — MK_PLAY 프리셋의 수치판 ----------
      반환 {alpha, dx, dy(px@720), scale, rot(추가 deg), clipW(0~1|null), blur(px)} */
   function stateAt(plan, el, t) {
-    const st = { alpha: 1, dx: 0, dy: 0, scale: 1, rot: 0, clipW: null, blur: 0 };
+    const st = { alpha: 1, dx: 0, dy: 0, scale: 1, rot: 0, clipW: null, clipH: null, blur: 0 };
     if (plan) {
       const raw = (t - plan.delay) / plan.dur;
       if (raw <= 0) { st.alpha = 0; return st; }
@@ -50,6 +50,7 @@ window.MK_VIDEO = (() => {
         else if (p <= 0.78) st.dy = 6 - 9 * (p - 0.55) / 0.23;
         else st.dy = -3 + 3 * (p - 0.78) / 0.22;
       } else if (n === 'mkp-wipe') { st.alpha = 1; st.clipW = p; }
+      else if (n === 'mkp-wipe-v') { st.alpha = 1; st.clipH = p; }
       else if (n === 'mkp-blur') { st.alpha = p; st.blur = (1 - p) * 9; }
       else if (n === 'mkp-rotate') { st.alpha = p; st.rot = -7 * (1 - p); st.scale = 0.94 + 0.06 * p; }
       else st.alpha = p;
@@ -302,6 +303,7 @@ window.MK_VIDEO = (() => {
             const eh = (el.h != null ? el.h / 100 * H : H * 0.2);
             const cx = ex + ew / 2, cy = ey + eh / 2;
             if (st.clipW != null) { ctx.beginPath(); ctx.rect(ex, 0, ew * st.clipW, H); ctx.clip(); }
+            if (st.clipH != null) { ctx.beginPath(); ctx.rect(0, ey, W, eh * st.clipH); ctx.clip(); }
             if (st.blur > 0.2) { try { ctx.filter = `blur(${(st.blur * pxu).toFixed(1)}px)`; } catch (_) {} }
             ctx.translate(cx, cy);
             if (st.rot) ctx.rotate(st.rot * Math.PI / 180);

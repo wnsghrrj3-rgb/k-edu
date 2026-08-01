@@ -30,8 +30,10 @@ const dom = new JSDOM(html, { runScripts: 'outside-only', pretendToBeVisual: tru
 const { window } = dom;
 if (!window.performance) Object.defineProperty(window, 'performance', { value: { now: () => Date.now() } });
 global.window = window; global.document = window.document;
-for (const f of [...html.matchAll(/<script src="([^?"]+)/g)].map((m) => m[1]))
-  window.eval(fs.readFileSync(f, 'utf8'));
+for (const f of [...html.matchAll(/<script src="([^?"]+)/g)].map((m) => m[1])) {
+  if (/^https?:/.test(f) || !fs.existsSync(f.replace(/^\//, ''))) continue; /* 외부 CDN·상위 공용 스크립트는 리포트 범위 밖 */
+  window.eval(fs.readFileSync(f.replace(/^\//, ''), 'utf8'));
+}
 window.document.dispatchEvent(new window.Event('DOMContentLoaded'));
 
 const ENGINES = Object.keys(window).filter((k) => k.startsWith('MK_') && window[k] && typeof window[k] === 'object').sort();

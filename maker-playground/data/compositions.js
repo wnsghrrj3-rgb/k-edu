@@ -36,9 +36,9 @@
     },
   });
 
-  /* ================= Composition 1 · Photo Slideshow ================= */
-  /* 지시서 §5-1: Intro → Title → Photo 반복(분할 대응) → Highlight → Outro
-     사진 1~2장=하이라이트 축소 · 16+ =2분할 · 제목 없으면 Title 생략 */
+  /* ================= Composition 1 · Photo Slideshow (R60 v2) ================= */
+  /* 지시서 2단계 §8: 미디어 수별 구성(1/2/3~5/6~15/16+) · variant 8종 · 비율별 우선순위
+     · 같은 레이아웃 3회 연속 금지 · 미디어별 캡션 · 캡션 없으면 빈 박스 미노출 */
   C.registerComposition({
     id: 'cx-slideshow', name: '포토 슬라이드쇼', category: '사진 영상',
     purpose: '여행·가족·행사·학교 활동 사진을 영상으로',
@@ -47,6 +47,66 @@
     defaultRatio: '16:9',
     audio: { synth: 'beat' },
     reserveTail: 1, /* 마지막 1장은 Highlight 몫 */
+
+    /* ---- variant 8종 정의 (지시서 §8-4) — 프레임은 비율별 override ---- */
+    variantDefs: {
+      'full-bleed': { base: { m: [{ x: 0, y: 0, w: 100, h: 100 }] } },
+      'framed-center': {
+        base: { m: [{ x: 8, y: 8, w: 84, h: 66, radius: 12 }], cap: { x: 8, y: 80, w: 84, align: 'center', maxCh: 20, maxLines: 1 } },
+        byRatio: {
+          '9:16': { m: [{ x: 6, y: 14, w: 88, h: 54, radius: 12 }], cap: { x: 8, y: 72, w: 84, align: 'center', maxCh: 16, maxLines: 1 } },
+          '1:1': { m: [{ x: 8, y: 8, w: 84, h: 62, radius: 12 }], cap: { x: 8, y: 76, w: 84, align: 'center', maxCh: 18, maxLines: 1 } },
+          '4:5': { m: [{ x: 7, y: 8, w: 86, h: 60, radius: 12 }], cap: { x: 8, y: 73, w: 84, align: 'center', maxCh: 18, maxLines: 1 } },
+        } },
+      'media-left-caption-right': { needsCaption: true,
+        base: { m: [{ x: 0, y: 0, w: 58, h: 100 }], cap: { x: 62, y: 42, w: 33, align: 'left', maxCh: 11, maxLines: 3 } } },
+      'media-right-caption-left': { needsCaption: true,
+        base: { m: [{ x: 42, y: 0, w: 58, h: 100 }], cap: { x: 5, y: 42, w: 33, align: 'left', maxCh: 11, maxLines: 3 } } },
+      'highlight-zoom': { bg: 'dark',
+        base: { m: [{ x: 10, y: 16, w: 80, h: 52, radius: 14 }], cap: { x: 8, y: 72, w: 84, align: 'center', maxCh: 16, maxLines: 1 } } },
+      'split-two': { base: { m: [{ x: 0, y: 0, w: 49.5, h: 100 }, { x: 50.5, y: 0, w: 49.5, h: 100 }] } },
+      'stacked-two': { base: { m: [{ x: 0, y: 0, w: 100, h: 49.5 }, { x: 0, y: 50.5, w: 100, h: 49.5 }] } },
+      'collage-three': {
+        base: { m: [{ x: 0, y: 0, w: 58, h: 100 }, { x: 59, y: 0, w: 41, h: 49 }, { x: 59, y: 51, w: 41, h: 49 }] },
+        byRatio: {
+          '9:16': { m: [{ x: 0, y: 0, w: 100, h: 49 }, { x: 0, y: 51, w: 49, h: 49 }, { x: 51, y: 51, w: 49, h: 49 }] },
+          '4:5': { m: [{ x: 0, y: 0, w: 100, h: 49 }, { x: 0, y: 51, w: 49, h: 49 }, { x: 51, y: 51, w: 49, h: 49 }] },
+        } },
+    },
+
+    /* ---- 배치 계획 (지시서 §8-3) — r장을 어떤 variant로 몇 장씩 ---- */
+    mediaPlan(r, ratio, captions, start) {
+      const cap = (k) => String((captions || [])[start + k] || '').trim();
+      const singles = ({
+        '16:9': ['full-bleed', 'media-left-caption-right', 'framed-center', 'media-right-caption-left'],
+        '9:16': ['full-bleed', 'framed-center', 'highlight-zoom'],
+        '1:1': ['framed-center', 'full-bleed'],
+        '4:5': ['framed-center', 'full-bleed'],
+      })[ratio] || ['full-bleed', 'framed-center'];
+      const two = ({ '16:9': 'split-two', '1:1': 'split-two', '9:16': 'stacked-two', '4:5': 'stacked-two' })[ratio] || 'split-two';
+      const seq = [];
+      let used = 0, si = 0, lastV = null, run = 0;
+      while (used < r) {
+        const left = r - used;
+        /* 16장 이상 = 2분할·3콜라주 리듬 섞기 — 미디어를 버리지 않고 흡수 (§8-3) */
+        if (r >= 16) {
+          const pos = seq.length % 6;
+          if (pos === 2 && left >= 3) { seq.push({ variant: two, take: 2 }); used += 2; lastV = two; run = 1; continue; }
+          if (pos === 5 && left >= 4) { seq.push({ variant: 'collage-three', take: 3 }); used += 3; lastV = 'collage-three'; run = 1; continue; }
+        }
+        /* 단일 — 순환 · 캡션형은 캡션 있을 때만 · 같은 레이아웃 3회 연속 금지 (§8-3·§8-4) */
+        let v = singles[si % singles.length]; si++;
+        const hasCap = !!cap(used);
+        if (/caption/.test(v) && !hasCap) v = singles.find((x) => !/caption/.test(x)) || 'full-bleed';
+        if (hasCap && v === 'full-bleed') /* 캡션 있는 사진 = 캡션 슬롯 있는 레이아웃으로 (§8-7) */
+          v = singles.find((x) => /caption/.test(x)) || singles.find((x) => x !== 'full-bleed') || v;
+        if (v === lastV && run >= 2) v = singles.find((x) => x !== lastV && (!/caption/.test(x) || cap(used))) || (lastV === 'full-bleed' ? 'framed-center' : 'full-bleed');
+        if (v === lastV) run++; else { lastV = v; run = 1; }
+        seq.push({ variant: v, take: 1 }); used++;
+      }
+      return seq;
+    },
+
     scenes: [
       { id: 'ss-intro', role: 'intro', name: '인트로', required: true, bg: 'dark',
         duration: { default: 2, min: 1.5, max: 2.5, mode: 'fixed' },
@@ -59,16 +119,11 @@
           { id: 't1', role: 'headline', bind: 'title', maxCh: 12, maxLines: 2, frame: { x: 8, y: 36, w: 84 }, align: 'center' },
           { id: 't2', role: 'body', bind: 'subtitle', defaultText: '', required: false, maxCh: 22, maxLines: 1, frame: { x: 8, y: 62, w: 84 }, align: 'center' },
         ] },
-      { id: 'ss-photo', role: 'media', name: '사진', required: true, repeatable: true,
-        mediaPerScene: 1, multiThreshold: 16, multiSlots: 2,
-        variants: ['base', 'mirror'], mediaAnim: 'fade',
+      { id: 'ss-photo', role: 'media', name: '사진', required: true, repeatable: true, usePlan: true,
+        mediaPerScene: 1, mediaAnim: 'fade',
         duration: { default: 3, min: 2, max: 4, mode: 'media-aware' },
         singleFrame: { x: 0, y: 0, w: 100, h: 100 },
-        mediaSlots: [
-          { id: 'm1', frame: { x: 0, y: 0, w: 100, h: 100 } },
-          { id: 'm2', required: false, frame: { x: 51, y: 0, w: 49, h: 100 } },
-        ],
-        layoutByRatio: { '9:16': { mediaSlots: [ { id: 'm1', frame: { x: 0, y: 0, w: 100, h: 100 } }, { id: 'm2', required: false, frame: { x: 0, y: 51, w: 100, h: 49 } } ] } },
+        mediaSlots: [{ id: 'm1', frame: { x: 0, y: 0, w: 100, h: 100 } }],
         textSlots: [] },
       { id: 'ss-high', role: 'highlight', name: '하이라이트', required: false, needs: 'media', bg: 'dark',
         duration: { default: 4, min: 3, max: 5, mode: 'fixed' },
@@ -161,36 +216,74 @@
   });
 
   /* ================= Composition 4 · Before & After ================= */
-  /* 미디어 2장 = 1쌍 · 좌우(16:9)/상하(9:16) 비교 · 홀수 장 = 단독 축소 */
+  /* ================= Composition 4 · Before & After (R60 v2 — Pair 단위) ================= */
+  /* 지시서 2단계 §9: 전후는 평면 배열이 아니라 쌍(ComparisonPair)으로 관리.
+     비교 방식 = sequential·side-by-side·top-bottom·wipe-h/v·fade-between (비율별 지원표 — 엔진 METHODS_BY_RATIO).
+     slider-reveal은 영상이 비대화형이라 정직 미지원(wipe가 그 역할). 누락 쌍 = 완성 비교로 위장 금지. */
   C.registerComposition({
     id: 'cx-beforeafter', name: '비포 & 애프터', category: '비교',
     purpose: '변화·개선·학습 결과를 전후로 비교',
     recommendedMediaCount: { min: 2, max: 12, ideal: 6 },
     recommendedDuration: { min: 10, max: 60, default: 25 },
     defaultRatio: '16:9', audio: { synth: 'beat' },
+    pairMode: true,
     scenes: [
       { id: 'ba-intro', role: 'intro', name: '인트로', required: true, bg: 'dark',
         duration: { default: 2, min: 1.5, max: 2.5, mode: 'fixed' },
         textSlots: [{ id: 't1', role: 'headline', bind: 'title', defaultText: '변화의 순간', maxCh: 12, maxLines: 2, frame: { x: 8, y: 40, w: 84 }, align: 'center' }] },
-      { id: 'ba-pair', role: 'comparison', name: '비교', required: true, repeatable: true,
-        mediaPerScene: 2, variants: ['base'], mediaAnim: 'wipe',
+      /* 전·후 단독 씬 — 동일 프레임·동일 라벨 위치 (§9-6 정렬) */
+      { id: 'ba-solo', role: 'media', name: '장면', pairOnly: true, bg: 'dark',
+        duration: { default: 2.5, min: 2, max: 3.5, mode: 'media-aware' },
+        singleFrame: { x: 0, y: 0, w: 100, h: 100 },
+        mediaSlots: [{ id: 'm1', frame: { x: 0, y: 0, w: 100, h: 100 } }],
+        textSlots: [
+          { id: 'lb', role: 'subheadline', bind: 'label', maxCh: 4, maxLines: 1, frame: { x: 5, y: 6, w: 20 } },
+          { id: 'pt', role: 'caption', bind: 'pairTitle', required: false, maxCh: 16, maxLines: 1, frame: { x: 8, y: 84, w: 84 }, align: 'center' },
+          { id: 'ic', role: 'caption', bind: 'incomplete', required: false, maxCh: 10, maxLines: 1, frame: { x: 66, y: 6, w: 29 }, align: 'right' },
+        ] },
+      /* 변신 씬 — 전 사진 위로 후 사진이 wipe/fade 리빌 (엔진이 슬롯별 anim 주입, KB 제외) */
+      { id: 'ba-transform', role: 'transform', name: '변신', pairOnly: true, bg: 'dark',
+        duration: { default: 3, min: 2.5, max: 4, mode: 'fixed' },
+        mediaSlots: [
+          { id: 'base', frame: { x: 0, y: 0, w: 100, h: 100 } },
+          { id: 'reveal', required: false, frame: { x: 0, y: 0, w: 100, h: 100 } },
+        ],
+        textSlots: [{ id: 'la', role: 'subheadline', bind: 'label', maxCh: 4, maxLines: 1, frame: { x: 5, y: 6, w: 20 } }] },
+      /* 좌우 비교 — 동일 크기·동일 fit·라벨 위치 통일 (§9-6) */
+      { id: 'ba-split-h', role: 'comparison', name: '비교', pairOnly: true,
         duration: { default: 4, min: 3, max: 5, mode: 'fixed' },
-        singleFrame: { x: 15, y: 8, w: 70, h: 74, radius: 10 },
         mediaSlots: [
           { id: 'before', frame: { x: 1.5, y: 8, w: 47.5, h: 74, radius: 10 } },
           { id: 'after', required: false, frame: { x: 51, y: 8, w: 47.5, h: 74, radius: 10 } },
         ],
-        layoutByRatio: { '9:16': { mediaSlots: [
-          { id: 'before', frame: { x: 5, y: 4, w: 90, h: 44, radius: 10 } },
-          { id: 'after', required: false, frame: { x: 5, y: 50, w: 90, h: 44, radius: 10 } },
+        layoutByRatio: { '1:1': { mediaSlots: [
+          { id: 'before', frame: { x: 2, y: 18, w: 47, h: 56, radius: 10 } },
+          { id: 'after', required: false, frame: { x: 51, y: 18, w: 47, h: 56, radius: 10 } },
         ],
           textSlots: [
-            { id: 'lb', role: 'caption', defaultText: '전', maxCh: 4, maxLines: 1, frame: { x: 8, y: 5.5, w: 12 } },
-            { id: 'la', role: 'caption', defaultText: '후', maxCh: 4, maxLines: 1, frame: { x: 8, y: 51.5, w: 12 } },
+            { id: 'lb', role: 'caption', defaultText: '전', maxCh: 4, maxLines: 1, frame: { x: 4, y: 78, w: 20 } },
+            { id: 'la', role: 'caption', defaultText: '후', maxCh: 4, maxLines: 1, frame: { x: 53, y: 78, w: 20 } },
+            { id: 'rs', role: 'subheadline', bind: 'pairResult', required: false, maxCh: 16, maxLines: 1, frame: { x: 8, y: 6, w: 84 }, align: 'center' },
           ] } },
         textSlots: [
           { id: 'lb', role: 'caption', defaultText: '전', maxCh: 4, maxLines: 1, frame: { x: 4, y: 86, w: 20 } },
           { id: 'la', role: 'caption', defaultText: '후', maxCh: 4, maxLines: 1, frame: { x: 53, y: 86, w: 20 } },
+          { id: 'rs', role: 'subheadline', bind: 'pairResult', required: false, maxCh: 16, maxLines: 1, frame: { x: 8, y: 1, w: 84 }, align: 'center' },
+        ] },
+      /* 상하 비교 — 9:16·4:5 (§9-5 비율별 기본) */
+      { id: 'ba-split-v', role: 'comparison', name: '비교', pairOnly: true,
+        duration: { default: 4, min: 3, max: 5, mode: 'fixed' },
+        mediaSlots: [
+          { id: 'before', frame: { x: 5, y: 4, w: 90, h: 44, radius: 10 } },
+          { id: 'after', required: false, frame: { x: 5, y: 50, w: 90, h: 44, radius: 10 } },
+        ],
+        layoutByRatio: { '4:5': { mediaSlots: [
+          { id: 'before', frame: { x: 4, y: 5, w: 92, h: 42, radius: 10 } },
+          { id: 'after', required: false, frame: { x: 4, y: 52, w: 92, h: 42, radius: 10 } },
+        ] } },
+        textSlots: [
+          { id: 'lb', role: 'caption', defaultText: '전', maxCh: 4, maxLines: 1, frame: { x: 8, y: 5.5, w: 12 } },
+          { id: 'la', role: 'caption', defaultText: '후', maxCh: 4, maxLines: 1, frame: { x: 8, y: 51.5, w: 12 } },
         ] },
       { id: 'ba-result', role: 'highlight', name: '결과', required: false, needs: 'result', bg: 'accent',
         duration: { default: 3, min: 2, max: 4, mode: 'content-aware' },

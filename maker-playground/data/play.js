@@ -23,6 +23,7 @@ window.MK_PLAY = (() => {
 @keyframes mkp-pop    { 0% { opacity:0; transform:scale(.6) } 70% { opacity:1; transform:scale(1.06) } 100% { opacity:1; transform:scale(1) } }
 @keyframes mkp-bounce { 0% { opacity:0; transform:translateY(-34px) } 55% { opacity:1; transform:translateY(6px) } 78% { transform:translateY(-3px) } 100% { opacity:1; transform:none } }
 @keyframes mkp-wipe   { from { clip-path:inset(0 100% 0 0); opacity:1 } to { clip-path:inset(0 0 0 0); opacity:1 } }
+@keyframes mkp-wipe-v { from { clip-path:inset(0 0 100% 0); opacity:1 } to { clip-path:inset(0 0 0 0); opacity:1 } }
 @keyframes mkp-blur   { from { opacity:0; filter:blur(9px) } to { opacity:1; filter:blur(0) } }
 @keyframes mkp-rotate { from { opacity:0; transform:rotate(-7deg) scale(.94) } to { opacity:1; transform:none } }
 @keyframes mkp-idle-float { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-5px) } }
@@ -46,7 +47,9 @@ window.MK_PLAY = (() => {
     if (preset === 'none') return null;
     if (!PRESET_KEYS.includes(preset)) preset = 'fade';
     const dir = a.direction || 'up';
-    const name = preset === 'slide' ? `mkp-slide-${['up', 'down', 'left', 'right'].includes(dir) ? dir : 'up'}` : `mkp-${preset}`;
+    const name = preset === 'slide' ? `mkp-slide-${['up', 'down', 'left', 'right'].includes(dir) ? dir : 'up'}`
+      : preset === 'wipe' && (dir === 'up' || dir === 'down') ? 'mkp-wipe-v' /* R60 — 세로 리빌(전후 비교) */
+      : `mkp-${preset}`;
     return {
       name,
       delay: clamp(a.delay != null ? +a.delay : i * 0.15, 0, 8),
