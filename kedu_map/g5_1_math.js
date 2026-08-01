@@ -14,14 +14,14 @@ window.KEDU_MAP["g5_1_math"] = {
    "kind": "unit",
    "lessons": [
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u1_l01",
+     "lessonId": "g5_math_u1_l01_v1",
      "n": "1",
      "title": "자연수의 혼합 계산을 만나 보자",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/1단원_자연수의혼합계산/g5_math_u1_l01_자연수의혼합계산을만나보자.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": "g5_math_u1_l02",
@@ -34,74 +34,74 @@ window.KEDU_MAP["g5_1_math"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u1_l03",
+     "lessonId": "g5_math_u1_l03_v1",
      "n": "3",
      "title": "곱셈과 나눗셈이 섞여 있는 식을 계산해요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/1단원_자연수의혼합계산/g5_math_u1_l03_곱셈과나눗셈이섞여있는식을계산해요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u1_l04",
+     "lessonId": "g5_math_u1_l04_v1",
      "n": "4",
      "title": "덧셈, 뺄셈, 곱셈이 섞여 있는 식을 계산해요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/1단원_자연수의혼합계산/g5_math_u1_l04_덧셈뺄셈곱셈이섞여있는식을계산해요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u1_l05",
+     "lessonId": "g5_math_u1_l05_v1",
      "n": "5",
      "title": "덧셈, 뺄셈, 나눗셈이 섞여 있는 식을 계산해요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/1단원_자연수의혼합계산/g5_math_u1_l05_덧셈뺄셈나눗셈이섞여있는식을계산해요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u1_l06",
+     "lessonId": "g5_math_u1_l06_v1",
      "n": "6",
      "title": "( )가 있는 식을 계산해요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/1단원_자연수의혼합계산/g5_math_u1_l06_괄호가있는식을계산해요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u1_l07",
+     "lessonId": "g5_math_u1_l07_v1",
      "n": "7",
      "title": "덧셈, 뺄셈, 곱셈, 나눗셈이 섞여 있는 식을 계산해요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/1단원_자연수의혼합계산/g5_math_u1_l07_사칙연산이섞여있는식을계산해요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u1_l08",
+     "lessonId": "g5_math_u1_l08_v1",
      "n": "8",
      "title": "궁금해! 내가 내는 세금",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/1단원_자연수의혼합계산/g5_math_u1_l08_궁금해내가내는세금.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u1_l09",
+     "lessonId": "g5_math_u1_l09_v1",
      "n": "9",
      "title": "스스로 마무리해요 (단원 평가)",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/1단원_자연수의혼합계산/g5_math_u1_l09_스스로마무리해요.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   },
