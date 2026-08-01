@@ -232,7 +232,15 @@
   const FooterBar = () => {
     const m = M(), d = doc(), sc = scene();
     const timeline = WS.mode === 'video'
-      ? `<div class="ws-timeline">${d.scenes.map((s, i) => `<button class="tl ${i === WS.sceneIdx ? 'on' : ''}" style="flex:${s.duration || 3}" data-ws-sc="${i}"><small>${i + 1}</small><span>${s.duration || 3}s</span></button>`).join('')}</div>`
+      ? `<div class="ws-timeline">${d.scenes.map((s, i) => {
+          const t = s.duration || 3;
+          /* R58 — 선택 칩 그 자리 시간 조절 */
+          const inner = i === WS.sceneIdx
+            ? `<small>${i + 1}</small><span class="mk-durctl" data-stop><button data-ws-dm="${i}">−</button><input type="number" step="0.5" min="1" max="30" value="${t}" data-ws-dv="${i}">s<button data-ws-dp="${i}">＋</button></span>`
+            : `<small>${i + 1}</small><span>${t}s</span>`;
+          const tag = i === WS.sceneIdx ? 'div' : 'button'; /* button 중첩 분해 방지 */
+          return `<${tag} class="tl ${i === WS.sceneIdx ? 'on' : ''}" style="flex:${t}" data-ws-sc="${i}">${inner}</${tag}>`;
+        }).join('')}</div>`
       : '';
     return `<div class="ws-footer">
       <div class="modes">${MODES.map(([k, n]) => `<button class="${WS.mode === k ? 'on' : ''}" data-ws-mode="${k}">${n}</button>`).join('')}</div>
@@ -410,7 +418,20 @@
 
       /* 좌 내비 */
       root.querySelectorAll('[data-ws-nav]').forEach((b) => b.onclick = () => { WS.nav = b.dataset.wsNav; R(); });
-      root.querySelectorAll('[data-ws-sc]').forEach((b) => b.onclick = () => { WS.sceneIdx = +b.dataset.wsSc; WS.sel = { type: 'scene' }; R(); });
+      /* R58 — 씬 길이 그 자리 조절 (undo 적립) */
+      const setDur = (i, v) => {
+        snap();
+        doc().scenes[i].duration = Math.round(Math.min(30, Math.max(1, v)) * 10) / 10;
+        R();
+      };
+      root.querySelectorAll('[data-ws-dm]').forEach((b) => b.onclick = (ev) => { ev.stopPropagation(); const i = +b.dataset.wsDm; setDur(i, (doc().scenes[i].duration || 3) - 0.5); });
+      root.querySelectorAll('[data-ws-dp]').forEach((b) => b.onclick = (ev) => { ev.stopPropagation(); const i = +b.dataset.wsDp; setDur(i, (doc().scenes[i].duration || 3) + 0.5); });
+      root.querySelectorAll('[data-ws-dv]').forEach((inp) => {
+        inp.onclick = (ev) => ev.stopPropagation();
+        inp.onchange = (ev) => { ev.stopPropagation(); setDur(+inp.dataset.wsDv, +inp.value || 3); };
+      });
+      root.querySelectorAll('[data-ws-sc]').forEach((b) => b.onclick = (ev) => {
+        if (ev && ev.target && ev.target.closest && ev.target.closest('[data-stop]')) return; WS.sceneIdx = +b.dataset.wsSc; WS.sel = { type: 'scene' }; R(); });
       root.querySelectorAll('[data-ws-tpl]').forEach((b) => b.onclick = () => m.Modal.open(`<h2>템플릿 적용</h2><p style="font:var(--mk-t-body-sm);color:var(--mk-text-secondary);margin-top:6px">현재 프로젝트에 스타일 적용 — 후속 단계예요.</p><div style="display:flex;justify-content:flex-end;margin-top:12px">${m.Button({ label: '확인', size: 'sm', attrs: 'onclick="MK.Modal.close()"' })}</div>`));
       root.querySelectorAll('[data-ws-asset]').forEach((b) => b.onclick = () => {
         snap();

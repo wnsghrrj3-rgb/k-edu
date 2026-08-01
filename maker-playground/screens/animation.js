@@ -113,11 +113,20 @@
       const total = Math.max(s.duration || 3, 1);
       const inW = Math.min(90, s.anim.enter.duration / total * 100);
       const outW = Math.min(90 - inW, s.anim.exit.duration / total * 100);
-      return `<button class="tl ${i === ST.sceneIdx ? 'on' : ''}" style="flex:${total}" data-an-sc="${i}">
+      /* R58 — 선택 칩에는 그 자리 시간 조절(−/입력/+), 나머지는 클릭=선택 */
+      const dur = i === ST.sceneIdx
+        ? `<small>${i + 1} ·</small><span class="mk-durctl" data-stop>
+             <button data-an-dm="${i}" title="0.5초 줄이기">−</button>
+             <input type="number" step="0.5" min="1" max="30" value="${total}" data-an-dv="${i}">s
+             <button data-an-dp="${i}" title="0.5초 늘리기">＋</button></span>`
+        : `<small>${i + 1} · ${total}s</small>`;
+      /* 선택 칩은 div — button 중첩은 HTML 파서가 분해한다 */
+      const tag = i === ST.sceneIdx ? 'div' : 'button';
+      return `<${tag} class="tl ${i === ST.sceneIdx ? 'on' : ''}" style="flex:${total}" data-an-sc="${i}">
         <span class="seg in" style="width:${inW}%" title="Enter"></span>
         <span class="seg idle" style="width:${Math.max(4, 100 - inW - outW)}%" title="Idle"></span>
         <span class="seg out" style="width:${outW}%" title="Exit"></span>
-        <small>${i + 1} · ${total}s</small></button>`;
+        ${dur}</${tag}>`;
     }).join('')}
     <div class="legend"><span class="k in"></span>Enter <span class="k idle"></span>Idle <span class="k out"></span>Exit</div></div>`;
   };
@@ -175,8 +184,23 @@
         R();
       });
 
-      /* Timeline 씬 선택 */
-      root.querySelectorAll('[data-an-sc]').forEach((b) => b.onclick = () => { stopPlay(); ST.sceneIdx = +b.dataset.anSc; ST.selEl = null; R(); });
+      /* Timeline 씬 선택 — 조절 컨트롤 클릭은 선택으로 번지지 않게 */
+      root.querySelectorAll('[data-an-sc]').forEach((b) => b.onclick = (ev) => {
+        if (ev && ev.target && ev.target.closest && ev.target.closest('[data-stop]')) return;
+        stopPlay(); ST.sceneIdx = +b.dataset.anSc; ST.selEl = null; R();
+      });
+      /* R58 — 씬 길이 그 자리 조절 (0.5초 단위, 1~30초 클램프) */
+      const setDur = (i, v) => {
+        const sc2 = docd().scenes[i];
+        sc2.duration = Math.round(Math.min(30, Math.max(1, v)) * 10) / 10;
+        R();
+      };
+      root.querySelectorAll('[data-an-dm]').forEach((b) => b.onclick = (ev) => { ev.stopPropagation(); const i = +b.dataset.anDm; setDur(i, (docd().scenes[i].duration || 3) - 0.5); });
+      root.querySelectorAll('[data-an-dp]').forEach((b) => b.onclick = (ev) => { ev.stopPropagation(); const i = +b.dataset.anDp; setDur(i, (docd().scenes[i].duration || 3) + 0.5); });
+      root.querySelectorAll('[data-an-dv]').forEach((inp) => {
+        inp.onclick = (ev) => ev.stopPropagation();
+        inp.onchange = (ev) => { ev.stopPropagation(); setDur(+inp.dataset.anDv, +inp.value || 3); };
+      });
     },
   };
 })();
