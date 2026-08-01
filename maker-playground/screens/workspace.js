@@ -113,27 +113,31 @@
 
   /* ================= 중앙: Canvas ================= */
   const BASE_W = 560;
+  /* R55 — 선택 핸들: 코너 4 + 좌우변 2 (리사이즈는 MK_LIVE.resizeTo, #/editor R36 동일 규약) */
+  const WSHD = '<i class="ws-hd tl"></i><i class="ws-hd tr"></i><i class="ws-hd bl"></i><i class="ws-hd br"></i><i class="ws-hd ml"></i><i class="ws-hd mr"></i>';
   const CanvasArea = () => {
     const sc = scene();
     const CW = Math.round(BASE_W * WS.zoom / 100), CH = Math.round(CW * sc.height / sc.width);
     const els = sc.elements.map((el, i) => {
       const on = WS.sel && WS.sel.idx === i && WS.sel.type !== 'scene' ? 'sel' : '';
+      const hd = on ? WSHD : '';
       if (el.kind === 'text') {
         const fs = (el.size / 100 * CH).toFixed(1);
-        return `<div class="ws-el text ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight || 400}${el.color ? `;color:${el.color}` : ''}${el.align ? `;text-align:${el.align}` : ''}">${M().esc(el.text).replace(/\n/g, '<br>')}</div>`;
+        return `<div class="ws-el text ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight || 400}${el.color ? `;color:${el.color}` : ''}${el.align ? `;text-align:${el.align}` : ''}">${M().esc(el.text).replace(/\n/g, '<br>')}${hd}</div>`;
       }
       if (el.src) {                                    /* R45 — Workspace도 실이미지·실영상 표시 (R36 editor와 동일) */
         const fit = el.fit === 'contain' ? 'contain' : 'cover';
         const media = (el.video === true || el.kind === 'video' || /^data:video\//.test(el.src))
           ? `<video class="ws-media" src="${el.src}" muted autoplay loop playsinline style="width:100%;height:100%;object-fit:${fit};display:block"></video>`
           : `<img class="ws-media" src="${el.src}" alt="${M().esc(el.label || '')}" draggable="false" style="width:100%;height:100%;object-fit:${fit};display:block">`;
-        return `<div class="ws-el media ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;overflow:hidden">${media}</div>`;
+        /* R55 — overflow 클립을 내부 span으로 옮겨 음수 오프셋 핸들이 잘리지 않게 */
+        return `<div class="ws-el media ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%"><span class="ws-clip">${media}</span>${hd}</div>`;
       }
       if (el.fill) {                                   /* R45 — 색 채움 요소 (자막 바 등) 실표시 · R49 radius */
         const rad = el.radius ? `;border-radius:${(el.radius * CW / sc.width).toFixed(1)}px` : '';
-        return `<div class="ws-el media ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;background:${el.fill}${rad}"></div>`;
+        return `<div class="ws-el media ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;background:${el.fill}${rad}">${hd}</div>`;
       }
-      return `<div class="ws-el box ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%"><span>${M().esc(el.label || '요소')}</span></div>`;
+      return `<div class="ws-el box ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%"><span>${M().esc(el.label || '요소')}</span>${hd}</div>`;
     }).join('');
     return `<div class="ws-canvaswrap"><div class="ws-canvas ${WS.mode === 'photo' ? 'photo' : ''}" data-ws-canvas style="width:${CW}px;height:${CH}px;background:${sc.background}">${els}</div></div>`;
   };
@@ -410,6 +414,67 @@
       });
       const cv = root.querySelector('[data-ws-canvas]');
       if (cv) cv.onclick = () => { WS.sel = { type: 'scene' }; R(); };
+
+      /* R55 — 실편집: 드래그 이동 + 핸들 리사이즈 (MK_LIVE 재사용, #/editor R36 동일 규약) */
+      const L = window.MK_LIVE;
+      if (cv && L) {
+        const selType = (el) => el.kind === 'text' ? 'text'
+          : (el.video === true || el.kind === 'video' || (el.label || '').includes('영상')) ? 'video'
+          : (el.label || '').includes('도형') ? 'shape' : 'image';
+        const GEO = ['x', 'y', 'w', 'h', 'size'];
+        const pickGeo = (el) => { const o = {}; GEO.forEach((k) => { if (el[k] != null) o[k] = el[k]; }); return o; };
+        const paint = (n, el) => {
+          n.style.left = el.x + '%'; n.style.top = el.y + '%'; n.style.width = el.w + '%';
+          if (el.kind !== 'text' && el.h != null) n.style.height = el.h + '%';
+          if (el.kind === 'text' && el.size != null) n.style.fontSize = (el.size / 100 * cv.clientHeight).toFixed(1) + 'px';
+        };
+        let ges = null, swallow = false;
+        cv.addEventListener('pointerdown', (ev) => {
+          if (ev.button !== undefined && ev.button !== 0) return;
+          const t = ev.target;
+          const hd = t.closest && t.closest('.ws-hd');
+          const elDom = t.closest && t.closest('[data-ws-el]');
+          if (!elDom) return;
+          const i = +elDom.dataset.wsEl;
+          const el = scene().elements[i]; if (!el) return;
+          WS.sel = { type: selType(el), idx: i };
+          ges = { i, type: hd ? 'resize' : 'move',
+            handle: hd ? [...hd.classList].find((c) => c !== 'ws-hd') : null,
+            start: pickGeo(el), sx: ev.clientX, sy: ev.clientY,
+            rect: cv.getBoundingClientRect(), moved: false,
+            pre: JSON.stringify(doc().scenes) };            /* 되돌릴 지점 = 제스처 시작 상태 */
+          if (cv.setPointerCapture && ev.pointerId != null) { try { cv.setPointerCapture(ev.pointerId); } catch (_) {} }
+          ev.preventDefault();
+        });
+        const onGesMove = (ev) => {
+          if (!ges) return;
+          const el = scene().elements[ges.i]; if (!el) { ges = null; return; }
+          const dx = (ev.clientX - ges.sx) / (ges.rect.width || 1) * 100;
+          const dy = (ev.clientY - ges.sy) / (ges.rect.height || 1) * 100;
+          if (Math.abs(dx) + Math.abs(dy) > 0.15) ges.moved = true;
+          if (ges.type === 'move') {
+            L.dragTo(el, ges.start.x, ges.start.y, dx, dy);
+            L.snap(el, scene().elements.filter((_, j) => j !== ges.i)); /* 자석 정렬 */
+          } else L.resizeTo(el, ges.handle, ges.start, dx, dy, { aspect: ev.shiftKey });
+          const n = cv.querySelector(`[data-ws-el="${ges.i}"]`);
+          if (n) paint(n, el);
+        };
+        const onGesUp = () => {
+          if (!ges) return;
+          const g = ges; ges = null;
+          if (g.moved) {
+            WS.undo.push(g.pre); if (WS.undo.length > 30) WS.undo.shift(); WS.redo = [];
+            swallow = true;                                 /* 제스처 직후 합성 click 무시 */
+          }
+          R();
+        };
+        cv.addEventListener('pointermove', onGesMove);
+        cv.addEventListener('pointerup', onGesUp);
+        cv.addEventListener('pointercancel', onGesUp);
+        cv.addEventListener('click', (e2) => { if (swallow && e2.target !== cv) { swallow = false; e2.stopPropagation(); } }, true);
+        const cvClick = cv.onclick;
+        cv.onclick = (e2) => { if (swallow) { swallow = false; return; } if (cvClick) cvClick(e2); };
+      }
 
       /* Context Panel */
       const txt = root.querySelector('[data-ws-txt]');
