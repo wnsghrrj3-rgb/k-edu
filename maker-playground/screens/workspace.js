@@ -53,7 +53,7 @@
     const m = M(), p = proj();
     return `<div class="ws-top">
       ${m.IconButton({ icon: '←', tip: '내 프로젝트로', attrs: 'data-ws="back"' })}
-      <div class="pjname"><b>${m.esc(p.name)}</b><small id="wsSave">${WS.savedAt ? '저장됨 · ' + WS.savedAt : '저장 안 함'}</small></div>
+      <div class="pjname"><b>${m.esc(p.name)}</b><small id="wsSave">${WS.savedAt ? '자동 저장됨 · ' + WS.savedAt : '자동 저장 대기'}</small></div>
       <div class="quick">${QUICK.map(([k, l]) => `<button class="qk" data-ws-q="${k}">${l}</button>`).join('')}</div>
       <span class="grow"></span>
       ${m.IconButton({ icon: '↺', tip: '실행 취소', attrs: `data-ws="undo" ${WS.undo.length ? '' : 'disabled'}` })}
@@ -287,7 +287,17 @@
     },
     mount(root) {
       const m = M();
-      const R = () => PG.render();
+      const R = () => {
+        /* R59 — 모든 편집 경로가 R()를 지나므로 여기서 디바운스 자동 저장 */
+        if (window.MK_LIVE) window.MK_LIVE.autosave(doc(), {
+          onSaved() {
+            WS.savedAt = new Date().toTimeString().slice(0, 5);
+            const el = document.getElementById('wsSave');
+            if (el) el.textContent = '자동 저장됨 · ' + WS.savedAt;
+          },
+        });
+        PG.render();
+      };
 
       /* 상단 */
       const act = {

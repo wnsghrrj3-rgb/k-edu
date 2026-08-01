@@ -15,9 +15,18 @@
   /* 대상 문서: 현재 프로젝트가 있으면 그것, 없으면 영상 샘플 사본 */
   const ST = { docRef: null, sceneIdx: 0, selEl: null, playing: false, phase: '—', slot: 'enter', cancel: null };
   function docd() {
-    if (ST.docRef) return ST.docRef;
+    /* R59 — 항상 현재 프로젝트를 추적. 캐시 고정이 「편집이 반영 안 됨」의 원인이었다.
+       프로젝트가 바뀌면 씬 인덱스·선택 초기화, 프로젝트가 없을 때만 샘플 사본. */
     const cur = window.MK_PROJ.current();
-    ST.docRef = cur ? cur.doc : JSON.parse(JSON.stringify(window.MK_SAMPLE.TEMPLATES.find((t) => t.contentType === 'video')));
+    if (cur) {
+      if (ST.docRef !== cur.doc) { ST.docRef = cur.doc; ST.sceneIdx = 0; ST.selEl = null; }
+      return ST.docRef;
+    }
+    if (!ST.docRef || ST.docRef.__sample !== true) {
+      ST.docRef = JSON.parse(JSON.stringify(window.MK_SAMPLE.TEMPLATES.find((t) => t.contentType === 'video')));
+      ST.docRef.__sample = true;
+      ST.sceneIdx = 0; ST.selEl = null;
+    }
     return ST.docRef;
   }
   const scene = () => {
@@ -139,7 +148,11 @@
         <div class="an-shell">${Gallery()}<div class="an-main">${Stage()}${Timeline()}</div>${Panel()}</div>`;
     },
     mount(root) {
-      const R = () => PG.render();
+      const R = () => {
+        /* R59 — 편집 디바운스 자동 저장 (샘플 편집은 저장 대상 아님) */
+        if (window.MK_LIVE && window.MK_PROJ.current()) window.MK_LIVE.autosave(docd());
+        PG.render();
+      };
       const stopPlay = () => { if (ST.cancel) { ST.cancel(); ST.cancel = null; } ST.playing = false; ST.phase = '—'; };
 
       /* Play */
