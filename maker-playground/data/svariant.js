@@ -15,7 +15,8 @@
    · 사용자 역할(mediaRoles)만 반영: highlight(중요)·start(시작)·
      end(마지막)·exclude(제외). 제외해도 원본 목록은 무손상.
 
-   Randomize·seed·잠금·source 추적·Builder UI 연결은 R66.
+   Randomize·seed·잠금·source 추적·Builder UI 연결은 R66 (MK_SVARX).
+   R66 add-only: balancePlan(…, rnd) · buildSmart(opt.seed·opt._draft).
    ============================================================ */
 window.MK_SVAR = (() => {
   'use strict';
@@ -32,6 +33,31 @@ window.MK_SVAR = (() => {
     DUR_FLOOR: 1.5,         /* 길이 압축 하한(초) — 가독성 보호 */
     SHRINK_FLOOR: 0.6,      /* 압축 최대 비율 */
   };
+
+  /* ================= 시드 난수 (R66 §22 — 재현 가능한 무작위) ================= */
+  /* Math.random 금지: 같은 seed = 같은 구성. 저장·공유·되돌리기가 성립하려면
+     무작위도 재현 가능해야 한다(정직 원칙 — "다시 누르면 달라짐"은 seed 변경으로만). */
+  function hashSeed(v) {
+    const str = String(v == null ? '' : v);
+    let h = 2166136261 >>> 0;
+    for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+    return h >>> 0;
+  }
+  function makeRng(seed) {
+    let a = hashSeed(seed) || 1;
+    const next = () => { a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+    return { seed: String(seed), next, int: (n) => Math.floor(next() * Math.max(1, n)),
+      pick: (arr) => arr[Math.floor(next() * arr.length)] };
+  }
+  /* Fisher–Yates — 원본 무손상 사본 반환 */
+  function shuffled(arr, rnd) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) { const j = rnd.int(i + 1); const t = a[i]; a[i] = a[j]; a[j] = t; }
+    return a;
+  }
 
   /* ================= 입력 미디어 통계 (§13 분석 범위) ================= */
   function mediaStats(input) {
@@ -103,7 +129,11 @@ window.MK_SVAR = (() => {
   /* ================= Variant 선택 (§7 — 결정론, 무작위 금지) ================= */
   /* 순서: ① 사용자 지정 → ② 조건 전부 일치 → ③ 최고 점수 → ④ priority → ⑤ 기본 */
   function selectVariant(templateId, stats, opt) {
-    const defs = VARS[templateId] || [];
+    return selectFrom(VARS[templateId] || [], stats, opt);
+  }
+  /* R66 — 레지스트리 밖의 정의 목록으로도 같은 규칙을 돌린다 (Builder 초안 테스트 §25) */
+  function selectFrom(defs0, stats, opt) {
+    const defs = defs0 || [];
     if (!defs.length) return { id: 'default', def: null, reason: ['템플릿에 Variant 정의 없음 — 기본 구성'] };
     const ratio = (opt && opt.ratio) || '16:9';
     if (opt && opt.variant) {
@@ -210,12 +240,22 @@ window.MK_SVAR = (() => {
   /* ================= Auto Balance 플래너 (§13~§20) ================= */
   /* items(제외 반영 전 원본 인덱스 포함) → { order:[원본 idx…], steps:[{variant, take, hl?}], notes, warnings }
      불변식: order 는 배치분 전량(중복 0·누락 0), steps 의 take 합 = order.length - reserve. */
-  function balancePlan(items, vdef, ratio, captions, roles) {
+  /* R66: rnd(선택) — 있으면 '다른 구성'(§12). 없으면 R65 경로와 완전 동일(회귀 보장).
+     무작위는 안전 규칙 안에서만 움직인다(§23): 역할 순서·전량 배치·3연속 금지·
+     콜라주 연속 제한·캡션 보존은 rnd 여부와 무관하게 그대로 강제된다. */
+  function balancePlan(items, vdef, ratio, captions, roles, rnd, avail) {
     const notes = [], warnings = [];
     const st = (vdef && vdef.sceneStrategy) || {};
-    const pool = new Set((vdef && vdef.layoutPool) || ['full-media', 'framed-center']);
     const M0 = M();
     const alias = (id) => { const L = M0.getLayout(id); return (L && L.alias) || id; };
+    /* R66 — 구성이 실제로 컴파일한 레이아웃만 쓴다. 풀에만 있고 실행 쪽에 없는
+       레이아웃을 고르면 그 자리의 미디어가 조용히 사라진다(실측 유실 → 이 가드로 차단). */
+    let pool = new Set((vdef && vdef.layoutPool) || ['full-media', 'framed-center']);
+    if (avail && avail.size) {
+      const ok = new Set([...pool].filter((l) => avail.has(alias(l))));
+      pool = ok.size ? ok : new Set(['full-media', 'framed-center'].filter((l) => avail.has(alias(l))));
+      if (!pool.size) pool = new Set(['full-media', 'framed-center']);
+    }
 
     /* ① 역할 반영 순서 — start 앞·end 뒤·highlight 표식 (그 외 원순서 유지 = 결정론) */
     const starts = [], mids = [], ends = [];
@@ -225,7 +265,9 @@ window.MK_SVAR = (() => {
       else if (r === 'end') ends.push(it);
       else mids.push(it);
     }
-    let seqItems = [...starts, ...mids, ...ends];
+    /* R66 — mids 안에서만 섞는다. start/end 는 위치 고정, highlight 는 역할 유지한 채 자리만 바뀜 */
+    const mids2 = rnd ? shuffled(mids, rnd) : mids;
+    let seqItems = [...starts, ...mids2, ...ends];
     const n = seqItems.length;
     if (!n) return { order: [], steps: [], notes, warnings };
 
@@ -247,6 +289,7 @@ window.MK_SVAR = (() => {
     const allowPair = st.allowPair !== false && (pool.has('split') || pool.has('stack'));
     const allowCollage = !!st.allowCollage && pool.has('collage') && items.length >= (st.collageThreshold || 1);
     const maxHl = st.maxHighlight != null ? st.maxHighlight : 2;
+    const rhythm = rnd ? rnd.int(3) : 0; /* 2·2·3 리듬 위상 — 같은 미디어로 다른 묶음이 나오는 근거 */
 
     const steps = [];
     const order = [];
@@ -298,9 +341,9 @@ window.MK_SVAR = (() => {
       } else {
         const need = Math.ceil(left / Math.max(1, remaining));
         take = Math.min(3, Math.max(1, need));
-        if (take === 1 && allowPair && left >= 3 && steps.length % 3 === 2) take = 2;
-        if (take === 1 && allowCollage && left >= 4 && steps.length % 6 === 5) take = 3;
-        if (take === 2 && allowCollage && left >= 4 && steps.length % 3 === 2) take = 3; /* 2·2·3 순환 리듬 */
+        if (take === 1 && allowPair && left >= 3 && (steps.length + rhythm) % 3 === 2) take = 2;
+        if (take === 1 && allowCollage && left >= 4 && (steps.length + rhythm) % 6 === 5) take = 3;
+        if (take === 2 && allowCollage && left >= 4 && (steps.length + rhythm) % 3 === 2) take = 3; /* 2·2·3 순환 리듬 */
       }
       if (take === 3 && (!allowCollage || collageRun >= 1)) take = allowPair && left >= 2 ? 2 : 1; /* 콜라주 연속 제한 (§20) */
       if (take === 2 && !allowPair) take = 1;
@@ -317,7 +360,8 @@ window.MK_SVAR = (() => {
       const isCapLay = (l) => l === 'media-left' || l === 'media-right';
       cand = cand.filter((l) => hasCap || !isCapLay(l));
       if (hasCap && cand.some(isCapLay)) cand = [cand.find(isCapLay), ...cand.filter((l) => !isCapLay(l))];
-      let lay = cand[0] || 'full-media';
+    /* R66 — 후보 자체는 방향 선호·캡션 규칙이 이미 걸러 낸 것. 그 안에서만 고른다(안전) */
+      let lay = (rnd && cand.length > 1 ? rnd.pick(cand.slice(0, 3)) : cand[0]) || 'full-media';
       if (isCapLay(lay)) { lay = capDir % 2 ? 'media-right' : 'media-left'; capDir++; } /* 좌우 분할 방향 교차 */
       if (alias(lay) === last && run >= 2) lay = cand.find((l) => alias(l) !== last) || (lay === 'full-media' ? 'framed-center' : 'full-media');
       push(lay, takeMatching(1));
@@ -380,25 +424,43 @@ window.MK_SVAR = (() => {
   /* ================= buildSmart — 통합 진입점 (§26 사용자 흐름 1~12) ================= */
   /* MK_MANIFEST.build 위임 + 역할 전처리 + Variant 선택 + 배치 주입 + 길이 균형.
      반환에 smart:{variant, reason, stats, roles} 를 실어 저장·재진입(§28 T14) 근거를 남긴다. */
+  /* R66 opt 확장: seed(다른 구성) · _draft{ mf, variants }(Builder 미등록 초안 테스트) */
   function buildSmart(templateId, input, opt) {
-    const t = M().getTemplate(templateId);
-    if (!t) return { ok: false, why: 'no-template', guide: '등록되지 않은 템플릿이에요: ' + templateId };
-    const comp = C().getComposition(t._compId);
-    if (!comp) return { ok: false, why: 'no-composition' };
+    const o = opt || {};
+    const draft = o._draft || null;
+    let t = null, comp = null, defsOverride = null;
+    if (draft) {
+      const mf = draft.mf;
+      if (!mf) return { ok: false, why: 'no-manifest' };
+      comp = { pairMode: !!mf.pairMode, defaultRatio: mf.defaultRatio || '16:9' };
+      defsOverride = Array.isArray(draft.variants) ? draft.variants : [];
+    } else {
+      t = M().getTemplate(templateId);
+      if (!t) return { ok: false, why: 'no-template', guide: '등록되지 않은 템플릿이에요: ' + templateId };
+      comp = C().getComposition(t._compId);
+      if (!comp) return { ok: false, why: 'no-composition' };
+    }
+    const doBuild = (inp2) => draft
+      ? M().buildDraft(draft.mf, inp2, { theme: o.theme })
+      : M().build(templateId, inp2, { theme: o.theme });
     const inp = clone(input || {});
     const ratio = C().RATIOS[inp.ratio] ? inp.ratio : (comp.defaultRatio || '16:9');
     const stats = mediaStats(inp);
-    const sel = selectVariant(templateId, stats, { ...(opt || {}), ratio, variant: (opt && opt.variant) || inp.variantId });
+    const selOpt = { ...o, ratio, variant: o.variant || inp.variantId };
+    const sel = defsOverride
+      ? selectFrom(defsOverride, stats, selOpt)
+      : selectVariant(templateId, stats, selOpt);
+    const rnd = o.seed != null && o.seed !== '' ? makeRng(o.seed) : null;
     const warnings = [];
 
     /* ---- Pair 모드(비포애프터) — 쌍 구조는 엔진 planPairs 그대로, 길이 정책만 ---- */
     if (comp.pairMode) {
-      const r = M().build(templateId, inp, { theme: opt && opt.theme });
+      const r = doBuild(inp);
       if (!r.ok) return r;
       const totalAfter = applyPairPolicy(r.doc, sel.def, warnings);
-      r.doc.meta = { ...(r.doc.meta || {}), svar: { templateId, variant: sel.id } };
+      r.doc.meta = { ...(r.doc.meta || {}), svar: { templateId, variant: sel.id, ...(rnd ? { seed: rnd.seed } : {}) } };
       return { ...r, total: totalAfter, warnings: [...(r.warnings || []), ...warnings],
-        smart: { variant: sel.id, reason: sel.reason, stats: statsSummary(stats) } };
+        smart: { variant: sel.id, reason: sel.reason, stats: statsSummary(stats), ...(rnd ? { seed: rnd.seed } : {}) } };
     }
 
     /* ---- 역할 전처리 (§19) — 제외는 빌드 입력에서만 빠지고 원본은 무손상 ---- */
@@ -409,7 +471,17 @@ window.MK_SVAR = (() => {
     if (excluded.length) warnings.push('제외 ' + excluded.length + '장은 이번 구성에서 빠졌어요 (원본 목록엔 그대로 있어요).');
 
     /* ---- Auto Balance — 순서 + 배치 계획 ---- */
-    const bal = balancePlan(keptItems, sel.def, ratio, inp.mediaCaptions || [], roles);
+    /* 실행 가능한 레이아웃 집합(별칭 기준) — 초안·등록 양쪽 동일 규약 */
+    const availSet = (() => {
+      const set = new Set();
+      const vd = (comp && comp.variantDefs) || null;
+      if (vd) for (const k of Object.keys(vd)) set.add(k);
+      if (draft) for (const l of M().layoutsUsedBy(draft.mf) || []) {
+        const L = M().getLayout(l); set.add(l); if (L && L.alias) set.add(L.alias);
+      }
+      return set;
+    })();
+    const bal = balancePlan(keptItems, sel.def, ratio, inp.mediaCaptions || [], roles, rnd, availSet);
     warnings.push(...bal.warnings);
     const medias2 = bal.order.map((i) => inp.medias[i]);
     const caps2 = bal.order.map((i) => (inp.mediaCaptions || [])[i] || '');
@@ -417,7 +489,7 @@ window.MK_SVAR = (() => {
     const planFn = () => clone(planned); /* (r,ratio,caps,start) 무시 — 전량 사전 계산 (결정론) */
 
     const inp2 = { ...inp, medias: medias2, mediaCaptions: caps2, _planOverride: planned.length ? planFn : undefined };
-    const r = M().build(templateId, inp2, { theme: opt && opt.theme });
+    const r = doBuild(inp2);
     if (!r.ok) return r;
 
     /* ---- 검증 (§17 빈 슬롯 · §16 누락) ---- */
@@ -428,9 +500,9 @@ window.MK_SVAR = (() => {
 
     /* ---- 길이 균형 (§21) ---- */
     const totalAfter = balanceDurations(r.doc, planned, sel.def, warnings, bal.hlTail);
-    r.doc.meta = { ...(r.doc.meta || {}), svar: { templateId, variant: sel.id, order: bal.order, roles } };
+    r.doc.meta = { ...(r.doc.meta || {}), svar: { templateId, variant: sel.id, order: bal.order, roles, ...(rnd ? { seed: rnd.seed } : {}) } };
     return { ...r, total: totalAfter, warnings: [...(r.warnings || []), ...warnings],
-      smart: { variant: sel.id, reason: sel.reason, stats: statsSummary(stats),
+      smart: { variant: sel.id, reason: sel.reason, stats: statsSummary(stats), ...(rnd ? { seed: rnd.seed } : {}),
         plan: planned.map((s) => s.variant + 'x' + s.take + (s.hl ? '*' : '')), excluded } };
   }
 
@@ -459,6 +531,7 @@ window.MK_SVAR = (() => {
   seedDefaults();
 
   return { CONST, mediaStats, defineVariants, listVariants, getVariant,
-    matchConditions, selectVariant, balancePlan, buildSmart, audit,
-    _internals: { SINGLE_PREF, pairLayout, normRoles } };
+    matchConditions, selectVariant, selectFrom, balancePlan, buildSmart, audit,
+    makeRng, hashSeed, shuffled,
+    _internals: { SINGLE_PREF, pairLayout, normRoles, VARS } };
 })();

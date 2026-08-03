@@ -263,8 +263,13 @@ window.MK_MANIFEST = (() => {
     const defs = {};
     for (const id of layoutIds) {
       const L = getLayout(id); if (!L) continue;
-      defs[id] = { ...(L.bg ? { bg: L.bg } : {}), ...(L.needsCaption ? { needsCaption: true } : {}),
+      const def = { ...(L.bg ? { bg: L.bg } : {}), ...(L.needsCaption ? { needsCaption: true } : {}),
         base: clone(L.base), ...(L.byRatio ? { byRatio: clone(L.byRatio) } : {}) };
+      defs[id] = def;
+      /* R66 — 배치 계획은 별칭(alias)으로 씬 variant 를 지정한다(compileRules 규약).
+         id 로만 등재하면 별칭 조회가 빗나가 그 씬의 미디어 슬롯이 0이 되고
+         사진이 조용히 사라진다(R66 실측 유실). 두 키 모두 등재한다. */
+      if (L.alias && L.alias !== id && !defs[L.alias]) defs[L.alias] = def;
     }
     /* 캡션 대체(빈 캡션 → full-media)와 run 대체가 참조하는 기본 2종은 항상 포함 */
     for (const must of ['full-media', 'framed-center']) if (!defs[must] && getLayout(must))
@@ -283,6 +288,10 @@ window.MK_MANIFEST = (() => {
     }
     for (const [, v] of Object.entries(mf.variants || {}))
       for (const rule of v.rules || []) for (const l of rule.cycle || []) set.add(l);
+    /* R66 — Smart Variant(§24)가 선언한 Layout 풀도 컴파일 대상이다.
+       풀에만 있고 variantDefs 에 없으면 Auto Balance 가 그 레이아웃을 골랐을 때
+       미디어가 조용히 사라진다(R66 에서 실제 발견된 유실). */
+    for (const sv of mf.smartVariants || []) for (const l of sv.layoutPool || []) set.add(l);
     return [...set];
   }
 
@@ -450,5 +459,5 @@ window.MK_MANIFEST = (() => {
     registerAnimation, getAnimation, listAnimations: () => Object.keys(ANIMS),
     registerTransition, getTransition, listTransitions: () => Object.keys(TRANSITIONS),
     registerTheme, listThemes, listCompositions,
-    compileRules, validate, registerTemplate, unregisterTemplate, takeover, getTemplate, listTemplates, build, buildDraft, audit };
+    compileRules, validate, registerTemplate, unregisterTemplate, takeover, getTemplate, listTemplates, build, buildDraft, layoutsUsedBy, audit };
 })();

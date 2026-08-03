@@ -347,6 +347,77 @@
   }
 
   /* ---------------- 상태·게시 (§18·§20) ---------------- */
+  /* ================= Smart Variant 설정 (R66 §24) ================= */
+  /* Variant 정의는 Manifest 안에 산다(smartVariants) — 별도 저장소 금지.
+     저장 포맷 = 실행 포맷 하나이므로 Ready 저장 시 그대로 MK_SVAR 로 넘어간다. */
+  const SV = () => window.MK_SVAR;
+  const SX = () => window.MK_SVARX;
+  const getVariants = (id) => { const e = get(id); return e ? clone(e.manifest.smartVariants || []) : []; };
+  function setVariants(id, list) {
+    const e = get(id); if (!e) return { ok: false, msg: '없는 템플릿' };
+    const arr = Array.isArray(list) ? clone(list) : [];
+    const v = SX() ? SX().validateVariants(arr, { pairMode: !!e.manifest.pairMode }) : { ok: true, errors: [], warnings: [] };
+    if (!v.ok) return { ok: false, msg: v.errors[0].msg, errors: v.errors };
+    if (arr.length) e.manifest.smartVariants = arr; else delete e.manifest.smartVariants;
+    touch(e);
+    return { ok: true, warnings: v.warnings };
+  }
+  function addVariant(id, opt) {
+    const e = get(id); if (!e) return { ok: false, msg: '없는 템플릿' };
+    const list = e.manifest.smartVariants || [];
+    const o = opt || {};
+    const base = e.manifest.pairMode
+      ? { conditions: { pairCountMin: 1 }, sceneStrategy: {}, layoutPool: [],
+          animationPool: ['fade', 'zoom', 'slide'], transitionPool: ['fade', 'wipe'], duration: { maxTotal: 60 } }
+      : { conditions: { mediaCountMin: 1, mediaCountMax: 10 },
+          sceneStrategy: { intro: 'auto', title: 'auto', outro: 'include', maxSceneCount: 14, allowPair: true, allowCollage: false },
+          layoutPool: ['full-media', 'framed-center', 'media-left', 'media-right', 'hero'],
+          animationPool: ['fade', 'zoom', 'slide'], transitionPool: ['fade', 'dissolve', 'push'], duration: { maxTotal: 60 } };
+    let n = list.length + 1, vid = o.id || ('v' + n);
+    while (list.some((x) => x.id === vid)) { n++; vid = 'v' + n; }
+    list.push({ id: vid, name: o.name || ('구성 ' + n), priority: 10, ...base, ...(o.patch || {}) });
+    e.manifest.smartVariants = list; touch(e);
+    return { ok: true, variantId: vid };
+  }
+  function removeVariant(id, vid) {
+    const e = get(id); if (!e) return { ok: false, msg: '없는 템플릿' };
+    const list = e.manifest.smartVariants || [];
+    const i = list.findIndex((x) => x.id === vid);
+    if (i < 0) return { ok: false, msg: '없는 Variant' };
+    list.splice(i, 1);
+    if (list.length) e.manifest.smartVariants = list; else delete e.manifest.smartVariants;
+    touch(e); return { ok: true };
+  }
+  function setVariant(id, vid, patch) {
+    const e = get(id); if (!e) return { ok: false, msg: '없는 템플릿' };
+    const v = (e.manifest.smartVariants || []).find((x) => x.id === vid);
+    if (!v) return { ok: false, msg: '없는 Variant' };
+    const merged = { ...clone(v), ...clone(patch || {}) };
+    if (patch && patch.conditions) merged.conditions = { ...(v.conditions || {}), ...patch.conditions };
+    if (patch && patch.sceneStrategy) merged.sceneStrategy = { ...(v.sceneStrategy || {}), ...patch.sceneStrategy };
+    if (patch && patch.duration) merged.duration = { ...(v.duration || {}), ...patch.duration };
+    const next = (e.manifest.smartVariants || []).map((x) => (x.id === vid ? merged : x));
+    const chk = SX() ? SX().validateVariants(next, { pairMode: !!e.manifest.pairMode }) : { ok: true, errors: [] };
+    if (!chk.ok) return { ok: false, msg: chk.errors[0].msg, errors: chk.errors };
+    e.manifest.smartVariants = next; touch(e);
+    return { ok: true, warnings: chk.warnings };
+  }
+  /* 등록된 템플릿에 Variant 정의를 실제로 연결 — Ready 저장·부팅 복원 공용 */
+  function wireVariants(mf) {
+    if (!SV()) return false;
+    const list = mf.smartVariants || [];
+    if (!list.length) return false;
+    return SV().defineVariants(mf.id, list);
+  }
+  /* Builder 초안 그대로 Smart 빌드 (§25 테스트 모드) — 미등록 상태에서도 실경로 */
+  function smartPreview(id, opt) {
+    const e = get(id); if (!e) return { ok: false, why: 'no-template' };
+    const o = opt || {};
+    return SX().testMatrix(e.manifest.id, { pairMode: !!e.manifest.pairMode, ratio: o.ratio,
+      theme: e.manifest.theme, seed: o.seed,
+      _draft: { mf: clone(e.manifest), variants: clone(e.manifest.smartVariants || []) } });
+  }
+
   function publish(id) {
     const e = get(id); if (!e) return { ok: false, errors: [{ msg: '없는 템플릿' }] };
     const v = validateDraft(id, { forReady: true });
@@ -354,11 +425,15 @@
     /* 실제 프로젝트 생성 테스트 — 통과 못 하면 Ready 불가 (§18) */
     const t = previewBuild(id, {});
     if (!t.ok) return { ok: false, errors: [{ code: 'E_BUILD_FAIL', msg: '실빌드 테스트 실패: ' + (t.why || '') + ' ' + (t.guide || '') }] };
+    /* R66 §24 — Variant 정의가 있으면 그것부터 검증. 못 쓸 정의로 Ready 를 만들지 않는다 */
+    const vv = SX() ? SX().validateVariants(e.manifest.smartVariants || [], { pairMode: !!e.manifest.pairMode }) : { ok: true, errors: [], warnings: [] };
+    if (!vv.ok) return { ok: false, errors: vv.errors, warnings: v.warnings };
     if (e.registered) M().unregisterTemplate(e.manifest.id);
     const r = M().registerTemplate(clone(e.manifest));
     if (!r.ok) return { ok: false, errors: r.errors };
+    wireVariants(e.manifest);
     e.status = 'ready'; e.registered = true; e.updatedAt = now(); save();
-    return { ok: true, warnings: v.warnings, compositions: r.compositions };
+    return { ok: true, warnings: [...v.warnings, ...(vv.warnings || []).map((m) => ({ msg: m }))], compositions: r.compositions, variants: (e.manifest.smartVariants || []).length };
   }
   function setStatus(id, st) {
     const e = get(id); if (!e) return false;
@@ -374,7 +449,7 @@
       e.registered = false;
       if (e.status !== 'ready') continue;
       const r = M().registerTemplate(clone(e.manifest));
-      if (r.ok) { e.registered = true; n++; }
+      if (r.ok) { e.registered = true; wireVariants(e.manifest); n++; }
       else { e.status = 'draft'; } /* 정직 — 재등록 실패면 Ready 로 위장하지 않는다 */
     }
     return n;
@@ -400,6 +475,7 @@
     addScene, removeScene, dupScene, moveScene, setScene,
     addTextSlot, setTextSlot, removeTextSlot,
     setRules, validateDraft, previewBuild, publish, setStatus, restore,
+    getVariants, setVariants, addVariant, removeVariant, setVariant, wireVariants, smartPreview,
     sampleMedias, samplePairs, sampleTexts,
     ROLES, layoutsForRole, layoutMeta, audit,
     _reload: load };
