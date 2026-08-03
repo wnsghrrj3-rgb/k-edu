@@ -362,94 +362,94 @@ window.KEDU_MAP["g5_1_math"] = {
    "kind": "unit",
    "lessons": [
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u5_l01",
+     "lessonId": "g5_math_u5_l01_v1",
      "n": "1",
      "title": "분수의 덧셈과 뺄셈을 만나 보자",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/5단원_분수의덧셈과뺄셈/g5_math_u5_l01_분수의덧셈과뺄셈을만나보자.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u5_l02",
+     "lessonId": "g5_math_u5_l02_v1",
      "n": "2",
      "title": "분수의 덧셈을 해요 ①",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/5단원_분수의덧셈과뺄셈/g5_math_u5_l02_분수의덧셈을해요1.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u5_l03",
+     "lessonId": "g5_math_u5_l03_v1",
      "n": "3",
      "title": "분수의 덧셈을 해요 ②",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/5단원_분수의덧셈과뺄셈/g5_math_u5_l03_분수의덧셈을해요2.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u5_l04",
+     "lessonId": "g5_math_u5_l04_v1",
      "n": "4",
      "title": "분수의 덧셈을 해요 ③",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/5단원_분수의덧셈과뺄셈/g5_math_u5_l04_분수의덧셈을해요3.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u5_l05",
+     "lessonId": "g5_math_u5_l05_v1",
      "n": "5",
      "title": "분수의 뺄셈을 해요 ①",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/5단원_분수의덧셈과뺄셈/g5_math_u5_l05_분수의뺄셈을해요1.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u5_l06",
+     "lessonId": "g5_math_u5_l06_v1",
      "n": "6",
      "title": "분수의 뺄셈을 해요 ②",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/5단원_분수의덧셈과뺄셈/g5_math_u5_l06_분수의뺄셈을해요2.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u5_l07",
+     "lessonId": "g5_math_u5_l07_v1",
      "n": "7",
      "title": "분수의 뺄셈을 해요 ③",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/5단원_분수의덧셈과뺄셈/g5_math_u5_l07_분수의뺄셈을해요3.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u5_l08",
+     "lessonId": "g5_math_u5_l08_v1",
      "n": "8",
      "title": "뚜벅뚜벅 이동할 거리 비교하기",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/5단원_분수의덧셈과뺄셈/g5_math_u5_l08_뚜벅뚜벅이동할거리비교하기.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u5_l09",
+     "lessonId": "g5_math_u5_l09_v1",
      "n": "9",
      "title": "스스로 마무리해요 (단원 평가)",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/5단원_분수의덧셈과뺄셈/g5_math_u5_l09_스스로마무리해요.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   },
