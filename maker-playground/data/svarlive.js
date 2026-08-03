@@ -177,6 +177,65 @@ window.MK_SVARX = (() => {
       { ...(opt || {}), seed: st.seed || undefined, variant: st.variant || undefined });
   }
 
+  /* ================= 문서 → 재구성 입력 (§12·§28) ================= */
+  /* 「다른 구성」은 문서만 열려 있는 상태에서 눌린다. 원본 사진은 이미 문서 안에
+     있으므로(전량 배치 보장), 거기서 되찾고 계획 메타는 doc.meta.svar 에서 읽는다.
+     사이드카 저장 없이 재진입이 성립하는 근거(§19 저장=실행 포맷 하나). */
+  function inputFromDoc(doc) {
+    const sv = (doc && doc.meta && doc.meta.svar) || null;
+    if (!sv || !sv.templateId) return { ok: false, why: 'no-state', guide: '이 문서에는 자동 구성 근거가 없어요.' };
+    if (sv.pairMode) return { ok: false, why: 'pair-mode', guide: '비포 & 애프터는 쌍 구조가 고정이라 다른 구성을 만들지 않아요.' };
+    const meta = sv.media || [];
+    const found = new Map(); /* 원본 인덱스 → {src, kind} */
+    let order = 0;
+    const noIdx = [];
+    for (const sc of (doc.scenes || [])) {
+      for (const e of (sc.elements || [])) {
+        if (e.kind !== 'image' || !e.src) continue;
+        if (e.oi != null && !found.has(e.oi)) found.set(e.oi, { src: e.src, video: !!e.video, label: e.label });
+        else if (e.oi == null) noIdx.push({ src: e.src, video: !!e.video, label: e.label, at: order });
+        order++;
+      }
+    }
+    /* 구버전 문서 — 원본 인덱스가 없으면 배치 순서를 원본 순서로 본다(정직한 근사) */
+    if (!found.size && noIdx.length) noIdx.forEach((x, i) => found.set(i, x));
+
+    const n = Math.max(meta.length, found.size ? Math.max(...found.keys()) + 1 : 0);
+    const medias = [], caps = [], missing = [];
+    const roles = {}, srcRoles = sv.roles || {};
+    let k = 0;
+    for (let i = 0; i < n; i++) {
+      const f = found.get(i);
+      const m = meta[i] || {};
+      if (!f) { missing.push(i); continue; } /* 제외됐던 사진은 문서에 없다 — 정직하게 빠진다 */
+      medias.push({ name: m.n || f.label || ('사진 ' + (i + 1)), kind: f.video ? 'video' : (m.k || 'image'),
+        src: f.src, w: m.w || 800, h: m.h || 600 });
+      caps.push(m.c || '');
+      const rv = srcRoles[i];
+      if (rv && rv !== 'exclude') roles[k] = rv;
+      k++;
+    }
+    if (!medias.length) return { ok: false, why: 'no-media', guide: '문서에서 사진을 찾지 못했어요.' };
+    return { ok: true, missing,
+      input: { medias, mediaCaptions: caps, mediaRoles: roles,
+        texts: clone(sv.texts || {}), ratio: sv.ratio || undefined },
+      templateId: sv.templateId };
+  }
+
+  /* 문서 하나로 「다른 구성」 — UI 가 부르는 한 점 (§12) */
+  function recomposeDoc(doc, opt) {
+    const f = inputFromDoc(doc);
+    if (!f.ok) return f;
+    const o = opt || {};
+    const r = recompose(f.templateId, f.input, { ...o, prevDoc: doc,
+      theme: o.theme || (doc.meta && doc.meta.theme) || undefined,
+      ratio: f.input.ratio, variant: o.variant });
+    if (!r.ok) return r;
+    if (f.missing.length) r.warnings = [...(r.warnings || []),
+      '이전에 제외한 사진 ' + f.missing.length + '장은 문서에 없어서 이번 구성에도 빠졌어요.'];
+    return r;
+  }
+
   /* ================= Variant 정의 검증 (§24 Builder 설정) ================= */
   /* Builder 가 만든 Variant 목록이 실제로 쓸 수 있는지 — 저장 전에 정직하게 막는다. */
   function validateVariants(list, opt) {
@@ -315,7 +374,7 @@ window.MK_SVARX = (() => {
   }
 
   return { SOURCES, markSources, markEdited, setLock, lockedScenes, lockSummary,
-    pinnedIndexes, recompose, nextSeed,
+    pinnedIndexes, recompose, recomposeDoc, inputFromDoc, nextSeed,
     pushHistory, previous, historyDepth, clearHistory,
     readState, reproduce, validateVariants, testMatrix, CASES, audit };
 })();

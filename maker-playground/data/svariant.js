@@ -458,7 +458,7 @@ window.MK_SVAR = (() => {
       const r = doBuild(inp);
       if (!r.ok) return r;
       const totalAfter = applyPairPolicy(r.doc, sel.def, warnings);
-      r.doc.meta = { ...(r.doc.meta || {}), svar: { templateId, variant: sel.id, ...(rnd ? { seed: rnd.seed } : {}) } };
+      r.doc.meta = { ...(r.doc.meta || {}), svar: { templateId, variant: sel.id, pairMode: true, texts: clone(inp.texts || {}), ratio, ...(rnd ? { seed: rnd.seed } : {}) } };
       return { ...r, total: totalAfter, warnings: [...(r.warnings || []), ...warnings],
         smart: { variant: sel.id, reason: sel.reason, stats: statsSummary(stats), ...(rnd ? { seed: rnd.seed } : {}) } };
     }
@@ -483,7 +483,8 @@ window.MK_SVAR = (() => {
     })();
     const bal = balancePlan(keptItems, sel.def, ratio, inp.mediaCaptions || [], roles, rnd, availSet);
     warnings.push(...bal.warnings);
-    const medias2 = bal.order.map((i) => inp.medias[i]);
+    /* R66 — 원본 인덱스 동행(_oi): 잠금으로 씬 순서가 바뀌어도 문서에서 원본 자리를 되찾는다 */
+    const medias2 = bal.order.map((i) => ({ ...inp.medias[i], _oi: i }));
     const caps2 = bal.order.map((i) => (inp.mediaCaptions || [])[i] || '');
     const planned = bal.steps;
     const planFn = () => clone(planned); /* (r,ratio,caps,start) 무시 — 전량 사전 계산 (결정론) */
@@ -500,7 +501,13 @@ window.MK_SVAR = (() => {
 
     /* ---- 길이 균형 (§21) ---- */
     const totalAfter = balanceDurations(r.doc, planned, sel.def, warnings, bal.hlTail);
-    r.doc.meta = { ...(r.doc.meta || {}), svar: { templateId, variant: sel.id, order: bal.order, roles, ...(rnd ? { seed: rnd.seed } : {}) } };
+    /* R66 — 문서만으로 「다른 구성」이 가능하도록 재구성 근거를 남긴다(§12·§28).
+       사진 원본(src)은 이미 문서 안에 있으므로 중복 저장하지 않고, 계획에 필요한
+       메타(이름·유형·픽셀 크기·캡션)만 원본 인덱스 순서로 싣는다. */
+    const svMedia = (inp.medias || []).map((m, i) => ({ n: m.name || '', k: m.kind || 'image',
+      w: m.w || 0, h: m.h || 0, c: (inp.mediaCaptions || [])[i] || '' }));
+    r.doc.meta = { ...(r.doc.meta || {}), svar: { templateId, variant: sel.id, order: bal.order, roles,
+      media: svMedia, texts: clone(inp.texts || {}), ratio, ...(rnd ? { seed: rnd.seed } : {}) } };
     return { ...r, total: totalAfter, warnings: [...(r.warnings || []), ...warnings],
       smart: { variant: sel.id, reason: sel.reason, stats: statsSummary(stats), ...(rnd ? { seed: rnd.seed } : {}),
         plan: planned.map((s) => s.variant + 'x' + s.take + (s.hl ? '*' : '')), excluded } };

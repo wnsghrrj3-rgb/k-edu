@@ -1,0 +1,89 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>R65~R66 — Smart Variant · Auto Balance · Randomize 제출</title>
+<style>body{font-family:system-ui,'Apple SD Gothic Neo',sans-serif;max-width:1080px;margin:0 auto;padding:32px 20px;color:#22302B;background:#FAFAF7;line-height:1.65}
+h1{font-size:26px}h2{font-size:19px;margin-top:40px;border-bottom:2px solid #2F6B54;padding-bottom:6px}h3{font-size:15px;margin-top:22px}
+pre{background:#1B2430;color:#E8ECF1;padding:14px 16px;border-radius:10px;overflow:auto;font-size:12.5px;line-height:1.5}
+table{border-collapse:collapse;width:100%;font-size:13.5px}td,th{border:1px solid #D8DED8;padding:7px 10px;text-align:left}th{background:#EFF4EF}
+.ok{color:#1E7A4E;font-weight:700}.bad{color:#B3261E;font-weight:700}
+.note{background:#FFF8E6;border:1px solid #EDD9A3;border-radius:10px;padding:12px 16px;font-size:13.5px;margin:12px 0}
+.err{background:#FDF4F4;border:1px solid #F1C6C6;border-radius:10px;padding:12px 16px;font-size:13px;margin:12px 0}
+.tag{display:inline-block;background:#2F6B54;color:#fff;border-radius:999px;padding:2px 10px;font-size:12px;margin-right:6px}
+code{background:#EEF2EE;border-radius:5px;padding:1px 5px;font-size:12.5px}</style></head><body>
+
+<h1>R65~R66 — Smart Variant · Auto Balance · Randomize (P1-3)</h1>
+<p><span class="tag">test-round65 17/17</span><span class="tag">test-round66 22/22</span><span class="tag">스위트 57 전량 통과</span><span class="tag">MK_SVAR·MK_SVARX·MK_TBUILD audit OK</span></p>
+<p>목표: <b>같은 템플릿이 사진 수·방향·역할에 따라 다른 구성으로 만들어지고, 그 무작위가 재현 가능하며, 사용자가 손댄 것은 자동이 덮지 않는다.</b>
+실행 URL: <b>keduclass.com/maker-playground/</b> — Builder는 <code>#/tbuilder</code>, 편집화면은 <code>#/workspace</code>.</p>
+
+<h2>A. 구조 — 어디에 무엇이 사는가</h2>
+<table><tr><th>구분</th><th>내용</th></tr>
+<tr><td>재사용</td><td>Layout·Animation·Transition·Theme Registry(MK_MANIFEST·MK_COMPOSE), 실렌더(MK_RENDER), 실재생(MK_PLAY), 프로젝트 저장(MK_PROJ), Builder(MK_TBUILD) — <b>새 렌더러 0줄</b></td></tr>
+<tr><td>신규 R65</td><td><code>data/svariant.js</code> (MK_SVAR) — 미디어 통계 · Variant 정의/선택 · Auto Balance 배치 계획 · 길이 균형 · <code>buildSmart</code></td></tr>
+<tr><td>신규 R66</td><td><code>data/svarlive.js</code> (MK_SVARX) — 시드 난수 · source 추적 · 잠금 · 재구성 · History · 재진입 · Variant 검증 · 테스트 매트릭스</td></tr>
+<tr><td>엔진 확장(add-only)</td><td><code>compose.js</code>: <code>_planOverride</code> 훅 · 미디어 원본 인덱스 <code>oi</code> 통과. <code>tbuild.js</code>: Variant 설정 API · <code>wireVariants</code> · <code>smartPreview</code></td></tr>
+<tr><td>UI</td><td><code>screens/tbuilder.js</code>: 자동 구성 탭(§24) · 테스트 모드 표(§25) · 「자동 구성으로 열기」. <code>screens/workspace.js</code>: 「다른 구성」·장면 잠금·이전 구성(§12)</td></tr>
+<tr><td>저장</td><td><b>사이드카 없음</b> — 근거 전부 <code>doc.meta.svar</code>(templateId·variant·seed·order·roles·media 메타·texts)와 <code>scene.svar</code>(source·locked)에 산다. 저장 포맷 = 실행 포맷 하나(§19)</td></tr></table>
+
+<h2>B. 원칙 4개와 그 기계적 근거</h2>
+<table><tr><th>원칙</th><th>구현</th><th>검증</th></tr>
+<tr><td>무작위도 재현된다</td><td><code>Math.random</code> 사용 금지 — <code>makeRng(seed)</code>(mulberry32) 하나로만 흔든다. 「다시 눌러서 달라짐」 = seed 가 바뀐 것</td><td>T1·T11 (같은 seed → 문서 JSON 완전 일치)</td></tr>
+<tr><td>무작위여도 안전 규칙은 안 깨진다</td><td>역할(시작·마지막·중요·제외) 불변, 전량 배치, 같은 배치 3연속 금지 — 난수는 <i>허용된 선택지 안에서만</i> 작동</td><td>T2·T3 (seed 5종 × 12장, 배치 12/12 · 3연속 0)</td></tr>
+<tr><td>사용자 것을 자동이 안 덮는다</td><td>source 추적(auto/variant/random/user) + 잠금. 잠긴 장면은 <b>그 안의 사진까지</b> 핀으로 빼고 재배치 후 원위치 복원</td><td>T4·T5·T13</td></tr>
+<tr><td>되돌리기는 항상 있다</td><td>History 20깊이(스택 끝 = 현재). 「다른 구성」은 실험이지 손실이 아니다</td><td>T7</td></tr></table>
+
+<h2>C. 실측 — 자동 구성 매트릭스 (§25, 전부 실빌드 결과)</h2>
+<p>예측값·추정치 없음. 아래는 <code>MK_SVARX.testMatrix('tm-slideshow')</code> 를 실제로 돌린 출력이다.</p>
+<table><tr><th>입력</th><th>고른 구성</th><th>장면</th><th>길이</th><th>사진 배치</th><th>배치 계획</th></tr>
+<tr><td>가로 1장</td><td>compact</td><td>4</td><td>9.9초</td><td class="ok">1/1</td><td>full-bleed×1</td></tr>
+<tr><td>가로 3장</td><td>compact</td><td>6</td><td>16.9초</td><td class="ok">3/3</td><td>full-bleed×1 · full-bleed×1</td></tr>
+<tr><td>가로 5장</td><td>standard</td><td>8</td><td>22.9초</td><td class="ok">5/5</td><td>full-bleed · full-bleed · framed-center · full-bleed</td></tr>
+<tr><td>가로 10장</td><td>standard</td><td>11</td><td>32.9초</td><td class="ok">10/10</td><td>full-bleed ×2 · stacked-two×2 · full-bleed ×2 · stacked-two×2 · full-bleed</td></tr>
+<tr><td>가로 20장</td><td>extended</td><td>14</td><td>45.4초</td><td class="ok">20/20</td><td>stacked-two×2 ×2 · collage-three×3 · stacked-two×2 · full-bleed · collage-three×3 …</td></tr>
+<tr><td>가로 30장</td><td>large</td><td>18</td><td>60.4초</td><td class="ok">30/30</td><td>stacked-two·collage-three 교차 리듬 (2·2·3)</td></tr>
+<tr><td>세로 8장</td><td>standard</td><td>10</td><td>29.4초</td><td class="ok">8/8</td><td>framed-center ×2 · split-two×2 · framed-center ×2 · highlight-zoom</td></tr>
+<tr><td>혼합 12장</td><td>extended</td><td>11</td><td>33.9초</td><td class="ok">12/12</td><td>full-bleed · framed-center · collage-three×3 · framed-center ×2 · collage-three×3 · full-bleed</td></tr>
+<tr><td>캡션 6장</td><td>standard</td><td>8</td><td>23.4초</td><td class="ok">6/6</td><td>media-left-caption-right · full-bleed · stacked-two×2 · media-right-caption-left</td></tr></table>
+<p>세로 우세 입력이 <code>framed-center</code>·<code>split-two</code> 로, 캡션이 붙은 입력이 <code>media-left-caption-right</code> 로 간다 — §15 방향↔레이아웃 매칭이 실제로 작동한 결과다.</p>
+
+<h2>D. R66 에서 잡은 결함 (R65 잠복 · 실측)</h2>
+<div class="err"><b>사진이 조용히 사라지던 경로 2개</b>
+<ol style="margin:6px 0 0 18px">
+<li><code>layoutsUsedBy</code> 가 <code>smartVariants</code> 의 layoutPool 을 안 봤다 → Builder 초안에서 Variant 가 선언한 레이아웃이 컴파일 대상에서 빠짐.</li>
+<li><code>variantDefsFromRegistry</code> 가 레이아웃을 <b>id</b> 로만 등재하는데 배치 계획은 <b>별칭</b>으로 지정 → 조회가 빗나가 그 장면 미디어 슬롯이 0 이 되고 사진이 말없이 유실. <b>세로 8장 중 2장 · 캡션 6장 중 3장</b> 유실을 실측했다.</li>
+</ol>
+<p style="margin:8px 0 0">수정: id·별칭 양쪽 등재 + <code>balancePlan</code> 에 <code>avail</code> 가드(구성이 실제로 컴파일하지 않은 레이아웃은 플래너가 애초에 못 고름). 이중 차단이라 한쪽이 뚫려도 다른 쪽이 막는다.</p></div>
+
+<h2>E. §28 저장·재진입 (T9~T14 — 전부 기계검증)</h2>
+<table><tr><th>번호</th><th>확인</th><th>결과</th></tr>
+<tr><td>T9</td><td>사이드카 없이 근거가 문서 안에 (templateId·variant·seed·order·media·texts)</td><td class="ok">PASS</td></tr>
+<tr><td>T10</td><td>JSON 왕복 후에도 상태 유지</td><td class="ok">PASS</td></tr>
+<tr><td>T11</td><td>저장된 seed 로 재진입 → 같은 구성 재현</td><td class="ok">PASS</td></tr>
+<tr><td>T12</td><td>재진입 후 「다른 구성」이 그대로 이어짐 (11장 전량 배치)</td><td class="ok">PASS</td></tr>
+<tr><td>T13</td><td>잠금이 저장·복원을 건너 살아남음</td><td class="ok">PASS</td></tr>
+<tr><td>T14</td><td>역할(중요·제외)이 재진입 후에도 유지 — 제외 1장은 문서에 없으므로 <b>정직하게 빠졌다고 안내</b></td><td class="ok">PASS</td></tr></table>
+<div class="note"><b>정직 지점</b> — 제외한 사진은 문서 안에 존재하지 않는다. 재진입 후 「다른 구성」을 누르면 그 사진은 돌아오지 않으며, 그 사실을 추측으로 덮지 않고 문구로 알린다: <i>「이전에 제외한 사진 N장은 문서에 없어서 이번 구성에도 빠졌어요.」</i></div>
+
+<h2>F. 사용자가 실제로 만나는 화면</h2>
+<table><tr><th>위치</th><th>동작</th></tr>
+<tr><td>#/tbuilder → 우측 「자동 구성」 탭</td><td>구성 추가·삭제, 사진 수 범위·방향·우선순위·최대 장면 수·콜라주 허용·권장 길이·쓸 Layout 선택. 저장 전 「검사」로 중복 id·없는 Layout·범위 역전·<b>커버리지 구멍</b>(예: 6~30장 구간에 맞는 구성 없음)을 알린다</td></tr>
+<tr><td>#/tbuilder → 상단 「◫ 테스트 모드」</td><td>중앙 미리보기가 위 C표로 바뀐다. 초안 상태(미등록)에서도 실빌드 경로 그대로 — 배치 수가 입력 수와 다르면 그 칸이 붉게 뜬다</td></tr>
+<tr><td>#/tbuilder → 「🎲 자동 구성으로 열기」</td><td>Ready 템플릿을 자동 구성으로 실제 작업 문서화 → Workspace 진입 (§12 의 실입구)</td></tr>
+<tr><td>#/workspace → 프로젝트 속성</td><td>현재 구성·장면 수·잠금 수·씨앗 표시 + <b>「🎲 다른 구성으로」</b> · <b>「↩ 이전 구성으로」</b></td></tr>
+<tr><td>#/workspace → 장면 속성</td><td><b>「🔒 잠그기」</b> 토글 + 출처 배지(자동 / 다른 구성 / 내가 수정). 장면을 편집하면 자동으로 「내가 수정」이 되어 이후 재구성에서 보호된다</td></tr></table>
+
+<h2>G. 남은 한계 (정직 기록)</h2>
+<ul>
+<li>비포&amp;애프터(pairMode)는 쌍 구조가 고정이라 「다른 구성」을 만들지 않는다 — 누르면 그 이유를 문구로 답한다.</li>
+<li>모든 장면을 잠그면 재구성을 <b>거부</b>한다(<code>all-locked</code>). 억지로 만들어 잠금을 흉내내지 않는다.</li>
+<li>Variant 정의는 Builder 화면에서 만들 수 있지만, 조건 축은 사진/쌍 수·방향까지다. 캡션 밀도·영상 비율 조건은 엔진(<code>matchConditions</code>)에는 있으나 UI 노출은 후속.</li>
+<li>「자동 구성으로 열기」는 Builder 샘플 미디어로 문서를 만든다. 사용자 실사진으로 들어가는 입구(#/video 갤러리 → 미디어 선택 → 자동 구성)는 후속 라운드 몫.</li>
+</ul>
+
+<h2>H. 검증 재현 방법</h2>
+<pre>cd maker-playground
+npm i --no-save jsdom
+node test-round65.mjs   # Smart Variant · Auto Balance   17/17
+node test-round66.mjs   # Randomize · 잠금 · 재진입 · UI  22/22
+for f in test-round*.mjs; do node $f >/dev/null || echo "FAIL $f"; done   # 57개 전량</pre>
+<p><small>생성: R66-b. 이 문서의 모든 수치는 위 명령을 실행해 얻은 값이며 손으로 적은 추정치는 없다.</small></p>
+</body></html>

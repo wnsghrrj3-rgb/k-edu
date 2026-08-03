@@ -21,7 +21,7 @@
     sel: null,              /* null=프로젝트 | {type:'scene'} | {type:'text'|'image'|'video'|'shape', idx} */
     mode: 'design',         /* design | presentation | video | photo */
     zoom: 100, nav: 'scenes', dock: false,
-    undo: [], redo: [], savedAt: null,
+    undo: [], redo: [], savedAt: null, svarMsg: '',
   };
   const proj = () => window.MK_PROJ.get(WS.projectId);
   const doc = () => proj()?.doc;
@@ -31,7 +31,12 @@
   const modeOf = (ct) => ct === 'video' ? 'video' : ct === 'presentation' ? 'presentation' : 'design';
 
   /* undo/redo — doc 스냅샷 (placeholder 구조) */
-  const snap = () => { WS.undo.push(JSON.stringify(doc().scenes)); if (WS.undo.length > 30) WS.undo.shift(); WS.redo = []; };
+  const snap = () => {
+    WS.undo.push(JSON.stringify(doc().scenes)); if (WS.undo.length > 30) WS.undo.shift(); WS.redo = [];
+    /* R66 §23 — 자동 구성 문서에서 사용자가 손댄 장면은 이후 재구성이 덮지 않는다 */
+    const d = doc();
+    if (window.MK_SVARX && d && d.meta && d.meta.svar) { const sc = d.scenes[WS.sceneIdx]; if (sc) window.MK_SVARX.markEdited(d, sc.id); }
+  };
   const undo = () => { if (!WS.undo.length) return; WS.redo.push(JSON.stringify(doc().scenes)); doc().scenes = JSON.parse(WS.undo.pop()); WS.sceneIdx = Math.min(WS.sceneIdx, doc().scenes.length - 1); };
   const redo = () => { if (!WS.redo.length) return; WS.undo.push(JSON.stringify(doc().scenes)); doc().scenes = JSON.parse(WS.redo.pop()); WS.sceneIdx = Math.min(WS.sceneIdx, doc().scenes.length - 1); };
 
@@ -163,6 +168,40 @@
         ${window.MK_CAPTION.PRESETS.map((p) => `<button data-ws-cap="${p.id}" title="${M().esc(p.hint)}" style="padding:8px 4px;border-radius:8px;border:1.5px solid ${cur === p.id ? 'var(--mk-teal)' : 'var(--mk-border)'};background:${cur === p.id ? 'var(--mk-teal-soft)' : 'transparent'};cursor:pointer;font:var(--mk-t-caption)">${M().esc(p.name)}</button>`).join('')}
       </div>`;
   };
+  /* ================= R66 §12 — 「다른 구성」·잠금·되돌리기 ================= */
+  /* 자동 구성으로 만들어진 문서(doc.meta.svar)에서만 뜬다. 무작위여도 seed 로 재현되고,
+     잠근 장면과 손댄 장면은 그대로 남는다 — 「다른 구성」은 실험이지 손실이 아니다. */
+  const svarState = () => (window.MK_SVARX && doc() && doc().meta && doc().meta.svar)
+    ? window.MK_SVARX.readState(doc()) : null;
+  const histKey = () => 'ws:' + WS.projectId;
+  const SRC_NAME = { auto: '자동', variant: '자동', random: '다른 구성', user: '내가 수정' };
+
+  const smartCtl = () => {
+    const stt = svarState();
+    if (!stt) return '';
+    const X = window.MK_SVARX;
+    const sum = stt.sources || { total: 0, locked: 0 };
+    const depth = X.historyDepth(histKey());
+    return `<div class="cx-smart" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--mk-border)">
+      <label class="cx-field"><span>자동 구성</span></label>
+      <div style="font:var(--mk-t-caption);color:var(--mk-text-secondary);margin:-4px 0 8px">
+        구성 「${M().esc(stt.variant || '기본')}」 · 장면 ${sum.total}개${sum.locked ? ' · 🔒 잠금 ' + sum.locked : ''}${stt.seed ? '<br>씨앗 ' + M().esc(String(stt.seed)) : ''}</div>
+      <button class="cx-scenebtn" data-ws-svar="new">🎲 다른 구성으로</button>
+      ${depth > 1 ? `<button class="cx-scenebtn" data-ws-svar="prev">↩ 이전 구성으로</button>` : ''}
+      ${WS.svarMsg ? `<div style="font:var(--mk-t-caption);color:var(--mk-text-secondary);margin-top:6px">${M().esc(WS.svarMsg)}</div>` : ''}
+    </div>`;
+  };
+
+  const lockCtl = (sc) => {
+    if (!svarState()) return '';
+    const sv = sc.svar || { source: 'auto', locked: false };
+    return `<label class="cx-field"><span>이 장면</span></label>
+      <div style="display:flex;gap:6px;margin:-4px 0 8px;align-items:center">
+        <button data-ws-lock="${sc.id}" style="flex:1;padding:7px 4px;border-radius:8px;border:1.5px solid ${sv.locked ? 'var(--mk-teal)' : 'var(--mk-border)'};background:${sv.locked ? 'var(--mk-teal-soft)' : 'transparent'};cursor:pointer;font:var(--mk-t-caption)">${sv.locked ? '🔒 잠김 — 다른 구성에도 그대로' : '🔓 잠그기'}</button>
+        <span style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">${SRC_NAME[sv.source] || '자동'}</span>
+      </div>`;
+  };
+
   const ContextPanel = () => {
     const m = M(), sc = scene(), p = proj();
     let title = '프로젝트', body = '';
@@ -172,12 +211,13 @@
     if (!sel) {
       body = field('이름', p.name) + field('종류', p.contentType) + field('Scene 수', doc().scenes.length) +
         field('스타일', doc().engine?.style?.name || '—') + field('애니메이션', doc().engine?.animation?.name || '—') +
-        `<div class="cx-sw">${(doc().engine?.style?.palette || []).map((c) => `<span style="background:${c}"></span>`).join('')}</div>`;
+        `<div class="cx-sw">${(doc().engine?.style?.palette || []).map((c) => `<span style="background:${c}"></span>`).join('')}</div>` +
+        smartCtl();
     } else if (sel.type === 'scene') {
       title = 'Scene';
       body = field('이름', sc.name) + field('크기', sc.width + '×' + sc.height) + field('배경', sc.background) +
         (WS.mode === 'video' || WS.mode === 'presentation' ? field('길이', (sc.duration || 0) + '초') + field('전환', sc.transition || 'none') : '') +
-        capCtl(sc) +
+        lockCtl(sc) + capCtl(sc) +
         `<button class="cx-scenebtn" data-ws-anim>✨ 애니메이션 편집 →</button>`;
     } else {
       const el = sc.elements[sel.idx];
@@ -423,6 +463,46 @@
         }
         else sc.elements.push({ kind: 'image', x: 60, y: 60, w: 28, h: 24, label: k === 'video' ? '영상 클립' : k === 'shape' ? '도형' : '이미지' });
         WS.sel = k === 'scene' ? { type: 'scene' } : { type: k, idx: sc.elements.length - 1 };
+        R();
+      });
+
+      /* R66 §12 — 「다른 구성」·이전 구성·장면 잠금 */
+      const applyDoc = (nd) => {
+        const p2 = proj();
+        nd.title = nd.title || p2.doc.title;
+        p2.doc = nd;
+        WS.sceneIdx = Math.min(WS.sceneIdx, nd.scenes.length - 1);
+        WS.sel = null; WS.undo = []; WS.redo = [];
+      };
+      root.querySelectorAll('[data-ws-svar]').forEach((b) => b.onclick = () => {
+        const X = window.MK_SVARX; if (!X) return;
+        const key = histKey();
+        if (b.dataset.wsSvar === 'prev') {
+          const h = X.previous(key);
+          if (!h) { WS.svarMsg = '되돌릴 이전 구성이 없어요'; R(); return; }
+          applyDoc(h.doc);
+          WS.svarMsg = '이전 구성으로 되돌렸어요' + (h.seed ? ' (씨앗 ' + h.seed + ')' : '');
+          R(); return;
+        }
+        /* 현재 구성을 먼저 스택에 올려야 되돌리기가 성립한다 */
+        if (X.historyDepth(key) === 0) {
+          const cur = X.readState(doc()) || {};
+          X.pushHistory(key, doc(), { seed: cur.seed, variant: cur.variant });
+        }
+        const r = X.recomposeDoc(doc(), { key });
+        if (!r.ok) { WS.svarMsg = r.guide || r.why || '다른 구성을 만들지 못했어요'; R(); return; }
+        applyDoc(r.doc);
+        WS.svarMsg = '새 구성을 만들었어요 — 장면 ' + r.doc.scenes.length + '개'
+          + (r.lockedKept ? ' · 잠긴 ' + r.lockedKept + '개는 그대로' : '')
+          + ((r.warnings || []).length ? ' · ' + r.warnings.join(' ') : '');
+        R();
+      });
+      root.querySelectorAll('[data-ws-lock]').forEach((b) => b.onclick = () => {
+        const X = window.MK_SVARX; if (!X) return;
+        const sc = doc().scenes.find((x) => x.id === b.dataset.wsLock); if (!sc) return;
+        const on = !(sc.svar && sc.svar.locked);
+        X.setLock(doc(), sc.id, on);
+        WS.svarMsg = on ? '이 장면은 다른 구성에도 그대로 남아요' : '잠금을 풀었어요';
         R();
       });
 

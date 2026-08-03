@@ -60,6 +60,7 @@ window.MK_COMPOSE = (() => {
         const w = +m.w || 0, h = +m.h || 0;
         const orient = w && h ? (w / h > 1.15 ? 'landscape' : h / w > 1.15 ? 'portrait' : 'square') : 'unknown';
         return { name: m.name || '', kind: m.kind === 'video' ? 'video' : 'image', src: m.src, orient, _i: i,
+          ...(m._oi != null ? { _oi: m._oi } : {}), /* R66 — 원본 인덱스 통과 */
           ...(m.duration ? { duration: +m.duration } : {}) };
       }),
     };
@@ -380,6 +381,7 @@ window.MK_COMPOSE = (() => {
       if (!m) return;
       els.push({ kind: 'image', x: f.frame.x, y: f.frame.y, w: f.frame.w, h: f.frame.h,
         label: m.name || '사진', src: m.src, ...(m.kind === 'video' ? { video: true } : {}),
+        ...(m._oi != null ? { oi: m._oi } : {}), /* R66 — 원본 미디어 인덱스 통과 (렌더러는 무시) */
         ...(f.frame.radius ? { radius: f.frame.radius } : {}),
         anim: (p.slotAnims && p.slotAnims[i]) ? { ...p.slotAnims[i] }
           : { preset: spec.mediaAnim || 'fade', delay: 0.05 + i * 0.12, duration: 0.5,

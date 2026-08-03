@@ -18,7 +18,9 @@
   /* ---------- 화면 상태 (편집 데이터는 전부 MK_TBUILD 소유 — 여긴 선택뿐) ---------- */
   const st = { view: 'list', tid: null, sid: null, ratio: null,
     sample: { mediaCount: 5, pairCount: 2 }, val: null, msg: '',
-    filter: { q: '', status: '', composition: '' }, newTpl: null };
+    filter: { q: '', status: '', composition: '' }, newTpl: null,
+    /* R66 §24·§25 — 자동 구성(Variant) 설정 탭 · 테스트 모드 표 */
+    tab: 'props', vsel: null, matrix: null, vval: null };
 
   /* ---------- 실빌드 (미리보기 공용) ---------- */
   function buildNow() {
@@ -110,6 +112,8 @@
         ${(mf.supportedRatios || []).map((rt) => `<button class="mk-btn" data-tb="ratio" data-rt="${rt}" style="${st.ratio === rt ? 'border-color:var(--mk-primary,#3B6EF6);color:var(--mk-primary,#3B6EF6)' : ''}">${rt}</button>`).join('')}
         <span style="flex:1"></span>
         <button class="mk-btn" data-tb="play">▶ 미리보기</button>
+        <button class="mk-btn" data-tb="matrix" style="${st.matrix ? 'border-color:var(--mk-primary,#3B6EF6);color:var(--mk-primary,#3B6EF6)' : ''}">◫ 테스트 모드</button>
+        ${t.status === 'ready' ? '<button class="mk-btn" data-tb="smartopen">🎲 자동 구성으로 열기</button>' : ''}
         <button class="mk-btn" data-tb="check">유효성 검사</button>
         <button class="mk-btn" data-tb="draft">초안 저장</button>
         <button class="mk-btn mk-btn-primary" data-tb="ready">Ready 저장</button>
@@ -137,9 +141,9 @@
           </div>
           <button class="mk-btn" data-tb="scadd" style="margin-top:8px;width:100%">＋ Scene 추가</button>
         </div>
-        <div><!-- 중앙: 실미리보기 (§4-3) -->
+        <div><!-- 중앙: 실미리보기 (§4-3) / 테스트 모드 표 (§25) -->
           <div style="font-size:12px;color:var(--mk-text-secondary,#68737F);margin-bottom:6px">${planInfo}</div>
-          ${stage}
+          ${st.matrix ? renderMatrix(st.matrix) : stage}
           <div style="display:flex;gap:8px;align-items:center;margin-top:8px;font-size:12px;flex-wrap:wrap">
             샘플: ${mf.pairMode
               ? '쌍 ' + [1, 2, 3].map((n) => `<button class="mk-btn" data-tb="spair" data-n="${n}" style="padding:2px 8px;${st.sample.pairCount === n ? 'border-color:var(--mk-primary,#3B6EF6)' : ''}">${n}</button>`).join('')
@@ -148,7 +152,12 @@
           </div>
         </div>
         <div style="padding:12px;border:1px solid var(--mk-border,#E3E8EF);border-radius:12px;background:var(--mk-surface,#fff)">
-          ${st.sid && selIdx >= 0 ? renderSceneProps(mf, mf.scenes[selIdx]) : renderTplProps(t)}
+          ${st.sid && selIdx >= 0 ? renderSceneProps(mf, mf.scenes[selIdx]) : `
+            <div style="display:flex;gap:6px;margin-bottom:10px">
+              <button class="mk-btn" data-tb="tab" data-k="props" style="flex:1;padding:4px 6px;font-size:12px;${st.tab !== 'svar' ? 'border-color:var(--mk-primary,#3B6EF6);color:var(--mk-primary,#3B6EF6)' : ''}">템플릿</button>
+              <button class="mk-btn" data-tb="tab" data-k="svar" style="flex:1;padding:4px 6px;font-size:12px;${st.tab === 'svar' ? 'border-color:var(--mk-primary,#3B6EF6);color:var(--mk-primary,#3B6EF6)' : ''}">자동 구성${(mf.smartVariants || []).length ? ' ' + (mf.smartVariants || []).length : ''}</button>
+            </div>
+            ${st.tab === 'svar' ? renderVariants(t) : renderTplProps(t)}`}
         </div>
       </div>`;
   }
@@ -168,6 +177,89 @@
           <option value="">없음</option>${M().listLayouts().map((l) => `<option value="${l}" ${mf.meta.thumbnail === l ? 'selected' : ''}>${esc((M().getLayout(l) || {}).name || l)}</option>`).join('')}</select></label>
         <label><input type="checkbox" data-tb="p-gal" ${t.gallery ? 'checked' : ''}> Gallery 공개 (Ready 저장 시 #/video 노출)</label>
       </div>`;
+  }
+
+  /* ---------- 우측: 자동 구성 Variant 설정 (R66 §24) ---------- */
+  /* Variant 정의는 Manifest.smartVariants 에 산다 — 저장 = 실행 포맷 하나.
+     여기서 만든 것이 Ready 저장 시 그대로 MK_SVAR 로 연결된다. */
+  function renderVariants(t) {
+    const mf = t.manifest;
+    const list = B().getVariants(st.tid);
+    const v = list.find((x) => x.id === st.vsel) || null;
+    const key = mf.pairMode ? 'pairCount' : 'mediaCount';
+    const unit = mf.pairMode ? '쌍' : '사진';
+    const val = st.vval;
+    const rangeOf = (c) => {
+      const lo = (c || {})[key + 'Min'], hi = (c || {})[key + 'Max'];
+      if (lo == null && hi == null) return '조건 없음';
+      return (lo != null ? lo : 1) + '~' + (hi != null ? hi : '∞') + unit;
+    };
+    const head = `<b>자동 구성 (Smart Variant)</b>
+      <p class="ed-note" style="margin:6px 0 8px;font-size:11px">사진 수·방향에 따라 다른 구성을 고르게 해요. 정의가 없으면 기본 구성 하나로만 만들어져요.</p>
+      ${val ? `<div style="margin-bottom:8px;padding:8px 10px;border-radius:8px;font-size:11px;border:1px solid ${val.ok ? '#BFE5CB' : '#F1C6C6'};background:${val.ok ? '#F2FBF5' : '#FDF4F4'}">
+        <b>${val.ok ? '✓ 쓸 수 있어요' : '✗ 오류 ' + val.errors.length + '건'}</b>
+        ${(val.errors || []).map((e) => `<div style="margin-top:3px">✗ ${esc(e.msg)}</div>`).join('')}
+        ${(val.warnings || []).map((w) => `<div style="margin-top:3px;color:#9A6200">⚠ ${esc(w)}</div>`).join('')}
+      </div>` : ''}
+      <div style="display:flex;flex-direction:column;gap:5px">${list.map((x) => `
+        <div data-tb="vsel" data-vid="${x.id}" style="padding:7px 9px;border-radius:9px;cursor:pointer;border:1px solid ${st.vsel === x.id ? 'var(--mk-primary,#3B6EF6)' : 'var(--mk-border,#E3E8EF)'}">
+          <div style="display:flex;align-items:center;gap:6px"><b style="font-size:12px;flex:1">${esc(x.name || x.id)}</b>
+            <button class="mk-btn" data-tb="vdel" data-vid="${x.id}" style="padding:0 6px;font-size:11px">✕</button></div>
+          <div style="font-size:11px;color:var(--mk-text-secondary,#68737F)">${esc(rangeOf(x.conditions))} · 우선 ${x.priority == null ? 10 : x.priority} · Layout ${(x.layoutPool || []).length}</div>
+        </div>`).join('')}</div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <button class="mk-btn" data-tb="vadd" style="flex:1;padding:3px 6px;font-size:12px">＋ 구성 추가</button>
+        <button class="mk-btn" data-tb="vcheck" style="flex:1;padding:3px 6px;font-size:12px">검사</button>
+      </div>`;
+    if (!v) return head + (list.length ? '<p class="ed-note" style="margin-top:8px;font-size:11px">구성을 고르면 조건을 편집해요.</p>' : '');
+
+    const c = v.conditions || {}, ss = v.sceneStrategy || {}, du = v.duration || {};
+    const layouts = M().listLayouts();
+    return head + `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--mk-border,#E3E8EF);display:flex;flex-direction:column;gap:7px;font-size:12px">
+      <b style="font-size:12px">「${esc(v.name || v.id)}」 조건</b>
+      <label>이름<input class="mk-input" data-tb="v-name" value="${esc(v.name || '')}" style="width:100%"></label>
+      <div>${unit} 수 최소 <input class="mk-input" data-tb="v-min" type="number" min="1" value="${c[key + 'Min'] != null ? c[key + 'Min'] : ''}" style="width:56px">
+        최대 <input class="mk-input" data-tb="v-max" type="number" min="1" value="${c[key + 'Max'] != null ? c[key + 'Max'] : ''}" style="width:56px"></div>
+      <div>방향 <select class="mk-input" data-tb="v-or" style="width:130px">
+        ${[['', '상관없음'], ['portraitDominant', '세로 우세'], ['landscapeDominant', '가로 우세'], ['mixed', '섞임']].map(([k2, n2]) => `<option value="${k2}" ${(c.orientation || '') === k2 ? 'selected' : ''}>${n2}</option>`).join('')}</select>
+        우선 <input class="mk-input" data-tb="v-pri" type="number" value="${v.priority == null ? 10 : v.priority}" style="width:52px"></div>
+      ${mf.pairMode ? '' : `<div>최대 장면 <input class="mk-input" data-tb="v-msc" type="number" min="1" value="${ss.maxSceneCount || 14}" style="width:56px">
+        <label style="margin-left:8px"><input type="checkbox" data-tb="v-col" ${ss.allowCollage ? 'checked' : ''}> 콜라주 허용</label>
+        <label style="margin-left:6px"><input type="checkbox" data-tb="v-pair" ${ss.allowPair !== false ? 'checked' : ''}> 2장 배치</label></div>`}
+      <div>권장 총 길이 <input class="mk-input" data-tb="v-mt" type="number" step="5" value="${du.maxTotal || 60}" style="width:64px">초</div>
+      <div><b style="font-size:11px">쓸 Layout</b>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${layouts.map((l) => `
+          <label style="font-size:11px;padding:2px 6px;border-radius:99px;border:1px solid ${(v.layoutPool || []).includes(l) ? 'var(--mk-primary,#3B6EF6)' : 'var(--mk-border,#E3E8EF)'}">
+            <input type="checkbox" data-tb="v-lay" value="${l}" ${(v.layoutPool || []).includes(l) ? 'checked' : ''} style="vertical-align:-1px"> ${esc((M().getLayout(l) || {}).name || l)}</label>`).join('')}</div></div>
+    </div>`;
+  }
+
+  /* ---------- 중앙: 테스트 모드 표 (R66 §25) ---------- */
+  /* 실제 buildSmart 결과만 표기 — 예측·추정 금지. 배치 수가 입력 수와 다르면 그 자리에서 빨갛게 드러난다. */
+  function renderMatrix(mx) {
+    const bad = (r) => !r.ok || r.placed !== r.expected;
+    return `<div style="border:1px solid var(--mk-border,#E3E8EF);border-radius:10px;overflow:hidden;background:var(--mk-surface,#fff)">
+      <div style="padding:8px 12px;border-bottom:1px solid var(--mk-border,#E3E8EF);font-size:12px">
+        <b>${mx.ok ? '✓ 모든 경우 정상' : '✗ 문제 ' + mx.problems + '건'}</b>
+        <span style="color:var(--mk-text-secondary,#68737F);margin-left:6px">사진 수·방향별로 실제 만들어 본 결과예요</span>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:11.5px">
+        <tr style="background:var(--mk-bg-secondary,#F2F5F9)">
+          ${['입력', '고른 구성', '장면', '길이', '사진 배치', '배치 계획'].map((h) => `<th style="text-align:left;padding:6px 8px;font-weight:600">${h}</th>`).join('')}</tr>
+        ${mx.rows.map((r) => r.ok ? `<tr style="border-top:1px solid var(--mk-border,#E3E8EF);${bad(r) ? 'background:#FDF4F4' : ''}">
+            <td style="padding:6px 8px">${esc(r.label)}</td>
+            <td style="padding:6px 8px">${esc(r.variant)}</td>
+            <td style="padding:6px 8px">${r.scenes}</td>
+            <td style="padding:6px 8px">${r.total}초</td>
+            <td style="padding:6px 8px;${bad(r) ? 'color:#B3261E;font-weight:700' : ''}">${r.placed}/${r.expected}</td>
+            <td style="padding:6px 8px;color:var(--mk-text-secondary,#68737F)">${esc(r.plan || '')}</td></tr>`
+          : `<tr style="border-top:1px solid var(--mk-border,#E3E8EF);background:#FDF4F4">
+            <td style="padding:6px 8px">${esc(r.label)}</td>
+            <td colspan="5" style="padding:6px 8px;color:#B3261E">${esc(r.why)}</td></tr>`).join('')}
+      </table>
+      ${mx.rows.some((r) => (r.warnings || []).length) ? `<div style="padding:8px 12px;border-top:1px solid var(--mk-border,#E3E8EF);font-size:11px;color:#9A6200">
+        ${mx.rows.filter((r) => (r.warnings || []).length).map((r) => `<div>⚠ ${esc(r.label)} — ${esc(r.warnings.join(' / '))}</div>`).join('')}</div>` : ''}
+    </div>`;
   }
 
   /* ---------- 우측: Scene 속성 (§4-4 B) ---------- */
@@ -214,7 +306,7 @@
     onch('[data-tb="q"]', (el) => { st.filter.q = el.value; rerender(); });
     onch('[data-tb="fst"]', (el) => { st.filter.status = el.value; rerender(); });
     onch('[data-tb="fcp"]', (el) => { st.filter.composition = el.value; rerender(); });
-    on('[data-tb="edit"]', (el) => { st.view = 'edit'; st.tid = el.dataset.id; st.sid = null; st.val = null; st.msg = ''; st.ratio = null; rerender(); });
+    on('[data-tb="edit"]', (el) => { st.view = 'edit'; st.tid = el.dataset.id; st.sid = null; st.val = null; st.msg = ''; st.ratio = null; st.tab = 'props'; st.vsel = null; st.matrix = null; st.vval = null; rerender(); });
     on('[data-tb="dup"]', (el) => { const nid = B().duplicate(el.dataset.id); st.msg = nid ? '복사본을 만들었어요' : '복제 실패'; rerender(); });
     on('[data-tb="prev"]', (el) => {
       const t = B().get(el.dataset.id); if (!t) return;
@@ -250,6 +342,71 @@
       else { st.msg = 'Ready 저장 불가 — 아래 오류를 해결하세요'; st.val = { ok: false, errors: r.errors || [], warnings: r.warnings || [] }; }
       rerender();
     });
+    /* R66 §12 — Ready 템플릿을 자동 구성으로 실제 작업 문서화 → Workspace 진입 */
+    on('[data-tb="smartopen"]', () => {
+      const S2 = window.MK_SVAR, t = B().get(st.tid);
+      if (!S2 || !t) { st.msg = '자동 구성 엔진 미로드'; rerender(); return; }
+      const mf = t.manifest;
+      const input = { ratio: st.ratio || mf.defaultRatio, texts: B().sampleTexts() };
+      if (mf.pairMode) input.pairs = B().samplePairs(st.sample.pairCount);
+      else input.medias = B().sampleMedias(st.sample.mediaCount);
+      const r = S2.buildSmart(mf.id, input, { theme: mf.theme });
+      if (!r.ok) { st.msg = '자동 구성 실패 — ' + (r.guide || r.why || ''); rerender(); return; }
+      if (!window.MK_PROJ) { st.msg = '프로젝트 저장소 미로드'; rerender(); return; }
+      const pj = window.MK_PROJ.createFromDoc(r.doc, mf.meta.name + ' 자동 구성');
+      window.MK_PROJ.open(pj.projectId);
+    });
+
+    /* R66 §25 — 테스트 모드: 실빌드 매트릭스 (초안 상태 그대로) */
+    on('[data-tb="matrix"]', () => {
+      if (st.matrix) { st.matrix = null; rerender(); return; }
+      const mx = B().smartPreview(st.tid, { ratio: st.ratio || undefined });
+      st.matrix = mx && mx.rows ? mx : null;
+      st.msg = mx && mx.rows ? (mx.ok ? '모든 경우 정상이에요' : '문제 ' + mx.problems + '건 — 표에서 확인하세요')
+        : '테스트 실패 — ' + ((mx && (mx.guide || mx.why)) || '');
+      rerender();
+    });
+    /* R66 §24 — 자동 구성 탭 */
+    on('[data-tb="tab"]', (el) => { st.tab = el.dataset.k; st.matrix = st.tab === 'svar' ? st.matrix : st.matrix; rerender(); });
+    on('[data-tb="vsel"]', (el, ev) => { if (ev.target.closest('button')) return; st.vsel = st.vsel === el.dataset.vid ? null : el.dataset.vid; rerender(); });
+    on('[data-tb="vadd"]', () => {
+      const r = B().addVariant(st.tid, {});
+      if (r.ok) { st.vsel = r.variantId; st.vval = null; } else st.msg = r.msg;
+      rerender();
+    });
+    on('[data-tb="vdel"]', (el) => {
+      const r = B().removeVariant(st.tid, el.dataset.vid);
+      if (!r.ok) st.msg = r.msg; else if (st.vsel === el.dataset.vid) st.vsel = null;
+      st.vval = null; rerender();
+    });
+    on('[data-tb="vcheck"]', () => {
+      const X = window.MK_SVARX; const t = B().get(st.tid);
+      st.vval = X ? X.validateVariants(B().getVariants(st.tid), { pairMode: !!t.manifest.pairMode })
+        : { ok: true, errors: [], warnings: ['검증 엔진 미로드'] };
+      rerender();
+    });
+    const vp = (patch) => {
+      const r = B().setVariant(st.tid, st.vsel, patch);
+      if (!r.ok) { st.vval = { ok: false, errors: r.errors || [{ msg: r.msg }], warnings: [] }; }
+      else st.vval = { ok: true, errors: [], warnings: r.warnings || [] };
+      rerender();
+    };
+    const numOrNull = (v) => (v === '' || v == null ? null : +v);
+    const curKey = () => { const t = B().get(st.tid); return t.manifest.pairMode ? 'pairCount' : 'mediaCount'; };
+    onch('[data-tb="v-name"]', (el) => vp({ name: el.value }));
+    onch('[data-tb="v-min"]', (el) => vp({ conditions: { [curKey() + 'Min']: numOrNull(el.value) } }));
+    onch('[data-tb="v-max"]', (el) => vp({ conditions: { [curKey() + 'Max']: numOrNull(el.value) } }));
+    onch('[data-tb="v-or"]', (el) => vp({ conditions: { orientation: el.value || null } }));
+    onch('[data-tb="v-pri"]', (el) => vp({ priority: +el.value || 0 }));
+    onch('[data-tb="v-msc"]', (el) => vp({ sceneStrategy: { maxSceneCount: +el.value || 14 } }));
+    onch('[data-tb="v-col"]', (el) => vp({ sceneStrategy: { allowCollage: el.checked } }));
+    onch('[data-tb="v-pair"]', (el) => vp({ sceneStrategy: { allowPair: el.checked } }));
+    onch('[data-tb="v-mt"]', (el) => vp({ duration: { maxTotal: +el.value || 60 } }));
+    onch('[data-tb="v-lay"]', () => {
+      const pool = [...root.querySelectorAll('[data-tb="v-lay"]')].filter((x) => x.checked).map((x) => x.value);
+      vp({ layoutPool: pool });
+    });
+
     /* 좌측 Scene 목록 */
     on('[data-tb="sel"]', (el, ev) => { if (ev.target.closest('button')) return; st.sid = st.sid === el.dataset.sid ? null : el.dataset.sid; rerender(); });
     on('[data-tb="mv"]', (el) => { B().moveScene(st.tid, el.dataset.sid, +el.dataset.d); rerender(); });
