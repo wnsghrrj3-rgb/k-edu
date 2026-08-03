@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>R70 — ★ 가산 보전 보고</title>
+<style>
+  body { font: 15px/1.7 -apple-system, "Noto Sans KR", sans-serif; color: #1b1f24; max-width: 900px; margin: 0 auto; padding: 32px 20px 80px; }
+  h1 { font-size: 24px; margin: 0 0 4px; }
+  h2 { font-size: 17px; margin: 32px 0 10px; padding-top: 14px; border-top: 1px solid #E3E8EF; }
+  .sub { color: #68737F; font-size: 13px; margin: 0 0 20px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 10px 0; }
+  th, td { text-align: left; padding: 7px 9px; border-bottom: 1px solid #E3E8EF; }
+  th { background: #F2F5F9; font-weight: 600; }
+  code { background: #F2F5F9; padding: 1px 5px; border-radius: 4px; font-size: 12.5px; }
+  .ok { color: #1E7A3C; font-weight: 600; }
+  .warn { color: #9A6200; }
+  ul { padding-left: 20px; }
+  li { margin: 4px 0; }
+  .note { background: #F8FAFC; border-left: 3px solid #3B6EF6; padding: 10px 14px; margin: 12px 0; font-size: 13.5px; }
+</style>
+</head>
+<body>
+
+<h1>R70 — ★ 가산 보전 (R69 한계 ① 해소)</h1>
+<p class="sub">2026-08-04 · 캐시버스터 <code>v=20260804b</code> · test-round70 33/33 · 전 스위트 61 전량 통과 · 실측 160빌드</p>
+
+<div class="note">
+R69는 「★ 를 걸면 그 쌍의 비교 장면이 <b>+1.0초</b> 길어진다」고 약속했지만, 길이 정책이 기본 길이와 가산을
+구분하지 않고 함께 눌러서 실측값이 구간마다 달랐다. 더 나쁜 것은 <b>씬에 적힌 <code>hlAdd</code> 는 1.0 그대로</b>였다는 점이다 —
+되돌릴 근거가 실제와 달라서, ★ 를 해제하면 원래보다 짧아졌다.
+</div>
+
+<h2>1. 고친 것 — R69 실측 대비</h2>
+<table>
+<tr><th>구간</th><th>R69 실제 가산</th><th>R69 기록(hlAdd)</th><th>R70 실제 가산</th><th>R70 기록</th><th>해제 왕복</th></tr>
+<tr><td>쌍 2</td><td>+1.0</td><td>1.0</td><td>+1.0</td><td>1.0</td><td class="ok">무손상</td></tr>
+<tr><td>쌍 4</td><td>+1.0</td><td>1.0</td><td>+1.0</td><td>1.0</td><td class="ok">무손상</td></tr>
+<tr><td>쌍 5</td><td>+1.0</td><td>1.0</td><td>+1.0</td><td>1.0</td><td class="ok">무손상</td></tr>
+<tr><td>쌍 8</td><td class="warn">+0.7</td><td class="warn">1.0 (거짓)</td><td>+1.0</td><td>1.0</td><td class="ok">무손상</td></tr>
+<tr><td>쌍 10</td><td class="warn">+0.6</td><td class="warn">1.0 (거짓)</td><td>+1.0</td><td>1.0</td><td class="ok">무손상</td></tr>
+</table>
+<p class="sub">R69 값은 이번 회차 착수 시 패치 전 코드로 직접 재측정한 것(씨앗 <code>s1</code>).</p>
+
+<h2>2. 못 박은 순서</h2>
+<ul>
+<li><b>① 압축은 기본 길이에서만.</b> 가산(<code>hlAdd</code>)은 비율 압축 대상 밖 — 사용자가 건 것이 자동값보다 먼저 밀리지 않는다.</li>
+<li><b>② 반올림 잔여분도 기본 길이에서 뺀다.</b> 0.1초 단위 착지 오차를 가산에서 빼면 「아직 줄일 여지가 있는데 강조부터 깎는」 순서가 된다. 기본 길이가 하한(<code>1.5초</code>)에 닿을 때까지 긴 장면부터 0.1초씩 깎는다(결정론).</li>
+<li><b>③ 하한까지 갔는데도 안 맞을 때만 가산을 깎는다.</b> 그리고 깎은 값을 <code>hlAdd</code> 에 다시 적는다 — 이 숫자로 되돌리기 때문에.</li>
+<li><b>④ 깎아도 상한을 못 맞추는 자리에서는 깎지 않는다.</b> 약속만 잃고 얻는 것이 없는 거래는 하지 않는다(초과 사실은 그대로 고지).</li>
+<li><b>⑤ 지키지 못한 만큼만 말한다.</b> 온전하면 「그대로 지켰어요」, 깎였으면 실제 남은 초를 숫자로.</li>
+</ul>
+
+<h2>3. 실측 매트릭스 — 쌍 8종 × 역할 4경우 × 씨앗 5회 = 160빌드</h2>
+<p class="sub">값이 둘 이상인 칸은 씨앗별로 다른 Variant 가 뽑힌 구간이다(장면 수·총길이가 갈린다). 추정치 없음 — 전부 실빌드 결과.</p>
+<table>
+<tr><th>쌍</th><th>역할</th><th>요청 가산</th><th>기록(hlAdd)</th><th>실제 가산</th><th>정합</th><th>총길이(초)</th><th>장면</th><th>사진</th><th>가산 절삭</th><th>상한</th></tr>
+<tr><td>쌍 2</td><td>★ 없음</td><td>0초</td><td>0</td><td>0</td><td class='ok'>일치</td><td>25 / 18</td><td>9 / 7</td><td>4</td><td>—</td><td>—</td></tr>
+<tr><td>쌍 2</td><td>★ 1개</td><td>1초</td><td>1</td><td>1</td><td class='ok'>일치</td><td>26 / 19</td><td>9 / 7</td><td>4</td><td>—</td><td>—</td></tr>
+<tr><td>쌍 2</td><td>★ 2개</td><td>2초</td><td>2</td><td>2</td><td class='ok'>일치</td><td>27 / 20</td><td>9 / 7</td><td>4</td><td>—</td><td>—</td></tr>
+<tr><td>쌍 2</td><td>★ 전부</td><td>2초</td><td>2</td><td>2</td><td class='ok'>일치</td><td>27 / 20</td><td>9 / 7</td><td>4</td><td>—</td><td>—</td></tr>
+<tr><td>쌍 4</td><td>★ 없음</td><td>0초</td><td>0</td><td>0</td><td class='ok'>일치</td><td>29 / 43</td><td>11 / 15</td><td>8</td><td>—</td><td>—</td></tr>
+<tr><td>쌍 4</td><td>★ 1개</td><td>1초</td><td>1</td><td>1</td><td class='ok'>일치</td><td>30 / 44</td><td>11 / 15</td><td>8</td><td>—</td><td>—</td></tr>
+<tr><td>쌍 4</td><td>★ 2개</td><td>2초</td><td>2</td><td>2</td><td class='ok'>일치</td><td>31 / 45</td><td>11 / 15</td><td>8</td><td>—</td><td>—</td></tr>
+<tr><td>쌍 4</td><td>★ 전부</td><td>4초</td><td>4</td><td>4</td><td class='ok'>일치</td><td>33 / 47</td><td>11 / 15</td><td>8</td><td>—</td><td>—</td></tr>
+<tr><td>쌍 5</td><td>★ 없음</td><td>0초</td><td>0</td><td>0</td><td class='ok'>일치</td><td>32 / 52 / 54.5 / 34.5</td><td>13 / 18</td><td>10</td><td>—</td><td>—</td></tr>
+<tr><td>쌍 5</td><td>★ 1개</td><td>1초</td><td>1</td><td>1</td><td class='ok'>일치</td><td>33 / 53 / 55.5 / 35.5</td><td>13 / 18</td><td>10</td><td>—</td><td>—</td></tr>
+<tr><td>쌍 5</td><td>★ 2개</td><td>2초</td><td>2</td><td>2</td><td class='ok'>일치</td><td>34 / 54 / 56.5 / 36.5</td><td>13 / 18</td><td>10</td><td>—</td><td>—</td></tr>
+<tr><td>쌍 5</td><td>★ 전부</td><td>5초</td><td>5</td><td>5</td><td class='ok'>일치</td><td>37 / 57 / 59.5 / 39.5</td><td>13 / 18</td><td>10</td><td>—</td><td>—</td></tr>
+<tr><td>쌍 6</td><td>★ 없음</td><td>0초</td><td>0</td><td>0</td><td class='ok'>일치</td><td>59.8 / 60 / 40</td><td>21 / 15</td><td>12</td><td>—</td><td>—</td></tr>
+<tr><td>쌍 6</td><td>★ 1개</td><td>1초</td><td>1</td><td>1</td><td class='ok'>일치</td><td>59.6 / 60 / 41</td><td>21 / 15</td><td>12</td><td>—</td><td>—</td></tr>
+<tr><td>쌍 6</td><td>★ 2개</td><td>2초</td><td>2</td><td>2</td><td class='ok'>일치</td><td>60 / 42</td><td>21 / 15</td><td>12</td><td>—</td><td>—</td></tr>
+<tr><td>쌍 6</td><td>★ 전부</td><td>6초</td><td>6</td><td>6</td><td class='ok'>일치</td><td>60 / 46</td><td>21 / 15</td><td>12</td><td>—</td><td>—</td></tr>
+<tr><td>쌍 8</td><td>★ 없음</td><td>0초</td><td>0</td><td>0</td><td class='ok'>일치</td><td>59 / 51 / 59.8 / 47</td><td>27 / 19</td><td>16</td><td>—</td><td>—</td></tr>
+<tr><td>쌍 8</td><td>★ 1개</td><td>1초</td><td>1</td><td>1</td><td class='ok'>일치</td><td>60 / 52 / 48</td><td>27 / 19</td><td>16</td><td>—</td><td>—</td></tr>
+<tr><td>쌍 8</td><td>★ 2개</td><td>2초</td><td>2</td><td>2</td><td class='ok'>일치</td><td>60 / 53 / 49</td><td>27 / 19</td><td>16</td><td>—</td><td>—</td></tr>
+<tr><td>쌍 8</td><td>★ 전부</td><td>8초</td><td>8</td><td>8</td><td class='ok'>일치</td><td>60 / 59 / 55</td><td>27 / 19</td><td>16</td><td>—</td><td>—</td></tr>
+<tr><td>쌍 10</td><td>★ 없음</td><td>0초</td><td>0</td><td>0</td><td class='ok'>일치</td><td>60 / 57</td><td>33 / 23</td><td>20</td><td>—</td><td>—</td></tr>
+<tr><td>쌍 10</td><td>★ 1개</td><td>1초</td><td>1</td><td>1</td><td class='ok'>일치</td><td>60 / 58</td><td>33 / 23</td><td>20</td><td>—</td><td>—</td></tr>
+<tr><td>쌍 10</td><td>★ 2개</td><td>2초</td><td>2</td><td>2</td><td class='ok'>일치</td><td>60 / 59</td><td>33 / 23</td><td>20</td><td>—</td><td>—</td></tr>
+<tr><td>쌍 10</td><td>★ 전부</td><td>10초</td><td>8 / 10</td><td>8 / 10</td><td class='ok'>일치</td><td>60</td><td>33 / 23</td><td>20</td><td><span class="warn">일부 절삭</span></td><td>—</td></tr>
+<tr><td>쌍 12</td><td>★ 없음</td><td>0초</td><td>0</td><td>0</td><td class='ok'>일치</td><td>59.8 / 61</td><td>27 / 39</td><td>24</td><td>—</td><td><span class="warn">초과 고지</span></td></tr>
+<tr><td>쌍 12</td><td>★ 1개</td><td>1초</td><td>1</td><td>1</td><td class='ok'>일치</td><td>60 / 62</td><td>27 / 39</td><td>24</td><td>—</td><td><span class="warn">초과 고지</span></td></tr>
+<tr><td>쌍 12</td><td>★ 2개</td><td>2초</td><td>2</td><td>2</td><td class='ok'>일치</td><td>59.4 / 63</td><td>27 / 39</td><td>24</td><td>—</td><td><span class="warn">초과 고지</span></td></tr>
+<tr><td>쌍 12</td><td>★ 전부</td><td>12초</td><td>12</td><td>12</td><td class='ok'>일치</td><td>59.8 / 60 / 73</td><td>27 / 39</td><td>24</td><td>—</td><td><span class="warn">초과 고지</span></td></tr>
+<tr><td>쌍 16</td><td>★ 없음</td><td>0초</td><td>0</td><td>0</td><td class='ok'>일치</td><td>59.8 / 79</td><td>35 / 51</td><td>32</td><td>—</td><td><span class="warn">초과 고지</span></td></tr>
+<tr><td>쌍 16</td><td>★ 1개</td><td>1초</td><td>1</td><td>1</td><td class='ok'>일치</td><td>60 / 80</td><td>35 / 51</td><td>32</td><td>—</td><td><span class="warn">초과 고지</span></td></tr>
+<tr><td>쌍 16</td><td>★ 2개</td><td>2초</td><td>2</td><td>2</td><td class='ok'>일치</td><td>60 / 81</td><td>35 / 51</td><td>32</td><td>—</td><td><span class="warn">초과 고지</span></td></tr>
+<tr><td>쌍 16</td><td>★ 전부</td><td>16초</td><td>4.8 / 16</td><td>4.8 / 16</td><td class='ok'>일치</td><td>59.8 / 95</td><td>35 / 51</td><td>32</td><td><span class="warn">일부 절삭</span></td><td><span class="warn">초과 고지</span></td></tr>
+</table>
+
+<h2>4. 이 표가 지키는 것</h2>
+<ul>
+<li><b>기록 = 실제, 32행 160빌드 전부 일치.</b> ★ 해제가 언제나 원래 길이로 돌아간다.</li>
+<li><b>사진 수는 역할과 무관하게 불변</b>(쌍 n → 2n장). ★ 가 사진을 삼키지 않는다.</li>
+<li><b>장면 수도 ★ 유무로 변하지 않는다.</b> 가산은 길이만 건드린다(R69 계약 유지).</li>
+<li><b>절삭은 2경우에서만</b> — 쌍 10 전부 ★(10초 요청 → 8.0초), 쌍 16 전부 ★(16초 요청 → 4.8초). 둘 다 숫자로 고지하고 <code>hlAdd</code> 를 그 값으로 다시 적었다.</li>
+</ul>
+
+<h2>5. 남은 한계</h2>
+<ul>
+<li>압축이 걸린 구간에서 ★ 는 <b>총길이를 늘리지 않는다</b> — 상한이 총길이를 정하므로, ★ 장면이 길어진 만큼 다른 장면이 짧아진다. 「그 장면이 더 길다」는 지키지만 「영상이 1초 길어진다」는 지키지 않는다(지킬 수 없는 약속).</li>
+<li>만든 뒤 Workspace 에서 ★ 를 해제해도 <b>압축된 기본 길이는 돌아오지 않는다</b>. 압축은 그 구성의 결과이고 해제는 문서 편집이라, 되돌리려면 「다른 구성」으로 다시 계산해야 한다.</li>
+<li>쌍이 아주 많은 구간(실측 12·16쌍의 일부 씨앗)은 ★ 와 무관하게 권장 길이를 넘는다 — 고지만 하고 강제로 자르지 않는다.</li>
+<li>미리보기 실빌드 비용 실브라우저 측정(사진 30장)은 R68·R69 에서 이월된 채 그대로.</li>
+</ul>
+
+</body>
+</html>

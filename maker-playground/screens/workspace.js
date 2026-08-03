@@ -188,7 +188,7 @@
     return `<div class="cx-smart" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--mk-border)">
       <label class="cx-field"><span>자동 구성</span></label>
       <div style="font:var(--mk-t-caption);color:var(--mk-text-secondary);margin:-4px 0 8px">
-        구성 「${M().esc(stt.variant || '기본')}」 · 장면 ${sum.total}개${sum.locked ? ' · 🔒 잠금 ' + sum.locked : ''}${stt.seed ? '<br>씨앗 ' + M().esc(String(stt.seed)) : ''}${ps && ps.pairs ? `<br>쌍 ${ps.pairs}개 · 🔒 통째 잠금 ${ps.locked}개${ps.partial ? ' · ⚠ 반쪽 ' + ps.partial + '개' : ''}${prs && prs.highlight ? ' · ★ 중요 ' + prs.highlight + '개' : ''}` : ''}</div>
+        구성 「${M().esc(stt.variant || '기본')}」 · 장면 ${sum.total}개${sum.locked ? ' · 🔒 잠금 ' + sum.locked : ''}${stt.seed ? '<br>씨앗 ' + M().esc(String(stt.seed)) : ''}${ps && ps.pairs ? `<br>쌍 ${ps.pairs}개 · 🔒 통째 잠금 ${ps.locked}개${ps.partial ? ' · ⚠ 반쪽 ' + ps.partial + '개' : ''}${prs && prs.highlight ? ' · ★ 중요 ' + prs.highlight + '개(+' + prs.add + '초' + (prs.trimmed ? ', 권장 길이 때문에 ' + prs.want + '초에서 줄임' : '') + ')' : ''}` : ''}</div>
       ${ps && ps.partial ? `<button class="cx-scenebtn" data-ws-pairfix="1" style="border-color:var(--mk-teal)">🔒 반쪽 잠긴 쌍 ${ps.partial}개를 통째로 잠그기</button>` : ''}
       <button class="cx-scenebtn" data-ws-svar="new">🎲 다른 구성으로</button>
       ${depth > 1 ? `<button class="cx-scenebtn" data-ws-svar="prev">↩ 이전 구성으로</button>` : ''}

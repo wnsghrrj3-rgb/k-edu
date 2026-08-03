@@ -68,6 +68,73 @@ window.MK_SVAR = (() => {
     return n;
   }
 
+  /* ================= R70 강조 보전 압축 (§21·§8 공통) =================
+     길이 상한을 맞출 때 ★ 가산(hlAdd)까지 같이 눌리면 「+1.0초 더 길게」라는 약속이
+     구간마다 다른 값이 된다(R69 실측: 쌍 8 에서 +0.7, 쌍 10 에서 +0.6). 더 나쁜 건
+     씬에 적힌 hlAdd 는 1.0 그대로라 ★ 를 해제하면 원래보다 짧아졌다는 것이다.
+     순서를 못 박는다:
+       ① 기본 길이만 비율 압축 — 가산은 압축 대상 밖(사용자가 건 것이 자동값보다 먼저 밀리지 않는다)
+       ② 최대 압축으로도 상한을 못 맞추면 그때 가산을 깎는다
+       ③ 깎은 값을 hlAdd 에 다시 적는다 — 이 숫자가 실제와 다르면 해제가 원래 길이로 못 돌아간다
+     반환: { total, bonusWant, bonusKept, shrunk } */
+  const bonusOf = (s) => (s && s.svar && s.svar.hlAdd) || 0;
+  function setBonus(s, v) {
+    const nx = { ...(s.svar || {}) };
+    if (v > 0) nx.hlAdd = v; else delete nx.hlAdd;
+    s.svar = nx;
+  }
+  function shrinkKeepingBonus(doc, scenes, maxT, warnings, label) {
+    const total = () => R1(doc.scenes.reduce((a, s) => a + s.duration, 0));
+    const bonusWant = R1(scenes.reduce((a, s) => a + bonusOf(s), 0));
+    if (!maxT || total() <= maxT) return { total: total(), bonusWant, bonusKept: bonusWant, shrunk: false };
+    const fixed = total() - scenes.reduce((a, s) => a + s.duration, 0);
+    const curBase = scenes.reduce((a, s) => a + (s.duration - bonusOf(s)), 0);
+    const want = Math.max(maxT - fixed - bonusWant, scenes.length * CONST.DUR_FLOOR);
+    const k = Math.max(CONST.SHRINK_FLOOR, Math.min(1, curBase > 0 ? want / curBase : 1));
+    for (const s of scenes) {
+      const b = bonusOf(s);
+      s.duration = R1(Math.max(CONST.DUR_FLOOR, (s.duration - b) * k) + b);
+    }
+    /* 비율 압축은 반올림(0.1초 단위) 때문에 상한을 조금 넘겨 착지할 수 있다. 그 잔여분을
+       가산에서 빼면 「기본 길이는 아직 줄일 여지가 있는데 강조부터 깎는」 순서가 된다.
+       기본 길이가 하한(DUR_FLOOR)에 닿을 때까지 먼저 0.1초씩 깎는다(결정론: 긴 것부터). */
+    let need = R1(total() - maxT);
+    while (need > 0) {
+      const room = scenes.filter((s) => R1(s.duration - bonusOf(s)) > CONST.DUR_FLOOR)
+        .sort((a, b) => (b.duration - bonusOf(b)) - (a.duration - bonusOf(a)) || String(a.id).localeCompare(String(b.id)));
+      if (!room.length) break;
+      for (const s of room) {
+        if (need <= 0) break;
+        s.duration = R1(s.duration - 0.1);
+        need = R1(need - 0.1);
+      }
+    }
+    let bonusKept = bonusWant;
+    const over = R1(total() - maxT);
+    /* 가산을 깎아서 상한 안에 들어갈 수 있을 때만 깎는다. 깎아도 넘는 자리(기본 길이만으로
+       이미 초과)에서 가산까지 버리면 약속만 잃고 상한은 못 지킨다 — 아무것도 못 얻는 손해다. */
+    if (bonusWant > 0 && over > 0 && over <= bonusWant) {
+      const cut = over;
+      const ratio = (bonusWant - cut) / bonusWant;
+      for (const s of scenes) {
+        const b = bonusOf(s);
+        if (!b) continue;
+        const nb = R1(b * ratio);
+        s.duration = R1(s.duration - b + nb);
+        setBonus(s, nb);
+      }
+      bonusKept = R1(scenes.reduce((a, s) => a + bonusOf(s), 0));
+    }
+    const t = total();
+    if (t > maxT) warnings.push(label + '권장 길이(' + maxT + '초)를 넘어요 — 현재 약 ' + Math.round(t) + '초예요.');
+    else warnings.push(label + '장면 길이를 줄여 권장 길이에 맞췄어요.');
+    if (bonusWant > 0) {
+      if (bonusKept >= bonusWant) warnings.push('중요 표시한 장면 길이는 그대로 지켰어요.');
+      else warnings.push('중요 표시 가산은 ' + bonusKept + '초까지만 지켰어요(원래 ' + bonusWant + '초) — 권장 길이를 맞추려면 여기까지예요.');
+    }
+    return { total: t, bonusWant, bonusKept, shrunk: true };
+  }
+
   /* ================= 시드 난수 (R66 §22 — 재현 가능한 무작위) ================= */
   /* Math.random 금지: 같은 seed = 같은 구성. 저장·공유·되돌리기가 성립하려면
      무작위도 재현 가능해야 한다(정직 원칙 — "다시 누르면 달라짐"은 seed 변경으로만). */
@@ -425,25 +492,23 @@ window.MK_SVAR = (() => {
   /* built doc 에 대해: highlight 가산 → 총길이 상한 압축(하한·가독성 보호) → 정직 안내 */
   function balanceDurations(doc, steps, vdef, warnings, hlTail) {
     const dur = (vdef && vdef.duration) || {};
-    if (hlTail) { const hs = doc.scenes.find((s) => s.role === 'highlight'); if (hs) hs.duration = R1(hs.duration + CONST.HL_BONUS); }
+    /* R70 — 평면 ★ 가산도 씬에 적어 둔다. 적어 두지 않으면 압축이 가산과 기본 길이를
+       구분할 수 없어 강조가 조용히 지워진다(쌍과 같은 계약). */
+    if (hlTail) { const hs = doc.scenes.find((s) => s.role === 'highlight');
+      if (hs) { hs.duration = R1(hs.duration + CONST.HL_BONUS); setBonus(hs, CONST.HL_BONUS); } }
     const mediaScenes = doc.scenes.filter((s) => s.role === 'media');
     /* hl 스텝 가산 — 씬 순서 = 스텝 순서 (usePlan 규약) */
     let si = 0;
     for (const s of mediaScenes) {
       const step = steps[si++];
-      if (step && step.hl) s.duration = R1(Math.min(s.duration + CONST.HL_BONUS, s.duration + 1.5));
+      if (step && step.hl) { const add = Math.min(CONST.HL_BONUS, 1.5);
+        s.duration = R1(s.duration + add); setBonus(s, R1(bonusOf(s) + add)); }
     }
     const total = () => R1(doc.scenes.reduce((a, s) => a + s.duration, 0));
     const maxT = dur.maxTotal || 0;
     if (maxT && total() > maxT) {
       const shrinkable = doc.scenes.filter((s) => s.role === 'media' || s.role === 'highlight');
-      const fixed = total() - shrinkable.reduce((a, s) => a + s.duration, 0);
-      const want = Math.max(maxT - fixed, shrinkable.length * CONST.DUR_FLOOR);
-      const cur = shrinkable.reduce((a, s) => a + s.duration, 0);
-      const k = Math.max(CONST.SHRINK_FLOOR, Math.min(1, want / cur));
-      for (const s of shrinkable) s.duration = R1(Math.max(CONST.DUR_FLOOR, s.duration * k));
-      if (total() > maxT) warnings.push('권장 길이(' + maxT + '초)를 넘어요 — 현재 약 ' + Math.round(total()) + '초예요.');
-      else warnings.push('권장 길이에 맞춰 장면 길이를 살짝 줄였어요.');
+      shrinkKeepingBonus(doc, shrinkable, maxT, warnings, '');
     }
     return R1(total());
   }
@@ -456,13 +521,7 @@ window.MK_SVAR = (() => {
     if (!maxT || total() <= maxT) return R1(total());
     /* Extended Comparison — Pair 씬 길이 축소·전체 제한·인트로/결과 유지 (§8) */
     const pairScenes = doc.scenes.filter((s) => ['media', 'transform', 'comparison'].includes(s.role));
-    const fixed = total() - pairScenes.reduce((a, s) => a + s.duration, 0);
-    const want = Math.max(maxT - fixed, pairScenes.length * CONST.DUR_FLOOR);
-    const cur = pairScenes.reduce((a, s) => a + s.duration, 0);
-    const k = Math.max(CONST.SHRINK_FLOOR, Math.min(1, want / cur));
-    for (const s of pairScenes) s.duration = R1(Math.max(CONST.DUR_FLOOR, s.duration * k));
-    if (total() > maxT) warnings.push('비교 쌍이 많아 권장 길이(' + maxT + '초)를 넘어요 — 현재 약 ' + Math.round(total()) + '초예요.');
-    else warnings.push('비교 쌍이 많아 장면 길이를 줄여 권장 길이에 맞췄어요.');
+    shrinkKeepingBonus(doc, pairScenes, maxT, warnings, '비교 쌍이 많아 ');
     return R1(total());
   }
 
@@ -665,5 +724,5 @@ window.MK_SVAR = (() => {
   return { CONST, mediaStats, defineVariants, listVariants, getVariant,
     matchConditions, selectVariant, selectFrom, balancePlan, buildSmart, audit,
     makeRng, hashSeed, shuffled,
-    _internals: { SINGLE_PREF, pairLayout, normRoles, VARS, shuffledKeeping, normPairRoles, applyPairHighlight } };
+    _internals: { SINGLE_PREF, pairLayout, normRoles, VARS, shuffledKeeping, normPairRoles, applyPairHighlight, shrinkKeepingBonus, bonusOf } };
 })();

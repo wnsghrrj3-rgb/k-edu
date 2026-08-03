@@ -149,10 +149,18 @@ window.MK_SVARX = (() => {
     return { ok: true, key: g.key, no: g.no, highlight: on, scene: last.id, duration: last.duration };
   }
 
+  /* R70 — 요약에 「실제로 지켜진 가산」을 함께 싣는다. ★ 개수만 세면 길이 정책이
+     가산을 깎은 자리에서 화면이 「★ 2개」라고만 말하고 실제 몇 초인지는 아무도 모른다.
+     add = 문서에 실제로 더해져 있는 초의 합, want = 그 ★ 개수라면 받았어야 할 초. */
   function pairRoleSummary(doc) {
     const gs = pairGroups(doc), roles = pairRolesOf(doc);
-    return { pairs: gs.length, highlight: gs.filter((g) => roles[g.key] === 'highlight').length,
-      keys: gs.filter((g) => roles[g.key] === 'highlight').map((g) => g.key) };
+    const hl = gs.filter((g) => roles[g.key] === 'highlight');
+    let add = 0;
+    for (const g of hl) for (const sc of g.scenes) add += (sc.svar && sc.svar.hlAdd) || 0;
+    add = Math.round(add * 10) / 10;
+    const want = Math.round(hl.length * HL_ADD * 10) / 10;
+    return { pairs: gs.length, highlight: hl.length, keys: hl.map((g) => g.key),
+      add, want, trimmed: add < want };
   }
 
   /* ================= 재구성 (§12 「다른 구성」) ================= */
