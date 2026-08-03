@@ -192,11 +192,13 @@ window.MK_COMPOSE = (() => {
       /* ② 반복 씬 복제 */
       if (spec.repeatable) {
         /* R60 — 구조가 자체 배치 계획을 갖는 경우 (variant 8종·미디어 수별 규칙) */
-        if (spec.usePlan && typeof comp.mediaPlan === 'function') {
+        if (spec.usePlan && (typeof comp.mediaPlan === 'function' || typeof input._planOverride === 'function')) {
           const reserve = comp.reserveTail || 0;
           const r = Math.max(spec.required ? Math.min(1, n - mi) : 0, Math.min(n - mi - reserve, n - mi));
           const ratio2 = RATIOS[input.ratio] ? input.ratio : (comp.defaultRatio || '16:9');
-          const seq2 = comp.mediaPlan(r, ratio2, input.mediaCaptions || [], mi) || [];
+          /* R65 — MK_SVAR Auto Balance 가 사전 계산한 배치를 주입 (없으면 기존 경로 그대로) */
+          const planFn2 = typeof input._planOverride === 'function' ? input._planOverride : comp.mediaPlan;
+          const seq2 = planFn2(r, ratio2, input.mediaCaptions || [], mi) || [];
           let idx2 = 0;
           for (const step of seq2) {
             if (mi >= n) break;
