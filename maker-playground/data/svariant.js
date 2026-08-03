@@ -34,6 +34,40 @@ window.MK_SVAR = (() => {
     SHRINK_FLOOR: 0.6,      /* 압축 최대 비율 */
   };
 
+  /* ================= 쌍 역할 정규화 (R69 §19-쌍) ================= */
+  /* pairRoles: { 쌍이름표(pairKey, 문자열) : 'highlight'|'exclude' } — 쌍당 1역할.
+     평면 역할(mediaRoles)은 사진 1장 단위지만 쌍은 전→후가 한 몸이라 단위가 다르다.
+     · exclude = 이번 구성에서 그 쌍이 통째로 빠짐(원본 목록엔 그대로 — 무손상 계약)
+     · highlight = 그 쌍의 비교 장면만 더 길게. 「자리·크기」는 비교 방식이 정하므로
+       쌍에서는 길이만 바꾼다(평면의 ★ 처럼 큰 자리로 옮기는 척하지 않는다). */
+  const PAIR_ROLE_SET = ['highlight', 'exclude'];
+  function normPairRoles(roles) {
+    const out = {};
+    for (const [k, v] of Object.entries(roles || {})) {
+      if (String(k) === '' || !PAIR_ROLE_SET.includes(v)) continue;
+      out[String(k)] = v;
+    }
+    return out;
+  }
+  /* ★ 쌍 길이 가산 — 한 쌍에서 나온 장면 중 마지막(비교·변형) 장면 하나에만 준다.
+     쌍의 모든 장면을 늘리면 쌍 하나가 영상을 삼킨다. 되돌릴 수 있게 가산량을 씬에 적어 둔다. */
+  function applyPairHighlight(doc, hlKeys) {
+    if (!hlKeys || !hlKeys.size) return 0;
+    const last = new Map();
+    for (const sc of (doc.scenes || [])) {
+      if (sc.pairKey == null) continue;
+      const k = String(sc.pairKey);
+      if (hlKeys.has(k)) last.set(k, sc);
+    }
+    let n = 0;
+    for (const sc of last.values()) {
+      sc.duration = R1(sc.duration + CONST.HL_BONUS);
+      sc.svar = { ...(sc.svar || {}), hlAdd: CONST.HL_BONUS };
+      n++;
+    }
+    return n;
+  }
+
   /* ================= 시드 난수 (R66 §22 — 재현 가능한 무작위) ================= */
   /* Math.random 금지: 같은 seed = 같은 구성. 저장·공유·되돌리기가 성립하려면
      무작위도 재현 가능해야 한다(정직 원칙 — "다시 누르면 달라짐"은 seed 변경으로만). */
@@ -474,6 +508,11 @@ window.MK_SVAR = (() => {
       /* R68 — 잠긴 쌍(이름표 목록)은 자리도 방식도 건드리지 않는다. 자리가 흔들리면
          원본 장면을 되끼울 수 없고, 방식이 바뀌면 그 쌍의 장면 수 자체가 달라진다. */
       const lockedKeys = new Set((o.lockedPairKeys || []).map((k) => String(k)));
+      /* R69 — 쌍 역할. 이름표(_oi) 기준이므로 순서를 섞어도 따라온다. */
+      const pRoles = normPairRoles(inp.pairRoles);
+      delete inp.pairRoles; /* 엔진 입력으로는 넘기지 않는다 — compose 계약 무변경 */
+      const hlKeys = new Set(), exKeys = new Set();
+      for (const [k, v] of Object.entries(pRoles)) (v === 'exclude' ? exKeys : hlKeys).add(k);
       if (rawPairs) {
         /* _oi 는 최초 1회만 부여하고 이후 보존한다 — 매번 다시 매기면 이름표가 회차마다
            달라져 「이 쌍을 잠갔다」가 성립하지 않는다(R67 은 매번 재부여였다). */
@@ -486,6 +525,23 @@ window.MK_SVAR = (() => {
         });
         const keyOf = (p) => String((p.before && p.before._oi != null) ? p.before._oi
           : (p.after && p.after._oi != null) ? p.after._oi : '');
+        /* R69 — ⊘ 뺀 쌍은 이번 구성에서만 빠진다. 잠근 쌍은 빼지 않는다:
+           잠금은 「이 장면들을 그대로 지킨다」는 약속이라 제외와 동시에 성립할 수 없다. */
+        let dropped = 0, lockedSkip = 0;
+        if (exKeys.size) {
+          const before = withOi.length;
+          for (let i = withOi.length - 1; i >= 0; i--) {
+            const k = keyOf(withOi[i]);
+            if (!exKeys.has(k)) continue;
+            if (lockedKeys.has(k)) { lockedSkip++; continue; }
+            withOi.splice(i, 1);
+          }
+          dropped = before - withOi.length;
+          if (!withOi.length) return { ok: false, why: 'all-excluded',
+            guide: '쌍을 전부 뺐어요 — 한 쌍 이상 남겨 주세요 (뺀 쌍도 목록엔 그대로 있어요).' };
+          if (dropped) warnings.push('뺀 쌍 ' + dropped + '개는 이번 구성에서 빠졌어요 (원본 목록엔 그대로 있어요).');
+          if (lockedSkip) warnings.push('잠근 쌍 ' + lockedSkip + '개는 빼지 않았어요 — 잠금을 먼저 풀어 주세요.');
+        }
         pairOrder = withOi.map((_, i) => i);
         if (rnd && withOi.length > 1) {
           const fixedPos = new Set();
@@ -503,6 +559,10 @@ window.MK_SVAR = (() => {
       }
       const r = doBuild(inp);
       if (!r.ok) return r;
+      /* R69 — ★ 가산은 길이 정책(권장 총길이) 앞에 둔다. 뒤에 두면 정책이 맞춘 총량을
+         다시 넘겨 「맞췄다」는 보고가 거짓이 된다. */
+      const hlDone = applyPairHighlight(r.doc, hlKeys);
+      if (hlKeys.size && !hlDone) warnings.push('중요 표시한 쌍이 이번 구성엔 없어요 — 뺀 쌍이거나 예전 문서예요.');
       const totalAfter = applyPairPolicy(r.doc, sel.def, warnings);
       /* 쌍 메타 — 사진 원본(src)은 문서 안에 있으므로 중복 저장 없이 자리(원본 인덱스)만 남긴다 */
       const svPairs = (inp.pairs || []).map((p) => ({
@@ -513,11 +573,18 @@ window.MK_SVAR = (() => {
       for (const p of (inp.pairs || [])) for (const m of [p.before, p.after]) {
         if (m && m._oi != null) svMediaP[m._oi] = { n: m.name || '', k: m.kind || 'image', w: m.w || 0, h: m.h || 0 };
       }
+      /* R69 — 남아 있는 쌍의 ★ 만 문서에 적는다. 뺀 쌍은 문서에 사진 자체가 없어
+         되살릴 근거가 없으므로 역할을 적어 둬도 지킬 수 없다(적지 않는 것이 정직하다). */
+      const keptKeys = new Set(svPairs.map((d) => String(d.b != null ? d.b : d.a)));
+      const svRoles = {};
+      for (const k of hlKeys) if (keptKeys.has(k)) svRoles[k] = 'highlight';
       r.doc.meta = { ...(r.doc.meta || {}), svar: { templateId, variant: sel.id, pairMode: true,
         pairs: svPairs, media: svMediaP, ...(methodPicked ? { method: methodPicked } : {}),
+        ...(Object.keys(svRoles).length ? { roles: svRoles } : {}),
         texts: clone(inp.texts || {}), ratio, ...(rnd ? { seed: rnd.seed } : {}) } };
       return { ...r, total: totalAfter, warnings: [...(r.warnings || []), ...warnings],
         smart: { variant: sel.id, reason: sel.reason, stats: statsSummary(stats),
+          ...(hlDone ? { highlighted: hlDone } : {}), ...(exKeys.size ? { excludedPairs: exKeys.size } : {}),
           ...(methodPicked ? { method: methodPicked } : {}), ...(rnd ? { seed: rnd.seed } : {}) } };
     }
 
@@ -598,5 +665,5 @@ window.MK_SVAR = (() => {
   return { CONST, mediaStats, defineVariants, listVariants, getVariant,
     matchConditions, selectVariant, selectFrom, balancePlan, buildSmart, audit,
     makeRng, hashSeed, shuffled,
-    _internals: { SINGLE_PREF, pairLayout, normRoles, VARS, shuffledKeeping } };
+    _internals: { SINGLE_PREF, pairLayout, normRoles, VARS, shuffledKeeping, normPairRoles, applyPairHighlight } };
 })();

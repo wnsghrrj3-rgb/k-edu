@@ -37,12 +37,31 @@
     const t = H.st.roles[i]; H.st.roles[i] = H.st.roles[j]; H.st.roles[j] = t;
   };
   H.removeMedia = (i) => { baseRemove(i); H.st.roles.splice(i, 1); syncRoles(); };
-  H.resetStage = () => { baseReset(); H.st.roles = []; H.st.seed = ''; };
+  H.resetStage = () => { baseReset(); H.st.roles = []; H.st.pairRoles = []; H.st.seed = ''; };
   H.setRole = (i, role) => { syncRoles(); H.st.roles[i] = H.st.roles[i] === role ? '' : role; };
   H.st.seed = '';
 
   /* 드래그 정렬(video2 내부)은 medias·captions 만 옮긴다 — 역할도 같이 옮기도록 훅 */
   H.dragRole = (from, to) => { const r = H.st.roles.splice(from, 1)[0]; H.st.roles.splice(to, 0, r == null ? '' : r); };
+
+  /* ---------------- R69 쌍 역할 (자리 인덱스 기준) ---------------- */
+  /* 쌍은 전→후가 한 몸이라 역할도 쌍 단위다. 화면에서는 자리(몇 번째 쌍)로 잡고,
+     엔진에 넘길 때 이름표(_oi)로 옮긴다 — 순서를 바꿔도 역할이 딴 쌍에 붙지 않는다. */
+  H.st.pairRoles = [];
+  const syncPairRoles = () => {
+    while (H.st.pairRoles.length < H.st.pairs.length) H.st.pairRoles.push('');
+    H.st.pairRoles.length = H.st.pairs.length;
+  };
+  const basePAdd = H.addPair, basePMove = H.movePair, basePDel = H.removePair;
+  H.addPair = () => { basePAdd(); syncPairRoles(); };
+  H.movePair = (i, dir) => {
+    const j = i + dir;
+    if (j < 0 || j >= H.st.pairs.length) return;
+    basePMove(i, dir); syncPairRoles();
+    const t = H.st.pairRoles[i]; H.st.pairRoles[i] = H.st.pairRoles[j]; H.st.pairRoles[j] = t;
+  };
+  H.removePair = (i) => { basePDel(i); H.st.pairRoles.splice(i, 1); syncPairRoles(); };
+  H.setPairRoleAt = (i, role) => { syncPairRoles(); H.st.pairRoles[i] = H.st.pairRoles[i] === role ? '' : role; };
 
   /* ---------------- 이 구조에 자동 구성이 있는가 ---------------- */
   /* Manifest 에 등록된 템플릿 중 이 Composition 을 쓰는 것 — Builder 로 새로 만든
@@ -59,7 +78,25 @@
   /* ---------------- 자동 구성 입력 ---------------- */
   H.smartInput = () => {
     const inp = H.stagedInput();
-    if (H.st.stage === 'pairs') return inp;
+    if (H.st.stage === 'pairs') {
+      syncPairRoles();
+      /* stagedInput 은 빈 쌍을 걸러 내므로 자리 번호가 밀린다 — 같은 기준으로 다시 세어
+         역할이 딴 쌍에 붙지 않게 한다. */
+      const kept = H.st.pairs.map((p, i) => i).filter((i) => H.st.pairs[i].before || H.st.pairs[i].after);
+      const pairs = (inp.pairs || []).map((p, j) => ({
+        ...p,
+        before: p.before ? { ...p.before, _oi: j * 2 } : p.before,
+        after: p.after ? { ...p.after, _oi: j * 2 + 1 } : p.after,
+      }));
+      const pr = {};
+      pairs.forEach((p, j) => {
+        const role = H.st.pairRoles[kept[j]];
+        if (!role) return;
+        const key = String(p.before ? p.before._oi : p.after._oi);
+        pr[key] = role;
+      });
+      return { ...inp, pairs, ...(Object.keys(pr).length ? { pairRoles: pr } : {}) };
+    }
     syncRoles();
     const roles = {};
     H.st.roles.forEach((r, i) => { if (r) roles[i] = r; });
@@ -108,17 +145,26 @@
     </span>`;
   };
 
+  H.renderPairRoleChips = (i) => {
+    const cur = H.st.pairRoles[i] || '';
+    return `<span class="vh-roles">
+      <button data-vh-prole="highlight" data-i="${i}" class="vh-rolebtn${cur === 'highlight' ? ' on' : ''}" title="이 쌍의 비교 장면을 더 길게">★</button>
+      <button data-vh-prole="exclude" data-i="${i}" class="vh-rolebtn${cur === 'exclude' ? ' on' : ''}" title="이번 구성에서 이 쌍 빼기 (목록엔 남아요)">⊘</button>
+    </span>`;
+  };
+
   H.renderSmartBar = () => {
     if (!canSmart()) return '';
     const peek = H.smartPeek();
     const kept = H.st.stage === 'media' ? H.st.roles.filter((r) => r === 'exclude').length : 0;
+    const keptP = H.st.stage === 'pairs' ? H.st.pairRoles.filter((r) => r === 'exclude').length : 0;
     const line = !peek ? '<em class="vh-est">사진을 넣으면 어떤 구성이 잡히는지 바로 보여줘요</em>'
       : !peek.ok ? `<em class="vh-est vh-est-warn">${esc(peek.why)}</em>`
         : `<em class="vh-est">자동 구성: <b>${esc(peek.variant)}</b> · 장면 ${peek.scenes}개${peek.total != null ? ' · 약 ' + peek.total + '초' : ''}${peek.method ? ' · ' + esc(peek.method) : ''}</em>`
           + (peek.warnings || []).map((w) => `<em class="vh-est vh-est-warn">⚠ ${esc(w)}</em>`).join('');
     return `<div class="vh-smart">
       <b style="font:var(--mk-t-h3);font-size:13px">🎲 자동 구성</b>
-      <p class="ed-note" style="margin:4px 0 6px;font-size:11.5px">사진 수·방향·문구를 보고 구성을 골라 짜요.${H.st.stage === 'media' ? ' ★ 는 더 길고 큰 자리, ⊘ 는 이번 구성에서만 빠져요(목록엔 남아요).' : ' 쌍은 그대로 두고 순서·비교 방식만 골라요.'}${kept ? ' 지금 뺀 사진 ' + kept + '장.' : ''}</p>
+      <p class="ed-note" style="margin:4px 0 6px;font-size:11.5px">사진 수·방향·문구를 보고 구성을 골라 짜요.${H.st.stage === 'media' ? ' ★ 는 더 길고 큰 자리, ⊘ 는 이번 구성에서만 빠져요(목록엔 남아요).' : ' 쌍은 그대로 두고 순서·비교 방식만 골라요. ★ 는 그 쌍의 비교 장면을 더 길게, ⊘ 는 이번 구성에서만 빼요(자리·크기는 비교 방식이 정해요).'}${kept ? ' 지금 뺀 사진 ' + kept + '장.' : ''}${keptP ? ' 지금 뺀 쌍 ' + keptP + '개.' : ''}</p>
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
         <input class="vh-input" id="vhSeed" placeholder="씨앗 (비우면 자동 — 같은 씨앗 = 같은 구성)" value="${esc(H.st.seed || '')}" maxlength="20" style="flex:1;min-width:150px;margin:0">
         <button class="vh-chip" data-vh-reseed>🎲 다른 씨앗</button>
@@ -143,6 +189,13 @@
         html = html.replace(/(<div class="vh-row"[^>]*data-vh-mrow="(\d+)")/g,
           (m0, all, i) => (H.st.roles[+i] === 'exclude' ? all.replace('class="vh-row"', 'class="vh-row vh-row-off"') : all));
       }
+      /* R69 — 쌍 행에 역할 칩 (행 구조는 그대로, 버튼 묶음 앞에만 끼운다) */
+      if (H.st.stage === 'pairs' && canSmart()) {
+        syncPairRoles();
+        html = html.replace(/<button data-vh-pup="(\d+)"/g, (m0, i) => H.renderPairRoleChips(+i) + m0);
+        html = html.replace(/<div class="vh-pair" data-vh-prow="(\d+)"/g,
+          (m0, i) => (H.st.pairRoles[+i] === 'exclude' ? m0.replace('class="vh-pair"', 'class="vh-pair vh-row-off"') : m0));
+      }
       /* 스테이지 안, 만들기 버튼 앞에 자동 구성 갈래 */
       const bar = H.renderSmartBar();
       if (bar) html = html.replace(/<button class="vh-go" data-vh-build>/, bar + '<button class="vh-go" data-vh-build>');
@@ -154,6 +207,10 @@
       root.querySelectorAll('[data-vh-role]').forEach((b) => b.onclick = (e) => {
         e.stopPropagation();
         H.setRole(+b.dataset.i, b.dataset.vhRole); redraw();
+      });
+      root.querySelectorAll('[data-vh-prole]').forEach((b) => b.onclick = (e) => {
+        e.stopPropagation();
+        H.setPairRoleAt(+b.dataset.i, b.dataset.vhProle); redraw();
       });
       /* 드래그 정렬 재배선 — video2 는 사진·문구만 옮긴다. 역할이 안 따라오면
          엉뚱한 사진이 빠지므로 같은 조작에 역할까지 묶어 다시 건다. */

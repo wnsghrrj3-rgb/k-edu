@@ -28,7 +28,10 @@ window.MK_SVARX = (() => {
     for (const sc of doc.scenes) {
       const prev = sc.svar || {};
       if (prev.locked || prev.source === 'user') continue; /* 보호 — 자동이 사용자 것을 덮지 않는다 */
-      sc.svar = { source: src, locked: false, ...(seed ? { seed: String(seed) } : {}) };
+      /* R69 — ★ 가산 표식은 살린다. 이 값이 지워지면 길이는 늘어난 채로 남고
+         해제할 때 되돌릴 근거가 사라진다(원래 길이로 못 돌아간다). */
+      sc.svar = { source: src, locked: false, ...(prev.hlAdd ? { hlAdd: prev.hlAdd } : {}),
+        ...(seed ? { seed: String(seed) } : {}) };
     }
     return doc;
   }
@@ -102,6 +105,54 @@ window.MK_SVARX = (() => {
     return { pairs: gs.length, locked: gs.filter((g) => g.state === 'full').length,
       partial: gs.filter((g) => g.state === 'partial').length,
       partialKeys: gs.filter((g) => g.state === 'partial').map((g) => g.key) };
+  }
+
+  /* ================= R69 쌍 역할 (★ 중요) ================= */
+  /* 만든 뒤(Workspace)에서는 ★ 만 건다. ⊘ 빼기는 만들기 화면(#/video)에서만 성립한다:
+     뺀 쌍은 문서에 사진이 들어가지 않아 나중에 되살릴 근거 자체가 없다.
+     여기서 ⊘ 를 받아 주면 「뺐다가 되돌리기」가 가능한 것처럼 보이지만 실제로는
+     그 쌍이 영영 사라진다 — 그래서 거부한다(위장 금지). */
+  const HL_ADD = 1.0; /* MK_SVAR CONST.HL_BONUS 와 같은 값 — 두 경로의 결과가 갈리면 안 된다 */
+  const pairRolesOf = (doc) => ((doc && doc.meta && doc.meta.svar && doc.meta.svar.roles) || {});
+  const pairRoleOf = (doc, key) => pairRolesOf(doc)[String(key)] || '';
+
+  function setPairRole(doc, key, role) {
+    if (role === 'exclude') return { ok: false, why: 'pair-exclude-here',
+      guide: '만든 뒤에는 쌍을 뺄 수 없어요 — 뺀 쌍은 이 영상에 사진이 없어 되돌릴 수 없거든요. 장면을 지우거나 만들기 화면에서 다시 골라 주세요.' };
+    if (role && role !== 'highlight') return { ok: false, why: 'bad-role' };
+    const g = pairGroupOf(doc, key);
+    if (!g) return { ok: false, why: 'no-pair' };
+    const sv = (doc.meta && doc.meta.svar) || null;
+    if (!sv) return { ok: false, why: 'no-state', guide: '이 영상에는 자동 구성 근거가 없어요.' };
+    const roles = { ...pairRolesOf(doc) };
+    const on = roles[g.key] !== 'highlight';
+    /* 길이는 그 쌍의 마지막 장면 하나에만 — MK_SVAR.applyPairHighlight 와 같은 규칙.
+       가산량을 씬에 적어 두고 해제할 때 그 값만 되돌린다(원래 길이 무손상). */
+    const last = g.scenes[g.scenes.length - 1];
+    if (on) {
+      if (!(last.svar && last.svar.hlAdd)) {
+        last.duration = Math.round((last.duration + HL_ADD) * 10) / 10;
+        last.svar = { ...(last.svar || {}), hlAdd: HL_ADD };
+      }
+      roles[g.key] = 'highlight';
+    } else {
+      for (const sc of g.scenes) {
+        if (sc.svar && sc.svar.hlAdd) {
+          sc.duration = Math.round((sc.duration - sc.svar.hlAdd) * 10) / 10;
+          const nx = { ...sc.svar }; delete nx.hlAdd; sc.svar = nx;
+        }
+      }
+      delete roles[g.key];
+    }
+    doc.meta.svar = { ...sv, ...(Object.keys(roles).length ? { roles } : { roles: undefined }) };
+    if (!Object.keys(roles).length) delete doc.meta.svar.roles;
+    return { ok: true, key: g.key, no: g.no, highlight: on, scene: last.id, duration: last.duration };
+  }
+
+  function pairRoleSummary(doc) {
+    const gs = pairGroups(doc), roles = pairRolesOf(doc);
+    return { pairs: gs.length, highlight: gs.filter((g) => roles[g.key] === 'highlight').length,
+      keys: gs.filter((g) => roles[g.key] === 'highlight').map((g) => g.key) };
   }
 
   /* ================= 재구성 (§12 「다른 구성」) ================= */
@@ -310,6 +361,8 @@ window.MK_SVARX = (() => {
       /* R68 — 비교 방식도 되돌려 준다. 잠근 쌍이 있으면 방식을 유지해야 하는데
          입력에 없으면 유지할 값 자체가 없다(R67 은 매번 다시 골랐으므로 필요 없었다). */
       input: { pairs, texts: clone(sv.texts || {}), ratio: sv.ratio || undefined,
+        /* R69 — ★ 도 되돌려 준다. 없으면 「다른 구성」 한 번에 중요 표시가 사라진다. */
+        ...(sv.roles && Object.keys(sv.roles).length ? { pairRoles: clone(sv.roles) } : {}),
         ...(sv.method ? { method: sv.method } : {}) },
       templateId: sv.templateId };
   }
@@ -508,6 +561,7 @@ window.MK_SVARX = (() => {
 
   return { SOURCES, markSources, markEdited, setLock, lockedScenes, lockSummary,
     pairGroups, pairGroupOf, setPairLock, pairLockSummary,
+    setPairRole, pairRoleOf, pairRoleSummary,
     pinnedIndexes, recompose, recomposeDoc, inputFromDoc, pairInputFromDoc, nextSeed,
     pushHistory, previous, historyDepth, clearHistory,
     readState, reproduce, validateVariants, testMatrix, CASES, audit };

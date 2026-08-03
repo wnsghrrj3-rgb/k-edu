@@ -183,11 +183,12 @@
     const sum = stt.sources || { total: 0, locked: 0 };
     /* R68 — 쌍 모드 문서면 쌍 단위 잠금 상태도 같이 보여 준다(반쪽 상태는 여기서 바로 푼다) */
     const ps = X.pairLockSummary ? X.pairLockSummary(doc()) : null;
+    const prs = X.pairRoleSummary ? X.pairRoleSummary(doc()) : null; /* R69 — ★ 쌍 개수 */
     const depth = X.historyDepth(histKey());
     return `<div class="cx-smart" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--mk-border)">
       <label class="cx-field"><span>자동 구성</span></label>
       <div style="font:var(--mk-t-caption);color:var(--mk-text-secondary);margin:-4px 0 8px">
-        구성 「${M().esc(stt.variant || '기본')}」 · 장면 ${sum.total}개${sum.locked ? ' · 🔒 잠금 ' + sum.locked : ''}${stt.seed ? '<br>씨앗 ' + M().esc(String(stt.seed)) : ''}${ps && ps.pairs ? `<br>쌍 ${ps.pairs}개 · 🔒 통째 잠금 ${ps.locked}개${ps.partial ? ' · ⚠ 반쪽 ' + ps.partial + '개' : ''}` : ''}</div>
+        구성 「${M().esc(stt.variant || '기본')}」 · 장면 ${sum.total}개${sum.locked ? ' · 🔒 잠금 ' + sum.locked : ''}${stt.seed ? '<br>씨앗 ' + M().esc(String(stt.seed)) : ''}${ps && ps.pairs ? `<br>쌍 ${ps.pairs}개 · 🔒 통째 잠금 ${ps.locked}개${ps.partial ? ' · ⚠ 반쪽 ' + ps.partial + '개' : ''}${prs && prs.highlight ? ' · ★ 중요 ' + prs.highlight + '개' : ''}` : ''}</div>
       ${ps && ps.partial ? `<button class="cx-scenebtn" data-ws-pairfix="1" style="border-color:var(--mk-teal)">🔒 반쪽 잠긴 쌍 ${ps.partial}개를 통째로 잠그기</button>` : ''}
       <button class="cx-scenebtn" data-ws-svar="new">🎲 다른 구성으로</button>
       ${depth > 1 ? `<button class="cx-scenebtn" data-ws-svar="prev">↩ 이전 구성으로</button>` : ''}
@@ -202,9 +203,13 @@
        한 쌍은 2~3장면으로 흩어지므로 통째로만 자리를 지킬 수 있다. */
     const X2 = window.MK_SVARX;
     const g = (X2 && X2.pairGroupOf && sc.pairKey != null) ? X2.pairGroupOf(doc(), sc.pairKey) : null;
+    /* R69 — 이 쌍이 ★ 인지. 여기서는 ★ 만 건다(⊘ 는 만들기 화면 전용 — 뺀 쌍은
+       이 영상에 사진이 없어 되살릴 근거가 없다). */
+    const phl = (g && X2 && X2.pairRoleOf) ? X2.pairRoleOf(doc(), g.key) === 'highlight' : false;
     const pairBox = g ? `<label class="cx-field"><span>이 쌍 (전·후 ${g.count}장면)</span></label>
       <div style="display:flex;gap:6px;margin:-4px 0 8px;align-items:center">
         <button data-ws-pairlock="${M().esc(String(g.key))}" style="flex:1;padding:7px 4px;border-radius:8px;border:1.5px solid ${g.state === 'full' ? 'var(--mk-teal)' : 'var(--mk-border)'};background:${g.state === 'full' ? 'var(--mk-teal-soft)' : 'transparent'};cursor:pointer;font:var(--mk-t-caption)">${g.state === 'full' ? '🔒 쌍 ' + g.no + ' 통째 잠김 — 순서·방식 그대로' : g.state === 'partial' ? '⚠ 반쪽 잠김 — 쌍 ' + g.no + ' 통째 잠그기' : '🔓 쌍 ' + g.no + ' 통째 잠그기'}</button>
+        <button data-ws-pairstar="${M().esc(String(g.key))}" title="이 쌍의 비교 장면을 더 길게 (다른 구성에서도 유지)" style="padding:7px 10px;border-radius:8px;border:1.5px solid ${phl ? 'var(--mk-teal)' : 'var(--mk-border)'};background:${phl ? 'var(--mk-teal-soft)' : 'transparent'};cursor:pointer;font:var(--mk-t-caption)">${phl ? '★ 중요' : '☆ 중요'}</button>
       </div>` : '';
     return pairBox + `<label class="cx-field"><span>이 장면</span></label>
       <div style="display:flex;gap:6px;margin:-4px 0 8px;align-items:center">
@@ -518,6 +523,18 @@
         WS.svarMsg = on
           ? '쌍 ' + g.no + '은 다른 구성에서도 자리·방식 그대로 남아요 (장면 ' + r.scenes + '개)'
           : '쌍 ' + g.no + ' 잠금을 풀었어요' + (g.edited ? ' — 직접 고친 장면이 있어 다시 잠가야 순서를 바꿀 수 있어요' : '');
+        R();
+      });
+      /* R69 — 쌍 ★ 중요 토글 (길이 가산은 그 쌍의 마지막 장면 하나에만) */
+      root.querySelectorAll('[data-ws-pairstar]').forEach((b) => b.onclick = () => {
+        const X = window.MK_SVARX; if (!X || !X.setPairRole) return;
+        const key = b.dataset.wsPairstar;
+        const g = X.pairGroupOf(doc(), key); if (!g) return;
+        const r = X.setPairRole(doc(), key, 'highlight');
+        if (!r.ok) { WS.svarMsg = r.guide || '중요 표시를 바꾸지 못했어요'; R(); return; }
+        WS.svarMsg = r.highlight
+          ? '쌍 ' + g.no + '을 중요로 뒀어요 — 비교 장면이 ' + r.duration + '초로 길어졌고 다른 구성에서도 유지돼요'
+          : '쌍 ' + g.no + '의 중요 표시를 풀었어요 — 길이가 원래대로 돌아왔어요';
         R();
       });
       root.querySelectorAll('[data-ws-pairfix]').forEach((b) => b.onclick = () => {
