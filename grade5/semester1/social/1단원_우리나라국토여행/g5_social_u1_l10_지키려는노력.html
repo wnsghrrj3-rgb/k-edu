@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<!--
+K-edu 사회 5-1 · 1단원 우리나라 국토 여행 · ② 소중한 우리 땅, 독도 · 10차시(l10)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [6사01-02] · 교과서 p.42~47 · 지도서(대단원1 주제② 12~13차시, 지도서 p.94~99) 근거
+직접조작: [재미있게 확인해요] 옳은 설명 판정 → 숫자판 색칠 → 낱말 리빌(신규 패턴 — 판정·색칠형)
+  교과서 47쪽 '재미있게 확인해요'를 그대로 승계. 설명 6개를 하나씩 ○/✕로 판정하고,
+  옳다고 확인된 설명의 번호가 10x12 숫자판에서 한꺼번에 색칠된다.
+  옳은 설명의 번호(1·3·5·6)를 모두 칠하면 숫자판에 낱말 '독도'가 드러나고,
+  마지막으로 그 낱말을 3택에서 골라 빈칸 문장을 완성한다.
+  정답 판정=blip·해당 문항 잠금·번호 색칠, 오답=thud·shake(600ms)·재판정 허용(감점 없음).
+  6문항 완료 시 chime, 낱말 확정 시 chime + 결론 카드.
+  ⚠️ 무효 문항 번호 가드 / 무효 판정값 가드(○·✕ 외) / 이미 판정한 문항 재판정 가드 /
+     6문항 완료 전 낱말 선택 무시(순서 가드) / 낱말 확정 후 전체 잠금 = 5종.
+  ⚠️ 숫자판은 CK_NUMS 리터럴(10행 x 12열)로 고정 — 난수 없음. 색칠 대상 칸은 1·3·5·6,
+     나머지 칸은 2·4만 들어가므로 옳은 설명 넷을 모두 찾아야만 낱말이 완성된다.
+     레이아웃 측정 불필요 → jsdom에서도 색칠 결과를 그대로 검증할 수 있다.
+지도서 근거:
+  [동기 유발] 독도의 캐릭터 = 독도랑(동도와 서도) · 안장군(안용복) · 홍대장(홍순칠).
+    독도를 지키려고 노력한 사람들을 알리고, 그들을 본받자는 뜻으로 만든 캐릭터.
+  [독도를 지킨 인물] 안용복 = 조선 시대에 두 차례 일본으로 건너가 울릉도와 독도가 조선의 땅이라고
+    설명함 → 일본은 두 섬이 조선의 땅임을 인정하고 일본인이 울릉도 주변에서 물고기를 잡지 못하게 함.
+    "이 도(강원도) 안에 울릉도와 독도가 있다."는 안용복이 일본 관리에게 말한 내용이 적힌 문서 /
+    홍순칠과 울릉도 청년들 = 독도 의용 수비대를 만들어 독도를 지킴, 독도 바위에 '한국령'을 새김
+    ([친구와 활동] 새긴 까닭 = 독도가 대한민국 영토임을 알리고 지키려는 의지를 표현하기 위해) /
+    최종덕 = 울릉도의 어부, 독도가 무인도가 아니라 우리 국민이 사는 고유의 영토임을 알리고자
+    1981년 독도로 주민 등록을 옮겨 최초의 독도 주민이 됨 /
+    그 밖에 심흥택·장한상·이규원·고종 황제 등도 독도를 지키려고 노력함.
+  [정부의 노력] ① 독도에 선착장·주민 숙소·등대 등 시설을 만듦(선착장은 동도의 접안 시설,
+    등대의 정식 이름은 독도 항로 표지 관리소, 주민 숙소는 서도에 4층으로 지음) /
+    ② 독도 경비대를 파견해 독도 주민과 관광객의 편의와 안전을 지킴(독도 의용 수비대에게서
+    경비 임무를 넘겨받아 인명 구조 훈련과 해안 경계를 함. 군인이 아닌 경찰이 머무는 것은
+    우리나라가 독도를 우리 영토로서 실제로 다스리고 있다는 뜻) /
+    ③ 여러 법령과 정책을 시행해 독도와 주변 바다를 보전·관리함 /
+    ④ 세계에 독도의 아름다움을 홍보하고 독도가 우리나라 고유의 영토임을 알림(외교부 독도 누리집은
+    독도 관련 자료를 세계 여러 나라 언어로 제공).
+  [개인·학교·단체의 노력] 독도 방문 행사(많은 사람이 독도를 찾아 우리 땅임을 알림) /
+    사이버 외교 사절단 '반크'(독도에 관한 잘못된 정보를 찾아 고치도록 하거나 독도를 홍보하는
+    비정부 민간 단체) / 학교의 독도 교육 주간 / 독도와 관련한 연구나 회의를 여는 단체.
+  [미디어 활동] 신문 기사 = 초등학교 학생들이 참여한 '독도 캠프'. 일본의 역사 왜곡에 대응하고자
+    독도를 찾아가 독도의 주인이 대한민국임을 선포, 독도 경비대와 만나고 '홀로 아리랑'을 합창,
+    이후 독도 명예시민 등록과 각국 대사관에 편지 쓰기로 독도의 올바른 역사를 알릴 계획.
+    → 효과 = 사람들에게 독도에 관한 관심을 불러일으키고, 독도가 대한민국 영토라는 사실을 널리 알림.
+  [스스로 활동] 독도 모형 만들기 — 동도·서도에 색을 칠하고 괭이갈매기·촛대바위·배를 바다 모형에
+    끼운 뒤 독도에게 하고 싶은 말을 써서 완성.
+  [별별 직업] 해양 경찰 = 독도 주변 바다를 포함한 우리나라의 바다를 지키고 바다에서 국민의 생명과
+    재산을 보호함. 해상 교통을 안전하게 관리하고 질서를 유지하며, 해양 오염을 막아 해양 환경을
+    보전함. 바다에서 일어난 사고에 대처하고 사람을 구조함.
+    필요한 것 = 평소 바다에서 일어나는 문제에 관심 기울이기, 위기 상황에 대처하는 문제 해결 능력과
+    체력, 나라와 국민을 위해 봉사하려는 마음가짐.
+  [재미있게 확인해요] 옳은 설명의 번호를 숫자판에서 찾아 색칠하고, 나타난 낱말을 빈칸에 써넣어
+    "우리나라 고유의 영토인 (독도)를 아끼고 지키려고 노력해야 합니다."를 완성.
+    설명 6개 = ①독도 전망대에서 볼 수 있다(○) ②동도와 서도로만 이루어져 있다(✕ — 크고 작은
+    여러 바위섬도 있음) ③가스 하이드레이트가 묻혀 있다(○) ④안용복이 독도 의용 수비대를
+    만들었다(✕ — 홍순칠) ⑤박물관과 체험관에서 자료를 볼 수 있다(○) ⑥독도 경비대가 지키고 있다(○).
+  [꼭 기억해요] 1 조선 시대에 (안용복)의 노력으로 일본은 독도가 우리나라 땅임을 인정했다 /
+    2 독도가 우리 땅임을 알리려고 정부, 개인, 학교, 여러 단체가 다양하게 노력하고 있다(○).
+  12~13차시 주요 내용 정리 = 1 독도를 지키기 위해 노력한 사람(안용복·홍순칠·최종덕) /
+    2 정부의 노력(시설·경비대·법령과 정책·홍보) / 3 개인·학교·여러 단체의 노력.
+  차시 예고 = '생각을 펼쳐요' 활동.
+⚠️ 설계 원칙: 연도는 슬라이드 안내에만 두고 문항에서는 묻지 않음.
+  적용 4번 정답 자체가 "독도는 정부와 경비대가 지키니 나는 관심을 갖지 않아도 된다"(알맞지 않은 태도)
+  → 함께 지키는 태도를 학습 내용화. 14차시(생각을 펼쳐요 — 창의·융합 활동)는 선행 침범 0.
+정직 원칙: 인물·시설·직업 장면은 모두 뜻을 나타낸 도식(실제 사진이 아님).
+⚠️ l11 미양산 — goNextLesson = 허브.
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g5_social_u1_l10_v1">
+<title>독도를 지키기 위한 노력 · 사회 5-1</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#276749; --green-d:#1C4D35; --cyan:#0E7490;
+  --bg:#F3F8F5; --bub:#DFF0E7; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#B45309; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes drawLine{to{transform:scaleX(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ka-lb{background:#F1F5F9;border:none;padding:7px 12px;border-radius:10px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;font-family:inherit;font-weight:700;color:#475569;flex-shrink:0;font-size:13px}
+.ka-lb svg{width:15px;height:15px}
+.ka-bar{flex:1;height:5px;background:var(--bg);border-radius:999px;overflow:hidden}
+.ka-bar>div{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:999px;transition:width .35s ease;width:6%}
+.ka-pg{color:var(--green);font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;flex-shrink:0}
+.ka-sc{background:var(--amber-bg);color:var(--amber);padding:4px 12px;border-radius:999px;display:flex;align-items:center;gap:5px;flex-shrink:0;font-weight:700}
+.ka-sc svg{width:14px;height:14px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px}
+.ka-sc-u{font-size:12px}
+
+/* 메인 */
+.ka-m{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow-y:auto}
+.ka-tags{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ka-bg{background:var(--amber-bg);color:var(--amber);padding:5px 14px;border-radius:30px;font-size:13px;
+  display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.ka-bg.s2{background:#E0F2FE;color:#0369A1}
+.ka-bg.s3{background:#EDE9FE;color:#6D28D9}
+.ka-bg.s4{background:#FCE7F3;color:#BE185D}
+.ka-bg.s5{background:var(--bub);color:var(--green)}
+.ka-bg svg{width:13px;height:13px}
+.ka-meta{font-size:13px;color:var(--muted)}
+.ka-t{font-size:clamp(20px,3.4vw,29px);margin-bottom:16px;line-height:1.4;color:var(--green);letter-spacing:-.3px;font-weight:700;animation:fadeUp .4s .15s ease both}
+.ka-bub{background:var(--bub);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);line-height:1.7;
+  margin-bottom:16px;border-left:4px solid var(--green);animation:fadeUp .4s .3s ease both}
+.ka-emph{position:relative;display:inline-block;font-weight:700;color:var(--green)}
+.ka-emph::after{content:'';position:absolute;bottom:2px;left:0;right:0;height:3px;background:var(--red);border-radius:2px;transform:scaleX(0);transform-origin:left;animation:drawLine .6s .6s ease forwards}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.scene.wide{width:clamp(240px,44vw,420px)}
+.scene.wide svg{height:clamp(120px,20vw,200px)}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(16px,2.6vw,21px);font-weight:700;line-height:1.6;margin-bottom:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:620px}
+.opt{background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:13px 14px;font-size:clamp(14px,2.3vw,17px);
+  font-weight:500;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:var(--green);background:var(--bub);animation:pop .4s ease}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;font-size:clamp(14px,2.3vw,17px);line-height:1.6;text-align:center;animation:fadeUp .35s ease both;max-width:620px}
+.fb.ok{color:var(--green);font-weight:700}
+.hint{margin-top:12px;background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(13px,2.2vw,16px);
+  line-height:1.6;color:#0C4A6E;max-width:560px;animation:fadeUp .35s ease both}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:640px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FCFA;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:clamp(14px,2.3vw,17px);line-height:1.5}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
+
+/* 직접조작 — [재미있게 확인해요] 옳은 설명 판정 → 숫자판 색칠 → 낱말 리빌 */
+.ck-wrap{width:100%;max-width:840px;margin:0 auto;display:flex;flex-direction:column;gap:7px}
+.ck-body{display:grid;grid-template-columns:1fr clamp(148px,24vw,224px);gap:10px;align-items:start}
+.ck-list{display:flex;flex-direction:column;gap:5px;min-width:0}
+.ckq{display:grid;grid-template-columns:21px 1fr auto;gap:6px;align-items:center;min-width:0;
+  border:2px solid #CBD5E0;background:#fff;border-radius:10px;padding:5px 7px;transition:.15s}
+.ckq.done{border-color:var(--green);background:var(--bub)}
+.ckq.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.ckn{width:21px;height:21px;border-radius:50%;background:#94A3B8;color:#fff;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-weight:800;font-size:12px}
+.ckq.done .ckn{background:var(--green)}
+.ckt{font-size:clamp(10.2px,1.7vw,12.8px);line-height:1.34;font-weight:500;min-width:0}
+.ckb{display:flex;gap:4px;flex-shrink:0}
+.ckb button{width:27px;height:27px;border-radius:8px;border:2px solid #CBD5E0;background:#F8FAFC;padding:0;
+  cursor:pointer;font-family:inherit;font-weight:800;font-size:13px;color:#475569}
+.ckb button:hover{border-color:var(--green);background:var(--bub)}
+.ckmark{flex-shrink:0;padding:0 5px;font-weight:800;font-size:12.5px;color:var(--green-d);white-space:nowrap}
+.ck-boardwrap{display:flex;flex-direction:column;gap:5px;align-items:center}
+.ck-board{display:grid;grid-template-columns:repeat(12,1fr);gap:1px;width:100%;
+  background:#E2E8F0;border:2px solid #94A3B8;border-radius:8px;padding:2px}
+.ck-cell{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;background:#fff;
+  color:#94A3B8;font-family:'Nunito',sans-serif;font-weight:800;border-radius:2px;transition:.25s;
+  font-size:clamp(5.5px,1.05vw,8.5px)}
+.ck-cell.lit{background:var(--green);color:#fff}
+.ck-boardcap{font-size:clamp(9.5px,1.6vw,12px);color:var(--muted);text-align:center;font-weight:700}
+.ck-word{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.ck-word button{border:2px solid var(--cyan);background:#fff;color:#0C4A6E;border-radius:10px;padding:7px 18px;
+  cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(12px,2vw,15px)}
+.ck-word button:hover{background:#CFFAFE}
+.ck-word button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.ck-why{background:#F8FAFC;border:2px solid var(--line);border-left:4px solid var(--cyan);border-radius:10px;
+  padding:8px 12px;font-size:clamp(11.4px,1.93vw,13.8px);line-height:1.55;color:#334155;animation:fadeUp .3s ease both}
+.ck-why b{color:var(--cyan)}
+.ck-card{background:#fff;border:2px solid var(--amber);border-radius:12px;padding:10px 12px;
+  font-size:clamp(12px,2.05vw,14.5px);line-height:1.55;animation:pop .35s ease both}
+.ck-card .pt{font-weight:800;color:var(--amber);margin-bottom:4px;font-size:clamp(12.5px,2.15vw,15px)}
+.paper{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:12px;padding:12px 16px;
+  font-size:clamp(12.5px,2.1vw,15px);line-height:1.65;color:#3F3A2C;max-width:660px;
+  animation:fadeUp .4s ease both}
+.paper .ph{font-weight:800;color:#8A6D3B;margin-bottom:6px;font-size:clamp(13px,2.2vw,16px)}
+.paper .src{margin-top:6px;font-size:clamp(11px,1.9vw,13px);color:#8A6D3B;text-align:right}
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(39,103,73,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#B45309"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식 =====
+   ⚠️ 정직 원칙: 바위·단면은 모양과 층위를 나타낸 도식(실제 사진·축척 단면이 아님). */
+const SVG = {
+  // 독도를 상징하는 캐릭터 — 두 섬과 두 인물
+  chars:`<svg viewBox="0 0 320 150"><rect width="320" height="150" fill="#EFF6FF"/>
+    <rect y="112" width="320" height="38" fill="#60A5FA"/>
+    <circle cx="62" cy="66" r="34" fill="#fff" stroke="#276749" stroke-width="2.5"/>
+    <path d="M42 78 Q54 50 66 78 Z" fill="#8A8375"/><path d="M68 78 Q78 58 88 78 Z" fill="#8A8375"/>
+    <rect x="40" y="78" width="48" height="6" fill="#60A5FA"/>
+    <text x="62" y="106" font-size="10.5" fill="#276749" text-anchor="middle" font-weight="800">독도랑</text>
+    <circle cx="160" cy="66" r="34" fill="#fff" stroke="#B45309" stroke-width="2.5"/>
+    <circle cx="160" cy="60" r="13" fill="#FDE68A"/><path d="M147 52 Q160 40 173 52 Z" fill="#7C2D12"/>
+    <path d="M148 84 Q160 70 172 84 Z" fill="#B45309"/>
+    <text x="160" y="106" font-size="10.5" fill="#B45309" text-anchor="middle" font-weight="800">안장군</text>
+    <circle cx="258" cy="66" r="34" fill="#fff" stroke="#0E7490" stroke-width="2.5"/>
+    <circle cx="258" cy="60" r="13" fill="#FDE68A"/><rect x="244" y="45" width="28" height="7" rx="3" fill="#0E7490"/>
+    <path d="M246 84 Q258 70 270 84 Z" fill="#0E7490"/>
+    <text x="258" y="106" font-size="10.5" fill="#0E7490" text-anchor="middle" font-weight="800">홍대장</text>
+    <text x="160" y="134" font-size="10" fill="#fff" text-anchor="middle" font-weight="800">독도를 지킨 사람들을 담은 캐릭터예요</text></svg>`,
+
+  // 안용복 — 일본으로 건너가 조선의 땅임을 설명
+  ahn:`<svg viewBox="0 0 320 150"><rect width="320" height="150" fill="#FFF7ED"/>
+    <rect y="96" width="320" height="54" fill="#7DD3FC"/>
+    <path d="M14 96 Q34 62 54 96 Z" fill="#86EFAC"/><text x="34" y="112" font-size="9.5" fill="#166534" text-anchor="middle" font-weight="800">조선</text>
+    <path d="M266 96 Q286 66 306 96 Z" fill="#FCA5A5"/><text x="286" y="112" font-size="9.5" fill="#7C2D12" text-anchor="middle" font-weight="800">일본</text>
+    <path d="M74 92 L106 92 L100 104 L80 104 Z" fill="#92400E"/><rect x="88" y="70" width="3" height="22" fill="#92400E"/>
+    <path d="M91 70 L110 82 L91 88 Z" fill="#fff" stroke="#92400E" stroke-width="1.4"/>
+    <path d="M118 88 L246 88" stroke="#B45309" stroke-width="2.4" stroke-dasharray="7 5" marker-end="url(#ahnA)"/>
+    <defs><marker id="ahnA" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0 0 L7 3.5 L0 7 Z" fill="#B45309"/></marker></defs>
+    <rect x="112" y="16" width="164" height="48" rx="9" fill="#fff" stroke="#B45309" stroke-width="2"/>
+    <text x="194" y="36" font-size="11" fill="#7C2D12" text-anchor="middle" font-weight="800">“이 도(강원도) 안에</text>
+    <text x="194" y="52" font-size="11" fill="#7C2D12" text-anchor="middle" font-weight="800">울릉도와 독도가 있다.”</text>
+    <text x="160" y="140" font-size="9.5" fill="#0C4A6E" text-anchor="middle" font-weight="800">두 차례 일본으로 건너가 설명했어요</text></svg>`,
+
+  // 홍순칠과 독도 의용 수비대 — 바위에 새긴 글자
+  hong:`<svg viewBox="0 0 320 150"><rect width="320" height="150" fill="#F0F9FF"/>
+    <rect y="112" width="320" height="38" fill="#38BDF8"/>
+    <path d="M96 112 Q160 26 224 112 Z" fill="#8A8375"/>
+    <path d="M120 112 Q160 56 200 112 Z" fill="#A8A093"/>
+    <rect x="136" y="60" width="48" height="46" rx="5" fill="#6B6459" stroke="#4B4640" stroke-width="2"/>
+    <text x="160" y="76" font-size="13" fill="#FDE68A" text-anchor="middle" font-weight="800">한</text>
+    <text x="160" y="91" font-size="13" fill="#FDE68A" text-anchor="middle" font-weight="800">국</text>
+    <text x="160" y="104" font-size="12" fill="#FDE68A" text-anchor="middle" font-weight="800">령</text>
+    <rect x="12" y="14" width="112" height="26" rx="9" fill="#fff" stroke="#0E7490" stroke-width="2"/>
+    <text x="68" y="31" font-size="10.5" fill="#0C4A6E" text-anchor="middle" font-weight="800">독도 의용 수비대</text>
+    <text x="248" y="30" font-size="10" fill="#0C4A6E" text-anchor="middle" font-weight="800">홍순칠과</text>
+    <text x="248" y="44" font-size="10" fill="#0C4A6E" text-anchor="middle" font-weight="800">울릉도 청년들</text>
+    <text x="160" y="138" font-size="9.5" fill="#fff" text-anchor="middle" font-weight="800">바위에 글자를 새겼어요</text></svg>`,
+
+  // 최종덕 — 최초의 독도 주민
+  choi:`<svg viewBox="0 0 320 150"><rect width="320" height="150" fill="#F0FDF4"/>
+    <rect y="112" width="320" height="38" fill="#38BDF8"/>
+    <path d="M40 112 Q104 40 168 112 Z" fill="#8A8375"/>
+    <path d="M92 106 L108 106 L108 96 L124 96 L124 86 L140 86 L140 76 L156 76"
+      stroke="#F8FAFC" stroke-width="5" fill="none" stroke-linejoin="round"/>
+    <circle cx="150" cy="62" r="8" fill="#FDE68A"/><path d="M140 82 Q150 66 160 82 Z" fill="#276749"/>
+    <rect x="196" y="34" width="110" height="58" rx="9" fill="#fff" stroke="#276749" stroke-width="2"/>
+    <text x="251" y="54" font-size="10" fill="#1C4D35" text-anchor="middle" font-weight="800">주민 등록</text>
+    <line x1="210" y1="62" x2="292" y2="62" stroke="#CBD5E0" stroke-width="1.6"/>
+    <text x="251" y="78" font-size="11.5" fill="#276749" text-anchor="middle" font-weight="800">독도</text>
+    <text x="160" y="138" font-size="9.5" fill="#fff" text-anchor="middle" font-weight="800">최초의 독도 주민이 됐어요</text></svg>`,
+
+  // 정부의 노력 — 독도의 시설들
+  facil:`<svg viewBox="0 0 320 168"><rect width="320" height="168" fill="#EFF6FF"/>
+    <rect y="122" width="320" height="46" fill="#60A5FA"/>
+    <path d="M18 122 Q86 40 154 122 Z" fill="#8A8375"/>
+    <path d="M168 122 Q226 56 284 122 Z" fill="#8A8375"/>
+    <text x="86" y="114" font-size="9" fill="#fff" text-anchor="middle" font-weight="800">서도</text>
+    <text x="226" y="114" font-size="9" fill="#fff" text-anchor="middle" font-weight="800">동도</text>
+    <rect x="60" y="86" width="34" height="26" rx="3" fill="#fff" stroke="#1E3A8A" stroke-width="1.8"/>
+    <line x1="60" y1="95" x2="94" y2="95" stroke="#1E3A8A" stroke-width="1.2"/>
+    <line x1="60" y1="104" x2="94" y2="104" stroke="#1E3A8A" stroke-width="1.2"/>
+    <text x="77" y="128" font-size="8.5" fill="#fff" text-anchor="middle" font-weight="800">주민 숙소</text>
+    <rect x="216" y="62" width="14" height="40" fill="#fff" stroke="#DC2626" stroke-width="1.8"/>
+    <path d="M216 62 L223 50 L230 62 Z" fill="#DC2626"/>
+    <circle cx="223" cy="70" r="4" fill="#FDE68A"/>
+    <text x="223" y="118" font-size="8.5" fill="#fff" text-anchor="middle" font-weight="800">등대</text>
+    <rect x="252" y="118" width="52" height="7" fill="#94A3B8"/>
+    <rect x="276" y="125" width="5" height="16" fill="#94A3B8"/>
+    <text x="278" y="152" font-size="8.5" fill="#fff" text-anchor="middle" font-weight="800">선착장</text>
+    <rect x="12" y="12" width="132" height="24" rx="9" fill="#fff" stroke="#1E3A8A" stroke-width="2"/>
+    <text x="78" y="28" font-size="10.5" fill="#1E3A8A" text-anchor="middle" font-weight="800">정부가 만든 시설이에요</text></svg>`,
+
+  // 독도 경비대
+  guard:`<svg viewBox="0 0 320 150"><rect width="320" height="150" fill="#F0F9FF"/>
+    <rect y="112" width="320" height="38" fill="#38BDF8"/>
+    <path d="M24 112 Q88 44 152 112 Z" fill="#8A8375"/>
+    <circle cx="206" cy="66" r="12" fill="#FDE68A"/>
+    <rect x="192" y="50" width="28" height="8" rx="3" fill="#1E3A8A"/>
+    <path d="M188 106 Q206 74 224 106 Z" fill="#1E3A8A"/>
+    <circle cx="252" cy="66" r="12" fill="#FDE68A"/>
+    <rect x="238" y="50" width="28" height="8" rx="3" fill="#1E3A8A"/>
+    <path d="M234 106 Q252 74 270 106 Z" fill="#1E3A8A"/>
+    <rect x="12" y="14" width="128" height="26" rx="9" fill="#fff" stroke="#1E3A8A" stroke-width="2"/>
+    <text x="76" y="31" font-size="11" fill="#1E3A8A" text-anchor="middle" font-weight="800">독도 경비대</text>
+    <text x="76" y="62" font-size="9.5" fill="#0C4A6E" text-anchor="middle" font-weight="700">주민과 관광객의</text>
+    <text x="76" y="76" font-size="9.5" fill="#0C4A6E" text-anchor="middle" font-weight="700">편의와 안전을 지켜요</text>
+    <text x="160" y="138" font-size="9.5" fill="#fff" text-anchor="middle" font-weight="800">군인이 아니라 경찰이 머물고 있어요</text></svg>`,
+
+  // 개인·학교·여러 단체의 노력
+  effort:`<svg viewBox="0 0 320 150"><rect width="320" height="150" fill="#FEF3C7"/>
+    <rect x="10" y="26" width="92" height="94" rx="10" fill="#fff" stroke="#B45309" stroke-width="2"/>
+    <circle cx="56" cy="58" r="11" fill="#FDE68A"/><path d="M42 82 Q56 62 70 82 Z" fill="#B45309"/>
+    <path d="M30 92 L82 92" stroke="#38BDF8" stroke-width="4"/>
+    <text x="56" y="110" font-size="10" fill="#7C2D12" text-anchor="middle" font-weight="800">독도 방문 행사</text>
+    <rect x="112" y="26" width="92" height="94" rx="10" fill="#fff" stroke="#B45309" stroke-width="2"/>
+    <rect x="130" y="46" width="56" height="38" rx="4" fill="#E0F2FE" stroke="#0E7490" stroke-width="1.6"/>
+    <text x="158" y="70" font-size="15" fill="#DC2626" text-anchor="middle" font-weight="800">✕ → ○</text>
+    <text x="158" y="102" font-size="10" fill="#7C2D12" text-anchor="middle" font-weight="800">반크</text>
+    <text x="158" y="114" font-size="8" fill="#8A6D3B" text-anchor="middle" font-weight="700">잘못된 정보 고치기</text>
+    <rect x="214" y="26" width="94" height="94" rx="10" fill="#fff" stroke="#B45309" stroke-width="2"/>
+    <rect x="234" y="48" width="54" height="34" rx="4" fill="#DCFCE7" stroke="#276749" stroke-width="1.6"/>
+    <path d="M240 48 L261 34 L282 48" fill="none" stroke="#276749" stroke-width="2"/>
+    <text x="261" y="72" font-size="10" fill="#276749" text-anchor="middle" font-weight="800">독도</text>
+    <text x="261" y="102" font-size="10" fill="#7C2D12" text-anchor="middle" font-weight="800">학교 교육 주간</text>
+    <text x="160" y="140" font-size="9.5" fill="#8A6D3B" text-anchor="middle" font-weight="800">개인·학교·여러 단체가 함께 노력해요</text></svg>`,
+
+  // 해양 경찰이 하는 일
+  police:`<svg viewBox="0 0 320 150"><rect width="320" height="150" fill="#ECFEFF"/>
+    <rect y="96" width="320" height="54" fill="#38BDF8"/>
+    <path d="M40 92 L120 92 L110 108 L52 108 Z" fill="#fff" stroke="#0E7490" stroke-width="2"/>
+    <rect x="66" y="72" width="28" height="20" rx="3" fill="#E0F2FE" stroke="#0E7490" stroke-width="1.6"/>
+    <circle cx="80" cy="62" r="5" fill="#DC2626"/>
+    <text x="80" y="128" font-size="9.5" fill="#fff" text-anchor="middle" font-weight="800">사람을 구조해요</text>
+    <circle cx="150" cy="88" r="7" fill="#FDE68A"/><path d="M142 104 Q150 92 158 104 Z" fill="#F97316"/>
+    <path d="M170 100 Q186 90 202 100" stroke="#fff" stroke-width="2.5" fill="none"/>
+    <circle cx="232" cy="72" r="20" fill="#fff" stroke="#0E7490" stroke-width="2"/>
+    <path d="M222 72 Q232 58 242 72 Q232 86 222 72 Z" fill="#94A3B8"/>
+    <line x1="216" y1="88" x2="248" y2="56" stroke="#DC2626" stroke-width="3.4"/>
+    <text x="232" y="112" font-size="9.5" fill="#0C4A6E" text-anchor="middle" font-weight="800">해양 오염을 막아요</text>
+    <rect x="12" y="12" width="150" height="24" rx="9" fill="#fff" stroke="#0E7490" stroke-width="2"/>
+    <text x="87" y="28" font-size="10.5" fill="#0C4A6E" text-anchor="middle" font-weight="800">우리 바다를 안전하게 지켜요</text></svg>`,
+
+  // 해양 경찰에게 필요한 것
+  need:`<svg viewBox="0 0 320 150"><rect width="320" height="150" fill="#F8FAFC"/>
+    <rect x="12" y="24" width="92" height="100" rx="12" fill="#fff" stroke="#0E7490" stroke-width="2"/>
+    <circle cx="58" cy="60" r="17" fill="#E0F2FE"/><text x="58" y="66" font-size="17" text-anchor="middle">🌊</text>
+    <text x="58" y="98" font-size="9.5" fill="#0C4A6E" text-anchor="middle" font-weight="800">바다 문제에</text>
+    <text x="58" y="111" font-size="9.5" fill="#0C4A6E" text-anchor="middle" font-weight="800">기울이는 관심</text>
+    <rect x="114" y="24" width="92" height="100" rx="12" fill="#fff" stroke="#0E7490" stroke-width="2"/>
+    <circle cx="160" cy="60" r="17" fill="#FEF3C7"/><text x="160" y="66" font-size="17" text-anchor="middle">💪</text>
+    <text x="160" y="98" font-size="9.5" fill="#0C4A6E" text-anchor="middle" font-weight="800">문제 해결 능력과</text>
+    <text x="160" y="111" font-size="9.5" fill="#0C4A6E" text-anchor="middle" font-weight="800">튼튼한 체력</text>
+    <rect x="216" y="24" width="92" height="100" rx="12" fill="#fff" stroke="#0E7490" stroke-width="2"/>
+    <circle cx="262" cy="60" r="17" fill="#DCFCE7"/><text x="262" y="66" font-size="17" text-anchor="middle">🤝</text>
+    <text x="262" y="98" font-size="9.5" fill="#0C4A6E" text-anchor="middle" font-weight="800">나라와 국민을 위해</text>
+    <text x="262" y="111" font-size="9.5" fill="#0C4A6E" text-anchor="middle" font-weight="800">봉사하려는 마음</text>
+    <text x="160" y="142" font-size="9.5" fill="#64748B" text-anchor="middle" font-weight="800">세 가지가 모두 필요해요</text></svg>`,
+
+  // 정리 — 완성
+  done:`<svg viewBox="0 0 320 150"><rect width="320" height="150" fill="#F0FDF4"/>
+    <rect y="112" width="320" height="38" fill="#38BDF8"/>
+    <path d="M60 112 Q112 48 164 112 Z" fill="#8A8375"/>
+    <path d="M170 112 Q210 62 250 112 Z" fill="#8A8375"/>
+    <circle cx="160" cy="52" r="26" fill="#fff" stroke="#276749" stroke-width="3"/>
+    <path d="M148 52 L157 62 L173 43" stroke="#276749" stroke-width="4.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="160" y="138" font-size="10" fill="#fff" text-anchor="middle" font-weight="800">우리 모두가 지키는 우리 땅, 독도</text></svg>`
+};
+
+function sceneCard(key,cap,size){return `<div class="scene${size?' '+size:''}">${SVG[key]}${cap?`<div class="cap">${cap}</div>`:''}</div>`;}
+
+/* ===== 직접 조작: [재미있게 확인해요] 옳은 설명 판정 → 숫자판 색칠 → 낱말 리빌 =====
+   교과서 47쪽 활동 승계. 설명 6개를 ○/✕로 판정하고, 옳다고 확인된 설명의 번호가
+   숫자판에서 한꺼번에 색칠된다. 옳은 설명의 번호(1·3·5·6)를 모두 칠하면 낱말 '독도'가 드러나고,
+   마지막으로 그 낱말을 3택에서 골라 빈칸 문장을 완성한다.
+   ⚠️ 무효 문항 번호 / 무효 판정값 / 이미 판정한 문항 재판정 /
+      6문항 완료 전 낱말 선택 무시(순서) / 낱말 확정 후 전체 잠금 = 가드 5종.
+   ⚠️ CK_NUMS는 고정 리터럴(난수 없음). 색칠 대상 칸에는 1·3·5·6만, 나머지 칸에는 2·4만 들어간다. */
+const CK_Q = [
+  {n:1, ok:true,  t:"맑은 날에는 울릉도에 있는 독도 전망대에서 독도를 볼 수 있습니다.",
+   why:"맞아요. 울릉도와 독도는 거리가 멀지 않아, 날씨가 맑으면 독도 전망대에서 눈으로 독도를 볼 수 있어요."},
+  {n:2, ok:false, t:"독도는 동도와 서도로만 이루어져 있습니다.",
+   why:"독도는 동도와 서도, 그리고 <b>크고 작은 여러 바위섬</b>으로 이루어져 있어요."},
+  {n:3, ok:true,  t:"독도 주변 바다의 밑바닥에는 가스 하이드레이트가 묻혀 있습니다.",
+   why:"맞아요. '불타는 얼음'이라고 불리는 가스 하이드레이트가 독도 주변 바다 밑에 묻혀 있어요."},
+  {n:4, ok:false, t:"안용복은 독도 의용 수비대를 만들어 독도를 지켰습니다.",
+   why:"독도 의용 수비대를 만든 사람은 <b>홍순칠</b>이에요. 안용복은 일본으로 건너가 독도가 조선의 땅임을 설명했어요."},
+  {n:5, ok:true,  t:"독도 박물관과 독도 체험관에서 다양한 독도 자료를 볼 수 있습니다.",
+   why:"맞아요. 울릉도의 독도 박물관과 전국의 독도 체험관에서 독도의 자료를 볼 수 있어요."},
+  {n:6, ok:true,  t:"정부가 파견한 독도 경비대가 독도에 머물며 독도를 지키고 있습니다.",
+   why:"맞아요. 정부는 독도 경비대를 파견해 독도 주민과 관광객의 편의와 안전을 지키고 있어요."}
+];
+const CK_N = CK_Q.length;
+// 숫자판(10행 x 12열) — 색칠 대상 칸에는 1·3·5·6, 나머지 칸에는 2·4만 들어 있다.
+const CK_NUMS = [
+  "613334451156","144224234222","644442464442","356534412422","423422465516",
+  "155134424222","224222444322","116512424344","224462244522","222432461536"
+];
+const CK_WORDS = ["동해","독도","울릉도"];
+const CK_ANSWER = "독도";
+
+function ckLitSet(st){
+  const set = {};
+  CK_Q.forEach((q,i)=>{ if(st.ckDone[i] && q.ok) set[q.n] = true; });
+  return set;
+}
+function ckBoard(st){
+  const lit = ckLitSet(st);
+  let cells = "";
+  for(let r=0;r<CK_NUMS.length;r++){
+    const row = CK_NUMS[r];
+    for(let c=0;c<row.length;c++){
+      const n = row.charAt(c);
+      cells += `<div class="ck-cell${lit[Number(n)]?' lit':''}">${n}</div>`;
+    }
+  }
+  return cells;
+}
+function checkBoard(st){
+  if(!st.ckDone) st.ckDone = CK_Q.map(()=>false);
+  if(st.ckWrong===undefined) st.ckWrong = null;
+  if(st.ckWhy===undefined) st.ckWhy = null;
+  if(st.ckWord===undefined) st.ckWord = null;
+  const solved = st.ckDone.filter(Boolean).length;
+  const allJudged = solved >= CK_N;
+  const finished = st.ckWord === CK_ANSWER;
+
+  const listHTML = CK_Q.map((q,i)=>{
+    const done = !!st.ckDone[i];
+    const no = st.ckWrong===i;
+    const mark = done ? `<span class="ckmark">${q.ok?'○ 옳아요':'✕ 아니에요'}</span>`
+      : `<span class="ckb"><button onclick="judge(${i},1)">○</button><button onclick="judge(${i},0)">✕</button></span>`;
+    return `<div class="ckq${done?' done':''}${no?' no':''}">
+      <span class="ckn">${q.n}</span><span class="ckt">${q.t}</span>${mark}</div>`;
+  }).join('');
+
+  let guide;
+  if(finished){
+    guide = `<div class="ck-card">
+      <div class="pt">🔢 숫자판에 낱말이 나타났어요</div>
+      <div>우리나라 고유의 영토인 <b style="color:#276749">독도</b>를 아끼고 지키려고 노력해야 합니다.</div>
+      <div style="margin-top:5px;color:#64748B">정부도, 개인도, 학교도, 여러 단체도 <b style="color:#276749">함께</b> 노력하고 있어요.</div>
+    </div>`;
+  } else if(allJudged){
+    guide = `<div class="ck-why">숫자판에 <b>낱말</b>이 드러났어요. 빈칸에 들어갈 낱말을 골라 문장을 완성해요.<br>
+      <span style="color:#0F172A">우리나라 고유의 영토인 <b style="color:#276749">◯◯</b>를 아끼고 지키려고 노력해야 합니다.</span></div>
+      <div class="ck-word">${CK_WORDS.map(w=>`<button class="${st.ckWrong==='w:'+w?'no':''}" onclick="pickWord('${w}')">${w}</button>`).join('')}</div>`;
+  } else if(st.ckWhy!=null){
+    const q = CK_Q[st.ckWhy];
+    guide = `<div class="ck-why"><b>${q.n}번</b> ${q.why}
+      <br><span style="color:#0E7490;font-weight:700">남은 설명도 판정해 봐요. (${solved} / ${CK_N})</span></div>`;
+  } else {
+    guide = `<div class="note">설명이 <b style="color:var(--green)">옳으면 ○</b>, <b style="color:var(--red)">아니면 ✕</b>를 눌러요. 옳은 설명의 번호가 숫자판에서 색칠돼요. (${solved} / ${CK_N})</div>`;
+  }
+
+  return `<div class="ck-wrap">
+    <div style="text-align:center"><b style="color:var(--green)">🔢 옳은 설명을 찾아 숫자판을 색칠해요</b></div>
+    <div class="ck-body">
+      <div class="ck-list">${listHTML}</div>
+      <div class="ck-boardwrap">
+        <div class="ck-board">${ckBoard(st)}</div>
+        <div class="ck-boardcap">옳은 설명의 번호가 칠해져요</div>
+      </div>
+    </div>
+    ${guide}
+  </div>`;
+}
+
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "1단원 · 주제② 소중한 우리 땅, 독도";
+
+// 확인 4 + 적용 4 — 정답 다양화 [2,0,3,1,0,3,1,2]
+// ⚠️ 연도는 슬라이드에만. 문항은 인물의 '한 일'·개념·판단·태도형. 14차시(생각을 펼쳐요) 선행 침범 0.
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"조선 시대에 두 차례 <b>일본으로 건너가</b> 울릉도와 독도가 조선의 땅이라고 설명한 사람은 누구일까요?",
+   opts:["최종덕","홍순칠","안용복","이사부"], correct:2, pts:POINTS_BASIC, scene:"ahn",
+   reason:"안용복은 일본으로 건너가 울릉도와 독도가 조선의 땅임을 설명했어요. 이를 계기로 일본은 두 섬이 조선의 땅임을 인정하고, 일본인이 울릉도 주변에서 물고기를 잡지 못하도록 했어요.",
+   h1:"일본 관리에게 “이 도(강원도) 안에 울릉도와 독도가 있다.”라고 말한 사람이에요.",
+   h2:"독도의 캐릭터 가운데 ‘안장군’이 이 사람을 나타내요."},
+
+  {stem:"독도로 <b>주민 등록을 옮겨</b> 최초의 독도 주민이 된 사람은 누구일까요?",
+   opts:["최종덕","안용복","홍순칠","심흥택"], correct:0, pts:POINTS_BASIC, scene:"choi",
+   reason:"울릉도의 어부였던 최종덕은 독도가 무인도가 아니라 우리나라 국민이 사는 고유의 영토임을 알리고자 독도로 주민 등록을 옮겼어요.",
+   h1:"독도에 계단을 만들며 그곳에서 살아간 사람이에요.",
+   h2:"“독도에는 사람이 산다”를 몸으로 보여 준 사람이에요."},
+
+  {stem:"정부가 독도에 파견하여 <b>독도 주민과 관광객의 편의와 안전</b>을 지키게 한 것은 무엇일까요?",
+   opts:["독도 박물관","독도 의용 수비대","독도 관리 사무소","독도 경비대"], correct:3, pts:POINTS_BASIC, scene:"guard",
+   reason:"정부는 독도 경비대를 파견해 독도 주민과 관광객의 편의와 안전을 지키고 있어요. 인명 구조 훈련과 해안 경계도 맡고 있어요.",
+   h1:"오늘날 독도에 머물며 해안을 살피는 사람들이에요.",
+   h2:"옛날 독도 의용 수비대에게서 경비 임무를 넘겨받았어요."},
+
+  {stem:"바다에서 국민의 생명과 재산을 보호하고, <b>해양 오염을 막아</b> 바다 환경을 지키는 직업은 무엇일까요?",
+   opts:["지질 공원 해설사","해양 경찰","등대지기","선장"], correct:1, pts:POINTS_BASIC, scene:"police",
+   reason:"해양 경찰은 독도 주변 바다를 포함한 우리나라의 바다를 지켜요. 해상 교통을 안전하게 관리하고, 사고가 나면 사람을 구조하며, 해양 오염을 막아 해양 환경을 보전해요.",
+   h1:"바다에서 사고가 나면 가장 먼저 달려가 사람을 구조해요.",
+   h2:"육지가 아니라 ‘바다’의 안전과 질서를 맡은 경찰이에요."},
+
+  // 4단계 적용 (+15)
+  {stem:"홍순칠과 독도 의용 수비대는 독도 바위에 <b>‘한국령’</b>이라는 글자를 새겼어요. 그 까닭으로 가장 알맞은 것은 무엇일까요?",
+   opts:["독도가 우리나라 영토임을 알리고 지키려는 의지를 나타내려고","바위의 이름을 붙여 관광객을 모으려고","배가 길을 잃지 않도록 방향을 알려 주려고","바위의 높이를 재어 기록해 두려고"],
+   correct:0, pts:POINTS_APPLY, scene:"hong",
+   reason:"‘한국령’은 ‘한국의 영토’라는 뜻이에요. 글자를 새긴 일은 독도가 대한민국의 땅임을 알리고, 스스로 지키겠다는 의지를 나타낸 것이에요.",
+   h1:"‘령’은 ‘거느리는 땅’, 곧 영토를 뜻해요.",
+   h2:"글자를 새긴 사람들은 스스로 모여 독도를 지키려던 사람들이에요."},
+
+  {stem:"독도에는 군인이 아니라 <b>경찰</b>인 독도 경비대가 머물고 있어요. 이것이 뜻하는 바로 가장 알맞은 것은 무엇일까요?",
+   opts:["독도가 아직 어느 나라 땅인지 정해지지 않았다는 뜻","독도에는 사람이 살 수 없다는 뜻","독도에 관광객이 오지 못한다는 뜻","우리나라가 독도를 우리 영토로서 실제로 다스리고 있다는 뜻"],
+   correct:3, pts:POINTS_APPLY, scene:"guard",
+   reason:"경찰은 나라 안의 질서와 안전을 지키는 일을 해요. 독도에 경찰이 머문다는 것은 우리나라가 독도를 우리 영토로서 평소처럼 다스리고 있다는 뜻이에요.",
+   h1:"경찰은 ‘우리나라 안’에서 일하는 사람들이에요.",
+   h2:"싸우러 간 곳이 아니라, 평소처럼 살펴 주는 우리 땅이라는 뜻이에요."},
+
+  {stem:"사이버 외교 사절단 <b>‘반크’</b>는 독도에 관한 잘못된 정보를 찾아 고치도록 하는 활동을 해요. 이런 활동이 필요한 까닭으로 가장 알맞은 것은 무엇일까요?",
+   opts:["독도를 찾는 관광객 수를 늘리기 위해서","세계 사람들이 독도를 우리 땅으로 바르게 알도록 하기 위해서","독도에 새로운 시설을 짓기 위해서","독도의 옛 이름을 새로 정하기 위해서"],
+   correct:1, pts:POINTS_APPLY, scene:"effort",
+   reason:"잘못된 정보가 퍼지면 세계 사람들이 독도를 오해할 수 있어요. 그래서 틀린 내용을 바로잡고 독도를 알리는 활동이 필요해요.",
+   h1:"‘반크’는 세계를 향해 우리나라를 알리는 민간 단체예요.",
+   h2:"무엇을 ‘고치도록’ 하는 활동인지 다시 읽어 봐요."},
+
+  {stem:"독도를 지키기 위한 태도로 <b>알맞지 않은</b> 것은 무엇일까요?",
+   opts:["독도에 꾸준히 관심을 기울인다","독도에 관한 정보를 올바르게 알아 둔다","독도는 정부와 경비대가 지키니 나는 관심을 갖지 않아도 된다","독도를 알리는 활동에 참여한다"],
+   correct:2, pts:POINTS_APPLY, scene:"effort",
+   reason:"독도를 지키는 일은 정부만의 일이 아니에요. 개인, 학교, 여러 단체가 함께 관심을 기울이고 노력할 때 우리 땅 독도를 더 잘 지킬 수 있어요.",
+   h1:"정부, 개인, 학교, 여러 단체가 ‘함께’ 노력하고 있어요.",
+   h2:"나와 상관없는 일이라고 여기는 태도를 찾아봐요."}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — 독도의 캐릭터
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">이 캐릭터들은 누구를 나타낼까요?</h2>
+  <div class="ka-bub">독도랑은 <b>동도와 서도</b>를, 안장군과 홍대장은 <b>독도를 지킨 사람들</b>을 나타내요. 캐릭터로까지 만든 까닭은 그분들을 알리고, 우리도 <span class="ka-emph">본받아 독도를 지키자</span>는 뜻이에요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('chars','독도를 상징하는 캐릭터','wide')}</div>
+    <div class="note">오늘은 독도를 <b style="color:var(--green)">지키기 위한 노력</b>을 알아봐요.</div>
+  </div>`});
+// 2 살펴보기 — 독도를 지킨 인물(안용복·최종덕)
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">독도를 지킨 사람들</h2>
+  <div class="ka-bub">조선 시대의 <b>안용복</b>은 두 차례 일본으로 건너가 울릉도와 독도가 조선의 땅이라고 설명했어요. 울릉도의 어부였던 <b>최종덕</b>은 독도로 주민 등록을 옮겨 <span class="ka-emph">최초의 독도 주민</span>이 됐어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('ahn','안용복')}${sceneCard('choi','최종덕')}</div>
+    <div class="note">안용복의 노력으로 일본은 두 섬이 <b style="color:var(--green)">조선의 땅</b>임을 인정했어요.</div></div>`});
+// 3 살펴보기 — '한국령' (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">바위에 새긴 세 글자</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('hong','독도 바위에 새긴 글자','wide')}</div>
+  ${st.revealed?`<div class="answer-box"><b>홍순칠</b>과 울릉도 청년들은 <b>독도 의용 수비대</b>를 만들어 독도를 지켰어요. 바위에 새긴 ‘한국령’은 <b>한국의 영토</b>라는 뜻이에요. 독도가 대한민국 땅임을 알리고 <span class="ka-emph">스스로 지키겠다는 의지</span>를 나타낸 것이에요.</div>`
+    :`<div class="note">‘한국령’이라는 글자를 새긴 까닭은 무엇일까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 4 살펴보기 — 정부의 노력
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘날 정부가 하는 일</h2>
+  <div class="ka-bub">정부는 독도에 <b>선착장·주민 숙소·등대</b>를 만들고, <b>독도 경비대</b>를 파견했어요. 독도와 주변 바다를 지키는 법과 정책을 만들고, 세계 여러 나라에 독도가 <span class="ka-emph">우리나라 고유의 영토</span>임을 알리고 있어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('facil','독도의 시설들','wide')}${sceneCard('guard','독도 경비대')}</div>
+    <div class="note">군인이 아닌 <b style="color:var(--green)">경찰</b>이 머문다는 것은, 독도를 평소처럼 다스리는 우리 땅이라는 뜻이에요.</div></div>`});
+// 5 살펴보기 — 직접조작(재미있게 확인해요)
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">숫자판에 무엇이 나타날까요?</h2>
+  <div class="ka-grp">${checkBoard(st)}</div>`});
+// 6 살펴보기 — 개인·학교·단체 + 미디어 활동(신문 기사)
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">우리도 함께 지켜요</h2>
+  <div class="ka-grp">
+    <div class="paper"><div class="ph">📰 초등학교 학생들이 참여한 감동의 ‘독도 캠프’</div>
+      <div>‘독도 캠프’에 참여한 초등학교 학생들이 독도를 찾아가 세계를 향해 <b>독도의 주인이 대한민국임을 선포</b>했다. 학생들은 독도 경비대와 만났고, 선생님들의 연주에 맞춰 ‘홀로 아리랑’을 합창했다. 이후 학생들은 독도 명예시민 등록과 각국 대사관에 편지 쓰기 활동으로 전 세계에 독도의 올바른 역사를 알릴 계획이다.</div>
+      <div class="src">— 『대경 일보』</div></div>
+    <div class="scene-row">${sceneCard('effort','개인·학교·여러 단체','wide')}</div>
+    <div class="note">이런 활동은 사람들에게 <b style="color:var(--green)">독도에 관한 관심</b>을 불러일으키고, 독도가 우리 땅이라는 사실을 널리 알려요.</div>
+  </div>`});
+// 7 살펴보기 — [별별 직업] 해양 경찰 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">[별별 직업] 우리 바다를 지키는 해양 경찰</h2>
+  <div class="ka-bub">해양 경찰은 독도 주변 바다를 포함한 우리나라의 바다를 지켜요. 바다에서 <b>국민의 생명과 재산을 보호</b>하고, 해상 교통의 질서를 지키며, <b>해양 오염을 막아</b> 바다 환경을 보전해요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('police','해양 경찰이 하는 일','wide')}</div>
+  ${st.revealed?`<div class="scene-row">${sceneCard('need','해양 경찰에게 필요한 것','wide')}</div>`
+    :`<div class="note">해양 경찰이 되려면 어떤 것이 필요할까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리: 요약 (지도서 12~13차시 주요 내용 정리)
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 배운 것을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('done','우리 모두가 지키는 독도')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">①</span><div><b style="color:var(--green)">안용복</b>은 일본으로 건너가 울릉도와 독도가 조선의 땅이라고 설명했어요.</div></div>
+    <div class="sum-item"><span class="n">②</span><div><b style="color:var(--green)">홍순칠</b>과 울릉도 청년들은 독도 의용 수비대를 만들어 독도를 지켰고, <b style="color:var(--green)">최종덕</b>은 최초의 독도 주민이 됐어요.</div></div>
+    <div class="sum-item"><span class="n">③</span><div>정부는 선착장·주민 숙소·등대를 만들고 <b style="color:var(--green)">독도 경비대</b>를 파견했으며, 법과 정책으로 독도와 주변 바다를 지켜요.</div></div>
+    <div class="sum-item"><span class="n">④</span><div><b style="color:var(--green)">개인·학교·여러 단체</b>도 독도를 방문하고, 잘못된 정보를 바로잡고, 독도를 알리는 활동을 해요.</div></div>
+    <div class="sum-item"><span class="n">★</span><div>독도가 우리 땅임을 알리려고 정부, 개인, 학교, 여러 단체가 <b style="color:var(--red)">다 함께</b> 노력하고 있어요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b style="color:var(--green)">생각을 펼쳐요</b> 활동을 해 봐요.</div></div>`});
+// 17 정리: 자기 평가 (지도서 '얼마나 잘했을까' 3항)
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"독도를 지키기 위한 여러 노력을 설명할 수 있어요",st)}
+    ${selfCheck(1,"독도를 소중하게 여기는 마음을 여러 방법으로 표현할 수 있어요",st)}
+    ${selfCheck(2,"우리 땅 독도를 아끼고 지켜야겠다는 마음을 갖게 됐어요",st)}
+  </div><div class="note">잘 떠오르지 않는 곳은 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">오늘 학습을 마쳤어요!</h2>
+  <div class="ka-grp">
+    <div class="end-score">\u2B50 ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">다음은 <b style="color:var(--amber)">생각을 펼쳐요</b>!</div>
+  </div>`;
+}});
+
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">⭕ 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">💡 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">💡 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g5_social_u1_l10";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  ckDone:[false,false,false,false,false,false], ckWrong:null, ckWhy:null, ckWord:null,
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 →';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+function judge(i,v){
+  if(!(i>=0 && i<CK_N)) return;                                   // 무효 문항 번호 가드
+  if(v!==0 && v!==1) return;                                      // 무효 판정값 가드
+  if(!state.ckDone) state.ckDone = CK_Q.map(()=>false);
+  if(state.ckWord===CK_ANSWER) return;                            // 낱말 확정 후 전체 잠금
+  if(state.ckDone[i]) return;                                     // 이미 판정한 문항 재판정 가드
+  const want = CK_Q[i].ok ? 1 : 0;
+  if(v===want){
+    state.ckDone[i] = true;
+    state.ckWhy = i;
+    state.ckWrong = null;
+    const allJudged = state.ckDone.filter(Boolean).length >= CK_N;
+    allJudged ? playChime() : playBlip();
+    main.innerHTML = slides[state.idx].render(state);
+  } else {
+    state.ckWrong = i;
+    playThud();
+    main.innerHTML = slides[state.idx].render(state);
+    setTimeout(()=>{ if(state.ckWrong===i){ state.ckWrong=null; main.innerHTML=slides[state.idx].render(state); } },600);
+  }
+}
+function pickWord(w){
+  if(CK_WORDS.indexOf(w)<0) return;                               // 무효키 가드
+  if(!state.ckDone) return;
+  if(state.ckDone.filter(Boolean).length < CK_N) return;          // 6문항 완료 전 무시(순서 가드)
+  if(state.ckWord===CK_ANSWER) return;                            // 확정 후 잠금
+  if(w===CK_ANSWER){
+    state.ckWord = w;
+    state.ckWrong = null;
+    playChime();
+    main.innerHTML = slides[state.idx].render(state);
+  } else {
+    const tag = 'w:'+w;
+    state.ckWrong = tag;
+    playThud();
+    main.innerHTML = slides[state.idx].render(state);
+    setTimeout(()=>{ if(state.ckWrong===tag){ state.ckWrong=null; main.innerHTML=slides[state.idx].render(state); } },600);
+  }
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true; qs.wrongPick=null;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2; if(qs.hint===2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">📘 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 →</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // ⚠️ l11 미양산 — 허브 복귀
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+</body>
+</html>
