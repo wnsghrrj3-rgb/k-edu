@@ -189,6 +189,16 @@
     const key = mf.pairMode ? 'pairCount' : 'mediaCount';
     const unit = mf.pairMode ? '쌍' : '사진';
     const val = st.vval;
+    /* R67 — 수·방향 밖의 조건 축도 목록에서 바로 보이게 */
+    const axisOf = (c0) => {
+      const c2 = c0 || {}, out = [];
+      if (c2.orientation) out.push({ portraitDominant: '세로', landscapeDominant: '가로', squareDominant: '정사각', mixed: '섞임', mixedOrientation: '섞임' }[c2.orientation] || c2.orientation);
+      if (c2.mediaKind) out.push({ imageOnly: '사진만', videoOnly: '영상만', mixed: '사진+영상', none: '미디어 없음' }[c2.mediaKind] || c2.mediaKind);
+      if (c2.hasCaptions != null) out.push(c2.hasCaptions ? '문구 있음' : '문구 없음');
+      if (c2.hasTitle != null) out.push(c2.hasTitle ? '제목 있음' : '제목 없음');
+      if (Array.isArray(c2.ratio) && c2.ratio.length) out.push(c2.ratio.join('/'));
+      return out.length ? ' · ' + out.join(' · ') : '';
+    };
     const rangeOf = (c) => {
       const lo = (c || {})[key + 'Min'], hi = (c || {})[key + 'Max'];
       if (lo == null && hi == null) return '조건 없음';
@@ -205,7 +215,7 @@
         <div data-tb="vsel" data-vid="${x.id}" style="padding:7px 9px;border-radius:9px;cursor:pointer;border:1px solid ${st.vsel === x.id ? 'var(--mk-primary,#3B6EF6)' : 'var(--mk-border,#E3E8EF)'}">
           <div style="display:flex;align-items:center;gap:6px"><b style="font-size:12px;flex:1">${esc(x.name || x.id)}</b>
             <button class="mk-btn" data-tb="vdel" data-vid="${x.id}" style="padding:0 6px;font-size:11px">✕</button></div>
-          <div style="font-size:11px;color:var(--mk-text-secondary,#68737F)">${esc(rangeOf(x.conditions))} · 우선 ${x.priority == null ? 10 : x.priority} · Layout ${(x.layoutPool || []).length}</div>
+          <div style="font-size:11px;color:var(--mk-text-secondary,#68737F)">${esc(rangeOf(x.conditions))}${esc(axisOf(x.conditions))} · 우선 ${x.priority == null ? 10 : x.priority} · Layout ${(x.layoutPool || []).length}</div>
         </div>`).join('')}</div>
       <div style="display:flex;gap:6px;margin-top:8px">
         <button class="mk-btn" data-tb="vadd" style="flex:1;padding:3px 6px;font-size:12px">＋ 구성 추가</button>
@@ -223,6 +233,15 @@
       <div>방향 <select class="mk-input" data-tb="v-or" style="width:130px">
         ${[['', '상관없음'], ['portraitDominant', '세로 우세'], ['landscapeDominant', '가로 우세'], ['mixed', '섞임']].map(([k2, n2]) => `<option value="${k2}" ${(c.orientation || '') === k2 ? 'selected' : ''}>${n2}</option>`).join('')}</select>
         우선 <input class="mk-input" data-tb="v-pri" type="number" value="${v.priority == null ? 10 : v.priority}" style="width:52px"></div>
+      <div>사진 종류 <select class="mk-input" data-tb="v-kind" style="width:110px">
+        ${[['', '상관없음'], ['imageOnly', '사진만'], ['videoOnly', '영상만'], ['mixed', '섞임']].map(([k2, n2]) => `<option value="${k2}" ${(c.mediaKind || '') === k2 ? 'selected' : ''}>${n2}</option>`).join('')}</select>
+        문구 <select class="mk-input" data-tb="v-cap" style="width:110px">
+        ${[['', '상관없음'], ['yes', '있을 때'], ['no', '없을 때']].map(([k2, n2]) => `<option value="${k2}" ${(c.hasCaptions == null ? '' : (c.hasCaptions ? 'yes' : 'no')) === k2 ? 'selected' : ''}>${n2}</option>`).join('')}</select></div>
+      <div>제목 <select class="mk-input" data-tb="v-ttl" style="width:110px">
+        ${[['', '상관없음'], ['yes', '있을 때'], ['no', '없을 때']].map(([k2, n2]) => `<option value="${k2}" ${(c.hasTitle == null ? '' : (c.hasTitle ? 'yes' : 'no')) === k2 ? 'selected' : ''}>${n2}</option>`).join('')}</select>
+        <span style="margin-left:8px;font-size:11px">비율</span>
+        ${(mf.supportedRatios || Object.keys((C() && C().RATIOS) || {})).map((rr) => `<label style="font-size:11px;margin-left:4px;padding:2px 5px;border-radius:99px;border:1px solid ${(c.ratio || []).includes(rr) ? 'var(--mk-primary,#3B6EF6)' : 'var(--mk-border,#E3E8EF)'}">
+          <input type="checkbox" data-tb="v-ratio" value="${rr}" ${(c.ratio || []).includes(rr) ? 'checked' : ''} style="vertical-align:-1px"> ${esc(rr)}</label>`).join('')}</div>
       ${mf.pairMode ? '' : `<div>최대 장면 <input class="mk-input" data-tb="v-msc" type="number" min="1" value="${ss.maxSceneCount || 14}" style="width:56px">
         <label style="margin-left:8px"><input type="checkbox" data-tb="v-col" ${ss.allowCollage ? 'checked' : ''}> 콜라주 허용</label>
         <label style="margin-left:6px"><input type="checkbox" data-tb="v-pair" ${ss.allowPair !== false ? 'checked' : ''}> 2장 배치</label></div>`}
@@ -398,6 +417,15 @@
     onch('[data-tb="v-max"]', (el) => vp({ conditions: { [curKey() + 'Max']: numOrNull(el.value) } }));
     onch('[data-tb="v-or"]', (el) => vp({ conditions: { orientation: el.value || null } }));
     onch('[data-tb="v-pri"]', (el) => vp({ priority: +el.value || 0 }));
+    /* R67 — 조건 축 확장 (종류·문구·제목·비율) */
+    onch('[data-tb="v-kind"]', (el) => vp({ conditions: { mediaKind: el.value || null } }));
+    const tri = (v) => (v === 'yes' ? true : v === 'no' ? false : null);
+    onch('[data-tb="v-cap"]', (el) => vp({ conditions: { hasCaptions: tri(el.value) } }));
+    onch('[data-tb="v-ttl"]', (el) => vp({ conditions: { hasTitle: tri(el.value) } }));
+    onch('[data-tb="v-ratio"]', () => {
+      const picked = [...root.querySelectorAll('[data-tb="v-ratio"]')].filter((x) => x.checked).map((x) => x.value);
+      vp({ conditions: { ratio: picked.length ? picked : null } });
+    });
     onch('[data-tb="v-msc"]', (el) => vp({ sceneStrategy: { maxSceneCount: +el.value || 14 } }));
     onch('[data-tb="v-col"]', (el) => vp({ sceneStrategy: { allowCollage: el.checked } }));
     onch('[data-tb="v-pair"]', (el) => vp({ sceneStrategy: { allowPair: el.checked } }));

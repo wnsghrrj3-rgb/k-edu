@@ -83,6 +83,26 @@ window.MK_SVARX = (() => {
     const seed = o.seed != null && o.seed !== '' ? String(o.seed)
       : nextSeed(prev && prev.meta && prev.meta.svar && prev.meta.svar.seed);
     const inp = clone(input || {});
+
+    /* ---- R67 쌍 모드 — 쌍 자체는 고정, 순서·비교 방식만 다시 고른다 (§12) ---- */
+    if (Array.isArray(inp.pairs) && inp.pairs.length) {
+      /* 잠금은 장면 단위인데 쌍은 한 쌍이 2~3장면으로 흩어진다. 순서가 바뀌면
+         잠긴 장면만 제자리에 두는 게 성립하지 않으므로 정직하게 막는다(위장 금지). */
+      const held = prev ? (prev.scenes || []).filter((s) => s.svar && (s.svar.locked || s.svar.source === 'user')) : [];
+      if (held.length) {
+        return { ok: false, why: 'pair-locked',
+          guide: '잠그거나 직접 고친 장면 ' + held.length + '개가 있어요 — 쌍 구조는 그 장면을 지키면서 순서를 바꿀 수 없어요. 잠금을 풀면 순서와 비교 방식을 다시 골라요.' };
+      }
+      const r = S().buildSmart(templateId, inp, { ...o, seed });
+      if (!r.ok) return r;
+      markSources(r.doc, 'random', seed);
+      const sv = r.doc.meta.svar || {};
+      sv.seed = seed; r.doc.meta.svar = sv;
+      const warnings = [...(r.warnings || [])];
+      if (o.key) pushHistory(o.key, r.doc, { seed, variant: r.smart && r.smart.variant });
+      return { ...r, warnings, seed, pinned: [], lockedKept: 0 };
+    }
+
     const medias = inp.medias || [];
     const pins = prev ? pinnedIndexes(prev, medias) : [];
     const locks = prev ? lockedScenes(prev) : [];
@@ -181,10 +201,40 @@ window.MK_SVARX = (() => {
   /* 「다른 구성」은 문서만 열려 있는 상태에서 눌린다. 원본 사진은 이미 문서 안에
      있으므로(전량 배치 보장), 거기서 되찾고 계획 메타는 doc.meta.svar 에서 읽는다.
      사이드카 저장 없이 재진입이 성립하는 근거(§19 저장=실행 포맷 하나). */
+  /* R67 — 쌍 문서 → 쌍 입력. 사진 원본은 문서 안에 있으므로(전·후 전량 배치)
+     원본 인덱스(oi)로 되찾고, 쌍 묶음·제목·방식은 doc.meta.svar 에서 읽는다. */
+  function pairInputFromDoc(doc, sv) {
+    const byOi = new Map();
+    for (const sc of (doc.scenes || [])) for (const e of (sc.elements || [])) {
+      if (e.kind !== 'image' || !e.src) continue;
+      if (e.oi != null && !byOi.has(e.oi)) byOi.set(e.oi, { src: e.src, video: !!e.video, label: e.label });
+    }
+    const meta = sv.media || [];
+    const mk = (oi) => {
+      const f = oi == null ? null : byOi.get(oi);
+      if (!f) return null;
+      const m = meta[oi] || {};
+      return { name: m.n || f.label || ('사진 ' + (oi + 1)), kind: f.video ? 'video' : (m.k || 'image'),
+        src: f.src, w: m.w || 800, h: m.h || 600 };
+    };
+    const defs = Array.isArray(sv.pairs) ? sv.pairs : [];
+    if (!defs.length) return { ok: false, why: 'no-pairs', guide: '이 문서에는 쌍 근거가 없어요 — 예전 방식으로 만든 문서예요.' };
+    const pairs = [], missing = [];
+    defs.forEach((d, i) => {
+      const b = mk(d.b), a = mk(d.a);
+      if (!b && !a) { missing.push(i); return; }
+      pairs.push({ before: b, after: a, title: d.t || '', resultText: d.r || '' });
+    });
+    if (!pairs.length) return { ok: false, why: 'no-media', guide: '문서에서 전·후 사진을 찾지 못했어요.' };
+    return { ok: true, missing,
+      input: { pairs, texts: clone(sv.texts || {}), ratio: sv.ratio || undefined },
+      templateId: sv.templateId };
+  }
+
   function inputFromDoc(doc) {
     const sv = (doc && doc.meta && doc.meta.svar) || null;
     if (!sv || !sv.templateId) return { ok: false, why: 'no-state', guide: '이 문서에는 자동 구성 근거가 없어요.' };
-    if (sv.pairMode) return { ok: false, why: 'pair-mode', guide: '비포 & 애프터는 쌍 구조가 고정이라 다른 구성을 만들지 않아요.' };
+    if (sv.pairMode) return pairInputFromDoc(doc, sv);
     const meta = sv.media || [];
     const found = new Map(); /* 원본 인덱스 → {src, kind} */
     let order = 0;
@@ -374,7 +424,7 @@ window.MK_SVARX = (() => {
   }
 
   return { SOURCES, markSources, markEdited, setLock, lockedScenes, lockSummary,
-    pinnedIndexes, recompose, recomposeDoc, inputFromDoc, nextSeed,
+    pinnedIndexes, recompose, recomposeDoc, inputFromDoc, pairInputFromDoc, nextSeed,
     pushHistory, previous, historyDepth, clearHistory,
     readState, reproduce, validateVariants, testMatrix, CASES, audit };
 })();

@@ -455,12 +455,45 @@ window.MK_SVAR = (() => {
 
     /* ---- Pair 모드(비포애프터) — 쌍 구조는 엔진 planPairs 그대로, 길이 정책만 ---- */
     if (comp.pairMode) {
+      /* R67 — 쌍도 「다른 구성」이 성립하게 한다. 쌍 자체(전→후)는 절대 섞지 않는다:
+         바뀌는 것은 ① 쌍이 나오는 순서 ② 비교 방식(그 비율에서 실작동하는 것만).
+         원본 인덱스(_oi)를 쌍 미디어에 실어 두면 문서만으로 쌍을 되찾을 수 있다(§28). */
+      const rawPairs = Array.isArray(inp.pairs) && inp.pairs.length ? inp.pairs.slice() : null;
+      let pairOrder = null, methodPicked = inp.method || null;
+      if (rawPairs) {
+        let fi = 0;
+        const withOi = rawPairs.map((p) => {
+          const b = p.before ? { ...p.before, _oi: fi++ } : p.before;
+          const a = p.after ? { ...p.after, _oi: fi++ } : p.after;
+          return { ...p, before: b, after: a };
+        });
+        pairOrder = withOi.map((_, i) => i);
+        if (rnd && withOi.length > 1) pairOrder = shuffled(pairOrder, rnd);
+        inp.pairs = pairOrder.map((i) => withOi[i]);
+        if (rnd) {
+          const allow = (C().METHODS_BY_RATIO || {})[ratio] || [];
+          if (allow.length) methodPicked = rnd.pick(allow);
+          if (methodPicked) inp.method = methodPicked;
+        }
+      }
       const r = doBuild(inp);
       if (!r.ok) return r;
       const totalAfter = applyPairPolicy(r.doc, sel.def, warnings);
-      r.doc.meta = { ...(r.doc.meta || {}), svar: { templateId, variant: sel.id, pairMode: true, texts: clone(inp.texts || {}), ratio, ...(rnd ? { seed: rnd.seed } : {}) } };
+      /* 쌍 메타 — 사진 원본(src)은 문서 안에 있으므로 중복 저장 없이 자리(원본 인덱스)만 남긴다 */
+      const svPairs = (inp.pairs || []).map((p) => ({
+        b: p.before && p.before._oi != null ? p.before._oi : null,
+        a: p.after && p.after._oi != null ? p.after._oi : null,
+        t: String(p.title || ''), r: String(p.resultText || p.result || '') }));
+      const svMediaP = [];
+      for (const p of (inp.pairs || [])) for (const m of [p.before, p.after]) {
+        if (m && m._oi != null) svMediaP[m._oi] = { n: m.name || '', k: m.kind || 'image', w: m.w || 0, h: m.h || 0 };
+      }
+      r.doc.meta = { ...(r.doc.meta || {}), svar: { templateId, variant: sel.id, pairMode: true,
+        pairs: svPairs, media: svMediaP, ...(methodPicked ? { method: methodPicked } : {}),
+        texts: clone(inp.texts || {}), ratio, ...(rnd ? { seed: rnd.seed } : {}) } };
       return { ...r, total: totalAfter, warnings: [...(r.warnings || []), ...warnings],
-        smart: { variant: sel.id, reason: sel.reason, stats: statsSummary(stats), ...(rnd ? { seed: rnd.seed } : {}) } };
+        smart: { variant: sel.id, reason: sel.reason, stats: statsSummary(stats),
+          ...(methodPicked ? { method: methodPicked } : {}), ...(rnd ? { seed: rnd.seed } : {}) } };
     }
 
     /* ---- 역할 전처리 (§19) — 제외는 빌드 입력에서만 빠지고 원본은 무손상 ---- */

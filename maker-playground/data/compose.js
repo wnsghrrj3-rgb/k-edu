@@ -103,6 +103,7 @@ window.MK_COMPOSE = (() => {
     'wipe-horizontal': '가로 닦아내기', 'wipe-vertical': '세로 닦아내기', 'fade-between': '서서히 겹침' };
   const normPairMedia = (m) => (!m || !m.src) ? null
     : { name: m.name || '', kind: m.kind === 'video' ? 'video' : 'image', src: m.src, orient: 'unknown',
+        ...(m._oi != null ? { _oi: m._oi } : {}), /* R67 — 쌍 미디어도 원본 인덱스 통과(문서만으로 쌍 복원) */
         ...(m.duration ? { duration: +m.duration } : {}) };
 
   function planPairs(comp, input) {
