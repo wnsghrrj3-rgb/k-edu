@@ -181,11 +181,14 @@
     if (!stt) return '';
     const X = window.MK_SVARX;
     const sum = stt.sources || { total: 0, locked: 0 };
+    /* R68 — 쌍 모드 문서면 쌍 단위 잠금 상태도 같이 보여 준다(반쪽 상태는 여기서 바로 푼다) */
+    const ps = X.pairLockSummary ? X.pairLockSummary(doc()) : null;
     const depth = X.historyDepth(histKey());
     return `<div class="cx-smart" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--mk-border)">
       <label class="cx-field"><span>자동 구성</span></label>
       <div style="font:var(--mk-t-caption);color:var(--mk-text-secondary);margin:-4px 0 8px">
-        구성 「${M().esc(stt.variant || '기본')}」 · 장면 ${sum.total}개${sum.locked ? ' · 🔒 잠금 ' + sum.locked : ''}${stt.seed ? '<br>씨앗 ' + M().esc(String(stt.seed)) : ''}</div>
+        구성 「${M().esc(stt.variant || '기본')}」 · 장면 ${sum.total}개${sum.locked ? ' · 🔒 잠금 ' + sum.locked : ''}${stt.seed ? '<br>씨앗 ' + M().esc(String(stt.seed)) : ''}${ps && ps.pairs ? `<br>쌍 ${ps.pairs}개 · 🔒 통째 잠금 ${ps.locked}개${ps.partial ? ' · ⚠ 반쪽 ' + ps.partial + '개' : ''}` : ''}</div>
+      ${ps && ps.partial ? `<button class="cx-scenebtn" data-ws-pairfix="1" style="border-color:var(--mk-teal)">🔒 반쪽 잠긴 쌍 ${ps.partial}개를 통째로 잠그기</button>` : ''}
       <button class="cx-scenebtn" data-ws-svar="new">🎲 다른 구성으로</button>
       ${depth > 1 ? `<button class="cx-scenebtn" data-ws-svar="prev">↩ 이전 구성으로</button>` : ''}
       ${WS.svarMsg ? `<div style="font:var(--mk-t-caption);color:var(--mk-text-secondary);margin-top:6px">${M().esc(WS.svarMsg)}</div>` : ''}
@@ -195,7 +198,15 @@
   const lockCtl = (sc) => {
     if (!svarState()) return '';
     const sv = sc.svar || { source: 'auto', locked: false };
-    return `<label class="cx-field"><span>이 장면</span></label>
+    /* R68 — 이 장면이 쌍의 일부라면, 지켜야 할 단위는 장면이 아니라 쌍이다.
+       한 쌍은 2~3장면으로 흩어지므로 통째로만 자리를 지킬 수 있다. */
+    const X2 = window.MK_SVARX;
+    const g = (X2 && X2.pairGroupOf && sc.pairKey != null) ? X2.pairGroupOf(doc(), sc.pairKey) : null;
+    const pairBox = g ? `<label class="cx-field"><span>이 쌍 (전·후 ${g.count}장면)</span></label>
+      <div style="display:flex;gap:6px;margin:-4px 0 8px;align-items:center">
+        <button data-ws-pairlock="${M().esc(String(g.key))}" style="flex:1;padding:7px 4px;border-radius:8px;border:1.5px solid ${g.state === 'full' ? 'var(--mk-teal)' : 'var(--mk-border)'};background:${g.state === 'full' ? 'var(--mk-teal-soft)' : 'transparent'};cursor:pointer;font:var(--mk-t-caption)">${g.state === 'full' ? '🔒 쌍 ' + g.no + ' 통째 잠김 — 순서·방식 그대로' : g.state === 'partial' ? '⚠ 반쪽 잠김 — 쌍 ' + g.no + ' 통째 잠그기' : '🔓 쌍 ' + g.no + ' 통째 잠그기'}</button>
+      </div>` : '';
+    return pairBox + `<label class="cx-field"><span>이 장면</span></label>
       <div style="display:flex;gap:6px;margin:-4px 0 8px;align-items:center">
         <button data-ws-lock="${sc.id}" style="flex:1;padding:7px 4px;border-radius:8px;border:1.5px solid ${sv.locked ? 'var(--mk-teal)' : 'var(--mk-border)'};background:${sv.locked ? 'var(--mk-teal-soft)' : 'transparent'};cursor:pointer;font:var(--mk-t-caption)">${sv.locked ? '🔒 잠김 — 다른 구성에도 그대로' : '🔓 잠그기'}</button>
         <span style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">${SRC_NAME[sv.source] || '자동'}</span>
@@ -495,6 +506,25 @@
         WS.svarMsg = '새 구성을 만들었어요 — 장면 ' + r.doc.scenes.length + '개'
           + (r.lockedKept ? ' · 잠긴 ' + r.lockedKept + '개는 그대로' : '')
           + ((r.warnings || []).length ? ' · ' + r.warnings.join(' ') : '');
+        R();
+      });
+      /* R68 — 쌍 통째 잠금 / 반쪽 상태 일괄 승격 */
+      root.querySelectorAll('[data-ws-pairlock]').forEach((b) => b.onclick = () => {
+        const X = window.MK_SVARX; if (!X || !X.setPairLock) return;
+        const key = b.dataset.wsPairlock;
+        const g = X.pairGroupOf(doc(), key); if (!g) return;
+        const on = g.state !== 'full';
+        const r = X.setPairLock(doc(), key, on);
+        WS.svarMsg = on
+          ? '쌍 ' + g.no + '은 다른 구성에서도 자리·방식 그대로 남아요 (장면 ' + r.scenes + '개)'
+          : '쌍 ' + g.no + ' 잠금을 풀었어요' + (g.edited ? ' — 직접 고친 장면이 있어 다시 잠가야 순서를 바꿀 수 있어요' : '');
+        R();
+      });
+      root.querySelectorAll('[data-ws-pairfix]').forEach((b) => b.onclick = () => {
+        const X = window.MK_SVARX; if (!X || !X.pairLockSummary) return;
+        const keys = X.pairLockSummary(doc()).partialKeys || [];
+        keys.forEach((k) => X.setPairLock(doc(), k, true));
+        WS.svarMsg = '반쪽 잠긴 쌍 ' + keys.length + '개를 통째로 잠갔어요 — 이제 나머지만 다시 골라요';
         R();
       });
       root.querySelectorAll('[data-ws-lock]').forEach((b) => b.onclick = () => {

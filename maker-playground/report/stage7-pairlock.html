@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>R68 — 쌍 단위 잠금 보고</title>
+<style>
+  body { font: 15px/1.7 -apple-system, "Noto Sans KR", sans-serif; color: #1b1f24; max-width: 900px; margin: 0 auto; padding: 32px 20px 80px; }
+  h1 { font-size: 24px; margin: 0 0 4px; }
+  h2 { font-size: 17px; margin: 32px 0 10px; padding-top: 14px; border-top: 1px solid #E3E8EF; }
+  .sub { color: #68737F; font-size: 13px; margin: 0 0 20px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 10px 0; }
+  th, td { text-align: left; padding: 7px 9px; border-bottom: 1px solid #E3E8EF; }
+  th { background: #F2F5F9; font-weight: 600; }
+  code { background: #F2F5F9; padding: 1px 5px; border-radius: 4px; font-size: 12.5px; }
+  .ok { color: #1E7A3C; font-weight: 600; }
+  .warn { color: #9A6200; }
+  ul { padding-left: 20px; }
+  li { margin: 4px 0; }
+  .note { background: #F8FAFC; border-left: 3px solid #3B6EF6; padding: 10px 14px; margin: 12px 0; font-size: 13.5px; }
+</style>
+</head>
+<body>
+
+<h1>R68 — 쌍 단위 잠금</h1>
+<p class="sub">2026-08-03 · 캐시버스터 <code>v=20260803f</code> · test-round68 24/24 · 전 스위트 59 전량 통과</p>
+
+<div class="note">
+R67은 쌍 문서에 잠긴 장면이 있으면 「다른 구성」을 <b>거부</b>했다. 한 쌍(전→후)이 2~3장면으로 흩어지는데
+잠금은 장면 단위라, 순서를 섞으면서 특정 장면만 제자리에 두는 게 성립하지 않았기 때문이다.
+R68은 그 어긋남을 없앤다 — 지켜야 할 단위를 장면에서 <b>쌍</b>으로 올렸다.
+</div>
+
+<h2>1. 쌍의 이름표</h2>
+<p>쌍을 잠그려면 회차가 바뀌어도 변하지 않는 이름이 있어야 한다. 자리 인덱스는 순서를 섞는 순간 딴 쌍을 가리킨다.</p>
+<ul>
+  <li><code>compose.planPairs</code> — 쌍에서 나온 장면에 <code>pairKey</code>(전 사진의 원본 인덱스)를 실었다. 제목·결과·마무리 장면엔 붙지 않는다.</li>
+  <li><code>svariant.buildSmart</code> — 원본 인덱스(<code>_oi</code>)를 <b>최초 1회만</b> 부여하고 이후 보존한다. R67은 매 회차 다시 매겼기 때문에 「이 쌍을 잠갔다」가 성립할 수 없었다.</li>
+  <li><code>svarlive.pairInputFromDoc</code> — 문서에서 되찾을 때 <code>_oi</code>와 비교 방식을 함께 돌려준다.</li>
+  <li>이름표는 문서에만 있고 렌더 요소로 새지 않는다(T3 실측 누출 0).</li>
+</ul>
+
+<h2>2. 잠근 쌍에 무슨 일이 일어나는가</h2>
+<ul>
+  <li><b>자리 고정</b> — 잠근 쌍은 있던 자리에 그대로 있고, 나머지 자리만 섞인다(<code>shuffledKeeping</code>).</li>
+  <li><b>방식 고정</b> — 잠근 쌍이 하나라도 있으면 비교 방식은 다시 고르지 않는다. 방식이 바뀌면 그 쌍의 장면 수 자체가 달라져 원본을 되끼울 수 없다.</li>
+  <li><b>원본 되끼움</b> — 새로 만든 그 쌍의 장면은 버리고 이전 장면을 그대로 넣는다. 직접 고친 내용도 함께 살아남는다.</li>
+  <li><b>쌍 밖 장면</b>(제목·결과·마무리)도 잠그면 같은 자리·같은 종류로 되돌아온다.</li>
+</ul>
+
+<h2>3. 반쪽 상태는 여전히 거부한다</h2>
+<p>한 쌍의 <b>일부</b> 장면만 잠겼거나 손댄 상태는 지킬 수 없다. 위장하지 않고 <code>pair-partial-lock</code>으로 거부하되,
+어느 쌍인지 번호로 알려 주고 「이 쌍 통째 잠그기」 한 번으로 바로 풀리게 했다.
+Workspace 프로젝트 패널에는 반쪽 쌍을 한꺼번에 올리는 버튼이 뜬다.</p>
+
+<h2>4. 실측 매트릭스</h2>
+<p class="sub">각 행은 씨앗 5개(x1~x5)로 「다른 구성」을 5번 돌린 결과다. 추정치 없음.</p>
+<table>
+<thead><tr><th>쌍 수</th><th>잠금</th><th>장면 수</th><th>순서 변화</th><th>방식 변화</th><th>잠근 쌍</th><th>사진</th></tr></thead>
+<tbody>
+<tr><td>2쌍</td><td>잠금 없음 (0)</td><td>9 → 7~9</td><td>3/5</td><td>4/5</td><td><span class="ok">무손상</span></td><td>4 / 손실 0</td></tr>
+<tr><td>2쌍</td><td>1쌍 잠금 (1)</td><td>9 → 9</td><td>0/5</td><td>0/5</td><td><span class="ok">무손상</span></td><td>4 / 손실 0</td></tr>
+<tr><td>2쌍</td><td>절반 잠금 (1)</td><td>9 → 9</td><td>0/5</td><td>0/5</td><td><span class="ok">무손상</span></td><td>4 / 손실 0</td></tr>
+<tr><td>2쌍</td><td>전부 잠금 (2)</td><td>9 → 9</td><td>0/5</td><td>0/5</td><td><span class="ok">무손상</span></td><td>4 / 손실 0</td></tr>
+<tr><td>3쌍</td><td>잠금 없음 (0)</td><td>12 → 9~12</td><td>5/5</td><td>3/5</td><td><span class="ok">무손상</span></td><td>6 / 손실 0</td></tr>
+<tr><td>3쌍</td><td>1쌍 잠금 (1)</td><td>12 → 12</td><td>3/5</td><td>0/5</td><td><span class="ok">무손상</span></td><td>6 / 손실 0</td></tr>
+<tr><td>3쌍</td><td>절반 잠금 (2)</td><td>12 → 12</td><td>0/5</td><td>0/5</td><td><span class="ok">무손상</span></td><td>6 / 손실 0</td></tr>
+<tr><td>3쌍</td><td>전부 잠금 (3)</td><td>12 → 12</td><td>0/5</td><td>0/5</td><td><span class="ok">무손상</span></td><td>6 / 손실 0</td></tr>
+<tr><td>4쌍</td><td>잠금 없음 (0)</td><td>15 → 11~15</td><td>5/5</td><td>4/5</td><td><span class="ok">무손상</span></td><td>8 / 손실 0</td></tr>
+<tr><td>4쌍</td><td>1쌍 잠금 (1)</td><td>15 → 15</td><td>5/5</td><td>0/5</td><td><span class="ok">무손상</span></td><td>8 / 손실 0</td></tr>
+<tr><td>4쌍</td><td>절반 잠금 (2)</td><td>15 → 15</td><td>3/5</td><td>0/5</td><td><span class="ok">무손상</span></td><td>8 / 손실 0</td></tr>
+<tr><td>4쌍</td><td>전부 잠금 (4)</td><td>15 → 15</td><td>0/5</td><td>0/5</td><td><span class="ok">무손상</span></td><td>8 / 손실 0</td></tr>
+<tr><td>5쌍</td><td>잠금 없음 (0)</td><td>13 → 13~18</td><td>5/5</td><td>5/5</td><td><span class="ok">무손상</span></td><td>10 / 손실 0</td></tr>
+<tr><td>5쌍</td><td>1쌍 잠금 (1)</td><td>13 → 13</td><td>5/5</td><td>0/5</td><td><span class="ok">무손상</span></td><td>10 / 손실 0</td></tr>
+<tr><td>5쌍</td><td>절반 잠금 (3)</td><td>13 → 13</td><td>3/5</td><td>0/5</td><td><span class="ok">무손상</span></td><td>10 / 손실 0</td></tr>
+<tr><td>5쌍</td><td>전부 잠금 (5)</td><td>13 → 13</td><td>0/5</td><td>0/5</td><td><span class="ok">무손상</span></td><td>10 / 손실 0</td></tr>
+<tr><td>8쌍</td><td>잠금 없음 (0)</td><td>19 → 19~27</td><td>5/5</td><td>4/5</td><td><span class="ok">무손상</span></td><td>16 / 손실 0</td></tr>
+<tr><td>8쌍</td><td>1쌍 잠금 (1)</td><td>19 → 19</td><td>5/5</td><td>0/5</td><td><span class="ok">무손상</span></td><td>16 / 손실 0</td></tr>
+<tr><td>8쌍</td><td>절반 잠금 (4)</td><td>19 → 19</td><td>5/5</td><td>0/5</td><td><span class="ok">무손상</span></td><td>16 / 손실 0</td></tr>
+<tr><td>8쌍</td><td>전부 잠금 (8)</td><td>19 → 19</td><td>0/5</td><td>0/5</td><td><span class="ok">무손상</span></td><td>16 / 손실 0</td></tr>
+</tbody>
+</table>
+<ul>
+  <li>잠금이 없으면 방식이 다시 골라지므로 <b>장면 수가 변한다</b>(8쌍: 19 → 19~27). 원본 사진 수는 어느 경우에도 불변이다.</li>
+  <li>잠금이 하나라도 있으면 방식 변화 <b>0/5</b>, 장면 수 불변, 잠근 쌍 무손상이 전 케이스에서 확인됐다.</li>
+  <li>사진 손실은 20개 조합 전부 <b>0</b>이다.</li>
+</ul>
+
+<h2>5. 남은 한계</h2>
+<ul>
+  <li><span class="warn">①</span> <b>자유로운 쌍이 0~1개면 순서가 바뀌지 않는다.</b> 2쌍 중 1쌍을 잠그면 남은 자리가 하나뿐이라 섞을 여지가 없다(실측: 2쌍·1잠금 순서 변화 0/5). 아무 일도 안 일어난 것처럼 보이지 않도록 그 이유를 경고로 먼저 말한다.</li>
+  <li><span class="warn">②</span> <b>잠근 쌍이 있으면 비교 방식을 바꿀 수 없다.</b> 방식을 바꾸려면 잠금을 모두 풀어야 한다 — 방식과 쌍 잠금은 함께 성립하지 않는다.</li>
+  <li><span class="warn">③</span> <b>쌍 스테이지(#/video 비포&amp;애프터)에는 아직 역할 지정이 없다.</b> 평면 스테이지의 ★·⊘가 쌍에는 붙지 않았다.</li>
+  <li><span class="warn">④</span> <b>실브라우저 측정은 아직이다.</b> 사진 30장 규모의 미리보기 실빌드 비용은 jsdom이 아니라 실제 브라우저에서 재야 의미가 있다.</li>
+</ul>
+
+<h2>6. 검증</h2>
+<ul>
+  <li><code>test-round68.mjs</code> <b>24/24</b> — 이름표 4건, 쌍 잠금 API 4건, 재구성 9건, 반쪽 상태 3건, 화면 2건, 회귀·감사 2건.</li>
+  <li><code>test-round67.mjs</code> T14는 새 계약으로 갱신했다 — 「쌍은 지킬 수 없다」는 거부가 「반쪽은 지킬 수 없다」로 좁아졌다. 정직성 계약 자체는 그대로다.</li>
+  <li>test-round 계열 <b>59개 전량 통과</b>. <code>shot*.mjs</code>는 실브라우저(puppeteer) 대상이라 이 회차 측정에서 제외했다.</li>
+</ul>
+
+</body>
+</html>

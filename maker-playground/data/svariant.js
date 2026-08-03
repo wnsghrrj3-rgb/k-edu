@@ -59,6 +59,17 @@ window.MK_SVAR = (() => {
     return a;
   }
 
+  /* R68 — 자리 고정 셔플: 잠긴 쌍은 있던 자리에 그대로 두고 나머지 자리만 섞는다.
+     (잠긴 쌍의 장면을 원본 그대로 되끼우려면 그 쌍의 순서가 변하면 안 된다.) */
+  function shuffledKeeping(arr, fixedPos, rnd) {
+    const out = arr.slice();
+    const free = [];
+    for (let i = 0; i < arr.length; i++) if (!fixedPos.has(i)) free.push(i);
+    const vals = shuffled(free.map((i) => arr[i]), rnd);
+    free.forEach((pos, k) => { out[pos] = vals[k]; });
+    return out;
+  }
+
   /* ================= 입력 미디어 통계 (§13 분석 범위) ================= */
   function mediaStats(input) {
     const inp = input || {};
@@ -460,20 +471,34 @@ window.MK_SVAR = (() => {
          원본 인덱스(_oi)를 쌍 미디어에 실어 두면 문서만으로 쌍을 되찾을 수 있다(§28). */
       const rawPairs = Array.isArray(inp.pairs) && inp.pairs.length ? inp.pairs.slice() : null;
       let pairOrder = null, methodPicked = inp.method || null;
+      /* R68 — 잠긴 쌍(이름표 목록)은 자리도 방식도 건드리지 않는다. 자리가 흔들리면
+         원본 장면을 되끼울 수 없고, 방식이 바뀌면 그 쌍의 장면 수 자체가 달라진다. */
+      const lockedKeys = new Set((o.lockedPairKeys || []).map((k) => String(k)));
       if (rawPairs) {
+        /* _oi 는 최초 1회만 부여하고 이후 보존한다 — 매번 다시 매기면 이름표가 회차마다
+           달라져 「이 쌍을 잠갔다」가 성립하지 않는다(R67 은 매번 재부여였다). */
         let fi = 0;
+        for (const p of rawPairs) for (const m of [p.before, p.after]) if (m && m._oi != null) fi = Math.max(fi, m._oi + 1);
         const withOi = rawPairs.map((p) => {
-          const b = p.before ? { ...p.before, _oi: fi++ } : p.before;
-          const a = p.after ? { ...p.after, _oi: fi++ } : p.after;
+          const b = p.before ? (p.before._oi != null ? p.before : { ...p.before, _oi: fi++ }) : p.before;
+          const a = p.after ? (p.after._oi != null ? p.after : { ...p.after, _oi: fi++ }) : p.after;
           return { ...p, before: b, after: a };
         });
+        const keyOf = (p) => String((p.before && p.before._oi != null) ? p.before._oi
+          : (p.after && p.after._oi != null) ? p.after._oi : '');
         pairOrder = withOi.map((_, i) => i);
-        if (rnd && withOi.length > 1) pairOrder = shuffled(pairOrder, rnd);
+        if (rnd && withOi.length > 1) {
+          const fixedPos = new Set();
+          withOi.forEach((p, i) => { if (lockedKeys.has(keyOf(p))) fixedPos.add(i); });
+          pairOrder = fixedPos.size ? shuffledKeeping(pairOrder, fixedPos, rnd) : shuffled(pairOrder, rnd);
+        }
         inp.pairs = pairOrder.map((i) => withOi[i]);
-        if (rnd) {
+        if (rnd && !(lockedKeys.size && o.keepMethod !== false)) {
           const allow = (C().METHODS_BY_RATIO || {})[ratio] || [];
           if (allow.length) methodPicked = rnd.pick(allow);
           if (methodPicked) inp.method = methodPicked;
+        } else if (lockedKeys.size) {
+          warnings.push('잠근 쌍이 있어 비교 방식은 그대로 뒀어요 — 방식이 바뀌면 그 쌍의 장면도 달라져요.');
         }
       }
       const r = doBuild(inp);
@@ -573,5 +598,5 @@ window.MK_SVAR = (() => {
   return { CONST, mediaStats, defineVariants, listVariants, getVariant,
     matchConditions, selectVariant, selectFrom, balancePlan, buildSmart, audit,
     makeRng, hashSeed, shuffled,
-    _internals: { SINGLE_PREF, pairLayout, normRoles, VARS } };
+    _internals: { SINGLE_PREF, pairLayout, normRoles, VARS, shuffledKeeping } };
 })();

@@ -172,13 +172,16 @@ T('T13 쌍 재구성도 결정론 — 같은 씨앗 = 같은 문서', () => {
   A(JSON.stringify(a.doc) === JSON.stringify(b.doc), '같은 씨앗인데 결과가 다름');
 });
 
-T('T14 쌍 + 잠금 = 정직한 거부 (지킬 수 없는 약속을 하지 않는다)', () => {
+/* R68 갱신 — 「쌍은 지킬 수 없다」는 거부(pair-locked)는 쌍 단위 잠금으로 대체됐다.
+   지킬 수 없는 약속을 하지 않는다는 계약 자체는 그대로다: 한 쌍의 일부만 잠근
+   반쪽 상태는 여전히 성립할 수 없으므로 정직하게 거부하고 해법을 알려 준다. */
+T('T14 쌍 + 반쪽 잠금 = 정직한 거부 (지킬 수 없는 약속을 하지 않는다)', () => {
   const base = S.buildSmart('tm-beforeafter', { pairs: mkPairs(3), texts: { title: '전후' } }, { seed: 'p-l' });
   const d = clone(base.doc);
   X.setLock(d, d.scenes[1].id, true);
   const r = X.recomposeDoc(d, { seed: 'p-l2' });
-  A(!r.ok && r.why === 'pair-locked', '잠금이 있는데 재구성이 통과함');
-  A(/잠금/.test(r.guide || ''), '안내 문구에 해법이 없음');
+  A(!r.ok && r.why === 'pair-partial-lock', '반쪽 잠금인데 재구성이 통과함 (why=' + (r.why || 'ok') + ')');
+  A(/통째/.test(r.guide || ''), '안내 문구에 해법이 없음');
   X.setLock(d, d.scenes[1].id, false);
   A(X.recomposeDoc(d, { seed: 'p-l3' }).ok, '잠금 풀었는데도 거부');
 });

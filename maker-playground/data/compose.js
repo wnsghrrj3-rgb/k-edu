@@ -131,9 +131,13 @@ window.MK_COMPOSE = (() => {
     /* ③ 씬 묶음 조립 */
     const specOf = (id) => comp.scenes.find((s) => s.id === id) || null;
     const plan = [];
-    const push = (id, medias, item, vi, slotAnims) => {
+    const push = (id, medias, item, vi, slotAnims, pk) => {
       const sp = specOf(id); if (!sp) return;
-      plan.push({ spec: sp, variantIdx: vi || 0, medias, item: item || null, totalItems: pairs.length, ...(slotAnims ? { slotAnims } : {}) });
+      /* R68 — pairKey: 이 장면이 어느 쌍의 것인지. 쌍 단위 잠금이 성립하려면 회차가 바뀌어도
+         변하지 않는 이름표가 필요하다. 자리 인덱스(pi)는 순서를 섞으면 딴 쌍을 가리키므로
+         전(前) 사진의 원본 인덱스(_oi)를 쓴다. 쌍 밖 장면(제목·결과·마무리)은 미지정. */
+      plan.push({ spec: sp, variantIdx: vi || 0, medias, item: item || null, totalItems: pairs.length,
+        ...(pk != null ? { pairKey: pk } : {}), ...(slotAnims ? { slotAnims } : {}) });
     };
     const texts = input.texts || {};
     if (specOf('ba-intro') && String(texts.title || '').trim()) push('ba-intro', [], null, 0);
@@ -146,21 +150,24 @@ window.MK_COMPOSE = (() => {
     };
     const A_BASE = { preset: 'fade', delay: 0, duration: 0.05, ease: 'linear', repeat: 1 };
     pairs.forEach((pr, pi) => {
+      /* R68 — 쌍 이름표(회차 불변). _oi 가 없는 예전/평면 입력은 자리 인덱스로 대신한다. */
+      const pk = (pr.before && pr.before._oi != null) ? pr.before._oi
+        : (pr.after && pr.after._oi != null) ? pr.after._oi : ('p' + pi);
       if (!pr.before || !pr.after) {
         /* 미디어 누락 — 완성 비교로 위장하지 않는다 (지시서 §9-4) */
         const side = pr.before ? '전' : '후', missing = pr.before ? '후' : '전';
         warnings.push('쌍 ' + (pi + 1) + ': ' + missing + ' 사진이 없어요 — 추가하면 비교 장면이 완성돼요');
-        push('ba-solo', [pr.before || pr.after], { label: side, pairTitle: pr.title, incomplete: '(' + missing + ' 없음)' }, pi * 4);
+        push('ba-solo', [pr.before || pr.after], { label: side, pairTitle: pr.title, incomplete: '(' + missing + ' 없음)' }, pi * 4, null, pk);
         return;
       }
-      push('ba-solo', [pr.before], { label: '전', pairTitle: pr.title }, pi * 4);
+      push('ba-solo', [pr.before], { label: '전', pairTitle: pr.title }, pi * 4, null, pk);
       if (method === 'sequential' || method === 'side-by-side' || method === 'top-bottom') {
-        push('ba-solo', [pr.after], { label: '후' }, pi * 4 + 1);
+        push('ba-solo', [pr.after], { label: '후' }, pi * 4 + 1, null, pk);
       } else {
-        push('ba-transform', [pr.before, pr.after], { label: '후' }, pi * 4 + 1, [A_BASE, A_REVEAL[method]]);
+        push('ba-transform', [pr.before, pr.after], { label: '후' }, pi * 4 + 1, [A_BASE, A_REVEAL[method]], pk);
       }
       if (method !== 'sequential' && method !== 'fade-between')
-        push(splitId, [pr.before, pr.after], { pairResult: pr.resultText }, pi * 4 + 2);
+        push(splitId, [pr.before, pr.after], { pairResult: pr.resultText }, pi * 4 + 2, null, pk);
     });
     if (specOf('ba-result') && String(texts.result || '').trim()) push('ba-result', [], null, 0);
     if (specOf('ba-outro')) push('ba-outro', [], null, 0);
@@ -425,6 +432,7 @@ window.MK_COMPOSE = (() => {
       width: R.w, height: R.h, duration: sceneDuration(spec, built),
       background: bg, transition: theme.transitions[seq % theme.transitions.length] || 'fade',
       order: seq, role: spec.role,
+      ...(p.pairKey != null ? { pairKey: p.pairKey } : {}), /* R68 — 쌍 단위 잠금의 근거 */
       ...(comp.audio ? { music: { name: theme.musicName || comp.audio.name || '배경음', synth: comp.audio.synth || 'beat' } } : {}),
       elements: els,
     };

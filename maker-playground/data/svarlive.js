@@ -67,6 +67,43 @@ window.MK_SVARX = (() => {
     return out;
   }
 
+  /* ================= R68 쌍 단위 잠금 ================= */
+  /* 잠금은 장면 단위인데 한 쌍(전→후)은 2~3장면으로 흩어진다. R67 은 이 어긋남을
+     정직하게 거부했다(pair-locked). R68 은 어긋남을 없앤다 — 쌍을 통째로 잠근다.
+     근거는 장면에 실린 pairKey(전 사진의 원본 인덱스, 회차 불변). */
+  function pairGroups(doc) {
+    const map = new Map();
+    for (const sc of ((doc && doc.scenes) || [])) {
+      if (sc.pairKey == null) continue;
+      const k = String(sc.pairKey);
+      if (!map.has(k)) map.set(k, []);
+      map.get(k).push(sc);
+    }
+    const out = [];
+    let i = 0;
+    for (const [key, scenes] of map) {
+      const held = scenes.filter((s) => s.svar && (s.svar.locked || s.svar.source === 'user'));
+      out.push({ key, no: ++i, scenes, count: scenes.length, held: held.length,
+        edited: scenes.some((s) => s.svar && s.svar.source === 'user'),
+        state: !held.length ? 'none' : (held.length === scenes.length ? 'full' : 'partial') });
+    }
+    return out;
+  }
+  const pairGroupOf = (doc, key) => pairGroups(doc).find((g) => g.key === String(key)) || null;
+  /* 쌍 통째 잠금 — 그 쌍에 속한 장면 전부에 같은 잠금을 건다(부분 상태를 남기지 않는다) */
+  function setPairLock(doc, key, on) {
+    const g = pairGroupOf(doc, key);
+    if (!g) return { ok: false, why: 'no-pair' };
+    for (const sc of g.scenes) setLock(doc, sc.id, !!on);
+    return { ok: true, key: g.key, scenes: g.scenes.length, locked: !!on };
+  }
+  function pairLockSummary(doc) {
+    const gs = pairGroups(doc);
+    return { pairs: gs.length, locked: gs.filter((g) => g.state === 'full').length,
+      partial: gs.filter((g) => g.state === 'partial').length,
+      partialKeys: gs.filter((g) => g.state === 'partial').map((g) => g.key) };
+  }
+
   /* ================= 재구성 (§12 「다른 구성」) ================= */
   /* opt: { seed, theme, ratio, variant, prevDoc, key }
      seed 미지정 = 자동 다음 seed(이전과 다른 값 보장). key 지정 시 History 적립. */
@@ -86,21 +123,62 @@ window.MK_SVARX = (() => {
 
     /* ---- R67 쌍 모드 — 쌍 자체는 고정, 순서·비교 방식만 다시 고른다 (§12) ---- */
     if (Array.isArray(inp.pairs) && inp.pairs.length) {
-      /* 잠금은 장면 단위인데 쌍은 한 쌍이 2~3장면으로 흩어진다. 순서가 바뀌면
-         잠긴 장면만 제자리에 두는 게 성립하지 않으므로 정직하게 막는다(위장 금지). */
-      const held = prev ? (prev.scenes || []).filter((s) => s.svar && (s.svar.locked || s.svar.source === 'user')) : [];
-      if (held.length) {
-        return { ok: false, why: 'pair-locked',
-          guide: '잠그거나 직접 고친 장면 ' + held.length + '개가 있어요 — 쌍 구조는 그 장면을 지키면서 순서를 바꿀 수 없어요. 잠금을 풀면 순서와 비교 방식을 다시 골라요.' };
+      /* R68 — 쌍 단위 잠금. 잠근 쌍은 자리도 방식도 그대로 두고 원본 장면을 되끼운다.
+         한 쌍 안에서 일부만 잠기거나 일부만 손댄 상태(partial)는 여전히 성립하지 않으므로
+         거부하되, 어느 쌍인지 돌려줘서 「이 쌍 통째 잠그기」로 바로 풀 수 있게 한다. */
+      const groups = prev ? pairGroups(prev) : [];
+      const partial = groups.filter((g) => g.state === 'partial');
+      if (partial.length) {
+        return { ok: false, why: 'pair-partial-lock', partialKeys: partial.map((g) => g.key),
+          guide: '쌍 ' + partial.map((g) => g.no).join('·') + '번은 일부 장면만 잠겼거나 손댔어요 — 한 쌍은 통째로만 지킬 수 있어요. 「이 쌍 통째 잠그기」를 누르면 그 쌍을 그대로 두고 나머지만 다시 골라요.' };
       }
-      const r = S().buildSmart(templateId, inp, { ...o, seed });
+      const lockedKeys = groups.filter((g) => g.state === 'full').map((g) => g.key);
+      const freeHeld = prev ? (prev.scenes || []).filter((s) => s.pairKey == null && s.svar && (s.svar.locked || s.svar.source === 'user')) : [];
+      const r = S().buildSmart(templateId, inp, { ...o, seed, lockedPairKeys: lockedKeys });
       if (!r.ok) return r;
       markSources(r.doc, 'random', seed);
-      const sv = r.doc.meta.svar || {};
-      sv.seed = seed; r.doc.meta.svar = sv;
       const warnings = [...(r.warnings || [])];
+      let kept = 0;
+      if (lockedKeys.length || freeHeld.length) {
+        const prevByKey = new Map();
+        for (const sc of (prev.scenes || [])) {
+          if (sc.pairKey == null) continue;
+          const k = String(sc.pairKey);
+          if (!prevByKey.has(k)) prevByKey.set(k, []);
+          prevByKey.get(k).push(sc);
+        }
+        const lockedSet = new Set(lockedKeys.map(String));
+        const out = [], done = new Set();
+        for (const sc of r.doc.scenes) {
+          const k = sc.pairKey != null ? String(sc.pairKey) : null;
+          if (k && lockedSet.has(k)) {
+            if (!done.has(k)) { done.add(k); for (const os of (prevByKey.get(k) || [])) { out.push(clone(os)); kept++; } }
+            continue; /* 새로 만든 그 쌍 장면은 버리고 원본을 쓴다 */
+          }
+          out.push(sc);
+        }
+        /* 쌍 밖 장면(제목·결과·마무리)도 잠겼으면 같은 자리 같은 종류로 되돌린다 */
+        for (const hs of freeHeld) {
+          const i = out.findIndex((x) => x.pairKey == null && x.specId === hs.specId && !(x.svar && x.svar.source === 'user'));
+          if (i >= 0) { out[i] = clone(hs); kept++; }
+        }
+        r.doc.scenes = out;
+        r.doc.scenes.forEach((x, i) => { x.order = i; });
+      }
+      const sv = r.doc.meta.svar || {};
+      sv.seed = seed;
+      sv.lockedPairs = lockedKeys;
+      r.doc.meta.svar = sv;
+      if (lockedKeys.length) {
+        warnings.push('잠근 쌍 ' + lockedKeys.length + '개(장면 ' + kept + '개)는 그대로 뒀어요.');
+        /* 정직하게 — 자유로운 쌍이 없거나 하나뿐이면 순서는 바뀔 자리가 없다.
+           「다른 구성」을 눌렀는데 아무것도 안 변한 것처럼 보이는 이유를 먼저 말해 준다. */
+        const freePairs = groups.length - lockedKeys.length;
+        if (freePairs <= 0) warnings.push('쌍을 전부 잠가서 바뀔 자리가 없어요 — 하나라도 풀면 순서를 다시 골라요.');
+        else if (freePairs === 1) warnings.push('자유로운 쌍이 1개뿐이라 순서는 그대로예요.');
+      }
       if (o.key) pushHistory(o.key, r.doc, { seed, variant: r.smart && r.smart.variant });
-      return { ...r, warnings, seed, pinned: [], lockedKept: 0 };
+      return { ...r, warnings, seed, pinned: [], lockedKept: kept, lockedPairs: lockedKeys };
     }
 
     const medias = inp.medias || [];
@@ -214,8 +292,10 @@ window.MK_SVARX = (() => {
       const f = oi == null ? null : byOi.get(oi);
       if (!f) return null;
       const m = meta[oi] || {};
+      /* R68 — 원본 인덱스를 그대로 되돌려 준다. 이 값이 쌍의 이름표가 되므로
+         회차가 바뀌어도 「몇 번 쌍을 잠갔는지」가 유지된다. */
       return { name: m.n || f.label || ('사진 ' + (oi + 1)), kind: f.video ? 'video' : (m.k || 'image'),
-        src: f.src, w: m.w || 800, h: m.h || 600 };
+        src: f.src, w: m.w || 800, h: m.h || 600, _oi: oi };
     };
     const defs = Array.isArray(sv.pairs) ? sv.pairs : [];
     if (!defs.length) return { ok: false, why: 'no-pairs', guide: '이 문서에는 쌍 근거가 없어요 — 예전 방식으로 만든 문서예요.' };
@@ -227,7 +307,10 @@ window.MK_SVARX = (() => {
     });
     if (!pairs.length) return { ok: false, why: 'no-media', guide: '문서에서 전·후 사진을 찾지 못했어요.' };
     return { ok: true, missing,
-      input: { pairs, texts: clone(sv.texts || {}), ratio: sv.ratio || undefined },
+      /* R68 — 비교 방식도 되돌려 준다. 잠근 쌍이 있으면 방식을 유지해야 하는데
+         입력에 없으면 유지할 값 자체가 없다(R67 은 매번 다시 골랐으므로 필요 없었다). */
+      input: { pairs, texts: clone(sv.texts || {}), ratio: sv.ratio || undefined,
+        ...(sv.method ? { method: sv.method } : {}) },
       templateId: sv.templateId };
   }
 
@@ -424,6 +507,7 @@ window.MK_SVARX = (() => {
   }
 
   return { SOURCES, markSources, markEdited, setLock, lockedScenes, lockSummary,
+    pairGroups, pairGroupOf, setPairLock, pairLockSummary,
     pinnedIndexes, recompose, recomposeDoc, inputFromDoc, pairInputFromDoc, nextSeed,
     pushHistory, previous, historyDepth, clearHistory,
     readState, reproduce, validateVariants, testMatrix, CASES, audit };
