@@ -200,7 +200,7 @@ T('잘못된 Manifest 는 등록 자체가 거부된다 (조용한 반영 0)', (
 T('audit — MK_MANIFEST 무위반 + MK_COMPOSE 전수(신규·variant 포함) 무위반', () => {
   const ma = M.audit();
   A(ma.ok, 'MANIFEST 위반: ' + ma.violations.join(', '));
-  A(ma.templates === 3 && ma.layouts >= 9, '집계=' + JSON.stringify(ma));
+  A(ma.templates >= 3 && ma.layouts >= 9, '집계=' + JSON.stringify(ma)); /* R64 — Builder 시드 4종이 추가 등록됨 */
   const ca = C.audit();
   A(ca.ok, 'COMPOSE 위반: ' + ca.violations.join(', '));
 });

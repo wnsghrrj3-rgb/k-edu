@@ -244,6 +244,14 @@ window.MK_MANIFEST = (() => {
                ...(sc.texts ? { textSlots: sc.texts.map((t) => clone(t)) } : {}) }]));
       if (L.bg && !sc.bg) spec.bg = L.bg;
     }
+    if (!sc.layout) {
+      /* R64 — Builder 씬은 원본 comp 스펙의 슬롯 데이터를 그대로 실어 나를 수 있다
+         (비포애프터 ba-* 씬처럼 Layout Registry 밖의 정밀 프레임 — 좌표는 데이터일 뿐, 코드 아님) */
+      if (sc.mediaSlots) spec.mediaSlots = sc.mediaSlots.map((s) => clone(s));
+      if (sc.layoutByRatio) spec.layoutByRatio = clone(sc.layoutByRatio);
+      if (sc.singleFrame) spec.singleFrame = clone(sc.singleFrame);
+    }
+    if (sc.pairOnly) spec.pairOnly = true;
     if (sc.texts) spec.textSlots = sc.texts.map((t) => clone(t));
     if (sc.animation) { const A = getAnimation(sc.animation); if (A && A.preset) spec.mediaAnim = A.preset; }
     if (sc.fallback) spec.fallback = sc.fallback;
@@ -271,6 +279,7 @@ window.MK_MANIFEST = (() => {
       for (const l of rule.cycle || []) set.add(l);
       for (const s of rule.mix || []) if (s.layout !== 'pair') set.add(s.layout);
       for (const l of Object.values(rule.pairByRatio || {})) set.add(l);
+      if (rule.pairByRatio && rule.default) set.add(rule.default); /* R64 — pair 기본 레이아웃도 variantDefs 에 */
     }
     for (const [, v] of Object.entries(mf.variants || {}))
       for (const rule of v.rules || []) for (const l of rule.cycle || []) set.add(l);
@@ -292,6 +301,7 @@ window.MK_MANIFEST = (() => {
       recommendedDuration: mf.meta.recommendedDuration || { min: 10, max: 90, default: 30 },
       defaultRatio: mf.defaultRatio || '16:9',
       ...(mf.audio ? { audio: clone(mf.audio) } : {}),
+      ...(mf.pairMode ? { pairMode: true } : {}),
       ...(mf.reserveTail ? { reserveTail: mf.reserveTail } : {}),
       ...(variantId !== 'default' ? { hidden: true } : {}),
       manifestId: mf.id, manifestVersion: mf.version, variantId,
@@ -343,6 +353,42 @@ window.MK_MANIFEST = (() => {
       ratio: (input && input.ratio) || t.defaultRatio || undefined };
     const r = C().buildProject(compId, themeId, merged);
     return r.ok ? { ...r, templateId, variant, manifestVersion: t.version } : r;
+  }
+
+  /* ================= buildDraft — 미등록 Manifest 즉시 빌드 (R64 Builder 미리보기) ================= */
+  /* Builder 초안은 Registry 에 없다 — 같은 컴파일러(compileComposition)로 휘발성
+     Composition(hidden)을 만들어 buildProject 전 경로를 그대로 태운다.
+     Builder 전용 렌더러·별도 포맷 없음 — 실행 포맷 하나만 존재한다는 §19 원칙 준수. */
+  let draftSeq = 0;
+  function buildDraft(mf, input, opt) {
+    const v = validate({ ...mf, id: '__tbd-' + (++draftSeq) }); /* 원본 id 중복검사 회피용 휘발 id 로 구조만 검증 */
+    if (!v.ok) return { ok: false, why: 'invalid', errors: v.errors };
+    const variant = (opt && opt.variant) || 'default';
+    const vdef = variant === 'default' ? {} : (mf.variants || {})[variant];
+    if (variant !== 'default' && !vdef) return { ok: false, why: 'no-variant' };
+    const comp = compileComposition({ ...clone(mf), id: '__tbd-' + draftSeq }, variant, vdef);
+    comp.hidden = true; /* 갤러리 오염 0 */
+    if (!C().registerComposition(comp)) return { ok: false, why: 'comp-register-fail' };
+    const themeId = (opt && opt.theme) || (input && input.themeId) || mf.theme || (listThemes()[0] || {}).id;
+    const merged = { ...(mf.defaults || {}), ...(input || {}),
+      texts: { ...((mf.defaults || {}).texts || {}), ...((input || {}).texts || {}) },
+      ratio: (input && input.ratio) || mf.defaultRatio || undefined };
+    const r = C().buildProject(comp.id, themeId, merged);
+    if (C().unregisterComposition) C().unregisterComposition(comp.id); /* 휘발 comp 즉시 회수 */
+    return r.ok ? { ...r, draft: true } : r;
+  }
+
+  /* ================= unregisterTemplate — 재게시·비활성 지원 (R64) ================= */
+  function unregisterTemplate(id) {
+    const i = TPLS.findIndex((t) => t.id === id);
+    if (i < 0) return false;
+    const t = TPLS[i];
+    if (t._mode === 'scenes' && C().unregisterComposition) {
+      const vids = ['default', ...Object.keys(t.variants || {})];
+      for (const vid of vids) C().unregisterComposition(vid === 'default' ? t.id : t.id + '--' + vid);
+    }
+    TPLS.splice(i, 1);
+    return true;
   }
 
   /* ================= takeover — 기존 Composition 을 Manifest 로 Migration ================= */
@@ -404,5 +450,5 @@ window.MK_MANIFEST = (() => {
     registerAnimation, getAnimation, listAnimations: () => Object.keys(ANIMS),
     registerTransition, getTransition, listTransitions: () => Object.keys(TRANSITIONS),
     registerTheme, listThemes, listCompositions,
-    compileRules, validate, registerTemplate, takeover, getTemplate, listTemplates, build, audit };
+    compileRules, validate, registerTemplate, unregisterTemplate, takeover, getTemplate, listTemplates, build, buildDraft, audit };
 })();

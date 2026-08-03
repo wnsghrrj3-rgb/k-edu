@@ -45,6 +45,7 @@ window.MK_COMPOSE = (() => {
   const COMPS = [];   /* Composition — 영상 구조 */
   const THEMES = [];  /* Theme — 시각 디자인 */
   const registerComposition = (c) => { if (!c || !c.id || COMPS.some((x) => x.id === c.id)) return null; COMPS.push(c); return c; };
+  const unregisterComposition = (id) => { const i = COMPS.findIndex((c) => c.id === id); if (i < 0) return false; COMPS.splice(i, 1); return true; }; /* R64 Builder 재게시 */
   const registerTheme = (t) => { if (!t || !t.id || THEMES.some((x) => x.id === t.id)) return null; THEMES.push(t); return t; };
   const getComposition = (id) => COMPS.find((c) => c.id === id) || null;
   const getTheme = (id) => THEMES.find((t) => t.id === id) || null;
@@ -415,7 +416,7 @@ window.MK_COMPOSE = (() => {
     });
     const built = { medias: p.medias, textsUsed };
     const scene = {
-      id: 'cp' + seq, name: spec.name + (p.variantIdx ? ' ' + (p.variantIdx + 1) : ''),
+      id: 'cp' + seq, specId: spec.id, name: spec.name + (p.variantIdx ? ' ' + (p.variantIdx + 1) : ''),
       width: R.w, height: R.h, duration: sceneDuration(spec, built),
       background: bg, transition: theme.transitions[seq % theme.transitions.length] || 'fade',
       order: seq, role: spec.role,
@@ -522,7 +523,7 @@ window.MK_COMPOSE = (() => {
     return { ok: !violations.length, compositions: COMPS.length, themes: THEMES.length, violations };
   }
 
-  return { RATIOS, registerComposition, registerTheme, getComposition, getTheme,
+  return { RATIOS, registerComposition, unregisterComposition, registerTheme, getComposition, getTheme,
     listCompositions: () => COMPS.filter((c) => !c.hidden).map((c) => ({ id: c.id, name: c.name, purpose: c.purpose, category: c.category,
       recommendedMediaCount: c.recommendedMediaCount, recommendedDuration: c.recommendedDuration,
       supportedRatios: Object.keys(RATIOS), defaultRatio: c.defaultRatio || '16:9' })),
