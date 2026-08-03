@@ -459,124 +459,124 @@ window.KEDU_MAP["g5_1_math"] = {
    "kind": "unit",
    "lessons": [
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u6_l01",
+     "lessonId": "g5_math_u6_l01_v1",
      "n": "1",
      "title": "다각형의 둘레와 넓이를 만나 보자",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/6단원_다각형의둘레와넓이/g5_math_u6_l01_다각형의둘레와넓이를만나보자.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u6_l02",
+     "lessonId": "g5_math_u6_l02_v1",
      "n": "2",
      "title": "다각형의 둘레를 구해요 ①",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/6단원_다각형의둘레와넓이/g5_math_u6_l02_다각형의둘레를구해요1.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u6_l03",
+     "lessonId": "g5_math_u6_l03_v1",
      "n": "3",
      "title": "다각형의 둘레를 구해요 ②",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/6단원_다각형의둘레와넓이/g5_math_u6_l03_다각형의둘레를구해요2.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u6_l04",
+     "lessonId": "g5_math_u6_l04_v1",
      "n": "4",
      "title": "1 cm²를 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/6단원_다각형의둘레와넓이/g5_math_u6_l04_1제곱센티미터를알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u6_l05",
+     "lessonId": "g5_math_u6_l05_v1",
      "n": "5",
      "title": "직사각형의 넓이를 구해요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/6단원_다각형의둘레와넓이/g5_math_u6_l05_직사각형의넓이를구해요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u6_l06",
+     "lessonId": "g5_math_u6_l06_v1",
      "n": "6",
      "title": "m², km²를 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/6단원_다각형의둘레와넓이/g5_math_u6_l06_제곱미터와제곱킬로미터를알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u6_l07",
+     "lessonId": "g5_math_u6_l07_v1",
      "n": "7",
      "title": "평행사변형의 넓이를 구해요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/6단원_다각형의둘레와넓이/g5_math_u6_l07_평행사변형의넓이를구해요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u6_l08",
+     "lessonId": "g5_math_u6_l08_v1",
      "n": "8",
      "title": "삼각형의 넓이를 구해요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/6단원_다각형의둘레와넓이/g5_math_u6_l08_삼각형의넓이를구해요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u6_l09",
+     "lessonId": "g5_math_u6_l09_v1",
      "n": "9",
      "title": "사다리꼴의 넓이를 구해요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/6단원_다각형의둘레와넓이/g5_math_u6_l09_사다리꼴의넓이를구해요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u6_l10",
+     "lessonId": "g5_math_u6_l10_v1",
      "n": "10",
      "title": "마름모의 넓이를 구해요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/6단원_다각형의둘레와넓이/g5_math_u6_l10_마름모의넓이를구해요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u6_l11",
+     "lessonId": "g5_math_u6_l11_v1",
      "n": "11",
      "title": "아하! 땅의 넓이 알아보기",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/6단원_다각형의둘레와넓이/g5_math_u6_l11_아하땅의넓이알아보기.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u6_l12",
+     "lessonId": "g5_math_u6_l12_v1",
      "n": "12",
      "title": "스스로 마무리해요 (단원 평가)",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/math/6단원_다각형의둘레와넓이/g5_math_u6_l12_스스로마무리해요.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }
