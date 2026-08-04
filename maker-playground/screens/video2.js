@@ -114,8 +114,12 @@
   const thumb = (m, cls) => m
     ? (m.kind === 'video'
       ? `<span class="${cls} vh-thumb vh-thumb-vid">🎬</span>`
-      /* R71 — 목록에 그리는 그림은 축소본이 있으면 그걸 쓴다(원본 src 는 빌드용으로 무손상) */
-      : `<img class="${cls} vh-thumb" src="${esc(m.thumb || m.src)}" alt="">`)
+      /* R71 — 목록에 그리는 그림은 축소본이 있으면 그걸 쓴다(원본 src 는 빌드용으로 무손상)
+         R73 — 축소본이 아직 없으면 원본을 화면으로 내보내지 않는다(video5 훅).
+               훅이 없으면 종전과 완전 동일하다. */
+      : (typeof H.thumbImg === 'function'
+        ? H.thumbImg(m, cls)
+        : `<img class="${cls} vh-thumb" src="${esc(m.thumb || m.src)}" alt="">`))
     : `<span class="${cls} vh-thumb vh-thumb-empty">＋</span>`;
 
   const estLine = () => {

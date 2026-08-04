@@ -1,0 +1,64 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<title>R73 — 저사양·태블릿 실측</title>
+<style>body{background:#14120f;color:#ede6da;font:15px/1.7 'Pretendard',sans-serif;max-width:920px;margin:40px auto;padding:0 20px}
+h1{font-size:22px}h2{font-size:17px;margin-top:34px;color:#d9a441}
+table{border-collapse:collapse;width:100%;margin:14px 0}th,td{border:1px solid #3a342b;padding:7px 10px;text-align:center}
+th{background:#211e19}code{background:#211e19;padding:1px 6px;border-radius:5px}
+.note{color:#9c927f;font-size:13.5px}</style></head><body>
+<h1>R73 — 저사양·태블릿 실측 (R71 한계 ④ 해소)</h1>
+<p>R68 부터 다섯 라운드 이월된 마지막 부채. R71 은 데스크톱 1440×900 에서만 쟀다.
+여기서는 CPU 스로틀 <b>1·4·6배</b>와 <b>1280×800@2x</b>(학교 보급 태블릿 가로)로 다시 쟀다.
+사진은 12MP JPEG 30장·44.5MB. 측정본 <code>report/_perf73-before.json</code>·<code>_perf73-after.json</code>.</p>
+<p class="note">스로틀은 실기기가 아니다. 4배는 라이트하우스 모바일 기준(중급), 6배는 저가 보급기 대역이다.
+실기기 실측은 여전히 미실시 — 그렇게 적는다.</p>
+
+<h2>실측 — 업로드하고 목록이 보이기까지</h2>
+<table><tr><th rowspan="2">CPU</th><th rowspan="2">사진</th><th colspan="2">전 (R71, k-edu 2372b4b)</th><th colspan="2">후 (R73)</th><th rowspan="2">축소(배경)</th><th rowspan="2">★클릭</th></tr>
+<tr><th>업로드→목록</th><th>첫 HTML</th><th>업로드→목록</th><th>첫 HTML</th></tr>
+<tr><td>1배 (기준·데스크톱급)</td><td>10장</td><td >3,252ms</td><td style="background:#2a1f1f">20,256KB</td><td style="background:#1f2a1f">1,109ms</td><td style="background:#1f2a1f">17KB</td><td>573 → 1,755ms</td><td>1 → 0.7ms</td></tr>
+<tr><td></td><td>30장</td><td style="background:#2a1f1f">6,511ms</td><td style="background:#2a1f1f">60,761KB</td><td style="background:#1f2a1f">849ms</td><td style="background:#1f2a1f">34KB</td><td>2,838 → 4,895ms</td><td>0.4 → 0.7ms</td></tr>
+<tr><td>4배 (중급 태블릿)</td><td>10장</td><td style="background:#2a1f1f">5,513ms</td><td style="background:#2a1f1f">20,256KB</td><td style="background:#1f2a1f">2,165ms</td><td style="background:#1f2a1f">17KB</td><td>3,472 → 5,441ms</td><td>2.9 → 3.2ms</td></tr>
+<tr><td></td><td>30장</td><td style="background:#2a1f1f">12,724ms</td><td style="background:#2a1f1f">60,761KB</td><td style="background:#1f2a1f">2,385ms</td><td style="background:#1f2a1f">34KB</td><td>8,756 → 14,798ms</td><td>3 → 4.1ms</td></tr>
+<tr><td>6배 (저가 보급 태블릿)</td><td>10장</td><td >3,308ms</td><td style="background:#2a1f1f">20,256KB</td><td style="background:#1f2a1f">2,056ms</td><td style="background:#1f2a1f">17KB</td><td>2,932 → 6,168ms</td><td>3.3 → 3ms</td></tr>
+<tr><td></td><td>30장</td><td style="background:#2a1f1f">28,660ms</td><td style="background:#2a1f1f">60,761KB</td><td style="background:#1f2a1f">2,972ms</td><td style="background:#1f2a1f">34KB</td><td>12,418 → 21,411ms</td><td>4.6 → 0.4ms</td></tr>
+</table>
+<p class="note">★클릭은 R71 처방의 성과다 — 저사양에서도 5ms 미만으로 유지된다(전 조합).
+안정 상태 재렌더 HTML 은 전·후 동일(30장 466~467KB) — 축소가 끝난 뒤 화면은 달라지지 않는다.</p>
+
+<h2>병목 분해 — CPU 6배 · 30장</h2>
+<table><tr><th>구간</th><th>전</th><th>후</th></tr>
+<tr><td>얹기</td><td>4ms</td><td>3ms</td></tr>
+<tr><td>render 문자열</td><td>4,654ms</td><td>1,485ms</td></tr>
+<tr><td>innerHTML 장착</td><td>5,863ms</td><td>2ms</td></tr>
+<tr><td>첫 페인트(12MP 해독)</td><td>18,139ms</td><td>1,482ms</td></tr>
+<tr><td><b>합 (화면이 멈춰 있는 시간)</b></td><td><b>28,660ms</b></td><td><b>2,972ms</b></td></tr>
+</table>
+<p>범인은 <b>첫 페인트</b>였다. 축소본은 업로드 뒤에 만들어지므로 첫 렌더에는 아직 없고,
+없으면 목록이 원본을 그린다(<code>m.thumb || m.src</code>). 원본 30장 <b>59.3MB</b> vs 축소본 <b>0.43MB</b> —
+<b>138배</b>가 첫 화면으로 통째로 흘러가 12MP 30장이 거기서 전부 해독됐다.
+R71 이 고친 것은 그 다음, <b>안정 상태의 재렌더</b>였다.</p>
+
+<h2>처방 — 축소 전에는 원본을 화면에 안 내보낸다</h2>
+<table><tr><th>갈래</th><th>내용</th><th>지키는 것</th></tr>
+<tr><td>① 자리표시</td><td>축소본이 없으면 같은 크기의 빈 칸을 그린다(<code>&lt;img&gt;</code> 구조·<code>.vh-thumb</code> 유지 — 레이아웃 무변)</td><td>원본 <code>m.src</code> 무손상. 빌드는 언제나 원본을 쓴다</td></tr>
+<tr><td>② 한 장씩 채우기</td><td>축소가 한 장 끝날 때마다 그 자리 <code>&lt;img&gt;</code> 하나만 갈아 끼운다</td><td>전체 재렌더 없음(R71 부분 갱신 계열). 6배·30장에서 1,418ms 절약</td></tr>
+<tr><td>③ 진행 고지</td><td>「사진 준비 중 12/30」 — 숫자는 실제 남은 수, 끝나면 스스로 사라진다</td><td>빈 칸만 보이면 「사진이 사라졌나」가 된다</td></tr>
+<tr><td>④ 폴백</td><td>축소가 불가능한 환경(캔버스 없음)에서는 종전대로 원본을 그린다</td><td>느린 것이 안 보이는 것보다 낫다</td></tr>
+<tr><td>⑤ 확정</td><td><code>makeThumb</code> 이 끝나면 답을 반드시 정한다(실패·불필요는 원본으로 확정)</td><td>미정으로 남기면 그 자리는 영영 빈 칸이 된다</td></tr>
+</table>
+
+<h2>안 쓴 길 — 축소 디코드</h2>
+<p><code>createImageBitmap(blob, {resizeWidth:320})</code> 는 JPEG 를 축소 해상도로 해독하므로 원리상 더 싸다.
+R71 이 데스크톱에서 재고 버렸는데, 스로틀에서는 답이 다를 수 있어 다시 쟀다 — 6배·10장에서
+<b>Image+canvas 4,338ms vs 축소 디코드 7,508ms</b>. 이 환경에서는 여전히 진다. 바꾸지 않는다.</p>
+<p class="note">첫 측정(Image 269ms)은 앞선 회차가 남긴 해독 캐시를 탄 값이라 무효다 — 재측값으로 비교했다.</p>
+
+<h2>남은 한계</h2>
+<ol>
+<li><b>실기기 미실시</b> — CPU 스로틀은 주 스레드만 늦춘다. 실제 태블릿의 느린 저장장치·적은 메모리·GPU 는 반영되지 않는다.</li>
+<li><b>메모리 미측정</b> — 헤드리스 셸에서 <code>performance.memory</code> 가 125MB 로 고정돼 움직이지 않았다(전·후 전 조합 동일). 12MP 30장의 해독 비트맵 압력은 재지 못했다. 자리표시가 그 해독을 첫 화면에서 걷어냈으므로 방향은 개선이지만, <b>수치로는 말할 수 없다</b>.</li>
+<li><b>축소 배경 21.4초</b>(6배·30장) — 전(12.4초)보다 늘었다. 전에는 첫 페인트가 이미 30장을 해독해 둔 뒤라 축소가 그 캐시를 탔고, 이제 그 원가가 배경으로 옮겨왔다. 목록은 그동안 쓸 수 있고 사진은 위에서부터 차례로 채워지지만, 마지막 사진이 보이기까지는 그만큼 걸린다. 「다 준비되기까지」 총합은 41.1초 → 24.4초로 줄었다.</li>
+<li><b>요약 갱신 4.0초</b>(6배·30장) — 실빌드 비용이라 줄일 방법이 이 라운드에 없다. 「구성을 다시 세는 중…」으로 먼저 말하므로 거짓은 아니지만, 저사양에서 4초는 길다.</li>
+</ol>
+<p class="note">검증: <code>test-round73.mjs</code> 42/42 · 전 스위트 64 전량 통과.</p>
+</body></html>
