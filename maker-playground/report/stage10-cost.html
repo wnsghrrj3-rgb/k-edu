@@ -1,0 +1,89 @@
+<!doctype html><html lang=ko><meta charset=utf-8>
+<title>R71 — 미리보기 실빌드 비용 실측</title>
+<style>
+body{font:14px/1.7 system-ui,'Apple SD Gothic Neo',sans-serif;max-width:1100px;margin:40px auto;padding:0 20px;color:#222}
+h1{font-size:22px;margin-bottom:4px} h2{font-size:16px;margin-top:34px;border-top:1px solid #eee;padding-top:18px}
+table{border-collapse:collapse;width:100%;margin:14px 0;font-size:13px}
+th,td{border:1px solid #e3e3e3;padding:7px 9px;text-align:right}
+th{background:#fafafa;font-weight:600;font-size:12px} td.n{text-align:left;font-weight:600}
+.bad{color:#b3261e} .good{color:#1a6b3c;font-weight:600} .g{color:#666;font-size:12px}
+.lead{color:#555} code{background:#f5f5f5;padding:1px 5px;border-radius:3px;font-size:12px}
+.note{background:#fbfbf8;border-left:3px solid #d9a441;padding:10px 14px;margin:14px 0}
+ul{padding-left:20px} li{margin:5px 0}
+</style>
+<h1>R71 — 미리보기 실빌드 비용 실측·해소</h1>
+<p class=lead>R68 부터 3회 이월된 과제. 추정 없이 <b>실제 크롬</b>에서, <b>실제 폰 사진 규격</b>(12MP JPEG 30장 · 원본 합 47.8MB)으로,
+<b>실제 클릭 한 번</b>의 비용을 쟀다. 측정 하니스 <code>perf71.mjs</code>, 저장본 <code>_perf71-before.json</code> · <code>_perf71-after.json</code>.</p>
+
+<h2>1. 무엇이 문제였나</h2>
+<p>사진 30장에서 ★ 를 한 번 누르면 화면이 <b class=bad>1,980ms</b> 얼어붙었다. 범인은 엔진이 아니었다 —
+실빌드(buildSmart)는 275ms 로 전체의 1/7 이었고, 나머지는 <b>원본 data URL 이 매 렌더마다 HTML 로 다시 흘러간 값</b>이다.
+사진 한 장이 1.7MB 인데 30장이면 51MB, 목록·미리보기 마크업이 붙어 렌더 한 번에 <b class=bad>65MB</b> 짜리 문자열이 만들어지고
+브라우저는 그걸 다시 파싱하며 12MP 이미지 30장을 매번 새로 해독했다.</p>
+
+<h2>2. 전 · 후 실측</h2>
+<table>
+<tr><th rowspan=2>사진</th><th colspan=3>★ 클릭 블로킹</th><th colspan=2>렌더 HTML</th><th colspan=2>재렌더</th>
+<th rowspan=2>요약 갱신<br>완료까지</th><th rowspan=2>축소 1회<br>(배경)</th><th rowspan=2>업로드 직후<br>첫 렌더</th></tr>
+<tr><th>전</th><th>후</th><th>배</th><th>전</th><th>후</th><th>전</th><th>후</th></tr>
+<tr>
+<td class=n>5장</td>
+<td class=bad>251.1ms</td><td class=good>0.5ms</td><td class=g>502.0×</td>
+<td class=bad>10,981KB</td><td class=good>146KB</td>
+<td class=bad>112ms</td><td class=good>1ms</td>
+<td>90.7ms</td><td>107ms</td><td>25.6ms / 4,136KB</td>
+</tr><tr>
+<td class=n>10장</td>
+<td class=bad>533.1ms</td><td class=good>0.4ms</td><td class=g>1333.0×</td>
+<td class=bad>21,975KB</td><td class=good>301KB</td>
+<td class=bad>279.5ms</td><td class=good>2ms</td>
+<td>189.7ms</td><td>391ms</td><td>108.4ms / 15,130KB</td>
+</tr><tr>
+<td class=n>20장</td>
+<td class=bad>1043.1ms</td><td class=good>0.4ms</td><td class=g>2608.0×</td>
+<td class=bad>43,387KB</td><td class=good>583KB</td>
+<td class=bad>485ms</td><td class=good>3.4ms</td>
+<td>406.5ms</td><td>962.5ms</td><td>725.7ms / 36,542KB</td>
+</tr><tr>
+<td class=n>30장</td>
+<td class=bad>1979.9ms</td><td class=good>0.5ms</td><td class=g>3960.0×</td>
+<td class=bad>65,359KB</td><td class=good>876KB</td>
+<td class=bad>855.4ms</td><td class=good>5.7ms</td>
+<td>608.4ms</td><td>1586.8ms</td><td>455.6ms / 58,514KB</td>
+</tr>
+</table>
+<p class=lead>「★ 클릭 블로킹」은 화면이 실제로 멈춰 있는 시간이다. 후(後) 값은 <b>처음 누르는 경우</b>(캐시가 절대 못 맞는 조건)로 쟀다.
+「요약 갱신 완료」는 화면이 멈추는 시간이 아니라, 「구성을 다시 세는 중…」이 실제 숫자로 바뀌기까지의 시간이다.</p>
+
+<h2>3. 처방 세 갈래</h2>
+<ul>
+<li><b>① 썸네일 1회 축소</b> — 목록에 그리는 그림만 320px 로 줄여 <code>m.thumb</code> 에 담는다.
+원본 <code>m.src</code> 는 손대지 않으므로 <b>만들어지는 영상 화질은 그대로</b>다(T18·T20 이 지킨다).
+<code>video2</code> 의 thumb() 은 <code>m.thumb || m.src</code> 로 한 갈래만 넓혔다 — 축소본이 없으면 종전과 같다.</li>
+<li><b>② 결정론 캐시</b> — 같은 입력·같은 씨앗이면 buildSmart 는 언제나 같은 답을 낸다(R66 T1 계약).
+캐시가 돌려주는 값은 <b>직전에 실제로 돌린 그 빌드 결과</b>이지 어림수가 아니다(T11).
+서명은 사진마다 붙인 이름표(<code>_uid</code>, 비열거)로 만든다 — 2MB data URL 을 해싱하면 아끼려던 비용을 그대로 다시 낸다.</li>
+<li><b>③ 부분 갱신</b> — 역할 하나 바꾸자고 목록 전체를 다시 그리면 썸네일 30장을 매번 새로 해독한다(중간 실측 680ms).
+바뀐 것은 칩 하나·행 하나·요약 한 줄뿐이므로 그 셋만 고친다(T27).</li>
+</ul>
+
+<div class=note><b>정직성 계약</b> — 비용을 줄이는 일에서 제일 쉬운 유혹은 「실제로 안 세고 대충 말하기」다.
+그래서 요약이 도는 동안 옛 숫자를 그대로 두지 않고 <b>「구성을 다시 세는 중…」</b> 이라고 먼저 말한 뒤 실제 숫자로 바꾼다(T30·T31).
+입력이 하나라도 바뀌면 반드시 다시 센다(T5~T10·T13).</div>
+
+<h2>4. 안 쓴 길</h2>
+<p>축소 디코드(<code>createImageBitmap</code> + resizeWidth)도 같은 사진으로 대조했으나 이 환경에서 <b>더 느렸다</b>(10장 2,128ms vs Image+canvas 1,761ms). 빠른 쪽만 남겼다.</p>
+
+<h2>5. 검증</h2>
+<p><code>test-round71.mjs</code> <b>40/40</b> — 이름표 3 · 서명 7 · 캐시 정직성 7 · 화질·누출 5 · 요약 단일 출처 3 · 부분 갱신 6 · 축소 가드 2 · 회귀 7.
+전 스위트 <b>62 전량 통과</b>(<code>shot*.mjs</code> 는 R68 사고 기록대로 회귀 대상 제외).</p>
+
+<h2>6. 남은 한계</h2>
+<ul>
+<li><b>업로드 직후 첫 렌더는 여전히 원본을 싣는다</b>(30장 455.6ms / 58,514KB, 딱 한 번).
+사진을 곧바로 보여주는 값과 맞바꾼 것 — 축소본이 준비될 때까지 회색 칸을 보여주는 쪽이 더 빠르지만 그건 다른 약속이다.</li>
+<li><b>축소 자체가 30장에 1586.8ms</b> 든다. 배경에서 사진마다 손을 놓으며 돌지만 그동안 목록은 원본을 그린다.</li>
+<li><b>실빌드 하한은 그대로</b> — 처음 누르는 역할 변경은 결국 한 번은 세야 한다(30장 224.5ms). 화면이 안 멈출 뿐이다.</li>
+<li>측정은 헤드리스 셸 · 데스크톱 뷰포트(1440×900) 기준이다. 실제 학교 태블릿·저사양 기기 실측은 미실시.</li>
+</ul>
+</html>

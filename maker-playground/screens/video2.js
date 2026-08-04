@@ -114,7 +114,8 @@
   const thumb = (m, cls) => m
     ? (m.kind === 'video'
       ? `<span class="${cls} vh-thumb vh-thumb-vid">🎬</span>`
-      : `<img class="${cls} vh-thumb" src="${esc(m.src)}" alt="">`)
+      /* R71 — 목록에 그리는 그림은 축소본이 있으면 그걸 쓴다(원본 src 는 빌드용으로 무손상) */
+      : `<img class="${cls} vh-thumb" src="${esc(m.thumb || m.src)}" alt="">`)
     : `<span class="${cls} vh-thumb vh-thumb-empty">＋</span>`;
 
   const estLine = () => {
