@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<!--
+K-edu 사회 5-1 · 1단원 우리나라 국토 여행 · 단원 마무리 · 15차시(l12)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [6사01-01]·[6사01-02] 통합 정리 · 교과서 p.50~53 · 지도서(대단원1 **15차시** 단원 마무리, 지도서 p.110~111) 근거
+학습 목표: ‘우리나라 국토 여행’에서 공부한 내용을 생각 그물과 교실 놀이로 정리할 수 있다.
+직접조작: 교실 놀이 말판(신규 패턴 — 주사위 이동 / 자산 누적형)
+  ① 상금 100,000원으로 시작 → ② 주사위를 굴려 나온 수만큼 말을 옮김 →
+  ③ 도착한 질문 칸의 물음에 바르게 답하면 가격만큼 상금을 내고 그 칸을 삼 →
+  ④ 질문 칸 여덟 개를 모두 사면 놀이가 끝나고 남은 상금 + 산 칸의 가격 = 총 재산.
+  · ‘출발’ 통과 +20,000 / ‘휴게소’ 도착 2회 쉼 / ‘독도 홍보 상금’ +15,000 / ‘국토 여행 비용’ -20,000.
+  · 바르게 답하지 못하면 그 칸을 사지 못하고 다음 차례까지 머무른다(교과서 규칙).
+  · 상금이 모자라면 살 수 없고, 한 바퀴 더 돌아 상금을 모은 뒤 다시 산다.
+  ⚠️ 이미 산 칸에 도착하면 한 칸씩 더 나아가 아직 사지 않은 칸에 멈춘다
+     — 혼자 하는 방식이라 통행료를 쓸 수 없어 대신 둔 규칙(화면 캡션에 명시).
+  ⚠️ 가드 6종: 놀이 완료 후 전체 잠금 / 질문이 열려 있으면 주사위 무시(순서) /
+     무효 주사위 눈(1~6 외) / 휴게소 2회 쉼 동안 이동 금지 /
+     질문이 열리지 않았을 때 답 클릭 무시(순서) / 무효 보기 번호.
+  ⚠️ 말판 칸 좌표는 4×4 링 고정 리터럴(MG_RC)이라 레이아웃 측정 불필요
+     → jsdom에서 이동·구매·상금 계산을 그대로 검증할 수 있다.
+  ⚠️ 주사위 눈은 1~6 무작위. rollDice(n)으로 눈을 지정할 수 있어 스모크에서 경로를 고정한다.
+말판 칸 8종(전량 교과서 52~53쪽 원문분): 산지란? / 하천이란? / 해안이란? / 산지 특징 /
+  해안 특징 / 독도 위치 / 지킨 인물 / 독도 중요. 가격도 교과서 그대로(10,000~30,000원).
+지도서 근거:
+  [동기 유발] 단원에서 공부한 내용 떠올리기 — 지형의 뜻과 종류 / 산지·하천·해안의 특징과 위치 /
+    지형 경관을 관광 자원으로 한 여행지 / 독도의 위치와 중요성 / 독도의 자연환경 /
+    독도에 관한 옛 지도와 기록 / 독도를 지키려고 노력한 인물 / 오늘날 정부·개인·학교·단체의 노력.
+    ⚠️ 자기 생각을 자유롭게 이야기할 수 있도록 편안한 분위기를 유도한다(정답 강요 금지).
+  [학습 문제] 단원에서 공부한 내용을 다양한 방법으로 정리해 봅시다.
+  [전개 1] ‘생각 그물을 완성해요’ — 빈칸을 채우며 공부한 내용을 정리. 스스로 떠올리도록 지도.
+    단원을 공부하며 알게 된 점이나 느낀 점을 자유롭게 써 보도록 한다.
+    생각 그물 뼈대 = 다양한 지형(뜻: 땅의 생김새 / 종류: 산지·평야·해안·섬) ·
+    우리나라의 산지(국토의 약 70%, 북쪽과 동쪽이 높고 남쪽과 서쪽이 낮음) ·
+    우리나라의 하천(대부분의 큰 하천이 서쪽과 남쪽으로 흐름, 큰 하천의 하류 주변에 평야 발달) ·
+    우리나라의 해안(삼면이 바다, 서·남해안은 해안선 복잡·섬 많음·갯벌 발달 / 동해안은 해안선 단순·
+    섬 적음·넓은 모래사장 발달) · 국토 여행 계획(여행 주제 정하기 → 여행지 조사하기 →
+    국토 여행 계획서 작성하기 → 국토 여행 계획 공유하기) · 독도의 위치와 중요성(영토의 동쪽 끝 /
+    교통과 군사 면에서 중요한 위치, 큰 연구 가치, 풍부한 자원) · 독도의 자연환경(동도와 서도,
+    여러 개의 바위섬 / 괭이갈매기·사철나무·도화새우 / 해양 심층수·가스 하이드레이트) ·
+    옛 지도와 기록(「팔도총도」·「삼국접양지도」 / 『세종실록지리지』·「태정관 지령」·대한 제국 칙령 →
+    독도가 우리나라 고유의 영토라는 증거) · 지키기 위한 노력(옛날: 안용복·홍순칠·최종덕 /
+    오늘날: 각종 시설 설치, 독도 경비대 파견, 정부·개인·학교·단체의 다양한 활동).
+  [전개 2] ‘교실 놀이를 함께해요’ — 말판 놀이로 단원을 정리. 준비물 = 주사위, 말(인원수만큼).
+    한 사람당 상금 100,000원 / 이동한 칸의 질문에 바르게 답해야 그 칸을 살 수 있음 /
+    산 칸은 기호로 표시 / 친구가 산 칸에 도착하면 통행료를 냄 / ‘출발’ 통과 시 상금 20,000원 /
+    ‘휴게소’ 2회 쉼 / 한 명이 상금을 모두 잃거나 살 수 있는 칸이 없으면 종료 →
+    남은 상금 + 산 칸의 가격을 더해 승패를 가림. 모둠별 또는 반 전체 활동으로 변형 가능.
+  [정리] 산지·하천·해안의 위치와 분포 특징 / 독도의 지리적 특성 /
+    우리나라 영토로서 독도의 중요성과 가치를 이야기하기.
+  차시 예고 = 2단원 ‘우리나라 지리 탐구’ 도입 활동.
+⚠️ 설계 원칙: 고유 지명 0(주제① 유의점 승계 — 산·산맥·하천 고유명 사용 안 함). 문항 연도 0.
+  적용 4번 정답 자체가 “공부가 끝났으니 알게 된 점은 적어 두지 않아도 된다”(알맞지 않은 태도)
+  → 스스로 정리하고 기록하는 태도를 학습 내용화.
+  **2단원(기후·인구 분포 등) 선행 침범 0** — 차시 예고에서 단원 이름만 언급한다.
+⚠️ 1단원 마지막 차시 — goNextLesson = 허브.
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g5_social_u1_l12_v1">
+<title>1단원 마무리 · 사회 5-1</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#276749; --green-d:#1C4D35; --cyan:#0E7490;
+  --bg:#F3F8F5; --bub:#DFF0E7; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#B45309; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes drawLine{to{transform:scaleX(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ka-lb{background:#F1F5F9;border:none;padding:7px 12px;border-radius:10px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;font-family:inherit;font-weight:700;color:#475569;flex-shrink:0;font-size:13px}
+.ka-lb svg{width:15px;height:15px}
+.ka-bar{flex:1;height:5px;background:var(--bg);border-radius:999px;overflow:hidden}
+.ka-bar>div{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:999px;transition:width .35s ease;width:6%}
+.ka-pg{color:var(--green);font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;flex-shrink:0}
+.ka-sc{background:var(--amber-bg);color:var(--amber);padding:4px 12px;border-radius:999px;display:flex;align-items:center;gap:5px;flex-shrink:0;font-weight:700}
+.ka-sc svg{width:14px;height:14px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px}
+.ka-sc-u{font-size:12px}
+
+/* 메인 */
+.ka-m{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow-y:auto}
+.ka-tags{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ka-bg{background:var(--amber-bg);color:var(--amber);padding:5px 14px;border-radius:30px;font-size:13px;
+  display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.ka-bg.s2{background:#E0F2FE;color:#0369A1}
+.ka-bg.s3{background:#EDE9FE;color:#6D28D9}
+.ka-bg.s4{background:#FCE7F3;color:#BE185D}
+.ka-bg.s5{background:var(--bub);color:var(--green)}
+.ka-bg svg{width:13px;height:13px}
+.ka-meta{font-size:13px;color:var(--muted)}
+.ka-t{font-size:clamp(20px,3.4vw,29px);margin-bottom:16px;line-height:1.4;color:var(--green);letter-spacing:-.3px;font-weight:700;animation:fadeUp .4s .15s ease both}
+.ka-bub{background:var(--bub);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);line-height:1.7;
+  margin-bottom:16px;border-left:4px solid var(--green);animation:fadeUp .4s .3s ease both}
+.ka-emph{position:relative;display:inline-block;font-weight:700;color:var(--green)}
+.ka-emph::after{content:'';position:absolute;bottom:2px;left:0;right:0;height:3px;background:var(--red);border-radius:2px;transform:scaleX(0);transform-origin:left;animation:drawLine .6s .6s ease forwards}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.scene.wide{width:clamp(240px,44vw,420px)}
+.scene.wide svg{height:clamp(120px,20vw,200px)}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(16px,2.6vw,21px);font-weight:700;line-height:1.6;margin-bottom:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:620px}
+.opt{background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:13px 14px;font-size:clamp(14px,2.3vw,17px);
+  font-weight:500;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:var(--green);background:var(--bub);animation:pop .4s ease}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;font-size:clamp(14px,2.3vw,17px);line-height:1.6;text-align:center;animation:fadeUp .35s ease both;max-width:620px}
+.fb.ok{color:var(--green);font-weight:700}
+.hint{margin-top:12px;background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(13px,2.2vw,16px);
+  line-height:1.6;color:#0C4A6E;max-width:560px;animation:fadeUp .35s ease both}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:640px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FCFA;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:clamp(14px,2.3vw,17px);line-height:1.5}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
+
+/* 직접조작 — 조건을 골라 그림 만들기(조건 합성형 / 캔버스 누적) */
+.dw-wrap{width:100%;max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dw-body{display:grid;grid-template-columns:1.05fr 1fr;gap:10px;align-items:start}
+.dw-canvas{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.dw-canvas svg{width:100%;height:auto;display:block}
+.dw-canvas .cvcap{padding:5px 6px;text-align:center;font-size:clamp(9.5px,1.6vw,11.5px);
+  color:var(--muted);font-weight:700;background:#F8FAFC}
+.dw-right{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dw-step{font-size:clamp(10.5px,1.75vw,13px);font-weight:800;color:var(--green)}
+.dw-scn{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.dw-scn button{border:2px solid #CBD5E0;background:#fff;border-radius:10px;padding:7px 4px;cursor:pointer;
+  font-family:inherit;font-weight:700;color:var(--ink);font-size:clamp(11px,1.85vw,13.5px);transition:.15s}
+.dw-scn button:hover{border-color:var(--green);background:var(--bub)}
+.dw-scn button.on{border-color:var(--cyan);background:#CFFAFE;color:#0C4A6E}
+.dw-scn button.lock{opacity:.45;cursor:default}
+.dw-chips{display:flex;flex-wrap:wrap;gap:5px}
+.dw-chip{border:2px solid #CBD5E0;background:#fff;border-radius:999px;padding:5px 10px;cursor:pointer;
+  font-family:inherit;font-weight:600;color:var(--ink);font-size:clamp(9.8px,1.62vw,12.2px);transition:.15s}
+.dw-chip:hover{border-color:var(--green);background:var(--bub)}
+.dw-chip.used{border-color:var(--green);background:var(--bub);color:var(--green-d);cursor:default;font-weight:700}
+.dw-chip.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.dw-name{display:flex;flex-wrap:wrap;gap:5px}
+.dw-name button{border:2px solid var(--cyan);background:#fff;color:#0C4A6E;border-radius:10px;padding:6px 12px;
+  cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px)}
+.dw-name button:hover{background:#CFFAFE}
+.dw-msg{background:#F8FAFC;border:2px solid var(--line);border-left:4px solid var(--cyan);border-radius:10px;
+  padding:8px 12px;font-size:clamp(11.4px,1.93vw,13.8px);line-height:1.55;color:#334155;animation:fadeUp .3s ease both}
+.dw-msg.warn{border-left-color:var(--red)}
+.dw-msg b{color:var(--cyan)}
+.dw-card{background:#fff;border:2px solid var(--amber);border-radius:12px;padding:10px 12px;
+  font-size:clamp(12px,2.05vw,14.5px);line-height:1.55;animation:pop .35s ease both}
+.dw-card .pt{font-weight:800;color:var(--amber);margin-bottom:4px;font-size:clamp(12.5px,2.15vw,15px)}
+.paper{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:12px;padding:12px 16px;
+  font-size:clamp(12.5px,2.1vw,15px);line-height:1.65;color:#3F3A2C;max-width:660px;
+  animation:fadeUp .4s ease both}
+.paper .ph{font-weight:800;color:#8A6D3B;margin-bottom:6px;font-size:clamp(13px,2.2vw,16px)}
+.paper .src{margin-top:6px;font-size:clamp(11px,1.9vw,13px);color:#8A6D3B;text-align:right}
+@media(max-width:620px){ .dw-body{grid-template-columns:1fr} }
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(39,103,73,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+/* 직접조작 — 교실 놀이 말판(주사위 이동 / 자산 누적형) */
+.mg-money{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+.mg-money span{background:#FFF8E1;color:#B45309;border-radius:999px;padding:4px 10px;
+  font-size:clamp(10px,1.72vw,12.5px);font-weight:800}
+.mg-money span.own{background:var(--bub);color:var(--green-d)}
+.mg-money span.mg-die{background:#CFFAFE;color:#0C4A6E;font-family:'Nunito',sans-serif}
+.mg-roll{border:2px solid var(--cyan);background:#CFFAFE;color:#0C4A6E;border-radius:12px;
+  padding:9px 14px;cursor:pointer;font-family:inherit;font-weight:800;font-size:clamp(11.5px,1.95vw,14px)}
+.mg-roll:hover{background:#A5F3FC}
+.mg-opts{display:flex;flex-direction:column;gap:5px}
+.mg-opts button{border:2px solid #CBD5E0;background:#fff;border-radius:10px;padding:7px 10px;cursor:pointer;
+  font-family:inherit;font-weight:600;color:var(--ink);font-size:clamp(10.2px,1.72vw,12.8px);text-align:left;line-height:1.45}
+.mg-opts button:hover{border-color:var(--green);background:var(--bub)}
+.mg-opts button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#B45309"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식 =====
+   ⚠️ 정직 원칙: 지도·말판은 내용을 나타낸 도식이며 실제 지도·축척이 아니다. */
+const SVG = {
+  // 동기 유발 — 1단원에서 공부한 것 떠올리기
+  recall:`<svg viewBox="0 0 320 150"><rect width="320" height="150" fill="#F8FAFC"/>
+    <rect x="12" y="16" width="140" height="52" rx="10" fill="#DFF0E7" stroke="#276749" stroke-width="2"/>
+    <text x="82" y="40" font-size="13" fill="#1C4D35" text-anchor="middle" font-weight="800">주제 ①</text>
+    <text x="82" y="58" font-size="11" fill="#1C4D35" text-anchor="middle">여러 지형 찾아가기</text>
+    <rect x="168" y="16" width="140" height="52" rx="10" fill="#E0F2FE" stroke="#0E7490" stroke-width="2"/>
+    <text x="238" y="40" font-size="13" fill="#0C4A6E" text-anchor="middle" font-weight="800">주제 ②</text>
+    <text x="238" y="58" font-size="11" fill="#0C4A6E" text-anchor="middle">소중한 우리 땅, 독도</text>
+    <path d="M60 84 Q60 100 46 100" stroke="#94A3B8" stroke-width="2" fill="none"/>
+    <path d="M104 84 Q104 100 118 100" stroke="#94A3B8" stroke-width="2" fill="none"/>
+    <path d="M216 84 Q216 100 202 100" stroke="#94A3B8" stroke-width="2" fill="none"/>
+    <path d="M260 84 Q260 100 274 100" stroke="#94A3B8" stroke-width="2" fill="none"/>
+    <rect x="10" y="102" width="68" height="34" rx="8" fill="#fff" stroke="#CBD5E0" stroke-width="1.6"/>
+    <text x="44" y="123" font-size="11" fill="#334155" text-anchor="middle" font-weight="700">산지·하천</text>
+    <rect x="86" y="102" width="68" height="34" rx="8" fill="#fff" stroke="#CBD5E0" stroke-width="1.6"/>
+    <text x="120" y="123" font-size="11" fill="#334155" text-anchor="middle" font-weight="700">해안·여행</text>
+    <rect x="166" y="102" width="68" height="34" rx="8" fill="#fff" stroke="#CBD5E0" stroke-width="1.6"/>
+    <text x="200" y="123" font-size="11" fill="#334155" text-anchor="middle" font-weight="700">위치·자연환경</text>
+    <rect x="242" y="102" width="68" height="34" rx="8" fill="#fff" stroke="#CBD5E0" stroke-width="1.6"/>
+    <text x="276" y="123" font-size="11" fill="#334155" text-anchor="middle" font-weight="700">옛 자료·노력</text></svg>`,
+
+  // 생각 그물 ① — 우리나라의 여러 지형 찾아가기
+  web1:`<svg viewBox="0 0 320 190"><rect width="320" height="190" fill="#F8FAFC"/>
+    <ellipse cx="160" cy="26" rx="86" ry="18" fill="#276749"/>
+    <text x="160" y="31" font-size="12" fill="#fff" text-anchor="middle" font-weight="800">우리나라의 여러 지형 찾아가기</text>
+    <path d="M160 44 L58 68" stroke="#276749" stroke-width="2" fill="none"/>
+    <path d="M160 44 L160 68" stroke="#276749" stroke-width="2" fill="none"/>
+    <path d="M160 44 L262 68" stroke="#276749" stroke-width="2" fill="none"/>
+    <rect x="8" y="68" width="100" height="34" rx="9" fill="#DFF0E7" stroke="#276749" stroke-width="1.8"/>
+    <text x="58" y="83" font-size="11" fill="#1C4D35" text-anchor="middle" font-weight="800">다양한 지형</text>
+    <text x="58" y="96" font-size="9.5" fill="#1C4D35" text-anchor="middle">땅의 생김새</text>
+    <rect x="112" y="68" width="96" height="34" rx="9" fill="#DFF0E7" stroke="#276749" stroke-width="1.8"/>
+    <text x="160" y="83" font-size="11" fill="#1C4D35" text-anchor="middle" font-weight="800">산지</text>
+    <text x="160" y="96" font-size="9.5" fill="#1C4D35" text-anchor="middle">국토의 약 70%</text>
+    <rect x="212" y="68" width="100" height="34" rx="9" fill="#DFF0E7" stroke="#276749" stroke-width="1.8"/>
+    <text x="262" y="83" font-size="11" fill="#1C4D35" text-anchor="middle" font-weight="800">하천</text>
+    <text x="262" y="96" font-size="9.5" fill="#1C4D35" text-anchor="middle">하류에 평야 발달</text>
+    <path d="M58 102 L58 124" stroke="#94A3B8" stroke-width="1.6" fill="none"/>
+    <path d="M160 102 L160 124" stroke="#94A3B8" stroke-width="1.6" fill="none"/>
+    <path d="M262 102 L262 124" stroke="#94A3B8" stroke-width="1.6" fill="none"/>
+    <rect x="8" y="124" width="100" height="30" rx="8" fill="#fff" stroke="#CBD5E0" stroke-width="1.6"/>
+    <text x="58" y="143" font-size="9.5" fill="#334155" text-anchor="middle">산지·평야·해안·섬</text>
+    <rect x="112" y="124" width="96" height="30" rx="8" fill="#fff" stroke="#CBD5E0" stroke-width="1.6"/>
+    <text x="160" y="138" font-size="9.5" fill="#334155" text-anchor="middle">북쪽·동쪽이 높고</text>
+    <text x="160" y="149" font-size="9.5" fill="#334155" text-anchor="middle">남쪽·서쪽이 낮음</text>
+    <rect x="212" y="124" width="100" height="30" rx="8" fill="#fff" stroke="#CBD5E0" stroke-width="1.6"/>
+    <text x="262" y="138" font-size="9.5" fill="#334155" text-anchor="middle">큰 하천이 서쪽·</text>
+    <text x="262" y="149" font-size="9.5" fill="#334155" text-anchor="middle">남쪽으로 흐름</text>
+    <rect x="60" y="160" width="200" height="24" rx="8" fill="#E0F2FE" stroke="#0E7490" stroke-width="1.6"/>
+    <text x="160" y="176" font-size="10" fill="#0C4A6E" text-anchor="middle" font-weight="700">해안 — 삼면이 바다, 동해안과 서·남해안이 다름</text></svg>`,
+
+  // 생각 그물 ② — 소중한 우리 땅, 독도
+  web2:`<svg viewBox="0 0 320 190"><rect width="320" height="190" fill="#F8FAFC"/>
+    <ellipse cx="160" cy="26" rx="80" ry="18" fill="#0E7490"/>
+    <text x="160" y="31" font-size="12" fill="#fff" text-anchor="middle" font-weight="800">소중한 우리 땅, 독도</text>
+    <path d="M160 44 L58 68" stroke="#0E7490" stroke-width="2" fill="none"/>
+    <path d="M160 44 L160 68" stroke="#0E7490" stroke-width="2" fill="none"/>
+    <path d="M160 44 L262 68" stroke="#0E7490" stroke-width="2" fill="none"/>
+    <rect x="8" y="68" width="100" height="42" rx="9" fill="#E0F2FE" stroke="#0E7490" stroke-width="1.8"/>
+    <text x="58" y="83" font-size="11" fill="#0C4A6E" text-anchor="middle" font-weight="800">위치와 중요성</text>
+    <text x="58" y="95" font-size="9.5" fill="#0C4A6E" text-anchor="middle">영토의 동쪽 끝</text>
+    <text x="58" y="106" font-size="9.5" fill="#0C4A6E" text-anchor="middle">교통·군사·연구 가치</text>
+    <rect x="112" y="68" width="96" height="42" rx="9" fill="#E0F2FE" stroke="#0E7490" stroke-width="1.8"/>
+    <text x="160" y="83" font-size="11" fill="#0C4A6E" text-anchor="middle" font-weight="800">자연환경</text>
+    <text x="160" y="95" font-size="9.5" fill="#0C4A6E" text-anchor="middle">동도와 서도</text>
+    <text x="160" y="106" font-size="9.5" fill="#0C4A6E" text-anchor="middle">동식물·풍부한 자원</text>
+    <rect x="212" y="68" width="100" height="42" rx="9" fill="#E0F2FE" stroke="#0E7490" stroke-width="1.8"/>
+    <text x="262" y="83" font-size="11" fill="#0C4A6E" text-anchor="middle" font-weight="800">옛 지도와 기록</text>
+    <text x="262" y="95" font-size="9.5" fill="#0C4A6E" text-anchor="middle">우리나라 자료</text>
+    <text x="262" y="106" font-size="9.5" fill="#0C4A6E" text-anchor="middle">다른 나라 자료</text>
+    <path d="M160 110 L160 128" stroke="#94A3B8" stroke-width="1.6" fill="none"/>
+    <rect x="34" y="128" width="252" height="26" rx="8" fill="#FFF8E1" stroke="#B45309" stroke-width="1.8"/>
+    <text x="160" y="145" font-size="10.5" fill="#B45309" text-anchor="middle" font-weight="800">독도가 우리나라 고유의 영토라는 증거</text>
+    <rect x="34" y="158" width="252" height="26" rx="8" fill="#DFF0E7" stroke="#276749" stroke-width="1.8"/>
+    <text x="160" y="175" font-size="10" fill="#1C4D35" text-anchor="middle" font-weight="700">지키기 위한 노력 — 옛날: 인물 / 오늘날: 시설·경비대·여러 활동</text></svg>`,
+
+  // 놀이 방법
+  rule:`<svg viewBox="0 0 320 150"><rect width="320" height="150" fill="#F8FAFC"/>
+    <rect x="12" y="14" width="52" height="52" rx="10" fill="#fff" stroke="#0E7490" stroke-width="2"/>
+    <circle cx="27" cy="29" r="4" fill="#0E7490"/><circle cx="49" cy="29" r="4" fill="#0E7490"/>
+    <circle cx="38" cy="40" r="4" fill="#0E7490"/><circle cx="27" cy="51" r="4" fill="#0E7490"/><circle cx="49" cy="51" r="4" fill="#0E7490"/>
+    <text x="38" y="82" font-size="10.5" fill="#0C4A6E" text-anchor="middle" font-weight="800">① 주사위</text>
+    <path d="M70 40 L92 40" stroke="#94A3B8" stroke-width="2"/><path d="M86 35 L92 40 L86 45" stroke="#94A3B8" stroke-width="2" fill="none"/>
+    <rect x="98" y="14" width="66" height="52" rx="10" fill="#fff" stroke="#276749" stroke-width="2"/>
+    <text x="131" y="36" font-size="11" fill="#1C4D35" text-anchor="middle" font-weight="800">칸의 질문</text>
+    <text x="131" y="52" font-size="10" fill="#334155" text-anchor="middle">바르게 답하면</text>
+    <text x="131" y="82" font-size="10.5" fill="#1C4D35" text-anchor="middle" font-weight="800">② 답하기</text>
+    <path d="M170 40 L192 40" stroke="#94A3B8" stroke-width="2"/><path d="M186 35 L192 40 L186 45" stroke="#94A3B8" stroke-width="2" fill="none"/>
+    <rect x="198" y="14" width="66" height="52" rx="10" fill="#DFF0E7" stroke="#276749" stroke-width="2"/>
+    <text x="231" y="38" font-size="11" fill="#1C4D35" text-anchor="middle" font-weight="800">그 칸을</text>
+    <text x="231" y="54" font-size="11" fill="#1C4D35" text-anchor="middle" font-weight="800">살 수 있어요</text>
+    <text x="231" y="82" font-size="10.5" fill="#1C4D35" text-anchor="middle" font-weight="800">③ 칸 사기</text>
+    <rect x="272" y="14" width="36" height="52" rx="10" fill="#FFF8E1" stroke="#B45309" stroke-width="2"/>
+    <text x="290" y="36" font-size="14" fill="#B45309" text-anchor="middle" font-weight="800">₩</text>
+    <text x="290" y="54" font-size="9" fill="#B45309" text-anchor="middle">상금</text>
+    <rect x="12" y="94" width="296" height="44" rx="10" fill="#fff" stroke="#CBD5E0" stroke-width="1.6"/>
+    <text x="160" y="111" font-size="10.5" fill="#334155" text-anchor="middle">‘출발’ 칸을 통과할 때마다 상금 20,000원을 받아요.</text>
+    <text x="160" y="128" font-size="10.5" fill="#334155" text-anchor="middle">‘휴게소’에 도착하면 2회 쉬고, 칸 여덟 개를 모두 사면 놀이가 끝나요.</text></svg>`,
+
+  // 국토 여행 계획 4단계
+  plan:`<svg viewBox="0 0 320 150"><rect width="320" height="150" fill="#F8FAFC"/>
+    <rect x="14" y="16" width="132" height="42" rx="10" fill="#DFF0E7" stroke="#276749" stroke-width="2"/>
+    <text x="80" y="42" font-size="11.5" fill="#1C4D35" text-anchor="middle" font-weight="800">① 여행 주제 정하기</text>
+    <path d="M80 58 L80 74" stroke="#276749" stroke-width="2"/><path d="M75 68 L80 74 L85 68" stroke="#276749" stroke-width="2" fill="none"/>
+    <rect x="14" y="74" width="132" height="42" rx="10" fill="#DFF0E7" stroke="#276749" stroke-width="2"/>
+    <text x="80" y="100" font-size="11.5" fill="#1C4D35" text-anchor="middle" font-weight="800">② 여행지 조사하기</text>
+    <path d="M146 95 L174 95" stroke="#276749" stroke-width="2"/><path d="M168 90 L174 95 L168 100" stroke="#276749" stroke-width="2" fill="none"/>
+    <rect x="174" y="74" width="132" height="42" rx="10" fill="#E0F2FE" stroke="#0E7490" stroke-width="2"/>
+    <text x="240" y="94" font-size="11.5" fill="#0C4A6E" text-anchor="middle" font-weight="800">③ 여행 계획서</text>
+    <text x="240" y="108" font-size="11.5" fill="#0C4A6E" text-anchor="middle" font-weight="800">작성하기</text>
+    <path d="M240 74 L240 58" stroke="#0E7490" stroke-width="2"/><path d="M235 64 L240 58 L245 64" stroke="#0E7490" stroke-width="2" fill="none"/>
+    <rect x="174" y="16" width="132" height="42" rx="10" fill="#E0F2FE" stroke="#0E7490" stroke-width="2"/>
+    <text x="240" y="42" font-size="11.5" fill="#0C4A6E" text-anchor="middle" font-weight="800">④ 계획 공유하기</text>
+    <text x="160" y="136" font-size="10.5" fill="#64748B" text-anchor="middle">주제를 먼저 정해야 무엇을 조사할지 정할 수 있어요.</text></svg>`,
+
+  // 새로 알게 된 점·느낀 점
+  feel:`<svg viewBox="0 0 320 140"><rect width="320" height="140" fill="#F8FAFC"/>
+    <rect x="26" y="16" width="120" height="104" rx="10" fill="#fff" stroke="#CBD5E0" stroke-width="2"/>
+    <path d="M40 40 L132 40" stroke="#E2E8F0" stroke-width="2"/><path d="M40 58 L132 58" stroke="#E2E8F0" stroke-width="2"/>
+    <path d="M40 76 L132 76" stroke="#E2E8F0" stroke-width="2"/><path d="M40 94 L110 94" stroke="#E2E8F0" stroke-width="2"/>
+    <text x="86" y="32" font-size="10.5" fill="#276749" text-anchor="middle" font-weight="800">새로 알게 된 점</text>
+    <rect x="174" y="16" width="120" height="104" rx="10" fill="#FFF8E1" stroke="#B45309" stroke-width="2"/>
+    <path d="M188 40 L280 40" stroke="#E7D9A8" stroke-width="2"/><path d="M188 58 L280 58" stroke="#E7D9A8" stroke-width="2"/>
+    <path d="M188 76 L280 76" stroke="#E7D9A8" stroke-width="2"/><path d="M188 94 L258 94" stroke="#E7D9A8" stroke-width="2"/>
+    <text x="234" y="32" font-size="10.5" fill="#B45309" text-anchor="middle" font-weight="800">느낀 점</text>
+    <path d="M152 68 L168 68" stroke="#94A3B8" stroke-width="2" stroke-dasharray="4 3"/></svg>`,
+
+  // 정리
+  done:`<svg viewBox="0 0 320 150"><rect width="320" height="150" fill="#F8FAFC"/>
+    <circle cx="160" cy="66" r="40" fill="#DFF0E7" stroke="#276749" stroke-width="3"/>
+    <path d="M142 66 L155 80 L180 52" stroke="#276749" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="160" y="128" font-size="13" fill="#1C4D35" text-anchor="middle" font-weight="800">1단원 우리나라 국토 여행 — 정리 끝!</text></svg>`
+};
+function sceneCard(key,cap,size){return `<div class="scene${size?' '+size:''}">${SVG[key]}${cap?`<div class="cap">${cap}</div>`:''}</div>`;}
+
+/* ===== 직접 조작: 교실 놀이 말판 (주사위 이동 · 자산 누적형) =====
+   교과서 52~53쪽 말판 놀이를 그대로 옮긴다.
+   ① 상금 100,000원으로 시작 → ② 주사위를 굴려 나온 수만큼 말을 옮김 →
+   ③ 도착한 질문 칸의 물음에 바르게 답하면 가격만큼 상금을 내고 그 칸을 삼 →
+   ④ 질문 칸 여덟 개를 모두 사면 놀이가 끝나고, 남은 상금 + 산 칸의 가격 = 총 재산.
+   · '출발' 칸을 통과할 때마다 +20,000원 / '휴게소'에 도착하면 2회 쉼 /
+     '독도 홍보 상금' +15,000원 / '국토 여행 비용' -20,000원.
+   · 이미 산 칸에 도착하면 한 칸씩 더 나아가 아직 사지 않은 칸에 멈춘다(혼자 하는 방식의 규칙).
+   ⚠️ 교실에서는 친구와 순서를 정해 놀이하고, 친구가 산 칸에 도착하면 통행료를 낸다.
+      여기서는 혼자 하는 방식이라 통행료 대신 이 규칙을 쓴다(화면에 명시).
+   ⚠️ 주사위 눈은 1~6 무작위. 스모크에서는 rollDice(n)으로 눈을 지정해 검증한다. */
+const MG_RC = [[0,0],[1,0],[2,0],[3,0],[3,1],[3,2],[3,3],[2,3],[1,3],[0,3],[0,2],[0,1]];
+const MG_CELLS = [
+  {t:'출발', s:'통과 +2만'},
+  {t:'산지란?', price:10000, q:{stem:'산지가 무엇인지 말해 보세요.',
+    opts:['산들이 모여 있는 땅','넓고 평평한 땅','바다와 맞닿은 육지 부분'], correct:0}},
+  {t:'하천이란?', price:10000, q:{stem:'하천이 무엇인지 말해 보세요.',
+    opts:['산들이 모여 있는 땅','빗물과 지하수가 모여 흐르는 물줄기','바다에 둘러싸인 땅'], correct:1}},
+  {t:'해안이란?', price:10000, q:{stem:'해안이 무엇인지 말해 보세요.',
+    opts:['높이 솟아오른 땅','하천 주변의 넓고 평평한 땅','바다와 맞닿은 육지 부분'], correct:2}},
+  {t:'휴게소', s:'2회 쉼'},
+  {t:'산지 특징', price:20000, q:{stem:'우리나라 산지의 특징을 말해 보세요.',
+    opts:['나라 전체가 고르게 평평하다','북쪽과 동쪽에 높고 험한 산지가 많다','남쪽과 서쪽에 높고 험한 산지가 많다'], correct:1}},
+  {t:'해안 특징', price:25000, q:{stem:'우리나라 해안의 특징을 말해 보세요.',
+    opts:['동해안은 해안선이 단순하고, 서·남해안은 복잡하며 갯벌이 발달했다','동해안은 해안선이 복잡하고 섬이 많다','삼면이 모두 갯벌로만 이루어져 있다'], correct:0}},
+  {t:'독도 위치', price:10000, q:{stem:'독도의 위치를 말해 보세요.',
+    opts:['우리나라 영토의 서쪽 끝','우리나라 영토의 남쪽 끝','우리나라 영토의 동쪽 끝'], correct:2}},
+  {t:'홍보 상금', s:'+1만 5천'},
+  {t:'지킨 인물', price:10000, q:{stem:'독도를 지키려고 노력한 인물을 한 명 말해 보세요.',
+    opts:['안용복','장영실','김정호'], correct:0}},
+  {t:'독도 중요', price:30000, q:{stem:'독도가 중요한 까닭을 말해 보세요.',
+    opts:['사람이 살지 않아 조용하기 때문이다','교통과 군사 면에서 중요한 위치이고 연구 가치가 크기 때문이다','육지에서 가장 가까운 섬이기 때문이다'], correct:1}},
+  {t:'여행 비용', s:'-2만'}
+];
+const MG_START = 100000, MG_PASS = 20000, MG_BONUS = 15000, MG_COST = 20000;
+const MG_QIDX = MG_CELLS.map((c,i)=>c.q?i:-1).filter(i=>i>=0);   // 질문 칸 8개
+function mgWon(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g,',')+'원'; }
+function mgOwned(st,i){ return st.mgOwn.indexOf(i)>=0; }
+function mgAssets(st){ return st.mgMoney + st.mgOwn.reduce((a,i)=>a+MG_CELLS[i].price,0); }
+
+function boardSVG(st){
+  const cells = MG_CELLS.map((c,i)=>{
+    const [cx,ry] = MG_RC[i], x = cx*80, y = ry*80;
+    const own = mgOwned(st,i);
+    const fill = own ? '#DFF0E7' : (c.q ? '#ffffff' : '#FFF8E1');
+    const line = own ? '#276749' : (c.q ? '#CBD5E0' : '#B45309');
+    const sub = c.q ? mgWon(c.price) : (c.s||'');
+    return `<g><rect x="${x+2}" y="${y+2}" width="76" height="76" rx="9" fill="${fill}" stroke="${line}" stroke-width="2"/>`
+      + `<text x="${x+40}" y="${y+34}" font-size="11" text-anchor="middle" font-weight="800" fill="${own?'#1C4D35':'#334155'}">${c.t}</text>`
+      + `<text x="${x+40}" y="${y+50}" font-size="9" text-anchor="middle" fill="${own?'#1C4D35':'#64748B'}">${sub}</text>`
+      + (own?`<text x="${x+66}" y="${y+20}" font-size="13" text-anchor="middle" font-weight="800" fill="#276749">✓</text>`:'')
+      + `</g>`;
+  }).join('');
+  const [tc,tr] = MG_RC[st.mgPos];
+  const token = `<circle cx="${tc*80+40}" cy="${tr*80+64}" r="9" fill="#B45309" stroke="#fff" stroke-width="2.5"/>`;
+  const bought = st.mgOwn.length;
+  const center = `<rect x="84" y="84" width="152" height="152" rx="12" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="2"/>`
+    + `<text x="160" y="126" font-size="12" text-anchor="middle" font-weight="800" fill="#276749">우리나라 국토 여행</text>`
+    + `<text x="160" y="150" font-size="11" text-anchor="middle" fill="#64748B">산 칸 ${bought} / 8</text>`
+    + `<text x="160" y="176" font-size="13" text-anchor="middle" font-weight="800" fill="#B45309">${mgWon(st.mgMoney)}</text>`
+    + `<text x="160" y="196" font-size="10" text-anchor="middle" fill="#94A3B8">가진 상금</text>`;
+  return `<svg viewBox="0 0 320 320"><rect width="320" height="320" fill="#ffffff"/>${cells}${center}${token}</svg>`;
+}
+
+function mgBoard(st){
+  if(!st.mgOwn) st.mgOwn = [];
+  const finished = st.mgOwn.length >= MG_QIDX.length;
+  const qOpen = st.mgQ!=null;
+
+  let right = '';
+  right += `<div class="mg-money"><span>상금 ${mgWon(st.mgMoney)}</span><span class="own">산 칸 ${st.mgOwn.length} / 8</span>`
+        + (st.mgDie?`<span class="mg-die">🎲 ${st.mgDie}</span>`:'') + `</div>`;
+
+  if(finished){
+    right += `<div class="dw-card"><div class="pt">🏁 놀이를 마쳤어요</div>
+      <div>칸 여덟 개를 모두 샀어요. 남은 상금 <b>${mgWon(st.mgMoney)}</b>와 산 칸의 가격을 더한
+      <b style="color:#276749">총 재산은 ${mgWon(mgAssets(st))}</b>이에요.</div>
+      <div style="margin-top:5px;color:#64748B">놀이를 하면서 1단원에서 공부한 내용을 모두 한 번씩 떠올렸어요.</div></div>`;
+  } else if(qOpen){
+    const c = MG_CELLS[st.mgQ];
+    right += `<div class="dw-step">🎲 도착한 칸의 질문 <span style="color:#64748B;font-weight:600">(가격 ${mgWon(c.price)})</span></div>`;
+    right += `<div class="dw-msg">${c.q.stem}</div>`;
+    right += `<div class="mg-opts">${c.q.opts.map((o,k)=>
+      `<button class="${st.mgWrong===k?'no':''}" onclick="answerCell(${k})">${o}</button>`).join('')}</div>`;
+  } else {
+    right += `<div class="dw-step">${st.mgSkip>0?'😴 휴게소에서 쉬는 중':'🎲 주사위를 굴려요'}</div>`;
+    right += `<button class="mg-roll" onclick="rollDice()">주사위 굴리기</button>`;
+  }
+  if(st.mgMsg) right += `<div class="dw-msg${st.mgWarn?' warn':''}">${st.mgMsg}</div>`;
+
+  return `<div class="dw-wrap">
+    <div style="text-align:center"><b style="color:var(--green)">🎲 교실 놀이 — 말판을 돌며 1단원을 정리해요</b></div>
+    <div class="dw-body">
+      <div class="dw-canvas">${boardSVG(st)}<div class="cvcap">교실에서는 친구와 순서를 정해 놀이하고, 친구가 산 칸에 도착하면 통행료를 내요</div></div>
+      <div class="dw-right">${right}</div>
+    </div>
+  </div>`;
+}
+
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "1단원 우리나라 국토 여행 · 단원 마무리";
+
+// 확인 4 + 적용 4 — 정답 다양화 [1,3,0,2,2,0,3,1]
+// ⚠️ 고유 지명 0(주제① 유의점 승계) · 연도 0 · 2단원(우리나라 지리 탐구) 선행 침범 0.
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"우리나라 국토의 약 <b>70%</b>를 차지하는 지형은 무엇일까요?",
+   opts:["평야","산지","해안","섬"], correct:1, pts:POINTS_BASIC, scene:"web1",
+   reason:"우리나라는 국토의 약 70%가 산지예요. 그래서 어디를 가도 산을 쉽게 볼 수 있어요.",
+   h1:"생각 그물의 ‘우리나라의 산지’ 가지를 떠올려 봐요.",
+   h2:"국토에서 가장 넓게 차지하는 땅의 생김새예요."},
+
+  {stem:"큰 하천의 <b>하류 주변</b>에 주로 발달하는 지형은 무엇일까요?",
+   opts:["산지","섬","해안","평야"], correct:3, pts:POINTS_BASIC, scene:"web1",
+   reason:"큰 하천의 하류 주변에는 넓고 평평한 평야가 발달해요. 그래서 하천 옆에 넓은 들판이 펼쳐져 있어요.",
+   h1:"하천이 실어 온 흙이 쌓이면 어떤 땅이 될까요?",
+   h2:"넓고 평평한 땅이에요."},
+
+  {stem:"우리나라 <b>서해안과 남해안</b>의 특징으로 알맞은 것은 무엇일까요?",
+   opts:["해안선이 복잡하고 섬이 많으며 갯벌이 발달했다","해안선이 단순하고 섬이 거의 없다","넓은 모래사장만 길게 이어져 있다","바다와 맞닿은 곳이 없다"],
+   correct:0, pts:POINTS_BASIC, scene:"web1",
+   reason:"서해안과 남해안은 해안선이 복잡하고 섬이 많으며 갯벌이 발달했어요. 동해안은 이와 달리 해안선이 단순하고 넓은 모래사장이 발달했어요.",
+   h1:"우리나라는 삼면이 바다로 둘러싸여 있어요.",
+   h2:"동해안과 반대되는 특징을 찾아봐요."},
+
+  {stem:"<b>독도</b>의 위치로 알맞은 것은 무엇일까요?",
+   opts:["우리나라 영토의 서쪽 끝","우리나라 영토의 남쪽 끝","우리나라 영토의 동쪽 끝","우리나라 영토의 북쪽 끝"],
+   correct:2, pts:POINTS_BASIC, scene:"web2",
+   reason:"독도는 우리나라 영토의 동쪽 끝에 있어요. 그래서 우리나라에서 해가 가장 먼저 뜨는 곳 가운데 하나예요.",
+   h1:"생각 그물의 ‘독도의 위치와 중요성’ 가지를 떠올려 봐요.",
+   h2:"해가 가장 먼저 뜨는 쪽이에요."},
+
+  // 4단계 적용 (+15)
+  {stem:"생각 그물의 빈칸에 들어갈 말은 무엇일까요?<br><span style=\"color:#64748B;font-weight:500\">“옛 지도와 기록은 독도가 우리나라 고유의 (　　　)(이)라는 증거이다.”</span>",
+   opts:["섬","자원","영토","해안"], correct:2, pts:POINTS_APPLY, scene:"web2",
+   reason:"우리나라 자료도, 다른 나라 자료도 모두 독도를 우리 땅으로 나타냈어요. 그래서 독도가 우리나라 고유의 영토라는 증거가 돼요.",
+   h1:"‘고유의 ◯◯’는 나라가 다스리는 땅을 뜻하는 말이에요.",
+   h2:"‘우리나라 고유의 ◯◯’ — 두 글자예요."},
+
+  {stem:"<b>국토 여행 계획</b>을 세우는 차례로 알맞은 것은 무엇일까요?",
+   opts:["여행 주제 정하기 → 여행지 조사하기 → 계획서 작성하기 → 계획 공유하기",
+         "여행지 조사하기 → 여행 주제 정하기 → 계획서 작성하기 → 계획 공유하기",
+         "계획서 작성하기 → 여행 주제 정하기 → 여행지 조사하기 → 계획 공유하기",
+         "계획 공유하기 → 여행지 조사하기 → 여행 주제 정하기 → 계획서 작성하기"],
+   correct:0, pts:POINTS_APPLY, scene:"plan",
+   reason:"무엇을 보러 갈지 주제를 먼저 정해야 어디를 조사할지 정할 수 있어요. 조사한 내용을 모아 계획서를 쓰고, 마지막에 친구들과 나누어요.",
+   h1:"가장 먼저 정해야 하는 것은 ‘무엇을 보러 갈까’예요.",
+   h2:"나누는 일은 언제나 마지막이에요."},
+
+  {stem:"말판 놀이에서 “<b>독도가 중요한 까닭</b>을 말해 보세요” 칸에 알맞은 답은 무엇일까요?",
+   opts:["사람이 살지 않아 조용하기 때문이다","육지에서 가장 가까운 섬이기 때문이다","다른 나라와 가장 멀리 떨어져 있기 때문이다","교통과 군사 면에서 중요한 위치이고 연구 가치가 크기 때문이다"],
+   correct:3, pts:POINTS_APPLY, scene:"web2",
+   reason:"독도는 교통과 군사 면에서 중요한 위치에 있고, 주변 바다와 땅속에 연구 가치가 큰 자원이 있어요.",
+   h1:"독도에는 실제로 사람이 살고 있어요.",
+   h2:"‘위치’와 ‘자원’ 두 가지가 함께 들어간 답을 찾아봐요."},
+
+  {stem:"단원을 <b>정리하는 태도</b>로 알맞지 <b>않은</b> 것은 무엇일까요?",
+   opts:["공부한 내용을 생각 그물로 한눈에 정리한다","공부가 끝났으니 알게 된 점은 적어 두지 않아도 된다","새로 알게 된 점과 느낀 점을 스스로 써 본다","친구와 놀이하며 배운 내용을 다시 떠올린다"],
+   correct:1, pts:POINTS_APPLY, scene:"feel",
+   reason:"새로 알게 된 점과 느낀 점을 스스로 적어 두면 배운 내용이 오래 남아요. 정리는 공부의 마지막이 아니라 한 부분이에요.",
+   h1:"‘적어 두지 않아도 된다’는 말이 알맞을까요?",
+   h2:"교과서는 알게 된 점이나 느낀 점을 써 보라고 했어요."}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — 1단원에서 공부한 내용 떠올리기
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">1단원에서 무엇을 공부했나요?</h2>
+  <div class="ka-bub">‘우리나라 국토 여행’에서는 <b>지형</b>의 뜻과 종류, 산지·하천·해안의 특징, 그리고 소중한 우리 땅 <b>독도</b>를 공부했어요. 오늘은 공부한 내용을 <span class="ka-emph">한눈에 정리</span>해 봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('recall','1단원에서 공부한 것','wide')}</div>
+    <div class="note">떠오르는 대로 자유롭게 이야기해도 좋아요.</div></div>`});
+// 2 살펴보기 — 생각 그물 ①
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">생각 그물 ① 우리나라의 여러 지형</h2>
+  <div class="ka-bub">지형은 <b>다양한 땅의 생김새</b>예요. 산지·평야·해안·섬처럼 여러 종류가 있고, 우리나라는 국토의 <span class="ka-emph">약 70%가 산지</span>예요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('web1','생각 그물 — 주제 ①','wide')}</div>
+    <div class="note">가지를 따라가며 <b style="color:var(--green)">뜻 → 종류 → 특징</b> 차례로 떠올려 봐요.</div></div>`});
+// 3 살펴보기 — 생각 그물 ② (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">옛 지도와 기록은 무엇을 말해 줄까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('web2','생각 그물 — 주제 ②','wide')}</div>
+  ${st.revealed?`<div class="answer-box">우리나라 자료도, 다른 나라 자료도 모두 독도를 우리 땅으로 나타냈어요. 그래서 옛 지도와 기록은 독도가 <span class="ka-emph">우리나라 고유의 영토</span>라는 증거가 돼요.</div>`
+    :`<div class="note">노란 칸에 들어갈 말은 무엇일까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 4 살펴보기 — 놀이 방법
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">말판 놀이는 이렇게 해요</h2>
+  <div class="ka-bub">한 사람당 상금 <b>100,000원</b>으로 시작해요. 주사위를 굴려 나온 수만큼 말을 옮기고, 도착한 칸의 질문에 <span class="ka-emph">바르게 답하면 그 칸을 살 수 있어요</span>.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('rule','놀이 방법','wide')}</div>
+    <div class="note">교실에서는 친구와 순서를 정해 놀이하고, 친구가 산 칸에 도착하면 <b style="color:var(--green)">통행료</b>를 내요.</div></div>`});
+// 5 살펴보기 — 직접조작(말판 놀이)
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">말판 놀이를 해요</h2>
+  <div class="ka-grp">${mgBoard(st)}</div>`});
+// 6 살펴보기 — 국토 여행 계획 4단계
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">국토 여행 계획은 어떤 차례였나요?</h2>
+  <div class="ka-bub">여행 주제를 먼저 정하고, 그 주제에 맞는 여행지를 조사했어요. 조사한 내용을 모아 계획서를 쓰고, 마지막에 친구들과 <span class="ka-emph">계획을 나누었어요</span>.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('plan','국토 여행 계획 네 단계','wide')}</div>
+    <div class="note">차례가 뒤바뀌면 무엇을 조사해야 할지 정하기 어려워요.</div></div>`});
+// 7 살펴보기 — 새로 알게 된 점·느낀 점 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">이 단원을 공부하며 무엇을 느꼈나요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('feel','새로 알게 된 점과 느낀 점','wide')}</div>
+  ${st.revealed?`<div class="paper"><div class="ph">✍️ 친구가 쓴 글</div>
+      <div>“우리나라의 다양한 지형과 독도를 살펴보며 <b>우리 국토를 더 소중하게 여기게 됐다.</b>”</div>
+      <div class="src">— 교과서 예시</div></div>
+    <div class="answer-box">정답은 없어요. 다만 <span class="ka-emph">스스로 적어 두면</span> 배운 내용이 오래 남아요.</div>`
+    :`<div class="note">새로 알게 된 점과 느낀 점을 한 줄로 적는다면 무엇을 쓰고 싶나요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리: 요약
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">1단원을 한눈에 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('done','1단원 마무리')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">①</span><div><b style="color:var(--green)">지형</b>은 다양한 땅의 생김새예요. 산지·평야·해안·섬 등이 있어요.</div></div>
+    <div class="sum-item"><span class="n">②</span><div>국토의 약 <b style="color:var(--green)">70%가 산지</b>이고, 북쪽과 동쪽이 높고 남쪽과 서쪽이 낮아요. 큰 하천의 하류 주변에는 <b style="color:var(--green)">평야</b>가 발달해요.</div></div>
+    <div class="sum-item"><span class="n">③</span><div>삼면이 바다예요. 동해안은 해안선이 단순하고, <b style="color:var(--green)">서·남해안</b>은 복잡하며 갯벌이 발달했어요.</div></div>
+    <div class="sum-item"><span class="n">④</span><div><b style="color:var(--green)">독도</b>는 우리나라 영토의 동쪽 끝이에요. 동도와 서도, 여러 바위섬으로 이루어져 있고 자원이 풍부해요.</div></div>
+    <div class="sum-item"><span class="n">★</span><div>옛 지도와 기록은 독도가 우리나라 고유의 <b style="color:var(--red)">영토</b>라는 증거예요. 옛날부터 오늘날까지 <b style="color:var(--red)">함께 지켜 온 땅</b>이에요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b style="color:var(--green)">2단원</b> 도입 활동을 해요.</div></div>`});
+// 17 정리: 자기 평가
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"우리나라 산지·하천·해안의 특징을 이야기할 수 있어요",st)}
+    ${selfCheck(1,"독도의 위치와 중요성을 이야기할 수 있어요",st)}
+    ${selfCheck(2,"1단원에서 공부한 내용을 생각 그물로 정리할 수 있어요",st)}
+  </div><div class="note">잘 떠오르지 않는 곳은 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">1단원을 모두 마쳤어요!</h2>
+  <div class="ka-grp">
+    <div class="end-score">\u2B50 ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">다음은 <b style="color:var(--amber)">2단원 우리나라 지리 탐구</b>!</div>
+  </div>`;
+}});
+
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">⭕ 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">💡 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">💡 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g5_social_u1_l12";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  mgPos:0, mgMoney:MG_START, mgOwn:[], mgQ:null, mgWrong:null, mgMsg:null, mgWarn:false, mgSkip:0, mgDie:null,
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 →';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+function mgRender(){ main.innerHTML = slides[state.idx].render(state); }
+function mgFlash(ms){ setTimeout(()=>{ state.mgMsg=null; state.mgWarn=false; state.mgWrong=null; mgRender(); }, ms||1500); }
+
+/* 주사위 굴리기 — force(1~6)는 검증용 지정 눈, 없으면 무작위 */
+function rollDice(force){
+  if(state.mgOwn.length >= MG_QIDX.length) return;                 // ① 놀이 완료 후 전체 잠금
+  if(state.mgQ!=null) return;                                      // ② 질문이 열려 있으면 이동 금지(순서 가드)
+  const n = (typeof force==='number' && force>=1 && force<=6)      // ③ 무효 눈 가드
+        ? force : (1 + Math.floor(Math.random()*6));
+  state.mgDie = n;
+  state.mgWrong = null;
+  if(state.mgSkip>0){                                              // ④ 휴게소 2회 쉼
+    state.mgSkip--;
+    state.mgMsg = '휴게소에서 쉬어요. 남은 쉼 <b>'+state.mgSkip+'회</b>';
+    state.mgWarn = false;
+    playThud(); mgRender(); return;
+  }
+  let pos = state.mgPos, pass = 0;
+  for(let s=0;s<n;s++){ pos = (pos+1)%MG_CELLS.length; if(pos===0) pass++; }
+  // 이미 산 칸에 도착하면 아직 사지 않은 칸까지 한 칸씩 더 나아간다(혼자 하는 방식의 규칙)
+  let guard = 0;
+  while(MG_CELLS[pos].q && mgOwned(state,pos) && guard<MG_CELLS.length){
+    pos = (pos+1)%MG_CELLS.length; if(pos===0) pass++; guard++;
+  }
+  state.mgPos = pos;
+  if(pass>0) state.mgMoney += MG_PASS*pass;
+  const c = MG_CELLS[pos];
+  if(c.q){
+    state.mgQ = pos;
+    state.mgMsg = (pass>0 ? '‘출발’을 지나 상금 <b>'+mgWon(MG_PASS*pass)+'</b>을 받았어요. ' : '')
+      + '<b>'+c.t+'</b> 칸에 도착했어요. 질문에 바르게 답하면 이 칸을 살 수 있어요.';
+    state.mgWarn = false;
+    playBlip(); mgRender(); return;
+  }
+  if(pos===4){ state.mgSkip = 2; state.mgMsg = '<b>휴게소</b>에 도착했어요. 2회 쉬어요.'; state.mgWarn = true; playThud(); }
+  else if(pos===8){ state.mgMoney += MG_BONUS; state.mgMsg = '<b>독도 홍보 상금</b> '+mgWon(MG_BONUS)+'을 받았어요!'; state.mgWarn = false; playChime(); }
+  else if(pos===11){ state.mgMoney = Math.max(0, state.mgMoney - MG_COST); state.mgMsg = '<b>국토 여행 비용</b>으로 '+mgWon(MG_COST)+'을 냈어요.'; state.mgWarn = true; playThud(); }
+  else { state.mgMsg = '<b>출발</b> 칸이에요. 다시 굴려 봐요.'; state.mgWarn = false; playBlip(); }
+  if(pass>0) state.mgMsg = '‘출발’을 지나 상금 <b>'+mgWon(MG_PASS*pass)+'</b>을 받았어요. ' + state.mgMsg;
+  mgRender();
+}
+
+/* 도착한 칸의 질문에 답하기 */
+function answerCell(k){
+  if(state.mgOwn.length >= MG_QIDX.length) return;                 // 완료 후 잠금
+  if(state.mgQ==null) return;                                      // ⑤ 질문이 열리지 않았으면 무시(순서 가드)
+  const i = state.mgQ, c = MG_CELLS[i];
+  if(!(k>=0 && k<c.q.opts.length)) return;                         // ⑥ 무효 보기 번호 가드
+  if(k===c.q.correct){
+    if(state.mgMoney < c.price){
+      state.mgQ = null; state.mgWarn = true;
+      state.mgMsg = '맞았어요! 하지만 상금이 모자라 이 칸을 살 수 없어요. 한 바퀴 더 돌아 상금을 모은 뒤 다시 와요.';
+      playThud(); mgRender(); mgFlash(2200); return;
+    }
+    state.mgMoney -= c.price;
+    state.mgOwn.push(i);
+    state.mgQ = null; state.mgWrong = null; state.mgWarn = false;
+    const done = state.mgOwn.length >= MG_QIDX.length;
+    state.mgMsg = done ? null : '맞았어요! <b>'+mgWon(c.price)+'</b>을 내고 <b>'+c.t+'</b> 칸을 샀어요.';
+    done ? playChime() : playBlip();
+    mgRender(); return;
+  }
+  state.mgWrong = k; state.mgWarn = true;
+  state.mgMsg = '다시 떠올려 봐요. 바르게 답하지 못하면 다음 차례까지 이 칸에 머무릅니다.';
+  playThud(); mgRender();
+  setTimeout(()=>{ if(state.mgWrong===k){ state.mgWrong=null; state.mgQ=null; state.mgMsg=null; state.mgWarn=false; mgRender(); } },1600);
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true; qs.wrongPick=null;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2; if(qs.hint===2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">📘 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 →</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // ⚠️ 1단원 마지막 차시 — 허브 복귀
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+</body>
+</html>
