@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<!--
+K-edu 사회 5-1 · 2단원 우리나라 지리 탐구 · 주제① 우리나라의 기후 · 1차시(l01)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [6사02-01] · 교과서 p.60~62 · 지도서(대단원2 **2차시** 기후가 무엇인지 알아볼까요, 지도서 p.124~134) 근거
+학습 목표: 기후의 의미와 기후를 구성하는 요소를 설명할 수 있다.
+직접조작: 관측 기록 쌓기(신규 패턴 — 누적 집계형)
+  ① 관측 카드 12장(세 해 × 네 계절)을 하나씩 눌러 그날의 기온·강수·바람을 기록판에 쌓는다.
+  ② 기록이 쌓일수록 계절별 **평균**이 다시 계산되어 막대·물방울·바람 표시가 자란다.
+  ③ 기록이 셋 이하일 때는 “아직 그때그때의 날씨”라고 안내하고,
+     열둘을 모두 채우면 계절별 평균이 완성되어 “여러 해에 걸친 평균적이고 종합적인 모습 = 기후” 결론이 열린다.
+  ④ 마지막으로 “이 기록에서 알 수 있는 것”을 3택으로 골라 확정한다(오늘의 날씨 / 우리나라의 기후 / 내일의 일기 예보).
+  ⚠️ 관측값은 OB_LOG 고정 리터럴(난수 0)이며 계절별 평균이 모두 정수로 떨어지도록 설계했다
+     → 레이아웃 측정 불필요, jsdom에서 누적 평균 계산까지 그대로 검증할 수 있다.
+  ⚠️ 가드 5종: 확정 후 전체 잠금 / 무효 관측 번호 / 이미 기록한 카드 재선택 /
+     열두 기록을 채우기 전 결론 3택 무시(순서) / 무효 결론 번호.
+지도서 근거:
+  [동기 유발] 옷장 속 여러 가지 옷 — 계절마다 다른 옷이 필요한 까닭 생각하기
+    → 더울 때도 있고 추울 때도 있다 / 계절이 바뀐다.
+  [학습 문제] 기후가 무엇인지 알아봅시다.
+  [전개 1] 기후의 의미 — 짧은 시간 동안의 대기 상태 = 날씨 /
+    오랜 기간 한 지역에서 나타나는 평균적이며 종합적인 대기 상태 = 기후.
+    기후는 여러 해에 걸쳐 나타난 기온·강수·바람 등으로 알 수 있다. (대기 = ‘공기’를 달리 이르는 말)
+  [전개 2] 기후를 구성하는 요소 — 기온(공기의 따뜻하고 차가운 정도) /
+    강수(눈, 비 등 땅에 내린 물) / 바람(공기가 움직이는 현상).
+  [스스로 활동] 기후를 바르게 이해한 사람 찾기 — “우리나라 기후는 사계절이 뚜렷해요”(소윤, 바름) /
+    “오늘은 맑고 쾌청한 기후래요”·“기후는 매일매일 달라요”(날씨를 가리키는 말).
+  [전개 3] 기후의 중요성 — 사람들의 의식주 생활뿐만 아니라 산업 발전에도 영향을 줌.
+    기온이 높고 강수량이 많은 지역은 벼농사가 활발해 쌀을 이용한 음식이 발달 /
+    바람이 강한 지역은 바람의 힘으로 전기를 생산하는 시설이 발달.
+  [꼭 기억해요] 오랜 기간 한 지역에서 나타나는 평균적이며 종합적인 대기 상태 = 기후 /
+    기후는 사람들의 생활에 많은 영향을 미친다.
+  차시 예고 = 우리나라의 계절별 기후 특징 살펴보기.
+⚠️ 설계 원칙:
+  · 지도서 유의점 — “계절별 기후 특징은 다음 차시에 자세하게 학습하므로 관련 내용을 간략하게 다루도록 유의한다”
+    → 3~4차시(계절별 기후) 선행 침범 0: 계절풍·기후도·강수량 분포·계절 축제를 다루지 않는다.
+  · 관측 카드의 수치는 ‘무엇을 관찰하는가’를 보이기 위한 기록일 뿐이므로 **문항에서는 수치를 일절 묻지 않는다**.
+  · 자연재해·기후변화(5~8차시) 선행 침범 0.
+  · 적용 4번 정답 자체가 “기후는 하루만 살펴보면 충분하다”(알맞지 않은 태도)
+    → 오랜 기간을 함께 살피는 태도를 학습 내용화.
+⚠️ 주제① 첫 차시 — goNextLesson = 허브(l02 미양산).
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g5_social_u2_l01_v1">
+<title>기후가 무엇인지 알아볼까요 · 사회 5-1</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#0E7490; --green-d:#0C4A6E; --cyan:#276749;
+  --bg:#F1F8FA; --bub:#DCF0F5; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#B45309; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes drawLine{to{transform:scaleX(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ka-lb{background:#F1F5F9;border:none;padding:7px 12px;border-radius:10px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;font-family:inherit;font-weight:700;color:#475569;flex-shrink:0;font-size:13px}
+.ka-lb svg{width:15px;height:15px}
+.ka-bar{flex:1;height:5px;background:var(--bg);border-radius:999px;overflow:hidden}
+.ka-bar>div{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:999px;transition:width .35s ease;width:6%}
+.ka-pg{color:var(--green);font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;flex-shrink:0}
+.ka-sc{background:var(--amber-bg);color:var(--amber);padding:4px 12px;border-radius:999px;display:flex;align-items:center;gap:5px;flex-shrink:0;font-weight:700}
+.ka-sc svg{width:14px;height:14px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px}
+.ka-sc-u{font-size:12px}
+
+/* 메인 */
+.ka-m{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow-y:auto}
+.ka-tags{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ka-bg{background:var(--amber-bg);color:var(--amber);padding:5px 14px;border-radius:30px;font-size:13px;
+  display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.ka-bg.s2{background:#E0F2FE;color:#0369A1}
+.ka-bg.s3{background:#EDE9FE;color:#6D28D9}
+.ka-bg.s4{background:#FCE7F3;color:#BE185D}
+.ka-bg.s5{background:var(--bub);color:var(--green)}
+.ka-bg svg{width:13px;height:13px}
+.ka-meta{font-size:13px;color:var(--muted)}
+.ka-t{font-size:clamp(20px,3.4vw,29px);margin-bottom:16px;line-height:1.4;color:var(--green);letter-spacing:-.3px;font-weight:700;animation:fadeUp .4s .15s ease both}
+.ka-bub{background:var(--bub);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);line-height:1.7;
+  margin-bottom:16px;border-left:4px solid var(--green);animation:fadeUp .4s .3s ease both}
+.ka-emph{position:relative;display:inline-block;font-weight:700;color:var(--green)}
+.ka-emph::after{content:'';position:absolute;bottom:2px;left:0;right:0;height:3px;background:var(--red);border-radius:2px;transform:scaleX(0);transform-origin:left;animation:drawLine .6s .6s ease forwards}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.scene.wide{width:clamp(240px,44vw,420px)}
+.scene.wide svg{height:clamp(120px,20vw,200px)}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(16px,2.6vw,21px);font-weight:700;line-height:1.6;margin-bottom:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:620px}
+.opt{background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:13px 14px;font-size:clamp(14px,2.3vw,17px);
+  font-weight:500;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:var(--green);background:var(--bub);animation:pop .4s ease}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;font-size:clamp(14px,2.3vw,17px);line-height:1.6;text-align:center;animation:fadeUp .35s ease both;max-width:620px}
+.fb.ok{color:var(--green);font-weight:700}
+.hint{margin-top:12px;background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(13px,2.2vw,16px);
+  line-height:1.6;color:#0C4A6E;max-width:560px;animation:fadeUp .35s ease both}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:640px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F5FBFC;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:clamp(14px,2.3vw,17px);line-height:1.5}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
+
+/* 직접조작 — 관측 기록 쌓기(누적 집계형) */
+.dw-wrap{width:100%;max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dw-body{display:grid;grid-template-columns:1.05fr 1fr;gap:10px;align-items:start}
+.dw-canvas{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.dw-canvas svg{width:100%;height:auto;display:block}
+.dw-canvas .cvcap{padding:5px 6px;text-align:center;font-size:clamp(9.5px,1.6vw,11.5px);
+  color:var(--muted);font-weight:700;background:#F8FAFC}
+.dw-right{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dw-step{font-size:clamp(10.5px,1.75vw,13px);font-weight:800;color:var(--green)}
+.dw-msg{background:#F8FAFC;border:2px solid var(--line);border-left:4px solid var(--green);border-radius:10px;
+  padding:8px 12px;font-size:clamp(11.4px,1.93vw,13.8px);line-height:1.55;color:#334155;animation:fadeUp .3s ease both}
+.dw-msg.warn{border-left-color:var(--red)}
+.dw-msg b{color:var(--green)}
+.dw-card{background:#fff;border:2px solid var(--amber);border-radius:12px;padding:10px 12px;
+  font-size:clamp(12px,2.05vw,14.5px);line-height:1.55;animation:pop .35s ease both}
+.dw-card .pt{font-weight:800;color:var(--amber);margin-bottom:4px;font-size:clamp(12.5px,2.15vw,15px)}
+.ob-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px}
+.ob-grid button{border:2px solid #CBD5E0;background:#fff;border-radius:9px;padding:6px 2px;cursor:pointer;
+  font-family:inherit;font-weight:700;color:var(--ink);font-size:clamp(9.4px,1.56vw,11.6px);transition:.15s;line-height:1.3}
+.ob-grid button:hover{border-color:var(--green);background:var(--bub)}
+.ob-grid button.used{border-color:var(--green);background:var(--bub);color:var(--green-d);cursor:default}
+.ob-yr{font-size:clamp(9.4px,1.56vw,11.6px);font-weight:800;color:var(--muted);margin-top:2px}
+.ob-conc{display:flex;flex-direction:column;gap:5px}
+.ob-conc button{border:2px solid var(--cyan);background:#fff;color:#1C4D35;border-radius:10px;padding:7px 10px;
+  cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left}
+.ob-conc button:hover{background:#DFF0E7}
+.ob-conc button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.paper{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:12px;padding:12px 16px;
+  font-size:clamp(12.5px,2.1vw,15px);line-height:1.65;color:#3F3A2C;max-width:660px;
+  animation:fadeUp .4s ease both}
+.paper .ph{font-weight:800;color:#8A6D3B;margin-bottom:6px;font-size:clamp(13px,2.2vw,16px)}
+.paper .src{margin-top:6px;font-size:clamp(11px,1.9vw,13px);color:#8A6D3B;text-align:right}
+@media(max-width:620px){ .dw-body{grid-template-columns:1fr} }
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(14,116,144,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#B45309"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식 =====
+   ⚠️ 정직 원칙: 모든 그림은 내용을 나타낸 도식이며 실제 사진·관측 자료가 아니다. */
+const SVG = {
+  // 동기 유발 — 옷장 속 여러 가지 옷
+  closet:`<svg viewBox="0 0 320 160"><rect width="320" height="160" fill="#F8FAFC"/>
+    <rect x="14" y="12" width="292" height="136" rx="10" fill="#fff" stroke="#94A3B8" stroke-width="2"/>
+    <line x1="26" y1="40" x2="294" y2="40" stroke="#94A3B8" stroke-width="3"/>
+    <g><path d="M46 44 L34 60 L40 66 L46 60 L46 118 L86 118 L86 60 L92 66 L98 60 L86 44 Z" fill="#FDE68A" stroke="#B45309" stroke-width="1.8"/>
+      <text x="66" y="136" font-size="11" fill="#334155" text-anchor="middle" font-weight="700">봄</text></g>
+    <g><path d="M116 44 L104 56 L110 62 L116 58 L116 112 L156 112 L156 58 L162 62 L168 56 L156 44 Z" fill="#BFDBFE" stroke="#0E7490" stroke-width="1.8"/>
+      <text x="136" y="136" font-size="11" fill="#334155" text-anchor="middle" font-weight="700">여름</text></g>
+    <g><path d="M186 44 L174 60 L180 66 L186 60 L186 118 L226 118 L226 60 L232 66 L238 60 L226 44 Z" fill="#FBCFE8" stroke="#BE185D" stroke-width="1.8"/>
+      <text x="206" y="136" font-size="11" fill="#334155" text-anchor="middle" font-weight="700">가을</text></g>
+    <g><path d="M256 44 L242 62 L248 70 L256 62 L256 122 L296 122 L296 62 L304 70 L310 62 L296 44 Z" fill="#CBD5E0" stroke="#334155" stroke-width="1.8"/>
+      <text x="276" y="136" font-size="11" fill="#334155" text-anchor="middle" font-weight="700">겨울</text></g></svg>`,
+
+  // 날씨 — 짧은 시간 동안의 대기 상태
+  wthr:`<svg viewBox="0 0 320 150"><rect width="320" height="150" fill="#F8FAFC"/>
+    <text x="160" y="20" font-size="12" fill="#0C4A6E" text-anchor="middle" font-weight="800">어느 한 주의 하루하루</text>
+    <g><rect x="16" y="32" width="88" height="86" rx="10" fill="#fff" stroke="#CBD5E0" stroke-width="2"/>
+      <circle cx="60" cy="66" r="17" fill="#FDE68A" stroke="#B45309" stroke-width="2"/>
+      <text x="60" y="104" font-size="11" fill="#334155" text-anchor="middle" font-weight="700">맑음</text></g>
+    <g><rect x="116" y="32" width="88" height="86" rx="10" fill="#fff" stroke="#CBD5E0" stroke-width="2"/>
+      <ellipse cx="160" cy="60" rx="26" ry="13" fill="#CBD5E0"/>
+      <line x1="148" y1="78" x2="144" y2="90" stroke="#0E7490" stroke-width="2.4" stroke-linecap="round"/>
+      <line x1="160" y1="78" x2="156" y2="90" stroke="#0E7490" stroke-width="2.4" stroke-linecap="round"/>
+      <line x1="172" y1="78" x2="168" y2="90" stroke="#0E7490" stroke-width="2.4" stroke-linecap="round"/>
+      <text x="160" y="104" font-size="11" fill="#334155" text-anchor="middle" font-weight="700">비</text></g>
+    <g><rect x="216" y="32" width="88" height="86" rx="10" fill="#fff" stroke="#CBD5E0" stroke-width="2"/>
+      <ellipse cx="252" cy="62" rx="24" ry="12" fill="#E2E8F0"/>
+      <ellipse cx="272" cy="70" rx="18" ry="10" fill="#CBD5E0"/>
+      <text x="260" y="104" font-size="11" fill="#334155" text-anchor="middle" font-weight="700">흐림</text></g>
+    <text x="160" y="138" font-size="11" fill="#64748B" text-anchor="middle">짧은 시간 동안의 대기 상태예요</text></svg>`,
+
+  // 기후를 구성하는 요소 — 기온·강수·바람
+  three:`<svg viewBox="0 0 320 150"><rect width="320" height="150" fill="#F8FAFC"/>
+    <g><rect x="12" y="16" width="92" height="118" rx="10" fill="#fff" stroke="#B45309" stroke-width="2"/>
+      <rect x="52" y="34" width="12" height="60" rx="6" fill="#FEE2E2" stroke="#B45309" stroke-width="1.6"/>
+      <rect x="54" y="62" width="8" height="32" fill="#DC2626"/>
+      <circle cx="58" cy="102" r="11" fill="#DC2626" stroke="#B45309" stroke-width="1.6"/>
+      <text x="58" y="126" font-size="12" fill="#B45309" text-anchor="middle" font-weight="800">기온</text></g>
+    <g><rect x="114" y="16" width="92" height="118" rx="10" fill="#fff" stroke="#0E7490" stroke-width="2"/>
+      <path d="M160 32 Q172 54 172 66 A12 12 0 0 1 148 66 Q148 54 160 32 Z" fill="#7DD3FC" stroke="#0E7490" stroke-width="1.8"/>
+      <path d="M136 92 l4 -8 l4 8 l8 -2 l-6 7 l6 7 l-8 -2 l-4 8 l-4 -8 l-8 2 l6 -7 l-6 -7 Z" fill="#BAE6FD" stroke="#0E7490" stroke-width="1.4"/>
+      <path d="M180 92 l4 -8 l4 8 l8 -2 l-6 7 l6 7 l-8 -2 l-4 8 l-4 -8 l-8 2 l6 -7 l-6 -7 Z" fill="#BAE6FD" stroke="#0E7490" stroke-width="1.4"/>
+      <text x="160" y="126" font-size="12" fill="#0E7490" text-anchor="middle" font-weight="800">강수</text></g>
+    <g><rect x="216" y="16" width="92" height="118" rx="10" fill="#fff" stroke="#276749" stroke-width="2"/>
+      <line x1="238" y1="34" x2="238" y2="106" stroke="#64748B" stroke-width="2.6"/>
+      <path d="M238 38 L288 46 L238 60 Z" fill="#86EFAC" stroke="#276749" stroke-width="1.8"/>
+      <path d="M244 78 Q262 72 280 78" stroke="#276749" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M244 90 Q262 84 280 90" stroke="#276749" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <text x="262" y="126" font-size="12" fill="#276749" text-anchor="middle" font-weight="800">바람</text></g></svg>`,
+
+  // 날씨 ↔ 기후 대비
+  cmp:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F8FAFC"/>
+    <rect x="12" y="14" width="140" height="142" rx="12" fill="#fff" stroke="#94A3B8" stroke-width="2"/>
+    <text x="82" y="36" font-size="13" fill="#334155" text-anchor="middle" font-weight="800">날씨</text>
+    <circle cx="82" cy="66" r="16" fill="#FDE68A" stroke="#B45309" stroke-width="2"/>
+    <text x="82" y="100" font-size="11" fill="#64748B" text-anchor="middle">오늘 하루</text>
+    <text x="82" y="118" font-size="11" fill="#64748B" text-anchor="middle">짧은 시간의</text>
+    <text x="82" y="134" font-size="11" fill="#64748B" text-anchor="middle">대기 상태</text>
+    <rect x="168" y="14" width="140" height="142" rx="12" fill="#DCF0F5" stroke="#0E7490" stroke-width="2.4"/>
+    <text x="238" y="36" font-size="13" fill="#0C4A6E" text-anchor="middle" font-weight="800">기후</text>
+    <rect x="188" y="60" width="14" height="24" rx="3" fill="#7DD3FC"/>
+    <rect x="210" y="48" width="14" height="36" rx="3" fill="#0E7490"/>
+    <rect x="232" y="56" width="14" height="28" rx="3" fill="#38BDF8"/>
+    <rect x="254" y="70" width="14" height="14" rx="3" fill="#BAE6FD"/>
+    <text x="238" y="102" font-size="11" fill="#0C4A6E" text-anchor="middle">여러 해에 걸친</text>
+    <text x="238" y="120" font-size="11" fill="#0C4A6E" text-anchor="middle">평균적이며 종합적인</text>
+    <text x="238" y="136" font-size="11" fill="#0C4A6E" text-anchor="middle">대기 상태</text></svg>`,
+
+  // 기후가 생활에 주는 영향
+  life:`<svg viewBox="0 0 320 150"><rect width="320" height="150" fill="#F8FAFC"/>
+    <g><rect x="12" y="18" width="92" height="114" rx="10" fill="#fff" stroke="#B45309" stroke-width="2"/>
+      <ellipse cx="58" cy="72" rx="30" ry="14" fill="#FEF3C7" stroke="#B45309" stroke-width="1.8"/>
+      <ellipse cx="58" cy="64" rx="22" ry="11" fill="#fff" stroke="#B45309" stroke-width="1.6"/>
+      <text x="58" y="106" font-size="11" fill="#334155" text-anchor="middle" font-weight="700">쌀을 이용한</text>
+      <text x="58" y="122" font-size="11" fill="#334155" text-anchor="middle" font-weight="700">음식</text></g>
+    <g><rect x="114" y="18" width="92" height="114" rx="10" fill="#fff" stroke="#276749" stroke-width="2"/>
+      <line x1="160" y1="46" x2="160" y2="104" stroke="#64748B" stroke-width="4"/>
+      <path d="M160 46 L186 34 L164 52 Z" fill="#86EFAC" stroke="#276749" stroke-width="1.6"/>
+      <path d="M160 46 L172 74 L156 52 Z" fill="#86EFAC" stroke="#276749" stroke-width="1.6"/>
+      <path d="M160 46 L134 52 L158 40 Z" fill="#86EFAC" stroke="#276749" stroke-width="1.6"/>
+      <text x="160" y="122" font-size="11" fill="#334155" text-anchor="middle" font-weight="700">바람으로 만든 전기</text></g>
+    <g><rect x="216" y="18" width="92" height="114" rx="10" fill="#fff" stroke="#0E7490" stroke-width="2"/>
+      <path d="M244 44 L234 56 L240 62 L244 58 L244 100 L280 100 L280 58 L284 62 L290 56 L280 44 Z" fill="#BFDBFE" stroke="#0E7490" stroke-width="1.8"/>
+      <text x="262" y="122" font-size="11" fill="#334155" text-anchor="middle" font-weight="700">계절에 맞는 옷</text></g></svg>`,
+
+  // 기후의 중요성 — 의식주와 산업
+  imp:`<svg viewBox="0 0 320 160"><rect width="320" height="160" fill="#F8FAFC"/>
+    <ellipse cx="160" cy="30" rx="70" ry="18" fill="#0E7490"/>
+    <text x="160" y="35" font-size="13" fill="#fff" text-anchor="middle" font-weight="800">기후</text>
+    <path d="M130 48 L58 78" stroke="#0E7490" stroke-width="2" fill="none"/>
+    <path d="M160 48 L160 78" stroke="#0E7490" stroke-width="2" fill="none"/>
+    <path d="M190 48 L262 78" stroke="#0E7490" stroke-width="2" fill="none"/>
+    <rect x="14" y="80" width="88" height="34" rx="9" fill="#fff" stroke="#CBD5E0" stroke-width="1.8"/>
+    <text x="58" y="102" font-size="11" fill="#334155" text-anchor="middle" font-weight="700">먹는 음식</text>
+    <rect x="116" y="80" width="88" height="34" rx="9" fill="#fff" stroke="#CBD5E0" stroke-width="1.8"/>
+    <text x="160" y="102" font-size="11" fill="#334155" text-anchor="middle" font-weight="700">입는 옷과 집</text>
+    <rect x="218" y="80" width="88" height="34" rx="9" fill="#fff" stroke="#CBD5E0" stroke-width="1.8"/>
+    <text x="262" y="102" font-size="11" fill="#334155" text-anchor="middle" font-weight="700">산업 발전</text>
+    <rect x="58" y="124" width="204" height="26" rx="8" fill="#DCF0F5" stroke="#0E7490" stroke-width="1.8"/>
+    <text x="160" y="141" font-size="11" fill="#0C4A6E" text-anchor="middle" font-weight="800">사람들의 생활에 많은 영향을 줘요</text></svg>`,
+
+  // [스스로 활동] 세 친구의 말
+  talk:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F8FAFC"/>
+    <g><rect x="12" y="16" width="140" height="52" rx="12" fill="#fff" stroke="#CBD5E0" stroke-width="2"/>
+      <text x="82" y="40" font-size="11" fill="#334155" text-anchor="middle">“오늘은 맑고</text>
+      <text x="82" y="56" font-size="11" fill="#334155" text-anchor="middle">쾌청한 기후래요.”</text>
+      <text x="82" y="82" font-size="11" fill="#64748B" text-anchor="middle" font-weight="700">승주</text></g>
+    <g><rect x="168" y="16" width="140" height="52" rx="12" fill="#fff" stroke="#CBD5E0" stroke-width="2"/>
+      <text x="238" y="40" font-size="11" fill="#334155" text-anchor="middle">“기후는 매일매일</text>
+      <text x="238" y="56" font-size="11" fill="#334155" text-anchor="middle">달라요.”</text>
+      <text x="238" y="82" font-size="11" fill="#64748B" text-anchor="middle" font-weight="700">지은</text></g>
+    <g><rect x="90" y="96" width="140" height="52" rx="12" fill="#DCF0F5" stroke="#0E7490" stroke-width="2.2"/>
+      <text x="160" y="120" font-size="11" fill="#0C4A6E" text-anchor="middle">“우리나라 기후는</text>
+      <text x="160" y="136" font-size="11" fill="#0C4A6E" text-anchor="middle">사계절이 뚜렷해요.”</text>
+      <text x="160" y="162" font-size="11" fill="#0C4A6E" text-anchor="middle" font-weight="700">소윤</text></g></svg>`,
+
+  // 정리
+  done:`<svg viewBox="0 0 320 150"><rect width="320" height="150" fill="#F8FAFC"/>
+    <rect x="20" y="20" width="280" height="46" rx="12" fill="#DCF0F5" stroke="#0E7490" stroke-width="2.2"/>
+    <text x="160" y="42" font-size="13" fill="#0C4A6E" text-anchor="middle" font-weight="800">기후</text>
+    <text x="160" y="58" font-size="11" fill="#0C4A6E" text-anchor="middle">오랜 기간 한 지역의 평균적이며 종합적인 대기 상태</text>
+    <rect x="20" y="78" width="86" height="30" rx="8" fill="#fff" stroke="#B45309" stroke-width="1.8"/>
+    <text x="63" y="98" font-size="12" fill="#B45309" text-anchor="middle" font-weight="800">기온</text>
+    <rect x="117" y="78" width="86" height="30" rx="8" fill="#fff" stroke="#0E7490" stroke-width="1.8"/>
+    <text x="160" y="98" font-size="12" fill="#0E7490" text-anchor="middle" font-weight="800">강수</text>
+    <rect x="214" y="78" width="86" height="30" rx="8" fill="#fff" stroke="#276749" stroke-width="1.8"/>
+    <text x="257" y="98" font-size="12" fill="#276749" text-anchor="middle" font-weight="800">바람</text>
+    <text x="160" y="132" font-size="11" fill="#64748B" text-anchor="middle">기후는 우리 생활에 많은 영향을 줘요</text></svg>`
+};
+function sceneCard(k,cap,extra){ return `<div class="scene ${extra||''}">${SVG[k]}${cap?`<div class="cap">${cap}</div>`:''}</div>`; }
+
+/* ===== 직접조작 — 관측 기록 쌓기(누적 집계형) =====
+   OB_LOG = 세 해 × 네 계절 = 12개 고정 리터럴(난수 0).
+   계절별 세 기록의 평균이 모두 정수로 떨어지도록 값을 골랐다
+   → jsdom에서 누적 평균 계산을 그대로 검증할 수 있다.
+   ⚠️ 수치는 ‘무엇을 관찰하는가’를 보이기 위한 기록이며, 문항에서는 일절 묻지 않는다. */
+const OB_SEASON = ['봄','여름','가을','겨울'];
+const OB_YEAR = ['첫째','둘째','셋째'];
+const OB_LOG = [
+  // 첫째 해
+  {y:0,s:0,t:12,r:70,w:4}, {y:0,s:1,t:25,r:280,w:2}, {y:0,s:2,t:15,r:50,w:3}, {y:0,s:3,t:0,r:20,w:6},
+  // 둘째 해
+  {y:1,s:0,t:14,r:80,w:3}, {y:1,s:1,t:26,r:300,w:3}, {y:1,s:2,t:14,r:60,w:2}, {y:1,s:3,t:-1,r:25,w:5},
+  // 셋째 해
+  {y:2,s:0,t:13,r:75,w:5}, {y:2,s:1,t:24,r:290,w:1}, {y:2,s:2,t:16,r:55,w:4}, {y:2,s:3,t:1,r:24,w:7}
+];
+// 계절별 평균 — 봄 13℃·75mm·4 / 여름 25℃·290mm·2 / 가을 15℃·55mm·3 / 겨울 0℃·23mm·6
+const OB_CONC = ['오늘의 날씨','우리나라의 기후','내일의 일기 예보'];
+const OB_CONC_OK = 1;
+
+function obStats(st){
+  const cnt=[0,0,0,0], ts=[0,0,0,0], rs=[0,0,0,0], ws=[0,0,0,0];
+  st.obDone.forEach(i=>{ const o=OB_LOG[i]; cnt[o.s]++; ts[o.s]+=o.t; rs[o.s]+=o.r; ws[o.s]+=o.w; });
+  const avg = s => cnt[s]===0 ? null : {t:Math.round(ts[s]/cnt[s]), r:Math.round(rs[s]/cnt[s]), w:Math.round(ws[s]/cnt[s])};
+  return {cnt:cnt, avg:[avg(0),avg(1),avg(2),avg(3)]};
+}
+
+function obCanvas(st){
+  const S = obStats(st);
+  const BASE = 150, H = 96, LO = -5, HI = 30;   // 기온 막대 눈금
+  let body = '';
+  for(let s=0;s<4;s++){
+    const x = 26 + s*72;
+    const a = S.avg[s];
+    body += `<rect x="${x}" y="${BASE-H}" width="46" height="${H}" rx="6" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1.4"/>`;
+    if(a){
+      const h = Math.max(4, Math.round((a.t-LO)/(HI-LO)*H));
+      body += `<rect x="${x+6}" y="${BASE-h}" width="34" height="${h}" rx="5" fill="${s===1?'#DC2626':(s===3?'#0E7490':'#38BDF8')}"/>`;
+      body += `<text x="${x+23}" y="${BASE-h-6}" font-size="10" text-anchor="middle" font-weight="800" fill="#0C4A6E">${a.t}℃</text>`;
+      const rr = Math.max(4, Math.min(13, Math.round(a.r/24)));
+      body += `<circle cx="${x+14}" cy="${BASE+18}" r="${rr}" fill="#7DD3FC" stroke="#0E7490" stroke-width="1.2"/>`;
+      body += `<text x="${x+36}" y="${BASE+22}" font-size="9" text-anchor="middle" fill="#0C4A6E" font-weight="700">${a.r}</text>`;
+      const wl = 4 + a.w*3;
+      body += `<line x1="${x+8}" y1="${BASE+38}" x2="${x+8+wl}" y2="${BASE+38}" stroke="#276749" stroke-width="2.6" stroke-linecap="round"/>`;
+      body += `<text x="${x+40}" y="${BASE+42}" font-size="9" text-anchor="middle" fill="#1C4D35" font-weight="700">${a.w}</text>`;
+    } else {
+      body += `<text x="${x+23}" y="${BASE-40}" font-size="10" text-anchor="middle" fill="#94A3B8">기록 없음</text>`;
+    }
+    body += `<text x="${x+23}" y="${BASE+66}" font-size="11" text-anchor="middle" font-weight="800" fill="#334155">${OB_SEASON[s]}</text>`;
+    body += `<text x="${x+23}" y="${BASE+80}" font-size="9" text-anchor="middle" fill="#94A3B8">기록 ${S.cnt[s]} / 3</text>`;
+  }
+  return `<svg viewBox="0 0 320 240"><rect width="320" height="240" fill="#ffffff"/>
+    <line x1="20" y1="150" x2="308" y2="150" stroke="#CBD5E0" stroke-width="1.6"/>
+    <text x="14" y="20" font-size="10" fill="#B45309" font-weight="800">기온</text>
+    <text x="14" y="172" font-size="10" fill="#0E7490" font-weight="800">강수</text>
+    <text x="14" y="192" font-size="10" fill="#276749" font-weight="800">바람</text>
+    ${body}</svg>`;
+}
+
+function obPanel(st){
+  if(!st.obDone) st.obDone = [];
+  const full = st.obDone.length >= OB_LOG.length;
+  const fixed = st.obConc != null;
+
+  let right = '';
+  right += `<div class="dw-step">📋 관측 기록 ${st.obDone.length} / 12</div>`;
+
+  if(fixed){
+    right += `<div class="dw-card"><div class="pt">🌤️ 기후를 찾았어요</div>
+      <div>세 해 동안의 기록을 모으니 <b>봄은 따뜻하고 여름은 덥고 비가 많으며, 가을은 선선하고 겨울은 춥고 바람이 셌어요.</b>
+      하루하루의 날씨가 아니라 <b style="color:#0E7490">여러 해에 걸친 평균적이고 종합적인 모습</b>이 드러났어요. 이것이 <b style="color:#0E7490">기후</b>예요.</div>
+      <div style="margin-top:5px;color:#64748B">기록한 기온·강수·바람이 바로 기후를 구성하는 요소예요.</div></div>`;
+  } else if(full){
+    right += `<div class="dw-msg">기록 열두 개가 모두 모였어요. 네 계절의 평균이 완성됐어요.</div>`;
+    right += `<div class="dw-step">🔎 이 기록에서 알 수 있는 것은 무엇일까요?</div>`;
+    right += `<div class="ob-conc">${OB_CONC.map((o,k)=>
+      `<button class="${st.obWrong===k?'no':''}" onclick="pickConc(${k})">${o}</button>`).join('')}</div>`;
+  } else {
+    right += `<div class="dw-msg">카드를 눌러 그 계절의 기록을 기록판에 쌓아 봐요.</div>`;
+    for(let y=0;y<3;y++){
+      right += `<div class="ob-yr">${OB_YEAR[y]} 해</div><div class="ob-grid">`;
+      for(let s=0;s<4;s++){
+        const i = y*4+s, used = st.obDone.indexOf(i)>=0;
+        right += `<button class="${used?'used':''}" onclick="pickObs(${i})">${OB_SEASON[s]}${used?' ✓':''}</button>`;
+      }
+      right += `</div>`;
+    }
+  }
+  if(st.obMsg) right += `<div class="dw-msg${st.obWarn?' warn':''}">${st.obMsg}</div>`;
+
+  return `<div class="dw-wrap">
+    <div style="text-align:center"><b style="color:var(--green)">📋 세 해 동안의 관측 기록을 쌓아 봐요</b></div>
+    <div class="dw-body">
+      <div class="dw-canvas">${obCanvas(st)}<div class="cvcap">기록이 쌓일수록 계절별 평균이 다시 계산되는 기록판이에요</div></div>
+      <div class="dw-right">${right}</div>
+    </div>
+  </div>`;
+}
+
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "2단원 우리나라 지리 탐구 · 주제① 우리나라의 기후";
+
+// 확인 4 + 적용 4 — 정답 다양화 [1,2,0,3,0,3,1,2]
+// ⚠️ 기온·강수 수치 0(관측 카드에만 존재) · 계절별 기후 특징(3~4차시) 선행 침범 0 · 자연재해·기후변화(5~8차시) 0.
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"어떤 날은 맑고 어떤 날은 비가 오는 것처럼, <b>짧은 시간 동안</b>의 대기 상태를 무엇이라고 할까요?",
+   opts:["기후","날씨","대기","계절"], correct:1, pts:POINTS_BASIC, scene:"wthr",
+   reason:"짧은 시간 동안의 대기 상태를 날씨라고 해요. 밖에 나가기 전에 확인하는 것이 바로 날씨예요.",
+   h1:"오늘 우산을 챙길지 정할 때 무엇을 볼까요?",
+   h2:"하루하루 달라지는 것이에요."},
+
+  {stem:"오랜 기간 한 지역에서 나타나는 <b>평균적이며 종합적인</b> 대기 상태를 무엇이라고 할까요?",
+   opts:["강수","바람","기후","대기"], correct:2, pts:POINTS_BASIC, scene:"cmp",
+   reason:"오랜 기간 한 지역에서 나타나는 평균적이며 종합적인 대기 상태를 기후라고 해요. 하루가 아니라 여러 해를 모아서 봐야 알 수 있어요.",
+   h1:"여러 해 동안 쌓은 기록에서 드러나는 모습이에요.",
+   h2:"두 글자예요."},
+
+  {stem:"공기의 <b>따뜻하고 차가운 정도</b>를 무엇이라고 할까요?",
+   opts:["기온","강수","바람","대기"], correct:0, pts:POINTS_BASIC, scene:"three",
+   reason:"공기의 따뜻하고 차가운 정도를 기온이라고 해요. 온도계로 재어 볼 수 있어요.",
+   h1:"덥다·춥다를 나타내는 말이에요.",
+   h2:"‘◯온’ — 두 글자예요."},
+
+  {stem:"기후를 구성하는 요소가 <b>아닌</b> 것은 무엇일까요?",
+   opts:["기온","강수","바람","지형"], correct:3, pts:POINTS_BASIC, scene:"three",
+   reason:"기후는 기온·강수·바람 등으로 알 수 있어요. 지형은 땅의 생김새로, 1단원에서 공부한 다른 내용이에요.",
+   h1:"기후는 ‘대기’의 상태예요.",
+   h2:"땅의 생김새를 가리키는 말을 찾아봐요."},
+
+  // 4단계 적용 (+15)
+  {stem:"“오늘은 맑고 쾌청한 <b>기후</b>래요.”라는 말이 알맞지 <b>않은</b> 까닭은 무엇일까요?",
+   opts:["기후는 오랜 기간을 모아 살펴보는 것이라 하루를 두고 말할 수 없기 때문이다",
+         "기후는 비가 오는 날에만 쓰는 말이기 때문이다",
+         "기후는 바람이 불 때만 쓰는 말이기 때문이다",
+         "기후는 사람이 정한 것이 아니기 때문이다"],
+   correct:0, pts:POINTS_APPLY, scene:"talk",
+   reason:"하루의 대기 상태는 날씨예요. ‘오늘은 맑다’처럼 하루를 말할 때는 기후가 아니라 날씨라고 해야 해요.",
+   h1:"‘오늘’은 얼마나 긴 시간일까요?",
+   h2:"기후는 여러 해를 모아야 알 수 있어요."},
+
+  {stem:"<b>바람이 강하게 부는 지역</b>에서 발달하기 쉬운 시설은 무엇일까요?",
+   opts:["갯벌 체험장","넓은 모래사장","눈썰매장","바람의 힘으로 전기를 만드는 시설"],
+   correct:3, pts:POINTS_APPLY, scene:"life",
+   reason:"바람이 강한 지역에서는 바람의 힘으로 전기를 생산하는 시설이 발달해요. 기후는 산업 발전에도 영향을 줘요.",
+   h1:"그 지역에 많은 것을 유리하게 이용하면 좋아요.",
+   h2:"바람을 힘으로 바꾸는 시설이에요."},
+
+  {stem:"기온이 높고 <b>강수량이 많은 지역</b>에서 발달한 음식 문화로 알맞은 것은 무엇일까요?",
+   opts:["물을 거의 쓰지 않는 음식","벼농사가 활발해 쌀을 이용한 음식","바람을 이용해 만든 음식","얼음으로만 만든 음식"],
+   correct:1, pts:POINTS_APPLY, scene:"life",
+   reason:"벼는 자랄 때 물이 많이 필요해요. 그래서 기온이 높고 비가 많이 내리는 지역에서는 벼농사가 활발해 쌀을 이용한 음식이 발달했어요.",
+   h1:"물이 많이 필요한 곡식을 떠올려 봐요.",
+   h2:"우리가 매일 먹는 밥의 재료예요."},
+
+  {stem:"기후를 알아보는 <b>태도</b>로 알맞지 <b>않은</b> 것은 무엇일까요?",
+   opts:["여러 해 동안 쌓인 기록을 함께 살펴본다","기온·강수·바람을 두루 살펴본다","기후는 하루만 살펴보면 충분하다","기후가 우리 생활에 주는 영향을 함께 생각한다"],
+   correct:2, pts:POINTS_APPLY, scene:"cmp",
+   reason:"하루만 보면 그날의 날씨밖에 알 수 없어요. 기후는 여러 해에 걸친 기록을 함께 모아야 드러나요.",
+   h1:"기후와 날씨의 차이를 떠올려 봐요.",
+   h2:"‘하루만 보면 충분하다’는 말이 맞을까요?"}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — 옷장 속 여러 가지 옷
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">옷장에 왜 이렇게 여러 옷이 있을까요?</h2>
+  <div class="ka-bub">얇은 옷도 있고 두꺼운 옷도 있어요. 계절마다 <b>필요한 옷이 달라지기</b> 때문이에요. 이것만 봐도 우리나라는 <span class="ka-emph">더울 때도 있고 추울 때도 있다</span>는 걸 알 수 있어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('closet','옷장 속 여러 가지 옷','wide')}</div>
+    <div class="note">여름과 겨울에 입는 옷이 달라지는 까닭을 이야기해 봐요.</div></div>`});
+// 2 살펴보기 — 날씨
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">‘날씨’는 무엇일까요?</h2>
+  <div class="ka-bub">밖에서 놀거나 여행을 갈 때 우리는 날씨를 확인해요. 어떤 날은 맑고 어떤 날은 비가 오지요. 이렇게 <span class="ka-emph">짧은 시간 동안의 대기 상태</span>를 날씨라고 해요. <b>대기</b>는 ‘공기’를 달리 이르는 말이에요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('wthr','날씨 — 하루하루의 모습','wide')}</div>
+    <div class="note">날씨는 하루 사이에도 바뀔 수 있어요.</div></div>`});
+// 3 살펴보기 — 기후를 구성하는 요소
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">무엇을 관찰하면 될까요?</h2>
+  <div class="ka-bub"><b>기온</b>은 공기의 따뜻하고 차가운 정도, <b>강수</b>는 눈·비처럼 땅에 내린 물, <b>바람</b>은 공기가 움직이는 현상이에요. 이 셋을 <span class="ka-emph">여러 해 동안</span> 살펴보면 그 지역의 모습이 드러나요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('three','기후를 구성하는 요소','wide')}</div>
+    <div class="note">기상청 누리집에서도 오늘의 기온·강수·바람을 찾아볼 수 있어요.</div></div>`});
+// 4 살펴보기 — 직접조작(관측 기록 쌓기)
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">기록을 쌓으면 무엇이 보일까요?</h2>
+  <div class="ka-grp">${obPanel(st)}</div>`});
+// 5 살펴보기 — 날씨와 기후의 차이 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">날씨와 기후는 무엇이 다를까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('cmp','날씨와 기후','wide')}</div>
+  ${st.revealed?`<div class="answer-box">날씨는 <b>짧은 시간</b>의 대기 상태이고, 기후는 오랜 기간 한 지역에서 나타나는 <span class="ka-emph">평균적이며 종합적인 대기 상태</span>예요. 그래서 기후는 하루가 아니라 여러 해에 걸친 기온·강수·바람으로 알 수 있어요.</div>`
+    :`<div class="note">두 낱말은 무엇이 다를까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 6 살펴보기 — [스스로 활동] 바르게 이해한 사람 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">기후를 바르게 이해한 사람은 누구일까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('talk','세 친구의 말','wide')}</div>
+  ${st.revealed?`<div class="answer-box"><b>소윤</b>이에요. ‘사계절이 뚜렷하다’는 말은 여러 해에 걸쳐 나타나는 모습이라 <span class="ka-emph">기후</span>예요. 승주와 지은이가 말한 것은 하루하루 달라지는 <b>날씨</b>랍니다.</div>`
+    :`<div class="note">세 친구 가운데 기후를 바르게 말한 사람을 찾아봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 7 살펴보기 — 기후의 중요성
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">기후는 우리 생활과 어떤 관계가 있을까요?</h2>
+  <div class="ka-bub">기온이 높고 비가 많이 내리는 지역에서는 <b>벼농사</b>가 활발해 쌀을 이용한 음식이 발달했어요. 바람이 강한 지역에서는 <b>바람의 힘으로 전기</b>를 만들지요. 기후는 <span class="ka-emph">의식주 생활과 산업 발전</span>에 모두 영향을 줘요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('life','기후와 생활')}${sceneCard('imp','기후의 중요성')}</div>
+    <div class="note">사는 곳의 기후에 맞추어 사람들은 살아가는 방법을 찾아 왔어요.</div></div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리: 요약
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 배운 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('done','기후')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">①</span><div><b style="color:var(--green)">날씨</b>는 짧은 시간 동안의 대기 상태예요. 하루 사이에도 달라질 수 있어요.</div></div>
+    <div class="sum-item"><span class="n">②</span><div><b style="color:var(--green)">기후</b>는 오랜 기간 한 지역에서 나타나는 <b style="color:var(--green)">평균적이며 종합적인</b> 대기 상태예요.</div></div>
+    <div class="sum-item"><span class="n">③</span><div>기후를 구성하는 요소는 <b style="color:var(--green)">기온·강수·바람</b>이에요. 여러 해에 걸친 기록으로 알 수 있어요.</div></div>
+    <div class="sum-item"><span class="n">★</span><div>기후는 사람들의 <b style="color:var(--red)">의식주 생활</b>뿐 아니라 <b style="color:var(--red)">산업 발전</b>에도 영향을 줘요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b style="color:var(--green)">우리나라의 계절별 기후 특징</b>을 살펴봐요.</div></div>`});
+// 17 정리: 자기 평가
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"날씨와 기후의 차이를 설명할 수 있어요",st)}
+    ${selfCheck(1,"기후를 구성하는 요소 세 가지를 말할 수 있어요",st)}
+    ${selfCheck(2,"기후가 우리 생활에 주는 영향을 이야기할 수 있어요",st)}
+  </div><div class="note">잘 떠오르지 않는 곳은 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">오늘 학습을 마쳤어요!</h2>
+  <div class="ka-grp">
+    <div class="end-score">\u2B50 ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">다음은 <b style="color:var(--amber)">우리나라의 계절별 기후 특징</b>!</div>
+  </div>`;
+}});
+
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">⭕ 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">💡 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">💡 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g5_social_u2_l01";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  obDone:[], obConc:null, obWrong:null, obMsg:null, obWarn:false,
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 →';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+function obRender(){ main.innerHTML = slides[state.idx].render(state); }
+
+/* 관측 카드 누르기 */
+function pickObs(i){
+  if(state.obConc!=null) return;                                   // ① 확정 후 전체 잠금
+  if(!(i>=0 && i<OB_LOG.length)) return;                           // ② 무효 관측 번호 가드
+  if(state.obDone.indexOf(i)>=0){                                  // ③ 이미 기록한 카드 재선택 가드
+    state.obMsg = '이미 기록판에 쌓은 기록이에요.'; state.obWarn = true;
+    playThud(); obRender(); return;
+  }
+  const o = OB_LOG[i];
+  state.obDone.push(i);
+  const n = state.obDone.length;
+  const S = obStats(state);
+  let msg = `<b>${OB_YEAR[o.y]} 해 ${OB_SEASON[o.s]}</b> — 기온 ${o.t}℃ · 강수 ${o.r}mm · 바람 ${o.w}`;
+  if(n<=3){
+    msg += `<br>아직은 그때그때의 <b>날씨</b>예요. 기록을 더 쌓아 봐요.`;
+    state.obWarn = false;
+  } else if(n<OB_LOG.length){
+    msg += `<br>기록이 쌓이면서 ${OB_SEASON[o.s]}의 평균이 <b>${S.avg[o.s].t}℃</b>로 다시 계산됐어요.`;
+    state.obWarn = false;
+  } else {
+    msg += `<br>열두 기록이 모두 모였어요! 네 계절의 평균이 완성됐어요.`;
+    state.obWarn = false;
+  }
+  state.obMsg = msg;
+  n>=OB_LOG.length ? playChime() : playBlip();
+  obRender();
+}
+
+/* 결론 고르기 */
+function pickConc(k){
+  if(state.obConc!=null) return;                                   // 확정 후 잠금
+  if(state.obDone.length < OB_LOG.length) return;                  // ④ 기록을 다 채우기 전 무시(순서 가드)
+  if(!(k>=0 && k<OB_CONC.length)) return;                          // ⑤ 무효 결론 번호 가드
+  if(k===OB_CONC_OK){
+    state.obConc = k; state.obWrong = null; state.obMsg = null; state.obWarn = false;
+    playChime(); obRender(); return;
+  }
+  state.obWrong = k; state.obWarn = true;
+  state.obMsg = k===0
+    ? '이 기록은 하루가 아니라 <b>세 해</b> 동안 모은 것이에요. 다시 골라 봐요.'
+    : '이 기록으로는 앞으로의 날씨를 알 수 없어요. <b>지나온 여러 해</b>를 모은 기록이에요.';
+  playThud(); obRender();
+  setTimeout(()=>{ if(state.obWrong===k){ state.obWrong=null; state.obMsg=null; state.obWarn=false; obRender(); } },1600);
+}
+
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true; qs.wrongPick=null;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2; if(qs.hint===2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">📘 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 →</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // ⚠️ l02 미양산 — 허브 복귀
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+</body>
+</html>
