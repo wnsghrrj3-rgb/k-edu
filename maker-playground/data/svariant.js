@@ -83,6 +83,7 @@ window.MK_SVAR = (() => {
        길이는 min 이 아니라 default 합이다: applyPairPolicy 는 쌍 장면만 누르고
        쌍 밖 장면은 기본 길이 그대로 두므로, 예산에서도 그만큼이 실제 고정 비용이다. */
     let overhead = CONST.PAIR_OVERHEAD_FB;
+    let overScenes = 0;
     if (comp && Array.isArray(comp.scenes)) {
       overhead = 0;
       const has = (k) => !!String(((texts || {})[k]) || '').trim();
@@ -92,12 +93,19 @@ window.MK_SVAR = (() => {
         if (sc.needs && !has(sc.needs)) continue;
         const d = sc.duration || {};
         overhead += +(d.default != null ? d.default : d.min) || 0;
+        overScenes++;
       }
     }
     const room = maxT - overhead;
-    if (pairsN * fullPer * CONST.DUR_FLOOR <= room) return { form: 'full', fullPer, compactPer };
-    if (compactPer >= fullPer) return { form: 'full', irreducible: true, fullPer, compactPer };
-    return { form: 'compact', fits: pairsN * compactPer * CONST.DUR_FLOOR <= room, fullPer, compactPer };
+    /* R73 — 형태를 고르게 하려면 「고르면 어떻게 되는지」를 숫자로 말할 수 있어야 한다.
+       장면 수는 정확한 값이고(쌍마다 몇 장면인지는 방식이 정한다), 총길이는 하한이다
+       (하한까지 눌러도 이보다 짧아질 수 없다 — 어림이 아니라 바닥). */
+    const shape = (per) => ({ scenes: overScenes + pairsN * per, minTotal: R1(overhead + pairsN * per * CONST.DUR_FLOOR) });
+    const base = { fullPer, compactPer, overhead: R1(overhead), overScenes,
+      full: shape(fullPer), compact: shape(compactPer) };
+    if (pairsN * fullPer * CONST.DUR_FLOOR <= room) return { form: 'full', ...base };
+    if (compactPer >= fullPer) return { form: 'full', irreducible: true, ...base };
+    return { form: 'compact', fits: pairsN * compactPer * CONST.DUR_FLOOR <= room, ...base };
   }
 
   /* ================= R70 강조 보전 압축 (§21·§8 공통) =================
@@ -634,13 +642,14 @@ window.MK_SVAR = (() => {
           if (lockedSkip) warnings.push('잠근 쌍 ' + lockedSkip + '개는 빼지 않았어요 — 잠금을 먼저 풀어 주세요.');
         }
         pairOrder = withOi.map((_, i) => i);
-        if (rnd && withOi.length > 1) {
+        /* R73 — 형태 전환은 순서를 흔들지 않는다. 흔들면 그건 전환이 아니라 「다른 구성」이다. */
+        if (rnd && !o.keepOrder && withOi.length > 1) {
           const fixedPos = new Set();
           withOi.forEach((p, i) => { if (lockedKeys.has(keyOf(p))) fixedPos.add(i); });
           pairOrder = fixedPos.size ? shuffledKeeping(pairOrder, fixedPos, rnd) : shuffled(pairOrder, rnd);
         }
         inp.pairs = pairOrder.map((i) => withOi[i]);
-        if (rnd && !(lockedKeys.size && o.keepMethod !== false)) {
+        if (rnd && !o.keepOrder && !(lockedKeys.size && o.keepMethod !== false)) {
           let allow = (C().METHODS_BY_RATIO || {})[ratio] || [];
           /* R72 — 쌍이 많아 하한(1.5초)으로도 권장 길이에 못 들어가는 방식은 뽑기 후보에서 뺀다.
              직접 고른 방식은 존중하고 경고한다(아래 budget) — 뽑기는 알면서 실패작을 집지 않는다.
@@ -661,13 +670,45 @@ window.MK_SVAR = (() => {
       const pairsN = Array.isArray(inp.pairs) ? inp.pairs.length : 0;
       const allowM = (C().METHODS_BY_RATIO || {})[ratio] || [];
       const effMethod = inp.method && allowM.includes(inp.method) ? inp.method : (allowM[0] || 'side-by-side');
-      const budget = pairSceneBudget(comp, inp.texts, pairsN, effMethod, ((sel.def || {}).duration || {}).maxTotal || 0);
-      if (budget.form === 'compact') {
-        inp.pairForm = 'compact';
+      const maxTotal = ((sel.def || {}).duration || {}).maxTotal || 0;
+      const budget = pairSceneBudget(comp, inp.texts, pairsN, effMethod, maxTotal);
+      /* R73 — 형태는 자동이 기본이되 사용자가 뒤집을 수 있다. 뒤집은 대가는 숨기지 않는다:
+         전 구성을 고르면 권장 길이를 넘는다고 미리 말하고, 간결을 고르면 무엇이 빠지는지 말한다.
+         고른 값은 문서에 남아 「다른 구성」에서도 유지된다(형태는 취향이지 우연이 아니다). */
+      const pick = (inp.pairFormPick === 'compact' || inp.pairFormPick === 'full') ? inp.pairFormPick : 'auto';
+      let form = budget.form, forced = null, refused = null;
+      if (pick === 'full' && budget.form === 'compact') { form = 'full'; forced = 'full'; }
+      else if (pick === 'compact' && budget.form === 'full') {
+        if (budget.compactPer >= budget.fullPer) refused = 'irreducible';
+        else { form = 'compact'; forced = 'compact'; }
+      }
+      if (form === 'compact') inp.pairForm = 'compact';
+      if (forced === 'full') {
+        warnings.push('전 구성으로 만들었어요 — 쌍이 ' + pairsN + '개라 권장 길이('
+          + maxTotal + '초)를 넘어요. 아무리 눌러도 ' + budget.full.minTotal + '초 밑으로는 안 내려가요.');
+      } else if (forced === 'compact') {
+        warnings.push('간결 구성으로 만들었어요 — 쌍마다 장면 하나(전체 '
+          + budget.compact.scenes + '장면)로, 쌍 제목처럼 그 장면에 없는 문구는 빠져요.');
+      } else if (refused === 'irreducible') {
+        warnings.push('「차례로」 방식은 전→후 두 장면이 본질이라 간결하게 줄일 수 없어요 — 전 구성 그대로 뒀어요.');
+      } else if (budget.form === 'compact') {
         warnings.push('쌍이 ' + pairsN + '개라 전·후·비교 장면을 다 담으면 권장 길이에 들어갈 수 없어요 — 쌍마다 비교 장면 하나로 간결하게 구성했어요.');
       } else if (budget.irreducible) {
         warnings.push('「차례로」 방식은 전→후 두 장면이 본질이라 더 줄일 수 없어요 — 쌍을 줄이거나 다른 비교 방식을 골라 보세요.');
       }
+      /* 다른 형태를 고르면 어떻게 되는지 — 장면 수는 정확한 값, 초는 하한.
+         한 번의 빌드로 답한다(두 번 돌리면 R71 에서 없앤 비용이 되돌아온다). */
+      const altForm = form === 'compact' ? 'full' : 'compact';
+      const altShape = budget[altForm] || null;
+      const altOk = altForm === 'full' ? true : budget.compactPer < budget.fullPer;
+      const formInfo = { form, auto: budget.form, pick,
+        scenes: (budget[form] || {}).scenes || null,
+        alt: { form: altForm, can: altOk,
+          scenes: altOk && altShape ? altShape.scenes : null,
+          minTotal: altOk && altShape ? altShape.minTotal : null,
+          over: !!(altOk && altShape && maxTotal && altShape.minTotal > maxTotal),
+          why: altOk ? '' : '「차례로」 방식은 전→후 두 장면이 본질이라 더 줄일 수 없어요.' },
+        maxTotal: maxTotal || null };
       const r = doBuild(inp);
       if (!r.ok) return r;
       /* R69 — ★ 가산은 길이 정책(권장 총길이) 앞에 둔다. 뒤에 두면 정책이 맞춘 총량을
@@ -692,11 +733,14 @@ window.MK_SVAR = (() => {
       r.doc.meta = { ...(r.doc.meta || {}), svar: { templateId, variant: sel.id, pairMode: true,
         pairs: svPairs, media: svMediaP, ...(methodPicked ? { method: methodPicked } : {}),
         ...(inp.pairForm === 'compact' ? { form: 'compact' } : {}),
+        /* R73 — 고른 형태는 문서에 남는다. 없으면 「다른 구성」 한 번에 취향이 사라진다. */
+        ...(pick !== 'auto' ? { formPick: pick } : {}),
         ...(Object.keys(svRoles).length ? { roles: svRoles } : {}),
         texts: clone(inp.texts || {}), ratio, ...(rnd ? { seed: rnd.seed } : {}) } };
       return { ...r, total: totalAfter, warnings: [...(r.warnings || []), ...warnings],
         smart: { variant: sel.id, reason: sel.reason, stats: statsSummary(stats),
           ...(inp.pairForm === 'compact' ? { form: 'compact' } : {}),
+          pairForm: formInfo,
           ...(hlDone ? { highlighted: hlDone } : {}), ...(exKeys.size ? { excludedPairs: exKeys.size } : {}),
           ...(methodPicked ? { method: methodPicked } : {}), ...(rnd ? { seed: rnd.seed } : {}) } };
     }

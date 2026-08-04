@@ -163,6 +163,29 @@ window.MK_SVARX = (() => {
       add, want, trimmed: add < want };
   }
 
+  /* ================= R73 — 구성 형태 (간결 ↔ 전 구성) =================
+     R72 는 쌍이 많으면 장면 수를 줄인 「간결 구성」으로 지었지만, 그 사실이
+     화면에 한 줄도 나오지 않았다 — 만든 사람은 자기 구성이 줄어든 걸 모르고
+     되돌릴 방법도 없었다. 여기서 상태를 읽어 화면에 내보낸다.
+     적힌 값(meta.form)이 아니라 **문서에 실제로 있는 장면 수**로 판정한다 —
+     잠근 쌍이 있으면 형태를 바꿔도 그 쌍만 옛 형태로 남으므로 섞일 수 있고,
+     그때 「간결이에요」라고만 말하면 거짓이 된다. */
+  function pairFormSummary(doc) {
+    const sv = (doc && doc.meta && doc.meta.svar) || null;
+    if (!sv || !sv.pairMode) return null;
+    const gs = pairGroups(doc);
+    if (!gs.length) return { pairs: 0, form: sv.form || 'full', pick: sv.formPick || 'auto', mixed: false };
+    const counts = gs.map((g) => g.scenes.length);
+    const min = Math.min(...counts), max = Math.max(...counts);
+    /* 미완성 쌍(전/후 한 장뿐)은 어느 형태에서도 장면 하나라 섞임 판정에서 뺀다 */
+    const full2 = gs.filter((g) => g.scenes.some((s) => (s.elements || []).filter((e) => e.kind === 'image' && e.src).length >= 2) || g.scenes.length > 1);
+    const c2 = full2.map((g) => g.scenes.length);
+    const mixed = c2.length > 1 && Math.min(...c2) !== Math.max(...c2);
+    return { pairs: gs.length, form: sv.form === 'compact' ? 'compact' : 'full',
+      pick: sv.formPick || 'auto', perMin: min, perMax: max, mixed,
+      scenes: (doc.scenes || []).length };
+  }
+
   /* ================= 재구성 (§12 「다른 구성」) ================= */
   /* opt: { seed, theme, ratio, variant, prevDoc, key }
      seed 미지정 = 자동 다음 seed(이전과 다른 값 보장). key 지정 시 History 적립. */
@@ -371,6 +394,9 @@ window.MK_SVARX = (() => {
       input: { pairs, texts: clone(sv.texts || {}), ratio: sv.ratio || undefined,
         /* R69 — ★ 도 되돌려 준다. 없으면 「다른 구성」 한 번에 중요 표시가 사라진다. */
         ...(sv.roles && Object.keys(sv.roles).length ? { pairRoles: clone(sv.roles) } : {}),
+        /* R73 — 고른 구성 형태(간결/전 구성)도 되돌려 준다. 없으면 「다른 구성」
+           한 번에 자동 판정으로 되돌아가 사용자가 고른 형태가 사라진다. */
+        ...(sv.formPick ? { pairFormPick: sv.formPick } : {}),
         ...(sv.method ? { method: sv.method } : {}) },
       templateId: sv.templateId };
   }
@@ -421,7 +447,16 @@ window.MK_SVARX = (() => {
     const f = inputFromDoc(doc);
     if (!f.ok) return f;
     const o = opt || {};
-    const r = recompose(f.templateId, f.input, { ...o, prevDoc: doc,
+    /* R73 — 형태 전환. 씨앗을 그대로 주면 순서·방식은 안 흔들리고 형태만 바뀐다
+       (형태를 바꾸려고 눌렀는데 구성 전체가 뒤바뀌면 그건 다른 물건이 된다). */
+    if (o.formPick === 'compact' || o.formPick === 'full' || o.formPick === 'auto') {
+      f.input = { ...f.input };
+      if (o.formPick === 'auto') delete f.input.pairFormPick;
+      else f.input.pairFormPick = o.formPick;
+    }
+    /* 형태만 바꾸는 자리에서는 순서·비교 방식을 붙잡는다(문서가 이미 그 답을 갖고 있다). */
+    const keep = o.keepOrder != null ? o.keepOrder : !!o.formPick;
+    const r = recompose(f.templateId, f.input, { ...o, keepOrder: keep, prevDoc: doc,
       theme: o.theme || (doc.meta && doc.meta.theme) || undefined,
       ratio: f.input.ratio, variant: o.variant });
     if (!r.ok) return r;
@@ -569,7 +604,7 @@ window.MK_SVARX = (() => {
 
   return { SOURCES, markSources, markEdited, setLock, lockedScenes, lockSummary,
     pairGroups, pairGroupOf, setPairLock, pairLockSummary,
-    setPairRole, pairRoleOf, pairRoleSummary,
+    setPairRole, pairRoleOf, pairRoleSummary, pairFormSummary,
     pinnedIndexes, recompose, recomposeDoc, inputFromDoc, pairInputFromDoc, nextSeed,
     pushHistory, previous, historyDepth, clearHistory,
     readState, reproduce, validateVariants, testMatrix, CASES, audit };

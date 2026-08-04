@@ -184,11 +184,18 @@
     /* R68 — 쌍 모드 문서면 쌍 단위 잠금 상태도 같이 보여 준다(반쪽 상태는 여기서 바로 푼다) */
     const ps = X.pairLockSummary ? X.pairLockSummary(doc()) : null;
     const prs = X.pairRoleSummary ? X.pairRoleSummary(doc()) : null; /* R69 — ★ 쌍 개수 */
+    /* R73 — 구성 형태. R72 가 조용히 간결로 지었던 사실을 여기서 처음 말한다. */
+    const pf = X.pairFormSummary ? X.pairFormSummary(doc()) : null;
+    const fname = pf ? (pf.form === 'compact' ? '간결' : '전 구성') : '';
+    const other = pf && pf.form === 'compact' ? 'full' : 'compact';
     const depth = X.historyDepth(histKey());
     return `<div class="cx-smart" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--mk-border)">
       <label class="cx-field"><span>자동 구성</span></label>
       <div style="font:var(--mk-t-caption);color:var(--mk-text-secondary);margin:-4px 0 8px">
         구성 「${M().esc(stt.variant || '기본')}」 · 장면 ${sum.total}개${sum.locked ? ' · 🔒 잠금 ' + sum.locked : ''}${stt.seed ? '<br>씨앗 ' + M().esc(String(stt.seed)) : ''}${ps && ps.pairs ? `<br>쌍 ${ps.pairs}개 · 🔒 통째 잠금 ${ps.locked}개${ps.partial ? ' · ⚠ 반쪽 ' + ps.partial + '개' : ''}${prs && prs.highlight ? ' · ★ 중요 ' + prs.highlight + '개(+' + prs.add + '초' + (prs.trimmed ? ', 권장 길이 때문에 ' + prs.want + '초에서 줄임' : '') + ')' : ''}` : ''}</div>
+      ${pf && pf.pairs ? `<div style="font:var(--mk-t-caption);color:var(--mk-text-secondary);margin:-4px 0 8px">
+        구성 형태 <b>${fname}</b> · 쌍마다 ${pf.perMin === pf.perMax ? pf.perMin + '장면' : pf.perMin + '~' + pf.perMax + '장면'}${pf.pick !== 'auto' ? ' (직접 고름)' : ''}${pf.mixed ? '<br>⚠ 쌍마다 장면 수가 달라요 — 잠근 쌍은 바꾸기 전 형태 그대로예요' : ''}</div>
+      <button class="cx-scenebtn" data-ws-pform="${other}">${other === 'full' ? '📐 전 구성으로 바꾸기 (전·후·비교 · 길어져요)' : '📐 간결하게 바꾸기 (쌍마다 1장면)'}</button>` : ''}
       ${ps && ps.partial ? `<button class="cx-scenebtn" data-ws-pairfix="1" style="border-color:var(--mk-teal)">🔒 반쪽 잠긴 쌍 ${ps.partial}개를 통째로 잠그기</button>` : ''}
       <button class="cx-scenebtn" data-ws-svar="new">🎲 다른 구성으로</button>
       ${depth > 1 ? `<button class="cx-scenebtn" data-ws-svar="prev">↩ 이전 구성으로</button>` : ''}
@@ -510,6 +517,28 @@
         applyDoc(r.doc);
         WS.svarMsg = '새 구성을 만들었어요 — 장면 ' + r.doc.scenes.length + '개'
           + (r.lockedKept ? ' · 잠긴 ' + r.lockedKept + '개는 그대로' : '')
+          + ((r.warnings || []).length ? ' · ' + r.warnings.join(' ') : '');
+        R();
+      });
+      /* R73 — 구성 형태 전환. 씨앗을 그대로 넘겨 순서·비교 방식은 붙잡고 장면 수만 바꾼다
+         (형태만 바꾸려고 눌렀는데 구성이 통째로 달라지면 그건 「다른 구성」이지 전환이 아니다). */
+      root.querySelectorAll('[data-ws-pform]').forEach((b) => b.onclick = () => {
+        const X = window.MK_SVARX; if (!X) return;
+        const key = histKey();
+        if (X.historyDepth(key) === 0) {
+          const cur = X.readState(doc()) || {};
+          X.pushHistory(key, doc(), { seed: cur.seed, variant: cur.variant });
+        }
+        const st = X.readState(doc()) || {};
+        const want = b.dataset.wsPform;
+        const r = X.recomposeDoc(doc(), { key, formPick: want, seed: st.seed || undefined });
+        if (!r.ok) { WS.svarMsg = r.guide || r.why || '형태를 바꾸지 못했어요'; R(); return; }
+        applyDoc(r.doc);
+        const now = X.pairFormSummary ? X.pairFormSummary(r.doc) : null;
+        const got = now && now.form === want;
+        WS.svarMsg = (got ? (want === 'compact' ? '간결 구성으로 바꿨어요' : '전 구성으로 바꿨어요')
+          : '고른 형태로 못 바꿨어요')
+          + ' — 장면 ' + r.doc.scenes.length + '개'
           + ((r.warnings || []).length ? ' · ' + r.warnings.join(' ') : '');
         R();
       });

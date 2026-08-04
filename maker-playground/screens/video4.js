@@ -53,7 +53,9 @@
   H.costSig = () => {
     const s = H.st;
     const p = [s.comp || '', s.theme || '', s.ratio || '', s.title || '', s.sub || '',
-      s.outro || '', s.result || '', s.method || '', s.stage || '', s.seed || ''];
+      s.outro || '', s.result || '', s.method || '', s.stage || '', s.seed || '',
+      /* R73 — 구성 형태도 답을 바꾼다. 빠뜨리면 형태를 바꿔도 옛 숫자가 그대로 남는다. */
+      s.pairFormPick || 'auto'];
     if (s.stage === 'pairs') {
       p.push((s.pairs || []).map((x) => (x && x.before ? uid(x.before) : '-') + '>' + (x && x.after ? uid(x.after) : '-')
         + '|' + ((x && x.title) || '') + '|' + ((x && x.resultText) || '')).join(','));
@@ -222,6 +224,17 @@
             paintChips(root, 'data-vh-prole', H.st.pairRoles, i);
             const row = root.querySelector(`[data-vh-prow="${i}"]`);
             if (row) row.classList.toggle('vh-row-off', H.st.pairRoles[i] === 'exclude');
+            refreshLine(root);
+          };
+        });
+        /* R73 — 형태 칩도 같은 대접. 바뀌는 것은 칩 3개와 요약 한 줄뿐이라
+           목록(사진 30장)을 다시 그릴 이유가 없다. */
+        root.querySelectorAll('[data-vh-pform]').forEach((b) => {
+          b.onclick = (e) => {
+            e.stopPropagation();
+            H.setPairForm(b.dataset.vhPform);
+            const cur = H.st.pairFormPick || 'auto';
+            root.querySelectorAll('[data-vh-pform]').forEach((x) => x.classList.toggle('on', x.dataset.vhPform === cur));
             refreshLine(root);
           };
         });

@@ -37,7 +37,7 @@
     const t = H.st.roles[i]; H.st.roles[i] = H.st.roles[j]; H.st.roles[j] = t;
   };
   H.removeMedia = (i) => { baseRemove(i); H.st.roles.splice(i, 1); syncRoles(); };
-  H.resetStage = () => { baseReset(); H.st.roles = []; H.st.pairRoles = []; H.st.seed = ''; };
+  H.resetStage = () => { baseReset(); H.st.roles = []; H.st.pairRoles = []; H.st.seed = ''; H.st.pairFormPick = 'auto'; };
   H.setRole = (i, role) => { syncRoles(); H.st.roles[i] = H.st.roles[i] === role ? '' : role; };
   H.st.seed = '';
 
@@ -62,6 +62,12 @@
   };
   H.removePair = (i) => { basePDel(i); H.st.pairRoles.splice(i, 1); syncPairRoles(); };
   H.setPairRoleAt = (i, role) => { syncPairRoles(); H.st.pairRoles[i] = H.st.pairRoles[i] === role ? '' : role; };
+
+  /* ---------------- R73 구성 형태 (간결 ↔ 전 구성) ----------------
+     R72 는 쌍이 많으면 조용히 간결 구성으로 지었다 — 만드는 사람은 그 사실도,
+     되돌릴 길도 몰랐다. 여기서 고르게 한다. 기본은 자동(종전과 동일). */
+  H.st.pairFormPick = 'auto';
+  H.setPairForm = (v) => { H.st.pairFormPick = (v === 'compact' || v === 'full') ? v : 'auto'; };
 
   /* ---------------- 이 구조에 자동 구성이 있는가 ---------------- */
   /* Manifest 에 등록된 템플릿 중 이 Composition 을 쓰는 것 — Builder 로 새로 만든
@@ -95,7 +101,8 @@
         const key = String(p.before ? p.before._oi : p.after._oi);
         pr[key] = role;
       });
-      return { ...inp, pairs, ...(Object.keys(pr).length ? { pairRoles: pr } : {}) };
+      return { ...inp, pairs, ...(Object.keys(pr).length ? { pairRoles: pr } : {}),
+        ...(H.st.pairFormPick && H.st.pairFormPick !== 'auto' ? { pairFormPick: H.st.pairFormPick } : {}) };
     }
     syncRoles();
     const roles = {};
@@ -114,7 +121,9 @@
     if (!r.ok) return { ok: false, why: r.guide || r.why || '' };
     return { ok: true, variant: r.smart.variant, scenes: r.doc.scenes.length,
       total: r.total != null ? r.total : null, warnings: r.warnings || [],
-      method: r.smart.method || null };
+      method: r.smart.method || null,
+      /* R73 — 형태와 「다른 형태로 가면 어떻게 되는지」. 한 번의 빌드에서 나온 값이다. */
+      pairForm: r.smart.pairForm || null };
   };
 
   /* ---------------- 자동 구성으로 만들기 ---------------- */
@@ -160,7 +169,25 @@
     return !peek ? '<em class="vh-est">사진을 넣으면 어떤 구성이 잡히는지 바로 보여줘요</em>'
       : !peek.ok ? `<em class="vh-est vh-est-warn">${esc(peek.why)}</em>`
         : `<em class="vh-est">자동 구성: <b>${esc(peek.variant)}</b> · 장면 ${peek.scenes}개${peek.total != null ? ' · 약 ' + peek.total + '초' : ''}${peek.method ? ' · ' + esc(peek.method) : ''}</em>`
+          + H.formLineHTML(peek.pairForm)
           + (peek.warnings || []).map((w) => `<em class="vh-est vh-est-warn">⚠ ${esc(w)}</em>`).join('');
+  };
+
+  /* R73 — 지금 형태와 「다른 형태로 가면 어떻게 되는지」.
+     장면 수는 정확한 값이라 늘 적고, 초는 하한이라 **권장 길이를 넘을 때만** 적는다
+     (넘지 않는 자리에서 「최소 16초」라고 적으면 실제 31초와 달라 거짓처럼 읽힌다). */
+  const FORM_NAME = { compact: '간결', full: '전 구성' };
+  H.formLineHTML = (pf) => {
+    if (!pf || !pf.form) return '';
+    const per = pf.form === 'compact' ? '쌍마다 1장면' : '쌍마다 전·후·비교';
+    const a = pf.alt || {};
+    const alt = !a.can ? `<br>${esc(a.why || '')}`
+      : a.form === 'full'
+        ? `<br>전 구성으로 하면 장면 ${a.scenes}개${a.over ? ' · 아무리 눌러도 ' + a.minTotal + '초 (권장 ' + pf.maxTotal + '초를 넘어요)' : ''}`
+        : `<br>간결로 하면 장면 ${a.scenes}개 (쌍 제목처럼 그 장면에 없는 문구는 빠져요)`;
+    return `<em class="vh-est">구성 형태: <b>${FORM_NAME[pf.form] || pf.form}</b> · ${per}`
+      + (pf.pick !== 'auto' && pf.pick !== pf.form ? ' <span class="vh-est-warn">— 고른 형태를 못 지켰어요</span>' : '')
+      + (pf.pick === 'auto' && pf.auto === 'compact' ? ' (자동 판정)' : '') + alt + '</em>';
   };
 
   H.renderSmartBar = () => {
@@ -171,6 +198,10 @@
     return `<div class="vh-smart">
       <b style="font:var(--mk-t-h3);font-size:13px">🎲 자동 구성</b>
       <p class="ed-note" style="margin:4px 0 6px;font-size:11.5px">사진 수·방향·문구를 보고 구성을 골라 짜요.${H.st.stage === 'media' ? ' ★ 는 더 길고 큰 자리, ⊘ 는 이번 구성에서만 빠져요(목록엔 남아요).' : ' 쌍은 그대로 두고 순서·비교 방식만 골라요. ★ 는 그 쌍의 비교 장면을 더 길게, ⊘ 는 이번 구성에서만 빼요(자리·크기는 비교 방식이 정해요).'}${kept ? ' 지금 뺀 사진 ' + kept + '장.' : ''}${keptP ? ' 지금 뺀 쌍 ' + keptP + '개.' : ''}</p>
+      ${H.st.stage === 'pairs' ? `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
+        <span class="ed-note" style="font-size:11.5px">구성 형태</span>
+        ${['auto', 'compact', 'full'].map((v) => `<button class="vh-chip${(H.st.pairFormPick || 'auto') === v ? ' on' : ''}" data-vh-pform="${v}" title="${v === 'auto' ? '권장 길이에 맞춰 자동으로 골라요' : v === 'compact' ? '쌍마다 장면 하나 — 짧게' : '쌍마다 전·후·비교 — 길어질 수 있어요'}">${v === 'auto' ? '자동' : v === 'compact' ? '간결' : '전 구성'}</button>`).join('')}
+      </div>` : ''}
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
         <input class="vh-input" id="vhSeed" placeholder="씨앗 (비우면 자동 — 같은 씨앗 = 같은 구성)" value="${esc(H.st.seed || '')}" maxlength="20" style="flex:1;min-width:150px;margin:0">
         <button class="vh-chip" data-vh-reseed>🎲 다른 씨앗</button>
@@ -233,6 +264,10 @@
           H.dragRole(from, to);
           from = null; redraw();
         };
+      });
+      root.querySelectorAll('[data-vh-pform]').forEach((b) => b.onclick = (e) => {
+        e.stopPropagation();
+        H.setPairForm(b.dataset.vhPform); redraw();
       });
       const sd = root.querySelector('#vhSeed');
       if (sd) { sd.oninput = () => { H.st.seed = sd.value; }; sd.onchange = () => redraw(); }
