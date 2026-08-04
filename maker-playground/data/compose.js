@@ -143,6 +143,17 @@ window.MK_COMPOSE = (() => {
     if (specOf('ba-intro') && String(texts.title || '').trim()) push('ba-intro', [], null, 0);
     else if (specOf('ba-intro')) notes.push('생략: ba-intro (title 없음)');
     const splitId = /vertical|top-bottom/.test(method) || (method !== 'side-by-side' && /^(9:16|4:5)$/.test(ratio)) ? 'ba-split-v' : 'ba-split-h';
+    /* R72 — 간결 구성(장면 수 정책, svariant 가 정한 형태): 쌍마다 방식의 본질 장면 하나만.
+       좌우·상하 → 비교 장면(두 장 동시), 닦아내기·서서히 겹침 → 변신 장면(전→후 리빌).
+       차례로는 전→후 두 장면이 본질이라 여기 오지 않는다(svariant 가 걸러 줌). 생략은 노트로 알린다. */
+    const compact = input.pairForm === 'compact' && method !== 'sequential';
+    if (compact) {
+      const splitKept = method === 'side-by-side' || method === 'top-bottom';
+      if (pairs.some((p) => String(p.title || '').trim()))
+        notes.push('간결 구성이라 쌍 제목(전 장면)은 생략했어요');
+      if (!splitKept && pairs.some((p) => String(p.resultText || p.result || '').trim()))
+        notes.push('간결 구성의 「' + METHOD_NAMES[method] + '」에는 비교 장면이 없어 쌍 결과 문구를 생략했어요');
+    }
     const A_REVEAL = {
       'wipe-horizontal': { preset: 'wipe', direction: 'right', delay: 0.5, duration: 1.6, ease: 'ease-in-out', repeat: 1 },
       'wipe-vertical':   { preset: 'wipe', direction: 'down',  delay: 0.5, duration: 1.6, ease: 'ease-in-out', repeat: 1 },
@@ -158,6 +169,14 @@ window.MK_COMPOSE = (() => {
         const side = pr.before ? '전' : '후', missing = pr.before ? '후' : '전';
         warnings.push('쌍 ' + (pi + 1) + ': ' + missing + ' 사진이 없어요 — 추가하면 비교 장면이 완성돼요');
         push('ba-solo', [pr.before || pr.after], { label: side, pairTitle: pr.title, incomplete: '(' + missing + ' 없음)' }, pi * 4, null, pk);
+        return;
+      }
+      if (compact) {
+        /* 라벨 「전→후」 — 간결 변신 장면은 전으로 시작해 후로 끝나므로 「후」만 적으면 거짓이 된다 */
+        if (method === 'side-by-side' || method === 'top-bottom')
+          push(splitId, [pr.before, pr.after], { pairResult: pr.resultText }, pi * 4 + 2, null, pk);
+        else
+          push('ba-transform', [pr.before, pr.after], { label: '전→후' }, pi * 4 + 1, [A_BASE, A_REVEAL[method]], pk);
         return;
       }
       push('ba-solo', [pr.before], { label: '전', pairTitle: pr.title }, pi * 4, null, pk);

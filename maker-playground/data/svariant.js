@@ -32,6 +32,7 @@ window.MK_SVAR = (() => {
     HL_BONUS: 1.0,          /* Highlight duration 가산(초) — §21 0.5~1.5 범위 내 고정값 */
     DUR_FLOOR: 1.5,         /* 길이 압축 하한(초) — 가독성 보호 */
     SHRINK_FLOOR: 0.6,      /* 압축 최대 비율 */
+    PAIR_OVERHEAD_FB: 5,    /* R72 — 씬 스펙을 모를 때(초안) 쌍 밖 장면 최소 합(초) 근사 */
   };
 
   /* ================= 쌍 역할 정규화 (R69 §19-쌍) ================= */
@@ -66,6 +67,37 @@ window.MK_SVAR = (() => {
       n++;
     }
     return n;
+  }
+
+  /* ================= R72 — 쌍 장면 수 정책 (§8) =================
+     쌍이 많으면 길이를 하한(1.5초)까지 눌러도 권장 총길이에 들어갈 수 없다 — R70 한계 ③.
+     길이가 아니라 장면 수로 맞춘다: 전 구성(전·후·비교)이 하한으로도 안 들어가면
+     방식의 본질 장면 하나만 남기는 「간결 구성」으로 짓는다. 몰래 줄이지 않는다 — 경고로 알린다. */
+  const PAIR_SCENES_FULL = { 'sequential': 2, 'fade-between': 2 };    /* 나머지 방식 3 */
+  const PAIR_SCENES_COMPACT = { 'sequential': 2 };                    /* 차례로는 전→후가 본질 — 더 못 줄임. 나머지 1 */
+  function pairSceneBudget(comp, texts, pairsN, method, maxT) {
+    if (!maxT || !pairsN) return { form: 'full' };
+    const fullPer = PAIR_SCENES_FULL[method] || 3;
+    const compactPer = PAIR_SCENES_COMPACT[method] || 1;
+    /* 쌍 밖 장면(인트로·결과·아웃트로) — planPairs 포함 규칙을 그대로 비춘다.
+       길이는 min 이 아니라 default 합이다: applyPairPolicy 는 쌍 장면만 누르고
+       쌍 밖 장면은 기본 길이 그대로 두므로, 예산에서도 그만큼이 실제 고정 비용이다. */
+    let overhead = CONST.PAIR_OVERHEAD_FB;
+    if (comp && Array.isArray(comp.scenes)) {
+      overhead = 0;
+      const has = (k) => !!String(((texts || {})[k]) || '').trim();
+      for (const sc of comp.scenes) {
+        if (sc.pairOnly) continue;
+        if (sc.id === 'ba-intro' && !has('title')) continue;
+        if (sc.needs && !has(sc.needs)) continue;
+        const d = sc.duration || {};
+        overhead += +(d.default != null ? d.default : d.min) || 0;
+      }
+    }
+    const room = maxT - overhead;
+    if (pairsN * fullPer * CONST.DUR_FLOOR <= room) return { form: 'full', fullPer, compactPer };
+    if (compactPer >= fullPer) return { form: 'full', irreducible: true, fullPer, compactPer };
+    return { form: 'compact', fits: pairsN * compactPer * CONST.DUR_FLOOR <= room, fullPer, compactPer };
   }
 
   /* ================= R70 강조 보전 압축 (§21·§8 공통) =================
@@ -609,12 +641,32 @@ window.MK_SVAR = (() => {
         }
         inp.pairs = pairOrder.map((i) => withOi[i]);
         if (rnd && !(lockedKeys.size && o.keepMethod !== false)) {
-          const allow = (C().METHODS_BY_RATIO || {})[ratio] || [];
+          let allow = (C().METHODS_BY_RATIO || {})[ratio] || [];
+          /* R72 — 쌍이 많아 하한(1.5초)으로도 권장 길이에 못 들어가는 방식은 뽑기 후보에서 뺀다.
+             직접 고른 방식은 존중하고 경고한다(아래 budget) — 뽑기는 알면서 실패작을 집지 않는다.
+             전 방식이 다 안 들어가면 원래 목록으로 되돌린다(최선 시도 + 기존 초과 경고). */
+          const maxTT = ((sel.def || {}).duration || {}).maxTotal || 0;
+          const fits = allow.filter((mm) => {
+            const b = pairSceneBudget(comp, inp.texts, inp.pairs.length, mm, maxTT);
+            return b.form === 'full' ? !b.irreducible : b.fits !== false;
+          });
+          if (fits.length) allow = fits;
           if (allow.length) methodPicked = rnd.pick(allow);
           if (methodPicked) inp.method = methodPicked;
         } else if (lockedKeys.size) {
           warnings.push('잠근 쌍이 있어 비교 방식은 그대로 뒀어요 — 방식이 바뀌면 그 쌍의 장면도 달라져요.');
         }
+      }
+      /* R72 — 장면 수 정책. 방식이 정해진 뒤에만 계산할 수 있다(방식마다 쌍당 장면 수가 다르다). */
+      const pairsN = Array.isArray(inp.pairs) ? inp.pairs.length : 0;
+      const allowM = (C().METHODS_BY_RATIO || {})[ratio] || [];
+      const effMethod = inp.method && allowM.includes(inp.method) ? inp.method : (allowM[0] || 'side-by-side');
+      const budget = pairSceneBudget(comp, inp.texts, pairsN, effMethod, ((sel.def || {}).duration || {}).maxTotal || 0);
+      if (budget.form === 'compact') {
+        inp.pairForm = 'compact';
+        warnings.push('쌍이 ' + pairsN + '개라 전·후·비교 장면을 다 담으면 권장 길이에 들어갈 수 없어요 — 쌍마다 비교 장면 하나로 간결하게 구성했어요.');
+      } else if (budget.irreducible) {
+        warnings.push('「차례로」 방식은 전→후 두 장면이 본질이라 더 줄일 수 없어요 — 쌍을 줄이거나 다른 비교 방식을 골라 보세요.');
       }
       const r = doBuild(inp);
       if (!r.ok) return r;
@@ -639,10 +691,12 @@ window.MK_SVAR = (() => {
       for (const k of hlKeys) if (keptKeys.has(k)) svRoles[k] = 'highlight';
       r.doc.meta = { ...(r.doc.meta || {}), svar: { templateId, variant: sel.id, pairMode: true,
         pairs: svPairs, media: svMediaP, ...(methodPicked ? { method: methodPicked } : {}),
+        ...(inp.pairForm === 'compact' ? { form: 'compact' } : {}),
         ...(Object.keys(svRoles).length ? { roles: svRoles } : {}),
         texts: clone(inp.texts || {}), ratio, ...(rnd ? { seed: rnd.seed } : {}) } };
       return { ...r, total: totalAfter, warnings: [...(r.warnings || []), ...warnings],
         smart: { variant: sel.id, reason: sel.reason, stats: statsSummary(stats),
+          ...(inp.pairForm === 'compact' ? { form: 'compact' } : {}),
           ...(hlDone ? { highlighted: hlDone } : {}), ...(exKeys.size ? { excludedPairs: exKeys.size } : {}),
           ...(methodPicked ? { method: methodPicked } : {}), ...(rnd ? { seed: rnd.seed } : {}) } };
     }
@@ -724,5 +778,5 @@ window.MK_SVAR = (() => {
   return { CONST, mediaStats, defineVariants, listVariants, getVariant,
     matchConditions, selectVariant, selectFrom, balancePlan, buildSmart, audit,
     makeRng, hashSeed, shuffled,
-    _internals: { SINGLE_PREF, pairLayout, normRoles, VARS, shuffledKeeping, normPairRoles, applyPairHighlight, shrinkKeepingBonus, bonusOf } };
+    _internals: { SINGLE_PREF, pairLayout, normRoles, VARS, shuffledKeeping, normPairRoles, applyPairHighlight, shrinkKeepingBonus, bonusOf, pairSceneBudget } };
 })();
