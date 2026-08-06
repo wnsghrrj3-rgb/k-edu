@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<!--
+  g5_sci_u4_l03 — 2. 우리가 먹은 음식물은 어떻게 될까?
+  ════════════════════════════════════════════════════════════
+  위치: kedu/curriculum/science/g5/unit4/03차_소화기관/draft.html
+  계획: unit4/_PLAN.md (2026-08-04)
+  준거: _SOURCE.md — 과학 5-1 p.92~93 / 실험관찰 5-1 p.54~55 / 단원 지도 계획 3/12차시
+        ★ 지도서 원문 미확보 ★
+
+  ★★ bodyLab 2번째 적용 — l02 좌표계·CSS 무수정 승계, 무대만 교체 ★★
+  - viewBox "0 0 420 340" 그대로. `.bod-*` CSS 한 줄도 건드리지 않는다.
+    새 CSS를 만들지 않으려고 현재 기관 강조는 클래스가 아니라 **인라인 style.fill**로
+    처리했다(.bod-bone이 fill을 지정하므로 presentation attribute로는 덮이지 않는다).
+  - 무대 = 팔(l02) → **소화 경로**(입→식도→위→작은창자→큰창자→항문).
+    ★조작을 '소화 과정 막대 내리기'로 잡은 까닭★ = l02가 '손잡이 잡아당기기'를 쓴 것과
+     같은 이유다. 실 p.55 3번 원문이 "소화 과정 막대를 내리면서"이고 학생이 실제로
+     만지는 것도 막대다. '음식물 이동' 같은 결과를 버튼 이름에 적으면 관찰할 것이 없어진다.
+  - ★판독 3칸 = 실 p.55 「활동하는 동안」 원문의 관찰 대상 그대로★
+    ("음식물이 거치는 소화기관과 소화기관 도안의 구멍으로 보이는 음식물의 모습을
+      관찰합니다") → ① 지금 지나는 소화기관 ② 구멍으로 보이는 음식물의 모습
+                     ③ 이곳에서 하는 일(p.93 캡션 원문)
+    l02가 실 p.53 표 머리글 3칸을 그대로 쓴 것과 동형.
+  - ★막대와 음식물을 갈라 놓은 판단★ = 실제 모형은 곧은 막대가 접힌 도안 속을 내려가고
+    학생은 **구멍으로 음식물을 본다**. 그래서 막대는 왼쪽에 곧게 세워 내려가게 하고,
+    음식물은 기관마다 뚫린 구멍 자리에 나타나게 했다. 둘을 한 덩어리로 묶으면
+    "구멍으로 보인다"는 관찰 구조가 사라진다.
+  - 음식물 반지름 12→11→8→6→5→5로 줄어든다 = 실 p.55 3번 빈칸 원문
+    ("음식물은 소화기관을 이동하면서 잘게 쪼개집니다")의 직접 구현.
+
+  - 시뮬 (1) digestStep(진행형 5단계) = 과 p.92 [활동해요] 1~3 + 실 p.55 제작 2단계
+  - 학습 목표(지도 계획 원문): 소화기관의 구조와 기능을 설명할 수 있다.
+  - 준비물(과 p.92 원문): 소화기관 도안(『실험관찰』 83쪽), 색연필, 스마트 기기,
+    소화 과정 막대(『실험관찰』 85쪽), 셀로판테이프, 풀
+  - 어휘 개방(이번 차시): 소화 · 소화기관 · 영양소 · 흡수 · 입 · 식도 · 위 ·
+    작은창자 · 큰창자 · 항문 · 간 · 쓸개 · 이자 · 수분 · 음식물 찌꺼기 · 배출 ·
+    분비 · 침 · 이 · 혀 · 소화 과정 막대 · 도안
+  - ★어휘 차단(이후 차시 몫)★: 순환·혈액·혈관·펌프 작용·산소(4차시) ·
+    호흡·숨관·숨관가지·이산화 탄소(5차시) · 배설·노폐물·콩팥·오줌·방광(6차시) ·
+    맥박·체온(7차시) · 질병(8차시)
+    ※ '심장'은 2차시에서 **이름만** 개방됨 → q12 오답 자리에 이름으로만 쓴다(기능 서술 0).
+  - ★초등 용어 규약★: 소장·대장✗→작은창자·큰창자 / 담낭✗→쓸개 / 췌장✗→이자 /
+    기관지✗→숨관가지 / 신장✗→콩팥 — 하니스 상시 검사
+  - ★오개념 처리 2건★
+    ① **"흡수는 위에서 다 한다"** → 슬 7 + q13 오답 + q15 오답. p.93이 흡수를
+       작은창자(영양소·대부분의 수분)와 큰창자(찌꺼기의 수분)로 나눠 지정한다.
+    ② **"작은창자는 큰창자보다 짧다"** — _PLAN 오개념 지도에 l03 몫으로 적혀 있으나
+       ★문항으로 내지 않는다★. 교과서 p.92~93·실 p.54~55 어디에도 길이 서술이 없어
+       정답 근거가 없고, 문항으로 내면 없는 서술을 지어내는 셈이 된다.
+       대신 무대에서 작은창자를 구불구불 길게, 큰창자를 그 둘레로 그려
+       **p.93 그림 그대로 렌더로만** 보여 준다(u2 '광원' 보류 · u3 '혼합물' 보류 계열).
+  - 도입 발문 이식(p.92): "똥은 어떻게 만들어질까요?"
+  - ★슬 18 예고에서 '순환·혈액'을 쓰지 않는다★ — 4차시 개방어. "온몸을 도는 것"으로 돌려 쓴다.
+  - 점수: 기본 4슬 x 10점 + 응용 4슬 x 15점 = 100점 만점
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g5_sci_u4_l03_v1">
+<title>소화기관의 구조와 기능 · K-edu 5학년 과학 (우리 몸의 구조와 기능)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@700;800&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:     #FBF7F1;
+  --ink:       #243043;
+  --ink-soft:  #62708A;
+  --line:      #ECE3D6;
+  --f-title:   'Noto Sans KR', sans-serif;
+  --f-body:    'Gowun Dodum', sans-serif;
+  --green:     #1E40AF;
+  --green-d:   #1E3A8A;
+  --green-bg:  #DBEAFE;
+  --green-2:   #3B82F6;
+  --green-pg:  #EFF6FF;
+  --red:       #DC2626;
+  --gold-bg:   #FFF8E1;
+  --gold:      #F57F17;
+  --fs-title:   clamp(22px, 3.6vw, 38px);
+  --fs-heading: clamp(19px, 3.1vw, 30px);
+  --fs-body:    clamp(17px, 2.8vw, 26px);
+  --fs-caption: clamp(16px, 2.6vw, 24px);
+  --fs-label:   clamp(13px, 2vw, 17px);
+  --em-sm: clamp(28px, 4.2vw, 46px);
+  --em-md: clamp(40px, 6.5vw, 72px);
+  --em-lg: clamp(60px, 9.5vw, 116px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(780px, 96vw);
+  --mw-lg: min(860px, 96vw);
+  --rd: clamp(10px, 1.8vw, 14px);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body { background: var(--paper); display: flex; align-items: center; justify-content: center; font-family: var(--f-body), 'Apple SD Gothic Neo', sans-serif; font-weight: 400; touch-action: manipulation; }
+
+@keyframes ka-fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ka-pop { 0% { opacity: 0; transform: scale(0.3); } 60% { opacity: 1; transform: scale(1.15); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes ka-popBig { 0% { opacity: 0; transform: scale(0.4); } 60% { opacity: 1; transform: scale(1.25); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes ka-pulse { 0%, 100% { transform: scale(1); box-shadow: 0 4px 14px rgba(30,64,175,0.32); } 50% { transform: scale(1.04); box-shadow: 0 6px 20px rgba(30,64,175,0.5); } }
+@keyframes ka-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+@keyframes ka-drawLine { to { transform: scaleX(1); } }
+@keyframes ka-roll { 0% { transform: translateX(0) rotate(0); } 100% { transform: translateX(var(--roll, 220px)) rotate(720deg); } }
+@keyframes ka-fall { 0% { transform: rotate(0); } 100% { transform: rotate(82deg); } }
+@keyframes ka-wobble { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-7deg); } 75% { transform: rotate(7deg); } }
+
+/* ───── 컨테이너 골격 ───── */
+.ka { background: var(--paper); width: 100vw; height: 100vh; height: 100dvh; padding: clamp(8px, 1.5vw, 14px) clamp(12px, 2.2vw, 22px); color: var(--ink); display: flex; flex-direction: column; position: relative; overflow: hidden; }
+.ka-h { display: flex; align-items: center; gap: clamp(6px, 1.2vw, 10px); margin-bottom: clamp(6px, 1.2vw, 10px); flex-shrink: 0; }
+.ka-lb { background: #F1F5F9; border: none; padding: clamp(4px, 0.9vw, 7px) clamp(8px, 1.5vw, 12px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; font-family: inherit; font-weight: 700; color: #475569; flex-shrink: 0; font-size: var(--fs-label); }
+.ka-bar { flex: 1; height: clamp(3px, 0.5vw, 5px); background: var(--green-pg); border-radius: 999px; overflow: hidden; min-width: clamp(40px, 6vw, 80px); }
+.ka-bar > div { height: 100%; background: linear-gradient(90deg, var(--green), var(--green-2)); border-radius: 999px; transition: width 0.45s ease; }
+.ka-pg { color: var(--green); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: var(--fs-label); flex-shrink: 0; }
+.ka-score { color: var(--gold); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: var(--fs-label); flex-shrink: 0; background: var(--gold-bg); padding: clamp(3px, 0.7vw, 5px) clamp(8px, 1.5vw, 12px); border-radius: 999px; }
+.ka-score.bump { animation: ka-popBig 0.4s ease; }
+.ka-mute { background: #F1F5F9; border: none; padding: clamp(4px, 0.9vw, 7px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; flex-shrink: 0; color: var(--green); font-size: clamp(12px, 2vw, 16px); width: clamp(28px, 4.5vw, 36px); height: clamp(28px, 4.5vw, 36px); display: flex; align-items: center; justify-content: center; }
+
+.ka-m { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; position: relative; overflow: hidden; }
+.slide { display: none; flex-direction: column; align-items: center; justify-content: center; gap: clamp(8px, 1.5vw, 14px); height: 100%; width: 100%; animation: ka-fadeUp 0.45s ease both; padding: clamp(8px, 1.6vw, 16px) 0; }
+.slide.active { display: flex; }
+.slide-title { font-family: var(--f-title); font-size: var(--fs-title); margin: 0; line-height: 1.3; color: var(--green); font-weight: 800; text-align: center; flex-shrink: 0; letter-spacing: -0.3px; }
+.slide-sub { font-size: var(--fs-caption); color: #64748B; text-align: center; flex-shrink: 0; }
+.ka-sub { font-size: var(--fs-caption); color: var(--ink-soft); text-align: center; margin-top: calc(-1 * clamp(4px, 0.8vw, 8px)); flex-shrink: 0; }
+.stage-badge { position: absolute; top: clamp(6px, 1.2vw, 12px); left: clamp(10px, 2vw, 18px); background: var(--green-bg); color: var(--green); padding: clamp(3px, 0.6vw, 5px) clamp(8px, 1.5vw, 12px); border-radius: 999px; font-size: clamp(10px, 1.6vw, 13px); font-family: 'Nunito', sans-serif; font-weight: 800; z-index: 5; }
+
+/* 말풍선 */
+.bub { background: var(--green-bg); border-radius: var(--rd); padding: clamp(10px, 2.2vw, 16px) clamp(14px, 3vw, 22px); font-size: var(--fs-body); line-height: 1.6; color: #0F172A; max-width: var(--mw-sm); border-left: clamp(3px, 0.7vw, 4px) solid var(--green); text-align: center; }
+
+/* 빨간 색연필 강조 */
+.emph { position: relative; display: inline-block; color: var(--green); font-weight: 700; padding-right: 3px; }
+.emph::after { content: ''; position: absolute; bottom: 2px; left: 0; right: 3px; height: clamp(2.5px, 0.6vw, 3.5px); background: var(--red); border-radius: 2px; }
+
+/* ───── 푸터 3-button ───── */
+.ka-f { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: clamp(6px, 1.2vw, 10px); padding-top: clamp(6px, 1.2vw, 10px); flex-shrink: 0; }
+.ka-prev, .ka-hint, .ka-next { border: none; padding: clamp(8px, 1.6vw, 12px) clamp(10px, 2vw, 16px); border-radius: clamp(10px, 1.7vw, 14px); font-family: inherit; font-weight: 700; font-size: clamp(13px, 2.2vw, 17px); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.ka-prev { background: #F1F5F9; color: #64748B; }
+.ka-hint { background: var(--gold-bg); color: var(--gold); }
+.ka-hint:hover { background: #FFECB3; }
+.ka-next { background: var(--green); color: white; box-shadow: 0 4px 14px rgba(30,64,175,0.32); font-size: clamp(14px, 2.4vw, 18px); }
+.ka-next:hover { background: var(--green-d); }
+.ka-next.hl { animation: ka-pulse 1.8s ease-in-out infinite; }
+.ka-prev:disabled, .ka-next:disabled { opacity: 0.4; cursor: not-allowed; animation: none; }
+.ka-hint:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ───── 도입 슬 ───── */
+.intro { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.6vw, 22px); max-width: var(--mw-md); }
+.intro-meta { font-size: var(--fs-label); color: #94A3B8; }
+.intro-row { display: flex; gap: clamp(16px, 3.2vw, 32px); font-size: var(--em-lg); align-items: flex-end; }
+.intro-row span { display: inline-block; animation: ka-pop 0.6s ease both; }
+.intro-row span:nth-child(2) { animation-delay: 0.25s; }
+.goal-list { display: flex; flex-direction: column; gap: clamp(10px, 1.8vw, 14px); font-size: var(--fs-body); max-width: var(--mw-sm); list-style: none; }
+.goal-list li { background: var(--green-bg); padding: clamp(10px, 1.8vw, 15px) clamp(16px, 2.8vw, 24px); border-radius: var(--rd); display: flex; gap: 10px; align-items: center; }
+.recall { background: var(--gold-bg); padding: clamp(14px, 2.6vw, 20px) clamp(18px, 3.2vw, 28px); border-radius: var(--rd); font-size: var(--fs-body); color: #6D4C41; max-width: var(--mw-sm); text-align: center; line-height: 1.6; }
+
+/* ───── 시뮬 공통 ───── */
+.sim { width: var(--mw-md); max-width: 100%; }
+.sim-ctrl { display: flex; gap: clamp(8px, 1.6vw, 14px); justify-content: center; margin-top: clamp(10px, 2vw, 16px); flex-wrap: wrap; }
+.sim-btn { background: var(--green); color: white; border: none; padding: clamp(8px, 1.6vw, 12px) clamp(16px, 3vw, 24px); border-radius: var(--rd); font-family: inherit; font-weight: 700; font-size: var(--fs-caption); cursor: pointer; box-shadow: 0 4px 14px rgba(30,64,175,0.3); }
+.sim-btn.alt { background: #ECFEFF; color: var(--green-2); border: 2px solid var(--green-2); box-shadow: none; }
+.sim-fb { text-align: center; margin-top: clamp(8px, 1.6vw, 12px); font-size: var(--fs-caption); color: var(--green-d); min-height: 1.6em; font-weight: 700; }
+
+/* ───── 몸짓 맞히기 (슬 4) ───── */
+.pose-stage { background: linear-gradient(#F0FDF4, #fff); border: 2px solid var(--green-bg); border-radius: var(--rd); padding: clamp(14px, 2.8vw, 24px); display: flex; flex-direction: column; align-items: center; gap: clamp(8px, 1.6vw, 14px); }
+.pose-emoji { font-size: var(--em-lg); animation: ka-pop 0.5s ease; }
+.pose-desc { font-size: var(--fs-body); color: #0F172A; text-align: center; line-height: 1.6; max-width: var(--mw-sm); }
+.pose-ans { display: none; background: var(--green-bg); border-radius: var(--rd); padding: clamp(8px, 1.6vw, 12px) clamp(16px, 3vw, 24px); font-size: var(--fs-heading); color: var(--green-d); font-weight: 700; }
+.pose-ans.show { display: block; animation: ka-popBig 0.4s ease; }
+
+/* ───── bodyLab — SVG 인체 무대 (슬 5·6) ─────
+   ★4단원 l02~l07 공통 좌표계: viewBox "0 0 420 340" · 무대 내용만 교체★ */
+.bod-stage { background: linear-gradient(#F8FAFF, #ffffff); border: 2px solid var(--green-bg); border-radius: var(--rd); padding: clamp(10px, 2vw, 18px); display: flex; flex-direction: column; align-items: center; gap: clamp(6px, 1.2vw, 10px); width: 100%; }
+.bod-svg { width: 100%; max-width: clamp(230px, 44vw, 360px); height: auto; display: block; }
+.bod-bone { fill: #F8FAFC; stroke: var(--green-d); stroke-width: 3; }
+.bod-joint { fill: var(--green); }
+.bod-mus-in { fill: #FCA5A5; stroke: #DC2626; stroke-width: 2.5; transition: rx 0.45s ease, ry 0.45s ease; }
+.bod-mus-out { fill: #BFDBFE; stroke: var(--green); stroke-width: 2.5; transition: rx 0.45s ease, ry 0.45s ease; }
+.bod-move { transition: transform 0.5s ease; }
+.bod-rope { stroke: var(--gold); stroke-width: 4; stroke-linecap: round; transition: all 0.45s ease; }
+.bod-grip { fill: var(--gold-bg); stroke: var(--gold); stroke-width: 2.5; }
+.bod-lab { font-size: 15px; font-weight: 700; fill: var(--green-d); font-family: 'Gowun Dodum', sans-serif; }
+.bod-lab-s { font-size: 13px; fill: #64748B; font-family: 'Gowun Dodum', sans-serif; }
+.bod-lead { stroke: #94A3B8; stroke-width: 1.6; stroke-dasharray: 4 3; fill: none; }
+.bod-row { display: flex; gap: clamp(6px, 1.4vw, 12px); width: 100%; justify-content: center; flex-wrap: wrap; }
+.bod-cell { flex: 1; min-width: clamp(88px, 17vw, 132px); background: var(--green-bg); border-radius: var(--rd); padding: clamp(6px, 1.2vw, 10px); text-align: center; }
+.bod-cell .bc-k { font-size: var(--fs-label); color: #64748B; display: block; margin-bottom: 3px; }
+.bod-cell .bc-v { font-size: var(--fs-caption); color: var(--green-d); font-weight: 700; }
+.bod-fb { text-align: center; font-size: var(--fs-caption); color: var(--green-d); min-height: 1.6em; font-weight: 700; margin-top: clamp(6px, 1.2vw, 10px); line-height: 1.5; max-width: var(--mw-sm); }
+
+/* 생김새·생활 방식 도식 (슬 6·7) */
+.fx-row { display: flex; gap: clamp(12px, 2.6vw, 22px); flex-wrap: wrap; justify-content: center; max-width: var(--mw-lg); }
+.fx-card { background: var(--green-bg); border-radius: var(--rd); padding: clamp(12px, 2.2vw, 18px); display: flex; flex-direction: column; align-items: center; gap: clamp(5px, 1vw, 8px); min-width: clamp(120px, 20vw, 180px); }
+.fx-emoji { font-size: var(--em-md); }
+.fx-label { font-size: var(--fs-caption); color: var(--green-d); font-weight: 700; text-align: center; }
+
+/* ───── 4지선다 ───── */
+.mcq { display: flex; flex-direction: column; gap: clamp(8px, 1.6vw, 12px); max-width: var(--mw-md); width: 100%; }
+.mcq-opt { background: white; border: 3px solid #E2E8F0; border-radius: var(--rd); padding: clamp(12px, 2.2vw, 18px) clamp(16px, 3vw, 24px); font-size: var(--fs-body); cursor: pointer; text-align: center; transition: all 0.15s; font-family: inherit; color: #0F172A; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.mcq-opt:hover { border-color: var(--green-2); }
+.mcq-opt.correct { border-color: var(--green); background: var(--green-bg); color: var(--green-d); font-weight: 700; }
+.mcq-opt.wrong { border-color: var(--red); background: #FEF2F2; animation: ka-shake 0.4s; }
+.mcq-opt:disabled { cursor: default; opacity: 0.55; }
+.mcq-opt.correct:disabled, .mcq-opt.wrong:disabled { opacity: 1; }
+.q-fb { text-align: center; font-size: var(--fs-caption); color: var(--green-d); min-height: 1.6em; font-weight: 700; margin-top: clamp(4px, 1vw, 8px); }
+.q-fb.wrong { color: var(--red); }
+.mcq-hint { display: none; background: var(--green-bg); border-radius: var(--rd); padding: clamp(8px, 1.6vw, 12px) clamp(14px, 2.6vw, 20px); font-size: var(--fs-caption); color: var(--green-d); max-width: var(--mw-sm); text-align: center; margin-top: clamp(6px, 1.2vw, 10px); }
+.mcq-hint.show { display: block; animation: ka-fadeUp 0.3s ease; }
+
+/* ───── 클릭 분류 ───── */
+.cls-items { display: flex; gap: clamp(8px, 1.8vw, 14px); flex-wrap: wrap; justify-content: center; margin-bottom: clamp(10px, 2vw, 16px); max-width: var(--mw-md); }
+.cls-item { background: white; border: 3px solid #E2E8F0; border-radius: var(--rd); padding: clamp(8px, 1.6vw, 12px) clamp(12px, 2.2vw, 18px); font-size: var(--fs-caption); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: all 0.15s; font-family: inherit; }
+.cls-item .ci-emoji { font-size: var(--em-sm); }
+.cls-item.sel { border-color: var(--green); background: var(--green-bg); transform: translateY(-3px); }
+.cls-item.placed { opacity: 0; pointer-events: none; height: 0; padding: 0; margin: -7px; }
+.cls-bins { display: flex; gap: clamp(12px, 2.4vw, 22px); justify-content: center; max-width: var(--mw-lg); width: 100%; }
+.cls-bin { flex: 1; min-height: clamp(110px, 20vw, 170px); background: #F8FAFC; border: 3px dashed var(--green-2); border-radius: var(--rd); padding: clamp(8px, 1.6vw, 12px); display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; transition: all 0.15s; }
+.cls-bin.armed { border-color: var(--green); background: var(--green-bg); }
+.cls-bin-name { font-size: var(--fs-caption); font-weight: 700; color: var(--green-d); margin-bottom: 4px; }
+.cls-chip { background: white; border: 2px solid var(--green); border-radius: 10px; padding: 4px 10px; font-size: var(--fs-caption); display: flex; align-items: center; gap: 6px; animation: ka-pop 0.3s ease; }
+
+/* ───── 매칭 ───── */
+.mt-wrap { display: flex; gap: clamp(18px, 4vw, 50px); justify-content: center; max-width: var(--mw-md); width: 100%; }
+.mt-col { display: flex; flex-direction: column; gap: clamp(10px, 2vw, 16px); flex: 1; }
+.mt-cell { background: white; border: 3px solid #E2E8F0; border-radius: var(--rd); padding: clamp(10px, 2vw, 16px); font-size: var(--fs-caption); cursor: pointer; text-align: center; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: clamp(54px, 9vw, 72px); }
+.mt-cell .mt-emoji { font-size: var(--em-sm); }
+.mt-cell.sel { border-color: var(--green); background: var(--green-bg); }
+.mt-cell.done { border-color: var(--green); background: var(--green-bg); color: var(--green-d); font-weight: 700; cursor: default; }
+.mt-cell.miss { border-color: var(--red); animation: ka-shake 0.4s; }
+
+/* ───── 다중 선택 ───── */
+.ms-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(clamp(120px, 20vw, 160px), 1fr)); gap: clamp(8px, 1.6vw, 12px); max-width: var(--mw-lg); width: 100%; }
+.ms-item { background: white; border: 3px solid #E2E8F0; border-radius: var(--rd); padding: clamp(10px, 2vw, 16px); font-size: var(--fs-caption); cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; transition: all 0.15s; font-family: inherit; }
+.ms-item .msi-emoji { font-size: var(--em-sm); }
+.ms-item.sel { border-color: var(--green); background: var(--green-bg); transform: translateY(-3px); }
+.ms-item.lock-ok { border-color: var(--green); background: var(--green-bg); color: var(--green-d); font-weight: 700; }
+.ms-item.lock-miss { border-color: var(--red); background: #FEF2F2; }
+.ms-check { margin-top: clamp(8px, 1.8vw, 14px); background: var(--green); color: white; border: none; padding: clamp(8px, 1.8vw, 13px) clamp(20px, 4vw, 34px); border-radius: var(--rd); font-family: inherit; font-weight: 700; font-size: var(--fs-caption); cursor: pointer; box-shadow: 0 4px 14px rgba(30,64,175,0.3); }
+.ms-check:disabled { opacity: 0.5; cursor: default; box-shadow: none; }
+
+/* ───── 정리 ───── */
+.sum-list { display: flex; flex-direction: column; gap: clamp(8px, 1.6vw, 12px); max-width: var(--mw-sm); width: 100%; }
+.sum-item { background: var(--green-bg); border-radius: var(--rd); padding: clamp(10px, 2vw, 15px) clamp(16px, 2.8vw, 24px); font-size: var(--fs-body); display: flex; gap: 10px; align-items: center; }
+.sum-item .si-i { font-size: var(--em-sm); flex-shrink: 0; }
+.wrap-msg { font-size: var(--fs-heading); color: var(--green); font-weight: 700; text-align: center; }
+.self-row { display: flex; gap: clamp(10px, 2.2vw, 18px); justify-content: center; flex-wrap: wrap; }
+.self-btn { background: white; border: 3px solid #E2E8F0; border-radius: var(--rd); padding: clamp(12px, 2.4vw, 18px) clamp(16px, 3vw, 26px); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; font-family: inherit; transition: all 0.15s; }
+.self-btn:hover { border-color: var(--green-2); }
+.self-btn.picked { border-color: var(--green); background: var(--green-bg); }
+.self-emoji { font-size: var(--em-sm); }
+.self-name { font-size: var(--fs-caption); color: var(--green-d); font-weight: 700; }
+.self-fb { text-align: center; font-size: var(--fs-caption); color: var(--green-d); min-height: 1.6em; margin-top: clamp(6px, 1.2vw, 10px); font-weight: 700; }
+.next-preview { background: var(--gold-bg); border-radius: var(--rd); padding: clamp(14px, 2.8vw, 22px); font-size: var(--fs-body); color: #6D4C41; max-width: var(--mw-sm); text-align: center; line-height: 1.6; }
+
+@media (max-width: 600px) {
+  .ka-lb { font-size: 0; padding: 7px; }
+  .ka-lb::before { content: '📋'; font-size: 14px; }
+  .pp-row, .fx-row { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">📋 차시 목록</button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <span class="ka-pg" id="pg">1 / 18</span>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+
+  <div class="ka-m">
+
+    <!-- 슬 1 · 도입: 흥미 유발 (교과서 p.92 발문 원문) -->
+    <div class="slide active" data-stage="도입">
+      <span class="stage-badge">생각해요</span>
+      <div class="intro">
+        <div class="intro-meta">4단원 · 우리 몸의 구조와 기능 · 3차시</div>
+        <div class="intro-row"><span>🍚</span><span>❓</span></div>
+        <h2 class="slide-title">우리가 먹은 음식물은 어떻게 될까?</h2>
+        <div class="ka-sub">똥은 어떻게 만들어질까요?</div>
+        <div class="bub">우리는 음식물에서 몸에 필요한 <span class="emph">영양소</span>를 얻습니다. 우리가 먹은 음식물이 몸속에서 어떤 길을 지나며 어떻게 달라지는지 알아봅시다.</div>
+      </div>
+    </div>
+
+    <!-- 슬 2 · 도입: 학습 목표 -->
+    <div class="slide" data-stage="도입">
+      <span class="stage-badge">학습 목표</span>
+      <h2 class="slide-title">오늘의 목표</h2>
+      <ul class="goal-list">
+        <li>🍚 <span class="emph">소화</span>가 무엇인지 압니다.</li>
+        <li>🫄 <span class="emph">소화기관</span>의 구조와 기능을 설명합니다.</li>
+        <li>➡️ 음식물이 소화되며 <span class="emph">이동하는 경로</span>를 이야기합니다.</li>
+      </ul>
+    </div>
+
+    <!-- 슬 3 · 도입: 지난 시간 되돌아보기 -->
+    <div class="slide" data-stage="도입">
+      <span class="stage-badge">떠올려요</span>
+      <h2 class="slide-title">지난 시간에는</h2>
+      <div class="recall">뼈와 근육이<br>우리 몸을 <span class="emph">움직이게</span> 한다는 것을<br>알아보았습니다.<br>이번에는 몸속에서<br>또 어떤 일이 일어나는지<br>들여다봅니다. 🔎</div>
+      <div class="intro-row" style="font-size: var(--em-md);"><span>💪</span><span>➡️</span><span>🍚</span></div>
+    </div>
+
+    <!-- 슬 4 · 전개: 활동 순서 시뮬 (교과서 p.92 활동해요 + 실험관찰 p.55) -->
+    <div class="slide" data-stage="전개">
+      <span class="stage-badge">해 봐요</span>
+      <h2 class="slide-title">소화 과정 모형을 만듭니다</h2>
+      <div class="ka-sub">교과서 92쪽 활동 순서와 실험관찰 55쪽 제작 과정을 따라갑니다.</div>
+      <div class="sim">
+        <div class="pose-stage">
+          <div class="pose-emoji" id="poseEmoji">🔎</div>
+          <div class="pose-desc" id="poseDesc">① 소화기관 도안과 스마트 기기를 이용해 소화기관의 구조와 기능을 알아봅니다.</div>
+          <div class="pose-ans" id="poseAns"></div>
+        </div>
+        <div class="sim-ctrl">
+          <button class="sim-btn" id="poseShow">다음 단계 →</button>
+          <button class="sim-btn alt" id="poseNext">처음부터 ↺</button>
+        </div>
+        <div class="sim-fb" id="poseFb">버튼을 눌러 활동 순서를 확인해 보세요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 5 · 전개: bodyLab — 소화 경로 (교과서 p.93 + 실험관찰 p.55 원문) -->
+    <div class="slide" data-stage="전개">
+      <span class="stage-badge">관찰해요</span>
+      <h2 class="slide-title">소화 과정 막대를 천천히 내려 보세요</h2>
+      <div class="sim">
+        <div class="bod-stage">
+          <svg class="bod-svg" id="bodSvg" viewBox="0 0 420 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="소화 과정 모형">
+            <!-- 소화 과정 막대 (실 p.55) — 곧은 막대가 접힌 도안 속을 내려간다 -->
+            <line x1="96" y1="46" x2="96" y2="322" class="bod-lead"/>
+            <g id="bodStick" class="bod-move" transform="translate(0 0)">
+              <line x1="96" y1="40" x2="96" y2="72" class="bod-rope"/>
+              <rect x="72" y="28" width="48" height="18" rx="9" class="bod-grip"/>
+              <text x="96" y="41" text-anchor="middle" class="bod-lab-s">막대</text>
+            </g>
+            <!-- 머리·몸통 윤곽 -->
+            <ellipse cx="228" cy="46" rx="34" ry="30" class="bod-bone"/>
+            <rect x="156" y="76" width="144" height="248" rx="26" class="bod-bone"/>
+            <!-- 입 -->
+            <ellipse id="bodOrgan0" cx="228" cy="60" rx="24" ry="11" class="bod-bone"/>
+            <path class="bod-lead" d="M252 58 H300"/>
+            <text x="306" y="63" class="bod-lab">입</text>
+            <!-- 식도 -->
+            <rect id="bodOrgan1" x="220" y="78" width="16" height="52" rx="8" class="bod-bone"/>
+            <path class="bod-lead" d="M236 104 H300"/>
+            <text x="306" y="109" class="bod-lab">식도</text>
+            <!-- 위 -->
+            <ellipse id="bodOrgan2" cx="202" cy="152" rx="34" ry="25" class="bod-bone"/>
+            <path class="bod-lead" d="M168 146 H126"/>
+            <text x="120" y="151" text-anchor="end" class="bod-lab">위</text>
+            <!-- 큰창자 (작은창자를 둘러싼 ㄷ자 틀) -->
+            <path id="bodOrgan4" d="M272 274 V196 H182 V292 H220" class="bod-bone" fill="none" stroke-width="15"/>
+            <path class="bod-lead" d="M272 214 H300"/>
+            <text x="306" y="219" class="bod-lab">큰창자</text>
+            <!-- 작은창자 (구불구불 — p.93 그림 그대로) -->
+            <path id="bodOrgan3" d="M198 216 Q228 204 252 218 Q222 230 198 240 Q228 252 252 246 Q222 260 200 262" class="bod-bone" fill="none" stroke-width="11"/>
+            <path class="bod-lead" d="M198 240 H126"/>
+            <text x="120" y="245" text-anchor="end" class="bod-lab">작은창자</text>
+            <!-- 항문 -->
+            <rect id="bodOrgan5" x="220" y="298" width="16" height="20" rx="7" class="bod-bone"/>
+            <path class="bod-lead" d="M236 308 H300"/>
+            <text x="306" y="313" class="bod-lab">항문</text>
+            <!-- 소화를 돕는 기관 (p.93 원문) -->
+            <ellipse cx="272" cy="150" rx="20" ry="14" class="bod-bone"/>
+            <text x="272" y="155" text-anchor="middle" class="bod-lab-s">간·쓸개·이자</text>
+            <!-- 구멍으로 보이는 음식물 -->
+            <circle id="bodFood" cx="228" cy="60" r="12" class="bod-grip"/>
+          </svg>
+          <div class="bod-row">
+            <div class="bod-cell"><span class="bc-k">지금 지나는 소화기관</span><span class="bc-v" id="bodValOrgan">—</span></div>
+            <div class="bod-cell"><span class="bc-k">구멍으로 보이는 음식물의 모습</span><span class="bc-v" id="bodValFood">—</span></div>
+            <div class="bod-cell"><span class="bc-k">이곳에서 하는 일</span><span class="bc-v" id="bodValJob">—</span></div>
+          </div>
+        </div>
+        <div class="sim-ctrl">
+          <button class="sim-btn" id="bodDown">⬇️ 막대 내리기</button>
+          <button class="sim-btn alt" id="bodReset">↺ 처음부터</button>
+        </div>
+        <div class="bod-fb" id="bodFb">소화 과정 막대를 천천히 내리면서 음식물이 거치는 소화기관과 음식물의 모습을 관찰해 보세요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 6 · 전개: 소화와 소화기관 (교과서 p.92~93 원문) -->
+    <div class="slide" data-stage="전개">
+      <span class="stage-badge">알아봐요</span>
+      <h2 class="slide-title">소화란 무엇일까요?</h2>
+      <div class="bub">음식물 속의 <span class="emph">영양소</span>를 몸에서 <span class="emph">흡수</span>할 수 있도록 음식물을 잘게 쪼개는 과정을 <span class="emph">소화</span>라고 하며, 이를 담당하는 기관을 <span class="emph">소화기관</span>이라고 합니다.</div>
+      <div class="fx-row">
+        <div class="fx-card"><div class="fx-emoji">👄</div><div class="fx-label">입</div></div>
+        <div class="fx-card"><div class="fx-emoji">🫗</div><div class="fx-label">식도</div></div>
+        <div class="fx-card"><div class="fx-emoji">🫃</div><div class="fx-label">위</div></div>
+      </div>
+      <div class="fx-row">
+        <div class="fx-card"><div class="fx-emoji">🌀</div><div class="fx-label">작은창자</div></div>
+        <div class="fx-card"><div class="fx-emoji">⭕</div><div class="fx-label">큰창자</div></div>
+        <div class="fx-card"><div class="fx-emoji">🚪</div><div class="fx-label">항문</div></div>
+      </div>
+    </div>
+
+    <!-- 슬 7 · 전개: 소화 과정 정리 (교과서 p.93 본문 원문) -->
+    <div class="slide" data-stage="전개">
+      <span class="stage-badge">정리해요</span>
+      <h2 class="slide-title">음식물은 어떤 길을 지날까요?</h2>
+      <div class="sum-list">
+        <div class="sum-item"><span class="si-i">➡️</span>우리가 먹은 음식물은 <span class="emph">입 → 식도 → 위 → 작은창자 → 큰창자</span>를 거치며 소화됩니다.</div>
+        <div class="sum-item"><span class="si-i">🍽️</span>이 과정에서 음식물이 잘게 쪼개져 <span class="emph">영양소와 수분은 몸속으로 흡수</span>됩니다.</div>
+        <div class="sum-item"><span class="si-i">🚪</span>나머지는 <span class="emph">항문</span>을 통해 몸 밖으로 배출됩니다.</div>
+        <div class="sum-item"><span class="si-i">🤝</span>소화를 도와주는 <span class="emph">간, 쓸개, 이자</span>도 소화기관입니다.</div>
+      </div>
+      <div class="bub">흡수는 위에서 다 끝나지 않습니다. <span class="emph">영양소와 대부분의 수분은 작은창자</span>에서, <span class="emph">찌꺼기에 남은 수분은 큰창자</span>에서 흡수됩니다.</div>
+    </div>
+
+    <!-- 슬 8 · 기본문제 1 (4지선다, 10점) — 교과서 p.93 정리해요 1 빈칸 직이식 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q8" data-q-points="10">
+      <span class="stage-badge">기본 문제 1</span>
+      <h2 class="slide-title">음식물을 잘게 쪼개 영양소를 몸속으로 흡수하는 기관을 ㅅㅎ기관이라고 합니다</h2>
+      <div class="mcq">
+        <button class="mcq-opt">🦴 골격</button>
+        <button class="mcq-opt" data-correct="1">🍚 소화</button>
+        <button class="mcq-opt">💪 근육</button>
+        <button class="mcq-opt">📐 형태</button>
+      </div>
+      <div class="q-fb"></div>
+      <div class="mcq-hint" data-hints='["음식물을 잘게 쪼개는 과정의 이름입니다.","교과서 92쪽 첫 문단을 떠올려 보세요."]'></div>
+    </div>
+
+    <!-- 슬 9 · 기본문제 2 (클릭 분류, 10점) — 교과서 p.93 원문 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q9" data-q-points="10">
+      <span class="stage-badge">기본 문제 2</span>
+      <h2 class="slide-title">음식물이 지나가는 기관과 소화를 돕는 기관을 갈라 보세요</h2>
+      <div class="cls-items">
+        <button class="cls-item" data-bin="0"><span class="ci-emoji">🫗</span>식도</button>
+        <button class="cls-item" data-bin="1"><span class="ci-emoji">🤎</span>간</button>
+        <button class="cls-item" data-bin="0"><span class="ci-emoji">⭕</span>큰창자</button>
+        <button class="cls-item" data-bin="1"><span class="ci-emoji">💛</span>이자</button>
+      </div>
+      <div class="cls-bins">
+        <div class="cls-bin" data-bin="0"><div class="cls-bin-name">➡️ 음식물이 지나갑니다</div></div>
+        <div class="cls-bin" data-bin="1"><div class="cls-bin-name">🤝 소화를 돕습니다</div></div>
+      </div>
+      <div class="q-fb"></div>
+      <div class="mcq-hint" data-hints='["교과서 93쪽에 소화를 돕는 기관 세 가지가 적혀 있습니다.","음식물이 직접 지나가는 길인지 생각해 보세요."]'></div>
+    </div>
+
+    <!-- 슬 10 · 기본문제 3 (4지선다, 10점) — 교과서 p.93 작은창자 캡션 원문 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q10" data-q-points="10">
+      <span class="stage-badge">기본 문제 3</span>
+      <h2 class="slide-title">작은창자가 하는 일은 무엇일까요?</h2>
+      <div class="mcq">
+        <button class="mcq-opt">👅 음식물을 침과 섞어 물러지게 합니다</button>
+        <button class="mcq-opt">🚪 음식물 찌꺼기를 몸 밖으로 내보냅니다</button>
+        <button class="mcq-opt">🫗 음식물이 위로 이동하는 통로입니다</button>
+        <button class="mcq-opt" data-correct="1">🌀 음식물을 더 잘게 쪼개고, 영양소와 대부분의 수분을 흡수합니다</button>
+      </div>
+      <div class="q-fb"></div>
+      <div class="mcq-hint" data-hints='["영양소를 가장 많이 흡수하는 곳입니다.","교과서 93쪽 작은창자 설명을 떠올려 보세요."]'></div>
+    </div>
+
+    <!-- 슬 11 · 기본문제 4 (매칭, 10점) — 교과서 p.93 캡션 원문 4쌍 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q11" data-q-points="10">
+      <span class="stage-badge">기본 문제 4</span>
+      <h2 class="slide-title">소화기관과 하는 일을 짝지어 보세요</h2>
+      <div class="mt-wrap">
+        <div class="mt-col" id="mt11L">
+          <div class="mt-cell mt-left" data-pair="p1"><span class="mt-emoji">👄</span>입</div>
+          <div class="mt-cell mt-left" data-pair="p2"><span class="mt-emoji">🫗</span>식도</div>
+          <div class="mt-cell mt-left" data-pair="p3"><span class="mt-emoji">⭕</span>큰창자</div>
+          <div class="mt-cell mt-left" data-pair="p4"><span class="mt-emoji">🚪</span>항문</div>
+        </div>
+        <div class="mt-col" id="mt11R">
+          <div class="mt-cell mt-right" data-pair="p3">음식물 찌꺼기에서 수분을 흡수합니다</div>
+          <div class="mt-cell mt-right" data-pair="p1">이로 잘게 부수고, 혀로 침과 섞어 물러지게 합니다</div>
+          <div class="mt-cell mt-right" data-pair="p4">음식물 찌꺼기를 몸 밖으로 내보냅니다</div>
+          <div class="mt-cell mt-right" data-pair="p2">음식물이 위로 이동하는 통로입니다</div>
+        </div>
+      </div>
+      <div class="q-fb"></div>
+      <div class="mcq-hint" data-hints='["막대를 내리며 읽었던 「이곳에서 하는 일」을 떠올려 보세요.","통로인 곳과 내보내는 곳은 서로 다릅니다."]'></div>
+    </div>
+
+    <!-- 슬 12 · 응용문제 1 (다중 선택, 15점) — 교과서 p.93 원문 -->
+    <div class="slide" data-stage="응용문제" data-q-id="q12" data-q-points="15">
+      <span class="stage-badge">응용 문제 1</span>
+      <h2 class="slide-title">음식물이 지나가는 소화기관을 모두 고르세요</h2>
+      <div class="ms-grid" id="ms12">
+        <button class="ms-item" data-correct="1"><span class="msi-emoji">👄</span>입</button>
+        <button class="ms-item" data-correct="1"><span class="msi-emoji">🫗</span>식도</button>
+        <button class="ms-item" data-correct="0"><span class="msi-emoji">🫀</span>심장</button>
+        <button class="ms-item" data-correct="1"><span class="msi-emoji">🫃</span>위</button>
+        <button class="ms-item" data-correct="0"><span class="msi-emoji">🦴</span>갈비뼈</button>
+        <button class="ms-item" data-correct="1"><span class="msi-emoji">⭕</span>큰창자</button>
+      </div>
+      <button class="ms-check" id="chk12">확인하기</button>
+      <div class="q-fb"></div>
+      <div class="mcq-hint" data-hints='["음식물이 직접 지나가는 길만 고릅니다.","지난 시간에 배운 뼈는 소화기관이 아닙니다."]'></div>
+    </div>
+
+    <!-- 슬 13 · 응용문제 2 (클릭 분류, 15점) — ★오개념 직격★ -->
+    <div class="slide" data-stage="응용문제" data-q-id="q13" data-q-points="15">
+      <span class="stage-badge">응용 문제 2</span>
+      <h2 class="slide-title">옳은 설명과 옳지 않은 설명을 갈라 보세요</h2>
+      <div class="cls-items">
+        <button class="cls-item" data-bin="0"><span class="ci-emoji">🔽</span>음식물은 소화기관을 이동하면서 잘게 쪼개집니다</button>
+        <button class="cls-item" data-bin="1"><span class="ci-emoji">🫃</span>음식물은 위에서 모두 흡수되어 없어집니다</button>
+        <button class="cls-item" data-bin="0"><span class="ci-emoji">🌀</span>영양소와 대부분의 수분은 작은창자에서 흡수됩니다</button>
+        <button class="cls-item" data-bin="1"><span class="ci-emoji">📦</span>음식물 찌꺼기는 몸 밖으로 나가지 못하고 그대로 쌓입니다</button>
+      </div>
+      <div class="cls-bins">
+        <div class="cls-bin" data-bin="0"><div class="cls-bin-name">⭕ 옳습니다</div></div>
+        <div class="cls-bin" data-bin="1"><div class="cls-bin-name">❌ 옳지 않습니다</div></div>
+      </div>
+      <div class="q-fb"></div>
+      <div class="mcq-hint" data-hints='["막대를 끝까지 내렸을 때 음식물은 어디로 갔나요?","교과서 93쪽은 흡수하는 곳을 위가 아닌 다른 기관으로 적고 있습니다."]'></div>
+    </div>
+
+    <!-- 슬 14 · 응용문제 3 (4지선다 추론, 15점) — 교과서 p.93 정리해요 2 발문 직이식 -->
+    <div class="slide" data-stage="응용문제" data-q-id="q14" data-q-points="15">
+      <span class="stage-badge">응용 문제 3</span>
+      <h2 class="slide-title">음식물을 꼭꼭 씹어 먹어야 하는 까닭은 무엇일까요?</h2>
+      <div class="mcq">
+        <button class="mcq-opt">⏱️ 음식물을 더 빨리 먹을 수 있기 때문입니다</button>
+        <button class="mcq-opt">🚫 침이 덜 나오게 해야 하기 때문입니다</button>
+        <button class="mcq-opt" data-correct="1">🍽️ 음식물이 잘게 쪼개지고 물러져야 소화가 잘되기 때문입니다</button>
+        <button class="mcq-opt">📈 음식물이 커야 영양소가 많아지기 때문입니다</button>
+      </div>
+      <div class="q-fb"></div>
+      <div class="mcq-hint" data-hints='["소화는 음식물을 잘게 쪼개는 과정입니다.","입에서 이와 혀가 하는 일을 떠올려 보세요."]'></div>
+    </div>
+
+    <!-- 슬 15 · 응용문제 4 (다중 선택 종합, 15점) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q15" data-q-points="15">
+      <span class="stage-badge">응용 문제 4</span>
+      <h2 class="slide-title">오늘 알게 된 것을 모두 고르세요</h2>
+      <div class="ms-grid" id="ms15">
+        <button class="ms-item" data-correct="1"><span class="msi-emoji">🍚</span>소화는 음식물을 잘게 쪼개는 과정입니다</button>
+        <button class="ms-item" data-correct="1"><span class="msi-emoji">➡️</span>음식물은 입, 식도, 위, 작은창자, 큰창자를 거칩니다</button>
+        <button class="ms-item" data-correct="0"><span class="msi-emoji">📈</span>음식물은 소화기관을 지나면서 점점 커집니다</button>
+        <button class="ms-item" data-correct="1"><span class="msi-emoji">🍽️</span>영양소와 수분은 몸속으로 흡수됩니다</button>
+        <button class="ms-item" data-correct="0"><span class="msi-emoji">🙅</span>간, 쓸개, 이자는 소화와 관계없는 기관입니다</button>
+        <button class="ms-item" data-correct="1"><span class="msi-emoji">🚪</span>나머지는 항문을 통해 몸 밖으로 배출됩니다</button>
+      </div>
+      <button class="ms-check" id="chk15">확인하기</button>
+      <div class="q-fb"></div>
+      <div class="mcq-hint" data-hints='["막대를 내릴수록 음식물은 커졌나요, 작아졌나요?","교과서 93쪽 마지막 문장을 떠올려 보세요."]'></div>
+    </div>
+
+    <!-- 슬 16 · 정리: 핵심 요약 -->
+    <div class="slide" data-stage="정리">
+      <span class="stage-badge">정리해요</span>
+      <h2 class="slide-title">오늘 배운 것</h2>
+      <div class="sum-list">
+        <div class="sum-item"><span class="si-i">🍚</span><span class="emph">소화</span>는 음식물을 잘게 쪼개 영양소를 흡수할 수 있게 하는 과정입니다.</div>
+        <div class="sum-item"><span class="si-i">➡️</span>음식물은 <span class="emph">입 → 식도 → 위 → 작은창자 → 큰창자</span>를 거칩니다.</div>
+        <div class="sum-item"><span class="si-i">🚪</span>영양소와 수분은 <span class="emph">흡수</span>되고, 나머지는 <span class="emph">항문</span>으로 배출됩니다.</div>
+      </div>
+      <div class="wrap-msg" id="wrap-msg"></div>
+    </div>
+
+    <!-- 슬 17 · 정리: 자기 평가 (실험관찰 p.55 평가하기 원문 준거) -->
+    <div class="slide" data-stage="정리">
+      <span class="stage-badge">자기 평가</span>
+      <h2 class="slide-title">소화기관의 구조와 기능을 설명할 수 있나요?</h2>
+      <div class="self-row">
+        <button class="self-btn"><span class="self-emoji">😆</span><span class="self-name">잘 설명할 수 있습니다</span></button>
+        <button class="self-btn"><span class="self-emoji">🙂</span><span class="self-name">대체로 알겠습니다</span></button>
+        <button class="self-btn"><span class="self-emoji">🤔</span><span class="self-name">한 번 더 보고 싶습니다</span></button>
+      </div>
+      <div class="self-fb" id="self-fb"></div>
+    </div>
+
+    <!-- 슬 18 · 정리: 다음 차시 예고 -->
+    <div class="slide" data-stage="정리">
+      <span class="stage-badge">다음 시간</span>
+      <h2 class="slide-title">다음에는</h2>
+      <div class="next-preview">🫀 흡수한 영양소는<br>어떻게 온몸으로 갈까요?<br>끊임없이 온몸을 도는 것이<br>무엇인지 알아봅니다.</div>
+      <div class="intro-row" style="font-size: var(--em-md);"><span>🍽️</span><span>➡️</span><span>❓</span></div>
+    </div>
+
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// 차시운영 표준 v1 준수 — 점수·힌트·다시 시도·진도 저장·진입 종료
+// 과학 정규 차시 최초 레퍼런스 엔진 (수학 차시 엔진과 동일 골격)
+// ════════════════════════════════════════
+const TOTAL = 18;
+const LESSON_ID = 'g5_sci_u4_l03';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const SCORE_QIDS = ['q8','q9','q10','q11','q12','q13','q14','q15'];
+const startedAt = Date.now();
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function slides() { return document.querySelectorAll('.slide'); }
+function currentSlide() { return slides()[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+function updateUI() {
+  slides().forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.getElementById('pg').textContent = (cur + 1) + ' / ' + TOTAL;
+  document.getElementById('bar').style.width = ((cur + 1) / TOTAL * 100) + '%';
+  document.getElementById('prev').disabled = cur === 0;
+
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.solved || st.hintLevel >= 2; }
+  else { hintBtn.disabled = true; }
+
+  const nextBtn = document.getElementById('next');
+  if (cur === TOTAL - 1) { nextBtn.textContent = '마치기 →'; saveProgress(true); }
+  else { nextBtn.textContent = '다음 →'; }
+
+  if (cur === 15) document.getElementById('wrap-msg').textContent = wrapMsg(score);
+}
+
+function wrapMsg(s) {
+  if (s >= 100) return '완벽합니다! 소화기관 박사 🏅';
+  if (s >= 80) return '아주 잘했습니다.';
+  if (s >= 60) return '잘했습니다.';
+  return '다시 확인해 보면 좋겠습니다.';
+}
+
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+
+function addScore(n) {
+  score += n;
+  const el = document.getElementById('score');
+  el.textContent = '⭐ ' + score;
+  el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
+}
+
+function showHint() {
+  const qid = currentQId();
+  if (!qid) return;
+  const st = getQState(qid);
+  if (st.solved || st.hintLevel >= 2) return;
+  const hintEl = currentSlide().querySelector('.mcq-hint');
+  if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[st.hintLevel - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= 2;
+}
+
+function pointsForQ(qid) {
+  const slide = document.querySelector('[data-q-id="' + qid + '"]');
+  const base = parseInt(slide.dataset.qPoints || '0', 10);
+  const st = getQState(qid);
+  if (st.hintLevel === 2) return Math.max(0, base - 5);
+  if (st.hintLevel === 1) return Math.max(0, base - 2);
+  return base;
+}
+
+function solveQ(qid, fbEl, msg) {
+  const st = getQState(qid);
+  st.solved = true;
+  const earn = pointsForQ(qid);
+  addScore(earn);
+  if (fbEl) { fbEl.textContent = (msg || '정답이에요!') + ' +' + earn + '점'; fbEl.classList.remove('wrong'); }
+  updateUI();
+}
+
+// ───── 4지선다 (슬 8·10·14) ─────
+document.querySelectorAll('.mcq').forEach(box => {
+  const slide = box.closest('.slide');
+  const qid = slide.dataset.qId;
+  const fb = slide.querySelector('.q-fb');
+  box.querySelectorAll('.mcq-opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved) return;
+      st.attempts++;
+      if (opt.dataset.correct === '1') {
+        box.querySelectorAll('.mcq-opt').forEach(o => o.disabled = true);
+        opt.classList.add('correct');
+        solveQ(qid, fb, '맞아요!');
+      } else {
+        st.wrongCount++;
+        opt.classList.add('wrong');
+        fb.textContent = '다시 한 번 생각해 볼까요?';
+        fb.classList.add('wrong');
+        setTimeout(() => opt.classList.remove('wrong'), 500);
+      }
+    });
+  });
+});
+
+// ───── 클릭 분류 (슬 9·13) ─────
+document.querySelectorAll('.cls-items').forEach(itemBox => {
+  const slide = itemBox.closest('.slide');
+  const qid = slide.dataset.qId;
+  const fb = slide.querySelector('.q-fb');
+  const bins = slide.querySelectorAll('.cls-bin');
+  const items = itemBox.querySelectorAll('.cls-item');
+  const total = items.length;
+  let placed = 0;
+  let selected = null;
+
+  function arm() { bins.forEach(b => b.classList.toggle('armed', !!selected)); }
+
+  items.forEach(item => {
+    item.addEventListener('click', () => {
+      if (getQState(qid).solved || item.classList.contains('placed')) return;
+      items.forEach(i => i.classList.remove('sel'));
+      if (selected === item) { selected = null; } else { selected = item; item.classList.add('sel'); }
+      arm();
+    });
+  });
+
+  bins.forEach(bin => {
+    bin.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved || !selected) return;
+      st.attempts++;
+      if (selected.dataset.bin === bin.dataset.bin) {
+        const chip = document.createElement('div');
+        chip.className = 'cls-chip';
+        chip.innerHTML = selected.innerHTML;
+        bin.appendChild(chip);
+        selected.classList.add('placed');
+        selected.classList.remove('sel');
+        selected = null; placed++; arm();
+        if (placed === total) solveQ(qid, fb, '모두 맞췄어요!');
+        else { fb.textContent = '좋아요! 계속 골라요'; fb.classList.remove('wrong'); }
+      } else {
+        st.wrongCount++;
+        bin.classList.add('armed');
+        fb.textContent = '여기가 맞을까요? 다시 보세요';
+        fb.classList.add('wrong');
+        const cur = selected; cur.classList.add('sel');
+        setTimeout(() => { fb.classList.remove('wrong'); }, 700);
+      }
+    });
+  });
+});
+
+// ───── 매칭 (슬 11) ─────
+document.querySelectorAll('.mt-wrap').forEach(wrap => {
+  const slide = wrap.closest('.slide');
+  const qid = slide.dataset.qId;
+  const fb = slide.querySelector('.q-fb');
+  const lefts = wrap.querySelectorAll('.mt-left');
+  const rights = wrap.querySelectorAll('.mt-right');
+  const total = lefts.length;
+  let done = 0;
+  let selLeft = null;
+
+  lefts.forEach(l => l.addEventListener('click', () => {
+    if (getQState(qid).solved || l.classList.contains('done')) return;
+    lefts.forEach(x => x.classList.remove('sel'));
+    if (selLeft === l) { selLeft = null; } else { selLeft = l; l.classList.add('sel'); }
+  }));
+
+  rights.forEach(r => r.addEventListener('click', () => {
+    const st = getQState(qid);
+    if (st.solved || r.classList.contains('done') || !selLeft) return;
+    st.attempts++;
+    if (selLeft.dataset.pair === r.dataset.pair) {
+      selLeft.classList.add('done'); selLeft.classList.remove('sel');
+      r.classList.add('done');
+      selLeft = null; done++;
+      if (done === total) solveQ(qid, fb, '짝을 다 찾았어요!');
+      else { fb.textContent = '좋아요! 다음 짝도 찾아요'; fb.classList.remove('wrong'); }
+    } else {
+      st.wrongCount++;
+      r.classList.add('miss');
+      fb.textContent = '다시 짝을 찾아볼까요?';
+      fb.classList.add('wrong');
+      setTimeout(() => r.classList.remove('miss'), 500);
+    }
+  }));
+});
+
+// ───── 다중 선택 (슬 12·15) ─────
+document.querySelectorAll('.ms-grid').forEach(grid => {
+  const slide = grid.closest('.slide');
+  const qid = slide.dataset.qId;
+  const fb = slide.querySelector('.q-fb');
+  const check = slide.querySelector('.ms-check');
+  const items = grid.querySelectorAll('.ms-item');
+
+  items.forEach(it => it.addEventListener('click', () => {
+    if (getQState(qid).solved) return;
+    it.classList.toggle('sel');
+  }));
+
+  check.addEventListener('click', () => {
+    const st = getQState(qid);
+    if (st.solved) return;
+    st.attempts++;
+    let ok = true;
+    items.forEach(it => {
+      const want = it.dataset.correct === '1';
+      const got = it.classList.contains('sel');
+      if (want !== got) ok = false;
+    });
+    if (ok) {
+      items.forEach(it => {
+        it.classList.remove('sel');
+        if (it.dataset.correct === '1') it.classList.add('lock-ok');
+      });
+      check.disabled = true;
+      solveQ(qid, fb, '모두 맞췄어요!');
+    } else {
+      st.wrongCount++;
+      fb.textContent = '한 번 더 살펴볼까요?';
+      fb.classList.add('wrong');
+    }
+  });
+});
+
+// ───── 슬 4 시뮬: 소화 과정 모형 만들기 (진행형 5단계 — 과 p.92 활동해요 + 실 p.55) ─────
+(function digestStep() {
+  const steps = [
+    { emoji: '🔎', desc: '① 소화기관 도안과 스마트 기기를 이용해 소화기관의 구조와 기능을 알아봅니다.', fb: '소화기관 도안을 관찰해 그림과 이름을 색연필로 연결하고, 기능을 조사해 써 봅니다.' },
+    { emoji: '✂️', desc: '② 소화기관 도안에 구멍을 낸 다음, 소화기관 도안을 반으로 접습니다.', fb: '구멍은 음식물이 지나가는 자리에 냅니다.' },
+    { emoji: '📏', desc: '③ 소화 과정 막대를 소화기관 도안 안에 넣은 다음 셀로판테이프나 풀로 붙입니다.', fb: '막대가 도안 속에서 위아래로 움직일 수 있게 붙입니다.' },
+    { emoji: '⬇️', desc: '④ 소화 과정 막대를 내리면서 음식물이 소화되는 과정을 관찰합니다.', fb: '소화 과정 막대를 천천히 내리면서 음식물이 거치는 소화기관과 소화기관 도안의 구멍으로 보이는 음식물의 모습을 관찰합니다.' },
+    { emoji: '🗣️', desc: '⑤ 소화기관에서 음식물이 소화되며 이동하는 경로를 이야기합니다.', fb: '활동이 끝나면 주변을 깨끗이 정리하고, 소화 과정 모형을 올바르게 처리합니다.', ans: '우리가 먹은 음식물은 입, 식도, 위, 작은창자, 큰창자를 거치며 소화됩니다.' },
+  ];
+  let idx = 0;
+  const emo = document.getElementById('poseEmoji');
+  const desc = document.getElementById('poseDesc');
+  const ans = document.getElementById('poseAns');
+  const fb = document.getElementById('poseFb');
+  const nextBtn = document.getElementById('poseShow');
+  function render() {
+    const p = steps[idx];
+    emo.textContent = p.emoji;
+    emo.style.animation = 'none'; void emo.offsetWidth; emo.style.animation = '';
+    desc.textContent = p.desc;
+    fb.textContent = p.fb;
+    if (p.ans) { ans.textContent = p.ans; ans.classList.add('show'); nextBtn.textContent = '한 번 더? ↺'; }
+    else { ans.textContent = ''; ans.classList.remove('show'); nextBtn.textContent = '다음 단계 →'; }
+  }
+  nextBtn.addEventListener('click', () => { idx = (idx + 1) % steps.length; render(); });
+  document.getElementById('poseNext').addEventListener('click', () => { idx = 0; render(); });
+})();
+
+// ───── 슬 5 시뮬: bodyLab — 소화 경로 (교과서 p.93 + 실험관찰 p.55) ─────
+//   ★l02에서 확립한 viewBox "0 0 420 340" · `.bod-*` CSS 무수정 승계, 무대만 교체★
+//   ★새 CSS를 만들지 않으려고 현재 기관 강조는 인라인 style.fill로 처리한다
+//     (.bod-bone이 fill을 지정하므로 presentation attribute로는 덮이지 않는다)★
+(function bodyLab() {
+  const BASE = '#F8FAFC', HI = '#FDE68A';
+  // 실 p.55 「활동하는 동안」 원문의 관찰 대상 = 거치는 소화기관 + 구멍으로 보이는 음식물의 모습
+  // job = 교과서 p.93 캡션 원문
+  const STOPS = [
+    { organ: '입', cx: 228, cy: 60, r: 12, stick: 0,
+      food: '큰 덩어리', job: '이로 잘게 부수고, 혀로 침과 섞어 물러지게 합니다' },
+    { organ: '식도', cx: 228, cy: 104, r: 11, stick: 44,
+      food: '물러진 덩어리', job: '음식물이 위로 이동하는 통로입니다' },
+    { organ: '위', cx: 202, cy: 152, r: 8, stick: 92,
+      food: '잘게 쪼개집니다', job: '소화를 돕는 액체를 분비해 음식물을 잘게 쪼갭니다' },
+    { organ: '작은창자', cx: 224, cy: 240, r: 6, stick: 180,
+      food: '더 잘게 쪼개집니다', job: '음식물을 더 잘게 쪼개고, 영양소와 대부분의 수분을 흡수합니다' },
+    { organ: '큰창자', cx: 226, cy: 196, r: 5, stick: 216,
+      food: '음식물 찌꺼기', job: '음식물 찌꺼기에서 수분을 흡수합니다' },
+    { organ: '항문', cx: 228, cy: 308, r: 5, stick: 260,
+      food: '몸 밖으로 나갑니다', job: '음식물 찌꺼기를 몸 밖으로 내보냅니다' },
+  ];
+  const START = '소화 과정 막대를 천천히 내리면서 음식물이 거치는 소화기관과 음식물의 모습을 관찰해 보세요.';
+  const DONE = '음식물은 소화기관을 이동하면서 잘게 쪼개집니다. 영양소와 수분은 몸속으로 흡수되고, 나머지는 항문을 통해 몸 밖으로 배출됩니다.';
+
+  const stick = document.getElementById('bodStick');
+  const food = document.getElementById('bodFood');
+  const vOrgan = document.getElementById('bodValOrgan');
+  const vFood = document.getElementById('bodValFood');
+  const vJob = document.getElementById('bodValJob');
+  const fb = document.getElementById('bodFb');
+  const downBtn = document.getElementById('bodDown');
+  const organs = STOPS.map((_, i) => document.getElementById('bodOrgan' + i));
+
+  let idx = -1;   // -1 = 아직 내리지 않음
+
+  function render() {
+    organs.forEach((el, i) => { el.style.fill = (i === idx) ? HI : BASE; });
+    if (idx < 0) {
+      stick.setAttribute('transform', 'translate(0 0)');
+      food.setAttribute('cx', STOPS[0].cx); food.setAttribute('cy', STOPS[0].cy);
+      food.setAttribute('r', STOPS[0].r);
+      food.style.display = 'none';
+      vOrgan.textContent = '—'; vFood.textContent = '—'; vJob.textContent = '—';
+      fb.textContent = START;
+      downBtn.disabled = false;
+      downBtn.textContent = '⬇️ 막대 내리기';
+      return;
+    }
+    const st = STOPS[idx];
+    stick.setAttribute('transform', 'translate(0 ' + st.stick + ')');
+    food.style.display = '';
+    food.setAttribute('cx', st.cx); food.setAttribute('cy', st.cy); food.setAttribute('r', st.r);
+    vOrgan.textContent = st.organ;
+    vFood.textContent = st.food;
+    vJob.textContent = st.job;
+    if (idx === STOPS.length - 1) {
+      fb.textContent = DONE;
+      downBtn.disabled = true;
+      downBtn.textContent = '⬇️ 끝까지 내렸습니다';
+    } else {
+      fb.textContent = st.organ + '을(를) 지나고 있습니다. 막대를 더 내려 보세요.';
+      downBtn.disabled = false;
+      downBtn.textContent = '⬇️ 막대 내리기';
+    }
+  }
+
+  downBtn.addEventListener('click', () => {
+    if (idx >= STOPS.length - 1) return;
+    idx += 1; render();
+  });
+  document.getElementById('bodReset').addEventListener('click', () => { idx = -1; render(); });
+  render();
+})();
+
+// ───── 자기 평가 (슬 17) — 점수 X ─────
+document.querySelectorAll('.self-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.self-btn').forEach(b => b.classList.remove('picked'));
+    btn.classList.add('picked');
+    document.getElementById('self-fb').textContent = btn.querySelector('.self-name').textContent + ' — 잘 골랐습니다! 💧';
+  });
+});
+
+// ───── 진도 저장 (차시운영 §4) ─────
+function saveProgress(completed) {
+  const wrongArr = [], hintArr = [];
+  SCORE_QIDS.forEach(qid => { const st = getQState(qid); wrongArr.push(st.wrongCount); hintArr.push(st.hintLevel); });
+  const prev = loadProgress();
+  const data = {
+    score: score, max_score: 100, completed: completed,
+    completed_at: completed ? new Date().toISOString() : (prev ? prev.completed_at : null),
+    first_attempt_score: prev && prev.first_attempt_score != null ? prev.first_attempt_score : (completed ? score : null),
+    attempt_count: prev ? (prev.attempt_count || 1) : 1,
+    hint_used: hintArr, wrong_count: wrongArr,
+    duration_sec: Math.floor((Date.now() - startedAt) / 1000),
+    last_slide: cur + 1
+  };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
+}
+function loadProgress() {
+  try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : null; }
+  catch (e) { return null; }
+}
+
+updateUI();
+</script>
+<script src="/kedu_back.js"></script>
+</body>
+</html>
