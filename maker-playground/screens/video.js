@@ -74,7 +74,27 @@ window.MK_VIDHUB = (() => {
     inp.click();
   }
 
-  return { st, select, startBuild, pick, mediaText, durText, esc };
+  /* ---------------- R75 — 재렌더는 언제나 사슬 맨 바깥에서 ----------------
+     영상 화면은 다섯 층이 겹쳐 있다(video → video2 → video3 → video4 → video5).
+     각 층은 자기 mount 안에서 `this.render()` + `this.mount()` 로 다시 그렸다.
+     `this` 는 그 층 자신이므로 **위 층의 render 가 얹은 것도, mount 가 건
+     배선도 다시 안 걸린다.** 실브라우저에서 확인한 결과:
+
+       · ▲▼✕·캡션 확정(video2 층) → 역할 칩 16개·자동 구성 줄·씨앗 입력이
+         통째로 사라짐 (R67~R74 가 얹은 것 전부)
+       · 사진 순서 드래그(video3 층) → 칩은 남지만 R71 부분 갱신 배선이 죽어
+         이후 ★ 클릭이 전체 재렌더로 퇴화 (CPU 6배·30장에서 3.9ms → 2,966ms)
+
+     그래서 다시 그릴 때는 지금 화면으로 등록된 **맨 바깥 객체**로 그린다.
+     자기 자신(self)은 아직 승격이 안 끝난 경우의 안전망이다. */
+  const screenRedraw = (root, self) => () => {
+    const top = window.MK_SCREENS && window.MK_SCREENS.video;
+    const s = (top && typeof top.render === 'function' && typeof top.mount === 'function') ? top : self;
+    root.innerHTML = s.render();
+    s.mount(root);
+  };
+
+  return { st, select, startBuild, pick, mediaText, durText, esc, screenRedraw };
 })();
 
 window.MK_SCREENS.video = {
@@ -135,7 +155,7 @@ window.MK_SCREENS.video = {
   },
   mount(root) {
     const H = window.MK_VIDHUB;
-    const redraw = () => { root.innerHTML = this.render(); this.mount(root); };
+    const redraw = H.screenRedraw(root, this);   /* R75 — 사슬 맨 바깥으로 */
     root.querySelectorAll('[data-st]').forEach((b) => b.onclick = () => {
       if (b.dataset.st === 'vid-files') return window.MK_START.pickAndStart('video', (m) => { const el = root.querySelector('#stMsgV'); if (el) el.textContent = m; });
       if (b.dataset.st === 'vid-tpl') return window.MK_TPL.load('pk-vid-01');

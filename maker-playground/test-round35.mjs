@@ -7,8 +7,13 @@ const dom = new JSDOM(html, { runScripts: 'outside-only', pretendToBeVisual: tru
 const { window } = dom;
 if (!window.performance) Object.defineProperty(window, 'performance', { value: { now: () => Date.now() } });
 global.window = window; global.document = window.document;
+/* R75 — 없는 파일은 건너뛴다. index.html 의 `/kedu_back.js`·`/kedu_boxbar.js` 는
+   배포 루트 기준 절대 경로라 여기선 파일계 최상단으로 풀려 ENOENT 로 죽었다.
+   그 바람에 이 스위트가 오래 아예 못 돌았다(§1.94 가 적어 둔 사각). */
+const __res = (p) => [p.replace(/^\//, '../'), p.replace(/^\//, ''), p].find((x) => fs.existsSync(x));
+const __ld = (p) => { const f = __res(p); if (f) window.eval(fs.readFileSync(f, 'utf8')); };
 const SRC = [...html.matchAll(/<script src="([^?"]+)/g)].map((m) => m[1]);
-for (const f of SRC) window.eval(fs.readFileSync(f, 'utf8'));
+for (const f of SRC) __ld(f);
 window.document.dispatchEvent(new window.Event('DOMContentLoaded'));
 
 const E = window.MK_EASY;

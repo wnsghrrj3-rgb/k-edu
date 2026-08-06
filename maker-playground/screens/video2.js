@@ -261,7 +261,8 @@
     },
     mount(root) {
       base.mount.call(base, root);
-      const redraw = () => { root.innerHTML = this.render(); this.mount(root); };
+      const redraw = H.screenRedraw ? H.screenRedraw(root, this)   /* R75 */
+        : () => { root.innerHTML = this.render(); this.mount(root); };
       const open = root.querySelector('[data-vh-open-stage]');
       if (open) open.onclick = () => {
         if (isPairComp()) { if (!H.st.pairs.length) H.addPair(); H.st.stage = 'pairs'; redraw(); }

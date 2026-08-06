@@ -240,7 +240,8 @@
     },
     mount(root) {
       base.mount.call(base, root);
-      const redraw = () => { root.innerHTML = this.render(); this.mount(root); };
+      const redraw = H.screenRedraw ? H.screenRedraw(root, this)   /* R75 */
+        : () => { root.innerHTML = this.render(); this.mount(root); };
       root.querySelectorAll('[data-vh-role]').forEach((b) => b.onclick = (e) => {
         e.stopPropagation();
         H.setRole(+b.dataset.i, b.dataset.vhRole); redraw();

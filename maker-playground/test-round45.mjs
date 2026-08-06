@@ -6,7 +6,8 @@ const dom = new JSDOM('<!doctype html><html><body><div id="app"></div></body></h
 const { window } = dom;
 global.window = window; global.document = window.document;
 
-const load = (p) => window.eval(fs.readFileSync(p, 'utf8'));
+const __res = (p) => [p.replace(/^\//, '../'), p.replace(/^\//, ''), p].find((x) => fs.existsSync(x));
+const load = (p) => { const f = __res(p); if (f) window.eval(fs.readFileSync(f, 'utf8')); };   /* R75 */
 
 /* 최소 스텁 */
 window.PG = { go: () => {}, openEditorDoc: () => {} };

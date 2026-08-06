@@ -6,7 +6,7 @@ const T = (name, fn) => { try { fn(); pass++; console.log('  ✓', name); } catc
 const A = (c, msg) => { if (!c) throw new Error(msg || 'assert'); };
 const src = fs.readFileSync('screens/workspace.js', 'utf8');
 const html = fs.readFileSync('index.html', 'utf8');
-const boxbar = fs.readFileSync('/kedu_boxbar.js', 'utf8');
+const boxbar = fs.readFileSync('../kedu_boxbar.js', 'utf8');   /* R75 — 배포 루트 = 레포 루트 */
 
 /* ---- ① 미리보기 ---- */
 T('미리보기 — MK_PLAY.open 실재생 배선 (#/editor R37 동일)', () => {

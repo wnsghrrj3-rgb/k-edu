@@ -10,9 +10,10 @@ const { window } = dom;
 if (!window.performance) window.performance = { now: () => Date.now() };
 try { window.localStorage.setItem('__t', '1'); } catch { Object.defineProperty(window, 'localStorage', { value: (() => { const s = {}; return { getItem: (k) => s[k] ?? null, setItem: (k, v) => { s[k] = String(v); }, removeItem: (k) => { delete s[k]; }, clear: () => {} }; })() }); }
 
+const __res = (p) => [p.replace(/^\//, '../'), p.replace(/^\//, ''), p].find((x) => fs.existsSync(x));
 for (const m of html.matchAll(/<script src="([^?"]+)/g)) {
   const p = m[1];
-  try { window.eval(fs.readFileSync(p, 'utf8')); }
+  try { const f = __res(p); if (f) window.eval(fs.readFileSync(f, 'utf8')); }   /* R75 */
   catch (e) { console.error('LOAD FAIL', p, e.message); process.exit(1); }
 }
 
