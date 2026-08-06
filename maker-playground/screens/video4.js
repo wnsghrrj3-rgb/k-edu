@@ -195,6 +195,8 @@
       if (live && document.contains(live)) live.innerHTML = H.smartLineHTML();
     }, 0);
   };
+  /* R76 — 같은 계약을 쓰는 자리가 늘었다(순서 변경). 한 벌만 둔다. */
+  H.refreshCostLine = refreshLine;
 
   const wrapScreen = () => {
     const prev = window.MK_SCREENS && window.MK_SCREENS.video;
@@ -248,6 +250,48 @@
         };
         const sd = root.querySelector('#vhSeed');
         if (sd) { sd.oninput = () => { H.st.seed = sd.value; }; sd.onchange = () => refreshLine(root); }
+
+        /* ---------------- R76 — 순서 변경은 노드를 옮긴다 ----------------
+           상태(사진·문구·역할)는 아래층 함수가 그대로 옮긴다. 여기서는
+           **화면을 상태에 맞추는 방식**만 바꾼다: 통째 재렌더 대신
+           노드 이동 + 번호 재부여. 못 옮기면 종전대로 다시 그린다.
+
+           요약 줄은 다시 센다. 재 보니 장면 수·총길이는 순서에 안
+           흔들렸지만(probe76), 「안 흔들리더라」를 화면이 믿고 안 세면
+           나중에 흔들리는 날 조용히 거짓말을 한다. 다시 세는 값은
+           멈춤 밖(setTimeout 0)에서 나오므로 대가도 없다. */
+        const redraw = typeof H.screenRedraw === 'function' ? H.screenRedraw(root, this)
+          : () => { root.innerHTML = this.render(); this.mount(root); };
+        const reorder = (from, to) => {
+          if (typeof H.reorderRows !== 'function' || !H.reorderRows(root, from, to)) { redraw(); return; }
+          refreshLine(root);
+        };
+        const step = (sel, key, dir) => root.querySelectorAll(sel).forEach((x) => {
+          x.onclick = () => {
+            const i = +x.dataset[key], j = i + dir;
+            if (!(i >= 0) || j < 0 || j >= H.st.medias.length) return;
+            H.moveMedia(i, dir);
+            reorder(i, j);
+          };
+        });
+        step('[data-vh-mup]', 'vhMup', -1);
+        step('[data-vh-mdn]', 'vhMdn', 1);
+
+        let dragFrom = null;
+        root.querySelectorAll('[data-vh-mrow]').forEach((row) => {
+          row.ondragstart = (e) => { dragFrom = +row.dataset.vhMrow; if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move'; };
+          row.ondragover = (e) => e.preventDefault();
+          row.ondrop = (e) => {
+            e.preventDefault();
+            const to = +row.dataset.vhMrow, from = dragFrom;
+            dragFrom = null;
+            if (from == null || !(to >= 0) || from === to) return;
+            const m = H.st.medias.splice(from, 1)[0], c = H.st.captions.splice(from, 1)[0];
+            H.st.medias.splice(to, 0, m); H.st.captions.splice(to, 0, c);
+            if (typeof H.dragRole === 'function') H.dragRole(from, to);
+            reorder(from, to);
+          };
+        });
       },
     };
     window.MK_SCREENS.video = next;

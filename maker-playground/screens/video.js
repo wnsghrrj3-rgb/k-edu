@@ -94,7 +94,55 @@ window.MK_VIDHUB = (() => {
     s.mount(root);
   };
 
-  return { st, select, startBuild, pick, mediaText, durText, esc, screenRedraw };
+  /* ---------------- R76 — 순서만 바뀌면 목록을 다시 그리지 않는다 ----------------
+     R75 가 재렌더를 「사슬 맨 바깥에서」로 고쳐 사라지는 문제는 끝났다.
+     남은 것은 **비용**이다. 사진 순서를 한 칸 옮기는 데 30행을 통째로
+     다시 만든다 — 실크롬 CPU 6배·30장에서 2,985 ms.
+
+     그런데 순서 변경이 실제로 바꾸는 것은 둘뿐이다.
+       · 행이 놓인 자리
+       · 행에 매겨진 번호
+     썸네일·문구·역할 칩은 **그 행에 붙어 그대로 따라간다**. 다시 만들
+     이유가 없다. 그래서 노드를 옮기고 번호만 다시 매긴다.
+
+     번호를 다시 매기는 것으로 충분한 까닭: 배선은 전부 누를 때
+     `+x.dataset.vh...` 를 읽는다(닫힘에 가둔 값이 아니다). 속성만
+     고치면 다시 걸 필요가 없다.
+
+     범위는 순서까지다. ✕(빼기)는 장면 수·「지금 뺀 사진 N장」처럼
+     개수에 딸린 줄을 같이 바꾸므로 여기 얹지 않았다 — R77 몫. */
+  const ROW_IDX = [['[data-vh-cap]', 'data-vh-cap'], ['[data-vh-mup]', 'data-vh-mup'],
+    ['[data-vh-mdn]', 'data-vh-mdn'], ['[data-vh-mdel]', 'data-vh-mdel'],
+    ['[data-vh-role]', 'data-i']];
+
+  const reindexRows = (root) => {
+    const rows = root.querySelectorAll('[data-vh-mrow]');
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i], s = String(i);
+      row.setAttribute('data-vh-mrow', s);
+      for (let k = 0; k < ROW_IDX.length; k++) {
+        const els = row.querySelectorAll(ROW_IDX[k][0]);
+        for (let j = 0; j < els.length; j++) els[j].setAttribute(ROW_IDX[k][1], s);
+      }
+    }
+    return rows.length;
+  };
+
+  /* 배열의 splice 이동과 같은 뜻으로 옮긴다: from 을 빼고 to 자리에 끼운다.
+     못 옮기면 거짓을 돌려주고, 부르는 쪽이 종전대로 다시 그린다. */
+  const reorderRows = (root, from, to) => {
+    if (!root || typeof root.querySelectorAll !== 'function') return false;
+    if (!(from >= 0) || !(to >= 0) || from === to) return false;
+    const rows = Array.prototype.slice.call(root.querySelectorAll('[data-vh-mrow]'));
+    const node = rows[from];
+    if (!node || !node.parentNode || to >= rows.length) return false;
+    const rest = rows.slice(0, from).concat(rows.slice(from + 1));
+    node.parentNode.insertBefore(node, rest[to] || null);
+    reindexRows(root);
+    return true;
+  };
+
+  return { st, select, startBuild, pick, mediaText, durText, esc, screenRedraw, reorderRows, reindexRows };
 })();
 
 window.MK_SCREENS.video = {

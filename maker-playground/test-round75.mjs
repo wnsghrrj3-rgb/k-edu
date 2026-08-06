@@ -273,15 +273,29 @@ T('T20 뺀 사진(⊘)이 재렌더 뒤에도 흐리게 남는다', () => {
 
 console.log('--- ⑤ 되풀이·안전 ---');
 
+/* R76 로 표적을 옮겼다. 원래 ▲ 로 쟀는데, R76 이후 ▲ 는 노드를 옮기고
+   번호만 다시 매기므로 **재렌더를 아예 안 한다**(0번). 계약이 깨진 게
+   아니라 그 조작이 이 계약의 대상에서 빠진 것이다. 여전히 통째로 다시
+   그리는 조작(✕ 빼기)으로 옮겨 같은 것을 잰다. */
 T('T21 재렌더가 되풀이로 빠지지 않는다 — 한 번에 끝난다', () => {
   stage();
   let n = 0;
   const scr = window.MK_SCREENS.video;
   const baseRender = scr.render;
   scr.render = function () { n++; return baseRender.call(this); };
-  root.querySelector('[data-vh-mup="3"]').click();
-  scr.render = baseRender;
+  try { root.querySelector('[data-vh-mdel="3"]').click(); }
+  finally { scr.render = baseRender; }
   return n === 1 ? true : 'render 가 ' + n + '번 탔다';
+});
+T('T21b 순서 변경은 재렌더를 안 한다 (R76)', () => {
+  stage();
+  let n = 0;
+  const scr = window.MK_SCREENS.video;
+  const baseRender = scr.render;
+  scr.render = function () { n++; return baseRender.call(this); };
+  try { root.querySelector('[data-vh-mup="3"]').click(); }
+  finally { scr.render = baseRender; }
+  return n === 0 ? true : 'render 가 ' + n + '번 탔다 — 부분 재정렬이 안 걸렸다';
 });
 
 T('T22 사슬 다섯 층이 다 살아 있다', () => {
