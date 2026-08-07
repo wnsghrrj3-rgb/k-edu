@@ -130,11 +130,27 @@ window.MK_VIDHUB = (() => {
     },
   };
 
-  const reindexRows = (root, kind) => {
+  /* R84 — lo·hi 를 주면 그 구간만 다시 맨다(splice 이동·삭제에서 번호가
+     바뀌는 행은 구간뿐이다). 구간 밖은 setAttribute 대신 getAttribute 로
+     「이미 제자리인지」만 읽는다 — 쓰기보다 훨씬 싸고, 하나라도 어긋나
+     있으면(구멍) 전량 재부여로 스스로 고친다. R76 의 「번호에 구멍이
+     안 난다」 보장은 그대로다: 전엔 무조건 다시 써서 지켰고, 이젠 읽어서
+     확인하고 어긋난 날에만 다시 쓴다. lo·hi 생략 = 종전 전량(하위 호환). */
+  const reindexRows = (root, kind, lo, hi) => {
     const K = ROW_KINDS[kind || 'media'];
     if (!K) return 0;
     const rows = root.querySelectorAll('[' + K.row + ']');
-    for (let i = 0; i < rows.length; i++) {
+    let full = !(lo >= 0) || !(hi >= 0);
+    if (!full) {
+      if (lo > hi) { const t = lo; lo = hi; hi = t; }
+      if (hi > rows.length - 1) hi = rows.length - 1;
+      for (let i = 0; i < rows.length && !full; i++) {
+        if (i >= lo && i <= hi) continue;
+        if (rows[i].getAttribute(K.row) !== String(i)) full = true;   /* 구멍 → 자가 치유 */
+      }
+    }
+    const a = full ? 0 : lo, b = full ? rows.length - 1 : hi;
+    for (let i = a; i <= b; i++) {
       const row = rows[i], s = String(i);
       row.setAttribute(K.row, s);
       if (K.num) { const n = row.querySelector(K.num); if (n) n.textContent = String(i + 1); }
@@ -158,7 +174,8 @@ window.MK_VIDHUB = (() => {
     if (!node || !node.parentNode || to >= rows.length) return false;
     const rest = rows.slice(0, from).concat(rows.slice(from + 1));
     node.parentNode.insertBefore(node, rest[to] || null);
-    reindexRows(root, kind);
+    /* R84 — splice 이동에서 번호가 바뀌는 행은 [min,max] 구간뿐이다 */
+    reindexRows(root, kind, Math.min(from, to), Math.max(from, to));
     return true;
   };
 
@@ -173,7 +190,9 @@ window.MK_VIDHUB = (() => {
     const node = root.querySelectorAll('[' + K.row + ']')[i];
     if (!node || !node.parentNode) return false;
     node.parentNode.removeChild(node);
-    reindexRows(root, kind);
+    /* R84 — splice(i,1)에서 번호가 바뀌는 행은 i 부터 끝까지다.
+       i 앞은 제자리 — reindexRows 가 읽기 검사로 확인한다. */
+    reindexRows(root, kind, i, Number.MAX_SAFE_INTEGER);
     return true;
   };
 
