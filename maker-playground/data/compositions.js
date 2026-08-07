@@ -404,7 +404,9 @@
   C.registerComposition({
     id: 'cx-problem', name: '문제 → 해결', category: '비즈니스',
     purpose: '광고·제안·수업 설명의 논리 흐름',
-    recommendedMediaCount: { min: 0, max: 8, ideal: 2 },
+    /* R83 — 표기 정직화: 미디어 자리는 문제·해결 각 1, 총 2가 전부.
+       종전 max 8 은 카드가 담을 수 없는 수를 약속하던 거짓말이었다. */
+    recommendedMediaCount: { min: 0, max: 2, ideal: 2 },
     recommendedDuration: { min: 15, max: 60, default: 30 },
     defaultRatio: '16:9', needsMedia: false, audio: { synth: 'beat' },
     scenes: [

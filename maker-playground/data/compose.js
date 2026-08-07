@@ -507,12 +507,36 @@ window.MK_COMPOSE = (() => {
       : { ok: false, why: r.why, guide: r.guide, warnings: r.warnings || [] };
   }
 
+  /* ================= R83 — 실수용량: 선언이 아니라 씬 구조에서 센다 ================= */
+  /* pairMode 는 쌍마다 씬을 만들고, repeatable(슬롯 보유 또는 usePlan) 씬은 미디어를
+     따라 늘어난다 — 둘 다 상한 없음(Infinity). 그 외에는 고정 슬롯의 합이 전부다.
+     카드 표기(recommendedMediaCount)가 이 값을 넘으면 카드가 거짓말을 하는 것. */
+  function mediaCapacity(compOrId) {
+    const comp = typeof compOrId === 'string' ? getComposition(compOrId) : compOrId;
+    if (!comp) return 0;
+    if (comp.pairMode) return Infinity;
+    let cap = 0;
+    for (const s of comp.scenes || []) {
+      const slots = (s.mediaSlots || []).length;
+      if (s.repeatable && (slots > 0 || s.usePlan)) return Infinity;
+      cap += slots;
+    }
+    return cap;
+  }
+
   /* ================= 감사 — 결정론·스키마 호환·규칙 실동작 ================= */
   function audit() {
     const violations = [];
     const mk = (k) => ({ name: 'p' + k, kind: 'image', src: 'data:image/png;base64,' + k, w: k % 2 ? 800 : 600, h: k % 2 ? 600 : 800 });
     for (const comp of COMPS) {
       const theme = THEMES[0]; if (!theme) { violations.push('no-theme'); break; }
+      /* R83 — 카드 표기 ≤ 실수용량: 고정 구조가 담을 수 없는 수를 약속하면 위반 */
+      const rc = comp.recommendedMediaCount || {};
+      const cap = mediaCapacity(comp);
+      if (cap !== Infinity) {
+        if ((rc.max || 0) > cap) violations.push(comp.id + ':declared-over-capacity:' + rc.max + '>' + cap);
+        if ((rc.ideal || 0) > cap) violations.push(comp.id + ':ideal-over-capacity:' + rc.ideal + '>' + cap);
+      }
       /* 0장 = 정직 안내 */
       if (comp.needsMedia !== false) {
         const z = buildProject(comp.id, theme.id, { medias: [] });
@@ -562,5 +586,5 @@ window.MK_COMPOSE = (() => {
     listThemes: () => THEMES.map((t) => ({ id: t.id, name: t.name, mood: t.mood })),
     KENBURNS, kbState, assignKenburns, varyTransitions, SAFE, applySafeZone,
     METHODS_BY_RATIO, METHOD_NAMES, estimate,
-    analyzeMedia, fitText, textLen, planScenes, buildProject, audit };
+    analyzeMedia, fitText, textLen, planScenes, buildProject, audit, mediaCapacity };
 })();
