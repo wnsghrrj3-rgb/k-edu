@@ -285,6 +285,29 @@ window.MK_SCREENS.home = (() => {
     if (use) use.onclick = () => { M().Modal.close(); window.MK_TPL.load(id); };
   }
 
+  /* ---- 미니 도구 (프로덕트 전용, R80) ----
+     R79 전면 전환으로 구 /kmake 메인이 유일한 문이던 독립 페이지 2종
+     (초대장 /kmake/invite/ · 마음 카드 /kmake/card/)으로 가는 길이 새 진입로에서
+     끊겼다. 두 페이지는 자체 완결(구 편집기 번들 kmake.js 미로드 — /kedu_gate·
+     /kedu_back 공통 셸만)이라 링크만으로 기능이 보전된다. 문구는 두 페이지의
+     실제 소개문을 그대로 옮김 — 새로 지어내지 않는다. 깃발 없는 부팅(검수·
+     플레이그라운드)에서는 렌더되지 않는다. */
+  const rMini = () => (window.MK_PRODUCT ? `<section class="h2-sec" aria-labelledby="h2MiniT">
+    <div class="h2-sec-head"><h2 id="h2MiniT">바로 만드는 미니 도구</h2></div>
+    <div class="h2-mini">
+      <a class="h2-mini-card" href="/kmake/invite/" data-h2-mini="invite">
+        <span class="h2-mini-ic" aria-hidden="true">🎟</span>
+        <span class="h2-mini-tx"><b>초대장</b><small>학예회·공개수업·생일 파티 — 일시와 장소가 움직이는 초대장으로</small></span>
+        <span class="h2-mini-ar" aria-hidden="true">→</span>
+      </a>
+      <a class="h2-mini-card" href="/kmake/card/" data-h2-mini="card">
+        <span class="h2-mini-ic" aria-hidden="true">💌</span>
+        <span class="h2-mini-tx"><b>마음 카드</b><small>이름·한마디·사진이면 끝 — 생일·감사·축하 카드가 움직이는 영상으로</small></span>
+        <span class="h2-mini-ar" aria-hidden="true">→</span>
+      </a>
+    </div>
+  </section>` : '');
+
   /* ============================================================ */
   return {
     title: 'Home', variants: ['v2'],
@@ -296,7 +319,7 @@ window.MK_SCREENS.home = (() => {
       const middle = cont
         ? rContinue(cont) + (rest.length ? rRecent(rest) : '')
         : rEmpty();
-      return `<div class="h2">${rHeader()}<main class="h2-main">${rHero()}${middle}${rReco(recoTpls())}</main></div>`;
+      return `<div class="h2">${rHeader()}<main class="h2-main">${rHero()}${middle}${rReco(recoTpls())}${rMini()}</main></div>`;
     },
 
     mount(root) {
