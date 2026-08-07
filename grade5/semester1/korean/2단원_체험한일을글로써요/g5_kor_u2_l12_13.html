@@ -4,10 +4,10 @@
 <script src="/kedu_config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/kedu_tracker.js"></script>
-<meta name="kedu-lesson-id" content="g5_kor_u2_l05_06_v1">
+<meta name="kedu-lesson-id" content="g5_kor_u2_l12_13_v1">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>시간 표현을 활용해 있었던 일 쓰기</title>
+<title>배운 내용 실천하기 — 여행지 안내장</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@500;700;800&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
 <style>
 /* ===== 5학년 국어 2단원 「체험한 일을 글로 써요」 · 자기주도 통합 엔진 (5학년 라인) =====
@@ -178,7 +178,7 @@ body{font-family:var(--f-body); background:var(--paper); color:var(--ink); -webk
 
 <div class="topbar">
   <button class="lb" onclick="location.href='../index.html'">📚 차시 목록</button>
-  <span class="pill">5~6차시</span>
+  <span class="pill">12~13차시</span>
   <span class="where">국어 5-1 · <b>2. 체험한 일을 글로 써요</b></span>
   <div class="dots" id="dots"></div>
   <span class="score">⭐ <b id="score">0</b></span>
@@ -194,143 +194,116 @@ body{font-family:var(--f-body); background:var(--paper); color:var(--ink); -webk
 </div>
 
 <script>
-/* ===== 5~6차시(소단원 1 통합 — 시간 표현을 활용해 있었던 일 쓰기) 15슬 =====
-   학습 목표: 있었던 일을 계획하여 시간 표현을 바르게 활용해 글로 쓰고 고쳐 쓸 수 있다.
-   정답 로깅 5슬(내용 알기 · 과거 표현 모으기 · 문장 바꾸기 잇기 · 빠진 계획 항목 · 가운데 내용 모으기) = 50점.
-   ★ 저작권: 교과서 81~83쪽 글 「지구를 위한 특별한 하루」 전문(쓰레기 줍기 활동·쓰레기 없는 가게·
-     전자 영수증 등 모든 문장), 82~83쪽 내용 알기·시간 표현 확인 문항의 인용,
-     84~86쪽 계획하기 그림(직업 체험·유기 동물 보호), 수정하기 말풍선과 점검표 배열 전면 미인용.
-     자체 체험 글 「손끝으로 고친 책들」로 대체.
-     쓰기 과정(계획하기-글쓰기-수정하기)과 처음·가운데·끝 짜임은 표준 국어 지식.
-   ※ 성취기준 [6국03-03] 체험한 일에 대한 감상을 나타내는 글을 쓴다·[6국04-05]. 역량 = 자기 성찰·계발. */
+/* ===== 11차시(실천 — 공공 누리집을 활용한 여행지 안내장 만들기) 12슬 =====
+   학습 목표: 여정·견문·감상이 드러나는 여행지 안내장을 계획하고 만들 수 있다.
+   정답 로깅 4슬(안내장 내용 모으기 · 형태와 특징 잇기 · 자료 이용 태도 · 감상이 드러난 문구) = 40점.
+   ★ 저작권: 교과서 102~103쪽 안내장 사진(관광 지도·그림엽서·소책자·광고지)과 예시 문구,
+     활동 안내 배열 전면 미인용. 자체 문구와 자체 예시로 대체.
+     안내장 형태와 공공 누리집 자료 이용 개념은 일반 지식.
+   ※ 성취기준 [6국04-05]·[6국03-03]. 역량 = 자기 성찰·계발. */
 const slides=[
-  {tag:'① 학습 목표', t:'있었던 일을 글로 써 봅시다',
-   html:`<div class="ka-bub">이번 시간에는 배운 시간 표현을 <b class="mc">실제 글</b>에 씁니다.<br>먼저 다른 사람이 쓴 글을 읽으며<br>시간 표현이 어떻게 쓰였는지 살펴봅니다.</div>`},
+  {tag:'① 실천 활동', t:'여행지 안내장을 만들어 봅시다',
+   html:`<div class="ka-bub">이번 시간에는 기행문에서 배운 <b class="mc">여정·견문·감상</b>을<br>다른 사람에게 <b class="emph">권하는 글</b>로 옮깁니다.<br>내가 다녀온 곳을 소개하는 안내장을 만듭니다.</div>`},
 
-  {tag:'② 글 읽기 ①', t:'손끝으로 고친 책들',
-   html:`<div class="story">
-      <p>지난 토요일, 나는 언니와 함께 마을 도서관으로 갔다. 그날은 도서관에서 낡은 책을 고치는 봉사 활동이 있는 날이었다.</p>
-      <p>자료실 한쪽에는 표지가 떨어지거나 책장이 찢어진 책이 상자 가득 쌓여 있었다. 생각보다 훨씬 많아서 놀랐다. 사서 선생님께서는 종이테이프 붙이는 방법과 풀칠하는 방법을 차근차근 알려 주셨다.</p>
-      <p>나는 찢어진 쪽을 이어 붙이는 일을 맡았다. 처음에는 테이프가 자꾸 삐뚤어져서 애를 먹었다. 옆에서 언니가 <span class="mark">종이를 먼저 맞춘 다음 테이프를 붙이라고</span> 알려 주었다. 그대로 해 보니 훨씬 반듯해졌다.</p>
+  {tag:'② 활동 차례', t:'이렇게 진행합니다',
+   html:`<div class="recap">
+      <div class="recap-item"><span class="recap-ic">1️⃣</span>다녀온 곳 가운데 <b>추천하고 싶은 여행지</b>를 고릅니다.</div>
+      <div class="recap-item"><span class="recap-ic">2️⃣</span>다양한 <b>안내장 형태</b>를 찾아봅니다.</div>
+      <div class="recap-item"><span class="recap-ic">3️⃣</span>안내장에 <b>들어갈 내용</b>을 떠올립니다.</div>
+      <div class="recap-item"><span class="recap-ic">4️⃣</span>공공 누리집 자료를 활용해 <b>만듭니다</b>.</div>
+      <div class="recap-item"><span class="recap-ic">5️⃣</span>완성한 안내장을 <b>발표합니다</b>.</div>
     </div>`},
 
-  {tag:'② 글 읽기 ②', t:'손끝으로 고친 책들',
-   html:`<div class="story">
-      <p>두 시간쯤 지나자 상자에 남은 책이 절반으로 줄었다. 고친 책을 서가에 다시 꽂으며, 이 책을 빌려 갈 누군가를 떠올렸다. 내 손을 거친 책이 다시 읽힌다는 것이 뿌듯했다.</p>
-      <p>예전에는 책이 낡으면 그냥 버리는 줄 알았다. 하지만 직접 해 보니 조금만 손보면 오래 쓸 수 있는 책이 많았다. 요즘 나는 책을 볼 때 모서리를 접지 않고 조심해서 <span class="mark">넘긴다</span>.</p>
-      <p>다음 달에도 봉사 활동에 참여할 <span class="mark">것이다</span>. 그때는 표지를 다시 씌우는 일까지 배워 보고 싶다.</p>
-    </div>`},
-
-  {tag:'③ 내용 알기', t:'글쓴이가 처음에 애를 먹은 까닭은?', log:true, okMsg:'맞습니다. 테이프가 자꾸 삐뚤어졌기 때문입니다. 🎉', hint:'세 번째 문단을 다시 읽어 보세요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-pic">📐</div><div class="wc-word">테이프가 자꾸<br>삐뚤어져서</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">📚</div><div class="wc-word">고칠 책이<br>하나도 없어서</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">🕐</div><div class="wc-word">시간이<br>모자라서</div></div>
-    </div><div class="fb"></div>`},
-
-  {tag:'③ 과거 표현 찾기', t:'지나간 일을 나타낸 표현을 모두 고르세요', log:true, collectMsg:'모두 찾았습니다. 🎉', hint:'말끝에 -았-/-었-이 들어 있는지 보세요.',
+  {tag:'③ 내용 고르기', t:'안내장에 들어갈 내용을 모두 고르세요', log:true, collectMsg:'모두 찾았습니다. 🎉', hint:'그곳에 가려는 사람이 궁금해할 것을 떠올려 보세요.',
    html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">도서관으로 갔다</div>
-      <div class="chip" data-hit="1">애를 먹었다</div>
-      <div class="chip" data-hit="0">조심해서 넘긴다</div>
-      <div class="chip" data-hit="1">절반으로 줄었다</div>
-      <div class="chip" data-hit="0">참여할 것이다</div>
+      <div class="chip" data-hit="1">갈 만한 곳</div>
+      <div class="chip" data-hit="1">먹을거리</div>
+      <div class="chip" data-hit="1">즐길 거리</div>
+      <div class="chip" data-hit="1">문화유산</div>
+      <div class="chip" data-hit="0">우리 집 주소</div>
+      <div class="chip" data-hit="0">내 시험 점수</div>
     </div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'② 분류해 보기', t:'글의 마지막 문단을 나누면',
+  {tag:'② 안내장 형태', t:'여러 가지 형태가 있습니다',
    html:`<div class="grid2">
-      <div class="g2-box"><h4>과거</h4>예전에는 버리는 줄 알<b class="emph">았다</b><br>직접 해 보니 오래 쓸 수 있었<b class="emph">다</b></div>
-      <div class="g2-box"><h4>현재</h4>요즘 나는 조심해서 넘긴<b class="emph">다</b></div>
-      <div class="g2-box good"><h4>미래</h4>다음 달에도 참여할 <b class="emph">것이다</b><br>표지 씌우는 일까지 배워 보<b class="emph">고 싶다</b></div>
-      <div class="g2-box"><h4>흐름</h4>예전 → 요즘 → 다음 달<br>시간의 차례를 따라간다</div>
+      <div class="g2-box"><h4>관광 지도</h4>다닌 곳의 <b>위치와 차례</b>를 한눈에</div>
+      <div class="g2-box good"><h4>그림엽서</h4>한 장면과 <b>짧은 글</b>로 인상을 전함</div>
+      <div class="g2-box"><h4>소책자</h4>여러 쪽에 <b>자세한 설명</b>을 담음</div>
+      <div class="g2-box"><h4>광고지</h4>한 면에 <b>눈에 띄게</b> 정리</div>
     </div>`},
 
-  {tag:'③ 문장 바꾸기', t:'문장을 바꾼 결과를 이어 봅시다', log:true, matchMsg:'모두 알맞게 이었습니다. 말끝만 바꾸면 때가 달라집니다. 🎉', hint:'바꾸어야 할 때에 맞는 말끝을 고르세요.',
+  {tag:'③ 형태 잇기', t:'형태와 어울리는 쓰임을 이어 봅시다', log:true, matchMsg:'모두 알맞게 이었습니다. 🎉', hint:'전할 내용의 양과 방식이 형태를 정합니다.',
    html:`<div class="match" id="match">
       <div class="match-col">
-        <div class="match-col-h">바꿀 문장과 방향</div>
-        <div class="match-card" data-k="a" data-pair="x">나는 아까 책을 읽었다 → 현재로</div>
-        <div class="match-card" data-k="b" data-pair="y">나는 지금 글을 쓴다 → 미래로</div>
-        <div class="match-card" data-k="c" data-pair="z">우리는 내일 그림을 그릴 것이다 → 과거로</div>
+        <div class="match-col-h">형태</div>
+        <div class="match-card" data-k="a" data-pair="x">관광 지도</div>
+        <div class="match-card" data-k="b" data-pair="y">그림엽서</div>
+        <div class="match-card" data-k="c" data-pair="z">소책자</div>
       </div>
       <div class="match-col">
-        <div class="match-col-h">바꾼 문장</div>
-        <div class="match-card" data-k="z" data-pair="c">우리는 어제 그림을 그렸다</div>
-        <div class="match-card" data-k="x" data-pair="a">나는 지금 책을 읽는다</div>
-        <div class="match-card" data-k="y" data-pair="b">나는 이따 글을 쓸 것이다</div>
+        <div class="match-col-h">어울리는 쓰임</div>
+        <div class="match-card" data-k="z" data-pair="c">여러 곳을 자세히 설명할 때</div>
+        <div class="match-card" data-k="x" data-pair="a">다닌 곳의 차례를 보일 때</div>
+        <div class="match-card" data-k="y" data-pair="b">한 장면의 인상을 전할 때</div>
       </div>
     </div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'② 계획하기', t:'글을 쓰기 전에 정리합니다',
-   html:`<div class="recap">
-      <div class="recap-item"><span class="recap-ic">👥</span>누구와 <b>언제</b> 어떤 활동을 했나요?</div>
-      <div class="recap-item"><span class="recap-ic">❓</span>그 활동을 한 <b>까닭</b>은 무엇인가요?</div>
-      <div class="recap-item"><span class="recap-ic">👀</span>보고 들은 것이나 <b>새롭게 안 것</b>은 무엇인가요?</div>
-      <div class="recap-item"><span class="recap-ic">💭</span><b>생각하거나 느낀 점</b>은 무엇인가요?</div>
-    </div>`},
+  {tag:'② 자료 찾기', t:'자료는 공공 누리집에서',
+   html:`<div class="ka-bub">지역의 <b class="mc">공공 누리집</b>에는 사진과 설명 자료가 공개되어 있습니다.<br>다만 자료마다 <b class="emph">쓸 수 있는 범위</b>가 정해져 있으므로<br>이용 조건을 확인하고 <b class="emph">출처를 밝혀야</b> 합니다.</div>`},
 
-  {tag:'③ 빠진 항목', t:'다음 계획에서 빠진 항목은 무엇일까요?', log:true, okMsg:'맞습니다. 그때 무엇을 느꼈는지가 비어 있습니다. 🎉', hint:'네 항목과 하나씩 맞추어 보세요.',
-   html:`<div class="story">
-      <p>· 지난 일요일에 가족과 함께 갯벌 체험을 했다.</p>
-      <p>· 학교에서 배운 갯벌 생물을 직접 보고 싶었다.</p>
-      <p>· 조개와 게를 보았고, 갯벌이 물을 걸러 준다는 설명을 들었다.</p>
-    </div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-pic">💭</div><div class="wc-word">생각하거나<br>느낀 점</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">📅</div><div class="wc-word">누구와 언제<br>했는지</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">❓</div><div class="wc-word">그 활동을<br>한 까닭</div></div>
+  {tag:'③ 태도 고르기', t:'자료를 가져다 쓸 때 지켜야 할 것은?', log:true, okMsg:'맞습니다. 이용 조건을 확인하고 출처를 밝혀야 합니다. 🎉', hint:'남이 만든 자료라는 점을 떠올려 보세요.',
+   html:`<div class="wordpick">
+      <div class="wcard" data-ok="1"><div class="wc-pic">🔖</div><div class="wc-word">이용 조건을 확인하고<br>출처를 밝힌다</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-pic">✂️</div><div class="wc-word">마음에 드는 것을<br>그냥 가져다 쓴다</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-pic">🙈</div><div class="wc-word">어디서 가져왔는지<br>숨긴다</div></div>
     </div><div class="fb"></div>`},
 
-  {tag:'② 글의 짜임', t:'처음 · 가운데 · 끝',
+  {tag:'② 세 요소 담기', t:'안내장에도 세 가지를 담습니다',
    html:`<div class="grid2">
-      <div class="g2-box"><h4>처음</h4>일을 경험한 상황이나 까닭<br>(한 문단)</div>
-      <div class="g2-box good"><h4>가운데</h4>있었던 일을 <b>시간의 흐름</b>에 따라<br>보고 들은 것과 느낀 점</div>
-      <div class="g2-box"><h4>끝</h4>전체적인 느낌과 다짐<br>(한 문단)</div>
-      <div class="g2-box"><h4>제목</h4>있었던 일이 잘 드러나게</div>
+      <div class="g2-box"><h4>여정</h4>추천하는 <b>길의 차례</b><br>동문 → 골목 → 대장간 → 남문</div>
+      <div class="g2-box"><h4>견문</h4>그곳에서 <b>볼 것과 들을 것</b><br>흙담과 돌담이 함께 남은 성벽</div>
+      <div class="g2-box good"><h4>감상</h4>내가 <b>느낀 것</b><br>담이 낮아 마을이 열려 보인다</div>
+      <div class="g2-box"><h4>왜 감상이 중요할까</h4>정보만 있으면 안내판이 되고,<br>느낌이 있어야 <b>가 보고 싶어진다</b></div>
     </div>`},
 
-  {tag:'③ 가운데 내용', t:'가운데 부분에 들어갈 내용을 모두 고르세요', log:true, collectMsg:'모두 찾았습니다. 🎉', hint:'실제로 일어난 일과 그때의 느낌이 가운데에 들어갑니다.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">활동하며 있었던 일</div>
-      <div class="chip" data-hit="1">보고 들은 것</div>
-      <div class="chip" data-hit="1">그때그때 느낀 점</div>
-      <div class="chip" data-hit="0">앞으로의 다짐</div>
-      <div class="chip" data-hit="0">그 활동을 하게 된 까닭</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ 문구 고르기', t:'감상이 드러난 안내 문구는 무엇일까요?', log:true, okMsg:'맞습니다. 글쓴이의 느낌이 담겨 있습니다. 🎉', hint:'사실만 적힌 것과 마음이 담긴 것을 나누어 보세요.',
+   html:`<div class="wordpick">
+      <div class="wcard" data-ok="1"><div class="wc-pic">💭</div><div class="wc-word">해 질 무렵 돌담길은<br>걸음을 늦추게 합니다</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-pic">📏</div><div class="wc-word">성벽의 둘레는<br>약 1.4킬로미터입니다</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-pic">🕘</div><div class="wc-word">관람 시간은<br>오전 아홉 시부터입니다</div></div>
+    </div><div class="fb"></div>`},
 
-  {tag:'④ 글쓰기', t:'이제 직접 써 봅시다',
-   html:`<div class="stage-box">계획한 내용을 바탕으로 있었던 일을 글로 써 보세요.
-      <small>· 처음과 끝은 한 문단으로, 가운데는 시간의 흐름에 따라.<br>· 시간 표현이 말끝과 맞는지 확인하며 쓰세요.</small></div>
-    <button class="stage-do" id="stageDo" data-fb="겪은 일이 글이 되는 순간, 기억은 남습니다. 👏">써 보았습니다</button>
+  {tag:'② 다른 활동도', t:'우리 반에서 정할 수 있는 활동',
+   html:`<div class="grid2">
+      <div class="g2-box"><h4>시간 여행으로 이야기 꾸미기</h4>모둠마다 과거·현재·미래를 맡아<br>그때의 일을 상상해 이야기를 쓰고<br>세 이야기를 이어 붙인다</div>
+      <div class="g2-box good"><h4>최고의 여행지 소개하기</h4>가장 인상 깊은 여행지를 골라<br>만화·노래·지도·광고지·영상 가운데<br>한 가지 방식으로 소개한다</div>
+    </div>
+    <div class="ka-bub">실천 활동은 <b class="mc">반에서 함께 정합니다</b>.<br>안내장 말고도 배운 것을 쓸 곳은 많습니다.</div>`},
+
+  {tag:'④ 만들기', t:'안내장을 만들어 봅시다',
+   html:`<div class="stage-box">고른 여행지의 안내장을 만들어 보세요.
+      <small>· 형태를 먼저 정하고, 갈 만한 곳·먹을거리·즐길 거리·문화유산을 배치하세요.<br>· 각 항목에 <b>내가 느낀 한 문장</b>을 꼭 넣으세요.<br>· 가져온 자료는 출처를 적으세요.</small></div>
+    <button class="stage-do" id="stageDo" data-fb="정보에 느낌이 얹히면 안내장이 살아납니다. 👏">만들어 보았습니다</button>
     <div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 고쳐 쓰기', t:'쓴 글을 스스로 확인해 봅시다',
-   html:`<div class="selfcheck">
-      <div class="sc-row"><span class="sc-box">✓</span>있었던 일이 잘 드러나는 <b>제목</b>을 썼나요?</div>
-      <div class="sc-row"><span class="sc-box">✓</span><b>처음·가운데·끝</b>의 내용을 알맞게 썼나요?</div>
-      <div class="sc-row"><span class="sc-box">✓</span>있었던 일에 대한 <b>소개나 내용</b>이 잘 담겨 있나요?</div>
-      <div class="sc-row"><span class="sc-box">✓</span><b>생각하거나 느낀 점</b>이 잘 드러나나요?</div>
-      <div class="sc-row"><span class="sc-box">✓</span>문장에 <b>시간 표현</b>을 올바르게 활용했나요?</div>
-    </div>`},
+  {tag:'② 발표하기', t:'만든 안내장을 소개합니다',
+   html:`<div class="ka-bub">발표할 때에는 <b class="mc">왜 이곳을 골랐는지</b>부터 말합니다.<br>듣는 사람은 <b class="mc">가 보고 싶어졌는지</b>,<br>어느 문구에서 그런 마음이 들었는지 말해 줍니다.</div>
+    <div class="sentence">좋은 안내장은 정보를 넘어 마음을 옮깁니다.</div>`},
 
-  {tag:'② 공유하기', t:'쓴 글을 나눕니다',
-   html:`<div class="ka-bub">고쳐 쓴 글을 친구들 앞에서 읽어 봅니다.<br>듣는 사람은 <b class="mc">시간의 흐름이 잘 따라오는지</b>,<br><b class="mc">느낀 점이 드러나는지</b>를 살펴 말해 줍니다.</div>
-    <div class="sentence">글은 읽히는 순간 한 번 더 완성됩니다.</div>`},
-
-  {tag:'⑤ 마무리', t:'오늘 해 본 것',
+  {tag:'⑤ 마무리', t:'오늘 실천한 것',
    html:`<div class="recap">
-      <div class="recap-item"><span class="recap-ic">🔍</span>글에서 시간 표현 찾아 분류하고 바꾸기</div>
-      <div class="recap-item"><span class="recap-ic">📝</span>네 항목으로 <b>계획</b>하고 처음·가운데·끝으로 <b>쓰기</b></div>
-      <div class="recap-item"><span class="recap-ic">✂️</span>기준에 따라 <b>고쳐 쓰기</b></div>
+      <div class="recap-item"><span class="recap-ic">🗺️</span>여행지를 골라 안내장 <b>형태</b> 정하기</div>
+      <div class="recap-item"><span class="recap-ic">🔖</span>공공 누리집 자료를 <b>출처를 밝혀</b> 활용하기</div>
+      <div class="recap-item"><span class="recap-ic">💭</span>여정·견문에 <b>감상</b>을 얹어 권하기</div>
     </div>
-    <div class="sentence">다음 시간에는 기행문의 특성을 알아봅니다.</div>`}
+    <div class="sentence">다음 시간에는 단원을 정리하고 이·히 표기를 익힙니다.</div>`}
 ];
 const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-const LESSON_ID='g5_kor_u2_l05_06_v1';
-const LESSON_MAX=50;
+const LESSON_ID='g5_kor_u2_l12_13_v1';
+const LESSON_MAX=40;
 let cur=0, score=0;
 const stage=document.getElementById('stage');
 const main=document.getElementById('main');
