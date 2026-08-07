@@ -214,14 +214,25 @@ window.MK_SVARX = (() => {
         return { ok: false, why: 'pair-partial-lock', partialKeys: partial.map((g) => g.key),
           guide: '쌍 ' + partial.map((g) => g.no).join('·') + '번은 일부 장면만 잠겼거나 손댔어요 — 한 쌍은 통째로만 지킬 수 있어요. 「이 쌍 통째 잠그기」를 누르면 그 쌍을 그대로 두고 나머지만 다시 골라요.' };
       }
-      const lockedKeys = groups.filter((g) => g.state === 'full').map((g) => g.key);
+      /* R86 — 잠금 vs 형태의 우선순위는 「무엇을 지키려던 잠금인가」로 가른다.
+         잠금이 약속한 것 = 자리·비교 방식·직접 고친 내용 (R68). 형태 전환은 같은
+         씨앗·keepOrder 로 자리와 방식을 이미 붙잡으므로(R73·R74), 고친 장면이 없는
+         잠근 쌍까지 옛 형태로 묶어 두면 사용자가 방금 누른 형태를 이유 없이
+         거스른다 — 그 쌍은 새 형태로 함께 바뀌고 잠금은 승계된다. 직접 고친 쌍만
+         고친 장면을 지키려 옛 형태로 남고, 어느 쌍인지 번호로 말한다. */
+      const fullG = groups.filter((g) => g.state === 'full');
+      const isFormSwitch = o.formPick === 'compact' || o.formPick === 'full' || o.formPick === 'auto';
+      const heldG = isFormSwitch ? fullG.filter((g) => g.edited) : fullG;
+      const convG = isFormSwitch ? fullG.filter((g) => !g.edited) : [];
+      const lockedKeys = fullG.map((g) => g.key);
+      const heldKeys = heldG.map((g) => g.key);
       const freeHeld = prev ? (prev.scenes || []).filter((s) => s.pairKey == null && s.svar && (s.svar.locked || s.svar.source === 'user')) : [];
       const r = S().buildSmart(templateId, inp, { ...o, seed, lockedPairKeys: lockedKeys });
       if (!r.ok) return r;
       markSources(r.doc, 'random', seed);
       const warnings = [...(r.warnings || [])];
       let kept = 0;
-      if (lockedKeys.length || freeHeld.length) {
+      if (heldKeys.length || freeHeld.length) {
         const prevByKey = new Map();
         for (const sc of (prev.scenes || [])) {
           if (sc.pairKey == null) continue;
@@ -229,7 +240,7 @@ window.MK_SVARX = (() => {
           if (!prevByKey.has(k)) prevByKey.set(k, []);
           prevByKey.get(k).push(sc);
         }
-        const lockedSet = new Set(lockedKeys.map(String));
+        const lockedSet = new Set(heldKeys.map(String));
         const out = [], done = new Set();
         for (const sc of r.doc.scenes) {
           const k = sc.pairKey != null ? String(sc.pairKey) : null;
@@ -247,11 +258,22 @@ window.MK_SVARX = (() => {
         r.doc.scenes = out;
         r.doc.scenes.forEach((x, i) => { x.order = i; });
       }
+      /* R86 — 새 형태로 함께 바뀐 잠근 쌍은 잠금을 승계한다. 승계가 없으면
+         전환 한 번에 잠금이 조용히 풀려, 다음 「다른 구성」이 그 쌍을 흔든다. */
+      if (convG.length) {
+        const cs = new Set(convG.map((g) => String(g.key)));
+        for (const sc of r.doc.scenes) if (sc.pairKey != null && cs.has(String(sc.pairKey)))
+          sc.svar = { ...(sc.svar || {}), source: (sc.svar || {}).source || 'auto', locked: true };
+      }
       const sv = r.doc.meta.svar || {};
       sv.seed = seed;
       sv.lockedPairs = lockedKeys;
       r.doc.meta.svar = sv;
-      if (lockedKeys.length) {
+      if (isFormSwitch) {
+        /* 전환 자리의 안내는 전환의 언어로 — 순서 재추첨 안내(아래)는 여기선 헛말이다(keepOrder). */
+        if (convG.length) warnings.push('잠근 쌍 ' + convG.length + '개도 새 형태로 함께 바꿨어요 — 자리·비교 방식·잠금은 그대로예요.');
+        if (heldG.length) warnings.push('직접 고친 쌍 ' + heldG.map((g) => g.no).join('·') + '번은 고친 장면을 지키려고 옛 형태로 남았어요 — 형태까지 바꾸려면 잠금을 풀고 다시 바꿔 주세요.');
+      } else if (lockedKeys.length) {
         warnings.push('잠근 쌍 ' + lockedKeys.length + '개(장면 ' + kept + '개)는 그대로 뒀어요.');
         /* 정직하게 — 자유로운 쌍이 없거나 하나뿐이면 순서는 바뀔 자리가 없다.
            「다른 구성」을 눌렀는데 아무것도 안 변한 것처럼 보이는 이유를 먼저 말해 준다. */

@@ -272,9 +272,25 @@ T('T37 쌍 문서가 아니면 null (평면 문서에서 헛말 금지)', () => 
   const r = S.buildSmart('tm-slideshow', { medias: [img(1), img(2), img(3)], texts: { title: 'T' } });
   return X.pairFormSummary(r.doc) === null ? true : JSON.stringify(X.pairFormSummary(r.doc));
 });
+/* R86 기능 탐지 — 고치지 않은 잠근 쌍이 형태 전환을 따라오는 세계인지.
+   잣대의 의도(섞임을 정직하게 읽는다)는 보존하고, 「섞임을 만드는 방법」만
+   그 세계에 맞게 고른다(§1.101·§1.105 전례 — 의도 보존·리터럴 해제). */
+const R86 = (() => {
+  try {
+    const src = build(6, 'side-by-side', { opt: { seed: 'pr86' } });
+    const g = X.pairGroups(src.doc)[0];
+    if (!g || g.scenes.length < 2) return false;
+    X.setPairLock(src.doc, g.key, true);
+    const sw = X.recomposeDoc(src.doc, { formPick: 'compact', seed: 'pr86' });
+    if (!sw.ok) return false;
+    const g2 = X.pairGroupOf(sw.doc, g.key);
+    return !!(g2 && g2.scenes.length < g.scenes.length);
+  } catch (e) { return false; }
+})();
 T('T38 잠근 쌍이 형태를 안 따라오면 섞임으로 읽는다', () => {
   const src = build(6, 'side-by-side', { opt: { seed: 'm1' } });   /* 전 구성 */
   const g = X.pairGroups(src.doc)[0];
+  if (R86) X.markEdited(src.doc, g.scenes[0].id); /* R86 — 옛 형태로 남는 쌍 = 직접 고친 쌍 */
   X.setPairLock(src.doc, g.key, true);
   const sw = X.recomposeDoc(src.doc, { formPick: 'compact', seed: 'm1' });
   if (!sw.ok) return sw.why;
@@ -305,6 +321,7 @@ T('T41 잠근 쌍은 형태를 바꿔도 장면이 그대로 남는다', () => {
   const src = build(6, 'side-by-side', { opt: { seed: 'k9' } });
   const g = X.pairGroups(src.doc)[0];
   const before = g.scenes.length;
+  if (R86) X.markEdited(src.doc, g.scenes[0].id); /* R86 — 장면 보존 약속은 고친 쌍의 것 */
   X.setPairLock(src.doc, g.key, true);
   const sw = X.recomposeDoc(src.doc, { formPick: 'compact', seed: 'k9' });
   if (!sw.ok) return sw.why;
