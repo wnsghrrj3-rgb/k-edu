@@ -4,10 +4,10 @@
 <script src="/kedu_config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/kedu_tracker.js"></script>
-<meta name="kedu-lesson-id" content="g5_kor_u4_l04_05_v1">
+<meta name="kedu-lesson-id" content="g5_kor_u4_l05_06_v1">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>구조를 드러내는 말과 중심 내용 정리하기</title>
+<title>설명하는 글을 읽고 내용 요약하기</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@500;700;800&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
 <style>
 /* ===== 5학년 국어 4단원 「대상을 설명해요」 · 자기주도 통합 엔진 (5학년 라인) =====
@@ -178,7 +178,7 @@ body{font-family:var(--f-body); background:var(--paper); color:var(--ink); -webk
 
 <div class="topbar">
   <button class="lb" onclick="location.href='../index.html'">📚 차시 목록</button>
-  <span class="pill">4~5차시</span>
+  <span class="pill">5~6차시</span>
   <span class="where">국어 5-1 · <b>4. 대상을 설명해요</b></span>
   <div class="dots" id="dots"></div>
   <span class="score">⭐ <b id="score">0</b></span>
@@ -194,141 +194,128 @@ body{font-family:var(--f-body); background:var(--paper); color:var(--ink); -webk
 </div>
 
 <script>
-/* ===== 4~5차시(소단원 1 기본 — 구조를 드러내는 말과 중심 내용 정리하기) 15슬 =====
-   학습 목표: 문단의 중심 문장을 찾고, 글의 구조에 맞는 틀로 중심 내용을 정리할 수 있다.
-   정답 로깅 5슬(중심 문장 찾기 · 열거 틀 채우기 · 순서 단계 잇기 · 공통점 모으기 · 잘못된 정리 찾기) = 50점.
-   ★ 저작권: 교과서 193·195·197쪽의 중심 내용 정리표(십장생·폐현수막 가방·소나무와 잣나무)와
-     해당 글의 문장 인용 전면 미인용. 2~3차시에서 쓴 자체 글 3편을 그대로 이어 사용한다.
-     중심 문장, 중심 낱말 개념은 표준 국어 지식.
-   ※ 성취기준 [6국02-01]. 역량 = 의사소통. */
+/* ===== 5~6차시(소단원 1 통합 — 설명하는 글을 읽고 내용 요약하기) 15슬 =====
+   지도서 확정: 소단원 1 통합 학습 = 5~6차시. 평가 연계: 5~6차시 = 구조 틀에 정리·요약 평가.
+   학습 목표: 긴 설명하는 글의 구조를 파악하고 처음·가운데·끝으로 내용을 요약할 수 있다.
+   정답 로깅 5슬(내용 알기 · 낱말 뜻 잇기 · 구조를 드러내는 말 모으기 · 구조 판별 · 가운데 중심 내용 모으기) = 50점.
+   ★ 저작권: 교과서 198~200쪽 글 「자연재해, 알고 대처해요」 전문(지진·태풍·폭염 대처 요령과
+     국민재난안전포털 안내에 관한 모든 문장과 사진), 201쪽 낱말 알기 보기
+     (현기증·방파제·파손·폭염·침수)와 예문, 202~203쪽 요약 정리표와 세상과 연결하기 말풍선
+     전면 미인용. 자체 글 「우리 마을 하천을 지키는 방법」과 자체 낱말 세트로 대체.
+     ※ 자연재해 대처 요령은 부정확하게 익히면 위험할 수 있어 자기주도 자료에서 다루지 않고
+       주제 자체를 교체했다(3단원 응급 처치와 같은 판단).
+   ※ 성취기준(지도서 확정) [6국02-01]. 역량 = 의사소통(이해와 표현). */
 const slides=[
-  {tag:'① 학습 목표', t:'중심 내용을 정리해 봅시다',
-   html:`<div class="ka-bub">구조를 찾았다면 다음은 <b class="mc">중심 내용을 뽑아내는 일</b>입니다.<br>지난 시간에 읽은 세 글을 각각의 틀에 담아 봅니다.</div>`},
+  {tag:'① 학습 목표', t:'긴 글을 요약해 봅시다',
+   html:`<div class="ka-bub">앞에서는 짧은 글을 다루었습니다.<br>이번에는 <b class="mc">긴 글 전체</b>를 구조에 따라 요약해 봅니다.<br>차례는 <b class="emph">구조 찾기 → 중심 문장 찾기 → 처음·가운데·끝 정리</b>입니다.</div>`},
 
-  {tag:'② 중심 문장', t:'문단에는 중심 문장이 있습니다',
-   html:`<div class="ka-bub">한 문단은 대개 <b class="mc">한 가지 이야기</b>를 합니다.<br>그 이야기를 대표하는 문장을 <b class="emph">중심 문장</b>이라 하고,<br>이를 자세히 풀어 주는 문장을 <b class="emph">뒷받침 문장</b>이라 합니다.</div>
-    <div class="sentence">중심 문장을 이으면 그것이 곧 요약이 됩니다.</div>`},
-
-  {tag:'③ 중심 문장 찾기', t:'다음 문단의 중심 문장은 무엇일까요?', log:true, okMsg:'맞습니다. 나머지 문장은 이 문장을 풀어 주고 있습니다. 🎉', hint:'문단 전체를 대표하는 문장을 찾으세요. 예를 드는 문장은 뒷받침 문장입니다.',
+  {tag:'② 글 ①', t:'우리 마을 하천을 지키는 방법',
    html:`<div class="story">
-      <p>㉮ 장구는 양쪽 가죽의 소리가 달라 잔가락을 넣습니다. ㉯ 한쪽은 두껍고 다른 쪽은 얇습니다. ㉰ 그래서 손과 채로 양쪽을 번갈아 치면 소리의 높낮이가 달라집니다.</p>
-    </div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-pic">📌</div><div class="wc-word">㉮</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">📄</div><div class="wc-word">㉯</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">📄</div><div class="wc-word">㉰</div></div>
+      <p>마을을 가로지르는 하천은 여러 생물이 사는 곳이자 사람들이 쉬어 가는 곳입니다. 그러나 조금만 소홀히 하면 물이 쉽게 오염됩니다. 하천을 지키는 방법을 알아봅시다.</p>
+      <p><span class="mark">첫째</span>, 하천에 쓰레기를 버리지 않습니다. 무단으로 버려진 비닐과 플라스틱은 물살에 떠내려가다 수풀에 걸려 오래 남습니다. 물속 생물이 이를 먹이로 잘못 알고 삼키면 위험합니다. 하천가에서 나온 쓰레기는 반드시 되가져와야 합니다.</p>
+    </div>`},
+
+  {tag:'② 글 ②', t:'우리 마을 하천을 지키는 방법',
+   html:`<div class="story">
+      <p><span class="mark">둘째</span>, 생활 하수를 줄입니다. 설거지할 때 기름기를 먼저 닦아 내고 씻으면 물에 흘러드는 기름이 크게 줄어듭니다. 세제는 정해진 양만 쓰고, 남은 국물은 하수구에 붓지 않습니다. 집에서 흘려보낸 물이 결국 하천으로 들어가기 때문입니다.</p>
+      <p><span class="mark">셋째</span>, 하천가의 풀과 나무를 함부로 뽑지 않습니다. 물가의 풀뿌리는 흙을 붙잡아 비가 올 때 흙이 쓸려 내려가는 것을 막습니다. 또 물속으로 들어오는 오염 물질을 걸러 주는 정화 역할도 합니다. 물가의 수풀은 작은 물고기와 새들의 서식 공간이기도 합니다.</p>
+    </div>`},
+
+  {tag:'② 글 ③', t:'우리 마을 하천을 지키는 방법',
+   html:`<div class="story">
+      <p>이처럼 하천을 지키는 일은 큰 공사가 아니라 <span class="mark">생활 속의 작은 습관</span>에서 시작됩니다. 한 사람이 버린 쓰레기 하나가 오래 남듯이, 한 사람이 지킨 습관 하나도 오래 남습니다. 우리 마을 하천이 어떤 상태인지 직접 걸어가 살펴보고, 할 수 있는 일부터 해 봅시다.</p>
+    </div>`},
+
+  {tag:'③ 내용 알기', t:'하천가의 풀과 나무가 하는 일이 아닌 것은?', log:true, okMsg:'맞습니다. 물살을 빠르게 하는 일은 글에 없습니다. 🎉', hint:'셋째 문단을 다시 읽어 보세요.',
+   html:`<div class="wordpick">
+      <div class="wcard" data-ok="1"><div class="wc-pic">❌</div><div class="wc-word">물살을<br>빠르게 한다</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-pic">🌱</div><div class="wc-word">흙이 쓸려 내려가는 것을<br>막는다</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-pic">🐟</div><div class="wc-word">작은 물고기와 새의<br>서식 공간이 된다</div></div>
     </div><div class="fb"></div>`},
 
-  {tag:'② 열거 틀', t:'「사물놀이의 네 악기」를 정리하면',
-   html:`<div class="recap">
-      <div class="recap-item"><span class="recap-ic">1️⃣</span><b>꽹과리</b> — 가장 작고 소리가 높으며 연주를 이끈다</div>
-      <div class="recap-item"><span class="recap-ic">2️⃣</span><b>징</b> — 가장 크고 소리가 낮게 퍼지며 큰 마디를 짚는다</div>
-      <div class="recap-item"><span class="recap-ic">3️⃣</span><b>장구</b> — 양쪽 소리가 달라 잔가락을 넣는다</div>
-      <div class="recap-item"><span class="recap-ic">4️⃣</span><b>북</b> — 낮고 묵직한 소리로 흐름을 받친다</div>
-    </div>
-    <div class="ka-bub">열거 구조는 <b class="mc">항목별로 나란히</b> 정리합니다.</div>`},
-
-  {tag:'③ 틀 채우기', t:'열거 틀에 들어갈 중심 내용을 모두 고르세요', log:true, collectMsg:'모두 찾았습니다. 각 악기의 특징만 남겼습니다. 🎉', hint:'각 항목을 대표하는 내용만 고르세요. 곁가지 설명은 뺍니다.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">꽹과리는 소리가 높고 연주를 이끈다</div>
-      <div class="chip" data-hit="1">징은 소리가 낮게 퍼진다</div>
-      <div class="chip" data-hit="0">천둥·바람·비·구름에 빗댄다</div>
-      <div class="chip" data-hit="1">북은 흐름을 받쳐 준다</div>
-      <div class="chip" data-hit="0">사물놀이는 네 악기로 연주한다</div>
-    </div><div class="fb" id="collectFb"></div>`},
-
-  {tag:'② 순서 틀', t:'「우유갑으로 연필꽂이 만들기」를 정리하면',
-   html:`<div class="recap">
-      <div class="recap-item"><span class="recap-ic">1️⃣</span><b>먼저</b> — 우유갑을 깨끗이 씻어 말린다</div>
-      <div class="recap-item"><span class="recap-ic">2️⃣</span><b>다음으로</b> — 연필 길이에 맞춰 윗부분을 자른다</div>
-      <div class="recap-item"><span class="recap-ic">3️⃣</span><b>그 뒤</b> — 자른 자리에 테이프를 둘러 마감한다</div>
-      <div class="recap-item"><span class="recap-ic">4️⃣</span><b>마지막으로</b> — 겉면을 감싸 꾸민다</div>
-    </div>
-    <div class="ka-bub">순서 구조는 <b class="mc">차례를 바꾸면 안 됩니다</b>.<br>단계가 곧 내용이기 때문입니다.</div>`},
-
-  {tag:'③ 단계 잇기', t:'단계와 하는 일을 이어 봅시다', log:true, matchMsg:'모두 알맞게 이었습니다. 🎉', hint:'만드는 차례를 머릿속으로 따라가 보세요.',
+  {tag:'③ 낱말 알기', t:'낱말과 뜻을 이어 봅시다', log:true, matchMsg:'모두 알맞게 이었습니다. 🎉', hint:'글에서 그 낱말이 쓰인 문장을 다시 보면 뜻이 보입니다.',
    html:`<div class="match" id="match">
       <div class="match-col">
-        <div class="match-col-h">단계</div>
-        <div class="match-card" data-k="a" data-pair="w">먼저</div>
-        <div class="match-card" data-k="b" data-pair="x">다음으로</div>
-        <div class="match-card" data-k="c" data-pair="y">그 뒤</div>
-        <div class="match-card" data-k="d" data-pair="z">마지막으로</div>
+        <div class="match-col-h">낱말</div>
+        <div class="match-card" data-k="a" data-pair="w">오염</div>
+        <div class="match-card" data-k="b" data-pair="x">정화</div>
+        <div class="match-card" data-k="c" data-pair="y">서식</div>
+        <div class="match-card" data-k="d" data-pair="z">무단</div>
       </div>
       <div class="match-col">
-        <div class="match-col-h">하는 일</div>
-        <div class="match-card" data-k="y" data-pair="c">자른 자리를 테이프로 마감하기</div>
-        <div class="match-card" data-k="w" data-pair="a">깨끗이 씻어 말리기</div>
-        <div class="match-card" data-k="z" data-pair="d">겉면을 감싸 꾸미기</div>
-        <div class="match-card" data-k="x" data-pair="b">윗부분을 자르기</div>
+        <div class="match-col-h">뜻</div>
+        <div class="match-card" data-k="y" data-pair="c">생물이 일정한 곳에 자리를 잡고 삶</div>
+        <div class="match-card" data-k="w" data-pair="a">더럽게 물듦</div>
+        <div class="match-card" data-k="z" data-pair="d">허락 없이 마음대로 함</div>
+        <div class="match-card" data-k="x" data-pair="b">불순한 것을 걸러 깨끗하게 함</div>
       </div>
     </div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'② 비교와 대조 틀', t:'「가야금과 거문고」를 정리하면',
-   html:`<div class="grid2">
-      <div class="g2-box"><h4>가야금</h4>줄 열두 개 · 안족<br>손가락으로 뜯거나 튕김<br>맑고 부드러운 소리</div>
-      <div class="g2-box"><h4>거문고</h4>줄 여섯 개 · 괘<br>술대로 치거나 밂<br>굵고 단단한 소리</div>
-      <div class="g2-box good"><h4>공통점</h4>긴 나무 몸통 · 명주실 줄<br>무릎에 놓고 연주</div>
-      <div class="g2-box"><h4>정리 방법</h4>같은 <b>항목끼리</b> 마주 놓아야<br>차이가 드러난다</div>
-    </div>`},
-
-  {tag:'③ 공통점 찾기', t:'두 악기의 공통점을 모두 고르세요', log:true, collectMsg:'모두 찾았습니다. 🎉', hint:'두 악기에 똑같이 해당하는 것만 고르세요.',
+  {tag:'③ 구조 신호 찾기', t:'글의 구조를 드러내는 말을 모두 고르세요', log:true, collectMsg:'모두 찾았습니다. 이 말들이 구조를 알려 줍니다. 🎉', hint:'항목을 나누어 주는 말을 찾으세요.',
    html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">긴 나무 몸통에 명주실 줄을 얹는다</div>
-      <div class="chip" data-hit="1">무릎에 놓고 연주한다</div>
-      <div class="chip" data-hit="0">줄이 열두 개이다</div>
-      <div class="chip" data-hit="1">우리나라를 대표하는 현악기이다</div>
-      <div class="chip" data-hit="0">술대로 줄을 친다</div>
+      <div class="chip" data-hit="1">첫째</div>
+      <div class="chip" data-hit="1">둘째</div>
+      <div class="chip" data-hit="1">셋째</div>
+      <div class="chip" data-hit="0">그러나</div>
+      <div class="chip" data-hit="0">이처럼</div>
     </div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'③ 잘못된 정리', t:'차이점 정리 가운데 잘못된 것은?', log:true, okMsg:'맞습니다. 안족은 가야금, 괘는 거문고의 것입니다. 🎉', hint:'각 항목이 어느 악기의 것인지 다시 확인해 보세요.',
+  {tag:'② 구조 파악', t:'이 글은 어떤 방법으로 설명했을까요',
+   html:`<div class="ka-bub">하천을 지키는 방법을 <b class="emph">세 가지로 나누어</b> 하나씩 설명했습니다.<br>단계가 있는 것도 아니고, 두 대상을 견주지도 않았습니다.<br>이럴 때 쓰는 구조가 있습니다.</div>`},
+
+  {tag:'③ 구조 판별', t:'이 글의 구조는 무엇일까요?', log:true, okMsg:'맞습니다. 방법을 항목별로 나열한 열거 구조입니다. 🎉', hint:'첫째·둘째·셋째로 나열되어 있습니다.',
    html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-pic">❌</div><div class="wc-word">거문고에는<br>안족이 놓여 있다</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">✅</div><div class="wc-word">가야금은 손가락으로<br>줄을 뜯는다</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">✅</div><div class="wc-word">거문고는 줄이<br>여섯 개이다</div></div>
+      <div class="wcard" data-ok="1"><div class="wc-pic">📋</div><div class="wc-word">열거 구조</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-pic">🪜</div><div class="wc-word">순서 구조</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-pic">⚖️</div><div class="wc-word">비교와 대조 구조</div></div>
     </div><div class="fb"></div>`},
 
-  {tag:'② 정리할 때', t:'중심 낱말로 짧게',
-   html:`<div class="grid2">
-      <div class="g2-box"><h4>문장을 그대로 옮기면</h4>가야금은 줄이 열두 개이고<br>줄마다 안족이라는 받침이 놓여 있습니다.</div>
-      <div class="g2-box good"><h4>중심 낱말로 줄이면</h4>줄 열두 개 · 안족</div>
-    </div>
-    <div class="ka-bub">정리는 <b class="mc">한눈에 들어와야</b> 쓸모가 있습니다.<br>설명하고 싶은 내용을 모두 쓰는 것이 아니라<br><b class="emph">중심 낱말</b>로 간단히 적습니다.</div>`},
-
-  {tag:'④ 다시 읽기', t:'중심 문장을 한 줄씩 읽어 봅시다',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>사물놀이는 네 가지 악기로 연주하는 우리 전통 음악입니다.</div>
-      <div class="read-line"><span class="rl-num">2</span>다 마신 우유갑도 조금만 손보면 쓸모 있는 물건이 됩니다.</div>
-      <div class="read-line"><span class="rl-num">3</span>가야금과 거문고는 우리나라를 대표하는 현악기입니다.</div>
-    </div><div class="fb" id="readFb"></div>`},
-
-  {tag:'④ 정리해 보기', t:'내 대상을 틀에 담아 봅시다',
-   html:`<div class="stage-box">앞에서 고른 대상과 구조에 맞추어 중심 내용을 정리해 보세요.
-      <small>· 열거라면 항목별로, 순서라면 단계별로, 비교라면 같은 항목끼리 마주 놓으세요.<br>· 문장이 아니라 중심 낱말로 짧게 적으세요.</small></div>
-    <button class="stage-do" id="stageDo" data-fb="틀이 채워지면 글은 절반쯤 쓰인 셈입니다. 👏">정리해 보았습니다</button>
-    <div class="fb" id="stageFb"></div>`},
-
-  {tag:'④ 스스로 점검', t:'정리한 내용을 확인해 봅시다',
-   html:`<div class="selfcheck">
-      <div class="sc-row"><span class="sc-box">✓</span>문단마다 <b>중심 문장</b>을 찾았나요?</div>
-      <div class="sc-row"><span class="sc-box">✓</span>구조에 <b>맞는 틀</b>에 담았나요?</div>
-      <div class="sc-row"><span class="sc-box">✓</span><b>중심 낱말</b>로 짧게 적었나요?</div>
-      <div class="sc-row"><span class="sc-box">✓</span>비교할 때 <b>같은 항목끼리</b> 마주 놓았나요?</div>
+  {tag:'② 세 부분으로', t:'처음 · 가운데 · 끝',
+   html:`<div class="recap">
+      <div class="recap-item"><span class="recap-ic">🚪</span><b>처음</b> — 하천이 어떤 곳인지 밝히고, 지키는 방법을 알아보자고 함</div>
+      <div class="recap-item"><span class="recap-ic">🧩</span><b>가운데</b> — 세 가지 방법을 첫째·둘째·셋째로 나누어 설명</div>
+      <div class="recap-item"><span class="recap-ic">🏁</span><b>끝</b> — 작은 습관에서 시작된다며 실천을 권함</div>
     </div>`},
 
-  {tag:'⑤ 마무리', t:'오늘 배운 것',
-   html:`<div class="recap">
-      <div class="recap-item"><span class="recap-ic">📌</span>문단의 <b>중심 문장</b> 찾기</div>
-      <div class="recap-item"><span class="recap-ic">🗂️</span>구조에 맞는 <b>틀</b>에 중심 내용 담기</div>
-      <div class="recap-item"><span class="recap-ic">✂️</span><b>중심 낱말</b>로 짧게 적기</div>
+  {tag:'③ 가운데 정리', t:'가운데 부분의 중심 내용을 모두 고르세요', log:true, collectMsg:'모두 찾았습니다. 세 방법이 곧 가운데 부분입니다. 🎉', hint:'첫째·둘째·셋째 문단의 중심 문장을 떠올리세요.',
+   html:`<div class="collect" id="collect">
+      <div class="chip" data-hit="1">하천에 쓰레기를 버리지 않는다</div>
+      <div class="chip" data-hit="1">생활 하수를 줄인다</div>
+      <div class="chip" data-hit="1">하천가의 풀과 나무를 함부로 뽑지 않는다</div>
+      <div class="chip" data-hit="0">하천은 여러 생물이 사는 곳이다</div>
+      <div class="chip" data-hit="0">작은 습관에서 시작된다</div>
+    </div><div class="fb" id="collectFb"></div>`},
+
+  {tag:'② 요약문 견주기', t:'어떤 요약이 좋을까요',
+   html:`<div class="grid2">
+      <div class="g2-box"><h4>아쉬운 요약</h4>하천은 중요하다. 쓰레기가 있다.<br>설거지 이야기도 나온다. 풀도 나온다.</div>
+      <div class="g2-box good"><h4>좋은 요약</h4>하천을 지키려면 쓰레기를 버리지 않고,<br>생활 하수를 줄이며,<br>하천가의 풀과 나무를 지켜야 한다.</div>
     </div>
-    <div class="sentence">다음 시간에는 긴 글 전체를 요약해 봅니다.</div>`}
+    <div class="ka-bub">요약문은 <b class="mc">중심 문장을 이어</b> 만듭니다.<br>글에 나온 낱말을 늘어놓는 것이 아닙니다.</div>`},
+
+  {tag:'④ 요약해 쓰기', t:'직접 요약해 봅시다',
+   html:`<div class="stage-box">이 글을 세 문장 안팎으로 요약해 써 보세요.
+      <small>· 처음 한 문장 + 가운데 한두 문장 + 끝 한 문장.<br>· 구조를 드러내는 말을 그대로 살려 쓰면 정리하기 쉽습니다.</small></div>
+    <button class="stage-do" id="stageDo" data-fb="긴 글이 세 문장으로 남았습니다. 👏">요약해 보았습니다</button>
+    <div class="fb" id="stageFb"></div>`},
+
+  {tag:'② 세상과 연결하기', t:'다른 교과서에서도 해 봅시다',
+   html:`<div class="ka-bub">사회나 과학 교과서에도 <b class="mc">설명하는 글</b>이 많습니다.<br>기후를 나누어 설명한 부분은 열거 구조,<br>두 생물을 견주는 부분은 비교와 대조 구조로 요약해 보세요.</div>
+    <div class="sentence">요약은 국어 시간에만 쓰는 기술이 아닙니다.</div>`},
+
+  {tag:'⑤ 마무리', t:'오늘 해 본 것',
+   html:`<div class="recap">
+      <div class="recap-item"><span class="recap-ic">🔍</span>구조를 드러내는 말로 <b>구조 찾기</b></div>
+      <div class="recap-item"><span class="recap-ic">📌</span>문단마다 <b>중심 문장</b> 찾기</div>
+      <div class="recap-item"><span class="recap-ic">🗂️</span><b>처음·가운데·끝</b>으로 정리해 요약하기</div>
+    </div>
+    <div class="sentence">다음 시간에는 직접 쓸 내용을 골라 봅니다.</div>`}
 ];
 const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-const LESSON_ID='g5_kor_u4_l04_05_v1';
+const LESSON_ID='g5_kor_u4_l05_06_v1';
 const LESSON_MAX=50;
 let cur=0, score=0;
 const stage=document.getElementById('stage');
