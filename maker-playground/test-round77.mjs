@@ -74,15 +74,18 @@ console.log('R77 ② 검수 모드 — 무영향 증명');
   t('딥링크 #/homex 정상(기존)', w.PG.state.screen === 'homex');
 }
 
-console.log('R77 ③ /maker 로더 성문 검증');
+console.log('R77 ③ /maker 정적 생성본 — 드리프트 검사');
 {
-  const src = fs.readFileSync(path.join(__dirname, '..', 'maker', 'index.html'), 'utf8');
-  t('MK_PRODUCT 를 적재 전에 주입', /window\.MK_PRODUCT = true;[\s\S]*fetch\(BASE/.test(src));
-  t('원본 경로 ../maker-playground/ 참조', src.includes("'../maker-playground/'"));
-  t('스크립트 순차 적재(순서 보존)', src.includes('await new Promise') && src.includes("querySelectorAll('script[src]')"));
-  t('PG.boot 직접 호출', src.includes('PG.boot()'));
-  t('절대·프로토콜 URL 은 보정 제외', src.includes("(https?:)?\\/\\/"));
-  t('검수 문구 제거(제품 브랜딩)', src.includes('케이메이커') && !src.includes('Design Playground'));
+  const built = fs.readFileSync(path.join(__dirname, '..', 'maker', 'index.html'), 'utf8');
+  const { transform } = await import(path.join(__dirname, '..', 'maker', 'build.mjs'));
+  const fresh = transform(read('index.html'));
+  t('재생성본과 커밋본 일치(드리프트 0)', built === fresh, '플레이그라운드 index.html 변경 후 `node maker/build.mjs` 재실행 필요');
+  t('MK_PRODUCT 가 첫 스크립트보다 앞', built.indexOf('MK_PRODUCT') < built.indexOf('<script src='));
+  const badPath = [...built.matchAll(/(?:src|href)="([^"]+)"/g)].map((m) => m[1])
+    .filter((u) => !/^(https?:\/\/|\/\/|\/|data:|#)/.test(u) && !u.startsWith('../maker-playground/'));
+  t('보정 누락 경로 0개', badPath.length === 0, badPath.slice(0, 3).join(','));
+  t('스크립트 수 원본과 동일', (built.match(/<script src=/g) || []).length === (read('index.html').match(/<script src=/g) || []).length);
+  t('제품 브랜딩 적용', built.includes('케이메이커') && !built.includes('Design Playground'));
 }
 
 console.log('R77 ④ /kmake 배너');

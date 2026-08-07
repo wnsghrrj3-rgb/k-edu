@@ -3,62 +3,127 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
 <title>케이메이커 — K-Maker</title>
-<style>#mkBootMsg{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font-family:Pretendard,system-ui,sans-serif;color:#8E9AAC;font-size:15px;background:#FDFCFA}</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Do+Hyeon&family=Black+Han+Sans&family=Gowun+Dodum&family=Gowun+Batang:wght@400;700&family=Nanum+Pen+Script&family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../maker-playground/tokens.css?v=20260806b">
+<link rel="stylesheet" href="../maker-playground/playground.css?v=20260806b">
+<link rel="stylesheet" href="../maker-playground/components/button.css?v=20260806b">
 </head>
 <body>
-<div id="mkBootMsg">케이메이커를 여는 중…</div>
-<script>
-/* ============================================================
-   R77 — /maker 제품 진입 로더
-   원리: 플레이그라운드(/maker-playground)의 index.html 을 원본
-   그대로 읽어와 자산 경로만 ../maker-playground/ 로 고쳐 순서대로
-   적재한다. 코드 복제 0 — 플레이그라운드에 화면·스크립트가 늘어도
-   이 파일은 손댈 필요가 없다(드리프트 제로).
-   제품 판정: 적재 전에 window.MK_PRODUCT = true 를 꽂는다.
-   app.js 가 이 깃발을 보고 검수 화면을 내비·라우팅에서 걸러낸다.
-   ============================================================ */
-(async () => {
-  window.MK_PRODUCT = true;                                  /* 반드시 스크립트 적재 전 */
-  const BASE = '../maker-playground/';
-  const abs = (u) => (!u || /^(https?:)?\/\//.test(u) || u.startsWith('/') || u.startsWith('data:')) ? u : BASE + u;
-  let doc;
-  try {
-    const res = await fetch(BASE + 'index.html', { cache: 'no-cache' });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    doc = new DOMParser().parseFromString(await res.text(), 'text/html');
-  } catch (e) {
-    document.getElementById('mkBootMsg').textContent = '불러오지 못했어요 — 새로고침해 주세요. (' + e.message + ')';
-    return;
-  }
-  /* 스타일·프리커넥트 이식 (경로 보정) */
-  doc.querySelectorAll('head link').forEach((l) => {
-    const n = document.createElement('link');
-    n.rel = l.rel; if (l.crossOrigin) n.crossOrigin = l.crossOrigin;
-    n.href = abs(l.getAttribute('href'));
-    document.head.appendChild(n);
-  });
-  /* 셸 마크업 이식 (스크립트 제외) */
-  const shell = doc.body.cloneNode(true);
-  shell.querySelectorAll('script').forEach((s) => s.remove());
-  document.body.innerHTML = shell.innerHTML;
-  /* 제품 브랜딩 — 검수 문구 제거 */
-  const logo = document.querySelector('.pg-logo');
-  if (logo) logo.innerHTML = 'K-MAKER<small>케이메이커</small>';
-  const foot = document.querySelector('.pg-nav-foot');
-  if (foot) foot.innerHTML = 'K-edu · 완전 무료';
-  /* 스크립트 순차 적재 — 원본 순서 보존 (실패 1개가 전체를 막지 않게 계속 진행) */
-  for (const s of doc.querySelectorAll('script[src]')) {
-    await new Promise((done) => {
-      const n = document.createElement('script');
-      n.src = abs(s.getAttribute('src'));
-      n.onload = done; n.onerror = done;
-      document.body.appendChild(n);
-    });
-  }
-  /* DOMContentLoaded 는 이미 지났으므로 부트 직접 호출 (boot._done 가드로 이중 발화 안전) */
-  if (window.PG && PG.boot) PG.boot();
-})();
-</script>
+<div class="pg-shell">
+  <nav class="pg-nav">
+    <div class="pg-logo">K-MAKER<small>케이메이커</small></div>
+    <div id="pgNav" style="display:contents"></div>
+    <div class="pg-nav-foot">K-edu · 완전 무료</div>
+  </nav>
+  <main class="pg-main">
+    <header class="pg-head"><h1 id="pgTitle"></h1><div class="pg-variants" id="pgVariants"></div></header>
+    <div class="pg-body" id="pgBody"></div>
+  </main>
+</div>
+<script>window.MK_PRODUCT = true; /* R77 제품 진입 — app.js 가 검수 화면을 차단 */</script>
+<script src="../maker-playground/data/sample.js?v=20260806b"></script>
+<script src="../maker-playground/data/sections.js?v=20260806b"></script>
+<script src="../maker-playground/data/pitchdeck.js?v=20260806b"></script>
+<script src="../maker-playground/data/catalog.js?v=20260806b"></script>
+<script src="../maker-playground/data/templates.js?v=20260806b"></script>
+<script src="../maker-playground/data/tplpack.js?v=20260806b"></script>
+<script src="../maker-playground/data/start.js?v=20260806b"></script>
+<script src="../maker-playground/data/stock.js?v=20260806b"></script>
+<script src="../maker-playground/data/compose.js?v=20260806b"></script>
+<script src="../maker-playground/data/compositions.js?v=20260806b"></script>
+<script src="../maker-playground/data/manifest.js?v=20260806b"></script>
+<script src="../maker-playground/data/manifests.js?v=20260806b"></script>
+<script src="../maker-playground/data/manifest-demo.js?v=20260806b"></script>
+<script src="../maker-playground/data/tbuild.js?v=20260806b"></script>
+<script src="../maker-playground/data/svariant.js?v=20260806b"></script>
+<script src="../maker-playground/data/svarlive.js?v=20260806b"></script>
+<script src="../maker-playground/data/tbuild-seed.js?v=20260806b"></script>
+<script src="../maker-playground/data/caption.js?v=20260806b"></script>
+<script src="../maker-playground/data/textstyle.js?v=20260806b"></script>
+<script src="../maker-playground/data/assets.js?v=20260806b"></script>
+<script src="../maker-playground/data/projects.js?v=20260806b"></script>
+<script src="../maker-playground/data/animations.js?v=20260806b"></script>
+<script src="../maker-playground/data/aiedit.js?v=20260806b"></script>
+<script src="../maker-playground/data/brand.js?v=20260806b"></script>
+<script src="../maker-playground/data/team.js?v=20260806b"></script>
+<script src="../maker-playground/data/collab.js?v=20260806b"></script>
+<script src="../maker-playground/data/dam.js?v=20260806b"></script>
+<script src="../maker-playground/data/render.js?v=20260806b"></script>
+<script src="../maker-playground/data/plugin.js?v=20260806b"></script>
+<script src="../maker-playground/data/plugins-samples.js?v=20260806b"></script>
+<script src="../maker-playground/data/market.js?v=20260806b"></script>
+<script src="../maker-playground/data/market-seed.js?v=20260806b"></script>
+<script src="../maker-playground/data/admin.js?v=20260806b"></script>
+<script src="../maker-playground/data/admin-seed.js?v=20260806b"></script>
+  <script src="../maker-playground/data/api.js?v=20260806b"></script>
+  <script src="../maker-playground/data/api-seed.js?v=20260806b"></script>
+<script src="../maker-playground/data/touch.js?v=20260806b"></script>
+<script src="../maker-playground/data/agent.js?v=20260806b"></script>
+<script src="../maker-playground/data/flow.js?v=20260806b"></script>
+<script src="../maker-playground/data/dls.js?v=20260806b"></script>
+<script src="../maker-playground/data/ops.js?v=20260806b"></script>
+<script src="../maker-playground/data/simplify.js?v=20260806b"></script>
+<script src="../maker-playground/data/invisible.js?v=20260806b"></script>
+<script src="../maker-playground/components.js?v=20260806b"></script>
+<script src="../maker-playground/screens/misc.js?v=20260806b"></script>
+<script src="../maker-playground/screens/video.js?v=20260806b"></script>
+<script src="../maker-playground/screens/video2.js?v=20260806b"></script>
+<script src="../maker-playground/screens/foundations.js?v=20260806b"></script>
+<script src="../maker-playground/screens/components.js?v=20260806b"></script>
+<script src="../maker-playground/screens/home.js?v=20260806b"></script>
+<script src="../maker-playground/screens/create.js?v=20260806b"></script>
+<script src="../maker-playground/screens/browser.js?v=20260806b"></script>
+<script src="../maker-playground/screens/library.js?v=20260806b"></script>
+<script src="../maker-playground/screens/editor.js?v=20260806b"></script>
+<script src="../maker-playground/screens/assets.js?v=20260806b"></script>
+<script src="../maker-playground/screens/ai.js?v=20260806b"></script>
+<script src="../maker-playground/screens/projects.js?v=20260806b"></script>
+<script src="../maker-playground/screens/workspace.js?v=20260806b"></script>
+<script src="../maker-playground/screens/builder.js?v=20260806b"></script>
+<script src="../maker-playground/screens/tbuilder.js?v=20260806b"></script>
+<script src="../maker-playground/screens/animation.js?v=20260806b"></script>
+<script src="../maker-playground/screens/brand.js?v=20260806b"></script>
+<script src="../maker-playground/screens/team.js?v=20260806b"></script>
+<script src="../maker-playground/screens/export.js?v=20260806b"></script>
+<script src="../maker-playground/screens/plugins.js?v=20260806b"></script>
+<script src="../maker-playground/screens/market.js?v=20260806b"></script>
+<script src="../maker-playground/screens/admin.js?v=20260806b"></script>
+  <script src="../maker-playground/screens/dev.js?v=20260806b"></script>
+  <script src="../maker-playground/screens/mobile.js?v=20260806b"></script>
+  <script src="../maker-playground/screens/agent.js?v=20260806b"></script>
+  <script src="../maker-playground/screens/flow.js?v=20260806b"></script>
+  <script src="../maker-playground/screens/dls.js?v=20260806b"></script>
+  <script src="../maker-playground/screens/ops.js?v=20260806b"></script>
+  <script src="../maker-playground/screens/simple.js?v=20260806b"></script>
+  <script src="../maker-playground/screens/invisible.js?v=20260806b"></script>
+  <script src="../maker-playground/data/constitution.js?v=20260806b"></script>
+  <script src="../maker-playground/data/audit.js?v=20260806b"></script>
+  <script src="../maker-playground/screens/constitution.js?v=20260806b"></script>
+  <script src="../maker-playground/screens/audit.js?v=20260806b"></script>
+  <script src="../maker-playground/data/homex.js?v=20260806b"></script>
+  <script src="../maker-playground/screens/homex.js?v=20260806b"></script>
+  <script src="../maker-playground/data/nav.js?v=20260806b"></script>
+  <script src="../maker-playground/screens/nav.js?v=20260806b"></script>
+  <script src="../maker-playground/data/journey.js?v=20260806b"></script>
+  <script src="../maker-playground/screens/journey.js?v=20260806b"></script>
+  <script src="../maker-playground/data/ftue.js?v=20260806b"></script>
+  <script src="../maker-playground/screens/ftue.js?v=20260806b"></script>
+  <script src="../maker-playground/data/easy.js?v=20260806b"></script>
+  <script src="../maker-playground/data/live.js?v=20260806b"></script>
+  <script src="../maker-playground/data/audio.js?v=20260806b"></script>
+  <script src="../maker-playground/data/video.js?v=20260806b"></script>
+  <script src="../maker-playground/data/ailive.js?v=20260806b"></script>
+  <script src="../maker-playground/data/play.js?v=20260806b"></script>
+  <script src="../maker-playground/screens/easy.js?v=20260806b"></script>
+  <script src="../maker-playground/screens/video3.js?v=20260806b"></script>
+  <script src="../maker-playground/screens/video4.js?v=20260806b"></script>
+  <script src="../maker-playground/screens/video5.js?v=20260806b"></script>
+<script src="../maker-playground/app.js?v=20260807a"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_boxbar.js"></script>
 </body>
 </html>
