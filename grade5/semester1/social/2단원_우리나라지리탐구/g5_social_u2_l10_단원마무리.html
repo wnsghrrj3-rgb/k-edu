@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<!--
+K-edu 사회 5-1 · 2단원 우리나라 지리 탐구 · 단원 마무리 · 16차시(l10)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [6사02-01]·[6사02-02] 통합 정리 · 교과서 p.100~103 · 지도서(대단원2 **16차시** 단원 마무리, 지도서 p.210~211) 근거
+학습 목표: ‘우리나라 지리 탐구’에서 공부한 내용을 생각 그물과 교실 놀이로 정리할 수 있다.
+수업 기법 및 전략: 돌아가며 말하기 · 교실 놀이하기
+직접조작: 에너지 채우기 놀이 판(신규 패턴 — 겹침 판정형)
+  ⭐ 앞의 스물네 종은 전부 **내가 옳으면 그만큼 나아갔다**. 잇기·쌓기·환산·대조·고리·잣대·퇴고 모두
+     옳고 그름 하나로 결과가 정해졌다. 이번만 다르다 — **옳아도 아무 일이 일어나지 않을 수 있다.**
+     낱말을 넣어 옳은 문장을 말해도 **같은 낱말을 쓴 친구가 한 명도 없으면 아무도 칸을 칠하지 못한다**
+     (교과서 p.102 규칙 4 원문). 판정 축이 처음으로 둘이다 —
+     ㉠ 내가 옳은 문장을 만들었는가(내 몫) + ㉡ 그 낱말을 쓴 사람이 또 있는가(내 손 밖의 일).
+     그래서 판을 채우는 첫 단계부터 **친구들도 떠올릴 만한 낱말인가**를 생각하게 된다.
+     이 놀이의 전략이 곧 “단원에서 중요한 낱말이 무엇이었나”를 되짚는 일이 되는 구조다.
+  ① 판 채우기 — 교과서 |보기| **45개 원문 전량**에서 골라 놀이 판 **16칸**을 채운다.
+     이미 판에 있는 낱말은 다시 넣을 수 없고, 「마지막 낱말 빼기」로 되돌릴 수 있다.
+     16칸이 다 차야 「놀이 시작」이 열린다(순서 강제).
+  ② 내 차례 — 아직 말하지 않은 낱말 하나를 고르면 **그 낱말이 들어간 문장 3택**이 열린다.
+     정답 자리는 낱말 차례에 따라 0·1·2로 돌아간다(`egAt(i)=i%3`).
+     · 옳은 문장 → **겹침 판정**. 그 낱말을 쓴 사람이 둘 이상이면 **그 사람들 모두** 한 칸씩 칠한다.
+       한 명도 없으면 아무도 칠하지 못하고, 그 칸은 **바꿀 수 있는 칸**이 된다(교과서 별표 규칙 —
+       자기만 쓴 용어는 다음 자기 차례에 아직 쓰지 않은 다른 용어로 바꿀 수 있다, 한 번에 하나만).
+     · 틀린 문장 → 아무도 칠하지 못하고 차례가 넘어간다. 그 낱말은 **다시 말할 수 있다**(교과서 별표 규칙).
+  ③ 친구 차례 — 「다음 차례 →」를 누르면 친구 ㉠·㉡·㉢이 차례로 자기 판의 낱말을 말한다.
+     친구가 말한 낱말을 **내가 썼으면 내 칸도 칠해진다** — 그래서 겹치는 낱말을 쓸수록 유리하다.
+  ④ 에너지 **8칸**을 먼저 채운 사람이 이긴다. 지도서 “놀이 인원에 따라 승리하는 에너지 칸 개수를
+     조정할 수 있습니다”에 따라 넷이서 짧게 하도록 정했고, 그 사실을 판 아래 캡션에 적었다.
+  ⚠️ 친구 셋의 놀이 판(`EG_FRIEND`)과 말하는 차례(`EG_SAY`)는 **고정 리터럴 — 난수 0**이라
+     jsdom에서 겹침 계산·에너지 누적·승패까지 그대로 검증할 수 있다.
+     친구끼리의 겹침도 설계했다 — ㉠∩㉡ 4개, ㉠∩㉢ 4개, **㉡∩㉢ 0개**.
+     흔한 낱말을 고른 학생은 3~4번째 차례에 이기고, 아무도 안 쓸 낱말만 고른 학생은
+     5번째 차례에 친구 ㉠이 먼저 8칸을 채워 끝난다 — 어느 쪽이든 놀이는 반드시 끝난다.
+  ⚠️ 가드 8종: ① 놀이가 끝난 뒤 전체 잠금 / ② 무효 낱말·칸·문장 번호(`Number.isInteger`) /
+     ③ 판이 다 차기 전 「놀이 시작」 무시 · 시작 뒤 판 고치기 무시(순서 강제) /
+     ④ 내 차례가 아닐 때 낱말 클릭 무시 · 내 차례에 말하지 않고 차례 넘기기 무시 /
+     ⑤ 이미 말한 낱말 재사용 무시 / ⑥ 문장이 열려 있는 동안 다른 클릭 무시 /
+     ⑦ 문장이 열리지 않았을 때 문장 클릭 무시 / ⑧ 같은 낱말을 판에 두 번 넣기 무시.
+     재시도 허용(감점 없음). 조작에는 점수가 붙지 않는다.
+낱말 사전: 교과서 p.102 |보기| **45개 전량**에 각각 **옳은 문장 1 + 그 낱말을 잘못 쓴 문장 2**를 달았다.
+  틀린 문장은 대부분 **이웃 낱말과 뒤바뀐 것**이다(날씨↔기후 / 인구↔인구 분포 / 인구 분포↔인구 밀도 /
+  자연환경↔인문환경 / 수도권↔비수도권 / 여름↔겨울 / 한파↔폭염 / 가뭄↔홍수 …).
+  그래서 문장 3택 자체가 단원 낱말의 **경계 확인**이 된다.
+지도서 근거(16차시 p.210~211):
+  [동기 유발] 단원에서 공부한 내용은 무엇인가요? — 기후가 무엇인지 / 계절별 기후 특징 /
+    자연재해와 피해를 줄이려는 노력 / 기후변화로 심해지는 자연재해와 기후 행동 /
+    인구 분포가 무엇인지 / 우리나라의 인구 분포 / 불균형에 따른 문제점 / 불균형을 해결하려는 노력.
+    ⚠️ 학생들이 자기 생각을 자유롭게 이야기할 수 있도록 편안한 분위기를 유도한다(정답 강요 금지).
+  [학습 문제] 단원에서 공부한 내용을 다양한 방법으로 정리해 봅시다.
+  [전개 1] ‘생각 그물을 완성해요’ — 빈칸을 채우며 정리한다. **스스로 떠올려 할 수 있도록** 지도한다.
+    생각 그물 뼈대(교과서 p.100~101) = 우리나라의 기후(뜻 · 기온·강수·바람) ·
+    계절별 기후 특징(봄 온화·건조 / 여름 기온 높고 강수량 절반 이상 집중, 남쪽 바다에서 뜨겁고 습한 바람 /
+    가을 맑고 건조 / 겨울 춥고 건조, 북서쪽 육지에서 차갑고 건조한 바람) ·
+    자연재해(뜻 · 황사·폭염·호우와 홍수·태풍·한파·가뭄·폭설 · 기상 특보 발표 등 피해를 줄이려는 노력) ·
+    기후변화(연평균 기온 상승 · 계절 길이 변화 · 자연재해 심화 · 기후 행동) ·
+    인구 분포(인구 · 인구 분포 · 인구 밀도 · 과거 자연환경 → 오늘날 인문환경) ·
+    불균형에 따른 문제(수도권: 일자리 부족·주택 문제·환경 오염·교통 혼잡·시설 부족 /
+    비수도권: 시설 감소·빈집 증가·폐업·일자리 감소·일손 부족) ·
+    해결 노력(정부: 공공 기관 이전·고향 사랑 기부제·청년 마을·지역 기업 육성·교육 기관과 지방 자치 단체 지원 /
+    지역: 지역 특색 정책·주거와 교육 환경 개선·일자리 만들기 / 국가 경쟁력 약화 → 균형 발전 유도).
+  [전개 2] ‘교실 놀이를 함께해요’ — 에너지 채우기 놀이. 준비물 = 연필, 지우개.
+    ① 놀이 판에 주요 용어 16개를 쓴다 ② 순서를 정한다 ③ 자기 용어 하나로 옳은 문장을 말한다.
+    같은 용어를 쓴 친구가 한 명 이상 있으면 그 용어를 쓴 사람들 **모두** 에너지 칸을 색칠한다.
+    ④ 문장을 만들지 못하거나 같은 용어를 쓴 친구가 없으면 **아무도** 색칠하지 못하고 차례를 넘긴다.
+    ⑤ 에너지를 먼저 다 채운 사람이 승리한다. * 인원에 따라 칸 수 조정 가능.
+    * 자기만 쓴 용어는 다음 자기 차례에 사용하지 않은 다른 용어로 바꿀 수 있다(한 번에 한 개만).
+    * 문장을 만들지 못한 용어는 자기 차례가 돌아왔을 때 다시 문장을 만들어 말할 수 있다.
+  [정리] 계절별 기후 특징 / 기후변화로 나타나는 자연재해의 심각성 / 우리나라 인구 분포 특징 /
+    불균형에 따른 문제점과 해결 방안을 이야기한다. 차시 예고 = 3단원 ‘법과 인권의 보장’ 도입 활동.
+⚠️ 설계 원칙:
+  · **3단원(법과 인권의 보장) 선행 침범 0** — 차시 예고에서 단원 이름만 말한다.
+    법·인권·헌법·기본권·인권 침해는 전부 0.
+  · **지역 이름 0 · 학생 이름 0 · 문항 내 연도·금액·수치 0**(‘1 km²’는 인구 밀도의 정의라 유지).
+  · 교사용 참고 자료(단원 평가 문항 원문, 참고 도서, 인구 구조 비율 수치, 신문 기사 사례)는 넣지 않는다.
+  · 생각 그물은 교과서 뼈대를 도식으로 옮기되 **두 칸을 비워 두고 [답 보기]로 확인**하게 했다 —
+    교실에서 손으로 채우는 활동지를 통째로 대신하지 않는다(l05·l09에서 쓴 정직 규약 승계).
+  · 정서 — 놀이의 승패를 성적처럼 다루지 않는다. 완료 안내에서 “이기고 지는 것보다
+    낱말을 떠올려 옳은 문장으로 만들어 본 것이 오늘의 공부”라고 명시한다.
+  · u1 l12(1단원 마무리)의 **말판·주사위 / 자산 누적형**과 겹치지 않는다 —
+    이번 조작에는 말·주사위·상금·구매가 하나도 없다.
+⚠️ 2단원 마지막 차시 — goNextLesson = 허브(3단원 미양산).
+-->
+<html lang="ko">-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g5_social_u2_l10_v1">
+<title>2단원 마무리 · 사회 5-1</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#0E7490; --green-d:#0C4A6E; --cyan:#276749;
+  --bg:#F1F8FA; --bub:#DCF0F5; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#B45309; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes drawLine{to{transform:scaleX(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ka-lb{background:#F1F5F9;border:none;padding:7px 12px;border-radius:10px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;font-family:inherit;font-weight:700;color:#475569;flex-shrink:0;font-size:13px}
+.ka-lb svg{width:15px;height:15px}
+.ka-bar{flex:1;height:5px;background:var(--bg);border-radius:999px;overflow:hidden}
+.ka-bar>div{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:999px;transition:width .35s ease;width:6%}
+.ka-pg{color:var(--green);font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;flex-shrink:0}
+.ka-sc{background:var(--amber-bg);color:var(--amber);padding:4px 12px;border-radius:999px;display:flex;align-items:center;gap:5px;flex-shrink:0;font-weight:700}
+.ka-sc svg{width:14px;height:14px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px}
+.ka-sc-u{font-size:12px}
+
+/* 메인 */
+.ka-m{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow-y:auto}
+.ka-tags{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ka-bg{background:var(--amber-bg);color:var(--amber);padding:5px 14px;border-radius:30px;font-size:13px;
+  display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.ka-bg.s2{background:#E0F2FE;color:#0369A1}
+.ka-bg.s3{background:#EDE9FE;color:#6D28D9}
+.ka-bg.s4{background:#FCE7F3;color:#BE185D}
+.ka-bg.s5{background:var(--bub);color:var(--green)}
+.ka-bg svg{width:13px;height:13px}
+.ka-meta{font-size:13px;color:var(--muted)}
+.ka-t{font-size:clamp(20px,3.4vw,29px);margin-bottom:16px;line-height:1.4;color:var(--green);letter-spacing:-.3px;font-weight:700;animation:fadeUp .4s .15s ease both}
+.ka-bub{background:var(--bub);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);line-height:1.7;
+  margin-bottom:16px;border-left:4px solid var(--green);animation:fadeUp .4s .3s ease both}
+.ka-emph{position:relative;display:inline-block;font-weight:700;color:var(--green)}
+.ka-emph::after{content:'';position:absolute;bottom:2px;left:0;right:0;height:3px;background:var(--red);border-radius:2px;transform:scaleX(0);transform-origin:left;animation:drawLine .6s .6s ease forwards}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.scene.wide{width:clamp(240px,44vw,420px)}
+.scene.wide svg{height:clamp(120px,20vw,200px)}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(16px,2.6vw,21px);font-weight:700;line-height:1.6;margin-bottom:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:620px}
+.opt{background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:13px 14px;font-size:clamp(14px,2.3vw,17px);
+  font-weight:500;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:var(--green);background:var(--bub);animation:pop .4s ease}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;font-size:clamp(14px,2.3vw,17px);line-height:1.6;text-align:center;animation:fadeUp .35s ease both;max-width:620px}
+.fb.ok{color:var(--green);font-weight:700}
+.hint{margin-top:12px;background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(13px,2.2vw,16px);
+  line-height:1.6;color:#0C4A6E;max-width:560px;animation:fadeUp .35s ease both}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:640px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F5FBFC;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:clamp(14px,2.3vw,17px);line-height:1.5}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
+
+/* 직접조작 — 에너지 채우기 놀이 판(겹침 판정형) */
+.eg-wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.eg-head{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.eg-head .tag{background:#F1F5F9;border:2px solid var(--line);border-radius:9px;padding:5px 10px;
+  font-size:clamp(10px,1.7vw,12.4px);font-weight:800;color:#475569}
+.eg-head .tag.on{border-color:var(--green);background:var(--bub);color:var(--green-d)}
+.eg-head .swap{margin-left:auto;border:2px solid #CBD5E0;background:#fff;border-radius:9px;padding:5px 10px;
+  cursor:pointer;font-family:inherit;font-weight:800;color:#475569;font-size:clamp(9.6px,1.62vw,11.6px)}
+.eg-head .swap:hover{border-color:var(--green);color:var(--green-d);background:var(--bub)}
+.eg-body{display:grid;grid-template-columns:1.04fr 1fr;gap:10px;align-items:start}
+.eg-canvas{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.eg-canvas svg{width:100%;height:auto;display:block}
+.eg-canvas .cvcap{padding:5px 6px;text-align:center;font-size:clamp(9.5px,1.6vw,11.5px);
+  color:var(--muted);font-weight:700;background:#F8FAFC}
+.eg-right{display:flex;flex-direction:column;gap:6px;min-width:0}
+.eg-step{font-size:clamp(10.5px,1.75vw,13px);font-weight:800;color:var(--green)}
+.eg-msg{background:#F8FAFC;border:2px solid var(--line);border-left:4px solid var(--green);border-radius:10px;
+  padding:8px 12px;font-size:clamp(11.2px,1.9vw,13.6px);line-height:1.55;color:#334155;animation:fadeUp .3s ease both}
+.eg-msg.warn{border-left-color:var(--red)}
+.eg-msg b{color:var(--green)}
+.eg-msg.warn b{color:#B91C1C}
+.eg-q{font-size:clamp(11.4px,1.93vw,13.8px);font-weight:800;color:var(--green-d);line-height:1.5;padding:0 2px}
+.eg-pool{display:flex;flex-wrap:wrap;gap:4px;max-height:196px;overflow-y:auto;padding:6px;
+  border:2px solid var(--line);border-radius:10px;background:#F8FAFC}
+.eg-chip{border:2px solid #CBD5E0;background:#fff;border-radius:8px;padding:5px 8px;cursor:pointer;
+  font-family:inherit;font-weight:700;color:var(--ink);font-size:clamp(9.6px,1.63vw,11.8px);transition:.15s}
+.eg-chip:hover{border-color:var(--green);background:var(--bub)}
+.eg-chip.used{opacity:.4;border-style:dashed;cursor:default;background:#EDF2F7}
+.eg-list{display:flex;flex-direction:column;gap:5px}
+.eg-list button{border:2px solid #CBD5E0;background:#fff;border-radius:10px;padding:8px 10px;cursor:pointer;
+  font-family:inherit;font-weight:700;color:var(--ink);font-size:clamp(10.2px,1.74vw,12.6px);
+  text-align:left;transition:.15s;line-height:1.42}
+.eg-list button:hover{border-color:var(--green);background:var(--bub)}
+.eg-row{display:flex;gap:6px;flex-wrap:wrap}
+.eg-go{flex:1;border:2px solid var(--green);background:var(--green);color:#fff;border-radius:10px;padding:9px 10px;
+  cursor:pointer;font-family:inherit;font-weight:800;font-size:clamp(10.6px,1.8vw,12.8px);transition:.15s}
+.eg-go:hover:not(:disabled){background:var(--green-d);border-color:var(--green-d)}
+.eg-go:disabled{opacity:.42;cursor:default;border-style:dashed;background:#94A3B8;border-color:#94A3B8}
+.eg-undo{border:2px solid #CBD5E0;background:#fff;border-radius:10px;padding:9px 10px;cursor:pointer;
+  font-family:inherit;font-weight:800;color:#475569;font-size:clamp(10.2px,1.74vw,12.4px)}
+.eg-undo:disabled{opacity:.42;cursor:default;border-style:dashed}
+.eg-swap{flex:1;border:2px solid var(--amber);background:#FFF8E1;color:var(--amber);border-radius:10px;padding:9px 10px;
+  cursor:pointer;font-family:inherit;font-weight:800;font-size:clamp(10.4px,1.77vw,12.6px)}
+.eg-swap:hover{background:#FDECC8}
+.eg-tip{background:#E0F2FE;border-radius:10px;padding:8px 11px;font-size:clamp(10.4px,1.77vw,12.6px);
+  line-height:1.55;color:#0C4A6E;border-left:4px solid #0369A1}
+.eg-card{background:#fff;border:2px solid var(--amber);border-radius:12px;padding:10px 12px;
+  font-size:clamp(11.6px,1.98vw,14px);line-height:1.55;animation:pop .35s ease both}
+.eg-card .pt{font-weight:800;color:var(--amber);margin-bottom:4px;font-size:clamp(12.5px,2.15vw,15px)}
+.paper{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:12px;padding:12px 16px;
+  font-size:clamp(12.5px,2.1vw,15px);line-height:1.65;color:#3F3A2C;max-width:660px;
+  animation:fadeUp .4s ease both}
+.paper .ph{font-weight:800;color:#8A6D3B;margin-bottom:6px;font-size:clamp(13px,2.2vw,16px)}
+.paper .src{margin-top:6px;font-size:clamp(11px,1.9vw,13px);color:#8A6D3B;text-align:right}
+.tipbox{background:#E0F2FE;border-radius:12px;padding:10px 16px;font-size:clamp(12.5px,2.1vw,15px);
+  line-height:1.6;color:#0C4A6E;max-width:660px;border-left:4px solid #0369A1}
+@media(max-width:620px){ .eg-body{grid-template-columns:1fr} }
+
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(14,116,144,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style></head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#B45309"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식 =====
+   ⚠️ 정직 원칙: 모든 그림은 정리 도식이며 사진이 아니다.
+   생각 그물은 교과서 p.100~101의 뼈대를 그대로 옮긴 것이고,
+   교실에서 손으로 채우는 활동지 자체를 대신하지 않는다.
+   ⚠️ 지역 이름 0 · 학생 이름 0 · 연도 0. */
+
+/* 이름표 상자 */
+function plate(x,y,w,h,txt,fs,bg,st,tc){
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="7" fill="${bg||'#fff'}" stroke="${st||'#94A3B8'}" stroke-width="1.6"/>`+
+    `<text x="${x+w/2}" y="${y+h/2+fs*0.36}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="${tc||'#0F172A'}">${txt}</text>`;
+}
+/* 두 줄 이름표 */
+function plate2(x,y,w,h,t1,t2,fs,bg,st,tc){
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="7" fill="${bg||'#fff'}" stroke="${st||'#94A3B8'}" stroke-width="1.6"/>`+
+    `<text x="${x+w/2}" y="${y+h/2-fs*0.15}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="${tc||'#0F172A'}">${t1}</text>`+
+    `<text x="${x+w/2}" y="${y+h/2+fs*1.05}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="${tc||'#0F172A'}">${t2}</text>`;
+}
+/* 잇는 선 */
+function link(x1,y1,x2,y2,col){
+  return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col||'#94A3B8'}" stroke-width="1.6"/>`;
+}
+/* 화살표 */
+function arrow(x1,y1,x2,y2,col){
+  const c=col||'#0E7490';
+  const dx=x2-x1, dy=y2-y1, L=Math.sqrt(dx*dx+dy*dy)||1, ux=dx/L, uy=dy/L;
+  const bx=x2-ux*7, by=y2-uy*7, px=-uy*4, py=ux*4;
+  return `<line x1="${x1}" y1="${y1}" x2="${bx}" y2="${by}" stroke="${c}" stroke-width="2"/>`+
+    `<polygon points="${x2},${y2} ${bx+px},${by+py} ${bx-px},${by-py}" fill="${c}"/>`;
+}
+/* 사람 도형 */
+function figure(x,y,s,col){
+  const c=col||'#0E7490';
+  return `<circle cx="${x}" cy="${y}" r="${3.4*s}" fill="${c}"/>`+
+    `<path d="M ${x-3.6*s} ${y+11*s} q ${3.6*s} ${-6*s} ${7.2*s} 0 z" fill="${c}"/>`;
+}
+/* 에너지 칸 도형(작은 사각) */
+function cell(x,y,w,on){
+  return `<rect x="${x}" y="${y}" width="${w}" height="${w}" rx="3" fill="${on?'#0E7490':'#fff'}" stroke="${on?'#0E7490':'#CBD5E0'}" stroke-width="1.5"/>`;
+}
+
+const SVG = {
+/* 1 들어가기 — 2단원에서 공부한 다섯 갈래 */
+recall:`<svg viewBox="0 0 420 190" xmlns="http://www.w3.org/2000/svg">
+<rect width="420" height="190" fill="#F1F8FA"/>
+${plate(150,12,120,28,'우리나라 지리 탐구',12.5,'#0E7490','#0C4A6E','#fff')}
+${link(210,40,60,64)}${link(210,40,135,64)}${link(210,40,210,64)}${link(210,40,285,64)}${link(210,40,360,64)}
+${plate(14,64,92,26,'기후',12,'#DCF0F5','#0E7490','#0C4A6E')}
+${plate(89,64,92,26,'계절별 기후',12,'#DCF0F5','#0E7490','#0C4A6E')}
+${plate(164,64,92,26,'자연재해',12,'#DCF0F5','#0E7490','#0C4A6E')}
+${plate(239,64,92,26,'기후변화',12,'#DCF0F5','#0E7490','#0C4A6E')}
+${plate(314,64,92,26,'인구 분포',12,'#DCF0F5','#0E7490','#0C4A6E')}
+<text x="210" y="112" text-anchor="middle" font-size="12" font-weight="700" fill="#475569">여기에 ‘불균형을 해결하려는 노력’까지</text>
+<text x="210" y="130" text-anchor="middle" font-size="12" font-weight="700" fill="#475569">모두 공부했어요</text>
+${figure(150,158,1.5,'#0E7490')}${figure(185,158,1.5,'#B45309')}${figure(220,158,1.5,'#276749')}${figure(255,158,1.5,'#BE185D')}
+</svg>`,
+
+/* 2 생각 그물 ① 우리나라의 기후 */
+web1:`<svg viewBox="0 0 420 214" xmlns="http://www.w3.org/2000/svg">
+<rect width="420" height="214" fill="#F8FAFC"/>
+${plate(160,10,100,26,'우리나라의 기후',11.5,'#0E7490','#0C4A6E','#fff')}
+${link(210,36,110,58)}${link(210,36,310,58)}
+${plate2(46,58,128,34,'뜻 — 오랜 기간 한 지역의','평균적이며 종합적인 대기 상태',10,'#fff','#0E7490','#0F172A')}
+${plate2(246,58,128,34,'특징 — 기온·강수·바람에','따라 달라짐',10,'#fff','#0E7490','#0F172A')}
+${plate(150,102,120,24,'계절별 기후 특징',11,'#DCF0F5','#0E7490','#0C4A6E')}
+${link(210,126,68,146)}${link(210,126,163,146)}${link(210,126,258,146)}${link(210,126,353,146)}
+${plate(18,146,100,26,'봄 — 온화·건조',10,'#FFF8E1','#B45309','#7C4A03')}
+${plate(113,146,100,26,'여름 — 덥고 비 많음',10,'#FFF8E1','#B45309','#7C4A03')}
+${plate(208,146,100,26,'가을 — 맑고 건조',10,'#FFF8E1','#B45309','#7C4A03')}
+${plate(303,146,100,26,'겨울 — 춥고 건조',10,'#FFF8E1','#B45309','#7C4A03')}
+<text x="210" y="192" text-anchor="middle" font-size="10.5" font-weight="700" fill="#475569">여름에는 남쪽 바다에서 뜨겁고 습한 바람이,</text>
+<text x="210" y="206" text-anchor="middle" font-size="10.5" font-weight="700" fill="#475569">겨울에는 북서쪽 육지에서 차갑고 건조한 바람이 불어와요</text>
+</svg>`,
+
+/* 3 생각 그물 ② 자연재해와 기후변화 — 노란 빈칸 하나 */
+web2:`<svg viewBox="0 0 420 206" xmlns="http://www.w3.org/2000/svg">
+<rect width="420" height="206" fill="#F8FAFC"/>
+${plate(158,10,104,26,'자연재해',11.5,'#0E7490','#0C4A6E','#fff')}
+${link(210,36,105,58)}${link(210,36,315,58)}
+${plate2(41,58,128,34,'뜻 — 생명과 재산에','피해를 주는 자연 현상',10,'#fff','#0E7490','#0F172A')}
+${plate2(251,58,128,34,'종류 — 황사·폭염·호우와 홍수','태풍·한파·가뭄·폭설',9.4,'#fff','#0E7490','#0F172A')}
+${plate(150,100,120,24,'기후변화',11,'#DCF0F5','#0E7490','#0C4A6E')}
+${link(210,124,110,146)}${link(210,124,310,146)}
+${plate2(46,146,128,34,'연평균 기온이 올라가고','자연재해가 잦아지고 심해짐',9.6,'#fff','#B45309','#7C4A03')}
+${plate(246,146,128,34,'',10,'#FEF3C7','#B45309','#7C4A03')}
+<text x="310" y="159" text-anchor="middle" font-size="9.6" font-weight="700" fill="#7C4A03">기후변화를 막으려는 모든 노력</text>
+<text x="310" y="174" text-anchor="middle" font-size="12" font-weight="800" fill="#B45309">= ?</text>
+</svg>`,
+
+/* 4 생각 그물 ③ 인구 분포 — 노란 빈칸 하나 */
+web3:`<svg viewBox="0 0 420 214" xmlns="http://www.w3.org/2000/svg">
+<rect width="420" height="214" fill="#F8FAFC"/>
+${plate(158,10,104,26,'인구 분포',11.5,'#0E7490','#0C4A6E','#fff')}
+${link(210,36,105,58)}${link(210,36,315,58)}
+${plate2(41,58,128,34,'뜻 — 인구가 모이거나','흩어져 있는 정도',10,'#fff','#0E7490','#0F172A')}
+${plate2(251,58,128,34,'예전은 자연환경,','오늘날은 인문환경의 영향',9.8,'#fff','#0E7490','#0F172A')}
+${plate(140,100,140,24,'불균형에 따른 문제',11,'#DCF0F5','#0E7490','#0C4A6E')}
+${link(210,124,105,146)}${link(210,124,315,146)}
+${plate2(41,146,128,34,'수도권 — 주택 문제·교통 혼잡','환경 오염·시설 부족',9.4,'#fff','#DC2626','#991B1B')}
+${plate2(251,146,128,34,'비수도권 — 시설 감소·빈집 증가','일자리 감소·일손 부족',9.4,'#fff','#DC2626','#991B1B')}
+${plate(140,186,140,22,'',10,'#FEF3C7','#B45309','#7C4A03')}
+<text x="210" y="201" text-anchor="middle" font-size="10" font-weight="800" fill="#B45309">국토의 ?  유도 — 고르게 발전하기</text>
+</svg>`,
+
+/* 5 놀이 방법 다섯 걸음 */
+rule:`<svg viewBox="0 0 420 200" xmlns="http://www.w3.org/2000/svg">
+<rect width="420" height="200" fill="#F1F8FA"/>
+<text x="210" y="22" text-anchor="middle" font-size="12.5" font-weight="800" fill="#0C4A6E">에너지 채우기 놀이</text>
+${plate(16,34,180,26,'① 놀이 판에 낱말 16개를 쓴다',10.4,'#fff','#0E7490','#0F172A')}
+${plate(224,34,180,26,'② 순서를 정한다',10.4,'#fff','#0E7490','#0F172A')}
+${plate(16,68,180,26,'③ 내 낱말 하나로 옳은 문장 말하기',10,'#fff','#0E7490','#0F172A')}
+${plate2(224,64,180,34,'④ 같은 낱말을 쓴 친구가 있으면','그 낱말을 쓴 사람 모두 색칠',9.8,'#DCF0F5','#0E7490','#0C4A6E')}
+${plate2(16,104,180,34,'⑤ 문장을 못 만들거나 같은 낱말을','쓴 친구가 없으면 아무도 못 칠함',9.6,'#FEE2E2','#DC2626','#991B1B')}
+${plate(224,104,180,34,'⑥ 에너지를 먼저 다 채우면 승리',10.4,'#FFF8E1','#B45309','#7C4A03')}
+<text x="210" y="160" text-anchor="middle" font-size="10.2" font-weight="700" fill="#475569">놀이 인원에 따라 이기는 에너지 칸 수는 조정할 수 있어요</text>
+${cell(126,170,15,true)}${cell(146,170,15,true)}${cell(166,170,15,true)}${cell(186,170,15,false)}
+${cell(206,170,15,false)}${cell(226,170,15,false)}${cell(246,170,15,false)}${cell(266,170,15,false)}
+</svg>`,
+
+/* 6 겹쳐야 칠한다 — 놀이의 핵심 규칙 */
+same:`<svg viewBox="0 0 420 184" xmlns="http://www.w3.org/2000/svg">
+<rect width="420" height="184" fill="#F8FAFC"/>
+<text x="105" y="20" text-anchor="middle" font-size="11.4" font-weight="800" fill="#0C4A6E">겹치는 친구가 있을 때</text>
+<text x="315" y="20" text-anchor="middle" font-size="11.4" font-weight="800" fill="#991B1B">겹치는 친구가 없을 때</text>
+<line x1="210" y1="10" x2="210" y2="174" stroke="#CBD5E0" stroke-width="1.4" stroke-dasharray="4 4"/>
+${plate(30,30,150,24,'“여름”이라고 말했어요',10.4,'#fff','#0E7490','#0F172A')}
+${plate(240,30,150,24,'“등온선”이라고 말했어요',10.4,'#fff','#DC2626','#991B1B')}
+${figure(56,80,1.5,'#0E7490')}${figure(90,80,1.5,'#0E7490')}${figure(124,80,1.5,'#0E7490')}${figure(158,80,1.5,'#94A3B8')}
+${figure(266,80,1.5,'#94A3B8')}${figure(300,80,1.5,'#94A3B8')}${figure(334,80,1.5,'#94A3B8')}${figure(368,80,1.5,'#94A3B8')}
+<text x="105" y="106" text-anchor="middle" font-size="9.8" font-weight="700" fill="#475569">같은 낱말을 쓴 사람이 셋</text>
+<text x="315" y="106" text-anchor="middle" font-size="9.8" font-weight="700" fill="#475569">나 말고는 아무도 안 씀</text>
+${plate(30,118,150,26,'셋 모두 에너지 한 칸 색칠',10.4,'#DCF0F5','#0E7490','#0C4A6E')}
+${plate(240,118,150,26,'아무도 색칠하지 못함',10.4,'#FEE2E2','#DC2626','#991B1B')}
+<text x="210" y="168" text-anchor="middle" font-size="10.2" font-weight="700" fill="#475569">옳은 문장을 말해도 겹치는 친구가 없으면 칸을 칠하지 못해요</text>
+</svg>`,
+
+/* 7 새로 알게 된 점·느낀 점 */
+feel:`<svg viewBox="0 0 420 170" xmlns="http://www.w3.org/2000/svg">
+<rect width="420" height="170" fill="#FFFDF5"/>
+<rect x="40" y="20" width="340" height="118" rx="10" fill="#fff" stroke="#E7D9A8" stroke-width="2"/>
+<text x="60" y="44" font-size="11.4" font-weight="800" fill="#8A6D3B">이 단원을 공부하며…</text>
+<line x1="60" y1="60" x2="360" y2="60" stroke="#E7D9A8" stroke-width="1.2"/>
+<line x1="60" y1="82" x2="360" y2="82" stroke="#E7D9A8" stroke-width="1.2"/>
+<line x1="60" y1="104" x2="360" y2="104" stroke="#E7D9A8" stroke-width="1.2"/>
+<text x="60" y="56" font-size="10.6" font-weight="700" fill="#3F3A2C">새로 알게 된 점 —</text>
+<text x="60" y="78" font-size="10.6" font-weight="700" fill="#3F3A2C">느낀 점 —</text>
+<text x="60" y="100" font-size="10.6" font-weight="700" fill="#3F3A2C">더 알고 싶은 점 —</text>
+<text x="210" y="158" text-anchor="middle" font-size="10.6" font-weight="700" fill="#8A6D3B">정답은 없어요 — 스스로 적어 두면 오래 남아요</text>
+</svg>`,
+
+/* 8 단원 마무리 완료 */
+done:`<svg viewBox="0 0 420 170" xmlns="http://www.w3.org/2000/svg">
+<rect width="420" height="170" fill="#F1F8FA"/>
+${plate(130,18,160,28,'2단원 마무리',13,'#0E7490','#0C4A6E','#fff')}
+${plate(28,60,110,26,'생각 그물 완성',10.6,'#fff','#0E7490','#0F172A')}
+${plate(155,60,110,26,'교실 놀이',10.6,'#fff','#0E7490','#0F172A')}
+${plate(282,60,110,26,'알게 된 점 쓰기',10.6,'#fff','#0E7490','#0F172A')}
+${cell(115,102,18,true)}${cell(139,102,18,true)}${cell(163,102,18,true)}${cell(187,102,18,true)}
+${cell(211,102,18,true)}${cell(235,102,18,true)}${cell(259,102,18,true)}${cell(283,102,18,true)}
+<text x="210" y="146" text-anchor="middle" font-size="11" font-weight="800" fill="#0C4A6E">‘우리나라 지리 탐구’를 모두 마쳤어요</text>
+</svg>`,
+
+/* 9 기후 — 문항용 */
+clim:`<svg viewBox="0 0 200 130" xmlns="http://www.w3.org/2000/svg">
+<rect width="200" height="130" fill="#F8FAFC"/>
+${plate(18,14,74,24,'날씨',10.6,'#fff','#94A3B8','#475569')}
+${plate(108,14,74,24,'기후',10.6,'#DCF0F5','#0E7490','#0C4A6E')}
+<text x="55" y="56" text-anchor="middle" font-size="9.4" font-weight="700" fill="#475569">짧은 시간의</text>
+<text x="55" y="70" text-anchor="middle" font-size="9.4" font-weight="700" fill="#475569">대기 상태</text>
+<text x="145" y="56" text-anchor="middle" font-size="9.4" font-weight="700" fill="#0C4A6E">오랜 기간의 평균적</text>
+<text x="145" y="70" text-anchor="middle" font-size="9.4" font-weight="700" fill="#0C4A6E">·종합적 대기 상태</text>
+${arrow(40,88,160,88,'#0E7490')}
+<text x="100" y="112" text-anchor="middle" font-size="9.6" font-weight="700" fill="#475569">하루 → 여러 해</text>
+</svg>`,
+
+/* 10 자연재해 — 문항용 */
+dis:`<svg viewBox="0 0 200 130" xmlns="http://www.w3.org/2000/svg">
+<rect width="200" height="130" fill="#FFF8E1"/>
+${plate(45,10,110,24,'자연재해',11,'#B45309','#7C4A03','#fff')}
+${plate(12,44,84,22,'황사 · 폭염',9.6,'#fff','#B45309','#7C4A03')}
+${plate(104,44,84,22,'호우와 홍수',9.6,'#fff','#B45309','#7C4A03')}
+${plate(12,72,84,22,'태풍 · 한파',9.6,'#fff','#B45309','#7C4A03')}
+${plate(104,72,84,22,'가뭄 · 폭설',9.6,'#fff','#B45309','#7C4A03')}
+<text x="100" y="116" text-anchor="middle" font-size="9.6" font-weight="700" fill="#7C4A03">생명과 재산에 피해를 주는 자연 현상</text>
+</svg>`,
+
+/* 11 인구 밀도 — 문항용 */
+dens:`<svg viewBox="0 0 200 130" xmlns="http://www.w3.org/2000/svg">
+<rect width="200" height="130" fill="#F8FAFC"/>
+<rect x="16" y="18" width="70" height="70" rx="6" fill="#fff" stroke="#0E7490" stroke-width="1.8"/>
+<rect x="114" y="18" width="70" height="70" rx="6" fill="#fff" stroke="#0E7490" stroke-width="1.8"/>
+${figure(36,42,1.2,'#0E7490')}${figure(52,42,1.2,'#0E7490')}${figure(68,42,1.2,'#0E7490')}
+${figure(36,66,1.2,'#0E7490')}${figure(52,66,1.2,'#0E7490')}${figure(68,66,1.2,'#0E7490')}
+${figure(149,54,1.2,'#0E7490')}
+<text x="51" y="104" text-anchor="middle" font-size="9.6" font-weight="700" fill="#0C4A6E">밀도 높음</text>
+<text x="149" y="104" text-anchor="middle" font-size="9.6" font-weight="700" fill="#475569">밀도 낮음</text>
+<text x="100" y="122" text-anchor="middle" font-size="9.4" font-weight="700" fill="#475569">1 km² 안에 사는 사람의 수</text>
+</svg>`,
+
+/* 12 계절에 따라 부는 바람 — 문항용 */
+wind:`<svg viewBox="0 0 200 130" xmlns="http://www.w3.org/2000/svg">
+<rect width="200" height="130" fill="#F1F8FA"/>
+${plate(14,12,80,22,'여름',10.4,'#FFF8E1','#B45309','#7C4A03')}
+${plate(106,12,80,22,'겨울',10.4,'#E0F2FE','#0369A1','#0C4A6E')}
+${arrow(54,92,54,44,'#B45309')}
+${arrow(122,44,146,92,'#0369A1')}
+<text x="54" y="110" text-anchor="middle" font-size="9.4" font-weight="700" fill="#7C4A03">남쪽 바다에서</text>
+<text x="54" y="123" text-anchor="middle" font-size="9.4" font-weight="700" fill="#7C4A03">뜨겁고 습한 바람</text>
+<text x="146" y="110" text-anchor="middle" font-size="9.4" font-weight="700" fill="#0C4A6E">북서쪽 육지에서</text>
+<text x="146" y="123" text-anchor="middle" font-size="9.4" font-weight="700" fill="#0C4A6E">차갑고 건조한 바람</text>
+</svg>`,
+
+/* 13 예전 → 오늘날 인구 분포 — 문항용 */
+shift:`<svg viewBox="0 0 200 130" xmlns="http://www.w3.org/2000/svg">
+<rect width="200" height="130" fill="#F8FAFC"/>
+${plate(12,14,76,24,'예전',10.6,'#fff','#94A3B8','#475569')}
+${plate(112,14,76,24,'오늘날',10.6,'#DCF0F5','#0E7490','#0C4A6E')}
+<text x="50" y="58" text-anchor="middle" font-size="9.4" font-weight="700" fill="#475569">기후가 온화하고</text>
+<text x="50" y="71" text-anchor="middle" font-size="9.4" font-weight="700" fill="#475569">평야가 발달한 곳</text>
+<text x="150" y="58" text-anchor="middle" font-size="9.4" font-weight="700" fill="#0C4A6E">일자리·교통이</text>
+<text x="150" y="71" text-anchor="middle" font-size="9.4" font-weight="700" fill="#0C4A6E">발달한 곳</text>
+${arrow(66,92,134,92,'#0E7490')}
+<text x="100" y="116" text-anchor="middle" font-size="9.6" font-weight="700" fill="#475569">자연환경 → 인문환경</text>
+</svg>`,
+
+/* 14 불균형을 해결하려는 노력 — 문항용 */
+help:`<svg viewBox="0 0 200 130" xmlns="http://www.w3.org/2000/svg">
+<rect width="200" height="130" fill="#F1F8FA"/>
+${plate(40,10,120,22,'균형 있게 발전하기',10.2,'#0E7490','#0C4A6E','#fff')}
+${plate(12,42,84,22,'공공 기관 이전',9.4,'#fff','#0E7490','#0F172A')}
+${plate(104,42,84,22,'혁신 도시',9.4,'#fff','#0E7490','#0F172A')}
+${plate(12,70,84,22,'청년 마을',9.4,'#fff','#0E7490','#0F172A')}
+${plate(104,70,84,22,'고향 사랑 기부제',9,'#fff','#0E7490','#0F172A')}
+<text x="100" y="114" text-anchor="middle" font-size="9.4" font-weight="700" fill="#475569">일자리·주거·교육 환경을 함께 살펴요</text>
+</svg>`,
+
+/* 15 정리하는 태도 — 문항용 */
+note:`<svg viewBox="0 0 200 130" xmlns="http://www.w3.org/2000/svg">
+<rect width="200" height="130" fill="#FFFDF5"/>
+<rect x="24" y="16" width="152" height="82" rx="8" fill="#fff" stroke="#E7D9A8" stroke-width="1.8"/>
+<line x1="40" y1="42" x2="160" y2="42" stroke="#E7D9A8" stroke-width="1.2"/>
+<line x1="40" y1="62" x2="160" y2="62" stroke="#E7D9A8" stroke-width="1.2"/>
+<line x1="40" y1="82" x2="160" y2="82" stroke="#E7D9A8" stroke-width="1.2"/>
+<text x="40" y="36" font-size="9.6" font-weight="800" fill="#8A6D3B">내가 떠올린 낱말</text>
+<text x="100" y="118" text-anchor="middle" font-size="9.6" font-weight="700" fill="#8A6D3B">스스로 떠올려 채우는 것이 정리예요</text>
+</svg>`
+};
+function sceneCard(k,cap,extra){ return `<div class="scene ${extra||''}">${SVG[k]}${cap?`<div class="cap">${cap}</div>`:''}</div>`; }
+
+/* ===== 직접조작 — 에너지 채우기 놀이 판(신규 패턴 — 겹침 판정형) =====
+   ⭐ 스물네 종의 조작은 모두 **내가 옳으면 그만큼 나아갔다**.
+      이번만 다르다 — **옳아도 아무 일이 일어나지 않을 수 있다.**
+      낱말을 넣어 옳은 문장을 말해도 **같은 낱말을 쓴 친구가 한 명도 없으면 아무도 칸을 칠하지 못한다.**
+      판정 축이 처음으로 둘이다: ㉠ 내가 옳은 문장을 만들었는가(내 몫) +
+      ㉡ 그 낱말을 쓴 친구가 있는가(내 손 밖의 일).
+      그래서 판을 채울 때부터 **친구들도 떠올릴 만한 낱말인가**를 생각하게 된다 — 교과서 놀이의 전략 그대로.
+   ⚠️ 보기 낱말 45개는 교과서 p.102 |보기| 원문 전량. 낱말마다 옳은 문장 하나와
+      그 낱말을 잘못 쓴 문장 둘을 두었다(정답 자리는 낱말 차례에 따라 0·1·2로 돌아간다).
+   ⚠️ 친구 셋의 놀이 판과 말하는 차례는 고정 리터럴 — 난수 0이라 jsdom에서 전 과정을 그대로 검증한다.
+   ⚠️ 이기는 에너지 칸 수는 8 — 지도서 “놀이 인원에 따라 승리하는 에너지 칸 개수를 조정할 수 있습니다”에 따라
+      넷이서 짧게 하도록 정했고, 판 아래 캡션에 그 사실을 적었다. */
+
+/* 교과서 p.102 |보기| — 45개 원문 순서 그대로 */
+const EG_W = [
+  {w:"기후", ok:"기후는 오랜 기간 한 지역에 나타나는 평균적인 대기 상태입니다.",
+   no:["기후는 오늘 하루의 하늘 상태를 가리키는 말입니다.","기후는 한 지역에 사는 사람의 수를 나타내는 말입니다."]},
+  {w:"날씨", ok:"날씨는 짧은 시간 동안의 대기 상태를 말합니다.",
+   no:["날씨는 여러 해 동안의 평균적인 대기 상태를 말합니다.","날씨는 한 해 동안 내린 비의 양만을 뜻합니다."]},
+  {w:"대기", ok:"대기는 지구를 둘러싸고 있는 공기를 말합니다.",
+   no:["대기는 땅의 생김새를 부르는 말입니다.","대기는 바다에 흐르는 물을 부르는 말입니다."]},
+  {w:"기온", ok:"기온은 공기가 따뜻하거나 차가운 정도로, 기후를 이루는 요소입니다.",
+   no:["기온은 하늘에서 내린 비의 양을 뜻합니다.","기온은 바람이 불어오는 방향을 뜻합니다."]},
+  {w:"강수", ok:"강수는 비나 눈처럼 하늘에서 내리는 물을 말합니다.",
+   no:["강수는 공기가 따뜻한 정도를 뜻합니다.","강수는 하천이 흐르는 방향을 뜻합니다."]},
+  {w:"바람", ok:"우리나라는 계절에 따라 불어오는 바람의 방향이 달라집니다.",
+   no:["우리나라는 한 해 내내 같은 방향의 바람만 불어옵니다.","바람은 기후를 이루는 요소에 들어가지 않습니다."]},
+  {w:"봄", ok:"봄은 대체로 온화하고 건조한 편입니다.",
+   no:["봄은 한 해 가운데 가장 춥고 눈이 많이 내립니다.","봄에는 한 해 강수량의 절반 이상이 집중됩니다."]},
+  {w:"여름", ok:"여름은 기온이 높고 비가 많이 내립니다.",
+   no:["여름은 기온이 낮고 매우 건조합니다.","여름에는 북서쪽 육지에서 차갑고 건조한 바람이 불어옵니다."]},
+  {w:"가을", ok:"가을은 대체로 맑고 건조한 편입니다.",
+   no:["가을은 한 해 가운데 비가 가장 많이 내리는 계절입니다.","가을에는 기온이 한 해 가운데 가장 높이 올라갑니다."]},
+  {w:"겨울", ok:"겨울에는 북서쪽 육지에서 차갑고 건조한 바람이 불어옵니다.",
+   no:["겨울에는 남쪽 바다에서 뜨겁고 습한 바람이 불어옵니다.","겨울은 기온이 높고 비가 많이 내리는 계절입니다."]},
+  {w:"계절", ok:"우리나라는 계절에 따라 기후의 특징이 다르게 나타납니다.",
+   no:["우리나라는 계절이 달라져도 기후의 특징이 똑같습니다.","계절은 땅의 생김새를 나누는 이름입니다."]},
+  {w:"등온선", ok:"등온선은 기온이 같은 곳을 이어서 나타낸 선입니다.",
+   no:["등온선은 인구가 같은 곳을 이어서 나타낸 선입니다.","등온선은 바다와 육지의 경계를 나타낸 선입니다."]},
+  {w:"자연재해", ok:"자연재해는 사람들의 생명과 재산에 피해를 주는 자연 현상입니다.",
+   no:["자연재해는 사람이 일부러 일으켜 즐기는 놀이입니다.","자연재해는 사람에게 피해를 주지 않는 현상만 가리킵니다."]},
+  {w:"가뭄", ok:"가뭄은 오랫동안 비가 내리지 않아 물이 부족해지는 자연재해입니다.",
+   no:["가뭄은 비가 너무 많이 내려 물에 잠기는 자연재해입니다.","가뭄은 짧은 시간에 눈이 많이 내리는 자연재해입니다."]},
+  {w:"황사", ok:"황사는 흙먼지가 바람을 타고 날아와 공기를 뿌옇게 만드는 자연재해입니다.",
+   no:["황사는 기온이 갑자기 크게 떨어지는 자연재해입니다.","황사는 하천이 넘쳐 물에 잠기는 자연재해입니다."]},
+  {w:"폭설", ok:"폭설은 짧은 시간에 눈이 매우 많이 내리는 자연재해입니다.",
+   no:["폭설은 오랫동안 비가 오지 않아 물이 마르는 자연재해입니다.","폭설은 기온이 매우 높이 올라가는 자연재해입니다."]},
+  {w:"한파", ok:"한파는 기온이 갑자기 크게 떨어져 매우 추워지는 자연재해입니다.",
+   no:["한파는 기온이 갑자기 크게 올라 매우 더워지는 자연재해입니다.","한파는 흙먼지가 날아와 하늘이 뿌옇게 되는 자연재해입니다."]},
+  {w:"폭염", ok:"폭염은 기온이 매우 높이 올라 더위가 심해지는 자연재해입니다.",
+   no:["폭염은 기온이 크게 떨어져 추위가 심해지는 자연재해입니다.","폭염은 눈이 많이 내려 길이 막히는 자연재해입니다."]},
+  {w:"호우", ok:"호우는 짧은 시간에 비가 매우 많이 내리는 것을 말합니다.",
+   no:["호우는 비가 오랫동안 내리지 않는 것을 말합니다.","호우는 바람만 세게 부는 것을 말합니다."]},
+  {w:"홍수", ok:"홍수는 비가 많이 내려 하천이 넘치고 물에 잠기는 자연재해입니다.",
+   no:["홍수는 물이 모자라 논밭이 마르는 자연재해입니다.","홍수는 기온이 크게 떨어져 물이 어는 자연재해입니다."]},
+  {w:"태풍", ok:"태풍은 강한 바람과 많은 비를 몰고 오는 자연재해입니다.",
+   no:["태풍은 바람도 비도 없이 조용히 지나가는 현상입니다.","태풍은 땅이 갈라져 흔들리는 현상입니다."]},
+  {w:"기후변화", ok:"기후변화로 우리나라의 연평균 기온이 꾸준히 올라가고 있습니다.",
+   no:["기후변화로 우리나라의 연평균 기온이 꾸준히 내려가고 있습니다.","기후변화가 일어나도 자연재해의 세기는 달라지지 않습니다."]},
+  {w:"지구 온난화", ok:"지구 온난화는 지구의 평균 기온이 높아지는 현상입니다.",
+   no:["지구 온난화는 지구의 평균 기온이 낮아지는 현상입니다.","지구 온난화는 하루 사이에 하늘이 바뀌는 현상입니다."]},
+  {w:"기후 행동", ok:"기후 행동은 기후변화를 막으려는 모든 노력을 말합니다.",
+   no:["기후 행동은 기후를 더 빨리 바꾸려는 노력을 말합니다.","기후 행동은 나라만 할 수 있어서 개인은 할 수 없습니다."]},
+  {w:"인구 분포", ok:"인구 분포는 인구가 모이거나 흩어져 있는 정도를 말합니다.",
+   no:["인구 분포는 한 지역에 사는 사람의 수만을 뜻합니다.","인구 분포는 1 km² 안에 사는 사람의 수를 뜻합니다."]},
+  {w:"인구", ok:"인구는 일정한 지역에 사는 사람의 수를 말합니다.",
+   no:["인구는 사람들이 모이거나 흩어져 있는 정도를 뜻합니다.","인구는 그 지역의 땅 넓이를 뜻합니다."]},
+  {w:"자연환경", ok:"기후와 지형은 인구 분포에 영향을 주는 자연환경입니다.",
+   no:["일자리와 교통은 인구 분포에 영향을 주는 자연환경입니다.","자연환경은 인구 분포에 아무런 영향을 주지 않습니다."]},
+  {w:"인문환경", ok:"일자리와 교통, 교육은 인구 분포에 영향을 주는 인문환경입니다.",
+   no:["기후와 지형은 인구 분포에 영향을 주는 인문환경입니다.","오늘날 인구 분포는 인문환경의 영향을 거의 받지 않습니다."]},
+  {w:"인구 밀도", ok:"인구 밀도는 1 km² 안에 사는 사람의 수를 나타냅니다.",
+   no:["인구 밀도는 그 지역에 사는 사람의 수를 그대로 나타냅니다.","인구 밀도는 도시가 발달한 지역에서 낮게 나타납니다."]},
+  {w:"수도권", ok:"수도권은 우리나라에서 인구가 가장 많이 모여 있는 지역입니다.",
+   no:["수도권은 우리나라에서 인구가 가장 적게 사는 지역입니다.","수도권에서는 빈집이 늘고 일손이 부족한 문제가 두드러집니다."]},
+  {w:"인구 구조", ok:"인구 구조를 보면 유소년층·청장년층·노년층의 비율을 알 수 있습니다.",
+   no:["인구 구조를 보면 그 지역의 땅 넓이를 알 수 있습니다.","인구 구조는 수도권과 비수도권이 서로 똑같습니다."]},
+  {w:"주택 문제", ok:"인구가 많이 모인 곳에서는 집이 부족한 주택 문제가 나타납니다.",
+   no:["인구가 빠져나간 곳일수록 집이 부족한 주택 문제가 심해집니다.","주택 문제는 인구 분포와 아무런 관계가 없습니다."]},
+  {w:"교통 혼잡", ok:"인구가 많이 모인 곳에서는 길이 막히는 교통 혼잡이 나타납니다.",
+   no:["인구가 적은 곳일수록 교통 혼잡이 더 심해집니다.","교통 혼잡은 자연재해의 한 가지입니다."]},
+  {w:"환경 오염", ok:"인구가 많이 모인 곳에서는 환경 오염 문제가 심해질 수 있습니다.",
+   no:["환경 오염은 사람이 적게 사는 곳일수록 반드시 심해집니다.","환경 오염은 기후를 이루는 요소 가운데 하나입니다."]},
+  {w:"비수도권", ok:"비수도권에서는 시설이 줄고 빈집이 늘어나는 문제가 나타납니다.",
+   no:["비수도권에서는 집값이 크게 올라 집을 구하기 어려워집니다.","비수도권은 우리나라에서 인구가 가장 많이 모인 지역입니다."]},
+  {w:"청장년층", ok:"비수도권에서는 청장년층이 빠져나가 일손이 부족해집니다.",
+   no:["청장년층은 열네 살 이하의 어린이를 가리킵니다.","청장년층이 빠져나가면 그 지역의 일손 부족이 저절로 사라집니다."]},
+  {w:"인구 유출", ok:"인구 유출은 인구가 다른 지역으로 빠져나가는 것을 말합니다.",
+   no:["인구 유출은 다른 지역에서 인구가 들어오는 것을 말합니다.","인구 유출이 이어져도 그 지역의 학교 수는 달라지지 않습니다."]},
+  {w:"국가 경쟁력", ok:"인구 분포의 불균형이 심해지면 국가 경쟁력이 약해질 수 있습니다.",
+   no:["인구 분포의 불균형이 심해질수록 국가 경쟁력이 강해집니다.","국가 경쟁력은 기후를 이루는 요소 가운데 하나입니다."]},
+  {w:"공공 기관", ok:"공공 기관을 비수도권으로 옮겨 인구가 고르게 살도록 돕습니다.",
+   no:["공공 기관을 수도권으로 모아 인구가 고르게 살도록 돕습니다.","공공 기관을 옮기는 일은 인구 분포와 관계가 없습니다."]},
+  {w:"로컬 브랜딩", ok:"로컬 브랜딩은 지역의 특색을 살려 그 지역을 알리는 노력입니다.",
+   no:["로컬 브랜딩은 모든 지역을 똑같은 모습으로 만드는 노력입니다.","로컬 브랜딩은 자연재해에 대비하는 방법입니다."]},
+  {w:"고향 사랑 기부제", ok:"고향 사랑 기부제는 다른 지역에 기부해 그 지역을 돕는 제도입니다.",
+   no:["고향 사랑 기부제는 자기가 사는 지역에만 기부할 수 있는 제도입니다.","고향 사랑 기부제는 기후변화를 막으려고 만든 제도입니다."]},
+  {w:"청년 마을", ok:"청년 마을은 청년들이 지역에 머물며 살아 보도록 돕는 사업입니다.",
+   no:["청년 마을은 청년들이 지역을 떠나도록 돕는 사업입니다.","청년 마을은 자연재해를 미리 알리는 시설입니다."]},
+  {w:"혁신 도시", ok:"혁신 도시를 만들면 일자리가 생겨 사람들이 모일 수 있습니다.",
+   no:["혁신 도시를 만들면 그 지역의 일자리가 오히려 줄어듭니다.","혁신 도시는 인구가 가장 많은 곳에만 만듭니다."]},
+  {w:"디지털 관광 주민증", ok:"디지털 관광 주민증은 그 지역에 살지 않아도 주민처럼 혜택을 받게 해 줍니다.",
+   no:["디지털 관광 주민증은 그 지역에 사는 사람만 받을 수 있습니다.","디지털 관광 주민증은 자연재해를 알리는 문자입니다."]},
+  {w:"국가 균형 발전", ok:"국가 균형 발전은 여러 지역이 고르게 발전하도록 하는 것입니다.",
+   no:["국가 균형 발전은 한 지역에만 사람과 시설을 모으는 것입니다.","국가 균형 발전은 계절에 따른 기후 차이를 줄이는 것입니다."]}
+];
+const EG_SLOTS = 16;          // 놀이 판 칸 수 (교과서 원문)
+const EG_GOAL  = 8;           // 이기는 에너지 칸 수 (지도서 조정 규칙에 따라 정함)
+const EG_NAMES = ["나","친구 ㉠","친구 ㉡","친구 ㉢"];
+/* 친구 셋의 놀이 판 — 고정 리터럴(난수 0) */
+const EG_FRIEND = [
+  [0,1,3,7,12,19,20,21,23,24,25,28,29,31,42,44],
+  [0,4,9,10,12,15,16,21,22,24,34,35,36,38,40,41],
+  [1,5,6,7,8,11,13,14,17,18,23,26,27,28,30,39]
+];
+/* 친구가 말하는 차례 — 고정 리터럴. 모두 자기 판 안의 낱말이다 */
+const EG_SAY = [
+  [0,24,7,29,28,12,20,21,1,23],
+  [12,9,21,35,0,15,24,34,22,4],
+  [28,14,23,27,1,6,17,5,13,30]
+];
+/* 조사 고르기 — 마지막 글자의 받침을 보고 을/를·은/는·(으)로를 자동으로 가른다 */
+function egJong(t){ const c=t.charCodeAt(t.length-1); return (c>=0xAC00&&c<=0xD7A3) ? (c-0xAC00)%28 : 0; }
+function egJ(t,a,b){ return t + (egJong(t)?a:b); }
+function egQ(t,a,b){ return '「'+t+'」' + (egJong(t)?a:b); }
+function egRo(t){ const j=egJong(t); return t + ((j===0||j===8)?'로':'으로'); }
+/* 정답 문장의 자리 — 낱말 차례에 따라 0·1·2로 돌아간다 */
+function egAt(i){ return i%3; }
+function egOpts(i){
+  const d=EG_W[i], at=egAt(i), out=[];
+  let c=0; for(let k=0;k<3;k++) out.push(k===at ? d.ok : d.no[c++]);
+  return out;
+}
+/* 상태 판정 헬퍼 */
+function egFilled(st){ return st.egBoard.filter(x=>x!=null).length; }
+function egReady(st){ return egFilled(st)===EG_SLOTS; }
+function egHas(st,i){ return st.egBoard.indexOf(i)>=0; }
+/* 그 낱말을 쓴 사람 모두 — 0=나, 1~3=친구 */
+function egHolders(st,i){
+  const out=[]; if(egHas(st,i)) out.push(0);
+  EG_FRIEND.forEach((b,k)=>{ if(b.indexOf(i)>=0) out.push(k+1); });
+  return out;
+}
+function egMyTurn(st){ return st.egTurn===0; }
+function egOver(st){ return st.egDone===true; }
+function egUnsaid(st){ const o=[]; st.egBoard.forEach((v,s)=>{ if(v!=null && !st.egSaid[s]) o.push(s); }); return o; }
+
+/* 놀이 판 캔버스 — 낱말 16칸 + 네 사람 에너지 */
+function egCanvas(st){
+  const cellW=80, cellH=30, gapX=4, gapY=4, x0=4, y0=30;
+  let g='';
+  for(let s=0;s<EG_SLOTS;s++){
+    const r=Math.floor(s/4), c=s%4;
+    const x=x0+c*(cellW+gapX), y=y0+r*(cellH+gapY);
+    const v=st.egBoard[s];
+    const said=v!=null && st.egSaid[s];
+    const pend=(st.egSwapSlot===s);
+    const bg = v==null ? '#F8FAFC' : (pend ? '#FEF3C7' : (said ? '#E2E8F0' : '#fff'));
+    const stk = v==null ? '#CBD5E0' : (pend ? '#B45309' : (said ? '#94A3B8' : '#0E7490'));
+    g+=`<rect x="${x}" y="${y}" width="${cellW}" height="${cellH}" rx="6" fill="${bg}" stroke="${stk}" stroke-width="1.6"/>`;
+    if(v!=null){
+      const t=EG_W[v].w, fs = t.length>=9 ? 7.4 : (t.length>=7 ? 8.4 : 10);
+      g+=`<text x="${x+cellW/2}" y="${y+cellH/2+fs*0.36}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="${said?'#64748B':'#0F172A'}">${t}</text>`;
+      if(said) g+=`<line x1="${x+8}" y1="${y+cellH/2}" x2="${x+cellW-8}" y2="${y+cellH/2}" stroke="#94A3B8" stroke-width="1.2"/>`;
+    } else {
+      g+=`<text x="${x+cellW/2}" y="${y+cellH/2+4}" text-anchor="middle" font-size="10" font-weight="700" fill="#CBD5E0">${s+1}</text>`;
+    }
+  }
+  let e='';
+  for(let p=0;p<4;p++){
+    const y=180+p*22;
+    e+=`<text x="4" y="${y+11}" font-size="9.4" font-weight="800" fill="${p===0?'#0C4A6E':'#475569'}">${EG_NAMES[p]}</text>`;
+    for(let k=0;k<EG_GOAL;k++){
+      const on = st.egEn[p]>k;
+      e+=`<rect x="${44+k*17}" y="${y}" width="14" height="14" rx="3" fill="${on?(p===0?'#0E7490':'#94A3B8'):'#fff'}" stroke="${on?(p===0?'#0E7490':'#94A3B8'):'#CBD5E0'}" stroke-width="1.4"/>`;
+    }
+    e+=`<text x="188" y="${y+11}" font-size="9.4" font-weight="800" fill="${p===0?'#0C4A6E':'#475569'}">${st.egEn[p]} / ${EG_GOAL}</text>`;
+    if(st.egWin===p) e+=`<text x="222" y="${y+11}" font-size="9.4" font-weight="800" fill="#B45309">승리!</text>`;
+  }
+  const head = egOver(st) ? '놀이 끝' : (egReady(st) ? (egMyTurn(st)?'내 차례':EG_NAMES[st.egTurn]+' 차례') : `놀이 판 채우기 ${egFilled(st)} / ${EG_SLOTS}`);
+  return `<div class="eg-canvas"><svg viewBox="0 0 340 290" xmlns="http://www.w3.org/2000/svg">
+  <rect width="340" height="290" fill="#F8FAFC"/>
+  <text x="4" y="18" font-size="11.4" font-weight="800" fill="#0C4A6E">에너지 채우기 놀이 판 — ${head}</text>
+  ${g}
+  <line x1="4" y1="172" x2="336" y2="172" stroke="#CBD5E0" stroke-width="1.2"/>
+  ${e}
+  <text x="4" y="284" font-size="8.6" font-weight="700" fill="#64748B">넷이서 하니까 이기는 칸을 ${EG_GOAL}개로 정했어요(인원에 따라 조정할 수 있어요)</text>
+</svg><div class="cvcap">회색으로 지워진 칸은 이미 말한 낱말이에요</div></div>`;
+}
+
+/* 조작 패널 — 왼쪽 놀이 판, 오른쪽 지금 할 일 */
+function egPanel(st){
+  let r='';
+  if(egOver(st)){
+    const win = st.egWin;
+    r += `<div class="eg-card"><div class="pt">${win===0?'내가 이겼어요!':'먼저 채운 사람은 '+EG_NAMES[win]+'!'}</div>
+      에너지 칸을 먼저 ${EG_GOAL}개 채워서 놀이가 끝났어요. 이기고 지는 것보다, <b>낱말을 떠올려 옳은 문장으로 만들어 본 것</b>이 오늘의 공부예요.
+      교실에서는 친구들과 직접 판을 그려 놀이해 봐요.</div>`;
+    if(st.egMsg) r += `<div class="eg-msg">${st.egMsg}</div>`;
+    return `<div class="eg-wrap"><div class="eg-head"><span class="tag on">놀이 끝</span></div>
+      <div class="eg-body">${egCanvas(st)}<div class="eg-right">${r}</div></div></div>`;
+  }
+  /* ① 판 채우기 · 낱말 바꾸기 */
+  if(!st.egStarted || st.egSwapMode){
+    const head = st.egSwapMode
+      ? `<div class="eg-step">낱말 바꾸기 — <b>${EG_W[st.egBoard[st.egSwapSlot]].w}</b> 대신 쓸 낱말을 골라요</div>`
+      : `<div class="eg-step">① 놀이 판 16칸을 채워요 (${egFilled(st)} / ${EG_SLOTS})</div>`;
+    const pool = EG_W.map((d,i)=>{
+      const used=egHas(st,i);
+      return `<button class="eg-chip${used?' used':''}" ${used?'disabled':''} onclick="egPut(${i})">${d.w}</button>`;
+    }).join('');
+    r += head;
+    if(st.egMsg) r += `<div class="eg-msg${st.egWarn?' warn':''}">${st.egMsg}</div>`;
+    r += `<div class="eg-pool">${pool}</div>`;
+    if(!st.egSwapMode){
+      r += `<div class="eg-row"><button class="eg-undo" ${egFilled(st)===0?'disabled':''} onclick="egUndo()">마지막 낱말 빼기</button>
+        <button class="eg-go" ${egReady(st)?'':'disabled'} onclick="egStart()">놀이 시작 →</button></div>`;
+      r += `<div class="eg-tip">💡 옳은 문장을 말해도 <b>같은 낱말을 쓴 친구가 없으면</b> 아무도 칸을 칠하지 못해요. 친구들도 떠올릴 만한 낱말인지 생각하며 골라요.</div>`;
+    }
+    return `<div class="eg-wrap"><div class="eg-head">
+      <span class="tag${egReady(st)?' on':''}">① 판 채우기</span><span class="tag">② 문장 말하기</span><span class="tag">③ 에너지 ${EG_GOAL}칸</span></div>
+      <div class="eg-body">${egCanvas(st)}<div class="eg-right">${r}</div></div></div>`;
+  }
+  /* ② 놀이 */
+  r += `<div class="eg-step">${st.egRound}번째 차례 — ${egMyTurn(st)?'내 차례예요':EG_NAMES[st.egTurn]+'의 차례예요'}</div>`;
+  if(st.egMsg) r += `<div class="eg-msg${st.egWarn?' warn':''}">${st.egMsg}</div>`;
+  if(egMyTurn(st)){
+    if(st.egSel!=null){
+      const wi=st.egBoard[st.egSel];
+      r += `<div class="eg-q">「${EG_W[wi].w}」라고 말하려고 해요. 이 낱말이 들어간 <b>옳은 문장</b>을 골라요</div>`;
+      r += `<div class="eg-list">`+egOpts(wi).map((t,j)=>
+        `<button onclick="egSent(${j})">${t}</button>`).join('')+`</div>`;
+    } else if(st.egTurnDone){
+      r += `<div class="eg-row"><button class="eg-go" onclick="egNextTurn()">다음 차례 →</button></div>`;
+    } else {
+      const un=egUnsaid(st);
+      if(st.egSwapSlot!=null)
+        r += `<div class="eg-row"><button class="eg-swap" onclick="egSwapOpen()">「${EG_W[st.egBoard[st.egSwapSlot]].w}」 바꾸기</button></div>`;
+      if(un.length===0){
+        r += `<div class="eg-msg">말할 수 있는 낱말이 남지 않았어요. 차례를 넘겨요.</div>
+          <div class="eg-row"><button class="eg-go" onclick="egNextTurn()">다음 차례 →</button></div>`;
+      } else {
+        r += `<div class="eg-q">내 판에서 낱말을 하나 골라요</div>`;
+        r += `<div class="eg-list">`+un.map(s=>`<button onclick="egSay(${s})">${EG_W[st.egBoard[s]].w}</button>`).join('')+`</div>`;
+      }
+    }
+  } else {
+    r += `<div class="eg-row"><button class="eg-go" onclick="egNextTurn()">다음 차례 →</button></div>`;
+  }
+  return `<div class="eg-wrap"><div class="eg-head">
+    <span class="tag on">① 판 채우기</span><span class="tag${egMyTurn(st)?' on':''}">② 문장 말하기</span><span class="tag">③ 에너지 ${EG_GOAL}칸</span>
+    <button class="swap" onclick="egRule()">놀이 규칙</button></div>
+    <div class="eg-body">${egCanvas(st)}<div class="eg-right">${r}</div></div></div>`;
+}
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "2단원 우리나라 지리 탐구 · 단원 마무리";
+
+// 확인 4 + 적용 4 — 정답 다양화 [3,1,0,2,0,2,3,1]
+// ⚠️ 단원 전체를 되받는 정리 문항. 지역 이름·연도·금액·수치 0.
+// ⚠️ 3단원(법과 인권의 보장) 선행 침범 0.
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"이 단원에서 배운 <b>기후</b>의 뜻으로 알맞은 것은 무엇일까요?",
+   opts:["짧은 시간 동안의 대기 상태예요","기온, 강수, 인구에 따라 달라져요",
+         "어제는 맑고 오늘은 비가 오는 현상이에요","오랜 기간 한 지역에 나타나는 평균적이며 종합적인 대기 상태예요"],
+   correct:3, pts:POINTS_BASIC, scene:"clim",
+   reason:"기후는 <b>오랜 기간</b> 한 지역에 나타나는 <b>평균적이며 종합적인</b> 대기 상태예요. 짧은 시간의 대기 상태는 <b>날씨</b>지요.",
+   h1:"하루치인지, 여러 해치인지를 갈라 봐요.",
+   h2:"짧은 시간의 대기 상태를 가리키는 낱말은 따로 있어요."},
+
+  {stem:"다음 가운데 <b>자연재해</b>가 <b>아닌</b> 것은 무엇일까요?",
+   opts:["폭염","교통 혼잡","태풍","폭설"],
+   correct:1, pts:POINTS_BASIC, scene:"dis",
+   reason:"자연재해는 <b>생명과 재산에 피해를 주는 자연 현상</b>이에요. 교통 혼잡은 인구가 많이 모인 곳에서 생기는 <b>사람들의 생활 문제</b>지요.",
+   h1:"자연이 일으킨 일인지 살펴봐요.",
+   h2:"하나는 인구 분포의 불균형에서 배운 낱말이에요."},
+
+  {stem:"<b>인구 밀도</b>에 관한 설명으로 알맞은 것은 무엇일까요?",
+   opts:["1 km² 안에 사는 사람의 수를 나타내요","그 지역에 사는 사람의 수를 그대로 나타내요",
+         "도시가 발달한 지역에서 낮게 나타나요","땅의 넓이는 생각하지 않고 구해요"],
+   correct:0, pts:POINTS_BASIC, scene:"dens",
+   reason:"인구 밀도는 인구를 땅의 넓이로 나누어 <b>1 km² 안에 사는 사람의 수</b>로 나타내요. 그래서 인구수만으로는 알 수 없던 것이 보여요.",
+   h1:"인구수만으로는 알 수 없던 것이 있었어요.",
+   h2:"땅의 넓이를 함께 생각해야 해요."},
+
+  {stem:"생각 그물의 빈칸이에요. <b>겨울</b>에 우리나라로 불어오는 바람은 어느 쪽에서 올까요?",
+   opts:["남쪽 바다에서 오는 뜨겁고 습한 바람","동쪽 바다에서 오는 따뜻한 바람",
+         "북서쪽 육지에서 오는 차갑고 건조한 바람","서쪽 바다에서 오는 따뜻하고 습한 바람"],
+   correct:2, pts:POINTS_BASIC, scene:"wind",
+   reason:"겨울에는 <b>북서쪽 육지</b>에서 차갑고 건조한 바람이 불어와요. 남쪽 바다에서 뜨겁고 습한 바람이 오는 계절은 <b>여름</b>이지요.",
+   h1:"바다에서 오면 습하고, 육지에서 오면 건조해요.",
+   h2:"여름과 겨울의 바람이 서로 반대예요."},
+
+  // 4단계 적용 (+15)
+  {stem:"에너지 채우기 놀이에서 낱말을 넣어 <b>옳은 문장</b>을 말했는데, 같은 낱말을 쓴 친구가 <b>한 명도 없었어요</b>. 어떻게 될까요?",
+   opts:["아무도 에너지 칸을 칠하지 못해요","문장이 옳았으니 나만 한 칸을 칠해요",
+         "모든 친구가 함께 한 칸씩 칠해요","겹치는 사람이 없으니 두 칸을 칠해요"],
+   correct:0, pts:POINTS_APPLY, scene:"same",
+   reason:"이 놀이는 <b>같은 낱말을 쓴 사람이 둘 이상</b>일 때에만 그 사람들이 칸을 칠해요. 그래서 옳은 문장을 말해도 겹치는 친구가 없으면 아무도 칠하지 못해요.",
+   h1:"조작에서 나만 쓴 낱말을 말했을 때 어떻게 되었나요?",
+   h2:"옳게 말하는 것만으로는 칸이 칠해지지 않았어요."},
+
+  {stem:"예전과 오늘날의 <b>인구 분포</b>를 견주어 볼 때 알맞은 설명은 무엇일까요?",
+   opts:["예전에는 일자리가 많은 곳에 인구가 모였어요","오늘날에는 기후와 지형의 영향이 가장 커요",
+         "예전에는 자연환경, 오늘날에는 인문환경의 영향이 커요","예전이나 오늘날이나 인구는 전국에 고르게 퍼져 있어요"],
+   correct:2, pts:POINTS_APPLY, scene:"shift",
+   reason:"예전에는 <b>기후가 온화하고 평야가 발달한 곳</b>에 인구가 모였고, 오늘날에는 <b>일자리와 교통</b> 같은 인문환경의 영향이 커요.",
+   h1:"자연환경과 인문환경 가운데 무엇이 언제 컸는지 떠올려요.",
+   h2:"둘의 차례가 뒤바뀐 것이 하나 있어요."},
+
+  {stem:"인구 분포의 <b>불균형</b>에 관한 설명으로 <b>알맞지 않은</b> 것은 무엇일까요?",
+   opts:["수도권에서는 주택 문제와 교통 혼잡이 나타나요","비수도권에서는 시설이 줄고 빈집이 늘어나요",
+         "불균형이 심해지면 국가 경쟁력이 약해질 수 있어요","공공 기관을 수도권으로 더 모으면 불균형이 풀려요"],
+   correct:3, pts:POINTS_APPLY, scene:"help",
+   reason:"공공 기관은 오히려 <b>비수도권으로 옮겨</b> 인구가 고르게 살도록 돕는 노력이에요. 수도권으로 더 모으면 불균형은 더 심해지겠지요.",
+   h1:"불균형을 해결하려는 노력이 어느 쪽으로 향했는지 떠올려요.",
+   h2:"방향이 반대로 적힌 것이 하나 있어요."},
+
+  {stem:"단원을 마무리하는 태도로 <b>알맞지 않은</b> 것은 무엇일까요?",
+   opts:["생각 그물의 빈칸을 스스로 떠올리며 채워요","생각 그물의 빈칸은 친구 것을 그대로 보고 옮겨 적어요",
+         "새로 알게 된 점과 느낀 점을 내 말로 적어 두어요","잘 떠오르지 않는 낱말은 교과서에서 다시 찾아봐요"],
+   correct:1, pts:POINTS_APPLY, scene:"note",
+   reason:"생각 그물은 <b>스스로 떠올려 채우는</b> 정리예요. 떠오르지 않으면 교과서에서 찾아보면 되고, 그렇게 찾은 것도 내 것이 돼요. 그대로 옮겨 적으면 무엇이 남았는지 알 수 없어요.",
+   h1:"정리는 무엇을 위해 하는 걸까요?",
+   h2:"찾아보는 것과 그대로 베끼는 것은 달라요."}
+];
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — [동기 유발] 단원에서 공부한 내용 떠올리기
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">2단원에서 무엇을 공부했나요?</h2>
+  <div class="ka-bub">‘우리나라 지리 탐구’에서는 <b>기후</b>와 <b>계절별 기후 특징</b>, <b>자연재해</b>와 <b>기후변화</b>, 그리고 <b>인구 분포</b>와 <b>불균형을 해결하려는 노력</b>까지 공부했어요. 오늘은 공부한 내용을 <span class="ka-emph">생각 그물과 교실 놀이</span>로 정리해 봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('recall','2단원에서 공부한 것','wide')}</div>
+    <div class="note">떠오르는 대로 자유롭게 이야기해도 좋아요. 정답을 맞히는 시간이 아니에요.</div></div>`});
+// 2 살펴보기 — 생각 그물 ① 우리나라의 기후
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">생각 그물 ① 우리나라의 기후</h2>
+  <div class="ka-bub">기후는 <b>오랜 기간</b> 한 지역에 나타나는 <b>평균적이며 종합적인 대기 상태</b>예요. <span class="ka-emph">기온·강수·바람</span>에 따라 달라지고, 계절마다 특징이 다르지요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('web1','생각 그물 — 주제 ①','wide')}</div>
+    <div class="note">가지를 따라가며 <b style="color:var(--green)">뜻 → 특징 → 계절</b> 차례로 떠올려 봐요.</div></div>`});
+// 3 살펴보기 — 생각 그물 ② 자연재해와 기후변화 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">생각 그물 ② 자연재해와 기후변화</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('web2','생각 그물 — 자연재해·기후변화','wide')}</div>
+  ${st.revealed?`<div class="answer-box">노란 칸에 들어갈 말은 <span class="ka-emph">기후 행동</span>이에요. 기후 행동은 <b>기후변화를 막으려는 모든 노력</b>을 말해요. 자연재해의 피해를 줄이려는 노력으로는 <b>기상 특보 발표</b>, 긴급 재난 문자 발송, 시설 점검, 재난 대비 훈련, 국민 행동 요령 실천이 있었지요.</div>`
+    :`<div class="note">노란 칸에 들어갈 말은 무엇일까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 4 살펴보기 — 생각 그물 ③ 인구 분포 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">생각 그물 ③ 인구 분포</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('web3','생각 그물 — 인구 분포','wide')}</div>
+  ${st.revealed?`<div class="answer-box">노란 칸에 들어갈 말은 <span class="ka-emph">균형 발전</span>이에요. 수도권과 비수도권의 격차가 심해지면 <b>국가 경쟁력</b>이 약해질 수 있어서, 국토의 <b>균형 발전</b>을 이끌려고 노력해요.</div>`
+    :`<div class="note">노란 칸에 들어갈 말은 무엇일까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 5 살펴보기 — 교실 놀이 방법
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">에너지 채우기 놀이는 이렇게 해요</h2>
+  <div class="ka-bub">놀이 판에 단원에서 배운 <b>주요 낱말 16개</b>를 써요. 자기 차례에 낱말 하나를 골라 그 낱말이 들어간 <b>옳은 문장</b>을 말하고, <span class="ka-emph">같은 낱말을 쓴 친구가 있으면 그 낱말을 쓴 사람 모두</span> 에너지 칸을 색칠해요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('rule','놀이 방법','wide')}</div>
+    <div class="note">문장을 못 만들거나 같은 낱말을 쓴 친구가 없으면 <b style="color:var(--red)">아무도</b> 칠하지 못하고 차례가 넘어가요.</div></div>`});
+// 6 살펴보기 — 직접조작(에너지 채우기 놀이 판)
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">에너지 채우기 놀이를 해요</h2>
+  <div class="ka-grp">${egPanel(st)}</div>`});
+// 7 살펴보기 — 새로 알게 된 점·느낀 점 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">이 단원을 공부하며 무엇을 느꼈나요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('feel','새로 알게 된 점과 느낀 점','wide')}</div>
+  ${st.revealed?`<div class="paper"><div class="ph">✍️ 친구가 쓴 글</div>
+      <div>“우리나라의 계절별 기후 특징을 알았고, <b>인구 분포의 불균형 문제가 심각하다고 느꼈다.</b>”</div>
+      <div class="src">— 교과서 예시</div></div>
+    <div class="answer-box">정답은 없어요. 다만 <span class="ka-emph">스스로 적어 두면</span> 배운 내용이 오래 남아요.</div>`
+    :`<div class="note">새로 알게 된 점과 느낀 점을 한 줄로 적는다면 무엇을 쓰고 싶나요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리: 요약
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">2단원을 한눈에 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('done','2단원 마무리','wide')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">①</span><div><b style="color:var(--green)">기후</b>는 오랜 기간의 평균적이며 종합적인 대기 상태예요. 기온·강수·바람에 따라 달라져요.</div></div>
+    <div class="sum-item"><span class="n">②</span><div>계절마다 특징이 달라요. <b style="color:var(--green)">여름</b>은 덥고 비가 많으며, <b style="color:var(--green)">겨울</b>은 춥고 건조해요.</div></div>
+    <div class="sum-item"><span class="n">③</span><div><b style="color:var(--green)">자연재해</b>는 생명과 재산에 피해를 주는 자연 현상이에요. <b style="color:var(--green)">기후변화</b>로 자연재해가 잦아지고 심해져요.</div></div>
+    <div class="sum-item"><span class="n">④</span><div><b style="color:var(--green)">인구 분포</b>는 인구가 모이거나 흩어져 있는 정도예요. 예전에는 자연환경, 오늘날에는 인문환경의 영향이 커요.</div></div>
+    <div class="sum-item"><span class="n">⑤</span><div>인구 분포의 <b style="color:var(--green)">불균형</b>은 수도권과 비수도권 모두에 문제를 낳아요. 그래서 <b style="color:var(--green)">균형 발전</b>을 위해 여러 노력을 해요.</div></div>
+    <div class="sum-item"><span class="n">★</span><div>생각 그물의 빈칸은 <b style="color:var(--red)">스스로 떠올려</b> 채워 봐요. 잘 생각나지 않으면 교과서에서 찾아봐도 좋아요.</div></div>
+  </div>
+  <div class="note">다음 시간부터는 <b style="color:var(--green)">3단원 「법과 인권의 보장」</b>을 공부해요.</div></div>`});
+// 17 정리: 자기 평가 — 16차시 학습 목표 기반
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"우리나라의 기후와 자연재해, 기후변화에 관해 공부한 내용을 정리할 수 있어요",st)}
+    ${selfCheck(1,"우리나라의 인구 분포와 불균형을 해결하려는 노력을 정리할 수 있어요",st)}
+    ${selfCheck(2,"단원에서 배운 낱말을 넣어 옳은 문장을 만들어 말할 수 있어요",st)}
+  </div><div class="note">잘 떠오르지 않는 곳은 앞 슬라이드를 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">2단원을 모두 마쳤어요!</h2>
+  <div class="ka-grp">
+    <div class="end-score">\u2B50 ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">다음은 <b style="color:var(--amber)">3단원 법과 인권의 보장</b>!</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">⭕ 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">💡 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">💡 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g5_social_u2_l10";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  egBoard:new Array(EG_SLOTS).fill(null), egSaid:new Array(EG_SLOTS).fill(false),
+  egEn:[0,0,0,0], egFc:[0,0,0], egTurn:0, egRound:0,
+  egStarted:false, egTurnDone:false, egSel:null,
+  egSwapSlot:null, egSwapMode:false, egSwapUsed:0,
+  egMsg:null, egWarn:false, egDone:false, egWin:null, egSays:0, egMiss:0,
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 →';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+function egRender(){ main.innerHTML = slides[state.idx].render(state); }
+function egClear(){ state.egMsg=null; state.egWarn=false; }
+function egNames(list){ return list.map(h=>EG_NAMES[h]).join(' · '); }
+/* 승패 판정 — 먼저 EG_GOAL칸을 채운 사람. 동시에 채우면 앞 차례(나부터)가 이긴다 */
+function egCheckWin(){
+  for(let p=0;p<4;p++){
+    if(state.egEn[p]>=EG_GOAL){ state.egWin=p; state.egDone=true; playChime(); return true; }
+  }
+  return false;
+}
+/* 겹침 판정 — 그 낱말을 쓴 사람이 둘 이상일 때만 모두 색칠한다 */
+function egAward(i,speaker){
+  const hold=egHolders(state,i);
+  if(hold.length>=2){
+    hold.forEach(h=>{ state.egEn[h]++; });
+    return {hit:true, hold:hold};
+  }
+  return {hit:false, hold:hold};
+}
+
+/* ① 놀이 판 채우기 — 보기 상자에서 낱말을 집어 넣는다 */
+function egPut(i){
+  if(egOver(state)) return;                                             // 가드① 놀이 끝난 뒤 전체 잠금
+  if(!Number.isInteger(i) || i<0 || i>=EG_W.length) return;             // 가드② 무효 낱말 번호
+  if(state.egStarted && !state.egSwapMode) return;                      // 가드③ 놀이 시작 뒤에는 바꾸기로만
+  if(egHas(state,i)){                                                   // 가드⑧ 같은 낱말 두 번 넣기 금지
+    state.egMsg=egQ(EG_W[i].w,'은','는')+' 이미 판에 있어요. 같은 낱말은 한 칸에만 쓸 수 있어요.';
+    state.egWarn=true; playThud(); egRender(); return;
+  }
+  egClear();
+  if(state.egSwapMode){
+    const s=state.egSwapSlot;
+    const old=EG_W[state.egBoard[s]].w;
+    state.egBoard[s]=i; state.egSaid[s]=false;
+    state.egSwapMode=false; state.egSwapSlot=null; state.egSwapUsed++;
+    state.egMsg='「'+old+'」 대신 「'+EG_W[i].w+'」 썼어요. 이제 이 낱말로 말해 볼 수 있어요.';
+    playBlip(); egRender(); return;
+  }
+  const s=state.egBoard.indexOf(null);
+  if(s<0) return;
+  state.egBoard[s]=i; state.egSaid[s]=false;
+  playBlip(); egRender();
+}
+/* 마지막에 넣은 낱말 빼기 */
+function egUndo(){
+  if(egOver(state)) return;                                             // 가드①
+  if(state.egStarted || state.egSwapMode) return;                       // 가드③ 놀이가 시작되면 뺄 수 없다
+  egClear();
+  let last=-1; state.egBoard.forEach((v,s)=>{ if(v!=null) last=s; });
+  if(last<0) return;
+  state.egBoard[last]=null; state.egSaid[last]=false;
+  playThud(); egRender();
+}
+/* 놀이 시작 — 16칸이 다 차야 열린다 */
+function egStart(){
+  if(egOver(state)) return;                                             // 가드①
+  if(state.egStarted) return;
+  if(!egReady(state)){                                                  // 가드③ 순서 강제
+    state.egMsg='아직 판이 다 차지 않았어요. 낱말 '+EG_SLOTS+'개를 모두 채워야 놀이를 시작할 수 있어요.';
+    state.egWarn=true; playThud(); egRender(); return;
+  }
+  egClear();
+  state.egStarted=true; state.egTurn=0; state.egRound=1; state.egTurnDone=false;
+  state.egMsg='내 차례부터 시작해요. 내 판의 낱말 하나를 골라 그 낱말이 들어간 <b>옳은 문장</b>을 말해요.';
+  playBlip(); egRender();
+}
+/* ② 내 차례 — 낱말 고르기 */
+function egSay(s){
+  if(egOver(state)) return;                                             // 가드①
+  if(!Number.isInteger(s) || s<0 || s>=EG_SLOTS) return;                // 가드② 무효 칸 번호
+  if(!state.egStarted) return;                                          // 가드③ 순서 강제
+  if(!egMyTurn(state) || state.egTurnDone) return;                      // 가드④ 내 차례가 아닐 때 무시
+  if(state.egSel!=null) return;                                         // 가드⑥ 문장이 열려 있는 동안 무시
+  if(state.egBoard[s]==null) return;
+  if(state.egSaid[s]){                                                  // 가드⑤ 이미 말한 낱말 재사용 금지
+    state.egMsg=egQ(EG_W[state.egBoard[s]].w,'은','는')+' 이미 말한 낱말이에요.';
+    state.egWarn=true; playThud(); egRender(); return;
+  }
+  egClear();
+  state.egSel=s; state.egSays++;
+  playBlip(); egRender();
+}
+/* ② 내 차례 — 문장 고르기. 옳아도 겹치는 친구가 없으면 아무도 칠하지 못한다 */
+function egSent(j){
+  if(egOver(state)) return;                                             // 가드①
+  if(!Number.isInteger(j) || j<0 || j>2) return;                        // 가드② 무효 문장 번호
+  if(state.egSel==null) return;                                         // 가드⑦ 문장이 열리지 않았으면 무시
+  const s=state.egSel, wi=state.egBoard[s];
+  egClear();
+  if(j!==egAt(wi)){
+    state.egSel=null; state.egTurnDone=true; state.egMiss++;
+    state.egMsg='그 문장은 '+egQ(EG_W[wi].w,'을','를')+' 잘못 쓴 문장이에요. 문장을 만들지 못하면 <b>아무도</b> 칸을 칠하지 못하고 차례가 넘어가요. 이 낱말은 다음 내 차례에 다시 말할 수 있어요.';
+    state.egWarn=true; playThud(); egRender(); return;
+  }
+  state.egSaid[s]=true; state.egSel=null; state.egTurnDone=true;
+  const res=egAward(wi,0);
+  if(res.hit){
+    state.egMsg='옳은 문장이에요! '+egQ(EG_W[wi].w,'을','를')+' 쓴 사람은 <b>'+egNames(res.hold)+'</b> — 모두 에너지 한 칸을 칠해요.';
+    playBlip();
+  } else {
+    state.egSwapSlot=s;
+    state.egMsg='문장은 옳아요. 그런데 '+egQ(EG_W[wi].w,'을','를')+' 쓴 친구가 <b>한 명도 없어요</b> — 이번에는 아무도 칸을 칠하지 못해요. 다음 내 차례에 이 낱말을 <b>다른 낱말로 바꿀</b> 수 있어요.';
+    state.egWarn=true; playThud();
+  }
+  egCheckWin(); egRender();
+}
+/* 나만 쓴 낱말 바꾸기 — 한 번에 한 낱말만(교과서 규칙) */
+function egSwapOpen(){
+  if(egOver(state)) return;                                             // 가드①
+  if(!state.egStarted) return;                                          // 가드③
+  if(!egMyTurn(state) || state.egTurnDone) return;                      // 가드④
+  if(state.egSel!=null) return;                                         // 가드⑥
+  if(state.egSwapSlot==null) return;
+  egClear();
+  state.egSwapMode=true;
+  state.egMsg='바꿀 낱말을 하나 고르세요. <b>한 번에 한 낱말만</b> 바꿀 수 있어요.';
+  egRender();
+}
+/* ③ 다음 차례 — 친구는 자기 판의 낱말을 차례대로 말한다(고정 리터럴) */
+function egNextTurn(){
+  if(egOver(state)) return;                                             // 가드①
+  if(!state.egStarted) return;                                          // 가드③ 순서 강제
+  if(state.egSwapMode) return;
+  if(state.egSel!=null) return;                                         // 가드⑥ 문장이 열려 있으면 무시
+  if(egMyTurn(state) && !state.egTurnDone && egUnsaid(state).length>0){  // 가드④ 내 차례엔 말을 먼저
+    state.egMsg='아직 내 차례예요. 낱말을 하나 골라 문장을 말해 봐요.';
+    state.egWarn=true; playThud(); egRender(); return;
+  }
+  egClear();
+  state.egTurnDone=false;
+  if(state.egTurn===3){ state.egTurn=0; state.egRound++;
+    state.egMsg='다시 내 차례예요. 아직 말하지 않은 낱말을 골라요.'; egRender(); return; }
+  state.egTurn=state.egTurn+1;
+  const f=state.egTurn-1, q=EG_SAY[f];
+  const wi=q[state.egFc[f] % q.length];
+  state.egFc[f]=state.egFc[f]+1;
+  const res=egAward(wi,state.egTurn);
+  if(res.hit) state.egMsg=EG_NAMES[state.egTurn]+' 차례 — 「'+EG_W[wi].w+'」라고 말했어요. 같은 낱말을 쓴 사람은 <b>'+egNames(res.hold)+'</b> — 모두 한 칸씩 칠해요.';
+  else { state.egMsg=EG_NAMES[state.egTurn]+' 차례 — 「'+EG_W[wi].w+'」라고 말했어요. 그런데 그 낱말을 쓴 사람이 <b>더 없어서</b> 아무도 칸을 칠하지 못했어요.'; state.egWarn=true; }
+  egCheckWin(); egRender();
+}
+/* 놀이 규칙 다시 보기 */
+function egRule(){
+  if(egOver(state)) return;                                             // 가드①
+  state.egMsg='① 내 낱말 하나로 옳은 문장을 말해요. ② 같은 낱말을 쓴 사람이 <b>둘 이상</b>이면 그 사람들 모두 한 칸을 칠해요. ③ 문장을 못 만들거나 겹치는 사람이 없으면 <b>아무도</b> 칠하지 못해요. ④ 에너지 '+EG_GOAL+'칸을 먼저 채우면 이겨요.';
+  state.egWarn=false; egRender();
+}
+
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true; qs.wrongPick=null;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2; if(qs.hint===2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">📘 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 →</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // ⚠️ 2단원 마지막 차시 — 허브 복귀
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+</body>
+</html>
