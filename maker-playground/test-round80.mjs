@@ -52,14 +52,17 @@ console.log('R80 ② 제품 홈 — 미니 도구 다리 2종');
 {
   const w = bootEnv({ product: true });
   const body = w.document.getElementById('pgBody').innerHTML;
-  t('초대장 링크', body.includes('href="/kmake/invite/"'), '제품 홈에 초대장 문 없음');
-  t('마음 카드 링크', body.includes('href="/kmake/card/"'), '제품 홈에 마음 카드 문 없음');
+  /* R81 이주로 URL은 /kmake/* → /maker/* 로 승계 — R80의 의도(제품 홈에
+     초대장·마음 카드로 가는 문이 실존)는 경로 무관하게 유지 검증.
+     현행 정확 URL 고정은 test-round81 ④가 담당. */
+  t('초대장 링크', /href="\/(kmake|maker)\/invite\/"/.test(body), '제품 홈에 초대장 문 없음');
+  t('마음 카드 링크', /href="\/(kmake|maker)\/card\/"/.test(body), '제품 홈에 마음 카드 문 없음');
   t('섹션 제목', body.includes('바로 만드는 미니 도구'));
   t('초대장 문구 = 원문 이식', body.includes('일시와 장소가 움직이는 초대장으로'));
   t('마음 카드 문구 = 원문 이식', body.includes('생일·감사·축하 카드가 움직이는 영상으로'));
   // 링크는 <a href> — SPA 라우터를 안 타고 실제 페이지로 나간다
   const a = w.document.querySelector('[data-h2-mini="invite"]');
-  t('실제 앵커 요소', !!a && a.tagName === 'A' && a.getAttribute('href') === '/kmake/invite/');
+  t('실제 앵커 요소', !!a && a.tagName === 'A' && /^\/(kmake|maker)\/invite\/$/.test(a.getAttribute('href') || ''));
 }
 
 console.log('R80 ③ 무깃발 — 검수·플레이그라운드 무오염');
@@ -97,7 +100,11 @@ console.log('R80 ⑥ /maker 정적본 드리프트 0');
   const { transform } = await import(path.join(__dirname, '..', 'maker', 'build.mjs'));
   const fresh = transform(read('index.html'));
   t('재생성본 일치', built === fresh, 'node maker/build.mjs 재실행 필요');
-  t('정적본이 새 캐시버스터 반영', built.includes('v=20260807a'), '옛 버전 자산을 가리킴');
+  /* R81 정정: 리터럴(v=20260807a) 고정은 버스터 범프 때마다 깨진다.
+     의도(정적본이 옛 자산을 가리키지 않음)는 플레이그라운드 현행 버스터와
+     동적 대조로 유지 — 재생성본 일치 검증과 함께 이중 안전망. */
+  const bust = (read('index.html').match(/\?v=([0-9a-z]+)/) || [])[1];
+  t('정적본이 현행 캐시버스터 반영', !!bust && built.includes('v=' + bust), '옛 버전 자산을 가리킴');
 }
 
 console.log('\nR80 결과:', pass + '/' + (pass + fail), fail === 0 ? '전부 통과' : '실패 ' + fail);

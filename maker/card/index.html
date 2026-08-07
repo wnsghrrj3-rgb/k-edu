@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>마음 카드 | 케이메이커</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;500;700&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{ --ink:#1c1c22; --line:#e3e0da; --gold:#a8894e; --paper:#faf9f6; }
+  *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  body{ font-family:'Noto Sans KR',sans-serif; background:var(--paper); color:var(--ink); min-height:100vh; display:flex; justify-content:center; }
+  .wrap{ width:min(720px,100%); padding:36px 20px 60px; }
+  h1{ font-family:'Noto Serif KR'; font-weight:500; font-size:clamp(24px,4.5vw,30px); text-align:center; letter-spacing:-.01em; }
+  .sub{ text-align:center; color:#8a877f; font-size:14px; font-weight:300; margin:10px 0 34px; letter-spacing:.02em; }
+  .field{ border-top:1px solid var(--line); padding:22px 2px; }
+  .field:last-of-type{ border-bottom:1px solid var(--line); }
+  .flabel{ font-size:12px; letter-spacing:.14em; color:#9a958a; margin-bottom:14px; font-weight:500; }
+  .chips{ display:flex; flex-wrap:wrap; gap:8px; }
+  .chip{ font-family:'Noto Sans KR'; font-size:15px; font-weight:400; padding:10px 20px; border-radius:2px; border:1px solid var(--line); background:#fff; color:#55524b; cursor:pointer; transition:.18s; }
+  .chip.on{ border-color:var(--ink); background:var(--ink); color:#fff; }
+  input[type=text]{ width:100%; font-family:'Noto Serif KR'; font-weight:500; font-size:22px; padding:6px 2px 10px; border:none; border-bottom:1px solid var(--line); background:transparent; color:var(--ink); border-radius:0; }
+  input[type=text]:focus{ outline:none; border-bottom-color:var(--gold); }
+  input::placeholder{ color:#c5c1b8; font-weight:300; }
+  .hint{ font-size:12px; color:#a8a49a; margin-top:10px; font-weight:300; }
+  .photoRow{ display:flex; gap:14px; align-items:center; }
+  .photoBtn{ font-size:14px; padding:11px 18px; border:1px solid var(--line); border-radius:2px; background:#fff; color:#55524b; cursor:pointer; }
+  #photoThumb{ width:48px; height:48px; border-radius:50%; object-fit:cover; border:1px solid var(--gold); display:none; }
+  .go{ display:block; width:100%; font-family:'Noto Sans KR'; font-weight:500; font-size:16px; letter-spacing:.16em; color:#fff; background:var(--ink); border:none; border-radius:2px; padding:19px; cursor:pointer; margin-top:36px; transition:.18s; }
+  .go:hover{ background:#000; }
+  .go:active{ transform:scale(.99); }
+  #stage{ display:none; }
+  .cvBox{ position:relative; border-radius:4px; overflow:hidden; box-shadow:0 24px 60px rgba(20,18,30,.28); background:#000; }
+  canvas{ display:block; width:100%; height:auto; }
+  .toolRow{ display:flex; gap:8px; margin-top:18px; flex-wrap:wrap; }
+  .tool{ flex:1 1 120px; font-family:'Noto Sans KR'; font-size:14px; font-weight:400; letter-spacing:.06em; padding:14px 10px; border-radius:2px; border:1px solid var(--line); cursor:pointer; background:#fff; color:var(--ink); transition:.15s; }
+  .tool.primary{ background:var(--ink); color:#fff; border-color:var(--ink); }
+  .tool:active{ transform:scale(.97); }
+  #recBadge{ position:absolute; top:14px; left:14px; background:rgba(0,0,0,.55); color:#fff; font-size:12px; letter-spacing:.08em; padding:7px 14px; border-radius:2px; display:none; backdrop-filter:blur(4px); }
+</style>
+  <script src="/kedu_gate.js"></script>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ── 1단계 ── -->
+  <div id="form">
+    <a href="/maker/" style="display:inline-block;font-size:13px;color:#9a958a;text-decoration:none;letter-spacing:.06em;margin-bottom:18px">← 케이메이커</a>
+    <h1>마음 카드</h1>
+    <div class="sub">세 가지만 적으세요 &nbsp;·&nbsp; 나머지는 케이메이커가 합니다</div>
+
+    <div class="field">
+      <div class="flabel">OCCASION &nbsp;—&nbsp; 어떤 카드인가요</div>
+      <div class="chips" id="occasionChips">
+        <button class="chip on" data-k="birthday">생일</button>
+        <button class="chip" data-k="congrats">축하</button>
+        <button class="chip" data-k="thanks">감사</button>
+        <button class="chip" data-k="cheer">응원</button>
+        <button class="chip" data-k="comfort">위로</button>
+        <button class="chip" data-k="welcome">환영</button>
+        <button class="chip" data-k="graduation">졸업</button>
+        <button class="chip" data-k="entrance">입학</button>
+        <button class="chip" data-k="newyear">새해</button>
+        <button class="chip" data-k="holiday">명절</button>
+        <button class="chip" data-k="wedding">결혼</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <div class="flabel">TO &nbsp;—&nbsp; 받는 사람</div>
+      <input type="text" id="nameIn" maxlength="12" placeholder="이름">
+    </div>
+
+    <div class="field">
+      <div class="flabel">MESSAGE &nbsp;—&nbsp; 전하고 싶은 말</div>
+      <input type="text" id="msgIn" maxlength="30" placeholder="비워 두면 어울리는 문장이 들어갑니다">
+    </div>
+
+    <div class="field">
+      <div class="flabel">PHOTO &nbsp;—&nbsp; 사진 <span style="letter-spacing:0;text-transform:none;color:#c0bcb2">(없으면 이니셜로 새깁니다)</span></div>
+      <div class="photoRow">
+        <img id="photoThumb" alt="">
+        <label class="photoBtn">사진 선택<input type="file" id="photoIn" accept="image/*" hidden></label>
+      </div>
+    </div>
+
+    <button class="go" id="makeBtn">카드 만들기</button>
+  </div>
+
+  <!-- ── 2단계 ── -->
+  <div id="stage">
+    <a href="/maker/" style="display:inline-block;font-size:13px;color:#9a958a;text-decoration:none;letter-spacing:.06em;margin-bottom:18px">← 케이메이커</a>
+    <h1>완성</h1>
+    <div class="sub">마음에 들면 저장해 전하세요</div>
+    <div class="cvBox">
+      <canvas id="cv" width="1280" height="720"></canvas>
+      <div id="recBadge">● RECORDING</div>
+    </div>
+    <div class="toolRow">
+      <button class="tool" id="replayBtn">다시 재생</button>
+      <button class="tool" id="pngBtn">이미지 저장</button>
+      <button class="tool primary" id="webmBtn">영상 저장</button>
+      <button class="tool" id="backBtn">수정</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ───────────────────────────────────────────
+   케이메이커 · 멸치식 템플릿 엔진 v0.2
+   톤 = 프리미엄 (고학년~성인). 딥 컬러 + 골드,
+   세리프 타이포, 금분·보케·시머 — 색종이/이모지 폐기.
+   GPT 재료 슬롯(bg/ring/deco)은 유지 — 현재 프로시저럴.
+   ─────────────────────────────────────────── */
+const THEMES = {
+  birthday:{ en:'HAPPY BIRTHDAY', bgA:'#2b1e3e', bgB:'#171126', accent:'#e3c186', dust:'#f0d9a8',
+    presets:['당신의 하루가 선물이기를','태어나 줘서 고마워요','오늘의 주인공에게'] },
+  congrats:{ en:'CONGRATULATIONS', bgA:'#1b1d24', bgB:'#0d0e12', accent:'#d8b26e', dust:'#e8cf9a',
+    presets:['해낸 당신에게 박수를','빛나는 순간을 축하합니다','노력이 결실을 맺는 날'] },
+  thanks:{ en:'WITH GRATITUDE', bgA:'#1c2b23', bgB:'#101b15', accent:'#e2d3ac', dust:'#efe4c4',
+    presets:['덕분에 여기까지 왔습니다','마음 깊이 감사드립니다','함께여서 든든했습니다'] },
+  cheer:{ en:'FOR YOUR TOMORROW', bgA:'#18243c', bgB:'#0c1424', accent:'#b9cfe8', dust:'#d5e4f4',
+    presets:['당신의 내일을 응원합니다','지금도 충분히 잘하고 있어요','끝까지 함께하겠습니다'] },
+  comfort:{ en:'ALWAYS WITH YOU', bgA:'#232733', bgB:'#12141c', accent:'#c9c3d8', dust:'#ddd8ea',
+    presets:['마음을 함께합니다','천천히 가도 괜찮아요','당신 곁에 있겠습니다'] },
+  welcome:{ en:'WELCOME', bgA:'#1e2a38', bgB:'#101820', accent:'#d9c79a', dust:'#eadfbe',
+    presets:['함께하게 되어 기쁩니다','당신을 기다렸습니다','새 식구를 환영합니다'] },
+  graduation:{ en:'GRADUATION', bgA:'#33202b', bgB:'#1a1016', accent:'#d8b26e', dust:'#e8cf9a',
+    presets:['걸어온 길이 자랑스럽습니다','새로운 장의 시작을 축하합니다','어디서든 빛나기를'] },
+  entrance:{ en:'A NEW BEGINNING', bgA:'#1a2e2e', bgB:'#0e1a1a', accent:'#cfe0c9', dust:'#e2efdc',
+    presets:['설레는 시작을 축하합니다','첫걸음을 응원합니다','멋진 날들이 기다립니다'] },
+  newyear:{ en:'HAPPY NEW YEAR', bgA:'#141b33', bgB:'#0a0e1d', accent:'#e0c98f', dust:'#efe0b4',
+    presets:['새해 복 많이 받으세요','바라는 일 모두 이루시기를','올해도 함께 걸어요'] },
+  holiday:{ en:"SEASON'S GREETINGS", bgA:'#2e2118', bgB:'#19110c', accent:'#e4b87e', dust:'#f1d4a4',
+    presets:['넉넉하고 따뜻한 명절 보내세요','가족과 함께 풍성한 한때를','고향 가는 길이 편안하시기를'] },
+  wedding:{ en:'BLESSINGS', bgA:'#2f1f28', bgB:'#181017', accent:'#e6c4b0', dust:'#f3dccb',
+    presets:['두 사람의 시작을 축복합니다','오래도록 나란히 걷기를','가장 아름다운 약속 앞에서'] }
+};
+const LOOP = 7.5;
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+const W = cv.width, H = cv.height;
+const state = { occ:'birthday', name:'', msg:'', photo:null };
+
+/* ── 1단계 UI ── */
+const chipBox = document.getElementById('occasionChips');
+chipBox.addEventListener('click', e=>{
+  const b = e.target.closest('.chip'); if(!b) return;
+  chipBox.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+  b.classList.add('on'); state.occ = b.dataset.k;
+  document.getElementById('msgIn').placeholder = THEMES[state.occ].presets[0];
+});
+document.getElementById('photoIn').addEventListener('change', e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const img = new Image();
+  img.onload = ()=>{ state.photo = img;
+    const t = document.getElementById('photoThumb'); t.src = img.src; t.style.display='block'; };
+  img.src = URL.createObjectURL(f);
+});
+
+let startT = 0, playing = false;
+document.getElementById('makeBtn').onclick = async ()=>{
+  state.name = document.getElementById('nameIn').value.trim() || '소중한 사람';
+  const th = THEMES[state.occ];
+  state.msg = document.getElementById('msgIn').value.trim()
+           || th.presets[Math.floor(Math.random()*th.presets.length)];
+  try{
+    await document.fonts.load("700 100px 'Noto Serif KR'");
+    await document.fonts.load("300 40px 'Noto Serif KR'");
+    await document.fonts.load("400 30px 'Noto Sans KR'");
+  }catch(e){}
+  document.getElementById('form').style.display='none';
+  document.getElementById('stage').style.display='block';
+  buildParticles(); play();
+  window.scrollTo({top:0,behavior:'smooth'});
+};
+document.getElementById('backBtn').onclick = ()=>{
+  playing=false;
+  document.getElementById('stage').style.display='none';
+  document.getElementById('form').style.display='block';
+};
+document.getElementById('replayBtn').onclick = ()=>{ buildParticles(); play(); };
+
+function play(){ startT = performance.now(); if(!playing){ playing=true; requestAnimationFrame(tick); } }
+function tick(now){
+  if(!playing) return;
+  drawScene(((now-startT)/1000) % LOOP);
+  requestAnimationFrame(tick);
+}
+
+/* ── 이징 ── */
+const eoc = x=>1-Math.pow(1-x,3);                       // easeOutCubic
+const eio = x=>x<.5? 4*x*x*x : 1-Math.pow(-2*x+2,3)/2;  // easeInOut
+const clamp01 = x=>Math.max(0,Math.min(1,x));
+const seg = (t,a,b)=>clamp01((t-a)/(b-a));
+
+/* ── 입자: 금분(느리게 상승) + 보케 ── */
+let dust=[], bokeh=[];
+function buildParticles(){
+  dust = Array.from({length:70},()=>({
+    x: Math.random()*W, y: Math.random()*H,
+    vy: 8+Math.random()*16, ph: Math.random()*6.28,
+    size: .8+Math.random()*1.8, tw: 1.5+Math.random()*2.5
+  }));
+  bokeh = Array.from({length:9},()=>({
+    x: Math.random()*W, y: Math.random()*H,
+    r: 40+Math.random()*90, ph: Math.random()*6.28, spd:.05+Math.random()*.1
+  }));
+}
+
+/* ── 타임라인 ──
+   0.0  배경·보케 숨 들어옴
+   0.6  골드 링이 스스로 그려짐 (호 스윕)
+   1.1  사진/모노그램 페이드-스케일 인
+   1.9  소제(영문 레터스페이스) 페이드
+   2.4  이름(세리프 대자) 상승 페이드
+   3.2  헤어라인 디바이더가 중앙에서 자람
+   3.6  문구 — 글자 단위 스태거 페이드
+   5.2  시머(빛줄기) 한 번 스윕
+   금분은 내내 느리게 상승           ── */
+function drawScene(t){
+  const th = THEMES[state.occ];
+  const inb = eoc(seg(t,0,1.0));
+
+  /* 배경 [GPT 슬롯: bg] */
+  const g = ctx.createLinearGradient(0,0,W*.3,H);
+  g.addColorStop(0,th.bgA); g.addColorStop(1,th.bgB);
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+
+  /* 보케 */
+  bokeh.forEach(b=>{
+    const bx=b.x+Math.sin(t*b.spd+b.ph)*30, by=b.y+Math.cos(t*b.spd*.8+b.ph)*20;
+    const rg=ctx.createRadialGradient(bx,by,0,bx,by,b.r);
+    rg.addColorStop(0, hexA(th.accent,.05*inb)); rg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(bx,by,b.r,0,6.28); ctx.fill();
+  });
+
+  /* 금분 — 느린 상승, 반짝임 */
+  dust.forEach(p=>{
+    const y=(p.y - t*p.vy) % (H+20); const yy = y<-10? y+H+20 : y;
+    const a=(Math.sin(t*p.tw+p.ph)+1)/2 * .8 * inb;
+    ctx.globalAlpha=a; ctx.fillStyle=th.dust;
+    ctx.beginPath(); ctx.arc(p.x+Math.sin(t*.4+p.ph)*12, yy, p.size, 0, 6.28); ctx.fill();
+  });
+  ctx.globalAlpha=1;
+
+  /* 비네트 */
+  const v=ctx.createRadialGradient(W/2,H/2,H*.32,W/2,H/2,H*.9);
+  v.addColorStop(0,'rgba(0,0,0,0)'); v.addColorStop(1,'rgba(0,0,0,.42)');
+  ctx.fillStyle=v; ctx.fillRect(0,0,W,H);
+
+  const cx=W/2, cy=224, R=112;
+
+  /* 골드 링 — 호가 스스로 그려짐 [GPT 슬롯: ring] */
+  const ringP = eio(seg(t,0.6,1.5));
+  if(ringP>0){
+    ctx.strokeStyle=th.accent; ctx.lineWidth=1.6; ctx.lineCap='round';
+    ctx.beginPath(); ctx.arc(cx,cy,R+11,-Math.PI/2,-Math.PI/2+6.283*ringP); ctx.stroke();
+    ctx.globalAlpha=.35;
+    ctx.beginPath(); ctx.arc(cx,cy,R+18,-Math.PI/2,-Math.PI/2+6.283*ringP); ctx.stroke();
+    ctx.globalAlpha=1;
+  }
+
+  /* 사진 / 모노그램 */
+  const pp = eoc(seg(t,1.1,1.9));
+  if(pp>0){
+    ctx.save();
+    ctx.globalAlpha=pp;
+    ctx.beginPath(); ctx.arc(cx,cy,R,0,6.28); ctx.clip();
+    const sc = 1.06-.06*pp;
+    if(state.photo){
+      const im=state.photo, s=Math.max(2*R/im.width,2*R/im.height)*sc;
+      ctx.drawImage(im,cx-im.width*s/2,cy-im.height*s/2,im.width*s,im.height*s);
+      ctx.fillStyle='rgba(10,8,16,.12)'; ctx.fillRect(cx-R,cy-R,2*R,2*R); // 딥톤 정합
+    }else{
+      ctx.fillStyle=hexA(th.accent,.09); ctx.fillRect(cx-R,cy-R,2*R,2*R);
+      ctx.fillStyle=th.accent;
+      ctx.font="300 104px 'Noto Serif KR'"; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(state.name.charAt(0), cx, cy+8);
+    }
+    ctx.restore(); ctx.globalAlpha=1;
+  }
+
+  /* 소제 — 영문 레터스페이스 */
+  const lp = eoc(seg(t,1.9,2.5));
+  if(lp>0){
+    ctx.globalAlpha=lp*.85; ctx.fillStyle=th.accent;
+    ctx.font="400 21px 'Noto Sans KR'"; ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+    drawSpaced(th.en, cx, 402+(1-lp)*10, 7.5);
+    ctx.globalAlpha=1;
+  }
+
+  /* 이름 — 세리프 대자 */
+  const np = eoc(seg(t,2.4,3.2));
+  if(np>0){
+    ctx.globalAlpha=np; ctx.fillStyle='#f4f1ea';
+    ctx.font="700 84px 'Noto Serif KR'"; ctx.textAlign='center';
+    ctx.fillText(state.name, cx, 496+(1-np)*24);
+    ctx.globalAlpha=1;
+  }
+
+  /* 헤어라인 디바이더 */
+  const dp = eio(seg(t,3.2,3.8));
+  if(dp>0){
+    ctx.strokeStyle=hexA(th.accent,.9); ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(cx-130*dp,536); ctx.lineTo(cx+130*dp,536); ctx.stroke();
+    if(dp>.5){ ctx.fillStyle=th.accent;
+      ctx.beginPath(); ctx.arc(cx,536,2.2,0,6.28); ctx.fill(); }
+  }
+
+  /* 문구 — 글자 스태거 페이드 */
+  if(t>3.6){
+    ctx.font="300 38px 'Noto Serif KR'"; ctx.textAlign='left';
+    const full=state.msg, totalW=ctx.measureText(full).width;
+    let x = cx-totalW/2;
+    for(let i=0;i<full.length;i++){
+      const chA = eoc(seg(t, 3.6+i*.045, 4.1+i*.045));
+      ctx.globalAlpha=chA*.95; ctx.fillStyle='#e9e4d8';
+      ctx.fillText(full[i], x, 596+(1-chA)*8);
+      x += ctx.measureText(full[i]).width;
+    }
+    ctx.globalAlpha=1;
+  }
+
+  /* 시머 — 한 루프에 한 번 대각 빛줄기 */
+  const sp = seg(t,5.2,6.4);
+  if(sp>0 && sp<1){
+    const sx = -300 + (W+600)*eio(sp);
+    const sg = ctx.createLinearGradient(sx-130,0,sx+130,0);
+    sg.addColorStop(0,'rgba(255,255,255,0)');
+    sg.addColorStop(.5, hexA('#ffffff',.07));
+    sg.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.save(); ctx.translate(W/2,H/2); ctx.rotate(-.35); ctx.translate(-W/2,-H/2);
+    ctx.fillStyle=sg; ctx.fillRect(sx-320,-200,640,H+400); ctx.restore();
+  }
+
+  /* 워터마크 */
+  ctx.globalAlpha=.34; ctx.fillStyle='#fff';
+  ctx.font="300 17px 'Noto Sans KR'"; ctx.textAlign='right';
+  ctx.fillText('K-MAKER · keduclass.com', W-26, H-22);
+  ctx.globalAlpha=1;
+}
+function drawSpaced(s,cx,y,sp){
+  let w=0; for(const ch of s) w += ctx.measureText(ch).width + sp;
+  let x = cx-(w-sp)/2; const prev=ctx.textAlign; ctx.textAlign='left';
+  for(const ch of s){ ctx.fillText(ch,x,y); x += ctx.measureText(ch).width + sp; }
+  ctx.textAlign=prev;
+}
+function hexA(hex,a){
+  const n=parseInt(hex.slice(1),16);
+  return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`;
+}
+
+/* ── 저장 ── */
+document.getElementById('pngBtn').onclick = ()=>{
+  drawScene(5.1);   // 전 요소 완성 프레임(시머 직전)
+  const a=document.createElement('a');
+  a.download='카드_'+state.name+'.png'; a.href=cv.toDataURL('image/png'); a.click();
+  play();
+};
+document.getElementById('webmBtn').onclick = ()=>{
+  const stream=cv.captureStream(30);
+  const mime=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'].find(m=>MediaRecorder.isTypeSupported(m));
+  if(!mime){ alert('이 기기에서는 영상 저장이 지원되지 않습니다. 이미지 저장을 이용해 주세요.'); return; }
+  const rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:7_000_000});
+  const chunks=[]; rec.ondataavailable=e=>chunks.push(e.data);
+  rec.onstop=()=>{
+    const a=document.createElement('a');
+    a.download='카드_'+state.name+'.webm';
+    a.href=URL.createObjectURL(new Blob(chunks,{type:'video/webm'})); a.click();
+    document.getElementById('recBadge').style.display='none';
+  };
+  document.getElementById('recBadge').style.display='block';
+  buildParticles(); play(); rec.start();
+  setTimeout(()=>rec.stop(), LOOP*1000);
+};
+buildParticles();
+</script>
+<script src="/kedu_back.js"></script>
+</body>
+</html>
