@@ -28,7 +28,7 @@
   /* ── 나가는 문 — 박물관에는 출구가 있어야 한다 ─────────────────
      들어온 사람은 나갈 수 있어야 한다. 뒤로가기는 출구가 아니다.
      전시 관람 중에는 보이지 않는다(로비에만 있다 — 무대를 침범하지 않는다). */
-  #exit-door{ position:fixed; left:22px; top:20px; z-index:70;
+  #exit-door{ position:fixed; left:22px; top:20px; z-index:110; /* 게이트(z100) 위 — 입장 전에도 나갈 수 있어야 한다 */
     display:inline-flex; align-items:center; gap:8px;
     font-family:'Gowun Dodum',sans-serif; font-size:13px; letter-spacing:.04em;
     color:rgba(201,169,97,.52); text-decoration:none;
@@ -270,7 +270,6 @@
       title.style.opacity = '.25';
       title.style.transform = 'translateY(-12px)';
       document.getElementById('walk-hint').classList.add('is-in');
-      document.getElementById('exit-door').classList.add('is-in');   // 나가는 문 — 점등이 끝난 뒤에야 보인다
     }, 3800*SP);
     sessionStorage.setItem('kmuseum.entered','1');
   }
@@ -280,6 +279,8 @@
   gate.id='gate';
   gate.innerHTML = '<div class="g-line">눌러서 입장</div>';
   document.body.appendChild(gate);
+  /* 나가는 문은 입장 전부터 켜져 있다 — 들어선 순간에도 돌아갈 길이 보여야 한다 */
+  setTimeout(function(){ document.getElementById('exit-door').classList.add('is-in'); }, 600);
   var entered = false;
   function enter(){
     if(entered) return; entered=true;
