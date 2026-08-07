@@ -25,8 +25,9 @@ for (const f of ['index.html', 'teacher/index.html', 'hub2/index.html']) {
 console.log('R79 ② 역경로 보존');
 {
   const km = site('kmake/index.html');
-  t('/kmake 시작 화면 생존', km.includes('<div id="start">'));
-  t('/kmake → /maker 배너 유지', km.includes('mkNewBanner') && km.includes('href="/maker/"'));
+  const retired = km.includes('data-r85-redirect'); /* R85 은퇴 스텁 */
+  t('/kmake 시작 화면 생존 (R85 은퇴 시 스텁)', retired || km.includes('<div id="start">'));
+  t('/kmake → /maker 안내 유지', km.includes('href="/maker/"') && (retired || km.includes('mkNewBanner')));
 }
 
 console.log('R79 ③ boxbar 분류');

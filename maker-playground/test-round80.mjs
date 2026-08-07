@@ -89,9 +89,10 @@ console.log('R80 ④ 미니 페이지 자립성 — 구 편집기 번들 미로�
 console.log('R80 ⑤ 역경로 무손상 — /kmake 메인의 미니 CTA 생존');
 {
   const km = site('kmake/index.html');
-  t('초대장 CTA', km.includes('href="/kmake/invite/"'));
-  t('마음 카드 CTA', km.includes('href="/kmake/card/"'));
-  t('배너 유지 (R79)', km.includes('mkNewBanner') && km.includes('href="/maker/"'));
+  const retired = km.includes('data-r85-redirect'); /* R85 은퇴 스텁 — CTA 의도는 /maker 홈 브리지가 승계 */
+  t('초대장 CTA (R85 은퇴 시 브리지 승계)', retired || km.includes('href="/kmake/invite/"'));
+  t('마음 카드 CTA (R85 은퇴 시 브리지 승계)', retired || km.includes('href="/kmake/card/"'));
+  t('안내 유지 (R79)', km.includes('href="/maker/"') && (retired || km.includes('mkNewBanner')));
 }
 
 console.log('R80 ⑥ /maker 정적본 드리프트 0');

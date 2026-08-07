@@ -91,11 +91,12 @@ console.log('R77 ③ /maker 정적 생성본 — 드리프트 검사');
 console.log('R77 ④ /kmake 배너');
 {
   const src = fs.readFileSync(path.join(__dirname, '..', 'kmake', 'index.html'), 'utf8');
-  t('배너 존재', src.includes('mkNewBanner'));
+  const retired = src.includes('data-r85-redirect'); /* R85 은퇴 스텁 — 배너 의도(신 버전 안내)의 최종형 */
+  t('배너 존재 (R85 은퇴 시 스텁이 충족)', retired || src.includes('mkNewBanner'));
   t('/maker/ 링크', src.includes('href="/maker/"'));
-  t('닫기 기억(localStorage)', src.includes("mkNewBannerOff"));
-  t('기본 display:none — 스크립트로만 노출', /id="mkNewBanner" style="display:none/.test(src));
-  t('시작 화면 마크업 보존', src.includes('<div id="start">'));
+  t('닫기 기억(localStorage)', retired || src.includes("mkNewBannerOff"));
+  t('기본 display:none — 스크립트로만 노출', retired || /id="mkNewBanner" style="display:none/.test(src));
+  t('시작 화면 마크업 보존 (R85 은퇴 시 해당 없음)', retired || src.includes('<div id="start">'));
 }
 
 console.log('\nR77 결과:', pass + '/' + (pass + fail), fail === 0 ? '전부 통과' : '실패 ' + fail);

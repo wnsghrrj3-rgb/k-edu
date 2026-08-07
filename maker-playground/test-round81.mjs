@@ -52,11 +52,17 @@ console.log('R81 ① 이주본 실존 — 신 영역에 두 페이지가 산다'
 console.log('R81 ② 기계 패리티 — 복귀 링크 외 바이트 동일');
 for (const [name, oldP, newP] of [['초대장', 'kmake/invite/index.html', 'maker/invite/index.html'], ['마음 카드', 'kmake/card/index.html', 'maker/card/index.html']]) {
   const oldSrc = site(oldP), newSrc = site(newP);
-  const reverted = newSrc.split('href="/maker/"').join('href="/kmake/"');
-  t(`${name} 역변환 == 원본`, reverted === oldSrc, '역변환 불일치 — 링크 외 내용 드리프트');
-  const nOld = (oldSrc.match(/href="\/kmake\/"/g) || []).length;
-  const nNew = (newSrc.match(/href="\/maker\/"/g) || []).length;
-  t(`${name} 복귀 링크 전량 치환 (${nOld}건)`, nOld > 0 && nOld === nNew, `원본 ${nOld} vs 이주본 ${nNew}`);
+  const retired = oldSrc.includes('data-r85-redirect'); /* R85 은퇴 — 패리티는 R81 커밋에서 이행 완료, 이후 정본은 이주본 */
+  if (retired) {
+    t(`${name} 역변환 == 원본 (R85 은퇴: 이주본이 정본)`, newSrc.length > 10000 && !newSrc.includes('data-r85-redirect'));
+    t(`${name} 복귀 링크 실존 (은퇴 후 잔여 계약)`, (newSrc.match(/href="\/maker\/"/g) || []).length > 0);
+  } else {
+    const reverted = newSrc.split('href="/maker/"').join('href="/kmake/"');
+    t(`${name} 역변환 == 원본`, reverted === oldSrc, '역변환 불일치 — 링크 외 내용 드리프트');
+    const nOld = (oldSrc.match(/href="\/kmake\/"/g) || []).length;
+    const nNew = (newSrc.match(/href="\/maker\/"/g) || []).length;
+    t(`${name} 복귀 링크 전량 치환 (${nOld}건)`, nOld > 0 && nOld === nNew, `원본 ${nOld} vs 이주본 ${nNew}`);
+  }
   t(`${name} 이주본에 /kmake/ 링크 잔존 0`, !newSrc.includes('href="/kmake/"'));
 }
 
@@ -98,8 +104,9 @@ console.log('R81 ⑥ 원본 생존 — 은퇴 전 구 영역 무손상 (R79·R80
   t('구 초대장 페이지 생존', exists('kmake/invite/index.html'));
   t('구 마음 카드 페이지 생존', exists('kmake/card/index.html'));
   const km = site('kmake/index.html');
-  t('구 메인 초대장 CTA 생존', km.includes('/kmake/invite/') || km.includes('invite'));
-  t('구 메인 카드 CTA 생존', km.includes('/kmake/card/') || km.includes('card'));
+  const retired6 = km.includes('data-r85-redirect'); /* R85 은퇴 — 도달 경로는 /maker 홈 브리지가 승계 */
+  t('구 메인 초대장 CTA 생존 (R85 은퇴 시 브리지 승계)', retired6 || km.includes('/kmake/invite/') || km.includes('invite'));
+  t('구 메인 카드 CTA 생존 (R85 은퇴 시 브리지 승계)', retired6 || km.includes('/kmake/card/') || km.includes('card'));
 }
 
 console.log('R81 ⑦ /maker 정적본 드리프트 0 (R77 계약)');
