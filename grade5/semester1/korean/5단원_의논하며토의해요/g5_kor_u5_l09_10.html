@@ -4,10 +4,10 @@
 <script src="/kedu_config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/kedu_tracker.js"></script>
-<meta name="kedu-lesson-id" content="g5_kor_u5_l10_11_v1">
+<meta name="kedu-lesson-id" content="g5_kor_u5_l09_10_v1">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>협력하며 토의하고 점검하기</title>
+<title>자료를 살펴보고 토의 주제 정하기</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@500;700;800&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
 <style>
 /* ===== 5학년 국어 5단원 「의논하며 토의해요」 · 자기주도 통합 엔진 (5학년 라인) =====
@@ -178,7 +178,7 @@ body{font-family:var(--f-body); background:var(--paper); color:var(--ink); -webk
 
 <div class="topbar">
   <button class="lb" onclick="location.href='../index.html'">📚 차시 목록</button>
-  <span class="pill">10~11차시</span>
+  <span class="pill">9~10차시</span>
   <span class="where">국어 5-1 · <b>5. 의논하며 토의해요</b></span>
   <div class="dots" id="dots"></div>
   <span class="score">⭐ <b id="score">0</b></span>
@@ -194,130 +194,133 @@ body{font-family:var(--f-body); background:var(--paper); color:var(--ink); -webk
 </div>
 
 <script>
-/* ===== 10~11차시(소단원 2 통합 후반 — 협력하며 토의하고 점검하기) 15슬 =====
-   학습 목표: 협력하며 토의해 의견의 장단점을 살피고, 여러 의견을 종합해 모둠 의견을 만들 수 있다.
-   정답 로깅 5슬(협력한 부분 모으기 · 의견과 단점 잇기 · 좋은 모둠 의견 · 결정 기준 모으기 · 듣는 태도) = 50점.
-   ★ 저작권: 교과서 252~253쪽 토의 문항표와 말풍선(여러 의견을 종합한다는 안내 포함),
-     토의 점검하기 표 배열 전면 미인용. 자체 토의 장면(6~7차시 인물 하윤·은채·서진·태이를
-     그대로 이어 씀)으로 대체. 의견 종합과 점검 절차는 표준 국어 지식.
-   ※ 성취기준 [6국01-06]. 역량 = 비판적·창의적 사고. */
+/* ===== 9~10차시(소단원 2 통합 전반 — 다양한 자료를 살펴보고 토의 주제 정하기) 15슬 =====
+   학습 목표: 광고와 기사 같은 다양한 자료를 살펴 토의 주제를 정하고, 이유를 갖춘 의견을 마련할 수 있다.
+   정답 로깅 5슬(광고의 뜻 · 기사 내용 알기 · 생각을 묻는 질문 모으기 · 알맞은 토의 주제 · 타당한 이유 모으기) = 50점.
+   ★ 저작권: 교과서 248쪽 나눔 공익 광고(농구공을 든 손·연탄을 든 손 등 구성 요소),
+     249쪽 신문 기사 「나눔을 실천해요」 전문(미국 시사 주간지의 올해의 어린이 선정,
+     실존 인물의 이름·발언·기부 내역 등 모든 내용), 250~251쪽 질문 예시와 계획 문항
+     전면 미인용. 자체 공익 광고 설명과 자체 기사 「작은 나눔이 만든 변화」로 대체.
+     ※ 실존 인물을 다룬 기사는 자체 서술로도 사실 확인 부담이 커, 익명 사례로 새로 썼다.
+   ★ 지도서 반영(2026-08-08, 288~293쪽): ① 차시 8~9 → 9~10으로 확정(소2 통합 = 9~11차시,
+     후반 l11과 분담). 학습 모형 = 토의·토론 학습 모형(주제 확인 → 준비 → 토의 → 정리·평가).
+     ② '스스로 삶과 관련 있고 흥미를 느낄 만한 주제 선정'(평가 유의점) → 주제 조건에 항목 추가.
+     평가 연계 차시 = 소단원 2의 9~11차시.
+   ※ 성취기준 [6국01-06]·[6국02-04]. 역량 = 비판적·창의적 사고. */
 const slides=[
-  {tag:'① 학습 목표', t:'이번에는 제대로 토의해 봅시다',
-   html:`<div class="ka-bub">지난 시간에는 <b class="emph">어긋난 토의</b>를 보았습니다.<br>같은 모둠이 방법을 바꾸어 다시 토의했습니다.<br>무엇이 달라졌는지 살펴봅시다.</div>`},
+  {tag:'① 학습 목표', t:'자료에서 토의 주제를 찾아봅시다',
+   html:`<div class="ka-bub">토의 주제는 <b class="emph">갑자기 떠오르지 않습니다</b>.<br>광고나 기사 같은 <b class="mc">자료를 살펴보다가</b><br>함께 이야기할 거리가 드러납니다.</div>`},
 
-  {tag:'② 다시 한 토의', t:'같은 모둠, 다른 토의',
-   html:`<div class="talk">
-      <div class="turn"><span class="turn-name">은채</span><span class="turn-say">학년마다 책 나눔 상자를 두면 좋겠어요. 집에서 안 읽는 책이 다시 읽힐 수 있으니까요.</span></div>
-      <div class="turn r"><span class="turn-name">태이</span><span class="turn-say">저는 상자가 금세 비거나 넘칠까 봐 걱정돼요. 관리하는 사람을 정해야 하지 않을까요?</span></div>
-      <div class="turn"><span class="turn-name">하윤</span><span class="turn-say">좋은 지적이에요. 관리 문제를 함께 생각해 봅시다.</span></div>
-      <div class="turn r"><span class="turn-name">서진</span><span class="turn-say">그럼 학급 도서 도우미가 한 주에 한 번 살피면 어때요? 이미 있는 역할이라 새로 만들지 않아도 돼요.</span></div>
-      <div class="turn"><span class="turn-name">태이</span><span class="turn-say">그 방법이면 저도 찬성이에요.</span></div>
-    </div>`},
-
-  {tag:'③ 협력한 부분', t:'이 토의에서 협력이 드러난 부분을 모두 고르세요', log:true, collectMsg:'모두 찾았습니다. 의견이 서로를 딛고 자랐습니다. 🎉', hint:'앞 사람의 말을 어떻게 이어받았는지 보세요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">의견에 이유를 함께 말했다</div>
-      <div class="chip" data-hit="1">걱정되는 점을 사람이 아니라 의견에 대해 말했다</div>
-      <div class="chip" data-hit="1">앞의 지적을 받아 다음 의견을 냈다</div>
-      <div class="chip" data-hit="1">사회자가 논의할 부분을 짚어 주었다</div>
-      <div class="chip" data-hit="0">가장 목소리가 큰 사람의 의견으로 정했다</div>
-    </div><div class="fb" id="collectFb"></div>`},
-
-  {tag:'② 장단점 살피기', t:'의견마다 장점과 단점이 있습니다',
+  {tag:'② 공익 광고', t:'이런 광고를 보았습니다',
    html:`<div class="grid2">
-      <div class="g2-box"><h4>학년마다 나눔 상자</h4><b>장점</b> 읽는 수준이 맞는다<br><b>단점</b> 관리할 사람이 필요하다</div>
-      <div class="g2-box good"><h4>학급 도서 도우미가 관리</h4><b>장점</b> 새 역할을 만들지 않아도 된다<br><b>단점</b> 도우미의 일이 늘어난다</div>
+      <div class="g2-box"><h4>화면에 담긴 것</h4>빈 손바닥 여럿이 모여<br>한 그루 나무 모양을 이룬다</div>
+      <div class="g2-box good"><h4>적힌 글</h4>혼자서는 그늘이 되지 못합니다</div>
     </div>
-    <div class="ka-bub">단점을 찾는 것은 <b class="emph">깎아내리는 일</b>이 아닙니다.<br>미리 알면 <b class="mc">보완할 수 있기</b> 때문입니다.</div>`},
+    <div class="ka-bub">광고는 길게 말하지 않습니다.<br>대신 <b class="mc">그림과 한 문장</b>으로 생각을 건넵니다.</div>`},
 
-  {tag:'③ 단점 잇기', t:'의견과 그 의견의 단점을 이어 봅시다', log:true, matchMsg:'모두 알맞게 이었습니다. 🎉', hint:'그 방법을 실제로 해 보면 무엇이 걸릴지 생각해 보세요.',
-   html:`<div class="match" id="match">
-      <div class="match-col">
-        <div class="match-col-h">의견</div>
-        <div class="match-card" data-k="a" data-pair="x">학년마다 나눔 상자를 둔다</div>
-        <div class="match-card" data-k="b" data-pair="y">도서 도우미가 상자를 관리한다</div>
-        <div class="match-card" data-k="c" data-pair="z">누구나 아무 때나 책을 넣게 한다</div>
-      </div>
-      <div class="match-col">
-        <div class="match-col-h">단점</div>
-        <div class="match-card" data-k="z" data-pair="c">읽기 어려운 책까지 섞일 수 있다</div>
-        <div class="match-card" data-k="x" data-pair="a">관리할 사람을 새로 정해야 한다</div>
-        <div class="match-card" data-k="y" data-pair="b">도우미가 맡는 일이 늘어난다</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
-
-  {tag:'② 종합하기', t:'하나를 고르는 것만이 답은 아닙니다',
-   html:`<div class="ka-bub">여러 의견 가운데 <b class="emph">하나만 골라야</b> 하는 것은 아닙니다.<br>서로의 좋은 점을 <b class="mc">합쳐 더 나은 의견</b>을 만들 수 있습니다.<br>이것이 토의가 투표와 다른 점입니다.</div>
-    <div class="sentence">학년마다 상자를 두되, 도서 도우미가 한 주에 한 번 살핀다.</div>`},
-
-  {tag:'③ 모둠 의견', t:'좋은 모둠 의견은 어느 것일까요?', log:true, okMsg:'맞습니다. 여러 의견의 좋은 점을 합쳐 단점을 줄였습니다. 🎉', hint:'한쪽만 남기지 않고 걱정되던 부분까지 다룬 것을 고르세요.',
+  {tag:'③ 뜻 고르기', t:'이 광고가 전하려는 것은 무엇일까요?', log:true, okMsg:'맞습니다. 작은 것도 함께 모이면 힘이 된다는 뜻입니다. 🎉', hint:'손 하나와 손 여럿의 차이를 생각해 보세요.',
    html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-pic">🧩</div><div class="wc-word">학년마다 상자를 두되<br>도서 도우미가 주 1회 살핀다</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">1️⃣</div><div class="wc-word">가장 먼저 나온 의견으로<br>그냥 정한다</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">🤐</div><div class="wc-word">걱정되는 점은<br>말하지 않고 넘어간다</div></div>
+      <div class="wcard" data-ok="1"><div class="wc-pic">🌳</div><div class="wc-word">작은 힘도 함께 모이면<br>누군가에게 그늘이 된다</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-pic">🌲</div><div class="wc-word">나무를 많이<br>심어야 한다</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-pic">✋</div><div class="wc-word">손을 자주<br>씻어야 한다</div></div>
     </div><div class="fb"></div>`},
 
-  {tag:'② 결정 기준', t:'의견을 결정할 때 따질 것',
-   html:`<div class="recap">
-      <div class="recap-item"><span class="recap-ic">🙋</span><b>누구나</b> 실천할 수 있는가</div>
-      <div class="recap-item"><span class="recap-ic">🔁</span><b>꾸준히</b> 이어 갈 수 있는가</div>
-      <div class="recap-item"><span class="recap-ic">🎯</span>문제를 해결하는 데 <b>효과적</b>인가</div>
-      <div class="recap-item"><span class="recap-ic">⚠️</span>실천하는 과정에서 <b>새 문제</b>가 생기지 않는가</div>
+  {tag:'② 기사 ①', t:'작은 나눔이 만든 변화',
+   html:`<div class="story">
+      <p><span class="q">○○일보</span></p>
+      <p>한 마을 어귀에 놓인 나무 상자가 요즘 화제다. 상자에는 <span class="mark">가져가도 좋고 두고 가도 좋은 책</span>이라는 글귀가 붙어 있다. 지나가던 사람이 책을 꺼내 읽고, 다 읽은 책을 두고 간다.</p>
+      <p>시작은 두 해 전이었다. 이 마을에 사는 한 초등학생이 다 읽은 책을 상자에 담아 정류장 옆에 두었다. 버스를 기다리는 시간이 지루하다는 말을 자주 들었기 때문이다.</p>
     </div>`},
 
-  {tag:'③ 기준 고르기', t:'모둠 의견을 결정할 때 따져야 할 것을 모두 고르세요', log:true, collectMsg:'모두 찾았습니다. 🎉', hint:'실제로 해 볼 수 있는지를 재는 기준을 고르세요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">누구나 실천할 수 있는가</div>
-      <div class="chip" data-hit="1">꾸준히 이어 갈 수 있는가</div>
-      <div class="chip" data-hit="1">문제 해결에 효과적인가</div>
-      <div class="chip" data-hit="1">새로운 문제가 생기지 않는가</div>
-      <div class="chip" data-hit="0">누가 낸 의견인가</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'② 기사 ②', t:'작은 나눔이 만든 변화',
+   html:`<div class="story">
+      <p>처음에는 책이 줄기만 했다. 그러나 몇 달이 지나자 낯선 책들이 하나둘 늘어나기 시작했다. 누군가 자기 책을 두고 간 것이다.</p>
+      <p>지금은 마을 사람들이 돌아가며 상자를 살핀다. 비에 젖은 책을 빼내고, 넘어진 상자를 세우는 일이 자연스럽게 나누어졌다. 상자는 세 곳으로 늘었다.</p>
+      <p>처음 상자를 놓은 학생은 <span class="q">&quot;큰일을 하려고 한 게 아니었어요. 그냥 제 책이 놀고 있어서요.&quot;</span>라고 말했다.</p>
+    </div>`},
 
-  {tag:'② 결과 나누기', t:'모둠 밖으로 의견을 가져갑니다',
-   html:`<div class="ka-bub">모둠 의견이 정해지면 <b class="mc">반 전체와 나눕니다</b>.<br>다른 모둠의 의견을 들을 때에도 토의는 이어집니다.<br>우리 모둠이 놓친 부분이 그쪽에서 보일 수 있습니다.</div>`},
-
-  {tag:'③ 듣는 태도', t:'다른 모둠의 의견을 들을 때 알맞은 태도는?', log:true, okMsg:'맞습니다. 우리 의견을 보완할 실마리를 찾는 자세입니다. 🎉', hint:'다른 모둠의 의견도 함께 문제를 푸는 자료입니다.',
+  {tag:'③ 내용 알기', t:'상자가 세 곳으로 늘어난 까닭은 무엇일까요?', log:true, okMsg:'맞습니다. 마을 사람들이 함께 참여하게 되었기 때문입니다. 🎉', hint:'처음과 지금이 무엇이 달라졌는지 보세요.',
    html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-pic">🧭</div><div class="wc-word">우리 의견에 보탤 점이 없는지<br>살피며 듣는다</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">🏆</div><div class="wc-word">우리 의견이 더 나은 까닭을<br>찾으며 듣는다</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">😴</div><div class="wc-word">이미 정했으니<br>듣지 않는다</div></div>
+      <div class="wcard" data-ok="1"><div class="wc-pic">🤝</div><div class="wc-word">마을 사람들이 책을 두고 가고<br>함께 돌보게 되어서</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-pic">💰</div><div class="wc-word">마을에서 돈을<br>많이 들여서</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-pic">📢</div><div class="wc-word">신문에<br>먼저 났기 때문에</div></div>
     </div><div class="fb"></div>`},
 
-  {tag:'④ 토의하기', t:'모둠원과 토의해 봅시다',
-   html:`<div class="stage-box">준비한 의견으로 모둠 토의를 해 보세요.
-      <small>· 의견과 이유를 말하고, 서로의 의견에서 장점과 단점을 찾아보세요.<br>· 하나를 고르기 전에 <b>합칠 수 있는지</b> 먼저 생각해 보세요.<br>· 네 가지 기준으로 최종 의견을 정하세요.</small></div>
-    <button class="stage-do" id="stageDo" data-fb="여럿의 생각이 하나로 자란 순간입니다. 👏">토의해 보았습니다</button>
+  {tag:'③ 질문 만들기', t:'생각을 묻는 질문을 모두 고르세요', log:true, collectMsg:'모두 찾았습니다. 답이 하나로 정해지지 않는 질문입니다. 🎉', hint:'기사에 답이 그대로 적혀 있는 질문은 생각을 묻는 질문이 아닙니다.',
+   html:`<div class="collect" id="collect">
+      <div class="chip" data-hit="1">이 학생은 어떤 마음으로 상자를 놓았을까?</div>
+      <div class="chip" data-hit="1">나눔을 실천하면 무엇이 좋을까?</div>
+      <div class="chip" data-hit="0">상자는 지금 몇 곳인가?</div>
+      <div class="chip" data-hit="1">우리 학교에서 할 수 있는 나눔은 무엇일까?</div>
+      <div class="chip" data-hit="0">기사가 실린 신문 이름은 무엇인가?</div>
+    </div><div class="fb" id="collectFb"></div>`},
+
+  {tag:'② 주제 정하기', t:'토의 주제는 이런 것이어야 합니다',
+   html:`<div class="recap">
+      <div class="recap-item"><span class="recap-ic">👥</span>여러 사람이 <b>함께 생각을 모아야</b> 할 주제</div>
+      <div class="recap-item"><span class="recap-ic">🔧</span>문제의 <b>원인이나 해결 방법</b>과 관련 있는 주제</div>
+      <div class="recap-item"><span class="recap-ic">🏫</span>우리가 <b>실제로 해 볼 수 있는</b> 범위의 주제</div>
+      <div class="recap-item"><span class="recap-ic">💬</span>여러 <b>의견이 나올 수</b> 있는 주제</div>
+      <div class="recap-item"><span class="recap-ic">🌱</span>내 <b>삶과 관련 있고 흥미를 느낄</b> 수 있는 주제</div>
+    </div>`},
+
+  {tag:'③ 주제 고르기', t:'토의 주제로 알맞은 것은 무엇일까요?', log:true, okMsg:'맞습니다. 여럿이 방법을 모아야 하고 우리가 해 볼 수 있는 주제입니다. 🎉', hint:'답이 하나로 정해지는 것은 토의 주제가 되기 어렵습니다.',
+   html:`<div class="wordpick">
+      <div class="wcard" data-ok="1"><div class="wc-pic">🎯</div><div class="wc-word">우리 학교에서 나눔을 실천할<br>방법은 무엇일까</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-pic">🔢</div><div class="wc-word">우리 학교 학생 수는<br>몇 명일까</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-pic">🍰</div><div class="wc-word">어떤 간식이<br>가장 맛있을까</div></div>
+    </div><div class="fb"></div>`},
+
+  {tag:'② 의견 마련', t:'의견에는 이유가 붙어야 합니다',
+   html:`<div class="grid2">
+      <div class="g2-box"><h4>의견</h4>학년마다 한 달에 한 번<br>책 나눔 상자를 운영하자</div>
+      <div class="g2-box good"><h4>이유</h4>다 읽은 책은 집에서 잠자고 있고,<br>학년별로 하면 읽는 수준도 맞아<br>실제로 읽히게 된다</div>
+    </div>
+    <div class="ka-bub">자료를 찾았다면 <b class="mc">출처</b>도 함께 적어 둡니다.<br>어디에서 온 근거인지 밝혀야 <b class="emph">설득력</b>이 생깁니다.</div>`},
+
+  {tag:'③ 타당한 이유', t:'의견을 뒷받침하는 타당한 이유를 모두 고르세요', log:true, collectMsg:'모두 찾았습니다. 근거가 있는 이유입니다. 🎉', hint:'그렇게 하면 왜 좋은지를 설명하는 이유를 고르세요.',
+   html:`<div class="collect" id="collect">
+      <div class="chip" data-hit="1">집에서 안 읽는 책을 다시 읽히게 할 수 있다</div>
+      <div class="chip" data-hit="1">학년별로 하면 읽는 수준이 맞는다</div>
+      <div class="chip" data-hit="1">한 달에 한 번이면 꾸준히 이어 갈 수 있다</div>
+      <div class="chip" data-hit="0">내가 하고 싶으니까</div>
+      <div class="chip" data-hit="0">다른 의견은 재미가 없어서</div>
+    </div><div class="fb" id="collectFb"></div>`},
+
+  {tag:'② 협력 계획', t:'토의하기 전에 정해 둘 것',
+   html:`<div class="recap">
+      <div class="recap-item"><span class="recap-ic">🔎</span><b>의견을 나누고 검토하기</b> — 의견에 이유를 꼭 붙여 말하기</div>
+      <div class="recap-item"><span class="recap-ic">🤝</span><b>존중하는 태도</b> — 말을 끊지 않고 끝까지 듣기</div>
+      <div class="recap-item"><span class="recap-ic">🧭</span><b>협력하며 진행</b> — 아직 말하지 않은 친구에게 차례 넘기기</div>
+    </div>`},
+
+  {tag:'④ 준비하기', t:'주제를 정하고 의견을 마련해 봅시다',
+   html:`<div class="stage-box">나눔과 관련해 우리 반에서 토의할 주제를 하나 정해 말해 보세요.
+      <small>· 여럿이 방법을 모아야 하는 주제인지 따져 보세요.<br>· 의견과 그 이유를 함께 준비하세요.<br>· 찾은 자료가 있다면 출처도 적어 두세요.</small></div>
+    <button class="stage-do" id="stageDo" data-fb="이유까지 준비된 의견은 토의를 앞으로 밀어 줍니다. 👏">준비해 보았습니다</button>
     <div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 토의 점검', t:'토의 과정을 점검해 봅시다',
+  {tag:'④ 스스로 점검', t:'준비한 것을 확인해 봅시다',
    html:`<div class="selfcheck">
-      <div class="sc-row"><span class="sc-box">✓</span>의견과 관련해 <b>질문하거나 비판</b>하며 토의했나요?</div>
-      <div class="sc-row"><span class="sc-box">✓</span>의견이 달라도 <b>존중</b>하며 토의했나요?</div>
-      <div class="sc-row"><span class="sc-box">✓</span>모둠원의 생각을 모아 <b>최선의 결정</b>을 내렸나요?</div>
-      <div class="sc-row"><span class="sc-box">✓</span>모두가 <b>말할 기회</b>를 가졌나요?</div>
+      <div class="sc-row"><span class="sc-box">✓</span>여러 사람이 함께 생각할 <b>주제</b>인가요?</div>
+      <div class="sc-row"><span class="sc-box">✓</span>의견을 뒷받침하는 <b>타당한 이유</b>를 마련했나요?</div>
+      <div class="sc-row"><span class="sc-box">✓</span>찾은 자료의 <b>출처</b>를 적었나요?</div>
+      <div class="sc-row"><span class="sc-box">✓</span>협력하며 토의할 <b>계획</b>을 세웠나요?</div>
     </div>`},
-
-  {tag:'② 되돌아보기', t:'다음 토의를 위해',
-   html:`<div class="grid2">
-      <div class="g2-box"><h4>잘한 점</h4>단점을 짚은 뒤에도<br>기분 상하지 않게 이어 갔다</div>
-      <div class="g2-box good"><h4>아쉬운 점</h4>말수가 적은 친구에게<br>차례를 넘기지 못했다</div>
-    </div>
-    <div class="ka-bub">아쉬운 점을 <b class="mc">한 가지만 정해</b> 다음 토의에서 고쳐 봅니다.<br>한 번에 다 바꾸려 하면 아무것도 바뀌지 않습니다.</div>`},
 
   {tag:'⑤ 마무리', t:'오늘 해 본 것',
    html:`<div class="recap">
-      <div class="recap-item"><span class="recap-ic">⚖️</span>의견의 <b>장점과 단점</b> 살피기</div>
-      <div class="recap-item"><span class="recap-ic">🧩</span>하나를 고르는 대신 <b>종합</b>해 더 나은 의견 만들기</div>
-      <div class="recap-item"><span class="recap-ic">✅</span>네 기준으로 <b>결정</b>하고 과정 <b>점검</b>하기</div>
+      <div class="recap-item"><span class="recap-ic">🖼️</span>광고와 기사에서 <b>이야기할 거리</b> 찾기</div>
+      <div class="recap-item"><span class="recap-ic">❓</span>생각을 묻는 <b>질문</b> 만들기</div>
+      <div class="recap-item"><span class="recap-ic">🎯</span>토의 <b>주제</b> 정하고 이유 있는 <b>의견</b> 마련하기</div>
     </div>
-    <div class="sentence">다음 시간에는 다른 교과와 이어지는 주제로 토의해 봅니다.</div>`}
+    <div class="sentence">다음 시간에는 직접 협력하며 토의합니다.</div>`}
 ];
 const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-const LESSON_ID='g5_kor_u5_l10_11_v1';
+const LESSON_ID='g5_kor_u5_l09_10_v1';
 const LESSON_MAX=50;
 let cur=0, score=0;
 const stage=document.getElementById('stage');
