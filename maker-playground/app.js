@@ -12,6 +12,13 @@ window.PG = (() => {
     ['export', '📤', 'Export'], ['plugins', '🔌', 'Plugins'], ['market', '🛒', 'Market'], ['admin', '🛡', 'Admin'], ['dev', '📡', 'Dev'], ['mobile', '📱', 'Mobile'], ['agent', '🧠', 'Agent'], ['flow', '🌊', 'Flow'], ['dls', '🧭', 'DLS'], ['ops', '⚙️', 'Ops'], ['simple', '🌱', 'Simple'], ['invisible', '🫥', 'Invisible'], ['constitution', '📜', 'Const'], ['audit', '🔟', 'Audit'], ['homex', '🎪', 'HomeX'], ['nav', '🗺', 'Nav'], ['journey', '🛤', 'Journey'], ['ftue', '⏱', 'FTUE'], ['easy', '⚡', 'Easy'],
   ];
 
+  /* R77 — /maker 제품 진입: MK_PRODUCT 깃발이 있으면 검수 화면을
+     내비와 라우팅 모두에서 차단한다. 깃발이 없으면(플레이그라운드
+     직접 진입) 아래 어떤 분기도 타지 않아 검수 환경은 무영향. */
+  const PRODUCT = () => !!window.MK_PRODUCT;
+  const PRODUCT_NAV = ['home', 'library', 'templates', 'assets', 'brand', 'editor', 'video', 'photo', 'ai', 'export'];
+  const guard = (k) => (PRODUCT() && !PRODUCT_NAV.includes(k)) ? 'home' : k;
+
   const state = {
     screen: 'foundations',
     variants: { home: 'A', templates: 'A', editor: 'Design' },
@@ -43,7 +50,8 @@ window.PG = (() => {
   }
 
   function go(screen) {
-    state.screen = screen;
+    state.screen = guard(screen);
+    screen = state.screen;
     location.hash = '#/' + screen;
     render();
   }
@@ -52,9 +60,10 @@ window.PG = (() => {
      검수 환경 기본값은 'full' — 기존 화면·테스트 무영향. */
   function toggleNavMode() { state.navMode = state.navMode === 'simple' ? 'full' : 'simple'; render(); }
   function navList() {
-    if (state.navMode !== 'simple' || !window.MK_SIMPLE) return NAV;
+    const base = PRODUCT() ? NAV.filter(([k]) => PRODUCT_NAV.includes(k)) : NAV;
+    if (state.navMode !== 'simple' || !window.MK_SIMPLE) return base;
     const vis = window.MK_SIMPLE.navFor({ edits: 0 });
-    return NAV.filter(([k]) => k !== '--div' && (vis.includes(k) || k === 'simple'));
+    return base.filter(([k]) => k !== '--div' && (vis.includes(k) || (!PRODUCT() && k === 'simple')));
   }
 
   function render() {
@@ -83,11 +92,12 @@ window.PG = (() => {
   function boot() {
     if (boot._done) return;                      /* 이중 발화 방어 */
     boot._done = true;
+    if (PRODUCT()) state.screen = 'home';                     /* 제품 기본 진입 = 홈 */
     const h = (location.hash || '').replace('#/', '');
-    if (window.MK_SCREENS[h]) state.screen = h;
-    if (/[?&]review=true/.test(location.search)) state.screen = 'review';   /* 쿼리 진입 지원 */
+    if (window.MK_SCREENS[h]) state.screen = guard(h);
+    if (!PRODUCT() && /[?&]review=true/.test(location.search)) state.screen = 'review';   /* 쿼리 진입 지원(검수 전용) */
     window.addEventListener('hashchange', () => {
-      const k = (location.hash || '').replace('#/', '');
+      const k = guard((location.hash || '').replace('#/', ''));
       if (window.MK_SCREENS[k] && k !== state.screen) { state.screen = k; render(); }
     });
     render();

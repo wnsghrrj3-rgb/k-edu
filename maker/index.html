@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>케이메이커 — K-Maker</title>
+<style>#mkBootMsg{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font-family:Pretendard,system-ui,sans-serif;color:#8E9AAC;font-size:15px;background:#FDFCFA}</style>
+</head>
+<body>
+<div id="mkBootMsg">케이메이커를 여는 중…</div>
+<script>
+/* ============================================================
+   R77 — /maker 제품 진입 로더
+   원리: 플레이그라운드(/maker-playground)의 index.html 을 원본
+   그대로 읽어와 자산 경로만 ../maker-playground/ 로 고쳐 순서대로
+   적재한다. 코드 복제 0 — 플레이그라운드에 화면·스크립트가 늘어도
+   이 파일은 손댈 필요가 없다(드리프트 제로).
+   제품 판정: 적재 전에 window.MK_PRODUCT = true 를 꽂는다.
+   app.js 가 이 깃발을 보고 검수 화면을 내비·라우팅에서 걸러낸다.
+   ============================================================ */
+(async () => {
+  window.MK_PRODUCT = true;                                  /* 반드시 스크립트 적재 전 */
+  const BASE = '../maker-playground/';
+  const abs = (u) => (!u || /^(https?:)?\/\//.test(u) || u.startsWith('/') || u.startsWith('data:')) ? u : BASE + u;
+  let doc;
+  try {
+    const res = await fetch(BASE + 'index.html', { cache: 'no-cache' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+  } catch (e) {
+    document.getElementById('mkBootMsg').textContent = '불러오지 못했어요 — 새로고침해 주세요. (' + e.message + ')';
+    return;
+  }
+  /* 스타일·프리커넥트 이식 (경로 보정) */
+  doc.querySelectorAll('head link').forEach((l) => {
+    const n = document.createElement('link');
+    n.rel = l.rel; if (l.crossOrigin) n.crossOrigin = l.crossOrigin;
+    n.href = abs(l.getAttribute('href'));
+    document.head.appendChild(n);
+  });
+  /* 셸 마크업 이식 (스크립트 제외) */
+  const shell = doc.body.cloneNode(true);
+  shell.querySelectorAll('script').forEach((s) => s.remove());
+  document.body.innerHTML = shell.innerHTML;
+  /* 제품 브랜딩 — 검수 문구 제거 */
+  const logo = document.querySelector('.pg-logo');
+  if (logo) logo.innerHTML = 'K-MAKER<small>케이메이커</small>';
+  const foot = document.querySelector('.pg-nav-foot');
+  if (foot) foot.innerHTML = 'K-edu · 완전 무료';
+  /* 스크립트 순차 적재 — 원본 순서 보존 (실패 1개가 전체를 막지 않게 계속 진행) */
+  for (const s of doc.querySelectorAll('script[src]')) {
+    await new Promise((done) => {
+      const n = document.createElement('script');
+      n.src = abs(s.getAttribute('src'));
+      n.onload = done; n.onerror = done;
+      document.body.appendChild(n);
+    });
+  }
+  /* DOMContentLoaded 는 이미 지났으므로 부트 직접 호출 (boot._done 가드로 이중 발화 안전) */
+  if (window.PG && PG.boot) PG.boot();
+})();
+</script>
+</body>
+</html>
