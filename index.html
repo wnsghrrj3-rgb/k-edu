@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/kedu_config.js"></script>
+<script src="/kedu_tier.js"></script>
 <script src="/kedu_tracker.js" defer></script>
 <style id="kedu-title-font">/* 케이에듀 제목 폰트 토큰 — 교체 시 이 블록만 수정 (2026-07-04, 학교안심 모험가) */
 @font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
@@ -180,6 +181,14 @@ body{background:var(--nh-paper);color:var(--nh-ink)}
       <span class="class-code-badge" id="class-code-badge"></span>
       <button class="btn-logout" onclick="doLogout()">로그아웃</button>
     </div>
+    <!-- 게스트(동의 전 학급, 이름·저장 없음) -->
+    <div class="user-area" id="guest-area" style="display:none">
+      <div class="nickname-chip">
+        <span class="chip-name" id="guest-label"></span>
+      </div>
+      <span class="class-code-badge" style="display:inline-block">이름 없이</span>
+      <button class="btn-logout" onclick="guestExit()">나가기</button>
+    </div>
     <button class="tb-teacher" onclick="pickRole('teacher')">선생님 공간</button>
   </div>
 </div>
@@ -208,13 +217,13 @@ body{background:var(--nh-paper);color:var(--nh-ink)}
         </div>
         <div class="nh-entry-row">
           <label for="entry-nickname">닉네임</label>
-          <input class="nh-input" id="entry-nickname" type="text" placeholder="선생님이 정해준 닉네임" maxlength="20" autocomplete="off">
+          <input class="nh-input" id="entry-nickname" type="text" placeholder="동의 받은 반만 · 없으면 비워 두세요" maxlength="20" autocomplete="off">
         </div>
-        <label class="nh-consent">
+        <label class="nh-consent" id="entry-consent-wrap" style="display:none">
           <input type="checkbox" id="entry-consent-check">
           <span>학부모님이 가정통신문을 통해 케이에듀 개인정보 처리에 사전 동의했음을 확인했어요. <a href="/privacy/" target="_blank">처리방침 보기</a></span>
         </label>
-        <button class="nh-entry-btn" id="entry-btn" onclick="enterStudent()">입장</button>
+        <button class="nh-entry-btn" id="entry-btn" onclick="enterStudent()">이름 없이 입장</button>
         <div class="nh-error" id="entry-error"></div>
       </div>
     </section>
@@ -532,6 +541,9 @@ let currentProfile = null; // student_profiles row
     if(savedEl) savedEl.style.display='inline-flex';
   }
 
+  // 닉네임 유무 → 동의 체크·버튼 라벨 동기화
+  document.getElementById('entry-nickname').addEventListener('input', updateEntryBtn);
+
   // URL로 진입 단계 결정 (없으면 역할 선택 유지)
   applyEntryRoute();
 })();
@@ -583,6 +595,8 @@ async function loadProfile(){
 // =============================================
 function showLoggedInUI(){
   document.getElementById('entry-card').style.display = 'none';
+  document.getElementById('guest-area').style.display = 'none';
+  if(window.KeduTier) KeduTier.clearGuest();  // 정식 좌석이 생기면 게스트 흔적 정리
   const area = document.getElementById('user-area');
   area.style.display = 'flex';
 
@@ -614,7 +628,36 @@ async function checkInbox(){
 
 function showLoggedOutUI(){
   document.getElementById('user-area').style.display = 'none';
+  const g = window.KeduTier ? KeduTier.guest() : null;
+  if(g){ showGuestUI(g); return; }
+  document.getElementById('guest-area').style.display = 'none';
   document.getElementById('entry-card').style.display = 'block';
+  updateEntryBtn();
+}
+
+// =============================================
+// 게스트(동의 전 학급) — 이름·저장 없이 입장. 상태는 이 기기뿐, 자정 만료.
+// =============================================
+function showGuestUI(g){
+  document.getElementById('user-area').style.display = 'none';
+  document.getElementById('entry-card').style.display = 'none';
+  document.getElementById('guest-area').style.display = 'flex';
+  document.getElementById('guest-label').textContent = g.label || g.code;
+}
+
+function guestExit(){
+  if(window.KeduTier) KeduTier.clearGuest();
+  document.getElementById('guest-area').style.display = 'none';
+  document.getElementById('entry-card').style.display = 'block';
+  updateEntryBtn();
+}
+
+// 닉네임 유무에 따라 버튼·동의 체크가 함께 말한다 (무설명 첫 화면)
+function updateEntryBtn(){
+  const nick = (document.getElementById('entry-nickname').value || '').trim();
+  document.getElementById('entry-consent-wrap').style.display = nick ? 'flex' : 'none';
+  const btn = document.getElementById('entry-btn');
+  if(!btn.disabled) btn.textContent = nick ? '입장' : '이름 없이 입장';
 }
 
 // =============================================
@@ -637,7 +680,24 @@ async function enterStudent(){
   const nick = (nickInput.value || '').trim();
 
   if(code.length < 4){ showError('학급코드를 입력해 주세요.'); codeInput.focus(); return; }
-  if(nick.length === 0){ showError('내 닉네임을 입력해 주세요.'); nickInput.focus(); return; }
+
+  // ── 게스트 경로: 닉네임 없이 = 동의 전 학급 입장 (서버 저장 0, 이름 0) ──
+  if(nick.length === 0){
+    if(!window.KeduTier){ showError('잠시 후 다시 시도해 주세요.'); return; }
+    btn.disabled = true; btn.textContent = '확인 중...';
+    const r = await KeduTier.enterGuest(db, code);
+    btn.disabled = false; updateEntryBtn();
+    if(r.status === 'ok'){
+      showGuestUI(r.guest);
+      showToast((r.guest.label || code) + '에 이름 없이 입장했어요.');
+    } else if(r.status === 'not_found'){
+      showError('학급코드를 다시 확인해 주세요.');
+    } else {
+      showError('네트워크 오류가 발생했어요. 잠시 후 다시 시도해 주세요.');
+    }
+    return;
+  }
+
   if(nick.length > 20){ showError('닉네임은 20자 이내로 입력해 주세요.'); nickInput.focus(); return; }
   if(!consent.checked){ showError('처리방침 동의를 확인해 주세요.'); return; }
 
@@ -650,7 +710,7 @@ async function enterStudent(){
       const { data: anonData, error: anonError } = await db.auth.signInAnonymously();
       if(anonError || !anonData || !anonData.session){
         showError('인증에 실패했어요. 잠시 후 다시 시도해 주세요.');
-        btn.disabled = false; btn.textContent = '입장';
+        btn.disabled = false; updateEntryBtn();
         return;
       }
       currentUser = anonData.user;
@@ -666,7 +726,7 @@ async function enterStudent(){
 
     if(claimError){
       showError('네트워크 오류가 발생했어요. 잠시 후 다시 시도해 주세요.');
-      btn.disabled = false; btn.textContent = '입장';
+      btn.disabled = false; updateEntryBtn();
       return;
     }
 
@@ -708,7 +768,7 @@ async function enterStudent(){
     showError('네트워크 오류가 발생했어요. 잠시 후 다시 시도해 주세요.');
   }
 
-  btn.disabled = false; btn.textContent = '입장';
+  btn.disabled = false; updateEntryBtn();
 }
 
 // =============================================
