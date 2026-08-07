@@ -190,14 +190,21 @@
       + (pf.pick === 'auto' && pf.auto === 'compact' ? ' (자동 판정)' : '') + alt + '</em>';
   };
 
+  /* R82 — 「지금 뺀 사진 N장·뺀 쌍 N개」는 개수에 딸린 줄이다.
+     ⊘ 토글·✕ 빼기의 부분 갱신이 이 줄을 안 고치면 화면이 낡은 숫자를
+     들고 거짓말한다. 한 벌만 두고 렌더와 부분 갱신이 같은 걸 쓴다. */
+  H.keptLineHTML = () => {
+    const kept = H.st.stage === 'media' ? (H.st.roles || []).filter((r) => r === 'exclude').length : 0;
+    const keptP = H.st.stage === 'pairs' ? (H.st.pairRoles || []).filter((r) => r === 'exclude').length : 0;
+    return (kept ? ' 지금 뺀 사진 ' + kept + '장.' : '') + (keptP ? ' 지금 뺀 쌍 ' + keptP + '개.' : '');
+  };
+
   H.renderSmartBar = () => {
     if (!canSmart()) return '';
-    const kept = H.st.stage === 'media' ? H.st.roles.filter((r) => r === 'exclude').length : 0;
-    const keptP = H.st.stage === 'pairs' ? H.st.pairRoles.filter((r) => r === 'exclude').length : 0;
     const line = H.smartLineHTML();
     return `<div class="vh-smart">
       <b style="font:var(--mk-t-h3);font-size:13px">🎲 자동 구성</b>
-      <p class="ed-note" style="margin:4px 0 6px;font-size:11.5px">사진 수·방향·문구를 보고 구성을 골라 짜요.${H.st.stage === 'media' ? ' ★ 는 더 길고 큰 자리, ⊘ 는 이번 구성에서만 빠져요(목록엔 남아요).' : ' 쌍은 그대로 두고 순서·비교 방식만 골라요. ★ 는 그 쌍의 비교 장면을 더 길게, ⊘ 는 이번 구성에서만 빼요(자리·크기는 비교 방식이 정해요).'}${kept ? ' 지금 뺀 사진 ' + kept + '장.' : ''}${keptP ? ' 지금 뺀 쌍 ' + keptP + '개.' : ''}</p>
+      <p class="ed-note" style="margin:4px 0 6px;font-size:11.5px">사진 수·방향·문구를 보고 구성을 골라 짜요.${H.st.stage === 'media' ? ' ★ 는 더 길고 큰 자리, ⊘ 는 이번 구성에서만 빠져요(목록엔 남아요).' : ' 쌍은 그대로 두고 순서·비교 방식만 골라요. ★ 는 그 쌍의 비교 장면을 더 길게, ⊘ 는 이번 구성에서만 빼요(자리·크기는 비교 방식이 정해요).'}<span id="vhKept">${H.keptLineHTML()}</span></p>
       ${H.st.stage === 'pairs' ? `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
         <span class="ed-note" style="font-size:11.5px">구성 형태</span>
         ${['auto', 'compact', 'full'].map((v) => `<button class="vh-chip${(H.st.pairFormPick || 'auto') === v ? ' on' : ''}" data-vh-pform="${v}" title="${v === 'auto' ? '권장 길이에 맞춰 자동으로 골라요' : v === 'compact' ? '쌍마다 장면 하나 — 짧게' : '쌍마다 전·후·비교 — 길어질 수 있어요'}">${v === 'auto' ? '자동' : v === 'compact' ? '간결' : '전 구성'}</button>`).join('')}

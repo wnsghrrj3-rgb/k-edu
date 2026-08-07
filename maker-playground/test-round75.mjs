@@ -278,6 +278,23 @@ console.log('--- ⑤ 되풀이·안전 ---');
    아니라 그 조작이 이 계약의 대상에서 빠진 것이다. 여전히 통째로 다시
    그리는 조작(✕ 빼기)으로 옮겨 같은 것을 잰다. */
 T('T21 재렌더가 되풀이로 빠지지 않는다 — 한 번에 끝난다', () => {
+  /* R76 이 ▲에서 ✕로 옮긴 표적을 R82 가 다시 비웠다(✕도 이제 재렌더 0).
+     의도(전체 재렌더는 한 번에 끝난다)는 그대로 두고, 아직 전체 재렌더를
+     타는 조작 = 문구 확정(onchange)으로 표적만 옮긴다. */
+  stage();
+  let n = 0;
+  const scr = window.MK_SCREENS.video;
+  const baseRender = scr.render;
+  scr.render = function () { n++; return baseRender.call(this); };
+  try {
+    const inp = root.querySelector('[data-vh-cap="3"]');
+    inp.value = 'x';
+    inp.dispatchEvent(new window.Event('change', { bubbles: true }));
+  }
+  finally { scr.render = baseRender; }
+  return n === 1 ? true : 'render 가 ' + n + '번 탔다';
+});
+T('T21c 빼기는 재렌더를 안 한다 (R82)', () => {
   stage();
   let n = 0;
   const scr = window.MK_SCREENS.video;
@@ -285,7 +302,7 @@ T('T21 재렌더가 되풀이로 빠지지 않는다 — 한 번에 끝난다', 
   scr.render = function () { n++; return baseRender.call(this); };
   try { root.querySelector('[data-vh-mdel="3"]').click(); }
   finally { scr.render = baseRender; }
-  return n === 1 ? true : 'render 가 ' + n + '번 탔다';
+  return n === 0 ? true : 'render 가 ' + n + '번 탔다 — 부분 빼기가 안 걸렸다';
 });
 T('T21b 순서 변경은 재렌더를 안 한다 (R76)', () => {
   stage();

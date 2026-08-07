@@ -129,6 +129,9 @@
     const warn = (e.warnings || []).map((w) => `<em class="vh-est vh-est-warn">⚠ ${esc(w)}</em>`).join('');
     return `<em class="vh-est">예상: 장면 ${e.sceneCount}개 · 약 ${e.total}초</em>${warn}`;
   };
+  /* R82 — 이 줄도 개수에 딸린 줄이다. ✕ 부분 갱신(video4)이 다시 세려면
+     한 벌로 노출돼야 하고, 갈아 끼울 자리(#vhEst2)가 있어야 한다. */
+  H.estLineHTML = estLine;
 
   H.renderStage = () => {
     if (H.st.stage === 'media') {
@@ -151,7 +154,7 @@
           <button class="vh-chip" data-vh-more>＋ 사진 더 추가</button>
         </div>
         <input class="vh-input" id="vhOutro" placeholder="마무리 문구 (선택 — 비우면 기본 인사)" value="${esc(H.st.outro)}" maxlength="20">
-        ${estLine()}
+        <span id="vhEst2">${estLine()}</span>
         <button class="vh-go" data-vh-build>🎬 영상 만들기</button>
       </div>`;
     }
@@ -183,7 +186,7 @@
         <div style="margin-top:10px"><small style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">비교 방식 (${esc(H.st.ratio || '16:9')} 기준 실작동분)</small>
           <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">${chips}</div></div>
         <input class="vh-input" id="vhResult" placeholder="결과 문구 (선택 — 예: 이렇게 달라졌어요)" value="${esc(H.st.result)}" maxlength="24">
-        ${estLine()}
+        <span id="vhEst2">${estLine()}</span>
         <button class="vh-go" data-vh-build>🎬 비교 영상 만들기</button>
       </div>`;
     }

@@ -185,18 +185,31 @@
   let pend = null;
   const refreshLine = (root) => {
     const holder = root.querySelector('#vhEst');
-    if (!holder || typeof H.smartLineHTML !== 'function') return;
-    holder.innerHTML = '<em class="vh-est">구성을 다시 세는 중…</em>';
+    const holder2 = root.querySelector('#vhEst2');   /* R82 — 「예상: 장면 N개」도 개수에 딸린 줄 */
+    if ((!holder && !holder2) || typeof H.smartLineHTML !== 'function') return;
+    const interim = '<em class="vh-est">구성을 다시 세는 중…</em>';
+    if (holder) holder.innerHTML = interim;
+    if (holder2) holder2.innerHTML = interim;
     if (pend) clearTimeout(pend);
     /* 손을 놓았다가 센다 — 연달아 누르는 동안 화면이 멈추지 않게 */
     pend = setTimeout(() => {
       pend = null;
       const live = root.querySelector('#vhEst');
       if (live && document.contains(live)) live.innerHTML = H.smartLineHTML();
+      const live2 = root.querySelector('#vhEst2');
+      if (live2 && document.contains(live2) && typeof H.estLineHTML === 'function') live2.innerHTML = H.estLineHTML();
     }, 0);
   };
   /* R76 — 같은 계약을 쓰는 자리가 늘었다(순서 변경). 한 벌만 둔다. */
   H.refreshCostLine = refreshLine;
+
+  /* R82 — 개수에 딸린 줄. #vhEst(장면 수·초)와 달리 이 줄은 세는 값이
+     아니라 상태에서 바로 읽히므로 멈춤 밖으로 미룰 것도 없다 — 즉시 고친다. */
+  const refreshKept = (root) => {
+    const el = root.querySelector('#vhKept');
+    if (el && typeof H.keptLineHTML === 'function') el.innerHTML = H.keptLineHTML();
+  };
+  H.refreshKeptLine = refreshKept;
 
   const wrapScreen = () => {
     const prev = window.MK_SCREENS && window.MK_SCREENS.video;
@@ -216,6 +229,7 @@
             const row = root.querySelector(`[data-vh-mrow="${i}"]`);
             if (row) row.classList.toggle('vh-row-off', H.st.roles[i] === 'exclude');
             refreshLine(root);
+            refreshKept(root);   /* R82 — ⊘ 개수 줄이 낡은 채 남던 구멍 */
           };
         });
         root.querySelectorAll('[data-vh-prole]').forEach((b) => {
@@ -227,6 +241,7 @@
             const row = root.querySelector(`[data-vh-prow="${i}"]`);
             if (row) row.classList.toggle('vh-row-off', H.st.pairRoles[i] === 'exclude');
             refreshLine(root);
+            refreshKept(root);   /* R82 — 같은 구멍, 쌍 쪽 */
           };
         });
         /* R73 — 형태 칩도 같은 대접. 바뀌는 것은 칩 3개와 요약 한 줄뿐이라
@@ -292,6 +307,41 @@
             reorder(from, to);
           };
         });
+
+        /* ---------------- R82 — 빼기는 행 하나를 지운다 ----------------
+           ✕ 가 실제로 바꾸는 것은 셋이다: 그 행의 소멸, 뒤 행들의 번호,
+           그리고 개수에 딸린 줄(장면 수·「지금 뺀 사진 N장」). 목록 전체를
+           다시 만들 이유가 없다 — R76 이 순서에서 이 일을 미룬 이유가 바로
+           개수 줄이었고, 여기서 그 줄을 반드시 다시 세는 것으로 갚는다.
+           마지막 하나를 지울 때는 종전대로 다시 그린다: 빈 목록의 화면
+           (자동 구성 갈래의 유무·안내 문구)은 렌더가 정하는 것이라
+           부분 갱신으로 흉내 내면 화면이 상태와 어긋난다. */
+        const wipe = (sel, key, kind, arr, del) => root.querySelectorAll(sel).forEach((x) => {
+          x.onclick = () => {
+            const i = +x.dataset[key], list = arr();
+            if (!(i >= 0) || !list || i >= list.length) return;
+            del(i);
+            if (!arr().length || typeof H.removeRow !== 'function' || !H.removeRow(root, i, kind)) { redraw(); return; }
+            refreshLine(root);
+            refreshKept(root);
+          };
+        });
+        wipe('[data-vh-mdel]', 'vhMdel', 'media', () => H.st.medias, (i) => H.removeMedia(i));
+        wipe('[data-vh-pdel]', 'vhPdel', 'pair', () => H.st.pairs, (i) => H.removePair(i));
+
+        /* 쌍 행 ▲▼ 도 같은 대접 (R76 이월분) — 상태는 아래층 함수가 옮기고,
+           화면은 노드 이동 + 번호(눈에 보이는 1..N 포함) 재부여로 따라간다. */
+        const pstep = (sel, key, dir) => root.querySelectorAll(sel).forEach((x) => {
+          x.onclick = () => {
+            const i = +x.dataset[key], j = i + dir;
+            if (!(i >= 0) || j < 0 || !H.st.pairs || j >= H.st.pairs.length) return;
+            H.movePair(i, dir);
+            if (typeof H.reorderRows !== 'function' || !H.reorderRows(root, i, j, 'pair')) { redraw(); return; }
+            refreshLine(root);
+          };
+        });
+        pstep('[data-vh-pup]', 'vhPup', -1);
+        pstep('[data-vh-pdn]', 'vhPdn', 1);
       },
     };
     window.MK_SCREENS.video = next;

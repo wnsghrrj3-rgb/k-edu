@@ -109,20 +109,38 @@ window.MK_VIDHUB = (() => {
      `+x.dataset.vh...` 를 읽는다(닫힘에 가둔 값이 아니다). 속성만
      고치면 다시 걸 필요가 없다.
 
-     범위는 순서까지다. ✕(빼기)는 장면 수·「지금 뺀 사진 N장」처럼
-     개수에 딸린 줄을 같이 바꾸므로 여기 얹지 않았다 — R77 몫. */
-  const ROW_IDX = [['[data-vh-cap]', 'data-vh-cap'], ['[data-vh-mup]', 'data-vh-mup'],
-    ['[data-vh-mdn]', 'data-vh-mdn'], ['[data-vh-mdel]', 'data-vh-mdel'],
-    ['[data-vh-role]', 'data-i']];
+     R76 의 범위는 순서까지였다. ✕(빼기)는 장면 수·「지금 뺀 사진 N장」처럼
+     개수에 딸린 줄을 같이 바꾸므로 그때 얹지 않았고, R82 가 removeRow 로
+     마저 얹는다 — 개수 줄의 정직한 갱신은 부르는 쪽(video4)의 계약이다.
+     R82 에서 쌍 행(data-vh-prow)도 같은 원시함수를 쓰도록 kind 로 넓혔다.
+     kind 생략 = 'media' — R76 이 건 자리와 하니스는 한 글자도 안 바뀐다. */
+  const ROW_KINDS = {
+    media: {
+      row: 'data-vh-mrow', num: null,
+      idx: [['[data-vh-cap]', 'data-vh-cap'], ['[data-vh-mup]', 'data-vh-mup'],
+        ['[data-vh-mdn]', 'data-vh-mdn'], ['[data-vh-mdel]', 'data-vh-mdel'],
+        ['[data-vh-role]', 'data-i']],
+    },
+    pair: {
+      row: 'data-vh-prow', num: '.vh-pairn',   /* 쌍 행만 눈에 보이는 번호가 있다 */
+      idx: [['[data-vh-pb]', 'data-vh-pb'], ['[data-vh-pa]', 'data-vh-pa'],
+        ['[data-vh-pt]', 'data-vh-pt'], ['[data-vh-pup]', 'data-vh-pup'],
+        ['[data-vh-pdn]', 'data-vh-pdn'], ['[data-vh-pdel]', 'data-vh-pdel'],
+        ['[data-vh-prole]', 'data-i']],
+    },
+  };
 
-  const reindexRows = (root) => {
-    const rows = root.querySelectorAll('[data-vh-mrow]');
+  const reindexRows = (root, kind) => {
+    const K = ROW_KINDS[kind || 'media'];
+    if (!K) return 0;
+    const rows = root.querySelectorAll('[' + K.row + ']');
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i], s = String(i);
-      row.setAttribute('data-vh-mrow', s);
-      for (let k = 0; k < ROW_IDX.length; k++) {
-        const els = row.querySelectorAll(ROW_IDX[k][0]);
-        for (let j = 0; j < els.length; j++) els[j].setAttribute(ROW_IDX[k][1], s);
+      row.setAttribute(K.row, s);
+      if (K.num) { const n = row.querySelector(K.num); if (n) n.textContent = String(i + 1); }
+      for (let k = 0; k < K.idx.length; k++) {
+        const els = row.querySelectorAll(K.idx[k][0]);
+        for (let j = 0; j < els.length; j++) els[j].setAttribute(K.idx[k][1], s);
       }
     }
     return rows.length;
@@ -130,19 +148,36 @@ window.MK_VIDHUB = (() => {
 
   /* 배열의 splice 이동과 같은 뜻으로 옮긴다: from 을 빼고 to 자리에 끼운다.
      못 옮기면 거짓을 돌려주고, 부르는 쪽이 종전대로 다시 그린다. */
-  const reorderRows = (root, from, to) => {
+  const reorderRows = (root, from, to, kind) => {
     if (!root || typeof root.querySelectorAll !== 'function') return false;
     if (!(from >= 0) || !(to >= 0) || from === to) return false;
-    const rows = Array.prototype.slice.call(root.querySelectorAll('[data-vh-mrow]'));
+    const K = ROW_KINDS[kind || 'media'];
+    if (!K) return false;
+    const rows = Array.prototype.slice.call(root.querySelectorAll('[' + K.row + ']'));
     const node = rows[from];
     if (!node || !node.parentNode || to >= rows.length) return false;
     const rest = rows.slice(0, from).concat(rows.slice(from + 1));
     node.parentNode.insertBefore(node, rest[to] || null);
-    reindexRows(root);
+    reindexRows(root, kind);
     return true;
   };
 
-  return { st, select, startBuild, pick, mediaText, durText, esc, screenRedraw, reorderRows, reindexRows };
+  /* R82 — 빼기는 행 하나를 지우고 남은 행 번호를 다시 맨다.
+     배열의 splice(i,1) 과 같은 뜻. 못 지우면 거짓을 돌려주고
+     부르는 쪽이 종전대로 다시 그린다(되돌아갈 길). */
+  const removeRow = (root, i, kind) => {
+    if (!root || typeof root.querySelectorAll !== 'function') return false;
+    if (!(i >= 0)) return false;
+    const K = ROW_KINDS[kind || 'media'];
+    if (!K) return false;
+    const node = root.querySelectorAll('[' + K.row + ']')[i];
+    if (!node || !node.parentNode) return false;
+    node.parentNode.removeChild(node);
+    reindexRows(root, kind);
+    return true;
+  };
+
+  return { st, select, startBuild, pick, mediaText, durText, esc, screenRedraw, reorderRows, reindexRows, removeRow };
 })();
 
 window.MK_SCREENS.video = {
