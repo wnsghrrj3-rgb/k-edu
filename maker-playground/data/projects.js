@@ -49,6 +49,9 @@ window.MK_PROJ = (() => {
   const STORE = [];
 
   function seed() {
+    if (window.MK_PRODUCT) return;                     /* R78: 제품에선 데모 시드 0 —
+       검수용 가짜 프로젝트(smp-*)가 학생의 실저장(serialize)에 섞여
+       영구히 굳는 것을 차단한다. 빈 목록은 홈의 빈 상태가 받는다. */
     const mk = (tplId, name, opts = {}) => {
       const doc = docFrom(tplId);
       const p = {
