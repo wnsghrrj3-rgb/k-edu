@@ -38,6 +38,7 @@
     if (/^\/labs\//.test(p) || /klab/.test(p)) return 'klab';
     if (/^\/kple\//.test(p)) return 'kple';
     if (/^\/kmake\//.test(p)) return 'kmake';
+    if (/^\/maker\//.test(p)) return 'kmake';   /* R79: 새 케이메이커(/maker)도 같은 분류 */
     if (/^\/english\//.test(p)) return 'english';
     if (/^\/kedu\/activities\//.test(p)) return 'activity';
     return 'link';
