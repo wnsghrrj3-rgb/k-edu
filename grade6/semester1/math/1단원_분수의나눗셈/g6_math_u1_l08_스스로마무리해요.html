@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<!--
+  g6_math_u1_l08 — 스스로 마무리해요 [6학년 1단원 08차시, 단일 40분]
+  단원: 6학년 1학기 1단원 「분수의 나눗셈」 / 지도서 113~154 · 교과서 24~26
+  base: g4_math_u6_l04(엔진·채점부·공통 CSS 계승) / 부품 divShare · fracCalc · fracStrip(g5 승계)
+  성격: 단원 평가 — 몫을 분수로 나타내기·곱셈으로 바꾸기·(진분수)와 (대분수) 나눗셈을 한 자리에서 되짚는다
+  ★ 오개념 훅: 지도서 152~154 문항 분석 8문항 — 특히 7번(역수 대신 그대로 곱한 계산 찾기)·8번(수 카드로 가장 큰 몫)
+  ★ 왜 그럴까 슬롯 = 슬7 : ÷(자연수)를 ×(단위분수)로 바꾸면 세 가지 나눗셈이 모두 한 가지 방법으로 풀린다
+  ⛔ 규약: 문자식 금지 / 권유형 종결 어미 금지(고학년 톤 v1 §1-3) / 이모지 슬라이드당 ≤2 / 항 4개 이내
+  점수: 기본 4×10 + 응용 4×15 = 100 / mcq 정답 위치 q8=3 · q10=1 · q12=2 · q14=1 · q15=1 / pad 정답 q9=3 · q11=9 · q13=5
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g6_math_u1_l08_v1">
+<title>스스로 마무리해요 · K-edu 6학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#FBF7F1; --ink:#243043; --ink-soft:#62708A;
+  --coral:#BE123C; --coral-deep:#8E0D2E; --coral-soft:#F8DCE3;
+  --teal:#0F766E; --teal-deep:#0B5A54; --teal-soft:#D3EDE9;
+  --gold:#F6B526; --emph:#F0451F; --line:#E4DACB; --mark:#FFE08A;
+  --f-title:'Do Hyeon',sans-serif; --f-body:'Gowun Dodum',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:0 14px 34px -18px rgba(36,48,67,.4);
+  --fs-title: clamp(26px, 4.2vw, 46px);
+  --fs-heading: clamp(24px, 3.7vw, 37px);
+  --fs-body: clamp(20px, 3.0vw, 29px);
+  --fs-caption: clamp(19px, 2.9vw, 27px);
+  --fs-label: clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --em-md: clamp(44px, 7vw, 80px);
+  --em-lg: clamp(66px, 10vw, 122px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(760px, 96vw);
+  --mw-lg: min(840px, 96vw);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+@keyframes ka-swap-r { 0%{transform:translateX(0); opacity:1;} 50%{transform:translateX(20px); opacity:.3;} 100%{transform:translateX(0); opacity:1;} }
+@keyframes ka-mark { from{background-size:0 100%;} to{background-size:100% 100%;} }
+
+/* ───── 컨테이너 ───── */
+.ka { background:var(--paper); width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; color:var(--ink); position:relative; overflow:hidden; }
+
+/* ───── 상단바 (topbar) ───── */
+.ka-h { display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); padding:clamp(11px,1.7vw,15px) clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:hover { transform:translateY(-1px); }
+.ka-pill { font-family:var(--f-title); background:var(--coral); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-where { font-size:clamp(14px,1.6vw,18px); color:var(--ink-soft); flex-shrink:1; }
+.ka-where b { color:var(--ink); }
+.ka-bar { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:46vw; }
+.ka-dot { width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s, background .2s; }
+.ka-dot:hover { transform:scale(1.2); }
+.ka-dot.active { background:var(--coral); transform:scale(1.3); }
+.ka-dot.done { background:var(--teal); }
+.ka-score { font-family:var(--f-title); background:#FFF8E1; color:#F57F17; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); padding:0; border-radius:50%; cursor:pointer; flex-shrink:0; color:var(--coral-deep); font-size:clamp(13px,2vw,16px); width:clamp(32px,4.5vw,38px); height:clamp(32px,4.5vw,38px); display:flex; align-items:center; justify-content:center; }
+
+/* ───── 본문 ───── */
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; gap:clamp(7px,1.3vw,12px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(8px,1.4vh,16px) clamp(16px,4vw,48px); overflow:hidden; }
+.slide.active { display:flex; }
+.slide-title { font-family:var(--f-title); font-size:var(--fs-title); margin:0; line-height:1.18; color:var(--ink); font-weight:400; text-align:center; flex-shrink:0; }
+.slide-sub { font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(10px,1.6vw,16px); left:clamp(16px,4vw,40px); font-family:var(--f-title); color:var(--coral); font-size:clamp(13px,1.9vw,18px); letter-spacing:.4px; z-index:5; }
+
+/* ───── 하단 내비 ───── */
+.ka-f { display:flex; justify-content:flex-end; gap:12px; padding:clamp(12px,1.7vw,16px) clamp(16px,4vw,40px); background:linear-gradient(to top, var(--paper) 62%, transparent); flex-shrink:0; }
+.ka-prev, .ka-hint, .ka-next { font-family:var(--f-title); font-size:clamp(15px,1.9vw,22px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(10px,1.4vw,15px) clamp(20px,2.8vw,38px); cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translateY(-2px); }
+.ka-prev { margin-right:auto; }
+.ka-hint { color:#F57F17; border-color:#FFE08A; }
+.ka-next { background:var(--coral); color:#fff; border-color:var(--coral); }
+.ka-prev:disabled, .ka-next:disabled { opacity:.35; cursor:default; transform:none; }
+.ka-hint:disabled { opacity:.4; cursor:default; }
+
+/* ───── 공통 콘텐츠 ───── */
+.concept-box { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,18px) clamp(18px,2.8vw,28px); border-radius:20px; font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); text-align:center; line-height:1.5; box-shadow:var(--shadow); }
+.concept-box strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.big-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-lg); line-height:1; }
+.intro-q { font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; }
+.intro-q strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.goal-list { display:flex; flex-direction:column; gap:clamp(7px,1.4vw,11px); font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); }
+.goal-list li { background:#fff; border:2px solid var(--line); padding:clamp(8px,1.5vw,12px) clamp(14px,2.6vw,20px); border-radius:16px; list-style:none; box-shadow:var(--shadow); }
+.goal-list li strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+.recall-box { background:var(--teal-soft); padding:clamp(14px,2.8vw,22px) clamp(20px,3.6vw,30px); border-radius:22px; font-size:var(--fs-body); color:var(--teal-deep); max-width:var(--mw-sm); text-align:center; line-height:1.6; }
+.recall-box strong { color:var(--teal-deep); font-family:var(--f-title); font-weight:400; }
+.scene { background:#fff; border:3px solid var(--coral-soft); border-radius:28px; padding:clamp(18px,3.4vw,30px) clamp(22px,4.2vw,38px); display:flex; flex-direction:column; gap:clamp(10px,2vw,16px); align-items:center; min-width:clamp(280px,50vw,460px); box-shadow:0 6px 0 var(--coral-soft); }
+.pencil-row { display:flex; gap:clamp(4px,0.8vw,8px); font-size:var(--em-sm); flex-wrap:wrap; justify-content:center; max-width:var(--mw-sm); color:var(--ink); }
+
+/* ───── place_value_block (모형) ───── */
+.pv-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.pv-row { display:flex; gap:clamp(10px,2.2vw,20px); align-items:flex-end; justify-content:center; flex-wrap:wrap; }
+.pv-group { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,0.8vw,7px); }
+.pv-label { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.pv-block svg { display:block; }
+.swap-arrow { font-size:var(--em-sm); color:var(--coral); animation:ka-swap-r 1.6s ease-in-out infinite; }
+.exchange-eq { font-size:var(--fs-heading); color:var(--ink); display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); flex-wrap:wrap; justify-content:center; }
+
+/* ───── number_line ───── */
+.nl-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(12px,2.4vw,20px); max-width:var(--mw-lg); width:100%; }
+.nl-svg { width:min(760px,94vw); height:auto; }
+.nl-svg .nl-tick text { font-family:var(--f-num); font-weight:800; fill:var(--ink-soft); }
+.nl-pick { cursor:pointer; }
+.nl-pick:hover circle { fill:var(--coral-soft); }
+.nl-pick.correct circle { fill:var(--teal); }
+.nl-pick.wrong circle { fill:var(--coral-soft); }
+
+/* ───── 100의 여러 의미 ───── */
+.mean-grid { display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-sm); width:100%; }
+.mean-item { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,17px) clamp(16px,3vw,24px); border-radius:18px; font-size:var(--fs-body); color:var(--ink); text-align:center; box-shadow:var(--shadow); }
+.mean-item strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+
+/* ───── 문제 공통 ───── */
+.q-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; font-weight:400; }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:20px; padding:clamp(8px,1.6vw,14px) clamp(24px,4.6vw,44px); min-width:clamp(120px,22vw,200px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.q-pad { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(6px,1.2vw,10px); max-width:clamp(280px,56vw,460px); }
+.q-key { background:#fff; border:2px solid var(--line); border-radius:14px; padding:clamp(7px,1.5vw,12px) 0; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, background .15s, border-color .15s; box-shadow:0 4px 0 var(--line); }
+.q-key:hover { background:var(--coral-soft); border-color:var(--coral); }
+.q-key:active { transform:translateY(3px); box-shadow:none; }
+.q-key.fn { background:#FFF8E1; color:#F57F17; font-family:var(--f-title); font-size:var(--fs-body); border-color:#FFE08A; box-shadow:0 4px 0 #FFE08A; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); color:var(--teal-deep); min-height:1.4em; text-align:center; }
+.q-fb.wrong { color:var(--emph); }
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-sm); }
+.mcq-opt { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,15px); font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .2s; box-shadow:0 6px 0 var(--coral-soft); font-weight:400; }
+.mcq-opt:hover { border-color:var(--coral); }
+.mcq-opt:active { transform:translateY(4px); box-shadow:none; }
+.mcq-opt.correct { border-color:var(--teal-deep); background:var(--teal); color:#fff; box-shadow:0 6px 0 var(--teal-deep); animation:ka-pop .5s ease; }
+.mcq-opt.wrong { border-color:var(--emph); background:#FFE0DA; color:var(--coral-deep); animation:ka-shake .35s; }
+.mcq-hint { font-family:var(--f-title); font-size:var(--fs-body); color:#F57F17; background:#FFF8E1; border-radius:16px; padding:clamp(8px,1.6vw,12px) clamp(14px,2.6vw,20px); max-width:var(--mw-sm); text-align:center; display:none; }
+.mcq-hint.show { display:block; }
+
+/* ───── trace ───── */
+.trace-row { display:flex; gap:clamp(12px,2.4vw,22px); justify-content:center; flex-wrap:wrap; }
+.trace-cell { width:clamp(64px,12vw,110px); height:clamp(84px,16vw,150px); border:5px dashed var(--coral-soft); border-radius:20px; display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:#D8C4B8; cursor:pointer; transition:all .2s; background:#fff; }
+.trace-cell.done { color:var(--coral-deep); border-style:solid; border-color:var(--coral); background:var(--coral-soft); }
+
+/* ───── match ───── */
+.match-stage { display:flex; flex-direction:column; gap:clamp(8px,1.5vw,13px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.match-cols { display:flex; gap:clamp(20px,4vw,48px); }
+.match-col { display:flex; flex-direction:column; gap:clamp(6px,1.1vw,9px); }
+.match-card { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(16px,3vw,26px); font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .15s; min-width:clamp(70px,13vw,108px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.match-card:hover { border-color:var(--coral); }
+.match-card.sel { border-color:var(--gold); background:var(--mark); }
+.match-card.matched { border-color:var(--teal-deep); background:var(--teal); color:#fff; cursor:default; box-shadow:0 5px 0 var(--teal-deep); }
+
+/* ───── multi judge ───── */
+.judge-grid { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); max-width:var(--mw-sm); width:100%; }
+.judge-item { display:flex; align-items:center; gap:clamp(10px,2vw,16px); background:#fff; border:3px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(14px,2.6vw,20px); box-shadow:0 5px 0 var(--coral-soft); }
+.judge-text { flex:1; font-size:var(--fs-body); color:var(--ink); text-align:left; }
+.judge-text strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.judge-btns { display:flex; gap:clamp(6px,1.2vw,10px); }
+.judge-btn { border:3px solid var(--line); border-radius:14px; padding:clamp(6px,1.2vw,10px) clamp(12px,2.4vw,18px); font-family:var(--f-title); font-size:var(--fs-heading); cursor:pointer; background:#fff; color:var(--ink-soft); transition:transform .1s; }
+.judge-btn:active { transform:translateY(3px); }
+.judge-btn.pick-o { background:var(--teal-soft); color:var(--teal-deep); border-color:var(--teal); }
+.judge-btn.pick-x { background:var(--coral-soft); color:var(--coral-deep); border-color:var(--coral); }
+.judge-item.right { border-color:var(--teal-deep); box-shadow:0 5px 0 var(--teal-deep); }
+.judge-item.miss { border-color:var(--emph); animation:ka-shake .35s; }
+
+/* ───── 정리/자기평가/다음 ───── */
+.summary-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.summary-card { background:#fff; border:2px solid var(--line); border-radius:22px; padding:clamp(18px,3.4vw,30px); font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; box-shadow:var(--shadow); }
+.summary-card strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.wrap-msg { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--coral-deep); }
+.self-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(14px,2.6vw,22px); }
+.self-row { display:flex; gap:clamp(12px,2.4vw,20px); flex-wrap:wrap; justify-content:center; }
+.self-btn { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,16px) clamp(14px,2.8vw,22px); cursor:pointer; display:flex; flex-direction:column; gap:clamp(3px,0.7vw,6px); align-items:center; transition:transform .12s, border-color .15s; box-shadow:0 6px 0 var(--coral-soft); }
+.self-btn:hover { border-color:var(--coral); }
+.self-btn:active { transform:translateY(4px); box-shadow:none; }
+.self-btn.selected { border-color:var(--gold); background:var(--mark); }
+.self-btn-stars { font-size:var(--em-sm); color:var(--gold); }
+.self-btn-name { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.next-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-md); }
+.next-card { background:var(--teal-soft); border-radius:22px; padding:clamp(20px,3.8vw,32px); display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); align-items:center; }
+.next-emojis { font-size:var(--em-md); }
+.next-label { font-size:var(--fs-body); color:var(--teal-deep); text-align:center; }
+.home-prompt { font-size:var(--fs-caption); color:var(--coral-deep); background:var(--coral-soft); border-radius:18px; padding:clamp(12px,2.4vw,18px) clamp(18px,3.4vw,28px); text-align:center; }
+
+
+  /* 세로셈 (3학년 덧셈·뺄셈) */
+  .vadd { display:inline-grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:clamp(2px,0.6vw,4px) clamp(8px,1.6vw,14px); font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--ink); justify-items:center; align-items:center; background:#fff; border:2px solid var(--line); border-radius:18px; padding:clamp(12px,2vw,20px) clamp(18px,3vw,30px); box-shadow:var(--shadow); }
+  .vadd .op { color:var(--coral-deep); }
+  .vadd .ln { grid-column:1/-1; width:100%; height:3px; background:var(--ink); border-radius:2px; }
+  .vadd .sum { color:var(--coral-deep); }
+  .pv-sum-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-md); }
+
+/* ───── 약분과 통분 부품 ───── */
+.ef-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(9px,1.8vw,16px); width:100%; }
+.fr-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(9px,1.8vw,16px); width:100%; }
+.fr-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); width:100%; max-width:var(--mw-lg); }
+.fr-svg { width:100%; height:auto; display:block; max-width:min(700px,94vw); margin:0 auto; }
+.fr-svg text { font-family:'Nunito',sans-serif; font-weight:800; }
+.fr-svg text.kor { font-family:'Do Hyeon',sans-serif; font-weight:400; }
+.fr-note { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; }
+
+/* 세로 분수 표기 */
+.fr-f { display:inline-flex; flex-direction:column; align-items:center; vertical-align:middle; line-height:1.05; margin:0 0.14em; }
+.fr-f > .fr-n { font-family:var(--f-num); font-weight:800; padding:0 0.2em; }
+.fr-f > .fr-d { font-family:var(--f-num); font-weight:800; padding:0 0.2em; border-top:3px solid currentColor; margin-top:2px; }
+.fr-mix { display:inline-flex; align-items:center; gap:0.18em; vertical-align:middle; }
+.fr-mix > .fr-w { font-family:var(--f-num); font-weight:800; }
+
+/* 분수 칩 */
+.fr-chips { display:flex; flex-wrap:wrap; gap:clamp(6px,1.2vw,11px); justify-content:center; max-width:var(--mw-md); }
+.fr-chip { font-size:var(--fs-heading); color:var(--ink); background:#fff; border:3px solid var(--line); border-radius:16px; padding:clamp(5px,1vw,9px) clamp(11px,2.2vw,18px); box-shadow:0 4px 0 var(--line); }
+.fr-chip.hi { color:#fff; background:var(--coral); border-color:var(--coral-deep); box-shadow:0 4px 0 var(--coral-deep); }
+.fr-chip.hi2 { color:#fff; background:var(--teal); border-color:var(--teal-deep); box-shadow:0 4px 0 var(--teal-deep); }
+.fr-chip.both { color:var(--ink); background:var(--mark); border-color:var(--gold); box-shadow:0 4px 0 var(--gold); }
+.fr-chip.dim { color:#C7CEDA; }
+
+/* 식 줄 */
+.fr-lines { display:flex; flex-direction:column; gap:clamp(6px,1.1vw,10px); align-items:center; }
+.fr-line { display:flex; align-items:center; gap:clamp(8px,1.6vw,14px); font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); }
+.fr-line .fr-lead { font-family:var(--f-title); font-size:var(--fs-label); color:var(--ink-soft); min-width:3.6em; text-align:right; }
+.fr-line.final { color:var(--coral-deep); }
+.fr-line.bad { color:var(--emph); }
+.fr-line.bad .fr-lead { color:var(--emph); }
+
+/* 두 갈래 대조 */
+.fr-pair { display:flex; gap:clamp(14px,3vw,34px); flex-wrap:wrap; justify-content:center; align-items:flex-start; }
+.fr-col { display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.2vw,10px); background:#fff; border:2px solid var(--line); border-radius:20px; padding:clamp(10px,2vw,18px) clamp(12px,2.4vw,22px); box-shadow:var(--shadow); }
+.fr-col.bad { border-color:#F3C4B7; background:#FFF6F3; }
+.fr-col.good { border-color:var(--teal-soft); background:#F5FBFA; }
+.fr-caph { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); }
+.fr-col.bad .fr-caph { color:var(--emph); }
+.fr-col.good .fr-caph { color:var(--teal-deep); }
+
+/* ───── 분수의 나눗셈 부품 (U1 추가) ───── */
+.dv-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); width:100%; max-width:var(--mw-lg); }
+.dv-svg { width:100%; height:auto; display:block; max-width:min(700px,94vw); margin:0 auto; }
+.dv-svg text { font-family:'Nunito',sans-serif; font-weight:800; }
+.dv-svg text.kor { font-family:'Do Hyeon',sans-serif; font-weight:400; }
+.dv-cards { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,11px); align-items:center; }
+.dv-card { display:flex; align-items:center; gap:clamp(9px,1.8vw,16px); background:#fff; border:3px solid var(--line); border-radius:18px; padding:clamp(7px,1.4vw,12px) clamp(13px,2.6vw,22px); box-shadow:0 4px 0 var(--line); font-size:var(--fs-heading); color:var(--ink); }
+.dv-card .dv-lead { font-family:var(--f-title); font-size:var(--fs-label); color:var(--ink-soft); min-width:4.2em; text-align:right; }
+.dv-card.turn { border-color:var(--coral); box-shadow:0 4px 0 var(--coral-deep); background:var(--coral-soft); }
+.dv-card.final { border-color:var(--teal); box-shadow:0 4px 0 var(--teal-deep); color:var(--teal-deep); }
+.dv-card.bad { border-color:#F3C4B7; background:#FFF6F3; color:var(--emph); }
+.dv-card.bad .dv-lead { color:var(--emph); }
+</style>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 목록</button>
+    <span class="ka-pill">8차시</span>
+    <span class="ka-where">수학 6-1 · <b>1. 분수의 나눗셈</b></span>
+    <div class="ka-bar" id="dots"></div>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+  <div class="ka-m">
+    <div class="slide active" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">단원을 마무리하자</h2>
+      <div class="intro-q">이번 단원에서 <strong>세 가지 나눗셈</strong>을 만났어요.<br>(자연수)÷(자연수), (진분수)÷(자연수),<br>그리고 (대분수)÷(자연수)예요.</div>
+    </div>
+
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">세 가지 나눗셈</h2>
+      <div class="ef-stage">
+        <div id="m-i2"></div>
+        <div class="concept-box">생김새는 달라 보이지만<br>모두 <strong>단위분수를 곱하는</strong> 한 가지 방법으로 풀려요.<br>차례대로 되짚어 보자.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">오늘의 질문</h2>
+      <div class="intro-q">세 나눗셈을 푸는 방법이 <strong>왜 같을까?</strong><br>그리고 어떤 실수를 가장 조심해야 할까?<br>문제를 풀며 스스로 확인해 보자.</div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 되짚기 ①</div>
+      <h2 class="slide-title">몫을 분수로 나타내기</h2>
+      <div class="ef-stage">
+        <div id="m-e1"></div>
+        <div class="concept-box">나누어지는 수는 <strong>분자</strong>, 나누는 수는 <strong>분모</strong>예요.<br>2 ÷ 5 = <span class="fr-f"><span class="fr-n">2</span><span class="fr-d">5</span></span> · 11 ÷ 3 = <span class="fr-f"><span class="fr-n">11</span><span class="fr-d">3</span></span> = <span class="fr-mix"><span class="fr-w">3</span><span class="fr-f"><span class="fr-n">2</span><span class="fr-d">3</span></span></span></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 되짚기 ②</div>
+      <h2 class="slide-title">나눗셈을 곱셈으로 바꾸기</h2>
+      <div class="ef-stage">
+        <div id="m-e2"></div>
+        <div class="concept-box">6 ÷ 7 = 6 × <span class="fr-f"><span class="fr-n">1</span><span class="fr-d">7</span></span> = <span class="fr-f"><span class="fr-n">6</span><span class="fr-d">7</span></span><br>나누는 수가 <strong>분모</strong>인 단위분수를 곱해요.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 되짚기 ③</div>
+      <h2 class="slide-title">진분수와 대분수 나눗셈</h2>
+      <div class="ef-stage">
+        <div id="m-e3"></div>
+        <div class="concept-box"><span class="fr-f"><span class="fr-n">4</span><span class="fr-d">9</span></span> ÷ 2 = <span class="fr-f"><span class="fr-n">4</span><span class="fr-d">9</span></span> × <span class="fr-f"><span class="fr-n">1</span><span class="fr-d">2</span></span><br><span class="fr-mix"><span class="fr-w">2</span><span class="fr-f"><span class="fr-n">1</span><span class="fr-d">4</span></span></span> ÷ 3 = <span class="fr-f"><span class="fr-n">9</span><span class="fr-d">4</span></span> × <span class="fr-f"><span class="fr-n">1</span><span class="fr-d">3</span></span><br><strong>대분수는 먼저 가분수로</strong> 고쳐요.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · ★왜 그럴까</div>
+      <h2 class="slide-title">왜 방법이 하나로 모일까</h2>
+      <div class="ef-stage">
+        <div id="m-e4"></div>
+        <div class="concept-box">어떤 수를 (자연수)로 나누는 것은<br>그 수를 <strong>(자연수)등분 한 것 중의 1</strong>을 구하는 것이에요.<br>그래서 언제나 <strong>단위분수를 곱하면</strong> 돼요.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q8" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">2 ÷ 5 의 몫을 분수로 나타내면?</div>
+        <div class="ef-stage"><div id="m-q8"></div></div>
+        <div class="mcq-opts" id="q8-opts">
+          <button class="mcq-opt" data-correct="0"><span class="fr-f"><span class="fr-n">5</span><span class="fr-d">2</span></span></button>
+          <button class="mcq-opt" data-correct="0"><span class="fr-mix"><span class="fr-w">2</span><span class="fr-f"><span class="fr-n">1</span><span class="fr-d">5</span></span></span></button>
+          <button class="mcq-opt" data-correct="1"><span class="fr-f"><span class="fr-n">2</span><span class="fr-d">5</span></span></button>
+          <button class="mcq-opt" data-correct="0"><span class="fr-f"><span class="fr-n">1</span><span class="fr-d">5</span></span></button>
+        </div>
+        <div class="mcq-hint" data-hints='["나누어지는 수가 분자가 돼요.","분자는 2, 분모는 5예요."]'></div>
+        <div class="q-fb" id="q8-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q9" data-q-points="10" data-answer="3">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">11 ÷ 3 의 몫을 <strong>대분수</strong>로 나타낼 때<br><strong>자연수 부분</strong>에 오는 수는?</div>
+        <div class="ef-stage"><div id="m-q9"></div></div>
+        <div class="q-display" id="q9-display">?</div>
+        <div class="q-pad" id="q9-pad"></div>
+        <div class="mcq-hint" data-hints='["11 안에 3이 몇 번 들어갈까?","3이 3번 들어가고 2가 남아요."]'></div>
+        <div class="q-fb" id="q9-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q10" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt"><span class="fr-f"><span class="fr-n">4</span><span class="fr-d">9</span></span> ÷ 2 의 몫은?</div>
+        <div class="ef-stage"><div id="m-q10"></div></div>
+        <div class="mcq-opts" id="q10-opts">
+          <button class="mcq-opt" data-correct="1"><span class="fr-f"><span class="fr-n">2</span><span class="fr-d">9</span></span></button>
+          <button class="mcq-opt" data-correct="0"><span class="fr-f"><span class="fr-n">8</span><span class="fr-d">9</span></span></button>
+          <button class="mcq-opt" data-correct="0"><span class="fr-f"><span class="fr-n">4</span><span class="fr-d">11</span></span></button>
+          <button class="mcq-opt" data-correct="0"><span class="fr-f"><span class="fr-n">9</span><span class="fr-d">4</span></span></button>
+        </div>
+        <div class="mcq-hint" data-hints='["4/9는 1/9이 4개예요.","4개를 둘로 나누면 2개예요."]'></div>
+        <div class="q-fb" id="q10-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q11" data-q-points="10" data-answer="9">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt"><span class="fr-mix"><span class="fr-w">2</span><span class="fr-f"><span class="fr-n">1</span><span class="fr-d">4</span></span></span> 을 <strong>가분수</strong>로 나타낼 때<br><strong>분자</strong>에 오는 수는?</div>
+        <div class="ef-stage"><div id="m-q11"></div></div>
+        <div class="q-display" id="q11-display">?</div>
+        <div class="q-pad" id="q11-pad"></div>
+        <div class="mcq-hint" data-hints='["2는 8/4와 같아요.","8/4와 1/4을 합해요."]'></div>
+        <div class="q-fb" id="q11-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q12" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <!-- q12 = 교과서 7번 / 정답② = 지도서 123 (1) 알고리즘 오류(단위분수 대신 자연수를 그대로 곱함) -->
+      <div class="q-stage">
+        <div class="q-prompt"><strong>잘못</strong> 계산한 것은?</div>
+        <div class="ef-stage"><div id="m-q12"></div></div>
+        <div class="mcq-opts" id="q12-opts">
+          <button class="mcq-opt" data-correct="0">㉠ <span class="fr-f"><span class="fr-n">2</span><span class="fr-d">9</span></span> ÷ 7 = <span class="fr-f"><span class="fr-n">2</span><span class="fr-d">9</span></span> × <span class="fr-f"><span class="fr-n">1</span><span class="fr-d">7</span></span></button>
+          <button class="mcq-opt" data-correct="1">㉡ <span class="fr-f"><span class="fr-n">5</span><span class="fr-d">8</span></span> ÷ 3 = <span class="fr-f"><span class="fr-n">5</span><span class="fr-d">8</span></span> × 3</button>
+          <button class="mcq-opt" data-correct="0">㉢ <span class="fr-f"><span class="fr-n">1</span><span class="fr-d">4</span></span> ÷ 2 = <span class="fr-f"><span class="fr-n">1</span><span class="fr-d">4</span></span> × <span class="fr-f"><span class="fr-n">1</span><span class="fr-d">2</span></span></button>
+          <button class="mcq-opt" data-correct="0">㉣ <span class="fr-f"><span class="fr-n">3</span><span class="fr-d">5</span></span> ÷ 4 = <span class="fr-f"><span class="fr-n">3</span><span class="fr-d">5</span></span> × <span class="fr-f"><span class="fr-n">1</span><span class="fr-d">4</span></span></button>
+        </div>
+        <div class="mcq-hint" data-hints='["나누면 몫이 작아져야 해요.","5/8 × 3 은 오히려 커져 버려요."]'></div>
+        <div class="q-fb" id="q12-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q13" data-q-points="15" data-answer="5">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">소금 <strong>9 kg</strong>을 <strong>5봉지</strong>에 똑같이 나누어 담았어요.<br>한 봉지에 담은 소금을 대분수로 나타낼 때<br><strong>자연수 부분과 분자의 합</strong>은?</div>
+        <div class="ef-stage"><div id="m-q13"></div></div>
+        <div class="q-display" id="q13-display">?</div>
+        <div class="q-pad" id="q13-pad"></div>
+        <div class="mcq-hint" data-hints='["9 ÷ 5 의 몫을 대분수로 나타내 보자.","1과 4/5 이므로 1과 4를 더해요."]'></div>
+        <div class="q-fb" id="q13-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q14" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <!-- q14 = 교과서 6번 · 2단계 — 두 몫을 각각 구한 뒤 15칸으로 맞추어 비교(5칸 vs 3칸) -->
+      <div class="q-stage">
+        <div class="q-prompt">몫이 <strong>더 큰</strong> 나눗셈은?</div>
+        <div class="ef-stage"><div id="m-q14"></div></div>
+        <div class="mcq-opts" id="q14-opts">
+          <button class="mcq-opt" data-correct="1"><span class="fr-f"><span class="fr-n">2</span><span class="fr-d">3</span></span> ÷ 2</button>
+          <button class="mcq-opt" data-correct="0"><span class="fr-mix"><span class="fr-w">1</span><span class="fr-f"><span class="fr-n">1</span><span class="fr-d">5</span></span></span> ÷ 6</button>
+          <button class="mcq-opt" data-correct="0">두 몫이 같다</button>
+          <button class="mcq-opt" data-correct="0">비교할 수 없다</button>
+        </div>
+        <div class="mcq-hint" data-hints='["두 몫을 각각 구해 보자.","1/3은 5/15, 1/5는 3/15예요."]'></div>
+        <div class="q-fb" id="q14-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q15" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <!-- q15 = 교과서 8번 · 2단계 — 큰 대분수를 만들고 작은 수로 나누어야 몫이 커진다 -->
+      <div class="q-stage">
+        <div class="q-prompt">수 카드 <strong>7 · 5 · 6 · 2</strong>를 한 번씩만 써서<br>(대분수)÷(자연수)를 만들 때<br>몫이 <strong>가장 큰</strong> 것은?</div>
+        <div class="ef-stage"><div id="m-q15"></div></div>
+        <div class="mcq-opts" id="q15-opts">
+          <button class="mcq-opt" data-correct="1"><span class="fr-mix"><span class="fr-w">7</span><span class="fr-f"><span class="fr-n">5</span><span class="fr-d">6</span></span></span> ÷ 2</button>
+          <button class="mcq-opt" data-correct="0"><span class="fr-mix"><span class="fr-w">2</span><span class="fr-f"><span class="fr-n">5</span><span class="fr-d">6</span></span></span> ÷ 7</button>
+          <button class="mcq-opt" data-correct="0"><span class="fr-mix"><span class="fr-w">6</span><span class="fr-f"><span class="fr-n">5</span><span class="fr-d">7</span></span></span> ÷ 2</button>
+          <button class="mcq-opt" data-correct="0"><span class="fr-mix"><span class="fr-w">5</span><span class="fr-f"><span class="fr-n">6</span><span class="fr-d">7</span></span></span> ÷ 2</button>
+        </div>
+        <div class="mcq-hint" data-hints='["나누어지는 수는 크게, 나누는 수는 작게 만들어 보자.","47/6 × 1/2 = 47/12 예요."]'></div>
+        <div class="q-fb" id="q15-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 배운 것</h2>
+      <div class="summary-stage">
+        <div class="summary-card">(자연수)÷(자연수)의 몫은 <strong>분수</strong>로 나타낼 수 있어요.<br>(분수)÷(자연수)는 나누는 수의 <strong>단위분수</strong>를 곱해요.<br>대분수는 언제나 <strong>가분수로 먼저</strong> 고쳐요.</div>
+        <div class="wrap-msg" id="wrap-msg"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 공부는 어땠나요?</h2>
+      <div class="self-stage">
+        <div class="self-row">
+          <button class="self-btn"><div class="self-btn-stars">★</div><div class="self-btn-name">조금 어려웠어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★</div><div class="self-btn-name">잘 했어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★★</div><div class="self-btn-name">아주 잘 했어요</div></button>
+        </div>
+        <div class="q-fb" id="self-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">다음 시간</h2>
+      <div class="next-stage">
+        <div class="next-card">
+          <div class="next-emojis">📦</div>
+          <div class="next-label">다음 단원에서는 <strong>각기둥과 각뿔</strong>을 만나요</div>
+        </div>
+        <div class="home-prompt">주변에서 기둥 모양과 뿔 모양 물건을 찾아 어떤 점이 다른지 살펴보자.</div>
+      </div>
+    </div>
+
+  </div>
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+<script>
+const TOTAL = 18;
+const LESSON_ID = 'g6_math_u1_l08';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.querySelectorAll('#dots .ka-dot').forEach((d, i) => { d.classList.toggle('active', i === cur); d.classList.toggle('done', i < cur); });
+  document.getElementById('prev').disabled = cur === 0;
+
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.solved || st.hintLevel >= 2; }
+  else { hintBtn.disabled = true; }
+
+  if (cur === TOTAL - 1) { document.getElementById('next').textContent = '마치기 →'; saveProgress(true); }
+  else { document.getElementById('next').textContent = '다음 →'; }
+
+  if (cur === 15) { document.getElementById('wrap-msg').textContent = wrapMsg(score); }
+}
+
+function saveProgress(done) {
+  const data = { cur, score, done, startedAt, finishedAt: done ? Date.now() : null, qState };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function wrapMsg(s) {
+  if (s >= 100) return '완벽해요!';
+  if (s >= 80) return '정말 잘했어요!';
+  if (s >= 60) return '잘했어요!';
+  return '다시 해도 좋아요!';
+}
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+function showHint() {
+  const qid = currentQId(); if (!qid) return;
+  const st = getQState(qid); if (st.solved || st.hintLevel >= 2) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint'); if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[st.hintLevel - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= 2;
+}
+function pointsForQ(qid) {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  const base = parseInt(slide.dataset.qPoints || '0', 10);
+  const st = getQState(qid);
+  if (st.hintLevel === 2) return Math.max(0, base - 5);
+  if (st.hintLevel === 1) return Math.max(0, base - 2);
+  return base;
+}
+
+// ══════════════════════════════════════════════════════════════
+// 5-1 수학 3단원 「약분과 통분」 부품 라이브러리 v1
+//   - fr(n, d, w)             : 세로 분수 표기(대분수는 w)
+//   - fx(str)                 : "3/4 = 6/8" 문자열의 a/b 를 자동으로 세로 분수화
+//   - fracStrip(num,den,o)    : 분수 띠. o.split=k → 재귀 분할(각 칸을 k등분)
+//   - fracBars(rows,o)        : 띠 여러 줄 — 크기가 같은 분수는 색칠 폭이 같다
+//   - fracCompare(a,b,o)      : 두 띠 상하 배치. o.common=공통분모 → 통분 눈금 삽입
+//   - decLine(items,o)        : 0~1 수직선에 분수·소수를 함께 찍는다
+//   - fracChips(items,o)      : 분수 칩 나열. o.hi/o.hi2/o.both/o.dim (인덱스)
+//   - fracLines(rows,o)       : 식 줄 나열
+//   - frPair(a,b)             : 두 갈래 대조(잘못된 길 / 옳은 길)
+//   ★ 모든 띠 부품은 data-frac(="num/den") 을 심어 검증기가 역산한다.
+//   ★ 재귀적 분할: 1/3 을 2등분하면 2/6 — 자른 횟수가 늘어도 양은 그대로.
+// ══════════════════════════════════════════════════════════════
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+function gcd(a,b){ a=Math.abs(a); b=Math.abs(b); while(b){ const t=a%b; a=b; b=t; } return a; }
+function lcm(a,b){ return a/gcd(a,b)*b; }
+
+// ───── 분수 표기 ─────
+function fr(n, d, w){
+  const core = '<span class="fr-f"><span class="fr-n">'+esc(n)+'</span>'
+             + '<span class="fr-d">'+esc(d)+'</span></span>';
+  if (w === undefined || w === null || w === '') return core;
+  return '<span class="fr-mix"><span class="fr-w">'+esc(w)+'</span>'+core+'</span>';
+}
+
+// "3/4 = 6/8" · "1 2/3" 형태를 자동 변환. 그 밖의 글자는 그대로 둔다.
+function fx(str){
+  return String(str)
+    .replace(/(\d+)\s+(\d+)\/(\d+)/g, function(_,w,n,d){ return fr(n,d,w); })
+    .replace(/(\d+)\/(\d+)/g, function(_,n,d){ return fr(n,d); });
+}
+
+// ───── 띠 한 줄 SVG(내부 공용) ─────
+//   x,y,w,h · num/den · opt{ split, color, dashOnly, commonTicks }
+function _bar(x, y, w, h, num, den, opt){
+  opt = opt || {};
+  const fill = opt.color === 'b' ? 'var(--teal)' : 'var(--coral)';
+  const soft = opt.color === 'b' ? 'var(--teal-soft)' : 'var(--coral-soft)';
+  let g = '';
+  g += '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="8" fill="'+soft+'" stroke="var(--line)" stroke-width="3"/>';
+  // 색칠
+  const cw = w * num / den;
+  if (num > 0) g += '<rect x="'+x+'" y="'+y+'" width="'+cw.toFixed(2)+'" height="'+h+'" rx="8" fill="'+fill+'" opacity="0.85"/>';
+  // 기본 눈금
+  for (let i = 1; i < den; i++){
+    const gx = (x + w * i / den).toFixed(2);
+    g += '<line x1="'+gx+'" y1="'+y+'" x2="'+gx+'" y2="'+(y+h)+'" stroke="#fff" stroke-width="3"/>';
+  }
+  // 재귀 분할 눈금(점선) — 원래 칸은 그대로 두고 그 안을 더 자른다
+  const k = opt.split || 0;
+  if (k > 1){
+    const tot = den * k;
+    for (let i = 1; i < tot; i++){
+      if (i % k === 0) continue;
+      const gx = (x + w * i / tot).toFixed(2);
+      g += '<line x1="'+gx+'" y1="'+y+'" x2="'+gx+'" y2="'+(y+h)+'" stroke="#fff" stroke-width="2" stroke-dasharray="5 4"/>';
+    }
+  }
+  // 공통분모 눈금(통분) — 굵은 흰 점선
+  if (opt.commonTicks && opt.commonTicks > den){
+    const tot = opt.commonTicks;
+    for (let i = 1; i < tot; i++){
+      if (i % (tot/den) === 0) continue;
+      const gx = (x + w * i / tot).toFixed(2);
+      g += '<line x1="'+gx+'" y1="'+y+'" x2="'+gx+'" y2="'+(y+h)+'" stroke="#fff" stroke-width="2" stroke-dasharray="6 4"/>';
+    }
+  }
+  g += '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="8" fill="none" stroke="var(--line)" stroke-width="3"/>';
+  return g;
+}
+
+// SVG 안 세로 분수
+function _svgFrac(cx, cy, n, d, col, size){
+  const s = size || 26;
+  const c = col || 'var(--ink)';
+  return '<text x="'+cx+'" y="'+(cy-6)+'" font-size="'+s+'" fill="'+c+'" text-anchor="middle">'+esc(n)+'</text>'
+       + '<line x1="'+(cx-16)+'" y1="'+(cy+1)+'" x2="'+(cx+16)+'" y2="'+(cy+1)+'" stroke="'+c+'" stroke-width="3"/>'
+       + '<text x="'+cx+'" y="'+(cy+30)+'" font-size="'+s+'" fill="'+c+'" text-anchor="middle">'+esc(d)+'</text>';
+}
+
+// ───── fracStrip ─────
+function fracStrip(num, den, o){
+  o = o || {};
+  const W = 700, H = 132, x = 96, w = 560, y = 44, h = 56;
+  let g = '';
+  g += _svgFrac(46, y + h/2 - 8, num, den, o.color === 'b' ? 'var(--teal-deep)' : 'var(--coral-deep)');
+  g += _bar(x, y, w, h, num, den, o);
+  g += '<text class="kor" x="'+x+'" y="'+(y-14)+'" font-size="20" fill="var(--ink-soft)" text-anchor="middle">0</text>';
+  g += '<text class="kor" x="'+(x+w)+'" y="'+(y-14)+'" font-size="20" fill="var(--ink-soft)" text-anchor="middle">1</text>';
+  if (o.split > 1){
+    const rn = num * o.split, rd = den * o.split;
+    g += _svgFrac(x + w + 34, y + h/2 - 8, rn, rd, 'var(--emph)', 24);
+    g += '<text class="kor" x="'+(W/2)+'" y="'+(y+h+34)+'" font-size="19" fill="var(--ink-soft)" text-anchor="middle">'
+       + '한 칸을 ' + o.split + '등분해도 색칠한 양은 그대로</text>';
+  } else if (o.rightLabel){
+    g += '<text class="kor" x="'+(x+w+22)+'" y="'+(y+h/2+2)+'" font-size="19" fill="var(--ink-soft)" text-anchor="start">'+esc(o.rightLabel)+'</text>';
+  }
+  const note = o.note ? '<div class="fr-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="fr-wrap" data-frac="'+num+'/'+den+'">'
+       + '<svg class="fr-svg" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">'+g+'</svg>'
+       + note + '</div>';
+}
+
+// ───── fracBars : rows = [[num,den], ...] ─────
+function fracBars(rows, o){
+  o = o || {};
+  const W = 700, x = 96, w = 560, h = 46, gap = 22, top = 34;
+  const H = top + rows.length * (h + gap) + 6;
+  let g = '';
+  g += '<text class="kor" x="'+x+'" y="'+(top-10)+'" font-size="19" fill="var(--ink-soft)" text-anchor="middle">0</text>';
+  g += '<text class="kor" x="'+(x+w)+'" y="'+(top-10)+'" font-size="19" fill="var(--ink-soft)" text-anchor="middle">1</text>';
+  rows.forEach(function(r, i){
+    const y = top + i * (h + gap);
+    const hi = o.hi && o.hi.indexOf(i) !== -1;
+    g += _svgFrac(46, y + h/2 - 6, r[0], r[1], hi ? 'var(--emph)' : 'var(--coral-deep)', 23);
+    g += _bar(x, y, w, h, r[0], r[1], { color: o.color });
+  });
+  // 색칠 끝선이 모두 같음을 보여 주는 세로 안내선
+  if (o.guide){
+    const gx = (x + w * rows[0][0] / rows[0][1]).toFixed(2);
+    g += '<line x1="'+gx+'" y1="'+(top-4)+'" x2="'+gx+'" y2="'+(top + rows.length*(h+gap) - gap + 4)+'" stroke="var(--emph)" stroke-width="3" stroke-dasharray="7 5"/>';
+  }
+  const note = o.note ? '<div class="fr-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="fr-wrap" data-bars="'+rows.map(r=>r[0]+'/'+r[1]).join(',')+'">'
+       + '<svg class="fr-svg" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">'+g+'</svg>'
+       + note + '</div>';
+}
+
+// ───── fracCompare : a,b = [num,den] · o.common = 공통분모 ─────
+function fracCompare(a, b, o){
+  o = o || {};
+  const W = 700, x = 96, w = 560, h = 52, top = 36, gap = 30;
+  const H = top + h*2 + gap + (o.common ? 42 : 12);
+  const cm = o.common || 0;
+  let g = '';
+  g += '<text class="kor" x="'+x+'" y="'+(top-10)+'" font-size="19" fill="var(--ink-soft)" text-anchor="middle">0</text>';
+  g += '<text class="kor" x="'+(x+w)+'" y="'+(top-10)+'" font-size="19" fill="var(--ink-soft)" text-anchor="middle">1</text>';
+  g += _svgFrac(46, top + h/2 - 6, a[0], a[1], 'var(--coral-deep)', 24);
+  g += _bar(x, top, w, h, a[0], a[1], { color:'a', commonTicks: cm });
+  const y2 = top + h + gap;
+  g += _svgFrac(46, y2 + h/2 - 6, b[0], b[1], 'var(--teal-deep)', 24);
+  g += _bar(x, y2, w, h, b[0], b[1], { color:'b', commonTicks: cm });
+  if (cm){
+    const an = a[0] * cm / a[1], bn = b[0] * cm / b[1];
+    g += '<text class="kor" x="'+(x+w+18)+'" y="'+(top+h/2+2)+'" font-size="19" fill="var(--coral-deep)" text-anchor="start">'+an+'칸</text>';
+    g += '<text class="kor" x="'+(x+w+18)+'" y="'+(y2+h/2+2)+'" font-size="19" fill="var(--teal-deep)" text-anchor="start">'+bn+'칸</text>';
+    g += '<text class="kor" x="'+(W/2)+'" y="'+(H-10)+'" font-size="19" fill="var(--ink-soft)" text-anchor="middle">'
+       + '같은 ' + cm + '칸으로 맞추면 ' + an + '칸과 ' + bn + '칸 — ' + (an>bn?'위':'아래') + '가 더 크다</text>';
+  }
+  const note = o.note ? '<div class="fr-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="fr-wrap" data-cmp="'+a[0]+'/'+a[1]+'|'+b[0]+'/'+b[1]+'">'
+       + '<svg class="fr-svg" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">'+g+'</svg>'
+       + note + '</div>';
+}
+
+// ───── decLine : items = [{v, label, kind:'frac'|'dec', n, d}] ─────
+function decLine(items, o){
+  o = o || {};
+  const W = 700, H = 150, x = 60, w = 580, y = 96;
+  const max = o.max || 1;
+  let g = '';
+  g += '<line x1="'+x+'" y1="'+y+'" x2="'+(x+w)+'" y2="'+y+'" stroke="var(--ink-soft)" stroke-width="4"/>';
+  const steps = o.steps || 10;
+  for (let i = 0; i <= steps; i++){
+    const gx = (x + w * i / steps).toFixed(2);
+    const big = (i % 5 === 0);
+    g += '<line x1="'+gx+'" y1="'+(y-(big?12:7))+'" x2="'+gx+'" y2="'+(y+(big?12:7))+'" stroke="var(--ink-soft)" stroke-width="'+(big?4:2)+'"/>';
+    if (big) g += '<text x="'+gx+'" y="'+(y+36)+'" font-size="20" fill="var(--ink-soft)" text-anchor="middle">'+(max*i/steps)+'</text>';
+  }
+  items.forEach(function(it, i){
+    const gx = (x + w * it.v / max);
+    const col = i === 0 ? 'var(--coral)' : 'var(--teal)';
+    const deep = i === 0 ? 'var(--coral-deep)' : 'var(--teal-deep)';
+    const up = (i % 2 === 0);
+    const ty = up ? y - 30 : y + 62;
+    g += '<circle cx="'+gx.toFixed(2)+'" cy="'+y+'" r="9" fill="'+col+'" stroke="#fff" stroke-width="3"/>';
+    if (it.kind === 'frac') g += _svgFrac(gx, up ? ty - 16 : ty + 6, it.n, it.d, deep, 23);
+    else g += '<text x="'+gx.toFixed(2)+'" y="'+ty+'" font-size="24" fill="'+deep+'" text-anchor="middle">'+esc(it.label)+'</text>';
+  });
+  const note = o.note ? '<div class="fr-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="fr-wrap" data-line="'+items.map(i=>i.v).join(',')+'">'
+       + '<svg class="fr-svg" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">'+g+'</svg>'
+       + note + '</div>';
+}
+
+// ───── fracChips : items = ["3/4", "6/8", ...] · o.hi 등은 인덱스 배열 ─────
+function fracChips(items, o){
+  o = o || {};
+  const cls = (i) => 'fr-chip'
+    + (o.both && o.both.indexOf(i)!==-1 ? ' both'
+      : o.hi && o.hi.indexOf(i)!==-1 ? ' hi'
+      : o.hi2 && o.hi2.indexOf(i)!==-1 ? ' hi2' : '')
+    + (o.dim && o.dim.indexOf(i)!==-1 ? ' dim' : '');
+  const body = items.map((v, i) => '<div class="'+cls(i)+'">'+fx(v)+'</div>').join('');
+  const note = o.note ? '<div class="fr-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="fr-wrap" data-chips="'+esc(items.join(','))+'">'
+       + '<div class="fr-chips">'+body+'</div>'+note+'</div>';
+}
+
+// ───── fracLines : rows = [{lead, expr, cls}] ─────
+function fracLines(rows, o){
+  o = o || {};
+  const body = rows.map(r => '<div class="fr-line '+(r.cls||'')+'">'
+      + '<span class="fr-lead">'+esc(r.lead||'')+'</span><span>'+fx(r.expr)+'</span></div>').join('');
+  const note = o.note ? '<div class="fr-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="fr-wrap"><div class="fr-lines">'+body+'</div>'+note+'</div>';
+}
+
+function frPair(a, b){
+  const col = (c) => '<div class="fr-col '+(c.kind||'')+'">'
+      + '<div class="fr-caph">'+esc(c.cap)+'</div>' + c.body + '</div>';
+  return '<div class="fr-pair">' + col(a) + col(b) + '</div>';
+}
+
+
+// ───── divShare : total 개를 parts 명이 똑같이 나눈다 (등분제) ─────
+//   사각형 total 개를 각각 parts 등분 → 한 명 몫 = 각 사각형에서 1칸씩 = total/parts
+//   o.unit  = 사각형에 쓸 이름(예: '떡')   o.who = 나누는 사람 수 라벨
+//   o.hideQ = 몫 분수 표기 감춤(문항용)     o.color='b' → teal 계열
+//   data-share="total/parts" 를 심어 검증기가 역산한다.
+function divShare(total, parts, o){
+  o = o || {};
+  const col  = o.color === 'b' ? 'var(--teal)' : 'var(--coral)';
+  const cold = o.color === 'b' ? 'var(--teal-deep)' : 'var(--coral-deep)';
+  const W = 700, y = 46, h = 84;
+  const gap = 18;
+  const boxW = Math.min(200, (560 - gap * (total - 1)) / total);
+  const allW = boxW * total + gap * (total - 1);
+  const x0 = (W - allW) / 2;
+  let g = '';
+  for (let i = 0; i < total; i++){
+    const bx = x0 + i * (boxW + gap);
+    const cw = boxW / parts;
+    // 한 사람 몫 = 맨 왼쪽 1칸
+    g += '<rect x="'+bx+'" y="'+y+'" width="'+cw+'" height="'+h+'" fill="'+col+'" opacity="0.85"/>';
+    for (let k = 1; k < parts; k++){
+      const lx = bx + cw * k;
+      g += '<line x1="'+lx+'" y1="'+y+'" x2="'+lx+'" y2="'+(y+h)+'" stroke="#fff" stroke-width="3"/>';
+    }
+    g += '<rect x="'+bx+'" y="'+y+'" width="'+boxW+'" height="'+h+'" fill="none" stroke="var(--ink)" stroke-width="3" rx="6"/>';
+    if (o.unit){
+      g += '<text class="kor" x="'+(bx+boxW/2)+'" y="'+(y-14)+'" font-size="19" fill="var(--ink-soft)" text-anchor="middle">'+esc(o.unit)+'</text>';
+    }
+  }
+  const cap = o.who ? esc(o.who) : (parts + '명이 똑같이 나누기');
+  g += '<text class="kor" x="'+(W/2)+'" y="'+(y+h+34)+'" font-size="20" fill="var(--ink-soft)" text-anchor="middle">'+cap+'</text>';
+  if (!o.hideQ){
+    g += _svgFrac(W/2, y + h + 58, total, parts, cold, 26);
+    g += '<text class="kor" x="'+(W/2)+'" y="'+(y+h+124)+'" font-size="19" fill="var(--ink-soft)" text-anchor="middle">한 명이 가지는 양</text>';
+  }
+  const H = o.hideQ ? (y + h + 54) : (y + h + 138);
+  return '<div class="dv-wrap" data-share="'+total+'/'+parts+'">'
+       + '<svg class="dv-svg" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">'+g+'</svg>'
+       + (o.note ? '<div class="fr-note">'+esc(o.note)+'</div>' : '') + '</div>';
+}
+
+// ───── fracCalc : (분수|자연수) ÷ (자연수) 3단 카드 ─────
+//   rows = [{lead, expr, cls}] 를 직접 받되, expr 안의 a/b 는 fx() 로 세로 분수화한다.
+//   cls: 'turn'(역수로 바꾸는 칸) · 'final'(답) · 'bad'(잘못된 길)
+function fracCalc(rows, o){
+  o = o || {};
+  const body = rows.map(r =>
+    '<div class="dv-card '+(r.cls||'')+'">'
+    + '<span class="dv-lead">'+esc(r.lead||'')+'</span>'
+    + '<span>'+fx(r.expr)+'</span></div>').join('');
+  return '<div class="dv-wrap"><div class="dv-cards">'+body+'</div>'
+       + (o.note ? '<div class="fr-note">'+esc(o.note)+'</div>' : '') + '</div>';
+}
+
+(function renderModels(){
+  document.getElementById('m-i2').innerHTML =
+    fracChips(['2 ÷ 5','4/9 ÷ 2','2 1/4 ÷ 3'], {note:'이 단원에서 만난 세 가지 나눗셈'});
+  document.getElementById('m-e1').innerHTML =
+    fracCalc([{lead:'몫이 작을 때', expr:'2 ÷ 5 = 2/5'},{lead:'몫이 클 때', expr:'11 ÷ 3 = 11/3 = 3 2/3', cls:'final'}], {note:'나누어지는 수는 분자, 나누는 수는 분모'});
+  document.getElementById('m-e2').innerHTML =
+    fracCalc([{lead:'나눗셈', expr:'6 ÷ 7'},{lead:'곱셈으로', expr:'6 × 1/7', cls:'turn'},{lead:'몫', expr:'6/7', cls:'final'}], {note:'나누는 수가 분모인 단위분수를 곱한다'});
+  document.getElementById('m-e3').innerHTML =
+    fracCalc([{lead:'진분수', expr:'4/9 ÷ 2 = 4/9 × 1/2'},{lead:'대분수', expr:'2 1/4 ÷ 3 = 9/4 × 1/3', cls:'turn'}], {note:'대분수는 먼저 가분수로 고친다'});
+  document.getElementById('m-e4').innerHTML =
+    fracCalc([{lead:'나눗셈', expr:'÷ (자연수)'},{lead:'같은 뜻', expr:'× 단위분수'},{lead:'그래서', expr:'세 나눗셈이 한 방법으로 풀린다', cls:'final'}], {note:'(자연수)등분 한 것 중의 1을 구하는 일'});
+  document.getElementById('m-q8').innerHTML =
+    fracCalc([{lead:'식', expr:'2 ÷ 5'}], {note:'몫을 분수로 나타내 보자'});
+  document.getElementById('m-q9').innerHTML =
+    fracCalc([{lead:'식', expr:'11 ÷ 3'}], {note:'대분수로 나타내 보자'});
+  document.getElementById('m-q10').innerHTML =
+    fracStrip(4, 9, {note:'1/9이 4개'});
+  document.getElementById('m-q11').innerHTML =
+    fracChips(['2 1/4'], {note:'가분수로 바꾸어 보자'});
+  document.getElementById('m-q12').innerHTML =
+    fracChips(['2/9 ÷ 7','5/8 ÷ 3','1/4 ÷ 2','3/5 ÷ 4'], {note:'네 계산을 살펴보자'});
+  document.getElementById('m-q13').innerHTML =
+    fracCalc([{lead:'소금', expr:'9 kg'},{lead:'봉지', expr:'5봉지'}], {note:'식을 세워 계산해 보자'});
+  document.getElementById('m-q14').innerHTML =
+    fracChips(['2/3 ÷ 2','1 1/5 ÷ 6'], {note:'두 몫을 구해 견주어 보자'});
+  document.getElementById('m-q15').innerHTML =
+    fracChips(['7','5','6','2'], {note:'네 장을 한 번씩만 써서 대분수와 자연수를 만들어 보자'});
+})();
+
+function setupPad(qid, correct, padId, displayId, fbId, doneMsg, maxLen) {
+  maxLen = maxLen || 6;
+  const pad = document.getElementById(padId);
+  const display = document.getElementById(displayId);
+  const fb = document.getElementById(fbId);
+  let buf = '';
+  const keys = ['1','2','3','4','5','6','7','8','9','0'];
+  keys.forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'q-key'; b.textContent = k;
+    b.addEventListener('click', () => {
+      const st = getQState(qid); if (st.solved) return;
+      if (buf.length < maxLen) { buf += k; display.textContent = buf; }
+    });
+    pad.appendChild(b);
+  });
+  const del = document.createElement('button');
+  del.className = 'q-key fn'; del.textContent = '지움';
+  del.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    buf = buf.slice(0, -1); display.textContent = buf || '?';
+  });
+  pad.appendChild(del);
+  const ok = document.createElement('button');
+  ok.className = 'q-key fn'; ok.textContent = '확인'; ok.style.gridColumn = 'span 4';
+  ok.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    st.attempts++;
+    if (parseInt(buf, 10) === correct) {
+      st.solved = true;
+      const earn = pointsForQ(qid); addScore(earn);
+      fb.classList.remove('wrong');
+      fb.textContent = (doneMsg || '정답이에요!') + ' +' + earn + '점';
+      updateUI();
+    } else {
+      st.wrongCount++;
+      fb.classList.add('wrong'); fb.textContent = '다시 계산해 보자';
+    }
+  });
+  pad.appendChild(ok);
+}
+
+function setupMcq(qid, doneMsg){
+  document.querySelectorAll('#'+qid+'-opts .mcq-opt').forEach(o=>{
+    o.addEventListener('click', ()=>{
+      const st=getQState(qid); if(st.solved) return;
+      st.attempts++;
+      const fb=document.getElementById(qid+'-fb');
+      if(o.dataset.correct==='1'){
+        st.solved=true; o.classList.add('correct');
+        const earn=pointsForQ(qid); addScore(earn);
+        fb.classList.remove('wrong'); fb.textContent=(doneMsg||'정답이에요!')+' +'+earn+'점';
+        updateUI();
+      } else {
+        st.wrongCount++; o.classList.add('wrong');
+        fb.classList.add('wrong'); fb.textContent='다시 골라 보세요';
+        setTimeout(()=>o.classList.remove('wrong'),500);
+      }
+    });
+  });
+}
+
+setupMcq('q8','맞아요! 2 ÷ 5 = 2/5 예요');
+setupPad('q9', 3, 'q9-pad','q9-display','q9-fb','맞아요! 11 ÷ 3 = 3과 2/3 이에요', 6);
+setupMcq('q10','맞아요! 4/9 ÷ 2 = 2/9 예요');
+setupPad('q11', 9, 'q11-pad','q11-display','q11-fb','맞아요! 2와 1/4 은 9/4 예요', 6);
+setupMcq('q12','맞아요! ㉡은 1/3을 곱해야 해요');
+setupPad('q13', 5, 'q13-pad','q13-display','q13-fb','맞아요! 1 + 4 = 5 예요', 6);
+setupMcq('q14','맞아요! 2/3 ÷ 2 의 몫이 더 커요');
+setupMcq('q15','맞아요! 7과 5/6 ÷ 2 의 몫이 가장 커요');
+
+
+// ───── 슬17 자기 평가 ─────
+document.querySelectorAll('.self-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.self-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('self-fb').textContent = '응답이 기록됐어요. 다음 차시에서 만나요!';
+  });
+});
+
+// ───── 진도 복원 ─────
+(function restore() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data.cur != null) cur = Math.min(data.cur, TOTAL - 1);
+    if (data.score != null) score = data.score;
+    document.getElementById('score').textContent = '⭐ ' + score;
+  } catch(e) {}
+})();
+
+(function buildDots(){ const w=document.getElementById('dots'); for(let i=0;i<TOTAL;i++){ const d=document.createElement('div'); d.className='ka-dot'; d.onclick=()=>{ cur=i; saveProgress(false); updateUI(); }; w.appendChild(d); } })();
+
+updateUI();
+</script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+</body>
+</html>

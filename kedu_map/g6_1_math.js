@@ -14,14 +14,14 @@ window.KEDU_MAP["g6_1_math"] = {
    "kind": "unit",
    "lessons": [
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u1_l01",
+     "lessonId": "g6_math_u1_l01_v1",
      "n": "1",
      "title": "분수의 나눗셈을 만나 보자",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/1단원_분수의나눗셈/g6_math_u1_l01_분수의나눗셈을만나보자.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": "g6_math_u1_l02",
@@ -34,64 +34,64 @@ window.KEDU_MAP["g6_1_math"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u1_l03",
+     "lessonId": "g6_math_u1_l03_v1",
      "n": "3",
      "title": "(자연수)÷(자연수)의 몫을 분수로 나타내요 ②",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/1단원_분수의나눗셈/g6_math_u1_l03_자연수나누기자연수의몫을분수로나타내요2.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u1_l04",
+     "lessonId": "g6_math_u1_l04_v1",
      "n": "4",
      "title": "(자연수)÷(자연수)를 분수의 곱셈으로 나타내어 계산해요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/1단원_분수의나눗셈/g6_math_u1_l04_자연수나누기자연수를분수의곱셈으로나타내어계산해요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u1_l05",
+     "lessonId": "g6_math_u1_l05_v1",
      "n": "5",
      "title": "(분수)÷(자연수)를 계산해요 ①",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/1단원_분수의나눗셈/g6_math_u1_l05_분수나누기자연수를계산해요1.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u1_l06",
+     "lessonId": "g6_math_u1_l06_v1",
      "n": "6",
      "title": "(분수)÷(자연수)를 계산해요 ②",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/1단원_분수의나눗셈/g6_math_u1_l06_분수나누기자연수를계산해요2.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u1_l07",
+     "lessonId": "g6_math_u1_l07_v1",
      "n": "7",
      "title": "짜잔! 페트병 뚜껑의 새 활용",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/1단원_분수의나눗셈/g6_math_u1_l07_짜잔페트병뚜껑의새활용.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u1_l08",
+     "lessonId": "g6_math_u1_l08_v1",
      "n": "8",
      "title": "스스로 마무리해요 (단원 평가)",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/1단원_분수의나눗셈/g6_math_u1_l08_스스로마무리해요.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   },
