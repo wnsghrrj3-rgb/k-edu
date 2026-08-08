@@ -612,6 +612,54 @@ cv.addEventListener('pointerup', up);
 cv.addEventListener('pointercancel', up);
 cv.addEventListener('pointerleave', e=>{ if(drawing && !isShape(tool)) up(e); });
 
+/* ============== R94 — 도화지 커서 링 (포인터 피드백) ==============
+   준호 실기기: 도화지 위에서 「뭐가 움직이는 게」 안 보임 — 십자 커서는
+   가늘어 안 보이고 태블릿·전자펜엔 OS 커서 자체가 없다. 이 부류 도구의
+   표준 = 커서를 따라다니는 붓 크기 링. 오버레이(#ov, z3·pointer-events
+   없음)에 그린다 — 도형 미리보기(드래그 중 ov 사용)와는 겹쳐 그림. */
+window.KArtCursor = (function(){
+  var STROKES = ['pencil','pen','marker','watercolor','oil','crayon','pencilcolor','pastel','spray','neon','eraser'];
+  function plan(tool, size){
+    var s = Math.max(1, +size || 1);
+    if (STROKES.indexOf(tool) >= 0) return { kind:'ring', r: Math.max(3, s/2), center: s >= 10 };
+    if (tool === 'fill' || tool === 'eyedropper') return { kind:'mark', r: 7, center: true };
+    return { kind:'mark', r: 5, center: true };            /* 도형·직선 — 시작점 표시 */
+  }
+  return { plan: plan, STROKES: STROKES.slice() };
+})();
+let curX = -1, curY = -1, curOn = false;
+function drawCursorRing(){
+  if (!curOn) return;
+  var p = window.KArtCursor.plan(tool, size);
+  ovx.save();
+  ovx.globalAlpha = 1; ovx.setLineDash([]);
+  /* 두 겹 링 — 어떤 배경에서도 보이게 (바깥 진회색 + 안쪽 흰색) */
+  ovx.beginPath(); ovx.arc(curX, curY, p.r + 1, 0, 7);
+  ovx.strokeStyle = 'rgba(30,38,52,.6)'; ovx.lineWidth = 2; ovx.stroke();
+  ovx.beginPath(); ovx.arc(curX, curY, Math.max(1.5, p.r - 0.5), 0, 7);
+  ovx.strokeStyle = 'rgba(255,255,255,.92)'; ovx.lineWidth = 1.2; ovx.stroke();
+  if (p.center){
+    ovx.beginPath(); ovx.arc(curX, curY, 1.4, 0, 7);
+    ovx.fillStyle = 'rgba(30,38,52,.75)'; ovx.fill();
+  }
+  ovx.restore();
+}
+cv.addEventListener('pointermove', function(e){
+  var xy = getXY(e); curX = xy.x; curY = xy.y; curOn = true;
+  /* 도형 드래그 중엔 move()가 이미 지우고 미리보기를 그렸다 — 링만 얹는다 */
+  if (!(drawing && isShape(tool))) ovx.clearRect(0, 0, cssW, cssH);
+  drawCursorRing();
+});
+cv.addEventListener('pointerleave', function(){
+  if (drawing) return;                                     /* 그리던 중 이탈은 up 경로가 정리 */
+  curOn = false; ovx.clearRect(0, 0, cssW, cssH);
+});
+cv.addEventListener('pointerup', function(e){
+  if (e.pointerType && e.pointerType !== 'mouse'){         /* 터치·펜 — 들면 링도 걷는다 */
+    curOn = false; ovx.clearRect(0, 0, cssW, cssH);
+  }
+});
+
 /* ============== undo / redo ============== */
 function pushUndo(){
   try{ undo.push(cv.toDataURL()); }catch(e){}
