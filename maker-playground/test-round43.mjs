@@ -57,9 +57,20 @@ sec('2. readFiles');
     { name: 'doc.pdf', type: 'application/pdf', size: 100 },
     { name: 'b.mp4', type: 'video/mp4', size: 100 },
   ];
+  /* R90 정정(의도 보존): R89 세계에선 8MB 초과 「사진」은 줄여서 받는 게 설계 —
+     huge.jpg 는 성공 쪽으로 옮겨 센다(jsdom은 캔버스 부재 = 원본 통과 경로).
+     비미디어 pdf 는 여전히 조용히(사유 없이) 걸러지고, 사유 딸린 건너뜀의
+     표적은 큰 「영상」이다 — 그 잣대를 지키려 b.mp4 를 9MB로 함께 잰다. */
+  const R89 = !!(window.MK_LIVE && window.MK_LIVE.normalizeImage);
+  if (R89) files.push({ name: 'huge.mp4', type: 'video/mp4', size: 9 * 1024 * 1024 });
   await new Promise((res) => ST.readFiles(files, (out, skipped) => {
-    T('읽기 성공 2건 (jpg·mp4)', out.length === 2 && out[0].kind === 'image' && out[1].kind === 'video');
-    T('8MB 초과·비미디어 건너뜀 + 사유', skipped.length === 2 && skipped.some((s) => /8MB/.test(s)));
+    if (R89) {
+      T('읽기 성공 3건 (jpg·큰jpg 수용·mp4)', out.length === 3 && out.filter((o) => o.kind === 'image').length === 2 && out.some((o) => o.kind === 'video'));
+      T('큰 영상·비미디어 건너뜀 + 사유', skipped.length === 2 && skipped.some((s) => /huge\.mp4.*8MB/.test(s)));
+    } else {
+      T('읽기 성공 2건 (jpg·mp4)', out.length === 2 && out[0].kind === 'image' && out[1].kind === 'video');
+      T('8MB 초과·비미디어 건너뜀 + 사유', skipped.length === 2 && skipped.some((s) => /8MB/.test(s)));
+    }
     res();
   }, FakeReader));
 }

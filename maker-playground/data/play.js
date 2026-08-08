@@ -60,11 +60,17 @@ window.MK_PLAY = (() => {
   const animCss = (el, i, sceneAnim) => {
     const p = enterPlan(el, i, sceneAnim);
     if (!p) return '';
+    /* R90 — idle(켄번즈·float·pulse)의 「등장 후 시작」 지연은 두 번째 선언의
+       제자리(시간값 자리)에 넣는다. 종전엔 콤마 앞을 치환해 첫 선언 꼬리에
+       시간값이 하나 더 붙었고(`both 0.6s,`), 시간 3개 = CSS 문법 위반 →
+       animation 선언 전체 무효 → 인라인 opacity:0에 영원히 갇힘 = 재생에서
+       idle 딸린 요소가 전부 투명(준호 실기기: 소개 스토리 4/4 빈 장면). */
+    const after = (p.delay + p.dur).toFixed(2) + 's';
     const kb = el.anim && /^kb-/.test(el.anim.idle || '') && el.anim.idle !== 'kb-static'
-      ? `,mkp-${el.anim.idle} ${Math.max(0.8, (el.anim.idleDur || 4) - p.delay - p.dur).toFixed(1)}s linear forwards` : '';
-    const idle = kb || (el.anim && el.anim.idle === 'float' ? ',mkp-idle-float 3.2s ease-in-out infinite'
-      : el.anim && el.anim.idle === 'pulse' ? ',mkp-idle-pulse 2.6s ease-in-out infinite' : '');
-    return `;opacity:0;animation:${p.name} ${p.dur}s ${p.ease} ${p.delay}s both${idle ? idle.replace(',', ` ${p.delay + p.dur}s,`) : ''}`;
+      ? `,mkp-${el.anim.idle} ${Math.max(0.8, (el.anim.idleDur || 4) - p.delay - p.dur).toFixed(1)}s linear ${after} forwards` : '';
+    const idle = kb || (el.anim && el.anim.idle === 'float' ? `,mkp-idle-float 3.2s ease-in-out ${after} infinite`
+      : el.anim && el.anim.idle === 'pulse' ? `,mkp-idle-pulse 2.6s ease-in-out ${after} infinite` : '');
+    return `;opacity:0;animation:${p.name} ${p.dur}s ${p.ease} ${p.delay}s both${idle}`;
   };
 
   /* ---------- 재생 순서 — 순수 데이터 ---------- */
@@ -216,7 +222,10 @@ window.MK_PLAY = (() => {
     if (!/mkp-idle-float/.test(KEYFRAMES) || PRESET_KEYS.length !== 9) v.push('프리셋 9종 미충족');
     if (['zoom-in', 'zoom-out', 'pan-left', 'pan-right', 'pan-up', 'pan-down', 'diagonal'].some((k) => !KEYFRAMES.includes('mkp-kb-' + k))) v.push('R52 켄번즈 키프레임 미충족');
     const hk = sceneHTML({ duration: 4, elements: [{ kind: 'image', src: 'data:image/png;base64,K', x: 0, y: 0, w: 100, h: 100, anim: { preset: 'fade', idle: 'kb-zoom-in', idleDur: 4 } }] });
-    if (!/mkp-kb-zoom-in [\d.]+s linear forwards/.test(hk)) v.push('켄번즈 재생 미방출');
+    if (!/mkp-kb-zoom-in [\d.]+s linear [\d.]+s forwards/.test(hk)) v.push('켄번즈 재생 미방출(지연 정위치)');
+    /* R90 — 첫 선언 꼬리에 시간값이 하나 더 붙으면(시간 3개) animation 전체가
+       문법 무효 → opacity:0 갇힘 = 빈 장면. 그 모양 자체를 감시한다. */
+    if (/both\s+[\d.]+m?s\s*,/.test(hk)) v.push('R90 결합식 회귀 — both 뒤 시간값');
     return { ok: v.length === 0, violations: v };
   }
 

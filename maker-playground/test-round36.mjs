@@ -87,8 +87,13 @@ sec('3. 실이미지');
   L.fileToSrc({ type: 'image/jpeg', size: 100, name: 'x.jpg' }, (src) => { got = src; }, FakeReader);
   T('fileToSrc — dataURL 반환', got === 'data:image/jpeg;base64,FAKE');
   let err2 = null;
-  L.fileToSrc({ type: 'image/jpeg', size: 9 * 1024 * 1024 }, (s, e2) => { err2 = e2; }, FakeReader);
-  T('fileToSrc — 8MB 상한 정직 거부', /8MB/.test(err2 || ''));
+  /* R90 정정(의도 보존 — §1.101 전례): 잣대의 의도 = 감당 못 할 입력을 조용히
+     삼키지 않는다. R89 세계에선 8MB 초과 「사진」은 줄여서 받는 게 설계라
+     정직 거부의 표적은 재인코딩이 불가한 「영상」이다. 구세계(normalizeImage
+     부재)에선 원문 그대로 사진으로 잰다. */
+  const bigType = L.normalizeImage ? 'video/mp4' : 'image/jpeg';
+  L.fileToSrc({ type: bigType, size: 9 * 1024 * 1024 }, (s, e2) => { err2 = e2; }, FakeReader);
+  T('fileToSrc — 8MB 상한 정직 거부(재인코딩 불가 유형)', /8MB/.test(err2 || ''));
   let nul = 'x';
   L.fileToSrc({ type: 'application/pdf', size: 10 }, (s) => { nul = s; }, FakeReader);
   T('fileToSrc — 비미디어 거부', nul === null);
