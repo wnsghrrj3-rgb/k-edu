@@ -136,7 +136,9 @@
     if (!r.ok) { H.st.msg = r.guide || '자동 구성을 만들지 못했어요.'; return r; }
     if (window.MK_SVARX) window.MK_SVARX.markSources(r.doc, 'random', seed);
     const say = [].concat(r.warnings || [], r.notes || []).filter((x) => String(x || '').trim());
-    if (say.length && typeof window.alert === 'function') window.alert(say.join('\n'));
+    /* R93 — alert → 워크스페이스 한 줄 안내 */
+    if (say.length && window.MK_WS) window.MK_WS.pendingNotice = say.join(' · ');
+    else if (say.length && typeof window.alert === 'function') window.alert(say.join('\n'));
     if (!window.MK_PROJ) { H.st.msg = '프로젝트 저장소가 없어요.'; return { ok: false, why: 'no-proj' }; }
     const comp = C() && C().getComposition(H.st.comp);
     const pj = window.MK_PROJ.createFromDoc(r.doc, (H.st.title.trim() || (comp ? comp.name : '자동 구성')) + ' 자동 구성');

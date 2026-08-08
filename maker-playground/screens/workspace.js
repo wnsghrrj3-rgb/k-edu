@@ -21,7 +21,7 @@
     sel: null,              /* null=프로젝트 | {type:'scene'} | {type:'text'|'image'|'video'|'shape', idx} */
     mode: 'design',         /* design | presentation | video | photo */
     zoom: 100, nav: 'scenes', dock: false,
-    undo: [], redo: [], savedAt: null, svarMsg: '',
+    undo: [], redo: [], savedAt: null, svarMsg: '', notice: '',
   };
   const proj = () => window.MK_PROJ.get(WS.projectId);
   const doc = () => proj()?.doc;
@@ -45,6 +45,10 @@
     enter(projectId) {
       WS.projectId = projectId; WS.sceneIdx = 0; WS.sel = null;
       WS.undo = []; WS.redo = []; WS.savedAt = null; WS.dock = false; WS.nav = 'scenes';
+      /* R93 — 빌드 정직 안내는 차단형 alert 가 아니라 이 자리 한 줄로.
+         (준호 실기기: 「생략: ss-title」 OS 경고창이 에러처럼 읽히고 흐름을 끊음) */
+      WS.notice = window.MK_WS && window.MK_WS.pendingNotice ? String(window.MK_WS.pendingNotice) : '';
+      if (window.MK_WS) window.MK_WS.pendingNotice = '';
       WS.mode = modeOf(window.MK_PROJ.get(projectId)?.contentType);
       WS.zoom = 100;
       PG.go('workspace');
@@ -67,7 +71,7 @@
       ${m.Button({ label: p.shared ? '공유 중' : '공유', kind: 'secondary', size: 'sm', attrs: 'data-ws="share"' })}
       ${m.Button({ label: '내보내기', kind: 'accent', size: 'sm', attrs: 'data-ws="export"' })}
       ${m.IconButton({ icon: '✦', tip: 'AI Dock', on: WS.dock, attrs: 'data-ws="dock"' })}
-    </div>`;
+    </div>${WS.notice ? `<div class="ws-notice" style="font:var(--mk-t-caption);color:var(--mk-text-secondary);background:var(--mk-surface-2,#F2EFE8);border-bottom:1px solid var(--mk-border);padding:7px 16px">📋 ${m.esc(WS.notice)} <button data-ws="notice-x" style="border:none;background:none;cursor:pointer;color:inherit;font:inherit;padding:0 2px;margin-left:6px">닫기 ✕</button></div>` : ''}`;
   };
 
   /* ================= 좌: Nav Rail + Nav Panel ================= */
@@ -371,6 +375,7 @@
         zout: () => { WS.zoom = Math.max(40, WS.zoom - 10); R(); },
         prev: () => { WS.sceneIdx = Math.max(0, WS.sceneIdx - 1); WS.sel = { type: 'scene' }; R(); },
         next: () => { WS.sceneIdx = Math.min(doc().scenes.length - 1, WS.sceneIdx + 1); WS.sel = { type: 'scene' }; R(); },
+        'notice-x': () => { WS.notice = ''; R(); },
         preview: () => {
           /* R48 — 실재생 (#/editor R37과 동일 엔진: 장면 순차·애니·배경음·영상 프레임) */
           if (window.MK_PLAY) { window.MK_PLAY.open(doc(), { startIdx: 0 }); return; }

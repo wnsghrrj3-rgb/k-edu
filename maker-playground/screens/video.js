@@ -52,7 +52,9 @@ window.MK_VIDHUB = (() => {
     /* 정직 안내 — 남은 미디어·자동 조정 내역을 열기 전에 알린다 */
     const notes = (r.notes || []).slice();
     if (r.unusedMedia > 0 && !notes.some((n) => /남/.test(n))) notes.push(`사진 ${r.unusedMedia}장은 이 구조에 자리가 없어 쓰이지 않았어요.`);
-    if (notes.length && typeof window.alert === 'function') window.alert(notes.join('\n'));
+    /* R93 — 정직 안내는 차단형 alert 아님: 워크스페이스 상단 한 줄로 전달 */
+    if (notes.length && window.MK_WS) window.MK_WS.pendingNotice = notes.join(' · ');
+    else if (notes.length && typeof window.alert === 'function') window.alert(notes.join('\n'));
     window.MK_START.open(r.doc);
     return r;
   }

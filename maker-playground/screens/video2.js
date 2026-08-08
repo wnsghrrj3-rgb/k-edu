@@ -91,7 +91,9 @@
     const r = C().buildProject(H.st.comp, H.st.theme, inp);
     if (!r.ok) { H.st.msg = r.guide || '만들 수 없어요 — 입력을 확인해 주세요.'; return r; }
     const say = [].concat(r.warnings || [], r.notes || []);
-    if (say.length && typeof window.alert === 'function') window.alert(say.join('\n'));
+    /* R93 — alert → 워크스페이스 한 줄 안내 */
+    if (say.length && window.MK_WS) window.MK_WS.pendingNotice = say.join(' · ');
+    else if (say.length && typeof window.alert === 'function') window.alert(say.join('\n'));
     window.MK_START.open(r.doc);
     return r;
   };
