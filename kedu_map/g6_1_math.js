@@ -101,94 +101,94 @@ window.KEDU_MAP["g6_1_math"] = {
    "kind": "unit",
    "lessons": [
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u2_l01",
+     "lessonId": "g6_math_u2_l01_v1",
      "n": "1",
      "title": "각기둥과 각뿔을 만나 보자",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/2단원_각기둥과각뿔/g6_math_u2_l01_각기둥과각뿔을만나보자.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u2_l02",
+     "lessonId": "g6_math_u2_l02_v1",
      "n": "2",
      "title": "각기둥을 알아봐요 ①",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/2단원_각기둥과각뿔/g6_math_u2_l02_각기둥을알아봐요1.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u2_l03",
+     "lessonId": "g6_math_u2_l03_v1",
      "n": "3",
      "title": "각기둥을 알아봐요 ②",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/2단원_각기둥과각뿔/g6_math_u2_l03_각기둥을알아봐요2.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u2_l04",
+     "lessonId": "g6_math_u2_l04_v1",
      "n": "4",
      "title": "각기둥의 전개도를 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/2단원_각기둥과각뿔/g6_math_u2_l04_각기둥의전개도를알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u2_l05",
+     "lessonId": "g6_math_u2_l05_v1",
      "n": "5",
      "title": "각기둥의 전개도를 그려요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/2단원_각기둥과각뿔/g6_math_u2_l05_각기둥의전개도를그려요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u2_l06",
+     "lessonId": "g6_math_u2_l06_v1",
      "n": "6",
      "title": "각뿔을 알아봐요 ①",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/2단원_각기둥과각뿔/g6_math_u2_l06_각뿔을알아봐요1.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u2_l07",
+     "lessonId": "g6_math_u2_l07_v1",
      "n": "7",
      "title": "각뿔을 알아봐요 ②",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/2단원_각기둥과각뿔/g6_math_u2_l07_각뿔을알아봐요2.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u2_l08",
+     "lessonId": "g6_math_u2_l08_v1",
      "n": "8",
      "title": "요리조리 규칙 찾기",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/2단원_각기둥과각뿔/g6_math_u2_l08_요리조리규칙찾기.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u2_l09",
+     "lessonId": "g6_math_u2_l09_v1",
      "n": "9",
      "title": "스스로 마무리해요 (단원 평가)",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/2단원_각기둥과각뿔/g6_math_u2_l09_스스로마무리해요.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   },
