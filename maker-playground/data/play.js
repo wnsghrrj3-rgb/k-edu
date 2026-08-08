@@ -13,6 +13,7 @@ window.MK_PLAY = (() => {
 
   /* ---------- 등장 프리셋 → CSS 키프레임 (MK_ANIM 9종 + idle 2종) ---------- */
   const KEYFRAMES = `
+body.mkp-on #kedu-back { display:none !important }
 @keyframes mkp-fade   { from { opacity:0 } to { opacity:1 } }
 @keyframes mkp-slide-up    { from { opacity:0; transform:translateY(26px) } to { opacity:1; transform:none } }
 @keyframes mkp-slide-down  { from { opacity:0; transform:translateY(-26px) } to { opacity:1; transform:none } }
@@ -188,6 +189,11 @@ window.MK_PLAY = (() => {
     if (!document.getElementById('mkpStyle')) {
       const st = document.createElement('style'); st.id = 'mkpStyle'; st.textContent = KEYFRAMES; document.head.appendChild(st);
     }
+    /* R91 — 재생 중에는 사이트 셸의 「← 나가기」 칩(#kedu-back, fixed·z 9999)을
+       숨긴다. 오버레이(z 900) 위에 그대로 떠서 사용자가 「재생 나가기」로
+       오해해 눌렀고, 발자국 트레일 하드 내비게이션이 /maker 밖(케이랩 허브)
+       으로 데려갔다(준호 실기기·영상). 재생의 나가기는 ✕·ESC 하나면 된다. */
+    document.body.classList.add('mkp-on');
     const back = document.createElement('div');
     back.className = 'mkp-back'; back.id = 'mkPlayer';
     document.body.appendChild(back);
@@ -201,6 +207,7 @@ window.MK_PLAY = (() => {
     stopTimer();
     if (window.MK_AUDIO) window.MK_AUDIO.stop();
     P.on = false;
+    document.body.classList.remove('mkp-on');   /* R91 — 셸 칩 복원 (✕·ESC·자동 종료 전 경로) */
     document.removeEventListener('keydown', onKey, true);
     const n = document.getElementById('mkPlayer'); if (n) n.remove();
   }
