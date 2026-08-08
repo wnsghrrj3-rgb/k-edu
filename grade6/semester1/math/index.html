@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>6학년 1학기 수학 | K-edu</title>
+<link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans KR',sans-serif;background:#F5F7FA;min-height:100vh;color:#1A202C}
+
+.top-bar{background:#fff;border-bottom:1px solid #E2E8F0;height:52px;display:flex;align-items:center;padding:0 24px;gap:12px}
+.back-link{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:#718096;text-decoration:none;font-weight:500;transition:color .15s}
+.back-link:hover{color:#1A202C}
+.top-title{font-family:'Do Hyeon',sans-serif;font-size:16px;color:#1A202C}
+
+main{max-width:800px;margin:0 auto;padding:28px 20px 60px}
+
+.page-header{display:flex;align-items:center;gap:14px;margin-bottom:32px}
+.subject-badge{display:inline-flex;align-items:center;gap:6px;padding:8px 20px;border-radius:50px;font-family:'Do Hyeon',sans-serif;font-size:18px;color:#fff;background:#B45309}
+.page-title{font-family:'Do Hyeon',sans-serif;font-size:26px}
+
+.unit-section{margin-bottom:28px}
+.unit-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:8px;border-bottom:2px solid #E2E8F0}
+.unit-num{width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Do Hyeon',sans-serif;font-size:16px;color:#fff}
+.unit-name{font-family:'Do Hyeon',sans-serif;font-size:18px;color:#1A202C}
+.unit-count{font-size:13px;color:#A0AEC0;margin-left:auto}
+
+.lesson-list{display:flex;flex-direction:column;gap:8px}
+.lesson-card{display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:14px 18px;box-shadow:0 1px 8px rgba(0,0,0,.05);cursor:pointer;text-decoration:none;color:#1A202C;border:2px solid transparent;transition:transform .15s,border-color .15s,box-shadow .15s}
+.lesson-card:hover{transform:translateY(-2px);border-color:var(--uc);box-shadow:0 6px 20px rgba(0,0,0,.1)}
+.lesson-num{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Do Hyeon',sans-serif;font-size:14px;color:#fff;background:var(--uc);flex-shrink:0}
+.lesson-title{font-size:14px;font-weight:500;flex:1}
+.lesson-arrow{color:#CBD5E0;font-size:16px}
+.lesson-badge{font-size:11px;padding:2px 8px;border-radius:50px;font-weight:500;flex-shrink:0}
+.badge-tb{background:#EBF8FF;color:#2B6CB0}
+.badge-soon{background:#EDF2F7;color:#A0AEC0}
+
+.lesson-card-soon{background:#FAFAFA;box-shadow:none;border:1px dashed #E2E8F0;cursor:default;opacity:.7}
+.lesson-card-soon:hover{transform:none;border-color:#E2E8F0;box-shadow:none}
+.lesson-card-soon .lesson-num{background:#CBD5E0!important}
+.lesson-card-soon .lesson-title{color:#A0AEC0}
+
+footer{text-align:center;padding:18px 24px;border-top:1px solid #E2E8F0;background:#fff}
+.footer-text{font-size:12px;color:#A0AEC0}
+.footer-text strong{color:#718096;font-weight:500}
+.footer-text a{color:#5B8EF8;text-decoration:none;margin-left:10px}
+.footer-text a:hover{text-decoration:underline}
+
+@media(max-width:600px){
+  .page-header{flex-direction:column;align-items:flex-start;gap:8px}
+  .page-title{font-size:22px}
+  .lesson-card{padding:12px 14px}
+}
+</style>
+  <script src="/kedu_gate.js"></script>
+<script src="/kedu_boxbar.js"></script>
+</head>
+<body>
+
+<div class="top-bar">
+  <a class="back-link" href="/?view=subject">← 홈</a>
+  <span style="color:#E2E8F0">|</span>
+  <span class="top-title">🧮 6학년 1학기 수학</span>
+</div>
+
+<main>
+  <div class="page-header">
+    <div class="subject-badge">🌊 5학년 · 1학기</div>
+    <div class="page-title">🧮 수학</div>
+  </div>
+
+  <div id="content"></div>
+</main>
+
+<footer>
+  <p class="footer-text">Copyright © 2025 <strong>K-edu</strong> · Developed by Choe Jun-ho (Kumsung Elementary School) · All rights reserved.
+  <a href="/privacy/">개인정보 처리방침</a>
+  <a href="/terms/">서비스 이용약관</a></p>
+</footer>
+
+<script>
+const UNITS = [
+  {
+    name: "1단원: 분수의 나눗셈", emoji: "➗", color: "#BE123C",
+    lessons: [
+      {n:1, file:"1단원_분수의나눗셈/g6_math_u1_l01_분수의나눗셈을만나보자.html", title:"분수의 나눗셈을 만나 보자", track:"soon"},
+      {n:2, file:"1단원_분수의나눗셈/g6_math_u1_l02_자연수나누기자연수의몫을분수로나타내요1.html", title:"(자연수)÷(자연수)의 몫을 분수로 나타내요 ①", track:"tb"},
+      {n:3, file:"1단원_분수의나눗셈/g6_math_u1_l03_자연수나누기자연수의몫을분수로나타내요2.html", title:"(자연수)÷(자연수)의 몫을 분수로 나타내요 ②", track:"soon"},
+      {n:4, file:"1단원_분수의나눗셈/g6_math_u1_l04_자연수나누기자연수를분수의곱셈으로나타내어계산해요.html", title:"(자연수)÷(자연수)를 분수의 곱셈으로 나타내어 계산해요", track:"soon"},
+      {n:5, file:"1단원_분수의나눗셈/g6_math_u1_l05_분수나누기자연수를계산해요1.html", title:"(분수)÷(자연수)를 계산해요 ①", track:"soon"},
+      {n:6, file:"1단원_분수의나눗셈/g6_math_u1_l06_분수나누기자연수를계산해요2.html", title:"(분수)÷(자연수)를 계산해요 ②", track:"soon"},
+      {n:7, file:"1단원_분수의나눗셈/g6_math_u1_l07_짜잔페트병뚜껑의새활용.html", title:"짜잔! 페트병 뚜껑의 새 활용", track:"soon"},
+      {n:8, file:"1단원_분수의나눗셈/g6_math_u1_l08_스스로마무리해요.html", title:"스스로 마무리해요 (단원 평가)", track:"soon"}
+    ]
+  },
+  {
+    name: "2단원: 각기둥과 각뿔", emoji: "📦", color: "#1D4ED8",
+    lessons: [
+      {n:1, file:"2단원_각기둥과각뿔/g6_math_u2_l01_각기둥과각뿔을만나보자.html", title:"각기둥과 각뿔을 만나 보자", track:"soon"},
+      {n:2, file:"2단원_각기둥과각뿔/g6_math_u2_l02_각기둥을알아봐요1.html", title:"각기둥을 알아봐요 ①", track:"soon"},
+      {n:3, file:"2단원_각기둥과각뿔/g6_math_u2_l03_각기둥을알아봐요2.html", title:"각기둥을 알아봐요 ②", track:"soon"},
+      {n:4, file:"2단원_각기둥과각뿔/g6_math_u2_l04_각기둥의전개도를알아봐요.html", title:"각기둥의 전개도를 알아봐요", track:"soon"},
+      {n:5, file:"2단원_각기둥과각뿔/g6_math_u2_l05_각기둥의전개도를그려요.html", title:"각기둥의 전개도를 그려요", track:"soon"},
+      {n:6, file:"2단원_각기둥과각뿔/g6_math_u2_l06_각뿔을알아봐요1.html", title:"각뿔을 알아봐요 ①", track:"soon"},
+      {n:7, file:"2단원_각기둥과각뿔/g6_math_u2_l07_각뿔을알아봐요2.html", title:"각뿔을 알아봐요 ②", track:"soon"},
+      {n:8, file:"2단원_각기둥과각뿔/g6_math_u2_l08_요리조리규칙찾기.html", title:"요리조리 규칙 찾기", track:"soon"},
+      {n:9, file:"2단원_각기둥과각뿔/g6_math_u2_l09_스스로마무리해요.html", title:"스스로 마무리해요 (단원 평가)", track:"soon"}
+    ]
+  },
+  {
+    name: "3단원: 소수의 나눗셈", emoji: "🔢", color: "#B45309",
+    lessons: [
+      {n:1, file:"3단원_소수의나눗셈/g6_math_u3_l01_소수의나눗셈을만나보자.html", title:"소수의 나눗셈을 만나 보자", track:"soon"},
+      {n:2, file:"3단원_소수의나눗셈/g6_math_u3_l02_소수나누기자연수를알아봐요1.html", title:"(소수)÷(자연수)를 알아봐요 ①", track:"soon"},
+      {n:3, file:"3단원_소수의나눗셈/g6_math_u3_l03_소수나누기자연수를알아봐요2.html", title:"(소수)÷(자연수)를 알아봐요 ②", track:"soon"},
+      {n:4, file:"3단원_소수의나눗셈/g6_math_u3_l04_소수나누기자연수를알아봐요3.html", title:"(소수)÷(자연수)를 알아봐요 ③", track:"soon"},
+      {n:5, file:"3단원_소수의나눗셈/g6_math_u3_l05_소수나누기자연수를알아봐요4.html", title:"(소수)÷(자연수)를 알아봐요 ④", track:"soon"},
+      {n:6, file:"3단원_소수의나눗셈/g6_math_u3_l06_소수나누기자연수를알아봐요5.html", title:"(소수)÷(자연수)를 알아봐요 ⑤", track:"soon"},
+      {n:7, file:"3단원_소수의나눗셈/g6_math_u3_l07_자연수나누기자연수의몫을소수로나타내요.html", title:"(자연수)÷(자연수)의 몫을 소수로 나타내요", track:"soon"},
+      {n:8, file:"3단원_소수의나눗셈/g6_math_u3_l08_아삭아삭수박상자선택하기.html", title:"아삭아삭 수박 상자 선택하기", track:"soon"},
+      {n:9, file:"3단원_소수의나눗셈/g6_math_u3_l09_스스로마무리해요.html", title:"스스로 마무리해요 (단원 평가)", track:"soon"}
+    ]
+  },
+  {
+    name: "4단원: 비와 비율", emoji: "⚖️", color: "#7C3AED",
+    lessons: [
+      {n:1, file:"4단원_비와비율/g6_math_u4_l01_비와비율을만나보자.html", title:"비와 비율을 만나 보자", track:"soon"},
+      {n:2, file:"4단원_비와비율/g6_math_u4_l02_두양의크기를비교하고비를알아봐요.html", title:"두 양의 크기를 비교하고 비를 알아봐요", track:"soon"},
+      {n:3, file:"4단원_비와비율/g6_math_u4_l03_비율을알아봐요.html", title:"비율을 알아봐요", track:"soon"},
+      {n:4, file:"4단원_비와비율/g6_math_u4_l04_비율이사용되는경우를알아봐요.html", title:"비율이 사용되는 경우를 알아봐요", track:"soon"},
+      {n:5, file:"4단원_비와비율/g6_math_u4_l05_백분율을알아봐요.html", title:"백분율을 알아봐요", track:"soon"},
+      {n:6, file:"4단원_비와비율/g6_math_u4_l06_백분율이사용되는경우를알아봐요.html", title:"백분율이 사용되는 경우를 알아봐요", track:"soon"},
+      {n:7, file:"4단원_비와비율/g6_math_u4_l07_지구를구해줘신재생에너지.html", title:"지구를 구해 줘! 신재생 에너지", track:"soon"},
+      {n:8, file:"4단원_비와비율/g6_math_u4_l08_스스로마무리해요.html", title:"스스로 마무리해요 (단원 평가)", track:"soon"}
+    ]
+  },
+  {
+    name: "5단원: 여러 가지 그래프", emoji: "📊", color: "#0F766E",
+    lessons: [
+      {n:1, file:"5단원_여러가지그래프/g6_math_u5_l01_여러가지그래프를만나보자.html", title:"여러 가지 그래프를 만나 보자", track:"soon"},
+      {n:2, file:"5단원_여러가지그래프/g6_math_u5_l02_띠그래프와원그래프를알아봐요.html", title:"띠그래프와 원그래프를 알아봐요", track:"soon"},
+      {n:3, file:"5단원_여러가지그래프/g6_math_u5_l03_띠그래프로나타내요.html", title:"띠그래프로 나타내요", track:"soon"},
+      {n:4, file:"5단원_여러가지그래프/g6_math_u5_l04_원그래프로나타내요.html", title:"원그래프로 나타내요", track:"soon"},
+      {n:5, file:"5단원_여러가지그래프/g6_math_u5_l05_자료를모아서띠그래프나원그래프로나타내고해석해요.html", title:"자료를 모아서 띠그래프나 원그래프로 나타내고 해석해요", track:"soon"},
+      {n:6, file:"5단원_여러가지그래프/g6_math_u5_l06_여러가지그래프를비교해요.html", title:"여러 가지 그래프를 비교해요", track:"soon"},
+      {n:7, file:"5단원_여러가지그래프/g6_math_u5_l07_그래프를이용하여문제를해결해요.html", title:"그래프를 이용하여 문제를 해결해요", track:"soon"},
+      {n:8, file:"5단원_여러가지그래프/g6_math_u5_l08_두근두근나의꿈설계하기.html", title:"두근두근 나의 꿈 설계하기", track:"soon"},
+      {n:9, file:"5단원_여러가지그래프/g6_math_u5_l09_스스로마무리해요.html", title:"스스로 마무리해요 (단원 평가)", track:"soon"}
+    ]
+  },
+  {
+    name: "6단원: 직육면체의 겉넓이와 부피", emoji: "🧊", color: "#15803D",
+    lessons: [
+      {n:1, file:"6단원_직육면체의겉넓이와부피/g6_math_u6_l01_직육면체의겉넓이와부피를만나보자.html", title:"직육면체의 겉넓이와 부피를 만나 보자", track:"soon"},
+      {n:2, file:"6단원_직육면체의겉넓이와부피/g6_math_u6_l02_직육면체의겉넓이를알아봐요1.html", title:"직육면체의 겉넓이를 알아봐요 ①", track:"soon"},
+      {n:3, file:"6단원_직육면체의겉넓이와부피/g6_math_u6_l03_직육면체의겉넓이를알아봐요2.html", title:"직육면체의 겉넓이를 알아봐요 ②", track:"soon"},
+      {n:4, file:"6단원_직육면체의겉넓이와부피/g6_math_u6_l04_세제곱센티미터를알아봐요.html", title:"cm³를 알아봐요", track:"soon"},
+      {n:5, file:"6단원_직육면체의겉넓이와부피/g6_math_u6_l05_직육면체의부피를구해요.html", title:"직육면체의 부피를 구해요", track:"soon"},
+      {n:6, file:"6단원_직육면체의겉넓이와부피/g6_math_u6_l06_세제곱미터를알아봐요.html", title:"m³를 알아봐요", track:"soon"},
+      {n:7, file:"6단원_직육면체의겉넓이와부피/g6_math_u6_l07_아하두부의부피와겉넓이.html", title:"아하! 두부의 부피와 겉넓이", track:"soon"},
+      {n:8, file:"6단원_직육면체의겉넓이와부피/g6_math_u6_l08_스스로마무리해요.html", title:"스스로 마무리해요 (단원 평가)", track:"soon"}
+    ]
+  }
+];
+
+const content = document.getElementById('content');
+UNITS.forEach((unit, i) => {
+  const tbLessons = unit.lessons.filter(l => l.track === 'tb');
+  const soonLessons = unit.lessons.filter(l => l.track === 'soon');
+
+  const section = document.createElement('div');
+  section.className = 'unit-section';
+  section.innerHTML = `
+    <div class="unit-header">
+      <div class="unit-num" style="background:${unit.color}">${unit.num || i+1}</div>
+      <div class="unit-name">${unit.emoji} ${unit.name}</div>
+      <div class="unit-count">교과서 ${tbLessons.length}차시${soonLessons.length ? ' · 준비 중 ' + soonLessons.length : ''}</div>
+    </div>
+    <div class="lesson-list">
+      ${unit.lessons.map(l => l.track === 'tb' ? `
+        <a class="lesson-card" href="${l.file}" style="--uc:${unit.color}">
+          <div class="lesson-num">${l.n}</div>
+          <div class="lesson-title">${l.title}</div>
+          <span class="lesson-badge badge-tb">교과서</span>
+          <div class="lesson-arrow">›</div>
+        </a>
+      ` : `
+        <div class="lesson-card lesson-card-soon">
+          <div class="lesson-num">${l.n}</div>
+          <div class="lesson-title">${l.title}</div>
+          <span class="lesson-badge badge-soon">준비 중</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  content.appendChild(section);
+});
+</script>
+<script src="/kedu_back.js"></script>
+</body>
+</html>
