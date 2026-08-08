@@ -198,94 +198,94 @@ window.KEDU_MAP["g6_1_math"] = {
    "kind": "unit",
    "lessons": [
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u3_l01",
+     "lessonId": "g6_math_u3_l01_v1",
      "n": "1",
      "title": "소수의 나눗셈을 만나 보자",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/3단원_소수의나눗셈/g6_math_u3_l01_소수의나눗셈을만나보자.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u3_l02",
+     "lessonId": "g6_math_u3_l02_v1",
      "n": "2",
      "title": "(소수)÷(자연수)를 알아봐요 ①",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/3단원_소수의나눗셈/g6_math_u3_l02_소수나누기자연수를알아봐요1.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u3_l03",
+     "lessonId": "g6_math_u3_l03_v1",
      "n": "3",
      "title": "(소수)÷(자연수)를 알아봐요 ②",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/3단원_소수의나눗셈/g6_math_u3_l03_소수나누기자연수를알아봐요2.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u3_l04",
+     "lessonId": "g6_math_u3_l04_v1",
      "n": "4",
      "title": "(소수)÷(자연수)를 알아봐요 ③",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/3단원_소수의나눗셈/g6_math_u3_l04_소수나누기자연수를알아봐요3.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u3_l05",
+     "lessonId": "g6_math_u3_l05_v1",
      "n": "5",
      "title": "(소수)÷(자연수)를 알아봐요 ④",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/3단원_소수의나눗셈/g6_math_u3_l05_소수나누기자연수를알아봐요4.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u3_l06",
+     "lessonId": "g6_math_u3_l06_v1",
      "n": "6",
      "title": "(소수)÷(자연수)를 알아봐요 ⑤",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/3단원_소수의나눗셈/g6_math_u3_l06_소수나누기자연수를알아봐요5.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u3_l07",
+     "lessonId": "g6_math_u3_l07_v1",
      "n": "7",
      "title": "(자연수)÷(자연수)의 몫을 소수로 나타내요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/3단원_소수의나눗셈/g6_math_u3_l07_자연수나누기자연수의몫을소수로나타내요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u3_l08",
+     "lessonId": "g6_math_u3_l08_v1",
      "n": "8",
      "title": "아삭아삭 수박 상자 선택하기",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/3단원_소수의나눗셈/g6_math_u3_l08_아삭아삭수박상자선택하기.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u3_l09",
+     "lessonId": "g6_math_u3_l09_v1",
      "n": "9",
      "title": "스스로 마무리해요 (단원 평가)",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/3단원_소수의나눗셈/g6_math_u3_l09_스스로마무리해요.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   },
