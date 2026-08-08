@@ -17,7 +17,13 @@ window.PG = (() => {
      직접 진입) 아래 어떤 분기도 타지 않아 검수 환경은 무영향. */
   const PRODUCT = () => !!window.MK_PRODUCT;
   const PRODUCT_NAV = ['home', 'library', 'templates', 'assets', 'brand', 'editor', 'video', 'photo', 'ai', 'export'];
-  const guard = (k) => (PRODUCT() && !PRODUCT_NAV.includes(k)) ? 'home' : k;
+  /* R87 — 내비 목록과 라우팅 허용은 다른 물음이다. create·workspace·projects·animation은
+     내비에 없을 뿐 제품 동선의 본체(칩→create, 열기→workspace, 이어서→projects,
+     워크스페이스→animation)인데, R77이 내비 목록으로 라우팅까지 재단해 홈의 모든
+     제작 진입이 home으로 튕겼다 — 화면이 이미 home이라 「눌러도 아무 반응 없음」.
+     검수 화면 차단(R77의 의도)은 그대로: 아래 4종 외 비내비 화면은 여전히 home. */
+  const PRODUCT_ROUTES = PRODUCT_NAV.concat(['create', 'workspace', 'projects', 'animation']);
+  const guard = (k) => (PRODUCT() && !PRODUCT_ROUTES.includes(k)) ? 'home' : k;
 
   const state = {
     screen: 'foundations',
