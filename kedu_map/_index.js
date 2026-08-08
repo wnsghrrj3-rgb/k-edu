@@ -49,10 +49,22 @@ window.KEDU_MAP_INDEX = [
   "ready": 31
  },
  {
+  "key": "g4_1_korean",
+  "units": 6,
+  "lessons": 47,
+  "ready": 47
+ },
+ {
   "key": "g4_1_math",
   "units": 6,
   "lessons": 54,
   "ready": 54
+ },
+ {
+  "key": "g4_1_science",
+  "units": 4,
+  "lessons": 36,
+  "ready": 36
  },
  {
   "key": "g4_1_social",
@@ -61,10 +73,28 @@ window.KEDU_MAP_INDEX = [
   "ready": 38
  },
  {
+  "key": "g5_1_korean",
+  "units": 6,
+  "lessons": 47,
+  "ready": 47
+ },
+ {
   "key": "g5_1_math",
   "units": 6,
   "lessons": 53,
   "ready": 53
+ },
+ {
+  "key": "g5_1_science",
+  "units": 4,
+  "lessons": 37,
+  "ready": 37
+ },
+ {
+  "key": "g5_1_social",
+  "units": 3,
+  "lessons": 33,
+  "ready": 31
  },
  {
   "key": "g6_1_math",

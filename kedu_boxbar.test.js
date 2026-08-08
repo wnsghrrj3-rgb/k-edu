@@ -37,6 +37,8 @@ console.log('[§6-2 kind 매핑]');
     ['/kedu/teacher/g1_math.html', 'kteacher'],
     ['/grade1/semester1/korean/x.html', 'selfstudy'],
     ['/grade4/y.html', 'selfstudy'],
+    ['/grade5/semester1/korean/1단원/g5_kor_u1_l01.html', 'selfstudy'],  /* §9-5: [1-4]→[1-6] 수리 — 5·6학년이 link 폴백('제출은 모이지 않아요' 오표기)으로 새지 않는다 */
+    ['/grade6/semester1/math/x.html', 'selfstudy'],
     ['/labs/scilab_lab2.html', 'klab'],
     ['/kple/game.html', 'kple'],
     ['/kmake/design.html', 'kmake'],

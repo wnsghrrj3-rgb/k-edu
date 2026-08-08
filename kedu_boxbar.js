@@ -34,7 +34,7 @@
     var p = pathname || location.pathname;
     if (/^\/kedu\/quiz\//.test(p)) return 'quiz';
     if (/^\/kedu\/teacher\//.test(p)) return 'kteacher';
-    if (/^\/grade[1-4]\//.test(p)) return 'selfstudy';
+    if (/^\/grade[1-6]\//.test(p)) return 'selfstudy';
     if (/^\/labs\//.test(p) || /klab/.test(p)) return 'klab';
     if (/^\/kple\//.test(p)) return 'kple';
     if (/^\/kmake\//.test(p)) return 'kmake';

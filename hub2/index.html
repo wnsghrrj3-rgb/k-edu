@@ -690,7 +690,9 @@ var CONTENT_MAP = {
   '1-1': ['korean','math'],
   '2-1': ['korean','math'],
   '3-1': ['korean','math','science','social'],
-  '4-1': ['korean','math','science','social']
+  '4-1': ['korean','math','science','social'],
+  '5-1': ['korean','math','science','social'],
+  '6-1': ['math']
 };
 function hasContent(g, s, subject){
   var list = CONTENT_MAP[g+'-'+s];
@@ -946,11 +948,27 @@ async function loadRoom(){
     });
   } catch(e){}
 
+  // 분모 = 보낸 학급의 좌석 수 (cw_sends → student_seats). 게스트 학급은 좌석 0 → 분자만(현행 유지).
+  var denom = {};
+  try {
+    var sends = (await db.from('cw_sends').select('bundle_id,class_code_id').in('bundle_id', ids)).data || [];
+    var ccIds = [];
+    sends.forEach(function(s){ if(s.class_code_id && ccIds.indexOf(s.class_code_id) < 0) ccIds.push(s.class_code_id); });
+    if(ccIds.length){
+      var seats = (await db.from('student_seats').select('id,class_code_id').in('class_code_id', ccIds)).data || [];
+      var seatN = {};
+      seats.forEach(function(s){ seatN[s.class_code_id] = (seatN[s.class_code_id] || 0) + 1; });
+      sends.forEach(function(s){ denom[s.bundle_id] = (denom[s.bundle_id] || 0) + (seatN[s.class_code_id] || 0); });
+    }
+  } catch(e){}
+
   document.getElementById('room-body').innerHTML = bundles.map(function(b){
     var n = back[b.id] ? Object.keys(back[b.id]).length : 0;
+    var m = denom[b.id] || 0;
+    var label = m ? (n + ' / ' + m + '명 돌아옴') : (n ? n + '명 돌아옴' : '아직');
     return '<a class="sent" href="/classwork/?box='+encodeURIComponent(b.id)+'">'+
       '<span class="sent-t">'+esc(b.title || '이름 없는 박스')+'</span>'+
-      '<span class="sent-back'+(n ? '' : ' none')+'">'+(n ? n+'명 돌아옴' : '아직')+'</span>'+
+      '<span class="sent-back'+(n ? '' : ' none')+'">'+label+'</span>'+
       '<svg class="sent-go" viewBox="0 0 24 24"><use href="#i-back"/></svg></a>';
   }).join('') + '<a class="room-more" href="/classwork/">케이박스 전부 보기</a>';
 }
