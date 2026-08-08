@@ -263,7 +263,14 @@ window.MK_SCREENS.video = {
       if (b.dataset.st === 'vid-tpl') return window.MK_TPL.load('pk-vid-01');
       if (b.dataset.st === 'go-projects') return window.PG.go('projects');
     });
-    root.querySelectorAll('[data-vh-comp]').forEach((b) => b.onclick = () => { H.select(b.dataset.vhComp); redraw(); });
+    root.querySelectorAll('[data-vh-comp]').forEach((b) => b.onclick = () => {
+      H.select(b.dataset.vhComp); redraw();
+      /* R88 — 패널은 카드 그리드 아래에 그려져 일반 노트북 높이에선 뷰포트 밖이다.
+         선택이 됐는데 화면에 아무 변화가 안 보이면 사용자는 「반응이 없다」고 읽는다
+         (준호 실기기 보고). 선택 즉시 다음 단계(분위기·비율·만들기)로 데려간다. */
+      const p = root.querySelector('#vhPanel');
+      if (p && p.scrollIntoView) p.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
     root.querySelectorAll('[data-vh-theme]').forEach((b) => b.onclick = () => { H.st.theme = b.dataset.vhTheme; redraw(); });
     root.querySelectorAll('[data-vh-ratio]').forEach((b) => b.onclick = () => { H.st.ratio = b.dataset.vhRatio; redraw(); });
     const ti = root.querySelector('#vhTitle'); if (ti) ti.oninput = () => { H.st.title = ti.value; };
