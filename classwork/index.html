@@ -326,6 +326,27 @@ async function ensureQuizCatalog(){
   return quizCatalog;
 }
 
+// ============ 자기주도 차시 지도 (지연 로드 — kedu_map 재사용, §9 후속 「골라 담기」) ============
+const SUBJ_KO = { korean:'국어', math:'수학', science:'과학', social:'사회', english:'영어' };
+function loadMapScript(src){
+  return new Promise(res=>{
+    const s=document.createElement('script');
+    s.onload=()=>res(true); s.onerror=()=>res(false);
+    s.src=src; document.head.appendChild(s);
+  });
+}
+async function ensureMapIndex(){
+  if(window.KEDU_MAP_INDEX) return window.KEDU_MAP_INDEX;
+  await loadMapScript('/kedu_map/_index.js');
+  return window.KEDU_MAP_INDEX || [];
+}
+async function ensureMap(key){
+  window.KEDU_MAP = window.KEDU_MAP || {};
+  if(window.KEDU_MAP[key]) return window.KEDU_MAP[key];
+  await loadMapScript('/kedu_map/'+key+'.js');
+  return window.KEDU_MAP[key] || null;
+}
+
 // ============ 초기화: 교사 세션 확인 ============
 (async function init(){
   let session;
@@ -452,7 +473,7 @@ function openBuilder(id){
   document.getElementById('scrim').classList.add('on');
   document.getElementById('builder').classList.add('on');
   document.getElementById('builder').setAttribute('aria-hidden','false');
-  setTimeout(()=>document.getElementById('f-title').focus(), 320);
+  setTimeout(()=>{ const el=document.getElementById('f-title'); el&&el.focus(); }, 320);
 }
 function fillClassOptions(selId){
   const sel = document.getElementById('f-class');
@@ -481,6 +502,7 @@ function pickKind(key){
   const k = KINDS[key];
   const box = document.getElementById('additem');
   if(key==='quiz'){ return pickQuiz(box, k); }
+  if(key==='selfstudy'){ return pickSelfstudy(box, k); }
   box.innerHTML = `
     <div class="ai-head"><span class="tag" style="background:${k.hex}">${k.i} ${k.n}</span><span style="color:var(--sub);font-weight:500">무엇을 담을까요?</span></div>
     <input class="inp" id="ai-name" type="text" placeholder="콘텐츠 이름 (예: ${k.hint})" maxlength="50">
@@ -490,7 +512,7 @@ function pickKind(key){
       <button class="ai-add" onclick="confirmAdd()">담기</button>
     </div>`;
   box.classList.add('on');
-  setTimeout(()=>document.getElementById('ai-name').focus(), 50);
+  setTimeout(()=>{ const el=document.getElementById('ai-name'); el&&el.focus(); }, 50);
 }
 // 케이퀴즈 전용 폼 — 단원·문제수·출제방식 선택 (URL·config 조립은 confirmQuiz)
 async function pickQuiz(box, k){
@@ -524,7 +546,84 @@ async function pickQuiz(box, k){
       <button class="ai-add" onclick="confirmAdd()">담기</button>
     </div>`;
   if(units.length===0) toast('케이퀴즈 목록을 불러오지 못했어요');
-  else setTimeout(()=>document.getElementById('q-unit').focus(), 50);
+  else setTimeout(()=>{ const el=document.getElementById('q-unit'); el&&el.focus(); }, 50);
+}
+// 자기주도 전용 폼 — 차시 지도를 보며 골라 담는다 (직접 입력은 폴백으로 유지)
+async function pickSelfstudy(box, k){
+  box.innerHTML = `<div class="ai-head"><span class="tag" style="background:${k.hex}">${k.i} ${k.n}</span><span style="color:var(--sub);font-weight:500">불러오는 중…</span></div>`;
+  box.classList.add('on');
+  const idx = await ensureMapIndex();
+  if(!idx.length){
+    // 지도를 못 불러오면 기존 직접 입력 폼으로 폴백
+    box.innerHTML = `
+      <div class="ai-head"><span class="tag" style="background:${k.hex}">${k.i} ${k.n}</span><span style="color:var(--sub);font-weight:500">무엇을 담을까요?</span></div>
+      <input class="inp" id="ai-name" type="text" placeholder="콘텐츠 이름 (예: ${k.hint})" maxlength="50">
+      <input class="inp" id="ai-url" type="text" placeholder="바로 열 링크 (선택)">
+      <div class="ai-btns">
+        <button class="ai-cancel" onclick="cancelAdd()">취소</button>
+        <button class="ai-add" onclick="confirmAdd()">담기</button>
+      </div>`;
+    return toast('차시 지도를 불러오지 못했어요 — 직접 적어서 담을 수 있어요');
+  }
+  const opts = idx.map(m=>{
+    const p = m.key.split('_');   // g5_1_korean
+    const label = p[0].slice(1)+'학년 '+(SUBJ_KO[p[2]]||p[2]);
+    return `<option value="${m.key}">${label} (${m.ready}차시)</option>`;
+  }).join('');
+  box.innerHTML = `
+    <div class="ai-head"><span class="tag" style="background:${k.hex}">${k.i} ${k.n}</span><span style="color:var(--sub);font-weight:500">어떤 차시를 담을까요?</span></div>
+    <select class="inp" id="ss-map" onchange="ssLoadUnits()">
+      <option value="">학년·과목을 골라주세요</option>${opts}
+    </select>
+    <select class="inp" id="ss-unit" onchange="ssLoadLessons()" style="display:none"></select>
+    <select class="inp" id="ss-lesson" onchange="ssNameHint()" style="display:none"></select>
+    <input class="inp" id="ai-name" type="text" placeholder="케이박스에 보일 이름 (차시 고르면 자동)" maxlength="50">
+    <div class="ai-btns">
+      <button class="ai-cancel" onclick="cancelAdd()">취소</button>
+      <button class="ai-add" onclick="confirmAdd()">담기</button>
+    </div>`;
+  setTimeout(()=>{ const el=document.getElementById('ss-map'); el&&el.focus(); }, 50);
+}
+async function ssLoadUnits(){
+  const key = document.getElementById('ss-map').value;
+  const uSel = document.getElementById('ss-unit');
+  const lSel = document.getElementById('ss-lesson');
+  lSel.style.display='none'; lSel.innerHTML='';
+  if(!key){ uSel.style.display='none'; return; }
+  uSel.style.display=''; uSel.innerHTML = '<option value="">불러오는 중…</option>';
+  const map = await ensureMap(key);
+  if(!map){ uSel.innerHTML='<option value="">단원을 불러오지 못했어요</option>'; return; }
+  uSel.innerHTML = '<option value="">단원을 골라주세요</option>' + map.units.map((u,i)=>{
+    const live = u.lessons.filter(l=>l.ready && l.url).length;
+    if(!live) return '';
+    const nm = u.num ? u.num+'단원 「'+esc(u.name)+'」' : esc(u.name);
+    return `<option value="${i}">${nm} (${live}차시)</option>`;
+  }).join('');
+}
+function ssLoadLessons(){
+  const key = document.getElementById('ss-map').value;
+  const ui  = document.getElementById('ss-unit').value;
+  const lSel = document.getElementById('ss-lesson');
+  if(ui===''){ lSel.style.display='none'; return; }
+  const u = window.KEDU_MAP[key].units[+ui];
+  lSel.style.display='';
+  lSel.innerHTML = '<option value="">차시를 골라주세요</option>' + u.lessons.map((l,i)=>{
+    if(!l.ready || !l.url) return '';
+    const sub = l.sub ? ' · '+esc(l.sub) : '';
+    return `<option value="${i}">${esc(l.n)}차시 「${esc(l.title)}」${sub}</option>`;
+  }).join('');
+  lSel.focus();
+}
+function ssNameHint(){
+  const key = document.getElementById('ss-map').value;
+  const ui  = document.getElementById('ss-unit').value;
+  const li  = document.getElementById('ss-lesson').value;
+  if(li==='') return;
+  const p = key.split('_');
+  const u = window.KEDU_MAP[key].units[+ui];
+  const l = u.lessons[+li];
+  const nm = document.getElementById('ai-name');
+  if(!nm.value.trim()) nm.value = p[0].slice(1)+'학년 '+(SUBJ_KO[p[2]]||p[2])+' '+(u.num?u.num+'단원 ':'')+l.n+'차시 「'+l.title+'」';
 }
 function quizNameHint(){
   const key=document.getElementById('q-unit').value;
@@ -535,10 +634,23 @@ function quizNameHint(){
 function cancelAdd(){ pendingKind=null; const b=document.getElementById('additem'); b.classList.remove('on'); b.innerHTML=''; }
 function confirmAdd(){
   if(pendingKind==='quiz'){ return confirmQuiz(); }
+  if(pendingKind==='selfstudy' && document.getElementById('ss-lesson')){ return confirmSelfstudy(); }
   const name = document.getElementById('ai-name').value.trim();
   const url  = document.getElementById('ai-url').value.trim();
   if(!name){ toast('콘텐츠 이름을 적어주세요'); document.getElementById('ai-name').focus(); return; }
   draft.items.push({ id:null, kind:pendingKind, name, url });
+  cancelAdd(); renderItems();
+}
+// 자기주도 담기 — 고른 차시의 이름·링크 자동
+function confirmSelfstudy(){
+  const key = document.getElementById('ss-map').value;
+  const ui  = document.getElementById('ss-unit').value;
+  const li  = document.getElementById('ss-lesson').value;
+  if(key==='' || ui==='' || li===''){ toast('차시를 골라주세요'); return; }
+  const l = window.KEDU_MAP[key].units[+ui].lessons[+li];
+  ssNameHint();
+  const name = document.getElementById('ai-name').value.trim();
+  draft.items.push({ id:null, kind:'selfstudy', name, url:l.url });
   cancelAdd(); renderItems();
 }
 // 케이퀴즈 담기 — 플레이어 딥링크 URL + config 조립
