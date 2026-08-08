@@ -130,13 +130,75 @@ window.MK_LIVE = (() => {
     return r;
   }
   /* File → dataURL. reader 주입 가능(jsdom 검증용). 이미지·영상만, 8MB 상한 */
+  /* R89 — 큰 사진은 거부하지 않고 줄여서 받는다. 요즘 폰·카메라 사진은
+     8MB를 예사로 넘는다 — 「8MB 이하만」은 선생님의 실사진 대부분을 문전에서
+     돌려보내는 규칙이었다(준호 실기기: 사진 넣었는데 안 뜸). 장변 1920px로
+     줄이면 영상·내보내기 품질은 그대로고 용량은 수백 KB로 준다.
+     영상 파일은 재인코딩이 불가하므로 종전 8MB 규칙·안내 그대로. */
+  /* R89 — 사진 입구 표준화. 요즘 폰·카메라 사진은 8MB를 예사로 넘고(종전
+     규칙은 문전 거부 = 준호 실기기 「사진이 안 떠」), 8MB 「이하」 원본도
+     dataURL로는 장당 수 MB라 localStorage 영속(5MB)이 조용히 실패함을
+     실크롬으로 실측했다(7.7MB PNG 3장 → 저장 0바이트). 그래서 크기가 아니라
+     쓰임에 맞춘다: 장면·내보내기 기준은 1280×720(썸네일 동일) — 장변
+     1920px JPEG면 화질은 남고 장당 수백 KB로 줄어 영속도 산다.
+     · 8MB 이하 & 장변 1920 이하 = 원본 무변형(스크린샷·그림 보호)
+     · 그 외 래스터 사진 = 장변 1920 JPEG 재인코딩
+     · GIF·SVG = 재인코딩이 애니·벡터를 죽이므로 종전 경로(8MB 규칙) 그대로
+     · 영상 = 재인코딩 불가 — 종전 8MB 규칙·안내 그대로
+     · 판독 불가 환경(구형·jsdom) = 짧은 대기 후 원본 통과(구세계 동작) */
+  function shrinkImage(src, cb) {
+    try {
+      const img = new window.Image();
+      img.onload = () => {
+        try {
+          const MAX = 1920;
+          const ow = img.naturalWidth || img.width || 1, oh = img.naturalHeight || img.height || 1;
+          const sc = Math.min(1, MAX / Math.max(ow, oh));
+          const w = Math.max(1, Math.round(ow * sc)), h = Math.max(1, Math.round(oh * sc));
+          const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+          cv.getContext('2d').drawImage(img, 0, 0, w, h);
+          cb(cv.toDataURL('image/jpeg', 0.85));
+        } catch (_) { cb(null, '사진이 너무 커서 줄이지 못했어요'); }
+      };
+      img.onerror = () => cb(null, '이 형식의 사진은 열 수 없어요');
+      img.src = src;
+    } catch (_) { cb(null, '사진이 너무 커서 줄이지 못했어요'); }
+  }
+  function normalizeImage(src, file, cb) {
+    /* 능력 판별 — 캔버스 2d 가 없는 환경(구형·jsdom)은 축소 자체가 불가하므로
+       즉시 원본 통과(구세계 동작). 타이머로 로드와 경주하면 큰 사진 디코드가
+       느린 기기에서 축소가 새는 것을 실크롬로 확인했다(12MP 3장 중 2장 원본). */
+    let can = false;
+    try { const cv = document.createElement('canvas'); can = !!(cv.getContext && cv.getContext('2d')); } catch (_) {}
+    if (!can) return cb(src);
+    let done = false;
+    const once = (s, e) => { if (done) return; done = true; cb(s, e); };
+    try {
+      const img = new window.Image();
+      img.onload = () => {
+        const long = Math.max(img.naturalWidth || img.width || 1, img.naturalHeight || img.height || 1);
+        if ((file && file.size || 0) <= 8 * 1024 * 1024 && long <= 1920) return once(src);
+        api.shrinkImage(src, once);
+      };
+      img.onerror = () => once(null, '이 형식의 사진은 열 수 없어요');
+      img.src = src;
+      setTimeout(() => once(src), 15000);   /* 극단 지연 안전망 — 경주가 아니라 최후 보루 */
+    } catch (_) { once(src); }
+  }
+
   function fileToSrc(file, cb, ReaderCls) {
     if (!file) return cb(null);
-    if (!/^(image|video)\//.test(file.type || '')) return cb(null);
-    if (file.size > 8 * 1024 * 1024) return cb(null, '8MB 이하만 넣을 수 있어요');
+    const type = file.type || '';
+    if (!/^(image|video)\//.test(type)) return cb(null);
+    const raster = /^image\//.test(type) && !/gif|svg/.test(type);
+    if (!raster && file.size > 8 * 1024 * 1024) return cb(null, '8MB 이하만 넣을 수 있어요');
     const R = ReaderCls || window.FileReader;
     const rd = new R();
-    rd.onload = () => cb(String(rd.result || ''));
+    rd.onload = () => {
+      const src = String(rd.result || '');
+      if (raster) return api.normalizeImage(src, file, cb);
+      cb(src);
+    };
     rd.onerror = () => cb(null, '파일을 읽지 못했어요');
     rd.readAsDataURL(file);
   }
@@ -238,12 +300,13 @@ window.MK_LIVE = (() => {
     return { ok: v.length === 0, violations: v };
   }
 
-  return {
+  const api = {
     dragTo, resizeTo, rotateTo, snap, nudge, removeEl, dupEl, editText,
-    replaceWithSrc, insertWithSrc, fileToSrc,
+    replaceWithSrc, insertWithSrc, fileToSrc, shrinkImage, normalizeImage,
     useBackend, saveDoc, loadDoc, clearDoc, saveProjects, restoreProjects, autosave, flush,
     liveAudit,
   };
+  return api;
 })();
 
 /* 부팅 복원 — 저장된 프로젝트가 있으면 시드 대신 이어서 (실브라우저 전용, 실패 무해) */

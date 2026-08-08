@@ -106,6 +106,11 @@ window.MK_PROJ = (() => {
       createdAt: now(), updatedAt: now(), shared: false, fav: false, trashed: false,
       aiHistory: aiEntry ? [{ at: now(), ...aiEntry }] : [], exportHistory: [] };
     STORE.push(p);
+    /* R89 — 만들어진 순간 저장한다. 종전에는 워크스페이스에서 「편집」해야만
+       자동저장이 돌았다 — 사진 넣고 만들어 놓고 구경만 하다 뒤로가기로 나가면
+       프로젝트가 통째로 사라졌다(준호 실기기: 튕긴 뒤 이어서 만들기에 없음).
+       실패(쿼터 등)는 종전 규약대로 조용히 false — 화면 계약 무변. */
+    try { if (window.MK_LIVE) { window.MK_LIVE.saveDoc(doc); window.MK_LIVE.saveProjects(); } } catch (_) {}
     return p;
   }
 
