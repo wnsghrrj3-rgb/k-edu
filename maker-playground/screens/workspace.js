@@ -671,9 +671,16 @@
           if (!elDom) return;
           const i = +elDom.dataset.wsEl;
           const el = scene().elements[i]; if (!el) return;
+          /* R95 — 터치·펜: 이미 선택된 요소의 모서리 근처를 짚으면 핸들을 못
+             맞혔어도 리사이즈로 판정(근접 22px, MK_LIVE.handleAt). 첫 탭 =
+             선택, 그 다음 모서리 근처 = 크기 조절 — 손가락의 해상도에 맞춘다. */
+          const wasSel = WS.sel && WS.sel.idx === i && WS.sel.type !== 'scene';
           WS.sel = { type: selType(el), idx: i };
-          ges = { i, type: hd ? 'resize' : 'move',
-            handle: hd ? [...hd.classList].find((c) => c !== 'ws-hd') : null,
+          let handle = hd ? [...hd.classList].find((c) => c !== 'ws-hd') : null;
+          if (!handle && wasSel && ev.pointerType && ev.pointerType !== 'mouse' && L.handleAt)
+            handle = L.handleAt(elDom.getBoundingClientRect(), ev.clientX, ev.clientY);
+          ges = { i, type: handle ? 'resize' : 'move',
+            handle,
             start: pickGeo(el), sx: ev.clientX, sy: ev.clientY,
             rect: cv.getBoundingClientRect(), moved: false,
             pre: JSON.stringify(doc().scenes) };            /* 되돌릴 지점 = 제스처 시작 상태 */
@@ -689,7 +696,8 @@
           if (ges.type === 'move') {
             L.dragTo(el, ges.start.x, ges.start.y, dx, dy);
             L.snap(el, scene().elements.filter((_, j) => j !== ges.i)); /* 자석 정렬 */
-          } else L.resizeTo(el, ges.handle, ges.start, dx, dy, { aspect: ev.shiftKey });
+          } else L.resizeTo(el, ges.handle, ges.start, dx, dy,
+            { aspect: L.aspectDefault ? L.aspectDefault(el, ges.handle, ev.shiftKey) : ev.shiftKey }); /* R95 — 사진 모서리 = 비율 기본 고정 */
           const n = cv.querySelector(`[data-ws-el="${ges.i}"]`);
           if (n) paint(n, el);
         };

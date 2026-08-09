@@ -56,6 +56,34 @@ window.MK_LIVE = (() => {
     return el;
   }
 
+  /* R95 — 터치 근접 핸들: 요소 rect와 포인터로 반경 안 가장 가까운 핸들.
+     8px 시각 핸들을 손가락이 정확히 못 짚는 문제의 수학 절반 — 나머지 절반은
+     CSS 히트 패드. rect 폭 0(jsdom·미배치)이면 판정하지 않는다. */
+  function handleAt(rect, px, py, radius) {
+    if (!rect || !(rect.width > 0) || !(rect.height > 0)) return null;
+    const r = radius == null ? 22 : radius;
+    const pts = {
+      tl: [rect.left, rect.top], tr: [rect.right, rect.top],
+      bl: [rect.left, rect.bottom], br: [rect.right, rect.bottom],
+      ml: [rect.left, rect.top + rect.height / 2], mr: [rect.right, rect.top + rect.height / 2],
+    };
+    let best = null, bd = r + 1e-9;
+    for (const k in pts) {
+      const d = Math.hypot(px - pts[k][0], py - pts[k][1]);
+      if (d < bd) { bd = d; best = k; }
+    }
+    return best;
+  }
+
+  /* R95 — 리사이즈 비율 기본값: 사진·영상(src 보유)의 모서리 = 기본 비율 고정
+     (shift = 자유). 그 외는 종전 그대로 shift = 고정. 터치엔 shift가 없다 —
+     사진이 일그러지는 길 자체를 기본값에서 없앤다. */
+  function aspectDefault(el, handle, shiftKey) {
+    const corner = /^(tl|tr|bl|br)$/.test(handle || '');
+    if (el && el.src && corner) return !shiftKey;
+    return !!shiftKey;
+  }
+
   /* 회전 — 중심(cx,cy)과 포인터(px,py)로 각도. 0·90·180·270 근처(±4°) 자석 */
   function rotateTo(el, cx, cy, px, py) {
     let deg = Math.atan2(py - cy, px - cx) * 180 / Math.PI + 90;
@@ -301,7 +329,7 @@ window.MK_LIVE = (() => {
   }
 
   const api = {
-    dragTo, resizeTo, rotateTo, snap, nudge, removeEl, dupEl, editText,
+    dragTo, resizeTo, rotateTo, handleAt, aspectDefault, snap, nudge, removeEl, dupEl, editText,
     replaceWithSrc, insertWithSrc, fileToSrc, shrinkImage, normalizeImage,
     useBackend, saveDoc, loadDoc, clearDoc, saveProjects, restoreProjects, autosave, flush,
     liveAudit,
