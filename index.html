@@ -556,6 +556,12 @@ let currentProfile = null; // student_profiles row
 //   /?role=student → 학생 학년 선택
 // =============================================
 function applyEntryRoute(){
+  // 뒤로가기·복원으로 우리 항목에 돌아온 경우: 브라우저가 state를 보존한다.
+  // 이때 사다리를 다시 쌓으면 루트를 거칠 때마다 스택이 불어나 뒤로가기 왕복 함정이 된다 — 표시만 하고 끝.
+  if(history.state && history.state.screen){
+    show(history.state.screen);
+    return;
+  }
   const target = screenFromURL();
   // 깊은 화면으로 직접 진입(콘텐츠에서 홈 복귀 등)해도
   // 기기 뒤로가기가 단계별로 동작하도록 history 스택을 미리 쌓는다.

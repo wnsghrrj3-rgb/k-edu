@@ -239,7 +239,7 @@ let selectedRole = 'teacher';
     // 프로필 존재 여부 확인
     const hasProfile = await ensureProfile(session.user);
     if(hasProfile) {
-      location.href = redirectTo;
+      location.replace(redirectTo);
     }
     // 프로필 없으면 닉네임 카드 보여줌 (ensureProfile에서 처리)
   }
@@ -296,7 +296,7 @@ async function doLogin(){
   // 프로필 확인 후 이동
   const hasProfile = await ensureProfile(data.user);
   if(hasProfile){
-    location.href = redirectTo;
+    location.replace(redirectTo);
   }
 }
 
@@ -366,11 +366,11 @@ async function doSignup(){
       const tSchool = document.getElementById('signup-teacher-school').value.trim();
       await createTeacherProfile(data.user.id, tName, tSchool);
       showToast('🎉 가입 완료! 환영합니다.');
-      setTimeout(()=>{ location.href = redirectTo; }, 800);
+      setTimeout(()=>{ location.replace(redirectTo); }, 800);
     } else {
       // 학부모: 별도 프로필 테이블 없음. parent/index.html에서 자녀 매핑 신청
       showToast('🎉 가입 완료! 자녀 정보를 등록해주세요.');
-      setTimeout(()=>{ location.href = '/parent/'; }, 800);
+      setTimeout(()=>{ location.replace('/parent/'); }, 800);
     }
   } else {
     // 이메일 확인 필요한 경우
@@ -395,7 +395,7 @@ async function ensureProfile(user){
   // 학부모는 별도 프로필 테이블 없음. signUp 시 user_metadata.role='parent' 저장됨.
   const isParentByMeta = user.user_metadata && user.user_metadata.role === 'parent';
   if(isParentByMeta){
-    location.href = '/parent/';
+    location.replace('/parent/');
     return true;
   }
 
@@ -415,7 +415,7 @@ async function ensureProfile(user){
     .eq('parent_id', user.id)
     .limit(1);
   if(pslRows && pslRows.length > 0){
-    location.href = '/parent/';
+    location.replace('/parent/');
     return true;
   }
 
@@ -467,7 +467,7 @@ async function saveNickname(){
   }
 
   showToast('🐾 ' + nick + '님, 환영해요!');
-  setTimeout(()=>{ location.href = redirectTo; }, 800);
+  setTimeout(()=>{ location.replace(redirectTo); }, 800);
 }
 
 // =============================================
