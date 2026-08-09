@@ -451,7 +451,7 @@ window.MK_RENDER = (() => {
           const mf = el.crop ? { x: f.x + f.w * el.crop.x, y: f.y + f.h * el.crop.y, w: f.w * el.crop.w, h: f.h * el.crop.h } : f;
           defs.push(`<clipPath id="${clipId}"><path d="${el.mask ? shapePath({ shape: el.mask }, f) : VEC.rect(mf.x, mf.y, mf.w, mf.h, 0)}"/></clipPath>`);
         }
-        ops.push({ op: 'image', frame: f, asset, src: el.src || (asset && asset.src) || null, fit: el.fit || 'cover', radius: el.radius, label: el.label != null ? el.label : (asset && asset.label) || '', clip: clipId, cssFilter: filter, style: { fill: (asset && asset.fill) || '#E6ECF2', ...base } });
+        ops.push({ op: 'image', frame: f, asset, src: el.src || (asset && asset.src) || null, fit: el.fit || 'cover', focal: el.focal || null, radius: el.radius, label: el.label != null ? el.label : (asset && asset.label) || '', clip: clipId, cssFilter: filter, style: { fill: (asset && asset.fill) || '#E6ECF2', ...base } });
         return;
       }
       /* 순수 도형 */
@@ -501,7 +501,7 @@ window.MK_RENDER = (() => {
         if (op.src) {                                  /* R37 — 실이미지 출력 */
           const rr = op.radius ? Math.min(op.radius, Math.min(f.w, f.h) / 2) : 0;
           const cid = 'ci' + Math.random().toString(36).slice(2, 8);
-          const pre = op.fit === 'contain' ? 'xMidYMid meet' : 'xMidYMid slice';
+          const pre = window.MK_FOCAL ? window.MK_FOCAL.svgPre(op.fit, op.focal) : (op.fit === 'contain' ? 'xMidYMid meet' : 'xMidYMid slice'); /* R94 — 초점 정렬 */
           parts.push(`<g${common}><clipPath id="${cid}"><rect x="${R2(f.x)}" y="${R2(f.y)}" width="${R2(f.w)}" height="${R2(f.h)}" rx="${R2(rr)}"/></clipPath>` +
             `<image href="${escX(op.src)}" x="${R2(f.x)}" y="${R2(f.y)}" width="${R2(f.w)}" height="${R2(f.h)}" preserveAspectRatio="${pre}" clip-path="url(#${cid})"${op.cssFilter ? ` style="filter:${escX(op.cssFilter)}"` : ''}/></g>`);
           return;

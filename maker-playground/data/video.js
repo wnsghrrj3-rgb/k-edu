@@ -74,14 +74,17 @@ window.MK_VIDEO = (() => {
   const isVideoEl = (el) => !!(el && el.src && (el.video === true || el.kind === 'video' || /^data:video\//.test(el.src)));
   const secondsInto = (t, dur) => (dur > 0 && isFinite(dur) ? ((t % dur) + dur) % dur : 0);
   /* 소스(vw×vh)를 틀(fw×fh)에 맞추는 기하 — cover=소스 크롭, contain=목적지 축소 */
-  function fitRect(vw, vh, fw, fh, fit) {
+  function fitRect(vw, vh, fw, fh, fit, focal) {
     vw = Math.max(1, vw || 1); vh = Math.max(1, vh || 1);
     if (fit === 'contain') {
       const s = Math.min(fw / vw, fh / vh), dw = vw * s, dh = vh * s;
       return { mode: 'contain', dx: (fw - dw) / 2, dy: (fh - dh) / 2, dw, dh };
     }
     const s = Math.max(fw / vw, fh / vh), sw = fw / s, sh = fh / s;
-    return { mode: 'cover', sx: (vw - sw) / 2, sy: (vh - sh) / 2, sw, sh };
+    /* R94 — 초점: 소스 크롭 원점이 (vw-sw)·fx — 기본 0.5 = 종전 가운데와 동일 값 */
+    const fx = focal && isFinite(+focal.x) ? Math.max(0, Math.min(1, +focal.x)) : 0.5;
+    const fy = focal && isFinite(+focal.y) ? Math.max(0, Math.min(1, +focal.y)) : 0.5;
+    return { mode: 'cover', sx: (vw - sw) * fx, sy: (vh - sh) * fy, sw, sh };
   }
   /* 장면 music → 시간 구간 — MK_PLAY 규약 그대로: 같은 음악은 장면을 넘어 이어짐 */
   function musicTimeline(doc, planIn) {
@@ -316,7 +319,7 @@ window.MK_VIDEO = (() => {
               if (rr > 0 && ctx.roundRect) ctx.roundRect(ex, ey, ew, eh, rr);
               else ctx.rect(ex, ey, ew, eh);
               ctx.clip();
-              const fr = fitRect(v.videoWidth, v.videoHeight, ew, eh, el.fit);
+              const fr = fitRect(v.videoWidth, v.videoHeight, ew, eh, el.fit, el.focal); /* R94 */
               if (fr.mode === 'cover') ctx.drawImage(v, fr.sx, fr.sy, fr.sw, fr.sh, ex, ey, ew, eh);
               else ctx.drawImage(v, ex + fr.dx, ey + fr.dy, fr.dw, fr.dh);
             } else {

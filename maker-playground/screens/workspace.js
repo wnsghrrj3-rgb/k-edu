@@ -137,9 +137,10 @@
       }
       if (el.src) {                                    /* R45 — Workspace도 실이미지·실영상 표시 (R36 editor와 동일) */
         const fit = el.fit === 'contain' ? 'contain' : 'cover';
+        const fo = window.MK_FOCAL ? window.MK_FOCAL.pos(el) : ''; /* R94 — 초점 */
         const media = (el.video === true || el.kind === 'video' || /^data:video\//.test(el.src))
-          ? `<video class="ws-media" src="${el.src}" muted autoplay loop playsinline style="width:100%;height:100%;object-fit:${fit};display:block"></video>`
-          : `<img class="ws-media" src="${el.src}" alt="${M().esc(el.label || '')}" draggable="false" style="width:100%;height:100%;object-fit:${fit};display:block">`;
+          ? `<video class="ws-media" src="${el.src}" muted autoplay loop playsinline style="width:100%;height:100%;object-fit:${fit}${fo};display:block"></video>`
+          : `<img class="ws-media" src="${el.src}" alt="${M().esc(el.label || '')}" draggable="false" style="width:100%;height:100%;object-fit:${fit}${fo};display:block">`;
         /* R55 — overflow 클립을 내부 span으로 옮겨 음수 오프셋 핸들이 잘리지 않게 */
         return `<div class="ws-el media ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%"><span class="ws-clip">${media}</span>${hd}</div>`;
       }
@@ -162,6 +163,21 @@
         <button data-ws-fit="cover" data-ws-fitidx="${idx}" style="flex:1;padding:7px 4px;border-radius:8px;border:1.5px solid ${cur === 'cover' ? 'var(--mk-teal)' : 'var(--mk-border)'};background:${cur === 'cover' ? 'var(--mk-teal-soft)' : 'transparent'};cursor:pointer;font:var(--mk-t-caption)">꽉 채우기</button>
         <button data-ws-fit="contain" data-ws-fitidx="${idx}" style="flex:1;padding:7px 4px;border-radius:8px;border:1.5px solid ${cur === 'contain' ? 'var(--mk-teal)' : 'var(--mk-border)'};background:${cur === 'contain' ? 'var(--mk-teal-soft)' : 'transparent'};cursor:pointer;font:var(--mk-t-caption)">원본 전체</button>
       </div>`;
+  };
+  /* R94 — 초점: 꽉 채우기에서 잘릴 때 남길 곳 (3×3 — SVG 내보내기 정렬 9칸과 정확히 일치) */
+  const focalCtl = (el, idx) => {
+    if (!window.MK_FOCAL || el.fit === 'contain') return '';
+    const n = window.MK_FOCAL.norm(el.focal);
+    const cells = [];
+    const NAME = ['왼쪽', '가운데', '오른쪽'], VNAME = ['위', '가운데', '아래'];
+    for (let ry = 0; ry < 3; ry++) for (let rx = 0; rx < 3; rx++) {
+      const fx = rx / 2, fy = ry / 2;
+      const on = Math.abs(n.x - fx) < 1 / 6 && Math.abs(n.y - fy) < 1 / 6;
+      cells.push(`<button data-ws-focal="${fx},${fy}" data-ws-focalidx="${idx}" title="${VNAME[ry]} ${NAME[rx]}" style="aspect-ratio:1;border-radius:6px;border:1.5px solid ${on ? 'var(--mk-teal)' : 'var(--mk-border)'};background:${on ? 'var(--mk-teal-soft)' : 'transparent'};cursor:pointer;font:var(--mk-t-caption);line-height:1;padding:0">·</button>`);
+    }
+    return `<label class="cx-field"><span>초점</span></label>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;width:96px;margin:-4px 0 4px">${cells.join('')}</div>
+      <div class="cx-hint" style="margin:0 0 8px">꽉 채우기에서 잘릴 때 이 지점이 남아요</div>`;
   };
   /* R49 — 자막 디자인 선택 (MK_CAPTION 프리셋) */
   const capCtl = (sc) => {
@@ -280,13 +296,13 @@
           field('크기', el.size) + field('굵기', el.weight || 400) + field('폭', el.w + '%') + styleCtl;
       } else if (sel.type === 'video') {
         title = '영상';
-        body = field('클립', el.label || '영상') + fitCtl(el, sel.idx) + field('볼륨', '100%') + `<div class="cx-hint">트리밍·속도 — 후속</div>`;
+        body = field('클립', el.label || '영상') + fitCtl(el, sel.idx) + focalCtl(el, sel.idx) + field('볼륨', '100%') + `<div class="cx-hint">트리밍·속도 — 후속</div>`;
       } else if (sel.type === 'shape') {
         title = '도형';
         body = field('종류', el.label || '도형') + field('채움', '단색') + field('테두리', '없음');
       } else {
         title = '이미지';
-        body = field('이름', el.label || '이미지') + field('크기', el.w + '×' + el.h + '%') + fitCtl(el, sel.idx) +
+        body = field('이름', el.label || '이미지') + field('크기', el.w + '×' + el.h + '%') + fitCtl(el, sel.idx) + focalCtl(el, sel.idx) +
           `<div class="cx-hint">자르기·보정·필터 — Photo 모드/후속</div>`;
       }
     }
@@ -712,6 +728,13 @@
         const el = scene().elements[+b.dataset.wsFitidx];
         if (!el) return;
         snap(); el.fit = b.dataset.wsFit; R();
+      });
+      /* R94 — 초점 (가운데 선택 = focal 삭제, MK_FOCAL.set 규약) */
+      root.querySelectorAll('[data-ws-focal]').forEach((b) => b.onclick = () => {
+        const el = scene().elements[+b.dataset.wsFocalidx];
+        if (!el || !el.src || !window.MK_FOCAL) return;
+        const [fx, fy] = b.dataset.wsFocal.split(',').map(Number);
+        snap(); window.MK_FOCAL.set(el, fx, fy); R();
       });
       /* R49 — 자막 디자인 */
       root.querySelectorAll('[data-ws-cap]').forEach((b) => b.onclick = () => {

@@ -110,8 +110,8 @@ body.mkp-on #kedu-back { display:none !important }
       if (el.src) {
         const fit = el.fit === 'contain' ? 'contain' : 'cover';
         const media = (el.video === true || el.kind === 'video' || /^data:video\//.test(el.src))
-          ? `<video src="${el.src}" muted autoplay loop playsinline style="width:100%;height:100%;object-fit:${fit};display:block;pointer-events:none"></video>`   /* R39 — 영상 프레임 실재생 */
-          : `<img src="${el.src}" alt="" style="width:100%;height:100%;object-fit:${fit};display:block">`;
+          ? `<video src="${el.src}" muted autoplay loop playsinline style="width:100%;height:100%;object-fit:${fit}${window.MK_FOCAL ? window.MK_FOCAL.pos(el) : ''};display:block;pointer-events:none"></video>`   /* R39 — 영상 프레임 실재생 · R94 초점 */
+          : `<img src="${el.src}" alt="" style="width:100%;height:100%;object-fit:${fit}${window.MK_FOCAL ? window.MK_FOCAL.pos(el) : ''};display:block">`;
         return `<div class="mkp-el mkp-img" style="${pos}height:${el.h}%${rad};overflow:hidden${rot}${an}">${media}</div>`;
       }
       if (el.fill && el.fill !== 'none') return `<div class="mkp-el" style="${pos}height:${el.h}%;background:${el.fill}${rad}${rot}${an}"></div>`;

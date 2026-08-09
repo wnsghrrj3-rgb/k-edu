@@ -65,8 +65,8 @@
       if (el.src) { /* R57 — 실이미지·실영상 (R45 Workspace 동일) */
         const fit = el.fit === 'contain' ? 'contain' : 'cover';
         const media = (el.video === true || el.kind === 'video' || /^data:video\//.test(el.src))
-          ? `<video class="an-media" src="${el.src}" muted autoplay loop playsinline style="width:100%;height:100%;object-fit:${fit};display:block"></video>`
-          : `<img class="an-media" src="${el.src}" alt="${m.esc(el.label || '')}" draggable="false" style="width:100%;height:100%;object-fit:${fit};display:block">`;
+          ? `<video class="an-media" src="${el.src}" muted autoplay loop playsinline style="width:100%;height:100%;object-fit:${fit}${window.MK_FOCAL ? window.MK_FOCAL.pos(el) : ''};display:block"></video>`
+          : `<img class="an-media" src="${el.src}" alt="${m.esc(el.label || '')}" draggable="false" style="width:100%;height:100%;object-fit:${fit}${window.MK_FOCAL ? window.MK_FOCAL.pos(el) : ''};display:block">`;
         return `<div class="an-el media ${on}" data-mka data-an-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;overflow:hidden">${media}</div>`;
       }
       if (el.fill) return `<div class="an-el media ${on}" data-mka data-an-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;background:${el.fill}${el.radius ? `;border-radius:${el.radius > 100 ? '50%' : el.radius + 'px'}` : ''}"></div>`;
