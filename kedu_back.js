@@ -44,6 +44,16 @@
   function writeTrail(t) { try { sessionStorage.setItem(TRAIL, JSON.stringify(t.slice(-CAP))); } catch (e) {} }
   var here = location.pathname + location.search;
   var trail = readTrail();
+  /* 홈을 거쳐 왔다면 이전 하강 기록을 끊는다 — 홈은 발자국을 남기지 않으므로
+     끊지 않으면 구기록 위에 새 하강이 이어붙는 함정이 생긴다
+     (홈→메이커→홈→허브 순회 시 허브의 「나가기」가 메이커로 가는 오판, 2026-08-10 준호 실기기 보고) */
+  try {
+    var refH = document.referrer || '';
+    if (refH && (refH === location.origin || refH.indexOf(location.origin + '/') === 0)) {
+      var uH = new URL(refH);
+      if (uH.pathname === '/' || uH.pathname === '/index.html') trail = [];
+    }
+  } catch (e) {}
   var arrivedByBack = false;
   try { arrivedByBack = sessionStorage.getItem(BACKFLAG) === '1'; sessionStorage.removeItem(BACKFLAG); } catch (e) {}
   if (!arrivedByBack && trail[trail.length - 1] !== here) { trail.push(here); writeTrail(trail); }
