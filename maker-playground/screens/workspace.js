@@ -138,12 +138,13 @@
       if (el.src) {                                    /* R45 — Workspace도 실이미지·실영상 표시 (R36 editor와 동일) */
         const fit = el.fit === 'contain' ? 'contain' : 'cover';
         const fo = window.MK_FOCAL ? window.MK_FOCAL.pos(el) : ''; /* R94 — 초점 */
-        const pf = window.MK_PHOTO ? window.MK_PHOTO.styleOf(el, CW / sc.width) : ''; /* R101 — 보정·필터, blur 는 표시 배율 */
+        const pf = window.MK_PHOTO ? window.MK_PHOTO.mediaStyle(el, CW / sc.width) : ''; /* R101·R102 — 보정·뒤집기, blur 는 표시 배율 */
+        const shp = window.MK_PHOTO ? window.MK_PHOTO.shapeStyle(el, CW / sc.width) : ''; /* R102 — 모양(사각·둥근·원) */
         const media = (el.video === true || el.kind === 'video' || /^data:video\//.test(el.src))
           ? `<video class="ws-media" src="${el.src}" muted autoplay loop playsinline style="width:100%;height:100%;object-fit:${fit}${fo}${pf};display:block"></video>`
           : `<img class="ws-media" src="${el.src}" alt="${M().esc(el.label || '')}" draggable="false" style="width:100%;height:100%;object-fit:${fit}${fo}${pf};display:block">`;
         /* R55 — overflow 클립을 내부 span으로 옮겨 음수 오프셋 핸들이 잘리지 않게 */
-        return `<div class="ws-el media ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%"><span class="ws-clip">${media}</span>${hd}</div>`;
+        return `<div class="ws-el media ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%"><span class="ws-clip" style="${shp ? shp.slice(1) : ''}">${media}</span>${hd}</div>`;
       }
       if (el.fill) {                                   /* R45 — 색 채움 요소 (자막 바 등) 실표시 · R49 radius */
         const rad = el.radius ? `;border-radius:${el.radius > 100 ? '50%' : (el.radius * CW / sc.width).toFixed(1) + 'px'}` : ''; /* R98 — >100 = 원 (play.js 규약 정렬) */
@@ -323,6 +324,10 @@
             (el.src ? `<button class="cx-scenebtn primary" data-ws-preplace>🖼 사진 바꾸기</button>` : '') +
             `<label class="cx-field"><span>필터</span></label><div class="cx-fchips">${chips}</div>` +
             `<label class="cx-field"><span>사진 보정</span></label><div class="cx-padj">${sliders}</div>` +
+            `<label class="cx-field"><span>모양 · 뒤집기</span></label><div class="cx-shrow">${PH.SHAPES.map((s2) =>
+              `<button class="cx-shb${PH.shapeOf(el) === s2.id ? ' on' : ''}" data-ws-pshape="${s2.id}" title="${s2.name}">${s2.icon}</button>`).join('')}<i></i>` +
+              `<button class="cx-shb${el.flipH ? ' on' : ''}" data-ws-pflip="h" title="좌우 뒤집기">⇋</button>` +
+              `<button class="cx-shb${el.flipV ? ' on' : ''}" data-ws-pflip="v" title="상하 뒤집기">⥮</button></div>` +
             (PH.isEdited(el) ? `<button class="cx-scenebtn" data-ws-preset0>↩ 원래대로</button>` : '');
         }
         body = field('이름', el.label || '이미지') + field('크기', el.w + '×' + el.h + '%') + photoCtl + fitCtl(el, sel.idx) + focalCtl(el, sel.idx);
@@ -773,6 +778,14 @@
         root.querySelectorAll('[data-ws-pfilter]').forEach((b) => b.onclick = () => {
           const el = phEl(); if (!el) return;
           snap(); PH.apply(el, b.dataset.wsPfilter); R();
+        });
+        root.querySelectorAll('[data-ws-pshape]').forEach((b) => b.onclick = () => {
+          const el = phEl(); if (!el) return;
+          snap(); PH.setShape(el, b.dataset.wsPshape); R();
+        });
+        root.querySelectorAll('[data-ws-pflip]').forEach((b) => b.onclick = () => {
+          const el = phEl(); if (!el) return;
+          snap(); PH.flip(el, b.dataset.wsPflip); R();
         });
         const rz = root.querySelector('[data-ws-preset0]');
         if (rz) rz.onclick = () => { const el = phEl(); if (!el) return; snap(); PH.reset(el); R(); };

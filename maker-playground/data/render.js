@@ -429,6 +429,10 @@ window.MK_RENDER = (() => {
         const rt = `rotate(${R2(el.rot)} ${R2(f.x + f.w / 2)} ${R2(f.y + f.h / 2)})`;
         base.transform = base.transform ? base.transform + ' ' + rt : rt;
       }
+      if (window.MK_PHOTO && (el.flipH || el.flipV)) { /* R102 — 뒤집기를 출력에도 동일 반영 */
+        const fp = window.MK_PHOTO.flipSvg(el, f);
+        if (fp) base.transform = base.transform ? base.transform + ' ' + fp : fp;
+      }
       if (el.rotate) base.transform = (base.transform || '') + ` rotate(${el.rotate} ${R2(f.x + f.w / 2)} ${R2(f.y + f.h / 2)})`;
 
       if (el.kind === 'text') {

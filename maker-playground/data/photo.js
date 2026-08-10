@@ -104,6 +104,60 @@ window.MK_PHOTO = (() => {
     return hit ? hit.id : null;
   }
 
+  /* ================================================================
+     R102 — 모양(Mask 3종) · 뒤집기
+     ----------------------------------------------------------------
+     모양은 신규 스키마 없이 el.radius 하나로: 없음=사각,
+     >100=원(R98 재생 규약 그대로), 그 외=둥근(씬px 정본 —
+     render.js VEC.rect 캡 min(radius, 변/2)과 동일 해석).
+     뒤집기는 el.flipH/flipV — true 만 저장(§23 바이트 보존).
+     화면 4경로는 미디어 자체에 CSS scale, SVG 는 프레임 중심
+     보정 translate·scale — 두 세계가 같은 그림.
+     ================================================================ */
+  const SHAPES = [
+    { id: 'rect',    name: '사각',   icon: '▭' },
+    { id: 'rounded', name: '둥근',   icon: '▢' },
+    { id: 'circle',  name: '원',     icon: '◯' },
+  ];
+  const ROUNDED = 28;                                  /* 둥근 기본 반경 — 씬px(1280 기준) */
+  const shapeOf = (el) => {
+    const r = el && +el.radius;
+    if (!r || !isFinite(r) || r <= 0) return 'rect';
+    return r > 100 ? 'circle' : 'rounded';
+  };
+  function setShape(el, id) {
+    if (!el) return;
+    if (id === 'rect') delete el.radius;
+    else if (id === 'circle') el.radius = 999;         /* >100 = 원 (R98) */
+    else if (id === 'rounded') el.radius = ROUNDED;
+  }
+  /* 컨테이너(클립) 조각 — radius 씬px × 배율, 원 = 50% */
+  function shapeStyle(el, scale) {
+    const r = el && +el.radius;
+    if (!r || !isFinite(r) || r <= 0) return '';
+    return `;border-radius:${r > 100 ? '50%' : R2(r * (scale || 1)) + 'px'}`;
+  }
+
+  function flip(el, axis) {                            /* 토글 — false 는 키 삭제 */
+    if (!el) return;
+    const k = axis === 'v' ? 'flipV' : 'flipH';
+    if (el[k]) delete el[k]; else el[k] = true;
+  }
+  function flipCss(el) {
+    if (!el) return '';
+    const sx = el.flipH ? -1 : 1, sy = el.flipV ? -1 : 1;
+    return sx === 1 && sy === 1 ? '' : `;transform:scale(${sx},${sy})`;
+  }
+  /* SVG — 프레임 중심 보정 반전 (render.js image transform 에 합성) */
+  function flipSvg(el, f) {
+    if (!el || (!el.flipH && !el.flipV)) return '';
+    const sx = el.flipH ? -1 : 1, sy = el.flipV ? -1 : 1;
+    const cx = R2(f.x + f.w / 2), cy = R2(f.y + f.h / 2);
+    return `translate(${cx} ${cy}) scale(${sx} ${sy}) translate(${-cx} ${-cy})`;
+  }
+  /* 미디어 요소 공용 조각 — 보정 + 뒤집기 (네 렌더 경로가 이 한 줄을 쓴다) */
+  const mediaStyle = (el, scale) => styleOf(el, scale) + flipCss(el);
+
   /* ---- 자가검증 ---- */
   function verify() {
     const v = [];
@@ -125,8 +179,24 @@ window.MK_PHOTO = (() => {
     if ('filters' in e2) v.push('기본 복귀 시 키 잔존');
     if (matchPreset({ filters: null }) !== 'original') v.push('무보정 ≠ original');
     PRESETS.forEach((p) => { const x = {}; apply(x, p.id); if (p.id !== 'original' && !isEdited(x)) v.push('프리셋 무효: ' + p.id); });
+    /* R102 — 모양·뒤집기 */
+    const s1 = {}; setShape(s1, 'circle');
+    if (shapeOf(s1) !== 'circle' || shapeStyle(s1) !== ';border-radius:50%') v.push('원 오류');
+    setShape(s1, 'rounded');
+    if (shapeOf(s1) !== 'rounded' || shapeStyle(s1, 0.5) !== ';border-radius:14px') v.push('둥근 배율 오류: ' + shapeStyle(s1, 0.5));
+    setShape(s1, 'rect');
+    if ('radius' in s1 || shapeStyle(s1) !== '') v.push('사각이 키를 남김');
+    const f1 = {}; flip(f1, 'h');
+    if (!f1.flipH || flipCss(f1) !== ';transform:scale(-1,1)') v.push('flipH 오류');
+    flip(f1, 'v');
+    if (flipCss(f1) !== ';transform:scale(-1,-1)') v.push('flipHV 오류');
+    flip(f1, 'h'); flip(f1, 'v');
+    if ('flipH' in f1 || 'flipV' in f1 || mediaStyle(f1) !== '') v.push('뒤집기 원복이 키를 남김');
+    const fs = flipSvg({ flipH: true }, { x: 100, y: 50, w: 200, h: 100 });
+    if (fs !== 'translate(200 100) scale(-1 1) translate(-200 -100)') v.push('flipSvg 오류: ' + fs);
     return { ok: !v.length, violations: v };
   }
 
-  return { KEYS, BY, SLIDERS, PRESETS, norm, css, styleOf, preset, setVal, apply, reset, isEdited, valOf, matchPreset, verify };
+  return { KEYS, BY, SLIDERS, PRESETS, norm, css, styleOf, preset, setVal, apply, reset, isEdited, valOf, matchPreset,
+    SHAPES, ROUNDED, shapeOf, setShape, shapeStyle, flip, flipCss, flipSvg, mediaStyle, verify };
 })();
