@@ -20,6 +20,7 @@
     projectId: null, sceneIdx: 0,
     sel: null,              /* null=프로젝트 | {type:'scene'} | {type:'text'|'image'|'video'|'shape', idx} */
     mode: 'design',         /* design | presentation | video | photo */
+    msel: [],               /* R103 — Shift 다중 선택 (상태 기본값 — enter 없이도 안전) */
     zoom: 100, nav: 'scenes', dock: false,
     undo: [], redo: [], savedAt: null, svarMsg: '', notice: '',
   };
