@@ -295,84 +295,84 @@ window.KEDU_MAP["g6_1_math"] = {
    "kind": "unit",
    "lessons": [
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u4_l01",
+     "lessonId": "g6_math_u4_l01_v1",
      "n": "1",
      "title": "비와 비율을 만나 보자",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/4단원_비와비율/g6_math_u4_l01_비와비율을만나보자.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u4_l02",
+     "lessonId": "g6_math_u4_l02_v1",
      "n": "2",
      "title": "두 양의 크기를 비교하고 비를 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/4단원_비와비율/g6_math_u4_l02_두양의크기를비교하고비를알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u4_l03",
+     "lessonId": "g6_math_u4_l03_v1",
      "n": "3",
      "title": "비율을 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/4단원_비와비율/g6_math_u4_l03_비율을알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u4_l04",
+     "lessonId": "g6_math_u4_l04_v1",
      "n": "4",
      "title": "비율이 사용되는 경우를 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/4단원_비와비율/g6_math_u4_l04_비율이사용되는경우를알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u4_l05",
+     "lessonId": "g6_math_u4_l05_v1",
      "n": "5",
      "title": "백분율을 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/4단원_비와비율/g6_math_u4_l05_백분율을알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u4_l06",
+     "lessonId": "g6_math_u4_l06_v1",
      "n": "6",
      "title": "백분율이 사용되는 경우를 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/4단원_비와비율/g6_math_u4_l06_백분율이사용되는경우를알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u4_l07",
+     "lessonId": "g6_math_u4_l07_v1",
      "n": "7",
      "title": "지구를 구해 줘! 신재생 에너지",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/4단원_비와비율/g6_math_u4_l07_지구를구해줘신재생에너지.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u4_l08",
+     "lessonId": "g6_math_u4_l08_v1",
      "n": "8",
      "title": "스스로 마무리해요 (단원 평가)",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/4단원_비와비율/g6_math_u4_l08_스스로마무리해요.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   },

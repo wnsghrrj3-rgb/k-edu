@@ -338,14 +338,14 @@ window.KEDU_MAP["g5_1_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_social_u3_l10",
+     "lessonId": "g5_social_u3_l10_v1",
      "n": "10",
-     "title": "생각을 펼쳐요",
+     "title": "[생각을 펼쳐요] 우리 학교에 제안하고 싶은 시설",
      "sub": "② 일상생활 속 인권 보호",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester1/social/3단원_법과인권의보장/g5_social_u3_l10_생각을펼쳐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
