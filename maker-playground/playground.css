@@ -427,7 +427,7 @@ select.mk-input { padding-right: 8px; }
 .ed-detail .ph-item:active { transform: scale(.985); }
 .ed-note { display: none; font: var(--mk-t-caption); color: var(--mk-text-disabled); margin-top: 12px; }
 .ed--review .ed-note { display: block; }
-.ed-canvaswrap { display: flex; align-items: center; justify-content: center; min-width: 0; padding: var(--mk-sp-6); position: relative; overflow: auto; background: var(--mk-surface-muted);
+.ed-canvaswrap { display: flex; min-width: 0; padding: var(--mk-sp-6); position: relative; overflow: auto; background: var(--mk-surface-muted); /* R96 — margin:auto 방식 */
   background-image: radial-gradient(ellipse at 50% 42%, rgba(255, 255, 255, .55), rgba(255, 255, 255, 0) 62%); }
 .ed-zoom { position: absolute; right: 16px; bottom: 14px; display: flex; align-items: stretch; background: var(--mk-surface); border: 1px solid var(--mk-border); border-radius: var(--mk-r-pill); box-shadow: var(--mk-sh-floating); overflow: hidden; }
 .ed-zoom button { height: 28px; padding: 0 10px; font: var(--mk-t-caption); font-weight: 700; color: var(--mk-text-secondary);
@@ -443,7 +443,7 @@ select.mk-input { padding-right: 8px; }
 .ed-adv summary::before { content: '▸ '; }
 .ed-adv[open] summary::before { content: '▾ '; }
 .ed-adv > div { padding-top: 6px; }
-.ed-canvas { background: #fff; box-shadow: 0 0 0 1px rgba(20, 28, 40, .07), var(--mk-sh-floating); border-radius: 2px; position: relative; }
+.ed-canvas { background: #fff; box-shadow: 0 0 0 1px rgba(20, 28, 40, .07), var(--mk-sh-floating); border-radius: 2px; position: relative; margin: auto; flex: none; }
 .ed-el { position: absolute; cursor: pointer; }
 .ed-el.sel { box-shadow: 0 0 0 1.5px var(--mk-coral); border-radius: 1px; }
 .ed-el .hd { position: absolute; width: 7px; height: 7px; background: #fff; border: 1.5px solid var(--mk-coral); border-radius: 1.5px; box-shadow: var(--mk-sh-subtle); pointer-events: none; }
@@ -771,8 +771,13 @@ select.mk-input { padding-right: 8px; }
 .ws-hist b{font:var(--mk-t-body-sm);display:block}
 .ws-hist small{font:var(--mk-t-caption);color:var(--mk-text-secondary)}
 
-.ws-canvaswrap{flex:1;display:flex;align-items:center;justify-content:center;background:var(--mk-surface-muted);overflow:auto;padding:var(--mk-sp-5)}
-.ws-canvas{position:relative;box-shadow:var(--mk-sh-floating);border-radius:2px;flex:none}
+.ws-canvaswrap{flex:1;display:flex;background:var(--mk-surface-muted);overflow:auto;padding:var(--mk-sp-5)}
+/* R96 — centered-overflow 함정 해제: 가운데 정렬을 margin:auto로.
+   justify/align center + overflow:auto는 넘친 시작쪽 조각이 스크롤 원점
+   「앞」이라 영원히 도달 불능(보이지도 눌리지도 않음) — 좁은 폭에서
+   캔버스 좌우 끝 핸들이 죽던 원인. margin:auto는 공간이 남으면 똑같이
+   가운데, 넘치면 전 구간이 스크롤로 닿는다. */
+.ws-canvas{position:relative;box-shadow:var(--mk-sh-floating);border-radius:2px;flex:none;margin:auto}
 .ws-canvas.photo{outline:3px solid var(--mk-coral-soft)}
 .ws-el{position:absolute;cursor:pointer;border:1.5px solid transparent;border-radius:2px}
 .ws-el:hover{border-color:var(--mk-teal-soft)}
@@ -855,7 +860,8 @@ select.mk-input { padding-right: 8px; }
 .tb-canvashead{display:flex;align-items:center;gap:var(--mk-sp-2)}
 .tb-canvashead b{font:var(--mk-t-h3)}
 .tb-canvashead .grow{flex:1}
-.tb-stage{display:flex;justify-content:center;background:var(--mk-surface-muted);border-radius:var(--mk-r-medium);padding:var(--mk-sp-5);overflow:auto}
+.tb-stage{display:flex;background:var(--mk-surface-muted);border-radius:var(--mk-r-medium);padding:var(--mk-sp-5);overflow:auto}
+.tb-stage>*{margin:auto} /* R96 */
 .tb-canvas{position:relative;box-shadow:var(--mk-sh-floating);border-radius:2px;flex:none}
 .tb-canvas.bgsel{outline:2px solid var(--mk-teal)}
 .tb-canvas>.mark.bg{position:absolute;top:6px;right:6px;z-index:2}
