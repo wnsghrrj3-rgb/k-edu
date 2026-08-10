@@ -52,6 +52,16 @@ window.KEDU_MAP["g6_1_science"] = {
      "url": "/grade6/semester1/science/1단원_산과염기/g6_sci_u1_l04_성질비교.html",
      "track": "tb",
      "ready": true
+    },
+    {
+     "key": "g6_science_u1_l05",
+     "lessonId": "g6_sci_u1_l05_v1",
+     "n": "6",
+     "title": "산성 용액과 염기성 용액을 섞으면 어떻게 될까?",
+     "sub": null,
+     "url": "/grade6/semester1/science/1단원_산과염기/g6_sci_u1_l05_섞으면.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }
