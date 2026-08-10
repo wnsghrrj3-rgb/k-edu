@@ -45,6 +45,7 @@
     enter(projectId) {
       WS.projectId = projectId; WS.sceneIdx = 0; WS.sel = null;
       WS.undo = []; WS.redo = []; WS.savedAt = null; WS.dock = false; WS.nav = 'scenes';
+      WS.msel = [];                                    /* R103 — Shift 다중 선택 (씬 이동·재진입 시 초기화) */
       /* R93 — 빌드 정직 안내는 차단형 alert 가 아니라 이 자리 한 줄로.
          (준호 실기기: 「생략: ss-title」 OS 경고창이 에러처럼 읽히고 흐름을 끊음) */
       WS.notice = window.MK_WS && window.MK_WS.pendingNotice ? String(window.MK_WS.pendingNotice) : '';
@@ -128,8 +129,8 @@
     const sc = scene();
     const CW = Math.round(BASE_W * WS.zoom / 100), CH = Math.round(CW * sc.height / sc.width);
     const els = sc.elements.map((el, i) => {
-      const on = WS.sel && WS.sel.idx === i && WS.sel.type !== 'scene' ? 'sel' : '';
-      const hd = on ? WSHD : '';
+      const on = (WS.sel && WS.sel.idx === i && WS.sel.type !== 'scene') || WS.msel.indexOf(i) >= 0 ? 'sel' : '';
+      const hd = on && WS.msel.indexOf(i) < 0 ? WSHD : '';   /* R103 — 다중 선택은 외곽만, 핸들 없음 */
       if (el.kind === 'text') {
         const fs = (el.size / 100 * CH).toFixed(1);
         const ts = window.MK_TEXTSTYLE ? window.MK_TEXTSTYLE.css(el) : ''; /* R56 — 글꼴·배경·외곽선·그림자 */
@@ -250,6 +251,19 @@
   const ContextPanel = () => {
     const m = M(), sc = scene(), p = proj();
     let title = '프로젝트', body = '';
+    if (WS.msel.length >= 2 && window.MK_ARRANGE) {    /* R103 — 여러 요소 선택 → 정렬·간격 (§10·§19) */
+      const n = WS.msel.length;
+      const ab = (m2, ic, tip) => `<button class="cx-shb" data-ws-arr="${m2}" title="${tip}">${ic}</button>`;
+      const dist = n >= 3
+        ? `<label class="cx-field"><span>간격</span></label><div class="cx-shrow">${ab('dist-h', '⇹', '가로 간격 동일')}${ab('dist-v', '⇳', '세로 간격 동일')}</div>`
+        : '';
+      return `<div class="ws-context"><small class="cap">속성</small><h3>선택 ${n}개</h3>
+        <label class="cx-field"><span>정렬</span></label>
+        <div class="cx-shrow">${ab('left', '⯇', '왼쪽')}${ab('centerH', '⬌', '가운데')}${ab('right', '⯈', '오른쪽')}</div>
+        <div class="cx-shrow">${ab('top', '⯅', '위')}${ab('centerV', '⬍', '세로 중앙')}${ab('bottom', '⯆', '아래')}</div>
+        ${dist}
+        <p class="mut" style="font:var(--mk-t-caption)">Shift+클릭으로 빼거나 더할 수 있어요</p></div>`;
+    }
     let sel = WS.sel;
     /* 방어: undo·삭제 등으로 선택 요소가 사라졌으면 Scene으로 폴백 */
     if (sel && sel.type !== 'scene' && !sc.elements[sel.idx]) { WS.sel = sel = { type: 'scene' }; }
@@ -701,6 +715,15 @@
           /* R95 — 터치·펜: 이미 선택된 요소의 모서리 근처를 짚으면 핸들을 못
              맞혔어도 리사이즈로 판정(근접 22px, MK_LIVE.handleAt). 첫 탭 =
              선택, 그 다음 모서리 근처 = 크기 조절 — 손가락의 해상도에 맞춘다. */
+          if (ev.shiftKey && !hd) {                    /* R103 — Shift+클릭 = 다중 선택 토글 (드래그 억제) */
+            const base = WS.sel && WS.sel.type !== 'scene' && WS.sel.idx != null ? [WS.sel.idx] : [];
+            if (!WS.msel.length && base.length && base[0] !== i) WS.msel = base;
+            const at = WS.msel.indexOf(i);
+            if (at >= 0) WS.msel.splice(at, 1); else WS.msel.push(i);
+            if (WS.msel.length === 1) { WS.sel = { type: selType(scene().elements[WS.msel[0]]), idx: WS.msel[0] }; WS.msel = []; }
+            ev.preventDefault(); R(); return;
+          }
+          if (WS.msel.length) WS.msel = [];            /* 일반 클릭 = 다중 해제 (기존 단일 동작 복귀) */
           const wasSel = WS.sel && WS.sel.idx === i && WS.sel.type !== 'scene';
           WS.sel = { type: selType(el), idx: i };
           let handle = hd ? [...hd.classList].find((c) => c !== 'ws-hd') : null;
@@ -770,6 +793,15 @@
         if (!el || !el.src || !window.MK_FOCAL) return;
         const [fx, fy] = b.dataset.wsFocal.split(',').map(Number);
         snap(); window.MK_FOCAL.set(el, fx, fy); R();
+      });
+      /* R103 — 정렬·간격 (MK_ARRANGE) */
+      root.querySelectorAll('[data-ws-arr]').forEach((b) => b.onclick = () => {
+        const AR = window.MK_ARRANGE; if (!AR || WS.msel.length < 2) return;
+        const els = WS.msel.map((ix) => scene().elements[ix]).filter(Boolean);
+        snap();
+        const m2 = b.dataset.wsArr;
+        const r = m2 === 'dist-h' ? AR.distribute(els, 'h') : m2 === 'dist-v' ? AR.distribute(els, 'v') : AR.align(els, m2);
+        if (r && r.ok) R();
       });
       /* R101 — 사진 보정·필터 (MK_PHOTO) */
       const PH = window.MK_PHOTO;
