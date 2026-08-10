@@ -42,6 +42,16 @@ window.KEDU_MAP["g6_1_science"] = {
      "url": "/grade6/semester1/science/1단원_산과염기/g6_sci_u1_l03_지시약.html",
      "track": "tb",
      "ready": true
+    },
+    {
+     "key": "g6_science_u1_l04",
+     "lessonId": "g6_sci_u1_l04_v1",
+     "n": "5",
+     "title": "산성 용액과 염기성 용액의 성질을 비교해 볼까?",
+     "sub": null,
+     "url": "/grade6/semester1/science/1단원_산과염기/g6_sci_u1_l04_성질비교.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }
