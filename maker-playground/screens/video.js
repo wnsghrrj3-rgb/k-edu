@@ -299,6 +299,55 @@ window.MK_SCREENS.video = {
       if (p && p.scrollIntoView) p.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
     root.querySelectorAll('[data-vh-theme]').forEach((b) => b.onclick = () => { H.st.theme = b.dataset.vhTheme; redraw(); });
+    /* R99 — 구조 카드 호버 미리보기: 진짜 엔진 샘플 빌드를 진짜 렌더러로.
+       마우스 전용(hover 가능 환경) — 터치는 탭=선택이 이미 미리보기 역할. */
+    (() => {
+      if (!window.MK_PREVIEW || !window.MK_PLAY) return;
+      if (window.matchMedia && !window.matchMedia('(hover: hover)').matches) return;
+      let pop = null, cycle = null, showT = null, curScenes = null, curIdx = 0;
+      const kill = () => {
+        if (showT) { clearTimeout(showT); showT = null; }
+        if (cycle) { clearInterval(cycle); cycle = null; }
+        if (pop) { pop.remove(); pop = null; }
+        curScenes = null;
+      };
+      const AR = { '16:9': '16/9', '9:16': '9/16', '1:1': '1/1', '4:5': '4/5' };
+      const renderScene = () => {
+        if (!pop || !curScenes) return;
+        const stage = pop.querySelector('.vh-pv-stage');
+        if (stage) {
+          stage.innerHTML = window.MK_PLAY.sceneHTML(curScenes[curIdx], { still: true });
+          const dots = pop.querySelector('.vh-pv-dots');
+          if (dots) dots.innerHTML = curScenes.map((_, i) => `<i class="${i === curIdx ? 'on' : ''}"></i>`).join('');
+        }
+      };
+      const show = (card) => {
+        const pv = window.MK_PREVIEW.build(card.dataset.vhComp, H.st.theme || null);
+        if (!pv.ok || !pv.scenes.length) return;
+        kill();
+        curScenes = pv.scenes; curIdx = 0;
+        pop = document.createElement('div');
+        pop.className = 'vh-pv';
+        pop.style.setProperty('--pv-ar', AR[pv.ratio] || '16/9');
+        pop.innerHTML = `<div class="vh-pv-stage"></div><div class="vh-pv-dots"></div><small>미리보기 — 실제 빌드 그대로</small>`;
+        const r = card.getBoundingClientRect();
+        const w2 = pv.ratio === '16:9' ? 300 : 190;
+        pop.style.width = w2 + 'px';
+        const px = Math.max(8, Math.min(window.innerWidth - w2 - 8, r.left + r.width / 2 - w2 / 2));
+        pop.style.left = px + 'px';
+        pop.style.top = Math.max(8, r.top - 10) + 'px';
+        pop.style.transform = 'translateY(-100%)';
+        document.body.appendChild(pop);
+        renderScene();
+        if (curScenes.length > 1) cycle = setInterval(() => { curIdx = (curIdx + 1) % curScenes.length; renderScene(); }, 1100);
+      };
+      root.querySelectorAll('[data-vh-comp]').forEach((card) => {
+        card.addEventListener('mouseenter', () => { kill(); showT = setTimeout(() => show(card), 160); });
+        card.addEventListener('mouseleave', kill);
+        card.addEventListener('click', kill, true);
+      });
+      window.addEventListener('hashchange', kill, { once: true });
+    })();
     root.querySelectorAll('[data-vh-ratio]').forEach((b) => b.onclick = () => { H.st.ratio = b.dataset.vhRatio; redraw(); });
     const ti = root.querySelector('#vhTitle'); if (ti) ti.oninput = () => { H.st.title = ti.value; };
     const su = root.querySelector('#vhSub'); if (su) su.oninput = () => { H.st.sub = su.value; };
