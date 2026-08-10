@@ -260,10 +260,16 @@ window.MK_RENDER = (() => {
   }
 
   function imageFilterCss(el) {
+    /* R101 — 정의는 MK_PHOTO 한 곳(씬 좌표 blur 정본 · 기본값 미방출).
+       SVG viewBox = 씬 좌표이므로 배율 1. 폴백은 단독 로드용 최소 구현. */
+    if (window.MK_PHOTO) return window.MK_PHOTO.css(el, 1);
     const f = el.filters || {}; const parts = [];
     if (f.brightness != null) parts.push(`brightness(${f.brightness})`);
     if (f.contrast != null) parts.push(`contrast(${f.contrast})`);
     if (f.saturate != null) parts.push(`saturate(${f.saturate})`);
+    if (f.grayscale != null) parts.push(`grayscale(${f.grayscale})`);
+    if (f.sepia != null) parts.push(`sepia(${f.sepia})`);
+    if (f.hueRotate != null) parts.push(`hue-rotate(${f.hueRotate}deg)`);
     if (f.blur != null) parts.push(`blur(${f.blur}px)`);
     return parts.join(' ');
   }

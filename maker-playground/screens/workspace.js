@@ -138,9 +138,10 @@
       if (el.src) {                                    /* R45 — Workspace도 실이미지·실영상 표시 (R36 editor와 동일) */
         const fit = el.fit === 'contain' ? 'contain' : 'cover';
         const fo = window.MK_FOCAL ? window.MK_FOCAL.pos(el) : ''; /* R94 — 초점 */
+        const pf = window.MK_PHOTO ? window.MK_PHOTO.styleOf(el, CW / sc.width) : ''; /* R101 — 보정·필터, blur 는 표시 배율 */
         const media = (el.video === true || el.kind === 'video' || /^data:video\//.test(el.src))
-          ? `<video class="ws-media" src="${el.src}" muted autoplay loop playsinline style="width:100%;height:100%;object-fit:${fit}${fo};display:block"></video>`
-          : `<img class="ws-media" src="${el.src}" alt="${M().esc(el.label || '')}" draggable="false" style="width:100%;height:100%;object-fit:${fit}${fo};display:block">`;
+          ? `<video class="ws-media" src="${el.src}" muted autoplay loop playsinline style="width:100%;height:100%;object-fit:${fit}${fo}${pf};display:block"></video>`
+          : `<img class="ws-media" src="${el.src}" alt="${M().esc(el.label || '')}" draggable="false" style="width:100%;height:100%;object-fit:${fit}${fo}${pf};display:block">`;
         /* R55 — overflow 클립을 내부 span으로 옮겨 음수 오프셋 핸들이 잘리지 않게 */
         return `<div class="ws-el media ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%"><span class="ws-clip">${media}</span>${hd}</div>`;
       }
@@ -302,8 +303,29 @@
         body = field('종류', el.label || '도형') + field('채움', '단색') + field('테두리', '없음');
       } else {
         title = '이미지';
-        body = field('이름', el.label || '이미지') + field('크기', el.w + '×' + el.h + '%') + fitCtl(el, sel.idx) + focalCtl(el, sel.idx) +
-          `<div class="cx-hint">자르기·보정·필터 — Photo 모드/후속</div>`;
+        /* R101 — 사진 보정·필터 실컨트롤 (MK_PHOTO). 클릭 첫 행동 = 사진 바꾸기(§11) */
+        const PH = window.MK_PHOTO;
+        let photoCtl = '';
+        if (PH) {
+          const cur = PH.matchPreset(el);
+          const chips = PH.PRESETS.map((pr) => {
+            const fCss = PH.css({ filters: pr.f });
+            const thumb = el.src
+              ? `<img src="${el.src}" alt="" style="${fCss ? `filter:${fCss};` : ''}width:100%;height:100%;object-fit:cover;display:block">`
+              : `<span style="display:block;width:100%;height:100%;background:linear-gradient(135deg,#7FB2D9,#E8A87C);${fCss ? `filter:${fCss}` : ''}"></span>`;
+            return `<button class="cx-fchip${cur === pr.id ? ' on' : ''}" data-ws-pfilter="${pr.id}" title="${pr.name}"><span class="th">${thumb}</span><small>${pr.name}</small></button>`;
+          }).join('');
+          const sliders = PH.SLIDERS.map((k) => {
+            const d = PH.BY[k]; const v = PH.valOf(el, k);
+            return `<label class="cx-prow"><span>${d.label}</span><input type="range" min="${d.min}" max="${d.max}" step="${d.step}" value="${v}" data-ws-padj="${k}" data-stop><b data-ws-pval="${k}">${d.def === 1 ? Math.round(v * 100) + '%' : v + d.unit}</b></label>`;
+          }).join('');
+          photoCtl =
+            (el.src ? `<button class="cx-scenebtn primary" data-ws-preplace>🖼 사진 바꾸기</button>` : '') +
+            `<label class="cx-field"><span>필터</span></label><div class="cx-fchips">${chips}</div>` +
+            `<label class="cx-field"><span>사진 보정</span></label><div class="cx-padj">${sliders}</div>` +
+            (PH.isEdited(el) ? `<button class="cx-scenebtn" data-ws-preset0>↩ 원래대로</button>` : '');
+        }
+        body = field('이름', el.label || '이미지') + field('크기', el.w + '×' + el.h + '%') + photoCtl + fitCtl(el, sel.idx) + focalCtl(el, sel.idx);
       }
     }
     return `<div class="ws-context"><small class="cap">속성</small><h3>${title}</h3>${body}
@@ -744,6 +766,46 @@
         const [fx, fy] = b.dataset.wsFocal.split(',').map(Number);
         snap(); window.MK_FOCAL.set(el, fx, fy); R();
       });
+      /* R101 — 사진 보정·필터 (MK_PHOTO) */
+      const PH = window.MK_PHOTO;
+      const phEl = () => WS.sel && WS.sel.idx != null ? scene().elements[WS.sel.idx] : null;
+      if (PH) {
+        root.querySelectorAll('[data-ws-pfilter]').forEach((b) => b.onclick = () => {
+          const el = phEl(); if (!el) return;
+          snap(); PH.apply(el, b.dataset.wsPfilter); R();
+        });
+        const rz = root.querySelector('[data-ws-preset0]');
+        if (rz) rz.onclick = () => { const el = phEl(); if (!el) return; snap(); PH.reset(el); R(); };
+        const rp = root.querySelector('[data-ws-preplace]');
+        if (rp) rp.onclick = () => {                   /* §11 — 구조는 두고 사진만. 취소 = 변화 0 (R46 규약) */
+          const el = phEl(); if (!el || !window.MK_LIVE) return;
+          const inp = document.createElement('input');
+          inp.type = 'file'; inp.accept = 'image/*';
+          inp.onchange = () => window.MK_LIVE.fileToSrc(inp.files && inp.files[0], (src, err) => {
+            if (!src) { if (err && typeof alert === 'function') alert(err); return; }
+            snap();
+            el.src = src; el.label = inp.files[0].name.replace(/\.[^.]+$/, '');
+            delete el.video;                           /* 사진으로 확정 — 영상 흔적 정리 */
+            R();
+          });
+          inp.click();
+        };
+        /* 슬라이더 — input: 재렌더 없이 캔버스 media·수치만 직갱신(§22), 드래그 세션당 snap 1회(§24), change: R() 커밋·자동저장 */
+        root.querySelectorAll('[data-ws-padj]').forEach((s) => {
+          const key = s.dataset.wsPadj; const d = PH.BY[key];
+          let armed = false;
+          s.oninput = () => {
+            const el = phEl(); if (!el || !d) return;
+            if (!armed) { snap(); armed = true; }
+            PH.setVal(el, key, +s.value);
+            const dom = root.querySelector(`[data-ws-el="${WS.sel.idx}"] .ws-media`);
+            if (dom) { const sc2 = scene(); const cw = dom.closest('[data-ws-canvas]'); dom.style.filter = PH.css(el, (cw ? cw.offsetWidth : sc2.width) / sc2.width); }
+            const val = root.querySelector(`[data-ws-pval="${key}"]`);
+            if (val) val.textContent = d.def === 1 ? Math.round(+s.value * 100) + '%' : +s.value + d.unit;
+          };
+          s.onchange = () => { armed = false; R(); };
+        });
+      }
       /* R49 — 자막 디자인 */
       root.querySelectorAll('[data-ws-cap]').forEach((b) => b.onclick = () => {
         if (!window.MK_CAPTION) return;
