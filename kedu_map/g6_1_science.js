@@ -32,6 +32,16 @@ window.KEDU_MAP["g6_1_science"] = {
      "url": "/grade6/semester1/science/1단원_산과염기/g6_sci_u1_l02_용액분류.html",
      "track": "tb",
      "ready": true
+    },
+    {
+     "key": "g6_science_u1_l03",
+     "lessonId": "g6_sci_u1_l03_v1",
+     "n": "3~4",
+     "title": "지시약으로 여러 가지 용액을 분류해 볼까? + 체험 더하기",
+     "sub": null,
+     "url": "/grade6/semester1/science/1단원_산과염기/g6_sci_u1_l03_지시약.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }

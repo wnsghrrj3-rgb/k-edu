@@ -101,5 +101,11 @@ window.KEDU_MAP_INDEX = [
   "units": 6,
   "lessons": 51,
   "ready": 43
+ },
+ {
+  "key": "g6_1_science",
+  "units": 1,
+  "lessons": 3,
+  "ready": 3
  }
 ];
