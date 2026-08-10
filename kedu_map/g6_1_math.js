@@ -479,84 +479,84 @@ window.KEDU_MAP["g6_1_math"] = {
    "kind": "unit",
    "lessons": [
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u6_l01",
+     "lessonId": "g6_math_u6_l01_v1",
      "n": "1",
      "title": "직육면체의 겉넓이와 부피를 만나 보자",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/6단원_직육면체의겉넓이와부피/g6_math_u6_l01_직육면체의겉넓이와부피를만나보자.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u6_l02",
+     "lessonId": "g6_math_u6_l02_v1",
      "n": "2",
      "title": "직육면체의 겉넓이를 알아봐요 ①",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/6단원_직육면체의겉넓이와부피/g6_math_u6_l02_직육면체의겉넓이를알아봐요1.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u6_l03",
+     "lessonId": "g6_math_u6_l03_v1",
      "n": "3",
      "title": "직육면체의 겉넓이를 알아봐요 ②",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/6단원_직육면체의겉넓이와부피/g6_math_u6_l03_직육면체의겉넓이를알아봐요2.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u6_l04",
+     "lessonId": "g6_math_u6_l04_v1",
      "n": "4",
      "title": "cm³를 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/6단원_직육면체의겉넓이와부피/g6_math_u6_l04_세제곱센티미터를알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u6_l05",
+     "lessonId": "g6_math_u6_l05_v1",
      "n": "5",
      "title": "직육면체의 부피를 구해요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/6단원_직육면체의겉넓이와부피/g6_math_u6_l05_직육면체의부피를구해요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u6_l06",
+     "lessonId": "g6_math_u6_l06_v1",
      "n": "6",
      "title": "m³를 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/6단원_직육면체의겉넓이와부피/g6_math_u6_l06_세제곱미터를알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u6_l07",
+     "lessonId": "g6_math_u6_l07_v1",
      "n": "7",
      "title": "아하! 두부의 부피와 겉넓이",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/6단원_직육면체의겉넓이와부피/g6_math_u6_l07_아하두부의부피와겉넓이.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u6_l08",
+     "lessonId": "g6_math_u6_l08_v1",
      "n": "8",
      "title": "스스로 마무리해요 (단원 평가)",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/6단원_직육면체의겉넓이와부피/g6_math_u6_l08_스스로마무리해요.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }

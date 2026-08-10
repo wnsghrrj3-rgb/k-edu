@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<!--
+  g6_math_u6_l03 — 직육면체의 겉넓이를 알아봐요 (2) [6학년 6단원 03차시, 단일 40분]
+  단원: 6학년 1학기 6단원 「직육면체의 겉넓이와 부피」 / 지도서 341~385 · 교과서 126~127
+  base: g4_math_u6_l04(엔진·채점부·공통 CSS 계승) / 부품 boxFig · netBox · cubeStack · volCalc · surfCalc · volScale (신규) · areaCalc · unitScale (g5 승계)
+  성격: 밑면과 옆면으로 나누어 겉넓이 구하기, 그리고 정육면체의 겉넓이(한 면 넓이 ×6)
+  ★ 오개념 훅: 옆면 직사각형의 가로는 한 밑면의 둘레와 같다. 한 변의 길이가 아니다
+  ★ 왜 그럴까 슬롯 = 슬7 : 왜 정육면체는 한 면 넓이를 6배 할까 — 여섯 면이 모두 합동인 정사각형이라 넓이가 같기 때문
+  ⛔ 규약: 문자식 금지 / 권유형 종결 어미 금지(고학년 톤 v1 §1-3) / 이모지 슬라이드당 ≤2 / 항 4개 이내
+  점수: 기본 4×10 + 응용 4×15 = 100 / mcq 정답 위치 2-3-3-2 / pad 정답 16 · 52 · 150 · 49
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g6_math_u6_l03_v1">
+<title>직육면체의 겉넓이를 알아봐요 (2) · K-edu 6학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#FBF7F1; --ink:#243043; --ink-soft:#62708A;
+  --coral:#15803D; --coral-deep:#0F5C2C; --coral-soft:#D8EEDF;
+  --teal:#B45309; --teal-deep:#8A3F07; --teal-soft:#F6E4CE;
+  --gold:#F6B526; --emph:#F0451F; --line:#E4DACB; --mark:#FFE08A;
+  --f-title:'Do Hyeon',sans-serif; --f-body:'Gowun Dodum',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:0 14px 34px -18px rgba(36,48,67,.4);
+  --fs-title: clamp(26px, 4.2vw, 46px);
+  --fs-heading: clamp(24px, 3.7vw, 37px);
+  --fs-body: clamp(20px, 3.0vw, 29px);
+  --fs-caption: clamp(19px, 2.9vw, 27px);
+  --fs-label: clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --em-md: clamp(44px, 7vw, 80px);
+  --em-lg: clamp(66px, 10vw, 122px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(760px, 96vw);
+  --mw-lg: min(840px, 96vw);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+@keyframes ka-swap-r { 0%{transform:translateX(0); opacity:1;} 50%{transform:translateX(20px); opacity:.3;} 100%{transform:translateX(0); opacity:1;} }
+@keyframes ka-mark { from{background-size:0 100%;} to{background-size:100% 100%;} }
+
+/* ───── 컨테이너 ───── */
+.ka { background:var(--paper); width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; color:var(--ink); position:relative; overflow:hidden; }
+
+/* ───── 상단바 (topbar) ───── */
+.ka-h { display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); padding:clamp(11px,1.7vw,15px) clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:hover { transform:translateY(-1px); }
+.ka-pill { font-family:var(--f-title); background:var(--coral); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-where { font-size:clamp(14px,1.6vw,18px); color:var(--ink-soft); flex-shrink:1; }
+.ka-where b { color:var(--ink); }
+.ka-bar { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:46vw; }
+.ka-dot { width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s, background .2s; }
+.ka-dot:hover { transform:scale(1.2); }
+.ka-dot.active { background:var(--coral); transform:scale(1.3); }
+.ka-dot.done { background:var(--teal); }
+.ka-score { font-family:var(--f-title); background:#FFF8E1; color:#F57F17; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); padding:0; border-radius:50%; cursor:pointer; flex-shrink:0; color:var(--coral-deep); font-size:clamp(13px,2vw,16px); width:clamp(32px,4.5vw,38px); height:clamp(32px,4.5vw,38px); display:flex; align-items:center; justify-content:center; }
+
+/* ───── 본문 ───── */
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; gap:clamp(7px,1.3vw,12px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(8px,1.4vh,16px) clamp(16px,4vw,48px); overflow:hidden; }
+.slide.active { display:flex; }
+.slide-title { font-family:var(--f-title); font-size:var(--fs-title); margin:0; line-height:1.18; color:var(--ink); font-weight:400; text-align:center; flex-shrink:0; }
+.slide-sub { font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(10px,1.6vw,16px); left:clamp(16px,4vw,40px); font-family:var(--f-title); color:var(--coral); font-size:clamp(13px,1.9vw,18px); letter-spacing:.4px; z-index:5; }
+
+/* ───── 하단 내비 ───── */
+.ka-f { display:flex; justify-content:flex-end; gap:12px; padding:clamp(12px,1.7vw,16px) clamp(16px,4vw,40px); background:linear-gradient(to top, var(--paper) 62%, transparent); flex-shrink:0; }
+.ka-prev, .ka-hint, .ka-next { font-family:var(--f-title); font-size:clamp(15px,1.9vw,22px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(10px,1.4vw,15px) clamp(20px,2.8vw,38px); cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translateY(-2px); }
+.ka-prev { margin-right:auto; }
+.ka-hint { color:#F57F17; border-color:#FFE08A; }
+.ka-next { background:var(--coral); color:#fff; border-color:var(--coral); }
+.ka-prev:disabled, .ka-next:disabled { opacity:.35; cursor:default; transform:none; }
+.ka-hint:disabled { opacity:.4; cursor:default; }
+
+/* ───── 공통 콘텐츠 ───── */
+.concept-box { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,18px) clamp(18px,2.8vw,28px); border-radius:20px; font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); text-align:center; line-height:1.5; box-shadow:var(--shadow); }
+.concept-box strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.big-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-lg); line-height:1; }
+.intro-q { font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; }
+.intro-q strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.goal-list { display:flex; flex-direction:column; gap:clamp(7px,1.4vw,11px); font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); }
+.goal-list li { background:#fff; border:2px solid var(--line); padding:clamp(8px,1.5vw,12px) clamp(14px,2.6vw,20px); border-radius:16px; list-style:none; box-shadow:var(--shadow); }
+.goal-list li strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+.recall-box { background:var(--teal-soft); padding:clamp(14px,2.8vw,22px) clamp(20px,3.6vw,30px); border-radius:22px; font-size:var(--fs-body); color:var(--teal-deep); max-width:var(--mw-sm); text-align:center; line-height:1.6; }
+.recall-box strong { color:var(--teal-deep); font-family:var(--f-title); font-weight:400; }
+.scene { background:#fff; border:3px solid var(--coral-soft); border-radius:28px; padding:clamp(18px,3.4vw,30px) clamp(22px,4.2vw,38px); display:flex; flex-direction:column; gap:clamp(10px,2vw,16px); align-items:center; min-width:clamp(280px,50vw,460px); box-shadow:0 6px 0 var(--coral-soft); }
+.pencil-row { display:flex; gap:clamp(4px,0.8vw,8px); font-size:var(--em-sm); flex-wrap:wrap; justify-content:center; max-width:var(--mw-sm); color:var(--ink); }
+
+/* ───── place_value_block (모형) ───── */
+.pv-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.pv-row { display:flex; gap:clamp(10px,2.2vw,20px); align-items:flex-end; justify-content:center; flex-wrap:wrap; }
+.pv-group { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,0.8vw,7px); }
+.pv-label { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.pv-block svg { display:block; }
+.swap-arrow { font-size:var(--em-sm); color:var(--coral); animation:ka-swap-r 1.6s ease-in-out infinite; }
+.exchange-eq { font-size:var(--fs-heading); color:var(--ink); display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); flex-wrap:wrap; justify-content:center; }
+
+/* ───── number_line ───── */
+.nl-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(12px,2.4vw,20px); max-width:var(--mw-lg); width:100%; }
+.nl-svg { width:min(760px,94vw); height:auto; }
+.nl-svg .nl-tick text { font-family:var(--f-num); font-weight:800; fill:var(--ink-soft); }
+.nl-pick { cursor:pointer; }
+.nl-pick:hover circle { fill:var(--coral-soft); }
+.nl-pick.correct circle { fill:var(--teal); }
+.nl-pick.wrong circle { fill:var(--coral-soft); }
+
+/* ───── 100의 여러 의미 ───── */
+.mean-grid { display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-sm); width:100%; }
+.mean-item { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,17px) clamp(16px,3vw,24px); border-radius:18px; font-size:var(--fs-body); color:var(--ink); text-align:center; box-shadow:var(--shadow); }
+.mean-item strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+
+/* ───── 문제 공통 ───── */
+.q-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; font-weight:400; }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:20px; padding:clamp(8px,1.6vw,14px) clamp(24px,4.6vw,44px); min-width:clamp(120px,22vw,200px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.q-pad { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(6px,1.2vw,10px); max-width:clamp(280px,56vw,460px); }
+.q-key { background:#fff; border:2px solid var(--line); border-radius:14px; padding:clamp(7px,1.5vw,12px) 0; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, background .15s, border-color .15s; box-shadow:0 4px 0 var(--line); }
+.q-key:hover { background:var(--coral-soft); border-color:var(--coral); }
+.q-key:active { transform:translateY(3px); box-shadow:none; }
+.q-key.fn { background:#FFF8E1; color:#F57F17; font-family:var(--f-title); font-size:var(--fs-body); border-color:#FFE08A; box-shadow:0 4px 0 #FFE08A; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); color:var(--teal-deep); min-height:1.4em; text-align:center; }
+.q-fb.wrong { color:var(--emph); }
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-sm); }
+.mcq-opt { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,15px); font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .2s; box-shadow:0 6px 0 var(--coral-soft); font-weight:400; }
+.mcq-opt:hover { border-color:var(--coral); }
+.mcq-opt:active { transform:translateY(4px); box-shadow:none; }
+.mcq-opt.correct { border-color:var(--teal-deep); background:var(--teal); color:#fff; box-shadow:0 6px 0 var(--teal-deep); animation:ka-pop .5s ease; }
+.mcq-opt.wrong { border-color:var(--emph); background:#FFE0DA; color:var(--coral-deep); animation:ka-shake .35s; }
+.mcq-hint { font-family:var(--f-title); font-size:var(--fs-body); color:#F57F17; background:#FFF8E1; border-radius:16px; padding:clamp(8px,1.6vw,12px) clamp(14px,2.6vw,20px); max-width:var(--mw-sm); text-align:center; display:none; }
+.mcq-hint.show { display:block; }
+
+/* ───── trace ───── */
+.trace-row { display:flex; gap:clamp(12px,2.4vw,22px); justify-content:center; flex-wrap:wrap; }
+.trace-cell { width:clamp(64px,12vw,110px); height:clamp(84px,16vw,150px); border:5px dashed var(--coral-soft); border-radius:20px; display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:#D8C4B8; cursor:pointer; transition:all .2s; background:#fff; }
+.trace-cell.done { color:var(--coral-deep); border-style:solid; border-color:var(--coral); background:var(--coral-soft); }
+
+/* ───── match ───── */
+.match-stage { display:flex; flex-direction:column; gap:clamp(8px,1.5vw,13px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.match-cols { display:flex; gap:clamp(20px,4vw,48px); }
+.match-col { display:flex; flex-direction:column; gap:clamp(6px,1.1vw,9px); }
+.match-card { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(16px,3vw,26px); font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .15s; min-width:clamp(70px,13vw,108px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.match-card:hover { border-color:var(--coral); }
+.match-card.sel { border-color:var(--gold); background:var(--mark); }
+.match-card.matched { border-color:var(--teal-deep); background:var(--teal); color:#fff; cursor:default; box-shadow:0 5px 0 var(--teal-deep); }
+
+/* ───── multi judge ───── */
+.judge-grid { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); max-width:var(--mw-sm); width:100%; }
+.judge-item { display:flex; align-items:center; gap:clamp(10px,2vw,16px); background:#fff; border:3px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(14px,2.6vw,20px); box-shadow:0 5px 0 var(--coral-soft); }
+.judge-text { flex:1; font-size:var(--fs-body); color:var(--ink); text-align:left; }
+.judge-text strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.judge-btns { display:flex; gap:clamp(6px,1.2vw,10px); }
+.judge-btn { border:3px solid var(--line); border-radius:14px; padding:clamp(6px,1.2vw,10px) clamp(12px,2.4vw,18px); font-family:var(--f-title); font-size:var(--fs-heading); cursor:pointer; background:#fff; color:var(--ink-soft); transition:transform .1s; }
+.judge-btn:active { transform:translateY(3px); }
+.judge-btn.pick-o { background:var(--teal-soft); color:var(--teal-deep); border-color:var(--teal); }
+.judge-btn.pick-x { background:var(--coral-soft); color:var(--coral-deep); border-color:var(--coral); }
+.judge-item.right { border-color:var(--teal-deep); box-shadow:0 5px 0 var(--teal-deep); }
+.judge-item.miss { border-color:var(--emph); animation:ka-shake .35s; }
+
+/* ───── 정리/자기평가/다음 ───── */
+.summary-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.summary-card { background:#fff; border:2px solid var(--line); border-radius:22px; padding:clamp(18px,3.4vw,30px); font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; box-shadow:var(--shadow); }
+.summary-card strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.wrap-msg { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--coral-deep); }
+.self-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(14px,2.6vw,22px); }
+.self-row { display:flex; gap:clamp(12px,2.4vw,20px); flex-wrap:wrap; justify-content:center; }
+.self-btn { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,16px) clamp(14px,2.8vw,22px); cursor:pointer; display:flex; flex-direction:column; gap:clamp(3px,0.7vw,6px); align-items:center; transition:transform .12s, border-color .15s; box-shadow:0 6px 0 var(--coral-soft); }
+.self-btn:hover { border-color:var(--coral); }
+.self-btn:active { transform:translateY(4px); box-shadow:none; }
+.self-btn.selected { border-color:var(--gold); background:var(--mark); }
+.self-btn-stars { font-size:var(--em-sm); color:var(--gold); }
+.self-btn-name { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.next-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-md); }
+.next-card { background:var(--teal-soft); border-radius:22px; padding:clamp(20px,3.8vw,32px); display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); align-items:center; }
+.next-emojis { font-size:var(--em-md); }
+.next-label { font-size:var(--fs-body); color:var(--teal-deep); text-align:center; }
+.home-prompt { font-size:var(--fs-caption); color:var(--coral-deep); background:var(--coral-soft); border-radius:18px; padding:clamp(12px,2.4vw,18px) clamp(18px,3.4vw,28px); text-align:center; }
+
+
+  /* 세로셈 (3학년 덧셈·뺄셈) */
+  .vadd { display:inline-grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:clamp(2px,0.6vw,4px) clamp(8px,1.6vw,14px); font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--ink); justify-items:center; align-items:center; background:#fff; border:2px solid var(--line); border-radius:18px; padding:clamp(12px,2vw,20px) clamp(18px,3vw,30px); box-shadow:var(--shadow); }
+  .vadd .op { color:var(--coral-deep); }
+  .vadd .ln { grid-column:1/-1; width:100%; height:3px; background:var(--ink); border-radius:2px; }
+  .vadd .sum { color:var(--coral-deep); }
+  .pv-sum-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-md); }
+
+/* ───── 도형 부품 공용 ───── */
+.ef-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(9px,1.8vw,16px); width:100%; }
+.fg-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(9px,1.8vw,16px); width:100%; }
+.fg-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); width:100%; max-width:var(--mw-lg); }
+.fg-svg { width:100%; height:auto; display:block; max-width:min(700px,94vw); margin:0 auto; }
+.fg-svg text { font-family:'Nunito',sans-serif; font-weight:800; }
+.fg-svg text.kor { font-family:'Do Hyeon',sans-serif; font-weight:400; }
+.fg-note { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; }
+
+/* 단위 위첨자 */
+.fg-u { font-family:var(--f-num); font-weight:800; }
+.fg-u sup { font-size:0.62em; vertical-align:super; }
+
+/* 칩 */
+.fg-chips { display:flex; flex-wrap:wrap; gap:clamp(6px,1.2vw,11px); justify-content:center; max-width:var(--mw-md); }
+.fg-chip { font-size:var(--fs-heading); color:var(--ink); background:#fff; border:3px solid var(--line); border-radius:16px; padding:clamp(5px,1vw,9px) clamp(11px,2.2vw,18px); box-shadow:0 4px 0 var(--line); }
+.fg-chip.hi { color:#fff; background:var(--coral); border-color:var(--coral-deep); box-shadow:0 4px 0 var(--coral-deep); }
+.fg-chip.hi2 { color:#fff; background:var(--teal); border-color:var(--teal-deep); box-shadow:0 4px 0 var(--teal-deep); }
+.fg-chip.both { color:var(--ink); background:var(--mark); border-color:var(--gold); box-shadow:0 4px 0 var(--gold); }
+.fg-chip.dim { color:#C7CEDA; }
+
+/* 식 줄 */
+.fg-lines { display:flex; flex-direction:column; gap:clamp(6px,1.1vw,10px); align-items:center; }
+.fg-line { display:flex; align-items:center; gap:clamp(8px,1.6vw,14px); font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); flex-wrap:wrap; justify-content:center; }
+.fg-line .fg-lead { font-family:var(--f-title); font-size:var(--fs-label); color:var(--ink-soft); min-width:3.8em; text-align:right; }
+.fg-line.final { color:var(--coral-deep); }
+.fg-line.bad { color:var(--emph); }
+.fg-line.bad .fg-lead { color:var(--emph); }
+
+/* 두 갈래 대조 */
+.fg-pair { display:flex; gap:clamp(14px,3vw,34px); flex-wrap:wrap; justify-content:center; align-items:flex-start; }
+.fg-col { display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.2vw,10px); background:#fff; border:2px solid var(--line); border-radius:20px; padding:clamp(10px,2vw,18px) clamp(12px,2.4vw,22px); box-shadow:var(--shadow); max-width:min(330px,46vw); }
+.fg-col.bad { border-color:#F3C4B7; background:#FFF6F3; }
+.fg-col.good { border-color:var(--teal-soft); background:#F5FBFA; }
+.fg-caph { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; }
+.fg-col.bad .fg-caph { color:var(--emph); }
+.fg-col.good .fg-caph { color:var(--teal-deep); }
+
+/* ───── periCalc · areaCalc : 공식 → 대입 → 결과 3단 카드 ───── */
+.fc-cards { display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); align-items:stretch; width:100%; max-width:var(--mw-md); }
+.fc-card { display:flex; align-items:center; gap:clamp(10px,2vw,18px); background:#fff; border:3px solid var(--line); border-radius:20px; padding:clamp(8px,1.6vw,14px) clamp(12px,2.4vw,20px); box-shadow:0 4px 0 var(--line); }
+.fc-card.last { border-color:var(--coral); background:var(--coral-soft); box-shadow:0 4px 0 var(--coral-deep); }
+.fc-card.half { border-color:var(--gold); background:var(--mark); box-shadow:0 4px 0 var(--gold); }
+.fc-step { font-family:var(--f-title); font-size:var(--fs-caption); color:#fff; background:var(--ink-soft); border-radius:999px; padding:2px 12px; white-space:nowrap; }
+.fc-card.last .fc-step { background:var(--coral-deep); }
+.fc-card.half .fc-step { background:var(--gold); }
+.fc-body { font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); flex:1; text-align:center; }
+.fc-card.last .fc-body { color:var(--coral-deep); }
+.fc-cap { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; }
+
+/* ───── 입체도형 부품 (U6 추가) ───── */
+.bx-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); width:100%; max-width:var(--mw-lg); }
+.bx-svg { width:100%; height:auto; display:block; max-width:min(540px,92vw); margin:0 auto; }
+.bx-svg text { font-family:'Nunito',sans-serif; font-weight:800; }
+.bx-svg text.kor { font-family:'Do Hyeon',sans-serif; font-weight:400; }
+.bx-note { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; }
+.bx-title { font-family:var(--f-title); font-size:var(--fs-label); color:var(--ink); text-align:center; }
+.bx-svg .bx-hi { fill:var(--emph); }
+</style>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 목록</button>
+    <span class="ka-pill">3차시</span>
+    <span class="ka-where">수학 6-1 · <b>6. 직육면체의 겉넓이와 부피</b></span>
+    <div class="ka-bar" id="dots"></div>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+  <div class="ka-m">
+    <div class="slide active" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">밑면과 옆면으로 나누어 보자</h2>
+      <div class="intro-q">직육면체를 <b>두 밑면</b>과 <b>옆면</b>으로 나눈다.<br>가로 4, 세로 2, 높이 3인 직육면체로<br>겉넓이를 다시 구해 보자.</div>
+    </div>
+
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">두 밑면 + 옆면</h2>
+      <div class="ef-stage">
+        <div id="m-i2"></div>
+        <div class="concept-box">두 밑면의 넓이 합: (4×2)×2 = <span class="em-u">16 (cm²)</span>.<br>옆면은 가로가 한 밑면의 둘레(2+4+2+4),<br>세로가 높이인 직사각형: (2+4+2+4)×3 = <span class="em-u">36 (cm²)</span>.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">합하면 겉넓이</h2>
+      <div class="intro-q">겉넓이 = 두 밑면 + 옆면<br>= 16 + 36 = <span class="em-u">52 (cm²)</span>.<br>여섯 면을 더한 값과 같다.</div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개</div>
+      <h2 class="slide-title">옆면의 가로에 주의</h2>
+      <div class="ef-stage">
+        <div id="m-e1"></div>
+        <div class="concept-box">옆면을 펼치면 한 장의 직사각형이 된다.<br>이 직사각형의 <b>가로</b>는 한 밑면의 <span class="em-u">둘레</span>다.<br>한 변의 길이가 아니다 — 여기서 자주 틀린다.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개</div>
+      <h2 class="slide-title">정육면체의 겉넓이</h2>
+      <div class="ef-stage">
+        <div id="m-e2"></div>
+        <div class="concept-box">정육면체는 여섯 면이 모두 <b>합동인 정사각형</b>이다.<br>한 모서리 5 cm이면 한 면의 넓이는 5×5.<br>겉넓이 = (5×5)×6 = <span class="em-u">150 (cm²)</span>.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개</div>
+      <h2 class="slide-title">여러 방법으로 확인</h2>
+      <div class="ef-stage">
+        <div id="m-e3"></div>
+        <div class="concept-box">직육면체(가로 10, 세로 7, 높이 4)의 겉넓이는<br>(10×7)×2 + (10+7+10+7)×4 = <span class="em-u">276 (cm²)</span>.<br>정육면체(한 모서리 8)은 (8×8)×6 = <span class="em-u">384 (cm²)</span>.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">왜 그럴까</div>
+      <h2 class="slide-title">왜 정육면체는 ×6일까</h2>
+      <div class="ef-stage">
+        <div id="m-e4"></div>
+        <div class="concept-box">정육면체는 여섯 면이 모두 <b>합동</b>이라 넓이가 같다.<br>그래서 <span class="em-u">한 면의 넓이만 구해 6배</span> 하면 된다.<br>직육면체의 성질에서 유추한 것이다.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q8" data-q-points="10" data-answer="16">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">가로 4, 세로 2인 직육면체의 <b>두 밑면</b>의 넓이의 합은 몇 cm²인가?</div>
+        <div class="ef-stage"><div id="m-q8"></div></div>
+        <div class="q-display" id="q8-display">?</div>
+        <div class="q-pad" id="q8-pad"></div>
+        <div class="mcq-hint" data-hints='["한 밑면 4×2, 밑면은 두 개","(4×2) × 2"]'></div>
+        <div class="q-fb" id="q8-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q9" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <!-- q9 ★오개념 옆면 가로=둘레 직격 -->
+      <div class="q-stage">
+        <div class="q-prompt">옆면을 펼친 직사각형의 <b>가로</b>는 무엇과 같은가?</div>
+        <div class="ef-stage"><div id="m-q9"></div></div>
+        <div class="mcq-opts" id="q9-opts">
+          <button class="mcq-opt" data-correct="0">한 밑면의 한 변</button>
+          <button class="mcq-opt" data-correct="1">한 밑면의 둘레</button>
+          <button class="mcq-opt" data-correct="0">직육면체의 높이</button>
+          <button class="mcq-opt" data-correct="0">겉넓이</button>
+        </div>
+        <div class="mcq-hint" data-hints='["옆면 네 개를 이어 붙인다","밑면을 한 바퀴 두른 길이"]'></div>
+        <div class="q-fb" id="q9-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q10" data-q-points="10" data-answer="52">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">가로 4, 세로 2, 높이 3인 직육면체의 겉넓이는 몇 cm²인가?</div>
+        <div class="ef-stage"><div id="m-q10"></div></div>
+        <div class="q-display" id="q10-display">?</div>
+        <div class="q-pad" id="q10-pad"></div>
+        <div class="mcq-hint" data-hints='["두 밑면 16 + 옆면 (2+4+2+4)×3","16 + 36"]'></div>
+        <div class="q-fb" id="q10-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q11" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <!-- q11 정육면체 겉넓이 -->
+      <div class="q-stage">
+        <div class="q-prompt">정육면체의 겉넓이를 구하는 바른 방법은?</div>
+        <div class="ef-stage"><div id="m-q11"></div></div>
+        <div class="mcq-opts" id="q11-opts">
+          <button class="mcq-opt" data-correct="0">한 면의 넓이 × 4</button>
+          <button class="mcq-opt" data-correct="0">한 모서리 × 6</button>
+          <button class="mcq-opt" data-correct="1">한 면의 넓이 × 6</button>
+          <button class="mcq-opt" data-correct="0">한 면의 넓이 × 2</button>
+        </div>
+        <div class="mcq-hint" data-hints='["정육면체는 면이 여섯 개","여섯 면이 모두 합동"]'></div>
+        <div class="q-fb" id="q11-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q12" data-q-points="15" data-answer="150">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">한 모서리가 5 cm인 정육면체의 겉넓이는 몇 cm²인가?</div>
+        <div class="ef-stage"><div id="m-q12"></div></div>
+        <div class="q-display" id="q12-display">?</div>
+        <div class="q-pad" id="q12-pad"></div>
+        <div class="mcq-hint" data-hints='["한 면 5×5, 여섯 면","(5×5) × 6"]'></div>
+        <div class="q-fb" id="q12-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q13" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <!-- q13 밑면+옆면 응용 -->
+      <div class="q-stage">
+        <div class="q-prompt">가로 10, 세로 7, 높이 4인 직육면체의 겉넓이는?</div>
+        <div class="ef-stage"><div id="m-q13"></div></div>
+        <div class="mcq-opts" id="q13-opts">
+          <button class="mcq-opt" data-correct="0">216 cm²</button>
+          <button class="mcq-opt" data-correct="0">280 cm²</button>
+          <button class="mcq-opt" data-correct="1">276 cm²</button>
+          <button class="mcq-opt" data-correct="0">140 cm²</button>
+        </div>
+        <div class="mcq-hint" data-hints='["(10×7)×2 + (10+7+10+7)×4","140 + 136"]'></div>
+        <div class="q-fb" id="q13-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q14" data-q-points="15" data-answer="49">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">겉넓이가 294 cm²인 정육면체가 있다. 한 면의 넓이는 몇 cm²인가?</div>
+        <div class="ef-stage"><div id="m-q14"></div></div>
+        <div class="q-display" id="q14-display">?</div>
+        <div class="q-pad" id="q14-pad"></div>
+        <div class="mcq-hint" data-hints='["여섯 면이 모두 같다","294 ÷ 6"]'></div>
+        <div class="q-fb" id="q14-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q15" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <!-- q15 응용 2단계 · 두 겉넓이 계산 후 비교 -->
+      <div class="q-stage">
+        <div class="q-prompt">포장지를 겹치거나 남김 없이 붙일 때, 상자 가(20,15,4)와 나(10,15,8) 중 <b>포장지가 덜 드는</b> 상자는?</div>
+        <div class="ef-stage"><div id="m-q15"></div></div>
+        <div class="mcq-opts" id="q15-opts">
+          <button class="mcq-opt" data-correct="0">가</button>
+          <button class="mcq-opt" data-correct="1">나</button>
+          <button class="mcq-opt" data-correct="0">둘이 같다</button>
+          <button class="mcq-opt" data-correct="0">알 수 없다</button>
+        </div>
+        <div class="mcq-hint" data-hints='["겉넓이가 작을수록 포장지가 적다","가=880, 나=700"]'></div>
+        <div class="q-fb" id="q15-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 배운 것</h2>
+      <div class="summary-stage">
+        <div class="summary-card">겉넓이는 <b>(두 밑면) + (옆면)</b>으로도 구한다. 옆면 가로는 한 밑면의 <span class="em-u">둘레</span>다.<br>정육면체는 여섯 면이 합동이라 <b>한 면 넓이 × 6</b>.<br>겉넓이가 작을수록 포장지가 덜 든다.</div>
+        <div class="wrap-msg" id="wrap-msg"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 공부는 어땠나요?</h2>
+      <div class="self-stage">
+        <div class="self-row">
+          <button class="self-btn"><div class="self-btn-stars">★</div><div class="self-btn-name">조금 어려웠어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★</div><div class="self-btn-name">잘 했어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★★</div><div class="self-btn-name">아주 잘 했어요</div></button>
+        </div>
+        <div class="q-fb" id="self-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">다음 시간</h2>
+      <div class="next-stage">
+        <div class="next-card">
+          <div class="next-emojis">🧊</div>
+          <div class="next-label">cm³를 알아봐요</div>
+        </div>
+        <div class="home-prompt">부피를 비교하고 부피 단위 1 cm³를 배운다.</div>
+      </div>
+    </div>
+
+  </div>
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+<script>
+const TOTAL = 18;
+const LESSON_ID = 'g6_math_u6_l03';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.querySelectorAll('#dots .ka-dot').forEach((d, i) => { d.classList.toggle('active', i === cur); d.classList.toggle('done', i < cur); });
+  document.getElementById('prev').disabled = cur === 0;
+
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.solved || st.hintLevel >= 2; }
+  else { hintBtn.disabled = true; }
+
+  if (cur === TOTAL - 1) { document.getElementById('next').textContent = '마치기 →'; saveProgress(true); }
+  else { document.getElementById('next').textContent = '다음 →'; }
+
+  if (cur === 15) { document.getElementById('wrap-msg').textContent = wrapMsg(score); }
+}
+
+function saveProgress(done) {
+  const data = { cur, score, done, startedAt, finishedAt: done ? Date.now() : null, qState };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function wrapMsg(s) {
+  if (s >= 100) return '완벽해요!';
+  if (s >= 80) return '정말 잘했어요!';
+  if (s >= 60) return '잘했어요!';
+  return '다시 해도 좋아요!';
+}
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+function showHint() {
+  const qid = currentQId(); if (!qid) return;
+  const st = getQState(qid); if (st.solved || st.hintLevel >= 2) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint'); if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[st.hintLevel - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= 2;
+}
+function pointsForQ(qid) {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  const base = parseInt(slide.dataset.qPoints || '0', 10);
+  const st = getQState(qid);
+  if (st.hintLevel === 2) return Math.max(0, base - 5);
+  if (st.hintLevel === 1) return Math.max(0, base - 2);
+  return base;
+}
+
+// ══════════════════════════════════════════════════════════════
+// 5-1 수학 6단원 「다각형의 둘레와 넓이」 부품 라이브러리 v1
+//   [신규]
+//   - polyFig(kind, d, o) : 도형 + 변 라벨 + 높이(점선) + 직각 표시. (o.noData = 단위 환산 차시용)
+//        kind = 'rect'|'para'|'tri'|'trap'|'rhom'|'reg'
+//        ★ 둘레를 스스로 계산해 data-peri, 넓이는 data-area 로 심는다.
+//   - areaGrid(kind, d, o) : 1 cm² 격자 위 도형 오버레이 + 칸 수 표시. data-area.
+//   - shapeMorph(type, d, o) : 등적(equal) / 배적(double) 변형 두 컷 대조.
+//        평행사변형→직사각형 · 삼각형2개→직사각형 · 사다리꼴2개→평행사변형 · 마름모→직사각형
+//        ★ 두 컷의 넓이 관계를 data-morph 로 심는다.
+//   - unitScale(from) : 1 m² = 10000 cm² · 1 km² = 1000000 m² 배율 시각화.
+//   - periCalc(kind, d, o) / areaCalc(kind, d, o) : 공식 → 대입 → 결과 3단 카드.
+//   - fgLines · fgChips · fgPair : 식 줄 · 칩 · 두 갈래 대조
+//   ⛔ 반적 변형 없음(지도서 명시) · 원·부피 없음 · 문자식 없음(모두 낱말 식)
+// ══════════════════════════════════════════════════════════════
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+// 넓이 단위 위첨자 표기
+function U(u){
+  const m = /^(c?m|km)2$/.exec(String(u));
+  if (m) return '<span class="fg-u">' + m[1] + '<sup>2</sup></span>';
+  return '<span class="fg-u">' + esc(u) + '</span>';
+}
+// "12 cm2" 같은 문자열 안의 단위를 자동 변환
+function ux(str){
+  return String(str).replace(/\b(c?m|km)2\b/g, function(_, u){ return u + '<sup>2</sup>'; });
+}
+
+// ───── 도형 좌표 ─────
+function _regPts(n, s, S){
+  const R = s * S / (2 * Math.sin(Math.PI / n));
+  const pts = [];
+  const start = -Math.PI / 2 + (n % 2 === 0 ? Math.PI / n : 0);
+  for (let i = 0; i < n; i++){
+    const a = start + i * 2 * Math.PI / n;
+    pts.push([R + R * Math.cos(a), R + R * Math.sin(a)]);
+  }
+  return pts;
+}
+
+function _shapePts(kind, d, S){
+  if (kind === 'rect') return [[0,0],[d.w*S,0],[d.w*S,d.h*S],[0,d.h*S]];
+  if (kind === 'para'){
+    const sk = (d.skew === undefined ? 0.5 : d.skew) * d.h * S;
+    return [[sk,0],[sk+d.b*S,0],[d.b*S,d.h*S],[0,d.h*S]];
+  }
+  if (kind === 'tri'){
+    const ap = (d.apex === undefined ? 0.4 : d.apex) * d.b * S;
+    return [[ap,0],[d.b*S,d.h*S],[0,d.h*S]];
+  }
+  if (kind === 'trap'){
+    const off = (d.off === undefined ? 0.3 : d.off) * (d.b - d.a) * S;
+    return [[off,0],[off+d.a*S,0],[d.b*S,d.h*S],[0,d.h*S]];
+  }
+  if (kind === 'rhom'){
+    const p = (d.p !== undefined ? d.p : d.s) * S, q = (d.q !== undefined ? d.q : d.s) * S;
+    return [[p/2,0],[p,q/2],[p/2,q],[0,q/2]];
+  }
+  if (kind === 'reg') return _regPts(d.n, d.s, S);
+  return [[0,0],[100,0],[100,80],[0,80]];
+}
+
+function _bbox(pts){
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const p of pts){ x0 = Math.min(x0,p[0]); y0 = Math.min(y0,p[1]); x1 = Math.max(x1,p[0]); y1 = Math.max(y1,p[1]); }
+  return { x0:x0, y0:y0, w:x1-x0, h:y1-y0 };
+}
+function _shift(pts, dx, dy){ return pts.map(p => [p[0]+dx, p[1]+dy]); }
+function _ps(pts){ return pts.map(p => p[0].toFixed(1)+','+p[1].toFixed(1)).join(' '); }
+
+// 둘레 계산 (도형 종류별 · 낱말 식)
+function _peri(kind, d){
+  if (kind === 'rect') return (d.w + d.h) * 2;
+  if (kind === 'para') return (d.side === undefined) ? null : (d.b + d.side) * 2;
+  if (kind === 'rhom') return (d.s === undefined) ? null : d.s * 4;
+  if (kind === 'reg')  return d.s * d.n;
+  if (kind === 'tri' && d.sides) return d.sides.reduce(function(a,b){ return a+b; }, 0);
+  if (kind === 'trap' && d.sides) return d.sides.reduce(function(a,b){ return a+b; }, 0);
+  return null;
+}
+// 넓이 계산
+function _area(kind, d){
+  if (kind === 'rect') return d.w * d.h;
+  if (kind === 'para') return d.b * d.h;
+  if (kind === 'tri')  return d.b * d.h / 2;
+  if (kind === 'trap') return (d.a + d.b) * d.h / 2;
+  if (kind === 'rhom' && d.p !== undefined) return d.p * d.q / 2;
+  if (kind === 'reg' && d.n === 4) return d.s * d.s;
+  return null;
+}
+
+// 변 라벨 (자동)
+function _sideLabels(kind, d, u){
+  u = u || 'cm';
+  if (kind === 'rect') return { top:d.w+' '+u, right:d.h+' '+u };
+  if (kind === 'para') return { bottom:d.b+' '+u, left:(d.side!==undefined? d.side+' '+u : '') };
+  if (kind === 'tri')  return { bottom:d.b+' '+u };
+  if (kind === 'trap') return { top:d.a+' '+u, bottom:d.b+' '+u };
+  if (kind === 'rhom') return { edge:(d.s!==undefined? d.s+' '+u : '') };
+  if (kind === 'reg')  return { edge:d.s+' '+u };
+  return {};
+}
+
+// ───── polyFig ─────
+function polyFig(kind, d, o){
+  o = o || {};
+  const u = o.unit || 'cm';
+  const W = 700, boxW = 400, boxH = 250;
+  let S = 1;
+  {
+    const raw = _shapePts(kind, d, 1);
+    const bb = _bbox(raw);
+    S = Math.min(boxW / Math.max(bb.w, 0.001), boxH / Math.max(bb.h, 0.001));
+    if (o.scale) S = S * o.scale;
+  }
+  let pts = _shapePts(kind, d, S);
+  let bb = _bbox(pts);
+  const ox = (W - bb.w) / 2 - bb.x0, oy = 60 - bb.y0;
+  pts = _shift(pts, ox, oy);
+  bb = _bbox(pts);
+  const H = bb.h + 130;
+
+  let g = '';
+  g += '<polygon points="'+_ps(pts)+'" fill="var(--coral-soft)" stroke="var(--coral-deep)" stroke-width="4" stroke-linejoin="round"/>';
+
+  // 높이(점선 + 직각 표시)
+  if (o.height && (kind === 'para' || kind === 'tri' || kind === 'trap')){
+    const baseY = bb.y0 + bb.h;
+    let hx;
+    if (kind === 'tri') hx = pts[0][0];
+    else if (kind === 'trap') hx = pts[0][0];
+    else hx = pts[0][0];
+    const inside = Math.max(bb.x0 + 14, Math.min(hx, bb.x0 + bb.w - 14));
+    g += '<line x1="'+inside.toFixed(1)+'" y1="'+bb.y0+'" x2="'+inside.toFixed(1)+'" y2="'+baseY+'" stroke="var(--teal-deep)" stroke-width="4" stroke-dasharray="8 6"/>';
+    g += '<path d="M '+(inside+18).toFixed(1)+' '+baseY+' L '+(inside+18).toFixed(1)+' '+(baseY-18)+' L '+inside.toFixed(1)+' '+(baseY-18)+'" fill="none" stroke="var(--teal-deep)" stroke-width="3"/>';
+    g += '<text class="kor" x="'+(inside-14).toFixed(1)+'" y="'+(bb.y0 + bb.h/2 + 8)+'" font-size="26" fill="var(--teal-deep)" text-anchor="end">높이 '+d.h+' '+u+'</text>';
+  }
+  // 대각선(마름모)
+  if (o.diag && kind === 'rhom'){
+    g += '<line x1="'+pts[0][0].toFixed(1)+'" y1="'+pts[0][1].toFixed(1)+'" x2="'+pts[2][0].toFixed(1)+'" y2="'+pts[2][1].toFixed(1)+'" stroke="var(--teal-deep)" stroke-width="4" stroke-dasharray="8 6"/>';
+    g += '<line x1="'+pts[3][0].toFixed(1)+'" y1="'+pts[3][1].toFixed(1)+'" x2="'+pts[1][0].toFixed(1)+'" y2="'+pts[1][1].toFixed(1)+'" stroke="var(--teal-deep)" stroke-width="4" stroke-dasharray="8 6"/>';
+    if (d.q !== undefined) g += '<text x="'+(pts[0][0]+16).toFixed(1)+'" y="'+(bb.y0 + bb.h/2 + 8)+'" font-size="26" fill="var(--teal-deep)" text-anchor="start">'+d.q+' '+u+'</text>';
+    if (d.p !== undefined) g += '<text x="'+(bb.x0 + bb.w/2).toFixed(1)+'" y="'+(pts[1][1]-14).toFixed(1)+'" font-size="26" fill="var(--teal-deep)" text-anchor="middle">'+d.p+' '+u+'</text>';
+  }
+
+  // 변 라벨
+  const lab = o.labels || _sideLabels(kind, d, u);
+  const mid = (a,b) => [ (a[0]+b[0])/2, (a[1]+b[1])/2 ];
+  const put = (x,y,t,anchor,dy) => '<text class="kor" x="'+x.toFixed(1)+'" y="'+(y+(dy||0)).toFixed(1)+'" font-size="26" fill="var(--ink)" text-anchor="'+(anchor||'middle')+'">'+esc(t)+'</text>';
+  const E = {};
+  if (kind === 'tri'){
+    E.bottom = mid(pts[1], pts[2]); E.right = mid(pts[0], pts[1]); E.left = mid(pts[2], pts[0]);
+  } else {
+    E.top = mid(pts[0], pts[1]); E.right = mid(pts[1], pts[2]);
+    E.bottom = mid(pts[2], pts[3] !== undefined ? pts[3] : pts[0]);
+    E.left = mid(pts[pts.length-1], pts[0]);
+  }
+  if (lab.top && E.top){ g += put(E.top[0], E.top[1] - 14, lab.top); }
+  if (lab.bottom && E.bottom){ g += put(E.bottom[0], E.bottom[1] + 34, lab.bottom); }
+  if (lab.right && E.right){ g += put(E.right[0] + 16, E.right[1] + 8, lab.right, 'start'); }
+  if (lab.left && E.left){ g += put(E.left[0] - 16, E.left[1] + 8, lab.left, 'end'); }
+  if (lab.edge){
+    // 정다각형·마름모: 한 변만 표시(첫 변)
+    const m = mid(pts[0], pts[1]);
+    const c = [bb.x0 + bb.w/2, bb.y0 + bb.h/2];
+    const dx = m[0]-c[0], dy = m[1]-c[1], len = Math.sqrt(dx*dx+dy*dy) || 1;
+    g += put(m[0] + dx/len*26, m[1] + dy/len*26 + 8, lab.edge);
+  }
+
+  // 둘레 강조(굵은 테두리 애니 대체 = 색 테두리)
+  if (o.trace) g += '<polygon points="'+_ps(pts)+'" fill="none" stroke="var(--gold)" stroke-width="8" stroke-linejoin="round" opacity="0.75"/>';
+
+  // o.noData : 라벨의 단위가 그리기 치수와 다른 차시(단위 환산)에서는 값을 심지 않는다
+  const P = o.noData ? null : _peri(kind, d), A = o.noData ? null : _area(kind, d);
+  const cap = o.caption ? '<text class="kor" x="'+(W/2)+'" y="'+(H-22)+'" font-size="25" fill="var(--ink-soft)" text-anchor="middle">'+esc(o.caption)+'</text>' : '';
+  const note = o.note ? '<div class="fg-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="fg-wrap"'
+    + (P !== null ? ' data-peri="'+P+'"' : '')
+    + (A !== null ? ' data-area="'+A+'"' : '')
+    + ' data-kind="'+kind+'">'
+    + '<svg class="fg-svg" viewBox="0 0 '+W+' '+Math.round(H)+'" xmlns="http://www.w3.org/2000/svg">'
+    + g + cap + '</svg>' + note + '</div>';
+}
+
+// ───── areaGrid : 1칸 = 1 넓이 단위 ─────
+function areaGrid(kind, d, o){
+  o = o || {};
+  const u = o.unit || 'cm';
+  const cell = o.cell || 40;
+  const cols = o.cols || Math.ceil((kind === 'rect' ? d.w : (d.b !== undefined ? d.b : d.w)) ) + 1;
+  const rows = o.rows || Math.ceil(d.h !== undefined ? d.h : d.w) + 1;
+  const W = 700, gw = cols * cell, gh = rows * cell;
+  const x0 = Math.round((W - gw) / 2), y0 = 54;
+  const H = gh + 130;
+
+  let g = '';
+  g += '<rect x="'+x0+'" y="'+y0+'" width="'+gw+'" height="'+gh+'" fill="#fff" stroke="var(--line)" stroke-width="3"/>';
+  for (let i = 1; i < cols; i++)
+    g += '<line x1="'+(x0+i*cell)+'" y1="'+y0+'" x2="'+(x0+i*cell)+'" y2="'+(y0+gh)+'" stroke="var(--line)" stroke-width="2"/>';
+  for (let j = 1; j < rows; j++)
+    g += '<line x1="'+x0+'" y1="'+(y0+j*cell)+'" x2="'+(x0+gw)+'" y2="'+(y0+j*cell)+'" stroke="var(--line)" stroke-width="2"/>';
+
+  // 도형 오버레이 (격자 원점에 맞춰 놓는다)
+  const px = o.px === undefined ? 0 : o.px, py = o.py === undefined ? 0 : o.py;
+  let pts = _shapePts(kind, d, cell);
+  pts = _shift(pts, x0 + px*cell, y0 + py*cell);
+  g += '<polygon points="'+_ps(pts)+'" fill="var(--coral)" fill-opacity="0.42" stroke="var(--coral-deep)" stroke-width="4" stroke-linejoin="round"/>';
+
+  // 1 단위 칸 표시
+  if (o.unitCell !== false){
+    g += '<rect x="'+(x0+4)+'" y="'+(y0-40)+'" width="30" height="30" fill="var(--teal-soft)" stroke="var(--teal-deep)" stroke-width="3"/>';
+    g += '<text class="kor" x="'+(x0+42)+'" y="'+(y0-16)+'" font-size="24" fill="var(--teal-deep)" text-anchor="start">1 '+u+'\u00B2</text>';
+  }
+  const A = _area(kind, d);
+  const cap = o.caption ? '<text class="kor" x="'+(W/2)+'" y="'+(H-24)+'" font-size="25" fill="var(--ink-soft)" text-anchor="middle">'+esc(o.caption)+'</text>' : '';
+  const cnt = (o.count !== false && A !== null)
+    ? '<text class="kor" x="'+(W/2)+'" y="'+(y0+gh+42)+'" font-size="28" fill="var(--coral-deep)" text-anchor="middle">모두 '+A+'칸 \u2014 '+A+' '+u+'\u00B2</text>' : '';
+  const note = o.note ? '<div class="fg-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="fg-wrap"'+(A !== null ? ' data-area="'+A+'"' : '')+' data-grid="'+cols+'x'+rows+'">'
+    + '<svg class="fg-svg" viewBox="0 0 '+W+' '+Math.round(H)+'" xmlns="http://www.w3.org/2000/svg">'
+    + g + cnt + cap + '</svg>' + note + '</div>';
+}
+
+// ───── shapeMorph : 변형 두 컷 대조 ─────
+//   type = 'para'(등적) | 'tri'(배적) | 'trap'(배적) | 'rhom'(배적)
+function shapeMorph(type, d, o){
+  o = o || {};
+  const u = o.unit || 'cm';
+  const W = 700, boxH = 210;
+  const cellW = 300;
+  let S;
+  {
+    const a = _bbox(_shapePts(type === 'rhom' ? 'rhom' : type, d, 1));
+    S = Math.min(230 / Math.max(a.w, 0.001), 150 / Math.max(a.h, 0.001));
+  }
+
+  // 왼쪽 = 원래 도형 / 오른쪽 = 변형 결과
+  let leftPts, rightPts, rel, resKind, resDims, capL, capR;
+  if (type === 'para'){
+    leftPts = _shapePts('para', d, S);
+    resKind = 'rect'; resDims = { w:d.b, h:d.h };
+    rel = 'equal';
+    capL = '평행사변형'; capR = '직사각형';
+  } else if (type === 'tri'){
+    leftPts = _shapePts('tri', d, S);
+    resKind = 'rect'; resDims = { w:d.b, h:d.h };
+    rel = 'double';
+    capL = '삼각형'; capR = '똑같은 삼각형 2개 \u2192 직사각형';
+  } else if (type === 'trap'){
+    leftPts = _shapePts('trap', d, S);
+    resKind = 'para'; resDims = { b:d.a + d.b, h:d.h, skew:0.3 };
+    rel = 'double';
+    capL = '사다리꼴'; capR = '똑같은 사다리꼴 2개 \u2192 평행사변형';
+  } else {
+    leftPts = _shapePts('rhom', d, S);
+    resKind = 'rect'; resDims = { w:d.p, h:d.q };
+    rel = 'double';
+    capL = '마름모'; capR = '마름모를 감싸는 직사각형';
+  }
+  if (o.capL) capL = o.capL;
+  if (o.capR) capR = o.capR;
+
+  let S2 = S;
+  {
+    const b = _bbox(_shapePts(resKind, resDims, 1));
+    S2 = Math.min(S, 250 / Math.max(b.w, 0.001), 150 / Math.max(b.h, 0.001));
+    leftPts = _shapePts(type === 'rhom' ? 'rhom' : type, d, S2);
+  }
+  rightPts = _shapePts(resKind, resDims, S2);
+
+  const lb = _bbox(leftPts), rb = _bbox(rightPts);
+  const H = Math.max(lb.h, rb.h) + 150;
+  const topY = 56;
+  const L = _shift(leftPts, 40 + (cellW - lb.w)/2 - lb.x0, topY + (Math.max(lb.h,rb.h) - lb.h) - lb.y0);
+  const R = _shift(rightPts, 380 + (cellW - rb.w)/2 - rb.x0, topY + (Math.max(lb.h,rb.h) - rb.h) - rb.y0);
+  const Lb = _bbox(L), Rb = _bbox(R);
+
+  let g = '';
+  // 왼쪽
+  g += '<polygon points="'+_ps(L)+'" fill="var(--coral-soft)" stroke="var(--coral-deep)" stroke-width="4" stroke-linejoin="round"/>';
+  // 오른쪽 — 배적이면 원래 도형 몫을 진하게, 나머지를 연하게
+  g += '<polygon points="'+_ps(R)+'" fill="var(--teal-soft)" stroke="var(--teal-deep)" stroke-width="4" stroke-linejoin="round"/>';
+  if (rel === 'double'){
+    if (type === 'tri'){
+      const tri = [ [Rb.x0 + (d.apex === undefined ? 0.4 : d.apex)*d.b*S2, Rb.y0], [Rb.x0 + d.b*S2, Rb.y0 + d.h*S2], [Rb.x0, Rb.y0 + d.h*S2] ];
+      g += '<polygon points="'+_ps(tri)+'" fill="var(--coral)" fill-opacity="0.45" stroke="var(--coral-deep)" stroke-width="3" stroke-dasharray="8 6"/>';
+    } else if (type === 'trap'){
+      const off = (d.off === undefined ? 0.3 : d.off) * (d.b - d.a) * S2;
+      const tr = [ [Rb.x0 + off, Rb.y0], [Rb.x0 + off + d.a*S2, Rb.y0], [Rb.x0 + d.b*S2, Rb.y0 + d.h*S2], [Rb.x0, Rb.y0 + d.h*S2] ];
+      g += '<polygon points="'+_ps(tr)+'" fill="var(--coral)" fill-opacity="0.45" stroke="var(--coral-deep)" stroke-width="3" stroke-dasharray="8 6"/>';
+    } else if (type === 'rhom'){
+      const rh = _shift(_shapePts('rhom', d, S2), Rb.x0, Rb.y0);
+      g += '<polygon points="'+_ps(rh)+'" fill="var(--coral)" fill-opacity="0.45" stroke="var(--coral-deep)" stroke-width="3" stroke-dasharray="8 6"/>';
+    }
+  } else {
+    // 등적 — 잘라 옮긴 조각을 점선으로
+    const sk = (d.skew === undefined ? 0.5 : d.skew) * d.h * S2;
+    g += '<line x1="'+(Lb.x0+sk).toFixed(1)+'" y1="'+Lb.y0+'" x2="'+(Lb.x0+sk).toFixed(1)+'" y2="'+(Lb.y0+Lb.h)+'" stroke="var(--emph)" stroke-width="4" stroke-dasharray="8 6"/>';
+  }
+  const arrow = '<path d="M 330 '+(topY + Math.max(Lb.h,Rb.h)/2)+' L 372 '+(topY + Math.max(Lb.h,Rb.h)/2)+'" stroke="var(--ink-soft)" stroke-width="5" marker-end="none"/>'
+    + '<polygon points="372,'+(topY + Math.max(Lb.h,Rb.h)/2)+' 358,'+(topY + Math.max(Lb.h,Rb.h)/2 - 9)+' 358,'+(topY + Math.max(Lb.h,Rb.h)/2 + 9)+'" fill="var(--ink-soft)"/>';
+  g += arrow;
+
+  const yCap = topY + Math.max(Lb.h, Rb.h) + 42;
+  g += '<text class="kor" x="190" y="'+yCap+'" font-size="25" fill="var(--ink-soft)" text-anchor="middle">'+esc(capL)+'</text>';
+  g += '<text class="kor" x="530" y="'+yCap+'" font-size="25" fill="var(--ink-soft)" text-anchor="middle">'+esc(capR)+'</text>';
+
+  const aL = _area(type === 'rhom' ? 'rhom' : type, d);
+  const aR = _area(resKind, resDims);
+  const say = (rel === 'equal')
+    ? '넓이가 그대로다 \u2014 ' + aL + ' ' + u + '\u00B2'
+    : '큰 도형의 넓이 ' + aR + ' ' + u + '\u00B2 의 절반 \u2014 ' + aL + ' ' + u + '\u00B2';
+  g += '<text class="kor" x="'+(W/2)+'" y="'+(yCap + 40)+'" font-size="27" fill="var(--coral-deep)" text-anchor="middle">'+esc(say)+'</text>';
+
+  const note = o.note ? '<div class="fg-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="fg-wrap" data-morph="'+rel+'|'+aL+'|'+aR+'">'
+    + '<svg class="fg-svg" viewBox="0 0 '+W+' '+Math.round(H + 40)+'" xmlns="http://www.w3.org/2000/svg">'
+    + g + '</svg>' + note + '</div>';
+}
+
+// ───── unitScale : 큰 단위가 얼마나 큰지 ─────
+//   from = 'cm'(1 m² = 10000 cm²) | 'm'(1 km² = 1000000 m²)
+function unitScale(from, o){
+  o = o || {};
+  const big = from === 'cm' ? 'm' : 'km';
+  const times = from === 'cm' ? 10000 : 1000000;
+  const side = from === 'cm' ? 100 : 1000;
+  const W = 700, box = 300, x0 = 200, y0 = 60, H = box + 190;
+  let g = '';
+  g += '<rect x="'+x0+'" y="'+y0+'" width="'+box+'" height="'+box+'" fill="var(--teal-soft)" stroke="var(--teal-deep)" stroke-width="4"/>';
+  const n = 10, step = box / n;
+  for (let i = 1; i < n; i++){
+    g += '<line x1="'+(x0+i*step)+'" y1="'+y0+'" x2="'+(x0+i*step)+'" y2="'+(y0+box)+'" stroke="#fff" stroke-width="2"/>';
+    g += '<line x1="'+x0+'" y1="'+(y0+i*step)+'" x2="'+(x0+box)+'" y2="'+(y0+i*step)+'" stroke="#fff" stroke-width="2"/>';
+  }
+  // 작은 단위 한 칸(실제 1/side)
+  const small = box / side * (from === 'cm' ? 8 : 60); // 눈에 보이게 과장(라벨로 명시)
+  g += '<rect x="'+x0+'" y="'+(y0+box-small)+'" width="'+small.toFixed(2)+'" height="'+small.toFixed(2)+'" fill="var(--coral)" stroke="var(--coral-deep)" stroke-width="3"/>';
+  g += '<text class="kor" x="'+(x0-14)+'" y="'+(y0+box+4)+'" font-size="24" fill="var(--coral-deep)" text-anchor="end">1 '+from+'\u00B2</text>';
+  g += '<text class="kor" x="'+(x0+box/2)+'" y="'+(y0-16)+'" font-size="27" fill="var(--teal-deep)" text-anchor="middle">1 '+big+'\u00B2</text>';
+  g += '<text x="'+(x0+box/2)+'" y="'+(y0+box+40)+'" font-size="25" fill="var(--ink-soft)" text-anchor="middle">'+side+' \u00D7 '+side+'</text>';
+  g += '<text class="kor" x="'+(W/2)+'" y="'+(y0+box+86)+'" font-size="28" fill="var(--coral-deep)" text-anchor="middle">1 '+big+'\u00B2 = '+times.toLocaleString('en-US')+' '+from+'\u00B2</text>';
+  g += '<text class="kor" x="'+(W/2)+'" y="'+(y0+box+124)+'" font-size="23" fill="var(--ink-soft)" text-anchor="middle">빨간 칸 한 개가 1 '+from+'\u00B2 (그림은 크게 그렸다)</text>';
+  const note = o.note ? '<div class="fg-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="fg-wrap" data-scale="'+from+'|'+big+'|'+times+'">'
+    + '<svg class="fg-svg" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">'+g+'</svg>'
+    + note + '</div>';
+}
+
+// ───── periCalc / areaCalc : 3단 카드 ─────
+const _FORM_P = {
+  rect: ['(가로 + 세로) \u00D7 2', function(d){ return '(' + d.w + ' + ' + d.h + ') \u00D7 2'; }],
+  para: ['(밑변의 길이 + 이웃한 변의 길이) \u00D7 2', function(d){ return '(' + d.b + ' + ' + d.side + ') \u00D7 2'; }],
+  rhom: ['(한 변의 길이) \u00D7 4', function(d){ return d.s + ' \u00D7 4'; }],
+  reg:  ['(한 변의 길이) \u00D7 (변의 수)', function(d){ return d.s + ' \u00D7 ' + d.n; }]
+};
+const _FORM_A = {
+  rect: ['(가로) \u00D7 (세로)', function(d){ return d.w + ' \u00D7 ' + d.h; }],
+  para: ['(밑변의 길이) \u00D7 (높이)', function(d){ return d.b + ' \u00D7 ' + d.h; }],
+  tri:  ['(밑변의 길이) \u00D7 (높이) \u00F7 2', function(d){ return d.b + ' \u00D7 ' + d.h + ' \u00F7 2'; }],
+  trap: ['((윗변의 길이) + (아랫변의 길이)) \u00D7 (높이) \u00F7 2', function(d){ return '(' + d.a + ' + ' + d.b + ') \u00D7 ' + d.h + ' \u00F7 2'; }],
+  rhom: ['(한 대각선의 길이) \u00D7 (다른 대각선의 길이) \u00F7 2', function(d){ return d.p + ' \u00D7 ' + d.q + ' \u00F7 2'; }]
+};
+
+function _calcCards(mode, kind, d, o){
+  o = o || {};
+  const u = o.unit || 'cm';
+  const tbl = mode === 'peri' ? _FORM_P : _FORM_A;
+  const F = tbl[kind];
+  if (!F) return '<div class="fg-note">부품 미지원</div>';
+  const val = mode === 'peri' ? _peri(kind, d) : _area(kind, d);
+  const unit = mode === 'peri' ? u : (u + '\u00B2');
+  const mid = F[1](d);
+  let cards = '';
+  cards += '<div class="fc-card"><span class="fc-step">공식</span><span class="fc-body">' + F[0] + '</span></div>';
+  cards += '<div class="fc-card"><span class="fc-step">넣기</span><span class="fc-body">' + mid + '</span></div>';
+  if (o.mid2) cards += '<div class="fc-card half"><span class="fc-step">중간</span><span class="fc-body">' + esc(o.mid2) + '</span></div>';
+  cards += '<div class="fc-card last"><span class="fc-step">답</span><span class="fc-body">' + val + ' ' + unit + '</span></div>';
+  const cap = o.caption ? '<div class="fc-cap">' + esc(o.caption) + '</div>' : '';
+  const key = mode + '|' + kind + '|' + mid.replace(/\s/g,'') + '|' + val;
+  return '<div class="fg-wrap" data-calc="' + key + '"><div class="fc-cards">' + cards + '</div>' + cap + '</div>';
+}
+function periCalc(kind, d, o){ return _calcCards('peri', kind, d, o); }
+function areaCalc(kind, d, o){ return _calcCards('area', kind, d, o); }
+
+// ───── 식 줄 · 칩 · 두 갈래 ─────
+function fgLines(rows, o){
+  o = o || {};
+  const body = rows.map(function(r){
+    return '<div class="fg-line ' + (r.cls || '') + '">'
+      + '<span class="fg-lead">' + esc(r.lead || '') + '</span>'
+      + '<span>' + ux(r.expr) + '</span></div>';
+  }).join('');
+  const note = o.note ? '<div class="fg-note">' + esc(o.note) + '</div>' : '';
+  return '<div class="fg-wrap"><div class="fg-lines">' + body + '</div>' + note + '</div>';
+}
+function fgChips(items, o){
+  o = o || {};
+  const body = items.map(function(it, i){
+    const cls = (o.hi && o.hi.indexOf(i) !== -1) ? ' hi'
+              : (o.hi2 && o.hi2.indexOf(i) !== -1) ? ' hi2'
+              : (o.both && o.both.indexOf(i) !== -1) ? ' both'
+              : (o.dim && o.dim.indexOf(i) !== -1) ? ' dim' : '';
+    return '<div class="fg-chip' + cls + '">' + ux(it) + '</div>';
+  }).join('');
+  const note = o.note ? '<div class="fg-note">' + esc(o.note) + '</div>' : '';
+  return '<div class="fg-wrap"><div class="fg-chips">' + body + '</div>' + note + '</div>';
+}
+function fgPair(a, b){
+  const col = function(c){
+    return '<div class="fg-col ' + (c.kind || '') + '">'
+      + '<div class="fg-caph">' + esc(c.cap) + '</div>' + c.body + '</div>';
+  };
+  return '<div class="fg-wrap"><div class="fg-pair">' + col(a) + col(b) + '</div></div>';
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// U6(g6) 「직육면체의 겉넓이와 부피」 부품
+//   - boxFig(d, o)      : 직육면체/정육면체 겨냥도(캐비닛 투영). 세 모서리 라벨 · 숨은 모서리 점선.
+//        d = {w(가로), de(세로), h(높이)} 또는 {s} (정육면체). data-vol = w·de·h, data-surf = 2(w·de+w·h+de·h).
+//   - netBox(d, o)      : 직육면체 전개도(십자). 여섯 면 넓이 라벨 · 밑면(파랑)/옆면(분홍) 색 분리. data-net.
+//   - cubeStack(d, o)   : 1 cm³ 쌓기나무 층 쌓기. d = {w,l,h(개수)}. 개수 카운트. data-cubes = w·l·h.
+//   - volCalc(kind,d,o) : 부피 공식→넣기→답 3단 카드. kind='box'|'cube'|'base'. 스스로 계산해 data-calc.
+//   - surfCalc(kind,d,o): 겉넓이 3단 카드. kind='box6'|'box3'|'base'|'cube'. data-calc.
+//   - volScale(o)       : 1 m³ = 1000000 cm³ 배율(한 모서리 100 cm → 100×100×100). data-vscale.
+//   ★ 겨냥도 라벨 감추기(문항용) = o.ask ∈ {'w','de','h','none'} — 해당 모서리 라벨을 '?'.
+// ══════════════════════════════════════════════════════════════
+
+var BX_KD = 0.46;   // 깊이축 축소 계수(캐비닛 투영)
+
+// ───── boxFig : 직육면체/정육면체 겨냥도 ─────
+function boxFig(d, o){
+  o = o || {};
+  var cube = (d.s !== undefined);
+  var w = cube ? d.s : d.w, de = cube ? d.s : d.de, h = cube ? d.s : d.h;
+  var u = o.unit || 'cm';
+  var W = 520, H = 420, pad = 96;
+  var needW = w + de * BX_KD, needH = h + de * BX_KD;
+  var sc = Math.min((W - pad * 2) / needW, (H - pad * 1.5) / needH);
+  var fw = w * sc, fh = h * sc, ox = de * BX_KD * sc, oy = de * BX_KD * sc;
+  var x0 = (W - (fw + ox)) / 2, y0 = H - pad + oy / 2;   // 앞면 좌하단
+  // 앞면 A(좌하) B(우하) C(우상) D(좌상)
+  var A = [x0, y0], B = [x0 + fw, y0], C = [x0 + fw, y0 - fh], D = [x0, y0 - fh];
+  var A2 = [A[0] + ox, A[1] - oy], B2 = [B[0] + ox, B[1] - oy], C2 = [C[0] + ox, C[1] - oy], D2 = [D[0] + ox, D[1] - oy];
+  function P(p){ return p[0].toFixed(1) + ',' + p[1].toFixed(1); }
+  var col = o.color || 'var(--coral-soft)', line = 'var(--coral-deep)';
+  var g = '';
+  // 면(뒤→앞): 윗면 · 오른면 · 앞면
+  g += '<polygon points="' + P(D) + ' ' + P(C) + ' ' + P(C2) + ' ' + P(D2) + '" fill="' + col + '" stroke="' + line + '" stroke-width="2.5"/>';
+  g += '<polygon points="' + P(B) + ' ' + P(C) + ' ' + P(C2) + ' ' + P(B2) + '" fill="' + col + '" stroke="' + line + '" stroke-width="2.5" opacity="0.82"/>';
+  g += '<polygon points="' + P(A) + ' ' + P(B) + ' ' + P(C) + ' ' + P(D) + '" fill="#fff" stroke="' + line + '" stroke-width="3"/>';
+  // 숨은 모서리(뒤 아래 꼭짓점 A2): A-A2, A2-B2, A2-D2 점선
+  var dash = ' stroke="var(--ink-soft)" stroke-width="2" stroke-dasharray="6 5"';
+  g += '<line x1="' + P(A).replace(',', '" y1="') + '" x2="' + P(A2).replace(',', '" y2="') + '"' + dash + '/>';
+  g += '<line x1="' + P(A2).replace(',', '" y1="') + '" x2="' + P(B2).replace(',', '" y2="') + '"' + dash + '/>';
+  g += '<line x1="' + P(A2).replace(',', '" y1="') + '" x2="' + P(D2).replace(',', '" y2="') + '"' + dash + '/>';
+  // 모서리 라벨 (가로=AB 아래 · 높이=BC 오른쪽 · 세로=B→B2 대각)
+  function lab(txt, x, y, anchor){
+    return '<text class="kor" x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" font-size="21" fill="var(--ink)" text-anchor="' + (anchor || 'middle') + '">' + esc(txt) + '</text>';
+  }
+  var lw = (o.ask === 'w') ? '?' : (w + ' ' + u);
+  var lh = (o.ask === 'h') ? '?' : (h + ' ' + u);
+  var lde = (o.ask === 'de') ? '?' : (de + ' ' + u);
+  if (cube){
+    // 정육면체 — 세 모서리 라벨만 (모두 같음)
+    g += lab(d.s + ' ' + u, (A[0] + B[0]) / 2, A[1] + 26, 'middle');
+    g += lab(d.s + ' ' + u, B[0] + 12, (B[1] + C[1]) / 2 + 6, 'start');
+    g += lab(d.s + ' ' + u, (B[0] + B2[0]) / 2 + 10, (B[1] + B2[1]) / 2 - 4, 'start');
+  } else {
+    g += lab(lw, (A[0] + B[0]) / 2, A[1] + 26, 'middle');           // 가로
+    g += lab(lh, B[0] + 12, (B[1] + C[1]) / 2 + 6, 'start');        // 높이
+    g += lab(lde, (C[0] + C2[0]) / 2 + 8, (C[1] + C2[1]) / 2 - 6, 'start'); // 세로
+  }
+  var vol = w * de * h, surf = 2 * (w * de + w * h + de * h);
+  var title = o.title ? '<div class="bx-title">' + esc(o.title) + '</div>' : '';
+  var note = o.note ? '<div class="bx-note">' + esc(o.note) + '</div>' : '';
+  return '<div class="bx-wrap" data-vol="' + vol + '" data-surf="' + surf + '">' + title
+       + '<svg class="bx-svg" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">' + g + '</svg>'
+       + note + '</div>';
+}
+
+// ───── netBox : 직육면체 전개도(십자) ─────
+//   중앙 세로줄 = 밑면·앞면·(윗면 자리 옆면 아님) — 표준 십자: 위밑면 / 앞·오른·뒤·왼 옆면 띠 / 아래밑면
+//   여기서는 밑면 2 + 옆면 4 를 십자로. 밑면(파랑)·옆면(분홍). 넓이 라벨.
+function netBox(d, o){
+  o = o || {};
+  var w = d.w, de = d.de, h = d.h, u = o.unit || 'cm';
+  // 셀 픽셀: 가로띠 = w + de + w + de(옆면 4개), 세로 = de + h + de
+  var totCol = w + de + w + de, totRow = de + h + de;
+  var W = 640, H = 440, pad = 40;
+  var sc = Math.min((W - pad * 2) / totCol, (H - pad * 2) / totRow);
+  var x0 = (W - totCol * sc) / 2, y0 = (H - totRow * sc) / 2;
+  var blue = '#BEE3F0', blueL = '#3B7A99', pink = '#F6D2DE', pinkL = '#B05A78';
+  function cell(px, py, cw, ch, fill, line, label){
+    var s = '<rect x="' + px.toFixed(1) + '" y="' + py.toFixed(1) + '" width="' + cw.toFixed(1) + '" height="' + ch.toFixed(1) + '" fill="' + fill + '" stroke="' + line + '" stroke-width="2.5"/>';
+    if (label) s += '<text class="kor" x="' + (px + cw / 2).toFixed(1) + '" y="' + (py + ch / 2 + 6).toFixed(1) + '" font-size="17" fill="var(--ink)" text-anchor="middle">' + esc(label) + '</text>';
+    return s;
+  }
+  var g = '';
+  // 옆면 띠 (앞 w×h, 오른 de×h, 뒤 w×h, 왼 de×h) — 세로 위치 y0+de*sc
+  var ry = y0 + de * sc, rh = h * sc;
+  var cxp = x0;
+  var faces = [[w, '앞'], [de, '옆'], [w, '뒤'], [de, '옆']];
+  var areasSide = [];
+  faces.forEach(function(f){
+    var fw = f[0] * sc;
+    var ar = f[0] * h;
+    areasSide.push(ar);
+    g += cell(cxp, ry, fw, rh, pink, pinkL, (o.noLabel ? '' : (ar + ' ' + u + '\u00B2')));
+    cxp += fw;
+  });
+  // 밑면 2개 (앞면 위·아래) — 앞면은 첫 칸(가로 w)
+  var topArea = w * de;
+  g += cell(x0, y0, w * sc, de * sc, blue, blueL, (o.noLabel ? '' : (topArea + ' ' + u + '\u00B2')));
+  g += cell(x0, ry + rh, w * sc, de * sc, blue, blueL, (o.noLabel ? '' : (topArea + ' ' + u + '\u00B2')));
+  var surf = 2 * (w * de + w * h + de * h);
+  var title = o.title ? '<div class="bx-title">' + esc(o.title) + '</div>' : '';
+  var note = o.note ? '<div class="bx-note">' + esc(o.note) + '</div>' : '';
+  return '<div class="bx-wrap" data-net="' + surf + '|' + (2 * topArea) + '|' + areasSide.reduce(function(a, b){ return a + b; }, 0) + '">' + title
+       + '<svg class="bx-svg" viewBox="0 0 ' + W + ' ' + H + '" style="max-width:min(600px,94vw)" xmlns="http://www.w3.org/2000/svg">' + g + '</svg>'
+       + note + '</div>';
+}
+
+// ───── cubeStack : 1 cm³ 쌓기나무 층 쌓기 ─────
+//   d = {w, l, h}  개수(가로·세로·높이). data-cubes = w·l·h. o.layer(강조할 층 수, 0..h) · o.count(개수 표기)
+function cubeStack(d, o){
+  o = o || {};
+  var w = d.w, l = d.l, h = d.h;
+  var W = 460, H = 380, cu = 34, kd = 0.5;
+  var offX = cu * kd, offY = cu * kd;
+  var totW = w * cu + l * offX, totH = h * cu + l * offY;
+  var sc = Math.min((W - 70) / totW, (H - 70) / totH, 1);
+  cu *= sc; offX *= sc; offY *= sc;
+  var x0 = (W - (w * cu + l * offX)) / 2 + l * offX * 0.5;
+  var y0 = H - 34 + l * offY * 0.5;
+  var cubes = [];
+  for (var z = 0; z < h; z++)
+    for (var y = 0; y < l; y++)
+      for (var x = 0; x < w; x++)
+        cubes.push([x, y, z]);
+  // painter: 뒤(y큰)→앞, 아래(z작은)→위, 왼→오
+  cubes.sort(function(a, b){ return (b[1] - a[1]) || (a[2] - b[2]) || (a[0] - b[0]); });
+  var g = '';
+  cubes.forEach(function(c){
+    var x = c[0], y = c[1], z = c[2];
+    var px = x0 + x * cu + y * offX;
+    var py = y0 - z * cu - y * offY;   // 앞면 좌하단
+    var hot = (o.layer !== undefined && z < o.layer);
+    var face = hot ? 'var(--coral-soft)' : '#FBF7F1';
+    var top = hot ? '#F3C9BC' : '#EFE7DA';
+    var side = hot ? '#E9B3A2' : '#E4DACB';
+    var lc = 'var(--coral-deep)';
+    // 앞면
+    g += '<rect x="' + px.toFixed(1) + '" y="' + (py - cu).toFixed(1) + '" width="' + cu.toFixed(1) + '" height="' + cu.toFixed(1) + '" fill="' + face + '" stroke="' + lc + '" stroke-width="1.4"/>';
+    // 윗면
+    g += '<polygon points="' + px.toFixed(1) + ',' + (py - cu).toFixed(1) + ' ' + (px + offX).toFixed(1) + ',' + (py - cu - offY).toFixed(1) + ' ' + (px + cu + offX).toFixed(1) + ',' + (py - cu - offY).toFixed(1) + ' ' + (px + cu).toFixed(1) + ',' + (py - cu).toFixed(1) + '" fill="' + top + '" stroke="' + lc + '" stroke-width="1.4"/>';
+    // 오른면
+    g += '<polygon points="' + (px + cu).toFixed(1) + ',' + (py - cu).toFixed(1) + ' ' + (px + cu + offX).toFixed(1) + ',' + (py - cu - offY).toFixed(1) + ' ' + (px + cu + offX).toFixed(1) + ',' + (py - offY).toFixed(1) + ' ' + (px + cu).toFixed(1) + ',' + py.toFixed(1) + '" fill="' + side + '" stroke="' + lc + '" stroke-width="1.4"/>';
+  });
+  var tot = w * l * h;
+  var title = o.title ? '<div class="bx-title">' + esc(o.title) + '</div>' : '';
+  var cntTxt = o.count ? '<div class="bx-note"><b style="color:var(--coral-deep)">' + tot + '</b> 개</div>' : (o.note ? '<div class="bx-note">' + esc(o.note) + '</div>' : '');
+  return '<div class="bx-wrap" data-cubes="' + tot + '|' + w + ',' + l + ',' + h + '">' + title
+       + '<svg class="bx-svg" viewBox="0 0 ' + W + ' ' + H + '" style="max-width:min(440px,86vw)" xmlns="http://www.w3.org/2000/svg">' + g + '</svg>'
+       + cntTxt + '</div>';
+}
+
+// ───── volCalc / surfCalc : 공식→넣기→답 3단 카드 ─────
+function _boxCalc(mode, kind, d, o){
+  o = o || {};
+  var u = o.unit || 'cm';
+  var w = d.w, de = d.de, h = d.h, s = d.s;
+  var formula = '', mid = '', val = 0, unit = '';
+  if (mode === 'vol'){
+    unit = u + '\u00B3';
+    if (kind === 'box'){ formula = '(가로) \u00D7 (세로) \u00D7 (높이)'; mid = w + ' \u00D7 ' + de + ' \u00D7 ' + h; val = w * de * h; }
+    else if (kind === 'cube'){ formula = '(한 모서리) \u00D7 (한 모서리) \u00D7 (한 모서리)'; mid = s + ' \u00D7 ' + s + ' \u00D7 ' + s; val = s * s * s; }
+    else if (kind === 'base'){ formula = '(한 밑면의 넓이) \u00D7 (높이)'; mid = '(' + w + ' \u00D7 ' + de + ') \u00D7 ' + h; val = w * de * h; }
+  } else {
+    unit = u + '\u00B2';
+    if (kind === 'box6'){ formula = '여섯 면의 넓이를 모두 더하기'; mid = w + '\u00D7' + de + ' + ' + w + '\u00D7' + h + ' + ' + de + '\u00D7' + h + ' + ' + w + '\u00D7' + de + ' + ' + w + '\u00D7' + h + ' + ' + de + '\u00D7' + h; val = 2 * (w * de + w * h + de * h); }
+    else if (kind === 'box3'){ formula = '(세 면의 넓이의 합) \u00D7 2'; mid = '(' + w + '\u00D7' + de + ' + ' + w + '\u00D7' + h + ' + ' + de + '\u00D7' + h + ') \u00D7 2'; val = 2 * (w * de + w * h + de * h); }
+    else if (kind === 'base'){ formula = '(두 밑면의 넓이) + (옆면의 넓이)'; mid = '(' + w + '\u00D7' + de + ')\u00D72 + (' + w + '+' + de + '+' + w + '+' + de + ')\u00D7' + h; val = 2 * w * de + 2 * (w + de) * h; }
+    else if (kind === 'cube'){ formula = '(한 면의 넓이) \u00D7 6'; mid = '(' + s + ' \u00D7 ' + s + ') \u00D7 6'; val = 6 * s * s; }
+  }
+  var midCard = (o.ask ? '<span class="fc-body">?</span>' : '<span class="fc-body">' + mid + '</span>');
+  var cards = '';
+  cards += '<div class="fc-card"><span class="fc-step">공식</span><span class="fc-body">' + formula + '</span></div>';
+  cards += '<div class="fc-card"><span class="fc-step">넣기</span>' + midCard + '</div>';
+  cards += '<div class="fc-card last"><span class="fc-step">답</span><span class="fc-body">' + (o.ask ? '?' : (val + ' ' + unit)) + '</span></div>';
+  var cap = o.caption ? '<div class="fc-cap">' + esc(o.caption) + '</div>' : '';
+  var key = mode + '|' + kind + '|' + mid.replace(/\s/g, '') + '|' + val;
+  return '<div class="fg-wrap" data-calc="' + key + '"><div class="fc-cards">' + cards + '</div>' + cap + '</div>';
+}
+function volCalc(kind, d, o){ return _boxCalc('vol', kind, d, o); }
+function surfCalc(kind, d, o){ return _boxCalc('surf', kind, d, o); }
+
+// ───── volScale : 1 m³ = 1000000 cm³ 배율 ─────
+//   ★ 대표 오개념(1 m³ = 100 또는 10000 cm³) 직격. 한 모서리 100 cm → 100 × 100 × 100.
+function volScale(o){
+  o = o || {};
+  var W = 560, H = 440, pad = 90;
+  // 1 m³ 정육면체 겨냥도 (모서리 = 100 cm)
+  var box = 260, kd = 0.46, off = box * kd;
+  var x0 = (W - (box + off)) / 2, y0 = H - 120 + off / 2;
+  var A = [x0, y0], B = [x0 + box, y0], C = [x0 + box, y0 - box], D = [x0, y0 - box];
+  var B2 = [B[0] + off, B[1] - off], C2 = [C[0] + off, C[1] - off], D2 = [D[0] + off, D[1] - off];
+  function P(p){ return p[0].toFixed(1) + ',' + p[1].toFixed(1); }
+  var g = '';
+  g += '<polygon points="' + P(D) + ' ' + P(C) + ' ' + P(C2) + ' ' + P(D2) + '" fill="var(--teal-soft)" stroke="var(--teal-deep)" stroke-width="2.5"/>';
+  g += '<polygon points="' + P(B) + ' ' + P(C) + ' ' + P(C2) + ' ' + P(B2) + '" fill="var(--teal-soft)" stroke="var(--teal-deep)" stroke-width="2.5" opacity="0.82"/>';
+  g += '<polygon points="' + P(A) + ' ' + P(B) + ' ' + P(C) + ' ' + P(D) + '" fill="#fff" stroke="var(--teal-deep)" stroke-width="3"/>';
+  // 모서리 100 cm 라벨 (세 모서리)
+  g += '<text class="kor" x="' + ((A[0] + B[0]) / 2).toFixed(1) + '" y="' + (A[1] + 26).toFixed(1) + '" font-size="20" fill="var(--teal-deep)" text-anchor="middle">100 cm</text>';
+  g += '<text class="kor" x="' + (B[0] + 12).toFixed(1) + '" y="' + ((B[1] + C[1]) / 2).toFixed(1) + '" font-size="20" fill="var(--teal-deep)" text-anchor="start">100 cm</text>';
+  g += '<text class="kor" x="' + ((C[0] + C2[0]) / 2 + 8).toFixed(1) + '" y="' + ((C[1] + C2[1]) / 2 - 6).toFixed(1) + '" font-size="20" fill="var(--teal-deep)" text-anchor="start">100 cm</text>';
+  g += '<text class="kor" x="' + (x0 - 8).toFixed(1) + '" y="' + (D[1] - 12).toFixed(1) + '" font-size="24" fill="var(--teal-deep)" text-anchor="start">1 m\u00B3</text>';
+  // 배율 문장
+  g += '<text class="kor" x="' + (W / 2).toFixed(1) + '" y="' + (H - 58).toFixed(1) + '" font-size="24" fill="var(--coral-deep)" text-anchor="middle">100 \u00D7 100 \u00D7 100 = 1000000</text>';
+  g += '<text class="kor" x="' + (W / 2).toFixed(1) + '" y="' + (H - 24).toFixed(1) + '" font-size="26" fill="var(--emph)" text-anchor="middle">1 m\u00B3 = 1000000 cm\u00B3</text>';
+  var note = o.note ? '<div class="bx-note">' + esc(o.note) + '</div>' : '';
+  return '<div class="bx-wrap" data-vscale="100|1000000">'
+       + '<svg class="bx-svg" viewBox="0 0 ' + W + ' ' + H + '" style="max-width:min(500px,90vw)" xmlns="http://www.w3.org/2000/svg">' + g + '</svg>'
+       + note + '</div>';
+}
+
+(function renderModels(){
+  document.getElementById('m-i2').innerHTML =
+    netBox({w:4,de:2,h:3},{title:'밑면(파랑)과 옆면(분홍)'});
+  document.getElementById('m-e1').innerHTML =
+    surfCalc('base',{w:4,de:2,h:3});
+  document.getElementById('m-e2').innerHTML =
+    surfCalc('cube',{s:5});
+  document.getElementById('m-e3').innerHTML =
+    surfCalc('base',{w:10,de:7,h:4});
+  document.getElementById('m-e4').innerHTML =
+    ruleCards([{lead:'직육면체',body:'두 밑면 + 옆면'},{lead:'정육면체',body:'한 면 × 6',cls:'final'}]);
+  document.getElementById('m-q8').innerHTML =
+    netBox({w:4,de:2,h:3},{title:'두 밑면의 넓이'});
+  document.getElementById('m-q9').innerHTML =
+    netBox({w:4,de:2,h:3},{title:'옆면 직사각형의 가로는'});
+  document.getElementById('m-q10').innerHTML =
+    surfCalc('base',{w:4,de:2,h:3},{ask:true});
+  document.getElementById('m-q11').innerHTML =
+    boxFig({s:5},{title:'정육면체 — 여섯 면 합동'});
+  document.getElementById('m-q12').innerHTML =
+    surfCalc('cube',{s:5},{ask:true});
+  document.getElementById('m-q13').innerHTML =
+    boxFig({w:10,de:7,h:4},{title:'겉넓이는 몇 cm²'});
+  document.getElementById('m-q14').innerHTML =
+    surfCalc('cube',{s:7},{ask:true});
+  document.getElementById('m-q15').innerHTML =
+    dataTable([{name:'가(20·15·4)',val:880},{name:'나(10·15·8)',val:700}],{itemLabel:'상자',valLabel:'겉넓이(cm²)',noPct:true,cap:'겉넓이가 작을수록 포장지가 적다'});
+})();
+
+
+function setupPad(qid, correct, padId, displayId, fbId, doneMsg, maxLen) {
+  maxLen = maxLen || 6;
+  const pad = document.getElementById(padId);
+  const display = document.getElementById(displayId);
+  const fb = document.getElementById(fbId);
+  let buf = '';
+  const keys = ['1','2','3','4','5','6','7','8','9','0'];
+  keys.forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'q-key'; b.textContent = k;
+    b.addEventListener('click', () => {
+      const st = getQState(qid); if (st.solved) return;
+      if (buf.length < maxLen) { buf += k; display.textContent = buf; }
+    });
+    pad.appendChild(b);
+  });
+  const del = document.createElement('button');
+  del.className = 'q-key fn'; del.textContent = '지움';
+  del.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    buf = buf.slice(0, -1); display.textContent = buf || '?';
+  });
+  pad.appendChild(del);
+  const ok = document.createElement('button');
+  ok.className = 'q-key fn'; ok.textContent = '확인'; ok.style.gridColumn = 'span 4';
+  ok.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    st.attempts++;
+    if (parseInt(buf, 10) === correct) {
+      st.solved = true;
+      const earn = pointsForQ(qid); addScore(earn);
+      fb.classList.remove('wrong');
+      fb.textContent = (doneMsg || '정답이에요!') + ' +' + earn + '점';
+      updateUI();
+    } else {
+      st.wrongCount++;
+      fb.classList.add('wrong'); fb.textContent = '다시 계산해 보자';
+    }
+  });
+  pad.appendChild(ok);
+}
+
+function setupMcq(qid, doneMsg){
+  document.querySelectorAll('#'+qid+'-opts .mcq-opt').forEach(o=>{
+    o.addEventListener('click', ()=>{
+      const st=getQState(qid); if(st.solved) return;
+      st.attempts++;
+      const fb=document.getElementById(qid+'-fb');
+      if(o.dataset.correct==='1'){
+        st.solved=true; o.classList.add('correct');
+        const earn=pointsForQ(qid); addScore(earn);
+        fb.classList.remove('wrong'); fb.textContent=(doneMsg||'정답이에요!')+' +'+earn+'점';
+        updateUI();
+      } else {
+        st.wrongCount++; o.classList.add('wrong');
+        fb.classList.add('wrong'); fb.textContent='다시 골라 보세요';
+        setTimeout(()=>o.classList.remove('wrong'),500);
+      }
+    });
+  });
+}
+
+setupPad('q8', 16, 'q8-pad','q8-display','q8-fb','(4×2) × 2 = 16 (cm²)이다.', 6);
+setupMcq('q9','옆면 직사각형의 가로는 한 밑면의 둘레와 같다.');
+setupPad('q10', 52, 'q10-pad','q10-display','q10-fb','16 + 36 = 52 (cm²)이다.', 6);
+setupMcq('q11','정육면체는 여섯 면이 모두 합동이므로 한 면의 넓이 × 6이다.');
+setupPad('q12', 150, 'q12-pad','q12-display','q12-fb','(5×5) × 6 = 25 × 6 = 150 (cm²)이다.', 6);
+setupMcq('q13','(10×7)×2 + 34×4 = 140 + 136 = 276 (cm²)이다.');
+setupPad('q14', 49, 'q14-pad','q14-display','q14-fb','294 ÷ 6 = 49 (cm²)이다. (한 모서리는 7×7=49이므로 7 cm)', 6);
+setupMcq('q15','가의 겉넓이 880 cm², 나의 겉넓이 700 cm². 나가 더 작으므로 포장지가 덜 든다.');
+
+
+// ───── 슬17 자기 평가 ─────
+document.querySelectorAll('.self-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.self-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('self-fb').textContent = '응답이 기록됐어요. 다음 차시에서 만나요!';
+  });
+});
+
+// ───── 진도 복원 ─────
+(function restore() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data.cur != null) cur = Math.min(data.cur, TOTAL - 1);
+    if (data.score != null) score = data.score;
+    document.getElementById('score').textContent = '⭐ ' + score;
+  } catch(e) {}
+})();
+
+(function buildDots(){ const w=document.getElementById('dots'); for(let i=0;i<TOTAL;i++){ const d=document.createElement('div'); d.className='ka-dot'; d.onclick=()=>{ cur=i; saveProgress(false); updateUI(); }; w.appendChild(d); } })();
+
+updateUI();
+</script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+</body>
+</html>
