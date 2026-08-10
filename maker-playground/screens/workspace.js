@@ -22,7 +22,7 @@
     mode: 'design',         /* design | presentation | video | photo */
     msel: [],               /* R103 — Shift 다중 선택 (상태 기본값 — enter 없이도 안전) */
     zoom: 100, nav: 'scenes', dock: false,
-    undo: [], redo: [], savedAt: null, svarMsg: '', notice: '',
+    undo: [], redo: [], savedAt: null, svarMsg: '', notice: '', smartMsg: '',
   };
   const proj = () => window.MK_PROJ.get(WS.projectId);
   const doc = () => proj()?.doc;
@@ -278,6 +278,8 @@
       body = field('이름', sc.name) + field('크기', sc.width + '×' + sc.height) + field('배경', sc.background) +
         (WS.mode === 'video' || WS.mode === 'presentation' ? field('길이', (sc.duration || 0) + '초') + field('전환', sc.transition || 'none') : '') +
         lockCtl(sc) + capCtl(sc) +
+        (window.MK_SMART ? `<label class="cx-field"><span>한 번에 정돈</span></label><div class="cx-shrow">${window.MK_SMART.RULES.map((r2) =>
+          `<button class="cx-shb wide" data-ws-smart="${r2.id}" title="${r2.name}">${r2.icon} ${r2.name}</button>`).join('')}</div>${WS.smartMsg ? `<p class="mut" style="font:var(--mk-t-caption)">${WS.smartMsg}</p>` : ''}` : '') +
         `<button class="cx-scenebtn" data-ws-anim>✨ 애니메이션 편집 →</button>`;
     } else {
       const el = sc.elements[sel.idx];
@@ -794,6 +796,17 @@
         if (!el || !el.src || !window.MK_FOCAL) return;
         const [fx, fy] = b.dataset.wsFocal.split(',').map(Number);
         snap(); window.MK_FOCAL.set(el, fx, fy); R();
+      });
+      /* R104 — 원클릭 프리셋 (MK_SMART) — 무변화면 undo 를 남기지 않는다 */
+      root.querySelectorAll('[data-ws-smart]').forEach((b) => b.onclick = () => {
+        const SM = window.MK_SMART; if (!SM) return;
+        const pre = JSON.stringify(doc().scenes);
+        const r = SM.run(scene(), b.dataset.wsSmart, window.MK_ARRANGE);
+        if (r && r.ok && r.changed) {
+          WS.undo.push(pre); if (WS.undo.length > 30) WS.undo.shift(); WS.redo = [];
+          WS.smartMsg = (SM.RULES.find((x) => x.id === b.dataset.wsSmart) || {}).name + ' — ' + r.changed + '곳 정돈 (↺로 되돌리기)';
+        } else WS.smartMsg = '이미 정돈되어 있어요';
+        R();
       });
       /* R103 — 정렬·간격 (MK_ARRANGE) */
       root.querySelectorAll('[data-ws-arr]').forEach((b) => b.onclick = () => {
