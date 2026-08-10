@@ -106,7 +106,7 @@ T('build — 사진 5장: Scene 은 Layout Registry 프레임·등장은 Animati
   A(r.doc.scenes.some((s) => s.role === 'section'), 'quote 씬 누락');
   /* 16:9 기본 — media-left 레이아웃 프레임(x0 w58)이 실제 요소로 */
   const ml = M.getLayout('media-left').base.m[0];
-  A(r.doc.scenes.some((s) => s.elements.some((e) => e.kind === 'image' && e.x === ml.x && e.w === ml.w)), 'media-left 프레임 미적용');
+  A(r.doc.scenes.some((s) => s.elements.some((e) => e.kind === 'image' && e.src && e.x === ml.x && e.w === ml.w)), 'media-left 프레임 미적용');
   A(r.templateId === 'tm-magazine' && r.manifestVersion === '1.0.0', '빌드 귀속');
   renderAll(r);
 });
@@ -115,12 +115,12 @@ T('Rules 실행 — 12장 이상이면 gallery 4장 묶음 자동 (if(media>10) 
   const r = M.build('tm-magazine', { medias: mk(14), texts: { title: '운동회' } });
   A(r.ok, r.why);
   const g = M.getLayout('gallery').base.m;
-  const hasGallery = r.doc.scenes.some((s) => s.elements.filter((e) => e.kind === 'image').length === 4);
+  const hasGallery = r.doc.scenes.some((s) => s.elements.filter((e) => e.kind === 'image' && e.src).length === 4);
   A(hasGallery, 'gallery 묶음 미발동');
   const placed = r.doc.scenes.reduce((c, s) => c + s.elements.filter((e) => e.src).length, 0);
   A(placed === 14, '누락 ' + placed);
   const few = M.build('tm-magazine', { medias: mk(6), texts: { title: '소풍' } });
-  A(!few.doc.scenes.some((s) => s.elements.filter((e) => e.kind === 'image').length === 4), '12장 미만인데 gallery 발동');
+  A(!few.doc.scenes.some((s) => s.elements.filter((e) => e.kind === 'image' && e.src).length === 4), '12장 미만인데 gallery 발동');
   A(typeof g[3].x === 'number', 'gallery 레이아웃 프레임');
   renderAll(r);
 });
@@ -151,12 +151,12 @@ T('Smart Variant — default/compact/magazine 이 씬 구성·레이아웃 순�
   A(d.doc.scenes.some((s) => s.role === 'section'), 'default 에 quote 씬 없음');
   A(!c.doc.scenes.some((s) => s.role === 'section'), 'compact 가 quote 씬을 생략하지 않음');
   /* compact = full-media 만 — 미디어 씬 레이아웃 서명 1종 */
-  const sig = (r2) => new Set(r2.doc.scenes.filter((s) => s.role === 'media').map((s) => s.elements.filter((e) => e.kind === 'image').map((e) => [e.x, e.w].join(',')).join('|')));
+  const sig = (r2) => new Set(r2.doc.scenes.filter((s) => s.role === 'media').map((s) => s.elements.filter((e) => e.kind === 'image' && e.src).map((e) => [e.x, e.w].join(',')).join('|')));
   A(sig(c).size === 1, 'compact 레이아웃 ' + sig(c).size + '종');
   A(sig(d).size >= 2, 'default 레이아웃 단일');
   /* magazine = 6장부터 gallery 리듬 */
-  A(g.doc.scenes.some((s) => s.elements.filter((e) => e.kind === 'image').length === 4), 'magazine gallery 미발동');
-  A(!d.doc.scenes.some((s) => s.elements.filter((e) => e.kind === 'image').length === 4), 'default 는 8장에서 gallery 없어야');
+  A(g.doc.scenes.some((s) => s.elements.filter((e) => e.kind === 'image' && e.src).length === 4), 'magazine gallery 미발동');
+  A(!d.doc.scenes.some((s) => s.elements.filter((e) => e.kind === 'image' && e.src).length === 4), 'default 는 8장에서 gallery 없어야');
   A(c.variant === 'compact', '빌드 결과 variant 표기');
   renderAll(c); renderAll(g);
 });

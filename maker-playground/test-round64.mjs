@@ -193,7 +193,7 @@ T('§22-B 스냅 비트 — 분할·콜라주 리듬 실적용 (16:9 사진 12�
   const t = B.list().find((x) => x.name === '스냅 비트');
   const r = B.previewBuild(t.id, { mediaCount: 12, ratio: '16:9' });
   A(r.ok, '빌드 실패');
-  const kinds = r.doc.scenes.map((s) => (s.elements || []).filter((el) => el.kind === 'image' || el.kind === 'video').length);
+  const kinds = r.doc.scenes.map((s) => (s.elements || []).filter((el) => (el.kind === 'image' && el.src) || el.kind === 'video').length);
   A(kinds.some((n) => n >= 3), '콜라주(3+ 미디어 씬) 없음: ' + kinds.join(','));
   A(kinds.some((n) => n === 2), '분할(2 미디어 씬) 없음');
 });

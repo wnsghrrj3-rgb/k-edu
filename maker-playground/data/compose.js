@@ -136,7 +136,7 @@ window.MK_COMPOSE = (() => {
       /* R68 — pairKey: 이 장면이 어느 쌍의 것인지. 쌍 단위 잠금이 성립하려면 회차가 바뀌어도
          변하지 않는 이름표가 필요하다. 자리 인덱스(pi)는 순서를 섞으면 딴 쌍을 가리키므로
          전(前) 사진의 원본 인덱스(_oi)를 쓴다. 쌍 밖 장면(제목·결과·마무리)은 미지정. */
-      plan.push({ spec: sp, variantIdx: vi || 0, medias, item: item || null, totalItems: pairs.length,
+      plan.push({ spec: sp, variantIdx: vi || 0, medias, item: item || null, totalItems: pairs.length, decorOff: input.decor === false,
         ...(pk != null ? { pairKey: pk } : {}), ...(slotAnims ? { slotAnims } : {}) });
     };
     const texts = input.texts || {};
@@ -232,7 +232,7 @@ window.MK_COMPOSE = (() => {
             if (mi >= n) break;
             const take = Math.max(1, Math.min(step.take || 1, n - mi));
             const slice = media.items.slice(mi, mi + take); mi += slice.length;
-            plan.push({ spec, variantIdx: idx2++, medias: slice, item: null, totalItems: 0, variant: step.variant });
+            plan.push({ spec, variantIdx: idx2++, medias: slice, item: null, totalItems: 0, variant: step.variant, decorOff: input.decor === false });
           }
           continue;
         }
@@ -256,7 +256,7 @@ window.MK_COMPOSE = (() => {
             if (!slice.length) break;
             mi += slice.length;
           }
-          plan.push({ spec, variantIdx: idx, medias: slice, item: source ? source[idx] : null, totalItems: source ? total : 0 });
+          plan.push({ spec, variantIdx: idx, medias: slice, item: source ? source[idx] : null, totalItems: source ? total : 0, decorOff: input.decor === false });
           idx++;
           if (idx > 200) break; /* 안전핀 */
         }
@@ -269,11 +269,11 @@ window.MK_COMPOSE = (() => {
       if (need && slice.length < need && spec.required) {
         /* 부족 우선순위: 다슬롯→단일 축소 (지시서 §7) */
         if (slice.length > 0) { notes.push('축소: ' + spec.id + ' 슬롯 ' + need + '→' + slice.length); }
-        else if (spec.fallback === 'graphic') { notes.push('대체: ' + spec.id + ' 그래픽 중심'); plan.push({ spec, variantIdx: 0, medias: [], item: null }); continue; }
+        else if (spec.fallback === 'graphic') { notes.push('대체: ' + spec.id + ' 그래픽 중심'); plan.push({ spec, variantIdx: 0, medias: [], item: null, decorOff: input.decor === false }); continue; }
         else { notes.push('생략: ' + spec.id + ' (미디어 부족)'); continue; }
       }
       if (need && !slice.length && !spec.required) { notes.push('생략: ' + spec.id + ' (미디어 부족)'); continue; }
-      plan.push({ spec, variantIdx: 0, medias: slice, item: null });
+      plan.push({ spec, variantIdx: 0, medias: slice, item: null, decorOff: input.decor === false });
       mi += slice.length;
     }
     /* 잔여 미디어 → 마지막 반복 스펙에 흡수 (버리지 않는다 — 지시서 §7) */
@@ -445,6 +445,20 @@ window.MK_COMPOSE = (() => {
         ...(s.align ? { align: s.align } : {}),
         anim: { preset: 'fade', delay: 0.25 + i * 0.15, duration: 0.5, direction: 'up', ease: 'ease-out', repeat: 1 } });
     });
+    /* R98 — 데코 레이어: 완성된 요소 「앞」에 장식을 깐다 (배열 순서 = z순서).
+       input.decor === false 로만 끌 수 있다(기본 켬). 실패해도 장면은 성립. */
+    if (window.MK_DECOR && p.decorOff !== true) {
+      try {
+        const numSlot = tslots.find((s2) => s2.autoNum || s2.role === 'number');
+        const dec = window.MK_DECOR.decorate({
+          role: spec.role, bgKey: bgKey || 'paper', tokens: T2, themeId: theme.id,
+          ratio: { w: R.w, h: R.h }, seq, variantIdx: p.variantIdx || 0,
+          mediaFrames: framed.filter((f, i2) => p.medias[i2]).map((f) => ({ ...f.frame })),
+          numFrame: numSlot ? { ...numSlot.frame } : null,
+        });
+        if (dec && dec.length) els.unshift(...dec);
+      } catch (e) { /* 장식은 장면의 성립 조건이 아니다 */ }
+    }
     const built = { medias: p.medias, textsUsed };
     const scene = {
       id: 'cp' + seq, specId: spec.id, name: spec.name + (p.variantIdx ? ' ' + (p.variantIdx + 1) : ''),

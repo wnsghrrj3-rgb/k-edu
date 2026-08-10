@@ -145,7 +145,7 @@
         return `<div class="ws-el media ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%"><span class="ws-clip">${media}</span>${hd}</div>`;
       }
       if (el.fill) {                                   /* R45 — 색 채움 요소 (자막 바 등) 실표시 · R49 radius */
-        const rad = el.radius ? `;border-radius:${(el.radius * CW / sc.width).toFixed(1)}px` : '';
+        const rad = el.radius ? `;border-radius:${el.radius > 100 ? '50%' : (el.radius * CW / sc.width).toFixed(1) + 'px'}` : ''; /* R98 — >100 = 원 (play.js 규약 정렬) */
         return `<div class="ws-el media ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;background:${el.fill}${rad}">${hd}</div>`;
       }
       return `<div class="ws-el box ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%"><span>${M().esc(el.label || '요소')}</span>${hd}</div>`;
@@ -166,7 +166,7 @@
   };
   /* R94 — 초점: 꽉 채우기에서 잘릴 때 남길 곳 (3×3 — SVG 내보내기 정렬 9칸과 정확히 일치) */
   const focalCtl = (el, idx) => {
-    if (!window.MK_FOCAL || el.fit === 'contain') return '';
+    if (!window.MK_FOCAL || !el.src || el.fit === 'contain') return ''; /* R98 — fill 장식엔 미노출 */
     const n = window.MK_FOCAL.norm(el.focal);
     const cells = [];
     const NAME = ['왼쪽', '가운데', '오른쪽'], VNAME = ['위', '가운데', '아래'];

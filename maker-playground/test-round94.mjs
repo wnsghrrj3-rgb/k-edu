@@ -95,8 +95,9 @@ const firstMediaIdx = () => {
   return null; /* 내부 접근 대신 DOM 경로 사용 */
 };
 const clickEl = (sel) => { const n = w.document.querySelector(sel); if (!n) return false; n.click ? n.click() : n.dispatchEvent(new w.Event('click', { bubbles: true })); return true; };
+const realMedia = () => [...w.document.querySelectorAll('.ws-el.media[data-ws-el]')].find((n) => n.querySelector('.ws-media')) || null;
 const selectFirstMedia = () => {
-  const el = w.document.querySelector('.ws-el.media[data-ws-el]');
+  const el = realMedia(); /* R98 — 데코 fill 박스가 아니라 진짜 사진을 고른다 */
   if (!el) return false;
   el.dispatchEvent(new w.PointerEvent('pointerdown', { bubbles: true }));
   el.dispatchEvent(new w.PointerEvent('pointerup', { bubbles: true }));
@@ -105,7 +106,7 @@ const selectFirstMedia = () => {
 T('T6 이미지 선택 → 초점 피커 3×3 노출 + 기본 = 가운데 켜짐', () => {
   if (!projReady) return '기반 미충족';
   /* 장면 1은 제목(텍스트 전용) — 미디어가 나올 때까지 다음 장면으로 */
-  for (let g = 0; g < 8 && !w.document.querySelector('.ws-el.media[data-ws-el]'); g++) {
+  for (let g = 0; g < 8 && !realMedia(); g++) {
     const nx = w.document.querySelector('[data-ws="next"]');
     if (!nx) return '다음 장면 버튼 없음';
     nx.click();
@@ -120,7 +121,8 @@ T('T7 왼쪽 위 클릭 → 캔버스 ws-media에 object-position:0% 0%', () => 
   const b = w.document.querySelector('[data-ws-focal="0,0"]');
   if (!b) return '버튼 없음';
   b.click();
-  const m = w.document.querySelector('.ws-el.media .ws-media');
+  const host = realMedia();
+  const m = host && host.querySelector('.ws-media');
   const st = m ? m.getAttribute('style') : '';
   return /object-position:0% 0%/.test(st) ? true : st;
 });
@@ -128,7 +130,8 @@ T('T8 가운데 클릭 → focal 삭제 = object-position 소멸(종전 바이�
   const b = w.document.querySelector('[data-ws-focal="0.5,0.5"]');
   if (!b) return '버튼 없음';
   b.click();
-  const m = w.document.querySelector('.ws-el.media .ws-media');
+  const host = realMedia();
+  const m = host && host.querySelector('.ws-media');
   const st = m ? m.getAttribute('style') : '';
   return !/object-position/.test(st) ? true : st;
 });
