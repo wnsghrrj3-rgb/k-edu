@@ -11,7 +11,7 @@
 window.MK_SCREENS = window.MK_SCREENS || {};
 
 window.MK_VIDHUB = (() => {
-  const st = { comp: null, theme: null, ratio: null, title: '', sub: '', msg: '' };
+  const st = { comp: null, theme: null, ratio: null, title: '', sub: '', msg: '', itemsRaw: '', extra: {} }; /* R97 — 구조별 재료 */
 
   const comps = () => (window.MK_COMPOSE ? window.MK_COMPOSE.listCompositions() : []);
   const themes = () => (window.MK_COMPOSE ? window.MK_COMPOSE.listThemes() : []);
@@ -33,6 +33,7 @@ window.MK_VIDHUB = (() => {
   function select(compId) {
     st.comp = st.comp === compId ? null : compId;
     st.msg = '';
+    st.itemsRaw = ''; st.extra = {}; /* R97 — 구조가 바뀌면 재료도 새로 */
     if (st.comp && !st.theme) { const t = themes(); st.theme = t.length ? t[0].id : null; }
     /* R54 — 비율 override: 선택 시 구조 기본 비율, 해제 시 초기화 */
     if (st.comp && window.MK_COMPOSE) {
@@ -47,7 +48,18 @@ window.MK_VIDHUB = (() => {
     const texts = {};
     if (st.title.trim()) texts.title = st.title.trim();
     if (st.sub.trim()) texts.subtitle = st.sub.trim();
-    const r = window.MK_COMPOSE.buildProject(st.comp, st.theme, { medias: medias || [], texts, ...(st.ratio ? { ratio: st.ratio } : {}) });
+    /* R97 — 구조별 재료: 추가 텍스트 필드 + 항목 줄글 파싱. 빈 입력 = 종전 동작. */
+    const IK = window.MK_INTAKE, sp = IK ? IK.spec(st.comp) : null;
+    if (sp && sp.texts) for (const f of sp.texts) {
+      const v = String(st.extra[f.key] || '').trim();
+      if (v) texts[f.key] = v;
+    }
+    let items = null;
+    if (sp && sp.items && st.itemsRaw.trim()) {
+      const parsed = IK.parseItems(sp.items.kind, st.itemsRaw);
+      if (parsed.length) items = parsed;
+    }
+    const r = window.MK_COMPOSE.buildProject(st.comp, st.theme, { medias: medias || [], texts, ...(items ? { items } : {}), ...(st.ratio ? { ratio: st.ratio } : {}) });
     if (!r.ok) { st.msg = r.guide || '만들 수 없어요 — 입력을 확인해 주세요.'; return r; }
     /* 정직 안내 — 남은 미디어·자동 조정 내역을 열기 전에 알린다 */
     const notes = (r.notes || []).slice();
@@ -231,6 +243,19 @@ window.MK_SCREENS.video = {
         <b style="font:var(--mk-t-h3)">${esc(c ? c.name : '')} 만들기</b>
         <div style="margin-top:10px"><small style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">분위기</small><div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">${chips}</div></div>
         <div style="margin-top:10px"><small style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">화면 비율</small><div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">${ratioChips}</div></div>
+        ${(() => { /* R97 — 구조별 재료 입력 */
+          const IK = window.MK_INTAKE, sp = IK ? IK.spec(H.st.comp) : null;
+          if (!sp) return '';
+          let out = '';
+          if (sp.note) out += `<p class="ed-note" style="margin-top:10px">${esc(sp.note)}</p>`;
+          if (sp.items) out += `<div style="margin-top:10px"><small style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">${esc(sp.items.label)}</small>
+            <textarea class="vh-input" id="vhItems" rows="4" placeholder="${esc(sp.items.ph)}" style="margin-top:6px;resize:vertical;font:var(--mk-t-body-sm);line-height:1.5">${esc(H.st.itemsRaw)}</textarea>
+            <small style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">${esc(sp.items.hint || '')}</small></div>`;
+          if (sp.texts && sp.texts.length) out += `<div style="margin-top:6px;display:grid;grid-template-columns:1fr 1fr;gap:6px 8px">` + sp.texts.map((f) =>
+            `<label style="display:flex;flex-direction:column;gap:3px"><small style="font:var(--mk-t-caption);color:var(--mk-text-secondary)">${esc(f.label)}</small>
+             <input class="vh-input" data-vh-extra="${esc(f.key)}" placeholder="${esc(f.ph || '')}" value="${esc(H.st.extra[f.key] || '')}" maxlength="${f.max || 20}" style="margin-top:0"></label>`).join('') + `</div>`;
+          return out;
+        })()}
         <input class="vh-input" id="vhTitle" placeholder="제목 (비우면 제목 장면이 자동으로 빠져요)" value="${esc(H.st.title)}" maxlength="24">
         <input class="vh-input" id="vhSub" placeholder="부제 (선택)" value="${esc(H.st.sub)}" maxlength="30">
         <button class="vh-go" data-vh-pick>📁 사진·영상 고르고 만들기</button>
@@ -277,6 +302,9 @@ window.MK_SCREENS.video = {
     root.querySelectorAll('[data-vh-ratio]').forEach((b) => b.onclick = () => { H.st.ratio = b.dataset.vhRatio; redraw(); });
     const ti = root.querySelector('#vhTitle'); if (ti) ti.oninput = () => { H.st.title = ti.value; };
     const su = root.querySelector('#vhSub'); if (su) su.oninput = () => { H.st.sub = su.value; };
+    /* R97 — 구조별 재료 입력 배선 */
+    const it = root.querySelector('#vhItems'); if (it) it.oninput = () => { H.st.itemsRaw = it.value; };
+    root.querySelectorAll('[data-vh-extra]').forEach((n) => n.oninput = () => { H.st.extra[n.dataset.vhExtra] = n.value; });
     const go = root.querySelector('[data-vh-pick]'); if (go) go.onclick = () => H.pick((m) => { const el = root.querySelector('#vhMsg'); if (el) el.textContent = m; });
   },
 };
