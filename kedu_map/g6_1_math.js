@@ -382,94 +382,94 @@ window.KEDU_MAP["g6_1_math"] = {
    "kind": "unit",
    "lessons": [
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u5_l01",
+     "lessonId": "g6_math_u5_l01_v1",
      "n": "1",
      "title": "여러 가지 그래프를 만나 보자",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/5단원_여러가지그래프/g6_math_u5_l01_여러가지그래프를만나보자.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u5_l02",
+     "lessonId": "g6_math_u5_l02_v1",
      "n": "2",
      "title": "띠그래프와 원그래프를 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/5단원_여러가지그래프/g6_math_u5_l02_띠그래프와원그래프를알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u5_l03",
+     "lessonId": "g6_math_u5_l03_v1",
      "n": "3",
      "title": "띠그래프로 나타내요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/5단원_여러가지그래프/g6_math_u5_l03_띠그래프로나타내요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u5_l04",
+     "lessonId": "g6_math_u5_l04_v1",
      "n": "4",
      "title": "원그래프로 나타내요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/5단원_여러가지그래프/g6_math_u5_l04_원그래프로나타내요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u5_l05",
+     "lessonId": "g6_math_u5_l05_v1",
      "n": "5",
      "title": "자료를 모아서 띠그래프나 원그래프로 나타내고 해석해요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/5단원_여러가지그래프/g6_math_u5_l05_자료를모아서띠그래프나원그래프로나타내고해석해요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u5_l06",
+     "lessonId": "g6_math_u5_l06_v1",
      "n": "6",
      "title": "여러 가지 그래프를 비교해요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/5단원_여러가지그래프/g6_math_u5_l06_여러가지그래프를비교해요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u5_l07",
+     "lessonId": "g6_math_u5_l07_v1",
      "n": "7",
      "title": "그래프를 이용하여 문제를 해결해요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/5단원_여러가지그래프/g6_math_u5_l07_그래프를이용하여문제를해결해요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u5_l08",
+     "lessonId": "g6_math_u5_l08_v1",
      "n": "8",
      "title": "두근두근 나의 꿈 설계하기",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/5단원_여러가지그래프/g6_math_u5_l08_두근두근나의꿈설계하기.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u5_l09",
+     "lessonId": "g6_math_u5_l09_v1",
      "n": "9",
      "title": "스스로 마무리해요 (단원 평가)",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/math/5단원_여러가지그래프/g6_math_u5_l09_스스로마무리해요.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   },
