@@ -597,7 +597,8 @@ window.MK_COMPOSE = (() => {
     listCompositions: () => COMPS.filter((c) => !c.hidden).map((c) => ({ id: c.id, name: c.name, purpose: c.purpose, category: c.category,
       recommendedMediaCount: c.recommendedMediaCount, recommendedDuration: c.recommendedDuration,
       supportedRatios: Object.keys(RATIOS), defaultRatio: c.defaultRatio || '16:9' })),
-    listThemes: () => THEMES.map((t) => ({ id: t.id, name: t.name, mood: t.mood })),
+    listThemes: () => THEMES.map((t) => ({ id: t.id, name: t.name, mood: t.mood,
+      swatch: t.tokens ? { paper: t.tokens.paper, dark: t.tokens.dark, accent: t.tokens.accent, ink: t.tokens.ink, onDark: t.tokens.onDark } : null })), /* R100 — 칩 색점·대비 감사용 */
     KENBURNS, kbState, assignKenburns, varyTransitions, SAFE, applySafeZone,
     METHODS_BY_RATIO, METHOD_NAMES, estimate,
     analyzeMedia, fitText, textLen, planScenes, buildProject, audit, mediaCapacity };

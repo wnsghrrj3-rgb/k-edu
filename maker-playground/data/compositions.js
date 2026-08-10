@@ -27,7 +27,7 @@
     transitions: ['slide', 'fade', 'push'],
     musicName: '신나는 비트',
     tokens: {
-      paper: '#FFFFFF', dark: '#141019', accent: '#D97757', ink: '#1C1C28', onDark: '#FFF7F2',
+      paper: '#FFFFFF', dark: '#141019', accent: '#D0693F', ink: '#1C1C28', onDark: '#FFF7F2', /* R100 — 대형글자 AA(3.0) 보정: #D97757(2.95)→3.44 */
       type: {
         headline: { size: 8.4, weight: 800 }, subheadline: { size: 3.6, weight: 700 },
         body: { size: 3.0, weight: 500 }, caption: { size: 2.2, weight: 500, color: '#9A8F9E' },

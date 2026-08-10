@@ -233,7 +233,7 @@ window.MK_SCREENS.video = {
     if (H.st.comp) {
       const c = cards.find((x) => x.id === H.st.comp);
       const chips = (window.MK_COMPOSE.listThemes()).map((t) =>
-        `<button class="vh-chip${H.st.theme === t.id ? ' on' : ''}" data-vh-theme="${t.id}">${esc(t.name)}</button>`).join('');
+        `<button class="vh-chip${H.st.theme === t.id ? ' on' : ''}" data-vh-theme="${t.id}">${t.swatch ? `<i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${t.swatch.accent};margin-right:5px;vertical-align:-1px"></i>` : ''}${esc(t.name)}</button>`).join(''); /* R100 — 색점 */
       /* R54 — 비율 칩: 기본 비율에 추천, 9:16에 쇼츠 라벨 정직 표기 */
       const ratioChips = (c ? c.supportedRatios : []).map((r) => {
         const label = r + (c.defaultRatio === r ? ' · 추천' : '') + (r === '9:16' ? ' · 쇼츠' : '');
