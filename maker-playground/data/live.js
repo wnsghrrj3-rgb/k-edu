@@ -94,6 +94,49 @@ window.MK_LIVE = (() => {
     return el;
   }
 
+  /* ===== R107 — 회전 기하 정본 =====
+     el.rot 은 CSS transform:rotate(deg) 와 같은 그림(중심 기준, 시계 방향).
+     workspace 가 회전을 표시하기 시작하면 제스처 수학도 회전을 알아야 한다:
+     화면에서 끈 거리를 요소의 제 축으로 돌려놓고(unrotVec), 리사이즈로 중심이
+     움직인 만큼 화면 기준 앵커가 어긋나는 것을 되돌린다(recenter). */
+
+  /* 유효 각도만 통과 — 0~359 정규화. 무효·0 은 0 (= 회전 없음) */
+  function rotOf(el) {
+    const v = el && el.rot;
+    if (!isFinite(+v)) return 0;
+    return ((Math.round(+v) % 360) + 360) % 360;
+  }
+
+  /* 각도 기록 — 0 이면 키 삭제(§23 기본값=키 없음 규약) */
+  function setRot(el, deg) {
+    if (!el) return el;
+    const d = isFinite(+deg) ? ((Math.round(+deg) % 360) + 360) % 360 : 0;
+    if (d === 0) delete el.rot; else el.rot = d;
+    return el;
+  }
+
+  /* 벡터 회전 — R(deg)·v (px 공간. % 는 축마다 배율이 달라 회전 불가) */
+  function rotVec(x, y, deg) {
+    const t = (+deg || 0) * Math.PI / 180, c = Math.cos(t), s = Math.sin(t);
+    return { x: x * c - y * s, y: x * s + y * c };
+  }
+  /* 역회전 — 화면 델타를 요소의 제 축으로 */
+  function unrotVec(x, y, deg) { return rotVec(x, y, -(+deg || 0)); }
+
+  /* 리사이즈 보정 — 중심이 c→c' 로 움직였을 때 화면 기준 앵커(반대 모서리)를
+     제자리에 두는 평행이동 Δ = (I − R)(c − c'). 어느 모서리를 잡았든 동일하다. */
+  function recenter(cx, cy, nx, ny, deg) {
+    const dx = cx - nx, dy = cy - ny, r = rotVec(dx, dy, deg);
+    return { x: dx - r.x, y: dy - r.y };
+  }
+
+  /* 화면 좌표 → 프레임 내 0~1 (object-position 과 같은 좌표계).
+     cx·cy = 요소 중심(회전해도 불변), w·h = 회전 전 레이아웃 크기(px) */
+  function framePos(cx, cy, w, h, px, py, deg) {
+    const v = unrotVec(px - cx, py - cy, deg);
+    return { x: clamp(0.5 + v.x / (w || 1), 0, 1), y: clamp(0.5 + v.y / (h || 1), 0, 1) };
+  }
+
   /* 스냅 — 씬 중앙(50)·다른 요소의 변/중앙에 1.2% 이내면 흡착. 가이드 좌표 반환 */
   function snap(el, others, thr = 1.2) {
     const w = el.w || 10, h = el.h || 8;
@@ -303,6 +346,22 @@ window.MK_LIVE = (() => {
     if (r.rot !== undefined) { if (r.rot !== 0) v.push('회전 0° 자석 실패'); }
     rotateTo(r, 50, 50, 80, 50);                       /* 오른쪽 = 90° */
     if (r.rot !== 90) v.push('회전 90° 오류');
+    /* R107 — 회전 기하 */
+    if (rotOf({ rot: -90 }) !== 270 || rotOf({ rot: 370 }) !== 10 || rotOf({}) !== 0 || rotOf({ rot: 'x' }) !== 0) v.push('rotOf 정규화 오류');
+    const rz = { rot: 12 }; setRot(rz, 0);
+    if ('rot' in rz) v.push('setRot 0° 키 미삭제');
+    setRot(rz, -45); if (rz.rot !== 315) v.push('setRot 음수 정규화 오류');
+    const rv = rotVec(10, 0, 90);
+    if (Math.abs(rv.x) > 1e-9 || Math.abs(rv.y - 10) > 1e-9) v.push('rotVec 90° 오류');
+    const uv = unrotVec(rv.x, rv.y, 90);
+    if (Math.abs(uv.x - 10) > 1e-9 || Math.abs(uv.y) > 1e-9) v.push('unrotVec 왕복 실패');
+    if (Math.abs(recenter(10, 10, 4, 4, 0).x) > 1e-9) v.push('회전 0° 보정이 0 이 아님');
+    const rc = recenter(0, 0, 10, 0, 180);              /* (I−R180)=2I → Δ=2·(c−c') */
+    if (Math.abs(rc.x + 20) > 1e-9) v.push('recenter 180° 오류');
+    const fp = framePos(100, 100, 40, 20, 100, 100, 33);
+    if (Math.abs(fp.x - 0.5) > 1e-9 || Math.abs(fp.y - 0.5) > 1e-9) v.push('framePos 중심 오류');
+    const fp2 = framePos(100, 100, 40, 20, 100, 120, 90);  /* 90° 회전: 화면 아래 = 요소의 오른쪽(+x) */
+    if (Math.abs(fp2.x - 1) > 1e-9 || Math.abs(fp2.y - 0.5) > 1e-9) v.push('framePos 회전 좌표 오류');
     /* 스냅 — 중앙 흡착 */
     const s = { kind: 'image', x: 44.5, y: 30, w: 10, h: 10 };
     const g = snap(s, []);
@@ -330,6 +389,7 @@ window.MK_LIVE = (() => {
 
   const api = {
     dragTo, resizeTo, rotateTo, handleAt, aspectDefault, snap, nudge, removeEl, dupEl, editText,
+    rotOf, setRot, rotVec, unrotVec, recenter, framePos,          /* R107 — 회전 기하 */
     replaceWithSrc, insertWithSrc, fileToSrc, shrinkImage, normalizeImage,
     useBackend, saveDoc, loadDoc, clearDoc, saveProjects, restoreProjects, autosave, flush,
     liveAudit,

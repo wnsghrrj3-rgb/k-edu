@@ -130,7 +130,14 @@
   const BASE_W = 560;
   let lastTap = null;    /* R106 — 더블탭 감지 {i, t} — 렌더마다 재배선돼도 살아남게 모듈 스코프 (dblclick 은 preventDefault 지형에서 못 믿는다) */
   /* R55 — 선택 핸들: 코너 4 + 좌우변 2 (리사이즈는 MK_LIVE.resizeTo, #/editor R36 동일 규약) */
-  const WSHD = '<i class="ws-hd tl"></i><i class="ws-hd tr"></i><i class="ws-hd bl"></i><i class="ws-hd br"></i><i class="ws-hd ml"></i><i class="ws-hd mr"></i>';
+  const WSHD = '<i class="ws-hd tl"></i><i class="ws-hd tr"></i><i class="ws-hd bl"></i><i class="ws-hd br"></i><i class="ws-hd ml"></i><i class="ws-hd mr"></i>'
+    + '<i class="ws-rh" data-ws-rh title="회전"></i>';   /* R107 — 회전 손잡이. .ws-hd 6개 계약(R55) 은 건드리지 않는다 */
+  /* R107 — 회전 표시. rot=0 이면 빈 문자열 = 회전 이전과 바이트 동일 */
+  const rotDeg = (el) => (window.MK_LIVE && window.MK_LIVE.rotOf ? window.MK_LIVE.rotOf(el) : 0);
+  const rotSty = (el) => { const d = rotDeg(el); return d ? `;transform:rotate(${d}deg)` : ''; };
+  /* 캔버스 실픽셀 — 회전 수학은 % 가 아니라 px 공간에서만 성립한다 */
+  const cpx = () => { const s2 = scene() || { width: 16, height: 9 };
+    const CW = Math.round(BASE_W * WS.zoom / 100); return { CW, CH: Math.round(CW * s2.height / s2.width) }; };
   /* R105 — 자르기 오버레이 조각 (스크림 4 + 상자 + 코너 4 + 확인 바) */
   const cropLayer = (d) => {
     const P = (v) => (Math.max(0, v) * 100).toFixed(2);
@@ -167,7 +174,7 @@
       if (el.kind === 'text') {
         const fs = (el.size / 100 * CH).toFixed(1);
         const ts = window.MK_TEXTSTYLE ? window.MK_TEXTSTYLE.css(el) : ''; /* R56 — 글꼴·배경·외곽선·그림자 */
-        return `<div class="ws-el text ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight || 400}${el.color ? `;color:${el.color}` : ''}${el.align ? `;text-align:${el.align}` : ''}${ts}">${M().esc(el.text).replace(/\n/g, '<br>')}${hd}</div>`;
+        return `<div class="ws-el text ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight || 400}${el.color ? `;color:${el.color}` : ''}${el.align ? `;text-align:${el.align}` : ''}${ts}${rotSty(el)}">${M().esc(el.text).replace(/\n/g, '<br>')}${hd}</div>`;
       }
       if (el.src) {                                    /* R45 — Workspace도 실이미지·실영상 표시 (R36 editor와 동일) */
         const fit = el.fit === 'contain' ? 'contain' : 'cover';
@@ -183,13 +190,13 @@
           ? `<video class="ws-media" src="${el.src}" muted autoplay loop playsinline style="width:100%;height:100%;object-fit:${fit}${fo}${pf};display:block"></video>`
           : `<img class="ws-media" src="${el.src}" alt="${M().esc(el.label || '')}" draggable="false" style="width:100%;height:100%;object-fit:${fit}${fo}${pf};display:block">`;
         /* R55 — overflow 클립을 내부 span으로 옮겨 음수 오프셋 핸들이 잘리지 않게 */
-        return `<div class="ws-el media ${on}${cropping ? ' cropping' : ''}${focaling ? ' focaling' : ''}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%"><span class="ws-clip" style="${(shp + crp).replace(/^;/, '')}">${media}</span>${cropping ? cropLayer(WS.crop.d) : focaling ? focalLayer(WS.focal.d) : hd}</div>`;
+        return `<div class="ws-el media ${on}${cropping ? ' cropping' : ''}${focaling ? ' focaling' : ''}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%${rotSty(el)}"><span class="ws-clip" style="${(shp + crp).replace(/^;/, '')}">${media}</span>${cropping ? cropLayer(WS.crop.d) : focaling ? focalLayer(WS.focal.d) : hd}</div>`;
       }
       if (el.fill) {                                   /* R45 — 색 채움 요소 (자막 바 등) 실표시 · R49 radius */
         const rad = el.radius ? `;border-radius:${el.radius > 100 ? '50%' : (el.radius * CW / sc.width).toFixed(1) + 'px'}` : ''; /* R98 — >100 = 원 (play.js 규약 정렬) */
-        return `<div class="ws-el media ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;background:${el.fill}${rad}">${hd}</div>`;
+        return `<div class="ws-el media ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;background:${el.fill}${rad}${rotSty(el)}">${hd}</div>`;
       }
-      return `<div class="ws-el box ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%"><span>${M().esc(el.label || '요소')}</span>${hd}</div>`;
+      return `<div class="ws-el box ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%${rotSty(el)}"><span>${M().esc(el.label || '요소')}</span>${hd}</div>`;
     }).join('');
     return `<div class="ws-canvaswrap"><div class="ws-canvas ${WS.mode === 'photo' ? 'photo' : ''}" data-ws-canvas style="width:${CW}px;height:${CH}px;background:${sc.background}">${els}</div></div>`;
   };
@@ -206,6 +213,19 @@
       </div>`;
   };
   /* R94 — 초점: 꽉 채우기에서 잘릴 때 남길 곳 (3×3 — SVG 내보내기 정렬 9칸과 정확히 일치) */
+  /* R107 — 회전 컨트롤. 종류를 가리지 않는다(글자·사진·도형·색칠 전부 el.rot 을 쓴다) */
+  const rotCtl = (el) => {
+    const d = rotDeg(el);
+    return `<label class="cx-field"><span>회전</span><b data-ws-rotval>${d}°</b></label>` +
+      `<div class="cx-rotrow">` +
+        `<button class="cx-shb" data-ws-rotby="-15" title="왼쪽으로 15°">↺</button>` +
+        `<button class="cx-shb" data-ws-rotby="15" title="오른쪽으로 15°">↻</button>` +
+        `<input type="range" min="0" max="359" step="1" value="${d}" data-ws-rotr data-stop>` +
+      `</div>` +
+      (d ? `<button class="cx-scenebtn" data-ws-rot0>↺ 회전 없음</button>` : '') +
+      `<div class="cx-hint">모서리 위 손잡이를 끌어도 돌아가요</div>`;
+  };
+
   const focalCtl = (el, idx) => {
     if (!window.MK_FOCAL || !el.src || el.fit === 'contain') return ''; /* R98 — fill 장식엔 미노출 */
     const n = window.MK_FOCAL.norm(el.focal);
@@ -390,6 +410,7 @@
         }
         body = field('이름', el.label || '이미지') + field('크기', el.w + '×' + el.h + '%') + photoCtl + fitCtl(el, sel.idx) + focalCtl(el, sel.idx);
       }
+      body += rotCtl(el);                              /* R107 — 회전은 요소 종류를 가리지 않는다 */
     }
     return `<div class="ws-context"><small class="cap">속성</small><h3>${title}</h3>${body}
       ${sel && sel.type !== 'scene' ? `<button class="cx-scenebtn" data-ws-selscene>← Scene 속성 보기</button>` : ''}
@@ -740,10 +761,11 @@
         const selType = (el) => el.kind === 'text' ? 'text'
           : (el.video === true || el.kind === 'video' || (el.label || '').includes('영상')) ? 'video'
           : (el.label || '').includes('도형') ? 'shape' : 'image';
-        const GEO = ['x', 'y', 'w', 'h', 'size'];
+        const GEO = ['x', 'y', 'w', 'h', 'size', 'rot'];   /* R107 — 회전도 제스처 시작 상태에 포함 */
         const pickGeo = (el) => { const o = {}; GEO.forEach((k) => { if (el[k] != null) o[k] = el[k]; }); return o; };
         const paint = (n, el) => {
           n.style.left = el.x + '%'; n.style.top = el.y + '%'; n.style.width = el.w + '%';
+          n.style.transform = rotDeg(el) ? `rotate(${rotDeg(el)}deg)` : '';   /* R107 */
           if (el.kind !== 'text' && el.h != null) n.style.height = el.h + '%';
           if (el.kind === 'text' && el.size != null) n.style.fontSize = (el.size / 100 * cv.clientHeight).toFixed(1) + 'px';
         };
@@ -770,7 +792,14 @@
         };
         const focalAt = (host, ev) => {                /* 프레임 내 포인터 → 0~1 (object-position 정의와 동일 좌표) */
           const r = host.getBoundingClientRect(), cl = (v) => Math.min(1, Math.max(0, v));
-          return { x: cl((ev.clientX - r.left) / (r.width || 1)), y: cl((ev.clientY - r.top) / (r.height || 1)) };
+          const el0 = scene() && scene().elements[+host.dataset.wsEl];
+          const rt = rotDeg(el0);
+          if (!rt) return { x: cl((ev.clientX - r.left) / (r.width || 1)), y: cl((ev.clientY - r.top) / (r.height || 1)) };
+          /* R107 — 회전 요소의 getBoundingClientRect 은 외접 상자다. 중심만 참이므로
+             중심 기준으로 역회전해 회전 전 프레임 좌표로 되돌린다. */
+          const c = cpx();
+          return L.framePos(r.left + r.width / 2, r.top + r.height / 2,
+            (el0.w || 0) / 100 * c.CW, (el0.h || 0) / 100 * c.CH, ev.clientX, ev.clientY, rt);
         };
         cv.addEventListener('pointerdown', (ev) => {
           if (ev.button !== undefined && ev.button !== 0) return;
@@ -823,8 +852,10 @@
           let handle = hd ? [...hd.classList].find((c) => c !== 'ws-hd') : null;
           if (!handle && wasSel && ev.pointerType && ev.pointerType !== 'mouse' && L.handleAt)
             handle = L.handleAt(elDom.getBoundingClientRect(), ev.clientX, ev.clientY);
-          ges = { i, type: handle ? 'resize' : 'move',
-            dtap,                                      /* R106 — 더블탭 후보 (무이동 up 에서 확정) */
+          const rh = t.closest && t.closest('[data-ws-rh]');   /* R107 — 회전 손잡이 */
+          ges = { i, type: rh ? 'rotate' : (handle ? 'resize' : 'move'),
+            erect: elDom.getBoundingClientRect(),      /* 회전해도 중심은 참 */
+            dtap: rh ? false : dtap,                                      /* R106 — 더블탭 후보 (무이동 up 에서 확정) */
             handle,
             start: pickGeo(el), sx: ev.clientX, sy: ev.clientY,
             rect: cv.getBoundingClientRect(), moved: false,
@@ -835,8 +866,17 @@
         const onGesMove = (ev) => {
           if (!ges) return;
           if (ges.cropMode) {                          /* R105 — 초안만 갱신, 문서·undo 무변형 */
-            const dx = (ev.clientX - ges.sx) / (ges.rect.width || 1);
-            const dy = (ev.clientY - ges.sy) / (ges.rect.height || 1);
+            const ce = WS.crop && scene() ? scene().elements[WS.crop.idx] : null;
+            const crt = rotDeg(ce);                    /* R107 — 회전 요소는 손가락 방향을 제 축으로 돌려놓는다 */
+            let dx, dy;
+            if (crt) {
+              const cv2 = cpx(), v2 = L.unrotVec(ev.clientX - ges.sx, ev.clientY - ges.sy, crt);
+              dx = v2.x / (((ce.w || 0) / 100 * cv2.CW) || 1);
+              dy = v2.y / (((ce.h || 0) / 100 * cv2.CH) || 1);
+            } else {
+              dx = (ev.clientX - ges.sx) / (ges.rect.width || 1);
+              dy = (ev.clientY - ges.sy) / (ges.rect.height || 1);
+            }
             const s = ges.start, MIN = window.MK_PHOTO.CROP_MIN, cl = (v, a, b) => Math.min(b, Math.max(a, v));
             const d = { ...s }, h = ges.handle;
             if (!h) { d.x = cl(s.x + dx, 0, 1 - s.w); d.y = cl(s.y + dy, 0, 1 - s.h); }
@@ -856,11 +896,34 @@
           const dx = (ev.clientX - ges.sx) / (ges.rect.width || 1) * 100;
           const dy = (ev.clientY - ges.sy) / (ges.rect.height || 1) * 100;
           if (Math.abs(dx) + Math.abs(dy) > 0.15) ges.moved = true;
-          if (ges.type === 'move') {
+          if (ges.type === 'rotate') {                 /* R107 — 중심과 손끝의 각도 (0·90·180·270 자석은 MK_LIVE) */
+            const er = ges.erect;
+            L.rotateTo(el, er.left + er.width / 2, er.top + er.height / 2, ev.clientX, ev.clientY);
+            ges.moved = true;
+          } else if (ges.type === 'move') {
+            /* 이동은 회전과 무관 — 중심 기준 회전이라 화면 이동량 = 좌표 이동량 */
             L.dragTo(el, ges.start.x, ges.start.y, dx, dy);
             L.snap(el, scene().elements.filter((_, j) => j !== ges.i)); /* 자석 정렬 */
-          } else L.resizeTo(el, ges.handle, ges.start, dx, dy,
-            { aspect: L.aspectDefault ? L.aspectDefault(el, ges.handle, ev.shiftKey) : ev.shiftKey }); /* R95 — 사진 모서리 = 비율 기본 고정 */
+          } else {
+            const rt = rotDeg(el);
+            let rx = dx, ry = dy;
+            if (rt) {                                  /* R107 — 끈 거리를 요소의 제 축으로 */
+              const v2 = L.unrotVec(ev.clientX - ges.sx, ev.clientY - ges.sy, rt);
+              rx = v2.x / (ges.rect.width || 1) * 100;
+              ry = v2.y / (ges.rect.height || 1) * 100;
+            }
+            L.resizeTo(el, ges.handle, ges.start, rx, ry,
+              { aspect: L.aspectDefault ? L.aspectDefault(el, ges.handle, ev.shiftKey) : ev.shiftKey }); /* R95 — 사진 모서리 = 비율 기본 고정 */
+            if (rt) {                                  /* R107 — 중심이 움직인 만큼 화면 앵커가 밀린다: Δ=(I−R)(c−c') */
+              const s0 = ges.start, c2 = cpx();
+              const CWp = c2.CW || 1, CHp = c2.CH || 1;
+              const d2 = L.recenter(
+                (s0.x + (s0.w || 0) / 2) / 100 * CWp, (s0.y + (s0.h || 0) / 2) / 100 * CHp,
+                (el.x + (el.w || 0) / 2) / 100 * CWp, (el.y + (el.h || 0) / 2) / 100 * CHp, rt);
+              el.x = Math.round((el.x + d2.x / CWp * 100) * 10) / 10;
+              el.y = Math.round((el.y + d2.y / CHp * 100) * 10) / 10;
+            }
+          }
           const n = cv.querySelector(`[data-ws-el="${ges.i}"]`);
           if (n) paint(n, el);
         };
@@ -1017,6 +1080,31 @@
           s.onchange = () => { armed = false; R(); };
         });
       }
+      /* R107 — 회전 컨트롤 (요소 종류 무관). 슬라이더 한 번 끌면 undo 한 칸 규약(R101) 승계 */
+      {
+        const rEl = () => (WS.sel && WS.sel.type !== 'scene' && scene() ? scene().elements[WS.sel.idx] : null);
+        root.querySelectorAll('[data-ws-rotby]').forEach((b) => {
+          b.onclick = () => { const el = rEl(); if (!el) return;
+            snap(); L.setRot(el, L.rotOf(el) + (+b.dataset.wsRotby || 0)); R(); };
+        });
+        const r0 = root.querySelector('[data-ws-rot0]');
+        if (r0) r0.onclick = () => { const el = rEl(); if (!el) return; snap(); L.setRot(el, 0); R(); };
+        const rr = root.querySelector('[data-ws-rotr]');
+        if (rr) {
+          let armed = false;
+          rr.oninput = () => {
+            const el = rEl(); if (!el) return;
+            if (!armed) { snap(); armed = true; }
+            L.setRot(el, +rr.value);
+            const dom = root.querySelector(`[data-ws-el="${WS.sel.idx}"]`);
+            if (dom) dom.style.transform = L.rotOf(el) ? `rotate(${L.rotOf(el)}deg)` : '';
+            const lab = root.querySelector('[data-ws-rotval]');
+            if (lab) lab.textContent = L.rotOf(el) + '°';
+          };
+          rr.onchange = () => { armed = false; R(); };
+        }
+      }
+
       /* R49 — 자막 디자인 */
       root.querySelectorAll('[data-ws-cap]').forEach((b) => b.onclick = () => {
         if (!window.MK_CAPTION) return;
