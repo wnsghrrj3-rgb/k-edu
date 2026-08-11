@@ -112,7 +112,7 @@ body.mkp-on #kedu-back { display:none !important }
         const media = (el.video === true || el.kind === 'video' || /^data:video\//.test(el.src))
           ? `<video src="${el.src}" muted autoplay loop playsinline style="width:100%;height:100%;object-fit:${fit}${window.MK_FOCAL ? window.MK_FOCAL.pos(el) : ''}${window.MK_PHOTO ? window.MK_PHOTO.mediaStyle(el) : ''};display:block;pointer-events:none"></video>`   /* R39 — 영상 프레임 실재생 · R94 초점 */
           : `<img src="${el.src}" alt="" style="width:100%;height:100%;object-fit:${fit}${window.MK_FOCAL ? window.MK_FOCAL.pos(el) : ''}${window.MK_PHOTO ? window.MK_PHOTO.mediaStyle(el) : ''};display:block">`;
-        return `<div class="mkp-el mkp-img" style="${pos}height:${el.h}%${rad};overflow:hidden${rot}${an}">${media}</div>`;
+        return `<div class="mkp-el mkp-img" style="${pos}height:${el.h}%${rad};overflow:hidden${window.MK_PHOTO ? window.MK_PHOTO.cropCss(el) : ''}${rot}${an}">${media}</div>`; /* R105 — 자르기 */
       }
       if (el.fill && el.fill !== 'none') return `<div class="mkp-el" style="${pos}height:${el.h}%;background:${el.fill}${rad}${rot}${an}"></div>`;
       return `<div class="mkp-el mkp-ph" style="${pos}height:${el.h}%${rad}${rot}${an}">${esc(el.label || '')}</div>`;

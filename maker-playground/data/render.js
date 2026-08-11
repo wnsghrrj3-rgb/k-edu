@@ -456,9 +456,12 @@ window.MK_RENDER = (() => {
         const asset = resolveAsset(el.assetId, warn);
         const filter = imageFilterCss(el);
         let clipId = null;
-        if (el.mask || el.crop) {
+        /* R105 — 유효 crop 만 (문자열 '4:3' 유산·비수치는 무시 — NaN clipPath 차단) */
+        const crv = (window.MK_PHOTO && window.MK_PHOTO.cropOf) ? window.MK_PHOTO.cropOf(el)
+          : (el.crop && typeof el.crop === 'object' && isFinite(+el.crop.w) && +el.crop.w > 0 && isFinite(+el.crop.h) && +el.crop.h > 0 ? el.crop : null);
+        if (el.mask || crv) {
           clipId = 'c' + (++defSeq);
-          const mf = el.crop ? { x: f.x + f.w * el.crop.x, y: f.y + f.h * el.crop.y, w: f.w * el.crop.w, h: f.h * el.crop.h } : f;
+          const mf = crv ? { x: f.x + f.w * crv.x, y: f.y + f.h * crv.y, w: f.w * crv.w, h: f.h * crv.h } : f;
           defs.push(`<clipPath id="${clipId}"><path d="${el.mask ? shapePath({ shape: el.mask }, f) : VEC.rect(mf.x, mf.y, mf.w, mf.h, 0)}"/></clipPath>`);
         }
         ops.push({ op: 'image', frame: f, asset, src: el.src || (asset && asset.src) || null, fit: el.fit || 'cover', focal: el.focal || null, radius: el.radius, label: el.label != null ? el.label : (asset && asset.label) || '', clip: clipId, cssFilter: filter, style: { fill: (asset && asset.fill) || '#E6ECF2', ...base } });

@@ -158,6 +158,44 @@ window.MK_PHOTO = (() => {
   /* 미디어 요소 공용 조각 — 보정 + 뒤집기 (네 렌더 경로가 이 한 줄을 쓴다) */
   const mediaStyle = (el, scale) => styleOf(el, scale) + flipCss(el);
 
+  /* ================================================================
+     R105 — 자르기(Crop)
+     ----------------------------------------------------------------
+     el.crop {x,y,w,h} — 프레임 기준 분수(0~1). export clipPath 는
+     R45 부터 살아있었고, 여기서 정본 판정·화면 CSS 조각을 연다.
+     · cropOf: 유효 crop 만 통과 — 문자열 crop('4:3', flow 샌드박스
+       유산)·비수치·풀프레임은 null (NaN clipPath 원천 차단)
+     · setCrop: 클램프(최소 8%) 후 저장, 풀프레임이면 키 삭제(§23
+       바이트 보존), null 이면 해제
+     · cropCss: clip-path:inset(t r b l) — SVG rect 클립과 같은 그림
+     ================================================================ */
+  const CROP_MIN = 0.08;                               /* 최소 변 — 8% */
+  const R4 = (v) => Math.round(v * 10000) / 10000;
+  function cropOf(el) {
+    const c = el && el.crop;
+    if (!c || typeof c !== 'object') return null;
+    const x = +c.x, y = +c.y, w = +c.w, h = +c.h;
+    if (![x, y, w, h].every(isFinite) || w <= 0 || h <= 0) return null;
+    if (x <= 0 && y <= 0 && w >= 1 && h >= 1) return null;
+    return { x, y, w, h };
+  }
+  function setCrop(el, c) {
+    if (!el) return;
+    if (!c) { delete el.crop; return; }
+    const w = R4(Math.min(1, Math.max(CROP_MIN, +c.w || 0)));
+    const h = R4(Math.min(1, Math.max(CROP_MIN, +c.h || 0)));
+    const x = R4(Math.min(1 - w, Math.max(0, +c.x || 0)));
+    const y = R4(Math.min(1 - h, Math.max(0, +c.y || 0)));
+    if (x === 0 && y === 0 && w === 1 && h === 1) { delete el.crop; return; }
+    el.crop = { x, y, w, h };
+  }
+  function cropCss(el) {
+    const c = cropOf(el);
+    if (!c) return '';
+    const P = (v) => R2(Math.max(0, v) * 100);
+    return `;clip-path:inset(${P(c.y)}% ${P(1 - c.x - c.w)}% ${P(1 - c.y - c.h)}% ${P(c.x)}%)`;
+  }
+
   /* ---- 자가검증 ---- */
   function verify() {
     const v = [];
@@ -194,9 +232,21 @@ window.MK_PHOTO = (() => {
     if ('flipH' in f1 || 'flipV' in f1 || mediaStyle(f1) !== '') v.push('뒤집기 원복이 키를 남김');
     const fs = flipSvg({ flipH: true }, { x: 100, y: 50, w: 200, h: 100 });
     if (fs !== 'translate(200 100) scale(-1 1) translate(-200 -100)') v.push('flipSvg 오류: ' + fs);
+    /* R105 — 자르기 */
+    if (cropOf({ crop: '4:3' }) !== null) v.push('문자열 crop 이 무효가 아님');
+    if (cropOf({ crop: { x: 0, y: 0, w: 1, h: 1 } }) !== null) v.push('풀프레임 crop 이 유효 판정');
+    const c1 = {}; setCrop(c1, { x: 0.1, y: 0.2, w: 0.5, h: 0.5 });
+    if (!c1.crop || c1.crop.x !== 0.1 || cropCss(c1) !== ';clip-path:inset(20% 40% 30% 10%)') v.push('cropCss 오류: ' + cropCss(c1));
+    setCrop(c1, { x: 0.9, y: 0, w: 0.5, h: 0.02 });
+    if (c1.crop.x + c1.crop.w > 1 || c1.crop.h !== CROP_MIN) v.push('crop 클램프 오류: ' + JSON.stringify(c1.crop));
+    setCrop(c1, { x: -3, y: -1, w: 9, h: 9 });
+    if ('crop' in c1) v.push('풀프레임 setCrop 이 키를 남김');
+    setCrop(c1, { x: 0.2, y: 0.2, w: 0.4, h: 0.4 }); setCrop(c1, null);
+    if ('crop' in c1) v.push('crop 해제가 키를 남김');
     return { ok: !v.length, violations: v };
   }
 
   return { KEYS, BY, SLIDERS, PRESETS, norm, css, styleOf, preset, setVal, apply, reset, isEdited, valOf, matchPreset,
-    SHAPES, ROUNDED, shapeOf, setShape, shapeStyle, flip, flipCss, flipSvg, mediaStyle, verify };
+    SHAPES, ROUNDED, shapeOf, setShape, shapeStyle, flip, flipCss, flipSvg, mediaStyle,
+    CROP_MIN, cropOf, setCrop, cropCss, verify };
 })();

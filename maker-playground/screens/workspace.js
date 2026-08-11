@@ -21,6 +21,7 @@
     sel: null,              /* null=프로젝트 | {type:'scene'} | {type:'text'|'image'|'video'|'shape', idx} */
     mode: 'design',         /* design | presentation | video | photo */
     msel: [],               /* R103 — Shift 다중 선택 (상태 기본값 — enter 없이도 안전) */
+    crop: null,             /* R105 — 자르기 모드 {idx, sc, d:{x,y,w,h}} (초안 — 확인 전 문서 무변형) */
     zoom: 100, nav: 'scenes', dock: false,
     undo: [], redo: [], savedAt: null, svarMsg: '', notice: '', smartMsg: '',
   };
@@ -47,6 +48,7 @@
       WS.projectId = projectId; WS.sceneIdx = 0; WS.sel = null;
       WS.undo = []; WS.redo = []; WS.savedAt = null; WS.dock = false; WS.nav = 'scenes';
       WS.msel = [];                                    /* R103 — Shift 다중 선택 (씬 이동·재진입 시 초기화) */
+      WS.crop = null;                                  /* R105 — 자르기 모드 재진입 시 종료 */
       /* R93 — 빌드 정직 안내는 차단형 alert 가 아니라 이 자리 한 줄로.
          (준호 실기기: 「생략: ss-title」 OS 경고창이 에러처럼 읽히고 흐름을 끊음) */
       WS.notice = window.MK_WS && window.MK_WS.pendingNotice ? String(window.MK_WS.pendingNotice) : '';
@@ -126,8 +128,24 @@
   const BASE_W = 560;
   /* R55 — 선택 핸들: 코너 4 + 좌우변 2 (리사이즈는 MK_LIVE.resizeTo, #/editor R36 동일 규약) */
   const WSHD = '<i class="ws-hd tl"></i><i class="ws-hd tr"></i><i class="ws-hd bl"></i><i class="ws-hd br"></i><i class="ws-hd ml"></i><i class="ws-hd mr"></i>';
+  /* R105 — 자르기 오버레이 조각 (스크림 4 + 상자 + 코너 4 + 확인 바) */
+  const cropLayer = (d) => {
+    const P = (v) => (Math.max(0, v) * 100).toFixed(2);
+    return `<div class="ws-croplay" data-ws-croplay>
+      <i class="sc" style="left:0;top:0;width:100%;height:${P(d.y)}%"></i>
+      <i class="sc" style="left:0;top:${P(d.y + d.h)}%;width:100%;height:${P(1 - d.y - d.h)}%"></i>
+      <i class="sc" style="left:0;top:${P(d.y)}%;width:${P(d.x)}%;height:${P(d.h)}%"></i>
+      <i class="sc" style="left:${P(d.x + d.w)}%;top:${P(d.y)}%;width:${P(1 - d.x - d.w)}%;height:${P(d.h)}%"></i>
+      <div class="ws-crbox" data-ws-crbox style="left:${P(d.x)}%;top:${P(d.y)}%;width:${P(d.w)}%;height:${P(d.h)}%">
+        <i class="ws-crh tl" data-ws-crh="tl"></i><i class="ws-crh tr" data-ws-crh="tr"></i>
+        <i class="ws-crh bl" data-ws-crh="bl"></i><i class="ws-crh br" data-ws-crh="br"></i></div>
+      <div class="ws-cropbar"><button data-ws-crok>✓ 자르기</button><button data-ws-crno>✕ 취소</button></div>
+    </div>`;
+  };
   const CanvasArea = () => {
     const sc = scene();
+    /* R105 — 장면 이동·요소 소실·사진 아님이면 자르기 모드 자동 종료 */
+    if (WS.crop && (WS.crop.sc !== WS.sceneIdx || !sc.elements[WS.crop.idx] || !sc.elements[WS.crop.idx].src)) WS.crop = null;
     const CW = Math.round(BASE_W * WS.zoom / 100), CH = Math.round(CW * sc.height / sc.width);
     const els = sc.elements.map((el, i) => {
       const on = (WS.sel && WS.sel.idx === i && WS.sel.type !== 'scene') || WS.msel.indexOf(i) >= 0 ? 'sel' : '';
@@ -142,11 +160,13 @@
         const fo = window.MK_FOCAL ? window.MK_FOCAL.pos(el) : ''; /* R94 — 초점 */
         const pf = window.MK_PHOTO ? window.MK_PHOTO.mediaStyle(el, CW / sc.width) : ''; /* R101·R102 — 보정·뒤집기, blur 는 표시 배율 */
         const shp = window.MK_PHOTO ? window.MK_PHOTO.shapeStyle(el, CW / sc.width) : ''; /* R102 — 모양(사각·둥근·원) */
+        const cropping = WS.crop && WS.crop.idx === i;
+        const crp = !cropping && window.MK_PHOTO ? window.MK_PHOTO.cropCss(el) : ''; /* R105 — 자르기 중엔 원본 전체 노출 */
         const media = (el.video === true || el.kind === 'video' || /^data:video\//.test(el.src))
           ? `<video class="ws-media" src="${el.src}" muted autoplay loop playsinline style="width:100%;height:100%;object-fit:${fit}${fo}${pf};display:block"></video>`
           : `<img class="ws-media" src="${el.src}" alt="${M().esc(el.label || '')}" draggable="false" style="width:100%;height:100%;object-fit:${fit}${fo}${pf};display:block">`;
         /* R55 — overflow 클립을 내부 span으로 옮겨 음수 오프셋 핸들이 잘리지 않게 */
-        return `<div class="ws-el media ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%"><span class="ws-clip" style="${shp ? shp.slice(1) : ''}">${media}</span>${hd}</div>`;
+        return `<div class="ws-el media ${on}${cropping ? ' cropping' : ''}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%"><span class="ws-clip" style="${(shp + crp).replace(/^;/, '')}">${media}</span>${cropping ? cropLayer(WS.crop.d) : hd}</div>`;
       }
       if (el.fill) {                                   /* R45 — 색 채움 요소 (자막 바 등) 실표시 · R49 radius */
         const rad = el.radius ? `;border-radius:${el.radius > 100 ? '50%' : (el.radius * CW / sc.width).toFixed(1) + 'px'}` : ''; /* R98 — >100 = 원 (play.js 규약 정렬) */
@@ -344,7 +364,9 @@
             `<label class="cx-field"><span>모양 · 뒤집기</span></label><div class="cx-shrow">${PH.SHAPES.map((s2) =>
               `<button class="cx-shb${PH.shapeOf(el) === s2.id ? ' on' : ''}" data-ws-pshape="${s2.id}" title="${s2.name}">${s2.icon}</button>`).join('')}<i></i>` +
               `<button class="cx-shb${el.flipH ? ' on' : ''}" data-ws-pflip="h" title="좌우 뒤집기">⇋</button>` +
-              `<button class="cx-shb${el.flipV ? ' on' : ''}" data-ws-pflip="v" title="상하 뒤집기">⥮</button></div>` +
+              `<button class="cx-shb${el.flipV ? ' on' : ''}" data-ws-pflip="v" title="상하 뒤집기">⥮</button>` +
+              (el.src ? `<button class="cx-shb${PH.cropOf(el) ? ' on' : ''}" data-ws-pcrop title="자르기">✂</button>` : '') + `</div>` +
+            (el.src && PH.cropOf(el) ? `<button class="cx-scenebtn" data-ws-pcrop0>✂ 자르기 해제</button>` : '') + /* R105 */
             (PH.isEdited(el) ? `<button class="cx-scenebtn" data-ws-preset0>↩ 원래대로</button>` : '');
         }
         body = field('이름', el.label || '이미지') + field('크기', el.w + '×' + el.h + '%') + photoCtl + fitCtl(el, sel.idx) + focalCtl(el, sel.idx);
@@ -707,9 +729,34 @@
           if (el.kind === 'text' && el.size != null) n.style.fontSize = (el.size / 100 * cv.clientHeight).toFixed(1) + 'px';
         };
         let ges = null, swallow = false;
+        /* R105 — 자르기 오버레이 직갱신 (재렌더 없이 스크림·상자만) */
+        const paintCrop = (host, d) => {
+          const P = (v) => (Math.max(0, v) * 100).toFixed(2) + '%';
+          const sc4 = host.querySelectorAll('.ws-croplay .sc');
+          if (sc4.length === 4) {
+            sc4[0].style.height = P(d.y);
+            sc4[1].style.top = P(d.y + d.h); sc4[1].style.height = P(1 - d.y - d.h);
+            sc4[2].style.top = P(d.y); sc4[2].style.width = P(d.x); sc4[2].style.height = P(d.h);
+            sc4[3].style.left = P(d.x + d.w); sc4[3].style.top = P(d.y); sc4[3].style.width = P(1 - d.x - d.w); sc4[3].style.height = P(d.h);
+          }
+          const bx = host.querySelector('.ws-crbox');
+          if (bx) { bx.style.left = P(d.x); bx.style.top = P(d.y); bx.style.width = P(d.w); bx.style.height = P(d.h); }
+        };
         cv.addEventListener('pointerdown', (ev) => {
           if (ev.button !== undefined && ev.button !== 0) return;
           const t = ev.target;
+          if (WS.crop) {                               /* R105 — 자르기 모드: 크롭 상자만 조작, 다른 요소는 잠금 */
+            if (t.closest && (t.closest('[data-ws-crok]') || t.closest('[data-ws-crno]'))) return; /* 버튼 click 통과 */
+            const crh = t.closest && t.closest('[data-ws-crh]');
+            const crb = t.closest && t.closest('[data-ws-crbox]');
+            if (!crh && !crb) return;
+            const host = cv.querySelector(`[data-ws-el="${WS.crop.idx}"]`); if (!host) return;
+            ges = { cropMode: true, handle: crh ? crh.dataset.wsCrh : null,
+              start: { ...WS.crop.d }, sx: ev.clientX, sy: ev.clientY,
+              rect: host.getBoundingClientRect(), host };
+            if (cv.setPointerCapture && ev.pointerId != null) { try { cv.setPointerCapture(ev.pointerId); } catch (_) {} }
+            ev.preventDefault(); return;
+          }
           const hd = t.closest && t.closest('.ws-hd');
           const elDom = t.closest && t.closest('[data-ws-el]');
           if (!elDom) return;
@@ -742,6 +789,20 @@
         });
         const onGesMove = (ev) => {
           if (!ges) return;
+          if (ges.cropMode) {                          /* R105 — 초안만 갱신, 문서·undo 무변형 */
+            const dx = (ev.clientX - ges.sx) / (ges.rect.width || 1);
+            const dy = (ev.clientY - ges.sy) / (ges.rect.height || 1);
+            const s = ges.start, MIN = window.MK_PHOTO.CROP_MIN, cl = (v, a, b) => Math.min(b, Math.max(a, v));
+            const d = { ...s }, h = ges.handle;
+            if (!h) { d.x = cl(s.x + dx, 0, 1 - s.w); d.y = cl(s.y + dy, 0, 1 - s.h); }
+            else {
+              if (h.indexOf('l') >= 0) { const nx = cl(s.x + dx, 0, s.x + s.w - MIN); d.w = s.x + s.w - nx; d.x = nx; }
+              if (h.indexOf('r') >= 0) d.w = cl(s.w + dx, MIN, 1 - s.x);
+              if (h.indexOf('t') >= 0) { const ny = cl(s.y + dy, 0, s.y + s.h - MIN); d.h = s.y + s.h - ny; d.y = ny; }
+              if (h.indexOf('b') >= 0) d.h = cl(s.h + dy, MIN, 1 - s.y);
+            }
+            WS.crop.d = d; paintCrop(ges.host, d); return;
+          }
           const el = scene().elements[ges.i]; if (!el) { ges = null; return; }
           const dx = (ev.clientX - ges.sx) / (ges.rect.width || 1) * 100;
           const dy = (ev.clientY - ges.sy) / (ges.rect.height || 1) * 100;
@@ -756,6 +817,7 @@
         };
         const onGesUp = () => {
           if (!ges) return;
+          if (ges.cropMode) { ges = null; return; }    /* R105 — 커밋은 ✓ 버튼에서만 */
           const g = ges; ges = null;
           if (g.moved) {
             WS.undo.push(g.pre); if (WS.undo.length > 30) WS.undo.shift(); WS.redo = [];
@@ -835,6 +897,23 @@
         });
         const rz = root.querySelector('[data-ws-preset0]');
         if (rz) rz.onclick = () => { const el = phEl(); if (!el) return; snap(); PH.reset(el); R(); };
+        /* R105 — 자르기: 진입(초안=기존 crop 또는 풀프레임)·해제·확인·취소.
+           초안은 WS.crop.d 에만 살고 문서는 확인 순간까지 무변형 — undo 1건 보장 */
+        const cb = root.querySelector('[data-ws-pcrop]');
+        if (cb) cb.onclick = () => {
+          const el = phEl(); if (!el || !el.src) return;
+          WS.crop = { idx: WS.sel.idx, sc: WS.sceneIdx, d: PH.cropOf(el) || { x: 0, y: 0, w: 1, h: 1 } };
+          R();
+        };
+        const cb0 = root.querySelector('[data-ws-pcrop0]');
+        if (cb0) cb0.onclick = () => { const el = phEl(); if (!el) return; snap(); PH.setCrop(el, null); R(); };
+        const cok = root.querySelector('[data-ws-crok]');
+        if (cok) cok.onclick = () => {
+          const el = scene().elements[WS.crop && WS.crop.idx]; if (!el) { WS.crop = null; R(); return; }
+          snap(); PH.setCrop(el, WS.crop.d); WS.crop = null; R();
+        };
+        const cno = root.querySelector('[data-ws-crno]');
+        if (cno) cno.onclick = () => { WS.crop = null; R(); };
         const rp = root.querySelector('[data-ws-preplace]');
         if (rp) rp.onclick = () => {                   /* §11 — 구조는 두고 사진만. 취소 = 변화 0 (R46 규약) */
           const el = phEl(); if (!el || !window.MK_LIVE) return;

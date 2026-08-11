@@ -238,8 +238,8 @@ window.MK_SCREENS.editor = (() => {
       if (el.src) {                                    /* R36 실이미지 — dataURL 실표시, 라벨은 걷는다 */
         const fit = el.fit === 'contain' ? 'contain' : 'cover';
         const media = (el.video === true || el.kind === 'video' || /^data:video\//.test(el.src))
-          ? `<video class="ed-imgreal" src="${el.src}" muted autoplay loop playsinline style="object-fit:${fit}${window.MK_FOCAL ? window.MK_FOCAL.pos(el) : ''}"></video>`   /* R39 — 영상 프레임 실표시 */
-          : `<img class="ed-imgreal" src="${el.src}" alt="${M().esc(el.label || '')}" draggable="false" style="object-fit:${fit}${window.MK_FOCAL ? window.MK_FOCAL.pos(el) : ''}${window.MK_PHOTO ? window.MK_PHOTO.mediaStyle(el) : ''}">`;
+          ? `<video class="ed-imgreal" src="${el.src}" muted autoplay loop playsinline style="object-fit:${fit}${window.MK_FOCAL ? window.MK_FOCAL.pos(el) : ''}${window.MK_PHOTO ? window.MK_PHOTO.cropCss(el) : ''}"></video>`   /* R39 — 영상 프레임 실표시 */
+          : `<img class="ed-imgreal" src="${el.src}" alt="${M().esc(el.label || '')}" draggable="false" style="object-fit:${fit}${window.MK_FOCAL ? window.MK_FOCAL.pos(el) : ''}${window.MK_PHOTO ? window.MK_PHOTO.mediaStyle(el) + window.MK_PHOTO.cropCss(el) : ''}">`;
         return `<div class="ed-el img-ph has-src ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%${rad}${rotSty(el)}">${media}${hd2}</div>`;
       }
       return `<div class="ed-el img-ph ${fillCls} ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%${fillSty}${rad}${cut}${rotSty(el)}">${M().esc(el.label)}${hd2}</div>`;
