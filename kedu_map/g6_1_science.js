@@ -82,6 +82,16 @@ window.KEDU_MAP["g6_1_science"] = {
      "url": "/grade6/semester1/science/1단원_산과염기/g6_sci_u1_l07_산성화.html",
      "track": "tb",
      "ready": true
+    },
+    {
+     "key": "g6_science_u1_l08",
+     "lessonId": "g6_sci_u1_l08_v1",
+     "n": "9~12",
+     "title": "창의가 팡팡 + 과학이 톡톡 — 산성화를 알리다",
+     "sub": null,
+     "url": "/grade6/semester1/science/1단원_산과염기/g6_sci_u1_l08_창의가팡팡.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }
