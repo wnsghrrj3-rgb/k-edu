@@ -92,6 +92,16 @@ window.KEDU_MAP["g6_1_science"] = {
      "url": "/grade6/semester1/science/1단원_산과염기/g6_sci_u1_l08_창의가팡팡.html",
      "track": "tb",
      "ready": true
+    },
+    {
+     "key": "g6_science_u1_l09",
+     "lessonId": "g6_sci_u1_l09_v1",
+     "n": "마무리",
+     "title": "산과 염기 마무리하기",
+     "sub": null,
+     "url": "/grade6/semester1/science/1단원_산과염기/g6_sci_u1_l09_단원마무리.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }
