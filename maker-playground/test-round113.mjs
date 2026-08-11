@@ -206,7 +206,10 @@ sec('── ⑬ export 텍스트 캐시가 자간·줄간격을 본다 (R113 이
   /* 화면이 export 에게 묻기 시작한 이상, export 가 캐시로 틀리면 화면도 같이 틀린다.
      종전 키엔 letterSpacing·lineHeight 가 없어서, 줄 수가 우연히 같으면 충돌했다. */
   const A = { kind: 'text', x: 8, y: 10, w: 24, size: 4, text: LONG };
-  const B = { ...A, letterSpacing: 0.08 };
+  /* R115 — 표본 재보정. 폭 모델이 글꼴 실측으로 바뀌면서 이 문장이 옛 경계에서
+     벗어났다(자간 0.08 로는 줄이 안 갈린다). 계약은 그대로고 자간 값만
+     새 경계 위로 다시 앉힌다 — 검사하려는 건 캐시 키의 격리이지 특정 수치가 아니다. */
+  const B = { ...A, letterSpacing: 0.2 };
   const line = (el) => R.renderScene(SC([el]), { noCache: true }).ops.find((o) => o.op === 'text').lines;
   line(A);                                   /* 캐시를 먼저 채운다 — 종전이면 여기서 오염된다 */
   ok(JSON.stringify(line(B)) !== JSON.stringify(line(A)), '자간 다른 텍스트가 남의 배치를 물려받지 않는다');

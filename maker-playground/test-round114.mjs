@@ -98,11 +98,14 @@ sec('── ③ 창구가 자간을 답한다 — px·em 두 단위', () => {
 });
 
 sec('── ④ 자간이 줄바꿈을 바꾼다', () => {
+  /* R115 — 표본 재보정: 자간 0.3 → 0.5. 글꼴 실측 폭(프리텐다드 한글 0.864em)이
+     들어오면서 같은 상자에 글자가 더 들어가, 옛 값으로는 줄이 안 갈린다.
+     계약("자간이 붙으면 줄이 는다")은 그대로다. */
   const a = R.layoutOf(mk(), 1280, 720);
-  const b = R.layoutOf(mk({ tracking: 0.3 }), 1280, 720);
+  const b = R.layoutOf(mk({ tracking: 0.5 }), 1280, 720);
   ok(b.lines.length > a.lines.length, `자간이 붙으면 줄이 는다 (${a.lines.length} → ${b.lines.length})`);
   ok(a.lines.join('|') !== b.lines.join('|'), '줄 내용이 갈린다');
-  const c = R.layoutOf(mk({ letterSpacing: 0.3 }), 1280, 720);
+  const c = R.layoutOf(mk({ letterSpacing: 0.5 }), 1280, 720);
   ok(b.lines.join('|') === c.lines.join('|'), '두 이름이 같은 줄을 낸다');
   const neg = R.layoutOf(mk({ tracking: -0.05 }), 1280, 720);
   ok(neg.textW < a.textW, `음수 자간도 통한다 (폭 ${a.textW} → ${neg.textW})`);

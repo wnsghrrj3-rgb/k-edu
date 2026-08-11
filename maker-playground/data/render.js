@@ -86,28 +86,78 @@ window.MK_RENDER = (() => {
 
   /* ================================================================
      3. Typography Engine — 결정론 측정·줄바꿈·오버플로·자동 축소
-     문자폭 테이블: 한글/CJK 1.0em · 라틴 대문자 .66 · 소문자 .52 ·
-     숫자 .58 · 공백 .32 · 문장부호 .30 (커닝 근사 포함)
+     R115 — 문자폭은 글꼴별 실측표에서 온다 (종전엔 전 글꼴 공통 고정표)
      ================================================================ */
-  const CH_W = (ch) => {
-    const c = ch.codePointAt(0);
-    if (c >= 0xAC00 && c <= 0xD7A3) return 1.0;              /* 한글 음절 */
-    if (c >= 0x4E00 && c <= 0x9FFF) return 1.0;              /* 한자 */
-    if (c >= 0x3000 && c <= 0x303F) return 1.0;              /* CJK 부호 */
-    if (ch === ' ') return 0.32;
-    if (/[A-Z]/.test(ch)) return 0.66;
-    if (/[a-z]/.test(ch)) return 0.52;
-    if (/[0-9]/.test(ch)) return 0.58;
-    if (/[.,:;'"!|·]/.test(ch)) return 0.30;
-    return 0.55;
+
+  /* R115 — 폭 모델이 글꼴을 모르고 있었다.
+     종전 표는 한글/CJK 1.0em · 대문자 .66 · 소문자 .52 … 하나로, 프리텐다드든
+     나눔 손글씨 펜이든 검은고딕이든 같은 수로 쟀다. layoutText 는 첫 줄에서
+     resolveFont 로 글꼴을 해석해놓고 폭 계산엔 한 번도 쓰지 않았다.
+
+     실측이 잔인했다 — 한글은 어떤 글꼴에서도 1.0em 이 아니다:
+       나눔 손글씨 펜 0.624 · 도현 0.768 · 주아 0.819 · 개구쟁이 0.820 ·
+       검은고딕 0.832 · 프리텐다드 0.864 · 고운돋움/고운바탕 0.914 ·
+       Noto Sans KR 0.920 · 나눔고딕 0.940
+     기본 글꼴 프리텐다드조차 모델이 15.7% 더 넓게 봤고, 나눔 손글씨 펜은
+     60% 더 넓게 봤다. 결과는 두 갈래로 나타났다:
+       · 줄바꿈이 실제보다 일찍 일어난다 (오른쪽에 안 쓴 자리가 남는다)
+       · 배경 pill 폭(textW)이 글자보다 넓게 그려진다 — 손글씨 프리셋 34.2%
+
+     그리고 이게 export 안에서 자기모순이 됐다. 같은 배경 pill 을
+     SVG 는 op.textW(모델)로, canvas(PNG·MP4)는 cx.measureText(브라우저 실측)로
+     그렸다 — 같은 문서가 형식에 따라 다른 폭으로 나왔다는 뜻이다.
+
+     표의 출처: fontkit 으로 실폰트 파일의 hmtx advance 를 직접 읽어
+     unitsPerEm 으로 정규화한 값. 문자군별 평균이고 표본은 한글 33·라틴 각 26·
+     숫자 10·부호 8~9·기타 15 자다. 한글은 대부분 글꼴에서 고정폭이라
+     평균이 곧 실값이고(min=max), 고운바탕만 가변(0.850~0.960)이라 평균을 쓴다.
+     굵기는 한글 폭을 거의 안 바꾸고(고운바탕 400→700 에서 +0.6%)
+     라틴만 최대 8% 넓힌다 — 이번 라운드는 글꼴 축만 갚는다. */
+  const FONT_METRICS = {
+    /*                    han    cjkp    sp     up     lo     di     pu     ot   */
+    'Pretendard':       { han: .864, cjkp: .639, sp: .251, up: .641, lo: .506, di: .584, pu: .268, ot: .527 },
+    'Noto Sans KR':     { han: .920, cjkp: .920, sp: .224, up: .636, lo: .530, di: .555, pu: .335, ot: .520 },
+    'Nanum Gothic':     { han: .940, cjkp: .940, sp: .280, up: .651, lo: .520, di: .606, pu: .322, ot: .573 },
+    'Jua':              { han: .819, cjkp: .819, sp: .300, up: .608, lo: .480, di: .576, pu: .303, ot: .578 },
+    'Do Hyeon':         { han: .768, cjkp: .768, sp: .300, up: .548, lo: .456, di: .509, pu: .227, ot: .476 },
+    'Black Han Sans':   { han: .832, cjkp: .832, sp: .300, up: .696, lo: .634, di: .600, pu: .310, ot: .561 },
+    'Gowun Dodum':      { han: .914, cjkp: .914, sp: .310, up: .626, lo: .464, di: .531, pu: .321, ot: .583 },
+    'Gowun Batang':     { han: .914, cjkp: .914, sp: .310, up: .632, lo: .485, di: .531, pu: .321, ot: .583 },
+    'Nanum Pen Script': { han: .624, cjkp: .624, sp: .280, up: .436, lo: .385, di: .340, pu: .258, ot: .419 },
+    'Gaegu':            { han: .820, cjkp: .820, sp: .420, up: .541, lo: .443, di: .509, pu: .372, ot: .609 },
   };
+
+  /* R115 — 폭 읽기 정본. 표에 없는 글꼴(브랜드 커스텀·OS 글꼴)은 폴백 표를 쓴다.
+     읽는 자리가 여기 하나뿐이라야 다음에 또 갈리지 않는다. */
+  function metricsOf(family) {
+    return FONT_METRICS[family || FALLBACK_CHAIN[0]] || FONT_METRICS[FALLBACK_CHAIN[0]];
+  }
+  const DEF_METRICS = FONT_METRICS[FALLBACK_CHAIN[0]];
+
+  /* 문자군 판정 — 배수는 글꼴별 실측표에서 온다. 범위는 종전 그대로다
+     (여기서 넓히면 글꼴 축 말고 다른 것까지 같이 움직인다) */
+  const CH_G = (ch) => {
+    const c = ch.codePointAt(0);
+    if (c >= 0xAC00 && c <= 0xD7A3) return 'han';            /* 한글 음절 */
+    if (c >= 0x4E00 && c <= 0x9FFF) return 'han';            /* 한자 */
+    if (c >= 0x3000 && c <= 0x303F) return 'cjkp';           /* CJK 부호 */
+    if (ch === ' ') return 'sp';
+    if (/[A-Z]/.test(ch)) return 'up';
+    if (/[a-z]/.test(ch)) return 'lo';
+    if (/[0-9]/.test(ch)) return 'di';
+    if (/[.,:;'"!|·]/.test(ch)) return 'pu';
+    return 'ot';
+  };
+  const CH_W = (ch, m) => { const v = (m || DEF_METRICS)[CH_G(ch)]; return v == null ? (m || DEF_METRICS).ot : v; };
+  /* 커닝 근사 — 글꼴별 kern/GPOS 까지는 재지 않았다. 라틴 3 쌍만 종전 그대로 */
   const KERN = { 'AV': -0.06, 'To': -0.05, 'Yo': -0.05, '가.': -0.03 };
 
-  function measure(text, size, letterSpacing) {
+  function measure(text, size, letterSpacing, m) {
     const ls = letterSpacing || 0;
+    const mm = m || DEF_METRICS;
     let w = 0; const chars = Array.from(text);
     for (let i = 0; i < chars.length; i++) {
-      w += CH_W(chars[i]) * size + ls;
+      w += CH_W(chars[i], mm) * size + ls;
       const pair = chars[i] + (chars[i + 1] || '');
       if (KERN[pair]) w += KERN[pair] * size;
     }
@@ -115,20 +165,20 @@ window.MK_RENDER = (() => {
   }
 
   /* 단어 우선 줄바꿈 — 공백 단위, 단어가 폭 초과 시 음절 단위 강제 분할 */
-  function wrap(text, maxW, size, letterSpacing) {
+  function wrap(text, maxW, size, letterSpacing, m) {
     const out = [];
     String(text == null ? '' : text).split('\n').forEach((para) => {
       if (!para) { out.push(''); return; }
       let line = '';
       para.split(' ').forEach((word) => {
         const tryLine = line ? line + ' ' + word : word;
-        if (measure(tryLine, size, letterSpacing) <= maxW) { line = tryLine; return; }
+        if (measure(tryLine, size, letterSpacing, m) <= maxW) { line = tryLine; return; }
         if (line) out.push(line);
-        if (measure(word, size, letterSpacing) <= maxW) { line = word; return; }
+        if (measure(word, size, letterSpacing, m) <= maxW) { line = word; return; }
         /* 음절 단위 강제 분할 */
         let seg = '';
         Array.from(word).forEach((ch) => {
-          if (measure(seg + ch, size, letterSpacing) > maxW && seg) { out.push(seg); seg = ch; }
+          if (measure(seg + ch, size, letterSpacing, m) > maxW && seg) { out.push(seg); seg = ch; }
           else seg += ch;
         });
         line = seg;
@@ -165,24 +215,31 @@ window.MK_RENDER = (() => {
     return raw;
   }
   function textLines(el, boxW, size) {
-    return wrap(listPrefixed(el), boxW, size, lsOf(el) * size).length;
+    /* R115 — 줄 수 정본도 글꼴을 본다. frameOf 가 이걸 부르므로, 여기서 표를
+       안 넘기면 프레임만 옛 폭으로 남아 layoutText 와 다시 갈린다. */
+    return wrap(listPrefixed(el), boxW, size, lsOf(el) * size, metricsOf(el && el.font)).length;
   }
 
   /* Paragraph 처리: bullet('· ')·number('1. ') 접두 + 오버플로 정책 */
   function layoutText(el, box, warn) {
     const font = resolveFont(el.font, warn);
+    /* R115 — 여기서 해석한 글꼴을 드디어 폭 계산이 쓴다. 종전엔 이 줄이
+       그리기용 stack 만 만들고 폭은 전 글꼴 공통표로 쟀다.
+       font.family 는 폴백이 이미 반영된 값이라, 없는 글꼴을 지정한 원소는
+       화면이 그리는 폴백 글꼴과 같은 표로 재게 된다. */
+    const fm = metricsOf(font.family);
     let size = el.sizePx;
     const lh = el.lineHeight || 1.35;
     const ls = lsOf(el) * size;
     let raw = listPrefixed(el);                    /* R111 — 접두 규약은 정본 하나로 */
 
-    let lines = wrap(raw, box.w, size, ls);
+    let lines = wrap(raw, box.w, size, ls, fm);
     const fits = () => lines.length * size * lh <= box.h + size * 0.4;
 
     const overflow = el.overflow || 'visible';
     if (overflow === 'autoresize') {
       let guard = 24;
-      while (!fits() && size > 6 && guard--) { size = R2(size * 0.92); lines = wrap(raw, box.w, size, lsOf(el) * size); }
+      while (!fits() && size > 6 && guard--) { size = R2(size * 0.92); lines = wrap(raw, box.w, size, lsOf(el) * size, fm); }
     } else if (overflow === 'clip' || overflow === 'ellipsis') {
       const maxLines = Math.max(1, Math.floor(box.h / (size * lh)));
       if (lines.length > maxLines) {
@@ -190,7 +247,7 @@ window.MK_RENDER = (() => {
         if (overflow === 'ellipsis') lines[maxLines - 1] = lines[maxLines - 1].replace(/.{1,2}$/, '') + '…';
       }
     }
-    return { font, size, lineHeight: lh, letterSpacing: ls, lines, textW: Math.max(...lines.map((l) => measure(l, size, ls)), 0) };
+    return { font, size, lineHeight: lh, letterSpacing: ls, lines, textW: Math.max(...lines.map((l) => measure(l, size, ls, fm)), 0) };
   }
 
   /* R113 — 화면이 export 에게 배치를 묻는 창구.
@@ -686,7 +743,12 @@ window.MK_RENDER = (() => {
         try { cx.letterSpacing = (op2.letterSpacing || 0) * S + 'px'; } catch (_) {}
         if (op2.bg && op2.bg.color) {
           const px2 = size * 0.5, py2 = size * 0.22;
-          const tw = Math.max(...op2.lines.map((l) => cx.measureText(l).width), 0);
+          /* R115 — 폭 정본은 op.textW 하나다. 종전엔 여기만 cx.measureText 로
+             브라우저 실측을 썼다 — 같은 배경 pill 을 SVG 는 모델 폭으로,
+             PNG·MP4 는 실측 폭으로 그렸다는 뜻이다. 같은 문서가 형식에 따라
+             달라지는 건 export 안의 자기모순이라, 재는 자리를 하나로 모은다.
+             (실측을 버리는 대신 모델이 실폰트 값을 쓰게 됐다 — 오차 9.7~34.2% → 0 수준) */
+          const tw = op2.textW != null ? op2.textW * S : Math.max(...op2.lines.map((l) => cx.measureText(l).width), 0);
           const bw = Math.min(tw + px2 * 2, f.w * S + px2 * 2);
           const bx = op2.align === 'center' ? tx0 - bw / 2 : op2.align === 'right' ? tx0 - bw + px2 : tx0 - px2;
           const bh = Math.max(op2.lines.length * lineH + py2 * 2 - (lineH - size), size + py2 * 2);
@@ -1092,6 +1154,7 @@ window.MK_RENDER = (() => {
     wrap, measure, layoutText, textLines, listPrefixed, frameOf,   /* R111 — 줄수 정본·프레임 (MK_LIVE 가 빌려 쓰고 하니스가 검사한다) */
     layoutOf,                                                      /* R113 — 화면이 export 에게 배치를 묻는 창구 (workspace·editor·미니 공용) */
     lsOf,                                                          /* R114 — 자간 읽기 정본 (letterSpacing 우선, tracking 은 옛 이름) */
+    metricsOf,                                                     /* R115 — 글꼴별 문자폭 실측표 (폭 읽기 정본) */
     resolveFont, resolveAsset, VEC, buildTimeline, sampleTrack,
     /* 어댑터 */
     toSVG, toHTML, toPDF, toPDFRaster, jpegSize, dataUrlBytes, toPPTX, toRaster, toVideoPlan, registerAdapter, ADAPTERS,
