@@ -72,6 +72,16 @@ window.KEDU_MAP["g6_1_science"] = {
      "url": "/grade6/semester1/science/1단원_산과염기/g6_sci_u1_l06_이용하는예.html",
      "track": "tb",
      "ready": true
+    },
+    {
+     "key": "g6_science_u1_l07",
+     "lessonId": "g6_sci_u1_l07_v1",
+     "n": "8",
+     "title": "산성화가 환경에 미치는 영향을 알아볼까?",
+     "sub": null,
+     "url": "/grade6/semester1/science/1단원_산과염기/g6_sci_u1_l07_산성화.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }
