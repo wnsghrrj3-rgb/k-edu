@@ -129,6 +129,16 @@ window.KEDU_MAP["g6_1_science"] = {
      "url": "/grade6/semester1/science/2단원_물체의운동/g6_sci_u2_l02_운동특징.html",
      "track": "tb",
      "ready": true
+    },
+    {
+     "key": "g6_science_u2_l03",
+     "lessonId": "g6_sci_u2_l03_v1",
+     "n": "3",
+     "title": "물체의 운동을 표현해 볼까?",
+     "sub": null,
+     "url": "/grade6/semester1/science/2단원_물체의운동/g6_sci_u2_l03_운동표현.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }

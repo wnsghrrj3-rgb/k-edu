@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<!--
+  g6_sci_u2_l03 — 2. 물체의 운동을 표현해 볼까?
+  ════════════════════════════════════════════════════════════
+  위치: kedu/curriculum/science/g6/unit2/03차_운동표현/draft.html
+  계획: unit2/_PLAN.md (2026-08-11)
+  준거: 『과학』 6-1 p.40~41 / 『실험관찰』 p.24~25 / 지도서 p.198~205 (3/12차시)
+
+  ★ 베이스 = u2 l02 draft (사장 CSS 3 = u1 l02와 동률 최소, 2단원 색 기적용) ★
+
+  ★ 신설 셸: moveLab (슬 5) ★
+  - 정원판 = 칸 모양 좌표평면 SVG (x -3~3, y -1~3). 중앙에 분수, 꽃 4종 배치.
+  - 꿀벌을 상하좌우 한 칸씩 이동. 한 칸 = 1초 (지도서 p.199 규칙 원문).
+  - 회수 문면 = "꿀벌은 N초 동안 ○○에서 △△으로 이동했습니다."
+  ★설계의 선★ = moveLab은 **거리를 재는 도구가 아니라 위치를 찍고 밟는 도구**다.
+    두 칸을 지정하면 초가 튀어나오는 계산기로 만들면 지도서 상한선을 넘는다.
+    꿀벌이 한 칸씩 실제로 이동하며 초를 세는 방식이라야 규칙 원문과 일치한다.
+  - 꽃 좌표는 지도서 p.199 예시 답안(분수 기준 방향 + 칸 수) 그대로:
+    수선화꽃 왼쪽 3칸(-3,0) · 제비꽃 위쪽 2칸(0,2) ·
+    유채꽃 오른쪽 2칸 위쪽 3칸(2,3) · 진달래꽃 오른쪽 1칸 아래쪽 1칸(1,-1)
+    ★검산★ 진달래→유채 5칸=5초 / 제비→유채 3칸=3초 / 제비→진달래 4칸=4초
+    — 지도서 p.200 예시 답안 3건과 전부 일치 확인.
+
+  ★설계 상한선 (지도서 p.198 지도상의 유의점 원문)★
+    ★"물체의 처음 위치와 나중 위치를 간단한 좌표평면 위에 표현하되
+       두 위치 사이의 거리는 구하지 않는다."★
+     → 두 위치 사이 거리 계산 0. 칸 수는 꿀벌이 밟은 이동 칸(=초)에만 쓰고,
+       처음 위치와 나중 위치를 잇는 거리는 어디에서도 구하지 않는다.
+    "좌표평면은 가로선과 세로선이 서로 직각으로 만나는 평면으로 물체의 위치를
+     나타내는 데 도움을 준다는 정도로 설명한다. 과학적으로 물체의 위치를 표현할 때는
+     기준점과 x축, y축이 표시된 좌표평면을 활용하지만 이 차시에서는 학생의 수준을
+     고려해 좌표평면을 칸 모양으로 간단하게 나타내었다."
+     → ★기준점·x축·y축 렌더 0★ (l02에서 이미 잠근 기준점 게이트 유지).
+    "학생의 수준을 고려해 대각선으로 이동하는 물체는 다루지 않았다."(p.200)
+     → 대각선 이동 0. 규칙도 상하좌우 4방향뿐.
+    "수업에서 물체의 운동을 표현할 때는 걸린 시간, 처음 위치, 나중 위치를 모두
+     포함해 말할 수 있도록 한다."(p.201) → 3요소 전량 포함이 정답 기준.
+
+  - 학습 목표(지도서 원문): 물체의 운동을 표현하는 방법을 설명할 수 있다 /
+    간단한 좌표평면을 이용해 운동하는 물체의 위치 변화를 표현할 수 있다.
+  - 핵심 정의(교과서 p.40 원문): "물체의 운동은 물체가 이동하는 데 걸린 시간과
+    물체의 위치 변화로 표현합니다. 이때 물체의 위치 변화는 처음 위치와 나중 위치로
+    나타냅니다."
+  - 어휘 개방: 처음 위치 · 나중 위치 · 위치 변화 · 걸린 시간 · 좌표평면 · 정원판 · 칸
+  - ★어휘 차단(2단원 사다리)★: 이동 거리·빠르기 비교 방법(4~5차시) · 속력(6차시) ·
+    기준점·x축·y축·대각선(지도서가 막음) ·
+    중등 몫(변위·속도·스칼라량·벡터량·순간 속력·평균 속력·가속도·등속 운동)
+    ★'걸린 시간'은 이 차시에서 열린다★ — 교과서 p.40 정의 원문의 구성 요소라서.
+    l01·l02에서 닫아 둔 낱말이 여기서 풀리는 자리.
+  - 단원명 「물체의 운동」 = title·intro-meta 2곳 라벨 예외(u1 규약 승계)
+  - 점수: 기본 4슬 x 10점 + 응용 4슬 x 15점 = 100점 만점
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g6_sci_u2_l03_v1">
+<title>물체의 운동을 표현해 볼까 · K-edu 6학년 과학 (물체의 운동)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@700;800&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:     #FBF7F1;
+  --ink:       #243043;
+  --ink-soft:  #62708A;
+  --line:      #ECE3D6;
+  --f-title:   'Noto Sans KR', sans-serif;
+  --f-body:    'Gowun Dodum', sans-serif;
+  --green:     #0E7490;
+  --green-d:   #155E75;
+  --green-bg:  #CFFAFE;
+  --green-2:   #06B6D4;
+  --green-pg:  #ECFEFF;
+  --red:       #DC2626;
+  --gold-bg:   #FFF8E1;
+  --gold:      #F57F17;
+  --fs-title:   clamp(22px, 3.6vw, 38px);
+  --fs-heading: clamp(19px, 3.1vw, 30px);
+  --fs-body:    clamp(17px, 2.8vw, 26px);
+  --fs-caption: clamp(16px, 2.6vw, 24px);
+  --fs-label:   clamp(13px, 2vw, 17px);
+  --em-sm: clamp(28px, 4.2vw, 46px);
+  --em-md: clamp(40px, 6.5vw, 72px);
+  --em-lg: clamp(60px, 9.5vw, 116px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(780px, 96vw);
+  --mw-lg: min(860px, 96vw);
+  --rd: clamp(10px, 1.8vw, 14px);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body { background: var(--paper); display: flex; align-items: center; justify-content: center; font-family: var(--f-body), 'Apple SD Gothic Neo', sans-serif; font-weight: 400; touch-action: manipulation; }
+
+@keyframes ka-fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ka-pop { 0% { opacity: 0; transform: scale(0.3); } 60% { opacity: 1; transform: scale(1.15); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes ka-popBig { 0% { opacity: 0; transform: scale(0.4); } 60% { opacity: 1; transform: scale(1.25); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes ka-pulse { 0%, 100% { transform: scale(1); box-shadow: 0 4px 14px rgba(14,116,144,0.32); } 50% { transform: scale(1.04); box-shadow: 0 6px 20px rgba(14,116,144,0.5); } }
+@keyframes ka-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+@keyframes ka-drawLine { to { transform: scaleX(1); } }
+@keyframes ka-roll { 0% { transform: translateX(0) rotate(0); } 100% { transform: translateX(var(--roll, 220px)) rotate(720deg); } }
+@keyframes ka-fall { 0% { transform: rotate(0); } 100% { transform: rotate(82deg); } }
+@keyframes ka-wobble { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-7deg); } 75% { transform: rotate(7deg); } }
+
+/* ───── 컨테이너 골격 ───── */
+.ka { background: var(--paper); width: 100vw; height: 100vh; height: 100dvh; padding: clamp(8px, 1.5vw, 14px) clamp(12px, 2.2vw, 22px); color: var(--ink); display: flex; flex-direction: column; position: relative; overflow: hidden; }
+.ka-h { display: flex; align-items: center; gap: clamp(6px, 1.2vw, 10px); margin-bottom: clamp(6px, 1.2vw, 10px); flex-shrink: 0; }
+.ka-lb { background: #F1F5F9; border: none; padding: clamp(4px, 0.9vw, 7px) clamp(8px, 1.5vw, 12px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; font-family: inherit; font-weight: 700; color: #475569; flex-shrink: 0; font-size: var(--fs-label); }
+.ka-bar { flex: 1; height: clamp(3px, 0.5vw, 5px); background: var(--green-pg); border-radius: 999px; overflow: hidden; min-width: clamp(40px, 6vw, 80px); }
+.ka-bar > div { height: 100%; background: linear-gradient(90deg, var(--green), var(--green-2)); border-radius: 999px; transition: width 0.45s ease; }
+.ka-pg { color: var(--green); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: var(--fs-label); flex-shrink: 0; }
+.ka-score { color: var(--gold); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: var(--fs-label); flex-shrink: 0; background: var(--gold-bg); padding: clamp(3px, 0.7vw, 5px) clamp(8px, 1.5vw, 12px); border-radius: 999px; }
+.ka-score.bump { animation: ka-popBig 0.4s ease; }
+.ka-mute { background: #F1F5F9; border: none; padding: clamp(4px, 0.9vw, 7px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; flex-shrink: 0; color: var(--green); font-size: clamp(12px, 2vw, 16px); width: clamp(28px, 4.5vw, 36px); height: clamp(28px, 4.5vw, 36px); display: flex; align-items: center; justify-content: center; }
+
+.ka-m { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; position: relative; overflow: hidden; }
+.slide { display: none; flex-direction: column; align-items: center; justify-content: center; gap: clamp(8px, 1.5vw, 14px); height: 100%; width: 100%; animation: ka-fadeUp 0.45s ease both; padding: clamp(8px, 1.6vw, 16px) 0; }
+.slide.active { display: flex; }
+.slide-title { font-family: var(--f-title); font-size: var(--fs-title); margin: 0; line-height: 1.3; color: var(--green); font-weight: 800; text-align: center; flex-shrink: 0; letter-spacing: -0.3px; }
+.slide-sub { font-size: var(--fs-caption); color: #64748B; text-align: center; flex-shrink: 0; }
+.ka-sub { font-size: var(--fs-caption); color: var(--ink-soft); text-align: center; margin-top: calc(-1 * clamp(4px, 0.8vw, 8px)); flex-shrink: 0; }
+.stage-badge { position: absolute; top: clamp(6px, 1.2vw, 12px); left: clamp(10px, 2vw, 18px); background: var(--green-bg); color: var(--green); padding: clamp(3px, 0.6vw, 5px) clamp(8px, 1.5vw, 12px); border-radius: 999px; font-size: clamp(10px, 1.6vw, 13px); font-family: 'Nunito', sans-serif; font-weight: 800; z-index: 5; }
+
+/* 말풍선 */
+.bub { background: var(--green-bg); border-radius: var(--rd); padding: clamp(10px, 2.2vw, 16px) clamp(14px, 3vw, 22px); font-size: var(--fs-body); line-height: 1.6; color: #0F172A; max-width: var(--mw-sm); border-left: clamp(3px, 0.7vw, 4px) solid var(--green); text-align: center; }
+
+/* 빨간 색연필 강조 */
+.emph { position: relative; display: inline-block; color: var(--green); font-weight: 700; padding-right: 3px; }
+.emph::after { content: ''; position: absolute; bottom: 2px; left: 0; right: 3px; height: clamp(2.5px, 0.6vw, 3.5px); background: var(--red); border-radius: 2px; }
+
+/* ───── 푸터 3-button ───── */
+.ka-f { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: clamp(6px, 1.2vw, 10px); padding-top: clamp(6px, 1.2vw, 10px); flex-shrink: 0; }
+.ka-prev, .ka-hint, .ka-next { border: none; padding: clamp(8px, 1.6vw, 12px) clamp(10px, 2vw, 16px); border-radius: clamp(10px, 1.7vw, 14px); font-family: inherit; font-weight: 700; font-size: clamp(13px, 2.2vw, 17px); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.ka-prev { background: #F1F5F9; color: #64748B; }
+.ka-hint { background: var(--gold-bg); color: var(--gold); }
+.ka-hint:hover { background: #FFECB3; }
+.ka-next { background: var(--green); color: white; box-shadow: 0 4px 14px rgba(14,116,144,0.32); font-size: clamp(14px, 2.4vw, 18px); }
+.ka-next:hover { background: var(--green-d); }
+.ka-next.hl { animation: ka-pulse 1.8s ease-in-out infinite; }
+.ka-prev:disabled, .ka-next:disabled { opacity: 0.4; cursor: not-allowed; animation: none; }
+.ka-hint:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ───── 도입 슬 ───── */
+.intro { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.6vw, 22px); max-width: var(--mw-md); }
+.intro-meta { font-size: var(--fs-label); color: #94A3B8; }
+.intro-row { display: flex; gap: clamp(16px, 3.2vw, 32px); font-size: var(--em-lg); align-items: flex-end; }
+.intro-row span { display: inline-block; animation: ka-pop 0.6s ease both; }
+.intro-row span:nth-child(2) { animation-delay: 0.25s; }
+.goal-list { display: flex; flex-direction: column; gap: clamp(10px, 1.8vw, 14px); font-size: var(--fs-body); max-width: var(--mw-sm); list-style: none; }
+.goal-list li { background: var(--green-bg); padding: clamp(10px, 1.8vw, 15px) clamp(16px, 2.8vw, 24px); border-radius: var(--rd); display: flex; gap: 10px; align-items: center; }
+.recall { background: var(--gold-bg); padding: clamp(14px, 2.6vw, 20px) clamp(18px, 3.2vw, 28px); border-radius: var(--rd); font-size: var(--fs-body); color: #6D4C41; max-width: var(--mw-sm); text-align: center; line-height: 1.6; }
+
+/* ───── 시뮬 공통 ───── */
+.sim { width: var(--mw-md); max-width: 100%; }
+.sim-ctrl { display: flex; gap: clamp(8px, 1.6vw, 14px); justify-content: center; margin-top: clamp(10px, 2vw, 16px); flex-wrap: wrap; }
+.sim-btn { background: var(--green); color: white; border: none; padding: clamp(8px, 1.6vw, 12px) clamp(16px, 3vw, 24px); border-radius: var(--rd); font-family: inherit; font-weight: 700; font-size: var(--fs-caption); cursor: pointer; box-shadow: 0 4px 14px rgba(14,116,144,0.3); }
+.sim-btn.alt { background: #ECFEFF; color: var(--green-2); border: 2px solid var(--green-2); box-shadow: none; }
+.sim-fb { text-align: center; margin-top: clamp(8px, 1.6vw, 12px); font-size: var(--fs-caption); color: var(--green-d); min-height: 1.6em; font-weight: 700; }
+
+/* ───── 몸짓 맞히기 (슬 4) ───── */
+.pose-stage { background: linear-gradient(#F0FDF4, #fff); border: 2px solid var(--green-bg); border-radius: var(--rd); padding: clamp(14px, 2.8vw, 24px); display: flex; flex-direction: column; align-items: center; gap: clamp(8px, 1.6vw, 14px); }
+.pose-emoji { font-size: var(--em-lg); animation: ka-pop 0.5s ease; }
+.pose-desc { font-size: var(--fs-body); color: #0F172A; text-align: center; line-height: 1.6; max-width: var(--mw-sm); }
+.pose-ans { display: none; background: var(--green-bg); border-radius: var(--rd); padding: clamp(8px, 1.6vw, 12px) clamp(16px, 3vw, 24px); font-size: var(--fs-heading); color: var(--green-d); font-weight: 700; }
+.pose-ans.show { display: block; animation: ka-popBig 0.4s ease; }
+
+/* ───── 특징 찾기 (슬 5) ───── */
+.feat-pick { display: flex; gap: clamp(8px, 1.8vw, 14px); justify-content: center; flex-wrap: wrap; }
+.feat-btn { background: white; border: 3px solid #E2E8F0; border-radius: var(--rd); padding: clamp(8px, 1.6vw, 12px) clamp(12px, 2.2vw, 18px); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; font-family: inherit; transition: all 0.15s; }
+.feat-btn .fb-emoji { font-size: var(--em-md); }
+.feat-btn .fb-name { font-size: var(--fs-caption); color: var(--green-d); font-weight: 700; }
+.feat-btn:hover { border-color: var(--green-2); }
+.feat-btn.on { border-color: var(--green); background: var(--green-bg); transform: translateY(-3px); }
+.feat-card { margin-top: clamp(10px, 2vw, 16px); background: var(--green-bg); border-radius: var(--rd); padding: clamp(12px, 2.4vw, 20px); max-width: var(--mw-sm); min-height: clamp(80px, 14vw, 120px); display: flex; flex-direction: column; gap: clamp(6px, 1.2vw, 10px); align-items: center; justify-content: center; }
+.feat-card .fc-head { font-size: var(--fs-heading); color: var(--green); font-weight: 700; }
+.feat-card .fc-list { display: flex; flex-direction: column; gap: 6px; }
+.feat-card .fc-item { font-size: var(--fs-body); color: #0F172A; animation: ka-fadeUp 0.3s ease both; }
+
+/* 생김새·생활 방식 도식 (슬 6·7) */
+.fx-row { display: flex; gap: clamp(12px, 2.6vw, 22px); flex-wrap: wrap; justify-content: center; max-width: var(--mw-lg); }
+.fx-card { background: var(--green-bg); border-radius: var(--rd); padding: clamp(12px, 2.2vw, 18px); display: flex; flex-direction: column; align-items: center; gap: clamp(5px, 1vw, 8px); min-width: clamp(120px, 20vw, 180px); }
+.fx-emoji { font-size: var(--em-md); }
+.fx-label { font-size: var(--fs-caption); color: var(--green-d); font-weight: 700; text-align: center; }
+
+/* ───── 4지선다 ───── */
+.mcq { display: flex; flex-direction: column; gap: clamp(8px, 1.6vw, 12px); max-width: var(--mw-md); width: 100%; }
+.mcq-opt { background: white; border: 3px solid #E2E8F0; border-radius: var(--rd); padding: clamp(12px, 2.2vw, 18px) clamp(16px, 3vw, 24px); font-size: var(--fs-body); cursor: pointer; text-align: center; transition: all 0.15s; font-family: inherit; color: #0F172A; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.mcq-opt:hover { border-color: var(--green-2); }
+.mcq-opt.correct { border-color: var(--green); background: var(--green-bg); color: var(--green-d); font-weight: 700; }
+.mcq-opt.wrong { border-color: var(--red); background: #FEF2F2; animation: ka-shake 0.4s; }
+.mcq-opt:disabled { cursor: default; opacity: 0.55; }
+.mcq-opt.correct:disabled, .mcq-opt.wrong:disabled { opacity: 1; }
+.q-fb { text-align: center; font-size: var(--fs-caption); color: var(--green-d); min-height: 1.6em; font-weight: 700; margin-top: clamp(4px, 1vw, 8px); }
+.q-fb.wrong { color: var(--red); }
+.mcq-hint { display: none; background: var(--green-bg); border-radius: var(--rd); padding: clamp(8px, 1.6vw, 12px) clamp(14px, 2.6vw, 20px); font-size: var(--fs-caption); color: var(--green-d); max-width: var(--mw-sm); text-align: center; margin-top: clamp(6px, 1.2vw, 10px); }
+.mcq-hint.show { display: block; animation: ka-fadeUp 0.3s ease; }
+
+/* ───── 클릭 분류 ───── */
+.cls-items { display: flex; gap: clamp(8px, 1.8vw, 14px); flex-wrap: wrap; justify-content: center; margin-bottom: clamp(10px, 2vw, 16px); max-width: var(--mw-md); }
+.cls-item { background: white; border: 3px solid #E2E8F0; border-radius: var(--rd); padding: clamp(8px, 1.6vw, 12px) clamp(12px, 2.2vw, 18px); font-size: var(--fs-caption); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: all 0.15s; font-family: inherit; }
+.cls-item .ci-emoji { font-size: var(--em-sm); }
+.cls-item.sel { border-color: var(--green); background: var(--green-bg); transform: translateY(-3px); }
+.cls-item.placed { opacity: 0; pointer-events: none; height: 0; padding: 0; margin: -7px; }
+.cls-bins { display: flex; gap: clamp(12px, 2.4vw, 22px); justify-content: center; max-width: var(--mw-lg); width: 100%; }
+.cls-bin { flex: 1; min-height: clamp(110px, 20vw, 170px); background: #F8FAFC; border: 3px dashed var(--green-2); border-radius: var(--rd); padding: clamp(8px, 1.6vw, 12px); display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; transition: all 0.15s; }
+.cls-bin.armed { border-color: var(--green); background: var(--green-bg); }
+.cls-bin-name { font-size: var(--fs-caption); font-weight: 700; color: var(--green-d); margin-bottom: 4px; }
+.cls-chip { background: white; border: 2px solid var(--green); border-radius: 10px; padding: 4px 10px; font-size: var(--fs-caption); display: flex; align-items: center; gap: 6px; animation: ka-pop 0.3s ease; }
+
+/* ───── 매칭 ───── */
+.mt-wrap { display: flex; gap: clamp(18px, 4vw, 50px); justify-content: center; max-width: var(--mw-md); width: 100%; }
+.mt-col { display: flex; flex-direction: column; gap: clamp(10px, 2vw, 16px); flex: 1; }
+.mt-cell { background: white; border: 3px solid #E2E8F0; border-radius: var(--rd); padding: clamp(10px, 2vw, 16px); font-size: var(--fs-caption); cursor: pointer; text-align: center; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: clamp(54px, 9vw, 72px); }
+.mt-cell .mt-emoji { font-size: var(--em-sm); }
+.mt-cell.sel { border-color: var(--green); background: var(--green-bg); }
+.mt-cell.done { border-color: var(--green); background: var(--green-bg); color: var(--green-d); font-weight: 700; cursor: default; }
+.mt-cell.miss { border-color: var(--red); animation: ka-shake 0.4s; }
+
+/* ───── 다중 선택 ───── */
+.ms-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(clamp(120px, 20vw, 160px), 1fr)); gap: clamp(8px, 1.6vw, 12px); max-width: var(--mw-lg); width: 100%; }
+.ms-item { background: white; border: 3px solid #E2E8F0; border-radius: var(--rd); padding: clamp(10px, 2vw, 16px); font-size: var(--fs-caption); cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; transition: all 0.15s; font-family: inherit; }
+.ms-item .msi-emoji { font-size: var(--em-sm); }
+.ms-item.sel { border-color: var(--green); background: var(--green-bg); transform: translateY(-3px); }
+.ms-item.lock-ok { border-color: var(--green); background: var(--green-bg); color: var(--green-d); font-weight: 700; }
+.ms-item.lock-miss { border-color: var(--red); background: #FEF2F2; }
+.ms-check { margin-top: clamp(8px, 1.8vw, 14px); background: var(--green); color: white; border: none; padding: clamp(8px, 1.8vw, 13px) clamp(20px, 4vw, 34px); border-radius: var(--rd); font-family: inherit; font-weight: 700; font-size: var(--fs-caption); cursor: pointer; box-shadow: 0 4px 14px rgba(14,116,144,0.3); }
+.ms-check:disabled { opacity: 0.5; cursor: default; box-shadow: none; }
+
+/* ───── 정리 ───── */
+.sum-list { display: flex; flex-direction: column; gap: clamp(8px, 1.6vw, 12px); max-width: var(--mw-sm); width: 100%; }
+.sum-item { background: var(--green-bg); border-radius: var(--rd); padding: clamp(10px, 2vw, 15px) clamp(16px, 2.8vw, 24px); font-size: var(--fs-body); display: flex; gap: 10px; align-items: center; }
+.sum-item .si-i { font-size: var(--em-sm); flex-shrink: 0; }
+.wrap-msg { font-size: var(--fs-heading); color: var(--green); font-weight: 700; text-align: center; }
+.self-row { display: flex; gap: clamp(10px, 2.2vw, 18px); justify-content: center; flex-wrap: wrap; }
+.self-btn { background: white; border: 3px solid #E2E8F0; border-radius: var(--rd); padding: clamp(12px, 2.4vw, 18px) clamp(16px, 3vw, 26px); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; font-family: inherit; transition: all 0.15s; }
+.self-btn:hover { border-color: var(--green-2); }
+.self-btn.picked { border-color: var(--green); background: var(--green-bg); }
+.self-emoji { font-size: var(--em-sm); }
+.self-name { font-size: var(--fs-caption); color: var(--green-d); font-weight: 700; }
+.self-fb { text-align: center; font-size: var(--fs-caption); color: var(--green-d); min-height: 1.6em; margin-top: clamp(6px, 1.2vw, 10px); font-weight: 700; }
+.next-preview { background: var(--gold-bg); border-radius: var(--rd); padding: clamp(14px, 2.8vw, 22px); font-size: var(--fs-body); color: #6D4C41; max-width: var(--mw-sm); text-align: center; line-height: 1.6; }
+
+@media (max-width: 600px) {
+  .ka-lb { font-size: 0; padding: 7px; }
+  .ka-lb::before { content: '📋'; font-size: 14px; }
+  .pp-row, .fx-row { flex-direction: column; }
+}
+
+/* ── moveLab (슬 5) — 정원판 칸 좌표평면 + 꿀벌 이동 ── */
+.mv-wrap { display: flex; flex-direction: column; align-items: center; gap: clamp(6px, 1.2vw, 12px); width: 100%; }
+.mv-board { width: 100%; max-width: clamp(240px, 46vw, 340px); height: auto; display: block; }
+.mv-cell { fill: var(--green-pg); stroke: var(--green-2); stroke-width: 1; }
+.mv-hub { font-size: 20px; text-anchor: middle; dominant-baseline: central; }
+.mv-flower { font-size: 20px; text-anchor: middle; dominant-baseline: central; }
+.mv-bee { font-size: 22px; text-anchor: middle; dominant-baseline: central; transition: x 0.25s ease, y 0.25s ease; }
+.mv-start { fill: none; stroke: var(--green-d); stroke-width: 3; stroke-dasharray: 5 3; }
+.mv-pad { display: grid; grid-template-columns: repeat(3, auto); gap: clamp(3px, 0.6vw, 6px); justify-content: center; }
+.mv-btn { background: var(--green-bg); color: var(--green-d); border: none; border-radius: clamp(6px, 1.2vw, 10px); padding: clamp(5px, 1vw, 9px) clamp(9px, 1.8vw, 15px); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(12px, 1.9vw, 16px); cursor: pointer; }
+.mv-btn:disabled { opacity: 0.35; cursor: default; }
+.mv-btn.wide { grid-column: span 3; background: var(--green); color: #fff; }
+.mv-read { background: var(--green-pg); border-radius: clamp(7px, 1.4vw, 12px); padding: clamp(6px, 1.2vw, 11px) clamp(9px, 1.8vw, 15px); font-size: var(--fs-body); color: var(--green-d); font-weight: 700; text-align: center; width: 100%; }
+.mv-time { color: var(--green); font-family: 'Nunito', sans-serif; font-weight: 800; }
+</style>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">📋 차시 목록</button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <span class="ka-pg" id="pg">1 / 18</span>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+
+  <div class="ka-m">
+
+    <!-- 슬 1 · 도입: 흥미 유발 (교과서 p.40 원문) -->
+    <div class="slide active" data-stage="도입">
+      <span class="stage-badge">오늘의 과학</span>
+      <div class="intro">
+        <div class="intro-meta">2단원 · 물체의 운동 · 3차시</div>
+        <div class="intro-row"><span>🚌</span><span>📍</span></div>
+        <h2 class="slide-title">물체의 운동을 표현해 볼까?</h2>
+        <div class="ka-sub">달리는 버스는 시간이 지남에 따라 버스의 위치가 달라집니다.</div>
+        <div class="bub">버스처럼 운동하는 물체의 <span class="emph">위치 변화</span>를 시간에 따라 어떻게 표현할 수 있는지 알아봅시다.</div>
+      </div>
+    </div>
+
+    <!-- 슬 2 · 도입: 학습 목표 (지도서 p.198 학습 목표 원문) -->
+    <div class="slide" data-stage="도입">
+      <span class="stage-badge">학습 목표</span>
+      <h2 class="slide-title">오늘의 목표</h2>
+      <ul class="goal-list">
+        <li>🗣️ 물체의 운동을 <span class="emph">표현하는 방법</span>을 설명합니다.</li>
+        <li>🧭 간단한 <span class="emph">좌표평면</span>을 이용해 위치 변화를 표현합니다.</li>
+        <li>🐝 꿀벌의 움직임을 <span class="emph">시간에 따른 위치 변화</span>로 나타냅니다.</li>
+      </ul>
+    </div>
+
+    <!-- 슬 3 · 도입: 떠올려요 (지도서 p.198 도입 1 예시 답안 원문 — 미끄럼틀 곰) -->
+    <div class="slide" data-stage="도입">
+      <span class="stage-badge">떠올려요</span>
+      <h2 class="slide-title">미끄럼틀을 타는 곰의 위치는 어떻게 바뀌었나요?</h2>
+      <div class="recall">곰은 미끄럼틀 위에서<br>아래로 미끄러져 내려왔습니다. 🐻<br><br>곰의 위치는 <span class="emph">미끄럼틀 위</span>에서<br><span class="emph">미끄럼틀 아래</span>로 바뀌었습니다.</div>
+      <div class="intro-row" style="font-size: var(--em-md);"><span>🐻</span><span>🛝</span><span>📍</span></div>
+    </div>
+
+    <!-- 슬 4 · 전개: 탐구 순서 시뮬 (지도서 p.199~200 활동해요 1~5 + 정리해요 원문) -->
+    <div class="slide" data-stage="전개">
+      <span class="stage-badge">해 봐요</span>
+      <h2 class="slide-title">이렇게 표현합니다</h2>
+      <div class="ka-sub">『실험관찰』 24~25쪽 활동 순서를 그대로 따라갑니다.</div>
+      <div class="sim">
+        <div class="pose-stage">
+          <div class="pose-emoji" id="poseEmoji">🚌</div>
+          <div class="pose-desc" id="poseDesc">① 운동하는 물체를 떠올리며 그 물체의 움직임을 이야기해 봅니다.</div>
+          <div class="pose-ans" id="poseAns"></div>
+        </div>
+        <div class="sim-ctrl">
+          <button class="sim-btn" id="poseShow">다음 단계 →</button>
+          <button class="sim-btn alt" id="poseNext">처음부터 ↺</button>
+        </div>
+        <div class="sim-fb" id="poseFb">버튼을 눌러 활동 순서를 확인해 보세요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 5 · 전개: ★moveLab★ 정원판 꿀벌 이동 (지도서 p.199 규칙 원문) -->
+    <div class="slide" data-stage="전개">
+      <span class="stage-badge">움직여요</span>
+      <h2 class="slide-title">꿀벌을 움직여 운동을 표현해 볼까요?</h2>
+      <div class="ka-sub">꿀벌은 오른쪽, 왼쪽, 위쪽, 아래쪽으로 한 칸씩 이동할 수 있고, 한 칸 이동할 때 걸리는 시간은 일 초입니다.</div>
+      <div class="sim">
+        <div class="mv-wrap">
+          <svg class="mv-board" id="mvBoard" viewBox="0 0 308 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="정원판">
+            <g id="mvGrid"></g>
+            <rect class="mv-start" id="mvStart" x="0" y="0" width="44" height="44" rx="6"></rect>
+            <g id="mvItems"></g>
+            <text class="mv-bee" id="mvBee" x="22" y="22">🐝</text>
+          </svg>
+          <div class="mv-pad">
+            <button class="mv-btn" id="mvUp" style="grid-column: 2;">↑ 위쪽</button>
+            <button class="mv-btn" id="mvLeft">← 왼쪽</button>
+            <button class="mv-btn" id="mvDown">↓ 아래쪽</button>
+            <button class="mv-btn" id="mvRight">오른쪽 →</button>
+            <button class="mv-btn wide" id="mvReset">처음 위치로 ↺</button>
+          </div>
+          <div class="mv-read" id="mvRead">꿀벌의 처음 위치는 진달래꽃입니다.</div>
+        </div>
+        <div class="sim-fb" id="mvFb">꿀벌을 다른 꽃까지 움직여 보세요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 6 · 전개: 꽃 도감 4종 (지도서 p.199 활동해요 2 예시 답안 원문) -->
+    <div class="slide" data-stage="전개">
+      <span class="stage-badge">살펴봐요</span>
+      <h2 class="slide-title">분수를 기준으로 꽃의 위치를 말해 볼까요?</h2>
+      <div class="ka-sub">위치는 분수로부터 꽃이 있는 방향과 꽃까지 떨어진 칸 수로 나타냅니다.</div>
+      <div class="sim">
+        <div class="feat-pick">
+          <button class="feat-btn" data-an="a"><span class="fb-emoji">🌼</span><span class="fb-name">수선화꽃</span></button>
+          <button class="feat-btn" data-an="b"><span class="fb-emoji">💜</span><span class="fb-name">제비꽃</span></button>
+          <button class="feat-btn" data-an="c"><span class="fb-emoji">🌻</span><span class="fb-name">유채꽃</span></button>
+          <button class="feat-btn" data-an="d"><span class="fb-emoji">🌸</span><span class="fb-name">진달래꽃</span></button>
+        </div>
+        <div class="feat-card" id="featCard">
+          <div class="fc-head">궁금한 꽃을 눌러 살펴보세요 🔎</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬 7 · 전개: 운동을 표현하는 예 3종 (교과서 p.41 원문) + 안전 -->
+    <div class="slide" data-stage="전개">
+      <span class="stage-badge">이렇게 말해요</span>
+      <h2 class="slide-title">물체의 운동을 표현하는 예</h2>
+      <div class="fx-row">
+        <div class="fx-card"><div class="fx-emoji">🚆</div><div class="fx-label">기차가 1시간 동안 출발역에서 도착역으로 이동했습니다</div></div>
+        <div class="fx-card"><div class="fx-emoji">🛗</div><div class="fx-label">승강기가 15초 동안 1층에서 5층으로 이동했습니다</div></div>
+        <div class="fx-card"><div class="fx-emoji">🤖</div><div class="fx-label">코딩 로봇이 10초 동안 입구에서 출구로 이동했습니다</div></div>
+        <div class="fx-card"><div class="fx-emoji">🌷</div><div class="fx-label">꽃 붙임딱지는 정해진 곳 이외에 얼굴이나 몸에 붙이지 않기</div></div>
+      </div>
+      <div class="bub">물체의 운동을 표현할 때는 <span class="emph">걸린 시간</span>, <span class="emph">처음 위치</span>, <span class="emph">나중 위치</span>를 모두 넣어 말합니다.</div>
+    </div>
+
+    <!-- 슬 8 · 기본문제 1 (4지선다, 10점) — 실험관찰 p.25 평가하기 1 원문 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q8" data-q-points="10">
+      <span class="stage-badge">기본 문제 1</span>
+      <h2 class="slide-title">빈칸에 들어갈 알맞은 말은 무엇일까요?</h2>
+      <div class="slide-sub">물체의 운동은 물체가 이동하는 데 걸린 시간과 물체의 (&nbsp;&nbsp;&nbsp;&nbsp;) 변화로 표현한다.</div>
+      <div class="mcq">
+        <button class="mcq-opt">🎨 색깔</button>
+        <button class="mcq-opt">⚖️ 무게</button>
+        <button class="mcq-opt" data-correct="1">📍 위치</button>
+        <button class="mcq-opt">📏 크기</button>
+      </div>
+      <div class="q-fb"></div>
+      <div class="mcq-hint" data-hints='["곰은 미끄럼틀 위에서 아래로 자리가 바뀌었습니다. 무엇이 바뀐 걸까요?","이 변화는 처음 위치와 나중 위치로 나타냅니다."]'></div>
+    </div>
+
+    <!-- 슬 9 · 기본문제 2 (클릭 분류, 10점) — 지도서 p.201 유의점(3요소 전량 포함) -->
+    <div class="slide" data-stage="기본문제" data-q-id="q9" data-q-points="10">
+      <span class="stage-badge">기본 문제 2</span>
+      <h2 class="slide-title">운동을 알맞게 표현했는지 분류해 보세요</h2>
+      <div class="cls-items">
+        <button class="cls-item" data-bin="0"><span class="ci-emoji">🚲</span>자전거를 타는 사람은 10분 동안 도서관에서 은행으로 이동했다</button>
+        <button class="cls-item" data-bin="1"><span class="ci-emoji">🕊️</span>비둘기는 1분 동안 이동했다</button>
+        <button class="cls-item" data-bin="0"><span class="ci-emoji">⚾</span>야구 선수가 5초 동안 1루에서 2루로 이동했다</button>
+        <button class="cls-item" data-bin="1"><span class="ci-emoji">🚶</span>사람은 공원에서 상점으로 이동했다</button>
+      </div>
+      <div class="cls-bins">
+        <div class="cls-bin" data-bin="0"><div class="cls-bin-name">⭕ 알맞게 표현했습니다</div></div>
+        <div class="cls-bin" data-bin="1"><div class="cls-bin-name">❌ 빠진 것이 있습니다</div></div>
+      </div>
+      <div class="q-fb"></div>
+      <div class="mcq-hint" data-hints='["걸린 시간, 처음 위치, 나중 위치가 모두 들어 있는지 살펴보세요.","비둘기는 어디에서 어디로 갔는지가 빠져 있습니다."]'></div>
+    </div>
+
+    <!-- 슬 10 · 기본문제 3 (4지선다, 10점) — 실험관찰 p.25 평가하기 1 오답지 원문 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q10" data-q-points="10">
+      <span class="stage-badge">기본 문제 3</span>
+      <h2 class="slide-title">물체의 운동을 옳게 표현한 것은 무엇일까요?</h2>
+      <div class="mcq">
+        <button class="mcq-opt">🚆 기차는 2시간 동안 서울로 이동했다</button>
+        <button class="mcq-opt">🚗 자동차는 3분 동안 시청에서 이동했다</button>
+        <button class="mcq-opt">🚶 사람은 공원에서 상점으로 이동했다</button>
+        <button class="mcq-opt" data-correct="1">🚲 자전거를 타는 사람은 10분 동안 도서관에서 은행으로 이동했다</button>
+      </div>
+      <div class="q-fb"></div>
+      <div class="mcq-hint" data-hints='["세 가지가 모두 들어 있어야 옳은 표현입니다.","기차는 출발한 곳이, 자동차는 도착한 곳이 빠져 있습니다."]'></div>
+    </div>
+
+    <!-- 슬 11 · 기본문제 4 (매칭, 10점) — 지도서 p.199 활동해요 2 예시 답안 원문 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q11" data-q-points="10">
+      <span class="stage-badge">기본 문제 4</span>
+      <h2 class="slide-title">꽃과 분수를 기준으로 한 위치를 짝지어 보세요</h2>
+      <div class="mt-wrap">
+        <div class="mt-col" id="mt11L">
+          <div class="mt-cell mt-left" data-pair="p1"><span class="mt-emoji">🌼</span>수선화꽃</div>
+          <div class="mt-cell mt-left" data-pair="p2"><span class="mt-emoji">💜</span>제비꽃</div>
+          <div class="mt-cell mt-left" data-pair="p3"><span class="mt-emoji">🌻</span>유채꽃</div>
+          <div class="mt-cell mt-left" data-pair="p4"><span class="mt-emoji">🌸</span>진달래꽃</div>
+        </div>
+        <div class="mt-col" id="mt11R">
+          <div class="mt-cell mt-right" data-pair="p3">오른쪽으로 2칸, 위쪽으로 3칸 떨어진 곳</div>
+          <div class="mt-cell mt-right" data-pair="p1">왼쪽으로 3칸 떨어진 곳</div>
+          <div class="mt-cell mt-right" data-pair="p4">오른쪽으로 1칸, 아래쪽으로 1칸 떨어진 곳</div>
+          <div class="mt-cell mt-right" data-pair="p2">위쪽으로 2칸 떨어진 곳</div>
+        </div>
+      </div>
+      <div class="q-fb"></div>
+      <div class="mcq-hint" data-hints='["분수로부터 꽃이 있는 방향과 떨어진 칸 수로 말합니다.","수선화꽃은 분수에서 왼쪽에만 떨어져 있습니다."]'></div>
+    </div>
+
+    <!-- 슬 12 · 응용문제 1 (다중 선택, 15점) — 지도서 p.201 유의점 3요소 -->
+    <div class="slide" data-stage="응용문제" data-q-id="q12" data-q-points="15">
+      <span class="stage-badge">응용 문제 1</span>
+      <h2 class="slide-title">운동을 표현할 때 꼭 넣어야 할 것을 모두 고르세요</h2>
+      <div class="ms-grid" id="ms12">
+        <button class="ms-item" data-correct="1"><span class="msi-emoji">⏱️</span>이동하는 데 걸린 시간</button>
+        <button class="ms-item" data-correct="0"><span class="msi-emoji">🎨</span>물체의 색깔</button>
+        <button class="ms-item" data-correct="1"><span class="msi-emoji">📍</span>물체의 처음 위치</button>
+        <button class="ms-item" data-correct="0"><span class="msi-emoji">⚖️</span>물체의 무게</button>
+        <button class="ms-item" data-correct="1"><span class="msi-emoji">🏁</span>물체의 나중 위치</button>
+        <button class="ms-item" data-correct="0"><span class="msi-emoji">🔢</span>물체를 만든 사람</button>
+      </div>
+      <button class="ms-check" id="chk12">확인하기</button>
+      <div class="q-fb"></div>
+      <div class="mcq-hint" data-hints='["물체의 운동은 걸린 시간과 위치 변화로 표현합니다.","위치 변화는 처음 위치와 나중 위치로 나타냅니다."]'></div>
+    </div>
+
+    <!-- 슬 13 · 응용문제 2 (클릭 분류, 15점) — 정원판 꿀벌 이동 (지도서 p.200 예시 답안 원문) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q13" data-q-points="15">
+      <span class="stage-badge">응용 문제 2</span>
+      <h2 class="slide-title">꿀벌의 운동을 알맞게 표현했는지 분류해 보세요</h2>
+      <div class="cls-items">
+        <button class="cls-item" data-bin="0"><span class="ci-emoji">🐝</span>꿀벌은 3초 동안 제비꽃에서 유채꽃으로 이동했습니다</button>
+        <button class="cls-item" data-bin="1"><span class="ci-emoji">🐝</span>꿀벌은 제비꽃에서 진달래꽃으로 이동했습니다</button>
+        <button class="cls-item" data-bin="0"><span class="ci-emoji">🐝</span>꿀벌은 5초 동안 진달래꽃에서 유채꽃으로 이동했습니다</button>
+        <button class="cls-item" data-bin="1"><span class="ci-emoji">🐝</span>꿀벌은 4초 동안 이동했습니다</button>
+      </div>
+      <div class="cls-bins">
+        <div class="cls-bin" data-bin="0"><div class="cls-bin-name">⭕ 알맞게 표현했습니다</div></div>
+        <div class="cls-bin" data-bin="1"><div class="cls-bin-name">❌ 빠진 것이 있습니다</div></div>
+      </div>
+      <div class="q-fb"></div>
+      <div class="mcq-hint" data-hints='["걸린 시간, 처음 위치, 나중 위치가 모두 들어 있어야 합니다.","한 칸 이동할 때 걸리는 시간은 일 초입니다."]'></div>
+    </div>
+
+    <!-- 슬 14 · 응용문제 3 (4지선다, 15점) — 교과서 p.41 예 적용 -->
+    <div class="slide" data-stage="응용문제" data-q-id="q14" data-q-points="15">
+      <span class="stage-badge">응용 문제 3</span>
+      <h2 class="slide-title">승강기의 운동을 알맞게 표현한 것은?</h2>
+      <div class="slide-sub">승강기가 15초 동안 1층에서 5층으로 이동했습니다.</div>
+      <div class="mcq">
+        <button class="mcq-opt">🏢 승강기의 처음 위치는 5층이고 나중 위치는 1층입니다</button>
+        <button class="mcq-opt" data-correct="1">🛗 걸린 시간은 15초, 처음 위치는 1층, 나중 위치는 5층입니다</button>
+        <button class="mcq-opt">⏱️ 걸린 시간만 알면 운동을 표현할 수 있습니다</button>
+        <button class="mcq-opt">📍 처음 위치와 나중 위치가 같습니다</button>
+      </div>
+      <div class="q-fb"></div>
+      <div class="mcq-hint" data-hints='["물체가 운동을 시작하는 곳이 처음 위치입니다.","얼마 뒤 물체가 있는 곳이 나중 위치입니다."]'></div>
+    </div>
+
+    <!-- 슬 15 · 응용문제 4 (다중 선택 종합, 15점) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q15" data-q-points="15">
+      <span class="stage-badge">응용 문제 4</span>
+      <h2 class="slide-title">오늘 알게 된 것을 모두 고르세요</h2>
+      <div class="ms-grid" id="ms15">
+        <button class="ms-item" data-correct="1"><span class="msi-emoji">🗣️</span>물체의 운동은 걸린 시간과 물체의 위치 변화로 표현합니다</button>
+        <button class="ms-item" data-correct="1"><span class="msi-emoji">📍</span>위치 변화는 처음 위치와 나중 위치로 나타냅니다</button>
+        <button class="ms-item" data-correct="0"><span class="msi-emoji">⏱️</span>걸린 시간만 말해도 운동을 표현한 것입니다</button>
+        <button class="ms-item" data-correct="1"><span class="msi-emoji">🐝</span>꿀벌이 한 칸 이동할 때 걸리는 시간은 일 초입니다</button>
+        <button class="ms-item" data-correct="0"><span class="msi-emoji">🏁</span>나중 위치만 말해도 운동을 표현한 것입니다</button>
+        <button class="ms-item" data-correct="1"><span class="msi-emoji">🧭</span>칸 모양 좌표평면은 물체의 위치를 나타내는 데 도움을 줍니다</button>
+      </div>
+      <button class="ms-check" id="chk15">확인하기</button>
+      <div class="q-fb"></div>
+      <div class="mcq-hint" data-hints='["세 가지를 모두 넣어 말해야 알맞은 표현입니다.","꿀벌은 오른쪽, 왼쪽, 위쪽, 아래쪽으로 한 칸씩 이동합니다."]'></div>
+    </div>
+
+    <!-- 슬 16 · 정리: 핵심 요약 (교과서 p.40 정의 원문 + 지도서 p.199 용어 원문) -->
+    <div class="slide" data-stage="정리">
+      <span class="stage-badge">정리해요</span>
+      <h2 class="slide-title">오늘 배운 것</h2>
+      <div class="sum-list">
+        <div class="sum-item"><span class="si-i">🗣️</span>물체의 운동은 물체가 이동하는 데 <span class="emph">걸린 시간</span>과 물체의 <span class="emph">위치 변화</span>로 표현합니다.</div>
+        <div class="sum-item"><span class="si-i">📍</span>위치 변화는 <span class="emph">처음 위치와 나중 위치</span>로 나타냅니다.</div>
+        <div class="sum-item"><span class="si-i">🧭</span>물체가 운동을 시작하는 곳이 <span class="emph">처음 위치</span>, 얼마 뒤 물체가 있는 곳이 <span class="emph">나중 위치</span>입니다.</div>
+      </div>
+      <div class="wrap-msg" id="wrap-msg"></div>
+    </div>
+
+    <!-- 슬 17 · 정리: 자기 평가 (실험관찰 p.25 평가하기 원문) -->
+    <div class="slide" data-stage="정리">
+      <span class="stage-badge">자기 평가</span>
+      <h2 class="slide-title">간단한 좌표평면을 이용해 운동하는 물체의 위치 변화를 표현할 수 있나요?</h2>
+      <div class="self-row">
+        <button class="self-btn"><span class="self-emoji">😆</span><span class="self-name">잘 표현할 수 있습니다</span></button>
+        <button class="self-btn"><span class="self-emoji">🙂</span><span class="self-name">대체로 알겠습니다</span></button>
+        <button class="self-btn"><span class="self-emoji">🤔</span><span class="self-name">한 번 더 보고 싶습니다</span></button>
+      </div>
+      <div class="self-fb" id="self-fb"></div>
+    </div>
+
+    <!-- 슬 18 · 정리: 다음 차시 예고 (l04 — 비교 방법 낱말 회피 돌려 쓰기) -->
+    <div class="slide" data-stage="정리">
+      <span class="stage-badge">다음 시간</span>
+      <h2 class="slide-title">다음에는</h2>
+      <div class="next-preview">🏃 같은 시간 동안<br>여럿이 함께 움직였을 때<br>누가 더 빠른지<br>견주어 봅니다.</div>
+      <div class="intro-row" style="font-size: var(--em-md);"><span>🏃</span><span>⏱️</span><span>❓</span></div>
+    </div>
+
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// 차시운영 표준 v1 준수 — 점수·힌트·다시 시도·진도 저장·진입 종료
+// 과학 정규 차시 최초 레퍼런스 엔진 (수학 차시 엔진과 동일 골격)
+// ════════════════════════════════════════
+const TOTAL = 18;
+const LESSON_ID = 'g6_sci_u2_l03';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const SCORE_QIDS = ['q8','q9','q10','q11','q12','q13','q14','q15'];
+const startedAt = Date.now();
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function slides() { return document.querySelectorAll('.slide'); }
+function currentSlide() { return slides()[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+function updateUI() {
+  slides().forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.getElementById('pg').textContent = (cur + 1) + ' / ' + TOTAL;
+  document.getElementById('bar').style.width = ((cur + 1) / TOTAL * 100) + '%';
+  document.getElementById('prev').disabled = cur === 0;
+
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.solved || st.hintLevel >= 2; }
+  else { hintBtn.disabled = true; }
+
+  const nextBtn = document.getElementById('next');
+  if (cur === TOTAL - 1) { nextBtn.textContent = '마치기 →'; saveProgress(true); }
+  else { nextBtn.textContent = '다음 →'; }
+
+  if (cur === 15) document.getElementById('wrap-msg').textContent = wrapMsg(score);
+}
+
+function wrapMsg(s) {
+  if (s >= 100) return '완벽합니다! 운동 표현 박사 🏅';
+  if (s >= 80) return '아주 잘했습니다.';
+  if (s >= 60) return '잘했습니다.';
+  return '다시 확인해 보면 좋겠습니다.';
+}
+
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+
+function addScore(n) {
+  score += n;
+  const el = document.getElementById('score');
+  el.textContent = '⭐ ' + score;
+  el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
+}
+
+function showHint() {
+  const qid = currentQId();
+  if (!qid) return;
+  const st = getQState(qid);
+  if (st.solved || st.hintLevel >= 2) return;
+  const hintEl = currentSlide().querySelector('.mcq-hint');
+  if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[st.hintLevel - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= 2;
+}
+
+function pointsForQ(qid) {
+  const slide = document.querySelector('[data-q-id="' + qid + '"]');
+  const base = parseInt(slide.dataset.qPoints || '0', 10);
+  const st = getQState(qid);
+  if (st.hintLevel === 2) return Math.max(0, base - 5);
+  if (st.hintLevel === 1) return Math.max(0, base - 2);
+  return base;
+}
+
+function solveQ(qid, fbEl, msg) {
+  const st = getQState(qid);
+  st.solved = true;
+  const earn = pointsForQ(qid);
+  addScore(earn);
+  if (fbEl) { fbEl.textContent = (msg || '정답이에요!') + ' +' + earn + '점'; fbEl.classList.remove('wrong'); }
+  updateUI();
+}
+
+// ───── 4지선다 (슬 8·10·14) ─────
+document.querySelectorAll('.mcq').forEach(box => {
+  const slide = box.closest('.slide');
+  const qid = slide.dataset.qId;
+  const fb = slide.querySelector('.q-fb');
+  box.querySelectorAll('.mcq-opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved) return;
+      st.attempts++;
+      if (opt.dataset.correct === '1') {
+        box.querySelectorAll('.mcq-opt').forEach(o => o.disabled = true);
+        opt.classList.add('correct');
+        solveQ(qid, fb, '맞아요!');
+      } else {
+        st.wrongCount++;
+        opt.classList.add('wrong');
+        fb.textContent = '다시 한 번 생각해 볼까요?';
+        fb.classList.add('wrong');
+        setTimeout(() => opt.classList.remove('wrong'), 500);
+      }
+    });
+  });
+});
+
+// ───── 클릭 분류 (슬 9·13) ─────
+document.querySelectorAll('.cls-items').forEach(itemBox => {
+  const slide = itemBox.closest('.slide');
+  const qid = slide.dataset.qId;
+  const fb = slide.querySelector('.q-fb');
+  const bins = slide.querySelectorAll('.cls-bin');
+  const items = itemBox.querySelectorAll('.cls-item');
+  const total = items.length;
+  let placed = 0;
+  let selected = null;
+
+  function arm() { bins.forEach(b => b.classList.toggle('armed', !!selected)); }
+
+  items.forEach(item => {
+    item.addEventListener('click', () => {
+      if (getQState(qid).solved || item.classList.contains('placed')) return;
+      items.forEach(i => i.classList.remove('sel'));
+      if (selected === item) { selected = null; } else { selected = item; item.classList.add('sel'); }
+      arm();
+    });
+  });
+
+  bins.forEach(bin => {
+    bin.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved || !selected) return;
+      st.attempts++;
+      if (selected.dataset.bin === bin.dataset.bin) {
+        const chip = document.createElement('div');
+        chip.className = 'cls-chip';
+        chip.innerHTML = selected.innerHTML;
+        bin.appendChild(chip);
+        selected.classList.add('placed');
+        selected.classList.remove('sel');
+        selected = null; placed++; arm();
+        if (placed === total) solveQ(qid, fb, '모두 맞췄어요!');
+        else { fb.textContent = '좋아요! 계속 골라요'; fb.classList.remove('wrong'); }
+      } else {
+        st.wrongCount++;
+        bin.classList.add('armed');
+        fb.textContent = '여기가 맞을까요? 다시 보세요';
+        fb.classList.add('wrong');
+        const cur = selected; cur.classList.add('sel');
+        setTimeout(() => { fb.classList.remove('wrong'); }, 700);
+      }
+    });
+  });
+});
+
+// ───── 매칭 (슬 11) ─────
+document.querySelectorAll('.mt-wrap').forEach(wrap => {
+  const slide = wrap.closest('.slide');
+  const qid = slide.dataset.qId;
+  const fb = slide.querySelector('.q-fb');
+  const lefts = wrap.querySelectorAll('.mt-left');
+  const rights = wrap.querySelectorAll('.mt-right');
+  const total = lefts.length;
+  let done = 0;
+  let selLeft = null;
+
+  lefts.forEach(l => l.addEventListener('click', () => {
+    if (getQState(qid).solved || l.classList.contains('done')) return;
+    lefts.forEach(x => x.classList.remove('sel'));
+    if (selLeft === l) { selLeft = null; } else { selLeft = l; l.classList.add('sel'); }
+  }));
+
+  rights.forEach(r => r.addEventListener('click', () => {
+    const st = getQState(qid);
+    if (st.solved || r.classList.contains('done') || !selLeft) return;
+    st.attempts++;
+    if (selLeft.dataset.pair === r.dataset.pair) {
+      selLeft.classList.add('done'); selLeft.classList.remove('sel');
+      r.classList.add('done');
+      selLeft = null; done++;
+      if (done === total) solveQ(qid, fb, '짝을 다 찾았어요!');
+      else { fb.textContent = '좋아요! 다음 짝도 찾아요'; fb.classList.remove('wrong'); }
+    } else {
+      st.wrongCount++;
+      r.classList.add('miss');
+      fb.textContent = '다시 짝을 찾아볼까요?';
+      fb.classList.add('wrong');
+      setTimeout(() => r.classList.remove('miss'), 500);
+    }
+  }));
+});
+
+// ───── 다중 선택 (슬 12·15) ─────
+document.querySelectorAll('.ms-grid').forEach(grid => {
+  const slide = grid.closest('.slide');
+  const qid = slide.dataset.qId;
+  const fb = slide.querySelector('.q-fb');
+  const check = slide.querySelector('.ms-check');
+  const items = grid.querySelectorAll('.ms-item');
+
+  items.forEach(it => it.addEventListener('click', () => {
+    if (getQState(qid).solved) return;
+    it.classList.toggle('sel');
+  }));
+
+  check.addEventListener('click', () => {
+    const st = getQState(qid);
+    if (st.solved) return;
+    st.attempts++;
+    let ok = true;
+    items.forEach(it => {
+      const want = it.dataset.correct === '1';
+      const got = it.classList.contains('sel');
+      if (want !== got) ok = false;
+    });
+    if (ok) {
+      items.forEach(it => {
+        it.classList.remove('sel');
+        if (it.dataset.correct === '1') it.classList.add('lock-ok');
+      });
+      check.disabled = true;
+      solveQ(qid, fb, '모두 맞췄어요!');
+    } else {
+      st.wrongCount++;
+      fb.textContent = '한 번 더 살펴볼까요?';
+      fb.classList.add('wrong');
+    }
+  });
+});
+
+// ───── 슬 4 시뮬: 물체의 운동 표현하기 (진행형 5단계 — 지도서 p.199~200 활동해요 1~5 + 정리해요) ─────
+(function gardenStep() {
+  const steps = [
+    { emoji: '🚌', desc: '① 운동하는 물체를 떠올리며 그 물체의 움직임을 이야기해 봅니다.', fb: '버스가 학교에서 도서관까지 갔습니다.' },
+    { emoji: '🌷', desc: '② 정원판에 꽃 붙임딱지를 원하는 칸에 붙이고 분수를 기준으로 꽃의 위치를 이야기해 봅니다.', fb: '수선화꽃은 분수에서 왼쪽으로 3칸 떨어진 곳에 위치합니다.' },
+    { emoji: '🐝', desc: '③ 꽃 하나를 정해 꿀벌을 꽃 위에 올려놓고 다른 꽃까지 규칙에 따라 이동해 봅니다.', fb: '꿀벌은 오른쪽, 왼쪽, 위쪽, 아래쪽으로 한 칸씩 이동할 수 있습니다. 한 칸 이동할 때 걸리는 시간은 일 초입니다.' },
+    { emoji: '⏱️', desc: '④ 꿀벌의 움직임을 시간에 따른 위치 변화로 표현해 봅니다.', fb: '꿀벌이 진달래꽃에서 5초 뒤 유채꽃까지 움직일 때, 꿀벌은 5초 동안 진달래꽃에서 유채꽃으로 이동했다고 표현할 수 있습니다.' },
+    { emoji: '🎉', desc: '⑤ 꿀벌을 다양하게 움직이며 꿀벌의 운동을 표현해 봅니다.', fb: '완성! 꿀벌은 3초 동안 제비꽃에서 유채꽃으로 이동했습니다. 🎉', ans: '물체의 운동은 물체가 이동하는 데 걸린 시간과 물체의 위치 변화로 표현합니다.' },
+  ];
+  let idx = 0;
+  const emo = document.getElementById('poseEmoji');
+  const desc = document.getElementById('poseDesc');
+  const ans = document.getElementById('poseAns');
+  const fb = document.getElementById('poseFb');
+  const nextBtn = document.getElementById('poseShow');
+  function render() {
+    const p = steps[idx];
+    emo.textContent = p.emoji;
+    emo.style.animation = 'none'; void emo.offsetWidth; emo.style.animation = '';
+    desc.textContent = p.desc;
+    fb.textContent = p.fb;
+    if (p.ans) { ans.textContent = p.ans; ans.classList.add('show'); nextBtn.textContent = '한 번 더? ↺'; }
+    else { ans.textContent = ''; ans.classList.remove('show'); nextBtn.textContent = '다음 단계 →'; }
+  }
+  nextBtn.addEventListener('click', () => { idx = (idx + 1) % steps.length; render(); });
+  document.getElementById('poseNext').addEventListener('click', () => { idx = 0; render(); });
+})();
+
+// ───── 슬 5 시뮬: ★moveLab★ 정원판 꿀벌 이동 (지도서 p.199 규칙 원문) ─────
+// ★거리를 재는 도구가 아니라 위치를 찍고 밟는 도구★ — 한 칸씩 실제로 이동하며 초를 센다.
+//   두 위치 사이의 거리는 어디에서도 구하지 않는다 (지도서 p.198 유의점).
+(function moveLab() {
+  const CELL = 44, X0 = -3, X1 = 3, Y0 = -1, Y1 = 3;
+  // 꽃 좌표 = 지도서 p.199 예시 답안(분수 기준 방향 + 칸 수) 그대로
+  const SPOTS = [
+    { x: 0,  y: 0,  emoji: '⛲', name: '분수' },
+    { x: -3, y: 0,  emoji: '🌼', name: '수선화꽃' },
+    { x: 0,  y: 2,  emoji: '💜', name: '제비꽃' },
+    { x: 2,  y: 3,  emoji: '🌻', name: '유채꽃' },
+    { x: 1,  y: -1, emoji: '🌸', name: '진달래꽃' },
+  ];
+  const START = { x: 1, y: -1 };   // 진달래꽃 = 처음 위치 (지도서 예시 도해와 동일)
+  const sx = gx => (gx - X0) * CELL;
+  const sy = gy => (Y1 - gy) * CELL;
+
+  const grid = document.getElementById('mvGrid');
+  const items = document.getElementById('mvItems');
+  const bee = document.getElementById('mvBee');
+  const startBox = document.getElementById('mvStart');
+  const read = document.getElementById('mvRead');
+  const fb = document.getElementById('mvFb');
+  const NS = 'http://www.w3.org/2000/svg';
+
+  for (let gy = Y0; gy <= Y1; gy++) {
+    for (let gx = X0; gx <= X1; gx++) {
+      const r = document.createElementNS(NS, 'rect');
+      r.setAttribute('class', 'mv-cell');
+      r.setAttribute('x', sx(gx)); r.setAttribute('y', sy(gy));
+      r.setAttribute('width', CELL); r.setAttribute('height', CELL);
+      grid.appendChild(r);
+    }
+  }
+  SPOTS.forEach(s => {
+    const el = document.createElementNS(NS, 'text');
+    el.setAttribute('class', s.name === '분수' ? 'mv-hub' : 'mv-flower');
+    el.setAttribute('x', sx(s.x) + CELL / 2); el.setAttribute('y', sy(s.y) + CELL / 2);
+    el.textContent = s.emoji;
+    items.appendChild(el);
+  });
+  startBox.setAttribute('x', sx(START.x)); startBox.setAttribute('y', sy(START.y));
+
+  let cx = START.x, cy = START.y, sec = 0;
+  function spotAt(x, y) { return SPOTS.find(s => s.x === x && s.y === y); }
+  const startName = spotAt(START.x, START.y).name;
+
+  function render() {
+    bee.setAttribute('x', sx(cx) + CELL / 2);
+    bee.setAttribute('y', sy(cy) + CELL / 2 - 6);
+    document.getElementById('mvUp').disabled = cy >= Y1;
+    document.getElementById('mvDown').disabled = cy <= Y0;
+    document.getElementById('mvLeft').disabled = cx <= X0;
+    document.getElementById('mvRight').disabled = cx >= X1;
+    const here = spotAt(cx, cy);
+    if (sec === 0) {
+      read.textContent = '꿀벌의 처음 위치는 ' + startName + '입니다.';
+      fb.textContent = '꿀벌을 다른 꽃까지 움직여 보세요.';
+      return;
+    }
+    if (here && here.name !== '분수' && here.name !== startName) {
+      read.innerHTML = '꿀벌은 <span class="mv-time">' + sec + '초</span> 동안 ' + startName + '에서 ' + here.name + '으로 이동했습니다.';
+      fb.textContent = '걸린 시간, 처음 위치, 나중 위치를 모두 넣어 표현했습니다. 🎉';
+    } else {
+      read.innerHTML = '꿀벌이 <span class="mv-time">' + sec + '초</span> 동안 움직였습니다. 아직 꽃 위가 아닙니다.';
+      fb.textContent = '꽃 위에 도착하면 꿀벌의 운동을 표현할 수 있습니다.';
+    }
+  }
+  function step(dx, dy) {
+    const nx = cx + dx, ny = cy + dy;
+    if (nx < X0 || nx > X1 || ny < Y0 || ny > Y1) return;
+    cx = nx; cy = ny; sec += 1;   // 한 칸 = 일 초 (규칙 원문)
+    render();
+  }
+  document.getElementById('mvUp').addEventListener('click', () => step(0, 1));
+  document.getElementById('mvDown').addEventListener('click', () => step(0, -1));
+  document.getElementById('mvLeft').addEventListener('click', () => step(-1, 0));
+  document.getElementById('mvRight').addEventListener('click', () => step(1, 0));
+  document.getElementById('mvReset').addEventListener('click', () => { cx = START.x; cy = START.y; sec = 0; render(); });
+  render();
+})();
+
+// ───── 슬 6 시뮬: 꽃 도감 4종 (지도서 p.199 활동해요 2 예시 답안 원문) ─────
+(function flowerDex() {
+  const data = {
+    a: { emoji: '🌼', name: '수선화꽃', feats: ['분수에서 왼쪽으로 3칸 떨어진 곳에 위치합니다', '분수와 같은 줄에 있습니다', '위치는 방향과 칸 수로 나타냅니다'] },
+    b: { emoji: '💜', name: '제비꽃', feats: ['분수에서 위쪽으로 2칸 떨어진 곳에 위치합니다', '분수와 같은 칸 줄에 있습니다', '위치는 방향과 칸 수로 나타냅니다'] },
+    c: { emoji: '🌻', name: '유채꽃', feats: ['분수에서 오른쪽으로 2칸, 위쪽으로 3칸 떨어진 곳에 위치합니다', '두 방향을 모두 말해야 합니다', '위치는 방향과 칸 수로 나타냅니다'] },
+    d: { emoji: '🌸', name: '진달래꽃', feats: ['분수에서 오른쪽으로 1칸, 아래쪽으로 1칸 떨어진 곳에 위치합니다', '두 방향을 모두 말해야 합니다', '위치는 방향과 칸 수로 나타냅니다'] },
+  };
+  const card = document.getElementById('featCard');
+  document.querySelectorAll('.feat-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.feat-btn').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      const d = data[btn.dataset.an];
+      let h = '<div class="fc-head">' + d.emoji + ' ' + d.name + '</div><div class="fc-list">';
+      d.feats.forEach((f, i) => { h += '<div class="fc-item" style="animation-delay:' + (i * 0.1) + 's">• ' + f + '</div>'; });
+      h += '</div>';
+      card.innerHTML = h;
+    });
+  });
+})();
+
+// ───── 자기 평가 (슬 17) — 점수 X ─────
+document.querySelectorAll('.self-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.self-btn').forEach(b => b.classList.remove('picked'));
+    btn.classList.add('picked');
+    document.getElementById('self-fb').textContent = btn.querySelector('.self-name').textContent + ' — 잘 골랐습니다! 🐝';
+  });
+});
+
+// ───── 진도 저장 (차시운영 §4) ─────
+function saveProgress(completed) {
+  const wrongArr = [], hintArr = [];
+  SCORE_QIDS.forEach(qid => { const st = getQState(qid); wrongArr.push(st.wrongCount); hintArr.push(st.hintLevel); });
+  const prev = loadProgress();
+  const data = {
+    score: score, max_score: 100, completed: completed,
+    completed_at: completed ? new Date().toISOString() : (prev ? prev.completed_at : null),
+    first_attempt_score: prev && prev.first_attempt_score != null ? prev.first_attempt_score : (completed ? score : null),
+    attempt_count: prev ? (prev.attempt_count || 1) : 1,
+    hint_used: hintArr, wrong_count: wrongArr,
+    duration_sec: Math.floor((Date.now() - startedAt) / 1000),
+    last_slide: cur + 1
+  };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
+}
+function loadProgress() {
+  try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : null; }
+  catch (e) { return null; }
+}
+
+updateUI();
+</script>
+<script src="/kedu_back.js"></script>
+</body>
+</html>
