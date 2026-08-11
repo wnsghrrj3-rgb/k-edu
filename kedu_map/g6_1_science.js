@@ -104,6 +104,23 @@ window.KEDU_MAP["g6_1_science"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 2,
+   "name": "물체의 운동",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g6_science_u2_l01",
+     "lessonId": "g6_sci_u2_l01_v1",
+     "n": "1",
+     "title": "열려라 과학 — 다양한 모습으로 걸어 보아요!",
+     "sub": null,
+     "url": "/grade6/semester1/science/2단원_물체의운동/g6_sci_u2_l01_열려라과학.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };
