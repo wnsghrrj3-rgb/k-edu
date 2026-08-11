@@ -59,20 +59,29 @@ window.MK_LIVE = (() => {
   /* R95 — 터치 근접 핸들: 요소 rect와 포인터로 반경 안 가장 가까운 핸들.
      8px 시각 핸들을 손가락이 정확히 못 짚는 문제의 수학 절반 — 나머지 절반은
      CSS 히트 패드. rect 폭 0(jsdom·미배치)이면 판정하지 않는다. */
-  function handleAt(rect, px, py, radius) {
-    if (!rect || !(rect.width > 0) || !(rect.height > 0)) return null;
+  /* R109 — 이름표 붙은 점들 중 반경 내 최근접. 회전한 요소의 손잡이는
+     외접 박스 모서리가 아니라 브라우저가 돌려놓은 실좌표에 있으므로,
+     호출자가 실측한 점들을 그대로 받는 일반형이 정본이다. */
+  function handleAtPts(pts, px, py, radius) {
     const r = radius == null ? 22 : radius;
-    const pts = {
-      tl: [rect.left, rect.top], tr: [rect.right, rect.top],
-      bl: [rect.left, rect.bottom], br: [rect.right, rect.bottom],
-      ml: [rect.left, rect.top + rect.height / 2], mr: [rect.right, rect.top + rect.height / 2],
-    };
     let best = null, bd = r + 1e-9;
     for (const k in pts) {
-      const d = Math.hypot(px - pts[k][0], py - pts[k][1]);
+      const p = pts[k];
+      if (!p || !isFinite(+p[0]) || !isFinite(+p[1])) continue;
+      const d = Math.hypot(px - p[0], py - p[1]);
       if (d < bd) { bd = d; best = k; }
     }
     return best;
+  }
+
+  /* 무회전 특수형 — 외접 박스 모서리 6점. R95 이래 결과 동일 (handleAtPts 위임) */
+  function handleAt(rect, px, py, radius) {
+    if (!rect || !(rect.width > 0) || !(rect.height > 0)) return null;
+    return handleAtPts({
+      tl: [rect.left, rect.top], tr: [rect.right, rect.top],
+      bl: [rect.left, rect.bottom], br: [rect.right, rect.bottom],
+      ml: [rect.left, rect.top + rect.height / 2], mr: [rect.right, rect.top + rect.height / 2],
+    }, px, py, radius);
   }
 
   /* R95 — 리사이즈 비율 기본값: 사진·영상(src 보유)의 모서리 = 기본 비율 고정
@@ -384,6 +393,13 @@ window.MK_LIVE = (() => {
     rotateTo(r, 50, 50, 80, 50);                       /* 오른쪽 = 90° */
     if (r.rot !== 90) v.push('회전 90° 오류');
     /* R107 — 회전 기하 */
+    /* R109 — handleAtPts: 최근접·반경 밖 null·무효점 건너뜀·handleAt 위임 동률 */
+    const hp = { tl: [0, 0], tr: [100, 0], bad: [NaN, 5] };
+    if (handleAtPts(hp, 3, 4, 22) !== 'tl') v.push('handleAtPts 최근접 오류');
+    if (handleAtPts(hp, 50, 50, 22) !== null) v.push('handleAtPts 반경 밖이 잡힘');
+    if (handleAtPts({ bad: [NaN, 0] }, 0, 0, 22) !== null) v.push('handleAtPts 무효점 미건너뜀');
+    const hr = { left: 0, top: 0, right: 100, bottom: 50, width: 100, height: 50 };
+    if (handleAt(hr, 98, 26, 22) !== 'mr') v.push('handleAt 위임 후 결과 변형');
     if (rotOf({ rot: -90 }) !== 270 || rotOf({ rot: 370 }) !== 10 || rotOf({}) !== 0 || rotOf({ rot: 'x' }) !== 0) v.push('rotOf 정규화 오류');
     const rz = { rot: 12 }; setRot(rz, 0);
     if ('rot' in rz) v.push('setRot 0° 키 미삭제');
@@ -435,7 +451,7 @@ window.MK_LIVE = (() => {
   }
 
   const api = {
-    dragTo, resizeTo, rotateTo, handleAt, aspectDefault, snap, nudge, removeEl, dupEl, editText,
+    dragTo, resizeTo, rotateTo, handleAt, handleAtPts, aspectDefault, snap, nudge, removeEl, dupEl, editText,
     rotOf, setRot, rotVec, unrotVec, recenter, framePos,          /* R107 — 회전 기하 */
     textH, boxOf, aabb,                                           /* R108 — 외접 박스·텍스트 모델 높이 */
     replaceWithSrc, insertWithSrc, fileToSrc, shrinkImage, normalizeImage,

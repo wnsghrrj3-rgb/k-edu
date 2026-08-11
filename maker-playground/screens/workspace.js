@@ -859,8 +859,27 @@
           const wasSel = WS.sel && WS.sel.idx === i && WS.sel.type !== 'scene';
           WS.sel = { type: selType(el), idx: i };
           let handle = hd ? [...hd.classList].find((c) => c !== 'ws-hd') : null;
-          if (!handle && wasSel && ev.pointerType && ev.pointerType !== 'mouse' && L.handleAt)
-            handle = L.handleAt(elDom.getBoundingClientRect(), ev.clientX, ev.clientY);
+          if (!handle && wasSel && ev.pointerType && ev.pointerType !== 'mouse' && L.handleAt) {
+            const rd9 = rotDeg(el);
+            let pts9 = null;
+            if (rd9 && L.handleAtPts) {
+              /* R109 — 회전 요소의 손잡이는 외접 박스 모서리가 아니라 브라우저가
+                 돌려놓은 자리에 있다. getBoundingClientRect(외접)로 재면 다른(없는)
+                 손잡이가 잡히므로, .ws-hd 실좌표를 그대로 잰다. */
+              pts9 = {};
+              elDom.querySelectorAll('.ws-hd').forEach((h9) => {
+                const k9 = [...h9.classList].find((c) => c !== 'ws-hd'); if (!k9) return;
+                const r9 = h9.getBoundingClientRect();
+                if (r9 && (r9.width > 0 || r9.height > 0))
+                  pts9[k9] = [r9.left + r9.width / 2, r9.top + r9.height / 2];
+              });
+              const ks9 = Object.keys(pts9);
+              if (ks9.length < 2 || !ks9.some((k9) =>
+                pts9[k9][0] !== pts9[ks9[0]][0] || pts9[k9][1] !== pts9[ks9[0]][1])) pts9 = null;  /* 실측 불가 환경 */
+            }
+            handle = pts9 ? L.handleAtPts(pts9, ev.clientX, ev.clientY)
+              : L.handleAt(elDom.getBoundingClientRect(), ev.clientX, ev.clientY);  /* rot=0 = 종전 그대로 */
+          }
           const rh = t.closest && t.closest('[data-ws-rh]');   /* R107 — 회전 손잡이 */
           ges = { i, type: rh ? 'rotate' : (handle ? 'resize' : 'move'),
             erect: elDom.getBoundingClientRect(),      /* 회전해도 중심은 참 */
@@ -1013,7 +1032,8 @@
         const els = WS.msel.map((ix) => scene().elements[ix]).filter(Boolean);
         snap();
         const m2 = b.dataset.wsArr;
-        const r = m2 === 'dist-h' ? AR.distribute(els, 'h') : m2 === 'dist-v' ? AR.distribute(els, 'v') : AR.align(els, m2);
+        const s9 = scene(), ar9 = (s9.width || 16) / (s9.height || 9);   /* R109 — 회전 요소는 외접 박스로 정렬·간격 */
+        const r = m2 === 'dist-h' ? AR.distribute(els, 'h', ar9) : m2 === 'dist-v' ? AR.distribute(els, 'v', ar9) : AR.align(els, m2, ar9);
         if (r && r.ok) R();
       });
       /* R101 — 사진 보정·필터 (MK_PHOTO) */
