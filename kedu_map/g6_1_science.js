@@ -149,6 +149,16 @@ window.KEDU_MAP["g6_1_science"] = {
      "url": "/grade6/semester1/science/2단원_물체의운동/g6_sci_u2_l04_같은시간.html",
      "track": "tb",
      "ready": true
+    },
+    {
+     "key": "g6_science_u2_l05",
+     "lessonId": "g6_sci_u2_l05_v1",
+     "n": "5",
+     "title": "같은 거리를 이동한 물체의 빠르기를 비교해 보자!",
+     "sub": null,
+     "url": "/grade6/semester1/science/2단원_물체의운동/g6_sci_u2_l05_같은거리.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }
