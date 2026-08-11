@@ -203,14 +203,24 @@
       // 고정만으로 부족하고 템플릿도 없으면 있는 만큼만 반환(관문 없음)
       return { set: key, seed: seed, items: items.slice(0, n) };
     }
-    var guard = 0, ti = 0;
+    // 같은 발문이 한 세트에 두 번 나오지 않게 1차로 거른다.
+    //   출제 풀이 좁은 세트(예: 한자 회차 10자)에서 라운드로빈이 같은 문항을 다시 뽑는 걸 막는다.
+    //   중복을 피하다 n을 못 채우면 2차에서 중복을 허용해 문항 수를 반드시 보장한다(기존 동작 호환).
+    var guard = 0, ti = 0, seen = {};
+    function push(it, tpl) {
+      it.id = key + '_' + tpl.id + '_s' + seedInt(seed) + '_q' + items.length;
+      items.push(it);
+    }
     while (items.length < n && guard < n * RETRY_MAX) {
       var tpl = usable[ti % usable.length]; ti++; guard++;
       var it = genOne(tpl, rng, { source: source, seed: seed });
-      if (it) {
-        it.id = key + '_' + tpl.id + '_s' + seedInt(seed) + '_q' + items.length;
-        items.push(it);
-      }
+      if (it && !seen[it.q]) { seen[it.q] = 1; push(it, tpl); }
+    }
+    guard = 0;
+    while (items.length < n && guard < n * RETRY_MAX) {      // 폴백: 중복 허용
+      var tpl2 = usable[ti % usable.length]; ti++; guard++;
+      var it2 = genOne(tpl2, rng, { source: source, seed: seed });
+      if (it2) push(it2, tpl2);
     }
     return { set: key, seed: seed, items: items };
   }

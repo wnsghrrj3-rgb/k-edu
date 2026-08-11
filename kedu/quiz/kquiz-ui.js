@@ -101,7 +101,13 @@
       var sd = el('div', 'kq-short'); var inp = el('input'); inp.type = 'text'; inp.inputMode = 'numeric';
       inp.value = state.answers[i] != null ? state.answers[i] : '';
       if (graded) inp.disabled = true;
-      inp.oninput = function () { state.answers[i] = inp.value; };
+      inp.oninput = function () {
+        state.answers[i] = inp.value;
+        // 렌더 시점에 잠가 둔 '확인'을 입력에 맞춰 풀어 준다.
+        // (객관식은 보기 클릭에서 재렌더되지만 단답형은 재렌더가 없어 계속 잠겨 있었다)
+        var c = el0.querySelector('.kq-foot .kq-btn.pri');
+        if (c) c.disabled = (inp.value === '' || inp.value == null);
+      };
       sd.appendChild(inp); q.appendChild(sd);
     }
 
