@@ -343,6 +343,13 @@ footer{padding-top:10px;padding-bottom:14px}
       <p class="nh-sub">교과서를 따라, <u>스스로</u> 탐구하고,<br>즐겁게 도전하며 나만의 성장을 만들어가는 공간, 케이에듀.</p>
       <button class="nh-cta" onclick="nav('s-grade')">시작하기 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 6l6 6-6 6"/></svg></button>
 
+      <!-- 아침활동 알림 (오늘 할 게 있는 학생) -->
+      <a class="nh-inbox" id="morning-banner" href="/morning/" style="display:none">
+        <b id="mb-title">오늘의 아침활동</b>
+        <span id="mb-sub">오늘 것을 풀어볼까요?</span>
+        <span class="nh-ib-go">하러 가기</span>
+      </a>
+
       <!-- 받은 박스 알림 (로그인 학생) -->
       <a class="nh-inbox" id="inbox-banner" href="/classwork/inbox.html" style="display:none">
         <b id="ib-count">받은 박스</b>
@@ -768,6 +775,7 @@ function showLoggedInUI(){
     }
   }
   checkInbox();
+  checkMorning();
 }
 
 // 받은 박스(케이박스) 알림 — RPC 없거나 박스 없으면 조용히 숨김
@@ -781,6 +789,22 @@ async function checkInbox(){
       document.getElementById('inbox-banner').style.display = 'flex';
     }
   } catch(e){ /* 테이블/RPC 미설정 시 무시 */ }
+}
+
+// 아침활동 — 오늘 할 게 있을 때만 띄운다(없는 날·미설정은 조용히 숨김)
+async function checkMorning(){
+  try {
+    const { data } = await db.rpc('ma_today');
+    if(!data || data.status !== 'ok') return;
+    const SUB = { hanja:'한자', english:'영어', math:'수학', korean:'국어' };
+    const done = data.my && data.my.submitted;
+    const ko = SUB[data.subject] || data.subject;
+    document.getElementById('mb-title').textContent =
+      done ? `아침활동 ${ko} 다 했어요` : `오늘의 아침활동 · ${ko}`;
+    document.getElementById('mb-sub').textContent =
+      done ? '결과와 선생님 말씀을 볼 수 있어요' : `${data.question_count}문제, 지금 풀어볼까요?`;
+    document.getElementById('morning-banner').style.display = 'flex';
+  } catch(e){ /* 스키마 미적용 시 무시 */ }
 }
 
 function showLoggedOutUI(){
