@@ -150,8 +150,19 @@ T('T8 손잡이 드래그 → rot 커밋 + undo 1번 원복', () => {
   const n = stub(node());
   const rh = n.querySelector('[data-ws-rh]');
   if (!rh) return '손잡이 없음';
-  rh.dispatchEvent(new w.MouseEvent('pointerdown', { bubbles: true, button: 0, clientX: 100, clientY: 0 }));
-  n.dispatchEvent(new w.MouseEvent('pointermove', { bubbles: true, clientX: 300, clientY: 100 })); /* 중심(100,100) 오른쪽 = 90° */
+  /* R110 — 회전의 축은 DOM 외접 상자가 아니라 모델 박스 중심이다.
+     여기 있던 「중심(100,100)」은 stub 이 심은 DOM 값이었고, 그건 R110 이
+     정본에서 내린 축이다. 계약(끌면 rot 커밋 + undo 한 칸 원복)은 그대로 두고
+     손끝만 모델 축의 오른쪽에 놓는다 — 축이 참이면 여전히 90°. */
+  const el0 = curScene().elements[idx];
+  const sc0 = curScene();
+  const CW0 = Math.round(560 * w.MK_WS.state.zoom / 100);
+  const CH0 = Math.round(CW0 * (sc0.height || 9) / (sc0.width || 16));
+  const pv0 = w.MK_LIVE.pivotPx
+    ? w.MK_LIVE.pivotPx(el0, CW0, CH0)
+    : { x: 100, y: 100 };
+  rh.dispatchEvent(new w.MouseEvent('pointerdown', { bubbles: true, button: 0, clientX: pv0.x, clientY: pv0.y - 20 }));
+  n.dispatchEvent(new w.MouseEvent('pointermove', { bubbles: true, clientX: pv0.x + 200, clientY: pv0.y })); /* 축의 오른쪽 = 90° */
   n.dispatchEvent(new w.MouseEvent('pointerup', { bubbles: true }));
   const el = curScene().elements[idx];
   if (el.rot !== 90) return 'rot=' + el.rot;

@@ -144,6 +144,18 @@
     const hpx = (L && L.textH ? L.textH(el) : 0) / 100 * CH;
     return `;transform:rotate(${d}deg);transform-origin:50% ${(hpx / 2).toFixed(1)}px`;
   };
+  /* R110 — 텍스트 상자가 모델 높이를 입는다.
+     여태 이 div 는 브라우저 자동 높이(CSS line-height 1.3 · 자동 줄바꿈)로 서 있었는데,
+     리사이즈·스냅·정렬·간격·export(render.js frameOf)는 전부 모델 높이 textH 를 쓴다.
+     그래서 손잡이가 앉은 자리와 실제로 움직이는 상자가 서로 달랐다 — 1줄 6% 글자에서
+     DOM 은 7.8%, 모델은 9.0%. 상자를 정본에 맞춰 둘을 하나로 만든다.
+     글자 자체는 종전과 똑같이 위에서부터 흐른다: overflow:visible 은 export 의
+     기본 overflow 규약과 같아서, 넘치면 넘치는 그대로가 결과물과 같은 그림이다. */
+  const textBoxSty = (el) => {
+    const L = window.MK_LIVE;
+    if (!L || !L.textH) return '';
+    return `;height:${(+L.textH(el)).toFixed(3)}%;overflow:visible`;
+  };
   /* 캔버스 실픽셀 — 회전 수학은 % 가 아니라 px 공간에서만 성립한다 */
   const cpx = () => { const s2 = scene() || { width: 16, height: 9 };
     const CW = Math.round(BASE_W * WS.zoom / 100); return { CW, CH: Math.round(CW * s2.height / s2.width) }; };
@@ -183,7 +195,7 @@
       if (el.kind === 'text') {
         const fs = (el.size / 100 * CH).toFixed(1);
         const ts = window.MK_TEXTSTYLE ? window.MK_TEXTSTYLE.css(el) : ''; /* R56 — 글꼴·배경·외곽선·그림자 */
-        return `<div class="ws-el text ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight || 400}${el.color ? `;color:${el.color}` : ''}${el.align ? `;text-align:${el.align}` : ''}${ts}${rotStyText(el, CH)}">${M().esc(el.text).replace(/\n/g, '<br>')}${hd}</div>`;
+        return `<div class="ws-el text ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%${textBoxSty(el)};font-size:${fs}px;font-weight:${el.weight || 400}${el.color ? `;color:${el.color}` : ''}${el.align ? `;text-align:${el.align}` : ''}${ts}${rotStyText(el, CH)}">${M().esc(el.text).replace(/\n/g, '<br>')}${hd}</div>`;
       }
       if (el.src) {                                    /* R45 — Workspace도 실이미지·실영상 표시 (R36 editor와 동일) */
         const fit = el.fit === 'contain' ? 'contain' : 'cover';
@@ -807,8 +819,12 @@
           /* R107 — 회전 요소의 getBoundingClientRect 은 외접 상자다. 중심만 참이므로
              중심 기준으로 역회전해 회전 전 프레임 좌표로 되돌린다. */
           const c = cpx();
+          /* R110 — 프레임 크기도 모델 박스에서. 사진은 h 가 있어 종전과 같은 수치이고,
+             h 없는 종류가 초점에 들어오더라도 0 짜리 프레임으로 무너지지 않는다. */
+          const bp = L.boxPx ? L.boxPx(el0, c.CW, c.CH)
+            : { w: (el0.w || 0) / 100 * c.CW, h: (el0.h || 0) / 100 * c.CH };
           return L.framePos(r.left + r.width / 2, r.top + r.height / 2,
-            (el0.w || 0) / 100 * c.CW, (el0.h || 0) / 100 * c.CH, ev.clientX, ev.clientY, rt);
+            bp.w, bp.h, ev.clientX, ev.clientY, rt);
         };
         cv.addEventListener('pointerdown', (ev) => {
           if (ev.button !== undefined && ev.button !== 0) return;
@@ -881,8 +897,21 @@
               : L.handleAt(elDom.getBoundingClientRect(), ev.clientX, ev.clientY);  /* rot=0 = 종전 그대로 */
           }
           const rh = t.closest && t.closest('[data-ws-rh]');   /* R107 — 회전 손잡이 */
+          /* R110 — 회전의 축은 모델 박스의 중심이다(=CSS transform-origin, export 회전축).
+             DOM 외접 상자의 중심은 사진·도형에서만 우연히 같다: 텍스트는 DOM 높이가
+             textH 와 달라 축이 어긋나고, 손끝이 재는 각과 글자가 도는 각이 갈라졌다.
+             실측 불가 환경에서는 종전 erect 중심으로 되돌아간다. */
+          let epiv = null;
+          try {
+            const cpv = cpx(), crb = cv.getBoundingClientRect();
+            if (L.pivotPx && cpv.CW > 0 && cpv.CH > 0) {
+              const p0 = L.pivotPx(el, cpv.CW, cpv.CH);
+              if (isFinite(p0.x) && isFinite(p0.y)) epiv = { x: crb.left + p0.x, y: crb.top + p0.y };
+            }
+          } catch (_) { epiv = null; }
           ges = { i, type: rh ? 'rotate' : (handle ? 'resize' : 'move'),
-            erect: elDom.getBoundingClientRect(),      /* 회전해도 중심은 참 */
+            epiv,                                      /* R110 — 모델 기준 회전 불변점 */
+            erect: elDom.getBoundingClientRect(),      /* 폴백 — 회전해도 DOM 중심은 참(텍스트 제외) */
             dtap: rh ? false : dtap,                                      /* R106 — 더블탭 후보 (무이동 up 에서 확정) */
             handle,
             start: pickGeo(el), sx: ev.clientX, sy: ev.clientY,
@@ -926,7 +955,8 @@
           if (Math.abs(dx) + Math.abs(dy) > 0.15) ges.moved = true;
           if (ges.type === 'rotate') {                 /* R107 — 중심과 손끝의 각도 (0·90·180·270 자석은 MK_LIVE) */
             const er = ges.erect;
-            L.rotateTo(el, er.left + er.width / 2, er.top + er.height / 2, ev.clientX, ev.clientY);
+            const pv = ges.epiv || { x: er.left + er.width / 2, y: er.top + er.height / 2 };  /* R110 — 모델 축 우선 */
+            L.rotateTo(el, pv.x, pv.y, ev.clientX, ev.clientY);
             ges.moved = true;
           } else if (ges.type === 'move') {
             /* 이동은 회전과 무관 — 중심 기준 회전이라 화면 이동량 = 좌표 이동량 */

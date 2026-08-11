@@ -180,6 +180,22 @@ window.MK_LIVE = (() => {
     return { x: b.x + b.w / 2 - W / 2, y: b.y + b.h / 2 - H / 2, w: W, h: H };
   }
 
+  /* R110 — 모델 박스의 실픽셀. 회전 수학은 % 가 아니라 px 공간에서만 성립한다.
+     텍스트만 모델에 h 가 없어 boxOf 가 textH 로 채운다 — 그래서 DOM 실측이 필요 없다. */
+  function boxPx(el, CW, CH) {
+    const b = boxOf(el), W = +CW || 0, H = +CH || 0;
+    return { x: b.x / 100 * W, y: b.y / 100 * H, w: b.w / 100 * W, h: b.h / 100 * H };
+  }
+
+  /* R110 — 회전 불변점. CSS transform-origin 이 앉는 자리이자 export(render.js)가
+     회전의 축으로 삼는 자리 = 모델 박스의 중심. 회전 각도와 무관하게 같은 점이라
+     제스처는 이 점을 중심으로 각을 재야 한다 — DOM 외접 상자의 중심은
+     사진·도형에서는 우연히 같지만 텍스트에서는 다르다(DOM 높이 ≠ textH). */
+  function pivotPx(el, CW, CH) {
+    const p = boxPx(el, CW, CH);
+    return { x: p.x + p.w / 2, y: p.y + p.h / 2 };
+  }
+
   /* 스냅 — 씬 중앙(50)·다른 요소의 변/중앙에 1.2% 이내면 흡착. 가이드 좌표 반환.
      ar>0 이면 회전을 아는 자(외접 박스·텍스트 실높이)로 잰다 — 흡착 결과는 어느 쪽이든
      평행이동(el.x/el.y 가감)이라 중심 기준 회전과 어긋나지 않는다. */
@@ -425,6 +441,16 @@ window.MK_LIVE = (() => {
     if (Math.abs((ab9.x + ab9.w / 2) - 10) > 1e-9 || Math.abs((ab9.y + ab9.h / 2) - 5) > 1e-9) v.push('aabb 중심 이동');
     const abr = aabb({ x: 0, y: 0, w: 20, h: 10, rot: 90 }, 2);   /* ar 이 축 배율을 가른다 */
     if (Math.abs(abr.w - 5) > 1e-9 || Math.abs(abr.h - 40) > 1e-9) v.push('aabb 종횡비 미반영');
+    /* R110 — 모델 박스 실픽셀·회전 불변점 */
+    const bp = boxPx({ x: 10, y: 20, w: 30, h: 40 }, 500, 300);
+    if (bp.x !== 50 || bp.y !== 60 || bp.w !== 150 || bp.h !== 120) v.push('boxPx 환산 오류');
+    const pv = pivotPx({ x: 10, y: 20, w: 30, h: 40 }, 500, 300);
+    if (pv.x !== 125 || pv.y !== 120) v.push('pivotPx 중심 오류');
+    /* 텍스트는 DOM 이 아니라 textH 로 중심을 얻는다 — 회전해도 같은 점 */
+    const tp0 = pivotPx({ kind: 'text', x: 0, y: 0, w: 40, size: 6, text: 'ㄱ' }, 500, 300);
+    const tp9 = pivotPx({ kind: 'text', x: 0, y: 0, w: 40, size: 6, text: 'ㄱ', rot: 137 }, 500, 300);
+    if (Math.abs(tp0.y - (6 * 1.5) / 2 / 100 * 300) > 1e-9) v.push('pivotPx 텍스트가 textH 를 안 씀');
+    if (tp0.x !== tp9.x || tp0.y !== tp9.y) v.push('pivotPx 가 회전 불변이 아님');
     /* 스냅 — 중앙 흡착 */
     const s = { kind: 'image', x: 44.5, y: 30, w: 10, h: 10 };
     const g = snap(s, []);
@@ -454,6 +480,7 @@ window.MK_LIVE = (() => {
     dragTo, resizeTo, rotateTo, handleAt, handleAtPts, aspectDefault, snap, nudge, removeEl, dupEl, editText,
     rotOf, setRot, rotVec, unrotVec, recenter, framePos,          /* R107 — 회전 기하 */
     textH, boxOf, aabb,                                           /* R108 — 외접 박스·텍스트 모델 높이 */
+    boxPx, pivotPx,                                               /* R110 — 모델 박스 실픽셀·회전 불변점 */
     replaceWithSrc, insertWithSrc, fileToSrc, shrinkImage, normalizeImage,
     useBackend, saveDoc, loadDoc, clearDoc, saveProjects, restoreProjects, autosave, flush,
     liveAudit,
