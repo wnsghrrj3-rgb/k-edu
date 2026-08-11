@@ -76,10 +76,16 @@ window.PG = (() => {
     const scr = window.MK_SCREENS[state.screen];
     /* 내비 */
     const modeBtn = window.MK_SIMPLE ? `<div class="pg-nav-div"></div><button class="pg-nav-item" data-navmode><span class="ico">${state.navMode === 'simple' ? '🗂' : '🌱'}</span><span class="txt">${state.navMode === 'simple' ? '전체 보기' : '단순 모드'}</span></button>` : '';
-    document.getElementById('pgNav').innerHTML = navList().map(([k, ico, n]) =>
+    /* 생태계 접점(2026-08-10) — 케이에듀로 돌아가는 문. R92가 「자체 내비 보유」로
+       context 모드를 걸었지만 정작 자체 출구가 이주에서 누락돼, 탈출 수단이 해시
+       히스토리 뒤로가기 연타뿐이었다(준호 내비 전수 감사에서 발견). */
+    const exitBtn = `<button class="pg-nav-item" data-navexit><span class="ico">🏠</span><span class="txt">케이에듀</span></button><div class="pg-nav-div"></div>`;
+    document.getElementById('pgNav').innerHTML = exitBtn + navList().map(([k, ico, n]) =>
       k === '--div' ? `<div class="pg-nav-div"></div>` :
       `<button class="pg-nav-item ${state.screen === k ? 'on' : ''}" data-nav="${k}"><span class="ico">${ico}</span><span class="txt">${n}</span></button>`).join('') + modeBtn;
     document.querySelectorAll('[data-nav]').forEach((b) => b.onclick = () => go(b.dataset.nav));
+    const xb = document.querySelector('[data-navexit]');
+    if (xb) xb.onclick = () => { if (window.KEDU_BACK && window.KEDU_BACK.go) window.KEDU_BACK.go(); else location.href = '/'; };
     const mb = document.querySelector('[data-navmode]'); if (mb) mb.onclick = toggleNavMode;
     /* 헤더 + variant 전환 */
     const v = state.variants[state.screen] || scr.variants[0];
