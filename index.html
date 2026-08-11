@@ -333,7 +333,7 @@ footer{padding-top:8px;padding-bottom:10px}
       <span class="class-code-badge" style="display:inline-block">이름 없이</span>
       <button class="btn-logout" onclick="guestExit()">나가기</button>
     </div>
-    <button class="tb-teacher" onclick="pickRole('teacher')">선생님 공간</button>
+    <button class="tb-teacher" onclick="location.href='/teacher/'">선생님 공간</button>
     <button class="tb-login" id="tb-login" onclick="location.href='/auth/'">로그인</button>
   </div>
 </div>
@@ -1053,7 +1053,7 @@ function screenFromURL(){
   const p = new URLSearchParams(location.search);
   if(p.get('view') === 'subject') return 's-subject';
   const role = p.get('role') || (location.hash ? location.hash.replace('#','') : '');
-  if(role === 'teacher') return 's-teacher';
+  if(role === 'teacher') { location.replace('/teacher/'); return 's-role'; }   // 구 링크 호환
   if(role === 'student') return p.get('step') === 'semester' ? 's-semester' : 's-grade';
   return 's-role';
 }
@@ -1062,7 +1062,8 @@ function screenFromURL(){
 // 역할 선택 (학생 / 선생님)
 // =============================================
 function pickRole(role){
-  nav(role === 'teacher' ? 's-teacher' : 's-grade');
+  if (role === 'teacher') { location.href = '/teacher/'; return; }   // 교사의 문은 대시보드 하나
+  nav('s-grade');
 }
 
 // 처음(역할 선택)으로
