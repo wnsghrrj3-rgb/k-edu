@@ -22,6 +22,7 @@
     mode: 'design',         /* design | presentation | video | photo */
     msel: [],               /* R103 — Shift 다중 선택 (상태 기본값 — enter 없이도 안전) */
     crop: null,             /* R105 — 자르기 모드 {idx, sc, d:{x,y,w,h}} (초안 — 확인 전 문서 무변형) */
+    focal: null,            /* R106 — 세밀 초점 모드 {idx, sc, d:{x,y}, nar} (초안 — 확인 전 문서 무변형) */
     zoom: 100, nav: 'scenes', dock: false,
     undo: [], redo: [], savedAt: null, svarMsg: '', notice: '', smartMsg: '',
   };
@@ -49,6 +50,7 @@
       WS.undo = []; WS.redo = []; WS.savedAt = null; WS.dock = false; WS.nav = 'scenes';
       WS.msel = [];                                    /* R103 — Shift 다중 선택 (씬 이동·재진입 시 초기화) */
       WS.crop = null;                                  /* R105 — 자르기 모드 재진입 시 종료 */
+      WS.focal = null;                                 /* R106 — 세밀 초점 모드 재진입 시 종료 */
       /* R93 — 빌드 정직 안내는 차단형 alert 가 아니라 이 자리 한 줄로.
          (준호 실기기: 「생략: ss-title」 OS 경고창이 에러처럼 읽히고 흐름을 끊음) */
       WS.notice = window.MK_WS && window.MK_WS.pendingNotice ? String(window.MK_WS.pendingNotice) : '';
@@ -126,6 +128,7 @@
 
   /* ================= 중앙: Canvas ================= */
   const BASE_W = 560;
+  let lastTap = null;    /* R106 — 더블탭 감지 {i, t} — 렌더마다 재배선돼도 살아남게 모듈 스코프 (dblclick 은 preventDefault 지형에서 못 믿는다) */
   /* R55 — 선택 핸들: 코너 4 + 좌우변 2 (리사이즈는 MK_LIVE.resizeTo, #/editor R36 동일 규약) */
   const WSHD = '<i class="ws-hd tl"></i><i class="ws-hd tr"></i><i class="ws-hd bl"></i><i class="ws-hd br"></i><i class="ws-hd ml"></i><i class="ws-hd mr"></i>';
   /* R105 — 자르기 오버레이 조각 (스크림 4 + 상자 + 코너 4 + 확인 바) */
@@ -142,10 +145,21 @@
       <div class="ws-cropbar"><button data-ws-crok>✓ 자르기</button><button data-ws-crno>✕ 취소</button></div>
     </div>`;
   };
+  /* R106 — 세밀 초점 오버레이 (마커 + 확인 바). 스크림 없음 — 사진이
+     실시간으로 미끄러지는 게 그 자체로 미리보기다 */
+  const focalLayer = (d) => {
+    const P = (v) => (Math.max(0, Math.min(1, v)) * 100).toFixed(2);
+    return `<div class="ws-folay" data-ws-folay>
+      <i class="ws-fopt" data-ws-fopt style="left:${P(d.x)}%;top:${P(d.y)}%"></i>
+      <div class="ws-cropbar"><button data-ws-fook>✓ 초점</button><button data-ws-fono>✕ 취소</button></div>
+    </div>`;
+  };
   const CanvasArea = () => {
     const sc = scene();
     /* R105 — 장면 이동·요소 소실·사진 아님이면 자르기 모드 자동 종료 */
     if (WS.crop && (WS.crop.sc !== WS.sceneIdx || !sc.elements[WS.crop.idx] || !sc.elements[WS.crop.idx].src)) WS.crop = null;
+    /* R106 — 세밀 초점 모드 자동 종료 (장면 이동·요소 소실·contain 전환 포함) */
+    if (WS.focal && (WS.focal.sc !== WS.sceneIdx || !sc.elements[WS.focal.idx] || !sc.elements[WS.focal.idx].src || sc.elements[WS.focal.idx].fit === 'contain')) WS.focal = null;
     const CW = Math.round(BASE_W * WS.zoom / 100), CH = Math.round(CW * sc.height / sc.width);
     const els = sc.elements.map((el, i) => {
       const on = (WS.sel && WS.sel.idx === i && WS.sel.type !== 'scene') || WS.msel.indexOf(i) >= 0 ? 'sel' : '';
@@ -157,7 +171,10 @@
       }
       if (el.src) {                                    /* R45 — Workspace도 실이미지·실영상 표시 (R36 editor와 동일) */
         const fit = el.fit === 'contain' ? 'contain' : 'cover';
-        const fo = window.MK_FOCAL ? window.MK_FOCAL.pos(el) : ''; /* R94 — 초점 */
+        const focaling = WS.focal && WS.focal.idx === i;
+        const fo = focaling                            /* R106 — 초점 모드 중엔 초안 좌표를 그대로(가운데여도 명시) */
+          ? `;object-position:${(WS.focal.d.x * 100).toFixed(1)}% ${(WS.focal.d.y * 100).toFixed(1)}%`
+          : (window.MK_FOCAL ? window.MK_FOCAL.pos(el) : ''); /* R94 — 초점 */
         const pf = window.MK_PHOTO ? window.MK_PHOTO.mediaStyle(el, CW / sc.width) : ''; /* R101·R102 — 보정·뒤집기, blur 는 표시 배율 */
         const shp = window.MK_PHOTO ? window.MK_PHOTO.shapeStyle(el, CW / sc.width) : ''; /* R102 — 모양(사각·둥근·원) */
         const cropping = WS.crop && WS.crop.idx === i;
@@ -166,7 +183,7 @@
           ? `<video class="ws-media" src="${el.src}" muted autoplay loop playsinline style="width:100%;height:100%;object-fit:${fit}${fo}${pf};display:block"></video>`
           : `<img class="ws-media" src="${el.src}" alt="${M().esc(el.label || '')}" draggable="false" style="width:100%;height:100%;object-fit:${fit}${fo}${pf};display:block">`;
         /* R55 — overflow 클립을 내부 span으로 옮겨 음수 오프셋 핸들이 잘리지 않게 */
-        return `<div class="ws-el media ${on}${cropping ? ' cropping' : ''}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%"><span class="ws-clip" style="${(shp + crp).replace(/^;/, '')}">${media}</span>${cropping ? cropLayer(WS.crop.d) : hd}</div>`;
+        return `<div class="ws-el media ${on}${cropping ? ' cropping' : ''}${focaling ? ' focaling' : ''}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%"><span class="ws-clip" style="${(shp + crp).replace(/^;/, '')}">${media}</span>${cropping ? cropLayer(WS.crop.d) : focaling ? focalLayer(WS.focal.d) : hd}</div>`;
       }
       if (el.fill) {                                   /* R45 — 색 채움 요소 (자막 바 등) 실표시 · R49 radius */
         const rad = el.radius ? `;border-radius:${el.radius > 100 ? '50%' : (el.radius * CW / sc.width).toFixed(1) + 'px'}` : ''; /* R98 — >100 = 원 (play.js 규약 정렬) */
@@ -199,9 +216,11 @@
       const on = Math.abs(n.x - fx) < 1 / 6 && Math.abs(n.y - fy) < 1 / 6;
       cells.push(`<button data-ws-focal="${fx},${fy}" data-ws-focalidx="${idx}" title="${VNAME[ry]} ${NAME[rx]}" style="aspect-ratio:1;border-radius:6px;border:1.5px solid ${on ? 'var(--mk-teal)' : 'var(--mk-border)'};background:${on ? 'var(--mk-teal-soft)' : 'transparent'};cursor:pointer;font:var(--mk-t-caption);line-height:1;padding:0">·</button>`);
     }
+    /* R106 — 9칸에 안 걸리는 연속 좌표면 세밀 초점 사용 중임을 알린다 */
+    const fine = el.focal && ![0, 0.5, 1].some((g) => n.x === g) || el.focal && ![0, 0.5, 1].some((g) => n.y === g);
     return `<label class="cx-field"><span>초점</span></label>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;width:96px;margin:-4px 0 4px">${cells.join('')}</div>
-      <div class="cx-hint" style="margin:0 0 8px">꽉 채우기에서 잘릴 때 이 지점이 남아요</div>`;
+      <div class="cx-hint" style="margin:0 0 8px">${fine ? `세밀 초점 ${Math.round(n.x * 100)}% · ${Math.round(n.y * 100)}% 사용 중 — ` : '꽉 채우기에서 잘릴 때 이 지점이 남아요 — '}사진을 빠르게 두 번 누르면 세밀하게 잡아요</div>`;
   };
   /* R49 — 자막 디자인 선택 (MK_CAPTION 프리셋) */
   const capCtl = (sc) => {
@@ -742,9 +761,29 @@
           const bx = host.querySelector('.ws-crbox');
           if (bx) { bx.style.left = P(d.x); bx.style.top = P(d.y); bx.style.width = P(d.w); bx.style.height = P(d.h); }
         };
+        /* R106 — 초점 초안 라이브: 마커·사진 object-position 만 만진다 (문서 무변형) */
+        const paintFocal = (host, d) => {
+          const pt = host.querySelector('[data-ws-fopt]');
+          if (pt) { pt.style.left = (d.x * 100).toFixed(2) + '%'; pt.style.top = (d.y * 100).toFixed(2) + '%'; }
+          const md = host.querySelector('.ws-media');
+          if (md) md.style.objectPosition = (d.x * 100).toFixed(1) + '% ' + (d.y * 100).toFixed(1) + '%';
+        };
+        const focalAt = (host, ev) => {                /* 프레임 내 포인터 → 0~1 (object-position 정의와 동일 좌표) */
+          const r = host.getBoundingClientRect(), cl = (v) => Math.min(1, Math.max(0, v));
+          return { x: cl((ev.clientX - r.left) / (r.width || 1)), y: cl((ev.clientY - r.top) / (r.height || 1)) };
+        };
         cv.addEventListener('pointerdown', (ev) => {
           if (ev.button !== undefined && ev.button !== 0) return;
           const t = ev.target;
+          if (WS.focal) {                              /* R106 — 초점 모드: 해당 사진 안에서만 탭·드래그, 나머지 잠금 */
+            if (t.closest && (t.closest('[data-ws-fook]') || t.closest('[data-ws-fono]'))) return; /* 버튼 click 통과 */
+            const host = cv.querySelector(`[data-ws-el="${WS.focal.idx}"]`); if (!host) return;
+            if (!(t.closest && t.closest('[data-ws-el]') === host)) return;
+            WS.focal.d = focalAt(host, ev); paintFocal(host, WS.focal.d);
+            ges = { focalMode: true, host };
+            if (cv.setPointerCapture && ev.pointerId != null) { try { cv.setPointerCapture(ev.pointerId); } catch (_) {} }
+            ev.preventDefault(); return;
+          }
           if (WS.crop) {                               /* R105 — 자르기 모드: 크롭 상자만 조작, 다른 요소는 잠금 */
             if (t.closest && (t.closest('[data-ws-crok]') || t.closest('[data-ws-crno]'))) return; /* 버튼 click 통과 */
             const crh = t.closest && t.closest('[data-ws-crh]');
@@ -774,12 +813,18 @@
             ev.preventDefault(); R(); return;
           }
           if (WS.msel.length) WS.msel = [];            /* 일반 클릭 = 다중 해제 (기존 단일 동작 복귀) */
+          /* R106 — 같은 사진을 350ms 안에 두 번 탭 = 세밀 초점 후보.
+             진입 확정은 up 에서 무이동일 때만 — 「탭 후 바로 끌기」를 잡아먹지 않는다 (교훈③) */
+          const now2 = Date.now();
+          const dtap = !!(el.src && el.fit !== 'contain' && window.MK_FOCAL && lastTap && lastTap.i === i && now2 - lastTap.t < 350);
+          lastTap = { i, t: now2 };
           const wasSel = WS.sel && WS.sel.idx === i && WS.sel.type !== 'scene';
           WS.sel = { type: selType(el), idx: i };
           let handle = hd ? [...hd.classList].find((c) => c !== 'ws-hd') : null;
           if (!handle && wasSel && ev.pointerType && ev.pointerType !== 'mouse' && L.handleAt)
             handle = L.handleAt(elDom.getBoundingClientRect(), ev.clientX, ev.clientY);
           ges = { i, type: handle ? 'resize' : 'move',
+            dtap,                                      /* R106 — 더블탭 후보 (무이동 up 에서 확정) */
             handle,
             start: pickGeo(el), sx: ev.clientX, sy: ev.clientY,
             rect: cv.getBoundingClientRect(), moved: false,
@@ -803,6 +848,10 @@
             }
             WS.crop.d = d; paintCrop(ges.host, d); return;
           }
+          if (ges.focalMode) {                         /* R106 — 초안만 갱신, 문서·undo 무변형 */
+            if (!WS.focal) { ges = null; return; }
+            WS.focal.d = focalAt(ges.host, ev); paintFocal(ges.host, WS.focal.d); return;
+          }
           const el = scene().elements[ges.i]; if (!el) { ges = null; return; }
           const dx = (ev.clientX - ges.sx) / (ges.rect.width || 1) * 100;
           const dy = (ev.clientY - ges.sy) / (ges.rect.height || 1) * 100;
@@ -817,8 +866,23 @@
         };
         const onGesUp = () => {
           if (!ges) return;
-          if (ges.cropMode) { ges = null; return; }    /* R105 — 커밋은 ✓ 버튼에서만 */
+          if (ges.cropMode || ges.focalMode) { ges = null; return; } /* R105·R106 — 커밋은 ✓ 버튼에서만 */
           const g = ges; ges = null;
+          if (g.moved) lastTap = null;                 /* R106 — 드래그였다면 탭 계보 리셋 */
+          if (g.dtap && !g.moved) {                    /* R106 — 무이동 더블탭 확정 → 세밀 초점 진입 */
+            const el2 = scene().elements[g.i];
+            if (el2 && el2.src && el2.fit !== 'contain' && window.MK_FOCAL) {
+              lastTap = null;
+              const host = cv.querySelector(`[data-ws-el="${g.i}"]`);
+              const md = host && host.querySelector('.ws-media');
+              const nw = md ? (md.naturalWidth || md.videoWidth || 0) : 0;
+              const nh = md ? (md.naturalHeight || md.videoHeight || 0) : 0;
+              WS.crop = null;
+              WS.focal = { idx: g.i, sc: WS.sceneIdx, d: window.MK_FOCAL.norm(el2.focal),
+                nar: nw > 0 && nh > 0 ? nw / nh : (window.MK_FOCAL.narOf(el2.nar) || null) };
+              swallow = true; R(); return;
+            }
+          }
           if (g.moved) {
             WS.undo.push(g.pre); if (WS.undo.length > 30) WS.undo.shift(); WS.redo = [];
             swallow = true;                                 /* 제스처 직후 합성 click 무시 */
@@ -902,9 +966,18 @@
         const cb = root.querySelector('[data-ws-pcrop]');
         if (cb) cb.onclick = () => {
           const el = phEl(); if (!el || !el.src) return;
+          WS.focal = null;                             /* R106 — 두 모드 상호배타 */
           WS.crop = { idx: WS.sel.idx, sc: WS.sceneIdx, d: PH.cropOf(el) || { x: 0, y: 0, w: 1, h: 1 } };
           R();
         };
+        /* R106 — 세밀 초점 확인·취소: 초안은 WS.focal.d 에만 살고 문서는 ✓ 순간까지 무변형 */
+        const fok = root.querySelector('[data-ws-fook]');
+        if (fok) fok.onclick = () => {
+          const el = scene().elements[WS.focal && WS.focal.idx]; if (!el) { WS.focal = null; R(); return; }
+          snap(); window.MK_FOCAL.setFine(el, WS.focal.d.x, WS.focal.d.y, WS.focal.nar); WS.focal = null; R();
+        };
+        const fno = root.querySelector('[data-ws-fono]');
+        if (fno) fno.onclick = () => { WS.focal = null; R(); };
         const cb0 = root.querySelector('[data-ws-pcrop0]');
         if (cb0) cb0.onclick = () => { const el = phEl(); if (!el) return; snap(); PH.setCrop(el, null); R(); };
         const cok = root.querySelector('[data-ws-crok]');

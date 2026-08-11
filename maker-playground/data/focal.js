@@ -9,10 +9,20 @@
      · CSS  object-position X% Y%      (workspace·play·animation·editor)
      · SVG  preserveAspectRatio 정렬    (render.js → PNG·PDF·PPTX·MP4 스프라이트)
      · 캔버스 소스 크롭 sx=(vw-sw)·fx   (video.js 실영상 프레임)
-   SVG 정렬은 Min/Mid/Max 9칸뿐이므로 UI(워크스페이스 3×3 피커)도
-   9칸만 쓴다 — 0/0.5/1에서 세 세계가 정확히 같은 그림을 만든다.
+   SVG 정렬은 Min/Mid/Max 9칸뿐이므로 R94 UI(3×3 피커)는 9칸을 쓴다 —
+   0/0.5/1에서 세 세계가 정확히 같은 그림을 만든다.
    (CSS 0% = 왼쪽 변 정렬 = SVG xMin slice. 수학이 아니라 사양이 같다.)
-   모델 자체는 연속값을 받는다 — 세밀 초점은 후속에서 UI만 열면 된다.
+
+   R106 — 세밀 초점: 모델은 처음부터 연속값이었다. CSS 세 경로는
+   object-position 이 그대로 연속을 그리지만, SVG preserveAspectRatio 는
+   9칸뿐이라 export 가 연속을 따라오지 못했다. coverRect 가 그 수학이다:
+   원본 종횡비(el.nar = w/h)를 알면 cover 에서 이미지가 프레임 밖으로
+   넘치는 양을 계산해 <image> 를 실좌표로 놓는다 — CSS object-position
+   fx% 의 정의(이미지의 fx% 지점 = 프레임의 fx% 지점)와 같은 식:
+     넘침 = 그린크기 − 프레임, 오프셋 = −넘침 × f
+   nar 를 모르면(측정 전 문서) 종전 9칸 정렬로 그대로 폴백 — 바이트 동일.
+   nar 는 세밀 초점을 실제로 만진 순간(setFine)에만 기록한다 — 문서는
+   기본값을 들고 다니지 않는다(§23).
    ============================================================ */
 window.MK_FOCAL = (() => {
   'use strict';
@@ -48,6 +58,38 @@ window.MK_FOCAL = (() => {
     else el.focal = n;
   };
 
+  /* R106 — 원본 종횡비 정규화 (w/h, 유효할 때만) */
+  const narOf = (v) => { v = +v; return isFinite(v) && v > 0 ? v : null; };
+
+  /* R106 — 세밀 초점 쓰기: 연속 좌표(소수 3자리) + 측정된 nar 동반 기록.
+     가운데 복귀 = focal 삭제·nar 도 함께 삭제(초점 없으면 쓸 데가 없다). */
+  const R3 = (v) => Math.round(v * 1000) / 1000;
+  const setFine = (el, x, y, nar) => {
+    if (!el) return;
+    const n = { x: R3(clamp01(x)), y: R3(clamp01(y)) };
+    if (n.x === 0.5 && n.y === 0.5) { delete el.focal; delete el.nar; return; }
+    el.focal = n;
+    const a = narOf(nar);
+    if (a) el.nar = R3(a); /* 측정 실패면 기존 el.nar 보존 — export 는 있는 만큼만 연속 */
+  };
+
+  /* R106 — export 연속 크롭 수학: cover 에서 <image> 실좌표.
+     frame {x,y,w,h}·nar(원본 w/h)·focal → 그릴 rect. 그린 rect 의
+     종횡비가 원본과 같으므로 preserveAspectRatio 는 필요 없다("none"과
+     기본이 같은 그림). 클립은 호출부(프레임 rect)가 담당한다. */
+  const coverRect = (frame, nar, focal) => {
+    const a = narOf(nar);
+    if (!a || !frame || !(frame.w > 0) || !(frame.h > 0)) return null;
+    const n = norm(focal);
+    const fa = frame.w / frame.h;
+    if (a >= fa) {                       /* 원본이 프레임보다 가로로 넓다 → 좌우가 넘친다 */
+      const dw = frame.h * a;
+      return { x: frame.x - (dw - frame.w) * n.x, y: frame.y, w: dw, h: frame.h };
+    }
+    const dh = frame.w / a;              /* 원본이 세로로 길다 → 상하가 넘친다 */
+    return { x: frame.x, y: frame.y - (dh - frame.h) * n.y, w: frame.w, h: dh };
+  };
+
   /* 자가 검증 */
   const audit = () => {
     const v = [];
@@ -60,8 +102,21 @@ window.MK_FOCAL = (() => {
     if (svgPre('contain', { x: 0, y: 0 }) !== 'xMidYMid meet') v.push('contain meet 위반');
     const e = { fit: 'cover' }; set(e, 0.5, 0.5);
     if ('focal' in e) v.push('가운데 지우기 위반');
+    /* R106 — 연속 수학 자가 검증 */
+    const cr = coverRect({ x: 0, y: 0, w: 100, h: 100 }, 2, { x: 0.3, y: 0.5 });
+    if (!cr || Math.abs(cr.w - 200) > 1e-9 || Math.abs(cr.x - (-30)) > 1e-9 || cr.y !== 0) v.push('coverRect 가로 넘침 위반');
+    const cv = coverRect({ x: 10, y: 20, w: 100, h: 100 }, 0.5, { x: 0.5, y: 1 });
+    if (!cv || Math.abs(cv.h - 200) > 1e-9 || Math.abs(cv.y - (-80)) > 1e-9 || cv.x !== 10) v.push('coverRect 세로 넘침 위반');
+    if (coverRect({ x: 0, y: 0, w: 100, h: 50 }, 2, { x: 0, y: 0 }).x !== 0) v.push('coverRect 동일비 위반');
+    if (coverRect({ x: 0, y: 0, w: 100, h: 100 }, 0, null) !== null || coverRect(null, 1, null) !== null) v.push('coverRect null 게이트 위반');
+    const fe = {}; setFine(fe, 0.31234, 0.7, 1.5);
+    if (!fe.focal || fe.focal.x !== 0.312 || fe.nar !== 1.5) v.push('setFine 기록 위반');
+    setFine(fe, 0.5, 0.5, 1.5);
+    if ('focal' in fe || 'nar' in fe) v.push('setFine 가운데 청소 위반');
+    const fk = { nar: 1.2 }; setFine(fk, 0.2, 0.2, NaN);
+    if (fk.nar !== 1.2) v.push('setFine nar 보존 위반');
     return { ok: !v.length, violations: v };
   };
 
-  return { norm, isCenter, pos, svgPre, set, audit };
+  return { norm, isCenter, pos, svgPre, set, setFine, coverRect, narOf, audit };
 })();

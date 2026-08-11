@@ -464,7 +464,7 @@ window.MK_RENDER = (() => {
           const mf = crv ? { x: f.x + f.w * crv.x, y: f.y + f.h * crv.y, w: f.w * crv.w, h: f.h * crv.h } : f;
           defs.push(`<clipPath id="${clipId}"><path d="${el.mask ? shapePath({ shape: el.mask }, f) : VEC.rect(mf.x, mf.y, mf.w, mf.h, 0)}"/></clipPath>`);
         }
-        ops.push({ op: 'image', frame: f, asset, src: el.src || (asset && asset.src) || null, fit: el.fit || 'cover', focal: el.focal || null, radius: el.radius, label: el.label != null ? el.label : (asset && asset.label) || '', clip: clipId, cssFilter: filter, style: { fill: (asset && asset.fill) || '#E6ECF2', ...base } });
+        ops.push({ op: 'image', frame: f, asset, src: el.src || (asset && asset.src) || null, fit: el.fit || 'cover', focal: el.focal || null, nar: (isFinite(+el.nar) && +el.nar > 0) ? +el.nar : null, /* R106 — 원본 종횡비(연속 초점 export) */ radius: el.radius, label: el.label != null ? el.label : (asset && asset.label) || '', clip: clipId, cssFilter: filter, style: { fill: (asset && asset.fill) || '#E6ECF2', ...base } });
         return;
       }
       /* 순수 도형 */
@@ -514,9 +514,17 @@ window.MK_RENDER = (() => {
         if (op.src) {                                  /* R37 — 실이미지 출력 */
           const rr = op.radius ? Math.min(op.radius, Math.min(f.w, f.h) / 2) : 0;
           const cid = 'ci' + Math.random().toString(36).slice(2, 8);
-          const pre = window.MK_FOCAL ? window.MK_FOCAL.svgPre(op.fit, op.focal) : (op.fit === 'contain' ? 'xMidYMid meet' : 'xMidYMid slice'); /* R94 — 초점 정렬 */
-          parts.push(`<g${common}><clipPath id="${cid}"><rect x="${R2(f.x)}" y="${R2(f.y)}" width="${R2(f.w)}" height="${R2(f.h)}" rx="${R2(rr)}"/></clipPath>` +
-            `<image href="${escX(op.src)}" x="${R2(f.x)}" y="${R2(f.y)}" width="${R2(f.w)}" height="${R2(f.h)}" preserveAspectRatio="${pre}" clip-path="url(#${cid})"${op.cssFilter ? ` style="filter:${escX(op.cssFilter)}"` : ''}/></g>`);
+          /* R106 — 연속 초점: nar(원본 종횡비)를 알면 <image>를 실좌표(cover 넘침 수학)로
+             놓는다 — CSS object-position 과 같은 그림. 모르면 종전 9칸 정렬 폴백(바이트 동일). */
+          const cr = (op.fit !== 'contain' && window.MK_FOCAL && window.MK_FOCAL.coverRect)
+            ? window.MK_FOCAL.coverRect(f, op.nar, op.focal) : null;
+          const geo = cr
+            ? `x="${R2(cr.x)}" y="${R2(cr.y)}" width="${R2(cr.w)}" height="${R2(cr.h)}" preserveAspectRatio="none"`
+            : `x="${R2(f.x)}" y="${R2(f.y)}" width="${R2(f.w)}" height="${R2(f.h)}" preserveAspectRatio="${window.MK_FOCAL ? window.MK_FOCAL.svgPre(op.fit, op.focal) : (op.fit === 'contain' ? 'xMidYMid meet' : 'xMidYMid slice')}"`;
+          /* R106 — crop·mask 클립 실배선: R45 유산 clipPath(op.clip)가 defs 에만 있고
+             실이미지에 안 걸리던 갭 — 화면(clip-path:inset)과 같은 그림이 되도록 g 에 씌운다 */
+          parts.push(`<g${common}${op.clip ? ` clip-path="url(#${op.clip})"` : ''}><clipPath id="${cid}"><rect x="${R2(f.x)}" y="${R2(f.y)}" width="${R2(f.w)}" height="${R2(f.h)}" rx="${R2(rr)}"/></clipPath>` +
+            `<image href="${escX(op.src)}" ${geo} clip-path="url(#${cid})"${op.cssFilter ? ` style="filter:${escX(op.cssFilter)}"` : ''}/></g>`);
           return;
         }
         parts.push(`<g${op.clip ? ` clip-path="url(#${op.clip})"` : ''}${common}>` +
