@@ -135,6 +135,15 @@
   /* R107 — 회전 표시. rot=0 이면 빈 문자열 = 회전 이전과 바이트 동일 */
   const rotDeg = (el) => (window.MK_LIVE && window.MK_LIVE.rotOf ? window.MK_LIVE.rotOf(el) : 0);
   const rotSty = (el) => { const d = rotDeg(el); return d ? `;transform:rotate(${d}deg)` : ''; };
+  /* R108 — 텍스트만 모델에 높이가 없다. 브라우저는 실측 박스 중심으로 돌리고
+     export(render.js frameOf)는 추정 높이 중심으로 돌리므로, 둘이 다르면 회전한 글자가
+     화면과 결과물에서 다른 자리에 앉는다. 화면을 export 의 축에 맞춘다. */
+  const rotStyText = (el, CH) => {
+    const d = rotDeg(el); if (!d) return '';
+    const L = window.MK_LIVE;
+    const hpx = (L && L.textH ? L.textH(el) : 0) / 100 * CH;
+    return `;transform:rotate(${d}deg);transform-origin:50% ${(hpx / 2).toFixed(1)}px`;
+  };
   /* 캔버스 실픽셀 — 회전 수학은 % 가 아니라 px 공간에서만 성립한다 */
   const cpx = () => { const s2 = scene() || { width: 16, height: 9 };
     const CW = Math.round(BASE_W * WS.zoom / 100); return { CW, CH: Math.round(CW * s2.height / s2.width) }; };
@@ -174,7 +183,7 @@
       if (el.kind === 'text') {
         const fs = (el.size / 100 * CH).toFixed(1);
         const ts = window.MK_TEXTSTYLE ? window.MK_TEXTSTYLE.css(el) : ''; /* R56 — 글꼴·배경·외곽선·그림자 */
-        return `<div class="ws-el text ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight || 400}${el.color ? `;color:${el.color}` : ''}${el.align ? `;text-align:${el.align}` : ''}${ts}${rotSty(el)}">${M().esc(el.text).replace(/\n/g, '<br>')}${hd}</div>`;
+        return `<div class="ws-el text ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight || 400}${el.color ? `;color:${el.color}` : ''}${el.align ? `;text-align:${el.align}` : ''}${ts}${rotStyText(el, CH)}">${M().esc(el.text).replace(/\n/g, '<br>')}${hd}</div>`;
       }
       if (el.src) {                                    /* R45 — Workspace도 실이미지·실영상 표시 (R36 editor와 동일) */
         const fit = el.fit === 'contain' ? 'contain' : 'cover';
@@ -903,7 +912,8 @@
           } else if (ges.type === 'move') {
             /* 이동은 회전과 무관 — 중심 기준 회전이라 화면 이동량 = 좌표 이동량 */
             L.dragTo(el, ges.start.x, ges.start.y, dx, dy);
-            L.snap(el, scene().elements.filter((_, j) => j !== ges.i)); /* 자석 정렬 */
+            L.snap(el, scene().elements.filter((_, j) => j !== ges.i), 1.2,
+              (scene().width || 16) / (scene().height || 9));  /* 자석 정렬 — R108: 회전은 외접 박스로 */
           } else {
             const rt = rotDeg(el);
             let rx = dx, ry = dy;

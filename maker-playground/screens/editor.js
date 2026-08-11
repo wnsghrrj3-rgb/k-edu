@@ -851,7 +851,8 @@ window.MK_SCREENS.editor = (() => {
             if (Math.abs(dx) + Math.abs(dy) > 0.15) ges.moved = true;
             if (ges.type === 'move') {
               L.dragTo(el, ges.start.x, ges.start.y, dx, dy);
-              showG(L.snap(el, scene2().elements.filter((_, j) => j !== ges.i)));
+              showG(L.snap(el, scene2().elements.filter((_, j) => j !== ges.i), 1.2,
+                (scene2().width || 16) / (scene2().height || 9)));  /* R108 */
             } else if (ges.type === 'resize') {
               L.resizeTo(el, ges.handle, ges.start, dx, dy, { aspect: ev.shiftKey });
             } else {

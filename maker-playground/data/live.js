@@ -137,16 +137,53 @@ window.MK_LIVE = (() => {
     return { x: clamp(0.5 + v.x / (w || 1), 0, 1), y: clamp(0.5 + v.y / (h || 1), 0, 1) };
   }
 
-  /* 스냅 — 씬 중앙(50)·다른 요소의 변/중앙에 1.2% 이내면 흡착. 가이드 좌표 반환 */
-  function snap(el, others, thr = 1.2) {
-    const w = el.w || 10, h = el.h || 8;
-    const mineX = [el.x, el.x + w / 2, el.x + w];
-    const mineY = [el.y, el.y + h / 2, el.y + h];
+  /* ===== R108 — 회전이 스냅에까지 닿는다 =====
+     R107 이 회전을 그리기 시작하자 스냅만 옛 세계에 남았다: 45° 돌린 사진의
+     「왼쪽 변」은 화면에서 기울어진 선이라 다른 요소의 수직 변과 맞출 수 없고,
+     사람이 실제로 맞추는 것은 그 요소가 차지하는 자리 = 외접 박스다.
+     % 좌표계는 축마다 배율이 다르므로(x=씬너비%, y=씬높이%) 외접 계산에는
+     씬 종횡비 ar=W/H 가 필요하다 — ar 을 받지 않으면 옛 길 그대로 간다. */
+
+  /* 텍스트의 모델 높이(% of 씬 높이). 모델에 h 가 없는 유일한 종류라
+     render.js frameOf 가 쓰는 추정식이 사실상 정본 — 같은 값임은 하니스가 기계 검증한다. */
+  function textH(el) {
+    const s = (el && +el.size) || 3;
+    const lines = String((el && el.text) || '').split('\n').length;
+    return Math.max(s * 1.5, s * 1.4 * lines);
+  }
+
+  /* 회전 전 % 박스 — 텍스트만 textH 로 높이를 얻는다 */
+  function boxOf(el) {
+    const w = (el && el.w) || 10;
+    const h = (el && el.h != null) ? el.h : (el && el.kind === 'text' ? textH(el) : 8);
+    return { x: (el && el.x) || 0, y: (el && el.y) || 0, w, h };
+  }
+
+  /* 외접 박스 — 회전한 요소가 화면에서 차지하는 자리.
+     W' = w|cos| + h|sin|/ar, H' = w·ar·|sin| + h|cos| (px 로 환산 후 되돌린 식).
+     중심은 회전 불변이므로 거기서 반씩 물린다. rot=0·ar 없음이면 boxOf 그대로. */
+  function aabb(el, ar) {
+    const b = boxOf(el), d = rotOf(el);
+    if (!d || !(+ar > 0)) return b;
+    const t = d * Math.PI / 180, c = Math.abs(Math.cos(t)), s = Math.abs(Math.sin(t));
+    const W = b.w * c + b.h * s / ar;
+    const H = b.w * s * ar + b.h * c;
+    return { x: b.x + b.w / 2 - W / 2, y: b.y + b.h / 2 - H / 2, w: W, h: H };
+  }
+
+  /* 스냅 — 씬 중앙(50)·다른 요소의 변/중앙에 1.2% 이내면 흡착. 가이드 좌표 반환.
+     ar>0 이면 회전을 아는 자(외접 박스·텍스트 실높이)로 잰다 — 흡착 결과는 어느 쪽이든
+     평행이동(el.x/el.y 가감)이라 중심 기준 회전과 어긋나지 않는다. */
+  function snap(el, others, thr = 1.2, ar = 0) {
+    const B = (+ar > 0) ? (e) => aabb(e, ar) : (e) => ({ x: e.x, y: e.y, w: e.w || 10, h: e.h || 8 });
+    const b = B(el);
+    const mineX = [b.x, b.x + b.w / 2, b.x + b.w];
+    const mineY = [b.y, b.y + b.h / 2, b.y + b.h];
     const tX = [50], tY = [50];
     (others || []).forEach((o) => {
-      const ow = o.w || 10, oh = o.h || 8;
-      tX.push(o.x, o.x + ow / 2, o.x + ow);
-      tY.push(o.y, o.y + oh / 2, o.y + oh);
+      const ob = B(o);
+      tX.push(ob.x, ob.x + ob.w / 2, ob.x + ob.w);
+      tY.push(ob.y, ob.y + ob.h / 2, ob.y + ob.h);
     });
     const guides = { v: null, h: null };
     let best = thr;
@@ -362,6 +399,16 @@ window.MK_LIVE = (() => {
     if (Math.abs(fp.x - 0.5) > 1e-9 || Math.abs(fp.y - 0.5) > 1e-9) v.push('framePos 중심 오류');
     const fp2 = framePos(100, 100, 40, 20, 100, 120, 90);  /* 90° 회전: 화면 아래 = 요소의 오른쪽(+x) */
     if (Math.abs(fp2.x - 1) > 1e-9 || Math.abs(fp2.y - 0.5) > 1e-9) v.push('framePos 회전 좌표 오류');
+    /* R108 — 외접 박스·텍스트 높이 */
+    if (Math.abs(textH({ size: 4, text: 'a\nb' }) - 11.2) > 1e-9) v.push('textH 2줄 오류');
+    if (Math.abs(textH({ size: 4, text: '한 줄' }) - 6) > 1e-9) v.push('textH 1줄 하한 오류');
+    const ab0 = aabb({ x: 10, y: 10, w: 20, h: 10 }, 16 / 9);
+    if (ab0.w !== 20 || ab0.h !== 10 || ab0.x !== 10) v.push('aabb 무회전 항등 실패');
+    const ab9 = aabb({ x: 0, y: 0, w: 20, h: 10, rot: 90 }, 1);
+    if (Math.abs(ab9.w - 10) > 1e-9 || Math.abs(ab9.h - 20) > 1e-9) v.push('aabb 90° 축 교환 실패');
+    if (Math.abs((ab9.x + ab9.w / 2) - 10) > 1e-9 || Math.abs((ab9.y + ab9.h / 2) - 5) > 1e-9) v.push('aabb 중심 이동');
+    const abr = aabb({ x: 0, y: 0, w: 20, h: 10, rot: 90 }, 2);   /* ar 이 축 배율을 가른다 */
+    if (Math.abs(abr.w - 5) > 1e-9 || Math.abs(abr.h - 40) > 1e-9) v.push('aabb 종횡비 미반영');
     /* 스냅 — 중앙 흡착 */
     const s = { kind: 'image', x: 44.5, y: 30, w: 10, h: 10 };
     const g = snap(s, []);
@@ -390,6 +437,7 @@ window.MK_LIVE = (() => {
   const api = {
     dragTo, resizeTo, rotateTo, handleAt, aspectDefault, snap, nudge, removeEl, dupEl, editText,
     rotOf, setRot, rotVec, unrotVec, recenter, framePos,          /* R107 — 회전 기하 */
+    textH, boxOf, aabb,                                           /* R108 — 외접 박스·텍스트 모델 높이 */
     replaceWithSrc, insertWithSrc, fileToSrc, shrinkImage, normalizeImage,
     useBackend, saveDoc, loadDoc, clearDoc, saveProjects, restoreProjects, autosave, flush,
     liveAudit,
