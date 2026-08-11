@@ -178,6 +178,34 @@ window.MK_RENDER = (() => {
     return { font, size, lineHeight: lh, letterSpacing: ls, lines, textW: Math.max(...lines.map((l) => measure(l, size, ls)), 0) };
   }
 
+  /* R113 — 화면이 export 에게 배치를 묻는 창구.
+     여태 화면(workspace·editor·미니)은 el.text 를 통째로 div 에 넣고 브라우저에
+     맡겼다. 그래서 overflow 정책이 화면엔 아예 존재하지 않았다:
+       · ellipsis|clip  — export 는 잘라 그리는데 화면은 다 보여줬다
+       · autoresize     — export 는 줄여 그리는데 화면은 원크기로 그렸다
+       · list           — export 는 '· ' 접두를 그리는데 화면엔 없었다
+     교사가 화면에서 읽은 문장이 내려받은 파일엔 없을 수 있었다는 뜻이다.
+
+     두 번째 배치 엔진을 만들지 않는다. 이 함수는 renderScene 이 텍스트에 하는 일
+     (frameOf → sizePx → layoutText)을 그대로 밟아 결과만 돌려준다. 새 계산이
+     없으니 화면은 export 를 흉내내는 게 아니라 export 에게 묻는다 — 앞으로 정책이
+     바뀌면 화면이 공짜로 따라온다.
+
+     W·H 는 반드시 씬 자신의 px 공간(scene.width·height)이다. 화면 캔버스 픽셀이
+     아니다: autoresize 의 6px 하한 같은 절대항은 ar 불변으로 못 잡히므로,
+     같은 좌표계에서 물어야 export 와 같은 값이 나온다.
+     캐시는 붙이지 않는다 — renderScene 의 텍스트 캐시 키는 letterSpacing 을
+     안 봐서, 빌려 쓰면 자간을 만지는 동안 화면이 굳는다. */
+  function layoutOf(el, W, H) {
+    if (!el || el.kind !== 'text') return null;
+    const w = +W > 0 ? +W : 1280, h = +H > 0 ? +H : 720;
+    const f = frameOf(el, w, h);
+    const sizePx = (el.size || 3) * h / 100;
+    const T = layoutText({ ...el, sizePx }, f, () => {});
+    return { frame: f, font: T.font, size: T.size, lineHeight: T.lineHeight,
+      letterSpacing: T.letterSpacing, lines: T.lines, textW: T.textW, sizePx };
+  }
+
   /* ================================================================
      4. Vector Engine — 도형→SVG path d (모든 어댑터가 공유하는 기하)
      ================================================================ */
@@ -463,7 +491,13 @@ window.MK_RENDER = (() => {
 
       if (el.kind === 'text') {
         const sizePx = (el.size || 3) * H / 100;
-        const tkey = fnv(JSON.stringify([el.text, sizePx, f.w, f.h, el.overflow, el.list, el.font]));
+        /* R113 — 키가 layoutText 의 입력을 모두 본다.
+           종전 키엔 letterSpacing·lineHeight 가 없었다. 둘 다 wrap 결과를 바꾸는데도.
+           프레임 높이가 우연히 같으면(자간이 줄 수를 안 바꾼 경우) 키가 충돌해서
+           자간 다른 텍스트가 남의 배치를 물려받았다 — probe113 실측: 자간 0.08 요소가
+           자간 0 의 줄바꿈으로 출력됐다. 화면이 export 에게 묻기 시작한 이상,
+           export 가 틀리면 화면도 같이 틀린다. 여기서 막는다. */
+        const tkey = fnv(JSON.stringify([el.text, sizePx, f.w, f.h, el.overflow, el.list, el.font, el.letterSpacing, el.lineHeight]));
         let T;
         if (CACHE.text.has(tkey)) { T = CACHE.text.get(tkey); CACHE.stats.hit++; }
         else { T = layoutText({ ...el, sizePx }, f, warn); CACHE.text.set(tkey, T); CACHE.stats.miss++; }
@@ -1038,6 +1072,7 @@ window.MK_RENDER = (() => {
     renderScene, renderProject, sceneHash, tilePlan,
     /* 서브엔진(테스트·확장용) */
     wrap, measure, layoutText, textLines, listPrefixed, frameOf,   /* R111 — 줄수 정본·프레임 (MK_LIVE 가 빌려 쓰고 하니스가 검사한다) */
+    layoutOf,                                                      /* R113 — 화면이 export 에게 배치를 묻는 창구 (workspace·editor·미니 공용) */
     resolveFont, resolveAsset, VEC, buildTimeline, sampleTrack,
     /* 어댑터 */
     toSVG, toHTML, toPDF, toPDFRaster, jpegSize, dataUrlBytes, toPPTX, toRaster, toVideoPlan, registerAdapter, ADAPTERS,

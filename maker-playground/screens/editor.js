@@ -209,6 +209,15 @@ window.MK_SCREENS.editor = (() => {
       MK_EASY.quickFor(el).map((q) => `<button data-easyq="${q.id}" title="${q.label}">${q.icon} ${q.label}</button>`).join('')}</div>`;
   };
 
+  /* R113 — export 배치 창구. 캔버스·씬 스트립·타임라인·Brand Preview 가 같이 쓴다.
+     씬 자신의 px 공간(scene.width·height)으로 물어야 autoresize 의 절대 하한까지
+     export 와 같은 값이 된다. 구버전 render.js 면 null → 종전 경로 유지. */
+  const txtLay = (el, sc) => {
+    const R = window.MK_RENDER;
+    if (!R || !R.layoutOf || !sc || el.kind !== 'text') return null;
+    try { return R.layoutOf(el, sc.width, sc.height); } catch (e) { return null; }
+  };
+
   /* ================= Center: Canvas (편집) — 확대/축소 ================= */
   const BASE_W = 680;
   const CanvasArea = (scene) => {
@@ -229,7 +238,11 @@ window.MK_SCREENS.editor = (() => {
         const col = el.color || (dark ? ((el.weight || 400) >= 600 ? '#F2F5F9' : '#B7C0CD') : ((el.weight || 400) >= 600 ? '#1F2733' : '#525C6A'));
         const al = el.align ? `;text-align:${el.align}` : '';
         const tr = el.tracking ? `;letter-spacing:${el.tracking}em` : '';
-        return `<div class="ed-el ${sel}" data-el="${i}" data-editable="1" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight};line-height:1.3;color:${col}${al}${tr};white-space:pre-wrap${rotSty(el)}"><span class="ed-txt">${M().esc(el.text)}</span>${hd}</div>`;
+        /* R113 — 화면이 export 가 그리는 줄을 그린다 (창구 부재 시 종전 통짜 경로) */
+        const T = txtLay(el, scene);
+        const body = T ? T.lines.map((l) => M().esc(l)).join('<br>') : M().esc(el.text);
+        const lay = T ? `;font-size:${(T.size / (scene.height || 720) * CH).toFixed(2)}px;line-height:${T.lineHeight};white-space:pre` : '';
+        return `<div class="ed-el ${sel}" data-el="${i}" data-editable="1" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight};line-height:1.3;color:${col}${al}${tr};white-space:pre-wrap${lay}${rotSty(el)}"><span class="ed-txt">${body}</span>${hd}</div>`;
       }
       const hd2 = e.selEl === i ? '<i class="hd tl"></i><i class="hd tr"></i><i class="hd bl"></i><i class="hd br"></i><i class="hd tm"></i><i class="hd bm"></i><i class="hd ml"></i><i class="hd mr"></i><i class="hd rot"></i>' : '';
       const fillCls = el.fill && el.fill !== 'none' ? 'has-fill' : '', fillSty = el.fill && el.fill !== 'none' ? `;background:${el.fill}` : '';
@@ -311,10 +324,18 @@ window.MK_SCREENS.editor = (() => {
         return `<span style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;overflow:hidden">${el.kind === 'chart' ? ChartSVG(el, dark, true) : TableHTML(el, dark, true)}</span>`;
       }
       if (el.kind === 'text') {
-        const fs = Math.max(3, el.size / 100 * H);
+        /* R113 — 썸네일도 export 에게 묻는다. R112 가 「표시 전용이니 뒀다」고
+           남긴 빚이 바로 여기다: 스트립·타임라인·Brand Preview 는 교사가 장면을
+           고르는 화면이라, 여기서 다 보이던 글이 파일에선 잘려 있으면 고르는
+           행위 자체가 틀린 정보 위에서 일어난다. */
+        const T = txtLay(el, scene);
+        const raw = el.size / 100 * H;
+        const fs = Math.max(3, T ? T.size / (scene.height || 720) * H : raw);
         const col = el.color || (dark ? ((el.weight || 400) >= 600 ? '#F2F5F9' : '#B7C0CD') : ((el.weight || 400) >= 600 ? '#1F2733' : '#525C6A'));
         const al = el.align ? `;text-align:${el.align}` : '';
-        return `<span style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight || 400};color:${col}${al}">${M().esc(el.text)}</span>`;
+        const body = T ? T.lines.map((l) => M().esc(l)).join('<br>') : M().esc(el.text);
+        const lay = T ? `;line-height:${T.lineHeight};white-space:pre` : '';
+        return `<span style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight || 400};color:${col}${al}${lay}">${body}</span>`;
       }
       if (el.src && (el.video === true || el.kind === 'video' || /^data:video\//.test(el.src))) return `<video src="${el.src}" muted preload="metadata" aria-hidden="true" style="position:absolute;left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;object-fit:${el.fit === 'contain' ? 'contain' : 'cover'};pointer-events:none"></video>`;   /* R39 — 영상 첫 프레임 미니 */
       if (el.src) return `<i style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;background-image:url('${el.src}');background-size:${el.fit === 'contain' ? 'contain' : 'cover'};background-position:center;background-repeat:no-repeat;opacity:1"></i>`;   /* R36 실이미지 미니 */
@@ -891,6 +912,13 @@ window.MK_SCREENS.editor = (() => {
             const el = scene2().elements[i]; if (!el || el.kind !== 'text') return;
             const span = n.querySelector('.ed-txt'); if (!span) return;
             e.selEl = i;
+            /* R113 — 화면은 이제 export 가 나눈 줄(+ '· ' 접두 · '…' 말줄임)을 그린다.
+               커밋은 innerText 를 원문으로 삼으므로, 편집에 들어가는 순간 원문으로
+               되돌려 놓지 않으면 그린 줄바꿈과 접두가 el.text 에 굳어버린다.
+               같이 pre → pre-wrap 으로 풀어 편집 중엔 전체 글이 보이게 한다. */
+            span.textContent = el.text == null ? '' : String(el.text);
+            const wsBack = n.style.whiteSpace;
+            n.style.whiteSpace = 'pre-wrap';
             try { span.contentEditable = 'plaintext-only'; } catch (_) {}
             if (span.contentEditable !== 'plaintext-only') { try { span.contentEditable = 'true'; } catch (_) {} }
             span.setAttribute('contenteditable', span.contentEditable === 'plaintext-only' ? 'plaintext-only' : 'true');   /* 속성 반영 보장 */
@@ -900,6 +928,7 @@ window.MK_SCREENS.editor = (() => {
             const finish = (cancel) => {
               if (done) return; done = true;
               span.removeAttribute('contenteditable');
+              n.style.whiteSpace = wsBack;   /* R113 — 그리는 규약으로 복귀 */
               const t2 = cancel ? el.text : (span.innerText != null ? span.innerText : span.textContent);
               if (!cancel && t2 !== el.text) { H.push('텍스트 편집'); L.editText(el, t2); }
               PG.render();

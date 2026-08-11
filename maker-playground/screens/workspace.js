@@ -163,6 +163,27 @@
     if (!L || !L.textH) return '';
     return `;height:${(+L.textH(el, sar())).toFixed(3)}%;overflow:visible`;
   };
+  /* R113 — 화면이 브라우저의 짐작이 아니라 export 가 그리는 줄을 그린다.
+     여태 이 div 는 el.text 를 통째로 받고 자동 줄바꿈을 브라우저에 맡겼다.
+     그래서 overflow 정책(자름·말줄임·자동축소)과 글머리표 접두가 화면엔
+     존재하지 않았다 — 화면에서 읽은 문장이 내려받은 파일엔 없을 수 있었다.
+     MK_RENDER.layoutOf 는 새 계산이 아니라 export 의 배치를 그대로 돌려준다.
+     창구가 없으면(구버전 render.js) 종전 통짜 경로로 조용히 되돌아간다. */
+  const txtLay = (el, sc) => {
+    const R = window.MK_RENDER;
+    if (!R || !R.layoutOf || !sc) return null;
+    try { return R.layoutOf(el, sc.width, sc.height); } catch (e) { return null; }
+  };
+  /* 씬 px 로 계산된 글자 크기를 화면 캔버스 px 로 환산 (autoresize 축소 포함) */
+  const txtBody = (el, T, CH, sc) => {
+    if (!T) return { html: M().esc(el.text).replace(/\n/g, '<br>'), sty: '' };
+    const fs = (T.size / (sc.height || 720) * CH).toFixed(2);
+    return {
+      html: T.lines.map((l) => M().esc(l)).join('<br>'),
+      /* white-space:pre — 브라우저 재줄바꿈을 끈다. 줄은 이미 export 가 나눴다 */
+      sty: `;font-size:${fs}px;line-height:${T.lineHeight};white-space:pre`,
+    };
+  };
   /* 캔버스 실픽셀 — 회전 수학은 % 가 아니라 px 공간에서만 성립한다 */
   const cpx = () => { const s2 = scene() || { width: 16, height: 9 };
     const CW = Math.round(BASE_W * WS.zoom / 100); return { CW, CH: Math.round(CW * s2.height / s2.width) }; };
@@ -202,7 +223,8 @@
       if (el.kind === 'text') {
         const fs = (el.size / 100 * CH).toFixed(1);
         const ts = window.MK_TEXTSTYLE ? window.MK_TEXTSTYLE.css(el) : ''; /* R56 — 글꼴·배경·외곽선·그림자 */
-        return `<div class="ws-el text ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%${textBoxSty(el)};font-size:${fs}px;font-weight:${el.weight || 400}${el.color ? `;color:${el.color}` : ''}${el.align ? `;text-align:${el.align}` : ''}${ts}${rotStyText(el, CH)}">${M().esc(el.text).replace(/\n/g, '<br>')}${hd}</div>`;
+        const T = txtLay(el, sc), B = txtBody(el, T, CH, sc);            /* R113 — export 창구 */
+        return `<div class="ws-el text ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%${textBoxSty(el)};font-size:${fs}px;font-weight:${el.weight || 400}${el.color ? `;color:${el.color}` : ''}${el.align ? `;text-align:${el.align}` : ''}${ts}${B.sty}${rotStyText(el, CH)}">${B.html}${hd}</div>`;
       }
       if (el.src) {                                    /* R45 — Workspace도 실이미지·실영상 표시 (R36 editor와 동일) */
         const fit = el.fit === 'contain' ? 'contain' : 'cover';
