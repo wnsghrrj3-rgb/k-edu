@@ -138,15 +138,28 @@ window.MK_RENDER = (() => {
     return out.length ? out : [''];
   }
 
+  /* R111 — 텍스트가 실제로 차지하는 줄 수. 정본은 여기 하나다.
+     layoutText 가 그리기 직전에 하는 것과 똑같은 준비(list 접두 → wrap)를 해서
+     프레임을 재는 쪽과 글자를 그리는 쪽이 같은 숫자를 보게 한다.
+     여태 프레임(frameOf)은 개행 문자만 셌고 그리는 쪽은 wrap 을 했다 —
+     같은 파일 안에서 두 값이 갈라져 있었다. */
+  function listPrefixed(el) {
+    let raw = String(el.text == null ? '' : el.text);
+    if (el.list === 'bullet') raw = raw.split('\n').map((l) => (l ? '· ' + l : l)).join('\n');
+    if (el.list === 'number') raw = raw.split('\n').map((l, i) => (l ? (i + 1) + '. ' + l : l)).join('\n');
+    return raw;
+  }
+  function textLines(el, boxW, size) {
+    return wrap(listPrefixed(el), boxW, size, (el.letterSpacing || 0) * size).length;
+  }
+
   /* Paragraph 처리: bullet('· ')·number('1. ') 접두 + 오버플로 정책 */
   function layoutText(el, box, warn) {
     const font = resolveFont(el.font, warn);
     let size = el.sizePx;
     const lh = el.lineHeight || 1.35;
     const ls = (el.letterSpacing || 0) * size;
-    let raw = String(el.text == null ? '' : el.text);
-    if (el.list === 'bullet') raw = raw.split('\n').map((l) => (l ? '· ' + l : l)).join('\n');
-    if (el.list === 'number') raw = raw.split('\n').map((l, i) => (l ? (i + 1) + '. ' + l : l)).join('\n');
+    let raw = listPrefixed(el);                    /* R111 — 접두 규약은 정본 하나로 */
 
     let lines = wrap(raw, box.w, size, ls);
     const fits = () => lines.length * size * lh <= box.h + size * 0.4;
@@ -282,7 +295,20 @@ window.MK_RENDER = (() => {
     /* 기본: 기존 샘플 스키마(% 좌표) 그대로 절대 배치 */
     const x = (el.x || 0) * W / 100, y = (el.y || 0) * H / 100;
     const w = (el.w || 10) * W / 100;
-    const h = el.h != null ? el.h * H / 100 : (el.kind === 'text' ? Math.max(((el.size || 3) * H / 100) * 1.5, (el.size || 3) * H / 100 * 1.4 * String(el.text || '').split('\n').length) : 40);
+    /* R111 — 텍스트 높이가 자동 줄바꿈을 안다.
+       종전엔 개행 문자만 세서, 폭을 넘겨 흐른 글자가 프레임 밖에 남았다.
+       줄 수는 layoutText 가 쓰는 것과 같은 정본(textLines)에서 받는다 —
+       그래야 프레임이 담는 줄과 실제로 그리는 줄이 같다. 이 높이는
+       overflow=clip|ellipsis 의 maxLines 와 autoresize 의 축소 판정 기준이기도 해서,
+       틀린 높이는 화면 미관이 아니라 결과물에서 사라지는 글자로 나타난다. */
+    let h;
+    if (el.h != null) h = el.h * H / 100;
+    else if (el.kind === 'text') {
+      const sz = (el.size || 3) * H / 100;
+      let n = 1;
+      try { n = textLines(el, w, sz) || 1; } catch (e) { n = String(el.text || '').split('\n').length; }
+      h = Math.max(sz * 1.5, sz * 1.4 * n);
+    } else h = 40;
     return { x: R2(x), y: R2(y), w: R2(w), h: R2(h) };
   }
 
@@ -1011,7 +1037,8 @@ window.MK_RENDER = (() => {
     /* 파이프라인 */
     renderScene, renderProject, sceneHash, tilePlan,
     /* 서브엔진(테스트·확장용) */
-    wrap, measure, layoutText, resolveFont, resolveAsset, VEC, buildTimeline, sampleTrack,
+    wrap, measure, layoutText, textLines, listPrefixed, frameOf,   /* R111 — 줄수 정본·프레임 (MK_LIVE 가 빌려 쓰고 하니스가 검사한다) */
+    resolveFont, resolveAsset, VEC, buildTimeline, sampleTrack,
     /* 어댑터 */
     toSVG, toHTML, toPDF, toPDFRaster, jpegSize, dataUrlBytes, toPPTX, toRaster, toVideoPlan, registerAdapter, ADAPTERS,
     /* 프리셋·큐 */

@@ -155,16 +155,37 @@ window.MK_LIVE = (() => {
 
   /* 텍스트의 모델 높이(% of 씬 높이). 모델에 h 가 없는 유일한 종류라
      render.js frameOf 가 쓰는 추정식이 사실상 정본 — 같은 값임은 하니스가 기계 검증한다. */
-  function textH(el) {
-    const s = (el && +el.size) || 3;
-    const lines = String((el && el.text) || '').split('\n').length;
-    return Math.max(s * 1.5, s * 1.4 * lines);
+  /* R111 — 글자가 실제로 차지하는 줄 수.
+     wrap 판정은 절대 크기와 무관하고 씬 종횡비 ar 하나에만 의존한다:
+     px 로 내리면 폭 = el.w/100·W, 크기 = el.size/100·H 이고 measure 는 크기에
+     선형이라, 부등식 양변을 W/100 으로 나누면 W·H 가 사라지고 ar=W/H 만 남는다.
+       Σ CH_W · el.size/ar ≤ el.w
+     그래서 「씬 폭 %」 공간에서 크기를 el.size/ar 로 재면 px 계산과 같은 줄이 나온다
+     (probe111 이 다섯 해상도로 대조 증명). aabb·snap 과 같은 ar 옵트인 규약을 쓴다 —
+     ar 을 안 주면 개행만 세던 종전 세계 그대로다.
+     세는 자는 MK_RENDER 하나뿐이다. 여기에 두 번째 wrap 을 만들면 R110 이 방금
+     없앤 병(상자가 둘)이 그대로 재발한다. */
+  function lineCount(el, ar) {
+    const nl = String((el && el.text) || '').split('\n').length;
+    if (!(+ar > 0)) return nl;
+    const R = window.MK_RENDER;
+    if (!R || typeof R.textLines !== 'function') return nl;   /* 정본 부재 — 옛 길로 */
+    const s = (el && +el.size) || 3, wp = (el && +el.w) || 10;
+    try {
+      const n = R.textLines(el, wp, s / ar);
+      return (isFinite(n) && n > 0) ? Math.max(n, nl) : nl;
+    } catch (_) { return nl; }
   }
 
-  /* 회전 전 % 박스 — 텍스트만 textH 로 높이를 얻는다 */
-  function boxOf(el) {
+  function textH(el, ar) {
+    const s = (el && +el.size) || 3;
+    return Math.max(s * 1.5, s * 1.4 * lineCount(el, ar));
+  }
+
+  /* 회전 전 % 박스 — 텍스트만 textH 로 높이를 얻는다 (R111: ar 을 받으면 wrap 까지) */
+  function boxOf(el, ar) {
     const w = (el && el.w) || 10;
-    const h = (el && el.h != null) ? el.h : (el && el.kind === 'text' ? textH(el) : 8);
+    const h = (el && el.h != null) ? el.h : (el && el.kind === 'text' ? textH(el, ar) : 8);
     return { x: (el && el.x) || 0, y: (el && el.y) || 0, w, h };
   }
 
@@ -172,7 +193,7 @@ window.MK_LIVE = (() => {
      W' = w|cos| + h|sin|/ar, H' = w·ar·|sin| + h|cos| (px 로 환산 후 되돌린 식).
      중심은 회전 불변이므로 거기서 반씩 물린다. rot=0·ar 없음이면 boxOf 그대로. */
   function aabb(el, ar) {
-    const b = boxOf(el), d = rotOf(el);
+    const b = boxOf(el, ar), d = rotOf(el);       /* R111 — 받은 ar 은 줄수에도 쓰인다 */
     if (!d || !(+ar > 0)) return b;
     const t = d * Math.PI / 180, c = Math.abs(Math.cos(t)), s = Math.abs(Math.sin(t));
     const W = b.w * c + b.h * s / ar;
@@ -183,7 +204,10 @@ window.MK_LIVE = (() => {
   /* R110 — 모델 박스의 실픽셀. 회전 수학은 % 가 아니라 px 공간에서만 성립한다.
      텍스트만 모델에 h 가 없어 boxOf 가 textH 로 채운다 — 그래서 DOM 실측이 필요 없다. */
   function boxPx(el, CW, CH) {
-    const b = boxOf(el), W = +CW || 0, H = +CH || 0;
+    const W = +CW || 0, H = +CH || 0;
+    /* R111 — 실픽셀을 아는 자는 종횡비도 안다. 따로 옵트인 받을 필요가 없어서,
+       회전축·초점 프레임이 별도 배선 없이 실제 줄 수를 따라간다. */
+    const b = boxOf(el, (W > 0 && H > 0) ? W / H : 0);
     return { x: b.x / 100 * W, y: b.y / 100 * H, w: b.w / 100 * W, h: b.h / 100 * H };
   }
 
@@ -451,6 +475,22 @@ window.MK_LIVE = (() => {
     const tp9 = pivotPx({ kind: 'text', x: 0, y: 0, w: 40, size: 6, text: 'ㄱ', rot: 137 }, 500, 300);
     if (Math.abs(tp0.y - (6 * 1.5) / 2 / 100 * 300) > 1e-9) v.push('pivotPx 텍스트가 textH 를 안 씀');
     if (tp0.x !== tp9.x || tp0.y !== tp9.y) v.push('pivotPx 가 회전 불변이 아님');
+    /* R111 — 자동 줄바꿈. 좁은 상자에 넣은 긴 글은 개행이 없어도 여러 줄이다. */
+    const LONG = { kind: 'text', x: 0, y: 0, w: 12, size: 4, text: '가나다라마바사아자차카타파하가나다라마바사' };
+    if (lineCount(LONG, 0) !== 1) v.push('lineCount 가 ar 없이도 wrap 함 (옵트인 위반)');
+    if (window.MK_RENDER && typeof window.MK_RENDER.textLines === 'function') {
+      if (!(lineCount(LONG, 16 / 9) > 1)) v.push('lineCount 가 ar 을 받고도 wrap 을 모름');
+      if (!(textH(LONG, 16 / 9) > textH(LONG, 0))) v.push('textH 가 wrap 을 높이에 안 반영');
+      /* ar 은 절대 크기와 무관 — 같은 비율이면 어느 해상도든 같은 높이 */
+      const p1 = boxPx(LONG, 1600, 900), p2 = boxPx(LONG, 800, 450);
+      if (Math.abs(p1.h / 900 - p2.h / 450) > 1e-9) v.push('boxPx 텍스트 높이가 해상도에 흔들림');
+      /* 개행만 있는 짧은 글은 종전 값 그대로 — 무회귀 */
+      const SHORT = { kind: 'text', x: 0, y: 0, w: 60, size: 4, text: 'a\nb' };
+      if (Math.abs(textH(SHORT, 16 / 9) - 11.2) > 1e-9) v.push('짧은 글 textH 가 ar 로 변함 (회귀)');
+    }
+    /* 비텍스트는 ar 과 무관 */
+    const IMG = { kind: 'image', x: 0, y: 0, w: 10, h: 10 };
+    if (boxOf(IMG, 16 / 9).h !== 10 || boxOf(IMG, 0).h !== 10) v.push('boxOf 가 비텍스트 높이를 건드림');
     /* 스냅 — 중앙 흡착 */
     const s = { kind: 'image', x: 44.5, y: 30, w: 10, h: 10 };
     const g = snap(s, []);
@@ -481,6 +521,7 @@ window.MK_LIVE = (() => {
     rotOf, setRot, rotVec, unrotVec, recenter, framePos,          /* R107 — 회전 기하 */
     textH, boxOf, aabb,                                           /* R108 — 외접 박스·텍스트 모델 높이 */
     boxPx, pivotPx,                                               /* R110 — 모델 박스 실픽셀·회전 불변점 */
+    lineCount,                                                    /* R111 — 자동 줄바꿈까지 아는 줄 수 */
     replaceWithSrc, insertWithSrc, fileToSrc, shrinkImage, normalizeImage,
     useBackend, saveDoc, loadDoc, clearDoc, saveProjects, restoreProjects, autosave, flush,
     liveAudit,

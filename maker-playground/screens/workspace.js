@@ -138,10 +138,13 @@
   /* R108 — 텍스트만 모델에 높이가 없다. 브라우저는 실측 박스 중심으로 돌리고
      export(render.js frameOf)는 추정 높이 중심으로 돌리므로, 둘이 다르면 회전한 글자가
      화면과 결과물에서 다른 자리에 앉는다. 화면을 export 의 축에 맞춘다. */
+  /* R111 — 씬 종횡비. 모델이 자동 줄바꿈을 아는 데 필요한 유일한 수 (probe111 §①). */
+  const sar = () => { const s2 = scene() || { width: 16, height: 9 };
+    return (+s2.width > 0 && +s2.height > 0) ? s2.width / s2.height : 16 / 9; };
   const rotStyText = (el, CH) => {
     const d = rotDeg(el); if (!d) return '';
     const L = window.MK_LIVE;
-    const hpx = (L && L.textH ? L.textH(el) : 0) / 100 * CH;
+    const hpx = (L && L.textH ? L.textH(el, sar()) : 0) / 100 * CH;   /* R111 — 줄바꿈 반영 축 */
     return `;transform:rotate(${d}deg);transform-origin:50% ${(hpx / 2).toFixed(1)}px`;
   };
   /* R110 — 텍스트 상자가 모델 높이를 입는다.
@@ -150,11 +153,15 @@
      그래서 손잡이가 앉은 자리와 실제로 움직이는 상자가 서로 달랐다 — 1줄 6% 글자에서
      DOM 은 7.8%, 모델은 9.0%. 상자를 정본에 맞춰 둘을 하나로 만든다.
      글자 자체는 종전과 똑같이 위에서부터 흐른다: overflow:visible 은 export 의
-     기본 overflow 규약과 같아서, 넘치면 넘치는 그대로가 결과물과 같은 그림이다. */
+     기본 overflow 규약과 같아서, 넘치면 넘치는 그대로가 결과물과 같은 그림이다.
+
+     R111 — 그리고 그 모델 높이가 이제 자동 줄바꿈까지 센다. R110 이 정직하게 적어둔
+     「textH 는 개행만 세므로 넘칠 수 있다」가 여기서 갚인다: 상자가 흐른 줄만큼 자라서
+     손잡이·스냅·정렬·간격이 눈에 보이는 글자 덩어리를 그대로 잡는다. */
   const textBoxSty = (el) => {
     const L = window.MK_LIVE;
     if (!L || !L.textH) return '';
-    return `;height:${(+L.textH(el)).toFixed(3)}%;overflow:visible`;
+    return `;height:${(+L.textH(el, sar())).toFixed(3)}%;overflow:visible`;
   };
   /* 캔버스 실픽셀 — 회전 수학은 % 가 아니라 px 공간에서만 성립한다 */
   const cpx = () => { const s2 = scene() || { width: 16, height: 9 };
