@@ -237,9 +237,14 @@ window.MK_SCREENS.editor = (() => {
         const dark = MK_SEC ? MK_SEC.isDark(scene.background) : scene.background === '#1F2733';
         const col = el.color || (dark ? ((el.weight || 400) >= 600 ? '#F2F5F9' : '#B7C0CD') : ((el.weight || 400) >= 600 ? '#1F2733' : '#525C6A'));
         const al = el.align ? `;text-align:${el.align}` : '';
-        const tr = el.tracking ? `;letter-spacing:${el.tracking}em` : '';
         /* R113 — 화면이 export 가 그리는 줄을 그린다 (창구 부재 시 종전 통짜 경로) */
         const T = txtLay(el, scene);
+        /* R114 — 자간도 창구가 답한 값으로. 종전엔 el.tracking 을 제 손으로 읽어
+           CSS 로 그리면서 줄바꿈은 그 이름을 모르는 창구에게 물었다 — 화면이
+           자기가 그은 줄 안에서 자기 글자에 넘쳤다는 뜻이다. 창구 값은 씬 px 이니
+           화면 px 로 환산해서 쓴다. 창구가 없으면 옛 경로(em)로 되돌아간다. */
+        const tr = T ? (T.letterSpacingEm ? `;letter-spacing:${T.letterSpacingEm}em` : '')
+                     : (el.tracking ? `;letter-spacing:${el.tracking}em` : '');
         const body = T ? T.lines.map((l) => M().esc(l)).join('<br>') : M().esc(el.text);
         const lay = T ? `;font-size:${(T.size / (scene.height || 720) * CH).toFixed(2)}px;line-height:${T.lineHeight};white-space:pre` : '';
         return `<div class="ed-el ${sel}" data-el="${i}" data-editable="1" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight};line-height:1.3;color:${col}${al}${tr};white-space:pre-wrap${lay}${rotSty(el)}"><span class="ed-txt">${body}</span>${hd}</div>`;
@@ -334,8 +339,11 @@ window.MK_SCREENS.editor = (() => {
         const col = el.color || (dark ? ((el.weight || 400) >= 600 ? '#F2F5F9' : '#B7C0CD') : ((el.weight || 400) >= 600 ? '#1F2733' : '#525C6A'));
         const al = el.align ? `;text-align:${el.align}` : '';
         const body = T ? T.lines.map((l) => M().esc(l)).join('<br>') : M().esc(el.text);
+        /* R114 — 미니도 자간을 창구에서 받는다. em 이라야 3px 가독 하한으로
+           크기가 export 와 달라진 썸네일에서도 글자 대비 비율이 유지된다. */
+        const mls = T && T.letterSpacingEm ? `;letter-spacing:${T.letterSpacingEm}em` : (el.tracking ? `;letter-spacing:${el.tracking}em` : '');
         const lay = T ? `;line-height:${T.lineHeight};white-space:pre` : '';
-        return `<span style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight || 400};color:${col}${al}${lay}">${body}</span>`;
+        return `<span style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight || 400};color:${col}${al}${mls}${lay}">${body}</span>`;
       }
       if (el.src && (el.video === true || el.kind === 'video' || /^data:video\//.test(el.src))) return `<video src="${el.src}" muted preload="metadata" aria-hidden="true" style="position:absolute;left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;object-fit:${el.fit === 'contain' ? 'contain' : 'cover'};pointer-events:none"></video>`;   /* R39 — 영상 첫 프레임 미니 */
       if (el.src) return `<i style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;background-image:url('${el.src}');background-size:${el.fit === 'contain' ? 'contain' : 'cover'};background-position:center;background-repeat:no-repeat;opacity:1"></i>`;   /* R36 실이미지 미니 */

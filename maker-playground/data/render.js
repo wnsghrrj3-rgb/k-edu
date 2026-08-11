@@ -143,6 +143,21 @@ window.MK_RENDER = (() => {
      프레임을 재는 쪽과 글자를 그리는 쪽이 같은 숫자를 보게 한다.
      여태 프레임(frameOf)은 개행 문자만 셌고 그리는 쪽은 wrap 을 했다 —
      같은 파일 안에서 두 값이 갈라져 있었다. */
+  /* R114 — 자간 읽기 정본. 같은 물리량이 두 이름으로 갈려 있었다:
+       · el.letterSpacing — render 가 읽는 키. MK_TEXTSTYLE 프리셋이 심는다.
+       · el.tracking      — 템플릿 t() 헬퍼·aiedit 이 심고 editor·play 가 CSS 로
+                            그리던 키. render 는 이 이름을 몰랐다.
+     결과는 이랬다: tracking 이 붙은 글자는 화면에선 벌어져 보이고 내려받은
+     파일에선 자간 0 으로 붙어 나왔다. R113 이 「화면이 export 에게 배치를 묻는다」
+     를 세운 뒤로는 더 나빠졌다 — 화면이 CSS 로는 자간을 그리면서 줄바꿈은
+     자간을 모르는 창구에게 물으니, 화면 자신이 자기 줄 안에서 넘쳤다.
+     정본은 letterSpacing 하나. tracking 은 옛 이름으로 읽기만 흡수한다.
+     읽는 자리가 여기 하나뿐이라야 다음에 또 갈리지 않는다. */
+  function lsOf(el) {
+    if (!el) return 0;
+    return +(el.letterSpacing != null ? el.letterSpacing : (el.tracking || 0)) || 0;
+  }
+
   function listPrefixed(el) {
     let raw = String(el.text == null ? '' : el.text);
     if (el.list === 'bullet') raw = raw.split('\n').map((l) => (l ? '· ' + l : l)).join('\n');
@@ -150,7 +165,7 @@ window.MK_RENDER = (() => {
     return raw;
   }
   function textLines(el, boxW, size) {
-    return wrap(listPrefixed(el), boxW, size, (el.letterSpacing || 0) * size).length;
+    return wrap(listPrefixed(el), boxW, size, lsOf(el) * size).length;
   }
 
   /* Paragraph 처리: bullet('· ')·number('1. ') 접두 + 오버플로 정책 */
@@ -158,7 +173,7 @@ window.MK_RENDER = (() => {
     const font = resolveFont(el.font, warn);
     let size = el.sizePx;
     const lh = el.lineHeight || 1.35;
-    const ls = (el.letterSpacing || 0) * size;
+    const ls = lsOf(el) * size;
     let raw = listPrefixed(el);                    /* R111 — 접두 규약은 정본 하나로 */
 
     let lines = wrap(raw, box.w, size, ls);
@@ -167,7 +182,7 @@ window.MK_RENDER = (() => {
     const overflow = el.overflow || 'visible';
     if (overflow === 'autoresize') {
       let guard = 24;
-      while (!fits() && size > 6 && guard--) { size = R2(size * 0.92); lines = wrap(raw, box.w, size, (el.letterSpacing || 0) * size); }
+      while (!fits() && size > 6 && guard--) { size = R2(size * 0.92); lines = wrap(raw, box.w, size, lsOf(el) * size); }
     } else if (overflow === 'clip' || overflow === 'ellipsis') {
       const maxLines = Math.max(1, Math.floor(box.h / (size * lh)));
       if (lines.length > maxLines) {
@@ -202,8 +217,11 @@ window.MK_RENDER = (() => {
     const f = frameOf(el, w, h);
     const sizePx = (el.size || 3) * h / 100;
     const T = layoutText({ ...el, sizePx }, f, () => {});
+    /* R114 — 자간은 두 단위로 답한다. letterSpacing 은 px(export 와 같은 수),
+       letterSpacingEm 은 배수. 플레이어처럼 cqh 로 크기를 잡는 화면은 px 을
+       쓸 수 없으니, 거기서 자기 손으로 el 을 다시 읽는 일이 없게 여기서 준다. */
     return { frame: f, font: T.font, size: T.size, lineHeight: T.lineHeight,
-      letterSpacing: T.letterSpacing, lines: T.lines, textW: T.textW, sizePx };
+      letterSpacing: T.letterSpacing, letterSpacingEm: lsOf(el), lines: T.lines, textW: T.textW, sizePx };
   }
 
   /* ================================================================
@@ -497,7 +515,7 @@ window.MK_RENDER = (() => {
            자간 다른 텍스트가 남의 배치를 물려받았다 — probe113 실측: 자간 0.08 요소가
            자간 0 의 줄바꿈으로 출력됐다. 화면이 export 에게 묻기 시작한 이상,
            export 가 틀리면 화면도 같이 틀린다. 여기서 막는다. */
-        const tkey = fnv(JSON.stringify([el.text, sizePx, f.w, f.h, el.overflow, el.list, el.font, el.letterSpacing, el.lineHeight]));
+        const tkey = fnv(JSON.stringify([el.text, sizePx, f.w, f.h, el.overflow, el.list, el.font, lsOf(el), el.lineHeight]));
         let T;
         if (CACHE.text.has(tkey)) { T = CACHE.text.get(tkey); CACHE.stats.hit++; }
         else { T = layoutText({ ...el, sizePx }, f, warn); CACHE.text.set(tkey, T); CACHE.stats.miss++; }
@@ -1073,6 +1091,7 @@ window.MK_RENDER = (() => {
     /* 서브엔진(테스트·확장용) */
     wrap, measure, layoutText, textLines, listPrefixed, frameOf,   /* R111 — 줄수 정본·프레임 (MK_LIVE 가 빌려 쓰고 하니스가 검사한다) */
     layoutOf,                                                      /* R113 — 화면이 export 에게 배치를 묻는 창구 (workspace·editor·미니 공용) */
+    lsOf,                                                          /* R114 — 자간 읽기 정본 (letterSpacing 우선, tracking 은 옛 이름) */
     resolveFont, resolveAsset, VEC, buildTimeline, sampleTrack,
     /* 어댑터 */
     toSVG, toHTML, toPDF, toPDFRaster, jpegSize, dataUrlBytes, toPPTX, toRaster, toVideoPlan, registerAdapter, ADAPTERS,

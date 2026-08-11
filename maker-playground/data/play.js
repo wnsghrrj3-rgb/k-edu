@@ -104,7 +104,23 @@ body.mkp-on #kedu-back { display:none !important }
       if (el.kind === 'text') {
         const col = el.color || (dark ? ((el.weight || 400) >= 600 ? '#F2F5F9' : '#B7C0CD') : ((el.weight || 400) >= 600 ? '#1F2733' : '#525C6A'));
         const ts = window.MK_TEXTSTYLE ? window.MK_TEXTSTYLE.css(el) : ''; /* R56 — 글꼴·배경·외곽선·그림자 (lineHeight는 css가 뒤에서 override) */
-        return `<div class="mkp-el" style="${pos}font-size:${el.size}cqh;font-weight:${el.weight || 400};line-height:1.3;color:${col}${el.align ? ';text-align:' + el.align : ''}${el.tracking ? ';letter-spacing:' + el.tracking + 'em' : ''};white-space:pre-wrap${rot}${an}${ts}">${esc(el.text)}</div>`;
+        /* R114 — 재생 화면도 export 창구로. R113 이 workspace·editor·미니를 옮길 때
+           여기는 범위 밖이었는데, 재생은 교사가 「내보내기 전 마지막으로 보는 화면」이다.
+           여기가 통짜 경로면 미리보기와 MP4 가 다르게 나온다 — 화면과 파일을 맞추려던
+           일이 정작 확인하는 자리에서 새는 셈이다.
+           cqh 는 컨테이너 높이 백분율이니 씬 px 을 씬 높이로 나누면 그대로 옮겨진다. */
+        const R = window.MK_RENDER, SH = scene.height || 720;
+        let T = null;
+        try { T = R && R.layoutOf ? R.layoutOf(el, scene.width, scene.height) : null; } catch (e) { T = null; }
+        if (T) {
+          const fs = (T.size / SH * 100).toFixed(3);
+          const ls = T.letterSpacingEm ? `;letter-spacing:${T.letterSpacingEm}em` : '';
+          const body = T.lines.map((l) => esc(l)).join('<br>');
+          /* white-space:pre — 줄은 이미 export 가 나눴다. 브라우저가 다시 나누면 갈린다 */
+          return `<div class="mkp-el" style="${pos}font-size:${fs}cqh;font-weight:${el.weight || 400};line-height:${T.lineHeight};color:${col}${el.align ? ';text-align:' + el.align : ''}${ls};white-space:pre${rot}${an}${ts}">${body}</div>`;
+        }
+        const lsF = R && R.lsOf ? R.lsOf(el) : (el.letterSpacing != null ? el.letterSpacing : (el.tracking || 0));
+        return `<div class="mkp-el" style="${pos}font-size:${el.size}cqh;font-weight:${el.weight || 400};line-height:1.3;color:${col}${el.align ? ';text-align:' + el.align : ''}${lsF ? ';letter-spacing:' + lsF + 'em' : ''};white-space:pre-wrap${rot}${an}${ts}">${esc(el.text)}</div>`;
       }
       const rad = el.radius ? `;border-radius:${el.radius > 100 ? '50%' : el.radius + 'px'}` : '';
       if (el.src) {

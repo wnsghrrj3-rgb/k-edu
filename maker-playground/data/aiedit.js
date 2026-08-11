@@ -226,7 +226,7 @@ window.MK_AIED = (() => {
   A['text.premium'] = (doc, ctx) => {
     const s = curScene(doc, ctx), el = targetEl(s, ctx, ['text']);
     if (!el) return { err: '텍스트 요소가 없어요. 캔버스에서 글자를 선택해 주세요.' };
-    el.weight = 700; el.size = +(el.size * 1.14).toFixed(2); el.tracking = -0.02; el.color = ctx.palette.accent;
+    el.weight = 700; el.size = +(el.size * 1.14).toFixed(2); el.letterSpacing = -0.02; el.color = ctx.palette.accent;
     return { msg: `"${String(el.text).split('\n')[0].slice(0, 12)}" 를 고급 톤으로 — 굵기 700 · 크기 ${el.size} · 자간 좁힘 · 강조색 적용` };
   };
   A['el.bigger'] = (doc, ctx, args) => {
@@ -311,7 +311,7 @@ window.MK_AIED = (() => {
     const tone = args.tone || 'pro';
     let n = 0;
     doc.scenes.forEach((s) => { n += rewriteScene(s, tone); });
-    if (args.premium) { doc.scenes.forEach((s) => { const h = headingOf(s); if (h) { h.weight = 700; h.tracking = -0.02; } }); }
+    if (args.premium) { doc.scenes.forEach((s) => { const h = headingOf(s); if (h) { h.weight = 700; h.letterSpacing = -0.02; } }); }
     return { msg: `프로젝트 전체 ${TONES[tone].name} 톤 — ${doc.scenes.length}씬 · 텍스트 ${n}건 수정` };
   };
   A['project.scenes'] = (doc, ctx, args) => {
@@ -494,12 +494,12 @@ window.MK_AIED = (() => {
     const B = window.MK_BRAND, b = B && (B.active() || B.get('bd-kmaker'));
     if (b) {
       B.apply(doc, b.brandId);
-      doc.scenes.forEach((s) => { const h = headingOf(s); if (h) { h.weight = 700; h.tracking = -0.02; } });
+      doc.scenes.forEach((s) => { const h = headingOf(s); if (h) { h.weight = 700; h.letterSpacing = -0.02; } });
       return { msg: `${b.name} 브랜드 컬러 적용 — 팔레트·폰트·차트 일괄 전환` };
     }
     applyPalette(doc, 'pl-ink');
     doc.fontFamily = 'Pretendard';
-    doc.scenes.forEach((s) => { const h = headingOf(s); if (h) { h.weight = 700; h.tracking = -0.02; } });
+    doc.scenes.forEach((s) => { const h = headingOf(s); if (h) { h.weight = 700; h.letterSpacing = -0.02; } });
     return { msg: 'K-MAKER 브랜드 적용 — Ink & Teal 팔레트 + Pretendard + 제목 트래킹' };
   };
 
@@ -542,7 +542,7 @@ window.MK_AIED = (() => {
         el.y = i === 0 ? 34 : 34 + 16 + (i - 1) * 9;
         el.size = i === 0 ? +clamp(el.size * 1.35, 8, 16).toFixed(2) : +clamp(el.size * 0.92, 2, 6).toFixed(2);
         el.weight = i === 0 ? 700 : 400;
-        el.tracking = i === 0 ? -0.03 : 0;
+        el.letterSpacing = i === 0 ? -0.03 : 0;
         el.color = i === 0 ? (SEC().isDark(s.background) ? P.light : P.dark) : (SEC().isDark(s.background) ? P.mutedOnDark : P.mutedOnLight);
       });
     });

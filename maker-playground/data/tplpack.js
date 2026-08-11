@@ -11,7 +11,7 @@ window.MK_TPLPACK = (() => {
   'use strict';
 
   /* ---------- 요소 헬퍼 ---------- */
-  const t = (x, y, w, size, text, o = {}) => ({ kind: 'text', x, y, w, size, text, weight: o.weight || 400, ...(o.color ? { color: o.color } : {}), ...(o.align ? { align: o.align } : {}), ...(o.tracking ? { tracking: o.tracking } : {}), ...(o.anim ? { anim: o.anim } : {}) });
+  const t = (x, y, w, size, text, o = {}) => ({ kind: 'text', x, y, w, size, text, weight: o.weight || 400, ...(o.color ? { color: o.color } : {}), ...(o.align ? { align: o.align } : {}), ...(o.tracking ? { letterSpacing: o.tracking } : {})   /* R114 — 심는 키는 정본 letterSpacing (호출부 표기는 유지) */, ...(o.anim ? { anim: o.anim } : {}) });
   const box = (x, y, w, h, fill, o = {}) => ({ kind: 'image', x, y, w, h, label: '', fill, ...(o.radius ? { radius: o.radius } : {}), ...(o.rot ? { rot: o.rot } : {}), ...(o.anim ? { anim: o.anim } : {}) });
   const img = (x, y, w, h, label, o = {}) => ({ kind: 'image', x, y, w, h, label, ...(o.radius ? { radius: o.radius } : {}), ...(o.anim ? { anim: o.anim } : {}) });
   const A = (preset, delay, o = {}) => ({ preset, delay, duration: o.duration || 0.55, direction: o.direction || 'up', ease: o.ease || 'ease-out', repeat: 1 });

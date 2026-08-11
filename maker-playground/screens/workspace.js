@@ -178,10 +178,15 @@
   const txtBody = (el, T, CH, sc) => {
     if (!T) return { html: M().esc(el.text).replace(/\n/g, '<br>'), sty: '' };
     const fs = (T.size / (sc.height || 720) * CH).toFixed(2);
+    /* R114 — 자간도 창구 값으로. MK_TEXTSTYLE.css 는 el.letterSpacing 만 보므로
+       옛 이름(el.tracking)이 붙은 글자는 화면에서 자간이 빠진 채 그려졌다.
+       render 는 이제 두 이름을 다 읽으니, 여기서 못 맞추면 이번엔 반대로
+       화면이 export 보다 좁게 그린다. 뒤에 붙어 css() 값을 후승으로 덮는다. */
+    const ls = T.letterSpacingEm ? `;letter-spacing:${T.letterSpacingEm}em` : '';
     return {
       html: T.lines.map((l) => M().esc(l)).join('<br>'),
       /* white-space:pre — 브라우저 재줄바꿈을 끈다. 줄은 이미 export 가 나눴다 */
-      sty: `;font-size:${fs}px;line-height:${T.lineHeight};white-space:pre`,
+      sty: `;font-size:${fs}px;line-height:${T.lineHeight}${ls};white-space:pre`,
     };
   };
   /* 캔버스 실픽셀 — 회전 수학은 % 가 아니라 px 공간에서만 성립한다 */
