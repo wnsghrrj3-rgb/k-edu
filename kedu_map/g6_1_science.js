@@ -119,6 +119,16 @@ window.KEDU_MAP["g6_1_science"] = {
      "url": "/grade6/semester1/science/2단원_물체의운동/g6_sci_u2_l01_열려라과학.html",
      "track": "tb",
      "ready": true
+    },
+    {
+     "key": "g6_science_u2_l02",
+     "lessonId": "g6_sci_u2_l02_v1",
+     "n": "2",
+     "title": "운동하는 물체의 특징을 찾아라!",
+     "sub": null,
+     "url": "/grade6/semester1/science/2단원_물체의운동/g6_sci_u2_l02_운동특징.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }
