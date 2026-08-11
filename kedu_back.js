@@ -122,7 +122,13 @@
   var ZONE = { l: 0, t: 0, r: 380, b: 76 };
   function sameDest(el) {
     var h = el.getAttribute && el.getAttribute('href');
-    if (!h) return false;
+    if (!h) {
+      /* onclick="location.href='../index.html'" 형태의 자체 나가기도 목적지로 읽는다
+         (차시 195곳의 「📚 차시 목록」 버튼 유형) */
+      var oc = el.getAttribute && el.getAttribute('onclick');
+      var m = oc && oc.match(/location\.href\s*=\s*['"]([^'"]+)['"]/);
+      if (m) h = m[1]; else return false;
+    }
     try {
       var A = new URL(h, location.href), B = new URL(href, location.href);
       if (A.pathname !== B.pathname) return false;
@@ -148,31 +154,80 @@
     return out;
   }
   function placeAvoiding(a) {
-    var mine = a.getBoundingClientRect();
-    var cols = topLeftControls(a).filter(function (c) {
-      return !(c.rect.right < mine.left || c.rect.left > mine.right ||
-               c.rect.bottom < mine.top || c.rect.top > mine.bottom);
-    });
-    if (!cols.length) return;
-    var maxRight = 0, maxBottom = 0;
-    for (var i = 0; i < cols.length; i++) {
-      maxRight = Math.max(maxRight, cols[i].rect.right);
-      maxBottom = Math.max(maxBottom, cols[i].rect.bottom);
+    /* 최상단 띠(top<=72)의 모든 컨트롤/텍스트 rect 수집 */
+    function bandRects() {
+      var res = [], nodes = document.querySelectorAll('a,button,span,.pill,.where,h1,h2');
+      for (var i = 0; i < nodes.length; i++) {
+        var n = nodes[i]; if (n === a || a.contains(n)) continue;
+        var r = n.getBoundingClientRect();
+        if (!r.width || !r.height || r.top > 110) continue;
+        var t = (n.textContent || '').trim();
+        if (!t || t.length > 40) continue;
+        res.push(r);
+      }
+      return res;
     }
-    if (maxRight + mine.width + 24 < Math.min(window.innerWidth * 0.62, 760)) {
-      a.style.left = Math.round(maxRight + 10) + 'px';       /* 오른쪽으로 비킴 */
-    } else {
-      a.style.top = Math.round(maxBottom + 10) + 'px';       /* 자리 없으면 아래로 */
+    function clashes() {
+      var mine = a.getBoundingClientRect();
+      return bandRects().filter(function (r) {
+        return !(r.right <= mine.left || r.left >= mine.right || r.bottom <= mine.top || r.top >= mine.bottom);
+      });
     }
+    if (!clashes().length) return;                            /* 이미 안 겹침 */
+
+    var band = bandRects();
+    if (!band.length) return;
+    var leftMost = Infinity, rightMost = 0, headerBottom = 0;
+    for (var i = 0; i < band.length; i++) {
+      leftMost = Math.min(leftMost, band[i].left);
+      rightMost = Math.max(rightMost, band[i].right);
+      headerBottom = Math.max(headerBottom, band[i].bottom);
+    }
+    var w = a.getBoundingClientRect().width;
+
+    /* 시도 1 — 오른쪽 끝 여백 (제목 뒤) */
+    if (window.innerWidth - rightMost > w + 20) {
+      a.style.left = 'auto'; a.style.right = '14px';
+      if (!clashes().length) return;
+    }
+    /* 시도 2 — 왼쪽 끝 여백 (컨트롤 왼쪽) */
+    if (leftMost > w + 20) {
+      a.style.right = 'auto'; a.style.left = '14px';
+      if (!clashes().length) return;
+    }
+    /* 시도 3 — 헤더 아래로 (넓은 헤더가 폭을 다 차지) */
+    a.style.right = 'auto'; a.style.left = '14px';
+    a.style.top = Math.round(headerBottom + 8) + 'px';
+    if (!clashes().length) return;
+    /* 시도 4 — 우측 여백으로 한 번 더 (아래에도 무언가 있는 경우) */
+    a.style.left = 'auto'; a.style.right = '14px'; a.style.top = '14px';
+    if (!clashes().length) return;
+    /* 최후 — 어디에도 빈 자리가 없다: 페이지가 자체 나가기 수단을 이미 가졌다는
+       뜻이므로(상단바 가득) 공용 버튼을 감춘다. 갈 곳이 없어지지 않도록
+       자체 나가기가 최상단 띠에 실재할 때만. */
+    var hasOwnExit = false, bb = document.querySelectorAll('a,button');
+    for (var q = 0; q < bb.length; q++) {
+      var rr = bb[q].getBoundingClientRect();
+      if (rr.width && rr.top <= 110 && /목록|홈|나가기|뒤로|나오기/.test((bb[q].textContent || ''))) { hasOwnExit = true; break; }
+    }
+    if (hasOwnExit) { a.style.display = 'none'; window.KEDU_BACK.suppressed = true; }
+    else { a.style.left = '14px'; a.style.right = 'auto'; a.style.top = Math.round(headerBottom + 8) + 'px'; }
   }
 
   function build() {
     if (document.getElementById('kedu-back')) return;
     /* 규칙 A — 같은 목적지의 자체 수단이 이미 좌상단에 있으면 물러난다 */
     if (!mount) {
-      var own = topLeftControls(null);
-      for (var i = 0; i < own.length; i++) {
-        if (sameDest(own[i].el)) { window.KEDU_BACK.suppressed = true; return; }
+      /* 최상단 띠의 자체 나가기 컨트롤 — 목적지가 우리와 같으면 물러난다.
+         차시의 넓은 헤더(📚 차시 목록 = 허브로)까지 포괄하도록 구역을 띠 전체로. */
+      var band = document.querySelectorAll('a,button');
+      for (var i = 0; i < band.length; i++) {
+        var n = band[i];
+        var r = n.getBoundingClientRect();
+        if (!r.width || r.top > 110) continue;                 /* 최상단 띠만 */
+        var txt = (n.textContent || '').trim();
+        var looksExit = /목록|홈|나가기|뒤로|나오기|케이에듀/.test(txt);
+        if (looksExit && sameDest(n)) { window.KEDU_BACK.suppressed = true; return; }
       }
     }
     var a = document.createElement('a');
