@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<!-- ════════════════════════════════════════
+     K-edu 영어 v3 양산 · Lv1 #3-2 알파벳 A~Z 소리 「연습」
+     베이스: _golden/P_acvc_blend_GOLDEN.html (골격 복제) + 01_2 게이트① 관용
+     펼침 원천: handoff kedu/english/v3/lv1/03_alphabet_sounds.md
+       (활동A 글자→소리 5 · 활동B 소리→글자 5 · 모음 먼저 → 자음 · 게이트① 틀린 글자 3개↑ → 3-B)
+     ════════════════════════════════════════ -->
+
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>K-edu | 영어 Lv1 — 알파벳 A~Z 소리 (3-2 연습)</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+/* 영어 v3 양산 — Lv1 #3-2 (P트랙 파랑). 골든 CSS 골격 그대로 / 모음 주황은 의미 색. */
+:root{
+  --bg:#F0F6FE; --card:#fff;
+  --primary:#1565C0; --primary-light:#E3EEFC; --secondary:#5B8DEF;
+  --vowel:#FF8A3D; --vowel-light:#FFF1E6;
+  --green:#4CAF50; --green-light:#E8F5E9; --red:#F44336; --red-light:#FFEBEE;
+  --yellow:#FFC107; --yellow-light:#FFF8E1;
+  --text:#333; --subtext:#888; --border:#D7E4F7;
+  --shadow:0 4px 16px rgba(0,0,0,.08); --radius:20px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:100vh;height:100dvh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0;gap:8px}
+.back{font-size:18px;color:var(--subtext);text-decoration:none}
+.progress-wrap{display:flex;align-items:center;gap:8px;flex:1;margin:0 4px}
+.progress-bar{flex:1;height:10px;background:var(--border);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .5s}
+.page-info{font-size:16px;color:var(--subtext);white-space:nowrap}
+.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:18px;color:#e6a800}
+.kedu-logo{display:flex;align-items:center;gap:4px;background:var(--primary);color:#fff;border-radius:99px;padding:4px 10px;font-size:14px}
+.kedu-logo .logo-circle{width:20px;height:20px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--primary);font-size:12px}
+.slides{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px 18px;opacity:0;transform:translateX(60px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none;overflow-y:auto}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all}
+.slide.out{opacity:0;transform:translateX(-60px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;width:100%;max-width:560px;text-align:center}
+.slide-title{font-size:21px;color:var(--subtext);margin-bottom:8px}
+.badge{display:inline-block;background:var(--primary-light);color:var(--primary);border-radius:99px;padding:4px 14px;font-size:17px;margin-bottom:8px}
+.concept-text{font-size:24px;line-height:1.6;margin:8px 0}
+.today-label{font-size:22px;color:var(--secondary);letter-spacing:.5px;margin:18px 0 18px}
+.today-en{font-size:40px;color:var(--primary);font-weight:bold;line-height:1.35;margin:8px 0}
+.today-blank{color:#e6a800;background:var(--yellow-light);border-radius:8px;padding:0 10px}
+.today-ko{font-size:26px;color:#2B925E;line-height:1.4;margin:14px 0 18px}
+.hl{background:linear-gradient(transparent 58%,#FFE680 58%);background-repeat:no-repeat;background-size:0% 100%;transition:background-size .55s cubic-bezier(.4,0,.2,1) .15s;padding:0 3px;font-weight:bold;color:var(--text)}
+.card.lit .hl{background-size:100% 100%}
+.step{opacity:0;transform:translateY(34px) scale(.82);transition:opacity .26s ease,transform .42s cubic-bezier(.34,1.6,.5,1);pointer-events:none}
+.step.in{opacity:1;transform:none;pointer-events:auto}
+.concept-big{font-size:30px;line-height:1.5;margin:10px 0}
+.kay-says{display:flex;align-items:center;gap:12px;background:var(--primary-light);border-radius:16px;padding:12px 16px;margin:10px 0;text-align:left}
+.kay-icon{font-size:30px;flex-shrink:0}
+.kay-text{font-size:21px;line-height:1.5}
+/* 소리 블록 */
+.sblocks{display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;margin:10px 0}
+.sblock{display:flex;flex-direction:column;align-items:center;gap:1px;background:#fff;border:3px solid var(--primary);color:var(--primary);border-radius:14px;padding:8px 12px;font-size:28px;line-height:1;cursor:pointer;box-shadow:0 4px 0 rgba(21,101,192,.25);transition:transform .12s}
+.sblock .sko{font-size:12px;color:var(--subtext)}
+.sblock.vowel{border-color:var(--vowel);color:var(--vowel);box-shadow:0 4px 0 rgba(255,138,61,.3)}
+.sblock:active{transform:scale(.94)}
+.sblock.mini{font-size:22px;padding:5px 8px;min-width:46px;border-width:2px;box-shadow:0 3px 0 rgba(21,101,192,.2)}
+.sblock.mini .sko{font-size:11px}
+/* 큰 글자 문제판 */
+.bigletter{font-size:88px;color:var(--primary);line-height:1.1;margin:2px 0}
+.bigletter.v{color:var(--vowel)}
+.lettertag{font-size:16px;color:var(--subtext)}
+/* 시범 */
+.demo-pick{display:flex;gap:10px;justify-content:center;margin:10px 0}
+.demo-pick .dp{background:#fff;border:3px solid var(--border);border-radius:14px;padding:10px 20px;font-size:26px;color:var(--text);transition:all .35s}
+.demo-pick .dp.hit{background:var(--green-light);border-color:var(--green);color:var(--green);transform:scale(1.1)}
+/* 문제 */
+.question-label{display:inline-flex;gap:6px;background:var(--primary);color:#fff;border-radius:99px;padding:5px 16px;font-size:17px;margin-bottom:8px}
+.stars{color:#FCD34D}
+.question-text{font-size:23px;margin:6px 0 12px;line-height:1.5}
+.choices{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:8px}
+.choice-btn{background:#fff;border:3px solid var(--border);border-radius:16px;padding:12px 22px;font-family:'Jua',sans-serif;font-size:26px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.06);color:var(--text)}
+.choice-btn.big{font-size:40px;padding:10px 26px}
+.choice-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s}
+@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
+.choice-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}50%{transform:translateX(8px)}75%{transform:translateX(-5px)}}
+.listen-btn{background:var(--primary-light);border:2px solid var(--primary);border-radius:12px;padding:8px 22px;font-family:'Jua',sans-serif;font-size:22px;cursor:pointer;color:var(--primary);margin:4px 0 8px}
+.listen-btn.big{font-size:26px;padding:14px 34px;margin:10px 0}
+.feedback{font-size:19px;margin-top:10px;min-height:34px;border-radius:12px;padding:5px 12px;line-height:1.5}
+.feedback.ok{color:var(--green);background:var(--green-light)}
+.feedback.err{color:var(--red);background:var(--red-light)}
+.combo-toast{position:fixed;top:60px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:22px;color:#e6a800;z-index:99;transition:transform .3s}
+.combo-toast.show{transform:translateX(-50%) scale(1)}
+.result-emoji{font-size:76px;margin:8px 0;animation:bounce 1s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.result-score{font-size:44px;color:var(--primary);margin:6px 0}
+.result-stars{font-size:36px;margin:6px 0}
+.nav{display:flex;justify-content:center;gap:16px;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--border);flex-shrink:0}
+.nav-btn{background:var(--primary);color:#fff;border:none;border-radius:14px;padding:12px 32px;font-family:'Jua',sans-serif;font-size:21px;cursor:pointer}
+.nav-btn:disabled{opacity:.3}
+.hint{font-size:16px;color:var(--subtext);margin-top:6px}
+</style>
+  <script src="/kedu_gate.js"></script>
+<script src="/kedu_boxbar.js"></script>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="back" href="../index.html">🪜</a>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="page-info" id="pageInfo">1 / 14</span>
+  </div>
+  <div class="score-badge">⭐ <span id="scoreVal">0</span></div>
+  <div class="kedu-logo"><div class="logo-circle">K</div>영어</div>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+
+<div class="slides" id="slidesContainer">
+
+  <!-- ━━━ S0 표지 ━━━ -->
+  <div class="slide active" data-steps>
+    <div class="card">
+      <div class="badge step">영어 Lv1 · 알파벳 소리 3-2</div>
+      <div class="today-label step">Today's Learn ✏️</div>
+      <div class="today-en step">글자 ↔ <span class="today-blank">소리</span></div>
+      <div class="today-ko step">양쪽으로 다 맞춰 봐요</div>
+    </div>
+  </div>
+
+  <!-- ━━━ S1 소환 — 모음 5 + 자음 (탭=소리) ━━━ -->
+  <div class="slide" data-steps>
+    <div class="card">
+      <div class="slide-title step">🔊 소리를 되살려요 — 눌러 봐!</div>
+      <div class="sblocks step">
+        <div class="sblock vowel" data-sound="a">a<span class="sko">/애/</span></div>
+        <div class="sblock vowel" data-sound="e">e<span class="sko">/에/</span></div>
+        <div class="sblock vowel" data-sound="i">i<span class="sko">/이/</span></div>
+        <div class="sblock vowel" data-sound="o">o<span class="sko">/오/</span></div>
+        <div class="sblock vowel" data-sound="u">u<span class="sko">/어/</span></div>
+      </div>
+      <div class="sblocks step">
+        <div class="sblock mini" data-sound="m">m<span class="sko">/므/</span></div>
+        <div class="sblock mini" data-sound="n">n<span class="sko">/느/</span></div>
+        <div class="sblock mini" data-sound="s">s<span class="sko">/스/</span></div>
+        <div class="sblock mini" data-sound="t">t<span class="sko">/트/</span></div>
+        <div class="sblock mini" data-sound="d">d<span class="sko">/드/</span></div>
+        <div class="sblock mini" data-sound="v">v<span class="sko">/브/</span></div>
+      </div>
+      <div class="concept-text step" style="font-size:20px">위는 <span style="color:var(--vowel)">모음</span>, 아래는 <span style="color:var(--primary)">자음</span>!</div>
+    </div>
+  </div>
+
+  <!-- ━━━ S2 시범 — 글자 보고 소리 고르는 법 ━━━ -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-title">✨ 먼저 보여줄게 — 글자 보고 소리 찾기</div>
+      <div class="bigletter">m</div>
+      <div class="demo-pick" id="demoPick">
+        <div class="dp" data-k="느">/느/</div>
+        <div class="dp" data-k="므">/므/</div>
+        <div class="dp" data-k="스">/스/</div>
+      </div>
+      <button class="listen-btn" id="demoBtn">▶ 시범 보기</button>
+      <div class="concept-text" id="demoMean" style="font-size:20px;color:var(--subtext)">글자를 보고, 그 글자의 소리를 골라요.</div>
+      <div class="kay-says" id="demoKay" style="display:none">
+        <div class="kay-icon">💡</div>
+        <div class="kay-text">글자 <b>m</b> 은 <span class="hl">/므/</span> — milk 🥛 의 첫소리!<br>헷갈리면 그 글자로 시작하는 <b>그림</b>을 떠올려요.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ━━━ S3 활동A-1 (모음 a) ━━━ -->
+  <div class="slide" data-correct="0" data-score="10" data-track="A">
+    <div class="card">
+      <div class="question-label">글자 → 소리 1 <span class="stars">⭐</span></div>
+      <div class="question-text">이 글자의 소리는?</div>
+      <div class="bigletter v">a</div>
+      <div class="choices">
+        <button class="choice-btn" onclick="answer(this,0)">/애/</button>
+        <button class="choice-btn" onclick="answer(this,1)">/에/</button>
+        <button class="choice-btn" onclick="answer(this,2)">/오/</button>
+        <button class="choice-btn" onclick="answer(this,3)">/이/</button>
+      </div>
+      <div class="feedback" id="fb3"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S4 활동A-2 (모음 e) ━━━ -->
+  <div class="slide" data-correct="2" data-score="10" data-track="A">
+    <div class="card">
+      <div class="question-label">글자 → 소리 2 <span class="stars">⭐</span></div>
+      <div class="question-text">이 글자의 소리는?</div>
+      <div class="bigletter v">e</div>
+      <div class="hint">🥚 egg 의 첫소리를 떠올려요</div>
+      <div class="choices">
+        <button class="choice-btn" onclick="answer(this,0)">/어/</button>
+        <button class="choice-btn" onclick="answer(this,1)">/이/</button>
+        <button class="choice-btn" onclick="answer(this,2)">/에/</button>
+        <button class="choice-btn" onclick="answer(this,3)">/오/</button>
+      </div>
+      <div class="feedback" id="fb4"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S5 활동A-3 (자음 m) ━━━ -->
+  <div class="slide" data-correct="1" data-score="10" data-track="A">
+    <div class="card">
+      <div class="question-label">글자 → 소리 3 <span class="stars">⭐</span></div>
+      <div class="question-text">이 글자의 소리는?</div>
+      <div class="bigletter">m</div>
+      <div class="choices">
+        <button class="choice-btn" onclick="answer(this,0)">/느/</button>
+        <button class="choice-btn" onclick="answer(this,1)">/므/</button>
+        <button class="choice-btn" onclick="answer(this,2)">/르/</button>
+        <button class="choice-btn" onclick="answer(this,3)">/즈/</button>
+      </div>
+      <div class="feedback" id="fb5"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S6 활동A-4 (자음 s) ━━━ -->
+  <div class="slide" data-correct="3" data-score="10" data-track="A">
+    <div class="card">
+      <div class="question-label">글자 → 소리 4 <span class="stars">⭐</span></div>
+      <div class="question-text">이 글자의 소리는?</div>
+      <div class="bigletter">s</div>
+      <div class="hint">☀️ sun 의 첫소리를 떠올려요</div>
+      <div class="choices">
+        <button class="choice-btn" onclick="answer(this,0)">/즈/</button>
+        <button class="choice-btn" onclick="answer(this,1)">/크/</button>
+        <button class="choice-btn" onclick="answer(this,2)">/드/</button>
+        <button class="choice-btn" onclick="answer(this,3)">/스/</button>
+      </div>
+      <div class="feedback" id="fb6"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S7 활동A-5 (자음 t) ━━━ -->
+  <div class="slide" data-correct="2" data-score="10" data-track="A">
+    <div class="card">
+      <div class="question-label">글자 → 소리 5 <span class="stars">⭐</span></div>
+      <div class="question-text">이 글자의 소리는?</div>
+      <div class="bigletter">t</div>
+      <div class="choices">
+        <button class="choice-btn" onclick="answer(this,0)">/드/</button>
+        <button class="choice-btn" onclick="answer(this,1)">/크/</button>
+        <button class="choice-btn" onclick="answer(this,2)">/트/</button>
+        <button class="choice-btn" onclick="answer(this,3)">/느/</button>
+      </div>
+      <div class="feedback" id="fb7"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S8 활동B-1 (모음 o) ━━━ -->
+  <div class="slide" data-correct="1" data-score="10" data-track="B">
+    <div class="card">
+      <div class="question-label">소리 → 글자 1 <span class="stars">⭐</span></div>
+      <div class="question-text">🔊 들은 소리의 글자는?</div>
+      <button class="listen-btn big" onclick="KTTS.sound('o')">🔊 듣기</button>
+      <div class="choices">
+        <button class="choice-btn big" onclick="answer(this,0)">a</button>
+        <button class="choice-btn big" onclick="answer(this,1)">o</button>
+        <button class="choice-btn big" onclick="answer(this,2)">i</button>
+        <button class="choice-btn big" onclick="answer(this,3)">e</button>
+      </div>
+      <div class="feedback" id="fb8"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S9 활동B-2 (모음 u) ━━━ -->
+  <div class="slide" data-correct="3" data-score="10" data-track="B">
+    <div class="card">
+      <div class="question-label">소리 → 글자 2 <span class="stars">⭐</span></div>
+      <div class="question-text">🔊 들은 소리의 글자는?</div>
+      <button class="listen-btn big" onclick="KTTS.sound('u')">🔊 듣기</button>
+      <div class="hint">o 와 u 는 비슷해요 — 두 번 들어도 좋아요</div>
+      <div class="choices">
+        <button class="choice-btn big" onclick="answer(this,0)">o</button>
+        <button class="choice-btn big" onclick="answer(this,1)">e</button>
+        <button class="choice-btn big" onclick="answer(this,2)">i</button>
+        <button class="choice-btn big" onclick="answer(this,3)">u</button>
+      </div>
+      <div class="feedback" id="fb9"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S10 활동B-3 (자음 n) ━━━ -->
+  <div class="slide" data-correct="0" data-score="10" data-track="B">
+    <div class="card">
+      <div class="question-label">소리 → 글자 3 <span class="stars">⭐</span></div>
+      <div class="question-text">🔊 들은 소리의 글자는?</div>
+      <button class="listen-btn big" onclick="KTTS.sound('n')">🔊 듣기</button>
+      <div class="choices">
+        <button class="choice-btn big" onclick="answer(this,0)">n</button>
+        <button class="choice-btn big" onclick="answer(this,1)">m</button>
+        <button class="choice-btn big" onclick="answer(this,2)">s</button>
+        <button class="choice-btn big" onclick="answer(this,3)">t</button>
+      </div>
+      <div class="feedback" id="fb10"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S11 활동B-4 (자음 v) ━━━ -->
+  <div class="slide" data-correct="2" data-score="10" data-track="B">
+    <div class="card">
+      <div class="question-label">소리 → 글자 4 <span class="stars">⭐</span></div>
+      <div class="question-text">🔊 들은 소리의 글자는?</div>
+      <button class="listen-btn big" onclick="KTTS.sound('v')">🔊 듣기</button>
+      <div class="hint">🚐 van 의 첫소리예요</div>
+      <div class="choices">
+        <button class="choice-btn big" onclick="answer(this,0)">f</button>
+        <button class="choice-btn big" onclick="answer(this,1)">b</button>
+        <button class="choice-btn big" onclick="answer(this,2)">v</button>
+        <button class="choice-btn big" onclick="answer(this,3)">z</button>
+      </div>
+      <div class="feedback" id="fb11"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S12 활동B-5 (자음 d) ━━━ -->
+  <div class="slide" data-correct="3" data-score="10" data-track="B">
+    <div class="card">
+      <div class="question-label">소리 → 글자 5 <span class="stars">⭐</span></div>
+      <div class="question-text">🔊 들은 소리의 글자는?</div>
+      <button class="listen-btn big" onclick="KTTS.sound('d')">🔊 듣기</button>
+      <div class="choices">
+        <button class="choice-btn big" onclick="answer(this,0)">b</button>
+        <button class="choice-btn big" onclick="answer(this,1)">p</button>
+        <button class="choice-btn big" onclick="answer(this,2)">t</button>
+        <button class="choice-btn big" onclick="answer(this,3)">d</button>
+      </div>
+      <div class="feedback" id="fb12"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S13 결과 + 게이트① ━━━ -->
+  <div class="slide">
+    <div class="card">
+      <div class="result-emoji" id="resultEmoji">🎉</div>
+      <div style="font-size:26px">연습 끝!</div>
+      <div class="result-score">⭐ <span id="finalScore">0</span>점</div>
+      <div class="result-stars" id="resultStars">⭐⭐⭐</div>
+      <div class="kay-says">
+        <div class="kay-icon">💡</div>
+        <div class="kay-text" id="gateText">채점 중…</div>
+      </div>
+      <button class="nav-btn" id="gateBtn" style="margin-top:10px">▶ 다음</button>
+      <button class="nav-btn" style="margin-top:10px;background:var(--secondary)" onclick="location.href='../index.html'">🪜 사다리로</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()" disabled>◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script src="../engine/k-tts.js"></script>
+<script>
+let currentSlide=0,score=0,combo=0,answered={},unlocked=false,justUnlocked=false;
+const TOTAL=14;
+let wrongLetters={};   /* 게이트① 판정용 — 틀린 글자(중복 제외) */
+let audioCtx=null;
+function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function playTone(f,t,d,g=.3){getCtx();audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),gn=audioCtx.createGain();o.connect(gn);gn.connect(audioCtx.destination);o.type=t;o.frequency.value=f;gn.gain.setValueAtTime(g,audioCtx.currentTime);gn.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+d);o.start();o.stop(audioCtx.currentTime+d);});}
+function playCorrect(){[523,659,784].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',.25),i*80));}
+function playWrong(){[220,196].forEach((f,i)=>setTimeout(()=>playTone(f,'sawtooth',.3),i*100));}
+function playClick(){playTone(880,'sine',.08,.2);}
+document.body.addEventListener('pointerdown',()=>{if(!unlocked){KTTS.unlock();unlocked=true;justUnlocked=true;setTimeout(()=>justUnlocked=false,350);}},{once:true});
+
+let stepState={};
+function setupSlide(slide,idx){
+  slide.classList.add('lit');
+  const steps=slide.querySelectorAll('.step');
+  if(!steps.length)return;
+  if(stepState[idx]===undefined){
+    steps.forEach(s=>s.classList.remove('in'));
+    steps[0].classList.add('in');stepState[idx]=1;
+  }else{
+    steps.forEach(s=>s.classList.add('in'));stepState[idx]=steps.length;
+  }
+}
+function advanceStep(slide,idx){
+  const steps=[...slide.querySelectorAll('.step')];
+  if(stepState[idx]<steps.length){
+    steps[stepState[idx]].classList.add('in');playClick();
+    stepState[idx]++;
+    return true;
+  }
+  return false;
+}
+function goSlide(n){
+  const sl=document.querySelectorAll('.slide');KTTS.stop();
+  sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');
+  setTimeout(()=>sl.forEach(s=>s.classList.remove('out')),400);
+  currentSlide=n;sl[n].classList.add('active');updateUI();
+  setupSlide(sl[n],n);
+}
+function nextSlide(){
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  if(slide.hasAttribute('data-steps')&&advanceStep(slide,currentSlide))return;
+  if(currentSlide<TOTAL-1)goSlide(currentSlide+1);
+}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
+function updateUI(){
+  document.getElementById('progressFill').style.width=(currentSlide/(TOTAL-1)*100)+'%';
+  document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL;
+  document.getElementById('prevBtn').disabled=currentSlide===0;
+  document.getElementById('nextBtn').disabled=currentSlide===TOTAL-1;
+  document.getElementById('scoreVal').textContent=score;
+  if(currentSlide===TOTAL-1)finish();
+}
+function addScore(p){
+  const bonus=combo>=3?Math.floor(p*.5):0;
+  score+=p+bonus;combo++;
+  document.getElementById('scoreVal').textContent=score;
+  if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}
+}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.innerHTML=msg;el.className='feedback '+(ok?'ok':'err');}}
+const OK_MSGS=['✅ 정답! +{p}점','🎯 바로 그 소리야! +{p}점','✨ 소리 박사인데? +{p}점'];
+const SAM_MSGS=['🙋 Sam: "나도 그거 골랐는데…" 다시 골라 봐!','🙋 Sam: "이름이랑 헷갈렸나?" 소리로 다시!','🤔 Sam이 또 헷갈리게 했구나 — 한 번 더!'];
+function okMsg(p){return OK_MSGS[Math.floor(Math.random()*OK_MSGS.length)].replace('{p}',p);}
+function samMsg(){return SAM_MSGS[Math.floor(Math.random()*SAM_MSGS.length)];}
+
+/* 문항별 정답 글자 (게이트① 기록용) */
+const QLETTER={3:'a',4:'e',5:'m',6:'s',7:'t',8:'o',9:'u',10:'n',11:'v',12:'d'};
+const KO={a:'/애/',e:'/에/',i:'/이/',o:'/오/',u:'/어/',m:'/므/',n:'/느/',s:'/스/',t:'/트/',d:'/드/',v:'/브/'};
+
+/* S2 시범 — 글자 m 을 보고 /므/ 찾기 */
+document.getElementById('demoBtn').addEventListener('click',function(){
+  this.style.display='none';
+  setTimeout(()=>{
+    document.querySelector('#demoPick .dp[data-k="므"]').classList.add('hit');
+    playClick();KTTS.sound('m');
+    document.getElementById('demoMean').innerHTML='글자 <b style="color:var(--primary)">m</b> → 소리 <b>/므/</b>';
+    document.getElementById('demoKay').style.display='flex';
+  },400);
+});
+
+function answer(btn,idx){
+  if(answered[currentSlide])return;
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  const correct=+slide.dataset.correct,pts=+slide.dataset.score||10;
+  const L=QLETTER[currentSlide];
+  playClick();
+  if(idx===correct){
+    btn.classList.add('correct');playCorrect();addScore(pts);
+    if(L)KTTS.sound(L);
+    setFB('fb'+currentSlide,okMsg(pts)+(L?' — <b>'+L+'</b> '+KO[L]:''),true);
+    answered[currentSlide]=true;
+  }else{
+    btn.classList.add('wrong');playWrong();combo=0;
+    if(L)wrongLetters[L]=true;
+    setFB('fb'+currentSlide,samMsg(),false);
+    setTimeout(()=>btn.classList.remove('wrong'),500);
+  }
+}
+
+/* ── 게이트① — 틀린 글자 3개 이상이면 보충(3-B)으로 ── */
+function finish(){
+  document.getElementById('finalScore').textContent=score;
+  const miss=Object.keys(wrongLetters);
+  document.getElementById('resultStars').textContent=score>=110?'⭐⭐⭐⭐⭐':score>=70?'⭐⭐⭐⭐':'⭐⭐⭐';
+  document.getElementById('resultEmoji').textContent=miss.length>=3?'💪':(score>=110?'🏆':'🎉');
+  const t=document.getElementById('gateText'),b=document.getElementById('gateBtn');
+  if(miss.length>=3){
+    t.innerHTML='헷갈린 글자가 <b>'+miss.length+'개</b> 있어요 ('+miss.join(' · ')+').<br>닮은 글자끼리 나란히 놓고 <span class="hl">천천히 다시</span> 볼게요!';
+    b.textContent='💪 보충으로 가기';
+    b.onclick=()=>location.href='03_B_alphabet_support.html?miss='+encodeURIComponent(miss.join(','));
+  }else{
+    t.innerHTML='오늘 손에 넣은 것 🏆<br>① 글자를 보고 <span class="hl">소리 떠올리기</span><br>② 소리를 듣고 <span class="hl">글자 찾기</span><br>다음은 <b>숙달</b> — A~Z 섞어서 빠르게!';
+    b.textContent='▶ 숙달로 가기';
+    b.onclick=()=>location.href='03_3_alphabet_master.html';
+  }
+}
+
+let tx=0,ty=0;
+const sc=document.getElementById('slidesContainer');
+sc.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;});
+sc.addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;
+  if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)){d_swipe(dx);return;}
+});
+function d_swipe(dx){dx>0?prevSlide():nextSlide();}
+sc.addEventListener('click',e=>{
+  if(justUnlocked)return;
+  const w=e.target.closest('[data-sound]');
+  if(!w)return;
+  const host=w.classList.contains('step')?w:w.closest('.step');
+  if(host&&host.classList.contains('in'))KTTS.sound(w.dataset.sound);
+});
+updateUI();
+setupSlide(document.querySelectorAll('.slide')[0],0);
+</script>
+<script src="/kedu_back.js"></script>
+</body>
+</html>
