@@ -113,8 +113,68 @@
   }
 
   /* 3) 버튼 생성 */
+  /* 3-0) 좌상단 충돌 처리 (2026-08-10 준호 전수 보고: 「모든 곳이 겹쳐 있다」)
+     페이지가 자기 나가기 수단을 좌상단에 이미 갖고 있으면(허브 「← 홈」,
+     차시 「📋 차시 목록」) 고정 버튼이 그 위를 덮어 글자를 가렸다.
+       규칙 A(중복 억제) — 그 수단의 목적지가 우리와 같으면 버튼을 아예 안 낸다.
+                           (한 자리에 같은 문 두 개를 두지 않는다)
+       규칙 B(충돌 회피) — 목적지가 다르면(교사 맥락 등) 서로 안 겹치게 비킨다. */
+  var ZONE = { l: 0, t: 0, r: 380, b: 76 };
+  function sameDest(el) {
+    var h = el.getAttribute && el.getAttribute('href');
+    if (!h) return false;
+    try {
+      var A = new URL(h, location.href), B = new URL(href, location.href);
+      if (A.pathname !== B.pathname) return false;
+      /* 둘 다 홈 셸(/)로 가면 화면 파라미터(?view=subject 등)가 달라도 같은 문으로 본다.
+         단 교사 맥락(/?role=teacher)은 목적지가 실제로 다르므로 예외. */
+      if (A.pathname === '/' && !fromTeacher) return true;
+      return A.search === B.search;
+    } catch (e) { return false; }
+  }
+  function topLeftControls(self) {
+    var out = [];
+    var nodes = document.querySelectorAll('a,button');
+    for (var i = 0; i < nodes.length; i++) {
+      var n = nodes[i];
+      if (n === self || (self && self.contains(n))) continue;
+      var r = n.getBoundingClientRect();
+      if (!r.width || !r.height) continue;
+      if (r.left > ZONE.r || r.top > ZONE.b) continue;      /* 좌상단 구역 밖 */
+      var txt = (n.textContent || '').trim();
+      if (txt.length > 24) continue;                         /* 큰 배너·카드 제외 */
+      out.push({ el: n, rect: r });
+    }
+    return out;
+  }
+  function placeAvoiding(a) {
+    var mine = a.getBoundingClientRect();
+    var cols = topLeftControls(a).filter(function (c) {
+      return !(c.rect.right < mine.left || c.rect.left > mine.right ||
+               c.rect.bottom < mine.top || c.rect.top > mine.bottom);
+    });
+    if (!cols.length) return;
+    var maxRight = 0, maxBottom = 0;
+    for (var i = 0; i < cols.length; i++) {
+      maxRight = Math.max(maxRight, cols[i].rect.right);
+      maxBottom = Math.max(maxBottom, cols[i].rect.bottom);
+    }
+    if (maxRight + mine.width + 24 < Math.min(window.innerWidth * 0.62, 760)) {
+      a.style.left = Math.round(maxRight + 10) + 'px';       /* 오른쪽으로 비킴 */
+    } else {
+      a.style.top = Math.round(maxBottom + 10) + 'px';       /* 자리 없으면 아래로 */
+    }
+  }
+
   function build() {
     if (document.getElementById('kedu-back')) return;
+    /* 규칙 A — 같은 목적지의 자체 수단이 이미 좌상단에 있으면 물러난다 */
+    if (!mount) {
+      var own = topLeftControls(null);
+      for (var i = 0; i < own.length; i++) {
+        if (sameDest(own[i].el)) { window.KEDU_BACK.suppressed = true; return; }
+      }
+    }
     var a = document.createElement('a');
     a.id = 'kedu-back';
     a.href = href;
@@ -123,7 +183,12 @@
     a.onclick = function (e) { e.preventDefault(); goBack(); };
     var target = mount ? document.querySelector(mount) : null;
     if (target) { a.className = 'kb-inline'; target.insertBefore(a, target.firstChild); }
-    else { a.className = 'kb-fixed'; document.body.appendChild(a); }
+    else {
+      a.className = 'kb-fixed'; document.body.appendChild(a);
+      placeAvoiding(a);                                       /* 규칙 B */
+      /* 폰트·늦은 렌더로 자체 버튼이 뒤늦게 커지는 경우 1회 재판정 */
+      setTimeout(function () { a.style.left = ''; a.style.top = ''; placeAvoiding(a); }, 350);
+    }
     window.KEDU_BACK.el = a;
   }
   if (document.body) build();
