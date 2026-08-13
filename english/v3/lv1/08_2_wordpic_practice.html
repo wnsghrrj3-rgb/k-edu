@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<!-- ════════════════════════════════════════
+     K-edu 영어 v3 양산 · Lv1 #8-2 그림에 단어 붙이기 「연습」
+     베이스: 05_2_animals_practice.html (계약 §3 R 관용 4칙 ① 지정 베이스)
+     R 관용: 자극 방향 = 글자 → 그림 / 드래그 금지·탭 확정 / 그림 근거 서는 단어만
+     펼침 원천: handoff kedu/english/v3/lv1/08_word_picture.md
+     ════════════════════════════════════════ -->
+
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>K-edu | 영어 Lv1 — 그림에 단어 붙이기 (8-2 연습)</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+/* 영어 v3 양산 — Lv1 #8-2 연습 (R트랙). 골든 CSS 골격 그대로, 트랙색 R초록 파생. */
+:root{
+  --bg:#F1FBF7; --card:#fff;
+  --primary:#12B886; --primary-light:#E3F7EF; --secondary:#63D9B4;
+  --green:#4CAF50; --green-light:#E8F5E9; --red:#F44336; --red-light:#FFEBEE;
+  --yellow:#FFC107; --yellow-light:#FFF8E1;
+  --text:#333; --subtext:#888; --border:#CDEBE0;
+  --shadow:0 4px 16px rgba(0,0,0,.08); --radius:20px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:100vh;height:100dvh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0;gap:8px}
+.back{font-size:18px;color:var(--subtext);text-decoration:none}
+.progress-wrap{display:flex;align-items:center;gap:8px;flex:1;margin:0 4px}
+.progress-bar{flex:1;height:10px;background:var(--border);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .5s}
+.page-info{font-size:16px;color:var(--subtext);white-space:nowrap}
+.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:18px;color:#e6a800}
+.kedu-logo{display:flex;align-items:center;gap:4px;background:var(--primary);color:#fff;border-radius:99px;padding:4px 10px;font-size:14px}
+.kedu-logo .logo-circle{width:20px;height:20px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--primary);font-size:12px}
+.slides{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px 18px;opacity:0;transform:translateX(60px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none;overflow-y:auto}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all}
+.slide.out{opacity:0;transform:translateX(-60px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;width:100%;max-width:560px;text-align:center}
+.slide-title{font-size:21px;color:var(--subtext);margin-bottom:8px}
+.badge{display:inline-block;background:var(--primary-light);color:var(--primary);border-radius:99px;padding:4px 14px;font-size:17px;margin-bottom:8px}
+.concept-text{font-size:24px;line-height:1.6;margin:8px 0}
+.today-label{font-size:22px;color:var(--secondary);letter-spacing:.5px;margin:18px 0 18px}
+.today-en{font-size:36px;color:var(--primary);font-weight:bold;line-height:1.35;margin:8px 0}
+.today-blank{color:#e6a800;background:var(--yellow-light);border-radius:8px;padding:0 10px}
+.today-ko{font-size:24px;color:#2B925E;line-height:1.4;margin:14px 0 18px}
+.hl{background:linear-gradient(transparent 58%,#FFE680 58%);background-repeat:no-repeat;background-size:0% 100%;transition:background-size .55s cubic-bezier(.4,0,.2,1) .15s;padding:0 3px;font-weight:bold;color:var(--text)}
+.card.lit .hl{background-size:100% 100%}
+.step{opacity:0;transform:translateY(34px) scale(.82);transition:opacity .26s ease,transform .42s cubic-bezier(.34,1.6,.5,1);pointer-events:none}
+.step.in{opacity:1;transform:none;pointer-events:auto}
+@keyframes tapBlink{0%,100%{opacity:.4}50%{opacity:1}}
+.kay-says{display:flex;align-items:center;gap:12px;background:var(--primary-light);border-radius:16px;padding:12px 16px;margin:10px 0;text-align:left}
+.kay-icon{font-size:30px;flex-shrink:0}
+.kay-text{font-size:21px;line-height:1.5}
+/* 글자 카드 — R트랙은 그림 없이 글자만 */
+.wcards{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:12px 0}
+.wcard{background:#fff;border:3px solid var(--primary);color:var(--primary);border-radius:14px;padding:7px 14px;font-size:26px;cursor:pointer;box-shadow:0 3px 0 rgba(18,184,134,.25);transition:transform .1s}
+.wcard:active{transform:scale(.94)}
+.wcard.tapped{background:var(--green-light);border-color:var(--green);color:var(--green)}
+.wcard.used{opacity:.25;pointer-events:none}
+.wcard.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+/* 잇기 — 단어 슬롯(고정, 위) + 그림 선택지(아래) : 글자 → 그림 방향 */
+.mslots{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:12px 0}
+.mslot{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:92px;border:3px dashed #A9DCC7;border-radius:14px;padding:8px 6px;background:#F7FDFA;transition:all .3s}
+.mslot .mw{font-size:26px;color:var(--primary);letter-spacing:1px}
+.mslot .mfe{font-size:38px;line-height:1.1;min-height:42px;color:#BFE3D3}
+.mslot .mko{font-size:14px;color:var(--subtext);min-height:18px}
+.mslot.now{border-style:solid;border-color:var(--yellow);background:var(--yellow-light);animation:tapBlink 1.2s infinite}
+.mslot.filled{border-style:solid;border-color:var(--green);background:var(--green-light);animation:none}
+.pcards{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:10px 0}
+.pcard{background:#fff;border:3px solid var(--border);border-radius:16px;padding:8px 14px;font-size:44px;line-height:1.1;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.06)}
+.pcard:active{transform:scale(.94)}
+.pcard.used{opacity:.25;pointer-events:none}
+.pcard.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+/* 시범 */
+.demo-pick{display:flex;gap:10px;justify-content:center;margin:10px 0}
+.demo-pick .dp{background:#fff;border:3px solid var(--border);border-radius:14px;padding:8px 16px;font-size:44px;line-height:1.1;color:var(--text);transition:all .35s}
+.demo-pick .dp.hit{background:var(--green-light);border-color:var(--green);transform:scale(1.12)}
+.bigword{font-size:52px;color:var(--primary);margin:8px 0;letter-spacing:2px}
+/* 문제 */
+.question-label{display:inline-flex;gap:6px;background:var(--primary);color:#fff;border-radius:99px;padding:5px 16px;font-size:17px;margin-bottom:8px}
+.stars{color:#FCD34D}
+.question-text{font-size:23px;margin:6px 0 12px;line-height:1.5}
+.choices{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:8px}
+.choice-btn{background:#fff;border:3px solid var(--border);border-radius:16px;padding:12px 22px;font-family:'Jua',sans-serif;font-size:26px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.06);color:var(--text)}
+.choice-btn .ko{display:block;font-size:14px;color:var(--subtext)}
+.choice-btn.pic-btn{font-size:50px;padding:10px 18px;line-height:1.1}
+.choice-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s}
+@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
+.choice-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}50%{transform:translateX(8px)}75%{transform:translateX(-5px)}}
+.listen-btn{background:var(--primary-light);border:2px solid var(--primary);border-radius:12px;padding:8px 22px;font-family:'Jua',sans-serif;font-size:22px;cursor:pointer;color:var(--primary);margin:4px 0 8px}
+.feedback{font-size:19px;margin-top:10px;min-height:34px;border-radius:12px;padding:5px 12px;line-height:1.5}
+.feedback.ok{color:var(--green);background:var(--green-light)}
+.feedback.err{color:var(--red);background:var(--red-light)}
+.combo-toast{position:fixed;top:60px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:22px;color:#e6a800;z-index:99;transition:transform .3s}
+.combo-toast.show{transform:translateX(-50%) scale(1)}
+.result-emoji{font-size:76px;margin:8px 0;animation:bounce 1s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.result-score{font-size:44px;color:var(--primary);margin:6px 0}
+.result-stars{font-size:36px;margin:6px 0}
+.nav{display:flex;justify-content:center;gap:16px;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--border);flex-shrink:0}
+.nav-btn{background:var(--primary);color:#fff;border:none;border-radius:14px;padding:12px 32px;font-family:'Jua',sans-serif;font-size:21px;cursor:pointer}
+.nav-btn:disabled{opacity:.3}
+.hint{font-size:16px;color:var(--subtext);margin-top:6px}
+</style>
+  <script src="/kedu_gate.js"></script>
+<script src="/kedu_boxbar.js"></script>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="back" href="../index.html">🪜</a>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="page-info" id="pageInfo">1 / 13</span>
+  </div>
+  <div class="score-badge">⭐ <span id="scoreVal">0</span></div>
+  <div class="kedu-logo"><div class="logo-circle">K</div>영어</div>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+
+<div class="slides" id="slidesContainer">
+
+  <!-- ━━━ S0 표지 ━━━ -->
+  <div class="slide active" data-steps>
+    <div class="card">
+      <div class="badge step">영어 Lv1 · 그림에 단어 붙이기 8-2</div>
+      <div class="today-label step">Today's Learn ✏️</div>
+      <div class="today-en step">읽고 → 그림 붙이기</div>
+      <div class="today-ko step">글자를 먼저 읽고 <span class="today-blank">맞는 그림</span>을 찾아요</div>
+    </div>
+  </div>
+
+  <!-- ━━━ S1 소환 — 오늘 붙일 단어 10장 (그림 없음, 탭=소리) ━━━ -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-title">📖 오늘 붙일 단어예요 — 하나씩 읽어 봐!</div>
+      <div class="wcards" id="callCards"></div>
+      <div class="concept-text" style="font-size:19px;color:var(--subtext)">그림이 없어요. <span class="hl">읽고 나서 머릿속에</span> 떠올려요.</div>
+      <div class="feedback" id="fb1"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S2 시범 — 읽고 그림 찾는 법 1회 시연 ━━━ -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-title">✨ 먼저 보여줄게 — 읽고 그림 찾기</div>
+      <div class="bigword">bat</div>
+      <div class="demo-pick" id="demoPick">
+        <div class="dp" data-w="pot">🍲</div>
+        <div class="dp" data-w="bat">🦇</div>
+        <div class="dp" data-w="pin">📌</div>
+      </div>
+      <button class="listen-btn" id="demoBtn">▶ 시범 보기</button>
+      <div class="concept-text" id="demoMean" style="font-size:20px;color:var(--subtext)">글자를 읽고, 떠오르는 그림을 찾아요.</div>
+      <div class="kay-says" id="demoKay" style="display:none">
+        <div class="kay-icon">💡</div>
+        <div class="kay-text"><b>b + a + t</b> 를 읽으니 <span class="hl">🦇</span> 가 떠올랐어요.<br>모르겠으면 🔊 를 눌러 <b>읽은 뒤에</b> 확인해도 돼요!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ━━━ S3 문제1 box ━━━ -->
+  <div class="slide" data-correct="1" data-score="10" data-track="A">
+    <div class="card">
+      <div class="question-label">읽고 그림 고르기 1 <span class="stars">⭐</span></div>
+      <div class="question-text">읽어 보고, 맞는 그림을 골라요</div>
+      <div class="bigword">box</div>
+      <button class="listen-btn" onclick="KTTS.word('box')">🔊 읽었으면 눌러 확인</button>
+      <div class="choices">
+        <button class="choice-btn pic-btn" onclick="answer(this,0)">🍳</button>
+        <button class="choice-btn pic-btn" onclick="answer(this,1)">📦</button>
+        <button class="choice-btn pic-btn" onclick="answer(this,2)">🐦</button>
+        <button class="choice-btn pic-btn" onclick="answer(this,3)">🐷</button>
+      </div>
+      <div class="feedback" id="fb3"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S4 문제2 pot ━━━ -->
+  <div class="slide" data-correct="3" data-score="10" data-track="A">
+    <div class="card">
+      <div class="question-label">읽고 그림 고르기 2 <span class="stars">⭐</span></div>
+      <div class="question-text">읽어 보고, 맞는 그림을 골라요</div>
+      <div class="bigword">pot</div>
+      <button class="listen-btn" onclick="KTTS.word('pot')">🔊 읽었으면 눌러 확인</button>
+      <div class="choices">
+        <button class="choice-btn pic-btn" onclick="answer(this,0)">🍳</button>
+        <button class="choice-btn pic-btn" onclick="answer(this,1)">📌</button>
+        <button class="choice-btn pic-btn" onclick="answer(this,2)">🦇</button>
+        <button class="choice-btn pic-btn" onclick="answer(this,3)">🍲</button>
+      </div>
+      <div class="feedback" id="fb4"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S5 문제3 pin ━━━ -->
+  <div class="slide" data-correct="0" data-score="10" data-track="A">
+    <div class="card">
+      <div class="question-label">읽고 그림 고르기 3 <span class="stars">⭐</span></div>
+      <div class="question-text">읽어 보고, 맞는 그림을 골라요</div>
+      <div class="bigword">pin</div>
+      <button class="listen-btn" onclick="KTTS.word('pin')">🔊 읽었으면 눌러 확인</button>
+      <div class="choices">
+        <button class="choice-btn pic-btn" onclick="answer(this,0)">📌</button>
+        <button class="choice-btn pic-btn" onclick="answer(this,1)">🍲</button>
+        <button class="choice-btn pic-btn" onclick="answer(this,2)">🐶</button>
+        <button class="choice-btn pic-btn" onclick="answer(this,3)">📦</button>
+      </div>
+      <div class="feedback" id="fb5"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S6 문제4 pig ━━━ -->
+  <div class="slide" data-correct="2" data-score="10" data-track="A">
+    <div class="card">
+      <div class="question-label">읽고 그림 고르기 4 <span class="stars">⭐</span></div>
+      <div class="question-text">읽어 보고, 맞는 그림을 골라요</div>
+      <div class="bigword">pig</div>
+      <button class="listen-btn" onclick="KTTS.word('pig')">🔊 읽었으면 눌러 확인</button>
+      <div class="choices">
+        <button class="choice-btn pic-btn" onclick="answer(this,0)">🐶</button>
+        <button class="choice-btn pic-btn" onclick="answer(this,1)">🐱</button>
+        <button class="choice-btn pic-btn" onclick="answer(this,2)">🐷</button>
+        <button class="choice-btn pic-btn" onclick="answer(this,3)">🐟</button>
+      </div>
+      <div class="feedback" id="fb6"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S7 문제5 fish (#5 통단어 소환) ━━━ -->
+  <div class="slide" data-correct="3" data-score="10" data-track="A">
+    <div class="card">
+      <div class="question-label">읽고 그림 고르기 5 <span class="stars">⭐</span></div>
+      <div class="question-text">읽어 보고, 맞는 그림을 골라요</div>
+      <div class="bigword">fish</div>
+      <button class="listen-btn" onclick="KTTS.word('fish')">🔊 읽었으면 눌러 확인</button>
+      <div class="hint">fish 와 bird 는 <b>글자가 넷</b>이라 모양째 떠올려요!</div>
+      <div class="choices">
+        <button class="choice-btn pic-btn" onclick="answer(this,0)">🐦</button>
+        <button class="choice-btn pic-btn" onclick="answer(this,1)">🐷</button>
+        <button class="choice-btn pic-btn" onclick="answer(this,2)">🐱</button>
+        <button class="choice-btn pic-btn" onclick="answer(this,3)">🐟</button>
+      </div>
+      <div class="feedback" id="fb7"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S8 잇기① cat·dog·pig ━━━ -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-title">🔗 단어를 읽고, 그림을 붙여 봐! (1)</div>
+      <div class="mslots" id="m1slots"></div>
+      <div class="concept-text" style="font-size:18px;color:var(--subtext)">⬇ 노란 칸의 단어를 읽고, 맞는 그림을 누르세요</div>
+      <div class="pcards" id="m1cards"></div>
+      <div class="feedback" id="fb8"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S9 잇기② pan·bat·bird ━━━ -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-title">🔗 단어를 읽고, 그림을 붙여 봐! (2)</div>
+      <div class="mslots" id="m2slots"></div>
+      <div class="concept-text" style="font-size:18px;color:var(--subtext)">⬇ 노란 칸의 단어를 읽고, 맞는 그림을 누르세요</div>
+      <div class="pcards" id="m2cards"></div>
+      <div class="feedback" id="fb9"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S10 확인① dog ━━━ -->
+  <div class="slide" data-correct="0" data-score="10" data-word="dog">
+    <div class="card">
+      <div class="question-label">확인 문제 1 <span class="stars">⭐</span></div>
+      <div class="question-text">읽어 보고, 맞는 그림을 골라요</div>
+      <div class="bigword">dog</div>
+      <button class="listen-btn" onclick="KTTS.word('dog')">🔊 읽었으면 눌러 확인</button>
+      <div class="choices">
+        <button class="choice-btn pic-btn" onclick="answer(this,0)">🐶</button>
+        <button class="choice-btn pic-btn" onclick="answer(this,1)">🐷</button>
+        <button class="choice-btn pic-btn" onclick="answer(this,2)">🐦</button>
+        <button class="choice-btn pic-btn" onclick="answer(this,3)">📦</button>
+      </div>
+      <div class="feedback" id="fb10"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S11 확인② pan (pot 과 변별) ━━━ -->
+  <div class="slide" data-correct="2" data-score="10" data-word="pan">
+    <div class="card">
+      <div class="question-label">확인 문제 2 <span class="stars">⭐</span></div>
+      <div class="question-text">읽어 보고, 맞는 그림을 골라요</div>
+      <div class="bigword">pan</div>
+      <button class="listen-btn" onclick="KTTS.word('pan')">🔊 읽었으면 눌러 확인</button>
+      <div class="hint">가운데 소리가 <b>/애/</b> 예요 — pot 이 아니에요!</div>
+      <div class="choices">
+        <button class="choice-btn pic-btn" onclick="answer(this,0)">🍲</button>
+        <button class="choice-btn pic-btn" onclick="answer(this,1)">🦇</button>
+        <button class="choice-btn pic-btn" onclick="answer(this,2)">🍳</button>
+        <button class="choice-btn pic-btn" onclick="answer(this,3)">📌</button>
+      </div>
+      <div class="feedback" id="fb11"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S12 결과 + 게이트① ━━━ -->
+  <div class="slide">
+    <div class="card">
+      <div class="result-emoji" id="resultEmoji">🎉</div>
+      <div style="font-size:26px">연습 끝!</div>
+      <div class="result-score">⭐ <span id="finalScore">0</span>점</div>
+      <div class="result-stars" id="resultStars">⭐⭐⭐</div>
+      <div class="kay-says">
+        <div class="kay-icon">💡</div>
+        <div class="kay-text" id="gateText">채점 중…</div>
+      </div>
+      <button class="nav-btn" id="gateBtn" style="margin-top:10px">▶ 다음</button>
+      <button class="nav-btn" style="margin-top:10px;background:var(--secondary)" onclick="location.href='../index.html'">🪜 사다리로</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()" disabled>◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script src="../engine/k-tts.js"></script>
+<script src="../engine/k-collection.js"></script>
+<script>
+let currentSlide=0,score=0,combo=0,answered={},unlocked=false,justUnlocked=false;
+const TOTAL=13;
+let wrongWords={};   /* 게이트① 판정용 — 틀린 단어(중복 제외) */
+let audioCtx=null;
+function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function playTone(f,t,d,g=.3){getCtx();audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),gn=audioCtx.createGain();o.connect(gn);gn.connect(audioCtx.destination);o.type=t;o.frequency.value=f;gn.gain.setValueAtTime(g,audioCtx.currentTime);gn.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+d);o.start();o.stop(audioCtx.currentTime+d);});}
+function playCorrect(){[523,659,784].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',.25),i*80));}
+function playWrong(){[220,196].forEach((f,i)=>setTimeout(()=>playTone(f,'sawtooth',.3),i*100));}
+function playClick(){playTone(880,'sine',.08,.2);}
+document.body.addEventListener('pointerdown',()=>{if(!unlocked){KTTS.unlock();unlocked=true;justUnlocked=true;setTimeout(()=>justUnlocked=false,350);}},{once:true});
+
+let stepState={};
+function setupSlide(slide,idx){
+  slide.classList.add('lit');
+  const steps=slide.querySelectorAll('.step');
+  if(!steps.length)return;
+  if(stepState[idx]===undefined){
+    steps.forEach(s=>s.classList.remove('in'));
+    steps[0].classList.add('in');stepState[idx]=1;
+  }else{
+    steps.forEach(s=>s.classList.add('in'));stepState[idx]=steps.length;
+  }
+}
+function advanceStep(slide,idx){
+  const steps=[...slide.querySelectorAll('.step')];
+  if(stepState[idx]<steps.length){
+    steps[stepState[idx]].classList.add('in');playClick();
+    stepState[idx]++;
+    return true;
+  }
+  return false;
+}
+function goSlide(n){
+  const sl=document.querySelectorAll('.slide');KTTS.stop();
+  sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');
+  setTimeout(()=>sl.forEach(s=>s.classList.remove('out')),400);
+  currentSlide=n;sl[n].classList.add('active');updateUI();
+  setupSlide(sl[n],n);
+}
+function nextSlide(){
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  if(slide.hasAttribute('data-steps')&&advanceStep(slide,currentSlide))return;
+  if(currentSlide<TOTAL-1)goSlide(currentSlide+1);
+}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
+function updateUI(){
+  document.getElementById('progressFill').style.width=(currentSlide/(TOTAL-1)*100)+'%';
+  document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL;
+  document.getElementById('prevBtn').disabled=currentSlide===0;
+  document.getElementById('nextBtn').disabled=currentSlide===TOTAL-1;
+  document.getElementById('scoreVal').textContent=score;
+  if(currentSlide===TOTAL-1)finish();
+}
+function addScore(p){
+  const bonus=combo>=3?Math.floor(p*.5):0;
+  score+=p+bonus;combo++;
+  document.getElementById('scoreVal').textContent=score;
+  if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}
+}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.innerHTML=msg;el.className='feedback '+(ok?'ok':'err');}}
+
+const OK_MSGS=['✅ 정답! +{p}점','🎯 읽고 바로 떠올렸구나! +{p}점','✨ 진짜 읽은 거야! +{p}점'];
+const SAM_MSGS=['🙋 Sam: "나도 그거 골랐는데…" 다시 골라 봐!','🤔 Sam이 또 헷갈리게 했구나 — 글자를 한 번 더 읽어 봐!','🙋 Sam: "가운데 소리를 봤어?" 다시!'];
+function okMsg(p){return OK_MSGS[Math.floor(Math.random()*OK_MSGS.length)].replace('{p}',p);}
+function samMsg(){return SAM_MSGS[Math.floor(Math.random()*SAM_MSGS.length)];}
+
+/* ── 오늘의 재료 10 (펼침 08_word_picture.md — #4·#5·#6·#7 소환) ── */
+const WD={
+  cat:{e:'🐱',ko:'고양이'}, dog:{e:'🐶',ko:'개'},   pig:{e:'🐷',ko:'돼지'},
+  box:{e:'📦',ko:'상자'},  pot:{e:'🍲',ko:'냄비'}, pan:{e:'🍳',ko:'프라이팬'},
+  bat:{e:'🦇',ko:'박쥐'},  pin:{e:'📌',ko:'머리핀'},
+  fish:{e:'🐟',ko:'물고기'},bird:{e:'🐦',ko:'새'}
+};
+const ALL=['cat','dog','pig','box','pot','pan','bat','pin','fish','bird'];
+
+/* 문항별 정답 단어 (게이트① 기록용) */
+const QWORD={3:'box',4:'pot',5:'pin',6:'pig',7:'fish'};
+
+/* S1 소환 — 글자 카드 10장 전부 눌러 읽기 */
+(function(){
+  const box=document.getElementById('callCards');
+  box.innerHTML=ALL.map(w=>'<div class="wcard" data-w="'+w+'">'+w+'</div>').join('');
+  const done=new Set();
+  box.querySelectorAll('.wcard').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const w=el.dataset.w;
+      playClick();KTTS.word(w);
+      el.classList.add('tapped');
+      if(!done.has(w)){
+        done.add(w);
+        if(done.size<ALL.length){
+          setFB('fb1','🔊 '+w+' — '+done.size+' / '+ALL.length+'장 읽었어요!',true);
+        }else if(!answered[1]){
+          answered[1]=true;addScore(10);
+          setFB('fb1','🎉 열 장 다 읽었어요! 이제 그림을 붙여 볼까요? +10점',true);
+        }
+      }
+    });
+  });
+})();
+
+/* S2 시범 — 글자 bat 을 읽고 같은 그림 찾기 1회 시연 */
+document.getElementById('demoBtn').addEventListener('click',function(){
+  this.style.display='none';
+  setTimeout(()=>KTTS.word('bat'),200);
+  setTimeout(()=>{
+    document.querySelector('#demoPick .dp[data-w="bat"]').classList.add('hit');
+    playClick();
+    document.getElementById('demoMean').innerHTML='글자 <b style="color:var(--primary)">bat</b> → 떠오르는 그림 <b>🦇</b>';
+    document.getElementById('demoKay').style.display='flex';
+  },1600);
+});
+
+/* ── 잇기 활동 — 단어 슬롯(고정, 위) + 그림 선택지(아래) : 글자 → 그림 ── */
+function buildMatch(slotsId,cardsId,fbId,words,onDone){
+  const slotBox=document.getElementById(slotsId),cardBox=document.getElementById(cardsId);
+  let cur=0,finished=false;
+  slotBox.innerHTML=words.map((w,i)=>
+    '<div class="mslot" data-i="'+i+'"><div class="mw">'+w+'</div><div class="mfe">?</div><div class="mko"></div></div>').join('');
+  const order=[...words].sort(()=>Math.random()-.5);
+  cardBox.innerHTML=order.map(w=>'<div class="pcard" data-w="'+w+'">'+WD[w].e+'</div>').join('');
+  const slots=[...slotBox.querySelectorAll('.mslot')];
+  function mark(){slots.forEach((s,i)=>s.classList.toggle('now',i===cur&&!finished));}
+  mark();
+  cardBox.querySelectorAll('.pcard').forEach(card=>{
+    card.addEventListener('click',()=>{
+      if(finished)return;
+      const w=card.dataset.w;playClick();
+      if(w===words[cur]){
+        const s=slots[cur];
+        s.querySelector('.mfe').textContent=WD[w].e;
+        s.querySelector('.mfe').style.color='inherit';
+        s.querySelector('.mko').textContent=WD[w].ko;
+        s.classList.remove('now');s.classList.add('filled');
+        card.classList.add('used');
+        KTTS.word(w);playCorrect();cur++;
+        if(cur>=words.length){
+          finished=true;mark();
+          setFB(fbId,'🎉 '+words.length+'개 모두 붙였어요! +10점',true);
+          if(onDone)onDone();
+        }else{
+          mark();
+          setFB(fbId,'✅ '+w+' = '+WD[w].ko+' — 다음은 <b>'+words[cur]+'</b> 를 읽어요!',true);
+        }
+      }else{
+        card.classList.add('wrong');playWrong();combo=0;wrongWords[words[cur]]=true;
+        setFB(fbId,samMsg()+' 지금 칸은 <b>'+words[cur]+'</b> 예요.',false);
+        setTimeout(()=>card.classList.remove('wrong'),450);
+      }
+    });
+  });
+}
+buildMatch('m1slots','m1cards','fb8',['cat','dog','pig'],()=>{if(!answered[8]){answered[8]=true;addScore(10);}});
+buildMatch('m2slots','m2cards','fb9',['pan','bat','bird'],()=>{if(!answered[9]){answered[9]=true;addScore(10);}});
+
+function answer(btn,idx){
+  if(answered[currentSlide])return;
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  const correct=+slide.dataset.correct,pts=+slide.dataset.score||10;
+  playClick();
+  if(idx===correct){
+    btn.classList.add('correct');playCorrect();addScore(pts);
+    const w=QWORD[currentSlide]||slide.dataset.word;
+    if(w)KTTS.word(w);
+    setFB('fb'+currentSlide,okMsg(pts),true);answered[currentSlide]=true;
+  }else{
+    btn.classList.add('wrong');playWrong();combo=0;
+    if(slide.dataset.track==='A'&&QWORD[currentSlide])wrongWords[QWORD[currentSlide]]=true;
+    setFB('fb'+currentSlide,samMsg(),false);
+    setTimeout(()=>btn.classList.remove('wrong'),500);
+  }
+}
+
+/* ── 게이트① — 틀린 단어 3개 이상이면 보충(8-B)으로 ── */
+function finish(){
+  document.getElementById('finalScore').textContent=score;
+  const miss=Object.keys(wrongWords);
+  document.getElementById('resultStars').textContent=score>=85?'⭐⭐⭐⭐⭐':score>=60?'⭐⭐⭐⭐':'⭐⭐⭐';
+  document.getElementById('resultEmoji').textContent=miss.length>=3?'💪':(score>=85?'🏆':'🎉');
+  try{ if(window.KCollection) KCollection.add(ALL); }catch(e){}
+  const t=document.getElementById('gateText'),b=document.getElementById('gateBtn');
+  if(miss.length>=3){
+    t.innerHTML='헷갈린 단어가 <b>'+miss.length+'개</b> 있어요 ('+miss.join(' · ')+').<br>한 단어씩 <span class="hl">천천히 읽고</span> 그림을 붙여 볼게요!';
+    b.textContent='💪 보충으로 가기';
+    b.onclick=()=>location.href='08_B_wordpic_support.html?miss='+encodeURIComponent(miss.join(','));
+  }else{
+    t.innerHTML='오늘 손에 넣은 것 🏆<br>① 글자를 읽고 <span class="hl">그림 찾기</span><br>② 단어와 그림 붙이기<br>다음은 <b>숙달</b> — 소리 없이 글자만 보고 골라요!';
+    b.textContent='▶ 숙달로 가기';
+    b.onclick=()=>location.href='08_3_wordpic_master.html';
+  }
+}
+
+let tx=0,ty=0;
+const sc=document.getElementById('slidesContainer');
+sc.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;});
+sc.addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;
+  if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)){d_swipe(dx);return;}
+});
+function d_swipe(dx){dx>0?prevSlide():nextSlide();}
+updateUI();
+setupSlide(document.querySelectorAll('.slide')[0],0);
+</script>
+<script src="/kedu_back.js"></script>
+</body>
+</html>
