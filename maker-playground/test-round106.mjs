@@ -29,7 +29,15 @@ const dom = new JSDOM('<!doctype html><body><div id="pgNav"></div><h1 id="pgTitl
   { runScripts: 'outside-only', url: 'https://x.test/#/video', pretendToBeVisual: true });
 const w = dom.window;
 w.alert = () => {}; w.confirm = () => true;
-Object.defineProperty(w, 'performance', { value: { now: () => Date.now() } });
+/* R115.1 — 가상 시계. 종전엔 tapMedia() 두 번 사이의 "실제 벽시계 경과"가 350ms 안이길
+   빌었고, 병렬 부하에선 그 기도가 무너져 이 스위트만 간헐 실패했다(R115 정직 보고의 부채).
+   Date.now 를 호출당 +1ms 자동 증가 가상 시계로 교체 — 제품 코드는 무변형이다:
+   workspace.js 는 w.eval 로 로드되므로 여기서 바꾼 w.Date.now 를 그대로 읽는다.
+   자동 +1ms 는 's'+Date.now() 류 id 유일성도 지킨다. vtAdvance(ms)로 임의 경과 주입. */
+let VT = 1700000000000;
+w.Date.now = () => ++VT;
+const vtAdvance = (ms) => { VT += ms; };
+Object.defineProperty(w, 'performance', { value: { now: () => VT } });
 const store = {};
 Object.defineProperty(w, 'localStorage', { value: {
   getItem: (k) => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = String(v); },
@@ -136,7 +144,12 @@ T('T7 더블탭 → 세밀 초점 모드 (마커·확인 바·문서 무변형)'
   const sc = curScene();
   sc.elements[mediaIdx].nar = 1.6;                     /* jsdom naturalWidth=0 — 기존 nar 보존 계약 검증용 */
   const before = JSON.stringify(sc.elements[mediaIdx]);
-  tapMedia(); tapMedia();                              /* 350ms 안 두 번 */
+  /* R115.1 — 창 법칙 양방향을 가상 시계로 결정론 증명:
+     ① 첫 탭 후 400ms 경과 → 두 번째 탭은 진입 아님(늦은 탭 거부)
+     ② 그 탭에서 350ms 안에 다시 탭 → 진입 */
+  tapMedia(); vtAdvance(400); tapMedia();
+  if (w.document.querySelector('.ws-folay')) return '400ms 지난 탭이 진입됨 — 창 법칙 위반';
+  tapMedia();                                          /* 직전 탭에서 수 ms — 창 안 */
   const lay = w.document.querySelector('.ws-folay');
   const pt = w.document.querySelector('[data-ws-fopt]');
   const ok = w.document.querySelector('[data-ws-fook]');
