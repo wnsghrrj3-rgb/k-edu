@@ -169,6 +169,16 @@ window.KEDU_MAP["g6_1_science"] = {
      "url": "/grade6/semester1/science/2단원_물체의운동/g6_sci_u2_l06_속력.html",
      "track": "tb",
      "ready": true
+    },
+    {
+     "key": "g6_science_u2_l07",
+     "lessonId": "g6_sci_u2_l07_v1",
+     "n": "7~8",
+     "title": "속력과 관련된 안전 수칙과 안전장치를 조사해 볼까?",
+     "sub": null,
+     "url": "/grade6/semester1/science/2단원_물체의운동/g6_sci_u2_l07_안전수칙.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }
