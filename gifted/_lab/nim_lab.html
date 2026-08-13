@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<!--
+  nim_lab.html — 케이영재 부품 실험실 · 님 게임 엔진(KNimCore) 데모
+  ⚠️ 차시 아님. 표준 18슬라이드 골격을 따르지 않는 부품 검증용 페이지.
+  목적: l3_str01 필승전략 게임에 넣기 전 ① 대전 감각 ② 복기의 충격 ③ 지는 자리 지도의 발견력 검증.
+  엔진 원본 = handoff/kedu/gifted/parts/kg_nim.js (여기 인라인 삽입본은 사본)
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>님 게임 엔진 실험실 · 케이영재</title>
+<link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#F6FBF7; --ink:#1F3830; --ink-soft:#5C7A6E;
+  --coral:#0E8A5F; --coral-deep:#0A6B49; --coral-soft:#D7F0E4;
+  --teal:#1D4ED8; --teal-deep:#153FA6; --teal-soft:#DCE6FB;
+  --gold:#F6B526; --emph:#E85D2F; --line:#DCEAE0; --mark:#FFE08A;
+  --f-title:'Do Hyeon',sans-serif; --f-body:'Gowun Dodum',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:0 14px 34px -18px rgba(31,56,48,.35);
+  --fs-heading: clamp(21px, 3.2vw, 30px);
+  --fs-body: clamp(17px, 2.6vw, 22px);
+  --fs-label: clamp(14px, 2.1vw, 17px);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body { background:var(--paper); color:var(--ink); font-family:var(--f-body); padding:16px 14px 60px; }
+.wrap { max-width:760px; margin:0 auto; display:flex; flex-direction:column; gap:16px; }
+h1 { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--coral-deep); }
+.sub { font-size:var(--fs-label); color:var(--ink-soft); margin-top:4px; }
+.card { background:#fff; border:1px solid var(--line); border-radius:18px; padding:16px; box-shadow:var(--shadow); }
+.card h2 { font-family:var(--f-title); font-size:var(--fs-body); color:var(--coral-deep); margin-bottom:10px; }
+
+/* 사탕판 */
+.candies { display:flex; flex-wrap:wrap; gap:7px; justify-content:center; min-height:56px; margin:6px 0 12px; }
+.c { width:clamp(22px,5.4vw,32px); height:clamp(22px,5.4vw,32px); border-radius:50%;
+     background:radial-gradient(circle at 32% 30%, #fff6d6, var(--gold)); border:2px solid #d99e14;
+     transition:transform .25s, opacity .25s; }
+.c.gone { opacity:.13; transform:scale(.62); background:#e6ece8; border-color:var(--line); }
+.c.just { animation:pop .35s ease; }
+@keyframes pop { 0%{transform:scale(1)} 45%{transform:scale(1.45)} 100%{transform:scale(.62)} }
+.count { font-family:var(--f-num); font-size:clamp(30px,7vw,46px); color:var(--coral-deep); text-align:center; }
+.count span { font-family:var(--f-body); font-size:var(--fs-label); color:var(--ink-soft); }
+
+.row { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+button { font-family:var(--f-body); font-size:var(--fs-body); padding:11px 16px; border-radius:13px;
+         border:2px solid var(--coral); background:#fff; color:var(--coral-deep); cursor:pointer; transition:.15s; }
+button:active { transform:translateY(2px); }
+button.take { background:var(--coral); color:#fff; min-width:78px; font-family:var(--f-num); }
+button:disabled { opacity:.35; cursor:default; }
+button.ghost { border-color:var(--line); color:var(--ink-soft); font-size:var(--fs-label); padding:9px 13px; }
+.msg { text-align:center; font-size:var(--fs-body); margin:12px 0 4px; min-height:1.6em; }
+.msg b { color:var(--emph); }
+
+/* 설정 */
+.opts { display:flex; flex-wrap:wrap; gap:10px; align-items:center; font-size:var(--fs-label); color:var(--ink-soft); }
+.opts label { display:flex; align-items:center; gap:6px; }
+select, input[type=number] { font-family:var(--f-body); font-size:var(--fs-label); padding:6px 9px;
+  border:1px solid var(--line); border-radius:9px; background:#fff; color:var(--ink); }
+input[type=number] { width:66px; }
+
+/* 지도 */
+.map { display:flex; flex-wrap:wrap; gap:5px; margin-top:10px; }
+.cell { width:clamp(30px,7vw,42px); height:clamp(30px,7vw,42px); border-radius:10px; border:2px solid var(--line);
+  display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-size:var(--fs-label);
+  background:#fff; color:var(--ink-soft); transition:.3s; }
+.cell.lose { background:var(--coral-soft); border-color:var(--coral); color:var(--coral-deep); }
+.cell.win  { background:#fff; }
+.cell.flash { transform:scale(1.16); box-shadow:0 0 0 4px rgba(14,138,95,.16); }
+.legend { font-size:var(--fs-label); color:var(--ink-soft); margin-top:10px; line-height:1.7; }
+.chip { display:inline-block; padding:2px 9px; border-radius:99px; background:var(--coral-soft);
+        color:var(--coral-deep); font-size:var(--fs-label); }
+.hidden { display:none; }
+
+/* 복기 */
+.ply { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:11px; font-size:var(--fs-label);
+       border:1px solid transparent; }
+.ply .who { width:52px; font-family:var(--f-title); }
+.ply .arw { font-family:var(--f-num); color:var(--ink-soft); }
+.ply.me { background:#fbfdfb; }
+.ply.blunder { background:#FFF3E8; border-color:var(--emph); }
+.ply.blunder .tag { margin-left:auto; color:var(--emph); font-family:var(--f-title); }
+.verdict { font-size:var(--fs-body); text-align:center; padding:12px; border-radius:13px;
+           background:var(--mark); margin-bottom:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div>
+    <h1>님 게임 엔진 실험실</h1>
+    <div class="sub">케이영재 공용 부품 <b>KNimCore</b> 검증용 · 차시 아님 · 지는 자리 거꾸로 계산기</div>
+  </div>
+
+  <!-- ① 대전 -->
+  <div class="card">
+    <h2>① 대전 — 마지막 사탕을 집으면 이긴다</h2>
+    <div class="opts">
+      <label>사탕 <input type="number" id="optN" value="21" min="3" max="40"></label>
+      <label>한 번에 <select id="optK"><option>2</option><option selected>3</option><option>4</option></select>개까지</label>
+      <label>상대 <select id="optSkill">
+        <option value="0.35">초보</option><option value="0.7" selected>보통</option><option value="1">완벽</option>
+      </select></label>
+      <label><input type="checkbox" id="optMis"> 마지막을 집으면 <b>짐</b></label>
+      <button class="ghost" id="btnReset">새 판</button>
+    </div>
+    <div class="candies" id="candies"></div>
+    <div class="count" id="count">21 <span>개 남음</span></div>
+    <div class="msg" id="msg">네가 먼저 집어. 몇 개 집을래?</div>
+    <div class="row" id="takes"></div>
+  </div>
+
+  <!-- ② 복기 -->
+  <div class="card hidden" id="cardReview">
+    <h2>② 복기 — 승부가 갈린 진짜 순간</h2>
+    <div class="verdict" id="verdict"></div>
+    <div id="plies"></div>
+    <div class="legend" id="reviewNote"></div>
+  </div>
+
+  <!-- ③ 지는 자리 지도 -->
+  <div class="card">
+    <h2>③ 지는 자리 지도 — 끝에서부터 거꾸로</h2>
+    <div class="legend">
+      끝(0개)에서 시작해서 거꾸로 한 칸씩 따져보면, <b>넘겨주면 이기는 자리</b>가 드러나.
+      <span class="chip">색칠된 칸</span> = 이 개수를 상대에게 넘기면 내가 이긴다.
+    </div>
+    <div class="map" id="map"></div>
+    <div class="row" style="margin-top:12px">
+      <button id="btnBack">거꾸로 계산 보기</button>
+      <button class="ghost" id="btnRule">찾은 규칙 확인</button>
+    </div>
+    <div class="legend hidden" id="ruleOut"></div>
+  </div>
+
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════
+   kg_nim.js — 케이영재 공용 부품 · 전략 게임 후진 귀납 엔진 (KNimCore)
+   제정: 2026-08-13 (사이클 3 · 오퍼스)
+
+   용도: 「지는 자리 거꾸로 계산기」. 트랙 헌법 §9 🔴 항목의 구현.
+   적용 차시 (편성표 STR 연구소 10차시 전부의 공통 심장):
+     l1_str01 마지막 사탕 게임 · l1_str02 길막기 대결
+     l2_str01 먼저 할까 나중 할까 · l2_str02 동전 뒤집기 작전
+     l3_str01 필승전략 게임 · l3_str02 경우 나누기 작전
+     l4 불변량 필승 게임·대칭 전략 / l5 전략 알고리즘 연구·새 게임 발명
+
+   설계 원칙 (트랙 헌법 §2·§3 준수)
+   ① DOM 무의존 순수 로직. 차시 HTML에 인라인 삽입 + jsdom/node 단독 테스트.
+   ② 답을 가르치지 않는다. 엔진은 "지는 자리"를 계산할 뿐, 규칙(주기)은
+      detectPeriod로 학생 발견을 **확인**만 한다. 공식은 어디에도 하드코딩하지 않는다.
+      → 님-합(XOR) 공식조차 solve 결과와 별도. 엔진은 항상 후진 귀납으로만 판정한다.
+   ③ 대전 AI는 완벽 승리기가 아니다. skill(0~1)로 실수를 섞는다.
+      영재 차시에서 학생이 한 번도 못 이기면 탐구가 죽는다.
+   ④ review()가 이 부품의 진짜 값어치 — "네가 진 순간은 3번째 수였어"를
+      게임이 끝난 뒤 지목한다. 결과가 아니라 갈림길을 보게 만드는 장치.
+
+   상태·이동 계약 (규칙 어댑터가 지켜야 할 인터페이스)
+     rule = { id, misere, start, key(state), moves(state) -> [{label, take, pile, to}] }
+     - 이동이 하나도 없는 상태 = 종국. 일반 규칙이면 둘 차례인 사람이 패,
+       미제르(마지막을 집으면 짐)면 둘 차례인 사람이 승.
+     - key는 동형 상태를 반드시 같은 문자열로 접는다 (더미는 내림차순 정렬).
+   ═══════════════════════════════════════════════════════════════════════ */
+
+const KNimCore = {
+
+  /* ───────── 1. 규칙 어댑터 ───────── */
+
+  /** 한 더미에서 정해진 개수만 집는 게임 (사탕·성냥·21게임)
+   *  @param n 시작 개수 / takes 집을 수 있는 개수 목록 (또는 maxTake로 1~k)
+   *  @param misere true면 "마지막을 집는 사람이 짐" */
+  subtraction({ n = 21, takes = null, maxTake = 3, misere = false } = {}) {
+    const set = (takes && takes.length ? takes.slice() : null)
+      || Array.from({ length: maxTake }, (_, i) => i + 1);
+    set.sort((a, b) => a - b);
+    return {
+      id: 'sub', kind: 'subtraction', misere, takes: set, start: n,
+      key: s => String(s),
+      moves(s) {
+        const out = [];
+        for (const t of set) if (s - t >= 0) out.push({ label: `${t}개`, take: t, to: s - t });
+        return out;
+      },
+      enumerate: upTo => Array.from({ length: upTo + 1 }, (_, i) => i)
+    };
+  },
+
+  /** 여러 더미 님 — 한 더미를 골라 원하는 만큼 (maxTake 지정 시 그만큼까지) */
+  nim({ piles = [3, 4, 5], maxTake = Infinity, misere = false } = {}) {
+    const canon = p => p.filter(x => x > 0).sort((a, b) => b - a);
+    return {
+      id: 'nim', kind: 'nim', misere, maxTake, start: canon(piles),
+      key: s => canon(s).join('-') || '0',
+      moves(s) {
+        const out = [];
+        const seen = new Set();
+        for (let i = 0; i < s.length; i++) {
+          const cap = Math.min(s[i], maxTake);
+          for (let t = 1; t <= cap; t++) {
+            const nx = s.slice(); nx[i] -= t;
+            const k = canon(nx).join('-') || '0';
+            if (seen.has(k)) continue;          // 같은 크기 더미 → 동형 이동 접기
+            seen.add(k);
+            out.push({ label: `${i + 1}번 더미에서 ${t}개`, take: t, pile: i, to: canon(nx) });
+          }
+        }
+        return out;
+      }
+    };
+  },
+
+  /** 임의 게임용 범용 어댑터 (길막기·동전 뒤집기 등 차시 고유 게임) */
+  custom({ id = 'custom', start, moves, key = JSON.stringify, misere = false }) {
+    return { id, kind: 'custom', misere, start, key, moves };
+  },
+
+  /* ───────── 2. 후진 귀납 (엔진 심장) ───────── */
+
+  /** 상태 하나를 판정. 필요한 후손만 반복(iterative)으로 풀어 메모에 적재.
+   *  반환 { win, dist, best[], end } — win = 둘 차례인 사람의 승패
+   *  dist = 최선을 다했을 때 남은 수(手) 수. 이기는 자리는 최단, 지는 자리는 최장 버티기. */
+  analyze(rule, state, ctx) {
+    const c = ctx || this._ctx(rule);
+    const rootKey = rule.key(state);
+    if (c.memo.has(rootKey)) return c.memo.get(rootKey);
+
+    const stack = [state];
+    while (stack.length) {
+      const cur = stack[stack.length - 1];
+      const k = rule.key(cur);
+      if (c.memo.has(k)) { stack.pop(); continue; }
+
+      const mv = rule.moves(cur);
+      if (mv.length === 0) {                       // 종국
+        c.memo.set(k, { win: !!rule.misere, dist: 0, best: [], end: true });
+        stack.pop(); continue;
+      }
+      let pending = null;
+      for (const m of mv) if (!c.memo.has(rule.key(m.to))) { pending = m; break; }
+      if (pending) {
+        if (++c.visits > c.limit) throw new Error('KNimCore: 상태 수가 한계를 넘었습니다 (limit=' + c.limit + ')');
+        stack.push(pending.to);
+        continue;
+      }
+      const kids = mv.map(m => ({ m, r: c.memo.get(rule.key(m.to)) }));
+      const losers = kids.filter(x => !x.r.win);   // 상대를 지는 자리로 보내는 이동
+      if (losers.length) {
+        const d = Math.min(...losers.map(x => x.r.dist)) + 1;
+        c.memo.set(k, { win: true, dist: d, end: false, best: losers.filter(x => x.r.dist + 1 === d).map(x => x.m) });
+      } else {
+        const d = Math.max(...kids.map(x => x.r.dist)) + 1;
+        c.memo.set(k, { win: false, dist: d, end: false, best: kids.filter(x => x.r.dist + 1 === d).map(x => x.m) });
+      }
+      stack.pop();
+    }
+    return c.memo.get(rootKey);
+  },
+
+  _ctx(rule, limit) { return { rule, memo: new Map(), visits: 0, limit: limit || 300000 }; },
+
+  /** 재사용할 판정기 하나 만들기 — 차시에서는 이걸 한 번 만들어 계속 쓴다 */
+  solver(rule, opts = {}) {
+    const ctx = this._ctx(rule, opts.limit);
+    const self = this;
+    return {
+      rule, ctx,
+      at: state => self.analyze(rule, state, ctx),
+      isLosing: state => !self.analyze(rule, state, ctx).win,
+      winningMoves: state => self.winningMoves(rule, state, ctx),
+      bestMove: (state, o) => self.bestMove(rule, state, Object.assign({ ctx }, o)),
+      review: states => self.review(rule, states, ctx),
+      size: () => ctx.memo.size
+    };
+  },
+
+  /** 이 자리에서 이기는 이동들 (없으면 빈 배열 = 지는 자리) */
+  winningMoves(rule, state, ctx) {
+    const c = ctx || this._ctx(rule);
+    const r = this.analyze(rule, state, c);
+    return r.win ? r.best.slice() : [];
+  },
+
+  /* ───────── 3. 대전 AI ───────── */
+
+  /** skill 1 = 완벽, 0 = 무작위. 지는 자리에서는 가장 오래 버티는 수를 고른다.
+   *  (지는 자리에서도 무작위로 두면 학생이 "왜 이겼는지" 알 수 없게 된다) */
+  bestMove(rule, state, opts = {}) {
+    const c = opts.ctx || this._ctx(rule);
+    const rng = opts.rng || Math.random;
+    const skill = opts.skill == null ? 1 : opts.skill;
+    const mv = rule.moves(state);
+    if (!mv.length) return null;
+    const r = this.analyze(rule, state, c);
+    const pick = list => list[Math.floor(rng() * list.length) % list.length];
+    if (rng() > skill) return pick(mv);            // 실수 구간
+    return pick(r.best.length ? r.best : mv);
+  },
+
+  /* ───────── 4. 복기 — 갈림길 지목 ───────── */
+
+  /** states = 시작 상태부터 매 수 뒤 상태를 순서대로 담은 배열.
+   *  반환 각 항목: { ply, mover(0=선), before, after, hadWin, gaveWin, blunder, better[] }
+   *  blunder = 이기고 있었는데 상대에게 승리를 넘긴 수 = 그 판의 진짜 패인. */
+  review(rule, states, ctx) {
+    const c = ctx || this._ctx(rule);
+    const out = [];
+    for (let i = 0; i + 1 < states.length; i++) {
+      const before = states[i], after = states[i + 1];
+      const rb = this.analyze(rule, before, c);
+      const ra = this.analyze(rule, after, c);
+      const blunder = rb.win && ra.win;            // 내 승 → 다음 사람(상대) 승
+      out.push({
+        ply: i + 1, mover: i % 2, before, after,
+        hadWin: rb.win, gaveWin: ra.win, blunder,
+        better: blunder ? rb.best.slice() : []
+      });
+    }
+    return out;
+  },
+
+  /** 복기에서 "결정적 한 수" 하나만 뽑기 (해당 플레이어의 첫 실수) */
+  turningPoint(reviewRows, mover) {
+    return reviewRows.find(r => r.blunder && (mover == null || r.mover === mover)) || null;
+  },
+
+  /* ───────── 5. 지는 자리 지도 · 규칙 확인기 ───────── */
+
+  /** 수직선형 게임(subtraction)의 0~upTo 승패 배열. bits[n] = true면 '지는 자리' */
+  losingMap(rule, upTo, ctx) {
+    if (!rule.enumerate) throw new Error('KNimCore: 이 규칙은 지도 생성을 지원하지 않습니다');
+    const c = ctx || this._ctx(rule);
+    return rule.enumerate(upTo).map(s => !this.analyze(rule, s, c).win);
+  },
+
+  losingList(rule, upTo, ctx) {
+    const bits = this.losingMap(rule, upTo, ctx);
+    const out = [];
+    bits.forEach((b, i) => { if (b) out.push(i); });
+    return out;
+  },
+
+  /** 승패 배열에서 되풀이 주기를 스스로 찾아낸다 (공식 하드코딩 금지 조항의 구현).
+   *  반환 { period, start, residues[] } 또는 null.
+   *  residues = 지는 자리의 나머지 목록 → 학생이 발견한 규칙을 이걸로 대조한다. */
+  detectPeriod(bits, opts = {}) {
+    const maxP = opts.maxPeriod || Math.max(2, Math.floor(bits.length / 3));
+    for (let p = 1; p <= maxP; p++) {
+      for (let start = 0; start <= Math.min(bits.length - 2 * p, 8); start++) {
+        let ok = true;
+        for (let i = start; i + p < bits.length; i++) if (bits[i] !== bits[i + p]) { ok = false; break; }
+        if (!ok) continue;
+        const residues = [];
+        for (let r = 0; r < p; r++) {
+          for (let i = start; i < bits.length; i++) if (i % p === r) { if (bits[i]) residues.push(r); break; }
+        }
+        return { period: p, start, residues };
+      }
+    }
+    return null;
+  },
+
+  /** 학생이 제출한 규칙 "period로 나눈 나머지가 residues면 지는 자리" 검사.
+   *  맞으면 { ok:true }, 틀리면 반례 하나를 돌려준다 (답이 아니라 반례를 준다) */
+  checkRule(rule, { period, residues }, upTo, ctx) {
+    if (!period || period < 1) return { ok: false, reason: 'period' };
+    const bits = this.losingMap(rule, upTo, ctx);
+    const set = new Set(residues || []);
+    for (let n = 0; n <= upTo; n++) {
+      const claim = set.has(n % period);
+      if (claim !== bits[n]) return { ok: false, counter: n, actual: bits[n] };
+    }
+    return { ok: true };
+  },
+
+  /* ───────── 6. 고레벨 확장 (L4~L5 전용 · 저레벨 차시 노출 금지) ───────── */
+
+  /** 님-합(XOR). 후진 귀납 결과와 일치하는지 확인하는 용도로만 쓴다.
+   *  L1~L3 차시에서는 절대 화면에 노출하지 않는다 — 발견을 빼앗는다. */
+  nimSum(piles) { return piles.reduce((a, b) => a ^ b, 0); },
+
+  /** 두 더미 대칭(미러) 전략이 성립하는 자리인지 */
+  isMirror(piles) {
+    const p = piles.filter(x => x > 0);
+    return p.length === 2 && p[0] === p[1];
+  }
+};
+
+if (typeof window !== 'undefined') window.KNimCore = KNimCore;
+
+</script>
+
+<script>
+/* ═══════ 실험실 UI (엔진 소비자 — 로직은 전부 KNimCore가 담당) ═══════ */
+const $ = s => document.querySelector(s);
+const el = (t, c) => { const e = document.createElement(t); if (c) e.className = c; return e; };
+
+let rule, solver, n, history, turn, over, busy = false;
+
+function cfg() {
+  return {
+    n: Math.max(3, Math.min(40, +$('#optN').value || 21)),
+    k: +$('#optK').value,
+    misere: $('#optMis').checked,
+    skill: +$('#optSkill').value
+  };
+}
+
+function newGame() {
+  const c = cfg();
+  rule = KNimCore.subtraction({ n: c.n, maxTake: c.k, misere: c.misere });
+  solver = KNimCore.solver(rule);
+  n = c.n; history = [n]; turn = 0; over = false; busy = false;
+  $('#cardReview').classList.add('hidden');
+  $('#msg').innerHTML = c.misere ? '마지막 사탕을 집으면 <b>지는</b> 판이야. 네가 먼저!' : '네가 먼저 집어. 몇 개 집을래?';
+  drawCandies(true); drawTakes(); drawMap(false);
+}
+
+function drawCandies(full) {
+  const box = $('#candies'); const c = cfg();
+  if (full) { box.innerHTML = ''; for (let i = 0; i < c.n; i++) box.appendChild(el('div', 'c')); }
+  const dots = box.children;
+  for (let i = 0; i < dots.length; i++) dots[i].classList.toggle('gone', i >= n);
+  $('#count').innerHTML = n + ' <span>개 남음</span>';
+}
+
+function drawTakes() {
+  const box = $('#takes'); box.innerHTML = '';
+  rule.moves(n).forEach(m => {
+    const b = el('button', 'take'); b.textContent = m.take + '개';
+    b.disabled = over || busy || turn !== 0;
+    b.onclick = () => play(m);
+    box.appendChild(b);
+  });
+  if (over) { const b = el('button', 'ghost'); b.textContent = '다시 하기'; b.onclick = newGame; box.appendChild(b); }
+}
+
+function play(m) {
+  if (over || busy) return;
+  n = m.to; history.push(n); turn ^= 1;
+  drawCandies(); drawTakes();
+  if (!rule.moves(n).length) return finish();
+  if (turn === 1) { busy = true; drawTakes(); setTimeout(aiTurn, 620); }
+}
+
+function aiTurn() {
+  const mv = KNimCore.bestMove(rule, n, { ctx: solver.ctx, skill: cfg().skill });
+  busy = false;
+  $('#msg').innerHTML = `상대가 <b>${mv.take}개</b>를 집었어.`;
+  n = mv.to; history.push(n); turn ^= 1;
+  drawCandies(); drawTakes();
+  if (!rule.moves(n).length) finish();
+}
+
+function finish() {
+  over = true;
+  // 둘 차례인 사람이 패 (일반) — 미제르면 마지막을 집은 사람이 패
+  const loserIsMe = rule.misere ? (turn === 1) : (turn === 0);
+  $('#msg').innerHTML = loserIsMe ? '이번 판은 <b>졌어.</b>' : '<b>이겼다!</b>';
+  drawTakes(); showReview(loserIsMe);
+}
+
+function showReview(loserIsMe) {
+  const rows = KNimCore.review(rule, history, solver.ctx);
+  const box = $('#plies'); box.innerHTML = '';
+  rows.forEach(r => {
+    const d = el('div', 'ply ' + (r.mover === 0 ? 'me' : '') + (r.blunder ? ' blunder' : ''));
+    const w = el('div', 'who'); w.textContent = r.mover === 0 ? '나' : '상대';
+    const a = el('div', 'arw'); a.textContent = `${r.before} → ${r.after}`;
+    d.appendChild(w); d.appendChild(a);
+    if (r.blunder) {
+      const t = el('div', 'tag'); t.textContent = '← 여기서 갈렸다';
+      d.appendChild(t);
+    }
+    box.appendChild(d);
+  });
+  const tp = KNimCore.turningPoint(rows, 0);
+  const v = $('#verdict');
+  if (loserIsMe && tp) {
+    v.innerHTML = `진 건 마지막 수가 아니야. <b>${tp.ply}번째 수</b> — ${tp.before}개에서 ${tp.after}개로 넘긴 그 순간이었어.`;
+    $('#reviewNote').innerHTML = `그때 <b>${tp.better.map(m => m.take + '개').join(' 또는 ')}</b>를 집어서 <b>${tp.better.map(m => m.to).join('·')}</b>개를 넘겼다면 판이 뒤집혔어. 왜 하필 그 개수일까?`;
+  } else if (loserIsMe) {
+    v.innerHTML = `이번엔 첫 수부터 불리한 자리였어. <b>먼저 두는 게 항상 유리한 건 아니야.</b>`;
+    $('#reviewNote').textContent = '어떤 개수로 시작하면 먼저 두는 쪽이 불리할까? 아래 지도에서 찾아봐.';
+  } else {
+    const mine = rows.filter(r => r.mover === 0 && r.blunder).length;
+    v.innerHTML = mine ? `이겼지만 흔들린 수가 <b>${mine}번</b> 있었어. 상대가 봐준 거야.` : `한 수도 흔들리지 않았어. <b>완벽한 판.</b>`;
+    $('#reviewNote').textContent = '네가 상대에게 넘긴 개수들을 지도에서 확인해봐. 공통점이 보일 거야.';
+  }
+  $('#cardReview').classList.remove('hidden');
+}
+
+/* ── 지는 자리 지도 ── */
+function drawMap(reveal) {
+  const c = cfg();
+  const r2 = KNimCore.subtraction({ n: c.n, maxTake: c.k, misere: c.misere });
+  const bits = KNimCore.losingMap(r2, c.n);
+  const box = $('#map'); box.innerHTML = '';
+  bits.forEach((b, i) => {
+    const d = el('div', 'cell'); d.textContent = i; d.dataset.i = i;
+    if (reveal && b) d.classList.add('lose');
+    box.appendChild(d);
+  });
+  $('#ruleOut').classList.add('hidden');
+  return bits;
+}
+
+$('#btnBack').onclick = () => {
+  const bits = drawMap(false);
+  const cells = $('#map').children;
+  let i = 0;
+  const step = () => {
+    if (i >= cells.length) return;
+    const cell = cells[i];
+    cell.classList.add('flash');
+    if (bits[i]) cell.classList.add('lose');
+    setTimeout(() => cell.classList.remove('flash'), 220);
+    i++; setTimeout(step, 95);
+  };
+  step();
+};
+
+$('#btnRule').onclick = () => {
+  const c = cfg();
+  const r2 = KNimCore.subtraction({ n: c.n, maxTake: c.k, misere: c.misere });
+  const bits = KNimCore.losingMap(r2, c.n);
+  const p = KNimCore.detectPeriod(bits);
+  const out = $('#ruleOut'); out.classList.remove('hidden');
+  out.innerHTML = p
+    ? `이 판의 색칠된 칸은 <b>${p.period}</b>씩 되풀이돼. ${p.period}로 나눈 나머지가 <b>${p.residues.join(', ')}</b>인 자리야.<br>
+       한 번에 집을 수 있는 개수를 바꾸면 이 숫자도 바뀔까? 위에서 바꿔보고 다시 눌러봐.`
+    : '되풀이되는 규칙이 안 보여. 더 큰 수까지 늘려볼까?';
+};
+
+['optN', 'optK', 'optMis', 'optSkill'].forEach(id => $('#' + id).onchange = newGame);
+$('#btnReset').onclick = newGame;
+newGame();
+</script>
+</body>
+</html>
