@@ -189,6 +189,16 @@ window.KEDU_MAP["g6_1_science"] = {
      "url": "/grade6/semester1/science/2단원_물체의운동/g6_sci_u2_l08_창의가팡팡.html",
      "track": "tb",
      "ready": true
+    },
+    {
+     "key": "g6_science_u2_l09",
+     "lessonId": "g6_sci_u2_l09_v1",
+     "n": "마무리",
+     "title": "물체의 운동 마무리하기",
+     "sub": null,
+     "url": "/grade6/semester1/science/2단원_물체의운동/g6_sci_u2_l09_단원마무리.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }
