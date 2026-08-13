@@ -179,6 +179,16 @@ window.KEDU_MAP["g6_1_science"] = {
      "url": "/grade6/semester1/science/2단원_물체의운동/g6_sci_u2_l07_안전수칙.html",
      "track": "tb",
      "ready": true
+    },
+    {
+     "key": "g6_science_u2_l08",
+     "lessonId": "g6_sci_u2_l08_v1",
+     "n": "9~12",
+     "title": "창의가 팡팡 + 과학이 톡톡 — 0.001초의 승부",
+     "sub": null,
+     "url": "/grade6/semester1/science/2단원_물체의운동/g6_sci_u2_l08_창의가팡팡.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }
