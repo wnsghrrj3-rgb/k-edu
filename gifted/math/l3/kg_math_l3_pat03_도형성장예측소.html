@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<!--
+  kg_math_l3_pat03 — 도형 성장 예측소 [케이영재 수학 · L3 · Wave 1 양산 1호]
+  트랙: 케이영재 / Lab: Pattern / Level: L3 (중학년 그린 톤) / 깊이: D1~D8
+  base: kg_math_l3_pat01 달력 숫자 탐정 (외부 골격·CSS 100% 계승) + kg_math_l3_pat02 (엔진 공통부 계승)
+  탐구 5단계: 미션(1~3) 탐험(4~7) 발견(8~11) 도전(12~15) 창조(16~18)
+  핵심 수학: 자라는 모양을 「변하지 않는 중심 + 자라는 팔」로 가르기 → 단계마다 +4 →
+            100단계 예측(401) → 규칙·실제 대조 검증 → 걸음이 다른 성장(정사각 1·4·9·16)
+            → 세계 일반화(팔 셋이면 +3 — 늘어나는 양 = 팔의 개수) → 자작 성장 설계·예측·검사
+  점수 100 = 탐험 단계3개 15 + 추측 10 + 발견 확인 20(q9 10+q10 10) + 검증(대조) 15 + 확장 20(다른 성장 10+세계 10) + 창조 20
+  힌트: H1/H2/H3 3단 (감점 없음, 답 비노출) / 정답 선공개 금지 — 구조 공개는 추측 기록 뒤에만
+  ⛔ 규약: 문자식 금지(★ 기호) / 차단 어휘 금지 / 이모지 슬라이드당 ≤2 / 신규 시각 언어 없음(전편 컴포넌트 조합)
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="kg_math_l3_pat03_v1">
+<title>도형 성장 예측소 · 케이영재 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#F6FBF7; --ink:#1F3830; --ink-soft:#5C7A6E;
+  --coral:#0E8A5F; --coral-deep:#0A6B49; --coral-soft:#D7F0E4;
+  --teal:#1D4ED8; --teal-deep:#153FA6; --teal-soft:#DCE6FB;
+  --gold:#F6B526; --emph:#E85D2F; --line:#DCEAE0; --mark:#FFE08A;
+  --f-title:'Do Hyeon',sans-serif; --f-body:'Gowun Dodum',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:0 14px 34px -18px rgba(31,56,48,.35);
+  --fs-title: clamp(26px, 4.2vw, 46px);
+  --fs-heading: clamp(23px, 3.5vw, 35px);
+  --fs-body: clamp(19px, 2.9vw, 27px);
+  --fs-caption: clamp(17px, 2.6vw, 24px);
+  --fs-label: clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --mw-sm: min(720px, 96vw);
+  --mw-lg: min(880px, 96vw);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+@keyframes ka-glow { 0%,100%{box-shadow:0 0 0 0 rgba(14,138,95,.4);} 50%{box-shadow:0 0 0 10px rgba(14,138,95,0);} }
+
+.ka { background:var(--paper); width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; color:var(--ink); position:relative; overflow:hidden; }
+.ka-h { display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); padding:clamp(11px,1.7vw,15px) clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:hover { transform:translateY(-1px); }
+.ka-pill { font-family:var(--f-title); background:var(--coral); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-where { font-size:clamp(14px,1.6vw,18px); color:var(--ink-soft); flex-shrink:1; }
+.ka-where b { color:var(--ink); }
+.ka-bar { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:46vw; }
+.ka-dot { width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s, background .2s; }
+.ka-dot:hover { transform:scale(1.2); }
+.ka-dot.active { background:var(--coral); transform:scale(1.3); }
+.ka-dot.done { background:var(--teal); }
+.ka-score { font-family:var(--f-title); background:#FFF8E1; color:#F57F17; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); padding:0; border-radius:50%; cursor:pointer; flex-shrink:0; color:var(--coral-deep); font-size:clamp(13px,2vw,16px); width:clamp(32px,4.5vw,38px); height:clamp(32px,4.5vw,38px); display:flex; align-items:center; justify-content:center; }
+
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; gap:clamp(7px,1.2vw,11px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(8px,1.4vh,16px) clamp(16px,4vw,48px); overflow:hidden; }
+.slide.active { display:flex; }
+.slide-title { font-family:var(--f-title); font-size:var(--fs-title); line-height:1.18; color:var(--ink); font-weight:400; text-align:center; flex-shrink:0; }
+.slide-sub { font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(10px,1.6vw,16px); left:clamp(16px,4vw,40px); font-family:var(--f-title); color:var(--coral); font-size:clamp(13px,1.9vw,18px); letter-spacing:.4px; z-index:5; }
+
+.ka-f { display:flex; justify-content:flex-end; gap:12px; padding:clamp(12px,1.7vw,16px) clamp(16px,4vw,40px); background:linear-gradient(to top, var(--paper) 62%, transparent); flex-shrink:0; }
+.ka-prev, .ka-hint, .ka-next { font-family:var(--f-title); font-size:clamp(15px,1.9vw,22px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(10px,1.4vw,15px) clamp(20px,2.8vw,38px); cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translateY(-2px); }
+.ka-prev { margin-right:auto; }
+.ka-hint { color:#F57F17; border-color:#FFE08A; }
+.ka-next { background:var(--coral); color:#fff; border-color:var(--coral); }
+.ka-prev:disabled, .ka-next:disabled { opacity:.35; cursor:default; transform:none; }
+.ka-hint:disabled { opacity:.4; cursor:default; }
+
+.concept-box { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,18px) clamp(18px,2.8vw,28px); border-radius:20px; font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); text-align:center; line-height:1.5; box-shadow:var(--shadow); }
+.concept-box strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.intro-q { font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; }
+.intro-q strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.goal-list { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); font-size:var(--fs-caption); color:var(--ink); max-width:var(--mw-sm); }
+.goal-list li { background:#fff; border:2px solid var(--line); padding:clamp(7px,1.3vw,11px) clamp(14px,2.6vw,20px); border-radius:16px; list-style:none; box-shadow:var(--shadow); }
+.goal-list li strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+.mission-card { background:#fff; border:3px solid var(--coral-soft); border-radius:26px; padding:clamp(16px,3vw,26px) clamp(20px,3.8vw,34px); max-width:var(--mw-sm); text-align:center; box-shadow:0 6px 0 var(--coral-soft); font-size:var(--fs-body); line-height:1.6; }
+.mission-card strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+
+/* ── 달력 격자 ── */
+.cal-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.1vw,10px); }
+.cal-head { display:flex; align-items:center; gap:clamp(8px,1.6vw,14px); }
+.cal-title { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--coral-deep); }
+.cal-month-btn { font-family:var(--f-title); font-size:var(--fs-label); background:#fff; border:2px solid var(--line); border-radius:999px; padding:4px 12px; cursor:pointer; color:var(--ink-soft); }
+.cal-month-btn.on { background:var(--coral); color:#fff; border-color:var(--coral); }
+.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:clamp(3px,0.6vw,5px); background:#fff; border:2px solid var(--line); border-radius:18px; padding:clamp(8px,1.4vw,12px); box-shadow:var(--shadow); }
+.cal-dow { font-family:var(--f-title); font-size:clamp(12px,1.7vw,16px); color:var(--ink-soft); text-align:center; padding-bottom:2px; }
+.cal-dow.sun { color:var(--emph); }
+.cal-cell { width:clamp(34px,6.2vw,54px); height:clamp(30px,5.4vw,46px); display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:clamp(15px,2.4vw,22px); color:var(--ink); background:var(--paper); border-radius:10px; cursor:pointer; transition:background .15s, transform .1s; user-select:none; }
+.cal-cell:hover { background:var(--coral-soft); }
+.cal-cell.empty { background:transparent; cursor:default; }
+.cal-cell.sel { background:var(--coral); color:#fff; animation:ka-pop .3s ease; }
+.cal-cell.diag-a { outline:3px solid var(--gold); outline-offset:-3px; }
+.cal-cell.diag-b { outline:3px solid var(--teal); outline-offset:-3px; }
+.cal-cell.center-cell { background:var(--emph); color:#fff; }
+.cal-info { display:flex; gap:clamp(8px,1.6vw,14px); flex-wrap:wrap; justify-content:center; min-height:2.2em; align-items:center; }
+.sum-chip { font-family:var(--f-title); font-size:var(--fs-caption); padding:clamp(5px,1vw,8px) clamp(12px,2.2vw,18px); border-radius:999px; background:#fff; border:2px solid var(--line); }
+.sum-chip.a { border-color:var(--gold); color:#B07E0A; }
+.sum-chip.b { border-color:var(--teal); color:var(--teal-deep); }
+.sum-chip.tot { border-color:var(--coral); color:var(--coral-deep); }
+.cal-msg { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--coral-deep); min-height:1.5em; text-align:center; }
+.cal-msg.wrong { color:var(--emph); }
+
+/* ── 사례 테이블 ── */
+.case-table { border-collapse:collapse; background:#fff; border-radius:16px; overflow:hidden; box-shadow:var(--shadow); font-size:var(--fs-caption); }
+.case-table th { font-family:var(--f-title); font-weight:400; background:var(--coral-soft); color:var(--coral-deep); padding:clamp(6px,1.1vw,10px) clamp(12px,2.2vw,20px); }
+.case-table td { font-family:var(--f-num); font-weight:800; text-align:center; padding:clamp(6px,1.1vw,10px) clamp(12px,2.2vw,20px); border-top:1px solid var(--line); }
+.case-count { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); }
+.case-count b { color:var(--coral-deep); font-size:1.2em; }
+
+/* ── 관찰·추측 선택 ── */
+.pick-list { display:flex; flex-direction:column; gap:clamp(7px,1.3vw,11px); width:100%; max-width:var(--mw-sm); }
+.pick-item { background:#fff; border:3px solid var(--line); border-radius:18px; padding:clamp(10px,1.8vw,15px) clamp(16px,3vw,24px); font-size:var(--fs-body); cursor:pointer; transition:border-color .2s, transform .12s; text-align:left; font-family:var(--f-body); color:var(--ink); }
+.pick-item:hover { border-color:var(--coral); }
+.pick-item.on { border-color:var(--coral); background:var(--coral-soft); animation:ka-pop .3s ease; }
+.pick-item .tag { font-family:var(--f-title); color:var(--coral-deep); margin-right:8px; }
+
+/* ── 구조 시각화 ── */
+.struct-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.5vw,13px); }
+.struct-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(6px,1.1vw,9px); }
+.struct-cell { width:clamp(76px,13vw,120px); height:clamp(52px,9vw,80px); background:#fff; border:3px solid var(--coral-soft); border-radius:14px; display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:clamp(19px,3vw,30px); color:var(--coral-deep); box-shadow:0 4px 0 var(--coral-soft); }
+.struct-cell.hl-a { border-color:var(--gold); box-shadow:0 4px 0 var(--gold); }
+.struct-cell.hl-b { border-color:var(--teal); box-shadow:0 4px 0 var(--teal-soft); }
+.struct-eq { font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center; }
+.struct-eq .star { color:var(--emph); }
+.arrow-note { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); background:#fff; border:2px solid var(--line); border-radius:999px; padding:5px 16px; cursor:pointer; transition:transform .15s; }
+.arrow-note.revealed { color:var(--coral-deep); border-color:var(--coral); animation:ka-glow 1.4s ease 1; }
+
+/* ── 문제 공통 ── */
+.q-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.5vw,13px); max-width:var(--mw-lg); width:100%; }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; font-weight:400; }
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-sm); }
+.mcq-opts.one-col { grid-template-columns:1fr; }
+.mcq-opt { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,1.9vw,15px); font-family:var(--f-title); font-size:var(--fs-body); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .2s; box-shadow:0 6px 0 var(--coral-soft); font-weight:400; }
+.mcq-opt:hover { border-color:var(--coral); }
+.mcq-opt:active { transform:translateY(4px); box-shadow:none; }
+.mcq-opt.correct { border-color:var(--coral-deep); background:var(--coral); color:#fff; box-shadow:0 6px 0 var(--coral-deep); animation:ka-pop .5s ease; }
+.mcq-opt.wrong { border-color:var(--emph); background:#FFE4DA; color:var(--ink); animation:ka-shake .35s; }
+.mcq-hint { font-family:var(--f-title); font-size:var(--fs-caption); color:#F57F17; background:#FFF8E1; border-radius:16px; padding:clamp(8px,1.5vw,12px) clamp(14px,2.6vw,20px); max-width:var(--mw-sm); text-align:center; display:none; }
+.mcq-hint.show { display:block; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); color:var(--coral-deep); min-height:1.4em; text-align:center; }
+.q-fb.wrong { color:var(--emph); }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:clamp(30px,5vw,54px); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:20px; padding:clamp(8px,1.5vw,13px) clamp(24px,4.4vw,42px); min-width:clamp(110px,20vw,180px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.q-pad { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(6px,1.2vw,10px); max-width:clamp(280px,56vw,460px); }
+.q-key { background:#fff; border:2px solid var(--line); border-radius:14px; padding:clamp(7px,1.4vw,11px) 0; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, background .15s; box-shadow:0 4px 0 var(--line); }
+.q-key:hover { background:var(--coral-soft); border-color:var(--coral); }
+.q-key:active { transform:translateY(3px); box-shadow:none; }
+.q-key.fn { background:#FFF8E1; color:#F57F17; font-family:var(--f-title); font-size:var(--fs-caption); border-color:#FFE08A; box-shadow:0 4px 0 #FFE08A; }
+
+/* ── 모양 실험실 ── */
+.shape-pick { display:flex; gap:clamp(8px,1.5vw,13px); flex-wrap:wrap; justify-content:center; }
+.shape-btn { background:#fff; border:3px solid var(--line); border-radius:16px; padding:clamp(8px,1.4vw,12px) clamp(12px,2.2vw,18px); cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:5px; transition:border-color .2s, transform .12s; }
+.shape-btn:hover { border-color:var(--coral); }
+.shape-btn.on { border-color:var(--coral); background:var(--coral-soft); }
+.shape-mini { display:grid; grid-template-columns:repeat(3, clamp(10px,1.8vw,15px)); gap:2px; }
+.shape-mini i { display:block; width:clamp(10px,1.8vw,15px); height:clamp(10px,1.8vw,15px); border-radius:3px; background:var(--line); }
+.shape-mini i.f { background:var(--coral); }
+.shape-name { font-family:var(--f-title); font-size:var(--fs-label); color:var(--ink); }
+.rule-build { display:flex; align-items:center; gap:clamp(6px,1.2vw,10px); flex-wrap:wrap; justify-content:center; font-family:var(--f-title); font-size:var(--fs-body); }
+.rule-slot { background:#fff; border:3px dashed var(--coral); border-radius:14px; min-width:clamp(72px,13vw,120px); padding:clamp(6px,1.1vw,9px) clamp(10px,1.8vw,14px); text-align:center; color:var(--coral-deep); font-family:var(--f-num); font-weight:800; cursor:pointer; }
+.rule-slot.filled { border-style:solid; background:var(--coral-soft); }
+.rule-choice { display:flex; gap:clamp(6px,1.1vw,9px); flex-wrap:wrap; justify-content:center; }
+.rule-chip { background:#fff; border:2px solid var(--line); border-radius:999px; padding:clamp(5px,1vw,8px) clamp(12px,2.2vw,18px); font-family:var(--f-title); font-size:var(--fs-caption); cursor:pointer; transition:transform .12s, border-color .15s; }
+.rule-chip:hover { border-color:var(--coral); transform:translateY(-2px); }
+
+/* ── 탐정 카드·마무리 ── */
+.detective-card { background:#fff; border:3px solid var(--gold); border-radius:26px; padding:clamp(16px,3vw,26px) clamp(20px,3.8vw,34px); max-width:var(--mw-sm); width:100%; box-shadow:0 8px 0 var(--mark); display:flex; flex-direction:column; gap:clamp(7px,1.3vw,11px); }
+.dc-row { display:flex; justify-content:space-between; gap:14px; font-size:var(--fs-caption); border-bottom:1px dashed var(--line); padding-bottom:6px; }
+.dc-row b { font-family:var(--f-title); font-weight:400; color:var(--coral-deep); }
+.dc-title { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; }
+.wrap-score { font-family:var(--f-num); font-weight:800; font-size:clamp(56px,10vw,110px); color:var(--coral-deep); line-height:1; }
+.wrap-msg { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); }
+.home-card { background:var(--teal-soft); border-radius:20px; padding:clamp(12px,2.2vw,18px) clamp(18px,3.2vw,26px); font-size:var(--fs-caption); color:var(--teal-deep); max-width:var(--mw-sm); text-align:center; line-height:1.55; }
+.next-mini { display:flex; gap:clamp(8px,1.5vw,13px); flex-wrap:wrap; justify-content:center; }
+.next-chip { font-family:var(--f-title); font-size:var(--fs-label); background:#fff; border:2px solid var(--line); border-radius:999px; padding:6px 16px; color:var(--ink-soft); }
+
+/* ── 차시 고유 (전편 컴포넌트의 파라미터 변형만 · 새 언어 없음) ── */
+.cal-grid.grow { gap:clamp(2px,0.4vw,4px); padding:clamp(6px,1.1vw,10px); }
+.cal-grid.grow .cal-cell { width:clamp(14px,2.6vw,26px); height:clamp(14px,2.6vw,26px); font-size:0; border-radius:5px; cursor:default; }
+.cal-grid.grow .cal-cell.empty { background:var(--paper); box-shadow:inset 0 0 0 1px var(--line); }
+.cal-grid.grow .cal-cell.sel { background:var(--coral); }
+.cal-grid.grow .cal-cell.center-cell { background:var(--emph); }
+.cal-grid.grow .cal-cell.trail { background:var(--gold); }
+.cal-grid.growmini .cal-cell { width:clamp(12px,2.2vw,20px); height:clamp(12px,2.2vw,20px); }
+.cal-grid.growtiny .cal-cell { width:clamp(9px,1.6vw,15px); height:clamp(9px,1.6vw,15px); }
+.step-btns { flex-wrap:wrap; justify-content:center; }
+.struct-grid.c3 { grid-template-columns:repeat(3,1fr); }
+</style>
+</head>
+<body>
+<div class="ka">
+  <header class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 나가기</button>
+    <span class="ka-pill">케이영재</span>
+    <span class="ka-where"><b>도형 성장 예측소</b> · 패턴 연구소</span>
+    <div class="ka-bar" id="dots"></div>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </header>
+
+  <main class="ka-m" id="main">
+
+    <!-- 슬1 · 표지 -->
+    <section class="slide">
+      <span class="stage-badge">미션</span>
+      <h1 class="slide-title">🌱 도형 성장 예측소</h1>
+      <p class="slide-sub">패턴 연구소 · 탐구 사건 3호</p>
+      <div class="mission-card">
+        이 연구소에는 <strong>스스로 자라는 모양</strong>이 산다.<br>
+        단계를 하나 올릴 때마다 조금씩 커진다. 오늘의 연구원은 바로 너다.
+      </div>
+    </section>
+
+    <!-- 슬2 · 미션 제시 -->
+    <section class="slide">
+      <span class="stage-badge">미션</span>
+      <h1 class="slide-title">연구원 임무서</h1>
+      <div class="mission-card">
+        선배 연구원들은 이 모양을 <strong>그리지 않고도</strong><br>
+        100단계의 칸 수를 알아맞힌다고 한다.<br><br>
+        <strong>질문: 단계가 하나 오를 때 칸 수는 얼마나, 왜 그만큼 늘어날까?</strong>
+      </div>
+      <p class="intro-q">늘어나는 양을 밝히고, <strong>왜 그런지</strong>까지 밝혀야 임무 완수다.</p>
+    </section>
+
+    <!-- 슬3 · 탐구 약속 -->
+    <section class="slide">
+      <span class="stage-badge">미션</span>
+      <h1 class="slide-title">연구원의 다섯 걸음</h1>
+      <ul class="goal-list">
+        <li><strong>① 탐험</strong> — 모양을 직접 자라게 하며 단서를 모은다</li>
+        <li><strong>② 발견</strong> — 단서에서 규칙을 짐작해 본다</li>
+        <li><strong>③ 확인</strong> — 왜 그런지 까닭을 밝힌다</li>
+        <li><strong>④ 도전</strong> — 다르게 자라는 모양, 다른 세계에서도 통하는지 살핀다</li>
+        <li><strong>⑤ 창조</strong> — 나만의 성장 규칙을 설계한다</li>
+      </ul>
+      <div class="concept-box">여기서도 <strong>빨리 맞히는 것</strong>보다 <strong>스스로 찾아내는 것</strong>이 점수다.</div>
+    </section>
+
+    <!-- 슬4 · 탐험: 모양 자라게 하기 -->
+    <section class="slide" data-q-id="explore">
+      <span class="stage-badge">탐험 1/4</span>
+      <h1 class="slide-title">모양을 자라게 해 보자</h1>
+      <p class="slide-sub">단계 단추를 눌러 모양을 키우자 · <b>서로 다른 단계 3개</b>를 살펴보면 기록된다 (+15)</p>
+      <div class="cal-wrap">
+        <div class="cal-head step-btns" id="step-btns">
+          <button class="cal-month-btn" data-s="1">1단계</button>
+          <button class="cal-month-btn" data-s="2">2단계</button>
+          <button class="cal-month-btn" data-s="3">3단계</button>
+          <button class="cal-month-btn" data-s="4">4단계</button>
+          <button class="cal-month-btn" data-s="5">5단계</button>
+        </div>
+        <div class="cal-grid grow" id="board-explore"></div>
+        <div class="cal-info" id="info-explore"></div>
+        <div class="cal-msg" id="msg-explore">단계 단추를 눌러 보자</div>
+      </div>
+      <div class="mcq-hint" data-hints='["단계를 하나씩 올리며 모양이 어디서 커지는지 지켜보자.","칸 수를 단계마다 적어 두자. 다음 화면 수첩에 모인다.","앞 단계보다 몇 칸이 늘었는지 나란히 견줘 보자."]'></div>
+    </section>
+
+    <!-- 슬5 · 수첩 -->
+    <section class="slide">
+      <span class="stage-badge">탐험 2/4</span>
+      <h1 class="slide-title">내가 모은 단서</h1>
+      <p class="slide-sub">살펴본 단계마다 칸 수와 늘어난 양을 모았다</p>
+      <table class="case-table">
+        <thead><tr><th>단계</th><th>칸 수</th><th>앞 단계보다</th></tr></thead>
+        <tbody id="case-body"></tbody>
+      </table>
+      <p class="case-count" id="case-count"></p>
+      <div class="concept-box" id="case-note">늘어난 양을 세로로 훑어보자. 매번 같은가, 매번 다른가?</div>
+    </section>
+
+    <!-- 슬6 · 관찰 기록 -->
+    <section class="slide">
+      <span class="stage-badge">탐험 3/4</span>
+      <h1 class="slide-title">연구 수첩 — 관찰 기록</h1>
+      <p class="slide-sub">눈에 띈 것을 모두 골라 수첩에 적어 두자 (여러 개 가능)</p>
+      <div class="pick-list" id="obs-list">
+        <button class="pick-item">가운데 한 칸은 단계가 바뀌어도 그대로다</button>
+        <button class="pick-item">팔 네 개가 단계마다 한 칸씩 길어진다</button>
+        <button class="pick-item">칸 수가 늘 같은 양만큼 늘어나는 것 같다</button>
+        <button class="pick-item">팔 하나의 길이가 단계 번호와 같아 보인다</button>
+      </div>
+      <p class="q-fb" id="obs-fb"></p>
+    </section>
+
+    <!-- 슬7 · 추측 -->
+    <section class="slide" data-q-id="conjecture">
+      <span class="stage-badge">탐험 4/4</span>
+      <h1 class="slide-title">나의 추측</h1>
+      <p class="slide-sub">단서를 바탕으로 짐작해 보자 · 추측은 틀려도 좋다, 기록하는 것이 연구원의 일 (+10)</p>
+      <div class="mcq-opts one-col" id="conj-opts">
+        <button class="mcq-opt" data-c="0">단계가 하나 오르면 칸 수가 4씩 늘어난다</button>
+        <button class="mcq-opt" data-c="1">단계가 하나 오르면 칸 수가 2씩 늘어난다</button>
+        <button class="mcq-opt" data-c="2">늘어나는 양이 단계마다 달라진다</button>
+        <button class="mcq-opt" data-c="3">칸 수는 단계 번호를 두 번 곱한 수다</button>
+      </div>
+      <p class="q-fb" id="conj-fb"></p>
+      <div class="mcq-hint" data-hints='["수첩의 늘어난 양 칸만 따로 읽어 보자.","앞 단계보다 늘어난 양이 단계마다 같았는지 살피자.","모양의 어느 부분이 자랐는지 떠올리면 짐작이 쉬워진다."]'></div>
+    </section>
+
+    <!-- 슬8 · 발견: 구조 공개 -->
+    <section class="slide">
+      <span class="stage-badge">발견 1/4</span>
+      <h1 class="slide-title">모양의 뼈대를 갈라 보자</h1>
+      <p class="slide-sub">단계 번호를 <b>★</b>이라고 하자 · 단추를 눌러 모양의 정체를 밝히자</p>
+      <div class="struct-stage">
+        <div class="struct-grid c3" id="struct-grid">
+          <div class="struct-cell" id="sc-c">?</div>
+          <div class="struct-cell" id="sc-a">?</div>
+          <div class="struct-cell" id="sc-t">?</div>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
+          <button class="arrow-note" id="ar-c" onclick="revealStruct('c')">변하지 않는 부분은?</button>
+          <button class="arrow-note" id="ar-a" onclick="revealStruct('a')">팔 하나의 길이는?</button>
+          <button class="arrow-note" id="ar-t" onclick="revealStruct('t')">그래서 모두 몇 칸?</button>
+        </div>
+        <div class="concept-box" id="struct-note">자라는 모양은 <strong>변하지 않는 부분</strong>과 <strong>자라는 부분</strong>으로 갈라 볼 수 있다.</div>
+      </div>
+    </section>
+
+    <!-- 슬9 · 발견: 확인 문제 1 -->
+    <section class="slide" data-q-id="q9">
+      <span class="stage-badge">발견 2/4</span>
+      <h1 class="slide-title">4씩 늘어나는 까닭</h1>
+      <div class="struct-stage">
+        <div class="struct-eq">
+          <span>칸 수 :</span><span>1</span><span>+</span>
+          <span class="star">★</span><span>+</span><span class="star">★</span><span>+</span><span class="star">★</span><span>+</span><span class="star">★</span>
+          <span style="color:var(--ink-soft)">&nbsp;/&nbsp;</span>
+          <span>같은 말 :</span><span>가운데 한 칸과</span><span class="star">★</span><span>칸짜리 팔 넷</span>
+        </div>
+      </div>
+      <div class="q-stage">
+        <p class="q-prompt">단계가 하나 오를 때마다 칸 수가 4씩 늘어나는 까닭은? (+10)</p>
+        <div class="mcq-opts one-col">
+          <button class="mcq-opt" data-a="0">가운데 부분도 함께 커지기 때문</button>
+          <button class="mcq-opt" data-a="1">팔이 넷이라 팔마다 한 칸씩 길어지기 때문</button>
+          <button class="mcq-opt" data-a="2">격자가 점점 넓어지기 때문</button>
+        </div>
+        <div class="mcq-hint" data-hints='["단계를 하나 올렸을 때 새로 칠해진 칸이 어디였는지 떠올리자.","새로 칠해진 칸이 팔마다 몇 개씩이었나?","팔 하나에 한 칸씩, 팔이 넷이면 새 칸은 모두 몇 개인가?"]'></div>
+        <p class="q-fb" id="fb-q9"></p>
+      </div>
+    </section>
+
+    <!-- 슬10 · 발견: 확인 문제 2 (그리지 않고 예측) -->
+    <section class="slide" data-q-id="q10">
+      <span class="stage-badge">발견 3/4</span>
+      <h1 class="slide-title">그리지 않고 맞히기</h1>
+      <p class="slide-sub">모양을 <b>그리지 않고</b> 규칙만으로 · <b>100단계</b>의 칸 수는 몇일까? (+10)</p>
+      <div class="q-stage">
+        <div class="q-display" id="disp-q10">&nbsp;</div>
+        <div class="q-pad" id="pad-q10"></div>
+        <div class="mcq-hint" data-hints='["100단계라면 팔 하나의 길이는 몇 칸일까?","팔은 넷이다. 팔의 칸을 모두 모으면 몇 칸인가?","팔의 칸을 다 모은 뒤, 가운데 한 칸을 잊지 말고 더하자."]'></div>
+        <p class="q-fb" id="fb-q10"></p>
+      </div>
+    </section>
+
+    <!-- 슬11 · 발견 4: 규칙과 실제 대조 (검증) -->
+    <section class="slide" data-q-id="verify">
+      <span class="stage-badge">발견 4/4</span>
+      <h1 class="slide-title">규칙이 진짜인지 확인하자</h1>
+      <p class="slide-sub"><b>세 단계</b>를 모두 눌러 · 규칙으로 셈한 칸 수와 실제로 그려 센 칸 수를 견주자 (+15)</p>
+      <div class="cal-wrap">
+        <div class="cal-head step-btns" id="verify-btns">
+          <button class="cal-month-btn" data-o="3">3단계</button>
+          <button class="cal-month-btn" data-o="5">5단계</button>
+          <button class="cal-month-btn" data-o="6">6단계</button>
+        </div>
+        <div class="cal-grid grow growmini" id="board-verify"></div>
+        <div class="cal-info" id="info-verify"></div>
+        <div class="cal-msg" id="msg-verify">단계를 하나 골라 눌러 보자</div>
+      </div>
+      <div class="mcq-hint" data-hints='["세 단계를 하나씩 다 눌러 보자.","규칙으로 셈한 칸 수와 실제로 센 칸 수를 나란히 읽자.","셋 다 맞아떨어진다면 규칙을 믿어도 될까? 몇 개를 더 봐야 마음이 놓일까?"]'></div>
+    </section>
+
+    <!-- 슬12 · 도전: 다르게 자라는 모양 -->
+    <section class="slide" data-q-id="edge">
+      <span class="stage-badge">도전 1/4</span>
+      <h1 class="slide-title">모든 성장이 같은 걸음일까</h1>
+      <p class="slide-sub">이번엔 <b>정사각 모양</b>이 자란다 · 단계를 <b>세 개 이상</b> 눌러 늘어난 양을 살피자 (+10)</p>
+      <div class="cal-wrap">
+        <div class="cal-head step-btns" id="edge-btns">
+          <button class="cal-month-btn" data-s="1">1단계</button>
+          <button class="cal-month-btn" data-s="2">2단계</button>
+          <button class="cal-month-btn" data-s="3">3단계</button>
+          <button class="cal-month-btn" data-s="4">4단계</button>
+          <button class="cal-month-btn" data-s="5">5단계</button>
+        </div>
+        <div class="cal-grid grow" id="board-edge"></div>
+        <div class="cal-info" id="info-edge"></div>
+        <div class="cal-msg" id="msg-edge">단계를 눌러 정사각 모양을 키워 보자</div>
+      </div>
+      <div class="concept-box" id="edge-note" style="visibility:hidden;">발견! 이 성장은 늘어난 양이 <strong>3, 5, 7 …</strong> 로 매번 달라진다. <strong>같은 양씩 자라는 성장</strong>만 「몇 씩 늘어난다」로 말할 수 있다.</div>
+      <div class="mcq-hint" data-hints='["단계를 순서대로 눌러 칸 수를 적어 보자.","앞 단계보다 늘어난 양을 단계마다 견줘 보자.","늘어난 양이 매번 같은가? 다르다면 이 성장은 앞의 모양과 무엇이 다른가?"]'></div>
+    </section>
+
+    <!-- 슬13 · 도전: 팔이 셋인 세계 -->
+    <section class="slide" data-q-id="world">
+      <span class="stage-badge">도전 2/4</span>
+      <h1 class="slide-title">팔이 셋인 모양의 세계</h1>
+      <p class="slide-sub">같은 방식으로 자라지만 팔이 <b>셋뿐</b>인 모양이다</p>
+      <div class="cal-wrap">
+        <div class="cal-grid grow growmini" id="board-world"></div>
+      </div>
+      <div class="q-stage">
+        <p class="q-prompt">이 모양은 단계가 하나 오를 때 몇 칸씩 늘어날까? (+10)</p>
+        <div class="mcq-opts">
+          <button class="mcq-opt" data-a="0">그대로 4</button>
+          <button class="mcq-opt" data-a="1">3</button>
+          <button class="mcq-opt" data-a="2">1</button>
+          <button class="mcq-opt" data-a="3">모양이 다르면 알 수 없다</button>
+        </div>
+        <div class="mcq-hint" data-hints='["앞 모양에서 4씩 늘었던 까닭을 떠올리자. 4는 어디서 온 수였나?","단계가 하나 오르면 팔 하나마다 몇 칸이 새로 생기나?","팔이 셋이면 새로 생기는 칸은 모두 몇 개인가?"]'></div>
+        <p class="q-fb" id="fb-world"></p>
+      </div>
+    </section>
+
+    <!-- 슬14 · 도전: 일반화 -->
+    <section class="slide">
+      <span class="stage-badge">도전 3/4</span>
+      <h1 class="slide-title">모든 성장에 통하는 열쇠</h1>
+      <div class="struct-stage">
+        <div class="struct-eq">
+          <span>팔 넷 :</span><span>4씩</span>
+          <span style="color:var(--ink-soft)">&nbsp;/&nbsp;</span>
+          <span>팔 셋 :</span><span>3씩</span>
+        </div>
+        <div class="concept-box">늘어나는 양의 정체는 4도 3도 아니었다.<br><strong>늘어나는 양 = 팔의 개수</strong> — 그리고 가운데 한 칸은 처음부터 끝까지 <strong>그대로</strong>다.</div>
+        <div class="concept-box">지난 사건에서 규칙은 <strong>판의 짜임</strong>에서 나왔다. 오늘 규칙은 <strong>모양의 짜임</strong>에서 나왔다.<br>그렇다면 팔이 <strong>여섯</strong>인 모양은 몇 씩 자랄까? 마음속으로 답해 보고 넘어가자.</div>
+      </div>
+    </section>
+
+    <!-- 슬15 · 창조 -->
+    <section class="slide" data-q-id="create">
+      <span class="stage-badge">창조 1/3</span>
+      <h1 class="slide-title">나만의 성장 설계소</h1>
+      <p class="slide-sub">팔 개수와 단계를 고르고 → 칸 수를 <b>그리기 전에 예측</b>하고 → 실험실을 돌려 확인하자 (+20)</p>
+      <div class="rule-build">
+        <span>팔</span>
+        <span class="rule-slot" id="slot-arms">몇 개?</span>
+        <span>· 단계</span>
+        <span class="rule-slot" id="slot-step">몇 단계?</span>
+      </div>
+      <div class="rule-choice" id="rule-choices"></div>
+      <div class="rule-build">
+        <span>칸 수 예측 :</span>
+        <span class="q-display" id="disp-create" style="min-width:clamp(70px,12vw,110px);">&nbsp;</span>
+      </div>
+      <div class="q-pad" id="pad-create"></div>
+      <button class="mcq-opt" id="btn-test-rule" style="max-width:340px;">🌱 성장 실험실 돌리기</button>
+      <div class="cal-grid grow growtiny" id="board-create" style="display:none;"></div>
+      <p class="q-fb" id="fb-create"></p>
+      <div class="mcq-hint" data-hints='["단계가 하나 오를 때 늘어나는 양은 팔의 개수와 같았다.","고른 단계라면 팔 하나의 길이는 몇 칸인가?","팔의 칸을 모두 모은 뒤 가운데 한 칸을 더하자."]'></div>
+    </section>
+
+    <!-- 슬16 · 연구원 카드 -->
+    <section class="slide">
+      <span class="stage-badge">창조 2/3</span>
+      <h1 class="slide-title">임무 완수 — 연구원 카드</h1>
+      <div class="detective-card">
+        <p class="dc-title">🌱 성장 예측 연구 기록</p>
+        <div class="dc-row"><span>살펴본 단계</span><b id="dc-cases">0개</b></div>
+        <div class="dc-row"><span>나의 추측</span><b id="dc-conj">기록 없음</b></div>
+        <div class="dc-row"><span>밝혀낸 까닭</span><b>중심 1칸 + 팔 넷 — 단계마다 4칸</b></div>
+        <div class="dc-row"><span>찾아낸 다른 성장</span><b id="dc-edge">아직</b></div>
+        <div class="dc-row"><span>내가 설계한 성장</span><b id="dc-rule">아직</b></div>
+      </div>
+    </section>
+
+    <!-- 슬17 · 정리 -->
+    <section class="slide">
+      <span class="stage-badge">창조 3/3</span>
+      <h1 class="slide-title">오늘의 발견 정리</h1>
+      <ul class="goal-list">
+        <li><strong>성장의 뼈대</strong> — 변하지 않는 부분과 자라는 부분으로 갈라 보면 규칙이 드러난다.</li>
+        <li><strong>늘어나는 양</strong> — 팔이 넷이면 4씩, 셋이면 3씩. 늘어나는 양은 팔의 개수다.</li>
+        <li><strong>그리지 않고 맞히기</strong> — 100단계도 그리지 않고 셀 수 있다.</li>
+        <li><strong>다른 걸음의 성장</strong> — 늘어난 양이 매번 달라지는 성장도 있다.</li>
+        <li><strong>규칙의 뿌리</strong> — 성장 규칙은 숫자가 아니라 모양의 짜임에서 나온다.</li>
+      </ul>
+    </section>
+
+    <!-- 슬18 · 마침 -->
+    <section class="slide">
+      <span class="stage-badge">마침</span>
+      <h1 class="slide-title">연구 결과</h1>
+      <div class="wrap-score" id="final-score">0</div>
+      <p class="wrap-msg" id="wrap-msg"></p>
+      <div class="home-card">🏠 <b>집에서 하는 진짜 연구</b> — 바둑돌이나 블록으로 팔이 다섯인 모양을 만들어 보자.<br>단계가 하나 오르면 몇 칸씩 늘까? 10단계의 칸 수를 그리기 전에 가족에게 맞혀 보이자.</div>
+      <div class="next-mini">
+        <span class="next-chip">다음 사건 · 소수 사냥 규칙 설계</span>
+        <span class="next-chip">지난 사건 · 수 배열표 순간이동</span>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next" id="next" onclick="goNext()">다음 →</button>
+  </footer>
+</div>
+
+<script>
+/* ═══════════ KGiftedCore — 순수 로직 (DOM 무의존, 테스트 대상) ═══════════ */
+const KGiftedCore = {
+  // 팔이 뻗는 방향 (오른쪽·아래·왼쪽·위 순서로 개수만큼 사용)
+  DIRS: [
+    { dr: 0,  dc: 1,  label: '오른쪽' },
+    { dr: 1,  dc: 0,  label: '아래' },
+    { dr: 0,  dc: -1, label: '왼쪽' },
+    { dr: -1, dc: 0,  label: '위' }
+  ],
+  // 단계 step의 칸 수 = 중심 1 + 팔 개수 × 한 걸음 자람 × 단계
+  count(step, arms, grow) {
+    const g = grow == null ? 1 : grow;
+    if (step == null || step < 0 || arms == null || arms < 0 || g < 1) return null;
+    if (arms > this.DIRS.length) return null;
+    return 1 + arms * g * step;
+  },
+  // 격자(폭 w · 전체 n) 위 중심 cIdx 기준 모양의 칸 인덱스. 판을 벗어나면 null
+  starCells(step, arms, w, n, cIdx, grow) {
+    const g = grow == null ? 1 : grow;
+    if (arms > this.DIRS.length || step < 0 || g < 1) return null;
+    const rows = Math.floor(n / w);
+    const cr = Math.floor(cIdx / w), cc = cIdx % w;
+    if (cr < 0 || cr >= rows || cc < 0 || cc >= w) return null;
+    const ids = [cIdx];
+    for (let a = 0; a < arms; a++) {
+      const d = this.DIRS[a];
+      for (let i = 1; i <= step * g; i++) {
+        const nr = cr + d.dr * i, nc = cc + d.dc * i;
+        if (nr < 0 || nr >= rows || nc < 0 || nc >= w) return null;
+        ids.push(nr * w + nc);
+      }
+    }
+    return ids;
+  },
+  // 단계 1~maxStep의 칸 수와 늘어난 양
+  growthTable(maxStep, arms, grow) {
+    const rows = [];
+    let prev = null;
+    for (let s = 1; s <= maxStep; s++) {
+      const c = this.count(s, arms, grow);
+      rows.push({ step: s, count: c, delta: prev == null ? null : c - prev });
+      prev = c;
+    }
+    return rows;
+  },
+  // 늘어난 양이 처음부터 끝까지 같은가
+  isConstant(rows) {
+    const ds = rows.map(r => r.delta).filter(d => d != null);
+    return ds.length > 0 && ds.every(d => d === ds[0]);
+  },
+  // 늘어난 양 목록 (관찰용)
+  deltas(rows) { return rows.map(r => r.delta).filter(d => d != null); },
+  // 견줄 성장: 정사각 성장 — 단계 step의 칸 수
+  squareCount(step) { return step == null || step < 0 ? null : step * step; },
+  squareCells(step, w, n, tlIdx) {
+    const rows = Math.floor(n / w);
+    const tr = Math.floor(tlIdx / w), tc = tlIdx % w;
+    const ids = [];
+    for (let r = 0; r < step; r++) for (let c = 0; c < step; c++) {
+      const nr = tr + r, nc = tc + c;
+      if (nr < 0 || nr >= rows || nc < 0 || nc >= w) return null;
+      ids.push(nr * w + nc);
+    }
+    return ids;
+  },
+  squareTable(maxStep) {
+    const rows = [];
+    let prev = null;
+    for (let s = 1; s <= maxStep; s++) {
+      const c = this.squareCount(s);
+      rows.push({ step: s, count: c, delta: prev == null ? null : c - prev });
+      prev = c;
+    }
+    return rows;
+  },
+  // 창조 설계의 칸 수 (팔 개수·단계를 고른 뒤 예측 대조용). 고르지 않았으면 null
+  designCount(arms, step, grow) {
+    if (arms == null || step == null) return null;
+    if (arms < 1 || step < 1) return null;
+    return this.count(step, arms, grow == null ? 1 : grow);
+  },
+  // 점수 배분 합계 검증용 (합 100)
+  SCORE_PLAN: { explore: 15, conjecture: 10, q9: 10, q10: 10, verify: 15, edge: 10, world: 10, create: 20 }
+};
+if (typeof module !== 'undefined') module.exports = KGiftedCore;
+
+/* ═══════════ 엔진 (base: kg_math_l3_pat01 계승 · 힌트 3단) ═══════════ */
+const TOTAL = 18;
+const LESSON_ID = 'kg_math_l3_pat03';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+const HINT_MAX = 3;
+const EX = { w: 11, n: 121, c: 60 };   // 탐험 격자 11x11, 중심 (5,5)
+const VF = { w: 13, n: 169, c: 84 };   // 검증 격자 13x13, 중심 (6,6)
+const WD = { w: 9,  n: 81,  c: 40 };   // 팔 셋 세계 9x9, 중심 (4,4)
+const CR = { w: 17, n: 289, c: 144 };  // 창조 격자 17x17, 중심 (8,8)
+const ED = { w: 7,  n: 49,  tl: 8 };   // 정사각 성장 7x7, 왼쪽 위 (1,1)
+const ARMS = 4, GROW = 1;
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.querySelectorAll('#dots .ka-dot').forEach((d, i) => { d.classList.toggle('active', i === cur); d.classList.toggle('done', i < cur); });
+  document.getElementById('prev').disabled = cur === 0;
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.hintLevel >= HINT_MAX; }
+  else { hintBtn.disabled = true; }
+  if (cur === TOTAL - 1) {
+    document.getElementById('next').textContent = '마치기 →';
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('wrap-msg').textContent = wrapMsg(score);
+    saveProgress(true);
+  } else { document.getElementById('next').textContent = '다음 →'; }
+  if (cur === 4) renderCaseTable();
+  if (cur === 15) renderAgentCard();
+}
+function saveProgress(done) {
+  const data = { cur, score, done, startedAt, finishedAt: done ? Date.now() : null, qState, cases: exploreCases, conj: conjPicked, myRule: myRuleText };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function wrapMsg(s) {
+  if (s >= 100) return '전설의 성장 예측 연구원!';
+  if (s >= 80) return '대단한 연구였다!';
+  if (s >= 60) return '연구원의 눈이 자라났다!';
+  return '단서는 충분히 모았다. 다시 연구해도 좋다!';
+}
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+function showHint() {
+  const qid = currentQId(); if (!qid) return;
+  const st = getQState(qid); if (st.hintLevel >= HINT_MAX) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint'); if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[Math.min(st.hintLevel, hints.length) - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= HINT_MAX;
+}
+
+
+/* ═══════════ 성장 격자 렌더 공통 ═══════════ */
+function renderGrid(elId, w, n, cls) {
+  const el = document.getElementById(elId);
+  el.innerHTML = '';
+  el.style.gridTemplateColumns = 'repeat(' + w + ',1fr)';
+  for (let i = 0; i < n; i++) {
+    const d = document.createElement('div');
+    d.className = 'cal-cell empty';
+    d.dataset.i = i;
+    el.appendChild(d);
+  }
+  if (cls) el.classList.add(cls);
+  return el;
+}
+function clearGrid(el) {
+  el.querySelectorAll('.cal-cell').forEach(c => {
+    c.classList.remove('sel', 'center-cell', 'trail');
+    c.classList.add('empty');
+  });
+}
+function fillCells(el, ids, cls) {
+  ids.forEach(i => {
+    const c = el.querySelector('[data-i="' + i + '"]');
+    if (c) { c.classList.remove('empty'); c.classList.add(cls); }
+  });
+}
+function drawStar(el, step, arms, dim, grow) {
+  const ids = KGiftedCore.starCells(step, arms, dim.w, dim.n, dim.c, grow);
+  if (!ids) return null;
+  clearGrid(el);
+  fillCells(el, ids.slice(1), 'sel');
+  fillCells(el, [dim.c], 'center-cell');
+  return ids;
+}
+
+/* ═══════════ 슬4 탐험 ═══════════ */
+const exploreCases = [];
+const seenSteps = new Set();
+const boardEx = renderGrid('board-explore', EX.w, EX.n);
+document.querySelectorAll('#step-btns .cal-month-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const s = parseInt(btn.dataset.s);
+    document.querySelectorAll('#step-btns .cal-month-btn').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    const ids = drawStar(boardEx, s, ARMS, EX, GROW);
+    const cnt = KGiftedCore.count(s, ARMS, GROW);
+    const prev = KGiftedCore.count(s - 1, ARMS, GROW);
+    const delta = s > 1 ? cnt - prev : null;
+    document.getElementById('info-explore').innerHTML =
+      '<span class="sum-chip a">' + s + '단계</span>' +
+      '<span class="sum-chip b">칸 수 ' + cnt + '</span>' +
+      (delta != null ? '<span class="sum-chip tot">앞 단계보다 +' + delta + '</span>' : '');
+    if (!seenSteps.has(s)) {
+      seenSteps.add(s);
+      exploreCases.push({ step: s, count: cnt, delta: delta });
+    }
+    const msg = document.getElementById('msg-explore');
+    msg.classList.remove('wrong');
+    const st = getQState('explore');
+    if (seenSteps.size >= 3 && !st.solved) {
+      st.solved = true;
+      addScore(KGiftedCore.SCORE_PLAN.explore);
+      msg.textContent = '단서 3개 수집 완료! ⭐ +15 — 수첩(다음 화면)에 기록됐다.';
+    } else if (!st.solved) {
+      msg.textContent = '단계 ' + seenSteps.size + '개째 기록. 서로 다른 단계를 ' + (3 - seenSteps.size) + '개 더 살펴보자!';
+    } else {
+      msg.textContent = s + '단계는 ' + cnt + '칸. 무엇이 자라고 무엇이 그대로인가?';
+    }
+    saveProgress(false);
+  });
+});
+
+/* ═══════════ 슬5 수첩 ═══════════ */
+function renderCaseTable() {
+  const body = document.getElementById('case-body');
+  body.innerHTML = '';
+  exploreCases.slice().sort((a, b) => a.step - b.step).forEach(c => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + c.step + '단계</td><td>' + c.count + '</td><td>' +
+      (c.delta != null ? '+' + c.delta : '—') + '</td>';
+    body.appendChild(tr);
+  });
+  document.getElementById('case-count').innerHTML = '살펴본 단계: <b>' + seenSteps.size + '개</b>';
+  if (exploreCases.length === 0) {
+    document.getElementById('case-note').innerHTML = '아직 단서가 없다. <strong>이전으로 돌아가</strong> 모양을 자라게 해 보고 오자.';
+  }
+}
+
+/* ═══════════ 슬6 관찰 기록 ═══════════ */
+document.querySelectorAll('#obs-list .pick-item').forEach(btn => {
+  btn.addEventListener('click', () => {
+    btn.classList.toggle('on');
+    const n = document.querySelectorAll('#obs-list .pick-item.on').length;
+    document.getElementById('obs-fb').textContent = n > 0 ? '수첩에 기록됐다 (' + n + '개)' : '';
+    saveProgress(false);
+  });
+});
+
+/* ═══════════ 슬7 추측 ═══════════ */
+let conjPicked = null;
+const CONJ_TEXT = ['단계마다 4씩', '단계마다 2씩', '단계마다 다르다', '단계를 두 번 곱한 수'];
+document.querySelectorAll('#conj-opts .mcq-opt').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const st = getQState('conjecture');
+    document.querySelectorAll('#conj-opts .mcq-opt').forEach(b => b.classList.remove('correct'));
+    btn.classList.add('correct');
+    conjPicked = parseInt(btn.dataset.c);
+    if (!st.solved) { st.solved = true; addScore(KGiftedCore.SCORE_PLAN.conjecture); }
+    document.getElementById('conj-fb').textContent = '추측 기록 완료 ⭐ — 이제 이 추측이 맞는지 함께 밝혀 보자.';
+    saveProgress(false);
+  });
+});
+
+/* ═══════════ 슬8 구조 공개 ═══════════ */
+const structVals = { c: '1', a: '★', t: '1 + ★넷' };
+function revealStruct(k) {
+  const cell = document.getElementById('sc-' + k);
+  const btn = document.getElementById('ar-' + k);
+  cell.innerHTML = structVals[k].replace(/★/g, '<span style="color:var(--emph)">★</span>');
+  cell.classList.add(k === 't' ? 'hl-a' : 'hl-b');
+  btn.classList.add('revealed');
+  btn.textContent = { c: '변하지 않는 부분 = 가운데 1칸', a: '팔 하나 = ★칸', t: '모두 = 1 과 ★칸짜리 팔 넷' }[k];
+  if (document.querySelectorAll('.arrow-note.revealed').length === 3) {
+    document.getElementById('struct-note').innerHTML =
+      '모양의 정체: <strong>가운데 1칸</strong>과 <strong>팔 넷</strong>. 팔 하나의 길이는 단계 번호와 같다.<br>' +
+      '그렇다면 단계가 하나 오를 때 칸 수는 왜 그만큼 늘까 — 다음 화면에서 확인!';
+  }
+}
+
+/* ═══════════ 확인 문제 공통 (mcq) ═══════════ */
+function wireMcq(slideQid, correctIdx, optsSelector, fbId, points, rightMsg, wrongMsg) {
+  document.querySelectorAll(optsSelector + ' .mcq-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const st = getQState(slideQid);
+      if (st.solved) return;
+      st.attempts++;
+      const fb = document.getElementById(fbId);
+      if (parseInt(btn.dataset.a) === correctIdx) {
+        st.solved = true;
+        btn.classList.add('correct');
+        addScore(points);
+        fb.textContent = rightMsg;
+        fb.classList.remove('wrong');
+      } else {
+        st.wrongCount++;
+        btn.classList.add('wrong');
+        setTimeout(() => btn.classList.remove('wrong'), 600);
+        fb.textContent = wrongMsg;
+        fb.classList.add('wrong');
+      }
+      saveProgress(false);
+    });
+  });
+}
+wireMcq('q9', 1, '[data-q-id="q9"]', 'fb-q9', KGiftedCore.SCORE_PLAN.q9,
+  '정확하다! 단계가 하나 오르면 팔마다 한 칸씩 — 팔이 넷이니 새 칸은 넷이다. ⭐ +10',
+  '새로 칠해진 칸이 어디에 생겼는지 다시 떠올려 보자.');
+wireMcq('world', 1, '[data-q-id="world"]', 'fb-world', KGiftedCore.SCORE_PLAN.world,
+  '연구 성공! 늘어나는 양은 팔의 개수다. 숫자가 아니라 모양의 짜임이 규칙을 만든다. ⭐ +10',
+  '4가 어디서 온 수였는지부터 다시 생각해 보자.');
+
+/* ═══════════ 슬10 숫자패드 ═══════════ */
+(function() {
+  const pad = document.getElementById('pad-q10');
+  const keys = ['1','2','3','4','5','6','7','8','9','0','←','확인'];
+  let val = '';
+  keys.forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'q-key' + (k === '←' || k === '확인' ? ' fn' : '');
+    b.textContent = k;
+    b.addEventListener('click', () => {
+      const st = getQState('q10');
+      if (st.solved) return;
+      const disp = document.getElementById('disp-q10');
+      const fb = document.getElementById('fb-q10');
+      if (k === '←') { val = val.slice(0, -1); }
+      else if (k === '확인') {
+        st.attempts++;
+        if (parseInt(val) === KGiftedCore.count(100, ARMS, GROW)) {
+          st.solved = true;
+          addScore(KGiftedCore.SCORE_PLAN.q10);
+          fb.textContent = '연구 성공! 100칸짜리 팔 넷에 가운데 한 칸 — 그리지 않고도 셌다. ⭐ +10';
+          fb.classList.remove('wrong');
+        } else {
+          st.wrongCount++;
+          fb.textContent = '아직이다. 팔 넷의 칸을 모두 모은 뒤 가운데 한 칸을 더해 보자.';
+          fb.classList.add('wrong');
+          val = '';
+        }
+        saveProgress(false);
+      }
+      else if (val.length < 3) { val += k; }
+      disp.textContent = val || '\u00A0';
+    });
+    pad.appendChild(b);
+  });
+})();
+
+/* ═══════════ 슬11 규칙·실제 대조 ═══════════ */
+const VERIFY_STEPS = [3, 5, 6];
+const verifyDone = new Set();
+const boardVf = renderGrid('board-verify', VF.w, VF.n);
+document.querySelectorAll('#verify-btns .cal-month-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const s = parseInt(btn.dataset.o);
+    document.querySelectorAll('#verify-btns .cal-month-btn').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    const ids = drawStar(boardVf, s, ARMS, VF, GROW);
+    const real = ids.length;
+    const byRule = KGiftedCore.count(s, ARMS, GROW);
+    verifyDone.add(s);
+    const info = document.getElementById('info-verify');
+    info.innerHTML = Array.from(verifyDone).sort((a, b) => a - b).map(x => {
+      const r = KGiftedCore.starCells(x, ARMS, VF.w, VF.n, VF.c, GROW).length;
+      return '<span class="sum-chip ' + (x === s ? 'tot' : 'b') + '">' + x + '단계 · 규칙 ' +
+        KGiftedCore.count(x, ARMS, GROW) + ' · 세어 보니 ' + r + '</span>';
+    }).join('');
+    const msg = document.getElementById('msg-verify');
+    const st = getQState('verify');
+    if (verifyDone.size >= 3 && !st.solved) {
+      st.solved = true;
+      addScore(KGiftedCore.SCORE_PLAN.verify);
+      msg.textContent = '세 단계 모두 규칙과 실제가 맞아떨어졌다! 규칙이 버텨 냈다. ⭐ +15';
+    } else if (!st.solved) {
+      msg.textContent = s + '단계 — 규칙 ' + byRule + ', 세어 보니 ' + real + '. 남은 단계도 눌러 보자 (' + verifyDone.size + '/3)';
+    }
+    saveProgress(false);
+  });
+});
+
+/* ═══════════ 슬12 다르게 자라는 모양 ═══════════ */
+const edgeSeen = new Set();
+const boardEd = renderGrid('board-edge', ED.w, ED.n);
+document.querySelectorAll('#edge-btns .cal-month-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const s = parseInt(btn.dataset.s);
+    document.querySelectorAll('#edge-btns .cal-month-btn').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    const ids = KGiftedCore.squareCells(s, ED.w, ED.n, ED.tl);
+    clearGrid(boardEd);
+    fillCells(boardEd, ids, 'trail');
+    const cnt = KGiftedCore.squareCount(s);
+    const delta = s > 1 ? cnt - KGiftedCore.squareCount(s - 1) : null;
+    edgeSeen.add(s);
+    document.getElementById('info-edge').innerHTML =
+      '<span class="sum-chip a">' + s + '단계</span>' +
+      '<span class="sum-chip b">칸 수 ' + cnt + '</span>' +
+      (delta != null ? '<span class="sum-chip tot">앞 단계보다 +' + delta + '</span>' : '');
+    const msg = document.getElementById('msg-edge');
+    const st = getQState('edge');
+    if (edgeSeen.size >= 3 && !st.solved) {
+      st.solved = true;
+      addScore(KGiftedCore.SCORE_PLAN.edge);
+      document.getElementById('edge-note').style.visibility = 'visible';
+      msg.textContent = '늘어난 양이 매번 달라진다! 같은 걸음으로 자라지 않는 성장이다. ⭐ +10';
+    } else if (!st.solved) {
+      msg.textContent = s + '단계는 ' + cnt + '칸. 단계를 ' + (3 - edgeSeen.size) + '개 더 눌러 늘어난 양을 견주자.';
+    } else {
+      msg.textContent = s + '단계는 ' + cnt + '칸. 늘어난 양이 어떻게 달라지는지 살피자.';
+    }
+    saveProgress(false);
+  });
+});
+
+/* ═══════════ 슬13 팔 셋 세계 ═══════════ */
+(function() {
+  const el = renderGrid('board-world', WD.w, WD.n);
+  drawStar(el, 3, 3, WD, 1);
+})();
+
+/* ═══════════ 슬15 창조 ═══════════ */
+let myArms = null, myStep = null, myPred = '', myRuleText = '아직';
+const CH = { arms: [2, 3, 4], step: [3, 5, 8] };
+let activeSlot = null;
+const boardCr = renderGrid('board-create', CR.w, CR.n);
+function renderChoices() {
+  const box = document.getElementById('rule-choices');
+  box.innerHTML = '';
+  if (!activeSlot) return;
+  CH[activeSlot].forEach(v => {
+    const b = document.createElement('button');
+    b.className = 'rule-chip';
+    b.textContent = activeSlot === 'arms' ? v + '개' : v + '단계';
+    b.addEventListener('click', () => {
+      if (activeSlot === 'arms') myArms = v;
+      if (activeSlot === 'step') myStep = v;
+      const slot = document.getElementById('slot-' + activeSlot);
+      slot.textContent = b.textContent;
+      slot.classList.add('filled');
+      activeSlot = null;
+      renderChoices();
+      saveProgress(false);
+    });
+    box.appendChild(b);
+  });
+}
+['arms', 'step'].forEach(k => {
+  document.getElementById('slot-' + k).addEventListener('click', () => { activeSlot = k; renderChoices(); });
+});
+(function() {
+  const pad = document.getElementById('pad-create');
+  const keys = ['1','2','3','4','5','6','7','8','9','0','←'];
+  keys.forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'q-key' + (k === '←' ? ' fn' : '');
+    b.textContent = k;
+    b.addEventListener('click', () => {
+      if (getQState('create').solved) return;
+      if (k === '←') myPred = myPred.slice(0, -1);
+      else if (myPred.length < 3) myPred += k;
+      document.getElementById('disp-create').textContent = myPred || '\u00A0';
+    });
+    pad.appendChild(b);
+  });
+})();
+document.getElementById('btn-test-rule').addEventListener('click', () => {
+  const st = getQState('create');
+  if (st.solved) return;
+  const fb = document.getElementById('fb-create');
+  if (myArms == null || myStep == null) { fb.textContent = '팔 개수와 단계를 먼저 고르자.'; fb.classList.add('wrong'); return; }
+  if (!myPred) { fb.textContent = '칸 수를 먼저 예측해서 적자. 그것이 설계다.'; fb.classList.add('wrong'); return; }
+  st.attempts++;
+  const real = KGiftedCore.designCount(myArms, myStep, GROW);
+  if (parseInt(myPred) === real) {
+    st.solved = true;
+    addScore(KGiftedCore.SCORE_PLAN.create);
+    const ids = KGiftedCore.starCells(myStep, myArms, CR.w, CR.n, CR.c, GROW);
+    if (ids) {
+      clearGrid(boardCr);
+      fillCells(boardCr, ids.slice(1), 'sel');
+      fillCells(boardCr, [CR.c], 'center-cell');
+      document.getElementById('board-create').style.display = '';
+      document.getElementById('pad-create').style.display = 'none';
+      document.getElementById('rule-choices').style.display = 'none';
+    }
+    myRuleText = '팔 ' + myArms + '개 · ' + myStep + '단계 = ' + real + '칸';
+    fb.classList.remove('wrong');
+    fb.textContent = '설계 성공! 실험실에서 세어 봐도 ' + real + '칸이다. 그리기 전에 알아냈다. ⭐ +20';
+  } else {
+    st.wrongCount++;
+    fb.classList.add('wrong');
+    fb.textContent = '실험실을 돌려 보니 예측과 다른 수가 나왔다. 팔 하나의 길이부터 다시 헤아려 보자.';
+    myPred = '';
+    document.getElementById('disp-create').textContent = '\u00A0';
+  }
+  saveProgress(false);
+});
+
+/* ═══════════ 슬16 연구원 카드 ═══════════ */
+function renderAgentCard() {
+  document.getElementById('dc-cases').textContent = seenSteps.size + '개';
+  document.getElementById('dc-conj').textContent = conjPicked != null ? CONJ_TEXT[conjPicked] : '기록 없음';
+  document.getElementById('dc-edge').textContent = getQState('edge').solved ? '정사각 성장 — 걸음이 매번 다르다' : '아직';
+  document.getElementById('dc-rule').textContent = myRuleText;
+}
+
+/* ═══════════ 초기화 ═══════════ */
+(function init() {
+  const dots = document.getElementById('dots');
+  for (let i = 0; i < TOTAL; i++) { const d = document.createElement('span'); d.className = 'ka-dot'; dots.appendChild(d); }
+  updateUI();
+})();
+</script>
+</body>
+</html>
