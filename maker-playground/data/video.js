@@ -86,6 +86,14 @@ window.MK_VIDEO = (() => {
     const fy = focal && isFinite(+focal.y) ? Math.max(0, Math.min(1, +focal.y)) : 0.5;
     return { mode: 'cover', sx: (vw - sw) * fx, sy: (vh - sh) * fy, sw, sh };
   }
+  /* R117 — 애니 변형(등장 scale·rotate 델타·켄번즈)의 캔버스 피벗.
+     정본은 MK_FOCAL.originOf 하나 — 재생 CSS transform-origin 이 같은 수를 읽어
+     패리티가 구조로 성립. null = 종전 중앙(cx·cy) 폴백. 순수 함수 — 하니스 직측. */
+  function animPivot(el, ex, ey, ew, eh) {
+    const F = window.MK_FOCAL;
+    const og = F && F.originOf ? F.originOf(el) : null;
+    return og ? { px: ex + ew * og.x, py: ey + eh * og.y } : null;
+  }
   /* 장면 music → 시간 구간 — MK_PLAY 규약 그대로: 같은 음악은 장면을 넘어 이어짐 */
   function musicTimeline(doc, planIn) {
     const plan = planIn || framePlan(doc, {});
@@ -308,10 +316,12 @@ window.MK_VIDEO = (() => {
             if (st.clipW != null) { ctx.beginPath(); ctx.rect(ex, 0, ew * st.clipW, H); ctx.clip(); }
             if (st.clipH != null) { ctx.beginPath(); ctx.rect(0, ey, W, eh * st.clipH); ctx.clip(); }
             if (st.blur > 0.2) { try { ctx.filter = `blur(${(st.blur * pxu).toFixed(1)}px)`; } catch (_) {} }
-            ctx.translate(cx, cy);
+            const og = animPivot(el, ex, ey, ew, eh);       /* R117 — 초점 축, null=중앙 */
+            const pvx = og ? og.px : cx, pvy = og ? og.py : cy;
+            ctx.translate(pvx, pvy);
             if (st.rot) ctx.rotate(st.rot * Math.PI / 180);
             if (st.scale !== 1) ctx.scale(st.scale, st.scale);
-            ctx.translate(-cx + st.dx * pxu, -cy + st.dy * pxu);
+            ctx.translate(-pvx + st.dx * pxu, -pvy + st.dy * pxu);
             if (sp.vids[i]) {                              /* R39 — 영상: radius 클립 + fit 기하 */
               const v = sp.vids[i];
               const rr = el.radius ? (el.radius > 100 ? Math.min(ew, eh) / 2 : Math.min(el.radius * pxu, Math.min(ew, eh) / 2)) : 0;
@@ -414,6 +424,13 @@ window.MK_VIDEO = (() => {
       const ks = stateAt(mk('mkp-fade'), { anim: { idle: 'kb-static', idleDur: 4 } }, 3);
       if (!(ks.scale === 1 && ks.dx === 0 && ks.dy === 0)) v.push('켄번즈 static 모션 발생');
     }
+    /* R117 — 애니 피벗: 초점 축 좌표 변환·회전 요소 제외·무초점 null */
+    if (window.MK_FOCAL && window.MK_FOCAL.originOf) {
+      const pv = animPivot({ focal: { x: 0.2, y: 0.9 } }, 100, 50, 200, 100);
+      if (!pv || Math.abs(pv.px - 140) > 1e-9 || Math.abs(pv.py - 140) > 1e-9) v.push('R117 애니 피벗 좌표 위반');
+      if (animPivot({ focal: { x: 0.2, y: 0.9 }, rot: 10 }, 0, 0, 10, 10) !== null) v.push('R117 회전 제외 위반');
+      if (animPivot({}, 0, 0, 10, 10) !== null) v.push('R117 무초점 null 위반');
+    }
     /* 프레임 플랜 — MK_PLAY.sequence와 동일 시간축 */
     const doc = { scenes: [{ duration: 2, elements: [] }, { duration: 3, elements: [] }] };
     const p = framePlan(doc, {});
@@ -440,5 +457,5 @@ window.MK_VIDEO = (() => {
   }
 
   return { FPS, TRANS_DUR, MAX_SEC, easeAt, stateAt, framePlan, exportMP4, videoAudit, busy: () => busy,
-    isVideoEl, secondsInto, fitRect, musicTimeline };
+    isVideoEl, secondsInto, fitRect, musicTimeline, animPivot };
 })();

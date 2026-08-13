@@ -124,11 +124,16 @@ body.mkp-on #kedu-back { display:none !important }
       }
       const rad = el.radius ? `;border-radius:${el.radius > 100 ? '50%' : el.radius + 'px'}` : '';
       if (el.src) {
+        /* R117 — 초점이 있으면 변형(켄번즈·등장 scale)의 축도 초점이다. 정본은
+           MK_FOCAL.originOf 하나 — MP4(video.js animPivot)가 같은 수를 읽어 패리티.
+           null(무초점·가운데·회전 요소) = 종전 바이트 동일. */
+        const og = window.MK_FOCAL && window.MK_FOCAL.originOf ? window.MK_FOCAL.originOf(el) : null;
+        const to = og ? `;transform-origin:${+(og.x * 100).toFixed(1)}% ${+(og.y * 100).toFixed(1)}%` : '';
         const fit = el.fit === 'contain' ? 'contain' : 'cover';
         const media = (el.video === true || el.kind === 'video' || /^data:video\//.test(el.src))
           ? `<video src="${el.src}" muted autoplay loop playsinline style="width:100%;height:100%;object-fit:${fit}${window.MK_FOCAL ? window.MK_FOCAL.pos(el) : ''}${window.MK_PHOTO ? window.MK_PHOTO.mediaStyle(el) : ''};display:block;pointer-events:none"></video>`   /* R39 — 영상 프레임 실재생 · R94 초점 */
           : `<img src="${el.src}" alt="" style="width:100%;height:100%;object-fit:${fit}${window.MK_FOCAL ? window.MK_FOCAL.pos(el) : ''}${window.MK_PHOTO ? window.MK_PHOTO.mediaStyle(el) : ''};display:block">`;
-        return `<div class="mkp-el mkp-img" style="${pos}height:${el.h}%${rad};overflow:hidden${window.MK_PHOTO ? window.MK_PHOTO.cropCss(el) : ''}${rot}${an}">${media}</div>`; /* R105 — 자르기 */
+        return `<div class="mkp-el mkp-img" style="${pos}height:${el.h}%${rad};overflow:hidden${window.MK_PHOTO ? window.MK_PHOTO.cropCss(el) : ''}${to}${rot}${an}">${media}</div>`; /* R105 — 자르기 · R117 — 초점 축 */
       }
       if (el.fill && el.fill !== 'none') return `<div class="mkp-el" style="${pos}height:${el.h}%;background:${el.fill}${rad}${rot}${an}"></div>`;
       return `<div class="mkp-el mkp-ph" style="${pos}height:${el.h}%${rad}${rot}${an}">${esc(el.label || '')}</div>`;

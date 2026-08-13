@@ -90,6 +90,23 @@ window.MK_FOCAL = (() => {
     return { x: frame.x, y: frame.y - (dh - frame.h) * n.y, w: frame.w, h: dh };
   };
 
+  /* R117 — 변형(켄번즈·등장 scale·enter rotate)의 축: 초점이 있으면 초점이 축이다.
+     cover의 object-position 계약(원본 fx%·fy% 지점이 틀의 fx%·fy%에 앉는다) 덕에
+     틀 좌표 (fx%, fy%)를 축으로 잡으면 커지는 화면이 초점 콘텐츠를 향한다.
+     재생(CSS transform-origin)과 MP4(캔버스 피벗)가 이 함수 하나를 함께 읽어
+     패리티가 구조로 성립한다. 0.1% 격자 양자화도 여기서 한 번만.
+     정직한 제외 — el.rot(정적 회전)은 중앙 축이 정립(R107): CSS origin은 요소당
+     하나뿐이라 초점 축을 주면 정적 회전 축까지 움직여 재생≠파일이 된다. 회전
+     요소는 종전 중앙 축 유지(한계로 기록). contain도 틀 좌표 기준 — 양세계가
+     같은 틀 좌표를 축으로 쓰므로 패리티는 구조상 정확하다. */
+  const originOf = (el) => {
+    if (!el || !el.focal || el.rot) return null;
+    const n = norm(el.focal);
+    if (n.x === 0.5 && n.y === 0.5) return null;
+    const q = (v) => Math.round(v * 1000) / 1000; /* 0.1% 격자 — CSS 표기와 캔버스가 같은 수 */
+    return { x: q(n.x), y: q(n.y) };
+  };
+
   /* 자가 검증 */
   const audit = () => {
     const v = [];
@@ -115,8 +132,13 @@ window.MK_FOCAL = (() => {
     if ('focal' in fe || 'nar' in fe) v.push('setFine 가운데 청소 위반');
     const fk = { nar: 1.2 }; setFine(fk, 0.2, 0.2, NaN);
     if (fk.nar !== 1.2) v.push('setFine nar 보존 위반');
+    /* R117 — originOf 계약 */
+    if (originOf(null) !== null || originOf({ focal: { x: 0.5, y: 0.5 } }) !== null) v.push('originOf 가운데 위반');
+    if (originOf({ focal: { x: 0.3, y: 0.8 }, rot: 15 }) !== null) v.push('originOf 회전 제외 위반');
+    const oo = originOf({ focal: { x: 0.3335, y: 1 } });
+    if (!oo || oo.x !== 0.334 || oo.y !== 1) v.push('originOf 격자 위반');
     return { ok: !v.length, violations: v };
   };
 
-  return { norm, isCenter, pos, svgPre, set, setFine, coverRect, narOf, audit };
+  return { norm, isCenter, pos, svgPre, set, setFine, coverRect, narOf, originOf, audit };
 })();
