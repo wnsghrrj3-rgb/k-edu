@@ -201,6 +201,23 @@ window.KEDU_MAP["g6_1_science"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 3,
+   "name": "식물의 구조와 기능",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g6_science_u3_l01",
+     "lessonId": "g6_sci_u3_l01_v1",
+     "n": "1",
+     "title": "열려라 과학 — 식물을 맞혀 봐! 다섯 고개 놀이",
+     "sub": null,
+     "url": "/grade6/semester1/science/3단원_식물의구조와기능/g6_sci_u3_l01_열려라과학.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };
