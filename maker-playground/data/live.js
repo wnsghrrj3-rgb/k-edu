@@ -363,7 +363,9 @@ window.MK_LIVE = (() => {
   /* ================= ③ 영속 ================= */
   let backend = null;                    /* {getItem,setItem,removeItem} — 기본 localStorage */
   const store = () => {
-    if (backend) return backend;
+    if (backend) return backend;         /* 주입이 항상 이긴다 — 하니스 계약 (R116 불변) */
+    const X = window.MK_STORE;           /* R116 — IndexedDB 파사드: 준비된 날만 정본 */
+    if (X && X.ready) return X;
     try { const t = window.localStorage; t.getItem('__mk'); return t; } catch (_) { return null; }
   };
   const useBackend = (b) => { backend = b; };
@@ -529,5 +531,22 @@ window.MK_LIVE = (() => {
   return api;
 })();
 
-/* 부팅 복원 — 저장된 프로젝트가 있으면 시드 대신 이어서 (실브라우저 전용, 실패 무해) */
-try { if (window.MK_PROJ && window.localStorage) window.MK_LIVE.restoreProjects(); } catch (_) {}
+/* 부팅 복원 — 저장된 프로젝트가 있으면 시드 대신 이어서 (실브라우저 전용, 실패 무해)
+   R116: MK_STORE 가 있으면 IDB 적재(init) 뒤에 복원한다 — IDB open 은 비동기라
+   첫 렌더(home)가 먼저 그려질 수 있으므로, 복원이 실데이터를 실었고 사용자가
+   아직 시작 화면(home·projects)에 있으면 한 번 다시 그린다. init 실패(ready
+   false)면 store() 가 종전 localStorage 로 폴백해 같은 복원 경로가 돈다. */
+try {
+  if (window.MK_STORE && window.MK_STORE.init) {
+    window.MK_STORE.init(() => {
+      try {
+        if (!window.MK_PROJ) return;
+        const had = window.MK_LIVE.restoreProjects();
+        const P = window.PG;
+        if (had && P && P.render && P.state && /^(home|projects)$/.test(P.state.screen || '')) P.render();
+      } catch (_) {}
+    });
+  } else if (window.MK_PROJ && window.localStorage) {
+    window.MK_LIVE.restoreProjects();
+  }
+} catch (_) {}
