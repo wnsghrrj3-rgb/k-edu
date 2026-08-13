@@ -76,7 +76,40 @@ window.MK_INTAKE = (() => {
       ] },
   };
 
-  const spec = (compId) => SPEC[compId] || null;
+  /* ---- R118: spec 2단 해석 — 마지막 카드 5종(tb 프리셋 4 + tm-magazine)의 재료 입구 ----
+     tb id 는 부팅마다 재생성(newId)이라 리터럴 키로는 못 고친다 — id 가 아니라
+     comp 「구조」로 판정한다 (R83 정신: 선언이 아니라 구조에서 판정).
+     · pairMode === true → beforeafter 위임. pairMode 계약이 곧 「전·후·전·후」
+       순서 규칙이므로 note 가 구조적으로 참. result 는 ba-result 씬이 베이스
+       클론에 실려 오므로 함께 참.
+     · 그 외 → slideshow 후보 texts 를 씬의 실제 bind 슬롯 실존으로 필터.
+       없는 슬롯의 입력 필드를 보여주면 그게 새 거짓말 — 실존 0 이면 spec
+       없음이 정직한 상태 (tm-magazine: highlight 없음·outro 실존 → outro 만).
+     · items 위임 없음 — items 문법(headbody/qa/step/body)은 컴포지션 고유라
+       일반 위임이 거짓을 만든다. 표적 5장은 전부 items 비소비 가족. */
+  function bindSetOf(comp) {
+    const set = new Set();
+    const scan = (slots) => { for (const t of slots || []) if (t && t.bind) set.add(t.bind); };
+    for (const sc of (comp && comp.scenes) || []) {
+      scan(sc.texts); scan(sc.textSlots);
+      if (sc.layoutByRatio) for (const d of Object.values(sc.layoutByRatio)) scan(d && d.textSlots);
+    }
+    return set;
+  }
+  /* 순수 — comp 객체만 보고 판정 (audit·하니스가 합성 comp 로 직접 고정 가능) */
+  function specForComp(comp) {
+    if (!comp) return null;
+    if (comp.pairMode === true) return SPEC['cx-beforeafter'];
+    const binds = bindSetOf(comp);
+    const texts = SPEC['cx-slideshow'].texts.filter((f) => binds.has(f.key));
+    return texts.length ? { texts } : null;
+  }
+  const spec = (compId) => {
+    if (SPEC[compId]) return SPEC[compId]; /* ① 직접 — 종전 10장 바이트 동일 (회귀 0) */
+    const CO = window.MK_COMPOSE;          /* ② 위임 — MK_COMPOSE 부재 시 종전 동작 폴백 */
+    if (!CO || typeof CO.getComposition !== 'function') return null;
+    return specForComp(CO.getComposition(compId));
+  };
 
   /* ---- 순수 파서: 줄글 → items[] ----
      빈 줄 무시 · 앞뒤 공백 정리 · 24항목 상한. 반각/전각 콜론 모두 인식. */
@@ -114,8 +147,14 @@ window.MK_INTAKE = (() => {
     if (parseItems('step', '한 걸음')[0].step !== '한 걸음') v.push('step 위반');
     if (parseItems('body', Array.from({ length: 40 }, (_, i) => 'x' + i).join('\n')).length !== MAX_ITEMS) v.push('상한 위반');
     if (!SPEC['cx-cardnews'] || !SPEC['cx-qa'].items || SPEC['cx-problem'].items) v.push('SPEC 골격 위반');
+    /* R118 위임 — 합성 comp 로 구조 판정을 고정 (id 무관·순수) */
+    if (specForComp({ pairMode: true, scenes: [] }) !== SPEC['cx-beforeafter']) v.push('pairMode 위임 위반');
+    const sf = specForComp({ scenes: [{ texts: [{ bind: 'outro' }] }] });
+    if (!sf || sf.texts.length !== 1 || sf.texts[0].key !== 'outro') v.push('bind 필터 위반');
+    if (specForComp({ scenes: [{ texts: [{ bind: 'title' }] }] }) !== null) v.push('실존 0 정직 위반');
+    if (spec('cx-slideshow') !== SPEC['cx-slideshow']) v.push('직접 spec 동일성 위반');
     return { ok: !v.length, violations: v };
   };
 
-  return { SPEC, spec, parseItems, MAX_ITEMS, audit };
+  return { SPEC, spec, specForComp, parseItems, MAX_ITEMS, audit };
 })();
