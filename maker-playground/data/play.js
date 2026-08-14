@@ -129,11 +129,24 @@ body.mkp-on #kedu-back { display:none !important }
            null(무초점·가운데·회전 요소) = 종전 바이트 동일. */
         const og = window.MK_FOCAL && window.MK_FOCAL.originOf ? window.MK_FOCAL.originOf(el) : null;
         const to = og ? `;transform-origin:${+(og.x * 100).toFixed(1)}% ${+(og.y * 100).toFixed(1)}%` : '';
+        /* R119 — 회전 요소 초점: pan 계열이 아닌 애니면 축 분리 대상(회전은 중앙, 줌은 초점) */
+        const isPan = /^kb-(pan|diagonal)/.test((el.anim && el.anim.idle) || '');
+        const rf = (!isPan && window.MK_FOCAL && window.MK_FOCAL.focalRot) ? window.MK_FOCAL.focalRot(el) : null;
         const fit = el.fit === 'contain' ? 'contain' : 'cover';
+        const crop = window.MK_PHOTO ? window.MK_PHOTO.cropCss(el) : '';
         const media = (el.video === true || el.kind === 'video' || /^data:video\//.test(el.src))
           ? `<video src="${el.src}" muted autoplay loop playsinline style="width:100%;height:100%;object-fit:${fit}${window.MK_FOCAL ? window.MK_FOCAL.pos(el) : ''}${window.MK_PHOTO ? window.MK_PHOTO.mediaStyle(el) : ''};display:block;pointer-events:none"></video>`   /* R39 — 영상 프레임 실재생 · R94 초점 */
           : `<img src="${el.src}" alt="" style="width:100%;height:100%;object-fit:${fit}${window.MK_FOCAL ? window.MK_FOCAL.pos(el) : ''}${window.MK_PHOTO ? window.MK_PHOTO.mediaStyle(el) : ''};display:block">`;
-        return `<div class="mkp-el mkp-img" style="${pos}height:${el.h}%${rad};overflow:hidden${window.MK_PHOTO ? window.MK_PHOTO.cropCss(el) : ''}${to}${rot}${an}">${media}</div>`; /* R105 — 자르기 · R117 — 초점 축 */
+        if (rf) {
+          /* R119 — 축 분리: 바깥 rotate(중앙축)·안쪽 scale(초점축)을 별 transform 으로 나눠 얹어
+             정적 회전과 애니 변형이 서로 덮지 않는다. MP4(video.js rotPivot)와 net 동치. */
+          const toF = `transform-origin:${+(rf.x * 100).toFixed(1)}% ${+(rf.y * 100).toFixed(1)}%`;
+          const inner = `<div class="mkp-inner" style="width:100%;height:100%${rad};overflow:hidden${crop};${toF}${an}">${media}</div>`;
+          /* 바깥은 rotate 만 — transform-origin 기본값이 중앙(50% 50%)이라 정적 회전은 중앙축(R107).
+             초점 축은 안쪽 origin 이 전담(축 분리). R117 originOf/animPivot 계약은 손대지 않는다. */
+          return `<div class="mkp-el mkp-img" style="${pos}height:${el.h}%${rot}">${inner}</div>`;
+        }
+        return `<div class="mkp-el mkp-img" style="${pos}height:${el.h}%${rad};overflow:hidden${crop}${to}${rot}${an}">${media}</div>`; /* R105 — 자르기 · R117 — 초점 축 */
       }
       if (el.fill && el.fill !== 'none') return `<div class="mkp-el" style="${pos}height:${el.h}%;background:${el.fill}${rad}${rot}${an}"></div>`;
       return `<div class="mkp-el mkp-ph" style="${pos}height:${el.h}%${rad}${rot}${an}">${esc(el.label || '')}</div>`;

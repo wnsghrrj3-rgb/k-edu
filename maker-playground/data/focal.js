@@ -107,6 +107,38 @@ window.MK_FOCAL = (() => {
     return { x: q(n.x), y: q(n.y) };
   };
 
+  /* R119 — 회전 요소 초점 축 분리.
+     정적 회전 θ(el.rot)는 스프라이트에 중앙축으로 구워진다(R107·render.js 557).
+     R117 originOf 는 회전 요소를 정직하게 제외했다 — CSS transform-origin 이
+     요소당 하나뿐이라 초점 축을 주면 정적 회전 축까지 초점으로 끌려가 재생≠파일.
+     해소 = 축 분리. 재생은 정적 회전(바깥 rotate·origin 중앙)과 초점 줌(안쪽 scale·
+     origin 초점)을 다른 transform 으로 나눠 얹고(DOM 중첩), MP4 는 스프라이트에 구워진
+     회전 위에 애니 scale 을 「초점을 θ만큼 중앙 회전시킨 점」에서 얹는다.
+     수학: 균등 scale·rotate 는 회전과 A_P·R(θ,C)=R(θ,C)·A_{R⁻¹P} 로 켤레되므로,
+     P=R(θ,C)·Fs 이면 캔버스 net=R(θ,C)·A_Fs = 재생 net(정적회전 중앙·초점 애니).
+     등장 rotate 델타까지 함께 성립. (translate 계열 pan 은 켤레가 축을 돌려
+     어긋나므로 호출부가 pan idle 을 제외한다 — 그 경우 종전 중앙 폴백.) */
+  const focalRot = (el) => {
+    if (!el || !el.rot || !el.focal) return null;
+    const rot = +el.rot;
+    if (!isFinite(rot) || rot % 360 === 0) return null;   /* 회전 없음 = 무회전 경로(originOf) */
+    const n = norm(el.focal);
+    if (n.x === 0.5 && n.y === 0.5) return null;            /* 가운데 = 축 이동 없음 */
+    const q = (v) => Math.round(v * 1000) / 1000;           /* originOf 와 같은 0.1% 격자 */
+    return { x: q(n.x), y: q(n.y), rot };
+  };
+
+  /* MP4 캔버스 피벗 — 초점(px)을 요소 중앙 기준 rot 만큼 회전한 점. 순수.
+     캔버스 ctx.rotate 와 SVG rotate(render.js) 는 같은 부호(시계·y下) 규약. */
+  const rotPivot = (el, ex, ey, ew, eh) => {
+    const fr = focalRot(el);
+    if (!fr) return null;
+    const cx = ex + ew / 2, cy = ey + eh / 2;
+    const dx = (ex + ew * fr.x) - cx, dy = (ey + eh * fr.y) - cy;
+    const a = fr.rot * Math.PI / 180, cos = Math.cos(a), sin = Math.sin(a);
+    return { px: cx + (dx * cos - dy * sin), py: cy + (dx * sin + dy * cos) };
+  };
+
   /* 자가 검증 */
   const audit = () => {
     const v = [];
@@ -137,8 +169,20 @@ window.MK_FOCAL = (() => {
     if (originOf({ focal: { x: 0.3, y: 0.8 }, rot: 15 }) !== null) v.push('originOf 회전 제외 위반');
     const oo = originOf({ focal: { x: 0.3335, y: 1 } });
     if (!oo || oo.x !== 0.334 || oo.y !== 1) v.push('originOf 격자 위반');
+    /* R119 — 회전 초점 축 분리 계약 */
+    if (focalRot(null) !== null || focalRot({ rot: 10 }) !== null || focalRot({ focal: { x: 0.2, y: 0.3 } }) !== null) v.push('focalRot 게이트 위반');
+    if (focalRot({ rot: 0, focal: { x: 0.2, y: 0.3 } }) !== null || focalRot({ rot: 360, focal: { x: 0.2, y: 0.3 } }) !== null) v.push('focalRot 0/360 위반');
+    if (focalRot({ rot: 10, focal: { x: 0.5, y: 0.5 } }) !== null) v.push('focalRot 가운데 위반');
+    const frv = focalRot({ rot: 90, focal: { x: 0.3335, y: 1 } });
+    if (!frv || frv.x !== 0.334 || frv.rot !== 90) v.push('focalRot 격자/rot 위반');
+    /* originOf 는 여전히 회전 제외 (무회전 경로 불변) */
+    if (originOf({ focal: { x: 0.3, y: 0.8 }, rot: 15 }) !== null) v.push('originOf 회전 제외 회귀');
+    /* 90° 회전: 중앙(50,50) 기준 초점 오프셋 (−20,+50)→회전(−50,−20)→피벗(0,30) [틀 0,0,100,100] */
+    const rp = rotPivot({ rot: 90, focal: { x: 0.3, y: 1 } }, 0, 0, 100, 100);
+    if (!rp || Math.abs(rp.px - 0) > 1e-6 || Math.abs(rp.py - 30) > 1e-6) v.push('rotPivot 90° 수학 위반');
+    if (rotPivot({ focal: { x: 0.3, y: 0.3 } }, 0, 0, 10, 10) !== null) v.push('rotPivot 무회전 null 위반');
     return { ok: !v.length, violations: v };
   };
 
-  return { norm, isCenter, pos, svgPre, set, setFine, coverRect, narOf, originOf, audit };
+  return { norm, isCenter, pos, svgPre, set, setFine, coverRect, narOf, originOf, focalRot, rotPivot, audit };
 })();

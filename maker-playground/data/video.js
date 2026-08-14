@@ -316,8 +316,11 @@ window.MK_VIDEO = (() => {
             if (st.clipW != null) { ctx.beginPath(); ctx.rect(ex, 0, ew * st.clipW, H); ctx.clip(); }
             if (st.clipH != null) { ctx.beginPath(); ctx.rect(0, ey, W, eh * st.clipH); ctx.clip(); }
             if (st.blur > 0.2) { try { ctx.filter = `blur(${(st.blur * pxu).toFixed(1)}px)`; } catch (_) {} }
-            const og = animPivot(el, ex, ey, ew, eh);       /* R117 — 초점 축, null=중앙 */
-            const pvx = og ? og.px : cx, pvy = og ? og.py : cy;
+            const og = animPivot(el, ex, ey, ew, eh);       /* R117 — 무회전 초점 축, null=중앙 */
+            const isPan = /^kb-(pan|diagonal)/.test((el.anim && el.anim.idle) || '');
+            const rp = (!og && !isPan && window.MK_FOCAL && window.MK_FOCAL.rotPivot) ? window.MK_FOCAL.rotPivot(el, ex, ey, ew, eh) : null; /* R119 — 회전 초점 축, 피벗=R(θ)·Fs */
+            const pv = og || rp;
+            const pvx = pv ? pv.px : cx, pvy = pv ? pv.py : cy;
             ctx.translate(pvx, pvy);
             if (st.rot) ctx.rotate(st.rot * Math.PI / 180);
             if (st.scale !== 1) ctx.scale(st.scale, st.scale);
@@ -430,6 +433,12 @@ window.MK_VIDEO = (() => {
       if (!pv || Math.abs(pv.px - 140) > 1e-9 || Math.abs(pv.py - 140) > 1e-9) v.push('R117 애니 피벗 좌표 위반');
       if (animPivot({ focal: { x: 0.2, y: 0.9 }, rot: 10 }, 0, 0, 10, 10) !== null) v.push('R117 회전 제외 위반');
       if (animPivot({}, 0, 0, 10, 10) !== null) v.push('R117 무초점 null 위반');
+    }
+    /* R119 — 회전 초점 피벗: 초점을 θ만큼 중앙 회전한 점(무회전은 rotPivot null=중앙 폴백) */
+    if (window.MK_FOCAL && window.MK_FOCAL.rotPivot) {
+      const rp = window.MK_FOCAL.rotPivot({ rot: 90, focal: { x: 0.3, y: 1 } }, 0, 0, 100, 100);
+      if (!rp || Math.abs(rp.px - 0) > 1e-6 || Math.abs(rp.py - 30) > 1e-6) v.push('R119 회전 피벗 수학 위반');
+      if (window.MK_FOCAL.rotPivot({ focal: { x: 0.2, y: 0.9 } }, 0, 0, 10, 10) !== null) v.push('R119 무회전 null 위반');
     }
     /* 프레임 플랜 — MK_PLAY.sequence와 동일 시간축 */
     const doc = { scenes: [{ duration: 2, elements: [] }, { duration: 3, elements: [] }] };
