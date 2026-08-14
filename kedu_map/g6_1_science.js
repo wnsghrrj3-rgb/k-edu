@@ -226,6 +226,16 @@ window.KEDU_MAP["g6_1_science"] = {
      "url": "/grade6/semester1/science/3단원_식물의구조와기능/g6_sci_u3_l02_세포.html",
      "track": "tb",
      "ready": true
+    },
+    {
+     "key": "g6_science_u3_l03",
+     "lessonId": "g6_sci_u3_l03_v1",
+     "n": "3",
+     "title": "뿌리의 생김새와 하는 일을 알아볼까?",
+     "sub": null,
+     "url": "/grade6/semester1/science/3단원_식물의구조와기능/g6_sci_u3_l03_뿌리.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }
