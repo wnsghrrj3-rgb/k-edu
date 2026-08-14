@@ -173,6 +173,26 @@ END $$;
 GRANT EXECUTE ON FUNCTION ma_set_routine(uuid,int,jsonb,int,boolean) TO authenticated;
 
 -- =============================================
+-- [보조] ma_max_step — 과목 × 학년의 총 회차 수
+--   한자 회차 = 그 학년 신출 자수 ÷ 10 (올림). 원장은 kedu/quiz/templates/hanja_data.js.
+--     1·2·3학년 = 8급·7급Ⅱ·7급 각 50자 →  5회차
+--     4·5학년   = 6급Ⅱ·6급    각 75자 →  8회차 (마지막 회차는 5자)
+--     6학년     = 5급Ⅱ           100자 → 10회차
+--   ★ hanja_data.js 의 GRADES 를 늘리면 이 표도 같이 고쳐야 한다.
+--     어긋나면 kedu/quiz/test_hanja_morning.js 가 이 파일을 직접 읽어 잡아낸다.
+-- =============================================
+CREATE OR REPLACE FUNCTION ma_max_step(p_subject text, p_grade int)
+RETURNS int LANGUAGE sql IMMUTABLE AS $$
+  SELECT CASE
+    WHEN p_subject = 'hanja' AND p_grade IN (1,2,3) THEN 5
+    WHEN p_subject = 'hanja' AND p_grade IN (4,5)   THEN 8
+    WHEN p_subject = 'hanja' AND p_grade  = 6       THEN 10
+    ELSE 5
+  END;
+$$;
+GRANT EXECUTE ON FUNCTION ma_max_step(text,int) TO authenticated;
+
+-- =============================================
 -- [RPC] ma_today — 오늘 것 가져오기 (학생·교사 공용)
 --   호출 시점에 그날 세션이 없으면 요일 시간표를 보고 자동으로 만든다.
 --   즉 교사가 아무것도 누르지 않아도, 학생이 아침에 열면 그날 것이 생성돼 있다.
@@ -221,8 +241,8 @@ BEGIN
     SELECT next_step, cycle INTO v_step, v_cycle
       FROM ma_progress WHERE class_code_id = v_cc AND subject = v_subject;
 
-    -- 과목별 총 회차 (지금은 한자만: 학년당 5회차 = 50자 ÷ 10)
-    v_max_step := CASE WHEN v_subject = 'hanja' THEN 5 ELSE 5 END;
+    -- 과목 × 학년별 총 회차 (학년마다 신출 자수가 달라 학년을 함께 넘긴다)
+    v_max_step := ma_max_step(v_subject, v_r.grade);
 
     IF v_step > v_max_step THEN                            -- 한 바퀴 다 돌면 복습 모드
       v_mode := 'review';
