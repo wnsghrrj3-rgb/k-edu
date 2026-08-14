@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>케이영재 | K-edu</title>
+<meta name="description" content="스스로 찾아내는 수학 — 케이영재 탐구 차시">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+/* 낮의 표준 v1 — 부품·원칙은 루트 허브와 동일 (이모지 0 · 말 덜기 · 상자 통일 · 색은 점·띠로만) */
+:root{
+  --nh-paper:#FAF7F0; --nh-paper2:#F3EEE3;
+  --nh-ink:#1F2933; --nh-ink-soft:#5A6672;
+  --nh-line:rgba(31,41,51,.12);
+  --nh-board:#2E6B52; --nh-board-deep:#1F4A39;
+  --nh-disp:'Gowun Batang',serif;
+  --nh-ease:cubic-bezier(.22,.61,.36,1);
+  /* 연구소 색 — 띠·점으로만 쓰인다 */
+  --lab-pat:#3BAB72; --lab-num:#B7791F; --lab-log:#3D90F0; --lab-geo:#7E57C2;
+  --lab-com:#2E9B9B; --lab-pro:#C2557E; --lab-dat:#6B7A8F; --lab-str:#D2691E;
+  --lab-mod:#5B8C5A; --lab-res:#8A6FA8;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Gowun Dodum',sans-serif;background:#F5F7FA;min-height:100vh;color:var(--nh-ink);display:flex;flex-direction:column}
+.top-bar{background:#fff;border-bottom:1px solid #E2E8F0;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 28px}
+.tb-brand{font-family:var(--nh-disp);font-weight:700;font-size:15px;color:var(--nh-ink);text-decoration:none}
+.tb-brand em{font-style:normal;color:var(--nh-board)}
+.tb-right{font-size:12.5px;color:var(--nh-ink-soft)}
+main{flex:1;max-width:900px;margin:0 auto;padding:34px 24px 56px;width:100%}
+
+.bc{font-size:13px;color:var(--nh-ink-soft);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.bc a{color:var(--nh-ink-soft);text-decoration:none}
+.bc a:hover{color:var(--nh-ink)}
+.bc-sep{color:rgba(31,41,51,.25)}
+
+.ns-head{margin-bottom:14px}
+.ns-k{font-size:11.5px;letter-spacing:.26em;color:var(--nh-board);margin-bottom:8px}
+.ns-h{font-family:var(--nh-disp);font-weight:700;font-size:clamp(23px,3vw,27px);line-height:1.3;letter-spacing:.02em}
+.ns-h em{font-style:normal;color:var(--nh-board)}
+.lede{max-width:620px;font-size:14px;line-height:1.75;color:var(--nh-ink-soft);margin-bottom:22px}
+
+/* 진척 막대 */
+.prog{max-width:620px;margin-bottom:30px}
+.prog-top{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px;color:var(--nh-ink-soft);margin-bottom:7px}
+.prog-top b{font-family:var(--nh-disp);font-size:15px;color:var(--nh-ink)}
+.prog-bar{height:7px;border-radius:999px;background:var(--nh-paper2);overflow:hidden}
+.prog-fill{height:100%;background:var(--nh-board);border-radius:999px;transition:width .6s var(--nh-ease)}
+
+/* 레벨 띠 */
+.lv-row{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:28px}
+.lv-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 14px;border-radius:999px;background:#fff;border:1px solid var(--nh-line);font-size:13px;color:var(--nh-ink-soft)}
+.lv-chip.on{border-color:var(--nh-board);color:var(--nh-ink)}
+.lv-chip b{font-family:var(--nh-disp);font-weight:700;font-size:13.5px;color:var(--nh-ink)}
+.lv-chip i{font-style:normal;width:8px;height:8px;border-radius:50%;background:var(--nh-line);display:inline-block}
+.lv-chip.on i{background:var(--nh-board)}
+
+.sec-h{font-family:var(--nh-disp);font-weight:700;font-size:16.5px;margin:0 0 4px}
+.sec-sub{font-size:12.5px;color:var(--nh-ink-soft);margin-bottom:16px}
+
+.lesson-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:13px;margin-bottom:38px}
+@media(max-width:640px){.lesson-grid{grid-template-columns:1fr}}
+
+.ns-card{position:relative;display:flex;gap:15px;align-items:flex-start;background:#fff;border:1px solid var(--nh-line);border-radius:16px;padding:17px 19px 16px 24px;overflow:hidden;text-decoration:none;cursor:pointer;color:var(--nh-ink);transition:transform .35s var(--nh-ease),box-shadow .35s var(--nh-ease),border-color .3s}
+.ns-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--gc,var(--nh-board));transition:width .35s var(--nh-ease)}
+.ns-card:hover{transform:translateY(-3px);box-shadow:0 14px 34px rgba(31,41,51,.09);border-color:rgba(31,41,51,.2)}
+.ns-card:hover::before{width:9px}
+.ns-card.soon{cursor:default;opacity:.45}
+.ns-card.soon:hover{transform:none;box-shadow:none;border-color:var(--nh-line)}
+.ns-card.soon:hover::before{width:5px}
+.ns-num{font-family:var(--nh-disp);font-weight:700;font-size:26px;line-height:1.1;color:var(--nh-ink);min-width:32px;padding-top:1px}
+.ns-body{flex:1;min-width:0}
+.ns-name{font-family:var(--nh-disp);font-weight:700;font-size:17px;line-height:1.35}
+.ns-sub{margin-top:4px;font-size:12.5px;color:var(--nh-ink-soft);line-height:1.55}
+.ns-meta{margin-top:9px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.lab-tag{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--nh-ink-soft)}
+.lab-tag i{font-style:normal;width:7px;height:7px;border-radius:50%;background:var(--gc);display:inline-block}
+.ns-soon{font-size:11.5px;color:var(--nh-ink-soft);background:var(--nh-paper2);border-radius:999px;padding:3px 10px}
+.ns-saved{font-size:11.5px;color:var(--nh-board)}
+.ns-saved::before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--nh-board);margin-right:5px;vertical-align:1px}
+.ns-saved.part{color:var(--nh-ink-soft)}
+.ns-saved.part::before{background:#C9A227}
+
+.lab-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:13px}
+@media(max-width:640px){.lab-grid{grid-template-columns:1fr}}
+
+.foot-note{max-width:620px;margin-top:34px;padding:13px 16px;background:#fff;border:1px solid var(--nh-line);border-radius:12px;font-size:12.5px;color:var(--nh-ink-soft);line-height:1.7}
+.reset{background:none;border:none;font-family:'Gowun Dodum',sans-serif;font-size:12.5px;color:var(--nh-ink-soft);text-decoration:underline;cursor:pointer;padding:0}
+.reset:hover{color:var(--nh-ink)}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <a class="tb-brand" href="/">K-<em>edu</em></a>
+  <span class="tb-right">케이영재</span>
+</div>
+
+<main>
+  <div class="bc"><a href="/">처음으로</a><span class="bc-sep">·</span><span>케이영재</span></div>
+
+  <div class="ns-head">
+    <div class="ns-k">K-GIFTED</div>
+    <h1 class="ns-h">스스로 찾아내는 <em>수학</em></h1>
+  </div>
+  <p class="lede">
+    답을 알려 주지 않는 수학입니다. 직접 만지고, 추측을 적고, 틀려 보고, 규칙을 찾아냅니다.
+    빨리 맞히는 것이 아니라 스스로 찾아내는 것이 점수입니다. 한 차시는 18장, 100점입니다.
+  </p>
+
+  <div class="prog">
+    <div class="prog-top"><span>L3 챌린저 진척</span><span><b id="prog-n">0</b> / 20</span></div>
+    <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0"></div></div>
+  </div>
+
+  <div class="lv-row">
+    <span class="lv-chip"><i></i>L1 <b>익스플로러</b> 준비 중</span>
+    <span class="lv-chip"><i></i>L2 <b>디스커버러</b> 준비 중</span>
+    <span class="lv-chip on"><i></i>L3 <b>챌린저</b> 열림</span>
+    <span class="lv-chip"><i></i>L4 <b>인베스티게이터</b> 준비 중</span>
+  </div>
+
+  <h2 class="sec-h">L3 챌린저 · 수학</h2>
+  <p class="sec-sub">중학년 · 연구소 10종 · 차시마다 탐험 → 발견 → 도전 → 창조</p>
+  <div class="lesson-grid" id="lesson-grid"></div>
+
+  <h2 class="sec-h">실험실</h2>
+  <p class="sec-sub">차시 밖에서 마음껏 돌려 보는 곳</p>
+  <div class="lab-grid" id="lab-grid"></div>
+
+  <div class="foot-note">
+    푼 기록은 이 기기에만 저장됩니다. 다른 기기에서는 이어지지 않습니다.
+    <button class="reset" id="btn-reset">기록 지우기</button>
+  </div>
+</main>
+
+<script>
+/* 차시 카탈로그 — 편성표 L3 20차시. file 이 있으면 열리고, 없으면 준비 중 */
+const LESSONS = [
+  { n:1,  id:'pat01', lab:'PAT', name:'달력 숫자 탐정',       sub:'가로 +1 · 세로 +7 에서 시작해 대각합이 변하지 않는 까닭까지', file:'math/l3/kg_math_l3_pat01_달력숫자탐정.html' },
+  { n:2,  id:'pat02', lab:'PAT', name:'수 배열표 순간이동',   sub:'백판 위의 이동 규칙을 스스로 일반화한다',                     file:'math/l3/kg_math_l3_pat02_수배열표순간이동.html' },
+  { n:3,  id:'pat03', lab:'PAT', name:'도형 성장 예측소',     sub:'늘어나는 규칙을 그림과 표와 말로 붙잡는다',                   file:'math/l3/kg_math_l3_pat03_도형성장예측소.html' },
+  { n:4,  id:'num01', lab:'NUM', name:'소수 사냥 규칙 설계',  sub:'1부터 100까지, 나만의 체를 만들어 거른다',                    file:'math/l3/kg_math_l3_num01_소수사냥규칙설계.html' },
+  { n:5,  id:'num02', lab:'NUM', name:'연속수 합의 비밀',     sub:'연속수의 합이 되지 못하는 수의 정체를 밝힌다',                file:'math/l3/kg_math_l3_num02_연속수합의비밀.html' },
+  { n:6,  id:'num03', lab:'NUM', name:'디지털 루트 추적단',   sub:'자릿수를 계속 더하면 끝에 무엇이 남는가',                     file:'math/l3/kg_math_l3_num03_디지털루트추적단.html' },
+  { n:7,  id:'log01', lab:'LOG', name:'논리표 대탈출',        sub:'표에 지워 나가면 열쇠와 문의 주인이 드러난다',                file:'math/l3/kg_math_l3_log01_논리표대탈출.html' },
+  { n:8,  id:'log02', lab:'LOG', name:'모순 탐지기',          sub:'세울 수 없는 조건 묶음을 가려내고 범인을 짚는다',             file:'math/l3/kg_math_l3_log02_모순탐지기.html' },
+  { n:9,  id:'log03', lab:'LOG', name:'기사와 건달의 섬',     sub:'참말하는 이와 거짓말하는 이를 말만 듣고 가른다' },
+  { n:10, id:'geo01', lab:'GEO', name:'같은 둘레 다른 넓이',  sub:'둘레가 같아도 넓이는 다르다 — 정사각형이 왕인 까닭' },
+  { n:11, id:'geo02', lab:'GEO', name:'도형 분할 마술',       sub:'조건대로 자르기, 그리고 자를 수 없는 까닭' },
+  { n:12, id:'geo03', lab:'GEO', name:'쌓기나무 그림자 수사', sub:'세 방향 그림자만으로 사라진 건물을 되살린다',                 file:'math/l3/kg_math_l3_geo03_쌓기나무그림자수사.html' },
+  { n:13, id:'com01', lab:'COM', name:'격자 경로 연구소',     sub:'최단 경로를 세다 보면 모퉁이 수에 규칙이 보인다' },
+  { n:14, id:'com02', lab:'COM', name:'나무그림 설계사',      sub:'경우를 빠짐없이 나누는 일을 그림으로 조직한다' },
+  { n:15, id:'pro01', lab:'PRO', name:'공정한 게임 판정단',   sub:'실제로 돌려 보고, 경우를 세어 공정한지 판정한다' },
+  { n:16, id:'pro02', lab:'PRO', name:'주사위 합 지도',       sub:'합마다 길의 수가 다르다 — 7이 왕인 까닭' },
+  { n:17, id:'dat01', lab:'DAT', name:'그래프가 숨긴 것',     sub:'같은 자료인데 인상이 달라지는 순간을 붙잡는다' },
+  { n:18, id:'str01', lab:'STR', name:'필승전략 게임',        sub:'지는 자리를 거꾸로 계산하면 이기는 길이 보인다' },
+  { n:19, id:'str02', lab:'STR', name:'경우 나누기 작전',     sub:'빠짐없이 나누어야 이긴다는 것이 증명된다' },
+  { n:20, id:'mod01', lab:'MOD', name:'학교 이동거리 설계단', sub:'현실의 제약을 넣고 가장 적게 움직이는 길을 짠다' }
+];
+
+const LABS = [
+  { name:'님 게임 실험실', sub:'돌을 가져가는 게임을 마음껏 돌려 보는 곳', file:'_lab/nim_lab.html', lab:'STR' }
+];
+
+const labColor = lab => 'var(--lab-' + lab.toLowerCase() + ')';
+const LAB_NAME = { PAT:'패턴', NUM:'수', LOG:'논리', GEO:'기하', COM:'경우의 수', PRO:'확률', DAT:'자료', STR:'전략', MOD:'모델링', RES:'연구' };
+
+/* 이 기기에 남은 진행 기록 — 차시가 쓰는 키를 그대로 읽는다 */
+function readProgress(id) {
+  try {
+    const raw = localStorage.getItem('kedu_progress_kg_math_l3_' + id);
+    if (!raw) return null;
+    const p = JSON.parse(raw);
+    return { done: !!p.done, score: p.score || 0 };
+  } catch (e) { return null; }
+}
+
+function cardHTML(item, isLab) {
+  const open = !!item.file;
+  const gc = labColor(item.lab);
+  const p = open && !isLab ? readProgress(item.id) : null;
+  let meta = '<span class="lab-tag"><i></i>' + (LAB_NAME[item.lab] || item.lab) + '</span>';
+  if (!open) meta += '<span class="ns-soon">준비 중</span>';
+  else if (p && p.done) meta += '<span class="ns-saved">마침 · ' + p.score + '점</span>';
+  else if (p) meta += '<span class="ns-saved part">풀던 중 · ' + p.score + '점</span>';
+  const num = isLab ? '' : '<div class="ns-num">' + item.n + '</div>';
+  const inner = num + '<div class="ns-body"><div class="ns-name">' + item.name + '</div>'
+    + '<div class="ns-sub">' + item.sub + '</div>'
+    + '<div class="ns-meta">' + meta + '</div></div>';
+  if (!open) return '<div class="ns-card soon" style="--gc:' + gc + '">' + inner + '</div>';
+  return '<a class="ns-card" style="--gc:' + gc + '" href="' + item.file + '">' + inner + '</a>';
+}
+
+function render() {
+  document.getElementById('lesson-grid').innerHTML = LESSONS.map(l => cardHTML(l, false)).join('');
+  document.getElementById('lab-grid').innerHTML = LABS.map(l => cardHTML(l, true)).join('');
+  const n = LESSONS.filter(l => l.file).length;
+  document.getElementById('prog-n').textContent = n;
+  document.getElementById('prog-fill').style.width = (n / LESSONS.length * 100) + '%';
+}
+render();
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+  if (!confirm('이 기기에 남은 케이영재 기록을 모두 지웁니다. 계속할까요?')) return;
+  LESSONS.forEach(l => { try { localStorage.removeItem('kedu_progress_kg_math_l3_' + l.id); } catch (e) {} });
+  render();
+});
+</script>
+</body>
+</html>
