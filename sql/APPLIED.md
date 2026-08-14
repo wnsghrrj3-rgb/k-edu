@@ -26,6 +26,7 @@
 | 16 | setup_seats_select_lockdown.sql | 2026-07-11 | student_seats 공개 SELECT 잠금 (대점검 3차) |
 | 17 | setup_classwork4.sql | 2026-07-13 | 케이박스 증분 4 — 활동 시스템 편입 (cw_items.kind에 'activity') |
 | 18 | setup_kbattle.sql | 2026-07-13 | 케이배틀 — kb_profiles(+xp 강등방지 트리거·link_code) · kb_answers · RLS 8종 |
+| 19 | setup_morning.sql | 2026-08-14 (실행 확인) | 아침활동(케이모닝) — ma_routines·ma_progress·ma_sessions·ma_submissions + RPC 8종(ma_max_step 포함) · RLS 6종. 재실행 안전(테이블 IF NOT EXISTS · 함수 OR REPLACE · 정책 DROP IF EXISTS 선행). **한자 회차 확장 시 ma_max_step 도 함께 고쳐야 함** — 어긋나면 kedu/quiz/test_hanja_morning.js 가 잡는다 |
 
 ## 새 SQL 추가 룰
 
