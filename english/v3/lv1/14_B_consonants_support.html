@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<!-- ════════════════════════════════════════
+     K-edu 영어 v3 양산 · Lv1 #14-B 자음 확장 「보조」
+     베이스: 03_B_alphabet_support.html (miss 파라미터 · buildQ 골격)
+     헷갈리는 쌍 대조: v/f · k/g (목 떨림으로 갈림) · j/y (특이한 소리 둘)
+     한글 근사 충돌쌍은 SAME 맵으로 오답 배제
+     ════════════════════════════════════════ -->
+
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>K-edu | 영어 Lv1 — 자음 확장 (14-B 보조)</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F0F6FE; --card:#fff;
+  --primary:#1565C0; --primary-light:#E3EEFC; --secondary:#5B8DEF;
+  --vowel:#FF8A3D; --vowel-light:#FFF1E6;
+  --green:#4CAF50; --green-light:#E8F5E9; --red:#F44336; --red-light:#FFEBEE;
+  --yellow:#FFC107; --yellow-light:#FFF8E1;
+  --text:#333; --subtext:#888; --border:#D7E4F7;
+  --shadow:0 4px 16px rgba(0,0,0,.08); --radius:20px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:100vh;height:100dvh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0;gap:8px}
+.back{font-size:18px;color:var(--subtext);text-decoration:none}
+.progress-wrap{display:flex;align-items:center;gap:8px;flex:1;margin:0 4px}
+.progress-bar{flex:1;height:10px;background:var(--border);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .5s}
+.page-info{font-size:16px;color:var(--subtext);white-space:nowrap}
+.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:18px;color:#e6a800}
+.kedu-logo{display:flex;align-items:center;gap:4px;background:var(--primary);color:#fff;border-radius:99px;padding:4px 10px;font-size:14px}
+.kedu-logo .logo-circle{width:20px;height:20px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--primary);font-size:12px}
+.slides{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px 18px;opacity:0;transform:translateX(60px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none;overflow-y:auto}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all}
+.slide.out{opacity:0;transform:translateX(-60px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;width:100%;max-width:560px;text-align:center}
+.slide-title{font-size:21px;color:var(--subtext);margin-bottom:8px}
+.badge{display:inline-block;background:var(--primary-light);color:var(--primary);border-radius:99px;padding:4px 14px;font-size:17px;margin-bottom:8px}
+.concept-text{font-size:22px;line-height:1.6;margin:8px 0}
+.hl{background:linear-gradient(transparent 58%,#FFE680 58%);background-repeat:no-repeat;background-size:100% 100%;padding:0 3px;font-weight:bold;color:var(--text)}
+.kay-says{display:flex;align-items:center;gap:12px;background:var(--primary-light);border-radius:16px;padding:12px 16px;margin:10px 0;text-align:left}
+.kay-icon{font-size:30px;flex-shrink:0}
+.kay-text{font-size:20px;line-height:1.5}
+/* 대조 두 칸 */
+.pcols{display:flex;gap:12px;justify-content:center;align-items:stretch;margin:12px 0}
+.pcol{flex:1;max-width:220px;border:3px solid var(--primary);border-radius:16px;padding:12px 8px;background:#F8FBFF;cursor:pointer}
+.pcol:active{transform:scale(.97)}
+.pcol .pl{font-size:52px;color:var(--primary);line-height:1.1}
+.pcol .pk{font-size:20px;color:var(--subtext)}
+.pcol .pw{font-size:16px;color:var(--text);margin-top:3px}
+.pcol.b{border-color:var(--secondary)}
+.pcol.b .pl{color:var(--secondary)}
+.question-label{display:inline-flex;gap:6px;background:var(--primary);color:#fff;border-radius:99px;padding:5px 16px;font-size:17px;margin-bottom:8px}
+.stars{color:#FCD34D}
+.question-text{font-size:22px;margin:6px 0 12px;line-height:1.5}
+.choices{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:8px}
+.choice-btn{background:#fff;border:3px solid var(--border);border-radius:16px;padding:12px 26px;font-family:'Jua',sans-serif;font-size:40px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.06);color:var(--text)}
+.choice-btn .ko{display:block;font-size:14px;color:var(--subtext)}
+.choice-btn.v{border-color:var(--vowel);color:var(--vowel)}
+.choice-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s}
+@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
+.choice-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}50%{transform:translateX(8px)}75%{transform:translateX(-5px)}}
+.listen-btn{background:var(--primary-light);border:2px solid var(--primary);border-radius:12px;padding:8px 22px;font-family:'Jua',sans-serif;font-size:22px;cursor:pointer;color:var(--primary);margin:4px 0 8px}
+.listen-btn.big{font-size:26px;padding:14px 34px;margin:10px 0}
+.feedback{font-size:19px;margin-top:10px;min-height:34px;border-radius:12px;padding:5px 12px;line-height:1.5}
+.feedback.ok{color:var(--green);background:var(--green-light)}
+.feedback.err{color:var(--red);background:var(--red-light)}
+.combo-toast{position:fixed;top:60px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:22px;color:#e6a800;z-index:99;transition:transform .3s}
+.combo-toast.show{transform:translateX(-50%) scale(1)}
+.result-emoji{font-size:76px;margin:8px 0;animation:bounce 1s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.result-score{font-size:44px;color:var(--primary);margin:6px 0}
+.result-stars{font-size:36px;margin:6px 0}
+.nav{display:flex;justify-content:center;gap:16px;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--border);flex-shrink:0}
+.nav-btn{background:var(--primary);color:#fff;border:none;border-radius:14px;padding:12px 32px;font-family:'Jua',sans-serif;font-size:21px;cursor:pointer}
+.nav-btn:disabled{opacity:.3}
+.hint{font-size:16px;color:var(--subtext);margin-top:6px}
+</style>
+  <script src="/kedu_gate.js"></script>
+<script src="/kedu_boxbar.js"></script>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="back" href="../index.html">🪜</a>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="page-info" id="pageInfo">1 / 8</span>
+  </div>
+  <div class="score-badge">⭐ <span id="scoreVal">0</span></div>
+  <div class="kedu-logo"><div class="logo-circle">K</div>영어</div>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+
+<div class="slides" id="slidesContainer">
+
+  <!-- ━━━ S0 표지 ━━━ -->
+  <div class="slide active">
+    <div class="card">
+      <div class="badge">영어 Lv1 · 자음 확장 14-B</div>
+      <div class="concept-text">천천히 다시 볼까요? 😊<br>헷갈린 자음: <b id="missTitle">v · j · k</b></div>
+      <div class="kay-says">
+        <div class="kay-icon">💪</div>
+        <div class="kay-text">닮은 자음끼리 <b>나란히</b> 놓고 소리를 비교하면<br>훨씬 쉬워져요. 하나씩 천천히!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ━━━ S1 대조① v/f · k/g — 목 떨림으로 갈림 ━━━ -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-title">🖐 <b>목 떨림</b>으로 갈리는 짝 — 눌러 들어 봐!</div>
+      <div class="pcols">
+        <div class="pcol" data-sound="f"><div class="pl">f</div><div class="pk">/프/</div><div class="pw">🐟 fish · 목 안 떨림</div></div>
+        <div class="pcol b" data-sound="v"><div class="pl">v</div><div class="pk">/브/</div><div class="pw">🚐 van · 목 떨림!</div></div>
+      </div>
+      <div class="pcols">
+        <div class="pcol" data-sound="k"><div class="pl">k</div><div class="pk">/크/</div><div class="pw">🪁 kite · 목 안 떨림</div></div>
+        <div class="pcol b" data-sound="g"><div class="pl">g</div><div class="pk">/그/</div><div class="pw">🐐 goat · 목 떨림!</div></div>
+      </div>
+      <div class="kay-says">
+        <div class="kay-icon">💡</div>
+        <div class="kay-text">입 모양은 같아요 — 손을 <b>목에 대고</b> 소리 내 봐요.<br><b>v · g</b> 는 목이 <span class="hl">부르르</span> 떨려요!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ━━━ S2 대조② j/y — 특이한 소리 둘 ━━━ -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-title">🖐 특이한 소리 짝 <b>j / y</b> — 눌러 들어 봐!</div>
+      <div class="pcols">
+        <div class="pcol" data-sound="j"><div class="pl">j</div><div class="pk">/즈/</div><div class="pw">🍯 jam · 혀로 튕겨요</div></div>
+        <div class="pcol b" data-sound="y"><div class="pl">y</div><div class="pk">/이/</div><div class="pw">🪀 yo-yo · 미끄러져요</div></div>
+      </div>
+      <div class="kay-says">
+        <div class="kay-icon">💡</div>
+        <div class="kay-text"><b>j</b> 는 <b>ja</b>m 처럼 딱 튕기고,<br><b>y</b> 는 <b>y</b>o-yo 처럼 <span class="hl">이-</span> 하고 미끄러져요.<br>(z 는 벌처럼 지-, j 와 소리가 달라요 — 귀로!)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ━━━ S3~S6 miss 문제 4 (buildQ) ━━━ -->
+  <div class="slide" data-correct="0" data-score="10">
+    <div class="card">
+      <div class="question-label">다시 확인 1 <span class="stars">⭐</span></div>
+      <div class="question-text">🔊 들은 소리의 글자는?</div>
+      <button class="listen-btn big" id="lb3">🔊 듣기</button>
+      <div class="choices" id="ch3"></div>
+      <div class="feedback" id="fb3"></div>
+    </div>
+  </div>
+  <div class="slide" data-correct="1" data-score="10">
+    <div class="card">
+      <div class="question-label">다시 확인 2 <span class="stars">⭐</span></div>
+      <div class="question-text">🔊 들은 소리의 글자는?</div>
+      <button class="listen-btn big" id="lb4">🔊 듣기</button>
+      <div class="choices" id="ch4"></div>
+      <div class="feedback" id="fb4"></div>
+    </div>
+  </div>
+  <div class="slide" data-correct="2" data-score="10">
+    <div class="card">
+      <div class="question-label">다시 확인 3 <span class="stars">⭐</span></div>
+      <div class="question-text">🔊 들은 소리의 글자는?</div>
+      <button class="listen-btn big" id="lb5">🔊 듣기</button>
+      <div class="choices" id="ch5"></div>
+      <div class="feedback" id="fb5"></div>
+    </div>
+  </div>
+  <div class="slide" data-correct="1" data-score="10">
+    <div class="card">
+      <div class="question-label">다시 확인 4 <span class="stars">⭐</span></div>
+      <div class="question-text">🔊 들은 소리의 글자는?</div>
+      <button class="listen-btn big" id="lb6">🔊 듣기</button>
+      <div class="choices" id="ch6"></div>
+      <div class="feedback" id="fb6"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S7 결과 ━━━ -->
+  <div class="slide">
+    <div class="card">
+      <div class="result-emoji" id="resultEmoji">💪</div>
+      <div style="font-size:26px">보충 끝 — 잘했어요!</div>
+      <div class="result-score">⭐ <span id="finalScore">0</span>점</div>
+      <div class="result-stars" id="resultStars">⭐⭐⭐</div>
+      <div class="kay-says">
+        <div class="kay-icon">💡</div>
+        <div class="kay-text">닮은 자음은 <span class="hl">목 떨림</span>과 <span class="hl">입 모양</span>으로 갈려요!<br>이제 숙달로 가서 모든 자음을 섞어 볼까요?</div>
+      </div>
+      <button class="nav-btn" style="margin-top:10px" onclick="location.href='14_3_consonants_master.html'">▶ 숙달로 가기</button>
+      <button class="nav-btn" style="margin-top:10px;background:var(--secondary)" onclick="location.href='../index.html'">🪜 사다리로</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()" disabled>◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script src="../engine/k-tts.js"></script>
+<script>
+let currentSlide=0,score=0,combo=0,answered={},unlocked=false,justUnlocked=false;
+const TOTAL=8;
+let audioCtx=null;
+function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function playTone(f,t,d,g=.3){getCtx();audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),gn=audioCtx.createGain();o.connect(gn);gn.connect(audioCtx.destination);o.type=t;o.frequency.value=f;gn.gain.setValueAtTime(g,audioCtx.currentTime);gn.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+d);o.start();o.stop(audioCtx.currentTime+d);});}
+function playCorrect(){[523,659,784].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',.25),i*80));}
+function playWrong(){[220,196].forEach((f,i)=>setTimeout(()=>playTone(f,'sawtooth',.3),i*100));}
+function playClick(){playTone(880,'sine',.08,.2);}
+document.body.addEventListener('pointerdown',()=>{if(!unlocked){KTTS.unlock();unlocked=true;justUnlocked=true;setTimeout(()=>justUnlocked=false,350);}},{once:true});
+
+function setupSlide(slide,idx){slide.classList.add('lit');}
+function goSlide(n){
+  const sl=document.querySelectorAll('.slide');KTTS.stop();
+  sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');
+  setTimeout(()=>sl.forEach(s=>s.classList.remove('out')),400);
+  currentSlide=n;sl[n].classList.add('active');updateUI();
+  setupSlide(sl[n],n);
+}
+function nextSlide(){if(currentSlide<TOTAL-1)goSlide(currentSlide+1);}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
+function updateUI(){
+  document.getElementById('progressFill').style.width=(currentSlide/(TOTAL-1)*100)+'%';
+  document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL;
+  document.getElementById('prevBtn').disabled=currentSlide===0;
+  document.getElementById('nextBtn').disabled=currentSlide===TOTAL-1;
+  document.getElementById('scoreVal').textContent=score;
+  if(currentSlide===TOTAL-1){
+    document.getElementById('finalScore').textContent=score;
+    document.getElementById('resultStars').textContent=score>=40?'⭐⭐⭐⭐⭐':score>=25?'⭐⭐⭐⭐':'⭐⭐⭐';
+    document.getElementById('resultEmoji').textContent=score>=40?'🏆':'💪';
+  }
+}
+function addScore(p){
+  const bonus=combo>=3?Math.floor(p*.5):0;
+  score+=p+bonus;combo++;
+  document.getElementById('scoreVal').textContent=score;
+  if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}
+}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.innerHTML=msg;el.className='feedback '+(ok?'ok':'err');}}
+const OK_MSGS=['✅ 정답! +{p}점','🎯 이번엔 바로 찾았어! +{p}점','✨ 귀가 열렸네? +{p}점'];
+const SAM_MSGS=['🙋 Sam: "나도 그거 골랐는데…" 다시 골라 봐!','🤔 Sam이 또 헷갈리게 했구나 — 🔊 한 번 더 듣고!','🙋 Sam: "목 떨림을 떠올려 볼까?" 다시!'];
+function okMsg(p){return OK_MSGS[Math.floor(Math.random()*OK_MSGS.length)].replace('{p}',p);}
+function samMsg(){return SAM_MSGS[Math.floor(Math.random()*SAM_MSGS.length)];}
+
+/* ── 알파벳 소리표 ── */
+const KO={a:'/애/',b:'/브/',c:'/크/',d:'/드/',e:'/에/',f:'/프/',g:'/그/',h:'/흐/',i:'/이/',j:'/즈/',
+  k:'/크/',l:'/르/',m:'/므/',n:'/느/',o:'/오/',p:'/프/',q:'/크워/',r:'/르/',s:'/스/',t:'/트/',
+  u:'/어/',v:'/브/',w:'/우/',x:'/크스/',y:'/이/',z:'/즈/'};
+/* 오늘 배운 헷갈림 짝 (14-B 대조 = v/f · k/g · j/y) */
+const CONFUSE={v:'f',f:'v',k:'g',g:'k',j:'y',y:'j',w:'v',z:'s',s:'z'};
+/* 한글 근사가 겹치는 짝 — 한 문제에 같이 넣지 않는다 (듣고 고르기 애매함 방지) */
+const SAME={c:'k',k:'c',j:'z',z:'j',y:'i',i:'y',v:'b',b:'v',f:'p',p:'f',l:'r',r:'l'};
+const ALL='abcdefghijklmnopqrstuvwxyz'.split('');
+const VOW=['a','e','i','o','u'];
+
+/* 14-2 게이트①에서 넘어온 틀린 자음 — 없으면 기본 헷갈림 짝 */
+function getMiss(){
+  const p=new URLSearchParams(location.search).get('miss');
+  let list=(p?p.split(','):[]).map(s=>s.trim().toLowerCase()).filter(w=>KO[w]);
+  ['v','j','y','w'].forEach(w=>{if(list.length<4&&list.indexOf(w)<0)list.push(w);});
+  return list.slice(0,4);
+}
+const MISS=getMiss();
+document.getElementById('missTitle').textContent=MISS.join(' · ');
+
+/* 문항 구성 — 정답이 슬라이드의 data-correct 자리에 오도록 선택지 배치 */
+function buildQ(slideIdx,letter,size){
+  const slide=document.querySelectorAll('.slide')[slideIdx];
+  const correct=+slide.dataset.correct;
+  const pool=[];
+  const bad=w=>w===letter||SAME[letter]===w;
+  const mate=CONFUSE[letter];
+  if(mate&&!bad(mate))pool.push(mate);
+  ALL.forEach(c=>{if(!bad(c)&&VOW.indexOf(c)<0&&pool.indexOf(c)<0)pool.push(c);});
+  const arr=pool.slice(0,size-1);
+  arr.splice(correct,0,letter);
+  document.getElementById('ch'+slideIdx).innerHTML=
+    arr.map((w,i)=>'<button class="choice-btn" onclick="answer(this,'+i+')">'+w+'<span class="ko">'+KO[w]+'</span></button>').join('');
+  document.getElementById('lb'+slideIdx).onclick=()=>{playClick();KTTS.sound(letter);};
+  slide.dataset.letter=letter;
+}
+buildQ(3,MISS[0],2);
+buildQ(4,MISS[1],2);
+buildQ(5,MISS[2],3);
+buildQ(6,MISS[3],3);
+
+function answer(btn,idx){
+  if(answered[currentSlide])return;
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  const correct=+slide.dataset.correct,pts=+slide.dataset.score||10;
+  const L=slide.dataset.letter;
+  playClick();
+  if(idx===correct){
+    btn.classList.add('correct');playCorrect();addScore(pts);
+    KTTS.sound(L).then(()=>KTTS.sound(L,{anchor:true,interrupt:false}));
+    setFB('fb'+currentSlide,okMsg(pts)+' — <b>'+L+'</b> '+KO[L],true);
+    answered[currentSlide]=true;
+  }else{
+    btn.classList.add('wrong');playWrong();combo=0;
+    setFB('fb'+currentSlide,samMsg(),false);
+    setTimeout(()=>btn.classList.remove('wrong'),500);
+  }
+}
+
+let tx=0,ty=0;
+const sc=document.getElementById('slidesContainer');
+sc.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;});
+sc.addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;
+  if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)){d_swipe(dx);return;}
+});
+function d_swipe(dx){dx>0?prevSlide():nextSlide();}
+sc.addEventListener('click',e=>{
+  if(justUnlocked)return;
+  const w=e.target.closest('[data-sound]');
+  if(!w)return;
+  KTTS.sound(w.dataset.sound).then(()=>KTTS.sound(w.dataset.sound,{anchor:true,interrupt:false}));
+});
+updateUI();
+setupSlide(document.querySelectorAll('.slide')[0],0);
+</script>
+<script src="/kedu_back.js"></script>
+</body>
+</html>
