@@ -216,6 +216,16 @@ window.KEDU_MAP["g6_1_science"] = {
      "url": "/grade6/semester1/science/3단원_식물의구조와기능/g6_sci_u3_l01_열려라과학.html",
      "track": "tb",
      "ready": true
+    },
+    {
+     "key": "g6_science_u3_l02",
+     "lessonId": "g6_sci_u3_l02_v1",
+     "n": "2",
+     "title": "세포가 궁금해!",
+     "sub": null,
+     "url": "/grade6/semester1/science/3단원_식물의구조와기능/g6_sci_u3_l02_세포.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }
