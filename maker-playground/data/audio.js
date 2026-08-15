@@ -273,5 +273,62 @@ window.MK_AUDIO = (() => {
   }
 
   const state = () => ({ playing: S.playing, paused: S.paused, kind: S.kind, name: S.name, engine: S.engine });
-  return { SYNTHS, patternPlan, play, pause, resume, stop, fileToSrc, state, audioAudit, waveAt, envAt, renderPattern, fitPlan, fitPcm, beatSync };
+  /* ================= R127 — 나레이션 녹음기 =================
+     마이크 → MediaRecorder → dataURL. 씬에 앉히는 건 화면의 몫이고, 여기는
+     기계만 진다. **기관 전량 주입 가능**(getUserMedia·MediaRecorder·Blob·
+     FileReader) — jsdom 하니스가 가짜 기관으로 전 수명을 밟는다(R89 Reader
+     주입과 같은 규약). 실패는 전부 「무엇이 안 됐고 뭘 하면 되는지」로 —
+     권한 거부를 조용히 삼키면 준호는 버튼이 고장난 줄 안다. */
+  function makeRecorder(deps) {
+    const d = deps || {};
+    const gUM = d.getUserMedia
+      || (navigator.mediaDevices && navigator.mediaDevices.getUserMedia
+        && navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices)) || null;
+    const MR = d.MediaRecorder || window.MediaRecorder || null;
+    let rec = null, chunks = [], stream = null, t0 = 0;
+    const supported = () => !!(gUM && MR);
+    const recording = () => !!rec;
+    async function start() {
+      if (!supported()) return { ok: false, msg: '이 브라우저는 녹음을 지원하지 않아요 — 크롬·엣지 최신 버전을 써주세요' };
+      if (rec) return { ok: false, msg: '이미 녹음 중이에요' };
+      let st2 = null;
+      try { st2 = await gUM({ audio: true }); }
+      catch (_) { return { ok: false, msg: '마이크 사용이 허용되지 않았어요 — 주소창 옆 권한을 확인해 주세요' }; }
+      try {
+        stream = st2; chunks = []; t0 = Date.now();
+        rec = new MR(stream);
+        rec.ondataavailable = (e) => { if (e && e.data && e.data.size) chunks.push(e.data); };
+        rec.start();
+        return { ok: true };
+      } catch (_) {
+        try { st2 && st2.getTracks().forEach((tk) => tk.stop()); } catch (_) {}
+        rec = null; stream = null;
+        return { ok: false, msg: '녹음을 시작하지 못했어요' };
+      }
+    }
+    function stop() {
+      return new Promise((res) => {
+        if (!rec) return res({ ok: false, msg: '녹음 중이 아니에요' });
+        const r = rec; rec = null;
+        r.onstop = () => {
+          const duration = Math.max(0.1, Math.round((Date.now() - t0) / 100) / 10);
+          try { stream && stream.getTracks().forEach((tk) => tk.stop()); } catch (_) {}
+          stream = null;
+          try {
+            const B = d.BlobCls || window.Blob;
+            const blob = new B(chunks, { type: r.mimeType || 'audio/webm' });
+            const RD = d.FileReaderCls || window.FileReader;
+            const rd = new RD();
+            rd.onload = () => res({ ok: true, src: String(rd.result || ''), duration });
+            rd.onerror = () => res({ ok: false, msg: '녹음을 읽지 못했어요' });
+            rd.readAsDataURL(blob);
+          } catch (_) { res({ ok: false, msg: '녹음을 읽지 못했어요' }); }
+        };
+        try { r.stop(); } catch (_) { res({ ok: false, msg: '녹음을 멈추지 못했어요' }); }
+      });
+    }
+    return { supported, recording, start, stop };
+  }
+
+  return { SYNTHS, patternPlan, play, pause, resume, stop, fileToSrc, state, audioAudit, waveAt, envAt, renderPattern, fitPlan, fitPcm, beatSync, makeRecorder };
 })();

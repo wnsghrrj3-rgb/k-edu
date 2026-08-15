@@ -225,6 +225,32 @@ window.MK_VIDEO = (() => {
     return { totalSec: plan.totalSec, segments };
   }
 
+  /* ---------- R127 — 소리 원천 수집 (순수) ----------
+     R39 이래 MP4 소리 트랙은 배경음악 타임라인만 탔다 — 클립에 담긴 소리(AI
+     생성 대사·현장음)와 준호가 녹음할 나레이션이 **화면에는 있는데 파일에는
+     없는** 세계였다. 여기서 씬 시작초 기준으로 전 원천을 나열한다.
+     · 클립: isVideoEl && !el.mute — 소리는 기본 켬(넣은 소리는 실리는 게 기본).
+       음량 el.volume(0~1, 기본 1). 화면 루프 규약대로 반복(loop:true).
+     · 나레이션: sc.narration.src — 반복 금지(loop:false), 씬 길이에서 잘림. */
+  function soundSources(doc, planIn) {
+    const plan = planIn || framePlan(doc, {});
+    const out = []; let t = 0;
+    plan.scenes.forEach((ps) => {
+      const sc = doc.scenes[ps.sceneIdx];
+      if (sc && sc.narration && sc.narration.src) {
+        out.push({ kind: 'narration', start: t, dur: ps.durSec, src: sc.narration.src, vol: 1, loop: false });
+      }
+      ((sc && sc.elements) || []).forEach((el) => {
+        if (isVideoEl(el) && !el.mute) {
+          out.push({ kind: 'clip', start: t, dur: ps.durSec, src: el.src,
+            vol: el.volume != null ? clamp(+el.volume || 0, 0, 1) : 1, loop: true });
+        }
+      });
+      t += ps.durSec;
+    });
+    return out;
+  }
+
   /* ---------- 프레임 플랜 — 순수 (MK_PLAY.sequence 기준 그대로) ---------- */
   function framePlan(doc, o) {
     o = o || {};
@@ -296,7 +322,7 @@ window.MK_VIDEO = (() => {
   }
 
   /* ---------- R39 — 소리 트랙 준비: 타임라인 → 모노 PCM 마스터 ---------- */
-  async function buildMasterPCM(timeline, sr) {
+  async function buildMasterPCM(timeline, sr, doc, planIn, deps) {
     const n = Math.max(1, Math.round(timeline.totalSec * sr));
     const master = new Float32Array(n);
     const FADE = Math.round(0.06 * sr);                   /* 구간 경계 클릭 방지 */
@@ -321,10 +347,37 @@ window.MK_VIDEO = (() => {
         master[st + i] += (pcm[i] || 0) * g;
       }
     }
+
+    /* ---------- R127 — 클립·나레이션 ----------
+       순서가 뜻이다: ① 음악을 다 쓴 뒤 ② 나레이션 구간의 음악만 낮추고(덕킹)
+       ③ 클립 ④ 나레이션을 얹는다. 덕킹을 나중에 하면 나레이션 자신까지
+       낮아지고, 먼저 하면 아직 없는 음악을 낮추는 헛손질이 된다. */
+    const srcs = doc ? soundSources(doc, planIn) : [];
+    const dec = (deps && deps.decode) || decodeToPCM;
+    const DUCK = 0.35;                                    /* 나레이션 밑 음악 */
+    for (const sp of srcs) {
+      if (sp.kind !== 'narration') continue;
+      const st = Math.round(sp.start * sr), en = Math.min(n, Math.round((sp.start + sp.dur) * sr));
+      for (let i = st; i < en; i++) master[i] *= DUCK;
+    }
+    for (const sp of srcs) {
+      const st = Math.round(sp.start * sr), en = Math.min(n, Math.round((sp.start + sp.dur) * sr));
+      const len = en - st;
+      if (len <= 0) continue;
+      const pcm = await dec(sp.src, len, sr, { loop: sp.loop });
+      if (!pcm) continue;                                 /* 해독 실패 = 그 원천만 무음(정직) */
+      const g0 = sp.kind === 'narration' ? 1.0 : 0.9 * sp.vol;
+      for (let i = 0; i < len; i++) {
+        let g = g0;
+        if (i < FADE) g *= i / FADE;
+        if (len - i < FADE) g *= (len - i) / FADE;
+        master[st + i] += (pcm[i] || 0) * g;
+      }
+    }
     for (let i = 0; i < n; i++) master[i] = clamp(master[i], -1, 1);
     return master;
   }
-  async function decodeToPCM(src, lenSamples, sr) {
+  async function decodeToPCM(src, lenSamples, sr, o) {
     try {
       const buf = await (await fetch(src)).arrayBuffer();
       const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
@@ -333,8 +386,12 @@ window.MK_VIDEO = (() => {
       const chs = []; for (let c = 0; c < ab.numberOfChannels; c++) chs.push(ab.getChannelData(c));
       const src0 = ab.length;
       const out = new Float32Array(lenSamples);
-      for (let i = 0; i < lenSamples; i++) {
-        const j = i % src0;                               /* 루프 — 플레이어 loop 규약과 동일 */
+      /* R127 — loop 선택. 음악·클립은 화면 루프 규약과 동일하게 반복하지만,
+         나레이션은 씬이 남는다고 처음부터 다시 말하면 안 된다(뒤는 무음). */
+      const loop = !o || o.loop !== false;
+      const upto = loop ? lenSamples : Math.min(lenSamples, src0);
+      for (let i = 0; i < upto; i++) {
+        const j = i % src0;
         let s = 0; for (const ch of chs) s += ch[j];
         out[i] = s / chs.length;
       }
@@ -405,7 +462,8 @@ window.MK_VIDEO = (() => {
       /* R39 — 소리 트랙: 장면 music 이 있고 AudioEncoder 지원 시에만 */
       const SR = EXPORT_SPEC.audioSampleRate;
       const timeline = musicTimeline(doc, plan);
-      const wantAudio = timeline.segments.length > 0;
+      /* R127 — 소리의 이유가 셋이 됐다: 음악 · 클립 소리 · 나레이션 */
+      const wantAudio = timeline.segments.length > 0 || soundSources(doc, plan).length > 0;
       /* R123 — typeof 만 보고 강행하던 자리. 실제로 물어보고, 안 되면 무음으로
          정직하게 내려간다(예전엔 AAC 미지원 기기에서 소리가 실리다 죽었다). */
       const apick = wantAudio ? await pickAudio(window) : { ok: false, cfg: null, why: '' };
@@ -414,7 +472,7 @@ window.MK_VIDEO = (() => {
       if (wantAudio && !canAudio) audioMsg = apick.why;
       if (canAudio) {
         say('소리 준비 중…');
-        masterPCM = await buildMasterPCM(timeline, SR);
+        masterPCM = await buildMasterPCM(timeline, SR, doc, plan);
       }
 
       const muxer = new Mp4Muxer.Muxer({
@@ -620,6 +678,17 @@ window.MK_VIDEO = (() => {
     if (EXPORT_SPEC.muxerUrl.charAt(0) !== '/') v.push('먹서 자체 주소가 루트 절대경로가 아님');
     if (/^https?:/i.test(EXPORT_SPEC.muxerUrl)) v.push('먹서 1순위가 외부 주소 — 자체 호스팅이 아님');
     if (!/^https?:/i.test(EXPORT_SPEC.muxerFallbackUrl)) v.push('먹서 폴백이 외부 주소가 아님');
+    /* R127 — 소리 원천 계약: 음소거 클립·이미지는 안 실리고, 나레이션은 반복 금지 */
+    const sdoc = { scenes: [{ duration: 2, narration: { src: 'data:audio/webm;base64,n' }, elements: [
+      { kind: 'video', src: 'data:video/mp4;base64,a' },
+      { kind: 'video', src: 'data:video/mp4;base64,b', mute: true },
+      { kind: 'image', src: 'data:image/png;base64,c' }] }] };
+    const ss = soundSources(sdoc);
+    if (ss.length !== 2) v.push('soundSources 총원 위반: ' + ss.length);
+    if (ss.filter((x) => x.kind === 'clip').length !== 1) v.push('음소거·이미지 제외 위반');
+    const nn = ss.find((x) => x.kind === 'narration');
+    if (!nn || nn.loop !== false) v.push('나레이션 반복 금지 위반');
+    if (!ss.every((x) => x.vol >= 0 && x.vol <= 1)) v.push('음량 범위 위반');
     const rs = rungSize(2, 1280, 720);
     if (!rs || rs.W !== 1280 || rs.H !== 720) v.push('사다리 720 단 치수 위반');
     if (rungSize(99, 1280, 720) !== null) v.push('없는 단이 null 이 아님');
@@ -637,7 +706,7 @@ window.MK_VIDEO = (() => {
     return { ok: v.length === 0, violations: v };
   }
 
-  return { FPS, TRANS_DUR, MAX_SEC, EXPORT_SPEC, VIDEO_LADDER, outSize, rungSize, pickVideoRung, pickAudio, loadMuxer, muxerSource,
+  return { FPS, TRANS_DUR, MAX_SEC, EXPORT_SPEC, VIDEO_LADDER, outSize, rungSize, pickVideoRung, pickAudio, loadMuxer, muxerSource, soundSources, buildMasterPCM,
     easeAt, stateAt, framePlan, exportMP4, videoAudit, busy: () => busy,
     isVideoEl, secondsInto, fitRect, musicTimeline, animPivot };
 })();

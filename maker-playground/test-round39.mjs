@@ -102,7 +102,16 @@ sec('3. 플레이어 영상 재생 (MK_PLAY)');
   ] }] };
   const h = P.sceneHTML(doc.scenes[0]);
   T('영상 = <video> 방출', /<video src="data:video\/mp4;base64,AAAA"/.test(h));
-  T('무음·자동·루프·인라인', /muted autoplay loop playsinline/.test(h));
+  /* R127 정정(의도 보존): 잣대의 의도 = 「재생 클립은 스스로 돌고 화면을 안
+     깨뜨린다」(자동·루프·인라인). 무음은 그 의도가 아니라 당시의 한계였다 —
+     소리 트랙이 클립 소리를 실을 수 없던 세계의 부산물. R127 로 소리가 실리는
+     세계에서는 **소리 여부를 요소(el.mute)가 결정**하고, 기본은 켬이다. */
+  T('자동·루프·인라인 — 기본은 소리 켬(muted 없음)', /<video [^>]*autoplay loop playsinline/.test(h) && !/<video [^>]*muted/.test(h));
+  T('음소거 요소는 muted 로 방출', (() => {
+    const sc2 = JSON.parse(JSON.stringify(doc.scenes[0]));
+    sc2.elements[0].mute = true;
+    return /muted autoplay loop playsinline/.test(P.sceneHTML(sc2));
+  })());
   T('fit 반영', /object-fit:cover/.test(h));
   T('이미지는 여전히 <img>', /<img src="data:image\/png;base64,BBBB"/.test(h));
   T('영상에 등장 애니 인라인', /mkp-fade 0.4s/.test(h));

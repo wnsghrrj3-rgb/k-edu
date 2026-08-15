@@ -135,7 +135,7 @@ body.mkp-on #kedu-back { display:none !important }
         const fit = el.fit === 'contain' ? 'contain' : 'cover';
         const crop = window.MK_PHOTO ? window.MK_PHOTO.cropCss(el) : '';
         const media = (el.video === true || el.kind === 'video' || /^data:video\//.test(el.src))
-          ? `<video src="${el.src}" muted autoplay loop playsinline style="width:100%;height:100%;object-fit:${fit}${window.MK_FOCAL ? window.MK_FOCAL.pos(el) : ''}${window.MK_PHOTO ? window.MK_PHOTO.mediaStyle(el) : ''};display:block;pointer-events:none"></video>`   /* R39 — 영상 프레임 실재생 · R94 초점 */
+          ? `<video src="${el.src}" ${el.mute ? 'muted ' : ''}autoplay loop playsinline style="width:100%;height:100%;object-fit:${fit}${window.MK_FOCAL ? window.MK_FOCAL.pos(el) : ''}${window.MK_PHOTO ? window.MK_PHOTO.mediaStyle(el) : ''};display:block;pointer-events:none"></video>`   /* R39 — 영상 프레임 실재생 · R94 초점 */
           : `<img src="${el.src}" alt="" style="width:100%;height:100%;object-fit:${fit}${window.MK_FOCAL ? window.MK_FOCAL.pos(el) : ''}${window.MK_PHOTO ? window.MK_PHOTO.mediaStyle(el) : ''};display:block">`;
         if (rf) {
           /* R119 — 축 분리: 바깥 rotate(중앙축)·안쪽 scale(초점축)을 별 transform 으로 나눠 얹어
@@ -151,7 +151,12 @@ body.mkp-on #kedu-back { display:none !important }
       if (el.fill && el.fill !== 'none') return `<div class="mkp-el" style="${pos}height:${el.h}%;background:${el.fill}${rad}${rot}${an}"></div>`;
       return `<div class="mkp-el mkp-ph" style="${pos}height:${el.h}%${rad}${rot}${an}">${esc(el.label || '')}</div>`;
     }).join('');
-    return `<div class="mkp-scene" style="background:${scene.background || '#fff'}">${els}</div>`;
+    /* R127 — 나레이션: 씬에 녹음이 있으면 재생에 실재생으로 싣는다.
+       정지 렌더(still — 썸네일·스프라이트 세계)엔 안 싣는다. MP4 쪽은
+       sceneSprites 가 sceneHTML 을 안 거치므로 이 태그가 새지 않는다. */
+    const narr = !opts.still && scene.narration && scene.narration.src
+      ? `<audio class="mkp-narr" src="${scene.narration.src}" autoplay></audio>` : '';
+    return `<div class="mkp-scene" style="background:${scene.background || '#fff'}">${els}${narr}</div>`;
   }
 
   /* ---------- 플레이어 ---------- */
@@ -178,6 +183,15 @@ body.mkp-on #kedu-back { display:none !important }
     const host = document.getElementById('mkPlayer');
     if (!host) return;
     host.innerHTML = stageHTML(P.doc, P.idx);
+    /* R127 — 소리 자동재생 구조대. 클립이 소리를 얻으면서 자동재생이 정책에
+       걸릴 수 있다(미리보기는 클릭 뒤라 대개 허용되지만, 거부되면 영상이
+       **멈춘 채**가 된다 — 그게 최악이다). 거부 시 무음으로 내려서라도 돈다. */
+    host.querySelectorAll('video,audio').forEach((mEl) => {
+      try {
+        const pr = mEl.play && mEl.play();
+        if (pr && typeof pr.catch === 'function') pr.catch(() => { mEl.muted = true; try { mEl.play(); } catch (_) {} });
+      } catch (_) {}
+    });
     host.querySelectorAll('[data-mkp]').forEach((b) => b.onclick = (ev) => {
       ev.stopPropagation();
       const k = b.dataset.mkp;

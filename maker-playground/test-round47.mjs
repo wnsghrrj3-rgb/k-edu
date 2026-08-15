@@ -19,7 +19,11 @@ T('fitCtl — cover/contain 두 버튼 존재', () => {
 T('fitCtl — 이미지·영상 패널 양쪽에 연결', () => {
   const img = src.indexOf("title = '이미지'"), vid = src.indexOf("title = '영상'");
   A(src.slice(img, img + 2600).includes('fitCtl'), '이미지 패널'); /* R101 — 사진 바꾸기·필터·보정이 fitCtl 앞에 들어옴(§11 첫 행동 = 사진 바꾸기) */
-  A(src.slice(vid, vid + 300).includes('fitCtl'), '영상 패널');
+  /* R127 정정(의도 보존): 잣대의 의도 = 영상 패널에 fitCtl 이 배선돼 있다.
+     300자 창은 당시 패널이 한 줄이던 구현 세부 — R127 소리 컨트롤이 앞에
+     들어와 밀렸다. 이미지 패널이 R101 때 같은 이유로 2600자 창을 쓴 전례
+     그대로 넓힌다(재는 것은 불변). */
+  A(src.slice(vid, vid + 1600).includes('fitCtl'), '영상 패널');
 });
 T('fit 핸들러 — snap 후 el.fit 기록·재렌더', () => {
   A(src.includes("el.fit = b.dataset.wsFit"), 'fit 기록');

@@ -297,6 +297,43 @@
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;width:96px;margin:-4px 0 4px">${cells.join('')}</div>
       <div class="cx-hint" style="margin:0 0 8px">${fine ? `세밀 초점 ${Math.round(n.x * 100)}% · ${Math.round(n.y * 100)}% 사용 중 — ` : '꽉 채우기에서 잘릴 때 이 지점이 남아요 — '}사진을 빠르게 두 번 누르면 세밀하게 잡아요</div>`;
   };
+  /* R127 — 나레이션: 씬마다 목소리 한 겹. 녹음기는 MK_AUDIO.makeRecorder,
+     여기는 상태와 버튼만 진다. 재생·MP4 반영은 scene.narration 계약 하나로
+     — play.js(mkp-narr)·video.js(soundSources)가 같은 자리를 읽는다. */
+  const recOf = () => {
+    if (!WS._rec && window.MK_AUDIO && window.MK_AUDIO.makeRecorder) WS._rec = window.MK_AUDIO.makeRecorder();
+    return WS._rec || null;
+  };
+  function narrCtl(sc) {
+    const rec = recOf();
+    if (!rec) return '';
+    if (!rec.supported()) {
+      return `<label class="cx-field"><span>나레이션</span></label><div class="cx-hint">이 브라우저는 녹음을 지원하지 않아요</div>`;
+    }
+    const busyRec = rec.recording();
+    const has = sc.narration && sc.narration.src;
+    let rows = '';
+    if (busyRec) {
+      rows = `<button class="cx-scenebtn primary" data-ws-nstop>■ 녹음 끝내기</button><div class="cx-hint">🔴 녹음 중이에요 — 말하고 나서 끝내기를 눌러 주세요</div>`;
+    } else if (has) {
+      rows = `<div class="cx-shrow"><button class="cx-shb" data-ws-nplay title="들어보기">▶</button>` +
+        `<button class="cx-shb" data-ws-nrec title="다시 녹음">●</button>` +
+        `<button class="cx-shb" data-ws-nclear title="지우기">✕</button><i></i></div>` +
+        `<div class="cx-hint">🎙 ${(+sc.narration.duration || 0).toFixed(1)}초 — 재생·영상 저장에 실려요 (음악은 자동으로 작아져요)</div>`;
+    } else {
+      rows = `<button class="cx-scenebtn" data-ws-nrec>● 나레이션 녹음</button>`;
+    }
+    return `<label class="cx-field"><span>나레이션</span></label>${rows}`;
+  }
+
+  /* R127 — 스티커: 새 렌더 능력 0 — 전부 기존 텍스트 요소다(MK_DECOR 원칙과
+     같은 결). 지우기·옮기기·애니 전부 보통 요소로 통한다. */
+  const STICKERS = ['⭐', '✨', '🎉', '🎈', '❤️', '🔥', '👍', '🏆', '🌟', '🎵', '💬', '➡️', '❓', '❗', '💯', '🙌'];
+  function stkCtl() {
+    return `<label class="cx-field"><span>스티커</span></label><div class="cx-shrow" style="flex-wrap:wrap">` +
+      STICKERS.map((e2) => `<button class="cx-shb" data-ws-stk="${e2}" title="스티커 넣기">${e2}</button>`).join('') + `<i></i></div>`;
+  }
+
   /* R49 — 자막 디자인 선택 (MK_CAPTION 프리셋) */
   const capCtl = (sc) => {
     if (!window.MK_CAPTION) return '';
@@ -394,6 +431,7 @@
         lockCtl(sc) + capCtl(sc) +
         (window.MK_SMART ? `<label class="cx-field"><span>한 번에 정돈</span></label><div class="cx-shrow">${window.MK_SMART.RULES.map((r2) =>
           `<button class="cx-shb wide" data-ws-smart="${r2.id}" title="${r2.name}">${r2.icon} ${r2.name}</button>`).join('')}</div>${WS.smartMsg ? `<p class="mut" style="font:var(--mk-t-caption)">${WS.smartMsg}</p>` : ''}` : '') +
+        narrCtl(sc) + stkCtl() +
         `<button class="cx-scenebtn" data-ws-anim>✨ 애니메이션 편집 →</button>`;
     } else {
       const el = sc.elements[sel.idx];
@@ -429,7 +467,15 @@
           field('크기', el.size) + field('굵기', el.weight || 400) + field('폭', el.w + '%') + styleCtl;
       } else if (sel.type === 'video') {
         title = '영상';
-        body = field('클립', el.label || '영상') + fitCtl(el, sel.idx) + focalCtl(el, sel.idx) + field('볼륨', '100%') + `<div class="cx-hint">트리밍·속도 — 후속</div>`;
+        /* R127 — 「볼륨 100%」 죽은 표기를 실컨트롤로. 클립 소리는 기본 켬 —
+           담긴 소리(AI 대사·현장음)는 실리는 게 기본이고, 끄는 게 선택이다. */
+        const vv = el.volume != null ? Math.round(el.volume * 100) : 100;
+        const sndCtl = `<label class="cx-field"><span>클립 소리</span></label><div class="cx-shrow">` +
+          `<button class="cx-shb${!el.mute ? ' on' : ''}" data-ws-vmute="0" title="소리 켬">🔊 켬</button>` +
+          `<button class="cx-shb${el.mute ? ' on' : ''}" data-ws-vmute="1" title="소리 끔">🔇 끔</button><i></i></div>` +
+          (el.mute ? '' : `<label class="cx-prow"><span>볼륨</span><input type="range" min="0" max="100" step="5" value="${vv}" data-ws-vvol data-stop><b data-ws-vvolb>${vv}%</b></label>`);
+        body = field('클립', el.label || '영상') + fitCtl(el, sel.idx) + focalCtl(el, sel.idx) + sndCtl +
+          `<div class="cx-hint">소리는 미리보기·영상 저장에 실려요 · 트리밍·속도 — 후속</div>`;
       } else if (sel.type === 'shape') {
         title = '도형';
         body = field('종류', el.label || '도형') + field('채움', '단색') + field('테두리', '없음');
@@ -1205,6 +1251,42 @@
       }
 
       /* R49 — 자막 디자인 */
+      /* R127 — 클립 소리 */
+      root.querySelectorAll('[data-ws-vmute]').forEach((b) => b.onclick = () => {
+        const el = selEl(); if (!el) return;
+        snap(); el.mute = b.dataset.wsVmute === '1'; if (!el.mute) delete el.mute; R();
+      });
+      { const sv = root.querySelector('[data-ws-vvol]');
+        if (sv) {
+          sv.oninput = () => { const b2 = root.querySelector('[data-ws-vvolb]'); if (b2) b2.textContent = sv.value + '%'; };
+          sv.onchange = () => { const el = selEl(); if (!el) return; snap(); el.volume = (+sv.value) / 100; if (el.volume === 1) delete el.volume; R(); };
+        } }
+      /* R127 — 나레이션 */
+      { const nr = root.querySelector('[data-ws-nrec]');
+        if (nr) nr.onclick = () => { const rec = recOf(); if (!rec) return;
+          rec.start().then((r2) => { if (!r2.ok && typeof alert === 'function') alert(r2.msg); R(); }); R(); };
+        const ns = root.querySelector('[data-ws-nstop]');
+        if (ns) ns.onclick = () => { const rec = recOf(); if (!rec) return;
+          rec.stop().then((r2) => {
+            if (r2.ok) { snap(); scene().narration = { src: r2.src, duration: r2.duration }; }
+            else if (typeof alert === 'function') alert(r2.msg);
+            R();
+          }); };
+        const np = root.querySelector('[data-ws-nplay]');
+        if (np) np.onclick = () => { const sc2 = scene();
+          if (sc2.narration && sc2.narration.src && typeof Audio === 'function') {
+            try { const a2 = new Audio(sc2.narration.src); const pr = a2.play && a2.play(); if (pr && pr.catch) pr.catch(() => {}); } catch (_) {}
+          } };
+        const nc = root.querySelector('[data-ws-nclear]');
+        if (nc) nc.onclick = () => { snap(); delete scene().narration; R(); };
+      }
+      /* R127 — 스티커 = 보통 텍스트 요소 삽입 */
+      root.querySelectorAll('[data-ws-stk]').forEach((b) => b.onclick = () => {
+        snap(); const sc2 = scene(); const n2 = sc2.elements.length;
+        sc2.elements.push({ kind: 'text', text: b.dataset.wsStk, x: 8 + (n2 * 9) % 60, y: 8 + (n2 * 7) % 55,
+          w: 14, size: 10, weight: 400, anim: { preset: 'pop', delay: 0, duration: 0.5, ease: 'ease-out' } });
+        WS.sel = { type: 'text', idx: sc2.elements.length - 1 }; R();
+      });
       root.querySelectorAll('[data-ws-cap]').forEach((b) => b.onclick = () => {
         if (!window.MK_CAPTION) return;
         snap();
