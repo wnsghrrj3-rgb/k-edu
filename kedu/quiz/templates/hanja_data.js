@@ -6,8 +6,12 @@
  *   4학년 = 6급Ⅱ 추가 75자 · 5학년 = 6급 추가 75자 · 6학년 = 5급Ⅱ 추가 100자
  *   (상위 급수는 하위 급수를 포함하지만, 여기에는 그 급수에서 새로 더해지는 글자만 담는다)
  *
- * 한 글자 = [한자, 훈(뜻), 음(소리), 대표낱말?, 낱말뜻?]
+ * 한 글자 = [한자, 훈(뜻), 음(소리), 대표낱말?, 낱말뜻?, 응용낱말?]
  *   대표낱말은 있는 글자만 — "낱말 속 한자" 문항의 소재로 쓰인다.
+ *   응용낱말은 [[낱말, 뜻], ...] 꼴의 덤. 대표낱말 하나로는 글자가 어디에 쓰이는지
+ *   감이 안 오므로 더 얹는 자리다. 문항 출제에는 쓰지 않고 학습 화면에서만 보여준다
+ *   (출제에 쓰면 회차별 난이도가 글자마다 들쭉날쭉해진다).
+ *   대표낱말과 같은 어휘 사다리를 지킨다 — 그 학년까지 배운 한자로만.
  *
  * 아침활동 1회분 = 10자 묶음(step). 50자 → 5회차 · 75자 → 8회차(마지막 5자) · 100자 → 10회차.
  *   대표낱말은 그 학년까지 누적 배정된 글자로만 만든다 — 아직 안 배운 한자가 문항에 안 나오게.
@@ -483,7 +487,11 @@
   /* 배열 → 객체 정규화 */
   function norm(rows) {
     return rows.map(function (r) {
-      return { c: r[0], hun: r[1], eum: r[2], word: r[3] || null, wordKo: r[4] || null };
+      return {
+        c: r[0], hun: r[1], eum: r[2],
+        word: r[3] || null, wordKo: r[4] || null,
+        extra: (r[5] || []).map(function (e) { return { word: e[0], ko: e[1] }; })
+      };
     });
   }
 
@@ -512,8 +520,33 @@
     return g.slice(0, stepNo * STEP_SIZE);
   }
 
+  /* 사전 전체(대표낱말 + 응용낱말)에서 그 글자가 쓰인 낱말을 모은다.
+     upToGrade 를 주면 그 학년까지 배운 한자로만 이뤄진 낱말로 거른다. */
+  function wordsWith(ch, upToGrade) {
+    var pool = [], seenW = {}, allowed = null;
+    if (upToGrade) {
+      allowed = {};
+      Object.keys(GRADES).forEach(function (g) {
+        if (Number(g) <= upToGrade) GRADES[g].forEach(function (r) { allowed[r.c] = 1; });
+      });
+    }
+    Object.keys(GRADES).forEach(function (g) {
+      GRADES[g].forEach(function (r) {
+        var list = [];
+        if (r.word) list.push({ word: r.word, ko: r.wordKo });
+        r.extra.forEach(function (e) { list.push(e); });
+        list.forEach(function (e) {
+          if (e.word.indexOf(ch) < 0 || seenW[e.word]) return;
+          if (allowed && !Array.prototype.every.call(e.word, function (c) { return allowed[c]; })) return;
+          seenW[e.word] = 1; pool.push(e);
+        });
+      });
+    });
+    return pool;
+  }
+
   return {
-    GRADES: GRADES, STEP_SIZE: STEP_SIZE,
+    GRADES: GRADES, STEP_SIZE: STEP_SIZE, wordsWith: wordsWith,
     grades: function () { return Object.keys(GRADES).map(Number); },
     all: function (grade) { return GRADES[grade] || []; },
     stepCount: stepCount, step: step, upto: upto

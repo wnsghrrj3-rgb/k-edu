@@ -13,7 +13,7 @@
   --primary:#5B8EF8;--primary-light:#EBF4FF;--pink:#FF85A1;
   --bg:#F4F6FB;--card:#fff;--ink:#1A202C;--sub:#718096;--faint:#A0AEC0;--border:#E7ECF3;
   --radius:20px;--shadow:0 2px 18px rgba(33,52,94,.07);
-  --done:#22A06B;--warn:#E8A33D;
+  --done:#22A06B;--warn:#E8A33D;--grid:#DDE4EE;
 }
 body{font-family:'Gowun Dodum',sans-serif;background:var(--bg);min-height:100vh;color:var(--ink);-webkit-font-smoothing:antialiased}
 
@@ -22,10 +22,8 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--bg);min-height:100vh;
 .nav-logo{font-family:var(--kedu-title);font-size:21px;text-decoration:none;color:var(--ink)}
 .nav-logo .kk{background:linear-gradient(135deg,var(--primary),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .nav a.back{font-size:13.5px;color:var(--sub);text-decoration:none}
-
 .wrap{max-width:860px;margin:0 auto;padding:22px 18px 90px}
 
-/* ── 회차 고르기 ─────────────────────────────── */
 .picker{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;margin-bottom:16px}
 .picker .row{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}
 label{font-size:13px;color:var(--sub);font-weight:600;display:block;margin-bottom:7px}
@@ -36,52 +34,77 @@ select:focus{outline:none;border-color:var(--primary)}
 .meta b{color:var(--ink)}
 
 .modes{display:flex;gap:8px;margin:16px 0 14px}
-.mode{flex:1;border:1.5px solid var(--border);background:var(--card);border-radius:14px;padding:11px;
-  font-family:var(--kedu-title);font-size:15px;color:var(--sub);cursor:pointer}
+.mode{flex:1;border:1.5px solid var(--border);background:var(--card);border-radius:14px;padding:11px 6px;
+  font-family:var(--kedu-title);font-size:14.5px;color:var(--sub);cursor:pointer}
 .mode[aria-pressed=true]{border-color:var(--primary);background:var(--primary-light);color:var(--primary)}
 
-/* ── 목록 모드 ───────────────────────────────── */
+/* ── 한눈에 보기 ─────────────────────────────── */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
 .ch{background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:16px 14px;text-align:center}
-.ch .g{font-family:var(--kedu-title);font-size:52px;line-height:1.15;margin-bottom:6px}
+.ch .g{font-family:var(--kedu-title);font-size:52px;line-height:1.15;margin-bottom:2px}
+.ch .st{font-size:11.5px;color:var(--faint);margin-bottom:6px}
 .ch .hy{font-family:var(--kedu-title);font-size:16px;margin-bottom:8px}
 .ch .wd{font-size:12.5px;color:var(--sub);line-height:1.6;border-top:1px solid var(--border);padding-top:8px}
 .ch .wd .w{font-family:var(--kedu-title);font-size:14px;color:var(--ink);display:block}
 .ch .none{font-size:12px;color:var(--faint);border-top:1px solid var(--border);padding-top:8px}
 
-/* ── 제시 모드 ───────────────────────────────── */
+/* ── 무대(한 자씩 · 따라쓰기 공용) ───────────── */
 .stage{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
-  padding:34px 22px 26px;text-align:center;position:relative;min-height:60vh;
-  display:flex;flex-direction:column;align-items:center;justify-content:center}
+  padding:30px 20px 24px;text-align:center;position:relative;
+  display:flex;flex-direction:column;align-items:center}
 .stage .count{position:absolute;top:16px;left:20px;font-size:13px;color:var(--faint)}
-.stage .big{font-family:var(--kedu-title);font-size:clamp(140px,30vw,240px);line-height:1;
-  color:var(--ink);cursor:pointer;user-select:none;transition:transform .12s}
-.stage .big:active{transform:scale(.97)}
-.reveal{margin-top:22px;min-height:96px}
-.reveal .ask{font-size:15px;color:var(--faint);padding-top:26px}
-.reveal .hy{font-family:var(--kedu-title);font-size:clamp(28px,6vw,40px);margin-bottom:10px}
+.stage .strokes{position:absolute;top:16px;right:20px;font-size:13px;color:var(--faint)}
+
+.paper{width:min(300px,72vw);aspect-ratio:1;position:relative;margin:6px auto 0}
+.paper svg{width:100%;height:100%;display:block;position:relative;z-index:1;touch-action:none}
+.paper::before{content:'';position:absolute;inset:0;border:1.5px solid var(--grid);border-radius:12px;
+  background:
+    linear-gradient(var(--grid),var(--grid)) center/100% 1px no-repeat,
+    linear-gradient(var(--grid),var(--grid)) center/1px 100% no-repeat}
+.paper.big{width:min(420px,84vw)}
+.ghost{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:var(--kedu-title);font-size:min(300px,72vw);line-height:1;color:#EDF1F7;z-index:0;user-select:none}
+
+.reveal{margin-top:18px;min-height:84px;width:100%}
+.reveal .ask{font-size:15px;color:var(--faint);padding-top:22px}
+.reveal .hy{font-family:var(--kedu-title);font-size:clamp(26px,5.5vw,36px);margin-bottom:8px}
 .reveal .wd{font-size:15px;color:var(--sub)}
 .reveal .wd .w{font-family:var(--kedu-title);font-size:19px;color:var(--primary)}
 .fade{animation:fade .28s ease}
 @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){.fade{animation:none}.stage .big{transition:none}}
+@media (prefers-reduced-motion:reduce){.fade{animation:none}}
+
+/* ── 응용 낱말 ───────────────────────────────── */
+.uses{margin-top:14px;border-top:1px solid var(--border);padding-top:14px;width:100%}
+.uses .t{font-size:12.5px;color:var(--faint);margin-bottom:9px}
+.uses .list{display:flex;flex-wrap:wrap;gap:7px;justify-content:center}
+.use{background:var(--primary-light);border-radius:11px;padding:7px 12px;font-size:13px;color:var(--sub)}
+.use b{font-family:var(--kedu-title);font-size:15px;color:var(--primary);margin-right:5px}
 
 .pager{display:flex;gap:10px;align-items:center;justify-content:center;margin-top:16px}
 .pg{border:1.5px solid var(--border);background:var(--card);border-radius:14px;padding:12px 20px;
   font-family:var(--kedu-title);font-size:16px;color:var(--ink);cursor:pointer}
+.pg.on{background:var(--primary);border-color:var(--primary);color:#fff}
 .pg:disabled{opacity:.4;cursor:not-allowed}
 .dots{display:flex;gap:5px;justify-content:center;margin-top:14px;flex-wrap:wrap}
 .dot{width:9px;height:9px;border-radius:50%;background:var(--border);border:none;padding:0;cursor:pointer}
 .dot.on{background:var(--primary)}
+.dot.cleared{background:var(--done)}
 
-.tools{display:flex;gap:8px;justify-content:center;margin-top:22px}
+.say{font-size:14px;color:var(--sub);min-height:22px;margin-top:12px}
+.say.good{color:var(--done)}
+.say.oops{color:var(--warn)}
+.nodata{font-size:13.5px;color:var(--warn);background:#FDF6E7;border-radius:12px;padding:12px 14px;margin-top:10px;line-height:1.6}
+
+.tools{display:flex;gap:8px;justify-content:center;margin-top:22px;flex-wrap:wrap}
 .btn.line{background:transparent;border:1px solid var(--border);color:var(--sub);
   border-radius:13px;padding:11px 16px;font-family:var(--kedu-title);font-size:14px;cursor:pointer}
+.credit{margin-top:26px;font-size:11.5px;color:var(--faint);text-align:center;line-height:1.7}
+.credit a{color:var(--faint)}
 :focus-visible{outline:3px solid var(--primary);outline-offset:2px}
 
-/* ── 인쇄(교실 배부용) ───────────────────────── */
 @media print{
-  .nav,.picker,.modes,.pager,.dots,.tools,.stage{display:none!important}
+  .nav,.picker,.modes,.pager,.dots,.tools,.stage,.credit{display:none!important}
   body{background:#fff}
   .wrap{max-width:none;padding:0}
   .print-head{display:block!important;font-family:var(--kedu-title);font-size:20px;margin-bottom:14px}
@@ -104,168 +127,284 @@ select:focus{outline:none;border-color:var(--primary)}
 
   <div class="picker">
     <div class="row">
-      <div>
-        <label for="g">학년</label>
-        <select id="g"></select>
-      </div>
-      <div>
-        <label for="s">회차</label>
-        <select id="s"></select>
-      </div>
-      <div>
-        <button class="pg" id="today" type="button" style="padding:12px 16px;font-size:14px">처음으로</button>
-      </div>
+      <div><label for="g">학년</label><select id="g"></select></div>
+      <div><label for="s">회차</label><select id="s"></select></div>
+      <div><button class="pg" id="today" type="button" style="padding:12px 16px;font-size:14px">처음으로</button></div>
     </div>
     <div class="meta" id="meta"></div>
   </div>
 
   <div class="modes">
-    <button class="mode" id="m-list" type="button" aria-pressed="true">한눈에 보기</button>
-    <button class="mode" id="m-show" type="button" aria-pressed="false">한 자씩 띄우기</button>
+    <button class="mode" id="m-list"  type="button" aria-pressed="true">한눈에 보기</button>
+    <button class="mode" id="m-show"  type="button" aria-pressed="false">한 자씩 띄우기</button>
+    <button class="mode" id="m-write" type="button" aria-pressed="false">따라쓰기</button>
   </div>
 
   <div id="view"></div>
 
-  <div class="tools" id="tools">
-    <button class="btn line" id="print" type="button">인쇄해서 나눠주기</button>
-  </div>
+  <div class="tools"><button class="btn line" id="print" type="button">인쇄해서 나눠주기</button></div>
+
+  <p class="credit">
+    획순 자료 — <a href="https://github.com/skishore/makemeahanzi" rel="noopener">Make Me A Hanzi</a>
+    (Arphic Public License) · 획순 엔진 —
+    <a href="https://github.com/chanind/hanzi-writer" rel="noopener">Hanzi Writer</a> (MIT)
+  </p>
 </div>
 
 <script src="/kedu/quiz/templates/hanja_data.js"></script>
+<script src="/kedu/hanja/hanzi-writer.min.js"></script>
 <script>
 (function(){
   'use strict';
   var D = (window.KQuiz && window.KQuiz.hanjaData) || null;
+  var HW = window.HanziWriter || null;
   var view = document.getElementById('view');
   var gSel = document.getElementById('g'), sSel = document.getElementById('s');
-  var st = { grade:1, step:1, mode:'list', idx:0, open:false };
+  var st = { grade:1, step:1, mode:'list', idx:0, open:false, cleared:{}, writer:null };
 
-  if (!D) {
-    view.innerHTML = '<div class="ch" style="grid-column:1/-1">한자 자료를 불러오지 못했어요. 새로고침해 주세요.</div>';
-    return;
-  }
-
-  /* ── 주소에서 회차 읽기 : ?key=g4_hanja_s01 또는 ?grade=4&step=1 ── */
-  function fromUrl(){
-    var q = new URLSearchParams(location.search);
-    var key = q.get('key');
-    if (key) {
-      var m = key.match(/^g(\d)_hanja_s(\d{1,2})$/);
-      if (m) return { grade:Number(m[1]), step:Number(m[2]) };
-    }
-    var g = Number(q.get('grade')), s = Number(q.get('step'));
-    return { grade: g || 1, step: s || 1 };
-  }
-
-  function clamp(){
-    var gs = D.grades();
-    if (gs.indexOf(st.grade) < 0) st.grade = gs[0];
-    var n = D.stepCount(st.grade);
-    if (st.step < 1) st.step = 1;
-    if (st.step > n) st.step = n;
-  }
-
-  function rows(){ return D.step(st.grade, st.step); }
-
-  function fillSelects(){
-    gSel.innerHTML = D.grades().map(function(g){
-      return '<option value="'+g+'"'+(g===st.grade?' selected':'')+'>'+g+'학년</option>';
-    }).join('');
-    var n = D.stepCount(st.grade), out = '';
-    for (var i=1;i<=n;i++){
-      out += '<option value="'+i+'"'+(i===st.step?' selected':'')+'>'+i+'회차</option>';
-    }
-    sSel.innerHTML = out;
-  }
-
-  function renderMeta(){
-    var n = D.stepCount(st.grade), r = rows(), total = D.all(st.grade).length;
-    document.getElementById('meta').innerHTML =
-      '<b>'+st.grade+'학년</b>은 모두 <b>'+total+'자</b>, <b>'+n+'회차</b>예요. '
-      + '오늘 회차는 <b>'+r.length+'자</b>' + (r.length<10 ? ' (마지막 회차라 조금 적어요)' : '') + '. '
-      + '<br>2회차부터는 앞에서 배운 글자가 문제에 섞여 나와요.';
-    document.getElementById('print-head').textContent =
-      st.grade + '학년 아침한자 ' + st.step + '회차 — ' + r.map(function(x){return x.c;}).join(' ');
-  }
+  if (!D) { view.innerHTML = '<div class="ch">한자 자료를 불러오지 못했어요. 새로고침해 주세요.</div>'; return; }
 
   function esc(t){ return String(t==null?'':t).replace(/[&<>"]/g, function(m){
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]; }); }
 
-  /* ── 한눈에 보기 : 교사가 오늘 나갈 10자를 한 화면에서 확인 ── */
-  function renderList(){
-    view.innerHTML = '<div class="grid">' + rows().map(function(x){
-      return '<div class="ch">'
-        + '<div class="g">'+esc(x.c)+'</div>'
-        + '<div class="hy">'+esc(x.hun)+' '+esc(x.eum)+'</div>'
-        + (x.word
-            ? '<div class="wd"><span class="w">'+esc(x.word)+'</span>'+esc(x.wordKo)+'</div>'
-            : '<div class="none">대표낱말 없음</div>')
-        + '</div>';
-    }).join('') + '</div>';
+  /* ── 획순 자료: 글자 하나씩 그때그때 불러온다(한 자 2KB) ── */
+  var cache = {};
+  function loadStrokes(ch){
+    if (cache[ch]) return Promise.resolve(cache[ch]);
+    return fetch('/kedu/hanja/strokes/' + encodeURIComponent(ch) + '.json')
+      .then(function(r){ if(!r.ok) throw new Error('no data'); return r.json(); })
+      .then(function(j){ cache[ch] = j; return j; })
+      .catch(function(){ cache[ch] = null; return null; });
+  }
+  function charLoader(ch, onLoad, onErr){
+    loadStrokes(ch).then(function(j){ j ? onLoad(j) : onErr(); });
   }
 
-  /* ── 한 자씩 띄우기 : 교실 화면용. 먼저 글자만 보이고, 누르면 훈·음이 드러난다 ── */
+  function fromUrl(){
+    var q = new URLSearchParams(location.search), key = q.get('key');
+    if (key) { var m = key.match(/^g(\d)_hanja_s(\d{1,2})$/); if (m) return { grade:+m[1], step:+m[2] }; }
+    return { grade: +q.get('grade') || 1, step: +q.get('step') || 1 };
+  }
+  function clamp(){
+    if (D.grades().indexOf(st.grade) < 0) st.grade = D.grades()[0];
+    var n = D.stepCount(st.grade);
+    st.step = Math.min(Math.max(st.step, 1), n);
+  }
+  function rows(){ return D.step(st.grade, st.step); }
+  function cur(){ return rows()[st.idx]; }
+
+  function fillSelects(){
+    gSel.innerHTML = D.grades().map(function(g){
+      return '<option value="'+g+'"'+(g===st.grade?' selected':'')+'>'+g+'학년</option>'; }).join('');
+    var out = '';
+    for (var i=1;i<=D.stepCount(st.grade);i++)
+      out += '<option value="'+i+'"'+(i===st.step?' selected':'')+'>'+i+'회차</option>';
+    sSel.innerHTML = out;
+  }
+  function renderMeta(){
+    var r = rows();
+    document.getElementById('meta').innerHTML =
+      '<b>'+st.grade+'학년</b>은 모두 <b>'+D.all(st.grade).length+'자</b>, <b>'+D.stepCount(st.grade)+'회차</b>예요. '
+      + '이 회차는 <b>'+r.length+'자</b>'+(r.length<10?' (마지막 회차라 조금 적어요)':'')+'.'
+      + '<br>2회차부터는 앞에서 배운 글자가 문제에 섞여 나와요.';
+    document.getElementById('print-head').textContent =
+      st.grade+'학년 아침한자 '+st.step+'회차 — '+r.map(function(x){return x.c;}).join(' ');
+  }
+
+  /* 이 글자가 쓰인 낱말 — 그 학년까지 배운 한자로만 이뤄진 것 */
+  function usesHtml(x){
+    var list = D.wordsWith(x.c, st.grade);
+    if (!list.length) return '';
+    return '<div class="uses"><div class="t">이 글자가 쓰이는 낱말</div><div class="list">'
+      + list.map(function(w){ return '<div class="use"><b>'+esc(w.word)+'</b>'+esc(w.ko)+'</div>'; }).join('')
+      + '</div></div>';
+  }
+
+  /* ── 한눈에 보기 ── */
+  function renderList(){
+    view.innerHTML = '<div class="grid">' + rows().map(function(x){
+      var n = cache[x.c] && cache[x.c].strokes ? cache[x.c].strokes.length : null;
+      return '<div class="ch">'
+        + '<div class="g">'+esc(x.c)+'</div>'
+        + '<div class="st">'+(n ? n+'획' : '&nbsp;')+'</div>'
+        + '<div class="hy">'+esc(x.hun)+' '+esc(x.eum)+'</div>'
+        + (x.word ? '<div class="wd"><span class="w">'+esc(x.word)+'</span>'+esc(x.wordKo)+'</div>'
+                  : '<div class="none">대표낱말 없음</div>')
+        + '</div>';
+    }).join('') + '</div>';
+    // 획수는 자료가 들어오는 대로 채운다(없어도 화면은 이미 완성돼 있다)
+    rows().forEach(function(x){ if(!(x.c in cache)) loadStrokes(x.c).then(function(){
+      if (st.mode==='list') renderList(); }); });
+  }
+
+  /* ── 한 자씩 띄우기 : 글자만 먼저, 누르면 훈·음이 드러난다 ── */
   function renderShow(){
-    var r = rows(), x = r[st.idx];
+    var r = rows(), x = cur();
     view.innerHTML =
       '<div class="stage">'
       + '<div class="count">'+(st.idx+1)+' / '+r.length+'</div>'
-      + '<div class="big" id="big" role="button" tabindex="0" '
-      +      'aria-label="'+(st.open?'훈과 음이 보이는 중':'눌러서 훈과 음 보기')+'">'+esc(x.c)+'</div>'
+      + '<div class="strokes" id="sc"></div>'
+      + '<div class="paper big"><div class="ghost" id="ghost">'+esc(x.c)+'</div><div id="tgt"></div></div>'
+      + '<div class="pager" style="margin-top:14px">'
+      +   '<button class="pg" id="play" type="button">획순 보기</button>'
+      +   '<button class="pg" id="peek" type="button">'+(st.open?'훈·음 감추기':'훈·음 보기')+'</button>'
+      + '</div>'
       + '<div class="reveal" id="rv">'
       + (st.open
           ? '<div class="fade"><div class="hy">'+esc(x.hun)+' '+esc(x.eum)+'</div>'
             + (x.word ? '<div class="wd"><span class="w">'+esc(x.word)+'</span> '+esc(x.wordKo)+'</div>' : '')
-            + '</div>'
-          : '<div class="ask">글자를 눌러 볼까요?</div>')
+            + usesHtml(x) + '</div>'
+          : '<div class="ask">무슨 글자일까요?</div>')
       + '</div></div>'
-      + '<div class="pager">'
-      +   '<button class="pg" id="prev" type="button"'+(st.idx===0?' disabled':'')+'>← 앞</button>'
-      +   '<button class="pg" id="next" type="button"'+(st.idx===r.length-1?' disabled':'')+'>뒤 →</button>'
-      + '</div>'
-      + '<div class="dots">' + r.map(function(_,i){
-            return '<button class="dot'+(i===st.idx?' on':'')+'" data-i="'+i+'" type="button" aria-label="'+(i+1)+'번째 글자"></button>';
-          }).join('') + '</div>';
-
-    var big = document.getElementById('big');
-    big.onclick = function(){ st.open = !st.open; renderShow(); };
-    big.onkeydown = function(e){ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); big.onclick(); } };
-    document.getElementById('prev').onclick = function(){ go(st.idx-1); };
-    document.getElementById('next').onclick = function(){ go(st.idx+1); };
-    view.querySelectorAll('.dot').forEach(function(d){
-      d.onclick = function(){ go(Number(d.dataset.i)); };
-    });
+      + pagerHtml(r) + dotsHtml(r);
+    wirePager();
+    document.getElementById('peek').onclick = function(){ st.open = !st.open; renderShow(); };
+    mountWriter(x, false);
   }
 
+  /* ── 따라쓰기 : 크롬북 마우스·터치로 직접 쓴다 ── */
+  function renderWrite(){
+    var r = rows(), x = cur();
+    view.innerHTML =
+      '<div class="stage">'
+      + '<div class="count">'+(st.idx+1)+' / '+r.length+'</div>'
+      + '<div class="strokes" id="sc"></div>'
+      + '<div style="font-family:var(--kedu-title);font-size:20px;margin-bottom:4px">'
+      +   esc(x.hun)+' '+esc(x.eum)+'</div>'
+      + '<div style="font-size:13px;color:var(--sub);margin-bottom:10px">칸 안에 순서대로 써 보세요</div>'
+      + '<div class="paper big"><div id="tgt"></div></div>'
+      + '<div class="say" id="say"></div>'
+      + '<div class="pager" style="margin-top:10px">'
+      +   '<button class="pg" id="hint" type="button">힌트</button>'
+      +   '<button class="pg" id="again" type="button">지우고 다시</button>'
+      +   '<button class="pg" id="play" type="button">획순 보기</button>'
+      + '</div>'
+      + '</div>'
+      + pagerHtml(r) + dotsHtml(r);
+    wirePager();
+    mountWriter(x, true);
+  }
+
+  function pagerHtml(r){
+    return '<div class="pager">'
+      + '<button class="pg" id="prev" type="button"'+(st.idx===0?' disabled':'')+'>← 앞</button>'
+      + '<button class="pg" id="next" type="button"'+(st.idx===r.length-1?' disabled':'')+'>뒤 →</button>'
+      + '</div>';
+  }
+  function dotsHtml(r){
+    return '<div class="dots">' + r.map(function(_,i){
+      return '<button class="dot'+(i===st.idx?' on':'')+(st.cleared[r[i].c]?' cleared':'')
+        + '" data-i="'+i+'" type="button" aria-label="'+(i+1)+'번째 글자"></button>'; }).join('') + '</div>';
+  }
+  function wirePager(){
+    document.getElementById('prev').onclick = function(){ go(st.idx-1); };
+    document.getElementById('next').onclick = function(){ go(st.idx+1); };
+    view.querySelectorAll('.dot').forEach(function(d){ d.onclick = function(){ go(+d.dataset.i); }; });
+  }
   function go(i){
-    var r = rows();
-    if (i < 0 || i >= r.length) return;
-    st.idx = i; st.open = false; renderShow();
+    if (i < 0 || i >= rows().length) return;
+    st.idx = i; st.open = false; render();
+  }
+
+  /* ── 획순 엔진 붙이기 ── */
+  function mountWriter(x, quiz){
+    var tgt = document.getElementById('tgt');
+    if (!tgt) return;
+    st.writer = null;
+    loadStrokes(x.c).then(function(data){
+      if (!tgt.isConnected) return;
+      var sc = document.getElementById('sc');
+      if (!data || !HW) {
+        if (sc) sc.textContent = '';
+        var g = document.getElementById('ghost'); if (g) g.style.color = '#E2E8F0';
+        tgt.innerHTML = '<div class="nodata">이 글자는 획순 자료가 아직 없어요.'
+          + (quiz ? '<br>다른 글자로 넘어가 주세요.' : '<br>뜻과 낱말은 그대로 볼 수 있어요.') + '</div>';
+        var p=document.getElementById('play'); if(p) p.disabled = true;
+        var h=document.getElementById('hint'); if(h) h.disabled = true;
+        var a=document.getElementById('again'); if(a) a.disabled = true;
+        return;
+      }
+      if (sc) sc.textContent = data.strokes.length + '획';
+      var ghost = document.getElementById('ghost'); if (ghost) ghost.style.display = 'none';
+
+      var w = HW.create(tgt, x.c, {
+        width: tgt.parentNode.clientWidth || 300,
+        height: tgt.parentNode.clientHeight || 300,
+        padding: 8,
+        showCharacter: !quiz,
+        showOutline: true,
+        strokeColor: quiz ? '#1A202C' : '#5B8EF8',
+        outlineColor: '#DDE4EE',
+        highlightColor: '#FF85A1',
+        drawingColor: '#1A202C',
+        drawingWidth: 22,
+        strokeAnimationSpeed: 1,
+        delayBetweenStrokes: 180,
+        charDataLoader: charLoader
+      });
+      st.writer = w;
+
+      var play = document.getElementById('play');
+      if (play) play.onclick = function(){ w.animateCharacter(); };
+
+      if (quiz) {
+        var say = document.getElementById('say');
+        w.quiz({
+          showHintAfterMisses: 2,
+          onMistake: function(res){
+            say.className = 'say oops';
+            say.textContent = '괜찮아요. ' + res.strokeNum + '번째 획을 다시 볼까요? (남은 기회 ' + res.strokesRemaining + ')';
+          },
+          onCorrectStroke: function(res){
+            say.className = 'say good';
+            say.textContent = res.strokesRemaining > 0
+              ? '좋아요! ' + res.strokesRemaining + '획 남았어요' : '';
+          },
+          onComplete: function(){
+            say.className = 'say good';
+            say.textContent = '다 썼어요! 잘했어요 🎉';
+            st.cleared[x.c] = true;
+            var d = view.querySelector('.dot[data-i="'+st.idx+'"]');
+            if (d) d.classList.add('cleared');
+          }
+        });
+        var hint = document.getElementById('hint');
+        if (hint) hint.onclick = function(){ w.animateStroke(w._quiz ? w._quiz._currentStrokeIndex || 0 : 0); };
+        var again = document.getElementById('again');
+        if (again) again.onclick = function(){
+          say.textContent = ''; say.className = 'say';
+          w.quiz({ showHintAfterMisses: 2 });
+        };
+      }
+    });
   }
 
   function render(){
     clamp(); fillSelects(); renderMeta();
-    document.getElementById('m-list').setAttribute('aria-pressed', st.mode==='list');
-    document.getElementById('m-show').setAttribute('aria-pressed', st.mode==='show');
-    if (st.mode==='list') renderList(); else renderShow();
+    [['m-list','list'],['m-show','show'],['m-write','write']].forEach(function(p){
+      document.getElementById(p[0]).setAttribute('aria-pressed', st.mode===p[1]);
+    });
+    if (st.mode==='list') renderList();
+    else if (st.mode==='show') renderShow();
+    else renderWrite();
   }
 
-  gSel.onchange = function(){ st.grade = Number(this.value); st.step = 1; st.idx = 0; st.open = false; render(); };
-  sSel.onchange = function(){ st.step  = Number(this.value); st.idx = 0; st.open = false; render(); };
+  gSel.onchange = function(){ st.grade=+this.value; st.step=1; st.idx=0; st.open=false; render(); };
+  sSel.onchange = function(){ st.step=+this.value; st.idx=0; st.open=false; render(); };
   document.getElementById('today').onclick = function(){
-    var u = fromUrl(); st.grade = u.grade; st.step = u.step; st.idx = 0; st.open = false; render();
-  };
-  document.getElementById('m-list').onclick = function(){ st.mode='list'; render(); };
-  document.getElementById('m-show').onclick = function(){ st.mode='show'; st.idx=0; st.open=false; render(); };
-  document.getElementById('print').onclick = function(){ st.mode='list'; render(); window.print(); };
+    var u = fromUrl(); st.grade=u.grade; st.step=u.step; st.idx=0; st.open=false; render(); };
+  document.getElementById('m-list').onclick  = function(){ st.mode='list';  render(); };
+  document.getElementById('m-show').onclick  = function(){ st.mode='show';  st.idx=0; st.open=false; render(); };
+  document.getElementById('m-write').onclick = function(){ st.mode='write'; st.idx=0; st.open=false; render(); };
+  document.getElementById('print').onclick   = function(){ st.mode='list'; render(); window.print(); };
 
   document.addEventListener('keydown', function(e){
-    if (st.mode!=='show') return;
+    if (st.mode==='list') return;
     if (e.key==='ArrowRight') go(st.idx+1);
     if (e.key==='ArrowLeft')  go(st.idx-1);
   });
 
-  var u = fromUrl(); st.grade = u.grade; st.step = u.step;
+  var u = fromUrl(); st.grade=u.grade; st.step=u.step;
   render();
 })();
 </script>
