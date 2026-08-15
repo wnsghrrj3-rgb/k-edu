@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<!-- ════════════════════════════════════════
+     K-edu 영어 v3 양산 · Lv1 #16-1 CVC 종합 해독 「도입」
+     베이스: 12_1_ucvc_intro.html (P골든 파생 도입 판형 · 여섯 번째)
+     추가 CSS: .wcards(12_3) · .sslots(12_2) · .blend-map(12_2) — 원본 그대로 이식
+     펼침 원천: handoff kedu/english/v3/lv1/16_cvc_decode.md — 다섯 모음 섞기(유창성 진입)
+     ════════════════════════════════════════ -->
+
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>K-edu | 영어 Lv1 — 모음 섞어 읽기 (16-1 도입)</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   골격 = 골든 불변 / 옷 = P트랙 파랑 #1565C0
+   모음 주황 #FF8A3D — 자음(파랑)·모음(주황) 색 구분은 파닉스 의미 색
+   ============================================================ */
+:root{
+  --bg:#F0F6FE; --card:#fff;
+  --primary:#1565C0; --primary-light:#E3EEFC; --secondary:#5B8DEF;
+  --vowel:#FF8A3D; --vowel-light:#FFF1E6;
+  --green:#4CAF50; --green-light:#E8F5E9; --red:#F44336; --red-light:#FFEBEE;
+  --yellow:#FFC107; --yellow-light:#FFF8E1;
+  --text:#333; --subtext:#888; --border:#D7E4F7;
+  --shadow:0 4px 16px rgba(0,0,0,.08); --radius:20px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:100vh;height:100dvh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0;gap:8px}
+.back{font-size:18px;color:var(--subtext);text-decoration:none}
+.progress-wrap{display:flex;align-items:center;gap:8px;flex:1;margin:0 4px}
+.progress-bar{flex:1;height:10px;background:var(--border);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .5s}
+.page-info{font-size:16px;color:var(--subtext);white-space:nowrap}
+.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:18px;color:#e6a800}
+.kedu-logo{display:flex;align-items:center;gap:4px;background:var(--primary);color:#fff;border-radius:99px;padding:4px 10px;font-size:14px}
+.kedu-logo .logo-circle{width:20px;height:20px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--primary);font-size:12px}
+.slides{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px 18px;opacity:0;transform:translateX(60px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none;overflow-y:auto}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all}
+.slide.out{opacity:0;transform:translateX(-60px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;width:100%;max-width:560px;text-align:center}
+.slide-title{font-size:21px;color:var(--subtext);margin-bottom:8px}
+.badge{display:inline-block;background:var(--primary-light);color:var(--primary);border-radius:99px;padding:4px 14px;font-size:17px;margin-bottom:8px}
+.concept-text{font-size:24px;line-height:1.6;margin:8px 0}
+.highlight{color:var(--primary)}
+/* 표지 */
+.today-label{font-size:22px;color:var(--secondary);letter-spacing:.5px;margin:18px 0 18px}
+.today-en{font-size:44px;color:var(--primary);font-weight:bold;line-height:1.3;margin:8px 0}
+.today-ko{font-size:26px;color:#2B925E;line-height:1.4;margin:14px 0 18px}
+/* 형광 강조 */
+.hl{background:linear-gradient(transparent 58%,#FFE680 58%);background-repeat:no-repeat;background-size:0% 100%;transition:background-size .55s cubic-bezier(.4,0,.2,1) .15s;padding:0 3px;font-weight:bold;color:var(--text)}
+.card.lit .hl{background-size:100% 100%}
+/* 탭 단계 등장 */
+.step{opacity:0;transform:translateY(34px) scale(.82);transition:opacity .26s ease,transform .42s cubic-bezier(.34,1.6,.5,1);pointer-events:none}
+.step.in{opacity:1;transform:none;pointer-events:auto}
+.concept-big{font-size:30px;line-height:1.5;margin:10px 0}
+@keyframes tapBlink{0%,100%{opacity:.4}50%{opacity:1}}
+.hl-slot{background:var(--yellow-light);border:2px dashed var(--yellow);border-radius:8px;padding:1px 8px;color:#e6a800}
+.kay-says{display:flex;align-items:center;gap:12px;background:var(--primary-light);border-radius:16px;padding:12px 16px;margin:10px 0;text-align:left}
+.kay-icon{font-size:30px;flex-shrink:0}
+.kay-text{font-size:21px;line-height:1.5}
+/* 소리 블록 — 파닉스 심장 (자음 파랑 / 모음 주황) */
+.sblocks{display:flex;gap:12px;justify-content:center;align-items:center;margin:14px 0;transition:gap .5s cubic-bezier(.4,0,.2,1);flex-wrap:wrap}
+.sblock{display:flex;flex-direction:column;align-items:center;gap:2px;background:#fff;border:3px solid var(--primary);color:var(--primary);border-radius:16px;padding:12px 18px;font-size:40px;line-height:1;cursor:pointer;box-shadow:0 4px 0 rgba(21,101,192,.25);transition:transform .12s,box-shadow .3s;position:relative}
+.sblock .sko{font-size:14px;color:var(--subtext)}
+.sblock.vowel{border-color:var(--vowel);color:var(--vowel);box-shadow:0 4px 0 rgba(255,138,61,.3)}
+.sblock:active{transform:scale(.94)}
+.sblock.singing{transform:scale(1.15);box-shadow:0 0 0 5px var(--yellow-light),0 4px 0 rgba(21,101,192,.25)}
+.sblock.isnew::after{content:'NEW';position:absolute;top:-10px;right:-6px;background:var(--red);color:#fff;font-size:11px;padding:1px 6px;border-radius:99px}
+.word-done{font-size:34px;color:var(--primary);margin:8px 0}
+.mean{font-size:20px;color:var(--subtext)}
+.pic{font-size:80px;margin:6px 0;line-height:1}
+@keyframes popIn{0%{transform:scale(0) rotate(-15deg)}70%{transform:scale(1.2)}100%{transform:scale(1)}}
+/* 지난 칸 되짚기 — i로 읽은 pig */
+.recall{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 0;flex-wrap:wrap}
+.rc{background:#fff;border:3px solid var(--primary);color:var(--primary);border-radius:12px;padding:6px 14px;font-size:28px}
+.rc.v{border-color:var(--vowel);color:var(--vowel)}
+.rc-arrow{font-size:24px;color:#e6a800;font-weight:bold}
+.rc-word{background:var(--yellow-light);border:3px solid var(--yellow);color:#e6a800;border-radius:12px;padding:6px 16px;font-size:28px;font-weight:bold}
+/* 문제 */
+.question-label{display:inline-flex;gap:6px;background:var(--primary);color:#fff;border-radius:99px;padding:5px 16px;font-size:17px;margin-bottom:8px}
+.stars{color:#FCD34D}
+.question-text{font-size:23px;margin:6px 0 12px;line-height:1.5}
+.choices{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:8px}
+.choice-btn{background:#fff;border:3px solid var(--border);border-radius:16px;padding:12px 22px;font-family:'Jua',sans-serif;font-size:24px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.06);color:var(--text)}
+.choice-btn .ko{display:block;font-size:14px;color:var(--subtext)}
+.choice-btn.big{font-size:40px;padding:10px 22px}
+.choice-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s}
+@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
+.choice-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}50%{transform:translateX(8px)}75%{transform:translateX(-5px)}}
+.listen-btn{background:var(--primary-light);border:2px solid var(--primary);border-radius:12px;padding:8px 22px;font-family:'Jua',sans-serif;font-size:22px;cursor:pointer;color:var(--primary);margin:4px 0 8px}
+.feedback{font-size:19px;margin-top:10px;min-height:34px;border-radius:12px;padding:5px 12px;line-height:1.5}
+.feedback.ok{color:var(--green);background:var(--green-light)}
+.feedback.err{color:var(--red);background:var(--red-light)}
+.combo-toast{position:fixed;top:60px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:22px;color:#e6a800;z-index:99;transition:transform .3s}
+.combo-toast.show{transform:translateX(-50%) scale(1)}
+.result-emoji{font-size:76px;margin:8px 0;animation:bounce 1s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.result-score{font-size:30px;color:#e6a800;margin:6px 0}
+.result-stars{font-size:34px;margin:4px 0}
+.nav{display:flex;justify-content:space-between;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:#fff;box-shadow:0 -2px 8px rgba(0,0,0,.06);flex-shrink:0;gap:10px}
+.nav-btn{flex:1;max-width:200px;background:var(--primary);color:#fff;border:none;border-radius:14px;padding:13px 0;font-family:'Jua',sans-serif;font-size:20px;cursor:pointer}
+.nav-btn:disabled{opacity:.3}
+.hint{font-size:16px;color:var(--subtext);margin-top:6px}
+/* 입 모양 대조 (a ↔ i ↔ o ↔ e ↔ u) */
+.mouth{display:flex;gap:10px;justify-content:center;margin:10px 0;flex-wrap:wrap}
+.mcol{border:3px solid var(--border);border-radius:16px;padding:9px 12px;background:#fff;min-width:96px;cursor:pointer}
+/* 다섯 장 판 — 모바일 세로에서 한 줄 3장이 들어가도록 축소 */
+.mouth.five{gap:7px}
+.mouth.five .mcol{min-width:70px;padding:7px 6px}
+.mouth.five .mface{font-size:32px}
+.mouth.five .mlab{font-size:13px;margin-top:1px}
+.jaw{display:flex;gap:10px;justify-content:center;margin:8px 0;flex-wrap:wrap}
+.jcol{border:3px dashed var(--vowel);border-radius:14px;padding:8px 14px;background:var(--vowel-light);cursor:pointer;min-width:120px}
+.jbig{font-size:30px;color:var(--vowel);line-height:1.2}
+.jlab{font-size:15px;color:var(--subtext);margin-top:2px}
+.mcol.on{border-color:var(--vowel);background:var(--vowel-light)}
+.mface{font-size:40px;line-height:1}
+.mlab{font-size:16px;color:var(--subtext);margin-top:2px}
+.mlab b{color:var(--vowel)}
+.pairrow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0}
+.pcard{display:flex;align-items:center;gap:4px;border:3px solid var(--primary);border-radius:14px;padding:8px 12px;background:#fff;cursor:pointer;font-size:28px;color:var(--primary)}
+.pcard .pv{color:var(--vowel)}
+.pcard .pk{font-size:13px;color:var(--subtext)}
+.pcard.done{background:var(--green-light);border-color:var(--green)}
+.wcards{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:10px 0}
+.wcard{border:3px solid var(--primary);border-radius:16px;padding:8px 14px;background:#fff;cursor:pointer;min-width:96px}
+.wcard .wpic{font-size:34px;line-height:1}
+.wcard .ww{font-size:26px;color:var(--primary)}
+.wcard .ww i{font-style:normal;color:var(--vowel)}
+.wcard .wk{font-size:13px;color:var(--subtext)}
+.wcard:active{transform:scale(.95)}
+.sslots{display:flex;gap:10px;justify-content:center;align-items:center;margin:14px 0;flex-wrap:wrap}
+.sslot{min-width:72px;height:70px;border:3px dashed #A8C4EA;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:34px;color:#A8C4EA;background:#F8FBFF;padding:0 10px;transition:all .3s}
+.sslot.filled{border-style:solid;border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
+.sslot.filled.vslot{border-color:var(--vowel);color:var(--vowel);background:var(--vowel-light)}
+.sslot.swap{animation:swapPop .5s ease}
+@keyframes swapPop{0%{transform:translateY(0)}40%{transform:translateY(-14px) scale(1.1);background:var(--yellow-light);border-color:var(--yellow)}100%{transform:translateY(0)}}
+.blend-map{display:flex;align-items:center;justify-content:center;gap:8px;margin:12px 0;flex-wrap:wrap}
+.bm-piece{background:#fff;border:3px solid var(--primary);color:var(--primary);border-radius:12px;padding:6px 14px;font-size:28px}
+.bm-piece.v{border-color:var(--vowel);color:var(--vowel)}
+.bm-arrow{font-size:26px;color:#e6a800;font-weight:bold}
+.bm-word{background:var(--yellow-light);border:3px solid var(--yellow);color:#e6a800;border-radius:12px;padding:6px 16px;font-size:30px;font-weight:bold}
+</style>
+  <script src="/kedu_gate.js"></script>
+<script src="/kedu_boxbar.js"></script>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="back" href="../index.html">🪜</a>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="page-info" id="pageInfo">1 / 10</span>
+  </div>
+  <div class="score-badge">⭐ <span id="scoreVal">0</span></div>
+  <div class="kedu-logo"><div class="logo-circle">K</div>영어</div>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+
+<div class="slides" id="slidesContainer">
+
+  <!-- ━━━ S0 표지 ━━━ -->
+  <div class="slide active" data-steps>
+    <div class="card">
+      <div class="badge step">영어 Lv1 · 모음 섞어 읽기 16-1</div>
+      <div class="today-label step">Today's Learn ✏️</div>
+      <div class="today-en step">c <span class="hl-slot">?</span> p → cap · cup · cop</div>
+      <div class="today-ko step">가운데 <span class="hl">모음</span>만 달라도 다른 단어예요</div>
+    </div>
+  </div>
+
+  <!-- ━━━ S1 개념① 소환 — 다섯 모음으로 읽었던 단어 다섯 ━━━ -->
+  <div class="slide" data-steps>
+    <div class="card">
+      <div class="slide-title step">🔁 지금까지 이렇게 읽었죠 — 눌러서 들어 봐!</div>
+      <div class="wcards step">
+        <div class="wcard" data-word="cat"><div class="wpic">🐱</div><div class="ww">c<i>a</i>t</div><div class="wk">고양이</div></div>
+        <div class="wcard" data-word="pig"><div class="wpic">🐷</div><div class="ww">p<i>i</i>g</div><div class="wk">돼지</div></div>
+        <div class="wcard" data-word="dog"><div class="wpic">🐶</div><div class="ww">d<i>o</i>g</div><div class="wk">개</div></div>
+        <div class="wcard" data-word="pen"><div class="wpic">🖊️</div><div class="ww">p<i>e</i>n</div><div class="wk">펜</div></div>
+        <div class="wcard" data-word="sun"><div class="wpic">☀️</div><div class="ww">s<i>u</i>n</div><div class="wk">해</div></div>
+      </div>
+      <div class="concept-text step" style="font-size:20px">한 칸씩 <span style="color:var(--vowel)">가운데 모음</span>만 배웠어요.</div>
+    </div>
+  </div>
+
+  <!-- ━━━ S2 개념② 오늘의 원리 — 다섯이 섞여 나온다 ━━━ -->
+  <div class="slide" data-steps>
+    <div class="card">
+      <div class="slide-title step">📐 오늘의 원리</div>
+      <div class="concept-big step">오늘은 다섯 모음이 <span class="hl">섞여</span> 나와요.<br>가운데를 <span class="hl">스스로 골라</span> 읽어요!</div>
+      <div class="blend-map step">
+        <div class="bm-piece">c</div>
+        <div class="bm-piece v">?</div>
+        <div class="bm-piece">p</div>
+        <span class="bm-arrow">→</span>
+        <div class="bm-word">cap? cup? cop?</div>
+      </div>
+      <div class="mouth five step">
+        <div class="mcol" data-sound="a"><div class="mface">😮</div><div class="mlab">a<br><b>/애/</b></div></div>
+        <div class="mcol" data-sound="e"><div class="mface">😃</div><div class="mlab">e<br><b>/에/</b></div></div>
+        <div class="mcol" data-sound="i"><div class="mface">😬</div><div class="mlab">i<br><b>/이/</b></div></div>
+        <div class="mcol" data-sound="o"><div class="mface">😯</div><div class="mlab">o<br><b>/오/</b></div></div>
+        <div class="mcol" data-sound="u"><div class="mface">😐</div><div class="mlab">u<br><b>/어/</b></div></div>
+      </div>
+      <div class="kay-says step">
+        <div class="kay-icon">💡</div>
+        <div class="kay-text">앞과 뒤가 <b>똑같은데</b> 가운데만 달라요.<br>그래서 <b>가운데 소리</b>를 잘 들어야 어떤 단어인지 알 수 있어요!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ━━━ S3 시범 — c _ p 에 a → u → o 갈아끼우기 ━━━ -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-title">✨ 먼저 보여줄게 — 가운데만 바꾸면?</div>
+      <div class="sslots">
+        <div class="sslot filled">c</div>
+        <div class="sslot filled vslot" id="midSlot">a</div>
+        <div class="sslot filled">p</div>
+      </div>
+      <button class="listen-btn" id="demoBtn">▶ 가운데를 바꿔 볼게!</button>
+      <div class="concept-text" id="demoMean" style="font-size:20px;color:var(--subtext)">앞 <b>c</b> 와 뒤 <b>p</b> 는 <b>그대로</b> 둬요.</div>
+      <div class="kay-says" id="demoKay" style="display:none">
+        <div class="kay-icon">💡</div>
+        <div class="kay-text"><span class="hl">cap</span> 🧢 모자 · <span class="hl">cup</span> ☕ 컵 · <span class="hl">cop</span> 👮 경찰<br>가운데 하나로 <b>세 단어</b>가 갈렸어요!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ━━━ S4 손활동① — 귀로 가운데 소리 찾기 ━━━ -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-title">👂 귀로 찾기 — 가운데 소리는?</div>
+      <div class="pic">🧢</div>
+      <button class="listen-btn" id="capBtn">🔊 cap 소리 듣기</button>
+      <div class="concept-text" style="font-size:19px">소리 셋 중 <b>가운데</b> 소리만 골라요</div>
+      <div class="choices" id="midChoices">
+        <button class="choice-btn big" data-k="o" style="color:var(--vowel)">/오/</button>
+        <button class="choice-btn big" data-k="a" style="color:var(--vowel)">/애/</button>
+        <button class="choice-btn big" data-k="u" style="color:var(--vowel)">/어/</button>
+      </div>
+      <div class="feedback" id="fb4"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S5 손활동② — 세 단어 나란히 듣기 ━━━ -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-title">🧩 세 단어를 나란히! 모두 눌러 봐</div>
+      <div class="pairrow" id="triBox"></div>
+      <div class="concept-text" style="font-size:19px">앞뒤는 <b>c … p</b> 로 똑같아요 — <span style="color:var(--vowel)">가운데</span>만 들어 봐요!</div>
+      <div class="feedback" id="fb5"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S6 따라 말하기 — 발음 모델 하나 ━━━ -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-title">🎤 듣고 따라 말해 봐요!</div>
+      <div class="word-done" style="font-size:46px">c<span style="color:var(--vowel)">u</span>p <span class="mean">컵 ☕</span></div>
+      <button class="listen-btn" id="sayBtn" style="font-size:24px;padding:14px 30px;margin:14px 0">🔊 발음 듣기</button>
+      <div class="kay-says">
+        <div class="kay-icon">💡</div>
+        <div class="kay-text">🔊 버튼을 누르고, 가운데를 <b>/어/</b> 로 힘 빼고<br><b>똑같이 따라</b> 말해 봐요!</div>
+      </div>
+      <div class="feedback" id="fb6"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S7 확인1 — 듣고 가운데 소리 고르기 ━━━ -->
+  <div class="slide" data-correct="2" data-score="10">
+    <div class="card">
+      <div class="question-label">확인 문제 1 <span class="stars">⭐</span></div>
+      <div class="question-text">🔊 이 단어의 <b>가운데</b> 소리는?</div>
+      <button class="listen-btn" onclick="KTTS.word('cop')">🔊 소리 듣기</button>
+      <div class="choices">
+        <button class="choice-btn big" onclick="answer(this,0)">/애/</button>
+        <button class="choice-btn big" onclick="answer(this,1)">/어/</button>
+        <button class="choice-btn big" onclick="answer(this,2)">/오/</button>
+      </div>
+      <div class="feedback" id="fb7"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S8 확인2 — 그림이 정답 근거 ━━━ -->
+  <div class="slide" data-correct="0" data-score="10">
+    <div class="card">
+      <div class="question-label">확인 문제 2 <span class="stars">⭐</span></div>
+      <div class="question-text">그림에 맞는 단어는?</div>
+      <div class="pic">🧢</div>
+      <div class="choices">
+        <button class="choice-btn" onclick="answer(this,0)">cap<span class="ko">모자</span></button>
+        <button class="choice-btn" onclick="answer(this,1)">cup<span class="ko">컵</span></button>
+        <button class="choice-btn" onclick="answer(this,2)">cop<span class="ko">경찰</span></button>
+      </div>
+      <div class="feedback" id="fb8"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S9 결과 ━━━ -->
+  <div class="slide">
+    <div class="card">
+      <div class="result-emoji" id="resultEmoji">🎉</div>
+      <div style="font-size:26px">가운데 소리를 잡았어요!</div>
+      <div class="result-score">⭐ <span id="finalScore">0</span>점</div>
+      <div class="result-stars" id="resultStars">⭐⭐⭐</div>
+      <div class="kay-says">
+        <div class="kay-icon">💡</div>
+        <div class="kay-text">오늘 손에 넣은 것 🏆<br>① 앞뒤가 같아도 <span class="hl">가운데 모음</span>이 바뀌면 다른 단어<br>② 다섯 모음(a·e·i·o·u)이 <span class="hl">섞여</span> 나온다는 것<br>다음은 <b>합치기</b> — 가운데를 직접 골라 끼워요!</div>
+      </div>
+      <button class="nav-btn" style="margin-top:10px" onclick="location.href='16_2_mixcvc_blend.html'">▶ 합치기로 가기</button>
+      <button class="nav-btn" style="margin-top:10px;background:var(--secondary)" onclick="location.href='../index.html'">🪜 사다리로</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()" disabled>◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script src="../engine/k-tts.js"></script>
+<script>
+let currentSlide=0,score=0,combo=0,answered={},unlocked=false,justUnlocked=false;
+const TOTAL=10;
+let audioCtx=null;
+function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function playTone(f,t,d,g=.3){getCtx();audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),gn=audioCtx.createGain();o.connect(gn);gn.connect(audioCtx.destination);o.type=t;o.frequency.value=f;gn.gain.setValueAtTime(g,audioCtx.currentTime);gn.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+d);o.start();o.stop(audioCtx.currentTime+d);});}
+function playCorrect(){[523,659,784].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',.25),i*80));}
+function playWrong(){[220,196].forEach((f,i)=>setTimeout(()=>playTone(f,'sawtooth',.3),i*100));}
+function playClick(){playTone(880,'sine',.08,.2);}
+document.body.addEventListener('pointerdown',()=>{if(!unlocked){KTTS.unlock();unlocked=true;justUnlocked=true;setTimeout(()=>justUnlocked=false,350);}},{once:true});
+
+let stepState={};
+function setupSlide(slide,idx){
+  slide.classList.add('lit');
+  const steps=slide.querySelectorAll('.step');
+  if(!steps.length)return;
+  if(stepState[idx]===undefined){
+    steps.forEach(s=>s.classList.remove('in'));
+    steps[0].classList.add('in');stepState[idx]=1;
+  }else{
+    steps.forEach(s=>s.classList.add('in'));stepState[idx]=steps.length;
+  }
+}
+function advanceStep(slide,idx){
+  const steps=[...slide.querySelectorAll('.step')];
+  if(stepState[idx]<steps.length){
+    steps[stepState[idx]].classList.add('in');playClick();
+    stepState[idx]++;
+    return true;
+  }
+  return false;
+}
+function goSlide(n){
+  const sl=document.querySelectorAll('.slide');KTTS.stop();
+  sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');
+  setTimeout(()=>sl.forEach(s=>s.classList.remove('out')),400);
+  currentSlide=n;sl[n].classList.add('active');updateUI();
+  setupSlide(sl[n],n);
+}
+function nextSlide(){
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  if(slide.hasAttribute('data-steps')&&advanceStep(slide,currentSlide))return;
+  if(currentSlide<TOTAL-1)goSlide(currentSlide+1);
+}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
+function updateUI(){
+  document.getElementById('progressFill').style.width=(currentSlide/(TOTAL-1)*100)+'%';
+  document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL;
+  document.getElementById('prevBtn').disabled=currentSlide===0;
+  document.getElementById('nextBtn').disabled=currentSlide===TOTAL-1;
+  document.getElementById('scoreVal').textContent=score;
+  if(currentSlide===TOTAL-1){
+    document.getElementById('finalScore').textContent=score;
+    document.getElementById('resultStars').textContent=score>=60?'⭐⭐⭐⭐⭐':score>=40?'⭐⭐⭐⭐':'⭐⭐⭐';
+    document.getElementById('resultEmoji').textContent=score>=60?'🏆':'🎉';
+  }
+}
+function addScore(p){
+  const bonus=combo>=3?Math.floor(p*.5):0;
+  score+=p+bonus;combo++;
+  document.getElementById('scoreVal').textContent=score;
+  if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}
+}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.innerHTML=msg;el.className='feedback '+(ok?'ok':'err');}}
+const OK_MSGS=['✅ 정답! +{p}점','🎯 귀가 좋은데? +{p}점','✨ 소리 박사인데? +{p}점'];
+const SAM_MSGS=['🙋 Sam: "나도 그거 골랐는데…" 다시 들어 봐!','🙋 Sam: "입 모양을 떠올려 볼까?" 한 번 더!','🤔 Sam이 또 헷갈리게 했구나 — 🔊 다시 듣고!'];
+function okMsg(p){return OK_MSGS[Math.floor(Math.random()*OK_MSGS.length)].replace('{p}',p);}
+function samMsg(){return SAM_MSGS[Math.floor(Math.random()*SAM_MSGS.length)];}
+
+/* ── 오늘의 재료 (펼침 16_cvc_decode.md 16-1) ── */
+const MEAN={cap:'모자 🧢',cup:'컵 ☕',cop:'경찰 👮'};
+const KEYS={cap:['c','a','p'],cup:['c','u','p'],cop:['c','o','p']};
+const MIDKO={a:'/애/',u:'/어/',o:'/오/'};
+
+function answer(btn,idx){
+  if(answered[currentSlide])return;
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  const correct=+slide.dataset.correct,pts=+slide.dataset.score||10;
+  playClick();
+  if(idx===correct){
+    btn.classList.add('correct');playCorrect();addScore(pts);
+    if(currentSlide===7){KTTS.word('cop');setFB('fb7',okMsg(pts)+' — c<b>o</b>p 의 가운데는 <b>/오/</b>',true);}
+    else{KTTS.word('cap');setFB('fb8',okMsg(pts)+' — <b>cap</b> 모자 🧢',true);}
+    answered[currentSlide]=true;
+  }else{
+    btn.classList.add('wrong');playWrong();combo=0;
+    setFB('fb'+currentSlide,samMsg(),false);
+    setTimeout(()=>btn.classList.remove('wrong'),500);
+  }
+}
+
+/* S1 소환 — 단어 카드 탭 */
+document.querySelectorAll('.wcard').forEach(c=>{
+  c.addEventListener('click',()=>{playClick();KTTS.word(c.dataset.word);});
+});
+
+/* S3 시범 — c _ p 의 가운데를 a → u → o 로 (앞뒤 고정) */
+document.getElementById('demoBtn').addEventListener('click',function(){
+  this.style.display='none';
+  const mid=document.getElementById('midSlot');
+  function step(v,delay){
+    setTimeout(()=>{
+      mid.classList.add('swap');
+      setTimeout(()=>{mid.textContent=v;KTTS.sound(v);playClick();},250);
+      setTimeout(()=>{mid.classList.remove('swap');KTTS.blend(['c',v,'p'],{word:'c'+v+'p',passes:1});},900);
+    },delay);
+  }
+  step('a',0);step('u',2600);step('o',5200);
+  setTimeout(()=>{
+    document.getElementById('demoMean').innerHTML='c<b style="color:var(--vowel)">a</b>p 🧢 · c<b style="color:var(--vowel)">u</b>p ☕ · c<b style="color:var(--vowel)">o</b>p 👮';
+    document.getElementById('demoKay').style.display='flex';
+  },7800);
+});
+
+/* S4 손활동① — cap 가운데 소리 (귀로만) */
+document.getElementById('capBtn').addEventListener('click',function(){playClick();KTTS.word('cap');});
+document.querySelectorAll('#midChoices .choice-btn').forEach(b=>{
+  b.addEventListener('click',()=>{
+    if(answered[4])return;
+    playClick();
+    const k=b.dataset.k;KTTS.sound(k);
+    if(k==='a'){
+      b.classList.add('correct');playCorrect();answered[4]=true;addScore(10);
+      setFB('fb4','🎉 맞아요! c <b>a</b> p — 가운데가 <b>/애/</b> 예요. +10점',true);
+    }else{
+      b.classList.add('wrong');playWrong();combo=0;
+      setFB('fb4',samMsg()+' 🔊 다시 듣고 <b>가운데</b>만!',false);
+      setTimeout(()=>b.classList.remove('wrong'),450);
+    }
+  });
+});
+
+/* S5 손활동② — 세 단어 나란히 (가운데만 다름) */
+const TRI=[{w:'cap',v:'a'},{w:'cup',v:'u'},{w:'cop',v:'o'}];
+(function(){
+  const box=document.getElementById('triBox');
+  box.innerHTML=TRI.map(p=>'<div class="pcard" data-w="'+p.w+'">c<span class="pv">'+p.v+'</span>p<span class="pk">'+MIDKO[p.v]+' · '+MEAN[p.w]+'</span></div>').join('');
+  let done=0;
+  box.querySelectorAll('.pcard').forEach(c=>{
+    c.addEventListener('click',()=>{
+      playClick();
+      const w=c.dataset.w;
+      KTTS.blend(KEYS[w],{word:w,passes:1});
+      if(!c.classList.contains('done')){
+        c.classList.add('done');done++;
+        if(done<TRI.length)setFB('fb5','👂 '+done+' / '+TRI.length+' — 가운데 소리가 <b>달라요</b>!',true);
+        else{
+          playCorrect();
+          if(!answered[5]){answered[5]=true;addScore(10);}
+          setFB('fb5','🎉 세 단어 모두 들었어요! 앞뒤는 같고 <b>가운데만</b> 달랐죠. +10점',true);
+        }
+      }
+    });
+  });
+})();
+
+/* S6 따라 말하기 — 발음 모델 하나 */
+document.getElementById('sayBtn').addEventListener('click',function(){
+  playClick();
+  KTTS.word('cup');
+  if(!answered[6]){answered[6]=true;addScore(10);
+    setFB('fb6','🎯 잘 들었어요! 가운데를 /어/ 로 — cup! +10점',true);}
+});
+
+let tx=0,ty=0;
+const sc=document.getElementById('slidesContainer');
+sc.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;});
+sc.addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;
+  if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)){d_swipe(dx);return;}
+});
+function d_swipe(dx){dx>0?prevSlide():nextSlide();}
+sc.addEventListener('click',e=>{
+  if(justUnlocked)return;
+  const w=e.target.closest('[data-sound]');
+  if(!w)return;
+  const host=w.classList.contains('step')?w:w.closest('.step');
+  if(!host||host.classList.contains('in'))KTTS.sound(w.dataset.sound);
+});
+updateUI();
+setupSlide(document.querySelectorAll('.slide')[0],0);
+</script>
+<script src="/kedu_back.js"></script>
+</body>
+</html>
