@@ -245,7 +245,10 @@ window.MK_SELFCHECK = (() => {
         indexeddb: !!w.indexedDB,
       },
       /* 정본에서 읽는다 — 여기에 값을 적지 않는다 */
-      spec: S ? { vcodec: S.vcodec, acodec: S.acodec, targetMin: S.targetMin, muxerUrl: S.muxerUrl } : null,
+      spec: S ? { vcodec: S.vcodec, acodec: S.acodec, targetMin: S.targetMin,
+        muxerUrl: S.muxerUrl, muxerFallbackUrl: S.muxerFallbackUrl,
+        /* R124 — 실제로 어디서 받았는지. 보고서만 보고도 자체/CDN 을 가릴 수 있어야 한다 */
+        muxerFrom: (V && typeof V.muxerSource === 'function' ? V.muxerSource() : null) || '미적재' } : null,
       ladder: (V && V.VIDEO_LADDER ? V.VIDEO_LADDER : []).map((r) => `${r.label} | ${r.codec} | ${r.targetMin}p | ${r.bitrate}`),
       checks: rows,
     };
@@ -652,7 +655,15 @@ window.MK_SELFCHECK = (() => {
       }
     }
 
-    /* ② muxer-reach — 학교 방화벽. jsdom 이 절대 못 잡고, 여기가 막히면 내보내기 전체가 죽는다 */
+    /* ② muxer-reach — 학교 방화벽. jsdom 이 절대 못 잡고, 여기가 막히면 내보내기 전체가 죽는다.
+
+       R124: 주소가 둘이 되었다(자체 → CDN). 이제 **받았느냐**만으로는 부족하고
+       **어디서 받았느냐**가 곧 발견이다. 셋을 구분한다:
+         자체 → 합격. 교실 망이 바깥 CDN 을 막아도 내보내기는 산다.
+         CDN  → 불합격. 지금 이 학생은 저장되지만 R124 가 세운 보호막이
+                없는 상태다. 다음 학교 망에서 죽는다 — 「지금 되니까 괜찮다」로
+                덮으면 그게 헛통과다(§5②).
+         둘 다 → 불합격. 종전과 같다. */
     let muxOK = !!win.Mp4Muxer;
     if (muxOK) out.push(R('muxer-reach', 'pass', 'MP4 모듈이 이미 올라와 있어요'));
     else {
@@ -660,10 +671,16 @@ window.MK_SELFCHECK = (() => {
       const got = await rope(V.loadMuxer(), 10000);
       const ms = Date.now() - t0;
       muxOK = !!win.Mp4Muxer;
-      if (muxOK) out.push(R('muxer-reach', 'pass', `CDN 에서 MP4 모듈을 받았어요 (${ms}ms)`, SPEC.muxerUrl));
+      const from = typeof V.muxerSource === 'function' ? V.muxerSource() : null;
+      if (muxOK && from === 'cdn') out.push(R('muxer-reach', 'fail',
+        `우리 서버가 아니라 바깥 CDN 에서 받았어요 (${ms}ms) — 지금은 저장되지만 다음 망에서 죽어요`,
+        `1순위가 실패했어요: ${SPEC.muxerUrl} — 자체 호스팅 파일이 배포에서 빠졌거나 경로가 틀렸어요`));
+      else if (muxOK) out.push(R('muxer-reach', 'pass',
+        `우리 서버에서 MP4 모듈을 받았어요 (${ms}ms)`, `${SPEC.muxerUrl} · 바깥 CDN 없이 됐어요`));
       else if (got === ROPE) out.push(R('muxer-reach', 'fail', '10초 안에 MP4 모듈을 못 받았어요 — 이 망에서는 내보내기가 통째로 죽어요',
-        '학교 방화벽이 cdn.jsdelivr.net 을 막는 경우예요. 자체 호스팅이 필요합니다'));
-      else out.push(R('muxer-reach', 'fail', 'MP4 모듈을 불러오지 못했어요', SPEC.muxerUrl));
+        `자체·CDN 두 주소가 다 안 됐어요: ${SPEC.muxerUrl} / ${SPEC.muxerFallbackUrl}`));
+      else out.push(R('muxer-reach', 'fail', 'MP4 모듈을 불러오지 못했어요',
+        `자체·CDN 두 주소가 다 안 됐어요: ${SPEC.muxerUrl} / ${SPEC.muxerFallbackUrl}`));
     }
 
     /* ③ enc-bytes — 종단 증명. 여기까지 밟혀야 「바이트가 실제로 나온다」가 성립한다 */

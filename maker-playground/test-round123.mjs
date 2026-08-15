@@ -493,7 +493,12 @@ Promise.all([
     (Array.isArray(res.results) && res.results.length === 0 && typeof res.skipped === 'string' && res.skipped.length > 0)
     || `게이트 통과됨: ${JSON.stringify(res).slice(0, 160)}`);
   T('CDN 스크립트 태그 잔존 0', () =>
-    [...w.document.querySelectorAll('script')].filter((s) => (s.src || '').includes('jsdelivr')).length === 0
+    [...w.document.querySelectorAll('script')].filter((s) => {
+      const src = s.src || '';
+      /* R124 — 주소가 둘이 되었다. 'jsdelivr' 만 재면 자체 호스팅으로 옮긴 뒤
+         이 검사가 저절로 통과하는 헛검사가 된다(§5②). 두 주소를 다 잰다. */
+      return src.includes(V.EXPORT_SPEC.muxerUrl) || src.includes(V.EXPORT_SPEC.muxerFallbackUrl);
+    }).length === 0
     || 'jsdom 에서 CDN 을 탔다');
   T('인코딩 캔버스 잔존 0', () =>
     w.document.querySelectorAll('canvas').length === 0 || '캔버스 잔존');

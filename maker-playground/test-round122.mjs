@@ -79,7 +79,8 @@ T('MK_VIDEO.EXPORT_SPEC 실존 · 동결', () =>
 
 T('정본이 내보내기 전 설정을 담는다', () => {
   const S = V.EXPORT_SPEC;
-  const need = ['vcodec', 'acodec', 'muxerUrl', 'targetMin', 'bitrate', 'fps',
+  /* R124 의도 보존 정정 — 먹서 주소가 자체/CDN 둘이 되었으므로 폴백도 정본이 진다 */
+  const need = ['vcodec', 'acodec', 'muxerUrl', 'muxerFallbackUrl', 'targetMin', 'bitrate', 'fps',
     'audioSampleRate', 'audioBitrate', 'audioChannels', 'muxVideo', 'muxAudio'];
   const miss = need.filter((k) => S[k] === undefined);
   return !miss.length || '누락: ' + miss.join(',');
@@ -101,14 +102,29 @@ T('★ 코덱 문자열이 video.js 안에서 정본 밖에 없다', () => {
 
 T('★ 코덱 문자열이 selfcheck.js 에 아예 없다 (탐침은 정본을 읽는다)', () => {
   const S = V.EXPORT_SPEC;
-  const leaked = [S.vcodec, S.acodec, S.muxerUrl].filter((x) => ssrc.includes(x));
+  const leaked = [S.vcodec, S.acodec, S.muxerUrl, S.muxerFallbackUrl].filter((x) => x && ssrc.includes(x));
   return !leaked.length || '탐침이 직접 적음: ' + leaked.join(' / ');
 });
 
-T('★ CDN 주소가 정본 밖에 없다 (학교 방화벽 진단의 근거)', () => {
-  const u = V.EXPORT_SPEC.muxerUrl;
-  const all = vsrc.split(u).length - 1;
-  return (all === 1 && specBlock.includes(u)) || `${all}회 등장 — 주소가 갈라졌다`;
+/* R124 의도 보존 정정 — 종전 계약은 「CDN 주소가 정본 밖에 없다」였다.
+   R124 가 자체 호스팅을 1순위로 올리면서 주소가 둘이 되었으므로, 계약을
+   「주소가 **정본 안에서만** 갈린다」로 옮긴다. 재는 것은 그대로다 —
+   주소가 video.js 어딘가에 또 적히면 거기가 바뀌어도 탐침은 모른다. */
+T('★ 먹서 두 주소가 정본 안에서만 갈린다 (학교 방화벽 진단의 근거)', () => {
+  const S = V.EXPORT_SPEC;
+  const bad = [S.muxerUrl, S.muxerFallbackUrl].filter((u) => {
+    const all = vsrc.split(u).length - 1;
+    return !(all === 1 && specBlock.includes(u));
+  });
+  return !bad.length || '정본 밖에 또 적힘: ' + bad.join(' / ');
+});
+
+T('★ 자체 주소가 1순위이고 루트 절대경로다 (/maker/ 진입에서 안 빗나간다)', () => {
+  const S = V.EXPORT_SPEC;
+  if (/^https?:/i.test(S.muxerUrl)) return '1순위가 외부 주소 — 자체 호스팅이 아니다';
+  if (S.muxerUrl.charAt(0) !== '/') return '상대경로 — /maker/ 에서 /maker/vendor/ 로 빗나간다';
+  if (!/^https?:/i.test(S.muxerFallbackUrl)) return '폴백이 외부 주소가 아니다';
+  return true;
 });
 
 T('★ 출력 기준값(1080)이 selfcheck.js 에 손글씨로 없다', () =>
@@ -295,7 +311,12 @@ Promise.all([
   T('★ 인코딩 캔버스 잔존 0 (1920×1080 이 남으면 메모리를 먹는다)', () =>
     w.document.querySelectorAll('canvas').length === 0 || '캔버스 잔존');
   T('★ CDN 스크립트 태그 잔존 0 (게이트에서 멈췄으므로 loadMuxer 미호출)', () =>
-    [...w.document.querySelectorAll('script')].filter((s) => (s.src || '').includes('jsdelivr')).length === 0
+    [...w.document.querySelectorAll('script')].filter((s) => {
+      const src = s.src || '';
+      /* R124 — 주소가 둘이 되었다. 'jsdelivr' 만 재면 자체 호스팅으로 옮긴 뒤
+         이 검사가 저절로 통과하는 헛검사가 된다(§5②). 두 주소를 다 잰다. */
+      return src.includes(V.EXPORT_SPEC.muxerUrl) || src.includes(V.EXPORT_SPEC.muxerFallbackUrl);
+    }).length === 0
     || 'jsdom 에서 CDN 을 탔다 — 게이트가 샜다');
   finish();
 }).catch((e) => {

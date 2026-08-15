@@ -28,10 +28,26 @@ window.MK_VIDEO = (() => {
      (test-round122 가 중복 리터럴을 잡는다).
 
      targetMin: 짧은 변을 이 값으로 맞춘다 — 1280×720 → 1920×1080 */
+  /* ---------- R124: 먹서 주소가 둘이 되었다 (자체 우선 · CDN 폴백) ----------
+     R123 까지 muxerUrl 은 CDN 하나였다. 학생이 마지막에 누르는 버튼이 남의
+     CDN 에 매달려 있었다는 뜻이다 — 학교 방화벽은 우리가 못 고친다.
+
+     ⚠ R124 가 발견한 것: mp4-muxer 패키지에는 `.min.js` 가 **실존하지 않는다.**
+     종전 주소가 가리키던 압축본은 jsdelivr 가 즉석에서 만들어 주던 것이다.
+     우리는 파일이 아니라 **CDN 의 기능** 하나에 매달려 있었다.
+
+     그래서 순서를 뒤집는다 — muxerUrl(자체) 을 먼저 시도하고, 실패해야
+     muxerFallbackUrl(CDN) 로 내려간다. 그 반대가 아니다.
+
+     ⚠ 자체 주소는 **루트 절대경로**여야 한다. loadMuxer 는 실행 시점에
+     스크립트를 꽂으므로 상대경로면 문서 URL 기준으로 풀린다 — 제품 진입점
+     `/maker/` 에서는 `/maker/vendor/...` 로 빗나가 통째로 죽는다.
+     (`maker/build.mjs` 의 경로 보정은 HTML 만 만지지 런타임 주입은 못 만진다.) */
   const EXPORT_SPEC = Object.freeze({
     vcodec: 'avc1.420028',                    /* H.264 Baseline@4.0 — 사다리 1단(R123 주석 교정) */
     acodec: 'mp4a.40.2',                      /* AAC-LC */
-    muxerUrl: 'https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.1/build/mp4-muxer.min.js',
+    muxerUrl: '/maker-playground/vendor/mp4-muxer-5.2.1.js',
+    muxerFallbackUrl: 'https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.1/build/mp4-muxer.min.js',
     targetMin: 1080, bitrate: BITRATE, fps: FPS,
     audioSampleRate: 48000, audioBitrate: 128000, audioChannels: 1,
     muxVideo: 'avc', muxAudio: 'aac',         /* mp4-muxer 쪽 이름 — 탐침이 같은 먹서를 짓는다 */
@@ -326,14 +342,33 @@ window.MK_VIDEO = (() => {
     } catch (_) { return null; }
   }
 
-  function loadMuxer() {
+  /* ---------- R124: 먹서 적재 — 자체 → CDN 2단 ----------
+     어디서 받았는지 **기록으로 남긴다**. 탐침이 「CDN 에서 받았어요」라고
+     말해 놓고 실제로는 자체에서 받았다면 그건 초록불이 아니라 거짓말이다.
+
+     onload 만 믿지 않는다 — 잘못된 리라이트가 200 으로 HTML 을 돌려주면
+     스크립트는 「실렸다」고 하면서 Mp4Muxer 는 없다. 그 경우도 실패로 보고
+     폴백으로 내려간다. */
+  let muxerFrom = null;
+  const muxerSource = () => muxerFrom;
+
+  function injectMuxer(url) {
     return new Promise((res, rej) => {
-      if (window.Mp4Muxer) return res();
       const s = document.createElement('script');
-      s.src = EXPORT_SPEC.muxerUrl;
-      s.onload = res; s.onerror = () => rej(new Error('MP4 모듈을 불러올 수 없어요 — 네트워크를 확인해 주세요'));
+      s.src = url;
+      s.onload = () => (window.Mp4Muxer ? res() : rej(new Error('실렸는데 Mp4Muxer 가 없어요')));
+      s.onerror = () => rej(new Error('못 받았어요'));
       document.head.appendChild(s);
     });
+  }
+
+  function loadMuxer() {
+    if (window.Mp4Muxer) { muxerFrom = muxerFrom || 'already'; return Promise.resolve(muxerFrom); }
+    return injectMuxer(EXPORT_SPEC.muxerUrl)
+      .then(() => { muxerFrom = 'self'; return muxerFrom; })
+      .catch(() => injectMuxer(EXPORT_SPEC.muxerFallbackUrl)
+        .then(() => { muxerFrom = 'cdn'; return muxerFrom; })
+        .catch(() => { throw new Error('MP4 모듈을 불러올 수 없어요 — 네트워크를 확인해 주세요'); }));
   }
   const waitQueue = (encoder) => new Promise((res) => {
     if (encoder.encodeQueueSize <= QUEUE_MAX) return res();
@@ -579,6 +614,12 @@ window.MK_VIDEO = (() => {
       if (VIDEO_LADDER[i].targetMin === VIDEO_LADDER[i - 1].targetMin
         && VIDEO_LADDER[i].codec === VIDEO_LADDER[i - 1].codec) v.push('같은 단 중복: ' + i);
     }
+    /* R124 — 먹서 주소 계약. 자체가 상대경로면 /maker/ 진입에서 빗나가 죽는다 */
+    if (typeof EXPORT_SPEC.muxerFallbackUrl !== 'string' || !EXPORT_SPEC.muxerFallbackUrl) v.push('먹서 폴백 주소 부재');
+    if (EXPORT_SPEC.muxerUrl === EXPORT_SPEC.muxerFallbackUrl) v.push('먹서 두 주소가 같음 — 폴백이 아님');
+    if (EXPORT_SPEC.muxerUrl.charAt(0) !== '/') v.push('먹서 자체 주소가 루트 절대경로가 아님');
+    if (/^https?:/i.test(EXPORT_SPEC.muxerUrl)) v.push('먹서 1순위가 외부 주소 — 자체 호스팅이 아님');
+    if (!/^https?:/i.test(EXPORT_SPEC.muxerFallbackUrl)) v.push('먹서 폴백이 외부 주소가 아님');
     const rs = rungSize(2, 1280, 720);
     if (!rs || rs.W !== 1280 || rs.H !== 720) v.push('사다리 720 단 치수 위반');
     if (rungSize(99, 1280, 720) !== null) v.push('없는 단이 null 이 아님');
@@ -596,7 +637,7 @@ window.MK_VIDEO = (() => {
     return { ok: v.length === 0, violations: v };
   }
 
-  return { FPS, TRANS_DUR, MAX_SEC, EXPORT_SPEC, VIDEO_LADDER, outSize, rungSize, pickVideoRung, pickAudio, loadMuxer,
+  return { FPS, TRANS_DUR, MAX_SEC, EXPORT_SPEC, VIDEO_LADDER, outSize, rungSize, pickVideoRung, pickAudio, loadMuxer, muxerSource,
     easeAt, stateAt, framePlan, exportMP4, videoAudit, busy: () => busy,
     isVideoEl, secondsInto, fitRect, musicTimeline, animPivot };
 })();
