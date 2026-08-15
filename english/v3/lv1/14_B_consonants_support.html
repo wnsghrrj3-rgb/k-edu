@@ -147,7 +147,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S3~S6 miss 문제 4 (buildQ) ━━━ -->
-  <div class="slide" data-correct="0" data-score="10">
+  <div class="slide" data-correct="0" data-score="10" data-concept="phonics.onset">
     <div class="card">
       <div class="question-label">다시 확인 1 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 들은 소리의 글자는?</div>
@@ -156,7 +156,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
       <div class="feedback" id="fb3"></div>
     </div>
   </div>
-  <div class="slide" data-correct="1" data-score="10">
+  <div class="slide" data-correct="1" data-score="10" data-concept="phonics.onset">
     <div class="card">
       <div class="question-label">다시 확인 2 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 들은 소리의 글자는?</div>
@@ -165,7 +165,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
       <div class="feedback" id="fb4"></div>
     </div>
   </div>
-  <div class="slide" data-correct="2" data-score="10">
+  <div class="slide" data-correct="2" data-score="10" data-concept="phonics.onset">
     <div class="card">
       <div class="question-label">다시 확인 3 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 들은 소리의 글자는?</div>
@@ -174,7 +174,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
       <div class="feedback" id="fb5"></div>
     </div>
   </div>
-  <div class="slide" data-correct="1" data-score="10">
+  <div class="slide" data-correct="1" data-score="10" data-concept="phonics.onset">
     <div class="card">
       <div class="question-label">다시 확인 4 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 들은 소리의 글자는?</div>
@@ -208,6 +208,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
 </div>
 
 <script src="../engine/k-tts.js"></script>
+<script src="../engine/k-diagnosis.js"></script>
 <script>
 let currentSlide=0,score=0,combo=0,answered={},unlocked=false,justUnlocked=false;
 const TOTAL=8;
@@ -288,7 +289,7 @@ function buildQ(slideIdx,letter,size){
   document.getElementById('ch'+slideIdx).innerHTML=
     arr.map((w,i)=>'<button class="choice-btn" onclick="answer(this,'+i+')">'+w+'<span class="ko">'+KO[w]+'</span></button>').join('');
   document.getElementById('lb'+slideIdx).onclick=()=>{playClick();KTTS.sound(letter);};
-  slide.dataset.letter=letter;
+  slide.dataset.letter=letter;slide.dataset.concept=VOW.indexOf(letter)>=0?'phonics.medial':'phonics.onset';
 }
 buildQ(3,MISS[0],2);
 buildQ(4,MISS[1],2);
@@ -297,6 +298,7 @@ buildQ(6,MISS[3],3);
 
 function answer(btn,idx){
   if(answered[currentSlide])return;
+  try{if(window.KDiagnosis){var _dg=window.__diagDone||(window.__diagDone={});var _ds=document.querySelectorAll('.slide')[currentSlide];if(_ds&&_ds.dataset.concept&&!_dg[currentSlide]){_dg[currentSlide]=1;KDiagnosis.record(_ds.dataset.concept,idx===+_ds.dataset.correct);}}}catch(e){}
   const slide=document.querySelectorAll('.slide')[currentSlide];
   const correct=+slide.dataset.correct,pts=+slide.dataset.score||10;
   const L=slide.dataset.letter;

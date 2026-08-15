@@ -274,7 +274,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S7 확인1 — 듣고 가운데 소리 고르기 ━━━ -->
-  <div class="slide" data-correct="2" data-score="10">
+  <div class="slide" data-correct="2" data-score="10" data-concept="phonics.medial">
     <div class="card">
       <div class="question-label">확인 문제 1 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 이 단어의 <b>가운데</b> 소리는?</div>
@@ -289,7 +289,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S8 확인2 — 그림이 정답 근거 ━━━ -->
-  <div class="slide" data-correct="0" data-score="10">
+  <div class="slide" data-correct="0" data-score="10" data-concept="phonics.blend">
     <div class="card">
       <div class="question-label">확인 문제 2 <span class="stars">⭐</span></div>
       <div class="question-text">그림에 맞는 단어는?</div>
@@ -327,6 +327,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
 </div>
 
 <script src="../engine/k-tts.js"></script>
+<script src="../engine/k-diagnosis.js"></script>
 <script>
 let currentSlide=0,score=0,combo=0,answered={},unlocked=false,justUnlocked=false;
 const TOTAL=10;
@@ -403,6 +404,7 @@ const MIDKO={a:'/애/',u:'/어/',o:'/오/'};
 
 function answer(btn,idx){
   if(answered[currentSlide])return;
+  try{if(window.KDiagnosis){var _dg=window.__diagDone||(window.__diagDone={});var _ds=document.querySelectorAll('.slide')[currentSlide];if(_ds&&_ds.dataset.concept&&!_dg[currentSlide]){_dg[currentSlide]=1;KDiagnosis.record(_ds.dataset.concept,idx===+_ds.dataset.correct);}}}catch(e){}
   const slide=document.querySelectorAll('.slide')[currentSlide];
   const correct=+slide.dataset.correct,pts=+slide.dataset.score||10;
   playClick();

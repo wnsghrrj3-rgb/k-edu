@@ -58,5 +58,8 @@ window.KDiagnosis.LABEL = {
   'phonics.coda':   '끝소리',
   'phonics.blend':  '소리 합치기',
   'vocab.meaning':  '단어 뜻',
-  'vocab.sight':    '기본 단어'
+  'vocab.sight':    '기본 단어',
+  'grammar.frame':  '문장틀',
+  'reading.wordpic':'단어 읽고 그림 찾기',
+  'reading.sentpic':'문장 읽고 장면 찾기'
 };

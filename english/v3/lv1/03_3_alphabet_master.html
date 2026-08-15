@@ -239,6 +239,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
 
 <script src="../engine/k-tts.js"></script>
 <script src="../engine/k-progress.js"></script>
+<script src="../engine/k-diagnosis.js"></script>
 <script src="../data/ladder.js"></script>
 <script>
 let currentSlide=0,score=0,combo=0,answered={},unlocked=false,justUnlocked=false;
@@ -347,13 +348,14 @@ function buildQ(slideIdx,letter){
   document.getElementById('ch'+slideIdx).innerHTML=
     arr.map((w,i)=>'<button class="choice-btn'+(VOW.indexOf(w)>=0?' v':'')+'" onclick="answer(this,'+i+')">'+w+'</button>').join('');
   document.getElementById('lb'+slideIdx).onclick=()=>{playClick();KTTS.sound(letter);};
-  slide.dataset.letter=letter;
+  slide.dataset.letter=letter;slide.dataset.concept=VOW.indexOf(letter)>=0?'phonics.medial':'phonics.onset';
 }
 for(let i=0;i<7;i++)buildQ(3+i,QORDER[i]);
 
 const WRONG_AT={};   /* 첫 시도 오답 기록 */
 function answer(btn,idx){
   if(answered[currentSlide])return;
+  try{if(window.KDiagnosis){var _dg=window.__diagDone||(window.__diagDone={});var _ds=document.querySelectorAll('.slide')[currentSlide];if(_ds&&_ds.dataset.concept&&!_dg[currentSlide]){_dg[currentSlide]=1;KDiagnosis.record(_ds.dataset.concept,idx===+_ds.dataset.correct);}}}catch(e){}
   const slide=document.querySelectorAll('.slide')[currentSlide];
   const correct=+slide.dataset.correct,pts=+slide.dataset.score||10;
   const L=slide.dataset.letter;

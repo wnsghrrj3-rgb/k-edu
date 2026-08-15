@@ -167,7 +167,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S3 듣고 그림 고르기 1 ━━━ -->
-  <div class="slide" data-correct="1" data-score="10" data-track="A">
+  <div class="slide" data-correct="1" data-score="10" data-track="A" data-concept="vocab.meaning">
     <div class="card">
       <div class="question-label">듣고 그림 고르기 1 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 들은 단어를 골라요</div>
@@ -182,7 +182,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S4 듣고 그림 고르기 2 ━━━ -->
-  <div class="slide" data-correct="2" data-score="10" data-track="A">
+  <div class="slide" data-correct="2" data-score="10" data-track="A" data-concept="vocab.meaning">
     <div class="card">
       <div class="question-label">듣고 그림 고르기 2 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 들은 단어를 골라요</div>
@@ -197,7 +197,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S5 듣고 그림 고르기 3 ━━━ -->
-  <div class="slide" data-correct="0" data-score="10" data-track="A">
+  <div class="slide" data-correct="0" data-score="10" data-track="A" data-concept="vocab.meaning">
     <div class="card">
       <div class="question-label">듣고 그림 고르기 3 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 들은 단어를 골라요</div>
@@ -212,7 +212,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S6 듣고 그림 고르기 4 ━━━ -->
-  <div class="slide" data-correct="2" data-score="10" data-track="A">
+  <div class="slide" data-correct="2" data-score="10" data-track="A" data-concept="vocab.meaning">
     <div class="card">
       <div class="question-label">듣고 그림 고르기 4 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 들은 단어를 골라요</div>
@@ -227,7 +227,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S7 듣고 그림 고르기 5 ━━━ -->
-  <div class="slide" data-correct="1" data-score="10" data-track="A">
+  <div class="slide" data-correct="1" data-score="10" data-track="A" data-concept="vocab.meaning">
     <div class="card">
       <div class="question-label">듣고 그림 고르기 5 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 들은 단어를 골라요</div>
@@ -264,7 +264,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S10 혼합 확인① 그림→단어 ━━━ -->
-  <div class="slide" data-correct="1" data-score="10">
+  <div class="slide" data-correct="1" data-score="10" data-concept="vocab.meaning">
     <div class="card">
       <div class="question-label">확인 문제 1 <span class="stars">⭐</span></div>
       <div class="question-text">그림에 맞는 단어는?</div>
@@ -280,7 +280,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S11 혼합 확인② 단어→그림 ━━━ -->
-  <div class="slide" data-correct="1" data-score="10">
+  <div class="slide" data-correct="1" data-score="10" data-concept="vocab.meaning">
     <div class="card">
       <div class="question-label">확인 문제 2 <span class="stars">⭐</span></div>
       <div class="question-text">이 단어는 어떤 그림일까요?</div>
@@ -319,6 +319,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
 </div>
 <script src="../engine/k-tts.js"></script>
 <script src="../engine/k-collection.js"></script>
+<script src="../engine/k-diagnosis.js"></script>
 <script>
 
 let currentSlide=0,score=0,combo=0,answered={},unlocked=false,justUnlocked=false;
@@ -400,6 +401,7 @@ const QWORD={3:'mom',4:'dad',5:'baby',6:'red',7:'blue'};
 
 function answer(btn,idx){
   if(answered[currentSlide])return;
+  try{if(window.KDiagnosis){var _dg=window.__diagDone||(window.__diagDone={});var _ds=document.querySelectorAll('.slide')[currentSlide];if(_ds&&_ds.dataset.concept&&!_dg[currentSlide]){_dg[currentSlide]=1;KDiagnosis.record(_ds.dataset.concept,idx===+_ds.dataset.correct);}}}catch(e){}
   const slide=document.querySelectorAll('.slide')[currentSlide];
   const correct=+slide.dataset.correct,pts=+slide.dataset.score||10;
   playClick();

@@ -168,7 +168,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S3 듣고 고르기 1 — my ━━━ -->
-  <div class="slide" data-correct="1" data-score="10" data-track="A">
+  <div class="slide" data-correct="1" data-score="10" data-track="A" data-concept="vocab.sight">
     <div class="card">
       <div class="question-label">듣고 고르기 1 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 들은 단어를 골라요</div>
@@ -184,7 +184,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S4 듣고 고르기 2 — is ━━━ -->
-  <div class="slide" data-correct="3" data-score="10" data-track="A">
+  <div class="slide" data-correct="3" data-score="10" data-track="A" data-concept="vocab.sight">
     <div class="card">
       <div class="question-label">듣고 고르기 2 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 들은 단어를 골라요</div>
@@ -201,7 +201,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S5 듣고 고르기 3 — this ━━━ -->
-  <div class="slide" data-correct="0" data-score="10" data-track="A">
+  <div class="slide" data-correct="0" data-score="10" data-track="A" data-concept="vocab.sight">
     <div class="card">
       <div class="question-label">듣고 고르기 3 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 들은 단어를 골라요</div>
@@ -217,7 +217,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S6 듣고 고르기 4 — go ━━━ -->
-  <div class="slide" data-correct="2" data-score="10" data-track="A">
+  <div class="slide" data-correct="2" data-score="10" data-track="A" data-concept="vocab.sight">
     <div class="card">
       <div class="question-label">듣고 고르기 4 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 들은 단어를 골라요</div>
@@ -233,7 +233,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S7 듣고 고르기 5 — here ━━━ -->
-  <div class="slide" data-correct="3" data-score="10" data-track="A">
+  <div class="slide" data-correct="3" data-score="10" data-track="A" data-concept="vocab.sight">
     <div class="card">
       <div class="question-label">듣고 고르기 5 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 들은 단어를 골라요</div>
@@ -249,7 +249,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S8 듣고 고르기 6 — yes ━━━ -->
-  <div class="slide" data-correct="1" data-score="10" data-track="A">
+  <div class="slide" data-correct="1" data-score="10" data-track="A" data-concept="vocab.sight">
     <div class="card">
       <div class="question-label">듣고 고르기 6 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 들은 단어를 골라요</div>
@@ -265,7 +265,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S9 듣고 고르기 7 — no ━━━ -->
-  <div class="slide" data-correct="0" data-score="10" data-track="A">
+  <div class="slide" data-correct="0" data-score="10" data-track="A" data-concept="vocab.sight">
     <div class="card">
       <div class="question-label">듣고 고르기 7 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 들은 단어를 골라요</div>
@@ -328,6 +328,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
 
 <script src="../engine/k-tts.js"></script>
 <script src="../engine/k-collection.js"></script>
+<script src="../engine/k-diagnosis.js"></script>
 <script>
 let currentSlide=0,score=0,combo=0,answered={},unlocked=false,justUnlocked=false;
 const TOTAL=13;
@@ -402,6 +403,7 @@ const QWORD={3:'my',4:'is',5:'this',6:'go',7:'here',8:'yes',9:'no'};
 
 function answer(btn,idx){
   if(answered[currentSlide])return;
+  try{if(window.KDiagnosis){var _dg=window.__diagDone||(window.__diagDone={});var _ds=document.querySelectorAll('.slide')[currentSlide];if(_ds&&_ds.dataset.concept&&!_dg[currentSlide]){_dg[currentSlide]=1;KDiagnosis.record(_ds.dataset.concept,idx===+_ds.dataset.correct);}}}catch(e){}
   const slide=document.querySelectorAll('.slide')[currentSlide];
   const correct=+slide.dataset.correct,pts=+slide.dataset.score||10;
   playClick();

@@ -228,7 +228,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S7 확인1 — 듣고 단어 고르기 ━━━ -->
-  <div class="slide" data-correct="1" data-score="10" data-w="pet">
+  <div class="slide" data-correct="1" data-score="10" data-w="pet" data-concept="phonics.blend">
     <div class="card">
       <div class="question-label">확인 문제 1 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 듣고 맞는 단어를 골라요!</div>
@@ -244,7 +244,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S8 확인2 — 그림 보고 단어 고르기 ━━━ -->
-  <div class="slide" data-correct="0" data-score="10" data-w="map">
+  <div class="slide" data-correct="0" data-score="10" data-w="map" data-concept="phonics.blend">
     <div class="card">
       <div class="question-label">확인 문제 2 <span class="stars">⭐</span></div>
       <div class="question-text">그림에 맞는 단어는?</div>
@@ -259,7 +259,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S9 확인3 — 빈칸 가운데 모음 채우기 ━━━ -->
-  <div class="slide" data-correct="2" data-score="10" data-w="sun">
+  <div class="slide" data-correct="2" data-score="10" data-w="sun" data-concept="phonics.medial">
     <div class="card">
       <div class="question-label">확인 문제 3 <span class="stars">⭐</span></div>
       <div class="question-text">☀️ 해! 빈칸에 올 <b>가운데</b> 글자는?</div>
@@ -274,7 +274,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S10 확인4 — 듣고 넷 중 고르기 ━━━ -->
-  <div class="slide" data-correct="3" data-score="10" data-w="dig">
+  <div class="slide" data-correct="3" data-score="10" data-w="dig" data-concept="phonics.blend">
     <div class="card">
       <div class="question-label">확인 문제 4 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 이번 소리는 어떤 단어?</div>
@@ -344,6 +344,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
 
 <script src="../engine/k-tts.js"></script>
 <script src="../engine/k-collection.js"></script>
+<script src="../engine/k-diagnosis.js"></script>
 <script>
 let currentSlide=0,score=0,combo=0,answered={},unlocked=false,justUnlocked=false;
 const TOTAL=13;
@@ -477,6 +478,7 @@ document.getElementById('lb10').onclick=()=>{playClick();KTTS.word('dig');};
 
 function answer(btn,idx){
   if(answered[currentSlide])return;
+  try{if(window.KDiagnosis){var _dg=window.__diagDone||(window.__diagDone={});var _ds=document.querySelectorAll('.slide')[currentSlide];if(_ds&&_ds.dataset.concept&&!_dg[currentSlide]){_dg[currentSlide]=1;KDiagnosis.record(_ds.dataset.concept,idx===+_ds.dataset.correct);}}}catch(e){}
   const slide=document.querySelectorAll('.slide')[currentSlide];
   const correct=+slide.dataset.correct,pts=+slide.dataset.score||10;
   const W=slide.dataset.w;

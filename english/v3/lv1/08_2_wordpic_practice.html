@@ -163,7 +163,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S3 문제1 box ━━━ -->
-  <div class="slide" data-correct="1" data-score="10" data-track="A">
+  <div class="slide" data-correct="1" data-score="10" data-track="A" data-concept="reading.wordpic">
     <div class="card">
       <div class="question-label">읽고 그림 고르기 1 <span class="stars">⭐</span></div>
       <div class="question-text">읽어 보고, 맞는 그림을 골라요</div>
@@ -180,7 +180,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S4 문제2 pot ━━━ -->
-  <div class="slide" data-correct="3" data-score="10" data-track="A">
+  <div class="slide" data-correct="3" data-score="10" data-track="A" data-concept="reading.wordpic">
     <div class="card">
       <div class="question-label">읽고 그림 고르기 2 <span class="stars">⭐</span></div>
       <div class="question-text">읽어 보고, 맞는 그림을 골라요</div>
@@ -197,7 +197,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S5 문제3 pin ━━━ -->
-  <div class="slide" data-correct="0" data-score="10" data-track="A">
+  <div class="slide" data-correct="0" data-score="10" data-track="A" data-concept="reading.wordpic">
     <div class="card">
       <div class="question-label">읽고 그림 고르기 3 <span class="stars">⭐</span></div>
       <div class="question-text">읽어 보고, 맞는 그림을 골라요</div>
@@ -214,7 +214,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S6 문제4 pig ━━━ -->
-  <div class="slide" data-correct="2" data-score="10" data-track="A">
+  <div class="slide" data-correct="2" data-score="10" data-track="A" data-concept="reading.wordpic">
     <div class="card">
       <div class="question-label">읽고 그림 고르기 4 <span class="stars">⭐</span></div>
       <div class="question-text">읽어 보고, 맞는 그림을 골라요</div>
@@ -231,7 +231,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S7 문제5 fish (#5 통단어 소환) ━━━ -->
-  <div class="slide" data-correct="3" data-score="10" data-track="A">
+  <div class="slide" data-correct="3" data-score="10" data-track="A" data-concept="reading.wordpic">
     <div class="card">
       <div class="question-label">읽고 그림 고르기 5 <span class="stars">⭐</span></div>
       <div class="question-text">읽어 보고, 맞는 그림을 골라요</div>
@@ -271,7 +271,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S10 확인① dog ━━━ -->
-  <div class="slide" data-correct="0" data-score="10" data-word="dog">
+  <div class="slide" data-correct="0" data-score="10" data-word="dog" data-concept="reading.wordpic">
     <div class="card">
       <div class="question-label">확인 문제 1 <span class="stars">⭐</span></div>
       <div class="question-text">읽어 보고, 맞는 그림을 골라요</div>
@@ -288,7 +288,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S11 확인② pan (pot 과 변별) ━━━ -->
-  <div class="slide" data-correct="2" data-score="10" data-word="pan">
+  <div class="slide" data-correct="2" data-score="10" data-word="pan" data-concept="reading.wordpic">
     <div class="card">
       <div class="question-label">확인 문제 2 <span class="stars">⭐</span></div>
       <div class="question-text">읽어 보고, 맞는 그림을 골라요</div>
@@ -330,6 +330,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
 
 <script src="../engine/k-tts.js"></script>
 <script src="../engine/k-collection.js"></script>
+<script src="../engine/k-diagnosis.js"></script>
 <script>
 let currentSlide=0,score=0,combo=0,answered={},unlocked=false,justUnlocked=false;
 const TOTAL=13;
@@ -488,6 +489,7 @@ buildMatch('m2slots','m2cards','fb9',['pan','bat','bird'],()=>{if(!answered[9]){
 
 function answer(btn,idx){
   if(answered[currentSlide])return;
+  try{if(window.KDiagnosis){var _dg=window.__diagDone||(window.__diagDone={});var _ds=document.querySelectorAll('.slide')[currentSlide];if(_ds&&_ds.dataset.concept&&!_dg[currentSlide]){_dg[currentSlide]=1;KDiagnosis.record(_ds.dataset.concept,idx===+_ds.dataset.correct);}}}catch(e){}
   const slide=document.querySelectorAll('.slide')[currentSlide];
   const correct=+slide.dataset.correct,pts=+slide.dataset.score||10;
   playClick();

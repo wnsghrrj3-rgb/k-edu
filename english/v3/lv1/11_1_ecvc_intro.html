@@ -243,7 +243,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S7 확인1 — 듣고 글자 고르기 ━━━ -->
-  <div class="slide" data-correct="1" data-score="10">
+  <div class="slide" data-correct="1" data-score="10" data-concept="phonics.medial">
     <div class="card">
       <div class="question-label">확인 문제 1 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 이 소리를 내는 글자는?</div>
@@ -258,7 +258,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S8 확인2 — 그림이 정답 근거 (o ↔ e 변별) ━━━ -->
-  <div class="slide" data-correct="0" data-score="10">
+  <div class="slide" data-correct="0" data-score="10" data-concept="phonics.medial">
     <div class="card">
       <div class="question-label">확인 문제 2 <span class="stars">⭐</span></div>
       <div class="question-text">🐶 dog 의 가운데 소리는 /오/ 였어요.<br>그럼 🖊️ <b>pen</b> 의 가운데 소리는?</div>
@@ -296,6 +296,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
 </div>
 
 <script src="../engine/k-tts.js"></script>
+<script src="../engine/k-diagnosis.js"></script>
 <script>
 let currentSlide=0,score=0,combo=0,answered={},unlocked=false,justUnlocked=false;
 const TOTAL=10;
@@ -367,6 +368,7 @@ function samMsg(){return SAM_MSGS[Math.floor(Math.random()*SAM_MSGS.length)];}
 
 function answer(btn,idx){
   if(answered[currentSlide])return;
+  try{if(window.KDiagnosis){var _dg=window.__diagDone||(window.__diagDone={});var _ds=document.querySelectorAll('.slide')[currentSlide];if(_ds&&_ds.dataset.concept&&!_dg[currentSlide]){_dg[currentSlide]=1;KDiagnosis.record(_ds.dataset.concept,idx===+_ds.dataset.correct);}}}catch(e){}
   const slide=document.querySelectorAll('.slide')[currentSlide];
   const correct=+slide.dataset.correct,pts=+slide.dataset.score||10;
   playClick();

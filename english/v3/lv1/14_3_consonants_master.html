@@ -139,7 +139,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S3~S7 섞어 듣고 글자 고르기 5문항 ━━━ -->
-  <div class="slide" data-correct="0" data-score="10">
+  <div class="slide" data-correct="0" data-score="10" data-concept="phonics.onset">
     <div class="card">
       <div class="question-label">섞어 고르기 1 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 들은 소리의 글자는?</div>
@@ -148,7 +148,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
       <div class="feedback" id="fb3"></div>
     </div>
   </div>
-  <div class="slide" data-correct="2" data-score="10">
+  <div class="slide" data-correct="2" data-score="10" data-concept="phonics.onset">
     <div class="card">
       <div class="question-label">섞어 고르기 2 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 들은 소리의 글자는?</div>
@@ -157,7 +157,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
       <div class="feedback" id="fb4"></div>
     </div>
   </div>
-  <div class="slide" data-correct="4" data-score="10">
+  <div class="slide" data-correct="4" data-score="10" data-concept="phonics.onset">
     <div class="card">
       <div class="question-label">섞어 고르기 3 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 들은 소리의 글자는?</div>
@@ -166,7 +166,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
       <div class="feedback" id="fb5"></div>
     </div>
   </div>
-  <div class="slide" data-correct="1" data-score="10">
+  <div class="slide" data-correct="1" data-score="10" data-concept="phonics.onset">
     <div class="card">
       <div class="question-label">섞어 고르기 4 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 들은 소리의 글자는?</div>
@@ -175,7 +175,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
       <div class="feedback" id="fb6"></div>
     </div>
   </div>
-  <div class="slide" data-correct="3" data-score="10">
+  <div class="slide" data-correct="3" data-score="10" data-concept="phonics.onset">
     <div class="card">
       <div class="question-label">섞어 고르기 5 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 들은 소리의 글자는?</div>
@@ -186,7 +186,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S8 새 자음 CVC 읽기 (소리 없이 읽고 그림) ━━━ -->
-  <div class="slide" data-correct="2" data-score="10">
+  <div class="slide" data-correct="2" data-score="10" data-concept="phonics.onset">
     <div class="card">
       <div class="question-label">읽고 고르기 <span class="stars">⭐</span></div>
       <div class="question-text">소리 없이 <b>읽고</b> 맞는 그림을 골라요</div>
@@ -227,6 +227,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
 </div>
 
 <script src="../engine/k-tts.js"></script>
+<script src="../engine/k-diagnosis.js"></script>
 <script>
 let currentSlide=0,score=0,combo=0,answered={},unlocked=false,justUnlocked=false;
 const TOTAL=10;
@@ -333,13 +334,14 @@ function buildQ(slideIdx,letter){
   document.getElementById('ch'+slideIdx).innerHTML=
     arr.map((w,i)=>'<button class="choice-btn" onclick="answer(this,'+i+')">'+w+'</button>').join('');
   document.getElementById('lb'+slideIdx).onclick=()=>{playClick();KTTS.sound(letter);};
-  slide.dataset.letter=letter;
+  slide.dataset.letter=letter;slide.dataset.concept=VOW.indexOf(letter)>=0?'phonics.medial':'phonics.onset';
 }
 for(let i=0;i<5;i++)buildQ(3+i,QORDER[i]);
 
 const WRONG_AT={};   /* 첫 시도 오답 기록 */
 function answer(btn,idx){
   if(answered[currentSlide])return;
+  try{if(window.KDiagnosis){var _dg=window.__diagDone||(window.__diagDone={});var _ds=document.querySelectorAll('.slide')[currentSlide];if(_ds&&_ds.dataset.concept&&!_dg[currentSlide]){_dg[currentSlide]=1;KDiagnosis.record(_ds.dataset.concept,idx===+_ds.dataset.correct);}}}catch(e){}
   const slide=document.querySelectorAll('.slide')[currentSlide];
   const correct=+slide.dataset.correct,pts=+slide.dataset.score||10;
   const L=slide.dataset.letter;

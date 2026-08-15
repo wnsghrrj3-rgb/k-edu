@@ -170,7 +170,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S3 듣고 완성 1 ━━━ -->
-  <div class="slide" data-correct="0" data-score="10" data-track="G">
+  <div class="slide" data-correct="0" data-score="10" data-track="G" data-concept="grammar.frame">
     <div class="card">
       <div class="question-label">듣고 완성 1 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 듣고 맨 뒤 칸을 채워요</div>
@@ -185,7 +185,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S4 듣고 완성 2 ━━━ -->
-  <div class="slide" data-correct="2" data-score="10" data-track="G">
+  <div class="slide" data-correct="2" data-score="10" data-track="G" data-concept="grammar.frame">
     <div class="card">
       <div class="question-label">듣고 완성 2 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 듣고 맨 뒤 칸을 채워요</div>
@@ -200,7 +200,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S5 듣고 완성 3 ━━━ -->
-  <div class="slide" data-correct="1" data-score="10" data-track="G">
+  <div class="slide" data-correct="1" data-score="10" data-track="G" data-concept="grammar.frame">
     <div class="card">
       <div class="question-label">듣고 완성 3 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 듣고 맨 뒤 칸을 채워요</div>
@@ -215,7 +215,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S6 듣고 완성 4 ━━━ -->
-  <div class="slide" data-correct="3" data-score="10" data-track="G">
+  <div class="slide" data-correct="3" data-score="10" data-track="G" data-concept="grammar.frame">
     <div class="card">
       <div class="question-label">듣고 완성 4 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 듣고 맨 뒤 칸을 채워요</div>
@@ -230,7 +230,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S7 듣고 완성 5 ━━━ -->
-  <div class="slide" data-correct="2" data-score="10" data-track="G">
+  <div class="slide" data-correct="2" data-score="10" data-track="G" data-concept="grammar.frame">
     <div class="card">
       <div class="question-label">듣고 완성 5 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 듣고 맨 뒤 칸을 채워요</div>
@@ -245,7 +245,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S8 확인 — 듣고 그림 고르기 (유형 분산) ━━━ -->
-  <div class="slide" data-correct="1" data-score="10">
+  <div class="slide" data-correct="1" data-score="10" data-concept="grammar.frame">
     <div class="card">
       <div class="question-label">확인 문제 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 듣고 맞는 그림을 골라요!</div>
@@ -303,6 +303,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
 <script src="../engine/k-tts.js"></script>
 <script src="../engine/k-collection.js"></script>
 <script src="../engine/k-progress.js"></script>
+<script src="../engine/k-diagnosis.js"></script>
 <script src="../data/ladder.js"></script>
 <script>
 let currentSlide=0,score=0,combo=0,answered={},unlocked=false,justUnlocked=false;
@@ -414,6 +415,7 @@ for(let i=0;i<5;i++)buildQ(3+i,QORDER[i]);
 
 function answer(btn,idx){
   if(answered[currentSlide])return;
+  try{if(window.KDiagnosis){var _dg=window.__diagDone||(window.__diagDone={});var _ds=document.querySelectorAll('.slide')[currentSlide];if(_ds&&_ds.dataset.concept&&!_dg[currentSlide]){_dg[currentSlide]=1;KDiagnosis.record(_ds.dataset.concept,idx===+_ds.dataset.correct);}}}catch(e){}
   const slide=document.querySelectorAll('.slide')[currentSlide];
   const correct=+slide.dataset.correct,pts=+slide.dataset.score||10;
   const word=slide.dataset.word;

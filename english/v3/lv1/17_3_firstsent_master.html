@@ -148,7 +148,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S3~S7 섞어 읽고 고르기 5문항 (4지) ━━━ -->
-  <div class="slide" data-correct="0" data-score="10">
+  <div class="slide" data-correct="0" data-score="10" data-concept="reading.sentpic">
     <div class="card">
       <div class="question-label">읽고 고르기 1 <span class="stars">⭐</span></div>
       <div class="question-text">문장을 읽고, 맞는 장면을 골라요</div>
@@ -158,7 +158,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
     </div>
   </div>
 
-  <div class="slide" data-correct="2" data-score="10">
+  <div class="slide" data-correct="2" data-score="10" data-concept="reading.sentpic">
     <div class="card">
       <div class="question-label">읽고 고르기 2 <span class="stars">⭐</span></div>
       <div class="question-text">문장을 읽고, 맞는 장면을 골라요</div>
@@ -168,7 +168,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
     </div>
   </div>
 
-  <div class="slide" data-correct="3" data-score="10">
+  <div class="slide" data-correct="3" data-score="10" data-concept="reading.sentpic">
     <div class="card">
       <div class="question-label">읽고 고르기 3 <span class="stars">⭐</span></div>
       <div class="question-text">문장을 읽고, 맞는 장면을 골라요</div>
@@ -178,7 +178,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
     </div>
   </div>
 
-  <div class="slide" data-correct="1" data-score="10">
+  <div class="slide" data-correct="1" data-score="10" data-concept="reading.sentpic">
     <div class="card">
       <div class="question-label">읽고 고르기 4 <span class="stars">⭐</span></div>
       <div class="question-text">문장을 읽고, 맞는 장면을 골라요</div>
@@ -188,7 +188,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
     </div>
   </div>
 
-  <div class="slide" data-correct="2" data-score="10">
+  <div class="slide" data-correct="2" data-score="10" data-concept="reading.sentpic">
     <div class="card">
       <div class="question-label">읽고 고르기 5 <span class="stars">⭐</span></div>
       <div class="question-text">문장을 읽고, 맞는 장면을 골라요</div>
@@ -199,7 +199,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S8 마지막 한 문항 — 앞 다섯에 안 나온 문장, 다섯 장면 중에서 ━━━ -->
-  <div class="slide" data-correct="4" data-score="10">
+  <div class="slide" data-correct="4" data-score="10" data-concept="reading.sentpic">
     <div class="card">
       <div class="question-label">마지막 한 문제 <span class="stars">⭐</span></div>
       <div class="question-text">장면이 다섯이에요 — 맨 앞부터 끝까지 읽어요!</div>
@@ -237,6 +237,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
 <script src="../engine/k-tts.js"></script>
 <script src="../engine/k-collection.js"></script>
 <script src="../engine/k-progress.js"></script>
+<script src="../engine/k-diagnosis.js"></script>
 <script src="../data/ladder.js"></script>
 <script>
 let currentSlide=0,score=0,combo=0,answered={},unlocked=false,justUnlocked=false;
@@ -383,6 +384,7 @@ buildQ(8,QORDER[5],5);
 
 function answer(btn,idx){
   if(answered[currentSlide])return;
+  try{if(window.KDiagnosis){var _dg=window.__diagDone||(window.__diagDone={});var _ds=document.querySelectorAll('.slide')[currentSlide];if(_ds&&_ds.dataset.concept&&!_dg[currentSlide]){_dg[currentSlide]=1;KDiagnosis.record(_ds.dataset.concept,idx===+_ds.dataset.correct);}}}catch(e){}
   const slide=document.querySelectorAll('.slide')[currentSlide];
   const correct=+slide.dataset.correct,pts=+slide.dataset.score||10;
   const k=slide.dataset.key;

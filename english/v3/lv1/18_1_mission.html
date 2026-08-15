@@ -543,6 +543,7 @@ const WRONG_AT={};
 
 function answer(btn,idx){
   if(answered[currentSlide])return;
+  try{if(window.KDiagnosis){var _dg=window.__diagDone||(window.__diagDone={});var _ds=document.querySelectorAll('.slide')[currentSlide];if(_ds&&_ds.dataset.concept&&!_dg[currentSlide]){_dg[currentSlide]=1;KDiagnosis.record(_ds.dataset.concept,idx===+_ds.dataset.correct);}}}catch(e){}
   const slide=document.querySelectorAll('.slide')[currentSlide];
   const correct=+slide.dataset.correct,pts=+slide.dataset.score||10;
   playClick();
@@ -550,7 +551,6 @@ function answer(btn,idx){
     btn.classList.add('correct');playCorrect();addScore(pts);
     const first=!WRONG_AT[currentSlide];
     if(first)firstTryOK++;
-    try{ if(window.KDiagnosis) KDiagnosis.record(slide.dataset.concept,first); }catch(e){}
     if(!first)pushWeak(slide);
     if(QSAY[currentSlide])QSAY[currentSlide]();
     setFB('fb'+currentSlide,okMsg(pts)+' '+QOK[currentSlide],true);
@@ -572,7 +572,6 @@ function answer(btn,idx){
 function pushWeak(slide){
   if(WEAK.some(w=>w.back===slide.dataset.back))return;
   WEAK.push({strand:slide.dataset.strand,back:slide.dataset.back,name:slide.dataset.backname});
-  try{ if(window.KDiagnosis) KDiagnosis.record(slide.dataset.concept,false); }catch(e){}
 }
 
 /* ── S11 미션2 — 내 문장 만들기 (표현형, 정답 없음) ── */

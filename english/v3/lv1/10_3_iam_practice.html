@@ -178,7 +178,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S3 그림 보고 고르기 1 ━━━ -->
-  <div class="slide" data-correct="0" data-score="10" data-track="A" data-sent="I am Mina.">
+  <div class="slide" data-correct="0" data-score="10" data-track="A" data-sent="I am Mina." data-concept="grammar.frame">
     <div class="card">
       <div class="question-label">그림 보고 고르기 1 <span class="stars">⭐</span></div>
       <div class="question-text">👧 이 친구가 이름을 말해요. 맞는 문장은?</div>
@@ -193,7 +193,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S4 그림 보고 고르기 2 ━━━ -->
-  <div class="slide" data-correct="2" data-score="10" data-track="A" data-sent="I am here.">
+  <div class="slide" data-correct="2" data-score="10" data-track="A" data-sent="I am here." data-concept="grammar.frame">
     <div class="card">
       <div class="question-label">그림 보고 고르기 2 <span class="stars">⭐</span></div>
       <div class="question-text">그림에 맞는 문장은?</div>
@@ -208,7 +208,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S5 그림 보고 고르기 3 — I like 대조 혼입 ━━━ -->
-  <div class="slide" data-correct="1" data-score="10" data-track="A" data-sent="I am happy.">
+  <div class="slide" data-correct="1" data-score="10" data-track="A" data-sent="I am happy." data-concept="grammar.frame">
     <div class="card">
       <div class="question-label">그림 보고 고르기 3 <span class="stars">⭐</span></div>
       <div class="question-text">그림에 맞는 문장은?</div>
@@ -224,7 +224,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S6 듣고 고르기 (유형 분산) ━━━ -->
-  <div class="slide" data-correct="1" data-score="10" data-track="A" data-sent="I am Mina.">
+  <div class="slide" data-correct="1" data-score="10" data-track="A" data-sent="I am Mina." data-concept="grammar.frame">
     <div class="card">
       <div class="question-label">듣고 고르기 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 들은 문장을 골라요</div>
@@ -270,7 +270,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- ━━━ S9 혼합 확인 — am 인지 like 인지 듣고 그림 고르기 ━━━ -->
-  <div class="slide" data-correct="1" data-score="10" data-sent="I like it.">
+  <div class="slide" data-correct="1" data-score="10" data-sent="I like it." data-concept="grammar.frame">
     <div class="card">
       <div class="question-label">확인 문제 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 듣고 맞는 그림을 골라요!</div>
@@ -310,6 +310,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
 
 <script src="../engine/k-tts.js"></script>
 <script src="../engine/k-collection.js"></script>
+<script src="../engine/k-diagnosis.js"></script>
 <script>
 let currentSlide=0,score=0,combo=0,answered={},unlocked=false,justUnlocked=false;
 const TOTAL=11;
@@ -396,6 +397,7 @@ const QWORD={3:'Mina',4:'here',5:'happy',6:'Mina'};
 
 function answer(btn,idx){
   if(answered[currentSlide])return;
+  try{if(window.KDiagnosis){var _dg=window.__diagDone||(window.__diagDone={});var _ds=document.querySelectorAll('.slide')[currentSlide];if(_ds&&_ds.dataset.concept&&!_dg[currentSlide]){_dg[currentSlide]=1;KDiagnosis.record(_ds.dataset.concept,idx===+_ds.dataset.correct);}}}catch(e){}
   const slide=document.querySelectorAll('.slide')[currentSlide];
   const correct=+slide.dataset.correct,pts=+slide.dataset.score||10;
   playClick();
