@@ -75,6 +75,28 @@ D.grades().forEach(g => {
   });
 });
 
+// ⑥ [회귀 가드] 일차 기준 '아직 안 배운 글자가 대표낱말에 섞임' 총량
+//    어휘 사다리는 의도적으로 **학년 단위**다. 하루 1자 구조에서 일차 단위 사다리는
+//    원리적으로 불가능하다(1일차엔 배운 글자가 1개뿐 → 두 글자 낱말을 못 만든다).
+//    그래서 이 수치는 0이 될 수 없고, 0을 요구해서도 안 된다.
+//    다만 학년 내 순서를 다시 건드렸을 때 조용히 나빠지는 것은 막는다.
+//    2026-08-15 의미 묶음 재배열 시점 실측 = 97건. 여유 5건.
+var LADDER_CAP = 102;
+var ladderHits = 0;
+D.grades().forEach(function (g) {
+  var seen = {};
+  D.grades().filter(function (x) { return x < g; })
+            .forEach(function (x) { D.all(x).forEach(function (r) { seen[r.c] = 1; }); });
+  D.all(g).forEach(function (r) {
+    seen[r.c] = 1;
+    if (!r.word) return;
+    Array.prototype.forEach.call(r.word, function (c) { if (!seen[c]) ladderHits++; });
+  });
+});
+T(ladderHits <= LADDER_CAP,
+  '일차 기준 미배운 글자 노출이 상한 초과: ' + ladderHits + ' > ' + LADDER_CAP +
+  ' (학년 내 순서를 바꿨다면 묶음 배치를 다시 보라)');
+
 // step 분할 무손실
 D.grades().forEach(g=>{
   const all = D.all(g), n = D.stepCount(g);
