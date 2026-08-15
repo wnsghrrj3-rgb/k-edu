@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<!--
+  kg_math_l3_com01 — 격자 경로 연구소 [케이영재 수학 · G2 양산 11호 · COM 연구소 개시]
+  트랙: 케이영재 / Lab: Combinatorics / Level: L3 CHALLENGER (중학년 그린 톤) / 깊이: D1~D8
+  base: kg_math_l3_pat01 (골격·CSS 계승) + kg_math_l3_pat02 (엔진 공통부 계승) + kg_math_l3_geo01 (공용 CSS 8종·칩·숫자패드 계승) / 신규 시각 언어 0 (cal-grid 파라미터 변형 road + 셀 상태 sel·center-cell·diag-a·diag-b·empty 재사용) / 신규 메카닉 0 (걸음 단추 = pat03·num02 단계 전환 선례, 모퉁이 눌러 공사 = log01 cycleMark 2상태 판, 판 채우기 = num03 백판 클릭 선례)
+  탐구 5단계: 미션(1~3) 탐험(4~6) 발견(7~10) 도전(11~14) 창조(15~18)
+  핵심 수학: 거리가 같아도 순서를 섞는 만큼 길이 갈린다 → 한 모퉁이의 길 수 = 왼쪽 수 + 위쪽 수(마지막 걸음이 올 수 있는 곳이 둘뿐이고 겹치지 않는다) → 첫 줄·첫 열은 외길이라 1 → 손으로 센 수 = 더해서 나온 수(세는 일을 더하기로 바꾼 것) → 공사 중인 모퉁이는 0으로 두면 같은 규칙이 그대로 통한다 → 어디를 막느냐가 전부(구석 20→19, 한가운데 20→8, 한 곳으로는 못 끊는다) → 판의 대각선 = 파스칼 삼각형
+  점수 100 = 탐험 15 + 추측 10 + 발견 20(q9 10 + q10 10) + 검증 15(3라운드 × 5) + 확장 20(가짜 보고서 10 + 공사 미션 10) + 창조 20(임무 가 10 + 임무 나 10)
+  힌트: H1/H2/H3 3단 (감점 없음, 답 비노출) / 정답 선공개 금지 — 검사기는 가짓수·공사 개수만 돌려주고 공사할 모퉁이는 비공개
+  ⚠ 평면 탐구라 KVox3D 입체 무대는 쓰지 않는다 (헌법 §10 — 부품은 쓸 수 있는 것이지 써야 하는 것이 아니다)
+  ⛔ 규약: 문자식 금지 / 차단 어휘 금지 / 이모지 슬라이드당 ≤2
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="kg_math_l3_com01_v1">
+<title>격자 경로 연구소 · 케이영재 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#F6FBF7; --ink:#1F3830; --ink-soft:#5C7A6E;
+  --coral:#0E8A5F; --coral-deep:#0A6B49; --coral-soft:#D7F0E4;
+  --teal:#1D4ED8; --teal-deep:#153FA6; --teal-soft:#DCE6FB;
+  --gold:#F6B526; --emph:#E85D2F; --line:#DCEAE0; --mark:#FFE08A;
+  --f-title:'Do Hyeon',sans-serif; --f-body:'Gowun Dodum',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:0 14px 34px -18px rgba(31,56,48,.35);
+  --fs-title: clamp(26px, 4.2vw, 46px);
+  --fs-heading: clamp(23px, 3.5vw, 35px);
+  --fs-body: clamp(19px, 2.9vw, 27px);
+  --fs-caption: clamp(17px, 2.6vw, 24px);
+  --fs-label: clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --mw-sm: min(720px, 96vw);
+  --mw-lg: min(880px, 96vw);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+@keyframes ka-glow { 0%,100%{box-shadow:0 0 0 0 rgba(14,138,95,.4);} 50%{box-shadow:0 0 0 10px rgba(14,138,95,0);} }
+
+.ka { background:var(--paper); width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; color:var(--ink); position:relative; overflow:hidden; }
+.ka-h { display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); padding:clamp(11px,1.7vw,15px) clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:hover { transform:translateY(-1px); }
+.ka-pill { font-family:var(--f-title); background:var(--coral); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-where { font-size:clamp(14px,1.6vw,18px); color:var(--ink-soft); flex-shrink:1; }
+.ka-where b { color:var(--ink); }
+.ka-bar { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:46vw; }
+.ka-dot { width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s, background .2s; }
+.ka-dot:hover { transform:scale(1.2); }
+.ka-dot.active { background:var(--coral); transform:scale(1.3); }
+.ka-dot.done { background:var(--teal); }
+.ka-score { font-family:var(--f-title); background:#FFF8E1; color:#F57F17; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); padding:0; border-radius:50%; cursor:pointer; flex-shrink:0; color:var(--coral-deep); font-size:clamp(13px,2vw,16px); width:clamp(32px,4.5vw,38px); height:clamp(32px,4.5vw,38px); display:flex; align-items:center; justify-content:center; }
+
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; justify-content:safe center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; justify-content:safe center; gap:clamp(7px,1.2vw,11px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(8px,1.4vh,16px) clamp(16px,4vw,48px); overflow-x:hidden; overflow-y:auto; scrollbar-width:none; -ms-overflow-style:none; }
+.slide::-webkit-scrollbar { width:0; height:0; }
+.slide.active { display:flex; }
+.slide-title { font-family:var(--f-title); font-size:var(--fs-title); line-height:1.18; color:var(--ink); font-weight:400; text-align:center; flex-shrink:0; }
+.slide-sub { font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(10px,1.6vw,16px); left:clamp(16px,4vw,40px); font-family:var(--f-title); color:var(--coral); font-size:clamp(13px,1.9vw,18px); letter-spacing:.4px; z-index:5; }
+
+.ka-f { display:flex; justify-content:flex-end; gap:12px; padding:clamp(12px,1.7vw,16px) clamp(16px,4vw,40px); background:linear-gradient(to top, var(--paper) 62%, transparent); flex-shrink:0; }
+.ka-prev, .ka-hint, .ka-next { font-family:var(--f-title); font-size:clamp(15px,1.9vw,22px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(10px,1.4vw,15px) clamp(20px,2.8vw,38px); cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translateY(-2px); }
+.ka-prev { margin-right:auto; }
+.ka-hint { color:#F57F17; border-color:#FFE08A; }
+.ka-next { background:var(--coral); color:#fff; border-color:var(--coral); }
+.ka-prev:disabled, .ka-next:disabled { opacity:.35; cursor:default; transform:none; }
+.ka-hint:disabled { opacity:.4; cursor:default; }
+
+.concept-box { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,18px) clamp(18px,2.8vw,28px); border-radius:20px; font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); text-align:center; line-height:1.5; box-shadow:var(--shadow); }
+.concept-box strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.intro-q { font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; }
+.intro-q strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.goal-list { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); font-size:var(--fs-caption); color:var(--ink); max-width:var(--mw-sm); }
+.goal-list li { background:#fff; border:2px solid var(--line); padding:clamp(7px,1.3vw,11px) clamp(14px,2.6vw,20px); border-radius:16px; list-style:none; box-shadow:var(--shadow); }
+.goal-list li strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+.mission-card { background:#fff; border:3px solid var(--coral-soft); border-radius:26px; padding:clamp(16px,3vw,26px) clamp(20px,3.8vw,34px); max-width:var(--mw-sm); text-align:center; box-shadow:0 6px 0 var(--coral-soft); font-size:var(--fs-body); line-height:1.6; }
+.mission-card strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+
+/* ── 달력 격자 ── */
+.cal-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.1vw,10px); }
+.cal-head { display:flex; align-items:center; gap:clamp(8px,1.6vw,14px); }
+.cal-title { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--coral-deep); }
+.cal-month-btn { font-family:var(--f-title); font-size:var(--fs-label); background:#fff; border:2px solid var(--line); border-radius:999px; padding:4px 12px; cursor:pointer; color:var(--ink-soft); }
+.cal-month-btn.on { background:var(--coral); color:#fff; border-color:var(--coral); }
+.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:clamp(3px,0.6vw,5px); background:#fff; border:2px solid var(--line); border-radius:18px; padding:clamp(8px,1.4vw,12px); box-shadow:var(--shadow); }
+.cal-dow { font-family:var(--f-title); font-size:clamp(12px,1.7vw,16px); color:var(--ink-soft); text-align:center; padding-bottom:2px; }
+.cal-dow.sun { color:var(--emph); }
+.cal-cell { width:clamp(34px,6.2vw,54px); height:clamp(30px,5.4vw,46px); display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:clamp(15px,2.4vw,22px); color:var(--ink); background:var(--paper); border-radius:10px; cursor:pointer; transition:background .15s, transform .1s; user-select:none; }
+.cal-cell:hover { background:var(--coral-soft); }
+.cal-cell.empty { background:transparent; cursor:default; }
+.cal-cell.sel { background:var(--coral); color:#fff; animation:ka-pop .3s ease; }
+.cal-cell.diag-a { outline:3px solid var(--gold); outline-offset:-3px; }
+.cal-cell.diag-b { outline:3px solid var(--teal); outline-offset:-3px; }
+.cal-cell.center-cell { background:var(--emph); color:#fff; }
+.cal-info { display:flex; gap:clamp(8px,1.6vw,14px); flex-wrap:wrap; justify-content:center; min-height:2.2em; align-items:center; }
+.sum-chip { font-family:var(--f-title); font-size:var(--fs-caption); padding:clamp(5px,1vw,8px) clamp(12px,2.2vw,18px); border-radius:999px; background:#fff; border:2px solid var(--line); }
+.sum-chip.a { border-color:var(--gold); color:#B07E0A; }
+.sum-chip.b { border-color:var(--teal); color:var(--teal-deep); }
+.sum-chip.tot { border-color:var(--coral); color:var(--coral-deep); }
+.cal-msg { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--coral-deep); min-height:1.5em; text-align:center; }
+.cal-msg.wrong { color:var(--emph); }
+
+/* ── 사례 테이블 ── */
+.case-table { border-collapse:collapse; background:#fff; border-radius:16px; overflow:hidden; box-shadow:var(--shadow); font-size:var(--fs-caption); }
+.case-table th { font-family:var(--f-title); font-weight:400; background:var(--coral-soft); color:var(--coral-deep); padding:clamp(6px,1.1vw,10px) clamp(12px,2.2vw,20px); }
+.case-table td { font-family:var(--f-num); font-weight:800; text-align:center; padding:clamp(6px,1.1vw,10px) clamp(12px,2.2vw,20px); border-top:1px solid var(--line); }
+.case-count { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); }
+.case-count b { color:var(--coral-deep); font-size:1.2em; }
+
+/* ── 관찰·추측 선택 ── */
+.pick-list { display:flex; flex-direction:column; gap:clamp(7px,1.3vw,11px); width:100%; max-width:var(--mw-sm); }
+.pick-item { background:#fff; border:3px solid var(--line); border-radius:18px; padding:clamp(10px,1.8vw,15px) clamp(16px,3vw,24px); font-size:var(--fs-body); cursor:pointer; transition:border-color .2s, transform .12s; text-align:left; font-family:var(--f-body); color:var(--ink); }
+.pick-item:hover { border-color:var(--coral); }
+.pick-item.on { border-color:var(--coral); background:var(--coral-soft); animation:ka-pop .3s ease; }
+.pick-item .tag { font-family:var(--f-title); color:var(--coral-deep); margin-right:8px; }
+
+/* ── 구조 시각화 ── */
+.struct-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.5vw,13px); }
+.struct-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(6px,1.1vw,9px); }
+.struct-cell { width:clamp(76px,13vw,120px); height:clamp(52px,9vw,80px); background:#fff; border:3px solid var(--coral-soft); border-radius:14px; display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:clamp(19px,3vw,30px); color:var(--coral-deep); box-shadow:0 4px 0 var(--coral-soft); }
+.struct-cell.hl-a { border-color:var(--gold); box-shadow:0 4px 0 var(--gold); }
+.struct-cell.hl-b { border-color:var(--teal); box-shadow:0 4px 0 var(--teal-soft); }
+.struct-eq { font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center; }
+.struct-eq .star { color:var(--emph); }
+.arrow-note { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); background:#fff; border:2px solid var(--line); border-radius:999px; padding:5px 16px; cursor:pointer; transition:transform .15s; }
+.arrow-note.revealed { color:var(--coral-deep); border-color:var(--coral); animation:ka-glow 1.4s ease 1; }
+
+/* ── 문제 공통 ── */
+.q-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.5vw,13px); max-width:var(--mw-lg); width:100%; }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; font-weight:400; }
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-sm); }
+.mcq-opts.one-col { grid-template-columns:1fr; }
+.mcq-opt { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,1.9vw,15px); font-family:var(--f-title); font-size:var(--fs-body); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .2s; box-shadow:0 6px 0 var(--coral-soft); font-weight:400; }
+.mcq-opt:hover { border-color:var(--coral); }
+.mcq-opt:active { transform:translateY(4px); box-shadow:none; }
+.mcq-opt.correct { border-color:var(--coral-deep); background:var(--coral); color:#fff; box-shadow:0 6px 0 var(--coral-deep); animation:ka-pop .5s ease; }
+.mcq-opt.wrong { border-color:var(--emph); background:#FFE4DA; color:var(--ink); animation:ka-shake .35s; }
+.mcq-hint { font-family:var(--f-title); font-size:var(--fs-caption); color:#F57F17; background:#FFF8E1; border-radius:16px; padding:clamp(8px,1.5vw,12px) clamp(14px,2.6vw,20px); max-width:var(--mw-sm); text-align:center; display:none; }
+.mcq-hint.show { display:block; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); color:var(--coral-deep); min-height:1.4em; text-align:center; }
+.q-fb.wrong { color:var(--emph); }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:clamp(30px,5vw,54px); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:20px; padding:clamp(8px,1.5vw,13px) clamp(24px,4.4vw,42px); min-width:clamp(110px,20vw,180px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.q-pad { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(6px,1.2vw,10px); max-width:clamp(280px,56vw,460px); }
+.q-key { background:#fff; border:2px solid var(--line); border-radius:14px; padding:clamp(7px,1.4vw,11px) 0; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, background .15s; box-shadow:0 4px 0 var(--line); }
+.q-key:hover { background:var(--coral-soft); border-color:var(--coral); }
+.q-key:active { transform:translateY(3px); box-shadow:none; }
+.q-key.fn { background:#FFF8E1; color:#F57F17; font-family:var(--f-title); font-size:var(--fs-caption); border-color:#FFE08A; box-shadow:0 4px 0 #FFE08A; }
+
+/* ── 모양 실험실 ── */
+.shape-pick { display:flex; gap:clamp(8px,1.5vw,13px); flex-wrap:wrap; justify-content:center; }
+.shape-btn { background:#fff; border:3px solid var(--line); border-radius:16px; padding:clamp(8px,1.4vw,12px) clamp(12px,2.2vw,18px); cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:5px; transition:border-color .2s, transform .12s; }
+.shape-btn:hover { border-color:var(--coral); }
+.shape-btn.on { border-color:var(--coral); background:var(--coral-soft); }
+.shape-mini { display:grid; grid-template-columns:repeat(3, clamp(10px,1.8vw,15px)); gap:2px; }
+.shape-mini i { display:block; width:clamp(10px,1.8vw,15px); height:clamp(10px,1.8vw,15px); border-radius:3px; background:var(--line); }
+.shape-mini i.f { background:var(--coral); }
+.shape-name { font-family:var(--f-title); font-size:var(--fs-label); color:var(--ink); }
+.rule-build { display:flex; align-items:center; gap:clamp(6px,1.2vw,10px); flex-wrap:wrap; justify-content:center; font-family:var(--f-title); font-size:var(--fs-body); }
+.rule-slot { background:#fff; border:3px dashed var(--coral); border-radius:14px; min-width:clamp(72px,13vw,120px); padding:clamp(6px,1.1vw,9px) clamp(10px,1.8vw,14px); text-align:center; color:var(--coral-deep); font-family:var(--f-num); font-weight:800; cursor:pointer; }
+.rule-slot.filled { border-style:solid; background:var(--coral-soft); }
+.rule-choice { display:flex; gap:clamp(6px,1.1vw,9px); flex-wrap:wrap; justify-content:center; }
+.rule-chip { background:#fff; border:2px solid var(--line); border-radius:999px; padding:clamp(5px,1vw,8px) clamp(12px,2.2vw,18px); font-family:var(--f-title); font-size:var(--fs-caption); cursor:pointer; transition:transform .12s, border-color .15s; }
+.rule-chip:hover { border-color:var(--coral); transform:translateY(-2px); }
+
+/* ── 탐정 카드·마무리 ── */
+.detective-card { background:#fff; border:3px solid var(--gold); border-radius:26px; padding:clamp(16px,3vw,26px) clamp(20px,3.8vw,34px); max-width:var(--mw-sm); width:100%; box-shadow:0 8px 0 var(--mark); display:flex; flex-direction:column; gap:clamp(7px,1.3vw,11px); }
+.dc-row { display:flex; justify-content:space-between; gap:14px; font-size:var(--fs-caption); border-bottom:1px dashed var(--line); padding-bottom:6px; }
+.dc-row b { font-family:var(--f-title); font-weight:400; color:var(--coral-deep); }
+.dc-title { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; }
+.wrap-score { font-family:var(--f-num); font-weight:800; font-size:clamp(56px,10vw,110px); color:var(--coral-deep); line-height:1; }
+.wrap-msg { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); }
+.home-card { background:var(--teal-soft); border-radius:20px; padding:clamp(12px,2.2vw,18px) clamp(18px,3.2vw,26px); font-size:var(--fs-caption); color:var(--teal-deep); max-width:var(--mw-sm); text-align:center; line-height:1.55; }
+.next-mini { display:flex; gap:clamp(8px,1.5vw,13px); flex-wrap:wrap; justify-content:center; }
+.next-chip { font-family:var(--f-title); font-size:var(--fs-label); background:#fff; border:2px solid var(--line); border-radius:999px; padding:6px 16px; color:var(--ink-soft); }
+
+/* ═══ 공용 8종 (geo01 정의 문자 그대로 추출·주입 — 손으로 옮겨 적지 않는다) ═══ */
+.shadow-set { display:flex; gap:clamp(8px,2.4vw,20px); justify-content:center; flex-wrap:wrap; }
+.shadow-one { display:flex; flex-direction:column; align-items:center; gap:4px; }
+.shadow-tag { font-size:var(--fs-label); color:var(--ink-soft); font-family:var(--f-title); }
+.vox-btns { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+.vox-name { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink); }
+.lab-meter { display:flex; align-items:baseline; justify-content:center; gap:8px; margin:6px 0; }
+.lab-label { font-size:var(--fs-label); color:var(--ink-soft); font-family:var(--f-title); }
+.lab-count { font-family:var(--f-title); font-size:var(--fs-h1); color:var(--coral-deep); min-width:2.2em; text-align:center; }
+
+/* ═══ 모퉁이 격자 (pat01 cal-grid 파라미터 변형 — 칸 크기·열 수·골목 간격만 다르다. 셀 상태는 sel/center-cell/diag-a/diag-b/empty 그대로) ═══ */
+.cal-grid.road { --road-c:clamp(30px,5.2vw,48px); grid-template-columns:repeat(var(--road-n,4), var(--road-c)); justify-content:center; gap:clamp(5px,1.1vw,9px); }
+.cal-grid.road .cal-cell { width:var(--road-c); height:var(--road-c); border-radius:50%; font-size:clamp(12px,2vw,18px); cursor:default; }
+.cal-grid.road.tap .cal-cell { cursor:pointer; }
+.cal-grid.road.small { --road-c:clamp(20px,3.4vw,32px); gap:clamp(3px,0.7vw,6px); }
+.cal-grid.road.small .cal-cell { font-size:clamp(9px,1.5vw,13px); }
+.road-row { display:flex; gap:clamp(10px,2.6vw,26px); justify-content:center; align-items:flex-end; flex-wrap:wrap; }
+.road-one { display:flex; flex-direction:column; align-items:center; gap:5px; }
+.chip-row { display:flex; gap:clamp(5px,1vw,9px); justify-content:center; flex-wrap:wrap; margin:6px 0; }
+</style>
+</head>
+<body>
+<div class="ka">
+  <header class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 나가기</button>
+    <span class="ka-pill">케이영재</span>
+    <span class="ka-where"><b>격자 경로 연구소</b> · 경우의 수 연구소</span>
+    <div class="ka-bar" id="dots"></div>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </header>
+
+  <main class="ka-m" id="main">
+
+
+    <!-- 슬1 · 미션: 타이틀 -->
+    <section class="slide">
+      <span class="stage-badge">미션 1/3</span>
+      <h1 class="slide-title">🗺️ 격자 경로 연구소</h1>
+      <p class="slide-sub">경우의 수 연구소 · 측량 의뢰 1호</p>
+      <div class="mission-card">
+        골목이 반듯한 바둑판 마을이 있다.<br>
+        <strong>집</strong>에서 <strong>학교</strong>까지, 돌아가지 않고 <strong>오른쪽 아니면 아래</strong>로만 간다.<br>
+        길은 <strong>몇 가지</strong>나 있을까?
+      </div>
+    </section>
+
+    <!-- 슬2 · 미션: 두 갈래 길 -->
+    <section class="slide">
+      <span class="stage-badge">미션 2/3</span>
+      <h1 class="slide-title">걸음 수는 같은데</h1>
+      <p class="slide-sub">동그라미가 <b>모퉁이</b>다 · 집에서 학교까지 <b>네 걸음</b></p>
+      <div class="road-row">
+        <div class="road-one">
+          <span class="shadow-tag">길 ①</span>
+          <div class="cal-grid road" id="intro-a"></div>
+          <span class="sum-chip a">오른쪽·오른쪽·아래·아래</span>
+        </div>
+        <div class="road-one">
+          <span class="shadow-tag">길 ②</span>
+          <div class="cal-grid road" id="intro-b"></div>
+          <span class="sum-chip b">아래·오른쪽·아래·오른쪽</span>
+        </div>
+      </div>
+      <div class="concept-box">
+        둘 다 <strong>네 걸음</strong>이라 걸어간 거리는 똑같다. 그런데 지나온 모퉁이는 다르다.<br>
+        이렇게 <strong>거리가 같으면서 서로 다른 길</strong>이 몇 가지나 숨어 있을까?
+      </div>
+    </section>
+
+    <!-- 슬3 · 미션: 다섯 걸음 -->
+    <section class="slide">
+      <span class="stage-badge">미션 3/3</span>
+      <h1 class="slide-title">조사의 다섯 걸음</h1>
+      <ul class="goal-list">
+        <li><strong>탐험</strong> — 작은 마을에서 길을 직접 걸어 보며 서로 다른 길을 모은다.</li>
+        <li><strong>발견</strong> — 하나씩 세지 않고도 길 수를 알아내는 <strong>더하기 판</strong>을 만난다.</li>
+        <li><strong>도전</strong> — 가짜 보고서를 적발하고, <strong>공사 중인 모퉁이</strong>가 생기면 어떻게 되는지 알아낸다.</li>
+        <li><strong>창조</strong> — 공사 계획을 직접 짜서 길 수를 원하는 만큼 맞춘다.</li>
+        <li><strong>조사원의 규칙</strong> — 추측은 틀려도 좋다. 기록하는 것이 조사다.</li>
+      </ul>
+      <div class="concept-box">여기서는 <strong>빨리 맞히는 것</strong>보다 <strong>스스로 찾아내는 것</strong>이 점수다.</div>
+    </section>
+
+    <!-- 슬4 · 탐험: 길 걸어 모으기 (+15) -->
+    <section class="slide" data-q-id="explore">
+      <span class="stage-badge">탐험 1/3</span>
+      <h1 class="slide-title">직접 걸어 보자</h1>
+      <p class="slide-sub">단추를 눌러 한 모퉁이씩 간다 · 서로 다른 길 <b>3가지</b>를 모으면 +15</p>
+      <div class="cal-grid road tap" id="ex-board"></div>
+      <div class="vox-btns" id="ex-btns"></div>
+      <div class="lab-meter">
+        <span class="lab-label">모은 길</span><span class="lab-count" id="ex-count">0</span><span class="lab-label">가지</span>
+      </div>
+      <div class="chip-row" id="ex-cases"></div>
+      <p class="q-fb" id="fb-explore"></p>
+    </section>
+
+    <!-- 슬5 · 탐험: 여섯 가지 -->
+    <section class="slide">
+      <span class="stage-badge">탐험 2/3</span>
+      <h1 class="slide-title">이 마을의 길 전부</h1>
+      <p class="slide-sub">모퉁이 세 줄짜리 마을에서 걸을 수 있는 길</p>
+      <div class="road-row" id="all6"></div>
+      <div class="concept-box">
+        빠짐없이 세어 보면 <strong>여섯 가지</strong>다. 오른쪽 두 번·아래 두 번을 <strong>어떤 순서로 섞느냐</strong>가 곧 길이다.<br>
+        이 수를 잘 기억해 두자. 곧 다른 방법으로 <strong>같은 수</strong>를 만나게 된다.
+      </div>
+    </section>
+
+    <!-- 슬6 · 탐험: 마을이 커지면 -->
+    <section class="slide">
+      <span class="stage-badge">탐험 3/3</span>
+      <h1 class="slide-title">마을이 한 줄 커지면</h1>
+      <p class="slide-sub">모퉁이 네 줄짜리 마을 · 걸어 보며 몇 가지인지 세어 보자</p>
+      <div class="cal-grid road tap" id="big-board"></div>
+      <div class="vox-btns" id="big-btns"></div>
+      <div class="lab-meter">
+        <span class="lab-label">모은 길</span><span class="lab-count" id="big-count">0</span><span class="lab-label">가지</span>
+      </div>
+      <div class="concept-box">
+        한 줄 늘었을 뿐인데 손으로 세기가 벅차다. 빠뜨렸는지 겹쳤는지도 알기 어렵다.<br>
+        <strong>걷지 않고도</strong> 길 수를 알아내는 방법이 필요하다.
+      </div>
+    </section>
+
+    <!-- 슬7 · 발견: 추측 기록 (+10) -->
+    <section class="slide" data-q-id="conjecture">
+      <span class="stage-badge">발견 1/4</span>
+      <h1 class="slide-title">먼저 추측해 보자</h1>
+      <p class="q-prompt">마을이 커질 때 길 수는 어떻게 늘어날까? 마음에 드는 것을 골라 기록하자. (+10)</p>
+      <div class="pick-list" id="conj-list"></div>
+      <p class="q-fb" id="fb-conjecture"></p>
+      <div class="concept-box">추측은 맞히려고 하는 것이 아니다. <strong>기록해 두었다가 확인하려고</strong> 하는 것이다.</div>
+    </section>
+
+    <!-- 슬8 · 발견: 채우기 실험실 -->
+    <section class="slide">
+      <span class="stage-badge">발견 2/4</span>
+      <h1 class="slide-title">모퉁이마다 수를 적는 실험실</h1>
+      <p class="slide-sub">그 모퉁이까지 오는 <b>길 수</b>를 적는다 · 왼쪽 위부터 순서대로 눌러 보자</p>
+      <div class="cal-grid road tap" id="lab-board"></div>
+      <div class="chip-row" id="lab-chip"></div>
+      <div class="lab-meter">
+        <span class="lab-label">손으로 센 길</span><span class="lab-count" id="lab-hand">6</span>
+        <span class="lab-label">더해서 나온 수</span><span class="lab-count" id="lab-calc">—</span>
+      </div>
+      <div class="vox-btns" id="lab-btns"></div>
+      <div class="concept-box" id="lab-note">
+        집은 <strong>1</strong>이다. 가만히 있는 것도 한 가지 길이니까.<br>
+        모퉁이를 누르면 <strong>어디서 올 수 있는지</strong>가 칩으로 나타난다. 무엇이 보이는지 살펴보자.
+      </div>
+    </section>
+
+    <!-- 슬9 · 발견: q9 (+10) -->
+    <section class="slide" data-q-id="q9">
+      <span class="stage-badge">발견 3/4</span>
+      <h1 class="slide-title">물음표 모퉁이</h1>
+      <div class="q-stage">
+        <div class="cal-grid road" id="q9-board"></div>
+        <p class="q-prompt">물음표가 있는 모퉁이에 적힐 수는 얼마일까? (+10)</p>
+        <div class="q-display" id="disp-q9">&nbsp;</div>
+        <div class="q-pad" id="pad-q9"></div>
+        <div class="mcq-hint" data-hints='["그 모퉁이에 닿는 마지막 걸음은 어디에서 왔을까. 올 수 있는 곳은 딱 두 군데다.","왼쪽에서 온 길과 위쪽에서 온 길은 서로 겹치지 않는다. 그러니 둘을 합치면 된다.","왼쪽 모퉁이의 수와 위쪽 모퉁이의 수를 찾아 나란히 놓아 보자."]'></div>
+        <p class="q-fb" id="fb-q9"></p>
+      </div>
+    </section>
+
+    <!-- 슬10 · 발견: q10 (+10) -->
+    <section class="slide" data-q-id="q10">
+      <span class="stage-badge">발견 4/4</span>
+      <h1 class="slide-title">모퉁이 다섯 줄 마을</h1>
+      <div class="q-stage">
+        <div class="cal-grid road" id="q10-board"></div>
+        <p class="q-prompt">이 마을에서 집부터 학교까지 가는 길은 몇 가지일까? (+10)</p>
+        <div class="mcq-opts" id="opts-q10">
+          <button class="mcq-opt" data-a="0">25가지</button>
+          <button class="mcq-opt" data-a="1">40가지</button>
+          <button class="mcq-opt" data-a="2">56가지</button>
+          <button class="mcq-opt" data-a="3">70가지</button>
+        </div>
+        <div class="mcq-hint" data-hints='["한 줄 늘었다고 곱절이 되지는 않는다. 판을 채워 보면 알 수 있다.","첫 줄과 첫 열은 전부 1이다. 외길이니까. 나머지는 왼쪽과 위쪽을 더하면 된다.","네 줄 마을의 판을 옆으로 한 칸, 아래로 한 칸 넓혀 이어서 채워 보자."]'></div>
+        <p class="q-fb" id="fb-q10"></p>
+      </div>
+    </section>
+
+    <!-- 슬11 · 도전: 검증 3라운드 (+15) -->
+    <section class="slide" data-q-id="verify">
+      <span class="stage-badge">도전 1/4</span>
+      <h1 class="slide-title">이웃 마을 조사</h1>
+      <p class="slide-sub">마을 모양이 달라도 같은 판이 통하는지 확인하자 · 라운드마다 +5</p>
+      <p class="q-prompt" id="vf-prompt"></p>
+      <div class="cal-grid road" id="vf-board"></div>
+      <div class="q-display" id="disp-verify">&nbsp;</div>
+      <div class="q-pad" id="pad-verify"></div>
+      <div class="chip-row" id="vf-log"></div>
+      <div class="mcq-hint" data-hints='["마을 모양이 바뀌어도 규칙은 그대로다. 첫 줄과 첫 열은 1.","안쪽 모퉁이는 왼쪽 수와 위쪽 수를 더한다. 학교 모퉁이의 수가 곧 답이다.","머릿속으로 판을 그리기 어려우면 종이에 모퉁이를 그리고 수를 적어 보자."]'></div>
+      <p class="q-fb" id="fb-verify"></p>
+    </section>
+
+    <!-- 슬12 · 도전: 가짜 보고서 (+10) -->
+    <section class="slide" data-q-id="report">
+      <span class="stage-badge">도전 2/4</span>
+      <h1 class="slide-title">보고서 세 장</h1>
+      <p class="slide-sub">조사원 셋이 같은 마을을 조사해 왔다 · <b>규칙을 지킨 보고서는 한 장뿐</b>이다</p>
+      <div class="shadow-set" id="rep-boards"></div>
+      <p class="q-prompt">어긋난 곳이 없는 보고서는 어느 것일까? (+10)</p>
+      <div class="pick-list" id="rep-list"></div>
+      <div class="mcq-hint" data-hints='["첫 줄과 첫 열부터 살펴보자. 외길로만 갈 수 있는 모퉁이들이다.","안쪽 모퉁이를 하나씩 짚으며 왼쪽 수와 위쪽 수를 더해 보자.","한 곳이라도 더한 값과 다르면 그 보고서는 어긋난 것이다."]'></div>
+      <p class="q-fb" id="fb-report"></p>
+    </section>
+
+    <!-- 슬13 · 도전: 공사 실험실 (+10) -->
+    <section class="slide" data-q-id="block">
+      <span class="stage-badge">도전 3/4</span>
+      <h1 class="slide-title">공사 중인 모퉁이</h1>
+      <p class="slide-sub">모퉁이를 누르면 공사가 시작된다 · 공사 중인 모퉁이는 지날 수 없다</p>
+      <div class="cal-grid road tap" id="bl-board"></div>
+      <div class="lab-meter">
+        <span class="lab-label">공사</span><span class="lab-count" id="bl-used">0</span><span class="lab-label">곳 · 남은 길</span><span class="lab-count" id="bl-ways">20</span><span class="lab-label">가지</span>
+      </div>
+      <div class="vox-btns" id="bl-btns"></div>
+      <p class="q-prompt"><b>딱 한 곳</b>만 공사해서 남은 길을 <b>8가지</b>로 만들어 보자. (+10)</p>
+      <div class="mcq-hint" data-hints='["공사 중인 모퉁이의 수는 0이 된다. 나머지는 규칙 그대로 더하면 된다.","여러 곳을 눌러 보며 남은 길 수가 어떻게 달라지는지 살펴보자. 자리마다 크게 다르다.","학교에서 먼 구석보다, 많은 길이 지나다니는 곳을 막을수록 크게 줄어든다."]'></div>
+      <p class="q-fb" id="fb-block"></p>
+    </section>
+
+    <!-- 슬14 · 도전: 파스칼 (무점수) -->
+    <section class="slide">
+      <span class="stage-badge">도전 4/4</span>
+      <h1 class="slide-title">판을 비스듬히 보면</h1>
+      <p class="slide-sub">더하기 판의 <b>대각선</b>을 하나씩 따라가 보자</p>
+      <div class="cal-grid road" id="pas-board"></div>
+      <div class="vox-btns" id="pas-btns"></div>
+      <div class="chip-row" id="pas-chips"></div>
+      <div class="concept-box">
+        비스듬히 줄을 세우면 <strong>1 / 1 1 / 1 2 1 / 1 3 3 1</strong> — 양 끝은 늘 1이고, 가운데는 위 두 수를 더한 수다.<br>
+        수백 년 전 사람들이 <strong>삼각형 모양으로 쌓아 두던 수</strong>가 바로 이것이다.
+        골목 지도와 삼각형 수표가 <strong>같은 것</strong>이었던 셈이다.
+      </div>
+    </section>
+
+    <!-- 슬15 · 창조: 임무 가 (+10) -->
+    <section class="slide" data-q-id="createA">
+      <span class="stage-badge">창조 1/4</span>
+      <h1 class="slide-title">공사 계획서 · 임무 가</h1>
+      <p class="slide-sub">모퉁이 다섯 줄 마을 · 원래는 70가지</p>
+      <div class="cal-grid road tap" id="ca-board"></div>
+      <div class="lab-meter">
+        <span class="lab-label">공사</span><span class="lab-count" id="ca-used">0</span><span class="lab-label">곳 · 남은 길</span><span class="lab-count" id="ca-ways">70</span><span class="lab-label">가지</span>
+      </div>
+      <div class="vox-btns" id="ca-btns"></div>
+      <p class="q-prompt"><b>세 곳</b>을 공사해서 남은 길을 <b>정확히 20가지</b>로 만들어 보자. (+10)</p>
+      <div class="mcq-hint" data-hints='["집 가까이를 막으면 크게 줄고, 학교 옆 구석을 막으면 조금만 준다.","세 곳을 한꺼번에 정하지 말고 한 곳씩 놓으면서 남은 길 수를 살펴보자.","70에서 20까지 한 번에 가려 하지 말고, 두 곳으로 20에 가깝게 만든 뒤 마지막 한 곳으로 맞춰 보자."]'></div>
+      <p class="q-fb" id="fb-createA"></p>
+    </section>
+
+    <!-- 슬16 · 창조: 임무 나 (+10) -->
+    <section class="slide" data-q-id="createB">
+      <span class="stage-badge">창조 2/4</span>
+      <h1 class="slide-title">공사 계획서 · 임무 나</h1>
+      <p class="slide-sub">이번에는 <b>외길</b>을 만든다 · 공사는 적을수록 좋다</p>
+      <div class="cal-grid road tap" id="cb-board"></div>
+      <div class="lab-meter">
+        <span class="lab-label">공사</span><span class="lab-count" id="cb-used">0</span><span class="lab-label">곳 · 남은 길</span><span class="lab-count" id="cb-ways">70</span><span class="lab-label">가지</span>
+      </div>
+      <div class="vox-btns" id="cb-btns"></div>
+      <p class="q-prompt">남은 길이 <b>딱 한 가지</b>만 되게 공사해 보자. (+10)</p>
+      <div class="mcq-hint" data-hints='["외길이 되려면 갈림길이 하나도 남지 않아야 한다.","한 모퉁이에서 오른쪽과 아래 둘 다 갈 수 있으면 거기서 길이 갈린다. 그 갈림을 없애야 한다.","집에서 학교까지 지나갈 길을 먼저 하나 정하고, 그 길에서 새는 곳을 막아 보자."]'></div>
+      <p class="q-fb" id="fb-createB"></p>
+    </section>
+
+    <!-- 슬17 · 창조: 정리 -->
+    <section class="slide">
+      <span class="stage-badge">창조 3/4</span>
+      <h1 class="slide-title">오늘의 발견 정리</h1>
+      <ul class="goal-list">
+        <li><strong>거리가 같아도 길은 여럿</strong> — 걸음 수가 정해져 있어도, 오른쪽과 아래를 섞는 순서만큼 길이 갈린다.</li>
+        <li><strong>더하기 판</strong> — 한 모퉁이의 수는 <strong>왼쪽 수 + 위쪽 수</strong>다. 그 모퉁이에 닿는 마지막 걸음이 올 수 있는 곳이 딱 두 군데이고, 둘은 겹치지 않기 때문이다.</li>
+        <li><strong>첫 줄과 첫 열은 1</strong> — 벽을 따라가는 외길뿐이라 다른 방법이 없다.</li>
+        <li><strong>손으로 센 수와 더해서 나온 수가 같다</strong> — 세지 않고도 알아낸 것이 아니라, <strong>세는 일을 더하기로 바꾼 것</strong>이다.</li>
+        <li><strong>공사 중인 모퉁이는 0</strong> — 규칙을 바꿀 필요가 없다. 그 모퉁이의 수만 0으로 두면 판이 알아서 답을 낸다.</li>
+        <li><strong>어디를 막느냐가 전부</strong> — 학교 옆 구석을 막으면 한 가지만 사라지고, 한가운데를 막으면 열두 가지가 사라진다. 한 곳으로는 길을 아주 끊을 수 없다.</li>
+        <li><strong>비스듬히 보면 삼각형</strong> — 골목 지도의 대각선은 옛사람들이 쌓아 두던 삼각형 수표와 같은 수였다.</li>
+      </ul>
+    </section>
+
+    <!-- 슬18 · 마침 -->
+    <section class="slide">
+      <span class="stage-badge">마침</span>
+      <h1 class="slide-title">조사 결과</h1>
+      <div class="wrap-score" id="final-score">0</div>
+      <p class="wrap-msg" id="wrap-msg"></p>
+      <div class="agent-card" id="agent-card">
+        <div class="ac-row"><span class="ac-k">모은 길</span><span class="ac-v" id="dc-cases">0개</span></div>
+        <div class="ac-row"><span class="ac-k">기록한 추측</span><span class="ac-v" id="dc-conj">기록 없음</span></div>
+        <div class="ac-row"><span class="ac-k">적발한 보고서</span><span class="ac-v" id="dc-report">아직</span></div>
+        <div class="ac-row"><span class="ac-k">공사 계획</span><span class="ac-v" id="dc-plan">아직</span></div>
+      </div>
+      <div class="home-card">🏠 <b>집에서 하는 진짜 조사</b> — 모눈종이에 모퉁이를 여섯 줄씩 그리고, 왼쪽 위부터 수를 채워 보자. 오른쪽 아래 끝에 나오는 수가 그 마을의 길 수다. 그다음 아무 모퉁이나 하나 지우고 0으로 둔 채 다시 채워 보면, 그 한 곳이 길을 얼마나 데려갔는지 알 수 있다.</div>
+      <div class="next-mini">
+        <span class="next-chip">다음 의뢰 · 나무그림 설계사</span>
+        <span class="next-chip">다음 의뢰 · 주사위 합 지도</span>
+      </div>
+    </section>
+
+
+  </main>
+
+  <footer class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next" id="next" onclick="goNext()">다음 →</button>
+  </footer>
+</div>
+
+<script>
+/* ═══════════ KGiftedCore — 순수 로직 (DOM 무의존, 테스트 대상) ═══════════ */
+const KGiftedCore = {
+  LESSON: 'kg_math_l3_com01',
+  SCORE_PLAN: { explore: 15, conjecture: 10, q9: 10, q10: 10, verify: 15, report: 10, block: 10, create: 20 },
+
+  EX_W: 3, EX_H: 3,      // 탐험 마을 (모퉁이 3줄 × 3줄) — 길 6가지
+  LAB_W: 4, LAB_H: 4,    // 채우기 실험실 · 공사 실험실 — 길 20가지
+  BIG_W: 5, BIG_H: 5,    // q10 · 창조 마을 — 길 70가지
+
+  /* ── 자리 셈 ── */
+  idx(W, x, y) { return y * W + x; },
+  xOf(W, i) { return i % W; },
+  yOf(W, i) { return Math.floor(i / W); },
+  inBoard(W, H, x, y) { return x >= 0 && x < W && y >= 0 && y < H; },
+  homeIdx() { return 0; },
+  schoolIdx(W, H) { return W * H - 1; },
+  canBlock(W, H, i) { return i > 0 && i < W * H - 1; },   // 집·학교는 공사 금지
+
+  /* ── 더하기 판: 한 모퉁이의 수 = 왼쪽 수 + 위쪽 수 (차시가 가르치는 방법 그대로) ── */
+  fill(W, H, blocked) {
+    const b = blocked || [], g = new Array(W * H).fill(0);
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        const i = y * W + x;
+        if (b.indexOf(i) >= 0) { g[i] = 0; continue; }
+        if (x === 0 && y === 0) { g[i] = 1; continue; }
+        g[i] = (x > 0 ? g[i - 1] : 0) + (y > 0 ? g[i - W] : 0);
+      }
+    }
+    return g;
+  },
+  countPaths(W, H, blocked) { return this.fill(W, H, blocked)[W * H - 1]; },
+  // 그 모퉁이의 왼쪽 수·위쪽 수 (실험실 칩 표기용) — 없으면 null
+  parts(W, H, blocked, i) {
+    const g = this.fill(W, H, blocked), x = this.xOf(W, i), y = this.yOf(W, i);
+    return { left: x > 0 ? g[i - 1] : null, up: y > 0 ? g[i - W] : null, sum: g[i] };
+  },
+  // 채우기 순서 강제 — 왼쪽·위가 이미 채워진 모퉁이만 채울 수 있다
+  canFill(W, H, done, i) {
+    if (done.indexOf(i) >= 0) return false;
+    const x = this.xOf(W, i), y = this.yOf(W, i);
+    if (x > 0 && done.indexOf(i - 1) < 0) return false;
+    if (y > 0 && done.indexOf(i - W) < 0) return false;
+    return true;
+  },
+
+  /* ── 길 만들기 (탐험) — 걸음은 'R'(오른쪽) 또는 'D'(아래) ── */
+  walk(W, H, seq) {                       // 지나온 모퉁이 목록. 마을을 벗어나면 null
+    let x = 0, y = 0; const v = [0];
+    for (let k = 0; k < seq.length; k++) {
+      if (seq[k] === 'R') x++; else y++;
+      if (!this.inBoard(W, H, x, y)) return null;
+      v.push(y * W + x);
+    }
+    return v;
+  },
+  canStep(W, H, seq, s) { return this.walk(W, H, seq.concat([s])) !== null; },
+  isDone(W, H, seq) { const v = this.walk(W, H, seq); return !!v && v[v.length - 1] === W * H - 1; },
+  pathKey(seq) { return seq.join(''); },
+  allPaths(W, H) {                        // 전수 — 사례 정렬·개수 대조용
+    const out = [];
+    const rec = (x, y, seq) => {
+      if (x === W - 1 && y === H - 1) { out.push(seq.join('')); return; }
+      if (x < W - 1) rec(x + 1, y, seq.concat(['R']));
+      if (y < H - 1) rec(x, y + 1, seq.concat(['D']));
+    };
+    rec(0, 0, []);
+    return out;
+  },
+
+  /* ── 가짜 보고서 — 더하기 규칙을 어긴 모퉁이 찾기 ── */
+  auditGrid(W, H, g) {
+    const bad = [];
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        const i = y * W + x; let want;
+        if (x === 0 && y === 0) want = 1;
+        else if (x === 0) want = g[i - W];
+        else if (y === 0) want = g[i - 1];
+        else want = g[i - 1] + g[i - W];
+        if (g[i] !== want) bad.push(i);
+      }
+    }
+    return bad;
+  },
+  reportOK(W, H, g) { return this.auditGrid(W, H, g).length === 0; },
+
+  /* ── 파스칼 대각선 (슬14 일반화) — 판의 대각선 = 파스칼 삼각형 한 줄 ── */
+  diagonal(W, H, d) {
+    const g = this.fill(W, H, []), out = [];
+    for (let x = 0; x <= d; x++) {
+      const y = d - x;
+      if (x < W && y < H) out.push(g[y * W + x]);
+    }
+    return out;
+  },
+
+  /* ── 검사기 (헌법 §3-6 — 가짓수·개수만 돌려주고 공사할 모퉁이는 비공개) ── */
+  checkBlock(W, H, blocked, target) {         // 슬13 공사 미션: 한 곳만 막아 target가지
+    const b = blocked || [], ways = this.countPaths(W, H, b);
+    return { used: b.length, ways: ways, ok: b.length === 1 && ways === target };
+  },
+  checkPlanA(blocked, target, limit) {        // 창조 임무 가: 공사 limit곳으로 정확히 target가지
+    const b = blocked || [], ways = this.countPaths(this.BIG_W, this.BIG_H, b);
+    return { used: b.length, ways: ways, ok: b.length === limit && ways === target };
+  },
+  checkPlanB(blocked) {                       // 창조 임무 나: 외길 만들기
+    const b = blocked || [], ways = this.countPaths(this.BIG_W, this.BIG_H, b);
+    return { used: b.length, ways: ways, ok: ways === 1, lean: ways === 1 && b.length <= 4 };
+  },
+
+  scoreTotal() {
+    const p = this.SCORE_PLAN; let s = 0;
+    for (const k in p) s += p[k];
+    return s;
+  }
+};
+if (typeof module !== 'undefined' && typeof module.exports === 'object') module.exports = KGiftedCore;
+
+/* ═══════════ 엔진 (base: kg_math_l3_pat01 · pat02 공통부 · geo01 칩·숫자패드 계승 · 힌트 3단) ═══════════ */
+const TOTAL = 18;
+const LESSON_ID = 'kg_math_l3_com01';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+const HINT_MAX = 3;
+const BOARD_W = 4, BOARD_H = 4;
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+/* ═══ 화면 맞춤 — 슬라이드가 프레임보다 길면 균일 축소 (제목이 헤더 뒤로 잘리는 것 방지) ═══ */
+const FIT_MIN = 0.55, FIT_STEP = 0.04;
+let fitPending = false;
+function fitActiveSlide() {
+  const el = document.querySelector('.slide.active');
+  if (!el) return;
+  if (el.style.zoom) el.style.zoom = '';
+  if (!(window.CSS && CSS.supports && CSS.supports('zoom', '0.9'))) return;
+  if (!el.clientHeight) return;
+  let k = 1;
+  for (let i = 0; i < 16 && el.scrollHeight > el.clientHeight + 1; i++) {
+    k = Math.max(FIT_MIN, k - FIT_STEP);
+    el.style.zoom = k;
+    if (k === FIT_MIN) break;
+  }
+}
+function scheduleFit() {
+  if (fitPending) return;
+  fitPending = true;
+  requestAnimationFrame(() => { fitPending = false; fitActiveSlide(); });
+}
+window.addEventListener('resize', scheduleFit);
+window.addEventListener('orientationchange', scheduleFit);
+document.addEventListener('click', scheduleFit, true);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(scheduleFit);
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.querySelectorAll('#dots .ka-dot').forEach((d, i) => { d.classList.toggle('active', i === cur); d.classList.toggle('done', i < cur); });
+  document.getElementById('prev').disabled = cur === 0;
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.hintLevel >= HINT_MAX; }
+  else { hintBtn.disabled = true; }
+  if (cur === TOTAL - 1) {
+    document.getElementById('next').textContent = '마치기 →';
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('wrap-msg').textContent = wrapMsg(score);
+    saveProgress(true);
+  } else { document.getElementById('next').textContent = '다음 →'; }
+  if (cur === 4) renderCaseTable();
+  if (cur === 15) renderAgentCard();
+  fitActiveSlide();
+}
+function saveProgress(done) {
+  const data = { cur, score, done, startedAt, finishedAt: done ? Date.now() : null, qState, cases: exploreCases, conj: conjPicked, myRule: myRuleText };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function wrapMsg(s) {
+  if (s >= 100) return '전설의 길 조사원!';
+  if (s >= 80) return '대단한 조사였다!';
+  if (s >= 60) return '조사원의 눈이 자라났다!';
+  return '단서는 충분히 모았다. 다시 도전해도 좋다!';
+}
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+function showHint() {
+  const qid = currentQId(); if (!qid) return;
+  const st = getQState(qid); if (st.hintLevel >= HINT_MAX) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint'); if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[Math.min(st.hintLevel, hints.length) - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= HINT_MAX;
+}
+
+
+/* ═══ 칩·숫자패드 공통 (geo01 정의 문자 그대로 추출·주입) ═══ */
+function chip(elId, text, kind) {
+  const s = document.createElement('span');
+  s.className = 'sum-chip ' + (kind || 'a');
+  s.textContent = text;
+  document.getElementById(elId).appendChild(s);
+}
+function buildPad(padId, dispId, maxLen, onSubmit) {
+  const pad = document.getElementById(padId);
+  const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '←', '확인'];
+  let val = '';
+  const draw = () => { document.getElementById(dispId).textContent = val || '\u00A0'; };
+  keys.forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'q-key' + (k === '←' || k === '확인' ? ' fn' : '');
+    b.textContent = k;
+    b.addEventListener('click', () => {
+      if (k === '←') val = val.slice(0, -1);
+      else if (k === '확인') { if (val !== '') { const v = parseInt(val, 10); if (onSubmit(v) !== false) val = ''; } }
+      else if (val.length < maxLen) val += k;
+      draw();
+    });
+    pad.appendChild(b);
+  });
+  draw();
+}
+
+/* ═══════════ 모퉁이 격자 렌더 공통 (pat01 cal-grid 계승 · 자리 = 모퉁이, 상태 = sel/center-cell/diag-a/diag-b/empty) ═══════════ */
+/* opt = { nums:[…]|null, mark:{i:'a'|'b'}, blocked:[…], holes:[…], onTap, hideHome } */
+function renderRoad(elId, W, H, opt) {
+  const o = opt || {}, el = document.getElementById(elId);
+  if (!el) return;
+  el.style.setProperty('--road-n', W);
+  el.innerHTML = '';
+  const blocked = o.blocked || [], mark = o.mark || {};
+  for (let i = 0; i < W * H; i++) {
+    const d = document.createElement('div');
+    let cls = 'cal-cell';
+    if (blocked.indexOf(i) >= 0) cls += ' empty';
+    else if (i === 0) cls += ' sel';
+    else if (i === W * H - 1) cls += ' center-cell';
+    if (mark[i] === 'a') cls += ' diag-a';
+    if (mark[i] === 'b') cls += ' diag-b';
+    d.className = cls;
+    d.dataset.cell = i;
+    if (o.nums && o.nums[i] !== null && o.nums[i] !== undefined && blocked.indexOf(i) < 0) d.textContent = o.nums[i];
+    if (blocked.indexOf(i) >= 0) d.textContent = '';
+    if (o.onTap) d.addEventListener('click', () => o.onTap(i));
+    el.appendChild(d);
+  }
+}
+function stepBtn(wrapId, label, fn) {
+  const b = document.createElement('button');
+  b.className = 'cal-month-btn';
+  b.textContent = label;
+  b.addEventListener('click', fn);
+  document.getElementById(wrapId).appendChild(b);
+  return b;
+}
+function clearChips(id) { const e = document.getElementById(id); if (e) e.innerHTML = ''; }
+
+/* ═══════════ 슬2 견본 두 길 (읽기 전용) ═══════════ */
+(function() {
+  const W = KGiftedCore.EX_W, H = KGiftedCore.EX_H;
+  const mk = (seq) => {
+    const v = KGiftedCore.walk(W, H, seq), m = {};
+    for (const i of v) if (i !== 0 && i !== W * H - 1) m[i] = 'a';
+    return m;
+  };
+  renderRoad('intro-a', W, H, { mark: mk(['R', 'R', 'D', 'D']) });
+  renderRoad('intro-b', W, H, { mark: mk(['D', 'R', 'D', 'R']) });
+})();
+
+/* ═══════════ 슬4 탐험 — 걸어서 길 모으기 (+15) ═══════════ */
+const exploreCases = [];
+let exSeq = [];
+(function() {
+  const W = KGiftedCore.EX_W, H = KGiftedCore.EX_H, NEED = 3;
+  function draw() {
+    const v = KGiftedCore.walk(W, H, exSeq), m = {};
+    for (let k = 0; k < v.length; k++) m[v[k]] = (k === v.length - 1) ? 'b' : 'a';
+    renderRoad('ex-board', W, H, { mark: m });
+    document.getElementById('ex-count').textContent = exploreCases.length;
+  }
+  function record() {
+    const key = KGiftedCore.pathKey(exSeq);
+    if (exploreCases.indexOf(key) >= 0) {
+      document.getElementById('fb-explore').textContent = '이미 걸어 본 길이다. 다른 순서로 섞어 보자.';
+      return;
+    }
+    exploreCases.push(key);
+    document.getElementById('ex-count').textContent = exploreCases.length;   // 도착 즉시 갱신
+    const nice = exSeq.map(s => s === 'R' ? '→' : '↓').join(' ');
+    chip('ex-cases', nice, exploreCases.length % 2 ? 'a' : 'b');
+    const st = getQState('explore');
+    if (!st.solved && exploreCases.length >= NEED) {
+      st.solved = true;
+      addScore(KGiftedCore.SCORE_PLAN.explore);
+      document.getElementById('fb-explore').textContent = '서로 다른 길 ' + NEED + '가지를 모았다. +15 — 남은 길도 마저 찾아보자.';
+    } else if (exploreCases.length === KGiftedCore.allPaths(W, H).length) {
+      document.getElementById('fb-explore').textContent = '이 마을의 길을 하나도 빠짐없이 모았다.';
+    } else {
+      document.getElementById('fb-explore').textContent = '새로운 길을 기록했다. 지금까지 ' + exploreCases.length + '가지.';
+    }
+    saveProgress(false);
+  }
+  stepBtn('ex-btns', '→ 오른쪽', () => {
+    if (!KGiftedCore.canStep(W, H, exSeq, 'R')) { document.getElementById('fb-explore').textContent = '마을 밖으로는 갈 수 없다.'; return; }
+    exSeq.push('R'); draw();
+    if (KGiftedCore.isDone(W, H, exSeq)) { record(); exSeq = []; setTimeout(draw, 450); }
+  });
+  stepBtn('ex-btns', '↓ 아래', () => {
+    if (!KGiftedCore.canStep(W, H, exSeq, 'D')) { document.getElementById('fb-explore').textContent = '마을 밖으로는 갈 수 없다.'; return; }
+    exSeq.push('D'); draw();
+    if (KGiftedCore.isDone(W, H, exSeq)) { record(); exSeq = []; setTimeout(draw, 450); }
+  });
+  stepBtn('ex-btns', '한 걸음 되돌리기', () => { exSeq.pop(); draw(); });
+  stepBtn('ex-btns', '집으로', () => { exSeq = []; draw(); });
+  draw();
+})();
+
+/* ═══════════ 슬5 여섯 가지 전부 (읽기 전용) ═══════════ */
+(function() {
+  const W = KGiftedCore.EX_W, H = KGiftedCore.EX_H, wrap = document.getElementById('all6');
+  KGiftedCore.allPaths(W, H).forEach((key, n) => {
+    const seq = key.split(''), v = KGiftedCore.walk(W, H, seq), m = {};
+    for (const i of v) if (i !== 0 && i !== W * H - 1) m[i] = 'a';
+    const one = document.createElement('div');
+    one.className = 'road-one';
+    const tag = document.createElement('span');
+    tag.className = 'shadow-tag';
+    tag.textContent = '길 ' + (n + 1);
+    const g = document.createElement('div');
+    g.className = 'cal-grid road small';
+    g.id = 'all6-' + n;
+    one.appendChild(tag); one.appendChild(g);
+    wrap.appendChild(one);
+    renderRoad('all6-' + n, W, H, { mark: m });
+  });
+})();
+
+/* ═══════════ 슬6 네 줄 마을 — 손세기의 한계 ═══════════ */
+let bigSeq = [];
+const bigCases = [];
+(function() {
+  const W = KGiftedCore.LAB_W, H = KGiftedCore.LAB_H;
+  function draw() {
+    const v = KGiftedCore.walk(W, H, bigSeq), m = {};
+    for (let k = 0; k < v.length; k++) m[v[k]] = (k === v.length - 1) ? 'b' : 'a';
+    renderRoad('big-board', W, H, { mark: m });
+    document.getElementById('big-count').textContent = bigCases.length;
+  }
+  function step(s) {
+    if (!KGiftedCore.canStep(W, H, bigSeq, s)) return;
+    bigSeq.push(s); draw();
+    if (KGiftedCore.isDone(W, H, bigSeq)) {
+      const key = KGiftedCore.pathKey(bigSeq);
+      if (bigCases.indexOf(key) < 0) bigCases.push(key);
+      document.getElementById('big-count').textContent = bigCases.length;
+      bigSeq = []; setTimeout(draw, 450);
+    }
+  }
+  stepBtn('big-btns', '→ 오른쪽', () => step('R'));
+  stepBtn('big-btns', '↓ 아래', () => step('D'));
+  stepBtn('big-btns', '한 걸음 되돌리기', () => { bigSeq.pop(); draw(); });
+  stepBtn('big-btns', '집으로', () => { bigSeq = []; draw(); });
+  draw();
+})();
+
+/* ═══════════ 슬7 추측 기록 (+10) ═══════════ */
+const CONJ_TEXT = [
+  '마을이 한 줄 커지면 길 수는 두 배가 된다',
+  '길 수는 모퉁이 개수만큼이다',
+  '한 모퉁이의 길 수는 이웃한 모퉁이들의 길 수를 더한 값이다',
+  '마을이 커지면 길 수는 한 가지씩 늘어난다'
+];
+let conjPicked = '';
+(function() {
+  const list = document.getElementById('conj-list');
+  CONJ_TEXT.forEach((t, n) => {
+    const b = document.createElement('button');
+    b.className = 'pick-item';
+    b.textContent = t;
+    b.addEventListener('click', () => {
+      const st = getQState('conjecture');
+      if (st.solved) return;
+      st.solved = true;
+      conjPicked = t;
+      Array.from(list.children).forEach(c => { c.style.opacity = '0.45'; });
+      b.style.opacity = '1';
+      b.classList.add('picked');
+      addScore(KGiftedCore.SCORE_PLAN.conjecture);
+      document.getElementById('fb-conjecture').textContent = '추측을 기록했다. +10 — 다음 실험실에서 직접 확인해 보자.';
+      saveProgress(false);
+    });
+    list.appendChild(b);
+  });
+})();
+
+/* ═══════════ 슬8 채우기 실험실 ═══════════ */
+const labDone = [];
+(function() {
+  const W = KGiftedCore.LAB_W, H = KGiftedCore.LAB_H;
+  const g = KGiftedCore.fill(W, H, []);
+  function draw() {
+    const nums = new Array(W * H).fill(null);
+    for (const i of labDone) nums[i] = g[i];
+    renderRoad('lab-board', W, H, { nums: nums, onTap: tap });
+    document.getElementById('lab-calc').textContent = labDone.indexOf(W * H - 1) >= 0 ? g[W * H - 1] : '—';
+  }
+  function tap(i) {
+    if (!KGiftedCore.canFill(W, H, labDone, i)) {
+      clearChips('lab-chip');
+      chip('lab-chip', '왼쪽과 위쪽을 먼저 채워야 한다', 'b');
+      return;
+    }
+    labDone.push(i);
+    const p = KGiftedCore.parts(W, H, [], i);
+    clearChips('lab-chip');
+    if (p.left === null && p.up === null) chip('lab-chip', '집 = 1', 'a');
+    else if (p.left === null) chip('lab-chip', '위쪽 ' + p.up + ' → ' + p.sum, 'a');
+    else if (p.up === null) chip('lab-chip', '왼쪽 ' + p.left + ' → ' + p.sum, 'a');
+    else {
+      chip('lab-chip', '왼쪽 ' + p.left, 'a');
+      chip('lab-chip', '위쪽 ' + p.up, 'b');
+      chip('lab-chip', '= ' + p.sum, 'tot');
+    }
+    draw();
+    if (labDone.indexOf(W * H - 1) >= 0) {
+      document.getElementById('lab-note').innerHTML =
+        '판을 다 채웠다. 학교 모퉁이에 <strong>' + g[W * H - 1] + '</strong>이 적혔다.<br>' +
+        '작은 마을에서 <strong>손으로 세어 얻은 6</strong>과, 그 마을 판을 채워 나온 수가 같았다. ' +
+        '<strong>세는 일을 더하기로 바꾼 것</strong>이다.';
+    }
+    scheduleFit();
+  }
+  stepBtn('lab-btns', '처음부터', () => { labDone.length = 0; clearChips('lab-chip'); draw(); });
+  stepBtn('lab-btns', '작은 마을로 확인', () => {
+    const s = KGiftedCore.fill(KGiftedCore.EX_W, KGiftedCore.EX_H, []);
+    clearChips('lab-chip');
+    chip('lab-chip', '모퉁이 세 줄 마을 판의 끝 수 = ' + s[KGiftedCore.EX_W * KGiftedCore.EX_H - 1], 'tot');
+  });
+  draw();
+})();
+
+/* ═══════════ 슬9 q9 — 물음표 모퉁이 (+10) ═══════════ */
+(function() {
+  const W = KGiftedCore.BIG_W, H = KGiftedCore.BIG_H;
+  const g = KGiftedCore.fill(W, H, []);
+  const TARGET = KGiftedCore.idx(W, 2, 3);          // 왼쪽 4 · 위쪽 6 → 10
+  const nums = new Array(W * H).fill(null);
+  for (let y = 0; y <= 3; y++) for (let x = 0; x < W; x++) {
+    const i = y * W + x;
+    if (y === 3 && x > 2) continue;
+    nums[i] = (i === TARGET) ? '?' : g[i];
+  }
+  renderRoad('q9-board', W, H, { nums: nums, mark: { [TARGET]: 'b' } });
+  buildPad('pad-q9', 'disp-q9', 3, (v) => {
+    const st = getQState('q9');
+    if (st.solved) return true;
+    const fb = document.getElementById('fb-q9');
+    if (v === g[TARGET]) {
+      st.solved = true;
+      addScore(KGiftedCore.SCORE_PLAN.q9);
+      fb.textContent = '맞다. 왼쪽 ' + g[TARGET - 1] + '과 위쪽 ' + g[TARGET - W] + '을 더한 수다. +10';
+      saveProgress(false);
+    } else if (v === g[TARGET - 1] * g[TARGET - W]) {
+      fb.textContent = '두 수를 곱했구나. 왼쪽에서 온 길과 위쪽에서 온 길은 서로 겹치지 않으니 합치는 것이다.';
+    } else if (v === g[TARGET - W] - g[TARGET - 1]) {
+      fb.textContent = '뺐구나. 길이 사라지는 것이 아니라 두 갈래가 모이는 것이다.';
+    } else {
+      fb.textContent = '다시 살펴보자. 그 모퉁이에 닿는 마지막 걸음은 어디에서 왔을까.';
+    }
+    return true;
+  });
+})();
+
+/* ═══════════ 슬10 q10 — 다섯 줄 마을 (+10) ═══════════ */
+(function() {
+  const W = KGiftedCore.BIG_W, H = KGiftedCore.BIG_H;
+  renderRoad('q10-board', W, H, {});
+  const ANS = 3, VAL = [25, 40, 56, 70];
+  const opts = document.getElementById('opts-q10');
+  Array.from(opts.querySelectorAll('.mcq-opt')).forEach(btn => {
+    btn.addEventListener('click', () => {
+      const st = getQState('q10');
+      if (st.solved) return;
+      const a = parseInt(btn.dataset.a, 10), fb = document.getElementById('fb-q10');
+      if (a === ANS) {
+        st.solved = true;
+        btn.classList.add('correct');
+        addScore(KGiftedCore.SCORE_PLAN.q10);
+        fb.textContent = '맞다. 판을 채우면 학교 모퉁이에 70이 적힌다. +10';
+        saveProgress(false);
+      } else {
+        btn.classList.add('wrong');
+        if (VAL[a] === 40) fb.textContent = '네 줄 마을의 20을 두 배 한 값이구나. 한 줄 늘 때마다 곱절이 되지는 않는다.';
+        else if (VAL[a] === 25) fb.textContent = '모퉁이 개수를 센 값이다. 우리가 세는 것은 모퉁이가 아니라 길이다.';
+        else fb.textContent = '아깝다. 판을 한 줄씩 늘려 가며 다시 채워 보자.';
+      }
+    });
+  });
+})();
+
+/* ═══════════ 슬11 검증 3라운드 (+5 × 3) ═══════════ */
+const VF = [
+  { w: 4, h: 2, name: '납작 마을' },
+  { w: 4, h: 4, name: '네모 마을' },
+  { w: 6, h: 3, name: '기다란 마을' }
+];
+let vfRound = 0;
+(function() {
+  function draw() {
+    if (vfRound >= VF.length) return;
+    const r = VF[vfRound];
+    document.getElementById('vf-prompt').textContent =
+      '라운드 ' + (vfRound + 1) + '/3 · ' + r.name + ' — 모퉁이가 가로 ' + r.w + '줄, 세로 ' + r.h + '줄이다. 길은 몇 가지일까? (+5)';
+    renderRoad('vf-board', r.w, r.h, {});
+    scheduleFit();
+  }
+  buildPad('pad-verify', 'disp-verify', 4, (v) => {
+    const st = getQState('verify');
+    if (vfRound >= VF.length) return true;
+    const r = VF[vfRound], want = KGiftedCore.countPaths(r.w, r.h, []);
+    const fb = document.getElementById('fb-verify');
+    if (v === want) {
+      addScore(5);
+      chip('vf-log', r.name + ' ' + want + '가지', 'a');
+      vfRound++;
+      if (vfRound >= VF.length) {
+        st.solved = true;
+        fb.textContent = '세 마을 모두 통과했다. 네모 마을 20보다 기다란 마을 21이 더 많았다 — 넓어 보인다고 길이 많은 것은 아니다.';
+        document.getElementById('vf-prompt').textContent = '조사 완료 · 세 마을 전부 확인했다.';
+        renderRoad('vf-board', VF[VF.length - 1].w, VF[VF.length - 1].h, { nums: KGiftedCore.fill(VF[VF.length - 1].w, VF[VF.length - 1].h, []) });
+      } else {
+        fb.textContent = '맞다. +5 — 다음 마을로.';
+        draw();
+      }
+      saveProgress(false);
+    } else {
+      fb.textContent = '다시 세어 보자. 첫 줄과 첫 열은 1, 안쪽은 왼쪽 + 위쪽이다.';
+    }
+    return true;
+  });
+  draw();
+})();
+
+/* ═══════════ 슬12 가짜 보고서 (+10) ═══════════ */
+const REPORTS = [
+  { name: '보고서 가', g: [1, 1, 1, 1, 1, 2, 3, 4, 1, 3, 6, 10, 1, 4, 10, 20] },
+  { name: '보고서 나', g: [1, 1, 1, 1, 1, 2, 3, 4, 1, 3, 7, 10, 1, 4, 11, 21] },
+  { name: '보고서 다', g: [1, 1, 2, 1, 1, 2, 4, 5, 1, 3, 7, 12, 1, 4, 11, 23] }
+];
+const REPORT_OK = 0;
+(function() {
+  const W = 4, H = 4, wrap = document.getElementById('rep-boards'), list = document.getElementById('rep-list');
+  REPORTS.forEach((r, n) => {
+    const one = document.createElement('div');
+    one.className = 'road-one';
+    const tag = document.createElement('span');
+    tag.className = 'shadow-tag';
+    tag.textContent = r.name;
+    const gdiv = document.createElement('div');
+    gdiv.className = 'cal-grid road small';
+    gdiv.id = 'rep-' + n;
+    one.appendChild(tag); one.appendChild(gdiv);
+    wrap.appendChild(one);
+    renderRoad('rep-' + n, W, H, { nums: r.g });
+
+    const b = document.createElement('button');
+    b.className = 'pick-item';
+    b.textContent = r.name;
+    b.addEventListener('click', () => {
+      const st = getQState('report');
+      if (st.solved) return;
+      const fb = document.getElementById('fb-report');
+      if (n === REPORT_OK) {
+        st.solved = true;
+        b.classList.add('picked');
+        addScore(KGiftedCore.SCORE_PLAN.report);
+        fb.textContent = '맞다. 나머지 두 장은 더한 값과 다른 모퉁이가 섞여 있었다. +10';
+        saveProgress(false);
+      } else {
+        b.style.opacity = '0.45';
+        fb.textContent = '이 보고서에는 왼쪽 수와 위쪽 수를 더한 값과 다른 모퉁이가 있다. 다시 짚어 보자.';
+      }
+    });
+    list.appendChild(b);
+  });
+})();
+
+/* ═══════════ 슬13 공사 실험실 (+10) ═══════════ */
+const blBlocked = [];
+(function() {
+  const W = KGiftedCore.LAB_W, H = KGiftedCore.LAB_H, TARGET = 8;
+  function draw() {
+    renderRoad('bl-board', W, H, { blocked: blBlocked, nums: KGiftedCore.fill(W, H, blBlocked), onTap: tap });
+    const r = KGiftedCore.checkBlock(W, H, blBlocked, TARGET);
+    document.getElementById('bl-used').textContent = r.used;
+    document.getElementById('bl-ways').textContent = r.ways;
+  }
+  function tap(i) {
+    if (!KGiftedCore.canBlock(W, H, i)) {
+      document.getElementById('fb-block').textContent = '집과 학교는 공사할 수 없다.';
+      return;
+    }
+    const k = blBlocked.indexOf(i);
+    if (k >= 0) blBlocked.splice(k, 1); else blBlocked.push(i);
+    draw();
+    const st = getQState('block'), r = KGiftedCore.checkBlock(W, H, blBlocked, TARGET), fb = document.getElementById('fb-block');
+    if (!st.solved && r.ok) {
+      st.solved = true;
+      addScore(KGiftedCore.SCORE_PLAN.block);
+      fb.textContent = '해냈다. 딱 한 곳으로 열두 가지를 데려갔다. +10 — 다른 자리도 눌러 보며 얼마나 달라지는지 살펴보자.';
+      saveProgress(false);
+    } else if (!st.solved) {
+      fb.textContent = r.used === 1 ? '공사 한 곳 · 남은 길 ' + r.ways + '가지. 자리를 옮겨 보자.'
+                                    : '한 곳만 공사해야 한다. 지금은 ' + r.used + '곳이다.';
+    }
+  }
+  stepBtn('bl-btns', '공사 전부 취소', () => { blBlocked.length = 0; draw(); });
+  draw();
+})();
+
+/* ═══════════ 슬14 파스칼 대각선 (무점수) ═══════════ */
+let pasD = 0;
+(function() {
+  const W = 6, H = 6, g = KGiftedCore.fill(W, H, []);
+  function draw() {
+    const mark = {};
+    for (let x = 0; x <= pasD; x++) {
+      const y = pasD - x;
+      if (x < W && y < H) mark[y * W + x] = 'a';
+    }
+    renderRoad('pas-board', W, H, { nums: g, mark: mark });
+    clearChips('pas-chips');
+    for (let d = 0; d <= pasD; d++) chip('pas-chips', KGiftedCore.diagonal(W, H, d).join(' '), d === pasD ? 'tot' : 'a');
+    scheduleFit();
+  }
+  stepBtn('pas-btns', '다음 대각선', () => { if (pasD < 5) { pasD++; draw(); } });
+  stepBtn('pas-btns', '처음부터', () => { pasD = 0; draw(); });
+  draw();
+})();
+
+/* ═══════════ 창조 산출물 기록 (엔진 saveProgress 규약) ═══════════ */
+let myRuleText = '아직';
+
+/* ═══════════ 슬15 창조 임무 가 (+10) ═══════════ */
+const caBlocked = [];
+(function() {
+  const W = KGiftedCore.BIG_W, H = KGiftedCore.BIG_H, TARGET = 20, LIMIT = 3;
+  function draw() {
+    renderRoad('ca-board', W, H, { blocked: caBlocked, nums: KGiftedCore.fill(W, H, caBlocked), onTap: tap });
+    const r = KGiftedCore.checkPlanA(caBlocked, TARGET, LIMIT);
+    document.getElementById('ca-used').textContent = r.used;
+    document.getElementById('ca-ways').textContent = r.ways;
+  }
+  function tap(i) {
+    if (!KGiftedCore.canBlock(W, H, i)) { document.getElementById('fb-createA').textContent = '집과 학교는 공사할 수 없다.'; return; }
+    const k = caBlocked.indexOf(i);
+    if (k >= 0) caBlocked.splice(k, 1); else caBlocked.push(i);
+    draw();
+    const st = getQState('createA'), r = KGiftedCore.checkPlanA(caBlocked, TARGET, LIMIT), fb = document.getElementById('fb-createA');
+    if (!st.solved && r.ok) {
+      st.solved = true;
+      addScore(10);
+      myRuleText = '임무 가 · 세 곳 공사로 20가지';
+      fb.textContent = '공사 계획서 승인. 세 곳으로 정확히 20가지를 만들었다. +10';
+      saveProgress(false);
+    } else if (!st.solved) {
+      if (r.used > LIMIT) fb.textContent = '공사가 ' + r.used + '곳이다. 세 곳으로 줄여 보자.';
+      else fb.textContent = '공사 ' + r.used + '곳 · 남은 길 ' + r.ways + '가지.' + (r.used === LIMIT ? ' 20에 닿도록 자리를 옮겨 보자.' : '');
+    }
+  }
+  stepBtn('ca-btns', '공사 전부 취소', () => { caBlocked.length = 0; draw(); });
+  draw();
+})();
+
+/* ═══════════ 슬16 창조 임무 나 (+10) ═══════════ */
+const cbBlocked = [];
+let cbBest = 0;
+(function() {
+  const W = KGiftedCore.BIG_W, H = KGiftedCore.BIG_H;
+  function draw() {
+    renderRoad('cb-board', W, H, { blocked: cbBlocked, nums: KGiftedCore.fill(W, H, cbBlocked), onTap: tap });
+    const r = KGiftedCore.checkPlanB(cbBlocked);
+    document.getElementById('cb-used').textContent = r.used;
+    document.getElementById('cb-ways').textContent = r.ways;
+  }
+  function tap(i) {
+    if (!KGiftedCore.canBlock(W, H, i)) { document.getElementById('fb-createB').textContent = '집과 학교는 공사할 수 없다.'; return; }
+    const k = cbBlocked.indexOf(i);
+    if (k >= 0) cbBlocked.splice(k, 1); else cbBlocked.push(i);
+    draw();
+    const st = getQState('createB'), r = KGiftedCore.checkPlanB(cbBlocked), fb = document.getElementById('fb-createB');
+    if (r.ok && (cbBest === 0 || r.used < cbBest)) cbBest = r.used;
+    if (r.ok) myRuleText = (myRuleText === '아직' ? '' : myRuleText + ' / ') + '임무 나 · 공사 ' + r.used + '곳으로 외길';
+    if (!st.solved && r.ok) {
+      st.solved = true;
+      addScore(10);
+      fb.textContent = r.lean
+        ? '외길 완성. 게다가 ' + r.used + '곳뿐이다 — 이보다 적게는 만들 수 없다. +10'
+        : '외길 완성. 공사 ' + r.used + '곳을 썼다. +10 — 더 적은 공사로도 되는지 도전해 보자.';
+      saveProgress(false);
+    } else if (st.solved && r.ok) {
+      fb.textContent = r.lean ? '이번에는 ' + r.used + '곳 — 이보다 적게는 만들 수 없다.' : '외길 · 공사 ' + r.used + '곳. 더 줄여 보자.';
+    } else if (!st.solved) {
+      fb.textContent = r.ways === 0 ? '길이 아주 끊겼다. 학교에 닿을 수는 있어야 한다.'
+                                    : '공사 ' + r.used + '곳 · 남은 길 ' + r.ways + '가지. 갈림이 남아 있다.';
+    }
+  }
+  stepBtn('cb-btns', '공사 전부 취소', () => { cbBlocked.length = 0; draw(); });
+  draw();
+})();
+
+/* ═══════════ 슬18 조사 카드 ═══════════ */
+function renderAgentCard() {
+  document.getElementById('dc-cases').textContent = exploreCases.length + '개';
+  document.getElementById('dc-conj').textContent = conjPicked || '기록 없음';
+  document.getElementById('dc-report').textContent = getQState('report').solved ? REPORTS[REPORT_OK].name + ' 확인' : '아직';
+  const a = getQState('createA').solved, b = getQState('createB').solved;
+  document.getElementById('dc-plan').textContent = (a && b) ? '임무 가·나 모두 승인' : a ? '임무 가 승인' : b ? '임무 나 승인' : '아직';
+}
+
+/* ═══════════ 초기화 ═══════════ */
+(function() {
+  const dots = document.getElementById('dots');
+  for (let i = 0; i < TOTAL; i++) {
+    const d = document.createElement('span');
+    d.className = 'ka-dot';
+    d.addEventListener('click', () => { cur = i; updateUI(); });
+    dots.appendChild(d);
+  }
+  updateUI();
+})();
+
+</script>
+</body>
+</html>
