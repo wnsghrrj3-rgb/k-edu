@@ -101,17 +101,17 @@ ALTER TABLE ma_submissions ENABLE ROW LEVEL SECURITY;
 
 -- 교사 id 조회(케이박스와 동일 규약)
 CREATE OR REPLACE FUNCTION ma_my_teacher_id() RETURNS uuid
-LANGUAGE sql STABLE SECURITY DEFINER AS $$
+LANGUAGE sql STABLE SECURITY DEFINER AS $fn$
   SELECT id FROM teachers WHERE user_id = auth.uid() LIMIT 1;
-$$;
+$fn$;
 
 -- 학생 프로필 조회
 CREATE OR REPLACE FUNCTION ma_my_profile() RETURNS TABLE(pid uuid, ccid uuid)
-LANGUAGE sql STABLE SECURITY DEFINER AS $$
+LANGUAGE sql STABLE SECURITY DEFINER AS $fn$
   SELECT id, class_code_id FROM student_profiles WHERE user_id = auth.uid() LIMIT 1;
-$$;
+$fn$;
 
-DO $$ BEGIN
+DO $do$ BEGIN
   -- 교사: 자기 학급 루틴 전권
   DROP POLICY IF EXISTS p_ma_routines_teacher ON ma_routines;
   CREATE POLICY p_ma_routines_teacher ON ma_routines FOR ALL TO authenticated
@@ -144,7 +144,7 @@ DO $$ BEGIN
   CREATE POLICY p_ma_subs_teacher ON ma_submissions FOR ALL TO authenticated
     USING (class_code_id IN (SELECT id FROM class_codes WHERE teacher_id = ma_my_teacher_id()))
     WITH CHECK (class_code_id IN (SELECT id FROM class_codes WHERE teacher_id = ma_my_teacher_id()));
-END $$;
+END $do$;
 
 -- =============================================
 -- [RPC] ma_set_routine — 교사: 요일 시간표 저장
@@ -152,7 +152,7 @@ END $$;
 CREATE OR REPLACE FUNCTION ma_set_routine(
   p_class_code_id uuid, p_grade int, p_days jsonb,
   p_question_count int DEFAULT 10, p_active boolean DEFAULT true
-) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER AS $$
+) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER AS $fn$
 DECLARE v_tid uuid; v_old_grade int; v_reset boolean := false;
 BEGIN
   v_tid := ma_my_teacher_id();
@@ -182,7 +182,7 @@ BEGIN
 
   RETURN jsonb_build_object('status','ok', 'grade_changed', v_reset,
                             'from_grade', v_old_grade, 'to_grade', p_grade);
-END $$;
+END $fn$;
 GRANT EXECUTE ON FUNCTION ma_set_routine(uuid,int,jsonb,int,boolean) TO authenticated;
 
 -- =============================================
@@ -196,14 +196,14 @@ GRANT EXECUTE ON FUNCTION ma_set_routine(uuid,int,jsonb,int,boolean) TO authenti
 --   kedu/quiz/test_hanja_morning.js 가 이 파일을 직접 읽어 잡아낸다.
 -- =============================================
 CREATE OR REPLACE FUNCTION ma_max_step(p_subject text, p_grade int)
-RETURNS int LANGUAGE sql IMMUTABLE AS $$
+RETURNS int LANGUAGE sql IMMUTABLE AS $fn$
   SELECT CASE
     WHEN p_subject = 'hanja' AND p_grade IN (1,2,3) THEN 50
     WHEN p_subject = 'hanja' AND p_grade IN (4,5)   THEN 75
     WHEN p_subject = 'hanja' AND p_grade  = 6       THEN 100
     ELSE 50
   END;
-$$;
+$fn$;
 GRANT EXECUTE ON FUNCTION ma_max_step(text,int) TO authenticated;
 
 -- =============================================
@@ -213,7 +213,7 @@ GRANT EXECUTE ON FUNCTION ma_max_step(text,int) TO authenticated;
 --   ★ 진도 상승은 세션이 "처음 만들어질 때" 딱 한 번 일어난다(중복 상승 없음).
 -- =============================================
 CREATE OR REPLACE FUNCTION ma_today(p_class_code_id uuid DEFAULT NULL)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER AS $$
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER AS $fn$
 DECLARE
   v_cc uuid; v_pid uuid; v_is_teacher boolean := false;
   v_r ma_routines%ROWTYPE; v_dow text; v_subject text;
@@ -308,7 +308,7 @@ BEGIN
     'my', COALESCE(v_sub, jsonb_build_object('submitted', false)),
     'is_teacher', v_is_teacher
   );
-END $$;
+END $fn$;
 GRANT EXECUTE ON FUNCTION ma_today(uuid) TO authenticated;
 
 -- =============================================
@@ -316,7 +316,7 @@ GRANT EXECUTE ON FUNCTION ma_today(uuid) TO authenticated;
 --   다시 풀면 갱신하되, 교사가 이미 채점한 건 채점 결과를 지우지 않는다.
 -- =============================================
 CREATE OR REPLACE FUNCTION ma_submit(p_session_id uuid, p_payload jsonb)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER AS $$
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER AS $fn$
 DECLARE v_pid uuid; v_cc uuid; v_scc uuid;
 BEGIN
   SELECT pid, ccid INTO v_pid, v_cc FROM ma_my_profile();
@@ -343,7 +343,7 @@ BEGIN
     status       = ma_submissions.status;
 
   RETURN jsonb_build_object('status','ok');
-END $$;
+END $fn$;
 GRANT EXECUTE ON FUNCTION ma_submit(uuid, jsonb) TO authenticated;
 
 -- =============================================
@@ -351,7 +351,7 @@ GRANT EXECUTE ON FUNCTION ma_submit(uuid, jsonb) TO authenticated;
 --   교실에서 제일 먼저 필요한 정보가 "안 낸 아이 명단"이라 명단 전체를 왼쪽 조인한다.
 -- =============================================
 CREATE OR REPLACE FUNCTION ma_board(p_session_id uuid)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER AS $$
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER AS $fn$
 DECLARE v_tid uuid; v_cc uuid; v_res jsonb; v_sess ma_sessions%ROWTYPE;
 BEGIN
   v_tid := ma_my_teacher_id();
@@ -396,7 +396,7 @@ BEGIN
   ) t;
 
   RETURN v_res;
-END $$;
+END $fn$;
 GRANT EXECUTE ON FUNCTION ma_board(uuid) TO authenticated;
 
 -- =============================================
@@ -406,7 +406,7 @@ GRANT EXECUTE ON FUNCTION ma_board(uuid) TO authenticated;
 CREATE OR REPLACE FUNCTION ma_grade(
   p_session_id uuid, p_student_profile_id uuid DEFAULT NULL,
   p_score numeric DEFAULT NULL, p_feedback text DEFAULT NULL
-) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER AS $$
+) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER AS $fn$
 DECLARE v_tid uuid; v_cc uuid; v_n int;
 BEGIN
   v_tid := ma_my_teacher_id();
@@ -433,7 +433,7 @@ BEGIN
   END IF;
 
   RETURN jsonb_build_object('status','ok','updated',v_n);
-END $$;
+END $fn$;
 GRANT EXECUTE ON FUNCTION ma_grade(uuid, uuid, numeric, text) TO authenticated;
 
 -- =============================================
@@ -442,7 +442,7 @@ GRANT EXECUTE ON FUNCTION ma_grade(uuid, uuid, numeric, text) TO authenticated;
 --   아침활동의 값어치는 하루치가 아니라 이 누적에 있다.
 -- =============================================
 CREATE OR REPLACE FUNCTION ma_stats(p_student_profile_id uuid DEFAULT NULL, p_days int DEFAULT 60)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER AS $$
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER AS $fn$
 DECLARE v_pid uuid; v_cc uuid; v_tid uuid; v_res jsonb;
 BEGIN
   SELECT pid, ccid INTO v_pid, v_cc FROM ma_my_profile();
@@ -482,5 +482,5 @@ BEGIN
     AND se.run_date >= (now() AT TIME ZONE 'Asia/Seoul')::date - p_days;
 
   RETURN v_res;
-END $$;
+END $fn$;
 GRANT EXECUTE ON FUNCTION ma_stats(uuid, int) TO authenticated;

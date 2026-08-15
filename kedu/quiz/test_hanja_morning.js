@@ -91,7 +91,9 @@ D.grades().forEach(function (g) {
 var fs = require('fs'), path = require('path');
 var sqlPath = path.join(__dirname, '..', '..', 'sql', 'setup_morning.sql');
 var sql = fs.readFileSync(sqlPath, 'utf8');
-var body = (sql.match(/CREATE OR REPLACE FUNCTION ma_max_step[\s\S]*?\$\$;/) || [''])[0];
+// 종료 표지는 달러 태그 이름을 가리지 않는다($$ · $fn$ 등 무엇이든 받는다).
+// 태그를 바꿨다고 검사기가 조용히 눈감는 일이 없도록.
+var body = (sql.match(/CREATE OR REPLACE FUNCTION ma_max_step[\s\S]*?\$[A-Za-z_]*\$;/) || [''])[0];
 T(!!body, 'SQL 에서 ma_max_step 을 못 찾음');
 
 var sqlMax = {};

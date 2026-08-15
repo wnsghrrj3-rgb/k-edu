@@ -26,7 +26,7 @@
 | 16 | setup_seats_select_lockdown.sql | 2026-07-11 | student_seats 공개 SELECT 잠금 (대점검 3차) |
 | 17 | setup_classwork4.sql | 2026-07-13 | 케이박스 증분 4 — 활동 시스템 편입 (cw_items.kind에 'activity') |
 | 18 | setup_kbattle.sql | 2026-07-13 | 케이배틀 — kb_profiles(+xp 강등방지 트리거·link_code) · kb_answers · RLS 8종 |
-| 19 | setup_morning.sql | 2026-08-14 (실행 확인) | 아침활동(케이모닝) — ma_routines·ma_progress·ma_sessions·ma_submissions + RPC 8종(ma_max_step 포함) · RLS 6종. 재실행 안전(테이블 IF NOT EXISTS · 함수 OR REPLACE · 정책 DROP IF EXISTS 선행). **한자 회차 확장 시 ma_max_step 도 함께 고쳐야 함** — 어긋나면 kedu/quiz/test_hanja_morning.js 가 잡는다 |
+| 19 | setup_morning.sql | 2026-08-14 최초 · **2026-08-15 재실행 확인** | 아침활동(케이모닝) — ma_routines·ma_progress·ma_sessions·ma_submissions + RPC 8종(ma_max_step 포함) · RLS 6종. 재실행 안전(테이블 IF NOT EXISTS · 함수 OR REPLACE · 정책 DROP IF EXISTS 선행). **한자 회차 확장 시 ma_max_step 도 함께 고쳐야 함** — 어긋나면 kedu/quiz/test_hanja_morning.js 가 잡는다. **2026-08-15 재실행분** = 진도 단위 회차→글자 전환(ma_max_step 5/5/5/8/8/10 → 50/50/50/75/75/100) + ma_today 의 lesson_key c형식(g4_hanja_c015). 검산 `SELECT ma_max_step('hanja',1),('hanja',4),('hanja',6)` → 50/75/100 확인함. 함께 돌린 마이그레이션: `UPDATE ma_progress SET next_step=1, cycle=1 WHERE subject='hanja';` + 당일 hanja 세션 DELETE(진도 의미가 바뀌어 리셋 필수였음). 달러 인용을 $$ → $fn$/$do$ 로 교체 — SQL Editor 붙여넣기가 중간에 잘렸을 때 미종료 지점이 드러나게 하려는 것 |
 
 ## 새 SQL 추가 룰
 
