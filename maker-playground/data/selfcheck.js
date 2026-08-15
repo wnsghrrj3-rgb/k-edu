@@ -162,7 +162,7 @@ window.MK_SELFCHECK = (() => {
       proves: '내보내기가 실제로 쓰는 코덱·치수를 인코더에 물어 지원을 확정한다',
       blind: 'jsdom 에 VideoEncoder 가 없다 — 저장소 전체가 isConfigSupported 를 한 번도 안 불렀다' },
     { id: 'muxer-reach', round: 'R38', title: 'MP4 모듈이 이 망에서 닿나',
-      proves: '먹서를 CDN 에서 실제로 받아온다 — 못 받으면 내보내기가 통째로 죽는다',
+      proves: '먹서를 우리 서버에서 실제로 받아온다 — 못 받으면 내보내기가 통째로 죽는다(R124: 자체 1순위·CDN 폴백)',
       blind: 'jsdom 은 네트워크를 안 탄다. 학교 방화벽은 여기서만 드러난다' },
     { id: 'enc-bytes', round: 'R38', title: '★ 진짜 MP4 바이트가 나온다',
       proves: '2프레임을 실제로 인코딩·먹싱해 ftyp 박스가 있는 MP4 가 손에 잡힌다',
@@ -565,7 +565,19 @@ window.MK_SELFCHECK = (() => {
      사건이다(computed opacity 0 · animationName "none"). 문법의 심판은 브라우저의
      CSS 파서 하나뿐 — jsdom 의 cssstyle 은 animation 단축선언을 실해결하지 않아
      깨진 문자열도 조용히 통과시킨다. */
-  function probeAnim(win, out) {
+  /* ---------- 프레임 대기 (R125) ----------
+     스타일을 바꾼 뒤 **같은 틱에서** 애니 효과값을 읽으면 안 된다. 브라우저는
+     새 타이밍으로 애니를 다음 프레임에 다시 표집하므로, 그 자리에서 읽으면
+     인라인 기저값이 나온다. rAF 가 없는 환경은 타이머로 내려간다. */
+  const nextFrames = (win, k) => new Promise((res) => {
+    const raf = typeof win.requestAnimationFrame === 'function'
+      ? win.requestAnimationFrame.bind(win) : (fn) => win.setTimeout(fn, 16);
+    let i = 0;
+    const step = () => { if (++i >= k) return res(); raf(step); };
+    raf(step);
+  });
+
+  async function probeAnim(win, out) {
     const P = win.MK_PLAY;
     if (!P || !P.sceneHTML) { out.push(R('anim-live', 'fail', 'MK_PLAY.sceneHTML 이 없어요')); return; }
     let host = null;
@@ -585,17 +597,40 @@ window.MK_SELFCHECK = (() => {
           'animationName = ' + (name || '(빈값)')));
         return;
       }
-      /* 등장이 끝난 시점으로 강제로 밀어 「그래서 보이나」를 본다.
-         선언 개수만큼 음수 지연을 맞춰 준다(개수가 어긋나면 브라우저가 통째로 무시). */
       const n = name.split(',').length;
-      node.style.animationDelay = new Array(n).fill('-30s').join(',');
+
+      /* ★ R125 — 등장을 끝낸 「뒤에」 읽는다.
+         종전엔 animationDelay 를 밀고 **같은 틱에서** opacity 를 읽었다. 그 값은
+         애니 효과값이 아니라 인라인 기저값(opacity:0)이라, **제품이 멀쩡해도
+         불합격이 떴다** — 준호 실기기 1차에서 실제로 거짓 경보를 냈다.
+         거짓 경보는 무해하지 않다. 다음에 진짜 결함이 떠도 「또 검사기겠지」로
+         넘어가면 이 페이지 전체가 값을 잃는다.
+
+         가능하면 Web Animations 로 **의도를 그대로** 말한다(끝내라). 없으면
+         종전처럼 지연을 밀되, 둘 다 프레임을 기다린 뒤에 읽는다. */
+      let how;
+      const anims = typeof node.getAnimations === 'function' ? node.getAnimations() : null;
+      if (anims && anims.length) {
+        anims.forEach((a) => { try { a.finish(); } catch (_) {} });
+        how = `getAnimations ${anims.length}개 finish`;
+      } else {
+        node.style.animationDelay = new Array(n).fill('-30s').join(',');
+        how = `지연 -30s ×${n}`;
+      }
+
+      if (await rope(nextFrames(win, 2), 3000) === ROPE) {
+        out.push(R('anim-live', 'skip', '화면 갱신이 시간 안에 안 왔어요 — 배경 탭이면 앞으로 두고 다시 검사해 주세요',
+          '불합격이 아니라 미확정이에요'));
+        return;
+      }
+
       const op = parseFloat(win.getComputedStyle(node).opacity);
       if (isFinite(op) && op >= 0.9)
         out.push(R('anim-live', 'pass', '애니가 실해결됐고 등장 뒤 요소가 보여요',
-          `${n}개 선언 · 등장 후 불투명도 ${op.toFixed(2)}`));
+          `${n}개 선언 · 등장 후 불투명도 ${op.toFixed(2)} · ${how}`));
       else
         out.push(R('anim-live', 'fail', '등장이 끝났는데 요소가 투명해요 — 빈 장면으로 재생됩니다',
-          `불투명도 ${isFinite(op) ? op.toFixed(2) : '?'} / ${name}`));
+          `불투명도 ${isFinite(op) ? op.toFixed(2) : '?'} / ${name} · ${how}`));
     } catch (e) { out.push(R('anim-live', 'fail', '탐침 실패', e.message)); }
     finally { if (host) host.remove(); }
   }
@@ -665,8 +700,19 @@ window.MK_SELFCHECK = (() => {
                 덮으면 그게 헛통과다(§5②).
          둘 다 → 불합격. 종전과 같다. */
     let muxOK = !!win.Mp4Muxer;
-    if (muxOK) out.push(R('muxer-reach', 'pass', 'MP4 모듈이 이미 올라와 있어요'));
-    else {
+    if (muxOK) {
+      /* ★ R125 — R124 가 빠뜨린 자리. 먹서가 이미 올라와 있으면(재검사·앞선 내보내기)
+         종전엔 무조건 합격이라 **자체/CDN 을 한 번도 안 가렸다** — R124 를 통째로
+         만든 이유가 그 구분인데 정작 그 정보를 버리고 있었다(준호 실기기 1차에서
+         이 분기가 떴다). 출처를 알면 말하고, 모르면 **모른다고 말한다.** */
+      const from0 = typeof V.muxerSource === 'function' ? V.muxerSource() : null;
+      if (from0 === 'self') out.push(R('muxer-reach', 'pass', '우리 서버에서 받은 MP4 모듈이 이미 올라와 있어요', SPEC.muxerUrl));
+      else if (from0 === 'cdn') out.push(R('muxer-reach', 'fail',
+        '이미 올라와 있는 MP4 모듈이 우리 서버가 아니라 바깥 CDN 것이에요 — 다음 망에서 죽어요',
+        `1순위가 실패했어요: ${SPEC.muxerUrl}`));
+      else out.push(R('muxer-reach', 'skip', 'MP4 모듈이 이미 올라와 있어 어디서 받았는지 못 가렸어요',
+        '새로고침하고 검사를 한 번만 돌리면 자체/CDN 이 갈려요 — 불합격이 아니라 미확정이에요'));
+    } else {
       const t0 = Date.now();
       const got = await rope(V.loadMuxer(), 10000);
       const ms = Date.now() - t0;
@@ -770,7 +816,7 @@ window.MK_SELFCHECK = (() => {
     try { probeFocus(win, out); } catch (e) { out.push(R('focus-origin', 'fail', '초점 탐침이 예외로 죽었어요', e.message)); }
     try { probeRot(win, out); } catch (e) { out.push(R('rot-nest', 'fail', '회전 탐침이 예외로 죽었어요', e.message)); }
     try { probeTouch(win, out); } catch (e) { out.push(R('touch-hit', 'fail', '히트 탐침이 예외로 죽었어요', e.message)); }
-    try { probeAnim(win, out); } catch (e) { out.push(R('anim-live', 'fail', '애니 탐침이 예외로 죽었어요', e.message)); }
+    try { await probeAnim(win, out); } catch (e) { out.push(R('anim-live', 'fail', '애니 탐침이 예외로 죽었어요', e.message)); }
     try { await probeExport(win, out); } catch (e) { out.push(R('enc-support', 'fail', '내보내기 탐침이 예외로 죽었어요', e.message)); }
     return { results: out, skipped: '' };
   }
