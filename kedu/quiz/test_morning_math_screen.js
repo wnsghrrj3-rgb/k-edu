@@ -87,6 +87,32 @@ jobs.push(win.__tf('g3_math_u1_l02').then(function (f) {
     '단원 키 해석이 깨짐: ' + JSON.stringify(f));
 }));
 
+/* ⑤ 교사 화면 — 수학이 시간표에 노출되는가 */
+(function () {
+  var thtml = fs.readFileSync(path.join(ROOT, 'morning', 'teacher.html'), 'utf8');
+  T(/\[\s*'math'\s*,\s*'수학'\s*\]/.test(thtml), '교사 화면 SUBJECTS 에 수학이 없음');
+  T(thtml.indexOf("SUBJECT_UNIT") >= 0 && /math\s*:\s*'하루 한 차시'/.test(thtml),
+    '교사 화면 과목별 진도 단위 문구(하루 한 차시)가 없음');
+  T(thtml.indexOf("SUBJECT_KO[(r.days||{}).mon") < 0,
+    '배너 요약이 아직 월요일 과목 하나로 전체를 대표하고 있음');
+
+  // routineTxt 를 떼어내 그대로 행동 검사(화면 코드와 검사가 갈라지지 않게)
+  var fm = thtml.match(/function routineTxt\(r\)\{[\s\S]*?\n  \}/);
+  T(!!fm, '교사 화면에서 routineTxt 를 못 찾음');
+  if (fm) {
+    var tdom = new JSDOM('<body></body>', { runScripts: 'outside-only' });
+    tdom.window.eval(
+      "var SUBJECT_KO={hanja:'한자',math:'수학'};var SUBJECT_UNIT={hanja:'하루 한 자',math:'하루 한 차시'};"
+      + fm[0] + "; this.__rt = routineTxt;");
+    var rt = tdom.window.__rt;
+    T(rt({ days: { mon: 'hanja', tue: 'hanja' } }) === '한자 <b>하루 한 자</b>', 'routineTxt 단일 한자 문구 오류');
+    T(rt({ days: { mon: 'math' } }) === '수학 <b>하루 한 차시</b>', 'routineTxt 단일 수학 문구 오류');
+    var mix = rt({ days: { mon: 'hanja', tue: 'hanja', thu: 'math', fri: 'math' } });
+    T(mix.indexOf('월·화요일 한자') >= 0 && mix.indexOf('목·금요일 수학') >= 0, 'routineTxt 혼합 문구 오류: ' + mix);
+    T(rt({}) === '아직 과목이 없어요', 'routineTxt 빈 시간표 문구 오류');
+  }
+})();
+
 Promise.all(jobs).then(function () {
   console.log('\n아침수학 화면 배선 — ' + pass + ' PASS / ' + fail + ' FAIL');
   process.exit(fail ? 1 : 0);

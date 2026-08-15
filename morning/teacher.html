@@ -102,8 +102,18 @@ td.name{font-weight:700}
   var db = getKeduDb();
   var wrap = document.getElementById('wrap');
   var DOWS = [['mon','월'],['tue','화'],['wed','수'],['thu','목'],['fri','금']];
-  var SUBJECTS = [['','—'],['hanja','한자']];
+  var SUBJECTS = [['','—'],['hanja','한자'],['math','수학']];
   var SUBJECT_KO = { hanja:'한자', english:'영어', math:'수학', korean:'국어' };
+  var SUBJECT_UNIT = { hanja:'하루 한 자', math:'하루 한 차시' };
+  /* 요일 시간표를 사람 말로 — 과목이 하나면 '한자 하루 한 자', 섞이면 '월·화 한자, 목·금 수학' */
+  function routineTxt(r){
+    var days = (r&&r.days)||{}, order=['mon','tue','wed','thu','fri'], KO={mon:'월',tue:'화',wed:'수',thu:'목',fri:'금'};
+    var by={}; order.forEach(function(d){ var s=days[d]; if(s){ (by[s]=by[s]||[]).push(KO[d]); } });
+    var subs=Object.keys(by);
+    if(!subs.length) return '아직 과목이 없어요';
+    if(subs.length===1){ var s=subs[0]; return (SUBJECT_KO[s]||s)+' <b>'+(SUBJECT_UNIT[s]||'하루 한 걸음')+'</b>'; }
+    return subs.map(function(s){ return by[s].join('·')+'요일 '+(SUBJECT_KO[s]||s)+'('+(SUBJECT_UNIT[s]||'')+')'; }).join(', ');
+  }
   var ALL_HANJA = { mon:'hanja', tue:'hanja', wed:'hanja', thu:'hanja', fri:'hanja' };
   var state = { teacher:null, classes:[], cc:null, routine:null, board:null };
 
@@ -199,12 +209,14 @@ td.name{font-weight:700}
       + '<div class="big">✅</div>'
       + '<b>아침활동이 돌아가고 있어요</b>'
       + '<span><b>'+(r.grade||c.grade||1)+'학년</b> 과정으로, '+esc(dayTxt)+'요일 아침마다 '
-        + esc(SUBJECT_KO[(r.days||{}).mon||'hanja']||'한자')+' <b>하루 한 자</b>와 확인 문제 '
+        + routineTxt(r)+'와 확인 문제 '
         + (r.question_count||10)+'개가 저절로 올라가요.</span>'
       + '<div style="margin-top:10px"><span style="font-size:12.5px;color:var(--sub)">학생들은 이 코드로 우리 반에 들어와요</span><br>'
       + '<span class="code-chip">'+esc(c.code||'')+'</span></div>'
-      + '<div style="margin-top:12px"><a class="btn ghost" style="text-decoration:none;display:inline-block" '
-        + 'href="/morning/chars.html?grade='+(r.grade||c.grade||1)+'">오늘 나가는 한자 보기</a></div>'
+      + (Object.keys(r.days||{}).some(function(d){ return (r.days||{})[d]==='hanja'; })
+          ? '<div style="margin-top:12px"><a class="btn ghost" style="text-decoration:none;display:inline-block" '
+            + 'href="/morning/chars.html?grade='+(r.grade||c.grade||1)+'">오늘 나가는 한자 보기</a></div>'
+          : '')
       + '</div>'
       + (state.classes.length>1
           ? '<div class="card" style="padding:14px 18px"><label style="margin:0 0 6px">학급</label><select id="cc">'+classOpts+'</select></div>'
@@ -223,7 +235,7 @@ td.name{font-weight:700}
       + [1,2,3,4,5,6].map(function(g){
           return '<option value="'+g+'"'+(g===(r.grade||c.grade||1)?' selected':'')+'>'+g+'학년</option>'; }).join('')
       + '</select>'
-      + '<div class="hint" style="margin:6px 0 14px">학년마다 배우는 한자가 통째로 달라요. '
+      + '<div class="hint" style="margin:6px 0 14px">학년마다 배우는 내용이 통째로 달라요. '
         + '바꾸면 <b>진도가 1회차부터 다시</b> 시작해요.</div>'
       + '<label>문항 수</label><input type="number" id="qc" min="5" max="20" value="'+(r.question_count||10)+'" style="width:100px">'
       + '<div style="margin-top:12px"><button class="btn" id="save">저장</button></div>'
@@ -239,7 +251,7 @@ td.name{font-weight:700}
       // 학년을 바꾸면 진도가 1회차로 되돌아간다(서버가 같은 트랜잭션에서 처리). 되돌릴 수 없으니 한 번 묻는다.
       if (newGrade !== oldGrade &&
           !confirm(oldGrade+'학년 → '+newGrade+'학년으로 바꿀까요?\n\n'
-                   +'배우는 한자가 통째로 달라져서, 진도가 1회차부터 다시 시작해요.\n'
+                   +'배우는 내용이 통째로 달라져서, 진도가 1회차부터 다시 시작해요.\n'
                    +'지금까지 제출한 기록은 그대로 남아요.')) return;
       db.rpc('ma_set_routine', {
         p_class_code_id: state.cc, p_grade: newGrade,
