@@ -143,6 +143,16 @@ window.MK_SELFCHECK = (() => {
     { id: 'rot-pan', round: 'R119', title: 'pan 은 제외(종전)',
       proves: '회전+pan 은 축 분리 대상이 아니라 종전 단일 구조 그대로다',
       blind: '실렌더 구조 확인 — 방출 문자열이 아니라 실제 DOM 을 본다' },
+    /* R121 — 준호가 실기기에서 직접 잡아낸 결함의 회귀 감시.
+       R88·R90·R95 는 전부 실브라우저에서만 드러났고, 지금 스위트는 「처방의 흔적」
+       (scrollIntoView 호출·CSS 선언 문자열)까지만 지킨다. 증상 자체를 밟는 눈은
+       준호 하나였다 — 같은 결함이 돌아와도 아무 불이 안 켜진다. */
+    { id: 'touch-hit', round: 'R95', title: '손가락이 핸들을 잡는다',
+      proves: '핸들의 실히트 영역이 손끝 크기만큼 실제로 넓다(보이는 8px 이 아니라)',
+      blind: 'jsdom 엔 elementFromPoint 도 가상요소(::after) 레이아웃도 없다' },
+    { id: 'anim-live', round: 'R90', title: '등장 애니가 살아서 해결된다',
+      proves: '브라우저가 애니 선언을 실제로 받아들였고 끝나면 요소가 보인다',
+      blind: 'jsdom 은 animation 단축선언을 실해결하지 않는다(콤마 하나로 죽던 자리)' },
   ];
 
   /* 눈으로만 확인되는 것 — 기계가 흉내내면 거짓이 된다. 정직하게 분리 */
@@ -302,6 +312,21 @@ window.MK_SELFCHECK = (() => {
   }
   const PX = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 
+  /* ---------- 히트 무대 (R121) ----------
+     stageEl 은 left:-99999px 라 elementFromPoint 가 닿지 않는다. 히트 판정만은
+     화면 안에 있어야 브라우저가 답한다 — 투명하게 띄우고 동기로 재고 즉시 걷는다.
+     (opacity:0 은 히트가 살아 있고 visibility:hidden 은 죽는다 — 여기선 전자라야 한다.) */
+  function stageHit(win, html) {
+    const d = win.document;
+    const host = d.createElement('div');
+    host.setAttribute('data-sc-hit', '1');
+    host.style.cssText = `position:fixed;left:0;top:0;width:${STAGE.w}px;height:${STAGE.h}px;`
+      + 'opacity:0;z-index:2147483647;overflow:visible';
+    host.innerHTML = html;
+    d.body.appendChild(host);
+    return host;
+  }
+
   /* ---------- 탐침: R117 ---------- */
   function probeFocus(win, out) {
     const P = win.MK_PLAY, F = win.MK_FOCAL;
@@ -413,6 +438,93 @@ window.MK_SELFCHECK = (() => {
     finally { if (host) host.remove(); }
   }
 
+  /* ---------- 탐침: R95 회귀 (손가락 히트) ----------
+     R95 는 「핸들 8px vs 손가락 접촉면 ~40px」이었다. 처방의 한 축이 순수 CSS
+     (.ws-hd::after 34px 히트패드 + coarse 확대)인데, 그 CSS 가 실제로 히트 영역을
+     만드는지는 브라우저만 안다. 분업이 이렇게 선다:
+       · jsdom(R95 T6) = workspace 가 .ws-hd 클래스를 붙인다
+       · 여기(R121)   = 그 클래스가 실제로 손끝만 한 과녁을 만든다
+     둘이 합쳐져야 「손가락이 핸들을 잡는다」가 증명된다. */
+  const HIT_MIN = 12;                      /* 이 거리까지 빗나가도 잡혀야 한다(px) */
+  const HIT_OLD = 7;                       /* 옛 세계 상한 — 여기 갇히면 회귀다 */
+
+  function probeTouch(win, out) {
+    const d = win.document;
+    if (typeof d.elementFromPoint !== 'function') {
+      out.push(R('touch-hit', 'skip', '이 브라우저에서 좌표 히트를 물어볼 수 없어요'));
+      return;
+    }
+    let host = null;
+    try {
+      /* workspace 의 핸들 마크업과 같은 클래스 계약(.ws-el > .ws-hd.br).
+         무대 안이라 좌표가 결정론이다. */
+      host = stageHit(win,
+        '<div class="ws-el media sel" style="left:120px;top:90px;width:200px;height:120px">'
+        + '<i class="ws-hd br"></i></div>');
+      const hd = host.querySelector('.ws-hd.br');
+      if (!hd) throw new Error('핸들 미발견');
+      const r = hd.getBoundingClientRect();
+      if (!(r.width > 0)) { out.push(R('touch-hit', 'skip', '핸들이 아직 배치되지 않았어요')); return; }
+      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+
+      /* 중심에서 축 방향으로 밀어 가며 「여기까지 잡히나」를 실제로 물어본다.
+         가상요소는 자기 부모를 히트 대상으로 돌려준다 — hd 자신이면 성공. */
+      const hits = (dx, dy) => {
+        const t = d.elementFromPoint(Math.round(cx + dx), Math.round(cy + dy));
+        return !!(t && (t === hd || hd.contains(t)));
+      };
+      let reach = 0;
+      for (let k = 1; k <= 20; k++) {
+        if (hits(k, 0) && hits(-k, 0) && hits(0, k) && hits(0, -k)) reach = k; else break;
+      }
+      const detail = `실측 히트 반경 ${reach}px (보이는 핸들 ${r.width.toFixed(0)}px)`;
+      if (reach >= HIT_MIN) out.push(R('touch-hit', 'pass', '핸들이 손끝만 한 과녁을 실제로 가졌어요', detail));
+      else if (reach <= HIT_OLD) out.push(R('touch-hit', 'fail', '히트 영역이 옛 세계로 돌아갔어요 — 태블릿에서 리사이즈가 안 잡힙니다', detail + ` / 필요 ${HIT_MIN}px 이상`));
+      else out.push(R('touch-hit', 'fail', '히트 영역이 손끝에 못 미쳐요', detail + ` / 필요 ${HIT_MIN}px 이상`));
+    } catch (e) { out.push(R('touch-hit', 'fail', '탐침 실패', e.message)); }
+    finally { if (host) host.remove(); }
+  }
+
+  /* ---------- 탐침: R90 회귀 (등장 애니 실해결) ----------
+     R90 은 콤마 하나가 애니 선언을 통째로 무효로 만들어 재생 장면이 빈 종이가 된
+     사건이다(computed opacity 0 · animationName "none"). 문법의 심판은 브라우저의
+     CSS 파서 하나뿐 — jsdom 의 cssstyle 은 animation 단축선언을 실해결하지 않아
+     깨진 문자열도 조용히 통과시킨다. */
+  function probeAnim(win, out) {
+    const P = win.MK_PLAY;
+    if (!P || !P.sceneHTML) { out.push(R('anim-live', 'fail', 'MK_PLAY.sceneHTML 이 없어요')); return; }
+    let host = null;
+    try {
+      const scene = {
+        duration: 4, width: 1280, height: 720,
+        elements: [{ kind: 'image', src: PX, x: 10, y: 20, w: 50, h: 60,
+          anim: { preset: 'fade', idle: 'kb-zoom-in', idleDur: 4 } }],
+      };
+      host = stageEl(win, P.sceneHTML(scene));
+      const node = host.querySelector('.mkp-el');
+      if (!node) throw new Error('요소 미발견');
+
+      const name = String(win.getComputedStyle(node).animationName || '');
+      if (!name || name === 'none') {
+        out.push(R('anim-live', 'fail', '브라우저가 애니 선언을 못 받아들였어요 — 재생 장면이 빈 종이가 됩니다',
+          'animationName = ' + (name || '(빈값)')));
+        return;
+      }
+      /* 등장이 끝난 시점으로 강제로 밀어 「그래서 보이나」를 본다.
+         선언 개수만큼 음수 지연을 맞춰 준다(개수가 어긋나면 브라우저가 통째로 무시). */
+      const n = name.split(',').length;
+      node.style.animationDelay = new Array(n).fill('-30s').join(',');
+      const op = parseFloat(win.getComputedStyle(node).opacity);
+      if (isFinite(op) && op >= 0.9)
+        out.push(R('anim-live', 'pass', '애니가 실해결됐고 등장 뒤 요소가 보여요',
+          `${n}개 선언 · 등장 후 불투명도 ${op.toFixed(2)}`));
+      else
+        out.push(R('anim-live', 'fail', '등장이 끝났는데 요소가 투명해요 — 빈 장면으로 재생됩니다',
+          `불투명도 ${isFinite(op) ? op.toFixed(2) : '?'} / ${name}`));
+    } catch (e) { out.push(R('anim-live', 'fail', '탐침 실패', e.message)); }
+    finally { if (host) host.remove(); }
+  }
+
   /* ---------- 실행 ---------- */
   async function run(w) {
     const win = w || window;
@@ -422,6 +534,8 @@ window.MK_SELFCHECK = (() => {
     try { await probeStore(win, out); } catch (e) { out.push(R('idb-open', 'fail', '저장 탐침이 예외로 죽었어요', e.message)); }
     try { probeFocus(win, out); } catch (e) { out.push(R('focus-origin', 'fail', '초점 탐침이 예외로 죽었어요', e.message)); }
     try { probeRot(win, out); } catch (e) { out.push(R('rot-nest', 'fail', '회전 탐침이 예외로 죽었어요', e.message)); }
+    try { probeTouch(win, out); } catch (e) { out.push(R('touch-hit', 'fail', '히트 탐침이 예외로 죽었어요', e.message)); }
+    try { probeAnim(win, out); } catch (e) { out.push(R('anim-live', 'fail', '애니 탐침이 예외로 죽었어요', e.message)); }
     return { results: out, skipped: '' };
   }
 
@@ -465,7 +579,7 @@ window.MK_SELFCHECK = (() => {
     if (verdict([]).ok) v.push('빈 결과를 합격으로 셈');
     if (verdict([{ state: 'fail' }, { state: 'pass' }]).fail !== 1) v.push('불합격 집계 위반');
     /* 명세 */
-    if (CHECKS.length !== 9) v.push('검사 명세 수 변경');
+    if (CHECKS.length !== 11) v.push('검사 명세 수 변경');
     if (!CHECKS.every((c) => c.id && c.round && c.title && c.proves && c.blind)) v.push('명세 항목 누락');
     if (new Set(CHECKS.map((c) => c.id)).size !== CHECKS.length) v.push('명세 id 중복');
     return { ok: !v.length, violations: v };

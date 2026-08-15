@@ -241,7 +241,8 @@ T('R118 은 눈 확인 목록에 있다 (덮이지 않고 자리를 옮겼을 �
 
 T('기계 검사는 R116·R117·R119 만', () => {
   const rs = [...new Set(E.CHECKS.map((c) => c.round))].sort();
-  return JSON.stringify(rs) === JSON.stringify(['R116', 'R117', 'R119']) || ('예상 밖 라운드: ' + rs.join(','));
+  /* R121 이 R95·R90(준호 실기기 결함의 회귀 감시)을 더했다 */
+  return JSON.stringify(rs) === JSON.stringify(['R116', 'R117', 'R119', 'R90', 'R95']) || ('예상 밖 라운드: ' + rs.join(','));
 });
 
 T('네 라운드 전부가 어딘가에서 다뤄진다 (기계 ∪ 눈)', () => {

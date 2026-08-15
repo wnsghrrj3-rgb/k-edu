@@ -89,7 +89,9 @@ window.MK_SCREENS.selfcheck = (() => {
           : s.results && s.results.length ? `<span class="sc-badge ${vd.fail ? 'bad' : vd.skip ? 'warn' : 'good'}">${esc(vd.label)}</span>`
             : `<span class="sc-badge">검사 전</span>`;
 
-      const rounds = ['R116', 'R117', 'R119'];
+      /* R121 — 라운드 목록을 손으로 적지 않는다. R121 착수 때 신규 2건이 CHECKS 에
+         들어왔는데 여기가 하드코딩이라 화면에 안 그려졌다(같은 함정 재발 방지). */
+      const rounds = [...new Set(E0.CHECKS.map((c) => c.round))];
       const groups = rounds.map((rd) => {
         const list = E0.CHECKS.filter((c) => c.round === rd);
         return `<div class="sc-group"><h3>${rd}</h3><ul class="sc-list">${list.map((c) => checkRow(c, byId[c.id])).join('')}</ul></div>`;
