@@ -41,11 +41,37 @@
     v: { say: 'vvv', anchor: 'van',    cont: true  }, w: { say: 'wuh', anchor: 'wind', cont: false },
     x: { say: 'ks',  anchor: 'box',    cont: true  }, y: { say: 'yuh', anchor: 'yo-yo',cont: false },
     z: { say: 'zzz', anchor: 'zoo',    cont: true  },
-    /* 이중자음 (Lv2 선등록) */
+    /* 이중자음 (Lv2 #1·#3) */
     sh: { say: 'shh',  anchor: 'ship',  cont: true  },
     ch: { say: 'chuh', anchor: 'chick', cont: false },
-    th: { say: 'thh',  anchor: 'this',  cont: true  }
+    th: { say: 'thh',  anchor: 'bath',  cont: true  },   /* 무성 /쓰/ — bath·math */
+    dh: { say: 'thuh', anchor: 'this',  cont: true  },   /* ★유성 /드/ — this·that.
+           글자는 둘 다 th 지만 소리가 갈리므로 키를 나눈다(블록 라벨은 HTML이 정한다).
+           키 이름 dh 는 IPA ð 관례 — 대문자 키를 만들지 않기 위한 선택. */
+    ck: { say: 'kuh',  anchor: 'duck',  cont: false, same: 'K' },
+
+    /* 매직e 장모음 (Lv2 #11·#13·#14) */
+    a_e: { say: 'ay',  anchor: 'cake',  cont: true, same: 'longA' },
+    i_e: { say: 'eye', anchor: 'bike',  cont: true, same: 'longI' },
+    o_e: { say: 'oh',  anchor: 'home',  cont: true, same: 'longO' },
+    u_e: { say: 'yoo', anchor: 'cute',  cont: true, same: 'longU' },
+
+    /* 모음팀 (Lv2 #19·#21·#23) */
+    ai: { say: 'ay', anchor: 'rain',  cont: true, same: 'longA' },
+    ay: { say: 'ay', anchor: 'day',   cont: true, same: 'longA' },
+    ee: { say: 'ee', anchor: 'tree',  cont: true, same: 'longE' },
+    ea: { say: 'ee', anchor: 'eat',   cont: true, same: 'longE' },
+    oa: { say: 'oh', anchor: 'boat',  cont: true, same: 'longO' },
+    ow: { say: 'oh', anchor: 'snow',  cont: true, same: 'longO' }
+        /* ow 는 cow /아우/ 도 되지만 Lv2 는 snow·slow 계열만 다룬다 */
   };
+
+  /* ----------------------------------------------------------
+   * 같은 소리 그룹 (same) — 한 문항 안에 함께 선택지로 내면 안 되는 짝.
+   * Lv1 #3 에서 c/k 충돌을 차시마다 손으로 SAME 맵을 짜 막았던 것을
+   * 엔진 사전으로 올린 것. KTTS.sameAs('c') → ['c','k','ck']
+   * ---------------------------------------------------------- */
+  var SAME_EXTRA = { c: 'K', k: 'K' };   /* 기존 키 소급 지정(사전 구조 보존) */
 
   /* 속도 프리셋 (저학년 기본) */
   var RATES = {
@@ -184,6 +210,16 @@
       opt = opt || {};
       return provider.speak(text, { unit: 'sentence',
         rate: opt.rate || RATES.sentence, interrupt: opt.interrupt });
+    },
+
+    /* 같은 소리를 내는 키들 — 선택지 충돌 회피용.
+       KTTS.sameAs('a_e') → ['a_e','ai','ay'] (자기 자신 포함) */
+    sameAs: function (key) {
+      var g = (PHONEMES[key] && PHONEMES[key].same) || SAME_EXTRA[key];
+      if (!g) return [key];
+      return Object.keys(PHONEMES).filter(function (k) {
+        return ((PHONEMES[k] && PHONEMES[k].same) || SAME_EXTRA[k]) === g;
+      });
     },
 
     /* ----------------------------------------------------------

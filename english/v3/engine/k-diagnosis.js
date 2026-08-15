@@ -61,5 +61,12 @@ window.KDiagnosis.LABEL = {
   'vocab.sight':    '기본 단어',
   'grammar.frame':  '문장틀',
   'reading.wordpic':'단어 읽고 그림 찾기',
-  'reading.sentpic':'문장 읽고 장면 찾기'
+  'reading.sentpic':'문장 읽고 장면 찾기',
+  /* Lv2 신설 (_LV2_PLAN.md §3) */
+  'phonics.digraph':   '두 글자 한 소리',
+  'phonics.cluster':   '첫소리 이어 붙이기',
+  'phonics.magice':    '매직 e',
+  'phonics.vowelteam': '모음 두 글자',
+  'grammar.be':        'am·are·is 고르기',
+  'grammar.article':   'a·an'
 };
