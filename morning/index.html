@@ -97,7 +97,7 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--bg);min-height:100vh;
   /* 한자 세트(g1_hanja_s01)는 hanja_data + hanja 두 파일이 필요하다.
      수학·국어 단원 세트는 기존 규칙(g1_math_u3 → g1_math_u3.js)을 그대로 따른다. */
   function templateFiles(lesson){
-    var m = lesson.match(/^g\d+_([a-z]+)_s\d+$/);
+    var m = lesson.match(/^g\d+_([a-z]+)_[sc]\d+$/);   // s=옛 회차 키 · c=하루 1자 키
     if (m) return ['/kedu/quiz/templates/'+m[1]+'_data.js', '/kedu/quiz/templates/'+m[1]+'.js'];
     var u = lesson.match(/^(g\d+_[a-z]+_u\d+)/);
     return u ? ['/kedu/quiz/templates/'+u[1]+'.js'] : null;
@@ -121,7 +121,7 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--bg);min-height:100vh;
 
   function heroHtml(t){
     var ko = SUBJECT_KO[t.subject] || t.subject;
-    var modeTag = t.mode === 'review' ? '복습' : (t.step + '회차');
+    var modeTag = t.mode === 'review' ? '복습' : (t.step + '일째 글자');
     return '<div class="hero">'
       + '<div class="date">'+todayKo()+'</div>'
       + '<h1>오늘의 아침활동<br>'+esc(ko)+'</h1>'
@@ -190,7 +190,7 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--bg);min-height:100vh;
         var pct = mx ? Math.round(100*sc/mx) : 0;
         var d = String(r.run_date||'').slice(5).replace('-','/');
         return '<div class="hrow"><span class="d">'+esc(d)+'</span>'
-             + '<span class="s">'+esc(SUBJECT_KO[r.subject]||r.subject)+(r.mode==='review'?' 복습':' '+r.step+'회차')+'</span>'
+             + '<span class="s">'+esc(SUBJECT_KO[r.subject]||r.subject)+(r.mode==='review'?' 복습':' '+r.step+'일째')+'</span>'
              + '<span class="bar"><i style="width:'+pct+'%"></i></span>'
              + '<span class="p">'+esc(sc)+'</span></div>';
       }).join('');
@@ -223,9 +223,12 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--bg);min-height:100vh;
         show(heroHtml(t) + card(
           '<div class="msg" style="padding:22px 10px 18px">'
           + '<span class="big">'+(SUBJECT_ICON[t.subject]||'✏️')+'</span>'
-          + '오늘은 <b>'+esc(SUBJECT_KO[t.subject]||t.subject)+'</b> '+(t.mode==='review'?'복습':t.step+'회차')+'예요.<br>'
+          + '오늘은 <b>'+esc(SUBJECT_KO[t.subject]||t.subject)+'</b> '+(t.mode==='review'?'복습':t.step+'일째 글자')+'예요.<br>'
           + t.question_count+'문제를 풀어 볼까요?</div>'
-          + '<button class="btn" id="go">시작하기</button>'
+          + '<button class="btn" id="go">확인 문제 풀기</button>'
+          + (t.subject==='hanja' && t.lesson_key
+              ? '<a class="btn ghost" style="margin-top:10px;display:block;text-decoration:none;text-align:center" '
+                + 'href="/morning/chars.html?key='+esc(t.lesson_key)+'">오늘 글자 먼저 익히기 (획순·쓰기·낱말)</a>' : '')
         ) + '<div id="stats"></div>');
         document.getElementById('go').onclick = function(){ startQuiz(t); };
         loadStats();

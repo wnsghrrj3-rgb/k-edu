@@ -103,17 +103,18 @@ body.replace(/p_grade\s*=\s*(\d+)\s*THEN\s*(\d+)/g, function (_, g, v) {
 });
 
 D.grades().forEach(function (g) {
-  T(sqlMax[g] === D.stepCount(g),
-    'g' + g + ' 회차 불일치 — SQL ma_max_step=' + sqlMax[g] + ' vs hanja_data=' + D.stepCount(g));
+  // ★ 진도 단위 = 하루 1자. SQL 상한은 그 학년 글자 수와 같아야 한다.
+  T(sqlMax[g] === D.all(g).length,
+    'g' + g + ' 일차 불일치 — SQL ma_max_step=' + sqlMax[g] + ' vs 글자 수=' + D.all(g).length);
 });
 
 /* ── 진도 시뮬 : ma_today 규칙대로 회차를 돌려 키가 전부 실재하는지 ── */
 D.grades().forEach(function (g) {
   var max = sqlMax[g], nextStep = 1;
-  for (var day = 1; day <= max + 4; day++) {          // 한 바퀴 + 복습 4일
+  for (var day = 1; day <= max + 4; day++) {          // 전체 글자 + 복습 4일
     var step = nextStep, mode = 'new';
     if (step > max) { mode = 'review'; step = ((step - 1) % max) + 1; }
-    var key = 'g' + g + '_hanja_s' + (step < 10 ? '0' + step : step);
+    var key = 'g' + g + '_hanja_c' + ('00' + step).slice(-3);   // ma_today 의 lpad(3) 그대로
     T(C.has(key), 'g' + g + ' ' + day + '일차 미등록 키 ' + key);
     T(day > max ? mode === 'review' : mode === 'new',
       'g' + g + ' ' + day + '일차 모드 이상: ' + mode);
@@ -121,5 +122,58 @@ D.grades().forEach(function (g) {
   }
 });
 
-console.log('\n조합 ' + combos + ' (41회차 × 4시드) — ' + pass + ' PASS / ' + fail + ' FAIL');
+
+/* ── 하루 1자(c 키) 전수 + 표본 심층 ────────────────────────────
+ *  전수(400키 × 1시드): 등록·문항수·만점 채점.
+ *  표본(학년별 1·2·중간·마지막 일차 × 4시드): 발문 중복 0·보기·재현성·복습 혼입·오늘 글자 포함. */
+D.grades().forEach(function (g) {
+  var all = D.all(g), n = all.length;
+  var cum = {};
+  D.grades().filter(function (x) { return x <= g; })
+            .forEach(function (x) { D.all(x).forEach(function (r) { cum[r.c] = 1; }); });
+
+  for (var i = 1; i <= n; i++) {
+    var key = 'g' + g + '_hanja_c' + ('00' + i).slice(-3);
+    T(C.has(key), key + ' 미등록');
+    var out = C.generate({ lesson: key, n: 10, seed: 3 });
+    T(out.items.length === 10, key + ' 문항수 ' + out.items.length);
+    var gr = C.gradeSet(out.items, out.items.map(function (it) { return it.answer; }));
+    T(gr.score === gr.max && gr.max === 10, key + ' 만점 채점 ' + gr.score + '/' + gr.max);
+  }
+
+  [1, 2, Math.ceil(n / 2), n].forEach(function (i2) {
+    var key2 = 'g' + g + '_hanja_c' + ('00' + i2).slice(-3);
+    var today = all[i2 - 1].c;
+    SEEDS.forEach(function (seed) {
+      combos++;
+      var o = C.generate({ lesson: key2, n: 10, seed: seed });
+      var qs = {}, hasToday = false, hasRev = false;
+      o.items.forEach(function (it, qi) {
+        T(!qs[it.q], key2 + ' seed' + seed + ' 발문 중복: ' + it.q);
+        qs[it.q] = 1;
+        if (it.q.indexOf(today) >= 0 || String(it.answer).indexOf(today) >= 0) hasToday = true;
+        if (/_rev_/.test(it.id || '')) hasRev = true;
+        if (it.type === 'choice') {
+          T(it.choices && it.choices.length === 4, key2 + ' seed' + seed + ' q' + qi + ' 보기 4개 아님');
+          var dup = {}, bad = 0;
+          it.choices.forEach(function (c) { if (dup[c]) bad++; dup[c] = 1; });
+          T(bad === 0, key2 + ' seed' + seed + ' q' + qi + ' 보기 중복');
+        }
+        var txt = it.q + '|' + (it.choices || []).join('|') + '|' + (it.explain || '');
+        Array.from(txt).forEach(function (chx) {
+          if (/[\u4e00-\u9fff]/.test(chx))
+            T(!!cum[chx], key2 + ' seed' + seed + ' 미배운 한자 노출: ' + chx);
+        });
+      });
+      T(hasToday, key2 + ' seed' + seed + ' 오늘 글자 「' + today + '」 문항이 하나도 없음');
+      if (i2 >= 2) T(hasRev, key2 + ' seed' + seed + ' 복습 문항 0개');
+      var again = C.generate({ lesson: key2, n: 10, seed: seed });
+      T(again.items.map(function (a) { return a.q; }).join('§') ===
+        o.items.map(function (a) { return a.q; }).join('§'),
+        key2 + ' seed' + seed + ' 같은 시드 재생성 불일치');
+    });
+  });
+});
+
+console.log('\n조합 ' + combos + ' (s키 41 + c키 표본 24, 각 × 4시드) — ' + pass + ' PASS / ' + fail + ' FAIL');
 process.exit(fail ? 1 : 0);

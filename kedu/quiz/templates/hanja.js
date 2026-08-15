@@ -116,7 +116,42 @@
     };
   }
 
-  /* ── 학년 × 회차 전수 등록 ─────────────────────────────────── */
+  /* ── 등록 ①: 학년 × 글자(하루 1자) ────────────────────────────
+   *  키: g{학년}_hanja_c{일차3자리}   예) g4_hanja_c001 … g4_hanja_c075
+   *  하루 = 새 글자 1자. 문항은 오늘 글자를 여러 각도(훈음·한자·음·낱말)로 짚고
+   *  나머지는 지금까지 배운 글자 복습으로 채운다 — 매일 하는 활동은 누적이 생명.
+   *  1일차는 복습 풀이 없어 오늘 글자 변주만으로 짠다(하루뿐이라 허용). */
+  DATA.grades().forEach(function (grade) {
+    var all = DATA.all(grade);
+    for (var i = 1; i <= all.length; i++) {
+      var curc = [all[i - 1]];                             // 오늘 글자 1자
+      var prevc = all.slice(0, i - 1);                     // 어제까지 누적(복습)
+      var ckey = 'g' + grade + '_hanja_c' + ('00' + i).slice(-3);
+
+      var ctpls = [
+        tplC2Hunum(curc, all, 'new', 1),
+        tplHunum2C(curc, all, 'new', 1),
+        tplWord(curc, all, 'new', 2),
+        tplEum(curc, 'new', 2),
+        tplOx(curc, all, 'new', 3)                         // 훈음 짝 O/X — 짝이 매번 달라 변주가 된다
+      ];
+      if (prevc.length) {
+        ctpls.push(tplC2Hunum(prevc, all, 'rev', 2));
+        ctpls.push(tplHunum2C(prevc, all, 'rev', 2));
+        ctpls.push(tplOx(prevc, all, 'rev', 3));
+      }
+
+      reg(ckey, {
+        source: grade + '학년 아침한자 ' + i + '일차 「' + all[i - 1].c + '」',
+        fixed: [],
+        templates: ctpls.filter(Boolean)
+      });
+    }
+  });
+
+  /* ── 등록 ②: 학년 × 회차(10자) — 옛 키 호환 ───────────────────
+   *  진도가 하루 1자로 바뀌기 전에 만들어진 세션(g?_hanja_s??)이
+   *  아직 조회될 수 있어 그대로 둔다. 새 세션은 c 키만 쓴다. */
   DATA.grades().forEach(function (grade) {
     var all = DATA.all(grade);
     var n = DATA.stepCount(grade);

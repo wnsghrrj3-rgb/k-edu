@@ -186,21 +186,22 @@ END $$;
 GRANT EXECUTE ON FUNCTION ma_set_routine(uuid,int,jsonb,int,boolean) TO authenticated;
 
 -- =============================================
--- [보조] ma_max_step — 과목 × 학년의 총 회차 수
---   한자 회차 = 그 학년 신출 자수 ÷ 10 (올림). 원장은 kedu/quiz/templates/hanja_data.js.
---     1·2·3학년 = 8급·7급Ⅱ·7급 각 50자 →  5회차
---     4·5학년   = 6급Ⅱ·6급    각 75자 →  8회차 (마지막 회차는 5자)
---     6학년     = 5급Ⅱ           100자 → 10회차
---   ★ hanja_data.js 의 GRADES 를 늘리면 이 표도 같이 고쳐야 한다.
---     어긋나면 kedu/quiz/test_hanja_morning.js 가 이 파일을 직접 읽어 잡아낸다.
+-- [보조] ma_max_step — 과목 × 학년의 총 일차 수
+--   ★ 한자 진도 단위 = 하루 1자. 매일 하는 활동이 1년을 버텨야 하므로
+--     하루 10자(회차)로는 5~10일 만에 끝나 버린다 → 글자 단위로 바꿈.
+--     1·2·3학년 =  50자 →  50일차 (약 10주)
+--     4·5학년   =  75자 →  75일차 (약 15주)
+--     6학년     = 100자 → 100일차 (약 20주)
+--   원장은 kedu/quiz/templates/hanja_data.js. 이 표와 어긋나면
+--   kedu/quiz/test_hanja_morning.js 가 이 파일을 직접 읽어 잡아낸다.
 -- =============================================
 CREATE OR REPLACE FUNCTION ma_max_step(p_subject text, p_grade int)
 RETURNS int LANGUAGE sql IMMUTABLE AS $$
   SELECT CASE
-    WHEN p_subject = 'hanja' AND p_grade IN (1,2,3) THEN 5
-    WHEN p_subject = 'hanja' AND p_grade IN (4,5)   THEN 8
-    WHEN p_subject = 'hanja' AND p_grade  = 6       THEN 10
-    ELSE 5
+    WHEN p_subject = 'hanja' AND p_grade IN (1,2,3) THEN 50
+    WHEN p_subject = 'hanja' AND p_grade IN (4,5)   THEN 75
+    WHEN p_subject = 'hanja' AND p_grade  = 6       THEN 100
+    ELSE 50
   END;
 $$;
 GRANT EXECUTE ON FUNCTION ma_max_step(text,int) TO authenticated;
@@ -254,7 +255,7 @@ BEGIN
     SELECT next_step, cycle INTO v_step, v_cycle
       FROM ma_progress WHERE class_code_id = v_cc AND subject = v_subject;
 
-    -- 과목 × 학년별 총 회차 (학년마다 신출 자수가 달라 학년을 함께 넘긴다)
+    -- 과목 × 학년별 총 일차 (학년마다 신출 자수가 달라 학년을 함께 넘긴다)
     v_max_step := ma_max_step(v_subject, v_r.grade);
 
     IF v_step > v_max_step THEN                            -- 한 바퀴 다 돌면 복습 모드
@@ -264,7 +265,8 @@ BEGIN
       v_mode := 'new';
     END IF;
 
-    v_key := 'g' || v_r.grade || '_' || v_subject || '_s' || lpad(v_step::text, 2, '0');
+    -- 하루 1자 키: g4_hanja_c015 = 4학년 15일차(15번째 글자)
+    v_key := 'g' || v_r.grade || '_' || v_subject || '_c' || lpad(v_step::text, 3, '0');
     v_seed := (extract(epoch from now())::bigint % 1000000000);
 
     INSERT INTO ma_sessions (class_code_id, run_date, subject, grade, step, mode, lesson_key, question_count, seed_base)
