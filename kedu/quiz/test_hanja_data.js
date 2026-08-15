@@ -53,6 +53,28 @@ D.grades().forEach(g => {
   });
 });
 
+// ⑤ 응용낱말(extra) 불변식 — 어휘 사다리 완화형
+//    (a) extra 낱말의 모든 글자가 400자 집합 안 (b) 자기 글자 포함
+//    (c) 뜻(ko) 존재 (d) 같은 글자 안에서 대표낱말 포함 중복 금지
+const ALL400 = new Set();
+D.grades().forEach(g=>D.all(g).forEach(r=>ALL400.add(r.c)));
+T(ALL400.size===400, `전체 자수 ${ALL400.size} ≠ 400`);
+D.grades().forEach(g => {
+  D.all(g).forEach(r => {
+    const dup = new Set();
+    if (r.word) dup.add(r.word);
+    r.extra.forEach(e => {
+      const out = Array.from(e.word).filter(ch=>!ALL400.has(ch));
+      T(out.length===0, `${r.c} extra ${e.word} 에 400자 밖 글자: ${out.join('')}`);
+      T(e.word.indexOf(r.c)>=0, `${r.c} 가 제 extra ${e.word} 안에 없음`);
+      T(!!e.ko, `${r.c} extra ${e.word} 에 뜻풀이 없음`);
+      T(!dup.has(e.word), `${r.c} 안에서 낱말 ${e.word} 중복`);
+      dup.add(e.word);
+      T(e.word.length>=2, `${r.c} extra ${e.word} 가 한 글자짜리`);
+    });
+  });
+});
+
 // step 분할 무손실
 D.grades().forEach(g=>{
   const all = D.all(g), n = D.stepCount(g);
