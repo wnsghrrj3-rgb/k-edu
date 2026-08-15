@@ -97,10 +97,13 @@ var body = (sql.match(/CREATE OR REPLACE FUNCTION ma_max_step[\s\S]*?\$[A-Za-z_]
 T(!!body, 'SQL 에서 ma_max_step 을 못 찾음');
 
 var sqlMax = {};
-body.replace(/p_grade\s+IN\s*\(([\d,\s]+)\)\s*THEN\s*(\d+)/g, function (_, gs, v) {
+// ★ p_subject 를 반드시 함께 물린다. 과목이 한자뿐일 때는 p_grade 만 봐도 맞았지만,
+//   수학 행이 추가되자 뒤에 오는 math 값이 hanja 값을 덮어써 6건이 오검출됐다.
+//   과목이 더 늘어도(영어 등) 이 검사가 흔들리지 않게 한다.
+body.replace(/p_subject\s*=\s*'hanja'\s*AND\s*p_grade\s+IN\s*\(([\d,\s]+)\)\s*THEN\s*(\d+)/g, function (_, gs, v) {
   gs.split(',').forEach(function (g) { sqlMax[Number(g.trim())] = Number(v); }); return '';
 });
-body.replace(/p_grade\s*=\s*(\d+)\s*THEN\s*(\d+)/g, function (_, g, v) {
+body.replace(/p_subject\s*=\s*'hanja'\s*AND\s*p_grade\s*=\s*(\d+)\s*THEN\s*(\d+)/g, function (_, g, v) {
   sqlMax[Number(g)] = Number(v); return '';
 });
 

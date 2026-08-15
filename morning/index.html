@@ -94,13 +94,31 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--bg);min-height:100vh;
   function show(html){ wrap.innerHTML = html; }
   function card(inner){ return '<div class="card">'+inner+'</div>'; }
 
-  /* 한자 세트(g1_hanja_s01)는 hanja_data + hanja 두 파일이 필요하다.
-     수학·국어 단원 세트는 기존 규칙(g1_math_u3 → g1_math_u3.js)을 그대로 따른다. */
-  function templateFiles(lesson){
+  /* 한자 세트(g1_hanja_s01·c001)는 hanja_data + hanja 두 파일이 필요하다.
+     수학·국어 단원 세트는 기존 규칙(g1_math_u3 → g1_math_u3.js)을 그대로 따른다.
+     ★ 수학 하루 1차시 키(g3_math_c015)는 둘 다 아니다. 그날 차시뿐 아니라
+       이전 차시를 복습으로 섞으므로 **그 학년 단원 파일 전부 + math_morning.js**
+       가 있어야 한다. 단원 목록은 catalog.json 에서 끌어온다(하드코딩하면
+       케이퀴즈 양산 때마다 여기도 같이 고쳐야 하고, 빠뜨리면 조용히 깨진다). */
+  function templateFiles(lesson, cb){
+    var mm = lesson.match(/^g(\d+)_math_c\d+$/);
+    if (mm) {
+      var grade = Number(mm[1]);
+      return fetch('/kedu/quiz/catalog.json').then(function(r){ return r.json(); })
+        .then(function(cat){
+          var units = (cat.units || cat.list || []).filter(function(u){
+            return u.subject === 'math' && u.grade === grade;
+          }).sort(function(a,b){ return a.unitNo - b.unitNo; });
+          if (!units.length) throw new Error('catalog 에 g'+grade+' 수학 단원이 없음');
+          var files = units.map(function(u){ return '/kedu/quiz/templates/'+u.key+'.js'; });
+          files.push('/kedu/quiz/templates/math_morning.js');
+          return files;
+        });
+    }
     var m = lesson.match(/^g\d+_([a-z]+)_[sc]\d+$/);   // s=옛 회차 키 · c=하루 1자 키
-    if (m) return ['/kedu/quiz/templates/'+m[1]+'_data.js', '/kedu/quiz/templates/'+m[1]+'.js'];
+    if (m) return Promise.resolve(['/kedu/quiz/templates/'+m[1]+'_data.js', '/kedu/quiz/templates/'+m[1]+'.js']);
     var u = lesson.match(/^(g\d+_[a-z]+_u\d+)/);
-    return u ? ['/kedu/quiz/templates/'+u[1]+'.js'] : null;
+    return Promise.resolve(u ? ['/kedu/quiz/templates/'+u[1]+'.js'] : null);
   }
   function loadScripts(list, done, fail){
     var i = 0;
@@ -153,11 +171,12 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--bg);min-height:100vh;
 
   /* 풀이 시작 */
   function startQuiz(t, isRetry){
-    var files = templateFiles(t.lesson_key);
-    if (!files) { show(card('<div class="msg">문제를 찾지 못했어요.</div>')); return; }
     show(heroHtml(t) + card('<div id="mount"></div>'));
     var mount = document.getElementById('mount');
     mount.innerHTML = '<div class="loading"><div class="spin"></div>문제를 준비하는 중…</div>';
+
+    templateFiles(t.lesson_key).then(function(files){
+    if (!files) { mount.innerHTML = '<div class="msg">문제를 찾지 못했어요.</div>'; return; }
 
     loadScripts(files, function(){
       if (!KQuiz.core.has(t.lesson_key)) {
@@ -177,6 +196,9 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--bg);min-height:100vh;
         }
       });
     }, function(){ mount.innerHTML = '<div class="msg">문제를 불러오지 못했어요.</div>'; });
+    })['catch'](function(){
+      mount.innerHTML = '<div class="msg">문제를 불러오지 못했어요.</div>';
+    });
   }
 
   /* 누적 기록 */

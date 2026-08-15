@@ -165,6 +165,11 @@
   // ── 템플릿 레지스트리 (templates/*.js가 등록) ─────────────────────────────
   var REG = {};   // lessonKey → { source, fixed:[], templates:[] }
   function register(lessonKey, def) { REG[lessonKey] = def; }
+
+  /* 등록된 세트 정의를 읽는다(합성 세트용 — 아침활동 수학이 여러 차시의
+     templates 를 엮어 '오늘 것 + 복습' 한 벌로 만든다).
+     REG 자체는 노출하지 않는다. 반환값을 수정하면 원본이 상한다 — 읽기 전용으로 쓸 것. */
+  function getDef(lessonKey) { return REG[lessonKey] || null; }
   function has(lessonKey) { return !!REG[lessonKey]; }
 
   // ── 공개: generate ───────────────────────────────────────────────────────
@@ -247,7 +252,7 @@
   return {
     version: 1,
     generate: generate, gradeOne: gradeOne, gradeSet: gradeSet,
-    register: register, has: has,
+    register: register, has: has, getDef: getDef,
     // 유틸 노출(템플릿·테스트용)
     _util: { makeRng: makeRng, seedInt: seedInt, compose: compose, decompose: decompose,
              normAnswer: normAnswer, buildChoices: buildChoices, CHO: CHO, JUNG: JUNG }

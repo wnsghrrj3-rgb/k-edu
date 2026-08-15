@@ -192,8 +192,14 @@ GRANT EXECUTE ON FUNCTION ma_set_routine(uuid,int,jsonb,int,boolean) TO authenti
 --     1·2·3학년 =  50자 →  50일차 (약 10주)
 --     4·5학년   =  75자 →  75일차 (약 15주)
 --     6학년     = 100자 → 100일차 (약 20주)
---   원장은 kedu/quiz/templates/hanja_data.js. 이 표와 어긋나면
---   kedu/quiz/test_hanja_morning.js 가 이 파일을 직접 읽어 잡아낸다.
+--   ★ 수학 진도 단위 = 하루 1차시. 케이퀴즈 차시 세트를 그대로 물려쓴다
+--     (자기주도 학습 차시와 같은 키 체계라 교과 진도와 어긋나지 않는다).
+--     학년별 차시 수가 제각각이라 값이 고르지 않은 것이 정상이다.
+--       1학년 33 · 2학년 34 · 3학년 38 · 4학년 26 · 5학년 31 · 6학년 22
+--     ※ 현재 1학기분만 있다. 소진하면 ma_today 가 복습 모드로 계속 돈다.
+--   원장은 kedu/quiz/templates/hanja_data.js 와 math_morning.js.
+--   이 표와 어긋나면 kedu/quiz/test_hanja_morning.js ·
+--   test_math_morning.js 가 이 파일을 직접 읽어 잡아낸다.
 -- =============================================
 CREATE OR REPLACE FUNCTION ma_max_step(p_subject text, p_grade int)
 RETURNS int LANGUAGE sql IMMUTABLE AS $fn$
@@ -201,6 +207,12 @@ RETURNS int LANGUAGE sql IMMUTABLE AS $fn$
     WHEN p_subject = 'hanja' AND p_grade IN (1,2,3) THEN 50
     WHEN p_subject = 'hanja' AND p_grade IN (4,5)   THEN 75
     WHEN p_subject = 'hanja' AND p_grade  = 6       THEN 100
+    WHEN p_subject = 'math'  AND p_grade  = 1       THEN 33
+    WHEN p_subject = 'math'  AND p_grade  = 2       THEN 34
+    WHEN p_subject = 'math'  AND p_grade  = 3       THEN 38
+    WHEN p_subject = 'math'  AND p_grade  = 4       THEN 26
+    WHEN p_subject = 'math'  AND p_grade  = 5       THEN 31
+    WHEN p_subject = 'math'  AND p_grade  = 6       THEN 22
     ELSE 50
   END;
 $fn$;
