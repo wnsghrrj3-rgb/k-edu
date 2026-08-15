@@ -535,6 +535,8 @@ window.MK_SCREENS.editor = (() => {
           const r = window.MK_LIVE.insertWithSrc(doc, e.sceneIdx, { name: f.name.replace(/\.[^.]+$/, ''), kind, src });
           if (r && r.ok) e.selEl = doc.scenes[e.sceneIdx].elements.length - 1;
           PG.render();
+          /* R126 — 클립 삽입 = 씬 길이 동행(늘리기만) */
+          if (r && r.ok && kind === 'video') window.MK_LIVE.fitSceneToClipSrc(doc, e.sceneIdx, src, (fr) => { if (fr && fr.changed) PG.render(); });
         });
         inp.click();
       };
@@ -706,8 +708,11 @@ window.MK_SCREENS.editor = (() => {
             if (!src) return;
             const f = inp.files[0];
             H.push('이미지 교체');
-            MK_LIVE.replaceWithSrc(doc, e.sceneIdx, e.selEl, { name: f.name.replace(/\.[^.]+$/, ''), kind: /^video\//.test(f.type) ? 'video' : 'image', src });
+            const kind2 = /^video\//.test(f.type) ? 'video' : 'image';
+            MK_LIVE.replaceWithSrc(doc, e.sceneIdx, e.selEl, { name: f.name.replace(/\.[^.]+$/, ''), kind: kind2, src });
             PG.render();
+            /* R126 — 자리에 앉힌 게 클립이면 씬 길이 동행(늘리기만) */
+            if (kind2 === 'video') MK_LIVE.fitSceneToClipSrc(doc, e.sceneIdx, src, (fr) => { if (fr && fr.changed) PG.render(); });
           });
           inp.click();
           return;
@@ -774,6 +779,8 @@ window.MK_SCREENS.editor = (() => {
               const r = hitIdx != null ? rep(doc, e.sceneIdx, hitIdx, media) : ins(doc, e.sceneIdx, media);
               if (!r.ok && hitIdx != null) ins(doc, e.sceneIdx, media);   /* 텍스트 위 드롭 → 옆에 삽입 */
               PG.render();
+              /* R126 — 드롭한 게 클립이면 씬 길이 동행(늘리기만) */
+              if (media.kind === 'video' && media.src && window.MK_LIVE) window.MK_LIVE.fitSceneToClipSrc(doc, e.sceneIdx, media.src, (fr) => { if (fr && fr.changed) PG.render(); });
             };
             if (f && window.MK_LIVE) {                    /* R36 — 실파일: dataURL로 읽어 실표시 */
               MK_LIVE.fileToSrc(f, (src, err) => {

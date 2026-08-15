@@ -286,12 +286,71 @@ window.MK_LIVE = (() => {
     }
     return r;
   }
-  /* File → dataURL. reader 주입 가능(jsdom 검증용). 이미지·영상만, 8MB 상한 */
+  /* ================= R126 — 매체 입구 정본 (MEDIA_SPEC) =================
+     준호 실사용에서 문이 걸렸다 — AI 생성 클립(6~10초·1080p)이 장당 10~20MB 라
+     종전 8MB 상한이 **정상 재료를 문전에서 돌려보냈다.** R89 가 사진에서 밟은
+     것과 같은 자리다(「요즘 재료」가 옛 상한을 넘는다). 사진은 줄여서 받는
+     처방이 있었지만 영상은 재인코딩이 불가하므로 처방이 다르다 — **상한 자체를
+     실재료에 맞춘다.**
+
+     32MB 인 까닭: 10초 1080p H.264 를 넉넉한 비트레이트로 잡아도 ~20MB 다.
+     dataURL 은 원본의 4/3 로 붇으므로 클립당 메모리 ~43MB — R116 IndexedDB 는
+     이 크기를 감당한다(#/selfcheck idb-bulk 가 실기기 왕복을 증명). 무한정
+     올리지 않는 까닭: 문서 자동저장이 클립을 통째로 다시 쓰므로, 상한 없는
+     입구는 느린 태블릿에서 저장을 잰다.
+
+     GIF·SVG 는 종전 8MB 유지 — 재인코딩이 애니·벡터를 죽여 처방이 없는 건
+     같지만, 이들은 씬 재료로 수십 MB 일 이유가 없다.
+
+     sceneFitMaxSec: 클립 길이에 씬을 맞출 때의 상한. 전체 상한(MK_VIDEO.MAX_SEC
+     120초)은 내보내기가 따로 지키므로 여기는 「한 장면」의 상식선이다. */
+  const MEDIA_SPEC = Object.freeze({
+    videoMaxBytes: 32 * 1024 * 1024, videoMaxLabel: '32MB',
+    stillMaxBytes: 8 * 1024 * 1024, stillMaxLabel: '8MB',
+    sceneFitMaxSec: 20,
+  });
+
+  /* R126 — 클립 실길이 판독. loadedmetadata 만 기다린다(전체 디코드 아님).
+     실패·지연은 null 로 정직하게 — 호출부가 「못 쟀다」를 알아야 한다. */
+  function videoDuration(src, cb) {
+    try {
+      const v = document.createElement('video');
+      v.preload = 'metadata'; v.muted = true;
+      let done = false;
+      const fin = (d) => { if (done) return; done = true; try { v.removeAttribute('src'); v.load && v.load(); } catch (_) {} cb(d); };
+      v.onloadedmetadata = () => fin(v.duration > 0 && isFinite(v.duration) ? v.duration : null);
+      v.onerror = () => fin(null);
+      v.src = src;
+      setTimeout(() => fin(null), 8000);
+    } catch (_) { cb(null); }
+  }
+
+  /* R126 — 씬 길이를 클립에 맞춘다. **늘리기만 한다** — 사용자가 이미 길게
+     잡아 둔 씬을 클립이 줄이면 그건 맞춤이 아니라 덮어쓰기다. 0.1초 올림. */
+  function fitSceneToClip(doc, si, dur) {
+    const sc = doc && doc.scenes && doc.scenes[si];
+    if (!sc || !(dur > 0) || !isFinite(dur)) return { ok: false, changed: false };
+    const want = Math.min(Math.ceil(dur * 10) / 10, MEDIA_SPEC.sceneFitMaxSec);
+    const cur = +sc.duration || 0;
+    if (want <= cur) return { ok: true, changed: false, duration: cur };
+    sc.duration = want;
+    return { ok: true, changed: true, from: cur, duration: want };
+  }
+
+  /* R126 — 위 둘의 결합(호출부 한 줄용). 판독 실패 시 씬은 그대로 둔다. */
+  function fitSceneToClipSrc(doc, si, src, done) {
+    videoDuration(src, (d) => {
+      const r = d ? fitSceneToClip(doc, si, d) : { ok: false, changed: false };
+      if (typeof done === 'function') done(r);
+    });
+  }
+
+  /* File → dataURL. reader 주입 가능(jsdom 검증용). 이미지·영상만 — 상한은 MEDIA_SPEC */
   /* R89 — 큰 사진은 거부하지 않고 줄여서 받는다. 요즘 폰·카메라 사진은
      8MB를 예사로 넘는다 — 「8MB 이하만」은 선생님의 실사진 대부분을 문전에서
      돌려보내는 규칙이었다(준호 실기기: 사진 넣었는데 안 뜸). 장변 1920px로
      줄이면 영상·내보내기 품질은 그대로고 용량은 수백 KB로 준다.
-     영상 파일은 재인코딩이 불가하므로 종전 8MB 규칙·안내 그대로. */
+     영상 파일은 재인코딩이 불가 — 상한은 MEDIA_SPEC.videoMaxBytes (R126). */
   /* R89 — 사진 입구 표준화. 요즘 폰·카메라 사진은 8MB를 예사로 넘고(종전
      규칙은 문전 거부 = 준호 실기기 「사진이 안 떠」), 8MB 「이하」 원본도
      dataURL로는 장당 수 MB라 localStorage 영속(5MB)이 조용히 실패함을
@@ -300,8 +359,8 @@ window.MK_LIVE = (() => {
      1920px JPEG면 화질은 남고 장당 수백 KB로 줄어 영속도 산다.
      · 8MB 이하 & 장변 1920 이하 = 원본 무변형(스크린샷·그림 보호)
      · 그 외 래스터 사진 = 장변 1920 JPEG 재인코딩
-     · GIF·SVG = 재인코딩이 애니·벡터를 죽이므로 종전 경로(8MB 규칙) 그대로
-     · 영상 = 재인코딩 불가 — 종전 8MB 규칙·안내 그대로
+     · GIF·SVG = 재인코딩이 애니·벡터를 죽이므로 종전 상한(MEDIA_SPEC.stillMaxBytes)
+     · 영상 = 재인코딩 불가 — 상한을 실재료에 맞춤(MEDIA_SPEC.videoMaxBytes · R126)
      · 판독 불가 환경(구형·jsdom) = 짧은 대기 후 원본 통과(구세계 동작) */
   function shrinkImage(src, cb) {
     try {
@@ -348,7 +407,13 @@ window.MK_LIVE = (() => {
     const type = file.type || '';
     if (!/^(image|video)\//.test(type)) return cb(null);
     const raster = /^image\//.test(type) && !/gif|svg/.test(type);
-    if (!raster && file.size > 8 * 1024 * 1024) return cb(null, '8MB 이하만 넣을 수 있어요');
+    /* R126 — 상한은 여기 적지 않는다, 정본(MEDIA_SPEC)에서 읽는다 */
+    const isVid = /^video\//.test(type);
+    const cap = isVid ? MEDIA_SPEC.videoMaxBytes : MEDIA_SPEC.stillMaxBytes;
+    if (!raster && file.size > cap) {
+      return cb(null, (isVid ? MEDIA_SPEC.videoMaxLabel : MEDIA_SPEC.stillMaxLabel)
+        + ' 이하만 넣을 수 있어요' + (isVid ? ' — 클립을 10초 안쪽으로 잘라 주세요' : ''));
+    }
     const R = ReaderCls || window.FileReader;
     const rd = new R();
     rd.onload = () => {
@@ -525,6 +590,7 @@ window.MK_LIVE = (() => {
     boxPx, pivotPx,                                               /* R110 — 모델 박스 실픽셀·회전 불변점 */
     lineCount,                                                    /* R111 — 자동 줄바꿈까지 아는 줄 수 */
     replaceWithSrc, insertWithSrc, fileToSrc, shrinkImage, normalizeImage,
+    MEDIA_SPEC, videoDuration, fitSceneToClip, fitSceneToClipSrc,   /* R126 — 매체 입구 정본·클립 맞춤 */
     useBackend, saveDoc, loadDoc, clearDoc, saveProjects, restoreProjects, autosave, flush,
     liveAudit,
   };

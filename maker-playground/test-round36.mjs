@@ -92,8 +92,13 @@ sec('3. 실이미지');
      정직 거부의 표적은 재인코딩이 불가한 「영상」이다. 구세계(normalizeImage
      부재)에선 원문 그대로 사진으로 잰다. */
   const bigType = L.normalizeImage ? 'video/mp4' : 'image/jpeg';
-  L.fileToSrc({ type: bigType, size: 9 * 1024 * 1024 }, (s, e2) => { err2 = e2; }, FakeReader);
-  T('fileToSrc — 8MB 상한 정직 거부(재인코딩 불가 유형)', /8MB/.test(err2 || ''));
+  /* R126 정정(의도 보존): 잣대의 의도 = 감당 못 할 입력을 조용히 삼키지 않는다.
+     상한이 정본(MEDIA_SPEC)으로 옮겨갔으므로 「초과」도 정본에서 계산하고,
+     거부 문구도 정본 라벨로 잰다 — 상한이 또 바뀌어도 이 잣대는 따라간다. */
+  const capB = (L.MEDIA_SPEC && L.MEDIA_SPEC.videoMaxBytes) || 8 * 1024 * 1024;
+  const capL = (L.MEDIA_SPEC && L.MEDIA_SPEC.videoMaxLabel) || '8MB';
+  L.fileToSrc({ type: bigType, size: capB + 1024 * 1024 }, (s, e2) => { err2 = e2; }, FakeReader);
+  T('fileToSrc — 상한 초과 정직 거부(재인코딩 불가 유형)', (err2 || '').includes(capL));
   let nul = 'x';
   L.fileToSrc({ type: 'application/pdf', size: 10 }, (s) => { nul = s; }, FakeReader);
   T('fileToSrc — 비미디어 거부', nul === null);

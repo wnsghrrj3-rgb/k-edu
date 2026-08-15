@@ -661,7 +661,12 @@
             if (!src) { if (err && typeof alert === 'function') alert(err); return; }
             const f = inp.files[0];
             const r = window.MK_LIVE.insertWithSrc(doc(), WS.sceneIdx, { name: f.name.replace(/\.[^.]+$/, ''), kind: k === 'video' ? 'video' : 'image', src });
-            if (r && r.ok) { WS.sel = { type: k, idx: scene().elements.length - 1 }; R(); }
+            if (r && r.ok) {
+              WS.sel = { type: k, idx: scene().elements.length - 1 }; R();
+              /* R126 — 클립을 넣으면 씬 길이가 클립을 따라온다(늘리기만).
+                 길이 판독은 비동기라 일단 그리고, 맞춰지면 다시 그린다. */
+              if (k === 'video') window.MK_LIVE.fitSceneToClipSrc(doc(), WS.sceneIdx, src, (fr) => { if (fr && fr.changed) R(); });
+            }
           });
           inp.click();
           return;                                                       /* 파일 고르기 전엔 아무것도 안 넣는다 — 취소 = 변화 0 */

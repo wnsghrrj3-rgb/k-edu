@@ -62,11 +62,15 @@ sec('2. readFiles');
      비미디어 pdf 는 여전히 조용히(사유 없이) 걸러지고, 사유 딸린 건너뜀의
      표적은 큰 「영상」이다 — 그 잣대를 지키려 b.mp4 를 9MB로 함께 잰다. */
   const R89 = !!(window.MK_LIVE && window.MK_LIVE.normalizeImage);
-  if (R89) files.push({ name: 'huge.mp4', type: 'video/mp4', size: 9 * 1024 * 1024 });
+  /* R126 정정(의도 보존): 사유 딸린 건너뜀의 표적 = 상한 「초과」 영상.
+     상한이 정본으로 옮겨갔으니 초과도 정본에서, 사유 대조도 정본 라벨로. */
+  const capB43 = (window.MK_LIVE && window.MK_LIVE.MEDIA_SPEC && window.MK_LIVE.MEDIA_SPEC.videoMaxBytes) || 8 * 1024 * 1024;
+  const capL43 = (window.MK_LIVE && window.MK_LIVE.MEDIA_SPEC && window.MK_LIVE.MEDIA_SPEC.videoMaxLabel) || '8MB';
+  if (R89) files.push({ name: 'huge.mp4', type: 'video/mp4', size: capB43 + 1024 * 1024 });
   await new Promise((res) => ST.readFiles(files, (out, skipped) => {
     if (R89) {
       T('읽기 성공 3건 (jpg·큰jpg 수용·mp4)', out.length === 3 && out.filter((o) => o.kind === 'image').length === 2 && out.some((o) => o.kind === 'video'));
-      T('큰 영상·비미디어 건너뜀 + 사유', skipped.length === 2 && skipped.some((s) => /huge\.mp4.*8MB/.test(s)));
+      T('큰 영상·비미디어 건너뜀 + 사유', skipped.length === 2 && skipped.some((s) => s.includes('huge.mp4') && s.includes(capL43)));
     } else {
       T('읽기 성공 2건 (jpg·mp4)', out.length === 2 && out[0].kind === 'image' && out[1].kind === 'video');
       T('8MB 초과·비미디어 건너뜀 + 사유', skipped.length === 2 && skipped.some((s) => /8MB/.test(s)));

@@ -66,6 +66,13 @@ class FakeReader {
 const file = (name, type, mb) => ({ name, type, size: Math.round(mb * 1024 * 1024) });
 const L = w.MK_LIVE;
 const MB9 = 9, MB2 = 2;
+/* R126 정정(의도 보존): 잣대의 의도 = 감당 못 할 「영상」을 조용히 삼키지 않는다.
+   상한이 정본(MEDIA_SPEC)으로 옮겨갔으므로 초과분도 정본에서 계산하고 거부
+   문구도 정본 라벨로 잰다. 구세계(정본 부재)는 종전값 폴백. 참고 — MB9 사진
+   쪽 잣대(A5)는 그대로다: 사진 축소 문턱은 R89 이래 8MB 로 불변이다. */
+const VCAP_MB = ((L.MEDIA_SPEC && L.MEDIA_SPEC.videoMaxBytes) || 8 * 1024 * 1024) / (1024 * 1024);
+const VCAP_L = (L.MEDIA_SPEC && L.MEDIA_SPEC.videoMaxLabel) || '8MB';
+const MBV = VCAP_MB + 1;                       /* 영상 상한 초과분 */
 
 /* 비동기 잣대를 순차로 */
 const run = async () => {
@@ -111,9 +118,15 @@ const run = async () => {
     T('A5 8MB 초과 = 축소', () => bigSize.s === 'data:image/jpeg;base64,SHRUNK' && shrunk === 2 ? true : JSON.stringify({ bigSize, shrunk }));
   }
   {
-    const r = await call(file('big.mp4', 'video/mp4', MB9));
-    T('A6 8MB 초과 영상은 종전 안내로 거부', () =>
-      r.src === null && /8MB 이하/.test(r.err || '') ? true : JSON.stringify(r));
+    const r = await call(file('big.mp4', 'video/mp4', MBV));
+    T('A6 상한 초과 영상은 정직한 안내로 거부', () =>
+      r.src === null && (r.err || '').includes(VCAP_L + ' 이하') ? true : JSON.stringify(r));
+    /* R126 — 상한 「이내」 영상은 산다. 준호 실사용(AI 클립 10~20MB)이 이 잣대의 존재 이유다 */
+    if (L.MEDIA_SPEC) {
+      const ok = await call(file('clip.mp4', 'video/mp4', Math.min(20, VCAP_MB - 1)));
+      T('A6b 상한 이내 큰 클립(AI 생성물)은 수용', () =>
+        typeof ok.src === 'string' && ok.src.indexOf('data:video/mp4') === 0 ? true : JSON.stringify(ok));
+    }
   }
   {
     const r = await call(file('anim.gif', 'image/gif', MB2));
@@ -138,7 +151,7 @@ const run = async () => {
     const orig = L.normalizeImage;
     L.normalizeImage = (src, f, cb) => (f.name === 'a.jpg' ? cb('data:image/jpeg;base64,SHRUNK2') : cb(src));
     const got = await new Promise((res) => w.MK_START.readFiles(
-      [file('a.jpg', 'image/jpeg', MB9), file('b.mp4', 'video/mp4', MB9), file('c.png', 'image/png', 1)],
+      [file('a.jpg', 'image/jpeg', MB9), file('b.mp4', 'video/mp4', MBV), file('c.png', 'image/png', 1)],
       (medias, skipped) => res({ medias, skipped }), FakeReader));
     L.normalizeImage = orig;
     T('A10 혼합 입력 — 큰 사진은 살고 큰 영상만 건너뛴다', () =>
