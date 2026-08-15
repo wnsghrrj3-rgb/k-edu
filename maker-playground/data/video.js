@@ -29,7 +29,7 @@ window.MK_VIDEO = (() => {
 
      targetMin: 짧은 변을 이 값으로 맞춘다 — 1280×720 → 1920×1080 */
   const EXPORT_SPEC = Object.freeze({
-    vcodec: 'avc1.420028',                    /* H.264 High@4.0 */
+    vcodec: 'avc1.420028',                    /* H.264 Baseline@4.0 — 사다리 1단(R123 주석 교정) */
     acodec: 'mp4a.40.2',                      /* AAC-LC */
     muxerUrl: 'https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.1/build/mp4-muxer.min.js',
     targetMin: 1080, bitrate: BITRATE, fps: FPS,
@@ -37,10 +37,81 @@ window.MK_VIDEO = (() => {
     muxVideo: 'avc', muxAudio: 'aac',         /* mp4-muxer 쪽 이름 — 탐침이 같은 먹서를 짓는다 */
   });
 
-  /* 출력 치수 규칙 — exportMP4 와 탐침이 같은 함수를 쓴다(따로 계산하면 어긋난다) */
-  function outSize(w, h) {
-    const scale = EXPORT_SPEC.targetMin / Math.min(w, h);
+  /* ---------- R123: 폴백 사다리 ----------
+     R122 까지 내보내기엔 **폴백이 아예 없었다** — configure 가 예외를 던지거나
+     error 콜백으로 중간에 죽는 게 전부다. 준호 기기 하나가 통과해도 교실의
+     서른 대가 통과한다는 뜻이 아니다(n=1). 그래서 결과를 기다리지 않고 세운다.
+
+     ⚠ 코덱 문자열 읽는 법 — avc1.PPCCLL (PP=프로파일 CC=제약 LL=레벨, 16진).
+     `42`=Baseline · `4D`=Main · `64`=High, `28`=40=레벨 4.0 · `1F`=31=레벨 3.1.
+     **정본 주석이 vcodec 을 「High@4.0」이라 적어 왔는데 그건 틀렸다 — 프로파일
+     자리가 `42`, 즉 Baseline 이다.** R123 인계 문서의 위험 분석(「High profile 거부」)도
+     그 오기 위에 서 있었다. 실제 위험은 프로파일이 아니라 **레벨 4.0 @1080p**
+     이므로 사다리는 프로파일이 아니라 **해상도**를 내려간다(Baseline 보다 더
+     호환되는 프로파일은 없으므로 High 로 올라가는 건 폴백이 아니라 후퇴다).
+     Main 단을 끼우는 까닭은 일부 칩셋이 Baseline 하드웨어 경로만 막혀 있어서다.
+
+     1단은 정본 자신을 읽는다 — 코덱을 바꾸면 사다리 머리도 같이 움직이고,
+     중복 리터럴이 0 이라 test-round122 ⑴ 정본 단일성이 그대로 성립한다. */
+  const BITRATE_720 = 4_000_000;
+  const VIDEO_LADDER = Object.freeze([
+    Object.freeze({ codec: EXPORT_SPEC.vcodec, targetMin: EXPORT_SPEC.targetMin, bitrate: EXPORT_SPEC.bitrate, label: '1080p 고화질' }),
+    Object.freeze({ codec: 'avc1.4D0028', targetMin: 1080, bitrate: EXPORT_SPEC.bitrate, label: '1080p 표준(Main)' }),
+    Object.freeze({ codec: 'avc1.42001F', targetMin: 720, bitrate: BITRATE_720, label: '720p' }),
+    Object.freeze({ codec: 'avc1.4D001F', targetMin: 720, bitrate: BITRATE_720, label: '720p 표준(Main)' }),
+  ]);
+
+  /* 출력 치수 규칙 — exportMP4 와 탐침이 같은 함수를 쓴다(따로 계산하면 어긋난다).
+     targetMin 생략 = 정본값이라 R122 이전 호출부·하니스는 바이트 동일하게 돈다. */
+  function outSize(w, h, targetMin) {
+    const tm = targetMin || EXPORT_SPEC.targetMin;
+    const scale = tm / Math.min(w, h);
     return { scale, W: even(w * scale), H: even(h * scale) };
+  }
+
+  /* 사다리 한 단의 실치수 — 단 고르기와 탐침이 같은 함수를 쓴다 */
+  function rungSize(i, w, h) {
+    const r = VIDEO_LADDER[i];
+    if (!r) return null;
+    const o = outSize(w, h, r.targetMin);
+    return { index: i, rung: r, scale: o.scale, W: o.W, H: o.H };
+  }
+
+  /* ★ 단 고르기 — exportMP4 와 #/selfcheck 탐침이 **같은 이 함수**를 부른다.
+     탐침이 따로 훑으면 「탐침은 3단이라는데 제품은 1단으로 죽는」 일이 생긴다.
+     isConfigSupported 가 없는 브라우저는 종전대로 1단 맹목 진행(회귀 0). */
+  async function pickVideoRung(win, w, h) {
+    const W0 = win || window;
+    const VE = W0.VideoEncoder;
+    if (typeof VE === 'undefined' || typeof VE.isConfigSupported !== 'function') {
+      return Object.assign(rungSize(0, w, h), { queried: false, tried: [], why: '' });
+    }
+    const tried = [];
+    for (let i = 0; i < VIDEO_LADDER.length; i++) {
+      const c = rungSize(i, w, h);
+      const cfg = { codec: c.rung.codec, width: c.W, height: c.H, bitrate: c.rung.bitrate, framerate: EXPORT_SPEC.fps };
+      let sup = null;
+      try { sup = await VE.isConfigSupported(cfg); } catch (e) { tried.push(`${c.rung.label} — 질의 예외`); continue; }
+      if (sup && sup.supported) return Object.assign(c, { queried: true, tried, why: '' });
+      tried.push(`${c.rung.label} (${c.rung.codec} ${c.W}×${c.H})`);
+    }
+    return { index: -1, rung: null, scale: 1, W: 0, H: 0, queried: true, tried,
+      why: '이 기기 인코더가 사다리 어느 단도 받지 않아요' };
+  }
+
+  /* 소리도 같은 규약 — typeof 만 보고 강행하던 자리(R122 탐침이 지적한 그 자리) */
+  async function pickAudio(win) {
+    const W0 = win || window;
+    const AE = W0.AudioEncoder;
+    const cfg = { codec: EXPORT_SPEC.acodec, sampleRate: EXPORT_SPEC.audioSampleRate,
+      numberOfChannels: EXPORT_SPEC.audioChannels, bitrate: EXPORT_SPEC.audioBitrate };
+    if (typeof AE === 'undefined') return { ok: false, cfg, queried: false, why: '이 브라우저는 소리 저장을 지원하지 않아 무음으로 저장했어요' };
+    if (typeof AE.isConfigSupported !== 'function') return { ok: true, cfg, queried: false, why: '' };
+    try {
+      const sup = await AE.isConfigSupported(cfg);
+      if (sup && sup.supported) return { ok: true, cfg, queried: true, why: '' };
+      return { ok: false, cfg, queried: true, why: '이 기기가 소리 형식(AAC)을 받지 않아 무음으로 저장했어요' };
+    } catch (e) { return { ok: false, cfg, queried: true, why: '소리 지원을 확인하지 못해 무음으로 저장했어요' }; }
   }
 
   /* ---------- 이징 (CSS 근사) ---------- */
@@ -282,7 +353,16 @@ window.MK_VIDEO = (() => {
     try {
       await loadMuxer();
       const dl0 = window.MK_RENDER.renderScene(doc.scenes[0], {});
-      const { scale, W, H } = outSize(dl0.width, dl0.height);         /* 1280×720 → 1920×1080 */
+      /* R123 — 맹목 configure 를 그만둔다. 사다리를 위에서부터 물어 첫 합격을 쓴다.
+         한 단도 못 받으면 여기서 정직하게 멈춘다(예전엔 configure 가 던지거나
+         error 콜백으로 프레임 한복판에서 죽어 「왜 안 되는지」가 안 남았다). */
+      const pick = await pickVideoRung(window, dl0.width, dl0.height);
+      if (!pick.rung) {
+        return { ok: false, msg: '이 기기에서는 영상 저장이 안 돼요 — 다른 기기나 크롬 최신 버전을 써주세요',
+          detail: pick.tried.join(' / ') };
+      }
+      const { scale, W, H } = outSize(dl0.width, dl0.height, pick.rung.targetMin);   /* 1280×720 → 1920×1080 */
+      const lowered = pick.index > 0 ? `이 기기에 맞춰 ${pick.rung.label} 로 저장했어요` : '';
       const pxu = H / 720;                                            /* CSS px(모달 기준) → 출력 px */
       const out = document.createElement('canvas'); out.width = W; out.height = H;
       const ctx = out.getContext('2d');
@@ -291,9 +371,12 @@ window.MK_VIDEO = (() => {
       const SR = EXPORT_SPEC.audioSampleRate;
       const timeline = musicTimeline(doc, plan);
       const wantAudio = timeline.segments.length > 0;
-      const canAudio = wantAudio && typeof AudioEncoder !== 'undefined';
+      /* R123 — typeof 만 보고 강행하던 자리. 실제로 물어보고, 안 되면 무음으로
+         정직하게 내려간다(예전엔 AAC 미지원 기기에서 소리가 실리다 죽었다). */
+      const apick = wantAudio ? await pickAudio(window) : { ok: false, cfg: null, why: '' };
+      const canAudio = wantAudio && apick.ok;
       let masterPCM = null, audioMsg = '';
-      if (wantAudio && !canAudio) audioMsg = '이 브라우저는 소리 저장을 지원하지 않아 무음으로 저장했어요';
+      if (wantAudio && !canAudio) audioMsg = apick.why;
       if (canAudio) {
         say('소리 준비 중…');
         masterPCM = await buildMasterPCM(timeline, SR);
@@ -309,7 +392,7 @@ window.MK_VIDEO = (() => {
         output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
         error: (e) => { encError = e; },
       });
-      encoder.configure({ codec: EXPORT_SPEC.vcodec, width: W, height: H, bitrate: EXPORT_SPEC.bitrate, framerate: EXPORT_SPEC.fps });
+      encoder.configure({ codec: pick.rung.codec, width: W, height: H, bitrate: pick.rung.bitrate, framerate: EXPORT_SPEC.fps });
 
       let frameIdx = 0;
       for (let si = 0; si < plan.scenes.length; si++) {
@@ -395,7 +478,7 @@ window.MK_VIDEO = (() => {
           output: (chunk, meta) => muxer.addAudioChunk(chunk, meta),
           error: (e) => { encError = e; },
         });
-        aenc.configure({ codec: EXPORT_SPEC.acodec, sampleRate: SR, numberOfChannels: EXPORT_SPEC.audioChannels, bitrate: EXPORT_SPEC.audioBitrate });
+        aenc.configure(apick.cfg);
         const CH = 1024;
         for (let off = 0; off < masterPCM.length; off += CH) {
           const nF = Math.min(CH, masterPCM.length - off);
@@ -418,7 +501,8 @@ window.MK_VIDEO = (() => {
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(a.href), 4000);
       return { ok: true, sec: Math.round(plan.totalSec), w: W, h: H, frames: plan.totalFrames,
-        audio: !!(canAudio && masterPCM), audioMsg };
+        audio: !!(canAudio && masterPCM), audioMsg,
+        rung: pick.rung.label, rungIndex: pick.index, lowered };
     } catch (e) {
       return { ok: false, msg: (e && e.message) || '영상 저장에 실패했어요' };
     } finally {
@@ -483,6 +567,21 @@ window.MK_VIDEO = (() => {
     const osp = outSize(1080, 1349);                    /* 세로 — 짧은 변이 가로 */
     if (osp.W !== 1080 || osp.H % 2 !== 0) v.push('세로 출력·짝수 보정 위반');
     if (!Object.isFrozen(EXPORT_SPEC)) v.push('EXPORT_SPEC 이 얼지 않음');
+    /* R123 — 폴백 사다리. 차단망을 audit 에 두면 이 함수를 부르는 여러 스위트에 소급 적용된다 */
+    if (!Object.isFrozen(VIDEO_LADDER) || !VIDEO_LADDER.every((r) => Object.isFrozen(r))) v.push('사다리가 얼지 않음');
+    if (VIDEO_LADDER.length < 2) v.push('사다리에 단이 없음 — 폴백이 없다');
+    if (VIDEO_LADDER[0].codec !== EXPORT_SPEC.vcodec || VIDEO_LADDER[0].targetMin !== EXPORT_SPEC.targetMin
+      || VIDEO_LADDER[0].bitrate !== EXPORT_SPEC.bitrate) v.push('사다리 1단이 정본과 어긋남');
+    if (!VIDEO_LADDER.every((r) => /^avc1\.[0-9A-Fa-f]{6}$/.test(r.codec) && r.targetMin > 0 && r.bitrate > 0 && r.label)) v.push('사다리 단 형태 위반');
+    /* 내려가기만 한다 — 위 단보다 큰 치수·높은 레벨이 아래에 오면 폴백이 아니다 */
+    for (let i = 1; i < VIDEO_LADDER.length; i++) {
+      if (VIDEO_LADDER[i].targetMin > VIDEO_LADDER[i - 1].targetMin) v.push('사다리가 위로 올라감: ' + i);
+      if (VIDEO_LADDER[i].targetMin === VIDEO_LADDER[i - 1].targetMin
+        && VIDEO_LADDER[i].codec === VIDEO_LADDER[i - 1].codec) v.push('같은 단 중복: ' + i);
+    }
+    const rs = rungSize(2, 1280, 720);
+    if (!rs || rs.W !== 1280 || rs.H !== 720) v.push('사다리 720 단 치수 위반');
+    if (rungSize(99, 1280, 720) !== null) v.push('없는 단이 null 이 아님');
     if (!isVideoEl({ kind: 'video', src: 'data:video/mp4;base64,x' }) || isVideoEl({ kind: 'image', src: 'data:image/png;base64,x' })) v.push('영상 판별 위반');
     /* R39 — 음악 타임라인: 같은 음악 병합·다른 음악 분리·무음 장면 공백 */
     const md = { scenes: [
@@ -497,7 +596,7 @@ window.MK_VIDEO = (() => {
     return { ok: v.length === 0, violations: v };
   }
 
-  return { FPS, TRANS_DUR, MAX_SEC, EXPORT_SPEC, outSize, loadMuxer,
+  return { FPS, TRANS_DUR, MAX_SEC, EXPORT_SPEC, VIDEO_LADDER, outSize, rungSize, pickVideoRung, pickAudio, loadMuxer,
     easeAt, stateAt, framePlan, exportMP4, videoAudit, busy: () => busy,
     isVideoEl, secondsInto, fitRect, musicTimeline, animPivot };
 })();

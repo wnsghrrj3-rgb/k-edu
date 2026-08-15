@@ -83,6 +83,25 @@ window.MK_SCREENS.selfcheck = (() => {
     </li>`;
   };
 
+  /* ---- R123: 결과를 기기 밖으로 ----
+     준호는 폰·태블릿에서 이 화면을 연다. 스크린샷은 detail 을 자르고, 불합격의
+     정보는 대부분 detail 에 있다. 그래서 ① 복사 버튼 ② **눌러서 고를 수 있는
+     본문**을 함께 둔다 — clipboard 권한이 막힌 브라우저에서도 길게 눌러 복사할
+     수 있어야 한다(폰에서 실패하는 길을 하나만 두면 그게 곧 막다른 길이다). */
+  const reportBlock = (E0, s) => {
+    if (!s.results || !s.results.length) return '';
+    let txt = '';
+    try { txt = E0.reportText(window, s.results); } catch (e) { txt = '(보고서를 만들지 못했어요: ' + (e && e.message) + ')'; }
+    return `<div class="sc-sec sc-report">
+      <h3 class="sc-sech">결과 보내기 <small>불합격이 있으면 이걸 그대로 붙여넣어 주세요</small></h3>
+      <div class="sc-cta">
+        <button class="sc-btn ghost" data-sc-copy>결과 복사</button>
+        <span class="sc-copymsg" data-sc-copymsg></span>
+      </div>
+      <textarea class="sc-json" data-sc-json readonly rows="8" spellcheck="false">${esc(txt)}</textarea>
+    </div>`;
+  };
+
   return {
     title: '자가 진단',
     get variants() { return [span() || '자가 진단']; },
@@ -123,6 +142,8 @@ window.MK_SCREENS.selfcheck = (() => {
 
         <div class="sc-sec"><h3 class="sc-sech">기계 검사</h3>${groups}</div>
 
+        ${reportBlock(E0, s)}
+
         <div class="sc-sec">
           <h3 class="sc-sech">눈 확인 <small>기계가 흉내내면 거짓이 되는 것</small></h3>
           <div class="sc-eyes">
@@ -159,6 +180,28 @@ window.MK_SCREENS.selfcheck = (() => {
       };
 
       if (btn) btn.onclick = start;
+
+      /* R123 — 복사. 세 갈래로 두는 까닭: iOS 사파리는 http 나 권한 거절 시
+         clipboard API 가 조용히 거부하고, execCommand 는 구형에서만 산다.
+         둘 다 실패해도 본문이 이미 선택돼 있어 손으로 복사할 수 있다. */
+      const cbtn = root.querySelector('[data-sc-copy]');
+      if (cbtn) cbtn.onclick = () => {
+        const ta = root.querySelector('[data-sc-json]');
+        const say = (m) => { const el = root.querySelector('[data-sc-copymsg]'); if (el) el.textContent = m; };
+        if (!ta) return;
+        try { ta.focus(); ta.select(); ta.setSelectionRange(0, ta.value.length); } catch (_) {}
+        const done = () => say('복사됐어요 — 준호에게 붙여넣기');
+        const manual = () => say('자동 복사가 막혔어요 — 아래 글을 길게 눌러 복사해 주세요');
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(ta.value).then(done).catch(() => {
+              try { document.execCommand('copy') ? done() : manual(); } catch (_) { manual(); }
+            });
+            return;
+          }
+          document.execCommand('copy') ? done() : manual();
+        } catch (_) { manual(); }
+      };
 
       /* 첫 진입 자동 실행 — 준호는 링크만 열면 된다.
          supported() 가 게이트라 jsdom 에서는 여기까지 와도 아무 일도 안 난다. */
