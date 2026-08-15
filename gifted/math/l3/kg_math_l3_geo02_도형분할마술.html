@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<!--
+  kg_math_l3_geo02 — 도형 분할 마술 [케이영재 수학 · G2 양산 10호]
+  트랙: 케이영재 / Lab: Geometry / Level: L3 CHALLENGER (중학년 그린 톤) / 깊이: D1~D8
+  base: kg_math_l3_pat01 (골격·CSS 계승) + kg_math_l3_pat02 (엔진 공통부 계승) + kg_math_l3_geo01 (격자·칩·숫자패드 계승) + kg_math_l3_geo03 (KVox3D 계승) / 신규 시각 언어 0 (cal-grid 파라미터 변형 + 셀 상태 sel·center-cell·diag-a·diag-b·empty 재사용) / 신규 메카닉 0 (칸 순환은 geo03 cycleHeight 3상태 변형, 파내기는 geo01 선례)
+  탐구 5단계: 미션(1~3) 탐험(4~6) 발견(7~10) 도전(11~14) 창조(15~18)
+  핵심 수학: 이웃한 두 칸은 색이 다르다 → 널판 한 장 = 두 색 하나씩 → 두 색 수가 다르면 절대 못 깐다(불변량) → 크기와 무관(6×6도 같다) → 최소 파내기 = 같은 색 두 칸 → 그러나 역은 거짓: 두 색이 같아도 못 깔리는 바닥이 있다(짝이 하나뿐인 칸 넷이 이웃 둘을 다툰다) → 입체 3×3×3에서도 같은 눈이 통한다(14 대 13, 속 한가운데는 남길 수 없다)
+  점수 100 = 탐험 15 + 추측 10 + 발견 20(q9 10 + q10 10) + 검증 15(3라운드 × 5) + 확장 20(가짜 보고서 10 + 최소 파내기 10) + 창조 20(임무 가 10 + 임무 나 10)
+  힌트: H1/H2/H3 3단 (감점 없음, 답 비노출) / 정답 선공개 금지 — 검사기는 가짓수·색 개수만 돌려주고 파낼 자리는 비공개
+  ⛔ 규약: 문자식 금지 / 차단 어휘 금지 / 이모지 슬라이드당 ≤2
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="kg_math_l3_geo02_v1">
+<title>도형 분할 마술 · 케이영재 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#F6FBF7; --ink:#1F3830; --ink-soft:#5C7A6E;
+  --coral:#0E8A5F; --coral-deep:#0A6B49; --coral-soft:#D7F0E4;
+  --teal:#1D4ED8; --teal-deep:#153FA6; --teal-soft:#DCE6FB;
+  --gold:#F6B526; --emph:#E85D2F; --line:#DCEAE0; --mark:#FFE08A;
+  --f-title:'Do Hyeon',sans-serif; --f-body:'Gowun Dodum',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:0 14px 34px -18px rgba(31,56,48,.35);
+  --fs-title: clamp(26px, 4.2vw, 46px);
+  --fs-heading: clamp(23px, 3.5vw, 35px);
+  --fs-body: clamp(19px, 2.9vw, 27px);
+  --fs-caption: clamp(17px, 2.6vw, 24px);
+  --fs-label: clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --mw-sm: min(720px, 96vw);
+  --mw-lg: min(880px, 96vw);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+@keyframes ka-glow { 0%,100%{box-shadow:0 0 0 0 rgba(14,138,95,.4);} 50%{box-shadow:0 0 0 10px rgba(14,138,95,0);} }
+
+.ka { background:var(--paper); width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; color:var(--ink); position:relative; overflow:hidden; }
+.ka-h { display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); padding:clamp(11px,1.7vw,15px) clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:hover { transform:translateY(-1px); }
+.ka-pill { font-family:var(--f-title); background:var(--coral); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-where { font-size:clamp(14px,1.6vw,18px); color:var(--ink-soft); flex-shrink:1; }
+.ka-where b { color:var(--ink); }
+.ka-bar { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:46vw; }
+.ka-dot { width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s, background .2s; }
+.ka-dot:hover { transform:scale(1.2); }
+.ka-dot.active { background:var(--coral); transform:scale(1.3); }
+.ka-dot.done { background:var(--teal); }
+.ka-score { font-family:var(--f-title); background:#FFF8E1; color:#F57F17; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); padding:0; border-radius:50%; cursor:pointer; flex-shrink:0; color:var(--coral-deep); font-size:clamp(13px,2vw,16px); width:clamp(32px,4.5vw,38px); height:clamp(32px,4.5vw,38px); display:flex; align-items:center; justify-content:center; }
+
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; justify-content:safe center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; justify-content:safe center; gap:clamp(7px,1.2vw,11px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(8px,1.4vh,16px) clamp(16px,4vw,48px); overflow-x:hidden; overflow-y:auto; scrollbar-width:none; -ms-overflow-style:none; }
+.slide::-webkit-scrollbar { width:0; height:0; }
+.slide.active { display:flex; }
+.slide-title { font-family:var(--f-title); font-size:var(--fs-title); line-height:1.18; color:var(--ink); font-weight:400; text-align:center; flex-shrink:0; }
+.slide-sub { font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(10px,1.6vw,16px); left:clamp(16px,4vw,40px); font-family:var(--f-title); color:var(--coral); font-size:clamp(13px,1.9vw,18px); letter-spacing:.4px; z-index:5; }
+
+.ka-f { display:flex; justify-content:flex-end; gap:12px; padding:clamp(12px,1.7vw,16px) clamp(16px,4vw,40px); background:linear-gradient(to top, var(--paper) 62%, transparent); flex-shrink:0; }
+.ka-prev, .ka-hint, .ka-next { font-family:var(--f-title); font-size:clamp(15px,1.9vw,22px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(10px,1.4vw,15px) clamp(20px,2.8vw,38px); cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translateY(-2px); }
+.ka-prev { margin-right:auto; }
+.ka-hint { color:#F57F17; border-color:#FFE08A; }
+.ka-next { background:var(--coral); color:#fff; border-color:var(--coral); }
+.ka-prev:disabled, .ka-next:disabled { opacity:.35; cursor:default; transform:none; }
+.ka-hint:disabled { opacity:.4; cursor:default; }
+
+.concept-box { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,18px) clamp(18px,2.8vw,28px); border-radius:20px; font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); text-align:center; line-height:1.5; box-shadow:var(--shadow); }
+.concept-box strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.intro-q { font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; }
+.intro-q strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.goal-list { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); font-size:var(--fs-caption); color:var(--ink); max-width:var(--mw-sm); }
+.goal-list li { background:#fff; border:2px solid var(--line); padding:clamp(7px,1.3vw,11px) clamp(14px,2.6vw,20px); border-radius:16px; list-style:none; box-shadow:var(--shadow); }
+.goal-list li strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+.mission-card { background:#fff; border:3px solid var(--coral-soft); border-radius:26px; padding:clamp(16px,3vw,26px) clamp(20px,3.8vw,34px); max-width:var(--mw-sm); text-align:center; box-shadow:0 6px 0 var(--coral-soft); font-size:var(--fs-body); line-height:1.6; }
+.mission-card strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+
+/* ── 달력 격자 ── */
+.cal-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.1vw,10px); }
+.cal-head { display:flex; align-items:center; gap:clamp(8px,1.6vw,14px); }
+.cal-title { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--coral-deep); }
+.cal-month-btn { font-family:var(--f-title); font-size:var(--fs-label); background:#fff; border:2px solid var(--line); border-radius:999px; padding:4px 12px; cursor:pointer; color:var(--ink-soft); }
+.cal-month-btn.on { background:var(--coral); color:#fff; border-color:var(--coral); }
+.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:clamp(3px,0.6vw,5px); background:#fff; border:2px solid var(--line); border-radius:18px; padding:clamp(8px,1.4vw,12px); box-shadow:var(--shadow); }
+.cal-dow { font-family:var(--f-title); font-size:clamp(12px,1.7vw,16px); color:var(--ink-soft); text-align:center; padding-bottom:2px; }
+.cal-dow.sun { color:var(--emph); }
+.cal-cell { width:clamp(34px,6.2vw,54px); height:clamp(30px,5.4vw,46px); display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:clamp(15px,2.4vw,22px); color:var(--ink); background:var(--paper); border-radius:10px; cursor:pointer; transition:background .15s, transform .1s; user-select:none; }
+.cal-cell:hover { background:var(--coral-soft); }
+.cal-cell.empty { background:transparent; cursor:default; }
+.cal-cell.sel { background:var(--coral); color:#fff; animation:ka-pop .3s ease; }
+.cal-cell.diag-a { outline:3px solid var(--gold); outline-offset:-3px; }
+.cal-cell.diag-b { outline:3px solid var(--teal); outline-offset:-3px; }
+.cal-cell.center-cell { background:var(--emph); color:#fff; }
+.cal-info { display:flex; gap:clamp(8px,1.6vw,14px); flex-wrap:wrap; justify-content:center; min-height:2.2em; align-items:center; }
+.sum-chip { font-family:var(--f-title); font-size:var(--fs-caption); padding:clamp(5px,1vw,8px) clamp(12px,2.2vw,18px); border-radius:999px; background:#fff; border:2px solid var(--line); }
+.sum-chip.a { border-color:var(--gold); color:#B07E0A; }
+.sum-chip.b { border-color:var(--teal); color:var(--teal-deep); }
+.sum-chip.tot { border-color:var(--coral); color:var(--coral-deep); }
+.cal-msg { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--coral-deep); min-height:1.5em; text-align:center; }
+.cal-msg.wrong { color:var(--emph); }
+
+/* ── 사례 테이블 ── */
+.case-table { border-collapse:collapse; background:#fff; border-radius:16px; overflow:hidden; box-shadow:var(--shadow); font-size:var(--fs-caption); }
+.case-table th { font-family:var(--f-title); font-weight:400; background:var(--coral-soft); color:var(--coral-deep); padding:clamp(6px,1.1vw,10px) clamp(12px,2.2vw,20px); }
+.case-table td { font-family:var(--f-num); font-weight:800; text-align:center; padding:clamp(6px,1.1vw,10px) clamp(12px,2.2vw,20px); border-top:1px solid var(--line); }
+.case-count { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); }
+.case-count b { color:var(--coral-deep); font-size:1.2em; }
+
+/* ── 관찰·추측 선택 ── */
+.pick-list { display:flex; flex-direction:column; gap:clamp(7px,1.3vw,11px); width:100%; max-width:var(--mw-sm); }
+.pick-item { background:#fff; border:3px solid var(--line); border-radius:18px; padding:clamp(10px,1.8vw,15px) clamp(16px,3vw,24px); font-size:var(--fs-body); cursor:pointer; transition:border-color .2s, transform .12s; text-align:left; font-family:var(--f-body); color:var(--ink); }
+.pick-item:hover { border-color:var(--coral); }
+.pick-item.on { border-color:var(--coral); background:var(--coral-soft); animation:ka-pop .3s ease; }
+.pick-item .tag { font-family:var(--f-title); color:var(--coral-deep); margin-right:8px; }
+
+/* ── 구조 시각화 ── */
+.struct-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.5vw,13px); }
+.struct-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(6px,1.1vw,9px); }
+.struct-cell { width:clamp(76px,13vw,120px); height:clamp(52px,9vw,80px); background:#fff; border:3px solid var(--coral-soft); border-radius:14px; display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:clamp(19px,3vw,30px); color:var(--coral-deep); box-shadow:0 4px 0 var(--coral-soft); }
+.struct-cell.hl-a { border-color:var(--gold); box-shadow:0 4px 0 var(--gold); }
+.struct-cell.hl-b { border-color:var(--teal); box-shadow:0 4px 0 var(--teal-soft); }
+.struct-eq { font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center; }
+.struct-eq .star { color:var(--emph); }
+.arrow-note { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); background:#fff; border:2px solid var(--line); border-radius:999px; padding:5px 16px; cursor:pointer; transition:transform .15s; }
+.arrow-note.revealed { color:var(--coral-deep); border-color:var(--coral); animation:ka-glow 1.4s ease 1; }
+
+/* ── 문제 공통 ── */
+.q-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.5vw,13px); max-width:var(--mw-lg); width:100%; }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; font-weight:400; }
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-sm); }
+.mcq-opts.one-col { grid-template-columns:1fr; }
+.mcq-opt { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,1.9vw,15px); font-family:var(--f-title); font-size:var(--fs-body); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .2s; box-shadow:0 6px 0 var(--coral-soft); font-weight:400; }
+.mcq-opt:hover { border-color:var(--coral); }
+.mcq-opt:active { transform:translateY(4px); box-shadow:none; }
+.mcq-opt.correct { border-color:var(--coral-deep); background:var(--coral); color:#fff; box-shadow:0 6px 0 var(--coral-deep); animation:ka-pop .5s ease; }
+.mcq-opt.wrong { border-color:var(--emph); background:#FFE4DA; color:var(--ink); animation:ka-shake .35s; }
+.mcq-hint { font-family:var(--f-title); font-size:var(--fs-caption); color:#F57F17; background:#FFF8E1; border-radius:16px; padding:clamp(8px,1.5vw,12px) clamp(14px,2.6vw,20px); max-width:var(--mw-sm); text-align:center; display:none; }
+.mcq-hint.show { display:block; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); color:var(--coral-deep); min-height:1.4em; text-align:center; }
+.q-fb.wrong { color:var(--emph); }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:clamp(30px,5vw,54px); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:20px; padding:clamp(8px,1.5vw,13px) clamp(24px,4.4vw,42px); min-width:clamp(110px,20vw,180px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.q-pad { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(6px,1.2vw,10px); max-width:clamp(280px,56vw,460px); }
+.q-key { background:#fff; border:2px solid var(--line); border-radius:14px; padding:clamp(7px,1.4vw,11px) 0; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, background .15s; box-shadow:0 4px 0 var(--line); }
+.q-key:hover { background:var(--coral-soft); border-color:var(--coral); }
+.q-key:active { transform:translateY(3px); box-shadow:none; }
+.q-key.fn { background:#FFF8E1; color:#F57F17; font-family:var(--f-title); font-size:var(--fs-caption); border-color:#FFE08A; box-shadow:0 4px 0 #FFE08A; }
+
+/* ── 모양 실험실 ── */
+.shape-pick { display:flex; gap:clamp(8px,1.5vw,13px); flex-wrap:wrap; justify-content:center; }
+.shape-btn { background:#fff; border:3px solid var(--line); border-radius:16px; padding:clamp(8px,1.4vw,12px) clamp(12px,2.2vw,18px); cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:5px; transition:border-color .2s, transform .12s; }
+.shape-btn:hover { border-color:var(--coral); }
+.shape-btn.on { border-color:var(--coral); background:var(--coral-soft); }
+.shape-mini { display:grid; grid-template-columns:repeat(3, clamp(10px,1.8vw,15px)); gap:2px; }
+.shape-mini i { display:block; width:clamp(10px,1.8vw,15px); height:clamp(10px,1.8vw,15px); border-radius:3px; background:var(--line); }
+.shape-mini i.f { background:var(--coral); }
+.shape-name { font-family:var(--f-title); font-size:var(--fs-label); color:var(--ink); }
+.rule-build { display:flex; align-items:center; gap:clamp(6px,1.2vw,10px); flex-wrap:wrap; justify-content:center; font-family:var(--f-title); font-size:var(--fs-body); }
+.rule-slot { background:#fff; border:3px dashed var(--coral); border-radius:14px; min-width:clamp(72px,13vw,120px); padding:clamp(6px,1.1vw,9px) clamp(10px,1.8vw,14px); text-align:center; color:var(--coral-deep); font-family:var(--f-num); font-weight:800; cursor:pointer; }
+.rule-slot.filled { border-style:solid; background:var(--coral-soft); }
+.rule-choice { display:flex; gap:clamp(6px,1.1vw,9px); flex-wrap:wrap; justify-content:center; }
+.rule-chip { background:#fff; border:2px solid var(--line); border-radius:999px; padding:clamp(5px,1vw,8px) clamp(12px,2.2vw,18px); font-family:var(--f-title); font-size:var(--fs-caption); cursor:pointer; transition:transform .12s, border-color .15s; }
+.rule-chip:hover { border-color:var(--coral); transform:translateY(-2px); }
+
+/* ── 탐정 카드·마무리 ── */
+.detective-card { background:#fff; border:3px solid var(--gold); border-radius:26px; padding:clamp(16px,3vw,26px) clamp(20px,3.8vw,34px); max-width:var(--mw-sm); width:100%; box-shadow:0 8px 0 var(--mark); display:flex; flex-direction:column; gap:clamp(7px,1.3vw,11px); }
+.dc-row { display:flex; justify-content:space-between; gap:14px; font-size:var(--fs-caption); border-bottom:1px dashed var(--line); padding-bottom:6px; }
+.dc-row b { font-family:var(--f-title); font-weight:400; color:var(--coral-deep); }
+.dc-title { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; }
+.wrap-score { font-family:var(--f-num); font-weight:800; font-size:clamp(56px,10vw,110px); color:var(--coral-deep); line-height:1; }
+.wrap-msg { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); }
+.home-card { background:var(--teal-soft); border-radius:20px; padding:clamp(12px,2.2vw,18px) clamp(18px,3.2vw,26px); font-size:var(--fs-caption); color:var(--teal-deep); max-width:var(--mw-sm); text-align:center; line-height:1.55; }
+.next-mini { display:flex; gap:clamp(8px,1.5vw,13px); flex-wrap:wrap; justify-content:center; }
+.next-chip { font-family:var(--f-title); font-size:var(--fs-label); background:#fff; border:2px solid var(--line); border-radius:999px; padding:6px 16px; color:var(--ink-soft); }
+
+/* ═══ 공용 부품 CSS (geo01 정의 문자 그대로 추출·주입 — 손으로 옮겨 적지 않는다) ═══ */
+/* ═══ 공용 8종 (log03 정의 문자 그대로 추출·주입 — 손으로 옮겨 적지 않는다) ═══ */
+.shadow-set { display:flex; gap:clamp(8px,2.4vw,20px); justify-content:center; flex-wrap:wrap; }
+.shadow-one { display:flex; flex-direction:column; align-items:center; gap:4px; }
+.shadow-tag { font-size:var(--fs-label); color:var(--ink-soft); font-family:var(--f-title); }
+.vox-btns { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+.vox-name { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink); }
+.lab-meter { display:flex; align-items:baseline; justify-content:center; gap:8px; margin:6px 0; }
+.lab-label { font-size:var(--fs-label); color:var(--ink-soft); font-family:var(--f-title); }
+.lab-count { font-family:var(--f-title); font-size:var(--fs-h1); color:var(--coral-deep); min-width:2.2em; text-align:center; }
+
+/* ═══ 목장 격자 (pat01 cal-grid 파라미터 변형 — 칸 크기·열 수만 다르다. 셀 상태는 sel/empty 그대로) ═══ */
+.cal-grid.farm { --farm-c:clamp(18px,3.2vw,30px); grid-template-columns:repeat(var(--farm-n,5), var(--farm-c)); justify-content:center; gap:2px; padding:clamp(6px,1.1vw,10px); }
+.cal-grid.farm .cal-cell { width:var(--farm-c); height:var(--farm-c); border-radius:5px; font-size:0; cursor:default; }
+.cal-grid.farm.big { --farm-c:clamp(26px,4.4vw,42px); }
+.cal-grid.farm.tap .cal-cell { cursor:pointer; }
+.farm-row { display:flex; gap:clamp(10px,2.6vw,26px); justify-content:center; align-items:flex-end; flex-wrap:wrap; }
+.farm-one { display:flex; flex-direction:column; align-items:center; gap:5px; }
+
+/* ═══ 입체 무대 KVox3D (geo03 정의 문자 그대로 추출·주입 · 헌법 §10) ═══ */
+.kvox { width:var(--vox-w,220px); height:var(--vox-h,190px); perspective:820px; touch-action:none; cursor:grab; position:relative; margin:0 auto; flex-shrink:0; }
+.kvox:active { cursor:grabbing; }
+.kvox-world { position:absolute; left:50%; top:58%; width:0; height:0; transform-style:preserve-3d; transition:transform .55s cubic-bezier(.22,1,.36,1); }
+.kvox.dragging .kvox-world { transition:none; }
+.kvox-cube { position:absolute; transform-style:preserve-3d; }
+.kvox-face { position:absolute; width:var(--vox-u,34px); height:var(--vox-u,34px); border:2px solid var(--coral-deep); box-sizing:border-box; backface-visibility:hidden; }
+.kvox-face.kf-top { background:#EAF8F0; }
+.kvox-face.kf-front { background:var(--coral-soft); }
+.kvox-face.kf-side { background:#BFE6D3; }
+.kvox-floor { position:absolute; transform-style:preserve-3d; }
+.kvox-tile { position:absolute; width:var(--vox-u,34px); height:var(--vox-u,34px); border:1px dashed var(--line); box-sizing:border-box; background:rgba(220,234,224,.35); }
+.vox-duo { display:flex; gap:clamp(10px,3vw,26px); justify-content:center; align-items:flex-start; flex-wrap:wrap; }
+.vox-col { display:flex; flex-direction:column; align-items:center; gap:6px; }
+</style>
+</head>
+<body>
+<div class="ka">
+  <header class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 나가기</button>
+    <span class="ka-pill">케이영재</span>
+    <span class="ka-where"><b>도형 분할 마술</b> · 기하 연구소</span>
+    <div class="ka-bar" id="dots"></div>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </header>
+
+  <main class="ka-m" id="main">
+
+    <!-- 슬1 · 미션 -->
+    <section class="slide">
+      <span class="stage-badge">미션 1/3</span>
+      <h1 class="slide-title">🔨 도형 분할 마술</h1>
+      <p class="slide-sub">기하 연구소 · 수리 의뢰 2호</p>
+      <div class="mission-card">
+        마룻바닥을 <strong>두 칸짜리 널판</strong>으로 빈틈없이, 겹치지 않게 깐다.<br>
+        16칸짜리 바닥이면 널판 8장으로 딱 맞는다.<br>
+        그런데 어떤 바닥은 <strong>칸 수가 딱 맞는데도</strong> 아무리 해도 안 깔린다.
+      </div>
+    </section>
+
+    <!-- 슬2 · 미션: 두 장의 의뢰 -->
+    <section class="slide">
+      <span class="stage-badge">미션 2/3</span>
+      <h1 class="slide-title">두 장의 수리 의뢰</h1>
+      <p class="slide-sub">둘 다 <b>14칸</b> — 널판 <b>7장</b>이면 딱 맞는 수</p>
+      <div class="farm-row">
+        <div class="farm-one">
+          <span class="shadow-tag">가 바닥 · 마주 보는 두 모서리가 없다</span>
+          <div class="cal-grid farm big" id="intro-a" style="--farm-n:4"></div>
+          <span class="sum-chip a">아무리 해도 안 깔린다</span>
+        </div>
+        <div class="farm-one">
+          <span class="shadow-tag">나 바닥 · 한 변의 두 모서리가 없다</span>
+          <div class="cal-grid farm big" id="intro-b" style="--farm-n:4"></div>
+          <span class="sum-chip b">7장으로 깔린다</span>
+        </div>
+      </div>
+      <div class="concept-box">
+        칸 수는 둘 다 <strong>14칸</strong>, 필요한 널판도 둘 다 <strong>7장</strong>이다.<br>
+        그런데 한쪽만 깔린다. <strong>칸 수는 답이 아니다.</strong> 그럼 무엇이 갈랐을까?
+      </div>
+    </section>
+
+    <!-- 슬3 · 미션: 다섯 걸음 -->
+    <section class="slide">
+      <span class="stage-badge">미션 3/3</span>
+      <h1 class="slide-title">수리의 다섯 걸음</h1>
+      <ul class="goal-list">
+        <li>널판을 직접 깔아 본다</li>
+        <li>안 깔리는 바닥에서 멈춰 본다</li>
+        <li>바닥에 색을 칠해 까닭을 찾는다</li>
+        <li>다른 바닥에서 확인하고, 색칠로도 못 잡는 거짓말을 만난다</li>
+        <li>내가 직접 수리공 시험 문제를 낸다</li>
+      </ul>
+      <div class="concept-box">
+        답을 알려 주지 않는다. <strong>깔아 보고, 막히고, 까닭을 찾는 것</strong>이 오늘의 점수다.
+      </div>
+    </section>
+
+    <!-- 슬4 · 탐험 1/3 -->
+    <section class="slide" data-q-id="explore">
+      <span class="stage-badge">탐험 1/3</span>
+      <h1 class="slide-title">널판 깔기</h1>
+      <p class="slide-sub">칸을 누르면 <b>오른쪽</b> → <b>아래</b> → <b>치움</b> 으로 바뀐다</p>
+      <div class="cal-grid farm big tap" id="ex-board" style="--farm-n:4"></div>
+      <div class="lab-meter">
+        <span class="lab-label">놓은 널판</span><span class="lab-count" id="ex-laid">0</span>
+        <span class="lab-label">/ 8장</span>
+      </div>
+      <div class="vox-btns">
+        <button class="cal-month-btn" id="ex-clear">전부 치우기</button>
+      </div>
+      <p class="cal-msg" id="ex-msg">8장을 다 깔면 한 가지 방법으로 기록된다. 서로 다른 방법 3가지를 모아 보자.</p>
+      <div class="lab-meter">
+        <span class="lab-label">모은 방법</span><span class="lab-count" id="ex-cnt">0</span>
+        <span class="lab-label">/ 3가지</span>
+      </div>
+    </section>
+
+    <!-- 슬5 · 탐험 2/3 -->
+    <section class="slide">
+      <span class="stage-badge">탐험 2/3</span>
+      <h1 class="slide-title">내가 깐 바닥</h1>
+      <p class="slide-sub">같은 16칸 바닥인데 까는 길은 여러 갈래다</p>
+      <div class="farm-row" id="ex-gallery"></div>
+      <p class="cal-msg" id="gal-msg">아직 기록된 방법이 없다. 앞 화면에서 바닥을 완성해 보자.</p>
+      <div class="concept-box">
+        16칸 바닥을 널판 8장으로 까는 방법은 <strong>36가지</strong>나 된다.<br>
+        길이 이렇게 많은데도 <strong>단 한 길도 없는 바닥</strong>이 있다면, 그건 운이 아니라 까닭이 있다는 뜻이다.
+      </div>
+    </section>
+
+    <!-- 슬6 · 탐험 3/3 -->
+    <section class="slide">
+      <span class="stage-badge">탐험 3/3</span>
+      <h1 class="slide-title">잘린 바닥 — 수리 수첩</h1>
+      <p class="slide-sub">마주 보는 두 모서리가 없는 <b>14칸</b> 바닥. 널판 <b>7장</b>이 필요하다</p>
+      <div class="cal-grid farm big tap" id="cut-board" style="--farm-n:4"></div>
+      <div class="lab-meter">
+        <span class="lab-label">놓은 널판</span><span class="lab-count" id="cut-laid">0</span>
+        <span class="lab-label">/ 7장</span>
+      </div>
+      <div class="vox-btns">
+        <button class="cal-month-btn" id="cut-clear">전부 치우기</button>
+      </div>
+      <p class="cal-msg" id="cut-msg">깔아 보자. 어디까지 가는지 직접 확인하는 것이 이 화면의 일이다.</p>
+      <div class="detective-card">
+        <div class="dc-title">수리 수첩</div>
+        <div class="dc-row">6장까지는 어렵지 않게 놓인다.</div>
+        <div class="dc-row">마지막 한 장이 놓일 자리에는 <b>늘 떨어져 있는 두 칸</b>만 남는다.</div>
+        <div class="dc-row">순서를 바꿔도 결과가 같다면, 순서 탓이 아니다.</div>
+      </div>
+    </section>
+
+    <!-- 슬7 · 발견 1/4 · 추측 -->
+    <section class="slide" data-q-id="conjecture">
+      <span class="stage-badge">발견 1/4</span>
+      <h1 class="slide-title">나의 추측</h1>
+      <p class="slide-sub">왜 가 바닥은 안 깔릴까? 지금 생각을 기록해 두자</p>
+      <div class="mcq-opts one-col" id="conj-opts">
+        <button class="mcq-opt" data-c="0">칸 수가 홀수라서</button>
+        <button class="mcq-opt" data-c="1">바닥 모양이 길쭉해서</button>
+        <button class="mcq-opt" data-c="2">떼어 낸 두 칸이 서로 닮은 자리라서</button>
+        <button class="mcq-opt" data-c="3">놓는 순서를 잘못 골라서</button>
+      </div>
+      <p class="q-fb" id="conj-fb">고른 것이 맞든 틀리든 점수는 같다. 기록해 두고 확인하러 가자.</p>
+    </section>
+
+    <!-- 슬8 · 발견 2/4 · 색칠 실험실 -->
+    <section class="slide">
+      <span class="stage-badge">발견 2/4</span>
+      <h1 class="slide-title">색칠 실험실</h1>
+      <p class="slide-sub">바닥을 <b>금칸</b>과 <b>풀칸</b>이 엇갈리게 칠해 본다</p>
+      <div class="cal-grid farm big tap" id="paint-board" style="--farm-n:4"></div>
+      <div class="vox-btns">
+        <button class="cal-month-btn on" id="paint-toggle">색칠 켜기</button>
+        <button class="cal-month-btn" id="paint-clear">널판 치우기</button>
+      </div>
+      <div class="lab-meter">
+        <span class="lab-label">널판이 덮은 금칸</span><span class="lab-count" id="pt-g">0</span>
+        <span class="lab-label">풀칸</span><span class="lab-count" id="pt-t">0</span>
+      </div>
+      <p class="cal-msg" id="paint-msg">널판을 한 장씩 놓아 보자. 두 수가 어떻게 움직이는지 보자.</p>
+      <div class="concept-box" id="paint-found">
+        널판은 이웃한 두 칸을 덮는다. 이웃한 칸은 <strong>색이 서로 다르다</strong>.<br>
+        그러니 널판 한 장은 <strong>언제나 금칸 하나와 풀칸 하나</strong>를 덮는다. 놓는 자리를 어떻게 골라도 그렇다.
+      </div>
+    </section>
+
+    <!-- 슬9 · 발견 3/4 · q9 -->
+    <section class="slide" data-q-id="q9">
+      <span class="stage-badge">발견 3/4</span>
+      <h1 class="slide-title">잘린 바닥의 두 색</h1>
+      <p class="slide-sub">가 바닥을 칠했다. 금칸과 풀칸은 각각 몇 개일까?</p>
+      <div class="cal-grid farm big" id="q9-board" style="--farm-n:4"></div>
+      <div class="mcq-opts" id="opts-q9">
+        <button class="mcq-opt" data-a="0">금 7 · 풀 7</button>
+        <button class="mcq-opt" data-a="1">금 6 · 풀 8</button>
+        <button class="mcq-opt" data-a="2">금 8 · 풀 6</button>
+      </div>
+      <p class="q-fb" id="fb-q9">떼어 낸 두 모서리가 무슨 색이었는지부터 보자.</p>
+      <div class="concept-box" id="q9-found">
+        널판 7장은 금칸 7개와 풀칸 7개를 덮는다. 그런데 이 바닥은 <strong>6개와 8개</strong>다.<br>
+        <strong>두 색 수가 다르면, 널판으로는 절대 못 깐다.</strong> 순서를 아무리 바꿔도 그렇다.
+      </div>
+    </section>
+
+    <!-- 슬10 · 발견 4/4 · q10 -->
+    <section class="slide" data-q-id="q10">
+      <span class="stage-badge">발견 4/4</span>
+      <h1 class="slide-title">바닥이 더 크다면</h1>
+      <p class="slide-sub">36칸짜리 큰 바닥에서 마주 보는 두 모서리를 뗐다. 널판 17장이 필요하다</p>
+      <div class="cal-grid farm" id="q10-board" style="--farm-n:6"></div>
+      <div class="mcq-opts one-col" id="opts-q10">
+        <button class="mcq-opt" data-a="0">넓으니 자리가 넉넉해서 17장으로 깔린다</button>
+        <button class="mcq-opt" data-a="1">크기와 상관없이 못 깐다</button>
+        <button class="mcq-opt" data-a="2">깔아 봐야만 알 수 있다</button>
+      </div>
+      <p class="q-fb" id="fb-q10">큰 바닥에서도 색을 세어 보자.</p>
+    </section>
+
+    <!-- 슬11 · 도전 1/4 · 판정 3라운드 -->
+    <section class="slide" data-q-id="verify">
+      <span class="stage-badge">도전 1/4</span>
+      <h1 class="slide-title">수리 판정 3라운드</h1>
+      <p class="slide-sub" id="vf-name">1라운드</p>
+      <div class="cal-grid farm big" id="vf-board" style="--farm-n:4"></div>
+      <div class="lab-meter">
+        <span class="lab-label">금칸</span><span class="lab-count" id="vf-g">0</span>
+        <span class="lab-label">풀칸</span><span class="lab-count" id="vf-t">0</span>
+      </div>
+      <p class="q-prompt">깔 수 있으면 <b>널판 수</b>를 적고, 못 깔면 <b>못 깝니다</b>를 누른다.</p>
+      <div class="q-stage">
+        <div class="q-display" id="disp-vf">0</div>
+        <div class="q-pad" id="pad-vf"></div>
+      </div>
+      <div class="vox-btns">
+        <button class="cal-month-btn" id="vf-no">못 깝니다</button>
+      </div>
+      <div id="vf-chips"></div>
+      <p class="cal-msg" id="msg-vf">색을 세어 보고 판정하자.</p>
+    </section>
+
+    <!-- 슬12 · 도전 2/4 · 가짜 보고서 -->
+    <section class="slide" data-q-id="edge">
+      <span class="stage-badge">도전 2/4</span>
+      <h1 class="slide-title">가짜 수리 보고서 적발</h1>
+      <p class="slide-sub">세 장 중 <b>한 장</b>이 거짓이다. 그런데 셋 다 두 색 수가 같다</p>
+      <div class="pick-list" id="edge-list"></div>
+      <p class="cal-msg" id="edge-msg">색만 세면 셋 다 통과한다. 통과했다고 깔리는 것은 아니다.</p>
+      <div class="concept-box" id="edge-found">
+        색칠은 <strong>걸러내는 눈</strong>이지 <strong>보증하는 눈</strong>이 아니다.<br>
+        나 보고서의 바닥에는 <strong>짝이 될 이웃이 하나뿐인 칸이 넷</strong>인데, 그 이웃은 <strong>둘뿐</strong>이다.<br>
+        네 칸이 두 칸을 나눠 가질 수는 없다. 색은 같아도 자리가 모자란 것이다.
+      </div>
+    </section>
+
+    <!-- 슬13 · 도전 3/4 · 가장 적게 파내기 -->
+    <section class="slide" data-q-id="range">
+      <span class="stage-badge">도전 3/4</span>
+      <h1 class="slide-title">가장 적게 파내기</h1>
+      <p class="slide-sub">16칸 바닥을 <b>못 깔리게</b> 만든다. 단 <b>파내는 칸 수는 짝수</b>여야 한다</p>
+      <div class="cal-grid farm big tap" id="rg-board" style="--farm-n:4"></div>
+      <div class="lab-meter">
+        <span class="lab-label">파낸 칸</span><span class="lab-count" id="rg-gone">0</span>
+        <span class="lab-label">금</span><span class="lab-count" id="rg-g">8</span>
+        <span class="lab-label">풀</span><span class="lab-count" id="rg-t">8</span>
+      </div>
+      <div class="vox-btns">
+        <button class="cal-month-btn" id="rg-check">검사하기</button>
+        <button class="cal-month-btn" id="rg-reset">되돌리기</button>
+      </div>
+      <div id="rg-chips"></div>
+      <p class="cal-msg" id="rg-msg">칸을 눌러 파낸다. 가장 적게 파내고도 못 깔리게 할 수 있을까?</p>
+    </section>
+
+    <!-- 슬14 · 도전 4/4 · 입체 세계 -->
+    <section class="slide">
+      <span class="stage-badge">도전 4/4</span>
+      <h1 class="slide-title">입체에서도 통할까</h1>
+      <p class="slide-sub">3층까지 쌓은 덩어리를 <b>두 칸짜리 벽돌</b>로 채운다 · 끌어서 돌려 볼 수 있다</p>
+      <div class="vox-duo">
+        <div class="vox-col">
+          <div class="kvox" id="box-stage" style="--vox-w:210px;--vox-h:200px;--vox-u:30px"></div>
+          <span class="vox-name" id="box-name">3층까지</span>
+        </div>
+      </div>
+      <div class="vox-btns">
+        <button class="cal-month-btn" data-lay="1">1층만</button>
+        <button class="cal-month-btn" data-lay="2">2층까지</button>
+        <button class="cal-month-btn on" data-lay="3">3층까지</button>
+      </div>
+      <div class="lab-meter">
+        <span class="lab-label">칸</span><span class="lab-count" id="box-n">27</span>
+        <span class="lab-label">금</span><span class="lab-count" id="box-g">14</span>
+        <span class="lab-label">풀</span><span class="lab-count" id="box-t">13</span>
+      </div>
+      <p class="cal-msg" id="box-msg">층을 벗겨 가며 두 색이 어떻게 어긋나는지 보자.</p>
+      <div class="concept-box">
+        27칸은 홀수라 벽돌 13장을 놓으면 <strong>한 칸이 남는다</strong>. 벽돌 한 장은 여기서도 두 색을 하나씩 덮으니,
+        남는 칸은 <strong>수가 많은 쪽 색</strong>이어야 한다.<br>
+        덩어리 <strong>속 한가운데 칸</strong>은 적은 쪽 색이다. 그래서 그 칸만은 끝까지 남길 수 없다.<br>
+        타일 시공, 퍼즐 조각 맞추기, 창고에 상자 채우기 — 「되나 안 되나」를 <strong>해 보기 전에 아는 법</strong>이 여기서 나온다.
+      </div>
+    </section>
+
+    <!-- 슬15 · 창조 1/3 -->
+    <section class="slide" data-q-id="create">
+      <span class="stage-badge">창조 1/3</span>
+      <h1 class="slide-title">수리공 시험 출제</h1>
+      <p class="slide-sub">칸을 파내 바닥을 설계하고, 두 임무를 완수한다</p>
+      <div class="cal-grid farm big tap" id="cr-board" style="--farm-n:4"></div>
+      <div class="lab-meter">
+        <span class="lab-label">남은 칸</span><span class="lab-count" id="cr-area">16</span>
+        <span class="lab-label">금</span><span class="lab-count" id="cr-g">8</span>
+        <span class="lab-label">풀</span><span class="lab-count" id="cr-t">8</span>
+      </div>
+      <div class="pick-list" id="create-goals">
+        <button class="pick-item" data-g="0"><span class="tag">임무 가</span>두 색 수가 같은데도 못 깔리는 <b>마술 바닥</b> (6칸 이상)</button>
+        <button class="pick-item" data-g="1"><span class="tag">임무 나</span>깔 수 있는 방법이 <b>딱 한 가지</b>뿐인 외길 바닥 (8칸 이상)</button>
+      </div>
+      <div class="vox-btns">
+        <button class="cal-month-btn" id="cr-check">출제 검사</button>
+        <button class="cal-month-btn" id="cr-reset">되돌리기</button>
+      </div>
+      <div id="cr-chips"></div>
+      <p class="cal-msg" id="msg-create">검사기는 <b>가짓수</b>만 알려 준다. 어느 칸을 파라는 말은 하지 않는다.</p>
+    </section>
+
+    <!-- 슬16 · 창조 2/3 -->
+    <section class="slide">
+      <span class="stage-badge">창조 2/3</span>
+      <h1 class="slide-title">수리 완료 — 수리공 카드</h1>
+      <div class="home-card" id="agent-card"></div>
+      <div class="concept-box">
+        오늘 만든 문제는 남에게 내 보면 더 재미있다. 마술 바닥을 보여 주고 <strong>왜 안 깔리는지</strong> 물어보자.
+      </div>
+    </section>
+
+    <!-- 슬17 · 창조 3/3 -->
+    <section class="slide">
+      <span class="stage-badge">창조 3/3</span>
+      <h1 class="slide-title">오늘의 발견 정리</h1>
+      <div class="detective-card">
+        <div class="dc-title">발견한 것</div>
+        <div class="dc-row">널판 한 장은 <b>언제나 두 색을 하나씩</b> 덮는다.</div>
+        <div class="dc-row">그러니 <b>두 색 수가 다르면 절대 못 깐다</b> — 바닥이 아무리 커도 같다.</div>
+        <div class="dc-row">가장 적게 파내 못 깔리게 하려면 <b>같은 색 두 칸</b>이면 된다.</div>
+        <div class="dc-row">하지만 <b>두 색 수가 같다고 깔리는 것은 아니다</b>. 색칠은 거르는 눈이지 보증하는 눈이 아니다.</div>
+        <div class="dc-row">입체에서도 같은 눈이 통한다. 27칸 덩어리에서 <b>속 한가운데</b>만은 남길 수 없다.</div>
+      </div>
+      <div class="concept-box">
+        <strong>해 보지 않고도 안 된다는 것을 아는 법</strong> — 이것이 오늘 손에 넣은 도구다.<br>
+        다만 <strong>된다는 것</strong>은 여전히 해 봐야 안다. 두 가지는 다른 일이다.
+      </div>
+    </section>
+
+    <!-- 슬18 · 마침 -->
+    <section class="slide">
+      <span class="stage-badge">마침</span>
+      <h1 class="slide-title">수리 결과</h1>
+      <div class="wrap-score" id="wrap-score">0점</div>
+      <p class="wrap-msg" id="wrap-msg"></p>
+      <div class="next-chip">
+        <span class="next-mini">다음 차시</span>
+        <b>격자 경로 연구소</b> — 길이 몇 갈래인지 세는 법
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next" id="next" onclick="goNext()">다음 →</button>
+  </footer>
+</div>
+
+<script>
+/* ═══════════ KGiftedCore — 순수 로직 (DOM 무의존, 테스트 대상) ═══════════ */
+const KGiftedCore = {
+  SCORE_PLAN: { explore: 15, conjecture: 10, q9: 10, q10: 10, verify: 15, edge: 10, range: 10, create: 20 },
+  W: 4, H: 4,
+  NEED_CASES: 3,          // 탐험 — 서로 다른 깔기 3가지
+  DIAG_CUT: [[0, 0], [3, 3]],   // 잘린 바닥 (대각 두 모서리)
+
+  /* ── 바닥 만들기 ── */
+  full(W, H) { return new Array(W * H).fill(true); },
+  cut(W, H, list) {
+    const on = this.full(W, H);
+    for (const p of list) on[p[1] * W + p[0]] = false;
+    return on;
+  },
+  area(on) { let n = 0; for (let i = 0; i < on.length; i++) if (on[i]) n++; return n; },
+  colorOf(i, W) { const x = i % W, y = Math.floor(i / W); return (x + y) % 2; },
+  colors(on, W) {                       // [검은칸, 흰칸]
+    let a = 0, b = 0;
+    for (let i = 0; i < on.length; i++) if (on[i]) { if (this.colorOf(i, W) === 0) a++; else b++; }
+    return [a, b];
+  },
+  balanced(on, W) { const c = this.colors(on, W); return c[0] === c[1]; },
+  neighbors(on, W, H, i) {
+    const x = i % W, y = Math.floor(i / W), out = [];
+    if (x + 1 < W && on[i + 1]) out.push(i + 1);
+    if (x - 1 >= 0 && on[i - 1]) out.push(i - 1);
+    if (y + 1 < H && on[i + W]) out.push(i + W);
+    if (y - 1 >= 0 && on[i - W]) out.push(i - W);
+    return out;
+  },
+  lonely(on, W, H) {                    // 짝이 아예 없는 칸 (외톨이)
+    const out = [];
+    for (let i = 0; i < on.length; i++) if (on[i] && this.neighbors(on, W, H, i).length === 0) out.push(i);
+    return out;
+  },
+
+  /* ── 분할 가짓수 — 사전순 첫 칸을 반드시 덮는 재귀 + 비트 기억 ──
+       (테스트 하니스는 「검은 칸마다 흰 짝 고르기」로 따로 세어 대조한다) */
+  countTilings(on, W, H) {
+    const N = W * H;
+    if (this.area(on) % 2) return 0;
+    const c = this.colors(on, W);
+    if (c[0] !== c[1]) return 0;        // 두 색이 어긋나면 크기와 무관하게 0 (이 차시의 발견 그대로)
+    if (N > 30) return -1;              // 그 밖의 큰 바닥은 세지 않는다 (거짓말 대신 모름을 돌려준다)
+    let full = 0;
+    for (let i = 0; i < N; i++) if (on[i]) full |= (1 << i);
+    const memo = new Map();
+    const rec = (rem) => {
+      if (rem === 0) return 1;
+      if (memo.has(rem)) return memo.get(rem);
+      let i = 0;
+      while (!((rem >> i) & 1)) i++;
+      const x = i % W, y = Math.floor(i / W);
+      let n = 0;
+      if (x + 1 < W && ((rem >> (i + 1)) & 1)) n += rec(rem & ~(1 << i) & ~(1 << (i + 1)));
+      if (y + 1 < H && ((rem >> (i + W)) & 1)) n += rec(rem & ~(1 << i) & ~(1 << (i + W)));
+      memo.set(rem, n);
+      return n;
+    };
+    return rec(full);
+  },
+  canTile(on, W, H) { return this.countTilings(on, W, H) > 0; },
+
+  /* ── 널판 놓기 — 칸을 누르면 없음 → 오른쪽 → 아래 → 없음 (3상태 순환) ──
+       lay[i] : 0 없음 · 1 오른쪽 짝 · 2 아래 짝. 널판 한 장이 두 칸을 덮는다. */
+  coverMap(lay, on, W, H) {             // covered[i] = 덮은 널판 번호 (없으면 -1)
+    const cov = new Array(W * H).fill(-1);
+    let k = 0;
+    for (let i = 0; i < lay.length; i++) {
+      if (!lay[i]) continue;
+      const j = lay[i] === 1 ? i + 1 : i + W;
+      cov[i] = k; cov[j] = k; k++;
+    }
+    return cov;
+  },
+  partner(i, d, W, H) {
+    const x = i % W, y = Math.floor(i / W);
+    if (d === 1) return x + 1 < W ? i + 1 : -1;
+    if (d === 2) return y + 1 < H ? i + W : -1;
+    return -1;
+  },
+  canLay(lay, on, W, H, i, d) {
+    if (!on[i]) return false;
+    const j = this.partner(i, d, W, H);
+    if (j < 0 || !on[j]) return false;
+    const cov = this.coverMap(lay, on, W, H);
+    if (cov[i] >= 0 && lay[i] === 0) return false;   // 남의 널판이 덮은 칸
+    if (cov[j] >= 0) return false;
+    return true;
+  },
+  cycleLay(lay, on, W, H, i) {          // 다음 상태로 (놓을 수 없는 방향은 건너뛴다)
+    const next = lay.slice();
+    if (!on[i]) return next;
+    const cur = lay[i] || 0;
+    for (let s = 1; s <= 3; s++) {
+      const d = (cur + s) % 3;
+      if (d === 0) { next[i] = 0; return next; }
+      const probe = lay.slice(); probe[i] = 0;
+      if (this.canLay(probe, on, W, H, i, d)) { next[i] = d; return next; }
+    }
+    next[i] = 0;
+    return next;
+  },
+  laidCount(lay) { let n = 0; for (let i = 0; i < lay.length; i++) if (lay[i]) n++; return n; },
+  isComplete(lay, on, W, H) {
+    const cov = this.coverMap(lay, on, W, H);
+    for (let i = 0; i < on.length; i++) if (on[i] && cov[i] < 0) return false;
+    return true;
+  },
+  laySignature(lay) { return lay.map(v => v || 0).join(''); },
+  /* 널판 두 색 — 맞닿은 널판이 서로 다른 색이 되게 (없는 CSS를 새로 만들지 않으려는 배치) */
+  plankTint(lay, on, W, H) {
+    const cov = this.coverMap(lay, on, W, H);
+    const tint = [];
+    for (let i = 0; i < lay.length; i++) {
+      if (!lay[i]) continue;
+      const k = cov[i], cells = [i, lay[i] === 1 ? i + 1 : i + W];
+      const used = new Set();
+      for (const c of cells) for (const nb of this.neighbors(on, W, H, c)) {
+        const nk = cov[nb];
+        if (nk >= 0 && nk !== k && tint[nk] !== undefined) used.add(tint[nk]);
+      }
+      tint[k] = used.has(0) ? (used.has(1) ? 0 : 1) : 0;
+    }
+    return tint;
+  },
+
+  /* ── 문항 데이터 ── */
+  VERIFY_ROUNDS: [
+    { name: '가 방', cut: [[0, 0], [0, 1]] },      // 다른 색 두 칸 → 7장 (18가지)
+    { name: '나 방', cut: [[1, 1], [2, 2]] },      // 같은 색 두 칸 → 못 깐다
+    { name: '다 방', cut: [[0, 0], [1, 0], [0, 1], [3, 3]] }  // 6장 (6가지)
+  ],
+  verifyBoard(i) { return this.cut(this.W, this.H, this.VERIFY_ROUNDS[i].cut); },
+  verifyAnswer(i) {                     // 깔 수 있으면 널판 수, 못 깔면 0
+    const on = this.verifyBoard(i);
+    return this.canTile(on, this.W, this.H) ? this.area(on) / 2 : 0;
+  },
+
+  // 가짜 수리 보고서 — 셋 다 두 색 개수가 같다. 색칠만으로는 거짓을 잡을 수 없다.
+  EDGE_REPORTS: [
+    { name: '가 보고서', cut: [[0, 0], [3, 0]] },
+    { name: '나 보고서', keep: [[0, 1], [1, 1], [1, 2], [2, 0], [2, 1], [3, 1]] },
+    { name: '다 보고서', cut: [[1, 1], [1, 2]] }
+  ],
+  EDGE_FAKE: 1,
+  edgeBoard(i) {
+    const r = this.EDGE_REPORTS[i];
+    if (r.keep) {
+      const on = new Array(this.W * this.H).fill(false);
+      for (const p of r.keep) on[p[1] * this.W + p[0]] = true;
+      return on;
+    }
+    return this.cut(this.W, this.H, r.cut);
+  },
+  reportTrue(i) { return this.canTile(this.edgeBoard(i), this.W, this.H); },
+
+  /* ── 실험실: 가장 적게 파내 못 깔리게 (짝수 칸만 파낸다) ── */
+  RANGE_BEST: 2,
+  checkCut(on) {                        // 파낸 자리는 절대 돌려주지 않는다 (§3-6)
+    const W = this.W, H = this.H;
+    const gone = W * H - this.area(on);
+    const c = this.colors(on, W);
+    const ways = this.countTilings(on, W, H);
+    return {
+      gone: gone, area: this.area(on), black: c[0], white: c[1], ways: ways,
+      evenCut: gone > 0 && gone % 2 === 0,
+      ok: gone > 0 && gone % 2 === 0 && ways === 0,
+      best: gone === this.RANGE_BEST && ways === 0
+    };
+  },
+
+  /* ── 창조: 수리공 시험 출제 ──
+       임무 가 = 마술 바닥 (칸 짝수 · 두 색 같음 · 그런데 못 깔린다)
+       임무 나 = 외길 바닥 (깔 수 있는 방법이 딱 한 가지) */
+  MAGIC_MIN: 6,     // 자명하지 않은 마술 바닥의 최소 크기 = 6칸 (전수 확인)
+  ONLY_MIN: 8,      // 외길 바닥은 8칸부터 — 짧은 띠는 시시하다
+  checkMagic(on) {                      // 가짓수·색 개수만 돌려준다 — 어느 칸을 파라는 말은 없다
+    const W = this.W, H = this.H;
+    const a = this.area(on), c = this.colors(on, W), ways = this.countTilings(on, W, H);
+    return {
+      area: a, black: c[0], white: c[1], ways: ways,
+      lonely: this.lonely(on, W, H).length,
+      ok: a >= this.MAGIC_MIN && a % 2 === 0 && c[0] === c[1] && ways === 0,
+      pure: a >= this.MAGIC_MIN && a % 2 === 0 && c[0] === c[1] && ways === 0
+            && this.lonely(on, W, H).length === 0
+    };
+  },
+  checkOnly(on) {
+    const W = this.W, H = this.H;
+    const a = this.area(on), ways = this.countTilings(on, W, H);
+    return { area: a, ways: ways, ok: a >= this.ONLY_MIN && ways === 1 };
+  },
+
+  /* ── 입체 세계: 3층까지 쌓은 3×3 덩어리 ── */
+  boxCells(layer) { return 9 * layer; },
+  boxColors(layer) {                    // [짝수합, 홀수합]
+    let a = 0, b = 0;
+    for (let z = 0; z < layer; z++) for (let y = 0; y < 3; y++) for (let x = 0; x < 3; x++) {
+      if ((x + y + z) % 2 === 0) a++; else b++;
+    }
+    return [a, b];
+  },
+  BOX_KEEPABLE: 14,                     // 27칸에서 남길 수 있는 칸 = 꼭짓점 8 + 면 한가운데 6
+  hintSteps: 3
+};
+if (typeof window !== 'undefined') window.KGiftedCore = KGiftedCore;
+if (typeof module !== 'undefined' && typeof module.exports === 'object') module.exports = KGiftedCore;
+
+/* ═══════════ 엔진 (base: kg_math_l3_pat01 · pat02 공통부 · geo01 격자 배선 · geo03 입체 계승 · 힌트 3단) ═══════════ */
+const TOTAL = 18;
+const LESSON_ID = 'kg_math_l3_geo02';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+const HINT_MAX = 3;
+const BOARD_W = 4, BOARD_H = 4;
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+/* ═══ 화면 맞춤 — 슬라이드가 프레임보다 길면 균일 축소 (제목이 헤더 뒤로 잘리는 것 방지) ═══ */
+const FIT_MIN = 0.55, FIT_STEP = 0.04;
+let fitPending = false;
+function fitActiveSlide() {
+  const el = document.querySelector('.slide.active');
+  if (!el) return;
+  if (el.style.zoom) el.style.zoom = '';
+  if (!(window.CSS && CSS.supports && CSS.supports('zoom', '0.9'))) return;
+  if (!el.clientHeight) return;
+  let k = 1;
+  for (let i = 0; i < 16 && el.scrollHeight > el.clientHeight + 1; i++) {
+    k = Math.max(FIT_MIN, k - FIT_STEP);
+    el.style.zoom = k;
+    if (k === FIT_MIN) break;
+  }
+}
+function scheduleFit() {
+  if (fitPending) return;
+  fitPending = true;
+  requestAnimationFrame(() => { fitPending = false; fitActiveSlide(); });
+}
+window.addEventListener('resize', scheduleFit);
+window.addEventListener('orientationchange', scheduleFit);
+document.addEventListener('click', scheduleFit, true);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(scheduleFit);
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.querySelectorAll('#dots .ka-dot').forEach((d, i) => { d.classList.toggle('active', i === cur); d.classList.toggle('done', i < cur); });
+  document.getElementById('prev').disabled = cur === 0;
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.hintLevel >= HINT_MAX; }
+  else { hintBtn.disabled = true; }
+  if (cur === TOTAL - 1) {
+    document.getElementById('next').textContent = '마치기 →';
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('wrap-msg').textContent = wrapMsg(score);
+    saveProgress(true);
+  } else { document.getElementById('next').textContent = '다음 →'; }
+  if (cur === 4) renderCaseTable();
+  if (cur === 15) renderAgentCard();
+  fitActiveSlide();
+}
+function saveProgress(done) {
+  const data = { cur, score, done, startedAt, finishedAt: done ? Date.now() : null, qState, cases: exploreCases, conj: conjPicked, myRule: myRuleText };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function wrapMsg(s) {
+  if (s >= 100) return '전설의 수리공!';
+  if (s >= 80) return '대단한 수리였다!';
+  if (s >= 60) return '수리공의 눈이 자라났다!';
+  return '단서는 충분히 모았다. 다시 도전해도 좋다!';
+}
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+function showHint() {
+  const qid = currentQId(); if (!qid) return;
+  const st = getQState(qid); if (st.hintLevel >= HINT_MAX) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint'); if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[Math.min(st.hintLevel, hints.length) - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= HINT_MAX;
+}
+
+
+/* ═══════════ KVox3D — 쌓기나무 입체 부품 (원본 · 차시에는 인라인 사본 주입) ═══════════
+   준호 지시(2026-08-14) 「3D 표준 도입」으로 헌법 v1.2 §10 등재.
+   기능: ① 높이판 → CSS 3D 쌓기나무 렌더 ② 손가락 드래그 회전(범위 제한 가능)
+        ③ 시점 스냅(비스듬히·위·앞·옆) — 그림자 감각을 몸으로 익히는 무대            */
+const KVox3D = {
+  SNAPS: { free: { x: -28, y: -38 }, top: { x: -89, y: 0 }, front: { x: -2, y: 0 }, side: { x: -2, y: -88 } },
+  mount(el, opts) {
+    opts = opts || {};
+    const U = opts.unit || parseInt(getComputedStyle(el).getPropertyValue('--vox-u')) || 34;
+    const lim = Object.assign({ minX: -92, maxX: 5, minY: -95, maxY: 5 }, opts.limits || {});
+    const world = document.createElement('div');
+    world.className = 'kvox-world';
+    el.appendChild(world);
+    const st = { x: this.SNAPS.free.x, y: this.SNAPS.free.y, map: null };
+    const apply = () => { world.style.transform = 'rotateX(' + st.x + 'deg) rotateY(' + st.y + 'deg)'; };
+    const face = (cls, tf) => {
+      const f = document.createElement('div');
+      f.className = 'kvox-face ' + cls;
+      f.style.width = U + 'px'; f.style.height = U + 'px';
+      f.style.left = (-U / 2) + 'px'; f.style.top = (-U / 2) + 'px';
+      f.style.transform = tf;
+      return f;
+    };
+    const render = () => {
+      world.innerHTML = '';
+      const floor = document.createElement('div');
+      floor.className = 'kvox-floor';
+      for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) {
+        const t = document.createElement('div');
+        t.className = 'kvox-tile';
+        t.style.width = U + 'px'; t.style.height = U + 'px';
+        t.style.left = (-U / 2) + 'px'; t.style.top = (-U / 2) + 'px';
+        t.style.transform = 'translate3d(' + ((c - 1) * U) + 'px,0,' + ((r - 1) * U) + 'px) rotateX(90deg)';
+        floor.appendChild(t);
+      }
+      world.appendChild(floor);
+      if (!st.map) return;
+      for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) {
+        for (let l = 0; l < st.map[r][c]; l++) {
+          const cube = document.createElement('div');
+          cube.className = 'kvox-cube';
+          cube.dataset.rc = r + ',' + c; cube.dataset.l = l;
+          cube.style.transform = 'translate3d(' + ((c - 1) * U) + 'px,' + (-(l * U + U / 2)) + 'px,' + ((r - 1) * U) + 'px)';
+          cube.appendChild(face('kf-top', 'rotateX(90deg) translateZ(' + (U / 2) + 'px)'));
+          cube.appendChild(face('kf-front', 'translateZ(' + (U / 2) + 'px)'));
+          cube.appendChild(face('kf-side', 'rotateY(90deg) translateZ(' + (U / 2) + 'px)'));
+          world.appendChild(cube);
+        }
+      }
+    };
+    if (opts.drag !== false) {
+      let down = null;
+      el.addEventListener('pointerdown', e => { down = { px: e.clientX, py: e.clientY, x: st.x, y: st.y }; el.classList.add('dragging'); el.setPointerCapture && el.setPointerCapture(e.pointerId); });
+      el.addEventListener('pointermove', e => {
+        if (!down) return;
+        st.y = Math.max(lim.minY, Math.min(lim.maxY, down.y + (e.clientX - down.px) * 0.45));
+        st.x = Math.max(lim.minX, Math.min(lim.maxX, down.x - (e.clientY - down.py) * 0.45));
+        apply();
+      });
+      const up = () => { down = null; el.classList.remove('dragging'); };
+      el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('pointerleave', up);
+    }
+    apply();
+    return {
+      el, state: st,
+      setMap(h) { st.map = h; render(); },
+      snap(name) { const s = KVox3D.SNAPS[name]; if (!s) return; st.x = Math.max(lim.minX, Math.min(lim.maxX, s.x)); st.y = Math.max(lim.minY, Math.min(lim.maxY, s.y)); apply(); },
+      cubeCount() { return world.querySelectorAll('.kvox-cube').length; }
+    };
+  }
+};
+if (typeof window !== 'undefined') window.KVox3D = KVox3D;
+/* ═══ 칩·숫자패드 공통 (geo01 정의 문자 그대로 추출·주입) ═══ */
+function chip(elId, text, kind) {
+  const s = document.createElement('span');
+  s.className = 'sum-chip ' + (kind || 'a');
+  s.textContent = text;
+  document.getElementById(elId).appendChild(s);
+}
+function buildPad(padId, dispId, maxLen, onSubmit) {
+  const pad = document.getElementById(padId);
+  const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '←', '확인'];
+  let val = '';
+  const draw = () => { document.getElementById(dispId).textContent = val || '\u00A0'; };
+  keys.forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'q-key' + (k === '←' || k === '확인' ? ' fn' : '');
+    b.textContent = k;
+    b.addEventListener('click', () => {
+      if (k === '←') val = val.slice(0, -1);
+      else if (k === '확인') { if (val !== '') { const v = parseInt(val, 10); if (onSubmit(v) !== false) val = ''; } }
+      else if (val.length < maxLen) val += k;
+      draw();
+    });
+    pad.appendChild(b);
+  });
+  draw();
+}
+
+/* ═══════════ 바닥 격자 렌더 공통 (pat01 cal-grid 파라미터 변형 · 상태는 기존 클래스만) ═══════════
+   널판 = 채움 두 색(sel · center-cell) · 체스판 색 = 테두리 두 색(diag-a 금 · diag-b 풀)          */
+function renderBoard(id, on, W, H, opt) {
+  opt = opt || {};
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = '';
+  const lay = opt.lay || null;
+  const cov = lay ? KGiftedCore.coverMap(lay, on, W, H) : null;
+  const tint = lay ? KGiftedCore.plankTint(lay, on, W, H) : null;
+  for (let i = 0; i < W * H; i++) {
+    const c = document.createElement('div');
+    c.className = 'cal-cell';
+    c.dataset.i = i;
+    if (!on[i]) c.classList.add('empty');
+    else {
+      if (opt.paint) c.classList.add(KGiftedCore.colorOf(i, W) === 0 ? 'diag-a' : 'diag-b');
+      if (cov && cov[i] >= 0) c.classList.add(tint[cov[i]] === 0 ? 'sel' : 'center-cell');
+    }
+    if (opt.onTap) c.addEventListener('click', () => opt.onTap(i));
+    el.appendChild(c);
+  }
+}
+function paintCount(on, W) {
+  const c = KGiftedCore.colors(on, W);
+  return { g: c[0], t: c[1] };
+}
+
+/* ═══════════ 슬2 견본 두 바닥 (읽기 전용) ═══════════ */
+renderBoard('intro-a', KGiftedCore.cut(4, 4, KGiftedCore.DIAG_CUT), 4, 4, {});
+renderBoard('intro-b', KGiftedCore.cut(4, 4, [[0, 0], [3, 0]]), 4, 4, {});
+
+/* ═══════════ 슬4 탐험 — 널판 깔기 ═══════════ */
+const exploreCases = [];
+(function() {
+  const on = KGiftedCore.full(4, 4);
+  let lay = new Array(16).fill(0);
+  const draw = () => {
+    renderBoard('ex-board', on, 4, 4, { lay: lay, onTap: tap });
+    document.getElementById('ex-laid').textContent = KGiftedCore.laidCount(lay);
+  };
+  function tap(i) {
+    lay = KGiftedCore.cycleLay(lay, on, 4, 4, i);
+    draw();
+    const msg = document.getElementById('ex-msg');
+    if (!KGiftedCore.isComplete(lay, on, 4, 4)) { msg.classList.remove('wrong'); return; }
+    const sig = KGiftedCore.laySignature(lay);
+    const st = getQState('explore');
+    if (exploreCases.indexOf(sig) >= 0) {
+      msg.textContent = '이미 기록한 방법이다. 다르게 깔아 보자.';
+      return;
+    }
+    exploreCases.push(sig);
+    document.getElementById('ex-cnt').textContent = Math.min(exploreCases.length, KGiftedCore.NEED_CASES);
+    renderGallery();
+    if (exploreCases.length < KGiftedCore.NEED_CASES) {
+      msg.textContent = '새 방법을 기록했다. ' + (KGiftedCore.NEED_CASES - exploreCases.length) + '가지 더 모아 보자.';
+    } else if (!st.solved) {
+      st.solved = true;
+      addScore(KGiftedCore.SCORE_PLAN.explore);
+      msg.textContent = '서로 다른 방법 3가지를 모았다. 까는 길은 하나가 아니다. ⭐ +15';
+    } else {
+      msg.textContent = '또 다른 방법을 기록했다.';
+    }
+    saveProgress(false);
+  }
+  document.getElementById('ex-clear').addEventListener('click', () => {
+    lay = new Array(16).fill(0); draw();
+    document.getElementById('ex-msg').textContent = '전부 치웠다. 다시 깔아 보자.';
+  });
+  draw();
+  function renderGallery() {
+    const box = document.getElementById('ex-gallery');
+    box.innerHTML = '';
+    exploreCases.slice(0, 6).forEach((sig, k) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'farm-one';
+      const tag = document.createElement('span');
+      tag.className = 'shadow-tag'; tag.textContent = (k + 1) + '번째 방법';
+      const g = document.createElement('div');
+      g.className = 'cal-grid farm'; g.id = 'gal-' + k; g.style.setProperty('--farm-n', 4);
+      wrap.appendChild(tag); wrap.appendChild(g); box.appendChild(wrap);
+      renderBoard('gal-' + k, KGiftedCore.full(4, 4), 4, 4, { lay: sig.split('').map(Number) });
+    });
+    document.getElementById('gal-msg').textContent = exploreCases.length
+      ? '기록된 방법 ' + exploreCases.length + '가지. 널판 색은 이웃한 널판끼리 구별하려고 번갈아 칠한 것이다.'
+      : '아직 기록된 방법이 없다. 앞 화면에서 바닥을 완성해 보자.';
+  }
+})();
+
+/* ═══════════ 슬6 잘린 바닥 ═══════════ */
+(function() {
+  const on = KGiftedCore.cut(4, 4, KGiftedCore.DIAG_CUT);
+  let lay = new Array(16).fill(0);
+  let best = 0;
+  const draw = () => {
+    renderBoard('cut-board', on, 4, 4, { lay: lay, onTap: tap });
+    const n = KGiftedCore.laidCount(lay);
+    document.getElementById('cut-laid').textContent = n;
+    if (n > best) {
+      best = n;
+      const msg = document.getElementById('cut-msg');
+      if (n >= 6) msg.textContent = '6장까지 왔다. 남은 두 칸이 서로 떨어져 있지 않은지 보자.';
+      else msg.textContent = n + '장. 계속 깔아 보자.';
+    }
+  };
+  function tap(i) { lay = KGiftedCore.cycleLay(lay, on, 4, 4, i); draw(); }
+  document.getElementById('cut-clear').addEventListener('click', () => {
+    lay = new Array(16).fill(0); best = 0; draw();
+    document.getElementById('cut-msg').textContent = '전부 치웠다. 순서를 바꿔 다시 깔아 보자.';
+  });
+  draw();
+})();
+
+/* ═══════════ 슬7 추측 기록 ═══════════ */
+let conjPicked = '';
+const CONJ_TEXT = ['칸 수가 홀수라서', '바닥 모양이 길쭉해서', '떼어 낸 두 칸이 서로 닮은 자리라서', '놓는 순서를 잘못 골라서'];
+document.querySelectorAll('#conj-opts .mcq-opt').forEach(b => {
+  b.addEventListener('click', () => {
+    const st = getQState('conjecture');
+    document.querySelectorAll('#conj-opts .mcq-opt').forEach(x => x.classList.remove('correct'));
+    b.classList.add('correct');
+    conjPicked = CONJ_TEXT[parseInt(b.dataset.c, 10)];
+    const fb = document.getElementById('conj-fb');
+    if (!st.solved) {
+      st.solved = true;
+      addScore(KGiftedCore.SCORE_PLAN.conjecture);
+      fb.textContent = '추측을 기록했다. 맞는지 틀리는지는 이제부터 확인한다. ⭐ +10';
+    } else {
+      fb.textContent = '추측을 바꿔 기록했다.';
+    }
+    saveProgress(false);
+  });
+});
+
+/* ═══════════ 슬8 색칠 실험실 ═══════════ */
+(function() {
+  const on = KGiftedCore.full(4, 4);
+  let lay = new Array(16).fill(0);
+  let paint = true;
+  const draw = () => {
+    renderBoard('paint-board', on, 4, 4, { lay: lay, paint: paint, onTap: tap });
+    const cov = KGiftedCore.coverMap(lay, on, 4, 4);
+    let g = 0, t = 0;
+    for (let i = 0; i < 16; i++) if (cov[i] >= 0) { if (KGiftedCore.colorOf(i, 4) === 0) g++; else t++; }
+    document.getElementById('pt-g').textContent = g;
+    document.getElementById('pt-t').textContent = t;
+    const msg = document.getElementById('paint-msg');
+    const n = KGiftedCore.laidCount(lay);
+    if (n === 0) msg.textContent = '널판을 한 장씩 놓아 보자. 두 수가 어떻게 움직이는지 보자.';
+    else if (g === t) msg.textContent = '널판 ' + n + '장 — 금칸 ' + g + ', 풀칸 ' + t + '. 두 수가 늘 같이 움직인다.';
+    else msg.textContent = '널판 ' + n + '장 — 금칸 ' + g + ', 풀칸 ' + t + '.';
+  };
+  function tap(i) { lay = KGiftedCore.cycleLay(lay, on, 4, 4, i); draw(); }
+  document.getElementById('paint-toggle').addEventListener('click', function() {
+    paint = !paint;
+    this.classList.toggle('on', paint);
+    this.textContent = paint ? '색칠 켜기' : '색칠 끄기';
+    draw();
+  });
+  document.getElementById('paint-clear').addEventListener('click', () => {
+    lay = new Array(16).fill(0); draw();
+  });
+  draw();
+})();
+
+/* ═══════════ 슬9 q9 — 잘린 바닥의 두 색 ═══════════ */
+renderBoard('q9-board', KGiftedCore.cut(4, 4, KGiftedCore.DIAG_CUT), 4, 4, { paint: true });
+document.querySelectorAll('#opts-q9 .mcq-opt').forEach(b => {
+  b.addEventListener('click', () => {
+    const st = getQState('q9');
+    if (st.solved) return;
+    st.attempts++;
+    const fb = document.getElementById('fb-q9');
+    if (parseInt(b.dataset.a, 10) === 1) {
+      st.solved = true;
+      b.classList.add('correct');
+      addScore(KGiftedCore.SCORE_PLAN.q9);
+      fb.classList.remove('wrong');
+      fb.textContent = '맞다. 떼어 낸 두 모서리가 둘 다 금칸이었다. 금 6 · 풀 8이다. ⭐ +10';
+    } else {
+      st.wrongCount++;
+      b.classList.add('wrong');
+      fb.classList.add('wrong');
+      fb.textContent = '아직이다. 두 모서리를 떼기 전에는 8과 8이었다. 뗀 두 칸의 색을 보자.';
+    }
+    saveProgress(false);
+  });
+});
+
+/* ═══════════ 슬10 q10 — 더 큰 바닥 ═══════════ */
+renderBoard('q10-board', KGiftedCore.cut(6, 6, [[0, 0], [5, 5]]), 6, 6, { paint: true });
+document.querySelectorAll('#opts-q10 .mcq-opt').forEach(b => {
+  b.addEventListener('click', () => {
+    const st = getQState('q10');
+    if (st.solved) return;
+    st.attempts++;
+    const fb = document.getElementById('fb-q10');
+    if (parseInt(b.dataset.a, 10) === 1) {
+      st.solved = true;
+      b.classList.add('correct');
+      addScore(KGiftedCore.SCORE_PLAN.q10);
+      fb.classList.remove('wrong');
+      fb.textContent = '맞다. 마주 보는 두 모서리는 늘 같은 색이다. 16과 18로 갈리니 크기와 상관없이 못 깐다. ⭐ +10';
+    } else {
+      st.wrongCount++;
+      b.classList.add('wrong');
+      fb.classList.add('wrong');
+      fb.textContent = '아직이다. 큰 바닥에서도 두 색을 세어 보자. 널판 한 장이 덮는 것은 그대로다.';
+    }
+    saveProgress(false);
+  });
+});
+
+/* ═══════════ 슬11 판정 3라운드 ═══════════ */
+(function() {
+  let r = 0;
+  const load = () => {
+    const R = KGiftedCore.VERIFY_ROUNDS[r];
+    const on = KGiftedCore.verifyBoard(r);
+    document.getElementById('vf-name').textContent = (r + 1) + '라운드 · ' + R.name;
+    renderBoard('vf-board', on, 4, 4, { paint: true });
+    const c = paintCount(on, 4);
+    document.getElementById('vf-g').textContent = c.g;
+    document.getElementById('vf-t').textContent = c.t;
+  };
+  const judge = (v) => {
+    const st = getQState('verify');
+    const msg = document.getElementById('msg-vf');
+    if (st.solved) return true;
+    st.attempts++;
+    if (v === KGiftedCore.verifyAnswer(r)) {
+      msg.classList.remove('wrong');
+      addScore(5);
+      chip('vf-chips', KGiftedCore.VERIFY_ROUNDS[r].name + ' ' + (v === 0 ? '못 깐다 ✓' : v + '장 ✓'), 'b');
+      if (r < KGiftedCore.VERIFY_ROUNDS.length - 1) {
+        r++; load();
+        msg.textContent = r + '라운드 통과! ⭐ +5 — 다음 라운드로 간다.';
+      } else {
+        st.solved = true;
+        msg.textContent = '3라운드 전부 통과! 깔지 않고도 판정한다. ⭐ +5';
+      }
+    } else {
+      st.wrongCount++;
+      msg.classList.add('wrong');
+      msg.textContent = '아직이다. 두 색 수부터 맞춰 보고, 같다면 실제로 깔 수 있는지도 따져 보자.';
+    }
+    saveProgress(false);
+    return true;
+  };
+  load();
+  buildPad('pad-vf', 'disp-vf', 2, judge);
+  document.getElementById('vf-no').addEventListener('click', () => judge(0));
+})();
+
+/* ═══════════ 슬12 가짜 수리 보고서 ═══════════ */
+(function() {
+  const list = document.getElementById('edge-list');
+  KGiftedCore.EDGE_REPORTS.forEach((rep, i) => {
+    const on = KGiftedCore.edgeBoard(i);
+    const c = paintCount(on, 4);
+    const b = document.createElement('button');
+    b.className = 'pick-item';
+    b.dataset.i = i;
+    b.innerHTML = '<span class="tag">' + rep.name + '</span>널판 ' + (KGiftedCore.area(on) / 2)
+      + '장으로 다 깔았습니다 · 금 ' + c.g + ' · 풀 ' + c.t;
+    const g = document.createElement('div');
+    g.className = 'cal-grid farm'; g.id = 'edge-b' + i; g.style.setProperty('--farm-n', 4);
+    b.appendChild(g);
+    list.appendChild(b);
+    renderBoard('edge-b' + i, on, 4, 4, { paint: true });
+    b.addEventListener('click', () => {
+      const st = getQState('edge');
+      if (st.solved) return;
+      st.attempts++;
+      const msg = document.getElementById('edge-msg');
+      if (i === KGiftedCore.EDGE_FAKE) {
+        st.solved = true;
+        b.classList.add('on');
+        addScore(KGiftedCore.SCORE_PLAN.edge);
+        msg.classList.remove('wrong');
+        msg.textContent = '적발! 나 보고서는 색 수가 맞는데도 깔 수 없는 바닥이다. ⭐ +10';
+      } else {
+        st.wrongCount++;
+        msg.classList.add('wrong');
+        msg.textContent = '이 바닥은 실제로 깔린다. 색이 아니라 자리를 보자 — 짝이 될 이웃이 몇인지 세어 보자.';
+      }
+      saveProgress(false);
+    });
+  });
+})();
+
+/* ═══════════ 슬13 가장 적게 파내기 ═══════════ */
+(function() {
+  let on = KGiftedCore.full(4, 4);
+  const draw = () => {
+    renderBoard('rg-board', on, 4, 4, { paint: true, onTap: tap });
+    const r = KGiftedCore.checkCut(on);
+    document.getElementById('rg-gone').textContent = r.gone;
+    document.getElementById('rg-g').textContent = r.black;
+    document.getElementById('rg-t').textContent = r.white;
+  };
+  function tap(i) { on = on.slice(); on[i] = !on[i]; draw(); }
+  document.getElementById('rg-reset').addEventListener('click', () => {
+    on = KGiftedCore.full(4, 4); draw();
+    document.getElementById('rg-msg').textContent = '되돌렸다. 다시 파내 보자.';
+  });
+  document.getElementById('rg-check').addEventListener('click', () => {
+    const st = getQState('range');
+    const msg = document.getElementById('rg-msg');
+    st.attempts++;
+    const r = KGiftedCore.checkCut(on);
+    if (r.gone === 0) {
+      msg.classList.add('wrong');
+      msg.textContent = '아직 파낸 칸이 없다.';
+    } else if (!r.evenCut) {
+      msg.classList.add('wrong');
+      msg.textContent = '파낸 칸이 ' + r.gone + '개 — 홀수다. 홀수로 파내면 남은 칸도 홀수라 시비가 붙지 않는다. 짝수로 파내 보자.';
+    } else if (r.ways > 0) {
+      msg.classList.add('wrong');
+      chip('rg-chips', r.gone + '칸 파냄 → ' + r.ways + '가지', 'b');
+      msg.textContent = '아직 ' + r.ways + '가지나 깔린다. 파낸 두 칸의 색을 보자.';
+    } else {
+      msg.classList.remove('wrong');
+      chip('rg-chips', r.gone + '칸 파냄 → 0가지', 'a');
+      if (!st.solved) {
+        st.solved = true;
+        addScore(KGiftedCore.SCORE_PLAN.range);
+        msg.textContent = r.best
+          ? '가장 적은 ' + KGiftedCore.RANGE_BEST + '칸으로 해냈다. 같은 색 두 칸을 빼면 수가 어긋난다. ⭐ +10'
+          : r.gone + '칸으로 해냈다. 더 적게도 되는지 다시 해 보자. ⭐ +10';
+      } else {
+        msg.textContent = r.best ? '가장 적은 ' + KGiftedCore.RANGE_BEST + '칸 — 이것이 최소다.' : r.gone + '칸으로도 된다.';
+      }
+    }
+    saveProgress(false);
+  });
+  draw();
+})();
+
+/* ═══════════ 슬14 입체 세계 (KVox3D 부품 조합) ═══════════ */
+(function() {
+  const el = document.getElementById('box-stage');
+  if (!el || typeof KVox3D === 'undefined') return;
+  const api = KVox3D.mount(el, { unit: 30 });
+  const set = (L) => {
+    api.setMap([[L, L, L], [L, L, L], [L, L, L]]);
+    const c = KGiftedCore.boxColors(L);
+    document.getElementById('box-n').textContent = KGiftedCore.boxCells(L);
+    document.getElementById('box-g').textContent = c[0];
+    document.getElementById('box-t').textContent = c[1];
+    document.getElementById('box-name').textContent = L === 3 ? '3층까지' : (L === 2 ? '2층까지' : '1층만');
+    document.getElementById('box-msg').textContent = c[0] === c[1]
+      ? L + '층 — 두 색이 ' + c[0] + '로 같다. 벽돌로 남김없이 채울 수 있다.'
+      : L + '층 — 두 색이 ' + c[0] + '와 ' + c[1] + '로 어긋난다. ' + (c[0] - c[1]) + '칸이 남는다.';
+    document.querySelectorAll('.vox-btns [data-lay]').forEach(b => {
+      b.classList.toggle('on', parseInt(b.dataset.lay, 10) === L);
+    });
+  };
+  document.querySelectorAll('.vox-btns [data-lay]').forEach(b => {
+    b.addEventListener('click', () => set(parseInt(b.dataset.lay, 10)));
+  });
+  set(3);
+})();
+
+/* ═══════════ 슬15 수리공 시험 출제 ═══════════ */
+let myRuleText = '';
+(function() {
+  let on = KGiftedCore.full(4, 4);
+  let gotA = false, gotB = false, pure = false;
+  const mark = () => {
+    document.querySelectorAll('#create-goals .pick-item').forEach(b => {
+      b.classList.toggle('on', parseInt(b.dataset.g, 10) === 0 ? gotA : gotB);
+    });
+  };
+  const draw = () => {
+    renderBoard('cr-board', on, 4, 4, { paint: true, onTap: tap });
+    const c = paintCount(on, 4);
+    document.getElementById('cr-area').textContent = KGiftedCore.area(on);
+    document.getElementById('cr-g').textContent = c.g;
+    document.getElementById('cr-t').textContent = c.t;
+  };
+  function tap(i) { on = on.slice(); on[i] = !on[i]; draw(); }
+  document.getElementById('cr-reset').addEventListener('click', () => {
+    on = KGiftedCore.full(4, 4); draw();
+    document.getElementById('msg-create').textContent = '되돌렸다. 다시 설계해 보자.';
+  });
+  document.getElementById('cr-check').addEventListener('click', () => {
+    const st = getQState('create');
+    const msg = document.getElementById('msg-create');
+    st.attempts++;
+    const m = KGiftedCore.checkMagic(on), o = KGiftedCore.checkOnly(on);
+    chip('cr-chips', KGiftedCore.area(on) + '칸 → ' + m.ways + '가지', m.ways === 0 ? 'a' : (m.ways === 1 ? 'tot' : 'b'));
+    let line = '남은 ' + m.area + '칸 · 금 ' + m.black + ' · 풀 ' + m.white + ' — 깔 수 있는 방법 ' + m.ways + '가지.';
+    msg.classList.remove('wrong');
+    if (!gotA && m.ok) {
+      gotA = true;
+      addScore(10);
+      myRuleText = m.area + '칸 마술 바닥';
+      line += ' 임무 가 완수 — 색은 같은데 못 깔리는 바닥이다! ⭐ +10';
+      if (m.pure) { pure = true; line += ' 게다가 외톨이 칸 하나 없이 해냈다 — 명수리공 도장.'; }
+    }
+    if (!gotB && o.ok) {
+      gotB = true;
+      addScore(10);
+      line += ' 임무 나 완수 — 길이 딱 하나뿐인 바닥이다! ⭐ +10';
+    }
+    if (!gotA && !gotB) {
+      if (m.ways === 0 && m.black !== m.white) line += ' 못 깔리긴 하는데 색이 이미 어긋나 있다. 색은 같게 두고 못 깔리게 해 보자.';
+      else if (m.ways === 0 && m.area < KGiftedCore.MAGIC_MIN) line += ' 너무 작다. ' + KGiftedCore.MAGIC_MIN + '칸 이상으로 만들어 보자.';
+      else if (m.ways > 1) line += ' 길이 아직 여럿이다. 더 좁혀 보자.';
+    }
+    if (gotA && gotB && !st.solved) {
+      st.solved = true;
+      line += ' 두 임무 모두 완수 — 출제 끝!';
+    }
+    msg.textContent = line;
+    mark();
+    renderAgentCard();
+    saveProgress(false);
+  });
+  window.__crState = () => ({ gotA: gotA, gotB: gotB, pure: pure });
+  draw(); mark();
+})();
+
+/* ═══════════ 슬16 수리공 카드 ═══════════ */
+function renderAgentCard() {
+  const el = document.getElementById('agent-card');
+  if (!el) return;
+  const s = window.__crState ? window.__crState() : { gotA: false, gotB: false, pure: false };
+  el.innerHTML = '<div class="dc-title">수리공 카드</div>'
+    + '<div class="dc-row">나의 추측 · ' + (conjPicked || '아직 기록하지 않았다') + '</div>'
+    + '<div class="dc-row">모은 깔기 방법 · ' + exploreCases.length + '가지</div>'
+    + '<div class="dc-row">임무 가 마술 바닥 · ' + (s.gotA ? (myRuleText + ' 완성') : '아직') + '</div>'
+    + '<div class="dc-row">임무 나 외길 바닥 · ' + (s.gotB ? '완성' : '아직') + '</div>'
+    + (s.pure ? '<div class="dc-row"><b>명수리공 도장</b> — 외톨이 칸 없이 마술 바닥을 지었다</div>' : '');
+}
+renderAgentCard();
+
+</script>
+</body>
+</html>
