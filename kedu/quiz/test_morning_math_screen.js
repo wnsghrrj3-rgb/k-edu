@@ -22,7 +22,9 @@ var src = html.match(/function templateFiles\(lesson, cb\)\{[\s\S]*?\n  \}/);
 T(!!src, 'morning/index.html 에서 templateFiles 를 못 찾음 — 함수 시그니처가 바뀌었나');
 if (!src) { console.log('\n중단'); process.exit(1); }
 
-var dom = new JSDOM('<!doctype html><html><body></body></html>');
+/* runScripts 없으면 window.eval 이 창 realm 이 아니라 노드 로컬 스코프에서 돌아
+ * 함수 선언이 window 에 안 붙는다(8차에서 이걸 몰라 헤맨 지점). */
+var dom = new JSDOM('<!doctype html><html><body></body></html>', { runScripts: 'outside-only' });
 var win = dom.window;
 win.fetch = function (u) {
   T(u === '/kedu/quiz/catalog.json', 'catalog 경로가 예상과 다름: ' + u);
