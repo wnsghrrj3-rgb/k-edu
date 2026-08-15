@@ -187,7 +187,8 @@ td.name{font-weight:700}
       '<div class="ok-banner">'
       + '<div class="big">✅</div>'
       + '<b>아침활동이 돌아가고 있어요</b>'
-      + '<span>'+esc(dayTxt)+'요일 아침마다 '+esc(SUBJECT_KO[(r.days||{}).mon||'hanja']||'한자')+' '+(r.question_count||10)+'문제가 저절로 올라가요.</span>'
+      + '<span><b>'+(r.grade||c.grade||1)+'학년</b> 과정으로, '+esc(dayTxt)+'요일 아침마다 '
+        + esc(SUBJECT_KO[(r.days||{}).mon||'hanja']||'한자')+' '+(r.question_count||10)+'문제가 저절로 올라가요.</span>'
       + '<div style="margin-top:10px"><span style="font-size:12.5px;color:var(--sub)">학생들은 이 코드로 우리 반에 들어와요</span><br>'
       + '<span class="code-chip">'+esc(c.code||'')+'</span></div>'
       + '</div>'
@@ -196,7 +197,7 @@ td.name{font-weight:700}
           : '')
       + '<div id="board"></div>'
       + '<div class="card" style="padding:16px 18px">'
-      + '<details><summary>설정 바꾸기 (요일·문항 수)</summary><div class="inner">'
+      + '<details><summary>설정 바꾸기 (학년·요일·문항 수)</summary><div class="inner">'
       + '<div class="days">'
       + DOWS.map(function(d){
           var v = (r.days||{})[d[0]] || '';
@@ -204,6 +205,12 @@ td.name{font-weight:700}
             + SUBJECTS.map(function(s){ return '<option value="'+s[0]+'"'+(s[0]===v?' selected':'')+'>'+s[1]+'</option>'; }).join('')
             + '</select></div>'; }).join('')
       + '</div>'
+      + '<label>학년</label><select id="rgrade" style="width:140px">'
+      + [1,2,3,4,5,6].map(function(g){
+          return '<option value="'+g+'"'+(g===(r.grade||c.grade||1)?' selected':'')+'>'+g+'학년</option>'; }).join('')
+      + '</select>'
+      + '<div class="hint" style="margin:6px 0 14px">학년마다 배우는 한자가 통째로 달라요. '
+        + '바꾸면 <b>진도가 1회차부터 다시</b> 시작해요.</div>'
       + '<label>문항 수</label><input type="number" id="qc" min="5" max="20" value="'+(r.question_count||10)+'" style="width:100px">'
       + '<div style="margin-top:12px"><button class="btn" id="save">저장</button></div>'
       + '</div></details></div>';
@@ -213,11 +220,21 @@ td.name{font-weight:700}
     document.getElementById('save').onclick = function(){
       var days = {};
       document.querySelectorAll('[data-dow]').forEach(function(s){ if(s.value) days[s.dataset.dow]=s.value; });
+      var newGrade = Number(document.getElementById('rgrade').value) || 1;
+      var oldGrade = (state.routine||{}).grade || cur().grade || 1;
+      // 학년을 바꾸면 진도가 1회차로 되돌아간다(서버가 같은 트랜잭션에서 처리). 되돌릴 수 없으니 한 번 묻는다.
+      if (newGrade !== oldGrade &&
+          !confirm(oldGrade+'학년 → '+newGrade+'학년으로 바꿀까요?\n\n'
+                   +'배우는 한자가 통째로 달라져서, 진도가 1회차부터 다시 시작해요.\n'
+                   +'지금까지 제출한 기록은 그대로 남아요.')) return;
       db.rpc('ma_set_routine', {
-        p_class_code_id: state.cc, p_grade: cur().grade || 1,
+        p_class_code_id: state.cc, p_grade: newGrade,
         p_days: days, p_question_count: Number(document.getElementById('qc').value)||10, p_active: true
       }).then(function(res){
-        if (res.data && res.data.status==='ok'){ toast('저장했어요'); loadClassData(); }
+        if (res.data && res.data.status==='ok'){
+          toast(res.data.grade_changed ? newGrade+'학년으로 바꿨어요 (진도 1회차부터)' : '저장했어요');
+          loadClassData();
+        }
         else toast('저장하지 못했어요');
       });
     };

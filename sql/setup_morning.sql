@@ -153,13 +153,15 @@ CREATE OR REPLACE FUNCTION ma_set_routine(
   p_class_code_id uuid, p_grade int, p_days jsonb,
   p_question_count int DEFAULT 10, p_active boolean DEFAULT true
 ) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER AS $$
-DECLARE v_tid uuid;
+DECLARE v_tid uuid; v_old_grade int; v_reset boolean := false;
 BEGIN
   v_tid := ma_my_teacher_id();
   IF v_tid IS NULL THEN RETURN jsonb_build_object('status','not_teacher'); END IF;
   IF NOT EXISTS (SELECT 1 FROM class_codes WHERE id = p_class_code_id AND teacher_id = v_tid) THEN
     RETURN jsonb_build_object('status','not_my_class');
   END IF;
+
+  SELECT grade INTO v_old_grade FROM ma_routines WHERE class_code_id = p_class_code_id;
 
   INSERT INTO ma_routines (class_code_id, teacher_id, grade, days, question_count, active)
   VALUES (p_class_code_id, v_tid, p_grade, p_days, p_question_count, p_active)
@@ -168,7 +170,18 @@ BEGIN
         question_count = EXCLUDED.question_count, active = EXCLUDED.active,
         teacher_id = EXCLUDED.teacher_id, updated_at = now();
 
-  RETURN jsonb_build_object('status','ok');
+  -- ★학년이 바뀌면 진도를 1회차로 되돌린다.
+  --   학년마다 배우는 글자가 통째로 다르므로 회차 번호를 이어받으면 안 된다.
+  --   (예: 1학년으로 3일 하다 4학년으로 바꾸면 next_step=4 → 4학년 s01~s03 30자를 통째로 건너뛴다)
+  --   같은 트랜잭션에서 처리해 "학년만 바뀌고 진도는 그대로"인 어긋난 상태가 생기지 않게 한다.
+  IF v_old_grade IS NOT NULL AND v_old_grade <> p_grade THEN
+    UPDATE ma_progress SET next_step = 1, cycle = 1, updated_at = now()
+     WHERE class_code_id = p_class_code_id;
+    v_reset := true;
+  END IF;
+
+  RETURN jsonb_build_object('status','ok', 'grade_changed', v_reset,
+                            'from_grade', v_old_grade, 'to_grade', p_grade);
 END $$;
 GRANT EXECUTE ON FUNCTION ma_set_routine(uuid,int,jsonb,int,boolean) TO authenticated;
 
