@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<!--
+  kg_math_l3_com02 — 나무그림 설계사 [케이영재 수학 · G2 양산 12호 · COM 연구소 2차시]
+  트랙: 케이영재 / Lab: Combinatorics / Level: L3 CHALLENGER (중학년 그린 톤) / 깊이: D1~D8
+  base: kg_math_l3_pat01 (골격·CSS 계승) + kg_math_l3_pat02 (엔진 공통부 계승) + kg_math_l3_com01 (공용 CSS·칩·숫자패드 계승)
+  신규 시각 언어 0 — 초록 블록 = 셀 상태 sel · 주황 블록 = center-cell · 잘린 가지 = empty(com01 「공사 중」 선례) · 마디 표시 = diag-a
+                    나무그림 = cal-grid 파라미터 변형(.tree — 열 수·칸 크기만 다름, 마디가 span 2^(h-r)을 먹어 층을 이룬다)
+                    규칙 조립 = 황금샘플 pat01의 rule-chip/rule-slot/rule-choice/rule-build 그대로
+  신규 메카닉 0 — 층 쌓기 단추 = com01 걸음 단추(stepBtn) 선례 / 규칙 칩 켜고 끄기 = pat01 선례 / 단계 전환 = pat03·num02 선례
+  탐구 5단계: 미션(1~3) 탐험(4~6) 발견(7~10) 도전(11~14) 창조(15~18)
+  핵심 수학: 손으로 적으면 빠뜨리고 겹친다 → 먼저 갈라 놓고 세면 그럴 일이 없다(나무그림) → 규칙이 없으면 갈래가 어디서나 둘이라 2×2×2=8, 곱하기가 통한다 → 「맨 아래는 초록」처럼 층 자리만 보는 규칙은 곱하기를 살려 둔다(1×2×2) → 「초록 위에 초록 금지」처럼 앞에 놓은 것을 보는 규칙은 갈래를 들쭉날쭉하게 만들어 어떤 곱으로도 안 된다(3층 = 8이 아니라 5) → 곱하기가 깨져도 나무는 통한다(마디의 잎 = 가지들의 잎의 합) → 층별로 2·3·5·8·13, 다음 수 = 앞의 두 수의 합(초록끝 = 앞 층 주황끝, 주황끝 = 앞 층 전부)
+  점수 100 = 탐험 15 + 추측 10 + 발견 20(q9 10 + q10 10) + 검증 15(3라운드 × 5) + 확장 20(가짜 설계도 10 + 규칙 미션 10) + 창조 20(임무 가 10 + 임무 나 10)
+  힌트: H1/H2/H3 3단 (감점 없음, 답 비노출) / 검사기는 건 조건 개수와 탑 가짓수만 돌려주고 어떤 조건을 켜야 하는지는 비공개
+  ⚠ 창조는 5층이라 나무가 32열이 된다 — 그리지 않는다. "다 그릴 수 없다"가 이 차시의 논지라 억지로 넣지 않는다 (헌법 §10 정신)
+  ⛔ 규약: 문자식 금지 / 차단 어휘 금지 / 이모지 슬라이드당 ≤2
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="kg_math_l3_com02_v1">
+<title>나무그림 설계사 · 케이영재 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#F6FBF7; --ink:#1F3830; --ink-soft:#5C7A6E;
+  --coral:#0E8A5F; --coral-deep:#0A6B49; --coral-soft:#D7F0E4;
+  --teal:#1D4ED8; --teal-deep:#153FA6; --teal-soft:#DCE6FB;
+  --gold:#F6B526; --emph:#E85D2F; --line:#DCEAE0; --mark:#FFE08A;
+  --f-title:'Do Hyeon',sans-serif; --f-body:'Gowun Dodum',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:0 14px 34px -18px rgba(31,56,48,.35);
+  --fs-title: clamp(26px, 4.2vw, 46px);
+  --fs-heading: clamp(23px, 3.5vw, 35px);
+  --fs-body: clamp(19px, 2.9vw, 27px);
+  --fs-caption: clamp(17px, 2.6vw, 24px);
+  --fs-label: clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --mw-sm: min(720px, 96vw);
+  --mw-lg: min(880px, 96vw);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+@keyframes ka-glow { 0%,100%{box-shadow:0 0 0 0 rgba(14,138,95,.4);} 50%{box-shadow:0 0 0 10px rgba(14,138,95,0);} }
+
+.ka { background:var(--paper); width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; color:var(--ink); position:relative; overflow:hidden; }
+.ka-h { display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); padding:clamp(11px,1.7vw,15px) clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:hover { transform:translateY(-1px); }
+.ka-pill { font-family:var(--f-title); background:var(--coral); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-where { font-size:clamp(14px,1.6vw,18px); color:var(--ink-soft); flex-shrink:1; }
+.ka-where b { color:var(--ink); }
+.ka-bar { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:46vw; }
+.ka-dot { width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s, background .2s; }
+.ka-dot:hover { transform:scale(1.2); }
+.ka-dot.active { background:var(--coral); transform:scale(1.3); }
+.ka-dot.done { background:var(--teal); }
+.ka-score { font-family:var(--f-title); background:#FFF8E1; color:#F57F17; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); padding:0; border-radius:50%; cursor:pointer; flex-shrink:0; color:var(--coral-deep); font-size:clamp(13px,2vw,16px); width:clamp(32px,4.5vw,38px); height:clamp(32px,4.5vw,38px); display:flex; align-items:center; justify-content:center; }
+
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; justify-content:safe center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; justify-content:safe center; gap:clamp(7px,1.2vw,11px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(8px,1.4vh,16px) clamp(16px,4vw,48px); overflow-x:hidden; overflow-y:auto; scrollbar-width:none; -ms-overflow-style:none; }
+.slide::-webkit-scrollbar { width:0; height:0; }
+.slide.active { display:flex; }
+.slide-title { font-family:var(--f-title); font-size:var(--fs-title); line-height:1.18; color:var(--ink); font-weight:400; text-align:center; flex-shrink:0; }
+.slide-sub { font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(10px,1.6vw,16px); left:clamp(16px,4vw,40px); font-family:var(--f-title); color:var(--coral); font-size:clamp(13px,1.9vw,18px); letter-spacing:.4px; z-index:5; }
+
+.ka-f { display:flex; justify-content:flex-end; gap:12px; padding:clamp(12px,1.7vw,16px) clamp(16px,4vw,40px); background:linear-gradient(to top, var(--paper) 62%, transparent); flex-shrink:0; }
+.ka-prev, .ka-hint, .ka-next { font-family:var(--f-title); font-size:clamp(15px,1.9vw,22px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(10px,1.4vw,15px) clamp(20px,2.8vw,38px); cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translateY(-2px); }
+.ka-prev { margin-right:auto; }
+.ka-hint { color:#F57F17; border-color:#FFE08A; }
+.ka-next { background:var(--coral); color:#fff; border-color:var(--coral); }
+.ka-prev:disabled, .ka-next:disabled { opacity:.35; cursor:default; transform:none; }
+.ka-hint:disabled { opacity:.4; cursor:default; }
+
+.concept-box { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,18px) clamp(18px,2.8vw,28px); border-radius:20px; font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); text-align:center; line-height:1.5; box-shadow:var(--shadow); }
+.concept-box strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.intro-q { font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; }
+.intro-q strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.goal-list { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); font-size:var(--fs-caption); color:var(--ink); max-width:var(--mw-sm); }
+.goal-list li { background:#fff; border:2px solid var(--line); padding:clamp(7px,1.3vw,11px) clamp(14px,2.6vw,20px); border-radius:16px; list-style:none; box-shadow:var(--shadow); }
+.goal-list li strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+.mission-card { background:#fff; border:3px solid var(--coral-soft); border-radius:26px; padding:clamp(16px,3vw,26px) clamp(20px,3.8vw,34px); max-width:var(--mw-sm); text-align:center; box-shadow:0 6px 0 var(--coral-soft); font-size:var(--fs-body); line-height:1.6; }
+.mission-card strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+
+/* ── 달력 격자 ── */
+.cal-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.1vw,10px); }
+.cal-head { display:flex; align-items:center; gap:clamp(8px,1.6vw,14px); }
+.cal-title { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--coral-deep); }
+.cal-month-btn { font-family:var(--f-title); font-size:var(--fs-label); background:#fff; border:2px solid var(--line); border-radius:999px; padding:4px 12px; cursor:pointer; color:var(--ink-soft); }
+.cal-month-btn.on { background:var(--coral); color:#fff; border-color:var(--coral); }
+.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:clamp(3px,0.6vw,5px); background:#fff; border:2px solid var(--line); border-radius:18px; padding:clamp(8px,1.4vw,12px); box-shadow:var(--shadow); }
+.cal-dow { font-family:var(--f-title); font-size:clamp(12px,1.7vw,16px); color:var(--ink-soft); text-align:center; padding-bottom:2px; }
+.cal-dow.sun { color:var(--emph); }
+.cal-cell { width:clamp(34px,6.2vw,54px); height:clamp(30px,5.4vw,46px); display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:clamp(15px,2.4vw,22px); color:var(--ink); background:var(--paper); border-radius:10px; cursor:pointer; transition:background .15s, transform .1s; user-select:none; }
+.cal-cell:hover { background:var(--coral-soft); }
+.cal-cell.empty { background:transparent; cursor:default; }
+.cal-cell.sel { background:var(--coral); color:#fff; animation:ka-pop .3s ease; }
+.cal-cell.diag-a { outline:3px solid var(--gold); outline-offset:-3px; }
+.cal-cell.diag-b { outline:3px solid var(--teal); outline-offset:-3px; }
+.cal-cell.center-cell { background:var(--emph); color:#fff; }
+.cal-info { display:flex; gap:clamp(8px,1.6vw,14px); flex-wrap:wrap; justify-content:center; min-height:2.2em; align-items:center; }
+.sum-chip { font-family:var(--f-title); font-size:var(--fs-caption); padding:clamp(5px,1vw,8px) clamp(12px,2.2vw,18px); border-radius:999px; background:#fff; border:2px solid var(--line); }
+.sum-chip.a { border-color:var(--gold); color:#B07E0A; }
+.sum-chip.b { border-color:var(--teal); color:var(--teal-deep); }
+.sum-chip.tot { border-color:var(--coral); color:var(--coral-deep); }
+.cal-msg { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--coral-deep); min-height:1.5em; text-align:center; }
+.cal-msg.wrong { color:var(--emph); }
+
+/* ── 사례 테이블 ── */
+.case-table { border-collapse:collapse; background:#fff; border-radius:16px; overflow:hidden; box-shadow:var(--shadow); font-size:var(--fs-caption); }
+.case-table th { font-family:var(--f-title); font-weight:400; background:var(--coral-soft); color:var(--coral-deep); padding:clamp(6px,1.1vw,10px) clamp(12px,2.2vw,20px); }
+.case-table td { font-family:var(--f-num); font-weight:800; text-align:center; padding:clamp(6px,1.1vw,10px) clamp(12px,2.2vw,20px); border-top:1px solid var(--line); }
+.case-count { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); }
+.case-count b { color:var(--coral-deep); font-size:1.2em; }
+
+/* ── 관찰·추측 선택 ── */
+.pick-list { display:flex; flex-direction:column; gap:clamp(7px,1.3vw,11px); width:100%; max-width:var(--mw-sm); }
+.pick-item { background:#fff; border:3px solid var(--line); border-radius:18px; padding:clamp(10px,1.8vw,15px) clamp(16px,3vw,24px); font-size:var(--fs-body); cursor:pointer; transition:border-color .2s, transform .12s; text-align:left; font-family:var(--f-body); color:var(--ink); }
+.pick-item:hover { border-color:var(--coral); }
+.pick-item.on { border-color:var(--coral); background:var(--coral-soft); animation:ka-pop .3s ease; }
+.pick-item .tag { font-family:var(--f-title); color:var(--coral-deep); margin-right:8px; }
+
+/* ── 구조 시각화 ── */
+.struct-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.5vw,13px); }
+.struct-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(6px,1.1vw,9px); }
+.struct-cell { width:clamp(76px,13vw,120px); height:clamp(52px,9vw,80px); background:#fff; border:3px solid var(--coral-soft); border-radius:14px; display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:clamp(19px,3vw,30px); color:var(--coral-deep); box-shadow:0 4px 0 var(--coral-soft); }
+.struct-cell.hl-a { border-color:var(--gold); box-shadow:0 4px 0 var(--gold); }
+.struct-cell.hl-b { border-color:var(--teal); box-shadow:0 4px 0 var(--teal-soft); }
+.struct-eq { font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center; }
+.struct-eq .star { color:var(--emph); }
+.arrow-note { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); background:#fff; border:2px solid var(--line); border-radius:999px; padding:5px 16px; cursor:pointer; transition:transform .15s; }
+.arrow-note.revealed { color:var(--coral-deep); border-color:var(--coral); animation:ka-glow 1.4s ease 1; }
+
+/* ── 문제 공통 ── */
+.q-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.5vw,13px); max-width:var(--mw-lg); width:100%; }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; font-weight:400; }
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-sm); }
+.mcq-opts.one-col { grid-template-columns:1fr; }
+.mcq-opt { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,1.9vw,15px); font-family:var(--f-title); font-size:var(--fs-body); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .2s; box-shadow:0 6px 0 var(--coral-soft); font-weight:400; }
+.mcq-opt:hover { border-color:var(--coral); }
+.mcq-opt:active { transform:translateY(4px); box-shadow:none; }
+.mcq-opt.correct { border-color:var(--coral-deep); background:var(--coral); color:#fff; box-shadow:0 6px 0 var(--coral-deep); animation:ka-pop .5s ease; }
+.mcq-opt.wrong { border-color:var(--emph); background:#FFE4DA; color:var(--ink); animation:ka-shake .35s; }
+.mcq-hint { font-family:var(--f-title); font-size:var(--fs-caption); color:#F57F17; background:#FFF8E1; border-radius:16px; padding:clamp(8px,1.5vw,12px) clamp(14px,2.6vw,20px); max-width:var(--mw-sm); text-align:center; display:none; }
+.mcq-hint.show { display:block; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); color:var(--coral-deep); min-height:1.4em; text-align:center; }
+.q-fb.wrong { color:var(--emph); }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:clamp(30px,5vw,54px); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:20px; padding:clamp(8px,1.5vw,13px) clamp(24px,4.4vw,42px); min-width:clamp(110px,20vw,180px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.q-pad { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(6px,1.2vw,10px); max-width:clamp(280px,56vw,460px); }
+.q-key { background:#fff; border:2px solid var(--line); border-radius:14px; padding:clamp(7px,1.4vw,11px) 0; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, background .15s; box-shadow:0 4px 0 var(--line); }
+.q-key:hover { background:var(--coral-soft); border-color:var(--coral); }
+.q-key:active { transform:translateY(3px); box-shadow:none; }
+.q-key.fn { background:#FFF8E1; color:#F57F17; font-family:var(--f-title); font-size:var(--fs-caption); border-color:#FFE08A; box-shadow:0 4px 0 #FFE08A; }
+
+/* ── 모양 실험실 ── */
+.shape-pick { display:flex; gap:clamp(8px,1.5vw,13px); flex-wrap:wrap; justify-content:center; }
+.shape-btn { background:#fff; border:3px solid var(--line); border-radius:16px; padding:clamp(8px,1.4vw,12px) clamp(12px,2.2vw,18px); cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:5px; transition:border-color .2s, transform .12s; }
+.shape-btn:hover { border-color:var(--coral); }
+.shape-btn.on { border-color:var(--coral); background:var(--coral-soft); }
+.shape-mini { display:grid; grid-template-columns:repeat(3, clamp(10px,1.8vw,15px)); gap:2px; }
+.shape-mini i { display:block; width:clamp(10px,1.8vw,15px); height:clamp(10px,1.8vw,15px); border-radius:3px; background:var(--line); }
+.shape-mini i.f { background:var(--coral); }
+.shape-name { font-family:var(--f-title); font-size:var(--fs-label); color:var(--ink); }
+.rule-build { display:flex; align-items:center; gap:clamp(6px,1.2vw,10px); flex-wrap:wrap; justify-content:center; font-family:var(--f-title); font-size:var(--fs-body); }
+.rule-slot { background:#fff; border:3px dashed var(--coral); border-radius:14px; min-width:clamp(72px,13vw,120px); padding:clamp(6px,1.1vw,9px) clamp(10px,1.8vw,14px); text-align:center; color:var(--coral-deep); font-family:var(--f-num); font-weight:800; cursor:pointer; }
+.rule-slot.filled { border-style:solid; background:var(--coral-soft); }
+.rule-choice { display:flex; gap:clamp(6px,1.1vw,9px); flex-wrap:wrap; justify-content:center; }
+.rule-chip { background:#fff; border:2px solid var(--line); border-radius:999px; padding:clamp(5px,1vw,8px) clamp(12px,2.2vw,18px); font-family:var(--f-title); font-size:var(--fs-caption); cursor:pointer; transition:transform .12s, border-color .15s; }
+.rule-chip:hover { border-color:var(--coral); transform:translateY(-2px); }
+
+/* ── 탐정 카드·마무리 ── */
+.detective-card { background:#fff; border:3px solid var(--gold); border-radius:26px; padding:clamp(16px,3vw,26px) clamp(20px,3.8vw,34px); max-width:var(--mw-sm); width:100%; box-shadow:0 8px 0 var(--mark); display:flex; flex-direction:column; gap:clamp(7px,1.3vw,11px); }
+.dc-row { display:flex; justify-content:space-between; gap:14px; font-size:var(--fs-caption); border-bottom:1px dashed var(--line); padding-bottom:6px; }
+.dc-row b { font-family:var(--f-title); font-weight:400; color:var(--coral-deep); }
+.dc-title { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; }
+.wrap-score { font-family:var(--f-num); font-weight:800; font-size:clamp(56px,10vw,110px); color:var(--coral-deep); line-height:1; }
+.wrap-msg { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); }
+.home-card { background:var(--teal-soft); border-radius:20px; padding:clamp(12px,2.2vw,18px) clamp(18px,3.2vw,26px); font-size:var(--fs-caption); color:var(--teal-deep); max-width:var(--mw-sm); text-align:center; line-height:1.55; }
+.next-mini { display:flex; gap:clamp(8px,1.5vw,13px); flex-wrap:wrap; justify-content:center; }
+.next-chip { font-family:var(--f-title); font-size:var(--fs-label); background:#fff; border:2px solid var(--line); border-radius:999px; padding:6px 16px; color:var(--ink-soft); }
+
+/* ═══ 공용 11종 (com01 정의 문자 그대로 추출·주입 — 손으로 옮겨 적지 않는다) ═══ */
+.shadow-set { display:flex; gap:clamp(8px,2.4vw,20px); justify-content:center; flex-wrap:wrap; }
+.shadow-one { display:flex; flex-direction:column; align-items:center; gap:4px; }
+.shadow-tag { font-size:var(--fs-label); color:var(--ink-soft); font-family:var(--f-title); }
+.vox-btns { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+.vox-name { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink); }
+.lab-meter { display:flex; align-items:baseline; justify-content:center; gap:8px; margin:6px 0; }
+.lab-label { font-size:var(--fs-label); color:var(--ink-soft); font-family:var(--f-title); }
+.lab-count { font-family:var(--f-title); font-size:var(--fs-h1); color:var(--coral-deep); min-width:2.2em; text-align:center; }
+.chip-row { display:flex; gap:clamp(5px,1vw,9px); justify-content:center; flex-wrap:wrap; margin:6px 0; }
+.road-row { display:flex; gap:clamp(10px,2.6vw,26px); justify-content:center; align-items:flex-end; flex-wrap:wrap; }
+.road-one { display:flex; flex-direction:column; align-items:center; gap:5px; }
+
+/* ═══ 나무그림 격자 (pat01 cal-grid 파라미터 변형 — 열 수·칸 크기·모서리만 다르다. 셀 상태는 sel/center-cell/empty/diag-a 그대로)
+       마디 하나가 span 2^(h-r)을 먹으므로 세로줄 하나가 곧 탑 하나가 된다 ═══ */
+.cal-grid.tree { --tree-c:clamp(24px,4.2vw,38px); grid-template-columns:repeat(var(--tree-n,8), var(--tree-c)); justify-content:center; gap:clamp(3px,0.7vw,5px); }
+.cal-grid.tree .cal-cell { width:auto; height:var(--tree-c); border-radius:9px; font-size:clamp(10px,1.7vw,15px); cursor:default; }
+.cal-grid.tree.small { --tree-c:clamp(15px,2.6vw,24px); gap:clamp(2px,0.4vw,4px); }
+.cal-grid.tree.small .cal-cell { border-radius:6px; }
+.cal-grid.tree.tow { --tree-c:clamp(26px,4.6vw,42px); }
+</style>
+</head>
+<body>
+<div class="ka">
+  <header class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 나가기</button>
+    <span class="ka-pill">케이영재</span>
+    <span class="ka-where"><b>나무그림 설계사</b> · 경우의 수 연구소</span>
+    <div class="ka-bar" id="dots"></div>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </header>
+
+  <main class="ka-m" id="main">
+
+
+    <!-- 슬1 · 미션: 타이틀 -->
+    <section class="slide">
+      <span class="stage-badge">미션 1/3</span>
+      <h1 class="slide-title">🧱 나무그림 설계사</h1>
+      <p class="slide-sub">경우의 수 연구소 · 설계 의뢰 2호</p>
+      <div class="mission-card">
+        블록은 <strong>초록</strong>과 <strong>주황</strong> 두 가지뿐이다.<br>
+        이 블록으로 <strong>3층 탑</strong>을 쌓으면, 서로 다른 탑이 <strong>몇 가지</strong>나 될까?<br>
+        손으로 적어 보면 금방 헷갈린다. 빠뜨렸는지 겹쳤는지도 알기 어렵다.
+      </div>
+    </section>
+
+    <!-- 슬2 · 미션: 견본 두 탑 -->
+    <section class="slide">
+      <span class="stage-badge">미션 2/3</span>
+      <h1 class="slide-title">블록 수는 같은데</h1>
+      <p class="slide-sub">둘 다 <b>세 개</b>를 썼다 · 아래에서 위로 읽는다</p>
+      <div class="road-row">
+        <div class="road-one">
+          <span class="shadow-tag">탑 ①</span>
+          <div class="cal-grid tree tow" id="intro-a"></div>
+          <span class="sum-chip a">초록 · 주황 · 초록</span>
+        </div>
+        <div class="road-one">
+          <span class="shadow-tag">탑 ②</span>
+          <div class="cal-grid tree tow" id="intro-b"></div>
+          <span class="sum-chip b">주황 · 주황 · 초록</span>
+        </div>
+      </div>
+      <div class="concept-box">
+        블록 개수는 같아도 <strong>쌓은 순서</strong>가 다르면 다른 탑이다.<br>
+        이렇게 서로 다른 탑이 몇 가지나 숨어 있는지, <strong>빠짐없이 겹치지 않게</strong> 세어 보자.
+      </div>
+    </section>
+
+    <!-- 슬3 · 미션: 다섯 걸음 -->
+    <section class="slide">
+      <span class="stage-badge">미션 3/3</span>
+      <h1 class="slide-title">설계의 다섯 걸음</h1>
+      <ul class="goal-list">
+        <li><strong>탐험</strong> — 직접 탑을 쌓아 보며 서로 다른 탑을 모은다.</li>
+        <li><strong>발견</strong> — 하나씩 적지 않고도 빠뜨림 없이 세는 <strong>나무그림</strong>을 만난다.</li>
+        <li><strong>도전</strong> — 규칙을 걸면 어떻게 달라지는지, <strong>곱하기가 언제 통하고 언제 깨지는지</strong> 알아낸다.</li>
+        <li><strong>창조</strong> — 규칙을 직접 골라 탑 수를 원하는 만큼 맞춘다.</li>
+        <li><strong>설계사의 규칙</strong> — 추측은 틀려도 좋다. 기록하는 것이 설계다.</li>
+      </ul>
+      <div class="concept-box">여기서는 <strong>빨리 맞히는 것</strong>보다 <strong>스스로 찾아내는 것</strong>이 점수다.</div>
+    </section>
+
+    <!-- 슬4 · 탐험: 탑 쌓아 모으기 (+15) -->
+    <section class="slide" data-q-id="explore">
+      <span class="stage-badge">탐험 1/3</span>
+      <h1 class="slide-title">직접 쌓아 보자</h1>
+      <p class="slide-sub">단추를 눌러 한 층씩 올린다 · 서로 다른 탑 <b>3가지</b>를 모으면 +15</p>
+      <div class="cal-grid tree tow" id="ex-board"></div>
+      <div class="vox-btns" id="ex-btns"></div>
+      <div class="lab-meter">
+        <span class="lab-label">모은 탑</span><span class="lab-count" id="ex-count">0</span><span class="lab-label">가지</span>
+      </div>
+      <div class="chip-row" id="ex-cases"></div>
+      <p class="q-fb" id="fb-explore"></p>
+    </section>
+
+    <!-- 슬5 · 탐험: 여덟 가지 전부 (cur===4 · renderCaseTable) -->
+    <section class="slide">
+      <span class="stage-badge">탐험 2/3</span>
+      <h1 class="slide-title">3층 탑 전부</h1>
+      <p class="slide-sub"><b>맨 아래 블록</b>이 무엇이냐로 먼저 갈라 놓았다</p>
+      <div id="all8"></div>
+      <div class="concept-box">
+        빠짐없이 세면 <strong>여덟 가지</strong>다. 맨 아래가 초록인 것이 넷, 주황인 것이 넷.<br>
+        <strong>먼저 갈라 놓고 세면</strong> 빠뜨렸는지 겹쳤는지가 한눈에 보인다. 이것이 나무그림의 시작이다.
+      </div>
+    </section>
+
+    <!-- 슬6 · 탐험: 규칙이 생기면 -->
+    <section class="slide">
+      <span class="stage-badge">탐험 3/3</span>
+      <h1 class="slide-title">규칙이 하나 생겼다</h1>
+      <p class="slide-sub">의뢰인의 조건 — <b>초록 위에 초록을 올리지 마시오</b></p>
+      <div class="cal-grid tree tow" id="r-board"></div>
+      <div class="vox-btns" id="r-btns"></div>
+      <div class="lab-meter">
+        <span class="lab-label">모은 탑</span><span class="lab-count" id="r-count">0</span><span class="lab-label">가지</span>
+      </div>
+      <p class="q-fb" id="fb-rule"></p>
+      <div class="concept-box">
+        규칙이 붙으니 쌓다가 막히는 자리가 생긴다.<br>
+        여덟 가지에서 <strong>몇 가지가 살아남을까?</strong> 손으로 세다 보면 또 헷갈리기 시작한다.
+      </div>
+    </section>
+
+    <!-- 슬7 · 발견: 추측 기록 (+10) -->
+    <section class="slide" data-q-id="conjecture">
+      <span class="stage-badge">발견 1/4</span>
+      <h1 class="slide-title">먼저 추측해 보자</h1>
+      <p class="q-prompt">탑 수를 알아내는 방법으로 무엇이 옳을까? 마음에 드는 것을 골라 기록하자. (+10)</p>
+      <div class="pick-list" id="conj-list"></div>
+      <p class="q-fb" id="fb-conjecture"></p>
+      <div class="concept-box">추측은 맞히려고 하는 것이 아니다. <strong>기록해 두었다가 확인하려고</strong> 하는 것이다.</div>
+    </section>
+
+    <!-- 슬8 · 발견: 나무그림 실험실 -->
+    <section class="slide">
+      <span class="stage-badge">발견 2/4</span>
+      <h1 class="slide-title">나무그림 실험실</h1>
+      <p class="slide-sub">맨 아래 줄이 <b>첫째 층</b> · 위로 갈수록 갈라진다 · <b>세로줄 하나가 곧 탑 하나</b></p>
+      <div class="cal-grid tree" id="lab-tree"></div>
+      <div class="lab-meter">
+        <span class="lab-label">맨 윗줄에 남은 칸</span><span class="lab-count" id="lab-leaf">8</span><span class="lab-label">= 탑 수</span>
+      </div>
+      <div class="vox-btns" id="lab-btns"></div>
+      <div class="concept-box" id="lab-note">
+        규칙이 없으면 어느 마디에서나 갈래가 <strong>둘</strong>이다. 그래서 2 × 2 × 2 = <strong>8</strong>.<br>
+        규칙 단추를 눌러 <strong>가지가 어디서 잘리는지</strong> 살펴보자.
+      </div>
+    </section>
+
+    <!-- 슬9 · 발견: q9 (+10) -->
+    <section class="slide" data-q-id="q9">
+      <span class="stage-badge">발견 3/4</span>
+      <h1 class="slide-title">이 마디에 달린 잎</h1>
+      <div class="q-stage">
+        <p class="slide-sub">4층 탑 · <b>초록 위에 초록 금지</b> · 테두리 친 마디가 「맨 아래가 초록」이다</p>
+        <div class="cal-grid tree small" id="q9-tree"></div>
+        <p class="q-prompt">테두리 친 마디에서 뻗어 나간 <strong>맨 윗줄 칸</strong>은 몇 개일까? (+10)</p>
+        <div class="q-display" id="disp-q9">&nbsp;</div>
+        <div class="q-pad" id="pad-q9"></div>
+        <div class="mcq-hint" data-hints='["맨 아래가 초록이면, 그 바로 위에는 무엇을 올릴 수 있을까. 규칙을 다시 읽어 보자.","둘째 층이 정해져 버린다. 그 뒤로 갈래가 몇 번 남는지 따라가 보자.","테두리 친 마디 위쪽만 눈으로 훑으면서, 잘리지 않고 맨 위까지 이어진 세로줄을 세어 보자."]'></div>
+        <p class="q-fb" id="fb-q9"></p>
+      </div>
+    </section>
+
+    <!-- 슬10 · 발견: q10 (+10) -->
+    <section class="slide" data-q-id="q10">
+      <span class="stage-badge">발견 4/4</span>
+      <h1 class="slide-title">4층 탑은 몇 가지</h1>
+      <div class="q-stage">
+        <p class="slide-sub">같은 규칙 — <b>초록 위에 초록 금지</b></p>
+        <div class="cal-grid tree small" id="q10-tree"></div>
+        <p class="q-prompt">이 규칙으로 4층 탑을 쌓으면 몇 가지일까? (+10)</p>
+        <div class="mcq-opts" id="opts-q10">
+          <button class="mcq-opt" data-a="0">6가지</button>
+          <button class="mcq-opt" data-a="1">8가지</button>
+          <button class="mcq-opt" data-a="2">10가지</button>
+          <button class="mcq-opt" data-a="3">16가지</button>
+        </div>
+        <div class="mcq-hint" data-hints='["규칙이 없을 때는 2를 네 번 곱해 16이었다. 규칙이 붙었으니 그보다는 적을 것이다.","곱하기로는 답이 나오지 않는다. 갈래가 두 개인 마디도 있고 한 개인 마디도 있기 때문이다.","맨 윗줄에서 잘리지 않고 남은 칸을 그냥 세어 보자. 나무그림은 규칙이 붙어도 그대로 통한다."]'></div>
+        <p class="q-fb" id="fb-q10"></p>
+      </div>
+    </section>
+
+    <!-- 슬11 · 도전: 검증 3라운드 (+15) -->
+    <section class="slide" data-q-id="verify">
+      <span class="stage-badge">도전 1/4</span>
+      <h1 class="slide-title">설계 검토 3라운드</h1>
+      <p class="slide-sub">조건이 달라져도 통하는지 확인하자 · 라운드마다 +5</p>
+      <p class="q-prompt" id="vf-prompt"></p>
+      <div class="cal-grid tree small" id="vf-tree"></div>
+      <div class="q-display" id="disp-verify">&nbsp;</div>
+      <div class="q-pad" id="pad-verify"></div>
+      <div class="chip-row" id="vf-log"></div>
+      <div class="mcq-hint" data-hints='["나무그림을 머릿속으로 그려 보자. 첫째 층부터 갈래를 하나씩 따라가면 된다.","규칙이 앞에 놓은 블록을 보고 갈래를 자르는지, 아니면 층 자리만 보고 자르는지 구별해 보자.","층 자리만 보는 규칙이면 곱하기가 통한다. 앞에 놓은 것을 보는 규칙이면 잎을 세어야 한다."]'></div>
+      <p class="q-fb" id="fb-verify"></p>
+    </section>
+
+    <!-- 슬12 · 도전: 가짜 나무그림 (+10) -->
+    <section class="slide" data-q-id="report">
+      <span class="stage-badge">도전 2/4</span>
+      <h1 class="slide-title">가짜 설계도 적발</h1>
+      <p class="slide-sub">3층 · <b>초록 위에 초록 금지</b> · 셋 중 <b>제대로 된 것</b>은 하나뿐이다</p>
+      <div id="rep-boards"></div>
+      <p class="q-prompt">빠뜨림도 겹침도 없는 설계도를 고르자. (+10)</p>
+      <div class="pick-list" id="rep-list"></div>
+      <p class="q-fb" id="fb-report"></p>
+    </section>
+
+    <!-- 슬13 · 도전: 규칙 미션 (+10) -->
+    <section class="slide" data-q-id="mission">
+      <span class="stage-badge">도전 3/4</span>
+      <h1 class="slide-title">조건을 걸어 맞추기</h1>
+      <p class="slide-sub"><b>4층 탑</b>이 정확히 <b>3가지</b>가 되도록 조건을 골라 보자 · 성공 +10</p>
+      <div class="rule-choice" id="ms-chips"></div>
+      <div class="cal-grid tree small" id="ms-tree"></div>
+      <div class="lab-meter">
+        <span class="lab-label">건 조건</span><span class="lab-count" id="ms-used">0</span>
+        <span class="lab-label">지금 탑 수</span><span class="lab-count" id="ms-ways">16</span>
+        <span class="lab-label">목표 3</span>
+      </div>
+      <div class="mcq-hint" data-hints='["조건 하나로는 3까지 내려가지 않는다. 두 개를 함께 걸어 보자.","맨 아래를 못 박는 조건은 갈래를 첫 층에서만 자른다. 짝을 막는 조건은 위쪽 층마다 자른다. 둘을 섞어 보자.","한쪽 색으로 시작을 못 박고, 그 색이 이어 붙는 것을 막으면 남는 탑이 아주 적어진다."]'></div>
+      <p class="q-fb" id="fb-mission"></p>
+    </section>
+
+    <!-- 슬14 · 도전: 층별 표 (무점수 일반화) -->
+    <section class="slide">
+      <span class="stage-badge">도전 4/4</span>
+      <h1 class="slide-title">끝 블록으로 나눠 적어 두면</h1>
+      <p class="slide-sub"><b>초록 위에 초록 금지</b> · 층을 하나씩 올리며 세어 본 표</p>
+      <div id="tab-grid"></div>
+      <div class="vox-btns" id="tab-btns"></div>
+      <div class="concept-box" id="tab-note">
+        단추를 눌러 한 층씩 늘려 보자. <strong>맨 오른쪽 칸</strong>에서 무엇이 보이는지 살펴보자.
+      </div>
+    </section>
+
+    <!-- 슬15 · 창조: 설계 의뢰소 (+20) -->
+    <section class="slide" data-q-id="create">
+      <span class="stage-badge">창조 1/4</span>
+      <h1 class="slide-title">설계 의뢰소</h1>
+      <p class="slide-sub"><b>5층 탑</b> · 조건을 골라 두 의뢰를 맞추자 (32열이라 나무는 그리지 않는다)</p>
+      <div class="rule-choice" id="cr-chips"></div>
+      <div class="lab-meter">
+        <span class="lab-label">건 조건</span><span class="lab-count" id="cr-used">0</span>
+        <span class="lab-label">지금 탑 수</span><span class="lab-count" id="cr-ways">32</span>
+      </div>
+      <div class="rule-build">
+        <span class="rule-slot" id="slot-a">임무 가 · 정확히 5가지</span>
+        <span class="rule-slot" id="slot-b">임무 나 · 딱 1가지</span>
+      </div>
+      <div class="vox-btns" id="cr-btns"></div>
+      <div class="mcq-hint" data-hints='["조건을 하나씩 켜 보며 탑 수가 어떻게 줄어드는지 지켜보자.","탑 수가 0이 되면 아무 탑도 못 쌓는다는 뜻이다. 조건을 너무 많이 걸지 말자.","한 색이 다른 색 위에 못 오게 막으면, 아래쪽은 한 색 위쪽은 다른 색으로 갈리는 탑만 남는다."]'></div>
+      <p class="q-fb" id="fb-create"></p>
+    </section>
+
+    <!-- 슬16 · 창조: 설계사 카드 (cur===15 · renderAgentCard) -->
+    <section class="slide">
+      <span class="stage-badge">창조 2/4</span>
+      <h1 class="slide-title">설계 완료 — 설계사 카드</h1>
+      <div class="detective-card">
+        <div class="dc-title">🧱 나무그림 설계사 기록</div>
+        <div class="dc-row"><span>모은 탑</span><b id="dc-cases">0개</b></div>
+        <div class="dc-row"><span>기록한 추측</span><b id="dc-conj">아직</b></div>
+        <div class="dc-row"><span>적발한 설계도</span><b id="dc-report">아직</b></div>
+        <div class="dc-row"><span>완성한 설계</span><b id="dc-plan">아직</b></div>
+      </div>
+      <div class="concept-box">설계는 답을 아는 일이 아니라 <strong>빠짐없이 겹치지 않게 늘어놓는 일</strong>이었다.</div>
+    </section>
+
+    <!-- 슬17 · 창조: 정리 -->
+    <section class="slide">
+      <span class="stage-badge">창조 3/4</span>
+      <h1 class="slide-title">오늘의 발견 정리</h1>
+      <ul class="goal-list">
+        <li>손으로 적으면 빠뜨리고 겹친다. <strong>먼저 갈라 놓고</strong> 세면 그럴 일이 없다.</li>
+        <li>규칙이 없으면 갈래가 어디서나 둘이라 <strong>2 × 2 × 2 = 8</strong>. 곱하기가 통한다.</li>
+        <li>「맨 아래는 초록」처럼 <strong>층 자리만 보는 규칙</strong>은 곱하기를 살려 둔다.</li>
+        <li>「초록 위에 초록 금지」처럼 <strong>앞에 놓은 것을 보는 규칙</strong>은 갈래를 들쭉날쭉하게 만들어 곱하기를 깨뜨린다.</li>
+        <li>곱하기가 깨져도 <strong>나무그림은 그대로 통한다</strong>. 한 마디의 잎은 그 마디에서 뻗은 가지들의 잎을 더한 값이다.</li>
+        <li>층을 올리며 세어 두면 2, 3, 5, 8, 13 — <strong>다음 수는 앞의 두 수를 더한 값</strong>이었다.</li>
+      </ul>
+      <div class="concept-box">
+        곱하기는 <strong>갈림이 한결같을 때의 지름길</strong>일 뿐이다.<br>
+        지름길이 막히면 돌아가면 된다. 나무는 언제나 길을 알려 준다.
+      </div>
+    </section>
+
+    <!-- 슬18 · 창조: 결과 -->
+    <section class="slide">
+      <span class="stage-badge">마침</span>
+      <h1 class="slide-title">설계 결과</h1>
+      <div class="wrap-score" id="final-score">0</div>
+      <p class="wrap-msg" id="wrap-msg"></p>
+      <div class="home-card">🏠 <b>집에서 하는 진짜 설계</b> — 색이 다른 블록이나 동전 두 종류를 준비하자. 5개를 한 줄로 늘어놓되 같은 것이 이웃하지 않게만 하면 몇 가지가 나오는지, 직접 늘어놓아 세어 보자. 종이에 나무그림을 먼저 그리고 나서 세면 훨씬 빠르다.</div>
+      <div class="next-mini">
+        <span class="next-chip">다음 의뢰 · 공정한 게임 판정단</span>
+        <span class="next-chip">다음 의뢰 · 주사위 합 지도</span>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next" id="next" onclick="goNext()">다음 →</button>
+  </footer>
+</div>
+
+<script>
+/* ═══════════ KGiftedCore — 순수 로직 (DOM 무의존, 테스트 대상) ═══════════ */
+const KGiftedCore = {
+  LESSON: 'kg_math_l3_com02',
+  SCORE_PLAN: { explore: 15, conjecture: 10, q9: 10, q10: 10, verify: 15, report: 10, mission: 10, create: 20 },
+
+  G: 'G', J: 'J',        // G = 초록 블록(sel) · J = 주황 블록(center-cell)
+  EX_H: 3,               // 탐험 탑 높이
+  Q_H: 4,                // q9 · q10 · 규칙 미션 높이
+  CR_H: 5,               // 창조 높이 (32열이라 나무는 그리지 않는다)
+
+  PARTS: ['no_GG', 'no_GJ', 'no_JG', 'no_JJ', 'bot_G', 'bot_J', 'top_G', 'top_J'],
+  PART_TEXT: {
+    no_GG: '초록 위에 초록 금지', no_GJ: '초록 위에 주황 금지',
+    no_JG: '주황 위에 초록 금지', no_JJ: '주황 위에 주황 금지',
+    bot_G: '맨 아래는 초록', bot_J: '맨 아래는 주황',
+    top_G: '맨 위는 초록', top_J: '맨 위는 주황'
+  },
+  RULE_A: ['bot_G'],     // ㉮ 곱하기가 살아 있는 규칙
+  RULE_B: ['no_GG'],     // ㉯ 곱하기가 깨지는 규칙
+
+  has(rules, id) { return (rules || []).indexOf(id) >= 0; },
+
+  /* ── 국소 판정: prefix(아래→위) 위에 c를 놓을 수 있는가 ──
+     학생이 손으로 나무를 그릴 때와 같은 판정이다.
+     첫째 층은 bot_*, 그 위는 직전 층과의 짝 금지, 마지막 층은 top_*. */
+  allowed(prefix, c, h, rules) {
+    const r = rules || [];
+    if (prefix.length === 0) {
+      if (this.has(r, 'bot_G') && c !== 'G') return false;
+      if (this.has(r, 'bot_J') && c !== 'J') return false;
+    } else {
+      const a = prefix.charAt(prefix.length - 1);
+      if (this.has(r, 'no_' + a + c)) return false;
+    }
+    if (prefix.length === h - 1) {
+      if (this.has(r, 'top_G') && c !== 'G') return false;
+      if (this.has(r, 'top_J') && c !== 'J') return false;
+    }
+    return true;
+  },
+  // 완성된 탑이 규칙을 지키는가 (독립 경로 — 전수 검사용)
+  okTower(t, rules) {
+    const r = rules || [];
+    for (let i = 0; i + 1 < t.length; i++) {
+      if (this.has(r, 'no_' + t.charAt(i) + t.charAt(i + 1))) return false;
+    }
+    if (this.has(r, 'bot_G') && t.charAt(0) !== 'G') return false;
+    if (this.has(r, 'bot_J') && t.charAt(0) !== 'J') return false;
+    if (this.has(r, 'top_G') && t.charAt(t.length - 1) !== 'G') return false;
+    if (this.has(r, 'top_J') && t.charAt(t.length - 1) !== 'J') return false;
+    return true;
+  },
+  // 그 가지가 살아 있는가 (뿌리부터 prefix까지 전부 국소 통과했는가)
+  alive(prefix, h, rules) {
+    for (let k = 0; k < prefix.length; k++) {
+      if (!this.allowed(prefix.slice(0, k), prefix.charAt(k), h, rules)) return false;
+    }
+    return true;
+  },
+  towers(h, rules) {
+    const out = [];
+    const rec = (p) => {
+      if (p.length === h) { out.push(p); return; }
+      if (this.allowed(p, 'G', h, rules)) rec(p + 'G');
+      if (this.allowed(p, 'J', h, rules)) rec(p + 'J');
+    };
+    rec('');
+    return out;
+  },
+  count(h, rules) { return this.towers(h, rules).length; },
+  // 그 마디 아래에 달린 잎 수 (= 그 마디로 시작하는 완성 탑 수)
+  leaves(prefix, h, rules) {
+    if (!this.alive(prefix, h, rules)) return 0;
+    let n = 0;
+    const all = this.towers(h, rules);
+    for (let i = 0; i < all.length; i++) if (all[i].indexOf(prefix) === 0) n++;
+    return n;
+  },
+
+  /* ── 나무그림 행 만들기 ── 층 h부터 층 1까지(역순) · 각 마디는 span 2^(h-r) ── */
+  treeRows(h, rules) {
+    const rows = [];
+    for (let r = h; r >= 1; r--) {
+      const row = [], n = Math.pow(2, r);
+      for (let i = 0; i < n; i++) {
+        let p = '';
+        for (let b = r - 1; b >= 0; b--) p += ((i >> b) & 1) ? 'J' : 'G';
+        row.push({ path: p, color: p.charAt(p.length - 1), span: Math.pow(2, h - r), cut: !this.alive(p, h, rules) });
+      }
+      rows.push({ level: r, cells: row });
+    }
+    return rows;
+  },
+
+  /* ── 곱으로 세지는가 = 층마다 갈래 수가 앞 선택과 무관하게 같은가 ── */
+  uniformProduct(h, rules) {
+    let prefixes = [''], prod = 1;
+    for (let k = 0; k < h; k++) {
+      const seen = {}; let nprefix = [], kinds = 0;
+      for (let i = 0; i < prefixes.length; i++) {
+        const p = prefixes[i]; let c = 0;
+        if (this.allowed(p, 'G', h, rules)) { c++; nprefix.push(p + 'G'); }
+        if (this.allowed(p, 'J', h, rules)) { c++; nprefix.push(p + 'J'); }
+        if (!seen[c]) { seen[c] = 1; kinds++; }
+      }
+      if (kinds !== 1) return null;          // 갈래가 들쭉날쭉 → 곱으로 안 된다
+      prod *= Number(Object.keys(seen)[0]);
+      prefixes = nprefix;
+    }
+    return prod;
+  },
+
+  /* ── 층별 끝색 표 (슬14 일반화) ── */
+  endTable(maxH, rules) {
+    const out = [];
+    for (let h = 1; h <= maxH; h++) {
+      const t = this.towers(h, rules);
+      let g = 0, j = 0;
+      for (let i = 0; i < t.length; i++) { if (t[i].charAt(h - 1) === 'G') g++; else j++; }
+      out.push({ h: h, g: g, j: j, tot: t.length });
+    }
+    return out;
+  },
+
+  /* ── 가짜 나무그림 감사 (잎 목록이 참인가) ── */
+  auditReport(list, h, rules) {
+    const truth = this.towers(h, rules), seen = {}, dup = [], bad = [];
+    for (let i = 0; i < list.length; i++) {
+      const t = list[i];
+      if (seen[t]) dup.push(t); else seen[t] = 1;
+      if (truth.indexOf(t) < 0) bad.push(t);
+    }
+    const miss = [];
+    for (let i = 0; i < truth.length; i++) if (!seen[truth[i]]) miss.push(truth[i]);
+    return { dup: dup, miss: miss, bad: bad, ok: dup.length === 0 && miss.length === 0 && bad.length === 0 };
+  },
+
+  /* ── 검사기 (헌법 §3-6 — 켠 부품 개수와 가짓수만 돌려준다) ──
+     어떤 부품을 켜야 하는지·해답 조합·최소 부품 수는 절대 반환하지 않는다. */
+  checkMission(rules, h, target) {
+    const w = this.count(h, rules);
+    return { used: (rules || []).length, ways: w, ok: w === target };
+  },
+  checkPlanA(rules, target) {
+    const w = this.count(this.CR_H, rules);
+    return { used: (rules || []).length, ways: w, ok: w === target };
+  },
+  checkPlanB(rules) {
+    const w = this.count(this.CR_H, rules);
+    return { used: (rules || []).length, ways: w, ok: w === 1, none: w === 0 };
+  },
+
+  scoreTotal() {
+    const p = this.SCORE_PLAN; let s = 0;
+    for (const k in p) s += p[k];
+    return s;
+  }
+};
+if (typeof module !== 'undefined' && typeof module.exports === 'object') module.exports = KGiftedCore;
+
+/* ═══════════ 엔진 (base: kg_math_l3_pat01 · pat02 공통부 · com01 칩·숫자패드 계승 · 힌트 3단) ═══════════ */
+const TOTAL = 18;
+const LESSON_ID = 'kg_math_l3_com02';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+const HINT_MAX = 3;
+const BLOCKS = 2;
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+/* ═══ 화면 맞춤 — 슬라이드가 프레임보다 길면 균일 축소 (제목이 헤더 뒤로 잘리는 것 방지) ═══ */
+const FIT_MIN = 0.55, FIT_STEP = 0.04;
+let fitPending = false;
+function fitActiveSlide() {
+  const el = document.querySelector('.slide.active');
+  if (!el) return;
+  if (el.style.zoom) el.style.zoom = '';
+  if (!(window.CSS && CSS.supports && CSS.supports('zoom', '0.9'))) return;
+  if (!el.clientHeight) return;
+  let k = 1;
+  for (let i = 0; i < 16 && el.scrollHeight > el.clientHeight + 1; i++) {
+    k = Math.max(FIT_MIN, k - FIT_STEP);
+    el.style.zoom = k;
+    if (k === FIT_MIN) break;
+  }
+}
+function scheduleFit() {
+  if (fitPending) return;
+  fitPending = true;
+  requestAnimationFrame(() => { fitPending = false; fitActiveSlide(); });
+}
+window.addEventListener('resize', scheduleFit);
+window.addEventListener('orientationchange', scheduleFit);
+document.addEventListener('click', scheduleFit, true);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(scheduleFit);
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.querySelectorAll('#dots .ka-dot').forEach((d, i) => { d.classList.toggle('active', i === cur); d.classList.toggle('done', i < cur); });
+  document.getElementById('prev').disabled = cur === 0;
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.hintLevel >= HINT_MAX; }
+  else { hintBtn.disabled = true; }
+  if (cur === TOTAL - 1) {
+    document.getElementById('next').textContent = '마치기 →';
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('wrap-msg').textContent = wrapMsg(score);
+    saveProgress(true);
+  } else { document.getElementById('next').textContent = '다음 →'; }
+  if (cur === 4) renderCaseTable();
+  if (cur === 15) renderAgentCard();
+  fitActiveSlide();
+}
+function saveProgress(done) {
+  const data = { cur, score, done, startedAt, finishedAt: done ? Date.now() : null, qState, cases: exploreCases, conj: conjPicked, myRule: myRuleText };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function wrapMsg(s) {
+  if (s >= 100) return '전설의 설계사!';
+  if (s >= 80) return '대단한 설계였다!';
+  if (s >= 60) return '설계사의 눈이 자라났다!';
+  return '단서는 충분히 모았다. 다시 도전해도 좋다!';
+}
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+function showHint() {
+  const qid = currentQId(); if (!qid) return;
+  const st = getQState(qid); if (st.hintLevel >= HINT_MAX) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint'); if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[Math.min(st.hintLevel, hints.length) - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= HINT_MAX;
+}
+
+
+/* ═══ 칩·숫자패드 공통 (com01 정의 문자 그대로 추출·주입) ═══ */
+function chip(elId, text, kind) {
+  const s = document.createElement('span');
+  s.className = 'sum-chip ' + (kind || 'a');
+  s.textContent = text;
+  document.getElementById(elId).appendChild(s);
+}
+function buildPad(padId, dispId, maxLen, onSubmit) {
+  const pad = document.getElementById(padId);
+  const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '←', '확인'];
+  let val = '';
+  const draw = () => { document.getElementById(dispId).textContent = val || '\u00A0'; };
+  keys.forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'q-key' + (k === '←' || k === '확인' ? ' fn' : '');
+    b.textContent = k;
+    b.addEventListener('click', () => {
+      if (k === '←') val = val.slice(0, -1);
+      else if (k === '확인') { if (val !== '') { const v = parseInt(val, 10); if (onSubmit(v) !== false) val = ''; } }
+      else if (val.length < maxLen) val += k;
+      draw();
+    });
+    pad.appendChild(b);
+  });
+  draw();
+}
+
+/* ═══════════ 나무그림·탑 렌더 공통 (pat01 cal-grid 파라미터 변형 · 셀 상태 sel/center-cell/empty/diag-a 그대로) ═══════════ */
+function cellClass(c) { return c === 'G' ? 'sel' : 'center-cell'; }
+
+/* 탑 하나 — 1열, 맨 위층이 위로 오게 뒤집어 그린다 */
+function renderTower(elId, t) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.style.setProperty('--tree-n', 1);
+  el.innerHTML = '';
+  for (let k = t.length - 1; k >= 0; k--) {
+    const d = document.createElement('div');
+    d.className = 'cal-cell ' + cellClass(t.charAt(k));
+    d.dataset.cell = k;
+    el.appendChild(d);
+  }
+}
+
+/* 나무그림 — 맨 아래 줄이 첫째 층. 층 h부터 역순으로 붙여 뿌리가 아래로 간다.
+   마디 하나가 span 2^(h-r)을 먹으므로 세로줄 하나가 곧 탑 하나가 된다. */
+function renderTree(elId, h, rules, opt) {
+  const o = opt || {}, el = document.getElementById(elId);
+  if (!el) return;
+  const W = Math.pow(2, h);
+  el.style.setProperty('--tree-n', W);
+  el.innerHTML = '';
+  const rows = KGiftedCore.treeRows(h, rules);
+  for (let r = 0; r < rows.length; r++) {
+    const row = rows[r];
+    for (let i = 0; i < row.cells.length; i++) {
+      const c = row.cells[i], d = document.createElement('div');
+      let cls = 'cal-cell';
+      if (c.cut) cls += ' empty';
+      else cls += ' ' + cellClass(c.color);
+      if (o.markPrefix && !c.cut && c.path.indexOf(o.markPrefix) === 0) cls += ' diag-a';
+      d.className = cls;
+      d.dataset.path = c.path;
+      d.dataset.level = row.level;
+      d.style.gridColumn = 'span ' + c.span;
+      el.appendChild(d);
+    }
+  }
+}
+function stepBtn(wrapId, label, fn) {
+  const b = document.createElement('button');
+  b.className = 'cal-month-btn';
+  b.textContent = label;
+  b.addEventListener('click', fn);
+  document.getElementById(wrapId).appendChild(b);
+  return b;
+}
+function clearChips(id) { const e = document.getElementById(id); if (e) e.innerHTML = ''; }
+function towerWords(t) {
+  const w = [];
+  for (let k = 0; k < t.length; k++) w.push(t.charAt(k) === 'G' ? '초록' : '주황');
+  return w.join('·');
+}
+
+/* ═══════════ 슬2 견본 두 탑 (읽기 전용) ═══════════ */
+renderTower('intro-a', 'GJG');
+renderTower('intro-b', 'JJG');
+
+/* ═══════════ 슬4 탐험 — 쌓아서 탑 모으기 (+15) ═══════════ */
+const exploreCases = [];
+let exSeq = '';
+(function() {
+  const H = KGiftedCore.EX_H, NEED = 3;
+  function draw() { renderTower('ex-board', exSeq); document.getElementById('ex-count').textContent = exploreCases.length; }
+  function record() {
+    if (exploreCases.indexOf(exSeq) >= 0) {
+      document.getElementById('fb-explore').textContent = '이미 쌓아 본 탑이다. 다른 순서로 쌓아 보자.';
+      return;
+    }
+    exploreCases.push(exSeq);
+    document.getElementById('ex-count').textContent = exploreCases.length;
+    chip('ex-cases', towerWords(exSeq), exploreCases.length % 2 ? 'a' : 'b');
+    const st = getQState('explore');
+    if (!st.solved && exploreCases.length >= NEED) {
+      st.solved = true;
+      addScore(KGiftedCore.SCORE_PLAN.explore);
+      document.getElementById('fb-explore').textContent = '서로 다른 탑 ' + NEED + '가지를 모았다. +15 — 남은 것도 마저 찾아보자.';
+    } else if (exploreCases.length === KGiftedCore.count(H, [])) {
+      document.getElementById('fb-explore').textContent = '3층 탑을 하나도 빠짐없이 모았다.';
+    } else {
+      document.getElementById('fb-explore').textContent = '새로운 탑을 기록했다. 지금까지 ' + exploreCases.length + '가지.';
+    }
+    saveProgress(false);
+  }
+  function put(c) {
+    if (exSeq.length >= H) return;
+    exSeq += c; draw();
+    if (exSeq.length === H) { record(); exSeq = ''; setTimeout(draw, 450); }
+  }
+  stepBtn('ex-btns', '초록 올리기', function() { put('G'); });
+  stepBtn('ex-btns', '주황 올리기', function() { put('J'); });
+  stepBtn('ex-btns', '한 층 내리기', function() { exSeq = exSeq.slice(0, -1); draw(); });
+  stepBtn('ex-btns', '처음부터', function() { exSeq = ''; draw(); });
+  draw();
+})();
+
+/* ═══════════ 슬5 3층 탑 전부 — 맨 아래 블록으로 묶어 나열 (엔진이 cur===4에 호출) ═══════════ */
+function renderCaseTable() {
+  const wrap = document.getElementById('all8');
+  if (!wrap || wrap.dataset.done) return;
+  wrap.dataset.done = '1';
+  const H = KGiftedCore.EX_H, all = KGiftedCore.towers(H, []);
+  [['G', '맨 아래가 초록'], ['J', '맨 아래가 주황']].forEach(function(grp) {
+    const box = document.createElement('div');
+    box.className = 'road-row';
+    const tag = document.createElement('div');
+    tag.className = 'road-one';
+    const nm = document.createElement('span');
+    nm.className = 'shadow-tag';
+    nm.textContent = grp[1];
+    tag.appendChild(nm);
+    box.appendChild(tag);
+    all.filter(function(t) { return t.charAt(0) === grp[0]; }).forEach(function(t, n) {
+      const one = document.createElement('div');
+      one.className = 'road-one';
+      const g = document.createElement('div');
+      g.className = 'cal-grid tree tow';
+      g.id = 'a8-' + grp[0] + n;
+      one.appendChild(g);
+      box.appendChild(one);
+      wrap.appendChild(box);
+      renderTower('a8-' + grp[0] + n, t);
+    });
+  });
+}
+
+/* ═══════════ 슬6 규칙이 붙으면 ═══════════ */
+let rSeq = '';
+const rCases = [];
+(function() {
+  const H = KGiftedCore.EX_H, R = KGiftedCore.RULE_B;
+  function draw() { renderTower('r-board', rSeq); document.getElementById('r-count').textContent = rCases.length; }
+  function put(c) {
+    if (rSeq.length >= H) return;
+    if (!KGiftedCore.allowed(rSeq, c, H, R)) {
+      document.getElementById('fb-rule').textContent = '초록 위에는 초록을 올릴 수 없다.';
+      return;
+    }
+    document.getElementById('fb-rule').textContent = '';
+    rSeq += c; draw();
+    if (rSeq.length === H) {
+      if (rCases.indexOf(rSeq) < 0) rCases.push(rSeq);
+      document.getElementById('r-count').textContent = rCases.length;
+      if (rCases.length === KGiftedCore.count(H, R)) {
+        document.getElementById('fb-rule').textContent = '이 규칙으로 쌓을 수 있는 탑을 전부 모았다.';
+      }
+      rSeq = ''; setTimeout(draw, 450);
+    }
+  }
+  stepBtn('r-btns', '초록 올리기', function() { put('G'); });
+  stepBtn('r-btns', '주황 올리기', function() { put('J'); });
+  stepBtn('r-btns', '한 층 내리기', function() { rSeq = rSeq.slice(0, -1); draw(); });
+  stepBtn('r-btns', '처음부터', function() { rSeq = ''; draw(); });
+  draw();
+})();
+
+/* ═══════════ 슬7 추측 기록 (+10) ═══════════ */
+const CONJ_TEXT = [
+  '층이 하나 늘 때마다 탑 수는 언제나 두 배가 된다',
+  '규칙이 붙어도 갈래 수를 층마다 곱하면 언제나 답이 나온다',
+  '규칙에 따라 갈래 수가 들쭉날쭉해지면 곱하기로는 안 되고, 갈라 놓고 세야 한다',
+  '탑 수는 블록 종류 수와 층 수를 더한 값이다'
+];
+let conjPicked = '';
+(function() {
+  const list = document.getElementById('conj-list');
+  CONJ_TEXT.forEach(function(t) {
+    const b = document.createElement('button');
+    b.className = 'pick-item';
+    b.textContent = t;
+    b.addEventListener('click', function() {
+      const st = getQState('conjecture');
+      if (st.solved) return;
+      st.solved = true;
+      conjPicked = t;
+      Array.prototype.slice.call(list.children).forEach(function(c) { c.style.opacity = '0.45'; });
+      b.style.opacity = '1';
+      b.classList.add('picked');
+      addScore(KGiftedCore.SCORE_PLAN.conjecture);
+      document.getElementById('fb-conjecture').textContent = '추측을 기록했다. +10 — 다음 실험실에서 직접 확인해 보자.';
+      saveProgress(false);
+    });
+    list.appendChild(b);
+  });
+})();
+
+/* ═══════════ 슬8 나무그림 실험실 ═══════════ */
+const labRules = [];
+(function() {
+  const H = KGiftedCore.EX_H;
+  const OPTS = ['no_GG', 'bot_G', 'no_JJ'];
+  function draw() {
+    renderTree('lab-tree', H, labRules, {});
+    const n = KGiftedCore.count(H, labRules);
+    document.getElementById('lab-leaf').textContent = n;
+    const prod = KGiftedCore.uniformProduct(H, labRules);
+    const note = document.getElementById('lab-note');
+    if (!labRules.length) {
+      note.innerHTML = '규칙이 없으면 어느 마디에서나 갈래가 <strong>둘</strong>이다. 그래서 2 × 2 × 2 = <strong>8</strong>.<br>' +
+        '규칙 단추를 눌러 <strong>가지가 어디서 잘리는지</strong> 살펴보자.';
+    } else if (prod !== null) {
+      note.innerHTML = '지금은 <strong>층마다 갈래 수가 한결같다</strong>. 그래서 곱해도 된다 — 답은 <strong>' + prod + '</strong>.<br>' +
+        '이런 규칙은 <strong>몇째 층이냐만</strong> 보고 자른다.';
+    } else {
+      note.innerHTML = '지금은 <strong>갈래 수가 들쭉날쭉하다</strong>. 어떤 곱으로도 <strong>' + n + '</strong>이 나오지 않는다.<br>' +
+        '이런 규칙은 <strong>앞에 무엇을 놓았는지</strong>를 보고 자른다. 그래도 맨 윗줄에 남은 칸을 세면 정확하다.';
+    }
+    scheduleFit();
+  }
+  OPTS.forEach(function(id) {
+    stepBtn('lab-btns', KGiftedCore.PART_TEXT[id], function() {
+      const k = labRules.indexOf(id);
+      if (k >= 0) labRules.splice(k, 1); else labRules.push(id);
+      draw();
+    });
+  });
+  stepBtn('lab-btns', '규칙 전부 끄기', function() { labRules.length = 0; draw(); });
+  draw();
+})();
+
+/* ═══════════ 슬9 q9 — 마디에 달린 잎 (+10) ═══════════ */
+(function() {
+  const H = KGiftedCore.Q_H, R = KGiftedCore.RULE_B, TARGET = KGiftedCore.leaves('G', H, R);
+  renderTree('q9-tree', H, R, { markPrefix: 'G' });
+  buildPad('pad-q9', 'disp-q9', 2, function(v) {
+    const st = getQState('q9');
+    if (st.solved) return true;
+    st.attempts++;
+    const fb = document.getElementById('fb-q9');
+    if (v === TARGET) {
+      st.solved = true;
+      addScore(KGiftedCore.SCORE_PLAN.q9);
+      fb.textContent = '맞다. +10 — 맨 아래가 초록이면 둘째 층은 주황으로 정해져 버린다. 그만큼 갈래가 줄었다.';
+      saveProgress(false);
+    } else {
+      st.wrongCount++;
+      fb.textContent = '다시 세어 보자. 테두리 친 마디에서 위로 이어진 세로줄만 센다.';
+    }
+    return true;
+  });
+})();
+
+/* ═══════════ 슬10 q10 — 4층 전체 (+10) ═══════════ */
+(function() {
+  const H = KGiftedCore.Q_H, R = KGiftedCore.RULE_B;
+  const ANS = 1;                          // 8가지
+  renderTree('q10-tree', H, R, {});
+  const opts = document.getElementById('opts-q10');
+  Array.prototype.slice.call(opts.children).forEach(function(b) {
+    b.addEventListener('click', function() {
+      const st = getQState('q10');
+      if (st.solved) return;
+      const fb = document.getElementById('fb-q10');
+      if (Number(b.dataset.a) === ANS) {
+        st.solved = true;
+        b.classList.add('correct');
+        addScore(KGiftedCore.SCORE_PLAN.q10);
+        fb.textContent = '맞다. +10 — 규칙이 없었다면 16이었다. 갈래가 잘린 만큼 절반으로 줄었다.';
+        saveProgress(false);
+      } else {
+        st.wrongCount++;
+        b.classList.add('wrong');
+        fb.textContent = Number(b.dataset.a) === 3
+          ? '16은 규칙이 없을 때의 수다. 규칙이 갈래를 잘랐으니 그보다 적다.'
+          : '맨 윗줄에서 잘리지 않고 남은 칸을 하나씩 세어 보자.';
+      }
+    });
+  });
+})();
+
+/* ═══════════ 슬11 검증 3라운드 (+5 × 3) ═══════════ */
+const VF = [
+  { h: 2, rules: KGiftedCore.RULE_B, name: '2층 · 초록 위에 초록 금지' },
+  { h: 5, rules: KGiftedCore.RULE_B, name: '5층 · 초록 위에 초록 금지' },
+  { h: 3, rules: KGiftedCore.RULE_A, name: '3층 · 맨 아래는 초록' }
+];
+let vfRound = 0;
+(function() {
+  function draw() {
+    if (vfRound >= VF.length) return;
+    const r = VF[vfRound];
+    document.getElementById('vf-prompt').textContent =
+      '라운드 ' + (vfRound + 1) + '/3 · ' + r.name + ' — 탑은 몇 가지일까? (+5)';
+    if (r.h <= 4) renderTree('vf-tree', r.h, r.rules, {});
+    else document.getElementById('vf-tree').innerHTML = '';
+    scheduleFit();
+  }
+  buildPad('pad-verify', 'disp-verify', 3, function(v) {
+    const st = getQState('verify');
+    if (vfRound >= VF.length) return true;
+    const r = VF[vfRound], want = KGiftedCore.count(r.h, r.rules);
+    const fb = document.getElementById('fb-verify');
+    if (v === want) {
+      addScore(5);
+      chip('vf-log', r.name.split(' · ')[0] + ' ' + want + '가지', 'a');
+      vfRound++;
+      if (vfRound >= VF.length) {
+        st.solved = true;
+        fb.textContent = '세 라운드 모두 통과했다. 마지막 것은 곱하기로도 되고(1 × 2 × 2), 앞의 둘은 갈라 놓고 세어야 했다.';
+        document.getElementById('vf-prompt').textContent = '검토 완료 · 세 조건 전부 확인했다.';
+        document.getElementById('vf-tree').innerHTML = '';
+      } else {
+        fb.textContent = '맞다. +5 — 다음 조건으로.';
+        draw();
+      }
+      saveProgress(false);
+    } else {
+      fb.textContent = '다시 세어 보자. 나무그림을 첫째 층부터 따라가면 된다.';
+    }
+    return true;
+  });
+  draw();
+})();
+
+/* ═══════════ 슬12 가짜 설계도 (+10) ═══════════ */
+const REPORTS = [
+  { name: '설계도 가', list: ['GJG', 'GJJ', 'JGJ', 'JJG', 'JJJ'] },
+  { name: '설계도 나', list: ['GJG', 'GJJ', 'JGJ', 'JJJ'] },
+  { name: '설계도 다', list: ['GJG', 'GJJ', 'JGJ', 'JJG', 'JJJ', 'GJJ'] }
+];
+const REPORT_OK = 0;
+(function() {
+  const H = KGiftedCore.EX_H, R = KGiftedCore.RULE_B;
+  const wrap = document.getElementById('rep-boards'), list = document.getElementById('rep-list');
+  REPORTS.forEach(function(r, n) {
+    const box = document.createElement('div');
+    box.className = 'road-row';
+    const tagOne = document.createElement('div');
+    tagOne.className = 'road-one';
+    const tag = document.createElement('span');
+    tag.className = 'shadow-tag';
+    tag.textContent = r.name;
+    tagOne.appendChild(tag);
+    box.appendChild(tagOne);
+    r.list.forEach(function(t, k) {
+      const one = document.createElement('div');
+      one.className = 'road-one';
+      const g = document.createElement('div');
+      g.className = 'cal-grid tree tow';
+      g.id = 'rp-' + n + '-' + k;
+      one.appendChild(g);
+      box.appendChild(one);
+      wrap.appendChild(box);
+      renderTower('rp-' + n + '-' + k, t);
+    });
+
+    const b = document.createElement('button');
+    b.className = 'pick-item';
+    b.textContent = r.name;
+    b.addEventListener('click', function() {
+      const st = getQState('report');
+      if (st.solved) return;
+      const fb = document.getElementById('fb-report');
+      const a = KGiftedCore.auditReport(r.list, H, R);
+      if (n === REPORT_OK) {
+        st.solved = true;
+        b.classList.add('picked');
+        addScore(KGiftedCore.SCORE_PLAN.report);
+        fb.textContent = '맞다. +10 — 나머지 둘은 하나가 빠졌거나 같은 것이 두 번 들어 있었다.';
+        saveProgress(false);
+      } else {
+        b.style.opacity = '0.45';
+        fb.textContent = a.miss.length ? '이 설계도에는 빠진 탑이 있다. 나무그림과 하나씩 맞춰 보자.'
+                                       : '이 설계도에는 같은 탑이 두 번 들어 있다. 잘 살펴보자.';
+      }
+    });
+    list.appendChild(b);
+  });
+})();
+
+/* ═══════════ 슬13 규칙 미션 (+10) ═══════════ */
+const msRules = [];
+(function() {
+  const H = KGiftedCore.Q_H, TARGET = 3;
+  function draw() {
+    renderTree('ms-tree', H, msRules, {});
+    const r = KGiftedCore.checkMission(msRules, H, TARGET);
+    document.getElementById('ms-used').textContent = r.used;
+    document.getElementById('ms-ways').textContent = r.ways;
+    Array.prototype.slice.call(document.getElementById('ms-chips').children).forEach(function(b) {
+      b.classList.toggle('on', msRules.indexOf(b.dataset.pid) >= 0);
+      b.style.opacity = msRules.indexOf(b.dataset.pid) >= 0 ? '1' : '0.6';
+    });
+    scheduleFit();
+  }
+  KGiftedCore.PARTS.forEach(function(id) {
+    const b = document.createElement('button');
+    b.className = 'rule-chip';
+    b.dataset.pid = id;
+    b.textContent = KGiftedCore.PART_TEXT[id];
+    b.addEventListener('click', function() {
+      const st = getQState('mission');
+      if (st.solved) return;
+      const k = msRules.indexOf(id);
+      if (k >= 0) msRules.splice(k, 1); else msRules.push(id);
+      draw();
+      const r = KGiftedCore.checkMission(msRules, H, TARGET), fb = document.getElementById('fb-mission');
+      if (r.ok) {
+        st.solved = true;
+        addScore(KGiftedCore.SCORE_PLAN.mission);
+        fb.textContent = '조건 ' + r.used + '개로 정확히 3가지를 만들었다. +10';
+        saveProgress(false);
+      } else if (r.ways === 0) {
+        fb.textContent = '조건이 너무 세다. 아무 탑도 못 쌓는다.';
+      } else {
+        fb.textContent = '지금 ' + r.ways + '가지. 목표는 3가지다.';
+      }
+    });
+    document.getElementById('ms-chips').appendChild(b);
+  });
+  draw();
+})();
+
+/* ═══════════ 슬14 층별 표 — 끝 블록으로 나눠 세기 (무점수) ═══════════ */
+let tabH = 3;
+(function() {
+  const R = KGiftedCore.RULE_B;
+  function draw() {
+    const rows = KGiftedCore.endTable(tabH, R), wrap = document.getElementById('tab-grid');
+    wrap.innerHTML = '';
+    const box = document.createElement('div');
+    box.className = 'struct-stage';
+    rows.forEach(function(x) {
+      const line = document.createElement('div');
+      line.className = 'struct-eq';
+      const a = document.createElement('span'); a.className = 'sum-chip'; a.textContent = x.h + '층';
+      const g = document.createElement('span'); g.className = 'sum-chip a'; g.textContent = '초록 끝 ' + x.g;
+      const j = document.createElement('span'); j.className = 'sum-chip b'; j.textContent = '주황 끝 ' + x.j;
+      const t = document.createElement('span'); t.className = 'sum-chip tot'; t.textContent = '모두 ' + x.tot;
+      line.appendChild(a); line.appendChild(g); line.appendChild(j); line.appendChild(t);
+      box.appendChild(line);
+    });
+    wrap.appendChild(box);
+    const seq = rows.map(function(x) { return x.tot; });
+    const note = document.getElementById('tab-note');
+    if (tabH >= 5) {
+      note.innerHTML = '모두 칸을 이어서 읽어 보자 — <strong>' + seq.join(', ') + '</strong>.<br>' +
+        '<strong>초록 끝</strong>은 바로 앞 층의 주황 끝과 같고, <strong>주황 끝</strong>은 바로 앞 층의 모두와 같다. ' +
+        '둘을 합치니 <strong>다음 수 = 앞의 두 수를 더한 값</strong>이 된다.';
+    } else {
+      note.innerHTML = '단추를 눌러 한 층씩 늘려 보자. <strong>맨 오른쪽 칸</strong>에서 무엇이 보이는지 살펴보자.';
+    }
+    scheduleFit();
+  }
+  stepBtn('tab-btns', '한 층 늘리기', function() { if (tabH < 8) tabH++; draw(); });
+  stepBtn('tab-btns', '한 층 줄이기', function() { if (tabH > 2) tabH--; draw(); });
+  draw();
+})();
+
+/* ═══════════ 창조 산출물 기록 (엔진 saveProgress 규약) ═══════════ */
+let myRuleText = '아직';
+
+/* ═══════════ 슬15 설계 의뢰소 (+10 + 10) ═══════════ */
+const crRules = [];
+(function() {
+  const TA = 5;
+  function draw() {
+    const a = KGiftedCore.checkPlanA(crRules, TA), b = KGiftedCore.checkPlanB(crRules);
+    document.getElementById('cr-used').textContent = a.used;
+    document.getElementById('cr-ways').textContent = a.ways;
+    const sa = document.getElementById('slot-a'), sb = document.getElementById('slot-b');
+    sa.classList.toggle('filled', getQState('createA').solved);
+    sb.classList.toggle('filled', getQState('createB').solved);
+    Array.prototype.slice.call(document.getElementById('cr-chips').children).forEach(function(x) {
+      x.classList.toggle('on', crRules.indexOf(x.dataset.pid) >= 0);
+      x.style.opacity = crRules.indexOf(x.dataset.pid) >= 0 ? '1' : '0.6';
+    });
+    scheduleFit();
+    return { a: a, b: b };
+  }
+  function note() {
+    const r = draw(), fb = document.getElementById('fb-create');
+    const sa = getQState('createA'), sb = getQState('createB');
+    if (!sa.solved && r.a.ok) {
+      sa.solved = true; addScore(10);
+      myRuleText = (myRuleText === '아직' ? '' : myRuleText + ' / ') + '임무 가 · 조건 ' + r.a.used + '개로 5가지';
+      fb.textContent = '임무 가 승인. 조건 ' + r.a.used + '개로 정확히 5가지를 만들었다. +10';
+      saveProgress(false); return;
+    }
+    if (!sb.solved && r.b.ok) {
+      sb.solved = true; addScore(10);
+      myRuleText = (myRuleText === '아직' ? '' : myRuleText + ' / ') + '임무 나 · 조건 ' + r.b.used + '개로 외길';
+      fb.textContent = '임무 나 승인. 쌓을 수 있는 탑이 딱 하나뿐이다. +10';
+      saveProgress(false); return;
+    }
+    if (r.b.none) fb.textContent = '조건이 너무 세서 아무 탑도 못 쌓는다. 하나 꺼 보자.';
+    else fb.textContent = '조건 ' + r.a.used + '개 · 지금 ' + r.a.ways + '가지.';
+  }
+  KGiftedCore.PARTS.forEach(function(id) {
+    const b = document.createElement('button');
+    b.className = 'rule-chip';
+    b.dataset.pid = id;
+    b.textContent = KGiftedCore.PART_TEXT[id];
+    b.addEventListener('click', function() {
+      const k = crRules.indexOf(id);
+      if (k >= 0) crRules.splice(k, 1); else crRules.push(id);
+      note();
+    });
+    document.getElementById('cr-chips').appendChild(b);
+  });
+  stepBtn('cr-btns', '조건 전부 끄기', function() { crRules.length = 0; note(); });
+  draw();
+})();
+
+/* ═══════════ 슬16 설계사 카드 ═══════════ */
+function renderAgentCard() {
+  document.getElementById('dc-cases').textContent = exploreCases.length + '개';
+  document.getElementById('dc-conj').textContent = conjPicked || '기록 없음';
+  document.getElementById('dc-report').textContent = getQState('report').solved ? REPORTS[REPORT_OK].name + ' 확인' : '아직';
+  const a = getQState('createA').solved, b = getQState('createB').solved;
+  document.getElementById('dc-plan').textContent = (a && b) ? '임무 가·나 모두 승인' : a ? '임무 가 승인' : b ? '임무 나 승인' : '아직';
+}
+
+/* ═══════════ 초기화 ═══════════ */
+(function() {
+  const dots = document.getElementById('dots');
+  for (let i = 0; i < TOTAL; i++) {
+    const d = document.createElement('span');
+    d.className = 'ka-dot';
+    d.addEventListener('click', function() { cur = i; updateUI(); });
+    dots.appendChild(d);
+  }
+  updateUI();
+})();
+
+</script>
+</body>
+</html>
