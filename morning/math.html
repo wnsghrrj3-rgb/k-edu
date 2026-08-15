@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>오늘 나가는 수학 — 아침활동</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#5B8EF8;--primary-light:#EBF4FF;
+  --bg:#F4F6FB;--card:#fff;--ink:#1A202C;--sub:#718096;--faint:#A0AEC0;--border:#E7ECF3;
+  --radius:20px;--shadow:0 2px 18px rgba(33,52,94,.07);--done:#22A06B;
+  --kedu-title:'Gowun Batang','Gowun Dodum',serif;
+}
+body{font-family:'Gowun Dodum',sans-serif;background:var(--bg);min-height:100vh;color:var(--ink);-webkit-font-smoothing:antialiased}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.top{background:var(--card);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;gap:10px}
+.top .brand{font-family:var(--kedu-title);font-weight:700;color:var(--primary)}
+.top .t{font-family:var(--kedu-title);font-size:17px}
+.top a{margin-left:auto;color:var(--sub);text-decoration:none;font-size:13.5px}
+.page{max-width:840px;margin:0 auto;padding:22px 16px 60px}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 22px;margin-bottom:16px}
+h2{font-family:var(--kedu-title);font-size:19px;margin-bottom:6px}
+.hint{font-size:13.5px;color:var(--sub);line-height:1.7}
+.pick{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}
+label{font-size:13px;color:var(--sub);display:block;margin-bottom:5px}
+select,input{font-family:inherit;font-size:15px;padding:9px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;color:var(--ink)}
+.meta{margin-top:14px;padding:12px 14px;background:var(--primary-light);border-radius:14px;font-size:14px;line-height:1.7}
+.meta b{color:var(--primary)}
+.msg{color:var(--sub);font-size:14px;padding:18px 0;text-align:center;line-height:1.7}
+.spin{width:22px;height:22px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:sp .8s linear infinite;margin:0 auto 10px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.foot{font-size:12.5px;color:var(--faint);text-align:center;margin-top:8px;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="top">
+  <span class="brand">케이에듀</span><span class="t">오늘 나가는 수학</span>
+  <a href="/morning/teacher.html">← 아침활동으로</a>
+</div>
+<div class="page">
+  <div class="card">
+    <h2>아침에 나갈 문제를 미리 볼 수 있어요</h2>
+    <div class="hint">학생들이 푸는 것과 같은 방식으로 문제가 만들어져요. 정답도 함께 보이고,
+      <b>다시 뽑기</b>를 누르면 같은 차시에서 다른 문제가 나와요 — 학생마다 문제가 조금씩 다른 것도 이 방식이에요.</div>
+    <div class="pick">
+      <div><label>학년</label><select id="g"></select></div>
+      <div><label>몇 일째</label><select id="d"></select></div>
+    </div>
+    <div class="meta" id="meta">불러오는 중…</div>
+  </div>
+  <div class="card"><div id="mount"><div class="msg"><div class="spin"></div>문제를 준비하는 중…</div></div></div>
+  <div class="foot">이 화면은 미리보기예요. 학생 기록에는 아무것도 남지 않아요.</div>
+</div>
+
+<script src="/kedu/quiz/kquiz-core.js"></script>
+<script src="/kedu/quiz/kquiz-ui.js"></script>
+<script>
+(function(){
+  'use strict';
+  var GRADES = [1,2,3,4,5,6];
+  var q = new URLSearchParams(location.search);
+  var st = { grade: Math.min(6, Math.max(1, +q.get('grade') || 1)), day: +q.get('day') || 1, loaded: {}, units: {} };
+  var gSel = document.getElementById('g'), dSel = document.getElementById('d');
+  var meta = document.getElementById('meta'), mount = document.getElementById('mount');
+
+  gSel.innerHTML = GRADES.map(function(g){
+    return '<option value="'+g+'"'+(g===st.grade?' selected':'')+'>'+g+'학년</option>'; }).join('');
+
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+
+  /* 학생 화면과 같은 규칙으로 파일 목록을 푼다(카탈로그 → 그 학년 단원 전부 + math_morning) */
+  function filesFor(grade){
+    return fetch('/kedu/quiz/catalog.json').then(function(r){ return r.json(); }).then(function(cat){
+      var units = (cat.units || cat.list || []).filter(function(u){
+        return u.subject === 'math' && u.grade === grade;
+      }).sort(function(a,b){ return a.unitNo - b.unitNo; });
+      if (!units.length) throw new Error('catalog 에 g'+grade+' 수학 단원이 없음');
+      st.units[grade] = {};
+      units.forEach(function(u){ st.units[grade][u.unitNo] = u.name; });
+      var files = units.map(function(u){ return '/kedu/quiz/templates/'+u.key+'.js'; });
+      files.push('/kedu/quiz/templates/math_morning.js');
+      return files;
+    });
+  }
+  function loadScripts(list, done, fail){
+    var i = 0;
+    (function next(){
+      if (i >= list.length) return done();
+      var s = document.createElement('script');
+      s.src = list[i++]; s.onload = next; s.onerror = fail;
+      document.head.appendChild(s);
+    })();
+  }
+
+  function keyOf(grade, day){ return 'g'+grade+'_math_c'+('00'+day).slice(-3); }
+
+  /* 세트가 알려주는 '3단원 06차시' 에 카탈로그의 단원 이름을 얹는다 —
+     선생님한테는 번호보다 '덧셈과 뺄셈' 이 먼저 읽힌다. */
+  function unitName(def){
+    var s = String(def.source || '');
+    var names = st.units[st.grade] || {};
+    return s.replace(/(\d+)단원/, function(all, n){
+      return names[+n] ? names[+n] + '(' + n + '단원)' : all;
+    });
+  }
+
+  function fillDays(grade){
+    var order = (KQuiz.core.mathMorningOrder ? KQuiz.core.mathMorningOrder(grade) : []) || [];
+    var n = order.length;
+    if (st.day > n) st.day = 1;
+    dSel.innerHTML = '';
+    for (var i = 1; i <= n; i++) {
+      var o = document.createElement('option');
+      o.value = i; o.textContent = i + '일째';
+      if (i === st.day) o.selected = true;
+      dSel.appendChild(o);
+    }
+    return n;
+  }
+
+  function draw(){
+    var key = keyOf(st.grade, st.day);
+    if (!KQuiz.core.has(key)) {
+      meta.innerHTML = '아직 준비되지 않은 차시예요.';
+      mount.innerHTML = '<div class="msg">이 학년·일차는 문제가 없어요.</div>';
+      return;
+    }
+    var def = KQuiz.core.getDef ? KQuiz.core.getDef(key) : null;
+    var total = ((KQuiz.core.mathMorningOrder && KQuiz.core.mathMorningOrder(st.grade)) || []).length;
+    meta.innerHTML = '<b>'+st.grade+'학년</b>의 <b>'+st.day+'일째</b> 아침수학이에요. '
+      + '한 학기에 모두 <b>'+total+'일</b>치가 있고, 다 나가면 복습으로 다시 돌아요.'
+      + (def && def.source ? '<br><span style="color:var(--sub)">' + esc(unitName(def)) + '</span>' : '');
+    KQuiz.mount(mount, { mode:'teacher', lesson:key, n:10 });
+    var u = new URL(location.href);
+    u.searchParams.set('grade', st.grade); u.searchParams.set('day', st.day);
+    history.replaceState(null, '', u);
+  }
+
+  function loadGrade(grade){
+    mount.innerHTML = '<div class="msg"><div class="spin"></div>문제를 준비하는 중…</div>';
+    meta.textContent = '불러오는 중…';
+    if (st.loaded[grade]) { fillDays(grade); draw(); return; }
+    filesFor(grade).then(function(files){
+      loadScripts(files, function(){
+        st.loaded[grade] = true;
+        fillDays(grade);
+        draw();
+      }, function(){
+        meta.textContent = '';
+        mount.innerHTML = '<div class="msg">문제를 불러오지 못했어요.<br>잠시 뒤에 다시 열어 주세요.</div>';
+      });
+    })['catch'](function(){
+      meta.textContent = '';
+      mount.innerHTML = '<div class="msg">문제를 불러오지 못했어요.</div>';
+    });
+  }
+
+  gSel.onchange = function(){ st.grade = +this.value; st.day = 1; loadGrade(st.grade); };
+  dSel.onchange = function(){ st.day = +this.value; draw(); };
+  loadGrade(st.grade);
+})();
+</script>
+</body>
+</html>

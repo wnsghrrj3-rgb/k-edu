@@ -136,6 +136,16 @@ GRADES.forEach(function (g) {
     'g' + g + ' 일차 불일치 — SQL ma_max_step=' + sqlMax[g] + ' vs 차시 수=' + js);
 });
 
+/* source 문구 회귀 — 원 차시 source 가 객체라 그냥 이어붙이면 [object Object] 가 화면에 뜬다(9.6차 실측) */
+[1,2,3,4,5,6].forEach(function (g) {
+  var order = KQuiz.mathMorningOrder(g);
+  order.forEach(function (_, i) {
+    var d = KQuiz.getDef('g' + g + '_math_c' + ('00' + (i + 1)).slice(-3));
+    T(String(d.source).indexOf('[object') < 0, 'g' + g + ' ' + (i + 1) + '일차 source 에 [object Object]');
+    T(/\d+단원/.test(String(d.source)), 'g' + g + ' ' + (i + 1) + '일차 source 에 단원 표기 없음: ' + d.source);
+  });
+});
+
 console.log('\n아침수학 검사 — 학년 ' + GRADES.length +
             ' · 총 ' + GRADES.reduce(function (a, g) { return a + KQuiz.mathMorningOrder(g).length; }, 0) +
             '일차 × ' + SEEDS.length + '시드 · 얇은 차시 복습 보정 ' + mixedOk + '/' + mixedCheck +

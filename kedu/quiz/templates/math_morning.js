@@ -33,6 +33,19 @@
      교과가 정한 차례가 곧 난이도 사다리다. */
   var ORDER = {};   // { 학년: [lessonKey, ...] }
 
+  /* 차시 키를 사람이 읽는 말로. 원 차시 source 가 객체({grade,subject,unit,lesson})라
+     그대로 문자열에 섞으면 [object Object] 가 된다. 단원명은 화면이 넣어 줄 수 있게
+     키에서 뽑은 단원·차시 번호만 만들고, 이름은 카탈로그를 아는 쪽에 맡긴다. */
+  function describe(key, src) {
+    var m = String(key).match(/^g\d+_math_u(\d+)_l(\d+)(?:_(\d+))?$/);
+    if (m) return m[1] + '단원 ' + (m[3] ? m[2] + '·' + m[3] : m[2]) + '차시';
+    if (src && typeof src === 'object' && src.unit) {
+      return String(src.unit).replace(/^u/, '') + '단원 ' + String(src.lesson || '').replace(/^l/, '') + '차시';
+    }
+    return String(key);
+  }
+
+
   /* 차시 키 수집. 대부분 g{g}_math_u{u}_l{ll} 이지만, 두 차시를 한 벌로 묶어
      등록한 합본 키도 있다(예: g1_math_u5_l02_03 — l02·l03 이 따로 없다).
      패턴을 좁게 잡으면 그런 차시가 통째로 빠지므로 합본도 함께 훑는다. */
@@ -99,7 +112,9 @@
       var all = tpls.concat(rev);
 
       reg('g' + grade + '_math_c' + ('00' + dayNo).slice(-3), {
-        source: grade + '학년 아침수학 ' + dayNo + '일차 — ' + (today.source || key),
+        // ★ 원 차시의 source 는 문자열이 아니라 {grade,subject,unit,lesson} 객체다.
+        //   그냥 이어붙이면 '[object Object]' 가 화면에 뜬다(9.6차 실측 결함).
+        source: grade + '학년 아침수학 ' + dayNo + '일차 — ' + describe(key, today.source),
         // 고정 문항은 물려받지 않는다. 차시별 고정 문항은 그 차시 화면 맥락에 기대어
         // 쓰인 것이 있어(그림·표 참조 등) 아침활동 단독 화면에서 깨질 수 있다.
         fixed: [],

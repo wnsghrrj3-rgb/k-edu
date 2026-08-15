@@ -111,6 +111,31 @@ jobs.push(win.__tf('g3_math_u1_l02').then(function (f) {
     T(mix.indexOf('월·화요일 한자') >= 0 && mix.indexOf('목·금요일 수학') >= 0, 'routineTxt 혼합 문구 오류: ' + mix);
     T(rt({}) === '아직 과목이 없어요', 'routineTxt 빈 시간표 문구 오류');
   }
+  // 시간표에 넣을 수 있는 과목은 전부 미리보기 통로가 있어야 한다
+  // (9.5차 실기기에서 수학을 배정해도 볼 곳이 없던 구멍 — 회귀 방지)
+  var subs = (thtml.match(/\[\s*'([a-z]+)'\s*,\s*'[^']+'\s*\]/g) || [])
+    .map(function (s) { return (s.match(/'([a-z]+)'/) || [])[1]; })
+    .filter(function (s) { return s && s !== 'mon' && s !== 'tue' && s !== 'wed' && s !== 'thu' && s !== 'fri'; });
+  T(subs.indexOf('hanja') >= 0 && subs.indexOf('math') >= 0, 'SUBJECTS 파싱 실패: ' + subs.join(','));
+  T(/var PREVIEW = \{/.test(thtml), '교사 화면에 과목별 미리보기 맵(PREVIEW)이 없음');
+  subs.forEach(function (s) {
+    T(new RegExp(s + '\\s*:\\s*\\{\\s*href').test(thtml),
+      '시간표에 고를 수 있는 과목인데 미리보기 통로가 없음: ' + s);
+  });
+  T(thtml.indexOf('previewLinks(r, c)') >= 0, '배너가 previewLinks 를 쓰지 않음');
+
+  // 미리보기 페이지 실재 + 학생 화면과 같은 규칙으로 파일을 푸는가
+  var mpath = path.join(ROOT, 'morning', 'math.html');
+  T(fs.existsSync(mpath), 'morning/math.html 이 없음');
+  if (fs.existsSync(mpath)) {
+    var mhtml = fs.readFileSync(mpath, 'utf8');
+    T(/mode\s*:\s*'teacher'/.test(mhtml), '수학 미리보기가 교사 모드로 띄우지 않음');
+    T(mhtml.indexOf('math_morning.js') >= 0 && mhtml.indexOf('catalog.json') >= 0,
+      '수학 미리보기가 학생 화면과 같은 파일 해석 규칙을 쓰지 않음');
+    T(/kquiz-core\.js/.test(mhtml) && /kquiz-ui\.js/.test(mhtml), '수학 미리보기에 케이퀴즈 스크립트 누락');
+    T(mhtml.indexOf('ma_submit') < 0 && mhtml.indexOf('getKeduDb') < 0,
+      '미리보기가 DB 를 건드림 — 학생 기록이 오염될 수 있음');
+  }
 })();
 
 Promise.all(jobs).then(function () {

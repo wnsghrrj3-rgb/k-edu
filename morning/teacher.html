@@ -106,6 +106,21 @@ td.name{font-weight:700}
   var SUBJECT_KO = { hanja:'한자', english:'영어', math:'수학', korean:'국어' };
   var SUBJECT_UNIT = { hanja:'하루 한 자', math:'하루 한 차시' };
   /* 요일 시간표를 사람 말로 — 과목이 하나면 '한자 하루 한 자', 섞이면 '월·화 한자, 목·금 수학' */
+  /* 시간표에 들어간 과목마다 미리보기 버튼 — 과목을 넣었는데 볼 곳이 없으면 안 되니까 */
+  var PREVIEW = {
+    hanja: { href:'/morning/chars.html', label:'오늘 나가는 한자 보기' },
+    math:  { href:'/morning/math.html',  label:'오늘 나가는 수학 보기' }
+  };
+  function previewLinks(r, c){
+    var days = (r&&r.days)||{}, grade = (r&&r.grade)||(c&&c.grade)||1, seen = {}, out = [];
+    ['mon','tue','wed','thu','fri'].forEach(function(d){
+      var s = days[d]; if (!s || seen[s] || !PREVIEW[s]) return;
+      seen[s] = 1;
+      out.push('<a class="btn ghost" style="text-decoration:none;display:inline-block;margin:0 6px 6px 0" '
+        + 'href="'+PREVIEW[s].href+'?grade='+grade+'">'+PREVIEW[s].label+'</a>');
+    });
+    return out.length ? '<div style="margin-top:12px">'+out.join('')+'</div>' : '';
+  }
   function routineTxt(r){
     var days = (r&&r.days)||{}, order=['mon','tue','wed','thu','fri'], KO={mon:'월',tue:'화',wed:'수',thu:'목',fri:'금'};
     var by={}; order.forEach(function(d){ var s=days[d]; if(s){ (by[s]=by[s]||[]).push(KO[d]); } });
@@ -213,10 +228,7 @@ td.name{font-weight:700}
         + (r.question_count||10)+'개가 저절로 올라가요.</span>'
       + '<div style="margin-top:10px"><span style="font-size:12.5px;color:var(--sub)">학생들은 이 코드로 우리 반에 들어와요</span><br>'
       + '<span class="code-chip">'+esc(c.code||'')+'</span></div>'
-      + (Object.keys(r.days||{}).some(function(d){ return (r.days||{})[d]==='hanja'; })
-          ? '<div style="margin-top:12px"><a class="btn ghost" style="text-decoration:none;display:inline-block" '
-            + 'href="/morning/chars.html?grade='+(r.grade||c.grade||1)+'">오늘 나가는 한자 보기</a></div>'
-          : '')
+      + previewLinks(r, c)
       + '</div>'
       + (state.classes.length>1
           ? '<div class="card" style="padding:14px 18px"><label style="margin:0 0 6px">학급</label><select id="cc">'+classOpts+'</select></div>'
