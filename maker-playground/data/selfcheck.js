@@ -153,6 +153,23 @@ window.MK_SELFCHECK = (() => {
     { id: 'anim-live', round: 'R90', title: '등장 애니가 살아서 해결된다',
       proves: '브라우저가 애니 선언을 실제로 받아들였고 끝나면 요소가 보인다',
       blind: 'jsdom 은 animation 단축선언을 실해결하지 않는다(콤마 하나로 죽던 자리)' },
+    /* R122 — 내보내기. R38 부터 84라운드 이월된, 정본 전체에서 가장 오래되고
+       가장 큰 미검증 자리다. 63개 엔진 스위트가 검증한 건 전부 「계획(plan)」
+       계층까지고, **실제로 바이트가 나오는지는 아무도 확인한 적이 없다.**
+       학생이 사진 고르고 영상 만들고 마지막에 누르는 버튼이 이 제품의 종착점인데,
+       폰에서 깨져도 지금은 알 방법이 없었다. */
+    { id: 'enc-support', round: 'R38', title: '이 기기 인코더가 우리 설정을 받나',
+      proves: '내보내기가 실제로 쓰는 코덱·치수를 인코더에 물어 지원을 확정한다',
+      blind: 'jsdom 에 VideoEncoder 가 없다 — 저장소 전체가 isConfigSupported 를 한 번도 안 불렀다' },
+    { id: 'muxer-reach', round: 'R38', title: 'MP4 모듈이 이 망에서 닿나',
+      proves: '먹서를 CDN 에서 실제로 받아온다 — 못 받으면 내보내기가 통째로 죽는다',
+      blind: 'jsdom 은 네트워크를 안 탄다. 학교 방화벽은 여기서만 드러난다' },
+    { id: 'enc-bytes', round: 'R38', title: '★ 진짜 MP4 바이트가 나온다',
+      proves: '2프레임을 실제로 인코딩·먹싱해 ftyp 박스가 있는 MP4 가 손에 잡힌다',
+      blind: '종단 증명 — 계획 계층만 덮는 스위트로는 원리적으로 닿을 수 없다' },
+    { id: 'audio-cfg', round: 'R39', title: '소리 트랙을 얹을 수 있나',
+      proves: 'AAC 설정 지원과 오프라인 오디오 해독기가 이 기기에 실제로 있다',
+      blind: 'jsdom 에 AudioEncoder·OfflineAudioContext 가 없다(typeof 만 보고 있었다)' },
   ];
 
   /* 눈으로만 확인되는 것 — 기계가 흉내내면 거짓이 된다. 정직하게 분리 */
@@ -525,6 +542,142 @@ window.MK_SELFCHECK = (() => {
     finally { if (host) host.remove(); }
   }
 
+  /* ---------- 탐침: R38·R39 내보내기 ----------
+     ★ 이 탐침은 코덱 문자열도 CDN 주소도 출력 치수도 **자기가 적지 않는다.**
+     전부 MK_VIDEO.EXPORT_SPEC 에서 읽는다. 내보내기가 코덱을 바꾸면 탐침이
+     저절로 새 코덱을 묻는다 — 안 그러면 초록불이 「지금 이 코드가 된다」를
+     뜻하지 않게 되고, 그건 검사가 아니라 착시다(R117 정본 규약과 같은 결).
+
+     밧줄: 인코더 질의·CDN·인코딩 전부 응답 없는 환경이 있다. 시간 안에 못
+     끝난 것을 불합격이라 부르면 느린 기기에서 거짓 경보가 뜬다 — 다만 CDN
+     미도달은 「느린 것」이 아니라 그 자체가 발견이므로 정직하게 불합격이다. */
+  const ROPE = { __rope: true };
+  const rope = (p, ms) => Promise.race([
+    Promise.resolve(p).catch(() => ROPE),
+    new Promise((res) => setTimeout(() => res(ROPE), ms)),
+  ]);
+
+  async function probeExport(win, out) {
+    const V = win.MK_VIDEO;
+    const IDS = ['enc-support', 'muxer-reach', 'enc-bytes', 'audio-cfg'];
+    if (!V || !V.EXPORT_SPEC || typeof V.outSize !== 'function' || typeof V.loadMuxer !== 'function') {
+      IDS.forEach((id) => out.push(R(id, 'fail', '내보내기 정본(MK_VIDEO.EXPORT_SPEC)이 없어요 — 배포가 R122 이전이에요')));
+      return;
+    }
+    const SPEC = V.EXPORT_SPEC;
+    const { W, H } = V.outSize(1280, 720);      /* 기본 장면의 실출력 치수 — 내보내기와 같은 함수 */
+    const VE = win.VideoEncoder, AE = win.AudioEncoder;
+
+    /* ① enc-support — 맹목 configure 를 그만두고 실제로 물어본다 */
+    let vSup = false;
+    if (typeof VE === 'undefined') {
+      out.push(R('enc-support', 'skip', '이 브라우저엔 VideoEncoder 가 없어요 — 여기선 영상 저장 자체가 안 돼요',
+        '불합격이 아니라 미확정이에요. 크롬·엣지에서 다시 검사해 주세요'));
+    } else if (typeof VE.isConfigSupported !== 'function') {
+      out.push(R('enc-support', 'fail', 'isConfigSupported 가 없어 지원 여부를 물어볼 수 없어요'));
+    } else {
+      const cfg = { codec: SPEC.vcodec, width: W, height: H, bitrate: SPEC.bitrate, framerate: SPEC.fps };
+      const sup = await rope(VE.isConfigSupported(cfg), 8000);
+      const bmp = typeof win.createImageBitmap === 'function';
+      if (sup === ROPE) out.push(R('enc-support', 'skip', '지원 여부 질의가 시간 안에 안 끝났어요', '다시 검사해 주세요'));
+      else if (sup && sup.supported) {
+        vSup = true;
+        const got = (sup.config && sup.config.codec) || SPEC.vcodec;
+        if (!bmp) out.push(R('enc-support', 'fail', `${SPEC.vcodec} ${W}×${H} 는 되는데 createImageBitmap 이 없어요 — 삽입 영상이 있는 작품이 죽어요`));
+        else out.push(R('enc-support', 'pass', `${SPEC.vcodec} · ${W}×${H} 지원`, `인코더가 돌려준 설정: ${got}`));
+      } else {
+        out.push(R('enc-support', 'fail', `이 기기 인코더가 ${SPEC.vcodec} ${W}×${H} 를 못 받아요 — 내보내기가 여기서 죽습니다`,
+          '모바일 인코더가 High profile 1080p 를 거부하는 자리예요. 폴백 설정이 필요합니다'));
+      }
+    }
+
+    /* ② muxer-reach — 학교 방화벽. jsdom 이 절대 못 잡고, 여기가 막히면 내보내기 전체가 죽는다 */
+    let muxOK = !!win.Mp4Muxer;
+    if (muxOK) out.push(R('muxer-reach', 'pass', 'MP4 모듈이 이미 올라와 있어요'));
+    else {
+      const t0 = Date.now();
+      const got = await rope(V.loadMuxer(), 10000);
+      const ms = Date.now() - t0;
+      muxOK = !!win.Mp4Muxer;
+      if (muxOK) out.push(R('muxer-reach', 'pass', `CDN 에서 MP4 모듈을 받았어요 (${ms}ms)`, SPEC.muxerUrl));
+      else if (got === ROPE) out.push(R('muxer-reach', 'fail', '10초 안에 MP4 모듈을 못 받았어요 — 이 망에서는 내보내기가 통째로 죽어요',
+        '학교 방화벽이 cdn.jsdelivr.net 을 막는 경우예요. 자체 호스팅이 필요합니다'));
+      else out.push(R('muxer-reach', 'fail', 'MP4 모듈을 불러오지 못했어요', SPEC.muxerUrl));
+    }
+
+    /* ③ enc-bytes — 종단 증명. 여기까지 밟혀야 「바이트가 실제로 나온다」가 성립한다 */
+    if (!vSup) out.push(R('enc-bytes', 'skip', '인코더 지원이 확정되지 않아 실인코딩을 건너뛰었어요'));
+    else if (!muxOK) out.push(R('enc-bytes', 'skip', 'MP4 모듈이 없어 먹싱까지 못 밟았어요', '인코더는 살아 있지만 종단 증명은 미확정이에요'));
+    else {
+      const r = await rope(encodeTwoFrames(win, SPEC, W, H), 20000);
+      if (r === ROPE) out.push(R('enc-bytes', 'skip', '2프레임 인코딩이 시간 안에 안 끝났어요 — 느린 기기일 뿐 불합격이 아니에요', '다시 검사해 주세요'));
+      else if (r.ok) out.push(R('enc-bytes', 'pass', `진짜 MP4 ${r.bytes.toLocaleString()}바이트 · ftyp 확인`, `${W}×${H} 2프레임 · ${r.ms}ms`));
+      else out.push(R('enc-bytes', 'fail', '바이트가 안 나왔어요 — 학생이 마지막에 누르는 버튼이 이 기기에서 깨집니다', r.why));
+    }
+
+    /* ④ audio-cfg — typeof 만 보던 자리를 실제 질의로 바꾼다 */
+    const OAC = win.OfflineAudioContext || win.webkitOfflineAudioContext;
+    if (typeof AE === 'undefined') {
+      out.push(R('audio-cfg', 'skip', '이 브라우저엔 AudioEncoder 가 없어요 — 영상은 무음으로 저장돼요',
+        '내보내기는 이 경우를 이미 안내문으로 처리해요(불합격 아님)'));
+    } else if (typeof AE.isConfigSupported !== 'function') {
+      out.push(R('audio-cfg', 'fail', 'AudioEncoder 는 있는데 지원 질의가 없어요'));
+    } else {
+      const acfg = { codec: SPEC.acodec, sampleRate: SPEC.audioSampleRate, numberOfChannels: SPEC.audioChannels, bitrate: SPEC.audioBitrate };
+      const asup = await rope(AE.isConfigSupported(acfg), 8000);
+      if (asup === ROPE) out.push(R('audio-cfg', 'skip', '소리 지원 질의가 시간 안에 안 끝났어요', '다시 검사해 주세요'));
+      else if (!asup || !asup.supported) out.push(R('audio-cfg', 'fail', `이 기기가 ${SPEC.acodec} 를 못 받아요 — 소리가 실리다 죽습니다`,
+        '내보내기는 typeof 만 보고 설정을 강행해요. 폴백이 필요합니다'));
+      else if (!OAC) out.push(R('audio-cfg', 'fail', 'AAC 는 되는데 OfflineAudioContext 가 없어요 — 음악 해독이 불가해요'));
+      else out.push(R('audio-cfg', 'pass', `${SPEC.acodec} ${SPEC.audioSampleRate}Hz 지원 · 오프라인 해독기 있음`));
+    }
+  }
+
+  /* 실제 인코딩 — 내보내기와 **같은 설정·같은 먹서**로 2프레임. 정리까지 책임진다 */
+  async function encodeTwoFrames(win, SPEC, W, H) {
+    const t0 = Date.now();
+    let enc = null, err = null;
+    const frames = [];
+    try {
+      const cv = win.document.createElement('canvas'); cv.width = W; cv.height = H;
+      const ctx = cv.getContext('2d');
+      if (!ctx) return { ok: false, why: '2d 캔버스를 못 얻었어요' };
+      const muxer = new win.Mp4Muxer.Muxer({
+        target: new win.Mp4Muxer.ArrayBufferTarget(),
+        video: { codec: SPEC.muxVideo, width: W, height: H },
+        fastStart: 'in-memory',
+      });
+      enc = new win.VideoEncoder({
+        output: (chunk, meta) => { try { muxer.addVideoChunk(chunk, meta); } catch (e) { err = err || e; } },
+        error: (e) => { err = err || e; },
+      });
+      enc.configure({ codec: SPEC.vcodec, width: W, height: H, bitrate: SPEC.bitrate, framerate: SPEC.fps });
+      const dur = Math.round(1e6 / SPEC.fps);
+      for (let i = 0; i < 2; i++) {
+        ctx.fillStyle = i ? '#1b2a3a' : '#3a2a1b';
+        ctx.fillRect(0, 0, W, H);
+        const fr = new win.VideoFrame(cv, { timestamp: i * dur, duration: dur });
+        frames.push(fr);
+        enc.encode(fr, { keyFrame: i === 0 });
+      }
+      await enc.flush();
+      if (err) return { ok: false, why: (err && err.message) || '인코더가 error 콜백으로 죽었어요' };
+      muxer.finalize();
+      const buf = muxer.target.buffer;
+      if (!buf || !buf.byteLength) return { ok: false, why: '먹서가 빈 버퍼를 돌려줬어요' };
+      /* MP4 는 [size(4)][ftyp] 로 시작한다 — 바이트가 진짜 MP4 인지 형태로 확인 */
+      const b = new Uint8Array(buf, 4, 4);
+      const tag = String.fromCharCode(b[0], b[1], b[2], b[3]);
+      if (tag !== 'ftyp') return { ok: false, why: `MP4 머리(ftyp)가 아니에요 — 읽은 값 "${tag}", ${buf.byteLength}바이트` };
+      return { ok: true, bytes: buf.byteLength, ms: Date.now() - t0 };
+    } catch (e) {
+      return { ok: false, why: (e && e.message) || '인코딩이 예외로 죽었어요' };
+    } finally {
+      frames.forEach((f) => { try { f.close(); } catch (_) {} });
+      try { if (enc && enc.state !== 'closed') enc.close(); } catch (_) {}
+    }
+  }
+
   /* ---------- 실행 ---------- */
   async function run(w) {
     const win = w || window;
@@ -536,6 +689,7 @@ window.MK_SELFCHECK = (() => {
     try { probeRot(win, out); } catch (e) { out.push(R('rot-nest', 'fail', '회전 탐침이 예외로 죽었어요', e.message)); }
     try { probeTouch(win, out); } catch (e) { out.push(R('touch-hit', 'fail', '히트 탐침이 예외로 죽었어요', e.message)); }
     try { probeAnim(win, out); } catch (e) { out.push(R('anim-live', 'fail', '애니 탐침이 예외로 죽었어요', e.message)); }
+    try { await probeExport(win, out); } catch (e) { out.push(R('enc-support', 'fail', '내보내기 탐침이 예외로 죽었어요', e.message)); }
     return { results: out, skipped: '' };
   }
 
@@ -579,7 +733,17 @@ window.MK_SELFCHECK = (() => {
     if (verdict([]).ok) v.push('빈 결과를 합격으로 셈');
     if (verdict([{ state: 'fail' }, { state: 'pass' }]).fail !== 1) v.push('불합격 집계 위반');
     /* 명세 */
-    if (CHECKS.length !== 11) v.push('검사 명세 수 변경');
+    if (CHECKS.length !== 15) v.push('검사 명세 수 변경');
+    /* R122 — 탐침이 정본을 함께 읽는가. 이 파일이 코덱을 따로 적으면 규약 위반 */
+    const V = window.MK_VIDEO;
+    if (V && V.EXPORT_SPEC) {
+      const os = V.outSize(1280, 720);
+      if (os.W !== 1920 || os.H !== 1080) v.push('탐침 출력 치수가 정본과 어긋남');
+      if (!/^avc1\./.test(V.EXPORT_SPEC.vcodec)) v.push('정본 코덱 형태 위반');
+    }
+    ['enc-support', 'muxer-reach', 'enc-bytes', 'audio-cfg'].forEach((id) => {
+      if (!CHECKS.some((c) => c.id === id)) v.push('내보내기 명세 누락: ' + id);
+    });
     if (!CHECKS.every((c) => c.id && c.round && c.title && c.proves && c.blind)) v.push('명세 항목 누락');
     if (new Set(CHECKS.map((c) => c.id)).size !== CHECKS.length) v.push('명세 id 중복');
     return { ok: !v.length, violations: v };
@@ -588,6 +752,6 @@ window.MK_SELFCHECK = (() => {
   return {
     CHECKS, EYES, STAGE, VISIT, DB, ST,
     I, T, rotM, scaleM, mul, about, near, maxDiff, parseMatrix, parseOrigin,
-    cssNet, canvasNet, verdict, supported, run, settle, audit,
+    cssNet, canvasNet, verdict, supported, run, settle, audit, encodeTwoFrames,
   };
 })();

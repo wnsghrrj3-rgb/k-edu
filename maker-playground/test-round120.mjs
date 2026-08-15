@@ -239,10 +239,17 @@ T('R118 은 눈 확인 목록에 있다 (덮이지 않고 자리를 옮겼을 �
   return (Array.isArray(E.EYES) && E.EYES.some((e) => e.round === 'R118')) || 'R118 이 어디에도 없음 — 누락';
 });
 
-T('기계 검사는 R116·R117·R119 만', () => {
-  const rs = [...new Set(E.CHECKS.map((c) => c.round))].sort();
-  /* R121 이 R95·R90(준호 실기기 결함의 회귀 감시)을 더했다 */
-  return JSON.stringify(rs) === JSON.stringify(['R116', 'R117', 'R119', 'R90', 'R95']) || ('예상 밖 라운드: ' + rs.join(','));
+/* R122 개정 — 라운드 목록을 손으로 고정하면 검사가 늘 때마다 여길 고쳐야 하고,
+   그러면 이 검사는 「구성이 안 변했다」만 말하지 R120 의 원칙은 못 지킨다.
+   원칙은 하나다: **jsdom 이 덮는 것은 기계 검사에 안 넣는다.** R118(재료 입구)은
+   jsdom 이 21/21 로 덮으므로 눈 확인이어야 하고, 나머지는 저마다 「왜 jsdom 이
+   못 하나」를 적어야 한다. 그 불변식을 직접 잰다 — 라운드가 늘어도 안 고친다. */
+T('기계 검사는 jsdom 이 못 닿는 것만 (R118 은 눈 확인)', () => {
+  const rs = [...new Set(E.CHECKS.map((c) => c.round))];
+  if (rs.includes('R118')) return 'R118 이 기계 검사에 있다 — jsdom 이 이미 덮는 것을 또 잰다';
+  const noBlind = E.CHECKS.filter((c) => !c.blind || c.blind.length < 8).map((c) => c.id);
+  if (noBlind.length) return '눈먼 까닭 미기재: ' + noBlind.join(',');
+  return rs.every((r) => /^R\d+$/.test(r)) || ('라운드 형식 위반: ' + rs.join(','));
 });
 
 T('네 라운드 전부가 어딘가에서 다뤄진다 (기계 ∪ 눈)', () => {

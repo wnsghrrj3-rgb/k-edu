@@ -16,6 +16,33 @@ window.MK_VIDEO = (() => {
   const even = (n) => Math.max(2, 2 * Math.round(n / 2));
   let busy = false;
 
+  /* ---------- R122: 내보내기 정본(EXPORT_SPEC) ----------
+     R38 부터 84라운드 동안 내보내기는 **한 번도 실브라우저에서 안 밟혔다**.
+     R122 가 #/selfcheck 에 탐침을 올리는데, 탐침이 코덱 문자열·CDN 주소·출력
+     치수를 **자기 파일에 다시 적으면** 여기가 바뀌어도 탐침은 옛 값을 계속
+     검사한다 — 초록불이 「지금 이 코드가 된다」를 뜻하지 않게 된다.
+
+     그래서 R117 이 세운 규약을 그대로 쓴다: **정본 하나를 양세계가 함께 읽는다.**
+     exportMP4 와 MK_SELFCHECK 가 같은 EXPORT_SPEC 을 읽으므로, 코덱을 바꾸면
+     탐침이 저절로 새 코덱을 묻는다. 아래 값은 이 객체 말고 어디에도 적지 않는다
+     (test-round122 가 중복 리터럴을 잡는다).
+
+     targetMin: 짧은 변을 이 값으로 맞춘다 — 1280×720 → 1920×1080 */
+  const EXPORT_SPEC = Object.freeze({
+    vcodec: 'avc1.420028',                    /* H.264 High@4.0 */
+    acodec: 'mp4a.40.2',                      /* AAC-LC */
+    muxerUrl: 'https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.1/build/mp4-muxer.min.js',
+    targetMin: 1080, bitrate: BITRATE, fps: FPS,
+    audioSampleRate: 48000, audioBitrate: 128000, audioChannels: 1,
+    muxVideo: 'avc', muxAudio: 'aac',         /* mp4-muxer 쪽 이름 — 탐침이 같은 먹서를 짓는다 */
+  });
+
+  /* 출력 치수 규칙 — exportMP4 와 탐침이 같은 함수를 쓴다(따로 계산하면 어긋난다) */
+  function outSize(w, h) {
+    const scale = EXPORT_SPEC.targetMin / Math.min(w, h);
+    return { scale, W: even(w * scale), H: even(h * scale) };
+  }
+
   /* ---------- 이징 (CSS 근사) ---------- */
   function easeAt(name, p) {
     p = clamp(p, 0, 1);
@@ -232,7 +259,7 @@ window.MK_VIDEO = (() => {
     return new Promise((res, rej) => {
       if (window.Mp4Muxer) return res();
       const s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.1/build/mp4-muxer.min.js';
+      s.src = EXPORT_SPEC.muxerUrl;
       s.onload = res; s.onerror = () => rej(new Error('MP4 모듈을 불러올 수 없어요 — 네트워크를 확인해 주세요'));
       document.head.appendChild(s);
     });
@@ -255,14 +282,13 @@ window.MK_VIDEO = (() => {
     try {
       await loadMuxer();
       const dl0 = window.MK_RENDER.renderScene(doc.scenes[0], {});
-      const scale = 1080 / Math.min(dl0.width, dl0.height);           /* 1280×720 → 1920×1080 */
-      const W = even(dl0.width * scale), H = even(dl0.height * scale);
+      const { scale, W, H } = outSize(dl0.width, dl0.height);         /* 1280×720 → 1920×1080 */
       const pxu = H / 720;                                            /* CSS px(모달 기준) → 출력 px */
       const out = document.createElement('canvas'); out.width = W; out.height = H;
       const ctx = out.getContext('2d');
 
       /* R39 — 소리 트랙: 장면 music 이 있고 AudioEncoder 지원 시에만 */
-      const SR = 48000;
+      const SR = EXPORT_SPEC.audioSampleRate;
       const timeline = musicTimeline(doc, plan);
       const wantAudio = timeline.segments.length > 0;
       const canAudio = wantAudio && typeof AudioEncoder !== 'undefined';
@@ -275,15 +301,15 @@ window.MK_VIDEO = (() => {
 
       const muxer = new Mp4Muxer.Muxer({
         target: new Mp4Muxer.ArrayBufferTarget(),
-        video: { codec: 'avc', width: W, height: H },
-        ...(canAudio ? { audio: { codec: 'aac', sampleRate: SR, numberOfChannels: 1 } } : {}),
+        video: { codec: EXPORT_SPEC.muxVideo, width: W, height: H },
+        ...(canAudio ? { audio: { codec: EXPORT_SPEC.muxAudio, sampleRate: SR, numberOfChannels: EXPORT_SPEC.audioChannels } } : {}),
         fastStart: 'in-memory',
       });
       encoder = new VideoEncoder({
         output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
         error: (e) => { encError = e; },
       });
-      encoder.configure({ codec: 'avc1.420028', width: W, height: H, bitrate: BITRATE, framerate: FPS });
+      encoder.configure({ codec: EXPORT_SPEC.vcodec, width: W, height: H, bitrate: EXPORT_SPEC.bitrate, framerate: EXPORT_SPEC.fps });
 
       let frameIdx = 0;
       for (let si = 0; si < plan.scenes.length; si++) {
@@ -369,7 +395,7 @@ window.MK_VIDEO = (() => {
           output: (chunk, meta) => muxer.addAudioChunk(chunk, meta),
           error: (e) => { encError = e; },
         });
-        aenc.configure({ codec: 'mp4a.40.2', sampleRate: SR, numberOfChannels: 1, bitrate: 128000 });
+        aenc.configure({ codec: EXPORT_SPEC.acodec, sampleRate: SR, numberOfChannels: EXPORT_SPEC.audioChannels, bitrate: EXPORT_SPEC.audioBitrate });
         const CH = 1024;
         for (let off = 0; off < masterPCM.length; off += CH) {
           const nF = Math.min(CH, masterPCM.length - off);
@@ -451,6 +477,12 @@ window.MK_VIDEO = (() => {
     const cn = fitRect(1920, 1080, 100, 100, 'contain');
     if (!(Math.abs(cn.dw - 100) < 1e-6 && Math.abs(cn.dh - 56.25) < 1e-6 && Math.abs(cn.dy - 21.875) < 1e-6)) v.push('contain 기하 위반');
     if (secondsInto(5.5, 2) !== 1.5 || secondsInto(3, 0) !== 0) v.push('루프 시각 위반');
+    /* R122 — 출력 치수 정본: 짧은 변을 targetMin 으로. 1280×720 → 1920×1080 */
+    const os = outSize(1280, 720);
+    if (!(os.W === 1920 && os.H === 1080 && Math.abs(os.scale - 1.5) < 1e-9)) v.push('출력 치수 위반');
+    const osp = outSize(1080, 1349);                    /* 세로 — 짧은 변이 가로 */
+    if (osp.W !== 1080 || osp.H % 2 !== 0) v.push('세로 출력·짝수 보정 위반');
+    if (!Object.isFrozen(EXPORT_SPEC)) v.push('EXPORT_SPEC 이 얼지 않음');
     if (!isVideoEl({ kind: 'video', src: 'data:video/mp4;base64,x' }) || isVideoEl({ kind: 'image', src: 'data:image/png;base64,x' })) v.push('영상 판별 위반');
     /* R39 — 음악 타임라인: 같은 음악 병합·다른 음악 분리·무음 장면 공백 */
     const md = { scenes: [
@@ -465,6 +497,7 @@ window.MK_VIDEO = (() => {
     return { ok: v.length === 0, violations: v };
   }
 
-  return { FPS, TRANS_DUR, MAX_SEC, easeAt, stateAt, framePlan, exportMP4, videoAudit, busy: () => busy,
+  return { FPS, TRANS_DUR, MAX_SEC, EXPORT_SPEC, outSize, loadMuxer,
+    easeAt, stateAt, framePlan, exportMP4, videoAudit, busy: () => busy,
     isVideoEl, secondsInto, fitRect, musicTimeline, animPivot };
 })();

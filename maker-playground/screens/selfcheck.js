@@ -26,6 +26,17 @@ window.MK_SCREENS.selfcheck = (() => {
 
   const ICON = { pass: '✓', fail: '✕', skip: '—' };
 
+  /* R121 이 밟은 함정(하드코딩된 라운드 목록)의 재발 방지 — 표제도 CHECKS 에서 도출한다.
+     R122 착수 때 신규 4건이 들어오는데 여기가 손글씨였다면 또 「R116~R119」로 남았다. */
+  const span = () => {
+    const E0 = E();
+    if (!E0 || !E0.CHECKS.length) return '';
+    const n = E0.CHECKS.map((c) => parseInt(String(c.round).replace(/\D/g, ''), 10)).filter(isFinite);
+    if (!n.length) return '';
+    const lo = Math.min(...n), hi = Math.max(...n);
+    return lo === hi ? `R${lo}` : `R${lo}~R${hi}`;
+  };
+
   /* ---- 견본: 기울인 사진 + 초점. 눈 확인용이라 실제 재생 경로(sceneHTML)를 탄다 ---- */
   const FOC = { x: 0.3, y: 0.3 };
   const SAMPLE_SRC = 'data:image/svg+xml;utf8,' + encodeURIComponent(
@@ -74,7 +85,7 @@ window.MK_SCREENS.selfcheck = (() => {
 
   return {
     title: '자가 진단',
-    variants: ['R116~R119'],
+    get variants() { return [span() || '자가 진단']; },
 
     render() {
       const E0 = E();
@@ -100,8 +111,10 @@ window.MK_SCREENS.selfcheck = (() => {
       return `<div class="sc">
         <div class="sc-head">
           <h2>자가 진단 ${badge}</h2>
-          <p>R116~R119 가운데 <b>jsdom 이 원리적으로 못 닿는 것만</b> 이 기기의 진짜 브라우저에서 밟아요.
-             이미 109개 스위트가 덮는 순수 계층은 여기서 다시 재지 않아요 — 그건 더 검사한 게 아니라 착시니까요.</p>
+          <p>${esc(span())} 가운데 <b>jsdom 이 원리적으로 못 닿는 것만</b> 이 기기의 진짜 브라우저에서 밟아요.
+             이미 111개 스위트가 덮는 순수 계층은 여기서 다시 재지 않아요 — 그건 더 검사한 게 아니라 착시니까요.</p>
+          <p class="sc-note">★ <b>내보내기(R38)</b>는 여기서 처음 밟혀요 — 84라운드 동안 「계획」까지만 검사됐고
+             실제로 MP4 바이트가 나오는지는 아무도 확인한 적이 없어요. 이 검사는 <b>진짜로 인코딩을 한 번 돌려요</b>(몇 초 걸려요).</p>
           <div class="sc-cta">
             <button class="sc-btn" data-sc-run ${s.phase === 'running' ? 'disabled' : ''}>${s.results && s.results.length ? '다시 검사' : '검사 시작'}</button>
             ${s.skipped ? `<span class="sc-skipmsg">${esc(s.skipped)}</span>` : ''}

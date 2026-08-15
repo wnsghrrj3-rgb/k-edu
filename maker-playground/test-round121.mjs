@@ -156,11 +156,16 @@ T('still 방출엔 애니가 없다 (탐침 대조군 계약 생존)', () => {
    ================================================================ */
 sec('3. 명세 정직성');
 
-T('CHECKS 11건 · 필드 전량 · id 유일', () => {
+/* R122 개정 — 총 건수 고정은 매 라운드 손질을 부른다. R121 이 지켜야 할 것은
+   「R121 이 넣은 2건이 살아 있다」이지 「총 11건이다」가 아니다. 정확한 총량은
+   그 라운드 스위트(R122 = 15건)가 잰다. 여기선 R121 몫만 못 박는다. */
+T('R121 2건 생존 · 필드 전량 · id 유일', () => {
   if (!E || !Array.isArray(E.CHECKS)) return 'CHECKS 부재';
-  if (E.CHECKS.length !== 11) return '검사 수 ' + E.CHECKS.length + ' (기대 11)';
+  const mine = ['touch-hit', 'anim-live'].filter((id) => !E.CHECKS.some((c) => c.id === id));
+  if (mine.length) return 'R121 검사 소실: ' + mine.join(',');
+  if (E.CHECKS.length < 11) return '검사 수 ' + E.CHECKS.length + ' — R121 시점보다 줄었다';
   if (!E.CHECKS.every((c) => c.id && c.round && c.title && c.proves && c.blind)) return '필드 누락';
-  return new Set(E.CHECKS.map((c) => c.id)).size === 11 || 'id 중복';
+  return new Set(E.CHECKS.map((c) => c.id)).size === E.CHECKS.length || 'id 중복';
 });
 
 T('신규 2건이 실제로 등재됐다', () => {
