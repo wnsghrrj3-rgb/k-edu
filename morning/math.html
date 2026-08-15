@@ -81,6 +81,7 @@ select,input{font-family:inherit;font-size:15px;padding:9px 12px;border:1px soli
       st.units[grade] = {};
       units.forEach(function(u){ st.units[grade][u.unitNo] = u.name; });
       var files = units.map(function(u){ return '/kedu/quiz/templates/'+u.key+'.js'; });
+      files.push('/kedu/quiz/templates/math_lessons.js');
       files.push('/kedu/quiz/templates/math_morning.js');
       return files;
     });
@@ -97,14 +98,13 @@ select,input{font-family:inherit;font-size:15px;padding:9px 12px;border:1px soli
 
   function keyOf(grade, day){ return 'g'+grade+'_math_c'+('00'+day).slice(-3); }
 
-  /* 세트가 알려주는 '3단원 06차시' 에 카탈로그의 단원 이름을 얹는다 —
-     선생님한테는 번호보다 '덧셈과 뺄셈' 이 먼저 읽힌다. */
+  /* 명세 메타로 '몇 단원(이름) 어떤 차시' 를 만든다 — 자기주도 차시 제목이 그대로 뜬다 */
   function unitName(def){
-    var s = String(def.source || '');
-    var names = st.units[st.grade] || {};
-    return s.replace(/(\d+)단원/, function(all, n){
-      return names[+n] ? names[+n] + '(' + n + '단원)' : all;
-    });
+    var m = (def && def.lesson_meta) || null;
+    if (!m) return String(def && def.source || '');
+    var lNice = String(m.l).replace(/^0+/,'').replace(/_0?/g,'·');
+    return m.unitName + '(' + m.unitNo + '단원) — ' + (m.title || (lNice + '차시'))
+      + (m.mode === 'review' ? ' · 이날은 그동안 배운 것으로 복습해요' : '');
   }
 
   function fillDays(grade){

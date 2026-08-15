@@ -41,6 +41,8 @@ GRADES.forEach(function (g) {
     if (!files) return;
     var last = files[files.length - 1];
     T(/math_morning\.js$/.test(last), 'g' + g + ' 목록 끝이 math_morning.js 가 아님: ' + last);
+    T(/math_lessons\.js$/.test(files[files.length - 2] || ''),
+      'g' + g + ' math_morning 앞에 정본 명세(math_lessons.js)가 없음 — 사다리가 8차 방식으로 돌아감');
 
     // ② 실재 확인
     files.forEach(function (f) {
@@ -52,8 +54,8 @@ GRADES.forEach(function (g) {
     var expect = (catalog.units || catalog.list || []).filter(function (u) {
       return u.subject === 'math' && u.grade === g;
     }).length;
-    T(files.length === expect + 1,
-      'g' + g + ' 단원 파일 수 불일치: ' + (files.length - 1) + ' vs 카탈로그 ' + expect);
+    T(files.length === expect + 2,
+      'g' + g + ' 단원 파일 수 불일치: ' + (files.length - 2) + ' vs 카탈로그 ' + expect);
 
     // ③ 그 목록대로 로드하면 c키가 살아나는가
     var KQuiz = require('./kquiz-core.js');

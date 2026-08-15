@@ -207,12 +207,12 @@ RETURNS int LANGUAGE sql IMMUTABLE AS $fn$
     WHEN p_subject = 'hanja' AND p_grade IN (1,2,3) THEN 50
     WHEN p_subject = 'hanja' AND p_grade IN (4,5)   THEN 75
     WHEN p_subject = 'hanja' AND p_grade  = 6       THEN 100
-    WHEN p_subject = 'math'  AND p_grade  = 1       THEN 33
-    WHEN p_subject = 'math'  AND p_grade  = 2       THEN 34
-    WHEN p_subject = 'math'  AND p_grade  = 3       THEN 38
-    WHEN p_subject = 'math'  AND p_grade  = 4       THEN 26
-    WHEN p_subject = 'math'  AND p_grade  = 5       THEN 31
-    WHEN p_subject = 'math'  AND p_grade  = 6       THEN 22
+    WHEN p_subject = 'math'  AND p_grade  = 1       THEN 44
+    WHEN p_subject = 'math'  AND p_grade  = 2       THEN 52
+    WHEN p_subject = 'math'  AND p_grade  = 3       THEN 55
+    WHEN p_subject = 'math'  AND p_grade  = 4       THEN 54
+    WHEN p_subject = 'math'  AND p_grade  = 5       THEN 53
+    WHEN p_subject = 'math'  AND p_grade  = 6       THEN 51
     ELSE 50
   END;
 $fn$;
