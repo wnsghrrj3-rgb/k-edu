@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>오늘의 한자 — 아침활동 · 케이에듀</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
+<style>:root{--kedu-title:'Gowun Batang','Gowun Dodum',serif}</style>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#5B8EF8;--primary-light:#EBF4FF;--pink:#FF85A1;
+  --bg:#F4F6FB;--card:#fff;--ink:#1A202C;--sub:#718096;--faint:#A0AEC0;--border:#E7ECF3;
+  --radius:20px;--shadow:0 2px 18px rgba(33,52,94,.07);
+  --done:#22A06B;--warn:#E8A33D;
+}
+body{font-family:'Gowun Dodum',sans-serif;background:var(--bg);min-height:100vh;color:var(--ink);-webkit-font-smoothing:antialiased}
+
+.nav{background:var(--card);border-bottom:1px solid var(--border);height:58px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 20px;position:sticky;top:0;z-index:50}
+.nav-logo{font-family:var(--kedu-title);font-size:21px;text-decoration:none;color:var(--ink)}
+.nav-logo .kk{background:linear-gradient(135deg,var(--primary),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.nav a.back{font-size:13.5px;color:var(--sub);text-decoration:none}
+
+.wrap{max-width:860px;margin:0 auto;padding:22px 18px 90px}
+
+/* ── 회차 고르기 ─────────────────────────────── */
+.picker{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;margin-bottom:16px}
+.picker .row{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}
+label{font-size:13px;color:var(--sub);font-weight:600;display:block;margin-bottom:7px}
+select{font-family:inherit;font-size:15px;padding:12px 14px;border:1.5px solid var(--border);
+  border-radius:13px;background:var(--card);color:var(--ink);width:100%}
+select:focus{outline:none;border-color:var(--primary)}
+.meta{font-size:13px;color:var(--sub);line-height:1.7;margin-top:12px}
+.meta b{color:var(--ink)}
+
+.modes{display:flex;gap:8px;margin:16px 0 14px}
+.mode{flex:1;border:1.5px solid var(--border);background:var(--card);border-radius:14px;padding:11px;
+  font-family:var(--kedu-title);font-size:15px;color:var(--sub);cursor:pointer}
+.mode[aria-pressed=true]{border-color:var(--primary);background:var(--primary-light);color:var(--primary)}
+
+/* ── 목록 모드 ───────────────────────────────── */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.ch{background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:16px 14px;text-align:center}
+.ch .g{font-family:var(--kedu-title);font-size:52px;line-height:1.15;margin-bottom:6px}
+.ch .hy{font-family:var(--kedu-title);font-size:16px;margin-bottom:8px}
+.ch .wd{font-size:12.5px;color:var(--sub);line-height:1.6;border-top:1px solid var(--border);padding-top:8px}
+.ch .wd .w{font-family:var(--kedu-title);font-size:14px;color:var(--ink);display:block}
+.ch .none{font-size:12px;color:var(--faint);border-top:1px solid var(--border);padding-top:8px}
+
+/* ── 제시 모드 ───────────────────────────────── */
+.stage{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:34px 22px 26px;text-align:center;position:relative;min-height:60vh;
+  display:flex;flex-direction:column;align-items:center;justify-content:center}
+.stage .count{position:absolute;top:16px;left:20px;font-size:13px;color:var(--faint)}
+.stage .big{font-family:var(--kedu-title);font-size:clamp(140px,30vw,240px);line-height:1;
+  color:var(--ink);cursor:pointer;user-select:none;transition:transform .12s}
+.stage .big:active{transform:scale(.97)}
+.reveal{margin-top:22px;min-height:96px}
+.reveal .ask{font-size:15px;color:var(--faint);padding-top:26px}
+.reveal .hy{font-family:var(--kedu-title);font-size:clamp(28px,6vw,40px);margin-bottom:10px}
+.reveal .wd{font-size:15px;color:var(--sub)}
+.reveal .wd .w{font-family:var(--kedu-title);font-size:19px;color:var(--primary)}
+.fade{animation:fade .28s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.fade{animation:none}.stage .big{transition:none}}
+
+.pager{display:flex;gap:10px;align-items:center;justify-content:center;margin-top:16px}
+.pg{border:1.5px solid var(--border);background:var(--card);border-radius:14px;padding:12px 20px;
+  font-family:var(--kedu-title);font-size:16px;color:var(--ink);cursor:pointer}
+.pg:disabled{opacity:.4;cursor:not-allowed}
+.dots{display:flex;gap:5px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--border);border:none;padding:0;cursor:pointer}
+.dot.on{background:var(--primary)}
+
+.tools{display:flex;gap:8px;justify-content:center;margin-top:22px}
+.btn.line{background:transparent;border:1px solid var(--border);color:var(--sub);
+  border-radius:13px;padding:11px 16px;font-family:var(--kedu-title);font-size:14px;cursor:pointer}
+:focus-visible{outline:3px solid var(--primary);outline-offset:2px}
+
+/* ── 인쇄(교실 배부용) ───────────────────────── */
+@media print{
+  .nav,.picker,.modes,.pager,.dots,.tools,.stage{display:none!important}
+  body{background:#fff}
+  .wrap{max-width:none;padding:0}
+  .print-head{display:block!important;font-family:var(--kedu-title);font-size:20px;margin-bottom:14px}
+  .grid{display:grid!important;grid-template-columns:repeat(5,1fr);gap:8px}
+  .ch{box-shadow:none;border:1px solid #ccc;break-inside:avoid;padding:10px 6px}
+  .ch .g{font-size:40px}
+}
+.print-head{display:none}
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <a class="nav-logo" href="/morning/teacher.html"><span class="kk">케이에듀</span> 오늘의 한자</a>
+  <a class="back" href="/morning/teacher.html">← 아침활동</a>
+</div>
+
+<div class="wrap">
+  <div class="print-head" id="print-head"></div>
+
+  <div class="picker">
+    <div class="row">
+      <div>
+        <label for="g">학년</label>
+        <select id="g"></select>
+      </div>
+      <div>
+        <label for="s">회차</label>
+        <select id="s"></select>
+      </div>
+      <div>
+        <button class="pg" id="today" type="button" style="padding:12px 16px;font-size:14px">처음으로</button>
+      </div>
+    </div>
+    <div class="meta" id="meta"></div>
+  </div>
+
+  <div class="modes">
+    <button class="mode" id="m-list" type="button" aria-pressed="true">한눈에 보기</button>
+    <button class="mode" id="m-show" type="button" aria-pressed="false">한 자씩 띄우기</button>
+  </div>
+
+  <div id="view"></div>
+
+  <div class="tools" id="tools">
+    <button class="btn line" id="print" type="button">인쇄해서 나눠주기</button>
+  </div>
+</div>
+
+<script src="/kedu/quiz/templates/hanja_data.js"></script>
+<script>
+(function(){
+  'use strict';
+  var D = (window.KQuiz && window.KQuiz.hanjaData) || null;
+  var view = document.getElementById('view');
+  var gSel = document.getElementById('g'), sSel = document.getElementById('s');
+  var st = { grade:1, step:1, mode:'list', idx:0, open:false };
+
+  if (!D) {
+    view.innerHTML = '<div class="ch" style="grid-column:1/-1">한자 자료를 불러오지 못했어요. 새로고침해 주세요.</div>';
+    return;
+  }
+
+  /* ── 주소에서 회차 읽기 : ?key=g4_hanja_s01 또는 ?grade=4&step=1 ── */
+  function fromUrl(){
+    var q = new URLSearchParams(location.search);
+    var key = q.get('key');
+    if (key) {
+      var m = key.match(/^g(\d)_hanja_s(\d{1,2})$/);
+      if (m) return { grade:Number(m[1]), step:Number(m[2]) };
+    }
+    var g = Number(q.get('grade')), s = Number(q.get('step'));
+    return { grade: g || 1, step: s || 1 };
+  }
+
+  function clamp(){
+    var gs = D.grades();
+    if (gs.indexOf(st.grade) < 0) st.grade = gs[0];
+    var n = D.stepCount(st.grade);
+    if (st.step < 1) st.step = 1;
+    if (st.step > n) st.step = n;
+  }
+
+  function rows(){ return D.step(st.grade, st.step); }
+
+  function fillSelects(){
+    gSel.innerHTML = D.grades().map(function(g){
+      return '<option value="'+g+'"'+(g===st.grade?' selected':'')+'>'+g+'학년</option>';
+    }).join('');
+    var n = D.stepCount(st.grade), out = '';
+    for (var i=1;i<=n;i++){
+      out += '<option value="'+i+'"'+(i===st.step?' selected':'')+'>'+i+'회차</option>';
+    }
+    sSel.innerHTML = out;
+  }
+
+  function renderMeta(){
+    var n = D.stepCount(st.grade), r = rows(), total = D.all(st.grade).length;
+    document.getElementById('meta').innerHTML =
+      '<b>'+st.grade+'학년</b>은 모두 <b>'+total+'자</b>, <b>'+n+'회차</b>예요. '
+      + '오늘 회차는 <b>'+r.length+'자</b>' + (r.length<10 ? ' (마지막 회차라 조금 적어요)' : '') + '. '
+      + '<br>2회차부터는 앞에서 배운 글자가 문제에 섞여 나와요.';
+    document.getElementById('print-head').textContent =
+      st.grade + '학년 아침한자 ' + st.step + '회차 — ' + r.map(function(x){return x.c;}).join(' ');
+  }
+
+  function esc(t){ return String(t==null?'':t).replace(/[&<>"]/g, function(m){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]; }); }
+
+  /* ── 한눈에 보기 : 교사가 오늘 나갈 10자를 한 화면에서 확인 ── */
+  function renderList(){
+    view.innerHTML = '<div class="grid">' + rows().map(function(x){
+      return '<div class="ch">'
+        + '<div class="g">'+esc(x.c)+'</div>'
+        + '<div class="hy">'+esc(x.hun)+' '+esc(x.eum)+'</div>'
+        + (x.word
+            ? '<div class="wd"><span class="w">'+esc(x.word)+'</span>'+esc(x.wordKo)+'</div>'
+            : '<div class="none">대표낱말 없음</div>')
+        + '</div>';
+    }).join('') + '</div>';
+  }
+
+  /* ── 한 자씩 띄우기 : 교실 화면용. 먼저 글자만 보이고, 누르면 훈·음이 드러난다 ── */
+  function renderShow(){
+    var r = rows(), x = r[st.idx];
+    view.innerHTML =
+      '<div class="stage">'
+      + '<div class="count">'+(st.idx+1)+' / '+r.length+'</div>'
+      + '<div class="big" id="big" role="button" tabindex="0" '
+      +      'aria-label="'+(st.open?'훈과 음이 보이는 중':'눌러서 훈과 음 보기')+'">'+esc(x.c)+'</div>'
+      + '<div class="reveal" id="rv">'
+      + (st.open
+          ? '<div class="fade"><div class="hy">'+esc(x.hun)+' '+esc(x.eum)+'</div>'
+            + (x.word ? '<div class="wd"><span class="w">'+esc(x.word)+'</span> '+esc(x.wordKo)+'</div>' : '')
+            + '</div>'
+          : '<div class="ask">글자를 눌러 볼까요?</div>')
+      + '</div></div>'
+      + '<div class="pager">'
+      +   '<button class="pg" id="prev" type="button"'+(st.idx===0?' disabled':'')+'>← 앞</button>'
+      +   '<button class="pg" id="next" type="button"'+(st.idx===r.length-1?' disabled':'')+'>뒤 →</button>'
+      + '</div>'
+      + '<div class="dots">' + r.map(function(_,i){
+            return '<button class="dot'+(i===st.idx?' on':'')+'" data-i="'+i+'" type="button" aria-label="'+(i+1)+'번째 글자"></button>';
+          }).join('') + '</div>';
+
+    var big = document.getElementById('big');
+    big.onclick = function(){ st.open = !st.open; renderShow(); };
+    big.onkeydown = function(e){ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); big.onclick(); } };
+    document.getElementById('prev').onclick = function(){ go(st.idx-1); };
+    document.getElementById('next').onclick = function(){ go(st.idx+1); };
+    view.querySelectorAll('.dot').forEach(function(d){
+      d.onclick = function(){ go(Number(d.dataset.i)); };
+    });
+  }
+
+  function go(i){
+    var r = rows();
+    if (i < 0 || i >= r.length) return;
+    st.idx = i; st.open = false; renderShow();
+  }
+
+  function render(){
+    clamp(); fillSelects(); renderMeta();
+    document.getElementById('m-list').setAttribute('aria-pressed', st.mode==='list');
+    document.getElementById('m-show').setAttribute('aria-pressed', st.mode==='show');
+    if (st.mode==='list') renderList(); else renderShow();
+  }
+
+  gSel.onchange = function(){ st.grade = Number(this.value); st.step = 1; st.idx = 0; st.open = false; render(); };
+  sSel.onchange = function(){ st.step  = Number(this.value); st.idx = 0; st.open = false; render(); };
+  document.getElementById('today').onclick = function(){
+    var u = fromUrl(); st.grade = u.grade; st.step = u.step; st.idx = 0; st.open = false; render();
+  };
+  document.getElementById('m-list').onclick = function(){ st.mode='list'; render(); };
+  document.getElementById('m-show').onclick = function(){ st.mode='show'; st.idx=0; st.open=false; render(); };
+  document.getElementById('print').onclick = function(){ st.mode='list'; render(); window.print(); };
+
+  document.addEventListener('keydown', function(e){
+    if (st.mode!=='show') return;
+    if (e.key==='ArrowRight') go(st.idx+1);
+    if (e.key==='ArrowLeft')  go(st.idx-1);
+  });
+
+  var u = fromUrl(); st.grade = u.grade; st.step = u.step;
+  render();
+})();
+</script>
+</body>
+</html>
