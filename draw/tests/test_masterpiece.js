@@ -73,6 +73,48 @@ const pal2 = K.kmeans(rgba, W, H, 3);
 t('색 3개 추출', pal2.length === 3);
 t('결정적(재실행 동일)', JSON.stringify(pal2) === JSON.stringify(K.kmeans(rgba, W, H, 3)));
 
+/* ── [8] 원작 기반 명화 데이터(artdata.js) ── */
+console.log('[8] 원작 기반 명화 데이터');
+const adSrc = fs.readFileSync(path.join(__dirname, '..', 'masterpiece', 'artdata.js'), 'utf8');
+const win = {};
+new Function('window', adSrc)(win);
+const D = win.KMDATA;
+const IDS = ['wave','starry','sunflower','scream','lilies','dance','kiss','jungle'];
+t('8작품 데이터 존재', IDS.every(k => D[k] && D[k].w && D[k].h && D[k].pal && D[k].rle));
+t('팔레트 4~14색 hex', IDS.every(k => D[k].pal.length >= 4 && D[k].pal.length <= 14 && D[k].pal.every(h => /^#[0-9A-F]{6}$/.test(h))));
+t('격자 한 변 600 이하', IDS.every(k => D[k].w <= 600 && D[k].h <= 600));
+function decode(d) {
+  const t2 = d.rle; let n = 0, i = 0, maxc = -1;
+  while (i < t2.length) {
+    const c = t2.charCodeAt(i++) - 65; if (c > maxc) maxc = c;
+    let v = 0, cc;
+    while (i < t2.length && (cc = t2.charCodeAt(i)) >= 48 && cc <= 57) { v = v * 10 + cc - 48; i++; }
+    if (v <= 0) return { ok: false };
+    n += v;
+  }
+  return { ok: true, n, maxc };
+}
+t('RLE 복원 = w×h (전 작품)', IDS.every(k => { const r = decode(D[k]); return r.ok && r.n === D[k].w * D[k].h; }));
+t('색 인덱스 < 팔레트 길이', IDS.every(k => decode(D[k]).maxc < D[k].pal.length));
+
+/* ── [9] ARTWORKS ↔ 데이터 일치 + paint 전면 채움 ── */
+console.log('[9] ARTWORKS 연동');
+const mA = html.match(/const AH=\{[\s\S]*?\n\};\n\nconst ARTWORKS=\[[\s\S]*?\n\];/);
+t('AH·ARTWORKS 블록', !!mA);
+const ARTS = new Function('KMP', 'window', mA[0] + '\nreturn ARTWORKS;')(K, win);
+const byId = Object.fromEntries(ARTS.map(a => [a.id, a]));
+t('팔레트 = 데이터 팔레트', IDS.every(k => JSON.stringify(byId[k].palette) === JSON.stringify(D[k].pal)));
+t('vw·vh·gw·gh = 데이터 크기', IDS.every(k => byId[k].vw === D[k].w && byId[k].gw === D[k].w && byId[k].vh === D[k].h && byId[k].gh === D[k].h));
+function mockPaint(a) {
+  let area = 0, bad = 0; const w = a.vw, h = a.vh;
+  const ctx = { fillStyle: '#000', fillRect(x, y, rw, rh) { area += rw * rh; if (x < 0 || y < 0 || x + rw > w || y + rh > h) bad++; } };
+  a.paint(ctx, 4, K.mulberry32(1));
+  return { area, bad };
+}
+t('paint가 화면을 빈틈없이 채움', IDS.every(k => mockPaint(byId[k]).area === D[k].w * D[k].h));
+t('paint가 화면 밖을 넘지 않음', IDS.every(k => mockPaint(byId[k]).bad === 0));
+
+
 console.log('');
 console.log(fail === 0 ? `전체 통과 ${pass}/${pass + fail}` : `실패 ${fail}건 — ${pass}/${pass + fail}`);
 process.exit(fail === 0 ? 0 : 1);
