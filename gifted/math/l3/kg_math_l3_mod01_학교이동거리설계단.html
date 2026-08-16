@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<!--
+  kg_math_l3_mod01 — 학교 이동거리 설계단 [케이영재 수학 · G2 양산 18호 · MOD 연구소 개시 · L3 완결]
+  트랙: 케이영재 / Lab: Modeling / Level: L3 CHALLENGER (트랙 스킨 v2 「신호기」) / 깊이: D1~D8
+  base: kg_math_l3_pat01 (골격·CSS·초기화 계승) + kg_math_l3_pat02 (엔진 공통부 계승)
+        + kg_math_l3_com01 (칩·숫자패드·미터·경로격자 CSS 계승)
+  신규 시각 언어 0 — 복도와 학교 지도 모두 com01 `.cal-grid.road` 의 칸 수 변형이다.
+                    칸 상태는 sel · center-cell · diag-b · empty 그대로 쓴다.
+  신규 메카닉 0 — 누르기·숫자패드·고르기 뿐이다 (부품 카탈로그 밖 메카닉 없음)
+  탐구 5단계: 미션(1~3) 탐험(4~7) 발견(8~11) 도전(12~14) 창조(15~18)
+  핵심 수학: 모임 장소를 한 칸 옮기면 왼쪽 사람은 한 걸음씩 늘고 오른쪽 사람은 한 걸음씩 준다
+             → 그래서 사람이 더 많은 쪽으로 옮기면 반드시 줄어든다
+             → 멈추는 곳은 왼쪽 수와 오른쪽 수가 뒤집히는 칸, 곧 순서로 가운데인 사람이 선 칸이다
+             → 한 사람을 아무리 멀리 보내도 순서는 그대로라 답이 움직이지 않는다
+                (양 끝의 한가운데는 끌려간다 — 이 대비가 탐험 마지막 무대다)
+             → 짝수 명이면 가운데 두 사람 사이가 모두 같은 값이라 답이 구간이 된다
+             → 못 쓰는 칸이 있으면 막힌 구간 양옆에서 처음 만나는 두 칸만 견주면 된다
+                (떨어진 칸 수가 같아도 걸음 합은 다를 수 있다 — 눈으로 고를 수 없다)
+             → 학교 전체 격자에서는 가로와 세로가 서로 방해하지 않아 따로 정해 짝지으면 된다
+             → 한 교실에 여러 명이면 사람 수만큼 거듭 세면 된다 — 규칙을 버리는 것이 아니라 세는 방법을 고치는 것
+  점수 100 = 탐험 15 + 추측 10 + 발견 20(q9 10 + q10 10) + 검증 15(pair 5 + ban 10)
+             + 확장 20(grid 10 + crowd 10) + 창조 20(임무 가 10 + 임무 나 10)
+  힌트: H1/H2/H3 3단 (감점 없음, 답 비노출) / 창조 검사기는 맞는지만 알려 주고 규칙은 알려주지 않는다
+  ⚠ 공식을 하드코딩하지 않는다 — 답은 언제나 칸을 하나씩 다 짚어 걸음 합을 재는 방식으로만 구한다.
+    정렬해서 가운데를 집는 지름길을 쓰지 않는다 (학생이 발견할 몫을 코드가 미리 쥐지 않는다)
+  ⚠ 수치는 tests/verify_kg_l3_mod01.py 전수 열거 245971건으로 코딩 전에 선검증했다.
+    선검증이 코딩 전에 잡아낸 것 3건: 제약 후보 정의 오류 · 슬12 답 · 슬13 배치
+  ⛔ 규약: 문자식 금지 / 차단 어휘 금지 / 이모지 슬라이드당 ≤2
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="kg_math_l3_mod01_v1">
+<title>학교 이동거리 설계단 · 케이영재 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#F4F2EC; --ink:#17161C; --ink-soft:#5A5762;
+  --coral:#7B4DFF; --coral-deep:#5B2EE0; --coral-soft:#E7DEFF;
+  --teal:#3B5BA5; --teal-deep:#2C4480; --teal-soft:#DDE4F5;
+  --gold:#9BBF00; --emph:#FF5714; --line:#17161C; --mark:#D6F94C;
+  --f-title:'Black Han Sans',sans-serif; --f-body:'Noto Sans KR',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:4px 4px 0 rgba(23,22,28,.92);
+  --fs-title: clamp(26px, 4.2vw, 46px);
+  --fs-heading: clamp(23px, 3.5vw, 35px);
+  --fs-body: clamp(19px, 2.9vw, 27px);
+  --fs-caption: clamp(17px, 2.6vw, 24px);
+  --fs-label: clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --mw-sm: min(720px, 96vw);
+  --mw-lg: min(880px, 96vw);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+@keyframes ka-glow { 0%,100%{box-shadow:0 0 0 0 rgba(14,138,95,.4);} 50%{box-shadow:0 0 0 10px rgba(14,138,95,0);} }
+
+.ka { background:var(--paper); width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; color:var(--ink); position:relative; overflow:hidden; }
+.ka-h { display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); padding:clamp(11px,1.7vw,15px) clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:hover { transform:translateY(-1px); }
+.ka-pill { font-family:var(--f-title); background:var(--coral); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-where { font-size:clamp(14px,1.6vw,18px); color:var(--ink-soft); flex-shrink:1; }
+.ka-where b { color:var(--ink); }
+.ka-bar { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:46vw; }
+.ka-dot { width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s, background .2s; }
+.ka-dot:hover { transform:scale(1.2); }
+.ka-dot.active { background:var(--coral); transform:scale(1.3); }
+.ka-dot.done { background:var(--teal); }
+.ka-score { font-family:var(--f-title); background:#D6F94C; color:#17161C; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); padding:0; border-radius:50%; cursor:pointer; flex-shrink:0; color:var(--coral-deep); font-size:clamp(13px,2vw,16px); width:clamp(32px,4.5vw,38px); height:clamp(32px,4.5vw,38px); display:flex; align-items:center; justify-content:center; }
+
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; justify-content:safe center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; justify-content:safe center; gap:clamp(7px,1.2vw,11px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(8px,1.4vh,16px) clamp(16px,4vw,48px); overflow-x:hidden; overflow-y:auto; scrollbar-width:none; -ms-overflow-style:none; }
+.slide::-webkit-scrollbar { width:0; height:0; }
+.slide.active { display:flex; }
+.slide-title { font-family:var(--f-title); font-size:var(--fs-title); line-height:1.18; color:var(--ink); font-weight:400; text-align:center; flex-shrink:0; }
+.slide-sub { font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(10px,1.6vw,16px); left:clamp(16px,4vw,40px); font-family:var(--f-title); color:var(--coral); font-size:clamp(13px,1.9vw,18px); letter-spacing:.4px; z-index:5; }
+
+.ka-f { display:flex; justify-content:flex-end; gap:12px; padding:clamp(12px,1.7vw,16px) clamp(16px,4vw,40px); background:linear-gradient(to top, var(--paper) 62%, transparent); flex-shrink:0; }
+.ka-prev, .ka-hint, .ka-next { font-family:var(--f-title); font-size:clamp(15px,1.9vw,22px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(10px,1.4vw,15px) clamp(20px,2.8vw,38px); cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translateY(-2px); }
+.ka-prev { margin-right:auto; }
+.ka-hint { color:#17161C; border-color:#17161C; }
+.ka-next { background:var(--coral); color:#fff; border-color:var(--coral); }
+.ka-prev:disabled, .ka-next:disabled { opacity:.35; cursor:default; transform:none; }
+.ka-hint:disabled { opacity:.4; cursor:default; }
+
+.concept-box { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,18px) clamp(18px,2.8vw,28px); border-radius:20px; font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); text-align:center; line-height:1.5; box-shadow:var(--shadow); }
+.concept-box strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.intro-q { font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; }
+.intro-q strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.goal-list { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); font-size:var(--fs-caption); color:var(--ink); max-width:var(--mw-sm); }
+.goal-list li { background:#fff; border:2px solid var(--line); padding:clamp(7px,1.3vw,11px) clamp(14px,2.6vw,20px); border-radius:16px; list-style:none; box-shadow:var(--shadow); }
+.goal-list li strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+.mission-card { background:#fff; border:3px solid var(--coral-soft); border-radius:26px; padding:clamp(16px,3vw,26px) clamp(20px,3.8vw,34px); max-width:var(--mw-sm); text-align:center; box-shadow:0 6px 0 var(--coral-soft); font-size:var(--fs-body); line-height:1.6; }
+.mission-card strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+
+/* ── 달력 격자 ── */
+.cal-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.1vw,10px); }
+.cal-head { display:flex; align-items:center; gap:clamp(8px,1.6vw,14px); }
+.cal-title { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--coral-deep); }
+.cal-month-btn { font-family:var(--f-title); font-size:var(--fs-label); background:#fff; border:2px solid var(--line); border-radius:999px; padding:4px 12px; cursor:pointer; color:var(--ink-soft); }
+.cal-month-btn.on { background:var(--coral); color:#fff; border-color:var(--coral); }
+.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:clamp(3px,0.6vw,5px); background:#fff; border:2px solid var(--line); border-radius:18px; padding:clamp(8px,1.4vw,12px); box-shadow:var(--shadow); }
+.cal-dow { font-family:var(--f-title); font-size:clamp(12px,1.7vw,16px); color:var(--ink-soft); text-align:center; padding-bottom:2px; }
+.cal-dow.sun { color:var(--emph); }
+.cal-cell { width:clamp(34px,6.2vw,54px); height:clamp(30px,5.4vw,46px); display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:clamp(15px,2.4vw,22px); color:var(--ink); background:var(--paper); border-radius:10px; cursor:pointer; transition:background .15s, transform .1s; user-select:none; }
+.cal-cell:hover { background:var(--coral-soft); }
+.cal-cell.empty { background:transparent; cursor:default; }
+.cal-cell.sel { background:var(--coral); color:#fff; animation:ka-pop .3s ease; }
+.cal-cell.diag-a { outline:3px solid var(--gold); outline-offset:-3px; }
+.cal-cell.diag-b { outline:3px solid var(--teal); outline-offset:-3px; }
+.cal-cell.center-cell { background:var(--emph); color:#fff; }
+.cal-info { display:flex; gap:clamp(8px,1.6vw,14px); flex-wrap:wrap; justify-content:center; min-height:2.2em; align-items:center; }
+.sum-chip { font-family:var(--f-title); font-size:var(--fs-caption); padding:clamp(5px,1vw,8px) clamp(12px,2.2vw,18px); border-radius:999px; background:#fff; border:2px solid var(--line); }
+.sum-chip.a { border-color:var(--gold); color:#5E7500; }
+.sum-chip.b { border-color:var(--teal); color:var(--teal-deep); }
+.sum-chip.tot { border-color:var(--coral); color:var(--coral-deep); }
+.cal-msg { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--coral-deep); min-height:1.5em; text-align:center; }
+.cal-msg.wrong { color:var(--emph); }
+
+/* ── 사례 테이블 ── */
+.case-table { border-collapse:collapse; background:#fff; border-radius:16px; overflow:hidden; box-shadow:var(--shadow); font-size:var(--fs-caption); }
+.case-table th { font-family:var(--f-title); font-weight:400; background:var(--coral-soft); color:var(--coral-deep); padding:clamp(6px,1.1vw,10px) clamp(12px,2.2vw,20px); }
+.case-table td { font-family:var(--f-num); font-weight:800; text-align:center; padding:clamp(6px,1.1vw,10px) clamp(12px,2.2vw,20px); border-top:1px solid var(--line); }
+.case-count { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); }
+.case-count b { color:var(--coral-deep); font-size:1.2em; }
+
+/* ── 관찰·추측 선택 ── */
+.pick-list { display:flex; flex-direction:column; gap:clamp(7px,1.3vw,11px); width:100%; max-width:var(--mw-sm); }
+.pick-item { background:#fff; border:3px solid var(--line); border-radius:18px; padding:clamp(10px,1.8vw,15px) clamp(16px,3vw,24px); font-size:var(--fs-body); cursor:pointer; transition:border-color .2s, transform .12s; text-align:left; font-family:var(--f-body); color:var(--ink); }
+.pick-item:hover { border-color:var(--coral); }
+.pick-item.on { border-color:var(--coral); background:var(--coral-soft); animation:ka-pop .3s ease; }
+.pick-item .tag { font-family:var(--f-title); color:var(--coral-deep); margin-right:8px; }
+
+/* ── 구조 시각화 ── */
+.struct-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.5vw,13px); }
+.struct-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(6px,1.1vw,9px); }
+.struct-cell { width:clamp(76px,13vw,120px); height:clamp(52px,9vw,80px); background:#fff; border:3px solid var(--coral-soft); border-radius:14px; display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:clamp(19px,3vw,30px); color:var(--coral-deep); box-shadow:0 4px 0 var(--coral-soft); }
+.struct-cell.hl-a { border-color:var(--gold); box-shadow:0 4px 0 var(--gold); }
+.struct-cell.hl-b { border-color:var(--teal); box-shadow:0 4px 0 var(--teal-soft); }
+.struct-eq { font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center; }
+.struct-eq .star { color:var(--emph); }
+.arrow-note { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); background:#fff; border:2px solid var(--line); border-radius:999px; padding:5px 16px; cursor:pointer; transition:transform .15s; }
+.arrow-note.revealed { color:var(--coral-deep); border-color:var(--coral); animation:ka-glow 1.4s ease 1; }
+
+/* ── 문제 공통 ── */
+.q-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.5vw,13px); max-width:var(--mw-lg); width:100%; }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; font-weight:400; }
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-sm); }
+.mcq-opts.one-col { grid-template-columns:1fr; }
+.mcq-opt { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,1.9vw,15px); font-family:var(--f-title); font-size:var(--fs-body); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .2s; box-shadow:0 6px 0 var(--coral-soft); font-weight:400; }
+.mcq-opt:hover { border-color:var(--coral); }
+.mcq-opt:active { transform:translateY(4px); box-shadow:none; }
+.mcq-opt.correct { border-color:var(--coral-deep); background:var(--coral); color:#fff; box-shadow:0 6px 0 var(--coral-deep); animation:ka-pop .5s ease; }
+.mcq-opt.wrong { border-color:var(--emph); background:#FFE3D6; color:var(--ink); animation:ka-shake .35s; }
+.mcq-hint { font-family:var(--f-title); font-size:var(--fs-caption); color:#17161C; background:#D6F94C; border-radius:16px; padding:clamp(8px,1.5vw,12px) clamp(14px,2.6vw,20px); max-width:var(--mw-sm); text-align:center; display:none; }
+.mcq-hint.show { display:block; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); color:var(--coral-deep); min-height:1.4em; text-align:center; }
+.q-fb.wrong { color:var(--emph); }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:clamp(30px,5vw,54px); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:20px; padding:clamp(8px,1.5vw,13px) clamp(24px,4.4vw,42px); min-width:clamp(110px,20vw,180px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.q-pad { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(6px,1.2vw,10px); max-width:clamp(280px,56vw,460px); }
+.q-key { background:#fff; border:2px solid var(--line); border-radius:14px; padding:clamp(7px,1.4vw,11px) 0; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, background .15s; box-shadow:0 4px 0 var(--line); }
+.q-key:hover { background:var(--coral-soft); border-color:var(--coral); }
+.q-key:active { transform:translateY(3px); box-shadow:none; }
+.q-key.fn { background:#D6F94C; color:#17161C; font-family:var(--f-title); font-size:var(--fs-caption); border-color:#17161C; box-shadow:0 4px 0 #17161C; }
+
+/* ── 모양 실험실 ── */
+.shape-pick { display:flex; gap:clamp(8px,1.5vw,13px); flex-wrap:wrap; justify-content:center; }
+.shape-btn { background:#fff; border:3px solid var(--line); border-radius:16px; padding:clamp(8px,1.4vw,12px) clamp(12px,2.2vw,18px); cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:5px; transition:border-color .2s, transform .12s; }
+.shape-btn:hover { border-color:var(--coral); }
+.shape-btn.on { border-color:var(--coral); background:var(--coral-soft); }
+.shape-mini { display:grid; grid-template-columns:repeat(3, clamp(10px,1.8vw,15px)); gap:2px; }
+.shape-mini i { display:block; width:clamp(10px,1.8vw,15px); height:clamp(10px,1.8vw,15px); border-radius:3px; background:var(--line); }
+.shape-mini i.f { background:var(--coral); }
+.shape-name { font-family:var(--f-title); font-size:var(--fs-label); color:var(--ink); }
+.rule-build { display:flex; align-items:center; gap:clamp(6px,1.2vw,10px); flex-wrap:wrap; justify-content:center; font-family:var(--f-title); font-size:var(--fs-body); }
+.rule-slot { background:#fff; border:3px dashed var(--coral); border-radius:14px; min-width:clamp(72px,13vw,120px); padding:clamp(6px,1.1vw,9px) clamp(10px,1.8vw,14px); text-align:center; color:var(--coral-deep); font-family:var(--f-num); font-weight:800; cursor:pointer; }
+.rule-slot.filled { border-style:solid; background:var(--coral-soft); }
+.rule-choice { display:flex; gap:clamp(6px,1.1vw,9px); flex-wrap:wrap; justify-content:center; }
+.rule-chip { background:#fff; border:2px solid var(--line); border-radius:999px; padding:clamp(5px,1vw,8px) clamp(12px,2.2vw,18px); font-family:var(--f-title); font-size:var(--fs-caption); cursor:pointer; transition:transform .12s, border-color .15s; }
+.rule-chip:hover { border-color:var(--coral); transform:translateY(-2px); }
+
+/* ── 탐정 카드·마무리 ── */
+.detective-card { background:#fff; border:3px solid var(--gold); border-radius:26px; padding:clamp(16px,3vw,26px) clamp(20px,3.8vw,34px); max-width:var(--mw-sm); width:100%; box-shadow:0 8px 0 var(--mark); display:flex; flex-direction:column; gap:clamp(7px,1.3vw,11px); }
+.dc-row { display:flex; justify-content:space-between; gap:14px; font-size:var(--fs-caption); border-bottom:1px dashed var(--line); padding-bottom:6px; }
+.dc-row b { font-family:var(--f-title); font-weight:400; color:var(--coral-deep); }
+.dc-title { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; }
+.wrap-score { font-family:var(--f-num); font-weight:800; font-size:clamp(56px,10vw,110px); color:var(--coral-deep); line-height:1; }
+.wrap-msg { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); }
+.home-card { background:var(--teal-soft); border-radius:20px; padding:clamp(12px,2.2vw,18px) clamp(18px,3.2vw,26px); font-size:var(--fs-caption); color:var(--teal-deep); max-width:var(--mw-sm); text-align:center; line-height:1.55; }
+.next-mini { display:flex; gap:clamp(8px,1.5vw,13px); flex-wrap:wrap; justify-content:center; }
+.next-chip { font-family:var(--f-title); font-size:var(--fs-label); background:#fff; border:2px solid var(--line); border-radius:999px; padding:6px 16px; color:var(--ink-soft); }
+
+/* ═══ 케이영재 스킨 v2 「신호기」 — 트랙 전용 (헌법 v1.3 §3-α · skin_v2_signal.py 가 단일 원본) ═══
+   굵은 먹선 + 오프셋 통그림자 + 보라·라임. 레이아웃 값(크기·간격)은 건드리지 않는다. */
+.ka-h { border-bottom:3px solid var(--ink); }
+.ka-prev, .ka-hint, .ka-next { box-shadow:3px 3px 0 var(--ink); }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translate(-1px,-1px); box-shadow:4px 4px 0 var(--ink); }
+.ka-prev:active, .ka-hint:active, .ka-next:active { transform:translate(3px,3px); box-shadow:0 0 0 var(--ink); }
+.ka-hint { background:var(--mark); }
+.ka-pill { border:2px solid var(--ink); box-shadow:2px 2px 0 var(--ink); }
+.ka-score { border:2px solid var(--ink); box-shadow:2px 2px 0 var(--ink); }
+.ka-dot { background:#CBC8BF; }
+.mcq-opt { border-color:var(--ink); box-shadow:5px 5px 0 var(--ink); }
+.mcq-opt.correct { box-shadow:5px 5px 0 var(--coral-deep); }
+.detective-card { border-color:var(--ink); }
+.mission-card { border-color:var(--ink); box-shadow:6px 6px 0 var(--ink); }
+.cal-cell { border:2px solid var(--ink); }
+.cal-cell.empty { border-color:transparent; background:transparent; }
+
+/* ═══ 공용 부품 CSS (com01 정의 문자 그대로 추출·주입 — 손으로 옮겨 적지 않는다) ═══ */
+/* 복도와 학교 지도는 `.cal-grid.road` 의 칸 수(--road-n)만 바꾼 것이다 — 새 시각 언어 0 */
+.shadow-tag { font-size:var(--fs-label); color:var(--ink-soft); font-family:var(--f-title); }
+.vox-btns { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+.lab-meter { display:flex; align-items:baseline; justify-content:center; gap:8px; margin:6px 0; }
+.lab-label { font-size:var(--fs-label); color:var(--ink-soft); font-family:var(--f-title); }
+.lab-count { font-family:var(--f-title); font-size:var(--fs-h1); color:var(--coral-deep); min-width:2.2em; text-align:center; }
+.chip-row { display:flex; gap:clamp(5px,1vw,9px); justify-content:center; flex-wrap:wrap; margin:6px 0; }
+.road-row { display:flex; gap:clamp(10px,2.6vw,26px); justify-content:center; align-items:flex-end; flex-wrap:wrap; }
+.road-one { display:flex; flex-direction:column; align-items:center; gap:5px; }
+.cal-grid.road { --road-c:clamp(30px,5.2vw,48px); grid-template-columns:repeat(var(--road-n,4), var(--road-c)); justify-content:center; gap:clamp(5px,1.1vw,9px); }
+.cal-grid.road .cal-cell { width:var(--road-c); height:var(--road-c); border-radius:50%; font-size:clamp(12px,2vw,18px); cursor:default; }
+.cal-grid.road.tap .cal-cell { cursor:pointer; }
+.cal-grid.road.small { --road-c:clamp(20px,3.4vw,32px); gap:clamp(3px,0.7vw,6px); }
+.cal-grid.road.small .cal-cell { font-size:clamp(9px,1.5vw,13px); }
+</style>
+</head>
+<body>
+<div class="ka">
+  <header class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 나가기</button>
+    <span class="ka-pill">케이영재</span>
+    <span class="ka-where"><b>학교 이동거리 설계단</b> · 모형 연구소</span>
+    <div class="ka-bar" id="dots"></div>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </header>
+
+  <main class="ka-m" id="main">
+
+    <!-- 슬1 · 미션: 의뢰 -->
+    <section class="slide">
+      <span class="stage-badge">미션 1/3</span>
+      <h1 class="slide-title">학교 이동거리 설계단</h1>
+      <p class="slide-sub">우리 반이 한 곳에 모이기로 했다 · 어디로 정해야 <b>모두가 걷는 걸음의 합</b>이 가장 적을까?</p>
+      <div class="road-one">
+        <div class="cal-grid road" id="s1-people"></div>
+        <div class="cal-grid road" id="s1-num"></div>
+      </div>
+      <div class="concept-box">복도가 한 줄로 <strong>0번 칸부터 10번 칸까지</strong> 있다. 위 줄의 표시는 <strong>그 칸에 서 있는 사람</strong>이고, 아래 줄은 <strong>칸 번호</strong>다. 한 칸 옮기면 한 걸음이다.</div>
+    </section>
+
+    <!-- 슬2 · 미션: 걸음 세는 법 -->
+    <section class="slide">
+      <span class="stage-badge">미션 2/3</span>
+      <h1 class="slide-title">걸음을 세어 보자</h1>
+      <p class="slide-sub">모임 장소를 정하면 <b>사람마다 걸어야 할 칸 수</b>가 정해진다 · 그것을 전부 더한다</p>
+      <div class="road-one">
+        <div class="cal-grid road" id="s2-people"></div>
+        <div class="cal-grid road" id="s2-num"></div>
+      </div>
+      <div class="chip-row" id="s2-chip"></div>
+      <div class="lab-meter">
+        <span class="lab-label">모임 장소</span><span class="lab-count" id="s2-spot">2</span><span class="lab-label">번 칸 · 걸음 합</span><span class="lab-count" id="s2-sum">10</span><span class="lab-label">걸음</span>
+      </div>
+      <div class="vox-btns" id="s2-btns"></div>
+      <div class="concept-box">같은 사람들인데 모임 장소를 바꾸면 걸음 합이 달라진다. <strong>2번 칸은 10걸음, 5번 칸은 7걸음</strong>이다.</div>
+    </section>
+
+    <!-- 슬3 · 미션: 오늘의 도구 -->
+    <section class="slide">
+      <span class="stage-badge">미션 3/3</span>
+      <h1 class="slide-title">그러면 다 눌러 보면 된다</h1>
+      <p class="slide-sub">칸이 열한 개뿐이니 <b>하나씩 다 짚어 보면</b> 가장 적은 곳을 찾을 수 있다</p>
+      <ul class="goal-list">
+        <li><strong>먼저 손으로 찾는다</strong> — 칸을 눌러 걸음 합을 모은다.</li>
+        <li><strong>그다음 규칙을 찾는다</strong> — 다 짚어 보지 않고도 알 수 있는 방법이 있을까.</li>
+        <li><strong>마지막으로 현실을 넣는다</strong> — 공사 중인 칸, 학교 전체 지도, 한 교실에 여러 명.</li>
+      </ul>
+      <div class="concept-box">다 짚어 보는 것은 <strong>지는 방법이 아니다</strong>. 다 짚어 본 것을 늘어놓고 보아야 규칙이 눈에 들어온다.</div>
+    </section>
+
+    <!-- 슬4 · 탐험: 모임 자리 계산기 (+15) -->
+    <section class="slide" data-q-id="explore">
+      <span class="stage-badge">탐험 1/4</span>
+      <h1 class="slide-title">모임 자리 계산기</h1>
+      <p class="slide-sub">아래 줄의 칸을 누르면 그 칸이 모임 장소가 된다 · 서로 다른 <b>4곳</b>을 눌러 보면 +15</p>
+      <div class="road-one">
+        <div class="cal-grid road" id="ex-people"></div>
+        <div class="cal-grid road tap" id="ex-num"></div>
+      </div>
+      <div class="lab-meter">
+        <span class="lab-label">걸음 합</span><span class="lab-count" id="ex-sum">-</span><span class="lab-label">걸음 · 눌러 본 칸</span><span class="lab-count" id="ex-count">0</span><span class="lab-label">곳</span>
+      </div>
+      <div class="chip-row" id="ex-cases"></div>
+      <div class="mcq-hint" data-hints='["아무 칸이나 눌러도 된다. 양쪽 끝부터 눌러 보면 차이가 크게 보인다.","한 곳을 누를 때마다 걸음 합이 나온다. 그 수가 커지는지 작아지는지 따라가 보자.","사람이 서 있는 칸과 아무도 없는 칸을 견주어 눌러 보자."]'></div>
+      <p class="q-fb" id="fb-explore"></p>
+    </section>
+
+    <!-- 슬5 · 탐험: 모은 사례 -->
+    <section class="slide">
+      <span class="stage-badge">탐험 2/4</span>
+      <h1 class="slide-title">모은 것을 늘어놓자</h1>
+      <p class="slide-sub">눌러 본 칸을 번호 순서로 세워 두면 <b>걸음 합이 어떻게 오르내리는지</b> 보인다</p>
+      <div class="chip-row" id="tbl-cases"></div>
+      <div class="lab-meter">
+        <span class="lab-label">지금까지 가장 적은 곳</span><span class="lab-count" id="tbl-best">-</span><span class="lab-label">번 칸</span>
+      </div>
+      <div class="concept-box">걸음 합은 <strong>내려가다가 다시 올라간다</strong>. 골짜기 바닥이 어디인지가 오늘의 물음이다. 아직 눌러 보지 않은 칸이 있으면 앞으로 돌아가 더 모아도 좋다.</div>
+    </section>
+
+    <!-- 슬6 · 탐험: 사람 수를 바꿔 본다 -->
+    <section class="slide">
+      <span class="stage-badge">탐험 3/4</span>
+      <h1 class="slide-title">사람 수를 바꿔 보자</h1>
+      <p class="slide-sub">단추를 눌러 배치를 바꾼다 · 배치마다 <b>가장 적은 칸</b>이 어디인지 살펴보자</p>
+      <div class="vox-btns" id="s6-btns"></div>
+      <div class="road-one">
+        <div class="cal-grid road" id="s6-people"></div>
+        <div class="cal-grid road" id="s6-num"></div>
+      </div>
+      <div class="lab-meter">
+        <span class="lab-label">가장 적은 칸</span><span class="lab-count" id="s6-spot">-</span><span class="lab-label">· 그때 걸음 합</span><span class="lab-count" id="s6-sum">-</span><span class="lab-label">걸음</span>
+      </div>
+      <p class="slide-sub" id="s6-note"></p>
+    </section>
+
+    <!-- 슬7 · 탐험: 한 사람만 멀리 보낸다 -->
+    <section class="slide">
+      <span class="stage-badge">탐험 4/4</span>
+      <h1 class="slide-title">한 사람만 멀리 보내면</h1>
+      <p class="slide-sub">2번·4번 칸에 두 사람이 있다 · 세 번째 사람만 오른쪽으로 옮겨 보자</p>
+      <div class="vox-btns" id="s7-btns"></div>
+      <div class="road-one">
+        <div class="cal-grid road" id="s7-people"></div>
+        <div class="cal-grid road" id="s7-num"></div>
+      </div>
+      <div class="lab-meter">
+        <span class="lab-label">양 끝의 한가운데</span><span class="lab-count" id="s7-mid">3</span><span class="lab-label">번 · 걸음이 가장 적은 칸</span><span class="lab-count" id="s7-best">4</span><span class="lab-label">번</span>
+      </div>
+      <p class="slide-sub" id="s7-note"></p>
+      <div class="concept-box">한 사람을 아무리 멀리 보내도 <strong>걸음이 가장 적은 칸은 꿈쩍하지 않는다</strong>. 양 끝의 한가운데는 따라 움직이는데도 그렇다. 무엇이 이 칸을 붙잡고 있을까?</div>
+    </section>
+
+    <!-- 슬8 · 발견: 추측 기록 (+10) -->
+    <section class="slide" data-q-id="conjecture">
+      <span class="stage-badge">발견 1/4</span>
+      <h1 class="slide-title">먼저 추측해 보자</h1>
+      <p class="q-prompt">걸음 합이 가장 적은 칸은 어디일까? 마음에 드는 것을 골라 기록하자. (+10)</p>
+      <div class="pick-list" id="conj-list"></div>
+      <div class="mcq-hint" data-hints='["앞에서 본 배치들을 하나씩 떠올려 보자. 어느 것이 늘 들어맞는지 견주어 볼 수 있다.","한 사람을 멀리 보냈을 때 움직이지 않은 것과 따라 움직인 것을 갈라 보자.","사람들을 왼쪽부터 순서대로 세워 놓고, 그 줄에서 어디쯤에 답이 있었는지 견주어 보자."]'></div>
+      <p class="q-fb" id="fb-conjecture"></p>
+      <div class="concept-box">추측은 맞히려고 하는 것이 아니다. <strong>기록해 두었다가 확인하려고</strong> 하는 것이다.</div>
+    </section>
+
+    <!-- 슬9 · 발견: 한 칸 옮기면 (+10) -->
+    <section class="slide" data-q-id="q9">
+      <span class="stage-badge">발견 2/4</span>
+      <h1 class="slide-title">한 칸만 옮겨 보자</h1>
+      <div class="q-stage">
+        <div class="road-one">
+          <div class="cal-grid road" id="q9-people"></div>
+          <div class="cal-grid road" id="q9-num"></div>
+        </div>
+        <div class="chip-row" id="q9-chip"></div>
+        <p class="q-prompt">3번 칸에 모이면 <b>28걸음</b>이다. 모임 장소를 <b>4번 칸</b>으로 옮기면 몇 걸음이 될까? (+10)</p>
+        <div class="q-display" id="disp-q9">&nbsp;</div>
+        <div class="q-pad" id="pad-q9"></div>
+        <div class="mcq-hint" data-hints='["한 사람씩 다시 세지 않아도 된다. 옮기면 걸음이 느는 사람과 주는 사람이 갈린다.","3번 칸보다 왼쪽에 있는 사람은 한 걸음씩 늘고, 오른쪽에 있는 사람은 한 걸음씩 준다.","왼쪽에 몇 명, 오른쪽에 몇 명인지 세어 보자. 늘어난 걸음과 줄어든 걸음을 28에서 셈해 보면 된다."]'></div>
+        <p class="q-fb" id="fb-q9"></p>
+      </div>
+    </section>
+
+    <!-- 슬10 · 발견: 다섯 명 (+10) -->
+    <section class="slide" data-q-id="q10">
+      <span class="stage-badge">발견 3/4</span>
+      <h1 class="slide-title">다섯 명이 모인다면</h1>
+      <div class="q-stage">
+        <div class="road-one">
+          <div class="cal-grid road" id="q10-people"></div>
+          <div class="cal-grid road" id="q10-num"></div>
+        </div>
+        <p class="q-prompt">이 배치에서 걸음 합이 가장 적은 칸은 <b>몇 번 칸</b>일까? (+10)</p>
+        <div class="q-display" id="disp-q10">&nbsp;</div>
+        <div class="q-pad" id="pad-q10"></div>
+        <div class="mcq-hint" data-hints='["칸을 하나씩 짚어 봐도 되고, 앞에서 찾은 방법을 써도 된다.","모임 장소를 오른쪽으로 옮길수록 좋은 것은 오른쪽에 사람이 더 많을 때다. 그 관계가 뒤집히는 곳에서 멈춘다.","사람들을 왼쪽부터 차례로 세어 보고, 그 줄에서 한가운데인 사람이 선 칸을 살펴보자."]'></div>
+        <p class="q-fb" id="fb-q10"></p>
+      </div>
+    </section>
+
+    <!-- 슬11 · 발견: 짝수 명이면 (+5) -->
+    <section class="slide" data-q-id="pair">
+      <span class="stage-badge">발견 4/4</span>
+      <h1 class="slide-title">답이 하나가 아닐 때</h1>
+      <div class="q-stage">
+        <div class="road-one">
+          <div class="cal-grid road" id="pair-people"></div>
+          <div class="cal-grid road tap" id="pair-num"></div>
+        </div>
+        <div class="lab-meter">
+          <span class="lab-label">누른 칸의 걸음 합</span><span class="lab-count" id="pair-sum">-</span><span class="lab-label">걸음</span>
+        </div>
+        <p class="q-prompt">네 명이다. 눌러 보면 <b>가장 적은 값이 여러 칸에서 나온다</b>. 그런 칸은 모두 몇 곳일까? (+5)</p>
+        <div class="q-display" id="disp-pair">&nbsp;</div>
+        <div class="q-pad" id="pad-pair"></div>
+        <div class="mcq-hint" data-hints='["칸을 하나씩 눌러 걸음 합을 적어 두자. 같은 수가 이어서 나오는 구간이 있다.","사람이 넷이면 왼쪽에 둘, 오른쪽에 둘이 되는 구간이 생긴다. 그 구간에서는 옮겨도 늘지도 줄지도 않는다.","가장 적은 값이 처음 나오는 칸과 마지막으로 나오는 칸을 찾아, 그 사이 칸을 빠짐없이 세어 보자."]'></div>
+        <p class="q-fb" id="fb-pair"></p>
+      </div>
+    </section>
+
+    <!-- 슬12 · 도전: 공사 중인 칸 (+10) -->
+    <section class="slide" data-q-id="ban">
+      <span class="stage-badge">도전 1/3</span>
+      <h1 class="slide-title">공사 중인 복도</h1>
+      <div class="q-stage">
+        <p class="slide-sub">3번·4번·5번 칸이 공사 중이라 <b>그곳에는 모일 수 없다</b> · 사람은 그대로 있다</p>
+        <div class="road-one">
+          <div class="cal-grid road" id="ban-people"></div>
+          <div class="cal-grid road tap" id="ban-num"></div>
+        </div>
+        <div class="lab-meter">
+          <span class="lab-label">누른 칸의 걸음 합</span><span class="lab-count" id="ban-sum">-</span><span class="lab-label">걸음</span>
+        </div>
+        <p class="q-prompt">쓸 수 있는 칸 중에서 걸음 합이 가장 적은 곳은 <b>몇 번 칸</b>일까? (+10)</p>
+        <div class="q-display" id="disp-ban">&nbsp;</div>
+        <div class="q-pad" id="pad-ban"></div>
+        <div class="mcq-hint" data-hints='["공사가 없었다면 4번 칸이 가장 적었다. 이제 그 칸을 쓸 수 없다.","걸음 합은 골짜기 모양이라, 막힌 구간의 왼쪽과 오른쪽에서 처음 만나는 쓸 수 있는 칸 두 곳만 견주면 된다.","두 후보는 4번 칸에서 똑같이 두 칸 떨어져 있다. 떨어진 칸 수가 같으니 눈으로는 고를 수 없다. 두 곳을 실제로 눌러 견주어 보자."]'></div>
+        <p class="q-fb" id="fb-ban"></p>
+      </div>
+    </section>
+
+    <!-- 슬13 · 도전: 학교 전체 지도 (+10) -->
+    <section class="slide" data-q-id="grid">
+      <span class="stage-badge">도전 2/3</span>
+      <h1 class="slide-title">학교 전체 지도</h1>
+      <div class="q-stage">
+        <p class="slide-sub">이번에는 복도가 <b>가로세로로 뻗어 있다</b> · 다섯 교실에 한 명씩 있다 · 비스듬히는 갈 수 없다</p>
+        <div class="cal-grid road" id="grid-board"></div>
+        <div class="lab-meter">
+          <span class="lab-label">누른 칸의 걸음 합</span><span class="lab-count" id="grid-sum">-</span><span class="lab-label">걸음</span>
+        </div>
+        <p class="q-prompt">걸음 합이 가장 적은 칸을 <b>눌러서</b> 골라 보자. (+10)</p>
+        <div class="mcq-hint" data-hints='["가로로 걷는 걸음과 세로로 걷는 걸음은 서로 방해하지 않는다. 따로 생각해도 된다.","가로줄만 보고 앞에서 찾은 방법을 쓰면 가로 자리가 정해진다. 세로줄만 보고 한 번 더 하면 세로 자리가 정해진다.","두 자리를 따로 정한 다음 짝지으면 된다. 그 칸에 사람이 서 있어야 하는 것은 아니다."]'></div>
+        <p class="q-fb" id="fb-grid"></p>
+      </div>
+    </section>
+
+    <!-- 슬14 · 도전: 한 교실에 여러 명 (+10) -->
+    <section class="slide" data-q-id="crowd">
+      <span class="stage-badge">도전 3/3</span>
+      <h1 class="slide-title">한 교실에 여러 명</h1>
+      <div class="q-stage">
+        <p class="slide-sub">1번 칸에 1명, 4번 칸에 1명, <b>7번 칸에 5명</b>이 있다 · 위 줄의 수가 사람 수다</p>
+        <div class="road-one">
+          <div class="cal-grid road" id="crowd-people"></div>
+          <div class="cal-grid road tap" id="crowd-num"></div>
+        </div>
+        <div class="lab-meter">
+          <span class="lab-label">누른 칸의 걸음 합</span><span class="lab-count" id="crowd-sum">-</span><span class="lab-label">걸음</span>
+        </div>
+        <p class="q-prompt">한 명씩이었다면 4번 칸이었다. 지금은 <b>몇 번 칸</b>일까? (+10)</p>
+        <div class="q-display" id="disp-crowd">&nbsp;</div>
+        <div class="q-pad" id="pad-crowd"></div>
+        <div class="mcq-hint" data-hints='["교실 하나에 다섯 명이 있으면, 그 교실이 한 번만 세어지지는 않을 것이다.","다섯 명이 있는 교실은 같은 칸에 사람이 다섯 번 적혀 있는 것과 같다. 그렇게 놓고 세어 보자.","다섯 명이 있는 칸을 다섯 번 거듭 적어 넣은 다음, 왼쪽부터 차례로 세어 보자."]'></div>
+        <p class="q-fb" id="fb-crowd"></p>
+      </div>
+    </section>
+
+    <!-- 슬15 · 창조: 설계 임무 가 (+10) -->
+    <section class="slide" data-q-id="create1">
+      <span class="stage-badge">창조 1/4</span>
+      <h1 class="slide-title">설계 임무 가 · 배치를 만든다</h1>
+      <p class="slide-sub">위 줄을 눌러 사람을 세우고 지운다 (<b>3명부터 6명까지</b>) · 그다음 아래 줄에서 가장 적을 칸을 짚는다</p>
+      <div class="road-one">
+        <div class="cal-grid road tap" id="c1-people"></div>
+        <div class="cal-grid road tap" id="c1-num"></div>
+      </div>
+      <div class="lab-meter">
+        <span class="lab-label">세운 사람</span><span class="lab-count" id="c1-n">0</span><span class="lab-label">명 · 짚은 칸</span><span class="lab-count" id="c1-pick">-</span><span class="lab-label">번</span>
+      </div>
+      <div class="vox-btns" id="c1-btns"></div>
+      <p class="q-prompt">사람을 세운 뒤 <b>걸음 합이 가장 적을 칸</b>을 짚고 확인 단추를 눌러 보자. (+10)</p>
+      <div class="mcq-hint" data-hints='["먼저 사람을 세 명 이상 세워야 확인할 수 있다.","짚기 전에 사람들을 왼쪽부터 순서대로 세어 보자.","짚은 칸이 틀리면 걸음 합이 얼마나 차이 나는지 알려 준다. 그 차이를 보고 어느 쪽으로 옮겨야 할지 정해 보자."]'></div>
+      <p class="q-fb" id="fb-create1"></p>
+    </section>
+
+    <!-- 슬16 · 창조: 설계 임무 나 (+10) -->
+    <section class="slide" data-q-id="create2">
+      <span class="stage-badge">창조 2/4</span>
+      <h1 class="slide-title">설계 임무 나 · 공사로 옮긴다</h1>
+      <p class="slide-sub">사람은 정해져 있다 · 아래 줄을 눌러 <b>공사할 칸</b>을 고른다 (최대 3곳)</p>
+      <div class="road-one">
+        <div class="cal-grid road" id="c2-people"></div>
+        <div class="cal-grid road tap" id="c2-num"></div>
+      </div>
+      <div class="lab-meter">
+        <span class="lab-label">공사</span><span class="lab-count" id="c2-used">0</span><span class="lab-label">곳 · 지금 가장 적은 칸</span><span class="lab-count" id="c2-spot">-</span><span class="lab-label">번</span>
+      </div>
+      <div class="vox-btns" id="c2-btns"></div>
+      <p class="q-prompt">공사를 넣어서 모임 장소가 <b>7번 칸 하나로</b> 정해지게 만들어 보자. (+10)</p>
+      <div class="mcq-hint" data-hints='["공사한 칸에는 모일 수 없다. 사람은 그대로 서 있다.","지금 가장 적은 칸을 막으면 답이 옆으로 밀린다. 어느 쪽으로 밀리는지 보면서 한 곳씩 놓자.","7번 칸보다 왼쪽에 있는 좋은 칸들을 막아야 한다. 답이 여러 곳이 되면 하나로 정해진 것이 아니다."]'></div>
+      <p class="q-fb" id="fb-create2"></p>
+    </section>
+
+    <!-- 슬17 · 창조: 오늘의 발견 정리 -->
+    <section class="slide">
+      <span class="stage-badge">창조 3/4</span>
+      <h1 class="slide-title">오늘의 발견 정리</h1>
+      <ul class="goal-list">
+        <li><strong>한 칸 옮기면 갈린다</strong> — 왼쪽 사람은 한 걸음씩 늘고 오른쪽 사람은 한 걸음씩 준다. 그래서 <strong>사람이 더 많은 쪽으로 옮기면 반드시 줄어든다</strong>.</li>
+        <li><strong>멈추는 곳</strong> — 왼쪽 수와 오른쪽 수가 뒤집히는 칸에서 멈춘다. 그 칸이 <strong>순서로 가운데인 사람</strong>이 선 칸이다.</li>
+        <li><strong>멀리 있는 사람은 답을 끌지 못한다</strong> — 한 사람을 아무리 멀리 보내도 순서는 그대로다. 양 끝의 한가운데는 끌려가지만 이 칸은 움직이지 않는다.</li>
+        <li><strong>짝수 명이면 답이 구간</strong> — 가운데 두 사람 사이에서는 옮겨도 늘지도 줄지도 않는다. 답이 하나가 아닌 것도 답이다.</li>
+        <li><strong>못 쓰는 칸이 있으면</strong> — 골짜기 모양이라 막힌 구간의 양옆에서 처음 만나는 칸 두 곳만 견주면 된다. 떨어진 칸 수가 같아도 걸음 합은 다를 수 있다.</li>
+        <li><strong>학교 전체 지도</strong> — 가로 걸음과 세로 걸음은 서로 방해하지 않는다. 따로 정해서 짝지으면 되고, 그 칸에 사람이 없어도 괜찮다.</li>
+        <li><strong>한 교실에 여러 명</strong> — 사람 수만큼 거듭 세면 된다. 규칙을 바꿀 필요가 없다. <strong>현실을 넣는 일은 규칙을 버리는 일이 아니라 세는 방법을 고치는 일</strong>이다.</li>
+      </ul>
+      <div class="home-card">🏠 <b>집에서 하는 진짜 설계</b> — 우리 집 식구가 각자 있는 방을 종이에 한 줄로 적고, 어느 방에 모이면 걸음이 가장 적은지 세어 보자. 그다음 식구 한 명을 아주 먼 방으로 보내 놓고 다시 세어 보면, 답이 움직이는지 그대로인지 눈으로 확인할 수 있다.</div>
+    </section>
+
+    <!-- 슬18 · 마침 -->
+    <section class="slide">
+      <span class="stage-badge">마침</span>
+      <h1 class="slide-title">설계 결과</h1>
+      <div class="wrap-score" id="final-score">0</div>
+      <p class="wrap-msg" id="wrap-msg"></p>
+      <div class="detective-card">
+        <div class="dc-title">🏆 이동거리 설계단 기록</div>
+        <div class="dc-row"><span>재어 본 칸</span><b id="dc-cases">0곳</b></div>
+        <div class="dc-row"><span>처음 추측</span><b id="dc-conj">기록 없음</b></div>
+        <div class="dc-row"><span>현실 조건 도전</span><b id="dc-real">아직</b></div>
+        <div class="dc-row"><span>설계 임무</span><b id="dc-plan">아직</b></div>
+      </div>
+      <div class="next-mini">
+        <span class="next-chip">L3 스무 차시 완주</span>
+        <span class="next-chip">다음 단계 · L2 탐험가</span>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next" id="next" onclick="goNext()">다음 →</button>
+  </footer>
+</div>
+
+<script>
+/* ═══════════ KGiftedCore — 순수 로직 (DOM 무의존, 테스트 대상) ═══════════
+   공식을 하나도 갖고 있지 않다. 「가운데 순서인 사람」은 학생이 발견할 몫이라,
+   이 코드는 언제나 칸을 하나씩 다 짚어 걸음 합을 재는 방식으로만 답을 구한다
+   (헌법 §3-6 — 구조 설명은 학생 추측 이후, 답을 코드가 미리 쥐고 있지 않는다).
+   정렬해서 가운데를 집는 지름길은 쓰지 않는다. 하니스가 독립 구현과 전수 대조한다. */
+const KGiftedCore = {
+  LESSON: 'kg_math_l3_mod01',
+  SCORE_PLAN: { explore: 15, conjecture: 10, q9: 10, q10: 10, pair: 5, ban: 10, grid: 10, crowd: 10, create1: 10, create2: 10 },
+
+  /* ── 무대 ──
+     학교 복도가 한 줄로 0번 칸부터 10번 칸까지 있다. 반 친구들이 각자 어느 칸에 서 있고,
+     모두 한 곳에 모이기로 했다. 한 칸 옮기면 한 걸음이다.
+     걸음을 전부 더한 것이 가장 적어지는 칸은 어디인가 — 그것이 오늘의 물음이다. */
+  HALL: 10,
+  EXPLORE: [2, 5, 9],
+  NEED_SPOTS: 4,
+  SAMPLE_A: 2, SAMPLE_B: 5,
+  P3: [1, 3, 8], P4: [1, 3, 6, 8], P5: [0, 2, 5, 6, 9],
+  PUSH_BASE: [2, 4], PUSH_FARS: [4, 6, 8, 10],
+  Q9: [1, 2, 6, 7, 8, 9, 10], Q9_FROM: 3, Q9_TO: 4,
+  Q10: [1, 2, 5, 8, 9],
+  PAIR: [1, 2, 7, 9],
+  BANP: [1, 2, 4, 5, 6], BAN: [3, 4, 5],
+  GW: 6, GH: 6,
+  GRID: [[0, 2], [1, 5], [3, 0], [4, 3], [5, 1]],
+  CROWD: [[1, 1], [4, 1], [7, 5]],
+  CREATE_MIN: 3, CREATE_MAX: 6,
+  CREATE_BAN_MAX: 3,
+
+  /* ── 걸음 재기 ── */
+  walk(people, m) {
+    let s = 0;
+    for (let i = 0; i < people.length; i++) s += Math.abs(people[i] - m);
+    return s;
+  },
+  /* 교실 하나에 여러 명이 있으면 그 교실을 사람 수만큼 거듭 센다. rooms = [[칸, 사람 수], …] */
+  walkRooms(rooms, m) {
+    let s = 0;
+    for (let i = 0; i < rooms.length; i++) s += rooms[i][1] * Math.abs(rooms[i][0] - m);
+    return s;
+  },
+  spread(rooms) {
+    const out = [];
+    for (let i = 0; i < rooms.length; i++) for (let k = 0; k < rooms[i][1]; k++) out.push(rooms[i][0]);
+    return out;
+  },
+
+  /* ── 가장 적은 칸 찾기 = 칸을 하나씩 다 짚어 본다 (지름길 없음) ── */
+  bestSpots(people, lo, hi, banned) {
+    const bad = banned || [], self = this;
+    let best = null, out = [];
+    for (let m = lo; m <= hi; m++) {
+      if (bad.indexOf(m) >= 0) continue;
+      const v = self.walk(people, m);
+      if (best === null || v < best) { best = v; out = [m]; }
+      else if (v === best) out.push(m);
+    }
+    return { spots: out, best: best };
+  },
+  bestRooms(rooms, lo, hi, banned) {
+    return this.bestSpots(this.spread(rooms), lo, hi, banned);
+  },
+
+  /* ── 한 칸 옮기면 얼마나 바뀌나 (슬9 구조) ──
+     왼쪽(같은 칸 포함)에 있는 사람은 한 걸음씩 늘고, 오른쪽 사람은 한 걸음씩 준다. */
+  sides(people, m) {
+    let L = 0, R = 0;
+    for (let i = 0; i < people.length; i++) { if (people[i] <= m) L++; else R++; }
+    return { left: L, right: R };
+  },
+  stepDiff(people, m) { return this.walk(people, m + 1) - this.walk(people, m); },
+
+  /* ── 양 끝의 한가운데 (슬7·슬8 에서 견줄 대상 — 답이 아니다) ── */
+  midEnds(people) {
+    let lo = people[0], hi = people[0];
+    for (let i = 1; i < people.length; i++) { if (people[i] < lo) lo = people[i]; if (people[i] > hi) hi = people[i]; }
+    return (lo + hi) / 2;
+  },
+
+  /* ── 학교 전체(격자) — 두 곳 사이 걸음 수는 가로 차이 + 세로 차이 ── */
+  walk2(pts, X, Y) {
+    let s = 0;
+    for (let i = 0; i < pts.length; i++) s += Math.abs(pts[i][0] - X) + Math.abs(pts[i][1] - Y);
+    return s;
+  },
+  bestSpots2(pts, W, H) {
+    let best = null, out = [];
+    for (let Y = 0; Y < H; Y++) for (let X = 0; X < W; X++) {
+      const v = this.walk2(pts, X, Y);
+      if (best === null || v < best) { best = v; out = [[X, Y]]; }
+      else if (v === best) out.push([X, Y]);
+    }
+    return { spots: out, best: best };
+  },
+  idx2(X, Y, W) { return Y * W + X; },
+  xy2(i, W) { return [i % W, Math.floor(i / W)]; },
+
+  /* ── 창조 검사기 ──
+     학생이 사람을 늘어놓고 「여기가 가장 적을 것」이라고 짚으면 맞는지만 알려 준다.
+     왜 그런지, 규칙이 무엇인지는 알려 주지 않는다 (헌법 §3-6). */
+  checkCreate1(people, pick) {
+    if (people.length < this.CREATE_MIN) return { ok: false, why: 'few' };
+    if (people.length > this.CREATE_MAX) return { ok: false, why: 'many' };
+    if (pick === null || pick === undefined) return { ok: false, why: 'nopick' };
+    const r = this.bestSpots(people, 0, this.HALL);
+    return { ok: r.spots.indexOf(pick) >= 0, why: 'checked', spots: r.spots, best: r.best, mine: this.walk(people, pick) };
+  },
+  /* 임무 나 — 공사할 칸을 골라 모임 장소를 목표 칸으로 옮긴다.
+     공사한 칸에는 모일 수 없다. 사람은 그대로 둔다. */
+  checkCreate2(people, banned, target) {
+    if (banned.length === 0) return { ok: false, why: 'noban' };
+    if (banned.length > this.CREATE_BAN_MAX) return { ok: false, why: 'toomany' };
+    if (banned.indexOf(target) >= 0) return { ok: false, why: 'bantarget' };
+    const r = this.bestSpots(people, 0, this.HALL, banned);
+    if (r.spots.length === 0) return { ok: false, why: 'nospot' };
+    return { ok: r.spots.length === 1 && r.spots[0] === target, why: 'checked', spots: r.spots, best: r.best };
+  },
+
+  /* ── 사례 기록기 (탐험 단계) ── */
+  addCase(list, m, sum) {
+    for (let i = 0; i < list.length; i++) if (list[i].m === m) return false;
+    list.push({ m: m, sum: sum });
+    list.sort(function (a, b) { return a.m - b.m; });
+    return true;
+  },
+  bestOfCases(list) {
+    if (!list.length) return null;
+    let b = list[0];
+    for (let i = 1; i < list.length; i++) if (list[i].sum < b.sum) b = list[i];
+    return b;
+  },
+
+  scoreTotal() {
+    const p = this.SCORE_PLAN;
+    let s = 0;
+    for (const k in p) s += p[k];
+    return s;
+  }
+};
+if (typeof module !== 'undefined' && module.exports) module.exports = { KGiftedCore };
+if (typeof window !== 'undefined') window.KGiftedCore = KGiftedCore;
+
+/* ═══════════ 엔진 (base: kg_math_l3_pat01 · pat02 공통부 · com01 칩·숫자패드·경로격자 계승 · 힌트 3단) ═══════════ */
+const TOTAL = 18;
+const LESSON_ID = 'kg_math_l3_mod01';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+const HINT_MAX = 3;
+const HALL_N = 11;   /* 복도 칸 0~10 */
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+/* ═══ 화면 맞춤 — 슬라이드가 프레임보다 길면 균일 축소 (제목이 헤더 뒤로 잘리는 것 방지) ═══ */
+const FIT_MIN = 0.55, FIT_STEP = 0.04;
+let fitPending = false;
+function fitActiveSlide() {
+  const el = document.querySelector('.slide.active');
+  if (!el) return;
+  if (el.style.zoom) el.style.zoom = '';
+  if (!(window.CSS && CSS.supports && CSS.supports('zoom', '0.9'))) return;
+  if (!el.clientHeight) return;
+  let k = 1;
+  for (let i = 0; i < 16 && el.scrollHeight > el.clientHeight + 1; i++) {
+    k = Math.max(FIT_MIN, k - FIT_STEP);
+    el.style.zoom = k;
+    if (k === FIT_MIN) break;
+  }
+}
+function scheduleFit() {
+  if (fitPending) return;
+  fitPending = true;
+  requestAnimationFrame(() => { fitPending = false; fitActiveSlide(); });
+}
+window.addEventListener('resize', scheduleFit);
+window.addEventListener('orientationchange', scheduleFit);
+document.addEventListener('click', scheduleFit, true);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(scheduleFit);
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.querySelectorAll('#dots .ka-dot').forEach((d, i) => { d.classList.toggle('active', i === cur); d.classList.toggle('done', i < cur); });
+  document.getElementById('prev').disabled = cur === 0;
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.hintLevel >= HINT_MAX; }
+  else { hintBtn.disabled = true; }
+  if (cur === TOTAL - 1) {
+    document.getElementById('next').textContent = '마치기 →';
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('wrap-msg').textContent = wrapMsg(score);
+    saveProgress(true);
+  } else { document.getElementById('next').textContent = '다음 →'; }
+  if (cur === 4) renderCaseTable();
+  if (cur === 17) renderAgentCard();
+  fitActiveSlide();
+}
+function saveProgress(done) {
+  const data = { cur, score, done, startedAt, finishedAt: done ? Date.now() : null, qState, cases: exploreCases, conj: conjPicked, real: realDone, plan: planText, far: farNote };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function wrapMsg(s) {
+  if (s >= 100) return '전설의 설계단장!';
+  if (s >= 80) return '대단한 설계였다!';
+  if (s >= 60) return '설계단의 눈이 자라났다!';
+  return '단서는 충분히 모았다. 다시 도전해도 좋다!';
+}
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+function showHint() {
+  const qid = currentQId(); if (!qid) return;
+  const st = getQState(qid); if (st.hintLevel >= HINT_MAX) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint'); if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[Math.min(st.hintLevel, hints.length) - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= HINT_MAX;
+}
+
+
+/* ═══ 칩·숫자패드·단추 공통 (com01 정의 문자 그대로 추출·주입) ═══ */
+function chip(elId, text, kind) {
+  const s = document.createElement('span');
+  s.className = 'sum-chip ' + (kind || 'a');
+  s.textContent = text;
+  document.getElementById(elId).appendChild(s);
+}
+function buildPad(padId, dispId, maxLen, onSubmit) {
+  const pad = document.getElementById(padId);
+  const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '←', '확인'];
+  let val = '';
+  const draw = () => { document.getElementById(dispId).textContent = val || '\u00A0'; };
+  keys.forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'q-key' + (k === '←' || k === '확인' ? ' fn' : '');
+    b.textContent = k;
+    b.addEventListener('click', () => {
+      if (k === '←') val = val.slice(0, -1);
+      else if (k === '확인') { if (val !== '') { const v = parseInt(val, 10); if (onSubmit(v) !== false) val = ''; } }
+      else if (val.length < maxLen) val += k;
+      draw();
+    });
+    pad.appendChild(b);
+  });
+  draw();
+}
+function stepBtn(wrapId, label, fn) {
+  const b = document.createElement('button');
+  b.className = 'cal-month-btn';
+  b.textContent = label;
+  b.addEventListener('click', fn);
+  document.getElementById(wrapId).appendChild(b);
+  return b;
+}
+function clearChips(id) { const e = document.getElementById(id); if (e) e.innerHTML = ''; }
+
+/* ═══════════ 복도·지도 렌더 (com01 `.cal-grid.road` 를 그대로 쓰고 칸 수만 바꾼다) ═══════════ */
+/* 위 줄 = 사람(수), 아래 줄 = 칸 번호. 상태는 sel · center-cell · diag-b · empty 뿐이다. */
+function hallCount(people) {
+  const c = {};
+  for (let i = 0; i < people.length; i++) c[people[i]] = (c[people[i]] || 0) + 1;
+  return c;
+}
+function renderHall(peopleId, numId, opt) {
+  const o = opt || {}, N = KGiftedCore.HALL + 1;
+  const cnt = o.count || {}, banned = o.banned || [], band = o.band || [];
+  const pe = document.getElementById(peopleId), nu = document.getElementById(numId);
+  if (pe) { pe.style.setProperty('--road-n', N); pe.innerHTML = ''; }
+  if (nu) { nu.style.setProperty('--road-n', N); nu.innerHTML = ''; }
+  for (let i = 0; i < N; i++) {
+    if (pe) {
+      const d = document.createElement('div'), c = cnt[i] || 0;
+      d.className = 'cal-cell' + (c > 0 ? ' sel' : ' empty');
+      d.textContent = c > 0 ? String(c) : '';
+      d.dataset.cell = i;
+      if (o.onTapPeople) d.addEventListener('click', () => o.onTapPeople(i));
+      pe.appendChild(d);
+    }
+    if (nu) {
+      const d = document.createElement('div');
+      let cls = 'cal-cell';
+      const off = banned.indexOf(i) >= 0;
+      if (off) cls += ' empty';
+      else if (o.meet === i) cls += ' center-cell';
+      else if (band.indexOf(i) >= 0) cls += ' diag-b';
+      d.className = cls;
+      /* 공사 칸도 번호는 남긴다 — 칸 테두리만 사라져 「이 칸은 쓸 수 없다」로 읽힌다 */
+      d.textContent = String(i);
+      d.dataset.cell = i;
+      if (o.onTap && (!off || o.tapBanned)) d.addEventListener('click', () => o.onTap(i));
+      nu.appendChild(d);
+    }
+  }
+}
+function renderMap(elId, pts, pick) {
+  const W = KGiftedCore.GW, H = KGiftedCore.GH, el = document.getElementById(elId);
+  if (!el) return;
+  el.style.setProperty('--road-n', W);
+  el.innerHTML = '';
+  for (let i = 0; i < W * H; i++) {
+    const xy = KGiftedCore.xy2(i, W);
+    let has = 0;
+    for (let k = 0; k < pts.length; k++) if (pts[k][0] === xy[0] && pts[k][1] === xy[1]) has++;
+    const d = document.createElement('div');
+    let cls = 'cal-cell';
+    if (i === pick) cls += ' center-cell';
+    else if (has) cls += ' sel';
+    d.className = cls;
+    d.textContent = has ? String(has) : '';
+    d.dataset.cell = i;
+    d.addEventListener('click', () => mapTap(i));
+    el.appendChild(d);
+  }
+}
+
+/* ═══════════ 진행 상태 ═══════════ */
+const exploreCases = [];
+let conjPicked = '';
+let realDone = '아직';
+let planText = '아직';
+let farNote = '';
+
+/* ═══════════ 슬1 미션 ═══════════ */
+renderHall('s1-people', 's1-num', { count: hallCount(KGiftedCore.EXPLORE) });
+
+/* ═══════════ 슬2 걸음 세는 법 ═══════════ */
+let s2Spot = KGiftedCore.SAMPLE_A;
+function drawS2() {
+  renderHall('s2-people', 's2-num', { count: hallCount(KGiftedCore.EXPLORE), meet: s2Spot });
+  document.getElementById('s2-spot').textContent = s2Spot;
+  document.getElementById('s2-sum').textContent = KGiftedCore.walk(KGiftedCore.EXPLORE, s2Spot);
+  clearChips('s2-chip');
+  KGiftedCore.EXPLORE.forEach(function (p) {
+    chip('s2-chip', p + '번 사람 → ' + Math.abs(p - s2Spot) + '걸음', p === s2Spot ? 'b' : 'a');
+  });
+}
+stepBtn('s2-btns', '2번 칸에 모이기', function () { s2Spot = KGiftedCore.SAMPLE_A; drawS2(); });
+stepBtn('s2-btns', '5번 칸에 모이기', function () { s2Spot = KGiftedCore.SAMPLE_B; drawS2(); });
+drawS2();
+
+/* ═══════════ 슬4 탐험 · 모임 자리 계산기 (+15) ═══════════ */
+function drawExplore(m) {
+  renderHall('ex-people', 'ex-num', {
+    count: hallCount(KGiftedCore.EXPLORE),
+    meet: (m === null || m === undefined) ? -1 : m,
+    onTap: exTap
+  });
+}
+function exTap(m) {
+  const sum = KGiftedCore.walk(KGiftedCore.EXPLORE, m);
+  drawExplore(m);
+  document.getElementById('ex-sum').textContent = sum;
+  const fresh = KGiftedCore.addCase(exploreCases, m, sum);
+  document.getElementById('ex-count').textContent = exploreCases.length;
+  clearChips('ex-cases');
+  exploreCases.forEach(function (c) { chip('ex-cases', c.m + '번 · ' + c.sum + '걸음', c.m === m ? 'b' : 'a'); });
+  const fb = document.getElementById('fb-explore'), st = getQState('explore');
+  if (!fresh) { fb.textContent = '이미 눌러 본 칸이다. 다른 칸도 짚어 보자.'; return; }
+  if (exploreCases.length >= KGiftedCore.NEED_SPOTS && !st.solved) {
+    st.solved = true;
+    addScore(KGiftedCore.SCORE_PLAN.explore);
+    fb.textContent = '서로 다른 ' + KGiftedCore.NEED_SPOTS + '곳을 재었다. +15 — 남은 칸도 마저 눌러 보자.';
+  } else if (exploreCases.length >= KGiftedCore.HALL + 1) {
+    fb.textContent = '복도의 모든 칸을 재었다.';
+  } else {
+    fb.textContent = m + '번 칸은 ' + sum + '걸음. 지금까지 ' + exploreCases.length + '곳.';
+  }
+}
+drawExplore(null);
+
+/* ═══════════ 슬5 탐험 · 모은 것 늘어놓기 (엔진이 cur===4 에서 부른다) ═══════════ */
+function renderCaseTable() {
+  clearChips('tbl-cases');
+  const best = KGiftedCore.bestOfCases(exploreCases);
+  if (!exploreCases.length) {
+    chip('tbl-cases', '아직 눌러 본 칸이 없다', 'a');
+    document.getElementById('tbl-best').textContent = '-';
+    return;
+  }
+  exploreCases.forEach(function (c) {
+    chip('tbl-cases', c.m + '번 · ' + c.sum + '걸음', (best && c.sum === best.sum) ? 'b' : 'a');
+  });
+  document.getElementById('tbl-best').textContent = best.m;
+}
+
+/* ═══════════ 슬6 탐험 · 사람 수 바꾸기 ═══════════ */
+const S6 = [
+  { name: '세 명', people: KGiftedCore.P3 },
+  { name: '네 명', people: KGiftedCore.P4 },
+  { name: '다섯 명', people: KGiftedCore.P5 }
+];
+function drawS6(k) {
+  const set = S6[k], r = KGiftedCore.bestSpots(set.people, 0, KGiftedCore.HALL);
+  renderHall('s6-people', 's6-num', {
+    count: hallCount(set.people),
+    meet: r.spots.length === 1 ? r.spots[0] : -1,
+    band: r.spots.length > 1 ? r.spots : []
+  });
+  document.getElementById('s6-spot').textContent = r.spots.join('·');
+  document.getElementById('s6-sum').textContent = r.best;
+  document.getElementById('s6-note').textContent = r.spots.length === 1
+    ? set.name + '일 때는 가장 적은 칸이 딱 하나다.'
+    : set.name + '일 때는 가장 적은 칸이 ' + r.spots.length + '곳이나 된다. 어느 곳을 골라도 걸음 합이 같다.';
+}
+S6.forEach(function (s, k) { stepBtn('s6-btns', s.name, function () { drawS6(k); }); });
+drawS6(0);
+
+/* ═══════════ 슬7 탐험 · 한 사람만 멀리 ═══════════ */
+function drawS7(far) {
+  const people = KGiftedCore.PUSH_BASE.concat([far]);
+  const r = KGiftedCore.bestSpots(people, 0, KGiftedCore.HALL);
+  const mid = KGiftedCore.midEnds(people);
+  renderHall('s7-people', 's7-num', { count: hallCount(people), meet: r.spots[0], band: [mid] });
+  document.getElementById('s7-mid').textContent = mid;
+  document.getElementById('s7-best').textContent = r.spots.join('·');
+  farNote = '세 번째 사람 ' + far + '번 칸';
+  document.getElementById('s7-note').textContent =
+    '세 번째 사람이 ' + far + '번 칸에 있다 · 양 끝의 한가운데는 ' + mid + '번으로 옮겨 갔지만, 걸음이 가장 적은 칸은 ' + r.spots[0] + '번 그대로다 (' + r.best + '걸음).';
+}
+KGiftedCore.PUSH_FARS.forEach(function (f) { stepBtn('s7-btns', f + '번 칸으로', function () { drawS7(f); }); });
+drawS7(KGiftedCore.PUSH_FARS[0]);
+
+/* ═══════════ 슬8 발견 · 추측 기록 (+10) ═══════════ */
+const CONJ = [
+  '맨 왼쪽 사람이 선 칸',
+  '양 끝의 한가운데 칸',
+  '순서로 가운데인 사람이 선 칸',
+  '사람이 가장 많이 모인 칸'
+];
+(function () {
+  const wrap = document.getElementById('conj-list');
+  CONJ.forEach(function (t) {
+    const b = document.createElement('button');
+    b.className = 'pick-item';
+    b.textContent = t;
+    b.addEventListener('click', function () {
+      wrap.querySelectorAll('.pick-item').forEach(function (x) { x.classList.remove('on'); });
+      b.classList.add('on');
+      conjPicked = t;
+      const st = getQState('conjecture');
+      if (!st.solved) { st.solved = true; addScore(KGiftedCore.SCORE_PLAN.conjecture); }
+      document.getElementById('fb-conjecture').textContent = '추측을 기록했다. 다음 화면에서 직접 확인해 보자.';
+    });
+    wrap.appendChild(b);
+  });
+})();
+
+/* ═══════════ 슬9 발견 · 한 칸 옮기면 (+10) ═══════════ */
+(function () {
+  const P = KGiftedCore.Q9, from = KGiftedCore.Q9_FROM, to = KGiftedCore.Q9_TO;
+  const s = KGiftedCore.sides(P, from);
+  renderHall('q9-people', 'q9-num', { count: hallCount(P), meet: from, band: [to] });
+  chip('q9-chip', '3번 칸까지 왼쪽 ' + s.left + '명', 'a');
+  chip('q9-chip', '3번 칸보다 오른쪽 ' + s.right + '명', 'b');
+  buildPad('pad-q9', 'disp-q9', 3, function (v) {
+    const st = getQState('q9'), fb = document.getElementById('fb-q9');
+    if (st.solved) return true;
+    if (v === KGiftedCore.walk(P, to)) {
+      st.solved = true;
+      addScore(KGiftedCore.SCORE_PLAN.q9);
+      fb.classList.remove('wrong');
+      fb.textContent = '맞다. 왼쪽 ' + s.left + '명은 한 걸음씩 늘고 오른쪽 ' + s.right + '명은 한 걸음씩 줄어서, 모두 합하면 ' + (s.right - s.left) + '걸음이 준다. +10';
+      renderHall('q9-people', 'q9-num', { count: hallCount(P), meet: to, band: [from] });
+    } else {
+      fb.classList.add('wrong');
+      fb.textContent = '다시 세어 보자. 한 사람씩 다시 재지 말고, 느는 사람과 주는 사람을 갈라 보자.';
+    }
+    return true;
+  });
+})();
+
+/* ═══════════ 슬10 발견 · 다섯 명 (+10) ═══════════ */
+(function () {
+  const P = KGiftedCore.Q10;
+  renderHall('q10-people', 'q10-num', { count: hallCount(P) });
+  buildPad('pad-q10', 'disp-q10', 2, function (v) {
+    const st = getQState('q10'), fb = document.getElementById('fb-q10'), r = KGiftedCore.bestSpots(P, 0, KGiftedCore.HALL);
+    if (st.solved) return true;
+    if (r.spots.indexOf(v) >= 0) {
+      st.solved = true;
+      addScore(KGiftedCore.SCORE_PLAN.q10);
+      fb.classList.remove('wrong');
+      fb.textContent = '맞다. ' + v + '번 칸이면 ' + r.best + '걸음이다. +10';
+      renderHall('q10-people', 'q10-num', { count: hallCount(P), meet: v });
+    } else {
+      fb.classList.add('wrong');
+      fb.textContent = v + '번 칸은 ' + KGiftedCore.walk(P, v) + '걸음이다. 더 적은 칸이 있다.';
+      renderHall('q10-people', 'q10-num', { count: hallCount(P), band: [v] });
+    }
+    return true;
+  });
+})();
+
+/* ═══════════ 슬11 발견 · 답이 여럿일 때 (+5) ═══════════ */
+(function () {
+  const P = KGiftedCore.PAIR, r = KGiftedCore.bestSpots(P, 0, KGiftedCore.HALL);
+  const tapped = [];
+  function draw(m) {
+    renderHall('pair-people', 'pair-num', {
+      count: hallCount(P),
+      meet: (m === null || m === undefined) ? -1 : m,
+      band: tapped.filter(function (x) { return x !== m; }),
+      onTap: tap
+    });
+  }
+  function tap(m) {
+    if (tapped.indexOf(m) < 0) tapped.push(m);
+    draw(m);
+    document.getElementById('pair-sum').textContent = KGiftedCore.walk(P, m);
+  }
+  draw(null);
+  buildPad('pad-pair', 'disp-pair', 2, function (v) {
+    const st = getQState('pair'), fb = document.getElementById('fb-pair');
+    if (st.solved) return true;
+    if (v === r.spots.length) {
+      st.solved = true;
+      addScore(KGiftedCore.SCORE_PLAN.pair);
+      fb.classList.remove('wrong');
+      fb.textContent = '맞다. ' + r.spots[0] + '번부터 ' + r.spots[r.spots.length - 1] + '번까지 ' + r.spots.length + '곳이 모두 ' + r.best + '걸음이다. +5';
+      renderHall('pair-people', 'pair-num', { count: hallCount(P), band: r.spots, onTap: tap });
+    } else {
+      fb.classList.add('wrong');
+      fb.textContent = '칸을 더 눌러 보자. 같은 값이 이어서 나오는 구간을 끝에서 끝까지 세어야 한다.';
+    }
+    return true;
+  });
+})();
+
+/* ═══════════ 슬12 도전 · 공사 중인 복도 (+10) ═══════════ */
+(function () {
+  const P = KGiftedCore.BANP, BAN = KGiftedCore.BAN;
+  const r = KGiftedCore.bestSpots(P, 0, KGiftedCore.HALL, BAN);
+  function draw(m) {
+    renderHall('ban-people', 'ban-num', {
+      count: hallCount(P), banned: BAN,
+      meet: (m === null || m === undefined) ? -1 : m,
+      onTap: function (x) {
+        draw(x);
+        document.getElementById('ban-sum').textContent = KGiftedCore.walk(P, x);
+      }
+    });
+  }
+  draw(null);
+  buildPad('pad-ban', 'disp-ban', 2, function (v) {
+    const st = getQState('ban'), fb = document.getElementById('fb-ban');
+    if (st.solved) return true;
+    if (BAN.indexOf(v) >= 0) {
+      fb.classList.add('wrong');
+      fb.textContent = v + '번 칸은 공사 중이라 모일 수 없다.';
+      return true;
+    }
+    if (r.spots.indexOf(v) >= 0) {
+      st.solved = true;
+      realDone = '공사 조건 통과';
+      addScore(KGiftedCore.SCORE_PLAN.ban);
+      fb.classList.remove('wrong');
+      fb.textContent = '맞다. ' + v + '번 칸은 ' + r.best + '걸음이다. 반대쪽 6번 칸도 4번에서 똑같이 두 칸 떨어져 있지만 ' + KGiftedCore.walk(P, 6) + '걸음이라 더 많다. +10';
+      draw(v);
+    } else {
+      fb.classList.add('wrong');
+      fb.textContent = v + '번 칸은 ' + KGiftedCore.walk(P, v) + '걸음이다. 쓸 수 있는 칸 중에 더 적은 곳이 있다.';
+      draw(v);
+    }
+    return true;
+  });
+})();
+
+/* ═══════════ 슬13 도전 · 학교 전체 지도 (+10) ═══════════ */
+function mapTap(i) {
+  const W = KGiftedCore.GW, pts = KGiftedCore.GRID, xy = KGiftedCore.xy2(i, W);
+  const st = getQState('grid'), fb = document.getElementById('fb-grid');
+  const sum = KGiftedCore.walk2(pts, xy[0], xy[1]);
+  document.getElementById('grid-sum').textContent = sum;
+  renderMap('grid-board', pts, i);
+  if (st.solved) return;
+  const r = KGiftedCore.bestSpots2(pts, W, KGiftedCore.GH);
+  if (sum === r.best) {
+    st.solved = true;
+    realDone = (realDone === '공사 조건 통과') ? '공사·지도 조건 통과' : '지도 조건 통과';
+    addScore(KGiftedCore.SCORE_PLAN.grid);
+    fb.classList.remove('wrong');
+    fb.textContent = '맞다. ' + sum + '걸음으로 가장 적다. 아무도 서 있지 않은 칸인데도 그렇다. +10';
+  } else {
+    fb.classList.add('wrong');
+    fb.textContent = '이 칸은 ' + sum + '걸음이다. 가로줄과 세로줄을 따로 살펴보자.';
+  }
+}
+renderMap('grid-board', KGiftedCore.GRID, -1);
+
+/* ═══════════ 슬14 도전 · 한 교실에 여러 명 (+10) ═══════════ */
+(function () {
+  const R = KGiftedCore.CROWD, cnt = {};
+  R.forEach(function (x) { cnt[x[0]] = x[1]; });
+  const r = KGiftedCore.bestRooms(R, 0, KGiftedCore.HALL);
+  function draw(m) {
+    renderHall('crowd-people', 'crowd-num', {
+      count: cnt,
+      meet: (m === null || m === undefined) ? -1 : m,
+      onTap: function (x) {
+        draw(x);
+        document.getElementById('crowd-sum').textContent = KGiftedCore.walkRooms(R, x);
+      }
+    });
+  }
+  draw(null);
+  buildPad('pad-crowd', 'disp-crowd', 2, function (v) {
+    const st = getQState('crowd'), fb = document.getElementById('fb-crowd');
+    if (st.solved) return true;
+    if (r.spots.indexOf(v) >= 0) {
+      st.solved = true;
+      realDone = (realDone.indexOf('통과') >= 0) ? '현실 조건 세 가지 통과' : '사람 수 조건 통과';
+      addScore(KGiftedCore.SCORE_PLAN.crowd);
+      fb.classList.remove('wrong');
+      fb.textContent = '맞다. ' + v + '번 칸이면 ' + r.best + '걸음이다. 다섯 명이 있는 교실이 다섯 사람 몫으로 셈해진 것이다. +10';
+      draw(v);
+    } else {
+      fb.classList.add('wrong');
+      fb.textContent = v + '번 칸은 ' + KGiftedCore.walkRooms(R, v) + '걸음이다. 사람 수를 빠짐없이 세었는지 살펴보자.';
+      draw(v);
+    }
+    return true;
+  });
+})();
+
+/* ═══════════ 슬15 창조 · 설계 임무 가 (+10) ═══════════ */
+const c1People = [];
+let c1Pick = null;
+function drawC1() {
+  renderHall('c1-people', 'c1-num', {
+    count: hallCount(c1People),
+    meet: (c1Pick === null) ? -1 : c1Pick,
+    onTapPeople: function (i) {
+      const k = c1People.indexOf(i);
+      if (k >= 0) c1People.splice(k, 1);
+      else if (c1People.length < KGiftedCore.CREATE_MAX) c1People.push(i);
+      else { document.getElementById('fb-create1').textContent = '사람은 ' + KGiftedCore.CREATE_MAX + '명까지 세울 수 있다.'; return; }
+      drawC1();
+    },
+    onTap: function (i) { c1Pick = i; drawC1(); }
+  });
+  document.getElementById('c1-n').textContent = c1People.length;
+  document.getElementById('c1-pick').textContent = (c1Pick === null) ? '-' : c1Pick;
+}
+stepBtn('c1-btns', '확인', function () {
+  const st = getQState('create1'), fb = document.getElementById('fb-create1');
+  const r = KGiftedCore.checkCreate1(c1People.slice(), c1Pick);
+  if (r.why === 'few') { fb.classList.add('wrong'); fb.textContent = '사람을 ' + KGiftedCore.CREATE_MIN + '명 이상 세워야 한다.'; return; }
+  if (r.why === 'nopick') { fb.classList.add('wrong'); fb.textContent = '아래 줄에서 가장 적을 것 같은 칸을 짚어 보자.'; return; }
+  if (r.ok) {
+    if (!st.solved) { st.solved = true; addScore(KGiftedCore.SCORE_PLAN.create1); }
+    planText = '임무 가 승인';
+    fb.classList.remove('wrong');
+    fb.textContent = '설계 승인. ' + c1Pick + '번 칸이 ' + r.best + '걸음으로 가장 적다. +10';
+  } else {
+    fb.classList.add('wrong');
+    fb.textContent = c1Pick + '번 칸은 ' + r.mine + '걸음인데, 더 적은 칸이 있다 (' + r.best + '걸음). ' + (r.mine - r.best) + '걸음 차이다.';
+  }
+});
+stepBtn('c1-btns', '지우기', function () {
+  c1People.length = 0; c1Pick = null;
+  document.getElementById('fb-create1').textContent = '';
+  drawC1();
+});
+drawC1();
+
+/* ═══════════ 슬16 창조 · 설계 임무 나 (+10) ═══════════ */
+const C2_PEOPLE = [2, 5, 6, 9, 10], C2_TARGET = 7;
+const c2Ban = [];
+function drawC2() {
+  const r = KGiftedCore.bestSpots(C2_PEOPLE, 0, KGiftedCore.HALL, c2Ban);
+  renderHall('c2-people', 'c2-num', {
+    count: hallCount(C2_PEOPLE), banned: c2Ban, tapBanned: true,
+    meet: r.spots.length === 1 ? r.spots[0] : -1,
+    band: r.spots.length > 1 ? r.spots : [],
+    onTap: function (i) {
+      const k = c2Ban.indexOf(i);
+      if (k >= 0) c2Ban.splice(k, 1);
+      else if (c2Ban.length < KGiftedCore.CREATE_BAN_MAX) c2Ban.push(i);
+      else { document.getElementById('fb-create2').textContent = '공사는 ' + KGiftedCore.CREATE_BAN_MAX + '곳까지 할 수 있다.'; return; }
+      drawC2();
+    }
+  });
+  document.getElementById('c2-used').textContent = c2Ban.length;
+  document.getElementById('c2-spot').textContent = r.spots.length ? r.spots.join('·') : '-';
+}
+stepBtn('c2-btns', '확인', function () {
+  const st = getQState('create2'), fb = document.getElementById('fb-create2');
+  const r = KGiftedCore.checkCreate2(C2_PEOPLE, c2Ban.slice(), C2_TARGET);
+  if (r.why === 'noban') { fb.classList.add('wrong'); fb.textContent = '아래 줄을 눌러 공사할 칸을 골라 보자.'; return; }
+  if (r.why === 'bantarget') { fb.classList.add('wrong'); fb.textContent = C2_TARGET + '번 칸을 공사하면 그곳에 모일 수 없다.'; return; }
+  if (r.ok) {
+    if (!st.solved) { st.solved = true; addScore(KGiftedCore.SCORE_PLAN.create2); }
+    planText = (planText === '임무 가 승인') ? '임무 가·나 모두 승인' : '임무 나 승인';
+    fb.classList.remove('wrong');
+    fb.textContent = '설계 승인. 공사 ' + c2Ban.length + '곳으로 모임 장소가 ' + C2_TARGET + '번 칸 하나로 정해졌다 (' + r.best + '걸음). +10';
+  } else {
+    fb.classList.add('wrong');
+    fb.textContent = r.spots.length > 1
+      ? '지금은 가장 적은 칸이 ' + r.spots.join('번·') + '번으로 여럿이다. 하나로 정해져야 한다.'
+      : '지금은 ' + r.spots[0] + '번 칸이 가장 적다. ' + C2_TARGET + '번이 되도록 공사를 옮겨 보자.';
+  }
+});
+stepBtn('c2-btns', '지우기', function () {
+  c2Ban.length = 0;
+  document.getElementById('fb-create2').textContent = '';
+  drawC2();
+});
+drawC2();
+
+/* ═══════════ 슬18 설계 카드 ═══════════ */
+function renderAgentCard() {
+  document.getElementById('dc-cases').textContent = exploreCases.length + '곳';
+  document.getElementById('dc-conj').textContent = conjPicked || '기록 없음';
+  document.getElementById('dc-real').textContent = realDone;
+  document.getElementById('dc-plan').textContent = planText;
+}
+
+/* ═══════════ 초기화 ═══════════ */
+(function init() {
+  const dots = document.getElementById('dots');
+  for (let i = 0; i < TOTAL; i++) {
+    const d = document.createElement('span');
+    d.className = 'ka-dot';
+    d.addEventListener('click', () => { cur = i; updateUI(); });
+    dots.appendChild(d);
+  }
+  updateUI();
+})();
+</script>
+</body>
+</html>
