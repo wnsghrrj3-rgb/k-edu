@@ -1,7 +1,8 @@
 /* =============================================================
  * test_english_data.js — 아침영어 원장 불변식 검산 (node)
  *   설계 정본: handoff/설계-아침영어-v1.md §3(사다리 헌법)·§6(스키마)·§8(검사 계획)
- *   ① 구조: 학년별 일수 정확(g3=40) · d 연번 1..N
+ *   ⓪ 학년 규약(GRADE_RULES): 규약 학년 집합 = 원장 학년 집합 · 학년별 newMax·tileMax 전수 강제
+ *   ① 구조: 학년별 일수 정확(전 학년 40) · d 연번 1..N
  *   ② 패턴 계획: PAT_PLAN 구간과 pat 필드 전수 일치 · 10패턴 전부 존재 · 구간 연속 피복
  *   ③ 필드: sent·ko·tiles·words 존재, ko 에 한국어 포함
  *   ④ tiles 왕복: tiles.join(' ') === sent (구두점 포함)
@@ -13,20 +14,36 @@
  * 실행: node kedu/quiz/test_english_data.js [원장경로]
  *   경로 인자는 역검증용(변조 사본 검사) — git 원복 함정(9.7차 기록)을 피한다.
  * ============================================================= */
-const path = process.argv[2] || './templates/english_data.js';
-const D = require(require('path').resolve(__dirname, path.startsWith('.') ? path : path));
+const P = require('path');
+const argPath = process.argv[2] || './templates/english_data.js';
+/* 절대경로면 그대로, 상대경로면 __dirname 기준. 로드 실패는 조용히 넘기지 않는다
+ * (경로가 안 풀려 원본을 읽으면 역검증이 거짓 그린을 낸다 — 2026-08-16 실측 함정) */
+const target = P.isAbsolute(argPath) ? argPath : P.resolve(__dirname, argPath);
+let D;
+try { D = require(target); }
+catch (e) { console.log('  ✗ 원장 로드 실패: ' + target + ' — ' + e.message); console.log('english_data: 0 PASS / 1 FAIL'); process.exit(1); }
+console.log('  · 대상: ' + target);
 let fail = 0, pass = 0;
 const T = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + m); } };
 
 const deepEq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-const EXPECT_DAYS = { 3: 40 };
+/* ★학년 규약은 원장이 상수로 들고 있다(GRADE_RULES) — 검사기는 그 표를 강제한다.
+ *   기대 학년 집합도 여기서 온다: 규약에 있는 학년은 원장에 있어야 하고 그 역도 성립. */
+const RULES = D.GRADE_RULES;
+const EXPECT_GRADES = Object.keys(RULES).map(Number).sort((a, b) => a - b);
+const ACTUAL_GRADES = D.grades().sort((a, b) => a - b);
+T(deepEq(EXPECT_GRADES, ACTUAL_GRADES),
+  `학년 집합 불일치: 규약 ${JSON.stringify(EXPECT_GRADES)} ≠ 원장 ${JSON.stringify(ACTUAL_GRADES)}`);
 
 D.grades().forEach(g => {
   const days = D.days(g);
   const plan = D.plan(g);
 
+  const R = RULES[g];
+
   /* ① 구조 */
-  T(days.length === EXPECT_DAYS[g], `g${g} 일수 ${days.length} ≠ ${EXPECT_DAYS[g]}`);
+  T(!!R, `g${g} 학년 규약(GRADE_RULES) 없음`);
+  T(days.length === (R ? R.days : -1), `g${g} 일수 ${days.length} ≠ ${R ? R.days : '?'}`);
   days.forEach((r, i) => T(r.d === i + 1, `g${g} d 연번 어긋남: index ${i} 에 d=${r.d}`));
 
   /* ② 패턴 계획 */
@@ -50,6 +67,9 @@ D.grades().forEach(g => {
     T(hasKo(r.ko), `g${g} d${r.d} ko 없음/한국어 아님`);
     T(Array.isArray(r.tiles) && r.tiles.length > 0 && r.tiles.every(t => t.length > 0), `g${g} d${r.d} tiles 불량`);
     T(r.tiles.join(' ') === r.sent, `g${g} d${r.d} tiles 왕복 실패: "${r.tiles.join(' ')}" ≠ "${r.sent}"`);
+    T(r.tiles.length <= R.tileMax, `g${g} d${r.d} 타일 ${r.tiles.length}개 > 학년 상한 ${R.tileMax} ("${r.sent}")`);
+    if (r.expand) T(D.tokenize(r.expand.sent).length <= R.tileMax,
+      `g${g} d${r.d} expand 길이 초과 > ${R.tileMax} ("${r.expand.sent}")`);
     T(deepEq(D.tokenize(r.sent), r.words), `g${g} d${r.d} 토큰 대조 실패: ${JSON.stringify(D.tokenize(r.sent))} ≠ ${JSON.stringify(r.words)}`);
   });
 
@@ -57,7 +77,7 @@ D.grades().forEach(g => {
   const learned = {};
   days.forEach(r => {
     const nw = r.new || [];
-    T(nw.length <= 3, `g${g} d${r.d} 새 단어 ${nw.length}개 > 3 (헌법 위반)`);
+    T(nw.length <= R.newMax, `g${g} d${r.d} 새 단어 ${nw.length}개 > 학년 상한 ${R.newMax} (헌법 위반)`);
     T(new Set(nw).size === nw.length, `g${g} d${r.d} new 내 중복`);
     nw.forEach(w => {
       T(r.words.indexOf(w) >= 0, `g${g} d${r.d} new "${w}" 가 그날 문장에 없음`);
@@ -91,7 +111,10 @@ D.grades().forEach(g => {
   /* 통계 */
   const units = days.reduce((n, r) => n + (r.new || []).length, 0);
   const expands = days.filter(r => r.expand).length;
-  console.log(`  g${g}: ${days.length}일 · 새 어휘 단위 ${units} · expand ${expands}/${days.length} · 패턴 ${plan.map(p => p.pat + ':' + (p.to - p.from + 1)).join(' ')}`);
+  const maxTile = days.reduce((m, r) => Math.max(m, r.tiles.length), 0);
+  const avgTile = (days.reduce((n, r) => n + r.tiles.length, 0) / days.length).toFixed(2);
+  const maxNew = days.reduce((m, r) => Math.max(m, (r.new || []).length), 0);
+  console.log(`  g${g}: ${days.length}일 · 새 어휘 ${units} · expand ${expands}/${days.length} · 타일 평균 ${avgTile} 최대 ${maxTile}/${R.tileMax} · 최대new ${maxNew}/${R.newMax} · ${plan.map(p => p.pat + ':' + (p.to - p.from + 1)).join(' ')}`);
 });
 
 console.log(`english_data: ${pass} PASS / ${fail} FAIL`);
