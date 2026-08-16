@@ -103,13 +103,21 @@ window.MK_SCREENS.studio = (() => {
     if (!spk || !spk.supported()) return '';
     const vs = spk.voices();
     const s2 = st();
-    const opt = vs.slice(0, 20).map((v) => `<option value="${esc(v.name)}"${s2.voice === v.name ? ' selected' : ''}>${esc(v.name)}${/^ko/i.test(v.lang || '') ? '' : ' (' + esc(v.lang || '') + ')'}</option>`).join('');
-    return `<div class="cx-shrow"><button class="cx-shb" data-st-speak title="다듬기용 미리듣기">▶ 미리듣기</button>
+    /* R131 — 한국어 음성은 전량, 그 외는 8개만. 20개 절단이 ko 를 자르던
+       기기는 없지만(ko 우선 정렬), 많은 음성 기기(엣지 400+)에서 목록이 늪이었다 */
+    const ko = vs.filter((v) => /^ko/i.test(v.lang || ''));
+    const rest = vs.filter((v) => !/^ko/i.test(v.lang || '')).slice(0, 8);
+    const opt = ko.concat(rest).map((v) => `<option value="${esc(v.name)}"${s2.voice === v.name ? ' selected' : ''}>${esc(v.name)}${/^ko/i.test(v.lang || '') ? '' : ' (' + esc(v.lang || '') + ')'}</option>`).join('');
+    const A2 = window.MK_AUDIO;
+    const chips = A2 && A2.SPEAK_PRESETS ? `<div class="cx-shrow" style="flex-wrap:wrap">${A2.SPEAK_PRESETS.map((p2) =>
+      `<button class="cx-shb${(scene() && scene().speaker) === p2.name ? ' on' : ''}" data-st-spkp="${p2.id}" title="높낮이 ${p2.pitch} · 배속 ${p2.rate}">${esc(p2.name)}</button>`).join('')}<i></i></div>` : '';
+    return `<label class="cx-field"><span>화자 (미리듣기 캐릭터 + 대본 [태그])</span></label>${chips}
+      <div class="cx-shrow"><button class="cx-shb" data-st-speak title="다듬기용 미리듣기">▶ 미리듣기</button>
       <select data-st-voice style="flex:1;min-width:0;padding:6px;border:1.5px solid var(--mk-border);border-radius:8px"><option value="">기본 목소리</option>${opt}</select>
       <select data-st-rate style="padding:6px;border:1.5px solid var(--mk-border);border-radius:8px">
         ${[0.8, 0.9, 1, 1.1, 1.2].map((r2) => `<option value="${r2}"${(+s2.rate || 1) === r2 ? ' selected' : ''}>×${r2}</option>`).join('')}
       </select><i></i></div>
-      <div class="cx-hint">브라우저 목소리는 <b>미리듣기 전용</b>이에요 — 영상에는 📁 파일 목소리(나레이션)가 실려요</div>`;
+      <div class="cx-hint">브라우저 목소리는 <b>미리듣기 전용</b>이에요 — 영상에는 📁 파일 목소리(나레이션)가 실려요${ko.length <= 2 ? '<br>💡 이 기기는 한국어 음성이 ' + ko.length + '개예요 — 엣지 브라우저는 자연 음성(선히·인준 등)이 더 많아요. 화자 칩(높낮이×배속)으로도 캐릭터를 가를 수 있어요' : ''}</div>`;
   }
   /* R130 — 자막 스타일: 새 렌더 능력 0 — R56 텍스트 스타일 프리셋 재사용 */
   function capStyleCtl(cap) {
@@ -359,9 +367,18 @@ window.MK_SCREENS.studio = (() => {
       if (sp2) sp2.onclick = () => {
         const spk = speakerOf(); const c2 = capOf(scene());
         if (!spk) return;
-        const r2 = spk.speak(c2 ? c2.text : '', { voice: st().voice, rate: st().rate });
+        const r2 = spk.speak(c2 ? c2.text : '', { voice: st().voice, rate: st().rate, pitch: st().pitch });
         if (!r2.ok && typeof alert === 'function') alert(r2.msg);
       };
+      /* R131 — 화자 칩: 미리듣기 높낮이×배속 + 씬 화자 라벨(대본 [태그]) 동시 지정 */
+      root.querySelectorAll('[data-st-spkp]').forEach((b) => b.onclick = () => {
+        const A2 = window.MK_AUDIO; const sc2 = scene();
+        const p2 = A2 && A2.SPEAK_PRESETS ? A2.SPEAK_PRESETS.find((x) => x.id === b.dataset.stSpkp) : null;
+        if (!p2 || !sc2) return;
+        st().pitch = p2.pitch; st().rate = p2.rate;
+        if (p2.id === 'sp-basic') delete sc2.speaker; else sc2.speaker = p2.name;
+        R();
+      });
       const vsel = root.querySelector('[data-st-voice]');
       if (vsel) vsel.onchange = () => { st().voice = vsel.value || ''; };
       const rsel = root.querySelector('[data-st-rate]');

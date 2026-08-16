@@ -358,7 +358,9 @@ window.MK_LIVE = (() => {
     const lines = scenes.map((sc, i) => {
       const cap = (sc.elements || []).find((e) => e && e.stCap);
       const t = cap && cap.text ? String(cap.text).trim() : '';
-      return `${i + 1}. ${t || '(대사 없음)'}`;
+      /* R131 — 씬 화자 태그: TTS 도구가 캐릭터별 목소리를 갈라 뽑는 근거 */
+      const who = sc.speaker ? `[${String(sc.speaker).trim()}] ` : '';
+      return `${i + 1}. ${who}${t || '(대사 없음)'}`;
     });
     return { text: lines.join('\n'), scenes: scenes.length,
       withCaption: lines.filter((l) => !l.endsWith('(대사 없음)')).length };

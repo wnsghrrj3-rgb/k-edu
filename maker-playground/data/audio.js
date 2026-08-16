@@ -284,6 +284,18 @@ window.MK_AUDIO = (() => {
      그래서 이 화자는 대사를 다듬는 「미리듣기 전용」이고, 영상에 실리는
      목소리는 파일(scene.narration.src)이다 — 화면이 이 경계를 문구로 진다.
      기관 주입 가능(synth·Utterance) — jsdom 하니스가 가짜로 전 수명을 밟는다. */
+  /* R131 — 화자 프리셋: 한국어 설치 음성이 1~2개뿐인 기기가 흔하다(크롬/윈도우).
+     음성을 추가할 수는 없지만(OS 소관) 같은 음성도 높낮이×배속을 조합하면
+     캐릭터가 갈린다. 프리셋 이름은 대본의 [화자] 태그로도 쓰인다. */
+  const SPEAK_PRESETS = [
+    { id: 'sp-basic', name: '기본', pitch: 1, rate: 1 },
+    { id: 'sp-kid', name: '밝은 아이', pitch: 1.45, rate: 1.12 },
+    { id: 'sp-calm', name: '차분한 어른', pitch: 0.85, rate: 0.95 },
+    { id: 'sp-low', name: '낮은 목소리', pitch: 0.65, rate: 0.92 },
+    { id: 'sp-live', name: '씩씩한 진행자', pitch: 1.15, rate: 1.18 },
+    { id: 'sp-slow', name: '느린 이야기꾼', pitch: 0.95, rate: 0.8 },
+  ];
+
   function makeSpeaker(deps) {
     const d = deps || {};
     const synth2 = d.synth || window.speechSynthesis || null;
@@ -309,6 +321,8 @@ window.MK_AUDIO = (() => {
         const o = opts || {};
         if (o.voice) { const v = voices().find((x) => x.name === o.voice); if (v) u.voice = v; }
         u.rate = o.rate != null ? Math.max(0.5, Math.min(2, +o.rate)) : 1;
+        /* R131 — 높낮이. 음성 1개짜리 기기에서 캐릭터를 가르는 유일한 축 */
+        u.pitch = o.pitch != null ? Math.max(0, Math.min(2, +o.pitch)) : 1;
         synth2.speak(u);
         return { ok: true };
       } catch (_) { return { ok: false, msg: '미리듣기를 시작하지 못했어요' }; }
@@ -368,5 +382,5 @@ window.MK_AUDIO = (() => {
     return { supported, recording, start, stop };
   }
 
-  return { SYNTHS, patternPlan, play, pause, resume, stop, fileToSrc, state, audioAudit, waveAt, envAt, renderPattern, fitPlan, fitPcm, beatSync, makeRecorder, makeSpeaker };
+  return { SYNTHS, patternPlan, play, pause, resume, stop, fileToSrc, state, audioAudit, waveAt, envAt, renderPattern, fitPlan, fitPcm, beatSync, makeRecorder, makeSpeaker, SPEAK_PRESETS };
 })();
