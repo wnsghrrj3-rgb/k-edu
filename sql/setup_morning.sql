@@ -197,7 +197,11 @@ GRANT EXECUTE ON FUNCTION ma_set_routine(uuid,int,jsonb,int,boolean) TO authenti
 --     학년별 차시 수가 제각각이라 값이 고르지 않은 것이 정상이다.
 --       1학년 33 · 2학년 34 · 3학년 38 · 4학년 26 · 5학년 31 · 6학년 22
 --     ※ 현재 1학기분만 있다. 소진하면 ma_today 가 복습 모드로 계속 돈다.
---   원장은 kedu/quiz/templates/hanja_data.js 와 math_morning.js.
+--   ★ 영어 진도 단위 = 하루 1문장. 학년마다 독립 사다리(zero-base)라 전 학년 40일로 같다.
+--     3·4·5·6학년 = 40문장 → 40일차 (약 8주). 1·2학년은 원장이 없다 —
+--     행을 만들지 않는 것이 정직하다. 행만 있고 문제 세트가 없으면 그 학년 학생은
+--     아침마다 "준비 중" 화면을 만난다. test_english_morning.js 가 이 없음까지 강제한다.
+--   원장은 kedu/quiz/templates/hanja_data.js · math_morning.js · english_data.js.
 --   이 표와 어긋나면 kedu/quiz/test_hanja_morning.js ·
 --   test_math_morning.js 가 이 파일을 직접 읽어 잡아낸다.
 -- =============================================
@@ -213,6 +217,7 @@ RETURNS int LANGUAGE sql IMMUTABLE AS $fn$
     WHEN p_subject = 'math'  AND p_grade  = 4       THEN 54
     WHEN p_subject = 'math'  AND p_grade  = 5       THEN 53
     WHEN p_subject = 'math'  AND p_grade  = 6       THEN 51
+    WHEN p_subject = 'english' AND p_grade IN (3,4,5,6) THEN 40
     ELSE 50
   END;
 $fn$;

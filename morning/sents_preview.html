@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>오늘 나가는 영어 — 아침활동</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#2FA37A;--primary-light:#E8F6F0;
+  --bg:#F4F8F6;--card:#fff;--ink:#1A202C;--sub:#718096;--faint:#A0AEC0;--border:#E4EDE9;
+  --radius:20px;--shadow:0 2px 18px rgba(26,70,55,.07);--new:#E76F51;
+  --kedu-title:'Gowun Batang','Gowun Dodum',serif;
+}
+body{font-family:'Gowun Dodum',sans-serif;background:var(--bg);min-height:100vh;color:var(--ink);-webkit-font-smoothing:antialiased}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.top{background:var(--card);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;gap:10px}
+.top .brand{font-family:var(--kedu-title);font-weight:700;color:var(--primary)}
+.top .t{font-family:var(--kedu-title);font-size:17px}
+.top a{margin-left:auto;color:var(--sub);text-decoration:none;font-size:13.5px}
+.page{max-width:840px;margin:0 auto;padding:22px 16px 60px}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 22px;margin-bottom:16px}
+h2{font-family:var(--kedu-title);font-size:19px;margin-bottom:6px}
+.hint{font-size:13.5px;color:var(--sub);line-height:1.7}
+.pick{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}
+label{font-size:13px;color:var(--sub);display:block;margin-bottom:5px}
+select{font-family:inherit;font-size:15px;padding:9px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;color:var(--ink)}
+.meta{margin-top:14px;padding:12px 14px;background:var(--primary-light);border-radius:14px;font-size:14px;line-height:1.7}
+.meta b{color:var(--primary)}
+.sent{font-family:var(--kedu-title);font-size:28px;line-height:1.45;letter-spacing:.2px;word-break:keep-all}
+.ko{font-size:15.5px;color:var(--sub);margin-top:8px}
+.tiles{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.tile{background:var(--primary-light);color:#1D6B51;border-radius:11px;padding:8px 13px;font-size:16px;font-family:var(--kedu-title)}
+.row{margin-top:18px;padding-top:16px;border-top:1px dashed var(--border)}
+.row h3{font-size:13px;color:var(--faint);margin-bottom:8px;letter-spacing:.4px}
+.badge{display:inline-block;background:#FDEEE9;color:var(--new);border-radius:999px;padding:5px 12px;font-size:14px;margin:0 6px 6px 0}
+.exp{font-size:17px;font-family:var(--kedu-title)}
+.exp small{display:block;font-family:'Gowun Dodum',sans-serif;font-size:13.5px;color:var(--sub);margin-top:4px}
+.none{font-size:13.5px;color:var(--faint)}
+.msg{color:var(--sub);font-size:14px;padding:18px 0;text-align:center;line-height:1.7}
+.spin{width:22px;height:22px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:sp .8s linear infinite;margin:0 auto 10px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.foot{font-size:12.5px;color:var(--faint);text-align:center;margin-top:8px;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="top">
+  <span class="brand">케이에듀</span><span class="t">오늘 나가는 영어</span>
+  <a href="/morning/teacher.html">← 아침활동으로</a>
+</div>
+<div class="page">
+  <div class="card">
+    <h2>아침에 나갈 문장과 문제를 미리 볼 수 있어요</h2>
+    <div class="hint">하루에 한 문장씩 나가요. 오늘 문장의 모든 낱말은 <b>그날까지 배운 것</b>으로만
+      되어 있어서, 아이가 모르는 말을 만나는 날이 없어요. 아래 확인 문제는 학생들이 푸는 것과
+      같은 방식으로 만들어지고, <b>다시 뽑기</b>를 누르면 다른 문제가 나와요.</div>
+    <div class="pick">
+      <div><label>학년</label><select id="g"></select></div>
+      <div><label>몇 일째</label><select id="d"></select></div>
+    </div>
+    <div class="meta" id="meta">불러오는 중…</div>
+  </div>
+
+  <div class="card" id="sentCard"><div class="msg"><div class="spin"></div>문장을 준비하는 중…</div></div>
+
+  <div class="card">
+    <h2 style="margin-bottom:12px">확인 문제</h2>
+    <div id="mount"><div class="msg"><div class="spin"></div>문제를 준비하는 중…</div></div>
+  </div>
+  <div class="foot">이 화면은 미리보기예요. 학생 기록에는 아무것도 남지 않아요.</div>
+</div>
+
+<script src="/kedu/quiz/kquiz-core.js"></script>
+<script src="/kedu/quiz/kquiz-ui.js"></script>
+<script src="/kedu/quiz/templates/english_data.js"></script>
+<script src="/kedu/quiz/templates/english.js"></script>
+<script>
+(function(){
+  'use strict';
+  var DATA = KQuiz.englishData;
+  var GRADES = DATA.grades();
+  var q = new URLSearchParams(location.search);
+  var wanted = +q.get('grade') || GRADES[0];
+  var st = { grade: GRADES.indexOf(wanted) >= 0 ? wanted : GRADES[0], day: +q.get('day') || 1 };
+
+  var gSel = document.getElementById('g'), dSel = document.getElementById('d');
+  var meta = document.getElementById('meta'), mount = document.getElementById('mount');
+  var sentCard = document.getElementById('sentCard');
+
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+  /* 원장에 없는 학년은 아예 고를 수 없게 한다 — 고를 수 있는데 볼 것이 없으면 안 된다 */
+  gSel.innerHTML = GRADES.map(function(g){
+    return '<option value="'+g+'"'+(g===st.grade?' selected':'')+'>'+g+'학년</option>'; }).join('');
+
+  function keyOf(g, d){ return 'g'+g+'_english_c'+('00'+d).slice(-3); }
+
+  function fillDays(){
+    var n = DATA.maxDay(st.grade);
+    if (st.day > n || st.day < 1) st.day = 1;
+    dSel.innerHTML = '';
+    for (var i = 1; i <= n; i++){
+      var o = document.createElement('option');
+      o.value = i; o.textContent = i + '일째';
+      if (i === st.day) o.selected = true;
+      dSel.appendChild(o);
+    }
+    return n;
+  }
+
+  function patKo(g, pat){
+    var row = DATA.plan(g).filter(function(p){ return p.pat === pat; })[0];
+    return row ? row.ko : pat;
+  }
+
+  function drawSentence(day){
+    var newWords = day['new'] || [];
+    var h = '<div class="sent">'+esc(day.sent)+'</div>'
+      + '<div class="ko">'+esc(day.ko)+'</div>'
+      + '<div class="tiles">'+day.tiles.map(function(t){
+          return '<span class="tile">'+esc(t)+'</span>'; }).join('')+'</div>'
+      + '<div class="row"><h3>오늘 처음 만나는 낱말</h3>'
+      + (newWords.length
+          ? newWords.map(function(w){ return '<span class="badge">'+esc(w)+'</span>'; }).join('')
+          : '<span class="none">없어요 — 그동안 배운 낱말만으로 만들어진 문장이에요.</span>')
+      + '</div>'
+      + '<div class="row"><h3>넓히기 — 같은 틀로 지어 보는 새 문장</h3>'
+      + (day.expand
+          ? '<div class="exp">'+esc(day.expand.sent)+'<small>'+esc(day.expand.ko)+'</small></div>'
+          : '<span class="none">이 날은 재료가 아직 모자라요. 오늘 문장을 한 번 더 조립해요.</span>')
+      + '</div>';
+    sentCard.innerHTML = h;
+  }
+
+  function draw(){
+    var n = fillDays();
+    var day = DATA.day(st.grade, st.day);
+    var key = keyOf(st.grade, st.day);
+    var rules = DATA.rules(st.grade) || {};
+
+    if (!day || !KQuiz.core.has(key)){
+      meta.innerHTML = '아직 준비되지 않은 일차예요.';
+      sentCard.innerHTML = '<div class="msg">이 학년·일차는 문장이 없어요.</div>';
+      mount.innerHTML = '<div class="msg">이 학년·일차는 문제가 없어요.</div>';
+      return;
+    }
+
+    meta.innerHTML = '<b>'+st.grade+'학년</b>의 <b>'+st.day+'일째</b> 아침영어예요. '
+      + '모두 <b>'+n+'일</b>치가 있고, 다 나가면 복습으로 다시 돌아요.'
+      + '<br><span style="color:var(--sub)">오늘의 틀: '+esc(patKo(st.grade, day.pat))
+      + ' · 이 학년은 하루 새 낱말 '+esc(rules.newMax)+'개까지, 문장은 낱말 '
+      + esc(rules.tileMax)+'개까지예요.</span>';
+
+    drawSentence(day);
+    KQuiz.mount(mount, { mode:'teacher', lesson:key, n:10 });
+
+    var u = new URL(location.href);
+    u.searchParams.set('grade', st.grade); u.searchParams.set('day', st.day);
+    history.replaceState(null, '', u);
+  }
+
+  gSel.onchange = function(){ st.grade = +this.value; st.day = 1; draw(); };
+  dSel.onchange = function(){ st.day = +this.value; draw(); };
+  draw();
+})();
+</script>
+</body>
+</html>
