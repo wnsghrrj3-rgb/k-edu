@@ -91,6 +91,39 @@ window.MK_SCREENS.studio = (() => {
     }).join('');
   }
 
+  /* R130 — 미리듣기: 브라우저 목소리로 대사를 다듬는다.
+     ⚠ 정직 경계 문구를 화면이 진다 — 이 목소리는 파일에 안 실린다. */
+  const speakerOf = () => {
+    const s2 = st();
+    if (!s2._spk && window.MK_AUDIO && window.MK_AUDIO.makeSpeaker) s2._spk = window.MK_AUDIO.makeSpeaker();
+    return s2._spk || null;
+  };
+  function speakCtl() {
+    const spk = speakerOf();
+    if (!spk || !spk.supported()) return '';
+    const vs = spk.voices();
+    const s2 = st();
+    const opt = vs.slice(0, 20).map((v) => `<option value="${esc(v.name)}"${s2.voice === v.name ? ' selected' : ''}>${esc(v.name)}${/^ko/i.test(v.lang || '') ? '' : ' (' + esc(v.lang || '') + ')'}</option>`).join('');
+    return `<div class="cx-shrow"><button class="cx-shb" data-st-speak title="다듬기용 미리듣기">▶ 미리듣기</button>
+      <select data-st-voice style="flex:1;min-width:0;padding:6px;border:1.5px solid var(--mk-border);border-radius:8px"><option value="">기본 목소리</option>${opt}</select>
+      <select data-st-rate style="padding:6px;border:1.5px solid var(--mk-border);border-radius:8px">
+        ${[0.8, 0.9, 1, 1.1, 1.2].map((r2) => `<option value="${r2}"${(+s2.rate || 1) === r2 ? ' selected' : ''}>×${r2}</option>`).join('')}
+      </select><i></i></div>
+      <div class="cx-hint">브라우저 목소리는 <b>미리듣기 전용</b>이에요 — 영상에는 📁 파일 목소리(나레이션)가 실려요</div>`;
+  }
+  /* R130 — 자막 스타일: 새 렌더 능력 0 — R56 텍스트 스타일 프리셋 재사용 */
+  function capStyleCtl(cap) {
+    const TS = window.MK_TEXTSTYLE;
+    if (!TS || !cap) return '';
+    return `<label class="cx-field"><span>자막 스타일</span></label>
+      <div class="cx-shrow" style="flex-wrap:wrap">${TS.PRESETS.map((p2) =>
+        `<button class="cx-shb" data-st-capstyle="${p2.id}" title="${esc(p2.hint)}">${esc(p2.name)}</button>`).join('')}<i></i></div>
+      <div class="stu-trow">크기 <input type="number" min="2" max="12" step="0.2" value="${+cap.size || 4.4}" data-st-capsize>
+        위치 <button class="cx-shb${cap.y >= 60 ? ' on' : ''}" data-st-cappos="78">하단</button>
+        <button class="cx-shb${cap.y > 30 && cap.y < 60 ? ' on' : ''}" data-st-cappos="45">중앙</button>
+        <button class="cx-shb${cap.y <= 30 ? ' on' : ''}" data-st-cappos="8">상단</button></div>`;
+  }
+
   function detailHTML() {
     const sc = scene();
     if (!sc) return '<div class="stu-empty">왼쪽에서 클립을 고르면 여기서 다듬어요</div>';
@@ -126,6 +159,7 @@ window.MK_SCREENS.studio = (() => {
       (sc.music ? `<button class="cx-scenebtn" data-st-mall>🎵 이 음악을 모든 장면에 — 하나로 이어 흘러요</button>` : '') : '';
     return `
       <label class="cx-field"><span>대사 (자막으로 실려요)</span><textarea rows="3" data-st-cap placeholder="GPT 대사를 붙여 넣으세요">${esc(cap ? cap.text : '')}</textarea></label>
+      ${speakCtl()}${capStyleCtl(cap)}
       ${trimCtl}${sndCtl}
       <label class="cx-field"><span>나레이션</span></label>${narrCtl}
       <label class="cx-field"><span>배경 음악</span></label>${musCtl}
@@ -160,6 +194,8 @@ window.MK_SCREENS.studio = (() => {
         <div class="stu-head">
           <h2>🎬 스튜디오</h2><small>${d.scenes.length}클립 · 총 ${fmt(tot)}초 / ${cap}초</small><span class="sp"></span>
           <button class="stu-btn" data-st-add>＋ 클립 추가</button>
+          <button class="stu-btn" data-st-script ${d.scenes.length ? '' : 'disabled'} title="전 장면 대사를 번호 붙여 복사 — TTS 에 통째로 붙여넣어요">📋 대본 복사</button>
+          <button class="stu-btn" data-st-vbatch ${d.scenes.length ? '' : 'disabled'} title="TTS 로 뽑은 mp3 들 — 파일 이름 숫자 순서로 장면에 앉아요">📁 목소리 일괄</button>
           <button class="stu-btn" data-st-play ${d.scenes.length ? '' : 'disabled'}>▶ 미리보기</button>
           <button class="stu-btn primary" data-st-export ${d.scenes.length && !s.busy ? '' : 'disabled'}>⬇ 내보내기</button>
         </div>
@@ -280,6 +316,65 @@ window.MK_SCREENS.studio = (() => {
         });
         inp.click();
       };
+      /* R130 — 대본 복사 · 목소리 일괄 · 미리듣기 · 자막 스타일 */
+      const sb = root.querySelector('[data-st-script]');
+      if (sb) sb.onclick = () => {
+        const r2 = window.MK_LIVE.captionScript(doc());
+        const done = () => { st().msg = `대본 ${r2.scenes}줄 복사 — 대사 있는 장면 ${r2.withCaption}개. TTS 에 붙여넣고, 뽑은 mp3 를 「목소리 일괄」로 넣어 주세요`; PG.render(); };
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(r2.text).then(done).catch(done); return; }
+        } catch (_) {}
+        done();
+      };
+      const vb = root.querySelector('[data-st-vbatch]');
+      if (vb) vb.onclick = () => {
+        if (!window.MK_AUDIO) return;
+        const inp = document.createElement('input');
+        inp.type = 'file'; inp.accept = 'audio/*'; inp.multiple = true;
+        inp.onchange = () => {
+          const files = Array.from(inp.files || []);
+          if (!files.length) return;                       /* 취소 = 변화 0 */
+          const items = []; let left = files.length;
+          files.forEach((f) => window.MK_AUDIO.fileToSrc(f, (src, err) => {
+            if (src) items.push({ name: f.name, src, _f: f });
+            if (--left === 0) {
+              let left2 = items.length;
+              if (!left2) { st().msg = '넣을 수 있는 소리 파일이 없었어요'; PG.render(); return; }
+              items.forEach((it) => window.MK_LIVE.videoDuration(it.src, (dur) => {
+                it.duration = dur || 0;
+                if (--left2 === 0) {
+                  const r2 = window.MK_LIVE.assignVoices(doc(), items);
+                  st().msg = `목소리 ${r2.assigned}개를 장면 순서대로 앉혔어요` +
+                    (r2.extra ? ` · ${r2.extra}개는 장면이 모자라 남았어요` : '') +
+                    (r2.empty ? ` · 장면 ${r2.empty}개는 목소리가 없어요` : '');
+                  R();
+                }
+              }));
+            }
+          }));
+        };
+        inp.click();
+      };
+      const sp2 = root.querySelector('[data-st-speak]');
+      if (sp2) sp2.onclick = () => {
+        const spk = speakerOf(); const c2 = capOf(scene());
+        if (!spk) return;
+        const r2 = spk.speak(c2 ? c2.text : '', { voice: st().voice, rate: st().rate });
+        if (!r2.ok && typeof alert === 'function') alert(r2.msg);
+      };
+      const vsel = root.querySelector('[data-st-voice]');
+      if (vsel) vsel.onchange = () => { st().voice = vsel.value || ''; };
+      const rsel = root.querySelector('[data-st-rate]');
+      if (rsel) rsel.onchange = () => { st().rate = +rsel.value || 1; };
+      root.querySelectorAll('[data-st-capstyle]').forEach((b) => b.onclick = () => {
+        const c2 = capOf(scene()); if (!c2 || !window.MK_TEXTSTYLE) return;
+        window.MK_TEXTSTYLE.applyPreset(c2, b.dataset.stCapstyle); R();
+      });
+      const cs = root.querySelector('[data-st-capsize]');
+      if (cs) cs.onchange = () => { const c2 = capOf(scene()); if (c2) { c2.size = Math.max(2, Math.min(12, +cs.value || 4.4)); R(); } };
+      root.querySelectorAll('[data-st-cappos]').forEach((b) => b.onclick = () => {
+        const c2 = capOf(scene()); if (c2) { c2.y = +b.dataset.stCappos; R(); }
+      });
       const ma = root.querySelector('[data-st-mall]');
       if (ma) ma.onclick = () => {
         const sc = scene(); if (!sc || !sc.music) return;

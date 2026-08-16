@@ -279,6 +279,44 @@ window.MK_AUDIO = (() => {
      FileReader) — jsdom 하니스가 가짜 기관으로 전 수명을 밟는다(R89 Reader
      주입과 같은 규약). 실패는 전부 「무엇이 안 됐고 뭘 하면 되는지」로 —
      권한 거부를 조용히 삼키면 준호는 버튼이 고장난 줄 안다. */
+  /* ================= R130 — 미리듣기 화자 (speechSynthesis) =================
+     ⚠ 정직 경계: 브라우저 음성은 **파일에 실리지 않는다**(캡처 API 부재).
+     그래서 이 화자는 대사를 다듬는 「미리듣기 전용」이고, 영상에 실리는
+     목소리는 파일(scene.narration.src)이다 — 화면이 이 경계를 문구로 진다.
+     기관 주입 가능(synth·Utterance) — jsdom 하니스가 가짜로 전 수명을 밟는다. */
+  function makeSpeaker(deps) {
+    const d = deps || {};
+    const synth2 = d.synth || window.speechSynthesis || null;
+    const U = d.Utterance || window.SpeechSynthesisUtterance || null;
+    const supported = () => !!(synth2 && U);
+    function voices() {
+      if (!supported()) return [];
+      let all = [];
+      try { all = synth2.getVoices() || []; } catch (_) { return []; }
+      /* 한국어 먼저, 이름순 — 준호의 대사는 한국어다 */
+      return all.slice().sort((a, b) => {
+        const ak = /^ko/i.test(a.lang || '') ? 0 : 1, bk = /^ko/i.test(b.lang || '') ? 0 : 1;
+        return ak - bk || String(a.name).localeCompare(String(b.name));
+      });
+    }
+    function speak(text, opts) {
+      if (!supported()) return { ok: false, msg: '이 브라우저는 미리듣기를 지원하지 않아요' };
+      const t = String(text || '').trim();
+      if (!t) return { ok: false, msg: '들려줄 대사가 없어요' };
+      try {
+        synth2.cancel();
+        const u = new U(t);
+        const o = opts || {};
+        if (o.voice) { const v = voices().find((x) => x.name === o.voice); if (v) u.voice = v; }
+        u.rate = o.rate != null ? Math.max(0.5, Math.min(2, +o.rate)) : 1;
+        synth2.speak(u);
+        return { ok: true };
+      } catch (_) { return { ok: false, msg: '미리듣기를 시작하지 못했어요' }; }
+    }
+    const stop2 = () => { try { synth2 && synth2.cancel(); } catch (_) {} };
+    return { supported, voices, speak, stop: stop2 };
+  }
+
   function makeRecorder(deps) {
     const d = deps || {};
     const gUM = d.getUserMedia
@@ -330,5 +368,5 @@ window.MK_AUDIO = (() => {
     return { supported, recording, start, stop };
   }
 
-  return { SYNTHS, patternPlan, play, pause, resume, stop, fileToSrc, state, audioAudit, waveAt, envAt, renderPattern, fitPlan, fitPcm, beatSync, makeRecorder };
+  return { SYNTHS, patternPlan, play, pause, resume, stop, fileToSrc, state, audioAudit, waveAt, envAt, renderPattern, fitPlan, fitPcm, beatSync, makeRecorder, makeSpeaker };
 })();

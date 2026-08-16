@@ -345,6 +345,38 @@ window.MK_LIVE = (() => {
     });
   }
 
+  /* ================= R130 — 대사가 목소리가 되는 다리 (순수) =================
+     준호의 요구: 자막 칸에 쓴 글이 자막으로도, AI 목소리로도 나온다.
+     브라우저 음성은 파일에 실리지 않으므로(캡처 API 부재) 다리는 둘이다:
+     ① captionScript — 전 씬의 대사를 번호 매긴 대본 하나로(TTS 도구에 통째
+        붙여넣기). 대사 없는 씬도 번호는 지킨다 — 파일 번호와 씬 번호가
+        어긋나면 목소리가 엉뚱한 장면에 앉는다.
+     ② assignVoices — TTS 가 뽑아 준 mp3 여러 개를 파일 이름 숫자 순서로
+        씬 나레이션에 일괄 배치. 남는 파일은 버리지 않고 정직하게 센다. */
+  function captionScript(doc) {
+    const scenes = (doc && doc.scenes) || [];
+    const lines = scenes.map((sc, i) => {
+      const cap = (sc.elements || []).find((e) => e && e.stCap);
+      const t = cap && cap.text ? String(cap.text).trim() : '';
+      return `${i + 1}. ${t || '(대사 없음)'}`;
+    });
+    return { text: lines.join('\n'), scenes: scenes.length,
+      withCaption: lines.filter((l) => !l.endsWith('(대사 없음)')).length };
+  }
+  function assignVoices(doc, items) {
+    const scenes = (doc && doc.scenes) || [];
+    const list = (items || []).filter((x) => x && x.src)
+      .slice().sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ko', { numeric: true }));
+    let assigned = 0;
+    list.forEach((it, i) => {
+      if (i >= scenes.length) return;
+      scenes[i].narration = { src: it.src, duration: it.duration != null ? Math.round(it.duration * 10) / 10 : 0 };
+      assigned++;
+    });
+    return { ok: assigned > 0, assigned, extra: Math.max(0, list.length - scenes.length),
+      empty: Math.max(0, scenes.length - assigned) };
+  }
+
   /* File → dataURL. reader 주입 가능(jsdom 검증용). 이미지·영상만 — 상한은 MEDIA_SPEC */
   /* R89 — 큰 사진은 거부하지 않고 줄여서 받는다. 요즘 폰·카메라 사진은
      8MB를 예사로 넘는다 — 「8MB 이하만」은 선생님의 실사진 대부분을 문전에서
@@ -591,6 +623,7 @@ window.MK_LIVE = (() => {
     lineCount,                                                    /* R111 — 자동 줄바꿈까지 아는 줄 수 */
     replaceWithSrc, insertWithSrc, fileToSrc, shrinkImage, normalizeImage,
     MEDIA_SPEC, videoDuration, fitSceneToClip, fitSceneToClipSrc,   /* R126 — 매체 입구 정본·클립 맞춤 */
+    captionScript, assignVoices,                                    /* R130 — 대사→목소리 다리 */
     useBackend, saveDoc, loadDoc, clearDoc, saveProjects, restoreProjects, autosave, flush,
     liveAudit,
   };
