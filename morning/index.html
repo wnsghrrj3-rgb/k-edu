@@ -85,6 +85,24 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--bg);min-height:100vh;
   var wrap = document.getElementById('wrap');
   var SUBJECT_KO = { hanja:'한자', english:'영어', math:'수학', korean:'국어' };
   var SUBJECT_ICON = { hanja:'漢', english:'A', math:'＋', korean:'가' };
+  /* 과목별 '문제 풀기 전 활동' 통로. 여기 없는 과목은 활동 화면이 없다는 뜻이고,
+     통로를 만들지 않는다 — 예전엔 lesson_key 만 있으면 무조건 한자 화면으로 보내서
+     수학·영어 학생이 엉뚱한 1학년 한자 칸을 만났다. */
+  var ACTIVITY = {
+    hanja:   { href:'/morning/chars.html', before:'오늘 글자 먼저 익히기 (획순·쓰기·낱말)', after:'오늘 한자 따라쓰기' },
+    english: { href:'/morning/sents.html', before:'오늘 문장 먼저 익히기 (듣기·다섯 번·넓히기)', after:'오늘 문장 다시 익히기' }
+  };
+  function activityLink(t, when){
+    var a = ACTIVITY[t.subject];
+    if (!a || !t.lesson_key) return '';
+    return '<a class="btn ghost" style="margin-top:10px;display:block;text-decoration:none;text-align:center" '
+      + 'href="'+a.href+'?key='+esc(t.lesson_key)+'">'+esc(a[when])+'</a>';
+  }
+  /* 과목마다 '오늘 몫'을 세는 단위가 다르다 — 한자는 글자, 영어는 문장, 수학은 차시 */
+  var STEP_UNIT = { hanja:'글자', english:'문장', math:'차시', korean:'차시' };
+  function stepTxt(t){
+    return t.mode === 'review' ? '복습' : (t.step + '일째 ' + (STEP_UNIT[t.subject] || ''));
+  }
 
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
   function todayKo(){
@@ -140,7 +158,7 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--bg);min-height:100vh;
 
   function heroHtml(t){
     var ko = SUBJECT_KO[t.subject] || t.subject;
-    var modeTag = t.mode === 'review' ? '복습' : (t.step + '일째 글자');
+    var modeTag = stepTxt(t);
     return '<div class="hero">'
       + '<div class="date">'+todayKo()+'</div>'
       + '<h1>오늘의 아침활동<br>'+esc(ko)+'</h1>'
@@ -162,8 +180,7 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--bg);min-height:100vh;
       + (my.feedback ? '<div class="fb"><b>선생님 말씀</b>'+esc(my.feedback)+'</div>' : '')
       + '</div>'
       + '<button class="btn ghost" id="again" style="margin-top:16px">한 번 더 풀어보기</button>'
-      + (t.lesson_key ? '<a class="btn ghost" style="margin-top:10px;display:block;text-decoration:none;text-align:center" '
-          + 'href="/morning/chars.html?key='+esc(t.lesson_key)+'">오늘 한자 따라쓰기</a>' : '')
+      + activityLink(t, 'after')
     );
     show(h + '<div id="stats"></div>');
     document.getElementById('again').onclick = function(){ startQuiz(t, true); };
@@ -246,12 +263,10 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--bg);min-height:100vh;
         show(heroHtml(t) + card(
           '<div class="msg" style="padding:22px 10px 18px">'
           + '<span class="big">'+(SUBJECT_ICON[t.subject]||'✏️')+'</span>'
-          + '오늘은 <b>'+esc(SUBJECT_KO[t.subject]||t.subject)+'</b> '+(t.mode==='review'?'복습':t.step+'일째 글자')+'예요.<br>'
+          + '오늘은 <b>'+esc(SUBJECT_KO[t.subject]||t.subject)+'</b> '+stepTxt(t)+'예요.<br>'
           + t.question_count+'문제를 풀어 볼까요?</div>'
           + '<button class="btn" id="go">확인 문제 풀기</button>'
-          + (t.subject==='hanja' && t.lesson_key
-              ? '<a class="btn ghost" style="margin-top:10px;display:block;text-decoration:none;text-align:center" '
-                + 'href="/morning/chars.html?key='+esc(t.lesson_key)+'">오늘 글자 먼저 익히기 (획순·쓰기·낱말)</a>' : '')
+          + activityLink(t, 'before')
         ) + '<div id="stats"></div>');
         document.getElementById('go').onclick = function(){ startQuiz(t); };
         loadStats();

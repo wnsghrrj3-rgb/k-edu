@@ -14,7 +14,10 @@ var fs = require('fs'), path = require('path');
 var { JSDOM } = require('jsdom');
 
 var ROOT = path.join(__dirname, '..', '..');
-var html = fs.readFileSync(path.join(ROOT, 'morning', 'index.html'), 'utf8');
+/* 검사할 화면 폴더를 인자로 받는다 — 역검증은 변조 사본 폴더를 넘기므로
+   원본 파일을 건드릴 일이 없다(9.7차 git 원복 함정 회피). */
+var PAGES = process.argv[2] ? path.resolve(process.argv[2]) : path.join(ROOT, 'morning');
+var html = fs.readFileSync(path.join(PAGES, 'index.html'), 'utf8');
 var DATA = require('./templates/english_data.js');
 
 var fail = 0, pass = 0;
@@ -63,7 +66,7 @@ DATA.grades().forEach(function (g) {
 
 /* ④ 미리보기 페이지 */
 (function () {
-  var p = path.join(ROOT, 'morning', 'sents_preview.html');
+  var p = path.join(PAGES, 'sents_preview.html');
   T(fs.existsSync(p), 'morning/sents_preview.html 이 없음');
   if (!fs.existsSync(p)) return;
   var h = fs.readFileSync(p, 'utf8');
@@ -85,7 +88,7 @@ DATA.grades().forEach(function (g) {
 
 /* ⑤ 교사 화면 — 배선했다면 짝이 맞아야 한다 */
 (function () {
-  var t = fs.readFileSync(path.join(ROOT, 'morning', 'teacher.html'), 'utf8');
+  var t = fs.readFileSync(path.join(PAGES, 'teacher.html'), 'utf8');
   var inSubjects = /\[\s*'english'\s*,\s*'영어'\s*\]/.test(t);
   var inPreview = /english\s*:\s*\{\s*href/.test(t);
   T(inSubjects === inPreview,
@@ -98,6 +101,49 @@ DATA.grades().forEach(function (g) {
   } else {
     console.log('  · 교사 화면 영어 배선은 아직(D4 대기) — 짝 불일치 없음 확인');
   }
+})();
+
+/* ⑥ 학생 진입 — 과목마다 제 활동 화면으로 가는가
+   (예전엔 lesson_key 만 있으면 무조건 한자 화면으로 보냈다. 수학·영어 학생이
+    엉뚱한 1학년 한자 칸을 만나던 결함이라 여기서 못을 박는다) */
+(function () {
+  T(fs.existsSync(path.join(PAGES, 'sents.html')), 'morning/sents.html 이 없음');
+  T(/var ACTIVITY = \{/.test(html), 'morning/index.html 에 과목별 활동 통로 맵(ACTIVITY)이 없음');
+  T(html.indexOf("href=\"/morning/chars.html?key='+esc(t.lesson_key)") < 0,
+    '과목을 안 보고 한자 화면으로 보내는 코드가 남아 있음');
+
+  var pick = html.match(/var ACTIVITY = \{[\s\S]*?\n  \};/);
+  var fn = html.match(/function activityLink\(t, when\)\{[\s\S]*?\n  \}/);
+  var unit = html.match(/var STEP_UNIT = \{[\s\S]*?\};/);
+  var stf = html.match(/function stepTxt\(t\)\{[\s\S]*?\n  \}/);
+  T(!!(pick && fn && unit && stf), '활동 통로/진도 단위 함수를 못 찾음 — 시그니처가 바뀌었나');
+  if (!(pick && fn && unit && stf)) return;
+
+  var w = new JSDOM('<!doctype html><html><body></body></html>', { runScripts: 'outside-only' }).window;
+  w.eval('function esc(s){return String(s==null?"":s);}\n'
+    + pick[0] + '\n' + fn[0] + '\n' + unit[0] + '\n' + stf[0]
+    + '\nthis.__a = activityLink; this.__s = stepTxt;');
+
+  var A = w.__a, S = w.__s;
+  T(/\/morning\/sents\.html\?key=g3_english_c007/.test(A({ subject: 'english', lesson_key: 'g3_english_c007' }, 'before')),
+    '영어 세션이 문장 화면으로 가지 않음');
+  T(/\/morning\/chars\.html\?key=g1_hanja_c003/.test(A({ subject: 'hanja', lesson_key: 'g1_hanja_c003' }, 'before')),
+    '한자 세션이 한자 화면으로 가지 않음');
+  T(A({ subject: 'math', lesson_key: 'g3_math_c015' }, 'before') === '',
+    '수학 세션에 활동 통로가 붙음 — 갈 곳 없는 링크다');
+  T(A({ subject: 'korean', lesson_key: 'g3_korean_u1' }, 'after') === '',
+    '국어 세션에 활동 통로가 붙음');
+  T(A({ subject: 'english' }, 'before') === '', 'lesson_key 없는데 통로가 생김');
+  T(A({ subject: 'english', lesson_key: 'g3_english_c007' }, 'after')
+    !== A({ subject: 'english', lesson_key: 'g3_english_c007' }, 'before'),
+    '풀기 전/뒤 문구가 같음 — 두 자리의 말이 달라야 한다');
+
+  T(S({ subject: 'english', step: 7, mode: 'new' }) === '7일째 문장', '영어 진도 단위가 문장이 아님');
+  T(S({ subject: 'hanja', step: 3, mode: 'new' }) === '3일째 글자', '한자 진도 단위가 글자가 아님');
+  T(S({ subject: 'math', step: 5, mode: 'new' }) === '5일째 차시', '수학 진도 단위가 차시가 아님');
+  T(S({ subject: 'english', step: 7, mode: 'review' }) === '복습', '복습 표시가 어긋남');
+  T(html.indexOf("'일째 글자'") < 0 && html.indexOf('일째 글자)') < 0,
+    '과목 무관하게 "일째 글자"라 부르는 자리가 남아 있음');
 })();
 
 Promise.all(jobs).then(function () {
