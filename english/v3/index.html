@@ -49,6 +49,10 @@
   .lvband .ds{font-size:12.5px;color:#A0AEC0;margin-top:2px}
   .lvband .lock{margin-left:auto;font-size:16px;color:#CBD5E0}
   .sectionT{font-family:Jua;font-size:15px;color:#718096;margin:22px 0 10px}
+  /* 사다리 안 레벨 경계 — 사다리는 하나로 이어지고 띠만 레벨을 알린다 */
+  .lvsep{font-family:Jua;font-size:14.5px;color:#1565C0;background:#EAF2FD;border-radius:12px;
+         padding:9px 13px;margin:16px 0 10px;display:flex;align-items:center;gap:8px}
+  .lvsep .no{background:#1565C0;color:#fff;border-radius:8px;padding:2px 8px;font-size:12.5px}
   /* 계단참 */
   .landing{position:relative;margin-bottom:10px}
   .landing-h{background:#fff;border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;
@@ -93,7 +97,7 @@
   <div class="summary">
     <div class="sumbox"><div class="n" id="sumLit">0 / 18</div><div class="l">밝힌 칸</div></div>
     <div class="sumbox"><div class="n" id="sumToday">0칸</div><div class="l">오늘</div></div>
-    <div class="sumbox"><div class="n">Lv1</div><div class="l">지금 레벨</div></div>
+    <div class="sumbox"><div class="n" id="sumLevel">Lv1</div><div class="l">지금 레벨</div></div>
   </div>
 
   <div class="sectionT" id="lv1Title">Lv1 · 알파벳과 단어 읽기</div>
@@ -135,7 +139,8 @@
 <script>
 var TEST = new URLSearchParams(location.search).get('test') === '1';
 var TRACK_ICON = { P:'소리', V:'단어', G:'문법', R:'읽기', M:'평가' };
-var lv1 = EN_LADDER.levels.find(function(l){return l.open;});
+var openLevels = EN_LADDER.levels.filter(function(l){return l.open;});
+var lv1 = openLevels[0];
 var curSheetStep = null;
 var expandedLandings = {};   /* 구경으로 펼친 계단참 기억(렌더 간 유지) */
 var expandedLevels = {};     /* 구경으로 펼친 잠긴 레벨 기억 */
@@ -150,7 +155,14 @@ function render(){
   host.innerHTML = '';
   var curStep = KProgress.current();
 
-  lv1.steps.forEach(function(s){
+  openLevels.forEach(function(lv, li){
+   if (li > 0) {
+     var sep = document.createElement('div');
+     sep.className = 'lvsep';
+     sep.innerHTML = '<span class="no">Lv'+lv.num+'</span>'+lv.name;
+     host.appendChild(sep);
+   }
+   lv.steps.forEach(function(s){
     var st = KProgress.state(s.id);
     var div = document.createElement('div');
     div.className = 'step ' + (st==='lit'||st==='lit_skip' ? 'lit' : st);
@@ -166,7 +178,15 @@ function render(){
       + (st==='open' ? '<div class="kei">지금</div>' : '');
     div.addEventListener('click', function(e){ e.stopPropagation(); tap(s, st); });
     host.appendChild(div);
+   });
   });
+
+  /* 요약 「지금 레벨」 — 도전 칸이 속한 레벨 (완주 시 마지막 레벨) */
+  var cs = curStep, lvNow = openLevels[openLevels.length-1];
+  if (cs) openLevels.forEach(function(lv){
+    if (lv.steps.some(function(x){return x.id===cs.id;})) lvNow = lv;
+  });
+  document.getElementById('sumLevel').textContent = 'Lv'+lvNow.num;
 
   var lk = document.getElementById('locked');
   lk.innerHTML = '';
@@ -219,6 +239,7 @@ document.getElementById('shStart').addEventListener('click', function(){
   if (curSheetStep && curSheetStep.id === 'lv1-16') { location.href = 'lv1/16_1_mixcvc_intro.html'; return; }
   if (curSheetStep && curSheetStep.id === 'lv1-17') { location.href = 'lv1/17_1_firstsent_intro.html'; return; }
   if (curSheetStep && curSheetStep.id === 'lv1-18') { location.href = 'lv1/18_1_mission.html'; return; }
+  if (curSheetStep && curSheetStep.id === 'lv2-01') { location.href = 'lv2/01_1_shch_intro.html'; return; }
   if (TEST) return simulate(curSheetStep, false);
   toastMini('준비 중인 단계입니다.');
 });

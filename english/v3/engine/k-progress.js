@@ -24,9 +24,15 @@
   }
   function save(d) { try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {} }
 
+  /* 사슬 = 열린 레벨의 칸을 배열 순서대로 이어 붙인 것.
+     레벨이 하나만 열려 있으면 종전과 완전히 동일(Lv1 회귀 무손실).
+     Lv2가 열리면 lv1-18 점등 뒤 lv2-01 이 open 이 된다 — 레벨 경계에
+     별도 규칙을 두지 않는 이유는 아이 화면에서 사다리가 하나이기 때문. */
   function steps() {
-    var lv = (global.EN_LADDER && global.EN_LADDER.levels || []).find(function (l) { return l.open; });
-    return lv ? lv.steps : [];
+    var lvs = (global.EN_LADDER && global.EN_LADDER.levels || []).filter(function (l) { return l.open; });
+    var out = [];
+    lvs.forEach(function (l) { (l.steps || []).forEach(function (s) { out.push(s); }); });
+    return out;
   }
 
   var KProgress = {
