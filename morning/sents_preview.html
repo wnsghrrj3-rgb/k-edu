@@ -43,6 +43,15 @@ select{font-family:inherit;font-size:15px;padding:9px 12px;border:1px solid var(
 .spin{width:22px;height:22px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:sp .8s linear infinite;margin:0 auto 10px}
 @keyframes sp{to{transform:rotate(360deg)}}
 .foot{font-size:12.5px;color:var(--faint);text-align:center;margin-top:8px;line-height:1.7}
+/* ── 건너가는 통로 ──────────────────────────────────
+   미리보기는 "무엇이 나가는지"를 보여주고, 통로는 "아이가 어떻게 만나는지"로 데려간다.
+   둘 다 새 창으로 연다 — 보던 자리를 잃지 않아야 한 손으로 준비가 된다. */
+.ways{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px;padding-top:15px;border-top:1px dashed var(--border)}
+.way{display:inline-flex;align-items:center;gap:7px;text-decoration:none;font-family:inherit;font-size:14.5px;
+  padding:11px 17px;border-radius:13px;border:1.5px solid var(--primary);color:var(--primary);background:#fff}
+.way.fill{background:var(--primary);color:#fff}
+.way small{font-size:12px;opacity:.8}
+.ways .note{font-size:12.5px;color:var(--faint);align-self:center;line-height:1.6}
 </style>
 </head>
 <body>
@@ -64,6 +73,16 @@ select{font-family:inherit;font-size:15px;padding:9px 12px;border:1px solid var(
   </div>
 
   <div class="card" id="sentCard"><div class="msg"><div class="spin"></div>문장을 준비하는 중…</div></div>
+
+  <div class="card" id="wayCard" style="display:none">
+    <h2>이 문장으로 무엇을 할 수 있어요</h2>
+    <div class="hint">아이가 실제로 만나는 화면을 그대로 열어 보거나, 칠판 옆에 붙일 인쇄물을 뽑을 수 있어요.</div>
+    <div class="ways">
+      <a class="way fill" id="wayOpen" target="_blank" rel="noopener">학생 화면 열기</a>
+      <a class="way" id="wayPrint" target="_blank" rel="noopener">인쇄물 만들기</a>
+      <span class="note">둘 다 새 창으로 열려요. 학생 화면은 기록이 남지 않게 열어요.</span>
+    </div>
+  </div>
 
   <div class="card">
     <h2 style="margin-bottom:12px">확인 문제</h2>
@@ -88,6 +107,18 @@ select{font-family:inherit;font-size:15px;padding:9px 12px;border:1px solid var(
   var gSel = document.getElementById('g'), dSel = document.getElementById('d');
   var meta = document.getElementById('meta'), mount = document.getElementById('mount');
   var sentCard = document.getElementById('sentCard');
+  var wayCard = document.getElementById('wayCard');
+  var wayOpen = document.getElementById('wayOpen'), wayPrint = document.getElementById('wayPrint');
+
+  /* 통로는 화면에 박힌 주소가 아니라 지금 고른 학년·일차를 따라간다.
+     없는 일차에서는 통로 자체를 감춘다 — 열었는데 볼 것이 없으면 안 된다.
+     학생 화면은 peek=1 로 연다: 교실 공용 기기에서 미리 돌려도 도장이 찍히지 않는다. */
+  function wire(on){
+    if (!on){ wayCard.style.display = 'none'; return; }
+    wayCard.style.display = '';
+    wayOpen.href  = '/morning/sents.html?grade='+st.grade+'&day='+st.day+'&peek=1';
+    wayPrint.href = '/morning/sents_print.html?grade='+st.grade+'&day='+st.day;
+  }
 
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
@@ -145,6 +176,7 @@ select{font-family:inherit;font-size:15px;padding:9px 12px;border:1px solid var(
       meta.innerHTML = '아직 준비되지 않은 일차예요.';
       sentCard.innerHTML = '<div class="msg">이 학년·일차는 문장이 없어요.</div>';
       mount.innerHTML = '<div class="msg">이 학년·일차는 문제가 없어요.</div>';
+      wire(false);
       return;
     }
 
@@ -155,6 +187,7 @@ select{font-family:inherit;font-size:15px;padding:9px 12px;border:1px solid var(
       + esc(rules.tileMax)+'개까지예요.</span>';
 
     drawSentence(day);
+    wire(true);
     KQuiz.mount(mount, { mode:'teacher', lesson:key, n:10 });
 
     var u = new URL(location.href);

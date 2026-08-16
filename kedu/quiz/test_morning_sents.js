@@ -336,6 +336,72 @@ await (async function(){
   }
 })();
 
+/* ══ ⑧ 미리보기로 열기(peek) — 교사가 돌려 봐도 아이 기록이 생기지 않는가 ══
+      교실 공용 기기에서 선생님이 먼저 돌려 보는 일이 잦다. 그때 도장이 찍히면
+      아이가 아직 만나지도 않은 날이 이미 끝난 것으로 남는다.
+      끄는 것만으로는 부족하고, 끈 사실이 화면에 적혀 있어야 한다. */
+await (async function(){
+  /* 넓히기가 있는 날 하나를 원장에서 실제로 고른다 */
+  var c = null;
+  D.grades().forEach(function(g){
+    for (var d = 1; d <= D.maxDay(g); d++) {
+      var x = D.day(g, d);
+      if (x.expand && x.expand.sent && !c) c = { g:g, d:d, x:x };
+    }
+  });
+  if (!c) { console.log('  · 넓히기 있는 날이 없어 peek 완주 갈래를 건너뜀'); return; }
+
+  async function runThrough(qs){
+    var o = open(qs);
+    await o.tick(6);
+    o.doc.getElementById('go-say').click();
+    await o.tick(4);
+    for (var r = 1; r <= 5; r++) { assemble(o, c.x.tiles, 'peek'); await o.tick(6); }
+    assemble(o, c.x.expand.sent.split(/\s+/), 'peek넓히기');
+    await o.tick(4);
+    o.doc.getElementById('fin').click();
+    await o.tick(4);
+    return o;
+  }
+
+  var base = '?grade=' + c.g + '&day=' + c.d;
+
+  /* 미리보기로 열면 — 완주해도 아무것도 남지 않는다 */
+  var pk = await runThrough(base + '&peek=1');
+  T(pk.txt('.sheet').indexOf('내 것이 됐어요') >= 0, 'peek: 마무리 화면까지 못 감 — 같은 화면이어야 한다');
+  var mp = pk.win.localStorage.getItem('kedu_english_done_g' + c.g);
+  T(mp === null || Object.keys(JSON.parse(mp)).length === 0,
+    'peek 로 열었는데 완주 기록이 남음: ' + mp);
+
+  /* 그냥 열면 — 남는다(끄는 쪽만 검사하면 항상 안 남는 화면도 통과한다) */
+  var nm = await runThrough(base);
+  var mn = JSON.parse(nm.win.localStorage.getItem('kedu_english_done_g' + c.g) || '{}');
+  T(mn[c.d] === 1, '평소 열기에서 완주 기록이 안 남음 — peek 판정 자체가 무의미해진다');
+
+  /* 끈 사실이 화면에 적혀 있는가 */
+  var p1 = open(base + '&peek=1'); await p1.tick(6);
+  T(p1.doc.querySelector('.peeknote') !== null, 'peek 안내 띠가 없음 — 조용히 다르게 도는 화면');
+  T(p1.txt('.peeknote').indexOf('기록이 남지 않아요') >= 0, 'peek 안내에 기록 이야기가 없음');
+  var n1 = open(base); await n1.tick(6);
+  T(n1.doc.querySelector('.peeknote') === null, '평소 열기인데 peek 안내가 뜸');
+
+  /* 화면 안 통로가 peek 를 계속 물고 가는가 — 한 칸 옮기자 기록이 살아나면 안 된다 */
+  var all1 = p1.doc.querySelector('.head .nav-ch a.chip');
+  T(all1 && /peek=1/.test(all1.getAttribute('href')), 'peek 상태에서 「전체」 통로가 peek 를 잃음');
+  var allN = n1.doc.querySelector('.head .nav-ch a.chip');
+  T(allN && /peek/.test(allN.getAttribute('href')) === false, '평소 열기인데 「전체」 통로에 peek 가 붙음');
+
+  /* 둘러보기(일차 없이 열기)도 마찬가지 */
+  var b1 = open('?grade=' + c.g + '&peek=1'); await b1.tick(4);
+  T(b1.doc.querySelector('.peeknote') !== null, 'peek 둘러보기에 안내 띠가 없음');
+  var w1 = b1.doc.querySelector('.wrow');
+  T(w1 && /peek=1/.test(w1.getAttribute('href')), 'peek 둘러보기 목록 링크가 peek 를 잃음');
+  var b0 = open('?grade=' + c.g); await b0.tick(4);
+  T(/peek/.test(b0.doc.querySelector('.wrow').getAttribute('href')) === false,
+    '평소 둘러보기 링크에 peek 가 붙음');
+  T(b1.all('.wrow').length === D.maxDay(c.g), 'peek 둘러보기 줄 수가 원장과 다름 — 다른 화면이 되면 안 된다');
+})();
+
 msgs.forEach(function(m){ console.log(m); });
 console.log('\n오늘의 문장 3막 활동 — ' + pass + ' PASS / ' + fail + ' FAIL');
 process.exit(fail ? 1 : 0);

@@ -192,8 +192,15 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--sky);min-height:100vh
 
 .credit{margin-top:26px;font-size:11.5px;color:var(--mist);text-align:center;line-height:1.7}
 
+/* ── 미리보기로 열었을 때 ─────────────────────────────
+   교실 공용 기기에서 선생님이 미리 돌려 보는 일이 잦다. 그때 도장이 찍히면
+   아이가 아직 만나지도 않은 날이 이미 끝난 것으로 남는다. 그래서 기록을 끄고,
+   끈 사실을 화면에 적는다 — 조용히 다르게 도는 화면은 신뢰를 잃는다. */
+.peeknote{background:#FFF6E3;border:1px solid #F0DCB4;color:#8A6320;border-radius:12px;
+  padding:9px 13px;margin-bottom:12px;font-size:12.5px;line-height:1.65}
+
 @media print{
-  .nav,.head .nav-ch,.journey,.sheet,.row,.credit,.browse-bar select,.bt{display:none!important}
+  .nav,.head .nav-ch,.journey,.sheet,.row,.credit,.browse-bar select,.bt,.peeknote{display:none!important}
   body{background:#fff}
   .wrap{max-width:none;padding:0}
   .wrow{break-inside:avoid}
@@ -219,7 +226,7 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--sky);min-height:100vh
   if (!D) { app.innerHTML = '<div class="sheet">문장 자료를 불러오지 못했어요. 새로고침해 주세요.</div>'; return; }
 
   var ROUNDS = 5;                       // 한 문장 = 다섯 번 (한자 열 번의 영어판)
-  var st = { grade:3, di:1, stage:1, round:1, browse:false, met:false };
+  var st = { grade:3, di:1, stage:1, round:1, browse:false, met:false, peek:false };
 
   function esc(t){ return String(t==null?'':t).replace(/[&<>"]/g,function(m){
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]; }); }
@@ -249,6 +256,7 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--sky);min-height:100vh
     catch(e){ return {}; }
   }
   function markDone(){
+    if (st.peek) return;                 /* 미리보기로 열었으면 아무것도 남기지 않는다 */
     try { var m = doneMap(); m[st.di] = 1;
       localStorage.setItem('kedu_english_done_g'+st.grade, JSON.stringify(m)); } catch(e){}
   }
@@ -256,12 +264,22 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--sky);min-height:100vh
   /* ── 주소 풀기: c키·grade/day 모두 받는다 ── */
   function fromUrl(){
     var q = new URLSearchParams(location.search);
+    var peek = q.get('peek') === '1';
     var key = q.get('key') || '';
     var m = key.match(/^g(\d)_english_c(\d{1,3})$/);
-    if (m) return { grade:+m[1], di:+m[2], browse:false };
+    if (m) return { grade:+m[1], di:+m[2], browse:false, peek:peek };
     var g = +q.get('grade') || D.grades()[0];
-    if (q.get('day')) return { grade:g, di:+q.get('day'), browse:false };
-    return { grade:g, di:1, browse: true };
+    if (q.get('day')) return { grade:g, di:+q.get('day'), browse:false, peek:peek };
+    return { grade:g, di:1, browse:true, peek:peek };
+  }
+  /* 화면 안의 통로(전체·주차 목록)는 peek 를 계속 물고 간다 —
+     한 번 미리보기로 들어왔는데 옆으로 한 칸 옮기자 기록이 살아나면 안 된다. */
+  function peekQs(){ return st.peek ? '&peek=1' : ''; }
+  function peekNote(){
+    return st.peek
+      ? '<div class="peeknote">미리보기로 열었어요 — 여기서 무엇을 해도 <b>기록이 남지 않아요</b>. '
+        + '아이들이 만날 화면 그대로예요.</div>'
+      : '';
   }
   function clamp(){
     if (D.grades().indexOf(st.grade) < 0) st.grade = D.grades()[0];
@@ -281,13 +299,14 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--sky);min-height:100vh
   }
   function headHtml(){
     var week = Math.ceil(st.di/5), dow = ['월','화','수','목','금'][(st.di-1)%5];
-    return '<div class="head">'
+    return peekNote()
+      + '<div class="head">'
       + '<div class="day">'+st.grade+'학년 '+st.di+'일째 문장'
       +   '<small>'+week+'주 '+dow+' · 모두 '+total()+'문장</small></div>'
       + '<div class="nav-ch">'
       +   '<button class="chip" id="pv" type="button"'+(st.di<=1?' disabled':'')+'>← 어제</button>'
       +   '<button class="chip" id="nx" type="button"'+(st.di>=total()?' disabled':'')+'>내일 →</button>'
-      +   '<a class="chip quiet" href="/morning/sents.html?grade='+st.grade+'">전체</a>'
+      +   '<a class="chip quiet" href="/morning/sents.html?grade='+st.grade+peekQs()+'">전체</a>'
       + '</div></div>';
   }
   function wireHead(){
@@ -590,7 +609,8 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--sky);min-height:100vh
   /* ══════════════ 둘러보기(교사·전체) ══════════════ */
   function renderBrowse(){
     var done = doneMap(), n = total(), weeks = Math.ceil(n/5);
-    var out = '<div class="browse-bar">'
+    var out = peekNote()
+      + '<div class="browse-bar">'
       + '<div><label for="g">학년</label><select id="g">'
       + D.grades().map(function(g){ return '<option value="'+g+'"'+(g===st.grade?' selected':'')+'>'+g+'학년</option>'; }).join('')
       + '</select></div>'
@@ -602,7 +622,7 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--sky);min-height:100vh
       var rows = '';
       for (var i = w*5+1; i <= Math.min(w*5+5, n); i++) {
         var x = D.day(st.grade, i);
-        rows += '<a class="wrow" href="/morning/sents.html?grade='+st.grade+'&day='+i+'">'
+        rows += '<a class="wrow" href="/morning/sents.html?grade='+st.grade+'&day='+i+peekQs()+'">'
           + (done[i] ? '<span class="mini"></span>' : '')
           + '<span class="n">'+i+'일째</span>'
           + '<span class="s">'+esc(x.sent)+'</span>'
@@ -631,7 +651,7 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--sky);min-height:100vh
   }
 
   var u = fromUrl();
-  st.grade = u.grade; st.di = u.di; st.browse = u.browse;
+  st.grade = u.grade; st.di = u.di; st.browse = u.browse; st.peek = u.peek;
   render();
 })();
 </script>

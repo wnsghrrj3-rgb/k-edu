@@ -254,6 +254,155 @@ DATA.grades().forEach(function (g) {
     '과목 무관하게 "일째 글자"라 부르는 자리가 남아 있음');
 })();
 
+/* ══ 공용: 화면 하나를 jsdom 에서 실제로 띄운다 ══
+   /kedu/... 로 부르는 스크립트를 레포 실물로 갈아 끼운다. 없는 태그를 갈아 끼우려 하면
+   조용히 지나가지 않고 그 자리에서 실패로 남긴다 — 시그니처가 바뀌면 검사가 헛돌기 때문이다. */
+function boot(file, qs, opt) {
+  opt = opt || {};
+  var p = path.join(PAGES, file);
+  if (!fs.existsSync(p)) { T(false, 'morning/' + file + ' 이 없음'); return null; }
+  var h = fs.readFileSync(p, 'utf8');
+  [['/kedu/quiz/kquiz-core.js', ['kedu', 'quiz', 'kquiz-core.js']],
+   ['/kedu/quiz/kquiz-ui.js', ['kedu', 'quiz', 'kquiz-ui.js']],
+   ['/kedu/quiz/templates/english_data.js', ['kedu', 'quiz', 'templates', 'english_data.js']],
+   ['/kedu/quiz/templates/english.js', ['kedu', 'quiz', 'templates', 'english.js']]
+  ].forEach(function (pair) {
+    var tag = '<script src="' + pair[0] + '"></script>';
+    if (h.indexOf(tag) < 0) return;
+    var src = '<script>' + fs.readFileSync(path.join(ROOT, pair[1].join(path.sep)), 'utf8') + '</script>';
+    /* 원장에 구멍을 낸다 — 일수는 그대로인데 뒤쪽 날이 비어 있는 상태.
+       원장이 학년마다 고르게 차 있는 지금은 "빈 날" 분기에 닿을 길이 없어,
+       방어가 살아 있는지 죽어 있는지 구분되지 않는다. 그래서 닿게 만들어 본다. */
+    if (opt.cap && pair[0].indexOf('english_data') >= 0) {
+      src += '<script>(function(){var D=window.KQuiz.englishData,od=D.day,C=' + opt.cap + ';'
+           + 'D.day=function(g,d){return d>C?null:od(g,d);};})();</script>';
+    }
+    h = h.replace(tag, src);
+  });
+  var dom = new JSDOM(h, {
+    url: 'https://keduclass.com/morning/' + file + (qs || ''),
+    runScripts: 'dangerously', pretendToBeVisual: true
+  });
+  var doc = dom.window.document;
+  return {
+    win: dom.window, doc: doc,
+    $: function (s) { return doc.querySelector(s); },
+    all: function (s) { return Array.prototype.slice.call(doc.querySelectorAll(s)); },
+    txt: function (s) { var e = doc.querySelector(s); return e ? e.textContent : ''; }
+  };
+}
+
+/* ⑥ 미리보기 → 학생 화면·인쇄물 통로 (D6)
+      교사가 "무엇이 나가는지" 본 자리에서 "아이가 어떻게 만나는지"로 바로 건너갈 수 있어야 한다.
+      통로는 화면에 박힌 주소가 아니라 지금 고른 학년·일차를 따라가야 한다. */
+(function () {
+  var o = boot('sents_preview.html', '?grade=4&day=3');
+  if (!o) return;
+  var open1 = o.$('#wayOpen'), print1 = o.$('#wayPrint');
+  T(!!open1, '미리보기에 학생 화면 통로가 없음 — 보기만 하고 열어 볼 수 없다');
+  T(!!print1, '미리보기에 인쇄물 통로가 없음');
+  if (!open1 || !print1) return;
+
+  var hO = open1.getAttribute('href') || '', hP = print1.getAttribute('href') || '';
+  T(hO.indexOf('/morning/sents.html') === 0, '학생 화면 통로가 3막 화면을 가리키지 않음: ' + hO);
+  T(/grade=4/.test(hO) && /day=3/.test(hO), '학생 화면 통로가 고른 학년·일차를 안 물고 감: ' + hO);
+  /* 교실 공용 기기에서 미리 돌려도 도장이 찍히면 안 된다 */
+  T(/peek=1/.test(hO), '학생 화면 통로가 peek 없이 열림 — 미리 보다 아이 기록이 생긴다');
+  T(hP.indexOf('/morning/sents_print.html') === 0, '인쇄물 통로가 인쇄 화면을 가리키지 않음: ' + hP);
+  T(/grade=4/.test(hP) && /day=3/.test(hP), '인쇄물 통로가 고른 학년·일차를 안 물고 감: ' + hP);
+  T(open1.getAttribute('target') === '_blank' && print1.getAttribute('target') === '_blank',
+    '통로가 보던 자리를 덮어씀 — 준비하다 미리보기를 잃는다');
+  T((open1.getAttribute('rel') || '').indexOf('noopener') >= 0
+    && (print1.getAttribute('rel') || '').indexOf('noopener') >= 0, '새 창 통로에 noopener 가 없음');
+
+  /* 일차를 바꾸면 통로도 따라와야 한다 — 묵은 주소가 남으면 엉뚱한 날이 열린다 */
+  var d = o.doc.getElementById('d');
+  d.value = '9'; d.onchange();
+  T(/day=9/.test(o.$('#wayOpen').getAttribute('href')), '일차를 바꿨는데 학생 화면 통로가 묵은 날을 가리킴');
+  T(/day=9/.test(o.$('#wayPrint').getAttribute('href')), '일차를 바꿨는데 인쇄물 통로가 묵은 날을 가리킴');
+  var g = o.doc.getElementById('g');
+  g.value = '6'; g.onchange();
+  T(/grade=6/.test(o.$('#wayOpen').getAttribute('href')), '학년을 바꿨는데 통로가 묵은 학년을 가리킴');
+  T(/day=1(&|$)/.test(o.$('#wayOpen').getAttribute('href')), '학년 전환 뒤 일차가 1로 안 접힘');
+
+  /* 원장에 없는 일차에서는 통로 자체를 감춘다 — 열었는데 볼 것이 없으면 안 된다 */
+  var card = o.doc.getElementById('wayCard');
+  T(!!card, '통로 묶음 자리가 없음');
+  T(card.style.display !== 'none', '정상 일차인데 통로가 감춰져 있음');
+})();
+
+/* ⑦ 인쇄물 (D6) — 카드 · 주간표 두 판형 */
+(function () {
+  var p = path.join(PAGES, 'sents_print.html');
+  T(fs.existsSync(p), 'morning/sents_print.html 이 없음');
+  if (!fs.existsSync(p)) return;
+  var raw = fs.readFileSync(p, 'utf8');
+  T(raw.indexOf('ma_submit') < 0 && raw.indexOf('getKeduDb') < 0,
+    '인쇄물이 DB 를 건드림 — 종이를 뽑는 일에 기록이 끼면 안 된다');
+  T(/@media\s+print/.test(raw), '인쇄물에 인쇄 규칙(@media print)이 없음');
+  T(/@page/.test(raw), '인쇄물에 용지 규격(@page)이 없음');
+  T(/\[\s*1\s*,\s*2\s*,\s*3\s*,\s*4\s*,\s*5\s*,\s*6\s*\]/.test(raw) === false,
+    '인쇄물에 학년 하드코딩이 있음 — 원장 없는 1·2학년이 뜬다');
+
+  /* 카드 판형 */
+  var g = 5, d = 7, x = DATA.day(g, d);
+  var o = boot('sents_print.html', '?grade=' + g + '&day=' + d);
+  if (!o) return;
+  T(o.all('.sheet').length === 1, '카드 판형이 한 장이 아님');
+  T(o.txt('.card-sent') === x.sent, '카드의 문장이 원장과 다름: ' + o.txt('.card-sent'));
+  T(o.txt('.card-ko') === x.ko, '카드의 뜻이 원장과 다름');
+  T(o.all('.card-tiles span').map(function (e) { return e.textContent; }).join(' ') === x.tiles.join(' '),
+    '카드의 낱말 조각이 원장 tiles 와 다름');
+  (x['new'] || []).forEach(function (w) {
+    T(o.txt('.words').indexOf(w) >= 0, '카드에 새 낱말이 빠짐: ' + w);
+  });
+  if (x.expand && x.expand.sent) {
+    T(o.txt('.exp').indexOf(x.expand.sent) >= 0, '카드에 넓히기 문장이 없음');
+  }
+  /* 학년 목록은 원장이 정한다 */
+  T(o.all('#g option').map(function (e) { return +e.value; }).join(',') === DATA.grades().join(','),
+    '인쇄물 학년 목록이 원장과 다름');
+  T(o.all('#d option').length === DATA.maxDay(g), '인쇄물 일차 목록이 원장 일수와 다름');
+
+  /* 뜻 숨기기 — 합창 때 한국어가 먼저 읽히면 아이가 영어를 안 본다 */
+  T(o.doc.body.classList.contains('noko') === false, '기본이 뜻 숨김 상태임');
+  o.doc.getElementById('ko').click();
+  T(o.doc.body.classList.contains('noko') === true, '뜻 숨기기가 안 걸림');
+  T(o.doc.getElementById('ko').textContent.indexOf('보이기') >= 0, '뜻 숨긴 뒤 버튼 문구가 안 바뀜');
+  o.doc.getElementById('ko').click();
+  T(o.doc.body.classList.contains('noko') === false, '뜻 다시 보이기가 안 됨');
+  T(o.txt('.card-sent') === x.sent, '뜻 토글 뒤 문장이 사라짐 — 다시 그릴 때 원장을 잃었다');
+
+  /* 주간표 판형 — 그 주 다섯 문장, 원장 끝을 넘으면 있는 만큼만 */
+  o.doc.getElementById('mWeek').click();
+  var rows = o.all('.wk tbody tr');
+  T(rows.length === 5, '주간표가 다섯 줄이 아님: ' + rows.length);
+  T(rows[0].querySelector('.s').textContent === DATA.day(g, 6).sent,
+    '주간표 첫 줄이 그 주 첫날(6일째)이 아님');
+  T(rows[4].querySelector('.s').textContent === DATA.day(g, 10).sent, '주간표 마지막 줄이 어긋남');
+  T(o.txt('.wk').indexOf(DATA.day(g, 11).sent) < 0, '주간표에 다음 주 문장이 섞임');
+
+  /* 마지막 주 — 지어내지 않고 있는 만큼만.
+     원장이 고르게 차 있는 지금은 부분 주가 생기지 않으므로, 원장에 구멍을 내어 닿게 한다.
+     (원장이 학년마다 다른 길이로 자라면 이 상황이 실제로 온다) */
+  var last = DATA.maxDay(g);
+  var o2 = boot('sents_print.html', '?grade=' + g + '&day=' + last + '&mode=week', { cap: last - 2 });
+  var r2 = o2.all('.wk tbody tr');
+  T(r2.length === 3, '구멍 난 원장에서 주간표가 있는 만큼만 나오지 않음: ' + r2.length + '줄 (기대 3)');
+  T(o2.txt('.wk').indexOf('undefined') < 0, '주간표가 빈 날을 지어냄');
+  T(r2.length && r2[r2.length - 1].querySelector('.s').textContent === DATA.day(g, last - 2).sent,
+    '구멍 난 원장에서 주간표 마지막 줄이 어긋남');
+
+  /* 원장 없는 학년·이상 일차는 조용히 접는다 */
+  var o3 = boot('sents_print.html', '?grade=1&day=999');
+  T(o3.all('#g option').map(function (e) { return +e.value; }).indexOf(1) < 0,
+    '인쇄물이 원장 없는 1학년을 고를 수 있게 함');
+  T(o3.txt('.card-sent') === DATA.day(DATA.grades()[0], DATA.maxDay(DATA.grades()[0])).sent
+    || o3.txt('.card-sent') === DATA.day(DATA.grades()[0], 1).sent,
+    '원장 없는 학년·이상 일차에서 빈 카드가 나옴');
+  T(o3.doc.querySelector('.sheet') !== null, '원장 없는 학년에서 종이가 아예 안 나옴');
+})();
+
 Promise.all(jobs).then(function () {
   console.log('\n아침영어 화면 배선 — ' + pass + ' PASS / ' + fail + ' FAIL');
   process.exit(fail ? 1 : 0);
