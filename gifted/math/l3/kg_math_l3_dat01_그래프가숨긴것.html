@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<!--
+  kg_math_l3_dat01 — 그래프가 숨긴 것 [케이영재 수학 · G2 양산 15호 · DAT 연구소 1차시]
+  트랙: 케이영재 / Lab: Data / Level: L3 CHALLENGER (트랙 스킨 v2 「신호기」) / 깊이: D1~D8
+  base: kg_math_l3_pat01 (골격·CSS 계승) + kg_math_l3_pat02 (엔진 공통부 계승)
+        + kg_math_l3_com01 (칩·숫자패드·미터 계승)
+  신규 시각 언어 0 — 눈금 막대 = pat01 .cal-grid 의 열 수 변형 (pro01 .map · com01 .road 와 같은 계열)
+                    칸 상태는 sel · center-cell · diag-b · empty 그대로
+  신규 메카닉 0 — 눈금 손잡이는 값을 고르는 칩과 버튼 조합이다 (com01·pro02 선례)
+  탐구 5단계: 미션(1~3) 탐험(4~7) 발견(8~11) 도전(12~14) 창조(15~16)
+  핵심 수학: 같은 표 하나에서 정반대 인상의 그림 두 장이 나온다
+             → 눈금을 0이 아닌 곳에서 시작하면 막대 길이가 재는 것이 「값」에서 「값 − 시작점」으로 바뀐다
+             → 12와 18은 1번 조금 넘는 사이지만, 10을 덜어낸 2와 8은 딱 4번이다
+             → 시작점을 올리면 보이는 배수는 반드시 커진다 (0~11 전수 확인, 되돌아가는 곳 0)
+             → 꼭대기는 보이는 배수를 바꾸지 못한다 (전체 칸이 약분된다 — 전수 확인)
+             → 대신 꼭대기를 올리면 길이 차이가 반드시 줄어든다 (채운 칸 차이는 늘 6칸, 전체만 늘어난다)
+             → 그래서 두 손잡이는 방향이 반대다: 자르기 = 부풀리기 / 꼭대기 = 숨기기
+             → 자르기가 언제나 속임수인 것은 아니다 — 0이 「없음」을 뜻하는 자료만 0에서 시작한다
+  점수 100 = 탐험 15 + 추측 10 + 발견 20(q9 10 + q10 10) + 검증 15(hide 10 + honest 5)
+             + 확장 20(grow 10 + shrink 10) + 창조 20(임무 가 10 + 임무 나 10)
+  힌트: H1/H2/H3 3단 (감점 없음, 답 비노출) / 창조 검사기는 학생이 만든 그림의 모습만 돌려주고 손잡이 값은 비공개
+  ⚠ 분수·백분율·소수를 쓰지 않는다 — 배수는 「몇 번 들어가는가」(몫과 나머지)로만 말한다
+  ⚠ 수치는 tests/verify_kg_l3_dat01.py 전수 열거 698건으로 코딩 전에 선검증했다
+     (그 과정에서 손계산 두 곳 c=5·c=7 이 반증되어 바로잡았다)
+  ⛔ 규약: 문자식 금지 / 차단 어휘 금지 / 이모지 슬라이드당 ≤2
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="kg_math_l3_dat01_v1">
+<title>그래프가 숨긴 것 · 케이영재 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#F4F2EC; --ink:#17161C; --ink-soft:#5A5762;
+  --coral:#7B4DFF; --coral-deep:#5B2EE0; --coral-soft:#E7DEFF;
+  --teal:#3B5BA5; --teal-deep:#2C4480; --teal-soft:#DDE4F5;
+  --gold:#9BBF00; --emph:#FF5714; --line:#17161C; --mark:#D6F94C;
+  --f-title:'Black Han Sans',sans-serif; --f-body:'Noto Sans KR',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:4px 4px 0 rgba(23,22,28,.92);
+  --fs-title: clamp(26px, 4.2vw, 46px);
+  --fs-heading: clamp(23px, 3.5vw, 35px);
+  --fs-body: clamp(19px, 2.9vw, 27px);
+  --fs-caption: clamp(17px, 2.6vw, 24px);
+  --fs-label: clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --mw-sm: min(720px, 96vw);
+  --mw-lg: min(880px, 96vw);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+@keyframes ka-glow { 0%,100%{box-shadow:0 0 0 0 rgba(14,138,95,.4);} 50%{box-shadow:0 0 0 10px rgba(14,138,95,0);} }
+
+.ka { background:var(--paper); width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; color:var(--ink); position:relative; overflow:hidden; }
+.ka-h { display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); padding:clamp(11px,1.7vw,15px) clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:hover { transform:translateY(-1px); }
+.ka-pill { font-family:var(--f-title); background:var(--coral); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-where { font-size:clamp(14px,1.6vw,18px); color:var(--ink-soft); flex-shrink:1; }
+.ka-where b { color:var(--ink); }
+.ka-bar { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:46vw; }
+.ka-dot { width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s, background .2s; }
+.ka-dot:hover { transform:scale(1.2); }
+.ka-dot.active { background:var(--coral); transform:scale(1.3); }
+.ka-dot.done { background:var(--teal); }
+.ka-score { font-family:var(--f-title); background:#D6F94C; color:#17161C; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); padding:0; border-radius:50%; cursor:pointer; flex-shrink:0; color:var(--coral-deep); font-size:clamp(13px,2vw,16px); width:clamp(32px,4.5vw,38px); height:clamp(32px,4.5vw,38px); display:flex; align-items:center; justify-content:center; }
+
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; justify-content:safe center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; justify-content:safe center; gap:clamp(7px,1.2vw,11px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(8px,1.4vh,16px) clamp(16px,4vw,48px); overflow-x:hidden; overflow-y:auto; scrollbar-width:none; -ms-overflow-style:none; }
+.slide::-webkit-scrollbar { width:0; height:0; }
+.slide.active { display:flex; }
+.slide-title { font-family:var(--f-title); font-size:var(--fs-title); line-height:1.18; color:var(--ink); font-weight:400; text-align:center; flex-shrink:0; }
+.slide-sub { font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(10px,1.6vw,16px); left:clamp(16px,4vw,40px); font-family:var(--f-title); color:var(--coral); font-size:clamp(13px,1.9vw,18px); letter-spacing:.4px; z-index:5; }
+
+.ka-f { display:flex; justify-content:flex-end; gap:12px; padding:clamp(12px,1.7vw,16px) clamp(16px,4vw,40px); background:linear-gradient(to top, var(--paper) 62%, transparent); flex-shrink:0; }
+.ka-prev, .ka-hint, .ka-next { font-family:var(--f-title); font-size:clamp(15px,1.9vw,22px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(10px,1.4vw,15px) clamp(20px,2.8vw,38px); cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translateY(-2px); }
+.ka-prev { margin-right:auto; }
+.ka-hint { color:#17161C; border-color:#17161C; }
+.ka-next { background:var(--coral); color:#fff; border-color:var(--coral); }
+.ka-prev:disabled, .ka-next:disabled { opacity:.35; cursor:default; transform:none; }
+.ka-hint:disabled { opacity:.4; cursor:default; }
+
+.concept-box { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,18px) clamp(18px,2.8vw,28px); border-radius:20px; font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); text-align:center; line-height:1.5; box-shadow:var(--shadow); }
+.concept-box strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.intro-q { font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; }
+.intro-q strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.goal-list { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); font-size:var(--fs-caption); color:var(--ink); max-width:var(--mw-sm); }
+.goal-list li { background:#fff; border:2px solid var(--line); padding:clamp(7px,1.3vw,11px) clamp(14px,2.6vw,20px); border-radius:16px; list-style:none; box-shadow:var(--shadow); }
+.goal-list li strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+.mission-card { background:#fff; border:3px solid var(--coral-soft); border-radius:26px; padding:clamp(16px,3vw,26px) clamp(20px,3.8vw,34px); max-width:var(--mw-sm); text-align:center; box-shadow:0 6px 0 var(--coral-soft); font-size:var(--fs-body); line-height:1.6; }
+.mission-card strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+
+/* ── 달력 격자 ── */
+.cal-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.1vw,10px); }
+.cal-head { display:flex; align-items:center; gap:clamp(8px,1.6vw,14px); }
+.cal-title { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--coral-deep); }
+.cal-month-btn { font-family:var(--f-title); font-size:var(--fs-label); background:#fff; border:2px solid var(--line); border-radius:999px; padding:4px 12px; cursor:pointer; color:var(--ink-soft); }
+.cal-month-btn.on { background:var(--coral); color:#fff; border-color:var(--coral); }
+.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:clamp(3px,0.6vw,5px); background:#fff; border:2px solid var(--line); border-radius:18px; padding:clamp(8px,1.4vw,12px); box-shadow:var(--shadow); }
+.cal-dow { font-family:var(--f-title); font-size:clamp(12px,1.7vw,16px); color:var(--ink-soft); text-align:center; padding-bottom:2px; }
+.cal-dow.sun { color:var(--emph); }
+.cal-cell { width:clamp(34px,6.2vw,54px); height:clamp(30px,5.4vw,46px); display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:clamp(15px,2.4vw,22px); color:var(--ink); background:var(--paper); border-radius:10px; cursor:pointer; transition:background .15s, transform .1s; user-select:none; }
+.cal-cell:hover { background:var(--coral-soft); }
+.cal-cell.empty { background:transparent; cursor:default; }
+.cal-cell.sel { background:var(--coral); color:#fff; animation:ka-pop .3s ease; }
+.cal-cell.diag-a { outline:3px solid var(--gold); outline-offset:-3px; }
+.cal-cell.diag-b { outline:3px solid var(--teal); outline-offset:-3px; }
+.cal-cell.center-cell { background:var(--emph); color:#fff; }
+.cal-info { display:flex; gap:clamp(8px,1.6vw,14px); flex-wrap:wrap; justify-content:center; min-height:2.2em; align-items:center; }
+.sum-chip { font-family:var(--f-title); font-size:var(--fs-caption); padding:clamp(5px,1vw,8px) clamp(12px,2.2vw,18px); border-radius:999px; background:#fff; border:2px solid var(--line); }
+.sum-chip.a { border-color:var(--gold); color:#5E7500; }
+.sum-chip.b { border-color:var(--teal); color:var(--teal-deep); }
+.sum-chip.tot { border-color:var(--coral); color:var(--coral-deep); }
+.cal-msg { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--coral-deep); min-height:1.5em; text-align:center; }
+.cal-msg.wrong { color:var(--emph); }
+
+/* ── 사례 테이블 ── */
+.case-table { border-collapse:collapse; background:#fff; border-radius:16px; overflow:hidden; box-shadow:var(--shadow); font-size:var(--fs-caption); }
+.case-table th { font-family:var(--f-title); font-weight:400; background:var(--coral-soft); color:var(--coral-deep); padding:clamp(6px,1.1vw,10px) clamp(12px,2.2vw,20px); }
+.case-table td { font-family:var(--f-num); font-weight:800; text-align:center; padding:clamp(6px,1.1vw,10px) clamp(12px,2.2vw,20px); border-top:1px solid var(--line); }
+.case-count { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); }
+.case-count b { color:var(--coral-deep); font-size:1.2em; }
+
+/* ── 관찰·추측 선택 ── */
+.pick-list { display:flex; flex-direction:column; gap:clamp(7px,1.3vw,11px); width:100%; max-width:var(--mw-sm); }
+.pick-item { background:#fff; border:3px solid var(--line); border-radius:18px; padding:clamp(10px,1.8vw,15px) clamp(16px,3vw,24px); font-size:var(--fs-body); cursor:pointer; transition:border-color .2s, transform .12s; text-align:left; font-family:var(--f-body); color:var(--ink); }
+.pick-item:hover { border-color:var(--coral); }
+.pick-item.on { border-color:var(--coral); background:var(--coral-soft); animation:ka-pop .3s ease; }
+.pick-item .tag { font-family:var(--f-title); color:var(--coral-deep); margin-right:8px; }
+
+/* ── 구조 시각화 ── */
+.struct-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.5vw,13px); }
+.struct-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(6px,1.1vw,9px); }
+.struct-cell { width:clamp(76px,13vw,120px); height:clamp(52px,9vw,80px); background:#fff; border:3px solid var(--coral-soft); border-radius:14px; display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:clamp(19px,3vw,30px); color:var(--coral-deep); box-shadow:0 4px 0 var(--coral-soft); }
+.struct-cell.hl-a { border-color:var(--gold); box-shadow:0 4px 0 var(--gold); }
+.struct-cell.hl-b { border-color:var(--teal); box-shadow:0 4px 0 var(--teal-soft); }
+.struct-eq { font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center; }
+.struct-eq .star { color:var(--emph); }
+.arrow-note { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); background:#fff; border:2px solid var(--line); border-radius:999px; padding:5px 16px; cursor:pointer; transition:transform .15s; }
+.arrow-note.revealed { color:var(--coral-deep); border-color:var(--coral); animation:ka-glow 1.4s ease 1; }
+
+/* ── 문제 공통 ── */
+.q-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.5vw,13px); max-width:var(--mw-lg); width:100%; }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; font-weight:400; }
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-sm); }
+.mcq-opts.one-col { grid-template-columns:1fr; }
+.mcq-opt { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,1.9vw,15px); font-family:var(--f-title); font-size:var(--fs-body); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .2s; box-shadow:0 6px 0 var(--coral-soft); font-weight:400; }
+.mcq-opt:hover { border-color:var(--coral); }
+.mcq-opt:active { transform:translateY(4px); box-shadow:none; }
+.mcq-opt.correct { border-color:var(--coral-deep); background:var(--coral); color:#fff; box-shadow:0 6px 0 var(--coral-deep); animation:ka-pop .5s ease; }
+.mcq-opt.wrong { border-color:var(--emph); background:#FFE3D6; color:var(--ink); animation:ka-shake .35s; }
+.mcq-hint { font-family:var(--f-title); font-size:var(--fs-caption); color:#17161C; background:#D6F94C; border-radius:16px; padding:clamp(8px,1.5vw,12px) clamp(14px,2.6vw,20px); max-width:var(--mw-sm); text-align:center; display:none; }
+.mcq-hint.show { display:block; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); color:var(--coral-deep); min-height:1.4em; text-align:center; }
+.q-fb.wrong { color:var(--emph); }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:clamp(30px,5vw,54px); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:20px; padding:clamp(8px,1.5vw,13px) clamp(24px,4.4vw,42px); min-width:clamp(110px,20vw,180px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.q-pad { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(6px,1.2vw,10px); max-width:clamp(280px,56vw,460px); }
+.q-key { background:#fff; border:2px solid var(--line); border-radius:14px; padding:clamp(7px,1.4vw,11px) 0; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, background .15s; box-shadow:0 4px 0 var(--line); }
+.q-key:hover { background:var(--coral-soft); border-color:var(--coral); }
+.q-key:active { transform:translateY(3px); box-shadow:none; }
+.q-key.fn { background:#D6F94C; color:#17161C; font-family:var(--f-title); font-size:var(--fs-caption); border-color:#17161C; box-shadow:0 4px 0 #17161C; }
+
+/* ── 모양 실험실 ── */
+.shape-pick { display:flex; gap:clamp(8px,1.5vw,13px); flex-wrap:wrap; justify-content:center; }
+.shape-btn { background:#fff; border:3px solid var(--line); border-radius:16px; padding:clamp(8px,1.4vw,12px) clamp(12px,2.2vw,18px); cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:5px; transition:border-color .2s, transform .12s; }
+.shape-btn:hover { border-color:var(--coral); }
+.shape-btn.on { border-color:var(--coral); background:var(--coral-soft); }
+.shape-mini { display:grid; grid-template-columns:repeat(3, clamp(10px,1.8vw,15px)); gap:2px; }
+.shape-mini i { display:block; width:clamp(10px,1.8vw,15px); height:clamp(10px,1.8vw,15px); border-radius:3px; background:var(--line); }
+.shape-mini i.f { background:var(--coral); }
+.shape-name { font-family:var(--f-title); font-size:var(--fs-label); color:var(--ink); }
+.rule-build { display:flex; align-items:center; gap:clamp(6px,1.2vw,10px); flex-wrap:wrap; justify-content:center; font-family:var(--f-title); font-size:var(--fs-body); }
+.rule-slot { background:#fff; border:3px dashed var(--coral); border-radius:14px; min-width:clamp(72px,13vw,120px); padding:clamp(6px,1.1vw,9px) clamp(10px,1.8vw,14px); text-align:center; color:var(--coral-deep); font-family:var(--f-num); font-weight:800; cursor:pointer; }
+.rule-slot.filled { border-style:solid; background:var(--coral-soft); }
+.rule-choice { display:flex; gap:clamp(6px,1.1vw,9px); flex-wrap:wrap; justify-content:center; }
+.rule-chip { background:#fff; border:2px solid var(--line); border-radius:999px; padding:clamp(5px,1vw,8px) clamp(12px,2.2vw,18px); font-family:var(--f-title); font-size:var(--fs-caption); cursor:pointer; transition:transform .12s, border-color .15s; }
+.rule-chip:hover { border-color:var(--coral); transform:translateY(-2px); }
+
+/* ── 탐정 카드·마무리 ── */
+.detective-card { background:#fff; border:3px solid var(--gold); border-radius:26px; padding:clamp(16px,3vw,26px) clamp(20px,3.8vw,34px); max-width:var(--mw-sm); width:100%; box-shadow:0 8px 0 var(--mark); display:flex; flex-direction:column; gap:clamp(7px,1.3vw,11px); }
+.dc-row { display:flex; justify-content:space-between; gap:14px; font-size:var(--fs-caption); border-bottom:1px dashed var(--line); padding-bottom:6px; }
+.dc-row b { font-family:var(--f-title); font-weight:400; color:var(--coral-deep); }
+.dc-title { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; }
+.wrap-score { font-family:var(--f-num); font-weight:800; font-size:clamp(56px,10vw,110px); color:var(--coral-deep); line-height:1; }
+.wrap-msg { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); }
+.home-card { background:var(--teal-soft); border-radius:20px; padding:clamp(12px,2.2vw,18px) clamp(18px,3.2vw,26px); font-size:var(--fs-caption); color:var(--teal-deep); max-width:var(--mw-sm); text-align:center; line-height:1.55; }
+.next-mini { display:flex; gap:clamp(8px,1.5vw,13px); flex-wrap:wrap; justify-content:center; }
+.next-chip { font-family:var(--f-title); font-size:var(--fs-label); background:#fff; border:2px solid var(--line); border-radius:999px; padding:6px 16px; color:var(--ink-soft); }
+
+/* ═══ 케이영재 스킨 v2 「신호기」 — 트랙 전용 (헌법 v1.3 §3-α · skin_v2_signal.py 가 단일 원본) ═══
+   굵은 먹선 + 오프셋 통그림자 + 보라·라임. 레이아웃 값(크기·간격)은 건드리지 않는다. */
+.ka-h { border-bottom:3px solid var(--ink); }
+.ka-prev, .ka-hint, .ka-next { box-shadow:3px 3px 0 var(--ink); }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translate(-1px,-1px); box-shadow:4px 4px 0 var(--ink); }
+.ka-prev:active, .ka-hint:active, .ka-next:active { transform:translate(3px,3px); box-shadow:0 0 0 var(--ink); }
+.ka-hint { background:var(--mark); }
+.ka-pill { border:2px solid var(--ink); box-shadow:2px 2px 0 var(--ink); }
+.ka-score { border:2px solid var(--ink); box-shadow:2px 2px 0 var(--ink); }
+.ka-dot { background:#CBC8BF; }
+.mcq-opt { border-color:var(--ink); box-shadow:5px 5px 0 var(--ink); }
+.mcq-opt.correct { box-shadow:5px 5px 0 var(--coral-deep); }
+.detective-card { border-color:var(--ink); }
+.mission-card { border-color:var(--ink); box-shadow:6px 6px 0 var(--ink); }
+.cal-cell { border:2px solid var(--ink); }
+.cal-cell.empty { border-color:transparent; background:transparent; }
+
+/* ═══ 공용 8종 (com01 정의 문자 그대로 추출·주입 — 손으로 옮겨 적지 않는다) ═══ */
+.shadow-tag { font-size:var(--fs-label); color:var(--ink-soft); font-family:var(--f-title); }
+.vox-btns { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+.lab-meter { display:flex; align-items:baseline; justify-content:center; gap:8px; margin:6px 0; }
+.lab-label { font-size:var(--fs-label); color:var(--ink-soft); font-family:var(--f-title); }
+.lab-count { font-family:var(--f-title); font-size:var(--fs-h1); color:var(--coral-deep); min-width:2.2em; text-align:center; }
+.chip-row { display:flex; gap:clamp(5px,1vw,9px); justify-content:center; flex-wrap:wrap; margin:6px 0; }
+.road-row { display:flex; gap:clamp(10px,2.6vw,26px); justify-content:center; align-items:flex-end; flex-wrap:wrap; }
+.road-one { display:flex; flex-direction:column; align-items:center; gap:5px; }
+
+/* ═══ 눈금 막대 (pat01 .cal-grid 의 열 수 변형 — pro01 .map · com01 .road 와 같은 계열) ═══ */
+.cal-grid.axis { --bn:18; grid-template-columns:repeat(var(--bn), 1fr); width:min(58vw, 400px); gap:clamp(1px,0.22vw,3px); padding:clamp(3px,0.6vw,6px); border-radius:10px; }
+.cal-grid.axis .cal-cell { width:auto; height:clamp(15px,2.6vw,24px); border-radius:3px; font-size:0; cursor:default; }
+.lab-meter.axis-row { align-items:center; gap:clamp(5px,1vw,10px); }
+</style>
+</head>
+<body>
+<div class="ka">
+  <header class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 나가기</button>
+    <span class="ka-pill">케이영재</span>
+    <span class="ka-where"><b>그래프가 숨긴 것</b> · 자료 연구소</span>
+    <div class="ka-bar" id="dots"></div>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </header>
+
+  <main class="ka-m" id="main">
+
+
+    <!-- 슬1 · 미션: 타이틀 -->
+    <section class="slide">
+      <span class="stage-badge">미션 1/3</span>
+      <h1 class="slide-title">📰 그래프가 숨긴 것</h1>
+      <p class="slide-sub">자료 연구소 · 수사 의뢰 1호</p>
+      <div class="mission-card">
+        같은 날 학교 신문 두 곳이 <strong>같은 자료</strong>로 기사를 냈다.<br>
+        「으뜸소식」은 <strong>「4반 독주 — 나머지는 상대가 안 된다」</strong>,
+        「한빛신문」은 <strong>「네 반 나란히 — 우열을 가릴 수 없다」</strong>.<br>
+        두 신문이 실은 그림도 정말 그렇게 보인다. 어느 쪽이 자료를 고쳤는지 찾아라.
+      </div>
+    </section>
+
+    <!-- 슬2 · 미션: 자료는 하나뿐 -->
+    <section class="slide">
+      <span class="stage-badge">미션 2/3</span>
+      <h1 class="slide-title">자료는 하나뿐이다</h1>
+      <p class="slide-sub">네 반이 이번 주에 읽은 책 수 · 두 신문이 본 표는 이것 하나였다</p>
+      <table class="case-table">
+        <tr><th>1반</th><th>2반</th><th>3반</th><th>4반</th></tr>
+        <tr><td>12권</td><td>14권</td><td>16권</td><td>18권</td></tr>
+      </table>
+      <div class="road-row">
+        <div class="road-one">
+          <span class="shadow-tag">으뜸소식의 그림</span>
+          <div id="intro-a"></div>
+        </div>
+        <div class="road-one">
+          <span class="shadow-tag">한빛신문의 그림</span>
+          <div id="intro-b"></div>
+        </div>
+      </div>
+      <div class="concept-box">
+        두 그림에 적힌 수는 <strong>똑같이 12·14·16·18</strong>이다.<br>
+        그런데 막대의 <strong>길이</strong>가 전혀 다르다. 길이를 정하는 것은 수만이 아니었다.
+      </div>
+    </section>
+
+    <!-- 슬3 · 미션: 수사의 다섯 걸음 -->
+    <section class="slide">
+      <span class="stage-badge">미션 3/3</span>
+      <h1 class="slide-title">수사의 다섯 걸음</h1>
+      <ul class="goal-list">
+        <li><b>손잡이를 잡는다</b> — 그림에서 바꿀 수 있는 것이 무엇인지 확인한다</li>
+        <li><b>표를 지켜본다</b> — 손잡이를 돌리는 동안 자료가 바뀌는지 본다</li>
+        <li><b>인상을 잰다</b> — 4반 막대 안에 1반 막대가 몇 번 들어가는지 센다</li>
+        <li><b>까닭을 찾는다</b> — 잘린 막대가 나타내는 것이 무엇인지 말한다</li>
+        <li><b>경계를 긋는다</b> — 잘라도 되는 자료와 안 되는 자료를 가른다</li>
+      </ul>
+      <div class="concept-box">
+        오늘 찾을 것은 <strong>거짓말한 사람</strong>이 아니다.<br>
+        수를 하나도 고치지 않고도 <strong>인상을 뒤집는 방법</strong>이다.
+      </div>
+    </section>
+
+    <!-- 슬4 · 탐험: 시작점 손잡이 (+15) -->
+    <section class="slide" data-q-id="explore">
+      <span class="stage-badge">탐험 1/4</span>
+      <h1 class="slide-title">첫째 손잡이 · 눈금의 시작점</h1>
+      <p class="slide-sub">눈금을 <b>0이 아닌 곳</b>에서 시작할 수 있다 · 서로 다른 시작점 <b>3곳</b>을 써 보면 +15</p>
+      <div class="vox-btns" id="ex-btns"></div>
+      <div class="lab-meter">
+        <span class="lab-label">눈금 시작점</span><span class="lab-count" id="ex-cut">0</span>
+        <span class="lab-label">부터 <b id="ex-top">18</b>까지</span>
+      </div>
+      <div id="ex-bars"></div>
+      <div class="concept-box" id="ex-read">4반 막대 안에 1반 막대가 <strong>1번 조금 넘게</strong> 들어간다.</div>
+      <p class="q-fb" id="fb-explore"></p>
+      <p class="mcq-hint" data-hints='["시작점을 한 칸씩 올리면서 막대 네 개가 어떻게 달라지는지 눈으로 따라가 보자.","오른쪽 끝의 수(12·14·16·18)를 함께 지켜보자. 그 수가 바뀌는지 아닌지가 오늘 수사의 첫 단서다.","시작점을 크게 올릴수록 1반 막대가 눈에 띄게 짧아진다. 짧아지는 정도가 네 반이 서로 같은지 견주어 보자."]'></p>
+    </section>
+
+    <!-- 슬5 · 탐험: 사례 표 (엔진 훅 cur===4) -->
+    <section class="slide">
+      <span class="stage-badge">탐험 2/4</span>
+      <h1 class="slide-title">지금까지 만든 그림들</h1>
+      <p class="slide-sub">손잡이를 돌릴 때마다 한 줄씩 쌓인다</p>
+      <div class="case-count">기록한 그림 <b id="case-n">0</b>개</div>
+      <table class="case-table" id="case-table">
+        <tr><th>시작점</th><th>1반 칸</th><th>4반 칸</th><th>4반 안에 1반이</th></tr>
+      </table>
+      <div class="concept-box">
+        표의 자료는 내내 <strong>12 · 14 · 16 · 18</strong> 그대로였다.<br>
+        바뀐 것은 <strong>칸 수</strong>뿐이다. 그런데 「몇 번 들어가는지」가 줄마다 다르다.
+      </div>
+    </section>
+
+    <!-- 슬6 · 탐험: 꼭대기 손잡이 -->
+    <section class="slide">
+      <span class="stage-badge">탐험 3/4</span>
+      <h1 class="slide-title">둘째 손잡이 · 눈금의 꼭대기</h1>
+      <p class="slide-sub">이번에는 시작점을 <b>0</b>에 두고 꼭대기만 올려 본다</p>
+      <div class="chip-row" id="tp-chips"></div>
+      <div id="tp-bars"></div>
+      <div class="lab-meter">
+        <span class="lab-label">4반 막대 안에 1반 막대가</span>
+        <span class="lab-count" id="tp-fits" style="min-width:6em">1번 조금 넘게</span>
+      </div>
+      <div class="concept-box">
+        꼭대기를 올리면 막대가 <strong>모두 함께 짧아진다.</strong><br>
+        그런데 아래 문장은 <strong>한 번도 바뀌지 않는다.</strong> 이 손잡이는 첫째와 하는 일이 다르다.
+      </div>
+    </section>
+
+    <!-- 슬7 · 탐험: 두 손잡이 함께 -->
+    <section class="slide">
+      <span class="stage-badge">탐험 4/4</span>
+      <h1 class="slide-title">두 손잡이를 함께</h1>
+      <p class="slide-sub">마음껏 돌려 보자 · 오른쪽 <b>표</b>에서 눈을 떼지 말 것</p>
+      <div class="vox-btns" id="fr-btns"></div>
+      <div class="chip-row" id="fr-tops"></div>
+      <div id="fr-bars"></div>
+      <table class="case-table">
+        <tr><th>1반</th><th>2반</th><th>3반</th><th>4반</th></tr>
+        <tr><td>12권</td><td>14권</td><td>16권</td><td>18권</td></tr>
+      </table>
+      <div class="concept-box">
+        손잡이를 아무리 돌려도 표의 수는 <strong>하나도 바뀌지 않았다.</strong><br>
+        두 신문 모두 자료를 고치지 않았다. 그런데도 그림은 정반대로 보였다.
+      </div>
+    </section>
+
+    <!-- 슬8 · 발견: 추측 기록 (+10) -->
+    <section class="slide" data-q-id="conjecture">
+      <span class="stage-badge">발견 1/4</span>
+      <h1 class="slide-title">추측을 적어 두자</h1>
+      <p class="slide-sub">눈금을 잘라 놓았을 때, <b>막대의 길이</b>가 나타내는 것은 무엇일까 · 고르면 +10</p>
+      <div class="pick-list" id="conj-list"></div>
+      <p class="q-fb" id="fb-conjecture"></p>
+      <p class="mcq-hint" data-hints='["앞으로 돌아가 시작점을 10으로 두고, 1반 막대에 남은 칸이 몇 칸인지 세어 보자.","1반은 12권인데 남은 칸은 12칸이 아니었다. 12에서 무엇을 덜어낸 수였는지 생각해 보자.","맞고 틀림을 지금 가리지 않는다. 지금 생각한 것을 그대로 남겨 두면 뒤에서 스스로 확인하게 된다."]'></p>
+    </section>
+
+    <!-- 슬9 · 발견: 막대의 두 토막 + q9 (+10) -->
+    <section class="slide" data-q-id="q9">
+      <span class="stage-badge">발견 2/4</span>
+      <h1 class="slide-title">막대는 두 토막이었다</h1>
+      <p class="slide-sub">시작점을 <b>10</b>으로 둔 그림 · 잘려 나간 아래쪽까지 되살려 보면</p>
+      <div id="cut-bars"></div>
+      <div class="lab-meter">
+        <span class="lab-label">＝ 잘려 나간 10칸</span>
+        <span class="lab-label">＋ 화면에 남은 칸</span>
+      </div>
+      <p class="q-prompt">이 그림에서 4반 막대는 1반 막대의 <b>딱 4배</b>로 보인다. 그렇다면 <b>18은 12의 4배</b>인가?</p>
+      <div class="mcq-opts one-col" id="q9-opts"></div>
+      <p class="q-fb" id="fb-q9"></p>
+      <p class="mcq-hint" data-hints='["12를 네 번 더하면 얼마인지 먼저 셈해 보자.","화면에 남은 칸은 1반이 2칸, 4반이 8칸이었다. 2를 네 번 더하면 8이 맞다.","그림이 잘못 그려진 것은 아니다. 그림은 「무엇의」 4배를 보여주고 있었는지를 가려야 한다."]'></p>
+    </section>
+
+    <!-- 슬10 · 발견: 목표 시작점 q10 (+10) -->
+    <section class="slide" data-q-id="q10">
+      <span class="stage-badge">발견 3/4</span>
+      <h1 class="slide-title">정확히 3배로 보이게 하려면</h1>
+      <p class="slide-sub">네 곳 모두 <b>딱 떨어지는</b> 시작점이다 · 그 가운데 <b>3배</b>가 되는 곳은 어디인가</p>
+      <div id="q10-bars"></div>
+      <div class="chip-row" id="q10-try"></div>
+      <div class="mcq-opts" id="q10-opts"></div>
+      <p class="q-fb" id="fb-q10"></p>
+      <p class="mcq-hint" data-hints='["위의 칩을 눌러 시작점을 바꿔 가며 두 막대의 칸 수를 직접 세어 보자.","1반에 남은 칸을 세 번 더했을 때 4반에 남은 칸과 같아지는 곳을 찾으면 된다.","시작점을 올릴수록 몇 배로 보이는지가 커진다. 2배가 되는 곳보다는 뒤, 4배가 되는 곳보다는 앞이다."]'></p>
+    </section>
+
+    <!-- 슬11 · 발견: 까닭 + grow (+10) -->
+    <section class="slide" data-q-id="grow">
+      <span class="stage-badge">발견 4/4</span>
+      <h1 class="slide-title">까닭 — 길이가 재는 것이 달라졌다</h1>
+      <div class="struct-stage">
+        <div class="struct-grid">
+          <div class="struct-cell hl-a">12</div><div class="struct-cell hl-a">18</div>
+          <div class="struct-cell">2</div><div class="struct-cell">8</div>
+        </div>
+        <div class="struct-eq">
+          <span class="sum-chip a">0에서 시작 → 길이가 곧 <b>값</b></span>
+          <span class="sum-chip b">10에서 시작 → 길이는 <b>10을 넘은 만큼</b></span>
+        </div>
+      </div>
+      <div class="concept-box">
+        12와 18은 <strong>1번 조금 넘는</strong> 사이다. 그런데 10을 덜어낸 2와 8은 <strong>딱 4번</strong>이다.<br>
+        같은 두 수인데 <strong>덜어내고 나면 사이가 벌어진다.</strong>
+      </div>
+      <div class="vox-btns" id="dir-btns"></div>
+      <p class="q-prompt">그렇다면 시작점을 <b>더 올릴수록</b> 「4반 안에 1반이 들어가는 횟수」는 어떻게 되는가?</p>
+      <div class="mcq-opts one-col" id="grow-opts"></div>
+      <p class="q-fb" id="fb-grow"></p>
+      <p class="mcq-hint" data-hints='["위의 버튼으로 시작점을 0부터 11까지 한 칸씩 올리며 아래 문장이 어떻게 바뀌는지 죽 따라가 보자.","한 번이라도 되돌아가는 곳이 있는지 살펴보자. 한 군데도 없다면 방향이 하나로 정해진 것이다.","1반 막대는 4반 막대보다 짧으니, 같은 만큼을 덜어내면 1반이 훨씬 크게 줄어든다. 그러면 둘 사이는 어떻게 될지 생각해 보자."]'></p>
+    </section>
+
+    <!-- 슬12 · 도전: 진짜 네 배인 자료 (+10) -->
+    <section class="slide" data-q-id="hide">
+      <span class="stage-badge">도전 1/3</span>
+      <h1 class="slide-title">진짜로 네 배인 자료</h1>
+      <p class="slide-sub">네 반이 심은 나무 수 · 시작점은 <b>0</b>에 두고 꼭대기만 바꾼다</p>
+      <table class="case-table">
+        <tr><th>1반</th><th>2반</th><th>3반</th><th>4반</th></tr>
+        <tr><td>4그루</td><td>8그루</td><td>12그루</td><td>16그루</td></tr>
+      </table>
+      <div class="chip-row" id="hd-chips"></div>
+      <div id="hd-bars"></div>
+      <p class="q-prompt">꼭대기를 <b>40</b>까지 올렸을 때, 4반 막대 안에 1반 막대는 몇 번 들어가는가?</p>
+      <div class="q-stage">
+        <div class="q-display" id="disp-hide">·</div>
+        <div class="q-pad" id="pad-hide"></div>
+      </div>
+      <p class="q-fb" id="fb-hide"></p>
+      <p class="mcq-hint" data-hints='["칩을 눌러 꼭대기를 바꿔 가며 두 막대를 직접 견주어 보자.","막대가 모두 짧아지지만, 1반 막대를 몇 번 이어 붙여야 4반 막대가 되는지는 세어 볼 수 있다.","꼭대기를 올리면 네 막대가 모두 같은 만큼씩 짧아진다. 같은 만큼 줄어들면 서로의 사이는 어떻게 될지 생각해 보자."]'></p>
+    </section>
+
+    <!-- 슬13 · 도전: 잘라도 되는 자료 (+5) -->
+    <section class="slide" data-q-id="honest">
+      <span class="stage-badge">도전 2/3</span>
+      <h1 class="slide-title">자를 수 있는 자료, 자르면 안 되는 자료</h1>
+      <p class="slide-sub">눈금 자르기가 언제나 속임수인 것은 아니다 · 눈금을 <b>반드시 0에서</b> 시작해야 하는 자료는?</p>
+      <div class="mcq-opts" id="honest-opts"></div>
+      <p class="q-fb" id="fb-honest"></p>
+      <div class="concept-box">
+        가름의 기준은 <strong>「0이 없음을 뜻하는가」</strong>이다.<br>
+        0이 <strong>없음</strong>을 뜻하는 자료는 0에서 시작한다. 0이 없음이 아닌 자료는 잘라도 된다 —
+        대신 <strong>잘랐다고 반드시 밝히고, 몇 배인지로 읽지 않는다.</strong>
+      </div>
+      <p class="mcq-hint" data-hints='["각 자료에서 「0」이 무슨 뜻이 되는지 하나씩 소리 내어 말해 보자.","키가 0cm인 학생은 없다. 그러면 키 그래프에서 0은 무엇을 뜻하는 수일까.","모은 돈이 0원이라는 말은 뜻이 통한다. 뜻이 통하는 0을 잘라내면 무엇을 잃게 될지 생각해 보자."]'></p>
+    </section>
+
+    <!-- 슬14 · 도전: 숨기는 손잡이 (+10) -->
+    <section class="slide" data-q-id="shrink">
+      <span class="stage-badge">도전 3/3</span>
+      <h1 class="slide-title">그러면 숨기는 쪽은 어느 손잡이인가</h1>
+      <p class="slide-sub">자료 A로 돌아왔다 · 시작점은 <b>0</b>에 두고 꼭대기만 바꾼다</p>
+      <div class="chip-row" id="sh-tops"></div>
+      <div id="sh-bars"></div>
+      <div class="lab-meter">
+        <span class="lab-label">채운 칸 차이</span><span class="lab-count" id="sh-cells">6</span>
+        <span class="lab-label">칸 · 100칸 척도 길이 차이</span>
+        <span class="lab-count" id="sh-gap">33</span><span class="lab-label">칸</span>
+      </div>
+      <p class="q-prompt">차이를 <b>눈에 덜 띄게</b> 하려면 어느 손잡이를 써야 하는가?</p>
+      <div class="mcq-opts one-col" id="shrink-opts"></div>
+      <p class="q-fb" id="fb-shrink"></p>
+      <p class="mcq-hint" data-hints='["칩을 눌러 가며 위의 두 수를 함께 지켜보자. 하나는 움직이고 하나는 움직이지 않는다.","채운 칸 차이는 꿈쩍도 하지 않는데 길이 차이는 달라진다. 무엇이 달라졌기에 그런지 생각해 보자.","같은 여섯 칸이라도 전체가 짧으면 크게 보이고 전체가 길면 작게 보인다. 전체를 늘리는 손잡이가 어느 쪽이었는지 떠올려 보자."]'></p>
+    </section>
+
+    <!-- 슬15 · 창조: 임무 가 (+10) -->
+    <section class="slide" data-q-id="create1">
+      <span class="stage-badge">창조 1/2</span>
+      <h1 class="slide-title">임무 가 · 나란해 보이는 그림</h1>
+      <p class="slide-sub">자료는 그대로 둔 채 <b>한빛신문의 그림</b>을 직접 만들어라</p>
+      <div class="vox-btns" id="c1-btns"></div>
+      <div class="chip-row" id="c1-tops"></div>
+      <div id="c1-bars"></div>
+      <div class="lab-meter">
+        <span class="lab-label">100칸 척도로 재면 1반</span><span class="lab-count" id="c1-l1">0</span>
+        <span class="lab-label">칸 · 4반</span><span class="lab-count" id="c1-l4">0</span><span class="lab-label">칸</span>
+      </div>
+      <p class="q-prompt">두 막대의 길이 차이를 <b>20칸 안으로</b> 좁힌 그림을 만들어 제출하라.</p>
+      <button class="arrow-note" id="c1-check">이 그림으로 제출</button>
+      <p class="q-fb" id="fb-create1"></p>
+      <p class="mcq-hint" data-hints='["시작점을 올리는 쪽으로는 아무리 애써도 나란해지지 않는다. 앞에서 확인한 방향 그대로다.","막대를 나란해 보이게 하려면 눈금 전체가 넉넉히 길어야 한다.","채워진 칸의 차이는 언제나 6칸이다. 그 6칸이 전체에서 작은 몫이 되도록 전체 칸 수를 늘려 보자."]'></p>
+    </section>
+
+    <!-- 슬16 · 창조: 임무 나 (+10) -->
+    <section class="slide" data-q-id="create2">
+      <span class="stage-badge">창조 2/2</span>
+      <h1 class="slide-title">임무 나 · 목표한 배수로 보이게</h1>
+      <p class="slide-sub">목표를 스스로 고르고, 4반이 1반의 <b>딱 그 배수</b>로 보이는 그림을 만들어라</p>
+      <div class="road-one">
+        <span class="shadow-tag">목표 배수 고르기</span>
+        <div class="chip-row" id="c2-goal"></div>
+      </div>
+      <div class="vox-btns" id="c2-btns"></div>
+      <div id="c2-bars"></div>
+      <div class="lab-meter">
+        <span class="lab-label">지금 그림에서는</span>
+        <span class="lab-count" id="c2-fits" style="min-width:6em">·</span>
+      </div>
+      <p class="q-prompt">고른 목표대로 보이는 그림을 만들어 제출하라.</p>
+      <button class="arrow-note" id="c2-check">이 그림으로 제출</button>
+      <p class="q-fb" id="fb-create2"></p>
+      <p class="mcq-hint" data-hints='["꼭대기는 배수를 바꾸지 못한다. 움직여야 할 손잡이는 하나다.","시작점을 한 칸씩 올리며 「딱 몇 번」이라는 말이 나오는 곳을 찾아보자.","딱 떨어지는 곳은 몇 군데뿐이고, 시작점이 커질수록 배수도 커진다. 목표보다 작으면 더 올리면 된다."]'></p>
+    </section>
+
+    <!-- 슬17 · 수사관 카드 (cur===16) -->
+    <section class="slide">
+      <span class="stage-badge">정리 1/2</span>
+      <h1 class="slide-title">수사 완료 — 자료 수사관 카드</h1>
+      <div class="detective-card">
+        <div class="dc-title">🔍 자료 수사관 기록</div>
+        <div class="dc-row"><span>만들어 본 그림</span><b id="dc-cases">0개</b></div>
+        <div class="dc-row"><span>처음 추측</span><b id="dc-conj">기록 없음</b></div>
+        <div class="dc-row"><span>자를 수 있는 자료 가름</span><b id="dc-honest">아직</b></div>
+        <div class="dc-row"><span>나란해 보이는 그림</span><b id="dc-flat">아직</b></div>
+        <div class="dc-row"><span>목표한 배수 맞추기</span><b id="dc-rule">아직</b></div>
+      </div>
+      <div class="concept-box">
+        오늘 밝힌 것은 <strong>두 신문 모두 자료를 고치지 않았다</strong>는 것이다.<br>
+        그래서 그래프는 언제나 <strong>「눈금이 어디서 시작하는가」</strong>부터 확인하고 읽어야 한다.
+      </div>
+    </section>
+
+    <!-- 슬18 · 결과 -->
+    <section class="slide">
+      <span class="stage-badge">정리 2/2</span>
+      <h1 class="slide-title">수사 결과</h1>
+      <div class="wrap-score" id="final-score">0</div>
+      <p class="wrap-msg" id="wrap-msg"></p>
+      <div class="home-card">
+        <div class="next-mini">다음 의뢰 예고</div>
+        <div class="next-chip">필승전략 게임 — 지는 곳을 거꾸로 찾아 나간다</div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next" id="next" onclick="goNext()">다음 →</button>
+  </footer>
+</div>
+
+<script>
+/* ═══════════ KGiftedCore — 순수 로직 (DOM 무의존, 테스트 대상) ═══════════ */
+const KGiftedCore = {
+  LESSON: 'kg_math_l3_dat01',
+  SCORE_PLAN: { explore: 15, conjecture: 10, q9: 10, q10: 10, hide: 10, honest: 5, grow: 10, shrink: 10, create1: 10, create2: 10 },
+
+  /* ── 무대 ──
+     자료 A = 네 반이 읽은 책 수. 네 반이 거의 비슷하다.
+     자료 B = 네 반이 심은 나무 수. 4반이 1반의 「진짜」 네 배다.
+     눈금 = 시작점 c 부터 꼭대기 t 까지, 한 칸이 1.
+     막대 = 전체 (t-c) 칸 가운데 (값-c) 칸이 채워진다.
+            전체 칸이 차지하는 가로 폭은 언제나 같으므로, 칸이 많아지면 한 칸이 얇아진다. */
+  DATA:    [12, 14, 16, 18],
+  DATA_B:  [4, 8, 12, 16],
+  NAMES:   ['1반', '2반', '3반', '4반'],
+  TOPS:    [18, 24, 30, 36],
+  TOPS_B:  [16, 24, 32, 40],
+  CUT_MAX: 11,
+  GAP_OK:  20,          /* 창조 임무 가 — 100 척도에서 이만큼 안으로 좁히면 「나란하다」 */
+  TARGETS: [2, 3, 4, 7],/* 창조 임무 나 — 딱 떨어지는 목표 배수 (전수 확인: 이 넷뿐) */
+
+  data(which) { return which === 'B' ? this.DATA_B : this.DATA; },
+
+  /* ── 보이는 칸 수 = 값 − 시작점 ── */
+  cells(v, c) { return v - c; },
+  total(c, t) { return t - c; },
+
+  /* ── 전체 폭을 100 으로 봤을 때의 막대 길이 ── */
+  width(v, c, t) {
+    if (t - c <= 0) return 0;
+    return Math.round(100 * (v - c) / (t - c));
+  },
+
+  /* ── 「4반 막대 안에 1반 막대가 몇 번 들어가나」 ──
+     나눗셈을 소수로 끌고 가지 않는다. 몫과 나머지로만 말한다 (L3 어휘). */
+  fits(c, which) {
+    const d = this.data(which);
+    const lo = this.cells(d[0], c), hi = this.cells(d[3], c);
+    if (lo <= 0) return null;
+    return { q: Math.floor(hi / lo), r: hi % lo, lo: lo, hi: hi };
+  },
+  fitsText(c, which) {
+    const f = this.fits(c, which);
+    if (!f) return '잴 수 없다';
+    return f.r === 0 ? ('딱 ' + f.q + '번') : (f.q + '번 조금 넘게');
+  },
+
+  /* ── 딱 떨어지는 시작점 목록 (전수 확인: 자료 A 는 6·9·10·11 넷뿐) ── */
+  exactCuts(which) {
+    const out = [];
+    for (let c = 0; c <= this.CUT_MAX; c++) {
+      const f = this.fits(c, which);
+      if (f && f.r === 0) out.push({ cut: c, times: f.q });
+    }
+    return out;
+  },
+  cutForTimes(k, which) {
+    const hit = this.exactCuts(which).filter(x => x.times === k);
+    return hit.length === 1 ? hit[0].cut : null;
+  },
+
+  /* ── 두 막대의 길이 차이 (100 척도) ──
+     채워진 칸의 차이는 시작점과 상관없이 언제나 같다. 달라지는 것은 전체 칸 수뿐이다. */
+  gap(c, t, which) {
+    const d = this.data(which);
+    return this.width(d[3], c, t) - this.width(d[0], c, t);
+  },
+
+  /* ── 창조 검사기 ──
+     학생이 만든 그림의 「모습」만 돌려준다. 어떤 손잡이 값을 써야 하는지는 담지 않는다. */
+  judgeA(c, t, which) {
+    const d = this.data(which);
+    const len1 = this.width(d[0], c, t), len4 = this.width(d[3], c, t);
+    const gap = len4 - len1;
+    return { start: c, top: t, len1: len1, len4: len4, gap: gap, flat: gap <= this.GAP_OK };
+  },
+  judgeB(c, t, target, which) {
+    const f = this.fits(c, which);
+    const d = this.data(which);
+    return {
+      start: c, top: t, target: target,
+      len1: this.width(d[0], c, t), len4: this.width(d[3], c, t),
+      times: f ? f.q : 0, over: f ? f.r : 0,
+      exact: !!f && f.r === 0,
+      hit: !!f && f.r === 0 && f.q === target
+    };
+  },
+
+  /* ── 사례 기록기 ── */
+  addCase(list, c, t, which) {
+    if (list.some(x => x.cut === c)) return list;
+    const f = this.fits(c, which);
+    list.push({ cut: c, top: t, lo: f ? f.lo : 0, hi: f ? f.hi : 0, text: this.fitsText(c, which) });
+    list.sort((a, b) => a.cut - b.cut);
+    return list;
+  }
+};
+if (typeof module !== 'undefined' && module.exports) module.exports = KGiftedCore;
+
+/* ═══════════ 엔진 (base: kg_math_l3_pat01 · pat02 공통부 · com01 칩·숫자패드 계승 · 힌트 3단) ═══════════ */
+const TOTAL = 18;
+const LESSON_ID = 'kg_math_l3_dat01';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+const HINT_MAX = 3;
+const SCALE = 100;
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+/* ═══ 화면 맞춤 — 슬라이드가 프레임보다 길면 균일 축소 (제목이 헤더 뒤로 잘리는 것 방지) ═══ */
+const FIT_MIN = 0.55, FIT_STEP = 0.04;
+let fitPending = false;
+function fitActiveSlide() {
+  const el = document.querySelector('.slide.active');
+  if (!el) return;
+  if (el.style.zoom) el.style.zoom = '';
+  if (!(window.CSS && CSS.supports && CSS.supports('zoom', '0.9'))) return;
+  if (!el.clientHeight) return;
+  let k = 1;
+  for (let i = 0; i < 16 && el.scrollHeight > el.clientHeight + 1; i++) {
+    k = Math.max(FIT_MIN, k - FIT_STEP);
+    el.style.zoom = k;
+    if (k === FIT_MIN) break;
+  }
+}
+function scheduleFit() {
+  if (fitPending) return;
+  fitPending = true;
+  requestAnimationFrame(() => { fitPending = false; fitActiveSlide(); });
+}
+window.addEventListener('resize', scheduleFit);
+window.addEventListener('orientationchange', scheduleFit);
+document.addEventListener('click', scheduleFit, true);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(scheduleFit);
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.querySelectorAll('#dots .ka-dot').forEach((d, i) => { d.classList.toggle('active', i === cur); d.classList.toggle('done', i < cur); });
+  document.getElementById('prev').disabled = cur === 0;
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.hintLevel >= HINT_MAX; }
+  else { hintBtn.disabled = true; }
+  if (cur === TOTAL - 1) {
+    document.getElementById('next').textContent = '마치기 →';
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('wrap-msg').textContent = wrapMsg(score);
+    saveProgress(true);
+  } else { document.getElementById('next').textContent = '다음 →'; }
+  if (cur === 4) renderCaseTable();
+  if (cur === 16) renderAgentCard();
+  fitActiveSlide();
+}
+function saveProgress(done) {
+  const data = { cur, score, done, startedAt, finishedAt: done ? Date.now() : null, qState, cases: exploreCases, conj: conjPicked, myRule: myRuleText, flat: flatText };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function wrapMsg(s) {
+  if (s >= 100) return '전설의 자료 수사관!';
+  if (s >= 80) return '대단한 수사였다!';
+  if (s >= 60) return '수사관의 눈이 자라났다!';
+  return '단서는 충분히 모았다. 다시 도전해도 좋다!';
+}
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+function showHint() {
+  const qid = currentQId(); if (!qid) return;
+  const st = getQState(qid); if (st.hintLevel >= HINT_MAX) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint'); if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[Math.min(st.hintLevel, hints.length) - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= HINT_MAX;
+}
+
+
+/* ═══ 칩·숫자패드 공통 (com01 정의 문자 그대로 추출·주입) ═══ */
+function chip(elId, text, kind) {
+  const s = document.createElement('span');
+  s.className = 'sum-chip ' + (kind || 'a');
+  s.textContent = text;
+  document.getElementById(elId).appendChild(s);
+}
+function buildPad(padId, dispId, maxLen, onSubmit) {
+  const pad = document.getElementById(padId);
+  const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '←', '확인'];
+  let val = '';
+  const draw = () => { document.getElementById(dispId).textContent = val || '\u00A0'; };
+  keys.forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'q-key' + (k === '←' || k === '확인' ? ' fn' : '');
+    b.textContent = k;
+    b.addEventListener('click', () => {
+      if (k === '←') val = val.slice(0, -1);
+      else if (k === '확인') { if (val !== '') { const v = parseInt(val, 10); if (onSubmit(v) !== false) val = ''; } }
+      else if (val.length < maxLen) val += k;
+      draw();
+    });
+    pad.appendChild(b);
+  });
+  draw();
+}
+
+/* ═══════════ 진행 상태 ═══════════
+   엔진의 saveProgress 가 이 넷을 읽는다. 슬4 의 첫 렌더가 곧바로 saveProgress 를 부르므로
+   선언이 배선 뒤쪽에 있으면 그 시점에 아직 초기화 전이라 참조에서 멈춘다 — 맨 앞에 둔다. */
+let exploreCases = [];
+let conjPicked = '';
+let myRuleText = '';
+let flatText = '';
+
+/* ═══════════ 눈금 막대 렌더 ═══════════
+   pat01 `.cal-grid` 의 열 수 변형이다 (pro01 `.map` · com01 `.road` 와 같은 계열).
+   전체 폭은 고정, 열 수만 바뀌므로 「칸이 늘면 한 칸이 얇아진다」가 그대로 눈에 보인다.
+   칸 상태는 pat01 의 sel · center-cell · diag-b · empty 그대로 — 새 상태를 만들지 않는다. */
+
+function cell(txt, cls) {
+  const d = document.createElement('div');
+  d.className = 'cal-cell' + (cls ? ' ' + cls : '');
+  d.textContent = txt;
+  return d;
+}
+
+/* 막대 한 줄 = 「이름 · 눈금칸 · 값」 (com01 의 .lab-meter 조합) */
+function renderAxis(elId, data, c, t, opts) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  opts = opts || {};
+  el.innerHTML = '';
+  const N = KGiftedCore.total(c, t);
+  data.forEach(function (v, i) {
+    const row = document.createElement('div');
+    row.className = 'lab-meter axis-row';
+    const lb = document.createElement('span');
+    lb.className = 'lab-label';
+    lb.textContent = KGiftedCore.NAMES[i];
+    const bar = document.createElement('div');
+    bar.className = 'cal-grid axis';
+    bar.style.setProperty('--bn', N + (opts.showCut ? c : 0));
+    /* 잘려 나간 아래쪽을 되살려 보여줄 때만 앞쪽에 c 칸을 덧붙인다 (슬9 전용) */
+    if (opts.showCut) { for (let k = 0; k < c; k++) bar.appendChild(cell('', 'diag-b')); }
+    const fill = KGiftedCore.cells(v, c);
+    const hot = opts.hot ? opts.hot(i) : (i === 0 || i === 3);
+    for (let k = 0; k < N; k++) bar.appendChild(cell('', k < fill ? (hot ? 'sel' : 'center-cell') : 'empty'));
+    const ct = document.createElement('span');
+    ct.className = 'lab-count';
+    ct.textContent = v;
+    row.appendChild(lb); row.appendChild(bar); row.appendChild(ct);
+    el.appendChild(row);
+  });
+}
+
+function btnRow(elId, text, fn) {
+  const b = document.createElement('button');
+  b.className = 'shape-btn';
+  b.textContent = text;
+  b.addEventListener('click', fn);
+  document.getElementById(elId).appendChild(b);
+  return b;
+}
+/* 고르기 칩 — .shape-btn 은 .on 에 테두리색과 바탕 채움이 둘 다 있다 (사이클 23 확정) */
+function tapChip(elId, text, fn) {
+  const s = document.createElement('button');
+  s.className = 'shape-btn';
+  s.textContent = text;
+  s.addEventListener('click', function () { fn(s); });
+  document.getElementById(elId).appendChild(s);
+  return s;
+}
+function onlyOn(sel, el) {
+  document.querySelectorAll(sel).forEach(function (x) { x.classList.remove('on'); });
+  if (el) el.classList.add('on');
+}
+function mcq(elId, list, qid, onDone) {
+  const box = document.getElementById(elId);
+  list.forEach(function (o) {
+    const b = document.createElement('button');
+    b.className = 'mcq-opt';
+    b.textContent = o.t;
+    b.addEventListener('click', function () {
+      const st = getQState(qid);
+      if (st.solved) return;
+      st.attempts++;
+      if (o.ok) {
+        st.solved = true;
+        b.classList.add('correct');
+        addScore(KGiftedCore.SCORE_PLAN[qid]);
+        if (onDone) onDone(o);
+      } else {
+        st.wrongCount++;
+        b.classList.add('wrong');
+      }
+      document.getElementById('fb-' + qid).textContent = o.fb;
+      saveProgress(false);
+    });
+    box.appendChild(b);
+  });
+}
+
+/* ═══════════ 슬2 미션 — 두 신문의 그림 ═══════════ */
+/* 으뜸소식 = 바짝 잘라 놓았다 (시작점 11 · 꼭대기 18)
+   한빛신문 = 넉넉히 열어 놓았다 (시작점 0 · 꼭대기 36) — 수치 선검증 8번 항목 */
+renderAxis('intro-a', KGiftedCore.DATA, 11, 18);
+renderAxis('intro-b', KGiftedCore.DATA, 0, 36);
+
+/* ═══════════ 슬4 탐험 — 첫째 손잡이 (+15) ═══════════ */
+const EX_TOP = 18;
+(function () {
+  let c = 0;
+  function draw() {
+    document.getElementById('ex-cut').textContent = c;
+    document.getElementById('ex-top').textContent = EX_TOP;
+    renderAxis('ex-bars', KGiftedCore.DATA, c, EX_TOP);
+    document.getElementById('ex-read').innerHTML =
+      '4반 막대 안에 1반 막대가 <strong>' + KGiftedCore.fitsText(c) + '</strong> 들어간다.';
+    const before = exploreCases.length;
+    KGiftedCore.addCase(exploreCases, c, EX_TOP);
+    if (exploreCases.length !== before) {
+      const st = getQState('explore');
+      document.getElementById('fb-explore').textContent =
+        '서로 다른 시작점 ' + exploreCases.length + '곳 기록됨';
+      if (exploreCases.length >= 3 && !st.solved) {
+        st.solved = true;
+        addScore(KGiftedCore.SCORE_PLAN.explore);
+        document.getElementById('fb-explore').textContent =
+          '기록 완료 ⭐ 시작점을 옮기는 것만으로 인상이 이만큼 달라진다. +15';
+      }
+      saveProgress(false);
+    }
+  }
+  btnRow('ex-btns', '◀ 내리기', function () { if (c > 0) { c--; draw(); } });
+  btnRow('ex-btns', '올리기 ▶', function () { if (c < KGiftedCore.CUT_MAX) { c++; draw(); } });
+  draw();
+})();
+
+/* ═══════════ 슬5 탐험 — 사례 표 (엔진 훅 cur===4) ═══════════ */
+function renderCaseTable() {
+  const tb = document.getElementById('case-table');
+  if (!tb) return;
+  while (tb.rows.length > 1) tb.deleteRow(1);
+  exploreCases.forEach(function (x) {
+    const tr = tb.insertRow();
+    tr.innerHTML = '<td>' + x.cut + '</td><td>' + x.lo + '</td><td>' + x.hi + '</td><td>' + x.text + '</td>';
+  });
+  document.getElementById('case-n').textContent = exploreCases.length;
+}
+
+/* ═══════════ 슬6 탐험 — 둘째 손잡이 ═══════════ */
+(function () {
+  function draw(t) {
+    renderAxis('tp-bars', KGiftedCore.DATA, 0, t);
+    document.getElementById('tp-fits').textContent = KGiftedCore.fitsText(0);
+  }
+  KGiftedCore.TOPS.forEach(function (t, i) {
+    const el = tapChip('tp-chips', '꼭대기 ' + t, function (s) {
+      onlyOn('#tp-chips .shape-btn', s); draw(t);
+    });
+    if (i === 0) el.classList.add('on');
+  });
+  draw(KGiftedCore.TOPS[0]);
+})();
+
+/* ═══════════ 슬7 탐험 — 두 손잡이 함께 ═══════════ */
+(function () {
+  let c = 0, t = 18;
+  function draw() { renderAxis('fr-bars', KGiftedCore.DATA, c, t); }
+  btnRow('fr-btns', '시작점 ◀', function () { if (c > 0) { c--; draw(); } });
+  btnRow('fr-btns', '시작점 ▶', function () { if (c < KGiftedCore.CUT_MAX) { c++; draw(); } });
+  KGiftedCore.TOPS.forEach(function (v, i) {
+    const el = tapChip('fr-tops', '꼭대기 ' + v, function (s) {
+      onlyOn('#fr-tops .shape-btn', s); t = v; draw();
+    });
+    if (i === 0) el.classList.add('on');
+  });
+  draw();
+})();
+
+/* ═══════════ 슬8 발견 — 추측 기록 (+10) ═══════════ */
+const CONJ = [
+  '그 반이 읽은 책 수를 그대로 나타낸다',
+  '시작점을 넘은 만큼을 나타낸다',
+  '반과 반 사이의 차이를 나타낸다',
+  '아무것도 나타내지 않는다'
+];
+(function () {
+  const box = document.getElementById('conj-list');
+  CONJ.forEach(function (txt) {
+    const d = document.createElement('div');
+    d.className = 'pick-item';
+    d.innerHTML = txt + '<span class="tag">고르기</span>';
+    d.addEventListener('click', function () {
+      onlyOn('#conj-list .pick-item', d);
+      conjPicked = txt;
+      const st = getQState('conjecture');
+      if (!st.solved) { st.solved = true; addScore(KGiftedCore.SCORE_PLAN.conjecture); }
+      document.getElementById('fb-conjecture').textContent =
+        '추측을 기록했다. 뒤에서 스스로 확인하게 된다. +10';
+      saveProgress(false);
+    });
+    box.appendChild(d);
+  });
+})();
+
+/* ═══════════ 슬9 발견 — 두 토막 + q9 (+10) ═══════════ */
+renderAxis('cut-bars', KGiftedCore.DATA, 10, 18, { showCut: true });
+mcq('q9-opts', [
+  { t: '그렇다 — 그림이 4배니 자료도 4배다', ok: false,
+    fb: '12를 네 번 더하면 48이다. 18과 한참 멀다. 그림의 4배는 자료의 4배가 아니었다.' },
+  { t: '아니다 — 4배인 것은 「10을 넘은 만큼」이다', ok: true,
+    fb: '그렇다 ⭐ 남은 칸은 1반이 2칸, 4반이 8칸이었다. 4배인 것은 12와 18이 아니라 2와 8이다.' },
+  { t: '아니다 — 그림이 잘못 그려졌다', ok: false,
+    fb: '그림은 자료를 그대로 옮겼다. 잘못 그린 것이 아니라, 길이가 재는 것이 달라진 것이다.' }
+], 'q9');
+
+/* ═══════════ 슬10 발견 — 목표 시작점 q10 (+10) ═══════════ */
+(function () {
+  function draw(c) {
+    renderAxis('q10-bars', KGiftedCore.DATA, c, 18);
+  }
+  KGiftedCore.exactCuts().forEach(function (x, i) {
+    const el = tapChip('q10-try', '시작점 ' + x.cut + ' 로 보기', function (s) {
+      onlyOn('#q10-try .shape-btn', s); draw(x.cut);
+    });
+    if (i === 0) el.classList.add('on');
+  });
+  draw(KGiftedCore.exactCuts()[0].cut);
+  const opts = KGiftedCore.exactCuts().map(function (x) {
+    return {
+      t: '시작점 ' + x.cut,
+      ok: x.times === 3,
+      fb: x.times === 3
+        ? '맞다 ⭐ 1반에 3칸, 4반에 9칸이 남는다. 3을 세 번 더하면 9다.'
+        : '여기서는 딱 ' + x.times + '번이 된다. 3번이 되는 곳은 따로 있다.'
+    };
+  });
+  mcq('q10-opts', opts, 'q10');
+})();
+
+/* ═══════════ 슬12 도전 — 진짜 네 배인 자료 (+10) ═══════════ */
+(function () {
+  function draw(t) { renderAxis('hd-bars', KGiftedCore.DATA_B, 0, t, { hot: function (i) { return i === 0 || i === 3; } }); }
+  KGiftedCore.TOPS_B.forEach(function (t, i) {
+    const el = tapChip('hd-chips', '꼭대기 ' + t, function (s) {
+      onlyOn('#hd-chips .shape-btn', s); draw(t);
+    });
+    if (i === 0) el.classList.add('on');
+  });
+  draw(KGiftedCore.TOPS_B[0]);
+  buildPad('pad-hide', 'disp-hide', 2, function (v) {
+    const st = getQState('hide');
+    if (st.solved) return true;
+    st.attempts++;
+    const ans = KGiftedCore.fits(0, 'B');
+    if (v === ans.q) {
+      st.solved = true;
+      addScore(KGiftedCore.SCORE_PLAN.hide);
+      document.getElementById('fb-hide').textContent =
+        '맞다 ⭐ 꼭대기를 아무리 올려도 이 횟수는 그대로다. 둘째 손잡이는 배수를 바꾸지 못한다 — 다만 막대를 모두 짧게 만들어 차이를 눈에 덜 띄게 한다.';
+    } else {
+      st.wrongCount++;
+      document.getElementById('fb-hide').textContent =
+        '다시 세어 보자. 1반 막대를 몇 번 이어 붙여야 4반 막대가 되는지만 따지면 된다.';
+    }
+    saveProgress(false);
+    return true;
+  });
+})();
+
+/* ═══════════ 슬13 도전 — 잘라도 되는 자료 (+5) ═══════════ */
+mcq('honest-opts', [
+  { t: '교실의 낮 기온', ok: false,
+    fb: '0도는 「기온이 없다」는 뜻이 아니다. 그래서 기온 그래프는 잘라도 된다.' },
+  { t: '반별로 모은 성금', ok: true,
+    fb: '그렇다 ⭐ 0원은 「한 푼도 없다」는 뜻이다. 뜻이 있는 0을 잘라내면 없는 차이가 생겨난다.' },
+  { t: '학생들의 키', ok: false,
+    fb: '키가 0cm인 사람은 없다. 0에서 시작하면 오히려 아무 차이도 안 보인다.' },
+  { t: '운동장 흙의 온도', ok: false,
+    fb: '온도의 0은 「없음」이 아니다. 기온과 같은 갈래의 자료다.' }
+], 'honest');
+
+/* ═══════════ 슬11 발견 — 까닭 + grow (+10) ═══════════ */
+(function () {
+  let c = 0;
+  const tag = document.createElement('span');
+  tag.className = 'shadow-tag';
+  tag.id = 'dir-now';
+  function draw() { tag.textContent = '시작점 ' + c + ' → ' + KGiftedCore.fitsText(c); }
+  btnRow('dir-btns', '시작점 ◀', function () { if (c > 0) { c--; draw(); } });
+  btnRow('dir-btns', '시작점 ▶', function () { if (c < KGiftedCore.CUT_MAX) { c++; draw(); } });
+  document.getElementById('dir-btns').appendChild(tag);
+  draw();
+  mcq('grow-opts', [
+    { t: '반드시 커진다', ok: true,
+      fb: '그렇다 ⭐ 0부터 11까지 한 번도 되돌아가지 않는다. 자르기는 차이를 부풀리는 쪽으로만 움직인다.' },
+    { t: '반드시 작아진다', ok: false,
+      fb: '시작점을 올리면 1반 막대가 4반 막대보다 훨씬 빨리 짧아진다. 사이는 벌어진다.' },
+    { t: '커질 때도 있고 작아질 때도 있다', ok: false,
+      fb: '버튼으로 한 칸씩 죽 올려 보자. 되돌아가는 곳이 한 군데도 없다.' }
+  ], 'grow');
+})();
+
+/* ═══════════ 슬14 도전 — 숨기는 손잡이 (+10) ═══════════ */
+(function () {
+  function draw(t) {
+    renderAxis('sh-bars', KGiftedCore.DATA, 0, t);
+    const d = KGiftedCore.DATA;
+    document.getElementById('sh-cells').textContent =
+      KGiftedCore.cells(d[3], 0) - KGiftedCore.cells(d[0], 0);
+    document.getElementById('sh-gap').textContent = KGiftedCore.gap(0, t);
+  }
+  KGiftedCore.TOPS.forEach(function (v, i) {
+    const el = tapChip('sh-tops', '꼭대기 ' + v, function (s) {
+      onlyOn('#sh-tops .shape-btn', s); draw(v);
+    });
+    if (i === 0) el.classList.add('on');
+  });
+  draw(KGiftedCore.TOPS[0]);
+  mcq('shrink-opts', [
+    { t: '첫째 손잡이 — 시작점을 올린다', ok: false,
+      fb: '그 방향으로는 차이가 커지기만 한다. 앞에서 확인한 그대로다.' },
+    { t: '둘째 손잡이 — 꼭대기를 올린다', ok: true,
+      fb: '그렇다 ⭐ 채운 칸 차이는 여섯 칸으로 늘 같지만, 전체 칸이 늘어나면 그 여섯 칸이 차지하는 몫이 작아진다.' },
+    { t: '자료를 고치지 않고는 할 수 없다', ok: false,
+      fb: '두 신문 모두 자료를 고치지 않고 정반대 인상을 만들었다. 방법이 있다.' }
+  ], 'shrink');
+})();
+
+/* ═══════════ 슬15 창조 — 임무 가 (+10) ═══════════ */
+(function () {
+  let c = 0, t = 18;
+  function draw() {
+    renderAxis('c1-bars', KGiftedCore.DATA, c, t);
+    const j = KGiftedCore.judgeA(c, t);
+    document.getElementById('c1-l1').textContent = j.len1;
+    document.getElementById('c1-l4').textContent = j.len4;
+  }
+  btnRow('c1-btns', '시작점 ◀', function () { if (c > 0) { c--; draw(); } });
+  btnRow('c1-btns', '시작점 ▶', function () { if (c < KGiftedCore.CUT_MAX) { c++; draw(); } });
+  KGiftedCore.TOPS.forEach(function (v, i) {
+    const el = tapChip('c1-tops', '꼭대기 ' + v, function (s) {
+      onlyOn('#c1-tops .shape-btn', s); t = v; draw();
+    });
+    if (i === 0) el.classList.add('on');
+  });
+  draw();
+  document.getElementById('c1-check').addEventListener('click', function () {
+    const st = getQState('create1');
+    const j = KGiftedCore.judgeA(c, t);
+    st.attempts++;
+    if (j.flat) {
+      if (!st.solved) { st.solved = true; addScore(KGiftedCore.SCORE_PLAN.create1); }
+      flatText = '시작점 ' + j.start + ' · 꼭대기 ' + j.top + ' (차이 ' + j.gap + '칸)';
+      document.getElementById('fb-create1').textContent =
+        '한빛신문의 그림을 다시 만들었다 ⭐ 길이 차이가 ' + j.gap + '칸이다. 수를 하나도 고치지 않았다. +10';
+    } else {
+      st.wrongCount++;
+      document.getElementById('fb-create1').textContent =
+        '아직 ' + j.gap + '칸 차이다. 20칸 안으로 좁혀야 한다. 어느 손잡이가 차이를 줄이는 쪽이었는지 떠올려 보자.';
+    }
+    saveProgress(false);
+  });
+})();
+
+/* ═══════════ 슬16 창조 — 임무 나 (+10) ═══════════ */
+(function () {
+  let c = 0, t = 18, goal = KGiftedCore.TARGETS[0];
+  function draw() {
+    renderAxis('c2-bars', KGiftedCore.DATA, c, t);
+    document.getElementById('c2-fits').textContent = KGiftedCore.fitsText(c);
+  }
+  KGiftedCore.TARGETS.forEach(function (k, i) {
+    const el = tapChip('c2-goal', k + '배', function (s) {
+      onlyOn('#c2-goal .shape-btn', s); goal = k;
+      document.getElementById('fb-create2').textContent = '목표를 ' + k + '배로 정했다.';
+    });
+    if (i === 0) el.classList.add('on');
+  });
+  btnRow('c2-btns', '시작점 ◀', function () { if (c > 0) { c--; draw(); } });
+  btnRow('c2-btns', '시작점 ▶', function () { if (c < KGiftedCore.CUT_MAX) { c++; draw(); } });
+  draw();
+  document.getElementById('c2-check').addEventListener('click', function () {
+    const st = getQState('create2');
+    const j = KGiftedCore.judgeB(c, t, goal);
+    st.attempts++;
+    if (j.hit) {
+      if (!st.solved) { st.solved = true; addScore(KGiftedCore.SCORE_PLAN.create2); }
+      myRuleText = '목표 ' + goal + '배 · 시작점 ' + j.start;
+      document.getElementById('fb-create2').textContent =
+        '맞췄다 ⭐ 1반에 ' + KGiftedCore.cells(KGiftedCore.DATA[0], c) + '칸, 4반에 ' +
+        KGiftedCore.cells(KGiftedCore.DATA[3], c) + '칸이 남아 딱 ' + goal + '배다. +10';
+    } else {
+      st.wrongCount++;
+      document.getElementById('fb-create2').textContent = j.exact
+        ? ('지금 그림은 딱 ' + j.times + '배다. 목표는 ' + goal + '배였다.')
+        : ('지금 그림은 ' + j.times + '번 조금 넘게 들어간다. 딱 떨어지는 곳을 찾아야 한다.');
+    }
+    saveProgress(false);
+  });
+})();
+
+/* ═══════════ 슬17 수사관 카드 (cur===16) ═══════════ */
+function renderAgentCard() {
+  document.getElementById('dc-cases').textContent = exploreCases.length + '개';
+  document.getElementById('dc-conj').textContent = conjPicked || '기록 없음';
+  document.getElementById('dc-honest').textContent =
+    getQState('honest').solved ? '가름 완료' : '아직';
+  document.getElementById('dc-flat').textContent = flatText || '아직';
+  document.getElementById('dc-rule').textContent = myRuleText || '아직';
+}
+
+</script>
+</body>
+</html>
