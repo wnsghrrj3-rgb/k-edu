@@ -446,12 +446,28 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--sky);min-height:100vh
 
   /* ══════════════ 2막 · 다섯 번 ══════════════
      매회 = 소리 내어 함께 말하기 + 타일 조립.
-     비계가 줄어든다: 1~2회 문장 보고 → 3~4회 뜻만 보고 → 5회 소리만 듣고.
-     마이크 채점은 하지 않는다. 조립 성공이 그 회의 도장이다. */
+     마이크 채점은 하지 않는다. 조립 성공이 그 회의 도장이다.
+
+     ★비계 계단 1-2-2 (2026-08-16 재배분). 이전은 2-2-1 이었다 —
+     가장 쉬운 회(문장 보고)가 40%를 먹고, 이 설계의 목적지인 "소리만 듣고 재생"이
+     20%뿐이었다. 5가 3단 계단에 안 나눠떨어져서 생긴 배분이지 의도한 무게중심이 아니었다.
+     1막에서 문장·소리·뜻을 이미 다 만났으므로 「보고 말하기」는 손에 익히는 1회면 족하다.
+     남은 넷을 뜻만 2 · 소리만 2 로 주어 무게중심을 뒤로 옮긴다.
+       1회 문장 보고 → 2·3회 뜻만 보고 → 4·5회 소리만 듣고
+
+     ★5회차는 소리가 저절로 오지 않는다(autoHear:false). 비계 축소의 마지막 한 칸은
+     "도움을 없애는 것"이 아니라 "도움을 불러야 오게 하는 것"이다 — 🔊 다시 듣기는 그대로 있고
+     누르면 언제든 온다. 4회와 5회가 조건이 같아 마지막 회가 그냥 반복이 되던 것도 이걸로 갈린다.
+     소리 없는 기기에서는 어차피 아무것도 울리지 않으므로 동작이 완전히 같다(설계 §4 D3확정 ②). */
   function roundCfg(r){
-    if (r <= 2) return { show:'sent', label:'보고 말하기',   lead:'문장을 보면서 <b>소리 내어</b> 함께 말해요' };
-    if (r <= 4) return { show:'ko',   label:'뜻만 보고',     lead:'이번엔 <b>뜻만</b> 보고 말해 볼까요?' };
-    return           { show:'none', label:'소리만 듣고',   lead:'마지막! <b>소리만</b> 듣고 만들어 보세요' };
+    if (r <= 1) return { show:'sent', label:'보고 말하기', autoHear:true,
+                         lead:'문장을 보면서 <b>소리 내어</b> 함께 말해요' };
+    if (r <= 3) return { show:'ko',   label:'뜻만 보고',   autoHear:true,
+                         lead:'이번엔 <b>뜻만</b> 보고 말해 볼까요?' };
+    if (r <= 4) return { show:'none', label:'소리만 듣고', autoHear:true,
+                         lead:'이번엔 <b>소리만</b> 듣고 만들어 보세요' };
+    return           { show:'none', label:'혼자서',     autoHear:false,
+                         lead:'마지막! <b>혼자서</b> 만들어 보세요 — 소리가 필요하면 눌러요' };
   }
   function trayHtml(){
     var out = '';
@@ -495,8 +511,8 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--sky);min-height:100vh
       speakSent(x.sent);
       setTimeout(function(){ beats.classList.remove('go'); }, 2200);
     }
-    hear();                                   // 매회 소리로 시작한다 — 합창의 신호
-    document.getElementById('hear').onclick = hear;
+    if (cfg.autoHear) hear();                 // 소리로 시작한다 — 합창의 신호
+    document.getElementById('hear').onclick = hear;   // 마지막 회에도 부르면 온다
     document.getElementById('again').onclick = function(){ renderSay(); };
 
     mountAssembler({

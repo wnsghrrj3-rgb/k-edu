@@ -3,8 +3,8 @@
  *   ① 화면이 원장에서만 재료를 끌어오는가(학년·일수 하드코딩 금지 · DB 무접촉)
  *   ② 1막 만나기 — 소리가 글자보다 먼저 오는가, 뜻이 뒤따르는가,
  *      새 낱말 배지·밑줄이 원장 new 와 전수 일치하는가, 어제 문장이 맞는가
- *   ③ 2막 다섯 번 — 비계가 실제로 줄어드는가(문장→뜻→소리만),
- *      매회 소리가 울리는가, 틀린 타일은 자리에 놓이지 않는가, 도장 5개
+ *   ③ 2막 다섯 번 — 비계 계단 1-2-2 가 화면에서 그대로 서는가(1 문장 · 2·3 뜻만 · 4·5 소리만),
+ *      소리가 4회까지 저절로 오고 5회는 불러야 오는가, 틀린 타일은 자리에 놓이지 않는가, 도장 5개
  *   ④ 3막 넓히기 — expand 있는 날은 조립, 없는 날은 문장을 지어내지 않는가
  *   ⑤ 완주 기록(localStorage) → 둘러보기 도장
  *   ⑥ 주소: c키·grade/day·이상값·원장 없는 학년
@@ -181,22 +181,44 @@ await (async function(){
   o.doc.getElementById('go-say').click();
   await o.tick(4);
 
+  /* ★소리는 "누적 수"가 아니라 "회 사이의 증가분"으로 봐야 한다.
+     회 진입 시점의 누적 수는 1막 발화까지 담고 있어, `>=1` 로 보면 2막이 한 번도 안 울려도 통과한다.
+     (첫 판 역검증이 이 결함을 잡았다 — 소리 변조 3건이 전부 그냥 지나갔다.)
+     그래서 회마다 누적 수를 적어 두고 인접 차이를 본다. */
+  var sndAt = [];
   for (var r = 1; r <= 5; r++) {
     var bubble = o.txt('.bubble');
     var soundsBefore = o.tts().sent.length;
+    sndAt[r] = soundsBefore;
     T(o.txt('.corner').indexOf(r + '번째') >= 0, r + '회차 표시가 어긋남');
 
-    if (r <= 2) {
+    /* ★계단 1-2-2: 1회 문장 · 2·3회 뜻만 · 4·5회 아무것도. 회차 경계를 숫자로 못박는다 —
+       "뒤로 갈수록 줄어들기만 하면 통과"로 두면 2-2-1 도 5-0-0 도 다 지나간다. */
+    if (r <= 1) {
       T(bubble.replace(/\s+/g,' ').indexOf(x.tiles.join(' ')) >= 0, r + '회는 문장을 보여 줘야 한다');
-    } else if (r <= 4) {
+    } else if (r <= 3) {
       T(bubble.indexOf(x.ko) >= 0, r + '회는 뜻을 보여 줘야 한다');
       T(bubble.replace(/\s+/g,' ').indexOf(x.tiles.join(' ')) < 0, r + '회인데 문장이 그대로 보임 — 비계가 안 줄었다');
     } else {
-      T(bubble.indexOf(x.ko) < 0, '5회인데 뜻이 보임 — 소리만 듣는 회차가 아니다');
-      T(bubble.replace(/\s+/g,' ').indexOf(x.tiles.join(' ')) < 0, '5회인데 문장이 보임');
+      T(bubble.indexOf(x.ko) < 0, r + '회인데 뜻이 보임 — 소리만 듣는 회차가 아니다');
+      T(bubble.replace(/\s+/g,' ').indexOf(x.tiles.join(' ')) < 0, r + '회인데 문장이 보임');
     }
-    /* 매회 소리로 시작한다 */
-    T(soundsBefore >= 1 && o.tts().sent.slice(-1)[0].t === x.sent, r + '회 시작에 문장 소리가 없음');
+
+    /* ★소리는 4회까지 저절로 오고, 5회는 부를 때만 온다.
+       "5회에 안 울린다"만 보면 아무 데서도 안 울리는 화면이 통과한다 —
+       1~4회에 울린다는 것과 짝으로 세운다. 그리고 5회에도 🔊를 누르면 오는지 실제로 눌러 본다. */
+    if (r <= 4) {
+      var grew = (r === 1) ? (soundsBefore >= 1) : (sndAt[r] - sndAt[r-1] >= 1);
+      T(grew, r + '회 시작에 문장 소리가 저절로 오지 않음');
+      T(o.tts().sent.slice(-1)[0].t === x.sent, r + '회 자동 발화가 오늘 문장이 아님');
+    } else {
+      T(sndAt[5] - sndAt[4] === 0, '5회가 저절로 소리를 냈다 — 마지막 한 칸의 비계가 안 걷혔다');
+      o.doc.getElementById('hear').click();
+      await o.tick(2);
+      var after = o.tts().sent;
+      T(after.length === soundsBefore + 1 && after.slice(-1)[0].t === x.sent,
+        '5회에서 🔊 를 눌렀는데 소리가 오지 않음 — 도움을 없애 버렸다');
+    }
 
     /* 틀린 타일은 자리에 놓이지 않는다 */
     var wrong = o.all('#pool .tile').filter(function(b){ return b.textContent !== x.tiles[0]; })[0];
