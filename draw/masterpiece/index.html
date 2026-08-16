@@ -481,6 +481,112 @@ const AH={ /* 그리기 도우미 */
 };
 
 const ARTWORKS=[
+/* ══════════════ 김홍도 · 씨름 ══════════════ */
+{
+  id:'ssireum', title:'씨름', artist:'김홍도', year:'1780년대',
+  emoji:'🤼', vw:1000, vh:840, gw:520, gh:437,
+  desc:'단원 김홍도의 풍속화첩에 실린 그림이에요. 씨름판을 둥글게 둘러싼 구경꾼들의 얼굴이 저마다 다르고, 벗어 둔 신발과 엿장수까지 그려 넣어 그날의 장터가 그대로 살아나요. 가운데가 아니라 둘레를 보는 재미가 있는 그림이에요.',
+  palette:['#EFE4CB','#DFCFAF','#2B2622','#5C5148','#F7F2E6','#D9CDB6','#5B7FA6','#3C4E70','#B4544A','#C89B54','#E6C39A','#C9A177','#8A6B44'],
+  levels:[{name:'쉬움',detail:1},{name:'보통',detail:2},{name:'어려움',detail:3},{name:'마스터',detail:4}],
+  paint(ctx,d,R){
+    const W=1000,H=840;
+    const HANJI='#EFE4CB',SHADE='#DFCFAF',INK='#2B2622',INK2='#5C5148',
+          WHT='#F7F2E6',WSH='#D9CDB6',BLU='#5B7FA6',NVY='#3C4E70',
+          RED='#B4544A',OCH='#C89B54',SKN='#E6C39A',SKD='#C9A177',BRN='#8A6B44';
+    ctx.fillStyle=HANJI;ctx.fillRect(0,0,W,H);
+    /* 씨름판 바닥 — 둥근 빈터 */
+    AH.ell(ctx,500,470,330,250,0,SHADE);
+
+    /* ── 구경꾼 한 사람 ── */
+    const sit=(x,y,s,face,coat,pants,hat)=>{
+      AH.ell(ctx,x,y-8*s,30*s,13*s,0,pants);              /* 책상다리 */
+      if(d>=2)AH.stroke(ctx,pants,7*s,[x-24*s,y-10*s,x+24*s,y-10*s]);
+      AH.ell(ctx,x,y-34*s,22*s,25*s,0,coat);              /* 몸통 */
+      if(d>=2)AH.stroke(ctx,coat,10*s,[x+face*15*s,y-44*s,x+face*27*s,y-20*s]); /* 팔 */
+      if(d>=3)AH.stroke(ctx,coat,9*s,[x-face*15*s,y-44*s,x-face*24*s,y-22*s]);
+      AH.circle(ctx,x+face*3*s,y-66*s,13*s,SKN);          /* 얼굴 */
+      if(d>=3)AH.ell(ctx,x+face*9*s,y-68*s,5*s,7*s,0,SKD);
+      if(d>=2){
+        if(hat===1)AH.ell(ctx,x+face*3*s,y-76*s,25*s,5*s,0,INK),AH.ell(ctx,x+face*3*s,y-84*s,9*s,9*s,0,INK);
+        else if(hat===2)AH.ell(ctx,x+face*3*s,y-78*s,14*s,8*s,0,INK);
+        else AH.circle(ctx,x+face*3*s,y-78*s,6*s,INK);    /* 상투 */
+      }
+      if(d>=4)AH.stroke(ctx,INK2,2.6*s,[x-16*s,y-40*s,x-13*s,y-16*s]);
+    };
+    /* 자리 배치 — 결정적(썸네일과 동일) */
+    const COAT=[WHT,BLU,WHT,RED,WHT,NVY,WHT,BLU,WHT,WHT,RED,WHT,NVY,WHT,BLU,WHT,WHT,BLU];
+    const PANT=[WSH,NVY,WSH,WSH,NVY,WSH,WSH,WSH,NVY,WSH,WSH,NVY,WSH,WSH,WSH,NVY,WSH,WSH];
+    const HAT =[0,1,2,0,1,0,2,1,0,0,2,1,0,1,0,2,1,0];
+    const seats=[
+      /* 뒤쪽 무리 */ [330,268,.86,1],[418,258,.86,1],[506,252,.86,-1],[594,258,.86,-1],[682,268,.86,-1],
+      /* 왼쪽 무리 */ [206,392,.98,1],[168,486,1.0,1],[246,506,1.0,1],[288,414,.94,1],
+      /* 오른쪽 무리 */[800,396,.98,-1],[848,488,1.0,-1],[762,510,1.0,-1],[724,418,.94,-1],
+      /* 앞쪽 무리 */ [352,706,1.1,1],[470,730,1.12,1],[600,732,1.12,-1],[716,708,1.1,-1],[240,650,1.04,1]
+    ];
+    seats.forEach((p,i)=>{ if(d===1&&i%2===1&&i>8)return; sit(p[0],p[1],p[2],p[3],COAT[i],PANT[i],d>=2?HAT[i]:0) });
+
+    /* ── 씨름꾼 두 사람 — 허리를 굽혀 맞붙은 순간 ── */
+    /* 왼쪽 사람 — 등이 왼쪽 아래로 흐름 */
+    AH.stroke(ctx,SKN,27,[404,478,366,566,346,652]);
+    AH.stroke(ctx,SKN,27,[430,488,420,572,414,656]);
+    if(d>=2){AH.ell(ctx,344,660,23,11,-0.1,SKD);AH.ell(ctx,412,664,23,11,0.05,SKD)}
+    AH.ell(ctx,410,470,42,26,-0.2,WHT);                    /* 잠방이 */
+    AH.ell(ctx,458,414,66,36,-0.72,SKN);                   /* 굽힌 등 */
+    AH.circle(ctx,522,352,25,SKN);
+    if(d>=2)AH.circle(ctx,518,328,10,INK);
+    /* 오른쪽 사람 */
+    AH.stroke(ctx,SKN,27,[644,478,682,566,702,652]);
+    AH.stroke(ctx,SKN,27,[618,488,628,572,634,656]);
+    if(d>=2){AH.ell(ctx,704,660,23,11,0.1,SKD);AH.ell(ctx,636,664,23,11,-0.05,SKD)}
+    AH.ell(ctx,638,470,42,26,0.2,WHT);
+    AH.ell(ctx,590,414,66,36,0.72,SKN);
+    AH.circle(ctx,566,346,25,SKN);
+    if(d>=2)AH.circle(ctx,570,322,10,INK);
+    /* 맞잡은 팔 — 앞쪽 팔은 짙은 살색으로 겹침이 보이게 */
+    AH.stroke(ctx,SKD,22,[500,376,566,404,624,452]);
+    AH.stroke(ctx,SKD,22,[548,370,486,400,428,446]);
+    if(d>=2){
+      AH.stroke(ctx,RED,12,[382,450,444,464]);              /* 샅바 */
+      AH.stroke(ctx,BLU,12,[666,450,604,464]);
+    }
+    if(d>=3){
+      AH.ell(ctx,532,344,6,8,0,SKD);AH.ell(ctx,556,338,6,8,0,SKD);
+      AH.stroke(ctx,INK2,3,[430,398,404,440]);
+      AH.stroke(ctx,INK2,3,[618,398,644,440]);
+      AH.stroke(ctx,INK2,3,[380,552,368,596]);
+      AH.stroke(ctx,INK2,3,[668,552,680,596]);
+    }
+    /* ── 벗어 둔 신발 ── */
+    if(d>=2){
+      const shoe=(x,y,rot,c)=>{AH.ell(ctx,x,y,18,8.5,rot,c);AH.ell(ctx,x+Math.cos(rot)*6,y+Math.sin(rot)*6,8,5,rot,INK2)};
+      const shoes=[[276,588,-0.2,BRN],[310,596,0.12,BRN],[736,592,0.18,OCH],[770,584,-0.14,OCH],[252,548,0.3,OCH]];
+      shoes.forEach((p,i)=>{ if(d===2&&i>2)return; shoe(p[0],p[1],p[2],p[3]) });
+    }
+    /* ── 엿장수 ── */
+    if(d>=2){
+      AH.stroke(ctx,WSH,15,[136,650,132,714]);
+      AH.stroke(ctx,WSH,15,[168,650,174,714]);
+      AH.ell(ctx,152,596,30,36,0,WHT);
+      AH.stroke(ctx,WHT,13,[180,590,202,626]);
+      AH.circle(ctx,155,540,17,SKN);
+      AH.ell(ctx,155,522,32,7,0,INK);
+      AH.poly(ctx,[104,626,206,626,196,660,114,660],OCH);   /* 목에 건 엿판 */
+      if(d>=3){AH.ell(ctx,128,640,11,6,0,WHT);AH.ell(ctx,154,642,11,6,0,WHT);AH.ell(ctx,180,640,11,6,0,WHT);
+        AH.stroke(ctx,INK2,3,[124,600,186,608]);}
+    }
+    /* ── 부채 ── */
+    if(d>=3){
+      const fan=(x,y,a)=>{const p=[x,y];for(let k=-3;k<=3;k++){p.push(x+Math.cos(a+k*0.15)*19,y+Math.sin(a+k*0.15)*19)}AH.poly(ctx,p,WHT)};
+      fan(304,438,-0.9);fan(744,442,-2.24);
+    }
+    /* ── 한지 결·먹점 (마스터) ── */
+    if(d>=4){
+      for(let i=0;i<120;i++){const x=R()*W,y=R()*H;AH.ell(ctx,x,y,7+R()*10,2.4+R()*2,R()*3,R()<.5?SHADE:'#E7DBC0')}
+      for(let i=0;i<46;i++){const x=60+R()*880,y=60+R()*720;AH.circle(ctx,x,y,2.4+R()*2.6,INK2)}
+      for(let i=0;i<14;i++){const t=R()*6.2832,rr=Math.sqrt(R())*0.92;const x=500+Math.cos(t)*rr*300,y=470+Math.sin(t)*rr*226;AH.stroke(ctx,INK2,3,[x,y,x+9+R()*13,y+4+R()*9])}
+    }
+  }
+},
 {
   id:'wave', title:'가나가와 해변의 큰 파도', artist:'가쓰시카 호쿠사이', year:'1831년경',
   emoji:'🌊', vw:1000, vh:700, gw:520, gh:364,
@@ -868,6 +974,266 @@ const ARTWORKS=[
     ctx.fillRect(0,270,180,24);
     ctx.fillRect(700,560,30,240);
     ctx.fillRect(700,640,100,22);
+  }
+},
+/* ══════════════ 마티스 · 춤 ══════════════ */
+{
+  id:'dance', title:'춤', artist:'앙리 마티스', year:'1910년',
+  emoji:'💃', vw:1000, vh:665, gw:520, gh:346,
+  desc:'파랑 하늘과 초록 언덕, 그리고 다섯 사람. 마티스는 색을 딱 세 가지로 줄이고 사람도 선 몇 개로 줄였어요. 그런데도 손을 잡고 도는 움직임이 그대로 느껴져요. 왼쪽 두 손이 아슬아슬하게 떨어져 있는 곳을 찾아보세요.',
+  palette:['#2E4E8F','#3E63A8','#20356B','#4E7A3A','#5F8F46','#33552A','#C8583C','#A8452F','#D9714E','#241A14'],
+  levels:[{name:'쉬움',detail:1},{name:'보통',detail:2},{name:'어려움',detail:3},{name:'마스터',detail:4}],
+  paint(ctx,d,R){
+    const W=1000,H=665;
+    const SKY='#2E4E8F',SKY2='#3E63A8',SKY3='#20356B',
+          GRN='#4E7A3A',GRN2='#5F8F46',GRN3='#33552A',
+          BOD='#C8583C',BSH='#A8452F',BLT='#D9714E',HAIR='#241A14';
+    ctx.fillStyle=SKY;ctx.fillRect(0,0,W,H);
+    {ctx.fillStyle=SKY2;ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(500,150,1000,0);ctx.closePath();ctx.fill()}
+    if(d>=3){ctx.fillStyle=SKY3;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(1000,0);
+      ctx.bezierCurveTo(820,86,560,44,300,96);ctx.bezierCurveTo(180,118,80,104,0,74);ctx.closePath();ctx.fill()}
+    /* 언덕 */
+    ctx.fillStyle=GRN;ctx.beginPath();ctx.moveTo(0,H);ctx.lineTo(0,470);
+    ctx.bezierCurveTo(160,300,360,268,520,300);
+    ctx.bezierCurveTo(700,336,880,318,1000,240);ctx.lineTo(1000,H);ctx.closePath();ctx.fill();
+    {ctx.fillStyle=GRN2;ctx.beginPath();ctx.moveTo(0,H);ctx.lineTo(0,556);
+      ctx.bezierCurveTo(240,470,600,486,1000,412);ctx.lineTo(1000,H);ctx.closePath();ctx.fill()}
+    if(d>=3){ctx.fillStyle=GRN3;ctx.beginPath();ctx.moveTo(0,H);ctx.lineTo(1000,H);ctx.lineTo(1000,596);
+      ctx.bezierCurveTo(700,640,360,608,0,652);ctx.closePath();ctx.fill()}
+
+    const limb=(w,pts)=>AH.stroke(ctx,BOD,w,pts);
+    if(d>=2){[[132,570],[318,458],[642,450],[898,566],[470,632]].forEach(g=>AH.ell(ctx,g[0],g[1],52,15,0,GRN3))}
+    /* 몸 = 그늘 타원을 먼저 깔고 본색 타원을 살짝 밀어 얹어 초승달 명암 */
+    const body=(hx,hy,hr,tx,ty,trx,try_,rot)=>{
+      AH.ell(ctx,tx-trx*0.17,ty+try_*0.06,trx,try_,rot,BSH);
+      AH.ell(ctx,tx,ty,trx,try_,rot,BOD);
+      if(d>=3)AH.ell(ctx,tx+trx*0.3,ty-try_*0.16,trx*0.42,try_*0.52,rot,BLT);
+      if(d>=2)AH.circle(ctx,hx-hr*0.2,hy+hr*0.1,hr,BSH);
+      AH.circle(ctx,hx,hy,hr,BOD);
+    };
+
+    /* ① 왼쪽 — 서서 아래로 손 뻗음 */
+    limb(30,[112,352,128,452,140,562]);limb(30,[152,352,182,452,206,556]);
+    limb(24,[112,296,128,392,192,450]);limb(24,[150,290,232,258,300,204]);
+    body(96,206,32,128,300,44,68,0.06);
+    /* ② 좌상 — 몸 숙임 */
+    limb(24,[352,244,326,346,314,450]);limb(24,[398,246,432,340,456,436]);
+    limb(22,[346,182,318,198,300,204]);limb(22,[406,180,520,150,610,134]);
+    body(346,122,29,376,198,40,60,0.44);
+    /* ③ 우상 */
+    limb(24,[652,240,644,342,636,440]);limb(24,[696,244,726,338,750,430]);
+    limb(22,[640,172,610,134]);limb(22,[706,180,800,214,860,250]);
+    body(654,112,29,672,192,40,60,-0.36);
+    /* ④ 오른쪽 — 몸 젖힘 */
+    limb(30,[868,362,878,462,890,560]);limb(30,[904,358,932,458,948,548]);
+    limb(24,[866,262,860,250]);limb(24,[890,364,842,468,762,518]);
+    body(906,214,32,884,304,44,68,-0.1);
+    /* ⑤ 아래 — 등 돌려 웅크림 */
+    limb(28,[444,568,398,624,346,618]);limb(28,[498,568,546,624,596,614]);
+    limb(24,[422,512,332,486,240,458]);limb(24,[516,514,624,516,742,506]);
+    body(470,436,31,470,528,58,54,0);
+    if(d>=3){
+      AH.ell(ctx,88,190,28,17,-0.35,HAIR);AH.ell(ctx,340,106,26,15,0.3,HAIR);
+      AH.ell(ctx,652,96,26,15,-0.22,HAIR);AH.ell(ctx,914,198,28,17,0.25,HAIR);
+      AH.ell(ctx,470,418,30,17,0,HAIR);
+      const rb=KMP.mulberry32(707);
+      for(let i=0;i<16;i++){const x=rb()*1000,y=rb()*250;AH.stroke(ctx,rb()<.5?SKY2:SKY3,9+rb()*5,[x,y,x+22+rb()*24,y+8+rb()*10])}
+      for(let i=0;i<16;i++){const x=rb()*1000,y=330+rb()*320;AH.stroke(ctx,rb()<.5?GRN2:GRN3,9+rb()*5,[x,y,x+24+rb()*24,y-6+rb()*14])}
+    }
+    /* 붓결 (마스터) */
+    if(d>=4){
+      for(let i=0;i<90;i++){const x=R()*W,y=R()*260;AH.stroke(ctx,R()<.5?SKY2:SKY3,7+R()*5,[x,y,x+16+R()*22,y+6+R()*10])}
+      for(let i=0;i<90;i++){const x=R()*W,y=300+R()*350;AH.stroke(ctx,R()<.5?GRN2:GRN3,7+R()*5,[x,y,x+18+R()*22,y-4+R()*12])}
+      for(let i=0;i<40;i++){const x=R()*W,y=R()*H;AH.circle(ctx,x,y,3+R()*3.4,R()<.5?BLT:BSH)}
+    }
+  }
+},
+/* ══════════════ 클림트 · 키스 ══════════════ */
+{
+  id:'kiss', title:'키스', artist:'구스타프 클림트', year:'1908년',
+  emoji:'💛', vw:900, vh:900, gw:470, gh:470,
+  desc:'온통 금빛인 그림이에요. 두 사람이 두른 옷을 보면 한쪽은 네모, 한쪽은 동그라미로 무늬가 갈려 있어요. 클림트는 진짜 금을 얇게 펴서 붙여 그렸대요. 꽃밭 끝에 선 발끝을 찾아보세요.',
+  palette:['#C68B18','#EBC34B','#8C6410','#2E2A22','#F2E4C4','#D8AE86','#4E7A46','#7FA858','#B8496A','#5A7FB0','#E8E0CE','#7E4A2E'],
+  levels:[{name:'쉬움',detail:1},{name:'보통',detail:2},{name:'어려움',detail:3},{name:'마스터',detail:4}],
+  paint(ctx,d,R){
+    const W=900,H=900;
+    const GLD='#C68B18',GLT='#EBC34B',GLD2='#8C6410',BLK='#2E2A22',
+          SKN='#F2E4C4',SKD='#D8AE86',GRN='#4E7A46',GRN2='#7FA858',
+          PNK='#B8496A',BLU='#5A7FB0',WHT='#E8E0CE',HAIR='#7E4A2E';
+    ctx.fillStyle=GLD;ctx.fillRect(0,0,W,H);
+    if(d>=3){ctx.fillStyle=GLD2;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(W,0);
+      ctx.bezierCurveTo(700,120,300,86,0,140);ctx.closePath();ctx.fill()}
+    /* 꽃밭 */
+    ctx.fillStyle=GRN;ctx.beginPath();ctx.moveTo(120,H);ctx.lineTo(160,742);
+    ctx.bezierCurveTo(330,694,620,700,772,750);ctx.lineTo(812,H);ctx.closePath();ctx.fill();
+    if(d>=2){ctx.fillStyle=GRN2;ctx.beginPath();ctx.moveTo(180,H);ctx.lineTo(212,796);
+      ctx.bezierCurveTo(360,762,600,766,732,800);ctx.lineTo(760,H);ctx.closePath();ctx.fill()}
+
+    /* ── 두 사람을 감싼 망토 ── */
+    const cloak=()=>{ctx.beginPath();
+      ctx.moveTo(316,268);
+      ctx.bezierCurveTo(330,166,572,156,606,268);
+      ctx.bezierCurveTo(662,368,684,520,660,640);
+      ctx.bezierCurveTo(640,750,540,802,428,798);
+      ctx.bezierCurveTo(316,794,250,706,258,592);
+      ctx.bezierCurveTo(266,448,292,352,316,268);
+      ctx.closePath()};
+    const manSide=()=>{ctx.beginPath();
+      ctx.moveTo(466,110);ctx.bezierCurveTo(544,300,472,566,516,860);
+      ctx.lineTo(900,860);ctx.lineTo(900,110);ctx.closePath()};
+    const womanSide=()=>{ctx.beginPath();
+      ctx.moveTo(466,110);ctx.bezierCurveTo(544,300,472,566,516,860);
+      ctx.lineTo(0,860);ctx.lineTo(0,110);ctx.closePath()};
+    cloak();ctx.fillStyle=GLT;ctx.fill();
+    if(d>=2){
+      /* 남자 몫 — 짙은 금 바탕에 검은 네모 */
+      ctx.save();cloak();ctx.clip();manSide();ctx.clip();
+      ctx.fillStyle=GLD2;ctx.fillRect(240,110,680,760);
+      const nm=d===2?9:(d===3?20:38),r1=KMP.mulberry32(77);
+      for(let i=0;i<nm;i++){const x=458+r1()*200,y=186+r1()*580,sw=18+r1()*34,sh=18+r1()*40;
+        ctx.fillStyle=(i%5===0)?WHT:BLK;ctx.fillRect(x,y,sw,sh)}
+      ctx.restore();
+      /* 여자 몫 — 밝은 금 바탕에 동그라미 */
+      ctx.save();cloak();ctx.clip();womanSide();ctx.clip();
+      const nc=d===2?10:(d===3?24:44),r2=KMP.mulberry32(99);
+      for(let i=0;i<nc;i++){const x=262+r2()*216,y=252+r2()*520,rr=13+r2()*21;
+        AH.circle(ctx,x,y,rr,i%3===0?PNK:(i%3===1?BLU:WHT));
+        if(d>=3&&i%2===0)AH.circle(ctx,x,y,rr*0.44,GLD2)}
+      ctx.restore();
+    }
+
+    /* ── 남자 — 뒤에서 여자를 감싸 안고 고개를 숙임 ── */
+    AH.ell(ctx,494,232,72,54,0.06,HAIR);
+    AH.ell(ctx,456,288,46,50,0.16,SKD);
+    AH.ell(ctx,516,284,42,52,0.02,HAIR);
+    if(d>=3){const r3=KMP.mulberry32(13);
+      for(let i=0;i<(d===3?8:16);i++)AH.circle(ctx,452+r3()*94,186+r3()*32,7+r3()*6,i%3===0?GRN:GRN2)}
+    /* ── 여자 — 고개를 젖히고 눈을 감음 ── */
+    AH.ell(ctx,342,406,30,36,-0.5,HAIR);
+    AH.ell(ctx,374,356,54,60,-0.25,SKN);
+    if(d>=2)AH.ell(ctx,348,376,22,30,-0.25,SKD);
+    AH.ell(ctx,378,300,60,32,-0.16,HAIR);
+    AH.ell(ctx,322,338,24,40,-0.36,HAIR);
+    if(d>=3){
+      AH.stroke(ctx,GLD2,5,[340,352,368,346]);
+      AH.ell(ctx,352,392,13,7,-0.12,PNK);
+      AH.circle(ctx,392,384,11,SKD);
+      const r4=KMP.mulberry32(23);
+      for(let i=0;i<(d===3?7:14);i++)AH.circle(ctx,338+r4()*82,284+r4()*30,5+r4()*5,i%3===0?PNK:(i%3===1?WHT:BLU));
+    }
+    /* 남자 손 — 볼과 턱 */
+    AH.ell(ctx,408,328,27,20,-0.3,SKD);
+    AH.ell(ctx,418,398,25,18,0.22,SKD);
+    if(d>=3){AH.stroke(ctx,GLD2,3.4,[390,320,428,332]);AH.stroke(ctx,GLD2,3.4,[400,392,438,402])}
+    /* 여자 손 — 남자 손등에 얹음 */
+    if(d>=2)AH.ell(ctx,446,352,21,15,0.32,SKN);
+
+    /* ── 꽃밭 끝에 선 발 ── */
+    AH.ell(ctx,398,768,56,44,0.16,SKN);
+    if(d>=2){AH.ell(ctx,356,806,23,13,0.34,SKD);AH.ell(ctx,406,814,23,13,0.16,SKD)}
+    if(d>=3)AH.stroke(ctx,SKD,4,[372,742,394,782]);
+
+    /* ── 꽃 ── */
+    if(d>=2){
+      const nf=d===2?16:(d===3?44:110),r5=KMP.mulberry32(41);
+      for(let i=0;i<nf;i++){const x=140+r5()*640,y=706+r5()*186;
+        AH.circle(ctx,x,y,5+r5()*7,i%3===0?PNK:(i%3===1?WHT:BLU))}
+    }
+    /* ── 금가루 ── */
+    if(d>=4){
+      for(let i=0;i<130;i++){const x=R()*W,y=R()*H;AH.circle(ctx,x,y,2.6+R()*3.4,R()<.5?GLT:GLD2)}
+      for(let i=0;i<50;i++){const x=R()*W,y=R()*180;AH.ell(ctx,x,y,10+R()*15,3+R()*3,R()*3,GLT)}
+      for(let i=0;i<40;i++){const x=120+R()*660,y=720+R()*160;AH.circle(ctx,x,y,3+R()*4,GRN2)}
+    }
+  }
+},
+/* ══════════════ 루소 · 놀람! ══════════════ */
+{
+  id:'jungle', title:'놀람!', artist:'앙리 루소', year:'1891년',
+  emoji:'🐅', vw:1000, vh:800, gw:520, gh:416,
+  desc:'세관원으로 일하며 혼자 그림을 배운 루소가 그린 정글이에요. 루소는 열대에 가 본 적이 없어서 식물원과 그림책만 보고 이 숲을 지어냈대요. 번개가 치는 순간 호랑이가 깜짝 놀란 얼굴을 하고 있어요.',
+  palette:['#1E3320','#2F4A2A','#5C8A3A','#86AF4E','#B9C4B0','#F0E08A','#CFE0C8','#D98A2B','#3A2A18','#F0D8A8','#C96A5A'],
+  levels:[{name:'쉬움',detail:1},{name:'보통',detail:2},{name:'어려움',detail:3},{name:'마스터',detail:4}],
+  paint(ctx,d,R){
+    const W=1000,H=800;
+    const DRK='#1E3320',MID='#2F4A2A',LEF='#5C8A3A',LIT='#86AF4E',
+          SKY='#B9C4B0',BLT='#F0E08A',RAIN='#CFE0C8',
+          ORG='#D98A2B',STR='#3A2A18',BEL='#F0D8A8',NOS='#C96A5A';
+    ctx.fillStyle=MID;ctx.fillRect(0,0,W,H);
+    /* 하늘 틈 */
+    AH.blob(ctx,700,150,190,0.24,12,KMP.mulberry32(3),SKY);
+    if(d>=2)AH.blob(ctx,300,120,140,0.24,12,KMP.mulberry32(9),SKY);
+    /* 번개 */
+    if(d>=2)AH.poly(ctx,[742,42,790,42,760,150,806,150,720,290,748,176,706,176],BLT);
+    /* 바닥 그늘 */
+    ctx.fillStyle=DRK;ctx.beginPath();ctx.moveTo(0,800);ctx.lineTo(0,620);
+    ctx.quadraticCurveTo(500,556,1000,644);ctx.lineTo(1000,800);ctx.closePath();ctx.fill();
+
+    /* 잎 — 결정적 배치 */
+    const leaf=(x,y,len,wid,rot,col)=>{AH.ell(ctx,x,y,len,wid,rot,col)};
+    const rl=KMP.mulberry32(2026);
+    const nL=d===1?14:(d===2?34:(d===3?68:98));
+    for(let i=0;i<nL;i++){
+      const x=rl()*W,y=rl()*H;
+      const len=34+rl()*76,wid=9+rl()*17,rot=rl()*3.14;
+      const c=i%3===0?LEF:(i%3===1?LIT:DRK);
+      leaf(x,y,len,wid,rot,c);
+      if(d>=3&&i%4===0)AH.stroke(ctx,MID,3.4,[x-Math.cos(rot)*len*0.8,y-Math.sin(rot)*len*0.8,x+Math.cos(rot)*len*0.8,y+Math.sin(rot)*len*0.8]);
+    }
+    /* 큰 잎 앞쪽 — 화면 가장자리 */
+    const big=[[60,700,140,42,-0.5],[210,760,150,46,0.3],[900,720,150,44,0.45],[760,780,140,40,-0.35],[40,300,120,36,0.9],[960,340,120,36,-0.9]];
+    big.forEach((b,i)=>{ if(d===1&&i>3)return; leaf(b[0],b[1],b[2],b[3],b[4],i%2?LEF:LIT);
+      if(d>=2)AH.stroke(ctx,MID,4,[b[0]-Math.cos(b[4])*b[2]*0.8,b[1]-Math.sin(b[4])*b[2]*0.8,b[0]+Math.cos(b[4])*b[2]*0.8,b[1]+Math.sin(b[4])*b[2]*0.8]) });
+
+    /* ── 호랑이 ── */
+    const tx=430,ty=520;
+    AH.stroke(ctx,ORG,34,[tx-90,ty+40,tx-120,ty+120,tx-108,ty+180]);   /* 앞다리 */
+    AH.stroke(ctx,ORG,34,[tx+70,ty+52,tx+112,ty+128,tx+124,ty+184]);
+    AH.ell(ctx,tx,ty+30,132,80,-0.06,ORG);                              /* 몸통 */
+    AH.stroke(ctx,ORG,26,[tx+120,ty-6,tx+206,ty-52,tx+272,ty-30]);      /* 꼬리 */
+    if(d>=2)AH.ell(ctx,tx-6,ty+70,86,36,0,BEL);
+    AH.ell(ctx,tx-116,ty-56,66,58,0.1,ORG);                             /* 머리 */
+    AH.ell(ctx,tx-160,ty-92,17,20,-0.5,ORG);                            /* 귀 */
+    AH.ell(ctx,tx-84,ty-104,17,20,0.5,ORG);
+    AH.ell(ctx,tx-124,ty-40,44,32,0.1,BEL);                             /* 주둥이 */
+    AH.circle(ctx,tx-128,ty-52,10,NOS);
+    if(d>=2){AH.circle(ctx,tx-140,ty-80,10,STR);AH.circle(ctx,tx-100,ty-84,10,STR)}
+    if(d>=3){
+      AH.ell(ctx,tx-137,ty-81,4,5,0,BEL);AH.ell(ctx,tx-97,ty-85,4,5,0,BEL);
+      AH.stroke(ctx,STR,3.4,[tx-150,ty-40,tx-186,ty-32]);
+      AH.stroke(ctx,STR,3.4,[tx-150,ty-30,tx-188,ty-16]);
+      AH.stroke(ctx,STR,3.4,[tx-98,ty-38,tx-62,ty-30]);
+      AH.ell(ctx,tx-124,ty-26,16,9,0,STR);                              /* 벌린 입 */
+    }
+    /* 줄무늬 — 등에서 옆구리로 흘러내리는 곡선 */
+    if(d>=2){
+      const nS=d===2?6:(d===3?10:14);
+      for(let i=0;i<nS;i++){
+        const t=i/(nS-1);
+        const sx=tx-86+t*206, sy=ty-42+Math.sin(t*3.14)*-10;
+        const len=34+Math.sin(t*3.14)*36;
+        AH.stroke(ctx,STR,11-Math.abs(t-0.5)*5,[sx,sy, sx-6,sy+len*0.6, sx-16,sy+len]);
+      }
+      AH.ell(ctx,tx-159,ty-91,9,11,-0.5,STR);
+      AH.ell(ctx,tx-85,ty-103,9,11,0.5,STR);
+      AH.stroke(ctx,STR,7,[tx-150,ty-116,tx-140,ty-100]);
+      AH.stroke(ctx,STR,7,[tx-116,ty-124,tx-112,ty-106]);
+      if(d>=3){
+        AH.stroke(ctx,STR,7,[tx+178,ty-46,tx+190,ty-24]);
+        AH.stroke(ctx,STR,7,[tx+230,ty-50,tx+240,ty-28]);
+        AH.stroke(ctx,STR,8,[tx-104,ty+66,tx-118,ty+104]);
+        AH.stroke(ctx,STR,8,[tx+74,ty+74,tx+92,ty+110]);
+      }
+    }
+    /* 비 */
+    if(d>=3){
+      const nR=d===3?26:80;
+      for(let i=0;i<nR;i++){const x=R()*W,y=R()*H;AH.stroke(ctx,RAIN,4.6,[x,y,x+22,y+46])}
+    }
+    if(d>=4){
+      for(let i=0;i<46;i++){const x=R()*W,y=R()*H;AH.circle(ctx,x,y,3.4+R()*4,R()<.5?LIT:DRK)}
+      for(let i=0;i<34;i++){const x=R()*W,y=R()*H;AH.stroke(ctx,DRK,5,[x,y,x+18+R()*24,y+10+R()*20])}
+    }
   }
 }
 ];
