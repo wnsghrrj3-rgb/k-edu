@@ -491,11 +491,12 @@ body { background:var(--paper); display:flex; align-items:center; justify-conten
       <h1 class="slide-title">조사 결과</h1>
       <div class="wrap-score" id="final-score">0</div>
       <p class="wrap-msg" id="wrap-msg"></p>
-      <div class="agent-card" id="agent-card">
-        <div class="ac-row"><span class="ac-k">모은 길</span><span class="ac-v" id="dc-cases">0개</span></div>
-        <div class="ac-row"><span class="ac-k">기록한 추측</span><span class="ac-v" id="dc-conj">기록 없음</span></div>
-        <div class="ac-row"><span class="ac-k">적발한 보고서</span><span class="ac-v" id="dc-report">아직</span></div>
-        <div class="ac-row"><span class="ac-k">공사 계획</span><span class="ac-v" id="dc-plan">아직</span></div>
+      <div class="detective-card">
+        <p class="dc-title">격자 경로 연구소 조사 기록</p>
+        <div class="dc-row"><span>모은 길</span><b id="dc-cases">0개</b></div>
+        <div class="dc-row"><span>기록한 추측</span><b id="dc-conj">기록 없음</b></div>
+        <div class="dc-row"><span>적발한 보고서</span><b id="dc-report">아직</b></div>
+        <div class="dc-row"><span>공사 계획</span><b id="dc-plan">아직</b></div>
       </div>
       <div class="home-card">🏠 <b>집에서 하는 진짜 조사</b> — 모눈종이에 모퉁이를 여섯 줄씩 그리고, 왼쪽 위부터 수를 채워 보자. 오른쪽 아래 끝에 나오는 수가 그 마을의 길 수다. 그다음 아무 모퉁이나 하나 지우고 0으로 둔 채 다시 채워 보면, 그 한 곳이 길을 얼마나 데려갔는지 알 수 있다.</div>
       <div class="next-mini">
@@ -710,7 +711,7 @@ function wrapMsg(s) {
 }
 function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } }
 function goPrev() { if (cur > 0) { cur--; updateUI(); } }
-function goHub() { saveProgress(false); location.href = '../index.html'; }
+function goHub() { saveProgress(false); location.href = '../../index.html'; }
 function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
 function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
 function showHint() {
@@ -916,7 +917,7 @@ let conjPicked = '';
       conjPicked = t;
       Array.from(list.children).forEach(c => { c.style.opacity = '0.45'; });
       b.style.opacity = '1';
-      b.classList.add('picked');
+      b.classList.add('on');
       addScore(KGiftedCore.SCORE_PLAN.conjecture);
       document.getElementById('fb-conjecture').textContent = '추측을 기록했다. +10 — 다음 실험실에서 직접 확인해 보자.';
       saveProgress(false);
@@ -1104,7 +1105,7 @@ const REPORT_OK = 0;
       const fb = document.getElementById('fb-report');
       if (n === REPORT_OK) {
         st.solved = true;
-        b.classList.add('picked');
+        b.classList.add('on');
         addScore(KGiftedCore.SCORE_PLAN.report);
         fb.textContent = '맞다. 나머지 두 장은 더한 값과 다른 모퉁이가 섞여 있었다. +10';
         saveProgress(false);
