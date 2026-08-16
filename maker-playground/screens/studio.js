@@ -22,11 +22,28 @@ window.MK_SCREENS.studio = (() => {
     if (!PG.state.studio) PG.state.studio = { doc: null, sel: 0, msg: '', busy: false };
     return PG.state.studio;
   };
+  /* R133 — 화면비 정본. 씬은 width·height 를 스스로 들고(render 531행이 읽는
+     키), 씬에 값이 없으면 1280×720 가로로 굳는다 — 준호의 첫 테스트 영상이
+     세로 프롬프트로도 가로로 나온 원인이 이 무지정이었다. 유튜브 쇼츠가
+     이 제작대의 표준이라 새 문서 기본은 세로다. targetMin 1080 규약과
+     맞물려 세로는 1080×1920 그대로 나간다. */
+  const ASPECTS = Object.freeze({
+    portrait: Object.freeze({ w: 1080, h: 1920, label: '세로 9:16' }),
+    landscape: Object.freeze({ w: 1280, h: 720, label: '가로 16:9' }),
+  });
+  const aspectOf = (d) => ASPECTS[(d.meta && d.meta.aspect) || 'portrait'] || ASPECTS.portrait;
+  const applyAspect = (d) => {
+    const a = aspectOf(d);
+    d.scenes.forEach((sc) => { sc.width = a.w; sc.height = a.h; });
+  };
   const doc = () => {
     const s = st();
     if (!s.doc) {
       const saved = window.MK_LIVE && window.MK_LIVE.loadDoc(DOC_ID);
-      s.doc = (saved && saved.doc) || { id: DOC_ID, title: '스튜디오', contentType: 'video', scenes: [], meta: {} };
+      s.doc = (saved && saved.doc) || { id: DOC_ID, title: '스튜디오', contentType: 'video', scenes: [], meta: { aspect: 'portrait' } };
+      if (!s.doc.meta) s.doc.meta = {};
+      if (!s.doc.meta.aspect) s.doc.meta.aspect = 'portrait';   /* 기존 저장분도 세로로 승격 — 토글로 언제든 복귀 */
+      applyAspect(s.doc);
     }
     return s.doc;
   };
@@ -42,8 +59,9 @@ window.MK_SCREENS.studio = (() => {
     window.MK_LIVE.fileToSrc(file, (src, err) => {
       if (!src) { done(err || '읽지 못했어요'); return; }
       const d = doc();
+      const a = aspectOf(d);                                        /* R133 — 씬이 화면비를 스스로 든다 */
       const sc = { id: 'st' + Date.now() + Math.floor(Math.random() * 1e4), name: file.name.replace(/\.[^.]+$/, ''),
-        duration: 3, background: '#000',
+        duration: 3, background: '#000', width: a.w, height: a.h,
         elements: [{ kind: 'video', video: true, x: 0, y: 0, w: 100, h: 100, fit: 'contain',
           label: file.name.replace(/\.[^.]+$/, ''), src }] };
       d.scenes.push(sc);
@@ -64,8 +82,12 @@ window.MK_SCREENS.studio = (() => {
     const t = String(text || '').trim();
     if (!t) { if (cur) sc.elements.splice(sc.elements.indexOf(cur), 1); return; }
     if (cur) { cur.text = t; return; }
-    sc.elements.push({ kind: 'text', stCap: true, text: t, x: 6, y: 80, w: 88, size: 4.4,
-      weight: 700, align: 'center', anim: { preset: 'fade', delay: 0.1, duration: 0.4 } });
+    const el = { kind: 'text', stCap: true, text: t, x: 6, y: 80, w: 88, size: 4.4,
+      weight: 700, align: 'center', anim: { preset: 'fade', delay: 0.1, duration: 0.4 } };
+    /* R133 — 새 자막은 채널 표준(수상한 자막)으로 태어난다. 스타일 칩으로
+       언제든 갈 수 있으니 기본값이지 강제가 아니다. */
+    if (window.MK_TEXTSTYLE) window.MK_TEXTSTYLE.applyPreset(el, 'ts-susu');
+    sc.elements.push(el);
   }
 
   const recOf = () => {
@@ -186,6 +208,7 @@ window.MK_SCREENS.studio = (() => {
           .stu-head{grid-column:1/3;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
           .stu-head h2{margin:0;font:var(--mk-t-h3, 700 18px/1.3 sans-serif)}
           .stu-head .sp{flex:1}
+          .stu-asp{display:inline-flex;gap:6px;margin-left:6px}
           .stu-btn{padding:9px 14px;border-radius:10px;border:1.5px solid var(--mk-border);background:transparent;cursor:pointer;font:inherit}
           .stu-btn.primary{background:var(--mk-teal);color:#fff;border-color:var(--mk-teal)}
           .stu-strip{display:flex;flex-direction:column;gap:8px;max-height:70vh;overflow:auto}
@@ -200,10 +223,15 @@ window.MK_SCREENS.studio = (() => {
           .stu-msg{grid-column:1/3;font:var(--mk-t-caption,12px sans-serif);color:var(--mk-mut,#888)}
         </style>
         <div class="stu-head">
-          <h2>🎬 스튜디오</h2><small>${d.scenes.length}클립 · 총 ${fmt(tot)}초 / ${cap}초</small><span class="sp"></span>
+          <h2>🎬 스튜디오</h2><small>${d.scenes.length}클립 · 총 ${fmt(tot)}초 / ${cap}초</small>
+          <span class="stu-asp">${Object.keys(ASPECTS).map((k) =>
+            `<button class="cx-shb${((d.meta && d.meta.aspect) || 'portrait') === k ? ' on' : ''}" data-st-aspect="${k}" title="${ASPECTS[k].w}×${ASPECTS[k].h}">${ASPECTS[k].label}</button>`).join('')}</span>
+          <span class="sp"></span>
           <button class="stu-btn" data-st-add>＋ 클립 추가</button>
+          <button class="stu-btn" data-st-capb ${d.scenes.length ? '' : 'disabled'} title="복사해 둔 컷 테이블 대사를 줄 순서대로 장면 자막에 앉혀요 — [화자] 태그도 읽어요">📥 대본 일괄</button>
           <button class="stu-btn" data-st-script ${d.scenes.length ? '' : 'disabled'} title="전 장면 대사를 번호 붙여 복사 — TTS 에 통째로 붙여넣어요">📋 대본 복사</button>
           <button class="stu-btn" data-st-vbatch ${d.scenes.length ? '' : 'disabled'} title="TTS 로 뽑은 mp3 들 — 파일 이름 숫자 순서로 장면에 앉아요">📁 목소리 일괄</button>
+          <button class="stu-btn" data-st-srt ${d.scenes.length ? '' : 'disabled'} title="유튜브 업로드용 자막 파일 — 장면 길이 누적으로 시각을 계산해요">💬 SRT</button>
           <button class="stu-btn" data-st-play ${d.scenes.length ? '' : 'disabled'}>▶ 미리보기</button>
           <button class="stu-btn primary" data-st-export ${d.scenes.length && !s.busy ? '' : 'disabled'}>⬇ 내보내기</button>
         </div>
@@ -323,6 +351,49 @@ window.MK_SCREENS.studio = (() => {
           R();
         });
         inp.click();
+      };
+      /* R133 — 화면비 토글: 문서와 전 씬이 함께 움직인다 */
+      root.querySelectorAll('[data-st-aspect]').forEach((b) => b.onclick = () => {
+        const d = doc();
+        d.meta.aspect = b.dataset.stAspect;
+        applyAspect(d);
+        const a = aspectOf(d);
+        s.msg = `${a.label} (${a.w}×${a.h}) — 전 장면에 적용했어요`;
+        R();
+      });
+      /* R133 — 대본 일괄: 클립보드의 컷 테이블 대사를 줄 순서대로 앉힌다 */
+      const cb = root.querySelector('[data-st-capb]');
+      if (cb) cb.onclick = () => {
+        const land = (text) => {
+          const r2 = window.MK_LIVE.assignCaptions(doc(), text, { styleId: 'ts-susu' });
+          st().msg = r2.ok
+            ? `자막 ${r2.assigned}개를 장면 순서대로 앉혔어요` +
+              (r2.cleared ? ` · ${r2.cleared}개는 (대사 없음)으로 지웠어요` : '') +
+              (r2.extraLines ? ` · ${r2.extraLines}줄은 장면이 모자라 남았어요` : '') +
+              (r2.extraScenes ? ` · 장면 ${r2.extraScenes}개는 줄이 모자라 비어 있어요` : '')
+            : '앉힐 대사를 못 찾았어요 — 한 줄에 한 장면 대사를 복사해 주세요';
+          R();
+        };
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          navigator.clipboard.readText().then(land).catch(() => {
+            st().msg = '클립보드를 읽지 못했어요 — 브라우저 권한을 허용해 주세요'; PG.render();
+          });
+        } else { st().msg = '이 브라우저는 클립보드 읽기가 안 돼요 — 장면마다 대사 칸에 붙여넣어 주세요'; PG.render(); }
+      };
+      /* R133 — SRT 내려받기: 순수 문자열(MK_LIVE.srtScript) + Blob 배선만 */
+      const sr = root.querySelector('[data-st-srt]');
+      if (sr) sr.onclick = () => {
+        const r2 = window.MK_LIVE.srtScript(doc());
+        if (!r2.cues) { st().msg = '자막 있는 장면이 없어요 — 대사를 먼저 넣어 주세요'; PG.render(); return; }
+        try {
+          const blob = new Blob([r2.text], { type: 'text/plain;charset=utf-8' });
+          const a2 = document.createElement('a');
+          a2.href = URL.createObjectURL(blob);
+          a2.download = (doc().title || '스튜디오') + '.srt';
+          a2.click();
+          setTimeout(() => URL.revokeObjectURL(a2.href), 4000);
+        } catch (_) {}
+        st().msg = `SRT ${r2.cues}큐 · 총 ${r2.totalSec}초 — 유튜브 자막 업로드에 그대로 써요`; PG.render();
       };
       /* R130 — 대본 복사 · 목소리 일괄 · 미리듣기 · 자막 스타일 */
       const sb = root.querySelector('[data-st-script]');

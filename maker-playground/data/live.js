@@ -379,6 +379,73 @@ window.MK_LIVE = (() => {
       empty: Math.max(0, scenes.length - assigned) };
   }
 
+  /* R133 — 대본→자막 다리(captionScript 의 역방향). 컷 테이블에서 대사를
+     통째로 붙여넣으면 줄 순서대로 씬 자막에 앉는다 — 씬마다 손으로 치던
+     일이 한 번의 붙여넣기가 된다.
+     · 줄 머리 「N.」「N)」 번호는 벗긴다(captionScript 왕복 보장)
+     · 「[화자]」 태그는 sc.speaker 로 앉는다
+     · 「(대사 없음)」 또는 빈 대사 = 그 씬의 자막을 지운다(정직한 왕복)
+     · 남는 줄·남는 씬은 버리지 않고 센다
+     · styleId 를 주면 새로 만든 자막에 MK_TEXTSTYLE 프리셋을 입힌다 */
+  function assignCaptions(doc, text, opt) {
+    const scenes = (doc && doc.scenes) || [];
+    const lines = String(text || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    const o = opt || {};
+    let assigned = 0, cleared = 0;
+    lines.forEach((raw, i) => {
+      if (i >= scenes.length) return;
+      const sc = scenes[i];
+      let t = raw.replace(/^\d+\s*[.)]\s*/, '');
+      const who = t.match(/^\[([^\]]+)\]\s*/);
+      if (who) { sc.speaker = who[1].trim(); t = t.slice(who[0].length); }
+      t = t.trim();
+      const els = sc.elements || (sc.elements = []);
+      const cur = els.find((e) => e && e.stCap);
+      if (!t || t === '(대사 없음)') {
+        if (cur) { els.splice(els.indexOf(cur), 1); cleared++; }
+        return;
+      }
+      if (cur) { cur.text = t; }
+      else {
+        const el = { kind: 'text', stCap: true, text: t, x: 6, y: 80, w: 88, size: 4.4,
+          weight: 700, align: 'center', anim: { preset: 'fade', delay: 0.1, duration: 0.4 } };
+        if (o.styleId && window.MK_TEXTSTYLE) window.MK_TEXTSTYLE.applyPreset(el, o.styleId);
+        els.push(el);
+      }
+      assigned++;
+    });
+    return { ok: assigned > 0 || cleared > 0, assigned, cleared,
+      extraLines: Math.max(0, lines.length - scenes.length),
+      extraScenes: Math.max(0, scenes.length - lines.length) };
+  }
+
+  /* R133 — 유튜브 업로드용 SRT. 씬 길이를 누적해 큐 시각을 계산한다 —
+     자막 없는 씬도 시간은 흐른다(큐만 안 만든다). 순수 문자열이라 jsdom 이
+     시각 수학을 끝까지 문다. */
+  function srtScript(doc) {
+    const scenes = (doc && doc.scenes) || [];
+    const tc = (sec) => {
+      const ms = Math.max(0, Math.round(sec * 1000));
+      const h = Math.floor(ms / 3600000), m = Math.floor(ms / 60000) % 60,
+        s = Math.floor(ms / 1000) % 60, r = ms % 1000;
+      const p2 = (n) => String(n).padStart(2, '0');
+      return `${p2(h)}:${p2(m)}:${p2(s)},${String(r).padStart(3, '0')}`;
+    };
+    let t = 0, n = 0;
+    const blocks = [];
+    scenes.forEach((sc) => {
+      const dur = Math.max(0, +sc.duration || 0);
+      const cap = (sc.elements || []).find((e) => e && e.stCap);
+      const txt = cap && cap.text ? String(cap.text).trim() : '';
+      if (txt && dur > 0) {
+        n++;
+        blocks.push(`${n}\n${tc(t)} --> ${tc(t + dur)}\n${txt}`);
+      }
+      t += dur;
+    });
+    return { text: blocks.join('\n\n') + (blocks.length ? '\n' : ''), cues: n, totalSec: Math.round(t * 10) / 10 };
+  }
+
   /* File → dataURL. reader 주입 가능(jsdom 검증용). 이미지·영상만 — 상한은 MEDIA_SPEC */
   /* R89 — 큰 사진은 거부하지 않고 줄여서 받는다. 요즘 폰·카메라 사진은
      8MB를 예사로 넘는다 — 「8MB 이하만」은 선생님의 실사진 대부분을 문전에서
@@ -626,6 +693,7 @@ window.MK_LIVE = (() => {
     replaceWithSrc, insertWithSrc, fileToSrc, shrinkImage, normalizeImage,
     MEDIA_SPEC, videoDuration, fitSceneToClip, fitSceneToClipSrc,   /* R126 — 매체 입구 정본·클립 맞춤 */
     captionScript, assignVoices,                                    /* R130 — 대사→목소리 다리 */
+    assignCaptions, srtScript,                                      /* R133 — 대본→자막 · 자막→SRT 다리 */
     useBackend, saveDoc, loadDoc, clearDoc, saveProjects, restoreProjects, autosave, flush,
     liveAudit,
   };

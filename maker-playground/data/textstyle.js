@@ -50,6 +50,14 @@ window.MK_TEXTSTYLE = (() => {
       style: { font: 'Gowun Batang', color: '#2C3E50', weight: 700, bg: null, outline: null, shadow: null, letterSpacing: 0.01, lineHeight: 1.5 } },
     { id: 'ts-mint', name: '민트 카드', hint: '고운돋움 · 민트 배경',
       style: { font: 'Gowun Dodum', color: '#0E7C6B', weight: 700, bg: { color: '#DFF7F0', radius: 0.3 }, outline: null, shadow: null, letterSpacing: null, lineHeight: 1.4 } },
+    /* R133 — 수상한 교과서 채널 표준 자막 2종. 검은고딕 흰 글자 + 검정
+       외곽선이 본문, 노랑이 강조(한 컷에 한 단어 원칙은 대본이 진다).
+       ts-poster 와 갈리는 점: 외곽선이 더 두껍고(쇼츠 축소 화면 생존),
+       낙하 그림자를 함께 얹어 밝은 하늘 배경에서도 읽힌다. */
+    { id: 'ts-susu', name: '수상한 자막', hint: '검은고딕 · 흰 글자 + 두꺼운 검정 외곽선 (채널 표준)',
+      style: { font: 'Black Han Sans', color: '#FFFFFF', weight: 400, bg: null, outline: { color: '#000000', w: 0.075 }, shadow: { color: 'rgba(0,0,0,.5)', x: 0.03, y: 0.05, blur: 0.1 }, letterSpacing: 0.01, lineHeight: 1.22 } },
+    { id: 'ts-susukey', name: '수상한 강조', hint: '검은고딕 · 노랑 강조 (한 컷 한 단어)',
+      style: { font: 'Black Han Sans', color: '#FFD93D', weight: 400, bg: null, outline: { color: '#000000', w: 0.075 }, shadow: { color: 'rgba(0,0,0,.5)', x: 0.03, y: 0.05, blur: 0.1 }, letterSpacing: 0.01, lineHeight: 1.22 } },
   ];
 
   /* ---- 색 팔레트 (직접 컨트롤용) ---- */
