@@ -32,6 +32,8 @@
 
 | 21 | setup_morning.sql | **2026-08-15 4차 재실행(수학 일수 정본화)** | 사다리 기준이 자기주도 본차시로 전환(9.7차)되어 ma_max_step math 일수 33/34/38/26/31/22 → **44/52/55/54/53/51**. 2of4 토막(시간표·진도상한)만 재실행. 검산 `ma_max_step('math',1), ('math',4), ('hanja',6)` → **44/54/100 확인함**. 진도 리셋 불필요(수학 세션 0) |
 
+| 22 | setup_morning.sql | **2026-08-16 5차 재실행(영어 편입)** | 아침영어(하루 1문장) 라이브 준비 — `ma_max_step` 에 english 행 추가(`english IN (3,4,5,6) THEN 40`). **1·2학년 행은 일부러 만들지 않음** — 영어 원장이 3~6학년만 있어, 행만 있고 세트가 없으면 그 학년은 매일 '준비 중' 화면을 만난다. `kedu/quiz/test_english_morning.js` 가 이 *없음*까지 강제한다. 실행 범위는 **ma_max_step 함수 블록 + GRANT 한 조각만**(전문 재실행 아님 — 실질 diff 가 이 1행뿐이라 절단 위험을 없앴다). 진도 리셋 불필요(english 신규·hanja/math 무변경). 검산 `SELECT ma_max_step('english',3) AS e3, ma_max_step('english',6) AS e6, ma_max_step('english',1) AS e1, ma_max_step('hanja',6) AS h6, ma_max_step('math',1) AS m1;` → 기대 **40/40/50/100/44** → **2026-08-16 확인함**. ※1차 검산에서 e3·e6 가 50 으로 나왔는데 이는 함수가 옛 버전이라 `ELSE 50` 으로 떨어진 것 — english 행이 없을 때의 정상 동작이며, e1=50 을 검산에 함께 넣어 '행 없음'과 '실행 안 됨'을 구분할 수 있게 했다 |
+
 ## 새 SQL 추가 룰
 
 1. 파일은 이 폴더(`sql/`)에 `setup_이름.sql`로 추가
