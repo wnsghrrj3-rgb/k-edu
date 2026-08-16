@@ -95,6 +95,7 @@ td.name{font-weight:700}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/kedu/quiz/templates/hanja_data.js"></script>
+<script src="/kedu/quiz/templates/english_data.js"></script>
 <script src="/kedu_config.js"></script>
 <script>
 (function(){
@@ -102,14 +103,43 @@ td.name{font-weight:700}
   var db = getKeduDb();
   var wrap = document.getElementById('wrap');
   var DOWS = [['mon','월'],['tue','화'],['wed','수'],['thu','목'],['fri','금']];
-  var SUBJECTS = [['','—'],['hanja','한자'],['math','수학']];
+  var SUBJECTS = [['','—'],['hanja','한자'],['english','영어'],['math','수학']];
   var SUBJECT_KO = { hanja:'한자', english:'영어', math:'수학', korean:'국어' };
-  var SUBJECT_UNIT = { hanja:'하루 한 자', math:'하루 한 차시' };
+  var SUBJECT_UNIT = { hanja:'하루 한 자', english:'하루 한 문장', math:'하루 한 차시' };
+  /* 원장이 없는 학년에는 그 과목을 배정할 수 없다 — 고르게 해 놓고 "준비 중"을 만나게 하지 않는다.
+     영어 원장은 3~6학년만 있다(학년마다 독립 사다리 40일). 원장에 직접 물어본다 — 여기에 학년을 박으면 원장이 늘어도 화면이 모른다. */
+  function subjectGrades(sub){
+    if (sub === 'english') {
+      try { return (window.KQuiz && KQuiz.englishData) ? KQuiz.englishData.grades() : []; }
+      catch(e){ return []; }
+    }
+    return null;   // null = 전 학년 가능
+  }
+  function subjectOk(sub, grade){
+    var gs = subjectGrades(sub);
+    return !gs || gs.indexOf(Number(grade)) >= 0;
+  }
+  /* 요일 칸 선택지 — 학년에 맞지 않는 과목은 잠그고 이유를 적는다 */
+  function subjectOptions(sel, grade){
+    /* 고른 과목이 이 학년에 없으면 '없음'으로 되돌린다 — 되돌림은 여기 한 곳에서만 일어난다.
+       브라우저 기본값(첫 항목)에 기대지 않고 명시적으로 selected 를 준다. */
+    var eff = subjectOk(sel, grade) ? sel : '';
+    return SUBJECTS.map(function(s){
+      var ok = subjectOk(s[0], grade), gs = subjectGrades(s[0]);
+      if (!s[0]) return '<option value=""'+(eff===''?' selected':'')+'>'+s[1]+'</option>';
+      var label = s[1] + (ok ? '' : ' ('+(gs && gs.length ? Math.min.apply(null,gs)+'학년부터' : '준비 중')+')');
+      return '<option value="'+s[0]+'"'
+        + (s[0]===eff ? ' selected' : '')
+        + (ok ? '' : ' disabled')
+        + '>'+label+'</option>';
+    }).join('');
+  }
   /* 요일 시간표를 사람 말로 — 과목이 하나면 '한자 하루 한 자', 섞이면 '월·화 한자, 목·금 수학' */
   /* 시간표에 들어간 과목마다 미리보기 버튼 — 과목을 넣었는데 볼 곳이 없으면 안 되니까 */
   var PREVIEW = {
-    hanja: { href:'/morning/chars.html', label:'오늘 나가는 한자 보기' },
-    math:  { href:'/morning/math.html',  label:'오늘 나가는 수학 보기' }
+    hanja:   { href:'/morning/chars.html',         label:'오늘 나가는 한자 보기' },
+    english: { href:'/morning/sents_preview.html', label:'오늘 나가는 영어 보기' },
+    math:    { href:'/morning/math.html',          label:'오늘 나가는 수학 보기' }
   };
   function previewLinks(r, c){
     var days = (r&&r.days)||{}, grade = (r&&r.grade)||(c&&c.grade)||1, seen = {}, out = [];
@@ -120,6 +150,17 @@ td.name{font-weight:700}
         + 'href="'+PREVIEW[s].href+'?grade='+grade+'">'+PREVIEW[s].label+'</a>');
     });
     return out.length ? '<div style="margin-top:12px">'+out.join('')+'</div>' : '';
+  }
+  /* 저장 직전 마지막 관문 — 화면을 우회해 들어온 조합(개발자도구·묵은 화면)도 여기서 막는다 */
+  function badDays(days, grade){
+    return Object.keys(days || {}).filter(function(d){ return days[d] && !subjectOk(days[d], grade); });
+  }
+  function dayCells(days, grade){
+    return DOWS.map(function(d){
+      var v = days[d[0]] || '';   // 학년에 맞지 않는 값의 되돌림은 subjectOptions 가 맡는다
+      return '<div class="day"><div class="n">'+d[1]+'</div><select data-dow="'+d[0]+'">'
+        + subjectOptions(v, grade) + '</select></div>';
+    }).join('');
   }
   function routineTxt(r){
     var days = (r&&r.days)||{}, order=['mon','tue','wed','thu','fri'], KO={mon:'월',tue:'화',wed:'수',thu:'목',fri:'금'};
@@ -136,14 +177,35 @@ td.name{font-weight:700}
   function toast(m){ var t=document.getElementById('toast'); t.textContent=m; t.classList.add('on'); setTimeout(function(){t.classList.remove('on');},2000); }
   function cur(){ return state.classes.find(function(c){ return c.id===state.cc; }) || {}; }
   function genCode(){ var ch='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',s=''; for(var i=0;i<6;i++) s+=ch[Math.floor(Math.random()*ch.length)]; return s; }
-  /* lesson_key(g4_hanja_c015)에서 오늘 글자를 꺼낸다 — 데이터가 없으면 조용히 생략 */
-  function todayCharTag(sess){
+  /* lesson_key 에서 오늘 몫을 꺼내 제목 옆에 붙인다 — 과목마다 꺼낼 것이 다르다.
+     한자는 글자(g4_hanja_c015), 영어는 문장(g3_english_c007). 원장이 없으면 조용히 생략. */
+  function todayTag(sess){
+    var key = (sess && sess.lesson_key) || '';
     try {
-      var m = (sess.lesson_key||'').match(/^g(\d)_hanja_c(\d{1,3})$/);
-      if (!m || !window.KQuiz || !KQuiz.hanjaData) return '';
-      var x = KQuiz.hanjaData.all(+m[1])[+m[2]-1];
-      return x ? ' 「'+x.c+'」 '+x.hun+' '+x.eum : '';
-    } catch(e){ return ''; }
+      var mh = key.match(/^g(\d)_hanja_c(\d{1,3})$/);
+      if (mh && window.KQuiz && KQuiz.hanjaData) {
+        var x = KQuiz.hanjaData.all(+mh[1])[+mh[2]-1];
+        return x ? ' 「'+x.c+'」 '+x.hun+' '+x.eum : '';
+      }
+      var me = key.match(/^g(\d)_english_c(\d{1,3})$/);
+      if (me && window.KQuiz && KQuiz.englishData) {
+        var y = KQuiz.englishData.day(+me[1], +me[2]);
+        return y ? ' 「'+y.sent+'」 '+y.ko : '';
+      }
+    } catch(e){}
+    return '';
+  }
+  /* 현황판에서 여는 활동 화면도 과목을 보고 고른다 — 학생 화면(index.html ACTIVITY)과 같은 규약.
+     예전엔 lesson_key 만 있으면 무조건 한자 화면으로 보냈다(영어·수학 반이 남의 반 한자 칸을 만나던 결함). */
+  var ACTIVITY = {
+    hanja:   { href:'/morning/chars.html', label:'오늘 글자 활동 열기 (획순·쓰기·낱말)' },
+    english: { href:'/morning/sents.html', label:'오늘 문장 활동 열기 (듣기·다섯 번·넓히기)' }
+  };
+  function activityLink(sess){
+    var a = ACTIVITY[sess && sess.subject];
+    if (!a || !sess.lesson_key) return '';
+    return '<div style="margin:-2px 0 12px"><a href="'+a.href+'?key='+esc(sess.lesson_key)+'" '
+      + 'style="font-size:13px;color:var(--primary);text-decoration:none">'+esc(a.label)+' →</a></div>';
   }
   function dots(n){ return '<div class="steps">'+[1,2,3].map(function(i){return '<div class="step-dot'+(i<=n?' on':'')+'"></div>';}).join('')+'</div>'; }
 
@@ -186,7 +248,7 @@ td.name{font-weight:700}
       + '<div class="days">'
       + DOWS.map(function(d){ return '<div class="day"><div class="n">'+d[1]+'</div>'
           + '<select data-dow="'+d[0]+'">'
-          + SUBJECTS.map(function(s){ return '<option value="'+s[0]+'"'+(s[0]==='hanja'?' selected':'')+'>'+s[1]+'</option>'; }).join('')
+          + subjectOptions('hanja', c.grade || 1)
           + '</select></div>'; }).join('')
       + '</div>'
       + '<label>문항 수</label><input type="number" id="qc" min="5" max="20" value="10" style="width:100px">'
@@ -236,12 +298,8 @@ td.name{font-weight:700}
       + '<div id="board"></div>'
       + '<div class="card" style="padding:16px 18px">'
       + '<details><summary>설정 바꾸기 (학년·요일·문항 수)</summary><div class="inner">'
-      + '<div class="days">'
-      + DOWS.map(function(d){
-          var v = (r.days||{})[d[0]] || '';
-          return '<div class="day"><div class="n">'+d[1]+'</div><select data-dow="'+d[0]+'">'
-            + SUBJECTS.map(function(s){ return '<option value="'+s[0]+'"'+(s[0]===v?' selected':'')+'>'+s[1]+'</option>'; }).join('')
-            + '</select></div>'; }).join('')
+      + '<div class="days" id="dayrow">'
+      + dayCells((r.days||{}), r.grade||c.grade||1)
       + '</div>'
       + '<label>학년</label><select id="rgrade" style="width:140px">'
       + [1,2,3,4,5,6].map(function(g){
@@ -255,10 +313,24 @@ td.name{font-weight:700}
 
     var sel = document.getElementById('cc');
     if (sel) sel.onchange = function(){ state.cc = this.value; loadClassData(); };
+    /* 학년을 바꾸면 요일 칸을 그 자리에서 다시 그린다 —
+       3학년 영어로 짜 두고 1학년으로 내리면 그 칸은 갈 곳이 없다. 저장까지 기다리지 않는다. */
+    var gsel = document.getElementById('rgrade');
+    if (gsel) gsel.onchange = function(){
+      var keep = {};
+      document.querySelectorAll('[data-dow]').forEach(function(x){ if(x.value) keep[x.dataset.dow]=x.value; });
+      var row = document.getElementById('dayrow');
+      if (row) row.innerHTML = dayCells(keep, Number(this.value)||1);
+    };
     document.getElementById('save').onclick = function(){
       var days = {};
       document.querySelectorAll('[data-dow]').forEach(function(s){ if(s.value) days[s.dataset.dow]=s.value; });
       var newGrade = Number(document.getElementById('rgrade').value) || 1;
+      var bad = badDays(days, newGrade);
+      if (bad.length) {
+        toast(newGrade+'학년에는 아직 '+(SUBJECT_KO[days[bad[0]]]||days[bad[0]])+' 원장이 없어요');
+        return;
+      }
       var oldGrade = (state.routine||{}).grade || cur().grade || 1;
       // 학년을 바꾸면 진도가 1회차로 되돌아간다(서버가 같은 트랜잭션에서 처리). 되돌릴 수 없으니 한 번 묻는다.
       if (newGrade !== oldGrade &&
@@ -303,9 +375,8 @@ td.name{font-weight:700}
     }).join('');
     el.innerHTML = '<div class="card">'
       + '<h2>오늘 — '+esc(SUBJECT_KO[s.subject]||s.subject)+' '
-      +   (s.mode==='review' ? '복습' : s.step+'일째'+todayCharTag(s))+'</h2>'
-      + (s.lesson_key ? '<div style="margin:-2px 0 12px"><a href="/morning/chars.html?key='+esc(s.lesson_key)+'" '
-          + 'style="font-size:13px;color:var(--primary);text-decoration:none">오늘 글자 활동 열기 (획순·쓰기·낱말) →</a></div>' : '')
+      +   (s.mode==='review' ? '복습' : s.step+'일째'+todayTag(s))+'</h2>'
+      + activityLink(s)
       + '<div class="sum">'
       + '<div class="b"><div class="v">'+(sm.total||0)+'</div><div class="l">전체</div></div>'
       + '<div class="b"><div class="v" style="color:var(--primary)">'+(sm.submitted||0)+'</div><div class="l">제출</div></div>'
