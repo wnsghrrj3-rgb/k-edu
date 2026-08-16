@@ -135,7 +135,7 @@ body.mkp-on #kedu-back { display:none !important }
         const fit = el.fit === 'contain' ? 'contain' : 'cover';
         const crop = window.MK_PHOTO ? window.MK_PHOTO.cropCss(el) : '';
         const media = (el.video === true || el.kind === 'video' || /^data:video\//.test(el.src))
-          ? `<video src="${el.src}" ${el.mute ? 'muted ' : ''}autoplay loop playsinline style="width:100%;height:100%;object-fit:${fit}${window.MK_FOCAL ? window.MK_FOCAL.pos(el) : ''}${window.MK_PHOTO ? window.MK_PHOTO.mediaStyle(el) : ''};display:block;pointer-events:none"></video>`   /* R39 — 영상 프레임 실재생 · R94 초점 */
+          ? `<video src="${el.src}" ${el.mute ? 'muted ' : ''}${el.trimStart || el.trimEnd ? `data-mkpt0="${+el.trimStart || 0}" ${el.trimEnd ? `data-mkpt1="${+el.trimEnd}" ` : ''}` : ''}autoplay loop playsinline style="width:100%;height:100%;object-fit:${fit}${window.MK_FOCAL ? window.MK_FOCAL.pos(el) : ''}${window.MK_PHOTO ? window.MK_PHOTO.mediaStyle(el) : ''};display:block;pointer-events:none"></video>`   /* R39 — 영상 프레임 실재생 · R94 초점 */
           : `<img src="${el.src}" alt="" style="width:100%;height:100%;object-fit:${fit}${window.MK_FOCAL ? window.MK_FOCAL.pos(el) : ''}${window.MK_PHOTO ? window.MK_PHOTO.mediaStyle(el) : ''};display:block">`;
         if (rf) {
           /* R119 — 축 분리: 바깥 rotate(중앙축)·안쪽 scale(초점축)을 별 transform 으로 나눠 얹어
@@ -188,6 +188,19 @@ body.mkp-on #kedu-back { display:none !important }
        **멈춘 채**가 된다 — 그게 최악이다). 거부 시 무음으로 내려서라도 돈다. */
     host.querySelectorAll('video,audio').forEach((mEl) => {
       try {
+        /* R128 — 트림 창 재생: 창 시작에서 출발, 창 끝을 지나면 창 시작으로
+           (loop 속성은 원본 전체를 돌므로 창이 있으면 JS 가 창 루프를 진다) */
+        const t0 = parseFloat(mEl.dataset && mEl.dataset.mkpt0);
+        const t1 = parseFloat(mEl.dataset && mEl.dataset.mkpt1);
+        if (isFinite(t0) && t0 > 0) { try { mEl.currentTime = t0; } catch (_) {} }
+        if (isFinite(t0) || isFinite(t1)) {
+          mEl.ontimeupdate = () => {
+            try {
+              const a2 = isFinite(t0) ? t0 : 0;
+              if (isFinite(t1) && mEl.currentTime >= t1) mEl.currentTime = a2;
+            } catch (_) {}
+          };
+        }
         const pr = mEl.play && mEl.play();
         if (pr && typeof pr.catch === 'function') pr.catch(() => { mEl.muted = true; try { mEl.play(); } catch (_) {} });
       } catch (_) {}

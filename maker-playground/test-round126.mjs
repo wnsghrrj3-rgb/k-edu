@@ -271,8 +271,10 @@ Promise.resolve()
       return (r.src == null && /8MB/.test(r.err || '')) || JSON.stringify(r);
     });
 
-    T('내보내기 전체 상한 120초 불변 (씬 맞춤 상한과 별개 계약)', () =>
-      (w.MK_VIDEO && w.MK_VIDEO.MAX_SEC === 120) || 'MAX_SEC=' + (w.MK_VIDEO && w.MK_VIDEO.MAX_SEC));
+    /* R128 정정(의도 보존): 잣대의 의도 = 총 상한이 실존하고 씬 맞춤 상한과
+       별개다. 값 120 은 R38 임의값 — R128 이 의도적으로 300 으로 올렸다. */
+    T('내보내기 전체 상한 실존·씬 맞춤 상한과 별개 (R128: 300초)', () =>
+      (w.MK_VIDEO && w.MK_VIDEO.MAX_SEC === 300 && w.MK_VIDEO.MAX_SEC > (SPEC ? SPEC.sceneFitMaxSec : 20)) || 'MAX_SEC=' + (w.MK_VIDEO && w.MK_VIDEO.MAX_SEC));
 
     T('낡은 주석 잔존 0 (「영상은 종전 8MB 규칙 그대로」가 거짓이 됐다)', () =>
       !/영상.*종전 8MB 규칙.*그대로/.test(lsrc) || '거짓 주석 잔존');

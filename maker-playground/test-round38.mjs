@@ -42,7 +42,9 @@ sec('1. MP4 엔진 (MK_VIDEO)');
   T('pop 중간 — 커지는 중', mid.alpha > 0 && mid.scale > 0.6 && mid.scale < 1.07);
   const done = V.stateAt(plan, doc.scenes[0].elements[0], 2);
   T('종료 후 정착 (alpha 1·scale 1)', Math.abs(done.alpha - 1) < 1e-9 && Math.abs(done.scale - 1) < 1e-9);
-  T('120초 상한 게이트', V.framePlan({ scenes: [{ duration: 200, elements: [] }] }, {}).capped === true);
+  /* R128 정정(의도 보존): 잣대의 의도 = 총 상한이 초과를 잡는다. 표본 200초는
+     당시 상한(120)의 초과였을 뿐 — 초과 표본을 정본(MAX_SEC+1)에서 딴다. */
+  T('총 상한 게이트 (초과 = 정본+1초)', V.framePlan({ scenes: [{ duration: V.MAX_SEC + 1, elements: [] }] }, {}).capped === true && V.framePlan({ scenes: [{ duration: V.MAX_SEC - 1, elements: [] }] }, {}).capped === false);
   /* jsdom = WebCodecs 없음 → 정직 거절 */
   const r = await V.exportMP4({ scenes: [{ duration: 1, elements: [] }] }, {});
   T('미지원 환경 정직 거절', r.ok === false && /지원하지 않아요/.test(r.msg));

@@ -224,7 +224,9 @@ Promise.resolve()
 
     T('★ 자동재생 구조대 — 거부되면 무음으로 내려서라도 돈다 (소스 대조)', () => {
       const i = psrc.indexOf('function paintStage');
-      const seg = psrc.slice(i, i + 900);
+      /* R128 정정(의도 보존): 트림 창 루프백이 구조대 앞에 들어와 900자 창을
+         밀었다 — R47 이 밟은 형태 그대로 창만 넓힌다(재는 것 불변). */
+      const seg = psrc.slice(i, i + 2000);
       if (!/video,audio/.test(seg)) return '구조대가 매체를 안 훑는다';
       if (!/\.catch\(/.test(seg)) return '재생 거부를 안 받는다 — 영상이 멈춘 채가 된다';
       return /muted = true/.test(seg) || '거부 시 무음 강하가 없다';
@@ -294,7 +296,8 @@ Promise.resolve()
       return !viol.length || viol.join(' / ');
     });
 
-    T('내보내기 전체 상한 120초 불변', () => V.MAX_SEC === 120 || 'MAX_SEC=' + V.MAX_SEC);
+    /* R128 정정(의도 보존): 상한 실존이 의도, 값은 R128 이 300 으로 올렸다 */
+    T('내보내기 전체 상한 실존 (R128: 300초)', () => V.MAX_SEC === 300 || 'MAX_SEC=' + V.MAX_SEC);
 
     T('이미지 요소 방출 불변 (<img> — 소리 세계가 사진을 안 건드린다)', () => {
       const h = P.sceneHTML({ duration: 3, elements: [{ kind: 'image', src: 'data:image/png;base64,I', x: 0, y: 0, w: 40, h: 30 }] });

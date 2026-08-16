@@ -22,7 +22,10 @@ window.PG = (() => {
      워크스페이스→animation)인데, R77이 내비 목록으로 라우팅까지 재단해 홈의 모든
      제작 진입이 home으로 튕겼다 — 화면이 이미 home이라 「눌러도 아무 반응 없음」.
      검수 화면 차단(R77의 의도)은 그대로: 아래 4종 외 비내비 화면은 여전히 home. */
-  const PRODUCT_ROUTES = PRODUCT_NAV.concat(['create', 'workspace', 'projects', 'animation']);
+  /* R128 — studio: 준호 전용 제작대. 내비에는 안 올린다(학생 화면이 아니다) —
+     직통 주소(#/studio)로만 들어간다. 제품 가드는 통과시켜야 keduclass.com
+     /maker/#/studio 가 산다. */
+  const PRODUCT_ROUTES = PRODUCT_NAV.concat(['create', 'workspace', 'projects', 'animation', 'studio']);
   const guard = (k) => (PRODUCT() && !PRODUCT_ROUTES.includes(k)) ? 'home' : k;
 
   const state = {

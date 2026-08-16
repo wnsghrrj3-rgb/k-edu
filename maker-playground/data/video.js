@@ -11,7 +11,11 @@
    ============================================================ */
 window.MK_VIDEO = (() => {
   'use strict';
-  const FPS = 30, TRANS_DUR = 0.5, BITRATE = 8_000_000, KEY_EVERY = 60, QUEUE_MAX = 8, MAX_SEC = 120;
+  /* R128 — MAX_SEC 120 → 300. 이 상한은 폭주 인코드 가드이지 교육 방침이
+     아니다(120은 R38 당시 임의값). 준호 제작대(#/studio)는 Veo 클립 수십 개를
+     잇는 분 단위 제작이 표준이라 2분 벽이 실사용을 막았다. 5분 = 1080p30
+     9,000프레임 — WebCodecs 가 감당하되 수 분 걸릴 수 있음은 진행 문구가 진다. */
+  const FPS = 30, TRANS_DUR = 0.5, BITRATE = 8_000_000, KEY_EVERY = 60, QUEUE_MAX = 8, MAX_SEC = 300;
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const even = (n) => Math.max(2, 2 * Math.round(n / 2));
   let busy = false;
@@ -225,6 +229,22 @@ window.MK_VIDEO = (() => {
     return { totalSec: plan.totalSec, segments };
   }
 
+  /* ---------- R128 — 클립 트림 (순수) ----------
+     Veo 생성 클립은 앞뒤에 죽은 프레임이 흔하다. el.trimStart/trimEnd(클립
+     시간축·초)로 창을 내고, 화면·소리·내보내기가 **같은 창**을 읽는다.
+     rawDur(실길이)를 모르면 끝을 못 자른다 — 반입 때 el.clipDur 로 심는다. */
+  function clipSpan(el, rawDur) {
+    const raw = rawDur != null ? rawDur : (el && el.clipDur != null ? +el.clipDur : null);
+    let start = Math.max(0, +((el && el.trimStart) || 0) || 0);
+    if (raw != null && isFinite(raw) && raw > 0) {
+      start = Math.min(start, Math.max(0, raw - 0.1));
+      let end = el && el.trimEnd != null ? clamp(+el.trimEnd, start + 0.1, raw) : raw;
+      return { start, end, eff: Math.max(0.1, end - start) };
+    }
+    /* 실길이 미상 — 시작만 유효, 끝·유효길이는 모른다고 말한다 */
+    return { start, end: null, eff: null };
+  }
+
   /* ---------- R127 — 소리 원천 수집 (순수) ----------
      R39 이래 MP4 소리 트랙은 배경음악 타임라인만 탔다 — 클립에 담긴 소리(AI
      생성 대사·현장음)와 준호가 녹음할 나레이션이 **화면에는 있는데 파일에는
@@ -242,8 +262,10 @@ window.MK_VIDEO = (() => {
       }
       ((sc && sc.elements) || []).forEach((el) => {
         if (isVideoEl(el) && !el.mute) {
+          const sp = clipSpan(el);                     /* R128 — 소리도 같은 트림 창 */
           out.push({ kind: 'clip', start: t, dur: ps.durSec, src: el.src,
-            vol: el.volume != null ? clamp(+el.volume || 0, 0, 1) : 1, loop: true });
+            vol: el.volume != null ? clamp(+el.volume || 0, 0, 1) : 1, loop: true,
+            offset: sp.start, span: sp.eff });
         }
       });
       t += ps.durSec;
@@ -308,10 +330,12 @@ window.MK_VIDEO = (() => {
       setTimeout(() => fin(v.readyState >= 2 ? v : null), 5000);
     });
   }
-  function seekTo(v, t) {
+  function seekTo(v, t, el) {
     return new Promise((res) => {
       if (!v || !(v.duration > 0) || !isFinite(v.duration)) return res();
-      const target = secondsInto(t, v.duration);
+      /* R128 — 트림 창: 창 안에서 루프(화면 규약 유지), 창 밖은 절대 안 밟는다 */
+      const sp = el ? clipSpan(el, v.duration) : { start: 0, eff: v.duration };
+      const target = sp.start + secondsInto(t, sp.eff != null ? sp.eff : v.duration - sp.start);
       if (Math.abs(v.currentTime - target) < 1 / (2 * FPS)) return res();
       let done = false;
       const fin = () => { if (!done) { done = true; v.removeEventListener('seeked', fin); res(); } };
@@ -364,7 +388,7 @@ window.MK_VIDEO = (() => {
       const st = Math.round(sp.start * sr), en = Math.min(n, Math.round((sp.start + sp.dur) * sr));
       const len = en - st;
       if (len <= 0) continue;
-      const pcm = await dec(sp.src, len, sr, { loop: sp.loop });
+      const pcm = await dec(sp.src, len, sr, { loop: sp.loop, offsetSec: sp.offset || 0, spanSec: sp.span });
       if (!pcm) continue;                                 /* 해독 실패 = 그 원천만 무음(정직) */
       const g0 = sp.kind === 'narration' ? 1.0 : 0.9 * sp.vol;
       for (let i = 0; i < len; i++) {
@@ -387,11 +411,15 @@ window.MK_VIDEO = (() => {
       const src0 = ab.length;
       const out = new Float32Array(lenSamples);
       /* R127 — loop 선택. 음악·클립은 화면 루프 규약과 동일하게 반복하지만,
-         나레이션은 씬이 남는다고 처음부터 다시 말하면 안 된다(뒤는 무음). */
+         나레이션은 씬이 남는다고 처음부터 다시 말하면 안 된다(뒤는 무음).
+         R128 — 트림 창(offset·span): 화면이 밟는 구간만 소리도 밟는다. */
       const loop = !o || o.loop !== false;
-      const upto = loop ? lenSamples : Math.min(lenSamples, src0);
+      const off = Math.min(src0, Math.max(0, Math.round(((o && o.offsetSec) || 0) * sr)));
+      const span = Math.max(1, Math.min(src0 - off,
+        (o && o.spanSec != null) ? Math.round(o.spanSec * sr) : (src0 - off)));
+      const upto = loop ? lenSamples : Math.min(lenSamples, span);
       for (let i = 0; i < upto; i++) {
-        const j = i % src0;
+        const j = off + (i % span);
         let s = 0; for (const ch of chs) s += ch[j];
         out[i] = s / chs.length;
       }
@@ -500,7 +528,7 @@ window.MK_VIDEO = (() => {
           const t = f / FPS;
           /* R39 — 영상 요소 프레임 시킹 (그리기 전에 완료) */
           for (let i = 0; i < scene.elements.length; i++) {
-            if (sp.vids[i]) await seekTo(sp.vids[i], t);
+            if (sp.vids[i]) await seekTo(sp.vids[i], t, scene.elements[i]);
           }
           ctx.globalAlpha = 1; ctx.filter = 'none';
           ctx.clearRect(0, 0, W, H);
@@ -689,6 +717,13 @@ window.MK_VIDEO = (() => {
     const nn = ss.find((x) => x.kind === 'narration');
     if (!nn || nn.loop !== false) v.push('나레이션 반복 금지 위반');
     if (!ss.every((x) => x.vol >= 0 && x.vol <= 1)) v.push('음량 범위 위반');
+    /* R128 — 트림 창 계약: 기본은 원본 전체, 창은 실길이 안, 최소 0.1초 */
+    const te = { trimStart: 2, trimEnd: 6, clipDur: 8 };
+    const c1 = clipSpan(te);
+    if (!(c1.start === 2 && c1.end === 6 && Math.abs(c1.eff - 4) < 1e-9)) v.push('트림 창 계산 위반');
+    if (clipSpan({ clipDur: 8 }).eff !== 8) v.push('무트림 기본 위반');
+    if (clipSpan({ trimStart: 99, clipDur: 8 }).start > 7.9) v.push('트림 시작 실길이 클램프 위반');
+    if (clipSpan({}).eff !== null) v.push('실길이 미상 정직 위반');
     const rs = rungSize(2, 1280, 720);
     if (!rs || rs.W !== 1280 || rs.H !== 720) v.push('사다리 720 단 치수 위반');
     if (rungSize(99, 1280, 720) !== null) v.push('없는 단이 null 이 아님');
@@ -706,7 +741,7 @@ window.MK_VIDEO = (() => {
     return { ok: v.length === 0, violations: v };
   }
 
-  return { FPS, TRANS_DUR, MAX_SEC, EXPORT_SPEC, VIDEO_LADDER, outSize, rungSize, pickVideoRung, pickAudio, loadMuxer, muxerSource, soundSources, buildMasterPCM,
+  return { FPS, TRANS_DUR, MAX_SEC, EXPORT_SPEC, VIDEO_LADDER, outSize, rungSize, pickVideoRung, pickAudio, loadMuxer, muxerSource, soundSources, buildMasterPCM, clipSpan,
     easeAt, stateAt, framePlan, exportMP4, videoAudit, busy: () => busy,
     isVideoEl, secondsInto, fitRect, musicTimeline, animPivot };
 })();

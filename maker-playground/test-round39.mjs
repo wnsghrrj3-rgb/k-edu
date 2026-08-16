@@ -149,7 +149,8 @@ sec('5. MP4 배선 정직성');
   /* jsdom = WebCodecs 없음 → 정직 거절 (R38 회귀) */
   const r = await V.exportMP4({ scenes: [{ duration: 1, elements: [] }] }, {});
   T('미지원 환경 정직 거절 유지', r.ok === false && /지원하지 않아요/.test(r.msg));
-  T('120초 상한 유지', V.framePlan({ scenes: [{ duration: 200, elements: [] }] }, {}).capped === true);
+  /* R128 정정(의도 보존): 초과 표본을 정본(MAX_SEC+1)에서 딴다 — 위와 동일 */
+  T('총 상한 유지 (초과 = 정본+1초)', V.framePlan({ scenes: [{ duration: V.MAX_SEC + 1, elements: [] }] }, {}).capped === true);
   /* buildMasterPCM 은 내부 — 대신 그 재료(renderPattern×timeline)가 결합 가능함을 검증 */
   const md = { scenes: [{ duration: 2, elements: [], music: { synth: 'calm' } }] };
   const tl = V.musicTimeline(md);
@@ -160,7 +161,9 @@ sec('5. MP4 배선 정직성');
   const src = fs.readFileSync('screens/editor.js', 'utf8');
   T('완료 문구 소리 표기 배선', /소리 포함/.test(src) && /audioMsg/.test(src));
   T('MP4 소리 트랙 코드 실존 (AAC 모노)', /mp4a\.40\.2/.test(fs.readFileSync('data/video.js', 'utf8')));
-  T('영상 시킹 합성 코드 실존', /seekTo\(sp\.vids\[i\], t\)/.test(fs.readFileSync('data/video.js', 'utf8')));
+  /* R128 정정(의도 보존): 시킹이 트림 창(요소)을 받게 되어 인자가 늘었다 —
+     재는 것(프레임 루프가 영상을 실시킹한다)은 그대로다. */
+  T('영상 시킹 합성 코드 실존', /seekTo\(sp\.vids\[i\], t, scene\.elements\[i\]\)/.test(fs.readFileSync('data/video.js', 'utf8')));
 }
 
 /* ============ 결과 ============ */
