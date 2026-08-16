@@ -347,6 +347,10 @@ window.MK_VIDEO = (() => {
 
   /* ---------- R39 — 소리 트랙 준비: 타임라인 → 모노 PCM 마스터 ---------- */
   async function buildMasterPCM(timeline, sr, doc, planIn, deps) {
+    /* R129 — 해독기는 하나다. R127 은 주입(deps.decode)을 클립·나레이션에만
+       달았고 음악 구간은 직접 decodeToPCM 을 불렀다 — 주입이 반쪽이라
+       하니스가 음악 믹스를 못 재는 사각이 있었다(R129 잣대가 실검출). */
+    const dec = (deps && deps.decode) || decodeToPCM;
     const n = Math.max(1, Math.round(timeline.totalSec * sr));
     const master = new Float32Array(n);
     const FADE = Math.round(0.06 * sr);                   /* 구간 경계 클릭 방지 */
@@ -358,7 +362,7 @@ window.MK_VIDEO = (() => {
       if (seg.music.synth && window.MK_AUDIO) {
         pcm = window.MK_AUDIO.renderPattern(seg.music.synth, len / sr, sr);
       } else if (seg.music.src) {
-        pcm = await decodeToPCM(seg.music.src, len, sr);  /* 실패 시 null → 그 구간만 무음(정직) */
+        pcm = await dec(seg.music.src, len, sr);          /* 실패 시 null → 그 구간만 무음(정직) */
       }
       if (!pcm) continue;
       /* R52 — 영상 끝에 닿는 구간은 fadeOut(1.2s), 아니면 경계 클릭 방지만 */
@@ -377,7 +381,6 @@ window.MK_VIDEO = (() => {
        ③ 클립 ④ 나레이션을 얹는다. 덕킹을 나중에 하면 나레이션 자신까지
        낮아지고, 먼저 하면 아직 없는 음악을 낮추는 헛손질이 된다. */
     const srcs = doc ? soundSources(doc, planIn) : [];
-    const dec = (deps && deps.decode) || decodeToPCM;
     const DUCK = 0.35;                                    /* 나레이션 밑 음악 */
     for (const sp of srcs) {
       if (sp.kind !== 'narration') continue;

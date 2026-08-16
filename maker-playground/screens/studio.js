@@ -112,13 +112,18 @@ window.MK_SCREENS.studio = (() => {
       ? (recording
         ? `<button class="cx-scenebtn primary" data-st-nstop>■ 녹음 끝내기</button><div class="cx-hint">🔴 녹음 중 — 대사를 읽고 끝내기를 눌러 주세요</div>`
         : (sc.narration
-          ? `<div class="cx-shrow"><button class="cx-shb" data-st-nplay>▶</button><button class="cx-shb" data-st-nrec>●</button><button class="cx-shb" data-st-nclear>✕</button><i></i></div>
+          ? `<div class="cx-shrow"><button class="cx-shb" data-st-nplay>▶</button><button class="cx-shb" data-st-nrec>●</button><button class="cx-shb" data-st-nfile title="AI 목소리 파일로 교체">📁</button><button class="cx-shb" data-st-nclear>✕</button><i></i></div>
              <div class="cx-hint">🎙 ${fmt(+sc.narration.duration || 0)}초 — 음악은 자동으로 작아져요</div>`
-          : `<button class="cx-scenebtn" data-st-nrec>● 나레이션 녹음</button>`))
-      : `<div class="cx-hint">이 브라우저는 녹음을 지원하지 않아요</div>`;
+          : `<div class="cx-shrow"><button class="cx-shb" data-st-nrec title="마이크로 녹음">● 녹음</button><button class="cx-shb" data-st-nfile title="TTS로 뽑은 mp3를 넣어요">📁 AI 목소리 파일</button><i></i></div>`))
+      : `<div class="cx-shrow"><button class="cx-shb" data-st-nfile>📁 AI 목소리 파일</button><i></i></div><div class="cx-hint">이 브라우저는 녹음을 지원하지 않아요 — 파일 반입은 돼요</div>`;
     const A = window.MK_AUDIO;
+    /* R129 — AI 음악(Suno 등)은 파일로 들어온다. 같은 파일을 이웃 씬에 깔면
+       musicTimeline 이 한 구간으로 병합해 이어 흐른다 — 「모든 장면에」가 그 문이다. */
     const musCtl = A ? `<div class="cx-shrow"><button class="cx-shb${!sc.music ? ' on' : ''}" data-st-music="">없음</button>` +
-      A.SYNTHS.map((m) => `<button class="cx-shb${sc.music && sc.music.synth === m.id ? ' on' : ''}" data-st-music="${m.id}">${esc(m.name)}</button>`).join('') + `<i></i></div>` : '';
+      A.SYNTHS.map((m) => `<button class="cx-shb${sc.music && sc.music.synth === m.id ? ' on' : ''}" data-st-music="${m.id}">${esc(m.name)}</button>`).join('') +
+      `<button class="cx-shb${sc.music && sc.music.src ? ' on' : ''}" data-st-mfile title="AI 음악·mp3 반입 (8MB)">📁 음악 파일</button><i></i></div>` +
+      (sc.music && sc.music.src ? `<div class="cx-hint">🎵 ${esc(sc.music.name || '내 음악')}</div>` : '') +
+      (sc.music ? `<button class="cx-scenebtn" data-st-mall>🎵 이 음악을 모든 장면에 — 하나로 이어 흘러요</button>` : '') : '';
     return `
       <label class="cx-field"><span>대사 (자막으로 실려요)</span><textarea rows="3" data-st-cap placeholder="GPT 대사를 붙여 넣으세요">${esc(cap ? cap.text : '')}</textarea></label>
       ${trimCtl}${sndCtl}
@@ -243,6 +248,46 @@ window.MK_SCREENS.studio = (() => {
         } };
       const nc = root.querySelector('[data-st-nclear]');
       if (nc) nc.onclick = () => { const sc = scene(); if (sc) { delete sc.narration; R(); } };
+      /* R129 — AI 목소리 파일: 녹음과 같은 자리(scene.narration)에 앉는다.
+         길이 판독은 videoDuration 재사용 — <video> 기관은 소리 파일의 metadata
+         도 읽는다(표준 동작). 못 재면 0 으로 두되 반입은 산다(믹스는 씬 길이로
+         자르므로 duration 은 표시용이다). */
+      const nf = root.querySelector('[data-st-nfile]');
+      if (nf) nf.onclick = () => {
+        if (!window.MK_AUDIO) return;
+        const inp = document.createElement('input');
+        inp.type = 'file'; inp.accept = 'audio/*';
+        inp.onchange = () => window.MK_AUDIO.fileToSrc(inp.files && inp.files[0], (src, err) => {
+          if (!src) { if (err && typeof alert === 'function') alert(err); return; }
+          const sc = scene(); if (!sc) return;
+          window.MK_LIVE.videoDuration(src, (dur) => {
+            sc.narration = { src, duration: dur ? Math.round(dur * 10) / 10 : 0 };
+            R();
+          });
+        });
+        inp.click();
+      };
+      const mf = root.querySelector('[data-st-mfile]');
+      if (mf) mf.onclick = () => {
+        if (!window.MK_AUDIO) return;
+        const inp = document.createElement('input');
+        inp.type = 'file'; inp.accept = 'audio/*';
+        inp.onchange = () => window.MK_AUDIO.fileToSrc(inp.files && inp.files[0], (src, err) => {
+          if (!src) { if (err && typeof alert === 'function') alert(err); return; }
+          const sc = scene(); if (!sc) return;
+          sc.music = { src, name: (inp.files[0].name || '내 음악').replace(/\.[^.]+$/, '') };
+          R();
+        });
+        inp.click();
+      };
+      const ma = root.querySelector('[data-st-mall]');
+      if (ma) ma.onclick = () => {
+        const sc = scene(); if (!sc || !sc.music) return;
+        const m2 = JSON.stringify(sc.music);
+        doc().scenes.forEach((s2) => { s2.music = JSON.parse(m2); });
+        st().msg = '모든 장면에 같은 음악을 깔았어요 — 장면이 넘어가도 이어 흘러요';
+        R();
+      };
 
       root.querySelectorAll('[data-st-music]').forEach((b) => b.onclick = () => {
         const sc = scene(); if (!sc) return;
