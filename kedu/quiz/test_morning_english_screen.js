@@ -3,6 +3,8 @@
  *   ① 학생 화면 templateFiles() 가 english c키를 english_data.js + english.js 로 푸는가
  *   ② 그 파일이 레포에 실재하는가
  *   ③ 그렇게 로드하면 c키가 등록되고 10문항이 생성되는가
+ *   ⑨ 새 낱말 뜻(gloss, D8-ⓐ): 미리보기 배지·인쇄물 카드·주간표가 원장 뜻을 그대로 싣는가,
+ *      문맥 예외가 공용 뜻을 이기는가, 뜻 숨기기가 낱말 뜻까지 덮는가
  *   ④ 미리보기(morning/sents_preview.html) — 교사 모드 · DB 무접촉 ·
  *      학년 목록을 원장에서 끌어오는가(하드코딩하면 1·2학년이 뜬다)
  *   ⑤ 교사 화면 배선(D4) — 고르기·보기·열기·학년 가드를 실제로 굴려서 확인한다
@@ -329,6 +331,24 @@ function boot(file, qs, opt) {
   var card = o.doc.getElementById('wayCard');
   T(!!card, '통로 묶음 자리가 없음');
   T(card.style.display !== 'none', '정상 일차인데 통로가 감춰져 있음');
+
+  /* ★새 낱말 뜻(D8-ⓐ) — 교사가 미리보기에서 "오늘 뭐가 새것인지"를 뜻까지 함께 본다.
+     여기서 뜻이 비면 준비하는 사람이 뜻을 지어내게 된다. */
+  var o4 = boot('sents_preview.html', '?grade=5&day=11');
+  if (o4) {
+    var xg = DATA.day(5, 11), gl = DATA.glossesOf(5, 11);
+    var bg = o4.all('.badge');
+    T(bg.length === (xg['new'] || []).length, '미리보기 새 낱말 배지 수가 원장과 다름: ' + bg.length);
+    gl.forEach(function (it, i) {
+      T(!!bg[i] && bg[i].textContent.indexOf(it.unit) >= 0, '미리보기 배지에 낱말이 빠짐: ' + it.unit);
+      var em = bg[i] && bg[i].querySelector('em');
+      T(!!em, '미리보기 배지에 뜻이 안 붙음: ' + it.unit);
+      T(!em || em.textContent === it.ko, '미리보기 뜻이 원장과 다름: ' + it.unit + ' → "' + (em ? em.textContent : '') + '"');
+    });
+    /* 그날 문맥 예외가 공용 뜻을 이기는지 실물에서 확인(g5 d11 like = look like 의 like) */
+    T(o4.txt('.badge') !== '' && o4.all('.badge').some(function (e) {
+      return e.textContent.indexOf('(look like)') >= 0; }), '문맥 예외 뜻이 화면까지 안 내려옴');
+  }
 })();
 
 /* ⑦ 인쇄물 (D6) — 카드 · 주간표 두 판형 */
@@ -356,6 +376,15 @@ function boot(file, qs, opt) {
   (x['new'] || []).forEach(function (w) {
     T(o.txt('.words').indexOf(w) >= 0, '카드에 새 낱말이 빠짐: ' + w);
   });
+  /* ★새 낱말 뜻(D8-ⓐ) — 종이로 나가는 낱말에 뜻이 없으면 집에서 물어볼 데가 없다 */
+  var gls = DATA.glossesOf(g, d), wsp = o.all('.words span');
+  T(wsp.length === (x['new'] || []).length, '카드 새 낱말 칸 수가 원장과 다름: ' + wsp.length);
+  gls.forEach(function (it, i) {
+    var em = wsp[i] && wsp[i].querySelector('em');
+    T(!!em, '카드 새 낱말에 뜻이 없음: ' + it.unit);
+    T(!em || em.textContent === it.ko, '카드 뜻이 원장과 다름: ' + it.unit);
+    T(!wsp[i] || wsp[i].textContent.indexOf(it.unit) >= 0, '카드에서 낱말이 뜻에 밀려 사라짐: ' + it.unit);
+  });
   if (x.expand && x.expand.sent) {
     T(o.txt('.exp').indexOf(x.expand.sent) >= 0, '카드에 넓히기 문장이 없음');
   }
@@ -373,6 +402,24 @@ function boot(file, qs, opt) {
   T(o.doc.body.classList.contains('noko') === false, '뜻 다시 보이기가 안 됨');
   T(o.txt('.card-sent') === x.sent, '뜻 토글 뒤 문장이 사라짐 — 다시 그릴 때 원장을 잃었다');
 
+  /* ★숨김 규칙이 새 낱말 뜻까지 덮는가 — 문장 뜻만 가리고 낱말 뜻이 남으면 토글이 새는 문이 된다.
+     상수 대조가 아니라, 규칙에 적힌 선택자를 실제 화면에 걸어 뜻 노드가 잡히는지 본다. */
+  var mRule = raw.match(/body\.noko[^{]*\{[^}]*visibility\s*:\s*hidden[^}]*\}/);
+  T(!!mRule, '인쇄물에 뜻 숨김 규칙이 없음');
+  if (mRule) {
+    var sels = mRule[0].split('{')[0].split(',').map(function (t) { return t.trim(); }).filter(Boolean);
+    o.doc.getElementById('ko').click();                 /* 숨김 켜기 */
+    var hit = [];
+    sels.forEach(function (sel) { try { hit = hit.concat(o.all(sel)); } catch (e) {} });
+    var glNodes = o.all('.words span em');
+    T(glNodes.length > 0, '숨김 검사에 쓸 새 낱말 뜻 노드가 없음 — 표본 일차를 바꿔야 한다');
+    glNodes.forEach(function (e) {
+      T(hit.indexOf(e) >= 0, '뜻 숨기기가 새 낱말 뜻을 안 덮음 — 한국어가 남아 합창 때 먼저 읽힌다');
+    });
+    T(o.all('.card-ko').every(function (e) { return hit.indexOf(e) >= 0; }), '뜻 숨기기가 문장 뜻을 안 덮음');
+    o.doc.getElementById('ko').click();                 /* 원복 */
+  }
+
   /* 주간표 판형 — 그 주 다섯 문장, 원장 끝을 넘으면 있는 만큼만 */
   o.doc.getElementById('mWeek').click();
   var rows = o.all('.wk tbody tr');
@@ -381,6 +428,21 @@ function boot(file, qs, opt) {
     '주간표 첫 줄이 그 주 첫날(6일째)이 아님');
   T(rows[4].querySelector('.s').textContent === DATA.day(g, 10).sent, '주간표 마지막 줄이 어긋남');
   T(o.txt('.wk').indexOf(DATA.day(g, 11).sent) < 0, '주간표에 다음 주 문장이 섞임');
+
+  /* ★주간표 새 낱말 줄에도 뜻 — 가정통신문으로 나가는 판형이라 여기가 비면 집에서 못 읽는다 */
+  for (var wi = 6; wi <= 10; wi++) {
+    var wx = DATA.day(g, wi), wgl = DATA.glossesOf(g, wi);
+    var line = rows[wi - 6].querySelector('.n');
+    if (!(wx['new'] || []).length) { T(!line, wi + '일째는 새 낱말이 없는데 줄이 있음'); continue; }
+    T(!!line, wi + '일째 새 낱말 줄이 없음');
+    if (!line) continue;
+    var ems = Array.prototype.slice.call(line.querySelectorAll('em'));
+    T(ems.length === wgl.length, wi + '일째 뜻 개수 ' + ems.length + ' ≠ 새 낱말 ' + wgl.length);
+    wgl.forEach(function (it, i) {
+      T(line.textContent.indexOf(it.unit) >= 0, wi + '일째 주간표에 낱말이 빠짐: ' + it.unit);
+      T(!!ems[i] && ems[i].textContent === it.ko, wi + '일째 주간표 뜻이 원장과 다름: ' + it.unit);
+    });
+  }
 
   /* 마지막 주 — 지어내지 않고 있는 만큼만.
      원장이 고르게 차 있는 지금은 부분 주가 생기지 않으므로, 원장에 구멍을 내어 닿게 한다.

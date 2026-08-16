@@ -2,7 +2,8 @@
  * test_morning_sents.js — 「오늘의 문장」 하루 1문장 활동 스모크 (jsdom)
  *   ① 화면이 원장에서만 재료를 끌어오는가(학년·일수 하드코딩 금지 · DB 무접촉)
  *   ② 1막 만나기 — 소리가 글자보다 먼저 오는가, 뜻이 뒤따르는가,
- *      새 낱말 배지·밑줄이 원장 new 와 전수 일치하는가, 어제 문장이 맞는가
+ *      새 낱말 배지·밑줄이 원장 new 와 전수 일치하는가, 배지가 원장 뜻(gloss)을 달고
+ *      나가면서도 탭 소리를 잃지 않는가, 어제 문장이 맞는가
  *   ③ 2막 다섯 번 — 비계 계단 1-2-2 가 화면에서 그대로 서는가(1 문장 · 2·3 뜻만 · 4·5 소리만),
  *      소리가 4회까지 저절로 오고 5회는 불러야 오는가, 틀린 타일은 자리에 놓이지 않는가, 도장 5개
  *   ④ 3막 넓히기 — expand 있는 날은 조립, 없는 날은 문장을 지어내지 않는가
@@ -143,10 +144,26 @@ for (var gi = 0; gi < D.grades().length; gi++) {
     T(o.doc.getElementById('ko').classList.contains('in'), tag + ' 뜻이 공개되지 않음');
     T(o.txt('#ko') === x.ko, tag + ' 뜻이 원장과 다름');
 
-    /* 새 낱말: 배지 전수 + 문장 안 밑줄 위치 */
-    var badges = o.all('#fresh .badge').map(function(e){ return e.textContent; });
+    /* 새 낱말: 배지 전수 + 뜻(D8-ⓐ) + 문장 안 밑줄 위치.
+       뜻은 원장에서만 온다 — 배지가 낱말만 들고 나가면 원장에 뜻이 있어도 아이는 못 만난다.
+       그리고 뜻이 붙었다고 해서 탭이 소리 내던 일을 잃으면 안 된다(1막의 본디 손맛). */
+    var badgeEls = o.all('#fresh .badge');
+    var badges = badgeEls.map(function(e){ return e.dataset.n; });
     T(badges.length === (x['new'] || []).length, tag + ' 새 낱말 배지 ' + badges.length + ' ≠ 원장 ' + (x['new']||[]).length);
-    (x['new'] || []).forEach(function(w){ T(badges.indexOf(w) >= 0, tag + ' 새 낱말 배지 누락: ' + w); });
+    T(badges.join('|') === (x['new'] || []).join('|'), tag + ' 배지 차례가 원장 new 와 어긋남');
+    badgeEls.forEach(function(e, bi){
+      var u = (x['new'] || [])[bi];
+      var want = D.glossOf(g, d, u);
+      T(!!want, tag + ' 원장에 "' + u + '" 뜻이 비어 있음');
+      T(e.textContent.indexOf(u) >= 0, tag + ' 배지에 낱말이 없음: ' + u);
+      var gl = e.querySelector('.gl');
+      T(!!gl, tag + ' 새 낱말 "' + u + '" 배지에 뜻이 안 붙음');
+      T(!gl || gl.textContent === want, tag + ' "' + u + '" 배지 뜻이 원장과 다름: "' + (gl ? gl.textContent : '') + '" ≠ "' + want + '"');
+      var b4 = o.tts().word.length;
+      e.click();
+      T(o.tts().word.length === b4 + 1 && o.tts().word.slice(-1)[0] === u,
+        tag + ' 뜻이 붙은 뒤 배지 탭이 소리를 잃음: ' + u);
+    });
     var underlined = o.all('.sent .w.fresh').map(function(e){ return e.dataset.w; });
     var wantIdx = [];
     (x.words || []).forEach(function(u, i){ if ((x['new']||[]).indexOf(u) >= 0) wantIdx.push(String(i)); });
@@ -294,6 +311,16 @@ await (async function(){
     T(o2.doc.getElementById('pool') === null, '넓히기 없는 날인데 조립판이 서 있음');
     var fin2 = o2.doc.getElementById('fin');
     T(fin2 && fin2.disabled === false, '넓히기 없는 날은 바로 끝낼 수 있어야 한다');
+    /* ★이 갈래의 배지도 1막과 같은 배지다(D8-ⓐ) — 한 화면에서만 뜻이 보이면 아이가 헷갈린다 */
+    var wb = o2.all('.badge');
+    var wgl = D.glossesOf(without.g, without.d);
+    T(wb.length === wgl.length, '넓히기 없는 날 배지 수가 원장 new 와 다름: ' + wb.length);
+    wgl.forEach(function(it, i){
+      T(!!wb[i] && wb[i].dataset.n === it.unit, '넓히기 갈래 배지 차례 어긋남: ' + it.unit);
+      var gl = wb[i] && wb[i].querySelector('.gl');
+      T(!!gl, '넓히기 갈래 배지에 뜻이 없음: ' + it.unit);
+      T(!gl || gl.textContent === it.ko, '넓히기 갈래 배지 뜻이 원장과 다름: ' + it.unit);
+    });
   } else {
     console.log('  · 원장에 넓히기 없는 날이 없음 — 해당 갈래는 건너뜀');
   }

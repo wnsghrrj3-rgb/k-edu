@@ -60,7 +60,10 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--bg);color:var(--ink);
 .blk{margin-top:12mm;border-top:1px dashed var(--border);padding-top:7mm}
 .blk h3{font-size:13px;color:var(--faint);letter-spacing:.5px;margin-bottom:8px}
 .words span{display:inline-block;font-family:var(--en);font-weight:600;font-size:19px;
-  border:1.5px solid #F0C9BB;color:var(--new);border-radius:999px;padding:6px 15px;margin:0 8px 8px 0}
+  border:1.5px solid #F0C9BB;color:var(--new);border-radius:14px;padding:6px 15px;margin:0 8px 8px 0}
+.words span em{font-family:var(--kedu-title);font-style:normal;font-weight:400;font-size:14px;
+  color:var(--sub);margin-left:8px;padding-left:9px;border-left:1px solid #F0C9BB}
+.wk .n em{font-style:normal;color:#6B7280}
 .exp{font-family:var(--en);font-weight:600;font-size:24px}
 .exp em{display:block;font-family:var(--kedu-title);font-style:normal;font-size:16px;color:var(--sub);margin-top:5px}
 .none{font-size:14px;color:var(--faint)}
@@ -81,7 +84,8 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--bg);color:var(--ink);
 .signrow div{flex:1;border-top:1px solid var(--border);padding-top:7px}
 
 /* 뜻 숨기기 */
-body.noko .card-ko,body.noko .wk .k,body.noko .exp em{visibility:hidden}
+body.noko .card-ko,body.noko .wk .k,body.noko .exp em,
+body.noko .words span em,body.noko .wk .n em{visibility:hidden}
 
 .miss{max-width:600px;margin:60px auto;background:#fff;border-radius:16px;padding:26px;
   text-align:center;color:var(--sub);line-height:1.8}
@@ -180,7 +184,9 @@ body.noko .card-ko,body.noko .wk .k,body.noko .exp em{visibility:hidden}
       + '<div class="card-tiles">'+x.tiles.map(function(t){
           return '<span>'+esc(t)+'</span>'; }).join('')+'</div>'
       + '<div class="blk"><h3>오늘 처음 만나는 낱말</h3><div class="words">'
-      + (nw.length ? nw.map(function(w){ return '<span>'+esc(w)+'</span>'; }).join('')
+      + (nw.length ? D.glossesOf(st.grade, st.day).map(function(it){
+                       return '<span>'+esc(it.unit)
+                         + (it.ko ? '<em>'+esc(it.ko)+'</em>' : '')+'</span>'; }).join('')
                    : '<span class="none">없어요 — 그동안 배운 낱말만으로 된 문장이에요.</span>')
       + '</div></div>'
       + '<div class="blk"><h3>넓히기 — 같은 틀로 지어 보는 문장</h3>'
@@ -204,7 +210,8 @@ body.noko .card-ko,body.noko .wk .k,body.noko .exp em{visibility:hidden}
       rows += '<tr><th class="d">'+dow(i)+'<br><span style="font-weight:400;font-size:12px">'+i+'일째</span></th>'
         + '<td><div class="s">'+esc(x.sent)+'</div>'
         +   '<div class="k">'+esc(x.ko)+'</div>'
-        +   (nw.length ? '<div class="n">새 낱말 · '+nw.map(esc).join(' · ')+'</div>' : '')
+        +   (nw.length ? '<div class="n">새 낱말 · '+D.glossesOf(st.grade, i).map(function(it){
+              return esc(it.unit) + (it.ko ? ' <em>'+esc(it.ko)+'</em>' : ''); }).join(' · ')+'</div>' : '')
         + '</td></tr>';
     }
     if (!any) return '<div class="miss">이 주에는 문장이 없어요.</div>';

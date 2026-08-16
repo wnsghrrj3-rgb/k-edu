@@ -2,7 +2,8 @@
  * templates/english_data.js — 아침영어 데이터셋 (하루 한 문장 원장)
  *
  * 정본 설계: handoff/설계-아침영어-v1.md (2026-08-15). 이 파일이 그 §6 스키마의 실물이다.
- *   하루 = { d, pat, sent, ko, tiles, words, new, expand }
+ *   하루 = { d, pat, sent, ko, tiles, words, new, expand, gloss? }
+ *   - gloss: 그날 새 낱말의 문맥 뜻 덮어쓰기(선택). 없으면 공용 GLOSS 를 쓴다.
  *   - tiles: 조립 단위(구두점 포함 표시형). tiles.join(' ') === sent 왕복이 검사기로 강제된다.
  *   - words: 사다리 판정용 정규화 토큰(소문자, 구두점 제거, 덩어리 병합). 문장 토큰과 1:1.
  *   - new  : 그날 처음 등장하는 어휘 단위(≤3, 화이트리스트 제외). 검사기가 전수 강제.
@@ -51,6 +52,69 @@
     gets: 'get', goes: 'go', eats: 'eat', wants: 'want', has: 'have', thinks: 'think'
   };
   var WHITELIST = ['ben', 'mia', 'kai', 'oh', 'wow'];
+
+  /* ── 새 낱말 뜻(gloss) ★ (2026-08-16 D8-ⓐ · 설계 §6 스키마 확장) ──────
+   * 배지 탭이 소리만 내던 이유는 원장에 뜻 칸이 없어서였다(§4 D3 기록).
+   * 그 칸을 여기서 연다. 단위는 원장의 어휘 단위와 같다 — 덩어리("thank you")·
+   * 굴절형(apples)·고유명사(busan)도 제 뜻을 따로 갖는다.
+   *   GLOSS      : 공용 뜻(그 단위가 원장 전체에서 갖는 기본 뜻)
+   *   day.gloss  : 그날 문맥에서 뜻이 갈리는 경우의 덮어쓰기(아래 8건)
+   * 뜻은 초등 눈높이로 짧게 — 사전 뜻 나열이 아니라 그 문장에서 쓰인 뜻 하나.
+   * 검사기 ⑨절이 전수 강제한다: 뜻 없는 새 낱말 0 · 고아 덮어쓰기 0 · 죽은 항목 0.
+   * ================================================================= */
+  var GLOSS = {
+    'a': '하나의', 'about': '(How about) ~은 어때', 'and': '그리고', 'apples': '사과들',
+    'are': '~이다, ~있다', 'at': '~에', 'bag': '가방', 'be': '~이다',
+    'because': '왜냐하면', 'bed': '침대', 'been': '(have been) 가 본 적 있다',
+    'big': '큰', 'bigger': '더 큰', 'blocks': '(길의) 블록', 'blue': '파란색',
+    'book': '책', 'borrow': '빌리다', 'busan': '부산', 'busy': '바쁜',
+    'can': '~할 수 있다', "can't": '~할 수 없다', 'canada': '캐나다', 'cap': '모자',
+    'cat': '고양이', 'close': '닫다', 'cold': '추운', 'color': '색깔',
+    'come': '오다', 'cook': '요리사', 'corner': '모퉁이', 'could': '~해 주시겠어요',
+    'curly': '곱슬곱슬한', 'day': '날, 하루', 'desk': '책상', 'did': '(지난 일) ~했니',
+    "didn't": '~하지 않았다', 'do': '하다', 'doctor': '의사', 'does': '(묻는 말을 만드는 말)',
+    'dog': '개', "don't": '~하지 않다', 'door': '문', 'down': '아래로',
+    'eat': '먹다', 'eight': '여덟, 8', 'ever': '(경험) 한 번이라도', 'every': '매~, 모든',
+    'everyone': '모두', 'exercise': '운동하다', 'eyes': '눈', 'faster': '더 빠른',
+    'fine': '잘 지내는', 'four': '넷, 4', 'friday': '금요일', 'from': '~에서 (온)',
+    'get': '(get up) 일어나다', 'go': '가다', 'going': '(be going to) ~할 거야',
+    'good': '좋은', 'goodbye': '안녕 (헤어질 때)', 'great': '아주 좋은', 'green': '초록색',
+    'had': '(have의 과거) 먹었다', 'hair': '머리카락', 'happy': '기쁜',
+    'has': '가지고 있다', 'have': '가지고 있다', 'he': '그는', 'hello': '안녕 (만날 때)',
+    'help': '돕다', 'here': '여기에', 'hi': '안녕', 'hot': '더운', 'house': '집',
+    'how': '어떻게, 얼마나', 'i': '나는', "i'm": '나는 ~이다', 'in': '~ 안에',
+    'is': '~이다, ~있다', 'it': '그것', "it's": '그것은 ~이다', 'jeju': '제주',
+    'jump': '뛰다', 'kind': '친절한', 'korea': '한국', 'late': '늦은', 'left': '왼쪽',
+    "let's": '~하자', 'like': '좋아하다', 'long': '긴', 'look': '(look like) ~처럼 보이다',
+    'lost': '잃어버렸다', 'lunch': '점심', 'many': '(How many) 몇 개의',
+    'may': '(May I ~?) ~해도 될까요', 'me': '나를, 나에게', 'meet': '만나다',
+    'mine': '내 것', 'monday': '월요일', 'much': '훨씬', 'my': '나의',
+    'never': '한 번도 ~않다', 'nine': '아홉, 9', 'no': '아니', 'noon': '낮 열두 시',
+    "o'clock": '~시', 'often': '자주', 'old': '(나이가) ~살인', 'on': '~ 위에',
+    'one': '하나, 1', 'open': '열다', 'park': '공원', 'pen': '펜', 'pencil': '연필',
+    'pencils': '연필들', 'photo': '사진', 'play': '(운동을) 하다', 'please': '~해 주세요',
+    'problem': '문제', 'quiet': '조용한', 'rainy': '비 오는', 'red': '빨간색',
+    'right': '오른쪽', 'run': '달리다', 'sad': '슬픈', 'saturday': '토요일',
+    'saw': '(see의 과거) 보았다', 'school': '학교', 'see': '보다, 만나다',
+    'seven': '일곱, 7', 'she': '그녀는', 'short': '짧은', 'sit': '앉다',
+    'ski': '스키를 타다', 'so': '그렇게', 'soccer': '축구', 'sorry': '미안해',
+    'sounds': '~하게 들리다', 'stand': '서다', 'straight': '곧장', 'sunny': '화창한',
+    'sure': '물론이지', 'swim': '수영하다', 'swimming': '수영하기', 'take': '가져가다',
+    'tall': '키가 큰', 'taller': '키가 더 큰', 'teacher': '선생님', 'ten': '열, 10',
+    'test': '시험', 'than': '~보다', 'thank you': '고마워', 'that': '그것, 저것',
+    'the': '그', 'there': '거기에', 'think': '생각하다', 'this': '이것',
+    'three': '셋, 3', 'time': '시간, 시각', 'to': '~로, ~에게', 'today': '오늘',
+    'together': '함께', 'tomorrow': '내일', 'too': '~도 또한', 'turn': '돌다',
+    'tv': '텔레비전', 'twice': '두 번', 'two': '둘, 2', 'under': '~ 아래에',
+    'up': '위로', 'use': '쓰다, 사용하다', 'very': '아주', 'visit': '찾아가다',
+    'want': '원하다', 'was': '(is의 과거) ~였다', 'watch': '보다', 'we': '우리는',
+    'weather': '날씨', 'week': '주, 일주일', 'went': '(go의 과거) 갔다', 'what': '무엇',
+    "what's": '무엇이 ~이니', 'where': '어디', 'which': '어느 것', 'whose': '누구의',
+    'why': '왜', 'will': '~할 거야', 'winter': '겨울', 'worry': '걱정하다',
+    'years': '(나이) 살, 해', 'yellow': '노란색', 'yes': '응, 그래',
+    'yesterday': '어제', 'you': '너는, 너를', 'your': '너의'
+  };
+
 
   /* ── 학년 규약 ★ (설계 §2 학년 차등의 실물) ────────────────────
    * 학년별 독립 사다리(zero-base): 각 학년 40일은 자족적이다.
@@ -146,7 +210,7 @@
       tiles: ['I', 'like', 'apples.'], words: ['i', 'like', 'apples'], new: ['like', 'apples'],
       expand: { sent: 'I like books.', ko: '나는 책을 좋아해.' } },
     { d: 9, pat: 'P4', sent: 'Do you like apples?', ko: '너는 사과를 좋아해?',
-      tiles: ['Do', 'you', 'like', 'apples?'], words: ['do', 'you', 'like', 'apples'], new: ['do'],
+      tiles: ['Do', 'you', 'like', 'apples?'], words: ['do', 'you', 'like', 'apples'], new: ['do'], gloss: { 'do': '(묻는 말을 만드는 말)' },
       expand: { sent: 'Do you like books?', ko: '너는 책을 좋아해?' } },
     { d: 10, pat: 'P4', sent: 'Yes, I do.', ko: '응, 좋아해.',
       tiles: ['Yes,', 'I', 'do.'], words: ['yes', 'i', 'do'], new: ['yes'],
@@ -267,7 +331,7 @@
       tiles: ["It's", 'Monday', 'today.'], words: ["it's", 'monday', 'today'], new: ['monday', 'today'],
       expand: { sent: "It's Monday.", ko: '월요일이야.' } },
     { d: 5, pat: 'P2', sent: 'What day is it today?', ko: '오늘 무슨 요일이야?',
-      tiles: ['What', 'day', 'is', 'it', 'today?'], words: ['what', 'day', 'is', 'it', 'today'], new: ['day'],
+      tiles: ['What', 'day', 'is', 'it', 'today?'], words: ['what', 'day', 'is', 'it', 'today'], new: ['day'], gloss: { 'day': '요일' },
       expand: { sent: 'What day is it?', ko: '무슨 요일이야?' } },
     { d: 6, pat: 'P2', sent: "It's Friday!", ko: '금요일이야!',
       tiles: ["It's", 'Friday!'], words: ["it's", 'friday'], new: ['friday'],
@@ -335,7 +399,7 @@
       tiles: ['I', 'have', 'three', 'cats.'], words: ['i', 'have', 'three', 'cats'], new: ['i', 'three'],
       expand: { sent: 'I have three books.', ko: '나는 책이 세 권 있어.' } },
     { d: 26, pat: 'P7', sent: 'How many pencils are there?', ko: '연필이 몇 자루 있어?',
-      tiles: ['How', 'many', 'pencils', 'are', 'there?'], words: ['how', 'many', 'pencils', 'are', 'there'], new: ['pencils', 'are', 'there'],
+      tiles: ['How', 'many', 'pencils', 'are', 'there?'], words: ['how', 'many', 'pencils', 'are', 'there'], new: ['pencils', 'are', 'there'], gloss: { 'there': '(there are) ~이 있다' },
       expand: { sent: 'How many cats are there?', ko: '고양이가 몇 마리 있어?' } },
 
     { d: 27, pat: 'P8', sent: 'This is my pencil.', ko: '이건 내 연필이야.',
@@ -402,10 +466,10 @@
       tiles: ["I'm", 'a', 'teacher.'], words: ["i'm", 'a', 'teacher'], new: ['a', 'teacher'],
       expand: { sent: 'Are you a teacher?', ko: '너는 선생님이야?' } },
     { d: 5, pat: 'P2', sent: 'I want to be a doctor.', ko: '나는 의사가 되고 싶어.',
-      tiles: ['I', 'want', 'to', 'be', 'a', 'doctor.'], words: ['i', 'want', 'to', 'be', 'a', 'doctor'], new: ['want', 'to', 'be', 'doctor'],
+      tiles: ['I', 'want', 'to', 'be', 'a', 'doctor.'], words: ['i', 'want', 'to', 'be', 'a', 'doctor'], new: ['want', 'to', 'be', 'doctor'], gloss: { 'be': '되다' },
       expand: { sent: 'I want to be a teacher.', ko: '나는 선생님이 되고 싶어.' } },
     { d: 6, pat: 'P2', sent: 'What do you want to be?', ko: '너는 뭐가 되고 싶어?',
-      tiles: ['What', 'do', 'you', 'want', 'to', 'be?'], words: ['what', 'do', 'you', 'want', 'to', 'be'], new: ['what', 'do'],
+      tiles: ['What', 'do', 'you', 'want', 'to', 'be?'], words: ['what', 'do', 'you', 'want', 'to', 'be'], new: ['what', 'do'], gloss: { 'do': '(묻는 말을 만드는 말)' },
       expand: { sent: 'What do you want to be, Mia?', ko: '미아야, 너는 뭐가 되고 싶어?' } },
     { d: 7, pat: 'P2', sent: 'I want to be a cook.', ko: '나는 요리사가 되고 싶어.',
       tiles: ['I', 'want', 'to', 'be', 'a', 'cook.'], words: ['i', 'want', 'to', 'be', 'a', 'cook'], new: ['cook'],
@@ -421,7 +485,7 @@
       tiles: ['She', 'has', 'big', 'eyes.'], words: ['she', 'has', 'big', 'eyes'], new: ['big', 'eyes'],
       expand: { sent: 'He has big eyes.', ko: '그는 눈이 커.' } },
     { d: 11, pat: 'P3', sent: 'What does he look like?', ko: '그는 어떻게 생겼어?',
-      tiles: ['What', 'does', 'he', 'look', 'like?'], words: ['what', 'does', 'he', 'look', 'like'], new: ['does', 'look', 'like'],
+      tiles: ['What', 'does', 'he', 'look', 'like?'], words: ['what', 'does', 'he', 'look', 'like'], new: ['does', 'look', 'like'], gloss: { 'like': '(look like) ~처럼' },
       expand: { sent: 'What does she look like?', ko: '그녀는 어떻게 생겼어?' } },
 
     { d: 12, pat: 'P4', sent: 'I get up at seven.', ko: '나는 7시에 일어나.',
@@ -595,7 +659,7 @@
       tiles: ['Which', 'is', 'bigger?'], words: ['which', 'is', 'bigger'], new: ['which', 'bigger'],
       expand: { sent: 'Which is faster?', ko: '어느 쪽이 더 빨라?' } },
     { d: 23, pat: 'P6', sent: 'This one is much bigger.', ko: '이게 훨씬 더 커.',
-      tiles: ['This', 'one', 'is', 'much', 'bigger.'], words: ['this', 'one', 'is', 'much', 'bigger'], new: ['this', 'one', 'much'],
+      tiles: ['This', 'one', 'is', 'much', 'bigger.'], words: ['this', 'one', 'is', 'much', 'bigger'], new: ['this', 'one', 'much'], gloss: { 'one': '(앞에 말한) 것' },
       expand: { sent: 'This one is much faster.', ko: '이게 훨씬 더 빨라.' } },
 
     { d: 24, pat: 'P7', sent: 'I have been to Busan.', ko: '나는 부산에 가 본 적 있어.',
@@ -634,7 +698,7 @@
       tiles: ['May', 'I', 'borrow', 'your', 'pen?'], words: ['may', 'i', 'borrow', 'your', 'pen'], new: ['may', 'borrow', 'pen'],
       expand: { sent: 'Could I borrow your pen?', ko: '펜 좀 빌릴 수 있을까요?' } },
     { d: 35, pat: 'P9', sent: 'Here you are. Take it.', ko: '여기 있어. 가져가.',
-      tiles: ['Here', 'you', 'are.', 'Take', 'it.'], words: ['here', 'you', 'are', 'take', 'it'], new: ['here', 'take'],
+      tiles: ['Here', 'you', 'are.', 'Take', 'it.'], words: ['here', 'you', 'are', 'take', 'it'], new: ['here', 'take'], gloss: { 'here': '여기 있어 (Here you are)' },
       expand: { sent: 'Here you are.', ko: '여기 있어.' } },
 
     { d: 36, pat: 'P10', sent: "I'm going to visit Jeju this Saturday.", ko: '나는 이번 토요일에 제주에 갈 거야.',
@@ -684,8 +748,22 @@
     return false;
   }
 
+  /* 그날 그 단위의 뜻 — 그날 덮어쓰기가 있으면 그것이 이긴다(문맥 우선) */
+  function glossOf(g, d, unit) {
+    var row = (GRADES[g] || [])[d - 1];
+    if (row && row.gloss && row.gloss[unit]) return row.gloss[unit];
+    return GLOSS[unit] || '';
+  }
+  /* 그날 새 낱말을 [{unit, ko}] 로 — 화면·인쇄물이 공유하는 단일 통로 */
+  function glossesOf(g, d) {
+    var row = (GRADES[g] || [])[d - 1];
+    if (!row) return [];
+    return (row['new'] || []).map(function (u) { return { unit: u, ko: glossOf(g, d, u) }; });
+  }
+
   return {
     CHUNKS: CHUNKS, EQUIV: EQUIV, INFLECT: INFLECT, WHITELIST: WHITELIST, PAT_PLAN: PAT_PLAN,
+    GLOSS: GLOSS, glossOf: glossOf, glossesOf: glossesOf,
     GRADE_RULES: GRADE_RULES,
     rules: function (g) { return GRADE_RULES[g] || null; },
     grades: function () { return Object.keys(GRADES).map(Number); },

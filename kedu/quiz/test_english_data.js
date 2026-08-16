@@ -11,6 +11,10 @@
  *      new ≤ 3 · new ⊆ 그날 words · new 에 기배운·화이트리스트 금지 · new 내 중복 금지
  *   ⑦ expand: 사다리 준수(그날 누적 기준) · 본문·타 expand 와 문장 중복 금지 · ko 존재
  *   ⑧ 문장 전역 중복 금지(본문 40문장 상호)
+ *   ⑨ gloss(새 낱말 뜻): 전 학년·전 일차의 new 가 빠짐없이 뜻을 갖는다(공백 0) ·
+ *      뜻에 한국어 포함 · 길이 상한(배지 폭) · day.gloss 는 그날 new 안의 키만(고아 0) ·
+ *      기본값과 같은 덮어쓰기 금지(무의미 예외 0) · GLOSS 죽은 항목 0 · 화이트리스트 금지 ·
+ *      glossesOf 왕복(순서·개수가 new 와 1:1)
  * 실행: node kedu/quiz/test_english_data.js [원장경로]
  *   경로 인자는 역검증용(변조 사본 검사) — git 원복 함정(9.7차 기록)을 피한다.
  * ============================================================= */
@@ -116,6 +120,60 @@ D.grades().forEach(g => {
   const maxNew = days.reduce((m, r) => Math.max(m, (r.new || []).length), 0);
   console.log(`  g${g}: ${days.length}일 · 새 어휘 ${units} · expand ${expands}/${days.length} · 타일 평균 ${avgTile} 최대 ${maxTile}/${R.tileMax} · 최대new ${maxNew}/${R.newMax} · ${plan.map(p => p.pat + ':' + (p.to - p.from + 1)).join(' ')}`);
 });
+
+/* ══════════════ ⑨ gloss — 새 낱말 뜻 ══════════════
+ * 2026-08-16 D8-ⓐ. 라이브 4개 학년이 매일 만나는 배지에 뜻이 비어 있던 구멍을 막는다.
+ * 뜻은 "있으면 좋은 것"이 아니라 새 낱말의 짝이다 — new 가 늘면 뜻도 함께 늘어야 한다.
+ * 이 절이 없으면 다음 사람이 문장을 한 줄 더 쓰는 순간 조용히 뜻 0 짜리 낱말이 생긴다. */
+const KO = s => /[가-힣]/.test(String(s || ''));
+const GLOSS_MAX = 24;              /* 배지 한 줄에 들어가는 폭 — 넘으면 화면에서 접힌다 */
+const usedUnits = new Set();
+
+T(D.GLOSS && typeof D.GLOSS === 'object', 'GLOSS 사전 없음');
+T(typeof D.glossOf === 'function', 'glossOf 없음');
+T(typeof D.glossesOf === 'function', 'glossesOf 없음');
+
+D.grades().forEach(g => {
+  D.days(g).forEach(r => {
+    const nw = r['new'] || [];
+    nw.forEach(u => {
+      usedUnits.add(u);
+      const k = D.glossOf(g, r.d, u);
+      T(!!k, `g${g} d${r.d} 새 낱말 "${u}" 뜻 없음 (배지·인쇄물이 빈칸으로 나간다)`);
+      T(KO(k), `g${g} d${r.d} "${u}" 뜻에 한국어 없음: "${k}"`);
+      T(String(k).length <= GLOSS_MAX, `g${g} d${r.d} "${u}" 뜻 ${String(k).length}자 > ${GLOSS_MAX} ("${k}")`);
+      T(String(k).trim() === String(k), `g${g} d${r.d} "${u}" 뜻 앞뒤 공백`);
+    });
+
+    /* 그날 덮어쓰기 — 고아·무의미 금지 */
+    if (r.gloss) {
+      T(typeof r.gloss === 'object' && !Array.isArray(r.gloss), `g${g} d${r.d} gloss 가 객체가 아님`);
+      Object.keys(r.gloss).forEach(u => {
+        T(nw.indexOf(u) >= 0, `g${g} d${r.d} gloss 고아 키 "${u}" — 그날 new 에 없다`);
+        T(KO(r.gloss[u]), `g${g} d${r.d} gloss["${u}"] 에 한국어 없음`);
+        T(r.gloss[u] !== D.GLOSS[u], `g${g} d${r.d} gloss["${u}"] 가 공용 뜻과 같음 — 예외가 아니다`);
+      });
+    }
+
+    /* glossesOf 왕복: 개수·순서가 new 와 1:1 이어야 화면이 배지와 뜻을 짝지을 수 있다 */
+    const list = D.glossesOf(g, r.d);
+    T(list.length === nw.length, `g${g} d${r.d} glossesOf 개수 ${list.length} ≠ new ${nw.length}`);
+    list.forEach((it, i) => {
+      T(it.unit === nw[i], `g${g} d${r.d} glossesOf 순서 어긋남: ${i} 번째 ${it.unit} ≠ ${nw[i]}`);
+      T(it.ko === D.glossOf(g, r.d, nw[i]), `g${g} d${r.d} glossesOf 뜻 불일치: ${it.unit}`);
+    });
+  });
+});
+
+/* 사전 부패 방지: 어느 날에도 안 쓰이는 뜻은 남겨 두지 않는다(문장을 고칠 때 같이 썩는다) */
+Object.keys(D.GLOSS).forEach(u => {
+  T(usedUnits.has(u), `GLOSS 죽은 항목 "${u}" — 어느 학년·일차의 new 에도 없다`);
+  T(D.WHITELIST.indexOf(u) < 0, `GLOSS 에 화이트리스트 단어 "${u}" — 새 낱말이 아니므로 뜻 대상이 아니다`);
+});
+T(usedUnits.size === Object.keys(D.GLOSS).length,
+  `뜻 사전 ${Object.keys(D.GLOSS).length} ≠ 원장 고유 단위 ${usedUnits.size}`);
+console.log(`  gloss: 사전 ${Object.keys(D.GLOSS).length} 단위 · 그날 예외 ${
+  D.grades().reduce((n, g) => n + D.days(g).filter(r => r.gloss).length, 0)} 건`);
 
 console.log(`english_data: ${pass} PASS / ${fail} FAIL`);
 process.exit(fail ? 1 : 0);

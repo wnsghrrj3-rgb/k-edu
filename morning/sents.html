@@ -101,8 +101,11 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--sky);min-height:100vh
 /* ── 새 낱말 배지 ─────────────────────────────────── */
 .fresh-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px}
 .fresh-lab{font-size:12.5px;color:var(--mist);width:100%;margin-bottom:2px}
-.badge{border:1.5px solid #F2D9AC;background:#FFF8EC;border-radius:999px;padding:7px 15px;cursor:pointer;
-  font-family:'Nunito',sans-serif;font-weight:600;font-size:15px;color:var(--sun-deep)}
+.badge{border:1.5px solid #F2D9AC;background:#FFF8EC;border-radius:16px;padding:7px 15px;cursor:pointer;
+  font-family:'Nunito',sans-serif;font-weight:600;font-size:15px;color:var(--sun-deep);
+  display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1.3}
+/* 뜻은 낱말 바로 아래 — 1막은 만나는 자리다. 감추면 원장에 뜻이 있어도 못 만난다 */
+.badge .gl{font-family:'Gowun Dodum',sans-serif;font-weight:400;font-size:11.5px;color:var(--ink-soft)}
 .badge:active{transform:scale(.96)}
 
 /* ── 어제 문장 ─────────────────────────────────────── */
@@ -399,7 +402,10 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--sky);min-height:100vh
       + '<div class="ko" id="ko">'+esc(x.ko)+'</div>'
       + (x['new'] && x['new'].length
           ? '<div class="fresh-row" id="fresh"><div class="fresh-lab">오늘 처음 만나는 낱말 — 눌러서 들어 보세요</div>'
-            + x['new'].map(function(w){ return '<button type="button" class="badge" data-n="'+esc(w)+'">'+esc(w)+'</button>'; }).join('')
+            + D.glossesOf(st.grade, st.di).map(function(it){
+                /* 낱말 + 뜻. 뜻은 원장(gloss)에서만 온다 — 화면이 지어내지 않는다 */
+                return '<button type="button" class="badge" data-n="'+esc(it.unit)+'"><span>'+esc(it.unit)+'</span>'
+                  + (it.ko ? '<span class="gl">'+esc(it.ko)+'</span>' : '') + '</button>'; }).join('')
             + '</div>'
           : '')
       + '<div class="row">'
@@ -565,7 +571,10 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--sky);min-height:100vh
         +   '대신 오늘 낱말을 한 번 더 만나요.</div>'
         + (news.length
             ? '<div class="fresh-row" style="margin-top:16px">'
-              + news.map(function(w){ return '<button type="button" class="badge" data-n="'+esc(w)+'">'+esc(w)+'</button>'; }).join('')
+              /* 여기도 1막과 같은 배지다 — 한 화면에서만 뜻이 보이면 아이는 어느 쪽이 진짜인지 모른다 */
+              + D.glossesOf(st.grade, st.di).map(function(it){
+                  return '<button type="button" class="badge" data-n="'+esc(it.unit)+'"><span>'+esc(it.unit)+'</span>'
+                    + (it.ko ? '<span class="gl">'+esc(it.ko)+'</span>' : '') + '</button>'; }).join('')
               + '</div>'
             : '<div class="bubble" style="margin-top:14px">' + sentHtml(x.tiles, 'allin') + '</div>')
         + '<div class="say" id="say"></div>'
