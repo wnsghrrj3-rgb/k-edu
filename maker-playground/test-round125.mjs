@@ -87,8 +87,11 @@ T('★ run() 이 probeAnim 을 await 한다 (안 하면 결과가 늦게 와 검
 
 T('★ 스타일을 바꾼 뒤 프레임을 기다린 다음에 읽는다 (거짓 경보의 원인)', () => {
   if (!ANIM) return 'probeAnim 부재';
+  /* R132 정정(의도 보존): 대기가 둘이 됐다 — 인스턴스를 세우는 선(先)대기와
+     측정 직전 대기. 잣대의 의도는 「**측정 직전에** 대기가 있다」이므로
+     마지막 대기를 본다(첫 대기를 보면 조작보다 앞서 순서가 뒤집힌다). */
   const iSet = Math.max(ANIM.indexOf('animationDelay'), ANIM.indexOf('finish()'));
-  const iWait = ANIM.indexOf('nextFrames');
+  const iWait = ANIM.lastIndexOf('nextFrames');
   const iRead = ANIM.indexOf('.opacity');
   if (iSet < 0) return '등장을 끝내는 조작이 없다';
   if (iWait < 0) return '프레임 대기가 없다 — 같은 틱에서 읽으면 기저값이 나온다';

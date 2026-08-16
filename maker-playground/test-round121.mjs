@@ -268,8 +268,11 @@ T('히트 무대가 즉시 걷히는 계약 (finally remove)', () => {
 });
 
 T('애니 탐침도 무대를 걷는다', () => {
+  /* R132 정정(의도 보존): 미확정 갈래 셋이 늘어 본문이 2600자 창을 넘겼다.
+     재는 것(probeAnim 이 finally 로 무대를 걷는다)은 그대로 — 창만 넓힌다.
+     R47·R127 이 밟은 형태와 같다. */
   const i = SRC.indexOf('function probeAnim');
-  const seg = SRC.slice(i, i + 2600);
+  const seg = SRC.slice(i, SRC.indexOf('async function probeExport'));
   return /finally\s*\{\s*if \(host\) host\.remove\(\);\s*\}/.test(seg) || 'probeAnim 에 finally 정리 없음';
 });
 

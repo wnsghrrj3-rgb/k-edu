@@ -402,6 +402,28 @@ window.MK_SELFCHECK = (() => {
     return host;
   }
 
+  /* ---------- 애니 무대 (R132) ----------
+     ★ R125 가 틀린 자리. stageEl 은 `left:-99999px` 라 브라우저가 **애니메이션을
+     시작조차 하지 않는다**(화면 밖 렌더 최적화). 그래서 R125 는 증상만 옳게
+     읽고 원인을 잘못 짚었다 — 「같은 틱 측정」이 아니라 「무대가 화면 밖」이었다.
+     R121 이 히트 판정에서 이미 밟은 교훈과 같다: 브라우저가 실제로 답하게
+     하려면 무대가 화면 안에 있어야 한다.
+
+     opacity:0 이 아니라 0.01 인 까닭 — 히트 판정(R121)은 0 으로 살았지만
+     애니 최적화 기준은 히트 기준과 다를 수 있어, 「확실히 그린다」쪽을 고른다.
+     사람 눈에는 안 보이고, 부모 opacity 는 자식의 computed opacity 에 안 섞인다
+     (그래서 측정 대상값이 오염되지 않는다). */
+  function stageAnim(win, html) {
+    const d = win.document;
+    const host = d.createElement('div');
+    host.setAttribute('data-sc-stage', '1');
+    host.style.cssText = `position:fixed;left:0;top:0;width:${STAGE.w}px;height:${STAGE.h}px;`
+      + 'opacity:0.01;pointer-events:none;z-index:-1;overflow:hidden';
+    host.innerHTML = html;
+    d.body.appendChild(host);
+    return host;
+  }
+
   /* ---------- 탐침: R117 ---------- */
   function probeFocus(win, out) {
     const P = win.MK_PLAY, F = win.MK_FOCAL;
@@ -587,7 +609,7 @@ window.MK_SELFCHECK = (() => {
         elements: [{ kind: 'image', src: PX, x: 10, y: 20, w: 50, h: 60,
           anim: { preset: 'fade', idle: 'kb-zoom-in', idleDur: 4 } }],
       };
-      host = stageEl(win, P.sceneHTML(scene));
+      host = stageAnim(win, P.sceneHTML(scene));       /* R132 — 화면 안 무대 */
       const node = host.querySelector('.mkp-el');
       if (!node) throw new Error('요소 미발견');
 
@@ -608,11 +630,25 @@ window.MK_SELFCHECK = (() => {
 
          가능하면 Web Animations 로 **의도를 그대로** 말한다(끝내라). 없으면
          종전처럼 지연을 밀되, 둘 다 프레임을 기다린 뒤에 읽는다. */
+      /* 한 프레임 줘서 애니 인스턴스가 서게 한다 — 삽입 직후엔 아직 없다 */
+      if (await rope(nextFrames(win, 1), 3000) === ROPE) {
+        out.push(R('anim-live', 'skip', '화면 갱신이 시간 안에 안 왔어요 — 배경 탭이면 앞으로 두고 다시 검사해 주세요',
+          '불합격이 아니라 미확정이에요'));
+        return;
+      }
+
       let how;
       const anims = typeof node.getAnimations === 'function' ? node.getAnimations() : null;
       if (anims && anims.length) {
         anims.forEach((a) => { try { a.finish(); } catch (_) {} });
         how = `getAnimations ${anims.length}개 finish`;
+      } else if (anims) {
+        /* ★ R132 — 선언은 붙었는데 인스턴스가 없다 = 이 기기가 이 무대에서
+           애니를 **안 돌린다**. 그건 「제품이 깨졌다」가 아니라 「여기서는 못
+           잰다」다. 불합격으로 부르면 거짓 경보다(R125 가 그렇게 두 번 틀렸다). */
+        out.push(R('anim-live', 'skip', '이 기기가 검사용 무대에서 애니를 안 돌려 판정을 못 냈어요',
+          `선언 ${n}개는 붙었어요 — 불합격이 아니라 미확정이에요 · 재생 화면에서 눈으로 봐 주세요`));
+        return;
       } else {
         node.style.animationDelay = new Array(n).fill('-30s').join(',');
         how = `지연 -30s ×${n}`;
@@ -628,6 +664,10 @@ window.MK_SELFCHECK = (() => {
       if (isFinite(op) && op >= 0.9)
         out.push(R('anim-live', 'pass', '애니가 실해결됐고 등장 뒤 요소가 보여요',
           `${n}개 선언 · 등장 후 불투명도 ${op.toFixed(2)} · ${how}`));
+      else if (/지연/.test(how))
+        /* 폴백 경로에서 0 = 애니가 안 돈 것일 수 있다(R132 교훈). 단정하지 않는다 */
+        out.push(R('anim-live', 'skip', '등장 뒤 상태를 확실히 재지 못했어요',
+          `불투명도 ${isFinite(op) ? op.toFixed(2) : '?'} · ${how} — 불합격이 아니라 미확정이에요 · 재생 화면에서 눈으로 봐 주세요`));
       else
         out.push(R('anim-live', 'fail', '등장이 끝났는데 요소가 투명해요 — 빈 장면으로 재생됩니다',
           `불투명도 ${isFinite(op) ? op.toFixed(2) : '?'} / ${name} · ${how}`));
