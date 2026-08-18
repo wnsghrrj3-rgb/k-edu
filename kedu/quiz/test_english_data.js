@@ -15,6 +15,9 @@
  *      뜻에 한국어 포함 · 길이 상한(배지 폭) · day.gloss 는 그날 new 안의 키만(고아 0) ·
  *      기본값과 같은 덮어쓰기 금지(무의미 예외 0) · GLOSS 죽은 항목 0 · 화이트리스트 금지 ·
  *      glossesOf 왕복(순서·개수가 new 와 1:1)
+ *   ⓪ 틀 단일 통로(patOf·patGroups, D8-Ⓔ): 전 학년 전 일차가 틀을 알고 있다 ·
+ *      틀 표기(이름·구간·틀 안 진행·연번)가 PAT_PLAN 원본과 전수 일치 ·
+ *      구간 밖·없는 학년은 지어내지 않고 null · patGroups 가 원장을 구멍·겹침 없이 덮는다
  * 실행: node kedu/quiz/test_english_data.js [원장경로]
  *   경로 인자는 역검증용(변조 사본 검사) — git 원복 함정(9.7차 기록)을 피한다.
  * ============================================================= */
@@ -164,6 +167,67 @@ D.grades().forEach(g => {
     });
   });
 });
+
+/* ── ⓺ 틀 단일 통로 (patOf · patGroups) ★D8-ⓔ ─────────────────────────
+ *  화면·인쇄물이 「몇 주 · 무슨 요일」을 지어내던 자리를 전부 이 두 통로로 갈아탔다.
+ *  그래서 이 통로가 틀리면 이제 4개 학년의 학생 화면·둘러보기·인쇄물이 한꺼번에 틀린다.
+ *  ★기대값을 patOf 로 뽑으면 안 된다 — 해석 함수가 망가지면 양쪽이 같이 흘러가 통과한다
+ *    (9.15차에 실제로 낸 구멍). 기대값은 PAT_PLAN·GRADES 원본에서 직접 만든다. */
+D.grades().forEach(g => {
+  const plan = D.plan(g), days = D.days(g), N = days.length;
+
+  /* (a) 전 일차 전수 — 원본 계획에서 직접 기대값을 만들어 대조 */
+  days.forEach((row, i) => {
+    const d = i + 1;
+    const want = plan.findIndex(p => d >= p.from && d <= p.to);
+    const wp = plan[want];
+    const got = D.patOf(g, d);
+    T(!!got, `g${g} d${d} patOf 가 null — 화면이 오늘의 틀을 말할 수 없다`);
+    if (!got || !wp) return;
+    T(got.pat === wp.pat, `g${g} d${d} patOf.pat ${got.pat} ≠ 계획 ${wp.pat}`);
+    T(got.pat === row.pat, `g${g} d${d} patOf.pat 이 원장 행 pat(${row.pat})과 다름`);
+    T(got.ko === wp.ko, `g${g} d${d} patOf.ko "${got.ko}" ≠ 계획 "${wp.ko}"`);
+    T(got.from === wp.from && got.to === wp.to, `g${g} d${d} patOf 구간 ${got.from}~${got.to} ≠ ${wp.from}~${wp.to}`);
+    T(got.len === wp.to - wp.from + 1, `g${g} d${d} patOf.len ${got.len} 이 구간 길이와 다름`);
+    T(got.idx === d - wp.from + 1, `g${g} d${d} patOf.idx ${got.idx} ≠ ${d - wp.from + 1}`);
+    T(got.idx >= 1 && got.idx <= got.len, `g${g} d${d} patOf.idx 가 1..len 밖: ${got.idx}/${got.len}`);
+    T(got.no === want + 1, `g${g} d${d} patOf.no ${got.no} ≠ 계획 순번 ${want + 1}`);
+  });
+
+  /* (b) 구간 밖·없는 학년은 지어내지 않는다 — 이게 없으면 41일째에 첫 틀이 뜬다 */
+  T(D.patOf(g, 0) === null, `g${g} patOf(0) 이 null 이 아님`);
+  T(D.patOf(g, N + 1) === null, `g${g} patOf(${N + 1}) 이 null 이 아님 — 원장 끝을 넘어 틀을 지어냄`);
+  T(D.patOf(g, -3) === null, `g${g} patOf(-3) 이 null 이 아님`);
+
+  /* (c) patGroups — 둘러보기·인쇄물이 이 경계로만 나눈다 */
+  const gs = D.patGroups(g);
+  T(gs.length === plan.filter(p => p.from <= N).length, `g${g} patGroups 수 ${gs.length} ≠ 원장 안에 든 계획 수`);
+  let cur = 1, sum = 0;
+  gs.forEach((p, i) => {
+    T(p.no === i + 1, `g${g} patGroups[${i}].no ${p.no} ≠ ${i + 1} (연번 아님)`);
+    T(p.pat === plan[i].pat && p.ko === plan[i].ko, `g${g} patGroups[${i}] 이름이 계획과 다름`);
+    T(p.from === cur, `g${g} patGroups[${i}] 시작 ${p.from} ≠ ${cur} — 구멍 또는 겹침`);
+    T(p.to >= p.from, `g${g} patGroups[${i}] 구간 역전`);
+    T(p.to <= N, `g${g} patGroups[${i}] 끝 ${p.to} 이 원장 일수 ${N} 을 넘음`);
+    sum += p.to - p.from + 1;
+    cur = p.to + 1;
+  });
+  T(sum === N, `g${g} patGroups 일수 합 ${sum} ≠ 원장 일수 ${N}`);
+  T(cur - 1 === N, `g${g} patGroups 가 마지막 날 ${N} 까지 덮지 못함`);
+
+  /* (d) 두 통로가 서로 어긋나지 않는가 — 화면은 머리(patOf)와 둘러보기(patGroups)를
+         동시에 쓴다. 둘이 다르면 같은 날이 두 이름으로 불린다. */
+  days.forEach((row, i) => {
+    const d = i + 1, got = D.patOf(g, d);
+    const grp = gs.filter(p => d >= p.from && d <= p.to)[0];
+    T(!!grp, `g${g} d${d} 가 어느 patGroups 묶음에도 안 듦`);
+    if (got && grp) T(got.no === grp.no && got.ko === grp.ko,
+      `g${g} d${d} patOf(${got.no}.${got.ko}) 와 patGroups(${grp.no}.${grp.ko}) 가 다름`);
+  });
+});
+T(D.patOf(9, 1) === null, 'patOf 가 원장 없는 9학년에 틀을 지어냄');
+T(D.patGroups(9).length === 0, 'patGroups 가 원장 없는 9학년에 묶음을 지어냄');
+console.log(`  틀: ${D.grades().map(g => `g${g} ${D.patGroups(g).length}묶음/${D.days(g).length}일`).join(' · ')}`);
 
 /* 사전 부패 방지: 어느 날에도 안 쓰이는 뜻은 남겨 두지 않는다(문장을 고칠 때 같이 썩는다) */
 Object.keys(D.GLOSS).forEach(u => {

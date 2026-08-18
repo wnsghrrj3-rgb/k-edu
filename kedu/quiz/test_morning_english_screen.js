@@ -393,6 +393,15 @@ function boot(file, qs, opt) {
   T(o.all('#g option').map(function (e) { return +e.value; }).join(',') === DATA.grades().join(','),
     '인쇄물 학년 목록이 원장과 다름');
   T(o.all('#d option').length === DATA.maxDay(g), '인쇄물 일차 목록이 원장 일수와 다름');
+  /* ★일차 드롭다운도 주·요일을 지어내던 자리다(「7일째 (2주 금)」).
+     ★여기서 「요일」을 정규식으로 훑으면 안 된다 — g4 의 P2 이름이 하필 「요일」이다.
+       그래서 훑는 대신 **원장이 만들 문자열과 정면으로 같은가**를 본다.
+       상수 대조가 아니라 원장 추종이므로, 원장이 자라도 검사가 따라온다. */
+  o.all('#d option').forEach(function (op, i) {
+    var pp = DATA.patOf(g, i + 1);
+    T(op.textContent === (i + 1) + '일째' + (pp ? ' · ' + pp.ko : ''),
+      '일차 드롭다운 ' + (i + 1) + '번 항목이 원장과 다름: "' + op.textContent + '"');
+  });
 
   /* 뜻 숨기기 — 합창 때 한국어가 먼저 읽히면 아이가 영어를 안 본다 */
   T(o.doc.body.classList.contains('noko') === false, '기본이 뜻 숨김 상태임');
@@ -421,19 +430,35 @@ function boot(file, qs, opt) {
     o.doc.getElementById('ko').click();                 /* 원복 */
   }
 
-  /* 주간표 판형 — 그 주 다섯 문장, 원장 끝을 넘으면 있는 만큼만 */
+  /* 틀 묶음표 판형 (D8-ⓔ) — 그 문장이 속한 틀 전부, 원장 끝을 넘으면 있는 만큼만.
+     ★기대값에 숫자를 박지 않는다. 예전 이 자리는 「다섯 줄」이라 적혀 있었는데
+       그 5 는 「5일=1주」라는 근거 없는 가정에서 나온 수였다. 이제 원장(patOf)에서
+       기대값을 뽑아, 표본·학년을 바꾸거나 원장이 자라도 검사가 따라오게 한다. */
   o.doc.getElementById('mWeek').click();
+  var px = DATA.patOf(g, d);
+  T(!!px, '표본 일차의 틀을 원장이 모름 — 표본을 바꿔야 한다');
+  var wFrom = px.from, wTo = Math.min(px.to, DATA.maxDay(g)), wLen = wTo - wFrom + 1;
   var rows = o.all('.wk tbody tr');
-  T(rows.length === 5, '주간표가 다섯 줄이 아님: ' + rows.length);
-  T(rows[0].querySelector('.s').textContent === DATA.day(g, 6).sent,
-    '주간표 첫 줄이 그 주 첫날(6일째)이 아님');
-  T(rows[4].querySelector('.s').textContent === DATA.day(g, 10).sent, '주간표 마지막 줄이 어긋남');
-  T(o.txt('.wk').indexOf(DATA.day(g, 11).sent) < 0, '주간표에 다음 주 문장이 섞임');
+  T(rows.length === wLen, '틀 묶음표 줄 수가 틀 일수와 다름: ' + rows.length + ' ≠ ' + wLen);
+  /* 첫 줄·끝 줄만 보면 가운데가 뒤섞여도 통과한다. 범위 전체를 순서까지 한 번에 대조한다. */
+  var gotS = rows.map(function (r) { var e = r.querySelector('.s'); return e ? e.textContent : '(없음)'; });
+  var wantS = []; for (var qi = wFrom; qi <= wTo; qi++) wantS.push(DATA.day(g, qi).sent);
+  T(gotS.join('\u0001') === wantS.join('\u0001'),
+    '틀 묶음표 줄이 원장 틀 범위·순서와 다름:\n     낸 것  ' + gotS.join(' / ') + '\n     원장  ' + wantS.join(' / '));
+  /* 이웃 틀이 다른 칸(뜻·새 낱말)으로 새어 들어오지 않는가 — 앞뒤 양쪽을 본다 */
+  if (wFrom > 1) T(o.txt('.wk').indexOf(DATA.day(g, wFrom - 1).sent) < 0, '틀 묶음표에 앞 틀 문장이 섞임');
+  if (wTo < DATA.maxDay(g)) T(o.txt('.wk').indexOf(DATA.day(g, wTo + 1).sent) < 0, '틀 묶음표에 다음 틀 문장이 섞임');
+  /* 표 제목·행 머리가 원장 틀에서 오는가 — 이걸 안 보면 「이름 없는 표」가 통과한다 */
+  T(o.txt('.shead').indexOf(px.ko) >= 0, '틀 묶음표 제목에 원장 틀 이름이 없음: ' + px.ko);
+  T(/\d+\s*주/.test(o.txt('.shead')) === false, '틀 묶음표 제목이 아직 주(週)를 주장함');
+  T(rows.every(function (r, i) {
+      var th = r.querySelector('.d'); return !!th && th.textContent.indexOf(String(wFrom + i)) >= 0;
+    }), '틀 묶음표 행 머리가 원장 일차와 다름');
 
-  /* ★주간표 새 낱말 줄에도 뜻 — 가정통신문으로 나가는 판형이라 여기가 비면 집에서 못 읽는다 */
-  for (var wi = 6; wi <= 10; wi++) {
+  /* ★틀 묶음표 새 낱말 줄에도 뜻 — 가정통신문으로 나가는 판형이라 여기가 비면 집에서 못 읽는다 */
+  for (var wi = wFrom; wi <= wTo; wi++) {
     var wx = DATA.day(g, wi), wgl = DATA.glossesOf(g, wi);
-    var line = rows[wi - 6].querySelector('.n');
+    var line = rows[wi - wFrom].querySelector('.n');
     if (!(wx['new'] || []).length) { T(!line, wi + '일째는 새 낱말이 없는데 줄이 있음'); continue; }
     T(!!line, wi + '일째 새 낱말 줄이 없음');
     if (!line) continue;
@@ -445,16 +470,26 @@ function boot(file, qs, opt) {
     });
   }
 
-  /* 마지막 주 — 지어내지 않고 있는 만큼만.
-     원장이 고르게 차 있는 지금은 부분 주가 생기지 않으므로, 원장에 구멍을 내어 닿게 한다.
+  /* 마지막 틀 — 지어내지 않고 있는 만큼만.
+     원장이 고르게 차 있는 지금은 부분 묶음이 생기지 않으므로, 원장에 구멍을 내어 닿게 한다.
      (원장이 학년마다 다른 길이로 자라면 이 상황이 실제로 온다) */
-  var last = DATA.maxDay(g);
-  var o2 = boot('sents_print.html', '?grade=' + g + '&day=' + last + '&mode=week', { cap: last - 2 });
+  var last = DATA.maxDay(g), cap = last - 2;
+  var o2 = boot('sents_print.html', '?grade=' + g + '&day=' + last + '&mode=week', { cap: cap });
+  var lastPx = DATA.patOf(g, last);
+  T(!!lastPx, '마지막 일차의 틀을 원장이 모름');
+  var wantN = cap - lastPx.from + 1;           /* 틀 시작일부터 cap 까지만 실린다 */
   var r2 = o2.all('.wk tbody tr');
-  T(r2.length === 3, '구멍 난 원장에서 주간표가 있는 만큼만 나오지 않음: ' + r2.length + '줄 (기대 3)');
-  T(o2.txt('.wk').indexOf('undefined') < 0, '주간표가 빈 날을 지어냄');
-  T(r2.length && r2[r2.length - 1].querySelector('.s').textContent === DATA.day(g, last - 2).sent,
-    '구멍 난 원장에서 주간표 마지막 줄이 어긋남');
+  T(r2.length === wantN,
+    '구멍 난 원장에서 틀 묶음표가 있는 만큼만 나오지 않음: ' + r2.length + '줄 (기대 ' + wantN + ')');
+  T(o2.txt('.wk').indexOf('undefined') < 0, '틀 묶음표가 빈 날을 지어냄');
+  T(r2.length && r2[r2.length - 1].querySelector('.s').textContent === DATA.day(g, cap).sent,
+    '구멍 난 원장에서 틀 묶음표 마지막 줄이 어긋남');
+  /* ★머리가 실제로 실은 범위만 말하는가 — 틀은 36~40인데 3줄만 실렸다면
+     머리에 40이 남아 있으면 안 된다. 이 차시가 걷어낸 「지어내기」와 같은 종류다. */
+  T(o2.txt('.shead').indexOf(String(cap)) >= 0,
+    '부분 묶음인데 머리가 실제로 실은 끝 일차(' + cap + ')를 말하지 않음: ' + o2.txt('.shead'));
+  T(o2.txt('.shead').indexOf(String(lastPx.to) + '일째') < 0,
+    '부분 묶음인데 머리가 안 실린 날(' + lastPx.to + '일째)까지 실었다고 주장함');
 
   /* 원장 없는 학년·이상 일차는 조용히 접는다 */
   var o3 = boot('sents_print.html', '?grade=1&day=999');

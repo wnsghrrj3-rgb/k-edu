@@ -481,8 +481,18 @@ await (async function(){
       T(pt.indexOf(p.len + '일 중 ' + p.idx + '일째') >= 0,
         'g' + g + ' d' + d + ' 틀 안 진행 표기가 원장과 다름: ' + pt);
 
-      /* 원장 내부 코드(P4)가 아이 화면에 새지 않는가 */
-      T(/\bP\d+\b/.test(o.txt('.sheet')) === false, 'g' + g + ' d' + d + ' 1막에 내부 코드가 노출됨');
+      /* 원장 내부 코드(P4)가 아이 화면에 새지 않는가.
+         ★예전 이 자리는 /\bP\d+\b/ 였는데 **한 번도 작동한 적이 없다**. 구석 배지의 글자는
+           바로 옆 문장과 붙어 "P1Hello, I'm Ben." 이 되므로 숫자 뒤에 낱말 경계가 안 생긴다.
+           역검증 5번이 이 헛그린을 잡아냈다(D8-ⓔ). 그래서 두 갈래로 바꾼다 —
+           (i) 원장이 쥔 그날의 코드 문자열을 정면으로 찾고(추측 대신 추종),
+           (ii) 홀로 선 코드 노드가 있는지 구조로 본다. 경계에 기대지 않는다. */
+      var code = D.day(g, d).pat;
+      T(o.txt('.sheet').indexOf(code) < 0,
+        'g' + g + ' d' + d + ' 1막에 원장 내부 코드(' + code + ')가 노출됨');
+      T(Array.prototype.slice.call(o.doc.querySelectorAll('.sheet *'))
+        .every(function(e){ return !/^P\d+$/.test(e.textContent.trim()); }),
+        'g' + g + ' d' + d + ' 1막에 내부 코드만 담은 칸이 있음');
     });
   });
 
