@@ -480,12 +480,50 @@
     }
   }
 
+  /* ── 본보기↔미션 다리 + 👻 따라 그리기 ──
+     같은 원리를 다루는 미션↔본보기 연결. 고스트 = 본보기 장을 연하게 비춰
+     "보기 → 따라 그리기 → 혼자 그리기" 3단 학습 동선을 만든다.
+     장수가 달라도(미션 3장 ↔ 본보기 8장) 진행 비율로 대응시킨다. */
+  var MISSION_LINKS = {
+    ball:'ball',      // 공 튀기기 3장 ↔ 스쿼시&스트레치 8장
+    frog:'hop',       // 폴짝 개구리 ↔ 토끼 점프(준비 동작→포물선)
+    flower:'bloom',   // 꽃 피어나기 ↔ 성장
+    candle:'candle',  // 흔들리는 촛불 ↔ 반복의 힘
+    walk:'chick',     // 걷기 사이클 ↔ 병아리 보행 사이클
+    arc:'hop',        // 포물선 튀는 공 ↔ 토끼 점프의 포물선
+    face:'face'       // 표정 바꾸기 ↔ 감정
+  };
+  function linkedSample(missionId){
+    var sid = MISSION_LINKS[missionId];
+    return sid ? findSample(sid) : null;
+  }
+  function ghostFrameFor(count, sampleFrames, cur){
+    count=count|0; sampleFrames=sampleFrames|0; cur=cur|0;
+    if(sampleFrames<=0 || count<=0) return 0;
+    if(cur<0) cur=0; if(cur>=count) cur=count-1;
+    if(count===sampleFrames) return cur;
+    var idx=Math.floor(cur*sampleFrames/count);
+    if(idx<0) idx=0; if(idx>=sampleFrames) idx=sampleFrames-1;
+    return idx;
+  }
+  function ghostPlan(st){
+    st=st||{};
+    if(!st.on || !st.sampleId || st.playing) return {show:false};
+    var S=findSample(st.sampleId);
+    if(!S) return {show:false};
+    return { show:true, sampleId:S.id,
+             frameIndex:ghostFrameFor(st.count|0, S.frames, st.cur|0),
+             tint:'#0FA98E', opacity:0.34 };
+  }
+
   var API = { MAX_FRAMES:MAX_FRAMES, MIN_FRAMES:MIN_FRAMES, clampFps:clampFps,
               createFrameStore:createFrameStore, onionLayers:onionLayers,
               createPlayback:createPlayback, MISSIONS:MISSIONS, findMission:findMission,
               missionsByGrade:missionsByGrade, createMissionRun:createMissionRun,
               crc32:crc32, buildStoreZip:buildStoreZip,
-              SAMPLES:SAMPLES, findSample:findSample, drawSample:drawSample };
+              SAMPLES:SAMPLES, findSample:findSample, drawSample:drawSample,
+              MISSION_LINKS:MISSION_LINKS, linkedSample:linkedSample,
+              ghostFrameFor:ghostFrameFor, ghostPlan:ghostPlan };
   if(typeof module!=='undefined' && module.exports){ module.exports = API; }
   if(typeof window!=='undefined'){ window.AnimLab = API; }
 })();
@@ -663,6 +701,9 @@ body.bgmode #onion{opacity:0}
 .guide-band.show{display:block}
 .guide-band .gstep{color:var(--accent);font-family:var(--kedu-title);margin-right:7px}
 .guide-band .gprog{display:block;margin-top:5px;font-size:12px;color:var(--mut)}
+.guide-band .gghost{display:block;margin-top:3px;font-size:11.5px;color:#2DD4BF}
+.mcard .mlink{font-size:12px;opacity:.85}
+#ghostBtn.on{background:rgba(15,169,142,.22);border-color:rgba(45,212,191,.55);color:#5EEAD4}
 
 /* 슬라이드 패널 공통 */
 .sheet-bg{position:fixed;inset:0;background:rgba(10,13,18,.5);opacity:0;pointer-events:none;
@@ -788,6 +829,7 @@ body.bgmode #onion{opacity:0}
   <div class="strip-controls">
     <button class="pbtn play" id="playBtn">▶ 재생</button>
     <button class="pbtn" id="onionBtn" title="어니언 스킨 — 앞뒤 장을 비쳐 보기">🧅 겹쳐보기</button>
+    <button class="pbtn" id="ghostBtn" title="따라 그리기 — 본보기를 연하게 비춰요" style="display:none">👻 따라 그리기</button>
     <div class="seg" id="modeSeg">
       <button class="pbtn on" data-mode="loop">🔁 반복</button>
       <button class="pbtn" data-mode="pingpong">↔ 왕복</button>
@@ -856,6 +898,7 @@ body.bgmode #onion{opacity:0}
   var store = L.createFrameStore({ start:1 });
   var play  = L.createPlayback({ fps:8, mode:'loop' });
   var onionOn = false;
+  var ghostOn = false, ghostSampleId = null;   // 👻 따라 그리기(본보기 비추기)
 
   // 각 프레임 = 오프스크린 캔버스(픽셀 저장소). 프레임 id → canvas
   var pixMap = {};
@@ -1040,15 +1083,23 @@ body.bgmode #onion{opacity:0}
         hd.textContent=grp==='char'?'🦊 캐릭터 — 우리 친구들이 움직여요':'📐 움직임의 원리';
         list.appendChild(hd); lastGrp=grp;
       }
-      var row=document.createElement('button');
-      row.style.cssText='display:flex;gap:10px;align-items:center;text-align:left;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:8px;cursor:pointer';
+      var row=document.createElement('div');
+      row.style.cssText='display:flex;gap:8px;align-items:stretch;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:8px';
+      var main=document.createElement('button');
+      main.style.cssText='display:flex;gap:10px;align-items:center;text-align:left;background:none;border:0;padding:0;cursor:pointer;flex:1;min-width:0';
       var cv=document.createElement('canvas'); cv.width=156; cv.height=108;
       cv.style.cssText='border-radius:9px;background:#FCFAF5;flex-shrink:0';
       var txt=document.createElement('div');
       txt.innerHTML='<div style="font-weight:700;font-size:14.5px;color:var(--ink)">'+S.emoji+' '+S.title+
         '</div><div style="font-size:11.5px;color:var(--mut);margin-top:3px;line-height:1.45">'+S.frames+'장 · '+S.fps+'fps<br>'+S.tip+'</div>';
-      row.appendChild(cv); row.appendChild(txt);
-      row.addEventListener('click', function(){ loadSample(S.id); });
+      main.appendChild(cv); main.appendChild(txt);
+      main.addEventListener('click', function(){ loadSample(S.id); });
+      var tb=document.createElement('button');
+      tb.title='본보기를 연하게 비추며 빈 장에 직접 따라 그려요';
+      tb.style.cssText='flex-shrink:0;align-self:center;background:rgba(15,169,142,.14);border:1px solid rgba(15,169,142,.4);color:var(--ink);border-radius:11px;padding:8px 9px;cursor:pointer;font-size:11.5px;font-weight:700;line-height:1.3';
+      tb.innerHTML='✏️<br>따라<br>그리기';
+      tb.addEventListener('click', function(e){ e.stopPropagation(); traceSample(S.id); });
+      row.appendChild(main); row.appendChild(tb);
       list.appendChild(row);
       /* 살아있는 미리보기 — 각자 fps로 순환 */
       var fi=0, g=cv.getContext('2d'), off=document.createElement('canvas'); off.width=W; off.height=H;
@@ -1087,8 +1138,28 @@ body.bgmode #onion{opacity:0}
     play.setFps(S.fps);
     document.getElementById('fps').value=S.fps;
     document.getElementById('fpsLbl').textContent=S.fps+' fps';
+    setGhostSource(S.id, false);   // 장을 지우고 다시 그릴 때 👻로 비춰볼 수 있게 대기
     closeSampleDrawer();
     toast('📽️ '+S.title+' — '+S.tip);
+  }
+  /* ✏️ 따라 그리기 — 본보기 장수만큼 빈 장을 만들고 👻를 켠 채 시작.
+     "구경(적재)"과 "혼자 그리기(미션)" 사이의 다리. */
+  function traceSample(id){
+    var S=L.findSample(id); if(!S) return;
+    confirmPend(); commitToFrame();
+    if(anySampleInk() && !confirm('지금 그리던 장들을 지우고 「'+S.title+'」 따라 그리기를 시작할까요?')) return;
+    while(store.count()>1) store.remove(store.count()-1);
+    while(store.count()<S.frames){ if(!store.add().ok) break; }
+    for(var i=0;i<store.count();i++){
+      frameCanvas(store.frameAt(i)).getContext('2d').clearRect(0,0,W,H);
+    }
+    store.setCurrent(0); loadFrame(); buildStrip();
+    play.setFps(S.fps);
+    document.getElementById('fps').value=S.fps;
+    document.getElementById('fpsLbl').textContent=S.fps+' fps';
+    setGhostSource(S.id, true);
+    closeSampleDrawer();
+    toast('✏️ '+S.title+' 따라 그리기 — 비치는 그림을 따라 그리고 ▶ 재생해보세요');
   }
   function closeDrawer(){ stampDrawer.classList.remove('show'); }
   document.getElementById('sdClose').addEventListener('click', closeDrawer);
@@ -1301,6 +1372,18 @@ body.bgmode #onion{opacity:0}
   function renderOnion(){
     onCtx.clearRect(0,0,W,H);
     if(play.isPlaying()) return;
+    /* 👻 고스트(본보기 비추기) — 어니언보다 먼저 = 맨 아래층 */
+    var gp=L.ghostPlan({ on:ghostOn, sampleId:ghostSampleId, playing:false,
+                         count:store.count(), cur:store.current() });
+    if(gp.show){
+      tintCtx.clearRect(0,0,W,H);
+      tintCtx.globalCompositeOperation='source-over';
+      L.drawSample(tintCtx, gp.sampleId, gp.frameIndex);
+      tintCtx.globalCompositeOperation='source-atop';   // 본보기 획에만 청록 착색
+      tintCtx.fillStyle=gp.tint; tintCtx.fillRect(0,0,W,H);
+      tintCtx.globalCompositeOperation='source-over';
+      onCtx.globalAlpha=gp.opacity; onCtx.drawImage(tintCv,0,0); onCtx.globalAlpha=1;
+    }
     var layers=L.onionLayers(store.count(), store.current(), {on:onionOn});
     layers.forEach(function(ly){
       var src=frameCanvas(store.frameAt(ly.index));
@@ -1449,6 +1532,19 @@ body.bgmode #onion{opacity:0}
   document.getElementById('onionBtn').addEventListener('click', function(){
     onionOn=!onionOn; this.classList.toggle('on', onionOn); renderOnion();
   });
+  // ── 👻 따라 그리기(고스트) — 본보기·연결 미션이 있을 때만 노출
+  var ghostBtn=document.getElementById('ghostBtn');
+  function setGhostSource(id, turnOn){
+    ghostSampleId=id||null;
+    ghostBtn.style.display=ghostSampleId?'':'none';
+    ghostOn=!!(ghostSampleId&&turnOn);
+    ghostBtn.classList.toggle('on', ghostOn);
+    renderOnion(); if(typeof renderGuide==='function') renderGuide();
+  }
+  ghostBtn.addEventListener('click', function(){
+    ghostOn=!ghostOn; this.classList.toggle('on', ghostOn); renderOnion(); renderGuide();
+    toast(ghostOn?'👻 본보기가 연하게 비쳐요 — 따라 그려보세요':'👻 따라 그리기를 껐어요');
+  });
   document.getElementById('modeSeg').addEventListener('click', function(e){
     var b=e.target.closest('.pbtn'); if(!b) return;
     play.setMode(b.dataset.mode);
@@ -1488,7 +1584,8 @@ body.bgmode #onion{opacity:0}
     var g = M.guides[cur] || '자유롭게 더 그려도 좋아요';
     guideBand.innerHTML='<span class="gstep">'+(cur+1)+'장</span>'+g+
       '<span class="gprog">'+st.have+' / '+st.need+' 장 완성'+
-      (st.done?' — 다 채웠어요! ▶ 재생해보세요':'')+'</span>';
+      (st.done?' — 다 채웠어요! ▶ 재생해보세요':'')+'</span>'+
+      (ghostSampleId&&!ghostOn?'<span class="gghost">👻 따라 그리기를 켜면 본보기가 비쳐요</span>':'');
     guideBand.classList.add('show');
   }
   function refreshMission(){
@@ -1509,11 +1606,14 @@ body.bgmode #onion{opacity:0}
     play.setFps(M.fps); document.getElementById('fps').value=M.fps;
     document.getElementById('fpsLbl').textContent=M.fps+' fps';
     if(M.needGuide){ onionOn=true; document.getElementById('onionBtn').classList.add('on'); renderOnion(); }
+    var LS=L.linkedSample(M.id);
+    setGhostSource(LS?LS.id:null, false);
     refreshMission(); closeMission();
     toast('미션: '+M.title+' — '+M.hint);
   }
   function clearMission(){
     activeMission=null; missionRun=null; guideBand.classList.remove('show');
+    setGhostSource(null, false);
     closeMission(); toast('자유 그리기로 바꿨어요');
   }
 
@@ -1523,7 +1623,8 @@ body.bgmode #onion{opacity:0}
     L.missionsByGrade(curGrade).forEach(function(M){
       var el=document.createElement('button');
       el.className='mcard'+(activeMission&&activeMission.id===M.id?' active':'')+(completedIds[M.id]?' completed':'');
-      el.innerHTML='<div class="mt">'+M.title+' <span class="mf">'+M.frames+'장</span></div>'+
+      el.innerHTML='<div class="mt">'+M.title+' <span class="mf">'+M.frames+'장</span>'+
+        (L.linkedSample(M.id)?' <span class="mlink" title="같은 원리의 본보기가 연결되어 있어요">📽️</span>':'')+'</div>'+
         '<div class="mh">'+M.hint+'</div><span class="mdone">✓ 완성</span>';
       el.addEventListener('click', function(){ selectMission(M.id); });
       box.appendChild(el);
