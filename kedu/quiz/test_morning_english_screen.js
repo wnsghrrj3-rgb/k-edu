@@ -133,7 +133,10 @@ DATA.grades().forEach(function (g) {
     grab(/function routineTxt\(r\)\{[\s\S]*?\n  \}/, 'routineTxt'),
     grab(/var ACTIVITY = \{[\s\S]*?\n  \};/, 'ACTIVITY'),
     grab(/function activityLink\(sess\)\{[\s\S]*?\n  \}/, 'activityLink'),
-    grab(/function todayTag\(sess\)\{[\s\S]*?\n  \}/, 'todayTag')
+    grab(/function todayTag\(sess\)\{[\s\S]*?\n  \}/, 'todayTag'),
+    /* cur 은 한 줄짜리라 `\n  }` 로 끝나지 않는다 — 줄 안에서 닫는다 */
+    grab(/function cur\(\)\{[^\n]*\}/, 'cur'),
+    grab(/function renderBoard\(\)\{[\s\S]*?\n  \}/, 'renderBoard')
   ];
   if (parts.some(function (x) { return !x; })) return;
 
@@ -143,7 +146,10 @@ DATA.grades().forEach(function (g) {
   /* todaySess 는 화면의 `state.board` 를 읽는다 — 상수 대조가 아니라 실제로 굴려 보려고
      같은 이름의 그릇을 만들어 준다. 세션이 아직 안 왔을 때 null 을 내는지가 이 함수의 전부다. */
   w.eval('var state = { board: null, routine: null, classes: [], cc: null };');
-  w.eval(parts.join('\n') + '\nthis.__ = { so: subjectOptions, ok: subjectOk, pl: previewLinks, dc: dayCells, bd: badDays, rt: routineTxt, al: activityLink, tt: todayTag, ts: todaySess, setBoard: function(b){ state.board = b; } };');
+  /* renderBoard 는 화면을 실제로 그린다 — `db`·`toast`·`loadBoard` 는 눌렀을 때만 쓰이므로
+     그리기까지는 닿지 않는다. 그래도 선언은 있어야 평가가 된다. */
+  w.eval('var db = null, toast = function(){}, loadBoard = function(){};');
+  w.eval(parts.join('\n') + '\nthis.__ = { so: subjectOptions, ok: subjectOk, pl: previewLinks, dc: dayCells, bd: badDays, rt: routineTxt, al: activityLink, tt: todayTag, ts: todaySess, rb: renderBoard, setBoard: function(b){ state.board = b; }, setRoutine: function(r){ state.routine = r; } };');
   var F = w.__;
 
   /* (1) 학년 가드 — 원장 있는 학년만 고를 수 있다. 학년 목록은 원장이 정한다(박으면 원장이 늘어도 화면이 모른다) */
@@ -223,11 +229,44 @@ DATA.grades().forEach(function (g) {
   T(F.ts() === null, '활동 없는 날인데 todaySess 가 세션을 내줌');
   F.setBoard({ status: 'ok', session: null });
   T(F.ts() === null, '세션이 비었는데 todaySess 가 그것을 내줌');
+  /* ★역검증 ④ 가 뚫고 지나간 자리 — `status` 를 안 보고 `b.session` 만 보는 형태는 위 세 경우를
+       **전부 통과한다**(그 셋은 애초에 세션이 없다). 그래서 준비되지 않은 현황판에 세션이
+       딸려 온 상태를 직접 만들어 본다. 이 한 줄이 없으면 「status 를 본다」는 계약이
+       아무도 안 보는 말로 남는다. */
+  F.setBoard({ status: 'off_day', session: todayE });
+  T(F.ts() === null, '준비되지 않은 현황판에 딸려 온 세션을 오늘로 씀');
   F.setBoard({ status: 'ok', session: todayE });
   T(F.ts() === todayE, '현황판에 오늘 세션이 있는데 todaySess 가 못 꺼냄');
   T(F.pl(RT, {}, F.ts()).indexOf('?key=g3_english_c007') >= 0,
     '현황판을 통해 꺼낸 세션이 통로에 안 실림 — 두 함수를 잇는 배선이 끊겼다');
   F.setBoard(null);
+
+  /* (4-d) 통로 **재그리기** — 두 함수가 이어져 있어도 그릴 때를 놓치면 소용이 없다.
+       `renderReady` 가 도는 시점엔 `ma_today` 가 아직 안 와서 `state.board` 가 비어 있다.
+       현황판이 온 뒤 다시 그리지 않으면 통로는 **영영 첫날만 연다** — 교사가 매일 누르는
+       버튼이 매일 1일째를 여는 상태가 조용히 그린을 받는다.
+     ★문자열 대조로는 못 잡는다: `previewLinks(r, c, todaySess())` 호출이 renderReady 쪽에
+       그대로 남아 있어 정규식은 통과한다(역검증 ⑫ 가 실제로 뚫고 지나갔다).
+       그래서 renderBoard 를 **실제로 굴려** 그릇의 내용이 오늘 몫으로 바뀌는지 본다.
+     ★짝으로 본다 — ① 다시 그릴 그릇(#prev)을 renderReady 가 남기는가
+                     ② renderBoard 가 그 그릇을 오늘 몫으로 채우는가.
+       하나만 보면 「그릇만 있고 안 채움」·「채우려는데 그릇이 없음」이 각각 통과한다. */
+  T(/<div id="prev">'\s*\+\s*previewLinks\(/.test(t),
+    '교사 화면이 통로를 다시 그릴 그릇(#prev)을 남기지 않음 — 채울 자리가 없다');
+  w.document.body.innerHTML = '<div id="prev"></div><div id="board"></div>';
+  F.setRoutine(RT);
+  F.setBoard({ status: 'ok', session: todayE, summary: { total: 0, submitted: 0 }, rows: [] });
+  F.rb();
+  var pvHtml = w.document.getElementById('prev').innerHTML;
+  T(pvHtml.indexOf('?key=g3_english_c007') >= 0,
+    '현황판이 온 뒤에도 통로가 오늘을 모름 — 다시 안 그려서 영영 첫날만 열린다');
+  T(/오늘 나가는 영어 보기/.test(pvHtml), '다시 그린 통로의 라벨이 오늘을 안 말함');
+  /* 그릇이 없는 화면에서도 조용히 지나가야 한다 — 여기서 터지면 현황판까지 함께 죽는다 */
+  var threw = false;
+  w.document.body.innerHTML = '<div id="board"></div>';
+  try { F.rb(); } catch (e) { threw = true; }
+  T(threw === false, '통로 그릇이 없을 때 renderBoard 가 터짐 — 현황판까지 함께 죽는다');
+  F.setBoard(null); F.setRoutine(null);
 
   /* (5) 사람 말 — 영어만 하는 반은 '하루 한 문장' */
   T(F.rt({ days: { mon: 'english', tue: 'english' } }).indexOf('하루 한 문장') >= 0,
@@ -656,6 +695,10 @@ var TTS_SRC = '/english/v3/engine/k-tts.js';
       ★두 갈래로 함께 본다(⑪-2·절 ⑩ 과 같은 이유):
         (a) 화면이 **자기 말**을 하는 마디만 골라 정면 대조 — 원장 문장이 실리는 자리는 뺀다.
         (b) 본문에서 원장 문자열을 전부 걷어낸 나머지에도 0 — 나중에 새 문구를 어디에 붙여도 걸린다.
+        ★이 두 갈래가 서로를 대신 못 한다는 근거는 **실측**이다(역검증 ⑬·⑭):
+          (b) 는 원장 뜻 `today=오늘` 이 실재하는 **g4·g5 에서 「오늘」을 통째로 지워 눈이 먼다** —
+          g4 머리에만 「오늘」을 심은 변조가 (b) 를 그대로 빠져나갔고 (a) 가 잡았다.
+          거꾸로 지정하지 않은 자리에 붙인 새 문구는 (a) 가 못 보고 (b) 가 잡는다.
       ★이 절은 반드시 `Promise.all` 바깥(최상위)에 둔다 — 9.18차에 절 ⑩ 이 `.catch` 안에
         떨어져 **한 번도 안 돌면서 그린을 받은** 전례가 있다. 숫자가 안 늘면 그게 신호다. */
 (function () {
@@ -663,6 +706,35 @@ var TTS_SRC = '/english/v3/engine/k-tts.js';
   var NAMES = ['오늘의 문장'];   /* 활동 **이름** — 제목·로고와 같은 자격이라 규약 대상이 아니다 */
 
   function vis(o, sel) { var e = o.$(sel); return !!e && !/display\s*:\s*none/.test(e.getAttribute('style') || ''); }
+
+  /* ★(a) 갈래 — 화면이 **자기 말**을 하는 마디를 지정해 정면으로 본다.
+       (b) 갈래(`ownLeft`)만으로는 부족하다는 것이 실측으로 섰다: **원장 뜻 사전에
+       `today=오늘` 이 실재한다**(g4 d4 · g5 d32). `ownLeft` 는 원장 문자열을 전부 걷어내므로
+       그 두 학년에서는 「오늘」이 본문에서 **통째로 지워져 눈이 먼다** — 역검증 ⑭ 가 g4 머리에만
+       「오늘」을 심고 그대로 빠져나갔다. 그 자리를 이 갈래가 정면으로 본다.
+       거꾸로 (a)는 지정하지 않은 자리를 못 보므로(새 문구를 아무 데나 붙이면 빠져나간다)
+       둘을 나란히 둔다. 어느 한쪽도 다른 쪽을 대신하지 못한다.
+     ★지정 마디는 **원장 문장이 실리지 않는 곳만** 고른다 — 문장·뜻·타일·새 낱말 배지는 뺀다.
+     ★감춰진 마디는 걷어낸다(되돌아가기 칩은 늘 본문에 있고 `display` 로만 갈린다).
+       그래서 부르는 쪽이 「빈 화면 아님」을 짝으로 함께 본다. */
+  var OWN = {
+    'sents_preview.html': ['#ttl', 'h2', '.hint', '.pick label', '#meta',
+                           '#sentCard h3', '#sentCard .none', '.way', '.ways .note', '.foot', '#back'],
+    'sents_print.html': ['.bar button', '.shead .ttl', '.shead .sub', '.shead .who',
+                         '.blk h3', '.none', '.card-foot', '.wk th', '.wknote', '.signrow', '.miss']
+  };
+  function ownSaid(o, file) {
+    var body = o.doc.body.cloneNode(true);
+    Array.prototype.slice.call(body.querySelectorAll('[style]')).forEach(function (e) {
+      if (/display\s*:\s*none/.test(e.getAttribute('style') || '')) e.parentNode.removeChild(e);
+    });
+    var t = (OWN[file] || []).map(function (s) {
+      return Array.prototype.slice.call(body.querySelectorAll(s))
+        .map(function (e) { return e.textContent; }).join(' ');
+    }).join(' ');
+    NAMES.forEach(function (n) { t = t.split(n).join(' '); });
+    return t;
+  }
 
   DATA.grades().forEach(function (g) {
     var d0 = Math.min(7, DATA.maxDay(g));      /* 오늘이라 칠 일차 */
@@ -677,9 +749,14 @@ var TTS_SRC = '/english/v3/engine/k-tts.js';
       if (!o) return;
       var left = ownLeft(o, g, { hidden: false, names: NAMES });
       T(TODAY.test(left) === false,
-        'g' + g + ' ' + c[0] + c[1] + ' 가 진도를 모르면서 「오늘」이라 말함: '
+        'g' + g + ' ' + c[0] + c[1] + ' 본문 나머지가 진도를 모르면서 「오늘」이라 말함: '
         + left.replace(/\s+/g, ' ').slice(0, 140));
       T(left.replace(/\s+/g, '').length > 20, 'g' + g + ' ' + c[0] + ' 가 사실상 빈 화면인데 통과함');
+      var said = ownSaid(o, c[0]);
+      T(TODAY.test(said) === false,
+        'g' + g + ' ' + c[0] + c[1] + ' 지정 마디가 진도를 모르면서 「오늘」이라 말함: '
+        + said.replace(/\s+/g, ' ').slice(0, 140));
+      T(said.replace(/\s+/g, '').length > 20, 'g' + g + ' ' + c[0] + ' 지정 마디가 통째로 비어 있는데 통과함');
       T(vis(o, '#back') === false, 'g' + g + ' ' + c[0] + ' 가 오늘을 모르는데 되돌아가기 칩을 띄움');
     });
 
@@ -723,7 +800,11 @@ var TTS_SRC = '/english/v3/engine/k-tts.js';
       var e = o.$('#back'); e.parentNode.removeChild(e);
       var left = ownLeft(o, g, { hidden: false, names: NAMES });
       T(TODAY.test(left) === false,
-        'g' + g + ' ' + c[0] + ' 가 진도를 벗어난 날을 「오늘」이라 부름: ' + left.replace(/\s+/g, ' ').slice(0, 140));
+        'g' + g + ' ' + c[0] + ' 본문 나머지가 진도를 벗어난 날을 「오늘」이라 부름: ' + left.replace(/\s+/g, ' ').slice(0, 140));
+      var saidC = ownSaid(o, c[0]);   /* 칩은 위에서 이미 떼어 냈다 */
+      T(TODAY.test(saidC) === false,
+        'g' + g + ' ' + c[0] + ' 지정 마디가 진도를 벗어난 날을 「오늘」이라 부름: '
+        + saidC.replace(/\s+/g, ' ').slice(0, 140));
     });
     var oA = boot('sents_preview.html', '?key=' + KEY + '&day=' + dAway);
     if (oA) {
@@ -745,7 +826,11 @@ var TTS_SRC = '/english/v3/engine/k-tts.js';
       if (!o) return;
       var left = ownLeft(o, DATA.grades()[0], { hidden: false, names: NAMES });
       T(TODAY.test(left) === false,
-        f + ' 가 원장 없는 ' + g + '학년 c키를 받고도 「오늘」이라 말함: ' + left.replace(/\s+/g, ' ').slice(0, 120));
+        f + ' 본문 나머지가 원장 없는 ' + g + '학년 c키를 받고도 「오늘」이라 말함: ' + left.replace(/\s+/g, ' ').slice(0, 120));
+      var saidD = ownSaid(o, f);
+      T(TODAY.test(saidD) === false,
+        f + ' 지정 마디가 원장 없는 ' + g + '학년 c키를 받고도 「오늘」이라 말함: '
+        + saidD.replace(/\s+/g, ' ').slice(0, 120));
       T(vis(o, '#back') === false, f + ' 가 원장 없는 학년 c키에서 되돌아가기 칩을 띄움');
     });
   });
