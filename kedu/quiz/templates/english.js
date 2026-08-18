@@ -7,12 +7,18 @@
  *   하루 = 새 문장 1개. 문항은 오늘 문장을 여러 각도로 짚고, 나머지는
  *   그동안 배운 문장 복습으로 채운다 — 매일 하는 활동은 누적이 생명.
  *
- * 문항 5형(설계 §5)
+ * 문항 6형(설계 §5)
  *   t_order  낱말 카드 배열 → 바른 문장 고르기      (choice)
  *   t_blank  빈칸에 알맞은 말                        (choice)
  *   t_ko2en  뜻 → 영어 문장                          (choice)
- *   t_en2ko  영어 문장 → 뜻                          (choice)
- *   t_ox     문장·뜻 짝이 맞는가                     (ox)
+ *   t_en2ko  영어 문장 → 뜻                          (choice)  🔊 다시 듣기
+ *   t_ox     문장·뜻 짝이 맞는가                     (ox)      🔊 다시 듣기
+ *   t_listen 듣고 알맞은 뜻 고르기                   (choice)  🔊 소리가 곧 문제
+ *
+ * ★소리 규약(D8-ⓓ) — 소리는 **이미 화면에 다 보이는 문장에만** 붙는다.
+ *   t_order·t_blank·t_ko2en 은 정답이 문장 자체(또는 그 일부)라서 읽어 주면 답이 샌다.
+ *   t_en2ko·t_ox 는 문장이 발문에 그대로 있고 답은 뜻 쪽이라 읽어 줘도 아무것도 안 샌다.
+ *   t_listen 만 예외로 문장을 발문에서 빼고 소리에 싣는다(그래야 듣기다).
  *
  * ★어휘 사다리(설계 §3, 헌법급)를 문항까지 연장한다.
  *   발문·보기·해설에 나오는 영어는 **그날까지 누적 단어장 안에서만** 나온다.
@@ -246,19 +252,31 @@
     };
   }
 
-  /* ④ 영어 문장 → 뜻 */
-  function tplEn2Ko(pool, allPairs, idx, tag, diff) {
+  /* ④ 영어 문장 → 뜻   ·   ⑥ 듣고 뜻 고르기(byEar)
+   *
+   * ★한 함수에서 갈라 낸다 — 오답 후보·검증·해설이 같아야 하고, 따로 쓰면 반드시 어긋난다.
+   *
+   * byEar=false : 문장을 발문에 글로 보여 준다. 소리는 「다시 듣기」로 덤이다.
+   * byEar=true  : 문장을 발문에 **넣지 않는다**. 넣으면 읽고 답할 수 있어 듣기가 아니다.
+   *   소리 없는 기기에서는 kquiz-ui 가 그 문장을 글로 대신 보여 주고, 그러면 이 문항은
+   *   자연스럽게 ④ 로 내려앉는다 — 답할 수 없는 문항이 되지도, 답이 거저 나오지도 않는다
+   *   (문장이 보여도 뜻은 여전히 골라야 한다). 설계 §5·§9, D3 확정 「소리는 비계지 관문이 아니다」. */
+  function tplEn2Ko(pool, allPairs, idx, tag, diff, byEar) {
     if (!pool.length || allPairs.length < 3) return null;
     return {
-      id: 't_en2ko_' + tag, type: 'pick', itemType: 'choice', difficulty: diff,
-      concept: '문장의 뜻',
+      id: (byEar ? 't_listen_' : 't_en2ko_') + tag, type: 'pick', itemType: 'choice', difficulty: diff,
+      concept: byEar ? '듣고 뜻 알기' : '문장의 뜻',
       gen: function (rng) {
         var x = rng.pick(pool);
         var safe = allPairs.filter(function (p) { return !idx[x.sent + SEP + p.ko]; });
         var cand = othersBy(safe, function (p) { return p.ko; }, x.ko, rng, 3);
         return { x: x, cand: cand };
       },
-      render: function (p) { return '「' + p.x.sent + '」 는 무슨 뜻일까요?'; },
+      render: function (p) {
+        return byEar ? '잘 듣고 알맞은 뜻을 고르세요.'
+                     : '「' + p.x.sent + '」 는 무슨 뜻일까요?';
+      },
+      tts: function (p) { return { text: p.x.sent, onscreen: !byEar }; },
       answer: function (p) { return p.x.ko; },
       distractors: function (p) { return p.cand.map(function (c) { return c.ko; }); },
       validate: function (p) { return p.cand.length >= 1; },
@@ -283,6 +301,9 @@
       render: function (p) {
         return '「' + p.x.sent + '」 는 「' + p.shown.ko + '」 라는 뜻이다.';
       },
+      /* 문장이 발문에 그대로 있으니 읽어 줘도 답이 새지 않는다 — 순수한 덤이다.
+         답은 뜻이 맞는지(O·X)에 달려 있고 소리는 거기에 아무 말도 하지 않는다. */
+      tts: function (p) { return { text: p.x.sent, onscreen: true }; },
       answer: function (p) { return p.truth; },
       validate: function (p) { return !!p.shown; },
       explain: function (p) {
@@ -325,6 +346,14 @@
         tpls.push(tplEn2Ko(prevPairsW, allPairs, idx, 'rev', 2));
         tpls.push(tplOx(prevPairsW, allPairs, idx, 'rev', 3));
       }
+      /* ⑥ 듣기 — 오늘 것과 복습을 한 통에 담아 **정확히 하나만** 세운다.
+         ★하나인 것이 취향이 아니라 구조다: core 의 라운드로빈은 usable[ti % 길이] 를
+         앞에서부터 돌며 10문항을 채우고 멈춘다. 템플릿이 11개가 되면 열한 번째는
+         도달 전에 세트가 차서 **영영 안 뽑힌다**(실측: 9개일 때 첫 템플릿만 1175회로
+         두 배였던 것과 같은 이유). 10개로 맞추면 열 자리에 열 템플릿이 하나씩 들어가
+         듣기가 매일 한 문항 보장되고, 덤으로 지금까지의 배분 쏠림도 사라진다.
+         pool 은 recency 가중(오늘 ×3)이라 대개 오늘 문장이지만 옛 문장도 귀로 돌아온다. */
+      tpls.push(tplEn2Ko(pairsOfMany(weighted(upto)), allPairs, idx, 'ear', 2, true));
 
       reg('g' + grade + '_english_c' + ('00' + i).slice(-3), {
         source: grade + '학년 아침영어 ' + i + '일차 「' + today.sent + '」',

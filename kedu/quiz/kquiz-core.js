@@ -142,6 +142,13 @@
     };
     if (tpl.explain) item.explain = tpl.explain(p, ans);
     if (tpl.concept) item.concept = tpl.concept;   // 소비처(케이배틀 answers)의 개념 축. 없으면 단원명으로 대체됨.
+    /* 소리(선택) — 그 문항에서 읽어 줄 말. 지금은 아침영어만 쓴다.
+       { text: 읽어 줄 말, onscreen: 그 말이 발문에 이미 글로 보이는가 }
+         onscreen:true  → 다시 듣기(이미 보이는 문장을 소리로 한 번 더)
+         onscreen:false → 소리가 곧 문제다. 소리 없는 기기에서는 화면이 그 말을
+                          글로 대신 보여 준다(kquiz-ui). 소리는 비계지 관문이 아니다.
+       훅을 안 단 템플릿은 이 줄을 그냥 지나간다 — 기존 세트 전부 무변경. */
+    if (tpl.tts) { var tt = tpl.tts(p, ans); if (tt && tt.text) item.tts = tt; }
 
     if (type === 'choice') {
       var raw = tpl.distractors ? tpl.distractors(p, ans, rng) : [];
@@ -211,7 +218,12 @@
     // 같은 발문이 한 세트에 두 번 나오지 않게 1차로 거른다.
     //   출제 풀이 좁은 세트(예: 한자 회차 10자)에서 라운드로빈이 같은 문항을 다시 뽑는 걸 막는다.
     //   중복을 피하다 n을 못 채우면 2차에서 중복을 허용해 문항 수를 반드시 보장한다(기존 동작 호환).
+    //   ★열쇠는 발문만이 아니다. 듣기 문항은 발문이 늘 같고(「잘 듣고 …」)
+    //   서로를 가르는 것은 들려주는 말이다 — 발문만 보면 다른 두 문장이 한 문항으로 접힌다.
+    //   아이가 화면에서 구별하는 것 전부를 열쇠로 삼는다.
+    //   (tts 없는 세트는 꼬리가 늘 빈 문자열이라 판정이 예전과 완전히 같다.)
     var guard = 0, ti = 0, seen = {};
+    function dedupKey(it) { return it.q + '\u0000' + (it.tts ? it.tts.text : ''); }
     function push(it, tpl) {
       it.id = key + '_' + tpl.id + '_s' + seedInt(seed) + '_q' + items.length;
       items.push(it);
@@ -219,7 +231,7 @@
     while (items.length < n && guard < n * RETRY_MAX) {
       var tpl = usable[ti % usable.length]; ti++; guard++;
       var it = genOne(tpl, rng, { source: source, seed: seed });
-      if (it && !seen[it.q]) { seen[it.q] = 1; push(it, tpl); }
+      if (it && !seen[dedupKey(it)]) { seen[dedupKey(it)] = 1; push(it, tpl); }
     }
     guard = 0;
     while (items.length < n && guard < n * RETRY_MAX) {      // 폴백: 중복 허용

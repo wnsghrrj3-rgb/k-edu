@@ -147,6 +147,20 @@ function oracle(g, key, it, tag) {
     T(isPair(g, m[1], ans), key + tag + ' t_en2ko 정답이 원장 짝이 아님: ' + ans);
     others.forEach(function (o) { T(!isPair(g, m[1], o), key + tag + ' t_en2ko 오답도 정답임: ' + o); });
 
+  } else if (/^t_listen_/.test(tid)) {
+    /* ★듣기 문항의 근거는 발문이 아니라 들려주는 말에 있다.
+       그러니 오라클도 소리를 읽어 원장 짝과 대조한다. 소리가 비면 이 문항은
+       화면에 답할 근거가 아무것도 없는 상태다 — 그 자체가 FAIL 이어야 한다. */
+    T(it.q === '잘 듣고 알맞은 뜻을 고르세요.', key + tag + ' t_listen 발문 형식 이탈: ' + it.q);
+    T(!!(it.tts && it.tts.text), key + tag + ' t_listen 인데 들려주는 말이 없다 — 답할 근거가 사라진다');
+    if (!it.tts || !it.tts.text) return;
+    var snd = it.tts.text;
+    T(it.tts.onscreen === false,
+      key + tag + ' t_listen 이 onscreen:true — 문장을 글로 보여 주면 듣기가 아니다');
+    T(it.q.indexOf(snd) < 0, key + tag + ' t_listen 발문에 문장이 새어 나옴: ' + it.q);
+    T(isPair(g, snd, ans), key + tag + ' t_listen 정답이 원장 짝이 아님: ' + snd + ' / ' + ans);
+    others.forEach(function (o) { T(!isPair(g, snd, o), key + tag + ' t_listen 오답도 정답임: ' + o); });
+
   } else if (/^t_ox_/.test(tid)) {
     m = it.q.match(/^「(.+?)」 는 「(.+?)」 라는 뜻이다\.$/);
     T(!!m, key + tag + ' t_ox 발문 형식 이탈: ' + it.q);

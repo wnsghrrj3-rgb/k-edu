@@ -49,7 +49,15 @@
       '.kq-done .msg{font-size:17px;color:var(--kq-sub);margin-top:10px}',
       '.kq-tbar{display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap}',
       '.kq-tbar select,.kq-tbar button{font-family:inherit;font-size:14px;border:1.5px solid var(--kq-line);border-radius:10px;padding:9px 12px;background:#fff;color:var(--kq-ink);cursor:pointer}',
-      '.kq-tbar .go{background:var(--kq-pri);color:#fff;border-color:var(--kq-pri);font-weight:700}'
+      '.kq-tbar .go{background:var(--kq-pri);color:#fff;border-color:var(--kq-pri);font-weight:700}',
+      /* 소리 — 아침영어 확인 문제. 소리 없는 기기에선 .kq-mute 로 갈린다 */
+      '.kq-tts{display:flex;align-items:center;gap:11px;margin:-6px 0 18px;flex-wrap:wrap}',
+      '.kq-tts button{display:inline-flex;align-items:center;gap:8px;border:1.5px solid var(--kq-pri);background:#EEF4FF;color:var(--kq-pri);border-radius:50px;padding:11px 20px;font-family:inherit;font-size:16px;font-weight:700;cursor:pointer;transition:transform .12s}',
+      '.kq-tts button:active{transform:scale(.97)}',
+      '.kq-tts .hint{font-size:13px;color:var(--kq-sub)}',
+      '.kq-mute{margin:-6px 0 18px;background:#F6F9FC;border:1px dashed var(--kq-line);border-radius:13px;padding:13px 15px}',
+      '.kq-mute .t{font-size:21px;font-weight:700;color:var(--kq-ink);line-height:1.4;word-break:keep-all}',
+      '.kq-mute .n{font-size:12.5px;color:var(--kq-sub);margin-top:7px}'
     ].join('\n');
     document.head.appendChild(s);
   }
@@ -57,6 +65,59 @@
   // 유틸: 요소 생성
   function el(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]; }); }
+
+  /* ── 소리 ────────────────────────────────────────────────────────────────
+   *  문항에 `tts` 가 실려 오면 읽어 준다(아침영어 확인 문제). 케이퀴즈의 다른
+   *  쓰임(한자·수학·케이박스)은 이 필드가 없어 아래가 전부 지나간다.
+   *
+   *  ★소리 없는 기기에서도 문항은 반드시 답할 수 있어야 한다.
+   *    onscreen:true  = 문장이 발문에 이미 글로 있다 → 소리는 덤. 없으면 아무것도 안 그린다.
+   *    onscreen:false = 소리가 곧 문제다 → 소리가 없으면 그 말을 글로 대신 보여 준다.
+   *    후자를 안 그리면 교실 스피커가 죽은 날 아이가 답할 수 없는 문항을 만난다. */
+  function ttsEngine() { return root.KTTS || null; }
+  function hasSound() {
+    var T = ttsEngine(); if (!T) return false;
+    try { return T.available() !== false; } catch (e) { return true; }
+  }
+  function speak(text) {
+    var T = ttsEngine(); if (!T) return;
+    try { T.sentence(text, { interrupt: true }); } catch (e) {}
+  }
+  /* 모바일·크롬북은 첫 터치 안에서 열어 줘야 소리가 난다 */
+  var unlocked = false;
+  function unlockOnce() {
+    if (unlocked) return; unlocked = true;
+    var T = ttsEngine(); if (T && T.unlock) { try { T.unlock(); } catch (e) {} }
+  }
+
+  /*  q  = 문항 카드, it = 문항, state = 풀이 상태, i = 문항 번호
+   *  발문 바로 밑에 놓는다 — 보기보다 먼저 귀에 와야 한다. */
+  function appendTts(q, it, state, i) {
+    if (!it.tts || !it.tts.text) return;
+    var text = String(it.tts.text);
+    var onscreen = !!it.tts.onscreen;
+
+    if (!hasSound()) {
+      if (onscreen) return;                 // 발문에 이미 있다 — 두 번 쓰지 않는다
+      var m = el('div', 'kq-mute');
+      m.appendChild(el('div', 't', esc(text)));
+      m.appendChild(el('div', 'n', '소리를 낼 수 없는 기기라 글로 보여 줘요.'));
+      q.appendChild(m);
+      return;
+    }
+
+    var row = el('div', 'kq-tts');
+    var b = el('button', null, '🔊 ' + (onscreen ? '다시 듣기' : '듣기'));
+    b.type = 'button';
+    b.onclick = function () { unlockOnce(); speak(text); };
+    row.appendChild(b);
+    if (!onscreen) row.appendChild(el('span', 'hint', '몇 번이든 다시 들어도 돼요'));
+    q.appendChild(row);
+
+    /* 소리가 곧 문제인 문항은 화면에 뜨는 순간 한 번 울린다.
+       보기를 고를 때마다 다시 렌더되므로 문항당 한 번만 — 안 그러면 계속 말을 끊는다. */
+    if (!onscreen && !state.spoken[i]) { state.spoken[i] = 1; unlockOnce(); speak(text); }
+  }
 
   // ── 학생 모드 렌더 ────────────────────────────────────────────────────────
   function renderStudent(el0, state, onSubmit) {
@@ -72,6 +133,8 @@
     var q = el('div', 'kq-q');
     q.appendChild(el('div', 'kq-qn', it.type === 'ox' ? 'O · X' : (it.type === 'short' ? '답 쓰기' : '알맞은 답 고르기')));
     q.appendChild(el('div', 'kq-qt', esc(it.q)));
+    if (!state.spoken) state.spoken = {};
+    appendTts(q, it, state, i);
 
     var answered = state.answers[i] != null;
     var graded = state.graded[i];
@@ -151,7 +214,7 @@
 
     var foot = el('div', 'kq-foot');
     var retry = el('button', 'kq-btn ghost', '다시 풀기');
-    retry.onclick = function () { state.idx = 0; state.answers = []; state.graded = []; renderStudent(el0, state, onSubmit); };
+    retry.onclick = function () { state.idx = 0; state.answers = []; state.graded = []; state.spoken = {}; renderStudent(el0, state, onSubmit); };
     foot.appendChild(retry);
     if (onSubmit) {
       var sub = el('button', 'kq-btn pri', state.submitted ? '제출 완료 ✓' : '제출하기');
@@ -189,6 +252,9 @@
         var q = el('div', 'kq-q'); q.style.marginBottom = '10px';
         q.appendChild(el('div', 'kq-qn', (qi + 1) + '. ' + (it.type === 'ox' ? 'OX' : it.type === 'short' ? '단답' : '객관식')));
         q.appendChild(el('div', 'kq-qt', esc(it.q)));
+        /* 듣기 문항은 발문만 보면 「잘 듣고 …」뿐이라 교사가 무엇이 나가는지 모른다.
+           교사가 본 것이 곧 아이가 만날 것이어야 한다(D6 규약). */
+        if (it.tts && it.tts.text) q.appendChild(el('div', 'kq-exp', '🔊 들려주는 말: ' + esc(it.tts.text)));
         if (it.type === 'choice') {
           var opts = el('div', 'kq-opts');
           it.choices.forEach(function (c, oi) { var o = el('div', 'kq-opt' + (oi === it.answer ? ' ok' : '')); o.style.cursor = 'default'; o.appendChild(el('span', 'mk', String.fromCharCode(9312 + oi))); o.appendChild(el('span', null, esc(c))); opts.appendChild(o); });
