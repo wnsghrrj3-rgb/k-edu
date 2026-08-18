@@ -233,11 +233,191 @@
     return out;
   }
 
+
+  /* ── 본보기 애니 12종 ──
+     저작권 0: 전부 코드로 그린 창작 만화. drawSample(ctx,id,i)는 결정적 —
+     같은 (id,i)면 항상 같은 그림. 배경은 그리지 않는다(무대 레이어 존중). */
+  var SAMPLES = [
+    {id:'ball',    title:'공 튀기기',    emoji:'🏀', frames:8,  fps:10, tip:'바닥에 닿는 장에서 납작해져요 — 찌그러짐이 통통 튀는 느낌을 만들어요'},
+    {id:'chick',   title:'병아리 걷기',  emoji:'🐤', frames:8,  fps:8,  tip:'몸이 위아래로 콩콩 — 다리가 번갈아 나와요'},
+    {id:'bird',    title:'새 날갯짓',    emoji:'🐦', frames:6,  fps:9,  tip:'날개가 위→아래로 — 두 장만 있어도 날아요'},
+    {id:'bloom',   title:'꽃 피어나기',  emoji:'🌷', frames:8,  fps:6,  tip:'줄기가 자라고 꽃잎이 한 장씩 열려요 — 느린 속도가 어울려요'},
+    {id:'hop',     title:'토끼 점프',    emoji:'🐰', frames:8,  fps:9,  tip:'뛰기 전에 웅크렸다가 — 준비 동작이 힘을 보여줘요'},
+    {id:'swim',    title:'물고기 헤엄',  emoji:'🐠', frames:8,  fps:8,  tip:'꼬리를 살랑살랑 — 물방울이 뒤로 흘러가요'},
+    {id:'launch',  title:'로켓 발사',    emoji:'🚀', frames:10, fps:10, tip:'부르르 떨다가 → 슝! 불꽃이 점점 커져요'},
+    {id:'spin',    title:'바람개비',     emoji:'🎡', frames:8,  fps:10, tip:'한 장에 조금씩 돌려요 — 8장이면 한 바퀴!'},
+    {id:'moon',    title:'달 차오르기',  emoji:'🌙', frames:8,  fps:5,  tip:'초승달 → 보름달 → 그믐달 — 진짜 달도 이렇게 변해요'},
+    {id:'drive',   title:'자동차 부릉',  emoji:'🚗', frames:8,  fps:9,  tip:'차가 지나가요 — 바퀴 무늬가 돌면 진짜 구르는 것처럼 보여요'},
+    {id:'face',    title:'표정 변화',    emoji:'😄', frames:6,  fps:5,  tip:'무표정 → 미소 → 활짝 — 입과 눈썹만 바꿔도 마음이 보여요'},
+    {id:'candle',  title:'촛불 흔들림',  emoji:'🕯️', frames:6,  fps:8,  tip:'불꽃이 좌우로 하늘하늘 — 2~3장 반복의 힘'}
+  ];
+  function findSample(id){ for(var i=0;i<SAMPLES.length;i++) if(SAMPLES[i].id===id) return SAMPLES[i]; return null; }
+
+  function drawSample(ctx, id, i){
+    var W=900, H=620, TAU=Math.PI*2;
+    function circle(x,y,r,c){ ctx.fillStyle=c; ctx.beginPath(); ctx.arc(x,y,r,0,TAU); ctx.fill(); }
+    function ell(x,y,rx,ry,c,rot){ ctx.fillStyle=c; ctx.beginPath(); ctx.ellipse(x,y,rx,ry,rot||0,0,TAU); ctx.fill(); }
+    function poly(pts,c){ ctx.fillStyle=c; ctx.beginPath(); ctx.moveTo(pts[0],pts[1]); for(var k=2;k<pts.length;k+=2) ctx.lineTo(pts[k],pts[k+1]); ctx.closePath(); ctx.fill(); }
+    function line(x1,y1,x2,y2,w,c){ ctx.strokeStyle=c; ctx.lineWidth=w; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); }
+    function ring(x,y,r,w,c){ ctx.strokeStyle=c; ctx.lineWidth=w; ctx.beginPath(); ctx.arc(x,y,r,0,TAU); ctx.stroke(); }
+    var INK='#2B2622';
+
+    if(id==='ball'){
+      /* 8장: 위→바닥(납작)→위. 포물선 + 스쿼시&스트레치 */
+      var t=i/8, ph=Math.abs(Math.sin(t*Math.PI*2));      /* 0=꼭대기 */
+      var y=120+Math.pow(Math.sin(t*Math.PI),2)*0;        /* 미사용 */
+      var yy=140+ (1-Math.abs(Math.cos(t*Math.PI)))*0;
+      var bounce=Math.abs(Math.sin(t*Math.PI));           /* 0..1..0 */
+      var cy=150+bounce*300;
+      var squash=(i===4)?1:0;                             /* 바닥 장 */
+      var rx=70*(squash?1.35:1-bounce*0.12), ry=70*(squash?0.62:1+bounce*0.12);
+      line(150,530,750,530,10,'#C9BCA0');
+      ell(450,squash?530-ry:cy,rx,ry,'#F59E0B');
+      ring(450,squash?530-ry:cy,(rx+ry)/2*0.55,7,'#B45309');
+      return;
+    }
+    if(id==='chick'){
+      var step=i%4, bob=(step===1||step===3)?-14:0;
+      var x=270+i*45, y=380+bob;
+      line(80,520,830,520,10,'#C9BCA0');
+      ell(x,y,95,85,'#FFD34D');                                 /* 몸 */
+      circle(x+70,y-70,52,'#FFD34D');                            /* 머리 */
+      circle(x+88,y-78,8,INK);                                   /* 눈 */
+      poly([x+118,y-70,x+150,y-58,x+118,y-48],'#F59E0B');        /* 부리 */
+      var lf=(step===0||step===1), a=lf?28:-16, b=lf?-16:28;     /* 다리 교차 */
+      line(x-22,y+78,x-22+a,520,9,'#F59E0B'); line(x+26,y+78,x+26+b,520,9,'#F59E0B');
+      ell(x-38,y-6,34,24,'#F6B73C',-0.4);                        /* 날개 */
+      return;
+    }
+    if(id==='bird'){
+      var wing=Math.sin((i+0.5)/6*Math.PI*2);                          /* -1..1 */
+      var x=450,y=290+wing*22;
+      ell(x,y,105,62,'#4CC9F0');                                  /* 몸 */
+      circle(x+92,y-34,40,'#4CC9F0'); circle(x+106,y-40,7,INK);   /* 머리·눈 */
+      poly([x+128,y-32,x+162,y-24,x+128,y-14],'#F59E0B');
+      poly([x-105,y-8,x-170,y+18,x-105,y+22],'#3AA8D8');          /* 꼬리 */
+      var tip= y-30-wing*115;
+      poly([x-42,y-24, x+34,y-24, x-6,tip],'#2E86AB');            /* 날개 */
+      return;
+    }
+    if(id==='bloom'){
+      var g=(i+1)/8;                                              /* 성장 0..1 */
+      var top=560-330*Math.min(1,g*1.15);
+      line(80,565,830,565,10,'#C9BCA0');
+      line(450,560,450,top,12,'#40916C');
+      if(g>0.35){ ell(410,470,34*Math.min(1,(g-0.3)*2.4),16,'#52B788',-0.5); ell(492,500,34*Math.min(1,(g-0.35)*2.4),16,'#52B788',0.5); }
+      var open=Math.max(0,(i-3)/4);                               /* 4장부터 개화 */
+      if(i<4){ ell(450,top,26+open*10,40,'#FF8FA3'); }             /* 봉오리 */
+      else{
+        for(var p2=0;p2<6;p2++){ var a2=p2/6*TAU-Math.PI/2, r2=18+open*44;
+          ell(450+Math.cos(a2)*r2, top+Math.sin(a2)*r2, 22+open*10, 30+open*8, '#FF8FA3', a2+Math.PI/2); }
+        circle(450,top,20+open*10,'#FFD34D');
+      }
+      return;
+    }
+    if(id==='hop'){
+      /* 0-1 웅크림(준비) 2-5 공중 포물선 6-7 착지 */
+      var seq=[[240,470,1.15,0.8],[240,482,1.28,0.66],[330,360,0.92,1.12],[430,268,0.9,1.14],[530,250,0.92,1.12],[620,330,0.95,1.08],[690,470,1.2,0.74],[690,458,1.05,0.95]];
+      var s2=seq[i], x=s2[0], y=s2[1], sx=s2[2], sy=s2[3];
+      line(80,545,830,545,10,'#C9BCA0');
+      ell(x,y,72*sx,64*sy,'#EDE4F3');                              /* 몸 */
+      circle(x+42*sx,y-52*sy,38,'#EDE4F3');                        /* 머리 */
+      ell(x+26*sx,y-96*sy,12,34,'#EDE4F3',-0.25); ell(x+58*sx,y-96*sy,12,34,'#EDE4F3',0.18); /* 귀 */
+      circle(x+56*sx,y-58*sy,6,INK);
+      circle(x-58*sx,y+18*sy,16,'#FFF');                           /* 꼬리 */
+      return;
+    }
+    if(id==='swim'){
+      var x=210+i*62, wag=Math.sin(i/8*TAU*2)*0.5;                 /* 꼬리 살랑 */
+      ell(x,300,95,58,'#FF8FA3');
+      poly([x-92,300, x-158,300-46-wag*30, x-148,300, x-158,300+46-wag*30],'#F77F9E');
+      circle(x+58,286,8,INK);
+      ell(x+2,300,16,26,'#F77F9E',wag*0.6);                        /* 지느러미 */
+      circle(x-190-((i*37)%60),240-((i*23)%80),9,'#BDE0FE');       /* 물방울 */
+      circle(x-240-((i*53)%80),200-((i*31)%60),6,'#BDE0FE');
+      return;
+    }
+    if(id==='launch'){
+      /* 0-3 카운트다운 부르르, 4-9 상승 */
+      var shake=(i<4)?((i%2)?6:-6):0;
+      var rise=(i<4)?0:Math.pow((i-3)/6,1.6)*430;
+      var x=450+shake, y=430-rise;
+      line(80,545,830,545,10,'#C9BCA0');
+      poly([x-52,y+60,x-52,y-60,x,y-130,x+52,y-60,x+52,y+60],'#EDEDED');
+      circle(x,y-40,24,'#4CC9F0');
+      poly([x-52,y+10,x-96,y+80,x-52,y+60],'#E63946'); poly([x+52,y+10,x+96,y+80,x+52,y+60],'#E63946');
+      var fl=(i<4)?10+i*4:34+(i-4)*10;
+      poly([x-30,y+62,x+30,y+62,x,y+62+fl*2.1],'#F59E0B');
+      poly([x-16,y+62,x+16,y+62,x,y+62+fl*1.3],'#FFD34D');
+      return;
+    }
+    if(id==='spin'){
+      var a3=i/8*TAU/1;                                            /* 8장=한 바퀴 */
+      var x=450,y=300;
+      line(x,y,x,560,12,'#A98467');
+      var cols=['#E63946','#FFD34D','#4CC9F0','#8AC926'];
+      for(var b3=0;b3<4;b3++){ var aa=a3+b3*TAU/4;
+        poly([x,y, x+Math.cos(aa)*150, y+Math.sin(aa)*150, x+Math.cos(aa+0.55)*95, y+Math.sin(aa+0.55)*95], cols[b3]); }
+      circle(x,y,18,'#2B2622');
+      return;
+    }
+    if(id==='moon'){
+      /* 위상: i 0..7 → 초승 → 보름 → 그믐 */
+      var x=450,y=300,R=150;
+      circle(680,120,5,'#FFF'); circle(220,180,4,'#FFF'); circle(700,420,4,'#FFF'); circle(180,420,5,'#FFF');
+      circle(x,y,R,'#FFE9A8');
+      var ph2=i/8;                                                 /* 0..1 */
+      var k=Math.cos(ph2*TAU);                                     /* 1→-1→1 */
+      ctx.fillStyle='#3B4666';
+      ctx.beginPath();
+      ctx.arc(x,y,R, -Math.PI/2, Math.PI/2, ph2<0.5);
+      ctx.ellipse(x,y,Math.abs(k)*R,R, 0, Math.PI/2, -Math.PI/2, (ph2<0.5)!==(k<0));
+      ctx.fill();
+      return;
+    }
+    if(id==='drive'){
+      var x=90+i*95, wa=i*0.9;
+      line(60,520,840,520,10,'#C9BCA0');
+      poly([x-130,470,x+130,470,x+130,412,x+70,412,x+40,368,x-60,368,x-90,412,x-130,412],'#4CC9F0');
+      poly([x-52,410,x-42,376,x+28,376,x+42,410],'#DFF6FF');
+      var wl=x-70,wr=x+70;
+      circle(wl,472,34,'#2B2622'); circle(wr,472,34,'#2B2622');
+      line(wl,472,wl+Math.cos(wa)*22,472+Math.sin(wa)*22,7,'#9A8C98');
+      line(wr,472,wr+Math.cos(wa+1.2)*22,472+Math.sin(wa+1.2)*22,7,'#9A8C98');
+      if(i>0){ circle(x-165,430,12,'#D9D2C5'); circle(x-195,412,8,'#D9D2C5'); }  /* 연기 */
+      return;
+    }
+    if(id==='face'){
+      var x=450,y=300;
+      circle(x,y,170,'#FFD9A8');
+      var m=i/5;                                                   /* 0..1 기쁨 정도 */
+      var eo=(i>=4)?1:0;                                           /* 활짝 = 눈 감김 */
+      if(eo){ line(x-72,y-40,x-32,y-52,9,INK); line(x+32,y-52,x+72,y-40,9,INK); }
+      else{ circle(x-52,y-46,14+m*3,INK); circle(x+52,y-46,14+m*3,INK); }
+      line(x-84,y-96+m*-10,x-30,y-104+m*-16,8,INK);                /* 눈썹 */
+      line(x+30,y-104+m*-16,x+84,y-96+m*-10,8,INK);
+      ctx.strokeStyle=INK; ctx.lineWidth=10; ctx.lineCap='round';
+      ctx.beginPath(); ctx.arc(x,y+30+m*4, 30+m*62, 0.15*Math.PI+(1-m)*0.25, 0.85*Math.PI-(1-m)*0.25); ctx.stroke();
+      if(m>0.7){ ell(x-108,y+34,20,14,'#FFB4C0'); ell(x+108,y+34,20,14,'#FFB4C0'); }
+      return;
+    }
+    if(id==='candle'){
+      var sway=Math.sin((i+0.5)/6*TAU)*26;
+      poly([390,560,510,560,498,330,402,330],'#FDF0D5');
+      line(450,330,450,300,7,'#6F4518');
+      ell(450+sway*0.4,268,26,46,'#F59E0B',sway*0.012);
+      ell(450+sway*0.62,276,13,26,'#FFD34D',sway*0.012);
+      ell(450,556,110,16,'#E8DCC0');
+      return;
+    }
+  }
+
   var API = { MAX_FRAMES:MAX_FRAMES, MIN_FRAMES:MIN_FRAMES, clampFps:clampFps,
               createFrameStore:createFrameStore, onionLayers:onionLayers,
               createPlayback:createPlayback, MISSIONS:MISSIONS, findMission:findMission,
               missionsByGrade:missionsByGrade, createMissionRun:createMissionRun,
-              crc32:crc32, buildStoreZip:buildStoreZip };
+              crc32:crc32, buildStoreZip:buildStoreZip,
+              SAMPLES:SAMPLES, findSample:findSample, drawSample:drawSample };
   if(typeof module!=='undefined' && module.exports){ module.exports = API; }
   if(typeof window!=='undefined'){ window.AnimLab = API; }
 })();
@@ -486,6 +666,7 @@ body.bgmode #onion{opacity:0}
     <button class="tool" id="t-eraser" data-tool="eraser">🧽<span class="tn">지우개</span></button>
     <button class="tool" id="t-stamp" data-tool="stamp">🐾<span class="tn">도장</span></button>
     <button class="tool" id="t-again" data-tool="again" disabled style="opacity:.35">👣<span class="tn">이어찍기</span></button>
+    <button class="tool" id="t-sample">📽️<span class="tn">본보기</span></button>
     <button class="tool" id="t-bg" data-tool="bg">🏞️<span class="tn">배경</span></button>
     <button class="tool" id="t-clear" data-tool="clear">🗑️<span class="tn">비우기</span></button>
     <div class="dock-div"></div>
@@ -495,6 +676,12 @@ body.bgmode #onion{opacity:0}
       <div class="size-dot" id="sizeDot" style="width:16px;height:16px"></div>
       <input type="range" class="size-range" id="size" min="2" max="46" value="8">
     </div>
+  </div>
+
+  <div class="stamp-drawer" id="sampleDrawer" style="width:392px">
+    <div class="sd-head"><h4>📽️ 본보기 애니</h4><button class="sd-close" id="spClose">✕</button></div>
+    <div class="sd-body"><div id="sampleList" style="display:flex;flex-direction:column;gap:10px;padding:4px"></div></div>
+    <div class="sd-foot" style="font-size:12px;color:var(--mut);line-height:1.5;padding:10px 12px">전부 베프가 코드로 그린 창작 만화라 마음껏 따라 그리고 바꿔도 돼요. 불러온 뒤 ▶ 재생을 눌러 보고, 장을 하나씩 넘기며 무엇이 달라지는지 찾아보세요.</div>
   </div>
 
   <div class="stamp-drawer" id="stampDrawer">
@@ -739,7 +926,76 @@ body.bgmode #onion{opacity:0}
     closeDrawer();
     newPend(b.dataset.src, +b.dataset.w || 200);
   });
-  function openDrawer(){ stampDrawer.classList.add('show'); }
+  function openDrawer(){ if(typeof closeSampleDrawer==='function')closeSampleDrawer(); stampDrawer.classList.add('show'); }
+
+  // ── 본보기 서랍 ──
+  var sampleDrawer=document.getElementById('sampleDrawer');
+  var sampleTimers=[];
+  function openSampleDrawer(){
+    stampDrawer.classList.remove('show');
+    sampleDrawer.classList.add('show');
+    buildSampleList();
+  }
+  function closeSampleDrawer(){
+    sampleDrawer.classList.remove('show');
+    sampleTimers.forEach(clearInterval); sampleTimers=[];
+  }
+  document.getElementById('t-sample').addEventListener('click', openSampleDrawer);
+  document.getElementById('spClose').addEventListener('click', closeSampleDrawer);
+  function buildSampleList(){
+    sampleTimers.forEach(clearInterval); sampleTimers=[];
+    var list=document.getElementById('sampleList'); list.innerHTML='';
+    L.SAMPLES.forEach(function(S){
+      var row=document.createElement('button');
+      row.style.cssText='display:flex;gap:10px;align-items:center;text-align:left;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:8px;cursor:pointer';
+      var cv=document.createElement('canvas'); cv.width=156; cv.height=108;
+      cv.style.cssText='border-radius:9px;background:#FCFAF5;flex-shrink:0';
+      var txt=document.createElement('div');
+      txt.innerHTML='<div style="font-weight:700;font-size:14.5px;color:var(--ink)">'+S.emoji+' '+S.title+
+        '</div><div style="font-size:11.5px;color:var(--mut);margin-top:3px;line-height:1.45">'+S.frames+'장 · '+S.fps+'fps<br>'+S.tip+'</div>';
+      row.appendChild(cv); row.appendChild(txt);
+      row.addEventListener('click', function(){ loadSample(S.id); });
+      list.appendChild(row);
+      /* 살아있는 미리보기 — 각자 fps로 순환 */
+      var fi=0, g=cv.getContext('2d'), off=document.createElement('canvas'); off.width=W; off.height=H;
+      var og=off.getContext('2d');
+      function tickPrev(){
+        og.clearRect(0,0,W,H); L.drawSample(og,S.id,fi%S.frames);
+        g.fillStyle='#FCFAF5'; g.fillRect(0,0,156,108); g.drawImage(off,0,0,156,108);
+        fi++;
+      }
+      tickPrev();
+      sampleTimers.push(setInterval(tickPrev, Math.round(1000/S.fps)));
+    });
+  }
+  function anySampleInk(){
+    var t=document.createElement('canvas'); t.width=48; t.height=32;
+    var g=t.getContext('2d');
+    for(var i=0;i<store.count();i++){
+      var f=store.frameAt(i); if(!pixMap[f.id]) continue;
+      g.clearRect(0,0,48,32); g.drawImage(pixMap[f.id],0,0,48,32);
+      var d=g.getImageData(0,0,48,32).data;
+      for(var p=3;p<d.length;p+=4) if(d[p]>8) return true;
+    }
+    return false;
+  }
+  function loadSample(id){
+    var S=L.findSample(id); if(!S) return;
+    confirmPend(); commitToFrame();
+    if(anySampleInk() && !confirm('지금 그리던 장들을 지우고 「'+S.title+'」 본보기를 불러올까요?')) return;
+    while(store.count()>1) store.remove(store.count()-1);
+    while(store.count()<S.frames){ if(!store.add().ok) break; }
+    for(var i=0;i<store.count();i++){
+      var c=frameCanvas(store.frameAt(i)), g=c.getContext('2d');
+      g.clearRect(0,0,W,H); L.drawSample(g,id,i);
+    }
+    store.setCurrent(0); loadFrame(); buildStrip();
+    play.setFps(S.fps);
+    document.getElementById('fps').value=S.fps;
+    document.getElementById('fpsLbl').textContent=S.fps+' fps';
+    closeSampleDrawer();
+    toast('📽️ '+S.title+' — '+S.tip);
+  }
   function closeDrawer(){ stampDrawer.classList.remove('show'); }
   document.getElementById('sdClose').addEventListener('click', closeDrawer);
 
