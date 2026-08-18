@@ -36,7 +36,8 @@ t('id는 photo와 겹치지 않음', ARTWORKS.every(a => a.id !== 'photo'));
 t('필수 항목 완비', ARTWORKS.every(a => a.title && a.artist && a.year && a.emoji && a.desc && a.palette && a.levels && a.vw && a.vh && a.gw && a.gh));
 t('해설 40자 이상', ARTWORKS.every(a => a.desc.length >= 40));
 t('팔레트 4~14색·hex', ARTWORKS.every(a => a.palette.length >= 4 && a.palette.length <= 14 && a.palette.every(h => /^#[0-9A-Fa-f]{6}$/.test(h))));
-t('단계 detail 1~4 오름차순', ARTWORKS.every(a => a.levels.every((l, i) => l.detail >= 1 && l.detail <= 4 && (i === 0 || l.detail > a.levels[i - 1].detail))));
+t('단계 detail 1~4 내림 없음', ARTWORKS.every(a => a.levels.every((l, i) => l.detail >= 1 && l.detail <= 4 && (i === 0 || l.detail >= a.levels[i - 1].detail))));
+t('꼬마 단계 = 26칸 상한 전 작품(몬드리안 제외)', ARTWORKS.every(a => a.id === 'mondrian' || (a.levels[0].name === '꼬마' && a.levels[0].cap === 26)));
 t('단계 이름이 안내표에 있음', (() => {
   const names = (html.match(/const LV_DESC=\{([\s\S]*?)\};/) || [, ''])[1];
   return ARTWORKS.every(a => a.levels.every(l => names.includes("'" + l.name + "'")));
