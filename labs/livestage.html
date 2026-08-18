@@ -6,6 +6,12 @@
 <title>살아나는 무대 | 케이아트</title>
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
 <script src="/kedu_collect.js"></script>
+<!-- 작업 이어하기 (2026-08-18) — 로드 순서 고정: config → supabase → tier → resume.
+     방문자·게스트는 저장 0(준호 결정). 판정은 KeduTier 한 창구로만. -->
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tier.js"></script>
+<script src="/kedu_resume.js"></script>
 <style id="kedu-title-font">/* 케이에듀 제목 폰트 토큰 (학교안심 모험가) — v3 표준 */
 @font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
 :root{--kedu-title:'Hakgyoansim Moheomga','Gowun Dodum',sans-serif}
@@ -93,6 +99,15 @@ button{cursor:pointer}
   background:rgba(255,255,255,.05);font-size:13px;transition:all .14s}
 .stbtn:hover{background:rgba(255,255,255,.10)}
 .stbtn.on{background:linear-gradient(135deg,rgba(255,155,199,.22),rgba(181,146,245,.22));border-color:var(--accent);color:var(--accent)}
+/* 💾 이어하기 */
+.resume-mask{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;
+  background:rgba(8,11,16,.6);backdrop-filter:blur(3px);padding:16px}
+.resume-mask.on{display:flex}
+.resume-box{background:linear-gradient(180deg,#232a34,#191e26);border:1px solid var(--hud-bd);
+  border-radius:18px;box-shadow:0 22px 60px rgba(0,0,0,.55);padding:22px 24px 18px;max-width:92vw;text-align:center}
+.resume-box .rz-t{font-family:var(--kedu-title);font-size:19px;margin-bottom:6px}
+.resume-box .rz-s{font-size:12.5px;color:var(--mut);margin-bottom:16px}
+.resume-box .rz-btns{display:flex;gap:9px;justify-content:center;flex-wrap:wrap}
 #stageWrap{position:relative;flex:1;min-height:0;border-radius:18px;overflow:hidden;
   box-shadow:0 14px 40px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.07)}
 #stage{display:block;width:100%;height:100%;touch-action:manipulation;cursor:pointer}
@@ -284,6 +299,7 @@ button{cursor:pointer}
       b.classList.add('on');
       bubbles.length = 0;
       toast(s.emoji + ' ' + s.name + ' 무대로 바뀌었어요');
+      markStage();
     };
     stagebar.appendChild(b);
   });
@@ -318,7 +334,8 @@ button{cursor:pointer}
         y: 60 + rnd()*Math.max(80, H-200)
       });
       b.sprite = sprite;
-      tally();
+      b.spriteSrc = sprite.src;        /* 💾 저장용 원본 — 다시 인코딩하지 않는다 */
+      tally(); markStage();
       toast((b.name ? b.name + '의 ' : '') + '그림이 무대에 나타났어요 ✨');
       pctx.clearRect(0,0,pad.width,pad.height);
       drew = false; padHint.style.display = 'flex';
@@ -335,7 +352,7 @@ button{cursor:pointer}
   });
 
   document.getElementById('clearStage').onclick = function(){
-    run.clear(); bubbles.length = 0; pops.length = 0; tally(); toast('무대를 비웠어요');
+    run.clear(); bubbles.length = 0; pops.length = 0; tally(); toast('무대를 비웠어요'); markStage();
   };
 
   /* 케이박스 제출 — 무대 한 장면을 그대로 담는다 */
@@ -390,8 +407,106 @@ button{cursor:pointer}
   }
   requestAnimationFrame(frame);
   tally();
+
+  /* ══ 💾 작업 이어하기 ══
+     무대의 상태 = 무대 종류 + 방생된 친구들(그림·이름·움직임). 순간 좌표는 담지 않는다 —
+     다시 열면 무대에서 새로 헤엄치는 게 자연스럽고, 그래야 저장이 가벼워진다.
+     저장 가부는 KeduResume(→KeduTier) 판정: 방문자·게스트는 저장 0. */
+  var RES = window.KeduResume || null;
+  var resumeOn = false, saver = null;
+
+  function markStage(){ if(resumeOn && saver) saver.mark(); }
+
+  function collectStage(){
+    var bs = run.beings(), parts = {}, list = [];
+    for(var i=0;i<bs.length;i++){
+      var b = bs[i];
+      if(!b.spriteSrc) continue;                 /* 원본이 없는 친구는 담지 않는다 */
+      parts['b'+list.length] = b.spriteSrc;      /* 방생 때 만든 dataURL 재사용 — 재인코딩 0 */
+      list.push({ name:b.name||'', mode:b.mode, face:b.face, w:b.w, h:b.h, y:Math.round(b.y) });
+    }
+    return { meta:{ stage:run.stage(), beings:list, at:Date.now() },
+             parts:parts, replaceParts:true };
+  }
+
+  function loadSprite(src){
+    return new Promise(function(res){
+      if(!src){ res(null); return; }
+      var im = new Image();
+      im.onload = function(){ res(im); };
+      im.onerror = function(){ res(null); };
+      im.src = src;
+    });
+  }
+  function applyStage(got){
+    var m = got.meta||{}, p = got.parts||{}, list = m.beings||[];
+    if(m.stage && run.setStage(m.stage)){
+      Array.prototype.forEach.call(stagebar.children, function(x, i){
+        x.classList.toggle('on', LS.STAGES[i] && LS.STAGES[i].id===m.stage);
+      });
+    }
+    var chain = Promise.resolve();
+    list.forEach(function(o, i){
+      chain = chain.then(function(){
+        return loadSprite(p['b'+i]).then(function(im){
+          if(!im) return;
+          var b = run.add({ w:o.w, h:o.h, face:o.face, motionSel:o.mode,
+                            name:o.name, rnd:rnd,
+                            y: o.y!=null ? o.y : (60 + rnd()*Math.max(80, H-200)) });
+          b.sprite = im; b.spriteSrc = p['b'+i];
+        });
+      });
+    });
+    return chain.then(function(){ tally(); });
+  }
+
+  function askResume(got){
+    var resumeMask = document.getElementById('resumeMask');   /* 시트는 이 스크립트 뒤에 온다 */
+    if(!resumeMask) return;
+    var n = (got.meta && got.meta.beings) ? got.meta.beings.length : 0;
+    var w = new Date((got.meta && got.meta.at) || got.at || Date.now());
+    document.getElementById('resumeWhen').textContent =
+      '그림 친구 ' + n + '명 · ' + (w.getMonth()+1) + '월 ' + w.getDate() + '일 ' + w.getHours() + '시경';
+    resumeMask.classList.add('on');
+    document.getElementById('resumeYes').onclick = function(){
+      resumeMask.classList.remove('on');
+      applyStage(got).then(function(){ markStage(); toast('💾 친구들이 다시 모였어요'); });
+    };
+    document.getElementById('resumeNo').onclick = function(){
+      resumeMask.classList.remove('on');
+      RES.clear('main'); toast('빈 무대로 시작해요');
+    };
+  }
+
+  (function initResume(){
+    if(!RES) return;
+    RES.init({ app:'livestage', version:1 }).then(function(r){
+      resumeOn = !!r.can;
+      if(!resumeOn) return;                      /* 방문자·게스트·IDB 부재 = 조용히 없던 일로 */
+      saver = RES.autosaver('main', collectStage, { wait:1500 });
+      window.addEventListener('pagehide', function(){ saver.flush(); });
+      document.addEventListener('visibilitychange', function(){
+        if(document.visibilityState==='hidden') saver.flush();
+      });
+      return RES.load('main').then(function(got){
+        if(got && got.meta && got.meta.beings && got.meta.beings.length) askResume(got);
+      });
+    }).catch(function(){});
+  })();
 })();
 </script>
+<!-- 💾 이어하기 (지난 무대가 있을 때만) -->
+<div class="resume-mask" id="resumeMask">
+  <div class="resume-box">
+    <div class="rz-t">💾 놀던 친구들이 있어요</div>
+    <div class="rz-s" id="resumeWhen"></div>
+    <div class="rz-btns">
+      <button class="stbtn on" id="resumeYes">다시 불러오기</button>
+      <button class="stbtn" id="resumeNo">빈 무대로</button>
+    </div>
+  </div>
+</div>
+
 <script src="/kedu_back.js"></script>
 </body>
 </html>
