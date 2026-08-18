@@ -15,6 +15,9 @@
  *            누적 단어장 안에 있는가 (설계 §3 헌법의 문항 연장)
  *   ④ SQL 드리프트 — sql/setup_morning.sql 의 ma_max_step english 행 대조
  *   ⑤ 진도 시뮬 — ma_today 규칙대로 돌려 키가 전부 실재하는가
+ *   ⑥ ★소리 — 들려주는 말이 화면과 어긋나지 않는가 (D8-ⓓ)
+ *            onscreen 참값 대조 · 소리의 어휘 사다리 · 답 누설 금지 ·
+ *            소리 금지 템플릿 · 세트당 듣기 1문항(라운드로빈 굶김 가드)
  * ============================================================= */
 'use strict';
 var fs = require('fs'), path = require('path');
@@ -173,6 +176,100 @@ function oracle(g, key, it, tag) {
   }
 }
 
+/* ── ⑥ 소리 ────────────────────────────────────────────────────
+ *  화면 검사는 아이가 **보는 것**만 훑는다(q|choices|explain). 그런데 D8-ⓓ 부터
+ *  아이는 **듣기도** 한다 — 소리로 나가는 영어가 검사망 밖에 있으면, 화면은
+ *  그린인데 스피커만 딴소리를 하는 상태가 통과한다(역검증 A 로 실측된 구멍).
+ *
+ *  ★핵심은 `onscreen` 이 **주장**이라는 것이다. "이 말은 발문에 이미 글로 있다"는
+ *    주장이 참인지 아무도 안 보면, 화면엔 「I like apples.」가 뜨고 스피커는
+ *    「He has big eyes.」를 읽는 문항이 그린을 받는다. 교사 미리보기의
+ *    「들려주는 말」까지 거짓을 표시한다. 그래서 주장을 발문과 대조한다.
+ *
+ *  소리 규약(설계 §5, 헌법급) — 소리는 이미 화면에 다 보이는 문장에만 붙는다.
+ *    t_order·t_blank·t_ko2en → 정답이 문장(또는 그 일부)이라 읽어 주면 답이 샌다 → 소리 금지
+ *    t_en2ko·t_ox           → 문장이 발문에 그대로 있고 답은 뜻 쪽 → onscreen:true
+ *    t_listen               → 문장을 발문에서 빼고 소리에 싣는다 → onscreen:false          */
+var SOUND_BAN = /^(t_order_|t_blank_|t_ko2en_)/;   // 소리가 붙으면 답이 새는 자리
+var SOUND_REQ = /^(t_en2ko_|t_ox_|t_listen_)/;     // 소리가 사라지면 설계가 조용히 죽는 자리
+var sndItems = 0, sndWords = 0;
+
+/* 그날까지 원장에 실재하는 문장(확장 문장 포함) — 템플릿을 거치지 않고 원장에서 직접 만든다.
+   템플릿이 준 값으로 템플릿을 검사하면 둘이 함께 틀려도 그린이 난다(D8-ⓐ 에서 겪은 자리). */
+function sentsUpto(g, d) {
+  var set = {};
+  for (var k = 1; k <= d; k++) {
+    var dy = DATA.day(g, k);
+    set[dy.sent] = 1;
+    if (dy.expand) set[dy.expand.sent] = 1;
+  }
+  return set;
+}
+/* 그날 열려 있는 짝의 수 — 듣기 템플릿은 짝이 3개 미만이면 서지 못한다(english.js validate).
+   ★날짜로 "2일차부터"라고 적지 않는다: 원장에 확장 문장이 늘거나 줄면 그 날짜가 달라지고,
+   그때 검사기만 옛 날짜를 붙들고 있으면 틀린 쪽이 검사기가 된다. 조건 자체를 적는다. */
+function pairsUptoCount(g, d) {
+  var n = 0;
+  for (var k = 1; k <= d; k++) n += 1 + (DATA.day(g, k).expand ? 1 : 0);
+  return n;
+}
+
+function soundCheck(g, key, it, tag, vocab, sents) {
+  var tid = (it.gen && it.gen.template_id) || '';
+
+  /* ⓓ 소리 금지 템플릿 */
+  if (SOUND_BAN.test(tid)) {
+    T(!it.tts, key + tag + ' ' + tid + ' 에 소리가 붙었다 — 정답이 문장 쪽이라 읽어 주면 답이 샌다');
+    return;
+  }
+  /* 소리를 실어야 할 자리에서 소리가 사라진 회귀(훅이 지워져도 전부 그린이던 상태) */
+  if (SOUND_REQ.test(tid)) {
+    T(!!(it.tts && it.tts.text), key + tag + ' ' + tid + ' 에 들려주는 말이 없다 — 3막이 다시 읽기만 측정한다');
+  }
+  if (!it.tts || !it.tts.text) return;
+
+  var snd = String(it.tts.text);
+  sndItems++;
+  T(typeof it.tts.onscreen === 'boolean',
+    key + tag + ' tts.onscreen 이 참·거짓이 아님: ' + JSON.stringify(it.tts.onscreen));
+
+  /* ⓐ ★onscreen 참값 대조 — 주장이 아니라 사실인지 본다 */
+  if (it.tts.onscreen) {
+    T(it.q.indexOf(snd) >= 0,
+      key + tag + ' onscreen:true 인데 발문에 그 말이 없다 — 보는 것과 듣는 것이 어긋남: 발문「' + it.q + '」 소리「' + snd + '」');
+  } else {
+    T(it.q.indexOf(snd) < 0,
+      key + tag + ' onscreen:false 인데 발문이 그 문장을 이미 보여 준다 — 듣기가 아니게 됨: ' + it.q);
+  }
+
+  /* ⓑ 소리의 어휘 사다리 전수 — 귀로 나가는 영어도 그날까지 배운 것뿐이어야 한다.
+     화면 검사(q|choices|explain)는 소리를 한 낱말도 보지 않는다. */
+  englishUnits(snd).forEach(function (u) {
+    sndWords++;
+    T(DATA.covered(vocab, u), key + tag + ' 소리로 미배운 낱말이 나감: ' + u + '  (' + snd + ')');
+  });
+
+  /* ⓒ 누설 금지 — 보기를 그대로 읽어 주면 뜻을 몰라도 답이 들린다 */
+  (it.choices || []).forEach(function (c) {
+    T(String(c) !== snd, key + tag + ' 소리가 보기와 같다 — 답을 소리로 읽어 주는 꼴: ' + snd);
+  });
+
+  /* ⓕ 그날까지 원장에 실재하는 문장인가 */
+  T(!!sents[snd], key + tag + ' 원장에 없거나 아직 안 배운 문장을 읽어 줌: ' + snd);
+}
+
+/* ⓔ 세트당 듣기 문항 수 — 라운드로빈 굶김 회귀 가드.
+   core 는 usable[ti % 길이] 를 앞에서부터 돌며 10문항을 채우고 멈춘다. 듣기는 마지막 자리라
+   템플릿이 11개가 되는 순간 **영영 안 뽑힌다**(전량 그린인 채로 듣기만 사라진다). */
+function earCountCheck(g, key, d, items, tag) {
+  var ear = items.filter(function (it) {
+    return /^t_listen_/.test((it.gen && it.gen.template_id) || '');
+  }).length;
+  var want = pairsUptoCount(g, d) >= 3 ? 1 : 0;
+  T(ear === want,
+    key + tag + ' 세트당 듣기 문항 ' + ear + '개 (기대 ' + want + ') — 라운드로빈에서 굶었거나 겹쳤다');
+}
+
 /* ── ①③ 전수: 등록 · 문항수 · 만점 채점 · 어휘 사다리 ───────── */
 DATA.grades().forEach(function (g) {
   var days = DATA.days(g);
@@ -188,14 +285,17 @@ DATA.grades().forEach(function (g) {
     var gr = C.gradeSet(out.items, out.items.map(function (it) { return it.answer; }));
     T(gr.score === gr.max && gr.max === N, key + ' 만점 채점 ' + gr.score + '/' + gr.max);
 
+    var sents = sentsUpto(g, i);
     out.items.forEach(function (it, qi) {
       oracle(g, key, it, ' q' + qi);
+      soundCheck(g, key, it, ' q' + qi, vocab, sents);
       var txt = it.q + ' | ' + (it.choices || []).join(' | ') + ' | ' + (it.explain || '');
       englishUnits(txt).forEach(function (u) {
         T(DATA.covered(vocab, u),
           key + ' q' + qi + ' 미배운 낱말 노출: ' + u + '  (' + it.q + ')');
       });
     });
+    earCountCheck(g, key, i, out.items, '');
   }
 });
 
@@ -206,6 +306,7 @@ DATA.grades().forEach(function (g) {
     var key = keyOf(g, i);
     var today = DATA.day(g, i);
     var vocab = vocabUpto(g, i);
+    var sents = sentsUpto(g, i);
 
     SEEDS.forEach(function (seed) {
       combos++;
@@ -239,11 +340,13 @@ DATA.grades().forEach(function (g) {
         if (/_rev\b/.test(it.id || '') || /_rev_/.test(it.id || '')) hasRev = true;
 
         oracle(g, key, it, ' seed' + seed + ' q' + qi);
+        soundCheck(g, key, it, ' seed' + seed + ' q' + qi, vocab, sents);
         var txt = it.q + ' | ' + (it.choices || []).join(' | ') + ' | ' + (it.explain || '');
         englishUnits(txt).forEach(function (u) {
           T(DATA.covered(vocab, u), key + ' seed' + seed + ' 미배운 낱말 노출: ' + u);
         });
       });
+      earCountCheck(g, key, i, o.items, ' seed' + seed);
 
       /* 1일차는 문장이 하나뿐이라 서로 다른 발문 수가 문장 길이에 묶인다 —
          없는 재료를 지어내느니 중복을 허용한다(english.js 머리 주석). 2일차부터 0. */
@@ -298,5 +401,10 @@ DATA.grades().forEach(function (g) {
   }
 });
 
+/* ★소리 절이 한 건도 안 돈 채로 그린이 나면 그건 검사가 아니라 침묵이다. */
+T(sndItems > 0, '소리 문항을 한 건도 못 봤다 — 소리 절이 통째로 안 돌았다');
+T(sndWords > 0, '소리의 영어 낱말을 한 개도 검사 못 했다 — 사다리 검사가 헛돌았다');
+
+console.log('  · 소리 문항 ' + sndItems + '건 · 소리 영어 낱말 ' + sndWords + '개 사다리 대조');
 console.log('\n조합 ' + combos + ' (표본 20일차 × 4시드) · 전수 160키 — ' + pass + ' PASS / ' + fail + ' FAIL');
 process.exit(fail ? 1 : 0);

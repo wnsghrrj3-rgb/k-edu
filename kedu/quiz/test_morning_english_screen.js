@@ -7,6 +7,7 @@
  *      문맥 예외가 공용 뜻을 이기는가, 뜻 숨기기가 낱말 뜻까지 덮는가
  *   ④ 미리보기(morning/sents_preview.html) — 교사 모드 · DB 무접촉 ·
  *      학년 목록을 원장에서 끌어오는가(하드코딩하면 1·2학년이 뜬다)
+ *   ⑩ 소리 배선(D8-ⓓ): 학생·미리보기 화면이 KTTS 를 싣는가, 수학은 안 싣는가
  *   ⑤ 교사 화면 배선(D4) — 고르기·보기·열기·학년 가드를 실제로 굴려서 확인한다
  *      (짝이 어긋나면 "고를 수 있는데 볼 수 없는 과목"이 된다)
  * 실행: NODE_PATH=/home/claude/node_modules node kedu/quiz/test_morning_english_screen.js
@@ -464,6 +465,29 @@ function boot(file, qs, opt) {
     '원장 없는 학년·이상 일차에서 빈 카드가 나옴');
   T(o3.doc.querySelector('.sheet') !== null, '원장 없는 학년에서 종이가 아예 안 나옴');
 })();
+
+/* ── ⑩ 소리 배선 (D8-ⓓ) ─────────────────────────────────────
+ *  ★이 검사가 필요한 이유: 이 script 줄이 빠져도 화면은 안 깨진다.
+ *    kquiz-ui 가 KTTS 를 못 찾으면 조용히 글 대체로 내려앉아 문항은 그대로 답할 수 있다.
+ *    즉 **아무 증상 없이 소리만 영영 안 나는** 상태가 되고, 검사기 전부가 그린이다.
+ *    그래서 배선 자체를 눈으로 확인한다. (역검증에서 이 줄을 지우면 여기서 죽어야 한다.) */
+var TTS_SRC = '/english/v3/engine/k-tts.js';
+[['index.html', true], ['sents_preview.html', true], ['math.html', false]].forEach(function (row) {
+  var f = row[0], want = row[1];
+  var p = path.join(PAGES, f);
+  if (!fs.existsSync(p)) { T(false, '화면 없음: ' + f); return; }
+  var h = fs.readFileSync(p, 'utf8');
+  var has = h.indexOf(TTS_SRC) >= 0;
+  if (want) {
+    T(has, f + ' 가 KTTS 를 안 싣는다 — 확인 문제 소리가 통째로 안 난다(화면은 멀쩡해 보인다)');
+    /* 순서: 소리 엔진이 렌더러보다 먼저 서야 첫 문항부터 소리가 난다 */
+    T(has && h.indexOf(TTS_SRC) < h.indexOf('/kedu/quiz/kquiz-ui.js'),
+      f + ' 에서 KTTS 가 kquiz-ui 뒤에 실린다 — 첫 문항이 소리를 놓칠 수 있다');
+  } else {
+    /* ★수학은 소리를 안 쓴다. 실으면 쓰지도 않는 엔진을 매일 아침 내려받게 된다. */
+    T(!has, f + ' 가 KTTS 를 싣는다 — 수학은 소리를 안 쓰는데 매일 내려받게 된다');
+  }
+});
 
 Promise.all(jobs).then(function () {
   console.log('\n아침영어 화면 배선 — ' + pass + ' PASS / ' + fail + ' FAIL');
