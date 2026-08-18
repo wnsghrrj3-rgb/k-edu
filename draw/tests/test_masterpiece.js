@@ -80,7 +80,7 @@ const win = {};
 new Function('window', adSrc)(win);
 const D = win.KMDATA;
 const IDS = Object.keys(D);
-t('작품 데이터 16점', IDS.length === 16);
+t('작품 데이터 24점', IDS.length === 24);
 t('8작품 데이터 존재', IDS.every(k => D[k] && D[k].w && D[k].h && D[k].pal && D[k].rle));
 t('팔레트 4~14색 hex', IDS.every(k => D[k].pal.length >= 4 && D[k].pal.length <= 14 && D[k].pal.every(h => /^#[0-9A-F]{6}$/.test(h))));
 t('격자 한 변 600 이하', IDS.every(k => D[k].w <= 600 && D[k].h <= 600));

@@ -44,10 +44,12 @@ t('단계 이름이 안내표에 있음', (() => {
 t('격자 비율 = 화폭 비율', ARTWORKS.every(a => Math.abs(a.gw / a.gh - a.vw / a.vh) < 0.02));
 t('격자 한 변 600 이하(성능)', ARTWORKS.every(a => a.gw <= 600 && a.gh <= 600));
 t('paint 함수 존재', ARTWORKS.every(a => typeof a.paint === 'function'));
+t('난이도 diff 1~3 전 작품', ARTWORKS.every(a => [1, 2, 3].includes(a.diff)));
 t('저작권 — 퍼블릭도메인 화가만', (() => {
   const OK = ['가쓰시카 호쿠사이', '빈센트 반 고흐', '에드바르 뭉크', '클로드 모네', '피트 몬드리안',
     '김홍도', '앙리 마티스', '구스타프 클림트', '앙리 루소',
-    '레오나르도 다빈치', '요하네스 베르메르', '에드가 드가', '조르주 쇠라', '프란츠 마르크', '알브레히트 뒤러'];
+    '레오나르도 다빈치', '요하네스 베르메르', '에드가 드가', '조르주 쇠라', '프란츠 마르크', '알브레히트 뒤러',
+    '바실리 칸딘스키', '파울 클레', '폴 세잔'];
   return ARTWORKS.every(a => OK.includes(a.artist));
 })(), ARTWORKS.map(a => a.artist).join('/'));
 

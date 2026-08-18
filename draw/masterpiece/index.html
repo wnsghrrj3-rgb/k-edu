@@ -119,6 +119,12 @@ button{font-family:inherit;cursor:pointer}
 .pchip.wiggle{animation:wig .3s ease}
 @keyframes wig{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
 
+/* ── 난이도 필터·배지 ── */
+.g-filter{display:flex;gap:8px;margin:0 0 14px;flex-wrap:wrap}
+.gf-chip{height:36px;padding:0 15px;border:1.5px solid var(--border);background:var(--panel);border-radius:11px;color:var(--sub);font-size:14px;transition:all .14s}
+.gf-chip.on{border-color:var(--primary);color:var(--primary);background:var(--primary-light);font-weight:700}
+.art-card.gf-hide{display:none}
+.diff-b{font-size:12px;color:var(--sub);margin-left:6px;white-space:nowrap}
 /* ── 원작 참고 패널 ── */
 #ref-panel{position:fixed;top:68px;right:12px;z-index:30;width:min(38vw,300px);background:var(--panel);border:1.5px solid var(--border);border-radius:14px;padding:8px;box-shadow:0 8px 28px rgba(0,0,0,.28);cursor:pointer}
 #ref-panel img{width:100%;border-radius:9px;display:block}
@@ -165,6 +171,12 @@ button{font-family:inherit;cursor:pointer}
     <div class="hero">
       <h1>번호를 따라 칠하면,<br><span class="grad">명화가 태어나요</span></h1>
       <p>칸마다 적힌 번호와 같은 색을 골라 칠해 보세요. 마지막 칸을 채우는 순간 작품이 완성돼요.</p>
+    </div>
+    <div class="g-filter" id="g-filter">
+      <button class="gf-chip on" data-diff="0">전체</button>
+      <button class="gf-chip" data-diff="1">🌱 입문</button>
+      <button class="gf-chip" data-diff="2">🌿 보통</button>
+      <button class="gf-chip" data-diff="3">🌳 도전</button>
     </div>
     <div class="g-grid" id="g-grid">
       <button class="photo-card" id="photo-card" type="button">
@@ -503,7 +515,7 @@ const AH={ /* 그리기 도우미 */
 const ARTWORKS=[
 /* ══════════════ 김홍도 · 씨름 ══════════════ */
 {
-  id:'ssireum', title:'씨름', artist:'김홍도', year:'1780년대',
+  id:'ssireum', diff:3, title:'씨름', artist:'김홍도', year:'1780년대',
   emoji:'🤼', vw:1000, vh:840, gw:520, gh:437,
   desc:'단원 김홍도의 풍속화첩에 실린 그림이에요. 씨름판을 둥글게 둘러싼 구경꾼들의 얼굴이 저마다 다르고, 벗어 둔 신발과 엿장수까지 그려 넣어 그날의 장터가 그대로 살아나요. 가운데가 아니라 둘레를 보는 재미가 있는 그림이에요.',
   palette:['#EFE4CB','#DFCFAF','#2B2622','#5C5148','#F7F2E6','#D9CDB6','#5B7FA6','#3C4E70','#B4544A','#C89B54','#E6C39A','#C9A177','#8A6B44'],
@@ -608,7 +620,7 @@ const ARTWORKS=[
   }
 },
 {
-  id:'wave', title:'가나가와 해변의 큰 파도', artist:'가쓰시카 호쿠사이', year:'1831년경',
+  id:'wave', diff:2, title:'가나가와 해변의 큰 파도', artist:'가쓰시카 호쿠사이', year:'1831년경',
   emoji:'🌊', vw:560, vh:310, gw:560, gh:310,
   desc:'후지산 46경 연작 가운데 가장 유명한 목판화예요. 거대한 파도의 손톱 같은 물거품 아래, 멀리 후지산이 작고 고요하게 서 있어요. 움직이는 것과 멈춘 것을 한 화면에 담은 그림이에요.',
   palette:['#6B847D','#1D2A45','#DAD5B4','#B9B499','#365970','#7BA298','#C5BFA2','#575642','#2A465F','#AA976C'],
@@ -616,7 +628,7 @@ const ARTWORKS=[
   paint(ctx,d,R){AH.rleImg(ctx,window.KMDATA.wave)}
 },
 {
-  id:'starry', title:'별이 빛나는 밤', artist:'빈센트 반 고흐', year:'1889년',
+  id:'starry', diff:3, title:'별이 빛나는 밤', artist:'빈센트 반 고흐', year:'1889년',
   emoji:'🌌', vw:540, vh:304, gw:540, gh:304,
   desc:'고흐가 프랑스 생레미의 병원에서 창밖 새벽 하늘을 떠올리며 그린 그림이에요. 하늘이 강물처럼 소용돌이치고, 별과 달이 물결 속 등불처럼 빛나요. 붓 자국 하나하나가 살아 움직이는 듯한 작품이에요.',
   palette:['#1C1F20','#496480','#ACB597','#7A93A9','#6B838E','#28303C','#B1A031','#56779E','#2F405F','#626B5D','#8E9D8C','#426197','#314883'],
@@ -624,7 +636,7 @@ const ARTWORKS=[
   paint(ctx,d,R){AH.rleImg(ctx,window.KMDATA.starry)}
 },
 {
-  id:'sunflower', title:'해바라기', artist:'빈센트 반 고흐', year:'1888년',
+  id:'sunflower', diff:2, title:'해바라기', artist:'빈센트 반 고흐', year:'1888년',
   emoji:'🌻', vw:432, vh:540, gw:432, gh:540,
   desc:'고흐가 노란 집에서 친구 고갱을 기다리며 그린 연작이에요. 청록 배경 앞에 열두 송이 — 활짝 핀 꽃, 씨가 가득한 꽃, 고개 숙인 꽃이 함께 담겨 있어요. 고흐는 이 해바라기를 자기 그림의 얼굴로 여겼답니다.',
   palette:['#D0A331','#ACA06E','#ADBAA8','#98662A','#C0CBB7','#CFBB78','#C09336','#938646','#6C713E','#683C24','#AF7E2E','#D4AB44'],
@@ -632,7 +644,7 @@ const ARTWORKS=[
   paint(ctx,d,R){AH.rleImg(ctx,window.KMDATA.sunflower)}
 },
 {
-  id:'scream', title:'절규', artist:'에드바르 뭉크', year:'1893년',
+  id:'scream', diff:2, title:'절규', artist:'에드바르 뭉크', year:'1893년',
   emoji:'😱', vw:424, vh:540, gw:424, gh:540,
   desc:'뭉크가 노을 진 다리 위를 걷다가 "자연을 뚫고 지나가는 커다란 비명"을 느낀 순간을 그렸어요. 하늘도 강물도 함께 출렁이며 소리치는 듯하죠. 마음속 느낌을 그대로 그림에 담은, 표현주의의 문을 연 작품이에요.',
   palette:['#5B543F','#111B14','#7D6442','#C5400A','#CE8F50','#A6552B','#747660','#3E4438','#A18055','#263029','#CA7339','#CF5E1F','#C9A870'],
@@ -640,7 +652,7 @@ const ARTWORKS=[
   paint(ctx,d,R){AH.rleImg(ctx,window.KMDATA.scream)}
 },
 {
-  id:'lilies', title:'수련', artist:'클로드 모네', year:'1905년',
+  id:'lilies', diff:2, title:'수련', artist:'클로드 모네', year:'1905년',
   emoji:'🪷', vw:560, vh:315, gw:560, gh:315,
   desc:'모네는 집 정원에 직접 연못을 만들고, 30년 동안 250점 넘는 수련을 그렸어요. 물 위에 뜬 꽃과 물에 비친 하늘·버드나무가 한 화면에 겹쳐요. 눈앞의 빛을 붙잡으려 한 인상주의의 대표작이에요.',
   palette:['#4A5344','#5EA8D3','#6098AF','#E7A294','#4D7193','#4D6C69','#596752','#7BBDE3','#F8F5ED','#A65557','#64887D','#FEF3AF'],
@@ -648,7 +660,7 @@ const ARTWORKS=[
   paint(ctx,d,R){AH.rleImg(ctx,window.KMDATA.lilies)}
 },
 {
-  id:'mondrian', title:'빨강, 파랑, 노랑의 구성', artist:'피트 몬드리안', year:'1930년',
+  id:'mondrian', diff:1, title:'빨강, 파랑, 노랑의 구성', artist:'피트 몬드리안', year:'1930년',
   emoji:'🟥', vw:800, vh:800, gw:220, gh:220,
   desc:'몬드리안은 세상의 모든 모습을 가장 단순한 것 — 수직선, 수평선, 삼원색 — 으로 줄일 수 있다고 믿었어요. 자를 대고 그은 듯한 이 그림에는 곡선이 하나도 없어요. 디자인과 건축에 큰 영향을 준 작품이에요.',
   palette:['#F5F3EE','#151515','#D63A2F','#2B4C9B','#F2C94C'],
@@ -671,7 +683,7 @@ const ARTWORKS=[
 },
 /* ══════════════ 마티스 · 춤 ══════════════ */
 {
-  id:'dance', title:'춤', artist:'앙리 마티스', year:'1910년',
+  id:'dance', diff:1, title:'춤', artist:'앙리 마티스', year:'1910년',
   emoji:'💃', vw:560, vh:315, gw:560, gh:315,
   desc:'파랑 하늘과 초록 언덕, 그리고 다섯 사람. 마티스는 색을 딱 세 가지로 줄이고 사람도 선 몇 개로 줄였어요. 그런데도 손을 잡고 도는 움직임이 그대로 느껴져요. 왼쪽 두 손이 아슬아슬하게 떨어져 있는 곳을 찾아보세요.',
   palette:['#E86E5C','#267A7D','#A4402F','#2A5C89','#725453','#3D8F93','#164B70','#3E71A5','#5886B4'],
@@ -680,7 +692,7 @@ const ARTWORKS=[
 },
 /* ══════════════ 클림트 · 키스 ══════════════ */
 {
-  id:'kiss', title:'키스', artist:'구스타프 클림트', year:'1908년',
+  id:'kiss', diff:3, title:'키스', artist:'구스타프 클림트', year:'1908년',
   emoji:'💛', vw:538, vh:540, gw:538, gh:540,
   desc:'온통 금빛인 그림이에요. 두 사람이 두른 옷을 보면 한쪽은 네모, 한쪽은 동그라미로 무늬가 갈려 있어요. 클림트는 진짜 금을 얇게 펴서 붙여 그렸대요. 꽃밭 끝에 선 발끝을 찾아보세요.',
   palette:['#738D54','#6D5C2C','#7E739C','#B95B3B','#978551','#9C9B70','#8E7942','#CDB251','#BBAE90','#383228','#BDA44A','#A8913F','#816C37'],
@@ -689,7 +701,7 @@ const ARTWORKS=[
 },
 /* ══════════════ 루소 · 놀람! ══════════════ */
 {
-  id:'jungle', title:'놀람!', artist:'앙리 루소', year:'1891년',
+  id:'jungle', diff:3, title:'놀람!', artist:'앙리 루소', year:'1891년',
   emoji:'🐅', vw:560, vh:315, gw:560, gh:315,
   desc:'세관원으로 일하며 혼자 그림을 배운 루소가 그린 정글이에요. 루소는 열대에 가 본 적이 없어서 식물원과 그림책만 보고 이 숲을 지어냈대요. 번개가 치는 순간 호랑이가 깜짝 놀란 얼굴을 하고 있어요.',
   palette:['#D27828','#5C5C1D','#94742C','#9F4631','#545E37','#434B28','#873723','#676A4E','#7A521F','#7B7316','#A99D42','#818950','#717032','#2D3B20'],
@@ -698,7 +710,7 @@ const ARTWORKS=[
 },
 /* ══════════════ 원작 기반 증설 8점 ══════════════ */
 {
-  id:'mona', title:'모나리자', artist:'레오나르도 다빈치', year:'1503년경',
+  id:'mona', diff:2, title:'모나리자', artist:'레오나르도 다빈치', year:'1503년경',
   emoji:'😊', vw:380, vh:540, gw:380, gh:540,
   desc:'세상에서 가장 유명한 미소예요. 다빈치는 윤곽선을 안개처럼 흐리는 \'스푸마토\' 기법으로 입꼬리를 살짝 감춰 놓아서, 볼 때마다 웃는 듯 아닌 듯 달라 보여요. 눈썹이 없는 것도 한번 찾아보세요.',
   palette:['#FFE766','#401A17','#5F633B','#B5BD78','#663417','#B17925','#A5AB5F','#200A18','#D29832','#FECD51','#8D5419','#ECB23E'],
@@ -706,7 +718,7 @@ const ARTWORKS=[
   paint(ctx,d,R){AH.rleImg(ctx,window.KMDATA.mona)}
 },
 {
-  id:'pearl', title:'진주 귀걸이를 한 소녀', artist:'요하네스 베르메르', year:'1665년경',
+  id:'pearl', diff:2, title:'진주 귀걸이를 한 소녀', artist:'요하네스 베르메르', year:'1665년경',
   emoji:'💎', vw:461, vh:540, gw:461, gh:540,
   desc:'\'북유럽의 모나리자\'라고 불리는 그림이에요. 깜깜한 배경에서 소녀가 막 뒤돌아본 순간 — 귀에 달린 진주 한 알이 빛을 모아 반짝여요. 파란 터번과 노란 옷, 색의 대비가 이 그림의 비밀이에요.',
   palette:['#050313','#CDA46D','#8C7359','#91AAC6','#4A3A2F','#F6DFD0','#E4C59D','#2C1E1B','#A88D6A','#6D5842','#384962'],
@@ -714,7 +726,7 @@ const ARTWORKS=[
   paint(ctx,d,R){AH.rleImg(ctx,window.KMDATA.pearl)}
 },
 {
-  id:'ballet', title:'무용 수업', artist:'에드가 드가', year:'1874년',
+  id:'ballet', diff:3, title:'무용 수업', artist:'에드가 드가', year:'1874년',
   emoji:'🩰', vw:560, vh:315, gw:560, gh:315,
   desc:'드가는 파리 오페라 극장의 발레 수업을 즐겨 그렸어요. 무대 위 반짝이는 순간이 아니라 연습하고, 기다리고, 딴청 부리는 평범한 순간을 담았죠. 지팡이를 짚고 가운데 선 분이 발레 선생님이에요.',
   palette:['#8D7650','#C7B699','#29231C','#5B543C','#A99F87','#DECEB1','#7A8561','#6A7156','#7B6340','#483C27','#958E6B','#BE9A65','#7A411C'],
@@ -722,7 +734,7 @@ const ARTWORKS=[
   paint(ctx,d,R){AH.rleImg(ctx,window.KMDATA.ballet)}
 },
 {
-  id:'sunrise', title:'해돋이 인상', artist:'클로드 모네', year:'1872년',
+  id:'sunrise', diff:2, title:'해돋이 인상', artist:'클로드 모네', year:'1872년',
   emoji:'🌅', vw:560, vh:315, gw:560, gh:315,
   desc:'\'인상주의\'라는 이름이 바로 이 그림에서 나왔어요. 안개 낀 항구의 해돋이를 재빠른 붓질 몇 번으로 잡아냈는데, 평론가가 \'인상만 그렸다\'고 놀린 말이 그대로 유파의 이름이 됐죠. 주황 해가 물에 남긴 빛길을 따라가 보세요.',
   palette:['#E15F3C','#708385','#A99578','#26363D','#48666E','#5A767E','#AC7150','#7F9795','#747F74','#858E7D','#64716A'],
@@ -730,7 +742,7 @@ const ARTWORKS=[
   paint(ctx,d,R){AH.rleImg(ctx,window.KMDATA.sunrise)}
 },
 {
-  id:'bridge', title:'수련 연못의 초록 다리', artist:'클로드 모네', year:'1899년',
+  id:'bridge', diff:2, title:'수련 연못의 초록 다리', artist:'클로드 모네', year:'1899년',
   emoji:'🌉', vw:560, vh:315, gw:560, gh:315,
   desc:'모네가 지베르니 집 정원에 직접 놓은 일본식 다리예요. 다리 아래 연못에는 수련이 떠 있고, 화면 전체가 초록의 겹겹이에요. 모네는 이 다리 하나를 마흔 번도 넘게 그렸답니다.',
   palette:['#C7C6AD','#ACAC65','#8E9455','#567765','#B0B589','#81939A','#2D4644','#6C7B4C','#738C6B','#67808C','#96A9BE','#909F77','#46654D'],
@@ -738,7 +750,7 @@ const ARTWORKS=[
   paint(ctx,d,R){AH.rleImg(ctx,window.KMDATA.bridge)}
 },
 {
-  id:'yellowcow', title:'노란 소', artist:'프란츠 마르크', year:'1911년',
+  id:'yellowcow', diff:1, title:'노란 소', artist:'프란츠 마르크', year:'1911년',
   emoji:'🐮', vw:560, vh:315, gw:560, gh:315,
   desc:'노란 소가 신이 나서 폴짝 뛰어올라요. 마르크는 동물의 마음을 색으로 그렸어요 — 노랑은 기쁨, 파랑은 씩씩함. 진짜 소 색깔이 아니어도 마음이 보이면 된다는 표현주의 그림이에요.',
   palette:['#B88916','#32465E','#CCB043','#27272A','#AE4522','#485340','#6A7283','#D2C1B3','#AC7640','#BE9A80','#D2AA0C','#7F6336'],
@@ -746,7 +758,7 @@ const ARTWORKS=[
   paint(ctx,d,R){AH.rleImg(ctx,window.KMDATA.yellowcow)}
 },
 {
-  id:'circus', title:'서커스', artist:'조르주 쇠라', year:'1891년',
+  id:'circus', diff:2, title:'서커스', artist:'조르주 쇠라', year:'1891년',
   emoji:'🎪', vw:560, vh:315, gw:560, gh:315,
   desc:'쇠라는 붓으로 점을 콕콕 찍어 그림을 완성했어요. 바로 \'점묘법\'이에요. 하얀 말 위에 곡예사가 사뿐 서고, 링 안에서 광대가 재주를 넘어요. 가까이서 보면 점, 멀리서 보면 그림이 되는 마법이죠.',
   palette:['#884321','#967C63','#AE864C','#E5D5A8','#C5B692','#916639','#D3AC6C','#5C483B','#776151','#BF975B','#BE5E35','#AF987A'],
@@ -754,12 +766,78 @@ const ARTWORKS=[
   paint(ctx,d,R){AH.rleImg(ctx,window.KMDATA.circus)}
 },
 {
-  id:'hare', title:'어린 산토끼', artist:'알브레히트 뒤러', year:'1502년',
+  id:'hare', diff:3, title:'어린 산토끼', artist:'알브레히트 뒤러', year:'1502년',
   emoji:'🐇', vw:489, vh:540, gw:489, gh:540,
   desc:'뒤러가 500년도 더 전에 그린 산토끼예요. 사진기가 없던 시절, 털 한 올 한 올과 수염까지 붓끝으로 그렸어요. 토끼 눈망울에는 화실 창문의 빛까지 비쳐 있대요. 관찰의 힘을 보여 주는 그림이에요.',
   palette:['#E9DFCA','#6F5D4B','#9E886D','#B8AB96','#5D4F3F','#7F6C56','#CEC0AB','#E5D7BE','#A79882','#8E7A62'],
   levels:[{name:'쉬움',detail:1},{name:'보통',detail:2},{name:'어려움',detail:3},{name:'마스터',detail:4}],
   paint(ctx,d,R){AH.rleImg(ctx,window.KMDATA.hare)}
+}
+,
+/* ══════════════ 난이도 다양화 증설 8점 ══════════════ */
+{
+  id:'redfuji', diff:1, title:'붉은 후지산', artist:'가쓰시카 호쿠사이', year:'1831년경',
+  emoji:'🗻', vw:560, vh:374, gw:560, gh:374,
+  desc:'이른 여름 아침, 남풍이 불고 하늘이 맑으면 후지산이 아침 해를 받아 붉게 물든대요. 산 하나, 하늘, 구름 — 색 몇 개로 이렇게 큰 그림이 되는 판화예요. 처음 칠하기에 딱 좋아요.',
+  palette:['#42584B','#E9E4C8','#A62F1D','#2F5B96','#BDCFC4','#7891A9','#20273A','#737D65','#B76951'],
+  levels:[{name:'쉬움',detail:1},{name:'보통',detail:2},{name:'어려움',detail:3},{name:'마스터',detail:4}],
+  paint(ctx,d,R){AH.rleImg(ctx,window.KMDATA.redfuji)}
+},
+{
+  id:'kandinsky', diff:1, title:'동심원이 있는 색 연구', artist:'바실리 칸딘스키', year:'1913년',
+  emoji:'🎯', vw:560, vh:418, gw:560, gh:418,
+  desc:'칸딘스키는 색에도 소리가 있다고 믿었어요. 열두 칸에 동그라미를 그리며 색끼리 어떻게 울리는지 실험했죠. 정답이 없는 그림이라, 어떤 색을 골라도 나만의 색 연구가 돼요.',
+  palette:['#9E160C','#652E41','#DCA709','#4E6733','#EAE2DD','#C47F0F','#756C77','#B06C68','#866636','#323236','#BDAC3B','#C1491D','#34427D','#C1AC8A'],
+  levels:[{name:'쉬움',detail:1},{name:'보통',detail:2},{name:'어려움',detail:3},{name:'마스터',detail:4}],
+  paint(ctx,d,R){AH.rleImg(ctx,window.KMDATA.kandinsky)}
+},
+{
+  id:'maypic', diff:1, title:'5월의 그림', artist:'파울 클레', year:'1925년',
+  emoji:'🧩', vw:560, vh:315, gw:560, gh:315,
+  desc:'클레가 색 타일을 붙이듯 네모를 쌓아 만든 5월이에요. 초록·분홍·주황 네모들이 봄 들판처럼 어른거려요. 네모 한 칸 한 칸이 그대로 색칠 칸이 되는 그림이에요.',
+  palette:['#988557','#737677','#6A615A','#3C3435','#6D2F2A','#E6D879','#B1BFB9','#534642','#8D413C','#A2A87E','#4A5471','#524E56','#848F96'],
+  levels:[{name:'쉬움',detail:1},{name:'보통',detail:2},{name:'어려움',detail:3},{name:'마스터',detail:4}],
+  paint(ctx,d,R){AH.rleImg(ctx,window.KMDATA.maypic)}
+},
+{
+  id:'apples', diff:2, title:'사과가 있는 정물', artist:'폴 세잔', year:'1895년경',
+  emoji:'🍎', vw:560, vh:315, gw:560, gh:315,
+  desc:'세잔은 \'사과 하나로 파리를 놀라게 하겠다\'고 말했어요. 굴러갈 듯 놓인 사과들을 여러 방향에서 본 것처럼 그렸죠. 이 사과들이 훗날 피카소의 새로운 그림으로 가는 문을 열었답니다.',
+  palette:['#8E8582','#7E3A27','#3C2F2D','#78706B','#C3BAAD','#7E6446','#62473D','#AB9D92','#5F5858','#9F825A','#2A2222','#4E3C39'],
+  levels:[{name:'쉬움',detail:1},{name:'보통',detail:2},{name:'어려움',detail:3},{name:'마스터',detail:4}],
+  paint(ctx,d,R){AH.rleImg(ctx,window.KMDATA.apples)}
+},
+{
+  id:'cafeterrace', diff:2, title:'밤의 카페 테라스', artist:'빈센트 반 고흐', year:'1888년',
+  emoji:'☕', vw:540, vh:304, gw:540, gh:304,
+  desc:'고흐가 밤을 그린 첫 그림이에요. 검정을 쓰지 않고 노란 불빛과 파란 밤하늘로만 밤을 만들었죠. 카페의 노랑이 별 뜬 하늘의 파랑과 만나는 경계를 찾아보세요.',
+  palette:['#7E875A','#A2A954','#B3B6A4','#D6C045','#353938','#6B684F','#49534C','#D0A04B','#B48B50','#8F9280','#526C77','#987150','#B5A472'],
+  levels:[{name:'쉬움',detail:1},{name:'보통',detail:2},{name:'어려움',detail:3},{name:'마스터',detail:4}],
+  paint(ctx,d,R){AH.rleImg(ctx,window.KMDATA.cafeterrace)}
+},
+{
+  id:'rhone', diff:2, title:'론강의 별이 빛나는 밤', artist:'빈센트 반 고흐', year:'1888년',
+  emoji:'✨', vw:560, vh:315, gw:560, gh:315,
+  desc:'고흐가 강가에 이젤을 세우고 그린 진짜 밤하늘이에요. 북두칠성이 떠 있고, 강물 위엔 가스등 불빛이 금빛 기둥으로 일렁여요. \'별이 빛나는 밤\'보다 한 해 먼저 그린, 조용하고 잔잔한 밤이에요.',
+  palette:['#48513A','#04101F','#B6A049','#225D9B','#021736','#6E7750','#01040A','#03214F','#1C3433','#042F67','#2C4F5A','#094282'],
+  levels:[{name:'쉬움',detail:1},{name:'보통',detail:2},{name:'어려움',detail:3},{name:'마스터',detail:4}],
+  paint(ctx,d,R){AH.rleImg(ctx,window.KMDATA.rhone)}
+},
+{
+  id:'bluedancers', diff:2, title:'푸른 발레리나들', artist:'에드가 드가', year:'1890년경',
+  emoji:'💙', vw:540, vh:304, gw:540, gh:304,
+  desc:'무대에 오르기 직전, 발레리나들이 어깨끈을 고치고 있어요. 드가는 파스텔을 문질러 푸른빛이 겹겹이 스미게 했죠. 같은 파랑인데 몇 가지나 다른 파랑이 숨어 있는지 세어 보세요.',
+  palette:['#2E6F9F','#442D46','#6C7E81','#C7BB8C','#9B9795','#338DC6','#A76C52','#21477A','#5E575A','#D3D6B8','#1B1641'],
+  levels:[{name:'쉬움',detail:1},{name:'보통',detail:2},{name:'어려움',detail:3},{name:'마스터',detail:4}],
+  paint(ctx,d,R){AH.rleImg(ctx,window.KMDATA.bluedancers)}
+},
+{
+  id:'exotic', diff:3, title:'이국의 풍경', artist:'앙리 루소', year:'1910년',
+  emoji:'🐒', vw:560, vh:315, gw:560, gh:315,
+  desc:'루소의 정글에 원숭이들이 숨어 있어요. 오렌지를 따고, 나뭇가지에 매달리고… 모두 몇 마리인지 세어 보세요. 잎사귀 하나하나를 정성껏 그린, 루소가 마지막 해에 남긴 그림이에요.',
+  palette:['#A6432D','#D77C23','#19221C','#465831','#E3D99A','#C48F38','#6D8C3B','#F4A428','#A16E30','#C4C265','#94A346','#547638','#313F2A'],
+  levels:[{name:'쉬움',detail:1},{name:'보통',detail:2},{name:'어려움',detail:3},{name:'마스터',detail:4}],
+  paint(ctx,d,R){AH.rleImg(ctx,window.KMDATA.exotic)}
 }
 
 ];
@@ -872,6 +950,7 @@ function buildGallery(){
   const grid=$('g-grid');
   for(const art of ARTWORKS){
     const card=document.createElement('div');card.className='art-card';
+    card.dataset.diff=art.diff||2;
     let thumb='';
     try{
       const tw=280,th=Math.round(280*art.vh/art.vw);
@@ -888,7 +967,7 @@ function buildGallery(){
     }).join('');
     card.innerHTML=(thumb?'<img class="art-thumb" src="'+thumb+'" alt="">':'<div class="art-thumb"></div>')+
       '<div class="art-body"><div><div class="art-title">'+art.emoji+' '+art.title+'</div>'+
-      '<div class="art-artist">'+art.artist+' · '+art.year+'</div></div>'+
+      '<div class="art-artist">'+art.artist+' · '+art.year+'<span class="diff-b">'+(['','🌱 입문','🌿 보통','🌳 도전'][art.diff||2])+'</span></div></div>'+
       '<div class="lv-row">'+chips+'</div></div>';
     grid.appendChild(card);
   }
@@ -897,6 +976,14 @@ function buildGallery(){
     if(!b)return;
     const art=ARTWORKS.find(a=>a.id===b.dataset.art);
     startArtwork(art,+b.dataset.lv);
+  });
+  $('g-filter').addEventListener('click',e=>{
+    const c=e.target.closest('.gf-chip');if(!c)return;
+    document.querySelectorAll('.gf-chip').forEach(x=>x.classList.toggle('on',x===c));
+    const d=+c.dataset.diff;
+    document.querySelectorAll('#g-grid .art-card').forEach(el=>{
+      el.classList.toggle('gf-hide',d!==0&&+el.dataset.diff!==d);
+    });
   });
 }
 
