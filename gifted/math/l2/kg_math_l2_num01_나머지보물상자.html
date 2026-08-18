@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<!--
+  kg_math_l2_num01 — 나머지 보물상자 [케이영재 수학 · L2 EXPLORER 1호 · NUM 연구소 개시]
+  트랙: 케이영재 / Lab: Number / Level: L2 EXPLORER (트랙 스킨 v2 「신호기」) / 깊이: D1~D8
+  base: kg_math_l3_pat01 (골격·CSS·초기화 계승) + kg_math_l3_pat02 (엔진 공통부 계승)
+        + kg_math_l3_com01 (칩·숫자패드·미터·상자줄 CSS 계승)
+  신규 시각 언어 0 — 상자줄은 com01 `.cal-grid.road` 의 칸 수 변형이다.
+                    칸 상태는 sel · center-cell · diag-b · empty 그대로 쓴다.
+  신규 메카닉 0 — 누르기·숫자패드·고르기 뿐이다 (부품 카탈로그 밖 메카닉 없음)
+  탐구 5단계: 미션(1~3) 탐험(4~7) 발견(8~11) 도전(12~15) 창조(16~18)
+  핵심 수학: 상자에 구슬을 차례로 넣으면 멈춘 상자가 되풀이된다
+             → 한 바퀴는 상자 수만큼이라 같은 상자에 멈추는 수는 그만큼씩 뛴 가족이다
+             → 그래서 큰 수도 다 세지 않고 뛰어 세기로 알 수 있다
+             → 상자 수가 바뀌면 가족도 바뀐다
+             → 나눠 넣어도 멈춘 상자는 같다 (확장 한 방향)
+  점수 100 = 탐험 15 + 추측 10 + 발견 20(q9 10 + q10 10) + 검증 15
+             + 확장 20(ext1 10 + ext2 10) + 창조 20(create1 10 + create2 10)
+  힌트: H1/H2/H3 3단 (감점 없음, 답 비노출) / 창조 검사기는 맞는지만 알려 준다
+  ⚠ 나눗셈 공식을 하드코딩하지 않는다 — 나머지 연산자를 쓰지 않고,
+    답은 언제나 구슬을 하나씩 놓아 보는 방식으로만 구한다
+  ⚠ 수치는 tests/verify_kg_l2_num01.py 전수 열거 32384건으로 코딩 전에 선검증했다.
+    선검증이 코딩 전에 잡아낸 것 2건: 확장 1 상자 수 겹침 · 슬11 오답이 실은 같은 가족
+  ⛔ 규약: 문자식 금지 / 차단 어휘 금지 / 이모지 슬라이드당 ≤2
+  ⛔ L2 규약(설계_L2_레벨톤_v1.md): 문장 길이 상한 · 화면 수 ≤999 · 계산 수 ≤99 ·
+     격자 가로 ≤6칸 · 한 화면 조작 요소 ≤12 · 논지 5겹 · 확장 한 방향
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="kg_math_l2_num01_v1">
+<title>나머지 보물상자 · 케이영재 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#F4F2EC; --ink:#17161C; --ink-soft:#5A5762;
+  --coral:#7B4DFF; --coral-deep:#5B2EE0; --coral-soft:#E7DEFF;
+  --teal:#3B5BA5; --teal-deep:#2C4480; --teal-soft:#DDE4F5;
+  --gold:#9BBF00; --emph:#FF5714; --line:#17161C; --mark:#D6F94C;
+  --f-title:'Black Han Sans',sans-serif; --f-body:'Noto Sans KR',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:4px 4px 0 rgba(23,22,28,.92);
+  --fs-title: clamp(26px, 4.2vw, 46px);
+  --fs-heading: clamp(23px, 3.5vw, 35px);
+  --fs-body: clamp(19px, 2.9vw, 27px);
+  --fs-caption: clamp(17px, 2.6vw, 24px);
+  --fs-label: clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --mw-sm: min(720px, 96vw);
+  --mw-lg: min(880px, 96vw);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+@keyframes ka-glow { 0%,100%{box-shadow:0 0 0 0 rgba(14,138,95,.4);} 50%{box-shadow:0 0 0 10px rgba(14,138,95,0);} }
+
+.ka { background:var(--paper); width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; color:var(--ink); position:relative; overflow:hidden; }
+.ka-h { display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); padding:clamp(11px,1.7vw,15px) clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:hover { transform:translateY(-1px); }
+.ka-pill { font-family:var(--f-title); background:var(--coral); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-where { font-size:clamp(14px,1.6vw,18px); color:var(--ink-soft); flex-shrink:1; }
+.ka-where b { color:var(--ink); }
+.ka-bar { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:46vw; }
+.ka-dot { width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s, background .2s; }
+.ka-dot:hover { transform:scale(1.2); }
+.ka-dot.active { background:var(--coral); transform:scale(1.3); }
+.ka-dot.done { background:var(--teal); }
+.ka-score { font-family:var(--f-title); background:#D6F94C; color:#17161C; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); padding:0; border-radius:50%; cursor:pointer; flex-shrink:0; color:var(--coral-deep); font-size:clamp(13px,2vw,16px); width:clamp(32px,4.5vw,38px); height:clamp(32px,4.5vw,38px); display:flex; align-items:center; justify-content:center; }
+
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; justify-content:safe center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; justify-content:safe center; gap:clamp(7px,1.2vw,11px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(8px,1.4vh,16px) clamp(16px,4vw,48px); overflow-x:hidden; overflow-y:auto; scrollbar-width:none; -ms-overflow-style:none; }
+.slide::-webkit-scrollbar { width:0; height:0; }
+.slide.active { display:flex; }
+.slide-title { font-family:var(--f-title); font-size:var(--fs-title); line-height:1.18; color:var(--ink); font-weight:400; text-align:center; flex-shrink:0; }
+.slide-sub { font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(10px,1.6vw,16px); left:clamp(16px,4vw,40px); font-family:var(--f-title); color:var(--coral); font-size:clamp(13px,1.9vw,18px); letter-spacing:.4px; z-index:5; }
+
+.ka-f { display:flex; justify-content:flex-end; gap:12px; padding:clamp(12px,1.7vw,16px) clamp(16px,4vw,40px); background:linear-gradient(to top, var(--paper) 62%, transparent); flex-shrink:0; }
+.ka-prev, .ka-hint, .ka-next { font-family:var(--f-title); font-size:clamp(15px,1.9vw,22px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(10px,1.4vw,15px) clamp(20px,2.8vw,38px); cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translateY(-2px); }
+.ka-prev { margin-right:auto; }
+.ka-hint { color:#17161C; border-color:#17161C; }
+.ka-next { background:var(--coral); color:#fff; border-color:var(--coral); }
+.ka-prev:disabled, .ka-next:disabled { opacity:.35; cursor:default; transform:none; }
+.ka-hint:disabled { opacity:.4; cursor:default; }
+
+.concept-box { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,18px) clamp(18px,2.8vw,28px); border-radius:20px; font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); text-align:center; line-height:1.5; box-shadow:var(--shadow); }
+.concept-box strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.intro-q { font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; }
+.intro-q strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.goal-list { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); font-size:var(--fs-caption); color:var(--ink); max-width:var(--mw-sm); }
+.goal-list li { background:#fff; border:2px solid var(--line); padding:clamp(7px,1.3vw,11px) clamp(14px,2.6vw,20px); border-radius:16px; list-style:none; box-shadow:var(--shadow); }
+.goal-list li strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+.mission-card { background:#fff; border:3px solid var(--coral-soft); border-radius:26px; padding:clamp(16px,3vw,26px) clamp(20px,3.8vw,34px); max-width:var(--mw-sm); text-align:center; box-shadow:0 6px 0 var(--coral-soft); font-size:var(--fs-body); line-height:1.6; }
+.mission-card strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+
+/* ── 달력 격자 ── */
+.cal-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.1vw,10px); }
+.cal-head { display:flex; align-items:center; gap:clamp(8px,1.6vw,14px); }
+.cal-title { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--coral-deep); }
+.cal-month-btn { font-family:var(--f-title); font-size:var(--fs-label); background:#fff; border:2px solid var(--line); border-radius:999px; padding:4px 12px; cursor:pointer; color:var(--ink-soft); }
+.cal-month-btn.on { background:var(--coral); color:#fff; border-color:var(--coral); }
+.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:clamp(3px,0.6vw,5px); background:#fff; border:2px solid var(--line); border-radius:18px; padding:clamp(8px,1.4vw,12px); box-shadow:var(--shadow); }
+.cal-dow { font-family:var(--f-title); font-size:clamp(12px,1.7vw,16px); color:var(--ink-soft); text-align:center; padding-bottom:2px; }
+.cal-dow.sun { color:var(--emph); }
+.cal-cell { width:clamp(34px,6.2vw,54px); height:clamp(30px,5.4vw,46px); display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:clamp(15px,2.4vw,22px); color:var(--ink); background:var(--paper); border-radius:10px; cursor:pointer; transition:background .15s, transform .1s; user-select:none; }
+.cal-cell:hover { background:var(--coral-soft); }
+.cal-cell.empty { background:transparent; cursor:default; }
+.cal-cell.sel { background:var(--coral); color:#fff; animation:ka-pop .3s ease; }
+.cal-cell.diag-a { outline:3px solid var(--gold); outline-offset:-3px; }
+.cal-cell.diag-b { outline:3px solid var(--teal); outline-offset:-3px; }
+.cal-cell.center-cell { background:var(--emph); color:#fff; }
+.cal-info { display:flex; gap:clamp(8px,1.6vw,14px); flex-wrap:wrap; justify-content:center; min-height:2.2em; align-items:center; }
+.sum-chip { font-family:var(--f-title); font-size:var(--fs-caption); padding:clamp(5px,1vw,8px) clamp(12px,2.2vw,18px); border-radius:999px; background:#fff; border:2px solid var(--line); }
+.sum-chip.a { border-color:var(--gold); color:#5E7500; }
+.sum-chip.b { border-color:var(--teal); color:var(--teal-deep); }
+.sum-chip.tot { border-color:var(--coral); color:var(--coral-deep); }
+.cal-msg { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--coral-deep); min-height:1.5em; text-align:center; }
+.cal-msg.wrong { color:var(--emph); }
+
+/* ── 사례 테이블 ── */
+.case-table { border-collapse:collapse; background:#fff; border-radius:16px; overflow:hidden; box-shadow:var(--shadow); font-size:var(--fs-caption); }
+.case-table th { font-family:var(--f-title); font-weight:400; background:var(--coral-soft); color:var(--coral-deep); padding:clamp(6px,1.1vw,10px) clamp(12px,2.2vw,20px); }
+.case-table td { font-family:var(--f-num); font-weight:800; text-align:center; padding:clamp(6px,1.1vw,10px) clamp(12px,2.2vw,20px); border-top:1px solid var(--line); }
+.case-count { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); }
+.case-count b { color:var(--coral-deep); font-size:1.2em; }
+
+/* ── 관찰·추측 선택 ── */
+.pick-list { display:flex; flex-direction:column; gap:clamp(7px,1.3vw,11px); width:100%; max-width:var(--mw-sm); }
+.pick-item { background:#fff; border:3px solid var(--line); border-radius:18px; padding:clamp(10px,1.8vw,15px) clamp(16px,3vw,24px); font-size:var(--fs-body); cursor:pointer; transition:border-color .2s, transform .12s; text-align:left; font-family:var(--f-body); color:var(--ink); }
+.pick-item:hover { border-color:var(--coral); }
+.pick-item.on { border-color:var(--coral); background:var(--coral-soft); animation:ka-pop .3s ease; }
+.pick-item .tag { font-family:var(--f-title); color:var(--coral-deep); margin-right:8px; }
+
+/* ── 구조 시각화 ── */
+.struct-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.5vw,13px); }
+.struct-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(6px,1.1vw,9px); }
+.struct-cell { width:clamp(76px,13vw,120px); height:clamp(52px,9vw,80px); background:#fff; border:3px solid var(--coral-soft); border-radius:14px; display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:clamp(19px,3vw,30px); color:var(--coral-deep); box-shadow:0 4px 0 var(--coral-soft); }
+.struct-cell.hl-a { border-color:var(--gold); box-shadow:0 4px 0 var(--gold); }
+.struct-cell.hl-b { border-color:var(--teal); box-shadow:0 4px 0 var(--teal-soft); }
+.struct-eq { font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center; }
+.struct-eq .star { color:var(--emph); }
+.arrow-note { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); background:#fff; border:2px solid var(--line); border-radius:999px; padding:5px 16px; cursor:pointer; transition:transform .15s; }
+.arrow-note.revealed { color:var(--coral-deep); border-color:var(--coral); animation:ka-glow 1.4s ease 1; }
+
+/* ── 문제 공통 ── */
+.q-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.5vw,13px); max-width:var(--mw-lg); width:100%; }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; font-weight:400; }
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-sm); }
+.mcq-opts.one-col { grid-template-columns:1fr; }
+.mcq-opt { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,1.9vw,15px); font-family:var(--f-title); font-size:var(--fs-body); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .2s; box-shadow:0 6px 0 var(--coral-soft); font-weight:400; }
+.mcq-opt:hover { border-color:var(--coral); }
+.mcq-opt:active { transform:translateY(4px); box-shadow:none; }
+.mcq-opt.correct { border-color:var(--coral-deep); background:var(--coral); color:#fff; box-shadow:0 6px 0 var(--coral-deep); animation:ka-pop .5s ease; }
+.mcq-opt.wrong { border-color:var(--emph); background:#FFE3D6; color:var(--ink); animation:ka-shake .35s; }
+.mcq-hint { font-family:var(--f-title); font-size:var(--fs-caption); color:#17161C; background:#D6F94C; border-radius:16px; padding:clamp(8px,1.5vw,12px) clamp(14px,2.6vw,20px); max-width:var(--mw-sm); text-align:center; display:none; }
+.mcq-hint.show { display:block; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); color:var(--coral-deep); min-height:1.4em; text-align:center; }
+.q-fb.wrong { color:var(--emph); }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:clamp(30px,5vw,54px); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:20px; padding:clamp(8px,1.5vw,13px) clamp(24px,4.4vw,42px); min-width:clamp(110px,20vw,180px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.q-pad { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(6px,1.2vw,10px); max-width:clamp(280px,56vw,460px); }
+.q-key { background:#fff; border:2px solid var(--line); border-radius:14px; padding:clamp(7px,1.4vw,11px) 0; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, background .15s; box-shadow:0 4px 0 var(--line); }
+.q-key:hover { background:var(--coral-soft); border-color:var(--coral); }
+.q-key:active { transform:translateY(3px); box-shadow:none; }
+.q-key.fn { background:#D6F94C; color:#17161C; font-family:var(--f-title); font-size:var(--fs-caption); border-color:#17161C; box-shadow:0 4px 0 #17161C; }
+
+/* ── 모양 실험실 ── */
+.shape-pick { display:flex; gap:clamp(8px,1.5vw,13px); flex-wrap:wrap; justify-content:center; }
+.shape-btn { background:#fff; border:3px solid var(--line); border-radius:16px; padding:clamp(8px,1.4vw,12px) clamp(12px,2.2vw,18px); cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:5px; transition:border-color .2s, transform .12s; }
+.shape-btn:hover { border-color:var(--coral); }
+.shape-btn.on { border-color:var(--coral); background:var(--coral-soft); }
+.shape-mini { display:grid; grid-template-columns:repeat(3, clamp(10px,1.8vw,15px)); gap:2px; }
+.shape-mini i { display:block; width:clamp(10px,1.8vw,15px); height:clamp(10px,1.8vw,15px); border-radius:3px; background:var(--line); }
+.shape-mini i.f { background:var(--coral); }
+.shape-name { font-family:var(--f-title); font-size:var(--fs-label); color:var(--ink); }
+.rule-build { display:flex; align-items:center; gap:clamp(6px,1.2vw,10px); flex-wrap:wrap; justify-content:center; font-family:var(--f-title); font-size:var(--fs-body); }
+.rule-slot { background:#fff; border:3px dashed var(--coral); border-radius:14px; min-width:clamp(72px,13vw,120px); padding:clamp(6px,1.1vw,9px) clamp(10px,1.8vw,14px); text-align:center; color:var(--coral-deep); font-family:var(--f-num); font-weight:800; cursor:pointer; }
+.rule-slot.filled { border-style:solid; background:var(--coral-soft); }
+.rule-choice { display:flex; gap:clamp(6px,1.1vw,9px); flex-wrap:wrap; justify-content:center; }
+.rule-chip { background:#fff; border:2px solid var(--line); border-radius:999px; padding:clamp(5px,1vw,8px) clamp(12px,2.2vw,18px); font-family:var(--f-title); font-size:var(--fs-caption); cursor:pointer; transition:transform .12s, border-color .15s; }
+.rule-chip:hover { border-color:var(--coral); transform:translateY(-2px); }
+
+/* ── 탐정 카드·마무리 ── */
+.detective-card { background:#fff; border:3px solid var(--gold); border-radius:26px; padding:clamp(16px,3vw,26px) clamp(20px,3.8vw,34px); max-width:var(--mw-sm); width:100%; box-shadow:0 8px 0 var(--mark); display:flex; flex-direction:column; gap:clamp(7px,1.3vw,11px); }
+.dc-row { display:flex; justify-content:space-between; gap:14px; font-size:var(--fs-caption); border-bottom:1px dashed var(--line); padding-bottom:6px; }
+.dc-row b { font-family:var(--f-title); font-weight:400; color:var(--coral-deep); }
+.dc-title { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; }
+.wrap-score { font-family:var(--f-num); font-weight:800; font-size:clamp(56px,10vw,110px); color:var(--coral-deep); line-height:1; }
+.wrap-msg { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); }
+.home-card { background:var(--teal-soft); border-radius:20px; padding:clamp(12px,2.2vw,18px) clamp(18px,3.2vw,26px); font-size:var(--fs-caption); color:var(--teal-deep); max-width:var(--mw-sm); text-align:center; line-height:1.55; }
+.next-mini { display:flex; gap:clamp(8px,1.5vw,13px); flex-wrap:wrap; justify-content:center; }
+.next-chip { font-family:var(--f-title); font-size:var(--fs-label); background:#fff; border:2px solid var(--line); border-radius:999px; padding:6px 16px; color:var(--ink-soft); }
+
+/* ═══ 케이영재 스킨 v2 「신호기」 — 트랙 전용 (헌법 v1.3 §3-α · skin_v2_signal.py 가 단일 원본) ═══
+   굵은 먹선 + 오프셋 통그림자 + 보라·라임. 레이아웃 값(크기·간격)은 건드리지 않는다. */
+.ka-h { border-bottom:3px solid var(--ink); }
+.ka-prev, .ka-hint, .ka-next { box-shadow:3px 3px 0 var(--ink); }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translate(-1px,-1px); box-shadow:4px 4px 0 var(--ink); }
+.ka-prev:active, .ka-hint:active, .ka-next:active { transform:translate(3px,3px); box-shadow:0 0 0 var(--ink); }
+.ka-hint { background:var(--mark); }
+.ka-pill { border:2px solid var(--ink); box-shadow:2px 2px 0 var(--ink); }
+.ka-score { border:2px solid var(--ink); box-shadow:2px 2px 0 var(--ink); }
+.ka-dot { background:#CBC8BF; }
+.mcq-opt { border-color:var(--ink); box-shadow:5px 5px 0 var(--ink); }
+.mcq-opt.correct { box-shadow:5px 5px 0 var(--coral-deep); }
+.detective-card { border-color:var(--ink); }
+.mission-card { border-color:var(--ink); box-shadow:6px 6px 0 var(--ink); }
+.cal-cell { border:2px solid var(--ink); }
+.cal-cell.empty { border-color:transparent; background:transparent; }
+
+/* ═══ 공용 부품 CSS (com01 정의 문자 그대로 추출·주입 — 손으로 옮겨 적지 않는다) ═══ */
+/* 상자줄은 `.cal-grid.road` 의 칸 수(--road-n)만 바꾼 것이다 — 새 시각 언어 0 */
+.vox-btns { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+.lab-meter { display:flex; align-items:baseline; justify-content:center; gap:8px; margin:6px 0; }
+.lab-label { font-size:var(--fs-label); color:var(--ink-soft); font-family:var(--f-title); }
+.lab-count { font-family:var(--f-title); font-size:var(--fs-h1); color:var(--coral-deep); min-width:2.2em; text-align:center; }
+.chip-row { display:flex; gap:clamp(5px,1vw,9px); justify-content:center; flex-wrap:wrap; margin:6px 0; }
+.road-row { display:flex; gap:clamp(10px,2.6vw,26px); justify-content:center; align-items:flex-end; flex-wrap:wrap; }
+.road-one { display:flex; flex-direction:column; align-items:center; gap:5px; }
+.cal-grid.road { --road-c:clamp(30px,5.2vw,48px); grid-template-columns:repeat(var(--road-n,4), var(--road-c)); justify-content:center; gap:clamp(5px,1.1vw,9px); }
+.cal-grid.road .cal-cell { width:var(--road-c); height:var(--road-c); border-radius:50%; font-size:clamp(12px,2vw,18px); cursor:default; }
+.cal-grid.road.tap .cal-cell { cursor:pointer; }
+.cal-grid.road.small { --road-c:clamp(20px,3.4vw,32px); gap:clamp(3px,0.7vw,6px); }
+.cal-grid.road.small .cal-cell { font-size:clamp(9px,1.5vw,13px); }
+</style>
+</head>
+<body>
+<div class="ka">
+  <header class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 나가기</button>
+    <span class="ka-pill">케이영재</span>
+    <span class="ka-where"><b>나머지 보물상자</b> · 수 연구소</span>
+    <div class="ka-bar" id="dots"></div>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </header>
+
+  <main class="ka-m" id="main">
+
+    <!-- 슬1 · 미션: 무대 -->
+    <section class="slide">
+      <span class="stage-badge">미션 1/3</span>
+      <h1 class="slide-title">나머지 보물상자</h1>
+      <p class="slide-sub">구슬을 차례로 넣는다</p>
+      <div class="road-one">
+        <div class="cal-grid road" id="s1-box"></div>
+        <div class="cal-grid road" id="s1-num"></div>
+      </div>
+      <div class="concept-box">상자가 1번부터 4번까지 있다.
+        구슬은 1번 상자부터 하나씩 들어간다.
+        4번 다음은 다시 1번이다.</div>
+    </section>
+
+    <!-- 슬2 · 미션: 견본 -->
+    <section class="slide">
+      <span class="stage-badge">미션 2/3</span>
+      <h1 class="slide-title">여섯 개를 넣어 보자</h1>
+      <p class="slide-sub">마지막 구슬이 어디서 멈출까</p>
+      <div class="road-one">
+        <div class="cal-grid road" id="s2-box"></div>
+        <div class="cal-grid road" id="s2-num"></div>
+      </div>
+      <div class="lab-meter">
+        <span class="lab-label">구슬</span><span class="lab-count" id="s2-n">6</span><span class="lab-label">개 · 멈춘 상자</span><span class="lab-count" id="s2-stop">2</span><span class="lab-label">번</span>
+      </div>
+      <div class="concept-box">구슬을 여섯 개 넣었다.
+        마지막 구슬은 2번 상자에 멈췄다.
+        이것을 멈춘 상자라 하자.</div>
+    </section>
+
+    <!-- 슬3 · 미션: 오늘의 물음 -->
+    <section class="slide">
+      <span class="stage-badge">미션 3/3</span>
+      <h1 class="slide-title">오늘의 물음</h1>
+      <p class="slide-sub">멈춘 상자에 규칙이 있을까</p>
+      <div class="concept-box">구슬 수를 바꾸면 어떻게 될까.
+        같은 상자에 멈추는 수가 있을까.
+        다 세지 않고도 알 수 있을까.</div>
+      <div class="concept-box">오늘은 직접 넣어 보고 찾는다.</div>
+    </section>
+
+    <!-- 슬4 · 탐험: 직접 넣기 -->
+    <section class="slide">
+      <span class="stage-badge">탐험 1/4</span>
+      <h1 class="slide-title">직접 넣어 보자</h1>
+      <p class="slide-sub">구슬을 늘리며 멈춘 상자를 보자</p>
+      <div class="road-one">
+        <div class="cal-grid road" id="s4-box"></div>
+        <div class="cal-grid road" id="s4-num"></div>
+      </div>
+      <div class="lab-meter">
+        <span class="lab-label">구슬</span><span class="lab-count" id="s4-n">6</span><span class="lab-label">개 · 멈춘 상자</span><span class="lab-count" id="s4-stop">2</span><span class="lab-label">번</span>
+      </div>
+      <div class="vox-btns" id="s4-btns"></div>
+      <div class="concept-box">단추를 눌러 구슬 수를 바꾸자.</div>
+    </section>
+
+    <!-- 슬5 · 탐험: 사례 모으기 -->
+    <section class="slide" data-q-id="explore">
+      <span class="stage-badge">탐험 2/4</span>
+      <h1 class="slide-title">세 가지를 적어 보자</h1>
+      <div class="q-stage">
+        <p class="q-prompt">구슬 수를 바꿔 세 번 적자</p>
+        <div class="road-one">
+          <div class="cal-grid road" id="s5-box"></div>
+          <div class="cal-grid road" id="s5-num"></div>
+        </div>
+        <div class="lab-meter">
+          <span class="lab-label">구슬</span><span class="lab-count" id="s5-n">6</span><span class="lab-label">개 · 멈춘 상자</span><span class="lab-count" id="s5-stop">2</span><span class="lab-label">번</span>
+        </div>
+        <div class="vox-btns" id="s5-btns"></div>
+        <div class="chip-row" id="tbl-cases"></div>
+        <p class="q-fb" id="fb-explore"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["구슬 수를 하나씩 늘려 보자.","같은 상자가 다시 나오는지 보자.","적은 것을 나란히 놓고 보자."]'></div>
+    </section>
+
+    <!-- 슬6 · 탐험: 상자 수 바꾸기 -->
+    <section class="slide">
+      <span class="stage-badge">탐험 3/4</span>
+      <h1 class="slide-title">상자를 셋으로</h1>
+      <p class="slide-sub">상자 수가 바뀌면 어떻게 될까</p>
+      <div class="road-one">
+        <div class="cal-grid road" id="s6-box"></div>
+        <div class="cal-grid road" id="s6-num"></div>
+      </div>
+      <div class="lab-meter">
+        <span class="lab-label">구슬</span><span class="lab-count" id="s6-n">6</span><span class="lab-label">개 · 멈춘 상자</span><span class="lab-count" id="s6-stop">3</span><span class="lab-label">번</span>
+      </div>
+      <div class="vox-btns" id="s6-btns"></div>
+      <div class="concept-box">상자가 셋일 때도 넣어 보자.</div>
+    </section>
+
+    <!-- 슬7 · 탐험: 두 무대 견주기 -->
+    <section class="slide">
+      <span class="stage-badge">탐험 4/4</span>
+      <h1 class="slide-title">나란히 놓고 보자</h1>
+      <p class="slide-sub">멈춘 상자를 차례로 적었다</p>
+      <div class="road-one">
+        <div class="road-one">
+          <span class="lab-label">상자 4개</span>
+          <div class="chip-row" id="s7-a"></div>
+        </div>
+        <div class="road-one">
+          <span class="lab-label">상자 3개</span>
+          <div class="chip-row" id="s7-b"></div>
+        </div>
+      </div>
+      <div class="concept-box">둘 다 같은 차례가 되풀이된다.
+        되풀이되는 길이가 서로 다르다.</div>
+    </section>
+
+    <!-- 슬8 · 발견: 추측 -->
+    <section class="slide" data-q-id="conjecture">
+      <span class="stage-badge">발견 1/4</span>
+      <h1 class="slide-title">내 추측을 고르자</h1>
+      <div class="q-stage">
+        <p class="q-prompt">같은 상자에 멈추는 수들의 사이는?</p>
+        <div class="mcq-opts" id="conj-opts">
+          <button class="mcq-opt" data-c="0">1씩 늘어난다</button>
+          <button class="mcq-opt" data-c="1">상자 수만큼 늘어난다</button>
+          <button class="mcq-opt" data-c="2">2씩 늘어난다</button>
+          <button class="mcq-opt" data-c="3">늘 다르다</button>
+        </div>
+        <p class="q-fb" id="conj-fb"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["내가 적은 사례를 다시 보자.","같은 상자끼리 모아 보자.","앞의 수와 뒤의 수를 견주자."]'></div>
+    </section>
+
+    <!-- 슬9 · 발견: 구조 -->
+    <section class="slide">
+      <span class="stage-badge">발견 2/4</span>
+      <h1 class="slide-title">한 가족을 모아 보자</h1>
+      <p class="slide-sub">상자 4개 · 2번에 멈추는 수들</p>
+      <div class="chip-row" id="s9-fam"></div>
+      <div class="road-one">
+        <div class="cal-grid road" id="s9-box"></div>
+        <div class="cal-grid road" id="s9-num"></div>
+      </div>
+      <div class="concept-box">한 바퀴는 상자 수만큼이다.
+        그래서 4씩 뛴 수가 모두 2번이다.
+        이 수들을 한 가족이라 하자.</div>
+    </section>
+
+    <!-- 슬10 · 발견: 확인 1 -->
+    <section class="slide" data-q-id="q9">
+      <span class="stage-badge">발견 3/4</span>
+      <h1 class="slide-title">상자가 셋일 때</h1>
+      <div class="q-stage">
+        <p class="q-prompt">구슬 11개는 몇 번에 멈출까?</p>
+        <div class="road-one">
+          <div class="cal-grid road" id="q9-box"></div>
+          <div class="cal-grid road" id="q9-num"></div>
+        </div>
+        <div class="mcq-opts" id="q9-opts">
+          <button class="mcq-opt" data-a="1">1번</button>
+          <button class="mcq-opt" data-a="2">2번</button>
+          <button class="mcq-opt" data-a="3">3번</button>
+        </div>
+        <p class="q-fb" id="fb-q9"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["3씩 뛴 수를 떠올리자.","9까지는 세 바퀴다.","9 다음부터 두 개 더 넣자."]'></div>
+    </section>
+
+    <!-- 슬11 · 발견: 확인 2 -->
+    <section class="slide" data-q-id="q10">
+      <span class="stage-badge">발견 4/4</span>
+      <h1 class="slide-title">가족의 넷째 수</h1>
+      <div class="q-stage">
+        <p class="q-prompt">상자 5개 · 3번 가족의 넷째 수는?</p>
+        <div class="chip-row" id="q10-fam"></div>
+        <div class="mcq-opts" id="q10-opts">
+          <button class="mcq-opt" data-a="16">16</button>
+          <button class="mcq-opt" data-a="17">17</button>
+          <button class="mcq-opt" data-a="18">18</button>
+          <button class="mcq-opt" data-a="19">19</button>
+        </div>
+        <p class="q-fb" id="fb-q10"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["첫째 수부터 찾자.","한 바퀴는 다섯이다.","3에서 5씩 세 번 뛰자."]'></div>
+    </section>
+
+    <!-- 슬12 · 도전: 큰 수 검증 -->
+    <section class="slide" data-q-id="ver">
+      <span class="stage-badge">도전 1/4</span>
+      <h1 class="slide-title">쉰 개를 넣는다면</h1>
+      <div class="q-stage">
+        <p class="q-prompt">상자 4개 · 구슬 50개는 몇 번?</p>
+        <div class="q-display" id="ver-disp">&nbsp;</div>
+        <div class="q-pad" id="ver-pad"></div>
+        <p class="q-fb" id="fb-ver"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["다 세지 않아도 된다.","4씩 뛴 수를 떠올리자.","48까지가 열두 바퀴다."]'></div>
+    </section>
+
+    <!-- 슬13 · 도전: 상자 수를 바꾸면 -->
+    <section class="slide" data-q-id="ext1">
+      <span class="stage-badge">도전 2/4</span>
+      <h1 class="slide-title">상자만 하나 늘리면</h1>
+      <div class="q-stage">
+        <p class="q-prompt">같은 50개 · 상자 5개는 몇 번?</p>
+        <div class="chip-row" id="ext1-hintchips"></div>
+        <div class="mcq-opts" id="ext1-opts">
+          <button class="mcq-opt" data-a="1">1번</button>
+          <button class="mcq-opt" data-a="2">2번</button>
+          <button class="mcq-opt" data-a="3">3번</button>
+          <button class="mcq-opt" data-a="4">4번</button>
+          <button class="mcq-opt" data-a="5">5번</button>
+        </div>
+        <p class="q-fb" id="fb-ext1"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["가족이 달라진다.","한 바퀴가 다섯이 됐다.","5씩 뛴 수를 보자."]'></div>
+    </section>
+
+    <!-- 슬14 · 도전: 나눠 넣기 -->
+    <section class="slide" data-q-id="ext2">
+      <span class="stage-badge">도전 3/4</span>
+      <h1 class="slide-title">나눠 넣어도 될까</h1>
+      <div class="q-stage">
+        <p class="q-prompt">상자 5개에 17개를 넣었다</p>
+        <div class="lab-meter">
+          <span class="lab-label">지금 멈춘 상자</span><span class="lab-count" id="ext2-mid">2</span><span class="lab-label">번</span>
+        </div>
+        <p class="q-prompt">이어서 26개를 더 넣으면?</p>
+        <div class="mcq-opts" id="ext2-opts">
+          <button class="mcq-opt" data-a="1">1번</button>
+          <button class="mcq-opt" data-a="2">2번</button>
+          <button class="mcq-opt" data-a="3">3번</button>
+          <button class="mcq-opt" data-a="4">4번</button>
+          <button class="mcq-opt" data-a="5">5번</button>
+        </div>
+        <p class="q-fb" id="fb-ext2"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["멈춘 자리에서 이어 넣자.","2번에서 26개를 더 넣는다.","한 번에 43개 넣은 것과 같다."]'></div>
+    </section>
+
+    <!-- 슬15 · 도전: 정리 -->
+    <section class="slide">
+      <span class="stage-badge">도전 4/4</span>
+      <h1 class="slide-title">알아낸 것</h1>
+      <div class="concept-box">멈춘 상자는 되풀이된다.
+        한 바퀴는 상자 수만큼이다.
+        같은 상자 가족은 그만큼씩 뛴다.</div>
+      <div class="concept-box">상자 수가 바뀌면 가족도 바뀐다.
+        나눠 넣어도 멈춘 상자는 같다.</div>
+    </section>
+
+    <!-- 슬16 · 창조: 내 문제 만들기 -->
+    <section class="slide" data-q-id="create1">
+      <span class="stage-badge">창조 1/3</span>
+      <h1 class="slide-title">내 문제를 만들자</h1>
+      <div class="q-stage">
+        <p class="q-prompt">상자 수와 구슬 수를 정하자</p>
+        <div class="vox-btns" id="cr-kbtns"></div>
+        <div class="lab-meter">
+          <span class="lab-label">상자</span><span class="lab-count" id="cr-k">4</span><span class="lab-label">개 · 구슬</span><span class="lab-count" id="cr-n">5</span><span class="lab-label">개</span>
+        </div>
+        <div class="vox-btns" id="cr-nbtns"></div>
+        <p class="q-fb" id="fb-create1"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["상자는 3개부터 6개까지다.","구슬은 5개부터 99개까지다.","다 정했으면 완성을 누르자."]'></div>
+    </section>
+
+    <!-- 슬17 · 창조: 답 고르고 규칙 카드 -->
+    <section class="slide" data-q-id="create2">
+      <span class="stage-badge">창조 2/3</span>
+      <h1 class="slide-title">내 문제의 답</h1>
+      <div class="q-stage">
+        <p class="q-prompt" id="cr2-prompt">먼저 앞에서 문제를 만들자</p>
+        <div class="mcq-opts" id="cr2-opts"></div>
+        <p class="q-fb" id="fb-create2"></p>
+      </div>
+      <div class="concept-box" id="dc-plan">규칙 카드는 문제를 만들면 채워진다.</div>
+      <div class="mcq-hint" data-hints='["내가 정한 상자 수를 보자.","가족을 떠올려 뛰어 세자.","마지막 구슬이 멈춘 곳이다."]'></div>
+    </section>
+
+    <!-- 슬18 · 창조: 마무리 -->
+    <section class="slide">
+      <span class="stage-badge">창조 3/3</span>
+      <h1 class="slide-title">보물상자 연구 끝</h1>
+      <p class="slide-sub">오늘 점수 <span id="final-score">0</span>점</p>
+      <div class="concept-box" id="wrap-msg"></div>
+      <div class="concept-box">되풀이를 찾으면 크게 세지 않아도 된다.
+        이 눈은 달력에서도 쓰인다.</div>
+    </section>
+
+  </main>
+
+  <footer class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next" id="next" onclick="goNext()">다음 →</button>
+  </footer>
+</div>
+
+<script>
+/* ═══════════ KGiftedCore — 순수 로직 (DOM 무의존, 테스트 대상) ═══════════
+   나눗셈 공식을 하나도 갖고 있지 않다. 나머지 연산자를 쓰지 않는다.
+   답은 언제나 구슬을 하나씩 실제로 놓아 보는 방식으로만 구한다
+   (헌법 §3-6 — 학생이 발견할 몫을 코드가 미리 쥐지 않는다).
+   하니스가 독립 구현과 전수 대조한다. */
+const KGiftedCore = {
+  LESSON: 'kg_math_l2_num01',
+  SCORE_PLAN: { explore: 15, conjecture: 10, q9: 10, q10: 10, ver: 15, ext1: 10, ext2: 10, create1: 10, create2: 10 },
+
+  /* ── 무대 ──
+     상자가 1번부터 K번까지 한 줄로 있다. 구슬을 1번 상자부터 차례로 하나씩 넣는다.
+     마지막 구슬이 들어간 상자를 「멈춘 상자」라 한다. */
+  INTRO_K: 4, INTRO_N: 6,
+  EX_K: 4, EX_N0: 6, EX_NEED: 3, EX_MAX: 24,
+  SEC_K: 3, SEC_N0: 6,
+  FAM_K: 4, FAM_B: 2, FAM_SHOW: 6,
+  Q9_K: 3, Q9_N: 11,
+  Q10_K: 5, Q10_B: 3, Q10_NTH: 4,
+  VER_K: 4, VER_N: 50,
+  EXT1_K: 5, EXT1_N: 50,
+  EXT2_K: 5, EXT2_A: 17, EXT2_B: 26,
+  CK_MIN: 3, CK_MAX: 6, CN_MIN: 5, CN_MAX: 99,
+
+  /* ── 구슬을 하나씩 놓는다 (지름길 없음) ── */
+  stop(n, k) {
+    let box = 0;
+    for (let i = 0; i < n; i++) { box = box + 1; if (box > k) box = 1; }
+    return box;
+  },
+  /* 상자마다 구슬이 몇 개 들어갔는가 — 이것도 하나씩 놓아 세어 본다 */
+  fill(n, k) {
+    const out = [];
+    for (let i = 0; i <= k; i++) out.push(0);
+    let box = 0;
+    for (let i = 0; i < n; i++) { box = box + 1; if (box > k) box = 1; out[box] = out[box] + 1; }
+    return out;
+  },
+  /* b번 상자에 멈추는 구슬 수를 작은 것부터 모은다 */
+  family(k, b, howMany) {
+    const out = [];
+    let n = 1;
+    while (out.length < howMany && n <= 400) { if (this.stop(n, k) === b) out.push(n); n++; }
+    return out;
+  },
+
+  /* ── 창조 검사기 — 맞는지만 알려 준다. 규칙은 알려 주지 않는다 (§3-6) ── */
+  checkCreate(k, n, pick) {
+    if (k < this.CK_MIN || k > this.CK_MAX) return { ok: false, why: 'k' };
+    if (n < this.CN_MIN || n > this.CN_MAX) return { ok: false, why: 'n' };
+    if (pick === null || pick === undefined) return { ok: false, why: 'nopick' };
+    return { ok: this.stop(n, k) === pick, why: 'checked', ans: this.stop(n, k) };
+  }
+};
+if (typeof module !== 'undefined' && module.exports) module.exports = { KGiftedCore };
+if (typeof window !== 'undefined') window.KGiftedCore = KGiftedCore;
+
+/* ═══════════ 엔진 (base: kg_math_l3_pat01 · pat02 공통부 · com01 칩·숫자패드·상자줄 계승 · 힌트 3단) ═══════════ */
+const TOTAL = 18;
+const LESSON_ID = 'kg_math_l2_num01';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+const HINT_MAX = 3;
+const BOX_MAX = 6;   /* 상자는 여섯 개까지 (L2 §5) */
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+/* ═══ 화면 맞춤 — 슬라이드가 프레임보다 길면 균일 축소 (제목이 헤더 뒤로 잘리는 것 방지) ═══ */
+const FIT_MIN = 0.55, FIT_STEP = 0.04;
+let fitPending = false;
+function fitActiveSlide() {
+  const el = document.querySelector('.slide.active');
+  if (!el) return;
+  if (el.style.zoom) el.style.zoom = '';
+  if (!(window.CSS && CSS.supports && CSS.supports('zoom', '0.9'))) return;
+  if (!el.clientHeight) return;
+  let k = 1;
+  for (let i = 0; i < 16 && el.scrollHeight > el.clientHeight + 1; i++) {
+    k = Math.max(FIT_MIN, k - FIT_STEP);
+    el.style.zoom = k;
+    if (k === FIT_MIN) break;
+  }
+}
+function scheduleFit() {
+  if (fitPending) return;
+  fitPending = true;
+  requestAnimationFrame(() => { fitPending = false; fitActiveSlide(); });
+}
+window.addEventListener('resize', scheduleFit);
+window.addEventListener('orientationchange', scheduleFit);
+document.addEventListener('click', scheduleFit, true);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(scheduleFit);
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.querySelectorAll('#dots .ka-dot').forEach((d, i) => { d.classList.toggle('active', i === cur); d.classList.toggle('done', i < cur); });
+  document.getElementById('prev').disabled = cur === 0;
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.hintLevel >= HINT_MAX; }
+  else { hintBtn.disabled = true; }
+  if (cur === TOTAL - 1) {
+    document.getElementById('next').textContent = '마치기 →';
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('wrap-msg').textContent = wrapMsg(score);
+    saveProgress(true);
+  } else { document.getElementById('next').textContent = '다음 →'; }
+  if (cur === 4) renderCaseTable();
+  if (cur === 16) renderAgentCard();
+  fitActiveSlide();
+}
+function saveProgress(done) {
+  const data = { cur, score, done, startedAt, finishedAt: done ? Date.now() : null, qState, cases: exploreCases, conj: conjPicked, myRule: myRuleText, crK: crK, crN: crN };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function wrapMsg(s) {
+  if (s >= 100) return '전설의 보물상자 연구원!';
+  if (s >= 80) return '대단한 연구였다!';
+  if (s >= 60) return '연구하는 눈이 자라났다!';
+  return '단서는 충분히 모았다. 다시 도전해도 좋다!';
+}
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+function showHint() {
+  const qid = currentQId(); if (!qid) return;
+  const st = getQState(qid); if (st.hintLevel >= HINT_MAX) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint'); if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[Math.min(st.hintLevel, hints.length) - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= HINT_MAX;
+}
+
+
+/* ═══ 칩·숫자패드·단추 공통 (com01 정의 문자 그대로 추출·주입) ═══ */
+function chip(elId, text, kind) {
+  const s = document.createElement('span');
+  s.className = 'sum-chip ' + (kind || 'a');
+  s.textContent = text;
+  document.getElementById(elId).appendChild(s);
+}
+function buildPad(padId, dispId, maxLen, onSubmit) {
+  const pad = document.getElementById(padId);
+  const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '←', '확인'];
+  let val = '';
+  const draw = () => { document.getElementById(dispId).textContent = val || '\u00A0'; };
+  keys.forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'q-key' + (k === '←' || k === '확인' ? ' fn' : '');
+    b.textContent = k;
+    b.addEventListener('click', () => {
+      if (k === '←') val = val.slice(0, -1);
+      else if (k === '확인') { if (val !== '') { const v = parseInt(val, 10); if (onSubmit(v) !== false) val = ''; } }
+      else if (val.length < maxLen) val += k;
+      draw();
+    });
+    pad.appendChild(b);
+  });
+  draw();
+}
+function stepBtn(wrapId, label, fn) {
+  const b = document.createElement('button');
+  b.className = 'cal-month-btn';
+  b.textContent = label;
+  b.addEventListener('click', fn);
+  document.getElementById(wrapId).appendChild(b);
+  return b;
+}
+function clearChips(id) { const e = document.getElementById(id); if (e) e.innerHTML = ''; }
+
+/* ═══════════ 상자줄 렌더 (com01 `.cal-grid.road` 를 그대로 쓰고 칸 수만 바꾼다) ═══════════ */
+/* 위 줄 = 상자에 든 구슬 수, 아래 줄 = 상자 번호. 상태는 sel · center-cell · diag-b · empty 뿐이다. */
+function renderBoxes(boxId, numId, k, n, opt) {
+  const o = opt || {};
+  const f = KGiftedCore.fill(n, k), stop = n > 0 ? KGiftedCore.stop(n, k) : 0;
+  const be = document.getElementById(boxId), nu = document.getElementById(numId);
+  if (be) { be.style.setProperty('--road-n', k); be.innerHTML = ''; }
+  if (nu) { nu.style.setProperty('--road-n', k); nu.innerHTML = ''; }
+  for (let b = 1; b <= k; b++) {
+    if (be) {
+      const d = document.createElement('div');
+      d.className = 'cal-cell' + (f[b] > 0 ? ' sel' : ' empty');
+      d.textContent = f[b] > 0 ? String(f[b]) : '';
+      d.dataset.cell = b;
+      be.appendChild(d);
+    }
+    if (nu) {
+      const d = document.createElement('div');
+      let cls = 'cal-cell';
+      if (o.mark !== false && b === stop) cls += ' center-cell';
+      else if (o.band && o.band.indexOf(b) >= 0) cls += ' diag-b';
+      d.className = cls;
+      d.textContent = String(b);
+      d.dataset.cell = b;
+      nu.appendChild(d);
+    }
+  }
+  return stop;
+}
+function setMeter(nId, stopId, n, stop) {
+  const a = document.getElementById(nId), b = document.getElementById(stopId);
+  if (a) a.textContent = String(n);
+  if (b) b.textContent = String(stop);
+}
+
+/* ═══════════ 진행 상태 ═══════════ */
+const exploreCases = [];
+let conjPicked = '';
+let myRuleText = '아직';
+let crK = 4, crN = 5, crFixed = false, crAns = 0;
+
+/* ═══════════ 슬1 미션 ═══════════ */
+renderBoxes('s1-box', 's1-num', KGiftedCore.INTRO_K, 0, { mark: false });
+
+/* ═══════════ 슬2 미션 견본 ═══════════ */
+(function () {
+  const k = KGiftedCore.INTRO_K, n = KGiftedCore.INTRO_N;
+  const s = renderBoxes('s2-box', 's2-num', k, n);
+  setMeter('s2-n', 's2-stop', n, s);
+})();
+
+/* ═══════════ 슬4 탐험 · 직접 넣기 ═══════════ */
+let s4n = KGiftedCore.EX_N0;
+function drawS4() {
+  const s = renderBoxes('s4-box', 's4-num', KGiftedCore.EX_K, s4n);
+  setMeter('s4-n', 's4-stop', s4n, s);
+}
+stepBtn('s4-btns', '구슬 하나 더', function () {
+  if (s4n < KGiftedCore.EX_MAX) { s4n++; drawS4(); }
+});
+stepBtn('s4-btns', '하나 빼기', function () {
+  if (s4n > 1) { s4n--; drawS4(); }
+});
+stepBtn('s4-btns', '처음으로', function () { s4n = KGiftedCore.EX_N0; drawS4(); });
+drawS4();
+
+/* ═══════════ 슬5 탐험 · 사례 모으기 ═══════════ */
+let s5n = KGiftedCore.EX_N0;
+function drawS5() {
+  const s = renderBoxes('s5-box', 's5-num', KGiftedCore.EX_K, s5n);
+  setMeter('s5-n', 's5-stop', s5n, s);
+}
+stepBtn('s5-btns', '구슬 하나 더', function () {
+  if (s5n < KGiftedCore.EX_MAX) { s5n++; drawS5(); }
+});
+stepBtn('s5-btns', '하나 빼기', function () {
+  if (s5n > 1) { s5n--; drawS5(); }
+});
+stepBtn('s5-btns', '이 사례 적기', function () {
+  const st = getQState('explore');
+  if (st.done) return;
+  for (let i = 0; i < exploreCases.length; i++) if (exploreCases[i].n === s5n) {
+    document.getElementById('fb-explore').textContent = '이미 적은 수다.';
+    return;
+  }
+  exploreCases.push({ n: s5n, b: KGiftedCore.stop(s5n, KGiftedCore.EX_K) });
+  renderCaseTable();
+  if (exploreCases.length >= KGiftedCore.EX_NEED) {
+    st.done = true;
+    addScore(KGiftedCore.SCORE_PLAN.explore);
+    document.getElementById('fb-explore').textContent = '세 가지를 다 적었다.';
+  } else {
+    document.getElementById('fb-explore').textContent = '적은 수 ' + exploreCases.length + '개.';
+  }
+  saveProgress(false);
+});
+drawS5();
+
+function renderCaseTable() {
+  clearChips('tbl-cases');
+  if (!exploreCases.length) { chip('tbl-cases', '아직 적은 사례가 없다', 'a'); return; }
+  exploreCases.forEach(function (c) {
+    chip('tbl-cases', '구슬 ' + c.n + ' → ' + c.b + '번', 'a');
+  });
+}
+
+/* ═══════════ 슬6 탐험 · 상자 셋 ═══════════ */
+let s6n = KGiftedCore.SEC_N0;
+function drawS6() {
+  const s = renderBoxes('s6-box', 's6-num', KGiftedCore.SEC_K, s6n);
+  setMeter('s6-n', 's6-stop', s6n, s);
+}
+stepBtn('s6-btns', '구슬 하나 더', function () {
+  if (s6n < KGiftedCore.EX_MAX) { s6n++; drawS6(); }
+});
+stepBtn('s6-btns', '하나 빼기', function () {
+  if (s6n > 1) { s6n--; drawS6(); }
+});
+stepBtn('s6-btns', '처음으로', function () { s6n = KGiftedCore.SEC_N0; drawS6(); });
+drawS6();
+
+/* ═══════════ 슬7 탐험 · 나란히 놓기 ═══════════ */
+(function () {
+  for (let n = 1; n <= 8; n++) chip('s7-a', String(KGiftedCore.stop(n, KGiftedCore.EX_K)), 'a');
+  for (let n = 1; n <= 8; n++) chip('s7-b', String(KGiftedCore.stop(n, KGiftedCore.SEC_K)), 'b');
+})();
+
+/* ═══════════ 슬8 발견 · 추측 ═══════════ */
+const CONJ = ['1씩 늘어난다', '상자 수만큼 늘어난다', '2씩 늘어난다', '늘 다르다'];
+document.querySelectorAll('#conj-opts .mcq-opt').forEach(function (b) {
+  b.addEventListener('click', function () {
+    const st = getQState('conjecture');
+    if (st.done) return;
+    st.done = true;
+    conjPicked = CONJ[Number(b.dataset.c)];
+    document.querySelectorAll('#conj-opts .mcq-opt').forEach(function (x) { x.disabled = true; });
+    b.classList.add('correct');   /* 황금샘플 pat01 선례 — 고른 것을 강조하는 표시다 */
+    addScore(KGiftedCore.SCORE_PLAN.conjecture);
+    document.getElementById('conj-fb').textContent = '추측을 적었다. 이제 살펴보자.';
+    saveProgress(false);
+  });
+});
+
+/* ═══════════ 슬9 발견 · 한 가족 ═══════════ */
+(function () {
+  const k = KGiftedCore.FAM_K, b = KGiftedCore.FAM_B;
+  const fam = KGiftedCore.family(k, b, KGiftedCore.FAM_SHOW);
+  fam.forEach(function (n) { chip('s9-fam', String(n), 'b'); });
+  renderBoxes('s9-box', 's9-num', k, fam[fam.length - 1]);
+})();
+
+/* ═══════════ 슬10 발견 · 확인 1 ═══════════ */
+renderBoxes('q9-box', 'q9-num', KGiftedCore.Q9_K, 0, { mark: false });
+document.querySelectorAll('#q9-opts .mcq-opt').forEach(function (b) {
+  b.addEventListener('click', function () {
+    const st = getQState('q9');
+    if (st.done) return;
+    const pick = Number(b.dataset.a);
+    const ans = KGiftedCore.stop(KGiftedCore.Q9_N, KGiftedCore.Q9_K);
+    if (pick === ans) {
+      st.done = true;
+      b.classList.add('correct');
+      addScore(KGiftedCore.SCORE_PLAN.q9);
+      document.getElementById('fb-q9').textContent = '맞다. 3씩 뛴 수를 지났다.';
+      renderBoxes('q9-box', 'q9-num', KGiftedCore.Q9_K, KGiftedCore.Q9_N);
+      saveProgress(false);
+    } else {
+      b.classList.add('wrong');
+      document.getElementById('fb-q9').textContent = '아니다. 다시 세어 보자.';
+    }
+  });
+});
+
+/* ═══════════ 슬11 발견 · 확인 2 ═══════════ */
+(function () {
+  const fam = KGiftedCore.family(KGiftedCore.Q10_K, KGiftedCore.Q10_B, 3);
+  fam.forEach(function (n) { chip('q10-fam', String(n), 'b'); });
+  chip('q10-fam', '?', 'a');
+})();
+document.querySelectorAll('#q10-opts .mcq-opt').forEach(function (b) {
+  b.addEventListener('click', function () {
+    const st = getQState('q10');
+    if (st.done) return;
+    const fam = KGiftedCore.family(KGiftedCore.Q10_K, KGiftedCore.Q10_B, KGiftedCore.Q10_NTH);
+    const ans = fam[KGiftedCore.Q10_NTH - 1];
+    if (Number(b.dataset.a) === ans) {
+      st.done = true;
+      b.classList.add('correct');
+      addScore(KGiftedCore.SCORE_PLAN.q10);
+      document.getElementById('fb-q10').textContent = '맞다. 5씩 뛰었다.';
+      saveProgress(false);
+    } else {
+      b.classList.add('wrong');
+      document.getElementById('fb-q10').textContent = '아니다. 한 바퀴를 다시 보자.';
+    }
+  });
+});
+
+/* ═══════════ 슬12 도전 · 큰 수 검증 ═══════════ */
+buildPad('ver-pad', 'ver-disp', 2, function (v) {
+  const st = getQState('ver');
+  if (st.done) return false;
+  const ans = KGiftedCore.stop(KGiftedCore.VER_N, KGiftedCore.VER_K);
+  if (v === ans) {
+    st.done = true;
+    addScore(KGiftedCore.SCORE_PLAN.ver);
+    document.getElementById('fb-ver').textContent = '맞다. 다 세지 않고 찾았다.';
+    saveProgress(false);
+    return true;
+  }
+  document.getElementById('fb-ver').textContent = '아니다. 4씩 뛰어 보자.';
+  return true;
+});
+
+/* ═══════════ 슬13 도전 · 상자 수를 바꾸면 ═══════════ */
+(function () {
+  const fam = KGiftedCore.family(KGiftedCore.EXT1_K, 5, 3);
+  fam.forEach(function (n) { chip('ext1-hintchips', String(n), 'a'); });
+})();
+document.querySelectorAll('#ext1-opts .mcq-opt').forEach(function (b) {
+  b.addEventListener('click', function () {
+    const st = getQState('ext1');
+    if (st.done) return;
+    const ans = KGiftedCore.stop(KGiftedCore.EXT1_N, KGiftedCore.EXT1_K);
+    if (Number(b.dataset.a) === ans) {
+      st.done = true;
+      b.classList.add('correct');
+      addScore(KGiftedCore.SCORE_PLAN.ext1);
+      document.getElementById('fb-ext1').textContent = '맞다. 가족이 달라졌다.';
+      saveProgress(false);
+    } else {
+      b.classList.add('wrong');
+      document.getElementById('fb-ext1').textContent = '아니다. 한 바퀴가 바뀌었다.';
+    }
+  });
+});
+
+/* ═══════════ 슬14 도전 · 나눠 넣기 ═══════════ */
+document.getElementById('ext2-mid').textContent =
+  String(KGiftedCore.stop(KGiftedCore.EXT2_A, KGiftedCore.EXT2_K));
+document.querySelectorAll('#ext2-opts .mcq-opt').forEach(function (b) {
+  b.addEventListener('click', function () {
+    const st = getQState('ext2');
+    if (st.done) return;
+    const ans = KGiftedCore.stop(KGiftedCore.EXT2_A + KGiftedCore.EXT2_B, KGiftedCore.EXT2_K);
+    if (Number(b.dataset.a) === ans) {
+      st.done = true;
+      b.classList.add('correct');
+      addScore(KGiftedCore.SCORE_PLAN.ext2);
+      document.getElementById('fb-ext2').textContent = '맞다. 이어 넣어도 같다.';
+      saveProgress(false);
+    } else {
+      b.classList.add('wrong');
+      document.getElementById('fb-ext2').textContent = '아니다. 멈춘 곳에서 이어 보자.';
+    }
+  });
+});
+
+/* ═══════════ 슬16 창조 · 내 문제 만들기 ═══════════ */
+function drawCr() {
+  document.getElementById('cr-k').textContent = String(crK);
+  document.getElementById('cr-n').textContent = String(crN);
+}
+for (let k = KGiftedCore.CK_MIN; k <= KGiftedCore.CK_MAX; k++) {
+  (function (kk) {
+    stepBtn('cr-kbtns', '상자 ' + kk, function () {
+      if (crFixed) return;
+      crK = kk; drawCr();
+    });
+  })(k);
+}
+stepBtn('cr-nbtns', '구슬 +1', function () {
+  if (crFixed) return;
+  if (crN < KGiftedCore.CN_MAX) { crN++; drawCr(); }
+});
+stepBtn('cr-nbtns', '구슬 +10', function () {
+  if (crFixed) return;
+  if (crN + 10 <= KGiftedCore.CN_MAX) { crN += 10; drawCr(); }
+});
+stepBtn('cr-nbtns', '되돌리기', function () {
+  if (crFixed) return;
+  crN = KGiftedCore.CN_MIN; drawCr();
+});
+stepBtn('cr-nbtns', '문제 완성', function () {
+  const st = getQState('create1');
+  if (st.done) return;
+  const r = KGiftedCore.checkCreate(crK, crN, 1);
+  if (r.why === 'k' || r.why === 'n') {
+    document.getElementById('fb-create1').textContent = '수를 다시 정하자.';
+    return;
+  }
+  st.done = true;
+  crFixed = true;
+  crAns = KGiftedCore.stop(crN, crK);
+  myRuleText = '상자 ' + crK + '개 · 구슬 ' + crN + '개';
+  addScore(KGiftedCore.SCORE_PLAN.create1);
+  document.getElementById('fb-create1').textContent = '문제를 만들었다.';
+  buildCr2();
+  saveProgress(false);
+});
+drawCr();
+
+/* ═══════════ 슬17 창조 · 내 문제의 답 ═══════════ */
+function buildCr2() {
+  const wrap = document.getElementById('cr2-opts');
+  wrap.innerHTML = '';
+  if (!crFixed) return;
+  document.getElementById('cr2-prompt').textContent = myRuleText + ' · 몇 번에 멈출까?';
+  for (let b = 1; b <= crK; b++) {
+    (function (bb) {
+      const el = document.createElement('button');
+      el.className = 'mcq-opt';
+      el.dataset.a = bb;
+      el.textContent = bb + '번';
+      el.addEventListener('click', function () {
+        const st = getQState('create2');
+        if (st.done) return;
+        const r = KGiftedCore.checkCreate(crK, crN, bb);
+        if (r.ok) {
+          st.done = true;
+          el.classList.add('correct');
+          addScore(KGiftedCore.SCORE_PLAN.create2);
+          document.getElementById('fb-create2').textContent = '맞다. 내 문제를 풀었다.';
+          renderAgentCard();
+          saveProgress(false);
+        } else {
+          el.classList.add('wrong');
+          document.getElementById('fb-create2').textContent = '아니다. 가족을 다시 보자.';
+        }
+      });
+      wrap.appendChild(el);
+    })(b);
+  }
+}
+
+function renderAgentCard() {
+  const el = document.getElementById('dc-plan');
+  if (!el) return;
+  if (!crFixed) { el.textContent = '규칙 카드는 문제를 만들면 채워진다.'; return; }
+  const st = getQState('create2');
+  let t = '내 문제는 ' + myRuleText + '이다. ';
+  t += '한 바퀴는 ' + crK + '이다. ';
+  if (st.done) t += '멈춘 상자는 ' + crAns + '번이다.';
+  else t += '멈춘 상자를 골라 보자.';
+  el.textContent = t;
+}
+
+/* ═══════════ 초기화 ═══════════ */
+(function init() {
+  const dots = document.getElementById('dots');
+  for (let i = 0; i < TOTAL; i++) {
+    const d = document.createElement('span');
+    d.className = 'ka-dot';
+    d.addEventListener('click', () => { cur = i; updateUI(); });
+    dots.appendChild(d);
+  }
+  updateUI();
+})();
+</script>
+</body>
+</html>

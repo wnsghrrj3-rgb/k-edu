@@ -49,13 +49,13 @@ main{flex:1;max-width:900px;margin:0 auto;padding:34px 24px 56px;width:100%}
 
 /* 레벨 띠 */
 .lv-row{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:28px}
-.lv-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 14px;border-radius:999px;background:#fff;border:1px solid var(--nh-line);font-size:13px;color:var(--nh-ink-soft)}
+.lv-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 14px;border-radius:999px;background:#fff;border:1px solid var(--nh-line);font-size:13px;color:var(--nh-ink-soft);text-decoration:none}
 .lv-chip.on{border-color:var(--nh-board);color:var(--nh-ink)}
 .lv-chip b{font-family:var(--nh-disp);font-weight:700;font-size:13.5px;color:var(--nh-ink)}
 .lv-chip i{font-style:normal;width:8px;height:8px;border-radius:50%;background:var(--nh-line);display:inline-block}
 .lv-chip.on i{background:var(--nh-board)}
 
-.sec-h{font-family:var(--nh-disp);font-weight:700;font-size:16.5px;margin:0 0 4px}
+.sec-h{font-family:var(--nh-disp);font-weight:700;font-size:16.5px;margin:0 0 4px;scroll-margin-top:18px}
 .sec-sub{font-size:12.5px;color:var(--nh-ink-soft);margin-bottom:16px}
 
 .lesson-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:13px;margin-bottom:38px}
@@ -128,21 +128,9 @@ main{flex:1;max-width:900px;margin:0 auto;padding:34px 24px 56px;width:100%}
     빨리 맞히는 것이 아니라 스스로 찾아내는 것이 점수입니다. 한 차시는 18장, 100점입니다.
   </p>
 
-  <div class="prog">
-    <div class="prog-top"><span>L3 챌린저 진척</span><span><b id="prog-n">0</b> / 20</span></div>
-    <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0"></div></div>
-  </div>
+  <div class="lv-row" id="lv-row"></div>
 
-  <div class="lv-row">
-    <span class="lv-chip"><i></i>L1 <b>익스플로러</b> 준비 중</span>
-    <span class="lv-chip"><i></i>L2 <b>디스커버러</b> 준비 중</span>
-    <span class="lv-chip on"><i></i>L3 <b>챌린저</b> 열림</span>
-    <span class="lv-chip"><i></i>L4 <b>인베스티게이터</b> 준비 중</span>
-  </div>
-
-  <h2 class="sec-h">L3 챌린저 · 수학</h2>
-  <p class="sec-sub">중학년 · 연구소 10종 · 차시마다 탐험 → 발견 → 도전 → 창조</p>
-  <div class="lesson-grid" id="lesson-grid"></div>
+  <div id="levels"></div>
 
   <h2 class="sec-h">실험실</h2>
   <p class="sec-sub">차시 밖에서 마음껏 돌려 보는 곳</p>
@@ -155,7 +143,34 @@ main{flex:1;max-width:900px;margin:0 auto;padding:34px 24px 56px;width:100%}
 </main>
 
 <script>
-/* 차시 카탈로그 — 편성표 L3 20차시. file 이 있으면 열리고, 없으면 준비 중 */
+/* ═══ 차시 카탈로그 ═══
+   레벨 이름은 편성 설계서 §4 를 단일 정답으로 삼는다
+   (L1 SPARK · L2 EXPLORER · L3 CHALLENGER · L4 INVESTIGATOR · L5 CREATOR).
+   file 이 있으면 열리고, 없으면 준비 중 카드가 된다.
+   레벨이 늘어날 때 손댈 곳은 이 자료 한 곳뿐이다 — 화면은 전부 여기서 만들어진다. */
+const L2_LESSONS = [
+  { n:1,  id:'num01', lab:'NUM', name:'나머지 보물상자',        sub:'구슬을 하나씩 놓다 보면 멈추는 상자가 되풀이된다', file:'math/l2/kg_math_l2_num01_나머지보물상자.html' },
+  { n:2,  id:'num02', lab:'NUM', name:'연속수 사다리',           sub:'이웃한 수를 이어 더하면 가운데 수가 드러난다' },
+  { n:3,  id:'num03', lab:'NUM', name:'숫자 피라미드 공사',      sub:'아래 두 칸을 더해 올라가고 거꾸로도 내려온다' },
+  { n:4,  id:'num04', lab:'NUM', name:'없는 수 수배 전단',       sub:'빈칸을 채우는 것은 기억이 아니라 구조다' },
+  { n:5,  id:'pat01', lab:'PAT', name:'입력–출력 요술상자',      sub:'들어간 수와 나온 수만 보고 속 규칙을 짚는다' },
+  { n:6,  id:'pat02', lab:'PAT', name:'두 규칙 합주단',          sub:'두 규칙의 순서를 바꾸면 답도 바뀔까' },
+  { n:7,  id:'pat03', lab:'PAT', name:'달력 숫자 탐정 (예습편)', sub:'수 배열표의 가로와 세로에 숨은 규칙을 찾는다' },
+  { n:8,  id:'log01', lab:'LOG', name:'거짓말쟁이는 누구',       sub:'말이 서로 어긋나는 곳에 답이 있다' },
+  { n:9,  id:'log02', lab:'LOG', name:'논리표 첫 탈출',          sub:'표에 하나씩 지워 나가면 남는 것이 답이다' },
+  { n:10, id:'log03', lab:'LOG', name:'규칙 위반 감시단',        sub:'어긋난 사례 하나가 규칙을 무너뜨린다' },
+  { n:11, id:'geo01', lab:'GEO', name:'칠교 도형 변신소',        sub:'넓이는 그대로인데 모양은 얼마든지 달라진다' },
+  { n:12, id:'geo02', lab:'GEO', name:'회전 미로',               sub:'돌려 놓아도 같은 모양인지 알아본다' },
+  { n:13, id:'geo03', lab:'GEO', name:'점 잇기 도형 공장',       sub:'격자점을 이어 만들 수 있는 도형은 몇 가지일까' },
+  { n:14, id:'com01', lab:'COM', name:'색칠 경우 세기',          sub:'이웃끼리 다른 색 — 조건이 붙으면 가짓수가 줄어든다' },
+  { n:15, id:'com02', lab:'COM', name:'악수 대회',               sub:'모두와 한 번씩 악수하면 몇 번일까' },
+  { n:16, id:'pro01', lab:'PRO', name:'뽑기 상자 예언가',        sub:'많이 든 것이 자주 나온다 — 실제로 돌려 확인한다' },
+  { n:17, id:'dat01', lab:'DAT', name:'그림그래프 탐정',         sub:'그래프가 말하지 않은 것을 찾아낸다' },
+  { n:18, id:'str01', lab:'STR', name:'먼저 할까 나중 할까',     sub:'순서 하나로 승부가 갈린다' },
+  { n:19, id:'str02', lab:'STR', name:'동전 뒤집기 작전',        sub:'가장 적은 횟수로 끝내는 길을 찾는다' },
+  { n:20, id:'mod01', lab:'MOD', name:'몇 개쯤 될까 어림단',     sub:'기준 하나를 잡으면 큰 수도 어림할 수 있다' }
+];
+
 const LESSONS = [
   { n:1,  id:'pat01', lab:'PAT', name:'달력 숫자 탐정',       sub:'가로 +1 · 세로 +7 에서 시작해 대각합이 변하지 않는 까닭까지', file:'math/l3/kg_math_l3_pat01_달력숫자탐정.html' },
   { n:2,  id:'pat02', lab:'PAT', name:'수 배열표 순간이동',   sub:'백판 위의 이동 규칙을 스스로 일반화한다',                     file:'math/l3/kg_math_l3_pat02_수배열표순간이동.html' },
@@ -179,6 +194,17 @@ const LESSONS = [
   { n:20, id:'mod01', lab:'MOD', name:'학교 이동거리 설계단', sub:'멀리 있는 한 사람은 모임 장소를 끌어당기지 못한다',      file:'math/l3/kg_math_l3_mod01_학교이동거리설계단.html' }
 ];
 
+/* 레벨 표 — 차시가 하나라도 있는 레벨만 카드를 편다.
+   준비 중 레벨은 띠에만 남긴다 (100장을 한 화면에 늘어놓지 않는다). */
+const LEVELS = [
+  { key:'l1', code:'L1', name:'스파크',         who:'초1~2', sub:'준비 중', lessons:[] },
+  { key:'l2', code:'L2', name:'익스플로러',     who:'초2~3', sub:'처음 만나는 연구 — 놓아 보고, 세어 보고, 규칙을 찾는다', lessons:L2_LESSONS },
+  { key:'l3', code:'L3', name:'챌린저',         who:'초3~4', sub:'연구소 10종 · 차시마다 탐험 → 발견 → 도전 → 창조', lessons:LESSONS },
+  { key:'l4', code:'L4', name:'인베스티게이터', who:'초4~5', sub:'준비 중', lessons:[] },
+  { key:'l5', code:'L5', name:'크리에이터',     who:'초5~6', sub:'준비 중', lessons:[] }
+];
+const openLevels = () => LEVELS.filter(v => v.lessons.some(l => l.file));
+
 const LABS = [
   { name:'님 게임 실험실', sub:'돌을 가져가는 게임을 마음껏 돌려 보는 곳', file:'_lab/nim_lab.html', lab:'STR' }
 ];
@@ -187,19 +213,20 @@ const labColor = lab => 'var(--lab-' + lab.toLowerCase() + ')';
 const LAB_NAME = { PAT:'패턴', NUM:'수', LOG:'논리', GEO:'기하', COM:'경우의 수', PRO:'확률', DAT:'자료', STR:'전략', MOD:'모델링', RES:'연구' };
 
 /* 이 기기에 남은 진행 기록 — 차시가 쓰는 키를 그대로 읽는다 */
-function readProgress(id) {
+const progKey = (lv, id) => 'kedu_progress_kg_math_' + lv + '_' + id;
+function readProgress(lv, id) {
   try {
-    const raw = localStorage.getItem('kedu_progress_kg_math_l3_' + id);
+    const raw = localStorage.getItem(progKey(lv, id));
     if (!raw) return null;
     const p = JSON.parse(raw);
     return { done: !!p.done, score: p.score || 0 };
   } catch (e) { return null; }
 }
 
-function cardHTML(item, isLab) {
+function cardHTML(item, isLab, lv) {
   const open = !!item.file;
   const gc = labColor(item.lab);
-  const p = open && !isLab ? readProgress(item.id) : null;
+  const p = open && !isLab ? readProgress(lv, item.id) : null;
   let meta = '<span class="lab-tag"><i></i>' + (LAB_NAME[item.lab] || item.lab) + '</span>';
   if (!open) meta += '<span class="ns-soon">준비 중</span>';
   else if (p && p.done) meta += '<span class="ns-saved">마침 · ' + p.score + '점</span>';
@@ -212,18 +239,37 @@ function cardHTML(item, isLab) {
   return '<a class="ns-card" style="--gc:' + gc + '" href="' + item.file + '">' + inner + '</a>';
 }
 
+function levelSection(v) {
+  const n = v.lessons.filter(l => l.file).length;
+  return '<h2 class="sec-h" id="lv-' + v.key + '">' + v.code + ' ' + v.name + ' · 수학</h2>'
+    + '<p class="sec-sub">' + v.who + ' · ' + v.sub + '</p>'
+    + '<div class="prog"><div class="prog-top"><span>이 레벨 진척</span>'
+    + '<span><b id="prog-n-' + v.key + '">' + n + '</b> / ' + v.lessons.length + '</span></div>'
+    + '<div class="prog-bar"><div class="prog-fill" id="prog-fill-' + v.key + '"'
+    + ' style="width:' + (n / v.lessons.length * 100) + '%"></div></div></div>'
+    + '<div class="lesson-grid" id="lesson-grid-' + v.key + '">'
+    + v.lessons.map(l => cardHTML(l, false, v.key)).join('') + '</div>';
+}
+
+function levelChip(v) {
+  const on = v.lessons.some(l => l.file);
+  const inner = '<i></i>' + v.code + ' <b>' + v.name + '</b> ' + (on ? '열림' : '준비 중');
+  return on ? '<a class="lv-chip on" href="#lv-' + v.key + '">' + inner + '</a>'
+            : '<span class="lv-chip">' + inner + '</span>';
+}
+
 function render() {
-  document.getElementById('lesson-grid').innerHTML = LESSONS.map(l => cardHTML(l, false)).join('');
+  document.getElementById('lv-row').innerHTML = LEVELS.map(levelChip).join('');
+  document.getElementById('levels').innerHTML = openLevels().map(levelSection).join('');
   document.getElementById('lab-grid').innerHTML = LABS.map(l => cardHTML(l, true)).join('');
-  const n = LESSONS.filter(l => l.file).length;
-  document.getElementById('prog-n').textContent = n;
-  document.getElementById('prog-fill').style.width = (n / LESSONS.length * 100) + '%';
 }
 render();
 
 document.getElementById('btn-reset').addEventListener('click', () => {
   if (!confirm('이 기기에 남은 케이영재 기록을 모두 지웁니다. 계속할까요?')) return;
-  LESSONS.forEach(l => { try { localStorage.removeItem('kedu_progress_kg_math_l3_' + l.id); } catch (e) {} });
+  LEVELS.forEach(v => v.lessons.forEach(l => {
+    try { localStorage.removeItem(progKey(v.key, l.id)); } catch (e) {}
+  }));
   render();
 });
 </script>
