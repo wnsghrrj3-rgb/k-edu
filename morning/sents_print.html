@@ -113,6 +113,7 @@ body.noko .words span em,body.noko .wk .n em{visibility:hidden}
     <button class="btn" id="mCard" type="button">카드 (하루 한 장)</button>
     <button class="btn" id="mWeek" type="button">틀 묶음표 (한 틀 한 장)</button>
   </div>
+  <button class="btn" id="back" type="button" style="display:none">오늘 문장으로 ↩</button>
   <button class="btn" id="ko" type="button">뜻 숨기기</button>
   <button class="btn fill" id="go" type="button">🖨 인쇄</button>
   <span class="sp"></span>
@@ -131,17 +132,30 @@ body.noko .words span em,body.noko .wk .n em{visibility:hidden}
 
   var q = new URLSearchParams(location.search);
   var GRADES = D.grades();
-  var wantG = +q.get('grade');
+  /* ── 주소 풀기: c키·grade/day 모두 받는다 (D8-ⓖ) ──
+     ★**진도일(today)은 c키 통로로 들어왔을 때만 안다.** 미리보기가 오늘 몫을 알고 있을 때만
+       `?key=g3_english_c007` 을 넘겨 준다. `?grade&day` 는 아무 날이나 여는 통로다.
+     ★인쇄물에서 이 구분이 특히 무겁다 — 종이는 교실 벽과 가정통신문으로 나가고, 화면과 달리
+       다음 날 다시 열어 고쳐지지 않는다. 아무 날 것을 뽑아 놓고 「오늘까지 배운 낱말」이라
+       적힌 종이가 한 학기 내내 붙어 있게 된다. */
+  var mKey = (q.get('key') || '').match(/^g(\d)_english_c(\d{1,3})$/);
+  var wantG = mKey ? +mKey[1] : +q.get('grade');
   var st = {
     grade: GRADES.indexOf(wantG) >= 0 ? wantG : GRADES[0],
-    day: +q.get('day') || 1,
+    day: +q.get('day') || (mKey ? +mKey[2] : 1),
+    today: mKey ? +mKey[2] : null,
     mode: q.get('mode') === 'week' ? 'week' : 'card',
     noko: q.get('ko') === '0'
   };
+  if (mKey && GRADES.indexOf(+mKey[1]) < 0) st.today = null;   /* 학년이 되돌려지면 진도일도 버린다 */
+  /* 이름과 뜻을 학생 화면(sents.html)·미리보기와 똑같이 둔다 */
+  function onToday(){ return st.today != null && st.day === st.today; }
+  function sentW(){ return onToday() ? '오늘 문장' : '이 문장'; }
+  function dayW(){  return onToday() ? '오늘' : '이 날'; }
 
   var gSel = document.getElementById('g'), dSel = document.getElementById('d');
   var bCard = document.getElementById('mCard'), bWeek = document.getElementById('mWeek');
-  var bKo = document.getElementById('ko');
+  var bKo = document.getElementById('ko'), bBack = document.getElementById('back');
 
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
@@ -176,6 +190,8 @@ body.noko .words span em,body.noko .wk .n em{visibility:hidden}
     if (!x) return '<div class="miss">이 학년·일차는 문장이 없어요.</div>';
     var nw = x['new'] || [], px = pat(st.day);
     return '<div class="sheet">'
+      /* ★「오늘의 문장」은 시각 주장이 아니라 활동 **이름**이다(제목·로고와 같은 자격).
+           위의 dayW()·sentW() 규약 대상이 아니므로 걷어내지 말 것 — sents.html 과 같은 판단. */
       + '<div class="shead"><span class="ttl">오늘의 문장</span>'
       +   '<span class="sub">'+st.grade+'학년 · '+st.day+'일째'
       +   (px ? ' · 틀 '+esc(px.ko)+' ('+px.len+'일 중 '+px.idx+'일째)' : '')+'</span>'
@@ -184,7 +200,7 @@ body.noko .words span em,body.noko .wk .n em{visibility:hidden}
       + '<div class="card-ko">'+esc(x.ko)+'</div>'
       + '<div class="card-tiles">'+x.tiles.map(function(t){
           return '<span>'+esc(t)+'</span>'; }).join('')+'</div>'
-      + '<div class="blk"><h3>오늘 처음 만나는 낱말</h3><div class="words">'
+      + '<div class="blk"><h3>'+dayW()+' 처음 만나는 낱말</h3><div class="words">'
       + (nw.length ? D.glossesOf(st.grade, st.day).map(function(it){
                        return '<span>'+esc(it.unit)
                          + (it.ko ? '<em>'+esc(it.ko)+'</em>' : '')+'</span>'; }).join('')
@@ -192,10 +208,10 @@ body.noko .words span em,body.noko .wk .n em{visibility:hidden}
       + '</div></div>'
       + '<div class="blk"><h3>넓히기 — 같은 틀로 지어 보는 문장</h3>'
       + (x.expand ? '<div class="exp">'+esc(x.expand.sent)+'<em>'+esc(x.expand.ko)+'</em></div>'
-                  : '<span class="none">이 날은 재료가 아직 모자라요. 오늘 문장을 한 번 더 조립해요.</span>')
+                  : '<span class="none">이 날은 재료가 아직 모자라요. '+sentW()+'을 한 번 더 조립해요.</span>')
       + '</div>'
       + '<div class="card-foot">함께 읽기 → 손으로 가리고 말하기 → 짝과 주고받기<br>'
-      +   '모든 낱말은 오늘까지 배운 것으로만 되어 있어요.</div>'
+      +   '모든 낱말은 '+dayW()+'까지 배운 것으로만 되어 있어요.</div>'
       + '</div>';
   }
 
@@ -237,6 +253,9 @@ body.noko .words span em,body.noko .wk .n em{visibility:hidden}
   }
 
   function syncBar(){
+    /* 진도에서 벗어나 있으면 벗어났다는 사실 자체를 통로로 보여 준다(D8-ⓕ 확립 원칙).
+       이 버튼은 `.bar` 안에 있어 인쇄물 자체에는 실리지 않는다. */
+    bBack.style.display = (st.today != null && st.day !== st.today) ? '' : 'none';
     bCard.classList.toggle('on', st.mode === 'card');
     bWeek.classList.toggle('on', st.mode === 'week');
     bKo.textContent = st.noko ? '뜻 보이기' : '뜻 숨기기';
@@ -247,19 +266,24 @@ body.noko .words span em,body.noko .wk .n em{visibility:hidden}
   function render(){
     clamp(); fillDays(); syncBar();
     out.innerHTML = st.mode === 'week' ? weekHtml() : cardHtml();
+    /* 주소가 진도일을 계속 물고 간다 — 새로고침으로 오늘을 잊으면 되돌아갈 통로가 사라진다 */
     var u = new URL(location.href);
-    u.searchParams.set('grade', st.grade);
+    if (st.today != null){ u.searchParams.set('key', 'g'+st.grade+'_english_c'+('00'+st.today).slice(-3));
+                           u.searchParams['delete']('grade'); }
+    else { u.searchParams.set('grade', st.grade); u.searchParams['delete']('key'); }
     u.searchParams.set('day', st.day);
     u.searchParams.set('mode', st.mode);
     if (st.noko) u.searchParams.set('ko', '0'); else u.searchParams.delete('ko');
     history.replaceState(null, '', u);
   }
 
-  gSel.onchange = function(){ st.grade = +this.value; st.day = 1; render(); };
+  /* 학년을 바꾸면 진도일을 버린다 — 우리 반 7일째가 옆 학년의 7일째는 아니다 */
+  gSel.onchange = function(){ st.grade = +this.value; st.day = 1; st.today = null; render(); };
   dSel.onchange = function(){ st.day = +this.value; render(); };
   bCard.onclick = function(){ st.mode = 'card'; render(); };
   bWeek.onclick = function(){ st.mode = 'week'; render(); };
   bKo.onclick   = function(){ st.noko = !st.noko; render(); };
+  bBack.onclick = function(){ if (st.today != null){ st.day = st.today; render(); } };
   document.getElementById('go').onclick = function(){ window.print(); };
 
   render();

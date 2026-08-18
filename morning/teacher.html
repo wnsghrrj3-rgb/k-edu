@@ -136,18 +136,40 @@ td.name{font-weight:700}
   }
   /* 요일 시간표를 사람 말로 — 과목이 하나면 '한자 하루 한 자', 섞이면 '월·화 한자, 목·금 수학' */
   /* 시간표에 들어간 과목마다 미리보기 버튼 — 과목을 넣었는데 볼 곳이 없으면 안 되니까 */
+  /* `key:true` = 그 미리보기가 c키를 받아 **오늘 몫으로 열린다**는 뜻.
+     한자·수학 미리보기는 아직 c키를 안 받는다(chars.html·math.html 은 이번 작업 영역 밖) —
+     그래서 그 둘은 `?grade=` 로만 열리고, 아래에서 라벨이 「오늘」이라 말하지 않는다. */
   var PREVIEW = {
-    hanja:   { href:'/morning/chars.html',         label:'오늘 나가는 한자 보기' },
-    english: { href:'/morning/sents_preview.html', label:'오늘 나가는 영어 보기' },
-    math:    { href:'/morning/math.html',          label:'오늘 나가는 수학 보기' }
+    hanja:   { href:'/morning/chars.html' },
+    english: { href:'/morning/sents_preview.html', key:true },
+    math:    { href:'/morning/math.html' }
   };
-  function previewLinks(r, c){
+  /* 오늘 몫 세션 — 현황판이 쓰는 것과 같은 값(ma_today). 아직 안 왔으면 null. */
+  function todaySess(){
+    var b = state.board;
+    return (b && b.status === 'ok' && b.session) ? b.session : null;
+  }
+  /* ★D8-ⓖ: 「오늘 나가는 …」이라 이름 붙인 통로는 **실제로 오늘을 열어야** 한다.
+       예전엔 `?grade=` 하나만 넘겼다. 미리보기는 일차를 못 받으면 1일째로 떨어지므로,
+       23일째를 가고 있는 반이 이 버튼을 눌러도 첫날 문장이 열렸다. 이름은 「오늘」인데
+       여는 것은 첫날이었고, 그 화면에서 그대로 뽑은 인쇄물이 교실 벽에 붙었다.
+       오늘 몫은 `ma_today` 가 이미 넘겨 준다 — 현황판이 「N일째 「…」」로 쓰고 있는 그 값이다.
+       아는 자리에서 모르는 자리로 넘기기만 하면 된다.
+     ★넘길 수 없으면 라벨에서 「오늘」을 뺀다. 오늘이 그 과목 날이 아니면(한자 날의 영어 버튼)
+       진도일을 알 길이 없고, 그 통로는 아무 날이나 여는 통로가 된다.
+     ★c키에는 학년이 이미 들어 있다(g3_english_c007) — grade 를 따로 안 붙인다. */
+  function previewLinks(r, c, sess){
     var days = (r&&r.days)||{}, grade = (r&&r.grade)||(c&&c.grade)||1, seen = {}, out = [];
     ['mon','tue','wed','thu','fri'].forEach(function(d){
       var s = days[d]; if (!s || seen[s] || !PREVIEW[s]) return;
       seen[s] = 1;
+      var p = PREVIEW[s];
+      var k = (p.key && sess && sess.subject === s && sess.lesson_key) ? sess.lesson_key : '';
+      var href  = p.href + (k ? '?key='+encodeURIComponent(k) : '?grade='+grade);
+      var label = k ? ('오늘 나가는 '+(SUBJECT_KO[s]||s)+' 보기')
+                    : ((SUBJECT_KO[s]||s)+' 미리 보기');
       out.push('<a class="btn ghost" style="text-decoration:none;display:inline-block;margin:0 6px 6px 0" '
-        + 'href="'+PREVIEW[s].href+'?grade='+grade+'">'+PREVIEW[s].label+'</a>');
+        + 'href="'+href+'">'+label+'</a>');
     });
     return out.length ? '<div style="margin-top:12px">'+out.join('')+'</div>' : '';
   }
@@ -290,7 +312,7 @@ td.name{font-weight:700}
         + (r.question_count||10)+'개가 저절로 올라가요.</span>'
       + '<div style="margin-top:10px"><span style="font-size:12.5px;color:var(--sub)">학생들은 이 코드로 우리 반에 들어와요</span><br>'
       + '<span class="code-chip">'+esc(c.code||'')+'</span></div>'
-      + previewLinks(r, c)
+      + '<div id="prev">'+previewLinks(r, c, todaySess())+'</div>'
       + '</div>'
       + (state.classes.length>1
           ? '<div class="card" style="padding:14px 18px"><label style="margin:0 0 6px">학급</label><select id="cc">'+classOpts+'</select></div>'
@@ -353,6 +375,10 @@ td.name{font-weight:700}
 
   /* ═══ 오늘 현황판 ═══ */
   function renderBoard(){
+    /* ★통로를 여기서 한 번 더 그린다 — renderReady 가 도는 시점에는 ma_today 가 아직 안 와서
+         state.board 가 비어 있다. 다시 안 그리면 통로는 영영 오늘을 모른 채로 남는다. */
+    var pv = document.getElementById('prev');
+    if (pv) pv.innerHTML = previewLinks(state.routine, cur(), todaySess());
     var el = document.getElementById('board'); if(!el) return;
     var b = state.board;
     if (!b) { el.innerHTML=''; return; }
