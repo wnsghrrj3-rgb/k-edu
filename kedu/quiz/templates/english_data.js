@@ -761,9 +761,38 @@
     return (row['new'] || []).map(function (u) { return { unit: u, ko: glossOf(g, d, u) }; });
   }
 
+  /* ── 틀(패턴) 단일 통로 ★ (2026-08-18 D8-ⓔ · 설계 §2·§4) ─────────────
+   * 화면·인쇄물은 「몇 주 · 무슨 요일」을 알 수 없다 — 그것은 교사 시간표(ma_routines)가
+   * 정하는 것이고 원장에는 없다. 원장이 아는 단위는 오직 **틀**이다.
+   * 그래서 묶음·표기를 전부 이 두 통로로만 얻게 한다(뜻을 glossOf 하나로 모은 것과 같은 방식).
+   *   patOf(g, d)  : { pat, ko, from, to, idx, len, no } — 그날이 어느 틀의 몇째 날인가
+   *   patGroups(g) : 원장 길이로 자른 틀 묶음 배열 — 둘러보기·인쇄물이 이 경계로만 나눈다
+   * 원장의 day.pat 과 PAT_PLAN 구간이 어긋나면 **지어내지 않고 null 을 낸다**.
+   * ================================================================= */
+  function patOf(g, d) {
+    var row = (GRADES[g] || [])[d - 1];
+    if (!row) return null;
+    var plan = PAT_PLAN['g' + g] || [];
+    for (var i = 0; i < plan.length; i++) {
+      var p = plan[i];
+      if (p.pat !== row.pat) continue;
+      if (d < p.from || d > p.to) return null;      /* 구간 밖 = 원장 훼손. 거짓말 대신 침묵 */
+      return { pat: p.pat, ko: p.ko, from: p.from, to: p.to,
+               idx: d - p.from + 1, len: p.to - p.from + 1, no: i + 1 };
+    }
+    return null;
+  }
+  function patGroups(g) {
+    var n = (GRADES[g] || []).length;
+    return (PAT_PLAN['g' + g] || []).map(function (p, i) {
+      return { pat: p.pat, ko: p.ko, no: i + 1, from: p.from, to: Math.min(p.to, n) };
+    }).filter(function (p) { return p.from <= n; });
+  }
+
   return {
     CHUNKS: CHUNKS, EQUIV: EQUIV, INFLECT: INFLECT, WHITELIST: WHITELIST, PAT_PLAN: PAT_PLAN,
     GLOSS: GLOSS, glossOf: glossOf, glossesOf: glossesOf,
+    patOf: patOf, patGroups: patGroups,
     GRADE_RULES: GRADE_RULES,
     rules: function (g) { return GRADE_RULES[g] || null; },
     grades: function () { return Object.keys(GRADES).map(Number); },

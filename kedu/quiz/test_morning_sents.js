@@ -451,6 +451,65 @@ await (async function(){
   T(b1.all('.wrow').length === D.maxDay(c.g), 'peek 둘러보기 줄 수가 원장과 다름 — 다른 화면이 되면 안 된다');
 })();
 
+/* ══ ⑨ 틀(패턴) — 화면은 원장이 아는 것만 말한다 (D8-ⓔ) ══
+ *  ★왜 필요한가: 이 화면은 「몇 주 · 무슨 요일」을 알 수 없다. 영어를 어느 요일에 넣을지는
+ *    교사 시간표(ma_routines)가 정하고 원장에는 그 정보가 없는데도, 머리는 (일째-1)%5 로
+ *    요일을 만들어 「3주 수」라고 적고 있었다. 근거가 없으니 대부분의 반에서 그냥 거짓이다.
+ *    onscreen 구멍(D8-ⓓ)과 같은 종류 — 화면이 참이 아닌 것을 사실처럼 표시한다.
+ *  ★그래서 두 가지를 함께 강제한다: (a) 주·요일 주장이 없을 것,
+ *    (b) 그 자리를 대신하는 틀 표기가 전부 원장(patOf·patGroups)에서만 올 것.
+ *    (a)만 검사하면 아무 말도 안 하는 화면이 통과하고, (b)만 검사하면 옛 주 표기가 남아도 통과한다. */
+(function(){
+  var src = fs.readFileSync(PAGE, 'utf8');
+  T(src.indexOf("'월','화','수','목','금'") < 0 && src.indexOf("'월', '화'") < 0,
+    '요일 배열이 화면에 남아 있음 — 원장이 모르는 것을 만들어 쓴다');
+
+  /* 주 주장 0 — 머리·둘러보기 안내 문구는 원장 문장을 싣지 않는 자리라 정면으로 본다.
+     (원장 뜻에는 '금요일' 같은 말이 실제로 들어 있어 본문 전체를 훑으면 안 된다) */
+  D.grades().forEach(function(g){
+    [1, 4, D.maxDay(g)].forEach(function(d){
+      var o = open('?grade=' + g + '&day=' + d);
+      var h = o.txt('.head');
+      T(/\d+\s*주/.test(h) === false, 'g' + g + ' d' + d + ' 머리가 주를 주장함: ' + h);
+      T(/[월화수목금]요일/.test(h) === false, 'g' + g + ' d' + d + ' 머리가 요일을 주장함: ' + h);
+
+      /* 틀 표기는 원장 그대로 */
+      var p = D.patOf(g, d);
+      T(!!p, 'g' + g + ' d' + d + ' 의 틀을 원장이 못 냄');
+      var pt = o.txt('.head .pat');
+      T(pt.indexOf(p.ko) >= 0, 'g' + g + ' d' + d + ' 머리에 틀 이름이 없음: ' + pt);
+      T(pt.indexOf(p.len + '일 중 ' + p.idx + '일째') >= 0,
+        'g' + g + ' d' + d + ' 틀 안 진행 표기가 원장과 다름: ' + pt);
+
+      /* 원장 내부 코드(P4)가 아이 화면에 새지 않는가 */
+      T(/\bP\d+\b/.test(o.txt('.sheet')) === false, 'g' + g + ' d' + d + ' 1막에 내부 코드가 노출됨');
+    });
+  });
+
+  /* 둘러보기 묶음 = 틀 경계와 정확히 일치 */
+  D.grades().forEach(function(g){
+    var o = open('?grade=' + g);
+    var gs = D.patGroups(g), heads = o.all('.week h3'), lists = o.all('.week .wlist');
+    T(heads.length === gs.length, 'g' + g + ' 둘러보기 묶음 수 ' + heads.length + ' ≠ 틀 ' + gs.length);
+    T(/\d+\s*주/.test(o.txt('.browse-meta')) === false,
+      'g' + g + ' 둘러보기 안내가 주를 주장함: ' + o.txt('.browse-meta'));
+    gs.forEach(function(p, i){
+      if (!heads[i] || !lists[i]) return;
+      var ht = heads[i].textContent;
+      T(ht.indexOf(p.ko) >= 0, 'g' + g + ' ' + p.no + '번째 묶음 제목에 틀 이름이 없음: ' + ht);
+      T(ht.indexOf(String(p.from)) >= 0, 'g' + g + ' ' + p.no + '번째 묶음이 시작 일차를 안 적음: ' + ht);
+      var rows = lists[i].querySelectorAll('.wrow');
+      T(rows.length === p.to - p.from + 1,
+        'g' + g + ' ' + p.no + '번째 묶음 줄 수 ' + rows.length + ' ≠ 틀 일수 ' + (p.to - p.from + 1));
+      for (var k = 0; k < rows.length; k++) {
+        var want = D.day(g, p.from + k);
+        T(rows[k].querySelector('.s').textContent === want.sent,
+          'g' + g + ' ' + p.no + '번째 묶음 ' + (k + 1) + '줄이 원장 순서와 다름');
+      }
+    });
+  });
+})();
+
 msgs.forEach(function(m){ console.log(m); });
 console.log('\n오늘의 문장 3막 활동 — ' + pass + ' PASS / ' + fail + ' FAIL');
 process.exit(fail ? 1 : 0);
