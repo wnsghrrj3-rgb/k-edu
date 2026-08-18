@@ -124,7 +124,10 @@ jobs.push(win.__tf('g3_math_u1_l02').then(function (f) {
     T(new RegExp(s + '\\s*:\\s*\\{\\s*href').test(thtml),
       '시간표에 고를 수 있는 과목인데 미리보기 통로가 없음: ' + s);
   });
-  T(thtml.indexOf('previewLinks(r, c)') >= 0, '배너가 previewLinks 를 쓰지 않음');
+  /* ★D8-ⓖ 로 인자가 하나 늘었다(오늘 몫 세션). 이름만 보지 말고 **오늘을 넘겨받는지**까지 본다 —
+     세션 없이 부르면 통로는 영영 첫날만 연다(수학 미리보기도 같은 통로를 탄다). */
+  T(/previewLinks\(r, c, todaySess\(\)\)/.test(thtml), '배너가 previewLinks 에 오늘 몫을 안 넘김');
+  T(/function previewLinks\(r, c, sess\)/.test(thtml), '교사 화면 previewLinks 시그니처가 바뀜');
 
   // 미리보기 페이지 실재 + 학생 화면과 같은 규칙으로 파일을 푸는가
   var mpath = path.join(ROOT, 'morning', 'math.html');

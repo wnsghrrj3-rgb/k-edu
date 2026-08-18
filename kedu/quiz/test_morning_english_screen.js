@@ -10,8 +10,10 @@
  *   ⑩ 소리 배선(D8-ⓓ): 학생·미리보기 화면이 KTTS 를 싣는가, 수학은 안 싣는가
  *   ⑤ 교사 화면 배선(D4) — 고르기·보기·열기·학년 가드를 실제로 굴려서 확인한다
  *      (짝이 어긋나면 "고를 수 있는데 볼 수 없는 과목"이 된다)
- *   ⑪ 시간 주장(D8-⓵): 허브의 「활동 없는 날」 문구와 미리보기·인쇄물이
+ *   ⑪ 시간 주장(D8-ⓕ): 허브의 「활동 없는 날」 문구와 미리보기·인쇄물이
  *      원장이 모르는 시각(어제·내일·주·요일)을 주장하지 않는가
+ *   ⑫ 「오늘」의 자격(D8-ⓖ): 미리보기·인쇄물이 c키로 들어온 날에만 「오늘」이라 말하는가,
+ *      교사 통로가 오늘 몫 c키를 실제로 넘겨 그 일차를 여는가(예전엔 늘 1일째가 열렸다)
  * 실행: NODE_PATH=/home/claude/node_modules node kedu/quiz/test_morning_english_screen.js
  * ============================================================= */
 'use strict';
@@ -124,7 +126,8 @@ DATA.grades().forEach(function (g) {
     grab(/function subjectOk\(sub, grade\)\{[\s\S]*?\n  \}/, 'subjectOk'),
     grab(/function subjectOptions\(sel, grade\)\{[\s\S]*?\n  \}/, 'subjectOptions'),
     grab(/var PREVIEW = \{[\s\S]*?\n  \};/, 'PREVIEW'),
-    grab(/function previewLinks\(r, c\)\{[\s\S]*?\n  \}/, 'previewLinks'),
+    grab(/function todaySess\(\)\{[\s\S]*?\n  \}/, 'todaySess'),
+    grab(/function previewLinks\(r, c, sess\)\{[\s\S]*?\n  \}/, 'previewLinks'),
     grab(/function badDays\(days, grade\)\{[\s\S]*?\n  \}/, 'badDays'),
     grab(/function dayCells\(days, grade\)\{[\s\S]*?\n  \}/, 'dayCells'),
     grab(/function routineTxt\(r\)\{[\s\S]*?\n  \}/, 'routineTxt'),
@@ -137,7 +140,10 @@ DATA.grades().forEach(function (g) {
   var w = new JSDOM('<!doctype html><html><body></body></html>', { runScripts: 'outside-only' }).window;
   w.eval('function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\\"":"&quot;"}[c];});}');
   w.KQuiz = { englishData: DATA, hanjaData: require('./templates/hanja_data.js') };
-  w.eval(parts.join('\n') + '\nthis.__ = { so: subjectOptions, ok: subjectOk, pl: previewLinks, dc: dayCells, bd: badDays, rt: routineTxt, al: activityLink, tt: todayTag };');
+  /* todaySess 는 화면의 `state.board` 를 읽는다 — 상수 대조가 아니라 실제로 굴려 보려고
+     같은 이름의 그릇을 만들어 준다. 세션이 아직 안 왔을 때 null 을 내는지가 이 함수의 전부다. */
+  w.eval('var state = { board: null, routine: null, classes: [], cc: null };');
+  w.eval(parts.join('\n') + '\nthis.__ = { so: subjectOptions, ok: subjectOk, pl: previewLinks, dc: dayCells, bd: badDays, rt: routineTxt, al: activityLink, tt: todayTag, ts: todaySess, setBoard: function(b){ state.board = b; } };');
   var F = w.__;
 
   /* (1) 학년 가드 — 원장 있는 학년만 고를 수 있다. 학년 목록은 원장이 정한다(박으면 원장이 늘어도 화면이 모른다) */
@@ -179,14 +185,49 @@ DATA.grades().forEach(function (g) {
   T(F.bd({}, 1).length === 0, '빈 시간표가 막힘');
 
   /* (4) 미리보기 통로 — 시간표에 넣었으면 볼 곳이 있어야 하고, 학년이 따라가야 한다 */
-  var pe = F.pl({ days: { mon: 'english', tue: 'english' }, grade: 5 }, {});
+  var pe = F.pl({ days: { mon: 'english', tue: 'english' }, grade: 5 }, {}, null);
   T(pe.indexOf('/morning/sents_preview.html?grade=5') >= 0, '영어 미리보기 통로가 없거나 학년이 안 따라감');
   T((pe.match(/sents_preview/g) || []).length === 1, '같은 과목 미리보기 통로가 중복으로 붙음');
-  var pm = F.pl({ days: { mon: 'hanja', wed: 'english', fri: 'math' }, grade: 3 }, {});
+  var pm = F.pl({ days: { mon: 'hanja', wed: 'english', fri: 'math' }, grade: 3 }, {}, null);
   ['chars.html', 'sents_preview.html', 'math.html'].forEach(function (h) {
     T(pm.indexOf(h) >= 0, '섞인 시간표에서 ' + h + ' 통로가 빠짐');
   });
-  T(F.pl({ days: {}, grade: 3 }, {}) === '', '과목이 없는데 미리보기 통로가 붙음');
+  T(F.pl({ days: {}, grade: 3 }, {}, null) === '', '과목이 없는데 미리보기 통로가 붙음');
+
+  /* (4-b) ★D8-ⓖ 「오늘 나가는 …」은 실제로 오늘을 열 때만 쓴다 — **짝으로** 본다.
+       한쪽만 보면 빠져나간다: 라벨만 보면 첫날을 여는 통로가 이름만 고쳐 통과하고,
+       주소만 보면 오늘을 여는데 이름이 「미리 보기」인 통로도 통과한다. */
+  var RT = { days: { mon: 'english', tue: 'english' }, grade: 3 };
+  var todayE = { subject: 'english', lesson_key: 'g3_english_c007', step: 7 };
+  var pKnown = F.pl(RT, {}, todayE);
+  T(pKnown.indexOf('/morning/sents_preview.html?key=g3_english_c007') >= 0,
+    '오늘 몫을 알면서 미리보기에 c키를 안 넘김 — 이름만 「오늘」이고 첫날이 열린다');
+  T(pKnown.indexOf('?grade=') < 0, 'c키를 넘기면서 grade 도 붙임 — c키에 학년이 이미 들어 있다');
+  T(/오늘 나가는 영어 보기/.test(pKnown), '오늘을 여는 통로인데 라벨이 그 사실을 안 말함');
+  var pUnknown = F.pl(RT, {}, null);
+  T(/오늘/.test(pUnknown) === false,
+    '오늘 몫을 모르는데 라벨이 「오늘」이라 말함: ' + pUnknown.replace(/<[^>]*>/g, '').trim());
+  T(/영어 미리 보기/.test(pUnknown), '오늘을 모를 때의 라벨이 통로 이름을 잃음');
+  /* 오늘이 한자 날이면 영어 통로는 오늘을 모른다 — 남의 과목 세션을 자기 것으로 쓰면 안 된다 */
+  var pOther = F.pl({ days: { mon: 'hanja', wed: 'english' }, grade: 3 }, {},
+                    { subject: 'hanja', lesson_key: 'g3_hanja_c012' });
+  T(pOther.indexOf('sents_preview.html?grade=3') >= 0,
+    '오늘이 한자 날인데 영어 통로가 c키를 물고 감 — 남의 과목 진도를 자기 것이라 우긴다');
+  T(pOther.indexOf('chars.html?key=') < 0,
+    '한자 미리보기에 c키를 넘김 — chars.html 은 아직 c키를 받지 않는다(이번 작업 영역 밖)');
+  /* (4-c) todaySess — 오늘을 「모른다」고 말해야 하는 세 경우를 실제로 굴려 본다.
+       여기서 빈 그릇을 세션처럼 내주면 위의 통로가 없는 진도를 물고 간다. */
+  F.setBoard(null);
+  T(F.ts() === null, '현황판이 아직 안 왔는데 todaySess 가 세션을 내줌');
+  F.setBoard({ status: 'off_day' });
+  T(F.ts() === null, '활동 없는 날인데 todaySess 가 세션을 내줌');
+  F.setBoard({ status: 'ok', session: null });
+  T(F.ts() === null, '세션이 비었는데 todaySess 가 그것을 내줌');
+  F.setBoard({ status: 'ok', session: todayE });
+  T(F.ts() === todayE, '현황판에 오늘 세션이 있는데 todaySess 가 못 꺼냄');
+  T(F.pl(RT, {}, F.ts()).indexOf('?key=g3_english_c007') >= 0,
+    '현황판을 통해 꺼낸 세션이 통로에 안 실림 — 두 함수를 잇는 배선이 끊겼다');
+  F.setBoard(null);
 
   /* (5) 사람 말 — 영어만 하는 반은 '하루 한 문장' */
   T(F.rt({ days: { mon: 'english', tue: 'english' } }).indexOf('하루 한 문장') >= 0,
@@ -295,6 +336,42 @@ function boot(file, qs, opt) {
     all: function (s) { return Array.prototype.slice.call(doc.querySelectorAll(s)); },
     txt: function (s) { var e = doc.querySelector(s); return e ? e.textContent : ''; }
   };
+}
+
+/* ── 화면이 **스스로 지어 쓴 말**만 남긴다 (⑪·⑫ 공용) ──
+   ★본문을 그냥 훑으면 안 된다 — 원장에 뜻 `yesterday=어제`·`tomorrow=내일`·`today=오늘`,
+     g4 P2 틀 이름 「요일」, g6 d30 「이번 주 어때?」가 **실재**한다(실측: 간격 낱말 28건 ·
+     「오늘」 11건, g4 d4~d10 은 틀 전체가 요일 이야기다). 원장이 낸 문자열을 먼저
+     걷어내고 남은 말만 본다. 걷어낼 때는 **공백으로** 바꾼다 — 이어붙이면 없던 낱말이 생긴다.
+   ★`<script>` 는 제외한다 — 이 하니스가 원장 소스를 본문에 인라인 주입하므로 그 주석까지
+     딸려 온다(절 ⑩ 첫 실행에서 실제로 이 함정에 걸려 40 FAIL 이 났다).
+   ★`opt.hidden === false` 면 감춰진 마디도 걷어낸다 — 안 보이는 말은 화면이 하는 말이 아니다.
+     (되돌아가기 칩은 늘 본문에 있고 `display` 로만 갈린다.) 이것이 「다 감추면 통과」로
+     새지 않도록, 부르는 쪽이 **빈 화면 아님**과 **칩의 보임/안 보임**을 짝으로 함께 본다.
+   ★`opt.names` 는 활동 **이름**이라 규약 대상이 아닌 말(「오늘의 문장」) — 먼저 걷어낸다. */
+function ownLeft(o, g, opt) {
+  opt = opt || {};
+  var body = o.doc.body.cloneNode(true);
+  Array.prototype.slice.call(body.querySelectorAll('script,style,template'))
+    .forEach(function (e) { e.parentNode.removeChild(e); });
+  if (opt.hidden === false) {
+    Array.prototype.slice.call(body.querySelectorAll('[style]'))
+      .forEach(function (e) { if (/display\s*:\s*none/.test(e.getAttribute('style') || '')) e.parentNode.removeChild(e); });
+  }
+  var t = body.textContent;
+  var led = (opt.names || []).slice();
+  for (var i = 1; i <= DATA.maxDay(g); i++) {
+    var x = DATA.day(g, i);
+    if (!x) continue;
+    led.push(x.sent, x.ko);
+    if (x.expand) { led.push(x.expand.sent); led.push(x.expand.ko); }
+    (x.tiles || []).forEach(function (w) { led.push(w); });
+    (DATA.glossesOf(g, i) || []).forEach(function (it) { led.push(it.unit); led.push(it.ko); });
+  }
+  DATA.patGroups(g).forEach(function (p) { led.push(p.ko); });
+  led = led.filter(Boolean).sort(function (a, b) { return String(b).length - String(a).length; });
+  led.forEach(function (w) { t = t.split(w).join(' '); });
+  return t;
 }
 
 /* ⑥ 미리보기 → 학생 화면·인쇄물 통로 (D6)
@@ -553,26 +630,6 @@ var TTS_SRC = '/english/v3/engine/k-tts.js';
        실재한다(실측 28건). 원장이 낸 문자열을 먼저 걷어내고 남은 말만 본다.
      ★`<script>` 는 제외한다 — 이 하니스가 원장 소스를 본문에 인라인 주입하므로 그 주석까지
        딸려 온다(절 ⑩ 첫 실행에서 실제로 이 함정에 걸려 40 FAIL 이 났다). */
-  function ownLeft(o, g) {
-    var body = o.doc.body.cloneNode(true);
-    Array.prototype.slice.call(body.querySelectorAll('script,style,template'))
-      .forEach(function (e) { e.parentNode.removeChild(e); });
-    var t = body.textContent;
-    var led = [];
-    for (var i = 1; i <= DATA.maxDay(g); i++) {
-      var x = DATA.day(g, i);
-      if (!x) continue;
-      led.push(x.sent, x.ko);
-      if (x.expand) { led.push(x.expand.sent); led.push(x.expand.ko); }
-      (x.tiles || []).forEach(function (w) { led.push(w); });
-      (DATA.glossesOf(g, i) || []).forEach(function (it) { led.push(it.unit); led.push(it.ko); });
-    }
-    DATA.patGroups(g).forEach(function (p) { led.push(p.ko); });
-    led = led.filter(Boolean).sort(function (a, b) { return String(b).length - String(a).length; });
-    led.forEach(function (w) { t = t.split(w).join(' '); });
-    return t;
-  }
-
   DATA.grades().forEach(function (g) {
     var last = DATA.maxDay(g);
     [[ 'sents_preview.html', '?grade=' + g + '&day=4' ],
@@ -587,6 +644,109 @@ var TTS_SRC = '/english/v3/engine/k-tts.js';
         + left.replace(/\s+/g, ' ').slice(0, 140));
       /* 짝 — 아무것도 안 그리는 화면이 「주장 0」으로 통과하면 안 된다 */
       T(left.replace(/\s+/g, '').length > 20, 'g' + g + ' ' + c[0] + ' 가 사실상 빈 화면인데 통과함');
+    });
+  });
+})();
+
+/* ⑫ 「오늘」의 자격 — 미리보기·인쇄물도 진도를 알 때만 오늘이라 말한다 (D8-ⓖ)
+      D8-ⓕ 가 학생 화면(sents.html)에서 세운 규약을, 그 화면을 **여는 두 화면**에 마저 세운다.
+      ⓕ 당시 두 화면은 손대지 않아 「오늘의 틀」·「오늘 처음 만나는 낱말」·「오늘까지 배운
+      낱말」이 그대로 남아 있었고, 그 둘은 `?grade&day` 로만 열려 **오늘을 알 길이 없었다**.
+      ★인쇄물이 특히 무겁다 — 종이는 교실 벽과 가정통신문으로 나가고 다음 날 고쳐지지 않는다.
+      ★두 갈래로 함께 본다(⑪-2·절 ⑩ 과 같은 이유):
+        (a) 화면이 **자기 말**을 하는 마디만 골라 정면 대조 — 원장 문장이 실리는 자리는 뺀다.
+        (b) 본문에서 원장 문자열을 전부 걷어낸 나머지에도 0 — 나중에 새 문구를 어디에 붙여도 걸린다.
+      ★이 절은 반드시 `Promise.all` 바깥(최상위)에 둔다 — 9.18차에 절 ⑩ 이 `.catch` 안에
+        떨어져 **한 번도 안 돌면서 그린을 받은** 전례가 있다. 숫자가 안 늘면 그게 신호다. */
+(function () {
+  var TODAY = /오늘/;
+  var NAMES = ['오늘의 문장'];   /* 활동 **이름** — 제목·로고와 같은 자격이라 규약 대상이 아니다 */
+
+  function vis(o, sel) { var e = o.$(sel); return !!e && !/display\s*:\s*none/.test(e.getAttribute('style') || ''); }
+
+  DATA.grades().forEach(function (g) {
+    var d0 = Math.min(7, DATA.maxDay(g));      /* 오늘이라 칠 일차 */
+    var dAway = d0 > 3 ? 3 : d0 + 1;           /* 오늘에서 벗어난 일차 */
+    var KEY = 'g' + g + '_english_c' + ('00' + d0).slice(-3);
+
+    /* ── A. 모르는 통로(`?grade&day`) — 아무 날이나 여는 통로다. 「오늘」이 한 번도 없어야 한다. */
+    [['sents_preview.html', '?grade=' + g + '&day=' + d0],
+     ['sents_print.html',   '?grade=' + g + '&day=' + d0],
+     ['sents_print.html',   '?grade=' + g + '&day=' + d0 + '&mode=week']].forEach(function (c) {
+      var o = boot(c[0], c[1]);
+      if (!o) return;
+      var left = ownLeft(o, g, { hidden: false, names: NAMES });
+      T(TODAY.test(left) === false,
+        'g' + g + ' ' + c[0] + c[1] + ' 가 진도를 모르면서 「오늘」이라 말함: '
+        + left.replace(/\s+/g, ' ').slice(0, 140));
+      T(left.replace(/\s+/g, '').length > 20, 'g' + g + ' ' + c[0] + ' 가 사실상 빈 화면인데 통과함');
+      T(vis(o, '#back') === false, 'g' + g + ' ' + c[0] + ' 가 오늘을 모르는데 되돌아가기 칩을 띄움');
+    });
+
+    /* ── B. 아는 통로(`?key=`) — 그 일차로 **실제로 열리고**, 그때는 「오늘」이라 말한다.
+             ★짝으로 본다: (A) 만 보면 **아무 때도 「오늘」이라 안 하는 화면**이 통과한다.
+               그러면 라벨만 정직해지고 교사는 여전히 첫날을 본다. */
+    var oK = boot('sents_preview.html', '?key=' + KEY);
+    if (oK) {
+      var day0 = DATA.day(g, d0);
+      T(oK.$('#d') && +oK.$('#d').value === d0,
+        'g' + g + ' 미리보기가 c키로 열렸는데 ' + d0 + '일째가 아님(' + (oK.$('#d') || {}).value + ') — 이름만 오늘이고 첫날이 열린다');
+      T(oK.txt('#sentCard').indexOf(day0.sent) >= 0, 'g' + g + ' 미리보기 c키가 그날 문장을 안 띄움');
+      T(TODAY.test(oK.txt('#meta')), 'g' + g + ' 미리보기가 오늘 몫을 보면서 「오늘의 틀」이라 안 함');
+      T(/오늘 처음 만나는 낱말/.test(oK.txt('#sentCard')),
+        'g' + g + ' 미리보기가 오늘 몫을 보면서 새 낱말 머리를 「이 날」이라 함');
+      T(vis(oK, '#back') === false, 'g' + g + ' 오늘 몫을 보고 있는데 되돌아가기 칩이 뜸 — 갈 곳이 없다');
+      /* 통로 전달 — 학생 화면에는 오늘일 때만 c키를 넘긴다(sents.html 의 D8-ⓕ 계약) */
+      T((oK.$('#wayOpen').getAttribute('href') || '').indexOf('key=' + KEY) >= 0,
+        'g' + g + ' 오늘 몫인데 학생 화면 통로가 c키를 안 물고 감');
+      T((oK.$('#wayPrint').getAttribute('href') || '').indexOf('key=' + KEY) >= 0,
+        'g' + g + ' 오늘 몫인데 인쇄물 통로가 c키를 안 물고 감');
+    }
+    var oP = boot('sents_print.html', '?key=' + KEY);
+    if (oP) {
+      T(TODAY.test(oP.txt('.card-foot')), 'g' + g + ' 인쇄물이 오늘 몫인데 「오늘까지 배운 낱말」이라 안 함');
+      T(oP.txt('.ttl').indexOf('오늘의 문장') >= 0,
+        'g' + g + ' 인쇄물 카드 머리에서 활동 이름 「오늘의 문장」이 사라짐 — 이름은 규약 대상이 아니다');
+      T(vis(oP, '#back') === false, 'g' + g + ' 인쇄물이 오늘 몫인데 되돌아가기 칩이 뜸');
+    }
+
+    /* ── C. 알지만 벗어난 통로(`?key=` + `day=`) — 「오늘」은 **되돌아가는 통로에만** 남는다.
+             ★정직해지면서 정보가 줄면 안 된다(D8-ⓕ 확립 원칙): 벗어났다는 사실 자체가 통로가 된다.
+               칩까지 지우면 예전엔 거짓말이나마 알려 주던 것이 그냥 사라진다. */
+    [['sents_preview.html', '?key=' + KEY + '&day=' + dAway],
+     ['sents_print.html',   '?key=' + KEY + '&day=' + dAway]].forEach(function (c) {
+      var o = boot(c[0], c[1]);
+      if (!o) return;
+      T(vis(o, '#back') === true, 'g' + g + ' ' + c[0] + ' 가 진도에서 벗어났는데 되돌아갈 통로를 안 줌');
+      T(TODAY.test(o.txt('#back')), 'g' + g + ' ' + c[0] + ' 되돌아가기 칩이 어디로 가는지 말하지 않음');
+      /* 칩을 뺀 나머지 자기 말에는 「오늘」이 0 이어야 한다 */
+      var e = o.$('#back'); e.parentNode.removeChild(e);
+      var left = ownLeft(o, g, { hidden: false, names: NAMES });
+      T(TODAY.test(left) === false,
+        'g' + g + ' ' + c[0] + ' 가 진도를 벗어난 날을 「오늘」이라 부름: ' + left.replace(/\s+/g, ' ').slice(0, 140));
+    });
+    var oA = boot('sents_preview.html', '?key=' + KEY + '&day=' + dAway);
+    if (oA) {
+      T((oA.$('#wayOpen').getAttribute('href') || '').indexOf('key=') < 0,
+        'g' + g + ' 진도를 벗어난 채로 학생 화면에 c키를 넘김 — 교사가 본 날과 아이가 만날 날이 어긋난다');
+      T((oA.$('#wayOpen').getAttribute('href') || '').indexOf('day=' + dAway) >= 0,
+        'g' + g + ' 학생 화면 통로가 지금 보고 있는 일차를 안 따라감');
+      T((oA.$('#wayPrint').getAttribute('href') || '').indexOf('key=' + KEY) >= 0 &&
+        (oA.$('#wayPrint').getAttribute('href') || '').indexOf('day=' + dAway) >= 0,
+        'g' + g + ' 인쇄물 통로가 오늘과 보고 있는 일차를 함께 넘기지 않음');
+    }
+  });
+
+  /* ── D. 원장 없는 학년의 c키 — 학년을 되돌리면서 진도일도 함께 버려야 한다.
+           안 버리면 3학년 화면이 1학년의 7일째를 자기 「오늘」이라 부른다. */
+  [1, 2].forEach(function (g) {
+    ['sents_preview.html', 'sents_print.html'].forEach(function (f) {
+      var o = boot(f, '?key=g' + g + '_english_c007');
+      if (!o) return;
+      var left = ownLeft(o, DATA.grades()[0], { hidden: false, names: NAMES });
+      T(TODAY.test(left) === false,
+        f + ' 가 원장 없는 ' + g + '학년 c키를 받고도 「오늘」이라 말함: ' + left.replace(/\s+/g, ' ').slice(0, 120));
+      T(vis(o, '#back') === false, f + ' 가 원장 없는 학년 c키에서 되돌아가기 칩을 띄움');
     });
   });
 })();

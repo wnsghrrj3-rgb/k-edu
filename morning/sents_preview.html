@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>오늘 나가는 영어 — 아침활동</title>
+<title>아침영어 미리 보기 — 오늘의 문장</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
 <style>
@@ -53,22 +53,25 @@ select{font-family:inherit;font-size:15px;padding:9px 12px;border:1px solid var(
 .way.fill{background:var(--primary);color:#fff}
 .way small{font-size:12px;opacity:.8}
 .ways .note{font-size:12.5px;color:var(--faint);align-self:center;line-height:1.6}
+.back{align-self:flex-end;border:1px solid var(--primary);background:transparent;color:var(--primary);
+  border-radius:999px;padding:7px 13px;font-family:inherit;font-size:13px;cursor:pointer}
 </style>
 </head>
 <body>
 <div class="top">
-  <span class="brand">케이에듀</span><span class="t">오늘 나가는 영어</span>
+  <span class="brand">케이에듀</span><span class="t" id="ttl">아침영어 미리 보기</span>
   <a href="/morning/teacher.html">← 아침활동으로</a>
 </div>
 <div class="page">
   <div class="card">
     <h2>아침에 나갈 문장과 문제를 미리 볼 수 있어요</h2>
-    <div class="hint">하루에 한 문장씩 나가요. 오늘 문장의 모든 낱말은 <b>그날까지 배운 것</b>으로만
+    <div class="hint">하루에 한 문장씩 나가요. 그날 문장의 모든 낱말은 <b>그날까지 배운 것</b>으로만
       되어 있어서, 아이가 모르는 말을 만나는 날이 없어요. 아래 확인 문제는 학생들이 푸는 것과
       같은 방식으로 만들어지고, <b>다시 뽑기</b>를 누르면 다른 문제가 나와요.</div>
     <div class="pick">
       <div><label>학년</label><select id="g"></select></div>
       <div><label>몇 일째</label><select id="d"></select></div>
+      <button class="back" id="back" type="button" style="display:none">오늘 문장으로 ↩</button>
     </div>
     <div class="meta" id="meta">불러오는 중…</div>
   </div>
@@ -105,15 +108,39 @@ select{font-family:inherit;font-size:15px;padding:9px 12px;border:1px solid var(
   'use strict';
   var DATA = KQuiz.englishData;
   var GRADES = DATA.grades();
-  var q = new URLSearchParams(location.search);
-  var wanted = +q.get('grade') || GRADES[0];
-  var st = { grade: GRADES.indexOf(wanted) >= 0 ? wanted : GRADES[0], day: +q.get('day') || 1 };
+  /* ── 주소 풀기: c키·grade/day 모두 받는다 (D8-ⓖ) ──
+     ★**진도일(today)은 c키 통로로 들어왔을 때만 안다.** 교사 화면이 `ma_today` 에서 받은 그날
+       몫을 `?key=g3_english_c007` 로 넘겨 준다. 반면 `?grade&day` 는 아무 날이나 여는 통로라,
+       그 문장이 오늘 몫인지 이 화면은 알 길이 없다. 모르면서 「오늘」이라 말하면 D8-ⓔ·ⓕ 가
+       걷어낸 요일·간격 주장과 같은 종류의 거짓이다. 모르면 `today = null` 로 둔다.
+     ★key 와 day 를 **함께** 받는다 — 오늘 몫으로 들어와도 교사가 옆 일차를 둘러봐야 하고,
+       그때도 「오늘이 며칠째인지」를 잃지 않아야 「오늘 문장으로 ↩」가 성립한다.
+       (학생 화면 sents.html 은 key 하나만 받는다 — 그쪽 계약은 D8-ⓕ 가 고정했으므로 안 건드린다.) */
+  function fromUrl(){
+    var q = new URLSearchParams(location.search);
+    var m = (q.get('key') || '').match(/^g(\d)_english_c(\d{1,3})$/);
+    var d = +q.get('day') || 0;
+    if (m) return { grade:+m[1], day: d || +m[2], today:+m[2] };
+    var g = +q.get('grade') || GRADES[0];
+    return { grade:g, day: d || 1, today:null };
+  }
+  var st = fromUrl();
+  /* 원장에 없는 학년으로 들어오면 학년을 되돌리는데, 그때 진도일도 함께 버린다 —
+     다른 학년의 일차를 이 학년의 「오늘」이라 부르면 안 된다. */
+  if (GRADES.indexOf(st.grade) < 0) { st.grade = GRADES[0]; st.today = null; }
+  /* 지금 보고 있는 문장이 「오늘 몫」임을 이 화면이 근거를 갖고 말할 수 있는가.
+     이름과 뜻을 학생 화면(sents.html)과 똑같이 둔다 — 두 화면이 서로 다른 말을 쓰면
+     다음 사람이 한쪽만 고치고 다른 쪽을 못 본다. */
+  function onToday(){ return st.today != null && st.day === st.today; }
+  function sentW(){ return onToday() ? '오늘 문장' : '이 문장'; }
+  function dayW(){  return onToday() ? '오늘' : '이 날'; }
 
   var gSel = document.getElementById('g'), dSel = document.getElementById('d');
   var meta = document.getElementById('meta'), mount = document.getElementById('mount');
   var sentCard = document.getElementById('sentCard');
   var wayCard = document.getElementById('wayCard');
   var wayOpen = document.getElementById('wayOpen'), wayPrint = document.getElementById('wayPrint');
+  var backBtn = document.getElementById('back');
 
   /* 통로는 화면에 박힌 주소가 아니라 지금 고른 학년·일차를 따라간다.
      없는 일차에서는 통로 자체를 감춘다 — 열었는데 볼 것이 없으면 안 된다.
@@ -121,8 +148,18 @@ select{font-family:inherit;font-size:15px;padding:9px 12px;border:1px solid var(
   function wire(on){
     if (!on){ wayCard.style.display = 'none'; return; }
     wayCard.style.display = '';
-    wayOpen.href  = '/morning/sents.html?grade='+st.grade+'&day='+st.day+'&peek=1';
-    wayPrint.href = '/morning/sents_print.html?grade='+st.grade+'&day='+st.day;
+    /* ★학생 화면에는 **오늘 몫을 보고 있을 때만** c키를 넘긴다. sents.html 은 c키를 받으면
+         그 일차를 열고 「오늘」이라 말한다(D8-ⓕ 계약). 3일째를 보다가 오늘(7일째) c키를 넘기면
+         교사가 본 것과 아이가 만날 것이 어긋난다. 벗어나 있으면 grade&day 로 넘겨 그쪽이
+         「이 문장」이라 말하게 둔다. */
+    wayOpen.href  = onToday()
+      ? '/morning/sents.html?key='+keyOf(st.grade, st.day)+'&peek=1'
+      : '/morning/sents.html?grade='+st.grade+'&day='+st.day+'&peek=1';
+    /* 인쇄물은 key 와 day 를 함께 받으므로(이 화면과 같은 규약) 오늘을 잃지 않은 채
+       옆 일차도 낼 수 있다. 종이는 다음 날 다시 열어 고칠 수 없으니 더 정확해야 한다. */
+    wayPrint.href = (st.today != null)
+      ? '/morning/sents_print.html?key='+keyOf(st.grade, st.today)+'&day='+st.day
+      : '/morning/sents_print.html?grade='+st.grade+'&day='+st.day;
   }
 
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){
@@ -158,7 +195,7 @@ select{font-family:inherit;font-size:15px;padding:9px 12px;border:1px solid var(
       + '<div class="ko">'+esc(day.ko)+'</div>'
       + '<div class="tiles">'+day.tiles.map(function(t){
           return '<span class="tile">'+esc(t)+'</span>'; }).join('')+'</div>'
-      + '<div class="row"><h3>오늘 처음 만나는 낱말</h3>'
+      + '<div class="row"><h3>'+dayW()+' 처음 만나는 낱말</h3>'
       + (newWords.length
           ? DATA.glossesOf(st.grade, day.d).map(function(it){
               return '<span class="badge">'+esc(it.unit)
@@ -168,7 +205,7 @@ select{font-family:inherit;font-size:15px;padding:9px 12px;border:1px solid var(
       + '<div class="row"><h3>넓히기 — 같은 틀로 지어 보는 새 문장</h3>'
       + (day.expand
           ? '<div class="exp">'+esc(day.expand.sent)+'<small>'+esc(day.expand.ko)+'</small></div>'
-          : '<span class="none">이 날은 재료가 아직 모자라요. 오늘 문장을 한 번 더 조립해요.</span>')
+          : '<span class="none">이 날은 재료가 아직 모자라요. '+sentW()+'을 한 번 더 조립해요.</span>')
       + '</div>';
     sentCard.innerHTML = h;
   }
@@ -189,21 +226,30 @@ select{font-family:inherit;font-size:15px;padding:9px 12px;border:1px solid var(
 
     meta.innerHTML = '<b>'+st.grade+'학년</b>의 <b>'+st.day+'일째</b> 아침영어예요. '
       + '모두 <b>'+n+'일</b>치가 있고, 다 나가면 복습으로 다시 돌아요.'
-      + '<br><span style="color:var(--sub)">오늘의 틀: '+esc(patKo(st.grade, day.pat))
+      + '<br><span style="color:var(--sub)">'+(onToday()?'오늘의 틀':'이 문장의 틀')+': '+esc(patKo(st.grade, day.pat))
       + ' · 이 학년은 하루 새 낱말 '+esc(rules.newMax)+'개까지, 문장은 낱말 '
       + esc(rules.tileMax)+'개까지예요.</span>';
 
+    /* 진도에서 벗어나 있으면 벗어났다는 사실 자체를 통로로 보여 준다 —
+       「오늘」이라는 거짓을 걷어낸 자리에 참인 안내를 채운다(D8-ⓕ 확립 원칙). */
+    backBtn.style.display = (st.today != null && st.day !== st.today) ? '' : 'none';
     drawSentence(day);
     wire(true);
     KQuiz.mount(mount, { mode:'teacher', lesson:key, n:10 });
 
+    /* ★주소가 진도일을 계속 물고 간다 — 새로고침하면 오늘을 잊는 화면은
+         「오늘 문장으로 ↩」를 조용히 잃는다(있다가 사라지는 통로가 제일 나쁘다). */
     var u = new URL(location.href);
-    u.searchParams.set('grade', st.grade); u.searchParams.set('day', st.day);
+    if (st.today != null){ u.searchParams.set('key', keyOf(st.grade, st.today)); u.searchParams['delete']('grade'); }
+    else { u.searchParams.set('grade', st.grade); u.searchParams['delete']('key'); }
+    u.searchParams.set('day', st.day);
     history.replaceState(null, '', u);
   }
 
-  gSel.onchange = function(){ st.grade = +this.value; st.day = 1; draw(); };
+  /* 학년을 바꾸면 진도일을 버린다 — 우리 반 7일째가 옆 학년의 7일째는 아니다 */
+  gSel.onchange = function(){ st.grade = +this.value; st.day = 1; st.today = null; draw(); };
   dSel.onchange = function(){ st.day = +this.value; draw(); };
+  backBtn.onclick = function(){ if (st.today != null){ st.day = st.today; draw(); } };
   draw();
 })();
 </script>
