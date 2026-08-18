@@ -167,6 +167,12 @@ button{font-family:inherit;cursor:pointer}
 
 </style>
   <script src="/kedu_gate.js"></script>
+  <!-- 작업 이어하기 (2026-08-18) — 로드 순서 고정: config → supabase → tier → resume.
+       방문자·게스트는 저장 0(준호 결정). 판정은 KeduTier 한 창구로만. -->
+  <script src="/kedu_config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/kedu_tier.js"></script>
+  <script src="/kedu_resume.js"></script>
 <script src="/kedu_boxbar.js"></script>
 </head>
 <body>
@@ -241,6 +247,18 @@ button{font-family:inherit;cursor:pointer}
 <div class="toast" id="toast"></div>
 
 <!-- 도면·배경 패널 -->
+<!-- 💾 이어하기 (지난 그림이 있을 때만) -->
+<div class="sheet-mask" id="resume-mask">
+  <div class="sheet" style="width:min(400px,100%);text-align:center;padding:26px 24px 22px">
+    <h3 style="justify-content:center">💾 그리던 그림이 있어요</h3>
+    <p class="desc" id="resume-when" style="margin-bottom:20px"></p>
+    <div style="display:flex;gap:9px;justify-content:center;flex-wrap:wrap">
+      <button class="tb-btn" id="resume-yes" style="background:var(--primary);color:#fff;border-color:var(--primary);padding:0 18px;height:42px">이어서 그리기</button>
+      <button class="tb-btn" id="resume-no" style="padding:0 18px;height:42px">새 도화지</button>
+    </div>
+  </div>
+</div>
+
 <div class="sheet-mask" id="sheet-mask">
   <div class="sheet">
     <button class="sheet-close" onclick="closeSheet()">✕</button>
@@ -667,6 +685,7 @@ function pushUndo(){
   try{ undo.push(cv.toDataURL()); }catch(e){}
   if(undo.length>30) undo.shift();
   redo=[]; updateBtns();
+  if(typeof markWork==='function') markWork();   /* 💾 획·도형·채우기·스탬프 모두 여기를 지난다 */
 }
 function restore(url){
   const img=new Image();
@@ -674,8 +693,8 @@ function restore(url){
     ctx.clearRect(0,0,cssW,cssH); ctx.drawImage(img,0,0,cssW,cssH); };
   img.src=url;
 }
-function doUndo(){ if(undo.length<=1) return; redo.push(undo.pop()); restore(undo[undo.length-1]); updateBtns(); }
-function doRedo(){ if(!redo.length) return; const d=redo.pop(); undo.push(d); restore(d); updateBtns(); }
+function doUndo(){ if(undo.length<=1) return; redo.push(undo.pop()); restore(undo[undo.length-1]); updateBtns(); if(typeof markWork==='function') markWork(); }
+function doRedo(){ if(!redo.length) return; const d=redo.pop(); undo.push(d); restore(d); updateBtns(); if(typeof markWork==='function') markWork(); }
 function updateBtns(){
   document.getElementById('undo-btn').disabled = undo.length<=1;
   document.getElementById('redo-btn').disabled = redo.length===0;
@@ -911,9 +930,81 @@ function openSheet(){ buildSheet(); document.getElementById('sheet-mask').classL
 function closeSheet(){ document.getElementById('sheet-mask').classList.remove('on'); }
 document.getElementById('sheet-mask').addEventListener('click', e=>{ if(e.target.id==='sheet-mask') closeSheet(); });
 
+/* ============== 💾 작업 이어하기 ============== */
+/* 도화지 한 장을 오래 그리는 도구다 — 새로고침 한 번에 잃지 않게.
+   저장 가부는 KeduResume(→KeduTier)가 판정: 방문자·게스트는 저장 0. */
+const RES = window.KeduResume || null;
+let resumeOn = false, saver = null;
+
+function markWork(){ if(resumeOn && saver) saver.mark(); }
+function blobOf(canvas){
+  return new Promise(res=>{ try{ canvas.toBlob(b=>res(b||null), 'image/png'); }catch(e){ res(null); } });
+}
+function bgIsBlank(){                       /* 흰 배경만 있으면 담지 않는다(용량) */
+  try{
+    const d=bgx.getImageData(0,0,Math.min(bg.width,64),Math.min(bg.height,64)).data;
+    for(let i=0;i<d.length;i+=4){ if(d[i]<250||d[i+1]<250||d[i+2]<250) return false; }
+    return true;
+  }catch(e){ return false; }
+}
+async function collectWork(){
+  return { meta:{ w:Math.round(cssW), h:Math.round(cssH), at:Date.now() },
+           parts:{ draw: hasDrawn ? await blobOf(cv) : null,
+                   bg:   bgIsBlank() ? null : await blobOf(bg) },
+           replaceParts:true };
+}
+function drawBlobTo(context, blob){          /* 저장 당시 크기가 달라도 지금 도화지에 맞춰 편다 */
+  return new Promise(res=>{
+    if(!blob){ res(false); return; }
+    let url; try{ url=URL.createObjectURL(blob); }catch(e){ res(false); return; }
+    const im=new Image();
+    im.onload=()=>{ try{ context.setTransform(dpr,0,0,dpr,0,0); context.globalAlpha=1;
+        context.globalCompositeOperation='source-over'; context.shadowBlur=0;
+        context.drawImage(im,0,0,cssW,cssH); }catch(e){}
+      try{ URL.revokeObjectURL(url); }catch(e){} res(true); };
+    im.onerror=()=>{ try{ URL.revokeObjectURL(url); }catch(e){} res(false); };
+    im.src=url;
+  });
+}
+async function applyWork(got){
+  const p=got.parts||{};
+  if(p.bg) await drawBlobTo(bgx, p.bg);
+  if(p.draw){ await drawBlobTo(ctx, p.draw); hasDrawn=true; undo=[]; redo=[]; pushUndo(); }
+}
+function askResume(got){
+  const w=new Date((got.meta&&got.meta.at)||got.at||Date.now());
+  document.getElementById('resume-when').textContent =
+    (w.getMonth()+1)+'월 '+w.getDate()+'일 '+w.getHours()+'시경에 그리던 그림이에요';
+  document.getElementById('resume-mask').classList.add('on');
+  document.getElementById('resume-yes').onclick = ()=>{
+    document.getElementById('resume-mask').classList.remove('on');
+    applyWork(got).then(()=>{ markWork(); toast('💾 이어서 그려요'); });
+  };
+  document.getElementById('resume-no').onclick = ()=>{
+    document.getElementById('resume-mask').classList.remove('on');
+    RES.clear('main'); toast('새 도화지로 시작해요');
+  };
+}
+function initResume(){
+  if(!RES) return;
+  RES.init({ app:'kart', version:1 }).then(r=>{
+    resumeOn = !!r.can;
+    if(!resumeOn) return;                    /* 방문자·게스트·IDB 부재 = 조용히 없던 일로 */
+    saver = RES.autosaver('main', collectWork, { wait:1800 });
+    window.addEventListener('pagehide', ()=>saver.flush());
+    document.addEventListener('visibilitychange', ()=>{
+      if(document.visibilityState==='hidden') saver.flush();
+    });
+    return RES.load('main').then(got=>{
+      if(got && got.parts && (got.parts.draw || got.parts.bg)) askResume(got);
+    });
+  }).catch(()=>{});
+}
+
 /* ============== 시작 ============== */
 fitCanvas();
 pushUndo();
+initResume();
 </script>
 <!-- 종이접기 패널 -->
 <div class="sheet-mask" id="origami-mask">

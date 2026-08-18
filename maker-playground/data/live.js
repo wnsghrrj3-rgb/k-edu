@@ -527,16 +527,45 @@ window.MK_LIVE = (() => {
   }
 
   /* ================= ③ 영속 ================= */
+  /* R129 — 접근 사다리 게이트 + 소유자 분리 (준호 결정 2026-08-18)
+     ① 방문자·게스트는 저장하지 않는다. 판정은 KeduResume(→KeduTier) 한 창구.
+        계층이 안 실린 페이지(플레이그라운드 검수)에서는 종전대로 — 옛 세계 무영향.
+        판정이 끝나기 전(부팅 수백 ms)에는 쓰지 않는다 — 조작이 닿기 전 창이다.
+     ② 학교 태블릿은 공용이다. 키에 소유자를 넣어 다음 사람이 앞사람 문서를 못 본다.
+        옛 키(소유자 없음)는 **읽기만** 폴백해 이미 만든 작품을 잃지 않는다 —
+        다음 저장부터 새 키로 옮겨 앉는다. */
   let backend = null;                    /* {getItem,setItem,removeItem} — 기본 localStorage */
+  function keduCanSave() {
+    const R = window.KeduResume;
+    if (!R || !R.state) return true;     /* 계층 미탑재 = 종전대로(R116 이전 세계 보존) */
+    const st = R.state();
+    if (!st.inited) return false;        /* 판정 전에는 쓰지 않는다 */
+    return !!st.can;
+  }
+  function keduOwner() {
+    const R = window.KeduResume;
+    if (!R || !R.state) return '';
+    const st = R.state();
+    return st && st.owner ? st.owner + ':' : '';
+  }
   const store = () => {
     if (backend) return backend;         /* 주입이 항상 이긴다 — 하니스 계약 (R116 불변) */
+    if (!keduCanSave()) return null;     /* 사다리 게이트 — saveDoc 은 규약대로 false */
     const X = window.MK_STORE;           /* R116 — IndexedDB 파사드: 준비된 날만 정본 */
     if (X && X.ready) return X;
     try { const t = window.localStorage; t.getItem('__mk'); return t; } catch (_) { return null; }
   };
   const useBackend = (b) => { backend = b; };
-  const K_DOC = (id) => 'mklive:doc:' + id;
-  const K_PROJ = 'mklive:projects';
+  const K_DOC = (id) => 'mklive:' + keduOwner() + 'doc:' + id;
+  const K_PROJ = () => 'mklive:' + keduOwner() + 'projects';
+  const L_DOC = (id) => 'mklive:doc:' + id;          /* 옛 키 — 읽기 폴백 전용 */
+  const L_PROJ = 'mklive:projects';
+  function readEither(s, key, legacy) {              /* 새 키 우선, 없으면 옛 키 */
+    let raw = null;
+    try { raw = s.getItem(key); } catch (_) {}
+    if (raw == null && legacy !== key) { try { raw = s.getItem(legacy); } catch (_) {} }
+    return raw;
+  }
 
   function saveDoc(doc) {
     const s = store(); if (!s || !doc || !doc.id) return false;
@@ -544,20 +573,24 @@ window.MK_LIVE = (() => {
   }
   function loadDoc(id) {
     const s = store(); if (!s || !id) return null;
-    try { const raw = s.getItem(K_DOC(id)); return raw ? JSON.parse(raw) : null; } catch (_) { return null; }
+    try { const raw = readEither(s, K_DOC(id), L_DOC(id)); return raw ? JSON.parse(raw) : null; } catch (_) { return null; }
   }
-  function clearDoc(id) { const s = store(); if (s) try { s.removeItem(K_DOC(id)); } catch (_) {} }
+  function clearDoc(id) {
+    const s = store(); if (!s) return;
+    try { s.removeItem(K_DOC(id)); } catch (_) {}
+    try { s.removeItem(L_DOC(id)); } catch (_) {}   /* 옛 키도 함께 — 지운 문서의 부활 차단 */
+  }
 
   /* 프로젝트 전체 영속 — MK_PROJ.serialize/hydrate 브리지 */
   function saveProjects() {
     const s = store(), P = window.MK_PROJ;
     if (!s || !P || !P.serialize) return false;
-    try { s.setItem(K_PROJ, P.serialize()); return true; } catch (_) { return false; }
+    try { s.setItem(K_PROJ(), P.serialize()); return true; } catch (_) { return false; }
   }
   function restoreProjects() {
     const s = store(), P = window.MK_PROJ;
     if (!s || !P || !P.hydrate) return false;
-    try { const raw = s.getItem(K_PROJ); if (!raw) return false; return P.hydrate(raw); } catch (_) { return false; }
+    try { const raw = readEither(s, K_PROJ(), L_PROJ); if (!raw) return false; return P.hydrate(raw); } catch (_) { return false; }
   }
 
   /* 자동저장 — 디바운스 700ms, timer 주입 가능 */
@@ -705,17 +738,33 @@ window.MK_LIVE = (() => {
    첫 렌더(home)가 먼저 그려질 수 있으므로, 복원이 실데이터를 실었고 사용자가
    아직 시작 화면(home·projects)에 있으면 한 번 다시 그린다. init 실패(ready
    false)면 store() 가 종전 localStorage 로 폴백해 같은 복원 경로가 돈다. */
+/* R129: 접근 사다리 판정을 **복원보다 먼저** 끝낸다 — 판정 전에는 store() 가
+   닫혀 있으므로(게이트), 기다리지 않으면 로그인한 학생·교사도 복원에 실패한다.
+   계층이 없는 페이지(플레이그라운드)에서는 즉시 통과해 옛 경로 그대로. */
+function keduReady() {
+  try {
+    const R = window.KeduResume;
+    if (!R || !R.init || !R.state) return Promise.resolve();
+    if (R.state().inited) return Promise.resolve();
+    return R.init({ app: 'kmaker', version: 1 }).then(() => {}, () => {});
+  } catch (_) { return Promise.resolve(); }
+}
 try {
-  if (window.MK_STORE && window.MK_STORE.init) {
-    window.MK_STORE.init(() => {
-      try {
-        if (!window.MK_PROJ) return;
-        const had = window.MK_LIVE.restoreProjects();
-        const P = window.PG;
-        if (had && P && P.render && P.state && /^(home|projects)$/.test(P.state.screen || '')) P.render();
-      } catch (_) {}
-    });
-  } else if (window.MK_PROJ && window.localStorage) {
-    window.MK_LIVE.restoreProjects();
-  }
+  const bootRestore = () => {
+    try {
+      if (window.MK_STORE && window.MK_STORE.init) {
+        window.MK_STORE.init(() => {
+          try {
+            if (!window.MK_PROJ) return;
+            const had = window.MK_LIVE.restoreProjects();
+            const P = window.PG;
+            if (had && P && P.render && P.state && /^(home|projects)$/.test(P.state.screen || '')) P.render();
+          } catch (_) {}
+        });
+      } else if (window.MK_PROJ && window.localStorage) {
+        window.MK_LIVE.restoreProjects();
+      }
+    } catch (_) {}
+  };
+  keduReady().then(bootRestore);
 } catch (_) {}
