@@ -16,6 +16,7 @@
      대상 테스트: handoff/draw/tests/test_animlab.js
      3모델: 프레임 스토어 · 어니언 스킨 규칙 · 재생 컨트롤러
      ═══════════════════════════════════════════════════════════════ -->
+<script src="kchar-core.js"></script>
 <script id="animlab-logic">
 (function(){
   'use strict';
@@ -251,10 +252,77 @@
     {id:'face',    title:'표정 변화',    emoji:'😄', frames:6,  fps:5,  tip:'무표정 → 미소 → 활짝 — 입과 눈썹만 바꿔도 마음이 보여요'},
     {id:'candle',  title:'촛불 흔들림',  emoji:'🕯️', frames:6,  fps:8,  tip:'불꽃이 좌우로 하늘하늘 — 2~3장 반복의 힘'}
   ];
+
+  /* ── 캐릭터 본보기 9종 — KChar 리그로 포즈만 기술 ──
+     각 항목: rig=캐릭터 id, pose(i)=장별 포즈, fx=효과(선택). 전부 결정적. */
+  function _S(t){ return Math.sin(t*Math.PI*2); }
+  var CHAR_SAMPLES = [
+    {id:'ch_koko', title:'코코 달리기', emoji:'🦊', frames:8, fps:10, rig:'koko', grp:'char',
+     tip:'다리는 번갈아, 꼬리는 반대로 — 몸이 살짝 앞으로 기울어요',
+     pose:function(i){ var t=i/8; return {tilt:-0.13, bob:_S(t*2)*8, legL:_S(t)*30, legR:-_S(t)*30,
+       armL:_S(t)*0.5, armR:-_S(t)*0.5, tail:_S(t+0.25), mood:'joy'}; },
+     fx:function(ctx,i){ ctx.strokeStyle='rgba(190,150,95,.55)'; ctx.lineWidth=6; ctx.lineCap='round';
+       for(var k=0;k<2;k++){ ctx.beginPath(); ctx.moveTo(150,300+k*40+(i%2)*10); ctx.lineTo(88,300+k*40+(i%2)*10); ctx.stroke(); } }},
+    {id:'ch_moony', title:'달님이 깡총', emoji:'🐰', frames:8, fps:9, rig:'moony', grp:'char',
+     tip:'뛰어오르면 귀가 뒤로 펄럭 — 착지에서 납작',
+     pose:function(i){ var k=i%4, jump=[0,120,190,80][k];
+       return {jump:jump, ear:jump/190, bob:k===0?8:-4, legL:k===2?-14:0, legR:k===2?14:0,
+         mood:k===2?'joy':'base', armL:k? k*0.5:0, armR:k? k*0.5:0}; }},
+    {id:'ch_owl', title:'부엉박사 인사', emoji:'🦉', frames:6, fps:7, rig:'owl', grp:'char',
+     tip:'날개 한쪽만 흔들어요 — 반짝, 한 장은 눈을 깜빡',
+     pose:function(i){ var t=i/6; return {armR:Math.max(0,_S(t))*1.9, bob:_S(t)*4,
+       blink:i===4?1:0, mood:i>=2&&i<=3?'joy':'base'}; }},
+    {id:'ch_navi', title:'나비 세수', emoji:'🐱', frames:6, fps:7, rig:'navi', grp:'char',
+     tip:'앞발로 얼굴을 쓱쓱 — 고개도 같이 살짝',
+     pose:function(i){ var t=i/6; return {armR:1.7+_S(t)*0.45, tilt:_S(t)*0.06, bob:_S(t)*5,
+       blink:(i===2||i===5)?1:0, tail:_S(t)*0.6}; }},
+    {id:'ch_pogeun', title:'포근이 기지개', emoji:'🐻', frames:6, fps:5, rig:'pogeun', grp:'char',
+     tip:'졸리다가 → 쭈욱 → 개운! 마음이 표정에 나와요',
+     pose:function(i){ if(i<2) return {mood:'sleep', tilt:0.06, bob:5+i*6};
+       if(i<4) return {armL:2.5, armR:2.5, bob:-12, mood:i===3?'wow':'base'};
+       return {armL:0.7-(i-4)*0.28, armR:0.7-(i-4)*0.28, mood:'joy', bob:(i-4)*5}; }},
+    {id:'ch_quack', title:'꽥이 첨벙', emoji:'🦆', frames:8, fps:9, rig:'quack', grp:'char',
+     tip:'점점 높이 — 꼭대기에서 놀란 얼굴, 내려와서 첨벙!',
+     pose:function(i){ var jump=[0,60,140,185,140,60,0,0][i];
+       return {jump:jump, armL:jump/90, armR:jump/90, legL:jump>100?-12:0, legR:jump>100?12:0,
+         mood:jump>150?'wow':(i>=6?'joy':'base'), bob:i>=6?6:0}; },
+     fx:function(ctx,i){ if(i>=6){ ctx.fillStyle='rgba(120,190,240,.7)';
+       var sp=[[380,586],[520,590],[340,574],[560,572],[450,596]];
+       for(var k=0;k<sp.length;k++){ ctx.beginPath(); ctx.ellipse(sp[k][0],sp[k][1],10-(i-6)*2,6,0,0,6.2832); ctx.fill(); } } }},
+    {id:'ch_kbot', title:'케이봇 두리번', emoji:'🤖', frames:6, fps:6, rig:'kbot', grp:'char',
+     tip:'눈동자만 좌우로 — 마지막 장은 찡긋',
+     pose:function(i){ var ex=[-1,-1,0,1,1,0][i];
+       return {eyeX:ex, bob:_S(i/6)*4, blink:i===5?1:0, mood:i===2?'joy':'base'}; }},
+    {id:'ch_mundol', title:'문돌이 둥실', emoji:'🐙', frames:8, fps:8, rig:'mundol', grp:'char',
+     tip:'물속이라 위아래로 둥실 — 다리가 물결처럼',
+     pose:function(i){ var t=i/8; return {jump:26+_S(t)*18, tail:_S(t+0.25), bob:_S(t)*6,
+       mood:i===4?'joy':'base'}; },
+     fx:function(ctx,i){ ctx.fillStyle='rgba(160,210,250,.7)';
+       for(var k=0;k<3;k++){ var by=520-((i*34+k*120)%420);
+         ctx.beginPath(); ctx.arc(240+k*36,by,6+k*2,0,6.2832); ctx.fill(); } }},
+    {id:'ch_greeny', title:'초록이 꼬리춤', emoji:'🦕', frames:6, fps:8, rig:'greeny', grp:'char',
+     tip:'꼬리를 크게 살랑살랑 — 신나면 콩!',
+     pose:function(i){ var t=i/6; return {tail:_S(t), jump:(i===2||i===5)?26:0,
+       bob:_S(t)*5, mood:'joy', armL:Math.max(0,_S(t))*0.8, armR:Math.max(0,-_S(t))*0.8}; }}
+  ];
+  for(var _ci=0;_ci<CHAR_SAMPLES.length;_ci++) SAMPLES.push(CHAR_SAMPLES[_ci]);
+
   function findSample(id){ for(var i=0;i<SAMPLES.length;i++) if(SAMPLES[i].id===id) return SAMPLES[i]; return null; }
 
   function drawSample(ctx, id, i){
     var W=900, H=620, TAU=Math.PI*2;
+    var SS=findSample(id);
+    if(SS && SS.rig){
+      var KC=(typeof window!=='undefined'&&window.KChar)||(typeof KChar!=='undefined'?KChar:null);
+      if(!KC) return;
+      /* 지면선 (물속 캐릭터 제외) */
+      if(SS.rig!=='mundol'){ ctx.strokeStyle='#C9BCA0'; ctx.lineWidth=10; ctx.lineCap='round';
+        ctx.beginPath(); ctx.moveTo(80,586); ctx.lineTo(830,586); ctx.stroke(); }
+      var p=SS.pose(i); p.x=450; p.y=560; p.s=0.92;
+      KC.draw(ctx,SS.rig,p);
+      if(SS.fx) SS.fx(ctx,i,p);
+      return;
+    }
     function circle(x,y,r,c){ ctx.fillStyle=c; ctx.beginPath(); ctx.arc(x,y,r,0,TAU); ctx.fill(); }
     function ell(x,y,rx,ry,c,rot){ ctx.fillStyle=c; ctx.beginPath(); ctx.ellipse(x,y,rx,ry,rot||0,0,TAU); ctx.fill(); }
     function poly(pts,c){ ctx.fillStyle=c; ctx.beginPath(); ctx.moveTo(pts[0],pts[1]); for(var k=2;k<pts.length;k+=2) ctx.lineTo(pts[k],pts[k+1]); ctx.closePath(); ctx.fill(); }
@@ -876,10 +944,10 @@ body.bgmode #onion{opacity:0}
     ['frog','개구리'],['pig','돼지'],['hamster','햄스터'],['penguin','펭귄'],
     ['koala','코알라'],['sheep','양'],['monkey','원숭이'],['raccoon','너구리']];
   var BUILDER='/draw/assets/builder/';
-  var TABS=[ {id:'animal',label:'동물'} ];       // 파츠 탭은 _meta.json 로드 후 채움
+  var TABS=[ {id:'kchar',label:'캐릭터'}, {id:'animal',label:'동물'} ]; // 파츠 탭은 _meta.json 로드 후 채움
   var TAB_MAP={ face:'얼굴', eye:'눈', mouth:'입', hair:'머리',
                 glasses:'안경', hat:'모자', ear:'귀', brow:'눈썹' };
-  var partsMeta=null, curTab='animal';
+  var partsMeta=null, curTab='kchar';
   fetch(BUILDER+'_meta.json').then(function(r){ return r.json(); }).then(function(m){
     partsMeta=m.categories||{};
     Object.keys(TAB_MAP).forEach(function(k){
@@ -897,9 +965,27 @@ body.bgmode #onion{opacity:0}
     }).join('');
     buildGrid();
   }
+  var kcharStampCache=null;
+  function kcharStamps(){
+    if(kcharStampCache) return kcharStampCache;
+    kcharStampCache=[];
+    var KC=window.KChar; if(!KC) return kcharStampCache;
+    var MOODS=[['base','기본'],['joy','기쁨']];
+    KC.CHARS.forEach(function(c){
+      MOODS.forEach(function(md){
+        var cv=document.createElement('canvas'); cv.width=460; cv.height=520;
+        var g=cv.getContext('2d');
+        KC.draw(g,c.id,{x:230,y:470,s:0.9,mood:md[0],armR:md[0]==='joy'?1.8:0,tail:md[0]==='joy'?1:0});
+        kcharStampCache.push({src:cv.toDataURL('image/png'), label:c.name+(md[0]==='joy'?' (기쁨)':''), w:230});
+      });
+    });
+    return kcharStampCache;
+  }
   function buildGrid(){
     var cards='';
-    if(curTab==='animal'){
+    if(curTab==='kchar'){
+      cards=kcharStamps().map(function(st){ return card(st.src, st.label, st.w); }).join('');
+    } else if(curTab==='animal'){
       cards=ANIMALS.map(function(a){
         return card(BUILDER+'animal/'+a[0]+'.png', a[1], 200);
       }).join('');
@@ -945,7 +1031,15 @@ body.bgmode #onion{opacity:0}
   function buildSampleList(){
     sampleTimers.forEach(clearInterval); sampleTimers=[];
     var list=document.getElementById('sampleList'); list.innerHTML='';
+    var lastGrp=null;
     L.SAMPLES.forEach(function(S){
+      var grp=S.grp==='char'?'char':'basic';
+      if(grp!==lastGrp){
+        var hd=document.createElement('div');
+        hd.style.cssText='font-weight:800;font-size:13px;color:var(--mut);letter-spacing:.04em;margin:6px 2px 0';
+        hd.textContent=grp==='char'?'🦊 캐릭터 — 우리 친구들이 움직여요':'📐 움직임의 원리';
+        list.appendChild(hd); lastGrp=grp;
+      }
       var row=document.createElement('button');
       row.style.cssText='display:flex;gap:10px;align-items:center;text-align:left;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:8px;cursor:pointer';
       var cv=document.createElement('canvas'); cv.width=156; cv.height=108;

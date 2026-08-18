@@ -10,8 +10,11 @@ const html = fs.readFileSync(path.join(__dirname, '..', '..', 'labs', 'animlab.h
 const m = html.match(/<script id="animlab-logic">\n([\s\S]*?)<\/script>/);
 if (!m) { console.log('animlab-logic 블록 없음'); process.exit(1); }
 const w = {};
+/* 리그 코어를 같은 window에 먼저 적재 (rig 본보기 렌더에 필요) */
+new Function('window', fs.readFileSync(path.join(__dirname, '..', '..', 'labs', 'kchar-core.js'), 'utf8'))(w);
 new Function('window', m[1])(w);
 const L = w.AnimLab;
+const KC = w.KChar;
 
 let pass = 0, fail = 0;
 function t(name, cond) {
@@ -21,10 +24,12 @@ function t(name, cond) {
 
 console.log('[1] 본보기 규격');
 const S = L.SAMPLES;
-t('본보기 12종', S.length === 12);
+t('본보기 21종 (원리 12 + 캐릭터 9)', S.length === 21 && S.filter(x => x.rig).length === 9);
+t('리그 캐릭터 id 유효', S.filter(x => x.rig).every(x => KC.findChar(x.rig)));
 t('id 유일', new Set(S.map(x => x.id)).size === S.length);
 t('제목·이모지·설명 완비', S.every(x => x.title && x.emoji && x.tip && x.tip.length >= 10));
 t('장수 4~12 (상한 24 이내)', S.every(x => x.frames >= 4 && x.frames <= 12 && x.frames <= L.MAX_FRAMES));
+t('캐릭터 본보기 pose 함수', S.filter(x => x.rig).every(x => typeof x.pose === 'function'));
 t('fps 2~12', S.every(x => x.fps >= 2 && x.fps <= 12 && x.fps === L.clampFps(x.fps)));
 t('findSample 왕복', S.every(x => L.findSample(x.id) === x) && L.findSample('없는것') === null);
 
