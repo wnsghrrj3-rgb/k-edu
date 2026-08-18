@@ -57,6 +57,7 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--sky);min-height:100vh
   font-family:var(--kedu-title);font-size:14px;color:var(--ink);cursor:pointer;text-decoration:none}
 .chip:disabled{opacity:.35;cursor:not-allowed}
 .chip.quiet{color:var(--ink-soft)}
+.chip.back{border-color:var(--blue);color:var(--blue);font-weight:700}
 
 /* ── 여정 ─────────────────────────────────────────── */
 .journey{display:flex;align-items:center;justify-content:center;gap:0;margin:0 0 18px}
@@ -112,7 +113,7 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--sky);min-height:100vh
 .badge .gl{font-family:'Gowun Dodum',sans-serif;font-weight:400;font-size:11.5px;color:var(--ink-soft)}
 .badge:active{transform:scale(.96)}
 
-/* ── 어제 문장 ─────────────────────────────────────── */
+/* ── 지난번 문장(= 바로 앞 일째) ────────────────────── */
 .yday{margin-top:16px;border-top:1px dashed var(--line);padding-top:14px}
 .yday .lab{font-size:12px;color:var(--mist);margin-bottom:5px}
 .yday button{all:unset;cursor:pointer;font-family:'Nunito',sans-serif;font-size:15px;color:var(--ink-soft);
@@ -217,6 +218,8 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--sky);min-height:100vh
 <body>
 
 <div class="nav">
+  <!-- 「오늘의 문장」은 이 활동의 **이름**이다(제목·로고). 특정 일차를 오늘이라 주장하는 말이
+       아니므로 D8-ⓕ 의 시간 주장 규약 대상이 아니다 — 그 규약은 머리·안내 문구가 적용 자리다. -->
   <a class="nav-logo" href="/morning/"><span class="dot"></span>오늘의 문장</a>
   <a class="back" id="backlink" href="/morning/">← 아침활동</a>
 </div>
@@ -233,7 +236,8 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--sky);min-height:100vh
   if (!D) { app.innerHTML = '<div class="sheet">문장 자료를 불러오지 못했어요. 새로고침해 주세요.</div>'; return; }
 
   var ROUNDS = 5;                       // 한 문장 = 다섯 번 (한자 열 번의 영어판)
-  var st = { grade:3, di:1, stage:1, round:1, browse:false, met:false, peek:false };
+  /* today = 이 화면이 근거를 갖고 아는 진도 일차. 모르면 null 이고, 그때는 「오늘」이라 말하지 않는다 */
+  var st = { grade:3, di:1, today:null, stage:1, round:1, browse:false, met:false, peek:false };
 
   function esc(t){ return String(t==null?'':t).replace(/[&<>"]/g,function(m){
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]; }); }
@@ -268,17 +272,26 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--sky);min-height:100vh
       localStorage.setItem('kedu_english_done_g'+st.grade, JSON.stringify(m)); } catch(e){}
   }
 
-  /* ── 주소 풀기: c키·grade/day 모두 받는다 ── */
+  /* ── 주소 풀기: c키·grade/day 모두 받는다 ──
+     ★D8-ⓕ: **진도일(today)은 c키 통로로 들어왔을 때만 안다.** 아침활동 허브(`/morning/`)가
+       서버에서 받은 그날 몫을 `?key=g3_english_c007` 로 넘겨 준다. 반면 `?grade&day` 는
+       둘러보기·교사 미리보기·인쇄물이 **아무 날이나** 여는 통로라, 그 문장이 오늘 몫인지
+       이 화면은 알 길이 없다. 모르면서 「오늘」이라 말하면 D8-ⓔ 가 걷어낸 요일 주장과 같은
+       종류의 거짓이 된다. 모르면 `today = null` 로 두고, 화면은 「이 문장」이라고만 말한다. */
   function fromUrl(){
     var q = new URLSearchParams(location.search);
     var peek = q.get('peek') === '1';
     var key = q.get('key') || '';
     var m = key.match(/^g(\d)_english_c(\d{1,3})$/);
-    if (m) return { grade:+m[1], di:+m[2], browse:false, peek:peek };
+    if (m) return { grade:+m[1], di:+m[2], today:+m[2], browse:false, peek:peek };
     var g = +q.get('grade') || D.grades()[0];
-    if (q.get('day')) return { grade:g, di:+q.get('day'), browse:false, peek:peek };
-    return { grade:g, di:1, browse:true, peek:peek };
+    if (q.get('day')) return { grade:g, di:+q.get('day'), today:null, browse:false, peek:peek };
+    return { grade:g, di:1, today:null, browse:true, peek:peek };
   }
+  /* 지금 보고 있는 문장이 「오늘 몫」임을 이 화면이 근거를 갖고 말할 수 있는가 */
+  function onToday(){ return st.today != null && st.di === st.today; }
+  function sentW(){ return onToday() ? '오늘 문장' : '이 문장'; }
+  function dayW(){  return onToday() ? '오늘' : '이 날'; }
   /* 화면 안의 통로(전체·주차 목록)는 peek 를 계속 물고 간다 —
      한 번 미리보기로 들어왔는데 옆으로 한 칸 옮기자 기록이 살아나면 안 된다. */
   function peekQs(){ return st.peek ? '&peek=1' : ''; }
@@ -291,6 +304,9 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--sky);min-height:100vh
   function clamp(){
     if (D.grades().indexOf(st.grade) < 0) st.grade = D.grades()[0];
     st.di = Math.min(Math.max(st.di||1, 1), total() || 1);
+    /* di 는 구간 안으로 당기지만 today 는 당기지 않는다 — 당기면 「엉뚱한 날을 오늘이라
+       우기는」 상태가 만들어진다. 구간 밖이면 진도를 모르는 것으로 되돌린다. */
+    if (st.today != null && (st.today < 1 || st.today > (total() || 0))) st.today = null;
   }
 
   /* ══════════════ 공통 조각 ══════════════ */
@@ -306,25 +322,37 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--sky);min-height:100vh
   }
   /* ★「몇 주 · 무슨 요일」은 이 화면이 알 수 없다 — 영어를 어느 요일에 넣을지는
      교사 시간표(ma_routines)가 정하고 원장에는 그 정보가 없다. 1일째가 월요일이라는
-     근거는 어디에도 없었다. 화면은 원장이 아는 것(일째·전체 문장 수·틀)만 말한다. */
+     근거는 어디에도 없었다. 화면은 원장이 아는 것(일째·전체 문장 수·틀)만 말한다.
+     ★D8-ⓕ 로 같은 규약을 두 갈래 더 밀었다.
+       ⓐ **일차 사이의 간격도 모른다.** 이동 칩이 「← 어제」·「내일 →」이었는데, 그건
+         6일째 다음이 하루 뒤라는 주장이다. 주 2회 반이면 실제로는 사나흘 뒤이고,
+         원장은 그 간격을 쥐고 있지 않다. 칩은 원장이 아는 단위(문장)로만 말한다.
+       ⓑ **「오늘」도 아무 때나 못 쓴다.** 진도를 아는 통로는 c키뿐이다(fromUrl 주석).
+         둘러보기·미리보기로 3일째를 열어 놓고 「오늘의 틀」이라 적으면 그것도 거짓이다.
+         진도를 알고 그 자리에 서 있을 때만 「오늘」이라 말하고, 진도에서 벗어나 있으면
+         **벗어났다는 사실 자체를 통로로 보여 준다**(「오늘 문장으로」 칩). */
   function headHtml(){
     var p = D.patOf(st.grade, st.di);
+    var away = (st.today != null && st.di !== st.today);
     return peekNote()
       + '<div class="head">'
       + '<div class="day">'+st.grade+'학년 '+st.di+'일째 문장'
       +   '<small>모두 '+total()+'문장</small></div>'
-      + (p ? '<div class="pat">오늘의 틀 <b>'+esc(p.ko)+'</b>'
+      + (p ? '<div class="pat">'+(onToday()?'오늘의 틀':'이 문장의 틀')+' <b>'+esc(p.ko)+'</b>'
              + '<span>'+p.len+'일 중 '+p.idx+'일째</span></div>' : '')
       + '<div class="nav-ch">'
-      +   '<button class="chip" id="pv" type="button"'+(st.di<=1?' disabled':'')+'>← 어제</button>'
-      +   '<button class="chip" id="nx" type="button"'+(st.di>=total()?' disabled':'')+'>내일 →</button>'
+      +   '<button class="chip" id="pv" type="button"'+(st.di<=1?' disabled':'')+'>← 이전 문장</button>'
+      +   '<button class="chip" id="nx" type="button"'+(st.di>=total()?' disabled':'')+'>다음 문장 →</button>'
+      +   (away ? '<button class="chip back" id="tod" type="button">오늘 문장으로 ↩</button>' : '')
       +   '<a class="chip quiet" href="/morning/sents.html?grade='+st.grade+peekQs()+'">전체</a>'
       + '</div></div>';
   }
   function wireHead(){
-    var pv = document.getElementById('pv'), nx = document.getElementById('nx');
+    var pv = document.getElementById('pv'), nx = document.getElementById('nx'),
+        td = document.getElementById('tod');
     if (pv) pv.onclick = function(){ gotoDay(st.di-1); };
     if (nx) nx.onclick = function(){ gotoDay(st.di+1); };
+    if (td) td.onclick = function(){ gotoDay(st.today); };
   }
   function gotoDay(i){
     if (i < 1 || i > total()) return;
@@ -411,7 +439,7 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--sky);min-height:100vh
       + '<div class="bubble">' + sentHtml(x.tiles) + '</div>'
       + '<div class="ko" id="ko">'+esc(x.ko)+'</div>'
       + (x['new'] && x['new'].length
-          ? '<div class="fresh-row" id="fresh"><div class="fresh-lab">오늘 처음 만나는 낱말 — 눌러서 들어 보세요</div>'
+          ? '<div class="fresh-row" id="fresh"><div class="fresh-lab">'+dayW()+' 처음 만나는 낱말 — 눌러서 들어 보세요</div>'
             + D.glossesOf(st.grade, st.di).map(function(it){
                 /* 낱말 + 뜻. 뜻은 원장(gloss)에서만 온다 — 화면이 지어내지 않는다 */
                 return '<button type="button" class="badge" data-n="'+esc(it.unit)+'"><span>'+esc(it.unit)+'</span>'
@@ -422,7 +450,10 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--sky);min-height:100vh
       +   '<button class="bt sound" id="replay" type="button">🔊 다시 듣기</button>'
       +   '<button class="bt" id="go-say" type="button">다섯 번 말하러 가기</button>'
       + '</div>'
-      + (y ? '<div class="yday"><div class="lab">어제 만난 문장</div>'
+      /* ★D8-ⓕ: 「어제 만난 문장」이 아니라 「지난번에 만난 문장」이다. 이건 di-1 일째,
+         즉 **바로 앞 문장**일 뿐이고 그것을 며칠 전에 만났는지 원장은 모른다.
+         주 2회 반이면 사나흘 전이다. 복습 장치의 값어치는 그대로다. */
+      + (y ? '<div class="yday"><div class="lab">지난번에 만난 문장</div>'
              + '<button type="button" id="yb">'+esc(y.sent)+'</button>'
              + '<div class="yk">'+esc(y.ko)+'</div></div>' : '')
       + '</div>' + creditHtml();
@@ -556,7 +587,7 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--sky);min-height:100vh
 
   /* ══════════════ 3막 · 넓히기 ══════════════
      외운 문장을 다시 뱉는 게 아니라, 같은 틀에 새 재료를 끼운다.
-     넓히기 문장이 없는 날(도입일)은 지어내지 않는다 — 오늘 낱말을 다시 만난다. */
+     넓히기 문장이 없는 날(도입일)은 지어내지 않는다 — 그 일째 낱말을 다시 만난다. */
   function renderWiden(){
     var x = day(), ex = x.expand;
     var inner;
@@ -564,21 +595,21 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--sky);min-height:100vh
       var tiles = String(ex.sent).split(/\s+/).filter(Boolean);
       inner = '<div class="corner">넓히기</div>'
         + '<div style="font-size:14.5px;color:var(--ink-soft);line-height:1.75;margin-bottom:6px">'
-        +   '오늘 문장의 <b>틀</b>은 그대로, 재료만 바꿔요.<br>'
+        +   sentW()+'의 <b>틀</b>은 그대로, 재료만 바꿔요.<br>'
         +   '<span style="font-size:13.5px;color:var(--mist)">' + esc(x.sent) + '</span></div>'
         + '<div class="bubble quiet"><div style="font-size:16px;color:var(--ink)">'+esc(ex.ko)+'</div></div>'
         + '<div class="slotline" id="slot"></div>'
         + '<div class="pool" id="pool"></div>'
         + '<div class="say" id="say"></div>'
         + '<div class="row">'
-        +   '<button class="bt line" id="hint" type="button">🔊 오늘 문장 듣기</button>'
-        +   '<button class="bt" id="fin" type="button" disabled>오늘 문장 끝내기</button>'
+        +   '<button class="bt line" id="hint" type="button">🔊 '+sentW()+' 듣기</button>'
+        +   '<button class="bt" id="fin" type="button" disabled>'+sentW()+' 끝내기</button>'
         + '</div>';
     } else {
       var news = (x['new'] || []);
       inner = '<div class="corner">넓히기</div>'
-        + '<div class="nodata">오늘은 새 문장을 만들지 않아요. 아직 배운 낱말만으로는 이 틀에 끼울 재료가 모자라거든요.<br>'
-        +   '대신 오늘 낱말을 한 번 더 만나요.</div>'
+        + '<div class="nodata">'+dayW()+'은 새 문장을 만들지 않아요. 아직 배운 낱말만으로는 이 틀에 끼울 재료가 모자라거든요.<br>'
+        +   '대신 '+dayW()+' 낱말을 한 번 더 만나요.</div>'
         + (news.length
             ? '<div class="fresh-row" style="margin-top:16px">'
               /* 여기도 1막과 같은 배지다 — 한 화면에서만 뜻이 보이면 아이는 어느 쪽이 진짜인지 모른다 */
@@ -589,8 +620,8 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--sky);min-height:100vh
             : '<div class="bubble" style="margin-top:14px">' + sentHtml(x.tiles, 'allin') + '</div>')
         + '<div class="say" id="say"></div>'
         + '<div class="row">'
-        +   '<button class="bt sound" id="hint" type="button">🔊 오늘 문장 듣기</button>'
-        +   '<button class="bt" id="fin" type="button">오늘 문장 끝내기</button>'
+        +   '<button class="bt sound" id="hint" type="button">🔊 '+sentW()+' 듣기</button>'
+        +   '<button class="bt" id="fin" type="button">'+sentW()+' 끝내기</button>'
         + '</div>';
     }
     app.innerHTML = headHtml() + journeyHtml() + '<div class="sheet">' + inner + '</div>' + creditHtml();
@@ -627,7 +658,7 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--sky);min-height:100vh
     app.innerHTML = headHtml() + journeyHtml().replace('jstep on','jstep done')
       + '<div class="sheet">'
       + '<div class="bigsun pop"><div class="c">☀</div><div class="t">'+st.di+'일째</div></div>'
-      + '<div style="font-family:var(--kedu-title);font-size:19px;margin-top:4px">오늘 문장, 내 것이 됐어요!</div>'
+      + '<div style="font-family:var(--kedu-title);font-size:19px;margin-top:4px">'+sentW()+', 내 것이 됐어요!</div>'
       + '<div class="bubble quiet" style="margin-top:14px"><div style="font-family:\'Nunito\',sans-serif;'
       +   'font-weight:700;font-size:19px">'+esc(x.sent)+'</div>'
       +   '<div style="font-size:13.5px;color:var(--ink-soft);margin-top:6px">'+esc(x.ko)+'</div></div>'
@@ -690,7 +721,7 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--sky);min-height:100vh
   }
 
   var u = fromUrl();
-  st.grade = u.grade; st.di = u.di; st.browse = u.browse; st.peek = u.peek;
+  st.grade = u.grade; st.di = u.di; st.today = u.today; st.browse = u.browse; st.peek = u.peek;
   render();
 })();
 </script>

@@ -3,13 +3,16 @@
  *   ① 화면이 원장에서만 재료를 끌어오는가(학년·일수 하드코딩 금지 · DB 무접촉)
  *   ② 1막 만나기 — 소리가 글자보다 먼저 오는가, 뜻이 뒤따르는가,
  *      새 낱말 배지·밑줄이 원장 new 와 전수 일치하는가, 배지가 원장 뜻(gloss)을 달고
- *      나가면서도 탭 소리를 잃지 않는가, 어제 문장이 맞는가
+ *      나가면서도 탭 소리를 잃지 않는가, 지난번 문장(= 바로 앞 일째)이 맞는가
  *   ③ 2막 다섯 번 — 비계 계단 1-2-2 가 화면에서 그대로 서는가(1 문장 · 2·3 뜻만 · 4·5 소리만),
  *      소리가 4회까지 저절로 오고 5회는 불러야 오는가, 틀린 타일은 자리에 놓이지 않는가, 도장 5개
  *   ④ 3막 넓히기 — expand 있는 날은 조립, 없는 날은 문장을 지어내지 않는가
  *   ⑤ 완주 기록(localStorage) → 둘러보기 도장
  *   ⑥ 주소: c키·grade/day·이상값·원장 없는 학년
  *   ⑦ 소리 없는 기기(실제 k-tts.js · speechSynthesis 없음)에서도 3막 완주
+ *   ⑨ 틀(패턴) — 주·요일을 주장하지 않고 표기가 전부 원장 출처인가 (D8-ⓔ)
+ *   ⑩ 시간 주장 — 일차 사이 간격(어제·내일)을 주장하지 않는가, 진도를 아는 통로(c키)에서만
+ *      「오늘」이라 말하는가, 진도를 벗어나면 그 사실과 돌아갈 통로가 보이는가 (D8-ⓕ)
  * 실행: NODE_PATH=/home/claude/node_modules node kedu/quiz/test_morning_sents.js
  *      (인자로 검사할 sents.html 경로를 줄 수 있다 — 역검증은 변조 사본을 넘긴다)
  * ============================================================= */
@@ -518,6 +521,135 @@ await (async function(){
       }
     });
   });
+})();
+
+/* ══ ⑩ 시간 주장 — 화면은 자기가 아는 시각만 말한다 (D8-ⓕ) ══
+ *  ★왜 ⑨ 로는 모자랐나: ⑨ 는 「주·요일」만 봤다. 그런데 같은 규약을 어기는 말이 세 종류 더
+ *    살아 있었다 — 이동 칩 「← 어제」·「내일 →」, 1막 「어제 만난 문장」, 그리고 「오늘」.
+ *    ⓐ **일차 사이의 간격을 화면은 모른다.** 6일째 다음이 하루 뒤라는 근거가 없다.
+ *       주 2회 반이면 사나흘 뒤다. 「어제·내일」은 요일 주장과 정확히 같은 종류의 거짓이다.
+ *    ⓑ **진도를 아는 통로는 c키 하나뿐이다.** 허브가 서버에서 받은 그날 몫을 key 로 넘긴다.
+ *       `?grade&day` 는 둘러보기·미리보기·인쇄물이 아무 날이나 여는 통로라, 그 문장이 오늘
+ *       몫인지 화면은 모른다. 모르면서 「오늘의 틀」이라 적으면 그것도 지어내기다.
+ *  ★두 갈래로 함께 본다(한 갈래만으로는 각각 빠져나간다):
+ *    (a) **자리 지정 정면 대조** — 화면이 자기 말을 하는 자리만 골라 시간 낱말 0 을 강제한다.
+ *    (b) **일반 구조 제약** — 본문에서 원장이 낸 문자열을 전부 걷어낸 나머지에도 0 을 강제한다.
+ *        나중에 누가 새 문구를 아무 데나 붙여도 자동으로 걸린다.
+ *  ★★본문을 그냥 정규식으로 훑으면 안 된다 — **실측 28건**: 원장에 g5 d23 뜻 `yesterday=어제`,
+ *    g4 d40 `tomorrow=내일`, g4 d4 `today=오늘`, g4 P2 틀 이름 「요일」, g6 d30 「이번 주 어때?」가
+ *    실재한다. 그래서 (b)는 원장 문자열을 먼저 걷어낸다. 걷어내면 그 낱말이 뜻으로 실린 날에는
+ *    (b)의 눈이 멀지만, 바로 그 자리를 (a)가 정면으로 보고 있다.
+ *  ★걷어낼 때 이어붙이지 않고 **공백으로** 바꾼다 — 붙이면 없던 「어제」가 만들어진다. */
+(function(){
+  /* 화면이 「자기 말」을 하는 자리. 원장 문장·뜻이 실리는 곳(.sent · .ko · .bubble · .badge ·
+     .yday button · .yday .yk · .wrow)은 일부러 뺐다 — 거기 있는 시간 낱말은 원장의 것이다. */
+  var OWN = ['.head', '.browse-meta', '.yday .lab', '.nodata', '.fresh-lab', '.row .bt', '.peeknote'];
+  var GAP  = /어제|엊그제|그제|내일|모레|지난주|이번\s*주|다음\s*주|\d+\s*주|[월화수목금토일]요일|하루\s*뒤|이틀\s*뒤/;
+  var TODAY = /오늘/;
+  var BRAND = '오늘의 문장';   /* 활동 이름(제목·로고). 특정 일차를 오늘이라 주장하는 말이 아니다 */
+
+  function ownTxt(o){
+    return OWN.map(function(sel){
+      return o.all(sel).map(function(e){ return e.textContent; }).join(' ');
+    }).join(' ');
+  }
+  /* 본문에서 원장이 낸 말을 전부 걷어낸 나머지 = 화면이 스스로 지어 쓴 말.
+     ★`body.textContent` 를 그냥 쓰면 안 된다 — 이 하니스는 원장·소리 엔진을 `<script>` 로
+       본문에 **인라인 주입**하므로 그 소스 코드(주석의 「어제·내일·요일」까지)가 통째로 딸려 온다.
+       첫 실행에서 실제로 g5·g6 전량이 그 코드 때문에 FAIL 이었다. 아이 눈에 닿는 글만 본다. */
+  function leftover(o, g){
+    var body = o.doc.body.cloneNode(true);
+    Array.prototype.slice.call(body.querySelectorAll('script,style,template'))
+      .forEach(function(e){ e.parentNode.removeChild(e); });
+    var t = body.textContent.split(BRAND).join(' ');
+    var led = [];
+    for (var i = 1; i <= D.maxDay(g); i++) {
+      var x = D.day(g, i);
+      led.push(x.sent, x.ko);
+      if (x.expand) { led.push(x.expand.sent); led.push(x.expand.ko); }
+      (x.tiles || []).forEach(function(w){ led.push(w); });
+      (D.glossesOf(g, i) || []).forEach(function(it){ led.push(it.unit); led.push(it.ko); });
+    }
+    D.patGroups(g).forEach(function(p){ led.push(p.ko); });
+    led = led.filter(Boolean).sort(function(a, b){ return String(b).length - String(a).length; });
+    led.forEach(function(w){ t = t.split(w).join(' '); });
+    return t;
+  }
+
+  D.grades().forEach(function(g){
+    var last = D.maxDay(g);
+    [1, 4, Math.min(23, last), last].forEach(function(d){
+      var tag = 'g' + g + ' d' + d;
+
+      /* ── 진도를 아는 통로(c키): 「오늘」을 말해도 된다 ── */
+      var key = '?key=g' + g + '_english_c' + String(d).replace(/^(\d)$/, '00$1').replace(/^(\d\d)$/, '0$1');
+      var ok = open(key);
+      var own = ownTxt(ok);
+      T(GAP.test(own) === false, tag + ' (c키) 화면 자기 말이 일차 간격을 주장함: ' + own.slice(0, 120));
+      T(GAP.test(leftover(ok, g)) === false, tag + ' (c키) 원장 밖 문구가 일차 간격을 주장함');
+      T(ok.txt('.head .pat').indexOf('오늘의 틀') === 0,
+        tag + ' 진도 자리인데 머리가 오늘이라 말하지 않음: ' + ok.txt('.head .pat'));
+      T(!ok.doc.getElementById('tod'), tag + ' 진도 자리인데 「오늘 문장으로」 통로가 떠 있음');
+
+      /* ── 진도를 모르는 통로(?day): 「오늘」이라 말하면 안 된다 ── */
+      var od = open('?grade=' + g + '&day=' + d);
+      var own2 = ownTxt(od);
+      T(GAP.test(own2) === false, tag + ' (day) 화면 자기 말이 일차 간격을 주장함: ' + own2.slice(0, 120));
+      T(TODAY.test(own2) === false, tag + ' 진도를 모르는데 오늘이라 주장함: ' + own2.slice(0, 120));
+      T(GAP.test(leftover(od, g)) === false, tag + ' (day) 원장 밖 문구가 일차 간격을 주장함');
+      T(TODAY.test(leftover(od, g)) === false, tag + ' (day) 원장 밖 문구가 오늘이라 주장함');
+      T(od.txt('.head .pat').indexOf('이 문장의 틀') === 0,
+        tag + ' 진도를 모르는데 머리가 그 사실을 안 드러냄: ' + od.txt('.head .pat'));
+      T(!od.doc.getElementById('tod'),
+        tag + ' 진도를 모르는데 「오늘 문장으로」 통로가 떠 있음 — 어디로 가라는 말인가');
+    });
+
+    /* ── 이동 칩: 이름도 동작도 원장 단위(문장)로 ──
+       이름만 보면 아무 데도 안 가는 칩이 통과하고, 동작만 보면 옛 「어제」 이름이 남아도 통과한다. */
+    var mid = Math.min(7, last);
+    var o = open('?key=g' + g + '_english_c' + String(mid).replace(/^(\d)$/, '00$1').replace(/^(\d\d)$/, '0$1'));
+    var pv = o.doc.getElementById('pv'), nx = o.doc.getElementById('nx');
+    T(!!pv && !!nx, 'g' + g + ' 이동 칩이 없음');
+    [pv, nx].forEach(function(b, i){
+      if (!b) return;
+      T(GAP.test(b.textContent) === false, 'g' + g + ' 이동 칩 이름이 시간을 주장함: ' + b.textContent);
+      T(b.textContent.indexOf('문장') >= 0,
+        'g' + g + ' 이동 칩이 원장 단위(문장)로 말하지 않음: ' + b.textContent);
+    });
+    pv.click();
+    T(o.txt('.head .day').indexOf((mid - 1) + '일째') >= 0,
+      'g' + g + ' 이전 칩이 한 문장 앞으로 가지 않음: ' + o.txt('.head .day'));
+    T(o.txt('.head .pat').indexOf('이 문장의 틀') === 0,
+      'g' + g + ' 진도를 벗어났는데 머리가 여전히 오늘이라 말함: ' + o.txt('.head .pat'));
+    var tod = o.doc.getElementById('tod');
+    T(!!tod, 'g' + g + ' 진도를 벗어났는데 돌아갈 통로가 없음');
+    T(TODAY.test(ownTxt(o).replace(tod ? tod.textContent : '', ' ')) === false,
+      'g' + g + ' 진도를 벗어난 자리에서 오늘이라 주장함');
+    if (tod) {
+      tod.click();
+      T(o.txt('.head .day').indexOf(mid + '일째') >= 0,
+        'g' + g + ' 「오늘 문장으로」가 진도 일차로 안 돌아감: ' + o.txt('.head .day'));
+      T(!o.doc.getElementById('tod'), 'g' + g + ' 진도로 돌아왔는데 통로가 그대로 남음');
+      T(o.txt('.head .pat').indexOf('오늘의 틀') === 0, 'g' + g + ' 진도로 돌아왔는데 오늘이라 말하지 않음');
+    }
+
+    /* 끝 칸에서 더 못 간다 — 없는 일차를 열면 화면이 지어내야 한다 */
+    var o1 = open('?grade=' + g + '&day=1');
+    T(o1.doc.getElementById('pv').disabled === true, 'g' + g + ' 1일째인데 이전 칩이 살아 있음');
+    var oz = open('?grade=' + g + '&day=' + last);
+    T(oz.doc.getElementById('nx').disabled === true, 'g' + g + ' 마지막 일째인데 다음 칩이 살아 있음');
+
+    /* 둘러보기 안내도 같은 규약 */
+    var ob = open('?grade=' + g);
+    T(GAP.test(ownTxt(ob)) === false, 'g' + g + ' 둘러보기 자기 말이 일차 간격을 주장함');
+    T(TODAY.test(ownTxt(ob)) === false, 'g' + g + ' 둘러보기가 오늘이라 주장함');
+  });
+
+  /* 진도가 원장 구간 밖이면 지어내지 않고 「모른다」로 내려앉는다 */
+  var bad = open('?key=g3_english_c999');
+  T(bad.txt('.head .pat').indexOf('이 문장의 틀') === 0,
+    '구간 밖 진도를 당겨 붙여 엉뚱한 날을 오늘이라 주장함: ' + bad.txt('.head .pat'));
+  T(!bad.doc.getElementById('tod'), '구간 밖 진도인데 돌아갈 통로를 그림');
 })();
 
 msgs.forEach(function(m){ console.log(m); });

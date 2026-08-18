@@ -10,6 +10,8 @@
  *   ⑩ 소리 배선(D8-ⓓ): 학생·미리보기 화면이 KTTS 를 싣는가, 수학은 안 싣는가
  *   ⑤ 교사 화면 배선(D4) — 고르기·보기·열기·학년 가드를 실제로 굴려서 확인한다
  *      (짝이 어긋나면 "고를 수 있는데 볼 수 없는 과목"이 된다)
+ *   ⑪ 시간 주장(D8-⓵): 허브의 「활동 없는 날」 문구와 미리보기·인쇄물이
+ *      원장이 모르는 시각(어제·내일·주·요일)을 주장하지 않는가
  * 실행: NODE_PATH=/home/claude/node_modules node kedu/quiz/test_morning_english_screen.js
  * ============================================================= */
 'use strict';
@@ -523,6 +525,71 @@ var TTS_SRC = '/english/v3/engine/k-tts.js';
     T(!has, f + ' 가 KTTS 를 싣는다 — 수학은 소리를 안 쓰는데 매일 내려받게 된다');
   }
 });
+
+/* ⑪ 시간 주장 — 교사 화면·인쇄물·허브도 자기가 아는 시각만 말한다 (D8-ⓕ)
+      ★학생 화면 쪽은 test_morning_sents.js 절 ⑩ 이 본다. 여기서는 나머지 세 화면을 본다.
+      ★이 절은 반드시 Promise.all 바깥(최상위)에 둔다 — 9.18차에 절 ⑩ 이 `.catch` 블록 안에
+        떨어져 **한 번도 안 돌면서 그린을 받은** 전례가 있다. 숫자가 안 늘면 그게 신호다. */
+(function () {
+  var GAP = /어제|엊그제|그제|내일|모레|지난주|이번\s*주|다음\s*주|\d+\s*주|[월화수목금토일]요일|하루\s*뒤|이틀\s*뒤/;
+
+  /* ── ⑪-1 허브: 활동 없는 날 문구 ──
+     ma_today 는 오늘이 활동일인지(off_day)와 요일만 넘긴다. **다음 활동일은 안 넘긴다.**
+     그런데 화면은 「내일 다시 만나요」라고 적고 있었다 — 주 2회 반이 월요일에 열면 다음은
+     모레이므로 대부분의 반에서 거짓이다. 세 과목 공용 화면이라 여기서 함께 지킨다.
+     ★짝으로 본다: 시간 주장이 없기만 하면 **아무 말도 안 하는 화면**도 통과한다. */
+  var hub = fs.readFileSync(path.join(PAGES, 'index.html'), 'utf8');
+  var mOff = hub.match(/function renderOff\([\s\S]*?\n  \}/);
+  T(!!mOff, '허브에서 renderOff 를 못 찾음 — 활동 없는 날 분기가 사라졌나');
+  if (mOff) {
+    T(GAP.test(mOff[0]) === false,
+      '허브가 다음 활동일을 주장함(ma_today 는 그 값을 안 준다): ' + mOff[0].slice(0, 160));
+    T(/없는 날/.test(mOff[0]), '허브가 활동 없는 날이라는 사실 자체를 말하지 않음');
+    T(/만나요/.test(mOff[0]), '허브가 다시 만난다는 인사를 잃음 — 아이가 보는 화면이다');
+  }
+
+  /* ── ⑪-2 미리보기·인쇄물: 화면이 스스로 지어 쓴 말에 일차 간격 주장 0 ──
+     ★본문을 그냥 훑으면 안 된다 — 원장에 뜻 `yesterday=어제`·`tomorrow=내일`·틀 이름 「요일」이
+       실재한다(실측 28건). 원장이 낸 문자열을 먼저 걷어내고 남은 말만 본다.
+     ★`<script>` 는 제외한다 — 이 하니스가 원장 소스를 본문에 인라인 주입하므로 그 주석까지
+       딸려 온다(절 ⑩ 첫 실행에서 실제로 이 함정에 걸려 40 FAIL 이 났다). */
+  function ownLeft(o, g) {
+    var body = o.doc.body.cloneNode(true);
+    Array.prototype.slice.call(body.querySelectorAll('script,style,template'))
+      .forEach(function (e) { e.parentNode.removeChild(e); });
+    var t = body.textContent;
+    var led = [];
+    for (var i = 1; i <= DATA.maxDay(g); i++) {
+      var x = DATA.day(g, i);
+      if (!x) continue;
+      led.push(x.sent, x.ko);
+      if (x.expand) { led.push(x.expand.sent); led.push(x.expand.ko); }
+      (x.tiles || []).forEach(function (w) { led.push(w); });
+      (DATA.glossesOf(g, i) || []).forEach(function (it) { led.push(it.unit); led.push(it.ko); });
+    }
+    DATA.patGroups(g).forEach(function (p) { led.push(p.ko); });
+    led = led.filter(Boolean).sort(function (a, b) { return String(b).length - String(a).length; });
+    led.forEach(function (w) { t = t.split(w).join(' '); });
+    return t;
+  }
+
+  DATA.grades().forEach(function (g) {
+    var last = DATA.maxDay(g);
+    [[ 'sents_preview.html', '?grade=' + g + '&day=4' ],
+     [ 'sents_preview.html', '?grade=' + g + '&day=' + last ],
+     [ 'sents_print.html',   '?grade=' + g + '&day=4' ],
+     [ 'sents_print.html',   '?grade=' + g + '&day=4&mode=week' ]].forEach(function (c) {
+      var o = boot(c[0], c[1]);
+      if (!o) return;
+      var left = ownLeft(o, g);
+      T(GAP.test(left) === false,
+        'g' + g + ' ' + c[0] + c[1] + ' 가 일차 간격을 주장함: '
+        + left.replace(/\s+/g, ' ').slice(0, 140));
+      /* 짝 — 아무것도 안 그리는 화면이 「주장 0」으로 통과하면 안 된다 */
+      T(left.replace(/\s+/g, '').length > 20, 'g' + g + ' ' + c[0] + ' 가 사실상 빈 화면인데 통과함');
+    });
+  });
+})();
 
 Promise.all(jobs).then(function () {
   console.log('\n아침영어 화면 배선 — ' + pass + ' PASS / ' + fail + ' FAIL');
