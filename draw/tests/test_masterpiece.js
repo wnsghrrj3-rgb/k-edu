@@ -79,7 +79,8 @@ const adSrc = fs.readFileSync(path.join(__dirname, '..', 'masterpiece', 'artdata
 const win = {};
 new Function('window', adSrc)(win);
 const D = win.KMDATA;
-const IDS = ['wave','starry','sunflower','scream','lilies','dance','kiss','jungle'];
+const IDS = Object.keys(D);
+t('작품 데이터 16점', IDS.length === 16);
 t('8작품 데이터 존재', IDS.every(k => D[k] && D[k].w && D[k].h && D[k].pal && D[k].rle));
 t('팔레트 4~14색 hex', IDS.every(k => D[k].pal.length >= 4 && D[k].pal.length <= 14 && D[k].pal.every(h => /^#[0-9A-F]{6}$/.test(h))));
 t('격자 한 변 600 이하', IDS.every(k => D[k].w <= 600 && D[k].h <= 600));
@@ -96,6 +97,7 @@ function decode(d) {
 }
 t('RLE 복원 = w×h (전 작품)', IDS.every(k => { const r = decode(D[k]); return r.ok && r.n === D[k].w * D[k].h; }));
 t('색 인덱스 < 팔레트 길이', IDS.every(k => decode(D[k]).maxc < D[k].pal.length));
+t('원작 사진 동봉 (originals/*.jpg)', IDS.every(k => fs.existsSync(path.join(__dirname, '..', 'masterpiece', 'originals', k + '.jpg'))));
 
 /* ── [9] ARTWORKS ↔ 데이터 일치 + paint 전면 채움 ── */
 console.log('[9] ARTWORKS 연동');

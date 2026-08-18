@@ -119,6 +119,13 @@ button{font-family:inherit;cursor:pointer}
 .pchip.wiggle{animation:wig .3s ease}
 @keyframes wig{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
 
+/* ── 원작 참고 패널 ── */
+#ref-panel{position:fixed;top:68px;right:12px;z-index:30;width:min(38vw,300px);background:var(--panel);border:1.5px solid var(--border);border-radius:14px;padding:8px;box-shadow:0 8px 28px rgba(0,0,0,.28);cursor:pointer}
+#ref-panel img{width:100%;border-radius:9px;display:block}
+.ref-cap{font-size:12px;color:var(--sub);text-align:center;padding-top:6px}
+.d-orig-wrap{margin:10px auto 2px;text-align:center}
+.d-orig-wrap img{max-width:78%;max-height:170px;object-fit:contain;border-radius:10px;border:1px solid var(--border)}
+.d-orig-wrap span{display:block;font-size:12px;color:var(--sub);padding-top:4px}
 /* ── 완성 오버레이 ── */
 #done-ov{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;justify-content:center;pointer-events:none}
 #done-ov .d-card{pointer-events:auto;background:var(--panel);border-radius:26px 26px 0 0;box-shadow:0 -12px 44px rgba(33,52,94,.25);width:min(560px,100%);padding:24px 24px calc(22px + env(safe-area-inset-bottom));animation:slideup .5s cubic-bezier(.2,1.2,.4,1);text-align:center}
@@ -181,8 +188,13 @@ button{font-family:inherit;cursor:pointer}
     <div class="p-title" id="p-title"></div>
     <div class="tb-spacer"></div>
     <div class="p-prog"><div class="p-bar"><i id="p-bar-i"></i></div><span class="p-pct" id="p-pct">0%</span></div>
+    <button class="tb-btn" id="btn-ref" title="원작 사진 함께 보기">🖼 원작</button>
     <button class="tb-btn" id="btn-hint" title="지금 색으로 칠할 칸 찾아가기">🔍 찾기</button>
     <button class="tb-btn" id="btn-fit" title="전체 보기">⛶</button>
+  </div>
+  <div id="ref-panel" class="hidden">
+    <img id="ref-img" alt="원작 사진">
+    <div class="ref-cap" id="ref-cap"></div>
   </div>
   <div id="stage-wrap">
     <svg id="stage" xmlns="http://www.w3.org/2000/svg"></svg>
@@ -202,6 +214,7 @@ button{font-family:inherit;cursor:pointer}
     <div class="d-big" id="d-big">🎉 완성!</div>
     <div class="d-art" id="d-art"></div>
     <div class="d-artist" id="d-artist"></div>
+    <div class="d-orig-wrap hidden" id="d-orig-wrap"><img id="d-orig" alt="원작 사진"><span>원작 사진</span></div>
     <div class="d-desc" id="d-desc"></div>
     <div class="d-btns">
       <button id="d-gallery">갤러리로</button>
@@ -682,7 +695,73 @@ const ARTWORKS=[
   palette:['#D27828','#5C5C1D','#94742C','#9F4631','#545E37','#434B28','#873723','#676A4E','#7A521F','#7B7316','#A99D42','#818950','#717032','#2D3B20'],
   levels:[{name:'쉬움',detail:1},{name:'보통',detail:2},{name:'어려움',detail:3},{name:'마스터',detail:4}],
   paint(ctx,d,R){AH.rleImg(ctx,window.KMDATA.jungle)}
+},
+/* ══════════════ 원작 기반 증설 8점 ══════════════ */
+{
+  id:'mona', title:'모나리자', artist:'레오나르도 다빈치', year:'1503년경',
+  emoji:'😊', vw:380, vh:540, gw:380, gh:540,
+  desc:'세상에서 가장 유명한 미소예요. 다빈치는 윤곽선을 안개처럼 흐리는 \'스푸마토\' 기법으로 입꼬리를 살짝 감춰 놓아서, 볼 때마다 웃는 듯 아닌 듯 달라 보여요. 눈썹이 없는 것도 한번 찾아보세요.',
+  palette:['#FFE766','#401A17','#5F633B','#B5BD78','#663417','#B17925','#A5AB5F','#200A18','#D29832','#FECD51','#8D5419','#ECB23E'],
+  levels:[{name:'쉬움',detail:1},{name:'보통',detail:2},{name:'어려움',detail:3},{name:'마스터',detail:4}],
+  paint(ctx,d,R){AH.rleImg(ctx,window.KMDATA.mona)}
+},
+{
+  id:'pearl', title:'진주 귀걸이를 한 소녀', artist:'요하네스 베르메르', year:'1665년경',
+  emoji:'💎', vw:461, vh:540, gw:461, gh:540,
+  desc:'\'북유럽의 모나리자\'라고 불리는 그림이에요. 깜깜한 배경에서 소녀가 막 뒤돌아본 순간 — 귀에 달린 진주 한 알이 빛을 모아 반짝여요. 파란 터번과 노란 옷, 색의 대비가 이 그림의 비밀이에요.',
+  palette:['#050313','#CDA46D','#8C7359','#91AAC6','#4A3A2F','#F6DFD0','#E4C59D','#2C1E1B','#A88D6A','#6D5842','#384962'],
+  levels:[{name:'쉬움',detail:1},{name:'보통',detail:2},{name:'어려움',detail:3},{name:'마스터',detail:4}],
+  paint(ctx,d,R){AH.rleImg(ctx,window.KMDATA.pearl)}
+},
+{
+  id:'ballet', title:'무용 수업', artist:'에드가 드가', year:'1874년',
+  emoji:'🩰', vw:560, vh:315, gw:560, gh:315,
+  desc:'드가는 파리 오페라 극장의 발레 수업을 즐겨 그렸어요. 무대 위 반짝이는 순간이 아니라 연습하고, 기다리고, 딴청 부리는 평범한 순간을 담았죠. 지팡이를 짚고 가운데 선 분이 발레 선생님이에요.',
+  palette:['#8D7650','#C7B699','#29231C','#5B543C','#A99F87','#DECEB1','#7A8561','#6A7156','#7B6340','#483C27','#958E6B','#BE9A65','#7A411C'],
+  levels:[{name:'쉬움',detail:1},{name:'보통',detail:2},{name:'어려움',detail:3},{name:'마스터',detail:4}],
+  paint(ctx,d,R){AH.rleImg(ctx,window.KMDATA.ballet)}
+},
+{
+  id:'sunrise', title:'해돋이 인상', artist:'클로드 모네', year:'1872년',
+  emoji:'🌅', vw:560, vh:315, gw:560, gh:315,
+  desc:'\'인상주의\'라는 이름이 바로 이 그림에서 나왔어요. 안개 낀 항구의 해돋이를 재빠른 붓질 몇 번으로 잡아냈는데, 평론가가 \'인상만 그렸다\'고 놀린 말이 그대로 유파의 이름이 됐죠. 주황 해가 물에 남긴 빛길을 따라가 보세요.',
+  palette:['#E15F3C','#708385','#A99578','#26363D','#48666E','#5A767E','#AC7150','#7F9795','#747F74','#858E7D','#64716A'],
+  levels:[{name:'쉬움',detail:1},{name:'보통',detail:2},{name:'어려움',detail:3},{name:'마스터',detail:4}],
+  paint(ctx,d,R){AH.rleImg(ctx,window.KMDATA.sunrise)}
+},
+{
+  id:'bridge', title:'수련 연못의 초록 다리', artist:'클로드 모네', year:'1899년',
+  emoji:'🌉', vw:560, vh:315, gw:560, gh:315,
+  desc:'모네가 지베르니 집 정원에 직접 놓은 일본식 다리예요. 다리 아래 연못에는 수련이 떠 있고, 화면 전체가 초록의 겹겹이에요. 모네는 이 다리 하나를 마흔 번도 넘게 그렸답니다.',
+  palette:['#C7C6AD','#ACAC65','#8E9455','#567765','#B0B589','#81939A','#2D4644','#6C7B4C','#738C6B','#67808C','#96A9BE','#909F77','#46654D'],
+  levels:[{name:'쉬움',detail:1},{name:'보통',detail:2},{name:'어려움',detail:3},{name:'마스터',detail:4}],
+  paint(ctx,d,R){AH.rleImg(ctx,window.KMDATA.bridge)}
+},
+{
+  id:'yellowcow', title:'노란 소', artist:'프란츠 마르크', year:'1911년',
+  emoji:'🐮', vw:560, vh:315, gw:560, gh:315,
+  desc:'노란 소가 신이 나서 폴짝 뛰어올라요. 마르크는 동물의 마음을 색으로 그렸어요 — 노랑은 기쁨, 파랑은 씩씩함. 진짜 소 색깔이 아니어도 마음이 보이면 된다는 표현주의 그림이에요.',
+  palette:['#B88916','#32465E','#CCB043','#27272A','#AE4522','#485340','#6A7283','#D2C1B3','#AC7640','#BE9A80','#D2AA0C','#7F6336'],
+  levels:[{name:'쉬움',detail:1},{name:'보통',detail:2},{name:'어려움',detail:3},{name:'마스터',detail:4}],
+  paint(ctx,d,R){AH.rleImg(ctx,window.KMDATA.yellowcow)}
+},
+{
+  id:'circus', title:'서커스', artist:'조르주 쇠라', year:'1891년',
+  emoji:'🎪', vw:560, vh:315, gw:560, gh:315,
+  desc:'쇠라는 붓으로 점을 콕콕 찍어 그림을 완성했어요. 바로 \'점묘법\'이에요. 하얀 말 위에 곡예사가 사뿐 서고, 링 안에서 광대가 재주를 넘어요. 가까이서 보면 점, 멀리서 보면 그림이 되는 마법이죠.',
+  palette:['#884321','#967C63','#AE864C','#E5D5A8','#C5B692','#916639','#D3AC6C','#5C483B','#776151','#BF975B','#BE5E35','#AF987A'],
+  levels:[{name:'쉬움',detail:1},{name:'보통',detail:2},{name:'어려움',detail:3},{name:'마스터',detail:4}],
+  paint(ctx,d,R){AH.rleImg(ctx,window.KMDATA.circus)}
+},
+{
+  id:'hare', title:'어린 산토끼', artist:'알브레히트 뒤러', year:'1502년',
+  emoji:'🐇', vw:489, vh:540, gw:489, gh:540,
+  desc:'뒤러가 500년도 더 전에 그린 산토끼예요. 사진기가 없던 시절, 털 한 올 한 올과 수염까지 붓끝으로 그렸어요. 토끼 눈망울에는 화실 창문의 빛까지 비쳐 있대요. 관찰의 힘을 보여 주는 그림이에요.',
+  palette:['#E9DFCA','#6F5D4B','#9E886D','#B8AB96','#5D4F3F','#7F6C56','#CEC0AB','#E5D7BE','#A79882','#8E7A62'],
+  levels:[{name:'쉬움',detail:1},{name:'보통',detail:2},{name:'어려움',detail:3},{name:'마스터',detail:4}],
+  paint(ctx,d,R){AH.rleImg(ctx,window.KMDATA.hare)}
 }
+
 ];
 /*@@ART_END@@*/
 
@@ -842,6 +921,7 @@ function openPhotoLevels(){
 async function startArtwork(art,levelIdx){
   state.art=art;state.levelIdx=levelIdx;state.isPhoto=false;state.done=false;
   showScreen('paint');
+  setRefFor(art,false);
   $('p-title').textContent=art.emoji+' '+art.title+' · '+art.levels[levelIdx].name;
   stage.classList.remove('done-anim');stage.innerHTML='';
   $('pal-bar').innerHTML='';
@@ -864,6 +944,7 @@ async function startPhoto(lvIdx){
     desc:'세상에 한 점뿐인 도안이에요. 사진은 서버로 가지 않고, 이 기기 안에서 도안이 되었어요.'};
   state.levelIdx=lvIdx;state.isPhoto=true;state.done=false;
   showScreen('paint');
+  setRefFor(state.art,true);
   $('p-title').textContent='📷 나만의 작품 · '+lv.name;
   stage.classList.remove('done-anim');stage.innerHTML='';
   $('pal-bar').innerHTML='';
@@ -980,6 +1061,18 @@ function updateProgress(){
   $('p-pct').textContent=p+'%';
 }
 
+/* ── 원작 참고 ── */
+const hasOrig=id=>!!(window.KMDATA&&window.KMDATA[id]);
+function setRefFor(art,isPhoto){
+  const btn=$('btn-ref');
+  const ok=!isPhoto&&hasOrig(art.id);
+  btn.style.display=ok?'':'none';
+  $('ref-panel').classList.add('hidden');
+  if(ok){$('ref-img').src='originals/'+art.id+'.jpg';$('ref-cap').textContent=art.title+' — '+art.artist+' 원작'}
+}
+$('btn-ref').onclick=()=>$('ref-panel').classList.toggle('hidden');
+$('ref-panel').onclick=()=>$('ref-panel').classList.add('hidden');
+
 /* ── 완성 ── */
 function celebrate(silent){
   state.done=true;
@@ -988,6 +1081,9 @@ function celebrate(silent){
   $('d-art').textContent=state.art.emoji+' '+state.art.title;
   $('d-artist').textContent=state.art.artist+' · '+state.art.year;
   $('d-desc').textContent=state.art.desc;
+  const ow=$('d-orig-wrap');
+  if(!state.isPhoto&&hasOrig(state.art.id)){$('d-orig').src='originals/'+state.art.id+'.jpg';ow.classList.remove('hidden')}
+  else ow.classList.add('hidden');
   $('done-ov').classList.remove('hidden');
   if(!silent)confetti();
 }
@@ -1151,7 +1247,7 @@ $('file-in').addEventListener('change',e=>{
 });
 
 /* ── 버튼 ── */
-$('btn-back').onclick=()=>{
+$('btn-back').onclick=()=>{$('ref-panel').classList.add('hidden');
   $('done-ov').classList.add('hidden');
   showScreen('gallery');
   refreshGalleryChips();
