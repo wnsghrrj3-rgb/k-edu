@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<!--
+  kg_math_l2_num03 — 숫자 피라미드 공사 [케이영재 수학 · L2 EXPLORER 3호 · NUM 연구소]
+  트랙: 케이영재 / Lab: Number / Level: L2 EXPLORER (트랙 스킨 v2 「신호기」) / 깊이: D1~D8
+  base: kg_math_l3_pat01 (골격·CSS·초기화 계승) + kg_math_l3_pat02 (엔진 공통부 계승)
+        + kg_math_l3_com01 (칩·숫자패드·미터·상자줄 CSS 계승)
+        + kg_math_l2_num01·l2_num02 (L2 규약 단언 계승)
+  신규 시각 언어 0 — 피라미드는 com01 `.cal-grid.road` 를 층마다 한 줄씩 겹겹이 쌓은 것이다.
+                    칸 상태는 sel · center-cell · diag-b · empty 그대로 쓴다.
+  신규 메카닉 0 — 누르기·숫자패드·고르기 뿐이다 (부품 카탈로그 밖 메카닉 없음)
+  탐구 5단계: 미션(1~3) 탐험(4~7) 발견(8~11) 도전(12~15) 창조(16~18)
+  핵심 수학: 아래 두 칸을 더해 위 칸을 만든다 → 밑줄이 정해지면 꼭대기는 하나로 정해진다
+             → 밑줄을 거꾸로 놓아도 꼭대기는 그대로다 (쌓는 길도 함께 뒤집힌다)
+             → 위 칸에서 아래 한 칸을 빼면 나머지 아래 칸이 나온다 (거꾸로 내려오기 · 확장 한 방향)
+             → 꼭대기 하나만으로는 밑줄이 정해지지 않는다 (학생이 직접 만드는 반례)
+  L3 com01 과의 선: com01 슬14 가 이미 「비스듬히 보면 1 / 1 1 / 1 2 1 / 1 3 3 1」까지 간다.
+             자리 무게·경로 세기·삼각형 수표는 L3 몫이라 한 글자도 넣지 않는다.
+             L2 는 쌓기와 거꾸로 내려오기까지고, 그 사이 길로 「거꾸로 놓아도 그대로」를 놓았다.
+  점수 100 = 탐험 15 + 추측 10 + 발견 20(q9 10 + q10 10) + 검증 15
+             + 확장 20(ext1 10 + ext2 10) + 창조 20(create1 10 + create2 10)
+  힌트: H1/H2/H3 3단 (감점 없음, 답 비노출) / 창조 검사기는 맞는지만 알려 준다
+  ⚠ 순수 로직은 더하기와 빼기만 쓴다 — 자리 무게 공식을 코드가 쥐고 있지 않다
+  ⚠ 수치는 tests/verify_kg_l2_num03.py 전수 열거 50567건으로 코딩 전에 선검증했다.
+    선검증이 코딩 전에 잡아낸 것 2건:
+      ① 탐험에 네 칸 밑줄이 열려 있어 도전 1(층이 늘어도 통하는가)의 몫을 미리 흘림
+      ② 확인 1 의 오답 후보가 오개념을 담지 못해 무대를 3·5·2 로 갈아 세움
+  ⛔ 규약: 문자식 금지 / 차단 어휘 금지 / 이모지 슬라이드당 ≤2
+  ⛔ L2 규약(설계_L2_레벨톤_v1.md): 문장 길이 상한 · 화면 수 ≤999 · 계산 수 ≤99 ·
+     격자 가로 ≤6칸 · 한 화면 조작 요소 ≤12 · 논지 5겹 · 확장 한 방향
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="kg_math_l2_num03_v1">
+<title>숫자 피라미드 공사 · 케이영재 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#F4F2EC; --ink:#17161C; --ink-soft:#5A5762;
+  --coral:#7B4DFF; --coral-deep:#5B2EE0; --coral-soft:#E7DEFF;
+  --teal:#3B5BA5; --teal-deep:#2C4480; --teal-soft:#DDE4F5;
+  --gold:#9BBF00; --emph:#FF5714; --line:#17161C; --mark:#D6F94C;
+  --f-title:'Black Han Sans',sans-serif; --f-body:'Noto Sans KR',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:4px 4px 0 rgba(23,22,28,.92);
+  --fs-title: clamp(26px, 4.2vw, 46px);
+  --fs-heading: clamp(23px, 3.5vw, 35px);
+  --fs-body: clamp(19px, 2.9vw, 27px);
+  --fs-caption: clamp(17px, 2.6vw, 24px);
+  --fs-label: clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --mw-sm: min(720px, 96vw);
+  --mw-lg: min(880px, 96vw);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+@keyframes ka-glow { 0%,100%{box-shadow:0 0 0 0 rgba(14,138,95,.4);} 50%{box-shadow:0 0 0 10px rgba(14,138,95,0);} }
+
+.ka { background:var(--paper); width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; color:var(--ink); position:relative; overflow:hidden; }
+.ka-h { display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); padding:clamp(11px,1.7vw,15px) clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:hover { transform:translateY(-1px); }
+.ka-pill { font-family:var(--f-title); background:var(--coral); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-where { font-size:clamp(14px,1.6vw,18px); color:var(--ink-soft); flex-shrink:1; }
+.ka-where b { color:var(--ink); }
+.ka-bar { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:46vw; }
+.ka-dot { width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s, background .2s; }
+.ka-dot:hover { transform:scale(1.2); }
+.ka-dot.active { background:var(--coral); transform:scale(1.3); }
+.ka-dot.done { background:var(--teal); }
+.ka-score { font-family:var(--f-title); background:#D6F94C; color:#17161C; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); padding:0; border-radius:50%; cursor:pointer; flex-shrink:0; color:var(--coral-deep); font-size:clamp(13px,2vw,16px); width:clamp(32px,4.5vw,38px); height:clamp(32px,4.5vw,38px); display:flex; align-items:center; justify-content:center; }
+
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; justify-content:safe center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; justify-content:safe center; gap:clamp(7px,1.2vw,11px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(8px,1.4vh,16px) clamp(16px,4vw,48px); overflow-x:hidden; overflow-y:auto; scrollbar-width:none; -ms-overflow-style:none; }
+.slide::-webkit-scrollbar { width:0; height:0; }
+.slide.active { display:flex; }
+.slide-title { font-family:var(--f-title); font-size:var(--fs-title); line-height:1.18; color:var(--ink); font-weight:400; text-align:center; flex-shrink:0; }
+.slide-sub { font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(10px,1.6vw,16px); left:clamp(16px,4vw,40px); font-family:var(--f-title); color:var(--coral); font-size:clamp(13px,1.9vw,18px); letter-spacing:.4px; z-index:5; }
+
+.ka-f { display:flex; justify-content:flex-end; gap:12px; padding:clamp(12px,1.7vw,16px) clamp(16px,4vw,40px); background:linear-gradient(to top, var(--paper) 62%, transparent); flex-shrink:0; }
+.ka-prev, .ka-hint, .ka-next { font-family:var(--f-title); font-size:clamp(15px,1.9vw,22px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(10px,1.4vw,15px) clamp(20px,2.8vw,38px); cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translateY(-2px); }
+.ka-prev { margin-right:auto; }
+.ka-hint { color:#17161C; border-color:#17161C; }
+.ka-next { background:var(--coral); color:#fff; border-color:var(--coral); }
+.ka-prev:disabled, .ka-next:disabled { opacity:.35; cursor:default; transform:none; }
+.ka-hint:disabled { opacity:.4; cursor:default; }
+
+.concept-box { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,18px) clamp(18px,2.8vw,28px); border-radius:20px; font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); text-align:center; line-height:1.5; box-shadow:var(--shadow); }
+.concept-box strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.intro-q { font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; }
+.intro-q strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.goal-list { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); font-size:var(--fs-caption); color:var(--ink); max-width:var(--mw-sm); }
+.goal-list li { background:#fff; border:2px solid var(--line); padding:clamp(7px,1.3vw,11px) clamp(14px,2.6vw,20px); border-radius:16px; list-style:none; box-shadow:var(--shadow); }
+.goal-list li strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+.mission-card { background:#fff; border:3px solid var(--coral-soft); border-radius:26px; padding:clamp(16px,3vw,26px) clamp(20px,3.8vw,34px); max-width:var(--mw-sm); text-align:center; box-shadow:0 6px 0 var(--coral-soft); font-size:var(--fs-body); line-height:1.6; }
+.mission-card strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+
+/* ── 달력 격자 ── */
+.cal-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.1vw,10px); }
+.cal-head { display:flex; align-items:center; gap:clamp(8px,1.6vw,14px); }
+.cal-title { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--coral-deep); }
+.cal-month-btn { font-family:var(--f-title); font-size:var(--fs-label); background:#fff; border:2px solid var(--line); border-radius:999px; padding:4px 12px; cursor:pointer; color:var(--ink-soft); }
+.cal-month-btn.on { background:var(--coral); color:#fff; border-color:var(--coral); }
+.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:clamp(3px,0.6vw,5px); background:#fff; border:2px solid var(--line); border-radius:18px; padding:clamp(8px,1.4vw,12px); box-shadow:var(--shadow); }
+.cal-dow { font-family:var(--f-title); font-size:clamp(12px,1.7vw,16px); color:var(--ink-soft); text-align:center; padding-bottom:2px; }
+.cal-dow.sun { color:var(--emph); }
+.cal-cell { width:clamp(34px,6.2vw,54px); height:clamp(30px,5.4vw,46px); display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:clamp(15px,2.4vw,22px); color:var(--ink); background:var(--paper); border-radius:10px; cursor:pointer; transition:background .15s, transform .1s; user-select:none; }
+.cal-cell:hover { background:var(--coral-soft); }
+.cal-cell.empty { background:transparent; cursor:default; }
+.cal-cell.sel { background:var(--coral); color:#fff; animation:ka-pop .3s ease; }
+.cal-cell.diag-a { outline:3px solid var(--gold); outline-offset:-3px; }
+.cal-cell.diag-b { outline:3px solid var(--teal); outline-offset:-3px; }
+.cal-cell.center-cell { background:var(--emph); color:#fff; }
+.cal-info { display:flex; gap:clamp(8px,1.6vw,14px); flex-wrap:wrap; justify-content:center; min-height:2.2em; align-items:center; }
+.sum-chip { font-family:var(--f-title); font-size:var(--fs-caption); padding:clamp(5px,1vw,8px) clamp(12px,2.2vw,18px); border-radius:999px; background:#fff; border:2px solid var(--line); }
+.sum-chip.a { border-color:var(--gold); color:#5E7500; }
+.sum-chip.b { border-color:var(--teal); color:var(--teal-deep); }
+.sum-chip.tot { border-color:var(--coral); color:var(--coral-deep); }
+.cal-msg { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--coral-deep); min-height:1.5em; text-align:center; }
+.cal-msg.wrong { color:var(--emph); }
+
+/* ── 사례 테이블 ── */
+.case-table { border-collapse:collapse; background:#fff; border-radius:16px; overflow:hidden; box-shadow:var(--shadow); font-size:var(--fs-caption); }
+.case-table th { font-family:var(--f-title); font-weight:400; background:var(--coral-soft); color:var(--coral-deep); padding:clamp(6px,1.1vw,10px) clamp(12px,2.2vw,20px); }
+.case-table td { font-family:var(--f-num); font-weight:800; text-align:center; padding:clamp(6px,1.1vw,10px) clamp(12px,2.2vw,20px); border-top:1px solid var(--line); }
+.case-count { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); }
+.case-count b { color:var(--coral-deep); font-size:1.2em; }
+
+/* ── 관찰·추측 선택 ── */
+.pick-list { display:flex; flex-direction:column; gap:clamp(7px,1.3vw,11px); width:100%; max-width:var(--mw-sm); }
+.pick-item { background:#fff; border:3px solid var(--line); border-radius:18px; padding:clamp(10px,1.8vw,15px) clamp(16px,3vw,24px); font-size:var(--fs-body); cursor:pointer; transition:border-color .2s, transform .12s; text-align:left; font-family:var(--f-body); color:var(--ink); }
+.pick-item:hover { border-color:var(--coral); }
+.pick-item.on { border-color:var(--coral); background:var(--coral-soft); animation:ka-pop .3s ease; }
+.pick-item .tag { font-family:var(--f-title); color:var(--coral-deep); margin-right:8px; }
+
+/* ── 구조 시각화 ── */
+.struct-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.5vw,13px); }
+.struct-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(6px,1.1vw,9px); }
+.struct-cell { width:clamp(76px,13vw,120px); height:clamp(52px,9vw,80px); background:#fff; border:3px solid var(--coral-soft); border-radius:14px; display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:clamp(19px,3vw,30px); color:var(--coral-deep); box-shadow:0 4px 0 var(--coral-soft); }
+.struct-cell.hl-a { border-color:var(--gold); box-shadow:0 4px 0 var(--gold); }
+.struct-cell.hl-b { border-color:var(--teal); box-shadow:0 4px 0 var(--teal-soft); }
+.struct-eq { font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center; }
+.struct-eq .star { color:var(--emph); }
+.arrow-note { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); background:#fff; border:2px solid var(--line); border-radius:999px; padding:5px 16px; cursor:pointer; transition:transform .15s; }
+.arrow-note.revealed { color:var(--coral-deep); border-color:var(--coral); animation:ka-glow 1.4s ease 1; }
+
+/* ── 문제 공통 ── */
+.q-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.5vw,13px); max-width:var(--mw-lg); width:100%; }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; font-weight:400; }
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-sm); }
+.mcq-opts.one-col { grid-template-columns:1fr; }
+.mcq-opt { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,1.9vw,15px); font-family:var(--f-title); font-size:var(--fs-body); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .2s; box-shadow:0 6px 0 var(--coral-soft); font-weight:400; }
+.mcq-opt:hover { border-color:var(--coral); }
+.mcq-opt:active { transform:translateY(4px); box-shadow:none; }
+.mcq-opt.correct { border-color:var(--coral-deep); background:var(--coral); color:#fff; box-shadow:0 6px 0 var(--coral-deep); animation:ka-pop .5s ease; }
+.mcq-opt.wrong { border-color:var(--emph); background:#FFE3D6; color:var(--ink); animation:ka-shake .35s; }
+.mcq-hint { font-family:var(--f-title); font-size:var(--fs-caption); color:#17161C; background:#D6F94C; border-radius:16px; padding:clamp(8px,1.5vw,12px) clamp(14px,2.6vw,20px); max-width:var(--mw-sm); text-align:center; display:none; }
+.mcq-hint.show { display:block; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); color:var(--coral-deep); min-height:1.4em; text-align:center; }
+.q-fb.wrong { color:var(--emph); }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:clamp(30px,5vw,54px); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:20px; padding:clamp(8px,1.5vw,13px) clamp(24px,4.4vw,42px); min-width:clamp(110px,20vw,180px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.q-pad { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(6px,1.2vw,10px); max-width:clamp(280px,56vw,460px); }
+.q-key { background:#fff; border:2px solid var(--line); border-radius:14px; padding:clamp(7px,1.4vw,11px) 0; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, background .15s; box-shadow:0 4px 0 var(--line); }
+.q-key:hover { background:var(--coral-soft); border-color:var(--coral); }
+.q-key:active { transform:translateY(3px); box-shadow:none; }
+.q-key.fn { background:#D6F94C; color:#17161C; font-family:var(--f-title); font-size:var(--fs-caption); border-color:#17161C; box-shadow:0 4px 0 #17161C; }
+
+/* ── 모양 실험실 ── */
+.shape-pick { display:flex; gap:clamp(8px,1.5vw,13px); flex-wrap:wrap; justify-content:center; }
+.shape-btn { background:#fff; border:3px solid var(--line); border-radius:16px; padding:clamp(8px,1.4vw,12px) clamp(12px,2.2vw,18px); cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:5px; transition:border-color .2s, transform .12s; }
+.shape-btn:hover { border-color:var(--coral); }
+.shape-btn.on { border-color:var(--coral); background:var(--coral-soft); }
+.shape-mini { display:grid; grid-template-columns:repeat(3, clamp(10px,1.8vw,15px)); gap:2px; }
+.shape-mini i { display:block; width:clamp(10px,1.8vw,15px); height:clamp(10px,1.8vw,15px); border-radius:3px; background:var(--line); }
+.shape-mini i.f { background:var(--coral); }
+.shape-name { font-family:var(--f-title); font-size:var(--fs-label); color:var(--ink); }
+.rule-build { display:flex; align-items:center; gap:clamp(6px,1.2vw,10px); flex-wrap:wrap; justify-content:center; font-family:var(--f-title); font-size:var(--fs-body); }
+.rule-slot { background:#fff; border:3px dashed var(--coral); border-radius:14px; min-width:clamp(72px,13vw,120px); padding:clamp(6px,1.1vw,9px) clamp(10px,1.8vw,14px); text-align:center; color:var(--coral-deep); font-family:var(--f-num); font-weight:800; cursor:pointer; }
+.rule-slot.filled { border-style:solid; background:var(--coral-soft); }
+.rule-choice { display:flex; gap:clamp(6px,1.1vw,9px); flex-wrap:wrap; justify-content:center; }
+.rule-chip { background:#fff; border:2px solid var(--line); border-radius:999px; padding:clamp(5px,1vw,8px) clamp(12px,2.2vw,18px); font-family:var(--f-title); font-size:var(--fs-caption); cursor:pointer; transition:transform .12s, border-color .15s; }
+.rule-chip:hover { border-color:var(--coral); transform:translateY(-2px); }
+
+/* ── 탐정 카드·마무리 ── */
+.detective-card { background:#fff; border:3px solid var(--gold); border-radius:26px; padding:clamp(16px,3vw,26px) clamp(20px,3.8vw,34px); max-width:var(--mw-sm); width:100%; box-shadow:0 8px 0 var(--mark); display:flex; flex-direction:column; gap:clamp(7px,1.3vw,11px); }
+.dc-row { display:flex; justify-content:space-between; gap:14px; font-size:var(--fs-caption); border-bottom:1px dashed var(--line); padding-bottom:6px; }
+.dc-row b { font-family:var(--f-title); font-weight:400; color:var(--coral-deep); }
+.dc-title { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; }
+.wrap-score { font-family:var(--f-num); font-weight:800; font-size:clamp(56px,10vw,110px); color:var(--coral-deep); line-height:1; }
+.wrap-msg { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); }
+.home-card { background:var(--teal-soft); border-radius:20px; padding:clamp(12px,2.2vw,18px) clamp(18px,3.2vw,26px); font-size:var(--fs-caption); color:var(--teal-deep); max-width:var(--mw-sm); text-align:center; line-height:1.55; }
+.next-mini { display:flex; gap:clamp(8px,1.5vw,13px); flex-wrap:wrap; justify-content:center; }
+.next-chip { font-family:var(--f-title); font-size:var(--fs-label); background:#fff; border:2px solid var(--line); border-radius:999px; padding:6px 16px; color:var(--ink-soft); }
+
+/* ═══ 케이영재 스킨 v2 「신호기」 — 트랙 전용 (헌법 v1.3 §3-α · skin_v2_signal.py 가 단일 원본) ═══
+   굵은 먹선 + 오프셋 통그림자 + 보라·라임. 레이아웃 값(크기·간격)은 건드리지 않는다. */
+.ka-h { border-bottom:3px solid var(--ink); }
+.ka-prev, .ka-hint, .ka-next { box-shadow:3px 3px 0 var(--ink); }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translate(-1px,-1px); box-shadow:4px 4px 0 var(--ink); }
+.ka-prev:active, .ka-hint:active, .ka-next:active { transform:translate(3px,3px); box-shadow:0 0 0 var(--ink); }
+.ka-hint { background:var(--mark); }
+.ka-pill { border:2px solid var(--ink); box-shadow:2px 2px 0 var(--ink); }
+.ka-score { border:2px solid var(--ink); box-shadow:2px 2px 0 var(--ink); }
+.ka-dot { background:#CBC8BF; }
+.mcq-opt { border-color:var(--ink); box-shadow:5px 5px 0 var(--ink); }
+.mcq-opt.correct { box-shadow:5px 5px 0 var(--coral-deep); }
+.detective-card { border-color:var(--ink); }
+.mission-card { border-color:var(--ink); box-shadow:6px 6px 0 var(--ink); }
+.cal-cell { border:2px solid var(--ink); }
+.cal-cell.empty { border-color:transparent; background:transparent; }
+
+/* ═══ 공용 부품 CSS (com01 정의 문자 그대로 추출·주입 — 손으로 옮겨 적지 않는다) ═══ */
+/* 피라미드는 `.cal-grid.road` 를 층마다 한 줄씩 겹겹이 쌓은 것이다 — 새 시각 언어 0 */
+.vox-btns { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+.lab-meter { display:flex; align-items:baseline; justify-content:center; gap:8px; margin:6px 0; }
+.lab-label { font-size:var(--fs-label); color:var(--ink-soft); font-family:var(--f-title); }
+.lab-count { font-family:var(--f-title); font-size:var(--fs-h1); color:var(--coral-deep); min-width:2.2em; text-align:center; }
+.chip-row { display:flex; gap:clamp(5px,1vw,9px); justify-content:center; flex-wrap:wrap; margin:6px 0; }
+.road-row { display:flex; gap:clamp(10px,2.6vw,26px); justify-content:center; align-items:flex-end; flex-wrap:wrap; }
+.road-one { display:flex; flex-direction:column; align-items:center; gap:5px; }
+.cal-grid.road { --road-c:clamp(30px,5.2vw,48px); grid-template-columns:repeat(var(--road-n,4), var(--road-c)); justify-content:center; gap:clamp(5px,1.1vw,9px); }
+.cal-grid.road .cal-cell { width:var(--road-c); height:var(--road-c); border-radius:50%; font-size:clamp(12px,2vw,18px); cursor:default; }
+.cal-grid.road.small { --road-c:clamp(20px,3.4vw,32px); gap:clamp(3px,0.7vw,6px); }
+.cal-grid.road.small .cal-cell { font-size:clamp(9px,1.5vw,13px); }
+</style>
+</head>
+<body>
+<div class="ka">
+  <header class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 나가기</button>
+    <span class="ka-pill">케이영재</span>
+    <span class="ka-where"><b>숫자 피라미드 공사</b> · 수 연구소</span>
+    <div class="ka-bar" id="dots"></div>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </header>
+
+  <main class="ka-m" id="main">
+
+    <!-- 슬1 · 미션: 무대 -->
+    <section class="slide">
+      <span class="stage-badge">미션 1/3</span>
+      <h1 class="slide-title">숫자 피라미드</h1>
+      <p class="slide-sub">밑줄에 수를 놓는다</p>
+      <div class="road-one" id="s1-pyr"></div>
+      <div class="concept-box">밑줄에 2와 3과 4를 놓았다.
+        이제 위로 쌓아 올린다.</div>
+    </section>
+
+    <!-- 슬2 · 미션: 쌓기 규칙 -->
+    <section class="slide">
+      <span class="stage-badge">미션 2/3</span>
+      <h1 class="slide-title">한 층씩 쌓아 보자</h1>
+      <p class="slide-sub">아래 두 칸을 더한다</p>
+      <div class="road-one" id="s2-pyr"></div>
+      <div class="lab-meter">
+        <span class="lab-label">쌓은 층</span><span class="lab-count" id="s2-k">1</span>
+      </div>
+      <div class="vox-btns" id="s2-btns"></div>
+      <div class="concept-box">아래 두 칸을 더해 위에 적는다.
+        한 층씩 올라간다.
+        꼭대기 한 칸이 남는다.</div>
+    </section>
+
+    <!-- 슬3 · 미션: 오늘의 물음 -->
+    <section class="slide">
+      <span class="stage-badge">미션 3/3</span>
+      <h1 class="slide-title">오늘의 물음</h1>
+      <p class="slide-sub">꼭대기가 밑줄을 알려 줄까</p>
+      <div class="concept-box">밑줄을 바꾸면 꼭대기도 바뀐다.
+        꼭대기만 보고 밑줄을 알 수 있을까.
+        쌓아 보며 찾자.</div>
+      <div class="concept-box">오늘은 위아래로 오가며 찾는다.</div>
+    </section>
+
+    <!-- 슬4 · 탐험: 밑줄 바꾸기 -->
+    <section class="slide">
+      <span class="stage-badge">탐험 1/4</span>
+      <h1 class="slide-title">밑줄을 바꿔 보자</h1>
+      <p class="slide-sub">세 칸에 수를 놓는다</p>
+      <div class="road-one" id="s4-pyr"></div>
+      <div class="lab-meter">
+        <span class="lab-label">꼭대기</span><span class="lab-count" id="s4-top">8</span>
+      </div>
+      <div class="vox-btns" id="s4-btns"></div>
+      <div class="concept-box">단추를 눌러 밑줄을 바꾸자.</div>
+    </section>
+
+    <!-- 슬5 · 탐험: 사례 모으기 -->
+    <section class="slide" data-q-id="explore">
+      <span class="stage-badge">탐험 2/4</span>
+      <h1 class="slide-title">세 가지를 적어 보자</h1>
+      <div class="q-stage">
+        <p class="q-prompt">서로 다른 밑줄 셋을 적자</p>
+        <div class="road-one" id="s5-pyr"></div>
+        <div class="lab-meter">
+          <span class="lab-label">꼭대기</span><span class="lab-count" id="s5-top">8</span>
+        </div>
+        <div class="vox-btns" id="s5-btns"></div>
+        <div class="chip-row" id="tbl-cases"></div>
+        <p class="q-fb" id="fb-explore"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["밑줄 한 칸만 바꿔 보자.","다른 칸도 바꿔 보자.","적은 것을 나란히 놓고 보자."]'></div>
+    </section>
+
+    <!-- 슬6 · 탐험: 거꾸로 놓기 -->
+    <section class="slide">
+      <span class="stage-badge">탐험 3/4</span>
+      <h1 class="slide-title">거꾸로 놓아 보자</h1>
+      <p class="slide-sub">밑줄의 차례를 바꾼다</p>
+      <div class="road-one" id="s6-pyr"></div>
+      <div class="lab-meter">
+        <span class="lab-label">꼭대기</span><span class="lab-count" id="s6-top">10</span>
+      </div>
+      <div class="vox-btns" id="s6-btns"></div>
+      <div class="concept-box">밑줄을 거꾸로 놓아 보자.
+        꼭대기를 견주자.</div>
+    </section>
+
+    <!-- 슬7 · 탐험: 나란히 놓기 -->
+    <section class="slide">
+      <span class="stage-badge">탐험 4/4</span>
+      <h1 class="slide-title">나란히 놓고 보자</h1>
+      <p class="slide-sub">밑줄 셋과 그 꼭대기</p>
+      <div class="road-row" id="s7-row"></div>
+      <div class="concept-box">밑줄 셋을 나란히 놓았다.
+        꼭대기를 견주어 보자.</div>
+    </section>
+
+    <!-- 슬8 · 발견: 추측 -->
+    <section class="slide" data-q-id="conjecture">
+      <span class="stage-badge">발견 1/4</span>
+      <h1 class="slide-title">내 추측을 고르자</h1>
+      <div class="q-stage">
+        <p class="q-prompt">밑줄을 거꾸로 놓으면 꼭대기는?</p>
+        <div class="mcq-opts" id="conj-opts">
+          <button class="mcq-opt" data-c="0">더 커진다</button>
+          <button class="mcq-opt" data-c="1">더 작아진다</button>
+          <button class="mcq-opt" data-c="2">바뀌지 않는다</button>
+          <button class="mcq-opt" data-c="3">그때그때 다르다</button>
+        </div>
+        <p class="q-fb" id="conj-fb"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["내가 거꾸로 놓아 본 것을 떠올리자.","앞 화면의 꼭대기를 견주자.","탐험으로 돌아가 다시 보자."]'></div>
+    </section>
+
+    <!-- 슬9 · 발견: 구조 -->
+    <section class="slide">
+      <span class="stage-badge">발견 2/4</span>
+      <h1 class="slide-title">뒤집어도 같은 피라미드다</h1>
+      <p class="slide-sub">좌우를 맞바꾸어 보았다</p>
+      <div class="road-one" id="s9-pyr"></div>
+      <div class="struct-eq" id="s9-eq"></div>
+      <div class="vox-btns" id="s9-btns"></div>
+      <div class="concept-box">왼쪽과 오른쪽을 맞바꾸었다.
+        쌓는 길도 함께 뒤집혔다.
+        그래서 꼭대기는 그대로다.</div>
+      <div class="concept-box">밑줄의 차례가 바뀌어도 꼭대기는 하나다.</div>
+    </section>
+
+    <!-- 슬10 · 발견: 확인 1 -->
+    <section class="slide" data-q-id="q9">
+      <span class="stage-badge">발견 3/4</span>
+      <h1 class="slide-title">3과 5와 2</h1>
+      <div class="q-stage">
+        <p class="q-prompt">이 밑줄의 꼭대기는 얼마일까?</p>
+        <div class="road-one" id="q9-pyr"></div>
+        <div class="mcq-opts" id="q9-opts">
+          <button class="mcq-opt" data-a="5">5</button>
+          <button class="mcq-opt" data-a="10">10</button>
+          <button class="mcq-opt" data-a="15">15</button>
+          <button class="mcq-opt" data-a="20">20</button>
+        </div>
+        <p class="q-fb" id="fb-q9"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["아래 두 칸부터 더하자.","둘째 층을 먼저 채우자.","그 두 칸을 다시 더하자."]'></div>
+    </section>
+
+    <!-- 슬11 · 발견: 확인 2 -->
+    <section class="slide" data-q-id="q10">
+      <span class="stage-badge">발견 4/4</span>
+      <h1 class="slide-title">차례만 바꾸면</h1>
+      <div class="q-stage">
+        <div class="chip-row" id="q10-chips"></div>
+        <div class="struct-eq" id="q10-eq"></div>
+        <p class="q-prompt">밑줄을 5와 6과 2로 놓으면 꼭대기는?</p>
+        <div class="mcq-opts" id="q10-opts">
+          <button class="mcq-opt" data-a="7">7</button>
+          <button class="mcq-opt" data-a="13">13</button>
+          <button class="mcq-opt" data-a="19">19</button>
+          <button class="mcq-opt" data-a="25">25</button>
+        </div>
+        <p class="q-fb" id="fb-q10"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["앞의 밑줄과 견주어 보자.","놓인 차례만 달라졌다.","쌓아 보고 확인해도 된다."]'></div>
+    </section>
+
+    <!-- 슬12 · 도전: 네 칸 밑줄 검증 -->
+    <section class="slide" data-q-id="ver">
+      <span class="stage-badge">도전 1/4</span>
+      <h1 class="slide-title">밑줄이 네 칸이면</h1>
+      <div class="q-stage">
+        <p class="q-prompt">층이 늘어도 같은 규칙이 통할까</p>
+        <div class="road-one" id="ver-pyr"></div>
+        <div class="q-display" id="ver-disp">&nbsp;</div>
+        <div class="q-pad" id="ver-pad"></div>
+        <p class="q-fb" id="fb-ver"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["아래 두 칸씩 더해 올라가자.","둘째 층은 세 칸이다.","셋째 층은 두 칸이다."]'></div>
+    </section>
+
+    <!-- 슬13 · 도전: 거꾸로 내려오기 -->
+    <section class="slide" data-q-id="ext1">
+      <span class="stage-badge">도전 2/4</span>
+      <h1 class="slide-title">거꾸로 내려오자</h1>
+      <div class="q-stage">
+        <p class="q-prompt">빈칸에 들어갈 수는 얼마일까?</p>
+        <div class="road-one" id="ext1-pyr"></div>
+        <div class="mcq-opts" id="ext1-opts"></div>
+        <div class="vox-btns" id="ext1-btns"></div>
+        <p class="q-fb" id="fb-ext1"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["위 칸은 아래 두 칸의 합이다.","아래 한 칸은 이미 나와 있다.","위 칸에서 아는 칸을 빼자."]'></div>
+    </section>
+
+    <!-- 슬14 · 도전: 반례 만들기 -->
+    <section class="slide" data-q-id="ext2">
+      <span class="stage-badge">도전 3/4</span>
+      <h1 class="slide-title">꼭대기 12 만들기</h1>
+      <div class="q-stage">
+        <p class="q-prompt">꼭대기가 12인 밑줄을 두 벌 찾자</p>
+        <div class="road-one" id="ext2-pyr"></div>
+        <div class="lab-meter">
+          <span class="lab-label">꼭대기</span><span class="lab-count" id="ext2-top">4</span>
+        </div>
+        <div class="vox-btns" id="ext2-btns"></div>
+        <div class="chip-row" id="ext2-found"></div>
+        <p class="q-fb" id="fb-ext2"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["한 칸을 올리면 다른 칸을 내리자.","꼭대기를 보며 맞추자.","찾은 밑줄을 적어 두자."]'></div>
+    </section>
+
+    <!-- 슬15 · 도전: 정리 -->
+    <section class="slide">
+      <span class="stage-badge">도전 4/4</span>
+      <h1 class="slide-title">알아낸 것</h1>
+      <div class="concept-box">아래 두 칸을 더해 위 칸을 만든다.
+        밑줄이 정해지면 꼭대기는 하나다.
+        거꾸로 놓아도 꼭대기는 그대로다.</div>
+      <div class="concept-box">위 칸에서 아래 한 칸을 빼면 나머지가 나온다.
+        꼭대기만으로는 밑줄을 알 수 없다.</div>
+    </section>
+
+    <!-- 슬16 · 창조: 내 피라미드 만들기 -->
+    <section class="slide" data-q-id="create1">
+      <span class="stage-badge">창조 1/3</span>
+      <h1 class="slide-title">내 피라미드를 만들자</h1>
+      <div class="q-stage">
+        <p class="q-prompt">밑줄 세 칸을 정하자</p>
+        <div class="chip-row" id="cr-chips"></div>
+        <div class="vox-btns" id="cr-btns"></div>
+        <p class="q-fb" id="fb-create1"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["밑줄 세 칸을 정하자.","한 칸에 1부터 9까지 놓는다.","다 정했으면 완성을 누르자."]'></div>
+    </section>
+
+    <!-- 슬17 · 창조: 꼭대기 맞히고 규칙 카드 -->
+    <section class="slide" data-q-id="create2">
+      <span class="stage-badge">창조 2/3</span>
+      <h1 class="slide-title">내 피라미드의 꼭대기</h1>
+      <div class="q-stage">
+        <p class="q-prompt" id="cr2-prompt">먼저 앞에서 밑줄을 정하자</p>
+        <div class="mcq-opts" id="cr2-opts"></div>
+        <p class="q-fb" id="fb-create2"></p>
+      </div>
+      <div class="concept-box" id="dc-plan">규칙 카드는 밑줄을 정하면 채워진다.</div>
+      <div class="mcq-hint" data-hints='["내 밑줄을 다시 보자.","아래 두 칸씩 더해 올라가자.","한 번 쌓아 보고 골라도 된다."]'></div>
+    </section>
+
+    <!-- 슬18 · 창조: 마무리 -->
+    <section class="slide">
+      <span class="stage-badge">창조 3/3</span>
+      <h1 class="slide-title">피라미드 공사 끝</h1>
+      <p class="slide-sub">오늘 점수 <span id="final-score">0</span>점</p>
+      <div class="concept-box" id="wrap-msg"></div>
+      <div class="concept-box">쌓고 되짚는 눈은 어디서나 쓰인다.
+        높은 피라미드도 이제 무섭지 않다.</div>
+    </section>
+
+  </main>
+
+  <footer class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next" id="next" onclick="goNext()">다음 →</button>
+  </footer>
+</div>
+
+<script>
+/* ═══════════ KGiftedCore — 순수 로직 (DOM 무의존, 테스트 대상) ═══════════
+   더하기와 빼기 말고는 아무것도 쓰지 않는다. 자리 무게 공식(1 3 3 1)은
+   L3 com01 의 몫이므로 이 차시의 코드가 쥐고 있지 않다
+   (헌법 §3-6 — 학생이 발견할 몫을 코드가 미리 쥐지 않는다).
+   하니스가 공식 기반 독립 구현과 전수 대조한다. */
+const KGiftedCore = {
+  LESSON: 'kg_math_l2_num03',
+  SCORE_PLAN: { explore: 15, conjecture: 10, q9: 10, q10: 10, ver: 15, ext1: 10, ext2: 10, create1: 10, create2: 10 },
+
+  /* ── 무대 ──
+     밑줄에 수를 놓고 아래 두 칸을 더해 위로 쌓는다. 꼭대기 한 칸이 남는다. */
+  PYR_W: 4, NUM_MIN: 1, NUM_MAX: 9,
+  INTRO: [2, 3, 4],
+  EX0: [1, 2, 3], EX_W: 3, EX_NEED: 3,
+  SEC: [3, 1, 5],
+  STR: [1, 2, 5],
+  Q9: [3, 5, 2],
+  Q10_SHOWN: [2, 6, 5],
+  VER: [1, 2, 3, 4],
+  EXT1_SET: [[4, 5, 3], [2, 6, 4], [5, 3, 8], [6, 2, 7]],
+  EXT2_GOAL: 12, EXT2_NEED: 2,
+  CR_W: 3, CR0: [1, 1, 1],
+
+  /* ── 쌓기 — 아래 두 칸을 더해 위 칸을 만든다 ── */
+  rows(base) {
+    const out = [];
+    if (!base || base.length < 1) return out;
+    let cur = [];
+    for (let i = 0; i < base.length; i++) cur.push(base[i]);
+    out.push(cur);
+    while (cur.length > 1) {
+      const nxt = [];
+      for (let i = 0; i + 1 < cur.length; i++) nxt.push(cur[i] + cur[i + 1]);
+      out.push(nxt);
+      cur = nxt;
+    }
+    return out;
+  },
+  /* ── 꼭대기 한 칸 ── */
+  top(base) {
+    const r = this.rows(base);
+    if (r.length < 1) return null;
+    return r[r.length - 1][0];
+  },
+  /* ── 밑줄을 거꾸로 놓는다 ── */
+  flip(base) {
+    const out = [];
+    for (let i = base.length - 1; i >= 0; i--) out.push(base[i]);
+    return out;
+  },
+  /* ── 거꾸로 내려오기 — 위 칸에서 아래 한 칸을 빼면 나머지 아래 칸이 나온다 ── */
+  down(up, left) {
+    if (up === null || left === null) return null;
+    return up - left;
+  },
+  /* ── 밑줄이 무대 안에 있는가 ── */
+  fits(base) {
+    if (!base || base.length < 2 || base.length > this.PYR_W) return false;
+    for (let i = 0; i < base.length; i++) {
+      if (base[i] < this.NUM_MIN || base[i] > this.NUM_MAX) return false;
+    }
+    return true;
+  },
+  /* ── 두 밑줄이 같은가 ── */
+  same(a, b) {
+    if (!a || !b || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+    return true;
+  },
+  /* ── 겹치지 않게 네 값을 고른다 (작은 값부터) ── */
+  pick4(cands) {
+    const out = [];
+    for (let i = 0; i < cands.length && out.length < 4; i++) {
+      const v = cands[i];
+      let seen = false;
+      for (let j = 0; j < out.length; j++) if (out[j] === v) seen = true;
+      if (v !== null && v >= 1 && !seen) out.push(v);
+    }
+    for (let i = 1; i < out.length; i++) {
+      const v = out[i];
+      let j = i - 1;
+      while (j >= 0 && out[j] > v) { out[j + 1] = out[j]; j -= 1; }
+      out[j + 1] = v;
+    }
+    return out;
+  },
+  /* ── 확장 1 선택지 — 되짚어야 할 칸과 오개념 값 ── */
+  ext1Opts(base) {
+    const r = this.rows(base);
+    const up = r[2][0], left = r[1][0], right = r[1][1];
+    return this.pick4([right, left, up, right + 1, right + 2, right + 3]);
+  },
+  /* ── 창조 선택지 — 정답과 오개념 값 ── */
+  crOptions(base) {
+    const ans = this.top(base);
+    let plain = 0;
+    for (let i = 0; i < base.length; i++) plain += base[i];
+    return this.pick4([ans, plain, ans + base[1], ans + base[2],
+      ans + 1, ans + 2, ans + 3]);
+  },
+  /* ── 창조 검사기 — 맞는지만 알려 준다. 규칙은 알려 주지 않는다 (§3-6) ── */
+  checkCreate(base, pick) {
+    if (!this.fits(base) || base.length !== this.CR_W) return { ok: false, why: 'base' };
+    if (pick === null || pick === undefined) return { ok: false, why: 'nopick' };
+    return { ok: this.top(base) === pick, why: 'checked', ans: this.top(base) };
+  }
+};
+if (typeof module !== 'undefined' && module.exports) module.exports = { KGiftedCore };
+if (typeof window !== 'undefined') window.KGiftedCore = KGiftedCore;
+
+/* ═══════════ 엔진 (base: kg_math_l3_pat01 · pat02 공통부 · com01 칩·숫자패드·상자줄 계승 · 힌트 3단) ═══════════ */
+const TOTAL = 18;
+const LESSON_ID = 'kg_math_l2_num03';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+const HINT_MAX = 3;
+const PYR_MAX = 4;   /* 밑줄 칸 상한 (L2 §5 격자 가로 ≤6) */
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+/* ═══ 화면 맞춤 — 슬라이드가 프레임보다 길면 균일 축소 (제목이 헤더 뒤로 잘리는 것 방지) ═══ */
+const FIT_MIN = 0.55, FIT_STEP = 0.04;
+let fitPending = false;
+function fitActiveSlide() {
+  const el = document.querySelector('.slide.active');
+  if (!el) return;
+  if (el.style.zoom) el.style.zoom = '';
+  if (!(window.CSS && CSS.supports && CSS.supports('zoom', '0.9'))) return;
+  if (!el.clientHeight) return;
+  let k = 1;
+  for (let i = 0; i < 16 && el.scrollHeight > el.clientHeight + 1; i++) {
+    k = Math.max(FIT_MIN, k - FIT_STEP);
+    el.style.zoom = k;
+    if (k === FIT_MIN) break;
+  }
+}
+function scheduleFit() {
+  if (fitPending) return;
+  fitPending = true;
+  requestAnimationFrame(() => { fitPending = false; fitActiveSlide(); });
+}
+window.addEventListener('resize', scheduleFit);
+window.addEventListener('orientationchange', scheduleFit);
+document.addEventListener('click', scheduleFit, true);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(scheduleFit);
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.querySelectorAll('#dots .ka-dot').forEach((d, i) => { d.classList.toggle('active', i === cur); d.classList.toggle('done', i < cur); });
+  document.getElementById('prev').disabled = cur === 0;
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.hintLevel >= HINT_MAX; }
+  else { hintBtn.disabled = true; }
+  if (cur === TOTAL - 1) {
+    document.getElementById('next').textContent = '마치기 →';
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('wrap-msg').textContent = wrapMsg(score);
+    saveProgress(true);
+  } else { document.getElementById('next').textContent = '다음 →'; }
+  if (cur === 4) renderCaseTable();
+  if (cur === 16) renderAgentCard();
+  fitActiveSlide();
+}
+function saveProgress(done) {
+  const data = { cur, score, done, startedAt, finishedAt: done ? Date.now() : null, qState, cases: exploreCases, conj: conjPicked, myRule: myRuleText, crBase: crBase };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function wrapMsg(s) {
+  if (s >= 100) return '전설의 피라미드 목수!';
+  if (s >= 80) return '훌륭한 공사였다!';
+  if (s >= 60) return '쌓는 눈이 자라났다!';
+  return '칸은 충분히 쌓아 봤다. 다시 해도 좋다!';
+}
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+function showHint() {
+  const qid = currentQId(); if (!qid) return;
+  const st = getQState(qid); if (st.hintLevel >= HINT_MAX) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint'); if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[Math.min(st.hintLevel, hints.length) - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= HINT_MAX;
+}
+
+
+/* ═══ 칩·숫자패드·단추 공통 (com01 정의 문자 그대로 추출·주입) ═══ */
+function chip(elId, text, kind) {
+  const s = document.createElement('span');
+  s.className = 'sum-chip ' + (kind || 'a');
+  s.textContent = text;
+  document.getElementById(elId).appendChild(s);
+}
+function buildPad(padId, dispId, maxLen, onSubmit) {
+  const pad = document.getElementById(padId);
+  const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '←', '확인'];
+  let val = '';
+  const draw = () => { document.getElementById(dispId).textContent = val || '\u00A0'; };
+  keys.forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'q-key' + (k === '←' || k === '확인' ? ' fn' : '');
+    b.textContent = k;
+    b.addEventListener('click', () => {
+      if (k === '←') val = val.slice(0, -1);
+      else if (k === '확인') { if (val !== '') { const v = parseInt(val, 10); if (onSubmit(v) !== false) val = ''; } }
+      else if (val.length < maxLen) val += k;
+      draw();
+    });
+    pad.appendChild(b);
+  });
+  draw();
+}
+function stepBtn(wrapId, label, fn) {
+  const b = document.createElement('button');
+  b.className = 'cal-month-btn';
+  b.textContent = label;
+  b.addEventListener('click', fn);
+  document.getElementById(wrapId).appendChild(b);
+  return b;
+}
+function clearChips(id) { const e = document.getElementById(id); if (e) e.innerHTML = ''; }
+
+/* ═══════════ 피라미드 렌더 (com01 `.cal-grid.road` 를 그대로 쓰고 층만 겹겹이 쌓는다) ═══════════ */
+/* 한 층이 곧 한 상자줄이다. 층마다 칸 수가 다르므로 `--road-n` 을 그 층의 칸 수로 준다.
+   칸 상태는 sel · center-cell · diag-b · empty 뿐이다 — 새 시각 언어 0. */
+function renderPyr(elId, rows, opt) {
+  const o = opt || {};
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.innerHTML = '';
+  for (let k = rows.length - 1; k >= 0; k--) {
+    const g = document.createElement('div');
+    g.className = o.small ? 'cal-grid road small' : 'cal-grid road';
+    g.style.setProperty('--road-n', rows[k].length);
+    for (let i = 0; i < rows[k].length; i++) {
+      const d = document.createElement('div');
+      let cls = 'cal-cell';
+      if (o.hide && o.hide(k, i)) {
+        cls += ' empty diag-b';
+        d.textContent = '?';
+      } else {
+        cls += (o.mid && o.mid(k, i)) ? ' center-cell' : ' sel';
+        d.textContent = String(rows[k][i]);
+      }
+      d.className = cls;
+      g.appendChild(d);
+    }
+    el.appendChild(g);
+  }
+}
+function setText(id, v) {
+  const e = document.getElementById(id);
+  if (e) e.textContent = String(v);
+}
+function baseText(base) {
+  let s = '';
+  for (let i = 0; i < base.length; i++) s += (i ? ' ' : '') + base[i];
+  return s;
+}
+function baseChips(id, base, top) {
+  clearChips(id);
+  for (let i = 0; i < base.length; i++) chip(id, String(base[i]), 'a');
+  if (top !== undefined && top !== null) chip(id, '꼭대기 ' + top, 'tot');
+}
+
+/* ═══════════ 진행 상태 ═══════════ */
+const exploreCases = [];
+let conjPicked = '';
+let myRuleText = '아직';
+let crBase = [KGiftedCore.CR0[0], KGiftedCore.CR0[1], KGiftedCore.CR0[2]];
+let crFixed = false, crAns = 0;
+
+/* ═══════════ 슬1 미션 ═══════════ */
+(function () {
+  renderPyr('s1-pyr', [KGiftedCore.INTRO], {});
+})();
+
+/* ═══════════ 슬2 미션 · 한 층씩 쌓기 ═══════════ */
+let s2k = 1;
+function drawS2() {
+  const full = KGiftedCore.rows(KGiftedCore.INTRO);
+  const shown = [];
+  for (let i = 0; i < s2k; i++) shown.push(full[i]);
+  renderPyr('s2-pyr', shown, {});
+  setText('s2-k', s2k);
+}
+stepBtn('s2-btns', '한 층 쌓기', function () {
+  const full = KGiftedCore.rows(KGiftedCore.INTRO);
+  if (s2k < full.length) { s2k += 1; drawS2(); }
+});
+stepBtn('s2-btns', '처음으로', function () { s2k = 1; drawS2(); });
+drawS2();
+
+/* ═══════════ 밑줄 조작 공통 (한 칸씩 올리고 내린다 — 두 단계 조작 금지) ═══════════ */
+function baseBtns(wrapId, get, redraw, locked) {
+  const names = ['왼쪽', '가운데', '오른쪽'];
+  for (let i = 0; i < names.length; i++) {
+    (function (idx) {
+      stepBtn(wrapId, names[idx] + ' 올리기', function () {
+        if (locked && locked()) return;
+        const b = get();
+        if (b[idx] < KGiftedCore.NUM_MAX) { b[idx] += 1; redraw(); }
+      });
+      stepBtn(wrapId, names[idx] + ' 내리기', function () {
+        if (locked && locked()) return;
+        const b = get();
+        if (b[idx] > KGiftedCore.NUM_MIN) { b[idx] -= 1; redraw(); }
+      });
+    })(i);
+  }
+}
+
+/* ═══════════ 슬4 탐험 · 밑줄 바꾸기 ═══════════ */
+const s4b = [KGiftedCore.EX0[0], KGiftedCore.EX0[1], KGiftedCore.EX0[2]];
+function drawS4() {
+  renderPyr('s4-pyr', KGiftedCore.rows(s4b), {});
+  setText('s4-top', KGiftedCore.top(s4b));
+}
+baseBtns('s4-btns', function () { return s4b; }, drawS4, null);
+drawS4();
+
+/* ═══════════ 슬5 탐험 · 사례 모으기 ═══════════ */
+const s5b = [KGiftedCore.EX0[0], KGiftedCore.EX0[1], KGiftedCore.EX0[2]];
+function drawS5() {
+  renderPyr('s5-pyr', KGiftedCore.rows(s5b), {});
+  setText('s5-top', KGiftedCore.top(s5b));
+}
+baseBtns('s5-btns', function () { return s5b; }, drawS5, null);
+stepBtn('s5-btns', '이 밑줄 적기', function () {
+  const st = getQState('explore');
+  if (st.done) return;
+  for (let i = 0; i < exploreCases.length; i++) {
+    if (KGiftedCore.same(exploreCases[i].b, s5b)) {
+      setText('fb-explore', '이미 적은 밑줄이다.');
+      return;
+    }
+  }
+  const keep = [];
+  for (let i = 0; i < s5b.length; i++) keep.push(s5b[i]);
+  exploreCases.push({ b: keep, t: KGiftedCore.top(keep) });
+  renderCaseTable();
+  if (exploreCases.length >= KGiftedCore.EX_NEED) {
+    st.done = true;
+    addScore(KGiftedCore.SCORE_PLAN.explore);
+    setText('fb-explore', '세 가지를 다 적었다.');
+  } else {
+    setText('fb-explore', '적은 밑줄 ' + exploreCases.length + '개.');
+  }
+  saveProgress(false);
+});
+drawS5();
+
+function renderCaseTable() {
+  clearChips('tbl-cases');
+  if (!exploreCases.length) { chip('tbl-cases', '아직 적은 사례가 없다', 'a'); return; }
+  for (let i = 0; i < exploreCases.length; i++) {
+    const c = exploreCases[i];
+    chip('tbl-cases', baseText(c.b) + ' \u2192 ' + c.t, 'a');
+  }
+}
+
+/* ═══════════ 슬6 탐험 · 거꾸로 놓기 ═══════════ */
+const S6_SET = [KGiftedCore.SEC, [2, 4, 1], [1, 5, 2], [4, 2, 6]];
+let s6i = 0, s6rev = false;
+function drawS6() {
+  const b = s6rev ? KGiftedCore.flip(S6_SET[s6i]) : S6_SET[s6i];
+  renderPyr('s6-pyr', KGiftedCore.rows(b), {});
+  setText('s6-top', KGiftedCore.top(b));
+}
+stepBtn('s6-btns', '거꾸로 놓기', function () { s6rev = !s6rev; drawS6(); });
+stepBtn('s6-btns', '다른 밑줄', function () {
+  s6i += 1;
+  if (s6i >= S6_SET.length) s6i = 0;
+  s6rev = false;
+  drawS6();
+});
+stepBtn('s6-btns', '처음으로', function () { s6i = 0; s6rev = false; drawS6(); });
+drawS6();
+
+/* ═══════════ 슬7 탐험 · 나란히 놓기 ═══════════ */
+(function () {
+  const wrap = document.getElementById('s7-row');
+  const show = [[2, 4, 1], [1, 4, 2], [4, 1, 2]];
+  for (let i = 0; i < show.length; i++) {
+    const one = document.createElement('div');
+    one.className = 'road-one';
+    const lab = document.createElement('span');
+    lab.className = 'lab-label';
+    lab.textContent = baseText(show[i]);
+    const box = document.createElement('div');
+    box.className = 'road-one';
+    box.id = 's7-g' + i;
+    const tag = document.createElement('span');
+    tag.className = 'sum-chip b';
+    tag.textContent = '꼭대기 ' + KGiftedCore.top(show[i]);
+    one.appendChild(lab);
+    one.appendChild(box);
+    one.appendChild(tag);
+    wrap.appendChild(one);
+    renderPyr('s7-g' + i, KGiftedCore.rows(show[i]), { small: true });
+  }
+})();
+
+/* ═══════════ 슬8 발견 · 추측 ═══════════ */
+const CONJ = ['더 커진다', '더 작아진다', '바뀌지 않는다', '그때그때 다르다'];
+document.querySelectorAll('#conj-opts .mcq-opt').forEach(function (b) {
+  b.addEventListener('click', function () {
+    const st = getQState('conjecture');
+    if (st.done) return;
+    st.done = true;
+    conjPicked = CONJ[Number(b.dataset.c)];
+    document.querySelectorAll('#conj-opts .mcq-opt').forEach(function (x) { x.disabled = true; });
+    b.classList.add('correct');   /* 황금샘플 pat01 선례 — 고른 것을 강조하는 표시다 */
+    addScore(KGiftedCore.SCORE_PLAN.conjecture);
+    setText('conj-fb', '추측을 적었다. 이제 살펴보자.');
+    saveProgress(false);
+  });
+});
+
+/* ═══════════ 슬9 발견 · 구조 ═══════════ */
+let s9rev = false;
+function drawS9() {
+  const b0 = KGiftedCore.STR;
+  const b = s9rev ? KGiftedCore.flip(b0) : b0;
+  const rows = KGiftedCore.rows(b);
+  renderPyr('s9-pyr', rows, { mid: function (k) { return k === rows.length - 1; } });
+  const eq = document.getElementById('s9-eq');
+  eq.innerHTML = baseText(b) + ' \u2192 <span class="star">' + KGiftedCore.top(b) + '</span>';
+}
+stepBtn('s9-btns', '좌우로 뒤집기', function () { s9rev = !s9rev; drawS9(); });
+stepBtn('s9-btns', '처음으로', function () { s9rev = false; drawS9(); });
+drawS9();
+
+/* ═══════════ 슬10 발견 · 확인 1 ═══════════ */
+(function () {
+  const rows = KGiftedCore.rows(KGiftedCore.Q9);
+  renderPyr('q9-pyr', rows, { hide: function (k) { return k > 0; } });
+})();
+document.querySelectorAll('#q9-opts .mcq-opt').forEach(function (b) {
+  b.addEventListener('click', function () {
+    const st = getQState('q9');
+    if (st.done) return;
+    const ans = KGiftedCore.top(KGiftedCore.Q9);
+    if (Number(b.dataset.a) === ans) {
+      st.done = true;
+      b.classList.add('correct');
+      addScore(KGiftedCore.SCORE_PLAN.q9);
+      setText('fb-q9', '맞다. 한 층씩 올라갔다.');
+      renderPyr('q9-pyr', KGiftedCore.rows(KGiftedCore.Q9), {});
+      saveProgress(false);
+    } else {
+      b.classList.add('wrong');
+      setText('fb-q9', '아니다. 둘째 층부터 다시 보자.');
+    }
+  });
+});
+
+/* ═══════════ 슬11 발견 · 확인 2 ═══════════ */
+(function () {
+  const shown = KGiftedCore.Q10_SHOWN;
+  for (let i = 0; i < shown.length; i++) chip('q10-chips', String(shown[i]), 'a');
+  document.getElementById('q10-eq').innerHTML =
+    baseText(shown) + ' \u2192 <span class="star">' + KGiftedCore.top(shown) + '</span>';
+})();
+document.querySelectorAll('#q10-opts .mcq-opt').forEach(function (b) {
+  b.addEventListener('click', function () {
+    const st = getQState('q10');
+    if (st.done) return;
+    const ans = KGiftedCore.top(KGiftedCore.flip(KGiftedCore.Q10_SHOWN));
+    if (Number(b.dataset.a) === ans) {
+      st.done = true;
+      b.classList.add('correct');
+      addScore(KGiftedCore.SCORE_PLAN.q10);
+      setText('fb-q10', '맞다. 쌓지 않고도 알아냈다.');
+      saveProgress(false);
+    } else {
+      b.classList.add('wrong');
+      setText('fb-q10', '아니다. 앞의 밑줄과 견주자.');
+    }
+  });
+});
+
+/* ═══════════ 슬12 도전 · 네 칸 밑줄 ═══════════ */
+(function () {
+  const rows = KGiftedCore.rows(KGiftedCore.VER);
+  renderPyr('ver-pyr', rows, { hide: function (k) { return k > 0; } });
+})();
+buildPad('ver-pad', 'ver-disp', 2, function (v) {
+  const st = getQState('ver');
+  if (st.done) return false;
+  const ans = KGiftedCore.top(KGiftedCore.VER);
+  if (v === ans) {
+    st.done = true;
+    addScore(KGiftedCore.SCORE_PLAN.ver);
+    setText('fb-ver', '맞다. 층이 늘어도 통한다.');
+    renderPyr('ver-pyr', KGiftedCore.rows(KGiftedCore.VER), {});
+    saveProgress(false);
+    return true;
+  }
+  setText('fb-ver', '아니다. 둘째 층부터 채우자.');
+  return true;
+});
+
+/* ═══════════ 슬13 도전 · 거꾸로 내려오기 ═══════════ */
+/* 밑줄을 감춘다. 보이는 것은 꼭대기와 둘째 층 왼쪽뿐이다.
+   그래서 더해 올라갈 길이 없고, 빼서 내려오는 길만 남는다. */
+let e1i = 0;
+function e1Base() { return KGiftedCore.EXT1_SET[e1i]; }
+function drawE1() {
+  const rows = KGiftedCore.rows(e1Base());
+  renderPyr('ext1-pyr', rows, {
+    hide: function (k, i) { return k === 0 || (k === 1 && i === 1); }
+  });
+  const wrap = document.getElementById('ext1-opts');
+  wrap.innerHTML = '';
+  const opts = KGiftedCore.ext1Opts(e1Base());
+  const ans = rows[1][1];
+  for (let i = 0; i < opts.length; i++) {
+    (function (vv) {
+      const el = document.createElement('button');
+      el.className = 'mcq-opt';
+      el.dataset.a = vv;
+      el.textContent = String(vv);
+      el.addEventListener('click', function () {
+        const st = getQState('ext1');
+        if (vv === ans) {
+          el.classList.add('correct');
+          renderPyr('ext1-pyr', rows, { hide: function (k) { return k === 0; } });
+          setText('fb-ext1', '맞다. 위에서 아래로 내려왔다.');
+          if (!st.done) {
+            st.done = true;
+            addScore(KGiftedCore.SCORE_PLAN.ext1);
+            saveProgress(false);
+          }
+        } else {
+          el.classList.add('wrong');
+          setText('fb-ext1', '아니다. 위 칸에서 빼 보자.');
+        }
+      });
+      wrap.appendChild(el);
+    })(opts[i]);
+  }
+}
+stepBtn('ext1-btns', '다른 피라미드', function () {
+  e1i += 1;
+  if (e1i >= KGiftedCore.EXT1_SET.length) e1i = 0;
+  setText('fb-ext1', '');
+  drawE1();
+});
+drawE1();
+
+/* ═══════════ 슬14 도전 · 반례 만들기 ═══════════ */
+const e2b = [1, 1, 1];
+const e2found = [];
+function drawE2() {
+  renderPyr('ext2-pyr', KGiftedCore.rows(e2b), {});
+  setText('ext2-top', KGiftedCore.top(e2b));
+}
+function renderE2Found() {
+  clearChips('ext2-found');
+  if (!e2found.length) { chip('ext2-found', '아직 찾은 밑줄이 없다', 'a'); return; }
+  for (let i = 0; i < e2found.length; i++) chip('ext2-found', baseText(e2found[i]), 'b');
+}
+baseBtns('ext2-btns', function () { return e2b; }, drawE2, null);
+stepBtn('ext2-btns', '이 밑줄 적기', function () {
+  const st = getQState('ext2');
+  if (st.done) return;
+  if (KGiftedCore.top(e2b) !== KGiftedCore.EXT2_GOAL) {
+    setText('fb-ext2', '꼭대기가 아직 다르다.');
+    return;
+  }
+  for (let i = 0; i < e2found.length; i++) {
+    if (KGiftedCore.same(e2found[i], e2b) ||
+        KGiftedCore.same(KGiftedCore.flip(e2found[i]), e2b)) {
+      setText('fb-ext2', '거꾸로 놓은 것은 같은 밑줄로 본다.');
+      return;
+    }
+  }
+  const keep = [];
+  for (let i = 0; i < e2b.length; i++) keep.push(e2b[i]);
+  e2found.push(keep);
+  renderE2Found();
+  if (e2found.length >= KGiftedCore.EXT2_NEED) {
+    st.done = true;
+    addScore(KGiftedCore.SCORE_PLAN.ext2);
+    setText('fb-ext2', '두 벌을 찾았다. 꼭대기가 밑줄을 정하지 못한다.');
+    saveProgress(false);
+  } else {
+    setText('fb-ext2', '한 벌 찾았다. 다른 밑줄도 찾자.');
+  }
+});
+drawE2();
+renderE2Found();
+
+/* ═══════════ 슬16 창조 · 내 피라미드 만들기 ═══════════ */
+function drawCr() {
+  baseChips('cr-chips', crBase, null);
+}
+baseBtns('cr-btns', function () { return crBase; }, drawCr, function () { return crFixed; });
+stepBtn('cr-btns', '피라미드 완성', function () {
+  const st = getQState('create1');
+  if (st.done) return;
+  const r = KGiftedCore.checkCreate(crBase, 1);
+  if (r.why === 'base') {
+    setText('fb-create1', '수를 다시 정하자.');
+    return;
+  }
+  st.done = true;
+  crFixed = true;
+  crAns = KGiftedCore.top(crBase);
+  myRuleText = baseText(crBase);
+  addScore(KGiftedCore.SCORE_PLAN.create1);
+  setText('fb-create1', '밑줄을 정했다.');
+  buildCr2();
+  saveProgress(false);
+});
+drawCr();
+
+/* ═══════════ 슬17 창조 · 내 피라미드의 꼭대기 ═══════════ */
+function buildCr2() {
+  const wrap = document.getElementById('cr2-opts');
+  wrap.innerHTML = '';
+  if (!crFixed) return;
+  setText('cr2-prompt', '밑줄 ' + myRuleText + ' 의 꼭대기는?');
+  const opts = KGiftedCore.crOptions(crBase);
+  for (let i = 0; i < opts.length; i++) {
+    (function (vv) {
+      const el = document.createElement('button');
+      el.className = 'mcq-opt';
+      el.dataset.a = vv;
+      el.textContent = String(vv);
+      el.addEventListener('click', function () {
+        const st = getQState('create2');
+        if (st.done) return;
+        const r = KGiftedCore.checkCreate(crBase, vv);
+        if (r.ok) {
+          st.done = true;
+          el.classList.add('correct');
+          addScore(KGiftedCore.SCORE_PLAN.create2);
+          setText('fb-create2', '맞다. 내 피라미드를 세웠다.');
+          renderAgentCard();
+          saveProgress(false);
+        } else {
+          el.classList.add('wrong');
+          setText('fb-create2', '아니다. 한 층씩 다시 올라가자.');
+        }
+      });
+      wrap.appendChild(el);
+    })(opts[i]);
+  }
+}
+
+function renderAgentCard() {
+  const el = document.getElementById('dc-plan');
+  if (!el) return;
+  if (!crFixed) { el.textContent = '규칙 카드는 밑줄을 정하면 채워진다.'; return; }
+  const st = getQState('create2');
+  let t = '내 밑줄은 ' + myRuleText + ' 이다. ';
+  t += '거꾸로 놓아도 꼭대기는 그대로다. ';
+  if (st.done) t += '꼭대기는 ' + crAns + ' 이다.';
+  else t += '꼭대기를 골라 보자.';
+  el.textContent = t;
+}
+
+/* ═══════════ 초기화 ═══════════ */
+(function init() {
+  const dots = document.getElementById('dots');
+  for (let i = 0; i < TOTAL; i++) {
+    const d = document.createElement('span');
+    d.className = 'ka-dot';
+    d.addEventListener('click', () => { cur = i; updateUI(); });
+    dots.appendChild(d);
+  }
+  updateUI();
+})();
+</script>
+</body>
+</html>
