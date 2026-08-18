@@ -23,7 +23,7 @@ function t(name, cond) {
 console.log('[1] 본보기↔미션 다리');
 const LK = L.MISSION_LINKS;
 const keys = Object.keys(LK);
-t('링크 7건', keys.length === 7);
+t('링크 10건(원리 7 + 캐릭터 3)', keys.length === 10);
 t('모든 링크의 미션이 실존', keys.every(k => L.findMission(k)));
 t('모든 링크의 본보기가 실존', keys.every(k => L.findSample(LK[k])));
 t('원리 궁합 고정점 — walk↔chick(보행)·face↔face(감정)·ball↔ball(스쿼시)',
@@ -76,7 +76,7 @@ function inkCount(id, i) {
   for (let p = 3; p < d.length; p += 4) if (d[p] > 8) n++;
   return n;
 }
-t('링크 대상 = 6종(중복 hop 제거)', targets.length === 6);
+t('링크 대상 = 9종(중복 hop 제거, 캐릭터 3 포함)', targets.length === 9);
 t('전 대상 전 장 그림 존재', targets.every(id => {
   const S = L.findSample(id);
   for (let i = 0; i < S.frames; i++) if (inkCount(id, i) < 200) return false;

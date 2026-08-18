@@ -149,9 +149,11 @@
              fps:function(){return fps;}, mode:function(){return mode;} };
   }
 
-  /* ── 미션 9종 (데이터 = 학년칸 3×3) ──
+  /* ── 미션 12종 (원리 3×3 + 학년별 캐릭터 1) ──
      미션 = 권장 장수 + 각 장 안내. 완성 = 권장 장수만큼 각 장에 그림이 있음.
-     needGuide: 겹쳐보기 참조가 특히 중요한 미션(걷기) 표시. */
+     needGuide: 겹쳐보기 참조가 특히 중요한 미션(걷기·달리기) 표시.
+     char: 캐릭터 미션 — KChar 본보기와 장수를 맞춰(1:1 또는 정수비)
+     👻 고스트가 장마다 정확한 포즈를 비추게 한다. */
   var MISSIONS = [
     { id:'ball',   grade:'1-2', title:'공 튀기기', frames:3, fps:6,
       hint:'3장이면 공이 통통 튑니다!',
@@ -180,7 +182,17 @@
       guides:['왼쪽 위에서 출발','내려오며 오른쪽으로','바닥에 닿아 눌림','튀어오르며','정점(조금 낮게)','다시 내려오기'] },
     { id:'face',   grade:'5-6', title:'표정 바꾸기', frames:6, fps:5,
       hint:'얼굴 윤곽은 그대로, 눈·입만 조금씩 바꿔요',
-      guides:['무표정한 얼굴','눈이 조금 커지고','입꼬리가 올라가며','미소','활짝 웃음','눈웃음까지'] }
+      guides:['무표정한 얼굴','눈이 조금 커지고','입꼬리가 올라가며','미소','활짝 웃음','눈웃음까지'] },
+    /* 캐릭터 미션 — 본보기(KChar)와 장수 정합: kbot 3↔6(=×2), pogeun 6↔6, koko 8↔8 */
+    { id:'kbot',   grade:'1-2', title:'🤖 케이봇 두리번', frames:3, fps:5, char:true,
+      hint:'몸은 그대로, 눈동자만 왼쪽 → 앞 → 오른쪽!',
+      guides:['왼쪽을 살피는 케이봇 — 눈동자만 왼쪽으로','앞을 똑바로 보는 케이봇','오른쪽을 살피는 케이봇'] },
+    { id:'pogeun', grade:'3-4', title:'🐻 포근이 기지개', frames:6, fps:5, char:true,
+      hint:'졸리다가 → 쭈욱 → 개운! 마음이 표정에 나와요',
+      guides:['꾸벅꾸벅 조는 포근이','더 깊이 꾸벅 — 몸이 아래로','두 팔을 하늘로 쭈욱!','눈이 번쩍 뜨여요','팔을 내리며 개운하게','활짝 웃는 포근이'] },
+    { id:'koko',   grade:'5-6', title:'🦊 코코 달리기', frames:8, fps:10, needGuide:true, char:true,
+      hint:'다리는 번갈아, 꼬리는 반대로 — 겹쳐보기로 이어 그려요',
+      guides:['달릴 준비 — 몸을 살짝 앞으로 기울여요','한 다리는 앞으로, 한 다리는 뒤로','다리를 가장 크게 벌려요','다리가 가운데로 모이며','몸이 통통 — 꼬리는 반대쪽으로 살랑','이번엔 반대 다리가 앞으로','반대쪽으로 가장 크게 벌려요','다리가 모이며 — 한 바퀴 완성!'] }
   ];
   function findMission(id){ for(var i=0;i<MISSIONS.length;i++) if(MISSIONS[i].id===id) return MISSIONS[i]; return null; }
   function missionsByGrade(g){ return MISSIONS.filter(function(m){return m.grade===g;}); }
@@ -491,7 +503,11 @@
     candle:'candle',  // 흔들리는 촛불 ↔ 반복의 힘
     walk:'chick',     // 걷기 사이클 ↔ 병아리 보행 사이클
     arc:'hop',        // 포물선 튀는 공 ↔ 토끼 점프의 포물선
-    face:'face'       // 표정 바꾸기 ↔ 감정
+    face:'face',      // 표정 바꾸기 ↔ 감정
+    /* 캐릭터 미션 — 장수 정합이라 👻 고스트가 장마다 정확한 포즈를 비춘다 */
+    kbot:'ch_kbot',   // 케이봇 두리번 3장 ↔ 본보기 6장(눈동자 -1·0·1 딱 대응)
+    pogeun:'ch_pogeun', // 포근이 기지개 6장 ↔ 6장(1:1)
+    koko:'ch_koko'    // 코코 달리기 8장 ↔ 8장(1:1)
   };
   function linkedSample(missionId){
     var sid = MISSION_LINKS[missionId];
@@ -538,6 +554,14 @@
     return { mine:  Math.min(count-1,        Math.floor(t*count)),
              sample:Math.min(sampleFrames-1, Math.floor(t*sampleFrames)) };
   }
+  function duetJumpFrame(ix, count){
+    /* 나란히 화면에서 내 그림을 탭 → 지금 보이던 그 장으로 점프.
+       ix = 마지막으로 그린 {mine, sample} (첫 rAF 전이면 null → 0장). */
+    count=count|0; if(count<1) count=1;
+    var m = (ix && typeof ix.mine==='number' && isFinite(ix.mine)) ? Math.floor(ix.mine) : 0;
+    if(m<0) m=0; if(m>=count) m=count-1;
+    return m;
+  }
 
   var API = { MAX_FRAMES:MAX_FRAMES, MIN_FRAMES:MIN_FRAMES, clampFps:clampFps,
               createFrameStore:createFrameStore, onionLayers:onionLayers,
@@ -547,7 +571,7 @@
               SAMPLES:SAMPLES, findSample:findSample, drawSample:drawSample,
               MISSION_LINKS:MISSION_LINKS, linkedSample:linkedSample,
               ghostFrameFor:ghostFrameFor, ghostPlan:ghostPlan,
-              duetPlan:duetPlan, duetIndices:duetIndices };
+              duetPlan:duetPlan, duetIndices:duetIndices, duetJumpFrame:duetJumpFrame };
   if(typeof module!=='undefined' && module.exports){ module.exports = API; }
   if(typeof window!=='undefined'){ window.AnimLab = API; }
 })();
@@ -746,6 +770,7 @@ body.bgmode #onion{opacity:0}
 .duet-row canvas{width:min(42vw,460px);max-width:86vw;aspect-ratio:900/620;
   background:var(--paper);border-radius:12px;border:1px solid var(--glass-bd);display:block}
 .duet-row figcaption{margin-top:6px;font-size:12.5px;color:var(--mut)}
+#duetMine{cursor:pointer;touch-action:manipulation}
 .duet-tip{margin-top:10px;font-size:12.5px;color:var(--mut);text-align:center}
 .mcard .mlink{font-size:12px;opacity:.85}
 #ghostBtn.on{background:rgba(15,169,142,.22);border-color:rgba(45,212,191,.55);color:#5EEAD4}
@@ -925,7 +950,8 @@ body.bgmode #onion{opacity:0}
         <figcaption>📽️ 본보기 — <span id="duetSmpName"></span></figcaption>
       </figure>
     </div>
-    <p class="duet-tip">같은 순간을 나란히 봐요 — 무엇이 닮았고, 무엇이 다른가요?</p>
+    <p class="duet-tip">같은 순간을 나란히 봐요 — 무엇이 닮았고, 무엇이 다른가요?<br>
+      고치고 싶은 순간이 보이면 ✏️ 내 그림을 탭 — 그 장으로 바로 가요</p>
   </div>
 </div>
 
@@ -1755,6 +1781,13 @@ body.bgmode #onion{opacity:0}
   }
   document.getElementById('duetClose').addEventListener('click', closeDuet);
   duetWrap.addEventListener('click', function(e){ if(e.target===duetWrap) closeDuet(); });
+  duetMine.addEventListener('click', function(){          // ✏️ 한 장 고치러 가기
+    if(!duetState) return;
+    var f=L.duetJumpFrame(duetState.last, store.count());
+    closeDuet();
+    store.setCurrent(f); loadFrame(); buildStrip(); renderGuide();
+    toast('✏️ '+(f+1)+'장을 고치러 왔어요 — 다 고치면 다시 🎭로 비교해요');
+  });
   guideBand.addEventListener('click', function(e){          // 밴드는 pointer-events:none, 버튼만 auto
     if(e.target.closest && e.target.closest('.gduet')) openDuet();
   });

@@ -19,7 +19,7 @@ t('👻 버튼 존재·초기 숨김', !!gb && gb.style.display==='none');
 /* 미션: 연결 미션 선택 → 👻 노출·꺼짐 상태 */
 doc.getElementById('missionBtn').click();
 const cards=[...doc.querySelectorAll('#mlist .mcard')];
-t('1-2 미션 3장 + 📽️ 배지(ball·frog 연결)', cards.length===3 && doc.querySelectorAll('#mlist .mlink').length===2);
+t('1-2 미션 4장 + 📽️ 배지 3(ball·frog·kbot 연결)', cards.length===4 && doc.querySelectorAll('#mlist .mlink').length===3);
 const ballCard=cards.find(c=>c.textContent.includes('공 튀기기'));
 ballCard.click();
 t('연결 미션 선택 → 👻 노출(꺼짐)', gb.style.display!=='none' && !gb.classList.contains('on'));
