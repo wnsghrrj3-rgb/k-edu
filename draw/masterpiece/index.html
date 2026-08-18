@@ -1031,7 +1031,7 @@ async function startPhoto(lvIdx){
     desc:'세상에 한 점뿐인 도안이에요. 사진은 서버로 가지 않고, 이 기기 안에서 도안이 되었어요.'};
   state.levelIdx=lvIdx;state.isPhoto=true;state.done=false;
   showScreen('paint');
-  setRefFor(state.art,true);
+  setRefFor(state.art,true,pendingPhoto&&pendingPhoto.ref);
   $('p-title').textContent='📷 나만의 작품 · '+lv.name;
   stage.classList.remove('done-anim');stage.innerHTML='';
   $('pal-bar').innerHTML='';
@@ -1150,12 +1150,15 @@ function updateProgress(){
 
 /* ── 원작 참고 ── */
 const hasOrig=id=>!!(window.KMDATA&&window.KMDATA[id]);
-function setRefFor(art,isPhoto){
+function setRefFor(art,isPhoto,refSrc){
   const btn=$('btn-ref');
-  const ok=!isPhoto&&hasOrig(art.id);
-  btn.style.display=ok?'':'none';
+  const src=isPhoto?refSrc:(hasOrig(art.id)?'originals/'+art.id+'.jpg':null);
+  btn.style.display=src?'':'none';
+  btn.textContent=isPhoto?'🖼 내 사진':'🖼 원작';
   $('ref-panel').classList.add('hidden');
-  if(ok){$('ref-img').src='originals/'+art.id+'.jpg';$('ref-cap').textContent=art.title+' — '+art.artist+' 원작'}
+  if(src){$('ref-img').src=src;
+    $('ref-cap').textContent=isPhoto?'내 사진 — 이 기기 안에만 있어요':art.title+' — '+art.artist+' 원작'}
+  state.refSrc=src;
 }
 $('btn-ref').onclick=()=>$('ref-panel').classList.toggle('hidden');
 $('ref-panel').onclick=()=>$('ref-panel').classList.add('hidden');
@@ -1169,7 +1172,9 @@ function celebrate(silent){
   $('d-artist').textContent=state.art.artist+' · '+state.art.year;
   $('d-desc').textContent=state.art.desc;
   const ow=$('d-orig-wrap');
-  if(!state.isPhoto&&hasOrig(state.art.id)){$('d-orig').src='originals/'+state.art.id+'.jpg';ow.classList.remove('hidden')}
+  if(state.refSrc){$('d-orig').src=state.refSrc;
+    ow.querySelector('span').textContent=state.isPhoto?'내 사진':'원작 사진';
+    ow.classList.remove('hidden')}
   else ow.classList.add('hidden');
   $('done-ov').classList.remove('hidden');
   if(!silent)confetti();
@@ -1326,7 +1331,7 @@ $('file-in').addEventListener('change',e=>{
     const cv=document.createElement('canvas');cv.width=W;cv.height=H;
     const ctx=cv.getContext('2d');
     ctx.drawImage(img,0,0,W,H);
-    pendingPhoto={data:ctx.getImageData(0,0,W,H).data,W,H};
+    pendingPhoto={data:ctx.getImageData(0,0,W,H).data,W,H,ref:cv.toDataURL('image/jpeg',0.85)};
     openPhotoLevels();
   };
   img.onerror=()=>URL.revokeObjectURL(url);
