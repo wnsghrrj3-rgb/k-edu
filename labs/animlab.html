@@ -6,6 +6,12 @@
 <title>애니메이션 공방 | 케이아트</title>
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
 <script src="/kedu_collect.js"></script>
+<!-- 작업 이어하기 (2026-08-18) — 로드 순서 고정: config → supabase → tier → resume.
+     방문자·게스트는 저장 0(준호 결정). 판정은 KeduTier 한 창구로만. -->
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tier.js"></script>
+<script src="/kedu_resume.js"></script>
 <style id="kedu-title-font">/* 케이에듀 제목 폰트 토큰 (학교안심 모험가) — v3 표준 */
 @font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
 :root{--kedu-title:'Hakgyoansim Moheomga','Gowun Dodum',sans-serif}
@@ -782,6 +788,16 @@ body.bgmode #onion{opacity:0}
 .mcard .mlink{font-size:12px;opacity:.85}
 #ghostBtn.on{background:#E3F7F2;border-color:#5FC9B4;color:#0A6E60}
 
+/* 💾 이어하기 */
+.resume-wrap{position:fixed;inset:0;z-index:70;display:none;align-items:center;justify-content:center;
+  background:rgba(10,13,18,.55);backdrop-filter:blur(3px);padding:16px}
+.resume-wrap.show{display:flex}
+.resume-box{background:#FFFFFF;border:1px solid var(--hud-bd);border-radius:18px;
+  box-shadow:0 20px 54px rgba(33,52,94,.24);padding:20px 22px 18px;max-width:92vw;text-align:center}
+.resume-box .rz-t{font-family:var(--kedu-title);font-size:19px;margin-bottom:6px}
+.resume-box .rz-s{font-size:12.5px;color:var(--mut);margin-bottom:16px}
+.resume-box .rz-btns{display:flex;gap:9px;justify-content:center;flex-wrap:wrap}
+
 /* 슬라이드 패널 공통 */
 .sheet-bg{position:fixed;inset:0;background:rgba(10,13,18,.5);opacity:0;pointer-events:none;
   transition:opacity .22s;z-index:40}
@@ -962,6 +978,18 @@ body.bgmode #onion{opacity:0}
   </div>
 </div>
 
+<!-- 💾 이어하기 (지난 작업이 있을 때만) -->
+<div class="resume-wrap" id="resumeSheet">
+  <div class="resume-box">
+    <div class="rz-t">💾 그리던 애니가 있어요</div>
+    <div class="rz-s" id="resumeWhen"></div>
+    <div class="rz-btns">
+      <button class="pbtn play" id="resumeYes">이어서 그리기</button>
+      <button class="pbtn" id="resumeNo">새로 시작</button>
+    </div>
+  </div>
+</div>
+
 <!-- 내보내기 시트 -->
 <div class="sheet-bg" id="exportBg"></div>
 <aside class="panel" id="exportPanel">
@@ -1078,7 +1106,7 @@ body.bgmode #onion{opacity:0}
     for(var i=3;i<d.length;i+=4) if(d[i]>8) return true;
     return false;
   }
-  function refreshBgViews(){ buildStrip(); }     // 무대가 바뀌면 썸네일 전 장 갱신
+  function refreshBgViews(){ buildStrip(); markAll(); }   // 무대가 바뀌면 썸네일 전 장 갱신 + 💾 전량
 
   // ── 도장 서랍 (탭 = 동물 + 빌더 파츠) ──
   var ANIMALS=[['dog','강아지'],['cat','고양이'],['rabbit','토끼'],['bear','곰'],
@@ -1458,6 +1486,7 @@ body.bgmode #onion{opacity:0}
     var f=store.get(); var c=frameCanvas(f); var cx=c.getContext('2d');
     cx.clearRect(0,0,W,H); cx.drawImage(drawCv,0,0);
     updateThumb(store.current());
+    markFrame(store.current());        // 💾 이 장만 다시 쓰면 된다
   }
   function clearCurrent(){
     if(bgMode){ bgCtx.clearRect(0,0,W,H); refreshBgViews(); toast('무대를 비웠어요'); return; }
@@ -1575,7 +1604,7 @@ body.bgmode #onion{opacity:0}
     confirmPend(); commitToFrame();
     var r=store.add();
     if(!r.ok){ toast('한 편은 최대 '+store.max+'장까지예요'); return; }
-    loadFrame(); buildStrip();
+    loadFrame(); buildStrip(); markAll();      // 💾 구조 변경 = 조각 순서가 바뀐다 → 전량
   }
   function doDup(i){
     confirmPend(); commitToFrame();
@@ -1584,19 +1613,19 @@ body.bgmode #onion{opacity:0}
     // 픽셀 복사
     var nc=frameCanvas(store.get()), g=nc.getContext('2d');
     g.clearRect(0,0,W,H); g.drawImage(frameCanvas(r.src),0,0);
-    loadFrame(); buildStrip();
+    loadFrame(); buildStrip(); markAll();
     toast('장을 복제했어요 — 조금씩 바꿔보세요');
   }
   function doDel(i){
     var r=store.remove(i);
     if(!r.ok){ toast('마지막 한 장은 지울 수 없어요'); return; }
-    loadFrame(); buildStrip();
+    loadFrame(); buildStrip(); markAll();
   }
   function doMove(from,to){
     confirmPend(); commitToFrame();
     var r=store.move(from, Math.max(0,Math.min(store.count()-1,to)));
     if(!r.ok) return;
-    loadFrame(); buildStrip();
+    loadFrame(); buildStrip(); markAll();
   }
 
   // ── 재생
@@ -1644,10 +1673,13 @@ body.bgmode #onion{opacity:0}
     ghostOn=!ghostOn; this.classList.toggle('on', ghostOn); renderOnion(); renderGuide();
     toast(ghostOn?'👻 본보기가 연하게 비쳐요 — 따라 그려보세요':'👻 따라 그리기를 껐어요');
   });
+  function syncModeBtns(){            // 재생 모드 ↔ 버튼 표시 동기(이어하기 복원에서도 씀)
+    var seg=document.getElementById('modeSeg');
+    [].forEach.call(seg.children, function(c){ c.classList.toggle('on', c.dataset.mode===play.mode()); });
+  }
   document.getElementById('modeSeg').addEventListener('click', function(e){
     var b=e.target.closest('.pbtn'); if(!b) return;
-    play.setMode(b.dataset.mode);
-    [].forEach.call(this.children, function(c){ c.classList.toggle('on', c===b); });
+    play.setMode(b.dataset.mode); syncModeBtns();
   });
   var fpsLbl=document.getElementById('fpsLbl');
   document.getElementById('fps').addEventListener('input', function(e){
@@ -1897,8 +1929,111 @@ body.bgmode #onion{opacity:0}
   document.getElementById('expZip').addEventListener('click', exportZip);
   document.getElementById('expBox').addEventListener('click', exportBox);
 
+  // ══ 💾 작업 이어하기 (2026-08-18) ══════════════════
+  /* 24장을 40분 그리다 새로고침 한 번에 잃는 일을 막는다.
+     저장 가부는 KeduResume(→KeduTier)가 판정 — 방문자·게스트는 저장 0(준호 결정).
+     조각 = 장별 PNG Blob. 획만 바뀌면 그 장만, 구조가 바뀌면(추가·삭제·이동·복제)
+     전량 다시 쓴다 — 조각 키가 인덱스라 순서가 바뀌면 통째가 안전하다. */
+  var RES = (typeof window!=='undefined' && window.KeduResume) || null;
+  var resumeOn=false, dirty={}, dirtyAll=false, saver=null;
+
+  function markFrame(i){ if(!resumeOn) return; dirty[i]=true; saver && saver.mark(); }
+  function markAll(){ if(!resumeOn) return; dirtyAll=true; saver && saver.mark(); }
+
+  function blobOf(cv){
+    return new Promise(function(res){
+      try{ cv.toBlob(function(b){ res(b||null); }, 'image/png'); }catch(e){ res(null); }
+    });
+  }
+  function frameHasInk(i){
+    var f=store.frameAt(i); if(!f||!pixMap[f.id]) return false;
+    return frameFilled(f);
+  }
+  async function collectWork(){
+    var n=store.count(), parts={}, idx=[];
+    if(dirtyAll){ for(var i=0;i<n;i++) idx.push(i); }
+    else { for(var k in dirty) if(dirty[k]) idx.push(+k); }
+    for(var j=0;j<idx.length;j++){
+      var i=idx[j]; if(i<0||i>=n) continue;
+      parts['f'+i] = frameHasInk(i) ? await blobOf(frameCanvas(store.frameAt(i))) : null;  // 빈 장은 안 담는다
+    }
+    if(dirtyAll){
+      for(var d=n; d<store.max; d++) parts['f'+d]=null;      // 줄어든 뒤 남은 조각 청소
+      parts.bg = bgFilled() ? await blobOf(bgCv) : null;
+    }
+    dirty={}; dirtyAll=false;
+    return { meta:{ n:n, fps:play.fps(), mode:play.mode(), cur:store.current(),
+                    mission: activeMission? activeMission.id : null,
+                    done: Object.keys(completedIds) },
+             parts:parts };
+  }
+
+  function drawBlobTo(cv, blob){
+    return new Promise(function(res){
+      if(!blob){ res(false); return; }
+      var url;
+      try{ url=URL.createObjectURL(blob); }catch(e){ res(false); return; }
+      var im=new Image();
+      im.onload=function(){ try{ cv.getContext('2d').drawImage(im,0,0); }catch(e){}
+        try{ URL.revokeObjectURL(url); }catch(e){} res(true); };
+      im.onerror=function(){ try{ URL.revokeObjectURL(url); }catch(e){} res(false); };
+      im.src=url;
+    });
+  }
+  async function applyWork(got){
+    var m=got.meta||{}, p=got.parts||{}, n=Math.max(1, Math.min(store.max, m.n|0));
+    while(store.count()<n){ if(!store.add().ok) break; }
+    for(var i=0;i<store.count();i++){
+      var cv=frameCanvas(store.frameAt(i));
+      cv.getContext('2d').clearRect(0,0,W,H);
+      await drawBlobTo(cv, p['f'+i]);
+    }
+    bgCtx.clearRect(0,0,W,H); await drawBlobTo(bgCv, p.bg);
+    var f=L.clampFps(m.fps||6); play.setFps(f);
+    document.getElementById('fps').value=f;
+    document.getElementById('fpsLbl').textContent=f+' fps';
+    if(m.mode) { play.setMode(m.mode); syncModeBtns(); }
+    (m.done||[]).forEach(function(id){ completedIds[id]=true; });
+    if(m.mission && L.findMission(m.mission)) selectMission(m.mission);
+    store.setCurrent(Math.max(0, Math.min(store.count()-1, m.cur|0)));
+    loadFrame(); buildStrip(); refreshBgViews();
+  }
+
+  var resumeSheet=document.getElementById('resumeSheet');
+  function askResume(got){
+    var when=new Date(got.at||Date.now());
+    document.getElementById('resumeWhen').textContent=
+      (got.meta&&got.meta.n?got.meta.n+'장 · ':'')+
+      (when.getMonth()+1)+'월 '+when.getDate()+'일 '+when.getHours()+'시경';
+    resumeSheet.classList.add('show');
+    document.getElementById('resumeYes').onclick=function(){
+      resumeSheet.classList.remove('show');
+      applyWork(got).then(function(){ markAll(); toast('💾 이어서 그려요'); });
+    };
+    document.getElementById('resumeNo').onclick=function(){
+      resumeSheet.classList.remove('show');
+      RES.clear('main'); markAll(); toast('새로 시작해요');
+    };
+  }
+
+  function initResume(){
+    if(!RES) return;
+    RES.init({ app:'animlab', version:1 }).then(function(r){
+      resumeOn = !!r.can;
+      if(!resumeOn) return;                       // 방문자·게스트·IDB 부재 = 조용히 없던 일로
+      saver = RES.autosaver('main', collectWork, { wait:1800 });
+      window.addEventListener('pagehide', function(){ saver.flush(); });
+      document.addEventListener('visibilitychange', function(){
+        if(document.visibilityState==='hidden') saver.flush();
+      });
+      return RES.load('main').then(function(got){
+        if(got && got.meta && (got.meta.n|0)>0) askResume(got);
+      });
+    }).catch(function(){});
+  }
+
   // ── init
-  buildStrip(); loadFrame(); renderBadge();
+  buildStrip(); loadFrame(); renderBadge(); initResume();
 })();
 </script>
 
