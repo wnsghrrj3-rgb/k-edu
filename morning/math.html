@@ -47,7 +47,8 @@ select,input{font-family:inherit;font-size:15px;padding:9px 12px;border:1px soli
       <b>다시 뽑기</b>를 누르면 같은 차시에서 다른 문제가 나와요 — 학생마다 문제가 조금씩 다른 것도 이 방식이에요.</div>
     <div class="pick">
       <div><label>학년</label><select id="g"></select></div>
-      <div><label>몇 일째</label><select id="d"></select></div>
+      <div><label>단원</label><select id="u"></select></div>
+      <div><label>차시</label><select id="d"></select></div>
     </div>
     <div class="meta" id="meta">불러오는 중…</div>
   </div>
@@ -63,7 +64,7 @@ select,input{font-family:inherit;font-size:15px;padding:9px 12px;border:1px soli
   var GRADES = [1,2,3,4,5,6];
   var q = new URLSearchParams(location.search);
   var st = { grade: Math.min(6, Math.max(1, +q.get('grade') || 1)), day: +q.get('day') || 1, loaded: {}, units: {} };
-  var gSel = document.getElementById('g'), dSel = document.getElementById('d');
+  var gSel = document.getElementById('g'), uSel = document.getElementById('u'), dSel = document.getElementById('d');
   var meta = document.getElementById('meta'), mount = document.getElementById('mount');
 
   gSel.innerHTML = GRADES.map(function(g){
@@ -78,8 +79,6 @@ select,input{font-family:inherit;font-size:15px;padding:9px 12px;border:1px soli
         return u.subject === 'math' && u.grade === grade;
       }).sort(function(a,b){ return a.unitNo - b.unitNo; });
       if (!units.length) throw new Error('catalog 에 g'+grade+' 수학 단원이 없음');
-      st.units[grade] = {};
-      units.forEach(function(u){ st.units[grade][u.unitNo] = u.name; });
       var files = units.map(function(u){ return '/kedu/quiz/templates/'+u.key+'.js'; });
       files.push('/kedu/quiz/templates/math_lessons.js');
       files.push('/kedu/quiz/templates/math_morning.js');
@@ -107,18 +106,46 @@ select,input{font-family:inherit;font-size:15px;padding:9px 12px;border:1px soli
       + (m.mode === 'review' ? ' · 이날은 그동안 배운 것으로 복습해요' : '');
   }
 
-  function fillDays(grade){
+  /* 사다리(일차 순서)를 단원 묶음으로 편다 — 일차와 차시는 1:1 이라 내부 키는 그대로 일차다 */
+  function unitsFor(grade){
     var order = (KQuiz.core.mathMorningOrder ? KQuiz.core.mathMorningOrder(grade) : []) || [];
-    var n = order.length;
-    if (st.day > n) st.day = 1;
-    dSel.innerHTML = '';
-    for (var i = 1; i <= n; i++) {
-      var o = document.createElement('option');
-      o.value = i; o.textContent = i + '일째';
-      if (i === st.day) o.selected = true;
-      dSel.appendChild(o);
-    }
-    return n;
+    var units = [], byNo = {};
+    order.forEach(function(d, i){
+      var u = byNo[d.unitNo];
+      if (!u) { u = byNo[d.unitNo] = { unitNo: d.unitNo, name: d.unitName, lessons: [] }; units.push(u); }
+      u.lessons.push({ day: i + 1, l: d.l, title: d.title, mode: d.mode });
+    });
+    return units;
+  }
+  function lessonLabel(les){
+    var lNice = String(les.l).replace(/^0+/,'').replace(/_0?/g,'·');
+    return (les.title || (lNice + '차시')) + (les.mode === 'review' ? ' (복습 구성)' : '');
+  }
+
+  function fillPickers(grade){
+    var units = unitsFor(grade);
+    st.units[grade] = units;
+    var total = units.reduce(function(a,u){ return a + u.lessons.length; }, 0);
+    if (st.day > total || st.day < 1) st.day = 1;
+
+    var cur = units.filter(function(u){
+      return u.lessons.some(function(les){ return les.day === st.day; });
+    })[0] || units[0];
+
+    uSel.innerHTML = units.map(function(u){
+      return '<option value="'+u.unitNo+'"'+(u===cur?' selected':'')+'>'
+        + u.unitNo + '단원 ' + esc(u.name) + '</option>';
+    }).join('');
+    fillLessons(cur);
+    return total;
+  }
+
+  function fillLessons(unit){
+    dSel.innerHTML = unit.lessons.map(function(les){
+      return '<option value="'+les.day+'"'+(les.day===st.day?' selected':'')+'>'
+        + esc(lessonLabel(les)) + '</option>';
+    }).join('');
+    if (+dSel.value !== st.day) { st.day = +dSel.value; }
   }
 
   function draw(){
@@ -130,9 +157,9 @@ select,input{font-family:inherit;font-size:15px;padding:9px 12px;border:1px soli
     }
     var def = KQuiz.core.getDef ? KQuiz.core.getDef(key) : null;
     var total = ((KQuiz.core.mathMorningOrder && KQuiz.core.mathMorningOrder(st.grade)) || []).length;
-    meta.innerHTML = '<b>'+st.grade+'학년</b>의 <b>'+st.day+'일째</b> 아침수학이에요. '
-      + '한 학기에 모두 <b>'+total+'일</b>치가 있고, 다 나가면 복습으로 다시 돌아요.'
-      + (def && def.source ? '<br><span style="color:var(--sub)">' + esc(unitName(def)) + '</span>' : '');
+    meta.innerHTML = '<b>'+st.grade+'학년</b> — ' + (def ? '<b>'+esc(unitName(def))+'</b>' : '')
+      + '<br><span style="color:var(--sub)">아침수학 순서로는 <b>'+st.day+'일째</b>예요. '
+      + '한 학기에 모두 '+total+'일치가 있고, 다 나가면 복습으로 다시 돌아요.</span>';
     KQuiz.mount(mount, { mode:'teacher', lesson:key, n:10 });
     var u = new URL(location.href);
     u.searchParams.set('grade', st.grade); u.searchParams.set('day', st.day);
@@ -142,11 +169,11 @@ select,input{font-family:inherit;font-size:15px;padding:9px 12px;border:1px soli
   function loadGrade(grade){
     mount.innerHTML = '<div class="msg"><div class="spin"></div>문제를 준비하는 중…</div>';
     meta.textContent = '불러오는 중…';
-    if (st.loaded[grade]) { fillDays(grade); draw(); return; }
+    if (st.loaded[grade]) { fillPickers(grade); draw(); return; }
     filesFor(grade).then(function(files){
       loadScripts(files, function(){
         st.loaded[grade] = true;
-        fillDays(grade);
+        fillPickers(grade);
         draw();
       }, function(){
         meta.textContent = '';
@@ -159,6 +186,14 @@ select,input{font-family:inherit;font-size:15px;padding:9px 12px;border:1px soli
   }
 
   gSel.onchange = function(){ st.grade = +this.value; st.day = 1; loadGrade(st.grade); };
+  uSel.onchange = function(){
+    var units = st.units[st.grade] || [];
+    var u = units.filter(function(x){ return x.unitNo === +uSel.value; })[0];
+    if (!u) return;
+    st.day = u.lessons[0].day;      // 단원을 바꾸면 그 단원 첫 차시부터
+    fillLessons(u);
+    draw();
+  };
   dSel.onchange = function(){ st.day = +this.value; draw(); };
   loadGrade(st.grade);
 })();
