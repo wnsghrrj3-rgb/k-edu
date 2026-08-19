@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>뽑기 | K-edu 선생님</title>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
+<style id="kedu-title-font">/* 케이에듀 제목 폰트 토큰 */
+:root{--kedu-title:'Gowun Batang','Gowun Dodum',serif}
+</style>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#5B8EF8;--primary-light:#EBF4FF;--primary-dark:#3B6FD8;--pink:#FF85A1;
+  --bg:#F4F6FB;--card:#fff;--ink:#1A202C;--sub:#718096;--faint:#A0AEC0;--border:#E7ECF3;
+  --radius:20px;--shadow:0 2px 18px rgba(33,52,94,.07);--shadow-lg:0 18px 50px rgba(33,52,94,.16);
+  --g1:#5B8EF8;--g2:#FF85A1;--g3:#3BAB72;--g4:#FFB347;--g5:#7E57C2;--g6:#38B2AC;--g7:#ED8936;--g8:#4299E1;
+}
+body{font-family:'Gowun Dodum',sans-serif;background:var(--bg);min-height:100vh;color:var(--ink);-webkit-font-smoothing:antialiased}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+button{font-family:inherit}
+
+/* NAV */
+.nav{background:var(--card);border-bottom:1px solid var(--border);height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;position:sticky;top:0;z-index:50}
+.nav-logo{font-family:var(--kedu-title);font-size:22px;display:flex;align-items:center;gap:9px;text-decoration:none;color:var(--ink)}
+.nav-logo .kk{background:linear-gradient(135deg,var(--primary),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.nav-badge{font-family:var(--kedu-title);font-size:13px;background:var(--primary-light);color:var(--primary);padding:3px 12px;border-radius:50px}
+.nav-right{display:flex;align-items:center;gap:10px}
+.nav-back{font-size:13px;color:var(--sub);text-decoration:none;display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border:1.5px solid var(--border);border-radius:50px;transition:all .15s;font-weight:500;background:none;cursor:pointer}
+.nav-back:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
+
+.wrap{max-width:1080px;margin:0 auto;padding:28px 26px 80px}
+
+/* 학급 줄 */
+.classbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+.cpill{border:1.5px solid var(--border);background:var(--card);border-radius:50px;padding:8px 16px;font-size:14px;cursor:pointer;color:var(--sub);font-weight:600;transition:all .14s}
+.cpill:hover{border-color:var(--primary);color:var(--primary)}
+.cpill.on{background:var(--primary);border-color:var(--primary);color:#fff}
+.cpill.add{border-style:dashed;color:var(--faint)}
+
+/* 탭 */
+.tabs{display:flex;gap:8px;background:#E9EEF7;padding:6px;border-radius:16px;margin-bottom:22px;width:fit-content}
+.tab{border:none;background:none;padding:10px 22px;border-radius:11px;font-size:15px;font-weight:700;color:var(--sub);cursor:pointer;transition:all .14s}
+.tab.on{background:var(--card);color:var(--primary);box-shadow:var(--shadow)}
+
+.panel{display:none}
+.panel.on{display:block}
+
+/* 무대 */
+.stage{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:36px 30px;text-align:center;position:relative;overflow:hidden;min-height:340px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px}
+.stage-eyebrow{font-size:14px;color:var(--sub);font-weight:600}
+.bigname{font-family:var(--kedu-title);font-size:clamp(52px,11vw,132px);line-height:1.05;letter-spacing:-2px;background:linear-gradient(120deg,var(--primary),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;word-break:keep-all;min-height:1.05em}
+.bigname.rolling{-webkit-text-fill-color:var(--faint);background:none;color:var(--faint)}
+.bigname.pop{animation:pop .38s cubic-bezier(.2,1.5,.4,1)}
+@keyframes pop{0%{transform:scale(.7);opacity:.2}100%{transform:scale(1);opacity:1}}
+.multi{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+.mname{font-family:var(--kedu-title);font-size:clamp(26px,4.4vw,46px);background:var(--primary-light);color:var(--primary-dark);padding:10px 22px;border-radius:16px;animation:pop .38s cubic-bezier(.2,1.5,.4,1)}
+
+.btn-go{height:62px;padding:0 44px;background:linear-gradient(120deg,var(--primary),#7AA6FF);color:#fff;border:none;border-radius:18px;font-family:var(--kedu-title);font-size:24px;cursor:pointer;box-shadow:0 8px 22px rgba(91,142,248,.34);transition:transform .14s,box-shadow .14s}
+.btn-go:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(91,142,248,.42)}
+.btn-go:active{transform:translateY(0)}
+.btn-go:disabled{background:#CBD5E0;box-shadow:none;cursor:not-allowed;transform:none}
+.hint{font-size:12.5px;color:var(--faint)}
+
+/* 옵션 줄 */
+.opts{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:18px 0 0;justify-content:center}
+.opt{display:inline-flex;align-items:center;gap:7px;background:var(--card);border:1.5px solid var(--border);border-radius:50px;padding:8px 15px;font-size:13.5px;color:var(--sub);font-weight:600;cursor:pointer}
+.opt input{accent-color:var(--primary);width:16px;height:16px;cursor:pointer}
+.opt select,.opt input[type=number]{border:none;background:none;font-family:inherit;font-size:13.5px;color:var(--primary-dark);font-weight:700;cursor:pointer;width:52px}
+.opt input[type=number]{width:56px;text-align:center}
+
+/* 진행 줄 */
+.progress{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:18px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px 18px;flex-wrap:wrap}
+.prog-txt{font-size:13.5px;color:var(--sub)}
+.prog-txt b{color:var(--primary-dark);font-size:15px}
+.bar{flex:1;min-width:140px;height:9px;background:#E9EEF7;border-radius:50px;overflow:hidden}
+.bar span{display:block;height:100%;background:linear-gradient(90deg,var(--primary),var(--pink));border-radius:50px;transition:width .3s}
+.btn-mini{border:1.5px solid var(--border);background:var(--card);border-radius:50px;padding:7px 14px;font-size:12.5px;color:var(--sub);cursor:pointer;font-weight:600}
+.btn-mini:hover{border-color:var(--primary);color:var(--primary)}
+
+/* 이번 바퀴 뽑힌 사람 */
+.drawnbox{margin-top:16px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px 18px}
+.drawnbox h4{font-size:13px;color:var(--sub);margin-bottom:11px;font-weight:700}
+.tags{display:flex;flex-wrap:wrap;gap:7px}
+.tag{font-size:13px;background:var(--bg);color:var(--sub);padding:5px 12px;border-radius:50px}
+.tag.new{background:var(--primary-light);color:var(--primary-dark);font-weight:700}
+
+/* 모둠 결과 */
+.groups{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px;margin-top:20px}
+.gcard{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:var(--shadow);animation:pop .34s cubic-bezier(.2,1.4,.4,1)}
+.gcard h3{font-family:var(--kedu-title);font-size:19px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.gdot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.gcard .cnt{font-size:12px;color:var(--faint);font-weight:400;margin-left:auto}
+.gcard ul{list-style:none;display:flex;flex-direction:column;gap:7px}
+.gcard li{font-size:17px;color:var(--ink);padding:5px 0;border-bottom:1px dashed #EDF1F7}
+.gcard li:last-child{border:none}
+
+/* 명단 패널 */
+.sheet{position:fixed;inset:0;background:rgba(20,30,55,.42);display:none;z-index:100;backdrop-filter:blur(2px)}
+.sheet.on{display:block}
+.sheet-in{position:absolute;right:0;top:0;bottom:0;width:min(460px,94vw);background:var(--card);padding:26px;overflow-y:auto;box-shadow:var(--shadow-lg);display:flex;flex-direction:column;gap:16px}
+.sheet-in h2{font-family:var(--kedu-title);font-size:24px}
+.field label{display:block;font-size:13px;color:var(--sub);font-weight:700;margin-bottom:7px}
+.field input[type=text],.field textarea{width:100%;border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;font-family:inherit;font-size:15px;color:var(--ink);background:#FAFBFE}
+.field textarea{min-height:230px;resize:vertical;line-height:1.7}
+.field input:focus,.field textarea:focus{outline:none;border-color:var(--primary);background:#fff}
+.sheet-actions{display:flex;gap:10px;margin-top:auto;padding-top:10px}
+.btn-primary{flex:1;height:50px;background:linear-gradient(120deg,var(--primary),#7AA6FF);color:#fff;border:none;border-radius:14px;font-family:var(--kedu-title);font-size:17px;cursor:pointer}
+.btn-ghost{height:50px;padding:0 20px;background:none;border:1.5px solid var(--border);border-radius:14px;color:var(--sub);font-size:15px;cursor:pointer}
+.btn-danger{background:none;border:none;color:#E53E3E;font-size:13px;cursor:pointer;text-decoration:underline;align-self:flex-start}
+
+/* 오늘 제외 */
+.exwrap{margin-top:16px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px 18px}
+.exwrap h4{font-size:13px;color:var(--sub);margin-bottom:11px;font-weight:700}
+.exname{font-size:13.5px;border:1.5px solid var(--border);background:var(--card);color:var(--sub);padding:6px 13px;border-radius:50px;cursor:pointer;transition:all .13s}
+.exname:hover{border-color:var(--primary)}
+.exname.off{background:#FFF1F4;border-color:#FFD3DC;color:#C53B58;text-decoration:line-through}
+
+/* 빈 상태 */
+.empty{background:var(--card);border:2px dashed #CBD6EA;border-radius:var(--radius);padding:60px 30px;text-align:center;color:var(--sub)}
+.empty .big{font-family:var(--kedu-title);font-size:26px;color:var(--ink);margin-bottom:10px}
+.empty button{margin-top:20px}
+
+@media(max-width:640px){
+  .wrap{padding:20px 16px 60px}
+  .stage{padding:28px 18px;min-height:280px}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a class="nav-logo" href="/"><span class="kk">케이에듀</span></a>
+  <div class="nav-right">
+    <span class="nav-badge">뽑기</span>
+    <a class="nav-back" href="/?role=teacher">← 선생님 도구</a>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <div class="classbar" id="classbar"></div>
+
+  <div class="tabs">
+    <button class="tab on" data-tab="draw">이름 뽑기</button>
+    <button class="tab" data-tab="group">모둠 짜기</button>
+  </div>
+
+  <div id="no-class" class="empty" style="display:none">
+    <div class="big">먼저 우리 반 명단을 넣어 주세요</div>
+    <div>이름을 붙여넣기만 하면 됩니다. 번호가 앞에 붙어 있어도 알아서 떼어 냅니다.</div>
+    <button class="btn-go" onclick="openSheet(null)">명단 넣기</button>
+  </div>
+
+  <div id="main" style="display:none">
+
+    <!-- 이름 뽑기 -->
+    <section class="panel on" id="p-draw">
+      <div class="stage">
+        <div class="stage-eyebrow" id="draw-eyebrow">누가 나올까요?</div>
+        <div class="bigname" id="bigname">준비</div>
+        <div class="multi" id="multi" style="display:none"></div>
+        <button class="btn-go" id="btn-draw" onclick="doDraw()">뽑기</button>
+        <div class="hint">스페이스바로도 뽑을 수 있어요</div>
+      </div>
+
+      <div class="opts">
+        <label class="opt"><input type="checkbox" id="opt-repeat"> 뽑힌 사람도 다시 뽑기</label>
+        <label class="opt">한 번에
+          <input type="number" id="opt-count" value="1" min="1" max="10"> 명
+        </label>
+      </div>
+
+      <div class="progress">
+        <div class="prog-txt" id="prog-txt"></div>
+        <div class="bar"><span id="prog-bar" style="width:0%"></span></div>
+        <button class="btn-mini" onclick="resetRound()">이번 바퀴 처음부터</button>
+      </div>
+
+      <div class="drawnbox" id="drawnbox" style="display:none">
+        <h4>이번 바퀴에 나온 사람</h4>
+        <div class="tags" id="drawntags"></div>
+      </div>
+    </section>
+
+    <!-- 모둠 짜기 -->
+    <section class="panel" id="p-group">
+      <div class="stage" style="min-height:200px">
+        <div class="stage-eyebrow">오늘 모둠을 새로 짜 볼까요?</div>
+        <div class="opts" style="margin:0">
+          <label class="opt">
+            <select id="g-mode">
+              <option value="count">모둠 수</option>
+              <option value="size">한 모둠 인원</option>
+            </select>
+            <input type="number" id="g-value" value="6" min="1" max="30">
+            <span id="g-unit">개</span>
+          </label>
+        </div>
+        <button class="btn-go" onclick="doGroups()">모둠 짜기</button>
+        <div class="hint" id="g-hint"></div>
+      </div>
+      <div class="groups" id="groups"></div>
+    </section>
+
+    <!-- 오늘 제외 -->
+    <div class="exwrap">
+      <h4>오늘 빠지는 사람 (이름을 누르면 오늘 뽑기에서 빠집니다)</h4>
+      <div class="tags" id="exlist"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 명단 시트 -->
+<div class="sheet" id="sheet" onclick="if(event.target===this)closeSheet()">
+  <div class="sheet-in">
+    <h2 id="sheet-title">우리 반 명단</h2>
+    <div class="field">
+      <label>반 이름</label>
+      <input type="text" id="f-name" placeholder="예) 3학년 2반">
+    </div>
+    <div class="field">
+      <label>학생 이름 (한 줄에 한 명, 쉼표로 이어 써도 됩니다)</label>
+      <textarea id="f-names" placeholder="1. 김하늘&#10;2. 박바다&#10;3. 이든"></textarea>
+    </div>
+    <div class="hint" id="f-count"></div>
+    <button class="btn-danger" id="f-del" style="display:none" onclick="deleteClass()">이 반 지우기</button>
+    <div class="sheet-actions">
+      <button class="btn-ghost" onclick="closeSheet()">닫기</button>
+      <button class="btn-primary" onclick="saveClass()">저장</button>
+    </div>
+  </div>
+</div>
+
+<script src="/pick/pick_logic.js"></script>
+<script>
+/* ── 저장소 ── */
+var KEY = 'kedu_pick_v1';
+var S = { classes: [], activeId: null };
+
+function load() {
+  try {
+    var raw = localStorage.getItem(KEY);
+    if (raw) {
+      var p = JSON.parse(raw);
+      if (p && Array.isArray(p.classes)) S = p;
+    }
+  } catch (e) { /* 저장소를 못 쓰는 환경 — 이번 시간만 메모리로 동작 */ }
+  if (!S.classes.length) S.activeId = null;
+  else if (!S.classes.some(function (c) { return c.id === S.activeId; })) S.activeId = S.classes[0].id;
+}
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { }
+}
+function active() {
+  for (var i = 0; i < S.classes.length; i++) if (S.classes[i].id === S.activeId) return S.classes[i];
+  return null;
+}
+function newId() { return 'c' + Date.now().toString(36) + Math.floor(Math.random() * 1000); }
+
+/* ── 학급 줄 ── */
+function renderClassbar() {
+  var el = document.getElementById('classbar');
+  el.innerHTML = '';
+  S.classes.forEach(function (c) {
+    var b = document.createElement('button');
+    b.className = 'cpill' + (c.id === S.activeId ? ' on' : '');
+    b.textContent = c.name + ' · ' + c.names.length + '명';
+    b.onclick = function () {
+      if (c.id === S.activeId) { openSheet(c.id); return; }
+      S.activeId = c.id; save(); renderAll();
+    };
+    el.appendChild(b);
+  });
+  var add = document.createElement('button');
+  add.className = 'cpill add';
+  add.textContent = '+ 반 추가';
+  add.onclick = function () { openSheet(null); };
+  el.appendChild(add);
+}
+
+/* ── 명단 시트 ── */
+var editingId = null;
+function openSheet(id) {
+  editingId = id;
+  var c = null;
+  if (id) for (var i = 0; i < S.classes.length; i++) if (S.classes[i].id === id) c = S.classes[i];
+  document.getElementById('sheet-title').textContent = c ? '명단 고치기' : '새 반 만들기';
+  document.getElementById('f-name').value = c ? c.name : '';
+  document.getElementById('f-names').value = c ? c.names.join('\n') : '';
+  document.getElementById('f-del').style.display = c ? 'block' : 'none';
+  updateCount();
+  document.getElementById('sheet').classList.add('on');
+}
+function closeSheet() { document.getElementById('sheet').classList.remove('on'); }
+function updateCount() {
+  var n = PickLogic.parseRoster(document.getElementById('f-names').value).length;
+  document.getElementById('f-count').textContent = n ? n + '명으로 읽었습니다.' : '';
+}
+document.getElementById('f-names').addEventListener('input', updateCount);
+
+function saveClass() {
+  var name = document.getElementById('f-name').value.trim() || '우리 반';
+  var names = PickLogic.parseRoster(document.getElementById('f-names').value);
+  if (!names.length) { alert('학생 이름을 한 명 이상 넣어 주세요.'); return; }
+  var c = null;
+  if (editingId) for (var i = 0; i < S.classes.length; i++) if (S.classes[i].id === editingId) c = S.classes[i];
+  if (c) {
+    c.name = name;
+    c.names = names;
+    c.excluded = (c.excluded || []).filter(function (n) { return names.indexOf(n) !== -1; });
+    c.drawn = (c.drawn || []).filter(function (n) { return names.indexOf(n) !== -1; });
+  } else {
+    c = { id: newId(), name: name, names: names, excluded: [], drawn: [], round: 1 };
+    S.classes.push(c);
+    S.activeId = c.id;
+  }
+  save(); closeSheet(); renderAll();
+}
+function deleteClass() {
+  if (!editingId) return;
+  if (!confirm('이 반 명단을 지울까요?')) return;
+  S.classes = S.classes.filter(function (c) { return c.id !== editingId; });
+  S.activeId = S.classes.length ? S.classes[0].id : null;
+  save(); closeSheet(); renderAll();
+}
+
+/* ── 탭 ── */
+Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (t) {
+  t.onclick = function () {
+    Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (x) { x.classList.remove('on'); });
+    Array.prototype.forEach.call(document.querySelectorAll('.panel'), function (x) { x.classList.remove('on'); });
+    t.classList.add('on');
+    document.getElementById('p-' + t.dataset.tab).classList.add('on');
+  };
+});
+document.getElementById('g-mode').addEventListener('change', function () {
+  document.getElementById('g-unit').textContent = this.value === 'count' ? '개' : '명';
+  document.getElementById('g-value').value = this.value === 'count' ? 6 : 4;
+  renderGroupHint();
+});
+
+/* ── 이름 뽑기 ── */
+var rolling = false;
+function doDraw() {
+  var c = active(); if (!c || rolling) return;
+  var pool = PickLogic.activePool(c.names, c.excluded || []);
+  if (!pool.length) { alert('오늘 뽑을 수 있는 사람이 없습니다. 아래에서 빠진 사람을 풀어 주세요.'); return; }
+
+  var n = Math.max(1, Math.min(10, parseInt(document.getElementById('opt-count').value, 10) || 1));
+  var repeat = document.getElementById('opt-repeat').checked;
+  var big = document.getElementById('bigname'), multi = document.getElementById('multi');
+
+  rolling = true;
+  document.getElementById('btn-draw').disabled = true;
+  multi.style.display = 'none'; multi.innerHTML = '';
+  big.style.display = 'block';
+  big.classList.add('rolling'); big.classList.remove('pop');
+
+  var ticks = 0;
+  var spin = setInterval(function () {
+    big.textContent = pool[Math.floor(Math.random() * pool.length)];
+    ticks++;
+  }, 60);
+
+  setTimeout(function () {
+    clearInterval(spin);
+    var res;
+    if (n === 1 || repeat) {
+      res = PickLogic.drawOne({ names: c.names, excluded: c.excluded || [], drawn: c.drawn || [], round: c.round || 1, repeatAllowed: repeat });
+      if (!repeat) { c.drawn = res.drawn; c.round = res.round; }
+      big.classList.remove('rolling');
+      big.textContent = res.name;
+      void big.offsetWidth; big.classList.add('pop');
+    } else {
+      var m = PickLogic.drawMany({ names: c.names, excluded: c.excluded || [], drawn: c.drawn || [], round: c.round || 1 }, n);
+      c.drawn = m.drawn; c.round = m.round;
+      big.style.display = 'none';
+      multi.style.display = 'flex';
+      m.picked.forEach(function (nm, i) {
+        var d = document.createElement('div');
+        d.className = 'mname'; d.textContent = nm;
+        d.style.animationDelay = (i * 90) + 'ms';
+        multi.appendChild(d);
+      });
+    }
+    save();
+    rolling = false;
+    document.getElementById('btn-draw').disabled = false;
+    renderProgress();
+  }, 900);
+}
+
+function resetRound() {
+  var c = active(); if (!c) return;
+  c.drawn = []; c.round = 1; save();
+  document.getElementById('bigname').textContent = '준비';
+  document.getElementById('bigname').style.display = 'block';
+  document.getElementById('multi').style.display = 'none';
+  renderProgress();
+}
+
+function renderProgress() {
+  var c = active(); if (!c) return;
+  var pool = PickLogic.activePool(c.names, c.excluded || []);
+  var drawn = (c.drawn || []).filter(function (n) { return pool.indexOf(n) !== -1; });
+  var pct = pool.length ? Math.round(drawn.length * 100 / pool.length) : 0;
+  document.getElementById('prog-txt').innerHTML =
+    (c.round > 1 ? (c.round + '바퀴째 · ') : '') + '오늘 <b>' + pool.length + '</b>명 중 <b>' + drawn.length + '</b>명 나옴';
+  document.getElementById('prog-bar').style.width = pct + '%';
+
+  var box = document.getElementById('drawnbox');
+  box.style.display = drawn.length ? 'block' : 'none';
+  var tags = document.getElementById('drawntags');
+  tags.innerHTML = '';
+  drawn.forEach(function (n, i) {
+    var s = document.createElement('span');
+    s.className = 'tag' + (i === drawn.length - 1 ? ' new' : '');
+    s.textContent = n;
+    tags.appendChild(s);
+  });
+  document.getElementById('draw-eyebrow').textContent =
+    drawn.length >= pool.length && pool.length ? '한 바퀴를 다 돌았어요 — 다음엔 새 바퀴가 열립니다' : '누가 나올까요?';
+}
+
+/* ── 모둠 짜기 ── */
+function renderGroupHint() {
+  var c = active(); if (!c) return;
+  var pool = PickLogic.activePool(c.names, c.excluded || []);
+  var mode = document.getElementById('g-mode').value;
+  var v = Math.max(1, parseInt(document.getElementById('g-value').value, 10) || 1);
+  var g = PickLogic.makeGroups(pool, { mode: mode, value: v, rng: function () { return 0.5; } });
+  var sizes = g.map(function (x) { return x.length; });
+  var min = Math.min.apply(null, sizes.length ? sizes : [0]), max = Math.max.apply(null, sizes.length ? sizes : [0]);
+  document.getElementById('g-hint').textContent = pool.length
+    ? '오늘 ' + pool.length + '명 → 모둠 ' + g.length + '개 (' + (min === max ? min + '명씩' : min + '~' + max + '명') + ')'
+    : '';
+}
+document.getElementById('g-value').addEventListener('input', renderGroupHint);
+
+function doGroups() {
+  var c = active(); if (!c) return;
+  var mode = document.getElementById('g-mode').value;
+  var v = Math.max(1, parseInt(document.getElementById('g-value').value, 10) || 1);
+  var groups = PickLogic.makeGroups(c.names, { mode: mode, value: v, excluded: c.excluded || [] });
+  var wrap = document.getElementById('groups');
+  wrap.innerHTML = '';
+  if (!groups.length) { alert('오늘 모둠을 짤 사람이 없습니다.'); return; }
+  var colors = ['var(--g1)', 'var(--g2)', 'var(--g3)', 'var(--g4)', 'var(--g5)', 'var(--g6)', 'var(--g7)', 'var(--g8)'];
+  groups.forEach(function (g, i) {
+    var card = document.createElement('div');
+    card.className = 'gcard';
+    card.style.animationDelay = (i * 70) + 'ms';
+    var h = document.createElement('h3');
+    var dot = document.createElement('span');
+    dot.className = 'gdot'; dot.style.background = colors[i % colors.length];
+    h.appendChild(dot);
+    h.appendChild(document.createTextNode((i + 1) + '모둠'));
+    var cnt = document.createElement('span');
+    cnt.className = 'cnt'; cnt.textContent = g.length + '명';
+    h.appendChild(cnt);
+    card.appendChild(h);
+    var ul = document.createElement('ul');
+    g.forEach(function (nm) { var li = document.createElement('li'); li.textContent = nm; ul.appendChild(li); });
+    card.appendChild(ul);
+    wrap.appendChild(card);
+  });
+  renderGroupHint();
+}
+
+/* ── 오늘 빠지는 사람 ── */
+function renderExcluded() {
+  var c = active(); if (!c) return;
+  var el = document.getElementById('exlist');
+  el.innerHTML = '';
+  c.excluded = c.excluded || [];
+  c.names.forEach(function (n) {
+    var off = c.excluded.indexOf(n) !== -1;
+    var b = document.createElement('button');
+    b.className = 'exname' + (off ? ' off' : '');
+    b.textContent = n;
+    b.onclick = function () {
+      if (off) c.excluded = c.excluded.filter(function (x) { return x !== n; });
+      else c.excluded.push(n);
+      save(); renderExcluded(); renderProgress(); renderGroupHint();
+    };
+    el.appendChild(b);
+  });
+}
+
+/* ── 전체 렌더 ── */
+function renderAll() {
+  renderClassbar();
+  var has = !!active();
+  document.getElementById('no-class').style.display = has ? 'none' : 'block';
+  document.getElementById('main').style.display = has ? 'block' : 'none';
+  if (has) {
+    renderExcluded();
+    renderProgress();
+    renderGroupHint();
+    document.getElementById('bigname').textContent = '준비';
+    document.getElementById('bigname').style.display = 'block';
+    document.getElementById('multi').style.display = 'none';
+    document.getElementById('groups').innerHTML = '';
+  }
+}
+
+document.addEventListener('keydown', function (e) {
+  if (e.code !== 'Space') return;
+  var tag = (e.target.tagName || '').toLowerCase();
+  if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+  if (document.getElementById('sheet').classList.contains('on')) return;
+  if (!document.getElementById('p-draw').classList.contains('on')) return;
+  e.preventDefault();
+  doDraw();
+});
+
+load();
+renderAll();
+</script>
+</body>
+</html>
