@@ -125,6 +125,7 @@ window.MK_SCREENS.editor = (() => {
       ${offBtn('아이콘·스티커', '재료 미입고')}`,
     photo: () => `<button class="ph-item" data-pane="ins-image">내 사진 파일 넣기 (8MB)</button>
       ${window.MK_SEG ? `<button class="ph-item" data-pane="person-swap">🪄 인물 바꾸기 — 선택한 사진 속 사람을 오리고·지우고·바꿔요</button>` : ''}
+      ${window.MK_TOON ? `<button class="ph-item" data-pane="toon">🎭 캐릭터 필터 — 선택한 사진을 만화·스케치·픽셀로 (6가지)</button>` : ''}
       ${stockBlock('P', '🎨 재료 검색 (내장 생성)')}
       ${offBtn('실사 스톡 사진', '외부 소스 미연결')}`,
     video: () => `<button class="ph-item" data-pane="ins-video">내 영상 파일 넣기 (8MB)</button>
@@ -607,6 +608,24 @@ window.MK_SCREENS.editor = (() => {
                 const h = Math.min(92, w * (dim.h / dim.w) * (sw / sh));
                 sc.elements.push({ kind: 'image', x: 34, y: Math.max(2, 50 - h / 2), w, h, fit: 'contain', label: '오려낸 인물', src: png });
                 e.selEl = sc.elements.length - 1;
+                PG.render();
+              },
+            });
+          }
+          /* R135 — 캐릭터 필터: 같은 원칙(스키마 0, el.src 교체가 전부) */
+          if (act === 'toon') {
+            if (!window.MK_TOON) return;
+            const sc2 = doc.scenes[e.sceneIdx];
+            const sel2 = e.selEl != null ? sc2.elements[e.selEl] : null;
+            if (!sel2 || sel2.kind !== 'image' || !sel2.src || sel2.video) {
+              return alert('사진 요소를 먼저 선택해 주세요 (영상·도형은 안 돼요)');
+            }
+            const t2 = sel2;
+            return window.MK_TOON.open({
+              src: t2.src,
+              onApply: (url, label) => {
+                H.push(label || '캐릭터 필터');
+                t2.src = url; delete t2.fill;
                 PG.render();
               },
             });
