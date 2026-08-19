@@ -16,6 +16,7 @@
 | `draw/`, `kmake/`, `kple/` | 케이아트/케이메이크/케이플 | draw/assets ≈ 25MB (에셋 비대 시 분리 후보) |
 | `sql/` | Supabase 수동 실행 SQL | **`sql/APPLIED.md`가 적용 이력 원장** — 새 SQL은 여기에 추가 |
 | `auth/ board/ classwork/ parent/ teacher/ admin/` | 계정·게시판·케이박스·학부모·교사·관리 | |
+| `live/` | 케이라이브 (실시간 모니터·스포트라이트) | `klive-core.js` 순수 로직 + 학생 `index.html` + 교사 `teacher.html` + `tests/` |
 | `terms/ privacy/ docs/` | 약관·개인정보·내부 문서 | |
 | `archive/` | 폐기 콘텐츠 보관 | old-math-content |
 

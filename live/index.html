@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>케이라이브 · K-edu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../kedu_config.js"></script>
+<script src="klive-core.js"></script>
+<style>
+  :root{ --paper:#FBF7F1; --ink:#21345E; --sub:#6b7a99; --line:#E8E0D4;
+         --go:#22A06B; --spot:#FF85A1; }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;background:var(--paper);color:var(--ink);
+            font-family:'Gowun Dodum',system-ui,sans-serif}
+
+  /* ── 입장 화면 ── */
+  #join{height:100%;display:flex;flex-direction:column;align-items:center;
+        justify-content:center;gap:14px;padding:24px;text-align:center}
+  #join h1{font-family:'Jua';font-size:34px;margin:0}
+  #join h1 .k{color:var(--go)}
+  #join p{margin:0;color:var(--sub);font-size:15px;line-height:1.6}
+  .field{width:min(340px,100%);text-align:left}
+  .field label{font-size:13px;color:var(--sub);display:block;margin:0 0 6px 4px}
+  .field input{width:100%;font-family:'Jua';font-size:22px;color:var(--ink);
+               background:#fff;border:2px solid var(--line);border-radius:14px;
+               padding:12px 16px;outline:none;text-align:center}
+  .field input:focus{border-color:var(--go)}
+  #code{letter-spacing:8px;text-transform:uppercase}
+  #goBtn{width:min(340px,100%);font-family:'Jua';font-size:20px;color:#fff;
+         background:var(--go);border:none;border-radius:14px;padding:14px;
+         cursor:pointer;margin-top:6px;box-shadow:0 6px 18px rgba(34,160,107,.3)}
+  #goBtn:disabled{opacity:.45;box-shadow:none}
+  #resume{font-size:14px;color:var(--sub);background:none;border:1px dashed var(--line);
+          border-radius:12px;padding:10px 16px;cursor:pointer;display:none}
+  #joinMsg{font-size:13.5px;color:#c0392b;min-height:18px}
+
+  /* ── 라이브 화면 ── */
+  #stage{display:none;height:100%}
+  #frame{width:100%;height:100%;border:0;display:block}
+  #badge{position:fixed;left:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));
+         display:none;align-items:center;gap:7px;font-size:13px;color:#fff;
+         background:rgba(33,52,94,.88);border-radius:999px;padding:7px 13px;
+         z-index:9500;cursor:pointer;user-select:none;font-family:'Gowun Dodum'}
+  #badge .dot{width:8px;height:8px;border-radius:50%;background:var(--go);
+              box-shadow:0 0 7px var(--go);animation:pulse 1.6s infinite}
+  #badge.off .dot{background:#9aa6b5;box-shadow:none;animation:none}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  #leave{position:fixed;left:14px;bottom:calc(56px + env(safe-area-inset-bottom,0px));
+         display:none;font-family:'Gowun Dodum';font-size:13.5px;color:var(--ink);
+         background:#fff;border:1px solid var(--line);border-radius:12px;
+         padding:9px 14px;z-index:9500;cursor:pointer;box-shadow:0 8px 24px rgba(33,52,94,.18)}
+
+  /* ── 스포트라이트 ── */
+  #meBar{position:fixed;top:0;left:0;right:0;display:none;z-index:9600;
+         background:var(--spot);color:#fff;font-family:'Jua';font-size:15px;
+         text-align:center;padding:9px}
+  #watch{position:fixed;inset:0;display:none;z-index:9700;background:rgba(13,17,23,.94);
+         flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px}
+  #watchName{font-family:'Jua';font-size:22px;color:#fff}
+  #watchName .k{color:#ffe08a}
+  #watchImg{max-width:96%;max-height:74%;border-radius:14px;background:#1b2230;
+            box-shadow:0 24px 60px rgba(0,0,0,.5)}
+  #watchPage{color:#9aa6b5;font-size:14px}
+  #toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);display:none;
+         background:#243B53;color:#fff;font-size:14px;padding:11px 20px;border-radius:50px;
+         z-index:9800;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+</style>
+</head>
+<body>
+
+<div id="join">
+  <h1>케이<span class="k">라이브</span></h1>
+  <p>선생님 화면의 <b>네 글자 코드</b>를 넣으면<br>선생님과 함께 공부할 수 있어요.</p>
+  <div class="field"><label>내 이름</label><input id="name" maxlength="10" placeholder="이름"></div>
+  <div class="field"><label>코드</label><input id="code" maxlength="4" placeholder="ABCD" autocomplete="off"></div>
+  <button id="goBtn">시작하기</button>
+  <button id="resume"></button>
+  <div id="joinMsg"></div>
+</div>
+
+<div id="stage"><iframe id="frame" title="K-edu"></iframe></div>
+<div id="badge"><span class="dot"></span><span id="badgeTxt">라이브</span></div>
+<button id="leave">라이브 나가기</button>
+<div id="meBar">📣 지금 내 화면을 반 친구들이 보고 있어요</div>
+<div id="watch"><div id="watchName"></div><img id="watchImg" alt=""><div id="watchPage"></div></div>
+<div id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+  var C = window.KLiveCore;
+  var NS = 'klive_v1', TTL = 6 * 3600 * 1000;
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* ── 세션 ── */
+  function loadSess() {
+    try {
+      var s = JSON.parse(localStorage.getItem(NS));
+      return (s && s.code && s.name && s.sid && Date.now() - s.at < TTL) ? s : null;
+    } catch (e) { return null; }
+  }
+  function saveSess(s) { try { localStorage.setItem(NS, JSON.stringify(s)); } catch (e) {} }
+  function clearSess() { try { localStorage.removeItem(NS); } catch (e) {} }
+
+  /* ── 입장 화면 ── */
+  var old = loadSess();
+  if (old) {
+    $('resume').style.display = 'inline-block';
+    $('resume').textContent = '이어서 들어가기 — ' + old.name + ' · ' + old.code;
+    $('resume').onclick = function () { start(old); };
+  }
+  $('code').addEventListener('input', function () { this.value = this.value.toUpperCase(); });
+  $('goBtn').onclick = function () {
+    var name = $('name').value.trim();
+    var code = C.normCode($('code').value);
+    if (!name) { $('joinMsg').textContent = '이름을 넣어 주세요.'; return; }
+    if (!code) { $('joinMsg').textContent = '코드 네 글자를 다시 확인해 주세요.'; return; }
+    start({ code: code, name: name, sid: C.makeSid(), at: Date.now() });
+  };
+
+  /* ── 라이브 런타임 ── */
+  var conn = null, sender = C.createSender(), spot = null, sess = null;
+  var page = '', path = '/', lastAct = Date.now(), forceState = true;
+
+  function start(s) {
+    sess = s; sess.at = Date.now(); saveSess(sess);
+    $('join').style.display = 'none';
+    $('stage').style.display = 'block';
+    $('badge').style.display = 'flex';
+    $('badgeTxt').textContent = '라이브 · ' + sess.name;
+    $('frame').src = '/';
+    openChannel();
+    setInterval(tick, 1000);
+  }
+
+  function openChannel() {
+    var db = getKeduDb();
+    var ch = db.channel(C.channelName(sess.code), { config: { broadcast: { self: false, ack: true } } });
+    ch.on('broadcast', { event: 'kl' }, function (e) { if (e && e.payload) onMsg(e.payload); });
+    ch.subscribe(function (status) {
+      var on = status === 'SUBSCRIBED';
+      $('badge').classList.toggle('off', !on);
+      $('badgeTxt').textContent = on ? '라이브 · ' + sess.name : '연결 중…';
+      if (on) { send({ kind: 'hello', sid: sess.sid, name: sess.name }); forceState = true; }
+    });
+    conn = {
+      send: function (p) { try { ch.send({ type: 'broadcast', event: 'kl', payload: p }); } catch (e) {} },
+      close: function () { try { ch.unsubscribe(); db.removeChannel(ch); } catch (e) {} }
+    };
+  }
+  function send(p) { if (conn) conn.send(p); }
+
+  function onMsg(m) {
+    if (!C.isValid(m)) return;
+    if (m.kind === 'ping') { send({ kind: 'hello', sid: sess.sid, name: sess.name }); forceState = true; }
+    else if (m.kind === 'spotlight') { spot = C.spotReduce(spot, m); renderSpot(); }
+    else if (m.kind === 'state') {
+      // 지목된 친구의 화면만 관심 — 나머지 상태 방송은 무시
+      if (spot && m.sid === spot.sid && C.spotView(spot, sess.sid) === 'watch') {
+        if (m.thumb) $('watchImg').src = m.thumb;
+        $('watchPage').textContent = m.page || '';
+      }
+    }
+    else if (m.kind === 'end') {
+      spot = null; renderSpot(); clearSess();
+      $('badge').classList.add('off'); $('badgeTxt').textContent = '라이브 끝';
+      toast('라이브가 끝났어요. 계속 공부해도 좋아요!');
+      if (conn) conn.close(); conn = null;
+    }
+  }
+
+  function renderSpot() {
+    var v = C.spotView(spot, sess ? sess.sid : null);
+    $('meBar').style.display = v === 'me' ? 'block' : 'none';
+    $('watch').style.display = v === 'watch' ? 'flex' : 'none';
+    if (v === 'watch') {
+      $('watchName').innerHTML = '<span class="k">' + esc(spot.name) + '</span> 친구의 화면';
+      $('watchImg').removeAttribute('src'); $('watchPage').textContent = '';
+    }
+  }
+
+  /* ── 프레임 관찰 ── */
+  $('frame').addEventListener('load', function () {
+    try {
+      var d = this.contentDocument;
+      page = (d.title || '').replace(/\s*·\s*K-edu.*$/, '') || 'K-edu';
+      path = this.contentWindow.location.pathname;
+      ['pointerdown', 'keydown', 'touchstart'].forEach(function (ev) {
+        d.addEventListener(ev, function () { lastAct = Date.now(); }, { passive: true, capture: true });
+      });
+      forceState = true;
+    } catch (e) { /* 크로스오리진 등 — 조용히 넘어감 */ }
+  });
+
+  // 프레임 속 가장 큰 캔버스 → 축소 JPEG (2D 전용 — WebGL은 검게 나와 코어가 걸러냄)
+  function grabThumb(w, q) {
+    try {
+      var d = $('frame').contentDocument;
+      if (!d) return null;
+      var best = null, area = 10000;
+      var cs = d.getElementsByTagName('canvas');
+      for (var i = 0; i < cs.length; i++) {
+        var r = cs[i].getBoundingClientRect();
+        if (r.width * r.height > area && r.width > 0) { best = cs[i]; area = r.width * r.height; }
+      }
+      if (!best) return null;
+      var h = Math.round(w * best.height / Math.max(1, best.width));
+      var off = document.createElement('canvas'); off.width = w; off.height = h;
+      off.getContext('2d').drawImage(best, 0, 0, w, h);
+      return off.toDataURL('image/jpeg', q);
+    } catch (e) { return null; } // 오염 캔버스 등
+  }
+
+  /* ── 송신 틱 ── */
+  function tick() {
+    if (!conn || !sess) return;
+    var now = Date.now();
+    var spotted = !!(spot && spot.sid === sess.sid);
+    var plan = sender.plan(spotted);
+    var thumb = null;
+    var t = grabThumb(plan.thumbW, plan.thumbQ);
+    if (sender.dueThumb(now, spotted, t)) thumb = t;
+    if (sender.dueState(now, spotted, forceState || !!thumb)) {
+      forceState = false;
+      var m = { kind: 'state', sid: sess.sid, name: sess.name, page: page, path: path, at: lastAct };
+      if (thumb) m.thumb = thumb;
+      send(m);
+    }
+  }
+
+  /* ── 나가기·정리 ── */
+  $('badge').onclick = function () {
+    var l = $('leave'); l.style.display = l.style.display === 'block' ? 'none' : 'block';
+  };
+  $('leave').onclick = function () {
+    send({ kind: 'bye', sid: sess.sid }); clearSess();
+    if (conn) conn.close();
+    location.href = '/';
+  };
+  window.addEventListener('pagehide', function () {
+    if (conn && sess) send({ kind: 'bye', sid: sess.sid });
+  });
+
+  function toast(t) {
+    $('toast').textContent = t; $('toast').style.display = 'block';
+    setTimeout(function () { $('toast').style.display = 'none'; }, 3500);
+  }
+  function esc(s) { return String(s).replace(/[<>&"]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]; }); }
+})();
+</script>
+</body>
+</html>

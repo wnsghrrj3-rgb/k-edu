@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>케이라이브 · 교사</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../kedu_config.js"></script>
+<script src="klive-core.js"></script>
+<style>
+  :root{ --bg:#0d1117; --panel:#161b22; --ink:#e8edf4; --sub:#9aa6b5;
+         --accent:#57d17a; --spot:#FF85A1; --line:rgba(255,255,255,.08); }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;background:
+      radial-gradient(1200px 700px at 70% -10%, #16202e 0%, var(--bg) 55%);
+      color:var(--ink);font-family:'Gowun Dodum',system-ui,sans-serif}
+
+  /* ── 시작 화면 ── */
+  #start{height:100%;display:flex;flex-direction:column;align-items:center;
+         justify-content:center;gap:16px;text-align:center;padding:24px}
+  #start h1{font-family:'Jua';font-size:36px;margin:0}
+  #start h1 .k{color:var(--accent)}
+  #start p{margin:0;color:var(--sub);font-size:15px;line-height:1.7}
+  #startBtn{font-family:'Jua';font-size:22px;color:#08130c;background:var(--accent);
+            border:none;border-radius:16px;padding:16px 34px;cursor:pointer;
+            box-shadow:0 8px 26px rgba(87,209,122,.3)}
+
+  /* ── 모니터 ── */
+  #mon{display:none;height:100%;flex-direction:column}
+  #bar{display:flex;align-items:center;gap:12px;padding:12px 16px;flex-wrap:wrap;
+       border-bottom:1px solid var(--line);background:rgba(13,17,23,.6)}
+  #bar .t{font-family:'Jua';font-size:19px}
+  #bar .t .k{color:var(--accent)}
+  #codeBox{font-family:'Jua';font-size:26px;letter-spacing:6px;color:#ffe08a;
+           background:rgba(255,255,255,.06);border:1px solid var(--line);
+           border-radius:12px;padding:6px 16px}
+  #hint{font-size:13px;color:var(--sub)}
+  #hint b{color:var(--ink)}
+  #spacer{flex:1}
+  #count{font-size:13.5px;color:var(--sub)}
+  #endBtn{font-family:'Gowun Dodum';font-size:13.5px;color:var(--ink);background:none;
+          border:1px solid var(--line);border-radius:999px;padding:7px 14px;cursor:pointer}
+  #spotBar{display:none;padding:9px 16px;background:var(--spot);color:#fff;
+           font-family:'Jua';font-size:15px;text-align:center;cursor:pointer}
+
+  #grid{flex:1;overflow:auto;padding:16px;display:grid;gap:14px;align-content:start;
+        grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
+  .tile{background:var(--panel);border:2px solid var(--line);border-radius:14px;
+        overflow:hidden;cursor:pointer;transition:transform .12s, border-color .12s}
+  .tile:hover{transform:translateY(-2px)}
+  .tile.spot{border-color:var(--spot);box-shadow:0 0 0 3px rgba(255,133,161,.25)}
+  .shot{aspect-ratio:16/10;background:#0a0e14;display:flex;align-items:center;
+        justify-content:center;overflow:hidden}
+  .shot img{width:100%;height:100%;object-fit:cover;display:block}
+  .shot .ph{font-family:'Jua';font-size:15px;color:#55637a;padding:0 12px;text-align:center;line-height:1.5}
+  .meta{display:flex;align-items:center;gap:7px;padding:9px 11px}
+  .dot{width:8px;height:8px;border-radius:50%;flex:none}
+  .dot.fresh{background:#57d17a;box-shadow:0 0 7px #57d17a}
+  .dot.idle{background:#ffd23f}
+  .dot.off{background:#55637a}
+  .nm{font-family:'Jua';font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pg{font-size:11.5px;color:var(--sub);margin-left:auto;white-space:nowrap;
+      overflow:hidden;text-overflow:ellipsis;max-width:55%}
+  #empty{grid-column:1/-1;text-align:center;color:var(--sub);padding:60px 20px;line-height:2}
+  #empty .big{font-family:'Jua';font-size:20px;color:var(--ink)}
+</style>
+</head>
+<body>
+
+<div id="start">
+  <h1>케이<span class="k">라이브</span></h1>
+  <p>학생들이 지금 무엇을 하는지 한 화면에서 봐요.<br>
+     타일을 누르면 그 학생 화면이 <b>반 전체</b>에 보여요.</p>
+  <button id="startBtn">라이브 시작</button>
+</div>
+
+<div id="mon">
+  <div id="bar">
+    <span class="t">케이<span class="k">라이브</span></span>
+    <span id="codeBox">····</span>
+    <span id="hint">학생: <b>keduclass.com/live</b> 에서 이 코드 입력</span>
+    <span id="spacer"></span>
+    <span id="count">0명</span>
+    <button id="endBtn">라이브 종료</button>
+  </div>
+  <div id="spotBar"></div>
+  <div id="grid">
+    <div id="empty"><div class="big">학생을 기다리는 중…</div>
+      학생이 <b>keduclass.com/live</b>에 코드를 넣으면 여기에 타일이 떠요.</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var C = window.KLiveCore;
+  var $ = function (id) { return document.getElementById(id); };
+  var roster = {}, spot = null, conn = null, code = null;
+
+  $('startBtn').onclick = function () {
+    code = C.makeCode();
+    $('start').style.display = 'none';
+    $('mon').style.display = 'flex';
+    $('codeBox').textContent = code;
+    open();
+    setInterval(render, 2000); // 생기 점 색 갱신
+  };
+
+  function open() {
+    var db = getKeduDb();
+    var ch = db.channel(C.channelName(code), { config: { broadcast: { self: false, ack: true } } });
+    ch.on('broadcast', { event: 'kl' }, function (e) { if (e && e.payload) onMsg(e.payload); });
+    ch.subscribe(function (status) {
+      if (status === 'SUBSCRIBED') send({ kind: 'ping' }); // 먼저 와 있던 학생 즉시 재송신
+    });
+    conn = { send: function (p) { try { ch.send({ type: 'broadcast', event: 'kl', payload: p }); } catch (e) {} } };
+  }
+  function send(p) { if (conn) conn.send(p); }
+
+  function onMsg(m) {
+    if (!C.isValid(m)) return;
+    if (m.kind === 'hello' || m.kind === 'state' || m.kind === 'bye') {
+      roster = C.rosterReduce(roster, m, Date.now());
+      render();
+    }
+  }
+
+  /* ── 타일 렌더 ── */
+  function render() {
+    var grid = $('grid'), now = Date.now();
+    var sids = Object.keys(roster).sort(function (a, b) {
+      return roster[a].name.localeCompare(roster[b].name, 'ko');
+    });
+    $('count').textContent = sids.length + '명';
+    $('empty').style.display = sids.length ? 'none' : 'block';
+
+    // 단순 재구축 (25명 × 0.5Hz — 부담 없음. 이미지 src 동일하면 브라우저 캐시)
+    var keep = { empty: true };
+    sids.forEach(function (sid) {
+      var s = roster[sid]; keep[sid] = true;
+      var el = document.getElementById('t_' + sid);
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 't_' + sid; el.className = 'tile';
+        el.innerHTML = '<div class="shot"></div><div class="meta"><span class="dot"></span><span class="nm"></span><span class="pg"></span></div>';
+        el.onclick = function () { toggleSpot(sid); };
+        grid.appendChild(el);
+      }
+      el.classList.toggle('spot', !!(spot && spot.sid === sid));
+      el.querySelector('.dot').className = 'dot ' + C.classify(now, s.at);
+      el.querySelector('.nm').textContent = s.name;
+      el.querySelector('.pg').textContent = s.page || '';
+      var shot = el.querySelector('.shot');
+      if (s.thumb) {
+        var img = shot.querySelector('img');
+        if (!img) { shot.innerHTML = '<img alt="">'; img = shot.querySelector('img'); }
+        if (img.src !== s.thumb) img.src = s.thumb;
+      } else {
+        shot.innerHTML = '<div class="ph">' + esc(s.page || '화면 준비 중') + '</div>';
+      }
+    });
+    // 퇴장한 타일 제거
+    Array.prototype.slice.call(grid.children).forEach(function (el) {
+      var sid = (el.id || '').replace(/^t_/, '');
+      if (el.id && el.id.indexOf('t_') === 0 && !keep[sid]) grid.removeChild(el);
+    });
+  }
+
+  /* ── 스포트라이트 ── */
+  function toggleSpot(sid) {
+    if (spot && spot.sid === sid) { setSpot(null); }
+    else if (roster[sid]) { setSpot({ sid: sid, name: roster[sid].name }); }
+  }
+  function setSpot(v) {
+    spot = v;
+    send(v ? { kind: 'spotlight', sid: v.sid, name: v.name }
+           : { kind: 'spotlight', sid: null });
+    $('spotBar').style.display = v ? 'block' : 'none';
+    if (v) $('spotBar').textContent = '📣 ' + v.name + ' 화면을 반 전체에 보여주는 중 — 여기나 타일을 다시 누르면 꺼져요';
+    render();
+  }
+  $('spotBar').onclick = function () { setSpot(null); };
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setSpot(null); });
+
+  /* ── 종료 ── */
+  $('endBtn').onclick = function () {
+    if (!confirm('라이브를 끝낼까요? 학생 화면의 라이브 표시가 사라져요.')) return;
+    setSpot(null);
+    send({ kind: 'end' });
+    location.reload();
+  };
+
+  function esc(s) { return String(s).replace(/[<>&"]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]; }); }
+})();
+</script>
+</body>
+</html>
