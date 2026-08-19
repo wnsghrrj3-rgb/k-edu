@@ -132,6 +132,19 @@
 
     var type = tpl.type === 'compose' ? (tpl.itemType || 'choice')
              : (tpl.itemType || (tpl.itemTypeOf ? tpl.itemTypeOf(p) : 'choice'));
+
+    /* 세트 단위 유형 섞기(def.shortRatio — 아침수학이 쓴다):
+       기본이 객관식인 문항 일부를 단답으로 뒤집어 유형을 섞는다.
+       - 답이 0 이상 정수일 때만 — 단답 입력이 숫자 키패드(inputMode:numeric)라
+         소수점·음수·낱말 답은 칠 수 없다(그런 문항은 객관식으로 남는다)
+       - 템플릿이 itemType 을 명시했으면 존중(ox 등 작성자 의도), noShort 도 존중
+       - rng 는 뒤집을 후보일 때만 소비 — shortRatio 없는 세트는 생성 결과가
+         이 기능 이전과 비트 단위로 같다(기존 세트 전부 무변경) */
+    if (ctx.shortRatio > 0 && type === 'choice' && !tpl.itemType && !tpl.noShort
+        && typeof ans === 'number' && isFinite(ans) && ans >= 0 && ans === Math.floor(ans)) {
+      if (rng.next() < ctx.shortRatio) type = 'short';
+    }
+
     var q = tpl.render(p);
     var item = {
       source: ctx.source,
@@ -230,13 +243,13 @@
     }
     while (items.length < n && guard < n * RETRY_MAX) {
       var tpl = usable[ti % usable.length]; ti++; guard++;
-      var it = genOne(tpl, rng, { source: source, seed: seed });
+      var it = genOne(tpl, rng, { source: source, seed: seed, shortRatio: def.shortRatio || 0 });
       if (it && !seen[dedupKey(it)]) { seen[dedupKey(it)] = 1; push(it, tpl); }
     }
     guard = 0;
     while (items.length < n && guard < n * RETRY_MAX) {      // 폴백: 중복 허용
       var tpl2 = usable[ti % usable.length]; ti++; guard++;
-      var it2 = genOne(tpl2, rng, { source: source, seed: seed });
+      var it2 = genOne(tpl2, rng, { source: source, seed: seed, shortRatio: def.shortRatio || 0 });
       if (it2) push(it2, tpl2);
     }
     return { set: key, seed: seed, items: items };

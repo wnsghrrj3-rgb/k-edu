@@ -116,6 +116,10 @@
           + (mode === 'review' ? ' (복습으로 구성)' : ''),
         fixed: [],           // 고정 문항은 물려받지 않는다 — 그림·표 등 원 화면 맥락에 기대는 것이 있음
         templates: tpls,
+        /* 유형 섞기(준호 지시): 객관식만이 아니라 단답도 섞여 나온다.
+           정수 답 문항의 4할쯤이 단답으로 뒤집힌다(소수·낱말 답은 객관식 유지).
+           본차시 세트(u키)는 그대로 — 아침수학 c키에만 적용. */
+        shortRatio: 0.4,
         origin: day.quiz,    // null 이면 그날은 복습 구성
         lesson_meta: { unitNo: day.unitNo, unitName: day.unitName, l: day.l, title: day.title, mode: mode }
       });
