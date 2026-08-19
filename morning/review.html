@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>수학 오답 다시 보기 — 아침활동</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
+<style>:root{--kedu-title:'Gowun Batang','Gowun Dodum',serif}</style>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#5B8EF8;--primary-light:#EBF4FF;
+  --bg:#F4F6FB;--card:#fff;--ink:#1A202C;--sub:#718096;--faint:#A0AEC0;--border:#E7ECF3;
+  --radius:20px;--shadow:0 2px 18px rgba(33,52,94,.07);--ok:#22A06B;--no:#E5484D;
+}
+body{font-family:'Gowun Dodum',sans-serif;background:var(--bg);min-height:100vh;color:var(--ink);-webkit-font-smoothing:antialiased}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.nav{background:var(--card);border-bottom:1px solid var(--border);height:58px;display:flex;align-items:center;gap:10px;padding:0 20px;position:sticky;top:0;z-index:50}
+.nav .brand{font-family:var(--kedu-title);font-weight:700;color:var(--primary)}
+.nav .t{font-family:var(--kedu-title);font-size:17px}
+.nav a{margin-left:auto;color:var(--sub);text-decoration:none;font-size:13.5px}
+.wrap{max-width:680px;margin:0 auto;padding:24px 16px 80px}
+.loading{min-height:50vh;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--faint);font-size:14px}
+.spin{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:sp .8s linear infinite;margin-bottom:14px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 22px;margin-bottom:16px}
+.msg{text-align:center;padding:40px 20px;color:var(--sub);font-size:15px;line-height:1.8}
+.msg .big{font-size:44px;display:block;margin-bottom:12px}
+.intro{font-size:13.5px;color:var(--sub);line-height:1.7}
+.day{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden}
+.day-h{display:flex;align-items:center;gap:10px;padding:16px 20px;cursor:pointer;user-select:none}
+.day-h .d{font-family:var(--kedu-title);font-size:16px}
+.day-h .c{margin-left:auto;background:#FDECEC;color:var(--no);border-radius:50px;padding:3px 12px;font-size:12.5px;font-weight:700}
+.day-h .ar{color:var(--faint);font-size:12px;transition:transform .15s}
+.day.open .day-h .ar{transform:rotate(90deg)}
+.day-b{display:none;border-top:1px solid var(--border);padding:16px 20px}
+.day.open .day-b{display:block}
+.witem{border:1px solid var(--border);border-radius:14px;padding:15px 16px;margin-bottom:10px}
+.witem .q{font-size:17px;font-weight:700;line-height:1.45;word-break:keep-all;white-space:pre-line}
+.witem .row{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:14px}
+.witem .row .my{color:var(--no)}
+.witem .row .an{color:var(--ok);font-weight:700}
+.witem .ex{margin-top:9px;font-size:13px;color:var(--sub);background:#F6F9FC;border-radius:10px;padding:10px 12px;line-height:1.55}
+.gone{font-size:12.5px;color:var(--faint);margin-top:4px}
+.btn{display:block;width:100%;border:none;border-radius:14px;padding:14px;font-family:var(--kedu-title);font-size:16px;cursor:pointer;background:var(--primary);color:#fff;transition:transform .12s;margin-top:6px}
+.btn:active{transform:scale(.98)}
+.btn.ghost{background:var(--primary-light);color:var(--primary)}
+.retry-wrap{margin-top:12px}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <span class="brand">케이에듀</span><span class="t">수학 오답 다시 보기</span>
+  <a href="/morning/">← 아침활동으로</a>
+</nav>
+<div class="wrap" id="wrap">
+  <div class="loading"><div class="spin"></div>지난 기록을 살펴보는 중…</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_config.js"></script>
+<script src="/kedu/quiz/kquiz-core.js"></script>
+<script src="/kedu/quiz/kquiz-ui.js"></script>
+<script>
+(function(){
+  'use strict';
+  var db = getKeduDb();
+  var wrap = document.getElementById('wrap');
+
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function show(html){ wrap.innerHTML = html; }
+  function dateKo(iso){
+    var m = String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!m) return String(iso||'');
+    var d = new Date(+m[1], +m[2]-1, +m[3]);
+    return (+m[2])+'월 '+(+m[3])+'일 '+['일','월','화','수','목','금','토'][d.getDay()]+'요일';
+  }
+
+  /* 그 학년 수학을 통째로 로드 — 아침수학 c키 규칙(index.html·math.html 과 동일) */
+  var loadedGrades = {};
+  function mathFiles(grade){
+    return fetch('/kedu/quiz/catalog.json').then(function(r){ return r.json(); }).then(function(cat){
+      var units = (cat.units || cat.list || []).filter(function(u){
+        return u.subject === 'math' && u.grade === grade;
+      }).sort(function(a,b){ return a.unitNo - b.unitNo; });
+      if (!units.length) throw new Error('catalog 에 g'+grade+' 수학 단원이 없음');
+      var files = units.map(function(u){ return '/kedu/quiz/templates/'+u.key+'.js'; });
+      files.push('/kedu/quiz/templates/math_lessons.js');
+      files.push('/kedu/quiz/templates/math_morning.js');
+      return files;
+    });
+  }
+  function loadScripts(list, done, fail){
+    var i = 0;
+    (function next(){
+      if (i >= list.length) return done();
+      var s = document.createElement('script');
+      s.src = list[i++]; s.onload = next; s.onerror = fail;
+      document.head.appendChild(s);
+    })();
+  }
+  function ensureGrade(grade){
+    if (loadedGrades[grade]) return Promise.resolve();
+    return mathFiles(grade).then(function(files){
+      return new Promise(function(res, rej){
+        loadScripts(files, function(){ loadedGrades[grade] = true; res(); }, rej);
+      });
+    });
+  }
+
+  /* ── 되살리기(순수) ──────────────────────────────────────────────────────
+   * 제출 봉투 한 벌 → 그날 틀린 문항을 seed 로 다시 생성해 id 로 대조한다.
+   *   맞대조가 실패한 문항(그 사이 템플릿이 바뀐 경우)은 조용히 버리지 않고
+   *   missing 으로 센다 — 화면이 「몇 개는 되살릴 수 없었다」고 정직하게 말한다. */
+  function rebuildWrong(day, core){
+    var out = { wrong: [], missing: 0 };
+    if (!day || !day.set || !core.has(day.set)) {
+      var stored = (day && day.items || []).filter(function(x){ return x.correct === false; });
+      out.missing = stored.length;
+      return out;
+    }
+    var gen = core.generate({ lesson: day.set, n: Number(day.n) || 10, seed: Number(day.seed) });
+    var byId = {};
+    gen.items.forEach(function(it){ byId[it.id] = it; });
+    (day.items || []).forEach(function(st){
+      if (st.correct !== false) return;
+      var it = byId[st.id];
+      if (it) out.wrong.push({ item: it, my: st.answer });
+      else out.missing++;
+    });
+    return out;
+  }
+
+  function myAnswerText(it, my){
+    if (my == null || my === '') return '(빈칸)';
+    if (it.type === 'choice') {
+      var c = it.choices && it.choices[Number(my)];
+      return c != null ? c : String(my);
+    }
+    if (it.type === 'ox') return Number(my) ? 'O' : 'X';
+    return String(my);
+  }
+  function answerText(it){
+    if (it.type === 'choice') return it.choices[it.answer];
+    if (it.type === 'ox') return it.answer ? 'O' : 'X';
+    return String(it.answer);
+  }
+
+  function itemHtml(w){
+    var it = w.item;
+    return '<div class="witem">'
+      + '<div class="q">'+esc(it.q)+'</div>'
+      + '<div class="row"><span class="my">내가 쓴 답: '+esc(myAnswerText(it, w.my))+'</span>'
+      + '<span class="an">정답: '+esc(answerText(it))+'</span></div>'
+      + (it.explain ? '<div class="ex">💡 '+esc(it.explain)+'</div>' : '')
+      + '</div>';
+  }
+
+  function render(days){
+    if (!days.length) {
+      show('<div class="card"><div class="msg"><span class="big">🌟</span>'
+        + '최근 30일 동안 틀린 수학 문제가 없어요.<br>전부 맞혔다는 뜻이에요!</div></div>');
+      return;
+    }
+    var h = '<div class="card"><div class="intro">아침수학에서 <b>틀렸던 문제</b>만 모았어요. '
+      + '날짜를 누르면 그날 문제와 정답·풀이가 보여요. <b>다시 풀기</b>를 누르면 '
+      + '틀린 것만 골라 한 번 더 풀 수 있어요 — 여기서 푸는 건 연습이라 기록에 남지 않아요.</div></div>';
+    days.forEach(function(day, di){
+      var wr = day._rebuilt;
+      h += '<div class="day" id="day'+di+'">'
+        + '<div class="day-h" data-i="'+di+'"><span class="d">'+esc(dateKo(day.run_date))+'</span>'
+        + '<span class="c">'+wr.wrong.length+'문제</span><span class="ar">▶</span></div>'
+        + '<div class="day-b">'
+        + wr.wrong.map(itemHtml).join('')
+        + (wr.missing ? '<div class="gone">'+wr.missing+'개는 문제가 새로 바뀌어 되살릴 수 없었어요.</div>' : '')
+        + (wr.wrong.length ? '<button class="btn ghost" data-retry="'+di+'">✏️ 이날 틀린 것만 다시 풀기</button>' : '')
+        + '<div class="retry-wrap" id="retry'+di+'"></div>'
+        + '</div></div>';
+    });
+    show(h);
+
+    Array.prototype.forEach.call(document.querySelectorAll('.day-h'), function(el){
+      el.onclick = function(){ document.getElementById('day'+el.getAttribute('data-i')).classList.toggle('open'); };
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-retry]'), function(btn){
+      btn.onclick = function(){
+        var di = +btn.getAttribute('data-retry');
+        var mountEl = document.getElementById('retry'+di);
+        var items = days[di]._rebuilt.wrong.map(function(w){
+          /* 답 흔적 없이 새 마음으로 — 얕은 복사로 원 문항은 그대로 둔다 */
+          var c = {}; for (var k in w.item) c[k] = w.item[k]; return c;
+        });
+        btn.style.display = 'none';
+        KQuiz.mount(mountEl, { mode:'student', items: items });   // 제출 없음 = 연습
+        mountEl.scrollIntoView({ behavior:'smooth', block:'start' });
+      };
+    });
+  }
+
+  db.rpc('ma_my_wrong', { p_days: 30 }).then(function(res){
+    var r = res.data;
+    if (!r || r.status === 'no_profile') {
+      show('<div class="card"><div class="msg"><span class="big">🔑</span>먼저 우리 반으로 들어와 주세요.</div>'
+        + '<button class="btn" onclick="location.href=\'/auth/\'">들어가기</button></div>');
+      return;
+    }
+    if (r.status !== 'ok') { show('<div class="card"><div class="msg">잠시 뒤에 다시 열어 주세요.</div></div>'); return; }
+    var days = r.days || [];
+    if (!days.length) { render([]); return; }
+
+    /* 등장하는 학년 전부 로드(전학 등으로 섞여 있어도 안전) 후 되살린다 */
+    var grades = {};
+    days.forEach(function(d){ var m = String(d.set||'').match(/^g(\d+)_math_c/); if (m) grades[+m[1]] = 1; });
+    var jobs = Object.keys(grades).map(function(g){ return ensureGrade(+g); });
+    Promise.all(jobs).then(function(){
+      days.forEach(function(d){ d._rebuilt = rebuildWrong(d, KQuiz.core); });
+      render(days.filter(function(d){ return d._rebuilt.wrong.length || d._rebuilt.missing; }));
+    })['catch'](function(){
+      show('<div class="card"><div class="msg">문제를 불러오지 못했어요.<br>잠시 뒤에 다시 열어 주세요.</div></div>');
+    });
+  });
+})();
+</script>
+<script src="/kedu_back.js"></script>
+</body>
+</html>

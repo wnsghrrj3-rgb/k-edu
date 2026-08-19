@@ -292,8 +292,12 @@
     if (mode === 'teacher') return renderTeacher(el0, cfg);
 
     // student: seed 확정 후 생성
+    //   cfg.items 가 오면 생성 대신 그대로 쓴다 — 오답 다시 풀기가 지난 제출에서
+    //   되살린 문항 몇 개만 골라 얹는 통로(제출 없음 = 오늘 기록을 덮지 않는다)
     var seed = cfg.seed != null ? cfg.seed : Math.floor(Math.random() * 1e9);
-    var gen = KQuiz.core.generate({ lesson: cfg.lesson, n: cfg.n || 10, seed: seed, difficulty: cfg.difficulty });
+    var gen = cfg.items
+      ? { items: cfg.items.slice(), seed: seed }
+      : KQuiz.core.generate({ lesson: cfg.lesson, n: cfg.n || 10, seed: seed, difficulty: cfg.difficulty });
     var state = { items: gen.items, seed: gen.seed, idx: 0, answers: [], graded: [], submitted: false, startAt: Date.now() };
     renderStudent(el0, state, cfg.onSubmit ? function (g) {
       return cfg.onSubmit({
