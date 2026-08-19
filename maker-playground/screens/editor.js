@@ -124,6 +124,7 @@ window.MK_SCREENS.editor = (() => {
       <button class="ph-item" data-pane="add-chart">차트 넣기 (막대)</button>
       ${offBtn('아이콘·스티커', '재료 미입고')}`,
     photo: () => `<button class="ph-item" data-pane="ins-image">내 사진 파일 넣기 (8MB)</button>
+      ${window.MK_SEG ? `<button class="ph-item" data-pane="person-swap">🪄 인물 바꾸기 — 선택한 사진 속 사람을 오리고·지우고·바꿔요</button>` : ''}
       ${stockBlock('P', '🎨 재료 검색 (내장 생성)')}
       ${offBtn('실사 스톡 사진', '외부 소스 미연결')}`,
     video: () => `<button class="ph-item" data-pane="ins-video">내 영상 파일 넣기 (8MB)</button>
@@ -575,6 +576,41 @@ window.MK_SCREENS.editor = (() => {
           if (act === 'add-chart') return paneAddEl('차트 넣기', { kind: 'chart', x: 10, y: 24, w: 80, h: 54, chartType: 'bar', title: '차트', accent: '#2E8C7F', series: [{ k: 'A', v: 3 }, { k: 'B', v: 5 }, { k: 'C', v: 4 }] });
           if (act === 'bg-set') { H.push('배경색 변경'); doc.scenes[e.sceneIdx].background = b.dataset.c; return PG.render(); }
           if (act === 'ins-image') return paneFile('image/*');
+          /* R134 — 인물 바꾸기: 선택한 사진 요소를 MK_SEG 작업창으로.
+             결과는 새 dataURL 하나 — 스키마 신설 0, el.src 교체가 전부라
+             render·play·export 전 경로가 그대로 옳다. */
+          if (act === 'person-swap') {
+            if (!window.MK_SEG) return;
+            const sc = doc.scenes[e.sceneIdx];
+            const sel = e.selEl != null ? sc.elements[e.selEl] : null;
+            if (!sel || sel.kind !== 'image' || !sel.src || sel.video) {
+              return alert('사진 요소를 먼저 선택해 주세요 (영상·도형은 안 돼요)');
+            }
+            const target = sel;
+            const others = [];
+            doc.scenes.forEach((s2) => (s2.elements || []).forEach((el2) => {
+              if (el2 && el2.kind === 'image' && el2.src && !el2.video && el2 !== target) {
+                others.push({ src: el2.src, label: el2.label || '문서 사진' });
+              }
+            }));
+            return window.MK_SEG.open({
+              src: target.src, docImages: others,
+              onApply: (url, label) => {
+                H.push(label || '인물 바꾸기');
+                target.src = url; delete target.fill;
+                PG.render();
+              },
+              onCutout: (png, dim) => {
+                H.push('인물 오리기');
+                const sw = +sc.width || 1280, sh = +sc.height || 720;
+                const w = 32;                                       /* 씬 % 좌표 */
+                const h = Math.min(92, w * (dim.h / dim.w) * (sw / sh));
+                sc.elements.push({ kind: 'image', x: 34, y: Math.max(2, 50 - h / 2), w, h, fit: 'contain', label: '오려낸 인물', src: png });
+                e.selEl = sc.elements.length - 1;
+                PG.render();
+              },
+            });
+          }
           if (act === 'ins-video') return paneFile('video/*');
           if (act === 'ins-any') return paneFile('image/*,video/*');
         };
