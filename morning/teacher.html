@@ -142,10 +142,11 @@ td.name{font-weight:700}
   /* 요일 시간표를 사람 말로 — 과목이 하나면 '한자 하루 한 자', 섞이면 '월·화 한자, 목·금 수학' */
   /* 시간표에 들어간 과목마다 미리보기 버튼 — 과목을 넣었는데 볼 곳이 없으면 안 되니까 */
   /* `key:true` = 그 미리보기가 c키를 받아 **오늘 몫으로 열린다**는 뜻.
-     한자·수학 미리보기는 아직 c키를 안 받는다(chars.html·math.html 은 이번 작업 영역 밖) —
-     그래서 그 둘은 `?grade=` 로만 열리고, 아래에서 라벨이 「오늘」이라 말하지 않는다. */
+     ★D8-ⓗ 로 `chars.html` 이 c키에서 진도일을 읽게 되어 한자도 오늘로 열린다.
+     수학 미리보기(`math.html`)는 아직 c키를 안 받는다 — 그래서 `?grade=` 로만 열리고,
+     아래에서 라벨이 「오늘」이라 말하지 않는다(모르는 통로에 오늘이라 이름 붙이지 않는다). */
   var PREVIEW = {
-    hanja:   { href:'/morning/chars.html' },
+    hanja:   { href:'/morning/chars.html', key:true },
     english: { href:'/morning/sents_preview.html', key:true },
     math:    { href:'/morning/math.html' }
   };
@@ -244,7 +245,13 @@ td.name{font-weight:700}
     return '';
   }
   /* 현황판에서 여는 활동 화면도 과목을 보고 고른다 — 학생 화면(index.html ACTIVITY)과 같은 규약.
-     예전엔 lesson_key 만 있으면 무조건 한자 화면으로 보냈다(영어·수학 반이 남의 반 한자 칸을 만나던 결함). */
+     예전엔 lesson_key 만 있으면 무조건 한자 화면으로 보냈다(영어·수학 반이 남의 반 한자 칸을 만나던 결함).
+     ★D8-ⓗ: **여기서 여는 것은 학생 화면 그 자체다** — 아무것도 안 붙이면 교사가 준비하려고
+       한 번 돌려 본 것이 그 기기에 완주 도장으로 남는다. 교실 공용 기기(수업용 PC·공용
+       크롬북)라면 아이가 아직 만나지도 않은 날이 이미 끝난 것으로 뜬다.
+       `peek=1` 은 미리보기 통로(`sents_preview.html`)가 이미 쓰던 계약인데, **교사가 제일
+       자주 누를 이 통로에만 빠져 있었다.** 화면 쪽 가드가 없으면 붙여도 장식이므로,
+       `sents.html`·`chars.html` 두 화면이 모두 peek 를 실제로 받는다. */
   var ACTIVITY = {
     hanja:   { href:'/morning/chars.html', label:'오늘 글자 활동 열기 (획순·쓰기·낱말)' },
     english: { href:'/morning/sents.html', label:'오늘 문장 활동 열기 (듣기·다섯 번·넓히기)' }
@@ -252,7 +259,7 @@ td.name{font-weight:700}
   function activityLink(sess){
     var a = ACTIVITY[sess && sess.subject];
     if (!a || !sess.lesson_key) return '';
-    return '<div style="margin:-2px 0 12px"><a href="'+a.href+'?key='+esc(sess.lesson_key)+'" '
+    return '<div style="margin:-2px 0 12px"><a href="'+a.href+'?key='+esc(sess.lesson_key)+'&peek=1" '
       + 'style="font-size:13px;color:var(--primary);text-decoration:none">'+esc(a.label)+' →</a></div>';
   }
   function dots(n){ return '<div class="steps">'+[1,2,3].map(function(i){return '<div class="step-dot'+(i<=n?' on':'')+'"></div>';}).join('')+'</div>'; }
