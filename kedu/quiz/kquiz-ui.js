@@ -38,6 +38,10 @@
       '.kq-ox .kq-opt{justify-content:center;font-size:26px;padding:20px}',
       '.kq-short input{width:100%;border:1.5px solid var(--kq-line);border-radius:13px;padding:16px;font-size:22px;font-family:inherit;text-align:center;font-weight:700;color:var(--kq-ink)}',
       '.kq-short input:focus{outline:none;border-color:var(--kq-pri)}',
+      '.kq-short input.ok{border-color:var(--kq-ok);background:#E7F7EF}',
+      '.kq-short input.no{border-color:var(--kq-no);background:#FDECEC}',
+      '.kq-ans{margin-top:10px;font-size:16px;color:var(--kq-ok);font-weight:700;text-align:center}',
+      '.kq-ans b{font-size:20px}',
       '.kq-exp{margin-top:14px;font-size:14px;color:var(--kq-sub);background:#F6F9FC;border-radius:11px;padding:12px 14px;line-height:1.5}',
       '.kq-foot{margin-top:18px;display:flex;gap:10px}',
       '.kq-btn{flex:1;height:52px;border:none;border-radius:14px;font-family:var(--kedu-title,"Jua"),sans-serif;font-size:18px;cursor:pointer;transition:transform .12s,opacity .12s}',
@@ -163,7 +167,13 @@
     } else if (it.type === 'short') {
       var sd = el('div', 'kq-short'); var inp = el('input'); inp.type = 'text'; inp.inputMode = 'numeric';
       inp.value = state.answers[i] != null ? state.answers[i] : '';
-      if (graded) inp.disabled = true;
+      if (graded) {
+        inp.disabled = true;
+        /* 객관식이 정답 보기를 초록으로 보여 주듯, 단답도 결과가 보여야 한다 —
+           틀렸을 때 explain 에 답이 있으리라 기대하지 않고 여기서 직접 보장한다 */
+        var sc = KQuiz.core.gradeOne(it, state.answers[i]).correct;
+        inp.className = sc ? 'ok' : 'no';
+      }
       inp.oninput = function () {
         state.answers[i] = inp.value;
         // 렌더 시점에 잠가 둔 '확인'을 입력에 맞춰 풀어 준다.
@@ -171,7 +181,11 @@
         var c = el0.querySelector('.kq-foot .kq-btn.pri');
         if (c) c.disabled = (inp.value === '' || inp.value == null);
       };
-      sd.appendChild(inp); q.appendChild(sd);
+      sd.appendChild(inp);
+      if (graded && inp.className === 'no') {
+        sd.appendChild(el('div', 'kq-ans', '정답은 <b>' + esc(it.answer) + '</b> 이에요'));
+      }
+      q.appendChild(sd);
     }
 
     if (graded && it.explain) {
