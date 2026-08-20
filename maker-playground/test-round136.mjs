@@ -130,8 +130,54 @@ ok('기존 알파와 곱 — 반투명 입력 보존', (() => {
   return o[p + 3] === 128;
 })());
 
-/* ---------- 5. 배선 계약 ---------- */
-console.log('\n[5] 배선 계약');
+/* ---------- 5. 험한 조건 — 조명 그라데이션 48% + 노이즈 ±9 + 2px 가닥 ---------- */
+console.log('\n[5] 험한 조건 (실사진 근사)');
+{
+  const HW = 120, HH = 120;
+  const hb = new Uint8ClampedArray(HW * HH * 4);
+  let seed = 42; const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+  for (let y = 0; y < HH; y++) for (let x = 0; x < HW; x++) {
+    const p = (y * HW + x) * 4;
+    const shade = 1 - (y / HH) * 0.48;                  /* 위 밝고 아래 그늘 */
+    let r = 38 * shade + (rnd() - .5) * 18, g = 200 * shade + (rnd() - .5) * 18, b2 = 66 * shade + (rnd() - .5) * 18;
+    const inBody = x >= 40 && x < 80 && y >= 40 && y < 100;
+    const inHair = y >= 20 && y < 40 && ((x >= 50 && x < 52) || (x >= 60 && x < 62) || (x >= 70 && x < 72));
+    if (inBody) { r = 225; g = 178; b2 = 158; }
+    if (inHair) { r = 92; g = 64; b2 = 40; }
+    hb[p] = r; hb[p + 1] = g; hb[p + 2] = b2; hb[p + 3] = 255;
+  }
+  const key = C.sampleAuto(hb, HW, HH);
+  const hOut = C.keyOut(hb, HW, HH, { color: key, tol: 35, soft: 30, spill: true });
+  const ha = (x, y) => hOut[(y * HW + x) * 4 + 3];
+  let bgLeak = 0, bodyLoss = 0, hairLoss = 0;
+  for (let y = 0; y < HH; y++) for (let x = 0; x < HW; x++) {
+    const inBody = x >= 40 && x < 80 && y >= 40 && y < 100;
+    const inHair = y >= 20 && y < 40 && ((x >= 50 && x < 52) || (x >= 60 && x < 62) || (x >= 70 && x < 72));
+    const edge = !inBody && !inHair && x >= 38 && x < 82 && y >= 18 && y < 102;
+    if (inBody) { if (ha(x, y) < 200) bodyLoss++; }
+    else if (inHair) { if (ha(x, y) < 128) hairLoss++; }
+    else if (!edge) { if (ha(x, y) > 40) bgLeak++; }
+  }
+  ok('그늘 배경 잔존 0 (조명 적응 wY)', bgLeak === 0, 'leak=' + bgLeak);
+  ok('인물 침식 0 (노이즈 내성)', bodyLoss === 0, 'loss=' + bodyLoss);
+  ok('2px 가닥 생존 (가는 선)', hairLoss === 0, 'loss=' + hairLoss);
+}
+
+/* ---------- 6. 작업창 스모크 — open() 실부팅 (캔버스 없는 jsdom에서도 안 죽는다) ---------- */
+console.log('\n[6] 작업창 스모크');
+{
+  C.open({ src: 'data:image/png;base64,x' });
+  const root = w.document.querySelector('[data-mkchroma]');
+  ok('작업창 루트 실존', !!root);
+  ok('칩 4종 실렌더', root && root.querySelectorAll('[data-ckchip]').length === 4);
+  ok('🎯 콕 찍기·슬라이더 2·스필 토글 실렌더', root && !!root.querySelector('[data-ck="pick"]') && !!root.querySelector('[data-ck="tol"]') && !!root.querySelector('[data-ck="soft"]') && !!root.querySelector('[data-ck="spill"]'));
+  ok('적용 버튼 — 키색 확정 전 disabled', root && root.querySelector('[data-ck="apply"]').disabled === true);
+  if (root) root.querySelector('[data-ck="close"]').onclick();
+  ok('닫기 = DOM 소거·body 청정', !w.document.querySelector('[data-mkchroma]') && w.document.body.children.length === 0);
+}
+
+/* ---------- 7. 배선 계약 ---------- */
+console.log('\n[7] 배선 계약');
 const ed = read('screens/editor.js');
 ok('에디터 진입 버튼(data-pane="chroma")', ed.includes('data-pane="chroma"'));
 ok('에디터 핸들러 — MK_CHROMA.open', ed.includes('MK_CHROMA.open'));
