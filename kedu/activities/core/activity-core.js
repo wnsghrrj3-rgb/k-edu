@@ -120,7 +120,10 @@
         c.addEventListener('click', function () {
           $$('.chip[data-set="' + c.dataset.set + '"]').forEach(function (x) { x.classList.remove('on'); });
           c.classList.add('on');
-          app.settings[c.dataset.set] = +c.dataset.v;
+          // 값 변환 규칙은 브리지와 같다 (§9-3, D21): 숫자로 읽히면 숫자, 아니면 문자열 그대로.
+          // 무조건 +v 하면 'add' 같은 열거값이 NaN이 되어 설정이 조용히 무시된다.
+          var raw = c.dataset.v;
+          app.settings[c.dataset.set] = (raw !== '' && !isNaN(+raw)) ? +raw : raw;
         });
       });
     }
@@ -366,6 +369,8 @@
       show('#scr-start');
     });
 
+    // 관측 훅 (D21) — 내부 상태 계약은 볼 수 없으면 지켜지지 않는다. 게이트 전용 읽기 참조.
+    try { window.__ACORE_APP__ = app; } catch (e) {}
     return app;
   }
 
