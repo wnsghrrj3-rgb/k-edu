@@ -1,7 +1,7 @@
-/* gate_g3_math_u1.js — g3 수학 u1 「덧셈과 뺄셈」 신규 제작 게이트 (9차시).
-   케이티처 3학년 첫 대상 → 40분 표준 v2 실내용 신규 제작 검증.
-   실엔진(jsdom) 부팅 → 전 차시 openShow → 7요소 실렌더 + 회귀 + 근거/산수 정합 + 3학년 용어·선행 가드.
-   실행: NODE_PATH=/home/claude/.jsdom/node_modules node gate_g3_math_u1.js */
+/* gate_g3_math_u2.js — g3 수학 u2 「평면도형」 신규 제작 게이트 (8차시).
+   40분 표준 v2 실내용 신규 제작 검증.
+   실엔진(jsdom) 부팅 → 전 차시 openShow → 7요소 실렌더 + 회귀 + 근거(도형 사실) 정합 + 3학년 용어·선행 가드.
+   실행: NODE_PATH=/home/claude/.jsdom/node_modules node gate_g3_math_u2.js */
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -9,12 +9,12 @@ const { JSDOM } = require('jsdom');
 
 const TDIR = path.resolve(__dirname, '..');
 const ENGINE = fs.readFileSync(path.join(TDIR, 'engine/teacher-engine.js'), 'utf8');
-const DATA = fs.readFileSync(path.join(TDIR, 'data/g3_math_u1.js'), 'utf8');
+const DATA = fs.readFileSync(path.join(TDIR, 'data/g3_math_u2.js'), 'utf8');
 /* 용어 가드(E)는 학생 노출 본문만 대상 — 파일 머리 주석에는 규약 설명을 위해
    금지어·선행 용어 목록 자체가 적혀 있으므로 자기 참조 오탐을 막으려면 반드시 잘라내고 검사한다.
    ⚠️ 신규 게이트 복제 시 이 BODY 슬라이싱을 반드시 포함할 것. */
 const BODY = DATA.replace(/^\s*\/\*[\s\S]*?\*\//, '');
-/* 산수 검산은 굵게 표시(**)가 섞여 있어도 잡히도록 별표를 걷어낸 텍스트로 한다. */
+/* 수 검산·사실 검사는 굵게 표시(**)가 섞여 있어도 잡히도록 별표를 걷어낸 텍스트로 한다. */
 const NUMTXT = BODY.replace(/\*/g, '');
 const G3HTML = fs.readFileSync(path.join(TDIR, 'g3_math.html'), 'utf8');
 const CURRIC_SRC = (G3HTML.match(/const CURRICULUM[\s\S]*?\];/) || [''])[0].replace(/^const CURRICULUM/, 'window.CURRICULUM');
@@ -22,6 +22,7 @@ const CURRIC_SRC = (G3HTML.match(/const CURRICULUM[\s\S]*?\];/) || [''])[0].repl
 let pass = 0, fail = 0;
 const T = (n, f) => { try { f(); pass++; console.log('  ✅ ' + n); } catch (e) { fail++; console.log('  ❌ ' + n + ' — ' + e.message); } };
 const ok = (v, m) => { if (!v) throw new Error(m || 'falsy'); };
+const plain = (o) => JSON.stringify(o).replace(/\*/g, '');
 
 function extractBody(html) {
   let b = html.replace(/[\s\S]*?<body[^>]*>/, '').replace(/<\/body>[\s\S]*/, '');
@@ -57,28 +58,28 @@ global.window = { LESSONS: {} };
 eval(DATA);
 const L = global.window.LESSONS;
 
-const KEYS = ['u1_l01','u1_l02','u1_l03','u1_l04','u1_l05','u1_l06','u1_l07','u1_l08','u1_l09'];
-const NO_OFFLINE = ['u1_l09'];            // 단원 마무리·평가 차시만 제외
-const PREVIEW = 'u1_l01';                 // 단원 도입 = 세 걸음 예고 차시
+const KEYS = ['u2_l01','u2_l02','u2_l03','u2_l04','u2_l05','u2_l06','u2_l07','u2_l08'];
+const NO_OFFLINE = ['u2_l08'];            // 단원 마무리·평가 차시만 제외
+const PREVIEW = 'u2_l01';                 // 단원 도입 = 네 걸음 예고 차시
 
 console.log('═══ A. 부팅 ═══');
 let W;
-T('부팅 + u1 9차시 로드', () => {
+T('부팅 + u2 8차시 로드', () => {
   W = boot();
-  const keys = Object.keys(W.LESSONS).filter(k => k.startsWith('u1_'));
-  ok(keys.length === 9, 'u1 차시 ' + keys.length);
+  const keys = Object.keys(W.LESSONS).filter(k => k.startsWith('u2_'));
+  ok(keys.length === 8, 'u2 차시 ' + keys.length);
 });
-T('차시 키 = 0패딩 u1_l01~l09', () => {
-  const got = Object.keys(L).filter(k => k.startsWith('u1_')).sort();
+T('차시 키 = 0패딩 u2_l01~l08', () => {
+  const got = Object.keys(L).filter(k => k.startsWith('u2_')).sort();
   ok(JSON.stringify(got) === JSON.stringify(KEYS), got.join(','));
 });
 
 console.log('═══ B. 전 차시 7요소 실렌더 ═══');
-for (let n = 1; n <= 9; n++) {
-  const key = 'u1_l' + String(n).padStart(2, '0');
+for (let n = 1; n <= 8; n++) {
+  const key = 'u2_l' + String(n).padStart(2, '0');
   T(key + ' 7요소 렌더', () => {
     const W2 = boot();
-    const ALL = renderAll(W2, 1, n);
+    const ALL = renderAll(W2, 2, n);
     ok(!/교구 로드 오류|undefined<\/|NaN/.test(ALL), '렌더 오류');
     ok(!/내용을 추가하세요/.test(ALL), '폴백(빈 내용) 렌더 잔존');
     ok(/kt-lv-tab/.test(ALL), '⑤ leveled 미렌더');
@@ -91,39 +92,66 @@ for (let n = 1; n <= 9; n++) {
 }
 
 console.log('═══ C. 회귀 (openShow 무손상) ═══');
-for (let n = 1; n <= 9; n++) {
-  T('회귀 u1_l' + String(n).padStart(2, '0'), () => {
+for (let n = 1; n <= 8; n++) {
+  T('회귀 u2_l' + String(n).padStart(2, '0'), () => {
     const W2 = boot();
-    W2.Teacher.openShow('1', String(n));
+    W2.Teacher.openShow('2', String(n));
     const html = W2.document.getElementById('slide-content').innerHTML;
     ok(html && html.length > 20 && !/교구 로드 오류/.test(html), '빈/오류 렌더');
   });
 }
 
-console.log('═══ D. 근거 정합 (학생 본차시 검증 식 계승 · 산수 검산) ═══');
+console.log('═══ D. 근거 정합 (학생 본차시 검증 사실 계승 · 도형 사실 검산) ═══');
 T('기본문제 정답 = 본차시 계승 값', () => {
   const FACTS = {
-    'u1_l01:s09': 86,    'u1_l01:s10': 33,    'u1_l01:s11': 2,
-    'u1_l02:s08': 477,   'u1_l02:s09': 896,   'u1_l02:s10': 739,
-    'u1_l03:s08': 673,   'u1_l03:s09': 781,   'u1_l03:s10': 805,
-    'u1_l04:s08': 523,   'u1_l04:s09': 711,   'u1_l04:s10': 1502,
-    'u1_l05:s08': 152,   'u1_l05:s09': 234,   'u1_l05:s10': 316,
-    'u1_l06:s08': 126,   'u1_l06:s09': 419,   'u1_l06:s10': 461,
-    'u1_l07:s08': 163,   'u1_l07:s09': 615,   'u1_l07:s10': 218,
-    'u1_l08:s08': 593,   'u1_l08:s09': 783,   'u1_l08:s10': 156,
-    'u1_l09:s08': 687,   'u1_l09:s09': 492,   'u1_l09:s10': 305,   'u1_l09:s11': 286
+    'u2_l01:s09': '3',            'u2_l01:s10': '3',            'u2_l01:s11': '4',
+    'u2_l02:s08': '선분 ㄱㄴ',     'u2_l02:s09': '반직선 ㄱㄴ',   'u2_l02:s10': '직선 ㄱㄴ',
+    'u2_l03:s08': '점 ㄴ',        'u2_l03:s09': '각 ㄱㄴㄷ',     'u2_l03:s10': '2',
+    'u2_l04:s08': '직각',         'u2_l04:s09': '2',            'u2_l04:s10': '삼각자',
+    'u2_l05:s08': '직각삼각형',    'u2_l05:s09': '1',            'u2_l05:s10': '3',
+    'u2_l06:s08': '직사각형',      'u2_l06:s09': '정사각형',      'u2_l06:s10': '4',
+    'u2_l07:s08': '정사각형',      'u2_l07:s09': '2',            'u2_l07:s10': '4',
+    'u2_l08:s08': '선분 ㄱㄴ',     'u2_l08:s09': '직각',         'u2_l08:s10': '직각삼각형', 'u2_l08:s11': '정사각형'
   };
   const bad = [];
   Object.keys(FACTS).forEach(ref => {
     const [k, sid] = ref.split(':');
     const s = L[k].slides.find(x => x.id === sid);
     if (!s) { bad.push(ref + ' 슬라이드 없음'); return; }
-    if (Number(s.data.answer) !== FACTS[ref]) bad.push(ref + '=' + s.data.answer + '(기대 ' + FACTS[ref] + ')');
+    if (String(s.data.answer) !== FACTS[ref]) bad.push(ref + '=' + s.data.answer + '(기대 ' + FACTS[ref] + ')');
   });
   ok(bad.length === 0, bad.join(' / '));
 });
-T('본문 산수 전수 검산 (덧셈·뺄셈 식 eval)', () => {
-  const re = /(\d{1,4})\s*([+−])\s*(\d{1,4})\s*=\s*(\d{1,4})/g;
+T('도형 사실 정합 (차시별 필수 사실 실존)', () => {
+  const NEED = {
+    'u2_l01': ['변','꼭짓점','삼각형','사각형','곧은 선 3개','곧은 선 4개','변 3개 · 꼭짓점 3개','변 4개 · 꼭짓점 4개'],
+    'u2_l02': ['선분','반직선','직선','시작점','양쪽으로 끝없이','한쪽으로 끝없이'],
+    'u2_l03': ['두 반직선','각의 꼭짓점','각의 변','꼭짓점이 가운데','각 ㄱㄴㄷ','각 ㄷㄴㄱ','벌어진 정도'],
+    'u2_l04': ['직각','반듯하게 두 번','ㄱ자','삼각자'],
+    'u2_l05': ['직각삼각형','한 각이 직각','1개','방향'],
+    'u2_l06': ['직사각형','정사각형','네 각이 모두 직각','네 변의 길이가 모두 같','4개'],
+    'u2_l07': ['정사각형 1개 · 직각삼각형 2개 · 직사각형 2개 · 선분 4개','9개'],
+    'u2_l08': ['선분','반직선','직선','직각','직각삼각형','직사각형','정사각형']
+  };
+  const bad = [];
+  Object.keys(NEED).forEach(k => {
+    const src = plain(L[k].slides);
+    NEED[k].forEach(v => { if (src.indexOf(v) < 0) bad.push(k + '→' + v); });
+  });
+  ok(bad.length === 0, '누락: ' + bad.join(' / '));
+});
+T('l07 도형 개수 합 정합 (1+2+2+4=9)', () => {
+  const s = L['u2_l07'].slides.find(x => x.id === 's09');
+  const t = L['u2_l07'].slides.find(x => x.id === 's10');
+  ok(Number(s.data.answer) === 2, '직각삼각형 개수');
+  ok(Number(t.data.answer) === 4, '선분 개수');
+  const sum = 1 + 2 + 2 + 4;
+  ok(sum === 9, '합계 계산');
+  ok(plain(L['u2_l07'].slides).indexOf('9개') >= 0, '본문에 합계 9개 없음');
+});
+T('본문 수 검산 (덧셈·뺄셈 식이 있으면 eval 일치)', () => {
+  /* 앞이 '+ '·'− '인 자리는 이어진 식의 가운데라 두 항만 떼어 보면 틀리게 잡힌다 → 건너뛴다 */
+  const re = /(?<![+−]\s)(\d{1,4})\s*([+−])\s*(\d{1,4})\s*=\s*(\d{1,4})/g;
   const bad = []; let m, cnt = 0;
   while ((m = re.exec(NUMTXT)) !== null) {
     const a = +m[1], b = +m[3], c = +m[4];
@@ -131,47 +159,38 @@ T('본문 산수 전수 검산 (덧셈·뺄셈 식 eval)', () => {
     cnt++;
     if (got !== c) bad.push(m[0].trim());
   }
-  ok(cnt >= 80, '검산 대상이 너무 적다: ' + cnt);
   ok(bad.length === 0, '틀린 식(' + bad.length + '): ' + bad.slice(0, 8).join(' / '));
-  console.log('     · 검산 식 ' + cnt + '건 전부 일치');
+  console.log('     · 검산 식 ' + cnt + '건 일치 (도형 단원이라 식은 적다)');
 });
 T('leveled 정답 = 계승 값', () => {
   const WANT = {
-    'u1_l01': ['85', '337'],
-    'u1_l02': ['478', '397'],
-    'u1_l03': ['542', '383'],
-    'u1_l04': ['1023', '743'],
-    'u1_l05': ['213', '127'],
-    'u1_l06': ['435', '218'],
-    'u1_l07': ['356', '354'],
-    'u1_l08': ['705', '746'],
-    'u1_l09': ['425', '821']
+    'u2_l01': ['변 3개, 꼭짓점 3개', '변 4개, 꼭짓점 4개'],
+    'u2_l02': ['선분 ㄱㄴ', '반직선 ㄴㄱ'],
+    'u2_l03': ['점 ㄴ', '각 ㄷㄴㄱ'],
+    'u2_l04': ['직각이에요', '직각이 아니에요'],
+    'u2_l05': ['직각삼각형이에요', '직각은 1개예요'],
+    'u2_l06': ['직사각형이에요', '정사각형이에요'],
+    'u2_l07': ['직각삼각형 2개', '선분 4개'],
+    'u2_l08': ['직각삼각형이에요', '정사각형이에요']
   };
   const bad = [];
   Object.keys(WANT).forEach(k => {
     const lv = L[k].slides.find(s => s.block === 'leveled_problem');
-    const src = JSON.stringify(lv.data.levels);
+    const src = plain(lv.data.levels);
     WANT[k].forEach(v => { if (src.indexOf(v) < 0) bad.push(k + '→' + v); });
   });
   ok(bad.length === 0, '누락: ' + bad.join(','));
 });
-T('l08 비사치기 점수표·물건값 실존 (본차시 계승)', () => {
-  const src = JSON.stringify(L['u1_l08']);
-  ['234', '359', '318', '465', '387', '816', '755', '627', '543', '852', '36'].forEach(v => {
-    ok(src.indexOf(v) >= 0, 'l08 점수/물건값 누락: ' + v);
-  });
-});
 T('차시별 오개념 실존 (단원 오답 계보)', () => {
   const need = {
-    'u1_l01': /자리|줄을 맞/,
-    'u1_l02': /끝|자리/,
-    'u1_l03': /10|올림|한 자리/,
-    'u1_l04': /한 번|여러/,
-    'u1_l05': /순서|바꿔/,
-    'u1_l06': /빌려|줄이/,
-    'u1_l07': /0/,
-    'u1_l08': /견주|바꿀/,
-    'u1_l09': /어림/
+    'u2_l01': /곧은 선|굽은/,
+    'u2_l02': /시작점|ㄴㄱ/,
+    'u2_l03': /벌어진|길수록/,
+    'u2_l04': /길수록|같은 크기/,
+    'u2_l05': /방향|아래/,
+    'u2_l06': /모두 정사각형|네 변/,
+    'u2_l07': /이름|정확/,
+    'u2_l08': /네 변|길이/
   };
   const bad = [];
   Object.keys(need).forEach(k => {
@@ -184,47 +203,50 @@ T('차시별 오개념 실존 (단원 오답 계보)', () => {
 
 console.log('═══ E. 3학년 용어 가드 · 선행 노출 가드 ═══');
 T('미도입 갈래 노출 0 (뒤 단원 소관)', () => {
-  const banned = ['분수', '소수', '나눗셈', '곱셈', '×', '÷'];
+  const banned = ['분수', '소수', '나눗셈', '곱셈', '×', '÷', '밀리미터', '킬로미터', '㎝', '㎜'];
   const bad = banned.filter(x => BODY.indexOf(x) >= 0);
   ok(bad.length === 0, '미도입 갈래 노출: ' + bad.join(','));
 });
-T('학생 노출 자리 어려운 용어 0', () => {
-  const banned = ['교환법칙', '결합법칙', '항등원', '알고리즘', '오차', '근사값'];
+T('학생 노출 자리 어려운 용어 0 (4학년 이상 소관)', () => {
+  const banned = ['예각', '둔각', '평각', '각도', '수직', '평행', '마름모', '사다리꼴',
+                  '다각형', '합동', '대칭', '둘레', '넓이', '이등변삼각형', '정삼각형', '직교'];
   const bad = banned.filter(x => BODY.indexOf(x) >= 0);
   ok(bad.length === 0, '어려운 용어: ' + bad.join(','));
 });
-T("'받아올림' 선행 노출 0 (l01·l02 · next_lesson 제외)", () => {
+T("'직각' 선행 노출 0 (l02·l03 · next_lesson 제외)", () => {
   const bad = [];
-  ['u1_l01', 'u1_l02'].forEach(k => {
+  ['u2_l02', 'u2_l03'].forEach(k => {
     const body = L[k].slides.filter(s => s.block !== 'next_lesson');
-    if (/받아올림/.test(JSON.stringify(body))) bad.push(k);
+    if (/직각/.test(JSON.stringify(body))) bad.push(k);
   });
-  ok(bad.length === 0, "'받아올림' 선행 노출: " + bad.join(','));
+  ok(bad.length === 0, "'직각' 선행 노출: " + bad.join(','));
 });
-T("'어림' 선행 노출 0 (l01·l02 · next_lesson 제외)", () => {
+T("'직각삼각형' 선행 노출 0 (l02~l04 · next_lesson 제외)", () => {
   const bad = [];
-  ['u1_l01', 'u1_l02'].forEach(k => {
+  ['u2_l02', 'u2_l03', 'u2_l04'].forEach(k => {
     const body = L[k].slides.filter(s => s.block !== 'next_lesson');
-    if (/어림/.test(JSON.stringify(body))) bad.push(k);
+    if (/직각삼각형/.test(JSON.stringify(body))) bad.push(k);
   });
-  ok(bad.length === 0, "'어림' 선행 노출: " + bad.join(','));
+  ok(bad.length === 0, "'직각삼각형' 선행 노출: " + bad.join(','));
 });
-T("'받아내림' 선행 노출 0 (l01~l05 · next_lesson 제외)", () => {
+T("'직사각형·정사각형' 선행 노출 0 (l02~l05 · next_lesson 제외)", () => {
   const bad = [];
-  ['u1_l01', 'u1_l02', 'u1_l03', 'u1_l04', 'u1_l05'].forEach(k => {
+  ['u2_l02', 'u2_l03', 'u2_l04', 'u2_l05'].forEach(k => {
     const body = L[k].slides.filter(s => s.block !== 'next_lesson');
-    if (/받아내림/.test(JSON.stringify(body))) bad.push(k);
+    if (/직사각형|정사각형/.test(JSON.stringify(body))) bad.push(k);
   });
-  ok(bad.length === 0, "'받아내림' 선행 노출: " + bad.join(','));
+  ok(bad.length === 0, "'직사각형·정사각형' 선행 노출: " + bad.join(','));
 });
-T('l01 = 단원 예고 차시 = 세 걸음 이름 실존', () => {
-  const src = JSON.stringify(L[PREVIEW].slides);
-  ['세 자리 수', '덧셈', '뺄셈', '생활 속 문제'].forEach(v => ok(src.indexOf(v) >= 0, 'l01 예고 누락: ' + v));
+T('l01 = 단원 예고 차시 = 네 걸음 이름 실존', () => {
+  const src = plain(L[PREVIEW].slides);
+  ['선분', '반직선', '직선', '직각', '직각삼각형', '직사각형', '정사각형'].forEach(v => ok(src.indexOf(v) >= 0, 'l01 예고 누락: ' + v));
 });
-T('도입 차시(l03·l06)에 해당 용어 실존', () => {
-  ok(/받아올림/.test(JSON.stringify(L['u1_l03'].slides)), 'l03에 받아올림 없음');
-  ok(/어림/.test(JSON.stringify(L['u1_l03'].slides)), 'l03에 어림 없음');
-  ok(/받아내림/.test(JSON.stringify(L['u1_l06'].slides)), 'l06에 받아내림 없음');
+T('도입 차시(l02·l03·l04·l05·l06)에 해당 용어 실존', () => {
+  ok(/선분/.test(plain(L['u2_l02'].slides)) && /반직선/.test(plain(L['u2_l02'].slides)) && /직선/.test(plain(L['u2_l02'].slides)), 'l02 선 갈래 없음');
+  ok(/두 반직선/.test(plain(L['u2_l03'].slides)), 'l03에 각 정의 없음');
+  ok(/직각/.test(plain(L['u2_l04'].slides)), 'l04에 직각 없음');
+  ok(/직각삼각형/.test(plain(L['u2_l05'].slides)), 'l05에 직각삼각형 없음');
+  ok(/직사각형/.test(plain(L['u2_l06'].slides)) && /정사각형/.test(plain(L['u2_l06'].slides)), 'l06에 두 사각형 없음');
 });
 
 console.log('═══ F. 구조 정합 ═══');
@@ -247,8 +269,8 @@ T('전 차시 img 폴백 1개 이상 (②)', () => {
   ok(bad.length === 0, bad.join(','));
 });
 T('review from 계보 정합 (①)', () => {
-  const want = {u1_l02:'u1_l01', u1_l03:'u1_l02', u1_l04:'u1_l03', u1_l05:'u1_l04',
-                u1_l06:'u1_l05', u1_l07:'u1_l06', u1_l08:'u1_l07', u1_l09:'u1_l08'};
+  const want = {u2_l02:'u2_l01', u2_l03:'u2_l02', u2_l04:'u2_l03', u2_l05:'u2_l04',
+                u2_l06:'u2_l05', u2_l07:'u2_l06', u2_l08:'u2_l07'};
   const bad = [];
   Object.keys(want).forEach(k => {
     const rv = L[k].slides.find(s => s.block === 'review');
@@ -257,7 +279,7 @@ T('review from 계보 정합 (①)', () => {
   ok(bad.length === 0, bad.join(','));
 });
 T('l01 = review 블록 없음 (단원 첫 차시)', () => {
-  ok(!L['u1_l01'].slides.some(s => s.block === 'review'), 'l01에 review 존재');
+  ok(!L['u2_l01'].slides.some(s => s.block === 'review'), 'l01에 review 존재');
 });
 T('review items = 직전 차시 exit 문항 계승', () => {
   const bad = [];
@@ -272,7 +294,7 @@ T('review items = 직전 차시 exit 문항 계승', () => {
   });
   ok(bad.length === 0, '계승 불일치: ' + bad.join(','));
 });
-T('offline 8차시 (l09 마무리 제외) · 필수 필드', () => {
+T('offline 7차시 (l08 마무리 제외) · 필수 필드', () => {
   const bad = [];
   KEYS.forEach(k => {
     const oa = L[k].slides.find(s => s.block === 'offline_activity');
@@ -341,30 +363,33 @@ T('leveled 3수준 + 심화 open · exit 확인3+신호등3', () => {
   });
   ok(bad.length === 0, bad.join(','));
 });
-T('meta 정합 (grade·unit·n·theme·std·duration)', () => {
+T('meta 정합 (grade·unit·n·theme·std·duration·live_url)', () => {
   const bad = [];
   KEYS.forEach((k, i) => {
     const m = L[k].meta;
-    if (m.grade !== 3 || m.subject !== '수학' || m.unit !== 1 || m.n !== i + 1) bad.push(k + ':meta');
-    if (!/온라인 마을/.test(m.theme || '')) bad.push(k + ':theme');
-    if (!/4수01-01/.test(m.std || '')) bad.push(k + ':std');
+    if (m.grade !== 3 || m.subject !== '수학' || m.unit !== 2 || m.n !== i + 1) bad.push(k + ':meta');
+    if (!/등굣길 도형 지도/.test(m.theme || '')) bad.push(k + ':theme');
+    if (!/4수02-0/.test(m.std || '')) bad.push(k + ':std');
     if (m.duration_min !== 40) bad.push(k + ':duration');
-    if (!/grade3\/semester1\/math\/1단원/.test(m.live_url || '')) bad.push(k + ':live_url');
+    if (!/grade3\/semester1\/math\/2단원/.test(m.live_url || '')) bad.push(k + ':live_url');
   });
   ok(bad.length === 0, bad.join(','));
 });
-T('CURRICULUM u1 ↔ LESSONS 정합 (9차시 ready)', () => {
+T('CURRICULUM u2 ↔ LESSONS 정합 (8차시 ready)', () => {
   const W2 = boot();
-  const u1 = W2.CURRICULUM.find(u => u.unit === 1);
-  ok(u1 && u1.lesson_count === 9, 'lesson_count');
-  ok(u1.lessons.length === 9 && u1.lessons.every(l => l.ready), 'ready 플래그');
-  u1.lessons.forEach((l, i) => {
-    const m = L['u1_l' + String(i + 1).padStart(2, '0')].meta;
+  const u2 = W2.CURRICULUM.find(u => u.unit === 2);
+  ok(u2 && u2.lesson_count === 8, 'lesson_count');
+  ok(u2.lessons.length === 8 && u2.lessons.every(l => l.ready), 'ready 플래그');
+  u2.lessons.forEach((l, i) => {
+    const m = L['u2_l' + String(i + 1).padStart(2, '0')].meta;
     ok(l.title.replace(/\s*\(단원 도입\)/, '') === m.title.replace(/\s*\(단원 도입\)/, ''), 'title 불일치 l' + (i + 1) + ': ' + l.title + ' / ' + m.title);
   });
 });
-/* ⚠️ 허브 카운트는 단원이 늘 때마다 커진다 — u2(8차시) 개통으로 1/9 → 2/17.
-   신규 단원 개통 시 이 자리도 함께 갱신할 것. */
+T('CURRICULUM u1 회귀 (9차시 ready 무손상)', () => {
+  const W2 = boot();
+  const u1 = W2.CURRICULUM.find(u => u.unit === 1);
+  ok(u1 && u1.lesson_count === 9 && u1.lessons.length === 9 && u1.lessons.every(l => l.ready), 'u1 손상');
+});
 T('허브 index.html "3_math" 등재 정합 (units 2 · lessons 17)', () => {
   const hub = fs.readFileSync(path.join(TDIR, 'index.html'), 'utf8');
   const m = hub.match(/"3_math":\s*\{\s*file:\s*"g3_math\.html",\s*units:\s*(\d+),\s*lessons:\s*(\d+)\s*\}/);
@@ -376,16 +401,17 @@ T('g3_math.html 배선 정합 (v3 3요소 · 데이터 · slug)', () => {
   ok(/<body class="kt3 subj-math">/.test(G3HTML), 'body kt3 없음');
   ok(/theme=classic/.test(G3HTML), 'classic 롤백 스니펫 없음');
   ok(/<script src="data\/g3_math_u1\.js"><\/script>/.test(G3HTML), 'u1 데이터 미배선');
+  ok(/<script src="data\/g3_math_u2\.js"><\/script>/.test(G3HTML), 'u2 데이터 미배선');
   ok(/slug:\s*"g3_math"/.test(G3HTML), 'slug 불일치');
   ok(!/g2_math/.test(G3HTML), 'g2 잔재 존재');
 });
-T('케이랩 u1 매핑 없음 = 의도적 (세로셈은 공책·수 모형 우위)', () => {
+T('케이랩 u2 매핑 없음 = 의도적 (선·각은 자·삼각자·종이접기 우위)', () => {
   ok(!fs.existsSync(path.join(TDIR, 'data/g3_math_klab.js')), 'g3 klab 매핑 파일이 생겼다 — 헤더 규약 재검토 필요');
   ok(!KEYS.some(k => L[k].slides.some(s => s.block === 'klab')), '데이터에 klab 블록 존재');
 });
 
 console.log('═══ G. 차단 어휘 ═══');
-T('u1 차단 어휘 0', () => {
+T('u2 차단 어휘 0', () => {
   const bad = ['박음', '빵꾸', '갈아엎', '결로'].filter(x => BODY.indexOf(x) >= 0);
   ok(bad.length === 0, bad.join(','));
 });
