@@ -1,0 +1,46 @@
+/* 무대 — 세 자리 세로셈 판 + 어림 판 */
+#board { display:inline-block; }
+
+#vert { background:#fff; border:5px solid var(--amber); border-radius:22px;
+        padding:clamp(10px,2.4vh,22px) clamp(16px,3.4vw,38px); box-shadow:0 8px 0 #e7c890;
+        display:inline-flex; flex-direction:column; align-items:flex-end; gap:0;
+        transition:border-color .25s; }
+#board.ok #vert, #board.ok #estb { border-color:var(--good); }
+
+#vert .row { display:flex; align-items:baseline; gap:0; }
+#vert .op { font-size:clamp(24px,4vw,50px); color:var(--amber-d); width:1.1em; text-align:right; }
+/* 자리 칸 — 백·십·일이 반드시 세로로 맞아야 한다 (3학년 세로셈의 전부) */
+#vert .d { font-family:'Nunito',sans-serif; font-weight:800;
+           font-size:clamp(38px,7.6vw,104px); color:var(--deep);
+           width:1.05em; text-align:center; }
+#vert .res .d { color:var(--amber-d); }
+/* 받아올림·받아내림 표 — 자리 위에 뜬다 */
+#vert .marks { height:1.35em; }
+#vert .mk { width:1.05em; text-align:center; height:1em;
+            font-family:'Nunito',sans-serif; font-weight:800;
+            font-size:clamp(18px,3vw,38px); line-height:1; }
+#vert .mk.up   { color:var(--bad); }
+#vert .mk.down { color:#2b7fd4; text-decoration:line-through 0; }
+#vert .mk.up::after   { content:'↑'; font-size:.62em; margin-left:.06em; opacity:.75; }
+#vert .mk.down::after { content:'↓'; font-size:.62em; margin-left:.06em; opacity:.75; }
+#vert .bar { height:5px; background:var(--deep); border-radius:3px; width:100%; margin:5px 0 3px; }
+
+/* 어림 판 — 계산이 아니라 판단을 묻는 자리라 판을 갈아낀다 */
+#estb { display:none; flex-direction:column; align-items:center; gap:4px;
+        background:#fff; border:5px dashed var(--amber); border-radius:22px;
+        padding:clamp(12px,2.6vh,24px) clamp(18px,4vw,44px); box-shadow:0 8px 0 #e7c890;
+        transition:border-color .25s; }
+#estb .erow { display:flex; align-items:center; gap:clamp(8px,1.6vw,18px); }
+#estb .eop { font-size:clamp(22px,3.6vw,44px); color:var(--amber-d); width:1.1em; text-align:right; }
+#estb .en { font-family:'Nunito',sans-serif; font-weight:800;
+            font-size:clamp(32px,6.2vw,82px); color:var(--deep); min-width:2.6em; text-align:right; }
+#estb .ar { font-size:clamp(20px,3vw,36px); color:var(--amber-d); opacity:.7; }
+#estb .ev { font-family:'Nunito',sans-serif; font-weight:800;
+            font-size:clamp(24px,4.4vw,52px); color:var(--amber-d); min-width:3.4em; text-align:left; }
+#estb .ev.big { font-size:clamp(36px,7vw,96px); min-width:2.8em; text-align:center; }
+#estb .et { font-size:clamp(18px,2.8vw,34px); color:var(--deep); opacity:.75; }
+#estb .ebar { height:4px; background:var(--deep); border-radius:3px; width:88%; margin:5px 0; opacity:.45; }
+#estb .erow.last { gap:clamp(6px,1.2vw,14px); }
+
+/* 자리 칸은 vw로 큰다 — 전자칠판에서는 clamp 상한까지 열려 3m 밖에서도 자리가 읽힌다 (§6-3·§13-1).
+   기존 22종이 모두 이 방식이라 별도 class 분기를 두지 않는다. */
