@@ -390,11 +390,12 @@ T('CURRICULUM u1 회귀 (9차시 ready 무손상)', () => {
   const u1 = W2.CURRICULUM.find(u => u.unit === 1);
   ok(u1 && u1.lesson_count === 9 && u1.lessons.length === 9 && u1.lessons.every(l => l.ready), 'u1 손상');
 });
-T('허브 index.html "3_math" 등재 정합 (units 2 · lessons 17)', () => {
+T('허브 index.html "3_math" 등재 정합 (units 3 · lessons 25)', () => {
   const hub = fs.readFileSync(path.join(TDIR, 'index.html'), 'utf8');
   const m = hub.match(/"3_math":\s*\{\s*file:\s*"g3_math\.html",\s*units:\s*(\d+),\s*lessons:\s*(\d+)\s*\}/);
   ok(m, '"3_math" 미등재');
-  ok(+m[1] === 2 && +m[2] === 17, '허브 카운트 ' + m[1] + '/' + m[2]);
+  /* ⚠️ 규약: 단원이 늘 때마다 허브 카운트가 커진다 — g3 게이트 전 자리를 함께 갱신할 것 */
+  ok(+m[1] === 3 && +m[2] === 25, '허브 카운트 ' + m[1] + '/' + m[2]);
 });
 T('g3_math.html 배선 정합 (v3 3요소 · 데이터 · slug)', () => {
   ok(/teacher-v3\.css/.test(G3HTML), 'v3 css 미배선');
