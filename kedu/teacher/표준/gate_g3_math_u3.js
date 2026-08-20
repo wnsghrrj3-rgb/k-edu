@@ -423,11 +423,11 @@ T('CURRICULUM u1·u2 회귀 (9차시·8차시 ready 무손상)', () => {
   ok(u1 && u1.lesson_count === 9 && u1.lessons.length === 9 && u1.lessons.every(l => l.ready), 'u1 손상');
   ok(u2 && u2.lesson_count === 8 && u2.lessons.length === 8 && u2.lessons.every(l => l.ready), 'u2 손상');
 });
-T('허브 index.html "3_math" 등재 정합 (units 3 · lessons 25)', () => {
+T('허브 index.html "3_math" 등재 정합 (units 4 · lessons 33)   /* ⚠️ 단원 개통 때마다 함께 올린다 */', () => {
   const hub = fs.readFileSync(path.join(TDIR, 'index.html'), 'utf8');
   const m = hub.match(/"3_math":\s*\{\s*file:\s*"g3_math\.html",\s*units:\s*(\d+),\s*lessons:\s*(\d+)\s*\}/);
   ok(m, '"3_math" 미등재');
-  ok(+m[1] === 3 && +m[2] === 25, '허브 카운트 ' + m[1] + '/' + m[2]);
+  ok(+m[1] === 4 && +m[2] === 33, '허브 카운트 ' + m[1] + '/' + m[2]);
 });
 T('g3_math.html 배선 정합 (v3 3요소 · 데이터 · slug)', () => {
   ok(/teacher-v3\.css/.test(G3HTML), 'v3 css 미배선');
