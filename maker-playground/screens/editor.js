@@ -126,6 +126,7 @@ window.MK_SCREENS.editor = (() => {
     photo: () => `<button class="ph-item" data-pane="ins-image">내 사진 파일 넣기 (8MB)</button>
       ${window.MK_SEG ? `<button class="ph-item" data-pane="person-swap">🪄 인물 바꾸기 — 선택한 사진 속 사람을 오리고·지우고·바꿔요</button>` : ''}
       ${window.MK_TOON ? `<button class="ph-item" data-pane="toon">🎭 캐릭터 필터 — 선택한 사진을 만화·스케치·픽셀로 (6가지)</button>` : ''}
+      ${window.MK_CHROMA ? `<button class="ph-item" data-pane="chroma">🟩 배경 지우기 — 초록 천·파란 도화지·흰 벽 앞 사진을 투명 배경으로</button>` : ''}
       ${stockBlock('P', '🎨 재료 검색 (내장 생성)')}
       ${offBtn('실사 스톡 사진', '외부 소스 미연결')}`,
     video: () => `<button class="ph-item" data-pane="ins-video">내 영상 파일 넣기 (8MB)</button>
@@ -626,6 +627,26 @@ window.MK_SCREENS.editor = (() => {
               onApply: (url, label) => {
                 H.push(label || '캐릭터 필터');
                 t2.src = url; delete t2.fill;
+                PG.render();
+              },
+            });
+          }
+          /* R136 — 크로마키: 같은 원칙(스키마 0, el.src 교체가 전부).
+             결과는 알파 PNG — 배경이 투명해진 인물이 어떤 장면 배경
+             위에도 그대로 얹힌다. */
+          if (act === 'chroma') {
+            if (!window.MK_CHROMA) return;
+            const sc3 = doc.scenes[e.sceneIdx];
+            const sel3 = e.selEl != null ? sc3.elements[e.selEl] : null;
+            if (!sel3 || sel3.kind !== 'image' || !sel3.src || sel3.video) {
+              return alert('사진 요소를 먼저 선택해 주세요 (영상·도형은 안 돼요)');
+            }
+            const t3 = sel3;
+            return window.MK_CHROMA.open({
+              src: t3.src,
+              onApply: (url, label) => {
+                H.push(label || '크로마키');
+                t3.src = url; delete t3.fill;
                 PG.render();
               },
             });
