@@ -843,3 +843,128 @@ Promise.all(jobs).then(function () {
   console.log('예외: ' + e.message);
   process.exit(1);
 });
+
+/* ⑬ 진입 게이트 — 로그인하지 않은 사람도 「무엇이 나가는지」는 볼 수 있다
+      ★고친 자리: 교사 화면이 열리자마자 `location.href='/auth/'` 로 튕겼다. 아침활동을
+        한 번도 못 본 채 가입부터 만나므로 **볼 수 있어야 정할 수 있다**는 순서가 뒤집혀 있었다.
+      ★두 갈래를 **짝으로** 본다 — 한쪽만 보면 다음 구멍이 된다:
+        (a) 튕기지 않고 실제로 화면이 선다  +  (b) 평소와 다르게 돈다는 사실을 화면에 적는다.
+        (a)만 보면 저장이 안 되는 줄 모르고 시간표를 짜다 잃는 화면이 통과하고,
+        (b)만 보면 띠만 있고 볼 것은 하나도 없는 화면이 통과한다.
+      ★DB 무접촉도 함께 강제한다 — 권한이 없는 자리에서 쓰기를 부르면 오류 문구가 화면에 뜬다.
+        할 수 없는 일을 처음부터 내놓지 않는 편이 정직하다. */
+(function () {
+  var t = fs.readFileSync(path.join(PAGES, 'teacher.html'), 'utf8');
+
+  /* ── (a) 부트 블록 정면 대조 — 정규식으로 본문 전체를 훑지 않는다.
+        「/auth/」 는 둘러보기 화면의 로그인 버튼에도 정당하게 실재하므로, 본문을 훑으면
+        고쳐 놓고도 잡히거나(거짓 실패) 버튼만 보고 통과한다(거짓 성공).
+        진입을 실제로 정하는 마디는 `db.auth.getUser()` 콜백 하나다 — 그 안만 본다. */
+  var bm = t.match(/db\.auth\.getUser\(\)\.then\(function\s*\(u\)\s*\{[\s\S]*?\n  \}\);/);
+  T(!!bm, '교사 화면 진입 블록(db.auth.getUser)을 못 찾음 — 시그니처가 바뀌었나');
+  var boot0 = bm ? bm[0] : '';
+  T(/location\s*\.\s*href\s*=/.test(boot0) === false,
+    '교사 화면이 진입 자리에서 아직 다른 주소로 튕김 — 화면을 보기 전에 가입부터 만난다');
+  T(/renderPeek\(\)/.test(boot0), '로그인하지 않았을 때 둘러보기로 착지하지 않음');
+  T(/renderPeek\('not_teacher'\)/.test(boot0),
+    '선생님 계정이 아닐 때 둘러보기로 착지하지 않음 — 막다른 화면이 남아 있다');
+
+  /* ── 화면을 실제로 굴린다. 상수 대조가 아니라 선 것을 본다. ── */
+  var grab = function (re, what) {
+    var m = t.match(re);
+    T(!!m, '교사 화면에서 ' + what + ' 를 못 찾음 — 시그니처가 바뀌었나');
+    return m ? m[0] : '';
+  };
+  var parts = [
+    grab(/var SUBJECTS = \[[\s\S]*?\];/, 'SUBJECTS'),
+    grab(/var SUBJECT_KO = \{[\s\S]*?\};/, 'SUBJECT_KO'),
+    grab(/function subjectGrades\(sub\)\{[\s\S]*?\n  \}/, 'subjectGrades'),
+    grab(/function subjectOk\(sub, grade\)\{[\s\S]*?\n  \}/, 'subjectOk'),
+    grab(/var PREVIEW = \{[\s\S]*?\n  \};/, 'PREVIEW'),
+    grab(/function peekLinks\(grade\)\{[\s\S]*?\n  \}/, 'peekLinks'),
+    grab(/function renderPeek\(reason\)\{[\s\S]*?\n  \}/, 'renderPeek')
+  ];
+  if (parts.some(function (x) { return !x; })) return;
+
+  var dom = new JSDOM('<!doctype html><html><body><div id="wrap"></div></body></html>',
+    { runScripts: 'outside-only' });
+  var w = dom.window;
+  w.eval('function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\\"":"&quot;"}[c];});}');
+  w.KQuiz = { englishData: DATA, hanjaData: require('./templates/hanja_data.js') };
+  w.eval('var state = { peek:false }, wrap = document.getElementById("wrap");');
+  /* db 를 부르면 그 자리에서 잡히게 세운다 — 둘러보기는 DB 를 한 번도 건드리면 안 된다.
+     null 을 주면 「부르지 않았다」와 「불렀는데 터졌다」가 구분되지 않는다. */
+  w.eval('var __dbCalls = 0;'
+       + 'function __tap(){ __dbCalls++; return __mk(); }'
+       + 'function __mk(){ return new Proxy(function(){ return __tap(); }, { get:function(){ return __tap(); }, apply:function(){ return __tap(); } }); }'
+       + 'var db = __mk();');
+  w.eval(parts.join('\n') + '\nthis.__ = { pk: peekLinks, rp: renderPeek, calls: function(){ return __dbCalls; }, peek: function(){ return state.peek; } };');
+  var F = w.__;
+
+  /* (1) 통로 표를 공유하는가 — 둘러보기만 다른 주소를 열면
+         가입 전에 본 것과 가입 후에 나가는 것이 갈린다. */
+  var PV = (t.match(/var PREVIEW = \{[\s\S]*?\n  \};/) || [''])[0];
+  ['chars.html', 'sents_preview.html', 'math.html'].forEach(function (f) {
+    T(PV.indexOf(f) >= 0, 'PREVIEW 표에 ' + f + ' 가 없음 — 표가 바뀌었다');
+  });
+  var l3 = F.pk(3);
+  ['chars.html?grade=3', 'sents_preview.html?grade=3', 'math.html?grade=3'].forEach(function (h) {
+    T(l3.indexOf(h) >= 0, '3학년 둘러보기에 ' + h + ' 통로가 없음');
+  });
+
+  /* (2) 학년 가드 — 원장 없는 과목은 통로를 주지 않고 **이유를 적는다**.
+         짝으로 본다: 안 여는 것만 보면 아무 통로도 없는 화면이 통과한다. */
+  var l1 = F.pk(1);
+  T(l1.indexOf('sents_preview.html') < 0, '1학년 둘러보기에 영어 통로가 열림 — 원장이 없는 학년이다');
+  T(/영어 \(3학년부터\)/.test(l1), '1학년에서 영어를 왜 못 보는지 적지 않음');
+  T(l1.indexOf('chars.html?grade=1') >= 0 && l1.indexOf('math.html?grade=1') >= 0,
+    '1학년 둘러보기에서 한자·수학 통로까지 함께 사라짐 — 전 학년 과목이다');
+  DATA.grades().forEach(function (g) {
+    T(F.pk(g).indexOf('sents_preview.html?grade=' + g) >= 0,
+      g + '학년 둘러보기에 영어 통로가 없음 — 원장이 있는 학년이다');
+  });
+
+  /* (3) 「오늘」이라 말하지 않는다 — 반도 시간표도 진도도 없으므로 아무 날이나 여는 통로다
+         (D8-ⓖ 와 같은 규약: 모르는 통로에 오늘이라 이름 붙이지 않는다). */
+  [1, 3, 6].forEach(function (g) {
+    T(/오늘/.test(F.pk(g)) === false, g + '학년 둘러보기 통로가 「오늘」이라 말함 — 진도를 모르는 자리다');
+  });
+
+  /* (4) 화면이 실제로 선다 + 다르게 돈다는 것을 적는다 (짝) */
+  F.rp();
+  var doc = w.document, wrapEl = doc.getElementById('wrap');
+  T(wrapEl.innerHTML.length > 0, '둘러보기 화면이 아무것도 그리지 않음');
+  T(!!doc.querySelector('.peeknote'), '둘러보기인데 안내 띠가 없음 — 조용히 다르게 도는 화면이 된다');
+  T(/저장|로그인/.test(doc.querySelector('.peeknote') ? doc.querySelector('.peeknote').textContent : ''),
+    '안내 띠가 무엇이 다른지(저장·로그인) 말하지 않음');
+  T(!!doc.getElementById('peek-grade'), '둘러보기에 학년 고르는 자리가 없음');
+  T(doc.querySelectorAll('#peek-links a').length >= 1, '둘러보기에 열어 볼 통로가 하나도 없음');
+  T(F.peek() === true, '둘러보기 상태 표시(state.peek)가 서지 않음');
+
+  /* (5) DB 무접촉 — 여기서 쓰기를 부르면 권한 오류가 화면에 뜬다 */
+  T(F.calls() === 0, '둘러보기 화면이 DB 를 건드림(' + F.calls() + '회) — 권한 없는 자리다');
+
+  /* (6) 쓰기 자리가 아예 없다 — 눌러 놓고 못 하게 하는 것보다 내놓지 않는 편이 정직하다 */
+  T(wrapEl.innerHTML.indexOf('cls-name') < 0 && wrapEl.innerHTML.indexOf('data-dow') < 0,
+    '둘러보기 화면에 반 만들기·시간표 저장 자리가 그려짐 — 저장할 수 없는 자리다');
+
+  /* (7) 학년을 바꾸면 통로가 그 자리에서 다시 선다 —
+         3학년부터인 영어가 1학년을 고른 채 열려 있으면 그게 곧 「준비 중」을 만나는 길이다. */
+  var sel = doc.getElementById('peek-grade');
+  sel.value = '1';
+  T(typeof sel.onchange === 'function', '학년을 바꿔도 통로가 다시 서지 않음(onchange 없음)');
+  sel.onchange.call(sel);
+  T(doc.getElementById('peek-links').innerHTML.indexOf('sents_preview.html') < 0,
+    '1학년으로 바꿨는데 영어 통로가 그대로 남아 있음');
+  sel.value = '5';
+  sel.onchange.call(sel);
+  T(doc.getElementById('peek-links').innerHTML.indexOf('sents_preview.html?grade=5') >= 0,
+    '5학년으로 바꿨는데 영어 통로가 살아나지 않음');
+
+  /* (8) 선생님 계정이 아닌 경우도 같은 화면으로 착지하되, 이유는 다르게 적는다 */
+  F.rp('not_teacher');
+  T(/선생님 계정/.test(doc.querySelector('.peeknote').textContent),
+    '선생님 계정이 아닌 사람에게 그 이유를 적지 않음');
+  T(doc.querySelectorAll('#peek-links a').length >= 1,
+    '선생님 계정이 아니면 볼 통로까지 사라짐 — 여기서도 무엇이 나가는지는 볼 수 있어야 한다');
+})();

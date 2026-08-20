@@ -76,6 +76,11 @@ td.name{font-weight:700}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:26px;background:#1A202C;color:#fff;padding:12px 22px;border-radius:50px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:99}
 .toast.on{opacity:1}
 .msg{text-align:center;padding:34px 20px;color:var(--sub);font-size:14.5px;line-height:1.7}
+/* 둘러보기 띠 — 로그인 없이 열린 화면은 평소와 다르게 돈다. 그 사실을 화면에 적는다
+   (sents.html·chars.html 의 peeknote 와 같은 규약: 조용히 다르게 도는 화면은 신뢰를 잃는다). */
+.peeknote{background:#FFF6E3;border:1px solid #F0DCB4;color:#8A6320;border-radius:12px;
+  padding:10px 14px;margin-bottom:14px;font-size:13px;line-height:1.7}
+.peekoff{background:#F1F3F7;color:var(--faint);cursor:default}
 .steps{display:flex;gap:6px;justify-content:center;margin-bottom:18px}
 .step-dot{width:26px;height:5px;border-radius:3px;background:var(--border)}
 .step-dot.on{background:var(--primary)}
@@ -173,6 +178,27 @@ td.name{font-weight:700}
     });
     return out.length ? '<div style="margin-top:12px">'+out.join('')+'</div>' : '';
   }
+  /* 둘러보기 통로 — 로그인 없이 열었을 때 「무엇이 나가는지」를 학년만 골라 바로 본다.
+     ★`previewLinks` 와 통로 표(`PREVIEW`)를 공유한다 — 둘러보기만 다른 주소를 열면
+       가입 전에 본 것과 가입 후에 나가는 것이 갈린다.
+     ★라벨에 「오늘」이 없다: 반도 시간표도 진도도 없으므로 **아무 날이나 여는 통로**다.
+       모르는 통로에 오늘이라 이름 붙이지 않는다(D8-ⓖ 규약과 같은 자리).
+     ★그 학년에 원장이 없는 과목은 통로를 주지 않고 **이유를 적는다** — 눌러 놓고
+       「준비 중」을 만나게 하지 않는다(요일 칸 잠금과 같은 규약). */
+  function peekLinks(grade){
+    return SUBJECTS.map(function(s){
+      var sub = s[0]; if (!sub || !PREVIEW[sub]) return '';
+      var name = SUBJECT_KO[sub] || sub;
+      if (!subjectOk(sub, grade)) {
+        var gs = subjectGrades(sub);
+        return '<span class="btn ghost peekoff" style="display:inline-block;margin:0 6px 6px 0">'
+          + esc(name) + ' (' + (gs && gs.length ? Math.min.apply(null, gs) + '학년부터' : '준비 중') + ')</span>';
+      }
+      return '<a class="btn ghost" style="text-decoration:none;display:inline-block;margin:0 6px 6px 0" '
+        + 'href="' + PREVIEW[sub].href + '?grade=' + encodeURIComponent(grade) + '">'
+        + esc(name) + ' 미리 보기</a>';
+    }).join('');
+  }
   /* 저장 직전 마지막 관문 — 화면을 우회해 들어온 조합(개발자도구·묵은 화면)도 여기서 막는다 */
   function badDays(days, grade){
     return Object.keys(days || {}).filter(function(d){ return days[d] && !subjectOk(days[d], grade); });
@@ -193,7 +219,7 @@ td.name{font-weight:700}
     return subs.map(function(s){ return by[s].join('·')+'요일 '+(SUBJECT_KO[s]||s)+'('+(SUBJECT_UNIT[s]||'')+')'; }).join(', ');
   }
   var ALL_HANJA = { mon:'hanja', tue:'hanja', wed:'hanja', thu:'hanja', fri:'hanja' };
-  var state = { teacher:null, classes:[], cc:null, routine:null, board:null };
+  var state = { teacher:null, classes:[], cc:null, routine:null, board:null, peek:false };
 
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
   function toast(m){ var t=document.getElementById('toast'); t.textContent=m; t.classList.add('on'); setTimeout(function(){t.classList.remove('on');},2000); }
@@ -230,6 +256,45 @@ td.name{font-weight:700}
       + 'style="font-size:13px;color:var(--primary);text-decoration:none">'+esc(a.label)+' →</a></div>';
   }
   function dots(n){ return '<div class="steps">'+[1,2,3].map(function(i){return '<div class="step-dot'+(i<=n?' on':'')+'"></div>';}).join('')+'</div>'; }
+
+  /* ═══ 0단계: 아직 로그인하지 않았다 → 튕기지 않고 둘러보기로 연다 ═══
+     ★예전엔 이 자리에서 `/auth/` 로 즉시 보냈다. 아침활동이 무엇인지 한 번도 못 본 채
+       가입 화면부터 만나므로, **볼 수 있어야 정할 수 있다**는 순서가 뒤집혀 있었다.
+     ★대신 조용히 열지 않는다 — 저장이 안 되는 상태임을 띠로 먼저 적는다.
+     ★이 화면은 **DB 를 한 번도 건드리지 않는다**(쓰기 화면을 아예 그리지 않는다).
+       반 만들기·시간표 저장·채점은 여기서 도달할 수 없다 — 눌러 놓고 권한 오류를
+       만나게 하는 것보다, 할 수 없는 일을 처음부터 내놓지 않는 편이 정직하다. */
+  function renderPeek(reason){
+    state.peek = true;
+    var g = 1;
+    wrap.innerHTML = '<div class="peeknote">둘러보는 중이에요 — '
+      + (reason === 'not_teacher'
+          ? '이 계정은 아직 <b>선생님 계정이 아니라서</b> 우리 반 자리는 열리지 않아요. '
+          : '아직 <b>로그인하지 않아서</b> 우리 반 자리는 열리지 않아요. ')
+      + '아래에서 <b>무엇이 나가는지</b>는 그대로 볼 수 있어요.</div>'
+      + '<div class="card">'
+      + '<h2>🌅 매일 아침, 하루 한 걸음</h2>'
+      + '<div class="hint">요일만 한 번 정해 두면 그날 것이 아침마다 저절로 올라가고, '
+      + '아이가 풀면 채점까지 저절로 돼요. 선생님은 결과만 보면 끝이에요.<br>'
+      + '먼저 학년을 골라 <b>어떤 것이 나가는지</b> 직접 보세요.</div>'
+      + '<label>학년</label><select id="peek-grade" style="width:130px">'
+      + [1,2,3,4,5,6].map(function(n){ return '<option value="'+n+'">'+n+'학년</option>'; }).join('')
+      + '</select>'
+      + '<div id="peek-links" style="margin-top:14px">' + peekLinks(g) + '</div>'
+      + '</div>'
+      + '<div class="card">'
+      + '<h2>우리 반에 들여놓으려면</h2>'
+      + '<div class="hint">선생님 계정으로 들어오면 이 자리에서 반을 만들고 요일을 정할 수 있어요. '
+      + '학급코드는 저절로 만들어져요.</div>'
+      + '<button class="big-btn" id="peek-login">선생님으로 시작하기</button>'
+      + '</div>';
+    /* 학년을 바꾸면 통로가 그 자리에서 다시 서야 한다 — 3학년부터인 영어가
+       1학년을 고른 채로 열려 있으면 그게 곧 「준비 중」을 만나는 길이다. */
+    document.getElementById('peek-grade').onchange = function(){
+      document.getElementById('peek-links').innerHTML = peekLinks(Number(this.value) || 1);
+    };
+    document.getElementById('peek-login').onclick = function(){ location.href = '/auth/'; };
+  }
 
   /* ═══ 1단계: 반이 없다 → 이 자리에서 만든다 ═══ */
   function renderMakeClass(){
@@ -446,14 +511,13 @@ td.name{font-weight:700}
       });
   }
 
+  /* ★진입 — 못 들어온 사람을 내쫓지 않는다.
+       로그인 전이든 선생님 계정이 아니든, 화면은 열리고 「무엇이 나가는지」는 보인다.
+       예전엔 둘 다 막다른 길이었다(하나는 즉시 리다이렉트, 하나는 로그인 버튼 한 개). */
   db.auth.getUser().then(function(u){
-    if (!u || !u.data || !u.data.user) { location.href = '/auth/'; return; }
+    if (!u || !u.data || !u.data.user) { renderPeek(); return; }
     db.from('teachers').select('id,name').eq('user_id', u.data.user.id).maybeSingle().then(function(t){
-      if (!t.data) {
-        wrap.innerHTML = '<div class="card"><div class="msg">선생님 계정으로 로그인해 주세요.<br><br>'
-          + '<button class="btn" onclick="location.href=\'/auth/\'">로그인하러 가기</button></div></div>';
-        return;
-      }
+      if (!t.data) { renderPeek('not_teacher'); return; }
       state.teacher = t.data;
       document.getElementById('me').textContent = t.data.name + ' 선생님';
       db.from('class_codes').select('id,code,label,grade').eq('teacher_id', t.data.id).eq('is_active', true)
