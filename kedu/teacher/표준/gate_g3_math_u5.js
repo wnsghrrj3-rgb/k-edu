@@ -518,11 +518,12 @@ T('CURRICULUM u1·u2·u3·u4 회귀 (9·8·8·8차시 ready 무손상)', () => {
     ok(c && c.lesson_count === want[u] && c.lessons.length === want[u] && c.lessons.every(l => l.ready), 'u' + u + ' 손상');
   });
 });
-T('허브 index.html "3_math" 등재 정합 (units 5 · lessons 43)', () => {
+/* ⚠️ 단원 개통 때마다 g3 게이트 전 자리의 허브 단언을 함께 올린다 — 동반 갱신 규약 (u6 개통: 5/43 → 6/54) */
+T('허브 index.html "3_math" 등재 정합 (units 6 · lessons 54)', () => {
   const hub = fs.readFileSync(path.join(TDIR, 'index.html'), 'utf8');
   const m = hub.match(/"3_math":\s*\{\s*file:\s*"g3_math\.html",\s*units:\s*(\d+),\s*lessons:\s*(\d+)\s*\}/);
   ok(m, '"3_math" 미등재');
-  ok(+m[1] === 5 && +m[2] === 43, '허브 카운트 ' + m[1] + '/' + m[2]);
+  ok(+m[1] === 6 && +m[2] === 54, '허브 카운트 ' + m[1] + '/' + m[2]);
 });
 T('g3_math.html 배선 정합 (v3 3요소 · 데이터 · slug)', () => {
   ok(/teacher-v3\.css/.test(G3HTML), 'v3 css 미배선');
