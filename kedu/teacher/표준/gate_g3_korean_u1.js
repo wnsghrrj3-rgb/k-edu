@@ -2,7 +2,8 @@
    40분 표준 v2 실내용 신규 제작 검증. 실엔진(jsdom) 부팅 → openShow → 7요소 실렌더 + 회귀.
 
    ⚠️ 국어 첫 진입이라 수학 게이트와 달라지는 자리 네 곳 (파일 머리 규약을 그대로 검사한다):
-   (1) 키가 연속하지 않는다 — u1_l01 · u1_l02(2·3차시) · u1_l04(4·5차시).
+   (1) 키가 연속하지 않는다 — u1_l01 · u1_l02(2·3) · u1_l04(4·5) · u1_l06 ·
+       u1_l07(7·8) · u1_l09(9·10) · u1_l11(11·12) · u1_l13.  l03·l05·l08·l10·l12는 생기지 않는다.
        수학의 "l01~lNN 연속" 단언을 그대로 가져오면 즉시 실패한다.
    (2) 묶음 차시는 80분 — duration_min·covers·period_split을 함께 검사하고,
        period_split 슬라이드 tnote에 교시 경계가 적혀 있는지 본다.
@@ -10,8 +11,9 @@
        자체 창작 동시 두 편의 네 행을 학생 본차시 원문과 문자열 완전 일치로 검사한다.
    (4) 국어 최우선 가드 = 저작권. 지도서 수록 제재명·작가명이 학생 노출 자리에 0건이어야 한다.
 
-   ⚠️ 허브(index.html) 미등재가 정상이다 — u1 8항목 가운데 3항목만 개통했다.
-      READY 등재는 "실물 양산이 끝나는 학년·과목"만 한다(g2_korean 선례). 게이트가 미등재를 못 박는다.
+   ⚠️ 2026-08-21 2차 — u1 8항목 완주. 이 시점에 허브(index.html)에 "3_korean"을 등재했다
+      (units 1 · lessons 8). g3 수학이 u1 개통 때 1/9로 등재하고 단원마다 카운트를 올린 선례를 따른다.
+      다음 단원(g3 국어 u2) 개통 시 이 게이트의 허브 카운트 단언을 함께 올려야 한다.
 
    실행: NODE_PATH=/home/claude/.jsdom/node_modules node gate_g3_korean_u1.js */
 'use strict';
@@ -36,11 +38,23 @@ const SDIR = path.join(ROOT, 'grade3/semester1/korean/1단원_생생하게표현
 const SRC01 = fs.readFileSync(path.join(SDIR, 'g3_kor_u1_l01.html'), 'utf8');
 const SRC02 = fs.readFileSync(path.join(SDIR, 'g3_kor_u1_l02_03.html'), 'utf8');
 const SRC04 = fs.readFileSync(path.join(SDIR, 'g3_kor_u1_l04_05.html'), 'utf8');
+const SRC06 = fs.readFileSync(path.join(SDIR, 'g3_kor_u1_l06.html'), 'utf8');
+const SRC07 = fs.readFileSync(path.join(SDIR, 'g3_kor_u1_l07_08.html'), 'utf8');
+const SRC09 = fs.readFileSync(path.join(SDIR, 'g3_kor_u1_l09_10.html'), 'utf8');
+const SRC11 = fs.readFileSync(path.join(SDIR, 'g3_kor_u1_l11_12.html'), 'utf8');
+const SRC13 = fs.readFileSync(path.join(SDIR, 'g3_kor_u1_l13.html'), 'utf8');
 
 let pass = 0, fail = 0;
 const T = (n, f) => { try { f(); pass++; console.log('  ✅ ' + n); } catch (e) { fail++; console.log('  ❌ ' + n + ' — ' + e.message); } };
 const ok = (v, m) => { if (!v) throw new Error(m || 'falsy'); };
 const plain = (o) => JSON.stringify(o).replace(/\*/g, '');
+/* ⚠️ 학생 본차시 원문은 <b class="emph">가 낱말 한가운데를 가르는 곳이 있다
+   (예: 자신감 넘치고 밝은<b>목소리</b>, 글씨 쓰기 칸은 한 글자씩 따로 감싼다).
+   원문 대조는 그래서 두 갈래로 한다 —
+     txt(): 태그 제거 + 공백 1칸으로 정규화 (문장·구 대조용)
+     sq() : 태그 제거 + 공백 전부 제거      (칸에 갈라 담긴 낱말 대조용) */
+const txt = (h) => h.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ');
+const sq = (h) => h.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, '').replace(/\s+/g, '');
 
 function extractBody(html) {
   let b = html.replace(/[\s\S]*?<body[^>]*>/, '').replace(/<\/body>[\s\S]*/, '');
@@ -74,9 +88,14 @@ global.window = { LESSONS: {} };
 eval(DATA);
 const L = global.window.LESSONS;
 
-const KEYS = ['u1_l01', 'u1_l02', 'u1_l04'];
-const NS = { u1_l01: 1, u1_l02: 2, u1_l04: 4 };
-const BLOCKED = { u1_l02: 24, u1_l04: 24, u1_l01: 19 };
+const KEYS = ['u1_l01', 'u1_l02', 'u1_l04', 'u1_l06', 'u1_l07',
+              'u1_l09', 'u1_l11', 'u1_l13'];
+const NS = { u1_l01: 1, u1_l02: 2, u1_l04: 4, u1_l06: 6, u1_l07: 7,
+             u1_l09: 9, u1_l11: 11, u1_l13: 13 };
+/* 묶음 차시 24슬(1교시 12 + 2교시 12) / 단일 차시 19슬 */
+const PAIRED = ['u1_l02', 'u1_l04', 'u1_l07', 'u1_l09', 'u1_l11'];
+const BLOCKED = {};
+KEYS.forEach(k => { BLOCKED[k] = PAIRED.includes(k) ? 24 : 19; });
 
 function studentText(k) {
   const s = L[k].slides.map(x => { const c = Object.assign({}, x); delete c.tnote; return c; });
@@ -91,12 +110,14 @@ let W;
 T('부팅 + u1 3항목 로드', () => {
   W = boot();
   const keys = Object.keys(W.LESSONS).filter(k => k.startsWith('u1_'));
-  ok(keys.length === 3, 'u1 항목 ' + keys.length);
+  ok(keys.length === 8, 'u1 항목 ' + keys.length);
 });
-T('⚠️ 키가 건너뛴다 = 묶음 차시 규약 (u1_l01·u1_l02·u1_l04, l03·l05 없음)', () => {
+T('⚠️ 키가 건너뛴다 = 묶음 차시 규약 (l03·l05·l08·l10·l12 없음)', () => {
   const got = Object.keys(L).filter(k => k.startsWith('u1_')).sort();
   ok(JSON.stringify(got) === JSON.stringify(KEYS), got.join(','));
-  ok(!L['u1_l03'] && !L['u1_l05'], '묶인 차시가 따로 생김');
+  ['u1_l03', 'u1_l05', 'u1_l08', 'u1_l10', 'u1_l12']
+    .forEach(k => ok(!L[k], '묶인 차시가 따로 생김: ' + k));
+  ok(Object.keys(L).filter(k => k.startsWith('u1_')).length === 8, '8항목 아님');
 });
 T('슬라이드 id 0패딩 s01~sNN 연속', () => {
   KEYS.forEach(k => {
@@ -118,9 +139,9 @@ KEYS.forEach(k => {
     ok(html.length > 3000, '렌더 길이 ' + html.length);
   });
 });
-T('u1_l01만 review 없음 · 묶음 두 항목은 review 실존', () => {
+T('u1_l01만 review 없음 · 나머지 일곱 항목은 review 실존', () => {
   ok(!L['u1_l01'].slides.some(s => s.block === 'review'), 'l01에 review');
-  ['u1_l02', 'u1_l04'].forEach(k =>
+  KEYS.filter(k => k !== 'u1_l01').forEach(k =>
     ok(L[k].slides.some(s => s.block === 'review'), k + ' review 없음'));
 });
 T('img 폴백 경로 실존 (미생성 = 폴백 정상)', () => {
@@ -131,7 +152,7 @@ T('img 폴백 경로 실존 (미생성 = 폴백 정상)', () => {
   });
 });
 
-console.log('═══ C. 회귀 (3항목 전수 재부팅) ═══');
+console.log('═══ C. 회귀 (8항목 전수 재부팅) ═══');
 KEYS.forEach(k => {
   T(k + ' 회귀 부팅', () => {
     const w2 = boot();
@@ -193,6 +214,121 @@ T('감각적 표현 정의 = 본차시 계승', () => {
   ok(SRC02.includes('생생하게 나타낸 말'), '본차시 미대응');
 });
 
+/* ── 2차(l06·l07·l09·l11·l13) 인용 대조 ── */
+const STORY = ['하준이는 발표가 무서워 고개를 푹 숙였어요.',
+               '"나… 못 하겠어." 떨리는 작은 목소리였어요.',
+               '서아가 어깨를 토닥이며 밝게 말했어요.',
+               '"괜찮아, 내가 응원할게!"'];
+T('「떨리는 발표」 4행 = 학생 본차시 원문과 문자열 완전 일치', () => {
+  const s06 = L['u1_l07'].slides.find(s => s.id === 's06').data.content.replace(/\*/g, '');
+  STORY.forEach(line => {
+    ok(SRC07.includes(line), '본차시에 없는 줄: ' + line);
+    ok(s06.includes(line), '케이티처에 없는 줄: ' + line);
+  });
+});
+T('l06 상황 ↔ 목소리·말투 짝 전수 대조', () => {
+  const a = L['u1_l06'].slides.find(s => s.id === 's10').data.answer;
+  [['칭찬을 들음', '밝고 자신감 넘치는 목소리'],
+   ['잘못을 깨달음', '공손하고 작은 목소리'],
+   ['반가운 친구를 만남', '반갑고 신나는 목소리']]
+    .forEach(([k, v]) => ok(a.includes(k + '-' + v), '짝 어긋남: ' + k));
+  ['자신감 넘치고 밝은 목소리', '공손하고 작은 목소리']
+    .forEach(w => ok(txt(SRC06).includes(w), '본차시 미대응: ' + w));
+});
+T('l06 좋은 점 3종 = 본차시 계승 · 오답 1종 분리', () => {
+  const t = plain(L['u1_l06'].slides);
+  ['내 마음을 정확히 전해요', '상대의 마음을 배려해요', '서로의 처지를 이해해요']
+    .forEach(w => { ok(t.includes(w), '누락: ' + w); ok(SRC06.includes(w), '본차시 미대응: ' + w); });
+  ok(L['u1_l06'].slides.find(s => s.id === 's11').data.answer === '친구가 더 화나요', '오답 자리 어긋남');
+  ok(SRC06.includes('친구가 더 화나요'), '본차시 미대응 (오답)');
+});
+T('l07 마음 ↔ 표정·몸짓 짝 전수 대조', () => {
+  const a = L['u1_l07'].slides.find(s => s.id === 's10').data.answer;
+  [['무서움', '고개 숙이고 움츠리기'], ['응원함', '웃으며 어깨 토닥이기'],
+   ['해냈음', '활짝 웃으며 두 손 번쩍']]
+    .forEach(([k, v]) => {
+      ok(a.includes(k + '-' + v), '짝 어긋남: ' + k);
+      ok(SRC07.includes(v), '본차시 미대응: ' + v);
+    });
+});
+T('l07 응원 표현 3종 · 아닌 것 2종 = 본차시 계승', () => {
+  const yes = ['환하게 웃는 표정', '밝고 다정한 목소리', '어깨를 토닥이는 몸짓'];
+  const no = ['눈을 흘기는 표정', '등을 돌리는 몸짓'];
+  const t = plain(L['u1_l07'].slides);
+  yes.concat(no).forEach(w => { ok(t.includes(w), '누락: ' + w); ok(SRC07.includes(w), '본차시 미대응: ' + w); });
+  const a = L['u1_l07'].slides.find(s => s.id === 's16').data.answer;
+  no.forEach(w => ok(a.includes(w), '오답 자리 어긋남: ' + w));
+  yes.forEach(w => ok(!a.includes(w), '정답이 오답 자리에: ' + w));
+});
+T('l09 상황 ↔ 말투 짝 전수 대조 · 표정 정답', () => {
+  const a = L['u1_l09'].slides.find(s => s.id === 's10').data.answer;
+  [['친구가 다침', '걱정스럽고 다정한 말투'], ['준비물 빌리기', '미안하고 공손한 말투'],
+   ['반가운 친구 만남', '반갑고 신나는 말투']]
+    .forEach(([k, v]) => ok(a.includes(k + '-' + v), '짝 어긋남: ' + k));
+  ok(L['u1_l09'].slides.find(s => s.id === 's09').data.answer === '환하게 웃는 표정', 'l09 표정 정답 어긋남');
+  ['걱정스러운 표정', '괜찮아? 내가 도와줄게.', '환하게 웃는 표정']
+    .forEach(w => ok(SRC09.includes(w), '본차시 미대응: ' + w));
+});
+T('l09 지킬 점 3종 · 아닌 것 2종 = 본차시 계승', () => {
+  const yes = ['상황에 맞게 실감 나게', '언어 예절 지키기', '또렷한 목소리로 전하기'];
+  const no = ['친구를 비웃기', '대충 장난치기'];
+  const t = plain(L['u1_l09'].slides);
+  yes.concat(no).forEach(w => { ok(t.includes(w), '누락: ' + w); ok(SRC09.includes(w), '본차시 미대응: ' + w); });
+  const a = L['u1_l09'].slides.find(s => s.id === 's16').data.answer;
+  no.forEach(w => ok(a.includes(w), '오답 자리 어긋남: ' + w));
+});
+T('l11 감각적 표현 판별 5항목 = 본차시 계승 (정답 3 · 아닌 것 2)', () => {
+  const yes = ['파도가 철썩철썩 친다', '갈매기가 끼룩끼룩 운다', '모래가 보슬보슬하다'];
+  const no = ['바다가 있다', '날씨가 그렇다'];
+  const t = plain(L['u1_l11'].slides);
+  yes.concat(no).forEach(w => { ok(t.includes(w), '누락: ' + w); ok(SRC11.includes(w), '본차시 미대응: ' + w); });
+  const a = L['u1_l11'].slides.find(s => s.id === 's10').data.answer;
+  no.forEach(w => ok(a.includes(w), '오답 자리 어긋남: ' + w));
+  yes.forEach(w => ok(!a.includes(w), '정답이 오답 자리에: ' + w));
+});
+T('l11 상황 ↔ 대화 짝 전수 대조', () => {
+  const a = L['u1_l11'].slides.find(s => s.id === 's16').data.answer;
+  [['비가 와서 좋을 때', '빗소리가 시원해서 좋아!'],
+   ['친구가 아플 때', '많이 아프니? 얼른 나아.'],
+   ['선물을 받을 때', '우아, 정말 고마워!']]
+    .forEach(([k, v]) => {
+      ok(a.includes(k) && a.includes(v), '짝 어긋남: ' + k);
+      ok(SRC11.includes(v), '본차시 미대응: ' + v);
+    });
+  ok(/느낌을 살려 또박또박/.test(plain(L['u1_l11'].slides)), '낭송회 태도 누락');
+  ok(SRC11.includes('느낌을 살려 또박또박'), '본차시 미대응 (낭송회 태도)');
+});
+T('⚠️ l13 연음 전수 대조 (이어 읽기 4 · 대표음화 2) = 본차시 값과 완전 일치', () => {
+  const LINK = [['꽃이', '꼬치'], ['무릎을', '무르플'], ['부엌에서', '부어케서'], ['책을', '채글']];
+  const CHANGE = [['부엌 안', '부어간'], ['무릎 위', '무르뷔']];
+  const t = plain(L['u1_l13'].slides);
+  LINK.concat(CHANGE).forEach(([w, snd]) => {
+    ok(t.includes(w), 'l13에 없는 낱말: ' + w);
+    ok(t.includes('[' + snd + ']'), 'l13에 없는 발음: [' + snd + ']');
+    ok(SRC13.includes(snd), '본차시 미대응: ' + snd);
+  });
+  /* 규칙이 갈리는 자리 = 뒤에 뜻이 있는 낱말이 오면 소리가 바뀐다 */
+  const s06 = L['u1_l13'].slides.find(s => s.id === 's06').data.content.replace(/\*/g, '');
+  ok(/뜻을 지닌 낱말/.test(s06) && /다른 소리로 바꿔/.test(s06), 'l13 대표음화 규칙문 어긋남');
+  const s05 = L['u1_l13'].slides.find(s => s.id === 's05').data.content.replace(/\*/g, '');
+  ok(/뜻이 없는 ㅇ/.test(s05) && /그대로 이어/.test(s05), 'l13 연음 규칙문 어긋남');
+});
+T('⚠️ l13 오답 발음 2종이 정답 자리에 새지 않는다', () => {
+  const a = L['u1_l13'].slides.find(s => s.id === 's10').data.answer;
+  ok(a.includes('무르플위') && a.includes('부어칸'), '오답 자리 어긋남');
+  const s11a = L['u1_l13'].slides.find(s => s.id === 's11').data.answer;
+  ['무르플위', '부어칸'].forEach(w => ok(!s11a.includes(w), '오답이 정답 잇기에 샘: ' + w));
+  ok(L['u1_l13'].slides.find(s => s.id === 's09').data.answer === '[꼬치]', 'l13 발음 정답 어긋남');
+});
+T('l13 글씨 쓰기 낱말 3종 = 본차시 계승 (향기·시간·햇살)', () => {
+  const o = L['u1_l13'].slides.find(s => s.block === 'offline_activity').data;
+  ['향기', '시간', '햇살'].forEach(w => {
+    ok(plain(o).includes(w), '누락: ' + w);
+    /* 본차시는 글씨 쓰기 칸에 '향'·'기'를 한 글자씩 따로 담는다 -> 공백 제거 대조 */
+    ok(sq(SRC13).includes(w), '본차시 미대응: ' + w);
+  });
+});
+
 console.log('═══ E. 저작권 · 용어 가드 ═══');
 T('⚠️ 지도서 수록 제재명·작가명 0건 (국어 최우선 가드)', () => {
   const COPY_BAN = ['웃음 참는 나무', '한현정', '벚꽃 팝콘', '김기연', '오늘부터는', '오은영',
@@ -202,11 +338,14 @@ T('⚠️ 지도서 수록 제재명·작가명 0건 (국어 최우선 가드)',
   const hit = COPY_BAN.filter(w => BODY.includes(w));
   ok(hit.length === 0, hit.join(','));
 });
-T('게재 시는 자체 창작 두 편뿐 (「풀밭에서」·「폴짝 줄넘기」)', () => {
+T('게재 제재는 자체 창작 세 편뿐 (「풀밭에서」·「폴짝 줄넘기」·「떨리는 발표」)', () => {
+  /* ⚠️ 「떨리는 발표」는 학생 본차시가 지도서 수록 동화 자리를 대신해 자체 창작한 이야기다.
+     허용 목록을 넓히는 것이 아니라, 본차시가 이미 창작해 둔 것만 1:1로 계승한다. */
+  const ALLOW = ['「풀밭에서」', '「폴짝 줄넘기」', '「떨리는 발표」', '「생생하게 표현해요」'];
   const titles = BODY.match(/「[^」]+」/g) || [];
   const uniq = [...new Set(titles)];
-  ok(uniq.every(t => t === '「풀밭에서」' || t === '「폴짝 줄넘기」' || t === '「생생하게 표현해요」'),
-     uniq.join(','));
+  ok(uniq.every(t => ALLOW.includes(t)), uniq.join(','));
+  ok(SRC07.includes('「떨리는 발표」'), '본차시가 창작하지 않은 제목');
 });
 T('미도입 갈래(4학년 이상 소관) 학생 노출 0', () => {
   const BAN = ['비유', '은유', '직유', '의인법', '운율', '심상', '시적 화자',
@@ -258,17 +397,20 @@ T('tnote 6슬 이상', () => {
   });
 });
 T('⚠️ 묶음 차시 = 80분 · covers · period_split 3종 일치', () => {
-  ['u1_l02', 'u1_l04'].forEach(k => {
+  PAIRED.forEach(k => {
     const m = L[k].meta;
     ok(m.duration_min === 80, k + ' duration ' + m.duration_min);
     ok(/차시$/.test(m.covers) && m.covers.includes('·'), k + ' covers ' + m.covers);
     ok(m.period_split === 's12', k + ' period_split ' + m.period_split);
   });
-  ok(L['u1_l01'].meta.duration_min === 40, 'l01 duration');
-  ok(!L['u1_l01'].meta.period_split, 'l01에 period_split');
+  KEYS.filter(k => !PAIRED.includes(k)).forEach(k => {
+    ok(L[k].meta.duration_min === 40, k + ' duration ' + L[k].meta.duration_min);
+    ok(!L[k].meta.period_split, k + '에 period_split');
+    ok(!/·/.test(L[k].meta.covers), k + ' covers ' + L[k].meta.covers);
+  });
 });
 T('⚠️ period_split 슬라이드 tnote가 교시 경계를 적는다', () => {
-  ['u1_l02', 'u1_l04'].forEach(k => {
+  PAIRED.forEach(k => {
     const s = L[k].slides.find(x => x.id === L[k].meta.period_split);
     ok(s, k + ' period_split 슬라이드 없음');
     ok(s.tnote && /1교시/.test(s.tnote.watch), k + ' 교시 경계 미기재');
@@ -276,13 +418,15 @@ T('⚠️ period_split 슬라이드 tnote가 교시 경계를 적는다', () => 
   });
 });
 T('⚠️ 2교시 시작 슬라이드가 s13이고 제목이 이어짐을 밝힌다', () => {
-  ['u1_l02', 'u1_l04'].forEach(k => {
+  PAIRED.forEach(k => {
     const s = L[k].slides.find(x => x.id === 's13');
     ok(s && /2교시/.test(s.data.title || ''), k + ' 2교시 표시 없음');
   });
 });
 T('⚠️ review 계보 = 직전 항목 exit 3문항 q·a 전수 계승', () => {
-  const chain = [['u1_l02', 'u1_l01'], ['u1_l04', 'u1_l02']];
+  const chain = [['u1_l02', 'u1_l01'], ['u1_l04', 'u1_l02'], ['u1_l06', 'u1_l04'],
+                 ['u1_l07', 'u1_l06'], ['u1_l09', 'u1_l07'], ['u1_l11', 'u1_l09'],
+                 ['u1_l13', 'u1_l11']];
   chain.forEach(([cur, prev]) => {
     const r = L[cur].slides.find(s => s.block === 'review');
     ok(r.data.from === prev, cur + ' from ' + r.data.from);
@@ -326,12 +470,12 @@ T('meta 정합 (grade·subject·unit·n·std·theme·live_url)', () => {
        k + ' 본차시 파일 없음');
   });
 });
-T('CURRICULUM ↔ LESSONS 정합 (8항목 등재 · ready 3)', () => {
+T('CURRICULUM ↔ LESSONS 정합 (8항목 등재 · ready 8 = u1 완주)', () => {
   const cur = (HOME.match(/const CURRICULUM[\s\S]*?\];/) || [''])[0];
   const ns = [...cur.matchAll(/\{n:\s*(\d+),/g)].map(m => +m[1]);
   ok(JSON.stringify(ns) === JSON.stringify([1, 2, 4, 6, 7, 9, 11, 13]), ns.join(','));
   const ready = (cur.match(/ready:\s*true/g) || []).length;
-  ok(ready === 3, 'ready ' + ready);
+  ok(ready === 8, 'ready ' + ready);
   ok(/lesson_count:\s*8/.test(cur), 'lesson_count 어긋남');
 });
 T('홈 배선 · slug', () => {
@@ -339,8 +483,13 @@ T('홈 배선 · slug', () => {
   ok(/slug:\s*"g3_korean"/.test(HOME), 'slug 어긋남');
   ok(!HOME.includes('g3_math'), '수학 잔여 참조');
 });
-T('⚠️ 허브 미등재가 정상 (u1 8항목 중 3항목 개통)', () => {
-  ok(!/"3_korean"/.test(HUB), '허브에 3_korean 등재됨 — 완주 전 등재 금지');
+T('⚠️ 허브 "3_korean" 등재 (u1 완주 = units 1 · lessons 8)', () => {
+  const m = HUB.match(/"3_korean":\s*\{\s*file:\s*"g3_korean\.html",\s*units:\s*(\d+),\s*lessons:\s*(\d+)\s*\}/);
+  ok(m, '허브에 3_korean 미등재 — u1 완주 시점에 등재한다');
+  ok(+m[1] === 1, 'units ' + m[1]);
+  ok(+m[2] === 8, 'lessons ' + m[2]);
+  /* ⚠️ 다음 단원 개통 시 이 두 수를 함께 올릴 것 (수학 라인에서 매 단원 겪은 대목) */
+  ok(+m[2] === KEYS.length, '허브 lessons ↔ 실제 항목 수 어긋남');
   ok(/"3_math"[\s\S]*?lessons:\s*55/.test(HUB), 'g3 수학 허브 단언 훼손');
 });
 T('케이랩 매핑 없음 = 의도적 (목소리·몸짓 실물이 우위)', () => {
