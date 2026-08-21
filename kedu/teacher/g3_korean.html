@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>케이티처 — 3학년 1학기 국어</title>
+<link rel="stylesheet" href="engine/teacher-styles.css">
+<link rel="stylesheet" href="engine/teacher-v3.css">
+  <script src="/kedu_gate.js"></script>
+<script src="/kedu_boxbar.js"></script>
+</head>
+<body class="kt3 subj-math">
+
+<!-- ===================== 화면 1: 차시 선택 (홈) ===================== -->
+<div class="home-view active" id="home-view">
+  <div class="home-inner">
+    <div class="home-header">
+      <a href="/" title="케이에듀 시작 화면으로" style="display:inline-flex;align-items:center;gap:6px;margin-bottom:14px;padding:9px 16px;border-radius:12px;border:2px solid #cfd9e8;background:#fff;color:#43618a;font-weight:700;font-size:14px;text-decoration:none;">🏠 케이에듀로 가기</a>
+      <div class="brand">케이티처 · K-edu Teacher</div>
+      <h1>3학년 1학기 국어</h1>
+      <div class="sub">차시를 선택하면 수업 자료가 열립니다. 사용 가능한 차시는 짙은 색으로 표시됩니다.</div>
+    </div>
+    <div id="units-container"></div>
+  </div>
+</div>
+
+<!-- ===================== 화면 2: 슬라이드쇼 ===================== -->
+<div class="show-view" id="show-view">
+
+<aside id="aside" class="collapsed">
+  <header>
+    <!-- 차시 진입 시 동적 갱신 -->
+    <h1>차시 선택 중</h1>
+    <div class="meta"></div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="slides">슬라이드</div>
+    <div class="tab" data-tab="extras">보조자료</div>
+    <div class="tab" data-tab="blocks">블록 추가</div>
+  </div>
+
+  <div class="tab-panel active" data-tab-panel="slides" id="slides-panel"></div>
+  <div class="tab-panel" data-tab-panel="extras">
+    <div class="extras-hint">현재 슬라이드에 어울리는 자료부터 보여드려요. 카드 클릭으로 끼움·뺌.</div>
+    <div class="extras-filter" id="extras-filter"></div>
+    <div id="extras-list"></div>
+  </div>
+  <div class="tab-panel" data-tab-panel="blocks">
+    <div class="extras-hint">현재 슬라이드 뒤에 새 슬라이드를 추가해요.</div>
+    <div class="block-section">
+      <h3>도입 · 전개</h3>
+      <div class="block-card" data-block-type="motivate"><div class="block-name">도입 상황</div><div class="block-desc">흥미 유발 장면</div></div>
+      <div class="block-card" data-block-type="concept"><div class="block-name">개념 설명</div><div class="block-desc">큰 글씨 설명</div></div>
+      <div class="block-card" data-block-type="question"><div class="block-name">발문</div><div class="block-desc">큰 발문 한 줄</div></div>
+    </div>
+    <div class="block-section">
+      <h3>문제 · 활동</h3>
+      <div class="block-card" data-block-type="basic_problem"><div class="block-name">기본 문제</div><div class="block-desc">±1 문제</div></div>
+      <div class="block-card" data-block-type="advanced_problem"><div class="block-name">응용 문제</div><div class="block-desc">실생활 적용</div></div>
+      <div class="block-card" data-block-type="game"><div class="block-name">활동 · 놀이</div><div class="block-desc">단계별 안내</div></div>
+    </div>
+    <div class="block-section">
+      <h3>정리</h3>
+      <div class="block-card" data-block-type="summary"><div class="block-name">핵심 요약</div><div class="block-desc">배운 점</div></div>
+      <div class="block-card" data-block-type="next_lesson"><div class="block-name">다음 차시</div><div class="block-desc">예고</div></div>
+    </div>
+  </div>
+</aside>
+
+<main>
+  <div class="toolbar">
+    <button class="icon-btn" id="back-to-home">← 차시 목록</button>
+    <div class="toolbar-sep"></div>
+    <button class="icon-btn" id="toggle-side" title="차시 목차 펼치기/접기">📑 차시 목차</button>
+    <div class="toolbar-sep"></div>
+    <button class="icon-btn" id="prev-btn" title="이전">←</button>
+    <button class="icon-btn" id="next-btn" title="다음">→</button>
+    <div class="toolbar-sep"></div>
+    <button class="icon-btn" id="full-btn" title="전체화면 (F)">⛶ 전체화면</button>
+    <button class="icon-btn reveal-btn" id="reveal-btn" title="정답 보기/가림" style="display:none;">🙈 정답 가림</button>
+    <button class="icon-btn" id="delete-slide-btn" title="현재 슬라이드 삭제" style="display:none;">삭제</button>
+    <button class="icon-btn" id="edit-slide-btn" title="이 슬라이드 내용 수정" style="display:none;">✏️ 수정</button>
+    <div class="toolbar-sep"></div>
+    <button class="icon-btn" id="export-pptx-btn" title="현재 조합을 교사용 PPT로 내려받기">⬇ PPT</button>
+    <button class="icon-btn" id="export-ws-btn" title="문제·활동을 학습지로 내려받기">⬇ 학습지</button>
+
+    <div class="position">
+      <span id="cur-pos">1</span> / <span id="total-pos">1</span>
+      <span class="stage-tag">· <span id="current-stage">도입</span></span>
+    </div>
+
+    <div class="save-status" id="save-status" title="자동 저장됨 — 다시 열어도 조립 상태 유지">
+      <span class="dot"></span>
+      <span id="save-status-text">자동 저장</span>
+    </div>
+    <button class="reset-btn" id="reset-btn" title="조립 상태를 초기 자리로 되돌리기">초기화</button>
+  </div>
+
+  <div class="slide-stage" id="slide-stage">
+    <div class="stage-row">
+      <div class="slide-wrapper">
+        <div id="slide-content"></div>
+      </div>
+      <div class="extras-panel" id="extras-panel" style="display:none;">
+        <div class="ep-label">보조자료</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+</div><!-- /show-view -->
+
+<button class="fs-exit" id="fs-exit-btn">전체화면 종료 (ESC)</button>
+
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <h3 id="modal-title"></h3>
+    <div class="content" id="modal-content"></div>
+    <div class="url" id="modal-url"></div>
+    <div style="margin-top: 16px;">
+      <button class="modal-close" onclick="document.getElementById('modal').classList.remove('active')">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== 자료 오버레이 ===================== -->
+<div class="ext-overlay" id="ext-overlay">
+  <div class="ext-overlay-bar">
+    <span class="eo-icon" id="eo-icon"></span>
+    <span class="eo-type-tag" id="eo-type-tag"></span>
+    <span class="eo-title" id="eo-title"></span>
+    <span class="eo-audience" id="eo-audience"></span>
+    <button class="eo-close" id="eo-close">닫기 (ESC)</button>
+  </div>
+  <div class="ext-overlay-body">
+    <div class="eo-canvas" id="eo-canvas"></div>
+  </div>
+</div>
+
+<!-- ===================== 시스템 엔진 ===================== -->
+<script src="games/memory-match.js"></script>
+<script src="games/compare-pair.js"></script>
+<script src="vendor/three.min.js"></script>
+<script src="engine/klab.js"></script>
+<script src="engine/tools/shape3d.js"></script>
+<script src="engine/tools/place_value.js"></script>
+<script src="engine/tools/cubes.js"></script>
+<script src="engine/tools/array.js"></script>
+<script src="engine/tools/graph.js"></script>
+<script src="/kedu/quiz/kquiz-core.js"></script>
+<script src="/kedu/quiz/kquiz-ui.js"></script>
+<script src="engine/teacher-engine.js"></script>
+<script src="/kedu/activities/core/activity-host.js"></script>
+<script src="vendor/pptxgen.bundle.js"></script>
+<script src="engine/teacher-export.js"></script>
+
+<!-- ===================== 학년·과목 데이터 ===================== -->
+<script>
+/* ========================================================
+   3학년 1학기 국어 — 단원·차시 카탈로그
+   ⚠️ 묶음 차시(2차시 연속 80분)는 시작 차시 번호 하나로 등재한다 — n이 연속하지 않는다
+   학생이 보는 차시 콘텐츠는 ready: true 차시만 진입 가능
+   ======================================================== */
+const CURRICULUM = [
+  {
+    unit: 1, title: "생생하게 표현해요", lesson_count: 8,
+    lessons: [
+      {n: 1, title: "생생하게 표현해요 (단원 도입)", std: "[4국05-04][4국01-03]", concept: "곰이·펭이 봄 풀밭 시 마을 동기 · 같은 장면 다른 표현 · 다섯 감각 · 표정·몸짓·목소리·말투 예고 · 학습 계획", ready: true},
+      {n: 2, title: "감각적 표현을 알고 장면을 상상해요 (2·3차시 80분)", std: "[4국05-04]", concept: "감각적 표현의 뜻 · 시 「풀밭에서」에서 표현 찾기 · 표현↔감각 잇기 · 장면 상상하고 그리기", ready: true},
+      {n: 4, title: "시를 읽고 낭송해요 (4·5차시 80분)", std: "[4국05-05]", concept: "낭송의 뜻 · 시 「폴짝 줄넘기」 흉내 내는 말 · 분위기·쉬어 읽기·강조 · 몸짓을 더한 모둠 낭송", ready: true},
+      {n: 6, title: "상황에 알맞은 목소리·말투의 좋은 점 알기", std: "[4국01-03]", concept: "같은 말도 상황에 따라 달라지는 목소리·말투 · 알맞게 쓰면 좋은 점", ready: false},
+      {n: 7, title: "상황에 알맞게 대화해요 (7·8차시 80분)", std: "[4국01-03][4국01-04]", concept: "인물의 표정·몸짓·목소리·말투 살피기 · 상황에 알맞은 대화", ready: false},
+      {n: 9, title: "역할놀이로 표현해요 (9·10차시 80분)", std: "[4국01-03][4국01-04]", concept: "다양한 상황에 알맞은 표정·몸짓·목소리·말투 · 역할 수행 학습", ready: false},
+      {n: 11, title: "배운 내용을 실천해요 (11·12차시 80분)", std: "단원 전체 통합", concept: "시 낭송회 · 대화 만들기 놀이 · 협동과 대인 관계", ready: false},
+      {n: 13, title: "단원을 마무리해요", std: "단원 전체 통합", concept: "단원 마무리·스스로 확인 · 연음 발음과 글씨 쓰기 기초 다지기", ready: false}
+    ]
+  }
+];
+
+/* ========================================================
+   차시별 데이터 — LESSONS["u{단원}_l{차시}"]
+   각 차시: { meta, slides, extras }
+   단원별 data/g3_korean_u{N}.js 파일이 window.LESSONS 객체에 누적시킴
+   ready: true 차시만 데이터 등록
+   ======================================================== */
+window.LESSONS = {};
+</script>
+
+<!-- ===================== 단원별 양산 데이터 ===================== -->
+<!-- 3학년 1학기 국어 단원별 데이터 (각 파일이 window.LESSONS에 누적) -->
+<!-- 1단원 = 2026-08-21 신규 제작 (케이티처 국어 40분 트랙 첫 진입). 묶음 차시라 키가 건너뛴다 -->
+<script src="data/g3_korean_u1.js"></script>
+
+<!-- ===================== 엔진 초기화 ===================== -->
+<script>
+/* v3 롤백: URL ?theme=classic → kt3 제거 → 즉시 구스킨 복귀 */
+if(new URLSearchParams(location.search).get('theme')==='classic')document.body.classList.remove('kt3');
+
+Teacher.init({
+  subject: {
+    grade: 3,
+    subject: "국어",
+    title: "3학년 1학기 국어",
+    brand: "케이티처 · K-edu Teacher",
+    slug: "g3_korean"
+  },
+  curriculum: CURRICULUM,
+  lessons: window.LESSONS
+});
+</script>
+
+<script src="/kedu_back.js"></script>
+</body>
+</html>
