@@ -1,0 +1,142 @@
+/* 무대 — 단위 정거장. 판 넷이 배타적으로 뜬다(한 번에 하나).
+   색 규칙 하나만 지킨다: **길이는 앰버(십진), 시간은 보라(60진법)**.
+   이 단원에서 아이가 헷갈리는 건 계산이 아니라 "지금 몇씩 묶이는 세계인가"라서,
+   판이 바뀔 때 색이 같이 바뀌는 것이 가장 빠른 신호다. */
+#board { display:inline-flex; flex-direction:column; align-items:center;
+         gap:clamp(6px,1.4vh,14px); }
+
+/* 60진법 쪽 색 — core에 없는 토큰이라 여기서 연다 */
+#board { --six:#7c5cc4; --six-d:#553a94; --six-bg:#f5f1ff; }
+
+/* ══════════ ① 변환대 ══════════ */
+#conv { display:none; flex-direction:column; align-items:center;
+        gap:clamp(6px,1.4vh,14px);
+        background:#fff; border:5px solid var(--amber); border-radius:22px;
+        padding:clamp(12px,2.6vh,24px) clamp(16px,3.6vw,40px);
+        box-shadow:0 8px 0 #e7c890; transition:border-color .25s; }
+#board.ok #conv, #board.ok #vert, #board.ok #span, #board.ok #unit { border-color:var(--good); }
+
+#conv .crow { display:flex; align-items:center; gap:clamp(8px,2vw,22px); }
+#conv .cbox { font-family:'Nunito',sans-serif; font-weight:800;
+              font-size:clamp(26px,5.2vw,68px); color:var(--deep);
+              white-space:nowrap; line-height:1.15; }
+#conv .cbox.q { color:var(--amber-d); min-width:2.2em; text-align:center;
+                border-bottom:6px dotted var(--amber); }
+#conv .cbox.done { color:var(--good); border-bottom:6px solid var(--good); }
+#conv .car { font-size:clamp(22px,3.6vw,46px); color:var(--amber-d); opacity:.75; }
+
+/* 환산 관계 띠 — 칸 수가 요점이다. 10칸과 60칸이 **한눈에 달라 보여야** 한다. */
+#conv .cband { width:100%; display:flex; justify-content:center; }
+#conv .bcells { display:flex; gap:2px; align-items:flex-end; }
+#conv .bcells i { display:block; background:var(--amber); border-radius:2px; }
+#conv .bcells.ten i { width:clamp(9px,1.7vw,20px); height:clamp(14px,2.4vh,26px); }
+#conv .bcells.sixty i { width:clamp(2px,.42vw,5px); height:clamp(14px,2.4vh,26px);
+                        background:var(--six); border-radius:1px; }
+#conv .bcells.sixty { gap:1px; }
+#conv .bcells.thousand i { width:clamp(9px,1.7vw,20px); height:clamp(14px,2.4vh,26px); }
+#conv .bcells.thousand { align-items:center; gap:3px; }
+#conv .bcells .bx { font-family:'Jua',sans-serif; font-size:clamp(13px,2vw,22px);
+                    color:var(--amber-d); margin-left:6px; }
+/* 1000칸은 그릴 수 없다 — 세 칸 뒤에 수로 말한다. 못 그리는 걸 그린 척하지 않는다. */
+#conv .bcells.thousand i:nth-child(3) { opacity:.35; }
+
+#conv .crel { font-family:'Jua',sans-serif; font-size:clamp(17px,3vw,38px);
+              padding:.1em .6em; border-radius:999px; }
+#conv .crel.len { color:var(--amber-d); background:#fff8e8; }
+#conv .crel.time { color:var(--six-d); background:var(--six-bg); }
+
+/* ══════════ ② 세로셈 (시·분·초) ══════════ */
+#vert { display:none; flex-direction:column; align-items:flex-end;
+        background:#fff; border:5px solid var(--six); border-radius:22px;
+        padding:clamp(10px,2.4vh,22px) clamp(16px,3.4vw,38px);
+        box-shadow:0 8px 0 #d3c6ee; transition:border-color .25s; }
+#vert .vhead { display:flex; align-items:baseline; padding-left:1.1em; }
+#vert .vh { width:2.1em; text-align:center; font-family:'Jua',sans-serif;
+            font-size:clamp(14px,2.2vw,26px); color:var(--six-d); opacity:.85; }
+#vert .vrow { display:flex; align-items:baseline; }
+#vert .vop { font-size:clamp(24px,4vw,50px); color:var(--six-d);
+             width:1.1em; text-align:right; }
+#vert .vd { font-family:'Nunito',sans-serif; font-weight:800;
+            font-size:clamp(34px,6.6vw,92px); color:var(--deep);
+            width:2.1em; text-align:center; }
+#vert .res .vd { color:var(--six-d); }
+/* 갈아타기 표 — 덧셈의 1과 뜻이 같지만 **단위가 60이라 수를 크게 쓴다** */
+#vert .marks { height:1.35em; }
+#vert .vmk { width:2.1em; text-align:center; height:1em;
+             font-family:'Nunito',sans-serif; font-weight:800;
+             font-size:clamp(17px,2.7vw,34px); line-height:1; }
+#vert .vmk.up { color:var(--bad); }
+#vert .vmk.down { color:var(--six-d); }
+#vert .vbar { height:5px; background:var(--deep); border-radius:3px;
+              width:100%; margin:5px 0 3px; }
+#vert .vnote { max-width:min(92vw,30em); margin-top:clamp(4px,1vh,10px);
+               font-family:'Jua',sans-serif; text-align:right;
+               font-size:clamp(13px,2.1vw,25px); color:var(--six-d); line-height:1.45; }
+
+/* ══════════ ③ 시각 띠 ══════════ */
+#span { display:none; flex-direction:column; align-items:center;
+        gap:clamp(10px,2.2vh,22px); width:min(92vw,760px);
+        background:#fff; border:5px solid var(--six); border-radius:22px;
+        padding:clamp(14px,3vh,28px) clamp(16px,3.4vw,38px);
+        box-shadow:0 8px 0 #d3c6ee; transition:border-color .25s; }
+#span .sask { font-family:'Jua',sans-serif; font-size:clamp(17px,3vw,36px);
+              color:var(--deep); text-align:center; }
+#span .sask .hi.pt { color:var(--amber-d); }
+#span .sask .hi.sp { color:var(--six-d); }
+#span .sask .tag { font-size:.7em; padding:.1em .55em; border-radius:999px; margin-left:.3em; }
+#span .sask .tag.pt { background:#fff8e8; color:var(--amber-d); }
+#span .sask .tag.sp { background:var(--six-bg); color:var(--six-d); }
+
+#span .sline { position:relative; width:100%; height:clamp(78px,13vh,120px); }
+#span .sline::before { content:''; position:absolute; left:0; right:0;
+                       top:clamp(34px,5.6vh,52px); height:6px;
+                       background:#e6e0f2; border-radius:3px; }
+/* 구간(시간)은 면, 시각은 점 — 둘의 생김새가 달라야 구별이 눈으로 온다 */
+#span .sfill { position:absolute; left:12%; right:12%;
+               top:clamp(34px,5.6vh,52px); height:6px;
+               background:#cfc3ea; border-radius:3px; }
+#span .sfill.hi { background:var(--six); height:14px; top:clamp(30px,5.1vh,48px); }
+#span .spt { position:absolute; top:0; transform:translateX(-50%);
+             display:flex; flex-direction:column; align-items:center; gap:4px; }
+#span .spt::after { content:'●'; font-size:clamp(15px,2.4vw,26px); color:var(--amber-d); }
+#span .spt.start { left:12%; }
+#span .spt.end { left:88%; }
+#span .spt b { font-family:'Nunito',sans-serif; font-weight:800;
+               font-size:clamp(17px,3.1vw,38px); color:var(--deep); white-space:nowrap; }
+#span .spt.q b { color:var(--amber-d); border-bottom:5px dotted var(--amber); min-width:1.6em;
+                 text-align:center; }
+#span .spt.done b { color:var(--good); }
+#span .sdur { position:absolute; left:50%; transform:translateX(-50%);
+              top:clamp(50px,8.4vh,74px);
+              font-family:'Nunito',sans-serif; font-weight:800;
+              font-size:clamp(18px,3.3vw,42px); color:var(--six-d); white-space:nowrap; }
+#span .sdur.q { border-bottom:5px dotted var(--six); min-width:2em; text-align:center; }
+#span .sdur.done { color:var(--good); border-bottom:5px solid var(--good); }
+#span .slegend { display:flex; gap:clamp(10px,2.4vw,28px); flex-wrap:wrap;
+                 justify-content:center; }
+#span .slegend .lg { font-family:'Jua',sans-serif; font-size:clamp(12px,1.9vw,22px);
+                     padding:.15em .6em; border-radius:999px; }
+#span .slegend .lg.pt { background:#fff8e8; color:var(--amber-d); }
+#span .slegend .lg.sp { background:var(--six-bg); color:var(--six-d); }
+
+/* ══════════ ④ 단위 고르기 (어림) ══════════ */
+#unit { display:none; flex-direction:column; align-items:center;
+        gap:clamp(8px,1.8vh,18px);
+        background:#fff; border:5px dashed var(--amber); border-radius:22px;
+        padding:clamp(14px,3vh,28px) clamp(18px,4vw,44px);
+        box-shadow:0 8px 0 #e7c890; transition:border-color .25s; }
+#unit .uthing { font-family:'Jua',sans-serif; font-size:clamp(18px,3.2vw,40px);
+                color:var(--deep); text-align:center; max-width:min(90vw,20em); }
+#unit .urow { display:flex; align-items:baseline; gap:clamp(6px,1.4vw,16px); }
+#unit .unum { font-family:'Nunito',sans-serif; font-weight:800;
+              font-size:clamp(40px,8vw,110px); color:var(--deep); }
+#unit .ubox { font-family:'Nunito',sans-serif; font-weight:800;
+              font-size:clamp(28px,5.4vw,72px); min-width:2.2em; text-align:center; }
+#unit .ubox.q { color:var(--amber-d); border-bottom:6px dotted var(--amber); }
+#unit .ubox.done { color:var(--good); border-bottom:6px solid var(--good); }
+#unit .uhint { font-family:'Jua',sans-serif; font-size:clamp(13px,2.1vw,25px);
+               color:var(--amber-d); opacity:.85; }
+
+/* 판 넷이 세로 높이가 제각각이라, 전환할 때 답 버튼이 위아래로 튀지 않도록
+   보드 최소 높이를 잡는다 (§6-4 삽입 비점프의 정신 — 손가락이 따라다니면 안 된다). */
+#board { min-height:clamp(200px,36vh,340px); justify-content:center; }
