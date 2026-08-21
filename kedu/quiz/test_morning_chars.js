@@ -20,7 +20,15 @@ var ROOT = path.join(__dirname, '..', '..');
 var STROKE_DIR = path.join(ROOT, 'kedu', 'hanja', 'strokes');
 var D = require('./templates/hanja_data.js');
 
-var html = fs.readFileSync(path.join(ROOT, 'morning', 'chars.html'), 'utf8');
+/* 검사할 화면 폴더를 인자로 받는다(기본 = 레포 실물).
+   역검증 드라이버가 `morning/` 사본을 `/tmp/rv/cN/` 로 떠서 변조한 뒤 그 경로를 넘긴다 —
+   레포 원본을 건드리지 않고 「이 검사가 정말 그 결함을 잡는가」를 물어보기 위해서다.
+   ★원장(hanja_data.js)·획순 자산은 ROOT 에서 그대로 읽는다: 이 검사가 묻는 것은 **화면**이고,
+     원장까지 사본에서 읽으면 변조가 원장으로 새어 무엇이 잡혔는지 갈리지 않는다.
+   (`test_morning_english_screen.js` 가 `process.argv[2]` 로 쓰는 것과 같은 계약.) */
+var PAGES = process.argv[2] ? path.resolve(process.argv[2]) : path.join(ROOT, 'morning');
+
+var html = fs.readFileSync(path.join(PAGES, 'chars.html'), 'utf8');
 html = html.replace('<script src="/kedu/quiz/templates/hanja_data.js"></script>',
   '<script>' + fs.readFileSync(path.join(ROOT,'kedu','quiz','templates','hanja_data.js'),'utf8') + '</script>');
 // 획순 엔진은 SVG 애니메이션이라 jsdom 에서 돌릴 게 못 된다.
