@@ -1040,6 +1040,12 @@ const Q9 = [
 const VF_TOUR = ['B', 'C', 'D'];
 const VF_OPTS = ['공정', '갑 유리', '을 유리'];
 let vfAt = 0, vfDone = 0;
+/* 사이클 50 — 부스마다 한 번만 셈한다.
+   종전에는 정답을 거듭 눌러도 그때마다 5점이 붙었다. 마지막 부스는 넘어가지 않으므로
+   누르는 만큼 끝없이 쌓였고(실측 55 → 105, 배분 합계 100 을 넘었다),
+   앞 부스도 넘어가기까지의 0.9초 동안 거듭 눌러 불릴 수 있었다.
+   부스 이름으로 지급 표시를 남겨 막는다 — 판정 글·넘어가기는 그대로 둔다. */
+const vfPaid = {};
 function drawVerify() {
   if (vfAt >= VF_TOUR.length) return;
   const id = VF_TOUR[vfAt], b = KGiftedCore.BOOTHS[id];
@@ -1059,8 +1065,7 @@ function drawVerify() {
       const truth = KGiftedCore.tally(id);
       if (t === truth.verdict) {
         btn.classList.add('correct');
-        vfDone++;
-        addScore(5);
+        if (!vfPaid[id]) { vfPaid[id] = true; vfDone++; addScore(5); }
         document.getElementById('fb-verify').textContent =
           '판정 승인 ⭐ 갑 ' + truth.gap + ' : 을 ' + truth.eul + ' — ' + truth.verdict + '.';
         if (vfAt === VF_TOUR.length - 1) {
