@@ -106,6 +106,63 @@ async function driveToWords(o){
 (async function(){
 
 /* -- (1) 획순 자산 정합성 -- */
+/* ══ 시간 표기 두 갈래 — **모듈 공용** (D8-ⓗ)
+   절 ⑧(통로별 대조)과 절 ⑨(완주 화면)이 같은 잣대를 써야 한다. 두 벌을 두면 다음 사람이
+   한쪽만 고친다(9.25차가 영어 화면에서 `ownLeft` 를 공용화한 것과 같은 판단). */
+var SPAN  = /어제|내일|모레|이번\s*주|다음\s*주|지난\s*주|[0-9]+\s*주(?!일)|요일|[월화수목금]요/;
+var TODAY = /오늘/;
+var NAMES = ['오늘의 한자'];   /* 활동 **이름**(제목·로고) — 규약 대상이 아니다 */
+
+/* 원장이 낸 문자열을 먼저 걷어내고 남은 말만 본다. 걷어낼 때는 **공백으로** 바꾼다 —
+   이어붙이면 없던 낱말이 생긴다. `<script>` 는 제외(하니스가 원장 소스를 인라인 주입한다). */
+/* ★함정(실측): 「오늘 글자로 ↩」 칩을 그냥 두면 **오늘을 벗어난 화면이 「오늘」이라 말한
+     것으로 세어진다**(1차 실행에서 6 FAIL). 칩은 지금 보는 것이 오늘이라는 주장이 아니라
+     **되돌아갈 길의 이름**이다. 그래서 두 갈래 모두에서 떼어 내고, 대신 칩의 **있음/없음**을
+     짝으로 본다(A·B 는 없어야 하고 C 는 있어야 한다). 영어 화면 절 ⑫ 와 같은 처리다. */
+function strip(body) {
+  var bk = body.querySelector('#bk');
+  if (bk) bk.parentNode.removeChild(bk);
+  return body;
+}
+/* ★★(b) 갈래를 재설계했다 — 「원장 문자열을 전부 걷어낸 나머지」는 **이 화면에서 원리적으로
+     못 쓴다.** 영어 원장은 문장이라 걷어내도 한국어가 남지만, 한자 원장은 **훈·음이 낱글자**다.
+   실측(전 학년 합집합 1980개 문자열): 「주」6건·「일」3건·「기」6건·「제」3건·「만」·「번」이
+     **그 자체로 한 항목**이라, 걷어내고 나면 한글이 통째로 갈려 나간다 —
+       「이번 주 만나기」→「나」 · 「3주 화요일」→「3」 · 「내일은 새 글자가 기다려요.」→「.」
+   즉 (b)는 「어제/내일」뿐 아니라 **주·요일까지 사실상 전면 실명**이었다. D8-ⓗ 역검증 ⑲
+     (비지정 마디에 「이번 주」를 심음)가 이것을 잡아냈고, 그 전까지 (b)는 **한 건도 잡을 수
+     없는 죽은 갈래**였다(9.27·9.29차 기록의 「원장이 그 낱말을 쥔 학년에서 눈이 먼다」는
+     실제보다 훨씬 약한 진술이다).
+   ★그래서 **걷어내기를 버리고 원장이 실리는 마디를 노드로 제외**한다. 화면이 그 자리를
+     `.led` 로 **스스로 표시**하므로 검사기가 추측하지 않는다(추측하면 빠뜨린 자리에서
+     거짓 실패가 난다 — 그때는 화면에 표시를 붙이는 것이 정답이다).
+   ★활동 **이름**만 문자열로 걷어낸다 — 로고 「오늘의 한자」는 규약 대상이 아닌데
+     TODAY 대조에는 걸리기 때문이다. */
+var LED_SEL = ['.hy-line', '.led', '.say', '.lead', '.nodata', '.wg .h'];
+function ownLeft(o) {
+  var body = strip(o.doc.body.cloneNode(true));
+  Array.prototype.slice.call(body.querySelectorAll('script,style,template,' + LED_SEL.join(',')))
+    .forEach(function (e) { e.parentNode.removeChild(e); });
+  var t = body.textContent;
+  NAMES.forEach(function (n) { t = t.split(n).join(' '); });
+  return t;
+}
+
+/* ★지정 마디는 **원장 훈음·낱말이 실리지 않는 곳만** 고른다 —
+   3막 안내(`.lead`·`.say`)는 훈음을 그대로 이고 있어 여기서 뺀다((b)가 본다). */
+var OWN = ['.head .day', '.nav-ch', '.hy-sub', '.browse-meta', '.stepbox h3', '.wg .d',
+           '.peeknote', '#fin'];
+function ownSaid(o) {
+  var body = strip(o.doc.body.cloneNode(true));
+  var t = OWN.map(function (sel) {
+    return Array.prototype.slice.call(body.querySelectorAll(sel))
+      .map(function (e) { return e.textContent; }).join(' ');
+  }).join(' ');
+  NAMES.forEach(function (n) { t = t.split(n).join(' '); });
+  return t;
+}
+function tidy(x){ return x.replace(/\s+/g, ' ').slice(0, 130); }
+
 var missing = JSON.parse(fs.readFileSync(path.join(ROOT,'kedu','hanja','MISSING.json'),'utf8'));
 var missSet = {}; missing.forEach(function(c){ missSet[c]=1; });
 var haveCount = 0;
@@ -335,52 +392,6 @@ for (var mi = 0; mi < missing.length; mi++) {
        어느 갈래가 잡았는지 못 가린다.
    ══════════════════════════════════════════════════════════════ */
 await (async function () {
-  var SPAN  = /어제|내일|모레|이번\s*주|다음\s*주|지난\s*주|[0-9]+\s*주(?!일)|요일|[월화수목금]요/;
-  var TODAY = /오늘/;
-  var NAMES = ['오늘의 한자'];   /* 활동 **이름**(제목·로고) — 규약 대상이 아니다 */
-
-  /* 원장이 낸 문자열을 먼저 걷어내고 남은 말만 본다. 걷어낼 때는 **공백으로** 바꾼다 —
-     이어붙이면 없던 낱말이 생긴다. `<script>` 는 제외(하니스가 원장 소스를 인라인 주입한다). */
-  /* ★함정(실측): 「오늘 글자로 ↩」 칩을 그냥 두면 **오늘을 벗어난 화면이 「오늘」이라 말한
-       것으로 세어진다**(1차 실행에서 6 FAIL). 칩은 지금 보는 것이 오늘이라는 주장이 아니라
-       **되돌아갈 길의 이름**이다. 그래서 두 갈래 모두에서 떼어 내고, 대신 칩의 **있음/없음**을
-       짝으로 본다(A·B 는 없어야 하고 C 는 있어야 한다). 영어 화면 절 ⑫ 와 같은 처리다. */
-  function strip(body) {
-    var bk = body.querySelector('#bk');
-    if (bk) bk.parentNode.removeChild(bk);
-    return body;
-  }
-  function ownLeft(o, g) {
-    var body = strip(o.doc.body.cloneNode(true));
-    Array.prototype.slice.call(body.querySelectorAll('script,style,template'))
-      .forEach(function (e) { e.parentNode.removeChild(e); });
-    var t = body.textContent;
-    var led = NAMES.slice();
-    D.grades().forEach(function (gg) {
-      D.all(gg).forEach(function (x) {
-        led.push(x.c, x.hun, x.eum, x.word, x.wordKo);
-        (x.extra || []).forEach(function (w) { led.push(w[0], w[1]); });
-      });
-    });
-    led = led.filter(Boolean).sort(function (a, b) { return String(b).length - String(a).length; });
-    led.forEach(function (w) { t = t.split(w).join(' '); });
-    return t;
-  }
-
-  /* ★지정 마디는 **원장 훈음·낱말이 실리지 않는 곳만** 고른다 —
-     3막 안내(`.lead`·`.say`)는 훈음을 그대로 이고 있어 여기서 뺀다((b)가 본다). */
-  var OWN = ['.head .day', '.nav-ch', '.hy-sub', '.browse-meta', '.stepbox h3', '.wg .d',
-             '.peeknote', '#fin'];
-  function ownSaid(o) {
-    var body = strip(o.doc.body.cloneNode(true));
-    var t = OWN.map(function (sel) {
-      return Array.prototype.slice.call(body.querySelectorAll(sel))
-        .map(function (e) { return e.textContent; }).join(' ');
-    }).join(' ');
-    NAMES.forEach(function (n) { t = t.split(n).join(' '); });
-    return t;
-  }
-  function tidy(x){ return x.replace(/\s+/g, ' ').slice(0, 130); }
 
   var cases = [];
   D.grades().forEach(function (g) {
@@ -397,7 +408,7 @@ await (async function () {
     /* ── A. 모르는 통로(`?grade&char`) — 아무 날이나 여는 통로다. 「오늘」이 한 번도 없어야 한다. */
     var a = open('?grade=' + g + '&char=' + C.d0);
     await a.tick(3);
-    var aLeft = ownLeft(a, g), aSaid = ownSaid(a);
+    var aLeft = ownLeft(a), aSaid = ownSaid(a);
     T(SPAN.test(aLeft) === false, 'g' + g + ' 모르는 통로: 본문 나머지가 주·요일·「어제/내일」을 지어냄: ' + tidy(aLeft));
     T(TODAY.test(aLeft) === false, 'g' + g + ' 모르는 통로: 본문 나머지가 진도를 모르면서 「오늘」이라 말함: ' + tidy(aLeft));
     T(SPAN.test(aSaid) === false, 'g' + g + ' 모르는 통로: 지정 마디가 주·요일·「어제/내일」을 지어냄: ' + tidy(aSaid));
@@ -405,13 +416,18 @@ await (async function () {
     T(aLeft.replace(/\s+/g, '').length > 20, 'g' + g + ' 모르는 통로가 사실상 빈 화면인데 통과함');
     T(aSaid.replace(/\s+/g, '').length > 10, 'g' + g + ' 모르는 통로의 지정 마디가 통째로 비어 있는데 통과함');
     T(a.doc.getElementById('bk') === null, 'g' + g + ' 오늘을 모르는데 「오늘 글자로 ↩」 칩을 띄움');
+    /* ★**짝** — 두 갈래는 활동 이름을 걷어내기만 한다. 걷어낼 대상이 실제로 있는지 아무도
+       안 보면, 이름이 통째로 사라져도 검사는 조용하다(영어 화면의 「오늘의 문장이 사라짐」에
+       해당하는 보호가 이 화면엔 없었다). 이름은 규약 대상이 아니지만 **있어야 한다.** */
+    T(a.doc.body.textContent.indexOf(NAMES[0]) >= 0,
+      'g' + g + ' 활동 이름 「오늘의 한자」가 사라짐 — 걷어낼 대상이 없으면 걷어내기 검사는 무의미하다');
     a.dom.window.close();
 
     /* ── B. 아는 통로(c키) — 「오늘」이라 말할 자격이 있다. 말하지 않으면 그것도 결함이다
            (**시간 주장 0 만 보면 아무 말도 안 하는 화면이 통과한다**). 단 주·요일은 여전히 0. */
     var b2 = open('?key=' + C.key);
     await b2.tick(3);
-    var bLeft = ownLeft(b2, g), bSaid = ownSaid(b2);
+    var bLeft = ownLeft(b2), bSaid = ownSaid(b2);
     T(TODAY.test(bSaid) === true, 'g' + g + ' 아는 통로인데 지정 마디가 「오늘」이라 말하지 않음: ' + tidy(bSaid));
     T(SPAN.test(bLeft) === false, 'g' + g + ' 아는 통로: 본문 나머지가 주·요일·「어제/내일」을 지어냄: ' + tidy(bLeft));
     T(SPAN.test(bSaid) === false, 'g' + g + ' 아는 통로: 지정 마디가 주·요일·「어제/내일」을 지어냄: ' + tidy(bSaid));
@@ -426,14 +442,20 @@ await (async function () {
     var steps2 = Math.abs(C.d0 - C.dAway);
     var btn = c2.doc.getElementById(C.dAway < C.d0 ? 'pv' : 'nx');
     for (var k2 = 0; k2 < steps2; k2++) { btn.click(); await c2.tick(2); btn = c2.doc.getElementById(C.dAway < C.d0 ? 'pv' : 'nx'); }
-    var cLeft = ownLeft(c2, g), cSaid = ownSaid(c2);
+    var cLeft = ownLeft(c2), cSaid = ownSaid(c2);
     T(c2.seen().indexOf(C.dAway + '일째') >= 0, 'g' + g + ' 옆으로 옮겨지지 않음');
     T(TODAY.test(cSaid) === false, 'g' + g + ' 오늘을 벗어났는데 지정 마디가 여전히 「오늘」이라 말함: ' + tidy(cSaid));
     T(TODAY.test(cLeft) === false, 'g' + g + ' 오늘을 벗어났는데 본문 나머지가 여전히 「오늘」이라 말함: ' + tidy(cLeft));
-    T(c2.doc.getElementById('bk') !== null, 'g' + g + ' 오늘을 벗어났는데 되돌아갈 길이 없음');
-    c2.doc.getElementById('bk').click(); await c2.tick(2);
-    T(c2.seen().indexOf(C.d0 + '일째') >= 0, 'g' + g + ' 되돌아가기 칩이 오늘로 안 데려감');
-    T(TODAY.test(ownSaid(c2)) === true, 'g' + g + ' 오늘로 돌아왔는데 「오늘」이라 말하지 않음');
+    /* ★칩이 없을 때 그냥 눌러 버리면 **여기서 죽고 뒤따르는 절 ⑨(peek 전량)가 통째로 안 돈다** —
+       역검증 ⑥⑦⑨ 가 `FAIL -1`(요약을 못 찍음)로 나와서 잡혔다. 결함 하나가 나머지 검사를
+       가리면, 고치는 사람은 자기가 무엇을 안 보고 있는지 모른다. 있을 때만 눌러 본다. */
+    var bk2 = c2.doc.getElementById('bk');
+    T(bk2 !== null, 'g' + g + ' 오늘을 벗어났는데 되돌아갈 길이 없음');
+    if (bk2) {
+      bk2.click(); await c2.tick(2);
+      T(c2.seen().indexOf(C.d0 + '일째') >= 0, 'g' + g + ' 되돌아가기 칩이 오늘로 안 데려감');
+      T(TODAY.test(ownSaid(c2)) === true, 'g' + g + ' 오늘로 돌아왔는데 「오늘」이라 말하지 않음');
+    }
     c2.dom.window.close();
   }
 
@@ -441,7 +463,7 @@ await (async function () {
   var gB = D.grades()[D.grades().length - 1];
   var d2 = open('?grade=' + gB);
   await d2.tick(2);
-  var dLeft = ownLeft(d2, gB), dSaid = ownSaid(d2);
+  var dLeft = ownLeft(d2), dSaid = ownSaid(d2);
   T(SPAN.test(dLeft) === false, '둘러보기: 본문 나머지가 주·요일을 지어냄: ' + tidy(dLeft));
   T(SPAN.test(dSaid) === false, '둘러보기: 지정 마디가 주·요일을 지어냄: ' + tidy(dSaid));
   T(TODAY.test(dSaid) === false, '둘러보기는 진도를 모르는데 「오늘」이라 말함: ' + tidy(dSaid));
@@ -490,8 +512,12 @@ await (async function () {
     var note = !!o.doc.querySelector('.peeknote');
     var hrefs = Array.prototype.slice.call(o.doc.querySelectorAll('a[href*="chars.html"]'))
       .map(function (a) { return a.getAttribute('href'); });
+    /* ★완주 화면은 **여기서만 열린다** — 절 ⑧ 의 A~E 는 `tick(3)` 이라 3막 완주까지 안 간다.
+       그래서 D8-ⓗ 이전까지 완주 문구(「내일은 새 글자가 기다려요」)는 **아무도 안 보는 자리**였다.
+       이미 완주시켜 놓은 화면이 여기 있으므로 시간 표기 대조를 같이 얹는다. */
+    var left = ownLeft(o), said = ownSaid(o);
     o.dom.window.close();
-    return { done: done, note: note, hrefs: hrefs, sealed: sealed };
+    return { done: done, note: note, hrefs: hrefs, sealed: sealed, left: left, said: said };
   }
 
   var norm = await runToDone('?grade=' + gM + '&char=' + ciM);
@@ -500,6 +526,12 @@ await (async function () {
   T(norm.note === false, '평소 열기인데 미리보기 안내 띠가 뜸');
   T(norm.hrefs.length > 0 && norm.hrefs.every(function (h) { return h.indexOf('peek=1') < 0; }),
     '평소 열기인데 화면 안 통로가 peek 를 달고 있음');
+
+  /* ★완주 화면도 시간 표기 규약 아래 있다 — 두 갈래 그대로. 「다음 글자가 기다려요」는
+     원장이 아는 단위(글자)로만 말한다. 「내일」이라 적으면 주 2회 반에서 그냥 거짓이다. */
+  T(SPAN.test(norm.left) === false, '완주 화면이 주·요일·「어제/내일」을 지어냄(본문 나머지): ' + tidy(norm.left));
+  T(SPAN.test(norm.said) === false, '완주 화면이 주·요일·「어제/내일」을 지어냄(지정 마디): ' + tidy(norm.said));
+  T(norm.said.replace(/\s+/g, '').length > 5, '완주 화면의 지정 마디가 통째로 비어 있는데 통과함');
 
   var pk = await runToDone('?grade=' + gM + '&char=' + ciM + '&peek=1');
   T(pk.sealed === true, 'peek 열기: 낙관이 안 찍힘 — 기록만 끄고 손맛까지 죽이면 안 된다');
