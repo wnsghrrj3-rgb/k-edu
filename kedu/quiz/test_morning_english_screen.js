@@ -214,13 +214,44 @@ DATA.grades().forEach(function (g) {
   T(/오늘/.test(pUnknown) === false,
     '오늘 몫을 모르는데 라벨이 「오늘」이라 말함: ' + pUnknown.replace(/<[^>]*>/g, '').trim());
   T(/영어 미리 보기/.test(pUnknown), '오늘을 모를 때의 라벨이 통로 이름을 잃음');
-  /* 오늘이 한자 날이면 영어 통로는 오늘을 모른다 — 남의 과목 세션을 자기 것으로 쓰면 안 된다 */
-  var pOther = F.pl({ days: { mon: 'hanja', wed: 'english' }, grade: 3 }, {},
-                    { subject: 'hanja', lesson_key: 'g3_hanja_c012' });
-  T(pOther.indexOf('sents_preview.html?grade=3') >= 0,
+  /* 오늘이 한자 날이면 영어 통로는 오늘을 모른다 — 남의 과목 세션을 자기 것으로 쓰면 안 된다.
+     ★D8-ⓗ 로 이 자리의 방향이 뒤집혔다. ⓖ 는 여기에 「한자 미리보기에 c키를 넘기면 안 된다」고
+       적었고 그때는 참이었다(`chars.html` 이 c키를 못 받았다). 이제 받으므로 **넘겨야 한다** —
+       뒤집되 **짝은 유지한다**: 같은 하루에 한 과목은 c키를 물고 한 과목은 못 무는 이 자리가,
+       「오늘」이라는 말이 **과목별 자격**에서 나온다는 것을 가장 좁게 증명한다.
+     ★통로를 뜯어서 본다 — 문자열 전체에 /오늘/ 을 걸면 두 통로가 한 문자열에 같이 있으므로
+       한자 라벨의 정당한 「오늘」이 영어 라벨의 거짓을 가려 준다(한쪽이 다른 쪽의 알리바이가 된다). */
+  function lk(s, file) {
+    var m = s.match(new RegExp('<a[^>]*href="[^"]*' + file.replace(/\./g, '\\.') + '[^"]*"[^>]*>[^<]*</a>'));
+    return m ? m[0] : '';
+  }
+  var MIX = { days: { mon: 'hanja', wed: 'english' }, grade: 3 };
+  var pHanjaDay = F.pl(MIX, {}, { subject: 'hanja', lesson_key: 'g3_hanja_c012' });
+  var hE = lk(pHanjaDay, 'sents_preview.html'), hH = lk(pHanjaDay, 'chars.html');
+  T(hE !== '' && hH !== '', '섞인 시간표인데 통로 하나를 못 찾음 — 통로 모양이 바뀌었나');
+  T(hE.indexOf('?grade=3') >= 0,
     '오늘이 한자 날인데 영어 통로가 c키를 물고 감 — 남의 과목 진도를 자기 것이라 우긴다');
-  T(pOther.indexOf('chars.html?key=') < 0,
-    '한자 미리보기에 c키를 넘김 — chars.html 은 아직 c키를 받지 않는다(이번 작업 영역 밖)');
+  T(/오늘/.test(hE) === false, '오늘을 모르는 영어 통로가 라벨에서 「오늘」이라 말함: ' + hE);
+  T(hH.indexOf('chars.html?key=g3_hanja_c012') >= 0,
+    '오늘이 한자 날인데 한자 통로가 c키를 안 물고 감 — 23일째 반이 눌러도 첫날 글자가 열린다');
+  T(/오늘 나가는 한자 보기/.test(hH), '한자 통로가 오늘을 여는데 라벨이 그 사실을 안 말함');
+  /* 뒤집힌 짝 — 시간표는 그대로 두고 오늘만 영어 날로. 이번엔 한자가 오늘을 모른다.
+     한쪽 방향만 보면 「늘 c키를 무는 통로」가 통과한다(그러면 한자 날이 아닌 날에도 오늘이라 우긴다). */
+  var pEngDay = F.pl(MIX, {}, todayE);
+  var eH = lk(pEngDay, 'chars.html'), eE = lk(pEngDay, 'sents_preview.html');
+  T(eH.indexOf('?grade=3') >= 0, '오늘이 영어 날인데 한자 통로가 c키를 물고 감');
+  T(/오늘/.test(eH) === false, '오늘을 모르는 한자 통로가 라벨에서 「오늘」이라 말함: ' + eH);
+  T(eE.indexOf('?key=g3_english_c007') >= 0, '오늘이 영어 날인데 영어 통로가 c키를 안 물고 감');
+  /* ★수학은 아직 c키를 못 받는다(`math.html` 미수용 = 설계 §11 미결정 7 의 잔여).
+       지금 라벨이 정직해서 거짓은 없지만, 표에 `key:true` 한 줄만 얹고 화면을 그대로 두면
+       **그날로 첫날이 열린다** — 한자가 넉 달 겪은 그 결함이 그대로 재현된다.
+       자격 없는 과목에 통로만 앞서 가지 않게 여기서 막아 둔다.
+       (`math.html` 이 c키를 받게 되면 위 한자처럼 이 두 줄을 뒤집을 것.) */
+  var mM = lk(F.pl({ days: { mon: 'math' }, grade: 3 }, {},
+                   { subject: 'math', lesson_key: 'g3_math_c015' }), 'math.html');
+  T(mM.indexOf('?grade=3') >= 0,
+    '수학 통로가 c키를 물고 감 — math.html 은 c키를 받지 않는다(받게 만들었다면 이 검사를 뒤집을 것)');
+  T(/오늘/.test(mM) === false, '오늘을 모르는 수학 통로가 라벨에서 「오늘」이라 말함: ' + mM);
   /* (4-c) todaySess — 오늘을 「모른다」고 말해야 하는 세 경우를 실제로 굴려 본다.
        여기서 빈 그릇을 세션처럼 내주면 위의 통로가 없는 진도를 물고 간다. */
   F.setBoard(null);
@@ -284,6 +315,17 @@ DATA.grades().forEach(function (g) {
     '현황판에서 한자 세션이 한자 화면으로 열리지 않음');
   T(F.al({ subject: 'math', lesson_key: 'g3_math_c015' }) === '', '수학 세션에 활동 통로가 붙음 — 갈 곳 없는 링크다');
   T(F.al({ subject: 'english' }) === '', 'lesson_key 없는데 통로가 생김');
+  /* ★D8-ⓗ: 이 통로가 여는 것은 **학생 화면 그 자체**다 — peek 를 안 물면 교사가 준비하려고
+       한 번 돌려 본 것이 그 기기에 완주 도장으로 남는다. 교실 공용 기기(수업용 PC·공용
+       크롬북)라면 아이가 아직 만나지도 않은 날이 이미 끝난 것으로 뜬다.
+     ★9.14차가 만든 peek 계약이 미리보기 통로(`sents_preview.html` → 학생 화면 열기)에는
+       걸려 있었는데 **교사가 제일 자주 누를 이 통로에만** 빠져 있었다. 그런데도 그린이었다 —
+       아무도 이 링크를 안 봤기 때문이다. 여기가 그 구멍이다.
+     ★두 과목 모두 본다: 한쪽만 보면 나머지 과목이 조용히 새고, 한자는 지금 실사용 중이다. */
+  T(/peek=1/.test(F.al({ subject: 'english', lesson_key: 'g3_english_c007' })),
+    '현황판 영어 활동 통로가 peek 없이 열림 — 교사가 돌려 보면 아이 기록이 생긴다');
+  T(/peek=1/.test(F.al({ subject: 'hanja', lesson_key: 'g1_hanja_c003' })),
+    '현황판 한자 활동 통로가 peek 없이 열림 — 교사가 돌려 보면 아이 기록이 생긴다');
 
   /* (7) 오늘 태그 — 교사가 제목만 보고도 오늘 무엇이 나가는지 안다 */
   var d1 = DATA.day(3, 7);
@@ -327,6 +369,13 @@ DATA.grades().forEach(function (g) {
   T(A({ subject: 'korean', lesson_key: 'g3_korean_u1' }, 'after') === '',
     '국어 세션에 활동 통로가 붙음');
   T(A({ subject: 'english' }, 'before') === '', 'lesson_key 없는데 통로가 생김');
+  /* ★D8-ⓗ 의 짝 — 교사 통로에 peek 를 강제했으면 **여기서는 붙지 않는가**를 함께 봐야 한다.
+       교사 쪽만 보면 「어디서 열어도 기록이 안 남는 화면」이 통과하고, 그러면 아이가 다 풀어도
+       도장이 안 찍힌다. peek 는 「기록을 끄는 스위치」가 아니라 **누가 열었는지의 표시**다. */
+  T(/peek/.test(A({ subject: 'english', lesson_key: 'g3_english_c007' }, 'before')) === false,
+    '학생 활동 통로에 peek 가 붙음 — 아이가 풀어도 기록이 안 남는다');
+  T(/peek/.test(A({ subject: 'hanja', lesson_key: 'g1_hanja_c003' }, 'before')) === false,
+    '학생 한자 활동 통로에 peek 가 붙음 — 아이가 풀어도 기록이 안 남는다');
   T(A({ subject: 'english', lesson_key: 'g3_english_c007' }, 'after')
     !== A({ subject: 'english', lesson_key: 'g3_english_c007' }, 'before'),
     '풀기 전/뒤 문구가 같음 — 두 자리의 말이 달라야 한다');

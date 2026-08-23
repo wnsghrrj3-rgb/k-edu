@@ -165,10 +165,10 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--paper);min-height:100
 .browse-bar select{font-family:inherit;font-size:15px;padding:10px 13px;border:1.5px solid var(--grid);
   border-radius:12px;background:#FFFDF8;color:var(--ink)}
 .browse-meta{font-size:13px;color:var(--ink-soft);flex:1;min-width:200px;line-height:1.7}
-.week{margin-bottom:18px}
-.week h3{font-family:var(--kedu-title);font-size:15px;color:var(--ink-soft);margin:0 2px 9px;
+.stepbox{margin-bottom:18px}
+.stepbox h3{font-family:var(--kedu-title);font-size:15px;color:var(--ink-soft);margin:0 2px 9px;
   display:flex;align-items:baseline;gap:8px}
-.week h3 small{font-size:12px;color:var(--sand)}
+.stepbox h3 small{font-size:12px;color:var(--sand)}
 .wgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:9px}
 .wg{background:var(--card);border:1px solid var(--grid);border-radius:13px;padding:12px 6px 10px;
   text-align:center;cursor:pointer;position:relative;text-decoration:none;color:var(--ink)}
@@ -182,9 +182,13 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--paper);min-height:100
 
 .credit{margin-top:26px;font-size:11.5px;color:var(--sand);text-align:center;line-height:1.7}
 .credit a{color:var(--sand)}
+/* 교실 공용 기기에서 교사가 먼저 돌려 보면 아이가 만나지도 않은 날이 끝난 것으로 남는다.
+   그래서 기록을 끄고, 끈 사실을 화면에 적는다 — 조용히 다르게 도는 화면은 신뢰를 잃는다. */
+.peeknote{background:#FFF6E3;border:1px solid #F0DCB4;color:#8A6320;border-radius:12px;
+  padding:9px 13px;margin-bottom:12px;font-size:12.5px;line-height:1.65}
 
 @media print{
-  .nav,.head .nav-ch,.journey,.sheet,.row,.credit,.browse-bar select,.bt{display:none!important}
+  .nav,.head .nav-ch,.journey,.sheet,.row,.credit,.browse-bar select,.bt,.peeknote{display:none!important}
   body{background:#fff}
   .wrap{max-width:none;padding:0}
   .wg{break-inside:avoid}
@@ -212,7 +216,7 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--paper);min-height:100
 
   var ROUNDS = 10;                     // 한 글자 = 열 번 쓰기
   var st = { grade:1, ci:1, stage:1,   // stage 1 만나기 · 2 쓰기 · 3 낱말
-             round:1, browse:false, writer:null, met:false };
+             round:1, browse:false, writer:null, met:false, today:null, peek:false };
 
   function esc(t){ return String(t==null?'':t).replace(/[&<>"]/g,function(m){
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]; }); }
@@ -225,6 +229,7 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--paper);min-height:100
     catch(e){ return {}; }
   }
   function markDone(){
+    if (st.peek) return;                 /* 미리보기로 열었으면 아무것도 남기지 않는다 */
     try {
       var m = doneMap(); m[st.ci] = 1;
       localStorage.setItem('kedu_hanja_done_g'+st.grade, JSON.stringify(m));
@@ -242,21 +247,54 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--paper);min-height:100
   }
   function charLoader(c, onLoad, onErr){ loadStrokes(c).then(function(j){ j?onLoad(j):onErr(); }); }
 
-  /* ── 주소 풀기: c키·옛 s키·grade/char 모두 받는다 ── */
+  /* ── 주소 풀기: c키·옛 s키·grade/char 모두 받는다 ──
+     ★D8-ⓗ: **진도일(today)은 c키 통로로 들어왔을 때만 안다.** 아침활동 허브(`/morning/`)와
+       교사 현황판이 서버에서 받은 그날 몫을 `?key=g4_hanja_c015` 로 넘겨 준다. 반면
+       `?grade&char` 는 둘러보기·교사 미리보기가 **아무 날이나** 여는 통로라, 그 글자가
+       오늘 몫인지 이 화면은 알 길이 없다. 모르면서 「오늘」이라 말하면 지어내기다.
+       모르면 `today = null` 로 두고, 화면은 「이 글자」라고만 말한다.
+     ★옛 s키(회차)는 10자 묶음의 **첫 글자**로만 열린다 — 그 글자가 오늘 몫이라는 근거가
+       아니므로 today 를 주지 않는다(하루 1자 전환 전의 통로다).
+     ★이름·뜻은 `sents.html` 과 같게 뒀다(onToday·dayW·peekQs·peekNote) — 다르면
+       다음 사람이 한쪽만 고친다. */
   function fromUrl(){
     var q = new URLSearchParams(location.search);
+    var peek = q.get('peek') === '1';
     var key = q.get('key') || '';
     var m = key.match(/^g(\d)_hanja_c(\d{1,3})$/);
-    if (m) return { grade:+m[1], ci:+m[2], browse:false };
+    if (m) return { grade:+m[1], ci:+m[2], today:+m[2], browse:false, peek:peek };
     m = key.match(/^g(\d)_hanja_s(\d{1,2})$/);               // 옛 회차 키 → 그 회차 첫 글자
-    if (m) return { grade:+m[1], ci:(+m[2]-1)*10+1, browse:false };
+    if (m) return { grade:+m[1], ci:(+m[2]-1)*10+1, today:null, browse:false, peek:peek };
     var g = +q.get('grade') || 1;
-    if (q.get('char')) return { grade:g, ci:+q.get('char'), browse:false };
-    return { grade:g, ci:1, browse: q.get('char') == null && !key };
+    if (q.get('char')) return { grade:g, ci:+q.get('char'), today:null, browse:false, peek:peek };
+    return { grade:g, ci:1, today:null, browse: q.get('char') == null && !key, peek:peek };
   }
+  /* 지금 보고 있는 글자가 「오늘 몫」임을 이 화면이 근거를 갖고 말할 수 있는가 */
+  function onToday(){ return st.today != null && st.ci === st.today; }
+  function charW(){ return onToday() ? '오늘 글자' : '이 글자'; }
+  function dayW(){  return onToday() ? '오늘' : '이 날'; }
+  /* 화면 안의 통로(전체·둘러보기 격자)는 peek 를 계속 물고 간다 —
+     한 번 미리보기로 들어왔는데 옆으로 한 칸 옮기자 기록이 살아나면 안 된다. */
+  function peekQs(){ return st.peek ? '&peek=1' : ''; }
+  function peekNote(){
+    return st.peek
+      ? '<div class="peeknote">미리보기로 열었어요 — 여기서 무엇을 해도 <b>기록이 남지 않아요</b>. '
+        + '아이들이 만날 화면 그대로예요.</div>'
+      : '';
+  }
+  /* 원장이 아는 묶음 = 10자 step. 「주」는 원장에 없다(요일·주 배정은 교사 시간표 소관). */
+  function stepInfo(){
+    var sz = D.STEP_SIZE || 10, si = Math.floor((st.ci-1)/sz) + 1;
+    var body = D.step(st.grade, si) || [];
+    return { no:si, cnt:D.stepCount(st.grade), within:st.ci-(si-1)*sz, size:body.length };
+  }
+  /* ★`ci` 는 구간 안으로 당기지만 `today` 는 **당기지 않는다** — 당기면 「엉뚱한 글자를
+       오늘이라 우기는」 상태가 만들어진다. 구간 밖이면 조용히 버린다.
+       학년마다 자수가 다르므로(50·50·50·75·75·100) 이 검사는 실제로 작동한다. */
   function clamp(){
     if (D.grades().indexOf(st.grade) < 0) st.grade = D.grades()[0];
     st.ci = Math.min(Math.max(st.ci||1, 1), total());
+    if (st.today != null && (st.today < 1 || st.today > (total() || 0))) st.today = null;
   }
 
   /* ══════════════ 오늘의 활동 ══════════════ */
@@ -270,20 +308,36 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--paper);min-height:100
         + '<div class="jstep '+cls+'"><div class="b">'+(k<st.stage?'✓':k)+'</div>'+n+'</div>';
     }).join('') + '</div>';
   }
+  /* ★D8-ⓗ: 예전엔 머리가 `['월','화','수','목','금'][(일째-1)%5]` 로 요일을 만들어
+       「2주 화」라 적었다. **1일째가 월요일이라는 근거는 어디에도 없다** — 한자를 어느 요일에
+       넣을지는 교사 시간표(`ma_routines`)가 정하고 원장에는 없다. 주 2회 반이면 11일째는
+       실제로 6주째이고, 매일 넣은 반이라도 첫날이 수요일이면 그날부터 전부 어긋난다.
+       이동 칩 「← 어제」·「내일 →」도 같은 종류다 — 다음 글자가 **하루 뒤**라는 주장인데
+       원장은 일차 사이의 간격을 쥐고 있지 않다.
+     ★주(모름) → 묶음(앎)으로 갈았다. 원장이 아는 묶음은 10자 step 뿐이다.
+     ★정직해지면서 정보가 줄면 안 된다 — 오늘 몫을 벗어나면 「오늘 글자로 ↩」이 뜬다.
+       칩 이름만 바꾸고 이걸 안 넣으면, 예전엔 「어제」라는 거짓말이 최소한 「움직였다」는
+       사실은 알려 줬는데 그마저 사라진다. */
   function headHtml(){
-    var week = Math.ceil(st.ci/5), dow = ['월','화','수','목','금'][(st.ci-1)%5];
-    return '<div class="head">'
+    var si = stepInfo();
+    return peekNote() + '<div class="head">'
       + '<div class="day">'+st.grade+'학년 '+st.ci+'일째 글자'
-      +   '<small>'+week+'주 '+dow+' · 모두 '+total()+'자</small></div>'
+      +   '<small>'+(onToday() ? '오늘 글자 · ' : '')
+      +   si.no+'번째 묶음(모두 '+si.cnt+') · '+si.size+'자 중 '+si.within+'번째'
+      +   ' · 모두 '+total()+'자</small></div>'
       + '<div class="nav-ch">'
-      +   '<button class="chip" id="pv" type="button"'+(st.ci<=1?' disabled':'')+'>← 어제</button>'
-      +   '<button class="chip" id="nx" type="button"'+(st.ci>=total()?' disabled':'')+'>내일 →</button>'
-      +   '<a class="chip quiet" href="/morning/chars.html?grade='+st.grade+'">전체</a>'
+      +   '<button class="chip" id="pv" type="button"'+(st.ci<=1?' disabled':'')+'>← 이전 글자</button>'
+      +   '<button class="chip" id="nx" type="button"'+(st.ci>=total()?' disabled':'')+'>다음 글자 →</button>'
+      +   (st.today != null && !onToday()
+            ? '<button class="chip" id="bk" type="button">오늘 글자로 ↩</button>' : '')
+      +   '<a class="chip quiet" href="/morning/chars.html?grade='+st.grade+peekQs()+'">전체</a>'
       + '</div></div>';
   }
   function wireHead(){
     document.getElementById('pv').onclick = function(){ gotoChar(st.ci-1); };
     document.getElementById('nx').onclick = function(){ gotoChar(st.ci+1); };
+    var bk = document.getElementById('bk');
+    if (bk) bk.onclick = function(){ gotoChar(st.today); };
   }
   function gotoChar(i){
     if (i < 1 || i > total()) return;
@@ -358,7 +412,7 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--paper);min-height:100
     app.innerHTML = headHtml() + journeyHtml()
       + '<div class="sheet">'
       + '<div class="corner"><b>'+st.round+'번째</b> · '+esc(cfg.label)+'</div>'
-      + '<div style="font-family:var(--kedu-title);font-size:19px;margin-bottom:2px">'+esc(x.hun)+' '+esc(x.eum)+'</div>'
+      + '<div class="led" style="font-family:var(--kedu-title);font-size:19px;margin-bottom:2px">'+esc(x.hun)+' '+esc(x.eum)+'</div>'
       + '<div class="hy-sub">'+(cfg.outline ? '옅은 글씨를 따라 순서대로 써 보세요'
                                             : '이번엔 본 없이! 획 순서를 떠올려 보세요')+'</div>'
       + '<div class="mija" style="margin-top:10px"><div id="tgt"></div></div>'
@@ -450,26 +504,26 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--paper);min-height:100
     var inner;
     if (!ws.length) {
       inner = '<div class="nodata">「'+esc(x.c)+'」'+(x.hun)+' '+(x.eum)+' — 이 글자로 된 낱말은 아직 사전에 없어요.<br>'
-        + '오늘은 글자만으로도 충분해요!</div>'
-        + '<div class="row"><button class="bt" id="fin" type="button">오늘 글자 끝내기</button></div>';
+        + dayW()+'은 글자만으로도 충분해요!</div>'
+        + '<div class="row"><button class="bt" id="fin" type="button">'+charW()+' 끝내기</button></div>';
     } else if (ws.length === 1) {
       // 낱말이 하나면: 낱말 속에서 오늘 글자를 찾는다
       var w0 = ws[0];
       inner = '<div class="wordy">'
         + '<div class="lead">「'+esc(w0.word)+'」은(는) <b>'+esc(w0.ko)+'</b>라는 뜻이에요.<br>'
-        + '이 낱말에서 오늘 배운 <b>'+esc(x.hun)+' '+esc(x.eum)+'</b>를 찾아 눌러 보세요.</div>'
+        + '이 낱말에서 '+dayW()+' 배운 <b>'+esc(x.hun)+' '+esc(x.eum)+'</b>를 찾아 눌러 보세요.</div>'
         + '<div class="findword" id="fw">'
         + Array.prototype.map.call(w0.word, function(g,i){
             return '<button type="button" data-c="'+esc(g)+'">'+esc(g)+'</button>'; }).join('')
         + '</div><div class="say" id="wsay"></div>'
-        + '<div class="row" style="display:none" id="finrow"><button class="bt" id="fin" type="button">오늘 글자 끝내기</button></div>'
+        + '<div class="row" style="display:none" id="finrow"><button class="bt" id="fin" type="button">'+charW()+' 끝내기</button></div>'
         + '</div>';
     } else {
       // 낱말이 여럿이면: 낱말 ↔ 뜻 짝짓기
       var shuffled = ws.map(function(w,i){ return {ko:w.ko, i:i}; })
         .sort(function(){ return Math.random()-.5; });
       inner = '<div class="wordy">'
-        + '<div class="lead">오늘 글자 <span style="color:var(--seal);font-family:var(--kedu-title)">'+esc(x.c)+'</span>'
+        + '<div class="lead">'+charW()+' <span style="color:var(--seal);font-family:var(--kedu-title)">'+esc(x.c)+'</span>'
         + ' 이(가) 사는 낱말들이에요.<br>낱말과 뜻을 <b>짝지어</b> 보세요.</div>'
         + '<div class="mcol">'
         + '<div>' + ws.map(function(w,i){
@@ -479,7 +533,7 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--paper);min-height:100
             return '<div class="mitem" data-k="'+s.i+'" role="button" tabindex="0">'+esc(s.ko)+'</div>';
           }).join('<div style="height:9px"></div>') + '</div>'
         + '</div><div class="say" id="wsay"></div>'
-        + '<div class="row" style="display:none" id="finrow"><button class="bt" id="fin" type="button">오늘 글자 끝내기</button></div>'
+        + '<div class="row" style="display:none" id="finrow"><button class="bt" id="fin" type="button">'+charW()+' 끝내기</button></div>'
         + '</div>';
     }
     app.innerHTML = headHtml() + journeyHtml()
@@ -504,7 +558,7 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--paper);min-height:100
             document.getElementById('finrow').style.display = 'flex';
           } else {
             b.classList.remove('no'); void b.offsetWidth; b.classList.add('no');
-            say.className = 'say oops'; say.textContent = '그 글자가 아니에요. 오늘 쓴 글자를 떠올려 보세요.';
+            say.className = 'say oops'; say.textContent = '그 글자가 아니에요. '+(onToday()?'오늘':'방금')+' 쓴 글자를 떠올려 보세요.';
           }
         };
       });
@@ -550,9 +604,14 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--paper);min-height:100
     app.innerHTML = headHtml() + journeyHtml().replace('jstep on','jstep done')
       + '<div class="sheet">'
       + '<div class="bigseal pop"><div class="c">'+esc(x.c)+'</div><div class="t">成</div></div>'
+      /* ★원장(훈음)과 화면이 **자기 말**을 하는 마디를 한 요소에 섞지 않는다 — 섞여 있으면
+         「원장 마디를 빼고 남은 말만 본다」가 원리적으로 불가능해진다(D8-ⓗ §3-2와 같은 축).
+         `.led` = 원장 문자열이 그대로 실리는 자리라는 표시. 검사기가 이 표시를 믿고 제외한다. */
       + '<div style="font-family:var(--kedu-title);font-size:20px;margin-top:4px">'
-      +   esc(x.hun)+' '+esc(x.eum)+', 오늘 것 완성!</div>'
-      + '<div class="hy-sub" style="margin-top:6px">열 번 쓰고 낱말까지 — 내일은 새 글자가 기다려요.</div>'
+      +   '<span class="led">'+esc(x.hun)+' '+esc(x.eum)+'</span>'
+      +   ', '+(onToday()?'오늘 것':'한 글자')+' 완성!</div>'
+      + '<div class="hy-sub" style="margin-top:6px">열 번 쓰고 낱말까지 — '
+      +   (st.ci >= total() ? '이 학년 글자를 모두 만났어요.' : '다음 글자가 기다려요.')+'</div>'
       + '<div class="row">'
       +   '<a class="bt" href="/morning/" style="text-decoration:none">확인 문제 풀러 가기</a>'
       +   '<button class="bt line" id="onemore" type="button">한 번 더 쓰기</button>'
@@ -563,31 +622,39 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--paper);min-height:100
   }
 
   /* ══════════════ 둘러보기(교사·전체) ══════════════ */
+  /* ★D8-ⓗ: 격자도 5자씩 「N주」로 묶고 칸마다 요일을 적고 있었다 — 머리와 같은 지어내기다.
+       원장이 아는 묶음은 10자 step 뿐이라 그것으로 갈았고, 칸 라벨은 일차로 바꿨다.
+       「N주면 다 만나요」도 걷어냈다 — 며칠 만에 다 만나는지는 교사 시간표가 정한다. */
   function renderBrowse(){
-    var done = doneMap(), all = D.all(st.grade), weeks = Math.ceil(all.length/5);
-    var out = '<div class="browse-bar">'
+    var done = doneMap(), all = D.all(st.grade), sz = D.STEP_SIZE || 10;
+    var steps = D.stepCount(st.grade);
+    var out = peekNote() + '<div class="browse-bar">'
       + '<div><label for="g">학년</label><select id="g">'
       + D.grades().map(function(g){ return '<option value="'+g+'"'+(g===st.grade?' selected':'')+'>'+g+'학년</option>'; }).join('')
       + '</select></div>'
       + '<div class="browse-meta"><b>'+st.grade+'학년</b>은 하루 한 자, 모두 <b>'+all.length+'자</b> — '
-      +   '<b>'+weeks+'주</b>면 다 만나요. 글자를 누르면 그날 활동이 열려요.</div>'
+      +   '<b>'+steps+'개 묶음</b>으로 나뉘어요. 글자를 누르면 그 활동이 열려요.</div>'
       + '<button class="bt line" id="print" type="button">인쇄</button>'
       + '</div>';
-    for (var w = 0; w < weeks; w++) {
-      var cs = all.slice(w*5, w*5+5);
-      out += '<div class="week"><h3>'+(w+1)+'주 <small>'+(w*5+1)+'~'+(w*5+cs.length)+'일째</small></h3><div class="wgrid">'
+    for (var w = 0; w < steps; w++) {
+      var cs = all.slice(w*sz, w*sz+sz);
+      out += '<div class="stepbox"><h3>'+(w+1)+'번째 묶음 <small>'+(w*sz+1)+'~'+(w*sz+cs.length)+'일째</small></h3><div class="wgrid">'
         + cs.map(function(x,i){
-            var ci = w*5+i+1;
-            return '<a class="wg" href="/morning/chars.html?grade='+st.grade+'&char='+ci+'">'
+            var ci = w*sz+i+1;
+            return '<a class="wg" href="/morning/chars.html?grade='+st.grade+'&char='+ci+peekQs()+'">'
               + (done[ci] ? '<div class="mini">'+esc(x.c)+'</div>' : '')
-              + '<div class="d">'+['월','화','수','목','금'][i]+'</div>'
+              + '<div class="d">'+ci+'일째</div>'
               + '<div class="c">'+esc(x.c)+'</div>'
               + '<div class="h">'+esc(x.hun)+' '+esc(x.eum)+'</div></a>';
           }).join('')
         + '</div></div>';
     }
     app.innerHTML = out + creditHtml();
-    document.getElementById('g').onchange = function(){ st.grade = +this.value; render(); };
+    document.getElementById('g').onchange = function(){
+      st.grade = +this.value;
+      st.today = null;        /* 4학년 15일째로 들어와 3학년으로 옮기면 그 15일째는 오늘이 아니다 */
+      render();
+    };
     document.getElementById('print').onclick = function(){ window.print(); };
   }
 
@@ -605,7 +672,7 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--paper);min-height:100
   }
 
   var u = fromUrl();
-  st.grade = u.grade; st.ci = u.ci; st.browse = u.browse;
+  st.grade = u.grade; st.ci = u.ci; st.browse = u.browse; st.today = u.today; st.peek = u.peek;
   render();
 })();
 </script>
