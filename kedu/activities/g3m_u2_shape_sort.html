@@ -1,0 +1,1360 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>도형 나누기 마당 — K✦edu</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<!-- 이 파일은 build/assemble.py가 조립했습니다. 직접 수정하지 마세요.
+     원본: src/g3m_u2_shape_sort.js (+ src/g3m_u2_shape_sort.css) · core/activity-core.* · core/genre/none.js · gens/math/plane_shape.js -->
+<style>
+/* activity-core.css — 케이티처 활동 표준 셸 (Phase 3)
+ * 헌법: 설계 §6 현장 헌장이 여기 박혀 있다. 도구는 이 스타일을 다시 쓰지 않는다.
+ *   §6-2 답 버튼은 가로 일렬 (.ansgrp = row 고정)
+ *   §6-3 판독 우선 (숫자·핵심 정보는 고대비 카드 위)
+ *   §6-6 우상단은 호스트 구역 (#hud right: var(--kb-safe-right))
+ *   §6-8 [넘기기]·[그만하기]는 HUD 상설
+ * 빌드가 이 파일을 <style>로 인라인한다 (단일 HTML 원칙 D1).
+ */
+:root {
+  --cream:#fffbf5; --ink:#78350f; --deep:#92400e; --amber:#f59e0b; --amber-d:#d97706;
+  --good:#22c55e; --bad:#f87171; --teamA:#f59e0b; --teamB:#10b981;
+}
+* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { margin:0; height:100%; }
+body { background:var(--cream); font-family:'Jua',sans-serif; color:var(--ink);
+       display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.num { font-family:'Nunito',sans-serif; font-weight:800; }
+.screen { display:none; width:100%; height:100%; padding:clamp(10px,2vw,28px);
+          flex-direction:column; align-items:center; justify-content:center; gap:clamp(10px,2vh,22px); }
+.screen.active { display:flex; }
+h1 { font-size:clamp(30px,6vw,58px); color:var(--deep); margin:0; text-align:center; }
+.brand { position:fixed; top:10px; left:14px; font-size:15px; color:var(--amber-d); z-index:5; }
+.btn { font-family:'Jua',sans-serif; border:none; border-radius:16px; cursor:pointer;
+       min-height:44px; min-width:44px; font-size:clamp(18px,2.6vw,26px); padding:12px 28px;
+       background:var(--amber); color:#fff; box-shadow:0 4px 0 var(--amber-d); }
+.btn:active { transform:translateY(3px); box-shadow:0 1px 0 var(--amber-d); }
+.btn.ghost { background:#fff; color:var(--deep); box-shadow:0 4px 0 #e7d9c4; border:2px solid #f3e2c4; }
+
+/* ── 시작 화면 ── */
+#scr-start .sub { font-size:clamp(16px,2.4vw,24px); color:var(--amber-d); text-align:center; }
+.setrow { display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center; }
+.setrow + .setrow { margin-top:8px; }
+.setrow .lb { font-size:clamp(15px,2vw,20px); }
+.chip { border:2px solid var(--amber); background:#fff; color:var(--deep); border-radius:999px;
+        padding:8px 18px; font-size:clamp(15px,2vw,20px); font-family:'Jua',sans-serif; cursor:pointer; min-height:44px; }
+.chip.on { background:var(--amber); color:#fff; }
+#sid-badge { display:none; background:var(--deep); color:#fff; border-radius:999px;
+             padding:6px 18px; font-size:clamp(16px,2.2vw,22px); }
+#best-line { display:none; font-size:clamp(15px,2vw,20px); color:var(--amber-d); }
+#start-btn { font-size:clamp(22px,3.4vw,32px); padding:16px 44px; }
+
+/* ── 게임 화면 ── */
+#scr-game { justify-content:space-between; padding-top:clamp(40px,6vh,60px); }
+#hud { position:fixed; top:8px; right:var(--kb-safe-right, 12px); display:flex; gap:10px; align-items:center; z-index:5; }
+#hud .pill { background:#fff; border:2px solid #f3e2c4; border-radius:999px; padding:5px 14px;
+             font-size:clamp(14px,1.8vw,18px); }
+#quit-btn,#mute-btn,#skip-btn { background:#fff; border:2px solid #f3e2c4; border-radius:12px; cursor:pointer;
+            font-size:17px; padding:6px 12px; min-height:44px; min-width:44px; font-family:'Jua',sans-serif; color:var(--deep); }
+#teams { display:none; width:100%; max-width:900px; justify-content:space-between; }
+.team { border-radius:14px; padding:6px 20px; color:#fff; font-size:clamp(18px,2.6vw,26px); }
+.team.A { background:var(--teamA); } .team.B { background:var(--teamB); }
+
+/* 무대: 장르가 채우는 영역 */
+#stage { flex:1; display:flex; align-items:center; justify-content:center; width:100%; min-height:0; }
+
+#explain { min-height:clamp(34px,5vh,52px); font-size:clamp(17px,2.6vw,26px); color:var(--deep);
+           background:#fef3c7; border-radius:14px; padding:8px 22px; opacity:0; transition:opacity .3s;
+           text-align:center; max-width:92vw; }
+#explain.show { opacity:1; }
+#explain .mark { font-size:1.1em; }
+
+/* 답 버튼 — §6-2: 그룹 내부는 언제나 가로 일렬 */
+#answers-solo { display:none; gap:clamp(10px,2vw,18px); width:100%; max-width:640px; justify-content:center; }
+#answers-class { display:none; width:100%; max-width:960px; justify-content:space-between; gap:12px; }
+.ansgrp { display:flex; gap:10px; flex-direction:row; align-items:center; }
+.ansgrp::before { content:attr(data-label); font-size:clamp(15px,1.8vw,20px); color:#fff;
+  padding:6px 12px; border-radius:10px; margin-right:2px; }
+.ansgrp.A::before { background:var(--teamA); } .ansgrp.B::before { background:var(--teamB); }
+.abtn { font-family:'Jua',sans-serif; font-size:clamp(19px,3vw,28px); border:none; border-radius:16px;
+        padding:clamp(12px,2vh,18px) clamp(18px,3vw,34px); cursor:pointer; min-height:52px;
+        background:#fff; color:var(--deep); border:3px solid var(--amber); box-shadow:0 4px 0 #e7c890; }
+.abtn:active { transform:translateY(3px); box-shadow:none; }
+.ansgrp.A .abtn { border-color:var(--teamA); } .ansgrp.B .abtn { border-color:var(--teamB); }
+.abtn.locked { opacity:.45; pointer-events:none; }
+.abtn.shake { animation:shake .45s; border-color:var(--bad); }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-9px)} 40%,80%{transform:translateX(9px)} }
+#why-box { display:none; flex-direction:column; align-items:center; gap:10px; width:100%; max-width:640px; }
+#why-box .wq { font-size:clamp(18px,2.6vw,26px); color:var(--deep); }
+#why-box .whyrow { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+
+/* ── 종료 화면 ── */
+#scr-end .big { font-size:clamp(40px,8vw,84px); color:var(--deep); }
+#scr-end .line { font-size:clamp(18px,3vw,30px); color:var(--amber-d); text-align:center; }
+#submit-line { font-size:clamp(15px,2.2vw,20px); }
+
+@media (orientation:portrait) {
+  #answers-class { flex-direction:column; align-items:center; }  /* 그룹 간 상하, 그룹 내부는 가로 (§6-2) */
+}
+
+/* ── 무대 스타일 ── */
+/* 무대 — 도형 나누기 마당. sort 원형(g2m_u5_classify)의 골격을 쓰되 세 가지가 다르다.
+   ① 물건이 도형이라 칸이 커야 한다 (72px SVG — 회전한 삼각형이 잘리면 안 된다)
+   ② 바구니 이름이 길다(「직각삼각형이 아님」) — 가로 일렬(§6-2)을 지키면서 두 줄까지 허용
+   ③ 판마다 정의 한 줄(hint)을 띄운다. 이 단원은 기준이 색·모양처럼 자명하지 않고
+      정의를 기억해야 나눌 수 있어서, 기준을 화면에서 치우면 그건 암기 시험이 된다. */
+#cy { display:flex; flex-direction:column; align-items:center;
+      gap:clamp(6px,1.6vh,14px); width:100%; }
+
+#rule { font-size:clamp(16px,2.3vw,26px); color:var(--deep); background:#efe9ff;
+        border-radius:14px; padding:7px 22px; font-family:'Jua',sans-serif; text-align:center; }
+#hint { font-family:'Jua',sans-serif; font-size:clamp(12px,1.7vw,19px);
+        color:#5b4a86; background:#faf8ff; border:2px dashed #cfc3ea; border-radius:12px;
+        padding:5px 16px; max-width:min(92vw,620px); text-align:center; line-height:1.5; }
+#hint b { color:#4a2f96; }
+
+#pool { display:flex; flex-wrap:wrap; gap:clamp(6px,1.4vw,14px); justify-content:center;
+        background:#faf8ff; border:2px dashed #cfc3ea; border-radius:18px; padding:10px 12px;
+        min-height:clamp(90px,16vh,160px); max-width:min(94vw,860px); align-items:center; }
+#pool .item { background:#fff; border:3px solid #ded3f2; border-radius:14px; cursor:pointer;
+              padding:2px 4px; box-shadow:0 4px 0 #ded3f2; line-height:0;
+              min-width:56px; min-height:56px; display:inline-flex;
+              align-items:center; justify-content:center; }
+#pool .item.on { border-color:var(--good); background:#dcfce7; transform:translateY(-3px); }
+#pool .item.gone { display:none; }
+/* 각 이름 카드 — 글자 자체가 물건이다. 가운데 글자가 꼭짓점이라 자간을 벌려 읽히게 한다. */
+#pool .item .nm { font-family:'Jua',sans-serif; font-size:clamp(18px,3vw,34px);
+                  color:var(--deep); letter-spacing:.12em; line-height:1.2;
+                  padding:.25em .45em; white-space:nowrap; }
+
+#baskets { display:flex; gap:clamp(8px,2vw,22px); flex-wrap:wrap; justify-content:center; }
+#baskets .basket { background:#fff; border:4px solid #b9a7e0; border-radius:20px; cursor:pointer;
+                   padding:10px clamp(12px,2.2vw,28px); display:flex; flex-direction:column;
+                   align-items:center; box-shadow:0 5px 0 #d6cbee;
+                   min-width:clamp(92px,13vw,168px); min-height:44px;
+                   font-family:'Jua',sans-serif; }
+#baskets .basket:active { transform:translateY(3px); box-shadow:none; }
+#baskets .bn { font-size:clamp(13px,1.85vw,22px); color:var(--deep);
+               line-height:1.25; text-align:center; max-width:9em; }
+#baskets .cnt { font-size:clamp(15px,2.1vw,26px); color:#5b4a86; }
+#baskets .basket.shake { animation:shake .45s; border-color:var(--bad); }
+</style>
+</head>
+<body>
+<div id="a-root"></div>
+
+<!-- 케이박스 스택 (assign 제출용 — 없으면 조용히 무시됨) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_config.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+
+<script>
+/* core/bridge.js — 케이티처 활동 시스템 브리지 v1.1.0
+ * 헌법: handoff/kedu/activities/케이티처_활동시스템_설계.md §3·§4·§8
+ * v1.0.0 프로토콜(§4 postMessage)은 동결 유지 — 변경 없음.
+ * v1.1.0 추가: assign 재제출 병합(§8-4, M3 해소). cw_submit이 upsert(last-write-wins)이므로
+ *   시도 이력이 서버에 쌓이지 않는다 → 브리지가 제출 직전에 이전 제출을 읽어 정책대로 병합한다.
+ *   정책 sc = best(기본, D4) | first(D10 성향) | last. 조회 원천은 RPC cw_open_bundle(서버) >
+ *   localStorage 백업(기기) > 없음(첫 시도). 조회 실패해도 제출은 반드시 수행한다(유실 0 우선).
+ *
+ * 프로토콜(§4): 상행 ACTIVITY_READY / PROGRESS / RESULT / EXIT, 하행 ACTIVITY_CONFIG / CLOSE. v:1 고정.
+ * 모드 판정(§20-2): URL에 cwb+cwi(케이박스 딥링크)가 있으면 무조건 assign. 그 외 ?mode=, 기본 solo.
+ * 설정 우선순위(§3-3): CONFIG > URL 파라미터 > init defaults(카탈로그 기본값) > 코드 기본값.
+ * 핸드셰이크(§4-1): 선택적. CONFIG 800ms 미도착 = standalone 진행. 실패가 도구를 멈추게 하지 않는다.
+ * 케이박스 제출(§20-2): finish 시 assign이면 KBox.submit 직결. 실패 시 localStorage 보관 +
+ *   지수 백오프 재시도(기본 [2000,6000,18000]ms, window.__KBRIDGE_RETRY_MS__로 오버라이드) +
+ *   재진입 시 자동 재제출. 학생 결과는 절대 유실하지 않는다(§4-4). 어댑터는 무수정(전 도구 공용).
+ * detail(§13-3): 문항 수준 기록은 assign 모드에서만 발신·제출. 최대 100항목.
+ * 안전 여백(§6-6): hosted면 <html>에 .kb-hosted + --kb-safe-right=128px. 도구 우상단 HUD는
+ *   right: var(--kb-safe-right, 12px)로 선언한다 — 호스트 [활동 닫기]와 겹치지 않는다.
+ * 시드(§3-1): ?seed= 있으면 고정(mulberry32), 없으면 랜덤. KBridge.rng로 노출.
+ *
+ * API(§4-5):
+ *   KBridge.init({ activityId, defaults, onConfig(cfg), onClose, getProgress, configWaitMs })
+ *   KBridge.progress({ q, total, ok, type })
+ *   KBridge.finish({ score, total, durationSec, byType, detail, onSubmit })  → true | false(중복)
+ *   KBridge.exit(reason, progress)
+ *   KBridge.mode / .seed / .scoring / .rng() / .version
+ */
+(function () {
+  'use strict';
+  var VERSION = '1.1.0';
+  var MODES = ['class', 'solo', 'assign'];
+  var SCORING = ['best', 'first', 'last'];
+  var PKEY = 'kbridge_pending_v1';
+  var BKEY = 'kbridge_best_v1';        // 서버 조회 실패 대비 기기 백업 (§8-4)
+  var PREV_WAIT_MS = 1500;             // 이전 제출 조회 상한 — 넘으면 병합 없이 제출
+
+  var q = new URLSearchParams(location.search);
+  var isLocal = location.protocol === 'file:' ||
+    location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  var TARGET = isLocal ? '*' : location.origin;
+
+  // ── 모드 판정: 케이박스 딥링크(cwb+cwi) = assign 강제 (§20-2)
+  var kboxDeep = !!(q.get('cwb') && q.get('cwi'));
+  var urlMode = q.get('mode');
+  var mode = kboxDeep ? 'assign' : (MODES.indexOf(urlMode) >= 0 ? urlMode : 'solo');
+
+  // ── 시드 난수 (mulberry32)
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      var t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  var seedRaw = q.get('seed');
+  var seed = (seedRaw != null && seedRaw !== '' && !isNaN(+seedRaw))
+    ? (+seedRaw | 0) : Math.floor(Math.random() * 2147483647);
+  var rng = mulberry32(seed);
+
+  var state = {
+    activityId: null,
+    mode: mode,
+    aid: q.get('aid') || null,
+    sid: (q.get('sid') != null && q.get('sid') !== '') ? parseInt(q.get('sid'), 10) : null,
+    mute: q.get('mute') === '1',
+    sc: (SCORING.indexOf(q.get('sc')) >= 0 ? q.get('sc') : 'best'),   // §8-4 재시도 채점 정책
+    startedAt: Date.now(),
+    finished: false,
+    closed: false
+  };
+
+  function post(msg) {
+    try { (window.parent || window).postMessage(msg, TARGET); } catch (e) { /* 발신 실패는 무해 */ }
+  }
+  function validOrigin(ev) { return isLocal || ev.origin === location.origin; }
+
+  // ── localStorage 보류 큐 (§4-4 유실 방지; 시크릿 모드 등 불가 환경은 조용히 무시 §14-10)
+  function loadPending() {
+    try { return JSON.parse(localStorage.getItem(PKEY) || '[]'); } catch (e) { return []; }
+  }
+  function savePending(arr) {
+    try { localStorage.setItem(PKEY, JSON.stringify(arr)); } catch (e) { /* no-op */ }
+  }
+  function addPending(env) {
+    var arr = loadPending();
+    arr.push({ ts: Date.now(), env: env });
+    savePending(arr);
+  }
+  function removePendingByTs(ts) {
+    savePending(loadPending().filter(function (p) { return p.ts !== ts; }));
+  }
+  function retryDelays() {
+    return (typeof window !== 'undefined' && window.__KBRIDGE_RETRY_MS__) || [2000, 6000, 18000];
+  }
+
+  // ── 케이박스 제출 (어댑터 직결 §20-2). done(res)는 최종 1회.
+  function kboxSubmit(env, attempt, pendingTs, done) {
+    var KB = window.KBox;
+    if (!(KB && KB.active)) { if (done) done({ status: 'inactive' }); return; }
+    var p;
+    try { p = Promise.resolve(KB.submit(env)); }
+    catch (e) { p = Promise.resolve({ status: 'error', message: String(e) }); }
+    p.then(function (res) {
+      var st = res && res.status;
+      var fail = (st === 'error' || st === 'no_client' || st === 'no_session');
+      if (!fail) { // ok·dup·inactive = 종결 (dup: 어댑터 이중 가드 통과 = 이미 제출됨)
+        if (pendingTs != null) removePendingByTs(pendingTs);
+        if (done) done(res || { status: 'ok' });
+        return;
+      }
+      var delays = retryDelays();
+      if (attempt < delays.length) {
+        setTimeout(function () { kboxSubmit(env, attempt + 1, pendingTs, done); }, delays[attempt]);
+      } else {
+        if (pendingTs == null) addPending(env); // 최초 실패분만 보관 (재진입분은 이미 큐에 있음)
+        if (done) done({ status: 'pending' });
+      }
+    });
+  }
+
+  // ── 재진입 시 보류분 자동 재제출 (init에서 호출)
+  // 보류 봉투는 detail.attempt(이번 시도 raw)를 품고 있으므로 재병합해서 보낸다 —
+  // 다른 기기에서 그 사이에 제출이 있었어도 정책(best/first)이 깨지지 않는다.
+  function flushPending() {
+    if (!(window.KBox && window.KBox.active)) return;
+    loadPending().forEach(function (p) {
+      var at = p.env && p.env.detail && p.env.detail.attempt;
+      if (at) submitAssign(at, p.env.detail.activityId, p.ts, null);
+      else kboxSubmit(p.env, 0, p.ts, null);   // v1.0.0 봉투 호환 (attempt 없음)
+    });
+  }
+
+  // ── 재제출 병합 (§8-4) ────────────────────────────────────────────────────
+  function itemKey() {
+    var KB = window.KBox;
+    return (KB && KB.bundleId && KB.itemId) ? (KB.bundleId + ':' + KB.itemId) : null;
+  }
+  function loadBackup() {
+    var k = itemKey(); if (!k) return null;
+    try { return (JSON.parse(localStorage.getItem(BKEY) || '{}'))[k] || null; } catch (e) { return null; }
+  }
+  function saveBackup(payload) {
+    var k = itemKey(); if (!k) return;
+    try {
+      var all = JSON.parse(localStorage.getItem(BKEY) || '{}');
+      all[k] = payload;
+      localStorage.setItem(BKEY, JSON.stringify(all));
+    } catch (e) { /* 시크릿 모드 등 — 서버가 원천이므로 무해 */ }
+  }
+  function sbClient() {
+    if (window.sb && window.sb.rpc) return window.sb;
+    if (typeof window.getKeduDb === 'function') { try { return window.getKeduDb(); } catch (e) { return null; } }
+    return (window.supabase && window.supabase.rpc) ? window.supabase : null;
+  }
+  // 이전 제출 payload 조회: 서버(cw_open_bundle) > 기기 백업 > null. 실패해도 절대 막지 않는다.
+  function readPrev(cb) {
+    var KB = window.KBox;
+    if (!(KB && KB.active && KB.bundleId && KB.itemId)) { cb(null); return; }
+    var sb = sbClient();
+    if (!sb || !sb.rpc) { cb(loadBackup()); return; }
+    var settled = false;
+    var timer = setTimeout(function () {
+      if (settled) return; settled = true; cb(loadBackup());
+    }, PREV_WAIT_MS);
+    var p;
+    try { p = Promise.resolve(sb.rpc('cw_open_bundle', { p_bundle_id: KB.bundleId })); }
+    catch (e) { clearTimeout(timer); settled = true; cb(loadBackup()); return; }
+    p.then(function (res) {
+      if (settled) return; settled = true; clearTimeout(timer);
+      var d = res && res.data, mine = null;
+      var items = d && d.items;
+      if (Array.isArray(items)) {
+        for (var i = 0; i < items.length; i++) {
+          if (items[i] && items[i].id === KB.itemId) { mine = items[i].payload || null; break; }
+        }
+      }
+      cb((mine && mine.tool === 'activity') ? mine : loadBackup());
+    }).catch(function () {
+      if (settled) return; settled = true; clearTimeout(timer); cb(loadBackup());
+    });
+  }
+  function rate(s, m) { return (m > 0) ? (s || 0) / m : 0; }
+
+  // prev(이전 payload) + attempt(이번 시도) → 정책대로 병합된 KEDU_RESULT 봉투
+  function mergeEnv(prev, attempt, activityId) {
+    var pd = (prev && prev.detail) || null;
+    var policy = state.sc;
+    var mine = { score: attempt.score, max: attempt.max, at: attempt.at };
+    var attempts = (pd && pd.attempts | 0) || 0;
+    attempts += 1;
+
+    var chosen;                                   // 채택된 시도 (최상위 score/max·byType·items의 원천)
+    if (!prev || !pd) chosen = attempt;
+    else if (policy === 'last') chosen = attempt;
+    else if (policy === 'first') {
+      chosen = {
+        score: prev.score, max: prev.max, byType: pd.byType || {},
+        items: pd.items || [], durationSec: pd.durationSec || 0,
+        at: (pd.first && pd.first.at) || mine.at
+      };
+    } else {                                      // best (기본, D4) — 동률이면 이전 기록 존중
+      chosen = (rate(attempt.score, attempt.max) > rate(prev.score, prev.max)) ? attempt : {
+        score: prev.score, max: prev.max, byType: pd.byType || {},
+        items: pd.items || [], durationSec: pd.durationSec || 0, at: mine.at
+      };
+    }
+
+    var history = ((pd && pd.history) || []).concat([mine]).slice(-10);
+    return {
+      tool: 'activity', kind: 'auto',
+      score: chosen.score, max: chosen.max,
+      detail: {
+        activityId: activityId,
+        byType: chosen.byType || {},
+        durationSec: chosen.durationSec,
+        items: chosen.items || [],
+        policy: policy,
+        attempts: attempts,
+        attempt: attempt,                          // 이번 시도 raw (보류 재제출 시 재병합용)
+        first: (pd && pd.first) || mine,
+        last: mine,
+        history: history
+      }
+    };
+  }
+
+  // assign 제출 진입점: 이전 제출 조회 → 병합 → 제출(+실패 시 보류·재시도)
+  function submitAssign(attempt, activityId, pendingTs, done) {
+    readPrev(function (prev) {
+      var env = mergeEnv(prev, attempt, activityId);
+      kboxSubmit(env, 0, pendingTs, function (res) {
+        if (res && (res.status === 'ok' || res.status === 'dup')) saveBackup(env);
+        if (done) done(res);
+      });
+    });
+  }
+
+  // ── 설정 병합 (§3-3): CONFIG > URL > defaults
+  function resolveConfig(hostCfg, defaults) {
+    var params = {};
+    var d = defaults || {};
+    Object.keys(d).forEach(function (k) { params[k] = d[k]; });
+    Object.keys(d).forEach(function (k) {           // URL 오버라이드 (defaults 선언 키만 — §3-1 미지 파라미터 무시)
+      var v = q.get(k);
+      if (v != null && v !== '') params[k] = isNaN(+v) ? v : +v;
+    });
+    var tRaw = q.get('t');                          // 예약 파라미터 t(제한 시간)
+    if (tRaw != null && tRaw !== '' && !isNaN(+tRaw)) params.t = parseInt(tRaw, 10);
+    if (hostCfg && hostCfg.params && SCORING.indexOf(hostCfg.params.sc) >= 0) state.sc = hostCfg.params.sc;
+    params.sc = state.sc;                           // 예약 파라미터 sc(재시도 채점 정책, §8-4)
+
+    var meta = { sid: state.sid, aid: state.aid, mute: state.mute, teamNames: null };
+    if (hostCfg) {
+      if (hostCfg.mode && MODES.indexOf(hostCfg.mode) >= 0 && !kboxDeep) state.mode = hostCfg.mode; // 딥링크 assign은 불가침
+      if (hostCfg.params && typeof hostCfg.params === 'object') {
+        Object.keys(hostCfg.params).forEach(function (k) { params[k] = hostCfg.params[k]; });
+      }
+      var hm = hostCfg.meta;
+      if (hm && typeof hm === 'object') {
+        if (hm.sid != null) { state.sid = hm.sid; meta.sid = hm.sid; }
+        if (hm.aid != null) { state.aid = hm.aid; meta.aid = hm.aid; }
+        if (hm.mute != null) { state.mute = !!hm.mute; meta.mute = state.mute; }
+        if (hm.teamNames) meta.teamNames = hm.teamNames;
+      }
+    }
+    return { mode: state.mode, params: params, meta: meta, seed: seed, hosted: !!hostCfg };
+  }
+
+  var KBridge = {
+    version: VERSION,
+    get mode() { return state.mode; },
+    get seed() { return seed; },
+    get scoring() { return state.sc; },
+    rng: rng,
+
+    // 부팅 시 1회 (§4-5)
+    init: function (opts) {
+      opts = opts || {};
+      state.activityId = opts.activityId || 'unknown';
+      post({ t: 'ACTIVITY_READY', v: 1, activityId: state.activityId, coreVersion: VERSION });
+      flushPending();
+
+      var settled = false;
+      var timer = null;
+      function settle(hostCfg) {
+        if (settled) return;
+        settled = true;
+        if (timer) clearTimeout(timer);
+        var cfg = resolveConfig(hostCfg, opts.defaults);
+        // §6-6 우상단은 호스트 구역: hosted면 도구 HUD가 피할 여백을 알려준다.
+        // 도구는 right: var(--kb-safe-right, 12px) 만 쓰면 된다 (표준).
+        try {
+          var de = document.documentElement;
+          if (cfg.hosted) {
+            de.classList.add('kb-hosted');
+            de.style.setProperty('--kb-safe-right', '128px');
+          } else {
+            de.style.setProperty('--kb-safe-right', '12px');
+          }
+        } catch (e) { /* DOM 없는 환경 무해 */ }
+        if (typeof opts.onConfig === 'function') opts.onConfig(cfg);
+      }
+
+      window.addEventListener('message', function (ev) {
+        if (!validOrigin(ev)) return;
+        var m = ev.data;
+        if (!m || m.v !== 1) return;
+        if (m.t === 'ACTIVITY_CONFIG') {
+          settle(m);
+        } else if (m.t === 'ACTIVITY_CLOSE') {       // §4-2 ⑥: 현재 상태로 EXIT/RESULT 후 정지
+          if (state.finished || state.closed) return;
+          if (typeof opts.onClose === 'function') opts.onClose();       // 도구가 RESULT로 마감할 기회
+          if (!state.finished && !state.closed) {
+            KBridge.exit('host_close', typeof opts.getProgress === 'function' ? opts.getProgress() : null);
+          }
+        }
+      });
+
+      timer = setTimeout(function () { settle(null); }, opts.configWaitMs || 800); // §4-1 standalone 진행
+    },
+
+    // 판정마다 (선택, §4-2 ②)
+    progress: function (p) {
+      p = p || {};
+      post({
+        t: 'ACTIVITY_PROGRESS', v: 1, activityId: state.activityId,
+        q: p.q, total: p.total, ok: !!p.ok, type: p.type
+      });
+    },
+
+    // 종료 시 1회 (§4-2 ③). 중복 호출 = false 반환 (이중 가드)
+    finish: function (r) {
+      if (state.finished) return false;
+      state.finished = true;
+      r = r || {};
+      var durationSec = (r.durationSec != null) ? r.durationSec
+        : Math.round((Date.now() - state.startedAt) / 1000);
+      var byType = r.byType || {};
+      var msg = {
+        t: 'ACTIVITY_RESULT', v: 1,
+        activityId: state.activityId, mode: state.mode,
+        score: r.score, total: r.total, durationSec: durationSec, byType: byType
+      };
+      var detail = null;
+      if (state.mode === 'assign') {                 // §13-3: detail은 assign에서만
+        if (state.aid) msg.aid = state.aid;
+        if (state.sid != null) msg.sid = state.sid;
+        if (Array.isArray(r.detail)) { detail = r.detail.slice(0, 100); msg.detail = detail; }
+      }
+      post(msg);
+
+      if (state.mode === 'assign') {                 // §8: KBox.submit 직결 + §8-4 정책 병합
+        submitAssign({
+          score: r.score, max: r.total, byType: byType,
+          items: detail || [], durationSec: durationSec, at: Date.now()
+        }, state.activityId, null, r.onSubmit || null);
+      }
+      return true;
+    },
+
+    // 중도 이탈 (§4-2 ④)
+    exit: function (reason, progress) {
+      if (state.finished || state.closed) return;
+      state.closed = true;
+      post({
+        t: 'ACTIVITY_EXIT', v: 1, activityId: state.activityId,
+        mode: state.mode, reason: reason || 'user', progress: progress || null
+      });
+    }
+  };
+
+  window.KBridge = KBridge;
+})();
+</script>
+<script>
+/* activity-core.js — 케이티처 활동 공통 프레임 v1.0.0 (Phase 3)
+ * 헌법: 설계 §9-2. 여기 있는 것은 모든 활동이 공짜로 얻는다. 도구는 다시 만들지 않는다.
+ *
+ * core가 하는 일: 셸 DOM(3막 화면·HUD·팀 점수판·설정 칩·답 버튼·explain) · 효과음 ·
+ *   점수/byType/judged 집계 · [넘기기]/[그만하기] · 부분 마감(§6-8) · 브리지 연동 · solo 최고 기록.
+ * core가 하지 않는 일: 문제 렌더 · 게임 루프 · 승패 판정 — 그건 장르(genre/*.js)의 일.
+ *
+ * 사용:
+ *   var app = ACore.create({
+ *     activityId, title, subtitle, defaults, settings: [{key,label,options:[{v,label}]}],
+ *     stageHtml, onConfig(app,cfg), onStart(app)
+ *   });
+ *   app.mode / app.cfg / app.settings / app.sfx / app.rng
+ *   app.el(sel) / app.setStage(html)
+ *   app.begin()                      // 게임 화면 진입 (장르가 호출)
+ *   app.setProg(i, n) / app.addScore(delta) / app.teamScore(idx, delta)
+ *   app.tally(type, ok) / app.markJudged()
+ *   app.answers(list, onPick)        // §6-2 가로 일렬. class면 2팀 그룹 자동
+ *   app.lockAnswers() / app.lockTeam(idx) / app.shake(idx, pick)
+ *   app.explain(text, ok) / app.clearExplain()
+ *   app.onSkip(fn) / app.finish(opts) / app.judged
+ */
+(function () {
+  'use strict';
+
+  var SHELL =
+    '<div class="brand">K✦edu 놀이터</div>' +
+    '<div class="screen active" id="scr-start">' +
+      '<h1 id="a-title"></h1>' +
+      '<div class="sub" id="a-sub"></div>' +
+      '<div id="sid-badge"></div>' +
+      '<div id="settings"></div>' +
+      '<div id="best-line"></div>' +
+      '<button class="btn" id="start-btn">시작!</button>' +
+    '</div>' +
+    '<div class="screen" id="scr-game">' +
+      '<div id="hud">' +
+        '<div class="pill" id="prog"></div>' +
+        '<div class="pill num" id="score-pill">0점</div>' +
+        '<button id="mute-btn" title="소리 켜기/끄기">🔊</button>' +
+        '<button id="skip-btn" title="이 문제는 넘기기">넘기기 ⏭</button>' +
+        '<button id="quit-btn">그만하기</button>' +
+      '</div>' +
+      '<div id="teams">' +
+        '<div class="team A"><span id="tA-name">케이팀</span> <span class="num" id="tA-score">0</span></div>' +
+        '<div class="team B"><span id="tB-name">듀팀</span> <span class="num" id="tB-score">0</span></div>' +
+      '</div>' +
+      '<div id="stage"></div>' +
+      '<div id="explain"></div>' +
+      '<div id="answers-solo"></div>' +
+      '<div id="answers-class">' +
+        '<div class="ansgrp A" data-team="0" data-label="케이팀"></div>' +
+        '<div class="ansgrp B" data-team="1" data-label="듀팀"></div>' +
+      '</div>' +
+      '<div id="why-box"><div class="wq" id="why-q">🦉 어떻게 알았어?</div><div class="whyrow" id="why-opts"></div></div>' +
+    '</div>' +
+    '<div class="screen" id="scr-end">' +
+      '<div class="big" id="end-big">🎉</div>' +
+      '<div class="line" id="end-line"></div>' +
+      '<div class="line" id="end-best" style="display:none"></div>' +
+      '<div class="line" id="submit-line" style="display:none"></div>' +
+      '<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">' +
+        '<button class="btn" id="again-btn">다시 하기</button>' +
+      '</div>' +
+    '</div>';
+
+  function create(opts) {
+    opts = opts || {};
+    var doc = document;
+    var host = doc.getElementById('a-root') || doc.body;
+    host.innerHTML = SHELL + host.innerHTML;
+
+    var $ = function (s) { return doc.querySelector(s); };
+    var $$ = function (s) { return Array.prototype.slice.call(doc.querySelectorAll(s)); };
+
+    // ── 효과음 (mute 반영, 시작 제스처 뒤 생성)
+    var AC = null, muted = false;
+    function sfxInit() { try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+    function tone(f, dur, type, vol) {
+      if (muted || !AC) return;
+      try {
+        var o = AC.createOscillator(), g = AC.createGain();
+        o.type = type || 'sine'; o.frequency.value = f;
+        g.gain.value = vol || .12;
+        o.connect(g); g.connect(AC.destination);
+        o.start(); g.gain.exponentialRampToValueAtTime(.001, AC.currentTime + (dur || .15));
+        o.stop(AC.currentTime + (dur || .15) + .02);
+      } catch (e) {}
+    }
+    var sfx = {
+      good: function () { tone(660, .12); setTimeout(function () { tone(880, .18); }, 90); },
+      bad: function () { tone(200, .2, 'triangle', .08); },
+      tick: function () { tone(440, .06, 'square', .05); },
+      win: function () { [523, 659, 784, 1046].forEach(function (f, i) { setTimeout(function () { tone(f, .22); }, i * 130); }); }
+    };
+
+    var app = {
+      activityId: opts.activityId || 'unknown',
+      mode: 'solo', cfg: null, settings: {},
+      sfx: sfx,
+      rng: function () { return Math.random(); },
+      judged: 0, skipped: 0, score: 0, i: 0, n: 0,
+      byType: {}, detail: [], teams: [{ name: '케이팀', score: 0 }, { name: '듀팀', score: 0 }],
+      started: false, over: false,
+      el: $, els: $$
+    };
+
+    // ── 설정 칩 (solo 전용 노출 — §3-2)
+    function renderSettings() {
+      var box = $('#settings');
+      if (!opts.settings || !opts.settings.length) { box.style.display = 'none'; return; }
+      box.innerHTML = opts.settings.map(function (s) {
+        return '<div class="setrow"><span class="lb">' + s.label + '</span>' +
+          s.options.map(function (o) {
+            var on = (app.settings[s.key] === o.v) ? ' on' : '';
+            return '<button class="chip' + on + '" data-set="' + s.key + '" data-v="' + o.v + '">' + o.label + '</button>';
+          }).join('') + '</div>';
+      }).join('');
+      $$('.chip').forEach(function (c) {
+        c.addEventListener('click', function () {
+          $$('.chip[data-set="' + c.dataset.set + '"]').forEach(function (x) { x.classList.remove('on'); });
+          c.classList.add('on');
+          // 값 변환 규칙은 브리지와 같다 (§9-3, D21): 숫자로 읽히면 숫자, 아니면 문자열 그대로.
+          // 무조건 +v 하면 'add' 같은 열거값이 NaN이 되어 설정이 조용히 무시된다.
+          var raw = c.dataset.v;
+          app.settings[c.dataset.set] = (raw !== '' && !isNaN(+raw)) ? +raw : raw;
+        });
+      });
+    }
+
+    // ── solo 최고 기록
+    var BEST_KEY = 'kedu_act_best_' + app.activityId;
+    var LEGACY_KEYS = opts.legacyRecordKeys || [];      // 구 단일파일 시절 키 (D13: 마이그레이션은 코드가 한다)
+    app.record = {
+      get: function () {
+        try {
+          var v = JSON.parse(localStorage.getItem(BEST_KEY) || 'null');
+          if (v) return v;
+          for (var i = 0; i < LEGACY_KEYS.length; i++) {
+            var old = JSON.parse(localStorage.getItem(LEGACY_KEYS[i]) || 'null');
+            if (old) { localStorage.setItem(BEST_KEY, JSON.stringify(old)); return old; }
+          }
+        } catch (e) {}
+        return null;
+      },
+      set: function (v) { try { localStorage.setItem(BEST_KEY, JSON.stringify(v)); } catch (e) {} }
+    };
+    function refreshBest() {
+      var b = app.record.get();
+      if (b) {
+        $('#best-line').style.display = 'block';
+        $('#best-line').textContent = '🏅 나의 최고 기록: ' + b.score + '점 / ' + b.total;
+      }
+    }
+
+    // ── 화면
+    function show(id) {
+      $$('.screen').forEach(function (s) { s.classList.remove('active'); });
+      $(id).classList.add('active');
+    }
+    app.show = show;
+    app.setStage = function (html) { $('#stage').innerHTML = html; };
+
+    // ── HUD
+    app.setProg = function (i, n) { app.i = i; app.n = n; $('#prog').textContent = i + ' / ' + n; };
+    app.addScore = function (d) { app.score += (d || 0); $('#score-pill').textContent = app.score + '점'; };
+    app.teamScore = function (idx, d) {
+      app.teams[idx].score += (d || 0);
+      $(idx === 0 ? '#tA-score' : '#tB-score').textContent = app.teams[idx].score;
+    };
+    app.tally = function (type, ok) {
+      if (!type) return;
+      var t = app.byType[type] || (app.byType[type] = { ok: 0, miss: 0 });
+      if (ok) t.ok++; else t.miss++;
+    };
+    app.markJudged = function () { app.judged++; };   // §6-8 채점 분모
+
+    // ── 답 버튼 (§6-2 가로 일렬. class = 2팀 그룹)
+    app.answers = function (list, onPick) {
+      var mk = function (o, teamIdx) {
+        return '<button class="abtn" data-pick="' + o.pick + '"' +
+          (teamIdx != null ? ' data-team="' + teamIdx + '"' : '') + '>' + o.label + '</button>';
+      };
+      if (app.mode === 'class') {
+        $('#answers-class').style.display = 'flex';
+        $('#answers-solo').style.display = 'none';
+        [0, 1].forEach(function (t) {
+          var g = $('.ansgrp' + (t === 0 ? '.A' : '.B'));
+          g.innerHTML = list.map(function (o) { return mk(o, t); }).join('');
+        });
+      } else {
+        $('#answers-solo').style.display = 'flex';
+        $('#answers-class').style.display = 'none';
+        $('#answers-solo').innerHTML = list.map(function (o) { return mk(o, null); }).join('');
+      }
+      $$('.abtn[data-pick]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          if (b.classList.contains('locked')) return;
+          var t = b.dataset.team;
+          onPick(b.dataset.pick, (t == null || t === '') ? null : +t, b);
+        });
+      });
+    };
+    app.hideAnswers = function () {
+      $('#answers-solo').style.display = 'none';
+      $('#answers-class').style.display = 'none';
+      $('#why-box').style.display = 'none';
+    };
+    app.unlockAnswers = function () {
+      $$('.abtn').forEach(function (b) { b.classList.remove('locked', 'shake'); });
+    };
+    app.lockAnswers = function () { $$('.abtn').forEach(function (b) { b.classList.add('locked'); }); };
+    app.lockTeam = function (idx) {
+      $$('.ansgrp[data-team="' + idx + '"] .abtn').forEach(function (b) { b.classList.add('locked'); });
+    };
+    app.shake = function (btn) {
+      if (!btn) return;
+      btn.classList.add('shake');
+      setTimeout(function () { btn.classList.remove('shake'); }, 460);
+    };
+
+    // ── explain (정답 근거 — §10-2에서 규약으로 승격)
+    app.explain = function (text, ok) {
+      var e = $('#explain');
+      e.innerHTML = '<span class="mark">' + (ok ? '⭕' : '❌') + '</span> ' + text;
+      e.classList.add('show');
+    };
+    app.clearExplain = function () { $('#explain').classList.remove('show'); };
+
+    // ── why 보너스 (선택)
+    app.why = function (question, list, onPick) {
+      $('#why-q').textContent = question;
+      $('#why-opts').innerHTML = list.map(function (o) {
+        return '<button class="abtn" data-why="' + o.v + '">' + o.label + '</button>';
+      }).join('');
+      $('#answers-solo').style.display = 'none';
+      $('#answers-class').style.display = 'none';
+      $('#why-box').style.display = 'flex';
+      $$('#why-opts .abtn').forEach(function (b) {
+        b.addEventListener('click', function () { onPick(b.dataset.why, b); });
+      });
+    };
+    app.hideWhy = function () { $('#why-box').style.display = 'none'; };
+
+    // ── 넘기기 (§6-8)
+    var skipFn = null;
+    app.onSkip = function (fn) { skipFn = fn; };
+    $('#skip-btn').addEventListener('click', function () {
+      if (!app.started || app.over || !skipFn) return;
+      app.skipped++;
+      skipFn();
+    });
+
+    // ── 마감 (§6-8: judged 0이면 결과 없음)
+    app.finish = function (o) {
+      o = o || {};
+      if (app.over) return false;
+      if (app.judged === 0) {                       // 판정 0 → 빈 수첩 금지
+        KBridge.exit('user', { q: app.i, total: app.n });
+        app.over = true;
+        show('#scr-start');
+        return false;
+      }
+      app.over = true;
+      var total = (o.total != null) ? o.total : app.judged;
+      var score = (o.score != null) ? o.score
+        : (app.mode === 'class' ? app.teams[0].score + app.teams[1].score : app.score);
+
+      show('#scr-end'); sfx.win();
+      if (app.mode === 'class') {
+        var A = app.teams[0], B = app.teams[1];
+        $('#end-big').textContent = A.score === B.score ? '🤝' : '🏆';
+        $('#end-line').innerHTML =
+          (A.score === B.score ? '무승부! ' : (A.score > B.score ? A.name : B.name) + ' 승리! ') +
+          '<br><span class="num">' + A.name + ' ' + A.score + ' : ' + B.score + ' ' + B.name + '</span>';
+      } else {
+        $('#end-big').textContent = score >= total * 0.8 ? '🎉' : '💪';
+        $('#end-line').innerHTML = '<span class="num" style="font-size:1.4em">' + score + '</span> / ' + total + '점';
+        if (app.mode === 'solo') {
+          var b = app.record.get();
+          var isNew = !b || score > b.score;
+          if (isNew) app.record.set({ score: score, total: total });
+          $('#end-best').style.display = 'block';
+          $('#end-best').textContent = isNew ? '🏅 최고 기록 갱신!' : ('🏅 최고 기록: ' + b.score + '점');
+        }
+      }
+      if (app.mode === 'assign') {
+        var sl = $('#submit-line');
+        sl.style.display = 'block'; sl.textContent = '제출하는 중…';
+        $('#again-btn').style.display = 'none';    // 재시도는 과제 정책 소관 (케이박스가 결정)
+      }
+      KBridge.finish({
+        score: score, total: total, byType: app.byType, detail: app.detail,
+        onSubmit: function (res) {
+          var sl2 = $('#submit-line');
+          if (!sl2) return;
+          if (!res || res.status === 'pending') sl2.textContent = '📮 제출 대기 중 — 인터넷이 연결되면 자동으로 전달돼요';
+          else if (res.status === 'inactive') sl2.textContent = '';
+          else sl2.textContent = '✅ 선생님께 전달됐어요!';
+        }
+      });
+      return true;
+    };
+
+    // ── 브리지 부팅
+    KBridge.init({
+      activityId: app.activityId,
+      defaults: opts.defaults || {},
+      onConfig: function (cfg) {
+        app.cfg = cfg; app.mode = cfg.mode; app.rng = KBridge.rng;
+        Object.keys(opts.defaults || {}).forEach(function (k) { app.settings[k] = cfg.params[k]; });
+        muted = !!(cfg.meta && cfg.meta.mute);
+        $('#mute-btn').textContent = muted ? '🔇' : '🔊';
+        $('#a-title').textContent = opts.title || '';
+        $('#a-sub').textContent = opts.subtitle || '';
+        if (opts.stageHtml) app.setStage(opts.stageHtml);
+
+        if (app.mode !== 'solo') $('#settings').style.display = 'none';   // §3-2
+        else renderSettings();
+        if (app.mode === 'assign') {
+          $('#skip-btn').style.display = 'none';                          // §6-8 과제는 완주가 제출 조건
+          if (cfg.meta.sid != null) {
+            $('#sid-badge').style.display = 'block';
+            $('#sid-badge').textContent = cfg.meta.sid + '번';
+          }
+        }
+        if (app.mode === 'class' && cfg.meta.teamNames) {
+          app.teams[0].name = cfg.meta.teamNames[0] || '케이팀';
+          app.teams[1].name = cfg.meta.teamNames[1] || '듀팀';
+          $('#tA-name').textContent = app.teams[0].name;
+          $('#tB-name').textContent = app.teams[1].name;
+          $('.ansgrp.A').setAttribute('data-label', app.teams[0].name);
+          $('.ansgrp.B').setAttribute('data-label', app.teams[1].name);
+        }
+        if (cfg.hosted) $('#quit-btn').style.display = 'none';            // §6-6 출구는 하나
+        if (app.mode === 'solo') refreshBest();
+        if (typeof opts.onConfig === 'function') opts.onConfig(app, cfg);
+      },
+      onClose: function () {
+        if (app.started && !app.over && app.judged > 0) app.finish({});   // §6-8 부분 결과도 결과다
+      },
+      getProgress: function () { return app.started ? { q: app.i, total: app.n } : null; }
+    });
+
+    // ── 시작 / 다시 / 음소거 / 그만하기
+    $('#start-btn').addEventListener('click', function () {
+      sfxInit();
+      app.started = true; app.over = false;
+      app.judged = 0; app.skipped = 0; app.score = 0;
+      app.byType = {}; app.detail = [];
+      app.teams[0].score = 0; app.teams[1].score = 0;
+      $('#tA-score').textContent = '0'; $('#tB-score').textContent = '0';
+      $('#score-pill').textContent = '0점';
+      show('#scr-game');
+      if (app.mode === 'class') { $('#teams').style.display = 'flex'; $('#score-pill').style.display = 'none'; }
+      if (typeof opts.onStart === 'function') opts.onStart(app);
+    });
+    $('#again-btn').addEventListener('click', function () { location.reload(); });
+    $('#mute-btn').addEventListener('click', function () {
+      muted = !muted;
+      $('#mute-btn').textContent = muted ? '🔇' : '🔊';
+    });
+    $('#quit-btn').addEventListener('click', function () {
+      if (!app.started || app.over) return;
+      if (!confirm('활동을 그만할까요?')) return;
+      if (app.judged > 0) { app.finish({}); return; }   // §6-8 여기까지의 결과로 마감
+      KBridge.exit('user', { q: app.i, total: app.n });
+      app.started = false;
+      show('#scr-start');
+    });
+
+    // 관측 훅 (D21) — 내부 상태 계약은 볼 수 없으면 지켜지지 않는다. 게이트 전용 읽기 참조.
+    try { window.__ACORE_APP__ = app; } catch (e) {}
+    return app;
+  }
+
+  window.ACore = { create: create, version: '1.0.0' };
+})();
+</script>
+
+<script>
+/* gens/math/plane_shape.js — 평면도형 (3학년 수학 2단원)
+ * 순수 함수·DOM 무관 (§9-3). sort 장르 계약: deal() → round, binOf(item, by) → bin key.
+ *
+ * type (§21-3 확정): line_kind · ray_dir · angle_read · right_angle ·
+ *                    rt_triangle · rect_square · tricky_rotate
+ * 한 판(round) = 한 유형. 그래야 "어느 기준에서 흔들리는지"가 byType으로 남는다.
+ *
+ * ★ 이 생성기가 도형을 **좌표로 계산**해 내보내고, 무대가 SVG로 그린다.
+ *   그림 에셋(§21-4 #3)이 아니다 — 회전각·직각 여부가 데이터라서, 아이가 보는 도형과
+ *   채점 기준이 같은 수에서 나온다. 일러스트를 쓰면 둘이 갈라진다.
+ *
+ * ★ rect_square의 바구니는 셋이다 — **정사각형은 직사각형이기도 하기 때문이다.**
+ *   「직사각형 / 정사각형」 두 칸으로 가르면 "정사각형은 직사각형이 아니다"를 가르치게 된다.
+ *   교과서 정의(네 각이 모두 직각 = 직사각형, 거기에 네 변이 같으면 정사각형)를 그대로 두려면
+ *   칸이 「정사각형」·「직사각형만」·「둘 다 아님」이어야 한다. 3학년에게 어려운 게 아니라,
+ *   포함 관계를 손으로 확인시키는 자리다.
+ *
+ * 차시 근거(실측 2026-08-21): l02 선의 종류 / l03 각 / l04 직각 /
+ *   l05 직각삼각형("방향이 달라도 직각삼각형") / l06 직사각형과 정사각형.
+ */
+(function (root, factory) {
+  var g = factory();
+  if (typeof module === 'object' && module.exports) module.exports = g;
+  root.GENS = root.GENS || {};
+  root.GENS['plane_shape'] = g;
+}(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  function ri(rng, lo, hi) { return lo + Math.floor(rng() * (hi - lo + 1)); }
+  function pick(rng, a) { return a[Math.floor(rng() * a.length)]; }
+  function shuffle(rng, a) {
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(rng() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+  var PT = ['ㄱ', 'ㄴ', 'ㄷ', 'ㄹ', 'ㅁ', 'ㅂ'];
+
+  // ── 판 정의 ───────────────────────────────────────────────────────
+  var ROUNDS = {
+    line_kind: {
+      ko: '선의 종류', bins: [
+        { k: 'segment', ko: '선분' }, { k: 'ray', ko: '반직선' }, { k: 'straight', ko: '직선' }],
+      prompt: '선의 종류로 나눠요',
+      hint: '끝이 둘 다 막히면 선분, 한쪽만 뻗으면 반직선, 양쪽 다 뻗으면 직선이에요.'
+    },
+    ray_dir: {
+      ko: '반직선의 방향', bins: [
+        { k: 'ab', ko: '반직선 ㄱㄴ' }, { k: 'ba', ko: '반직선 ㄴㄱ' }],
+      prompt: '반직선의 이름으로 나눠요',
+      hint: '반직선은 **시작하는 점을 먼저** 써요. ㄱ에서 시작하면 반직선 ㄱㄴ이에요.'
+    },
+    angle_read: {
+      ko: '각의 꼭짓점', bins: [],       // 판마다 세 점이 바뀌므로 deal에서 만든다
+      prompt: '각의 꼭짓점이 어디인지로 나눠요',
+      hint: '각의 이름은 **가운데 글자가 꼭짓점**이에요. 각 ㄱㄴㄷ의 꼭짓점은 ㄴ.'
+    },
+    right_angle: {
+      ko: '직각인가', bins: [
+        { k: 'yes', ko: '직각' }, { k: 'no', ko: '직각이 아님' }],
+      prompt: '직각인 것과 아닌 것으로 나눠요',
+      hint: '직각은 종이를 반듯하게 두 번 접었을 때 생기는 각이에요. 방향은 상관없어요.'
+    },
+    rt_triangle: {
+      ko: '직각삼각형', bins: [
+        { k: 'yes', ko: '직각삼각형' }, { k: 'no', ko: '직각삼각형이 아님' }],
+      prompt: '직각삼각형인 것과 아닌 것으로 나눠요',
+      hint: '한 각이 직각이면 직각삼각형이에요. **돌아가 있어도** 직각삼각형이에요.'
+    },
+    rect_square: {
+      ko: '직사각형과 정사각형', bins: [
+        { k: 'square', ko: '정사각형' }, { k: 'rect', ko: '직사각형만' },
+        { k: 'no', ko: '둘 다 아님' }],
+      prompt: '정사각형 · 직사각형 · 둘 다 아님으로 나눠요',
+      hint: '네 각이 모두 직각이면 직사각형. 거기에 네 변까지 같으면 정사각형이에요. ' +
+            '**정사각형도 직사각형이지만**, 정사각형 칸이 있으면 그쪽으로 담아요.'
+    },
+    tricky_rotate: {
+      ko: '돌아간 도형', bins: [
+        { k: 'rt', ko: '직각삼각형' }, { k: 'rect', ko: '직사각형' },
+        { k: 'no', ko: '둘 다 아님' }],
+      prompt: '돌아가 있어도 이름은 그대로! 이름으로 나눠요',
+      hint: '도형의 이름은 **생김새가 아니라 정의**로 정해져요. 돌려도 각과 변은 안 변해요.'
+    }
+  };
+  var ORDER = ['line_kind', 'ray_dir', 'angle_read', 'right_angle',
+               'rt_triangle', 'rect_square', 'tricky_rotate'];   // 교과서 차시 순서 (D22)
+
+  // ── 물건 만들기 ───────────────────────────────────────────────────
+  function makeLine(rng, kind, a, b) {
+    return { kind: 'line', k: kind, a: a, b: b, tilt: ri(rng, -28, 28) };
+  }
+  function makeRay(rng, from) {                       // from: 'a'(ㄱ 시작) | 'b'(ㄴ 시작)
+    return { kind: 'ray', from: from, a: 'ㄱ', b: 'ㄴ', tilt: ri(rng, -22, 22) };
+  }
+  function makeAngleName(rng, pts, vi) {              // 각 이름 카드 — 가운데가 꼭짓점
+    var o = shuffle(rng, pts.slice());
+    var v = pts[vi];
+    var rest = o.filter(function (p) { return p !== v; });
+    return { kind: 'name', text: '각 ' + rest[0] + v + rest[1], vertex: v };
+  }
+  function makeAngle(rng, isRight) {
+    var deg = isRight ? 90 : pick(rng, [30, 40, 50, 60, 70, 110, 125, 140, 155]);
+    return { kind: 'angle', deg: deg, rot: ri(rng, 0, 350), right: isRight };
+  }
+  function makeTri(rng, isRight, forceRot) {
+    // 직각삼각형이 아닌 것은 예각·둔각 삼각형. 세 각 중 하나가 90이면 직각삼각형이다.
+    var A = isRight ? 90 : pick(rng, [35, 45, 55, 65, 105, 120]);
+    var B = isRight ? pick(rng, [30, 35, 40, 50, 55, 60]) : pick(rng, [40, 50, 60, 35]);
+    if (!isRight && A + B >= 175) B = 40;
+    if (!isRight && (A === 90 || B === 90 || 180 - A - B === 90)) B = B + 5;
+    var rot = forceRot ? pick(rng, [18, 27, 34, 41, 52, 63, 71, 106, 128, 145, 198, 234, 301])
+                       : pick(rng, [0, 0, 8, 90, 180, 270, 15]);
+    return { kind: 'tri', right: isRight, a: A, b: B, rot: rot };
+  }
+  function makeQuad(rng, k, forceRot) {
+    // k: 'square' 정사각형 / 'rect' 직사각형(정사각형 아님) / 'no' 네 각이 직각이 아님
+    var w = 1, h = 1, skew = 0;
+    if (k === 'rect') { w = 1; h = pick(rng, [0.55, 0.6, 0.65, 1.6, 1.7]); }
+    if (k === 'no') {
+      // 평행사변형·마름모·사다리꼴 — 네 각이 직각이 아니다
+      skew = pick(rng, [16, 20, 24, -18, -22]);
+      h = pick(rng, [0.7, 0.85, 1, 1.2]);
+    }
+    var rot = forceRot ? pick(rng, [17, 26, 33, 44, 58, 67, 112, 131, 209, 246, 317])
+                       : pick(rng, [0, 0, 0, 90, 180, 12]);
+    return { kind: 'quad', k: k, w: w, h: h, skew: skew, rot: rot };
+  }
+
+  // 한 판의 물건을 만들되, **바구니가 비지 않게** 각 범주를 최소 1개씩 보장한다.
+  // 한 칸이 비면 아이가 "이 칸은 안 쓰나?"에 시간을 뺏긴다 (§6-3).
+  function fill(rng, per, binKeys, maker) {
+    var out = [];
+    binKeys.forEach(function (k) { out.push(maker(k)); });
+    while (out.length < per) out.push(maker(pick(rng, binKeys)));
+    return shuffle(rng, out);
+  }
+
+  return {
+    id: 'plane_shape',
+    title: '평면도형',
+    rounds: ORDER,
+
+    create: function (params, rng) {
+      var p = params || {};
+      var by = p.by || 'mix';
+      var per = +p.per || 6;
+      var qi = 0;
+
+      function dealOne(type) {
+        var R = ROUNDS[type], bins = R.bins, items;
+
+        if (type === 'line_kind') {
+          items = fill(rng, per, ['segment', 'ray', 'straight'], function (k) {
+            var a = PT[ri(rng, 0, 3)], b;
+            do { b = PT[ri(rng, 0, 3)]; } while (b === a);
+            return makeLine(rng, k, a, b);
+          });
+        } else if (type === 'ray_dir') {
+          items = fill(rng, per, ['ab', 'ba'], function (k) {
+            return makeRay(rng, k === 'ab' ? 'a' : 'b');
+          });
+        } else if (type === 'angle_read') {
+          var pts = shuffle(rng, PT.slice(0, 4)).slice(0, 3);
+          bins = pts.map(function (v) { return { k: v, ko: '꼭짓점이 ' + v }; });
+          items = fill(rng, per, pts, function (k) {
+            return makeAngleName(rng, pts, pts.indexOf(k));
+          });
+        } else if (type === 'right_angle') {
+          items = fill(rng, per, ['yes', 'no'], function (k) { return makeAngle(rng, k === 'yes'); });
+        } else if (type === 'rt_triangle') {
+          items = fill(rng, per, ['yes', 'no'], function (k) { return makeTri(rng, k === 'yes', false); });
+        } else if (type === 'rect_square') {
+          items = fill(rng, per, ['square', 'rect', 'no'], function (k) { return makeQuad(rng, k, false); });
+        } else {   // tricky_rotate — 전부 비스듬히 돌아가 있다. 생김새가 아니라 정의로 갈라야 한다.
+          items = fill(rng, per, ['rt', 'rect', 'no'], function (k) {
+            if (k === 'rt') return makeTri(rng, true, true);
+            if (k === 'rect') return makeQuad(rng, pick(rng, ['rect', 'square']), true);
+            return (rng() < 0.5) ? makeTri(rng, false, true) : makeQuad(rng, 'no', true);
+          });
+        }
+
+        return { by: type, byKo: R.ko, bins: bins, items: items,
+                 prompt: R.prompt, hint: R.hint, type: type };
+      }
+
+      return {
+        deal: function () {
+          var type = (by === 'mix') ? ORDER[qi++ % ORDER.length] : by;
+          return dealOne(type);
+        },
+        // 채점 — 도형을 만든 수(각·변·회전)에서 그대로 나온다. 그림을 보고 정하지 않는다.
+        binOf: function (it, type) {
+          if (type === 'line_kind') return it.k;
+          if (type === 'ray_dir') return (it.from === 'a') ? 'ab' : 'ba';
+          if (type === 'angle_read') return it.vertex;
+          if (type === 'right_angle') return it.right ? 'yes' : 'no';
+          if (type === 'rt_triangle') return it.right ? 'yes' : 'no';
+          if (type === 'rect_square') return it.k;          // square · rect · no
+          // tricky_rotate
+          if (it.kind === 'tri') return it.right ? 'rt' : 'no';
+          return (it.k === 'no') ? 'no' : 'rect';           // 정사각형도 직사각형이다
+        },
+        // 오분류 때 띄울 근거 문장 — 버그가 아니라 수업이다
+        reasonOf: function (it, type, wantKo) {
+          if (type === 'ray_dir')
+            return '반직선은 **시작하는 점을 먼저** 써요. 이건 「' + wantKo + '」예요.';
+          if (type === 'angle_read')
+            return '각의 이름은 **가운데 글자가 꼭짓점**이에요. ' + it.text + '의 꼭짓점은 ' + it.vertex + '.';
+          if (type === 'rect_square' && it.k === 'square')
+            return '네 각이 직각이고 **네 변까지 같아요** — 정사각형이에요. (정사각형도 직사각형이랍니다)';
+          if (type === 'rect_square' && it.k === 'rect')
+            return '네 각은 모두 직각인데 변의 길이가 달라요 — 직사각형이에요.';
+          if (type === 'tricky_rotate')
+            return '돌아가 있어도 각과 변은 그대로예요. 이건 「' + wantKo + '」예요.';
+          if (type === 'rt_triangle')
+            return it.right ? '한 각이 직각이에요 — 방향이 달라도 직각삼각형이에요.'
+                            : '직각인 각이 하나도 없어요.';
+          if (type === 'right_angle')
+            return it.right ? '반듯하게 두 번 접은 각과 꼭 맞아요 — 직각이에요.'
+                            : '직각보다 ' + (it.deg < 90 ? '작아요' : '커요') + '.';
+          return '이건 「' + wantKo + '」이에요.';
+        }
+      };
+    }
+  };
+}));
+</script>
+<script>
+/* src/g3m_u2_shape_sort.js — 도형 나누기 마당 (3학년 수학 2단원 평면도형)
+ * 장르: sort(무대형) · 생성기: plane_shape
+ * 원형: 기준을 정해 분류하기(g2m_u5_classify). 엔진 구조를 그대로 물려받고
+ *       물건 그리기(svgOf)와 근거 문장만 이 단원 것으로 갈아낀다. sort 4회차.
+ *
+ * 도형은 **생성기가 내보낸 수(각·변 비율·회전각)에서 좌표를 계산해** 그린다.
+ * 그림 에셋을 쓰지 않는 이유가 취향이 아니다 — tricky_rotate가 요구하는 것이
+ * "돌아가 있어도 같은 도형"인데, 회전이 데이터가 아니면 채점 기준과 아이가 보는
+ * 그림이 갈라진다. 회전은 장식이 아니라 이 단원의 학습 내용이다.
+ *
+ * §6-3(판독 우선)을 도형에 적용한 것 두 가지:
+ *  ① 직각 표시(□)를 그리지 않는다. 그리면 아이가 각을 판단하지 않고 표시를 찾는다.
+ *  ② 선분·반직선·직선은 **끝점의 생김새**로만 구별된다(● 막힘 / 화살표 뻗음).
+ *     그래서 끝 표시를 선보다 굵게 그린다 — 거기가 판독 지점이다.
+ */
+(function () {
+  'use strict';
+
+  var INK = '#2f2a3f', ACC = '#7c5cc4';
+
+  function svgLine(it) {
+    var x1 = 10, x2 = 86, y = 48, t = it.tilt || 0;
+    var body = '', head = '';
+    // 뻗는 쪽은 화살표, 막힌 쪽은 점. 선분=양쪽 점, 반직선=한쪽 점 한쪽 화살표, 직선=양쪽 화살표
+    var openL = (it.k === 'straight') || (it.k === 'ray' && it.from === 'b');
+    var openR = (it.k === 'straight') || (it.k === 'ray' && it.from !== 'b');
+    if (it.kind === 'ray') { openL = (it.from === 'b'); openR = (it.from === 'a'); }
+    body = '<line x1="' + x1 + '" y1="' + y + '" x2="' + x2 + '" y2="' + y +
+           '" stroke="' + INK + '" stroke-width="4" stroke-linecap="round"/>';
+    function cap(x, open, dir) {
+      if (open) {
+        return '<path d="M' + (x + dir * 2) + ' ' + (y - 7) + ' L' + (x + dir * 12) + ' ' + y +
+               ' L' + (x + dir * 2) + ' ' + (y + 7) + '" fill="none" stroke="' + ACC +
+               '" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
+      }
+      return '<circle cx="' + x + '" cy="' + y + '" r="6" fill="' + ACC + '"/>';
+    }
+    head = cap(x1, openL, -1) + cap(x2, openR, 1);
+    var la = it.a || 'ㄱ', lb = it.b || 'ㄴ';
+    var lab = '<text x="' + x1 + '" y="' + (y - 13) + '" font-size="15" text-anchor="middle" fill="' + INK + '">' + la + '</text>' +
+              '<text x="' + x2 + '" y="' + (y - 13) + '" font-size="15" text-anchor="middle" fill="' + INK + '">' + lb + '</text>';
+    return '<g transform="rotate(' + t + ' 48 48)">' + body + head + lab + '</g>';
+  }
+
+  function svgAngle(it) {
+    var cx = 30, cy = 66, L = 46;
+    var r0 = -it.rot * Math.PI / 180;
+    var r1 = r0 - it.deg * Math.PI / 180;
+    function pt(r) { return [cx + L * Math.cos(r), cy + L * Math.sin(r)]; }
+    var p0 = pt(r0), p1 = pt(r1);
+    var arcR = 15;
+    var a0 = pt(r0), a1 = pt(r1);
+    var q0 = [cx + arcR * Math.cos(r0), cy + arcR * Math.sin(r0)];
+    var q1 = [cx + arcR * Math.cos(r1), cy + arcR * Math.sin(r1)];
+    return '<g transform="translate(14 -8)">' +
+      '<path d="M' + q0[0].toFixed(1) + ' ' + q0[1].toFixed(1) + ' A' + arcR + ' ' + arcR +
+        ' 0 0 0 ' + q1[0].toFixed(1) + ' ' + q1[1].toFixed(1) + '" fill="none" stroke="' + ACC +
+        '" stroke-width="3" opacity=".8"/>' +
+      '<polyline points="' + p0[0].toFixed(1) + ',' + p0[1].toFixed(1) + ' ' + cx + ',' + cy +
+        ' ' + p1[0].toFixed(1) + ',' + p1[1].toFixed(1) + '" fill="none" stroke="' + INK +
+        '" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<circle cx="' + cx + '" cy="' + cy + '" r="4.5" fill="' + INK + '"/></g>';
+  }
+
+  function svgTri(it) {
+    // 두 각 a·b로 세 꼭짓점을 계산한다 — 직각 여부가 그림에서 그대로 성립한다
+    var A = it.a * Math.PI / 180, B = it.b * Math.PI / 180;
+    var c = 1;                                  // 변 AB = 1 (사인법칙으로 나머지)
+    var C = Math.PI - A - B;
+    var b = Math.sin(B) / Math.sin(C) * c;      // 변 CA
+    var P = [[0, 0], [c, 0], [b * Math.cos(A), b * Math.sin(A)]];
+    // 정규화 → 88×88 안에 채운다
+    var xs = P.map(p => p[0]), ys = P.map(p => p[1]);
+    var mnx = Math.min.apply(null, xs), mxx = Math.max.apply(null, xs);
+    var mny = Math.min.apply(null, ys), mxy = Math.max.apply(null, ys);
+    var s = 62 / Math.max(mxx - mnx, mxy - mny);
+    var pts = P.map(function (p) {
+      return [(48 + (p[0] - (mnx + mxx) / 2) * s).toFixed(1),
+              (48 - (p[1] - (mny + mxy) / 2) * s).toFixed(1)].join(',');
+    }).join(' ');
+    return '<g transform="rotate(' + it.rot + ' 48 48)"><polygon points="' + pts +
+           '" fill="#efe9ff" stroke="' + INK + '" stroke-width="4" stroke-linejoin="round"/></g>';
+  }
+
+  function svgQuad(it) {
+    var w = 62, h = 62 * it.h, sk = (it.skew || 0) / 100 * w;
+    if (h > 62) { w = 62 * 62 / h; h = 62; }
+    var x = 48 - w / 2, y = 48 - h / 2;
+    var pts = [[x + Math.max(0, sk), y], [x + w + Math.max(0, sk), y],
+               [x + w - Math.max(0, -sk) + Math.min(0, sk) * -1 * 0, y + h], [x, y + h]];
+    if (sk) pts = [[x + sk, y], [x + w + sk, y], [x + w, y + h], [x, y + h]];
+    else pts = [[x, y], [x + w, y], [x + w, y + h], [x, y + h]];
+    var d = pts.map(function (p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ');
+    return '<g transform="rotate(' + it.rot + ' 48 48)"><polygon points="' + d +
+           '" fill="#efe9ff" stroke="' + INK + '" stroke-width="4" stroke-linejoin="round"/></g>';
+  }
+
+  function svgOf(it) {
+    var inner;
+    if (it.kind === 'name') {
+      return '<span class="nm">' + it.text + '</span>';       // 각 이름은 글자가 물건이다
+    }
+    if (it.kind === 'line' || it.kind === 'ray') inner = svgLine(it);
+    else if (it.kind === 'angle') inner = svgAngle(it);
+    else if (it.kind === 'tri') inner = svgTri(it);
+    else inner = svgQuad(it);
+    return '<svg viewBox="0 0 96 96" width="72" height="72" font-family="Jua, sans-serif">' +
+           inner + '</svg>';
+  }
+
+  ACore.create({
+    activityId: 'g3m_u2_shape_sort',
+    title: '📐 도형 나누기 마당',
+    subtitle: '돌아가 있어도 이름은 그대로! 정의로 나눠요',
+    defaults: { by: 'mix', per: 6, n: 3 },
+    settings: [
+      { key: 'by', label: '무엇으로', options: [
+        { v: 'line_kind', label: '선의 종류' }, { v: 'ray_dir', label: '반직선 방향' },
+        { v: 'angle_read', label: '각 읽기' }, { v: 'right_angle', label: '직각' },
+        { v: 'rt_triangle', label: '직각삼각형' }, { v: 'rect_square', label: '직사각형·정사각형' },
+        { v: 'tricky_rotate', label: '돌아간 도형' }, { v: 'mix', label: '판마다 다르게' }] },
+      { key: 'per', label: '한 판 도형 수', options: [
+        { v: 4, label: '4개' }, { v: 6, label: '6개' }, { v: 9, label: '9개' }] },
+      { key: 'n', label: '판 수', options: [{ v: 2, label: '2' }, { v: 3, label: '3' }, { v: 5, label: '5' }] }
+    ],
+    stageHtml:
+      '<div id="cy">' +
+        '<div id="rule"></div>' +
+        '<div id="hint"></div>' +
+        '<div id="pool"></div>' +
+        '<div id="baskets"></div>' +
+      '</div>',
+    onStart: function (app) {
+      var gen = GENS['plane_shape'].create({ by: app.settings.by, per: app.settings.per }, app.rng);
+      var N = app.settings.n, i = 0, S = null;
+
+      function render() {
+        app.el('#rule').textContent = '📐 ' + S.round.prompt;
+        app.el('#hint').innerHTML = (S.round.hint || '').replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+        app.el('#pool').innerHTML = S.round.items.map(function (it, k) {
+          return '<button class="item" data-k="' + k + '">' + svgOf(it) + '</button>';
+        }).join('');
+        // 바구니는 가로 일렬 (§6-2). 이름이 길어도 줄바꿈으로 버틴다 — 세로로 세우지 않는다.
+        app.el('#baskets').innerHTML = S.round.bins.map(function (b) {
+          return '<button class="basket" data-b="' + b.k + '">' +
+                 '<div class="bn">' + b.ko + '</div><div class="cnt num">0</div></button>';
+        }).join('');
+        app.els('#pool .item').forEach(function (b) {
+          b.addEventListener('click', function () {
+            if (S.done) return;
+            app.els('#pool .item').forEach(function (x) { x.classList.remove('on'); });
+            b.classList.add('on');
+            S.sel = +b.dataset.k;
+            app.sfx.tick();
+          });
+        });
+        app.els('#baskets .basket').forEach(function (bk) {
+          bk.addEventListener('click', function () { drop(bk); });
+        });
+      }
+
+      function drop(bk) {
+        if (!S || S.done) return;
+        if (S.sel == null) { app.explain('먼저 담을 도형을 골라요!', false); return; }
+        var it = S.round.items[S.sel];
+        var want = gen.binOf(it, S.round.by);
+        var el = app.el('#pool .item[data-k="' + S.sel + '"]');
+        if (bk.dataset.b === want) {
+          if (S.firstTry[S.sel] !== false) app.tally(S.round.type, true);
+          app.sfx.good();
+          el.classList.add('gone');
+          bk.querySelector('.cnt').textContent = (+bk.querySelector('.cnt').textContent + 1);
+          S.left--; S.sel = null;
+          app.clearExplain();
+          if (S.left === 0) endRound();
+        } else {
+          S.firstTry[S.sel] = false;
+          S.miss++;
+          app.tally(S.round.type, false);
+          app.sfx.bad();
+          app.shake(bk);
+          var wantKo = S.round.bins.filter(function (b) { return b.k === want; })[0].ko;
+          // 오분류는 버그가 아니라 수업이다 — 어느 정의에서 갈렸는지를 말해준다
+          app.explain(gen.reasonOf(it, S.round.by, wantKo).replace(/\*\*/g, ''), false);
+          if (app.mode === 'class' && S.miss % 2 === 0) {
+            S.turn = 1 - S.turn;
+            app.explain(app.teams[S.turn].name + ' 차례로 넘어갑니다!', false);
+          }
+        }
+      }
+
+      function endRound() {
+        S.done = true;
+        app.markJudged();
+        var clean = S.firstTry.every(function (v) { return v !== false; });
+        if (clean && app.mode !== 'class') app.addScore(1);
+        if (app.mode === 'class') app.teamScore(S.turn, 1);
+        app.sfx.win();
+        app.explain('다 나눴어요! ' + (clean ? '한 번에 성공! 🎉' : '잘했어요 👏'), true);
+        setTimeout(next, app.mode === 'class' ? 2000 : 1500);
+      }
+
+      function next() {
+        if (i >= N) return app.finish({});
+        var round = gen.deal();
+        S = { round: round, left: round.items.length, sel: null, done: false,
+              firstTry: round.items.map(function () { return true; }), miss: 0, turn: (i % 2) };
+        i++;
+        app.setProg(i, N);
+        app.clearExplain();
+        app.hideAnswers();
+        render();
+        if (app.mode === 'class') app.explain(app.teams[S.turn].name + ' 차례예요!', true);
+      }
+
+      app.onSkip(function () { if (S && !S.done) next(); });
+      next();
+    }
+  });
+})();
+</script>
+</body>
+</html>
