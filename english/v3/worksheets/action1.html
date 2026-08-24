@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<!-- K-edu 영어 v3 활동지 · Lv2 #7 동작① 8단어 — school1.html 판형 변형, V트랙 주황
+     동사는 정지 그림으로 뜻이 서지 않는다. 화면에서는 움직임이 근거였으므로
+     종이에서는 그 움직임의 「한 순간」을 고정 포즈(.p-*)로 인쇄한다. -->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page { size: A4; margin: 11mm 13mm 9mm 13mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans CJK KR', sans-serif; color: #1f2430; font-size: 12px; line-height: 1.5; }
+  .topbar { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #d9702a; padding-bottom: 6px; }
+  .brand { font-size: 13px; font-weight: 700; color: #9c4d13; }
+  .brand .lv { background: #d9702a; color: #fff; padding: 2px 9px; border-radius: 20px; font-size: 11px; margin-left: 6px; }
+  .namebox { font-size: 11px; color: #5f5e5a; }
+  .namebox span { display: inline-block; border-bottom: 1px solid #b4b2a9; width: 70px; margin: 0 4px; }
+
+  .seed { margin-top: 8px; background: #fdeee1; border: 2px solid #d9702a; border-radius: 12px; padding: 8px 13px; display: flex; align-items: center; gap: 12px; }
+  .seed .star { font-size: 26px; color: #ef9f27; line-height: 1; }
+  .seed .label { font-size: 10px; color: #9c4d13; font-weight: 700; letter-spacing: 1px; }
+  .seed .main { font-size: 16px; font-weight: 800; color: #4a2408; }
+  .seed .main b { color: #d85a30; }
+
+  .keypoint { margin-top: 7px; background: #faeeda; border-left: 6px solid #ef9f27; border-radius: 0 8px 8px 0; padding: 6px 12px; font-size: 12.5px; }
+  .keypoint .k { color: #854f0b; font-weight: 800; }
+  .keypoint .big { font-size: 16px; font-weight: 800; color: #d85a30; }
+
+  /* ── 동작 도형 (인쇄용 고정 포즈) — 화면 .act 규격의 종이판 ── */
+  .act { position: relative; display: inline-block; width: 30px; height: 34px; vertical-align: middle; }
+  .act b { position: absolute; display: block; background: #b5651d; border-radius: 2px; }
+  .act .hd { left: 10px; top: 0; width: 10px; height: 10px; border-radius: 50%; }
+  .act .bd { left: 13.5px; top: 10px; width: 3.5px; height: 13px; }
+  .act .aL { left: 5px; top: 12px; width: 9px; height: 3.5px; transform-origin: right center; }
+  .act .aR { left: 16px; top: 12px; width: 9px; height: 3.5px; transform-origin: left center; }
+  .act .lL { left: 9px; top: 22px; width: 3.5px; height: 11px; transform-origin: top center; }
+  .act .lR { left: 17.5px; top: 22px; width: 3.5px; height: 11px; transform-origin: top center; }
+  .act .ob { left: 24px; top: 10px; width: 7px; height: 7px; border-radius: 50%; background: #3C7FE8; }
+  .act .sh { left: 7px; top: 33px; width: 16px; height: 3px; border-radius: 50%; background: #cfcabf; }
+  .act .wv { left: -2px; top: 29px; width: 34px; height: 0; background: none; border-top: 2px dotted #3C7FE8; border-radius: 0; }
+  .act .sp { background: none; color: #d99a1c; font-size: 11px; line-height: 11px; font-weight: 700; }
+  .act .ob, .act .wv, .act .sp { display: none; }
+  /* 포즈 — 화면 애니메이션에서 뜻이 가장 잘 드러나는 한 순간을 고정 */
+  .p-stop .aR { transform: rotate(-74deg); }
+  .p-stop .aR::after { content: ''; position: absolute; right: -5px; top: -2px; width: 6px; height: 8px; background: #b5651d; border-radius: 2px; }
+  .p-swim .aL { transform: rotate(-120deg); }
+  .p-swim .aR { transform: rotate(-40deg); }
+  .p-swim .wv { display: block; }
+  .p-spin .sp { display: block; left: 22px; top: 0; }
+  .p-spin .sp::after { content: '↻'; }
+  .p-spin .aL { transform: rotate(24deg); }
+  .p-spin .aR { transform: rotate(24deg); }
+  .p-snap .aR { transform: rotate(-70deg); }
+  .p-snap .sp { display: block; left: 23px; top: -3px; }
+  .p-snap .sp::after { content: '✦'; }
+  .p-clap .aL { transform: translateX(7px); }
+  .p-clap .aR { transform: translateX(-7px); }
+  .p-clap .sp { display: block; left: 11px; top: 9px; }
+  .p-clap .sp::after { content: '✦'; }
+  .p-drop .ob { display: block; top: 27px; }
+  .p-drop .aR { transform: rotate(-12deg); }
+  .p-grab .ob { display: block; }
+  .p-grab .aR { transform: scaleX(1.5); }
+  .p-jump .lL { transform: rotate(22deg); }
+  .p-jump .lR { transform: rotate(-22deg); }
+  .p-jump .aL { transform: rotate(-42deg); }
+  .p-jump .aR { transform: rotate(42deg); }
+  .p-jump .sh { left: 11px; width: 8px; }
+
+  /* 상단 고정 — 오늘의 8단어 */
+  .wordstrip { margin-top: 7px; display: flex; gap: 4px; }
+  .wchip { flex: 1; border: 1.5px solid #e0b48c; border-radius: 8px; padding: 4px 1px 3px; text-align: center; background: #fffaf5; }
+  .wchip.soon { background: #fdf3ea; border-color: #d9702a; }
+  .wchip .pic { height: 36px; display: flex; align-items: center; justify-content: center; }
+  .wchip .w { font-size: 12.5px; font-weight: 800; color: #9c4d13; letter-spacing: .3px; }
+  .wchip .w i { font-style: normal; color: #d85a30; }
+  .wchip .ko { font-size: 9px; color: #888780; }
+
+  h2 { margin-top: 9px; font-size: 13px; color: #9c4d13; display: flex; align-items: center; gap: 7px; }
+  h2 .n { background: #9c4d13; color: #fff; width: 19px; height: 19px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; }
+  h2 .hint { font-weight: 400; font-size: 10px; color: #888780; }
+
+  .trace { display: flex; gap: 7px; margin-top: 4px; }
+  .traceword { text-align: center; flex: 1; min-width: 56px; }
+  .traceword .outline { font-size: 21px; font-weight: 800; color: transparent; -webkit-text-stroke: 1.4px #c4c2b8; letter-spacing: 1.2px; }
+  .traceword .line { border-bottom: 1.5px solid #d3d1c7; height: 16px; margin-top: 2px; }
+
+  /* ② 움직임에 번호 쓰기 */
+  .matchwrap { display: flex; gap: 9px; margin-top: 5px; align-items: stretch; }
+  .figgrid { flex: 1; display: flex; flex-wrap: wrap; gap: 5px; border: 2px solid #d9702a; border-radius: 12px; background: #fffaf5; padding: 7px 6px; }
+  .figgrid .cellf { width: 23%; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 4px 0; }
+  .figgrid .cir { display: inline-block; width: 15px; height: 15px; border: 1.5px solid #9c4d13; border-radius: 50%; background: #fff; }
+  .numlist { width: 100px; border: 1.5px solid #e0b48c; border-radius: 10px; padding: 6px 7px; background: #fffdfa; }
+  .numlist div { font-size: 11.5px; font-weight: 700; color: #9c4d13; padding: 1px 0; }
+  .numlist div b { display: inline-block; width: 13px; color: #d85a30; }
+
+  .pairbox { margin-top: 7px; border: 2px dashed #ef9f27; border-radius: 10px; padding: 6px 11px; text-align: center; font-size: 12px; background: #fffaf2; }
+  .pairbox b { color: #d85a30; }
+
+  /* ③ 오늘 내가 한 동작 (표현형) */
+  .mine { margin-top: 5px; border: 2.5px solid #d9702a; border-radius: 10px; background: #fffaf5; display: flex; flex-wrap: wrap; padding: 6px 4px; position: relative; }
+  .mine .cap { width: 100%; text-align: center; font-size: 10px; color: #9c4d13; margin-bottom: 2px; }
+  .mine .cell { width: 25%; display: flex; align-items: center; justify-content: center; gap: 5px; padding: 4px 0; font-size: 11.5px; font-weight: 700; color: #9c4d13; }
+  .mine .cell .cir { display: inline-block; width: 15px; height: 15px; border: 1.5px solid #9c4d13; border-radius: 50%; background: #fff; }
+
+  .recap { margin-top: 8px; background: #4a2408; color: #fdeee1; border-radius: 10px; padding: 8px 13px; text-align: center; font-size: 12.5px; }
+  .recap b { color: #fac775; }
+
+  .parent { margin-top: 7px; border-top: 1px dashed #b4b2a9; padding-top: 6px; font-size: 9.5px; color: #888780; line-height: 1.45; }
+  .parent b { color: #5f5e5a; }
+</style>
+  <script src="/kedu_gate.js"></script>
+<script src="/kedu_boxbar.js"></script>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">K-edu 영어 <span class="lv">Lv2 · 어휘 #7</span></div>
+    <div class="namebox">이름 <span></span> 날짜 <span></span></div>
+  </div>
+
+  <div class="seed">
+    <div class="star">★</div>
+    <div>
+      <div class="label">오늘 진짜 남길 단 하나</div>
+      <div class="main"><b>몸으로 하면 안 잊는다.</b> — 읽고, 해 보고, 담아요</div>
+    </div>
+  </div>
+
+  <div class="keypoint">
+    <span class="k">★ 핵심!</span> 오늘 여덟 단어는 전부 <span class="big">몸으로 하는 말</span>입니다. 일곱 개는 <b>#5·#6에서 이미 소리로 읽어 본 단어</b>이고, 오늘은 그 <b>뜻</b>을 붙입니다.
+    <b>jump</b> 하나만 아직 소리로 읽을 수 없어 <b>통째로</b> 담아 둡니다 — 다음 칸에서 쪼개 읽게 됩니다.
+  </div>
+
+  <div class="wordstrip">
+    <div class="wchip"><div class="pic"><span class="act p-stop"><b class="hd"></b><b class="bd"></b><b class="aL"></b><b class="aR"></b><b class="lL"></b><b class="lR"></b><b class="ob"></b><b class="sh"></b><b class="wv"></b><b class="sp"></b></span></div><div class="w"><i>st</i>op</div><div class="ko">멈추다</div></div>
+    <div class="wchip"><div class="pic"><span class="act p-swim"><b class="hd"></b><b class="bd"></b><b class="aL"></b><b class="aR"></b><b class="lL"></b><b class="lR"></b><b class="ob"></b><b class="sh"></b><b class="wv"></b><b class="sp"></b></span></div><div class="w"><i>sw</i>im</div><div class="ko">헤엄치다</div></div>
+    <div class="wchip"><div class="pic"><span class="act p-spin"><b class="hd"></b><b class="bd"></b><b class="aL"></b><b class="aR"></b><b class="lL"></b><b class="lR"></b><b class="ob"></b><b class="sh"></b><b class="wv"></b><b class="sp"></b></span></div><div class="w"><i>sp</i>in</div><div class="ko">빙글 돌다</div></div>
+    <div class="wchip"><div class="pic"><span class="act p-snap"><b class="hd"></b><b class="bd"></b><b class="aL"></b><b class="aR"></b><b class="lL"></b><b class="lR"></b><b class="ob"></b><b class="sh"></b><b class="wv"></b><b class="sp"></b></span></div><div class="w"><i>sn</i>ap</div><div class="ko">딱 튕기다</div></div>
+    <div class="wchip"><div class="pic"><span class="act p-clap"><b class="hd"></b><b class="bd"></b><b class="aL"></b><b class="aR"></b><b class="lL"></b><b class="lR"></b><b class="ob"></b><b class="sh"></b><b class="wv"></b><b class="sp"></b></span></div><div class="w"><i>cl</i>ap</div><div class="ko">박수 치다</div></div>
+    <div class="wchip"><div class="pic"><span class="act p-drop"><b class="hd"></b><b class="bd"></b><b class="aL"></b><b class="aR"></b><b class="lL"></b><b class="lR"></b><b class="ob"></b><b class="sh"></b><b class="wv"></b><b class="sp"></b></span></div><div class="w"><i>dr</i>op</div><div class="ko">떨어뜨리다</div></div>
+    <div class="wchip"><div class="pic"><span class="act p-grab"><b class="hd"></b><b class="bd"></b><b class="aL"></b><b class="aR"></b><b class="lL"></b><b class="lR"></b><b class="ob"></b><b class="sh"></b><b class="wv"></b><b class="sp"></b></span></div><div class="w"><i>gr</i>ab</div><div class="ko">붙잡다</div></div>
+    <div class="wchip soon"><div class="pic"><span class="act p-jump"><b class="hd"></b><b class="bd"></b><b class="aL"></b><b class="aR"></b><b class="lL"></b><b class="lR"></b><b class="ob"></b><b class="sh"></b><b class="wv"></b><b class="sp"></b></span></div><div class="w">jump</div><div class="ko">뛰어오르다</div></div>
+  </div>
+
+  <h2><span class="n">1</span> 따라 써요 <span class="hint">흐린 글자를 따라 쓰고, 쓰면서 그 동작을 한 번 해 봐요</span></h2>
+  <div class="trace">
+    <div class="traceword"><div class="outline">stop</div><div class="line"></div></div>
+    <div class="traceword"><div class="outline">swim</div><div class="line"></div></div>
+    <div class="traceword"><div class="outline">spin</div><div class="line"></div></div>
+    <div class="traceword"><div class="outline">snap</div><div class="line"></div></div>
+  </div>
+  <div class="trace">
+    <div class="traceword"><div class="outline">clap</div><div class="line"></div></div>
+    <div class="traceword"><div class="outline">drop</div><div class="line"></div></div>
+    <div class="traceword"><div class="outline">grab</div><div class="line"></div></div>
+    <div class="traceword"><div class="outline">jump</div><div class="line"></div></div>
+  </div>
+
+  <h2><span class="n">2</span> 움직임에 번호를 써요 <span class="hint">오른쪽 목록의 번호를 찾아 동그라미 안에 써요</span></h2>
+  <div class="matchwrap">
+    <div class="figgrid">
+      <div class="cellf"><span class="act p-clap"><b class="hd"></b><b class="bd"></b><b class="aL"></b><b class="aR"></b><b class="lL"></b><b class="lR"></b><b class="ob"></b><b class="sh"></b><b class="wv"></b><b class="sp"></b></span><span class="cir"></span></div>
+      <div class="cellf"><span class="act p-stop"><b class="hd"></b><b class="bd"></b><b class="aL"></b><b class="aR"></b><b class="lL"></b><b class="lR"></b><b class="ob"></b><b class="sh"></b><b class="wv"></b><b class="sp"></b></span><span class="cir"></span></div>
+      <div class="cellf"><span class="act p-grab"><b class="hd"></b><b class="bd"></b><b class="aL"></b><b class="aR"></b><b class="lL"></b><b class="lR"></b><b class="ob"></b><b class="sh"></b><b class="wv"></b><b class="sp"></b></span><span class="cir"></span></div>
+      <div class="cellf"><span class="act p-jump"><b class="hd"></b><b class="bd"></b><b class="aL"></b><b class="aR"></b><b class="lL"></b><b class="lR"></b><b class="ob"></b><b class="sh"></b><b class="wv"></b><b class="sp"></b></span><span class="cir"></span></div>
+      <div class="cellf"><span class="act p-swim"><b class="hd"></b><b class="bd"></b><b class="aL"></b><b class="aR"></b><b class="lL"></b><b class="lR"></b><b class="ob"></b><b class="sh"></b><b class="wv"></b><b class="sp"></b></span><span class="cir"></span></div>
+      <div class="cellf"><span class="act p-snap"><b class="hd"></b><b class="bd"></b><b class="aL"></b><b class="aR"></b><b class="lL"></b><b class="lR"></b><b class="ob"></b><b class="sh"></b><b class="wv"></b><b class="sp"></b></span><span class="cir"></span></div>
+      <div class="cellf"><span class="act p-drop"><b class="hd"></b><b class="bd"></b><b class="aL"></b><b class="aR"></b><b class="lL"></b><b class="lR"></b><b class="ob"></b><b class="sh"></b><b class="wv"></b><b class="sp"></b></span><span class="cir"></span></div>
+      <div class="cellf"><span class="act p-spin"><b class="hd"></b><b class="bd"></b><b class="aL"></b><b class="aR"></b><b class="lL"></b><b class="lR"></b><b class="ob"></b><b class="sh"></b><b class="wv"></b><b class="sp"></b></span><span class="cir"></span></div>
+    </div>
+    <div class="numlist">
+      <div><b>1</b> stop</div>
+      <div><b>2</b> swim</div>
+      <div><b>3</b> spin</div>
+      <div><b>4</b> snap</div>
+      <div><b>5</b> clap</div>
+      <div><b>6</b> drop</div>
+      <div><b>7</b> grab</div>
+      <div><b>8</b> jump</div>
+    </div>
+  </div>
+
+  <div class="pairbox">소리가 닮은 짝 —
+    <b>drop</b> ↔ <b>stop</b> (끝이 같아요 · 맨 앞을 들어요) &nbsp;·&nbsp;
+    <b>spin</b> ↔ <b>swim</b> (앞이 닮았어요 · 끝까지 들어요) &nbsp;·&nbsp;
+    <b>clap</b> ↔ <b>snap</b> (두 손 / 한 손)
+  </div>
+
+  <h2><span class="n">3</span> 오늘 내가 한 동작에 ○ <span class="hint">오늘 하루 실제로 해 본 동작 3개를 골라 동그라미 해요</span></h2>
+  <div class="mine">
+    <div class="cap">오늘 내가 한 동작</div>
+    <div class="cell">stop <span class="cir"></span></div>
+    <div class="cell">swim <span class="cir"></span></div>
+    <div class="cell">spin <span class="cir"></span></div>
+    <div class="cell">snap <span class="cir"></span></div>
+    <div class="cell">clap <span class="cir"></span></div>
+    <div class="cell">drop <span class="cir"></span></div>
+    <div class="cell">grab <span class="cir"></span></div>
+    <div class="cell">jump <span class="cir"></span></div>
+  </div>
+
+  <div class="recap">★ 오늘 기억해요 — 단어를 <b>몸으로</b> 한 번 하면 안 잊어요! 다음 칸에서는 드디어 <b>jump</b> 를 소리로 쪼개 읽어요.</div>
+
+  <div class="parent">
+    <b>학습 안내</b> · 이 활동지의 목표는 <b>동작 여덟 개의 뜻을 몸에 붙이는 것</b>입니다. 일곱 개는 아이가 <b>#5·#6에서 이미 읽어 본 단어</b>라 오늘의 일은 읽기가 아니라 <b>뜻</b>입니다 — 단어를 볼 때마다 <b>실제로 한 번씩 시켜 주세요</b>. 앉아서 눈으로만 하면 하루 만에 흐려집니다.
+    가장 자주 틀리는 곳은 <b>소리가 닮은 세 짝</b>입니다. <b>drop 과 stop</b> 은 끝이 같아 <b>맨 앞</b>을 들어야 갈리고, <b>spin 과 swim</b> 은 앞이 닮아 <b>끝까지</b> 들어야 합니다. <b>clap 과 snap</b> 은 <b>손이 두 개인지 한 개인지</b>로 가르면 절대 헷갈리지 않습니다.
+    <b>jump</b> 는 아직 소리로 읽을 수 없는 단어입니다 — 아이가 쪼개 읽으려 하면 "이건 통째로 담는 단어"라고 알려 주세요. 다음 칸에서 쪼개 읽게 됩니다. ③은 정답이 없는 활동입니다.
+    정답 — ② 위 왼쪽부터 5, 1, 7, 8 / 아래 왼쪽부터 2, 4, 6, 3 · ③ 정답 없음(오늘 여덟 단어 중 3개면 모두 정답)
+  </div>
+<script src="/kedu_back.js"></script>
+</body>
+</html>
