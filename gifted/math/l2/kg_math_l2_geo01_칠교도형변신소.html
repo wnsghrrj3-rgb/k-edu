@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<!--
+  kg_math_l2_geo01 — 칠교 도형 변신소 [케이영재 수학 · L2 EXPLORER 11호 · GEO 연구소 1번(개시)]
+  트랙: 케이영재 / Lab: Geometry / Level: L2 EXPLORER (트랙 스킨 v2 「신호기」) / 깊이: D1~D8
+  base: kg_math_l3_pat01 (골격·CSS·초기화 계승) + kg_math_l3_pat02 (엔진 공통부 계승)
+        + kg_math_l3_geo01 (`cal-grid.farm` 계열 밑판 CSS 계승)
+        + kg_math_l3_com01 (`chip-row`·계기판 CSS 계승)
+        + kg_math_l2_num01~l2_log03 (L2 규약 단언 계승)
+  신규 시각 언어 0 — 밑판은 geo01 이 이미 세운 `.cal-grid.farm` 이고, 변신 단추는 pat01 `.shape-btn` 이다.
+                    칸 상태 다섯도 이미 있던 것이다: 빈칸 `empty` · 조각 넷은 `sel`·`diag-a`·`diag-b`·`sel diag-a`.
+  신규 메카닉 0 — 누르기·고르기 뿐이다 (끌기 없음 · 두 단계 조작 없음)
+  탐구 5단계: 미션(1~3) 탐험(4~7) 발견(8~11) 도전(12~15) 창조(16~18)
+  핵심 수학: 조각을 옮겨 붙이면 모양이 바뀐다 — 칸 수는 그대로다
+             → 길쭉하면 넓어 보인다 · 보는 것과 세는 것이 어긋난다 (알맹이)
+             → 조각을 빼면 그때는 정말로 줄어든다 (안 변하는 데에도 조건이 있다)
+             → 조각을 갈라도 그대로다 — 자르기는 칸을 안 없앤다
+  이웃 차시와의 선 (넷을 읽고 그었다):
+    · l3_geo01 같은 둘레 다른 넓이 = 둘레를 붙잡고 넓이를 흔든다. 여기는 정확히 뒤집힌 자리다 —
+      조각을 붙잡으니 넓이가 안 흔들린다.
+    · l2_geo02 회전 미로 = 돌린 모양을 알아보는 것이 그쪽 몫이다.
+      그래서 이 차시는 화면에서 「돌린다」는 말을 한 번도 쓰지 않는다.
+    · l2_geo03 점 잇기 도형 공장 = 가짓수가 그쪽 몫이다. 여기는 몇 가지인지 묻지 않는다.
+    · l2_num04 없는 수 수배 전단 = 거기서 세는 것은 자리, 여기서 세는 것은 칸이다.
+      그리고 여기서는 세는 것이 곧 넓이다 — 그 겹침이 알맹이다.
+  점수 100 = 탐험 15 + 추측 10 + 발견 20(q9 10 + q10 10) + 검증 15
+             + 확장 20(ext1 10 + ext2 10) + 창조 20(create1 10 + create2 10)
+  힌트: H1/H2/H3 3단 (감점 없음, 답 비노출)
+  ⚠ 넓이 12 를 코드가 상수로 쥐고 있지 않다 — areaOf 는 칸을 실제로 센다 (헌법 §3-6).
+  ⚠ 수치는 tests/verify_kg_l2_geo01.py 로 코딩 전에 선검증했다 (162건).
+    선검증이 코딩 전에 잡아낸 것 셋:
+      ㉠ 손으로 그린 「ㄱ 널」이 10칸이었다 — 12칸이라 적어 둔 채 나갈 뻔했다.
+      ㉡ 「십자」는 12칸이 맞지만 조각 넷으로 안 덮인다 — 눈으로는 안 보이는 어긋남이다.
+      ㉢ 되짚기 차례를 조각으로 잡으면 헛돈다. 차례는 자리로 잡아야 한다.
+  ⛔ 규약: 문자식 금지 / 차단 어휘 금지 / 이모지 슬라이드당 ≤2
+  ⛔ L2 규약(설계_L2_레벨톤_v1.md): 문장 길이 상한 · 화면 수 ≤999 · 계산 수 ≤99 ·
+     한 화면 조작 요소 ≤12 · 논지 4~5겹 · 확장 한 방향 · 두 단계 조작 금지
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="kg_math_l2_geo01_v1">
+<title>칠교 도형 변신소 · 케이영재 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#F4F2EC; --ink:#17161C; --ink-soft:#5A5762;
+  --coral:#7B4DFF; --coral-deep:#5B2EE0; --coral-soft:#E7DEFF;
+  --teal:#3B5BA5; --teal-deep:#2C4480; --teal-soft:#DDE4F5;
+  --gold:#9BBF00; --emph:#FF5714; --line:#17161C; --mark:#D6F94C;
+  --f-title:'Black Han Sans',sans-serif; --f-body:'Noto Sans KR',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:4px 4px 0 rgba(23,22,28,.92);
+  --fs-title: clamp(26px, 4.2vw, 46px);
+  --fs-heading: clamp(23px, 3.5vw, 35px);
+  --fs-body: clamp(19px, 2.9vw, 27px);
+  --fs-caption: clamp(17px, 2.6vw, 24px);
+  --fs-label: clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --mw-sm: min(720px, 96vw);
+  --mw-lg: min(880px, 96vw);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; word-break:keep-all; overflow-wrap:break-word; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+@keyframes ka-glow { 0%,100%{box-shadow:0 0 0 0 rgba(14,138,95,.4);} 50%{box-shadow:0 0 0 10px rgba(14,138,95,0);} }
+
+.ka { background:var(--paper); width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; color:var(--ink); position:relative; overflow:hidden; }
+.ka-h { display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); padding:clamp(11px,1.7vw,15px) clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:hover { transform:translateY(-1px); }
+.ka-pill { font-family:var(--f-title); background:var(--coral); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-where { font-size:clamp(14px,1.6vw,18px); color:var(--ink-soft); flex-shrink:1; }
+.ka-where b { color:var(--ink); }
+.ka-bar { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:46vw; }
+.ka-dot { width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s, background .2s; }
+.ka-dot:hover { transform:scale(1.2); }
+.ka-dot.active { background:var(--coral); transform:scale(1.3); }
+.ka-dot.done { background:var(--teal); }
+.ka-score { font-family:var(--f-title); background:#D6F94C; color:#17161C; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); padding:0; border-radius:50%; cursor:pointer; flex-shrink:0; color:var(--coral-deep); font-size:clamp(13px,2vw,16px); width:clamp(32px,4.5vw,38px); height:clamp(32px,4.5vw,38px); display:flex; align-items:center; justify-content:center; }
+
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; justify-content:safe center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; justify-content:safe center; gap:clamp(7px,1.2vw,11px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(8px,1.4vh,16px) clamp(16px,4vw,48px); overflow-x:hidden; overflow-y:auto; scrollbar-width:none; -ms-overflow-style:none; }
+.slide::-webkit-scrollbar { width:0; height:0; }
+.slide.active { display:flex; }
+.slide-title { font-family:var(--f-title); font-size:var(--fs-title); line-height:1.18; color:var(--ink); font-weight:400; text-align:center; flex-shrink:0; }
+.slide-sub { font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(10px,1.6vw,16px); left:clamp(16px,4vw,40px); font-family:var(--f-title); color:var(--coral); font-size:clamp(13px,1.9vw,18px); letter-spacing:.4px; z-index:5; }
+
+.ka-f { display:flex; justify-content:flex-end; gap:12px; padding:clamp(12px,1.7vw,16px) clamp(16px,4vw,40px); background:linear-gradient(to top, var(--paper) 62%, transparent); flex-shrink:0; }
+.ka-prev, .ka-hint, .ka-next { font-family:var(--f-title); font-size:clamp(15px,1.9vw,22px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(10px,1.4vw,15px) clamp(20px,2.8vw,38px); cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translateY(-2px); }
+.ka-prev { margin-right:auto; }
+.ka-hint { color:#17161C; border-color:#17161C; }
+.ka-next { background:var(--coral); color:#fff; border-color:var(--coral); }
+.ka-prev:disabled, .ka-next:disabled { opacity:.35; cursor:default; transform:none; }
+.ka-hint:disabled { opacity:.4; cursor:default; }
+
+.concept-box { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,18px) clamp(18px,2.8vw,28px); border-radius:20px; font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); text-align:center; line-height:1.5; box-shadow:var(--shadow); }
+.concept-box strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.intro-q { font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; }
+.intro-q strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.goal-list { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); font-size:var(--fs-caption); color:var(--ink); max-width:var(--mw-sm); }
+.goal-list li { background:#fff; border:2px solid var(--line); padding:clamp(7px,1.3vw,11px) clamp(14px,2.6vw,20px); border-radius:16px; list-style:none; box-shadow:var(--shadow); }
+.goal-list li strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+.mission-card { background:#fff; border:3px solid var(--coral-soft); border-radius:26px; padding:clamp(16px,3vw,26px) clamp(20px,3.8vw,34px); max-width:var(--mw-sm); text-align:center; box-shadow:0 6px 0 var(--coral-soft); font-size:var(--fs-body); line-height:1.6; }
+.mission-card strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+
+/* ── 달력 격자 ── */
+.cal-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.1vw,10px); }
+.cal-head { display:flex; align-items:center; gap:clamp(8px,1.6vw,14px); }
+.cal-title { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--coral-deep); }
+.cal-month-btn { font-family:var(--f-title); font-size:var(--fs-label); background:#fff; border:2px solid var(--line); border-radius:999px; padding:4px 12px; cursor:pointer; color:var(--ink-soft); }
+.cal-month-btn.on { background:var(--coral); color:#fff; border-color:var(--coral); }
+.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:clamp(3px,0.6vw,5px); background:#fff; border:2px solid var(--line); border-radius:18px; padding:clamp(8px,1.4vw,12px); box-shadow:var(--shadow); }
+.cal-dow { font-family:var(--f-title); font-size:clamp(12px,1.7vw,16px); color:var(--ink-soft); text-align:center; padding-bottom:2px; }
+.cal-dow.sun { color:var(--emph); }
+.cal-cell { width:clamp(34px,6.2vw,54px); height:clamp(30px,5.4vw,46px); display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:clamp(15px,2.4vw,22px); color:var(--ink); background:var(--paper); border-radius:10px; cursor:pointer; transition:background .15s, transform .1s; user-select:none; }
+.cal-cell:hover { background:var(--coral-soft); }
+.cal-cell.empty { background:transparent; cursor:default; }
+.cal-cell.sel { background:var(--coral); color:#fff; animation:ka-pop .3s ease; }
+.cal-cell.diag-a { outline:3px solid var(--gold); outline-offset:-3px; }
+.cal-cell.diag-b { outline:3px solid var(--teal); outline-offset:-3px; }
+.cal-cell.center-cell { background:var(--emph); color:#fff; }
+.cal-info { display:flex; gap:clamp(8px,1.6vw,14px); flex-wrap:wrap; justify-content:center; min-height:2.2em; align-items:center; }
+.sum-chip { font-family:var(--f-title); font-size:var(--fs-caption); padding:clamp(5px,1vw,8px) clamp(12px,2.2vw,18px); border-radius:999px; background:#fff; border:2px solid var(--line); }
+.sum-chip.a { border-color:var(--gold); color:#5E7500; }
+.sum-chip.b { border-color:var(--teal); color:var(--teal-deep); }
+.sum-chip.tot { border-color:var(--coral); color:var(--coral-deep); }
+.cal-msg { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--coral-deep); min-height:1.5em; text-align:center; }
+.cal-msg.wrong { color:var(--emph); }
+
+/* ── 사례 테이블 ── */
+.case-table { border-collapse:collapse; background:#fff; border-radius:16px; overflow:hidden; box-shadow:var(--shadow); font-size:var(--fs-caption); }
+.case-table th { font-family:var(--f-title); font-weight:400; background:var(--coral-soft); color:var(--coral-deep); padding:clamp(6px,1.1vw,10px) clamp(12px,2.2vw,20px); }
+.case-table td { font-family:var(--f-num); font-weight:800; text-align:center; padding:clamp(6px,1.1vw,10px) clamp(12px,2.2vw,20px); border-top:1px solid var(--line); }
+.case-count { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); }
+.case-count b { color:var(--coral-deep); font-size:1.2em; }
+
+/* ── 관찰·추측 선택 ── */
+.pick-list { display:flex; flex-direction:column; gap:clamp(7px,1.3vw,11px); width:100%; max-width:var(--mw-sm); }
+.pick-item { background:#fff; border:3px solid var(--line); border-radius:18px; padding:clamp(10px,1.8vw,15px) clamp(16px,3vw,24px); font-size:var(--fs-body); cursor:pointer; transition:border-color .2s, transform .12s; text-align:left; font-family:var(--f-body); color:var(--ink); }
+.pick-item:hover { border-color:var(--coral); }
+.pick-item.on { border-color:var(--coral); background:var(--coral-soft); animation:ka-pop .3s ease; }
+.pick-item .tag { font-family:var(--f-title); color:var(--coral-deep); margin-right:8px; }
+
+/* ── 구조 시각화 ── */
+.struct-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.5vw,13px); }
+.struct-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(6px,1.1vw,9px); }
+.struct-cell { width:clamp(76px,13vw,120px); height:clamp(52px,9vw,80px); background:#fff; border:3px solid var(--coral-soft); border-radius:14px; display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:clamp(19px,3vw,30px); color:var(--coral-deep); box-shadow:0 4px 0 var(--coral-soft); }
+.struct-cell.hl-a { border-color:var(--gold); box-shadow:0 4px 0 var(--gold); }
+.struct-cell.hl-b { border-color:var(--teal); box-shadow:0 4px 0 var(--teal-soft); }
+.struct-eq { font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center; }
+.struct-eq .star { color:var(--emph); }
+.arrow-note { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); background:#fff; border:2px solid var(--line); border-radius:999px; padding:5px 16px; cursor:pointer; transition:transform .15s; }
+.arrow-note.revealed { color:var(--coral-deep); border-color:var(--coral); animation:ka-glow 1.4s ease 1; }
+
+/* ── 문제 공통 ── */
+.q-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.5vw,13px); max-width:var(--mw-lg); width:100%; }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; font-weight:400; }
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-sm); }
+.mcq-opts.one-col { grid-template-columns:1fr; }
+.mcq-opt { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,1.9vw,15px); font-family:var(--f-title); font-size:var(--fs-body); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .2s; box-shadow:0 6px 0 var(--coral-soft); font-weight:400; }
+.mcq-opt:hover { border-color:var(--coral); }
+.mcq-opt:active { transform:translateY(4px); box-shadow:none; }
+.mcq-opt.correct { border-color:var(--coral-deep); background:var(--coral); color:#fff; box-shadow:0 6px 0 var(--coral-deep); animation:ka-pop .5s ease; }
+.mcq-opt.wrong { border-color:var(--emph); background:#FFE3D6; color:var(--ink); animation:ka-shake .35s; }
+.mcq-hint { font-family:var(--f-title); font-size:var(--fs-caption); color:#17161C; background:#D6F94C; border-radius:16px; padding:clamp(8px,1.5vw,12px) clamp(14px,2.6vw,20px); max-width:var(--mw-sm); text-align:center; display:none; }
+.mcq-hint.show { display:block; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); color:var(--coral-deep); min-height:1.4em; text-align:center; }
+.q-fb.wrong { color:var(--emph); }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:clamp(30px,5vw,54px); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:20px; padding:clamp(8px,1.5vw,13px) clamp(24px,4.4vw,42px); min-width:clamp(110px,20vw,180px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.q-pad { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(6px,1.2vw,10px); max-width:clamp(280px,56vw,460px); }
+.q-key { background:#fff; border:2px solid var(--line); border-radius:14px; padding:clamp(7px,1.4vw,11px) 0; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, background .15s; box-shadow:0 4px 0 var(--line); }
+.q-key:hover { background:var(--coral-soft); border-color:var(--coral); }
+.q-key:active { transform:translateY(3px); box-shadow:none; }
+.q-key.fn { background:#D6F94C; color:#17161C; font-family:var(--f-title); font-size:var(--fs-caption); border-color:#17161C; box-shadow:0 4px 0 #17161C; }
+
+/* ── 모양 실험실 ── */
+.shape-pick { display:flex; gap:clamp(8px,1.5vw,13px); flex-wrap:wrap; justify-content:center; }
+.shape-btn { background:#fff; border:3px solid var(--line); border-radius:16px; padding:clamp(8px,1.4vw,12px) clamp(12px,2.2vw,18px); cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:5px; transition:border-color .2s, transform .12s; }
+.shape-btn:hover { border-color:var(--coral); }
+.shape-btn.on { border-color:var(--coral); background:var(--coral-soft); }
+.shape-mini { display:grid; grid-template-columns:repeat(3, clamp(10px,1.8vw,15px)); gap:2px; }
+.shape-mini i { display:block; width:clamp(10px,1.8vw,15px); height:clamp(10px,1.8vw,15px); border-radius:3px; background:var(--line); }
+.shape-mini i.f { background:var(--coral); }
+.shape-name { font-family:var(--f-title); font-size:var(--fs-label); color:var(--ink); }
+.rule-build { display:flex; align-items:center; gap:clamp(6px,1.2vw,10px); flex-wrap:wrap; justify-content:center; font-family:var(--f-title); font-size:var(--fs-body); }
+.rule-slot { background:#fff; border:3px dashed var(--coral); border-radius:14px; min-width:clamp(72px,13vw,120px); padding:clamp(6px,1.1vw,9px) clamp(10px,1.8vw,14px); text-align:center; color:var(--coral-deep); font-family:var(--f-num); font-weight:800; cursor:pointer; }
+.rule-slot.filled { border-style:solid; background:var(--coral-soft); }
+.rule-choice { display:flex; gap:clamp(6px,1.1vw,9px); flex-wrap:wrap; justify-content:center; }
+.rule-chip { background:#fff; border:2px solid var(--line); border-radius:999px; padding:clamp(5px,1vw,8px) clamp(12px,2.2vw,18px); font-family:var(--f-title); font-size:var(--fs-caption); cursor:pointer; transition:transform .12s, border-color .15s; }
+.rule-chip:hover { border-color:var(--coral); transform:translateY(-2px); }
+
+/* ── 탐정 카드·마무리 ── */
+.detective-card { background:#fff; border:3px solid var(--gold); border-radius:26px; padding:clamp(16px,3vw,26px) clamp(20px,3.8vw,34px); max-width:var(--mw-sm); width:100%; box-shadow:0 8px 0 var(--mark); display:flex; flex-direction:column; gap:clamp(7px,1.3vw,11px); }
+.dc-row { display:flex; justify-content:space-between; gap:14px; font-size:var(--fs-caption); border-bottom:1px dashed var(--line); padding-bottom:6px; }
+.dc-row b { font-family:var(--f-title); font-weight:400; color:var(--coral-deep); }
+.dc-title { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; }
+.wrap-score { font-family:var(--f-num); font-weight:800; font-size:clamp(56px,10vw,110px); color:var(--coral-deep); line-height:1; }
+.wrap-msg { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); }
+.home-card { background:var(--teal-soft); border-radius:20px; padding:clamp(12px,2.2vw,18px) clamp(18px,3.2vw,26px); font-size:var(--fs-caption); color:var(--teal-deep); max-width:var(--mw-sm); text-align:center; line-height:1.55; }
+.next-mini { display:flex; gap:clamp(8px,1.5vw,13px); flex-wrap:wrap; justify-content:center; }
+.next-chip { font-family:var(--f-title); font-size:var(--fs-label); background:#fff; border:2px solid var(--line); border-radius:999px; padding:6px 16px; color:var(--ink-soft); }
+
+/* ═══ 케이영재 스킨 v2 「신호기」 — 트랙 전용 (헌법 v1.3 §3-α · skin_v2_signal.py 가 단일 원본) ═══
+   굵은 먹선 + 오프셋 통그림자 + 보라·라임. 레이아웃 값(크기·간격)은 건드리지 않는다. */
+.ka-h { border-bottom:3px solid var(--ink); }
+.ka-prev, .ka-hint, .ka-next { box-shadow:3px 3px 0 var(--ink); }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translate(-1px,-1px); box-shadow:4px 4px 0 var(--ink); }
+.ka-prev:active, .ka-hint:active, .ka-next:active { transform:translate(3px,3px); box-shadow:0 0 0 var(--ink); }
+.ka-hint { background:var(--mark); }
+.ka-pill { border:2px solid var(--ink); box-shadow:2px 2px 0 var(--ink); }
+.ka-score { border:2px solid var(--ink); box-shadow:2px 2px 0 var(--ink); }
+.ka-dot { background:#CBC8BF; }
+.mcq-opt { border-color:var(--ink); box-shadow:5px 5px 0 var(--ink); }
+.mcq-opt.correct { box-shadow:5px 5px 0 var(--coral-deep); }
+.detective-card { border-color:var(--ink); }
+.mission-card { border-color:var(--ink); box-shadow:6px 6px 0 var(--ink); }
+.cal-cell { border:2px solid var(--ink); }
+.cal-cell.empty { border-color:transparent; background:transparent; }
+
+/* ═══ 공용 부품 CSS (geo01·com01 정의 문자 그대로 추출·주입 — 손으로 옮겨 적지 않는다) ═══ */
+/* 밑판은 geo01 이 이미 세운 `.cal-grid.farm` 이다. 칸 상태 다섯(empty·sel·diag-a·
+   diag-b·sel diag-a)은 전부 pat01 에 있던 클래스다 — 새 시각 언어 0. */
+.cal-grid.farm { --farm-c:clamp(18px,3.2vw,30px); grid-template-columns:repeat(var(--farm-n,5), var(--farm-c)); justify-content:center; gap:2px; padding:clamp(6px,1.1vw,10px); }
+.cal-grid.farm .cal-cell { width:var(--farm-c); height:var(--farm-c); border-radius:5px; font-size:0; cursor:default; }
+.cal-grid.farm.big { --farm-c:clamp(26px,4.4vw,42px); }
+.farm-row { display:flex; gap:clamp(10px,2.6vw,26px); justify-content:center; align-items:flex-end; flex-wrap:wrap; }
+.farm-one { display:flex; flex-direction:column; align-items:center; gap:5px; }
+.chip-row { display:flex; gap:clamp(5px,1vw,9px); justify-content:center; flex-wrap:wrap; margin:6px 0; }
+.lab-meter { display:flex; align-items:baseline; justify-content:center; gap:8px; margin:6px 0; }
+.lab-label { font-size:var(--fs-label); color:var(--ink-soft); font-family:var(--f-title); }
+.lab-count { font-family:var(--f-title); font-size:var(--fs-h1); color:var(--coral-deep); min-width:2.2em; text-align:center; }
+</style></style>
+</head>
+<body>
+<div class="ka">
+  <header class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 나가기</button>
+    <span class="ka-pill">케이영재</span>
+    <span class="ka-where"><b>칠교 도형 변신소</b> · 도형 연구소</span>
+    <div class="ka-bar" id="dots"></div>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </header>
+
+  <main class="ka-m" id="main">
+
+    <!-- 슬1 · 표지 -->
+    <section class="slide">
+      <span class="stage-badge">미션</span>
+      <h1 class="slide-title">🧩 칠교 도형 변신소</h1>
+      <p class="slide-sub">도형 연구소 · 탐구 사건 1호</p>
+      <div class="mission-card">
+        조각 넷을 옮겨 붙이면 <strong>모양이 달라진다</strong>.<br>
+        그런데 달라지지 않는 것이 하나 있다.
+      </div>
+    </section>
+
+    <!-- 슬2 · 미션 제시 -->
+    <section class="slide">
+      <span class="stage-badge">미션</span>
+      <h1 class="slide-title">변신소에서 온 의뢰</h1>
+      <div class="mission-card">
+        변신소는 <strong>늘 같은 조각 넷</strong>만 쓴다.<br>
+        조각을 버리지도 더하지도 않는다.<br><br>
+        <strong>질문: 모양이 바뀌면 넓이도 바뀔까?</strong>
+      </div>
+      <p class="intro-q">눈으로 보고, 그다음 <strong>세어서</strong> 확인하자.</p>
+    </section>
+
+    <!-- 슬3 · 탐구 약속 -->
+    <section class="slide">
+      <span class="stage-badge">미션</span>
+      <h1 class="slide-title">연구원의 다섯 걸음</h1>
+      <ul class="goal-list">
+        <li><strong>① 탐험</strong> — 변신을 눌러 보며 모양을 모은다</li>
+        <li><strong>② 발견</strong> — 무엇이 안 변했는지 짐작한다</li>
+        <li><strong>③ 확인</strong> — 세어서 까닭을 밝힌다</li>
+        <li><strong>④ 도전</strong> — 조각을 건드리면 어떻게 되는지 본다</li>
+        <li><strong>⑤ 창조</strong> — 나만의 조각 묶음을 만든다</li>
+      </ul>
+      <div class="concept-box">여기서는 <strong>세어 본 것</strong>만 믿는다.</div>
+    </section>
+
+    <!-- 슬4 · 탐험 1/4 : 조각 넷 -->
+    <section class="slide">
+      <span class="stage-badge">탐험 1/4</span>
+      <h1 class="slide-title">오늘의 조각 넷</h1>
+      <p class="slide-sub">변신소가 가진 조각은 이것뿐이다</p>
+      <div class="farm-row" id="piece-row"></div>
+      <div class="concept-box" id="piece-note"></div>
+    </section>
+
+    <!-- 슬5 · 탐험 2/4 : 변신 무대 -->
+    <section class="slide" data-q-id="explore">
+      <span class="stage-badge">탐험 2/4</span>
+      <h1 class="slide-title">변신을 눌러 보자</h1>
+      <p class="slide-sub">서로 다른 변신 <b>3가지</b>를 보면 기록이 쌓인다 (+15)</p>
+      <div class="shape-pick" id="shape-btns"></div>
+      <div class="cal-wrap">
+        <div class="cal-grid farm big" id="stage-explore"></div>
+        <div class="cal-msg" id="msg-explore">변신 단추를 눌러 보자</div>
+      </div>
+      <div class="mcq-hint" data-hints='["아무 단추나 눌러 보자. 밑판에 조각이 놓인다.","다른 단추도 눌러 보자. 모양이 어떻게 달라지나?","모양만 보지 말고 색칠된 칸을 세어 보자."]'></div>
+    </section>
+
+    <!-- 슬6 · 탐험 3/4 : 사례 기록 -->
+    <section class="slide">
+      <span class="stage-badge">탐험 3/4</span>
+      <h1 class="slide-title">내가 모은 기록</h1>
+      <p class="slide-sub">가로·세로는 밑판 크기다 · 칸 수는 색칠된 칸이다</p>
+      <table class="case-table" id="case-table">
+        <thead><tr><th>변신</th><th>가로</th><th>세로</th><th>칸 수</th></tr></thead>
+        <tbody id="case-body"></tbody>
+      </table>
+      <p class="case-count" id="case-count"></p>
+      <div class="concept-box" id="case-note">표를 가만히 보자. 무엇이 눈에 띄나?</div>
+    </section>
+
+    <!-- 슬7 · 탐험 4/4 : 추측 기록 -->
+    <section class="slide" data-q-id="conj">
+      <span class="stage-badge">탐험 4/4</span>
+      <h1 class="slide-title">내 짐작을 적어 두자</h1>
+      <p class="slide-sub">틀려도 좋다 · 적어 두는 것이 연구다 (+10)</p>
+      <div class="q-stage">
+        <p class="q-prompt">변신을 해도 안 변하는 것은?</p>
+        <div class="mcq-opts one-col" id="conj-opts">
+          <button class="mcq-opt" data-a="0">밑판의 가로 길이</button>
+          <button class="mcq-opt" data-a="1">색칠된 칸의 수</button>
+          <button class="mcq-opt" data-a="2">모양의 생김새</button>
+          <button class="mcq-opt" data-a="3">밑판의 세로 길이</button>
+        </div>
+        <div class="mcq-hint" data-hints='["기록표의 칸을 세로로 훑어보자.","가로도 세로도 줄마다 다르다.","한 칸만 줄곧 같은 수다. 그 칸이 무엇인가?"]'></div>
+        <p class="q-fb" id="fb-conj"></p>
+      </div>
+    </section>
+
+    <!-- 슬8 · 발견 1/4 : 눈속임 견주기 -->
+    <section class="slide" data-q-id="q9">
+      <span class="stage-badge">발견 1/4</span>
+      <h1 class="slide-title">어느 쪽이 더 넓을까</h1>
+      <p class="slide-sub">먼저 <b>눈으로만</b> 골라 보자 (+10)</p>
+      <div class="farm-row" id="illusion-row"></div>
+      <div class="q-stage">
+        <p class="q-prompt">두 변신 중 넓은 쪽은?</p>
+        <div class="mcq-opts one-col" id="q9-opts">
+          <button class="mcq-opt" data-a="0">왼쪽이 더 넓다</button>
+          <button class="mcq-opt" data-a="1">오른쪽이 더 넓다</button>
+          <button class="mcq-opt" data-a="2">둘이 똑같다</button>
+        </div>
+        <div class="mcq-hint" data-hints='["눈에는 한쪽이 커 보인다. 정말 그럴까?","길쭉하면 커 보인다. 그것은 길이지 넓이가 아니다.","두 밑판의 색칠된 칸을 하나씩 세어 보자."]'></div>
+        <p class="q-fb" id="fb-q9"></p>
+      </div>
+    </section>
+
+    <!-- 슬9 · 발견 2/4 : 세어서 확인 -->
+    <section class="slide" data-q-id="q10">
+      <span class="stage-badge">발견 2/4</span>
+      <h1 class="slide-title">세어서 밝히자</h1>
+      <p class="slide-sub">아래 변신의 색칠된 칸이 몇 개인지 적자 (+10)</p>
+      <div class="cal-wrap">
+        <div class="cal-grid farm big" id="stage-q10"></div>
+      </div>
+      <div class="q-stage">
+        <div class="q-display" id="disp-q10">&nbsp;</div>
+        <div class="q-pad" id="pad-q10"></div>
+        <div class="mcq-hint" data-hints='["한 줄씩 세어 보자.","줄마다 센 수를 더하면 된다.","조각 넷의 칸 수를 더해도 같은 수가 나온다."]'></div>
+        <p class="q-fb" id="fb-q10"></p>
+      </div>
+    </section>
+
+    <!-- 슬10 · 발견 3/4 : 구조 -->
+    <section class="slide">
+      <span class="stage-badge">발견 3/4</span>
+      <h1 class="slide-title">조각을 따로 떼어 보면</h1>
+      <p class="slide-sub">조각마다 칸 수를 세어 더해 보자</p>
+      <div class="chip-row" id="sum-chips"></div>
+      <div class="concept-box" id="struct-note"></div>
+    </section>
+
+    <!-- 슬11 · 발견 4/4 : 까닭 -->
+    <section class="slide">
+      <span class="stage-badge">발견 4/4</span>
+      <h1 class="slide-title">왜 그대로일까</h1>
+      <div class="concept-box">
+        조각을 옮겨도 <strong>조각은 그대로</strong>다.<br>
+        칸을 버린 적도 더한 적도 없다.<br>
+        그래서 칸 수도 그대로다.
+      </div>
+      <div class="concept-box" id="eye-note">
+        눈에는 길쭉한 쪽이 넓어 보인다.<br>
+        보는 것과 세는 것이 어긋날 때는 <strong>세는 쪽</strong>이 맞다.
+      </div>
+    </section>
+
+    <!-- 슬12 · 도전 1/4 : 검증 -->
+    <section class="slide" data-q-id="verify">
+      <span class="stage-badge">도전 1/4</span>
+      <h1 class="slide-title">남은 변신도 그럴까</h1>
+      <p class="slide-sub">아직 안 본 변신을 <b>남김없이</b> 눌러 확인하자 (+15)</p>
+      <div class="shape-pick" id="verify-btns"></div>
+      <div class="cal-wrap">
+        <div class="cal-grid farm" id="stage-verify"></div>
+        <div class="cal-msg" id="msg-verify">안 본 변신을 눌러 보자</div>
+      </div>
+      <div class="lab-meter"><span class="lab-label">확인한 변신</span><span class="lab-count" id="verify-count">0</span></div>
+      <div class="mcq-hint" data-hints='["흐리게 남은 단추가 아직 안 본 것이다.","하나도 빠뜨리지 말자.","다섯을 다 봐야 「늘 그렇다」고 말할 수 있다."]'></div>
+    </section>
+
+    <!-- 슬13 · 도전 2/4 : 경계 — 조각을 빼면 -->
+    <section class="slide" data-q-id="ext1">
+      <span class="stage-badge">도전 2/4</span>
+      <h1 class="slide-title">조각을 빼면 어떨까</h1>
+      <p class="slide-sub">뺄 조각을 하나 골라 보자 (+10)</p>
+      <div class="shape-pick" id="drop-btns"></div>
+      <div class="cal-msg" id="msg-drop">조각을 하나 골라 보자</div>
+      <div class="q-stage">
+        <p class="q-prompt">조각을 빼도 칸 수는 그대로일까?</p>
+        <div class="mcq-opts one-col" id="ext1-opts">
+          <button class="mcq-opt" data-a="0">그대로다</button>
+          <button class="mcq-opt" data-a="1">줄어든다</button>
+          <button class="mcq-opt" data-a="2">늘어난다</button>
+        </div>
+        <div class="mcq-hint" data-hints='["조각을 하나 골라 눌러 보자.","뺀 뒤의 수가 위에 나온다.","안 변하는 것에도 조건이 있었다."]'></div>
+        <p class="q-fb" id="fb-ext1"></p>
+      </div>
+    </section>
+
+    <!-- 슬14 · 도전 3/4 : 확장 — 조각을 가르면 -->
+    <section class="slide" data-q-id="ext2">
+      <span class="stage-badge">도전 3/4</span>
+      <h1 class="slide-title">조각을 갈라 보면</h1>
+      <p class="slide-sub">네모 조각을 둘로 가른다 · 그때 칸 수를 적자 (+10)</p>
+      <div class="chip-row" id="split-chips"></div>
+      <div class="q-stage">
+        <div class="q-display" id="disp-ext2">&nbsp;</div>
+        <div class="q-pad" id="pad-ext2"></div>
+        <div class="mcq-hint" data-hints='["가른 두 조각을 다 쓴다. 버리지 않는다.","가르기 전과 뒤의 칸 수를 견주어 보자.","자르기는 칸을 없애지 않는다."]'></div>
+        <p class="q-fb" id="fb-ext2"></p>
+      </div>
+    </section>
+
+    <!-- 슬15 · 도전 4/4 : 정리 -->
+    <section class="slide">
+      <span class="stage-badge">도전 4/4</span>
+      <h1 class="slide-title">밝혀진 것</h1>
+      <ul class="goal-list">
+        <li>조각을 옮기면 모양이 바뀐다 — 칸 수는 그대로다</li>
+        <li>길쭉하면 넓어 보인다 — 그것은 눈속임이다</li>
+        <li>조각을 빼면 줄어든다 — 안 변하는 데에도 조건이 있다</li>
+        <li>조각을 갈라도 그대로다 — 자르기는 칸을 안 없앤다</li>
+      </ul>
+    </section>
+
+    <!-- 슬16 · 창조 1/3 : 내 조각 묶음 -->
+    <section class="slide" data-q-id="create1">
+      <span class="stage-badge">창조 1/3</span>
+      <h1 class="slide-title">내 조각 묶음 만들기</h1>
+      <p class="slide-sub">조각을 <b>3개 넘게</b> 골라 보자 (+10)</p>
+      <div class="pick-list" id="my-pieces"></div>
+      <div class="lab-meter"><span class="lab-label">내 묶음의 칸 수</span><span class="lab-count" id="my-sum">0</span></div>
+      <div class="mcq-hint" data-hints='["조각 카드를 눌러 고르자.","다시 누르면 빠진다.","고른 조각의 칸 수가 아래에 더해진다."]'></div>
+      <p class="q-fb" id="fb-create1"></p>
+    </section>
+
+    <!-- 슬17 · 창조 2/3 : 규칙 카드 -->
+    <section class="slide" data-q-id="create2">
+      <span class="stage-badge">창조 2/3</span>
+      <h1 class="slide-title">내 변신소 규칙</h1>
+      <p class="slide-sub">내 묶음에 걸맞은 규칙을 고르자 (+10)</p>
+      <div class="q-stage">
+        <p class="q-prompt">내 변신소가 지킬 규칙은?</p>
+        <div class="mcq-opts one-col" id="create2-opts">
+          <button class="mcq-opt" data-a="0">모양이 바뀌면 칸 수도 바꾼다</button>
+          <button class="mcq-opt" data-a="1">조각을 버리지도 더하지도 않는다</button>
+          <button class="mcq-opt" data-a="2">길쭉한 모양만 만든다</button>
+          <button class="mcq-opt" data-a="3">칸 수를 셀 때마다 다르게 센다</button>
+        </div>
+        <div class="mcq-hint" data-hints='["칸 수가 그대로이려면 무엇을 지켜야 하나?","조각을 건드리면 칸 수가 달라졌다.","오늘 변신소가 처음부터 지킨 약속이다."]'></div>
+        <p class="q-fb" id="fb-create2"></p>
+      </div>
+    </section>
+
+    <!-- 슬18 · 창조 3/3 : 마무리 -->
+    <section class="slide">
+      <span class="stage-badge">창조 3/3</span>
+      <h1 class="slide-title">연구 종료</h1>
+      <div class="detective-card" id="agent-card"></div>
+      <p class="wrap-score">⭐ <span id="final-score">0</span> / 100</p>
+      <p class="wrap-msg" id="wrap-msg"></p>
+      <div class="next-mini">
+        <span class="next-chip">다음 사건 — 회전 미로</span>
+      </div>
+    </section>
+
+  </main>
+
+
+  <footer class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next" id="next" onclick="goNext()">다음 →</button>
+  </footer>
+</div>
+
+<script>
+/* ═══════════ KGiftedCore — 순수 로직 (DOM 무의존, 테스트 대상) ═══════════
+   ★넓이 12 를 상수로 갖고 있지 않다. `areaOf` 는 실루엣의 칸을 **그때그때 센다.**
+     「모양이 달라도 그대로다」는 학생이 다섯을 세어 보다가 알아채는 몫이다 (헌법 §3-6).
+     조각 칸 수도 마찬가지다 — `sizeOf` 는 조각의 칸 목록 길이를 잰다.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function (root) {
+  'use strict';
+
+  var D = {"order": ["L3", "I3", "O4", "D2"], "sord": ["A", "B", "C", "D", "E"], "pieces": {"L3": [[0, 0], [1, 0], [1, 1]], "I3": [[0, 0], [0, 1], [0, 2]], "O4": [[0, 0], [0, 1], [1, 0], [1, 1]], "D2": [[0, 0], [0, 1]]}, "shapes": {"A": {"name": "길쭉이", "rows": ["######", "######"], "sol": {"L3": [[0, 0], [0, 1], [1, 0]], "D2": [[0, 2], [0, 3]], "O4": [[0, 4], [0, 5], [1, 4], [1, 5]], "I3": [[1, 1], [1, 2], [1, 3]]}}, "B": {"name": "네모", "rows": ["####", "####", "####"], "sol": {"L3": [[0, 0], [0, 1], [1, 1]], "O4": [[0, 2], [0, 3], [1, 2], [1, 3]], "D2": [[1, 0], [2, 0]], "I3": [[2, 1], [2, 2], [2, 3]]}}, "C": {"name": "계단", "rows": ["##....", "####..", "######"], "sol": {"O4": [[0, 0], [0, 1], [1, 0], [1, 1]], "L3": [[1, 2], [1, 3], [2, 2]], "D2": [[2, 0], [2, 1]], "I3": [[2, 3], [2, 4], [2, 5]]}}, "D": {"name": "ㄱ자", "rows": ["#####", "#####", "#....", "#...."], "sol": {"L3": [[0, 0], [0, 1], [1, 1]], "O4": [[0, 2], [0, 3], [1, 2], [1, 3]], "D2": [[0, 4], [1, 4]], "I3": [[1, 0], [2, 0], [3, 0]]}}, "E": {"name": "배", "rows": [".####.", "######", "..##.."], "sol": {"L3": [[0, 1], [1, 0], [1, 1]], "I3": [[0, 2], [0, 3], [0, 4]], "O4": [[1, 2], [1, 3], [2, 2], [2, 3]], "D2": [[1, 4], [1, 5]]}}}, "label": {"L3": "ㄴ 조각", "I3": "막대 조각", "O4": "네모 조각", "D2": "짝 조각"}, "cls": {"L3": "sel", "I3": "diag-a", "O4": "diag-b", "D2": "sel diag-a"}};
+
+  /* ── 실루엣의 칸 목록 ── */
+  function cellsOf(key) {
+    var rows = D.shapes[key].rows, out = [], r, c;
+    for (r = 0; r < rows.length; r++)
+      for (c = 0; c < rows[r].length; c++)
+        if (rows[r].charAt(c) === '#') out.push([r, c]);
+    return out;
+  }
+
+  /* ── ★넓이 = 칸을 센 값 (상수 아님) ── */
+  function areaOf(key) { return cellsOf(key).length; }
+
+  /* ── 밑판 크기 ── */
+  function boxOf(key) {
+    var rows = D.shapes[key].rows, w = 0, r;
+    for (r = 0; r < rows.length; r++) if (rows[r].length > w) w = rows[r].length;
+    return { h: rows.length, w: w };
+  }
+
+  /* ── 조각 한 개의 칸 수 ── */
+  function sizeOf(pk) { return D.pieces[pk].length; }
+
+  /* ── 조각 묶음의 칸 수 합 ── */
+  function sumOf(keys) {
+    var s = 0, i;
+    for (i = 0; i < keys.length; i++) s += sizeOf(keys[i]);
+    return s;
+  }
+
+  /* ── 칸마다 어느 조각이 덮었나 — 'r,c' → 조각 열쇠 ── */
+  function ownerMap(key) {
+    var sol = D.shapes[key].sol, m = {}, pk, i, p;
+    for (pk in sol) {
+      if (!sol.hasOwnProperty(pk)) continue;
+      for (i = 0; i < sol[pk].length; i++) { p = sol[pk][i]; m[p[0] + ',' + p[1]] = pk; }
+    }
+    return m;
+  }
+
+  /* ── 덮기가 성한가 — 겹침·빠짐 없이 실루엣과 꼭 맞는가 ──
+     차시가 화면에 그리기 전에 스스로 묻는다. 어긋난 배치는 아예 안 그린다. */
+  function coverOk(key) {
+    var cs = cellsOf(key), m = ownerMap(key), i, k, n = 0, s;
+    for (s in m) if (m.hasOwnProperty(s)) n++;
+    if (n !== cs.length) return false;
+    for (i = 0; i < cs.length; i++) {
+      k = cs[i][0] + ',' + cs[i][1];
+      if (!m[k]) return false;
+    }
+    return true;
+  }
+
+  /* ── 어느 조각을 빼면 몇 칸이 남나 (논지 ③) ── */
+  function withoutPiece(pk) {
+    var keys = [], i;
+    for (i = 0; i < D.order.length; i++) if (D.order[i] !== pk) keys.push(D.order[i]);
+    return sumOf(keys);
+  }
+
+  /* ── 조각 하나를 둘로 가른다 (논지 ④) ──
+     가른 뒤의 칸 수 합을 돌려준다. 자르기는 넓이를 안 바꾼다 — 그것이 이 함수로 드러난다. */
+  function splitSum(pk, a) {
+    var n = sizeOf(pk);
+    if (a <= 0 || a >= n) return null;          /* 아무것도 안 자른 것은 자르기가 아니다 */
+    return sumOf(D.order) - n + a + (n - a);
+  }
+
+  /* ── 탐험 기록 — 서로 다른 변신을 몇 가지 봤나 ── */
+  function distinct(seen) {
+    var m = {}, i, n = 0;
+    for (i = 0; i < seen.length; i++) if (!m[seen[i]]) { m[seen[i]] = 1; n++; }
+    return n;
+  }
+
+  /* ── 다섯이 다 같은 넓이인가 (하니스가 묻는 자리) ── */
+  function allSameArea() {
+    var i, a = areaOf(D.sord[0]);
+    for (i = 1; i < D.sord.length; i++) if (areaOf(D.sord[i]) !== a) return false;
+    return true;
+  }
+
+  var api = {
+    data: D,
+    cellsOf: cellsOf, areaOf: areaOf, boxOf: boxOf,
+    sizeOf: sizeOf, sumOf: sumOf, ownerMap: ownerMap, coverOk: coverOk,
+    withoutPiece: withoutPiece, splitSum: splitSum,
+    distinct: distinct, allSameArea: allSameArea
+  };
+  root.KGiftedCore = api;
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+})(typeof window !== 'undefined' ? window : this);
+
+/* ═══════════ 엔진 (base: kg_math_l3_pat01 · pat02 공통부 · geo01 밑판 · com01 칩·계기판 계승 · 힌트 3단) ═══════════ */
+const TOTAL = 18;
+const LESSON_ID = 'kg_math_l2_geo01';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+const HINT_MAX = 3;
+/* 무대 상수는 KGiftedCore 가 쥔다 (변신 다섯 · 조각 넷) */
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+/* ═══ 화면 맞춤 — 슬라이드가 프레임보다 길면 균일 축소 (제목이 헤더 뒤로 잘리는 것 방지) ═══ */
+const FIT_MIN = 0.55, FIT_STEP = 0.04;
+let fitPending = false;
+function fitActiveSlide() {
+  const el = document.querySelector('.slide.active');
+  if (!el) return;
+  if (el.style.zoom) el.style.zoom = '';
+  if (!(window.CSS && CSS.supports && CSS.supports('zoom', '0.9'))) return;
+  if (!el.clientHeight) return;
+  let k = 1;
+  for (let i = 0; i < 16 && el.scrollHeight > el.clientHeight + 1; i++) {
+    k = Math.max(FIT_MIN, k - FIT_STEP);
+    el.style.zoom = k;
+    if (k === FIT_MIN) break;
+  }
+}
+function scheduleFit() {
+  if (fitPending) return;
+  fitPending = true;
+  requestAnimationFrame(() => { fitPending = false; fitActiveSlide(); });
+}
+window.addEventListener('resize', scheduleFit);
+window.addEventListener('orientationchange', scheduleFit);
+document.addEventListener('click', scheduleFit, true);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(scheduleFit);
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.querySelectorAll('#dots .ka-dot').forEach((d, i) => { d.classList.toggle('active', i === cur); d.classList.toggle('done', i < cur); });
+  document.getElementById('prev').disabled = cur === 0;
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.hintLevel >= HINT_MAX; }
+  else { hintBtn.disabled = true; }
+  if (cur === TOTAL - 1) {
+    document.getElementById('next').textContent = '마치기 →';
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('wrap-msg').textContent = wrapMsg(score);
+    saveProgress(true);
+  } else { document.getElementById('next').textContent = '다음 →'; }
+  if (cur === 5) renderCaseTable();
+  if (cur === 17) renderAgentCard();
+  fitActiveSlide();
+}
+function saveProgress(done) {
+  const data = { cur, score, done, startedAt, finishedAt: done ? Date.now() : null, qState, seen: seenExplore, ver: seenVerify, conj: conjPicked, mine: myPieces };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function wrapMsg(s) {
+  if (s >= 100) return '전설의 변신소장!';
+  if (s >= 80) return '빈틈없는 연구였다!';
+  if (s >= 60) return '세는 눈이 자라났다!';
+  return '조각은 그대로 있다. 다시 해도 좋다!';
+}
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+function showHint() {
+  const qid = currentQId(); if (!qid) return;
+  const st = getQState(qid); if (st.hintLevel >= HINT_MAX) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint'); if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[Math.min(st.hintLevel, hints.length) - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= HINT_MAX;
+}
+
+
+/* ═══════════ 차시 배선 (KGiftedCore 위에서만 판단한다) ═══════════ */
+const K = window.KGiftedCore;
+const D = K.data;
+
+let seenExplore = [];      /* 탐험에서 본 변신 */
+let seenVerify = [];       /* 도전에서 확인한 변신 */
+let conjPicked = null;
+let myPieces = [];
+let dropPicked = null;
+let exploreScored = false, verifyScored = false, create1Scored = false;
+
+/* 그리기 전에 덮기가 성한지 스스로 묻는다 — 어긋난 배치는 안 그린다 */
+D.sord.forEach(k => { if (!K.coverOk(k)) throw new Error('덮기가 어긋난 배치: ' + k); });
+
+/* ── 밑판 한 장 그리기 ── */
+function drawBoard(el, key, small) {
+  const rows = D.shapes[key].rows;
+  const box = K.boxOf(key);
+  const own = K.ownerMap(key);
+  el.style.setProperty('--farm-n', box.w);
+  el.innerHTML = '';
+  for (let r = 0; r < rows.length; r++) {
+    for (let c = 0; c < box.w; c++) {
+      const d = document.createElement('div');
+      const on = rows[r].charAt(c) === '#';
+      d.className = 'cal-cell' + (on ? ' ' + D.cls[own[r + ',' + c]] : ' empty');
+      el.appendChild(d);
+    }
+  }
+}
+
+/* ── 조각 한 개를 작은 밑판으로 그리기 ── */
+function drawPiece(el, pk) {
+  const cells = D.pieces[pk];
+  let h = 0, w = 0;
+  cells.forEach(p => { if (p[0] + 1 > h) h = p[0] + 1; if (p[1] + 1 > w) w = p[1] + 1; });
+  const set = {};
+  cells.forEach(p => { set[p[0] + ',' + p[1]] = 1; });
+  el.style.setProperty('--farm-n', w);
+  el.innerHTML = '';
+  for (let r = 0; r < h; r++)
+    for (let c = 0; c < w; c++) {
+      const d = document.createElement('div');
+      d.className = 'cal-cell' + (set[r + ',' + c] ? ' ' + D.cls[pk] : ' empty');
+      el.appendChild(d);
+    }
+}
+
+/* ── 슬4 · 조각 넷 ── */
+function drawPieces() {
+  const row = document.getElementById('piece-row');
+  row.innerHTML = '';
+  D.order.forEach(pk => {
+    const one = document.createElement('div');
+    one.className = 'farm-one';
+    const g = document.createElement('div');
+    g.className = 'cal-grid farm';
+    one.appendChild(g);
+    const nm = document.createElement('span');
+    nm.className = 'shape-name';
+    nm.textContent = D.label[pk] + ' · ' + K.sizeOf(pk) + '칸';
+    one.appendChild(nm);
+    row.appendChild(one);
+    drawPiece(g, pk);
+  });
+  document.getElementById('piece-note').innerHTML =
+    '조각은 <strong>넷</strong>이다. 오늘 내내 이 넷만 쓴다.';
+}
+
+/* ── 슬5 · 변신 무대 ── */
+function drawExplore() {
+  const box = document.getElementById('shape-btns');
+  box.innerHTML = '';
+  D.sord.forEach(key => {
+    const b = document.createElement('button');
+    b.className = 'shape-btn';
+    b.dataset.k = key;
+    const nm = document.createElement('span');
+    nm.className = 'shape-name';
+    nm.textContent = D.shapes[key].name;
+    b.appendChild(nm);
+    b.onclick = () => pickExplore(key);
+    box.appendChild(b);
+  });
+}
+function pickExplore(key) {
+  document.querySelectorAll('#shape-btns .shape-btn')
+    .forEach(b => b.classList.toggle('on', b.dataset.k === key));
+  drawBoard(document.getElementById('stage-explore'), key);
+  if (seenExplore.indexOf(key) < 0) seenExplore.push(key);
+  const n = K.distinct(seenExplore);
+  const box = K.boxOf(key);
+  document.getElementById('msg-explore').textContent =
+    D.shapes[key].name + ' · 가로 ' + box.w + ' · 세로 ' + box.h + ' · 본 변신 ' + n + '가지';
+  if (!exploreScored && n >= 3) {
+    exploreScored = true;
+    getQState('explore').solved = true;
+    addScore(15);
+    document.getElementById('msg-explore').textContent = '기록이 쌓였다! 다음에서 표를 보자 (+15)';
+  }
+  saveProgress(false);
+}
+
+/* ── 슬6 · 기록표 ── */
+function renderCaseTable() {
+  const body = document.getElementById('case-body');
+  body.innerHTML = '';
+  seenExplore.forEach(key => {
+    const box = K.boxOf(key);
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + D.shapes[key].name + '</td><td>' + box.w + '</td><td>' +
+                   box.h + '</td><td><b>' + K.areaOf(key) + '</b></td>';
+    body.appendChild(tr);
+  });
+  document.getElementById('case-count').textContent =
+    seenExplore.length ? '모은 변신 ' + seenExplore.length + '가지' : '아직 모은 것이 없다';
+  document.getElementById('case-note').innerHTML = seenExplore.length >= 2
+    ? '가로도 세로도 줄마다 다르다. 그런데 <strong>한 칸</strong>만 늘 같다.'
+    : '앞으로 돌아가 변신을 더 눌러 보자.';
+}
+
+/* ── 슬7 · 추측 ── */
+function wireConj() {
+  document.querySelectorAll('#conj-opts .mcq-opt').forEach(b => {
+    b.onclick = () => {
+      if (getQState('conj').solved) return;
+      conjPicked = b.dataset.a;
+      const ok = b.dataset.a === '1';
+      document.querySelectorAll('#conj-opts .mcq-opt').forEach(x => x.disabled = true);
+      b.classList.add(ok ? 'correct' : 'wrong');
+      if (!ok) document.querySelector('#conj-opts .mcq-opt[data-a="1"]').classList.add('correct');
+      getQState('conj').solved = true;
+      addScore(10);
+      document.getElementById('fb-conj').textContent = ok
+        ? '적어 두었다. 이제 세어서 확인하자. (+10)'
+        : '짐작을 적어 두었다. 세어서 확인해 보자. (+10)';
+      saveProgress(false);
+    };
+  });
+}
+
+/* ── 슬8 · 눈속임 견주기 ── */
+function drawIllusion() {
+  const row = document.getElementById('illusion-row');
+  row.innerHTML = '';
+  ['A', 'B'].forEach(key => {
+    const one = document.createElement('div');
+    one.className = 'farm-one';
+    const g = document.createElement('div');
+    g.className = 'cal-grid farm big';
+    one.appendChild(g);
+    const nm = document.createElement('span');
+    nm.className = 'shape-name';
+    nm.textContent = D.shapes[key].name;
+    one.appendChild(nm);
+    row.appendChild(one);
+    drawBoard(g, key);
+  });
+}
+function wireQ9() {
+  document.querySelectorAll('#q9-opts .mcq-opt').forEach(b => {
+    b.onclick = () => {
+      const st = getQState('q9');
+      if (st.solved) return;
+      st.attempts++;
+      const ok = b.dataset.a === '2';
+      if (ok) {
+        st.solved = true;
+        b.classList.add('correct');
+        document.querySelectorAll('#q9-opts .mcq-opt').forEach(x => x.disabled = true);
+        addScore(10);
+        document.getElementById('fb-q9').textContent = '맞다. 세어 보면 둘 다 같다. (+10)';
+      } else {
+        st.wrongCount++;
+        b.classList.add('wrong');
+        b.disabled = true;
+        document.getElementById('fb-q9').textContent = '눈에는 그렇게 보인다. 세어 보자.';
+        document.getElementById('fb-q9').classList.add('wrong');
+      }
+      saveProgress(false);
+    };
+  });
+}
+
+/* ── 숫자패드 공통 (pat01 선례 그대로) ── */
+function buildPad(padId, dispId, onSubmit) {
+  const pad = document.getElementById(padId);
+  const disp = document.getElementById(dispId);
+  let buf = '';
+  const paint = () => { disp.textContent = buf || '\u00a0'; };
+  pad.innerHTML = '';
+  ['1','2','3','4','5','6','7','8','9','지움','0','확인'].forEach(t => {
+    const b = document.createElement('button');
+    b.className = 'q-key' + (t === '지움' || t === '확인' ? ' fn' : '');
+    b.textContent = t;
+    b.onclick = () => {
+      if (t === '지움') { buf = ''; paint(); return; }
+      if (t === '확인') { if (buf) onSubmit(parseInt(buf, 10), () => { buf = ''; paint(); }); return; }
+      if (buf.length < 2) { buf += t; paint(); }
+    };
+    pad.appendChild(b);
+  });
+  paint();
+}
+
+/* ── 슬9 · 세어서 확인 ── */
+const Q10_KEY = 'C';
+function drawQ10() { drawBoard(document.getElementById('stage-q10'), Q10_KEY); }
+function wireQ10() {
+  buildPad('pad-q10', 'disp-q10', (v, clear) => {
+    const st = getQState('q10');
+    if (st.solved) return;
+    st.attempts++;
+    const fb = document.getElementById('fb-q10');
+    if (v === K.areaOf(Q10_KEY)) {
+      st.solved = true;
+      addScore(10);
+      fb.classList.remove('wrong');
+      fb.textContent = '맞다. 앞의 변신들과 같은 수다. (+10)';
+      document.querySelectorAll('#pad-q10 .q-key').forEach(x => x.disabled = true);
+    } else {
+      st.wrongCount++;
+      fb.classList.add('wrong');
+      fb.textContent = '다시 세어 보자. 한 줄씩 세면 쉽다.';
+      clear();
+    }
+    saveProgress(false);
+  });
+}
+
+/* ── 슬10 · 조각 칸 수 더하기 ── */
+function drawSumChips() {
+  const row = document.getElementById('sum-chips');
+  row.innerHTML = '';
+  D.order.forEach((pk, i) => {
+    if (i) {
+      const plus = document.createElement('span');
+      plus.className = 'rule-chip';
+      plus.textContent = '+';
+      row.appendChild(plus);
+    }
+    const c = document.createElement('span');
+    c.className = 'rule-chip';
+    c.textContent = D.label[pk] + ' ' + K.sizeOf(pk);
+    row.appendChild(c);
+  });
+  const eq = document.createElement('span');
+  eq.className = 'rule-chip';
+  eq.textContent = '= ' + K.sumOf(D.order);
+  row.appendChild(eq);
+  document.getElementById('struct-note').innerHTML =
+    '조각 넷의 칸 수를 더하면 <strong>' + K.sumOf(D.order) +
+    '</strong>이다. 어떤 변신을 세어도 같은 수다.';
+}
+
+/* ── 슬12 · 검증 ── */
+function drawVerify() {
+  const box = document.getElementById('verify-btns');
+  box.innerHTML = '';
+  D.sord.forEach(key => {
+    const b = document.createElement('button');
+    b.className = 'shape-btn';
+    b.dataset.k = key;
+    const nm = document.createElement('span');
+    nm.className = 'shape-name';
+    nm.textContent = D.shapes[key].name;
+    b.appendChild(nm);
+    b.onclick = () => pickVerify(key);
+    box.appendChild(b);
+  });
+  paintVerify();
+}
+function paintVerify() {
+  document.querySelectorAll('#verify-btns .shape-btn')
+    .forEach(b => b.classList.toggle('on', seenVerify.indexOf(b.dataset.k) >= 0));
+  document.getElementById('verify-count').textContent = K.distinct(seenVerify);
+}
+function pickVerify(key) {
+  if (seenVerify.indexOf(key) < 0) seenVerify.push(key);
+  drawBoard(document.getElementById('stage-verify'), key);
+  paintVerify();
+  document.getElementById('msg-verify').textContent =
+    D.shapes[key].name + ' · 칸 수 ' + K.areaOf(key);
+  if (!verifyScored && K.distinct(seenVerify) >= D.sord.length) {
+    verifyScored = true;
+    getQState('verify').solved = true;
+    addScore(15);
+    document.getElementById('msg-verify').textContent = '다섯을 다 확인했다. 전부 같은 수다 (+15)';
+  }
+  saveProgress(false);
+}
+
+/* ── 슬13 · 조각 빼기 ── */
+function drawDrop() {
+  const box = document.getElementById('drop-btns');
+  box.innerHTML = '';
+  D.order.forEach(pk => {
+    const b = document.createElement('button');
+    b.className = 'shape-btn';
+    b.dataset.p = pk;
+    const nm = document.createElement('span');
+    nm.className = 'shape-name';
+    nm.textContent = D.label[pk];
+    b.appendChild(nm);
+    b.onclick = () => {
+      dropPicked = pk;
+      document.querySelectorAll('#drop-btns .shape-btn')
+        .forEach(x => x.classList.toggle('on', x.dataset.p === pk));
+      document.getElementById('msg-drop').textContent =
+        D.label[pk] + '를 빼면 ' + K.withoutPiece(pk) + '칸이 된다';
+      saveProgress(false);
+    };
+    box.appendChild(b);
+  });
+}
+function wireExt1() {
+  document.querySelectorAll('#ext1-opts .mcq-opt').forEach(b => {
+    b.onclick = () => {
+      const st = getQState('ext1');
+      if (st.solved) return;
+      st.attempts++;
+      const ok = b.dataset.a === '1';
+      if (ok) {
+        st.solved = true;
+        b.classList.add('correct');
+        document.querySelectorAll('#ext1-opts .mcq-opt').forEach(x => x.disabled = true);
+        addScore(10);
+        document.getElementById('fb-ext1').classList.remove('wrong');
+        document.getElementById('fb-ext1').textContent =
+          '맞다. 옮기는 것과 빼는 것은 다르다. (+10)';
+      } else {
+        st.wrongCount++;
+        b.classList.add('wrong');
+        b.disabled = true;
+        document.getElementById('fb-ext1').classList.add('wrong');
+        document.getElementById('fb-ext1').textContent = '조각을 하나 눌러 수를 보고 오자.';
+      }
+      saveProgress(false);
+    };
+  });
+}
+
+/* ── 슬14 · 조각 가르기 ── */
+const SPLIT_PIECE = 'O4', SPLIT_A = 2;
+function drawSplit() {
+  const row = document.getElementById('split-chips');
+  row.innerHTML = '';
+  const before = document.createElement('span');
+  before.className = 'rule-chip';
+  before.textContent = D.label[SPLIT_PIECE] + ' ' + K.sizeOf(SPLIT_PIECE) + '칸';
+  row.appendChild(before);
+  const ar = document.createElement('span');
+  ar.className = 'rule-chip';
+  ar.textContent = '→';
+  row.appendChild(ar);
+  const a = document.createElement('span');
+  a.className = 'rule-chip';
+  a.textContent = SPLIT_A + '칸';
+  row.appendChild(a);
+  const b = document.createElement('span');
+  b.className = 'rule-chip';
+  b.textContent = (K.sizeOf(SPLIT_PIECE) - SPLIT_A) + '칸';
+  row.appendChild(b);
+}
+function wireExt2() {
+  buildPad('pad-ext2', 'disp-ext2', (v, clear) => {
+    const st = getQState('ext2');
+    if (st.solved) return;
+    st.attempts++;
+    const fb = document.getElementById('fb-ext2');
+    if (v === K.splitSum(SPLIT_PIECE, SPLIT_A)) {
+      st.solved = true;
+      addScore(10);
+      fb.classList.remove('wrong');
+      fb.textContent = '맞다. 자르기는 칸을 없애지 않는다. (+10)';
+      document.querySelectorAll('#pad-ext2 .q-key').forEach(x => x.disabled = true);
+    } else {
+      st.wrongCount++;
+      fb.classList.add('wrong');
+      fb.textContent = '가른 두 조각을 다 더해 보자.';
+      clear();
+    }
+    saveProgress(false);
+  });
+}
+
+/* ── 슬16 · 내 조각 묶음 ── */
+function drawMyPieces() {
+  const list = document.getElementById('my-pieces');
+  list.innerHTML = '';
+  D.order.forEach(pk => {
+    const it = document.createElement('button');
+    it.className = 'pick-item';
+    it.dataset.p = pk;
+    it.innerHTML = D.label[pk] + ' <span class="tag">' + K.sizeOf(pk) + '칸</span>';
+    it.onclick = () => {
+      const i = myPieces.indexOf(pk);
+      if (i >= 0) myPieces.splice(i, 1); else myPieces.push(pk);
+      it.classList.toggle('on', myPieces.indexOf(pk) >= 0);
+      document.getElementById('my-sum').textContent = K.sumOf(myPieces);
+      if (!create1Scored && myPieces.length > 3) {
+        create1Scored = true;
+        getQState('create1').solved = true;
+        addScore(10);
+        document.getElementById('fb-create1').textContent = '내 묶음이 만들어졌다. (+10)';
+      }
+      saveProgress(false);
+    };
+    list.appendChild(it);
+  });
+}
+function wireCreate2() {
+  document.querySelectorAll('#create2-opts .mcq-opt').forEach(b => {
+    b.onclick = () => {
+      const st = getQState('create2');
+      if (st.solved) return;
+      st.attempts++;
+      const ok = b.dataset.a === '1';
+      if (ok) {
+        st.solved = true;
+        b.classList.add('correct');
+        document.querySelectorAll('#create2-opts .mcq-opt').forEach(x => x.disabled = true);
+        addScore(10);
+        document.getElementById('fb-create2').classList.remove('wrong');
+        document.getElementById('fb-create2').textContent = '내 변신소 규칙이 정해졌다. (+10)';
+      } else {
+        st.wrongCount++;
+        b.classList.add('wrong');
+        b.disabled = true;
+        document.getElementById('fb-create2').classList.add('wrong');
+        document.getElementById('fb-create2').textContent = '오늘 안 변한 것이 무엇이었나?';
+      }
+      saveProgress(false);
+    };
+  });
+}
+
+/* ── 슬18 · 연구 카드 ── */
+function renderAgentCard() {
+  const el = document.getElementById('agent-card');
+  const mine = myPieces.length ? myPieces.map(p => D.label[p]).join(' · ') : '아직 없다';
+  el.innerHTML =
+    '<div class="dc-title">칠교 연구 기록</div>' +
+    '<div class="dc-row"><span>본 변신</span><b>' + K.distinct(seenExplore.concat(seenVerify)) + '가지</b></div>' +
+    '<div class="dc-row"><span>변신마다 칸 수</span><b>' + K.areaOf(D.sord[0]) + '</b></div>' +
+    '<div class="dc-row"><span>내 조각 묶음</span><b>' + mine + '</b></div>' +
+    '<div class="dc-row"><span>내 묶음 칸 수</span><b>' + K.sumOf(myPieces) + '</b></div>';
+}
+
+/* ── 첫 그리기 ── */
+drawPieces();
+drawExplore();
+wireConj();
+drawIllusion();
+wireQ9();
+drawQ10();
+wireQ10();
+drawSumChips();
+drawVerify();
+drawDrop();
+wireExt1();
+drawSplit();
+wireExt2();
+drawMyPieces();
+wireCreate2();
+
+/* ═══════════ 초기화 ═══════════ */
+(function init() {
+  const dots = document.getElementById('dots');
+  for (let i = 0; i < TOTAL; i++) {
+    const d = document.createElement('span');
+    d.className = 'ka-dot';
+    d.addEventListener('click', () => { cur = i; updateUI(); });
+    dots.appendChild(d);
+  }
+  updateUI();
+})();
+
+</script>
+</body>
+</html>
