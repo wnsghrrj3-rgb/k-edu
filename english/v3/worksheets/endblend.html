@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<!-- K-edu 영어 v3 활동지 · Lv2 #8 끝블렌드 — lrblend.html 판형 변형, P트랙 파랑
+     ★이 칸의 원리: 같은 덩어리가 자리만 바꿔 온다. st 는 stop 에선 앞, best 에선 뒤다.
+       그래서 ③ 갈라 담기의 칩을 「덩어리」가 아니라 「단어」로 준다 —
+       덩어리로 주면 st 가 양쪽에 다 들어가 답이 서지 않는다.
+     ★오류 정의: 끝소리 하나만 내고 멈춤(pink → 「핀」). 최소대립 앞말은 전부 Lv1 기지.
+     ★bet 는 그림 근거가 약해 소리 대조 전용 — 그림 잇기에 넣지 않는다(#5 top·nap 계승).
+     ★pink 는 색 자체라 색 칩으로, nest 는 CSS 도형으로 그린다(최신 이모지 회피).
+     재료 일치: 08-1~08-4 에서 편 소리(h·a·n·d·t·e·b·s·j·u·m·p·i·k)와
+     단어(hand·tent·best·jump·pink / sand·nest / pin·ten·bet / stop·clap·swim)만 사용 -->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page { size: A4; margin: 14mm 14mm 12mm 14mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans CJK KR', sans-serif; color: #1f2430; font-size: 12px; line-height: 1.5; }
+  .topbar { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #185fa5; padding-bottom: 6px; }
+  .brand { font-size: 13px; font-weight: 700; color: #10406f; }
+  .brand .lv { background: #185fa5; color: #fff; padding: 2px 9px; border-radius: 20px; font-size: 11px; margin-left: 6px; }
+  .namebox { font-size: 11px; color: #5f5e5a; }
+  .namebox span { display: inline-block; border-bottom: 1px solid #b4b2a9; width: 70px; margin: 0 4px; }
+
+  .seed { margin-top: 11px; background: #e6f1fb; border: 2px solid #185fa5; border-radius: 12px; padding: 10px 14px; display: flex; align-items: center; gap: 12px; }
+  .seed .star { font-size: 25px; color: #ef9f27; line-height: 1; }
+  .seed .label { font-size: 10px; color: #10406f; font-weight: 700; letter-spacing: 1px; }
+  .seed .main { font-size: 17px; font-weight: 800; color: #0a2942; }
+  .seed .main b { color: #185fa5; }
+
+  .keypoint { margin-top: 9px; background: #faeeda; border-left: 6px solid #ef9f27; border-radius: 0 8px 8px 0; padding: 8px 13px; font-size: 12.5px; }
+  .keypoint .k { color: #854f0b; font-weight: 800; }
+  .keypoint .big { font-size: 17px; font-weight: 800; color: #185fa5; }
+
+  /* 상단 고정 — 오늘의 카드 5장 */
+  .board { margin-top: 10px; border: 1.5px solid #b9d3ec; border-radius: 10px; padding: 8px; background: #f7fbff; }
+  .blabel { font-size: 10px; color: #10406f; font-weight: 700; text-align: center; margin-bottom: 4px; }
+  .cardrow { display: flex; gap: 7px; justify-content: center; }
+  .cl { border: 2.5px solid #185fa5; border-radius: 10px; background: #fff; padding: 5px 9px 7px; text-align: center; min-width: 88px; }
+  .clpair { display: inline-flex; gap: 3px; position: relative; padding-bottom: 6px; }
+  .clp { border: 2px solid #185fa5; background: #e6f1fb; color: #185fa5; border-radius: 5px; padding: 0 6px; font-size: 19px; font-weight: 800; }
+  .clbridge { position: absolute; left: 5px; right: 5px; bottom: 0; height: 5px; border: 2.5px solid #185fa5; border-top: 0; border-radius: 0 0 5px 5px; opacity: .55; }
+  .cl .k { font-size: 10px; color: #10406f; font-weight: 700; margin-top: 2px; }
+  .cl .w { font-size: 9px; color: #888780; }
+  .tongue { text-align: center; font-size: 10.5px; color: #5f5e5a; margin-top: 5px; }
+  .tongue b { color: #185fa5; }
+
+  /* 앞↔뒤 대칭 안내 */
+  .mixnote { margin-top: 8px; border: 2px dashed #ef9f27; border-radius: 9px; background: #fffaf0; padding: 6px 10px; display: flex; align-items: center; justify-content: center; gap: 12px; }
+  .symw { font-size: 20px; font-weight: 800; color: #1f2430; letter-spacing: 1px; }
+  .symw .tie { color: #185fa5; border-bottom: 3px solid #185fa5; }
+  .mixnote .ar { font-size: 15px; color: #ef9f27; font-weight: 800; }
+  .mixnote .t { font-size: 11px; color: #5f5e5a; }
+  .mixnote .t b { color: #9c6b0b; }
+
+  h2.q { margin-top: 11px; font-size: 13px; color: #10406f; display: flex; align-items: center; gap: 7px; }
+  h2.q .n { background: #10406f; color: #fff; width: 19px; height: 19px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; }
+  h2.q .sub { font-weight: 400; font-size: 10px; color: #888780; }
+
+  /* ① 끝에 붙여 읽기 */
+  .addrow { display: flex; gap: 10px; margin-top: 7px; }
+  .addcard { flex: 1; border: 1.5px solid #d3d1c7; border-radius: 10px; padding: 7px 6px; text-align: center; }
+  .addcard .src { font-size: 22px; font-weight: 800; color: #185fa5; letter-spacing: 2px; }
+  .addcard .ko { font-size: 10px; color: #888780; }
+  .addcard .arrow { font-size: 11px; color: #888780; margin: 2px 0; }
+  .addcard .dst { font-size: 22px; font-weight: 800; letter-spacing: 2px; }
+  .addcard .blank { display: inline-block; width: 24px; border-bottom: 3px solid #185fa5; color: transparent; }
+  .addcard .fing { font-size: 14px; margin-top: 2px; letter-spacing: -2px; }
+
+  /* ② 그림 잇기 */
+  .match { display: flex; gap: 14px; margin-top: 7px; align-items: flex-start; }
+  .mcol { flex: 1; }
+  .mitem { border: 1.5px solid #d3d1c7; border-radius: 9px; padding: 5px 8px; margin-bottom: 5px; display: flex; align-items: center; justify-content: space-between; min-height: 34px; }
+  .mitem .w { font-size: 20px; font-weight: 800; color: #185fa5; letter-spacing: 1px; }
+  .mitem .w u { text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 2.5px; }
+  .mitem .dot { width: 9px; height: 9px; border: 2px solid #185fa5; border-radius: 50%; flex: none; }
+  .mitem .pic { font-size: 24px; line-height: 1; }
+  /* pink = 색 칩 · nest = 도형 (최신 이모지는 인쇄·기기에서 갈린다) */
+  .sw { display: inline-block; width: 24px; height: 24px; border-radius: 6px; border: 2px solid rgba(0,0,0,.15); }
+  .sw.pink { background: #F49AC1; }
+  .nst { position: relative; display: inline-block; width: 30px; height: 24px; }
+  .nst i { position: absolute; display: block; }
+  .nst .bw { left: 0; bottom: 0; width: 30px; height: 13px; background: #A9793F; border-radius: 0 0 15px 15px; }
+  .nst .eg { width: 8px; height: 10px; background: #F4EADA; border: 1px solid #ccc0aa; border-radius: 50% 50% 46% 46%; }
+  .nst .e1 { left: 3px; bottom: 8px; }
+  .nst .e2 { left: 11px; bottom: 11px; }
+  .nst .e3 { left: 19px; bottom: 8px; }
+
+  /* ③ 앞 상자 / 뒤 상자 */
+  .bins { display: flex; gap: 12px; margin-top: 7px; }
+  .binbox { flex: 1; border: 2px dashed #b4b2a9; border-radius: 10px; padding: 7px; min-height: 54px; }
+  .binbox .bt { font-size: 11px; font-weight: 800; text-align: center; margin-bottom: 3px; color: #10406f; }
+  .pool { display: flex; gap: 5px; justify-content: center; flex-wrap: wrap; margin-top: 6px; }
+  .chip { border: 2px solid #888780; border-radius: 8px; background: #fff; padding: 2px 10px; font-size: 17px; font-weight: 800; color: #5f5e5a; }
+
+  .recap { margin-top: 10px; background: #0a2942; color: #e6f1fb; border-radius: 10px; padding: 9px 14px; text-align: center; font-size: 13.5px; }
+  .recap b { color: #fac775; }
+
+  .parent { margin-top: 8px; border-top: 1px dashed #b4b2a9; padding-top: 6px; font-size: 9.5px; color: #888780; line-height: 1.45; }
+  .parent b { color: #5f5e5a; }
+</style>
+  <script src="/kedu_gate.js"></script>
+<script src="/kedu_boxbar.js"></script>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">K-edu 영어 <span class="lv">Lv2 · 파닉스 #8</span></div>
+    <div class="namebox">이름 <span></span> 날짜 <span></span></div>
+  </div>
+
+  <div class="seed">
+    <div class="star">★</div>
+    <div>
+      <div class="label">오늘 진짜 남길 단 하나</div>
+      <div class="main"><b>끝소리를 끝까지</b> 듣는다.</div>
+    </div>
+  </div>
+
+  <div class="keypoint">
+    <span class="k">★ 핵심!</span> 오늘은 새 방법을 배우는 게 아니라 <b>덩어리의 자리가 바뀝니다</b> — 앞에 있던 것이 <b>뒤로</b> 옵니다.
+    <span class="big">nd · nt · st · mp · nk</span> 는 전부 <b>맨 뒤</b>에 오고, <b>소리는 둘</b>입니다.
+    끝소리를 <b>하나만 내고 멈추면</b> 다른 단어가 돼요.
+  </div>
+
+  <div class="board">
+    <div class="blabel">오늘의 카드 다섯 장 — 아래 <b>이음줄</b>은 「칸이 둘」이라는 표시예요</div>
+    <div class="cardrow">
+      <div class="cl"><div class="clpair"><span class="clp">n</span><span class="clp">d</span><span class="clbridge"></span></div><div class="k">/느/ + /드/</div><div class="w">hand · sand</div></div>
+      <div class="cl"><div class="clpair"><span class="clp">n</span><span class="clp">t</span><span class="clbridge"></span></div><div class="k">/느/ + /트/</div><div class="w">tent</div></div>
+      <div class="cl"><div class="clpair"><span class="clp">s</span><span class="clp">t</span><span class="clbridge"></span></div><div class="k">/스/ + /트/</div><div class="w">best · nest</div></div>
+      <div class="cl"><div class="clpair"><span class="clp">m</span><span class="clp">p</span><span class="clbridge"></span></div><div class="k">/므/ + /프/</div><div class="w">jump</div></div>
+      <div class="cl"><div class="clpair"><span class="clp">n</span><span class="clp">k</span><span class="clbridge"></span></div><div class="k">/느/ + /크/</div><div class="w">pink</div></div>
+    </div>
+    <div class="tongue">☝️ 끝소리 <b>1개</b> &nbsp;·&nbsp; ✌️ 끝소리 <b>2개</b> — 읽기 전에 <b>밑줄 글자 수</b>를 먼저 세어요</div>
+  </div>
+
+  <div class="mixnote">
+    <div class="symw"><span class="tie">st</span>op</div>
+    <div class="ar">↔</div>
+    <div class="symw">be<span class="tie">st</span></div>
+    <div class="t">같은 <b>st</b> 인데 하나는 <b>앞</b>, 하나는 <b>뒤</b> — 자리만 반대예요!</div>
+  </div>
+
+  <h2 class="q"><span class="n">1</span> 끝에 글자를 <b>하나 더</b> 써 넣고, 손가락을 세며 읽어요 <span class="sub">소리가 하나 늘어납니다</span></h2>
+  <div class="addrow">
+    <div class="addcard">
+      <div class="src">pin</div><div class="ko">핀 📌</div>
+      <div class="arrow">▼ 끝에 /크/ 를 붙이면</div>
+      <div class="dst">pin<span class="blank"></span></div><div class="ko">분홍 <span class="sw pink"></span></div>
+      <div class="fing">☝️ → ✌️</div>
+    </div>
+    <div class="addcard">
+      <div class="src">ten</div><div class="ko">열 🔟</div>
+      <div class="arrow">▼ 끝에 /트/ 를 붙이면</div>
+      <div class="dst">ten<span class="blank"></span></div><div class="ko">텐트 ⛺</div>
+      <div class="fing">☝️ → ✌️</div>
+    </div>
+  </div>
+
+  <h2 class="q"><span class="n">2</span> 소리 내어 읽고 알맞은 그림과 <b>선으로 이어요</b> <span class="sub">끝까지 읽고 나서 고릅니다</span></h2>
+  <div class="match">
+    <div class="mcol">
+      <div class="mitem"><span class="w">ha<u>nd</u></span><span class="dot"></span></div>
+      <div class="mitem"><span class="w">te<u>nt</u></span><span class="dot"></span></div>
+      <div class="mitem"><span class="w">be<u>st</u></span><span class="dot"></span></div>
+      <div class="mitem"><span class="w">pi<u>nk</u></span><span class="dot"></span></div>
+      <div class="mitem"><span class="w">sa<u>nd</u></span><span class="dot"></span></div>
+      <div class="mitem"><span class="w">ne<u>st</u></span><span class="dot"></span></div>
+    </div>
+    <div class="mcol">
+      <div class="mitem"><span class="dot"></span><span class="pic">🏜️</span></div>
+      <div class="mitem"><span class="dot"></span><span class="pic">🥇</span></div>
+      <div class="mitem"><span class="dot"></span><span class="pic"><span class="nst"><i class="bw"></i><i class="eg e1"></i><i class="eg e2"></i><i class="eg e3"></i></span></span></div>
+      <div class="mitem"><span class="dot"></span><span class="pic">✋</span></div>
+      <div class="mitem"><span class="dot"></span><span class="pic"><span class="sw pink"></span></span></div>
+      <div class="mitem"><span class="dot"></span><span class="pic">⛺</span></div>
+    </div>
+  </div>
+
+  <h2 class="q"><span class="n">3</span> 덩어리가 <b>앞</b>에 있는지 <b>뒤</b>에 있는지 갈라 담아요 <span class="sub">아래 단어를 알맞은 상자에 옮겨 써요</span></h2>
+  <div class="bins">
+    <div class="binbox"><div class="bt">덩어리가 <b>맨 앞</b>에 오는 단어</div></div>
+    <div class="binbox"><div class="bt">덩어리가 <b>맨 뒤</b>에 오는 단어</div></div>
+  </div>
+  <div class="pool">
+    <div class="chip">stop</div><div class="chip">hand</div><div class="chip">clap</div>
+    <div class="chip">pink</div><div class="chip">swim</div><div class="chip">best</div>
+  </div>
+
+  <div class="recap">★ 오늘 기억해요 — 덩어리는 <b>앞에도 뒤에도</b> 올 수 있어요. 소리는 언제나 <b>둘</b>! 🎉</div>
+
+  <div class="parent">
+    <b>학습 안내</b> · 이 활동지의 목표는 <b>끝자리 자음군을 두 소리로 끝까지 내어 해독</b>하는 것입니다.
+    지난 두 칸에서 배운 <b>방법은 그대로</b>이고 오늘은 <b>덩어리의 자리만</b> 앞에서 뒤로 옮겼습니다.
+    아이가 "저번 거랑 똑같은 st 네" 하고 알아채면 크게 반겨 주세요 — 그게 이 칸에서 가장 중요한 발견입니다.
+    이 구간의 오류는 하나입니다. <b>끝소리를 하나만 내고 멈추는 것</b> — pink 를 「핀」, tent 를 「텐」, best 를 「벳」 으로 읽습니다.
+    <b>-nd · -nt · -nk</b> 세 가지가 <b>/느/</b> 로 시작하는데, 코로 나오는 소리라 특히 잘 흘립니다.
+    고치는 방법은 하나뿐입니다 — <b>읽기 전에 밑줄 안 글자 수를 먼저 세게 하고</b>, 손가락을 세워 두고 <b>하나씩 접으며</b> 읽게 하세요.
+    <b>jump</b> 는 지난 칸에서 <b>통째로</b> 담아 두었던 단어입니다. 오늘 처음으로 j + u + [mp] 로 <b>쪼개어 읽을 수 있게</b> 됐어요 —
+    "외운 게 아니라 읽을 수 있는 단어였다"는 것을 꼭 짚어 주세요.
+    <b>pink</b> 는 색 자체라 색 칩으로, <b>nest</b> 는 그림으로 담기 어려워 둥지 도형으로 표기했습니다.
+    정답 — ① pink · tent / ② hand–✋ · tent–⛺ · best–🥇 · pink–분홍 칩 · sand–🏜️ · nest–둥지 /
+    ③ 앞 상자 = <b>stop · clap · swim</b> · 뒤 상자 = <b>hand · pink · best</b>
+  </div>
+<script src="/kedu_back.js"></script>
+</body>
+</html>
