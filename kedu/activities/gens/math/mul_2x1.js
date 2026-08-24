@@ -162,6 +162,7 @@
             }
             return {
               a: q.a, m: q.m, t: q.t, o: q.o, est: true, round: ra,
+              shown: [q.a, q.m, est],
               prompt: q.a + ' × ' + KO.j(q.m, '은/는') + ' 약 얼마쯤일까요?',
               answer: String(est), options: eopts, type: 'estimate',
               explain: KO.j(q.a, '은/는') + ' 약 ' + KO.ida(ra) + '. ' + ra + ' × ' + q.m + ' = ' + est +
@@ -171,6 +172,7 @@
 
           return {
             a: q.a, m: q.m, t: q.t, o: q.o, est: false,
+            shown: [q.a, q.m, q.ans],   // §6-9-7 판에 보이는 수 — "백의 자리가 생겼어요"는 답이 세 자리일 때만 참
             carry: { ones: q.c1, tens: q.c2 },
             part: { tens: q.t * 10 * q.m, ones: q.o * q.m },
             prompt: q.a + ' × ' + q.m + ' = ?',
