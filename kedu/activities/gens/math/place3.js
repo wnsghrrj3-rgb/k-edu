@@ -5,14 +5,19 @@
  *   zero_trap이 약하면 "빈 자리를 세지 않는다"는 오개념. 305를 35로 읽는 아이가 여기서 걸린다.
  */
 (function (root, factory) {
-  var g = factory();
+  var g = factory(root);
   if (typeof module === 'object' && module.exports) module.exports = g;
   root.GENS = root.GENS || {};
   root.GENS['place3'] = g;
-}(typeof self !== 'undefined' ? self : this, function () {
+}(typeof self !== 'undefined' ? self : this, function (root) {
   'use strict';
+  /* §6-10 4·5항 — 조사 판정은 core/ko.js 한 곳에서. 못 찾으면 소리 내어 실패한다. */
+  var KO = (typeof module === 'object' && module.exports)
+    ? require('../../core/ko.js')
+    : root.KEDU_KO;
+  if (!KO) throw new Error('[gen] core/ko.js 가 먼저 로드돼야 합니다 (설계 §6-10 5항)');
   function ri(rng, lo, hi) { return lo + Math.floor(rng() * (hi - lo + 1)); }
-  var KO = { h: '백의 자리', t: '십의 자리', o: '일의 자리' };
+  var SLOT_KO = { h: '백의 자리', t: '십의 자리', o: '일의 자리' };
 
   return {
     id: 'place3',
@@ -37,13 +42,13 @@
           var answer, prompt, explain;
           if (kind === 'digit') {                 // 그 자리의 숫자는?
             answer = String(digit);
-            prompt = num + '의 ' + KO[slot] + ' 숫자는?';
-            explain = num + '의 ' + KO[slot] + ' 숫자는 ' + digit + '이에요';
+            prompt = num + '의 ' + SLOT_KO[slot] + ' 숫자는?';
+            explain = num + '의 ' + SLOT_KO[slot] + ' 숫자는 ' + KO.ida(digit);
           } else {                                 // 그 자리가 나타내는 값은?
             var val = digit * (slot === 'h' ? 100 : (slot === 't' ? 10 : 1));
             answer = String(val);
-            prompt = num + '의 ' + KO[slot] + '는 얼마를 나타낼까요?';
-            explain = num + '의 ' + KO[slot] + ' 숫자 ' + digit + '은(는) ' + val + '을(를) 나타내요';
+            prompt = num + '의 ' + SLOT_KO[slot] + '는 얼마를 나타낼까요?';
+            explain = num + '의 ' + SLOT_KO[slot] + ' 숫자 ' + KO.j(digit, '은/는') + ' ' + KO.j(val, '을/를') + ' 나타내요';
           }
           var type = zeroTrap ? 'zero_trap' : (slot === 'h' ? 'hundreds' : (slot === 't' ? 'tens' : 'ones'));
 

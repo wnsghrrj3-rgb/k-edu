@@ -18,12 +18,17 @@
  *   아이가 자기 실수와 똑같은 값을 집으면 그건 오답이 아니라 진단 정보다.
  */
 (function (root, factory) {
-  var g = factory();
+  var g = factory(root);
   if (typeof module === 'object' && module.exports) module.exports = g;
   root.GENS = root.GENS || {};
   root.GENS['mul_2x1'] = g;
-}(typeof self !== 'undefined' ? self : this, function () {
+}(typeof self !== 'undefined' ? self : this, function (root) {
   'use strict';
+  /* §6-10 4·5항 — 조사 판정은 core/ko.js 한 곳에서. 못 찾으면 소리 내어 실패한다. */
+  var KO = (typeof module === 'object' && module.exports)
+    ? require('../../core/ko.js')
+    : root.KEDU_KO;
+  if (!KO) throw new Error('[gen] core/ko.js 가 먼저 로드돼야 합니다 (설계 §6-10 5항)');
 
   function ri(rng, lo, hi) { return lo + Math.floor(rng() * (hi - lo + 1)); }
   function pick(rng, arr) { return arr[Math.floor(rng() * arr.length)]; }
@@ -106,18 +111,18 @@
                ' → ' + q.a + ')가 되면 답도 10배예요. 그래서 ' + q.a + ' × ' + q.m + ' = ' + q.ans + '.';
       case 'plain':
         return tens + ' × ' + q.m + ' = ' + partT + ', ' + q.o + ' × ' + q.m + ' = ' + partO +
-               '. 나누어 곱한 뒤 더하면 ' + q.ans + '이에요.';
+               '. 나누어 곱한 뒤 더하면 ' + KO.ida(q.ans) + '.';
       case 'carry_tens':
         return '십의 자리 곱 ' + tens + ' × ' + q.m + ' = ' + partT + ' — 백의 자리가 생겼어요! ' +
-               '십 모형 ' + (q.t * q.m) + '개 중 10개를 백 모형 1개로 바꾸는 거예요. ' + partO + '을 더하면 ' + q.ans + '.';
+               '십 모형 ' + (q.t * q.m) + '개 중 10개를 백 모형 1개로 바꾸는 거예요. ' + KO.j(partO, '을/를') + ' 더하면 ' + q.ans + '.';
       case 'carry_ones':
         return '일의 자리 곱 ' + q.o + ' × ' + q.m + ' = ' + partO + ' → ' + (partO % 10) +
-               '을 쓰고 ' + q.c1 + '을 올려요. 십의 자리 ' + q.t + ' × ' + q.m + ' = ' + (q.t * q.m) +
-               '에 **올린 ' + q.c1 + '을 꼭 더해야** ' + q.ans + '이 돼요.';
+               KO.only(partO % 10, '을/를') + ' 쓰고 ' + KO.j(q.c1, '을/를') + ' 올려요. 십의 자리 ' + q.t + ' × ' + q.m + ' = ' + (q.t * q.m) +
+               '에 **올린 ' + KO.j(q.c1, '을/를') + ' 꼭 더해야** ' + KO.j(q.ans, '이/가') + ' 돼요.';
       case 'carry_both':
-        return '올림이 두 번! 일의 자리 ' + q.o + ' × ' + q.m + ' = ' + partO + ' → ' + q.c1 +
-               '을 올리고, 십의 자리 ' + q.t + ' × ' + q.m + ' = ' + (q.t * q.m) + '에 ' + q.c1 +
-               '을 더해 ' + (q.t * q.m + q.c1) + ' → 다시 ' + q.c2 + '을 백의 자리로 올려요. 답은 ' + q.ans + '.';
+        return '올림이 두 번! 일의 자리 ' + q.o + ' × ' + q.m + ' = ' + partO + ' → ' + KO.j(q.c1, '을/를') +
+               ' 올리고, 십의 자리 ' + q.t + ' × ' + q.m + ' = ' + (q.t * q.m) + '에 ' + KO.j(q.c1, '을/를') +
+               ' 더해 ' + (q.t * q.m + q.c1) + ' → 다시 ' + KO.j(q.c2, '을/를') + ' 백의 자리로 올려요. 답은 ' + q.ans + '.';
     }
     return '';
   }
@@ -157,10 +162,10 @@
             }
             return {
               a: q.a, m: q.m, t: q.t, o: q.o, est: true, round: ra,
-              prompt: q.a + ' × ' + q.m + '은 약 얼마쯤일까요?',
+              prompt: q.a + ' × ' + KO.j(q.m, '은/는') + ' 약 얼마쯤일까요?',
               answer: String(est), options: eopts, type: 'estimate',
-              explain: q.a + '은 약 ' + ra + '이에요. ' + ra + ' × ' + q.m + ' = ' + est +
-                       '이니까 약 ' + est + '쯤! 어림은 계산하기 전에 답이 몇백쯤인지 미리 아는 거예요.'
+              explain: KO.j(q.a, '은/는') + ' 약 ' + KO.ida(ra) + '. ' + ra + ' × ' + q.m + ' = ' + est +
+                       KO.only(est, '이니까/니까') + ' 약 ' + est + '쯤! 어림은 계산하기 전에 답이 몇백쯤인지 미리 아는 거예요.'
             };
           }
 

@@ -12,12 +12,17 @@
  *   뺀 값. 아이가 자기 실수와 똑같은 값을 집으면 그건 오답이 아니라 진단 정보다.
  */
 (function (root, factory) {
-  var g = factory();
+  var g = factory(root);
   if (typeof module === 'object' && module.exports) module.exports = g;
   root.GENS = root.GENS || {};
   root.GENS['add_sub_3digit'] = g;
-}(typeof self !== 'undefined' ? self : this, function () {
+}(typeof self !== 'undefined' ? self : this, function (root) {
   'use strict';
+  /* §6-10 4·5항 — 조사 판정은 core/ko.js 한 곳에서. 못 찾으면 소리 내어 실패한다. */
+  var KO = (typeof module === 'object' && module.exports)
+    ? require('../../core/ko.js')
+    : root.KEDU_KO;
+  if (!KO) throw new Error('[gen] core/ko.js 가 먼저 로드돼야 합니다 (설계 §6-10 5항)');
 
   function ri(rng, lo, hi) { return lo + Math.floor(rng() * (hi - lo + 1)); }
   function digits(n) { return [Math.floor(n / 100) % 10, Math.floor(n / 10) % 10, n % 10]; } // 백,십,일
@@ -157,7 +162,7 @@
                   ' — 10개를 백 모형 1개로 바꿔요. 올린 1을 백의 자리에 꼭 더해요!';
             } else {
               explain = '받아올림이 두 번! 일의 자리에서 1을 올리고, 십의 자리에서 또 1을 올려요. ' +
-                        '올린 1을 두 번 다 더해야 ' + ans + '이 돼요.';
+                        '올린 1을 두 번 다 더해야 ' + KO.j(ans, '이/가') + ' 돼요.';
             }
           } else {
             var wantZero = (want === 2) && rng() < 0.4;
@@ -170,9 +175,9 @@
               explain = '각 자리의 수끼리 빼면 돼요. ' + q.a + ' − ' + q.b + ' = ' + ans;
             } else if (type === 'borrow1') {
               explain = q.br0
-                ? '일의 자리: ' + A[2] + '에서 ' + B[2] + '을 뺄 수 없어요. 십 모형 1개를 일 모형 10개로 바꿔요. ' +
+                ? '일의 자리: ' + A[2] + '에서 ' + KO.j(B[2], '을/를') + ' 뺄 수 없어요. 십 모형 1개를 일 모형 10개로 바꿔요. ' +
                   '십의 자리는 1 줄어든다는 걸 잊지 마세요!'
-                : '십의 자리: ' + A[1] + '에서 ' + B[1] + '을 뺄 수 없어요. 백 모형 1개를 십 모형 10개로 바꿔요. ' +
+                : '십의 자리: ' + A[1] + '에서 ' + KO.j(B[1], '을/를') + ' 뺄 수 없어요. 백 모형 1개를 십 모형 10개로 바꿔요. ' +
                   '백의 자리는 1 줄어들어요!';
             } else if (type === 'zero_borrow') {
               explain = '십의 자리가 0이에요! 빌려줄 게 없으니 백의 자리에서 십의 자리로 먼저 빌려와요. ' +
@@ -200,10 +205,10 @@
             }
             return {
               a: q.a, b: q.b, kind: kind, est: true,
-              prompt: q.a + (kind === 'add' ? ' + ' : ' − ') + q.b + '은 약 얼마쯤일까요?',
+              prompt: q.a + (kind === 'add' ? ' + ' : ' − ') + KO.j(q.b, '은/는') + ' 약 얼마쯤일까요?',
               answer: String(est), options: eopts, type: 'estimate',
-              explain: q.a + '은 약 ' + ra + ', ' + q.b + '은 약 ' + rb + '. 그래서 ' +
-                       (kind === 'add' ? '합' : '차') + '은 약 ' + est + '쯤이에요. ' +
+              explain: KO.j(q.a, '은/는') + ' 약 ' + ra + ', ' + KO.j(q.b, '은/는') + ' 약 ' + rb + '. 그래서 ' +
+                       KO.j(kind === 'add' ? '합' : '차', '은/는') + ' 약 ' + est + '쯤이에요. ' +
                        '어림은 계산하기 전에 대강의 값을 미리 알아보는 거예요.'
             };
           }

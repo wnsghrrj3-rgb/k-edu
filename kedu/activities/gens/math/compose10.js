@@ -4,12 +4,17 @@
  * type: pair_small(1~4 짝) · pair_large(6~9 짝) · five(5+5) · split(가르기)
  */
 (function (root, factory) {
-  var g = factory();
+  var g = factory(root);
   if (typeof module === 'object' && module.exports) module.exports = g;
   root.GENS = root.GENS || {};
   root.GENS['compose10'] = g;
-}(typeof self !== 'undefined' ? self : this, function () {
+}(typeof self !== 'undefined' ? self : this, function (root) {
   'use strict';
+  /* §6-10 4·5항 — 조사 판정은 core/ko.js 한 곳에서. 못 찾으면 소리 내어 실패한다. */
+  var KO = (typeof module === 'object' && module.exports)
+    ? require('../../core/ko.js')
+    : root.KEDU_KO;
+  if (!KO) throw new Error('[gen] core/ko.js 가 먼저 로드돼야 합니다 (설계 §6-10 5항)');
   function ri(rng, lo, hi) { return lo + Math.floor(rng() * (hi - lo + 1)); }
 
   function make(kind, rng) {
@@ -19,7 +24,7 @@
       return {
         a: a, b: b, prompt: '10 → ' + a + ' 과 □', answer: String(b),
         type: 'split',
-        explain: '10은 ' + a + '와(과) ' + b + '로 갈라져요. 손가락 ' + a + '개를 접으면 ' + b + '개가 남아요!'
+        explain: '10은 ' + KO.j(a, '와/과') + ' ' + KO.ro(b) + ' 갈라져요. 손가락 ' + a + '개를 접으면 ' + b + '개가 남아요!'
       };
     }
     var need = 10 - a;                            // a와 무엇을 모으면 10?
@@ -28,7 +33,7 @@
       a: a, b: need, prompt: a + ' + □ = 10', answer: String(need),
       type: type,
       explain: a === 5 ? '5와 5를 모으면 10! 한 손씩 짝이에요'
-        : a + '에 ' + need + '을(를) 더하면 10이 돼요. ' + a + '·' + need + '은 10의 단짝!'
+        : a + '에 ' + KO.j(need, '을/를') + ' 더하면 10이 돼요. ' + a + '·' + KO.j(need, '은/는') + ' 10의 단짝!'
     };
   }
 

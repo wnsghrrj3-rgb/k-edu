@@ -5,12 +5,17 @@
  * type: plain(낱개 있음) · exact(딱 떨어짐: 30, 40 …) · teen(10대 수)
  */
 (function (root, factory) {
-  var g = factory();
+  var g = factory(root);
   if (typeof module === 'object' && module.exports) module.exports = g;
   root.GENS = root.GENS || {};
   root.GENS['count_bundle'] = g;
-}(typeof self !== 'undefined' ? self : this, function () {
+}(typeof self !== 'undefined' ? self : this, function (root) {
   'use strict';
+  /* §6-10 4·5항 — 조사 판정은 core/ko.js 한 곳에서. 못 찾으면 소리 내어 실패한다. */
+  var KO = (typeof module === 'object' && module.exports)
+    ? require('../../core/ko.js')
+    : root.KEDU_KO;
+  if (!KO) throw new Error('[gen] core/ko.js 가 먼저 로드돼야 합니다 (설계 §6-10 5항)');
   function ri(rng, lo, hi) { return lo + Math.floor(rng() * (hi - lo + 1)); }
 
   return {
@@ -46,7 +51,7 @@
 
           return {
             total: total, tens: tens, ones: ones,
-            prompt: total + '은 10개씩 몇 묶음, 낱개 몇 개?',
+            prompt: KO.j(total, '은/는') + ' 10개씩 몇 묶음, 낱개 몇 개?',
             answer: answer, options: opts, type: type,
             explain: total + ' = 10개씩 ' + tens + '묶음 하고 낱개 ' + ones + '개예요' +
                      (ones === 0 ? ' (남는 낱개가 없어요!)' : '')

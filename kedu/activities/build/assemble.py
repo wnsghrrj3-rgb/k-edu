@@ -39,7 +39,7 @@ SHELL = """<!doctype html>
 <title>{title} — K✦edu</title>
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
 <!-- 이 파일은 build/assemble.py가 조립했습니다. 직접 수정하지 마세요.
-     원본: src/{aid}.js (+ src/{aid}.css) · core/activity-core.* · core/genre/{engine}.js · {gen_path} -->
+     원본: src/{aid}.js (+ src/{aid}.css) · core/activity-core.* · core/ko.js · core/genre/{engine}.js · {gen_path} -->
 <style>
 {css}
 </style>
@@ -57,6 +57,9 @@ SHELL = """<!doctype html>
 </script>
 <script>
 {core}
+</script>
+<script>
+{ko}
 </script>
 {engine_block}
 {gen_block}
@@ -104,6 +107,7 @@ def build(item: dict) -> Path:
         css=css,
         bridge=read(ROOT / 'core' / 'bridge.js'),
         core=read(ROOT / 'core' / 'activity-core.js'),
+        ko=read(ROOT / 'core' / 'ko.js'),
         engine_block=engine_block,
         gen_block=gen_block,
         src=read(src_js),

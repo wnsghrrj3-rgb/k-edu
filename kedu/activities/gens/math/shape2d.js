@@ -5,12 +5,17 @@
  *   rotated_trap이 약하면 "삼각형은 뾰족한 게 위로 가야 한다"는 방향 고착. 도형은 돌려도 그 도형이다.
  */
 (function (root, factory) {
-  var g = factory();
+  var g = factory(root);
   if (typeof module === 'object' && module.exports) module.exports = g;
   root.GENS = root.GENS || {};
   root.GENS['shape2d'] = g;
-}(typeof self !== 'undefined' ? self : this, function () {
+}(typeof self !== 'undefined' ? self : this, function (root) {
   'use strict';
+  /* §6-10 4·5항 — 조사 판정은 core/ko.js 한 곳에서. 못 찾으면 소리 내어 실패한다. */
+  var KO = (typeof module === 'object' && module.exports)
+    ? require('../../core/ko.js')
+    : root.KEDU_KO;
+  if (!KO) throw new Error('[gen] core/ko.js 가 먼저 로드돼야 합니다 (설계 §6-10 5항)');
   function ri(rng, lo, hi) { return lo + Math.floor(rng() * (hi - lo + 1)); }
   var SHAPES = [
     { k: 'triangle', ko: '삼각형', sides: 3, vtx: 3 },
@@ -43,7 +48,7 @@
           if (kind === 'name') {
             answer = s.k;
             prompt = '이 도형의 이름은?';
-            explain = s.ko + '이에요' + (it.rotated ? ' — 돌아가 있어도 ' + s.ko + '이에요!' : '') +
+            explain = KO.ida(s.ko) + (it.rotated ? ' — 돌아가 있어도 ' + KO.ida(s.ko) + '!' : '') +
               (s.sides ? ' (변 ' + s.sides + '개, 꼭짓점 ' + s.vtx + '개)' : ' (변도 꼭짓점도 없어요)');
             var pool = SHAPES.map(function (x) { return x.k; });
             opts = [answer];
@@ -55,7 +60,7 @@
             var n = (kind === 'sides') ? s.sides : s.vtx;
             answer = String(n);
             prompt = (kind === 'sides') ? '변은 몇 개일까요?' : '꼭짓점은 몇 개일까요?';
-            explain = s.ko + '은(는) ' + (kind === 'sides' ? '변이 ' : '꼭짓점이 ') + n + '개예요' +
+            explain = KO.j(s.ko, '은/는') + ' ' + (kind === 'sides' ? '변이 ' : '꼭짓점이 ') + n + '개예요' +
               (n === 0 ? ' — 원은 곧은 선도 모난 곳도 없어요' : '');
             opts = [answer];
             while (opts.length < 4) {

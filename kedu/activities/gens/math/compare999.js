@@ -5,12 +5,17 @@
  *       · zero_trap(0이 낀 수) · equal
  */
 (function (root, factory) {
-  var g = factory();
+  var g = factory(root);
   if (typeof module === 'object' && module.exports) module.exports = g;
   root.GENS = root.GENS || {};
   root.GENS['compare999'] = g;
-}(typeof self !== 'undefined' ? self : this, function () {
+}(typeof self !== 'undefined' ? self : this, function (root) {
   'use strict';
+  /* §6-10 4·5항 — 조사 판정은 core/ko.js 한 곳에서. 못 찾으면 소리 내어 실패한다. */
+  var KO = (typeof module === 'object' && module.exports)
+    ? require('../../core/ko.js')
+    : root.KEDU_KO;
+  if (!KO) throw new Error('[gen] core/ko.js 가 먼저 로드돼야 합니다 (설계 §6-10 5항)');
   function ri(rng, lo, hi) { return lo + Math.floor(rng() * (hi - lo + 1)); }
 
   return {
@@ -60,7 +65,7 @@
           else if (type === 'hundreds_diff') explain = '백의 자리부터 비교해요: ' + Math.floor(big / 100) + ' > ' + Math.floor(small / 100) + ' — 백의 자리가 크면 더 큰 수!';
           else if (type === 'tens_diff') explain = '백의 자리가 같으니 십의 자리를 봐요: ' + Math.floor(big / 10) % 10 + ' > ' + Math.floor(small / 10) % 10;
           else if (type === 'ones_diff') explain = '백·십이 같으니 일의 자리를 봐요: ' + (big % 10) + ' > ' + (small % 10);
-          else explain = big + '이(가) 더 커요. 0이 있는 자리를 빠뜨리지 말고 자리마다 비교해요!';
+          else explain = KO.j(big, '이/가') + ' 더 커요. 0이 있는 자리를 빠뜨리지 말고 자리마다 비교해요!';
 
           return { a: a, b: b, prompt: a + ' ◯ ' + b, answer: ans, type: type, explain: explain };
         },

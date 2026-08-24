@@ -5,12 +5,17 @@
  *   size_trap이 유독 약하면 "크면 무겁다"는 오개념이 남아 있다는 신호.
  */
 (function (root, factory) {
-  var g = factory();
+  var g = factory(root);
   if (typeof module === 'object' && module.exports) module.exports = g;
   root.GENS = root.GENS || {};
   root.GENS['compare_weight'] = g;
-}(typeof self !== 'undefined' ? self : this, function () {
+}(typeof self !== 'undefined' ? self : this, function (root) {
   'use strict';
+  /* §6-10 4·5항 — 조사 판정은 core/ko.js 한 곳에서. 못 찾으면 소리 내어 실패한다. */
+  var KO = (typeof module === 'object' && module.exports)
+    ? require('../../core/ko.js')
+    : root.KEDU_KO;
+  if (!KO) throw new Error('[gen] core/ko.js 가 먼저 로드돼야 합니다 (설계 §6-10 5항)');
   // { 이름, 아이콘, 무게(g), 보이는 크기(1~5) }
   var THINGS = [
     { n: '지우개', i: '🧽', w: 20, s: 2 }, { n: '연필', i: '✏️', w: 10, s: 2 },
@@ -50,8 +55,8 @@
           var ans = (L.w === R.w) ? 'E' : (L.w > R.w ? 'L' : 'R');
           var heavyOne = (L.w > R.w) ? L : R, lightOne = (L.w > R.w) ? R : L;
           var explain = (type === 'size_trap')
-            ? heavyOne.n + '이(가) 더 무거워요. ' + lightOne.n + '은(는) 커 보여도 가벼워요 — 크다고 무거운 게 아니에요!'
-            : heavyOne.n + '이(가) ' + lightOne.n + '보다 무거워요. 저울이 무거운 쪽으로 내려가요';
+            ? KO.j(heavyOne.n, '이/가') + ' 더 무거워요. ' + KO.j(lightOne.n, '은/는') + ' 커 보여도 가벼워요 — 크다고 무거운 게 아니에요!'
+            : KO.j(heavyOne.n, '이/가') + ' ' + lightOne.n + '보다 무거워요. 저울이 무거운 쪽으로 내려가요';
           return {
             L: L, R: R, prompt: L.n + ' vs ' + R.n, answer: ans, type: type, explain: explain
           };

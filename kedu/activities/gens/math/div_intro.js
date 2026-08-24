@@ -20,12 +20,17 @@
  * 조작 무대(stage)는 화면에 낱개가 다 보여야 하므로 전체 30개 이하로 죈다.
  */
 (function (root, factory) {
-  var g = factory();
+  var g = factory(root);
   if (typeof module === 'object' && module.exports) module.exports = g;
   root.GENS = root.GENS || {};
   root.GENS['div_intro'] = g;
-}(typeof self !== 'undefined' ? self : this, function () {
+}(typeof self !== 'undefined' ? self : this, function (root) {
   'use strict';
+  /* §6-10 4·5항 — 조사 판정은 core/ko.js 한 곳에서. 못 찾으면 소리 내어 실패한다. */
+  var KO = (typeof module === 'object' && module.exports)
+    ? require('../../core/ko.js')
+    : root.KEDU_KO;
+  if (!KO) throw new Error('[gen] core/ko.js 가 먼저 로드돼야 합니다 (설계 §6-10 5항)');
 
   function ri(rng, lo, hi) { return lo + Math.floor(rng() * (hi - lo + 1)); }
   function pick(rng, arr) { return arr[Math.floor(rng() * arr.length)]; }
@@ -84,7 +89,7 @@
     return {
       type: 'equal_share', kind: 'share', item: it,
       total: d.total, plates: plates, each: each,
-      task: it.thing + ' ' + d.total + it.unit + '를 ' + it.dish + ' ' + plates + '개에 똑같이 나눠 담아요',
+      task: it.thing + ' ' + KO.j(d.total + it.unit, '을/를') + ' ' + it.dish + ' ' + plates + '개에 똑같이 나눠 담아요',
       prompt: it.dish + ' 한 개에 몇 ' + it.unit + '씩 담겼나요?',
       answer: String(each),
       options: numOptions(rng, each, plates, d.total),
@@ -100,8 +105,8 @@
     return {
       type: 'grouping', kind: 'group', item: it,
       total: d.total, per: per, groups: groups,
-      task: it.thing + ' ' + d.total + it.unit + '를 ' + per + it.unit + '씩 묶어 덜어내요',
-      prompt: it.dish + '이(가) 몇 개 됐나요?',
+      task: it.thing + ' ' + KO.j(d.total + it.unit, '을/를') + ' ' + per + it.unit + '씩 묶어 덜어내요',
+      prompt: KO.j(it.dish, '이/가') + ' 몇 개 됐나요?',
       answer: String(groups),
       options: numOptions(rng, groups, per, d.total),
       expr: d.total + ' ÷ ' + per + ' = ' + groups,
@@ -114,8 +119,8 @@
     var isShare = rng() < 0.5;
     var d = draw(rng, 72), it = pick(rng, isShare ? SHARE_ITEMS : GROUP_ITEMS);
     var text = isShare
-      ? it.thing + ' ' + d.total + it.unit + '를 ' + it.dish + ' ' + d.per + '개에 똑같이 나눠 담았어요.'
-      : it.thing + ' ' + d.total + it.unit + '를 ' + d.per + it.unit + '씩 ' + it.dish + '에 담았어요.';
+      ? it.thing + ' ' + KO.j(d.total + it.unit, '을/를') + ' ' + it.dish + ' ' + d.per + '개에 똑같이 나눠 담았어요.'
+      : it.thing + ' ' + KO.j(d.total + it.unit, '을/를') + ' ' + d.per + it.unit + '씩 ' + it.dish + '에 담았어요.';
     return {
       type: 'which_div', kind: 'which', item: it,
       total: d.total, per: d.per, quot: d.quot, isShare: isShare,
@@ -126,7 +131,7 @@
       labels: { each: '한 ' + it.dish + '에 담긴 개수 (몇 ' + it.unit + '씩)', groups: it.dish + '의 수 (몇 개)' },
       explain: isShare
         ? '똑같이 나누기예요 — ' + it.dish + ' 수를 알고 있으니, 나눗셈으로 "한 ' + it.dish + '에 몇 ' + it.unit + '씩"을 알 수 있어요.'
-        : '묶어 덜어내기예요 — 한 번에 담는 개수를 알고 있으니, 나눗셈으로 "' + it.dish + '이(가) 몇 개"인지 알 수 있어요.'
+        : '묶어 덜어내기예요 — 한 번에 담는 개수를 알고 있으니, 나눗셈으로 "' + KO.j(it.dish, '이/가') + ' 몇 개"인지 알 수 있어요.'
     };
   }
 
@@ -150,7 +155,7 @@
       total: d.total, per: d.per, quot: d.quot,
       task: text, prompt: '알맞은 나눗셈식은?',
       answer: ans, options: shuffle(rng, opts),
-      explain: '전체 ' + d.total + '을 ' + d.per + '(으)로 나눠요 — 나눗셈식은 언제나 「전체 ÷ 나누는 수」. ' + ans + '.'
+      explain: '전체 ' + KO.j(d.total, '을/를') + ' ' + KO.ro(d.per) + ' 나눠요 — 나눗셈식은 언제나 「전체 ÷ 나누는 수」. ' + ans + '.'
     };
   }
 
@@ -186,7 +191,7 @@
       options: numOptions(rng, d.quot, d.per, d.total),
       gugu: d.per + ' × ' + d.quot + ' = ' + d.total,
       explain: '곱셈구구를 떠올려요 — ' + d.per + ' × □ = ' + d.total + '에서 □는 ' + d.quot +
-               '. 그래서 ' + d.total + ' ÷ ' + d.per + ' = ' + d.quot + '이에요.'
+               '. 그래서 ' + d.total + ' ÷ ' + d.per + ' = ' + KO.ida(d.quot) + '.'
     };
   }
 

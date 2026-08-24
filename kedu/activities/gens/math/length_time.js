@@ -22,12 +22,17 @@
  *   l05 m·km 어림 / l06 분보다 작은 단위 / l07 시간의 덧셈 / l08 시간의 뺄셈.
  */
 (function (root, factory) {
-  var g = factory();
+  var g = factory(root);
   if (typeof module === 'object' && module.exports) module.exports = g;
   root.GENS = root.GENS || {};
   root.GENS['length_time'] = g;
-}(typeof self !== 'undefined' ? self : this, function () {
+}(typeof self !== 'undefined' ? self : this, function (root) {
   'use strict';
+  /* §6-10 4·5항 — 조사 판정은 core/ko.js 한 곳에서. 못 찾으면 소리 내어 실패한다. */
+  var KO = (typeof module === 'object' && module.exports)
+    ? require('../../core/ko.js')
+    : root.KEDU_KO;
+  if (!KO) throw new Error('[gen] core/ko.js 가 먼저 로드돼야 합니다 (설계 §6-10 5항)');
 
   function ri(rng, lo, hi) { return lo + Math.floor(rng() * (hi - lo + 1)); }
   function pick(rng, arr) { return arr[Math.floor(rng() * arr.length)]; }
@@ -186,7 +191,7 @@
       answer: o.u,
       wrongs: all.filter(function (u) { return u !== o.u; }),
       filler: function () { return null; },
-      explain: o.t + '는 약 ' + o.n + o.u + '쯤이에요. 어림할 때는 앞에 **약**을 붙여 말해요.'
+      explain: KO.j(o.t, '은/는') + ' 약 ' + o.n + o.u + '쯤이에요. 어림할 때는 앞에 **약**을 붙여 말해요.'
     };
   }
 
@@ -260,7 +265,7 @@
            (a.m + b.m >= 60 ? ' → 60분이 넘었으니 1시간으로 **받아올림**! ' : ' → '))
         : (a.s + '초 + ' + b.s + '초 = ' + (a.s + b.s) + '초' +
            (a.s + b.s >= 60 ? ' → 60초가 넘었으니 1분으로 **받아올림**! ' : ' → '))) +
-        '답은 ' + fmtTime(sum) + '이에요.'
+        '답은 ' + KO.ida(fmtTime(sum)) + '.'
     };
   }
 
@@ -296,7 +301,7 @@
            a.h + '에서 ' + (a.h - 1) + '로 **줄어듭니다**. ' : '')
         : (a.s < b.s ? a.s + '초에서 ' + b.s + '초를 뺄 수 없으니 1분을 60초로 **빌려 와요** — 빌려 준 분 자리는 ' +
            a.m + '에서 ' + (a.m - 1) + '로 **줄어듭니다**. ' : '')) +
-        '답은 ' + fmtTime(diff) + '이에요.'
+        '답은 ' + KO.ida(fmtTime(diff)) + '.'
     };
   }
 
@@ -321,7 +326,7 @@
         ],
         filler: function (r) { return fmtClock(fromSec(toSec(end) + ri(r, 1, 4) * 600)); },
         explain: '**시각**을 물었어요. 시작 시각 ' + fmtClock(start) + '에 걸린 시간 ' + fmtTime(dur) +
-                 '을 더하면 ' + fmtClock(end) + '이에요.'
+                 '을 더하면 ' + KO.ida(fmtClock(end)) + '.'
       };
     }
     // (b) 시작~끝 시각 → 걸린 **시간**
@@ -337,7 +342,7 @@
       ],
       filler: function (r) { return fmtTime(fromSec(toSec(dur) + ri(r, 1, 4) * 600)); },
       explain: '**시간**을 물었어요. 끝난 시각 ' + fmtClock(end) + '에서 시작 시각 ' + fmtClock(start) +
-               '을 빼면 ' + fmtTime(dur) + '이에요. 시각은 **언제**고, 시간은 **얼마 동안**이에요.'
+               '을 빼면 ' + KO.ida(fmtTime(dur)) + '. 시각은 **언제**고, 시간은 **얼마 동안**이에요.'
     };
   }
 

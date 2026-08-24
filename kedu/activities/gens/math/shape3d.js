@@ -5,12 +5,17 @@
  *   tricky가 약하면 "이름·용도"로 분류하고 있다는 신호. 모양은 쓰임이 아니라 생김새다.
  */
 (function (root, factory) {
-  var g = factory();
+  var g = factory(root);
   if (typeof module === 'object' && module.exports) module.exports = g;
   root.GENS = root.GENS || {};
   root.GENS['shape3d'] = g;
-}(typeof self !== 'undefined' ? self : this, function () {
+}(typeof self !== 'undefined' ? self : this, function (root) {
   'use strict';
+  /* §6-10 4·5항 — 조사 판정은 core/ko.js 한 곳에서. 못 찾으면 소리 내어 실패한다. */
+  var KO = (typeof module === 'object' && module.exports)
+    ? require('../../core/ko.js')
+    : root.KEDU_KO;
+  if (!KO) throw new Error('[gen] core/ko.js 가 먼저 로드돼야 합니다 (설계 §6-10 5항)');
   var SHAPE_KO = { box: '상자 모양', cylinder: '둥근기둥 모양', ball: '공 모양' };
   // { 이름, 아이콘, 모양, 헷갈림 여부 }
   var THINGS = [
@@ -42,9 +47,9 @@
             var j = Math.floor(rng() * (i + 1)), x = opts[i]; opts[i] = opts[j]; opts[j] = x;
           }
           return {
-            thing: t, prompt: t.n + '은(는) 어떤 모양일까요?',
+            thing: t, prompt: KO.j(t.n, '은/는') + ' 어떤 모양일까요?',
             answer: t.s, options: opts, type: t.t ? 'tricky' : t.s,
-            explain: t.n + '은(는) ' + SHAPE_KO[t.s] + '이에요' +
+            explain: KO.j(t.n, '은/는') + ' ' + KO.ida(SHAPE_KO[t.s]) +
               (t.t ? '. 겉모습에 속지 말고 생김새를 봐요!' : '')
           };
         },

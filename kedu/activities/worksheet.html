@@ -114,6 +114,15 @@
     });
   }
 
+  function load(src) {
+    return new Promise(function (res, rej) {
+      var s = document.createElement('script');
+      s.src = src;
+      s.onload = res; s.onerror = function () { rej(new Error('부품 로드 실패: ' + src)); };
+      document.head.appendChild(s);
+    });
+  }
+
   // 카탈로그가 단일 원천 — gen 파일 경로도 여기서 찾는다
   fetch('/kedu/activities/_CATALOG.json').then(function (r) { return r.json(); }).then(function (cat) {
     var item = cat.filter(function (a) { return a.gen && a.gen.indexOf('/' + genId + '.js') >= 0; })[0];
@@ -122,11 +131,9 @@
     schema = item.paramsSchema || {};
     document.getElementById('ws-meta').textContent =
       (item.map ? item.map.grade + '학년 ' + item.map.unit + '단원' : '') + (item.pages ? ' · ' + item.pages : '');
-    return new Promise(function (res, rej) {
-      var s = document.createElement('script');
-      s.src = '/kedu/activities/' + item.gen;
-      s.onload = res; s.onerror = function () { rej(new Error('생성기 로드 실패')); };
-      document.head.appendChild(s);
+    // §6-10 5항 — 조사 부품이 생성기보다 먼저 와야 한다 (없으면 생성기가 소리 내어 죽는다)
+    return load('/kedu/activities/core/ko.js').then(function () {
+      return load('/kedu/activities/' + item.gen);
     });
   }).then(function () {
     render();

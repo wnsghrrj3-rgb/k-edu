@@ -6,12 +6,17 @@
  * type: gather_small(합≤5) · gather_large(합 6~9) · split_small(가른 수 ≤2) · split_large
  */
 (function (root, factory) {
-  var g = factory();
+  var g = factory(root);
   if (typeof module === 'object' && module.exports) module.exports = g;
   root.GENS = root.GENS || {};
   root.GENS['split_gather'] = g;
-}(typeof self !== 'undefined' ? self : this, function () {
+}(typeof self !== 'undefined' ? self : this, function (root) {
   'use strict';
+  /* §6-10 4·5항 — 조사 판정은 core/ko.js 한 곳에서. 못 찾으면 소리 내어 실패한다. */
+  var KO = (typeof module === 'object' && module.exports)
+    ? require('../../core/ko.js')
+    : root.KEDU_KO;
+  if (!KO) throw new Error('[gen] core/ko.js 가 먼저 로드돼야 합니다 (설계 §6-10 5항)');
   function ri(rng, lo, hi) { return lo + Math.floor(rng() * (hi - lo + 1)); }
 
   function gather(max, rng) {
@@ -21,7 +26,7 @@
       a: a, b: b, sum: sum, kind: 'gather',
       prompt: a + ' 과 ' + b + ' 을 모으면?', answer: String(sum),
       type: sum <= 5 ? 'gather_small' : 'gather_large',
-      explain: a + '개에 ' + b + '개를 더 놓으면 모두 ' + sum + '개! ' + a + '와 ' + b + '를 모으면 ' + sum + '이에요'
+      explain: a + '개에 ' + b + '개를 더 놓으면 모두 ' + sum + '개! ' + KO.j(a, '와/과') + ' ' + KO.j(b, '을/를') + ' 모으면 ' + KO.ida(sum)
     };
   }
   function split(max, rng) {
@@ -31,7 +36,7 @@
       a: a, b: b, sum: whole, kind: 'split',
       prompt: whole + ' 은 ' + a + ' 과 □', answer: String(b),
       type: b <= 2 ? 'split_small' : 'split_large',
-      explain: whole + '개에서 ' + a + '개를 덜어내면 ' + b + '개가 남아요. ' + whole + '은 ' + a + '와 ' + b + '로 갈라져요'
+      explain: whole + '개에서 ' + a + '개를 덜어내면 ' + b + '개가 남아요. ' + KO.j(whole, '은/는') + ' ' + KO.j(a, '와/과') + ' ' + KO.ro(b) + ' 갈라져요'
     };
   }
 

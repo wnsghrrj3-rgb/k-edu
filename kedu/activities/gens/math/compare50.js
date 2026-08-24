@@ -13,12 +13,17 @@
  *   - far에서 자리 수가 다르면 "한 자리 / 두 자리" 언어로 말한다 (0을 십의 자리라고 하지 않는다).
  */
 (function (root, factory) {
-  var g = factory();
+  var g = factory(root);
   if (typeof module === 'object' && module.exports) module.exports = g;
   root.GENS = root.GENS || {};
   root.GENS['compare50'] = g;
-}(typeof self !== 'undefined' ? self : this, function () {
+}(typeof self !== 'undefined' ? self : this, function (root) {
   'use strict';
+  /* §6-10 4·5항 — 조사 판정은 core/ko.js 한 곳에서. 못 찾으면 소리 내어 실패한다. */
+  var KO = (typeof module === 'object' && module.exports)
+    ? require('../../core/ko.js')
+    : root.KEDU_KO;
+  if (!KO) throw new Error('[gen] core/ko.js 가 먼저 로드돼야 합니다 (설계 §6-10 5항)');
 
   function ri(rng, lo, hi) { return lo + Math.floor(rng() * (hi - lo + 1)); }
   var DIGIT_KO = { 1: '한', 2: '두', 3: '세' };
@@ -62,7 +67,7 @@
     var big = Math.max(a, b), small = Math.min(a, b);
     var explain =
       type === 'same_tens' ? '십의 자리가 같으니 낱개끼리 비교해요: ' + (a % 10) + (a > b ? ' > ' : ' < ') + (b % 10) :
-      type === 'boundary' ? small + ' 다음 수가 ' + big + '이에요. ' + big + '이(가) 1 더 커요' :
+      type === 'boundary' ? small + ' 다음 수가 ' + KO.ida(big) + '. ' + KO.j(big, '이/가') + ' 1 더 커요' :
       type === 'far' ? farExplain(a, b) :
       '두 수가 똑같아요!';
     var whyAns = (type === 'same_tens') ? 'ones' : (type === 'equal' ? 'equal' : 'tens');

@@ -5,12 +5,17 @@
  *       · repeated_add(같은 수를 여러 번 더하기 = 곱셈의 뿌리)
  */
 (function (root, factory) {
-  var g = factory();
+  var g = factory(root);
   if (typeof module === 'object' && module.exports) module.exports = g;
   root.GENS = root.GENS || {};
   root.GENS['multiply'] = g;
-}(typeof self !== 'undefined' ? self : this, function () {
+}(typeof self !== 'undefined' ? self : this, function (root) {
   'use strict';
+  /* §6-10 4·5항 — 조사 판정은 core/ko.js 한 곳에서. 못 찾으면 소리 내어 실패한다. */
+  var KO = (typeof module === 'object' && module.exports)
+    ? require('../../core/ko.js')
+    : root.KEDU_KO;
+  if (!KO) throw new Error('[gen] core/ko.js 가 먼저 로드돼야 합니다 (설계 §6-10 5항)');
   function ri(rng, lo, hi) { return lo + Math.floor(rng() * (hi - lo + 1)); }
 
   return {
@@ -33,7 +38,7 @@
                       '  →  ' + a + ' × ' + b + ' = ' + ans;
           } else {
             prompt = a + ' × ' + b + ' = ?';
-            explain = a + '을(를) ' + b + '번 더한 것과 같아요 = ' + ans;
+            explain = KO.j(a, '을/를') + ' ' + b + '번 더한 것과 같아요 = ' + ans;
           }
           var type = (a === 2 || a === 5) ? 'times_2_5'
             : (a === 3 || a === 4) ? 'times_3_4'

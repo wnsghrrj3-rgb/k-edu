@@ -5,12 +5,17 @@
  * type: color · shape · size — 어떤 기준에서 흔들리는지가 신호
  */
 (function (root, factory) {
-  var g = factory();
+  var g = factory(root);
   if (typeof module === 'object' && module.exports) module.exports = g;
   root.GENS = root.GENS || {};
   root.GENS['classify'] = g;
-}(typeof self !== 'undefined' ? self : this, function () {
+}(typeof self !== 'undefined' ? self : this, function (root) {
   'use strict';
+  /* §6-10 4·5항 — 조사 판정은 core/ko.js 한 곳에서. 못 찾으면 소리 내어 실패한다. */
+  var KO = (typeof module === 'object' && module.exports)
+    ? require('../../core/ko.js')
+    : root.KEDU_KO;
+  if (!KO) throw new Error('[gen] core/ko.js 가 먼저 로드돼야 합니다 (설계 §6-10 5항)');
   function ri(rng, lo, hi) { return lo + Math.floor(rng() * (hi - lo + 1)); }
   var COLORS = [
     { k: 'red', ko: '빨강', hex: '#ef4444' },
@@ -46,7 +51,7 @@
           var bins = (b === 'color') ? COLORS : (b === 'shape' ? SHAPES : SIZES);
           return {
             by: b, byKo: BY_KO[b], bins: bins, items: items,
-            prompt: BY_KO[b] + '(으)로 나눠요',
+            prompt: KO.ro(BY_KO[b]) + ' 나눠요',
             type: b
           };
         },
