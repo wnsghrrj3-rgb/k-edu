@@ -36,6 +36,15 @@ button{font-family:inherit;cursor:pointer;border:none}
 
 #hint{position:fixed;bottom:52px;left:50%;transform:translateX(-50%);z-index:18;font-size:13px;color:var(--dim);background:var(--panel);border:1px solid var(--line);padding:8px 16px;border-radius:999px;white-space:nowrap;transition:opacity .4s}
 
+#mission{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:60;background:rgba(3,4,12,.55);backdrop-filter:blur(2px)}
+#mission.on{display:flex}
+#mission .mcard{background:var(--panel2,#141a33);border:2px solid #ffd35c;border-radius:20px;padding:24px 26px;text-align:center;max-width:88vw;animation:mpop .4s cubic-bezier(.2,.85,.3,1.15);box-shadow:0 0 50px rgba(255,211,92,.2)}
+@keyframes mpop{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+#mission h2{font-size:21px;color:#ffd35c;margin:0 0 10px}
+#mission p{font-size:14px;line-height:1.8;color:#e8ecff;margin:0 0 4px}
+#mission b{color:#ffd35c}
+#mission .mgo{margin-top:14px;padding:12px 34px;border:0;border-radius:14px;background:linear-gradient(135deg,#ffd35c,#ffb02e);color:#2a1d00;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit}
+.peekdot{position:fixed;z-index:21;font-size:15px;pointer-events:none;transform:translate(-50%,-50%);transition:opacity .5s;opacity:0;text-shadow:0 0 8px rgba(140,165,255,.8)}
 .ring{position:fixed;z-index:22;width:58px;height:58px;border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);display:none}
 .ring i{position:absolute;inset:4px;border-radius:50%;background:var(--bg);opacity:.0}
 .float{position:fixed;z-index:30;font-weight:900;font-size:20px;pointer-events:none;text-shadow:0 2px 8px rgba(0,0,0,.7);animation:floatUp 1.1s ease-out forwards}
@@ -89,7 +98,7 @@ button{font-family:inherit;cursor:pointer;border:none}
   <button class="qbtn" id="btnBack">←</button>
   <div id="roomInfo"><b id="riNm">방</b><small id="riSub"></small></div>
   <div id="stats">
-    <div class="stat" id="lantern">🏮 <b id="caught">0</b>/<span id="total">0</span></div>
+    <div class="stat" id="lantern">🏮 친구 <b id="caught">0</b>/<span id="total">0</span></div>
     <div class="stat">⏱ <b id="timer">60</b></div>
     <button class="qbtn" id="btnHow2">❓</button>
   </div>
@@ -100,6 +109,13 @@ button{font-family:inherit;cursor:pointer;border:none}
   <div id="battBox"><div id="battBar"></div></div>
 </div>
 <div id="hint" style="display:none">화면을 꾹 누르면 손전등이 켜져요</div>
+<div id="mission"><div class="mcard">
+  <h2 id="mTitle">🏚️ 현관 로비</h2>
+  <p id="mGoal">🎯 유령 <b>3명</b>을 모두 <b>랜턴 친구</b>로!</p>
+  <p>🔦 화면을 <b>꾹 누르면</b> 손전등 · 유령에게 <b>계속 비추면</b> 💚 마음이 열려요</p>
+  <p id="mTime">⏱ 제한 시간 <b>60초</b></p>
+  <button class="mgo" id="mGo">좋아, 들어간다!</button>
+</div></div>
 <div class="toast" id="toast"></div>
 
 <div id="title">
@@ -127,6 +143,7 @@ button{font-family:inherit;cursor:pointer;border:none}
 <div id="howto">
   <div class="hcard">
     <h2>👀 놀이 방법</h2>
+    <p>🎯 <b>목표</b>: 제한 시간 안에 방에 숨은 <b>유령을 모두 랜턴 친구</b>로 만들면 성공!</p>
     <p><b>① 화면을 꾹 누르면</b> 손전등이 켜져요. 누른 채 움직이면 빛도 따라와요.</p>
     <p><b>② 어둠 속 유령을 비추면</b> 모습이 드러나요. 계속 비추면 마음이 열려서 <b>랜턴 친구</b>가 돼요!</p>
     <p><b>③ 어떤 유령은 부끄러워서</b> 숨거나 도망가요. 괜찮아요 — 열린 마음은 잘 안 식으니까 다시 찾아서 비춰요.</p>
@@ -196,7 +213,8 @@ function roomToScreen(x, y, z) {
 
 /* ---------- 상태 ---------- */
 let world = null, roomIdx = 0;
-let roomObj = null, gviews = [], rings = [];
+let roomObj = null, gviews = [], rings = [], peekdots = [];
+let missionHold = false;
 let input = { x: 0, y: 1.2, on: false };
 let capAnims = [];                       // 랜턴으로 빨려가는 연출
 let uiT = 0, lastNow = 0, acc = 0;
@@ -236,6 +254,8 @@ function disposeRoom() {
   gviews = [];
   for (const r of rings) r.remove();
   rings = [];
+  for (const d of peekdots) d.remove();
+  peekdots = [];
   capAnims = [];
 }
 function startRoom(i) {
@@ -252,6 +272,10 @@ function startRoom(i) {
     ring.className = 'ring'; ring.innerHTML = '<i></i>';
     document.body.appendChild(ring);
     rings.push(ring);
+    const dot = document.createElement('div');
+    dot.className = 'peekdot'; dot.textContent = '👀';
+    document.body.appendChild(dot);
+    peekdots.push(dot);
   }
   $('title').style.display = 'none';
   $('result').style.display = 'none';
@@ -264,6 +288,12 @@ function startRoom(i) {
   $('caught').textContent = '0';
   $('hint').textContent = '화면을 꾹 누르면 손전등이 켜져요';
   input = { x: 0, y: 1.2, on: false };
+  /* 미션 카드 — 닫기 전까지 게임 정지 */
+  missionHold = true;
+  $('mTitle').textContent = world.room.em + ' ' + world.room.nm;
+  $('mGoal').innerHTML = '🎯 유령 <b>' + world.total + '명</b>을 모두 <b>랜턴 친구</b>로!';
+  $('mTime').innerHTML = '⏱ 제한 시간 <b>' + world.room.time + '초</b>';
+  $('mission').classList.add('on');
   if (!save.seenHow) { $('howto').style.display = 'flex'; save.seenHow = 1; persist(); }
 }
 function toTitle() {
@@ -358,6 +388,7 @@ $('btnRetry').onclick = () => startRoom(roomIdx);
 $('btnNext').onclick = () => startRoom(Math.min(roomIdx + 1, C.ROOMS.length - 1));
 $('btnHow').onclick = $('btnHow2').onclick = () => { $('howto').style.display = 'flex'; };
 $('btnHowOk').onclick = () => { $('howto').style.display = 'none'; };
+$('mGo').onclick = () => { $('mission').classList.remove('on'); missionHold = false; snd.giggle ? snd.giggle(0.5) : 0; };
 
 /* ---------- 루프 ---------- */
 let shake = 0;
@@ -367,7 +398,7 @@ function frame(now) {
   const dt = Math.min(0.1, (now - lastNow) / 1000 || 0.016);
   lastNow = now; uiT += dt;
 
-  if (world && !world.done) {
+  if (world && !world.done && !missionHold) {
     acc += dt;
     while (acc >= DT) { acc -= DT; onEvents(C.step(world, DT, input)); }
     $('timer').textContent = Math.max(0, Math.ceil(world.timeLeft));
@@ -400,6 +431,18 @@ function frame(now) {
         ring.style.left = p.x + 'px'; ring.style.top = p.y + 'px';
         ring.style.background = `conic-gradient(#7dffb0 ${g.meter * 360}deg, rgba(140,165,255,.18) 0deg)`;
       } else ring.style.display = 'none';
+      /* 숨은 유령 기척 — 이따금 👀 깜빡 (위치 힌트) */
+      const dot = peekdots[i];
+      if (dot) {
+        if (g.state === 'hidden' && !missionHold) {
+          const ph = (uiT * 0.55 + i * 1.31) % 4;
+          if (ph < 0.9) {
+            const pp = roomToScreen(g.x, g.y, g.z);
+            dot.style.left = pp.x + 'px'; dot.style.top = pp.y + 'px';
+            dot.style.opacity = String(0.35 * Math.sin(ph / 0.9 * Math.PI));
+          } else dot.style.opacity = '0';
+        } else dot.style.opacity = '0';
+      }
     }
   }
 
