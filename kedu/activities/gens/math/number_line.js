@@ -2,7 +2,8 @@
  * 순수 함수·DOM 무관 (§9-3). 게임(순서 탭)·활동지(빈칸) 공유.
  * params: { from, to, step: 1|2|5|10, count: 카드 수, desc: 0|1 }
  * next() → { seq:[정답 순서], cards:[섞인 카드], typeOf(v), prompt, type }
- * type(카드 단위): decade_cross(x9→x0 경계) · mid — §10-4 경계 넘김 오개념 검출
+ * type(문항 단위): decade_cross(x9→x0 경계) · skip(뛰어 세기) · back(거꾸로 세기) · mid
+ *   판정 우선순위 = 경계 > 뛰어 > 거꾸로 > 순서 (§21-3·§10-4)
  */
 (function (root, factory) {
   var g = factory();
@@ -40,7 +41,11 @@
           for (var m = 1; m < seq.length; m++) {
             if (Math.floor(Math.min(seq[m - 1], seq[m]) / 10) !== Math.floor(Math.max(seq[m - 1], seq[m]) / 10)) cross = true;
           }
-          var type = cross ? 'decade_cross' : (step > 1 ? 'skip' : 'mid');
+          // 한 문항 = 한 키 (§13-2). 판정 우선순위: 경계 넘김 > 뛰어 세기 > 거꾸로 > 순서.
+          // `back`은 g1u1 「9까지의 수」의 진단 축이다 — 1~9엔 십의 경계도 뛰어 세기도
+          // 없어서, 이 키가 없으면 그 활동의 수첩이 한 칸이 되고 형성평가가 성립하지 않는다.
+          var type = cross ? 'decade_cross'
+                   : (step > 1 ? 'skip' : (desc ? 'back' : 'mid'));
           return {
             seq: seq, cards: cards, step: step, desc: desc, type: type,
             prompt: (desc ? '큰 수부터' : '작은 수부터') + (step > 1 ? ' ' + step + '씩 뛰어' : '') + ' 순서대로 짚어요',

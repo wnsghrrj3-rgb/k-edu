@@ -8,9 +8,10 @@
     activityId: 'g1m_u1_seq9',
     title: '🔢 수 카드 줄 세우기',
     subtitle: '흩어진 수 카드를 작은 수부터 순서대로 짚어요',
-    defaults: { n: 5, count: 6 },
+    defaults: { n: 5, count: 6, desc: 0 },
     settings: [
       { key: 'count', label: '카드 수', options: [{ v: 5, label: '5장' }, { v: 6, label: '6장' }, { v: 9, label: '9장' }] },
+      { key: 'desc', label: '순서', options: [{ v: 0, label: '작은 수부터' }, { v: 1, label: '큰 수부터' }] },
       { key: 'n', label: '문제 수', options: [{ v: 3, label: '3' }, { v: 5, label: '5' }, { v: 8, label: '8' }] }
     ],
     stageHtml: '<div id="line"><div id="hint"></div><div id="cards"></div></div>',
