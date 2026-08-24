@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<!--
+  kg_math_l2_log03 — 규칙 위반 감시단 [케이영재 수학 · L2 EXPLORER 10호 · LOG 연구소 3번(완결)]
+  트랙: 케이영재 / Lab: Logic / Level: L2 EXPLORER (트랙 스킨 v2 「신호기」) / 깊이: D1~D8
+  base: kg_math_l3_pat01 (골격·CSS·초기화 계승) + kg_math_l3_pat02 (엔진 공통부 계승)
+        + kg_math_l3_com01 (칩·단추줄·계기판·창조 카드 CSS·칩 함수 계승)
+        + kg_math_l3_log01 (`cal-grid.g4q`·`cal-cell.hd` 계승)
+        + kg_math_l2_num01~l2_log02 (L2 규약 단언 계승)
+  신규 시각 언어 0 — 카드판은 pat01 `.cal-grid`+`.cal-cell` 이고 네 칸 폭은 log01 정의 그대로다.
+                    카드 상태 넷도 이미 있던 것이다: 안 봄 기본 · 지킴 `diag-b` · 어김 `sel` ·
+                    규칙이 말하지 않음 `hd`. 검사 기록은 `.case-table`, 창조 카드는 `.pick-item`.
+  신규 메카닉 0 — 누르기·고르기 뿐이다 (부품 카탈로그 밖 메카닉 없음)
+  탐구 5단계: 미션(1~3) 탐험(4~7) 발견(8~11) 도전(12~15) 창조(16~18)
+  핵심 수학: 어긴 카드 하나면 규칙이 무너진다
+             → 「어긴 것이 없다」는 말이 걸린 카드를 남김없이 봐야 선다 (하나와 전부의 어긋남)
+             → 규칙이 말을 걸지 않는 카드는 열어도 헛걸음이다
+             → 어긴 카드를 만나면 규칙을 버릴 수도, 고칠 수도 있다
+  이웃 차시와의 선 (다섯을 읽고 그었다 — 「반례」를 이미 쓴 차시가 넷이다):
+    · l2_pat01 입력–출력 요술상자 = 반례가 규칙 후보를 지운다. 거기서는 규칙이 숨겨져 있다.
+      여기서는 규칙이 처음부터 다 보인다 — 숨은 것은 「어디를 봐야 하는가」다.
+    · l3_num01 소수 사냥 규칙 설계 = 반례가 추측을 버리게 한다.
+      여기서 반례는 규칙을 고치게 한다. 버리는 것과 고치는 것은 다른 몸짓이다.
+    · l2_log01 거짓말쟁이는 누구 = 말과 말이 어긋나는 것이 그쪽 몫이다. 여기 말은 규칙 한 줄뿐이다.
+    · l2_log02 논리표 첫 탈출 = 지우고 남는 것이 답이다. 여기 카드는 서로를 지우지 않는다.
+    · l3_log03 기사와 건달의 섬 = 화자가 참말꾼이냐가 그쪽 몫이다. 여기 화자는 없다.
+  점수 100 = 탐험 15 + 추측 10 + 발견 20(q9 10 + q10 10) + 검증 15
+             + 확장 20(ext1 10 + ext2 10) + 창조 20(create1 10 + create2 10)
+  힌트: H1/H2/H3 3단 (감점 없음, 답 비노출)
+  ⚠ 판정은 학생이 연 카드만 쓴다 — 「몇 장 봐야 하는가」를 코드가 상수로 쥐고 있지 않다.
+    「지켜졌다」는 말이 걸린 카드를 남김없이 봤을 때만 난다 (헌법 §3-6).
+  ⚠ 수치는 tests/verify_kg_l2_log03.py 로 코딩 전에 선검증했다 (65,577건).
+    선검증이 코딩 전에 잡아낸 것 셋:
+      ㉠ 손으로 고른 둘째 검사 무리에 어김이 하나 섞여 있었다 — 알맹이가 서는 자리인데 아니었다.
+      ㉡ 도전 무리는 반대로 어김이 하나도 없었다 — 도전이 도전이 아니게 된다.
+      ㉢ 창조에서 조건 넷을 다 열면 공간이 빈다 — 「모든 한 자리 수는 10보다 크다」는
+         모든 카드가 어김이라 어김 하나짜리 무리를 만들 수 없다 (전수 0벌). 짝수·홀수 둘로 좁혔다.
+  ⛔ 규약: 문자식 금지 / 차단 어휘 금지 / 이모지 슬라이드당 ≤2
+  ⛔ L2 규약(설계_L2_레벨톤_v1.md): 문장 길이 상한 · 화면 수 ≤999 · 계산 수 ≤99 ·
+     한 화면 조작 요소 ≤12 · 논지 4~5겹 · 확장 한 방향 · 두 단계 조작 금지
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="kg_math_l2_log03_v1">
+<title>규칙 위반 감시단 · 케이영재 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#F4F2EC; --ink:#17161C; --ink-soft:#5A5762;
+  --coral:#7B4DFF; --coral-deep:#5B2EE0; --coral-soft:#E7DEFF;
+  --teal:#3B5BA5; --teal-deep:#2C4480; --teal-soft:#DDE4F5;
+  --gold:#9BBF00; --emph:#FF5714; --line:#17161C; --mark:#D6F94C;
+  --f-title:'Black Han Sans',sans-serif; --f-body:'Noto Sans KR',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:4px 4px 0 rgba(23,22,28,.92);
+  --fs-title: clamp(26px, 4.2vw, 46px);
+  --fs-heading: clamp(23px, 3.5vw, 35px);
+  --fs-body: clamp(19px, 2.9vw, 27px);
+  --fs-caption: clamp(17px, 2.6vw, 24px);
+  --fs-label: clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --mw-sm: min(720px, 96vw);
+  --mw-lg: min(880px, 96vw);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; word-break:keep-all; overflow-wrap:break-word; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+@keyframes ka-glow { 0%,100%{box-shadow:0 0 0 0 rgba(14,138,95,.4);} 50%{box-shadow:0 0 0 10px rgba(14,138,95,0);} }
+
+.ka { background:var(--paper); width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; color:var(--ink); position:relative; overflow:hidden; }
+.ka-h { display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); padding:clamp(11px,1.7vw,15px) clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:hover { transform:translateY(-1px); }
+.ka-pill { font-family:var(--f-title); background:var(--coral); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-where { font-size:clamp(14px,1.6vw,18px); color:var(--ink-soft); flex-shrink:1; }
+.ka-where b { color:var(--ink); }
+.ka-bar { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:46vw; }
+.ka-dot { width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s, background .2s; }
+.ka-dot:hover { transform:scale(1.2); }
+.ka-dot.active { background:var(--coral); transform:scale(1.3); }
+.ka-dot.done { background:var(--teal); }
+.ka-score { font-family:var(--f-title); background:#D6F94C; color:#17161C; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); padding:0; border-radius:50%; cursor:pointer; flex-shrink:0; color:var(--coral-deep); font-size:clamp(13px,2vw,16px); width:clamp(32px,4.5vw,38px); height:clamp(32px,4.5vw,38px); display:flex; align-items:center; justify-content:center; }
+
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; justify-content:safe center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; justify-content:safe center; gap:clamp(7px,1.2vw,11px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(8px,1.4vh,16px) clamp(16px,4vw,48px); overflow-x:hidden; overflow-y:auto; scrollbar-width:none; -ms-overflow-style:none; }
+.slide::-webkit-scrollbar { width:0; height:0; }
+.slide.active { display:flex; }
+.slide-title { font-family:var(--f-title); font-size:var(--fs-title); line-height:1.18; color:var(--ink); font-weight:400; text-align:center; flex-shrink:0; }
+.slide-sub { font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(10px,1.6vw,16px); left:clamp(16px,4vw,40px); font-family:var(--f-title); color:var(--coral); font-size:clamp(13px,1.9vw,18px); letter-spacing:.4px; z-index:5; }
+
+.ka-f { display:flex; justify-content:flex-end; gap:12px; padding:clamp(12px,1.7vw,16px) clamp(16px,4vw,40px); background:linear-gradient(to top, var(--paper) 62%, transparent); flex-shrink:0; }
+.ka-prev, .ka-hint, .ka-next { font-family:var(--f-title); font-size:clamp(15px,1.9vw,22px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(10px,1.4vw,15px) clamp(20px,2.8vw,38px); cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translateY(-2px); }
+.ka-prev { margin-right:auto; }
+.ka-hint { color:#17161C; border-color:#17161C; }
+.ka-next { background:var(--coral); color:#fff; border-color:var(--coral); }
+.ka-prev:disabled, .ka-next:disabled { opacity:.35; cursor:default; transform:none; }
+.ka-hint:disabled { opacity:.4; cursor:default; }
+
+.concept-box { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,18px) clamp(18px,2.8vw,28px); border-radius:20px; font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); text-align:center; line-height:1.5; box-shadow:var(--shadow); }
+.concept-box strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.intro-q { font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; }
+.intro-q strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.goal-list { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); font-size:var(--fs-caption); color:var(--ink); max-width:var(--mw-sm); }
+.goal-list li { background:#fff; border:2px solid var(--line); padding:clamp(7px,1.3vw,11px) clamp(14px,2.6vw,20px); border-radius:16px; list-style:none; box-shadow:var(--shadow); }
+.goal-list li strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+.mission-card { background:#fff; border:3px solid var(--coral-soft); border-radius:26px; padding:clamp(16px,3vw,26px) clamp(20px,3.8vw,34px); max-width:var(--mw-sm); text-align:center; box-shadow:0 6px 0 var(--coral-soft); font-size:var(--fs-body); line-height:1.6; }
+.mission-card strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+
+/* ── 달력 격자 ── */
+.cal-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.1vw,10px); }
+.cal-head { display:flex; align-items:center; gap:clamp(8px,1.6vw,14px); }
+.cal-title { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--coral-deep); }
+.cal-month-btn { font-family:var(--f-title); font-size:var(--fs-label); background:#fff; border:2px solid var(--line); border-radius:999px; padding:4px 12px; cursor:pointer; color:var(--ink-soft); }
+.cal-month-btn.on { background:var(--coral); color:#fff; border-color:var(--coral); }
+.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:clamp(3px,0.6vw,5px); background:#fff; border:2px solid var(--line); border-radius:18px; padding:clamp(8px,1.4vw,12px); box-shadow:var(--shadow); }
+.cal-dow { font-family:var(--f-title); font-size:clamp(12px,1.7vw,16px); color:var(--ink-soft); text-align:center; padding-bottom:2px; }
+.cal-dow.sun { color:var(--emph); }
+.cal-cell { width:clamp(34px,6.2vw,54px); height:clamp(30px,5.4vw,46px); display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:clamp(15px,2.4vw,22px); color:var(--ink); background:var(--paper); border-radius:10px; cursor:pointer; transition:background .15s, transform .1s; user-select:none; }
+.cal-cell:hover { background:var(--coral-soft); }
+.cal-cell.empty { background:transparent; cursor:default; }
+.cal-cell.sel { background:var(--coral); color:#fff; animation:ka-pop .3s ease; }
+.cal-cell.diag-a { outline:3px solid var(--gold); outline-offset:-3px; }
+.cal-cell.diag-b { outline:3px solid var(--teal); outline-offset:-3px; }
+.cal-cell.center-cell { background:var(--emph); color:#fff; }
+.cal-info { display:flex; gap:clamp(8px,1.6vw,14px); flex-wrap:wrap; justify-content:center; min-height:2.2em; align-items:center; }
+.sum-chip { font-family:var(--f-title); font-size:var(--fs-caption); padding:clamp(5px,1vw,8px) clamp(12px,2.2vw,18px); border-radius:999px; background:#fff; border:2px solid var(--line); }
+.sum-chip.a { border-color:var(--gold); color:#5E7500; }
+.sum-chip.b { border-color:var(--teal); color:var(--teal-deep); }
+.sum-chip.tot { border-color:var(--coral); color:var(--coral-deep); }
+.cal-msg { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--coral-deep); min-height:1.5em; text-align:center; }
+.cal-msg.wrong { color:var(--emph); }
+
+/* ── 사례 테이블 ── */
+.case-table { border-collapse:collapse; background:#fff; border-radius:16px; overflow:hidden; box-shadow:var(--shadow); font-size:var(--fs-caption); }
+.case-table th { font-family:var(--f-title); font-weight:400; background:var(--coral-soft); color:var(--coral-deep); padding:clamp(6px,1.1vw,10px) clamp(12px,2.2vw,20px); }
+.case-table td { font-family:var(--f-num); font-weight:800; text-align:center; padding:clamp(6px,1.1vw,10px) clamp(12px,2.2vw,20px); border-top:1px solid var(--line); }
+.case-count { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); }
+.case-count b { color:var(--coral-deep); font-size:1.2em; }
+
+/* ── 관찰·추측 선택 ── */
+.pick-list { display:flex; flex-direction:column; gap:clamp(7px,1.3vw,11px); width:100%; max-width:var(--mw-sm); }
+.pick-item { background:#fff; border:3px solid var(--line); border-radius:18px; padding:clamp(10px,1.8vw,15px) clamp(16px,3vw,24px); font-size:var(--fs-body); cursor:pointer; transition:border-color .2s, transform .12s; text-align:left; font-family:var(--f-body); color:var(--ink); }
+.pick-item:hover { border-color:var(--coral); }
+.pick-item.on { border-color:var(--coral); background:var(--coral-soft); animation:ka-pop .3s ease; }
+.pick-item .tag { font-family:var(--f-title); color:var(--coral-deep); margin-right:8px; }
+
+/* ── 구조 시각화 ── */
+.struct-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.5vw,13px); }
+.struct-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(6px,1.1vw,9px); }
+.struct-cell { width:clamp(76px,13vw,120px); height:clamp(52px,9vw,80px); background:#fff; border:3px solid var(--coral-soft); border-radius:14px; display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:clamp(19px,3vw,30px); color:var(--coral-deep); box-shadow:0 4px 0 var(--coral-soft); }
+.struct-cell.hl-a { border-color:var(--gold); box-shadow:0 4px 0 var(--gold); }
+.struct-cell.hl-b { border-color:var(--teal); box-shadow:0 4px 0 var(--teal-soft); }
+.struct-eq { font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center; }
+.struct-eq .star { color:var(--emph); }
+.arrow-note { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); background:#fff; border:2px solid var(--line); border-radius:999px; padding:5px 16px; cursor:pointer; transition:transform .15s; }
+.arrow-note.revealed { color:var(--coral-deep); border-color:var(--coral); animation:ka-glow 1.4s ease 1; }
+
+/* ── 문제 공통 ── */
+.q-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.5vw,13px); max-width:var(--mw-lg); width:100%; }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; font-weight:400; }
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-sm); }
+.mcq-opts.one-col { grid-template-columns:1fr; }
+.mcq-opt { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,1.9vw,15px); font-family:var(--f-title); font-size:var(--fs-body); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .2s; box-shadow:0 6px 0 var(--coral-soft); font-weight:400; }
+.mcq-opt:hover { border-color:var(--coral); }
+.mcq-opt:active { transform:translateY(4px); box-shadow:none; }
+.mcq-opt.correct { border-color:var(--coral-deep); background:var(--coral); color:#fff; box-shadow:0 6px 0 var(--coral-deep); animation:ka-pop .5s ease; }
+.mcq-opt.wrong { border-color:var(--emph); background:#FFE3D6; color:var(--ink); animation:ka-shake .35s; }
+.mcq-hint { font-family:var(--f-title); font-size:var(--fs-caption); color:#17161C; background:#D6F94C; border-radius:16px; padding:clamp(8px,1.5vw,12px) clamp(14px,2.6vw,20px); max-width:var(--mw-sm); text-align:center; display:none; }
+.mcq-hint.show { display:block; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); color:var(--coral-deep); min-height:1.4em; text-align:center; }
+.q-fb.wrong { color:var(--emph); }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:clamp(30px,5vw,54px); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:20px; padding:clamp(8px,1.5vw,13px) clamp(24px,4.4vw,42px); min-width:clamp(110px,20vw,180px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.q-pad { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(6px,1.2vw,10px); max-width:clamp(280px,56vw,460px); }
+.q-key { background:#fff; border:2px solid var(--line); border-radius:14px; padding:clamp(7px,1.4vw,11px) 0; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, background .15s; box-shadow:0 4px 0 var(--line); }
+.q-key:hover { background:var(--coral-soft); border-color:var(--coral); }
+.q-key:active { transform:translateY(3px); box-shadow:none; }
+.q-key.fn { background:#D6F94C; color:#17161C; font-family:var(--f-title); font-size:var(--fs-caption); border-color:#17161C; box-shadow:0 4px 0 #17161C; }
+
+/* ── 모양 실험실 ── */
+.shape-pick { display:flex; gap:clamp(8px,1.5vw,13px); flex-wrap:wrap; justify-content:center; }
+.shape-btn { background:#fff; border:3px solid var(--line); border-radius:16px; padding:clamp(8px,1.4vw,12px) clamp(12px,2.2vw,18px); cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:5px; transition:border-color .2s, transform .12s; }
+.shape-btn:hover { border-color:var(--coral); }
+.shape-btn.on { border-color:var(--coral); background:var(--coral-soft); }
+.shape-mini { display:grid; grid-template-columns:repeat(3, clamp(10px,1.8vw,15px)); gap:2px; }
+.shape-mini i { display:block; width:clamp(10px,1.8vw,15px); height:clamp(10px,1.8vw,15px); border-radius:3px; background:var(--line); }
+.shape-mini i.f { background:var(--coral); }
+.shape-name { font-family:var(--f-title); font-size:var(--fs-label); color:var(--ink); }
+.rule-build { display:flex; align-items:center; gap:clamp(6px,1.2vw,10px); flex-wrap:wrap; justify-content:center; font-family:var(--f-title); font-size:var(--fs-body); }
+.rule-slot { background:#fff; border:3px dashed var(--coral); border-radius:14px; min-width:clamp(72px,13vw,120px); padding:clamp(6px,1.1vw,9px) clamp(10px,1.8vw,14px); text-align:center; color:var(--coral-deep); font-family:var(--f-num); font-weight:800; cursor:pointer; }
+.rule-slot.filled { border-style:solid; background:var(--coral-soft); }
+.rule-choice { display:flex; gap:clamp(6px,1.1vw,9px); flex-wrap:wrap; justify-content:center; }
+.rule-chip { background:#fff; border:2px solid var(--line); border-radius:999px; padding:clamp(5px,1vw,8px) clamp(12px,2.2vw,18px); font-family:var(--f-title); font-size:var(--fs-caption); cursor:pointer; transition:transform .12s, border-color .15s; }
+.rule-chip:hover { border-color:var(--coral); transform:translateY(-2px); }
+
+/* ── 탐정 카드·마무리 ── */
+.detective-card { background:#fff; border:3px solid var(--gold); border-radius:26px; padding:clamp(16px,3vw,26px) clamp(20px,3.8vw,34px); max-width:var(--mw-sm); width:100%; box-shadow:0 8px 0 var(--mark); display:flex; flex-direction:column; gap:clamp(7px,1.3vw,11px); }
+.dc-row { display:flex; justify-content:space-between; gap:14px; font-size:var(--fs-caption); border-bottom:1px dashed var(--line); padding-bottom:6px; }
+.dc-row b { font-family:var(--f-title); font-weight:400; color:var(--coral-deep); }
+.dc-title { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; }
+.wrap-score { font-family:var(--f-num); font-weight:800; font-size:clamp(56px,10vw,110px); color:var(--coral-deep); line-height:1; }
+.wrap-msg { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); }
+.home-card { background:var(--teal-soft); border-radius:20px; padding:clamp(12px,2.2vw,18px) clamp(18px,3.2vw,26px); font-size:var(--fs-caption); color:var(--teal-deep); max-width:var(--mw-sm); text-align:center; line-height:1.55; }
+.next-mini { display:flex; gap:clamp(8px,1.5vw,13px); flex-wrap:wrap; justify-content:center; }
+.next-chip { font-family:var(--f-title); font-size:var(--fs-label); background:#fff; border:2px solid var(--line); border-radius:999px; padding:6px 16px; color:var(--ink-soft); }
+
+/* ═══ 케이영재 스킨 v2 「신호기」 — 트랙 전용 (헌법 v1.3 §3-α · skin_v2_signal.py 가 단일 원본) ═══
+   굵은 먹선 + 오프셋 통그림자 + 보라·라임. 레이아웃 값(크기·간격)은 건드리지 않는다. */
+.ka-h { border-bottom:3px solid var(--ink); }
+.ka-prev, .ka-hint, .ka-next { box-shadow:3px 3px 0 var(--ink); }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translate(-1px,-1px); box-shadow:4px 4px 0 var(--ink); }
+.ka-prev:active, .ka-hint:active, .ka-next:active { transform:translate(3px,3px); box-shadow:0 0 0 var(--ink); }
+.ka-hint { background:var(--mark); }
+.ka-pill { border:2px solid var(--ink); box-shadow:2px 2px 0 var(--ink); }
+.ka-score { border:2px solid var(--ink); box-shadow:2px 2px 0 var(--ink); }
+.ka-dot { background:#CBC8BF; }
+.mcq-opt { border-color:var(--ink); box-shadow:5px 5px 0 var(--ink); }
+.mcq-opt.correct { box-shadow:5px 5px 0 var(--coral-deep); }
+.detective-card { border-color:var(--ink); }
+.mission-card { border-color:var(--ink); box-shadow:6px 6px 0 var(--ink); }
+.cal-cell { border:2px solid var(--ink); }
+.cal-cell.empty { border-color:transparent; background:transparent; }
+
+/* ═══ 공용 부품 CSS (com01·log01 정의 문자 그대로 추출·주입 — 손으로 옮겨 적지 않는다) ═══ */
+/* 카드판은 pat01 `.cal-grid`+`.cal-cell` 이고, 네 칸 폭은 log01 이 이미 정해 둔 g4q 를 쓴다.
+   카드 상태 넷(기본·diag-b·sel·hd)은 전부 이미 있던 클래스다 — 새 시각 언어 0. */
+.vox-btns { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+.chip-row { display:flex; gap:clamp(5px,1vw,9px); justify-content:center; flex-wrap:wrap; margin:6px 0; }
+.lab-meter { display:flex; align-items:baseline; justify-content:center; gap:8px; margin:6px 0; }
+.lab-label { font-size:var(--fs-label); color:var(--ink-soft); font-family:var(--f-title); }
+.lab-count { font-family:var(--f-title); font-size:var(--fs-h1); color:var(--coral-deep); min-width:2.2em; text-align:center; }
+.cal-grid.g4q { grid-template-columns:repeat(4, clamp(36px,5.8vw,46px)); }
+.cal-grid.g4q .cal-cell { width:clamp(36px,5.8vw,46px); height:clamp(36px,5.8vw,46px); font-size:var(--fs-body); font-family:var(--f-title); }
+.cal-cell.hd { background:transparent; border-color:transparent; color:var(--ink-soft); font-size:var(--fs-label); cursor:default; pointer-events:none; }
+</style>
+</head>
+<body>
+<div class="ka">
+  <header class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 나가기</button>
+    <span class="ka-pill">케이영재</span>
+    <span class="ka-where"><b>규칙 위반 감시단</b> · 논리 연구소</span>
+    <div class="ka-bar" id="dots"></div>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </header>
+
+  <main class="ka-m" id="main">
+
+    <!-- 슬1 · 미션: 감시단 첫날 -->
+    <section class="slide">
+      <span class="stage-badge">미션 1/3</span>
+      <h1 class="slide-title">감시단 첫날</h1>
+      <p class="slide-sub">벽에 규칙 한 줄이 걸려 있다</p>
+      <div class="chip-row" id="s1-rule"></div>
+      <div class="concept-box">카드가 여덟 장 있다.
+        규칙은 한 줄뿐이다.</div>
+      <div class="concept-box">우리 일은 하나다.
+        이 규칙이 지켜지는지 살핀다.</div>
+    </section>
+
+    <!-- 슬2 · 미션: 규칙 읽는 법 -->
+    <section class="slide">
+      <span class="stage-badge">미션 2/3</span>
+      <h1 class="slide-title">규칙 읽는 법</h1>
+      <p class="slide-sub">카드 두 장을 견본으로 보자</p>
+      <div class="cal-wrap"><table class="case-table" id="s2-tab"></table></div>
+      <div class="concept-box">규칙은 짝수 카드에만 말을 건다.
+        홀수 카드에는 아무 말도 하지 않는다.</div>
+    </section>
+
+    <!-- 슬3 · 미션: 오늘의 물음 -->
+    <section class="slide">
+      <span class="stage-badge">미션 3/3</span>
+      <h1 class="slide-title">오늘의 물음</h1>
+      <p class="slide-sub">몇 장을 열어야 할까</p>
+      <div class="chip-row" id="s3-rule"></div>
+      <div class="concept-box">카드는 눌러야 보인다.
+        다 열지 않고도 알 수 있을까.</div>
+    </section>
+
+    <!-- 슬4 · 탐험: 첫 검사 -->
+    <section class="slide">
+      <span class="stage-badge">탐험 1/4</span>
+      <h1 class="slide-title">첫 검사</h1>
+      <p class="slide-sub">카드를 눌러 열어 보자</p>
+      <div class="chip-row" id="s4-rule"></div>
+      <div class="cal-wrap" id="s4-grid"></div>
+      <div class="lab-meter"><span class="lab-label">연 카드</span><span class="lab-count" id="s4-cnt">0</span></div>
+      <div class="cal-msg" id="s4-msg">아무 카드나 눌러 보자</div>
+      <div class="vox-btns" id="s4-btns"></div>
+    </section>
+
+    <!-- 슬5 · 탐험: 둘째 검사 (★알맹이가 서는 자리) -->
+    <section class="slide" data-q-id="explore">
+      <span class="stage-badge">탐험 2/4</span>
+      <h1 class="slide-title">둘째 검사</h1>
+      <div class="q-stage">
+        <p class="q-prompt">카드가 바뀌었다. 다시 살피자.</p>
+        <div class="chip-row" id="s5-rule"></div>
+        <div class="cal-wrap" id="s5-grid"></div>
+        <div class="lab-meter"><span class="lab-label">연 카드</span><span class="lab-count" id="s5-cnt">0</span></div>
+        <div class="cal-msg" id="s5-msg">판정이 날 때까지 열어 보자</div>
+        <div class="vox-btns" id="s5-btns"></div>
+        <p class="q-fb" id="fb-explore"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["규칙은 첫 검사와 같다.","어기는 카드가 안 보인다.","안 연 카드가 남아 있는지 보자."]'></div>
+    </section>
+
+    <!-- 슬6 · 탐험: 두 검사를 나란히 -->
+    <section class="slide">
+      <span class="stage-badge">탐험 3/4</span>
+      <h1 class="slide-title">두 검사를 나란히</h1>
+      <p class="slide-sub">모아 둔 자국이다</p>
+      <div class="cal-wrap"><table class="case-table" id="s6-tab"></table></div>
+      <div class="concept-box">같은 규칙이었다.
+        그런데 연 카드 수가 달랐다.</div>
+    </section>
+
+    <!-- 슬7 · 탐험: 나의 추측 -->
+    <section class="slide" data-q-id="conjecture">
+      <span class="stage-badge">탐험 4/4</span>
+      <h1 class="slide-title">내 추측을 고르자</h1>
+      <div class="q-stage">
+        <p class="q-prompt">왜 한쪽은 빨리 끝났을까?</p>
+        <div class="mcq-opts one-col" id="conj-opts">
+          <button class="mcq-opt" data-c="0">카드가 더 쉬웠으니까</button>
+          <button class="mcq-opt" data-c="1">어기는 카드를 만났으니까</button>
+          <button class="mcq-opt" data-c="2">운이 좋았을 뿐이다</button>
+          <button class="mcq-opt" data-c="3">아직 모르겠다</button>
+        </div>
+        <p class="q-fb" id="conj-fb"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["아직 몰라도 된다.","두 검사를 떠올리자.","고른 뒤에 살펴보자."]'></div>
+    </section>
+
+    <!-- 슬8 · 발견: 헛걸음 실험실 -->
+    <section class="slide">
+      <span class="stage-badge">발견 1/4</span>
+      <h1 class="slide-title">헛걸음 실험실</h1>
+      <p class="slide-sub">이번 카드는 홀수가 많다</p>
+      <div class="chip-row" id="s8-rule"></div>
+      <div class="cal-wrap" id="s8-grid"></div>
+      <div class="lab-meter"><span class="lab-label">헛걸음</span><span class="lab-count" id="s8-cnt">0</span></div>
+      <div class="cal-msg" id="s8-msg">눌러서 열어 보자</div>
+      <div class="vox-btns" id="s8-btns"></div>
+    </section>
+
+    <!-- 슬9 · 발견: 확인 하나 -->
+    <section class="slide" data-q-id="q9">
+      <span class="stage-badge">발견 2/4</span>
+      <h1 class="slide-title">확인 하나</h1>
+      <div class="q-stage">
+        <p class="q-prompt">규칙이 무너졌다고 말하려면?</p>
+        <div class="mcq-opts one-col" id="q9-opts">
+          <button class="mcq-opt" data-c="0">어기는 카드 한 장을 찾으면 된다</button>
+          <button class="mcq-opt" data-c="1">카드를 전부 열어야 한다</button>
+          <button class="mcq-opt" data-c="2">절반을 열면 된다</button>
+          <button class="mcq-opt" data-c="3">규칙을 고쳐야 한다</button>
+        </div>
+        <p class="q-fb" id="q9-fb"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["첫 검사를 떠올리자.","몇 장 만에 끝났는가.","한 장으로도 끝난 적이 있다."]'></div>
+    </section>
+
+    <!-- 슬10 · 발견: 확인 둘 -->
+    <section class="slide" data-q-id="q10">
+      <span class="stage-badge">발견 3/4</span>
+      <h1 class="slide-title">확인 둘</h1>
+      <div class="q-stage">
+        <p class="q-prompt">규칙이 지켜졌다고 말하려면?</p>
+        <div class="mcq-opts one-col" id="q10-opts">
+          <button class="mcq-opt" data-c="0">한 장만 열면 된다</button>
+          <button class="mcq-opt" data-c="1">지키는 카드를 셋 찾으면 된다</button>
+          <button class="mcq-opt" data-c="2">말이 걸린 카드를 남김없이 봐야 한다</button>
+          <button class="mcq-opt" data-c="3">절반을 열면 된다</button>
+        </div>
+        <p class="q-fb" id="q10-fb"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["둘째 검사를 떠올리자.","한 장을 안 열고 두면 어떨까.","그 한 장이 어길 수도 있다."]'></div>
+    </section>
+
+    <!-- 슬11 · 발견: 하나와 전부 -->
+    <section class="slide">
+      <span class="stage-badge">발견 4/4</span>
+      <h1 class="slide-title">하나와 전부</h1>
+      <p class="slide-sub">같은 규칙인데 값이 다르다</p>
+      <div class="cal-wrap"><table class="case-table" id="s11-tab"></table></div>
+      <div class="concept-box">무너뜨리는 데는 한 장이면 된다.
+        세우는 데는 남김없이 봐야 한다.</div>
+      <div class="concept-box">그래서 어길 만한 카드부터 연다.
+        홀수 카드는 열어도 헛걸음이다.</div>
+    </section>
+
+    <!-- 슬12 · 도전: 규칙이 바뀌었다 -->
+    <section class="slide" data-q-id="ver">
+      <span class="stage-badge">도전 1/4</span>
+      <h1 class="slide-title">규칙이 바뀌었다</h1>
+      <div class="q-stage">
+        <p class="q-prompt">이번에는 홀수 카드에 말을 건다.</p>
+        <div class="chip-row" id="s12-rule"></div>
+        <div class="cal-wrap" id="s12-grid"></div>
+        <div class="lab-meter"><span class="lab-label">헛걸음</span><span class="lab-count" id="s12-cnt">0</span></div>
+        <div class="cal-msg" id="s12-msg">헛걸음 없이 찾아보자</div>
+        <div class="vox-btns" id="s12-btns"></div>
+        <p class="q-fb" id="fb-verify"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["말이 걸린 카드가 어느 쪽인가.","짝수 카드를 열면 헛걸음이 는다.","홀수 카드만 골라 열자."]'></div>
+    </section>
+
+    <!-- 슬13 · 도전: 규칙을 고칠 수 있을까 -->
+    <section class="slide" data-q-id="ext1">
+      <span class="stage-badge">도전 2/4</span>
+      <h1 class="slide-title">규칙을 고칠 수 있을까</h1>
+      <div class="q-stage">
+        <p class="q-prompt">어기는 카드가 하나 나왔다.</p>
+        <div class="chip-row" id="s13-rule"></div>
+        <div class="cal-wrap" id="s13-grid"></div>
+        <div class="cal-msg" id="s13-msg">여덟 장이 다 열려 있다</div>
+        <div class="mcq-opts one-col" id="ext1-opts">
+          <button class="mcq-opt" data-c="0">규칙을 버린다</button>
+          <button class="mcq-opt" data-c="1">문턱을 낮춰 고친다</button>
+          <button class="mcq-opt" data-c="2">그 카드를 없앤다</button>
+        </div>
+        <p class="q-fb" id="ext1-fb"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["어기는 카드를 보자.","그 카드도 품는 규칙이 있을까.","숫자 하나만 바꿔 보자."]'></div>
+    </section>
+
+    <!-- 슬14 · 도전: 어디까지 낮출까 -->
+    <section class="slide" data-q-id="ext2">
+      <span class="stage-badge">도전 3/4</span>
+      <h1 class="slide-title">어디까지 낮출까</h1>
+      <div class="q-stage">
+        <p class="q-prompt">가장 높이 세울 수 있는 문턱은?</p>
+        <div class="cal-wrap"><table class="case-table" id="s14-tab"></table></div>
+        <div class="mcq-opts" id="ext2-opts">
+          <button class="mcq-opt" data-c="0">3</button>
+          <button class="mcq-opt" data-c="1">5</button>
+          <button class="mcq-opt" data-c="2">6</button>
+          <button class="mcq-opt" data-c="3">9</button>
+        </div>
+        <p class="q-fb" id="ext2-fb"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["가장 작은 짝수 카드를 보자.","그 카드도 넘어야 한다.","문턱이 그 카드보다 크면 안 된다."]'></div>
+    </section>
+
+    <!-- 슬15 · 도전: 감시단 수첩 -->
+    <section class="slide">
+      <span class="stage-badge">도전 4/4</span>
+      <h1 class="slide-title">감시단 수첩</h1>
+      <p class="slide-sub">오늘 배운 것을 적어 두자</p>
+      <div class="cal-wrap"><table class="case-table" id="s15-tab"></table></div>
+      <div class="concept-box">어기는 카드는 규칙을 무너뜨린다.
+        그리고 고칠 자리도 가리킨다.</div>
+    </section>
+
+    <!-- 슬16 · 창조: 내 규칙 세우기 -->
+    <section class="slide" data-q-id="create1">
+      <span class="stage-badge">창조 1/2</span>
+      <h1 class="slide-title">내 규칙 세우기</h1>
+      <div class="q-stage">
+        <p class="q-prompt">규칙을 하나 골라 걸어 보자.</p>
+        <div class="pick-list" id="cr-rules"></div>
+        <div class="cal-wrap" id="s16-grid"></div>
+        <div class="cal-msg" id="s16-msg">고르면 카드가 다시 갈린다</div>
+        <p class="q-fb" id="create1-fb"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["어느 쪽에 말을 걸까.","문턱을 정해 보자.","골라 보면 카드가 갈린다."]'></div>
+    </section>
+
+    <!-- 슬17 · 창조: 어기는 카드 한 장 -->
+    <section class="slide" data-q-id="create2">
+      <span class="stage-badge">창조 2/2</span>
+      <h1 class="slide-title">어기는 카드 한 장</h1>
+      <div class="q-stage">
+        <p class="q-prompt">내 규칙을 어기는 카드를 넣자.</p>
+        <div class="chip-row" id="s17-rule"></div>
+        <div class="cal-wrap" id="s17-grid"></div>
+        <div class="cal-msg" id="s17-msg">아래에서 한 장을 고르자</div>
+        <div class="vox-btns" id="s17-pick"></div>
+        <p class="q-fb" id="create2-fb"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["말이 걸리는 쪽이어야 한다.","문턱을 못 넘는 수여야 한다.","둘 다 맞아야 어긴다."]'></div>
+    </section>
+
+    <!-- 슬18 · 마침: 감시단 증서 (엔진 훅) -->
+    <section class="slide">
+      <span class="stage-badge">마침</span>
+      <h1 class="slide-title">감시단 증서</h1>
+      <p class="slide-sub">오늘 점수 <span id="final-score">0</span>점</p>
+      <div class="detective-card" id="agent-card"></div>
+      <div class="concept-box" id="wrap-msg"></div>
+      <div class="concept-box">집에서도 해 보자. 가족이 정한 규칙 하나를 골라
+        어기는 자리를 찾아보자.</div>
+    </section>
+
+  </main>
+
+  <footer class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next" id="next" onclick="goNext()">다음 →</button>
+  </footer>
+</div>
+
+<script>
+/* ═══════════ KGiftedCore — 순수 로직 (DOM 무의존, 테스트 대상) ═══════════
+   「몇 장을 봐야 하는가」의 답을 갖고 있지 않다. 그것이 이 차시에서 학생이 발견할 몫이다.
+   판정 verdict 는 오직 **학생이 연 카드**만 보고 세 값을 돌려준다 (헌법 §3-6).
+   조건도 규칙표로 적지 않는다 — 짝수·홀수는 2로 나눈 나머지로, 자릿수는 10과 견주어 그때그때 가른다.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function (root) {
+  'use strict';
+
+  /* ── 조건: 규칙이 말을 거는 카드를 가른다 ── */
+  var CONDS = {
+    even: { key: 'even', label: '짝수', test: function (n) { return n % 2 === 0; } },
+    odd:  { key: 'odd',  label: '홀수', test: function (n) { return n % 2 === 1; } }
+  };
+
+  /* ── 주장: 조건에 걸린 카드가 지켜야 하는 것 ── */
+  function claimGt(k) {
+    return { kind: 'gt', k: k, label: k + '보다 크다', test: function (n) { return n > k; } };
+  }
+
+  function ruleText(cond, claim) {
+    return '모든 ' + cond.label + ' 카드는 ' + claim.label;
+  }
+
+  /* ── 카드 한 장의 상태 ──
+     'v' 어김 · 'o' 지킴 · '-' 규칙이 말하지 않음                       */
+  function cardState(n, cond, claim) {
+    if (!cond.test(n)) return '-';
+    return claim.test(n) ? 'o' : 'v';
+  }
+
+  function states(cards, cond, claim) {
+    var out = [], i;
+    for (i = 0; i < cards.length; i++) out.push(cardState(cards[i], cond, claim));
+    return out;
+  }
+
+  /* ── ★판정 — 학생이 연 카드만 본다 ──
+     seen = 열어 본 자리의 목록(중복 무시). 답을 미리 쥐지 않는 자리가 여기다.
+       'broken'  어김을 하나라도 봤다 → 규칙이 무너졌다 (한 장이면 끝난다)
+       'held'    **말이 걸린 카드**를 남김없이 봤는데 어김이 없다 → 규칙이 지켜졌다
+                 ⚠ 「전부」는 여덟 장 전부가 아니라 **규칙이 말을 건 카드 전부**다.
+                 그래야 논지 ③(헛걸음)과 맞물린다 — 홀수 카드는 세지 않는다.
+       'unknown' 그 밖 — 아직 모른다
+     ⚠ 'held' 는 cards.length 와 견주어서만 난다. 「전부」의 값이 여기 실려 있다. */
+  function verdict(cards, cond, claim, seen) {
+    var st = states(cards, cond, claim), i, mark = {}, need = 0, got = 0;
+    for (i = 0; i < seen.length; i++) {
+      if (seen[i] < 0 || seen[i] >= cards.length) continue;
+      mark[seen[i]] = 1;
+    }
+    for (i = 0; i < cards.length; i++) {
+      if (mark[i] && st[i] === 'v') return 'broken';
+      if (st[i] !== '-') { need++; if (mark[i]) got++; }
+    }
+    if (need > 0 && got >= need) return 'held';
+    return 'unknown';
+  }
+
+  /* 말이 걸린 카드 수 · 그중 본 것 — 화면 계기판이 읽는다 */
+  function progress(cards, cond, seen) {
+    var mark = {}, i, need = 0, got = 0;
+    for (i = 0; i < seen.length; i++) {
+      if (seen[i] >= 0 && seen[i] < cards.length) mark[seen[i]] = 1;
+    }
+    for (i = 0; i < cards.length; i++) {
+      if (cond.test(cards[i])) { need++; if (mark[i]) got++; }
+    }
+    return { need: need, got: got };
+  }
+
+  /* 연 카드 가운데 몇 장이 「말이 걸린 카드」였는가 — 헛걸음을 세는 데 쓴다 */
+  function wasted(cards, cond, seen) {
+    var mark = {}, i, w = 0;
+    for (i = 0; i < seen.length; i++) {
+      if (seen[i] < 0 || seen[i] >= cards.length || mark[seen[i]]) continue;
+      mark[seen[i]] = 1;
+      if (!cond.test(cards[seen[i]])) w++;
+    }
+    return w;
+  }
+
+  /* ── 규칙 고치기 — 문턱을 낮춰 살아나는 자리를 찾는다 ──
+     ⚠ 답을 표로 갖지 않는다. 1부터 훑어 「어김이 사라지고 지킨 카드가 남는가」를 그때그때 묻는다.
+        지킨 카드가 0 이면 아무 말도 하지 않는 규칙이 되므로 살아난 것으로 세지 않는다. */
+  function fixes(cards, cond, maxK) {
+    var out = [], k, st, j, bad, good;
+    for (k = 1; k <= (maxK || 25); k++) {
+      st = states(cards, cond, claimGt(k));
+      bad = 0; good = 0;
+      for (j = 0; j < st.length; j++) {
+        if (st[j] === 'v') bad++;
+        if (st[j] === 'o') good++;
+      }
+      if (bad === 0 && good >= 1) out.push(k);
+    }
+    return out;
+  }
+
+  /* 학생이 만든 무리가 「어김 딱 하나」인가 — 창조 검사 */
+  function checkMade(cards, cond, claim) {
+    var st = states(cards, cond, claim), i, v = 0, o = 0, x = 0;
+    for (i = 0; i < st.length; i++) {
+      if (st[i] === 'v') v++; else if (st[i] === 'o') o++; else x++;
+    }
+    return { bad: v, good: o, silent: x, ok: (v === 1 && o >= 1) };
+  }
+
+  /* ── 무대 상수 ──
+     ⚠ 아래 다섯 무리는 tests/verify_kg_l2_log03.py 가 코딩 전에 전수로 훑어 고른 것이다.
+        조립 단언이 선검증 파일과 **글자까지 같은지** 대조한다 (사이클 42 교훈). */
+  var STAGE = {
+    SCORE_PLAN: { explore: 15, conjecture: 10, q9: 10, q10: 10, ver: 15,
+                  ext1: 10, ext2: 10, create1: 10, create2: 10 },
+
+    EX1: [3, 8, 12, 5, 20, 14, 7, 16],        /* 탐험 첫 검사 — 어김 하나(8) */
+    EX2: [12, 11, 14, 9, 18, 7, 22, 5],       /* 탐험 둘째 검사 — 어김 없음 ★알맹이 */
+    LAB: [1, 3, 5, 7, 9, 12, 20, 11],         /* 발견 헛걸음 실험실 — 말 안 거는 카드 여섯 */
+    CH:  [4, 13, 6, 17, 8, 9, 2, 19],         /* 도전 검증 — 홀수 조건 · 어김 하나(9) */
+    FIX: [6, 12, 14, 3, 20, 9, 18, 5],        /* 도전 고치기 — 어김 하나(6) · 살리는 문턱 1~5 */
+
+    CR_BASE:  [24, 26, 21, 28, 23, 30],       /* 창조 밑판 — 어떤 규칙으로도 어김 0 */
+    CR_CARDS: [2, 5, 8, 9, 13, 16, 19, 25],   /* 창조 후보 — 규칙마다 어기는 것이 갈린다 */
+    CR_RULES: [['even', 10], ['even', 15], ['even', 20],
+               ['odd', 10], ['odd', 15], ['odd', 20]],
+
+    K0: 10                                     /* 미션~도전에서 쓰는 문턱 */
+  };
+
+  var API = {
+    CONDS: CONDS, claimGt: claimGt, ruleText: ruleText,
+    cardState: cardState, states: states,
+    verdict: verdict, progress: progress, wasted: wasted, fixes: fixes, checkMade: checkMade
+  };
+  for (var _k in STAGE) if (STAGE.hasOwnProperty(_k)) API[_k] = STAGE[_k];
+
+  root.KGiftedCore = API;
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+})(typeof window !== 'undefined' ? window : this);
+
+/* ═══════════ 엔진 (base: kg_math_l3_pat01 · pat02 공통부 · com01 칩·계기판 · log01 g4q 계승 · 힌트 3단) ═══════════ */
+const TOTAL = 18;
+const LESSON_ID = 'kg_math_l2_log03';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+const HINT_MAX = 3;
+/* 무대 상수는 KGiftedCore 가 쥔다 (카드 무리 다섯 · 창조 밑판) */
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+/* ═══ 화면 맞춤 — 슬라이드가 프레임보다 길면 균일 축소 (제목이 헤더 뒤로 잘리는 것 방지) ═══ */
+const FIT_MIN = 0.55, FIT_STEP = 0.04;
+let fitPending = false;
+function fitActiveSlide() {
+  const el = document.querySelector('.slide.active');
+  if (!el) return;
+  if (el.style.zoom) el.style.zoom = '';
+  if (!(window.CSS && CSS.supports && CSS.supports('zoom', '0.9'))) return;
+  if (!el.clientHeight) return;
+  let k = 1;
+  for (let i = 0; i < 16 && el.scrollHeight > el.clientHeight + 1; i++) {
+    k = Math.max(FIT_MIN, k - FIT_STEP);
+    el.style.zoom = k;
+    if (k === FIT_MIN) break;
+  }
+}
+function scheduleFit() {
+  if (fitPending) return;
+  fitPending = true;
+  requestAnimationFrame(() => { fitPending = false; fitActiveSlide(); });
+}
+window.addEventListener('resize', scheduleFit);
+window.addEventListener('orientationchange', scheduleFit);
+document.addEventListener('click', scheduleFit, true);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(scheduleFit);
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.querySelectorAll('#dots .ka-dot').forEach((d, i) => { d.classList.toggle('active', i === cur); d.classList.toggle('done', i < cur); });
+  document.getElementById('prev').disabled = cur === 0;
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.hintLevel >= HINT_MAX; }
+  else { hintBtn.disabled = true; }
+  if (cur === TOTAL - 1) {
+    document.getElementById('next').textContent = '마치기 →';
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('wrap-msg').textContent = wrapMsg(score);
+    saveProgress(true);
+  } else { document.getElementById('next').textContent = '다음 →'; }
+  if (cur === 5) renderS6();
+  if (cur === 16) renderCr2();
+  if (cur === 17) renderAgentCard();
+  fitActiveSlide();
+}
+function saveProgress(done) {
+  const data = { cur, score, done, startedAt, finishedAt: done ? Date.now() : null, qState, seen: seenLog, conj: conjPicked, mine: crRule };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function wrapMsg(s) {
+  if (s >= 100) return '전설의 감시단장!';
+  if (s >= 80) return '빈틈없는 감시였다!';
+  if (s >= 60) return '규칙을 보는 눈이 자라났다!';
+  return '카드는 아직 남아 있다. 다시 해도 좋다!';
+}
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+function showHint() {
+  const qid = currentQId(); if (!qid) return;
+  const st = getQState(qid); if (st.hintLevel >= HINT_MAX) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint'); if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[Math.min(st.hintLevel, hints.length) - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= HINT_MAX;
+}
+
+
+/* ═══ 칩·숫자패드·단추 공통 (com01 정의 문자 그대로 추출·주입) ═══ */
+function chip(elId, text, kind) {
+  const s = document.createElement('span');
+  s.className = 'sum-chip ' + (kind || 'a');
+  s.textContent = text;
+  document.getElementById(elId).appendChild(s);
+}
+function buildPad(padId, dispId, maxLen, onSubmit) {
+  const pad = document.getElementById(padId);
+  const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '←', '확인'];
+  let val = '';
+  const draw = () => { document.getElementById(dispId).textContent = val || '\u00A0'; };
+  keys.forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'q-key' + (k === '←' || k === '확인' ? ' fn' : '');
+    b.textContent = k;
+    b.addEventListener('click', () => {
+      if (k === '←') val = val.slice(0, -1);
+      else if (k === '확인') { if (val !== '') { const v = parseInt(val, 10); if (onSubmit(v) !== false) val = ''; } }
+      else if (val.length < maxLen) val += k;
+      draw();
+    });
+    pad.appendChild(b);
+  });
+  draw();
+}
+function stepBtn(wrapId, label, fn) {
+  const b = document.createElement('button');
+  b.className = 'cal-month-btn';
+  b.textContent = label;
+  b.addEventListener('click', fn);
+  document.getElementById(wrapId).appendChild(b);
+  return b;
+}
+function clearChips(id) { const e = document.getElementById(id); if (e) e.innerHTML = ''; }
+/* ═══════════ 진행 상태 ═══════════ */
+const S = KGiftedCore;
+const seenLog = { s4: [], s5: [], s8: [], s12: [] };   // 슬라이드마다 학생이 연 카드 자리
+let conjPicked = -1;            // 추측 (정오 없음 · 기록만)
+let crRule = -1;                // 창조 — 학생이 건 규칙 번호
+let crAdded = -1;               // 창조 — 학생이 더한 카드
+
+/* ═══════════ 그리는 손 (공통) ═══════════ */
+function setText(id, t) { const e = document.getElementById(id); if (e) e.textContent = t; }
+
+function ruleOf(condKey, k) { return { cond: S.CONDS[condKey], claim: S.claimGt(k) }; }
+
+function drawRule(elId, r) {
+  const e = document.getElementById(elId);
+  if (!e) return;
+  e.innerHTML = '';
+  chip(elId, S.ruleText(r.cond, r.claim), 'a');
+}
+
+/* 카드판 한 벌. onTap 이 없으면 읽기 전용이다 (L2 §5 조작 수 계산의 기준).
+   상태 클래스 넷은 전부 이미 있던 것이다 — 새로 만든 것 0.
+     안 봄 기본 · 지킴 diag-b · 어김 sel · 규칙이 말하지 않음 hd            */
+function renderCards(elId, cards, r, seen, onTap) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.className = 'cal-grid g4q';
+  for (let i = 0; i < cards.length; i++) {
+    const d = document.createElement('div');
+    let cls = 'cal-cell';
+    if (seen.indexOf(i) >= 0) {
+      const st = S.cardState(cards[i], r.cond, r.claim);
+      cls += (st === 'v' ? ' sel' : (st === 'o' ? ' diag-b' : ' hd'));
+    }
+    d.className = cls;
+    d.textContent = String(cards[i]);
+    if (onTap && seen.indexOf(i) < 0) d.addEventListener('click', (function (j) {
+      return function () { onTap(j); };
+    })(i));
+    wrap.appendChild(d);
+  }
+  el.appendChild(wrap);
+}
+
+function openCard(key, i) {
+  if (seenLog[key].indexOf(i) < 0) seenLog[key].push(i);
+}
+
+function sayVerdict(v) {
+  if (v === 'broken') return '규칙이 무너졌다';
+  if (v === 'held') return '규칙이 지켜졌다';
+  return '아직 모른다';
+}
+
+/* ═══════════ 슬1·3 · 미션: 벽에 걸린 규칙 ═══════════ */
+function wireS1() {
+  const r = ruleOf('even', S.K0);
+  drawRule('s1-rule', r);
+  drawRule('s3-rule', r);
+}
+
+/* ═══════════ 슬2 · 미션: 견본 두 장 (읽기 전용) ═══════════ */
+function wireS2() {
+  const r = ruleOf('even', S.K0);
+  const rows = [[14, '짝수다. 10보다 크다. 지켰다.'],
+                [8, '짝수다. 10보다 작다. 어겼다.'],
+                [7, '홀수다. 규칙이 말을 걸지 않는다.']];
+  let h = '<tr><th>카드</th><th>살펴본 것</th></tr>';
+  for (let k = 0; k < rows.length; k++) {
+    h += '<tr><td>' + rows[k][0] + '</td><td>' + rows[k][1] + '</td></tr>';
+  }
+  const e = document.getElementById('s2-tab');
+  if (e) e.innerHTML = h;
+  void r;
+}
+
+/* ═══════════ 슬4 · 탐험: 첫 검사 (어김 하나) ═══════════ */
+function drawS4() {
+  const r = ruleOf('even', S.K0), cards = S.EX1, seen = seenLog.s4;
+  drawRule('s4-rule', r);
+  renderCards('s4-grid', cards, r, seen, function (i) { openCard('s4', i); drawS4(); });
+  setText('s4-cnt', String(seen.length));
+  const v = S.verdict(cards, r.cond, r.claim, seen);
+  if (v === 'unknown' && seen.length === 0) { setText('s4-msg', '아무 카드나 눌러 보자'); return; }
+  setText('s4-msg', sayVerdict(v) + (v === 'broken' ? ' — 여기서 끝이다' : ''));
+}
+
+function wireS4() {
+  drawS4();
+  stepBtn('s4-btns', '다시 덮기', function () { seenLog.s4 = []; drawS4(); });
+}
+
+/* ═══════════ 슬5 · 탐험: 둘째 검사 (★어김 없음 — 알맹이) ═══════════ */
+function drawS5() {
+  const r = ruleOf('even', S.K0), cards = S.EX2, seen = seenLog.s5;
+  drawRule('s5-rule', r);
+  renderCards('s5-grid', cards, r, seen, function (i) { openCard('s5', i); drawS5(); });
+  setText('s5-cnt', String(seen.length));
+  const v = S.verdict(cards, r.cond, r.claim, seen);
+  setText('s5-msg', seen.length === 0 ? '판정이 날 때까지 열어 보자' : sayVerdict(v));
+  if (v !== 'held') return;
+  const st = getQState('explore');
+  if (st.solved) return;
+  st.solved = true;
+  addScore(S.SCORE_PLAN.explore);
+  setText('fb-explore', '남김없이 살폈다 (+' + S.SCORE_PLAN.explore + ')');
+}
+
+function wireS5() {
+  drawS5();
+  stepBtn('s5-btns', '다시 덮기', function () { seenLog.s5 = []; drawS5(); });
+}
+
+/* ═══════════ 슬6 · 탐험: 두 검사를 나란히 ═══════════ */
+function renderS6() {
+  const r = ruleOf('even', S.K0);
+  const rows = [['첫 검사', S.EX1, seenLog.s4], ['둘째 검사', S.EX2, seenLog.s5]];
+  let h = '<tr><th>검사</th><th>연 카드</th><th>판정</th></tr>';
+  for (let k = 0; k < rows.length; k++) {
+    const v = S.verdict(rows[k][1], r.cond, r.claim, rows[k][2]);
+    h += '<tr><td>' + rows[k][0] + '</td><td>' + rows[k][2].length + '</td><td>'
+       + sayVerdict(v) + '</td></tr>';
+  }
+  const e = document.getElementById('s6-tab');
+  if (e) e.innerHTML = h;
+}
+
+/* ═══════════ 슬7 · 탐험: 추측 (정오 없음 · 고르면 준다) ═══════════ */
+function wireConj() {
+  const opts = document.querySelectorAll('#conj-opts .mcq-opt');
+  for (let i = 0; i < opts.length; i++) {
+    opts[i].addEventListener('click', function () {
+      if (conjPicked >= 0) return;
+      conjPicked = parseInt(this.getAttribute('data-c'), 10);
+      for (let j = 0; j < opts.length; j++) opts[j].classList.remove('on');
+      this.classList.add('on');
+      const st = getQState('conjecture');
+      if (st.solved) return;
+      st.solved = true;
+      addScore(S.SCORE_PLAN.conjecture);
+      setText('conj-fb', '적어 두었다 (+' + S.SCORE_PLAN.conjecture + ')');
+    });
+  }
+}
+
+/* ═══════════ 슬8 · 발견: 헛걸음 실험실 ═══════════ */
+function drawS8() {
+  const r = ruleOf('even', S.K0), cards = S.LAB, seen = seenLog.s8;
+  drawRule('s8-rule', r);
+  renderCards('s8-grid', cards, r, seen, function (i) { openCard('s8', i); drawS8(); });
+  const w = S.wasted(cards, r.cond, seen);
+  setText('s8-cnt', String(w));
+  const v = S.verdict(cards, r.cond, r.claim, seen);
+  if (seen.length === 0) { setText('s8-msg', '눌러서 열어 보자'); return; }
+  setText('s8-msg', sayVerdict(v) + ' · 헛걸음 ' + w + '장');
+}
+
+function wireS8() {
+  drawS8();
+  stepBtn('s8-btns', '다시 덮기', function () { seenLog.s8 = []; drawS8(); });
+}
+
+/* ═══════════ 슬9·10 · 발견 확인 ═══════════ */
+function wireMcq(optsId, fbId, qid, right, okText, noText) {
+  const opts = document.querySelectorAll('#' + optsId + ' .mcq-opt');
+  for (let i = 0; i < opts.length; i++) {
+    opts[i].addEventListener('click', function () {
+      const st = getQState(qid);
+      if (st.solved) return;
+      const c = parseInt(this.getAttribute('data-c'), 10);
+      if (c !== right) {
+        this.classList.add('wrong');
+        setText(fbId, noText);
+        return;
+      }
+      this.classList.add('correct');
+      st.solved = true;
+      addScore(S.SCORE_PLAN[qid]);
+      setText(fbId, okText + ' (+' + S.SCORE_PLAN[qid] + ')');
+    });
+  }
+}
+
+/* ═══════════ 슬11 · 발견: 하나와 전부 ═══════════ */
+function renderS11() {
+  const rows = [['무너뜨린다', '어기는 카드 한 장'],
+                ['세운다', '말이 걸린 카드 전부'],
+                ['헛걸음', '말이 안 걸린 카드']];
+  let h = '<tr><th>하는 일</th><th>봐야 하는 것</th></tr>';
+  for (let k = 0; k < rows.length; k++) {
+    h += '<tr><td>' + rows[k][0] + '</td><td>' + rows[k][1] + '</td></tr>';
+  }
+  const e = document.getElementById('s11-tab');
+  if (e) e.innerHTML = h;
+}
+
+/* ═══════════ 슬12 · 도전: 조건이 바뀐 규칙 ═══════════ */
+function drawS12() {
+  const r = ruleOf('odd', S.K0), cards = S.CH, seen = seenLog.s12;
+  drawRule('s12-rule', r);
+  renderCards('s12-grid', cards, r, seen, function (i) { openCard('s12', i); drawS12(); });
+  const w = S.wasted(cards, r.cond, seen);
+  setText('s12-cnt', String(w));
+  const v = S.verdict(cards, r.cond, r.claim, seen);
+  setText('s12-msg', seen.length === 0 ? '헛걸음 없이 찾아보자' : sayVerdict(v) + ' · 헛걸음 ' + w + '장');
+  if (v !== 'broken') return;
+  const st = getQState('ver');
+  if (st.solved) return;
+  st.solved = true;
+  addScore(S.SCORE_PLAN.ver);
+  setText('fb-verify', '어기는 카드를 찾았다 (+' + S.SCORE_PLAN.ver + ')');
+}
+
+function wireS12() {
+  drawS12();
+  stepBtn('s12-btns', '다시 덮기', function () { seenLog.s12 = []; drawS12(); });
+}
+
+/* ═══════════ 슬13 · 도전: 규칙을 고칠까 (카드판은 읽기 전용) ═══════════ */
+function wireS13() {
+  const r = ruleOf('even', S.K0), cards = S.FIX;
+  const all = [];
+  for (let i = 0; i < cards.length; i++) all.push(i);
+  drawRule('s13-rule', r);
+  renderCards('s13-grid', cards, r, all, null);
+  setText('s13-msg', '여덟 장이 다 열려 있다');
+  wireMcq('ext1-opts', 'ext1-fb', 'ext1', 1,
+          '문턱을 낮추면 그 카드도 품는다', '다른 길이 하나 더 있다');
+}
+
+/* ═══════════ 슬14 · 도전: 어디까지 낮출까 ═══════════ */
+function renderS14() {
+  const cards = S.FIX, r = ruleOf('even', S.K0);
+  const st = S.states(cards, r.cond, r.claim);
+  let h = '<tr><th>짝수 카드</th><th>살펴본 것</th></tr>';
+  for (let i = 0; i < cards.length; i++) {
+    if (st[i] === '-') continue;
+    h += '<tr><td>' + cards[i] + '</td><td>' + (st[i] === 'v' ? '어겼다' : '지켰다') + '</td></tr>';
+  }
+  const e = document.getElementById('s14-tab');
+  if (e) e.innerHTML = h;
+}
+
+function wireS14() {
+  renderS14();
+  /* 답을 손으로 적지 않는다 — 살리는 문턱을 순수 로직에게 물어 가장 높은 것을 고른다 */
+  const fx = S.fixes(S.FIX, S.CONDS.even, 25);
+  const best = fx[fx.length - 1];
+  const opts = document.querySelectorAll('#ext2-opts .mcq-opt');
+  let right = -1;
+  for (let i = 0; i < opts.length; i++) {
+    if (parseInt(opts[i].textContent, 10) === best) right = i;
+  }
+  wireMcq('ext2-opts', 'ext2-fb', 'ext2', right,
+          '가장 작은 짝수 카드 바로 아래다', '그 문턱으로는 아직 어기는 카드가 있다');
+}
+
+/* ═══════════ 슬15 · 도전: 감시단 수첩 ═══════════ */
+function renderS15() {
+  const rows = [['어기는 카드를 보면', '규칙이 무너진다'],
+                ['어기는 카드가 없으면', '걸린 카드를 다 봐야 한다'],
+                ['어기는 카드를 만나면', '규칙을 고칠 수도 있다']];
+  let h = '<tr><th>언제</th><th>무엇을</th></tr>';
+  for (let k = 0; k < rows.length; k++) {
+    h += '<tr><td>' + rows[k][0] + '</td><td>' + rows[k][1] + '</td></tr>';
+  }
+  const e = document.getElementById('s15-tab');
+  if (e) e.innerHTML = h;
+}
+
+/* ═══════════ 슬16 · 창조: 내 규칙 세우기 ═══════════ */
+function crRuleOf(n) { return ruleOf(S.CR_RULES[n][0], S.CR_RULES[n][1]); }
+
+function drawS16() {
+  const el = document.getElementById('cr-rules');
+  if (!el) return;
+  el.innerHTML = '';
+  for (let n = 0; n < S.CR_RULES.length; n++) {
+    const b = document.createElement('button');
+    b.className = 'pick-item' + (crRule === n ? ' on' : '');
+    const r = crRuleOf(n);
+    b.textContent = S.ruleText(r.cond, r.claim);
+    b.addEventListener('click', (function (m) {
+      return function () { crRule = m; judgeCreate1(); };
+    })(n));
+    el.appendChild(b);
+  }
+  const all = [];
+  for (let i = 0; i < S.CR_BASE.length; i++) all.push(i);
+  renderCards('s16-grid', S.CR_BASE, crRule < 0 ? ruleOf('even', S.K0) : crRuleOf(crRule),
+              crRule < 0 ? [] : all, null);
+}
+
+function judgeCreate1() {
+  drawS16();
+  if (crRule < 0) return;
+  const r = crRuleOf(crRule);
+  const m = S.checkMade(S.CR_BASE, r.cond, r.claim);
+  setText('s16-msg', '말이 걸린 카드 ' + (m.good + m.bad) + '장 · 어기는 카드 ' + m.bad + '장');
+  const st = getQState('create1');
+  if (st.solved) return;
+  st.solved = true;
+  addScore(S.SCORE_PLAN.create1);
+  setText('create1-fb', '규칙을 걸었다 (+' + S.SCORE_PLAN.create1 + ')');
+}
+
+/* ═══════════ 슬17 · 창조: 어기는 카드 한 장 ═══════════ */
+function renderCr2() {
+  const r = crRule < 0 ? ruleOf('even', S.K0) : crRuleOf(crRule);
+  drawRule('s17-rule', r);
+  const cards = crAdded < 0 ? S.CR_BASE : S.CR_BASE.concat([crAdded]);
+  const all = [];
+  for (let i = 0; i < cards.length; i++) all.push(i);
+  renderCards('s17-grid', cards, r, all, null);
+  const pick = document.getElementById('s17-pick');
+  if (pick && !pick.getAttribute('data-built')) {
+    pick.setAttribute('data-built', '1');
+    for (let k = 0; k < S.CR_CARDS.length; k++) {
+      stepBtn('s17-pick', String(S.CR_CARDS[k]), (function (n) {
+        return function () { crAdded = n; judgeCreate2(); };
+      })(S.CR_CARDS[k]));
+    }
+  }
+  if (crRule < 0) setText('s17-msg', '앞에서 규칙을 먼저 걸자');
+}
+
+function judgeCreate2() {
+  renderCr2();
+  if (crRule < 0 || crAdded < 0) return;
+  const r = crRuleOf(crRule);
+  const m = S.checkMade(S.CR_BASE.concat([crAdded]), r.cond, r.claim);
+  if (!m.ok) {
+    setText('s17-msg', crAdded + '은 이 규칙을 어기지 않는다');
+    setText('create2-fb', '말이 걸리고 문턱을 못 넘어야 한다');
+    return;
+  }
+  setText('s17-msg', crAdded + ' 한 장이 규칙을 무너뜨렸다');
+  const st = getQState('create2');
+  if (st.solved) return;
+  st.solved = true;
+  addScore(S.SCORE_PLAN.create2);
+  setText('create2-fb', '내가 만든 어김이다 (+' + S.SCORE_PLAN.create2 + ')');
+}
+
+/* ═══════════ 슬18 · 마무리 ═══════════ */
+function renderAgentCard() {
+  const e = document.getElementById('agent-card');
+  if (!e) return;
+  const opened = seenLog.s4.length + seenLog.s5.length + seenLog.s8.length + seenLog.s12.length;
+  const mine = crRule < 0 ? '아직 없다'
+             : S.ruleText(crRuleOf(crRule).cond, crRuleOf(crRule).claim);
+  e.innerHTML = '<div class="dc-title">감시단 증서</div>'
+    + '<div class="dc-row"><b>연 카드</b><span>' + opened + '장</span></div>'
+    + '<div class="dc-row"><b>내 규칙</b><span>' + mine + '</span></div>'
+    + '<div class="dc-row"><b>내가 만든 어김</b><span>'
+    + (crAdded < 0 ? '아직 없다' : crAdded + ' 한 장') + '</span></div>';
+}
+
+/* ═══════════ 배선 실행 ═══════════ */
+wireS1();
+wireS2();
+wireS4();
+wireS5();
+wireConj();
+wireS8();
+wireMcq('q9-opts', 'q9-fb', 'q9', 0, '한 장으로 끝난다', '첫 검사를 떠올리자');
+wireMcq('q10-opts', 'q10-fb', 'q10', 2, '남김없이 봐야 한다', '한 장을 남겨 두면 어떨까');
+renderS11();
+wireS12();
+wireS13();
+wireS14();
+renderS15();
+drawS16();
+renderCr2();
+
+/* ═══════════ 초기화 ═══════════ */
+(function init() {
+  const dots = document.getElementById('dots');
+  for (let i = 0; i < TOTAL; i++) {
+    const d = document.createElement('span');
+    d.className = 'ka-dot';
+    d.addEventListener('click', () => { cur = i; updateUI(); });
+    dots.appendChild(d);
+  }
+  updateUI();
+})();
+</script>
+</body>
+</html>
