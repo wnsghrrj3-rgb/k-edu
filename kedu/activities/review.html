@@ -35,6 +35,35 @@
          display:flex; align-items:baseline; gap:10px; }
   .grp span { font-size:12px; color:var(--amber-d); }
 
+  /* ── 1차 코스 (§16-4-1 · D28) — 한 판이 곧 네 부품 ───────────── */
+  #course { background:#fff; border:3px solid var(--amber); border-radius:22px; padding:18px 20px; margin-bottom:22px;
+            box-shadow:0 6px 0 #f6d9a4; }
+  #course.done { border-color:var(--good); box-shadow:0 6px 0 #cfeed6; }
+  #course .tag { display:inline-block; background:var(--amber); color:#fff; font-size:12px; padding:4px 12px;
+                 border-radius:999px; margin-bottom:8px; }
+  #course.done .tag { background:var(--good); }
+  #course h2 { margin:0 0 6px; font-size:clamp(19px,2.6vw,24px); color:var(--deep); }
+  #course .lead { font-size:14px; line-height:1.85; }
+  #course .lead b { color:var(--deep); }
+  #course .runs { display:flex; gap:9px; flex-wrap:wrap; margin:14px 0 4px; }
+  #course .runs .btn { font-size:15px; min-height:48px; padding:10px 20px; }
+
+  .rows { border-top:2px solid var(--line); margin-top:14px; padding-top:6px; }
+  .row { padding:11px 0; border-bottom:1px dashed var(--line); }
+  .row:last-child { border-bottom:none; }
+  .row .rh { display:flex; gap:9px; align-items:center; flex-wrap:wrap; }
+  .row .rn { flex:1; min-width:170px; font-size:15.5px; color:var(--deep); }
+  .row .rn i { display:block; font-style:normal; font-size:12.5px; color:var(--amber-d); line-height:1.6; margin-top:2px; }
+  .row .btn { min-height:38px; font-size:13px; padding:7px 13px; }
+  .row.flag { background:#fffcfc; }
+
+  .fold { margin-top:8px; }
+  .fold > summary { cursor:pointer; list-style:none; background:#fff7e8; border:2px solid var(--line);
+        border-radius:14px; padding:12px 16px; font-size:14.5px; color:var(--deep); }
+  .fold > summary::-webkit-details-marker { display:none; }
+  .fold > summary span { font-size:12px; color:var(--amber-d); display:block; margin-top:3px; line-height:1.6; }
+  .fold[open] > summary { border-color:var(--amber); margin-bottom:12px; }
+
   .part { background:#fff; border:2px solid var(--line); border-radius:18px; padding:14px 16px; margin-bottom:12px;
           display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap; }
   .part.done { border-color:#d9f0dc; background:#fcfffd; }
@@ -104,8 +133,8 @@
 <header>
   <h1>부품 검수대</h1>
   <div class="sub">
-    검수 대상은 활동 26종이 아니라 <b>부품</b>입니다. 부품 하나를 고치면 그 부품을 쓰는 활동 전부가 같이 바뀝니다.<br>
-    위에 있을수록 파급이 큽니다 — <b>위에서부터</b> 보시면 됩니다.
+    검수 대상은 활동 28종이 아니라 <b>부품</b>입니다. 부품 하나를 고치면 그 부품을 쓰는 활동 전부가 같이 바뀝니다.<br>
+    <b>1차 코스 한 판이면 28종 전부가 판정됩니다.</b> 그 아래는 선택입니다.
   </div>
   <div class="bar">
     <div class="prog"><i id="prog-fill"></i></div>
@@ -114,15 +143,39 @@
 </header>
 
 <main>
+  <div id="course">
+    <div class="tag" id="c-tag">1차 코스</div>
+    <h2 id="c-title">한 판만 끝까지 해 주세요</h2>
+    <div class="lead">
+      아래 네 부품은 <b>같은 판에 차례로 다 나옵니다</b> — 따로 열 필요가 없습니다.
+      「도토리 저울 대결」 <b>다섯 판</b>으로 맞춰 뒀으니 [시작!] 누르고 끝까지 가시면 됩니다.<br>
+      답 버튼 → 근거 띠 → HUD → 종료 화면 순으로 지나갑니다. 보시면서 아래 네 줄에 판정만 눌러 주세요.<br>
+      <b>이 네 개가 활동 28종 전부에 들어갑니다.</b>
+    </div>
+    <div class="runs">
+      <button class="btn primary" id="c-tv">🖥 전자칠판으로 한 판</button>
+      <button class="btn" id="c-ph">📱 폰 세로로 한 판</button>
+    </div>
+    <div class="rows" id="c-rows"></div>
+  </div>
+
   <div class="note">
     <b>보는 법.</b> [전자칠판]은 16:9 가로 — 3m 뒤에서 읽히는지, 팀 버튼이 눌리는지를 봅니다.
-    [폰 세로]는 아이가 과제로 받는 화면입니다. 각 문은 <b>봐야 할 판이 첫 문항으로 오도록</b> 고정해 뒀으니
-    <b>시작!</b>만 누르시면 됩니다.<br>
+    [폰 세로]는 아이가 과제로 받는 화면입니다.<br>
     <b>판정.</b> [괜찮다] 또는 [고쳐야 한다] + 한 줄 메모. 메모가 곧 §6 헌장 조항이 됩니다.
-    다 보신 뒤 아래 <b>[판정 내보내기]</b>로 텍스트를 뽑아 채팅에 붙여 주시면 그대로 이어받습니다.
-    <b>판정은 이 기기에만 저장</b>되니 검수는 한 기기에서 끝내 주세요.
+    보신 만큼만 아래 <b>[판정 내보내기]</b>로 텍스트를 뽑아 채팅에 붙여 주시면 그대로 이어받습니다.
+    <b>한 개만 판정해도 보내실 수 있습니다.</b> 판정은 이 기기에만 저장되니 검수는 한 기기에서 끝내 주세요.
   </div>
-  <div id="list"></div>
+
+  <details class="fold" id="fold2">
+    <summary>➕ 2차 — 나머지 공통 부품 · 장르 무대 <span>선택입니다. 파급이 작은 순서로 이어집니다.</span></summary>
+    <div id="list2"></div>
+  </details>
+
+  <details class="fold" id="fold3">
+    <summary>➕ 3차 — 신규 무대 <span>직전에 만든 것 — 아직 아무도 교실에서 못 봤습니다.</span></summary>
+    <div id="list3"></div>
+  </details>
 </main>
 
 <div class="out">
@@ -301,10 +354,21 @@ var PARTS = [
 ];
 
 var GRP = {
-  core:  ['공통 부품', '여기서 고치면 활동 26종 전부가 같이 바뀝니다'],
+  core:  ['공통 부품', '여기서 고치면 활동 28종 전부가 같이 바뀝니다'],
   genre: ['장르 무대', '같은 장르를 쓰는 활동에 함께 반영됩니다'],
   new:   ['신규 무대', '직전에 만든 것 — 아직 아무도 교실에서 못 봤습니다']
 };
+
+/* 1차 코스 (§16-4-1 · D28) — 이 넷은 한 판에 차례로 다 나온다.
+   따로 여는 것이 낭비였고, 22문 진행률이 숙제로 읽힌 것이 실제 문턱이었다. */
+var TIER1 = ['ans_row', 'hud', 'explain', 'end'];
+var COURSE = {
+  tv: 'g1m_u5_balance.html?mode=class&n=5&seed=7',
+  ph: 'g1m_u5_balance.html?mode=solo&n=5&seed=7',
+  name: '1차 코스 — 도토리 저울 대결 5판',
+  hint: '[시작!] → 답 버튼 → 답을 고르면 근거 띠 → 오른쪽 위 HUD → 다섯 판 끝나면 종료 화면. 순서대로 다 지나갑니다.'
+};
+function isT1(id) { return TIER1.indexOf(id) >= 0; }
 
 var KEY = 'kedu_part_review_v1';
 var state = {};
@@ -315,17 +379,48 @@ var $ = function (s) { return document.querySelector(s); };
 var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
   return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]; }); };
 
-/* ── 목록 렌더 ───────────────────────────────────────────────── */
+/* 판정 두 줄 — .part(개별 문)와 .row(1차 코스)가 공유한다. 키가 같으므로 하나의 판정이다. */
+function verdictHtml(p, v) {
+  return '<button class="btn ok' + (v.verdict === 'ok' ? ' on' : '') + '" data-v="ok">괜찮다</button>' +
+         '<button class="btn no' + (v.verdict === 'no' ? ' on' : '') + '" data-v="no">고쳐야 한다</button>';
+}
+function memoHtml(v) {
+  return '<div class="memo' + (v.verdict === 'no' ? ' show' : '') + '">' +
+      '<div class="lb">무엇이 문제인지 한 줄 — 이 문장이 그대로 조항이 됩니다</div>' +
+      '<textarea placeholder="예) 전자칠판 뒷자리에서 바구니 이름이 안 읽힌다">' + esc(v.memo || '') + '</textarea>' +
+    '</div>';
+}
+
+/* ── 1차 코스 렌더 ───────────────────────────────────────────── */
+function renderCourse() {
+  var html = '';
+  TIER1.forEach(function (id) {
+    var p = PARTS.find(function (x) { return x.id === id; }); if (!p) return;
+    var v = state[id] || {};
+    html +=
+      '<div class="row' + (v.verdict === 'no' ? ' flag' : '') + '" data-id="' + id + '">' +
+        '<div class="rh">' +
+          '<div class="rn">' + esc(p.name) + '<i>' + esc(p.look) + '</i></div>' +
+          verdictHtml(p, v) +
+        '</div>' + memoHtml(v) +
+      '</div>';
+  });
+  $('#c-rows').innerHTML = html;
+}
+
+/* ── 2·3차 목록 렌더 ─────────────────────────────────────────── */
 function render() {
-  var host = $('#list'), html = '', lastGrp = null;
+  var h2 = '', h3 = '', lastGrp = null;
   PARTS.forEach(function (p) {
-    if (p.grp !== lastGrp) {
-      lastGrp = p.grp;
-      html += '<div class="grp">' + esc(GRP[p.grp][0]) + '<span>' + esc(GRP[p.grp][1]) + '</span></div>';
-    }
+    if (isT1(p.id)) return;                       // 1차는 통합 문에서만 연다
     var v = state[p.id] || {};
     var cls = v.verdict === 'ok' ? ' done' : (v.verdict === 'no' ? ' flag' : '');
-    html +=
+    var block = '';
+    if (p.grp !== 'new' && p.grp !== lastGrp) {
+      lastGrp = p.grp;
+      block += '<div class="grp">' + esc(GRP[p.grp][0]) + '<span>' + esc(GRP[p.grp][1]) + '</span></div>';
+    }
+    block +=
       '<div class="part' + cls + '" data-id="' + p.id + '">' +
         '<div class="reach' + (p.reach >= 12 ? ' wide' : '') + '">' +
           '<b class="n num">' + p.reach + '</b><span class="u">' + esc(p.unit) + '</span>' +
@@ -338,33 +433,45 @@ function render() {
           '<div class="acts">' +
             (p.tv ? '<button class="btn primary" data-open="tv">🖥 전자칠판</button>' : '') +
             (p.ph ? '<button class="btn" data-open="ph">📱 폰 세로</button>' : '') +
-            '<button class="btn ok' + (v.verdict === 'ok' ? ' on' : '') + '" data-v="ok">괜찮다</button>' +
-            '<button class="btn no' + (v.verdict === 'no' ? ' on' : '') + '" data-v="no">고쳐야 한다</button>' +
-          '</div>' +
-          '<div class="memo' + (v.verdict === 'no' ? ' show' : '') + '">' +
-            '<div class="lb">무엇이 문제인지 한 줄 — 이 문장이 그대로 조항이 됩니다</div>' +
-            '<textarea placeholder="예) 전자칠판 뒷자리에서 바구니 이름이 안 읽힌다">' + esc(v.memo || '') + '</textarea>' +
-          '</div>' +
+            verdictHtml(p, v) +
+          '</div>' + memoHtml(v) +
         '</div>' +
       '</div>';
+    if (p.grp === 'new') h3 += block; else h2 += block;
   });
-  host.innerHTML = html;
+  $('#list2').innerHTML = h2;
+  $('#list3').innerHTML = h3;
+  renderCourse();
   refreshProg();
 }
 
+/* ── 진행률 — 분모는 22가 아니라 4다 (D28) ───────────────────── */
 function refreshProg() {
-  var done = PARTS.filter(function (p) { return (state[p.id] || {}).verdict; }).length;
+  var t1done = TIER1.filter(function (id) { return (state[id] || {}).verdict; }).length;
+  var allDone = PARTS.filter(function (p) { return (state[p.id] || {}).verdict; }).length;
   var flag = PARTS.filter(function (p) { return (state[p.id] || {}).verdict === 'no'; }).length;
-  $('#prog-fill').style.width = (done / PARTS.length * 100) + '%';
-  $('#prog-tx').textContent = done + ' / ' + PARTS.length;
-  $('#out-t').textContent = done === 0 ? '아직 판정한 부품이 없습니다.'
-    : (done + '개 판정' + (flag ? ' · 고칠 것 ' + flag + '개' : ' · 전부 통과'));
+  var full = t1done === TIER1.length;
+
+  $('#prog-fill').style.width = (t1done / TIER1.length * 100) + '%';
+  $('#prog-tx').textContent = full
+    ? ('1차 완료 — 활동 28종 판정됨' + (allDone > t1done ? ' · 추가 ' + (allDone - t1done) + '개' : ''))
+    : ('1차 ' + t1done + ' / ' + TIER1.length);
+
+  $('#course').classList.toggle('done', full);
+  $('#c-tag').textContent = full ? '1차 완료' : '1차 코스';
+  $('#c-title').textContent = full
+    ? '여기까지로 활동 28종이 판정됐습니다'
+    : '한 판만 끝까지 해 주세요';
+
+  $('#out-t').textContent = allDone === 0
+    ? '아직 판정한 부품이 없습니다 — 한 개만 눌러도 보내실 수 있습니다.'
+    : (allDone + '개 판정' + (flag ? ' · 고칠 것 ' + flag + '개' : ' · 전부 통과'));
 }
 
-/* ── 목록 이벤트 (위임) ──────────────────────────────────────── */
-$('#list').addEventListener('click', function (ev) {
+/* ── 판정·열기 이벤트 (main 전체 위임 — .part와 .row 공통) ───── */
+document.querySelector('main').addEventListener('click', function (ev) {
   var btn = ev.target.closest('button'); if (!btn) return;
-  var card = btn.closest('.part'); if (!card) return;
+  var card = btn.closest('.part, .row'); if (!card) return;
   var p = PARTS.find(function (x) { return x.id === card.dataset.id; }); if (!p) return;
 
   if (btn.dataset.open) { openViewer(p, btn.dataset.open); return; }
@@ -374,21 +481,30 @@ $('#list').addEventListener('click', function (ev) {
     v.verdict = (v.verdict === btn.dataset.v) ? null : btn.dataset.v;   // 다시 누르면 해제
     v.at = new Date().toISOString().slice(0, 10);
     save();
-    card.querySelectorAll('[data-v]').forEach(function (b) {
-      b.classList.toggle('on', !!v.verdict && b.dataset.v === v.verdict);
-    });
-    card.classList.toggle('done', v.verdict === 'ok');
-    card.classList.toggle('flag', v.verdict === 'no');
-    card.querySelector('.memo').classList.toggle('show', v.verdict === 'no');
+    // 같은 부품이 두 곳(통합 문·개별 문)에 있을 수 있으므로 전부 동기화한다
+    Array.prototype.forEach.call(
+      document.querySelectorAll('[data-id="' + p.id + '"]'), function (c) {
+        c.querySelectorAll('[data-v]').forEach(function (b) {
+          b.classList.toggle('on', !!v.verdict && b.dataset.v === v.verdict);
+        });
+        c.classList.toggle('done', c.classList.contains('part') && v.verdict === 'ok');
+        c.classList.toggle('flag', v.verdict === 'no');
+        var m = c.querySelector('.memo'); if (m) m.classList.toggle('show', v.verdict === 'no');
+      });
     refreshProg();
   }
 });
-$('#list').addEventListener('input', function (ev) {
+document.querySelector('main').addEventListener('input', function (ev) {
   var ta = ev.target; if (ta.tagName !== 'TEXTAREA') return;
-  var card = ta.closest('.part'); if (!card) return;
+  var card = ta.closest('.part, .row'); if (!card) return;
   var v = state[card.dataset.id] = state[card.dataset.id] || {};
   v.memo = ta.value; save();
 });
+
+/* 1차 코스 실행 버튼 */
+$('#c-tv').addEventListener('click', function () { openViewer(COURSE, 'tv'); });
+$('#c-ph').addEventListener('click', function () { openViewer(COURSE, 'ph'); });
+
 
 /* ── 기기 프레임 뷰어 ────────────────────────────────────────── */
 var cur = null, curDev = 'tv';
@@ -440,9 +556,12 @@ function exportText() {
     else if (v.verdict === 'ok') oks.push(p);
     else todo.push(p);
   });
+  var t1done = TIER1.filter(function (id) { return (state[id] || {}).verdict; }).length;
   var L = [];
   L.push('## 부품 검수 판정 — ' + new Date().toISOString().slice(0, 10));
-  L.push('총 ' + PARTS.length + '개 부품 중 판정 ' + (PARTS.length - todo.length) + '개.');
+  L.push('**1차 ' + t1done + '/' + TIER1.length + '**' +
+         (t1done === TIER1.length ? ' — 활동 28종 전부 판정됨.' : ' (파급 28종짜리 공통 부품).') +
+         ' 전체 ' + (PARTS.length - todo.length) + '/' + PARTS.length + '개 판정.');
   L.push('');
   L.push('### 고쳐야 한다 (' + (flags.length / 2) + '개)');
   if (!flags.length) L.push('- 없음');
