@@ -685,7 +685,7 @@ T('⚠️ std = 전 항목 "단원 전체 통합" (본차시가 성취기준을 
 T('CURRICULUM ↔ LESSONS 정합 (u3 블록 7항목 · ready 7 = u3 완주)', () => {
   const cur = (HOME.match(/const CURRICULUM[\s\S]*?\];/) || [''])[0];
   /* ⚠️ 단원이 셋이 되었으므로 unit 3 블록만 잘라내고 검사한다 (u1 게이트 정정 선례) */
-  const u3 = (cur.match(/unit:\s*3,[\s\S]*/) || [''])[0];
+  const u3 = (cur.match(/unit:\s*3,[\s\S]*?(?=\n\s*\},\n\s*\{\n\s*unit:\s*4|\];)/) || [''])[0];
   ok(u3.length > 100, 'unit 3 블록을 못 잘랐다');
   const ns = [...u3.matchAll(/\{n:\s*(\d+),/g)].map(m => +m[1]);
   ok(JSON.stringify(ns) === JSON.stringify([1, 2, 4, 6, 8, 11, 13]), ns.join(','));
@@ -700,11 +700,11 @@ T('홈 배선 · slug · u1·u2 회귀', () => {
   ok(/unit:\s*1,\s*title:\s*"생생하게 표현해요"/.test(HOME), 'u1 블록 훼손');
   ok(/unit:\s*2,\s*title:\s*"분명하고 유창하게"/.test(HOME), 'u2 블록 훼손');
 });
-T('⚠️ 허브 "3_korean" 카운트 갱신 (8+7+7 = units 3 · lessons 22)', () => {
+T('⚠️ 허브 "3_korean" 카운트 갱신 (8+7+7+7 = units 4 · lessons 29)', () => {
   const m = HUB.match(/"3_korean":\s*\{\s*file:\s*"g3_korean\.html",\s*units:\s*(\d+),\s*lessons:\s*(\d+)\s*\}/);
   ok(m, '허브에 3_korean 미등재');
-  ok(+m[1] === 3, 'units ' + m[1]);
-  ok(+m[2] === 22, 'lessons ' + m[2]);
+  ok(+m[1] === 4, 'units ' + m[1]);
+  ok(+m[2] === 29, 'lessons ' + m[2]);
   /* ⚠️ 다음 단원(u4) 개통 시 이 두 수와 gate_g3_korean_u1·u2의 같은 단언을 함께 올릴 것 */
   ok(/"3_math"[\s\S]*?lessons:\s*55/.test(HUB), 'g3 수학 허브 단언 훼손');
 });

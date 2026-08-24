@@ -488,15 +488,15 @@ T('홈 배선 · slug', () => {
   ok(/slug:\s*"g3_korean"/.test(HOME), 'slug 어긋남');
   ok(!HOME.includes('g3_math'), '수학 잔여 참조');
 });
-T('⚠️ 허브 "3_korean" 등재 (u1+u2 = units 3 · lessons 22)', () => {
+T('⚠️ 허브 "3_korean" 등재 (u1 8 + u2 7 + u3 7 + u4 7 = units 4 · lessons 29)', () => {
   const m = HUB.match(/"3_korean":\s*\{\s*file:\s*"g3_korean\.html",\s*units:\s*(\d+),\s*lessons:\s*(\d+)\s*\}/);
   ok(m, '허브에 3_korean 미등재');
   /* ⚠️ 2026-08-21 u2(7항목) 개통으로 1/8 -> 2/15로 올렸다. u1 게이트가 옛 수를 못 박고 있어
      u2 개통 즉시 1건 실패했고, 그 자리를 여기서 함께 올린 것이다.
      2026-08-24 u3(7항목) 개통으로 다시 3/22로 올렸다. 다음 단원(u4) 개통 때도 이 두 수를 함께 올릴 것 — 수학 라인에서 매 단원 겪은 대목이다. */
-  ok(+m[1] === 3, 'units ' + m[1]);
-  ok(+m[2] === 22, 'lessons ' + m[2]);
-  ok(+m[2] === KEYS.length + 7 + 7, '허브 lessons ↔ u1 8 + u2 7 + u3 7 어긋남');
+  ok(+m[1] === 4, 'units ' + m[1]);
+  ok(+m[2] === 29, 'lessons ' + m[2]);
+  ok(+m[2] === KEYS.length + 7 + 7 + 7, '허브 lessons ↔ u1 8 + u2 7 + u3 7 + u4 7 어긋남');
   ok(/"3_math"[\s\S]*?lessons:\s*55/.test(HUB), 'g3 수학 허브 단언 훼손');
 });
 T('케이랩 매핑 없음 = 의도적 (목소리·몸짓 실물이 우위)', () => {
