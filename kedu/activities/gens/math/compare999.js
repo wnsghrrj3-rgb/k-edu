@@ -17,7 +17,13 @@
     id: 'compare999',
     title: '세 자리 수 비교',
     create: function (params, rng) {
-      var range = +((params || {}).range) === 500 ? 500 : 999;
+      /* §6-9-4 — 옵션은 [500, 999] 둘뿐. 옵션 밖 값은 **아래로** 낮춘다(위로 올리지 않는다).
+       * v3.29까지 `=== 500 ? 500 : 999`가 range:9 요청에 996을 냈다 (상향 코어션). */
+      var rawRange = +((params || {}).range);
+      var range = (rawRange >= 999 || isNaN(rawRange)) ? 999 : 500;
+      /* §6-9-6 — 사후 클램프 금지: 백의 자리 상한을 생성 전에 계산해 처음부터 범위 안에서 낸다.
+       * hMax*100+99 <= range 를 보장 → 십·일의 자리가 자유로워도 range를 넘지 않는다. */
+      var hMax = Math.max(1, Math.floor((range - 99) / 100));
       return {
         next: function () {
           var r = rng(), a, b, type;
@@ -26,30 +32,27 @@
             while (Math.floor(a / 100) === Math.floor(b / 100));
             type = 'hundreds_diff';
           } else if (r < 0.55) {                          // 백은 같고 십이 다르다
-            var h = ri(rng, 1, Math.floor(range / 100));
+            var h = ri(rng, 1, hMax);
             var t1 = ri(rng, 0, 9), t2;
             do { t2 = ri(rng, 0, 9); } while (t2 === t1);
             a = h * 100 + t1 * 10 + ri(rng, 0, 9);
             b = h * 100 + t2 * 10 + ri(rng, 0, 9);
             type = 'tens_diff';
           } else if (r < 0.75) {                          // 백·십이 같고 일만 다르다
-            var h2 = ri(rng, 1, Math.floor(range / 100)), t = ri(rng, 0, 9);
+            var h2 = ri(rng, 1, hMax), t = ri(rng, 0, 9);
             var o1 = ri(rng, 0, 9), o2;
             do { o2 = ri(rng, 0, 9); } while (o2 === o1);
             a = h2 * 100 + t * 10 + o1;
             b = h2 * 100 + t * 10 + o2;
             type = 'ones_diff';
           } else if (r < 0.92) {                          // 0이 낀 수 — 305 vs 350 같은 함정
-            var h3 = ri(rng, 1, Math.floor(range / 100));
+            var h3 = ri(rng, 1, hMax);
             a = h3 * 100 + ri(rng, 1, 9);                 // h0o
             b = h3 * 100 + ri(rng, 1, 9) * 10;            // ht0
             type = 'zero_trap';
           } else {
             a = ri(rng, 100, range); b = a; type = 'equal';
           }
-          if (a > range) a = range;
-          if (b > range) b = range;
-
           var ans = (a === b) ? 'E' : (a > b ? 'L' : 'R');
           var big = Math.max(a, b), small = Math.min(a, b);
           var explain;
