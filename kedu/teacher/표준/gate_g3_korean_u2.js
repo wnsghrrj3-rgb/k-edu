@@ -638,11 +638,11 @@ T('홈 배선 · slug · u1 회귀', () => {
   ok(!HOME.includes('g3_math'), '수학 잔여 참조');
   ok(/unit:\s*1,\s*title:\s*"생생하게 표현해요"/.test(HOME), 'u1 블록 훼손');
 });
-T('⚠️ 허브 "3_korean" 카운트 갱신 (u1 8 + u2 7 + u3 7 + u4 7 + u5 8 = units 5 · lessons 37)', () => {
+T('⚠️ 허브 "3_korean" 카운트 갱신 (u1 8 + u2 7 + u3 7 + u4 7 + u5 8 + u6 8 = units 6 · lessons 45)', () => {
   const m = HUB.match(/"3_korean":\s*\{\s*file:\s*"g3_korean\.html",\s*units:\s*(\d+),\s*lessons:\s*(\d+)\s*\}/);
   ok(m, '허브에 3_korean 미등재');
-  ok(+m[1] === 5, 'units ' + m[1]);
-  ok(+m[2] === 37, 'lessons ' + m[2]);
+  ok(+m[1] === 6, 'units ' + m[1]);
+  ok(+m[2] === 45, 'lessons ' + m[2]);
   /* ⚠️ 다음 단원(u6) 개통 시 이 두 수와 gate_g3_korean_u1·u3·u4·u5의 같은 단언을 함께 올릴 것 */
   ok(/"3_math"[\s\S]*?lessons:\s*55/.test(HUB), 'g3 수학 허브 단언 훼손');
 });

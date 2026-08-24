@@ -697,11 +697,11 @@ T('홈 slug · u1~u4 회귀', () => {
   ['u1_l01', 'u2_l01', 'u3_l01', 'u4_l01'].forEach(k =>
     ok(CURRIC_SRC.includes('unit: ' + k[1]), 'unit ' + k[1] + ' 블록 없음'));
 });
-T('⚠️ 허브 "3_korean" 카운트 갱신 (8+7+7+7+8 = units 5 · lessons 37)', () => {
+T('⚠️ 허브 "3_korean" 카운트 갱신 (8+7+7+7+8+8 = units 6 · lessons 45)', () => {
   const m = HUB.match(/"3_korean":\s*\{[^}]*units:\s*(\d+),\s*lessons:\s*(\d+)/);
   ok(m, '허브에 3_korean 미등재');
-  ok(+m[1] === 5, 'units ' + m[1]);
-  ok(+m[2] === 37, 'lessons ' + m[2]);
+  ok(+m[1] === 6, 'units ' + m[1]);
+  ok(+m[2] === 45, 'lessons ' + m[2]);
 });
 T('케이랩 매핑 없음 = 의도적 (편지·역할 말하기는 실물이 우위)', () => {
   ok(!fs.existsSync(path.join(TDIR, 'data/g3_korean_klab.js')), 'klab 데이터가 생겼다');
