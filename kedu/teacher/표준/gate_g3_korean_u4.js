@@ -716,12 +716,12 @@ T('홈 slug · u1~u3 회귀', () => {
   ok(/unit:\s*2,\s*title:\s*"분명하고 유창하게"/.test(HOME), 'u2 블록 훼손');
   ok(/unit:\s*3,\s*title:\s*"짜임새 있는 글, 재미와 감동이 있는 글"/.test(HOME), 'u3 블록 훼손');
 });
-T('⚠️ 허브 "3_korean" 카운트 갱신 (8+7+7+7 = units 4 · lessons 29)', () => {
+T('⚠️ 허브 "3_korean" 카운트 갱신 (8+7+7+7+8 = units 5 · lessons 37)', () => {
   const m = HUB.match(/"3_korean":\s*\{\s*file:\s*"g3_korean\.html",\s*units:\s*(\d+),\s*lessons:\s*(\d+)\s*\}/);
   ok(m, '허브에 3_korean 미등재');
-  ok(+m[1] === 4, 'units ' + m[1]);
-  ok(+m[2] === 29, 'lessons ' + m[2]);
-  /* ⚠️ 다음 단원(u5) 개통 시 이 두 수와 gate_g3_korean_u1·u2·u3의 같은 단언을 함께 올릴 것 */
+  ok(+m[1] === 5, 'units ' + m[1]);
+  ok(+m[2] === 37, 'lessons ' + m[2]);
+  /* ⚠️ 다음 단원(u6) 개통 시 이 두 수와 gate_g3_korean_u1·u2·u3·u5의 같은 단언을 함께 올릴 것 */
   ok(/"3_math"[\s\S]*?lessons:\s*55/.test(HUB), 'g3 수학 허브 단언 훼손');
 });
 T('케이랩 매핑 없음 = 의도적 (듣기·발표는 실물 목소리가 우위)', () => {
