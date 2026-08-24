@@ -36,6 +36,21 @@ button{font-family:inherit;cursor:pointer;border:none}
 .pchip.act3{box-shadow:0 0 16px rgba(125,255,176,.55);border-color:var(--p3);transform:scale(1.06)}
 
 /* ---------- 배너·토스트 ---------- */
+/* ---------- 현황판 ---------- */
+#statPanel{position:fixed;top:56px;right:8px;z-index:18;width:250px;max-width:calc(100vw - 16px);max-height:calc(100vh - 180px);overflow-y:auto;background:rgba(13,17,38,.92);border:1px solid var(--line);border-radius:16px;padding:10px;display:none;backdrop-filter:blur(4px)}
+#statPanel.on{display:block}
+#statPanel h3{font-size:12px;color:var(--gold);margin:0 0 8px;text-align:center;letter-spacing:1px}
+.spCard{border:1px solid var(--line);border-radius:12px;padding:8px 9px;margin-bottom:7px;background:rgba(255,255,255,.03)}
+.spCard.turn{border-color:var(--gold);box-shadow:0 0 10px rgba(255,211,92,.25)}
+.spCard.dead{opacity:.4;filter:grayscale(1)}
+.spHead{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700}
+.spHead .spCash{margin-left:auto;color:var(--gold);font-weight:800}
+.spAsset{font-size:10.5px;color:#9aa3c7;margin:2px 0 5px;padding-left:2px}
+.spLands{display:flex;flex-wrap:wrap;gap:4px}
+.spLand{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;padding:2px 7px 2px 5px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)}
+.spLand .dotg{width:7px;height:7px;border-radius:50%;flex:none}
+.spNone{font-size:10.5px;color:#6b7396;padding-left:2px}
+@media(max-width:600px){#statPanel{top:auto;bottom:96px;right:6px;width:210px;max-height:46vh}}
 #banner{position:fixed;top:56px;left:50%;transform:translateX(-50%);z-index:19;font-size:15px;padding:8px 20px;border-radius:999px;background:var(--panel);border:1px solid var(--line);white-space:nowrap;max-width:94vw;overflow:hidden;text-overflow:ellipsis}
 .toast{position:fixed;left:50%;bottom:104px;transform:translate(-50%,20px);background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:10px 18px;font-size:14px;opacity:0;transition:.28s;z-index:40;pointer-events:none;max-width:92vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .toast.on{opacity:1;transform:translate(-50%,0)}
@@ -110,10 +125,12 @@ button{font-family:inherit;cursor:pointer;border:none}
 <div id="topbar" style="display:none">
   <button class="qbtn" id="btnHome2" title="다른 놀이">🎪</button>
   <button class="qbtn" id="btnHow">❓</button>
+  <button class="qbtn" id="btnStat" title="현황판">📊</button>
   <span id="roundLbl">라운드 1/30</span>
   <div id="chips"></div>
 </div>
 <div id="banner" style="display:none"></div>
+<div id="statPanel"><h3>📊 여행 현황판</h3><div id="statBody"></div></div>
 
 <div id="diceRow" style="display:none"><button class="rollBtn" id="btnRoll">🎲 굴리기!</button></div>
 <div id="diceResult"></div>
@@ -445,8 +462,41 @@ function buildChips() {
     cashShown[p.id] = p.cash;
   });
 }
+/* ================== 현황판 ================== */
+const gHex = g => '#' + GCOLORS[g].toString(16).padStart(6, '0');
+function renderStat() {
+  if (!S) return;
+  const box = $('statBody'); let html = '';
+  S.players.forEach(p => {
+    const isTurn = p.id === S.turn && p.alive && !S.winner;
+    html += `<div class="spCard${isTurn ? ' turn' : ''}${p.alive ? '' : ' dead'}">`;
+    html += `<div class="spHead"><span>${p.em}</span><span style="color:${PCSS[p.id]}">${p.name}</span>${isTurn ? '▶' : ''}<span class="spCash">💰${p.cash}</span></div>`;
+    html += `<div class="spAsset">총재산 ${C.assets(S, p.id)}${p.shield ? ' · 🛡️방패' : ''}${p.island > 0 ? ' · 🏝️무인도 ' + p.island : ''}${p.fly ? ' · 🚀우주여행' : ''}</div>`;
+    const lands = [];
+    for (const i in S.owner) if (S.owner[i].p === p.id) lands.push(+i);
+    lands.sort((a, b) => a - b);
+    if (!p.alive) html += `<div class="spNone">💥 파산…</div>`;
+    else if (!lands.length) html += `<div class="spNone">아직 내 땅이 없어</div>`;
+    else {
+      html += '<div class="spLands">';
+      lands.forEach(i => {
+        const t = C.TILES[i], o = S.owner[i];
+        const dot = t.g ? `<span class="dotg" style="background:${gHex(t.g)}"></span>` : '<span>⭐</span>';
+        const lv = t.t === 'city' ? C.LV_EM[o.lv] : '';
+        const fest = S.festival === i ? '🎪' : '';
+        html += `<span class="spLand">${dot}${t.nm}${lv}${fest}</span>`;
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+  });
+  box.innerHTML = html;
+}
+$('btnStat').onclick = () => { $('statPanel').classList.toggle('on'); snd.tick(); };
+
 function refresh() {
   $('roundLbl').textContent = '라운드 ' + Math.min(S.round, C.MAX_ROUNDS) + '/' + C.MAX_ROUNDS;
+  renderStat();
   S.players.forEach(p => {
     const ch = $('chip' + p.id);
     $('sh' + p.id).textContent = p.shield ? '🛡️' : (p.island > 0 ? '🏝️' : (p.fly ? '🚀' : ''));
@@ -759,6 +809,7 @@ function startGame() {
   board.tiles.forEach(T => { T.frame.userData.on = false; T.frame.material.opacity = 0; if (T.festival) { stage.scene.remove(T.festival); T.festival = null; } });
   $('setup').style.display = 'none';
   $('topbar').style.display = ''; $('banner').style.display = '';
+  $('statPanel').classList.toggle('on', window.innerWidth >= 900);
   $('over').style.display = 'none';
   buildChips(); buildTokens(); refresh();
   director.over();
@@ -769,13 +820,15 @@ function startGame() {
 }
 $('btnStart').onclick = () => { snd.tick(); startGame(); };
 $('btnRoll').onclick = () => { if (!busy) playTurn(); };
-$('btnAgain').onclick = () => { $('over').style.display = 'none'; $('setup').style.display = 'flex'; $('topbar').style.display = 'none'; $('banner').style.display = 'none'; $('diceRow').style.display = 'none'; };
+$('btnAgain').onclick = () => { $('over').style.display = 'none'; $('statPanel').classList.remove('on'); $('setup').style.display = 'flex'; $('topbar').style.display = 'none'; $('banner').style.display = 'none'; $('diceRow').style.display = 'none'; };
 
 /* ================== 프레임 루프 ================== */
 let last = performance.now();
+let statT = 0;
 function loop(now) {
   requestAnimationFrame(loop);
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  statT += dt; if (statT > 0.6) { statT = 0; if ($('statPanel').classList.contains('on')) renderStat(); }
   director.update(dt);
   parts.update(dt);
   updateDice(dt);
