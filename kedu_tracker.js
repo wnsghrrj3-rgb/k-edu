@@ -2,7 +2,7 @@
 // K-edu 학습 추적 + 인증 가드 (kedu_tracker.js v2)
 // 작성: 2026-04-28
 // 명세: handoff/kedu/standards/데이터진단_표준.md
-// 적합성: 무로그인 저장 X, 학급코드 학생만 저장.
+// 적합성: 학습데이터는 학급코드 학생만 저장. 방문집계(page_visits)는 익명·개인식별 없음.
 //
 // 페이지 사용:
 //   <meta name="kedu-lesson-id" content="g1_korean_01_글자의짜임">
@@ -49,6 +49,11 @@
       state.client = getKeduDb();
       var path = location.pathname;
 
+      // --- 방문 집계 (익명, 개인식별 없음) ---
+      // page_visits: page_path + 임의 세션ID만 기록. 사용자 정보 저장 X.
+      // 로그인 여부와 무관하게 동작 (관리자 대시보드 방문 통계용).
+      logVisit(path);
+
       // --- 인증 가드 (보호 경로) ---
       // 무로그인 = 즉시 /auth로 리다이렉트.
       // 단, kedu_config.js의 KEDU_AUTH_GATE === false면 게이트 OFF (작업·검증용).
@@ -78,6 +83,37 @@
 
     } catch(e){
       // 추적 실패해도 페이지 동작 영향 없음
+    }
+  }
+
+  // ============================================
+  // 익명 방문 집계 (page_visits)
+  // 저장 항목: page_path, session_id(임의 난수), visited_at(서버 default)
+  // 개인식별 정보 저장 없음. 학습 데이터(scores 등)와 완전히 분리.
+  // ============================================
+  function logVisit(path){
+    // 관리·인증 페이지는 집계 제외
+    if(SKIP.test(path)) return;
+
+    try {
+      // 탭 단위 세션ID (유니크 방문자 계산용, 개인식별 불가)
+      var sessionId = sessionStorage.getItem('kedu_visit_session');
+      if(!sessionId){
+        sessionId = 'v_' + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+        sessionStorage.setItem('kedu_visit_session', sessionId);
+      }
+
+      // 같은 세션 내 같은 페이지는 1회만 기록
+      var pageKey = 'kedu_visited_' + path;
+      if(sessionStorage.getItem(pageKey)) return;
+      sessionStorage.setItem(pageKey, '1');
+
+      state.client.from('page_visits').insert({
+        page_path: path,
+        session_id: sessionId
+      }).then(function(){}).catch(function(){});
+    } catch(e){
+      // 집계 실패해도 페이지 동작 영향 없음
     }
   }
 
