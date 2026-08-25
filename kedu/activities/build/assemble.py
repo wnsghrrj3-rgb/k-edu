@@ -9,7 +9,7 @@
     python3 build/assemble.py g1m_u5_balance   # 하나만
 
 입력(관례 — 카탈로그가 단일 원천):
-    _CATALOG.json 의 id / title / short / genre / gen / src
+    _CATALOG.json 의 id / title / short / genre / gen / gens(선택, 부품 생성기) / src
     src/{id}.js     활동 정의 (무대·연출)      [필수]
     src/{id}.css    무대 스타일                 [선택]
 출력:
@@ -97,7 +97,14 @@ def build(item: dict) -> Path:
     if gen_path and not gen_path.exists():
         raise SystemExit(f'[{aid}] 생성기가 없습니다: {gen_path}')
 
-    gen_block = ('<script>\n' + read(gen_path) + '\n</script>') if gen_path else ''
+    # §5-1 gens [v3.34]: 혼합 생성기가 위임하는 부품 생성기 — gen보다 먼저 인라인한다 (브라우저에서 GENS[이름]으로 찾는다)
+    gen_block = ''
+    for sub in item.get('gens', []):
+        sub_path = ROOT / sub
+        if not sub_path.exists():
+            raise SystemExit(f'[{aid}] 부품 생성기가 없습니다: {sub_path}')
+        gen_block += '<script>\n' + read(sub_path) + '\n</script>\n'
+    gen_block += ('<script>\n' + read(gen_path) + '\n</script>') if gen_path else ''
 
     html = SHELL.format(
         title=item.get('title', aid),
