@@ -50,7 +50,7 @@
    ⚠️ CURRICULUM 슬라이싱은 다음 unit 앞에서 끊는 **전방탐색**으로 짠다(u4 대비).
    ⚠️ 홈 배선은 문자열 존재가 아니라 **닫는 태그까지** 검사한다(u1·u2·u3 셋).
    ⚠️ 허브 카운트는 「수를 못 박는 줄」과 「부분 합으로 다시 계산하는 줄」을 **함께** 둔다.
-      lessons = **항목 수 합 28**(u1 9 + u2 10 + u3 9)이지 차시 수 합 31이 아니다.
+      lessons = **항목 수 합 37**(u1 9 + u2 10 + u3 9 + u4 9)이지 차시 수 합 40이 아니다.
    ⚠️ jsdom은 세션마다 새로 깔아야 한다.
    ⚠️ 게이트는 **k-edu 클론에서 돌릴 것** — handoff에는 `grade3/`가 없어 본차시 대조가 죽는다.
 
@@ -766,7 +766,9 @@ T('⚠️ 홈 배선 — **닫는 태그까지** 성립한다 (u1·u2·u3 셋)',
   ['u1', 'u2', 'u3'].forEach(u =>
     ok(new RegExp('<script src="data\\/g3_science_' + u + '\\.js"><\\/script>').test(HOME),
        u + ' script 태그가 닫는 태그까지 성립하지 않는다'));
-  ok(!/g3_science_u4\.js/.test(HOME), 'u4 배선이 미리 생겼다');
+  /* ⚠️ u4가 붙은 뒤로는 넷을 다 검사한다(2026-08-26). 다음은 u5가 미리 생기지 않았는지. */
+  ok(/<script src="data\/g3_science_u4\.js"><\/script>/.test(HOME), 'u4 배선이 사라졌다');
+  ok(!/g3_science_u5\.js/.test(HOME), 'u5 배선이 미리 생겼다');
   const open = (HOME.match(/<script[\s>]/g) || []).length;
   const close = (HOME.match(/<\/script>/g) || []).length;
   ok(open === close, 'script 여닫이 개수 불일치 ' + open + '/' + close);
@@ -780,14 +782,14 @@ T('홈 slug · 과목 · 복제 원본(국어) 잔재 0', () => {
   ok(hit.length === 0, '렌더 대상에 국어 잔재 ' + hit.length + '건');
   ok(/과학/.test(noComment), '과학 표기가 없다');
 });
-T('⚠️ 허브 "3_science" 등재 (units 3 · lessons 28) — 못 박는 줄 + 부분 합 재계산 줄', () => {
+T('⚠️ 허브 "3_science" 등재 (units 4 · lessons 37) — 못 박는 줄 + 부분 합 재계산 줄', () => {
   const m = HUB.match(/"3_science":\s*\{[^}]*units:\s*(\d+),\s*lessons:\s*(\d+)/);
   ok(m, '허브에 3_science 미등재');
-  ok(+m[1] === 3, 'units ' + m[1]);
-  ok(+m[2] === 28, 'lessons ' + m[2]);
-  /* ⚠️ lessons = **항목 수** 합이지 차시 수가 아니다. u1 9 + u2 10 + u3 9 = 28. */
-  ok(+m[2] === 9 + 10 + KEYS.length, '부분 합 재계산 어긋남 ' + m[2]);
-  ok(+m[2] !== 31, 'lessons에 차시 수 합 31을 넣었다 — 항목 수 28이어야 한다');
+  ok(+m[1] === 4, 'units ' + m[1]);
+  ok(+m[2] === 37, 'lessons ' + m[2]);
+  /* ⚠️ lessons = **항목 수** 합이지 차시 수가 아니다. u1 9 + u2 10 + u3 9 + u4 9 = 37. */
+  ok(+m[2] === 9 + 10 + KEYS.length + 9, '부분 합 재계산 어긋남 ' + m[2]);
+  ok(+m[2] !== 40, 'lessons에 차시 수 합 40을 넣었다 — 항목 수 37이어야 한다');
   ok(/id:\s*"science"/.test(HUB), '허브 SUB_HIGH에 과학이 없다');
 });
 T('⚠️ 허브 옆 줄 무영향 회귀 (3_korean 6/45 · 3_math 7/55)', () => {
