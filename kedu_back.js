@@ -1,5 +1,5 @@
 /* ============================================================
-   케이에듀 공용 돌아가기 버튼 (2026-07-25)
+   케이에듀 공용 돌아가기 버튼 (2026-07-25 · 2026-08-25 슬라이드 전환 재판정)
    목적: 모든 도구 화면에서 같은 자리(좌측 상단)·같은 문구·같은 모양.
    규칙:
      · 선생님 도구(/?role=teacher)에서 들어온 흐름 → 「← 선생님 도구」 → /?role=teacher
@@ -153,29 +153,42 @@
     }
     return out;
   }
-  function placeAvoiding(a) {
-    /* 최상단 띠(top<=72)의 모든 컨트롤/텍스트 rect 수집 */
-    function bandRects() {
-      var res = [], nodes = document.querySelectorAll('a,button,span,.pill,.where,h1,h2');
-      for (var i = 0; i < nodes.length; i++) {
-        var n = nodes[i]; if (n === a || a.contains(n)) continue;
-        var r = n.getBoundingClientRect();
-        if (!r.width || !r.height || r.top > 110) continue;
-        var t = (n.textContent || '').trim();
-        if (!t || t.length > 40) continue;
-        res.push(r);
+  /* 띠 안의 짧은 텍스트 요소 전부 — a/button/제목뿐 아니라 JS가 그리는 div/span 태그
+     (「③ 알맞은 문장 모으기」류)도 잡는다. limitTop: 이 높이까지만 본다. */
+  function bandRects(a, limitTop) {
+    var res = [], nodes = document.body.querySelectorAll('*');
+    for (var i = 0; i < nodes.length; i++) {
+      var n = nodes[i], tg = n.tagName;
+      if (tg === 'SCRIPT' || tg === 'STYLE' || tg === 'SVG' || tg === 'PATH') continue;
+      if (n === a || a.contains(n)) continue;
+      var r = n.getBoundingClientRect();
+      if (!r.width || !r.height || r.top > limitTop || r.bottom < 0) continue;
+      var t;
+      if (tg === 'A' || tg === 'BUTTON' || tg === 'H1' || tg === 'H2') t = (n.textContent || '').trim();
+      else {
+        t = '';
+        for (var c = n.firstChild; c; c = c.nextSibling) if (c.nodeType === 3) t += c.textContent;
+        t = t.trim();
       }
-      return res;
+      if (!t || t.length > 40) continue;
+      var cs = getComputedStyle(n);
+      if (cs.display === 'none' || cs.visibility === 'hidden') continue;   /* 페이드 중(opacity 0)도 곧 보이므로 포함 */
+      res.push(r);
     }
-    function clashes() {
-      var mine = a.getBoundingClientRect();
-      return bandRects().filter(function (r) {
-        return !(r.right <= mine.left || r.left >= mine.right || r.bottom <= mine.top || r.top >= mine.bottom);
-      });
-    }
+    return res;
+  }
+  function clashesAt(a, limitTop) {
+    var mine = a.getBoundingClientRect();
+    return bandRects(a, limitTop).filter(function (r) {
+      return !(r.right <= mine.left || r.left >= mine.right || r.bottom <= mine.top || r.top >= mine.bottom);
+    });
+  }
+  var CLASH_TOP = 240;                                       /* 겹침 판정 범위 — 헤더 아래로 내려간 버튼까지 */
+  function placeAvoiding(a) {
+    function clashes() { return clashesAt(a, CLASH_TOP); }
     if (!clashes().length) return;                            /* 이미 안 겹침 */
 
-    var band = bandRects();
+    var band = bandRects(a, 110);                             /* 헤더 기하는 최상단 띠만으로 */
     if (!band.length) return;
     var leftMost = Infinity, rightMost = 0, headerBottom = 0;
     for (var i = 0; i < band.length; i++) {
@@ -204,14 +217,47 @@
     if (!clashes().length) return;
     /* 최후 — 어디에도 빈 자리가 없다: 페이지가 자체 나가기 수단을 이미 가졌다는
        뜻이므로(상단바 가득) 공용 버튼을 감춘다. 갈 곳이 없어지지 않도록
-       자체 나가기가 최상단 띠에 실재할 때만. */
+       자체 나가기가 최상단 띠에 실재할 때만. 한 번 감추면 이 화면 세션 동안 유지. */
     var hasOwnExit = false, bb = document.querySelectorAll('a,button');
     for (var q = 0; q < bb.length; q++) {
       var rr = bb[q].getBoundingClientRect();
       if (rr.width && rr.top <= 110 && /목록|홈|나가기|뒤로|나오기/.test((bb[q].textContent || ''))) { hasOwnExit = true; break; }
     }
-    if (hasOwnExit) { a.style.display = 'none'; window.KEDU_BACK.suppressed = true; }
+    if (hasOwnExit) suppress(a);
     else { a.style.left = '14px'; a.style.right = 'auto'; a.style.top = Math.round(headerBottom + 8) + 'px'; }
+  }
+  var HIDE = 'kedu_back_hidden_v1';
+  function hiddenHere() { try { return sessionStorage.getItem(HIDE) === location.pathname; } catch (e) { return false; } }
+  function suppress(a) {
+    a.style.display = 'none'; window.KEDU_BACK.suppressed = true;
+    try { sessionStorage.setItem(HIDE, location.pathname); } catch (e) {}
+    if (window.__keduBackMO) { window.__keduBackMO.disconnect(); window.__keduBackMO = null; }
+  }
+  /* 슬라이드 전환마다 재판정 — 로드 시 1회만 보면 JS가 나중에 그리는 상단 태그와 겹친다
+     (세로폰에서 카드가 화면을 꽉 채운 뒤 드러난 문제, 2026-08-25). 겹칠 때만 자리를 다시 잡는다. */
+  function watch(a) {
+    var pending = null, trailing = null;
+    function recheck(isTrail) {
+      pending = null;
+      if (!isTrail && !trailing) trailing = setTimeout(function () { trailing = null; recheck(true); }, 700);   /* 늦게 그려지는 요소용 1회 재확인 */
+      if (window.KEDU_BACK.suppressed || !document.body.contains(a)) return;
+      if (!clashesAt(a, CLASH_TOP).length) return;
+      a.style.left = ''; a.style.right = ''; a.style.top = '';
+      placeAvoiding(a);
+    }
+    function schedule() { if (!pending) pending = setTimeout(function () { recheck(false); }, 200); }
+    try {
+      var mo = new MutationObserver(function (recs) {
+        for (var i = 0; i < recs.length; i++) {
+          var tgt = recs[i].target;
+          if (tgt === a || (tgt.nodeType === 1 && a.contains(tgt))) continue;
+          schedule(); return;
+        }
+      });
+      mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style', 'hidden'] });
+      window.__keduBackMO = mo;
+    } catch (e) {}
+    window.addEventListener('resize', schedule);
   }
 
   function build() {
@@ -240,9 +286,11 @@
     if (target) { a.className = 'kb-inline'; target.insertBefore(a, target.firstChild); }
     else {
       a.className = 'kb-fixed'; document.body.appendChild(a);
+      if (hiddenHere()) { suppress(a); window.KEDU_BACK.el = a; return; }   /* 이 화면에서 이미 감췄던 세션 */
       placeAvoiding(a);                                       /* 규칙 B */
       /* 폰트·늦은 렌더로 자체 버튼이 뒤늦게 커지는 경우 1회 재판정 */
-      setTimeout(function () { a.style.left = ''; a.style.top = ''; placeAvoiding(a); }, 350);
+      setTimeout(function () { if (window.KEDU_BACK.suppressed) return; a.style.left = ''; a.style.right = ''; a.style.top = ''; placeAvoiding(a); }, 350);
+      watch(a);                                               /* 이후 슬라이드 전환마다 */
     }
     window.KEDU_BACK.el = a;
   }
