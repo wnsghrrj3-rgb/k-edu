@@ -111,7 +111,7 @@ for (const home of HOMES) {
   });
 
   // ③ 전 차시 전 슬라이드 실렌더
-  T(`ready ${dataKeys.length}차시 전 슬라이드 실렌더(예외 0·폴백 0·미지 블록 0)`, () => {
+  T(`ready ${dataKeys.length}차시 전 슬라이드 실렌더(예외 0·폴백 0·오류 카드 0·미지 블록 0)`, () => {
     const bad = [];
     curKeys.filter(c => dataKeys.includes(c.key)).forEach(c => {
       const les = w.LESSONS[c.key];
@@ -126,6 +126,8 @@ for (const home of HOMES) {
           if (i > 0) w.eval('Teacher._debug && Teacher._debug(); document.dispatchEvent(new KeyboardEvent("keydown",{key:"ArrowRight"}))');
           const t = stage.textContent || '';
           if (t.indexOf('내용을 추가하세요') >= 0) { bad.push(`${c.key} s${i + 1}: 폴백 「내용을 추가하세요」`); break; }
+          // 점검 2/2: 엔진이 renderSlide 예외를 오류 카드로 감싸므로 예외가 콘솔로 새지 않는다 — 카드 문구로 잡는다.
+          if (t.indexOf('이 슬라이드를 그리지 못했어요') >= 0) { bad.push(`${c.key} s${i + 1}: 오류 카드(renderSlide 예외)`); break; }
         }
         w.eval('Teacher.backToHome()');
         if (jsErrors.length > before) bad.push(`${c.key}: 렌더 중 예외 ${jsErrors.length - before}건 — ${jsErrors[before].split('\n')[0]}`);

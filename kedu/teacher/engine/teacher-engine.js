@@ -685,9 +685,19 @@
         return renderPresent(d, slide.id);
 
       case 'arrow_flow': {
-        const flowHtml = d.flow.map((f, i) => {
+        // 점검 2/2(2026-08-25): flow 없이 steps(문자열 배열)나 pairs로 온 데이터 폴백 —
+        // g1 수학 u5 네 슬라이드가 steps만 담아 d.flow.map에서 죽어 수업이 멈추던 자리.
+        let flow = Array.isArray(d.flow) ? d.flow : null;
+        if (!flow && Array.isArray(d.steps)) flow = d.steps.map((s, i) => ({ num: i + 1, label: String(s) }));
+        if (!flow && Array.isArray(d.pairs)) {
+          const fwd = (d.labels && d.labels.forward) || '모으면', bwd = (d.labels && d.labels.backward) || '가르면';
+          const rows = d.pairs.map(p => `<div class="af-pair"><span class="af-side">${md(String(p.left))}</span><span class="af-arrow">→ ${fwd} →</span><span class="af-side">${md(String(p.right))}</span><span class="af-arrow">← ${bwd} ←</span></div>`).join('');
+          return `<h2>${md(d.title)}</h2><div class="center"><div class="arrow-flow af-pairs">${rows}</div>${d.sub ? `<div class="small-text">${md(d.sub)}</div>` : ''}</div>`;
+        }
+        if (!flow) return `<h2>${md(d.title || '')}</h2><div class="center">${d.body ? `<p>${md(d.body)}</p>` : ''}${d.sub ? `<div class="small-text">${md(d.sub)}</div>` : ''}</div>`;
+        const flowHtml = flow.map((f, i) => {
           const numCls = f.type === 'anchor' ? 'anchor' : (f.type === 'up' ? 'up' : '');
-          return `<div class="af-item"><div class="af-num ${numCls}">${f.num}</div><div class="af-label">${md(f.label)}</div></div>${i < d.flow.length - 1 ? '<div class="af-arrow">→</div>' : ''}`;
+          return `<div class="af-item"><div class="af-num ${numCls}">${f.num}</div><div class="af-label">${md(f.label)}</div></div>${i < flow.length - 1 ? '<div class="af-arrow">→</div>' : ''}`;
         }).join('');
         return `<h2>${md(d.title)}</h2><div class="center"><div class="arrow-flow">${flowHtml}</div>${d.sub ? `<div class="small-text">${md(d.sub)}</div>` : ''}</div>`;
       }
@@ -1097,7 +1107,15 @@
     // v3 C2: 블록 타입 훅(스킨 전용, classic 모드엔 대응 CSS 없어 무변화) + 풀다크 4종 마커
     const _blk = cur.block || '';
     const _dk = (_blk === 'cover' || _blk === 'summary' || _blk === 'next_lesson' || _blk === 'game') ? ' kt-dk' : '';
-    document.getElementById('slide-content').innerHTML = `<div class="slide active blk-${_blk}${_dk} ${cur.user_added ? 'user-added' : ''}">${renderSlide(cur)}</div>`;
+    // 점검 2/2(2026-08-25): renderSlide 예외를 오류 카드로 감싼다 — 한 슬라이드의 데이터 오류가
+    // go()를 죽여 수업 전체를 멈추던 자리. 콘솔에는 그대로 남겨 점검기(audit_all_homes)가 잡게 한다.
+    let _html;
+    try { _html = renderSlide(cur); }
+    catch (e) {
+      console.error('[teacher] renderSlide 실패', cur && cur.id, cur && cur.block, e);
+      _html = `<div class="slide-error"><h2>이 슬라이드를 그리지 못했어요</h2><p class="small-text">다음 슬라이드로 넘어가 주세요. (${cur && cur.id ? cur.id : '?'} · ${cur && cur.block ? cur.block : '?'})</p></div>`;
+    }
+    document.getElementById('slide-content').innerHTML = `<div class="slide active blk-${_blk}${_dk} ${cur.user_added ? 'user-added' : ''}">${_html}</div>`;
     const _mt = document.querySelector('#slide-content .klab-mount');
     if (_mt && window.KLab) {
       try {
