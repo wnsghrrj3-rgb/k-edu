@@ -1,11 +1,11 @@
-/* kedu_fit.js — KEDU fit-to-frame v12 (공유 모듈)
+/* kedu_fit.js — KEDU fit-to-frame v13 (공유 모듈)
    슬라이드 콘텐츠가 프레임을 넘칠 때만 래퍼로 감싸 실측 축소·중앙정렬.
    무개입 우선 / 축소영향 요소 전수 union / 3-pass / 하한 0.33.
    ★래퍼 애니메이션 차단: 원본 `.slide.active>*{animation}`이 래퍼에 걸리면
      키프레임 transform이 인라인보다 우선해 fit가 통째로 무력화되므로
      animation/transition none !important + transform은 항상 !important로 적용.
    자기주도 slide형 전 차시 공통 로드: <script src="/kedu_fit.js"><\/script> */
-/* KEDU fit-to-frame v12 — 원본 실측 후 넘칠 때만 감싸 축소·정렬(무개입 우선, 축소영향 요소 전수 측정, 3-pass, 래퍼 애니메이션 무력화 차단) */
+/* KEDU fit-to-frame v13 — 중심 기준 축소·이동 클램프(스크롤 영역 확장 차단). 원본 실측 후 넘칠 때만 감싸 축소·정렬(무개입 우선, 축소영향 요소 전수 측정, 3-pass, 래퍼 애니메이션 무력화 차단) */
 (function(){
   var MINK=0.33, TOL=2;
   /* 애니메이션 우선순위를 이기기 위해 transform은 항상 !important 로 */
@@ -48,7 +48,7 @@
     var cs=getComputedStyle(s);
     var w=document.createElement('div');
     w.className='__fitwrap';
-    w.style.cssText='display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:'+cs.gap+';transform-origin:0 0;';
+    w.style.cssText='display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:'+cs.gap+';transform-origin:50% 50%;';
     /* 원본 CSS의 `.slide.active>*{animation:...}` 류가 래퍼에 걸리면 키프레임 transform이
        인라인 transform을 이겨 fit가 통째로 무력화됨 → !important로 차단 */
     w.style.setProperty('animation','none','important');
@@ -62,7 +62,7 @@
   function fitActive(){
     var s=document.querySelector('.slide.active'); if(!s) return;
     var w=s.__fw, f, u, o;
-    if(w){ setTF(w,'none'); w.style.justifyContent='flex-start'; void w.offsetHeight; }
+    if(w){ setTF(w,'none'); void w.offsetHeight; }
     f=frame(s); u=union(w||s);
     if(!u.any){ if(w) w.style.justifyContent='center'; return; }
     o=over(f,u);
@@ -71,7 +71,7 @@
       return;
     }
     if(!w){                          /* 넘칠 때만 감싼다 */
-      w=wrap(s); w.style.justifyContent='flex-start'; void w.offsetHeight;
+      w=wrap(s); void w.offsetHeight;
       f=frame(s); u=union(w);
       o=over(f,u);
       if(o.v<=TOL && o.h<=TOL){ w.style.justifyContent='center'; setTF(w,'none'); return; }
@@ -85,6 +85,14 @@
       var u2=union(w); if(!u2.any) break;
       dx += (f.l+f.w/2)-(u2.left+u2.right)/2;
       dy += (f.t+f.h/2)-(u2.top+u2.bot)/2;
+      /* 래퍼 시각 박스가 프레임 밖으로 나가지 않도록 이동량 클램프 — transform은 레이아웃 박스를 안 바꾸지만
+         스크롤 영역(scrollHeight)은 넓히므로, overflow:auto 슬라이드에서 헛스크롤·hidden에서 유령 넘침이 생기던 원인 */
+      var wr=w.getBoundingClientRect();
+      var cxl=(wr.left+wr.right)/2-dx, cyl=(wr.top+wr.bottom)/2-dy;
+      var xlo=f.l-cxl+wr.width/2, xhi=f.l+f.w-cxl-wr.width/2;
+      var ylo=f.t-cyl+wr.height/2, yhi=f.t+f.h-cyl-wr.height/2;
+      dx = xlo>xhi ? (xlo+xhi)/2 : Math.min(Math.max(dx,xlo),xhi);
+      dy = ylo>yhi ? (ylo+yhi)/2 : Math.min(Math.max(dy,ylo),yhi);
       var need=Math.min(u2.ch>f.h?f.h/u2.ch:1, u2.cw>f.w?f.w/u2.cw:1);
       if(need<1){ k=Math.max(k*need*0.985, MINK); }
       else if(pass>0) break;

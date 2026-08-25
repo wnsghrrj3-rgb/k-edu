@@ -1,4 +1,4 @@
-/* kedu_fit_main.js — KEDU fit-to-frame v1 (#main 렌더형 공유 모듈)
+/* kedu_fit_main.js — KEDU fit-to-frame v2 (#main 렌더형 공유 모듈, 중심 기준 축소·이동 클램프)
    kedu_fit.js는 `.slide.active` 구조 전용이라 #main을 다시 그리는 차시형(ka형·stage형)에는
    걸리지 않는다. 이 모듈이 그 형태를 맡는다. 계산 규칙은 kedu_fit v12와 동일:
    무개입 우선 / 축소영향 요소 전수 union / 3-pass / 하한 0.33.
@@ -62,7 +62,7 @@
     var w=document.createElement('div');
     w.className='__fitwrap';
     w.style.cssText='display:flex;flex-direction:column;align-items:center;justify-content:center;'+
-                    'width:100%;height:100%;gap:'+(gap||'normal')+';transform-origin:0 0;';
+                    'width:100%;height:100%;gap:'+(gap||'normal')+';transform-origin:50% 50%;';
     w.style.setProperty('animation','none','important');
     w.style.setProperty('transition','none','important');
     return w;
@@ -119,7 +119,7 @@
     var fr=findFrame(main); if(!fr||!fr.clientHeight){ busy=false; return; }
     try{
       var w=main.__fw && main.__fw.isConnected ? main.__fw : null, f, u, o;
-      if(w){ setTF(w,'none'); w.style.justifyContent='flex-start'; void w.offsetHeight; }
+      if(w){ setTF(w,'none'); void w.offsetHeight; }
       f=frame(fr); u=union(w || (fr===main ? main : fr));
       if(!u.any){ if(w) w.style.justifyContent='center'; return; }
       o=over(f,u);
@@ -129,7 +129,7 @@
       }
       if(!w){                              /* 넘칠 때만 감싼다 */
         w=ensureWrap(main, fr);
-        w.style.justifyContent='flex-start'; void w.offsetHeight;
+        void w.offsetHeight;
         f=frame(fr); u=union(w); o=over(f,u);
         if(o.v<=TOL && o.h<=TOL){ w.style.justifyContent='center'; setTF(w,'none'); return; }
       }
@@ -142,6 +142,14 @@
         var u2=union(w); if(!u2.any) break;
         dx += (f.l+f.w/2)-(u2.left+u2.right)/2;
         dy += (f.t+f.h/2)-(u2.top+u2.bot)/2;
+        /* 래퍼 시각 박스가 프레임 밖으로 나가지 않도록 이동량 클램프 — transform은 레이아웃 박스를 안 바꾸지만
+           스크롤 영역(scrollHeight)은 넓히므로, overflow:auto 슬라이드에서 헛스크롤·hidden에서 유령 넘침이 생기던 원인 */
+        var wr=w.getBoundingClientRect();
+        var cxl=(wr.left+wr.right)/2-dx, cyl=(wr.top+wr.bottom)/2-dy;
+        var xlo=f.l-cxl+wr.width/2, xhi=f.l+f.w-cxl-wr.width/2;
+        var ylo=f.t-cyl+wr.height/2, yhi=f.t+f.h-cyl-wr.height/2;
+        dx = xlo>xhi ? (xlo+xhi)/2 : Math.min(Math.max(dx,xlo),xhi);
+        dy = ylo>yhi ? (ylo+yhi)/2 : Math.min(Math.max(dy,ylo),yhi);
         var need=Math.min(u2.ch>f.h?f.h/u2.ch:1, u2.cw>f.w?f.w/u2.cw:1);
         if(need<1){ k=Math.max(k*need*0.985, MINK); }
         else if(pass>0) break;
