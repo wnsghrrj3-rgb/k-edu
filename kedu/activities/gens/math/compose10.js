@@ -22,7 +22,7 @@
     if (kind === 'split') {                       // 10을 a와 □로 가르기
       var b = 10 - a;
       return {
-        a: a, b: b, prompt: '10 → ' + a + ' 과 □', answer: String(b),
+        a: a, b: b, prompt: '10 → ' + KO.j(a, '와/과') + ' □', answer: String(b),
         type: 'split',
         explain: '10은 ' + KO.j(a, '와/과') + ' ' + KO.ro(b) + ' 갈라져요. 손가락 ' + a + '개를 접으면 ' + b + '개가 남아요!'
       };

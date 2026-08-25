@@ -24,7 +24,7 @@
     var a = ri(rng, 1, sum - 1), b = sum - a;
     return {
       a: a, b: b, sum: sum, kind: 'gather',
-      prompt: a + ' 과 ' + b + ' 을 모으면?', answer: String(sum),
+      prompt: KO.j(a, '와/과') + ' ' + KO.j(b, '을/를') + ' 모으면?', answer: String(sum),
       type: sum <= 5 ? 'gather_small' : 'gather_large',
       explain: a + '개에 ' + b + '개를 더 놓으면 모두 ' + sum + '개! ' + KO.j(a, '와/과') + ' ' + KO.j(b, '을/를') + ' 모으면 ' + KO.ida(sum)
     };
@@ -34,7 +34,7 @@
     var a = ri(rng, 1, whole - 1), b = whole - a;
     return {
       a: a, b: b, sum: whole, kind: 'split',
-      prompt: whole + ' 은 ' + a + ' 과 □', answer: String(b),
+      prompt: KO.j(whole, '은/는') + ' ' + KO.j(a, '와/과') + ' □', answer: String(b),
       type: b <= 2 ? 'split_small' : 'split_large',
       explain: whole + '개에서 ' + a + '개를 덜어내면 ' + b + '개가 남아요. ' + KO.j(whole, '은/는') + ' ' + KO.j(a, '와/과') + ' ' + KO.ro(b) + ' 갈라져요'
     };
