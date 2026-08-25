@@ -20,6 +20,8 @@
 
   header { background:#fff; border-bottom:3px solid var(--amber); padding:16px 20px; position:sticky; top:0; z-index:20; }
   header h1 { margin:0; font-size:clamp(20px,3vw,28px); color:var(--deep); }
+  #catfail { margin:0 0 14px; padding:12px 14px; border-radius:12px; line-height:1.6;
+             background:#fdecea; border:2px solid #e5534b; color:#8a1f19; font-size:15px; }
   header .sub { font-size:13px; color:var(--amber-d); margin-top:4px; line-height:1.6; }
   .bar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:12px; }
   .prog { flex:1; min-width:180px; height:12px; background:var(--line); border-radius:999px; overflow:hidden; }
@@ -133,8 +135,8 @@
 <header>
   <h1>부품 검수대</h1>
   <div class="sub">
-    검수 대상은 활동 28종이 아니라 <b>부품</b>입니다. 부품 하나를 고치면 그 부품을 쓰는 활동 전부가 같이 바뀝니다.<br>
-    <b>1차 코스 한 판이면 28종 전부가 판정됩니다.</b> 그 아래는 선택입니다.
+    검수 대상은 활동 <b class="n-all">—</b>종이 아니라 <b>부품</b>입니다. 부품 하나를 고치면 그 부품을 쓰는 활동 전부가 같이 바뀝니다.<br>
+    <b>1차 코스 한 판이면 <span class="n-all">—</span>종 전부가 판정됩니다.</b> 그 아래는 선택입니다.
   </div>
   <div class="bar">
     <div class="prog"><i id="prog-fill"></i></div>
@@ -143,6 +145,10 @@
 </header>
 
 <main>
+  <div id="catfail" style="display:none">
+    ⚠️ <b>카탈로그(_CATALOG.json)를 읽지 못했습니다.</b>
+    파급 수치를 <b>—</b>로 둡니다 — 화면의 종수를 믿지 마세요. 판정은 그대로 하실 수 있습니다.
+  </div>
   <div id="course">
     <div class="tag" id="c-tag">1차 코스</div>
     <h2 id="c-title">한 판만 끝까지 해 주세요</h2>
@@ -150,7 +156,7 @@
       아래 네 부품은 <b>같은 판에 차례로 다 나옵니다</b> — 따로 열 필요가 없습니다.
       「도토리 저울 대결」 <b>다섯 판</b>으로 맞춰 뒀으니 [시작!] 누르고 끝까지 가시면 됩니다.<br>
       답 버튼 → 근거 띠 → HUD → 종료 화면 순으로 지나갑니다. 보시면서 아래 네 줄에 판정만 눌러 주세요.<br>
-      <b>이 네 개가 활동 28종 전부에 들어갑니다.</b>
+      <b>이 네 개가 활동 <span class="n-all">—</span>종 전부에 들어갑니다.</b>
     </div>
     <div class="runs">
       <button class="btn primary" id="c-tv">🖥 전자칠판으로 한 판</button>
@@ -210,49 +216,52 @@
 
 <script>
 'use strict';
-/* 부품 표 — 파급 범위는 _CATALOG.json 실측치(2026-08-24)와 일치한다.
+/* 부품 표 — 파급 범위(reach)는 이 파일이 갖고 있지 않다 (§16-4-2 · D32).
+   count가 붙은 부품은 _CATALOG.json에서 화면을 열 때마다 센다: 'total' | 'genre:x' | 'mode:x'.
+   손으로 적어 둔 종수는 활동이 하나 늘어난 순간 조용히 거짓이 되고, 준호는 그 거짓 위에서
+   "한 판이면 전부 판정된다"를 읽는다. 세지 못하면 소리 내어 실패한다 — 옛 수를 보여주지 않는다.
    link = 봐야 할 판이 첫 문항으로 오도록 고정한 딥링크. 시드는 전부 스모크에서 검증된 값. */
 var PARTS = [
-  /* ── 공통 부품 (core) — 26종 전부에 반영 ───────────────────────── */
-  { id:'ans_row', grp:'core', reach:28, unit:'활동 전부', name:'답 버튼 (가로 일렬)',
+  /* ── 공통 부품 (core) — 활동 전부에 반영 ───────────────────────── */
+  { id:'ans_row', grp:'core', count:'total', unit:'활동 전부', name:'답 버튼 (가로 일렬)',
     look:'전자칠판에서 두 팀 버튼이 가로로 안 무너지고, 3m 뒤에서 글자가 읽히고, 손가락으로 눌리는지.',
     cite:'§6-2 답 버튼은 언제나 가로 일렬', where:'core/activity-core.css · .ansgrp / .abtn',
     tv:'g3m_u5_lt.html?mode=class&seed=17', ph:'g3m_u5_lt.html?mode=solo&seed=17',
     hint:'시작! → 답 버튼 4개가 뜹니다. 전자칠판에서는 케이팀·듀팀 두 줄로 갈립니다.' },
 
-  { id:'hud', grp:'core', reach:28, unit:'활동 전부', name:'HUD — 넘기기 · 그만하기 · 소리',
+  { id:'hud', grp:'core', count:'total', unit:'활동 전부', name:'HUD — 넘기기 · 그만하기 · 소리',
     look:'세 버튼이 44×44로 눌리는지, 우상단에서 케이티처 도구 막대와 겹치지 않는지.',
     cite:'§6-6 우상단은 호스트 구역 · §6-8 넘기기·그만하기는 상설',
     where:'core/activity-core.css · #hud',
     tv:'g1m_u5_balance.html?mode=class&seed=7', ph:'g1m_u5_balance.html?mode=solo&seed=7',
     hint:'화면 오른쪽 위. 과제 모드에서는 [넘기기]가 사라지는 것이 정상입니다(완주가 제출 조건).' },
 
-  { id:'explain', grp:'core', reach:28, unit:'활동 전부', name:'근거 띠 (explain)',
+  { id:'explain', grp:'core', count:'total', unit:'활동 전부', name:'근거 띠 (explain)',
     look:'답을 고른 뒤 뜨는 노란 띠 한 줄이 3m에서 읽히는지, 다음 문제로 넘어가기 전에 읽을 시간이 되는지.',
     cite:'§10-2 정답 공개에는 근거 문장을 함께 낸다',
     where:'core/activity-core.css · #explain',
     tv:'g1m_u5_balance.html?mode=class&seed=7', ph:'g1m_u5_balance.html?mode=solo&seed=7',
     hint:'아무 답이나 눌러 보세요. 맞아도 틀려도 근거 한 줄이 뜹니다.' },
 
-  { id:'end', grp:'core', reach:28, unit:'활동 전부', name:'종료 화면 (승패 · 점수 · 최고 기록)',
+  { id:'end', grp:'core', count:'total', unit:'활동 전부', name:'종료 화면 (승패 · 점수 · 최고 기록)',
     look:'수업을 닫는 화면입니다. 승패가 한눈에 갈리는지, 아이들이 환호할 만한지.',
     cite:'§9-2 종료는 공통 부품', where:'core/activity-core.js · app.finish',
     tv:'g1m_u5_balance.html?mode=class&n=5&seed=7', ph:'g1m_u5_balance.html?mode=solo&n=5&seed=7',
     hint:'문제 수를 5로 두었습니다. 다섯 판만 풀면 바로 종료 화면입니다.' },
 
-  { id:'teams', grp:'core', reach:28, unit:'활동 전부', name:'팀 점수판 (수업 모드)',
+  { id:'teams', grp:'core', count:'total', unit:'활동 전부', name:'팀 점수판 (수업 모드)',
     look:'케이팀(주황)·듀팀(초록)이 3m 뒤에서 색으로 갈리는지, 점수가 오를 때 눈에 들어오는지.',
     cite:'§10-1 수업 모드는 2팀 대결', where:'core/activity-core.css · #teams',
     tv:'g3m_u4_mul.html?mode=class&seed=3', ph:null,
     hint:'전자칠판 전용입니다. 폰에는 팀 대결을 띄우지 않습니다.' },
 
-  { id:'chips', grp:'core', reach:26, unit:'연습 모드', name:'설정 칩 (연습 모드 전용)',
+  { id:'chips', grp:'core', count:'mode:solo', unit:'연습 모드', name:'설정 칩 (연습 모드 전용)',
     look:'폰 세로에서 칩 줄이 안 무너지는지, 아이가 혼자 고를 만큼 말이 쉬운지.',
     cite:'§3-2 설정은 연습 모드에만 노출', where:'core/activity-core.js · renderSettings',
     tv:null, ph:'g3m_u5_lt.html?mode=solo&seed=17',
     hint:'시작 화면에 그대로 있습니다. 수업·과제 모드에서는 숨는 것이 정상입니다.' },
 
-  { id:'assign', grp:'core', reach:25, unit:'과제 지원', name:'과제 모드 — 번호 배지 · 제출 줄',
+  { id:'assign', grp:'core', count:'mode:assign', unit:'과제 지원', name:'과제 모드 — 번호 배지 · 제출 줄',
     look:'아이 번호가 크게 보이는지, 끝난 뒤 "전달됐어요"가 뜨는지, [넘기기]가 사라져 있는지.',
     cite:'§16-3-5 과제 지원 활동은 실폰 세로 검수 전 승격 금지',
     where:'core/activity-core.js · #sid-badge / #submit-line',
@@ -267,45 +276,45 @@ var PARTS = [
     hint:'보너스를 켜 두었습니다. 답을 맞히면 🦉 되짚기가 뜹니다.' },
 
   /* ── 장르 무대 ──────────────────────────────────────────────── */
-  { id:'g_duel', grp:'genre', reach:13, unit:'선다 대결', name:'선다 대결 무대 (duel_quiz)',
+  { id:'g_duel', grp:'genre', count:'genre:duel_quiz', unit:'선다 대결', name:'선다 대결 무대 (duel_quiz)',
     look:'문제가 무대 한가운데 크게 서는지, 답 버튼과 문제가 눈에 같이 들어오는지.',
     cite:'§10-1', where:'core/genre/stream.js',
     tv:'g3m_u4_mul.html?mode=class&seed=17', ph:'g3m_u4_mul.html?mode=solo&seed=17',
-    hint:'가장 많이 쓰는 무대입니다 — 12종이 이걸 씁니다.' },
+    hint:'가장 많이 쓰는 무대입니다 — 활동 절반 가까이가 이 무대를 씁니다.' },
 
-  { id:'g_balance', grp:'genre', reach:4, unit:'저울', name:'저울 무대 (balance)',
+  { id:'g_balance', grp:'genre', count:'genre:balance', unit:'저울', name:'저울 무대 (balance)',
     look:'저울이 기우는 연출이 답을 미리 흘리지 않는지, 숫자 카드가 고대비로 읽히는지.',
     cite:'§6-3 판독 우선 — 숫자는 고대비 카드 위에',
     where:'src/g1m_u5_balance.js 외 4종 공유',
     tv:'g1m_u5_balance.html?mode=class&seed=7', ph:'g1m_u5_balance.html?mode=solo&seed=7',
     hint:'1~3학년을 관통하는 부품입니다. 여기서 고치면 분수 저울까지 같이 바뀝니다.' },
 
-  { id:'g_sort', grp:'genre', reach:3, unit:'분류', name:'분류 무대 (sort — 바구니)',
+  { id:'g_sort', grp:'genre', count:'genre:sort', unit:'분류', name:'분류 무대 (sort — 바구니)',
     look:'바구니 이름이 폰에서 두 줄로 버티는지, 카드를 담는 손맛이 나는지.',
     cite:'§10-7', where:'src/g3m_u2_shape_sort.js 외 3종 공유',
     tv:'g3m_u2_shape_sort.html?mode=class&seed=11', ph:'g3m_u2_shape_sort.html?mode=solo&seed=17',
     hint:'카드를 탭하면 바구니로 들어갑니다.' },
 
-  { id:'g_seq', grp:'genre', reach:3, unit:'줄 세우기', name:'줄 세우기 무대 (sequence)',
+  { id:'g_seq', grp:'genre', count:'genre:sequence', unit:'줄 세우기', name:'줄 세우기 무대 (sequence)',
     look:'빈칸이 어디인지 한눈에 잡히는지, 카드 순서가 헷갈리지 않는지.',
     cite:'§10-4', where:'core/genre/sequence.js',
     tv:'g1m_u5_seq50.html?mode=class&step=1', ph:'g1m_u5_seq50.html?mode=solo&step=10',
     hint:'폰 쪽은 10씩 뛰어 세기로 열어 두었습니다.' },
 
-  { id:'g_relay', grp:'genre', reach:2, unit:'릴레이', name:'릴레이 무대 (교실 운영감)',
+  { id:'g_relay', grp:'genre', count:'genre:relay', unit:'릴레이', name:'릴레이 무대 (교실 운영감)',
     look:'스무 명이 차례로 나오는 흐름이 교실에서 굴러가는지, 다음 주자가 누군지 바로 보이는지.',
     cite:'§10-5 개인 기록 미표시 계약', where:'core/genre/relay.js',
     tv:'g1m_u3_relay.html?mode=class&seed=5&runners=20', ph:null,
     hint:'수업 전용입니다. 개인 점수를 화면에 남기지 않는 것이 계약입니다 — 그게 지켜지는지도 봐 주세요.' },
 
-  { id:'g_bundle', grp:'genre', reach:2, unit:'묶음 조작', name:'묶음 마당 (조작 터치감)',
+  { id:'g_bundle', grp:'genre', count:'genre:bundle', unit:'묶음 조작', name:'묶음 마당 (조작 터치감)',
     look:'묶고 담는 동작이 손에 붙는지. 도토리(10개 묶기)와 나눔 마당(접시 배분·몇 개씩 묶기)이 같은 부품입니다.',
     cite:'§10-6 · D23', where:'src/g1m_u5_bundle.js · src/g3m_u3_div_yard.js',
     tv:'g3m_u3_div_yard.html?mode=class&n=3&seed=7', 
     ph:'g3m_u3_div_yard.html?mode=solo&n=3&seed=7',
     hint:'나눗셈 「나눔 마당」이 이 부품의 확장으로 실현됐습니다 — 등분제 접시판과 포함제 묶기판을 함께 봐 주세요.' },
 
-  { id:'g_explore', grp:'genre', reach:1, unit:'탐험', name:'탐험 무대 (explore)',
+  { id:'g_explore', grp:'genre', count:'genre:explore', unit:'탐험', name:'탐험 무대 (explore)',
     look:'정답이 없는 판입니다. 아이가 무엇을 하는 곳인지 스스로 알아보는지.',
     cite:'D7 — 실사용 2회 통과 전 두 번째 explore 금지',
     where:'src/g1m_u3_explore.js',
@@ -354,7 +363,7 @@ var PARTS = [
 ];
 
 var GRP = {
-  core:  ['공통 부품', '여기서 고치면 활동 28종 전부가 같이 바뀝니다'],
+  core:  ['공통 부품', '여기서 고치면 활동 전부가 같이 바뀝니다'],
   genre: ['장르 무대', '같은 장르를 쓰는 활동에 함께 반영됩니다'],
   new:   ['신규 무대', '직전에 만든 것 — 아직 아무도 교실에서 못 봤습니다']
 };
@@ -369,6 +378,43 @@ var COURSE = {
   hint: '[시작!] → 답 버튼 → 답을 고르면 근거 띠 → 오른쪽 위 HUD → 다섯 판 끝나면 종료 화면. 순서대로 다 지나갑니다.'
 };
 function isT1(id) { return TIER1.indexOf(id) >= 0; }
+
+/* ── 파급 수치 산출 — 카탈로그가 단일 정답 (§16-4-2 · D32) ───────── */
+var TOTAL = null;                       // null = 아직 못 셌다. 옛 수를 대신 보여주지 않는다.
+function nTx(v) { return v == null ? '—' : String(v); }
+function totalTx() { return nTx(TOTAL); }
+function reachTx(p) { return nTx(p.reach); }
+
+function countFor(spec, cat) {
+  if (spec === 'total') return cat.length;
+  var g = /^genre:(.+)$/.exec(spec);
+  if (g) return cat.filter(function (a) { return a.genre === g[1]; }).length;
+  var m = /^mode:(.+)$/.exec(spec);
+  if (m) return cat.filter(function (a) { return (a.modes || []).indexOf(m[1]) >= 0; }).length;
+  throw new Error('알 수 없는 파급 규칙: ' + spec);   // 조용히 0으로 흘리지 않는다
+}
+function applyCatalog(cat) {
+  PARTS.forEach(function (p) { if (p.count) p.reach = countFor(p.count, cat); });
+  TOTAL = cat.length;
+}
+function paintTotals() {
+  var ns = document.querySelectorAll('.n-all');
+  for (var i = 0; i < ns.length; i++) ns[i].textContent = totalTx();
+}
+function catFail(err) {
+  try { console.error('[검수대] 카탈로그 산출 실패', err); } catch (e) {}
+  var b = document.getElementById('catfail'); if (b) b.style.display = 'block';
+}
+function loadCatalog() {
+  return fetch('_CATALOG.json')
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function (raw) {
+      var cat = Array.isArray(raw) ? raw : (raw.activities || raw.items || []);
+      if (!cat.length) throw new Error('카탈로그가 비어 있다');
+      applyCatalog(cat);
+    })
+    .catch(catFail);
+}
 
 var KEY = 'kedu_part_review_v1';
 var state = {};
@@ -423,7 +469,7 @@ function render() {
     block +=
       '<div class="part' + cls + '" data-id="' + p.id + '">' +
         '<div class="reach' + (p.reach >= 12 ? ' wide' : '') + '">' +
-          '<b class="n num">' + p.reach + '</b><span class="u">' + esc(p.unit) + '</span>' +
+          '<b class="n num">' + reachTx(p) + '</b><span class="u">' + esc(p.unit) + '</span>' +
         '</div>' +
         '<div class="body">' +
           '<h3>' + esc(p.name) + '</h3>' +
@@ -454,13 +500,13 @@ function refreshProg() {
 
   $('#prog-fill').style.width = (t1done / TIER1.length * 100) + '%';
   $('#prog-tx').textContent = full
-    ? ('1차 완료 — 활동 28종 판정됨' + (allDone > t1done ? ' · 추가 ' + (allDone - t1done) + '개' : ''))
+    ? ('1차 완료 — 활동 ' + totalTx() + '종 판정됨' + (allDone > t1done ? ' · 추가 ' + (allDone - t1done) + '개' : ''))
     : ('1차 ' + t1done + ' / ' + TIER1.length);
 
   $('#course').classList.toggle('done', full);
   $('#c-tag').textContent = full ? '1차 완료' : '1차 코스';
   $('#c-title').textContent = full
-    ? '여기까지로 활동 28종이 판정됐습니다'
+    ? '여기까지로 활동 ' + totalTx() + '종이 판정됐습니다'
     : '한 판만 끝까지 해 주세요';
 
   $('#out-t').textContent = allDone === 0
@@ -560,14 +606,15 @@ function exportText() {
   var L = [];
   L.push('## 부품 검수 판정 — ' + new Date().toISOString().slice(0, 10));
   L.push('**1차 ' + t1done + '/' + TIER1.length + '**' +
-         (t1done === TIER1.length ? ' — 활동 28종 전부 판정됨.' : ' (파급 28종짜리 공통 부품).') +
+         (t1done === TIER1.length ? ' — 활동 ' + totalTx() + '종 전부 판정됨.'
+                                  : ' (파급 ' + totalTx() + '종짜리 공통 부품).') +
          ' 전체 ' + (PARTS.length - todo.length) + '/' + PARTS.length + '개 판정.');
   L.push('');
   L.push('### 고쳐야 한다 (' + (flags.length / 2) + '개)');
   if (!flags.length) L.push('- 없음');
   for (var i = 0; i < flags.length; i += 2) {
     var p = flags[i], v = flags[i + 1];
-    L.push('- **' + p.name + '** (' + p.reach + '종 반영 · ' + p.where + ')');
+    L.push('- **' + p.name + '** (' + reachTx(p) + '종 반영 · ' + p.where + ')');
     L.push('  - ' + (v.memo && v.memo.trim() ? v.memo.trim() : '(메모 없음)'));
     L.push('  - 근거: ' + p.cite);
   }
@@ -598,7 +645,7 @@ $('#btn-reset').addEventListener('click', function () {
   state = {}; save(); render();
 });
 
-render();
+loadCatalog().then(function () { paintTotals(); render(); });
 </script>
 </body>
 </html>
