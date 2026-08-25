@@ -609,15 +609,15 @@ T('홈 slug · 과목 · 복제 원본(국어) 잔재 0', () => {
   ok(hit.length === 0, '렌더 대상에 국어 잔재 ' + hit.length + '건');
   ok(/과학/.test(noComment), '과학 표기가 없다');
 });
-T('⚠️ 허브 "3_science" 등재 (units 2 · lessons 19) — 못 박는 줄 + 부분 합 재계산 줄', () => {
+T('⚠️ 허브 "3_science" 등재 (units 3 · lessons 28) — 못 박는 줄 + 부분 합 재계산 줄', () => {
   const m = HUB.match(/"3_science":\s*\{[^}]*units:\s*(\d+),\s*lessons:\s*(\d+)/);
   ok(m, '허브에 3_science 미등재');
-  ok(+m[1] === 2, 'units ' + m[1]);
-  ok(+m[2] === 19, 'lessons ' + m[2]);
+  ok(+m[1] === 3, 'units ' + m[1]);
+  ok(+m[2] === 28, 'lessons ' + m[2]);
   /* ⚠️ lessons = **항목 수** 합이지 차시 수가 아니다 (국어 u5에서 깨진 자리).
-     u1 9항목 + u2 10항목 = 19. 단원이 늘 때마다 이 줄을 함께 올릴 것. */
-  ok(+m[2] === KEYS.length + 10, '부분 합 재계산 어긋남 ' + m[2]);
-  ok(+m[2] !== 21, 'lessons에 차시 수 합 21을 넣었다 — 항목 수 19여야 한다');
+     u1 9항목 + u2 10항목 + u3 9항목 = 28. 단원이 늘 때마다 이 줄을 함께 올릴 것. */
+  ok(+m[2] === KEYS.length + 10 + 9, '부분 합 재계산 어긋남 ' + m[2]);
+  ok(+m[2] !== 31, 'lessons에 차시 수 합 31을 넣었다 — 항목 수 28이어야 한다');
   /* g=3은 SUB_HIGH라 과학 카드가 실제로 뜬다 */
   ok(/id:\s*"science"/.test(HUB), '허브 SUB_HIGH에 과학이 없다');
 });
