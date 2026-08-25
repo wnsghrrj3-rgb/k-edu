@@ -1250,6 +1250,8 @@
     });
 
     // 케이배틀 도킹 — 케이퀴즈에 문제가 있는 단원에만 버튼을 켠다(없는 단원에 버튼이 보이면 교사가 헛걸음).
+    // fetch가 없는 환경(구형 브라우저·jsdom 게이트)에서는 도킹만 건너뛰고 홈은 그대로 산다.
+    if (typeof fetch !== 'function') return;
     fetch('/kedu/quiz/catalog.json').then(r => r.json()).then(j => {
       const have = {};
       (j.units || []).forEach(u => { have[u.key] = 1; });
