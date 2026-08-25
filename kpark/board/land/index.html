@@ -156,6 +156,10 @@ function renderBoard(){
     s+='<rect x="'+(x*CELL+2)+'" y="'+(y*CELL+2)+'" width="'+(CELL-4)+'" height="'+(CELL-4)+'" rx="8" fill="'+
       (v===0?'#1a2354':COLS[v])+'"'+(v?' stroke="'+EDGE[v]+'" stroke-width="3"':'')+' data-x="'+x+'" data-y="'+y+'"/>';
   }
+  // 마지막 놓은 조각 반짝
+  if(G.last&&!G.over)for(const[x,y]of G.last){
+    s+='<rect x="'+(x*CELL+1)+'" y="'+(y*CELL+1)+'" width="'+(CELL-2)+'" height="'+(CELL-2)+'" rx="9" fill="none" stroke="#fff" stroke-width="2.5" stroke-dasharray="6 5" opacity=".8"><animate attributeName="opacity" values=".85;.2;.85" dur="1.1s" repeatCount="indefinite"/></rect>';
+  }
   // 시작 별자리 표시
   for(const p of [1,2]){const[sx,sy]=C.STARTS[p];
     if(G.board[sy][sx]===0)s+='<text x="'+(sx*CELL+25)+'" y="'+(sy*CELL+33)+'" text-anchor="middle" font-size="24">'+(p===1?'⭐':'🌙')+'</text>';}
@@ -219,6 +223,7 @@ function renderHand(){
 function confirmPut(){
   if(!G.ghost||!G.ghost.legal)return;
   C.place(G.board,G.turn,G.ghost.cells,G.ghost.ox,G.ghost.oy);
+  G.last=G.ghost.cells.map(([dx,dy])=>[G.ghost.ox+dx,G.ghost.oy+dy]);
   const i=G.hands[G.turn].indexOf(G.sel);G.hands[G.turn].splice(i,1);
   Snd.put();
   G.sel=null;G.ghost=null;$('btnPut').disabled=true;G.passes=0;
@@ -241,6 +246,7 @@ function aiTurn(){
   const m=C.aiPick(G.board,G.turn,G.hands[G.turn],G.level);
   if(!m){G.busy=false;finish();return;}
   C.place(G.board,G.turn,m.cells,m.ox,m.oy);
+  G.last=m.cells.map(([dx,dy])=>[m.ox+dx,m.oy+dy]);
   const i=G.hands[G.turn].indexOf(m.pid);G.hands[G.turn].splice(i,1);
   Snd.put();G.busy=false;
   nextTurn();
