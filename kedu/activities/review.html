@@ -102,10 +102,15 @@
   .memo .lb { font-size:12px; color:var(--flag); margin-bottom:4px; }
 
   /* 기기 프레임 뷰어 */
+  /* [D40] 툴바·안내가 세로를 먹어 배율이 깎였다(48%). 둘 다 프레임 위로 띄우고
+     판이 화면을 다 쓰게 한다. 손을 멈추면 흐려져 판을 가리지 않는다. */
   .veil { position:fixed; inset:0; background:rgba(60,35,10,.82); z-index:50; display:none;
-          flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:14px; }
+          align-items:center; justify-content:center; padding:4px; }
   .veil.show { display:flex; }
-  .vtop { display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:center; width:100%; }
+  .vtop { position:absolute; top:0; left:0; right:0; z-index:60;
+          display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:center;
+          padding:7px 12px; opacity:1; transition:opacity .4s;
+          background:linear-gradient(rgba(28,25,23,.94), rgba(28,25,23,.55) 70%, rgba(28,25,23,0)); }
   .vtop .name { color:#fff; font-size:15px; padding-left:6px; }
   /* 지금 보는 것이 실물 몇 %인지 적어 둔다 — 크기 판정(44px 버튼 등)은 배율을 알아야 선다 */
   .vtop .zoom { color:#fde68a; font-size:12.5px; margin-right:auto; padding-left:10px; }
@@ -120,7 +125,12 @@
   .frame .scaler.pan.drag { cursor:grabbing; }
   .frame iframe { display:block; border:0; background:var(--cream);
                   transform-origin:top left; }
-  .vhint { color:#fde68a; font-size:13px; text-align:center; max-width:640px; line-height:1.7; }
+  .vhint { position:absolute; bottom:0; left:0; right:0; z-index:60; padding:8px 16px;
+           color:#fde68a; font-size:13px; text-align:center; line-height:1.6;
+           opacity:1; transition:opacity .4s;
+           background:linear-gradient(rgba(28,25,23,0), rgba(28,25,23,.55) 30%, rgba(28,25,23,.94)); }
+  .veil.idle .vtop, .veil.idle .vhint { opacity:.14; }
+  .vtop:hover, .vhint:hover { opacity:1 !important; }
 
   /* 내보내기 */
   .out { position:fixed; left:0; right:0; bottom:0; background:#fff; border-top:3px solid var(--amber);
@@ -204,6 +214,7 @@
     <div class="zoom" id="v-zoom"></div>
     <button class="vbtn" id="v-tv">🖥 전자칠판</button>
     <button class="vbtn" id="v-ph">📱 폰 세로</button>
+    <button class="vbtn" id="v-full">⛶ 전체화면</button>
     <button class="vbtn" id="v-fit">⤢ 맞춤</button>
     <button class="vbtn" id="v-1x">1:1 실물</button>
     <button class="vbtn" id="v-re">↻ 다시 열기</button>
@@ -737,22 +748,24 @@ var zoomMode = 'fit';          // 'fit' = 전체가 보이는 배율 · 1 = 실�
 /* 화면에서 뷰어가 쓸 수 있는 자리 — 하드코딩(전 190px)이 아니라 실측한다.
    툴바·힌트 높이는 글자 줄 수에 따라 변하고, 그 오차가 그대로 배율을 깎았다. */
 function room() {
-  var veil = $('#veil'), top = $('.vtop'), hint = $('#v-hint');
-  var padV = 14 * 2 + 12 * 2;                                  // veil padding + gap
-  var chrome = (top ? top.offsetHeight : 56) + (hint ? hint.offsetHeight : 36) + padV;
+  /* 툴바·안내는 프레임 위에 떠 있으므로(D40) 더 이상 자리를 먹지 않는다.
+     남는 것은 veil 여백과 기기 프레임 테두리뿐이다. */
   var fpad = curDev === 'ph' ? { x: 16, y: 24 } : { x: 20, y: 20 };
+  var pad = 4 * 2;
   return {
-    w: Math.max(240, window.innerWidth - 28 - fpad.x),
-    h: Math.max(200, window.innerHeight - chrome - fpad.y)
+    w: Math.max(240, window.innerWidth - pad - fpad.x),
+    h: Math.max(200, window.innerHeight - pad - fpad.y)
   };
 }
+/* 맞춤은 실물(1:1)을 넘겨 늘리지 않는다 — 큰 모니터에서 131%까지 부풀었고,
+   그러면 「1학년이 이 글자를 읽나」가 실물보다 후하게 보인다. 판정이 거짓이 된다. */
 function fitScale(dev) {
   var d = DEV[dev] || DEV.tv, r = room();
-  return Math.min(r.w / d.w, r.h / d.h);
+  return Math.min(r.w / d.w, r.h / d.h, 1);
 }
 function fit(dev) {
   var d = DEV[dev] || DEV.tv, r = room();
-  var kFit = Math.min(r.w / d.w, r.h / d.h);
+  var kFit = fitScale(dev);
   var k = zoomMode === 'fit' ? kFit : 1;
   if (!(k > 0)) k = 0.1;
   var f = $('#v-if'), sc = $('#v-scale');
@@ -779,6 +792,7 @@ function fit(dev) {
 function openViewer(p, dev) {
   cur = p; curDev = (dev === 'ph' && p.ph) ? 'ph' : (p.tv ? 'tv' : 'ph');
   $('#veil').classList.add('show');
+  wake();
   $('#v-name').textContent = p.name;
   $('#v-hint').textContent = p.hint || '';
   $('#v-tv').style.display = p.tv ? '' : 'none';
@@ -797,10 +811,47 @@ $('#v-ph').addEventListener('click', function () { if (cur && cur.ph) { curDev =
 $('#v-re').addEventListener('click', load);
 /* 배율만 바꿀 때는 iframe을 다시 띄우지 않는다 — 판을 처음부터 다시 하게 되면
    「지금 이 장면이 실물에서 어떤가」를 볼 수 없다. */
+/* 전체화면 — 준호 창은 브라우저 크롬만큼 이미 작다. 모니터를 다 쓰면
+   1920 판이 실물 1:1에 근접한다(1920×1080 모니터에서 약 98%). */
+function fullEl() { return $('#veil'); }
+function isFull() { return !!(document.fullscreenElement || document.webkitFullscreenElement); }
+$('#v-full').addEventListener('click', function () {
+  var el = fullEl();
+  try {
+    if (!isFull()) {
+      var rq = el.requestFullscreen || el.webkitRequestFullscreen;
+      if (rq) rq.call(el); else return;
+    } else {
+      var ex = document.exitFullscreen || document.webkitExitFullscreen;
+      if (ex) ex.call(document);
+    }
+  } catch (e) { /* 브라우저가 막으면 그냥 지금 배율로 둔다 */ }
+});
+['fullscreenchange', 'webkitfullscreenchange'].forEach(function (ev) {
+  document.addEventListener(ev, function () {
+    $('#v-full').classList.toggle('on', isFull());
+    $('#v-full').textContent = isFull() ? '⛶ 창으로' : '⛶ 전체화면';
+    if (cur) setTimeout(function () { fit(curDev); }, 60);
+  });
+});
+
+/* 손을 멈추면 툴바·안내가 흐려져 판을 가리지 않는다 */
+var idleT = null;
+function wake() {
+  var v = $('#veil'); v.classList.remove('idle');
+  clearTimeout(idleT);
+  idleT = setTimeout(function () { if (cur) v.classList.add('idle'); }, 2600);
+}
+$('#veil').addEventListener('mousemove', wake);
+$('#veil').addEventListener('mousedown', wake);
+
 $('#v-fit').addEventListener('click', function () { zoomMode = 'fit'; fit(curDev); });
 $('#v-1x').addEventListener('click', function () { zoomMode = 1; fit(curDev); });
 $('#v-close').addEventListener('click', function () {
-  $('#veil').classList.remove('show'); $('#v-if').src = 'about:blank'; cur = null;
+  $('#veil').classList.remove('show'); $('#veil').classList.remove('idle');
+  clearTimeout(idleT);
+  if (isFull()) { try { (document.exitFullscreen || document.webkitExitFullscreen).call(document); } catch (e) {} }
+  $('#v-if').src = 'about:blank'; cur = null;
 });
 /* 1:1에서 끌어 보기 — iframe 위에서는 mousemove가 부모로 안 오므로
    드래그 중에는 포인터를 래퍼가 가져간다. */
