@@ -49,12 +49,17 @@ ok(KT.can(L2a, 'class_rec', 3, { opened: true }).allow === true, '개방: L2a cl
 const c1 = KT.can(L2g, 'class_rec', 3, { opened: true });
 ok(c1.allow === false && c1.reason === 'consent', '개방이어도 L2g class_rec 은 동의 안내');
 ok(KT.can(L2g, 'class_rec', 3, {}).reason === 'consent', '미개방 L2g class_rec 도 동의 안내');
-// 학년 잠금은 L2 만
-const g1 = KT.can(L2g, 'open', 5, {}); ok(g1.allow === false && g1.reason === 'grade' && g1.myGrade === 3, 'L2g open 학년 불일치 잠금');
-ok(KT.can(L2a, 'open', 5, {}).reason === 'grade', 'L2a open 학년 불일치 잠금');
+// 학년 잠금 — 기본은 무른 모드(GRADE_LOCK=false): 통과 + gradeMismatch 표시. 굳은 모드에서만 잠근다. L2 만 해당.
+ok(KT.GRADE_LOCK === false, '학년 잠금 기본값은 무른 모드(class_codes.grade 가 실데이터가 아님)');
+const soft = KT.can(L2g, 'open', 5, {}); ok(soft.allow === true && soft.gradeMismatch === true && soft.myGrade === 3, '무른 모드: L2g 학년 불일치 통과+표시');
+ok(KT.can(L2a, 'open', 5, {}).allow === true && KT.can(L2a, 'open', 5, {}).save === true, '무른 모드: L2a 통과·저장');
+KT.GRADE_LOCK = true;
+const g1 = KT.can(L2g, 'open', 5, {}); ok(g1.allow === false && g1.reason === 'grade' && g1.myGrade === 3, '굳은 모드: L2g open 학년 불일치 잠금');
+ok(KT.can(L2a, 'open', 5, {}).reason === 'grade', '굳은 모드: L2a open 학년 불일치 잠금');
 ok(KT.can(L1, 'open', 5, {}).allow === true, 'L1 은 전 학년 자유');
 ok(KT.can(L2g, 'open', null, {}).allow === true, '전학년 콘텐츠(grade null) 는 L2 통과');
 ok(KT.can(L2a, 'open', 5, { opened: true }).allow === true, '개방 목록은 학년 잠금보다 앞선다(A5 예외)');
+KT.GRADE_LOCK = false;
 // 교사·계정
 ok(KT.keyOf(T) === 'T' && KT.keyOf(Tp) === 'account' && KT.keyOf(ACC) === 'account', 'keyOf 교사/미승인/계정');
 ok(KT.can(Tp, 'class', 3, {}).allow === false && KT.can(Tp, 'class', 3, {}).key === 'account', '미승인 교사는 class 잠김');
@@ -78,7 +83,7 @@ ok(KT.gradeOf('kg_math_l2_pro01', '/gifted/x') === null, 'gradeOf 케이영재 =
 
 // ── ③ 집행자 (jsdom) ───────────────────────────────────────
 const gateSrc = rd('kedu_gate.js'), tierSrc = rd('kedu_tier.js');
-function runGate({ url, meta = '', ls = {}, ss = {}, resolveAs = null }) {
+function runGate({ url, meta = '', ls = {}, ss = {}, resolveAs = null, gradeLock = false }) {
   const html = `<!doctype html><html><head>${meta}</head><body><p>page</p></body></html>`;
   const dom = new JSDOM(html, { url, runScripts: 'outside-only' });
   const w = dom.window;
@@ -96,6 +101,7 @@ function runGate({ url, meta = '', ls = {}, ss = {}, resolveAs = null }) {
     });
   }
   w.eval(tierSrc);   // 판정기 선탑재 (실서비스에선 없으면 스스로 싣는다)
+  if (gradeLock) w.KeduTier.GRADE_LOCK = true;
   w.eval(gateSrc);
   return new Promise(res => setTimeout(() => res({ w, doc: w.document, rpcCalls }), 30));
 }
@@ -111,7 +117,9 @@ function runGate({ url, meta = '', ls = {}, ss = {}, resolveAs = null }) {
 
   const guest = JSON.stringify({ code: 'ABCDEF', label: 'x', grade: 3, day: (d => d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate())(new Date()) });
   r = await runGate({ url: 'https://keduclass.com/grade5/semester1/math/x.html', meta: '<meta name="kedu-lesson-id" content="g5_math_tb_01_v1">', ls: { kedu_guest_v1: guest } });
-  ok(!!r.doc.getElementById('kedu-lock') && /5학년 방/.test(r.doc.getElementById('kedu-lock').textContent) && /3학년/.test(r.doc.getElementById('kedu-lock').textContent), '게스트 학년 불일치 카드');
+  ok(!r.doc.getElementById('kedu-lock') && r.w.KeduGate.result.gradeMismatch === true, '무른 모드(기본): 게스트 다른 학년 차시 통과 + 표시 — 2026-08-26 준호 접속 불가 재현 방지');
+  r = await runGate({ url: 'https://keduclass.com/grade5/semester1/math/x.html', meta: '<meta name="kedu-lesson-id" content="g5_math_tb_01_v1">', ls: { kedu_guest_v1: guest }, gradeLock: true });
+  ok(!!r.doc.getElementById('kedu-lock') && /5학년 방/.test(r.doc.getElementById('kedu-lock').textContent) && /3학년/.test(r.doc.getElementById('kedu-lock').textContent), '굳은 모드: 게스트 학년 불일치 카드');
 
   r = await runGate({ url: 'https://keduclass.com/grade3/semester1/math/x.html', meta: '<meta name="kedu-lesson-id" content="g3_math_tb_01_v1">', ls: { kedu_guest_v1: guest } });
   ok(!r.doc.getElementById('kedu-lock'), '게스트 학년 일치 통과');
@@ -130,7 +138,12 @@ function runGate({ url, meta = '', ls = {}, ss = {}, resolveAs = null }) {
   ok(!!r.doc.getElementById('kedu-lock') && /계정 확인/.test(r.doc.getElementById('kedu-lock').textContent), '미승인 교사 class → 계정 확인 카드');
 
   r = await runGate({ url: 'https://keduclass.com/grade5/semester1/math/x.html', meta: '<meta name="kedu-lesson-id" content="g5_math_tb_01_v1">', resolveAs: { tier: 'student', grade: 3 } });
-  ok(!!r.doc.getElementById('kedu-lock') && /5학년 방/.test(r.doc.getElementById('kedu-lock').textContent), '좌석 학생 학년 불일치 카드');
+  ok(!r.doc.getElementById('kedu-lock'), '무른 모드(기본): 좌석 학생 다른 학년 차시 통과');
+  r = await runGate({ url: 'https://keduclass.com/grade5/semester1/math/x.html', meta: '<meta name="kedu-lesson-id" content="g5_math_tb_01_v1">', resolveAs: { tier: 'student', grade: 3 }, gradeLock: true });
+  ok(!!r.doc.getElementById('kedu-lock') && /5학년 방/.test(r.doc.getElementById('kedu-lock').textContent), '굳은 모드: 좌석 학생 학년 불일치 카드');
+  // 굳은 모드 전제 ① — 교사 화면이 학급 학년을 실제로 받는다
+  const tpage = rd('teacher/index.html');
+  ok(!/grade:\s*1,/.test(tpage) && tpage.includes('id="new-class-grade"') && tpage.includes('function setClassGrade('), '교사 화면: 학급 생성 학년 선택 + 기존 학급 학년 변경 (grade:1 고정 제거)');
 
   r = await runGate({ url: 'https://keduclass.com/kpark/index.html', meta: '<meta name="kedu-tier" content="open">' });
   ok(!r.doc.getElementById('kedu-lock'), 'meta kedu-tier 가 경로 표보다 앞선다');

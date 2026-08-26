@@ -1060,7 +1060,10 @@ async function loadClassCode(){
       : '<button class="code-btn outline seats" onclick="openSeatsModal()">🪑 학생 슬롯 관리</button>';
 
     box.innerHTML = `
-      <div style="font-size:14px;color:var(--sub);margin-bottom:4px">${codes[0].label || '내 학급'}${badge}</div>
+      <div style="font-size:14px;color:var(--sub);margin-bottom:4px">${codes[0].label || '내 학급'}${badge}
+        <select onchange="setClassGrade(this.value)" title="우리 반 학년 — 학생 화면이 이 학년을 기준으로 열려요" style="margin-left:8px;padding:2px 8px;border:1px solid #d5dbe3;border-radius:999px;font-size:11.5px;background:#fff;color:#2c3a4d;cursor:pointer">
+          ${[1,2,3,4,5,6].map(g => `<option value="${g}" ${g === (codes[0].grade || 1) ? 'selected' : ''}>${g}학년</option>`).join('')}
+        </select></div>
       <div class="code-display">${codes[0].code}</div>
       <div class="code-hint">${hint}</div>
       <div class="code-actions">
@@ -1080,6 +1083,10 @@ async function loadClassCode(){
         <div class="form-group" style="max-width:360px;margin:20px auto 0;text-align:left">
           <label class="form-label">학급 이름 (예: 1학년 2반)</label>
           <input class="form-input" type="text" id="new-class-label" placeholder="1학년 2반">
+          <select class="form-input" id="new-class-grade" style="max-width:140px;margin-top:8px" title="우리 반 학년 — 학생 화면이 이 학년을 기준으로 열려요">
+            <option value="1">1학년</option><option value="2">2학년</option><option value="3">3학년</option>
+            <option value="4">4학년</option><option value="5">5학년</option><option value="6">6학년</option>
+          </select>
         </div>
         <div style="max-width:480px;margin:18px auto 0;text-align:left">
           <div class="form-label" style="margin-bottom:8px">학급 유형</div>
@@ -1155,7 +1162,7 @@ async function createCode(){
   const { error } = await db.from('class_codes').insert({
     code: code,
     label: label,
-    grade: 1,
+    grade: parseInt(document.getElementById('new-class-grade')?.value || '1', 10) || 1,
     semester: 1,
     is_active: true,
     teacher_id: currentTeacher.id,
@@ -1171,6 +1178,17 @@ async function createCode(){
   showToast(isConsent ? '🎉 저장형 학급코드가 생성되었습니다!' : '🎉 게스트 전용 학급코드가 생성되었습니다!');
   await loadClassCode();
   await loadRightsChannel();
+}
+
+// 학급 학년 변경 — 학생 화면(허브·학년 잠금)이 이 값을 기준으로 열린다. class_codes.grade 는 생성 때 1로 박혀 있었음(2026-08-26 이전).
+async function setClassGrade(v){
+  if(!currentClassCode) return;
+  const g = parseInt(v, 10);
+  if(!(g >= 1 && g <= 6)) return;
+  const { error } = await db.from('class_codes').update({ grade: g }).eq('id', currentClassCode.id);
+  if(error){ showToast('⚠️ 학년 변경 실패: ' + (error.message || '')); return; }
+  currentClassCode.grade = g;
+  showToast(`✅ 우리 반 학년을 ${g}학년으로 바꿨어요.`);
 }
 
 async function refreshCode(){

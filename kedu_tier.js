@@ -152,6 +152,14 @@
     return null;
   }
 
+  // ── 학년 잠금 스위치 (§E A5) ──────────────────────────────────────
+  //   false = 무른 모드: 학년이 달라도 통과시키고 결과에 gradeMismatch 만 표시한다.
+  //   true  = 굳은 모드: L2 가 다른 학년 콘텐츠를 열면 잠근다(우리 반 방으로).
+  //   2026-08-26 무른 모드로 둔 이유 둘 — 굳히기 전에 둘 다 풀려야 한다:
+  //     ① class_codes.grade 가 학급 생성 때 늘 1로 박혀 실데이터가 아니다(교사 화면에 학년 선택을 달았지만
+  //        기존 학급은 교사가 한 번 바꿔 줘야 한다) ② 입구(index.html)가 학급 세션에도 전 학년을 고르게 한다.
+  var GRADE_LOCK = false;
+
   // ── 판정 (§B 표 + §E 우선순위) ──────────────────────────────────
   //   can(t, contentTier, contentGrade, {opened:boolean}) → {allow, reason, save, key}
   //   reason: 'teacher' | 'opened' | 'open' | 'free' | 'grade' | 'consent' | 'locked' | 'home'
@@ -173,7 +181,10 @@
     if (contentTier === 'open') {
       if (isClass) {
         var g = keyGrade(t);
-        if (g && contentGrade && g !== contentGrade) return { allow: false, reason: 'grade', save: false, key: key, myGrade: g };
+        if (g && contentGrade && g !== contentGrade) {
+          if (window.KeduTier && window.KeduTier.GRADE_LOCK) return { allow: false, reason: 'grade', save: false, key: key, myGrade: g };
+          return { allow: true, reason: 'open', save: saveOk, key: key, gradeMismatch: true, myGrade: g };
+        }
         return { allow: true, reason: 'open', save: saveOk, key: key };
       }
       return { allow: true, reason: 'open', save: false, key: key };   // L1 · account: 전 학년 자유, 저장 없음
@@ -185,6 +196,7 @@
 
   // ── 공개 API ──────────────────────────────────────────────────────
   window.KeduTier = {
+    GRADE_LOCK: GRADE_LOCK,    // 학년 잠금 스위치 — 위 주석의 둘이 풀리면 true
     CONTENT_TIERS: CONTENT_TIERS,
     tierOfPath: tierOfPath,    // 경로 → 콘텐츠 tier
     gradeOf: gradeOf,          // lesson-id·경로 → 학년
