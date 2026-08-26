@@ -106,14 +106,18 @@
           flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:14px; }
   .veil.show { display:flex; }
   .vtop { display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:center; width:100%; }
-  .vtop .name { color:#fff; font-size:15px; margin-right:auto; padding-left:6px; }
+  .vtop .name { color:#fff; font-size:15px; padding-left:6px; }
+  /* 지금 보는 것이 실물 몇 %인지 적어 둔다 — 크기 판정(44px 버튼 등)은 배율을 알아야 선다 */
+  .vtop .zoom { color:#fde68a; font-size:12.5px; margin-right:auto; padding-left:10px; }
   .vbtn { font-family:'Jua',sans-serif; border:2px solid rgba(255,255,255,.5); background:transparent; color:#fff;
           border-radius:11px; cursor:pointer; min-height:40px; font-size:13.5px; padding:8px 14px; }
   .vbtn.on { background:#fff; color:var(--deep); border-color:#fff; }
   .frame { background:#1c1917; border-radius:14px; padding:10px; box-shadow:0 18px 50px rgba(0,0,0,.45);
            max-width:100%; max-height:100%; }
   .frame.phone { border-radius:30px; padding:12px 8px; }
-  .frame iframe { display:block; border:0; background:var(--cream); border-radius:6px; }
+  .frame .scaler { overflow:hidden; border-radius:6px; background:var(--cream); }
+  .frame iframe { display:block; border:0; background:var(--cream);
+                  transform-origin:top left; }
   .vhint { color:#fde68a; font-size:13px; text-align:center; max-width:640px; line-height:1.7; }
 
   /* 내보내기 */
@@ -195,12 +199,13 @@
 <div class="veil" id="veil">
   <div class="vtop">
     <div class="name" id="v-name"></div>
+    <div class="zoom" id="v-zoom"></div>
     <button class="vbtn" id="v-tv">🖥 전자칠판</button>
     <button class="vbtn" id="v-ph">📱 폰 세로</button>
     <button class="vbtn" id="v-re">↻ 다시 열기</button>
     <button class="vbtn" id="v-close">✕ 닫기</button>
   </div>
-  <div class="frame" id="v-frame"><iframe id="v-if" allow="autoplay"></iframe></div>
+  <div class="frame" id="v-frame"><div class="scaler" id="v-scale"><iframe id="v-if" allow="autoplay"></iframe></div></div>
   <div class="vhint" id="v-hint"></div>
 </div>
 
@@ -716,18 +721,29 @@ $('#c-ph').addEventListener('click', function () { openViewer(COURSE, 'ph'); });
 
 /* ── 기기 프레임 뷰어 ────────────────────────────────────────── */
 var cur = null, curDev = 'tv';
+/* 기기 프레임 [D35] — **실물 해상도로 그리고 통째로 축소한다.**
+   전에는 iframe을 작게 만들어 활동이 그 폭에 맞춰 다시 흐르게 했다. 그러면 준호가 보는 것은
+   전자칠판도 폰도 아닌 제3의 기기다 — 실측하면 폰 프레임이 **210px 폭**이었고(실물 390),
+   전자칠판은 807px였다(실물 1920). clamp() 글자·max-width가 전부 다른 값으로 계산돼
+   실물에 없는 깨짐이 보이고, 실물에 있는 깨짐은 안 보인다. 도구가 거짓말을 하면 판정이 못 산다.
+   그래서 iframe은 언제나 기기 실물 크기이고, CSS transform으로만 줄인다. */
+var DEV = { tv: { w: 1920, h: 1080 }, ph: { w: 390, h: 844 } };
 function fit(dev) {
-  // 화면에 맞춰 프레임을 letterbox 한다. 전자칠판 16:9 / 폰 9:19.5.
-  var ratio = dev === 'ph' ? 9 / 19.5 : 16 / 9;
+  var d = DEV[dev] || DEV.tv;
   var padX = dev === 'ph' ? 16 : 20, padY = dev === 'ph' ? 24 : 20;
   var maxW = Math.min(window.innerWidth - 28, 1280) - padX;
   var maxH = window.innerHeight - 190 - padY;
-  var w = maxW, h = w / ratio;
-  if (h > maxH) { h = maxH; w = h * ratio; }
-  var f = $('#v-if');
-  f.style.width = Math.round(w) + 'px';
-  f.style.height = Math.round(h) + 'px';
+  var k = Math.min(maxW / d.w, maxH / d.h);
+  if (!(k > 0)) k = 0.1;
+  var f = $('#v-if'), sc = $('#v-scale');
+  f.style.width = d.w + 'px';
+  f.style.height = d.h + 'px';
+  f.style.transform = 'scale(' + k + ')';
+  sc.style.width = Math.round(d.w * k) + 'px';
+  sc.style.height = Math.round(d.h * k) + 'px';
   $('#v-frame').className = 'frame' + (dev === 'ph' ? ' phone' : '');
+  var z = $('#v-zoom');
+  if (z) z.textContent = d.w + '×' + d.h + ' · ' + Math.round(k * 100) + '%';
 }
 function openViewer(p, dev) {
   cur = p; curDev = (dev === 'ph' && p.ph) ? 'ph' : (p.tv ? 'tv' : 'ph');
