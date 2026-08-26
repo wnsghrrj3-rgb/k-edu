@@ -102,6 +102,10 @@ svg{display:block;width:100%;height:auto;touch-action:manipulation}
 <div id="over"><div class="card"><h2 id="ovT"></h2><p id="ovS"></p><button class="start" id="btnAgain">한 판 더!</button></div></div>
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_config.js"></script>
+<script src="../../kpark_net.js"></script>
+<script src="../../kpark_board_net.js"></script>
 <script src="./core.js"></script>
 <script>
 'use strict';
@@ -127,8 +131,25 @@ document.querySelectorAll('#modeOpts .opt').forEach(b=>b.onclick=()=>{Snd.click(
   G.mode=b.dataset.m;$('lvOpts').classList.toggle('show',G.mode==='ai');});
 document.querySelectorAll('#lvOpts .opt').forEach(b=>b.onclick=()=>{Snd.click();
   document.querySelectorAll('#lvOpts .opt').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');G.level=+b.dataset.l;});
-$('btnStart').onclick=start;$('btnRe').onclick=start;$('btnAgain').onclick=()=>{$('over').style.display='none';start();};
+$('btnStart').onclick=start;
+$('btnRe').onclick=()=>replay();$('btnAgain').onclick=()=>{$('over').style.display='none';replay();};
 $('btnHome').onclick=()=>location.href='../';
+
+/* ---- 친구 크롬북이랑 (락스텝: 오가는 건 "몇 번째 칸" 하나뿐) ---- */
+function replay(){
+  if(G.mode!=='net')return start();
+  if(!KParkNet.isHost()){toast('방장이 다시 시작할 거야!');return;}
+  KParkNet.start({});
+}
+KParkBoard.attach({
+  game:'four',seats:2,
+  onStart(d){
+    G.mode='net';G.human=d.seat+1;
+    d.seats.forEach((p,i)=>{NAMES[i+1]=[p.em+' '+p.name,NAMES[i+1][1]];});
+    start();
+  },
+  onAct(a){if(a.t==='mv')place(a.v);}
+});
 
 function start(){
   Snd.click();
@@ -144,7 +165,8 @@ function buildCols(){
 function banner(txt){
   const[nm,col]=NAMES[G.turn];
   $('banner').innerHTML=txt||('<span class="chip" style="background:'+col+';box-shadow:0 0 12px '+col+'"></span> <b style="color:'+col+'">'+nm+'</b> 차례!'+
-    (G.mode==='ai'&&G.turn!==G.human?' <span style="color:var(--dim);font-size:14px">(컴퓨터 생각 중…)</span>':''));
+    (G.mode==='ai'&&G.turn!==G.human?' <span style="color:var(--dim);font-size:14px">(컴퓨터 생각 중…)</span>':'')+
+    (G.mode==='net'?(G.turn===G.human?' <span style="color:#7dffb0;font-size:14px">— 내 차례!</span>':' <span style="color:var(--dim);font-size:14px">(친구가 두는 중…)</span>'):''));
 }
 function render(hl){
   const svg=$('board');let s='';
@@ -159,11 +181,12 @@ function render(hl){
     if(!hl&&G.last&&G.last[0]===c&&G.last[1]===r&&v)s+='<circle cx="'+cx+'" cy="'+cy+'" r="45" fill="none" stroke="#fff" stroke-width="3" opacity=".8" stroke-dasharray="8 7"><animate attributeName="opacity" values=".85;.25;.85" dur="1.1s" repeatCount="indefinite"/></circle>';
   }
   svg.innerHTML='<defs><filter id="glow"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>'+s;
-  document.querySelectorAll('.cbtn').forEach((b,c)=>b.disabled=G.over||G.busy||!C.canDrop(G.board,c)||(G.mode==='ai'&&G.turn!==G.human));
+  document.querySelectorAll('.cbtn').forEach((b,c)=>b.disabled=G.over||G.busy||!C.canDrop(G.board,c)||(G.mode!=='hot'&&G.turn!==G.human));
 }
 function humanDrop(c){
   if(G.over||G.busy)return;
-  if(G.mode==='ai'&&G.turn!==G.human)return;
+  if(G.mode!=='hot'&&G.turn!==G.human)return;
+  if(G.mode==='net'){if(!C.canDrop(G.board,c))return;KParkBoard.act('mv',c);return;}
   place(c);
 }
 function place(c){

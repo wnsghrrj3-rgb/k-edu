@@ -102,6 +102,26 @@ button{font-family:inherit;cursor:pointer;border:none}
 .start{padding:15px 40px;border-radius:999px;font-size:18px;font-weight:900;color:#1b1230;background:linear-gradient(135deg,#ffd35c,#ffb02e);box-shadow:0 8px 30px rgba(255,176,46,.45)}
 .howlink{color:var(--dim);font-size:13px;text-decoration:underline;cursor:pointer}
 
+/* ---------- 이름·이모지·방 (크롬북 기준: 1366x768, 마우스/트랙패드) ---------- */
+.nin{flex:1;min-width:0;padding:9px 12px;border-radius:12px;font-size:15px;font-weight:700;color:var(--ink);background:rgba(140,165,255,.08);border:1px solid var(--line);outline:none}
+.nin:focus{border-color:var(--gold);background:rgba(255,211,92,.08)}
+.nin::placeholder{color:var(--dim);font-weight:600}
+.emq{width:44px;height:44px;flex:none;font-size:24px;border-radius:12px;background:rgba(140,165,255,.1);border:1px solid var(--line);line-height:1}
+.emq:hover{border-color:var(--gold)}
+.mecard{display:flex;align-items:center;gap:10px;width:min(360px,92vw);background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:10px 12px}
+.joinrow{display:flex;gap:8px;width:min(360px,92vw);margin-top:10px}
+.cin{flex:1;padding:11px 14px;border-radius:14px;font-size:20px;font-weight:900;letter-spacing:6px;text-align:center;text-transform:uppercase;color:var(--gold);background:rgba(140,165,255,.08);border:1px solid var(--line);outline:none}
+.roomcode{font-size:15px;color:var(--dim)}
+.roomcode b{font-size:30px;letter-spacing:8px;color:var(--gold);margin-left:8px;font-weight:900}
+#paneSolo,#paneNet{display:flex;flex-direction:column;align-items:center;gap:12px}
+#netHome,#netLobby{display:flex;flex-direction:column;align-items:center}
+#empick{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:85;background:rgba(4,6,18,.72)}
+#empick .grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;background:var(--panel2);border:1px solid var(--line);border-radius:20px;padding:18px}
+#empick button{width:52px;height:52px;font-size:28px;border-radius:14px;background:rgba(140,165,255,.1);border:1px solid var(--line)}
+#empick button:hover{border-color:var(--gold);background:rgba(255,211,92,.12)}
+.lob{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:9px 13px;font-weight:800}
+.lob .tagme{margin-left:auto;font-size:11px;color:var(--gold)}
+
 /* ---------- 놀이 방법 ---------- */
 #howto{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:80;background:rgba(4,6,18,.72)}
 .hcard{width:min(420px,92vw);max-height:84vh;overflow-y:auto;background:var(--panel2);border:1px solid var(--line);border-radius:22px;padding:24px}
@@ -146,15 +166,47 @@ button{font-family:inherit;cursor:pointer;border:none}
 <section id="setup">
   <div class="logo">👑 케이마블</div>
   <p class="tag">주사위 굴려 세계 도시를 사고, 건물을 올리고, 통행료를 걷어라!</p>
-  <div class="opts" id="cntOpts">
-    <button class="opt" data-c="2">2명</button>
-    <button class="opt sel" data-c="3">3명</button>
-    <button class="opt" data-c="4">4명</button>
+  <div class="opts" id="modeOpts">
+    <button class="opt sel" data-m="solo">🧑 이 컴퓨터에서</button>
+    <button class="opt" data-m="net">👫 친구 크롬북이랑</button>
   </div>
-  <div class="slots" id="slots"></div>
-  <button class="start" id="btnStart">여행 출발! 🎲</button>
+
+  <div id="paneSolo">
+    <div class="opts" id="cntOpts">
+      <button class="opt" data-c="2">2명</button>
+      <button class="opt sel" data-c="3">3명</button>
+      <button class="opt" data-c="4">4명</button>
+    </div>
+    <div class="slots" id="slots"></div>
+    <button class="start" id="btnStart">여행 출발! 🎲</button>
+  </div>
+
+  <div id="paneNet" style="display:none">
+    <div class="mecard">
+      <button class="emq" id="myEm">🦊</button>
+      <input id="myName" class="nin" maxlength="6" placeholder="내 이름을 정해 봐">
+    </div>
+    <div id="netHome">
+      <button class="start" id="btnMake">🏠 방 만들기</button>
+      <div class="joinrow">
+        <input id="joinCode" class="cin" maxlength="4" placeholder="코드">
+        <button class="opt" id="btnJoin">들어가기</button>
+      </div>
+      <p class="tag" style="margin-top:10px;text-align:center">친구가 알려준 <b>방코드 4글자</b>를 넣으면 같은 판에서 놀 수 있어.</p>
+    </div>
+    <div id="netLobby" style="display:none">
+      <div class="roomcode">방코드 <b id="roomCode">----</b></div>
+      <div class="slots" id="lobbyList" style="margin:12px 0"></div>
+      <button class="opt" id="btnBot" style="margin-bottom:10px">🤖 로봇 한 명 넣기</button>
+      <button class="start" id="btnNetStart">다 모였어! 출발 🎲</button>
+      <p class="tag" id="netStatus" style="margin-top:10px">연결 중…</p>
+    </div>
+  </div>
+
   <span class="howlink" id="howLink">👀 처음이야? 놀이 방법 보기</span>
 </section>
+
+<div id="empick"><div class="grid" id="emGrid"></div></div>
 
 <div id="howto"><div class="hcard">
   <h2>👑 케이마블 놀이 방법</h2>
@@ -170,6 +222,9 @@ button{font-family:inherit;cursor:pointer;border:none}
 <div id="over"><div class="card"><h2 id="ovT"></h2><p id="ovS"></p><button class="start" id="btnAgain">한 판 더!</button></div></div>
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_config.js"></script>
+<script src="../kpark_net.js"></script>
 <script src="./core.js"></script>
 <script src="./stage/dice.js"></script>
 <script type="importmap">
@@ -193,20 +248,55 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const PCOLORS = [0xffd35c, 0xc58aff, 0xff8a5c, 0x7dffb0];
 const PCSS = ['var(--p0)', 'var(--p1)', 'var(--p2)', 'var(--p3)'];
 
+/* ===== 친구랑 놀기 = 결정적 락스텝 =====
+   같은 시드로 같은 난수를 뽑으니 상태를 주고받을 필요가 없다. 오가는 건 "입력"뿐.
+   RND 는 게임 판정용 난수. 주사위 굴러가는 물리 같은 연출은 Math.random 그대로 둔다
+   (연출까지 시드에 묶으면 프레임이 다를 때 어긋난다). */
+let RND = Math.random;
+let NET_ON = false;
+let pendingIn = null;   // 남의 차례 입력을 기다리는 중
+let rollResolve = null; // "한 번 더" 굴림 대기
+
 /* ================== 설정 화면 ================== */
-const CHARS = [{ em: '⭐', nm: '별' }, { em: '🌙', nm: '달' }, { em: '☀️', nm: '해' }, { em: '🌈', nm: '무지개' }];
+/* 이름은 아이가 직접 정한다 — 정해진 캐릭터 이름을 쓰지 않는다 */
+const EMS = ['🦊','🐼','🐯','🐸','🐙','🦄','🐢','🐧','🦁','🐰','🐻','🐨'];
 const KINDS = [{ t: '🧑 사람', ai: false, lv: 0 }, { t: '🤖 아장아장', ai: true, lv: 1 }, { t: '🤖 제법인데', ai: true, lv: 2 }, { t: '🤖 도사급', ai: true, lv: 3 }];
 let cnt = 3, slotKind = [0, 2, 2, 2];
+let slotName = ['', '', '', ''], slotEm = ['🦊', '🐼', '🐯', '🐸'];
+let mode = 'solo';
+
+const LS = { get(k, d) { try { return localStorage.getItem(k) || d; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) { } } };
+let myName = LS.get('kpark.me.name', ''), myEm = LS.get('kpark.me.em', '🦊');
+
+/* ---- 이모지 고르기 ---- */
+let emTarget = null;
+(function buildEmGrid() {
+  const g = $('emGrid');
+  EMS.forEach(e => {
+    const b = document.createElement('button'); b.textContent = e;
+    b.onclick = () => { if (emTarget) emTarget(e); $('empick').style.display = 'none'; snd.tick(); };
+    g.appendChild(b);
+  });
+})();
+$('empick').onclick = e => { if (e.target.id === 'empick') $('empick').style.display = 'none'; };
+function openEm(fn) { emTarget = fn; $('empick').style.display = 'flex'; }
+
+/* ---- 혼자/한 대에서 ---- */
 function buildSlots() {
   const box = $('slots'); box.innerHTML = '';
-  CHARS.forEach((c, i) => {
+  for (let i = 0; i < 4; i++) {
     const d = document.createElement('div'); d.className = 'slot' + (i < cnt ? ' on' : '');
-    d.innerHTML = `<span class="face">${c.em}</span><span class="who"><b>${c.nm}</b><small>${i + 1}번 여행자</small></span>`;
+    const eb = document.createElement('button'); eb.className = 'emq'; eb.textContent = slotEm[i];
+    eb.onclick = () => openEm(e => { slotEm[i] = e; eb.textContent = e; });
+    const inp = document.createElement('input');
+    inp.className = 'nin'; inp.maxLength = 6; inp.value = slotName[i];
+    inp.placeholder = (i + 1) + '번 이름';
+    inp.oninput = () => { slotName[i] = inp.value; };
     const b = document.createElement('button'); b.className = 'kind' + (KINDS[slotKind[i]].ai ? '' : ' human');
     b.textContent = KINDS[slotKind[i]].t;
     b.onclick = () => { slotKind[i] = (slotKind[i] + 1) % 4; b.textContent = KINDS[slotKind[i]].t; b.className = 'kind' + (KINDS[slotKind[i]].ai ? '' : ' human'); snd.tick(); };
-    d.appendChild(b); box.appendChild(d);
-  });
+    d.appendChild(eb); d.appendChild(inp); d.appendChild(b); box.appendChild(d);
+  }
 }
 buildSlots();
 $('cntOpts').addEventListener('click', e => {
@@ -215,6 +305,87 @@ $('cntOpts').addEventListener('click', e => {
   [...$('cntOpts').children].forEach(x => x.classList.toggle('sel', x === b));
   buildSlots(); snd.tick();
 });
+function soloCfgs() {
+  const out = [];
+  for (let i = 0; i < cnt; i++) {
+    const ai = KINDS[slotKind[i]].ai;
+    out.push({
+      name: (slotName[i] || '').trim() || (ai ? ('로봇 ' + (i + 1)) : ((i + 1) + '번 여행자')),
+      em: slotEm[i], ai, level: KINDS[slotKind[i]].lv
+    });
+  }
+  return out;
+}
+
+/* ---- 모드 전환 ---- */
+$('modeOpts').addEventListener('click', e => {
+  const b = e.target.closest('.opt'); if (!b) return;
+  mode = b.dataset.m; snd.tick();
+  [...$('modeOpts').children].forEach(x => x.classList.toggle('sel', x === b));
+  $('paneSolo').style.display = mode === 'solo' ? 'flex' : 'none';
+  $('paneNet').style.display = mode === 'net' ? 'flex' : 'none';
+  if (mode === 'net' && !KParkNet.supported()) netStatus('⚠️ 학교 인터넷이 막고 있는 것 같아. 선생님께 말해 줘.');
+});
+
+/* ---- 친구랑 (크롬북) ---- */
+$('myEm').textContent = myEm; $('myName').value = myName;
+$('myEm').onclick = () => openEm(e => { myEm = e; $('myEm').textContent = e; LS.set('kpark.me.em', e); });
+$('myName').oninput = () => { myName = $('myName').value; LS.set('kpark.me.name', myName); };
+function netStatus(t) { $('netStatus').textContent = t; }
+function meNow() { return { name: (myName || '').trim() || '이름없음', em: myEm }; }
+
+function netCallbacks() {
+  return {
+    game: 'kmarble', max: 4,
+    name: meNow().name, em: meNow().em,
+    onStatus: st => {
+      if (st === 'SUBSCRIBED') netStatus('연결됐어! 친구를 기다리는 중…');
+      else if (st === 'CHANNEL_ERROR' || st === 'TIMED_OUT') netStatus('⚠️ 연결이 안 돼. 학교 인터넷이 막고 있을 수 있어.');
+    },
+    onLobby: seats => renderLobby(seats),
+    onNotice: t => toast(t),
+    onStart: d => { NET_ON = true; $('setup').style.display = 'none'; startGame(d.seats.map(x => ({ name: x.name, em: x.em, ai: !!x.ai, level: x.level || 0 })), d.seed); },
+    onAction: a => onNetAction(a),
+    onResync: r => { if (!S || busy || pendingIn) return; if (KParkNet.hash(S) !== r.hash) r.ask(); },
+    snapshot: () => ({ s: S, r: RND.get ? RND.get() : 0 })
+  };
+}
+function renderLobby(seats) {
+  $('netHome').style.display = 'none'; $('netLobby').style.display = 'flex';
+  $('roomCode').textContent = KParkNet.code();
+  $('btnBot').style.display = KParkNet.isHost() ? '' : 'none';
+  $('btnNetStart').style.display = KParkNet.isHost() ? '' : 'none';
+  const box = $('lobbyList'); box.innerHTML = '';
+  seats.forEach((p, i) => {
+    const d = document.createElement('div'); d.className = 'lob';
+    d.innerHTML = '<span style="font-size:22px">' + p.em + '</span><b>' + p.name + '</b>' +
+      (i === KParkNet.mySeat() ? '<span class="tagme">나</span>' : (p.ai ? '<span class="tagme">🤖</span>' : ''));
+    box.appendChild(d);
+  });
+  if (!KParkNet.isHost()) netStatus('방장이 시작하기를 기다리는 중… (' + seats.length + '명)');
+  else netStatus(seats.length + '명 모였어. 2명부터 시작할 수 있어.');
+}
+$('btnMake').onclick = () => {
+  if (!KParkNet.supported()) return netStatus('⚠️ 연결을 못 했어. 학교 인터넷을 확인해 줘.');
+  snd.tick(); KParkNet.setMe(meNow().name, meNow().em);
+  const code = KParkNet.createRoom(netCallbacks());
+  netStatus('방을 만들었어! 친구에게 코드 ' + code + ' 를 알려 줘.');
+};
+$('btnJoin').onclick = () => {
+  const c = ($('joinCode').value || '').toUpperCase().trim();
+  if (c.length < 4) return netStatus('방코드 4글자를 넣어 줘.');
+  if (!KParkNet.supported()) return netStatus('⚠️ 연결을 못 했어. 학교 인터넷을 확인해 줘.');
+  snd.tick(); KParkNet.setMe(meNow().name, meNow().em);
+  KParkNet.joinRoom(c, netCallbacks());
+  netStatus('들어가는 중…');
+};
+$('btnBot').onclick = () => { snd.tick(); KParkNet.addBot(); };
+$('btnNetStart').onclick = () => {
+  const seats = KParkNet.seats();
+  if (seats.length < 2) return netStatus('2명부터 시작할 수 있어. 친구를 기다리거나 🤖 를 넣어 봐.');
+  snd.tick(); KParkNet.start({});
+};
+
 function showHow() { $('howto').style.display = 'flex'; }
 $('btnHow').onclick = showHow; $('howLink').onclick = showHow;
 $('btnHowOk').onclick = () => { $('howto').style.display = 'none'; try { localStorage.setItem('kpark.kmarble.howto', '1'); } catch (e) { } };
@@ -363,7 +534,8 @@ dieMeshes.forEach(m => { m.visible = false; stage.scene.add(m); });
 let diceRun = null;   // { frames, i, t0 }
 
 function rollDice3D(d1, d2, quick) {
-  const seed = Math.floor(Math.random() * 0x7fffffff);
+  /* 굴러가는 모양까지 같게 — 판정 난수(RND)를 안 쓰면서도 모두 같은 궤적이 나오게 값에서 뽑는다 */
+  const seed = (((d1 * 31 + d2) * 131 + S.round * 7 + S.turn * 17) & 0x7fffffff) | 1;
   const R = DICE.throwPair(d1, d2, seed);
   setDieFaces(dieMeshes[0], R.faceValues[0]);
   setDieFaces(dieMeshes[1], R.faceValues[1]);
@@ -506,7 +678,7 @@ function refresh() {
     tokens[p.id] && (tokens[p.id].userData.ring.material.opacity = (p.id === S.turn && p.alive && !S.winner) ? 0.001 : 0, tokens[p.id].userData.ring.userData.on = (p.id === S.turn && p.alive && !S.winner));
   });
   syncBoard();
-  $('btnRoll').disabled = busy || (S.players[S.turn] && S.players[S.turn].ai);
+  $('btnRoll').disabled = busy || (S.players[S.turn] && S.players[S.turn].ai) || (NET_ON && !KParkNet.isMine(S.turn));
 }
 
 /* ================== 결정 시트 ================== */
@@ -559,6 +731,57 @@ function landFlash(i) {
     if (a >= 1) { if (!T.pick.userData.on) T.pick.material.opacity = 0; T.pick.material.color.setHex(0x7dffb0); return false; }
     return true;
   });
+}
+
+/* ================== 입력 게이트 (친구랑 놀기) ================== */
+function waitFor(pid, txt) {
+  const p = S.players[pid];
+  banner('🕐 ' + p.em + ' <b>' + p.name + '</b> ' + txt);
+}
+function gatedAsk(pid, q, info, btns, fb) {
+  if (!NET_ON) return ask(q, info, btns);
+  if (KParkNet.isMine(pid)) return ask(q, info, btns).then(v => { KParkNet.act('in', v); return v; });
+  waitFor(pid, '고르는 중…');
+  return new Promise(res => { pendingIn = { pid, res, fb }; });
+}
+function gatedPick(pid, cands, q, info, fb) {
+  if (!NET_ON) return pickTile(cands, q, info);
+  if (KParkNet.isMine(pid)) return pickTile(cands, q, info).then(v => { KParkNet.act('in', v); return v; });
+  /* 관전자도 후보 칸이 반짝인다 — 뭘 두고 고민하는지 보인다 */
+  cands.forEach(i => { board.tiles.get(i).pick.userData.on = true; });
+  waitFor(pid, '칸을 고르는 중…');
+  return new Promise(res => { pendingIn = { pid, res, fb, cands }; });
+}
+function resolveIn(v) {
+  if (!pendingIn) return;
+  const p = pendingIn; pendingIn = null;
+  if (p.cands) p.cands.forEach(i => { const t = board.tiles.get(i); t.pick.userData.on = false; t.pick.material.opacity = 0; });
+  p.res(v);
+}
+function doRoll() {
+  if (rollResolve) { const r = rollResolve; rollResolve = null; r(); return; }
+  if (!busy) playTurn();
+}
+function onNetAction(a) {
+  if (a.t === 'in') return resolveIn(a.v);
+  if (a.t === 'roll') return doRoll();
+  if (a.t === '__drop') {
+    const p = S && S.players[a.seat];
+    if (p) { p.ai = true; p.level = 2; }
+    refresh();
+    /* 나간 사람이 답을 붙들고 있으면 미리 정해 둔 안전한 값으로 넘긴다.
+       모든 피어가 같은 값을 쓰므로 난수를 건드리지 않아 판이 안 어긋난다. */
+    if (pendingIn && pendingIn.pid === a.seat) resolveIn(pendingIn.fb);
+    else if (rollResolve && S && S.turn === a.seat) doRoll();
+    return;
+  }
+  if (a.t === '__full' && a.state) {
+    S = a.state.s;
+    if (RND.set) RND.set(a.state.r);
+    buildChips(); buildTokens(); placeTokens(true); refresh(); director.over();
+    toast('🔄 판을 다시 맞췄어!');
+    return;
+  }
 }
 
 /* ================== 이벤트 연출 ================== */
@@ -615,30 +838,30 @@ async function handleChoice(pid, choice) {
   let evs = [];
   if (pl.ai) {
     await sleep(700);
-    evs = C.aiResolve(S, pid, choice, Math.random);
+    evs = C.aiResolve(S, pid, choice, RND);
   } else if (choice.type === 'buy') {
     const rent = C.r10(t.t === 'tourist' ? t.p / 2 : t.p * 0.4);
-    const yes = await ask(t.em + ' <b>' + t.nm + '</b> 살까? <b style="color:var(--gold)">' + choice.price + '</b>',
+    const yes = await gatedAsk(pid, t.em + ' <b>' + t.nm + '</b> 살까? <b style="color:var(--gold)">' + choice.price + '</b>',
       '통행료 ' + rent + '부터 시작 · 내 돈 ' + pl.cash + (t.t === 'tourist' ? ' · 관광지 3곳 모으면 승리!' : ''),
-      [{ t: '💰 산다!', cls: 'go', v: true }, { t: '그냥 갈래', v: false }]);
+      [{ t: '💰 산다!', cls: 'go', v: true }, { t: '그냥 갈래', v: false }], false);
     evs = C.applyChoice(S, pid, choice, yes);
   } else if (choice.type === 'upgrade') {
     const nextRent = C.r10(t.p * [0.4, 1, 2, 4][choice.toLv]);
-    const yes = await ask(t.em + ' ' + t.nm + ' 공사할까? ' + C.LV_EM[choice.toLv] + ' <b>' + C.LV_NM[choice.toLv] + '</b>',
+    const yes = await gatedAsk(pid, t.em + ' ' + t.nm + ' 공사할까? ' + C.LV_EM[choice.toLv] + ' <b>' + C.LV_NM[choice.toLv] + '</b>',
       '공사비 ' + choice.cost + ' → 통행료가 <b style="color:var(--gold)">' + nextRent + '</b>으로!' + (choice.toLv === 3 ? ' 랜드마크는 아무도 못 뺏어!' : ''),
-      [{ t: '🔨 공사하자!', cls: 'go', v: true }, { t: '다음에', v: false }]);
+      [{ t: '🔨 공사하자!', cls: 'go', v: true }, { t: '다음에', v: false }], false);
     evs = C.applyChoice(S, pid, choice, yes);
   } else if (choice.type === 'takeover') {
     const o = S.players[S.owner[choice.i].p];
-    const yes = await ask('😎 ' + t.em + ' ' + t.nm + '을(를) 인수할까?',
+    const yes = await gatedAsk(pid, '😎 ' + t.em + ' ' + t.nm + '을(를) 인수할까?',
       o.em + ' ' + o.name + '에게 <b style="color:var(--gold)">' + choice.cost + '</b>을 주면 내 도시가 된다! · 내 돈 ' + pl.cash,
-      [{ t: '🤝 인수한다!', cls: 'go', v: true }, { t: '참는다', v: false }]);
+      [{ t: '🤝 인수한다!', cls: 'go', v: true }, { t: '참는다', v: false }], false);
     evs = C.applyChoice(S, pid, choice, yes);
   } else if (choice.type === 'festival') {
-    const i = await pickTile(choice.options, '🎪 어느 도시에서 축제를 열까?', '축제 도시는 통행료가 <b>2배</b>!');
+    const i = await gatedPick(pid, choice.options, '🎪 어느 도시에서 축제를 열까?', '축제 도시는 통행료가 <b>2배</b>!', choice.options[0]);
     evs = C.applyChoice(S, pid, choice, true, i);
   } else if (choice.type === 'freeUpgrade') {
-    const i = await pickTile(choice.options, '🆙 어느 도시를 공짜로 공사할까?', '');
+    const i = await gatedPick(pid, choice.options, '🆙 어느 도시를 공짜로 공사할까?', '', choice.options[0]);
     evs = C.applyChoice(S, pid, choice, true, i);
   }
   for (const e of evs) {
@@ -671,11 +894,11 @@ async function playTurn() {
     /* 우주여행 예약 */
     if (pl.fly) {
       let dest;
-      if (pl.ai) { await sleep(800); dest = C.aiFly(S, pid, Math.random); }
+      if (pl.ai) { await sleep(800); dest = C.aiFly(S, pid, RND); }
       else {
         director.over();
         const all = []; for (let i = 0; i < C.N; i++) if (i !== pl.pos) all.push(i);
-        dest = await pickTile(all, '🚀 어디로 날아갈까?', '아무 칸이나 골라 봐 — 앞으로 가서 출발점을 넘으면 월급도!');
+        dest = await gatedPick(pid, all, '🚀 어디로 날아갈까?', '아무 칸이나 골라 봐 — 앞으로 가서 출발점을 넘으면 월급도!', all[0]);
       }
       snd.fly();
       const r = C.flyTo(S, pid, dest);
@@ -692,8 +915,8 @@ async function playTurn() {
       let pay = false;
       if (pl.ai) { await sleep(700); pay = C.aiIslandPay(S, pid); }
       else if (pl.cash >= C.ISLAND_ESCAPE) {
-        pay = await ask('🏝️ 무인도 ' + pl.island + '번 남음', '💰 ' + C.ISLAND_ESCAPE + ' 내고 바로 탈출할까, 🎲 더블에 도전할까?',
-          [{ t: '💰 100 내고 탈출', cls: 'go', v: true }, { t: '🎲 더블 도전!', v: false }]);
+        pay = await gatedAsk(pid, '🏝️ 무인도 ' + pl.island + '번 남음', '💰 ' + C.ISLAND_ESCAPE + ' 내고 바로 탈출할까, 🎲 더블에 도전할까?',
+          [{ t: '💰 100 내고 탈출', cls: 'go', v: true }, { t: '🎲 더블 도전!', v: false }], true);
       }
       if (pay) { await showEvents(C.islandPay(S, pid), pid); refresh(); }
     }
@@ -703,7 +926,7 @@ async function playTurn() {
       rolls++;
       /* 🎲 3D 물리 굴림 */
       $('diceRow').style.display = 'none';
-      const d1 = C.rollDie(Math.random), d2 = C.rollDie(Math.random);
+      const d1 = C.rollDie(RND), d2 = C.rollDie(RND);
       await rollDice3D(d1, d2, pl.ai);
       const dbl = d1 === d2;
       showDiceResult(d1, d2, dbl);
@@ -750,12 +973,23 @@ async function playTurn() {
       if (!((dbl || again) && pl.alive && pl.island === 0 && !pl.fly) || rolls >= 5) break;
       banner('✨ ' + pl.em + ' ' + pl.name + ' 한 번 더!');
       if (!pl.ai) {
-        $('diceRow').style.display = ''; $('btnRoll').disabled = false;
-        await new Promise(res => { $('btnRoll').onclick = () => { $('btnRoll').onclick = () => { if (!busy) playTurn(); }; res(); }; });
+        $('diceRow').style.display = (NET_ON && !KParkNet.isMine(pid)) ? 'none' : '';
+        $('btnRoll').disabled = NET_ON && !KParkNet.isMine(pid);
+        await new Promise(res => { rollResolve = res; });
       } else await sleep(500);
     }
     endTurn();
   } catch (err) { console.error(err); busy = false; }
+}
+/* 차례 안내 — 친구랑 놀 때는 "내 차례"인지가 제일 먼저 보여야 한다 */
+function turnBanner() {
+  const pl = S.players[S.turn];
+  const mine = !NET_ON || KParkNet.isMine(S.turn);
+  if (pl.ai) banner('🤖 ' + pl.em + ' <b>' + pl.name + '</b> 차례!');
+  else if (mine) banner('👉 ' + pl.em + ' <b>' + pl.name + '</b> 내 차례! — 🎲 굴리기를 눌러!');
+  else banner('👀 ' + pl.em + ' <b>' + pl.name + '</b> 차례를 기다리는 중…');
+  $('diceRow').style.display = (pl.ai || !mine) ? 'none' : '';
+  $('btnRoll').disabled = !mine;
 }
 function endTurn() {
   hideDice();
@@ -764,10 +998,10 @@ function endTurn() {
   const over = C.nextTurn(S);
   if (over) { finish(C.roundsEndWinner(S)); busy = false; return; }
   busy = false; refresh();
-  const pl = S.players[S.turn];
-  banner((pl.ai ? '🤖 ' : '📱 ') + pl.em + ' <b>' + pl.name + '</b> 차례!' + (pl.ai ? '' : ' — 🎲 굴리기를 눌러!'));
-  $('diceRow').style.display = pl.ai ? 'none' : '';
+  turnBanner();
   director.follow(tokens[S.turn].position);
+  /* 방장이 턴마다 지문을 뿌린다 — 어긋난 크롬북만 상태를 다시 받아간다 */
+  if (NET_ON && KParkNet.isHost()) KParkNet.sync(S);
   nextIfAI();
 }
 function nextIfAI() {
@@ -800,10 +1034,10 @@ function finish(w) {
 }
 
 /* ================== 시작 ================== */
-function startGame() {
-  const cfgs = [];
-  for (let i = 0; i < cnt; i++) cfgs.push({ name: CHARS[i].nm, em: CHARS[i].em, ai: KINDS[slotKind[i]].ai, level: KINDS[slotKind[i]].lv });
-  S = C.newGame(cfgs, Math.random);
+function startGame(cfgs, seed) {
+  cfgs = cfgs || soloCfgs();
+  RND = (seed == null) ? Math.random : KParkNet.useSeed(seed);
+  S = C.newGame(cfgs, RND);
   shown.forEach(rec => { if (rec.mesh) stage.scene.remove(rec.mesh); if (rec.beam) stage.scene.remove(rec.beam); });
   shown.clear();
   board.tiles.forEach(T => { T.frame.userData.on = false; T.frame.material.opacity = 0; if (T.festival) { stage.scene.remove(T.festival); T.festival = null; } });
@@ -813,14 +1047,26 @@ function startGame() {
   $('over').style.display = 'none';
   buildChips(); buildTokens(); refresh();
   director.over();
-  const pl = S.players[S.turn];
-  banner((pl.ai ? '🤖 ' : '📱 ') + pl.em + ' <b>' + pl.name + '</b> 차례!' + (pl.ai ? '' : ' — 🎲 굴리기를 눌러!'));
-  $('diceRow').style.display = pl.ai ? 'none' : '';
+  turnBanner();
   nextIfAI();
 }
-$('btnStart').onclick = () => { snd.tick(); startGame(); };
-$('btnRoll').onclick = () => { if (!busy) playTurn(); };
-$('btnAgain').onclick = () => { $('over').style.display = 'none'; $('statPanel').classList.remove('on'); $('setup').style.display = 'flex'; $('topbar').style.display = 'none'; $('banner').style.display = 'none'; $('diceRow').style.display = 'none'; };
+$('btnStart').onclick = () => { snd.tick(); NET_ON = false; startGame(soloCfgs(), null); };
+$('btnRoll').onclick = () => {
+  if (NET_ON) {
+    if (!KParkNet.isMine(S.turn)) return;
+    if (busy && !rollResolve) return;
+    KParkNet.act('roll'); return;
+  }
+  doRoll();
+};
+$('btnAgain').onclick = () => {
+  if (NET_ON) {
+    if (!KParkNet.isHost()) { toast('방장이 다시 시작할 거야!'); return; }
+    $('over').style.display = 'none'; snd.tick(); KParkNet.start({}); return;
+  }
+  $('over').style.display = 'none'; $('statPanel').classList.remove('on'); $('setup').style.display = 'flex';
+  $('topbar').style.display = 'none'; $('banner').style.display = 'none'; $('diceRow').style.display = 'none';
+};
 
 /* ================== 프레임 루프 ================== */
 let last = performance.now();

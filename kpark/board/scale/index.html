@@ -99,6 +99,10 @@ svg{display:block;width:100%;height:auto;touch-action:manipulation}
 <div id="over"><div class="card"><h2 id="ovT"></h2><p id="ovS"></p><button class="start" id="btnAgain">한 판 더!</button></div></div>
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_config.js"></script>
+<script src="../../kpark_net.js"></script>
+<script src="../../kpark_board_net.js"></script>
 <script src="./core.js"></script>
 <script>
 'use strict';
@@ -123,8 +127,26 @@ document.querySelectorAll('#modeOpts .opt').forEach(b=>b.onclick=()=>{Snd.click(
   G.mode=b.dataset.m;$('lvOpts').classList.toggle('show',G.mode==='ai');});
 document.querySelectorAll('#lvOpts .opt').forEach(b=>b.onclick=()=>{Snd.click();
   document.querySelectorAll('#lvOpts .opt').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');G.level=+b.dataset.l;});
-$('btnStart').onclick=start;$('btnRe').onclick=start;$('btnAgain').onclick=()=>{$('over').style.display='none';start();};
+$('btnStart').onclick=start;
+$('btnRe').onclick=()=>replay();$('btnAgain').onclick=()=>{$('over').style.display='none';replay();};
 $('btnHome').onclick=()=>location.href='../';
+
+/* ---- 친구 크롬북이랑 (오가는 건 "어느 추를 어디에" 세 값뿐) ---- */
+const TEAM=['⭐ 별팀','🌙 달팀'];
+function replay(){
+  if(G.mode!=='net')return start();
+  if(!KParkNet.isHost()){toast('방장이 다시 시작할 거야!');return;}
+  KParkNet.start({});
+}
+KParkBoard.attach({
+  game:'scale',seats:2,
+  onStart(d){
+    G.mode='net';G.human=d.seat+1;
+    d.seats.forEach((p,i)=>{TEAM[i]=p.em+' '+p.name;NAMES[i+1]=[TEAM[i],NAMES[i+1][1]];});
+    start();
+  },
+  onAct(a){if(a.t==='mv'){G.selW=a.v.w;tryHang(a.v.side,a.v.d);}}
+});
 
 function start(){
   Snd.click();
@@ -136,7 +158,8 @@ function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clear
 function banner(){
   const[nm,col]=NAMES[G.turn];
   $('banner').innerHTML='<b style="color:'+col+'">'+nm+'</b> 차례 — 추를 골라 자리에 걸어 봐!'+
-    (G.mode==='ai'&&G.turn!==G.human?' <span style="color:var(--dim);font-size:13px">(컴퓨터 계산 중…)</span>':'');
+    (G.mode==='ai'&&G.turn!==G.human?' <span style="color:var(--dim);font-size:13px">(컴퓨터 계산 중…)</span>':'')+
+    (G.mode==='net'?(G.turn===G.human?' <span style="color:#7dffb0;font-size:13px">— 내 차례!</span>':' <span style="color:var(--dim);font-size:13px">(친구가 거는 중…)</span>'):'');
 }
 function renderAll(){renderBoard();renderHand();renderMeter();}
 function renderMeter(){
@@ -176,7 +199,7 @@ function renderBoard(crashSide){
       if(G.last&&G.last.side===side&&G.last.d===d&&!crashSide)s+='<circle cx="'+x+'" cy="'+(152+r)+'" r="'+(r+7)+'" fill="none" stroke="#fff" stroke-width="3" opacity=".8" stroke-dasharray="7 6"><animate attributeName="opacity" values=".85;.2;.85" dur="1.1s" repeatCount="indefinite"/></circle>';
     }else{
       let stc='#3b4a8f';
-      if(G.selW&&!G.over&&!(G.mode==='ai'&&G.turn!==G.human))
+      if(G.selW&&!G.over&&!(G.mode!=='hot'&&G.turn!==G.human))
         stc=C.isSafe(st,{w:G.selW,side,d})?'#7dffb0':'#ff6b8a';
       s+='<circle cx="'+x+'" cy="160" r="12" fill="none" stroke="'+stc+'" stroke-width="2.5" stroke-dasharray="4 4" data-side="'+side+'" data-d="'+d+'" style="cursor:pointer"/>';
       s+='<circle cx="'+x+'" cy="160" r="22" fill="rgba(0,0,0,0)" data-side="'+side+'" data-d="'+d+'" style="cursor:pointer"/>';
@@ -192,22 +215,24 @@ function renderBoard(crashSide){
   svg.innerHTML=s;
   svg.onclick=e=>{
     if(G.over||G.busy)return;
-    if(G.mode==='ai'&&G.turn!==G.human)return;
+    if(G.mode!=='hot'&&G.turn!==G.human)return;
     const el=e.target.closest('[data-side]');
     if(!el)return;
     if(!G.selW){toast('먼저 아래에서 추를 골라 봐!');return;}
-    tryHang(el.getAttribute('data-side'),+el.getAttribute('data-d'));
+    const side=el.getAttribute('data-side'),d=+el.getAttribute('data-d');
+    if(G.mode==='net'){KParkBoard.act('mv',{w:G.selW,side,d});return;}
+    tryHang(side,d);
   };
 }
 function renderHand(){
-  const showFor=(G.mode==='ai')?G.human:G.turn;
-  $('handTitle').innerHTML=(showFor===1?'⭐ 별팀':'🌙 달팀')+' 남은 추 <span style="color:var(--dim)">(무거울수록 큰 힘!)</span>';
+  const showFor=(G.mode==='hot')?G.turn:G.human;
+  $('handTitle').innerHTML=TEAM[showFor-1]+' 남은 추 <span style="color:var(--dim)">(무거울수록 큰 힘!)</span>';
   const w=$('hand');w.innerHTML='';
   for(const wt of G.st.hands[showFor]){
     const b=document.createElement('button');
     b.className='wbtn p'+showFor+(G.selW===wt&&G.turn===showFor?' sel':'');
     b.textContent=wt;
-    b.disabled=G.over||G.busy||(G.mode==='ai'&&G.turn!==G.human)||(G.mode==='hot'&&G.turn!==showFor);
+    b.disabled=G.over||G.busy||(G.mode!=='hot'&&G.turn!==G.human)||(G.mode==='hot'&&G.turn!==showFor);
     b.onclick=()=>{Snd.click();G.selW=wt;renderHand();renderBoard();};
     w.appendChild(b);
   }
