@@ -58,7 +58,9 @@
       재현성은 `python3 scripts/gen_g3_social_u1.py`를 두 번 돌려 재는 것이 옳다.
    ⚠️ 부팅 body class는 **`kt3 subj-social`** · 악센트 `--acc:#A784E6`.
    ⚠️ CURRICULUM 슬라이싱은 다음 unit 앞에서 끊는 **전방탐색**으로 짠다(u2 대비).
-   ⚠️ 홈 배선은 문자열 존재가 아니라 **닫는 태그까지** 검사한다(u1 하나 · u2 미리 생김 0).
+   ⚠️ 홈 배선은 문자열 존재가 아니라 **닫는 태그까지** 검사한다(u1·u2 둘).
+      🚨 2026-08-26 9차: u2가 붙어 「u2 미리 생김 0」을 **실존 단언으로 뒤집었다**.
+         허브 단언도 1·13 → **2·31**(13+18 · 항목 수 합)로 함께 올렸다.
    ⚠️ 허브 카운트는 「수를 못 박는 줄」과 「부분 합으로 다시 계산하는 줄」을 **함께** 둔다.
       사회는 단원이 하나뿐이라 lessons = 항목 수 13 = 차시 수 13이다 —
       **둘이 같아서 안 보일 뿐**이니 u2가 붙을 때 항목 수 쪽으로 올릴 것.
@@ -860,10 +862,13 @@ T('CURRICULUM ↔ LESSONS 정합 (u1 블록 13항목 · ready 13 · n 목록 1~1
   KEYS.forEach(k => ok(blk.includes(L[k].meta.title.split(' (')[0]),
     k + ' 제목이 CURRICULUM에 없음'));
 });
-T('⚠️ 홈 배선 — **닫는 태그까지** 성립한다 (u1 하나) · u2 미리 생김 0', () => {
+T('⚠️ 홈 배선 — **닫는 태그까지** 성립한다 (u1·u2 둘) · u3 미리 생김 0', () => {
   ok(/<script src="data\/g3_social_u1\.js"><\/script>/.test(HOME),
      'u1 script 태그가 닫는 태그까지 성립하지 않는다');
-  ok(!/g3_social_u2\.js/.test(HOME), 'u2 배선이 미리 생겼다');
+  /* 🚨 9차에 뒤집힌 줄 — u2가 라이브에 붙었다. 「없음」이 아니라 「있음」을 못 박는다. */
+  ok(/<script src="data\/g3_social_u2\.js"><\/script>/.test(HOME),
+     'u2 script 태그가 닫는 태그까지 성립하지 않는다');
+  ok(!/g3_social_u3\.js/.test(HOME), 'u3 배선이 미리 생겼다');
   const open = (HOME.match(/<script[\s>]/g) || []).length;
   const close = (HOME.match(/<\/script>/g) || []).length;
   ok(open === close, 'script 여닫이 개수 불일치 ' + open + '/' + close);
@@ -885,16 +890,16 @@ T('홈 slug · 과목 · 복제 원본(과학) 잔재 0', () => {
     ok(/복제하지 말 것/.test(ln), '묶음 주석이 경고가 아니라 선언으로 적혀 있다: ' + ln.trim()));
   ok(/묶음\(2차시\) 차시가 하나도 없다|묶음 0/.test(HOME), '홈이 묶음 0을 밝히지 않는다');
 });
-T('⚠️ 허브 "3_social" 등재 (units 1 · lessons 13) — 못 박는 줄 + 부분 합 재계산 줄', () => {
+T('⚠️ 허브 "3_social" 등재 (units 2 · lessons 31) — 못 박는 줄 + 부분 합 재계산 줄', () => {
   const m = HUB.match(/"3_social":\s*\{[^}]*units:\s*(\d+),\s*lessons:\s*(\d+)/);
   ok(m, '허브에 3_social 미등재');
-  ok(+m[1] === 1, 'units ' + m[1]);
-  ok(+m[2] === 13, 'lessons ' + m[2]);
-  /* ⚠️ lessons = **항목 수** 합이다. 사회 u1은 항목 13 = 차시 13이라 둘이 같아 안 보일 뿐 —
-     u2가 붙을 때 반드시 항목 수 쪽으로 올릴 것. */
-  ok(+m[2] === KEYS.length, '부분 합 재계산 어긋남 ' + m[2]);
-  ok(+m[2] === KEYS.reduce((a, k) => a + (L[k].meta.covers.includes('·') ? 2 : 1), 0),
-     '항목 수와 차시 수가 갈렸다 — 묶음이 생겼으면 항목 수로 적을 것');
+  ok(+m[1] === 2, 'units ' + m[1]);
+  ok(+m[2] === 31, 'lessons ' + m[2]);
+  /* ⚠️ lessons = **항목 수** 합이다(u1 13 + u2 18 = 31). 사회는 묶음이 0이라
+     항목 수와 차시 수가 우연히 같을 뿐 — 묶음이 생기면 항목 수 쪽으로 적을 것. */
+  ok(+m[2] === KEYS.length + 18, '부분 합 재계산 어긋남 ' + m[2]);
+  ok(KEYS.every(k => !L[k].meta.covers.includes('·')),
+     'u1에 묶음이 생겼다 — 항목 수와 차시 수가 갈린다');
   ok(/id:\s*"social"/.test(HUB), '허브 SUB_HIGH에 사회가 없다');
   ok(/"3_social":\s*\{[^}]*file:\s*"g3_social\.html"/.test(HUB), '허브 file 경로 어긋남');
 });
