@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<!--
+  kg_math_l2_com02 — 악수 대회 [케이영재 수학 · L2 EXPLORER 15호 · COM 연구소 2/2]
+  트랙: 케이영재 / Lab: Combinatorics / Level: L2 EXPLORER (트랙 스킨 v2 「신호기」) / 깊이: D1~D8
+  base: kg_math_l3_pat01 (골격·CSS·초기화 계승) + kg_math_l3_pat02 (엔진 공통부 계승)
+        + kg_math_l3_com01 (칩·패드·단추줄 CSS 계승)
+        + kg_math_l2_num01~l2_com01 (L2 규약 단언 계승)
+  신규 시각 언어 0 — 사람은 com01 `stepBtn` 의 `.cal-month-btn` 이고 고른 사람은 `.on` 이다.
+                    짝은 com01 `chip` 의 `.sum-chip` 한 알, 숫자패드는 com01 `buildPad` 다.
+                    14호가 세운 깃발 줄(`.cal-grid.farm`)은 그쪽 몫이라 한 칸도 쓰지 않는다.
+  신규 메카닉 0 — 단추를 눌러 고르고 다시 눌러 푸는 것은 com01 단추줄의 `.on` 토글이다.
+  탐구 5단계: 미션(1~3) 탐험(4~7) 발견(8~11) 도전(12~15) 창조(16~18)
+  핵심 수학: 악수 하나는 두 사람의 짝이다 — 가와 나, 나와 가는 같은 악수다
+             → 앞사람부터 차례로 적으면 남김없이 센다 (셋이면 2·1·0)
+             → 사람이 하나 늘면 새 악수는 앞사람 수만큼 는다 (알맹이)
+             → 그래서 느는 폭이 하나씩 커진다 — 1·3·6·10·15
+             → 셋일 때는 악수도 셋이라 사람 수와 같았다. 넷은 여섯이다 (학생이 만드는 반례)
+             → 인사를 건네면 짝마다 둘이다 (확장 한 방향 = 짝 하나를 몇 번 세는가)
+  이웃 차시와의 선 (여섯을 읽고 그었다):
+    · l2_com01 색칠 경우 세기 (14호) = 깃발 한 줄에 옆과 다른 색을 칠한다. 그쪽이 깃발·색칠·
+      「하나 늘면 같은 배로 는다」의 주인이다. 여기는 깃발을 한 칸도 세우지 않고 색을 칠하지 않으며,
+      느는 폭이 늘 달라진다 — 배가 아니라 더해지는 수가 커진다.
+    · l3_com01 격자 경로 연구소 = 격자 위 길 세기·모퉁이 수. 격자를 쓰지 않는다.
+    · l3_com02 나무그림 설계사 = 나무그림·탑·층·블록. 나무를 한 번도 그리지 않는다.
+    · l2_geo02 회전 미로 = 「꼴」·「가짓수」·「돌리기」가 그쪽 몫이다 — 한 글자도 쓰지 않는다.
+    · l2_geo03 점 잇기 도형 공장 = 점판 위 도형·「틀로 나누면 빠뜨리지 않는다」가 그쪽 몫이다.
+      여기서 잇는 것은 도형이 아니라 사람이고, 「점」·「틀」을 쓰지 않는다.
+    · l2_pat01 입력 출력 요술 상자 = 상자·요술이 그쪽 몫이다. 상자를 세우지 않는다.
+  점수 100 = 탐험 15 + 추측 10 + 발견 20(q9 10 + q10 10) + 검증 15(3판 × 5)
+             + 확장 20(ext1 10 + ext2 10) + 창조 20(create1 10 + create2 10)
+  힌트: H1/H2/H3 3단 (감점 없음, 답 비노출)
+  ⚠ 순수 로직은 곱셈·나눗셈을 쓰지 않는다 — 사람 수로 한 번에 구하는 식을 쥐면
+    학생이 발견할 것을 코드가 미리 갖는 셈이다. 두 사람을 뽑는 짝을 전부 늘어놓고 센다.
+  ⚠ 새 사람이 하는 악수도 세어서 낸다 — newPairs() 는 짝을 늘어놓고 마지막 사람이 든 것만 고른다.
+  ⚠ 인사도 세어서 낸다 — greets() 는 짝마다 앞뒤 두 방향을 붙인다.
+  ⚠ 수치는 tests/verify_kg_l2_com02.py 로 코딩 전에 선검증했다 (2,453건).
+    선검증이 못 박은 것:
+      ㉠ 「사람이 하나 늘면 악수도 하나 는다」는 거짓 — 1·3·6 은 하나씩이 아니다.
+      ㉡ 「악수 수는 사람 수와 같다」도 거짓 — 셋에서만 우연히 맞는다 (반례의 근거).
+      ㉢ 「사람이 곱절이면 악수도 곱절」 거짓 — 셋 3, 여섯 15.
+      ㉣ 편을 갈라 다른 편과만 하면 수가 달라진다 (여섯이 9). 이 차시는 편을 가르지 않는다.
+      ㉤ 창조 임무 가(15)는 외길(악수·사람 여섯), 임무 나(6)는 정확히 두 길
+         (악수·사람 넷 / 인사·사람 셋).
+      ㉥ 학생이 세는 가장 큰 수는 15 (검증 1판) — L2 §4 두 자리 안.
+  ⛔ 규약: 문자식 금지 / 차단 어휘 금지 / 이모지 슬라이드당 ≤2
+  ⛔ L2 규약(설계_L2_레벨톤_v1.md): 문장 길이 상한 · 화면 수 ≤999 · 계산 수 ≤99 ·
+     한 화면 조작 요소 ≤12 · 사람 줄 여섯 이내 · 논지 5겹 · 확장 한 방향
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="kg_math_l2_com02_v1">
+<title>악수 대회 · 케이영재 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#F4F2EC; --ink:#17161C; --ink-soft:#5A5762;
+  --coral:#7B4DFF; --coral-deep:#5B2EE0; --coral-soft:#E7DEFF;
+  --teal:#3B5BA5; --teal-deep:#2C4480; --teal-soft:#DDE4F5;
+  --gold:#9BBF00; --emph:#FF5714; --line:#17161C; --mark:#D6F94C;
+  --f-title:'Black Han Sans',sans-serif; --f-body:'Noto Sans KR',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:4px 4px 0 rgba(23,22,28,.92);
+  --fs-title: clamp(26px, 4.2vw, 46px);
+  --fs-heading: clamp(23px, 3.5vw, 35px);
+  --fs-body: clamp(19px, 2.9vw, 27px);
+  --fs-caption: clamp(17px, 2.6vw, 24px);
+  --fs-label: clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --mw-sm: min(720px, 96vw);
+  --mw-lg: min(880px, 96vw);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; word-break:keep-all; overflow-wrap:break-word; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+@keyframes ka-glow { 0%,100%{box-shadow:0 0 0 0 rgba(14,138,95,.4);} 50%{box-shadow:0 0 0 10px rgba(14,138,95,0);} }
+
+.ka { background:var(--paper); width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; color:var(--ink); position:relative; overflow:hidden; }
+.ka-h { display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); padding:clamp(11px,1.7vw,15px) clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:hover { transform:translateY(-1px); }
+.ka-pill { font-family:var(--f-title); background:var(--coral); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-where { font-size:clamp(14px,1.6vw,18px); color:var(--ink-soft); flex-shrink:1; }
+.ka-where b { color:var(--ink); }
+.ka-bar { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:46vw; }
+.ka-dot { width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s, background .2s; }
+.ka-dot:hover { transform:scale(1.2); }
+.ka-dot.active { background:var(--coral); transform:scale(1.3); }
+.ka-dot.done { background:var(--teal); }
+.ka-score { font-family:var(--f-title); background:#D6F94C; color:#17161C; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); padding:0; border-radius:50%; cursor:pointer; flex-shrink:0; color:var(--coral-deep); font-size:clamp(13px,2vw,16px); width:clamp(32px,4.5vw,38px); height:clamp(32px,4.5vw,38px); display:flex; align-items:center; justify-content:center; }
+
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; justify-content:safe center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; justify-content:safe center; gap:clamp(7px,1.2vw,11px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(8px,1.4vh,16px) clamp(16px,4vw,48px); overflow-x:hidden; overflow-y:auto; scrollbar-width:none; -ms-overflow-style:none; }
+.slide::-webkit-scrollbar { width:0; height:0; }
+.slide.active { display:flex; }
+.slide-title { font-family:var(--f-title); font-size:var(--fs-title); line-height:1.18; color:var(--ink); font-weight:400; text-align:center; flex-shrink:0; }
+.slide-sub { font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(10px,1.6vw,16px); left:clamp(16px,4vw,40px); font-family:var(--f-title); color:var(--coral); font-size:clamp(13px,1.9vw,18px); letter-spacing:.4px; z-index:5; }
+
+.ka-f { display:flex; justify-content:flex-end; gap:12px; padding:clamp(12px,1.7vw,16px) clamp(16px,4vw,40px); background:linear-gradient(to top, var(--paper) 62%, transparent); flex-shrink:0; }
+.ka-prev, .ka-hint, .ka-next { font-family:var(--f-title); font-size:clamp(15px,1.9vw,22px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(10px,1.4vw,15px) clamp(20px,2.8vw,38px); cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translateY(-2px); }
+.ka-prev { margin-right:auto; }
+.ka-hint { color:#17161C; border-color:#17161C; }
+.ka-next { background:var(--coral); color:#fff; border-color:var(--coral); }
+.ka-prev:disabled, .ka-next:disabled { opacity:.35; cursor:default; transform:none; }
+.ka-hint:disabled { opacity:.4; cursor:default; }
+
+.concept-box { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,18px) clamp(18px,2.8vw,28px); border-radius:20px; font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); text-align:center; line-height:1.5; box-shadow:var(--shadow); }
+.concept-box strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.intro-q { font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; }
+.intro-q strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.goal-list { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); font-size:var(--fs-caption); color:var(--ink); max-width:var(--mw-sm); }
+.goal-list li { background:#fff; border:2px solid var(--line); padding:clamp(7px,1.3vw,11px) clamp(14px,2.6vw,20px); border-radius:16px; list-style:none; box-shadow:var(--shadow); }
+.goal-list li strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+.mission-card { background:#fff; border:3px solid var(--coral-soft); border-radius:26px; padding:clamp(16px,3vw,26px) clamp(20px,3.8vw,34px); max-width:var(--mw-sm); text-align:center; box-shadow:0 6px 0 var(--coral-soft); font-size:var(--fs-body); line-height:1.6; }
+.mission-card strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+
+/* ── 달력 격자 ── */
+.cal-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.1vw,10px); }
+.cal-head { display:flex; align-items:center; gap:clamp(8px,1.6vw,14px); }
+.cal-title { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--coral-deep); }
+.cal-month-btn { font-family:var(--f-title); font-size:var(--fs-label); background:#fff; border:2px solid var(--line); border-radius:999px; padding:4px 12px; cursor:pointer; color:var(--ink-soft); }
+.cal-month-btn.on { background:var(--coral); color:#fff; border-color:var(--coral); }
+.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:clamp(3px,0.6vw,5px); background:#fff; border:2px solid var(--line); border-radius:18px; padding:clamp(8px,1.4vw,12px); box-shadow:var(--shadow); }
+.cal-dow { font-family:var(--f-title); font-size:clamp(12px,1.7vw,16px); color:var(--ink-soft); text-align:center; padding-bottom:2px; }
+.cal-dow.sun { color:var(--emph); }
+.cal-cell { width:clamp(34px,6.2vw,54px); height:clamp(30px,5.4vw,46px); display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:clamp(15px,2.4vw,22px); color:var(--ink); background:var(--paper); border-radius:10px; cursor:pointer; transition:background .15s, transform .1s; user-select:none; }
+.cal-cell:hover { background:var(--coral-soft); }
+.cal-cell.empty { background:transparent; cursor:default; }
+.cal-cell.sel { background:var(--coral); color:#fff; animation:ka-pop .3s ease; }
+.cal-cell.diag-a { outline:3px solid var(--gold); outline-offset:-3px; }
+.cal-cell.diag-b { outline:3px solid var(--teal); outline-offset:-3px; }
+.cal-cell.center-cell { background:var(--emph); color:#fff; }
+.cal-info { display:flex; gap:clamp(8px,1.6vw,14px); flex-wrap:wrap; justify-content:center; min-height:2.2em; align-items:center; }
+.sum-chip { font-family:var(--f-title); font-size:var(--fs-caption); padding:clamp(5px,1vw,8px) clamp(12px,2.2vw,18px); border-radius:999px; background:#fff; border:2px solid var(--line); }
+.sum-chip.a { border-color:var(--gold); color:#5E7500; }
+.sum-chip.b { border-color:var(--teal); color:var(--teal-deep); }
+.sum-chip.tot { border-color:var(--coral); color:var(--coral-deep); }
+.cal-msg { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--coral-deep); min-height:1.5em; text-align:center; }
+.cal-msg.wrong { color:var(--emph); }
+
+/* ── 사례 테이블 ── */
+.case-table { border-collapse:collapse; background:#fff; border-radius:16px; overflow:hidden; box-shadow:var(--shadow); font-size:var(--fs-caption); }
+.case-table th { font-family:var(--f-title); font-weight:400; background:var(--coral-soft); color:var(--coral-deep); padding:clamp(6px,1.1vw,10px) clamp(12px,2.2vw,20px); }
+.case-table td { font-family:var(--f-num); font-weight:800; text-align:center; padding:clamp(6px,1.1vw,10px) clamp(12px,2.2vw,20px); border-top:1px solid var(--line); }
+.case-count { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); }
+.case-count b { color:var(--coral-deep); font-size:1.2em; }
+
+/* ── 관찰·추측 선택 ── */
+.pick-list { display:flex; flex-direction:column; gap:clamp(7px,1.3vw,11px); width:100%; max-width:var(--mw-sm); }
+.pick-item { background:#fff; border:3px solid var(--line); border-radius:18px; padding:clamp(10px,1.8vw,15px) clamp(16px,3vw,24px); font-size:var(--fs-body); cursor:pointer; transition:border-color .2s, transform .12s; text-align:left; font-family:var(--f-body); color:var(--ink); }
+.pick-item:hover { border-color:var(--coral); }
+.pick-item.on { border-color:var(--coral); background:var(--coral-soft); animation:ka-pop .3s ease; }
+.pick-item .tag { font-family:var(--f-title); color:var(--coral-deep); margin-right:8px; }
+
+/* ── 구조 시각화 ── */
+.struct-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.5vw,13px); }
+.struct-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(6px,1.1vw,9px); }
+.struct-cell { width:clamp(76px,13vw,120px); height:clamp(52px,9vw,80px); background:#fff; border:3px solid var(--coral-soft); border-radius:14px; display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:clamp(19px,3vw,30px); color:var(--coral-deep); box-shadow:0 4px 0 var(--coral-soft); }
+.struct-cell.hl-a { border-color:var(--gold); box-shadow:0 4px 0 var(--gold); }
+.struct-cell.hl-b { border-color:var(--teal); box-shadow:0 4px 0 var(--teal-soft); }
+.struct-eq { font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center; }
+.struct-eq .star { color:var(--emph); }
+.arrow-note { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); background:#fff; border:2px solid var(--line); border-radius:999px; padding:5px 16px; cursor:pointer; transition:transform .15s; }
+.arrow-note.revealed { color:var(--coral-deep); border-color:var(--coral); animation:ka-glow 1.4s ease 1; }
+
+/* ── 문제 공통 ── */
+.q-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.5vw,13px); max-width:var(--mw-lg); width:100%; }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; font-weight:400; }
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-sm); }
+.mcq-opts.one-col { grid-template-columns:1fr; }
+.mcq-opt { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,1.9vw,15px); font-family:var(--f-title); font-size:var(--fs-body); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .2s; box-shadow:0 6px 0 var(--coral-soft); font-weight:400; }
+.mcq-opt:hover { border-color:var(--coral); }
+.mcq-opt:active { transform:translateY(4px); box-shadow:none; }
+.mcq-opt.correct { border-color:var(--coral-deep); background:var(--coral); color:#fff; box-shadow:0 6px 0 var(--coral-deep); animation:ka-pop .5s ease; }
+.mcq-opt.wrong { border-color:var(--emph); background:#FFE3D6; color:var(--ink); animation:ka-shake .35s; }
+.mcq-hint { font-family:var(--f-title); font-size:var(--fs-caption); color:#17161C; background:#D6F94C; border-radius:16px; padding:clamp(8px,1.5vw,12px) clamp(14px,2.6vw,20px); max-width:var(--mw-sm); text-align:center; display:none; }
+.mcq-hint.show { display:block; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); color:var(--coral-deep); min-height:1.4em; text-align:center; }
+.q-fb.wrong { color:var(--emph); }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:clamp(30px,5vw,54px); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:20px; padding:clamp(8px,1.5vw,13px) clamp(24px,4.4vw,42px); min-width:clamp(110px,20vw,180px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.q-pad { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(6px,1.2vw,10px); max-width:clamp(280px,56vw,460px); }
+.q-key { background:#fff; border:2px solid var(--line); border-radius:14px; padding:clamp(7px,1.4vw,11px) 0; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, background .15s; box-shadow:0 4px 0 var(--line); }
+.q-key:hover { background:var(--coral-soft); border-color:var(--coral); }
+.q-key:active { transform:translateY(3px); box-shadow:none; }
+.q-key.fn { background:#D6F94C; color:#17161C; font-family:var(--f-title); font-size:var(--fs-caption); border-color:#17161C; box-shadow:0 4px 0 #17161C; }
+
+/* ── 모양 실험실 ── */
+.shape-pick { display:flex; gap:clamp(8px,1.5vw,13px); flex-wrap:wrap; justify-content:center; }
+.shape-btn { background:#fff; border:3px solid var(--line); border-radius:16px; padding:clamp(8px,1.4vw,12px) clamp(12px,2.2vw,18px); cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:5px; transition:border-color .2s, transform .12s; }
+.shape-btn:hover { border-color:var(--coral); }
+.shape-btn.on { border-color:var(--coral); background:var(--coral-soft); }
+.shape-mini { display:grid; grid-template-columns:repeat(3, clamp(10px,1.8vw,15px)); gap:2px; }
+.shape-mini i { display:block; width:clamp(10px,1.8vw,15px); height:clamp(10px,1.8vw,15px); border-radius:3px; background:var(--line); }
+.shape-mini i.f { background:var(--coral); }
+.shape-name { font-family:var(--f-title); font-size:var(--fs-label); color:var(--ink); }
+.rule-build { display:flex; align-items:center; gap:clamp(6px,1.2vw,10px); flex-wrap:wrap; justify-content:center; font-family:var(--f-title); font-size:var(--fs-body); }
+.rule-slot { background:#fff; border:3px dashed var(--coral); border-radius:14px; min-width:clamp(72px,13vw,120px); padding:clamp(6px,1.1vw,9px) clamp(10px,1.8vw,14px); text-align:center; color:var(--coral-deep); font-family:var(--f-num); font-weight:800; cursor:pointer; }
+.rule-slot.filled { border-style:solid; background:var(--coral-soft); }
+.rule-choice { display:flex; gap:clamp(6px,1.1vw,9px); flex-wrap:wrap; justify-content:center; }
+.rule-chip { background:#fff; border:2px solid var(--line); border-radius:999px; padding:clamp(5px,1vw,8px) clamp(12px,2.2vw,18px); font-family:var(--f-title); font-size:var(--fs-caption); cursor:pointer; transition:transform .12s, border-color .15s; }
+.rule-chip:hover { border-color:var(--coral); transform:translateY(-2px); }
+
+/* ── 탐정 카드·마무리 ── */
+.detective-card { background:#fff; border:3px solid var(--gold); border-radius:26px; padding:clamp(16px,3vw,26px) clamp(20px,3.8vw,34px); max-width:var(--mw-sm); width:100%; box-shadow:0 8px 0 var(--mark); display:flex; flex-direction:column; gap:clamp(7px,1.3vw,11px); }
+.dc-row { display:flex; justify-content:space-between; gap:14px; font-size:var(--fs-caption); border-bottom:1px dashed var(--line); padding-bottom:6px; }
+.dc-row b { font-family:var(--f-title); font-weight:400; color:var(--coral-deep); }
+.dc-title { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; }
+.wrap-score { font-family:var(--f-num); font-weight:800; font-size:clamp(56px,10vw,110px); color:var(--coral-deep); line-height:1; }
+.wrap-msg { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); }
+.home-card { background:var(--teal-soft); border-radius:20px; padding:clamp(12px,2.2vw,18px) clamp(18px,3.2vw,26px); font-size:var(--fs-caption); color:var(--teal-deep); max-width:var(--mw-sm); text-align:center; line-height:1.55; }
+.next-mini { display:flex; gap:clamp(8px,1.5vw,13px); flex-wrap:wrap; justify-content:center; }
+.next-chip { font-family:var(--f-title); font-size:var(--fs-label); background:#fff; border:2px solid var(--line); border-radius:999px; padding:6px 16px; color:var(--ink-soft); }
+
+/* ═══ 케이영재 스킨 v2 「신호기」 — 트랙 전용 (헌법 v1.3 §3-α · skin_v2_signal.py 가 단일 원본) ═══
+   굵은 먹선 + 오프셋 통그림자 + 보라·라임. 레이아웃 값(크기·간격)은 건드리지 않는다. */
+.ka-h { border-bottom:3px solid var(--ink); }
+.ka-prev, .ka-hint, .ka-next { box-shadow:3px 3px 0 var(--ink); }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translate(-1px,-1px); box-shadow:4px 4px 0 var(--ink); }
+.ka-prev:active, .ka-hint:active, .ka-next:active { transform:translate(3px,3px); box-shadow:0 0 0 var(--ink); }
+.ka-hint { background:var(--mark); }
+.ka-pill { border:2px solid var(--ink); box-shadow:2px 2px 0 var(--ink); }
+.ka-score { border:2px solid var(--ink); box-shadow:2px 2px 0 var(--ink); }
+.ka-dot { background:#CBC8BF; }
+.mcq-opt { border-color:var(--ink); box-shadow:5px 5px 0 var(--ink); }
+.mcq-opt.correct { box-shadow:5px 5px 0 var(--coral-deep); }
+.detective-card { border-color:var(--ink); }
+.mission-card { border-color:var(--ink); box-shadow:6px 6px 0 var(--ink); }
+.cal-cell { border:2px solid var(--ink); }
+.cal-cell.empty { border-color:transparent; background:transparent; }
+
+/* ═══ 공용 부품 CSS (com01 정의 문자 그대로 추출·주입 — 손으로 옮겨 적지 않는다) ═══ */
+/* 사람은 pat01 `.cal-month-btn` 단추이고 고른 사람은 `.on` 이다. 짝은 pat01 `.sum-chip` 한 알이다
+   — 새 시각 언어 0. 여기서 들여오는 것은 그것을 담는 줄과 눈금뿐이다. */
+.chip-row { display:flex; gap:clamp(5px,1vw,9px); justify-content:center; flex-wrap:wrap; margin:6px 0; }
+.vox-btns { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+.lab-meter { display:flex; align-items:baseline; justify-content:center; gap:8px; margin:6px 0; }
+.lab-label { font-size:var(--fs-label); color:var(--ink-soft); font-family:var(--f-title); }
+.lab-count { font-family:var(--f-title); font-size:var(--fs-h1); color:var(--coral-deep); min-width:2.2em; text-align:center; }
+</style>
+</head>
+<body>
+<div class="ka">
+  <header class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 나가기</button>
+    <span class="ka-pill">케이영재</span>
+    <span class="ka-where"><b>악수 대회</b> · 경우 연구소</span>
+    <div class="ka-bar" id="dots"></div>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </header>
+
+  <main class="ka-m" id="main">
+
+    <!-- 슬1 · 미션: 악수 대회 -->
+    <section class="slide">
+      <span class="stage-badge">미션 1/3</span>
+      <h1 class="slide-title">악수 대회</h1>
+      <p class="slide-sub">만나면 한 번 악수한다</p>
+      <div class="chip-row" id="s1-people"></div>
+      <div class="chip-row" id="s1-one"></div>
+      <div class="concept-box">두 사람이 만나면 악수를 한 번 한다.
+        악수 하나는 두 사람의 짝이다.</div>
+    </section>
+
+    <!-- 슬2 · 미션: 같은 짝은 한 번 -->
+    <section class="slide">
+      <span class="stage-badge">미션 2/3</span>
+      <h1 class="slide-title">같은 짝은 한 번</h1>
+      <p class="slide-sub">순서를 바꿔도 같은 악수다</p>
+      <div class="chip-row" id="s2-same"></div>
+      <div class="concept-box">가와 나가 악수했다.
+        나와 가도 같은 악수다.</div>
+    </section>
+
+    <!-- 슬3 · 미션: 오늘의 물음 -->
+    <section class="slide">
+      <span class="stage-badge">미션 3/3</span>
+      <h1 class="slide-title">오늘의 물음</h1>
+      <p class="slide-sub">악수는 몇 번일까</p>
+      <div class="concept-box">사람이 늘면 악수도 는다.
+        얼마나 늘까.</div>
+      <div class="concept-box">직접 세어 보자.</div>
+    </section>
+
+    <!-- 슬4 · 탐험: 셋이 모였다 -->
+    <section class="slide" data-q-id="explore">
+      <span class="stage-badge">탐험 1/4</span>
+      <h1 class="slide-title">셋이 모였다</h1>
+      <div class="q-stage">
+        <p class="q-prompt">악수를 다 모으자</p>
+        <div class="vox-btns" id="s4-btns"></div>
+        <div class="cal-msg" id="s4-msg">두 사람을 눌러 보자</div>
+        <div class="lab-meter"><span class="lab-label">모은 악수</span><span class="lab-count" id="s4-count">0</span></div>
+        <div class="chip-row" id="s4-log"></div>
+        <p class="q-fb" id="fb-explore"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["두 사람을 눌러 보자.","같은 짝은 한 번만 센다.","가부터 차례로 짝을 지어 보자."]'></div>
+    </section>
+
+    <!-- 슬5 · 탐험: 모은 기록 (엔진 훅 cur === 4) -->
+    <section class="slide">
+      <span class="stage-badge">탐험 2/4</span>
+      <h1 class="slide-title">모은 기록</h1>
+      <p class="slide-sub">내가 모은 악수다</p>
+      <div class="chip-row" id="s5-table"></div>
+      <p class="case-count" id="s5-count"></p>
+      <div class="concept-box">같은 짝은 다시 없다.
+        규칙이 걸러 냈다.</div>
+    </section>
+
+    <!-- 슬6 · 탐험: 차례대로 갈라 보자 (엔진 훅 cur === 5) -->
+    <section class="slide">
+      <span class="stage-badge">탐험 3/4</span>
+      <h1 class="slide-title">차례대로 갈라 보자</h1>
+      <p class="slide-sub">앞사람부터 적는다</p>
+      <div class="chip-row" id="s6-label"></div>
+      <div class="chip-row" id="s6-g0"></div>
+      <div class="chip-row" id="s6-g1"></div>
+      <div class="chip-row" id="s6-g2"></div>
+      <div class="concept-box">앞사람부터 차례로 적었다.
+        이러면 남김없이 센다.</div>
+    </section>
+
+    <!-- 슬7 · 탐험: 나의 추측 -->
+    <section class="slide" data-q-id="conjecture">
+      <span class="stage-badge">탐험 4/4</span>
+      <h1 class="slide-title">내 추측을 고르자</h1>
+      <div class="q-stage">
+        <p class="q-prompt">한 사람이 더 오면 악수는?</p>
+        <div class="mcq-opts one-col" id="conj-opts">
+          <button class="mcq-opt" data-c="0">사람 수와 같다</button>
+          <button class="mcq-opt" data-c="1">앞사람 수만큼 는다</button>
+          <button class="mcq-opt" data-c="2">한 번 는다</button>
+          <button class="mcq-opt" data-c="3">그때그때 다르다</button>
+        </div>
+        <p class="q-fb" id="conj-fb"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["아직 몰라도 된다.","모은 것을 떠올리자.","고른 뒤에 살펴보자."]'></div>
+    </section>
+
+    <!-- 슬8 · 발견: 넷째 사람이 왔다 -->
+    <section class="slide">
+      <span class="stage-badge">발견 1/4</span>
+      <h1 class="slide-title">넷째 사람이 왔다</h1>
+      <p class="slide-sub">새 악수만 더 생긴다</p>
+      <div class="vox-btns" id="s8-btns"></div>
+      <div class="lab-meter"><span class="lab-label">악수 수</span><span class="lab-count" id="s8-count">—</span></div>
+      <div class="chip-row" id="s8-old"></div>
+      <div class="chip-row" id="s8-new"></div>
+      <div class="cal-msg" id="s8-msg">넷째 오기를 눌러 보자</div>
+    </section>
+
+    <!-- 슬9 · 발견: 다섯이 모이면 -->
+    <section class="slide" data-q-id="q9">
+      <span class="stage-badge">발견 2/4</span>
+      <h1 class="slide-title">다섯이 모이면</h1>
+      <div class="q-stage">
+        <p class="q-prompt">다섯이 모였다. 악수는 몇 번일까?</p>
+        <div class="chip-row" id="q9-people"></div>
+        <div class="mcq-opts" id="q9-opts"></div>
+        <p class="q-fb" id="fb-q9"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["넷일 때는 여섯이었다.","다섯째는 앞사람 모두와 한다.","여섯에 넷을 더해 보자."]'></div>
+    </section>
+
+    <!-- 슬10 · 발견: 왜 앞사람 수만큼일까 -->
+    <section class="slide">
+      <span class="stage-badge">발견 3/4</span>
+      <h1 class="slide-title">왜 앞사람 수만큼일까</h1>
+      <p class="slide-sub">새 사람만 따로 보자</p>
+      <div class="vox-btns" id="s10-btns"></div>
+      <div class="chip-row" id="s10-pick"></div>
+      <div class="lab-meter"><span class="lab-label">새 악수</span><span class="lab-count" id="s10-count">—</span></div>
+      <div class="concept-box">새 사람은 앞사람 모두와 한 번씩 한다.
+        그래서 앞사람 수만큼 는다.</div>
+    </section>
+
+    <!-- 슬11 · 발견: 가는 몇 번 할까 -->
+    <section class="slide" data-q-id="q10">
+      <span class="stage-badge">발견 4/4</span>
+      <h1 class="slide-title">가는 몇 번 할까</h1>
+      <div class="q-stage">
+        <p class="q-prompt">다섯이 모였다. 가는 몇 번 악수할까?</p>
+        <div class="chip-row" id="q10-people"></div>
+        <div class="mcq-opts" id="q10-opts"></div>
+        <p class="q-fb" id="fb-q10"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["가는 누구와 할까.","자기와는 하지 않는다.","가를 뺀 사람을 세어 보자."]'></div>
+    </section>
+
+    <!-- 슬12 · 도전: 세지 않고 맞히기 -->
+    <section class="slide" data-q-id="ver">
+      <span class="stage-badge">도전 1/4</span>
+      <h1 class="slide-title">세지 않고 맞히기</h1>
+      <div class="q-stage">
+        <p class="q-prompt" id="ver-prompt"></p>
+        <div class="chip-row" id="ver-people"></div>
+        <div class="q-display" id="disp-ver">&nbsp;</div>
+        <div class="q-pad" id="pad-ver"></div>
+        <p class="q-fb" id="fb-ver"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["사람을 차례로 늘려 보자.","새 사람은 앞사람 모두와 악수한다.","앞 수에 앞사람 수를 더하자."]'></div>
+    </section>
+
+    <!-- 슬13 · 도전: 넷이면 다시 세자 (반례) -->
+    <section class="slide" data-q-id="ext1">
+      <span class="stage-badge">도전 2/4</span>
+      <h1 class="slide-title">넷이면 다시 세자</h1>
+      <div class="q-stage">
+        <p class="q-prompt">넷이 모였다. 악수를 다 모으자</p>
+        <div class="vox-btns" id="e1-btns"></div>
+        <div class="cal-msg" id="e1-msg">두 사람을 눌러 보자</div>
+        <div class="lab-meter"><span class="lab-label">모은 악수</span><span class="lab-count" id="e1-count">0</span></div>
+        <div class="chip-row" id="e1-log"></div>
+        <p class="q-fb" id="fb-ext1"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["가부터 차례로 지어 보자.","가로 시작하는 짝이 셋이다.","나로 시작하는 짝도 찾자."]'></div>
+    </section>
+
+    <!-- 슬14 · 도전: 인사를 건네면 -->
+    <section class="slide" data-q-id="ext2">
+      <span class="stage-badge">도전 3/4</span>
+      <h1 class="slide-title">인사를 건네면</h1>
+      <div class="q-stage">
+        <p class="q-prompt">넷이 서로 인사를 건넨다. 몇 번일까?</p>
+        <div class="chip-row" id="e2-people"></div>
+        <div class="concept-box">악수는 둘이 함께 한 번 한다.
+          인사는 저마다 건넨다.</div>
+        <div class="mcq-opts" id="ext2-opts"></div>
+        <p class="q-fb" id="fb-ext2"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["악수 하나에 인사는 몇 번일까.","가가 나에게 건네고 나가 가에게 건넨다.","짝마다 인사가 둘이다."]'></div>
+    </section>
+
+    <!-- 슬15 · 도전: 사람 수와 악수 수 -->
+    <section class="slide">
+      <span class="stage-badge">도전 4/4</span>
+      <h1 class="slide-title">사람 수와 악수 수</h1>
+      <p class="slide-sub">둘부터 여섯까지</p>
+      <div class="chip-row" id="s15-r1"></div>
+      <div class="chip-row" id="s15-r2"></div>
+      <div class="chip-row" id="s15-r3"></div>
+      <div class="concept-box">사람이 하나 늘 때마다 는 수가 커진다.
+        앞사람이 늘기 때문이다.</div>
+    </section>
+
+    <!-- 슬16 · 창조: 딱 15 번 만들기 -->
+    <section class="slide" data-q-id="create1">
+      <span class="stage-badge">창조 1/3</span>
+      <h1 class="slide-title">딱 15 번 만들기</h1>
+      <div class="q-stage">
+        <p class="q-prompt" id="c1-goal"></p>
+        <div class="vox-btns" id="c1-ms"></div>
+        <div class="vox-btns" id="c1-ns"></div>
+        <div class="chip-row" id="c1-stage"></div>
+        <div class="lab-meter"><span class="lab-label">세어 보면</span><span class="lab-count" id="c1-count">—</span></div>
+        <p class="q-fb" id="fb-create1"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["방식과 사람 수를 바꿔 보자.","정리 줄을 떠올리자.","사람을 하나씩 늘려 보자."]'></div>
+    </section>
+
+    <!-- 슬17 · 창조: 6 번을 두 길로 -->
+    <section class="slide" data-q-id="create2">
+      <span class="stage-badge">창조 2/3</span>
+      <h1 class="slide-title">6 번을 두 길로</h1>
+      <div class="q-stage">
+        <p class="q-prompt" id="c2-goal"></p>
+        <div class="vox-btns" id="c2-ms"></div>
+        <div class="vox-btns" id="c2-ns"></div>
+        <div class="chip-row" id="c2-stage"></div>
+        <div class="lab-meter"><span class="lab-label">세어 보면</span><span class="lab-count" id="c2-count">—</span></div>
+        <div class="chip-row" id="c2-found"></div>
+        <p class="q-fb" id="fb-create2"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["길이 둘이다.","한 길은 악수로, 다른 길은 인사로 간다.","인사로 가면 사람이 적어도 된다."]'></div>
+    </section>
+
+    <!-- 슬18 · 창조: 악수 기록증 -->
+    <section class="slide">
+      <span class="stage-badge">창조 3/3</span>
+      <h1 class="slide-title">악수 기록증</h1>
+      <div class="detective-card">
+        <div class="dc-title">오늘의 악수</div>
+        <div class="dc-row" id="card-r1"></div>
+        <div class="dc-row" id="card-r2"></div>
+        <div class="dc-row" id="card-r3"></div>
+      </div>
+      <div class="concept-box">새 사람은 앞사람 모두와 한다.
+        그래서 느는 수가 하나씩 커진다.</div>
+      <p class="wrap-score">점수 <b id="final-score">0</b></p>
+      <p class="wrap-msg" id="wrap-msg"></p>
+    </section>
+
+  </main>
+
+  <footer class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next" id="next" onclick="goNext()">다음 →</button>
+  </footer>
+</div>
+
+<script>
+/* ═══════════ KGiftedCore — 순수 로직 (DOM 무의존, 테스트 대상) ═══════════
+   세는 것은 전부 늘어놓고 센다. 「사람 수로 한 번에 구하는 식」을 쥐고 있으면
+   학생이 발견할 것을 코드가 미리 갖는 셈이다 — 곱셈·나눗셈 기호를 한 번도 쓰지 않는다.
+   ★새 사람이 하는 악수도 세어서 낸다 — newPairs() 는 짝을 늘어놓고 마지막 사람이 든 것만 고른다.
+     「앞사람 수만큼」을 식으로 적지 않는다.
+   ★인사도 세어서 낸다 — greets() 는 짝마다 앞뒤 두 방향을 붙인다. 「곱절」을 식으로 적지 않는다.
+   하니스가 「한 사람씩 세어 더하는」 독립 구현과 전 구간 전수 대조한다.
+   (헌법 §3-6 — 학생이 발견할 몫을 코드가 미리 쥐지 않는다) */
+const KGiftedCore = {
+  LESSON: 'kg_math_l2_com02',
+  SCORE_PLAN: { explore: 15, conjecture: 10, q9: 10, q10: 10, ver: 15, ext1: 10, ext2: 10, create1: 10, create2: 10 },
+
+  /* ── 사람 이름 ── 다섯째·여섯째는 발견·검증 무대에서만 선다 ── */
+  PEOPLE: ['가', '나', '다', '라', '마', '바'],
+
+  /* ── 무대 상수 (선검증 _com02_확정.json 과 빌더가 맞대어 본다) ── */
+  EX_N: 3, Q9_N: 5, Q10_N: 5, Q10_ONE: 0,
+  VER_ROUNDS: [6, 2, 4],
+  EXT1_N: 4, EXT2_N: 4,
+  C_MODES: [1, 2], C_NS: [2, 3, 4, 5, 6],
+  C1_TARGET: 15, C2_TARGET: 6,
+
+  name(i) { return this.PEOPLE[i] || ''; },
+  label(p) { return this.name(p[0]) + '와 ' + this.name(p[1]); },
+  key(p) { return p[0] < p[1] ? String(p[0]) + '-' + String(p[1]) : String(p[1]) + '-' + String(p[0]); },
+  /* ── 두 사람을 뽑는 짝을 전부 늘어놓는다 ── 앞사람부터 차례로 ── */
+  pairs(n) {
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      for (let j = i + 1; j < n; j++) out.push([i, j]);
+    }
+    return out;
+  },
+  count(n) { return this.pairs(n).length; },
+  /* ── 인사 ── 짝마다 앞뒤 두 방향을 붙인다 ── */
+  greets(n) {
+    const out = [];
+    const ps = this.pairs(n);
+    for (let i = 0; i < ps.length; i++) {
+      out.push([ps[i][0], ps[i][1]]);
+      out.push([ps[i][1], ps[i][0]]);
+    }
+    return out;
+  },
+  greetCount(n) { return this.greets(n).length; },
+  /* ── 새 사람이 하는 악수 ── 마지막 사람이 든 짝만 고른다 ── */
+  newPairs(n) {
+    const out = [];
+    const ps = this.pairs(n);
+    for (let i = 0; i < ps.length; i++) if (ps[i][1] === n - 1) out.push(ps[i]);
+    return out;
+  },
+  /* ── 한 사람이 하는 악수 ── */
+  myPairs(n, who) {
+    const out = [];
+    const ps = this.pairs(n);
+    for (let i = 0; i < ps.length; i++) if (ps[i][0] === who || ps[i][1] === who) out.push(ps[i]);
+    return out;
+  },
+  /* ── 앞사람이 who 인 짝만 ── 차례대로 갈라 적기 ── */
+  fromGroup(n, who) {
+    const out = [];
+    const ps = this.pairs(n);
+    for (let i = 0; i < ps.length; i++) if (ps[i][0] === who) out.push(ps[i]);
+    return out;
+  },
+  /* ── 탐험·반례 문턱 = 그 무대의 악수를 다 모으는 것 (세어서 낸다) ── */
+  exNeed() { return this.count(this.EX_N); },
+  ext1Need() { return this.count(this.EXT1_N); },
+
+  /* ── 방식 1 = 악수(짝마다 하나) · 방식 2 = 인사(짝마다 둘) ── */
+  made(mode, n) { return mode === 1 ? this.count(n) : this.greetCount(n); },
+
+  /* ── 창조 검사기 ── 수만 돌려준다. 어느 방식·사람 수가 답인지는 담지 않는다 (§3-6) ── */
+  judge1(mode, n) {
+    const m = this.made(mode, n);
+    return { count: m, hit: m === this.C1_TARGET };
+  },
+  judge2(mode, n) {
+    const m = this.made(mode, n);
+    return { count: m, hit: m === this.C2_TARGET };
+  }
+};
+if (typeof module !== 'undefined' && module.exports) module.exports = KGiftedCore;
+if (typeof window !== 'undefined') window.KGiftedCore = KGiftedCore;
+
+/* ═══════════ 엔진 (base: kg_math_l3_pat01 · pat02 공통부 · com01 칩·패드·단추줄 계승 · 힌트 3단) ═══════════ */
+const TOTAL = 18;
+const LESSON_ID = 'kg_math_l2_com02';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+const HINT_MAX = 3;
+/* 무대 상수는 KGiftedCore 가 쥔다 (사람 줄 · 짝) */
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+/* ═══ 화면 맞춤 — 슬라이드가 프레임보다 길면 균일 축소 (제목이 헤더 뒤로 잘리는 것 방지) ═══ */
+const FIT_MIN = 0.55, FIT_STEP = 0.04;
+let fitPending = false;
+function fitActiveSlide() {
+  const el = document.querySelector('.slide.active');
+  if (!el) return;
+  if (el.style.zoom) el.style.zoom = '';
+  if (!(window.CSS && CSS.supports && CSS.supports('zoom', '0.9'))) return;
+  if (!el.clientHeight) return;
+  let k = 1;
+  for (let i = 0; i < 16 && el.scrollHeight > el.clientHeight + 1; i++) {
+    k = Math.max(FIT_MIN, k - FIT_STEP);
+    el.style.zoom = k;
+    if (k === FIT_MIN) break;
+  }
+}
+function scheduleFit() {
+  if (fitPending) return;
+  fitPending = true;
+  requestAnimationFrame(() => { fitPending = false; fitActiveSlide(); });
+}
+window.addEventListener('resize', scheduleFit);
+window.addEventListener('orientationchange', scheduleFit);
+document.addEventListener('click', scheduleFit, true);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(scheduleFit);
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.querySelectorAll('#dots .ka-dot').forEach((d, i) => { d.classList.toggle('active', i === cur); d.classList.toggle('done', i < cur); });
+  document.getElementById('prev').disabled = cur === 0;
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.hintLevel >= HINT_MAX; }
+  else { hintBtn.disabled = true; }
+  if (cur === TOTAL - 1) {
+    document.getElementById('next').textContent = '마치기 →';
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('wrap-msg').textContent = wrapMsg(score);
+    saveProgress(true);
+  } else { document.getElementById('next').textContent = '다음 →'; }
+  if (cur === 4) renderCaseTable();
+  if (cur === 5) renderS6();
+  if (cur === 17) renderAgentCard();
+  fitActiveSlide();
+}
+function saveProgress(done) {
+  const data = { cur, score, done, startedAt, finishedAt: done ? Date.now() : null, qState, cases: exploreCases, conj: conjPicked, myRule: myRuleText };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function wrapMsg(s) {
+  if (s >= 100) return '전설의 악수 연구원!';
+  if (s >= 80) return '멋진 악수였다!';
+  if (s >= 60) return '세는 눈이 자라났다!';
+  return '만날 사람은 얼마든지 있다. 다시 해도 좋다!';
+}
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+function showHint() {
+  const qid = currentQId(); if (!qid) return;
+  const st = getQState(qid); if (st.hintLevel >= HINT_MAX) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint'); if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[Math.min(st.hintLevel, hints.length) - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= HINT_MAX;
+}
+
+
+/* ═══ 칩·숫자패드·단추 공통 (com01 정의 문자 그대로 추출·주입) ═══ */
+function chip(elId, text, kind) {
+  const s = document.createElement('span');
+  s.className = 'sum-chip ' + (kind || 'a');
+  s.textContent = text;
+  document.getElementById(elId).appendChild(s);
+}
+function buildPad(padId, dispId, maxLen, onSubmit) {
+  const pad = document.getElementById(padId);
+  const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '←', '확인'];
+  let val = '';
+  const draw = () => { document.getElementById(dispId).textContent = val || '\u00A0'; };
+  keys.forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'q-key' + (k === '←' || k === '확인' ? ' fn' : '');
+    b.textContent = k;
+    b.addEventListener('click', () => {
+      if (k === '←') val = val.slice(0, -1);
+      else if (k === '확인') { if (val !== '') { const v = parseInt(val, 10); if (onSubmit(v) !== false) val = ''; } }
+      else if (val.length < maxLen) val += k;
+      draw();
+    });
+    pad.appendChild(b);
+  });
+  draw();
+}
+function stepBtn(wrapId, label, fn) {
+  const b = document.createElement('button');
+  b.className = 'cal-month-btn';
+  b.textContent = label;
+  b.addEventListener('click', fn);
+  document.getElementById(wrapId).appendChild(b);
+  return b;
+}
+function clearChips(id) { const e = document.getElementById(id); if (e) e.innerHTML = ''; }
+
+/* ═══════════ 진행 상태 ═══════════
+   엔진 saveProgress 가 이 셋을 읽는다. 첫 렌더보다 앞에 선다 (사이클 24 TDZ 회귀 차단). */
+const exploreCases = [];
+let conjPicked = null;
+let myRuleText = '';
+
+/* ═══════════ 그리기 공통 ═══════════
+   신규 시각 언어 0 — 사람은 com01 `stepBtn` 의 단추, 짝은 com01 `chip` 의 알이다. */
+function setText(id, t) { const e = document.getElementById(id); if (e) e.textContent = t; }
+function setMsg(id, t, wrong) {
+  const e = document.getElementById(id);
+  if (!e) return;
+  e.textContent = t;
+  if (wrong) e.classList.add('wrong'); else e.classList.remove('wrong');
+}
+function beon(m) { return String(m) + ' 번'; }
+/* 사람을 알로 늘어놓는다 (보기 전용). hi 는 도드라지게 둘 사람. */
+function drawPeople(elId, n, hi) {
+  clearChips(elId);
+  for (let i = 0; i < n; i++) chip(elId, KGiftedCore.name(i), i === hi ? 'tot' : 'b');
+}
+/* 짝을 알로 늘어놓는다 */
+function drawPairs(elId, list, kind) {
+  clearChips(elId);
+  for (let i = 0; i < list.length; i++) chip(elId, KGiftedCore.label(list[i]), kind);
+}
+/* 보기 그리기 공통 */
+function renderOpts(elId, labels, fn) {
+  const el = document.getElementById(elId);
+  el.innerHTML = '';
+  for (let i = 0; i < labels.length; i++) {
+    (function (k) {
+      const b = document.createElement('button');
+      b.className = 'mcq-opt';
+      b.setAttribute('data-c', String(k));
+      b.textContent = labels[k];
+      b.addEventListener('click', () => fn(k, b, el));
+      el.appendChild(b);
+    })(i);
+  }
+}
+
+/* ═══════════ 모으기 무대 공통 (슬4 탐험 · 슬13 반례) ═══════════
+   두 사람을 누르면 악수가 적힌다. 같은 짝은 두 번 세지 않는다.
+   한 번 누른 사람을 다시 누르면 고른 것이 풀린다 (두 단계 조작 없음 · L2 §5). */
+function collectStage(cfg) {
+  const S = KGiftedCore;
+  const picked = [];
+  const seen = {};
+  const list = cfg.list;
+  const btns = [];
+  function paint() {
+    for (let i = 0; i < btns.length; i++) {
+      if (picked.indexOf(i) >= 0) btns[i].classList.add('on'); else btns[i].classList.remove('on');
+    }
+  }
+  function drawLog() {
+    drawPairs(cfg.log, list, 'a');
+    setText(cfg.count, beon(list.length));
+  }
+  function record() {
+    const st = getQState(cfg.qid);
+    const p = picked[0] < picked[1] ? [picked[0], picked[1]] : [picked[1], picked[0]];
+    picked.length = 0;
+    paint();
+    const k = S.key(p);
+    if (seen[k]) { setMsg(cfg.msg, '이미 한 악수다', true); return; }
+    seen[k] = true;
+    list.push(p);
+    drawLog();
+    if (list.length >= cfg.need() && !st.solved) {
+      st.solved = true;
+      addScore(S.SCORE_PLAN[cfg.qid]);
+      setMsg(cfg.msg, '다 모았다', false);
+      setText(cfg.fb, cfg.doneText);
+    } else if (!st.solved) {
+      setMsg(cfg.msg, '적었다. 다른 짝도 찾자', false);
+      setText(cfg.fb, beon(list.length) + ' 모았다.');
+    } else {
+      setMsg(cfg.msg, '적었다', false);
+    }
+    saveProgress(false);
+  }
+  function tap(i) {
+    const at = picked.indexOf(i);
+    if (at >= 0) { picked.splice(at, 1); paint(); setMsg(cfg.msg, '두 사람을 눌러 보자', false); return; }
+    picked.push(i);
+    paint();
+    if (picked.length >= 2) record();
+    else setMsg(cfg.msg, '한 사람 더 고르자', false);
+  }
+  const wrap = document.getElementById(cfg.btns);
+  wrap.innerHTML = '';
+  for (let i = 0; i < cfg.n; i++) {
+    (function (idx) { btns.push(stepBtn(cfg.btns, S.name(idx), () => tap(idx))); })(i);
+  }
+  stepBtn(cfg.btns, '고른 것 풀기', () => { picked.length = 0; paint(); setMsg(cfg.msg, '두 사람을 눌러 보자', false); });
+  paint();
+  drawLog();
+}
+
+/* ═══════════ 슬1 · 슬2 미션 견본 ═══════════ */
+drawPeople('s1-people', KGiftedCore.EX_N, -1);
+drawPairs('s1-one', [[0, 1]], 'tot');
+chip('s2-same', KGiftedCore.label([0, 1]), 'a');
+chip('s2-same', KGiftedCore.label([1, 0]), 'b');
+chip('s2-same', '같은 악수', 'tot');
+
+/* ═══════════ 슬4 탐험 · 셋이 모였다 ═══════════ */
+collectStage({
+  qid: 'explore', n: KGiftedCore.EX_N, list: exploreCases,
+  btns: 's4-btns', msg: 's4-msg', count: 's4-count', log: 's4-log', fb: 'fb-explore',
+  need: () => KGiftedCore.exNeed(), doneText: '셋이 하는 악수를 다 모았다.'
+});
+
+/* ═══════════ 슬5 탐험 · 모은 기록 (엔진 훅 cur === 4) ═══════════ */
+function renderCaseTable() {
+  drawPairs('s5-table', exploreCases, 'a');
+  setText('s5-count', '모은 악수 ' + beon(exploreCases.length));
+}
+
+/* ═══════════ 슬6 탐험 · 차례대로 갈라 보자 (엔진 훅 cur === 5) ═══════════ */
+function renderS6() {
+  const S = KGiftedCore;
+  clearChips('s6-label');
+  for (let c = 0; c < S.EX_N; c++) {
+    const mine = [];
+    for (let i = 0; i < exploreCases.length; i++) {
+      if (exploreCases[i][0] === c) mine.push(exploreCases[i]);
+    }
+    drawPairs('s6-g' + c, mine, c === 0 ? 'a' : (c === 1 ? 'b' : 'tot'));
+    chip('s6-label', S.name(c) + '부터 ' + beon(mine.length), c === 0 ? 'a' : (c === 1 ? 'b' : 'tot'));
+  }
+}
+
+/* ═══════════ 슬7 탐험 · 나의 추측 ═══════════ */
+const CONJ = ['사람 수와 같다', '앞사람 수만큼 는다', '한 번 는다', '그때그때 다르다'];
+document.querySelectorAll('#conj-opts .mcq-opt').forEach(b => {
+  b.addEventListener('click', () => {
+    const st = getQState('conjecture');
+    document.querySelectorAll('#conj-opts .mcq-opt').forEach(o => o.classList.remove('sel'));
+    b.classList.add('sel');
+    conjPicked = CONJ[parseInt(b.getAttribute('data-c'), 10)];
+    setText('conj-fb', '추측을 적어 두었다. 이어서 살펴보자.');
+    if (!st.solved) { st.solved = true; addScore(KGiftedCore.SCORE_PLAN.conjecture); }
+    saveProgress(false);
+  });
+});
+
+/* ═══════════ 슬8 발견 · 넷째 사람이 왔다 ═══════════
+   세 짝은 코어가 늘어놓은 것이다(학생 기록이 아니다). 넷째가 오면 새 짝만 더 붙는다. */
+let s8Fourth = false;
+function s8Draw() {
+  const S = KGiftedCore;
+  const base = S.pairs(S.EX_N);
+  drawPairs('s8-old', base, 'a');
+  if (!s8Fourth) {
+    clearChips('s8-new');
+    setText('s8-count', beon(base.length));
+    setMsg('s8-msg', '넷째 오기를 눌러 보자', false);
+    return;
+  }
+  const add = S.newPairs(S.EX_N + 1);
+  drawPairs('s8-new', add, 'tot');
+  setText('s8-count', beon(base.length + add.length));
+  setMsg('s8-msg', '넷째가 앞사람 모두와 했다', false);
+}
+(function () {
+  const el = document.getElementById('s8-btns');
+  el.innerHTML = '';
+  stepBtn('s8-btns', '넷째 오기', () => { s8Fourth = true; s8Draw(); });
+  stepBtn('s8-btns', '처음으로', () => { s8Fourth = false; s8Draw(); });
+})();
+s8Draw();
+
+/* ═══════════ 슬9 발견 · 다섯이 모이면 ═══════════ */
+const Q9_OPTS = [7, 10, 15, 5];
+const Q9_IDX = 1;
+drawPeople('q9-people', KGiftedCore.Q9_N, -1);
+renderOpts('q9-opts', Q9_OPTS.map(v => beon(v)), (k, b, el) => {
+  const S = KGiftedCore, st = getQState('q9');
+  if (st.solved) return;
+  if (k === Q9_IDX) {
+    b.classList.add('correct');
+    st.solved = true;
+    addScore(S.SCORE_PLAN.q9);
+    setText('fb-q9', '맞다. 다섯째가 넷과 했다.');
+  } else {
+    b.classList.add('wrong');
+    setText('fb-q9', '새 사람이 몇 명과 하는지 보자.');
+  }
+  saveProgress(false);
+});
+
+/* ═══════════ 슬10 발견 · 왜 앞사람 수만큼일까 ═══════════ */
+const S10_NS = [3, 4, 5];
+let s10N = S10_NS[0];
+const s10Btns = [];
+function s10Draw() {
+  const S = KGiftedCore;
+  const add = S.newPairs(s10N);
+  drawPairs('s10-pick', add, 'tot');
+  setText('s10-count', beon(add.length));
+  for (let i = 0; i < s10Btns.length; i++) {
+    if (S10_NS[i] === s10N) s10Btns[i].classList.add('on'); else s10Btns[i].classList.remove('on');
+  }
+}
+(function () {
+  const el = document.getElementById('s10-btns');
+  el.innerHTML = '';
+  for (let i = 0; i < S10_NS.length; i++) {
+    (function (v) { s10Btns.push(stepBtn('s10-btns', '사람 ' + String(v), () => { s10N = v; s10Draw(); })); })(S10_NS[i]);
+  }
+})();
+s10Draw();
+
+/* ═══════════ 슬11 발견 · 가는 몇 번 할까 ═══════════ */
+const Q10_OPTS = [10, 5, 4, 6];
+const Q10_IDX = 2;
+drawPeople('q10-people', KGiftedCore.Q10_N, KGiftedCore.Q10_ONE);
+renderOpts('q10-opts', Q10_OPTS.map(v => beon(v)), (k, b, el) => {
+  const S = KGiftedCore, st = getQState('q10');
+  if (st.solved) return;
+  if (k === Q10_IDX) {
+    b.classList.add('correct');
+    st.solved = true;
+    addScore(S.SCORE_PLAN.q10);
+    setText('fb-q10', '맞다. 자기만 빼고 모두와 한다.');
+  } else {
+    b.classList.add('wrong');
+    setText('fb-q10', '가가 만나는 사람만 세어 보자.');
+  }
+  saveProgress(false);
+});
+
+/* ═══════════ 슬12 도전 · 세지 않고 맞히기 ═══════════ */
+let verRound = 0;
+function verDraw() {
+  const S = KGiftedCore;
+  const n = S.VER_ROUNDS[verRound];
+  setText('ver-prompt', String(verRound + 1) + '판. 모인 사람 ' + String(n) + '. 악수는 몇 번일까?');
+  drawPeople('ver-people', n, -1);
+}
+buildPad('pad-ver', 'disp-ver', 2, (v) => {
+  const S = KGiftedCore, st = getQState('ver');
+  if (st.solved) return false;
+  const n = S.VER_ROUNDS[verRound];
+  if (v === S.count(n)) {
+    addScore(5);
+    verRound = verRound + 1;
+    if (verRound >= S.VER_ROUNDS.length) {
+      st.solved = true;
+      verRound = S.VER_ROUNDS.length - 1;
+      setText('fb-ver', '세 판을 다 맞혔다.');
+    } else {
+      setText('fb-ver', '맞다. 다음 판이다.');
+      verDraw();
+    }
+    saveProgress(false);
+    return true;
+  }
+  setText('fb-ver', '앞사람 수를 하나씩 더해 보자.');
+  saveProgress(false);
+  return true;
+});
+verDraw();
+
+/* ═══════════ 슬13 도전 · 넷이면 다시 세자 (반례) ═══════════ */
+const ext1Cases = [];
+collectStage({
+  qid: 'ext1', n: KGiftedCore.EXT1_N, list: ext1Cases,
+  btns: 'e1-btns', msg: 'e1-msg', count: 'e1-count', log: 'e1-log', fb: 'fb-ext1',
+  need: () => KGiftedCore.ext1Need(), doneText: '셋일 때는 사람 수와 같았다. 넷은 다르다.'
+});
+
+/* ═══════════ 슬14 도전 · 인사를 건네면 ═══════════ */
+const EXT2_OPTS = [6, 8, 12, 16];
+const EXT2_IDX = 2;
+drawPeople('e2-people', KGiftedCore.EXT2_N, -1);
+renderOpts('ext2-opts', EXT2_OPTS.map(v => beon(v)), (k, b, el) => {
+  const S = KGiftedCore, st = getQState('ext2');
+  if (st.solved) return;
+  if (k === EXT2_IDX) {
+    b.classList.add('correct');
+    st.solved = true;
+    addScore(S.SCORE_PLAN.ext2);
+    setText('fb-ext2', '맞다. 짝마다 인사가 둘이다.');
+  } else {
+    b.classList.add('wrong');
+    setText('fb-ext2', '한 짝에서 인사가 몇 번인지 보자.');
+  }
+  saveProgress(false);
+});
+
+/* ═══════════ 슬15 도전 · 사람 수와 악수 수 ═══════════ */
+(function () {
+  const S = KGiftedCore;
+  clearChips('s15-r1');
+  clearChips('s15-r2');
+  clearChips('s15-r3');
+  chip('s15-r1', '사람', 'a');
+  chip('s15-r2', '악수', 'b');
+  chip('s15-r3', '새 악수', 'tot');
+  for (let n = 2; n <= 6; n++) {
+    chip('s15-r1', String(n), 'a');
+    chip('s15-r2', String(S.count(n)), 'b');
+    chip('s15-r3', String(S.newPairs(n).length), 'tot');
+  }
+})();
+
+/* ═══════════ 창조 무대 공통 (슬16 · 슬17) ═══════════
+   방식 단추 둘 + 사람 수 단추 다섯 = 일곱 (L2 §5). 한 번 누르면 한 가지만 바뀐다. */
+function modeName(m) { return m === 1 ? '악수' : '인사'; }
+function createStage(cfg) {
+  const S = KGiftedCore;
+  let mode = S.C_MODES[0], n = S.C_NS[0];
+  const mb = [], nb = [];
+  function paintBtns() {
+    for (let i = 0; i < mb.length; i++) { if (S.C_MODES[i] === mode) mb[i].classList.add('on'); else mb[i].classList.remove('on'); }
+    for (let i = 0; i < nb.length; i++) { if (S.C_NS[i] === n) nb[i].classList.add('on'); else nb[i].classList.remove('on'); }
+  }
+  function draw() {
+    clearChips(cfg.stage);
+    chip(cfg.stage, modeName(mode), 'tot');
+    for (let i = 0; i < n; i++) chip(cfg.stage, S.name(i), 'b');
+    paintBtns();
+    cfg.onChange(mode, n);
+  }
+  document.getElementById(cfg.ms).innerHTML = '';
+  document.getElementById(cfg.ns).innerHTML = '';
+  for (let i = 0; i < S.C_MODES.length; i++) {
+    (function (v) { mb.push(stepBtn(cfg.ms, modeName(v), () => { mode = v; draw(); })); })(S.C_MODES[i]);
+  }
+  for (let i = 0; i < S.C_NS.length; i++) {
+    (function (v) { nb.push(stepBtn(cfg.ns, '사람 ' + String(v), () => { n = v; draw(); })); })(S.C_NS[i]);
+  }
+  draw();
+}
+
+/* ═══════════ 슬16 창조 · 딱 15 번 만들기 ═══════════ */
+setText('c1-goal', '세어 보면 딱 ' + beon(KGiftedCore.C1_TARGET) + ' 되게 하자');
+createStage({
+  ms: 'c1-ms', ns: 'c1-ns', stage: 'c1-stage',
+  onChange: (mode, n) => {
+    const S = KGiftedCore, st = getQState('create1');
+    const r = S.judge1(mode, n);
+    setText('c1-count', beon(r.count));
+    if (r.hit) {
+      if (!st.solved) {
+        st.solved = true;
+        addScore(S.SCORE_PLAN.create1);
+        myRuleText = modeName(mode) + ' · 사람 ' + String(n);
+      }
+      setText('fb-create1', '됐다. 딱 ' + beon(S.C1_TARGET) + ' 이다.');
+    } else {
+      setText('fb-create1', beon(r.count) + ' 이다. 다시 골라 보자.');
+    }
+    saveProgress(false);
+  }
+});
+
+/* ═══════════ 슬17 창조 · 6 번을 두 길로 ═══════════ */
+const c2Found = {};
+setText('c2-goal', beon(KGiftedCore.C2_TARGET) + ' 이 되는 길을 둘 다 찾자');
+createStage({
+  ms: 'c2-ms', ns: 'c2-ns', stage: 'c2-stage',
+  onChange: (mode, n) => {
+    const S = KGiftedCore, st = getQState('create2');
+    const r = S.judge2(mode, n);
+    setText('c2-count', beon(r.count));
+    if (r.hit) {
+      const key = String(mode) + '|' + String(n);
+      if (!c2Found[key]) {
+        c2Found[key] = true;
+        chip('c2-found', modeName(mode) + ' · 사람 ' + String(n), 'tot');
+      }
+      let found = 0;
+      for (const kk in c2Found) if (c2Found[kk]) found = found + 1;
+      if (found >= 2) {
+        if (!st.solved) { st.solved = true; addScore(S.SCORE_PLAN.create2); }
+        setText('fb-create2', '두 길을 다 찾았다.');
+      } else {
+        setText('fb-create2', '한 길을 찾았다. 다른 길도 찾자.');
+      }
+    } else {
+      setText('fb-create2', beon(r.count) + ' 이다. 다시 골라 보자.');
+    }
+    saveProgress(false);
+  }
+});
+
+/* ═══════════ 슬18 창조 · 악수 기록증 (엔진 훅 cur === 17) ═══════════ */
+function renderAgentCard() {
+  setText('card-r1', '모은 악수 ' + beon(exploreCases.length));
+  setText('card-r2', '내 추측 ' + (conjPicked ? conjPicked : '아직 없음'));
+  setText('card-r3', '딱 ' + beon(KGiftedCore.C1_TARGET) + ' 만든 길 ' + (myRuleText ? myRuleText : '아직 없음'));
+}
+
+/* ═══════════ 초기화 ═══════════ */
+(function init() {
+  const dots = document.getElementById('dots');
+  for (let i = 0; i < TOTAL; i++) {
+    const d = document.createElement('span');
+    d.className = 'ka-dot';
+    d.addEventListener('click', () => { cur = i; updateUI(); });
+    dots.appendChild(d);
+  }
+  updateUI();
+})();
+</script>
+</body>
+</html>
