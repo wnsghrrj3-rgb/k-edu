@@ -36,6 +36,8 @@
 
 | 23 | setup_teacher_approval.sql | 2026-08-26 작성 · **⏳ 미실행 — 준호가 Supabase SQL Editor 에서 실행 후 여기 확인 표기** | 교사 승인(교사 증명) — 생태계설계_v2_공개준비 §D·§J-1. `kedu_policy`(정책 스위치 `auto_approve_edu_domains`=false) · `edu_domains`(17개 시도 초안, verified=false) · `teachers.approval/approved_at/approved_by/approval_note/approval_requested_at` · 헬퍼 `kedu_is_admin()`·`kedu_teacher_approved()`·`kedu_email_is_edu()` · 트리거 2(가입 시 승인 결정 — 클라이언트 approval·is_admin 무시 / 비관리자의 approval·is_admin·user_id 변경 되돌림) · RLS 잠금 5(`teachers_insert_codes`·`cw_bundles/items/sends_teacher`·`p_ma_routines_teacher` WITH CHECK 에 승인 조건) · 관리자 RPC 3(`admin_teacher_list`·`admin_set_teacher_approval`·`admin_set_policy`) · 교사 RPC `request_teacher_approval`. **게이트 이전 가입 행(created_at < 2026-08-27)은 일괄 approved** — 원치 않는 계정은 /admin 에서 반려. 재실행 안전. 검산 `SELECT approval, count(*) FROM teachers GROUP BY 1;` → 전부 approved · `SELECT kedu_email_is_edu('a@sen.go.kr') AS s, kedu_email_is_edu('a@gmail.com') AS g;` → true/false · `SELECT count(*) FROM edu_domains;` → 17. 화면 배선: `teacher/index.html`(배너·신청) · `admin/index.html`(대기 표·승인/반려·정책 스위치) — SQL 미적용 상태에선 둘 다 폴백으로 종전처럼 동작 |
 
+| 24 | setup_contents_tier.sql | 2026-08-26 작성 · **⏳ 미실행** | 콘텐츠 원장 등급 `contents.tier`(open/class/class_rec/home, 기본 open) — 생태계설계_v2 §B·§J-4. `/kedu_tier.js CONTENT_TIERS` 경로 표의 DB 거울(같은 접두·같은 순서, `tests/test_kedu_gate.js` 가 둘을 대조). 백필은 file_path 접두로 — 현재 원장이 /grade1·/english 뿐이라 결과는 전부 open. 판정은 1단계엔 브라우저가 하므로 실행을 서두를 이유는 없고, 서버 강제(2단계) 전까지만 들어가 있으면 된다. 검산 `SELECT tier, count(*) FROM contents GROUP BY 1;` → open 400 |
+
 ## 새 SQL 추가 룰
 
 1. 파일은 이 폴더(`sql/`)에 `setup_이름.sql`로 추가

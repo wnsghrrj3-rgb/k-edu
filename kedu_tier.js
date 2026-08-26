@@ -1,5 +1,5 @@
 // =====================================================================
-// kedu_tier.js — 케이에듀 접근 단계 단일 진실 공급원 (2026-08-08)
+// kedu_tier.js — 케이에듀 접근 단계 단일 진실 공급원 (2026-08-08 · 판정기 2026-08-26)
 //
 // 사다리 (생태계설계_v1 §3 + 준호 지시 2026-08-08):
 //   visitor  방문자          — 코드 없음. 서버 저장 0, 신원 0.
@@ -14,6 +14,13 @@
 //     guest/visitor에서 서버 기록을 남기는 코드는 컴플라이언스 위반.
 //   · guest 상태는 이 파일만 읽고 쓴다(키: kedu_guest_v1).
 //   · 게스트 입장은 익명 인증조차 만들지 않는다 — 서버 발자국 0.
+//
+// 2026-08-26 공개 준비 §J-2 (생태계설계_v2_공개준비 §B·§E) — 열쇠 × 등급 판정기:
+//   열쇠(누가)  = 위 사다리. account 이면서 teacher(승인) 이면 T.
+//   등급(무엇을) = 콘텐츠 tier: open | class | class_rec | home  (경로 → tier 표 CONTENT_TIERS,
+//                  DB 원장 contents.tier 는 같은 표의 거울 — sql/setup_contents_tier.sql)
+//   판정 창구는 하나: KeduTier.can(tierObj, contentTier, contentGrade, opts) → {allow, reason, save}
+//   집행자는 /kedu_gate.js — 페이지는 판정기를 직접 부르지 않는다.
 // =====================================================================
 (function () {
   'use strict';
@@ -74,9 +81,21 @@
           clearGuest(); // 정식 좌석이 생기면 게스트 흔적 정리
           return { tier: 'student', profile: res.data };
         }
-        return { tier: 'account' };
-      }).catch(function () { return { tier: 'account' }; });
+        return resolveTeacher(db, session.user.id);
+      }).catch(function () { return resolveTeacher(db, session.user.id); });
     }).catch(function () { return tierWithoutSession(); });
+  }
+
+  // account 세션 → 교사 행이 있으면 teacher 를 실어 준다(tier 값은 'account' 그대로 — 기존 호출자 호환).
+  //   teacher.approved = approval 이 auto/approved (컬럼 없는 구버전 DB 는 행이 있으면 승인으로 본다)
+  function resolveTeacher(db, userId) {
+    return db.from('teachers').select('*').eq('user_id', userId).maybeSingle().then(function (r) {
+      var t = r && !r.error && r.data;
+      if (!t) return { tier: 'account' };
+      var a = t.approval;
+      return { tier: 'account', teacher: { id: t.id, approval: a === undefined ? 'approved' : a,
+               approved: a === undefined || a === 'auto' || a === 'approved', is_admin: !!t.is_admin } };
+    }).catch(function () { return { tier: 'account' }; });
   }
 
   function tierWithoutSession() {
@@ -84,8 +103,93 @@
     return g ? { tier: 'guest', guest: g } : { tier: 'visitor' };
   }
 
+  // ── 등급 표 (경로 → tier). 앞 글자 일치, 위에서부터 첫 일치. null = 문 없음(도구·문서·입구) ──
+  //   open      누구나 (자기주도·케이랩·뮤지엄·허브·케이영재 — 홍보 채널, 잠그지 않는다)
+  //   class     교사가 학급에 열어주면 (기록 불필요)
+  //   class_rec 교사가 열어주고 동의 학급만 (기록이 본질)
+  //   home      L3 (지금은 빈 목록)
+  var CONTENT_TIERS = [
+    ['/classwork/', 'class_rec'], ['/morning/', 'class_rec'], ['/kbattle/', 'class_rec'], ['/live/', 'class_rec'],
+    ['/kpark/', 'class'], ['/maker/', 'class'], ['/kmake/', 'class'], ['/maker-playground/', 'class'],
+    ['/draw/', 'class'], ['/kple/', 'class'],
+    ['/grade1/', 'open'], ['/grade2/', 'open'], ['/grade3/', 'open'], ['/grade4/', 'open'],
+    ['/grade5/', 'open'], ['/grade6/', 'open'], ['/english/', 'open'], ['/gifted/', 'open'],
+    ['/labs/', 'open'], ['/museum/', 'open'], ['/hub2/', 'open'], ['/kedu/hub/', 'open']
+  ];
+
+  function tierOfPath(path) {
+    var p = (path || '').toLowerCase();
+    for (var i = 0; i < CONTENT_TIERS.length; i++) {
+      if (p.indexOf(CONTENT_TIERS[i][0]) === 0) return CONTENT_TIERS[i][1];
+    }
+    return null;
+  }
+
+  // 콘텐츠 학년: lesson-id(g3_…) → 경로(/grade3/ · /english/g3/) 순. 못 찾으면 null(전학년).
+  function gradeOf(lessonId, path) {
+    var m = /^g([1-6])_/.exec(lessonId || '');
+    if (m) return +m[1];
+    m = /^\/grade([1-6])\//.exec((path || '').toLowerCase());
+    if (m) return +m[1];
+    m = /^\/english\/g([1-6])\//.exec((path || '').toLowerCase());
+    if (m) return +m[1];
+    return null;
+  }
+
+  // 열쇠: L1 방문자 · L2g 동의 전 학급 · L2a 동의 학급 좌석 · T 승인 교사 · account(세션만·교사 아님/미승인)
+  function keyOf(t) {
+    if (!t) return 'L1';
+    if (t.tier === 'student') return 'L2a';
+    if (t.tier === 'guest') return 'L2g';
+    if (t.tier === 'account') return (t.teacher && t.teacher.approved) ? 'T' : 'account';
+    return 'L1';
+  }
+
+  function keyGrade(t) {
+    if (!t) return null;
+    if (t.tier === 'student' && t.profile) return t.profile.grade || null;
+    if (t.tier === 'guest' && t.guest) return t.guest.grade || null;
+    return null;
+  }
+
+  // ── 판정 (§B 표 + §E 우선순위) ──────────────────────────────────
+  //   can(t, contentTier, contentGrade, {opened:boolean}) → {allow, reason, save, key}
+  //   reason: 'teacher' | 'opened' | 'open' | 'free' | 'grade' | 'consent' | 'locked' | 'home'
+  //   ① T 교사 → 전부 ② L2 + 개방/배정 목록 → 통과(학년 불문, 저장은 동의 학급만)
+  //   ③ L2 + 학년 일치 + open → 통과 ④ L1 + open → 통과 ⑤ 그 외 → 잠금(보이되 잠김)
+  function can(t, contentTier, contentGrade, opts) {
+    var key = keyOf(t);
+    var opened = !!(opts && opts.opened);
+    var saveOk = key === 'L2a';
+    if (!contentTier) return { allow: true, reason: 'free', save: saveOk, key: key };
+    if (key === 'T') return { allow: true, reason: 'teacher', save: false, key: key };
+    if (contentTier === 'home') return { allow: false, reason: 'home', save: false, key: key };
+
+    var isClass = key === 'L2g' || key === 'L2a';
+    if (isClass && opened) {
+      if (contentTier === 'class_rec' && key === 'L2g') return { allow: false, reason: 'consent', save: false, key: key };
+      return { allow: true, reason: 'opened', save: saveOk, key: key };
+    }
+    if (contentTier === 'open') {
+      if (isClass) {
+        var g = keyGrade(t);
+        if (g && contentGrade && g !== contentGrade) return { allow: false, reason: 'grade', save: false, key: key, myGrade: g };
+        return { allow: true, reason: 'open', save: saveOk, key: key };
+      }
+      return { allow: true, reason: 'open', save: false, key: key };   // L1 · account: 전 학년 자유, 저장 없음
+    }
+    // class · class_rec 인데 열어준 적 없음
+    if (isClass && contentTier === 'class_rec' && key === 'L2g') return { allow: false, reason: 'consent', save: false, key: key };
+    return { allow: false, reason: 'locked', save: false, key: key };
+  }
+
   // ── 공개 API ──────────────────────────────────────────────────────
   window.KeduTier = {
+    CONTENT_TIERS: CONTENT_TIERS,
+    tierOfPath: tierOfPath,    // 경로 → 콘텐츠 tier
+    gradeOf: gradeOf,          // lesson-id·경로 → 학년
+    keyOf: keyOf,              // tierObj → 열쇠
+    can: can,                  // 열쇠 × 등급 판정 — 유일한 창구
     resolve: resolve,          // async 전체 판별
     guest: readGuest,          // 동기 — 게스트 상태만
     enterGuest: enterGuest,    // 게스트 입장 시도
