@@ -117,9 +117,9 @@
   .vbtn { font-family:'Jua',sans-serif; border:2px solid rgba(255,255,255,.5); background:transparent; color:#fff;
           border-radius:11px; cursor:pointer; min-height:40px; font-size:13.5px; padding:8px 14px; }
   .vbtn.on { background:#fff; color:var(--deep); border-color:#fff; }
-  .frame { background:#1c1917; border-radius:14px; padding:10px; box-shadow:0 18px 50px rgba(0,0,0,.45);
+  .frame { background:#1c1917; border-radius:10px; padding:6px; box-shadow:0 18px 50px rgba(0,0,0,.45);
            max-width:100%; max-height:100%; }
-  .frame.phone { border-radius:30px; padding:12px 8px; }
+  .frame.phone { border-radius:26px; padding:8px 6px; }
   .frame .scaler { overflow:hidden; border-radius:6px; background:var(--cream); }
   .frame .scaler.pan { overflow:auto; cursor:grab; }
   .frame .scaler.pan.drag { cursor:grabbing; }
@@ -750,7 +750,7 @@ var zoomMode = 'fit';          // 'fit' = 전체가 보이는 배율 · 1 = 실�
 function room() {
   /* 툴바·안내는 프레임 위에 떠 있으므로(D40) 더 이상 자리를 먹지 않는다.
      남는 것은 veil 여백과 기기 프레임 테두리뿐이다. */
-  var fpad = curDev === 'ph' ? { x: 16, y: 24 } : { x: 20, y: 20 };
+  var fpad = curDev === 'ph' ? { x: 12, y: 16 } : { x: 12, y: 12 };
   var pad = 4 * 2;
   return {
     w: Math.max(240, window.innerWidth - pad - fpad.x),
@@ -793,6 +793,7 @@ function openViewer(p, dev) {
   cur = p; curDev = (dev === 'ph' && p.ph) ? 'ph' : (p.tv ? 'tv' : 'ph');
   $('#veil').classList.add('show');
   wake();
+  if (wantFull() && !isFull()) tryFull();
   $('#v-name').textContent = p.name;
   $('#v-hint').textContent = p.hint || '';
   $('#v-tv').style.display = p.tv ? '' : 'none';
@@ -813,19 +814,29 @@ $('#v-re').addEventListener('click', load);
    「지금 이 장면이 실물에서 어떤가」를 볼 수 없다. */
 /* 전체화면 — 준호 창은 브라우저 크롬만큼 이미 작다. 모니터를 다 쓰면
    1920 판이 실물 1:1에 근접한다(1920×1080 모니터에서 약 98%). */
+/* [D41] 검수는 판을 크게 보는 일이고, 준호 브라우저 창은 세로 664px이라
+   창 안에서는 59%가 물리적 상한이다(판 1080을 636에 넣는다). 그래서 **열 때부터 전체화면**이다.
+   [전자칠판으로 한 판] 클릭이 사용자 제스처라 브라우저가 허용한다.
+   준호가 직접 [창으로] 나가면 그 선호를 기억하고 다음부터 자동으로 켜지 않는다. */
+var FKEY = 'kedu_review_fullscreen_v1';
+function wantFull() { try { return localStorage.getItem(FKEY) !== 'off'; } catch (e) { return true; } }
+function setWantFull(v) { try { localStorage.setItem(FKEY, v ? 'on' : 'off'); } catch (e) {} }
+function tryFull() {
+  var el = fullEl();
+  try {
+    var rq = el.requestFullscreen || el.webkitRequestFullscreen;
+    if (rq) { var r = rq.call(el); if (r && r.catch) r.catch(function () {}); }
+  } catch (e) { /* 막히면 창 배율 그대로 — 판정은 계속할 수 있다 */ }
+}
 function fullEl() { return $('#veil'); }
 function isFull() { return !!(document.fullscreenElement || document.webkitFullscreenElement); }
 $('#v-full').addEventListener('click', function () {
-  var el = fullEl();
+  if (!isFull()) { setWantFull(true); tryFull(); return; }
+  setWantFull(false);                       // 손으로 나갔으면 다음부터 자동으로 안 켠다
   try {
-    if (!isFull()) {
-      var rq = el.requestFullscreen || el.webkitRequestFullscreen;
-      if (rq) rq.call(el); else return;
-    } else {
-      var ex = document.exitFullscreen || document.webkitExitFullscreen;
-      if (ex) ex.call(document);
-    }
-  } catch (e) { /* 브라우저가 막으면 그냥 지금 배율로 둔다 */ }
+    var ex = document.exitFullscreen || document.webkitExitFullscreen;
+    if (ex) ex.call(document);
+  } catch (e) {}
 });
 ['fullscreenchange', 'webkitfullscreenchange'].forEach(function (ev) {
   document.addEventListener(ev, function () {
