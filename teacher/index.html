@@ -537,6 +537,21 @@ tr:hover td{background:#FAFBFC}
     <!-- 동적으로 채워짐 -->
   </div>
 
+  <!-- CLASS OPENINGS (생태계설계 v2 §F 「우리 반에 열기」 · sql/setup_class_openings.sql) -->
+  <div class="table-wrap fade-up" id="openings-wrap">
+    <div class="table-header">
+      <h3>🔓 우리 반에 열린 활동</h3>
+      <span class="table-count" id="openings-count">0개</span>
+    </div>
+    <div style="padding:0 20px 10px;font-size:12.5px;color:var(--sub);line-height:1.6">
+      케이파크·케이메이커·케이플·케이박스 같은 활동은 선생님이 열어 준 것만 학생 화면에서 열려요.
+      활동 페이지 오른쪽 아래 📦 버튼 → 반 선택 → <b>「우리 반에 열기」</b>로 열고, 여기서 닫을 수 있어요.
+    </div>
+    <div id="openings-list">
+      <div class="empty-state"><div class="empty-icon">🔒</div><p>아직 열어 준 활동이 없어요.</p></div>
+    </div>
+  </div>
+
   <!-- STUDENT LIST -->
   <div class="table-wrap fade-up">
     <div class="table-header">
@@ -886,6 +901,9 @@ async function loadDashboard(user){
 
   // 학급코드 로드
   await loadClassCode();
+
+  // 우리 반에 열린 활동 (§F)
+  await loadOpenings();
 
   // 학생 목록 로드
   await loadStudents();
@@ -1280,6 +1298,53 @@ function copyCode(){
 // =============================================
 // 학생 목록
 // =============================================
+// =============================================
+// 우리 반에 열린 활동 (§F 「우리 반에 열기」) — 원장 class_openings, 닫기는 close_for_class RPC
+// =============================================
+const OPEN_KIND_LABEL = { kteacher:'케이티처', selfstudy:'자기주도', klab:'케이랩', kple:'케이플', kmake:'케이메이커', english:'영어', quiz:'케이퀴즈', activity:'활동', link:'링크' };
+function openingScope(key){
+  if(!key) return '';
+  if(key[0] !== '/') return '차시';
+  return /^\/[a-z0-9_-]+\/$/.test(key) ? '영역 전체' : '페이지';
+}
+async function loadOpenings(){
+  const list = document.getElementById('openings-list');
+  const cnt = document.getElementById('openings-count');
+  if(!list || !cnt) return;
+  if(!currentClassCode){ cnt.textContent = '0개'; return; }
+  const { data, error } = await db.from('class_openings')
+    .select('id, content_key, title, kind, url, opened_at')
+    .eq('class_code_id', currentClassCode.id)
+    .order('opened_at', { ascending:false });
+  if(error){ cnt.textContent = '-'; return; }   // SQL 미적용(테이블 없음) 폴백 — 종전 화면 그대로
+  const rows = data || [];
+  cnt.textContent = rows.length + '개';
+  if(!rows.length){
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">🔒</div><p>아직 열어 준 활동이 없어요.</p></div>';
+    return;
+  }
+  list.innerHTML = rows.map(o => {
+    const when = new Date(o.opened_at).toLocaleDateString('ko-KR');
+    const href = o.url ? `<a href="${escHtml(o.url)}" target="_blank" style="color:var(--primary);text-decoration:none">${escHtml(o.title || o.content_key)}</a>` : escHtml(o.title || o.content_key);
+    return `<div style="display:flex;align-items:center;gap:12px;padding:10px 20px;border-top:1px solid var(--border);font-size:13.5px">
+      <span style="flex-shrink:0;padding:3px 9px;border-radius:999px;background:#EAF8F1;color:#1F7A4D;font-size:11px;font-weight:700">${OPEN_KIND_LABEL[o.kind] || '링크'}</span>
+      <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${href}
+        <span style="color:var(--sub);font-size:11.5px;margin-left:6px">${openingScope(o.content_key)} · <code style="font-size:11px">${escHtml(o.content_key)}</code></span></span>
+      <span style="color:var(--sub);font-size:12px;flex-shrink:0">${when}</span>
+      <button class="code-btn outline" style="padding:6px 12px;font-size:12px;flex-shrink:0" onclick="closeOpening('${escHtml(o.content_key)}')">🔒 닫기</button>
+    </div>`;
+  }).join('');
+}
+async function closeOpening(key){
+  if(!currentClassCode) return;
+  if(!confirm('이 활동을 우리 반에서 닫을까요? 학생 화면에서 잠겨요.')) return;
+  const { error } = await db.rpc('close_for_class', { p_class_code_id: currentClassCode.id, p_content_key: key });
+  if(error){ showToast('⚠️ 닫기 실패: ' + (error.message || '')); return; }
+  showToast('🔒 닫았어요.');
+  await loadOpenings();
+}
+function escHtml(v){ return String(v==null?'':v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
 async function loadStudents(){
   if(!currentClassCode){
     document.getElementById('stat-students').textContent = '0';

@@ -7,6 +7,11 @@
  *
  * 부팅 규약(§4): localStorage 캐시 없으면 아무것도 안 함 → 학생 기기 비용 0.
  *   캐시는 교사 페이지(허브 교사분기·classwork·케이티처)가 심는다: KeduBoxbar.markTeacher().
+ *
+ * 2026-08-26 「우리 반에 열기」(생태계설계_v2 §F · §J-3): 초대 패널에 열기/닫기 토글.
+ *   열기 = class_openings 한 줄(open_for_class) + 케이박스 카드 한 장(같은 초대 파이프라인) — 한 통로.
+ *   닫기 = close_for_class(원장만 지움, 카드는 이력). 키 규약 = /kedu_gate.js 와 동일:
+ *     차시(<meta kedu-lesson-id>) → lesson-id 정확 일치 · 영역 허브(/kpark/, /kpark/index.html) → '/kpark/' 접두 · 그 외 → 경로.
  * ============================================================= */
 (function () {
   'use strict';
@@ -222,6 +227,89 @@
     try { var q = JSON.parse(localStorage.getItem(QUEUE) || '[]'); q.push(item); localStorage.setItem(QUEUE, JSON.stringify(q)); } catch (e) {}
   }
 
+  // ── 「우리 반에 열기」(§F) ─────────────────────────────────────────────────
+  // 현재 페이지의 개방 키 — 게이트(isOpened)와 같은 규약
+  function openingKey(pathname, lessonId) {
+    var p = (pathname || location.pathname || '/').toLowerCase();
+    if (lessonId === undefined) {
+      var m = document.querySelector('meta[name="kedu-lesson-id"]');
+      lessonId = m ? (m.getAttribute('content') || '') : '';
+    }
+    if (lessonId) return { key: lessonId, scope: 'lesson' };
+    var a = /^\/([a-z0-9_-]+)\/(index\.html?)?$/.exec(p);
+    if (a) return { key: '/' + a[1] + '/', scope: 'area' };
+    return { key: p, scope: 'page' };
+  }
+  var SCOPE_LABEL = { lesson: '이 차시', area: '이 영역 전체', page: '이 페이지' };
+
+  // 케이박스 카드 한 장(sent 박스 + 항목 + 발송) — 초대와 같은 파이프라인. 실패해도 열기는 진행(bundle 없이).
+  function createCard(d, tid, cls, item) {
+    return d.from('cw_bundles').insert({
+      teacher_id: tid, title: item.title, description: '', status: 'sent', sent_at: new Date().toISOString()
+    }).select('id').single().then(function (ins) {
+      if (ins.error || !ins.data) throw new Error('bundle');
+      var bid = ins.data.id;
+      return d.from('cw_items').insert({ bundle_id: bid, kind: item.kind, title: item.title, url: item.url, config: item.config || {}, sort_order: 0 })
+        .then(function (ir) {
+          if (ir.error) throw new Error('item');
+          return d.from('cw_sends').upsert({ bundle_id: bid, class_code_id: cls.id }, { onConflict: 'bundle_id,class_code_id' })
+            .then(function (sr) { if (sr.error) throw new Error('send'); return bid; });
+        });
+    });
+  }
+  function openingState(d, cls, key) {
+    return d.from('class_openings').select('id,bundle_id').eq('class_code_id', cls.id).eq('content_key', key).maybeSingle()
+      .then(function (r) { return (r && !r.error && r.data) ? r.data : null; });
+  }
+  function openForClass(cls) {
+    var item = currentItem();
+    var ok = openingKey();
+    setBusy(true);
+    return withTeacher().then(function (ctx) {
+      var d = ctx.d;
+      return openingState(d, cls, ok.key).then(function (st) {
+        var cardP = (st && st.bundle_id) ? Promise.resolve(st.bundle_id)
+          : createCard(d, ctx.tid, cls, item).catch(function () { return null; });
+        return cardP.then(function (bid) {
+          return d.rpc('open_for_class', {
+            p_class_code_id: cls.id, p_content_key: ok.key, p_title: item.title, p_kind: item.kind, p_url: item.url, p_bundle_id: bid
+          }).then(function (r) {
+            if (r.error) throw new Error(r.error.message || 'open');
+            return { id: r.data, bundle_id: bid };
+          });
+        });
+      });
+    }).then(function (res) {
+      setBusy(false); rememberClass(cls);
+      toast('🔓 ' + cls.label + '에 ' + SCOPE_LABEL[ok.scope] + '를 열었어요' + (res.bundle_id ? ' — 케이박스에도 카드가 떴어요' : ''));
+      return res;
+    }).catch(function (e) {
+      setBusy(false);
+      var msg = String(e && e.message || '');
+      if (msg.indexOf('approval') >= 0) toast('교사 확인이 끝나야 열 수 있어요 — 선생님 공간에서 신청해 주세요');
+      else if (msg.indexOf('session') < 0 && msg.indexOf('teacher') < 0) toast('열기에 실패했어요 — 잠시 후 다시 눌러 주세요');
+      return null;
+    });
+  }
+  function closeForClass(cls) {
+    var ok = openingKey();
+    setBusy(true);
+    return withTeacher().then(function (ctx) {
+      return ctx.d.rpc('close_for_class', { p_class_code_id: cls.id, p_content_key: ok.key }).then(function (r) {
+        if (r.error) throw new Error(r.error.message || 'close');
+        return r.data | 0;
+      });
+    }).then(function (n) {
+      setBusy(false);
+      toast('🔒 ' + cls.label + '에서 ' + SCOPE_LABEL[ok.scope] + '를 닫았어요');
+      return n;
+    }).catch(function (e) {
+      setBusy(false);
+      if (String(e.message).indexOf('session') < 0 && String(e.message).indexOf('teacher') < 0) toast('닫기에 실패했어요 — 잠시 후 다시 눌러 주세요');
+      return null;
+    });
+  }
+
   // ── UI ───────────────────────────────────────────────────────────────────
   var fab, badgeEl, busy = false;
   function boot() {
@@ -260,6 +348,7 @@
       '<div class="kbx-p-hook ' + (hook.ok ? 'ok' : '') + '">' + hook.t + '</div>' +
       '<div class="kbx-p-classes"><span class="kbx-p-loading">우리 반 불러오는 중…</span></div>' +
       '<button class="kbx-p-invite" disabled>📤 바로 초대</button>' +
+      '<div class="kbx-p-open"><span class="kbx-p-open-txt">반을 고르면 열기 상태가 보여요</span><button class="kbx-p-open-btn" disabled>🔓 우리 반에 열기</button></div>' +
       '<div class="kbx-p-row"><button class="kbx-p-add">📦 담기</button><button class="kbx-p-go">케이박스 열기 →</button></div>';
     panel.querySelector('.kbx-p-title').textContent = item.title;
     panel.querySelector('.kbx-p-add').onclick = function () { closePanel(); addCurrent(); };
@@ -291,10 +380,31 @@
         selClass = c;
         inviteBtn.disabled = false;
         inviteBtn.textContent = '📤 ' + c.label + '에 바로 초대';
+        refreshOpening(c);
       };
       box.appendChild(chip);
       if ((last && last.id === c.id) || (!last && cs.length === 1)) chip.onclick();  // 최근 반(또는 유일 반) 자동 선택
     });
+  }
+  // 열기 블록 — 고른 반의 현재 상태를 보여주고 토글한다
+  function refreshOpening(c) {
+    if (!panel) return;
+    var txt = panel.querySelector('.kbx-p-open-txt'), btn = panel.querySelector('.kbx-p-open-btn');
+    if (!txt || !btn) return;
+    var ok = openingKey();
+    btn.disabled = true; txt.textContent = '열기 상태 확인 중…';
+    withTeacher().then(function (ctx) { return openingState(ctx.d, c, ok.key); }).then(function (st) {
+      if (!panel || selClass !== c) return;
+      var opened = !!st;
+      txt.textContent = (opened ? '🔓 ' : '🔒 ') + c.label + '에 ' + SCOPE_LABEL[ok.scope] + (opened ? '가 열려 있어요' : '는 닫혀 있어요');
+      btn.textContent = opened ? '🔒 ' + c.label + '에서 닫기' : '🔓 ' + c.label + '에 열기';
+      btn.classList.toggle('opened', opened);
+      btn.disabled = false;
+      btn.onclick = function () {
+        btn.disabled = true;
+        (opened ? closeForClass(c) : openForClass(c)).then(function () { refreshOpening(c); });
+      };
+    }).catch(function () { if (panel) txt.textContent = '열기 상태를 불러오지 못했어요'; });
   }
   function outsideClose(e) {
     if (panel && !panel.contains(e.target) && !(fab && fab.contains(e.target))) closePanel();
@@ -349,6 +459,11 @@
       '.kbx-p-invite{width:100%;height:48px;border:none;border-radius:13px;background:linear-gradient(120deg,#5B8EF8,#7AA6FF);color:#fff;font:700 15px "Noto Sans KR";cursor:pointer;box-shadow:0 6px 18px rgba(91,142,248,.35);transition:transform .12s}',
       '.kbx-p-invite:hover{transform:translateY(-1px)}',
       '.kbx-p-invite:disabled{background:#E7ECF3;color:#A0AEC0;box-shadow:none;cursor:default;transform:none}',
+      '.kbx-p-open{margin-top:9px;padding:9px 11px;border:1.5px dashed #E7ECF3;border-radius:11px;display:flex;flex-direction:column;gap:7px}',
+      '.kbx-p-open-txt{font:500 12px/1.4 "Noto Sans KR";color:#718096}',
+      '.kbx-p-open-btn{height:40px;border:none;border-radius:11px;background:#EAF8F1;color:#1F7A4D;font:700 13px "Noto Sans KR";cursor:pointer}',
+      '.kbx-p-open-btn.opened{background:#FFF5F5;color:#9B2C2C}',
+      '.kbx-p-open-btn:disabled{background:#F4F6FB;color:#A0AEC0;cursor:default}',
       '.kbx-p-row{display:flex;gap:8px;margin-top:9px}',
       '.kbx-p-add,.kbx-p-go{flex:1;height:40px;border:1.5px solid #E7ECF3;background:#fff;border-radius:11px;font:600 13px "Noto Sans KR";color:#718096;cursor:pointer}',
       '.kbx-p-add:hover,.kbx-p-go:hover{border-color:#5B8EF8;color:#3B6FD8;background:#EBF4FF}'
@@ -403,6 +518,9 @@
     boot: boot,                      // 캐시 있으면 바 표시
     openPanel: openPanel,            // 초대 패널 열기(§7)
     invite: inviteCurrent,           // 바로 초대 실행 — invite({id,label})
+    openingKey: openingKey,          // 현재 페이지 개방 키 {key, scope} (§F)
+    openForClass: openForClass,      // 우리 반에 열기 — openForClass({id,label})
+    closeForClass: closeForClass,    // 우리 반에서 닫기
     closePanel: closePanel,
     detectKind: detectKind,          // 테스트용
     currentItem: currentItem,        // 테스트용

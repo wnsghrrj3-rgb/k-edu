@@ -103,13 +103,17 @@ function runGate({ url, meta = '', ls = {}, ss = {}, resolveAs = null, gradeLock
   Object.keys(ls).forEach(k => w.localStorage.setItem(k, ls[k]));
   Object.keys(ss).forEach(k => w.sessionStorage.setItem(k, ss[k]));
   let rpcCalls = 0;
+  // 개방 목록 RPC(§J-3)는 항상 빈 목록 — 개방 목록 자체는 tests/test_class_openings.js 가 본다
+  w.supabase = {};
+  w.getKeduDb = () => ({ auth: { getSession: () => Promise.resolve({ data: { session: null } }) },
+    rpc: (n) => { rpcCalls++; return Promise.resolve({ data: [], error: null }); } });
   if (resolveAs) {
     // 세션 흔적 + 가짜 DB: resolve 가 my_seat_class/teachers 를 두드린다
     w.localStorage.setItem('sb-x-auth-token', '{}');
     w.supabase = {};
     w.getKeduDb = () => ({
       auth: { getSession: () => Promise.resolve({ data: { session: { user: { id: 'u1' } } } }) },
-      rpc: (n) => { rpcCalls++; return Promise.resolve(resolveAs.tier === 'student' ? { data: { status: 'ok', profile_id: 'p', grade: resolveAs.grade } } : { data: { status: 'no_profile' } }); },
+      rpc: (n) => { rpcCalls++; if (n === 'list_class_openings') return Promise.resolve({ data: [], error: null }); return Promise.resolve(resolveAs.tier === 'student' ? { data: { status: 'ok', profile_id: 'p', grade: resolveAs.grade, class_code: 'ZZZ999' } } : { data: { status: 'no_profile' } }); },
       from: () => ({ select: () => ({ eq: () => ({ maybeSingle: () => { rpcCalls++; return Promise.resolve({ data: resolveAs.teacher || null }); } }) }) }),
     });
   }

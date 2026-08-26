@@ -7,7 +7,8 @@
    - 페이지 삽입은 <script src="/kedu_gate.js"></script> 한 줄. 판정기·Supabase 가 없으면 스스로 싣는다.
    - 등급: <meta name="kedu-tier" content="open|class|class_rec|home"> 가 있으면 그것, 없으면 경로 표.
    - 학년: <meta name="kedu-lesson-id" content="g3_…"> → 경로(/grade3/ · /english/g3/).
-   - 개방/배정 목록(§F class_openings)은 sessionStorage kedu_openings_v1 — §J-3 에서 채운다. 지금은 빈 목록.
+   - 개방 목록(§F class_openings): 학급 세션이면 list_class_openings(학급코드) RPC 로 받아 sessionStorage
+     kedu_openings_v1 에 60초 캐시 {code, keys, at}. 잠금 카드의 「다시 확인」이 캐시를 비우고 다시 묻는다.
    - 서버 강제(미들웨어)는 2단계. 여기는 브라우저 판정이다.
 
    [구 임시 잠금] 아래 KEDU_TEMP_LOCK 은 2026-08-08 해제 상태 그대로 둔다. true 로 바꾸면 종전 아이디/비번 가림막.
@@ -23,7 +24,8 @@
 
   var CACHE_KEY = 'kedu_gate_t_v1';       // 열쇠 판별 결과 캐시 (sessionStorage, 5분)
   var CACHE_MS  = 5 * 60 * 1000;
-  var OPEN_KEY  = 'kedu_openings_v1';     // §J-3 이 채울 개방 목록
+  var OPEN_KEY  = 'kedu_openings_v1';     // 개방 목록 캐시 {code, keys, at} (§J-3)
+  var OPEN_MS   = 60 * 1000;
 
   var path = (location.pathname || '/').toLowerCase();
 
@@ -64,11 +66,36 @@
     return null;
   }
   function writeCache(t) { try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ t: t, at: Date.now() })); } catch (e) {} }
-  function openings() {
-    try { var a = JSON.parse(sessionStorage.getItem(OPEN_KEY) || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; }
+  // ── 개방 목록 (§J-3) ─────────────────────────────────────
+  function classCodeOf(t) {
+    if (!t) return null;
+    if (t.tier === 'guest' && t.guest) return t.guest.code || null;
+    if (t.tier === 'student' && t.profile) return t.profile.class_code || null;
+    return null;
   }
-  function isOpened(lessonId, p) {
-    var list = openings();
+  function readOpenings(code) {
+    try {
+      var c = JSON.parse(sessionStorage.getItem(OPEN_KEY) || 'null');
+      if (Array.isArray(c)) return c;                                    // 옛 꼴(배열) 호환
+      if (c && c.code === code && Array.isArray(c.keys) && (Date.now() - c.at) < OPEN_MS) return c.keys;
+    } catch (e) {}
+    return null;
+  }
+  function writeOpenings(code, keys) { try { sessionStorage.setItem(OPEN_KEY, JSON.stringify({ code: code, keys: keys, at: Date.now() })); } catch (e) {} }
+  function fetchOpenings(code) {
+    if (!code) return Promise.resolve([]);
+    var cached = readOpenings(code);
+    if (cached) return Promise.resolve(cached);
+    return ensureDb().then(function (db) { return db.rpc('list_class_openings', { p_class_code: code }); })
+      .then(function (r) {
+        var keys = (r && !r.error && Array.isArray(r.data)) ? r.data.map(function (x) { return x && x.content_key; }).filter(Boolean) : [];
+        if (r && !r.error) writeOpenings(code, keys);   // 실패는 캐시하지 않는다(다음 페이지에서 다시 묻는다)
+        return keys;
+      })
+      .catch(function () { return []; });
+  }
+  function isOpened(lessonId, p, list) {
+    list = list || [];
     for (var i = 0; i < list.length; i++) {
       var o = String(list[i] || '').toLowerCase();
       if (!o) continue;
@@ -110,17 +137,31 @@
       // 방문자 + open 은 판별조차 필요 없다(가장 흔한 경로 — 서버 호출 0)
       if (tier === 'open' && !hasSbSession() && !KT.guest()) { publish({ allow: true, reason: 'open', key: 'L1' }, tier, grade); return; }
       resolveKey().then(function (t) {
-        var r = KT.can(t, tier, grade, { opened: isOpened(lessonId, path) });
-        publish(r, tier, grade);
-        if (!r.allow) lock(r, tier, grade, t);
+        var code = classCodeOf(t);
+        // 개방 목록은 학급 세션이 class·class_rec 을 열 때(또는 굳은 학년 잠금 아래 open 을 열 때)만 묻는다
+        var need = !!code && (tier !== 'open' || !!KT.GRADE_LOCK);
+        return (need ? fetchOpenings(code) : Promise.resolve([])).then(function (keys) {
+          var r = KT.can(t, tier, grade, { opened: isOpened(lessonId, path, keys) });
+          publish(r, tier, grade);
+          if (!r.allow) lock(r, tier, grade, t);
+        });
       });
     }).catch(function () { /* 판정기를 못 실으면 열어 둔다 — 잠금 실패로 수업을 막지 않는다 */ });
   }
 
   function publish(r, tier, grade) {
-    window.KeduGate = { result: r, contentTier: tier, contentGrade: grade, lessonId: lessonId, recheck: run,
-      clearCache: function () { try { sessionStorage.removeItem(CACHE_KEY); } catch (e) {} } };
+    window.KeduGate = { result: r, contentTier: tier, contentGrade: grade, lessonId: lessonId, recheck: recheck,
+      clearCache: clearCaches };
     try { document.dispatchEvent(new CustomEvent('kedu-gate', { detail: window.KeduGate })); } catch (e) {}
+  }
+
+  function clearCaches() { try { sessionStorage.removeItem(CACHE_KEY); sessionStorage.removeItem(OPEN_KEY); } catch (e) {} }
+  function recheck() {
+    clearCaches();
+    var ov = document.getElementById('kedu-lock'), st = document.getElementById('kedu-lock-style');
+    if (ov) ov.remove(); if (st) st.remove();
+    try { document.documentElement.style.overflow = ''; } catch (e) {}
+    run();
   }
 
   // ── 「보이되 잠김」 화면 ───────────────────────────────────
@@ -180,8 +221,8 @@
     }
     if (r.key === 'L2g' || r.key === 'L2a') {
       return { icon: '🔒', title: '선생님이 열어주면 할 수 있어요',
-        body: (rec ? '이 활동은 우리 반 기록이 남는 활동이에요. ' : '') + '선생님께 「우리 반에 열어 주세요」라고 말해 보세요.',
-        buttons: [{ label: '돌아가기', pri: true, go: goBack }] };
+        body: (rec ? '이 활동은 우리 반 기록이 남는 활동이에요. ' : '') + '선생님께 「우리 반에 열어 주세요」라고 말해 보세요. 열어 주셨으면 「다시 확인」을 눌러요.',
+        buttons: [{ label: '다시 확인', pri: true, go: recheck }, { label: '돌아가기', go: goBack }] };
     }
     return { icon: '🔒', title: '선생님이 열어주면 할 수 있어요',
       body: '학급 코드로 들어오면 선생님이 열어 준 활동을 할 수 있어요. 자기주도 학습은 코드 없이도 자유예요.',

@@ -38,6 +38,8 @@
 
 | 24 | setup_contents_tier.sql | 2026-08-26 작성 · **⏳ 미실행** | 콘텐츠 원장 등급 `contents.tier`(open/class/class_rec/home, 기본 open) — 생태계설계_v2 §B·§J-4. `/kedu_tier.js CONTENT_TIERS` 경로 표의 DB 거울(같은 접두·같은 순서, `tests/test_kedu_gate.js` 가 둘을 대조). 백필은 file_path 접두로 — 현재 원장이 /grade1·/english 뿐이라 결과는 전부 open. 판정은 1단계엔 브라우저가 하므로 실행을 서두를 이유는 없고, 서버 강제(2단계) 전까지만 들어가 있으면 된다. 검산 `SELECT tier, count(*) FROM contents GROUP BY 1;` → open 400 |
 
+| 25 | setup_class_openings.sql | 2026-08-26 작성 · **⏳ 미실행 — 준호 실행 후 확인 표기** | 「우리 반에 열기」 원장 — 생태계설계_v2 §F·§J-3. `class_openings(class_code_id, content_key, title, kind, url, bundle_id, opened_by, opened_at)` UNIQUE(반, 키) · RLS 교사 자기 학급(쓰기는 승인 교사) · RPC 셋: `list_class_openings(코드)`(anon, 활성 학급의 키 목록만) · `open_for_class(...)`(멱등 upsert, bundle_id 는 첫 열기만) · `close_for_class(반, 키)`. 의존 #14 classwork(cw_my_teacher_id, cw_bundles) · #23 교사 승인(kedu_teacher_approved). 검산 `SELECT count(*) FROM class_openings;` → 0 · `SELECT * FROM list_class_openings('ABCDEF');` → 0 rows · `SELECT policyname FROM pg_policies WHERE tablename='class_openings';` → p_class_openings_teacher. **실행 후** 준호가 케이파크에서 📦 → 반 → 「우리 반에 열기」 한 번 → 학급코드로 케이파크 열림 확인 → 그 다음 `kedu_tier.js` `OPENING_LOCK=true` |
+
 ## 새 SQL 추가 룰
 
 1. 파일은 이 폴더(`sql/`)에 `setup_이름.sql`로 추가
