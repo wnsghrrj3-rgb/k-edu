@@ -495,6 +495,18 @@ tr:hover td{background:#FAFBFC}
   </div>
 
   <!-- YEARLY WIPE COUNTDOWN BANNER — 처리방침 v2.1 제4조 (D-7 이내일 때만 표시) -->
+  <!-- 교사 승인 배너 (생태계설계 v2 §D-3 — pending/rejected 일 때만) -->
+  <div class="wipe-banner" id="approval-banner" hidden>
+    <span class="wipe-icon" id="approval-icon">🔑</span>
+    <span class="wipe-text">
+      <div id="approval-text"></div>
+      <div id="approval-form" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <input type="text" id="approval-note" maxlength="200" placeholder="예) ○○초등학교 3학년 담임" style="flex:1;min-width:220px;padding:8px 12px;border:1px solid #d5dbe3;border-radius:8px;font-size:13px">
+        <button class="code-btn primary" style="margin:0;padding:8px 16px;font-size:13px" onclick="requestApproval()">확인 신청</button>
+      </div>
+    </span>
+  </div>
+
   <div class="wipe-banner" id="wipe-banner" hidden>
     <span class="wipe-icon">🗂️</span>
     <span class="wipe-text" id="wipe-banner-text"></span>
@@ -869,6 +881,9 @@ async function loadDashboard(user){
   document.getElementById('nav-name').textContent = teacher.name + ' 선생님';
   document.getElementById('welcome-name').innerHTML = `<span class="accent">${teacher.name}</span> 선생님`;
 
+  // 교사 승인 상태 (sql/setup_teacher_approval.sql) — pending/rejected 면 쓰기 잠김
+  renderApprovalBanner();
+
   // 학급코드 로드
   await loadClassCode();
 
@@ -920,6 +935,55 @@ function nextYearlyWipeUtcMs(){
   let cand = Date.UTC(y, 1, 28, 15, 0, 0);
   if(cand <= now.getTime()) cand = Date.UTC(y + 1, 1, 28, 15, 0, 0);
   return cand;
+}
+
+// =============================================
+// 교사 승인 (생태계설계 v2 §D) — 승인 전엔 학급 개설·케이박스·아침활동이 DB(RLS)에서 잠긴다
+// =============================================
+function teacherApproved(){
+  const a = currentTeacher && currentTeacher.approval;
+  return a === 'auto' || a === 'approved' || a === undefined;   // 컬럼 없는 구버전 DB 는 통과
+}
+
+function renderApprovalBanner(){
+  const banner = document.getElementById('approval-banner');
+  if(!banner) return;
+  const a = currentTeacher && currentTeacher.approval;
+  if(a === undefined || a === 'auto' || a === 'approved'){ banner.hidden = true; return; }
+
+  const text = document.getElementById('approval-text');
+  const icon = document.getElementById('approval-icon');
+  const form = document.getElementById('approval-form');
+  const note = document.getElementById('approval-note');
+  banner.classList.remove('info','warn','critical');
+  if(note && currentTeacher.approval_note) note.value = currentTeacher.approval_note;
+
+  if(a === 'rejected'){
+    banner.classList.add('critical'); icon.textContent = '⛔';
+    text.innerHTML = '<b>교사 확인이 반려되었어요.</b> 학교명·직위를 다시 적어 신청하면 확인 후 열어드려요.';
+    form.style.display = 'flex';
+  } else if(currentTeacher.approval_requested_at){
+    banner.classList.add('info'); icon.textContent = '⏳';
+    const when = new Date(currentTeacher.approval_requested_at).toLocaleDateString('ko-KR');
+    text.innerHTML = `<b>교사 확인 대기 중이에요.</b> ${when}에 신청하셨어요. 확인되면 학급 개설·케이박스·아침활동이 열려요.`;
+    form.style.display = 'flex';
+  } else {
+    banner.classList.add('warn'); icon.textContent = '🔑';
+    text.innerHTML = '<b>교사 확인이 필요해요.</b> 학교명·직위를 적어 신청하면 확인 후 열어드려요. 확인 전에는 학급 개설·케이박스·아침활동이 잠겨 있어요.';
+    form.style.display = 'flex';
+  }
+  banner.hidden = false;
+}
+
+async function requestApproval(){
+  const note = document.getElementById('approval-note')?.value.trim() || '';
+  if(note.length < 2){ showToast('학교명과 직위를 적어 주세요.'); return; }
+  const { error } = await db.rpc('request_teacher_approval', { p_note: note });
+  if(error){ showToast('⚠️ 신청 실패: ' + (error.message || '')); return; }
+  currentTeacher.approval_note = note;
+  currentTeacher.approval_requested_at = new Date().toISOString();
+  renderApprovalBanner();
+  showToast('✅ 확인 신청을 보냈어요. 확인되면 바로 열려요.');
 }
 
 function renderWipeCountdown(){
@@ -1041,7 +1105,7 @@ async function loadClassCode(){
             <a href="/privacy/" target="_blank" style="color:#3b82f6;text-decoration:none">처리방침 보기 →</a>
           </div>
         </div>
-        <button id="create-code-btn" class="code-btn primary" style="margin-top:16px" onclick="createCode()">✨ 학급코드 생성</button>
+        <button id="create-code-btn" class="code-btn primary" style="margin-top:16px" onclick="createCode()">${teacherApproved() ? '✨ 학급코드 생성' : '🔑 교사 확인 후 생성할 수 있어요'}</button>
       </div>
     `;
   }
@@ -1073,6 +1137,10 @@ function updateCreateBtn(){
 }
 
 async function createCode(){
+  if(!teacherApproved()){
+    showToast('🔑 교사 확인 후 학급을 만들 수 있어요. 위 배너에서 신청해 주세요.');
+    return;
+  }
   const mode = classMode();
   const isConsent = mode === 'consent';
 

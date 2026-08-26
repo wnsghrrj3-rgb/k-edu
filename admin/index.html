@@ -128,6 +128,15 @@ tr:hover td{background:#FAFBFC}
 .teacher-row{display:flex;align-items:center;gap:12px}
 .teacher-avatar{width:32px;height:32px;border-radius:50%;background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--primary)}
 .admin-tag{font-size:10px;background:var(--red);color:#fff;padding:2px 8px;border-radius:50px;font-weight:700}
+.table-badge.pending{background:#FFFBEA;color:#7A5A1A}
+.table-badge.rejected{background:#F3F4F6;color:#6B7280}
+.apv-btn{font-size:12px;padding:5px 12px;border-radius:8px;border:1px solid transparent;cursor:pointer;font-weight:600;margin-right:4px}
+.apv-btn.ok{background:var(--green);color:#fff}
+.apv-btn.no{background:#fff;color:var(--red);border-color:var(--red)}
+.apv-btn:disabled{opacity:.5;cursor:not-allowed}
+.policy-row{display:flex;align-items:center;gap:12px;padding:12px 16px;background:#F7F9FC;border:1px solid #E3E8EF;border-radius:10px;font-size:13px;margin-bottom:14px;flex-wrap:wrap}
+.policy-row .sw{margin-left:auto;display:flex;align-items:center;gap:8px}
+.policy-row code{background:#fff;padding:2px 8px;border-radius:4px;font-size:12px}
 
 /* SESSION */
 .form-check{display:flex;align-items:center;gap:8px;margin:12px 0 4px;justify-content:flex-start}
@@ -367,6 +376,35 @@ tr:hover td{background:#FAFBFC}
     </div>
   </div>
 
+  <!-- TEACHER APPROVAL (생태계설계 v2 §D-4 · sql/setup_teacher_approval.sql) -->
+  <div class="section-title fade-up">🔑 교사 확인(승인)</div>
+  <div class="policy-row fade-up">
+    <span>교육청 메일 자동승인 <code>auto_approve_edu_domains</code></span>
+    <span style="color:var(--sub)">1단계=끔(수동 승인만) · 2단계=켬(도메인 일치 시 자동 승인, 코드 무변경)</span>
+    <label class="sw"><input type="checkbox" id="policy-auto" onchange="togglePolicy(this)"> <span id="policy-auto-label">끔</span></label>
+  </div>
+  <div class="table-wrap fade-up">
+    <div class="table-header">
+      <h3>승인 대기</h3>
+      <span class="table-badge pending" id="pending-count">0명</span>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr>
+          <th>이름</th>
+          <th>학교</th>
+          <th>이메일</th>
+          <th>신청 메모</th>
+          <th>신청일</th>
+          <th>처리</th>
+        </tr></thead>
+        <tbody id="pending-body">
+          <tr><td colspan="6"><div class="empty-state"><p>대기 중인 교사가 없습니다.</p></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
   <!-- TEACHER LIST -->
   <div class="section-title fade-up">👩‍🏫 교사 목록</div>
   <div class="table-wrap fade-up">
@@ -382,10 +420,11 @@ tr:hover td{background:#FAFBFC}
           <th>학급코드</th>
           <th>학생 수</th>
           <th>가입일</th>
+          <th>승인</th>
           <th>권한</th>
         </tr></thead>
         <tbody id="teacher-body">
-          <tr><td colspan="6"><div class="empty-state"><p>등록된 교사가 없습니다.</p></div></td></tr>
+          <tr><td colspan="7"><div class="empty-state"><p>등록된 교사가 없습니다.</p></div></td></tr>
         </tbody>
       </table>
     </div>
@@ -839,22 +878,56 @@ async function togglePremium(id, checked){
 // =============================================
 // 교사 목록
 // =============================================
-async function loadTeachers(){
-  const { data: teachers } = await db.from('teachers')
-    .select('*')
-    .order('created_at', { ascending: false });
+const APV_LABEL = { pending:'대기', auto:'자동승인', approved:'승인', rejected:'반려' };
+const APV_CLASS = { pending:'pending', auto:'free', approved:'free', rejected:'rejected' };
 
+async function fetchTeacherRows(){
+  const { data, error } = await db.rpc('admin_teacher_list');
+  if(!error && data) return data;
+  // SQL 미적용(구버전 DB) 폴백 — 이메일·승인 열 없음
+  const { data: rows } = await db.from('teachers').select('*').order('created_at', { ascending:false });
+  return rows || [];
+}
+
+async function loadTeachers(){
+  const teachers = await fetchTeacherRows();
+  await loadPolicySwitch();
+
+  const tbody = document.getElementById('teacher-body');
+  const pbody = document.getElementById('pending-body');
   if(!teachers || teachers.length === 0){
     document.getElementById('teacher-count').textContent = '0명';
+    document.getElementById('pending-count').textContent = '0명';
     return;
   }
 
   document.getElementById('teacher-count').textContent = teachers.length + '명';
 
-  // 각 교사의 학급코드와 학생 수 조회
-  const tbody = document.getElementById('teacher-body');
-  let html = '';
+  // 승인 대기 표
+  const pending = teachers.filter(t => t.approval === 'pending' || t.approval === 'rejected');
+  document.getElementById('pending-count').textContent = pending.filter(t=>t.approval==='pending').length + '명';
+  if(pending.length){
+    pbody.innerHTML = pending.map(t => {
+      const req = t.approval_requested_at ? new Date(t.approval_requested_at).toLocaleDateString('ko-KR') : '<span style="color:var(--sub)">미신청</span>';
+      const edu = t.is_edu_email ? ' <span class="table-badge free" title="교육청 도메인">교육청</span>' : '';
+      return `<tr>
+        <td><strong>${esc(t.name)}</strong>${t.approval==='rejected' ? ' <span class="table-badge rejected">반려됨</span>' : ''}</td>
+        <td>${esc(t.school || '-')}</td>
+        <td style="font-size:12px">${esc(t.email || '-')}${edu}</td>
+        <td style="font-size:12px;max-width:260px;white-space:normal">${esc(t.approval_note || '-')}</td>
+        <td>${req}</td>
+        <td>
+          <button class="apv-btn ok" onclick="setApproval('${t.id}','approved',this)">승인</button>
+          ${t.approval==='rejected' ? '' : `<button class="apv-btn no" onclick="setApproval('${t.id}','rejected',this)">반려</button>`}
+        </td>
+      </tr>`;
+    }).join('');
+  } else {
+    pbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><p>대기 중인 교사가 없습니다.</p></div></td></tr>';
+  }
 
+  // 전체 교사 표 — 학급코드·학생 수는 종전대로 행마다 조회
+  let html = '';
   for(const t of teachers){
     const { data: codes } = await db.from('class_codes')
       .select('code, id')
@@ -874,19 +947,54 @@ async function loadTeachers(){
 
     const initial = t.name.charAt(0);
     const created = new Date(t.created_at).toLocaleDateString('ko-KR');
+    const apv = t.approval || 'approved';
+    const apvCell = `<span class="table-badge ${APV_CLASS[apv]||'free'}">${APV_LABEL[apv]||apv}</span>` +
+      (apv==='approved' || apv==='auto'
+        ? ` <button class="apv-btn no" style="margin-left:6px" onclick="setApproval('${t.id}','rejected',this)">반려</button>` : '');
 
     html += `<tr>
-      <td><div class="teacher-row"><div class="teacher-avatar">${initial}</div><strong>${t.name}</strong></div></td>
-      <td style="font-size:12px;color:var(--sub)">${t.user_id ? t.user_id.slice(0,8)+'...' : '-'}</td>
+      <td><div class="teacher-row"><div class="teacher-avatar">${initial}</div><strong>${esc(t.name)}</strong></div></td>
+      <td style="font-size:12px;color:var(--sub)">${esc(t.email || (t.user_id ? t.user_id.slice(0,8)+'...' : '-'))}</td>
       <td><code style="background:var(--bg);padding:2px 8px;border-radius:4px;font-size:13px">${codeStr}</code></td>
       <td>${studentCount}명</td>
       <td>${created}</td>
+      <td>${apvCell}</td>
       <td>${t.is_admin ? '<span class="admin-tag">ADMIN</span>' : '교사'}</td>
     </tr>`;
   }
 
   tbody.innerHTML = html;
 }
+
+async function setApproval(teacherId, status, btn){
+  if(status === 'rejected' && !confirm('이 교사를 반려할까요? 학급 개설·케이박스·아침활동이 잠깁니다.')) return;
+  if(btn) btn.disabled = true;
+  const { error } = await db.rpc('admin_set_teacher_approval', { p_teacher_id: teacherId, p_status: status });
+  if(error){ showToast('⚠️ 처리 실패: ' + (error.message || '')); if(btn) btn.disabled = false; return; }
+  showToast(status === 'approved' ? '✅ 승인했어요. 해당 교사는 바로 학급을 만들 수 있어요.' : '⛔ 반려했어요.');
+  await loadTeachers();
+}
+
+async function loadPolicySwitch(){
+  const { data } = await db.from('kedu_policy').select('key,value').eq('key','auto_approve_edu_domains').maybeSingle();
+  const cb = document.getElementById('policy-auto');
+  const lb = document.getElementById('policy-auto-label');
+  if(!cb) return;
+  if(!data){ cb.disabled = true; lb.textContent = 'SQL 미적용'; return; }
+  const on = data.value === true;
+  cb.checked = on; lb.textContent = on ? '켬 (2단계)' : '끔 (1단계)';
+}
+
+async function togglePolicy(cb){
+  const on = cb.checked;
+  if(on && !confirm('교육청 메일 도메인 자동승인을 켤까요? (2단계) 이후 가입하는 교육청 메일 교사는 바로 승인됩니다.')){ cb.checked = false; return; }
+  const { error } = await db.rpc('admin_set_policy', { p_key:'auto_approve_edu_domains', p_value: on });
+  if(error){ showToast('⚠️ 정책 변경 실패: ' + (error.message || '')); cb.checked = !on; return; }
+  document.getElementById('policy-auto-label').textContent = on ? '켬 (2단계)' : '끔 (1단계)';
+  showToast(on ? '🔓 교육청 도메인 자동승인 켬' : '🔒 자동승인 끔 — 수동 승인만');
+}
+
+function esc(v){ return String(v==null?'':v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 // =============================================
 // 유틸
