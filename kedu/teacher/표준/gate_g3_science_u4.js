@@ -167,6 +167,26 @@ eval(DATA3);
 eval(DATA);
 const L = global.window.LESSONS;
 
+/* 🚨🚨 키 집합 선점검 — **라이브 버그(항목 순번 키)를 잡는 그물은 여기여야 한다.**
+   ⚠️ A 섹션까지 미루면 안 된다: 바로 아래 STUDENT·TNOTE가 L[k]를 곧바로 읽으므로
+      키가 하나라도 어긋나면 **단언이 아니라 TypeError로 죽어** 「N 통과 / M 실패」 줄
+      자체가 안 나온다(역검증 ⑦ 실측 — `LESSONS["u4_l11"]`을 `["u4_l10x"]`로 주입하면
+      게이트가 173줄에서 그냥 터졌다). 실패는 반드시 빨간 줄로 보이게 만든다.
+   ⚠️ 복제할 사람은 이 블록을 **`const L` 바로 뒤**에 그대로 옮길 것. */
+console.log('═══ @. 키 집합 선점검 (파생 상수보다 먼저) ═══');
+T('🚨🚨 uN 키 집합이 KEYS와 정확히 같다 — 항목 순번으로 붙이면 여기서 잡힌다', () => {
+  const got = Object.keys(L).filter(k => /^u4_/.test(k)).sort();
+  ok(JSON.stringify(got) === JSON.stringify(KEYS),
+     '키 집합 어긋남 — 빠진 키 [' + KEYS.filter(k => !got.includes(k)).join(',') +
+     '] · 군더더기 키 [' + got.filter(k => !KEYS.includes(k)).join(',') + ']');
+  KEYS.forEach(k => ok(L[k] && Array.isArray(L[k].slides) && L[k].slides.length,
+    k + ' 항목이 비었다 — 키는 있는데 slides가 없다'));
+});
+if (fail) {
+  console.log('\n결과: ' + pass + ' 통과 / ' + fail + ' 실패 (키 집합이 어긋나 이후 검사를 돌릴 수 없다)');
+  process.exit(1);
+}
+
 /* ⚠️ 세 번째 인수 keepReview — 선행 가드는 review까지 빼고 잰다(l01 review가 u3 exit를 데려온다) */
 function studentSlides(k, keepNext, keepReview) {
   if (keepReview === undefined) keepReview = true;
