@@ -160,6 +160,13 @@
   //        기존 학급은 교사가 한 번 바꿔 줘야 한다) ② 입구(index.html)가 학급 세션에도 전 학년을 고르게 한다.
   var GRADE_LOCK = false;
 
+  // ── 개방 잠금 스위치 (§B class·class_rec × L2) ──────────────────────
+  //   false = 무른 모드: 학급 세션(L2g·L2a)은 개방 목록 없이도 class·class_rec 을 연다(동의 규칙은 그대로).
+  //   true  = 굳은 모드: 교사가 「우리 반에 열기」로 열어준 것만 통과.
+  //   2026-08-26 무른 모드 — §J-3 「우리 반에 열기」가 라이브에 오르기 전엔 열쇠 없는 문이라 학급이 통째로 막힌다.
+  //   방문자(L1)는 스위치와 무관하게 잠긴다(보이되 잠김).
+  var OPENING_LOCK = false;
+
   // ── 판정 (§B 표 + §E 우선순위) ──────────────────────────────────
   //   can(t, contentTier, contentGrade, {opened:boolean}) → {allow, reason, save, key}
   //   reason: 'teacher' | 'opened' | 'open' | 'free' | 'grade' | 'consent' | 'locked' | 'home'
@@ -174,6 +181,7 @@
     if (contentTier === 'home') return { allow: false, reason: 'home', save: false, key: key };
 
     var isClass = key === 'L2g' || key === 'L2a';
+    if (isClass && contentTier !== 'open' && !(window.KeduTier && window.KeduTier.OPENING_LOCK)) opened = true;   // 무른 모드: class·class_rec 은 학급이면 열린 것으로(open 의 학년 규칙은 별개)
     if (isClass && opened) {
       if (contentTier === 'class_rec' && key === 'L2g') return { allow: false, reason: 'consent', save: false, key: key };
       return { allow: true, reason: 'opened', save: saveOk, key: key };
@@ -197,6 +205,7 @@
   // ── 공개 API ──────────────────────────────────────────────────────
   window.KeduTier = {
     GRADE_LOCK: GRADE_LOCK,    // 학년 잠금 스위치 — 위 주석의 둘이 풀리면 true
+    OPENING_LOCK: OPENING_LOCK,// 개방 잠금 스위치 — §J-3 「우리 반에 열기」 라이브 후 true
     CONTENT_TIERS: CONTENT_TIERS,
     tierOfPath: tierOfPath,    // 경로 → 콘텐츠 tier
     gradeOf: gradeOf,          // lesson-id·경로 → 학년

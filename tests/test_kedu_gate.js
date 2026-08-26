@@ -37,11 +37,22 @@ const table = {
   T:   { open: [true, false], class: [true, false],  class_rec: [true, false],  home: [true, false] },
 };
 const keys = { L1, L2g, L2a, T };
+// §B 표는 굳은 모드(OPENING_LOCK=true)의 목표 상태. 기본은 무른 모드 — 아래에서 따로 본다.
+ok(KT.OPENING_LOCK === false, '개방 잠금 기본값은 무른 모드(§J-3 우리 반에 열기 전)');
+KT.OPENING_LOCK = true;
 for (const k of Object.keys(table)) for (const tier of Object.keys(table[k])) {
   const r = KT.can(keys[k], tier, 3, {});
   const [a, s] = table[k][tier];
   ok(r.allow === a && r.save === s && r.key === k, `§B ${k}×${tier}: allow=${r.allow} save=${r.save} key=${r.key}`);
 }
+KT.OPENING_LOCK = false;
+// 무른 모드: 학급 세션은 개방 목록 없이도 class·class_rec 을 연다 — 방문자는 여전히 잠김, 동의 규칙은 유지
+ok(KT.can(L2g, 'class', 3, {}).allow === true && KT.can(L2g, 'class', 3, {}).reason === 'opened', '무른 모드: L2g class 통과');
+ok(KT.can(L2a, 'class_rec', 3, {}).allow === true && KT.can(L2a, 'class_rec', 3, {}).save === true, '무른 모드: L2a class_rec 통과·저장');
+ok(KT.can(L2g, 'class_rec', 3, {}).reason === 'consent', '무른 모드: L2g class_rec 은 동의 안내 그대로');
+ok(KT.can(L1, 'class', 3, {}).allow === false, '무른 모드: 방문자 class 잠금 유지');
+ok(KT.can(Tp, 'class', 3, {}).allow === false, '무른 모드: 미승인 교사 class 잠금 유지');
+KT.OPENING_LOCK = true;
 // §E ② 개방 목록 → L2 통과(학년 불문), 저장은 동의 학급만
 ok(KT.can(L2g, 'class', 5, { opened: true }).allow === true, '개방: L2g class 통과');
 ok(KT.can(L2a, 'class', 5, { opened: true }).save === true, '개방: L2a class 저장');
@@ -49,6 +60,8 @@ ok(KT.can(L2a, 'class_rec', 3, { opened: true }).allow === true, '개방: L2a cl
 const c1 = KT.can(L2g, 'class_rec', 3, { opened: true });
 ok(c1.allow === false && c1.reason === 'consent', '개방이어도 L2g class_rec 은 동의 안내');
 ok(KT.can(L2g, 'class_rec', 3, {}).reason === 'consent', '미개방 L2g class_rec 도 동의 안내');
+ok(KT.can(L2g, 'class', 3, {}).allow === false && KT.can(L2g, 'class', 3, {}).reason === 'locked', '굳은 모드: 미개방 L2g class 잠금');
+KT.OPENING_LOCK = false;
 // 학년 잠금 — 기본은 무른 모드(GRADE_LOCK=false): 통과 + gradeMismatch 표시. 굳은 모드에서만 잠근다. L2 만 해당.
 ok(KT.GRADE_LOCK === false, '학년 잠금 기본값은 무른 모드(class_codes.grade 가 실데이터가 아님)');
 const soft = KT.can(L2g, 'open', 5, {}); ok(soft.allow === true && soft.gradeMismatch === true && soft.myGrade === 3, '무른 모드: L2g 학년 불일치 통과+표시');
@@ -83,7 +96,7 @@ ok(KT.gradeOf('kg_math_l2_pro01', '/gifted/x') === null, 'gradeOf 케이영재 =
 
 // ── ③ 집행자 (jsdom) ───────────────────────────────────────
 const gateSrc = rd('kedu_gate.js'), tierSrc = rd('kedu_tier.js');
-function runGate({ url, meta = '', ls = {}, ss = {}, resolveAs = null, gradeLock = false }) {
+function runGate({ url, meta = '', ls = {}, ss = {}, resolveAs = null, gradeLock = false, openingLock = false }) {
   const html = `<!doctype html><html><head>${meta}</head><body><p>page</p></body></html>`;
   const dom = new JSDOM(html, { url, runScripts: 'outside-only' });
   const w = dom.window;
@@ -102,6 +115,7 @@ function runGate({ url, meta = '', ls = {}, ss = {}, resolveAs = null, gradeLock
   }
   w.eval(tierSrc);   // 판정기 선탑재 (실서비스에선 없으면 스스로 싣는다)
   if (gradeLock) w.KeduTier.GRADE_LOCK = true;
+  if (openingLock) w.KeduTier.OPENING_LOCK = true;
   w.eval(gateSrc);
   return new Promise(res => setTimeout(() => res({ w, doc: w.document, rpcCalls }), 30));
 }
@@ -124,15 +138,30 @@ function runGate({ url, meta = '', ls = {}, ss = {}, resolveAs = null, gradeLock
   r = await runGate({ url: 'https://keduclass.com/grade3/semester1/math/x.html', meta: '<meta name="kedu-lesson-id" content="g3_math_tb_01_v1">', ls: { kedu_guest_v1: guest } });
   ok(!r.doc.getElementById('kedu-lock'), '게스트 학년 일치 통과');
 
-  r = await runGate({ url: 'https://keduclass.com/kpark/index.html', ls: { kedu_guest_v1: guest }, ss: { kedu_openings_v1: JSON.stringify(['/kpark/']) } });
-  ok(!r.doc.getElementById('kedu-lock') && r.w.KeduGate.result.reason === 'opened', '개방 목록(경로 접두) → 게스트 class 통과');
+  r = await runGate({ url: 'https://keduclass.com/kpark/index.html', ls: { kedu_guest_v1: guest } });
+  ok(!r.doc.getElementById('kedu-lock') && r.w.KeduGate.result.reason === 'opened', '무른 모드(기본): 게스트 class 개방 목록 없이 통과 — 2026-08-26 "활동을 못 연다" 재현 방지');
+  r = await runGate({ url: 'https://keduclass.com/kpark/index.html', ls: { kedu_guest_v1: guest }, openingLock: true });
+  ok(!!r.doc.getElementById('kedu-lock') && /열어주면/.test(r.doc.getElementById('kedu-lock').textContent), '굳은 모드: 미개방 게스트 class 잠금 카드');
+  r = await runGate({ url: 'https://keduclass.com/kpark/index.html', ls: { kedu_guest_v1: guest }, ss: { kedu_openings_v1: JSON.stringify(['/kpark/']) }, openingLock: true });
+  ok(!r.doc.getElementById('kedu-lock') && r.w.KeduGate.result.reason === 'opened', '굳은 모드: 개방 목록(경로 접두) → 게스트 class 통과');
 
   r = await runGate({ url: 'https://keduclass.com/morning/index.html', ls: { kedu_guest_v1: guest }, ss: { kedu_openings_v1: JSON.stringify(['/morning/']) } });
   ok(!!r.doc.getElementById('kedu-lock') && /동의 후/.test(r.doc.getElementById('kedu-lock').textContent), '게스트 class_rec 은 개방돼도 동의 카드');
 
   r = await runGate({ url: 'https://keduclass.com/kpark/index.html', resolveAs: { tier: 'account', teacher: { id: 't', approval: 'approved' } } });
   ok(!r.doc.getElementById('kedu-lock') && r.w.KeduGate.result.reason === 'teacher', '승인 교사 class 통과');
-  ok(!!r.w.sessionStorage.getItem('kedu_gate_t_v1'), '열쇠 판별 결과 캐시');
+  ok(!!r.w.sessionStorage.getItem('kedu_gate_t_v1'), '열쇠 판별 결과 캐시(교사)');
+  ok(typeof r.w.KeduGate.clearCache === 'function', 'KeduGate.clearCache 노출');
+  // 세션 흔적은 있는데 세션이 죽은 경우(로그아웃 직후 등) — 방문자 결과는 캐시하지 않는다
+  {
+    const html = `<!doctype html><html><head></head><body></body></html>`;
+    const dom = new JSDOM(html, { url: 'https://keduclass.com/kpark/index.html', runScripts: 'outside-only' });
+    const w = dom.window; w.localStorage.setItem('sb-x-auth-token', '{}'); w.supabase = {};
+    w.getKeduDb = () => ({ auth: { getSession: () => Promise.resolve({ data: { session: null } }) } });
+    w.eval(tierSrc); w.eval(gateSrc);
+    await new Promise(res => setTimeout(res, 30));
+    ok(!w.sessionStorage.getItem('kedu_gate_t_v1') && !!w.document.getElementById('kedu-lock'), '죽은 세션 → 방문자 잠금이되 캐시는 남기지 않는다(로그인 직후 5분 잠김 방지)');
+  }
 
   r = await runGate({ url: 'https://keduclass.com/kpark/index.html', resolveAs: { tier: 'account', teacher: { id: 't', approval: 'pending' } } });
   ok(!!r.doc.getElementById('kedu-lock') && /계정 확인/.test(r.doc.getElementById('kedu-lock').textContent), '미승인 교사 class → 계정 확인 카드');

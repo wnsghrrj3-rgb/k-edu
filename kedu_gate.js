@@ -88,7 +88,11 @@
         return g ? { tier: 'guest', guest: g } : { tier: 'visitor' };
       }
       return ensureDb().then(function (db) { return window.KeduTier.resolve(db); })
-        .then(function (t) { writeCache(t); return t; })
+        .then(function (t) {
+          // 좌석·교사 판별만 캐시. 방문자/빈 계정 결과를 캐시하면 로그인 직후 5분 동안 잠긴다.
+          if (t && (t.tier === 'student' || t.teacher)) writeCache(t);
+          return t;
+        })
         .catch(function () { return { tier: 'visitor' }; });
     });
   }
@@ -114,7 +118,8 @@
   }
 
   function publish(r, tier, grade) {
-    window.KeduGate = { result: r, contentTier: tier, contentGrade: grade, lessonId: lessonId, recheck: run };
+    window.KeduGate = { result: r, contentTier: tier, contentGrade: grade, lessonId: lessonId, recheck: run,
+      clearCache: function () { try { sessionStorage.removeItem(CACHE_KEY); } catch (e) {} } };
     try { document.dispatchEvent(new CustomEvent('kedu-gate', { detail: window.KeduGate })); } catch (e) {}
   }
 
