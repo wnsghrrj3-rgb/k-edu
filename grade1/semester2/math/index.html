@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1학년 2학기 수학 | K-edu</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans KR',sans-serif;background:#F5F7FA;min-height:100vh;color:#1A202C}
+
+.top-bar{background:#fff;border-bottom:1px solid #E2E8F0;height:52px;display:flex;align-items:center;padding:0 24px;gap:12px}
+.back-link{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:#718096;text-decoration:none;font-weight:500;transition:color .15s}
+.back-link:hover{color:#1A202C}
+.top-title{font-family:'Jua',sans-serif;font-size:16px;color:#1A202C}
+
+main{max-width:800px;margin:0 auto;padding:28px 20px 60px}
+
+.page-header{display:flex;align-items:center;gap:14px;margin-bottom:32px}
+.subject-badge{display:inline-flex;align-items:center;gap:6px;padding:8px 20px;border-radius:50px;font-family:'Jua',sans-serif;font-size:18px;color:#fff;background:#FF85A1}
+.page-title{font-family:'Jua',sans-serif;font-size:26px}
+
+.unit-section{margin-bottom:28px}
+.unit-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:8px;border-bottom:2px solid #E2E8F0}
+.unit-num{width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Jua',sans-serif;font-size:16px;color:#fff}
+.unit-name{font-family:'Jua',sans-serif;font-size:18px;color:#1A202C}
+.unit-count{font-size:13px;color:#A0AEC0;margin-left:auto}
+
+.lesson-list{display:flex;flex-direction:column;gap:8px}
+.lesson-card{display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:14px 18px;box-shadow:0 1px 8px rgba(0,0,0,.05);cursor:pointer;text-decoration:none;color:#1A202C;border:2px solid transparent;transition:transform .15s,border-color .15s,box-shadow .15s}
+.lesson-card:hover{transform:translateY(-2px);border-color:var(--uc);box-shadow:0 6px 20px rgba(0,0,0,.1)}
+.lesson-num{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Jua',sans-serif;font-size:14px;color:#fff;background:var(--uc);flex-shrink:0}
+.lesson-title{font-size:14px;font-weight:500;flex:1}
+.lesson-arrow{color:#CBD5E0;font-size:16px}
+.lesson-badge{font-size:11px;padding:2px 8px;border-radius:50px;font-weight:500;flex-shrink:0}
+.badge-tb{background:#EBF8FF;color:#2B6CB0}
+.badge-adv{background:#FFF5F5;color:#C53030}
+.badge-game{background:#FFF3E0;color:#E65100}
+.badge-advanced{background:#EDE7F6;color:#5E35B1}
+.badge-extra{background:#F0FFF4;color:#22543D}
+
+.lesson-card-extra{margin-left:32px;padding:10px 16px;background:#FAFAFA;box-shadow:none;border:1px dashed #CBD5E0}
+.lesson-card-extra:hover{transform:translateY(-1px);border-style:solid;box-shadow:0 3px 12px rgba(0,0,0,.06)}
+.lesson-card-extra .lesson-num{width:28px;height:28px;font-size:14px;background:#A0AEC0!important}
+.lesson-card-extra .lesson-title{font-size:13px;color:#4A5568}
+
+footer{text-align:center;padding:18px 24px;border-top:1px solid #E2E8F0;background:#fff}
+.footer-text{font-size:12px;color:#A0AEC0}
+.footer-text strong{color:#718096;font-weight:500}
+.footer-text a{color:#5B8EF8;text-decoration:none;margin-left:10px}
+.footer-text a:hover{text-decoration:underline}
+
+@media(max-width:600px){
+  .page-header{flex-direction:column;align-items:flex-start;gap:8px}
+  .page-title{font-size:22px}
+  .lesson-card{padding:12px 14px}
+}
+</style>
+  <script src="/kedu_gate.js"></script>
+<script src="/kedu_boxbar.js"></script>
+</head>
+<body>
+
+<div class="top-bar">
+  <a class="back-link" href="/?view=subject">← 홈</a>
+  <span style="color:#E2E8F0">|</span>
+  <span class="top-title">🔢 1학년 2학기 수학</span>
+</div>
+
+<main>
+  <div class="page-header">
+    <div class="subject-badge">🌸 1학년 · 2학기</div>
+    <div class="page-title">🔢 수학</div>
+  </div>
+
+  <div id="content"></div>
+</main>
+
+<footer>
+  <p class="footer-text">Copyright © 2025 <strong>K-edu</strong> · Developed by Choe Jun-ho (Kumsung Elementary School) · All rights reserved.
+  <a href="/privacy/">개인정보 처리방침</a>
+  <a href="/terms/">서비스 이용약관</a></p>
+</footer>
+
+<script>
+const UNITS = [
+  {
+    name: "1단원: 100까지의 수", emoji: "🔢", color: "#3D90F0",
+    lessons: [
+      {n:1, file:"1단원_100까지의수/g1_math_u1_l01_단원도입.html", title:"단원 도입 — 시장에 갔어요", track:"tb"},
+      {n:2, file:"1단원_100까지의수/g1_math_u1_l02_60708090을알아볼까요.html", title:"60, 70, 80, 90을 알아볼까요", track:"tb"},
+      {n:3, file:"1단원_100까지의수/g1_math_u1_l03_99까지의수를알아볼까요_1.html", title:"99까지의 수를 알아볼까요 (1) — 낱개가 늘어나요", track:"tb"},
+      {n:4, file:"1단원_100까지의수/g1_math_u1_l04_99까지의수를알아볼까요_2.html", title:"99까지의 수를 알아볼까요 (2) — 묶음이 늘어나요", track:"tb"},
+      {n:5, file:"1단원_100까지의수/g1_math_u1_l05_수를넣어이야기를해볼까요.html", title:"수를 넣어 이야기를 해 볼까요", track:"tb"},
+      {n:6, file:"1단원_100까지의수/g1_math_u1_l06_수의순서를알아볼까요.html", title:"수의 순서를 알아볼까요", track:"tb"},
+      {n:7, file:"1단원_100까지의수/g1_math_u1_l07_수의크기를비교해볼까요.html", title:"수의 크기를 비교해 볼까요", track:"tb"},
+      {n:8, file:"1단원_100까지의수/g1_math_u1_l08_짝수와홀수를알아볼까요.html", title:"짝수와 홀수를 알아볼까요", track:"tb"},
+      {n:9, file:"1단원_100까지의수/g1_math_u1_l09_수학이랑확인해요_단원평가.html", title:"수학이랑 확인해요 (단원 평가)", track:"tb"},
+      {n:10, file:"1단원_100까지의수/g1_math_u1_l10_수학이랑만들어요.html", title:"수학이랑 만들어요 — 나의 가게", track:"tb"},
+    ]
+  }
+];
+
+const content = document.getElementById('content');
+UNITS.forEach((unit, i) => {
+  const tbLessons = unit.lessons.filter(l => l.track === 'tb');
+  const advLessons = unit.lessons.filter(l => l.track === 'adv');
+  const gameLessons = unit.lessons.filter(l => l.track === 'game');
+  const advancedLessons = unit.lessons.filter(l => l.track === 'advanced');
+  const summaryLessons = unit.lessons.filter(l => l.track === 'summary');
+  const extraLessons = unit.lessons.filter(l => l.track === 'extra');
+  
+  const section = document.createElement('div');
+  section.className = 'unit-section';
+  section.innerHTML = `
+    <div class="unit-header">
+      <div class="unit-num" style="background:${unit.color}">${i+1}</div>
+      <div class="unit-name">${unit.emoji} ${unit.name}</div>
+      <div class="unit-count">교과서 ${tbLessons.length} + 심화 ${advLessons.length}차시${extraLessons.length ? ' + 추가 풀이 ' + extraLessons.length : ''}${advancedLessons.length ? ' + 도전 ' + advancedLessons.length : ''}${gameLessons.length ? ' + 게임 ' + gameLessons.length : ''}${summaryLessons.length ? ' + 통합 ' + summaryLessons.length : ''}</div>
+    </div>
+    <div class="lesson-list">
+      ${tbLessons.map(l => `
+        <a class="lesson-card" href="${l.file}" style="--uc:${unit.color}">
+          <div class="lesson-num">${l.n}</div>
+          <div class="lesson-title">${l.title}</div>
+          <span class="lesson-badge badge-tb">교과서</span>
+          <div class="lesson-arrow">›</div>
+        </a>
+        ${extraLessons.filter(e => e.n === l.n).map(e => `
+          <a class="lesson-card lesson-card-extra" href="${e.file}" style="--uc:${unit.color}">
+            <div class="lesson-num">↳</div>
+            <div class="lesson-title">${e.title}</div>
+            <span class="lesson-badge badge-extra">추가 풀이</span>
+            <div class="lesson-arrow">›</div>
+          </a>
+        `).join('')}
+      `).join('')}
+      ${advLessons.length ? `
+        <div style="margin:8px 0 4px;padding-left:4px;font-size:13px;color:#C53030;font-weight:600">⭐ 심화 트랙</div>
+        ${advLessons.map(l => `
+          <a class="lesson-card" href="${l.file}" style="--uc:#C53030">
+            <div class="lesson-num" style="background:#C53030">${l.n}</div>
+            <div class="lesson-title">${l.title}</div>
+            <span class="lesson-badge badge-adv">심화</span>
+            <div class="lesson-arrow">›</div>
+          </a>
+        `).join('')}
+      ` : ''}
+      ${advancedLessons.length ? `
+        <div style="margin:8px 0 4px;padding-left:4px;font-size:13px;color:#5E35B1;font-weight:600">🚀 도전 트랙</div>
+        ${advancedLessons.map(l => `
+          <a class="lesson-card" href="${l.file}" style="--uc:#5E35B1">
+            <div class="lesson-num" style="background:#5E35B1">🚀</div>
+            <div class="lesson-title">${l.title}</div>
+            <span class="lesson-badge badge-advanced">도전</span>
+            <div class="lesson-arrow">›</div>
+          </a>
+        `).join('')}
+      ` : ''}
+      ${gameLessons.length ? `
+        <div style="margin:8px 0 4px;padding-left:4px;font-size:13px;color:#E65100;font-weight:600">🎮 단원 게임</div>
+        ${gameLessons.map(l => `
+          <a class="lesson-card" href="${l.file}" style="--uc:#F57C00">
+            <div class="lesson-num" style="background:#F57C00">🎮</div>
+            <div class="lesson-title">${l.title}</div>
+            <span class="lesson-badge badge-game">게임</span>
+            <div class="lesson-arrow">›</div>
+          </a>
+        `).join('')}
+      ` : ''}
+      ${summaryLessons.length ? `
+        <div style="margin:8px 0 4px;padding-left:4px;font-size:13px;color:#C2185B;font-weight:600">🎓 단원 통합 도전</div>
+        ${summaryLessons.map(l => `
+          <a class="lesson-card" href="${l.file}" style="--uc:#C2185B">
+            <div class="lesson-num" style="background:#C2185B">🎓</div>
+            <div class="lesson-title">${l.title}</div>
+            <span class="lesson-badge badge-summary">통합</span>
+            <div class="lesson-arrow">›</div>
+          </a>
+        `).join('')}
+      ` : ''}
+    </div>
+  `;
+  content.appendChild(section);
+});
+</script>
+<script src="/kedu_accordion.js"></script>
+<script src="/kedu_back.js"></script>
+</body>
+</html>

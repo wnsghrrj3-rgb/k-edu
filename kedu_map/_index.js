@@ -13,6 +13,12 @@ window.KEDU_MAP_INDEX = [
   "ready": 69
  },
  {
+  "key": "g1_2_math",
+  "units": 1,
+  "lessons": 10,
+  "ready": 10
+ },
+ {
   "key": "g2_1_korean",
   "units": 8,
   "lessons": 56,
