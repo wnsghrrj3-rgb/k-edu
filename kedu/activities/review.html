@@ -116,6 +116,8 @@
            max-width:100%; max-height:100%; }
   .frame.phone { border-radius:30px; padding:12px 8px; }
   .frame .scaler { overflow:hidden; border-radius:6px; background:var(--cream); }
+  .frame .scaler.pan { overflow:auto; cursor:grab; }
+  .frame .scaler.pan.drag { cursor:grabbing; }
   .frame iframe { display:block; border:0; background:var(--cream);
                   transform-origin:top left; }
   .vhint { color:#fde68a; font-size:13px; text-align:center; max-width:640px; line-height:1.7; }
@@ -202,6 +204,8 @@
     <div class="zoom" id="v-zoom"></div>
     <button class="vbtn" id="v-tv">🖥 전자칠판</button>
     <button class="vbtn" id="v-ph">📱 폰 세로</button>
+    <button class="vbtn" id="v-fit">⤢ 맞춤</button>
+    <button class="vbtn" id="v-1x">1:1 실물</button>
     <button class="vbtn" id="v-re">↻ 다시 열기</button>
     <button class="vbtn" id="v-close">✕ 닫기</button>
   </div>
@@ -728,22 +732,49 @@ var cur = null, curDev = 'tv';
    실물에 없는 깨짐이 보이고, 실물에 있는 깨짐은 안 보인다. 도구가 거짓말을 하면 판정이 못 산다.
    그래서 iframe은 언제나 기기 실물 크기이고, CSS transform으로만 줄인다. */
 var DEV = { tv: { w: 1920, h: 1080 }, ph: { w: 390, h: 844 } };
+var zoomMode = 'fit';          // 'fit' = 전체가 보이는 배율 · 1 = 실물 1:1
+
+/* 화면에서 뷰어가 쓸 수 있는 자리 — 하드코딩(전 190px)이 아니라 실측한다.
+   툴바·힌트 높이는 글자 줄 수에 따라 변하고, 그 오차가 그대로 배율을 깎았다. */
+function room() {
+  var veil = $('#veil'), top = $('.vtop'), hint = $('#v-hint');
+  var padV = 14 * 2 + 12 * 2;                                  // veil padding + gap
+  var chrome = (top ? top.offsetHeight : 56) + (hint ? hint.offsetHeight : 36) + padV;
+  var fpad = curDev === 'ph' ? { x: 16, y: 24 } : { x: 20, y: 20 };
+  return {
+    w: Math.max(240, window.innerWidth - 28 - fpad.x),
+    h: Math.max(200, window.innerHeight - chrome - fpad.y)
+  };
+}
+function fitScale(dev) {
+  var d = DEV[dev] || DEV.tv, r = room();
+  return Math.min(r.w / d.w, r.h / d.h);
+}
 function fit(dev) {
-  var d = DEV[dev] || DEV.tv;
-  var padX = dev === 'ph' ? 16 : 20, padY = dev === 'ph' ? 24 : 20;
-  var maxW = Math.min(window.innerWidth - 28, 1280) - padX;
-  var maxH = window.innerHeight - 190 - padY;
-  var k = Math.min(maxW / d.w, maxH / d.h);
+  var d = DEV[dev] || DEV.tv, r = room();
+  var kFit = Math.min(r.w / d.w, r.h / d.h);
+  var k = zoomMode === 'fit' ? kFit : 1;
   if (!(k > 0)) k = 0.1;
   var f = $('#v-if'), sc = $('#v-scale');
   f.style.width = d.w + 'px';
   f.style.height = d.h + 'px';
   f.style.transform = 'scale(' + k + ')';
-  sc.style.width = Math.round(d.w * k) + 'px';
-  sc.style.height = Math.round(d.h * k) + 'px';
+  /* 1:1에서는 판이 자리보다 크므로 보이는 창만 자리에 맞추고 나머지는 끌어서 본다. */
+  var vw = Math.min(Math.round(d.w * k), Math.round(r.w));
+  var vh = Math.min(Math.round(d.h * k), Math.round(r.h));
+  sc.style.width = vw + 'px';
+  sc.style.height = vh + 'px';
+  sc.classList.toggle('pan', k > kFit + 0.001);
   $('#v-frame').className = 'frame' + (dev === 'ph' ? ' phone' : '');
+  $('#v-fit').classList.toggle('on', zoomMode === 'fit');
+  $('#v-1x').classList.toggle('on', zoomMode !== 'fit');
   var z = $('#v-zoom');
-  if (z) z.textContent = d.w + '×' + d.h + ' · ' + Math.round(k * 100) + '%';
+  if (z) {
+    z.textContent = d.w + '×' + d.h + ' · ' + Math.round(k * 100) + '%' +
+      (zoomMode === 'fit'
+        ? '  (전체가 보임 — 줄·겹침을 봅니다)'
+        : '  (실물 크기 — 글자·손가락을 봅니다 · 끌어서 이동)');
+  }
 }
 function openViewer(p, dev) {
   cur = p; curDev = (dev === 'ph' && p.ph) ? 'ph' : (p.tv ? 'tv' : 'ph');
@@ -761,12 +792,37 @@ function load() {
   fit(curDev);
   $('#v-if').src = './' + (curDev === 'ph' ? cur.ph : cur.tv);
 }
-$('#v-tv').addEventListener('click', function () { if (cur && cur.tv) { curDev = 'tv'; load(); } });
-$('#v-ph').addEventListener('click', function () { if (cur && cur.ph) { curDev = 'ph'; load(); } });
+$('#v-tv').addEventListener('click', function () { if (cur && cur.tv) { curDev = 'tv'; zoomMode = 'fit'; load(); } });
+$('#v-ph').addEventListener('click', function () { if (cur && cur.ph) { curDev = 'ph'; zoomMode = 'fit'; load(); } });
 $('#v-re').addEventListener('click', load);
+/* 배율만 바꿀 때는 iframe을 다시 띄우지 않는다 — 판을 처음부터 다시 하게 되면
+   「지금 이 장면이 실물에서 어떤가」를 볼 수 없다. */
+$('#v-fit').addEventListener('click', function () { zoomMode = 'fit'; fit(curDev); });
+$('#v-1x').addEventListener('click', function () { zoomMode = 1; fit(curDev); });
 $('#v-close').addEventListener('click', function () {
   $('#veil').classList.remove('show'); $('#v-if').src = 'about:blank'; cur = null;
 });
+/* 1:1에서 끌어 보기 — iframe 위에서는 mousemove가 부모로 안 오므로
+   드래그 중에는 포인터를 래퍼가 가져간다. */
+(function () {
+  var sc = $('#v-scale'), on = false, sx = 0, sy = 0, l = 0, t = 0;
+  sc.addEventListener('mousedown', function (ev) {
+    if (!sc.classList.contains('pan')) return;
+    on = true; sx = ev.clientX; sy = ev.clientY; l = sc.scrollLeft; t = sc.scrollTop;
+    sc.classList.add('drag'); $('#v-if').style.pointerEvents = 'none';
+    ev.preventDefault();
+  });
+  window.addEventListener('mousemove', function (ev) {
+    if (!on) return;
+    sc.scrollLeft = l - (ev.clientX - sx);
+    sc.scrollTop  = t - (ev.clientY - sy);
+  });
+  window.addEventListener('mouseup', function () {
+    if (!on) return;
+    on = false; sc.classList.remove('drag'); $('#v-if').style.pointerEvents = '';
+  });
+})();
+window.addEventListener('resize', function () { if (cur) fit(curDev); });
 $('#veil').addEventListener('click', function (ev) { if (ev.target === this) $('#v-close').click(); });
 window.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && cur) $('#v-close').click(); });
 window.addEventListener('resize', function () { if (cur) fit(curDev); });
