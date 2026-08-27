@@ -32,6 +32,11 @@ export function createCameras(renderer, center) {
   orbit.panSpeed = 0.8;
   orbit.minDistance = 0.15;
   orbit.maxDistance = 6.0;        // 긴 트랙 전체를 잡을 수 있게 확장 (v1: 2.5)
+  /* 커서(핀치 중심) 밑의 지점을 향해 확대/축소 — 예전엔 dolly가 항상 orbit.target
+   * 축을 따라가서, 시선점이 어디에 박혀 있든 그 한 점으로만 줌이 수렴했다 (2026-08-27).
+   * three r155+ 는 휠·터치 핀치 모두 지원. 줌이 옮긴 target은 아래 'start' 프로브가
+   * desired에 동기화해 자동 글라이드가 손을 되감지 않는다. */
+  orbit.zoomToCursor = true;
   orbit.maxPolarAngle = Math.PI * 0.49;
   orbit.update();
 
