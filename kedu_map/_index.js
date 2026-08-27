@@ -14,9 +14,9 @@ window.KEDU_MAP_INDEX = [
  },
  {
   "key": "g1_2_math",
-  "units": 1,
-  "lessons": 10,
-  "ready": 10
+  "units": 2,
+  "lessons": 20,
+  "ready": 20
  },
  {
   "key": "g2_1_korean",
