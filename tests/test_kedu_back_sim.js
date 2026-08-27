@@ -42,5 +42,14 @@ scenario('⑬ 케이랩 도구를 새 탭으로 직접 열기', [['/labs/scilab_
 scenario('⑭ 영어 차시 → 영어 허브', [['/', 1], ['/english/index.html', 1], ['/english/g3/reading/g3_english_adv_17_주제찾기.html', 1]], '/english/index.html');
 scenario('⑮ 교사 도구에서 바로 활동으로(대시보드 발자국 없음)', [['/teacher/index.html', 0], ['/kple/host.html', 1]], '/teacher/index.html');
 scenario('⑯ 보드게임 폴더 — 안내판이 아니라 케이파크 정문으로', [['/kpark/board/bolt/index.html', 1]], '/kpark/index.html');
+/* 도구 구역 장면 — 준호 보고: "자기주도보다 다른 것들이 더 안 된다, 특히 케이파크" (2026-08-27) */
+scenario('⑰ 케이파크 → 보드게임 → 나가기', [['/', 1], ['/kpark/index.html', 1], ['/kpark/board/bolt/index.html', 1]], '/kpark/index.html');
+scenario('⑱ 케이파크 어트락션을 새 탭으로 직접', [['/kpark/marblerun/index.html', 1]], '/kpark/index.html');
+scenario('⑲ 보드게임에서 옆 보드게임으로 옮겨 놀다 나가기', [['/', 1], ['/kpark/index.html', 1], ['/kpark/board/four/index.html', 1], ['/kpark/board/travel/index.html', 1]], '/kpark/index.html');
+scenario('⑳ 케이뮤지엄 전시 → 뮤지엄 입구', [['/', 1], ['/museum/index.html', 1], ['/museum/math/ex01_gauss.html', 1]], '/museum/index.html');
+scenario('㉑ 케이메이커 옛 주소(kmake) 아래 화면 — 안내판 아닌 새 주소로', [['/kmake/viewer.html', 1]], '/maker/index.html');
+scenario('㉒ 케이영재 차시 — 다리(gifted/math) 말고 케이영재 허브로', [['/gifted/math/l2/kg_math_l2_com01_색칠경우세기.html', 1]], '/gifted/index.html');
+scenario('㉓ 아침활동 하위 화면', [['/morning/index.html', 1], ['/morning/math.html', 1]], '/morning/index.html');
+scenario('㉔ 케이배틀에서 나가기 — 학생', [['/', 1], ['/kbattle/index.html', 1]], '/');
 console.log(`돌아가기 동선 시뮬 — ${pass} PASS / ${fail} FAIL`);
 process.exit(fail ? 1 : 0);

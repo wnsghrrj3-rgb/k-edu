@@ -19,6 +19,10 @@
     if (document.getElementById('kedu-back')) return;              // 이미 버튼 있음
     if (window.top !== window) return;                             // 도구가 오버레이/iframe 으로 박힌 경우
     if (location.pathname === '/' || location.pathname === '/index.html') return;  // 홈에서 홈으로는 무의미
+    /* 안내판(즉시 리다이렉트) 페이지 — 지나가는 화면이므로 발자국을 남기면 트레일이 오염된다.
+       (케이파크 board 안내판이 트레일에 허브로 남아 나가기 목적지가 되던 문제, 2026-08-27) */
+    var mr = document.querySelector('meta[http-equiv="refresh" i]');
+    if (mr && /^\s*0\s*;/.test(mr.getAttribute('content') || '')) return;
   } catch (e) {}
 
   /* 1) 진입 맥락 갱신 — 케이에듀 홈에서 넘어온 순간에만 기록을 덮어쓴다 */
@@ -50,15 +54,15 @@
   /* 1.5-a) 허브 명부 — 실제 index.html 이 있는 디렉터리(71) + 자체 허브 페이지 */
   var HUB_DIRS = [
     '/admin/','/auth/','/board/','/classwork/','/draw/','/draw/coloring/','/draw/masterpiece/','/english/',
-    '/english/v3/','/english/v3/samples/','/gifted/','/gifted/math/','/grade1/semester1/korean/',
+    '/english/v3/','/english/v3/samples/','/gifted/','/grade1/semester1/korean/',
     '/grade1/semester1/math/','/grade1/semester2/math/','/grade2/semester1/korean/','/grade2/semester1/math/',
     '/grade3/semester1/korean/','/grade3/semester1/math/','/grade3/semester1/science/',
     '/grade3/semester1/social/','/grade4/semester1/korean/','/grade4/semester1/math/',
     '/grade4/semester1/science/','/grade4/semester1/social/','/grade5/semester1/korean/',
     '/grade5/semester1/math/','/grade5/semester1/science/','/grade5/semester1/social/',
     '/grade6/semester1/math/','/grade6/semester1/science/','/hub2/','/kbattle/','/kedu/activities/',
-    '/kedu/quiz/','/kedu/teacher/','/kedu/teacher/tools3/','/kmake/','/kmake/card/','/kmake/invite/',
-    '/kpark/','/kpark/board/','/kpark/board/bolt/','/kpark/board/four/','/kpark/board/kmarble/',
+    '/kedu/quiz/','/kedu/teacher/','/kedu/teacher/tools3/',
+    '/kpark/','/kpark/board/bolt/','/kpark/board/four/',
     '/kpark/board/ladder/','/kpark/board/land/','/kpark/board/mafia/','/kpark/board/mooncode/',
     '/kpark/board/rainbow/','/kpark/board/scale/','/kpark/board/tilemagic/','/kpark/board/travel/',
     '/kpark/kmarble/','/kpark/marblerun/','/kpark/shooting/','/kpark/tangram/','/labs/draw/paint/','/live/',
@@ -70,7 +74,13 @@
   /* 예외표 — 구조상 부모가 없거나(최상위 폴더) 실제 목록이 다른 곳인 화면 */
   var HUB_EXCEPT = [
     ['/labs/', '/kedu/hub/klab.html'],
-    ['/kpark/board/', '/kpark/index.html'],          /* 보드게임 폴더는 안내판만 남았다 — 케이파크 정문으로 */
+    /* 아래는 「안내판(즉시 리다이렉트) 껍데기」로 나가지 않게 최종 목적지를 직접 적은 것 —
+       나가기를 눌렀는데 화면이 한 번 번쩍이고 다시 튕기는 일을 없앤다 (2026-08-27) */
+    ['/kpark/board/', '/kpark/index.html'],          /* 보드게임 폴더 안내판 → 케이파크 정문 */
+    ['/kmake/card/', '/maker/card/index.html'],
+    ['/kmake/invite/', '/maker/invite/index.html'],
+    ['/kmake/', '/maker/index.html'],                /* 케이메이커 옛 주소 → 새 주소 */
+    ['/gifted/math/', '/gifted/index.html'],         /* 케이영재 수학 다리 → 케이영재 허브 */
     ['/kedu/전시실.html', '/museum/index.html']
   ];
 
@@ -247,7 +257,11 @@
     }
     try {
       var A = new URL(h, location.href), B = new URL(href, location.href);
-      if (A.pathname !== B.pathname) return false;
+      /* 디렉터리 URL 과 그 index.html 은 같은 문이다 (「← 케이파크」 href="../../" vs 우리 /kpark/index.html) */
+      var ap = A.pathname.slice(-1) === '/' ? A.pathname + 'index.html' : A.pathname;
+      var bp = B.pathname.slice(-1) === '/' ? B.pathname + 'index.html' : B.pathname;
+      if (ap !== bp) return false;
+      A = { pathname: ap, search: A.search }; B = { pathname: bp, search: B.search };
       /* 둘 다 홈 셸(/)로 가면 화면 파라미터(?view=subject 등)가 달라도 같은 문으로 본다.
          단 교사 맥락(/?role=teacher)은 목적지가 실제로 다르므로 예외. */
       if (A.pathname === '/' && !fromTeacher) return true;
