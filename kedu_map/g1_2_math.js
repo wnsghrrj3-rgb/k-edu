@@ -221,6 +221,103 @@ window.KEDU_MAP["g1_2_math"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 3,
+   "name": "모양과 시각",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g1_math_u3_l01",
+     "lessonId": "g1_2_math_u3_l01_v1",
+     "n": "1",
+     "title": "단원 도입 — 모양과 시각을 알아볼까요",
+     "sub": null,
+     "url": "/grade1/semester2/math/3단원_모양과시각/g1_math_u3_l01_단원도입.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u3_l02",
+     "lessonId": "g1_2_math_u3_l02_v1",
+     "n": "2",
+     "title": "모양을 찾아볼까요 — 네모·세모·동그라미",
+     "sub": null,
+     "url": "/grade1/semester2/math/3단원_모양과시각/g1_math_u3_l02_모양을찾아볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u3_l03",
+     "lessonId": "g1_2_math_u3_l03_v1",
+     "n": "3",
+     "title": "모양을 알아볼까요 — 본뜨고 찍어 보아요",
+     "sub": null,
+     "url": "/grade1/semester2/math/3단원_모양과시각/g1_math_u3_l03_모양을알아볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u3_l04",
+     "lessonId": "g1_2_math_u3_l04_v1",
+     "n": "4",
+     "title": "여러 가지 모양을 만들어 볼까요",
+     "sub": null,
+     "url": "/grade1/semester2/math/3단원_모양과시각/g1_math_u3_l04_여러가지모양을만들어볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u3_l05",
+     "lessonId": "g1_2_math_u3_l05_v1",
+     "n": "5",
+     "title": "몇 시를 알아볼까요",
+     "sub": null,
+     "url": "/grade1/semester2/math/3단원_모양과시각/g1_math_u3_l05_몇시를알아볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u3_l06",
+     "lessonId": "g1_2_math_u3_l06_v1",
+     "n": "6",
+     "title": "몇 시 30분을 알아볼까요 (1) — 읽고 써 보아요",
+     "sub": null,
+     "url": "/grade1/semester2/math/3단원_모양과시각/g1_math_u3_l06_몇시30분을알아볼까요_1.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u3_l07",
+     "lessonId": "g1_2_math_u3_l07_v1",
+     "n": "7",
+     "title": "몇 시 30분을 알아볼까요 (2) — 나타내고 말해 보아요",
+     "sub": null,
+     "url": "/grade1/semester2/math/3단원_모양과시각/g1_math_u3_l07_몇시30분을알아볼까요_2.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u3_l08",
+     "lessonId": "g1_2_math_u3_l08_v1",
+     "n": "8",
+     "title": "수학이랑 확인해요 (단원 평가)",
+     "sub": null,
+     "url": "/grade1/semester2/math/3단원_모양과시각/g1_math_u3_l08_수학이랑확인해요_단원평가.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u3_l09",
+     "lessonId": "g1_2_math_u3_l09_v1",
+     "n": "9",
+     "title": "수학이랑 만들어요 — 모양 나라를 만들어요",
+     "sub": null,
+     "url": "/grade1/semester2/math/3단원_모양과시각/g1_math_u3_l09_수학이랑만들어요.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };
