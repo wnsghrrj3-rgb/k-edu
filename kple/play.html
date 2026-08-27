@@ -54,6 +54,15 @@
     if (!codeEl) return;
     codeEl.addEventListener('input', function () { codeEl.value = codeEl.value.toUpperCase(); });
 
+    /* 초대 링크(?code=ABCD)로 왔으면 방코드를 미리 채운다 — 학생은 이름만 넣으면 됨 (2026-08-27) */
+    try {
+      var qc = new URLSearchParams(location.search).get('code');
+      if (qc) {
+        qc = qc.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
+        if (qc.length === 4) { codeEl.value = qc; if (nameEl) nameEl.focus(); }
+      }
+    } catch (e) {}
+
     document.getElementById('enter').onclick = function () {
       var code = codeEl.value.trim().toUpperCase();
       var name = nameEl.value.trim();
