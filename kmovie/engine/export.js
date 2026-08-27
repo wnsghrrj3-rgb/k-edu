@@ -67,7 +67,7 @@
         const sup = await AudioEncoder.isConfigSupported({ codec: 'mp4a.40.2', sampleRate: g.KMV_AUDIO.SR, numberOfChannels: 2, bitrate: 192000 });
         acodecOK = !!sup.supported;
       } catch (e) {}
-      if (acodecOK && P.data.A1.length) mix = await g.KMV_AUDIO.renderMix(total);
+      if (acodecOK && (P.data.A1.length || (P.data.A2 && P.data.A2.length))) mix = await g.KMV_AUDIO.renderMix(total);
 
       muxer = new g.Mp4Muxer.Muxer({
         target,
@@ -92,6 +92,8 @@
         await aenc.flush();
       }
 
+      // 인물 뒤 부품이 있으면 세그 모델을 먼저 세운다 (첫 프레임 지연 흡수)
+      if (g.KMV_SEG && P.data.P.some(pt => g.KMV_PARTS && g.KMV_PARTS.behind(pt))) { prog(0, '인물 컷아웃 모델 준비'); await g.KMV_SEG.load(); }
       // 영상 전 프레임
       const cv = new OffscreenCanvas(W, H), ctx = cv.getContext('2d');
       const t0 = performance.now();

@@ -10,11 +10,17 @@
 - 내보내기: MP4 (H.264 → VP9 폴백) + AAC 192k, 1920x1080 30fps
 - 저장: IndexedDB 자동 저장/복원
 
-## 3단계 룩·전환·자막 (현재)
+## 3단계 룩·전환·자막 ✅
 - 룩 (`engine/look.js`): kmake/parts/lut/*.cube 3종 (fetch, 복사 0) — WebGL2 3D LUT 한 패스, 프로젝트 기본 + 클립 덮어쓰기, 강도, 노출 자동 맞춤(썸네일 통계 휴리스틱), 밝기·대비·채도, 비네트, 시네마 바(2.39:1), 켄 번즈 4종
 - 전환 (`engine/transition.js`): 컷·디졸브·딥 투 블랙·딥 투 화이트·광누출(부품 p-lightleak)·스윕 와이프(금선)·휩 팬(4방향, 프레임 누적 블러). 길이 3 프리셋. 이전 클립은 out 너머 핸들 프레임(없으면 마지막 프레임)
 - 자막 (`engine/subtitle.js`): S 레인 카드, 스타일 5종(방송 기본·박스·키커·다큐·팝), {강조} 표기(키커·팝), 두 줄 자동 줄바꿈, 150ms 페이드, 시네마 바 위로 자동 회피. 문장 목록 → A1 음성 구간 자동 분배(`KMV_AUDIO.voice()`), 타임라인에서 끌어 이동·트림
 - 미리보기 = 내보내기 (같은 `KMV_RENDER.draw`/`drawExact`)
+
+## 4단계 부품 레인·인물 컷아웃·음악 (현재)
+- 부품 P (`engine/parts.js`): kmake/parts 8종을 그대로 호출(복사 0). 목록 썸네일, 클릭=플레이헤드/끌기=P 레인 드롭, 필드 편집(파츠 계약), 홀드 늘이기(카드를 늘이면 등장·퇴장은 원속도, 가운데만 늘어남), 복제, 겹침 허용
+- 인물 컷아웃 (`engine/seg.js`): "인물 뒤 흐르는 글자"는 부품 → 사람 컷아웃 순으로 합성. MediaPipe Selfie Segmentation 자체 호스팅(maker-playground/vendor/selfie-seg/, R134) 지연 로드, 프레임별 마스크 LRU 캐시, 켄 번즈 변환 동승. 카드별 "인물 뒤" 토글
+- 음악 A2 (`engine/audio.js`·`media.js`): mp3·wav·m4a 가져오기 → A2 레인, 파형, 볼륨, 페이드 인/아웃 프리셋, 영상 끝 맞춤, 오토 덕킹(A1 음성 구간 -depth dB, 진입 200ms/복귀 500ms), 비트 마커(onset 휴리스틱) → 클립 경계 스냅
+- 카드(S·P·A2) 공통 손맛: 끌어 이동·가장자리 트림·스냅·Del·undo
 
 ## 파일
 - `index.html`, `kmovie.js` — UI·타임라인
@@ -24,7 +30,9 @@
 - `engine/look.js` — LUT·노출·켄 번즈·비네트·시네마 바 (WebGL2, CPU 폴백)
 - `engine/transition.js` — 전환 7종
 - `engine/subtitle.js` — 자막 스타일 5종·자동 분배
-- `engine/render.js` — 프레임 렌더 (클립 → 룩 → 전환 → 자막 → 부품)
+- `engine/parts.js` — 부품 메타·홀드 재매핑·썸네일
+- `engine/seg.js` — 인물 컷아웃 마스크 (MediaPipe 자체 호스팅)
+- `engine/render.js` — 프레임 렌더 (클립 → 룩 → 전환 → 인물 뒤 부품+컷아웃 → 자막 → 부품)
 - `engine/export.js` — VideoEncoder/AudioEncoder + mp4-muxer
 
 ## 단축키

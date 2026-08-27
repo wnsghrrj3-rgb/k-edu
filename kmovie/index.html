@@ -19,7 +19,7 @@
   button.ico { padding:6px 9px; min-width:34px; }
   input[type=range] { accent-color:var(--gold); }
 
-  #app { display:grid; grid-template-rows:48px 1fr 292px; height:100%; }
+  #app { display:grid; grid-template-rows:48px 1fr 300px; height:100%; }
   header.top { display:flex; align-items:center; gap:10px; padding:0 16px; border-bottom:1px solid var(--line); background:var(--panel); }
   header .back { color:var(--sub); text-decoration:none; font-size:13px; margin-right:6px; }
   header .back:hover { color:var(--txt); }
@@ -89,6 +89,19 @@
   .sc .x { color:var(--dim); font-size:13px; padding:0 3px; } .sc .x:hover { color:var(--danger); }
   #subText { width:100%; min-height:64px; resize:vertical; font-size:12px; line-height:1.5; }
   .note { color:var(--dim); font-size:11.5px; line-height:1.6; }
+  #partGrid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  #partGrid .cat { grid-column:1 / -1; color:var(--dim); font-size:10.5px; letter-spacing:1.5px; margin:4px 0 -2px; }
+  .pc { background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:5px; cursor:grab; }
+  .pc:hover { border-color:var(--gold); }
+  .pc.on { border-color:var(--gold); box-shadow:0 0 0 1px var(--gold) inset; }
+  .pc canvas { width:100%; display:block; border-radius:5px; background:#000; aspect-ratio:16/9; }
+  .pc b { display:block; font-size:11px; font-weight:600; margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .pc small { color:var(--sub); font-size:10px; }
+  #partFields .row label { width:74px; }
+  #partFields input[type=text] { flex:1; min-width:0; }
+  #partGhost { position:fixed; pointer-events:none; z-index:70; background:rgba(217,182,92,.92); color:#1a1408; font-weight:700; font-size:12px; padding:5px 10px; border-radius:8px; transform:translate(-50%,-140%); white-space:nowrap; box-shadow:0 4px 14px rgba(0,0,0,.4); }
+  #musicPanel .row label { width:74px; }
+  .mi.audio canvas { background:#0e1a16; }
 
   .tl-wrap { border-top:1px solid var(--line); background:var(--panel); display:flex; flex-direction:column; min-height:0; }
   .tl-bar { display:flex; align-items:center; gap:8px; padding:6px 12px; font-size:12px; color:var(--sub); }
@@ -116,7 +129,7 @@
     <b>케이<i>무비</i></b><span class="sub">컷은 프리미어처럼, 꾸미기는 부품으로</span>
     <div class="sp"></div>
     <button id="btnImport">＋ 가져오기</button>
-    <input id="fileIn" type="file" multiple accept="video/mp4,video/quicktime,.mp4,.mov,.m4v,image/*" hidden>
+    <input id="fileIn" type="file" multiple accept="video/mp4,video/quicktime,.mp4,.mov,.m4v,image/*,audio/*,.mp3,.wav,.m4a,.aac,.ogg" hidden>
     <div class="sep"></div>
     <button id="btnUndo" class="ico" title="되돌리기 (Ctrl+Z)" disabled>↶</button>
     <button id="btnRedo" class="ico" title="다시 (Ctrl+Shift+Z)" disabled>↷</button>
@@ -142,7 +155,7 @@
         <button id="tEnd" class="ico" title="끝 (End)">⏭</button>
         <span class="tc" id="tcCur">00:00:00</span><span class="tc dim">/</span><span class="tc dim" id="tcTot">00:00:00</span>
         <div class="sp"></div>
-        <span class="hint">Space 재생 · S 분할 · Q/W 플레이헤드까지 트림 · F 프리즈 · Del 리플 삭제 · Alt+소리띠 끌기 J/L컷 · Ctrl+휠 줌</span>
+        <span class="hint">Space 재생 · S 분할 · Q/W 플레이헤드까지 트림 · F 프리즈 · Del 삭제 · Alt+소리띠 끌기 J/L컷 · 부품·자막·음악 카드는 끌어서 이동/트림 · Ctrl+휠 줌</span>
       </div>
     </section>
     <aside class="side">
@@ -170,6 +183,17 @@
           <div class="row" id="rowTrDir"><label>방향</label><div class="seg c4" id="trDirSeg"></div></div>
         </div>
       </div>
+      <div class="panel" id="partPanel">
+        <h3>부품<div class="sp"></div><span class="note" style="letter-spacing:0;text-transform:none;font-weight:400">끌어서 P 레인에 · 클릭은 플레이헤드에</span></h3>
+        <div id="partGrid"></div>
+        <div id="partEdit" class="hidden">
+          <div class="sub2" id="partEditName"></div>
+          <div id="partFields"></div>
+          <div class="row"><label>길이</label><input type="number" id="partDur" min="0.5" max="120" step="0.5"><span class="v">초</span><div class="sp"></div><span class="note" id="partHoldNote"></span></div>
+          <div class="row" id="rowPartCut"><label>인물 뒤</label><button class="tog" id="tgPartCut"></button><span class="note">사람만 앞에 다시 얹어요 (AI 컷아웃)</span></div>
+          <div class="row"><span class="v" id="partEditTime" style="font-size:12px;color:var(--sub)"></span><div class="sp"></div><button id="btnPartDup" title="같은 카드 하나 더 (바로 뒤에)">복제</button><button id="btnPartDel" class="danger">삭제</button></div>
+        </div>
+      </div>
       <div class="panel" id="subPanel">
         <h3>자막<div class="sp"></div><button id="btnSubClear" title="자막 전부 지우기">비우기</button></h3>
         <textarea id="subText" placeholder="한 줄에 한 문장씩 붙여넣고 [자동 배치] — 현장음의 말하는 구간에 나눠 놓아요"></textarea>
@@ -177,6 +201,22 @@
         <div class="row"><label>스타일</label><div class="seg c3" id="subStyleSeg"></div></div>
         <div id="subEdit" class="hidden"><div class="row"><label>문구</label><input type="text" id="subEditText" style="flex:1"></div><div class="row"><label>구간</label><span class="v" id="subEditTime"></span><div class="sp"></div><button id="btnSubDel" class="danger">삭제</button></div></div>
         <div id="subList"></div>
+      </div>
+      <div class="panel" id="musicPanel">
+        <h3>음악<div class="sp"></div><button id="btnMusicImport">＋ 음악 파일</button></h3>
+        <div id="musicNone" class="note">mp3·wav·m4a 를 넣으면 A2 레인에 놓여요.<br>현장음에서 말하는 동안은 음악이 자동으로 내려가요.</div>
+        <div id="musicBody" class="hidden">
+          <div class="row"><label>파일</label><span class="v" id="mName" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span></div>
+          <div class="row"><label>구간</label><span class="v" id="mRange" style="font-size:12px"></span></div>
+          <div class="row"><label>소리</label><input type="range" id="mVol" min="0" max="150" value="100"><span class="v" id="mVolV" style="width:38px;text-align:right">100%</span></div>
+          <div class="row"><label>페이드 인</label><div class="seg c4" id="fadeInSeg"></div></div>
+          <div class="row"><label>페이드 아웃</label><div class="seg c4" id="fadeOutSeg"></div></div>
+          <div class="row"><div class="sp"></div><button id="btnMusicFit" title="음악 끝을 영상 끝에 맞춰 자르고 페이드 아웃">영상 끝에 맞춤</button><button id="btnMusicDel" class="danger">삭제</button></div>
+        </div>
+        <div class="sub2">덕킹·박자 (프로젝트)</div>
+        <div class="row"><label>자동 덕킹</label><button class="tog" id="tgDuck"></button><span class="note">말하는 동안 음악을 낮춰요</span></div>
+        <div class="row" id="rowDuck"><label>깊이</label><input type="range" id="duckDepth" min="3" max="24" value="12"><span class="v" id="duckDepthV" style="width:44px;text-align:right">-12dB</span></div>
+        <div class="row"><label>박자 스냅</label><button class="tog" id="tgBeat"></button><span class="note">클립 경계가 비트 마커에 붙어요</span></div>
       </div>
       <div class="panel" id="lookPanel">
         <h3>룩 (프로젝트)</h3>
@@ -194,7 +234,7 @@
       <div class="panel">
         <h3>프로젝트</h3>
         <div class="row" style="display:flex;gap:8px;font-size:13px"><span style="color:var(--sub)">전체</span><span id="pTot" class="v">0초</span><span style="color:var(--sub);margin-left:8px">클립</span><span id="pCnt" class="v">0</span></div>
-        <div class="note" style="margin-top:8px">1920×1080 · 30fps · H.264 8Mbps · AAC<br>부품·음악 레인은 다음 단계에서 열려요.<br>작업은 이 브라우저에 자동 저장돼요.</div>
+        <div class="note" style="margin-top:8px">1920×1080 · 30fps · H.264 8Mbps · AAC<br>작업은 이 브라우저에 자동 저장돼요.</div>
       </div>
     </aside>
   </main>
@@ -213,6 +253,7 @@
 
 <div id="overlay" class="hidden"><div class="box"><h4 id="ovTitle">내보내는 중</h4><div class="bar"><i id="ovBar"></i></div><div class="lbl"><span id="ovLabel"></span><span id="ovPct">0%</span></div></div></div>
 <div id="toast"></div>
+<div id="partGhost" class="hidden"></div>
 <div id="nosup" class="hidden"><div><b style="font-size:18px">이 브라우저는 케이무비를 지원하지 않아요</b><br>WebCodecs 가 필요해요 — 크롬·엣지 최신 버전(데스크톱)에서 열어 주세요.</div></div>
 
 <!-- 외부 2개: mp4box(디먹스)·mp4-muxer(묶기). 실패해도 화면은 뜨고, 필요할 때 다시 시도한다 -->
@@ -231,6 +272,8 @@
 <script src="engine/project.js" defer></script>
 <script src="engine/audio.js" defer></script>
 <script src="engine/media.js" defer></script>
+<script src="engine/seg.js" defer></script>
+<script src="engine/parts.js" defer></script>
 <script src="engine/look.js" defer></script>
 <script src="engine/transition.js" defer></script>
 <script src="engine/subtitle.js" defer></script>

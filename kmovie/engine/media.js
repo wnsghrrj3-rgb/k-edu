@@ -7,6 +7,7 @@
    · 오디오: decodeAudioData 로 트랙 전체 PCM (브라우저판 상한 10분).
    · 분석(백그라운드): 썸네일(1초마다 160×90) · 모션량(프레임 차) · 파형(프레임별 RMS).
    · 사진: ImageBitmap 하나. 회전(폰 세로 영상)은 tkhd matrix 에서 읽는다.
+   · 음악(A2): mp3·wav·m4a·aac·ogg → decodeAudioData 만. 프레임은 30fps 기준 정수, 파형·비트 마커 분석.
    ============================================================ */
 (function (g) {
   'use strict';
@@ -206,10 +207,25 @@
     getFrame() { return Promise.resolve(this.bmp); } prefetch() {} dispose() { this.bmp.close && this.bmp.close(); }
   }
 
+  class AudioSource {
+    constructor(id, audio) { this.id = id; this.kind = 'audio'; this.audio = audio; this.w = 0; this.h = 0; this.rot = 0; this.fps = 30; this.durSec = audio.duration; this.frames = Math.max(1, Math.round(audio.duration * 30)); this.thumbs = []; this.thumbEvery = 1e9; this.motion = null; this.peaks = null; this.beats = null; this.analyzed = false; this.analyzing = false; }
+    cached() { return null; } nearest() { return null; } getFrame() { return Promise.resolve(null); } prefetch() {} dispose() { this.audio = null; }
+  }
+  function isAudioFile(file) { const name = file.name || ''; return /^audio\//.test(file.type) || /\.(mp3|wav|m4a|aac|ogg|oga|flac|weba)$/i.test(name); }
+
   /* ---------- 가져오기 ---------- */
   async function open(file, id, status) {
     id = id || uid('m');
     const name = file.name || '미디어';
+    if (isAudioFile(file)) {
+      status && status('음악 푸는 중');
+      let audio = null;
+      try { audio = await g.KMV_AUDIO.decode(await file.arrayBuffer()); } catch (e) { throw new Error('이 음악 파일을 풀 수 없어요 (mp3·wav·m4a 권장)'); }
+      if (audio.duration > MAX_SEC * 2) throw new Error('음악은 20분 이하만');
+      const src = new AudioSource(id, audio);
+      SRC.set(id, src);
+      return { id, name, kind: 'audio', dur: src.frames, w: 0, h: 0, fps: 30, audio: true, rot: 0, blobKey: id };
+    }
     const isImg = /^image\//.test(file.type) || /\.(png|jpe?g|webp|gif|bmp)$/i.test(name);
     if (isImg) {
       const bmp = await createImageBitmap(file);
@@ -242,8 +258,27 @@
   }
 
   /* ---------- 분석: 썸네일·모션량·파형 (백그라운드, 별도 디코더) ---------- */
+  function audioPeaks(ab, fps, n) {
+    const peaks = new Float32Array(n), per = ab.sampleRate / fps;
+    const chs = []; for (let c = 0; c < ab.numberOfChannels; c++) chs.push(ab.getChannelData(c));
+    for (let f = 0; f < n; f++) {
+      const s0 = Math.floor(f * per), s1 = Math.min(ab.length, Math.floor((f + 1) * per));
+      let acc = 0, cnt = 0;
+      for (let s = s0; s < s1; s += 4) { let v = 0; for (let c = 0; c < chs.length; c++) v += chs[c][s]; v /= chs.length; acc += v * v; cnt++; }
+      peaks[f] = cnt ? Math.sqrt(acc / cnt) : 0;
+    }
+    return peaks;
+  }
   async function analyze(id, onProgress) {
-    const src = SRC.get(id); if (!src || src.kind !== 'video' || src.analyzed || src.analyzing) return;
+    const src = SRC.get(id); if (!src || src.analyzed || src.analyzing) return;
+    if (src.kind === 'audio') {
+      src.analyzing = true;
+      await new Promise(r => setTimeout(r, 0));
+      src.peaks = audioPeaks(src.audio, src.fps, src.frames);
+      try { src.beats = g.KMV_AUDIO.beats(src.audio); } catch (e) { src.beats = []; }
+      src.analyzed = true; src.analyzing = false; onProgress && onProgress(1); return;
+    }
+    if (src.kind !== 'video') return;
     src.analyzing = true;
     // 파형
     if (src.audio) {
@@ -320,7 +355,7 @@
   }
 
   g.KMV_MEDIA = {
-    supported, open, analyze, drawFit,
+    supported, open, analyze, drawFit, isAudioFile,
     get: id => SRC.get(id) || null,
     has: id => SRC.has(id),
     remove: id => { const s = SRC.get(id); if (s) { s.dispose(); SRC.delete(id); } },

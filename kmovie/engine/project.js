@@ -114,6 +114,7 @@
   function removeMedia(id) {
     commit();
     P.V = P.V.filter(c => c.media !== id);
+    P.A2 = (P.A2 || []).filter(a => a.media !== id);
     P.media = P.media.filter(m => m.id !== id);
     relayout(); emit('media');
   }
@@ -259,12 +260,78 @@
   function clearS() { if (!P.S.length) return; commit(); P.S = []; emit('S'); }
   function subtitleAt(t) { for (const s of P.S) if (t >= s.at && t < s.at + s.dur) return s; return null; }
 
+  /* ---------- 4단계: 부품 P ----------
+     카드 { id, part, at, dur, p:{부품 필드}, cut?: true|false }  — cut: 인물 컷아웃(뒤에 놓기) 강제, 없으면 부품 메타가 정함.
+     겹침 허용(광누출 위에 로워서드 등). 그리는 순서는 at 순. */
+  function sortP() { P.P.sort((a, b) => a.at - b.at); }
+  function part(id) { return P.P.find(x => x.id === id) || null; }
+  function partDefault(partId) {
+    const K = g.KM_PARTS, def = K && K.get(partId);
+    return { dur: Math.round((def ? def.dur : 5) * FPS), p: def ? K.defaults(partId) : {} };
+  }
+  function addP(card) {
+    if (!card || !card.part) return null;
+    commit();
+    const d = partDefault(card.part);
+    const x = Object.assign({ id: uid('p'), at: 0, dur: d.dur, p: d.p }, card);
+    x.p = Object.assign({}, d.p, card.p || {});
+    x.at = Math.max(0, Math.round(x.at)); x.dur = Math.max(FPS / 3 | 0, Math.round(x.dur));
+    P.P.push(x); sortP(); emit('P'); return x;
+  }
+  function updateP(id, patch, opt) {
+    const x = part(id); if (!x) return;
+    if (!(opt && opt.commit === false)) commit();
+    if (patch.p) { x.p = Object.assign({}, x.p, patch.p); patch = Object.assign({}, patch); delete patch.p; }
+    Object.assign(x, patch);
+    x.at = Math.max(0, Math.round(x.at)); x.dur = Math.max(FPS / 3 | 0, Math.round(x.dur));
+    sortP(); emit('P');
+  }
+  function removeP(id) { const i = P.P.findIndex(x => x.id === id); if (i < 0) return; commit(); P.P.splice(i, 1); emit('P'); }
+  function clearP() { if (!P.P.length) return; commit(); P.P = []; emit('P'); }
+  function partsAt(t) { return P.P.filter(x => t >= x.at && t < x.at + x.dur); }
+
+  /* ---------- 4단계: 음악 A2 ----------
+     항목 { id, media, in, out, at, vol, fadeIn, fadeOut } — in/out/at 전부 타임라인 프레임(음악 미디어 fps=30 고정). 길이 = out-in. */
+  function sortA2() { P.A2.sort((a, b) => a.at - b.at); }
+  function a2(id) { return P.A2.find(x => x.id === id) || null; }
+  function addA2(mediaId, at) {
+    const m = media(mediaId); if (!m || m.kind !== 'audio') return null;
+    commit();
+    const x = { id: uid('a'), media: m.id, in: 0, out: m.dur, at: Math.max(0, Math.round(at || 0)), vol: 1, fadeIn: FPS, fadeOut: 2 * FPS };
+    P.A2.push(x); sortA2(); emit('A2'); return x;
+  }
+  function updateA2(id, patch, opt) {
+    const x = a2(id); if (!x) return;
+    const m = media(x.media);
+    if (!(opt && opt.commit === false)) commit();
+    Object.assign(x, patch);
+    x.at = Math.max(0, Math.round(x.at));
+    x.in = clamp(Math.round(x.in), 0, m.dur - 1); x.out = clamp(Math.round(x.out), x.in + 1, m.dur);
+    x.vol = clamp(x.vol == null ? 1 : x.vol, 0, 2);
+    const len = x.out - x.in;
+    x.fadeIn = clamp(Math.round(x.fadeIn || 0), 0, len); x.fadeOut = clamp(Math.round(x.fadeOut || 0), 0, len - x.fadeIn);
+    sortA2(); emit('A2');
+  }
+  /* 가장자리 트림 — side 'in': at 과 in 이 같이 움직임(소리는 제자리), 'out': out 만 */
+  function trimA2(id, side, tlFrame, opt) {
+    const x = a2(id); if (!x) return;
+    tlFrame = Math.round(tlFrame);
+    if (side === 'in') { const d = clamp(tlFrame - x.at, -x.in, x.out - x.in - 1); updateA2(id, { at: x.at + d, in: x.in + d }, opt); }
+    else updateA2(id, { out: clamp(x.in + (tlFrame - x.at), x.in + 1, media(x.media).dur) }, opt);
+  }
+  function removeA2(id) { const i = P.A2.findIndex(x => x.id === id); if (i < 0) return; commit(); P.A2.splice(i, 1); emit('A2'); }
+  function setDucking(patch) { commit(); Object.assign(P.audio.ducking, patch); emit('A2'); }
+  function a2At(t) { for (const x of P.A2) if (t >= x.at && t < x.at + (x.out - x.in)) return x; return null; }
+
   /* ---------- 저장/복구 ---------- */
   function toJSON() { return JSON.parse(snapshot()); }
   function load(json) {
     const b = blank();
     P = Object.assign(b, json || {});
     P.V = (P.V || []).filter(c => media(c.media));
+    P.A2 = (P.A2 || []).filter(a => media(a.media));
+    P.P = (P.P || []).map(x => Object.assign({ p: {} }, x));
+    if (!P.audio) P.audio = b.audio; if (!P.audio.ducking) P.audio.ducking = { on: true, depth: 12 };
     relayout(); undoStack.length = 0; redoStack.length = 0; emit('load');
   }
   function reset() { P = blank(); undoStack.length = 0; redoStack.length = 0; emit('load'); }
@@ -277,6 +344,8 @@
     addMedia, removeMedia, addClip, removeClip, move, split, trim, trimToPlayhead, freeze, setSpeed, setVol, audioTrim, relink,
     setLook, setProjectLook, setKenburns, setTransition, setTheme,
     addS, setS, subtitle, updateS, removeS, clearS, subtitleAt,
+    part, addP, updateP, removeP, clearP, partsAt, partDefault,
+    a2, addA2, updateA2, trimA2, removeA2, setDucking, a2At,
     commit, undo, redo, canUndo: () => undoStack.length > 0, canRedo: () => redoStack.length > 0,
     toJSON, load, reset,
   };

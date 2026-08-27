@@ -5,11 +5,13 @@
      오프스크린에 그려 두고 플레이헤드·드래그만 매 프레임 덧그린다.
    · 컷 도구: 클릭 선택 / 끌어서 순서 / 가장자리 끌어서 리플 트림(경계 프레임 미리보기)
      / Alt+소리띠 가장자리 = J/L 컷 / S 분할 / F 프리즈 / Q·W / Del / ↑↓ 편집점 / 스냅.
+   · 4단계: 부품 P 레인(목록에서 끌어 놓기·필드 편집·홀드 늘이기·인물 뒤 컷아웃) · 음악 A2 레인
+     (페이드·덕킹·비트 마커 스냅). 카드(S·P·A2)는 같은 손맛 — 끌어 이동·가장자리 트림·스냅·Del.
    · 저장: 프로젝트 JSON + 원본 blob → IndexedDB. 새로고침해도 그대로.
    ============================================================ */
 (function () {
   'use strict';
-  const P = window.KMV_PROJECT, M = window.KMV_MEDIA, A = window.KMV_AUDIO, R = window.KMV_RENDER, LK = window.KMV_LOOK, TR = window.KMV_TRANSITION, SB = window.KMV_SUBTITLE;
+  const P = window.KMV_PROJECT, M = window.KMV_MEDIA, A = window.KMV_AUDIO, R = window.KMV_RENDER, LK = window.KMV_LOOK, TR = window.KMV_TRANSITION, SB = window.KMV_SUBTITLE, PT = window.KMV_PARTS, SG = window.KMV_SEG;
   const FPS = P.FPS, PW = P.W, PH = P.H;
   const $ = id => document.getElementById(id);
   const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -18,9 +20,10 @@
   if (!M.supported()) { $('nosup').classList.remove('hidden'); return; }
 
   /* ---------- 상태 ---------- */
-  let ph = 0, sel = null, selS = null, playing = false, snap = true, playStart = 0;
+  let ph = 0, sel = null, selS = null, selP = null, selA2 = null, playing = false, snap = true, beatSnap = true, playStart = 0;
   let pxf = 2, scrollF = 0;
   let drag = null, hover = null, dirty = true, previewJob = 0, rafId = 0;
+  let partDrag = null;                       // 부품 목록에서 끌어오는 중 {part, dur, x, y, moved, overTL, f}
   const binProg = {};
 
   /* ---------- 유틸 ---------- */
@@ -55,14 +58,18 @@
 
   /* ---------- 미리보기 ---------- */
   const pv = $('preview'), pctx = pv.getContext('2d');
+  let segToast = 0;
   function renderPreview() {
     const r = R.draw(pctx, PW, PH, ph);
     if (!r.exact && r.src) {
       const want = ph, job = ++previewJob;
-      r.src.getFrame(r.idx, true).then(f => { if (f && job === previewJob && ph === want && !playing && !drag) renderPreview(); }).catch(() => {});
+      if (r.segPending && !playing) {
+        if (SG && SG.status() !== 'ready' && !segToast) { segToast = 1; toast('인물 컷아웃 모델을 처음 한 번 불러와요 (12MB)', 3500); }
+        r.src.getFrame(r.idx, true).then(f => f && SG.mask(r.media, r.idx, f)).then(() => { if (job === previewJob && ph === want && !playing && !drag) renderPreview(); }).catch(() => {});
+      } else r.src.getFrame(r.idx, true).then(f => { if (f && job === previewJob && ph === want && !playing && !drag) renderPreview(); }).catch(() => {});
     }
     if (r.src && playing) r.src.prefetch(r.idx + 45);
-    $('empty').classList.toggle('hidden', P.total() > 0);
+    $('empty').classList.toggle('hidden', P.total() > 0 || P.data.P.length > 0);
   }
   function setPH(f, opts) {
     const tot = P.total();
@@ -101,7 +108,7 @@
   const sc = document.createElement('canvas'), sctx = sc.getContext('2d');
   let TW = 0, TH = 0, DPR = 1;
   const HEAD = 56, RULER = 24;
-  const LANES = [{ k: 'P', h: 30, label: '부품', off: true }, { k: 'S', h: 30, label: '자막' }, { k: 'V', h: 88, label: '영상' }, { k: 'A1', h: 52, label: '현장음' }, { k: 'A2', h: 30, label: '음악', off: true }];
+  const LANES = [{ k: 'P', h: 30, label: '부품' }, { k: 'S', h: 30, label: '자막' }, { k: 'V', h: 88, label: '영상' }, { k: 'A1', h: 48, label: '현장음' }, { k: 'A2', h: 36, label: '음악' }];
   const LY = {}; { let y = RULER; LANES.forEach(l => { LY[l.k] = { y, h: l.h }; y += l.h; }); }
   const xOf = f => HEAD + (f - scrollF) * pxf;
   const frameOf = x => scrollF + (x - HEAD) / pxf;
@@ -151,6 +158,13 @@
     // 자막 카드
     const SL = LY.S;
     for (const sc2 of D.S) { const x0 = xOf(sc2.at), x1 = xOf(sc2.at + sc2.dur); if (x1 < HEAD || x0 > TW) continue; drawSub(ctx, sc2, x0, x1, SL.y + 4, SL.h - 8, sc2.id === selS); }
+    // 부품 카드 (겹치면 뒤 카드가 위에)
+    const PL = LY.P;
+    for (const pt of D.P) { const x0 = xOf(pt.at), x1 = xOf(pt.at + pt.dur); if (x1 < HEAD || x0 > TW) continue; drawPart(ctx, pt, x0, x1, PL.y + 4, PL.h - 8, pt.id === selP); }
+    // 음악 카드 + 비트 마커
+    const A2L = LY.A2, tot0 = P.total();
+    for (const a of D.A2) { const x0 = xOf(a.at), x1 = xOf(a.at + a.out - a.in); if (x1 < HEAD || x0 > TW) continue; drawMusic(ctx, a, x0, x1, A2L.y + 4, A2L.h - 8, a.id === selA2, tot0); }
+    if (beatSnap && pxf >= 0.6) { const bts = beatFrames(); ctx.strokeStyle = 'rgba(217,182,92,.22)'; ctx.lineWidth = 1; for (const b of bts) { const x = Math.round(xOf(b)) + .5; if (x < HEAD || x > TW) continue; ctx.beginPath(); ctx.moveTo(x, V.y + 4); ctx.lineTo(x, V.y + V.h - 4); ctx.stroke(); } }
     // 끝 표시
     const tot = P.total();
     if (tot) { const xe = Math.round(xOf(tot)) + 0.5; if (xe > HEAD && xe < TW) { ctx.strokeStyle = '#3a4a70'; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(xe, RULER); ctx.lineTo(xe, TH); ctx.stroke(); ctx.setLineDash([]); } }
@@ -214,6 +228,58 @@
     rr(ctx, x0 + 0.5, y + 0.5, w - 1, h - 1, 4); ctx.strokeStyle = selected ? GOLD : '#5a4f86'; ctx.lineWidth = selected ? 2 : 1; ctx.stroke();
   }
 
+  function drawPart(ctx, pt, x0, x1, y, h, selected) {
+    const vx0 = Math.max(x0, HEAD), vx1 = Math.min(x1, TW); if (vx1 - vx0 < 1) return;
+    const w = x1 - x0, behind = PT.behind(pt);
+    ctx.save(); rr(ctx, x0, y, w, h, 4); ctx.clip();
+    ctx.fillStyle = selected ? '#4a3d1f' : (behind ? '#2f3a2c' : '#3a3220'); ctx.fillRect(x0, y, w, h);
+    // 홀드 구간 표시: 등장·퇴장은 진하게, 늘어난 가운데는 옅게
+    const m = PT.meta(pt.part), d = PT.def(pt.part);
+    if (m.hold && d && pt.dur / FPS > d.dur + 0.05) { const ia = m.hold[0] * FPS, ob = (d.dur - m.hold[1]) * FPS; ctx.fillStyle = 'rgba(217,182,92,.12)'; ctx.fillRect(x0 + ia * pxf, y, Math.max(0, w - (ia + ob) * pxf), h); }
+    ctx.fillStyle = selected ? GOLD : (behind ? '#cfe3c8' : '#f0dfa8'); ctx.font = '600 11px Pretendard, sans-serif'; ctx.textBaseline = 'middle';
+    ctx.fillText((behind ? '↩ ' : '✦ ') + PT.label(pt), vx0 + 6, y + h / 2 + 0.5, Math.max(10, vx1 - vx0 - 10));
+    ctx.restore();
+    rr(ctx, x0 + 0.5, y + 0.5, w - 1, h - 1, 4); ctx.strokeStyle = selected ? GOLD : (behind ? '#6f8f62' : '#8a6f2e'); ctx.lineWidth = selected ? 2 : 1; ctx.stroke();
+  }
+
+  function drawMusic(ctx, a, x0, x1, y, h, selected, tot) {
+    const m = P.media(a.media), src = M.get(a.media);
+    const vx0 = Math.max(x0, HEAD), vx1 = Math.min(x1, TW); if (vx1 - vx0 < 1) return;
+    const w = x1 - x0, len = a.out - a.in;
+    ctx.save(); rr(ctx, x0, y, w, h, 4); ctx.clip();
+    ctx.fillStyle = selected ? '#1f3a4a' : '#1a2f3d'; ctx.fillRect(x0, y, w, h);
+    const vol = a.vol == null ? 1 : a.vol, mid = y + h / 2, amp = (h - 6) / 2;
+    const gainAt = f => { let v = 1; if (a.fadeIn && f < a.fadeIn) v *= f / a.fadeIn; if (a.fadeOut && f > len - a.fadeOut) v *= Math.max(0, (len - f) / a.fadeOut); return v; };
+    if (src && src.peaks) {
+      ctx.fillStyle = '#6fb7d9';
+      for (let px = vx0; px < vx1; px += 2) {
+        const f = (px - x0) / pxf, sf = clamp(a.in + Math.floor(f), 0, m.dur - 1);
+        const v = Math.min(1, (src.peaks[sf] || 0) * 4 * vol * gainAt(f)), bh = Math.max(1, v * amp);
+        ctx.fillRect(px, mid - bh, 1.5, bh * 2);
+      }
+    } else { ctx.fillStyle = '#5c6884'; ctx.font = '11px Pretendard, sans-serif'; ctx.fillText('분석 중…', vx0 + 8, mid + 4); }
+    // 페이드 램프
+    ctx.strokeStyle = 'rgba(217,182,92,.8)'; ctx.lineWidth = 1;
+    if (a.fadeIn) { ctx.beginPath(); ctx.moveTo(x0, y + h - 1); ctx.lineTo(x0 + a.fadeIn * pxf, y + 1); ctx.stroke(); }
+    if (a.fadeOut) { ctx.beginPath(); ctx.moveTo(x1 - a.fadeOut * pxf, y + 1); ctx.lineTo(x1, y + h - 1); ctx.stroke(); }
+    // 비트 마커 (작은 눈금)
+    if (src && src.beats && pxf >= 0.6) { ctx.fillStyle = 'rgba(217,182,92,.75)'; for (const b of src.beats) { const bf = Math.round(b * FPS); if (bf < a.in || bf >= a.out) continue; const x = x0 + (bf - a.in) * pxf; if (x < vx0 || x > vx1) continue; ctx.fillRect(x, y, 1, 4); } }
+    // 영상 끝 너머는 흐리게
+    if (tot && x1 > xOf(tot)) { ctx.fillStyle = 'rgba(12,17,28,.6)'; ctx.fillRect(xOf(tot), y, x1 - xOf(tot), h); }
+    ctx.fillStyle = 'rgba(8,14,30,.7)'; ctx.fillRect(vx0, y, Math.min(160, vx1 - vx0), 13);
+    ctx.fillStyle = selected ? GOLD : '#cfe6f3'; ctx.font = '600 10px Pretendard, sans-serif'; ctx.textBaseline = 'middle';
+    ctx.fillText('♪ ' + m.name + (vol !== 1 ? ' · ' + Math.round(vol * 100) + '%' : ''), vx0 + 5, y + 7, Math.min(150, vx1 - vx0 - 10));
+    ctx.restore();
+    rr(ctx, x0 + 0.5, y + 0.5, w - 1, h - 1, 4); ctx.strokeStyle = selected ? GOLD : '#3f6f8a'; ctx.lineWidth = selected ? 2 : 1; ctx.stroke();
+  }
+
+  /* A2 비트 마커 → 타임라인 프레임 목록 (스냅 후보) */
+  function beatFrames() {
+    const out = [];
+    for (const a of P.data.A2) { const src = M.get(a.media); if (!src || !src.beats) continue; for (const b of src.beats) { const bf = Math.round(b * FPS); if (bf >= a.in && bf < a.out) out.push(a.at + bf - a.in); } }
+    return out;
+  }
+
   function drawAudio(ctx, a, c, x0, x1, y, h, selected) {
     const m = P.media(c.media), src = M.get(c.media);
     const vx0 = Math.max(x0, HEAD), vx1 = Math.min(x1, TW); if (vx1 - vx0 < 1) return;
@@ -253,14 +319,20 @@
       const c = drag.clip, gw = c.dur * pxf; ctx.globalAlpha = .35; ctx.fillStyle = '#6f8fd0'; rr(ctx, drag.x - drag.grab, LY.V.y + 4, Math.max(8, gw), LY.V.h - 8, 5); ctx.fill(); ctx.globalAlpha = 1;
     }
     // 호버 트림 손잡이
-    const hv = (drag && (drag.type === 'trim' || drag.type === 'atrim' || drag.type === 'strim')) ? { kind: drag.type === 'trim' ? 'V' : drag.type === 'atrim' ? 'A1' : 'S', clip: drag.clip, s: drag.s, edge: drag.side } : hover;
-    if (hv && hv.edge && (hv.kind === 'V' || hv.kind === 'A1' || hv.kind === 'S')) {
+    const hv = (drag && /^(trim|atrim|strim|ptrim|mtrim)$/.test(drag.type)) ? { kind: { trim: 'V', atrim: 'A1', strim: 'S', ptrim: 'P', mtrim: 'A2' }[drag.type], clip: drag.clip, s: drag.s, pt: drag.pt, a2: drag.a2, edge: drag.side } : hover;
+    if (hv && hv.edge && /^(V|A1|S|P|A2)$/.test(hv.kind)) {
       const L = LY[hv.kind]; let x0, x1;
-      if (hv.kind === 'V') { x0 = xOf(hv.clip.at); x1 = xOf(hv.clip.at + hv.clip.dur); } else if (hv.kind === 'S') { x0 = xOf(hv.s.at); x1 = xOf(hv.s.at + hv.s.dur); } else { const a = P.audioOf(hv.clip.id); if (!a) x0 = x1 = -99; else { x0 = xOf(a.at); x1 = xOf(a.at + a.dur); } }
+      if (hv.kind === 'V') { x0 = xOf(hv.clip.at); x1 = xOf(hv.clip.at + hv.clip.dur); }
+      else if (hv.kind === 'S') { x0 = xOf(hv.s.at); x1 = xOf(hv.s.at + hv.s.dur); }
+      else if (hv.kind === 'P') { x0 = xOf(hv.pt.at); x1 = xOf(hv.pt.at + hv.pt.dur); }
+      else if (hv.kind === 'A2') { x0 = xOf(hv.a2.at); x1 = xOf(hv.a2.at + hv.a2.out - hv.a2.in); }
+      else { const a = P.audioOf(hv.clip.id); if (!a) x0 = x1 = -99; else { x0 = xOf(a.at); x1 = xOf(a.at + a.dur); } }
       const x = hv.edge === 'in' ? x0 : x1 - 6;
       ctx.fillStyle = GOLD; rr(ctx, x, L.y + 4, 6, L.h - 8, 2); ctx.fill();
       ctx.fillStyle = '#1a1408'; ctx.fillRect(x + 2.5, L.y + L.h / 2 - 6, 1, 12);
     }
+    // 부품 목록에서 끌어오는 중: P 레인 삽입 위치
+    if (partDrag && partDrag.overTL) { const x = Math.round(xOf(partDrag.f)) + .5; ctx.fillStyle = 'rgba(217,182,92,.35)'; rr(ctx, x, LY.P.y + 4, Math.max(8, partDrag.dur * pxf), LY.P.h - 8, 4); ctx.fill(); ctx.fillStyle = GOLD; ctx.fillRect(x - 1, LY.P.y, 3, LY.P.h); }
     // 스냅 표시
     if (drag && drag.snapX != null) { ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(Math.round(drag.snapX) + .5, RULER); ctx.lineTo(Math.round(drag.snapX) + .5, TH); ctx.stroke(); ctx.setLineDash([]); }
     // 플레이헤드
@@ -294,6 +366,8 @@
     const lane = laneAt(y);
     if (lane === 'V') for (const c of P.data.V) { const x0 = xOf(c.at), x1 = xOf(c.at + c.dur); if (x >= x0 && x < x1) { const ez = Math.min(9, (x1 - x0) / 3); return { kind: 'V', clip: c, edge: x - x0 < ez ? 'in' : x1 - x <= ez ? 'out' : null }; } }
     if (lane === 'S') for (const sc2 of P.data.S) { const x0 = xOf(sc2.at), x1 = xOf(sc2.at + sc2.dur); if (x >= x0 && x < x1) { const ez = Math.min(9, (x1 - x0) / 3); return { kind: 'S', s: sc2, edge: x - x0 < ez ? 'in' : x1 - x <= ez ? 'out' : null }; } }
+    if (lane === 'P') { const arr = P.data.P; for (let i = arr.length - 1; i >= 0; i--) { const pt = arr[i], x0 = xOf(pt.at), x1 = xOf(pt.at + pt.dur); if (x >= x0 && x < x1) { const ez = Math.min(9, (x1 - x0) / 3); return { kind: 'P', pt, edge: x - x0 < ez ? 'in' : x1 - x <= ez ? 'out' : null }; } } }
+    if (lane === 'A2') { const arr = P.data.A2; for (let i = arr.length - 1; i >= 0; i--) { const a = arr[i], x0 = xOf(a.at), x1 = xOf(a.at + a.out - a.in); if (x >= x0 && x < x1) { const ez = Math.min(9, (x1 - x0) / 3); return { kind: 'A2', a2: a, edge: x - x0 < ez ? 'in' : x1 - x <= ez ? 'out' : null }; } } }
     if (lane === 'A1') for (const a of P.data.A1) { const x0 = xOf(a.at), x1 = xOf(a.at + a.dur); if (x >= x0 && x < x1) { const ez = Math.min(9, (x1 - x0) / 3); return { kind: 'A1', clip: P.clip(a.clip), a, edge: x - x0 < ez ? 'in' : x1 - x <= ez ? 'out' : null }; } }
     return { kind: 'lane', lane };
   }
@@ -302,7 +376,7 @@
   /* 스냅: 타임라인 프레임 f 를 후보(플레이헤드·편집점)에 7px 안이면 붙인다 */
   function snapFrame(f, extra) {
     if (!snap) return { f, x: null };
-    const cands = [ph].concat(P.edges()).concat(extra || []);
+    const cands = [ph].concat(P.edges()).concat(extra || []).concat(beatSnap ? beatFrames() : []);
     let best = f, bd = 7 / pxf, sx = null;
     for (const c of cands) { const d = Math.abs(c - f); if (d < bd) { bd = d; best = c; sx = xOf(c); } }
     return { f: best, x: sx };
@@ -314,14 +388,26 @@
     const { x, y } = pos(e); if (x < HEAD) return;
     stop();
     const h = hitTest(x, y);
-    if (h.kind === 'ruler' || h.kind === 'lane') { if (h.kind === 'lane') { select(null); selectS(null); } drag = { type: 'scrub' }; setPH(frameOf(x), { noScroll: true }); return; }
+    if (h.kind === 'ruler' || h.kind === 'lane') { if (h.kind === 'lane') { select(null); selectS(null); selectP(null); selectA2(null); } drag = { type: 'scrub' }; setPH(frameOf(x), { noScroll: true }); return; }
+    if (h.kind === 'P') {
+      selectP(h.pt.id); P.commit();
+      if (h.edge) drag = { type: 'ptrim', pt: h.pt, side: h.edge, x0: x, orig: { at: h.pt.at, dur: h.pt.dur } };
+      else drag = { type: 'pmove', pt: h.pt, x0: x, orig: { at: h.pt.at } };
+      return;
+    }
+    if (h.kind === 'A2') {
+      selectA2(h.a2.id); P.commit();
+      if (h.edge) drag = { type: 'mtrim', a2: h.a2, side: h.edge, x0: x, orig: { at: h.a2.at, in: h.a2.in, out: h.a2.out } };
+      else drag = { type: 'mmove', a2: h.a2, x0: x, orig: { at: h.a2.at } };
+      return;
+    }
     if (h.kind === 'S') {
       selectS(h.s.id); P.commit();
       if (h.edge) drag = { type: 'strim', s: h.s, side: h.edge, x0: x, orig: { at: h.s.at, dur: h.s.dur } };
       else drag = { type: 'smove', s: h.s, x0: x, orig: { at: h.s.at } };
       return;
     }
-    select(h.clip.id); selectS(null);
+    select(h.clip.id); selectS(null); selectP(null); selectA2(null);
     if (h.edge) {
       const a = h.kind === 'A1' ? h.a : null;
       const audioOnly = h.kind === 'A1' && (e.altKey || !a.linked) && h.clip.speed === 'normal' && !h.clip.freeze;
@@ -337,15 +423,31 @@
     const { x, y } = pos(e);
     if (!drag) {
       const h = hitTest(x, y);
-      const prevEdge = hover && hover.edge, prevClip = hover ? (hover.kind === 'S' ? hover.s.id : hover.clip.id) : undefined;
-      hover = (h.kind === 'V' || h.kind === 'A1' || h.kind === 'S') ? h : null;
+      const hid = hv => hv ? (hv.kind === 'S' ? hv.s.id : hv.kind === 'P' ? hv.pt.id : hv.kind === 'A2' ? hv.a2.id : hv.clip.id) : undefined;
+      const hname = hv => hv.kind === 'S' ? SB.plain(hv.s.text) : hv.kind === 'P' ? PT.label(hv.pt) : hv.kind === 'A2' ? '♪ ' + P.media(hv.a2.media).name : P.media(hv.clip.media).name;
+      const prevEdge = hover && hover.edge, prevClip = hid(hover);
+      hover = /^(V|A1|S|P|A2)$/.test(h.kind) ? h : null;
       tl.style.cursor = hover && hover.edge ? 'ew-resize' : hover ? 'grab' : (x >= HEAD ? 'text' : 'default');
-      if (x >= HEAD && y >= 0 && y <= TH) $('hover').textContent = tc(Math.max(0, frameOf(x))) + (hover ? ' · ' + (hover.kind === 'S' ? SB.plain(hover.s.text) : P.media(hover.clip.media).name) : ''); else $('hover').textContent = '';
-      const curId = hover ? (hover.kind === 'S' ? hover.s.id : hover.clip.id) : undefined;
+      if (x >= HEAD && y >= 0 && y <= TH) $('hover').textContent = tc(Math.max(0, frameOf(x))) + (hover ? ' · ' + hname(hover) : ''); else $('hover').textContent = '';
+      const curId = hid(hover);
       if ((hover && hover.edge) !== prevEdge || curId !== prevClip) draw();
       return;
     }
     if (drag.type === 'scrub') { setPH(frameOf(x), { noScroll: true }); return; }
+    if (drag.type === 'pmove' || drag.type === 'ptrim') {
+      const d = drag.pt, dtl = (x - drag.x0) / pxf;
+      if (drag.type === 'pmove') { const sn = snapFrame(drag.orig.at + dtl); drag.snapX = sn.x; P.updateP(d.id, { at: Math.max(0, sn.f) }, { commit: false }); }
+      else if (drag.side === 'in') { const sn = snapFrame(drag.orig.at + dtl); drag.snapX = sn.x; const at = clamp(sn.f, 0, drag.orig.at + drag.orig.dur - 10); P.updateP(d.id, { at, dur: drag.orig.at + drag.orig.dur - at }, { commit: false }); }
+      else { const sn = snapFrame(drag.orig.at + drag.orig.dur + dtl); drag.snapX = sn.x; P.updateP(d.id, { dur: Math.max(10, sn.f - drag.orig.at) }, { commit: false }); }
+      renderPreview(); return;
+    }
+    if (drag.type === 'mmove' || drag.type === 'mtrim') {
+      const d = drag.a2, dtl = (x - drag.x0) / pxf;
+      if (drag.type === 'mmove') { const sn = snapFrame(drag.orig.at + dtl); drag.snapX = sn.x; P.updateA2(d.id, { at: Math.max(0, sn.f) }, { commit: false }); }
+      else if (drag.side === 'in') { const sn = snapFrame(drag.orig.at + dtl); drag.snapX = sn.x; P.updateA2(d.id, { at: drag.orig.at, in: drag.orig.in, out: drag.orig.out }, { commit: false }); P.trimA2(d.id, 'in', sn.f, { commit: false }); }
+      else { const sn = snapFrame(drag.orig.at + (drag.orig.out - drag.orig.in) + dtl); drag.snapX = sn.x; P.updateA2(d.id, { out: drag.orig.out }, { commit: false }); P.trimA2(d.id, 'out', sn.f, { commit: false }); }
+      return;
+    }
     if (drag.type === 'smove' || drag.type === 'strim') {
       const d = drag.s, dtl = (x - drag.x0) / pxf;
       if (drag.type === 'smove') { const sn = snapFrame(drag.orig.at + dtl); drag.snapX = sn.x; P.updateS(d.id, { at: Math.max(0, sn.f) }, { commit: false }); }
@@ -394,7 +496,7 @@
     if (!drag) return;
     const d = drag; drag = null; tl.style.cursor = 'default';
     if (d.type === 'move' && d.moved) P.move(d.clip.id, d.insert);
-    if (d.type === 'trim' || d.type === 'atrim' || d.type === 'strim' || d.type === 'smove') { dirty = true; setPH(ph); if (d.type === 'strim' || d.type === 'smove') refreshSubPanel(); }
+    if (/^(trim|atrim|strim|smove|ptrim|pmove|mtrim|mmove)$/.test(d.type)) { dirty = true; setPH(ph); if (d.type === 'strim' || d.type === 'smove') refreshSubPanel(); if (d.type === 'ptrim' || d.type === 'pmove') refreshPartPanel(); if (d.type === 'mtrim' || d.type === 'mmove') refreshMusicPanel(); }
     draw();
   });
   tl.addEventListener('mouseleave', () => { if (!drag) { hover = null; $('hover').textContent = ''; draw(); } });
@@ -403,14 +505,22 @@
     if (e.ctrlKey || e.metaKey) setZoom(pxf * (e.deltaY < 0 ? 1.18 : 1 / 1.18), x);
     else { scrollF += (e.deltaX || e.deltaY) / pxf * 0.8; clampScroll(); dirty = true; draw(); }
   }, { passive: false });
-  tl.addEventListener('dblclick', e => { const { x, y } = pos(e); const h = hitTest(x, y); if (h.kind === 'V' || h.kind === 'A1') { setPH(h.clip.at); } if (h.kind === 'S') { setPH(h.s.at); $('subEditText').focus(); } });
+  tl.addEventListener('dblclick', e => { const { x, y } = pos(e); const h = hitTest(x, y); if (h.kind === 'V' || h.kind === 'A1') { setPH(h.clip.at); } if (h.kind === 'S') { setPH(h.s.at); $('subEditText').focus(); } if (h.kind === 'P') { setPH(h.pt.at + Math.min(h.pt.dur - 1, Math.round(PT.meta(h.pt.part).thumbT * FPS))); const f = $('partFields').querySelector('input'); if (f) f.focus(); } if (h.kind === 'A2') setPH(h.a2.at); });
 
   /* ---------- 선택·편집 동작 ---------- */
   function select(id) { if (sel === id) return; sel = id; dirty = true; draw(); refreshPanel(); }
   function selectS(id) { if (selS === id) return; selS = id; dirty = true; draw(); refreshSubPanel(); }
+  function selectP(id) { if (selP === id) return; selP = id; dirty = true; draw(); refreshPartPanel(); }
+  function selectA2(id) { if (selA2 === id) return; selA2 = id; dirty = true; draw(); refreshMusicPanel(); }
   function selClip() { return sel ? P.clip(sel) : null; }
   function doSplit() { stop(); const c2 = P.split(ph); if (c2) select(c2.id); else toast('여기선 나눌 게 없어요 — 플레이헤드를 클립 안쪽으로'); }
-  function doDelete() { stop(); if (selS) { P.removeS(selS); selectS(null); setPH(ph); return; } const c = selClip() || P.clipAt(ph); if (!c) return; P.removeClip(c.id); select(null); setPH(ph); }
+  function doDelete() {
+    stop();
+    if (selS) { P.removeS(selS); selectS(null); setPH(ph); return; }
+    if (selP) { P.removeP(selP); selectP(null); setPH(ph); return; }
+    if (selA2) { P.removeA2(selA2); selectA2(null); setPH(ph); return; }
+    const c = selClip() || P.clipAt(ph); if (!c) return; P.removeClip(c.id); select(null); setPH(ph);
+  }
   function doFreeze() { stop(); const fz = P.freeze(ph); if (fz) { select(fz.id); toast('프리즈 프레임 ' + secStr(fz.dur) + ' — 오른쪽 패널에서 길이 조절'); } else toast('영상 클립 위에 플레이헤드를 두고 F'); }
   function jumpEdge(dir) { const e = P.edges(); if (dir > 0) { const n = e.find(v => v > ph); setPH(n == null ? P.total() - 1 : Math.min(n, P.total() - 1)); } else { const prev = e.filter(v => v < ph); setPH(prev.length ? prev[prev.length - 1] : 0); } }
 
@@ -437,7 +547,7 @@
       case '=': case '+': setZoom(pxf * 1.3); break;
       case '-': case '_': setZoom(pxf / 1.3); break;
       case '\\': zoomFit(); break;
-      case 'Escape': select(null); selectS(null); break;
+      case 'Escape': select(null); selectS(null); selectP(null); selectA2(null); break;
     }
   });
   // 버튼·슬라이더에 포커스가 남으면 Space·화살표가 거기로 가므로 놓는 즉시 풀어 준다
@@ -596,27 +706,157 @@
     });
   }
 
+  /* ---------- 4단계 패널: 부품 P ---------- */
+  const partThumbs = new Map();              // partId → canvas 요소 (목록)
+  function buildPartGrid() {
+    const grid = $('partGrid'); grid.innerHTML = ''; partThumbs.clear();
+    if (!PT || !PT.ready()) { grid.innerHTML = '<div class="note">부품(kmake/parts)을 불러오지 못했어요 — 네트워크를 확인해 주세요.</div>'; return; }
+    let cat = null;
+    PT.list().forEach(({ def, meta }) => {
+      if (meta.cat !== cat) { cat = meta.cat; const h = document.createElement('div'); h.className = 'cat'; h.textContent = (PT.CATS.find(c => c.id === cat) || {}).name || cat; grid.appendChild(h); }
+      const el = document.createElement('div'); el.className = 'pc'; el.dataset.id = def.id; el.title = def.name + ' · ' + def.dur + '초 — 클릭: 플레이헤드에 놓기 / 끌기: P 레인에 놓기';
+      const cv = document.createElement('canvas'); cv.width = 240; cv.height = 135; el.appendChild(cv); partThumbs.set(def.id, cv);
+      const b = document.createElement('b'); b.textContent = def.name; el.appendChild(b);
+      const sm = document.createElement('small'); sm.textContent = def.dur + '초' + (meta.behind ? ' · 인물 뒤' : ''); el.appendChild(sm);
+      el.onmousedown = e => { if (e.button !== 0) return; e.preventDefault(); partDrag = { part: def.id, dur: P.partDefault(def.id).dur, x: e.clientX, y: e.clientY, moved: false, overTL: false, f: 0 }; };
+      grid.appendChild(el);
+    });
+    paintPartThumbs();
+  }
+  function paintPartThumbs() {
+    if (!PT || !PT.ready()) return;
+    partThumbs.forEach((cv, id) => { const th = PT.thumb(id, null, P.data.theme, 240, 135); if (th) { const c = cv.getContext('2d'); c.clearRect(0, 0, 240, 135); c.drawImage(th, 0, 0); } });
+  }
+  function placePart(partId, at) {
+    stop();
+    const pt = P.addP({ part: partId, at: Math.max(0, Math.round(at)) });
+    if (!pt) return;
+    selectP(pt.id); select(null); selectS(null); selectA2(null);
+    setPH(pt.at + Math.min(pt.dur - 1, Math.round(PT.meta(partId).thumbT * FPS)));
+    if (PT.behind(pt) && SG) SG.load().then(ok => { if (!ok) toast('인물 컷아웃 모델을 못 불러와 부품이 그냥 앞에 그려져요', 4000); });
+    toast(PT.def(partId).name + ' 을 놓았어요 — 오른쪽에서 문구를 바꾸세요', 1800);
+  }
+  window.addEventListener('mousemove', e => {
+    if (!partDrag) return;
+    if (!partDrag.moved && Math.hypot(e.clientX - partDrag.x, e.clientY - partDrag.y) < 6) return;
+    partDrag.moved = true;
+    const gh = $('partGhost'); gh.classList.remove('hidden'); gh.textContent = '✦ ' + PT.def(partDrag.part).name; gh.style.left = e.clientX + 'px'; gh.style.top = e.clientY + 'px';
+    const r = tl.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+    const over = x >= HEAD && x <= r.width && y >= 0 && y <= r.height;
+    partDrag.overTL = over;
+    if (over) { const sn = snapFrame(frameOf(x)); partDrag.f = Math.max(0, sn.f); }
+    tl.style.cursor = over ? 'copy' : 'default';
+    draw();
+  });
+  window.addEventListener('mouseup', () => {
+    if (!partDrag) return;
+    const d = partDrag; partDrag = null; $('partGhost').classList.add('hidden'); tl.style.cursor = 'default';
+    if (!d.moved) placePart(d.part, ph);
+    else if (d.overTL) placePart(d.part, d.f);
+    else draw();
+  });
+  function selPart() { return selP ? P.part(selP) : null; }
+  let partFieldStart = null;
+  function buildPartFields(pt) {
+    const box = $('partFields'); box.innerHTML = '';
+    const def = PT.def(pt.part); if (!def) return;
+    def.fields.forEach(f => {
+      const row = document.createElement('div'); row.className = 'row';
+      const lb = document.createElement('label'); lb.textContent = f.label; row.appendChild(lb);
+      if (f.opts) {
+        const seg = document.createElement('div'); seg.className = 'seg' + (f.opts.length >= 3 ? ' c' + Math.min(f.opts.length, 4) : '');
+        f.opts.forEach(o => { const b = document.createElement('button'); b.textContent = OPT_KO[o] || o; b.dataset.k = o; b.classList.toggle('on', pt.p[f.k] === o); b.onclick = () => { const cur = selPart(); if (cur) P.updateP(cur.id, { p: { [f.k]: o } }); }; seg.appendChild(b); });
+        row.appendChild(seg);
+      } else {
+        const inp = document.createElement('input'); inp.type = 'text'; inp.value = pt.p[f.k] == null ? '' : pt.p[f.k]; inp.dataset.k = f.k;
+        inp.oninput = e => { const cur = selPart(); if (!cur) return; if (partFieldStart == null) partFieldStart = cur.p[f.k]; cur.p[f.k] = e.target.value; dirty = true; renderPreview(); draw(); };
+        inp.onchange = e => { const cur = selPart(); if (!cur) return; const v = e.target.value; if (partFieldStart != null) cur.p[f.k] = partFieldStart; partFieldStart = null; P.updateP(cur.id, { p: { [f.k]: v } }); };
+        inp.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } };
+        row.appendChild(inp);
+      }
+      box.appendChild(row);
+    });
+  }
+  const OPT_KO = { none: '없음', bottom: '아래', left: '왼쪽', center: '가운데', right: '오른쪽', navy: '네이비', black: '검정', white: '흰색', zoom: '줌', fade: '페이드', solid: '채움', outline: '윤곽', accent: '금색', top: '위', middle: '중간', slow: '느리게', normal: '보통', warm: '따뜻', gold: '금', cool: '차가움', ltr: '→', rtl: '←', topleft: '왼쪽 위', topright: '오른쪽 위', bottomright: '오른쪽 아래' };
+  let partPanelFor = null;
+  function refreshPartPanel() {
+    const pt = selPart();
+    $('partEdit').classList.toggle('hidden', !pt);
+    Array.from($('partGrid').querySelectorAll('.pc')).forEach(el => el.classList.toggle('on', !!pt && el.dataset.id === pt.part));
+    if (!pt) { partPanelFor = null; return; }
+    const def = PT.def(pt.part), m = PT.meta(pt.part);
+    if (partPanelFor !== pt.id) { buildPartFields(pt); partPanelFor = pt.id; }
+    else { // 값만 갱신 (입력 중인 칸은 건드리지 않음)
+      $('partFields').querySelectorAll('input[type=text]').forEach(inp => { if (document.activeElement !== inp) inp.value = pt.p[inp.dataset.k] == null ? '' : pt.p[inp.dataset.k]; });
+      $('partFields').querySelectorAll('.seg').forEach(seg => { const f = def.fields.find(x => x.opts && x.opts.includes(seg.firstChild.dataset.k)); Array.from(seg.children).forEach(b => b.classList.toggle('on', f && pt.p[f.k] === b.dataset.k)); });
+    }
+    $('partEditName').textContent = def ? def.name : pt.part;
+    if (document.activeElement !== $('partDur')) $('partDur').value = (pt.dur / FPS).toFixed(1);
+    $('partHoldNote').textContent = def ? (m.hold ? (pt.dur / FPS > def.dur + 0.05 ? '가운데가 ' + ((pt.dur / FPS) - def.dur).toFixed(1) + '초 늘어나요' : pt.dur / FPS < def.dur - 0.05 ? '기본 ' + def.dur + '초보다 빨리 돌아요' : '기본 ' + def.dur + '초') : '전체가 비례로 늘고 줄어요') : '';
+    $('rowPartCut').classList.toggle('hidden', !m.behind);
+    $('tgPartCut').classList.toggle('on', PT.behind(pt));
+    $('partEditTime').textContent = tc(pt.at) + ' → ' + tc(pt.at + pt.dur);
+  }
+  $('partDur').onchange = e => { const pt = selPart(); if (pt) { stop(); P.updateP(pt.id, { dur: Math.round(clamp(+e.target.value, 0.5, 120) * FPS) }); } };
+  $('tgPartCut').onclick = () => { const pt = selPart(); if (!pt) return; const next = !PT.behind(pt); P.updateP(pt.id, { cut: next }); if (next && SG) SG.load(); };
+  $('btnPartDel').onclick = () => { if (selP) { stop(); P.removeP(selP); selectP(null); setPH(ph); } };
+  $('btnPartDup').onclick = () => { const pt = selPart(); if (!pt) return; stop(); const n = P.addP({ part: pt.part, at: pt.at + pt.dur, dur: pt.dur, p: Object.assign({}, pt.p), cut: pt.cut }); if (n) { selectP(n.id); setPH(n.at); } };
+
+  /* ---------- 4단계 패널: 음악 A2 ---------- */
+  function selMusic() { return selA2 ? P.a2(selA2) : null; }
+  const FADES = [[0, '없음'], [FPS, '1초'], [2 * FPS, '2초'], [3 * FPS, '3초']];
+  FADES.forEach(([f, l]) => segBtn($('fadeInSeg'), String(f), l, () => { const a = selMusic(); if (a) P.updateA2(a.id, { fadeIn: f }); }));
+  FADES.forEach(([f, l]) => segBtn($('fadeOutSeg'), String(f), l, () => { const a = selMusic(); if (a) P.updateA2(a.id, { fadeOut: f }); }));
+  let mVolStart = null;
+  $('mVol').oninput = e => { const a = selMusic(); if (!a) return; if (mVolStart == null) mVolStart = a.vol == null ? 1 : a.vol; a.vol = +e.target.value / 100; $('mVolV').textContent = e.target.value + '%'; dirty = true; draw(); };
+  $('mVol').onchange = e => { const a = selMusic(); if (!a) return; const v = +e.target.value / 100; a.vol = mVolStart == null ? 1 : mVolStart; mVolStart = null; P.updateA2(a.id, { vol: v }); };
+  $('btnMusicDel').onclick = () => { if (selA2) { stop(); P.removeA2(selA2); selectA2(null); setPH(ph); } };
+  $('btnMusicFit').onclick = () => { const a = selMusic(); if (!a) return; stop(); const tot = P.total(); if (!tot) return toast('영상이 없어요'); if (tot <= a.at) return toast('음악이 영상 끝보다 뒤에서 시작해요 — 앞으로 끌어 주세요'); const out = Math.min(P.media(a.media).dur, a.in + (tot - a.at)); P.updateA2(a.id, { out, fadeOut: Math.min(2 * FPS, out - a.in) }); toast('음악을 영상 끝에 맞췄어요 (페이드 아웃 2초)', 2000); };
+  $('btnMusicImport').onclick = () => $('fileIn').click();
+  $('tgDuck').onclick = () => P.setDucking({ on: !P.data.audio.ducking.on });
+  let duckStart = null;
+  $('duckDepth').oninput = e => { if (duckStart == null) duckStart = P.data.audio.ducking.depth; P.data.audio.ducking.depth = +e.target.value; $('duckDepthV').textContent = '-' + e.target.value + 'dB'; };
+  $('duckDepth').onchange = e => { const v = +e.target.value; P.data.audio.ducking.depth = duckStart == null ? 12 : duckStart; duckStart = null; P.setDucking({ depth: v }); };
+  $('tgBeat').onclick = () => { beatSnap = !beatSnap; $('tgBeat').classList.toggle('on', beatSnap); dirty = true; draw(); toast(beatSnap ? '박자 스냅 켬 — 클립 경계가 비트 마커에 붙어요' : '박자 스냅 끔', 1600); };
+  function refreshMusicPanel() {
+    const a = selMusic();
+    $('musicBody').classList.toggle('hidden', !a); $('musicNone').classList.toggle('hidden', !!a || P.data.A2.length > 0);
+    const D = P.data.audio.ducking; $('tgDuck').classList.toggle('on', !!D.on); $('rowDuck').classList.toggle('hidden', !D.on);
+    if (document.activeElement !== $('duckDepth')) { $('duckDepth').value = D.depth == null ? 12 : D.depth; $('duckDepthV').textContent = '-' + $('duckDepth').value + 'dB'; }
+    $('tgBeat').classList.toggle('on', beatSnap);
+    if (!a) return;
+    const m = P.media(a.media), src = M.get(a.media);
+    $('mName').textContent = m.name; $('mName').title = m.name;
+    $('mRange').textContent = tc(a.at) + ' → ' + tc(a.at + a.out - a.in) + ' · ' + secStr(a.out - a.in) + (src && src.beats ? ' · 비트 ' + src.beats.filter(b => { const f = Math.round(b * FPS); return f >= a.in && f < a.out; }).length + '개' : '');
+    if (document.activeElement !== $('mVol')) { $('mVol').value = Math.round((a.vol == null ? 1 : a.vol) * 100); $('mVolV').textContent = $('mVol').value + '%'; }
+    Array.from($('fadeInSeg').children).forEach(b => b.classList.toggle('on', +b.dataset.k === (a.fadeIn || 0)));
+    Array.from($('fadeOutSeg').children).forEach(b => b.classList.toggle('on', +b.dataset.k === (a.fadeOut || 0)));
+  }
+
   /* ---------- 우측 패널: 미디어 ---------- */
   function refreshBin() {
     const bin = $('bin'); bin.innerHTML = '';
     if (!P.data.media.length) { bin.innerHTML = '<div class="bin-empty">아직 없어요.<br>영상·사진을 끌어다 놓으면 타임라인 끝에 붙어요.</div>'; return; }
     P.data.media.forEach(m => {
       const src = M.get(m.id);
-      const el = document.createElement('div'); el.className = 'mi'; el.title = '클릭: 타임라인 끝에 추가';
+      const isAud = m.kind === 'audio';
+      const el = document.createElement('div'); el.className = 'mi' + (isAud ? ' audio' : ''); el.title = isAud ? '클릭: 플레이헤드에 음악 놓기' : '클릭: 타임라인 끝에 추가';
       const th = src && src.thumbs && src.thumbs[0];
-      if (th) { const cv = document.createElement('canvas'); cv.width = 128; cv.height = 72; cv.getContext('2d').drawImage(th, 0, 0, 128, 72); el.appendChild(cv); }
-      else { const ph2 = document.createElement('div'); ph2.className = 'ph'; ph2.textContent = m.kind === 'image' ? '사진' : '…'; el.appendChild(ph2); }
+      if (isAud && src && src.peaks) { const cv = document.createElement('canvas'); cv.width = 128; cv.height = 72; const c = cv.getContext('2d'); c.fillStyle = '#6fb7d9'; const n = src.peaks.length; for (let x = 0; x < 128; x += 2) { const v = Math.min(1, (src.peaks[Math.floor(x / 128 * n)] || 0) * 4), h2 = Math.max(1, v * 32); c.fillRect(x, 36 - h2, 1.5, h2 * 2); } el.appendChild(cv); }
+      else if (th) { const cv = document.createElement('canvas'); cv.width = 128; cv.height = 72; cv.getContext('2d').drawImage(th, 0, 0, 128, 72); el.appendChild(cv); }
+      else { const ph2 = document.createElement('div'); ph2.className = 'ph'; ph2.textContent = m.kind === 'image' ? '사진' : isAud ? '♪' : '…'; el.appendChild(ph2); }
       const nm = document.createElement('div'); nm.className = 'nm';
-      const used = P.data.V.filter(c => c.media === m.id).length;
+      const used = isAud ? P.data.A2.filter(a => a.media === m.id).length : P.data.V.filter(c => c.media === m.id).length;
       nm.innerHTML = '<b></b><span></span>';
       nm.querySelector('b').textContent = m.name;
-      nm.querySelector('span').textContent = (m.kind === 'image' ? m.w + '×' + m.h : Math.round(m.dur / m.fps) + '초 · ' + m.w + '×' + m.h + ' ' + m.fps + 'fps' + (m.audio ? '' : ' · 무음')) + (used ? ' · 사용 ' + used : '');
+      nm.querySelector('span').textContent = (m.kind === 'image' ? m.w + '×' + m.h : isAud ? '음악 · ' + Math.round(m.dur / m.fps) + '초' + (src && src.beats ? ' · 비트 ' + src.beats.length : '') : Math.round(m.dur / m.fps) + '초 · ' + m.w + '×' + m.h + ' ' + m.fps + 'fps' + (m.audio ? '' : ' · 무음')) + (used ? ' · 사용 ' + used : '');
       if (src && src.kind === 'video' && !src.analyzed) { const bar = document.createElement('div'); bar.className = 'bar'; bar.innerHTML = '<i></i>'; bar.querySelector('i').style.width = Math.round((binProg[m.id] || 0) * 100) + '%'; bar.dataset.id = m.id; nm.appendChild(bar); }
       el.appendChild(nm);
       const x = document.createElement('span'); x.className = 'x'; x.textContent = '✕'; x.title = '미디어 제거 (타임라인에서도 빠져요)';
-      x.onclick = ev => { ev.stopPropagation(); if (!confirm('"' + m.name + '" 을 지울까요? 타임라인의 클립도 함께 빠져요.')) return; stop(); P.removeMedia(m.id); M.remove(m.id); DB.delMedia(m.id); if (sel && !P.clip(sel)) select(null); setPH(ph); refreshBin(); };
+      x.onclick = ev => { ev.stopPropagation(); if (!confirm('"' + m.name + '" 을 지울까요? 타임라인의 클립도 함께 빠져요.')) return; stop(); P.removeMedia(m.id); M.remove(m.id); DB.delMedia(m.id); if (sel && !P.clip(sel)) select(null); if (selA2 && !P.a2(selA2)) selectA2(null); setPH(ph); refreshBin(); };
       el.appendChild(x);
-      el.onclick = () => { stop(); const c = P.addClip(m.id); select(c.id); setPH(c.at); toast(m.name + ' 을 끝에 붙였어요', 1500); };
+      if (isAud) el.onclick = () => { stop(); const a = P.addA2(m.id, ph); if (a) { selectA2(a.id); select(null); selectS(null); selectP(null); setPH(a.at); toast(m.name + ' 을 ' + tc(a.at) + ' 에 놓았어요', 1500); } };
+      else el.onclick = () => { stop(); const c = P.addClip(m.id); select(c.id); setPH(c.at); toast(m.name + ' 을 끝에 붙였어요', 1500); };
       bin.appendChild(el);
     });
   }
@@ -630,15 +870,15 @@
     }).catch(e => console.warn('analyze', e));
   }
   function refreshStatus() {
-    const n = P.data.media.filter(m => { const s = M.get(m.id); return s && s.kind === 'video' && !s.analyzed; }).length;
+    const n = P.data.media.filter(m => { const s = M.get(m.id); return s && (s.kind === 'video' || s.kind === 'audio') && !s.analyzed; }).length;
     status(n ? '썸네일·모션·파형 분석 중 ' + n + '개' : '');
   }
 
   /* ---------- 가져오기 ---------- */
   let importing = false; const importQueue = [];
   async function importFiles(files) {
-    files = files.filter(f => /^(video|image)\//.test(f.type) || /\.(mp4|mov|m4v|png|jpe?g|webp)$/i.test(f.name));
-    if (!files.length) return toast('mp4·mov 영상이나 jpg·png 사진만 넣을 수 있어요');
+    files = files.filter(f => /^(video|image|audio)\//.test(f.type) || /\.(mp4|mov|m4v|png|jpe?g|webp|mp3|wav|m4a|aac|ogg)$/i.test(f.name));
+    if (!files.length) return toast('mp4·mov 영상, jpg·png 사진, mp3·wav·m4a 음악만 넣을 수 있어요');
     if (importing) { importQueue.push(...files); toast('앞 파일 다음에 이어서 넣을게요 (' + importQueue.length + '개 대기)', 1500); return; }
     importing = true; stop();
     const first = !P.total();
@@ -649,6 +889,12 @@
         const meta = await M.open(f, null, s => status(s + ' — ' + f.name));
         P.addMedia(meta);
         DB.putMedia(meta.id, f, f.name).catch(e => console.warn('db', e));
+        if (meta.kind === 'audio') {
+          const a = P.addA2(meta.id, P.data.A2.length ? ph : 0);
+          refreshBin(); analyzeBg(meta.id); refreshStatus();
+          if (a) { selectA2(a.id); select(null); toast(f.name + ' → 음악 레인 ' + tc(a.at) + ' · 말하는 동안은 자동으로 낮아져요', 3000); }
+          continue;
+        }
         const c = P.addClip(meta.id);
         refreshBin(); analyzeBg(meta.id); refreshStatus();
         if (files.length === 1) { select(c.id); setPH(c.at); }
@@ -669,7 +915,14 @@
     if (sel && !P.clip(sel)) sel = null;
     refreshPanel(); refreshProject();
     scheduleSave(); if (!drag) refreshBin();
-    if (!drag) { refreshLookPanel(); refreshSubPanel(); if (selS && !P.subtitle(selS)) { selS = null; refreshSubPanel(); } if (!playing && (kind === 'look' || kind === 'S' || kind === 'change')) renderPreview(); }
+    if (!drag) {
+      refreshLookPanel(); refreshSubPanel(); refreshPartPanel(); refreshMusicPanel();
+      if (selS && !P.subtitle(selS)) { selS = null; refreshSubPanel(); }
+      if (selP && !P.part(selP)) { selP = null; refreshPartPanel(); }
+      if (selA2 && !P.a2(selA2)) { selA2 = null; refreshMusicPanel(); }
+      if (kind === 'look' || kind === 'load') paintPartThumbs();
+      if (!playing && (kind === 'look' || kind === 'S' || kind === 'P' || kind === 'change' || kind === 'load' || kind === 'undo' || kind === 'redo')) renderPreview();
+    }
     if (!drag) { const tot = P.total(); if (ph > Math.max(0, tot - 1)) ph = Math.max(0, tot - 1); }
     draw();
   });
@@ -694,11 +947,12 @@
     if (ok.length < wanted) toast('일부 원본을 다시 찾지 못해 빠졌어요');
   }
 
-  window.KMV_UI = { importFiles, setPH: f => setPH(f), get ph() { return ph; }, select, play, stop, zoomFit, get pxf() { return pxf; }, get scrollF() { return scrollF; } };
+  window.KMV_UI = { importFiles, setPH: f => setPH(f), get ph() { return ph; }, select, selectP, selectA2, placePart, play, stop, zoomFit, get pxf() { return pxf; }, get scrollF() { return scrollF; }, get selP() { return selP; }, get selA2() { return selA2; }, beatFrames };
 
   /* ---------- 시작 ---------- */
   resize();
-  refreshBin(); refreshPanel(); refreshProject(); refreshLookPanel(); refreshSubPanel();
+  refreshBin(); refreshPanel(); refreshProject(); refreshLookPanel(); refreshSubPanel(); buildPartGrid(); refreshPartPanel(); refreshMusicPanel();
+  document.fonts && document.fonts.ready.then(() => { paintPartThumbs(); if (!playing) renderPreview(); });
   LK.ready().then(() => { if (P.total()) renderPreview(); });
   $('zoom').value = Math.round(1000 * Math.log(pxf / MIN_PXF) / Math.log(MAX_PXF / MIN_PXF));
   restore().then(() => { zoomFit(); setPH(0); });
