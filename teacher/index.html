@@ -919,9 +919,9 @@ async function loadDashboard(user){
 }
 
 // =============================================
-// [베타] 게스트 진입 — 로그인 없이 대시보드 골격 표시
+// 게스트 미리보기 — /teacher/?guest=1 로만 진입 (개발·시연용).
 // 세션이 없으므로 RLS로 보호되는 데이터는 비어 있을 수 있음 (의도된 동작).
-// 게이트 복구 시: 초기화 블록의 else 분기를 원래대로 되돌리면 됨.
+// 2026-08-27 게이트 복구: 일반 방문자는 로그인 화면이 정문.
 // =============================================
 async function enterDashboardAsGuest(){
   currentTeacher = { user_id: null, id: null, name: '게스트' };
@@ -929,7 +929,10 @@ async function enterDashboardAsGuest(){
   document.getElementById('dashboard').classList.add('active');
   document.getElementById('nav-right').style.display = 'flex';
   const navName = document.getElementById('nav-name');
-  if(navName) navName.textContent = '게스트 선생님';
+  if(navName) navName.textContent = '게스트 미리보기';
+  // 세션이 없으니 「로그아웃」이 성립하지 않는다 → 「로그인」으로
+  const navBtn = document.querySelector('#nav-right .nav-btn');
+  if(navBtn){ navBtn.textContent = '로그인'; navBtn.onclick = function(){ location.href = '/teacher/'; }; }
   const welcome = document.getElementById('welcome-name');
   if(welcome) welcome.innerHTML = '<span class="accent">게스트</span> 선생님';
   // 데이터 로드 — 비거나 실패해도 화면 골격은 유지
@@ -2464,9 +2467,13 @@ function checkSession(){
   if(session?.user){
     await loadDashboard(session.user);
     startSessionTimer();
-  } else {
-    // [베타] 로그인 게이트 해제 — 세션이 없어도 바로 대시보드로 진입
+  } else if(new URLSearchParams(location.search).has('guest')){
+    // 게스트 미리보기 — /teacher/?guest=1 로만. 개발·시연용 골격 화면.
     await enterDashboardAsGuest();
+  } else {
+    // 로그인 게이트 복구 (2026-08-27 준호 보고: 로그인 없이 들어왔는데 「게스트 선생님·로그아웃」).
+    // 공개 정책상 교사 공간은 인증 필수 — 세션이 없으면 로그인 화면이 정문이다.
+    // [베타] 때 풀어 둔 게이트가 그대로 남아 방문자가 대시보드 골격에 들어오고 있었다.
   }
 
   // Enter 키 바인딩
