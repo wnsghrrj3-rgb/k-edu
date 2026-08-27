@@ -26,12 +26,21 @@ function scenario(name, steps, expect) {
   if (got === expect) pass++; else { fail++; console.log('  ✗', name, '\n      마지막', steps[steps.length - 1][0], '→', got, ' 기대', expect); }
 }
 scenario('① 홈→허브→차시', [['/', 1], ['/grade3/semester1/science/index.html', 1], ['/grade3/semester1/science/2단원/g3_sci_u2_l03.html', 1]], '/grade3/semester1/science/index.html');
-scenario('② 중간에 돌아가기 없는 페이지(아침활동)가 끼면 한 층 건너뛴다', [['/', 1], ['/grade1/semester1/math/index.html', 1], ['/grade1/semester1/math/g1_math_01.html', 1], ['/morning/index.html', 0], ['/kbattle/index.html', 1]], '/morning/index.html');
+scenario('② 아침활동을 거쳐 케이배틀로 — 최근 허브(아침활동)로 나간다', [['/', 1], ['/grade1/semester1/math/index.html', 1], ['/grade1/semester1/math/g1_math_01.html', 1], ['/morning/index.html', 1], ['/kbattle/index.html', 1]], '/morning/index.html');
 scenario('③ 교사 대시보드에서 케이파크로 들어갔다 나가면 학생 입구로 떨어진다', [['/teacher/index.html', 0], ['/kpark/index.html', 1]], '/teacher/index.html');
 scenario('④ 교사 도구 뒤 학생 허브(홈 안 거침)', [['/', 1], ['/?role=teacher', 1], ['/kedu/teacher/g3_math.html', 1], ['/classwork/index.html', 1], ['/grade3/semester1/math/index.html', 1]], '/classwork/index.html');
 scenario('⑤ 새 탭으로 차시 직접 열면 허브가 아니라 홈', [['/grade4/semester1/math/g4_math_05.html', 1]], '/grade4/semester1/math/index.html');
 scenario('⑥ 케이랩 도구', [['/', 1], ['/kedu/hub/klab.html', 1], ['/labs/scilab_states.html', 1]], '/kedu/hub/klab.html');
 scenario('⑦ 차시→옆 차시→옆 차시 뒤 나가기가 허브가 아니라 이전 차시', [['/', 1], ['/grade3/semester1/math/index.html', 1], ['/grade3/semester1/math/g3_m_01.html', 1], ['/grade3/semester1/math/g3_m_02.html', 1], ['/grade3/semester1/math/g3_m_03.html', 1]], '/grade3/semester1/math/index.html');
 scenario('⑧ 허브→차시→허브→다른 차시', [['/', 1], ['/grade3/semester1/math/index.html', 1], ['/grade3/semester1/math/g3_m_01.html', 1], ['/grade3/semester1/math/index.html', 1], ['/grade3/semester1/math/g3_m_02.html', 1]], '/grade3/semester1/math/index.html');
+/* v2 추가 장면 (2026-08-27) */
+scenario('⑨ 교사→학급과제→케이박스 활동', [['/?role=teacher', 1], ['/classwork/index.html', 1], ['/kedu/activities/g1m_u3_relay.html', 1]], '/kedu/activities/index.html');
+scenario('⑩ 학부모 열람 화면에서 나가기 — 자기 자신으로 돌지 않는다', [['/', 1], ['/parent/index.html', 1]], '/');
+scenario('⑪ 게이트 잠금 카드 — 직접 URL 로 연 차시', [['/grade5/semester1/science/1단원_지층과화석/g5_sci_u1_l01_열려라과학.html', 1]], '/grade5/semester1/science/index.html');
+scenario('⑫ 한 기기에서 교사 뒤 학생이 홈 거쳐 들어옴 — 교사 맥락이 남지 않는다', [['/?role=teacher', 1], ['/teacher/index.html', 1], ['/', 1], ['/kbattle/index.html', 1]], '/');
+scenario('⑬ 케이랩 도구를 새 탭으로 직접 열기', [['/labs/scilab_states.html', 1]], '/kedu/hub/klab.html');
+scenario('⑭ 영어 차시 → 영어 허브', [['/', 1], ['/english/index.html', 1], ['/english/g3/reading/g3_english_adv_17_주제찾기.html', 1]], '/english/index.html');
+scenario('⑮ 교사 도구에서 바로 활동으로(대시보드 발자국 없음)', [['/teacher/index.html', 0], ['/kple/host.html', 1]], '/teacher/index.html');
+scenario('⑯ 보드게임 폴더 — 안내판이 아니라 케이파크 정문으로', [['/kpark/board/bolt/index.html', 1]], '/kpark/index.html');
 console.log(`돌아가기 동선 시뮬 — ${pass} PASS / ${fail} FAIL`);
 process.exit(fail ? 1 : 0);

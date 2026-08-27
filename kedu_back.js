@@ -36,17 +36,131 @@
   var fromTeacher = false;
   try { fromTeacher = sessionStorage.getItem(KEY) === '1'; } catch (e) {}
 
-  /* 1.5) 발자국 트레일 — 같은 탭에서 들어온 길을 그대로 한 층씩 되짚어 나간다.
-     · 페이지 로드마다 현재 URL push (연속 중복 제외 · 되짚기 도착이면 제외)
-     · 나가기 = pop 후 이전 발자국으로 이동. 발자국이 없으면 홈(또는 선생님 도구). */
+  /* ============================================================
+     1.5) 돌아갈 곳 판정 v2 (2026-08-27 · 동선 점검 트랙)
+     v1 은 발자국(트레일)만 믿었다 → 발자국을 안 찍는 페이지가 끼면 한 층 건너뛰고,
+     새 탭이면 발자국이 없어 홈으로 떨어지고, 옆 차시로 넘어가면 형제 차시로 나갔다.
+     v2 우선순위:
+       ① 트레일에 남은 **구조상 조상 허브** 중 가장 최근 것 (형제·후손·무관 페이지는 후보 제외)
+       ② 없으면 **구조상 부모 허브** = 가장 가까운 상위 index.html (+ 예외표)
+       ③ 그것도 없으면(최상위 화면) 트레일에 남은 **가장 최근 허브** (교사 학급과제 → 학년허브 같은 가로 이동)
+       ④ 끝으로 **자격 홈**: 교사 → /teacher/, 학부모 → /parent/, 그 외 → /
+     ============================================================ */
+
+  /* 1.5-a) 허브 명부 — 실제 index.html 이 있는 디렉터리(71) + 자체 허브 페이지 */
+  var HUB_DIRS = [
+    '/admin/','/auth/','/board/','/classwork/','/draw/','/draw/coloring/','/draw/masterpiece/','/english/',
+    '/english/v3/','/english/v3/samples/','/gifted/','/gifted/math/','/grade1/semester1/korean/',
+    '/grade1/semester1/math/','/grade1/semester2/math/','/grade2/semester1/korean/','/grade2/semester1/math/',
+    '/grade3/semester1/korean/','/grade3/semester1/math/','/grade3/semester1/science/',
+    '/grade3/semester1/social/','/grade4/semester1/korean/','/grade4/semester1/math/',
+    '/grade4/semester1/science/','/grade4/semester1/social/','/grade5/semester1/korean/',
+    '/grade5/semester1/math/','/grade5/semester1/science/','/grade5/semester1/social/',
+    '/grade6/semester1/math/','/grade6/semester1/science/','/hub2/','/kbattle/','/kedu/activities/',
+    '/kedu/quiz/','/kedu/teacher/','/kedu/teacher/tools3/','/kmake/','/kmake/card/','/kmake/invite/',
+    '/kpark/','/kpark/board/','/kpark/board/bolt/','/kpark/board/four/','/kpark/board/kmarble/',
+    '/kpark/board/ladder/','/kpark/board/land/','/kpark/board/mafia/','/kpark/board/mooncode/',
+    '/kpark/board/rainbow/','/kpark/board/scale/','/kpark/board/tilemagic/','/kpark/board/travel/',
+    '/kpark/kmarble/','/kpark/marblerun/','/kpark/shooting/','/kpark/tangram/','/labs/draw/paint/','/live/',
+    '/maker-playground/','/maker-playground/report/','/maker/','/maker/card/','/maker/invite/','/morning/',
+    '/museum/','/parent/','/pick/','/privacy/','/teacher/','/terms/'
+  ];
+  /* index.html 이 아니면서 허브 노릇을 하는 페이지 = 그 아래 화면들의 목록 */
+  var HUB_PAGES = { '/kedu/hub/klab.html': '/labs/', '/kedu/hub/science.html': null };
+  /* 예외표 — 구조상 부모가 없거나(최상위 폴더) 실제 목록이 다른 곳인 화면 */
+  var HUB_EXCEPT = [
+    ['/labs/', '/kedu/hub/klab.html'],
+    ['/kpark/board/', '/kpark/index.html'],          /* 보드게임 폴더는 안내판만 남았다 — 케이파크 정문으로 */
+    ['/kedu/전시실.html', '/museum/index.html']
+  ];
+
+  function pathOnly(u) { var i = u.indexOf('?'); return i < 0 ? u : u.slice(0, i); }
+  function dirOf(p) { return p.slice(0, p.lastIndexOf('/') + 1); }
+  function isIndex(p) { return p === '/' || /\/index\.html$/.test(p); }
+
+  /* 구조상 부모 허브 — 없으면 null(=자격 홈이 맡는다) */
+  function hubOf(p) {
+    p = pathOnly(p);
+    for (var e = 0; e < HUB_EXCEPT.length; e++) {
+      var pre = HUB_EXCEPT[e][0];
+      if (pre.slice(-1) === '/' ? p.indexOf(pre) === 0 : p === pre) {
+        return HUB_EXCEPT[e][1] === p ? null : HUB_EXCEPT[e][1];
+      }
+    }
+    if (HUB_PAGES.hasOwnProperty(p)) return null;          /* 허브 자신은 자격 홈으로 */
+    var d = dirOf(p);
+    if (isIndex(p)) d = dirOf(d.slice(0, -1));             /* index 는 자기 폴더 위부터 */
+    while (d && d !== '/') {
+      for (var i = 0; i < HUB_DIRS.length; i++) if (HUB_DIRS[i] === d) return d + 'index.html';
+      d = dirOf(d.slice(0, -1));
+    }
+    return null;
+  }
+
+  /* 그 발자국이 「허브」인가 — index.html 이거나 명부에 있는 허브 페이지 */
+  function isHub(u) {
+    var p = pathOnly(u);
+    return isIndex(p) || HUB_PAGES.hasOwnProperty(p);
+  }
+  /* 그 허브가 현재 화면의 조상인가 (같은 폴더의 index 포함, 형제·후손은 제외) */
+  function isAncestorHub(u, hereP) {
+    if (!isHub(u)) return false;
+    var p = pathOnly(u);
+    if (p === pathOnly(hereP)) return false;
+    var cd = HUB_PAGES.hasOwnProperty(p) ? HUB_PAGES[p] : (p === '/' ? null : dirOf(p));
+    if (!cd) return false;
+    return dirOf(pathOnly(hereP)).indexOf(cd) === 0;
+  }
+
+  /* 1.5-b) 자격(역할) — RPC 없이 지금 경로·referrer·이 탭 기록만으로 */
+  var ROLEKEY = 'kedu_back_role_v1';
+  var TEACHER_AREA = /^\/(teacher|classwork|admin)\//;
+  var TEACHER_TOOL = /^\/kedu\/(teacher|quiz|activities)\//;
+  var PARENT_AREA  = /^\/parent\//;
+  function roleFromPath(p, q) {
+    if (PARENT_AREA.test(p)) return 'parent';
+    if (TEACHER_AREA.test(p) || TEACHER_TOOL.test(p)) return 'teacher';
+    if (/(\?|&)role=teacher(&|$)/.test(q || '')) return 'teacher';
+    if (/(\?|&)role=parent(&|$)/.test(q || '')) return 'parent';
+    return null;
+  }
+  var role = null;
+  try { role = sessionStorage.getItem(ROLEKEY) || null; } catch (e) {}
+  var roleNow = roleFromPath(location.pathname, location.search);
+  if (!roleNow) {                                          /* 앞 화면이 교사·학부모 자리였으면 그 맥락을 잇는다 */
+    try {
+      var rf = document.referrer || '';
+      if (rf && (rf === location.origin || rf.indexOf(location.origin + '/') === 0)) {
+        var ru = new URL(rf);
+        roleNow = roleFromPath(ru.pathname, ru.search);
+      }
+    } catch (e) {}
+  }
+  try {                                                    /* 홈을 거치면 자격 맥락을 홈이 말한 대로 다시 세운다
+                                                              (한 기기에서 교사 뒤 학생이 들어오면 교사 맥락이 남는 함정 방지) */
+    var rf2 = document.referrer || '';
+    if (rf2 && (rf2 === location.origin || rf2.indexOf(location.origin + '/') === 0)) {
+      var ru2 = new URL(rf2);
+      if (ru2.pathname === '/' || ru2.pathname === '/index.html') {
+        roleNow = roleFromPath(location.pathname, location.search) || roleFromPath(ru2.pathname, ru2.search);
+        role = roleNow;
+        try { if (role) sessionStorage.setItem(ROLEKEY, role); else sessionStorage.removeItem(ROLEKEY); } catch (e) {}
+      }
+    }
+  } catch (e) {}
+  if (roleNow) { role = roleNow; try { sessionStorage.setItem(ROLEKEY, role); } catch (e) {} }
+  if (!role) {                                             /* 교사 도구 캐시(케이박스)도 교사 표식으로 인정 */
+    try { if (localStorage.getItem('kedu_boxbar_teacher_v1')) role = 'teacher'; } catch (e) {}
+  }
+  if (role === 'teacher' && !fromTeacher) fromTeacher = true;
+  function roleHome() { return role === 'teacher' ? '/teacher/index.html' : (role === 'parent' ? '/parent/index.html' : '/'); }
+
+  /* 1.5-c) 발자국 — 판정 재료. 홈을 거치면 끊는다(옛 하강 위에 새 하강이 이어붙는 함정 방지) */
   var TRAIL = 'kedu_back_trail_v1', BACKFLAG = 'kedu_back_going_v1', CAP = 40;
   function readTrail() { try { var t = JSON.parse(sessionStorage.getItem(TRAIL)); return Array.isArray(t) ? t : []; } catch (e) { return []; } }
   function writeTrail(t) { try { sessionStorage.setItem(TRAIL, JSON.stringify(t.slice(-CAP))); } catch (e) {} }
   var here = location.pathname + location.search;
   var trail = readTrail();
-  /* 홈을 거쳐 왔다면 이전 하강 기록을 끊는다 — 홈은 발자국을 남기지 않으므로
-     끊지 않으면 구기록 위에 새 하강이 이어붙는 함정이 생긴다
-     (홈→메이커→홈→허브 순회 시 허브의 「나가기」가 메이커로 가는 오판, 2026-08-10 준호 실기기 보고) */
   try {
     var refH = document.referrer || '';
     if (refH && (refH === location.origin || refH.indexOf(location.origin + '/') === 0)) {
@@ -58,32 +172,34 @@
   try { arrivedByBack = sessionStorage.getItem(BACKFLAG) === '1'; sessionStorage.removeItem(BACKFLAG); } catch (e) {}
   if (!arrivedByBack && trail[trail.length - 1] !== here) { trail.push(here); writeTrail(trail); }
 
-  var prev = null;
-  for (var ti = trail.length - 2; ti >= 0; ti--) {          // 바로 아래 발자국(자기 자신 제외)
-    if (trail[ti] !== here) { prev = trail[ti]; break; }
+  /* 1.5-d) 판정 */
+  function resolveBack() {
+    var t = readTrail(), i;
+    for (i = t.length - 1; i >= 0; i--) if (isAncestorHub(t[i], here)) return t[i];   /* ① 조상 허브 */
+    var up = hubOf(here);
+    if (up) return up;                                                                /* ② 구조상 부모 */
+    for (i = t.length - 1; i >= 0; i--) {                                             /* ③ 최근 허브(가로 이동) */
+      if (isHub(t[i]) && pathOnly(t[i]) !== pathOnly(here)) return t[i];
+    }
+    var rh = roleHome();                                                              /* ④ 자격 홈 */
+    return pathOnly(rh) === pathOnly(here) ? '/' : rh;                                 /* 자기 자신으로 나가지 않는다 */
   }
+  var dest = resolveBack();
+  var atHome = pathOnly(dest) === '/' || pathOnly(dest) === '/index.html';
 
   function goBack() {
-    var t = readTrail();
-    while (t.length && t[t.length - 1] === here) t.pop();   // 현재 층 제거
-    var target = null;
-    while (t.length) {                                       // 혹시 남은 중복도 걷어냄
-      var cand = t[t.length - 1];
-      if (cand !== here) { target = cand; break; }
-      t.pop();
-    }
-    if (target) {
-      t.pop(); t.push(target); writeTrail(t);                // 트레일 = 도착지까지
-      try { sessionStorage.setItem(BACKFLAG, '1'); } catch (e) {}
-      location.href = target;
-    } else {
-      writeTrail([]);
-      location.href = fromTeacher ? '/?role=teacher' : '/';
-    }
+    var t = readTrail(), target = resolveBack();
+    var cut = -1;
+    for (var i = t.length - 1; i >= 0; i--) if (t[i] === target) { cut = i; break; }
+    if (cut >= 0) t = t.slice(0, cut + 1); else t = [target];
+    writeTrail(t);
+    try { sessionStorage.setItem(BACKFLAG, '1'); } catch (e) {}
+    location.href = target;
   }
 
-  var label = prev ? '← 나가기' : (fromTeacher ? '← 선생님 도구' : '🏠 케이에듀로 가기');
-  var href  = prev ? prev : (fromTeacher ? '/?role=teacher' : '/');
+  var label = atHome ? '🏠 케이에듀로 가기' : (pathOnly(dest) === '/teacher/index.html' ? '← 선생님 도구' : '← 나가기');
+  var href  = dest;
+  var prev  = atHome ? null : dest;   /* 아래 겹침·문구 규칙이 쓰는 「한 층 위가 있는가」 표시 */
 
   var script = document.currentScript ||
     (function () { var s = document.getElementsByTagName('script'); return s[s.length - 1]; })();
@@ -272,7 +388,7 @@
         var r = n.getBoundingClientRect();
         if (!r.width || r.top > 110) continue;                 /* 최상단 띠만 */
         var txt = (n.textContent || '').trim();
-        var looksExit = /목록|홈|나가기|뒤로|나오기|케이에듀/.test(txt);
+        var looksExit = /목록|홈|나가기|뒤로|나오기|케이에듀|케이파크/.test(txt);
         if (looksExit && sameDest(n)) { window.KEDU_BACK.suppressed = true; return; }
       }
     }

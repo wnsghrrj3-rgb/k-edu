@@ -195,7 +195,12 @@
   }
 
   function goHome() { location.href = '/'; }
-  function goBack() { if (history.length > 1) history.back(); else location.href = '/'; }
+  /* 잠금 카드의 「돌아가기」 — 직접 URL 진입이면 브라우저 뒤로가 없다.
+     그때는 공용 돌아가기(kedu_back v2)가 계산한 구조상 허브로 보낸다(2026-08-27 동선 점검). */
+  function goBack() {
+    if (window.KEDU_BACK && window.KEDU_BACK.go) { window.KEDU_BACK.go(); return; }
+    if (history.length > 1) history.back(); else location.href = '/';
+  }
 
   function lockCopy(r, tier, grade, t) {
     var rec = tier === 'class_rec';
