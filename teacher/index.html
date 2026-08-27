@@ -1102,12 +1102,17 @@ async function loadClassCode(){
         <div style="font-size:48px;margin-bottom:12px">🔐</div>
         <p>아직 학급코드가 없어요.<br>생성 버튼을 눌러 학급을 만들어 보세요!</p>
         <div class="form-group" style="max-width:360px;margin:20px auto 0;text-align:left">
-          <label class="form-label">학급 이름 (예: 1학년 2반)</label>
-          <input class="form-input" type="text" id="new-class-label" placeholder="1학년 2반">
-          <select class="form-input" id="new-class-grade" style="max-width:140px;margin-top:8px" title="우리 반 학년 — 학생 화면이 이 학년을 기준으로 열려요">
-            <option value="1">1학년</option><option value="2">2학년</option><option value="3">3학년</option>
-            <option value="4">4학년</option><option value="5">5학년</option><option value="6">6학년</option>
-          </select>
+          <label class="form-label">학년 · 반</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select class="form-input" id="new-class-grade" style="max-width:120px" title="우리 반 학년 — 학생 화면이 이 학년을 기준으로 열려요" onchange="syncClassLabel()">
+              <option value="1">1학년</option><option value="2">2학년</option><option value="3">3학년</option>
+              <option value="4">4학년</option><option value="5">5학년</option><option value="6">6학년</option>
+            </select>
+            <input class="form-input" type="number" id="new-class-ban" min="1" max="20" placeholder="반" style="max-width:90px" oninput="syncClassLabel()">
+            <span style="font-size:13px;color:#6b7a90">반</span>
+          </div>
+          <label class="form-label" style="margin-top:10px">학급 이름</label>
+          <input class="form-input" type="text" id="new-class-label" placeholder="위에서 학년·반을 고르면 자동으로 채워져요">
         </div>
         <div style="max-width:480px;margin:18px auto 0;text-align:left">
           <div class="form-label" style="margin-bottom:8px">학급 유형</div>
@@ -1164,6 +1169,19 @@ function updateCreateBtn(){
   btn.style.cursor = ready ? 'pointer' : 'not-allowed';
 }
 
+
+// 학년·반 → 학급 이름 자동 구성. 직접 고친 이름(자동 패턴이 아닌 값)은 덮지 않는다.
+function syncClassLabel(){
+  const lab = document.getElementById('new-class-label');
+  if(!lab) return;
+  const g = document.getElementById('new-class-grade')?.value || '1';
+  const b = document.getElementById('new-class-ban')?.value.trim();
+  const auto = /^\d학년( \d{1,2}반)?$/;
+  if(lab.value.trim() === '' || auto.test(lab.value.trim())){
+    lab.value = b ? (g + '학년 ' + b + '반') : (g + '학년');
+  }
+}
+
 async function createCode(){
   if(!teacherApproved()){
     showToast('🔑 교사 확인 후 학급을 만들 수 있어요. 위 배너에서 신청해 주세요.');
@@ -1177,6 +1195,7 @@ async function createCode(){
     return;
   }
 
+  syncClassLabel();
   const label = document.getElementById('new-class-label')?.value.trim() || '내 학급';
   const code = generateCode();
 
