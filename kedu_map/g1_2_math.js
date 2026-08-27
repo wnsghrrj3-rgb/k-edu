@@ -318,6 +318,123 @@ window.KEDU_MAP["g1_2_math"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 4,
+   "name": "덧셈과 뺄셈(2)",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g1_math_u4_l01",
+     "lessonId": "g1_2_math_u4_l01_v1",
+     "n": "1",
+     "title": "단원 도입 — 우유갑 친구들을 만나요",
+     "sub": null,
+     "url": "/grade1/semester2/math/4단원_덧셈과뺄셈2/g1_math_u4_l01_단원도입.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u4_l02",
+     "lessonId": "g1_2_math_u4_l02_v1",
+     "n": "2",
+     "title": "덧셈을 알아볼까요",
+     "sub": null,
+     "url": "/grade1/semester2/math/4단원_덧셈과뺄셈2/g1_math_u4_l02_덧셈을알아볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u4_l03",
+     "lessonId": "g1_2_math_u4_l03_v1",
+     "n": "3",
+     "title": "덧셈을 해 볼까요 (1) — 10을 만들어 더해요",
+     "sub": null,
+     "url": "/grade1/semester2/math/4단원_덧셈과뺄셈2/g1_math_u4_l03_덧셈을해볼까요_1.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u4_l04",
+     "lessonId": "g1_2_math_u4_l04_v1",
+     "n": "4",
+     "title": "덧셈을 해 볼까요 (2) — 어느 수를 가르기 할까요",
+     "sub": null,
+     "url": "/grade1/semester2/math/4단원_덧셈과뺄셈2/g1_math_u4_l04_덧셈을해볼까요_2.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u4_l05",
+     "lessonId": "g1_2_math_u4_l05_v1",
+     "n": "5",
+     "title": "여러 가지 덧셈을 해 볼까요",
+     "sub": null,
+     "url": "/grade1/semester2/math/4단원_덧셈과뺄셈2/g1_math_u4_l05_여러가지덧셈을해볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u4_l06",
+     "lessonId": "g1_2_math_u4_l06_v1",
+     "n": "6",
+     "title": "뺄셈을 알아볼까요",
+     "sub": null,
+     "url": "/grade1/semester2/math/4단원_덧셈과뺄셈2/g1_math_u4_l06_뺄셈을알아볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u4_l07",
+     "lessonId": "g1_2_math_u4_l07_v1",
+     "n": "7",
+     "title": "뺄셈을 해 볼까요 (1) — 낱개를 먼저 빼요",
+     "sub": null,
+     "url": "/grade1/semester2/math/4단원_덧셈과뺄셈2/g1_math_u4_l07_뺄셈을해볼까요_1.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u4_l08",
+     "lessonId": "g1_2_math_u4_l08_v1",
+     "n": "8",
+     "title": "뺄셈을 해 볼까요 (2) — 10개씩 묶음에서 빼요",
+     "sub": null,
+     "url": "/grade1/semester2/math/4단원_덧셈과뺄셈2/g1_math_u4_l08_뺄셈을해볼까요_2.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u4_l09",
+     "lessonId": "g1_2_math_u4_l09_v1",
+     "n": "9",
+     "title": "여러 가지 뺄셈을 해 볼까요",
+     "sub": null,
+     "url": "/grade1/semester2/math/4단원_덧셈과뺄셈2/g1_math_u4_l09_여러가지뺄셈을해볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u4_l10",
+     "lessonId": "g1_2_math_u4_l10_v1",
+     "n": "10",
+     "title": "수학이랑 확인해요 (단원 평가)",
+     "sub": null,
+     "url": "/grade1/semester2/math/4단원_덧셈과뺄셈2/g1_math_u4_l10_수학이랑확인해요_단원평가.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u4_l11",
+     "lessonId": "g1_2_math_u4_l11_v1",
+     "n": "11",
+     "title": "수학이랑 만들어요 — 덧셈과 뺄셈 로봇 길",
+     "sub": null,
+     "url": "/grade1/semester2/math/4단원_덧셈과뺄셈2/g1_math_u4_l11_수학이랑만들어요.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };
