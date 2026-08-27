@@ -153,15 +153,19 @@
       var ru2 = new URL(rf2);
       if (ru2.pathname === '/' || ru2.pathname === '/index.html') {
         roleNow = roleFromPath(location.pathname, location.search) || roleFromPath(ru2.pathname, ru2.search);
-        role = roleNow;
-        try { if (role) sessionStorage.setItem(ROLEKEY, role); else sessionStorage.removeItem(ROLEKEY); } catch (e) {}
+        /* 홈이 「교사 아님」이라고 말했으면 'visitor' 를 명시해 둔다 —
+           비워 두면 아래 케이박스 캐시(localStorage, 24h)가 교사 자격을 되살려서
+           같은 기기에서 학생으로 들어와도 「← 선생님 도구」가 뜨던 문제 (2026-08-27) */
+        role = roleNow || 'visitor';
+        try { sessionStorage.setItem(ROLEKEY, role); } catch (e) {}
       }
     }
   } catch (e) {}
   if (roleNow) { role = roleNow; try { sessionStorage.setItem(ROLEKEY, role); } catch (e) {} }
-  if (!role) {                                             /* 교사 도구 캐시(케이박스)도 교사 표식으로 인정 */
+  if (!role) {                                             /* 교사 도구 캐시(케이박스)도 교사 표식으로 인정 — 단, 홈이 'visitor' 라고 못박은 탭은 제외 */
     try { if (localStorage.getItem('kedu_boxbar_teacher_v1')) role = 'teacher'; } catch (e) {}
   }
+  if (role === 'visitor') role = null;                     /* 'visitor' 는 「교사 아님」 표시일 뿐 — 홈 판정용 자격은 없음 */
   if (role === 'teacher' && !fromTeacher) fromTeacher = true;
   function roleHome() { return role === 'teacher' ? '/teacher/index.html' : (role === 'parent' ? '/parent/index.html' : '/'); }
 
