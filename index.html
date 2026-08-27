@@ -127,7 +127,8 @@ body{background:var(--nh-paper);color:var(--nh-ink)}
 .nh-inbox b{font-family:var(--nh-disp);font-size:15.5px;color:var(--nh-ink)}
 .nh-inbox span{font-size:12.5px;color:var(--nh-ink-soft)}
 .nh-inbox .nh-ib-go{margin-left:auto;font-size:13px;color:var(--nh-board);white-space:nowrap}
-.nh-entry{margin-top:22px;max-width:460px;background:#fff;border:1px solid var(--nh-line);border-radius:16px;padding:20px 22px;box-shadow:0 2px 14px rgba(31,41,51,.05)}
+.nh-entry{display:none;margin-top:22px;max-width:460px;background:#fff;border:1px solid var(--nh-line);border-radius:16px;padding:20px 22px;box-shadow:0 2px 14px rgba(31,41,51,.05)}
+.nh-entry.is-on{display:block}
 .nh-entry-row{display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--nh-line);padding:6px 0}
 .nh-entry-row label{font-size:13px;color:var(--nh-ink-soft);white-space:nowrap;width:58px}
 .nh-entry-row input{flex:1;min-width:0;border:0;background:transparent;padding:9px 0;font-family:'Gowun Dodum',sans-serif;font-size:16px;color:var(--nh-ink);outline:none}
@@ -280,7 +281,7 @@ footer .footer-text{flex:1;text-align:center}
 .nh-entry .nh-entry-row input{padding:6px 0;font-size:15px}
 .nh-entry .nh-entry-btn{margin-top:10px;padding:11px;font-size:14.5px;border-radius:10px}
 @media(min-width:901px){
-  .nh-entry{display:grid;grid-template-columns:1fr 1fr;gap:2px 18px}
+  .nh-entry.is-on{display:grid;grid-template-columns:1fr 1fr;gap:2px 18px}
   .nh-entry .nh-entry-btn{grid-column:1 / -1}
   .nh-entry .nh-consent,.nh-entry .nh-error,.nh-entry .nh-entry-head{grid-column:1 / -1}
 }
@@ -371,7 +372,7 @@ footer{padding-top:8px;padding-bottom:10px}
       </a>
 
       <!-- 학급코드 입장 (비로그인) — claim_seat 3요소 유지 -->
-      <div class="nh-entry" id="entry-card" style="display:none">
+      <div class="nh-entry" id="entry-card">
         <div class="nh-entry-head">
           <strong>학급코드가 있나요?</strong>
           <span>선생님이 알려 준 코드를 넣으면 우리 반으로 입장해요. 코드가 없으면 위 <b>시작하기</b>로 바로 공부할 수 있어요.</span>
@@ -766,7 +767,7 @@ async function loadProfile(){
 // 로그인 UI 전환
 // =============================================
 function showLoggedInUI(){
-  document.getElementById('entry-card').style.display = 'none';
+  document.getElementById('entry-card').classList.remove('is-on');
   document.getElementById('guest-area').style.display = 'none';
   var tbl = document.getElementById('tb-login'); if(tbl) tbl.style.display = 'none';
   if(window.KeduTier) KeduTier.clearGuest();  // 정식 좌석이 생기면 게스트 흔적 정리
@@ -821,7 +822,7 @@ function showLoggedOutUI(){
   const g = window.KeduTier ? KeduTier.guest() : null;
   if(g){ showGuestUI(g); return; }
   document.getElementById('guest-area').style.display = 'none';
-  document.getElementById('entry-card').style.display = 'block';
+  document.getElementById('entry-card').classList.add('is-on');
   updateEntryBtn();
 }
 
@@ -830,7 +831,7 @@ function showLoggedOutUI(){
 // =============================================
 function showGuestUI(g){
   document.getElementById('user-area').style.display = 'none';
-  document.getElementById('entry-card').style.display = 'none';
+  document.getElementById('entry-card').classList.remove('is-on');
   document.getElementById('guest-area').style.display = 'flex';
   document.getElementById('guest-label').textContent = g.label || g.code;
 }
@@ -838,7 +839,7 @@ function showGuestUI(g){
 function guestExit(){
   if(window.KeduTier) KeduTier.clearGuest();
   document.getElementById('guest-area').style.display = 'none';
-  document.getElementById('entry-card').style.display = 'block';
+  document.getElementById('entry-card').classList.add('is-on');
   updateEntryBtn();
 }
 
@@ -869,7 +870,7 @@ async function enterStudent(){
   const code = (codeInput.value || '').trim().toUpperCase();
   const nick = (nickInput.value || '').trim();
 
-  if(code.length < 4){ showError('학급코드를 입력해 주세요.'); codeInput.focus(); return; }
+  if(code.length < 4){ showError('학급코드를 먼저 넣어 주세요. 코드가 없으면 위 「시작하기」로 바로 공부할 수 있어요.'); codeInput.focus(); return; }
 
   // ── 게스트 경로: 닉네임 없이 = 동의 전 학급 입장 (서버 저장 0, 이름 0) ──
   if(nick.length === 0){
