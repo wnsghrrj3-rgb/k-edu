@@ -74,6 +74,10 @@ body{font-family:'Gowun Dodum',sans-serif;background:#F5F7FA;min-height:100vh;di
 .step-nickname p{font-size:14px;color:#718096;text-align:center;margin-bottom:20px;line-height:1.5}
 
 /* 동의 체크박스 (T05) */
+.remember-row{display:flex;align-items:center;gap:18px;margin:-2px 0 16px;font-size:13px;color:#4A5568;flex-wrap:wrap}
+.remember-row label{display:inline-flex;align-items:center;gap:7px;cursor:pointer}
+.remember-row input[type="checkbox"]{width:16px;height:16px;accent-color:#5B8EF8;cursor:pointer}
+.remember-note{width:100%;font-size:12px;color:#A0AEC0;line-height:1.5}
 .consent-box{margin:18px 0 8px;padding:14px 14px;background:#F7FAFC;border:1px solid #E2E8F0;border-radius:12px}
 .consent-row{display:flex;align-items:flex-start;gap:9px;font-size:13px;color:#2D3748;line-height:1.55;cursor:pointer;padding:5px 0}
 .consent-row + .consent-row{border-top:1px solid #EDF2F7;margin-top:4px;padding-top:9px}
@@ -117,19 +121,27 @@ footer strong{color:#718096;font-weight:500}
       <button class="tab-btn" id="tab-signup" onclick="switchTab('signup')">회원가입</button>
     </div>
 
-    <!-- 로그인 폼 -->
-    <div id="form-login">
+    <!-- 로그인 폼
+         · 진짜 <form> 으로 감싼 까닭: 이렇게 해야 크롬·사파리의 자체 비밀번호 관리자가
+           「비밀번호를 저장할까요?」를 띄운다. 우리가 비밀번호를 들고 있지 않아도
+           다음부터 자동으로 채워진다 (2026-08-27). -->
+    <form id="form-login" onsubmit="doLogin(event)">
       <div class="form-group">
         <label>이메일</label>
-        <input type="email" id="login-email" placeholder="example@email.com" autocomplete="email">
+        <input type="email" id="login-email" name="email" placeholder="example@email.com" autocomplete="username email">
       </div>
       <div class="form-group">
         <label>비밀번호</label>
-        <input type="password" id="login-pw" placeholder="비밀번호 입력" autocomplete="current-password">
+        <input type="password" id="login-pw" name="password" placeholder="비밀번호 입력" autocomplete="current-password">
       </div>
-      <button class="submit-btn" id="btn-login" onclick="doLogin()">로그인</button>
+      <div class="remember-row">
+        <label><input type="checkbox" id="save-email"> 아이디 저장</label>
+        <label><input type="checkbox" id="stay-signed-in" checked> 로그인 유지</label>
+        <span class="remember-note">공용 컴퓨터에서는 둘 다 꺼 주세요. 비밀번호 자체는 저장하지 않고, 저장은 브라우저에 맡깁니다.</span>
+      </div>
+      <button class="submit-btn" id="btn-login" type="submit">로그인</button>
       <div class="msg" id="login-msg"></div>
-    </div>
+    </form>
 
     <!-- 회원가입 폼 -->
     <div id="form-signup" style="display:none">
@@ -277,7 +289,51 @@ function pickRole(role){
 // =============================================
 // 로그인
 // =============================================
-async function doLogin(){
+// 아이디 저장 · 로그인 유지 (2026-08-27)
+//   · 아이디만 이 기기에 남긴다. 비밀번호는 우리가 저장하지 않는다 —
+//     교사 계정은 학생 개인정보에 닿으므로 평문 보관은 공용 PC에서 위험하다.
+//     비밀번호 자동 채움은 브라우저 자체 관리자(OS 암호화)에 맡긴다.
+//   · 「로그인 유지」를 끄면 이 기기에 남은 세션을 탭을 닫을 때 지운다.
+const SAVE_EMAIL_KEY = 'kedu_saved_email_v1';
+const STAY_KEY = 'kedu_stay_signed_in_v1';
+
+function initRemember(){
+  const emailBox = document.getElementById('save-email');
+  const stayBox  = document.getElementById('stay-signed-in');
+  if(!emailBox || !stayBox) return;
+  try{
+    const saved = localStorage.getItem(SAVE_EMAIL_KEY);
+    if(saved){ document.getElementById('login-email').value = saved; emailBox.checked = true; }
+    const stay = localStorage.getItem(STAY_KEY);
+    if(stay !== null) stayBox.checked = (stay === '1');
+  }catch(e){}
+  emailBox.onchange = function(){
+    try{
+      if(emailBox.checked) localStorage.setItem(SAVE_EMAIL_KEY, document.getElementById('login-email').value.trim());
+      else localStorage.removeItem(SAVE_EMAIL_KEY);
+    }catch(e){}
+  };
+  stayBox.onchange = function(){ try{ localStorage.setItem(STAY_KEY, stayBox.checked ? '1' : '0'); }catch(e){} };
+}
+document.addEventListener('DOMContentLoaded', initRemember);
+
+// 「로그인 유지」를 끈 기기: 탭을 닫을 때 이 기기에 남은 세션 흔적을 지운다
+function applyStayPreference(){
+  let stay = true;
+  try{ stay = localStorage.getItem(STAY_KEY) !== '0'; }catch(e){}
+  if(stay) return;
+  window.addEventListener('pagehide', function(){
+    try{
+      for(let i = localStorage.length - 1; i >= 0; i--){
+        const k = localStorage.key(i);
+        if(k && k.indexOf('sb-') === 0) localStorage.removeItem(k);
+      }
+    }catch(e){}
+  });
+}
+
+async function doLogin(ev){
+  if(ev && ev.preventDefault) ev.preventDefault();
   const email = document.getElementById('login-email').value.trim();
   const pw = document.getElementById('login-pw').value;
   if(!email || !pw){ showMsg('login-msg','이메일과 비밀번호를 입력해주세요.','error'); return; }
@@ -292,6 +348,16 @@ async function doLogin(){
     showMsg('login-msg', '이메일 또는 비밀번호가 올바르지 않습니다.', 'error');
     return;
   }
+
+  // 아이디 저장 / 로그인 유지 반영 (성공했을 때만 남긴다)
+  try{
+    const emailBox = document.getElementById('save-email');
+    if(emailBox && emailBox.checked) localStorage.setItem(SAVE_EMAIL_KEY, email);
+    else localStorage.removeItem(SAVE_EMAIL_KEY);
+    const stayBox = document.getElementById('stay-signed-in');
+    if(stayBox) localStorage.setItem(STAY_KEY, stayBox.checked ? '1' : '0');
+  }catch(e){}
+  applyStayPreference();
 
   // 프로필 확인 후 이동
   const hasProfile = await ensureProfile(data.user);
