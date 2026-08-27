@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1200">
+<title>케이무비 — 케이에듀 영상 편집기</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root { --navy:#0B2545; --gold:#D9B65C; --bg:#0c111c; --panel:#131a2a; --panel2:#182135; --line:#243050; --line2:#2f3d62; --txt:#e7ecf5; --sub:#8f9bb7; --dim:#5c6884; --danger:#e06c6c; }
+  * { box-sizing:border-box; }
+  html, body { height:100%; margin:0; }
+  body { background:var(--bg); color:var(--txt); font:14px/1.45 Pretendard, "Noto Sans KR", sans-serif; overflow:hidden; user-select:none; -webkit-user-select:none; }
+  button { font:inherit; color:var(--txt); background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:6px 12px; cursor:pointer; white-space:nowrap; }
+  button:hover { border-color:var(--line2); background:#1d2840; }
+  button:disabled { opacity:.35; cursor:default; }
+  button.gold { background:var(--gold); color:#1a1408; border-color:transparent; font-weight:700; }
+  button.gold:hover { background:#e6c66f; }
+  button.on { border-color:var(--gold); color:var(--gold); }
+  button.ico { padding:6px 9px; min-width:34px; }
+  input[type=range] { accent-color:var(--gold); }
+
+  #app { display:grid; grid-template-rows:48px 1fr 292px; height:100%; }
+  header.top { display:flex; align-items:center; gap:10px; padding:0 16px; border-bottom:1px solid var(--line); background:var(--panel); }
+  header .back { color:var(--sub); text-decoration:none; font-size:13px; margin-right:6px; }
+  header .back:hover { color:var(--txt); }
+  header b { font-size:16px; letter-spacing:-.3px; }
+  header b i { font-style:normal; color:var(--gold); }
+  header .sub { color:var(--sub); font-size:12px; margin-left:4px; }
+  .sp { flex:1; }
+  .sep { width:1px; height:22px; background:var(--line); margin:0 4px; }
+
+  main { display:grid; grid-template-columns:1fr 300px; min-height:0; }
+  .stage-wrap { display:flex; flex-direction:column; min-width:0; min-height:0; padding:14px 14px 8px; gap:8px; }
+  .stage { flex:1; min-height:0; display:flex; align-items:center; justify-content:center; background:#000; border-radius:10px; position:relative; overflow:hidden; border:1px solid var(--line); }
+  .stage canvas { width:100%; height:100%; object-fit:contain; display:block; }
+  #empty { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; color:var(--sub); font-size:15px; pointer-events:none; }
+  #empty b { color:var(--txt); font-size:18px; }
+  #empty small { color:var(--dim); }
+  .transport { display:flex; align-items:center; gap:6px; }
+  .transport .tc { font-variant-numeric:tabular-nums; font-size:15px; font-weight:600; letter-spacing:.3px; margin-left:8px; }
+  .transport .tc.dim { color:var(--sub); font-weight:400; }
+  .transport .hint { color:var(--dim); font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #tPlay { min-width:64px; font-weight:700; }
+
+  aside.side { border-left:1px solid var(--line); background:var(--panel); display:flex; flex-direction:column; min-height:0; overflow:auto; }
+  .panel { padding:12px 14px; border-bottom:1px solid var(--line); }
+  .panel h3 { margin:0 0 8px; font-size:11px; color:var(--gold); letter-spacing:2px; text-transform:uppercase; display:flex; align-items:center; gap:8px; }
+  .panel h3 .sp { flex:1; }
+  .panel h3 button { font-size:12px; padding:3px 8px; }
+  #bin { display:flex; flex-direction:column; gap:6px; }
+  .mi { display:flex; gap:8px; align-items:center; background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:6px; cursor:pointer; }
+  .mi:hover { border-color:var(--line2); }
+  .mi canvas, .mi .ph { width:64px; height:36px; border-radius:4px; background:#000; flex:none; object-fit:cover; }
+  .mi .ph { display:flex; align-items:center; justify-content:center; color:var(--dim); font-size:11px; }
+  .mi .nm { flex:1; min-width:0; }
+  .mi .nm b { display:block; font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .mi .nm span { font-size:11px; color:var(--sub); }
+  .mi .bar { height:2px; background:var(--line); border-radius:2px; margin-top:4px; overflow:hidden; }
+  .mi .bar i { display:block; height:100%; background:var(--gold); width:0; }
+  .mi .x { color:var(--dim); font-size:14px; padding:2px 4px; }
+  .mi .x:hover { color:var(--danger); }
+  .bin-empty { color:var(--dim); font-size:12px; padding:6px 2px; line-height:1.6; }
+
+  #clipPanel .row { display:flex; align-items:center; gap:8px; margin:8px 0; font-size:13px; }
+  #clipPanel .row label { color:var(--sub); width:64px; flex:none; font-size:12px; }
+  #clipPanel .row .v { font-variant-numeric:tabular-nums; }
+  #clipPanel .seg { display:grid; grid-template-columns:1fr 1fr; gap:6px; flex:1; }
+  #clipPanel .seg button { padding:5px 6px; font-size:12px; }
+  #clipPanel input[type=range] { flex:1; }
+  #clipPanel input[type=number] { width:64px; background:#0f1524; color:var(--txt); border:1px solid var(--line); border-radius:6px; padding:4px 6px; font:inherit; }
+  #clipPanel .none { color:var(--dim); font-size:12px; line-height:1.6; }
+  #clipPanel .danger { color:var(--danger); border-color:transparent; background:transparent; }
+  #clipPanel .danger:hover { background:#2a1717; }
+  .note { color:var(--dim); font-size:11.5px; line-height:1.6; }
+
+  .tl-wrap { border-top:1px solid var(--line); background:var(--panel); display:flex; flex-direction:column; min-height:0; }
+  .tl-bar { display:flex; align-items:center; gap:8px; padding:6px 12px; font-size:12px; color:var(--sub); }
+  .tl-bar input[type=range] { width:140px; }
+  .tl-bar .zi { color:var(--sub); cursor:pointer; padding:0 4px; font-size:15px; }
+  #timeline { flex:1; width:100%; display:block; cursor:default; }
+
+  #overlay { position:fixed; inset:0; background:rgba(6,10,20,.82); display:flex; align-items:center; justify-content:center; z-index:50; backdrop-filter:blur(2px); }
+  #overlay.hidden, .hidden { display:none !important; }
+  #overlay .box { width:420px; background:var(--panel); border:1px solid var(--line2); border-radius:14px; padding:22px 24px; }
+  #overlay .box h4 { margin:0 0 10px; font-size:15px; }
+  #overlay .bar { height:8px; background:#0f1524; border-radius:8px; overflow:hidden; }
+  #overlay .bar i { display:block; height:100%; width:0; background:linear-gradient(90deg, var(--gold), #f0d58a); transition:width .15s; }
+  #overlay .lbl { display:flex; justify-content:space-between; color:var(--sub); font-size:12px; margin-top:8px; font-variant-numeric:tabular-nums; }
+  #toast { position:fixed; left:50%; bottom:310px; transform:translateX(-50%); background:#1c2740; border:1px solid var(--line2); color:var(--txt); padding:10px 16px; border-radius:10px; font-size:13px; opacity:0; pointer-events:none; transition:opacity .2s; z-index:60; max-width:70vw; }
+  #toast.show { opacity:1; }
+  body.dragover .stage { outline:2px dashed var(--gold); outline-offset:-6px; }
+  #nosup { position:fixed; inset:0; background:var(--bg); z-index:100; display:flex; align-items:center; justify-content:center; text-align:center; line-height:1.8; padding:40px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <a class="back" href="/">← 케이에듀</a>
+    <b>케이<i>무비</i></b><span class="sub">컷은 프리미어처럼, 꾸미기는 부품으로</span>
+    <div class="sp"></div>
+    <button id="btnImport">＋ 가져오기</button>
+    <input id="fileIn" type="file" multiple accept="video/mp4,video/quicktime,.mp4,.mov,.m4v,image/*" hidden>
+    <div class="sep"></div>
+    <button id="btnUndo" class="ico" title="되돌리기 (Ctrl+Z)" disabled>↶</button>
+    <button id="btnRedo" class="ico" title="다시 (Ctrl+Shift+Z)" disabled>↷</button>
+    <button id="btnSnap" class="ico on" title="스냅 (N)">🧲</button>
+    <div class="sep"></div>
+    <button id="btnNew" title="비우고 새로">새로</button>
+    <button id="btnExport" class="gold">MP4 내보내기</button>
+  </header>
+
+  <main>
+    <section class="stage-wrap">
+      <div class="stage">
+        <canvas id="preview" width="1920" height="1080"></canvas>
+        <div id="empty"><b>영상을 여기로 끌어다 놓으세요</b><span>또는 위의 ＋ 가져오기</span><small>H.264 mp4/mov · 사진(jpg/png) · 브라우저판은 10분·700MB 이하</small></div>
+      </div>
+      <div class="transport">
+        <button id="tStart" class="ico" title="처음 (Home)">⏮</button>
+        <button id="tPrevEdit" class="ico" title="이전 편집점 (↑)">⇤</button>
+        <button id="tPrev" class="ico" title="1프레임 뒤 (←)">◂</button>
+        <button id="tPlay" title="재생/정지 (Space)">▶ 재생</button>
+        <button id="tNext" class="ico" title="1프레임 앞 (→)">▸</button>
+        <button id="tNextEdit" class="ico" title="다음 편집점 (↓)">⇥</button>
+        <button id="tEnd" class="ico" title="끝 (End)">⏭</button>
+        <span class="tc" id="tcCur">00:00:00</span><span class="tc dim">/</span><span class="tc dim" id="tcTot">00:00:00</span>
+        <div class="sp"></div>
+        <span class="hint">Space 재생 · S 분할 · Q/W 플레이헤드까지 트림 · F 프리즈 · Del 리플 삭제 · Alt+소리띠 끌기 J/L컷 · Ctrl+휠 줌</span>
+      </div>
+    </section>
+    <aside class="side">
+      <div class="panel" id="clipPanel">
+        <h3>클립</h3>
+        <div id="clipNone" class="none">타임라인에서 클립을 고르면<br>속도·소리·프리즈를 여기서 정해요.</div>
+        <div id="clipBody" class="hidden">
+          <div class="row"><label>원본</label><span class="v" id="cName" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span></div>
+          <div class="row"><label>구간</label><span class="v" id="cRange"></span></div>
+          <div class="row"><label>길이</label><span class="v" id="cDur"></span></div>
+          <div class="row" id="rowSpeed"><label>속도</label><div class="seg" id="speedSeg"></div></div>
+          <div class="row" id="rowFreeze"><label>정지 길이</label><input type="number" id="freezeSec" min="0.5" max="60" step="0.5"><span class="v">초</span></div>
+          <div class="row" id="rowVol"><label>소리</label><input type="range" id="vol" min="0" max="150" value="100"><span class="v" id="volV" style="width:38px;text-align:right">100%</span></div>
+          <div class="row" id="rowLink"><label>소리 띠</label><span class="v" id="linkState"></span><div class="sp"></div><button id="btnRelink">링크 복원</button></div>
+          <div class="row"><div class="sp"></div><button id="btnFreeze" title="플레이헤드 프레임을 정지 클립으로 (F)">프리즈</button><button id="btnSplit" title="플레이헤드에서 분할 (S)">분할</button><button id="btnDel" class="danger" title="리플 삭제 (Del)">삭제</button></div>
+        </div>
+      </div>
+      <div class="panel" id="binPanel">
+        <h3>미디어<div class="sp"></div><button id="btnImport2">＋</button></h3>
+        <div id="bin"></div>
+      </div>
+      <div class="panel">
+        <h3>프로젝트</h3>
+        <div class="row" style="display:flex;gap:8px;font-size:13px"><span style="color:var(--sub)">전체</span><span id="pTot" class="v">0초</span><span style="color:var(--sub);margin-left:8px">클립</span><span id="pCnt" class="v">0</span></div>
+        <div class="note" style="margin-top:8px">1920×1080 · 30fps · H.264 8Mbps · AAC<br>부품·자막·룩·음악 레인은 다음 단계에서 열려요.<br>작업은 이 브라우저에 자동 저장돼요.</div>
+      </div>
+    </aside>
+  </main>
+
+  <section class="tl-wrap">
+    <div class="tl-bar">
+      <span class="zi" id="zoomOut">−</span><input type="range" id="zoom" min="0" max="1000" value="500"><span class="zi" id="zoomIn">＋</span>
+      <button id="zoomFit" style="padding:3px 8px;font-size:12px">전체 보기</button>
+      <span id="status"></span>
+      <div class="sp"></div>
+      <span id="hover" style="font-variant-numeric:tabular-nums"></span>
+    </div>
+    <canvas id="timeline"></canvas>
+  </section>
+</div>
+
+<div id="overlay" class="hidden"><div class="box"><h4 id="ovTitle">내보내는 중</h4><div class="bar"><i id="ovBar"></i></div><div class="lbl"><span id="ovLabel"></span><span id="ovPct">0%</span></div></div></div>
+<div id="toast"></div>
+<div id="nosup" class="hidden"><div><b style="font-size:18px">이 브라우저는 케이무비를 지원하지 않아요</b><br>WebCodecs 가 필요해요 — 크롬·엣지 최신 버전(데스크톱)에서 열어 주세요.</div></div>
+
+<!-- 외부 2개: mp4box(디먹스)·mp4-muxer(묶기). 실패해도 화면은 뜨고, 필요할 때 다시 시도한다 -->
+<script src="https://cdn.jsdelivr.net/npm/mp4box@0.5.2/dist/mp4box.all.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.1/build/mp4-muxer.min.js" defer></script>
+<script src="engine/project.js" defer></script>
+<script src="engine/audio.js" defer></script>
+<script src="engine/media.js" defer></script>
+<script src="engine/render.js" defer></script>
+<script src="engine/export.js" defer></script>
+<script src="kmovie.js" defer></script>
+</body>
+</html>
