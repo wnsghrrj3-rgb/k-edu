@@ -14,8 +14,8 @@
 
   const CACHE_MAX = 150;               // VideoFrame 캐시 상한 (설계서 ≈90, 재생 여유분)
   const THUMB_W = 160, THUMB_H = 90;
-  const MAX_FILE = 700 * 1024 * 1024;   // 브라우저판 원본 상한
-  const MAX_SEC = 10 * 60;
+  // 브라우저판 원본 상한. 데스크톱 껍데기(KMV_SHELL)가 붙으면 프록시 기준으로 limits 를 바꾼다.
+  const limits = { maxFile: 700 * 1024 * 1024, maxSec: 10 * 60 };
   const MP4BOX_URL = 'https://cdn.jsdelivr.net/npm/mp4box@0.5.2/dist/mp4box.all.min.js';
 
   const SRC = new Map();               // media.id → 런타임 소스
@@ -221,7 +221,7 @@
       status && status('음악 푸는 중');
       let audio = null;
       try { audio = await g.KMV_AUDIO.decode(await file.arrayBuffer()); } catch (e) { throw new Error('이 음악 파일을 풀 수 없어요 (mp3·wav·m4a 권장)'); }
-      if (audio.duration > MAX_SEC * 2) throw new Error('음악은 20분 이하만');
+      if (audio.duration > limits.maxSec * 2) throw new Error('음악은 20분 이하만');
       const src = new AudioSource(id, audio);
       SRC.set(id, src);
       return { id, name, kind: 'audio', dur: src.frames, w: 0, h: 0, fps: 30, audio: true, rot: 0, blobKey: id };
@@ -236,7 +236,7 @@
       return meta;
     }
     if (!supported()) throw new Error('이 브라우저는 영상 편집을 지원하지 않아요 — 크롬·엣지 최신 버전을 써 주세요');
-    if (file.size > MAX_FILE) throw new Error('브라우저판은 700MB 이하 원본만 — 긴 원본은 데스크톱판(4단계) 몫이에요');
+    if (file.size > limits.maxFile) throw new Error(limits.maxFile >= 1024 * 1024 * 1024 ? '이 원본은 너무 커요 (' + Math.round(file.size / 1048576) + 'MB)' : '브라우저판은 700MB 이하 원본만 — 긴 원본은 데스크톱판 몫이에요');
     status && status('mp4 읽는 중');
     await loadMp4box();
     const buf = await file.arrayBuffer();
@@ -251,7 +251,7 @@
       try { audio = await g.KMV_AUDIO.decode(buf.slice(0)); } catch (e) { console.warn('[KMV media] audio decode', e); }
     }
     const src = new VideoSource(id, dm, audio);
-    if (src.durSec > MAX_SEC) { src.dispose(); throw new Error('브라우저판은 10분 이하 원본만 읽어요 — 긴 원본은 데스크톱판 몫'); }
+    if (src.durSec > limits.maxSec) { src.dispose(); throw new Error(Math.round(limits.maxSec / 60) + '분 이하 원본만 읽어요' + (limits.maxSec <= 10 * 60 ? ' — 긴 원본은 데스크톱판 몫' : ' — 폰에서 먼저 잘라 주세요')); }
     SRC.set(id, src);
     const rotated = src.rot === 90 || src.rot === 270;
     return { id, name, kind: 'video', dur: src.frames, w: rotated ? src.h : src.w, h: rotated ? src.w : src.h, fps: src.fps, audio: !!audio, rot: src.rot, blobKey: id };
@@ -355,7 +355,7 @@
   }
 
   g.KMV_MEDIA = {
-    supported, open, analyze, drawFit, isAudioFile,
+    supported, open, analyze, drawFit, isAudioFile, limits,
     get: id => SRC.get(id) || null,
     has: id => SRC.has(id),
     remove: id => { const s = SRC.get(id); if (s) { s.dispose(); SRC.delete(id); } },

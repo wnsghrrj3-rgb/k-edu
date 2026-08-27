@@ -140,12 +140,15 @@
     if (!c) { emptyFrame(ctx, W, H, t); return; }
     const src = g.KMV_MEDIA.get(c.media);
     const idx = P.srcFrame(c, t);
-    const img = await src.getFrame(idx, false);
+    // 데스크톱 껍데기가 붙어 있으면 같은 번호의 프레임을 원본(원화질)에서 받는다. 실패하면 프록시 프레임.
+    const SH = g.KMV_SHELL && g.KMV_SHELL.active ? g.KMV_SHELL : null;
+    const img = (SH && await SH.exact(c.media, idx)) || await src.getFrame(idx, false);
     const tr = transitionAt(c, t); let prevImg = null;
-    if (tr && tr.prev) { const psrc = g.KMV_MEDIA.get(tr.prev.media); if (psrc) { try { prevImg = await psrc.getFrame(tr.pidx, false); } catch (e) { prevImg = psrc.nearest(tr.pidx); } } }
+    if (tr && tr.prev) { const psrc = g.KMV_MEDIA.get(tr.prev.media); if (psrc) { try { prevImg = (SH && await SH.exact(tr.prev.media, tr.pidx)) || await psrc.getFrame(tr.pidx, false); } catch (e) { prevImg = psrc.nearest(tr.pidx); } } }
     let mask = null;
     if (g.KMV_SEG && needsMask(t)) { try { mask = await g.KMV_SEG.mask(c.media, idx, img); } catch (e) { mask = null; } }
-    compose(ctx, W, H, t, c, img, tr, prevImg, mask);
+    try { compose(ctx, W, H, t, c, img, tr, prevImg, mask); }
+    finally { for (const f of [img, prevImg]) if (f && f.kmvTemp) { try { f.close(); } catch (e) {} } }
   }
 
   /* 원본 프레임 하나를 그대로 (트림 드래그 중 경계 프레임 보기) */

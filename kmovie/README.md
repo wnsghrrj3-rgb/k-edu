@@ -24,8 +24,13 @@
 - 앰비언스 (`engine/audio.js` findRoomTone/ambGaps/scheduleAmb): 타임라인 원본에서 가장 조용한(무음 아닌) 1.5초 룸톤을 찾아 이음매 없는 루프로 만들고, A1 이 비는 구간(사진·프리즈·무음·볼륨 0)에 200ms 페이드로 깐다. 세기 3단(조용히/그대로/살짝 크게). A1 레인에 빗금 띠 "룸톤"
 - 몽타주 깔기 (`engine/project.js` montage): 선택 클립부터 뒤 클립들(끝까지/4개/8개)의 길이를 A2 비트 격자(1·2·4박)에 맞춘다. 시작이 비트 위면 그 비트가 원점. 원본이 짧으면 있는 만큼만 쓰고 다음 클립이 격자 나머지를 채움. 구간은 "움직임 큰 곳"(motion 창 평균 최대) 또는 "지금 자리". 자동 컷 아님 — 순서·컷 수는 그대로, 길이만 박자 위로. Ctrl+Z 한 번에 원복
 
+## 5단계 데스크톱 껍데기 (2026-08-28, 1차)
+- `engine/shell.js` KMV_SHELL: `__TAURI__` 가 있을 때만 켜짐 — 경로 가져오기(껍데기 ffmpeg 프록시), 디스크 복원, 원화질 프레임(내보내기), 스트리밍 저장, 프록시 보관함. 브라우저에선 no-op.
+- `shell/` Tauri 2 껍데기(Windows 1차). 자세한 건 `shell/README.md`.
+
 ## 파일
 - `index.html`, `kmovie.js` — UI·타임라인
+- `engine/shell.js` — 데스크톱 껍데기 접합점
 - `engine/project.js` — 프로젝트 모델·편집 연산·undo
 - `engine/media.js` — mp4box 디먹스 + VideoDecoder GOP 캐시 + 분석(썸네일·움직임·파형)
 - `engine/audio.js` — 재생 클럭·A1 스케줄·오프라인 믹스

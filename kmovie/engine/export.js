@@ -6,6 +6,8 @@
    · 소리: KMV_AUDIO.renderMix (오프라인) → AudioEncoder
    · 묶기: mp4-muxer. 파일 저장 창(showSaveFilePicker)이 되면 디스크로 바로
      흘려보내(메모리 0), 아니면 메모리에 모아 다운로드.
+   · 데스크톱 껍데기(KMV_SHELL.active): 저장은 껍데기 파일 쓰기(StreamTarget), 원본이 연결된 클립의 프레임은
+     프록시 대신 원본(원화질) 파이프에서 — drawExact 가 알아서 바꿔 받는다.
    ============================================================ */
 (function (g) {
   'use strict';
@@ -46,8 +48,16 @@
     let encoder = null, aenc = null, muxer = null, stream = null, encErr = null;
     const name = opt.fileName || '케이무비.mp4';
     // 저장 창은 사용자 클릭 직후에 열어야 한다 (다른 await 보다 먼저)
-    let target = null, toDisk = false;
-    if (g.showSaveFilePicker) {
+    let target = null, toDisk = false, shellSave = null;
+    const SH = g.KMV_SHELL && g.KMV_SHELL.active ? g.KMV_SHELL : null;
+    if (SH) {
+      // 데스크톱 껍데기: 저장 창은 껍데기 것, 쓰기는 mp4-muxer StreamTarget → 파일(메모리 0)
+      await loadMuxer();
+      try { shellSave = await SH.saveTarget(name); } catch (e) { console.warn('[KMV export] shell save', e); shellSave = null; }
+      if (shellSave && shellSave.cancelled) { busy = false; return null; }
+      if (shellSave) toDisk = true;
+    }
+    if (!shellSave && g.showSaveFilePicker) {
       try {
         const fh = await g.showSaveFilePicker({ suggestedName: name, types: [{ description: 'MP4 영상', accept: { 'video/mp4': ['.mp4'] } }] });
         stream = await fh.createWritable(); toDisk = true;
@@ -58,7 +68,7 @@
       const vcodec = await pickVideoCodec(W, H);
       if (!vcodec) throw new Error('영상 인코더를 쓸 수 없어요 (크롬·엣지 데스크톱 최신 버전)');
       const isAvc = /^avc/.test(vcodec);
-      target = toDisk ? new g.Mp4Muxer.FileSystemWritableFileStreamTarget(stream) : new g.Mp4Muxer.ArrayBufferTarget();
+      target = shellSave ? shellSave.target : toDisk ? new g.Mp4Muxer.FileSystemWritableFileStreamTarget(stream) : new g.Mp4Muxer.ArrayBufferTarget();
 
       // 소리 믹스 먼저 (오프라인, 빠름)
       prog(0, '소리 섞는 중');
@@ -94,6 +104,9 @@
 
       // 인물 뒤 부품이 있으면 세그 모델을 먼저 세운다 (첫 프레임 지연 흡수)
       if (g.KMV_SEG && P.data.P.some(pt => g.KMV_PARTS && g.KMV_PARTS.behind(pt))) { prog(0, '인물 컷아웃 모델 준비'); await g.KMV_SEG.load(); }
+      // 데스크톱 껍데기: 원본이 연결된 클립은 원화질 프레임 파이프로 (drawExact 안에서 KMV_SHELL.exact)
+      const exactSrc = !!(SH && SH.anyOrigin());
+      if (exactSrc) { SH.exactBegin(); prog(0, '원본 화질로 렌더링 준비'); }
       // 영상 전 프레임
       const cv = new OffscreenCanvas(W, H), ctx = cv.getContext('2d');
       const t0 = performance.now();
@@ -106,7 +119,7 @@
         vf.close();
         if (t % 6 === 0 || t === total - 1) {
           const el = (performance.now() - t0) / 1000, eta = t > 0 ? el / t * (total - t) : 0;
-          prog(t / total, '렌더링 ' + Math.round(t / FPS) + '/' + Math.round(total / FPS) + '초' + (t > 30 ? ' · 남은 시간 ' + Math.round(eta) + '초' : ''));
+          prog(t / total, (exactSrc ? '원본 화질 렌더링 ' : '렌더링 ') + Math.round(t / FPS) + '/' + Math.round(total / FPS) + '초' + (t > 30 ? ' · 남은 시간 ' + Math.round(eta) + '초' : ''));
           await new Promise(r => setTimeout(r, 0));
         }
       }
@@ -114,6 +127,8 @@
       await encoder.flush();
       if (encErr) throw encErr;
       muxer.finalize();
+      if (exactSrc) await SH.exactEnd();
+      if (shellSave) { await shellSave.close(); shellSave = null; return { toDisk: true, name, seconds: total / FPS, codec: vcodec, exact: true }; }
       if (toDisk) { await stream.close(); stream = null; return { toDisk: true, name, seconds: total / FPS, codec: vcodec }; }
       const blob = new Blob([target.buffer], { type: 'video/mp4' });
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click();
@@ -123,6 +138,8 @@
       try { if (encoder && encoder.state !== 'closed') encoder.close(); } catch (e) {}
       try { if (aenc && aenc.state !== 'closed') aenc.close(); } catch (e) {}
       try { if (stream) await stream.abort(); } catch (e) {}
+      try { if (shellSave) await shellSave.abort(); } catch (e) {}
+      try { if (SH) await SH.exactEnd(); } catch (e) {}
       busy = false;
     }
   }

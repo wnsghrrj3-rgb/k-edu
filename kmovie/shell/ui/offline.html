@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>케이무비</title>
+<style>
+  :root { --bg:#0b1630; --gold:#c9a24a; --fg:#eef2fa; --sub:#93a0bd; }
+  html,body { height:100%; margin:0; background:var(--bg); color:var(--fg); font-family:Pretendard,"Malgun Gothic",system-ui,sans-serif; }
+  .wrap { height:100%; display:flex; align-items:center; justify-content:center; text-align:center; }
+  b { font-size:22px; } b i { color:var(--gold); font-style:normal; }
+  p { color:var(--sub); line-height:1.8; margin:14px 0 22px; }
+  button { background:transparent; color:var(--gold); border:1px solid var(--gold); border-radius:8px; padding:8px 18px; font-size:14px; cursor:pointer; }
+  button:disabled { opacity:.5; }
+  .line { width:56px; height:2px; background:var(--gold); margin:18px auto; }
+</style></head>
+<body><div class="wrap"><div>
+  <b>케이<i>무비</i></b>
+  <div class="line"></div>
+  <p>케이에듀(keduclass.com)에 접속해야 열려요.<br>인터넷 연결을 확인한 뒤 다시 시도해 주세요.</p>
+  <button id="retry">다시 시도</button>
+  <p id="msg" style="margin-top:14px;font-size:12px"></p>
+</div></div>
+<script>
+  const btn = document.getElementById('retry'), msg = document.getElementById('msg');
+  async function retry() {
+    btn.disabled = true; msg.textContent = '접속 확인 중…';
+    try {
+      const ok = await window.__TAURI__.core.invoke('retry_online');
+      if (!ok) { msg.textContent = '아직 연결되지 않았어요.'; btn.disabled = false; }
+      else msg.textContent = '연결됐어요 — 여는 중…';
+    } catch (e) { msg.textContent = String(e); btn.disabled = false; }
+  }
+  btn.onclick = retry;
+  setTimeout(retry, 2500);
+</script>
+</body></html>

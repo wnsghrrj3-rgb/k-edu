@@ -12,7 +12,7 @@
    ============================================================ */
 (function () {
   'use strict';
-  const P = window.KMV_PROJECT, M = window.KMV_MEDIA, A = window.KMV_AUDIO, R = window.KMV_RENDER, LK = window.KMV_LOOK, TR = window.KMV_TRANSITION, SB = window.KMV_SUBTITLE, PT = window.KMV_PARTS, SG = window.KMV_SEG;
+  const P = window.KMV_PROJECT, M = window.KMV_MEDIA, A = window.KMV_AUDIO, R = window.KMV_RENDER, LK = window.KMV_LOOK, TR = window.KMV_TRANSITION, SB = window.KMV_SUBTITLE, PT = window.KMV_PARTS, SG = window.KMV_SEG, SH = window.KMV_SHELL;
   const FPS = P.FPS, PW = P.W, PH = P.H;
   const $ = id => document.getElementById(id);
   const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -569,7 +569,7 @@
   $('btnUndo').onclick = () => { stop(); if (P.undo()) setPH(ph); };
   $('btnRedo').onclick = () => { stop(); if (P.redo()) setPH(ph); };
   $('btnSnap').onclick = toggleSnap;
-  $('btnImport').onclick = $('btnImport2').onclick = () => $('fileIn').click();
+  $('btnImport').onclick = $('btnImport2').onclick = () => { if (SH && SH.active) SH.pick().then(refs => { if (refs.length) importFiles(refs); }); else $('fileIn').click(); };
   $('fileIn').onchange = e => { importFiles(Array.from(e.target.files)); e.target.value = ''; };
   $('btnNew').onclick = async () => { if (!confirm('타임라인과 미디어를 모두 비울까요? (되돌릴 수 없어요)')) return; stop(); P.data.media.forEach(m => M.remove(m.id)); P.reset(); await DB.clearAll(); select(null); setPH(0); refreshBin(); zoomFit(); };
   $('btnExport').onclick = async () => {
@@ -946,18 +946,26 @@
   /* ---------- 가져오기 ---------- */
   let importing = false; const importQueue = [];
   async function importFiles(files) {
-    files = files.filter(f => /^(video|image|audio)\//.test(f.type) || /\.(mp4|mov|m4v|png|jpe?g|webp|mp3|wav|m4a|aac|ogg)$/i.test(f.name));
+    // files: File 또는 KMV_SHELL.PathRef(데스크톱판, 경로만). 껍데기는 mkv·avi·mts 등도 프록시로 바꿔 준다.
+    const shellRe = /\.(mp4|mov|m4v|mkv|avi|mts|m2ts|webm|3gp|wmv|png|jpe?g|webp|bmp|gif|mp3|wav|m4a|aac|ogg|oga|flac)$/i;
+    files = files.filter(f => f.isPathRef ? shellRe.test(f.name) : (/^(video|image|audio)\//.test(f.type) || /\.(mp4|mov|m4v|png|jpe?g|webp|mp3|wav|m4a|aac|ogg)$/i.test(f.name)));
     if (!files.length) return toast('mp4·mov 영상, jpg·png 사진, mp3·wav·m4a 음악만 넣을 수 있어요');
     if (importing) { importQueue.push(...files); toast('앞 파일 다음에 이어서 넣을게요 (' + importQueue.length + '개 대기)', 1500); return; }
     importing = true; stop();
     const first = !P.total();
     while (files.length) {
-      const f = files.shift();
+      let f = files.shift();
       status('가져오는 중: ' + f.name);
       try {
+        if (f.isPathRef) {
+          // 데스크톱판: 껍데기가 프록시를 만들어 준다 (진행률은 덮개에)
+          OV.show('원본 준비 중'); OV.set(0, f.name);
+          try { f = await SH.file(f, { status: t => OV.set(0.9, t), progress: (p, l) => OV.set(p, l) }); } finally { OV.hide(); }
+        }
         const meta = await M.open(f, null, s => status(s + ' — ' + f.name));
+        if (f.kmvOrigin) meta.origin = f.kmvOrigin;   // 원본 경로·해시 — 복원은 디스크의 프록시에서
         P.addMedia(meta);
-        DB.putMedia(meta.id, f, f.name).catch(e => console.warn('db', e));
+        if (!f.kmvOrigin) DB.putMedia(meta.id, f, f.name).catch(e => console.warn('db', e));
         if (meta.kind === 'audio') {
           const a = P.addA2(meta.id, P.data.A2.length ? ph : 0);
           refreshBin(); analyzeBg(meta.id); refreshStatus();
@@ -977,6 +985,7 @@
   document.addEventListener('dragover', e => { e.preventDefault(); document.body.classList.add('dragover'); });
   document.addEventListener('dragleave', e => { if (!e.relatedTarget) document.body.classList.remove('dragover'); });
   document.addEventListener('drop', e => { e.preventDefault(); document.body.classList.remove('dragover'); if (e.dataTransfer && e.dataTransfer.files.length) importFiles(Array.from(e.dataTransfer.files)); });
+  if (SH && SH.active) SH.listenDrop(refs => importFiles(refs), on => document.body.classList.toggle('dragover', !!on));
 
   /* ---------- 프로젝트 변경 반응 ---------- */
   P.on(kind => {
@@ -1005,8 +1014,15 @@
     const ok = [];
     for (let i = 0; i < json.media.length; i++) {
       const m = json.media[i]; OV.set(i / json.media.length, m.name);
-      try { const rec = await DB.getMedia(m.blobKey || m.id); if (!rec) continue; const meta = await M.open(rec.blob, m.id, s => OV.set(i / json.media.length, s + ' — ' + m.name)); ok.push(meta); }
-      catch (e) { console.warn('restore', m.name, e); }
+      try {
+        let blob = null;
+        if (m.origin && SH && SH.active) blob = await SH.restoreFile(m.origin, { status: t => OV.set(i / json.media.length, t), progress: (p, l) => OV.set((i + p) / json.media.length, l) });
+        else { const rec = await DB.getMedia(m.blobKey || m.id); blob = rec && rec.blob; }
+        if (!blob) continue;
+        const meta = await M.open(blob, m.id, s => OV.set(i / json.media.length, s + ' — ' + m.name));
+        if (m.origin) meta.origin = blob.kmvOrigin || m.origin;
+        ok.push(meta);
+      } catch (e) { console.warn('restore', m.name, e); }
     }
     const wanted = json.media.length; json.media = ok;
     P.load(json);
@@ -1024,5 +1040,21 @@
   document.fonts && document.fonts.ready.then(() => { paintPartThumbs(); if (!playing) renderPreview(); });
   LK.ready().then(() => { if (P.total()) renderPreview(); });
   $('zoom').value = Math.round(1000 * Math.log(pxf / MIN_PXF) / Math.log(MAX_PXF / MIN_PXF));
-  restore().then(() => { zoomFit(); setPH(0); });
+  /* ---------- 데스크톱 껍데기 ---------- */
+  async function refreshShellRow() {
+    if (!SH || !SH.active) return;
+    const row = $('shellRow'); if (!row) return;
+    row.hidden = false; row.style.display = 'flex'; $('shellBadge').hidden = false;
+    const ci = await SH.cacheInfo().catch(() => null);
+    $('shellCache').textContent = ci ? '프록시 ' + ci.count + '개 · ' + SH.fmtBytes(ci.bytes) : '프록시 정보 없음';
+    const note = $('saveNote'); if (note) note.textContent = '원본은 그 자리에 두고 프록시로 편집, 내보내기는 원본 화질로 렌더해요.';
+  }
+  if (SH && SH.active) {
+    $('btnCacheClear').onclick = async () => { if (!confirm('보관된 프록시를 모두 지울까요? (열려 있는 작업은 새로고침 때 원본에서 다시 만들어요)')) return; await SH.cacheClear(); refreshShellRow(); toast('프록시를 비웠어요'); };
+    $('btnCacheDir').onclick = () => SH.openCacheDir();
+  }
+
+  (SH && SH.active ? SH.init().then(refreshShellRow) : Promise.resolve())
+    .then(() => { if (SH && SH.active && SH.info && SH.info.ffmpeg === false) toast('ffmpeg 를 찾지 못했어요 — 설치가 온전한지 확인해 주세요', 6000); })
+    .then(restore).then(() => { zoomFit(); setPH(0); refreshShellRow(); });
 })();
