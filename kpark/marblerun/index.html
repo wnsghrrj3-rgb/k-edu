@@ -63,13 +63,19 @@
   #mr-result .result-body b { color: var(--accent); }
 
   /* ── 건설 모드 ── */
-  #mr-build { position: absolute; bottom: max(16px, env(safe-area-inset-bottom)); left: 50%;
-    transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; align-items: center; width: min(94vw, 640px); }
-  #mr-palette { display: flex; flex-direction: column; gap: 6px; width: 100%; }
-  #mr-palette .prow { display: flex; gap: 6px; justify-content: center; width: 100%; }
-  #mr-palette button { pointer-events: auto; flex: 1; max-width: 100px; font: inherit; color: var(--text);
-    background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 8px 2px 6px;
-    backdrop-filter: blur(8px); cursor: pointer; font-size: 19px; line-height: 1.1;
+  /* 오른쪽 세로 도크 — 화면 가운데 아래를 비워 트랙이 가려지지 않게 (2026-08-27) */
+  #mr-build { position: absolute; right: 12px; top: 104px; bottom: max(12px, env(safe-area-inset-bottom));
+    left: auto; transform: none; display: flex; flex-direction: column; gap: 8px; align-items: stretch;
+    width: min(46vw, 182px); pointer-events: auto; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 18px; padding: 10px; backdrop-filter: blur(8px); overflow: hidden; }
+  #mr-palette { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; width: 100%;
+    flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; align-content: start; padding-right: 2px; }
+  #mr-palette .prow { display: contents; }            /* 줄 묶음을 풀어 2열 격자로 흘린다 */
+  #mr-palette::-webkit-scrollbar { width: 6px; }
+  #mr-palette::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+  #mr-palette button { pointer-events: auto; width: 100%; max-width: none; font: inherit; color: var(--text);
+    background: rgba(10, 15, 44, 0.55); border: 1px solid var(--line); border-radius: 12px; padding: 7px 2px 5px;
+    cursor: pointer; font-size: 18px; line-height: 1.1;
     display: flex; flex-direction: column; align-items: center; gap: 2px; transition: transform .08s, border-color .15s; }
   #mr-palette button span { font-size: 11px; font-weight: 700; }
   #mr-palette button:active:not(:disabled) { transform: scale(0.92); border-color: var(--accent); }
@@ -93,34 +99,46 @@
   #mr-recenter, #mr-frameall { font-size: 17px; padding: 10px 12px; line-height: 1; }
   #mr-recenter.lit { border-color: #4de1ff; color: #4de1ff; box-shadow: 0 0 0 2px rgba(77, 225, 255, 0.22); }
   #mr-buildops button:disabled { cursor: help; }
-  #mr-buildops { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; }
-  #mr-buildops button { pointer-events: auto; font: inherit; font-size: 14px; font-weight: 700; color: var(--text);
-    background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px;
-    backdrop-filter: blur(8px); cursor: pointer; }
+  #mr-buildops { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; align-items: stretch;
+    flex: 0 0 auto; padding-top: 8px; border-top: 1px solid var(--line); }
+  #mr-buildops button { pointer-events: auto; width: 100%; font: inherit; font-size: 13px; font-weight: 700; color: var(--text);
+    background: rgba(10, 15, 44, 0.55); border: 1px solid var(--line); border-radius: 12px; padding: 9px 6px;
+    cursor: pointer; white-space: nowrap; }
+  #mr-height, #mr-share, #mr-gorun, #mr-branch, #mr-merge { grid-column: 1 / -1; }
   #mr-buildops button:disabled { opacity: 0.32; cursor: default; }
   #mr-buildops button.primary { background: linear-gradient(135deg, #2a6dff, #4de1ff); border: none; color: #04122e; }
-  #mr-height { pointer-events: auto; display: flex; gap: 6px; align-items: center;
-    background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 5px 10px; backdrop-filter: blur(8px); }
+  #mr-height { pointer-events: auto; display: flex; gap: 6px; align-items: center; justify-content: space-between;
+    background: rgba(10, 15, 44, 0.55); border: 1px solid var(--line); border-radius: 12px; padding: 5px 8px; }
   #mr-height .lbl { font-size: 12px; color: var(--dim); }
   #mr-height b { min-width: 18px; text-align: center; font-size: 16px; color: var(--accent); }
   #mr-height button { font-size: 16px; font-weight: 800; width: 30px; height: 30px; padding: 0; border-radius: 10px;
     color: var(--text); background: transparent; border: 1px solid var(--line); cursor: pointer; }
 
   /* ── 실행 모드 ── */
-  #mr-run { position: absolute; bottom: max(20px, env(safe-area-inset-bottom)); left: 50%;
-    transform: translateX(-50%); display: flex; gap: 10px; align-items: center; }
-  #mr-count { pointer-events: auto; display: flex; gap: 4px; background: var(--panel);
-    border: 1px solid var(--line); border-radius: 16px; padding: 5px 7px; backdrop-filter: blur(8px); }
-  #mr-count button { font: inherit; font-size: 17px; width: 38px; height: 38px; padding: 0;
-    color: var(--dim); background: transparent; border: 1px solid transparent; border-radius: 12px; cursor: pointer; }
+  /* 실행 모드도 같은 오른쪽 도크 자리 */
+  #mr-run { position: absolute; right: 12px; top: 104px; bottom: auto; left: auto; transform: none;
+    display: flex; flex-direction: column; gap: 8px; align-items: stretch; width: min(46vw, 182px);
+    pointer-events: auto; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 18px; padding: 10px; backdrop-filter: blur(8px); }
+  #mr-count { pointer-events: auto; display: flex; gap: 3px; background: rgba(10, 15, 44, 0.55);
+    border: 1px solid var(--line); border-radius: 12px; padding: 4px; }
+  #mr-count button { font: inherit; font-size: 15px; flex: 1; width: auto; height: 34px; padding: 0;
+    color: var(--dim); background: transparent; border: 1px solid transparent; border-radius: 9px; cursor: pointer; }
   #mr-count button.on { color: #04122e; background: linear-gradient(135deg, #2a6dff, #4de1ff); font-weight: 800; }
   #mr-branch { border-color: #b84dff !important; color: #e2b8ff !important; }
-  #mr-run button { pointer-events: auto; font: inherit; font-size: 15px; font-weight: 700; color: var(--text);
-    background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 13px 20px;
-    backdrop-filter: blur(8px); cursor: pointer; transition: transform .08s; }
+  #mr-run > button { pointer-events: auto; width: 100%; font: inherit; font-size: 14px; font-weight: 700; color: var(--text);
+    background: rgba(10, 15, 44, 0.55); border: 1px solid var(--line); border-radius: 12px; padding: 11px 8px;
+    cursor: pointer; transition: transform .08s; }
   #mr-run button:active { transform: scale(0.94); }
   #mr-slomo.on { border-color: var(--gold); color: var(--gold);
     box-shadow: 0 0 0 2px rgba(255, 211, 92, 0.22); }
+
+  @media (max-width: 520px) {
+    #mr-build, #mr-run { width: min(52vw, 156px); top: 96px; }
+    #mr-palette button { font-size: 16px; padding: 6px 2px 4px; }
+    #mr-palette button span { font-size: 10px; }
+    #mr-buildops button { font-size: 12px; padding: 8px 4px; }
+  }
 
   /* ── 안내 ── */
   #mr-hint { position: absolute; top: 104px; left: 50%; transform: translateX(-50%); z-index: 5;
