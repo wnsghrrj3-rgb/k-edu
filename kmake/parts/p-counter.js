@@ -26,7 +26,7 @@
       var align = p.pos === 'center' ? 'center' : p.pos === 'right' ? 'right' : 'left';
       var y = H * 0.5 + 60 * s - 20 * s * gone;
       // 설명 (위, 금색 작은 자간)
-      K.drawText(ctx, p.label, ax, y - 150 * s, { size: 30 * s, weight: 700, ls: 6 * s, color: T.accent, align: align, alpha: a });
+      K.drawText(ctx, p.label, ax, y - 150 * s, { size: 30 * s, weight: 700, ls: 6 * s, color: T.accent, align: align, alpha: a, shadow: { color: 'rgba(0,0,0,0.35)', blur: 12 * s, dy: 3 * s } });
       // 숫자 + 단위
       ctx.save(); ctx.font = K.font(900, 190 * s); var nw = K.textWidth(ctx, numStr, -4 * s); ctx.font = K.font(700, 56 * s); var uw = K.textWidth(ctx, p.unit, 0); ctx.restore();
       var total = nw + 14 * s + uw;
@@ -35,7 +35,7 @@
       ctx.save(); ctx.translate(x0 + nw / 2, y); ctx.scale(pop, pop); ctx.translate(-(x0 + nw / 2), -y);
       K.drawText(ctx, numStr, x0, y, { size: 190 * s, weight: 900, ls: -4 * s, color: T.text, alpha: a, shadow: { color: 'rgba(0,0,0,0.3)', blur: 20 * s, dy: 5 * s } });
       ctx.restore();
-      K.drawText(ctx, p.unit, x0 + nw + 14 * s, y, { size: 56 * s, weight: 700, color: T.sub, alpha: a });
+      K.drawText(ctx, p.unit, x0 + nw + 14 * s, y, { size: 56 * s, weight: 700, color: T.text, alpha: a, shadow: { color: 'rgba(0,0,0,0.3)', blur: 16 * s, dy: 4 * s } });
       // 밑 금선
       var lu = life(t, 0.3, 1.2, OUT_A, OUT_B);
       ctx.fillStyle = K.rgba(T.accent, 0.9 * a);
