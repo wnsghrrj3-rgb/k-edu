@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>6학년 1학기 사회 · K-edu</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans KR',sans-serif;background:#F5F7FA;min-height:100vh;color:#1A202C}
+
+.top-bar{background:#fff;border-bottom:1px solid #E2E8F0;height:52px;display:flex;align-items:center;padding:0 24px;gap:12px}
+.back-link{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:#718096;text-decoration:none;font-weight:500;transition:color .15s}
+.back-link:hover{color:#1A202C}
+.top-title{font-family:'Jua',sans-serif;font-size:16px;color:#1A202C}
+
+main{max-width:800px;margin:0 auto;padding:28px 20px 60px}
+
+.page-header{display:flex;align-items:center;gap:14px;margin-bottom:32px}
+.subject-badge{display:inline-flex;align-items:center;gap:6px;padding:8px 20px;border-radius:50px;font-family:'Jua',sans-serif;font-size:18px;color:#fff;background:#1D4ED8}
+.page-title{font-family:'Jua',sans-serif;font-size:26px}
+
+.unit-section{margin-bottom:30px}
+.unit-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #E2E8F0}
+.unit-num{width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Jua',sans-serif;font-size:16px;color:#fff}
+.unit-name{font-family:'Jua',sans-serif;font-size:18px;color:#1A202C}
+.unit-count{font-size:13px;color:#A0AEC0;margin-left:auto}
+
+.topic-name{font-family:'Jua',sans-serif;font-size:14px;color:#4A5568;margin:14px 0 8px;padding-left:2px;display:flex;align-items:center;gap:8px}
+.topic-name::before{content:"";width:4px;height:15px;border-radius:2px;background:var(--uc)}
+.topic-std{font-size:11px;color:#A0AEC0;font-weight:400;font-family:'Noto Sans KR',sans-serif}
+
+.lesson-list{display:flex;flex-direction:column;gap:8px}
+.lesson-card{display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:14px 18px;box-shadow:0 1px 8px rgba(0,0,0,.05);cursor:pointer;text-decoration:none;color:#1A202C;border:2px solid transparent;transition:transform .15s,border-color .15s,box-shadow .15s}
+.lesson-card:hover{transform:translateY(-2px);border-color:var(--uc);box-shadow:0 6px 20px rgba(0,0,0,.1)}
+.lesson-num{min-width:32px;height:32px;padding:0 8px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Jua',sans-serif;font-size:14px;color:#fff;background:var(--uc);flex-shrink:0}
+.lesson-title{font-size:14px;font-weight:500;flex:1}
+.lesson-arrow{color:#CBD5E0;font-size:16px}
+.lesson-badge{font-size:11px;padding:2px 8px;border-radius:50px;font-weight:500;flex-shrink:0}
+.badge-tb{background:#EBF8FF;color:#2B6CB0}
+.badge-soon{background:#EDF2F7;color:#A0AEC0}
+
+.lesson-card-soon{background:#FAFAFA;box-shadow:none;border:1px dashed #E2E8F0;cursor:default;opacity:.7}
+.lesson-card-soon:hover{transform:none;border-color:#E2E8F0;box-shadow:none}
+.lesson-card-soon .lesson-num{background:#CBD5E0!important}
+.lesson-card-soon .lesson-title{color:#A0AEC0}
+
+footer{text-align:center;padding:18px 24px;border-top:1px solid #E2E8F0;background:#fff}
+.footer-text{font-size:12px;color:#A0AEC0}
+.footer-text strong{color:#718096;font-weight:500}
+.footer-text a{color:#5B8EF8;text-decoration:none;margin-left:10px}
+.footer-text a:hover{text-decoration:underline}
+
+@media(max-width:600px){
+  .page-header{flex-direction:column;align-items:flex-start;gap:8px}
+  .page-title{font-size:22px}
+  .lesson-card{padding:12px 14px}
+}
+</style>
+  <script src="/kedu_gate.js"></script>
+<script src="/kedu_boxbar.js"></script>
+</head>
+<body>
+
+<div class="top-bar">
+  <a class="back-link" href="/?view=subject">← 홈</a>
+  <span style="color:#E2E8F0">|</span>
+  <span class="top-title">🌏 6학년 1학기 사회</span>
+</div>
+
+<main>
+  <div class="page-header">
+    <div class="subject-badge">📘 6학년 · 1학기</div>
+    <div class="page-title">🌏 사회</div>
+  </div>
+
+  <div id="content"></div>
+</main>
+
+<footer>
+  <p class="footer-text">Copyright © 2025 <strong>K-edu</strong> · Developed by Choe Jun-ho (Kumsung Elementary School) · All rights reserved.
+  <a href="/privacy/">개인정보 처리방침</a>
+  <a href="/terms/">서비스 이용약관</a></p>
+</footer>
+
+<script>
+const DIR1 = "1단원_평화통일민주화산업화/";
+const DIR2 = "2단원_민주주의와시민참여/";
+const DIR3 = "3단원_지구대륙그리고국가들/";
+
+const UNITS = [
+  {
+    num: 1, name: "평화 통일을 위한 노력, 민주화와 산업화", emoji: "\u{1F54A}\uFE0F", color: "#1D4ED8",
+    topics: [
+      { name: "\u2460 평화 통일을 위한 노력", std: "[6\uC0AC07-01]", lessons: [
+        {n:"1", file:DIR1+"g6_social_u1_l01_분단의문제점.html", title:"분단으로 나타난 문제점을 알아볼까요", track:"soon"},
+        {n:"2", title:"분단의 아픔이 담긴 장소를 살펴볼까요 / [디지털+ 할 수 있어요] 인터넷으로 분단과 관련 있는 장소 답사하기", track:"soon"},
+        {n:"3", title:"평화 통일을 위한 노력을 알아볼까요 / [풍덩] 남과 북이 팀 코리아로 하나가 돼요", track:"soon"},
+        {n:"4", title:"평화 통일을 위해 할 수 있는 일을 실천해 볼까요 / [별별 직업] 북한 연구자", track:"soon"}
+      ]},
+      { name: "\u2461 민주화와 산업화로 달라진 생활 모습", std: "[6\uC0AC07-02]", lessons: [
+        {n:"5", title:"4\u00B719 혁명과 민주화를 위한 사람들의 노력을 알아볼까요", track:"soon"},
+        {n:"6", title:"5\u00B718 민주화 운동과 민주화를 위한 사람들의 노력을 알아볼까요", track:"soon"},
+        {n:"7", title:"6월 민주 항쟁과 민주화로 달라진 모습을 알아볼까요", track:"soon"},
+        {n:"8", title:"우리나라 산업의 발달 과정을 알아볼까요", track:"soon"},
+        {n:"9", title:"산업화로 달라진 사람들의 생활 모습을 알아볼까요 / [별별 직업] 도시 재생 전문가", track:"soon"},
+        {n:"10", title:"[생각을 펼쳐요]", track:"soon"},
+        {n:"11", title:"1단원 마무리 \u2014 생각 그물\u00B7교실 놀이", track:"soon"}
+      ]}
+    ]
+  },
+  {
+    num: 2, name: "민주주의와 시민 참여", emoji: "\u{1F5F3}\uFE0F", color: "#C2410C",
+    topics: [
+      { name: "\u2460 민주주의와 선거", std: "[6\uC0AC08-01]", lessons: [
+        {n:"1", title:"민주주의에서 선거가 무엇인지 알아볼까요", track:"soon"},
+        {n:"2", title:"선거가 중요한 까닭을 알아볼까요", track:"soon"},
+        {n:"3", title:"선거 과정을 알아볼까요 / [별별 직업] 선거 관리 위원회 공무원", track:"soon"},
+        {n:"4", title:"모의 선거를 통해 선거에 참여해 볼까요 / [할 수 있어요] 선거 공약 평가하기", track:"soon"}
+      ]},
+      { name: "\u2461 국가기관과 권력 분립", std: "[6\uC0AC08-02]", lessons: [
+        {n:"5", title:"우리나라 국가기관에는 무엇이 있는지 알아볼까요", track:"soon"},
+        {n:"6", title:"국회에서 하는 일을 알아볼까요", track:"soon"},
+        {n:"7", title:"행정부에서 하는 일을 알아볼까요", track:"soon"},
+        {n:"8", title:"법원에서 하는 일을 알아볼까요 / [별별 직업] 변호사", track:"soon"},
+        {n:"9", title:"국가기관의 권력을 나누는 까닭을 알아볼까요 / [할 수 있어요] 권력을 나누는 이유 탐구하기", track:"soon"}
+      ]},
+      { name: "\u2462 민주주의와 미디어", std: "[6\uC0AC08-03]", lessons: [
+        {n:"10", title:"미디어가 무엇인지 알아볼까요", track:"soon"},
+        {n:"11", title:"민주주의에서 미디어의 역할을 알아볼까요 / [풍덩] 1인 미디어로 정보의 생산자가 돼요", track:"soon"},
+        {n:"12", title:"미디어의 내용을 비판적으로 분석해야 하는 까닭을 알아볼까요", track:"soon"},
+        {n:"13", title:"미디어를 올바르게 이용하는 태도를 길러 볼까요 / [별별 직업] 미디어 비평가", track:"soon"},
+        {n:"14", title:"[생각을 펼쳐요]", track:"soon"},
+        {n:"15", title:"2단원 마무리 \u2014 생각 그물\u00B7교실 놀이", track:"soon"}
+      ]}
+    ]
+  },
+  {
+    num: 3, name: "지구, 대륙 그리고 국가들", emoji: "\u{1F30D}", color: "#047857",
+    topics: [
+      { name: "\u2460 세계를 표현하는 다양한 자료", std: "[6\uC0AC09-01]", lessons: [
+        {n:"1", title:"지구본과 세계지도를 살펴볼까요 / [풍덩] 지도에 담긴 세계의 모습은 실제와 다를 수 있어요", track:"soon"},
+        {n:"2", title:"디지털 영상 지도를 살펴볼까요 / [디지털+ 할 수 있어요] 디지털 영상 지도로 세계의 모습 살펴보기", track:"soon"},
+        {n:"3", title:"위도와 경도를 알아볼까요", track:"soon"},
+        {n:"4", title:"지구본과 세계지도에서 위치를 표현해 볼까요 / [별별 직업] 공간 정보 연구원", track:"soon"}
+      ]},
+      { name: "\u2461 세계 여러 국가의 위치와 영토 모습", std: "[6\uC0AC09-02]", lessons: [
+        {n:"5", title:"세계의 대륙과 대양을 알아볼까요", track:"soon"},
+        {n:"6", title:"아시아와 오세아니아의 여러 나라를 살펴볼까요 / [별별 직업] 외교관", track:"soon"},
+        {n:"7", title:"유럽과 아프리카의 여러 나라를 살펴볼까요 / [풍덩] 나라 안에 다른 나라가 있어요", track:"soon"},
+        {n:"8", title:"북아메리카와 남아메리카의 여러 나라를 살펴볼까요", track:"soon"},
+        {n:"9", title:"[생각을 펼쳐요]", track:"soon"},
+        {n:"10", title:"3단원 마무리 \u2014 생각 그물\u00B7교실 놀이", track:"soon"}
+      ]}
+    ]
+  }
+];
+
+const content = document.getElementById('content');
+UNITS.forEach((unit) => {
+  const all = unit.topics.reduce((a,t)=>a.concat(t.lessons), []);
+  const tbCount = all.filter(l => l.track === 'tb').length;
+  const soonCount = all.filter(l => l.track === 'soon').length;
+
+  const section = document.createElement('div');
+  section.className = 'unit-section';
+
+  let html = `
+    <div class="unit-header">
+      <div class="unit-num" style="background:${unit.color}">${unit.num}</div>
+      <div class="unit-name">${unit.emoji} ${unit.num}단원: ${unit.name}</div>
+      <div class="unit-count">라이브 ${tbCount}차시${soonCount ? ' · 준비 중 ' + soonCount : ''}</div>
+    </div>
+  `;
+
+  unit.topics.forEach((topic) => {
+    html += `<div class="topic-name" style="--uc:${unit.color}">${topic.name} <span class="topic-std">${topic.std}</span></div>`;
+    html += `<div class="lesson-list">`;
+    html += topic.lessons.map(l => l.track === 'tb' ? `
+      <a class="lesson-card" href="${l.file}" style="--uc:${unit.color}">
+        <div class="lesson-num">${l.n}</div>
+        <div class="lesson-title">${l.title}</div>
+        <span class="lesson-badge badge-tb">교과서</span>
+        <div class="lesson-arrow">›</div>
+      </a>
+    ` : `
+      <div class="lesson-card lesson-card-soon">
+        <div class="lesson-num">${l.n}</div>
+        <div class="lesson-title">${l.title}</div>
+        <span class="lesson-badge badge-soon">준비 중</span>
+      </div>
+    `).join('');
+    html += `</div>`;
+  });
+
+  section.innerHTML = html;
+  content.appendChild(section);
+});
+</script>
+<script src="/kedu_accordion.js"></script>
+<script src="/kedu_back.js"></script>
+</body>
+</html>
