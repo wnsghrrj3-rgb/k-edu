@@ -51,5 +51,14 @@ scenario('㉑ 케이메이커 옛 주소(kmake) 아래 화면 — 안내판 아�
 scenario('㉒ 케이영재 차시 — 다리(gifted/math) 말고 케이영재 허브로', [['/gifted/math/l2/kg_math_l2_com01_색칠경우세기.html', 1]], '/gifted/index.html');
 scenario('㉓ 아침활동 하위 화면', [['/morning/index.html', 1], ['/morning/math.html', 1]], '/morning/index.html');
 scenario('㉔ 케이배틀에서 나가기 — 학생', [['/', 1], ['/kbattle/index.html', 1]], '/');
+/* 도구 구역 2차 (2026-08-27) — 케이랩·케이플·케이배틀·메이커·아침·라이브 */
+scenario('㉕ 케이랩 도구에서 옆 도구로 옮긴 뒤 나가기', [['/', 1], ['/kedu/hub/klab.html', 1], ['/labs/scilab_states.html', 1], ['/labs/scilab_sound.html', 1]], '/kedu/hub/klab.html');
+scenario('㉖ 케이박스 활동을 직접 주소로 연 경우', [['/kedu/activities/g1m_u1_count9.html', 1]], '/kedu/activities/index.html');
+scenario('㉗ 케이플 방 참가 화면', [['/', 1], ['/kple/play.html', 1]], '/');
+scenario('㉘ 교사가 케이플 사회자 화면을 열었다 나가기', [['/?role=teacher', 1], ['/kple/host.html', 1]], '/teacher/index.html');
+scenario('㉙ 메이커 하위 화면', [['/', 1], ['/maker/index.html', 1], ['/maker/card/index.html', 1]], '/maker/index.html');
+scenario('㉚ 케이메이커 놀이터 리포트', [['/maker-playground/report/stage4-builder.html', 1]], '/maker-playground/report/index.html');
+scenario('㉛ 그림 그리기 하위 화면', [['/', 1], ['/draw/index.html', 1], ['/draw/coloring/index.html', 1]], '/draw/index.html');
+scenario('㉜ 뮤지엄에서 케이랩으로 건너뛴 뒤 나가기 — 뮤지엄이 아니라 케이랩 허브', [['/', 1], ['/museum/index.html', 1], ['/museum/math/ex01_gauss.html', 1], ['/labs/scilab_states.html', 1]], '/kedu/hub/klab.html');
 console.log(`돌아가기 동선 시뮬 — ${pass} PASS / ${fail} FAIL`);
 process.exit(fail ? 1 : 0);

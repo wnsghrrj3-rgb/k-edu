@@ -11,7 +11,7 @@
 <script src="/kedu_boxbar.js"></script>
 </head>
 <body>
-<button id="kedu-home" title="케이에듀 시작 화면으로" style="position:fixed;top:14px;left:14px;z-index:9999;display:inline-flex;align-items:center;gap:6px;padding:9px 15px;border-radius:12px;border:none;background:#fff;color:#1a2540;font-weight:800;font-size:14px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.25);font-family:inherit;">🏠 케이에듀로 가기</button>
+<script src="/kedu_back.js"></script>
 <div id="root">
   <div class="kp-gate" id="gate">
     <div class="kp-logo">케이<span>플</span></div>
@@ -95,18 +95,25 @@
   });
   window.addEventListener('beforeunload', function () { if (activeCtx) { try { activeCtx.leave(); } catch (e) {} } });
 
-  var homeBtn = document.getElementById('kedu-home');
-  function setHomeBtn() { homeBtn.textContent = activeCtx ? '← 방 나가기' : '🏠 케이에듀로 가기'; }
-  // 참가 중이면 방코드 입력(앱 홈)으로 — 뒤로가기와 동일 경로. 입력 화면이면 케이에듀 시작점으로
-  homeBtn.onclick = function () {
-    if (activeCtx) { history.back(); }
-    else { location.href = '/'; }
-  };
+  /* 좌상단 버튼은 공용 것 하나만 쓴다 (2026-08-27 동선 점검 — 자체 버튼과 공용 버튼이
+     같은 자리에 두 개 겹쳐 있었다). 방에 들어가 있는 동안만 문구·행동을 바꾼다. */
+  var homeBtn = document.getElementById('kedu-back');
+  function setHomeBtn() {
+    if (!homeBtn) homeBtn = document.getElementById('kedu-back');
+    if (!homeBtn) return;
+    homeBtn.textContent = activeCtx ? '← 방 나가기'
+      : (window.KEDU_BACK ? window.KEDU_BACK.label : '🏠 케이에듀로 가기');
+  }
+  document.addEventListener('click', function (e) {   // 방에 있는 동안은 방 나가기로 가로챈다
+    if (!activeCtx) return;
+    var t = e.target && e.target.closest && e.target.closest('#kedu-back');
+    if (!t) return;
+    e.preventDefault(); history.back();
+  }, true);
 
   bindGate();
   setHomeBtn();
 })();
 </script>
-<script src="/kedu_back.js"></script>
 </body>
 </html>
