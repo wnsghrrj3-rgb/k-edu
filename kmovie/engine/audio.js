@@ -10,6 +10,7 @@
    · A2 음악: 페이드 인/아웃 + 오토 덕킹(A1 음성 구간에서 -depth dB, 진입 200ms/복귀 500ms).
      페이드 게인과 덕킹 게인은 노드 둘을 직렬로 — 자동화 곡선을 곱하기 위해.
    · 비트 마커: 에너지 봉우리(onset) 휴리스틱 — 클립 경계 스냅용. 자동 컷은 없다(헌법).
+   · 앰비언스: 원본에서 찾은 룸톤 1.5초를 이음매 없는 루프로 만들어 A1 빈틈(사진·프리즈·무음)에 깐다.
    ============================================================ */
 (function (g) {
   'use strict';
@@ -129,6 +130,86 @@
     return nodes;
   }
 
+
+  /* ---------- 앰비언스(룸톤) ----------
+     · findRoomTone(): 타임라인에 쓰인 영상 원본들의 peaks(프레임 RMS) 에서 가장 조용하면서 "완전 무음은 아닌" 1.5초 창을 고른다.
+       (디지털 무음은 룸톤이 아니다 — 최대값 문턱). 점수 = 평균 RMS + 흔들림(표준편차) 가중. 앞쪽 클립 우선(같은 점수면 먼저 나온 것).
+     · ambGaps(): A1 이 하나도 덮지 않는 타임라인 구간(사진·프리즈·무음 클립·소리 0). 3프레임 미만은 무시.
+     · ambBuffer(): 룸톤 구간을 잘라 앞뒤 100ms 를 겹쳐 붙인 "이음매 없는 루프" 버퍼(캐시).
+     · scheduleAmb(): 빈틈마다 루프 재생 + 200ms 페이드 인/아웃. gain = 원본 레벨 × ambience.gain. */
+  const AMB_SEC = 1.5, AMB_XF = 0.1, AMB_EDGE = 0.2;
+  const ambCache = new Map();
+  function findRoomTone() {
+    const P = g.KMV_PROJECT, M = g.KMV_MEDIA;
+    const used = []; for (const c of P.data.V) if (!used.includes(c.media)) used.push(c.media);
+    let best = null;
+    used.forEach((mid, order) => {
+      const m = P.media(mid), src = M.get(mid); if (!m || m.kind !== 'video' || !m.audio || !src || !src.peaks) return;
+      const pk = src.peaks, n = pk.length, win = Math.round(AMB_SEC * m.fps); if (n < win + 2) return;
+      const sorted = Array.from(pk).sort((a, b) => a - b), q90 = sorted[Math.floor(n * 0.9)] || 0;
+      const silent = Math.max(1e-4, q90 * 0.002);            // 이보다 작으면 디지털 무음
+      let sum = 0, sq = 0; for (let i = 0; i < win; i++) { sum += pk[i]; sq += pk[i] * pk[i]; }
+      const step = Math.max(1, Math.round(m.fps / 10));       // 0.1초 간격으로 훑는다
+      for (let i = 0; i + win <= n; i += step) {
+        if (i) { for (let j = i - step; j < i; j++) { sum -= pk[j]; sq -= pk[j] * pk[j]; } for (let j = i + win - step; j < i + win; j++) { sum += pk[j]; sq += pk[j] * pk[j]; } }
+        const mean = sum / win, sd = Math.sqrt(Math.max(0, sq / win - mean * mean));
+        let mx = 0; for (let j = i; j < i + win; j++) if (pk[j] > mx) mx = pk[j];
+        if (mx <= silent) continue;
+        const score = mean + sd * 2 + order * 1e-6;
+        if (!best || score < best.score) best = { media: mid, in: i, out: i + win, score, level: mean };
+      }
+    });
+    return best;
+  }
+  function ambGaps(totalFrames) {
+    const P = g.KMV_PROJECT, tot = totalFrames == null ? P.total() : totalFrames;
+    if (!tot) return [];
+    const on = new Uint8Array(tot);
+    for (const a of P.data.A1) { const c = P.clip(a.clip); if (!c || (a.vol != null && a.vol <= 0)) continue; const m = P.media(c.media); for (const sg of segments(a, c, m)) for (let f = Math.max(0, sg.tl); f < Math.min(tot, sg.tl + sg.dur); f++) on[f] = 1; }
+    const out = []; let st = -1;
+    for (let f = 0; f <= tot; f++) { const v = f < tot && !on[f]; if (v && st < 0) st = f; else if (!v && st >= 0) { if (f - st >= 3) out.push({ at: st, dur: f - st }); st = -1; } }
+    return out;
+  }
+  function ambBuffer(actx) {
+    const P = g.KMV_PROJECT, amb = P.data.audio && P.data.audio.ambience, src = amb && amb.src;
+    if (!src) return null;
+    const m = P.media(src.media), S = g.KMV_MEDIA.get(src.media); if (!m || !S || !S.audio) return null;
+    const ab = S.audio, sr = ab.sampleRate, key = src.media + ':' + src.in + ':' + src.out + ':' + sr;
+    if (ambCache.has(key)) return ambCache.get(key);
+    const s0 = Math.floor(src.in / m.fps * sr), s1 = Math.min(ab.length, Math.floor(src.out / m.fps * sr));
+    const len = s1 - s0, xf = Math.min(Math.floor(AMB_XF * sr), Math.floor(len / 4));
+    if (len < sr * 0.3) return null;
+    const outLen = len - xf, buf = actx.createBuffer(ab.numberOfChannels, outLen, sr);
+    for (let ch = 0; ch < ab.numberOfChannels; ch++) {
+      const d = ab.getChannelData(ch), o = buf.getChannelData(ch);
+      for (let i = 0; i < outLen; i++) o[i] = d[s0 + i];
+      for (let i = 0; i < xf; i++) { const t = i / xf, w = Math.sqrt(t), w2 = Math.sqrt(1 - t); o[i] = d[s0 + i] * w + d[s0 + outLen + i] * w2; }   // 끝 100ms 를 앞에 겹쳐 이음매 제거(등전력)
+    }
+    ambCache.set(key, buf); return buf;
+  }
+  function scheduleAmb(actx, dest, fromFrame, t0, untilFrame) {
+    const P = g.KMV_PROJECT, FPS = P.FPS, amb = P.data.audio && P.data.audio.ambience, nodes = [];
+    if (!amb || !amb.on || !amb.src) return nodes;
+    const buf = ambBuffer(actx); if (!buf) return nodes;
+    const gainV = amb.gain == null ? 1 : amb.gain, loopSec = buf.duration;
+    for (const gp of ambGaps(untilFrame)) {
+      const end = gp.at + gp.dur; if (end <= fromFrame) continue;
+      if (untilFrame != null && gp.at >= untilFrame) continue;
+      const skip = Math.max(0, fromFrame - gp.at), when = t0 + (gp.at + skip - fromFrame) / FPS, durSec = (gp.dur - skip) / FPS;
+      if (durSec <= 0.02) continue;
+      const node = actx.createBufferSource(); node.buffer = buf; node.loop = true; node.loopStart = 0; node.loopEnd = loopSec;
+      const gn = actx.createGain(), f = Math.min(AMB_EDGE, durSec / 2);
+      const gapStartSec = gp.at / FPS, tNow = (gp.at + skip) / FPS;
+      gn.gain.setValueAtTime(skip > 0 ? gainV : 0, when);
+      if (skip === 0) gn.gain.linearRampToValueAtTime(gainV, when + f);
+      gn.gain.setValueAtTime(gainV, when + durSec - f); gn.gain.linearRampToValueAtTime(0, when + durSec);
+      node.connect(gn); gn.connect(dest);
+      node.start(when, ((tNow - gapStartSec) % loopSec), durSec);
+      nodes.push(node);
+    }
+    return nodes;
+  }
+
   /* ---------- 비트 마커 (onset 휴리스틱) → 초 배열 ---------- */
   function beats(ab) {
     if (!ab) return [];
@@ -164,7 +245,7 @@
     const a = ctx();
     if (a.state !== 'running') { try { await a.resume(); } catch (e) {} }
     const t0 = a.currentTime + 0.06;
-    playing = { fromFrame, t0, nodes: scheduleA1(a, a.destination, fromFrame, t0).concat(scheduleA2(a, a.destination, fromFrame, t0)) };
+    playing = { fromFrame, t0, nodes: scheduleA1(a, a.destination, fromFrame, t0).concat(scheduleA2(a, a.destination, fromFrame, t0), scheduleAmb(a, a.destination, fromFrame, t0)) };
     return t0;
   }
   function now() { if (!playing) return null; return playing.fromFrame + (ctx().currentTime - playing.t0) * g.KMV_PROJECT.FPS; }
@@ -182,6 +263,7 @@
     const oac = new OfflineAudioContext(2, len, SR);
     scheduleA1(oac, oac.destination, 0, 0, totalFrames);
     scheduleA2(oac, oac.destination, 0, 0, totalFrames);
+    scheduleAmb(oac, oac.destination, 0, 0, totalFrames);
     return oac.startRendering();
   }
 
@@ -212,5 +294,5 @@
     return out.filter(s => s.dur >= min);
   }
 
-  g.KMV_AUDIO = { ctx, decode, play, stop, now, isPlaying, renderMix, segments, scheduleA1, scheduleA2, voice, beats, duckSpans, XF, SR };
+  g.KMV_AUDIO = { ctx, decode, play, stop, now, isPlaying, renderMix, segments, scheduleA1, scheduleA2, scheduleAmb, findRoomTone, ambGaps, ambBuffer, voice, beats, duckSpans, XF, SR, AMB_SEC };
 })(typeof window !== 'undefined' ? window : globalThis);

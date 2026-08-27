@@ -67,7 +67,7 @@
         const sup = await AudioEncoder.isConfigSupported({ codec: 'mp4a.40.2', sampleRate: g.KMV_AUDIO.SR, numberOfChannels: 2, bitrate: 192000 });
         acodecOK = !!sup.supported;
       } catch (e) {}
-      if (acodecOK && (P.data.A1.length || (P.data.A2 && P.data.A2.length))) mix = await g.KMV_AUDIO.renderMix(total);
+      if (acodecOK && (P.data.A1.length || (P.data.A2 && P.data.A2.length) || (P.data.audio && P.data.audio.ambience && P.data.audio.ambience.on && P.data.audio.ambience.src))) mix = await g.KMV_AUDIO.renderMix(total);
 
       muxer = new g.Mp4Muxer.Muxer({
         target,

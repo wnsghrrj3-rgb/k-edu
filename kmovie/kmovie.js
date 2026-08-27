@@ -7,6 +7,7 @@
      / Alt+소리띠 가장자리 = J/L 컷 / S 분할 / F 프리즈 / Q·W / Del / ↑↓ 편집점 / 스냅.
    · 4단계: 부품 P 레인(목록에서 끌어 놓기·필드 편집·홀드 늘이기·인물 뒤 컷아웃) · 음악 A2 레인
      (페이드·덕킹·비트 마커 스냅). 카드(S·P·A2)는 같은 손맛 — 끌어 이동·가장자리 트림·스냅·Del.
+     잔여: 앰비언스(룸톤 자동 채움, A1 빈틈에 띠) · 몽타주 깔기(선택 클립부터 박자 격자에 길이 맞춤, 움직임 큰 구간 고르기).
    · 저장: 프로젝트 JSON + 원본 blob → IndexedDB. 새로고침해도 그대로.
    ============================================================ */
 (function () {
@@ -21,6 +22,7 @@
 
   /* ---------- 상태 ---------- */
   let ph = 0, sel = null, selS = null, selP = null, selA2 = null, playing = false, snap = true, beatSnap = true, playStart = 0;
+  let montRange = 'all', montEvery = 2, montPick = 'motion';   // 몽타주 깔기 설정(세션)
   let pxf = 2, scrollF = 0;
   let drag = null, hover = null, dirty = true, previewJob = 0, rafId = 0;
   let partDrag = null;                       // 부품 목록에서 끌어오는 중 {part, dur, x, y, moved, overTL, f}
@@ -153,6 +155,8 @@
     const D = P.data, V = LY.V, A1 = LY.A1;
     for (const c of D.V) { const x0 = xOf(c.at), x1 = xOf(c.at + c.dur); if (x1 < HEAD || x0 > TW) continue; drawClip(ctx, c, x0, x1, V.y + 4, V.h - 8, c.id === sel); }
     for (const a of D.A1) { const c = P.clip(a.clip); const x0 = xOf(a.at), x1 = xOf(a.at + a.dur); if (x1 < HEAD || x0 > TW) continue; drawAudio(ctx, a, c, x0, x1, A1.y + 4, A1.h - 8, a.clip === sel); }
+    // 앰비언스: A1 빈틈에 룸톤 루프 띠
+    { const amb = D.audio && D.audio.ambience; if (amb && amb.on && amb.src) { const gaps = A.ambGaps(); for (const gp of gaps) { const x0 = Math.max(HEAD, xOf(gp.at)), x1 = Math.min(TW, xOf(gp.at + gp.dur)); if (x1 - x0 < 1) continue; const y = A1.y + 4, h = A1.h - 8; ctx.save(); rr(ctx, x0, y, x1 - x0, h, 4); ctx.clip(); ctx.fillStyle = 'rgba(111,183,217,.10)'; ctx.fillRect(x0, y, x1 - x0, h); ctx.strokeStyle = 'rgba(111,183,217,.28)'; ctx.lineWidth = 1; ctx.beginPath(); for (let xx = x0 - h; xx < x1; xx += 8) { ctx.moveTo(xx, y + h); ctx.lineTo(xx + h, y); } ctx.stroke(); ctx.beginPath(); ctx.moveTo(x0, y + h / 2 + .5); ctx.lineTo(x1, y + h / 2 + .5); ctx.strokeStyle = 'rgba(111,183,217,.45)'; ctx.stroke(); if (x1 - x0 > 46) { ctx.fillStyle = 'rgba(160,205,228,.8)'; ctx.font = '600 10px Pretendard, sans-serif'; ctx.textBaseline = 'middle'; ctx.fillText('룸톤', x0 + 5, y + 8); } ctx.restore(); } } }
     // 전환 표시 (클립 시작에 작은 겹침 표)
     for (const c of D.V) if (c.transIn) { const x0 = xOf(c.at), w = Math.max(6, TR.durFrames(c.transIn) * pxf); if (x0 + w < HEAD || x0 > TW) continue; ctx.fillStyle = 'rgba(217,182,92,.28)'; ctx.fillRect(x0, V.y + 4, w, V.h - 8); ctx.fillStyle = GOLD; ctx.beginPath(); ctx.moveTo(x0, V.y + 4); ctx.lineTo(x0 + w, V.y + 4); ctx.lineTo(x0, V.y + 4 + Math.min(14, w)); ctx.closePath(); ctx.fill(); }
     // 자막 카드
@@ -508,7 +512,7 @@
   tl.addEventListener('dblclick', e => { const { x, y } = pos(e); const h = hitTest(x, y); if (h.kind === 'V' || h.kind === 'A1') { setPH(h.clip.at); } if (h.kind === 'S') { setPH(h.s.at); $('subEditText').focus(); } if (h.kind === 'P') { setPH(h.pt.at + Math.min(h.pt.dur - 1, Math.round(PT.meta(h.pt.part).thumbT * FPS))); const f = $('partFields').querySelector('input'); if (f) f.focus(); } if (h.kind === 'A2') setPH(h.a2.at); });
 
   /* ---------- 선택·편집 동작 ---------- */
-  function select(id) { if (sel === id) return; sel = id; dirty = true; draw(); refreshPanel(); }
+  function select(id) { if (sel === id) return; sel = id; dirty = true; draw(); refreshPanel(); refreshMontPanel(); }
   function selectS(id) { if (selS === id) return; selS = id; dirty = true; draw(); refreshSubPanel(); }
   function selectP(id) { if (selP === id) return; selP = id; dirty = true; draw(); refreshPartPanel(); }
   function selectA2(id) { if (selA2 === id) return; selA2 = id; dirty = true; draw(); refreshMusicPanel(); }
@@ -824,6 +828,7 @@
     const D = P.data.audio.ducking; $('tgDuck').classList.toggle('on', !!D.on); $('rowDuck').classList.toggle('hidden', !D.on);
     if (document.activeElement !== $('duckDepth')) { $('duckDepth').value = D.depth == null ? 12 : D.depth; $('duckDepthV').textContent = '-' + $('duckDepth').value + 'dB'; }
     $('tgBeat').classList.toggle('on', beatSnap);
+    refreshAmbPanel(); refreshMontPanel();
     if (!a) return;
     const m = P.media(a.media), src = M.get(a.media);
     $('mName').textContent = m.name; $('mName').title = m.name;
@@ -832,6 +837,70 @@
     Array.from($('fadeInSeg').children).forEach(b => b.classList.toggle('on', +b.dataset.k === (a.fadeIn || 0)));
     Array.from($('fadeOutSeg').children).forEach(b => b.classList.toggle('on', +b.dataset.k === (a.fadeOut || 0)));
   }
+
+  /* ---------- 4단계 잔여 패널: 앰비언스·몽타주 ---------- */
+  function ambState() { return P.data.audio.ambience || { on: false, src: null, gain: 1 }; }
+  function findRoomTone(silent) {
+    const rt = A.findRoomTone();
+    if (!rt) { if (!silent) toast(refreshStatusCount() ? '아직 현장음 분석 중이에요 — 잠시 후 다시 눌러 주세요' : '룸톤을 찾을 현장음이 없어요 (소리 있는 영상 클립이 타임라인에 있어야 해요)', 2600); return null; }
+    return { media: rt.media, in: rt.in, out: rt.out };
+  }
+  function refreshStatusCount() { return P.data.media.filter(m => { const s = M.get(m.id); return s && s.kind === 'video' && !s.analyzed; }).length; }
+  $('tgAmb').onclick = () => {
+    stop(); const amb = ambState();
+    if (amb.on) { P.setAmbience({ on: false }); return; }
+    const src = amb.src || findRoomTone(); if (!src) return;
+    P.setAmbience({ on: true, src });
+    toast('룸톤을 찾아 빈 구간에 깔았어요 — 재생해서 들어 보세요', 2200);
+  };
+  $('btnAmbFind').onclick = () => { stop(); const src = findRoomTone(); if (src) { P.setAmbience({ src, on: true }); toast('가장 조용한 1.5초를 다시 골랐어요', 1600); } };
+  [['0.5', '조용히'], ['1', '그대로'], ['1.8', '살짝 크게']].forEach(([k, l]) => segBtn($('ambGainSeg'), k, l, () => { stop(); P.setAmbience({ gain: +k }); }));
+  function refreshAmbPanel() {
+    const amb = ambState(); $('tgAmb').classList.toggle('on', !!amb.on);
+    $('rowAmbSrc').classList.toggle('hidden', !amb.on); $('rowAmbGain').classList.toggle('hidden', !amb.on);
+    if (amb.src) { const m = P.media(amb.src.media); $('ambSrc').textContent = m ? m.name + ' · ' + tc(Math.round(amb.src.in * FPS / m.fps)) + ' 부터 ' + (A.AMB_SEC) + '초' : '(원본 없음)'; $('ambSrc').title = $('ambSrc').textContent; }
+    else $('ambSrc').textContent = '아직 못 찾음';
+    const gk = String(amb.gain == null ? 1 : amb.gain);
+    Array.from($('ambGainSeg').children).forEach(b => b.classList.toggle('on', b.dataset.k === gk));
+  }
+  // 몽타주 깔기
+  [['all', '끝까지'], ['4', '4개'], ['8', '8개']].forEach(([k, l]) => segBtn($('montRangeSeg'), k, l, () => { montRange = k; refreshMontPanel(); }));
+  [['1', '1박'], ['2', '2박'], ['4', '4박']].forEach(([k, l]) => segBtn($('montEverySeg'), k, l, () => { montEvery = +k; refreshMontPanel(); }));
+  [['motion', '움직임 큰 곳'], ['keep', '지금 자리']].forEach(([k, l]) => segBtn($('montPickSeg'), k, l, () => { montPick = k; refreshMontPanel(); }));
+  /* 원본 motion(프레임별 0..1) 에서 needSrc 길이 창의 평균이 가장 큰 시작점. 클립 구간 안에서 먼저 찾고, 구간이 짧으면 원본 전체에서. */
+  function pickMotionIn(c, m, needSrc) {
+    const src = M.get(m.id); if (!src || !src.motion) return c.in;
+    const mo = src.motion, n = mo.length;
+    let lo = c.in, hi = c.out; if (hi - lo < needSrc) { lo = 0; hi = n; }
+    if (hi - lo <= needSrc) return lo;
+    let sum = 0; for (let i = lo; i < lo + needSrc; i++) sum += mo[i];
+    let best = sum, bi = lo;
+    for (let i = lo + 1; i + needSrc <= hi; i++) { sum += mo[i + needSrc - 1] - mo[i - 1]; if (sum > best) { best = sum; bi = i; } }
+    return bi;
+  }
+  function montageClips() {
+    const c0 = selClip() || P.clipAt(ph); if (!c0) return [];
+    const i = P.clipIndex(c0.id), V = P.data.V;
+    return (montRange === 'all' ? V.slice(i) : V.slice(i, i + (+montRange))).map(c => c.id);
+  }
+  function refreshMontPanel() {
+    Array.from($('montRangeSeg').children).forEach(b => b.classList.toggle('on', b.dataset.k === montRange));
+    Array.from($('montEverySeg').children).forEach(b => b.classList.toggle('on', +b.dataset.k === montEvery));
+    Array.from($('montPickSeg').children).forEach(b => b.classList.toggle('on', b.dataset.k === montPick));
+    const ids = montageClips(), hasBeat = beatFrames().length >= 2;
+    $('btnMontage').disabled = !ids.length || !hasBeat;
+    $('montNote').textContent = !hasBeat ? '음악(A2)을 먼저 놓아 주세요 — 비트 마커가 있어야 해요' : !ids.length ? '기준이 될 클립을 선택하거나 플레이헤드를 클립 위에 두세요' : '클립 ' + ids.length + '개의 길이를 ' + montEvery + '박 간격에 맞춰요. 컷 순서는 그대로, 길이만 박자 위로 (Ctrl+Z 로 되돌려요)';
+  }
+  $('btnMontage').onclick = () => {
+    stop();
+    const ids = montageClips(); if (!ids.length) return toast('기준 클립을 먼저 선택해 주세요');
+    const bts = beatFrames(); if (bts.length < 2) return toast('음악을 먼저 놓아 주세요 — 비트 마커가 있어야 해요');
+    const c0 = P.clip(ids[0]);
+    const r = P.montage(ids, bts, { every: montEvery, pickIn: montPick === 'motion' ? pickMotionIn : null });
+    if (!r) return toast('이 클립 뒤로는 비트 마커가 없어요 — 음악을 더 길게 놓거나 앞 클립을 선택해 주세요', 2800);
+    select(c0.id); setPH(c0.at);
+    toast('몽타주 ' + r.done + '개를 ' + montEvery + '박 간격에 맞췄어요' + (r.short ? ' · 원본이 짧아 다 못 채운 클립 ' + r.short + '개' : '') + (r.done < ids.length ? ' · 비트가 끝나 ' + (ids.length - r.done) + '개는 그대로' : ''), 3200);
+  };
 
   /* ---------- 우측 패널: 미디어 ---------- */
   function refreshBin() {
@@ -866,7 +935,7 @@
       binProg[id] = p;
       const bar = document.querySelector('#bin .bar[data-id="' + id + '"] i'); if (bar) bar.style.width = Math.round(p * 100) + '%';
       const now = performance.now();
-      if (p >= 1 || now - thumbTick > 700) { thumbTick = now; dirty = true; draw(); if (p >= 1) { refreshBin(); refreshStatus(); } }
+      if (p >= 1 || now - thumbTick > 700) { thumbTick = now; dirty = true; draw(); if (p >= 1) { refreshBin(); refreshStatus(); const amb = ambState(); if (amb.on && !amb.src) { const src = findRoomTone(true); if (src) P.setAmbience({ src }, { commit: false }); } refreshMusicPanel(); } }
     }).catch(e => console.warn('analyze', e));
   }
   function refreshStatus() {

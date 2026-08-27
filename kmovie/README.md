@@ -21,6 +21,8 @@
 - 인물 컷아웃 (`engine/seg.js`): "인물 뒤 흐르는 글자"는 부품 → 사람 컷아웃 순으로 합성. MediaPipe Selfie Segmentation 자체 호스팅(maker-playground/vendor/selfie-seg/, R134) 지연 로드, 프레임별 마스크 LRU 캐시, 켄 번즈 변환 동승. 카드별 "인물 뒤" 토글
 - 음악 A2 (`engine/audio.js`·`media.js`): mp3·wav·m4a 가져오기 → A2 레인, 파형, 볼륨, 페이드 인/아웃 프리셋, 영상 끝 맞춤, 오토 덕킹(A1 음성 구간 -depth dB, 진입 200ms/복귀 500ms), 비트 마커(onset 휴리스틱) → 클립 경계 스냅
 - 카드(S·P·A2) 공통 손맛: 끌어 이동·가장자리 트림·스냅·Del·undo
+- 앰비언스 (`engine/audio.js` findRoomTone/ambGaps/scheduleAmb): 타임라인 원본에서 가장 조용한(무음 아닌) 1.5초 룸톤을 찾아 이음매 없는 루프로 만들고, A1 이 비는 구간(사진·프리즈·무음·볼륨 0)에 200ms 페이드로 깐다. 세기 3단(조용히/그대로/살짝 크게). A1 레인에 빗금 띠 "룸톤"
+- 몽타주 깔기 (`engine/project.js` montage): 선택 클립부터 뒤 클립들(끝까지/4개/8개)의 길이를 A2 비트 격자(1·2·4박)에 맞춘다. 시작이 비트 위면 그 비트가 원점. 원본이 짧으면 있는 만큼만 쓰고 다음 클립이 격자 나머지를 채움. 구간은 "움직임 큰 곳"(motion 창 평균 최대) 또는 "지금 자리". 자동 컷 아님 — 순서·컷 수는 그대로, 길이만 박자 위로. Ctrl+Z 한 번에 원복
 
 ## 파일
 - `index.html`, `kmovie.js` — UI·타임라인

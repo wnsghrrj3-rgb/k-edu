@@ -38,7 +38,7 @@
       v: 1, fps: FPS, w: W, h: H, theme: 'geumseong',
       media: [], V: [], A1: [], A2: [], P: [], S: [],
       look: { lut: 'cinema-navy', strength: 0.6, autoExpose: false, target: { luma: 0.48, contrast: 1 }, cinemaBar: false, vignette: 0 },
-      audio: { ducking: { on: true, depth: 12 }, ambience: { on: false, src: null } },
+      audio: { ducking: { on: true, depth: 12 }, ambience: { on: false, src: null, gain: 1 } },
     };
   }
 
@@ -116,6 +116,7 @@
     P.V = P.V.filter(c => c.media !== id);
     P.A2 = (P.A2 || []).filter(a => a.media !== id);
     P.media = P.media.filter(m => m.id !== id);
+    if (P.audio.ambience && P.audio.ambience.src && P.audio.ambience.src.media === id) P.audio.ambience.src = null;
     relayout(); emit('media');
   }
 
@@ -323,6 +324,62 @@
   function setDucking(patch) { commit(); Object.assign(P.audio.ducking, patch); emit('A2'); }
   function a2At(t) { for (const x of P.A2) if (t >= x.at && t < x.at + (x.out - x.in)) return x; return null; }
 
+
+  /* ---------- 4단계 잔여: 앰비언스(룸톤) ----------
+     audio.ambience { on, src:{media,in,out}|null (원본 프레임, 조용한 룸톤 구간), gain(선형) }
+     A1 이 비는 구간(사진·프리즈·무음 클립)을 룸톤 루프로 채운다. 스케줄은 KMV_AUDIO.scheduleAmb. */
+  function setAmbience(patch, opt) {
+    if (!(opt && opt.commit === false)) commit();
+    if (!P.audio.ambience) P.audio.ambience = { on: false, src: null, gain: 1 };
+    Object.assign(P.audio.ambience, patch);
+    if (P.audio.ambience.src && !media(P.audio.ambience.src.media)) P.audio.ambience.src = null;
+    emit('amb');
+  }
+
+  /* ---------- 4단계 잔여: 몽타주 깔기 ----------
+     clipIds(V 에서 연속·순서대로) 를 박자 격자 beatsAbs(타임라인 프레임, 오름차순) 에 맞춰 트림한다.
+     every: 몇 박마다 컷인지. pickIn(c, m, needSrc) → 원본 in 프레임(움직임 큰 구간 고르기 — UI 가 준다). 없으면 지금 in 유지.
+     규칙: 첫 클립 시작(at)은 그대로, 그 뒤 경계는 전부 비트 위. 원본이 모자라면 있는 만큼만 쓰고 다음 격자 비트로 넘어간다.
+     자동 컷은 아니다 — 사용자가 고른 클립들의 길이만 박자에 맞춘다(헌법). 반환: { done, short } */
+  function montage(clipIds, beatsAbs, opt) {
+    opt = opt || {};
+    const every = Math.max(1, opt.every | 0 || 1), minGap = Math.max(2, Math.round(FPS * 0.2));
+    const clips = clipIds.map(id => clip(id)).filter(Boolean);
+    if (!clips.length || !beatsAbs || beatsAbs.length < 2) return null;
+    const beats = beatsAbs.slice().sort((a, b) => a - b);
+    const at0 = clips[0].at;
+    let i0 = 0; while (i0 < beats.length && beats[i0] < at0 - 1) i0++;
+    if (i0 < beats.length && beats[i0] <= at0 + 1) i0 += every;                     // 시작이 비트 위면 그 비트가 격자 원점 → 첫 경계는 every 박 뒤
+    else while (i0 < beats.length && beats[i0] < at0 + minGap) i0++;                 // 비트 사이에서 시작하면 다음 비트부터 격자
+    if (i0 >= beats.length) return null;
+    const grid = []; for (let i = i0; i < beats.length; i += every) grid.push(beats[i]);   // 격자(every 박마다)
+    commit();
+    let cur = at0, done = 0, short = 0;
+    const nextBoundary = from => { for (const b of grid) if (b >= from + minGap) return b; return null; };
+    for (const c of clips) {
+      const target = nextBoundary(cur);
+      if (target == null) break;
+      const need = target - cur;                    // 타임라인 프레임
+      const m = media(c.media);
+      if (c.freeze) { c.dur = Math.max(1, need); }
+      else {
+        const isImg = m.kind === 'image';
+        const needSrc = Math.max(1, Math.round(need * SPEED[c.speed].f * m.fps / FPS));
+        const maxSrc = isImg ? IMAGE_MAX : m.dur;
+        let nin = c.in;
+        if (typeof opt.pickIn === 'function' && !isImg) { const v = opt.pickIn(c, m, needSrc); if (Number.isFinite(v)) nin = clamp(Math.round(v), 0, maxSrc - 1); }
+        if (nin + needSrc > maxSrc) nin = Math.max(0, maxSrc - needSrc);
+        c.in = nin; c.out = Math.min(maxSrc, nin + needSrc);
+        const a = audioOf(c.id); if (a) a.linked = true;
+        if (c.out - c.in < needSrc) short++;        // 원본이 모자람 — 격자는 유지, 다음 클립이 남은 자리를 채운다
+      }
+      relayout();
+      cur = c.at + c.dur; done++;
+    }
+    relayout(); emit();
+    return { done, short };
+  }
+
   /* ---------- 저장/복구 ---------- */
   function toJSON() { return JSON.parse(snapshot()); }
   function load(json) {
@@ -332,6 +389,7 @@
     P.A2 = (P.A2 || []).filter(a => media(a.media));
     P.P = (P.P || []).map(x => Object.assign({ p: {} }, x));
     if (!P.audio) P.audio = b.audio; if (!P.audio.ducking) P.audio.ducking = { on: true, depth: 12 };
+    if (!P.audio.ambience) P.audio.ambience = { on: false, src: null, gain: 1 }; if (P.audio.ambience.src && !media(P.audio.ambience.src.media)) P.audio.ambience.src = null; if (P.audio.ambience.gain == null) P.audio.ambience.gain = 1;
     relayout(); undoStack.length = 0; redoStack.length = 0; emit('load');
   }
   function reset() { P = blank(); undoStack.length = 0; redoStack.length = 0; emit('load'); }
@@ -346,6 +404,7 @@
     addS, setS, subtitle, updateS, removeS, clearS, subtitleAt,
     part, addP, updateP, removeP, clearP, partsAt, partDefault,
     a2, addA2, updateA2, trimA2, removeA2, setDucking, a2At,
+    setAmbience, montage,
     commit, undo, redo, canUndo: () => undoStack.length > 0, canRedo: () => redoStack.length > 0,
     toJSON, load, reset,
   };
