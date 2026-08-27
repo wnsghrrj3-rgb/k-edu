@@ -509,14 +509,15 @@
   }
 
   /* ---------- 가져오기 ---------- */
-  let importing = false;
+  let importing = false; const importQueue = [];
   async function importFiles(files) {
     files = files.filter(f => /^(video|image)\//.test(f.type) || /\.(mp4|mov|m4v|png|jpe?g|webp)$/i.test(f.name));
     if (!files.length) return toast('mp4·mov 영상이나 jpg·png 사진만 넣을 수 있어요');
-    if (importing) return toast('앞의 파일을 아직 읽는 중이에요');
+    if (importing) { importQueue.push(...files); toast('앞 파일 다음에 이어서 넣을게요 (' + importQueue.length + '개 대기)', 1500); return; }
     importing = true; stop();
     const first = !P.total();
-    for (const f of files) {
+    while (files.length) {
+      const f = files.shift();
       status('가져오는 중: ' + f.name);
       try {
         const meta = await M.open(f, null, s => status(s + ' — ' + f.name));
@@ -526,6 +527,7 @@
         refreshBin(); analyzeBg(meta.id); refreshStatus();
         if (files.length === 1) { select(c.id); setPH(c.at); }
       } catch (e) { console.error(e); toast(f.name + ' — ' + (e.message || e), 5000); }
+      if (!files.length && importQueue.length) files.push(...importQueue.splice(0));  // 읽는 중 들어온 파일 이어서
     }
     status(''); refreshStatus(); importing = false;
     if (first) zoomFit(); else { dirty = true; draw(); }
