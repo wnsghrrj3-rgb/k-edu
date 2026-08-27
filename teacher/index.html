@@ -966,10 +966,27 @@ function teacherApproved(){
   return a === 'auto' || a === 'approved' || a === undefined;   // 컬럼 없는 구버전 DB 는 통과
 }
 
+let _claimTried = false;
+/* 스위치가 켜진 뒤 가입해 pending 으로 남은 교육청 메일 교사 — 화면에서 조용히 자동승인을
+   시도한다 (sql/setup_teacher_approval2.sql claim_edu_auto_approval). SQL 미적용이면 무시. */
+async function tryEduAutoApproval(){
+  if(_claimTried) return; _claimTried = true;
+  try {
+    const { data, error } = await db.rpc('claim_edu_auto_approval');
+    if(!error && data === 'auto'){
+      currentTeacher.approval = 'auto';
+      renderApprovalBanner();
+      loadClassCode();
+      showToast('🎉 교육청 메일이 확인되어 자동 승인됐어요!');
+    }
+  } catch(e){ /* 함수 미존재(구 DB) — 조용히 통과 */ }
+}
+
 function renderApprovalBanner(){
   const banner = document.getElementById('approval-banner');
   if(!banner) return;
   const a = currentTeacher && currentTeacher.approval;
+  if(a === 'pending') tryEduAutoApproval();
   if(a === undefined || a === 'auto' || a === 'approved'){ banner.hidden = true; return; }
 
   const text = document.getElementById('approval-text');
