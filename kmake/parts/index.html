@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>케이메이커 영상 부품 — 미리보기</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root { --navy:#0B2545; --gold:#D9B65C; --bg:#0f1420; --panel:#171e2e; --line:#26304a; --txt:#e7ecf5; --sub:#93a0bb; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--txt); font:15px/1.5 Pretendard, "Noto Sans KR", sans-serif; }
+  header { display:flex; align-items:center; gap:14px; padding:14px 22px; border-bottom:1px solid var(--line); }
+  header b { font-size:17px; letter-spacing:-.3px; }
+  header span { color:var(--sub); font-size:13px; }
+  main { display:grid; grid-template-columns: 1fr 320px; gap:18px; padding:18px 22px; max-width:1500px; margin:0 auto; }
+  .stage { background:#000; border-radius:12px; overflow:hidden; position:relative; aspect-ratio:16/9; }
+  .stage canvas { position:absolute; inset:0; width:100%; height:100%; }
+  #bg { background:linear-gradient(180deg,#8fb7d9 0%,#c9d8c2 55%,#7a8a5c 100%); }
+  .ctl { display:flex; gap:10px; align-items:center; margin-top:12px; }
+  .ctl button { background:var(--navy); color:#fff; border:0; border-radius:8px; padding:8px 14px; cursor:pointer; font-weight:700; }
+  .ctl input[type=range] { flex:1; }
+  .ctl .t { color:var(--sub); font-variant-numeric:tabular-nums; min-width:70px; text-align:right; }
+  aside { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px; align-self:start; }
+  aside h3 { margin:0 0 10px; font-size:13px; color:var(--gold); letter-spacing:2px; text-transform:uppercase; }
+  label { display:block; font-size:12px; color:var(--sub); margin:10px 0 4px; }
+  select, input[type=text] { width:100%; background:#0f1524; color:var(--txt); border:1px solid var(--line); border-radius:8px; padding:8px 10px; font:inherit; }
+  .chk { display:flex; align-items:center; gap:8px; margin-top:12px; font-size:13px; color:var(--sub); }
+  .note { margin-top:14px; font-size:12px; color:var(--sub); border-top:1px solid var(--line); padding-top:10px; }
+  code { color:var(--gold); }
+  @media (max-width: 900px) { main { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<header><b>케이메이커 영상 부품</b><span>알파 오버레이 미리보기 · 필모라/프리미어/리졸브 위에 얹는 부품</span></header>
+<main>
+  <section>
+    <div class="stage">
+      <div id="bg" style="position:absolute;inset:0"></div>
+      <canvas id="cv" width="1920" height="1080"></canvas>
+    </div>
+    <div class="ctl">
+      <button id="play">⏸ 일시정지</button>
+      <input id="scrub" type="range" min="0" max="1000" value="0">
+      <span class="t" id="tt">0.00s</span>
+    </div>
+  </section>
+  <aside>
+    <h3>부품</h3>
+    <select id="part"></select>
+    <label>테마</label>
+    <select id="theme"></select>
+    <div id="fields"></div>
+    <div class="chk"><input type="checkbox" id="sample" checked><label for="sample" style="margin:0">가짜 영상 배경 깔기 (실제 출력엔 없음)</label></div>
+    <div class="note">알파 MOV 로 뽑기: <code>node render.mjs --all --preset presets/geumseong.json</code><br>룩 LUT: <code>lut/*.cube</code> 를 편집기 LUT 슬롯에.</div>
+  </aside>
+</main>
+<script src="parts.js"></script>
+<script src="p-opening.js"></script>
+<script src="p-section.js"></script>
+<script src="p-lower3rd.js"></script>
+<script>
+(function () {
+  var K = window.KM_PARTS, cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  var W = cv.width, H = cv.height;
+  var selPart = document.getElementById('part'), selTheme = document.getElementById('theme'), fieldsEl = document.getElementById('fields');
+  var play = document.getElementById('play'), scrub = document.getElementById('scrub'), tt = document.getElementById('tt');
+  var bg = document.getElementById('bg'), sample = document.getElementById('sample');
+
+  K.list().forEach(function (d) { var o = document.createElement('option'); o.value = d.id; o.textContent = d.name + ' · ' + d.dur + 's'; selPart.appendChild(o); });
+  Object.keys(K.THEMES).forEach(function (k) { var o = document.createElement('option'); o.value = k; o.textContent = K.THEMES[k].name; selTheme.appendChild(o); });
+
+  var cur = { id: selPart.value, p: {}, theme: selTheme.value, t: 0, playing: true, last: 0 };
+
+  function buildFields() {
+    fieldsEl.innerHTML = '';
+    cur.p = K.defaults(cur.id);
+    K.get(cur.id).fields.forEach(function (f) {
+      var lab = document.createElement('label'); lab.textContent = f.label; fieldsEl.appendChild(lab);
+      var el;
+      if (f.opts) { el = document.createElement('select'); f.opts.forEach(function (v) { var o = document.createElement('option'); o.value = v; o.textContent = v; el.appendChild(o); }); el.value = f.def; }
+      else { el = document.createElement('input'); el.type = 'text'; el.value = f.def; }
+      el.addEventListener('input', function () { cur.p[f.k] = el.value; });
+      fieldsEl.appendChild(el);
+    });
+  }
+  selPart.addEventListener('change', function () { cur.id = selPart.value; cur.t = 0; buildFields(); });
+  selTheme.addEventListener('change', function () { cur.theme = selTheme.value; });
+  sample.addEventListener('change', function () { bg.style.display = sample.checked ? '' : 'none'; });
+  play.addEventListener('click', function () { cur.playing = !cur.playing; play.textContent = cur.playing ? '⏸ 일시정지' : '▶ 재생'; });
+  scrub.addEventListener('input', function () { cur.playing = false; play.textContent = '▶ 재생'; cur.t = scrub.value / 1000 * K.get(cur.id).dur; });
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    K.frame(cur.id, ctx, W, H, cur.t, cur.p, cur.theme);
+    var dur = K.get(cur.id).dur;
+    scrub.value = Math.round(cur.t / dur * 1000);
+    tt.textContent = cur.t.toFixed(2) + 's';
+  }
+  function tick(now) {
+    if (cur.playing) {
+      var dt = cur.last ? (now - cur.last) / 1000 : 0;
+      cur.t += dt;
+      var dur = K.get(cur.id).dur;
+      if (cur.t > dur + 0.6) cur.t = 0;   // 끝나면 0.6초 쉬고 반복
+    }
+    cur.last = now;
+    draw();
+    requestAnimationFrame(tick);
+  }
+  buildFields();
+  document.fonts.ready.then(function () { requestAnimationFrame(tick); });
+})();
+</script>
+</body>
+</html>
