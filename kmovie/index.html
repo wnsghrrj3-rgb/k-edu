@@ -61,16 +61,33 @@
   .mi .x:hover { color:var(--danger); }
   .bin-empty { color:var(--dim); font-size:12px; padding:6px 2px; line-height:1.6; }
 
-  #clipPanel .row { display:flex; align-items:center; gap:8px; margin:8px 0; font-size:13px; }
-  #clipPanel .row label { color:var(--sub); width:64px; flex:none; font-size:12px; }
-  #clipPanel .row .v { font-variant-numeric:tabular-nums; }
-  #clipPanel .seg { display:grid; grid-template-columns:1fr 1fr; gap:6px; flex:1; }
-  #clipPanel .seg button { padding:5px 6px; font-size:12px; }
-  #clipPanel input[type=range] { flex:1; }
-  #clipPanel input[type=number] { width:64px; background:#0f1524; color:var(--txt); border:1px solid var(--line); border-radius:6px; padding:4px 6px; font:inherit; }
-  #clipPanel .none { color:var(--dim); font-size:12px; line-height:1.6; }
-  #clipPanel .danger { color:var(--danger); border-color:transparent; background:transparent; }
-  #clipPanel .danger:hover { background:#2a1717; }
+  .panel .row { display:flex; align-items:center; gap:8px; margin:8px 0; font-size:13px; }
+  .panel .row label { color:var(--sub); width:64px; flex:none; font-size:12px; }
+  .panel .row .v { font-variant-numeric:tabular-nums; }
+  .panel .seg { display:grid; grid-template-columns:1fr 1fr; gap:6px; flex:1; }
+  .panel .seg.c3 { grid-template-columns:1fr 1fr 1fr; }
+  .panel .seg.c4 { grid-template-columns:1fr 1fr 1fr 1fr; }
+  .panel .seg.c5 { grid-template-columns:repeat(5,1fr); }
+  .panel .seg button { padding:5px 6px; font-size:12px; }
+  .panel .seg button.on { background:#2a3a5f; border-color:var(--gold); color:var(--gold); }
+  .panel input[type=range] { flex:1; }
+  .panel input[type=number], .panel select, .panel textarea, .panel input[type=text] { background:#0f1524; color:var(--txt); border:1px solid var(--line); border-radius:6px; padding:4px 6px; font:inherit; }
+  .panel input[type=number] { width:64px; }
+  .panel select { flex:1; font-size:12px; }
+  .panel .none { color:var(--dim); font-size:12px; line-height:1.6; }
+  .panel .danger { color:var(--danger); border-color:transparent; background:transparent; }
+  .panel .danger:hover { background:#2a1717; }
+  .panel .sub2 { color:var(--dim); font-size:11px; margin:10px 0 2px; letter-spacing:1px; }
+  .panel .tog { width:36px; height:20px; border-radius:10px; background:var(--line); position:relative; cursor:pointer; flex:none; border:none; padding:0; }
+  .panel .tog::after { content:''; position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:8px; background:#8f9bb7; transition:left .15s; }
+  .panel .tog.on { background:var(--gold); } .panel .tog.on::after { left:18px; background:#1a1408; }
+  #subList { display:flex; flex-direction:column; gap:4px; max-height:220px; overflow:auto; }
+  .sc { display:flex; gap:6px; align-items:center; background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:4px 6px; cursor:pointer; }
+  .sc.on { border-color:var(--gold); }
+  .sc .t { flex:1; min-width:0; font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sc .tm { font-size:10px; color:var(--sub); font-variant-numeric:tabular-nums; flex:none; }
+  .sc .x { color:var(--dim); font-size:13px; padding:0 3px; } .sc .x:hover { color:var(--danger); }
+  #subText { width:100%; min-height:64px; resize:vertical; font-size:12px; line-height:1.5; }
   .note { color:var(--dim); font-size:11.5px; line-height:1.6; }
 
   .tl-wrap { border-top:1px solid var(--line); background:var(--panel); display:flex; flex-direction:column; min-height:0; }
@@ -141,7 +158,34 @@
           <div class="row" id="rowVol"><label>소리</label><input type="range" id="vol" min="0" max="150" value="100"><span class="v" id="volV" style="width:38px;text-align:right">100%</span></div>
           <div class="row" id="rowLink"><label>소리 띠</label><span class="v" id="linkState"></span><div class="sp"></div><button id="btnRelink">링크 복원</button></div>
           <div class="row"><div class="sp"></div><button id="btnFreeze" title="플레이헤드 프레임을 정지 클립으로 (F)">프리즈</button><button id="btnSplit" title="플레이헤드에서 분할 (S)">분할</button><button id="btnDel" class="danger" title="리플 삭제 (Del)">삭제</button></div>
+          <div class="sub2">룩 (이 클립)</div>
+          <div class="row"><label>LUT</label><div class="seg c3" id="clipLutSeg"></div></div>
+          <div class="row"><label>밝기</label><input type="range" id="cBright" min="-30" max="30" value="0"><span class="v" id="cBrightV" style="width:34px;text-align:right">0</span></div>
+          <div class="row"><label>대비</label><input type="range" id="cContrast" min="50" max="160" value="100"><span class="v" id="cContrastV" style="width:34px;text-align:right">100</span></div>
+          <div class="row"><label>채도</label><input type="range" id="cSat" min="0" max="180" value="100"><span class="v" id="cSatV" style="width:34px;text-align:right">100</span></div>
+          <div class="row" id="rowKb"><label>켄 번즈</label><div class="seg c3" id="kbSeg"></div></div>
+          <div class="sub2">전환 (이 클립 시작)</div>
+          <div class="row"><label>종류</label><select id="trType"></select></div>
+          <div class="row" id="rowTrDur"><label>길이</label><div class="seg c3" id="trDurSeg"></div></div>
+          <div class="row" id="rowTrDir"><label>방향</label><div class="seg c4" id="trDirSeg"></div></div>
         </div>
+      </div>
+      <div class="panel" id="subPanel">
+        <h3>자막<div class="sp"></div><button id="btnSubClear" title="자막 전부 지우기">비우기</button></h3>
+        <textarea id="subText" placeholder="한 줄에 한 문장씩 붙여넣고 [자동 배치] — 현장음의 말하는 구간에 나눠 놓아요"></textarea>
+        <div class="row" style="margin-top:6px"><button id="btnSubAuto" class="gold" style="flex:1">자동 배치</button><button id="btnSubAdd" title="플레이헤드에 자막 카드 하나">＋ 여기에</button></div>
+        <div class="row"><label>스타일</label><div class="seg c3" id="subStyleSeg"></div></div>
+        <div id="subEdit" class="hidden"><div class="row"><label>문구</label><input type="text" id="subEditText" style="flex:1"></div><div class="row"><label>구간</label><span class="v" id="subEditTime"></span><div class="sp"></div><button id="btnSubDel" class="danger">삭제</button></div></div>
+        <div id="subList"></div>
+      </div>
+      <div class="panel" id="lookPanel">
+        <h3>룩 (프로젝트)</h3>
+        <div class="row"><label>테마</label><div class="seg c3" id="themeSeg"></div></div>
+        <div class="row"><label>LUT</label><div class="seg c4" id="lutSeg"></div></div>
+        <div class="row"><label>강도</label><input type="range" id="lutStr" min="0" max="100" value="60"><span class="v" id="lutStrV" style="width:34px;text-align:right">60%</span></div>
+        <div class="row"><label>노출 맞춤</label><button class="tog" id="tgExpose"></button><span class="note">클립마다 밝기·대비를 한 작품처럼</span></div>
+        <div class="row"><label>시네마 바</label><button class="tog" id="tgBar"></button><span class="note">2.39:1 레터박스</span></div>
+        <div class="row"><label>비네트</label><input type="range" id="vig" min="0" max="100" value="0"><span class="v" id="vigV" style="width:34px;text-align:right">0%</span></div>
       </div>
       <div class="panel" id="binPanel">
         <h3>미디어<div class="sp"></div><button id="btnImport2">＋</button></h3>
@@ -150,7 +194,7 @@
       <div class="panel">
         <h3>프로젝트</h3>
         <div class="row" style="display:flex;gap:8px;font-size:13px"><span style="color:var(--sub)">전체</span><span id="pTot" class="v">0초</span><span style="color:var(--sub);margin-left:8px">클립</span><span id="pCnt" class="v">0</span></div>
-        <div class="note" style="margin-top:8px">1920×1080 · 30fps · H.264 8Mbps · AAC<br>부품·자막·룩·음악 레인은 다음 단계에서 열려요.<br>작업은 이 브라우저에 자동 저장돼요.</div>
+        <div class="note" style="margin-top:8px">1920×1080 · 30fps · H.264 8Mbps · AAC<br>부품·음악 레인은 다음 단계에서 열려요.<br>작업은 이 브라우저에 자동 저장돼요.</div>
       </div>
     </aside>
   </main>
@@ -174,9 +218,22 @@
 <!-- 외부 2개: mp4box(디먹스)·mp4-muxer(묶기). 실패해도 화면은 뜨고, 필요할 때 다시 시도한다 -->
 <script src="https://cdn.jsdelivr.net/npm/mp4box@0.5.2/dist/mp4box.all.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.1/build/mp4-muxer.min.js" defer></script>
+<!-- 케이메이커 부품 — 복사 없이 그대로 (kmake/parts) -->
+<script src="../kmake/parts/parts.js" defer></script>
+<script src="../kmake/parts/p-opening.js" defer></script>
+<script src="../kmake/parts/p-section.js" defer></script>
+<script src="../kmake/parts/p-lower3rd.js" defer></script>
+<script src="../kmake/parts/p-sweep.js" defer></script>
+<script src="../kmake/parts/p-counter.js" defer></script>
+<script src="../kmake/parts/p-lightleak.js" defer></script>
+<script src="../kmake/parts/p-tag.js" defer></script>
+<script src="../kmake/parts/p-knockout.js" defer></script>
 <script src="engine/project.js" defer></script>
 <script src="engine/audio.js" defer></script>
 <script src="engine/media.js" defer></script>
+<script src="engine/look.js" defer></script>
+<script src="engine/transition.js" defer></script>
+<script src="engine/subtitle.js" defer></script>
 <script src="engine/render.js" defer></script>
 <script src="engine/export.js" defer></script>
 <script src="kmovie.js" defer></script>

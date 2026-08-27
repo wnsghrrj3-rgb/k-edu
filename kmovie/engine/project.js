@@ -224,6 +224,41 @@
   }
   function relink(clipId) { const a = audioOf(clipId); if (!a || a.linked) return; commit(); a.linked = true; relayout(); emit(); }
 
+  /* ---------- 3단계: 룩·켄 번즈·전환 ---------- */
+  function setLook(clipId, patch, opt) {                // patch: {lut?, strength?, bright?, contrast?, sat?}. lut: undefined=프로젝트 따름, null=없음
+    const c = clip(clipId); if (!c) return;
+    if (!(opt && opt.commit === false)) commit();
+    if (patch === null) c.look = null;
+    else { c.look = Object.assign({}, c.look || {}); for (const k in patch) { if (patch[k] === undefined) delete c.look[k]; else c.look[k] = patch[k]; } if (!Object.keys(c.look).length) c.look = null; }
+    emit('look');
+  }
+  function setProjectLook(patch, opt) {                 // {lut, strength, autoExpose, autoStrength, cinemaBar, vignette}
+    if (!(opt && opt.commit === false)) commit();
+    Object.assign(P.look, patch); emit('look');
+  }
+  function setKenburns(clipId, id) { const c = clip(clipId); if (!c) return; commit(); c.kenburns = id || null; emit(); }
+  function setTransition(clipId, tr) {                  // tr: null | {type, dur:'short'|'normal'|'long', dir?}
+    const c = clip(clipId); if (!c) return; commit();
+    c.transIn = tr && tr.type && tr.type !== 'cut' ? Object.assign({ dur: 'normal' }, tr) : null; emit();
+  }
+  function setTheme(id) { commit(); P.theme = id; emit('look'); }
+
+  /* ---------- 3단계: 자막 S ---------- */
+  function sortS() { P.S.sort((a, b) => a.at - b.at); }
+  function addS(card) { commit(); const s = Object.assign({ id: uid('s'), text: '', at: 0, dur: 2 * FPS, style: 'basic' }, card); P.S.push(s); sortS(); emit('S'); return s; }
+  function setS(list) { commit(); P.S = list.map(c => Object.assign({ id: uid('s'), style: 'basic' }, c)); sortS(); emit('S'); }
+  function subtitle(id) { return P.S.find(s => s.id === id) || null; }
+  function updateS(id, patch, opt) {
+    const s = subtitle(id); if (!s) return;
+    if (!(opt && opt.commit === false)) commit();
+    Object.assign(s, patch);
+    s.at = Math.max(0, Math.round(s.at)); s.dur = Math.max(FPS / 3 | 0, Math.round(s.dur));
+    sortS(); emit('S');
+  }
+  function removeS(id) { const i = P.S.findIndex(s => s.id === id); if (i < 0) return; commit(); P.S.splice(i, 1); emit('S'); }
+  function clearS() { if (!P.S.length) return; commit(); P.S = []; emit('S'); }
+  function subtitleAt(t) { for (const s of P.S) if (t >= s.at && t < s.at + s.dur) return s; return null; }
+
   /* ---------- 저장/복구 ---------- */
   function toJSON() { return JSON.parse(snapshot()); }
   function load(json) {
@@ -240,6 +275,8 @@
     on: fn => listeners.push(fn),
     media, clip, clipIndex, audioOf, clipAt, total, edges, srcFrame, clipDur, speedMap,
     addMedia, removeMedia, addClip, removeClip, move, split, trim, trimToPlayhead, freeze, setSpeed, setVol, audioTrim, relink,
+    setLook, setProjectLook, setKenburns, setTransition, setTheme,
+    addS, setS, subtitle, updateS, removeS, clearS, subtitleAt,
     commit, undo, redo, canUndo: () => undoStack.length > 0, canRedo: () => redoStack.length > 0,
     toJSON, load, reset,
   };

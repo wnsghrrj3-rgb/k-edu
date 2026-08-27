@@ -9,7 +9,7 @@
    ============================================================ */
 (function () {
   'use strict';
-  const P = window.KMV_PROJECT, M = window.KMV_MEDIA, A = window.KMV_AUDIO, R = window.KMV_RENDER;
+  const P = window.KMV_PROJECT, M = window.KMV_MEDIA, A = window.KMV_AUDIO, R = window.KMV_RENDER, LK = window.KMV_LOOK, TR = window.KMV_TRANSITION, SB = window.KMV_SUBTITLE;
   const FPS = P.FPS, PW = P.W, PH = P.H;
   const $ = id => document.getElementById(id);
   const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -18,7 +18,7 @@
   if (!M.supported()) { $('nosup').classList.remove('hidden'); return; }
 
   /* ---------- 상태 ---------- */
-  let ph = 0, sel = null, playing = false, snap = true, playStart = 0;
+  let ph = 0, sel = null, selS = null, playing = false, snap = true, playStart = 0;
   let pxf = 2, scrollF = 0;
   let drag = null, hover = null, dirty = true, previewJob = 0, rafId = 0;
   const binProg = {};
@@ -101,7 +101,7 @@
   const sc = document.createElement('canvas'), sctx = sc.getContext('2d');
   let TW = 0, TH = 0, DPR = 1;
   const HEAD = 56, RULER = 24;
-  const LANES = [{ k: 'P', h: 30, label: '부품', off: true }, { k: 'S', h: 30, label: '자막', off: true }, { k: 'V', h: 88, label: '영상' }, { k: 'A1', h: 52, label: '현장음' }, { k: 'A2', h: 30, label: '음악', off: true }];
+  const LANES = [{ k: 'P', h: 30, label: '부품', off: true }, { k: 'S', h: 30, label: '자막' }, { k: 'V', h: 88, label: '영상' }, { k: 'A1', h: 52, label: '현장음' }, { k: 'A2', h: 30, label: '음악', off: true }];
   const LY = {}; { let y = RULER; LANES.forEach(l => { LY[l.k] = { y, h: l.h }; y += l.h; }); }
   const xOf = f => HEAD + (f - scrollF) * pxf;
   const frameOf = x => scrollF + (x - HEAD) / pxf;
@@ -146,6 +146,11 @@
     const D = P.data, V = LY.V, A1 = LY.A1;
     for (const c of D.V) { const x0 = xOf(c.at), x1 = xOf(c.at + c.dur); if (x1 < HEAD || x0 > TW) continue; drawClip(ctx, c, x0, x1, V.y + 4, V.h - 8, c.id === sel); }
     for (const a of D.A1) { const c = P.clip(a.clip); const x0 = xOf(a.at), x1 = xOf(a.at + a.dur); if (x1 < HEAD || x0 > TW) continue; drawAudio(ctx, a, c, x0, x1, A1.y + 4, A1.h - 8, a.clip === sel); }
+    // 전환 표시 (클립 시작에 작은 겹침 표)
+    for (const c of D.V) if (c.transIn) { const x0 = xOf(c.at), w = Math.max(6, TR.durFrames(c.transIn) * pxf); if (x0 + w < HEAD || x0 > TW) continue; ctx.fillStyle = 'rgba(217,182,92,.28)'; ctx.fillRect(x0, V.y + 4, w, V.h - 8); ctx.fillStyle = GOLD; ctx.beginPath(); ctx.moveTo(x0, V.y + 4); ctx.lineTo(x0 + w, V.y + 4); ctx.lineTo(x0, V.y + 4 + Math.min(14, w)); ctx.closePath(); ctx.fill(); }
+    // 자막 카드
+    const SL = LY.S;
+    for (const sc2 of D.S) { const x0 = xOf(sc2.at), x1 = xOf(sc2.at + sc2.dur); if (x1 < HEAD || x0 > TW) continue; drawSub(ctx, sc2, x0, x1, SL.y + 4, SL.h - 8, sc2.id === selS); }
     // 끝 표시
     const tot = P.total();
     if (tot) { const xe = Math.round(xOf(tot)) + 0.5; if (xe > HEAD && xe < TW) { ctx.strokeStyle = '#3a4a70'; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(xe, RULER); ctx.lineTo(xe, TH); ctx.stroke(); ctx.setLineDash([]); } }
@@ -198,6 +203,17 @@
     rr(ctx, x0 + 0.5, y + 0.5, w - 1, h - 1, 5); ctx.strokeStyle = selected ? GOLD : '#3b5185'; ctx.lineWidth = selected ? 2 : 1; ctx.stroke();
   }
 
+  function drawSub(ctx, sc2, x0, x1, y, h, selected) {
+    const vx0 = Math.max(x0, HEAD), vx1 = Math.min(x1, TW); if (vx1 - vx0 < 1) return;
+    const w = x1 - x0;
+    ctx.save(); rr(ctx, x0, y, w, h, 4); ctx.clip();
+    ctx.fillStyle = selected ? '#3a3054' : '#2b2542'; ctx.fillRect(x0, y, w, h);
+    ctx.fillStyle = selected ? GOLD : '#d9d2ea'; ctx.font = '600 11px Pretendard, sans-serif'; ctx.textBaseline = 'middle';
+    ctx.fillText(SB.plain(sc2.text || ''), vx0 + 6, y + h / 2 + 0.5, Math.max(10, vx1 - vx0 - 10));
+    ctx.restore();
+    rr(ctx, x0 + 0.5, y + 0.5, w - 1, h - 1, 4); ctx.strokeStyle = selected ? GOLD : '#5a4f86'; ctx.lineWidth = selected ? 2 : 1; ctx.stroke();
+  }
+
   function drawAudio(ctx, a, c, x0, x1, y, h, selected) {
     const m = P.media(c.media), src = M.get(c.media);
     const vx0 = Math.max(x0, HEAD), vx1 = Math.min(x1, TW); if (vx1 - vx0 < 1) return;
@@ -237,10 +253,10 @@
       const c = drag.clip, gw = c.dur * pxf; ctx.globalAlpha = .35; ctx.fillStyle = '#6f8fd0'; rr(ctx, drag.x - drag.grab, LY.V.y + 4, Math.max(8, gw), LY.V.h - 8, 5); ctx.fill(); ctx.globalAlpha = 1;
     }
     // 호버 트림 손잡이
-    const hv = (drag && (drag.type === 'trim' || drag.type === 'atrim')) ? { kind: drag.type === 'trim' ? 'V' : 'A1', clip: drag.clip, edge: drag.side } : hover;
-    if (hv && hv.edge && (hv.kind === 'V' || hv.kind === 'A1')) {
+    const hv = (drag && (drag.type === 'trim' || drag.type === 'atrim' || drag.type === 'strim')) ? { kind: drag.type === 'trim' ? 'V' : drag.type === 'atrim' ? 'A1' : 'S', clip: drag.clip, s: drag.s, edge: drag.side } : hover;
+    if (hv && hv.edge && (hv.kind === 'V' || hv.kind === 'A1' || hv.kind === 'S')) {
       const L = LY[hv.kind]; let x0, x1;
-      if (hv.kind === 'V') { x0 = xOf(hv.clip.at); x1 = xOf(hv.clip.at + hv.clip.dur); } else { const a = P.audioOf(hv.clip.id); if (!a) x0 = x1 = -99; else { x0 = xOf(a.at); x1 = xOf(a.at + a.dur); } }
+      if (hv.kind === 'V') { x0 = xOf(hv.clip.at); x1 = xOf(hv.clip.at + hv.clip.dur); } else if (hv.kind === 'S') { x0 = xOf(hv.s.at); x1 = xOf(hv.s.at + hv.s.dur); } else { const a = P.audioOf(hv.clip.id); if (!a) x0 = x1 = -99; else { x0 = xOf(a.at); x1 = xOf(a.at + a.dur); } }
       const x = hv.edge === 'in' ? x0 : x1 - 6;
       ctx.fillStyle = GOLD; rr(ctx, x, L.y + 4, 6, L.h - 8, 2); ctx.fill();
       ctx.fillStyle = '#1a1408'; ctx.fillRect(x + 2.5, L.y + L.h / 2 - 6, 1, 12);
@@ -277,6 +293,7 @@
     if (y < RULER) return { kind: 'ruler' };
     const lane = laneAt(y);
     if (lane === 'V') for (const c of P.data.V) { const x0 = xOf(c.at), x1 = xOf(c.at + c.dur); if (x >= x0 && x < x1) { const ez = Math.min(9, (x1 - x0) / 3); return { kind: 'V', clip: c, edge: x - x0 < ez ? 'in' : x1 - x <= ez ? 'out' : null }; } }
+    if (lane === 'S') for (const sc2 of P.data.S) { const x0 = xOf(sc2.at), x1 = xOf(sc2.at + sc2.dur); if (x >= x0 && x < x1) { const ez = Math.min(9, (x1 - x0) / 3); return { kind: 'S', s: sc2, edge: x - x0 < ez ? 'in' : x1 - x <= ez ? 'out' : null }; } }
     if (lane === 'A1') for (const a of P.data.A1) { const x0 = xOf(a.at), x1 = xOf(a.at + a.dur); if (x >= x0 && x < x1) { const ez = Math.min(9, (x1 - x0) / 3); return { kind: 'A1', clip: P.clip(a.clip), a, edge: x - x0 < ez ? 'in' : x1 - x <= ez ? 'out' : null }; } }
     return { kind: 'lane', lane };
   }
@@ -297,8 +314,14 @@
     const { x, y } = pos(e); if (x < HEAD) return;
     stop();
     const h = hitTest(x, y);
-    if (h.kind === 'ruler' || h.kind === 'lane') { if (h.kind === 'lane') select(null); drag = { type: 'scrub' }; setPH(frameOf(x), { noScroll: true }); return; }
-    select(h.clip.id);
+    if (h.kind === 'ruler' || h.kind === 'lane') { if (h.kind === 'lane') { select(null); selectS(null); } drag = { type: 'scrub' }; setPH(frameOf(x), { noScroll: true }); return; }
+    if (h.kind === 'S') {
+      selectS(h.s.id); P.commit();
+      if (h.edge) drag = { type: 'strim', s: h.s, side: h.edge, x0: x, orig: { at: h.s.at, dur: h.s.dur } };
+      else drag = { type: 'smove', s: h.s, x0: x, orig: { at: h.s.at } };
+      return;
+    }
+    select(h.clip.id); selectS(null);
     if (h.edge) {
       const a = h.kind === 'A1' ? h.a : null;
       const audioOnly = h.kind === 'A1' && (e.altKey || !a.linked) && h.clip.speed === 'normal' && !h.clip.freeze;
@@ -314,14 +337,22 @@
     const { x, y } = pos(e);
     if (!drag) {
       const h = hitTest(x, y);
-      const prevEdge = hover && hover.edge, prevClip = hover && hover.clip && hover.clip.id;
-      hover = (h.kind === 'V' || h.kind === 'A1') ? h : null;
+      const prevEdge = hover && hover.edge, prevClip = hover ? (hover.kind === 'S' ? hover.s.id : hover.clip.id) : undefined;
+      hover = (h.kind === 'V' || h.kind === 'A1' || h.kind === 'S') ? h : null;
       tl.style.cursor = hover && hover.edge ? 'ew-resize' : hover ? 'grab' : (x >= HEAD ? 'text' : 'default');
-      if (x >= HEAD && y >= 0 && y <= TH) $('hover').textContent = tc(Math.max(0, frameOf(x))) + (hover ? ' · ' + P.media(hover.clip.media).name : ''); else $('hover').textContent = '';
-      if ((hover && hover.edge) !== prevEdge || (hover && hover.clip.id) !== prevClip) draw();
+      if (x >= HEAD && y >= 0 && y <= TH) $('hover').textContent = tc(Math.max(0, frameOf(x))) + (hover ? ' · ' + (hover.kind === 'S' ? SB.plain(hover.s.text) : P.media(hover.clip.media).name) : ''); else $('hover').textContent = '';
+      const curId = hover ? (hover.kind === 'S' ? hover.s.id : hover.clip.id) : undefined;
+      if ((hover && hover.edge) !== prevEdge || curId !== prevClip) draw();
       return;
     }
     if (drag.type === 'scrub') { setPH(frameOf(x), { noScroll: true }); return; }
+    if (drag.type === 'smove' || drag.type === 'strim') {
+      const d = drag.s, dtl = (x - drag.x0) / pxf;
+      if (drag.type === 'smove') { const sn = snapFrame(drag.orig.at + dtl); drag.snapX = sn.x; P.updateS(d.id, { at: Math.max(0, sn.f) }, { commit: false }); }
+      else if (drag.side === 'in') { const sn = snapFrame(drag.orig.at + dtl); drag.snapX = sn.x; const at = clamp(sn.f, 0, drag.orig.at + drag.orig.dur - 5); P.updateS(d.id, { at, dur: drag.orig.at + drag.orig.dur - at }, { commit: false }); }
+      else { const sn = snapFrame(drag.orig.at + drag.orig.dur + dtl); drag.snapX = sn.x; P.updateS(d.id, { dur: Math.max(5, sn.f - drag.orig.at) }, { commit: false }); }
+      renderPreview(); return;
+    }
     const c = drag.clip, m = P.media(c.media);
     if (drag.type === 'move') {
       drag.x = x; if (!drag.moved && Math.abs(x - drag.x0) < 5) return;
@@ -363,7 +394,7 @@
     if (!drag) return;
     const d = drag; drag = null; tl.style.cursor = 'default';
     if (d.type === 'move' && d.moved) P.move(d.clip.id, d.insert);
-    if (d.type === 'trim' || d.type === 'atrim') { dirty = true; setPH(ph); }
+    if (d.type === 'trim' || d.type === 'atrim' || d.type === 'strim' || d.type === 'smove') { dirty = true; setPH(ph); if (d.type === 'strim' || d.type === 'smove') refreshSubPanel(); }
     draw();
   });
   tl.addEventListener('mouseleave', () => { if (!drag) { hover = null; $('hover').textContent = ''; draw(); } });
@@ -372,13 +403,14 @@
     if (e.ctrlKey || e.metaKey) setZoom(pxf * (e.deltaY < 0 ? 1.18 : 1 / 1.18), x);
     else { scrollF += (e.deltaX || e.deltaY) / pxf * 0.8; clampScroll(); dirty = true; draw(); }
   }, { passive: false });
-  tl.addEventListener('dblclick', e => { const { x, y } = pos(e); const h = hitTest(x, y); if (h.kind === 'V' || h.kind === 'A1') { setPH(h.clip.at); } });
+  tl.addEventListener('dblclick', e => { const { x, y } = pos(e); const h = hitTest(x, y); if (h.kind === 'V' || h.kind === 'A1') { setPH(h.clip.at); } if (h.kind === 'S') { setPH(h.s.at); $('subEditText').focus(); } });
 
   /* ---------- 선택·편집 동작 ---------- */
   function select(id) { if (sel === id) return; sel = id; dirty = true; draw(); refreshPanel(); }
+  function selectS(id) { if (selS === id) return; selS = id; dirty = true; draw(); refreshSubPanel(); }
   function selClip() { return sel ? P.clip(sel) : null; }
   function doSplit() { stop(); const c2 = P.split(ph); if (c2) select(c2.id); else toast('여기선 나눌 게 없어요 — 플레이헤드를 클립 안쪽으로'); }
-  function doDelete() { stop(); const c = selClip() || P.clipAt(ph); if (!c) return; P.removeClip(c.id); select(null); setPH(ph); }
+  function doDelete() { stop(); if (selS) { P.removeS(selS); selectS(null); setPH(ph); return; } const c = selClip() || P.clipAt(ph); if (!c) return; P.removeClip(c.id); select(null); setPH(ph); }
   function doFreeze() { stop(); const fz = P.freeze(ph); if (fz) { select(fz.id); toast('프리즈 프레임 ' + secStr(fz.dur) + ' — 오른쪽 패널에서 길이 조절'); } else toast('영상 클립 위에 플레이헤드를 두고 F'); }
   function jumpEdge(dir) { const e = P.edges(); if (dir > 0) { const n = e.find(v => v > ph); setPH(n == null ? P.total() - 1 : Math.min(n, P.total() - 1)); } else { const prev = e.filter(v => v < ph); setPH(prev.length ? prev[prev.length - 1] : 0); } }
 
@@ -405,7 +437,7 @@
       case '=': case '+': setZoom(pxf * 1.3); break;
       case '-': case '_': setZoom(pxf / 1.3); break;
       case '\\': zoomFit(); break;
-      case 'Escape': select(null); break;
+      case 'Escape': select(null); selectS(null); break;
     }
   });
   // 버튼·슬라이더에 포커스가 남으면 Space·화살표가 거기로 가므로 놓는 즉시 풀어 준다
@@ -467,8 +499,102 @@
     $('rowLink').classList.toggle('hidden', !a || a.linked);
     if (a && !a.linked) $('linkState').textContent = 'J/L 컷 (' + (a.in < c.in ? '소리 먼저' : '') + (a.out > c.out ? (a.in < c.in ? '·' : '') + '소리 나중' : '') + ')';
     $('btnFreeze').disabled = c.freeze || m.kind === 'image';
+    // 룩 (클립)
+    const cl = c.look || {};
+    const lutKey = cl.lut === undefined ? 'inherit' : (cl.lut === null ? 'none' : cl.lut);
+    Array.from($('clipLutSeg').children).forEach(b => b.classList.toggle('on', b.dataset.k === lutKey));
+    $('cBright').value = Math.round((cl.bright || 0) * 100); $('cBrightV').textContent = $('cBright').value;
+    $('cContrast').value = Math.round((cl.contrast == null ? 1 : cl.contrast) * 100); $('cContrastV').textContent = $('cContrast').value;
+    $('cSat').value = Math.round((cl.sat == null ? 1 : cl.sat) * 100); $('cSatV').textContent = $('cSat').value;
+    Array.from($('kbSeg').children).forEach(b => b.classList.toggle('on', (b.dataset.k || null) === (c.kenburns || null)));
+    // 전환
+    const tr = c.transIn || { type: 'cut' };
+    $('trType').value = tr.type;
+    const def = TR.TYPES.find(t => t.id === tr.type) || TR.TYPES[0];
+    $('rowTrDur').classList.toggle('hidden', tr.type === 'cut');
+    $('rowTrDir').classList.toggle('hidden', !def.dirs);
+    Array.from($('trDurSeg').children).forEach(b => b.classList.toggle('on', b.dataset.k === (tr.dur || 'normal')));
+    Array.from($('trDirSeg').children).forEach(b => { const ok = def.dirs && def.dirs.includes(b.dataset.k); b.classList.toggle('hidden', !ok); b.classList.toggle('on', b.dataset.k === (tr.dir || (def.dirs && def.dirs[0]))); });
   }
   function refreshProject() { $('pTot').textContent = secStr(P.total()); $('pCnt').textContent = P.data.V.length; $('tcTot').textContent = tc(P.total()); }
+
+  /* ---------- 3단계 패널: 룩·켄 번즈·전환·자막 ---------- */
+  function segBtn(parent, k, label, fn, title) { const b = document.createElement('button'); b.textContent = label; b.dataset.k = k; if (title) b.title = title; b.onclick = fn; parent.appendChild(b); return b; }
+  // 클립 LUT
+  segBtn($('clipLutSeg'), 'inherit', '프로젝트', () => { const c = selClip(); if (c) P.setLook(c.id, { lut: undefined, strength: undefined }); });
+  segBtn($('clipLutSeg'), 'none', '없음', () => { const c = selClip(); if (c) P.setLook(c.id, { lut: null }); });
+  LK.LUTS.forEach(l => segBtn($('clipLutSeg'), l.id, l.name.replace(/ /g, ''), () => { const c = selClip(); if (c) P.setLook(c.id, { lut: l.id }); }, l.hint));
+  function sliderLook(id, key, scale, vEl, fmt) {
+    let start = null;
+    $(id).oninput = e => { const c = selClip(); if (!c) return; if (start == null) { start = c.look ? c.look[key] : undefined; } const v = +e.target.value / scale; $(vEl).textContent = fmt ? fmt(e.target.value) : e.target.value; c.look = Object.assign({}, c.look || {}, { [key]: v }); renderPreview(); };
+    $(id).onchange = e => { const c = selClip(); if (!c) return; const v = +e.target.value / scale; if (c.look) { if (start === undefined) delete c.look[key]; else c.look[key] = start; if (!Object.keys(c.look).length) c.look = null; } start = null; P.setLook(c.id, { [key]: v }); };
+  }
+  sliderLook('cBright', 'bright', 100, 'cBrightV'); sliderLook('cContrast', 'contrast', 100, 'cContrastV'); sliderLook('cSat', 'sat', 100, 'cSatV');
+  // 켄 번즈
+  segBtn($('kbSeg'), '', '없음', () => { const c = selClip(); if (c) P.setKenburns(c.id, null); });
+  LK.KENBURNS.forEach(k => segBtn($('kbSeg'), k.id, k.name, () => { const c = selClip(); if (c) P.setKenburns(c.id, k.id); }));
+  // 전환
+  TR.TYPES.forEach(t => { const o = document.createElement('option'); o.value = t.id; o.textContent = t.name; $('trType').appendChild(o); });
+  $('trType').onchange = e => { const c = selClip(); if (!c) return; stop(); const type = e.target.value, def = TR.TYPES.find(t => t.id === type); const cur = c.transIn || {}; P.setTransition(c.id, type === 'cut' ? null : { type, dur: cur.dur || 'normal', dir: def.dirs ? (def.dirs.includes(cur.dir) ? cur.dir : def.dirs[0]) : undefined }); if (type !== 'cut') setPH(c.at + Math.round(TR.durFrames({ dur: cur.dur || 'normal' }) / 2)); };
+  TR.DURS.forEach(d => segBtn($('trDurSeg'), d.id, d.name + ' ' + (d.f / FPS).toFixed(1) + 's', () => { const c = selClip(); if (c && c.transIn) P.setTransition(c.id, Object.assign({}, c.transIn, { dur: d.id })); }));
+  [['ltr', '→'], ['rtl', '←'], ['ttb', '↓'], ['btt', '↑']].forEach(([k, l]) => segBtn($('trDirSeg'), k, l, () => { const c = selClip(); if (c && c.transIn) P.setTransition(c.id, Object.assign({}, c.transIn, { dir: k })); }));
+  // 프로젝트 룩
+  const THEME_LIST = window.KM_PARTS ? Object.values(window.KM_PARTS.THEMES) : [{ id: 'geumseong', name: '금성초 네이비' }];
+  THEME_LIST.forEach(t => segBtn($('themeSeg'), t.id, t.name.replace(/ 네이비| 초록/, ''), () => P.setTheme(t.id)));
+  segBtn($('lutSeg'), 'none', '없음', () => P.setProjectLook({ lut: null }));
+  LK.LUTS.forEach(l => segBtn($('lutSeg'), l.id, l.name.replace(/ /g, ''), () => P.setProjectLook({ lut: l.id }), l.hint));
+  let lutStrStart = null;
+  $('lutStr').oninput = e => { if (lutStrStart == null) lutStrStart = P.data.look.strength; P.data.look.strength = +e.target.value / 100; $('lutStrV').textContent = e.target.value + '%'; renderPreview(); };
+  $('lutStr').onchange = e => { const v = +e.target.value / 100; P.data.look.strength = lutStrStart == null ? 0.6 : lutStrStart; lutStrStart = null; P.setProjectLook({ strength: v }); };
+  let vigStart = null;
+  $('vig').oninput = e => { if (vigStart == null) vigStart = P.data.look.vignette || 0; P.data.look.vignette = +e.target.value / 100; $('vigV').textContent = e.target.value + '%'; renderPreview(); };
+  $('vig').onchange = e => { const v = +e.target.value / 100; P.data.look.vignette = vigStart == null ? 0 : vigStart; vigStart = null; P.setProjectLook({ vignette: v }); };
+  $('tgExpose').onclick = () => P.setProjectLook({ autoExpose: !P.data.look.autoExpose });
+  $('tgBar').onclick = () => P.setProjectLook({ cinemaBar: !P.data.look.cinemaBar });
+  function refreshLookPanel() {
+    const L = P.data.look;
+    Array.from($('themeSeg').children).forEach(b => b.classList.toggle('on', b.dataset.k === P.data.theme));
+    Array.from($('lutSeg').children).forEach(b => b.classList.toggle('on', b.dataset.k === (L.lut || 'none')));
+    $('lutStr').value = Math.round((L.strength == null ? 0.6 : L.strength) * 100); $('lutStrV').textContent = $('lutStr').value + '%';
+    $('vig').value = Math.round((L.vignette || 0) * 100); $('vigV').textContent = $('vig').value + '%';
+    $('tgExpose').classList.toggle('on', !!L.autoExpose); $('tgBar').classList.toggle('on', !!L.cinemaBar);
+  }
+  // 자막
+  let subStyle = 'basic';
+  SB.STYLES.forEach(st => segBtn($('subStyleSeg'), st.id, st.name, () => { subStyle = st.id; const s2 = selS && P.subtitle(selS); if (s2) P.updateS(s2.id, { style: st.id }); else refreshSubPanel(); }, st.hint));
+  $('btnSubAuto').onclick = () => {
+    stop();
+    const lines = $('subText').value.split(/\n/).map(x => x.trim()).filter(Boolean);
+    if (!lines.length) return toast('먼저 문장을 한 줄에 하나씩 넣어 주세요');
+    if (!P.total()) return toast('타임라인이 비어 있어요');
+    const voice = A.voice();
+    const cards = SB.distribute(lines, voice, P.total(), FPS).map(c => Object.assign(c, { style: subStyle }));
+    P.setS(cards); $('subText').value = '';
+    toast(voice.length ? '말하는 구간 ' + voice.length + '곳에 나눠 놓았어요 — 카드를 끌어서 손보세요' : '음성 구간을 못 찾아 전체 길이에 고르게 놓았어요', 3000);
+    if (cards.length) { selectS(cards[0].id); setPH(cards[0].at); }
+  };
+  $('btnSubAdd').onclick = () => { stop(); const text = $('subText').value.split(/\n/).map(x => x.trim()).filter(Boolean)[0] || '자막'; const s2 = P.addS({ text, at: ph, dur: 2 * FPS, style: subStyle }); selectS(s2.id); setPH(ph); };
+  $('btnSubClear').onclick = () => { if (!P.data.S.length) return; if (!confirm('자막을 전부 지울까요?')) return; P.clearS(); selectS(null); setPH(ph); };
+  let subEditStart = null;
+  $('subEditText').oninput = e => { const s2 = selS && P.subtitle(selS); if (s2) { if (subEditStart == null) subEditStart = s2.text; s2.text = e.target.value; dirty = true; renderPreview(); draw(); } };
+  $('subEditText').onchange = e => { const s2 = selS && P.subtitle(selS); if (s2) { const v = e.target.value; if (subEditStart != null) s2.text = subEditStart; subEditStart = null; P.updateS(s2.id, { text: v }); } };
+  $('subEditText').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } };
+  $('btnSubDel').onclick = () => { if (selS) { P.removeS(selS); selectS(null); setPH(ph); } };
+  function refreshSubPanel() {
+    const s2 = selS && P.subtitle(selS);
+    $('subEdit').classList.toggle('hidden', !s2);
+    Array.from($('subStyleSeg').children).forEach(b => b.classList.toggle('on', b.dataset.k === (s2 ? s2.style : subStyle)));
+    if (s2) { if (document.activeElement !== $('subEditText')) $('subEditText').value = s2.text; $('subEditTime').textContent = tc(s2.at) + ' → ' + tc(s2.at + s2.dur) + ' · ' + secStr(s2.dur); }
+    const list = $('subList'); list.innerHTML = '';
+    P.data.S.forEach(c => {
+      const el = document.createElement('div'); el.className = 'sc' + (c.id === selS ? ' on' : '');
+      const t = document.createElement('span'); t.className = 't'; t.textContent = SB.plain(c.text) || '(빈 자막)';
+      const tm = document.createElement('span'); tm.className = 'tm'; tm.textContent = tc(c.at);
+      const x = document.createElement('span'); x.className = 'x'; x.textContent = '✕'; x.onclick = ev => { ev.stopPropagation(); P.removeS(c.id); if (selS === c.id) selectS(null); setPH(ph); };
+      el.append(t, tm, x); el.onclick = () => { selectS(c.id); setPH(c.at); };
+      list.appendChild(el);
+    });
+  }
 
   /* ---------- 우측 패널: 미디어 ---------- */
   function refreshBin() {
@@ -543,6 +669,7 @@
     if (sel && !P.clip(sel)) sel = null;
     refreshPanel(); refreshProject();
     scheduleSave(); if (!drag) refreshBin();
+    if (!drag) { refreshLookPanel(); refreshSubPanel(); if (selS && !P.subtitle(selS)) { selS = null; refreshSubPanel(); } if (!playing && (kind === 'look' || kind === 'S' || kind === 'change')) renderPreview(); }
     if (!drag) { const tot = P.total(); if (ph > Math.max(0, tot - 1)) ph = Math.max(0, tot - 1); }
     draw();
   });
@@ -571,7 +698,8 @@
 
   /* ---------- 시작 ---------- */
   resize();
-  refreshBin(); refreshPanel(); refreshProject();
+  refreshBin(); refreshPanel(); refreshProject(); refreshLookPanel(); refreshSubPanel();
+  LK.ready().then(() => { if (P.total()) renderPreview(); });
   $('zoom').value = Math.round(1000 * Math.log(pxf / MIN_PXF) / Math.log(MAX_PXF / MIN_PXF));
   restore().then(() => { zoomFit(); setPH(0); });
 })();

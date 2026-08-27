@@ -98,5 +98,32 @@
     return oac.startRendering();
   }
 
-  g.KMV_AUDIO = { ctx, decode, play, stop, now, isPlaying, renderMix, segments, scheduleA1, XF, SR };
+  /* 타임라인 A1 음성 구간 [{at,dur}] — 미디어 peaks(프레임 RMS) 기반 휴리스틱.
+     문턱 = 바닥(20%분위)×3 과 큰 소리(90%분위)×0.18 중 큰 쪽(최소 0.012), 0.4초 미만 빈틈은 이어 붙이고 0.6초 미만 구간은 버림. */
+  function voice() {
+    const P = g.KMV_PROJECT, FPS = P.FPS, M = g.KMV_MEDIA, on = new Uint8Array(P.total());
+    for (const a of P.data.A1) {
+      const c = P.clip(a.clip), m = P.media(c.media), src = M.get(m.id); if (!src || !src.peaks) continue;
+      for (const sg of segments(a, c, m)) {
+        const vals = []; for (let f = 0; f < sg.dur; f++) { const si = Math.min(src.frames - 1, Math.floor((sg.src + f / FPS * sg.rate) * m.fps)); vals.push(src.peaks[si] || 0); }
+        const sorted = vals.slice().sort((x, y) => x - y), q = k => sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * k))] || 0;
+        const th = Math.max(0.012, q(0.2) * 3, q(0.9) * 0.18);   // 바닥(20%)의 3배 또는 큰 소리(90%)의 18% — 둘 중 큰 쪽
+        for (let f = 0; f < sg.dur; f++) if (vals[f] > th) on[sg.tl + f] = 1;
+      }
+    }
+    const out = []; let start = -1;
+    const gap = Math.round(0.4 * FPS), min = Math.round(0.6 * FPS);
+    for (let f = 0; f <= on.length; f++) {
+      const v = f < on.length && on[f];
+      if (v && start < 0) start = f;
+      else if (!v && start >= 0) {
+        const last = out[out.length - 1];
+        if (last && start - (last.at + last.dur) < gap) last.dur = f - last.at; else out.push({ at: start, dur: f - start });
+        start = -1;
+      }
+    }
+    return out.filter(s => s.dur >= min);
+  }
+
+  g.KMV_AUDIO = { ctx, decode, play, stop, now, isPlaying, renderMix, segments, scheduleA1, voice, XF, SR };
 })(typeof window !== 'undefined' ? window : globalThis);
