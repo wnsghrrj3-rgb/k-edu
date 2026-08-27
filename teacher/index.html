@@ -501,7 +501,8 @@ tr:hover td{background:#FAFBFC}
     <span class="wipe-text">
       <div id="approval-text"></div>
       <div id="approval-form" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-        <input type="text" id="approval-note" maxlength="200" placeholder="예) ○○초등학교 3학년 담임" style="flex:1;min-width:220px;padding:8px 12px;border:1px solid #d5dbe3;border-radius:8px;font-size:13px">
+        <input type="text" id="approval-note" maxlength="120" placeholder="예) ○○초등학교 3학년 담임" style="flex:1;min-width:180px;padding:8px 12px;border:1px solid #d5dbe3;border-radius:8px;font-size:13px">
+        <input type="text" id="approval-neis" maxlength="30" placeholder="나이스 재직증명서 문서확인번호" title="나이스(neis.go.kr)에서 재직증명서를 발급하면 나오는 문서확인번호예요. 서류 제출 없이 이 번호만으로 진위를 확인해요." style="flex:1;min-width:200px;padding:8px 12px;border:1px solid #d5dbe3;border-radius:8px;font-size:13px">
         <button class="code-btn primary" style="margin:0;padding:8px 16px;font-size:13px" onclick="requestApproval()">확인 신청</button>
       </div>
     </span>
@@ -1007,15 +1008,17 @@ function renderApprovalBanner(){
     form.style.display = 'flex';
   } else {
     banner.classList.add('warn'); icon.textContent = '🔑';
-    text.innerHTML = '<b>교사 확인이 필요해요.</b> 학교명·직위를 적어 신청하면 확인 후 열어드려요. 확인 전에는 학급 개설·케이박스·아침활동이 잠겨 있어요.';
+    text.innerHTML = '<b>교사 확인이 필요해요.</b> 학교명·직위와 함께 <b>나이스 재직증명서 문서확인번호</b>를 적어 주세요 — 서류 제출 없이 번호로만 진위를 확인해요. 교육청 메일(@교육청.go.kr)로 가입했다면 자동으로 확인되기도 해요.';
     form.style.display = 'flex';
   }
   banner.hidden = false;
 }
 
 async function requestApproval(){
-  const note = document.getElementById('approval-note')?.value.trim() || '';
-  if(note.length < 2){ showToast('학교명과 직위를 적어 주세요.'); return; }
+  const base = document.getElementById('approval-note')?.value.trim() || '';
+  if(base.length < 2){ showToast('학교명과 직위를 적어 주세요.'); return; }
+  const neis = (document.getElementById('approval-neis')?.value.trim() || '').replace(/[^0-9A-Za-z-]/g,'');
+  const note = neis ? base + ' | 나이스증명 ' + neis : base;
   const { error } = await db.rpc('request_teacher_approval', { p_note: note });
   if(error){ showToast('⚠️ 신청 실패: ' + (error.message || '')); return; }
   currentTeacher.approval_note = note;
