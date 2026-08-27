@@ -672,7 +672,7 @@ tr:hover td{background:#FAFBFC}
     <div class="modal-body">
       <div class="modal-warn">
         <b>📌 입력 방법</b>
-        한 줄에 한 명씩 학생 닉네임을 입력하세요. 학생들은 메인 페이지에서 학급코드와 본인 닉네임을 입력해 입장합니다.
+        한 줄에 한 명씩 입력하세요. 쉼표(,)나 띄어쓰기로 쭉 이어 써도 알아서 나눠 등록해요. 학생들은 메인 페이지에서 학급코드와 본인 닉네임을 입력해 입장합니다.
         <br><br>
         <b>처리방침 v2.1 정합:</b> 닉네임은 실명 X · 별명만 사용 (예: 하늘이, 바다, 구름이). 학부모 사전 동의가 확인된 학급에서만 등록 가능합니다.
       </div>
@@ -1750,9 +1750,19 @@ function closeBulkModal(){
   document.getElementById('bulk-modal').classList.remove('show');
 }
 
+// 닉네임 파서 — 줄바꿈·쉼표·탭·가운뎃점(·)으로 자르고,
+// 구분자 없이 한 줄로 쭉 쓴 경우엔 공백도 구분자로 본다 (띄어쓰기 든 닉네임은 줄 단위 입력 시 보존).
+function parseBulkNicknames(raw){
+  let parts = (raw || '').split(/[\n,\t\u00B7]+/).map(s => s.trim()).filter(Boolean);
+  if(parts.length === 1 && /\s/.test(parts[0])){
+    parts = parts[0].split(/\s+/).filter(Boolean);
+  }
+  return [...new Set(parts)];
+}
+
 function updateBulkCounter(){
   const ta = document.getElementById('bulk-textarea');
-  const lines = ta.value.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+  const lines = parseBulkNicknames(ta.value);
   document.getElementById('bulk-counter-num').textContent = lines.length;
 }
 
@@ -1760,7 +1770,7 @@ async function submitBulkRegister(){
   if(!currentClassCode){ showToast('학급코드 정보가 없어요.'); return; }
 
   const ta = document.getElementById('bulk-textarea');
-  const lines = ta.value.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+  const lines = parseBulkNicknames(ta.value);
 
   if(lines.length === 0){ showToast('한 줄에 한 명씩 닉네임을 입력해 주세요.'); ta.focus(); return; }
   if(lines.length > 50){ showToast('한 번에 최대 50명까지 등록할 수 있어요.'); return; }
