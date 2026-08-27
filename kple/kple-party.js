@@ -116,14 +116,18 @@
         '100%{transform:translateY(110vh) rotate(540deg);opacity:.85;}}',
       '.kpty-scene-x{position:absolute;top:16px;right:18px;width:40px;height:40px;border:none;',
         'border-radius:12px;background:rgba(255,255,255,.14);color:#fff;font-size:24px;cursor:pointer;}',
-      /* 참가자 리액션 바(폰) */
-      '.kpty-react{position:fixed;left:0;right:0;bottom:0;z-index:9998;display:flex;',
-        'justify-content:center;gap:8px;padding:10px 10px calc(10px + env(safe-area-inset-bottom,0));',
-        'background:linear-gradient(180deg,transparent,rgba(10,16,32,.55));font-family:inherit;}',
-      '.kpty-react button{width:52px;height:52px;border:none;border-radius:16px;font-size:26px;',
+      /* 참가자 리액션 바(폰) — 접힘식: 평소엔 우하단 토글 하나, 누르면 펼침
+         (전면 바가 문제·답 버튼을 가리던 문제, 2026-08-27) */
+      '.kpty-react{position:fixed;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0));',
+        'z-index:9998;display:flex;justify-content:flex-end;gap:8px;font-family:inherit;}',
+      '.kpty-react button{width:48px;height:48px;border:none;border-radius:16px;font-size:24px;',
         'cursor:pointer;background:rgba(255,255,255,.94);box-shadow:0 3px 10px rgba(0,0,0,.25);',
         'transition:transform .08s;}',
       '.kpty-react button:active{transform:scale(.86);}',
+      '.kpty-react button.kpty-emo-btn{display:none;}',
+      '.kpty-react.open button.kpty-emo-btn{display:block;}',
+      '.kpty-toggle{opacity:.85;}',
+      '.kpty-react.open .kpty-toggle{opacity:1;}',
       '.kpty-mine{position:fixed;left:12px;bottom:76px;z-index:9998;display:none;align-items:center;',
         'gap:6px;padding:7px 12px;border-radius:999px;font-family:inherit;font-weight:800;',
         'font-size:14px;color:#fff;box-shadow:0 3px 12px rgba(0,0,0,.3);}',
@@ -399,20 +403,27 @@
     var docBody = document.body;
     var lastReact = 0;
 
-    // 리액션 바
+    // 리액션 바 — 접힘식(토글을 눌러야 이모지 줄이 펼쳐지고, 보내면 다시 접힌다)
     var bar = el('div', 'kpty-react');
     REACTS.forEach(function (e) {
-      var b = el('button', '', e);
+      var b = el('button', 'kpty-emo-btn', e);
       b.onclick = function () {
         var now = Date.now();
         if (now - lastReact < REACT_MIN_GAP) return;   // 송신단 상한(KP-3)
         lastReact = now;
         try { joinCtx.answer({ __pty: 'react', e: e }); } catch (err) {}
         b.style.transform = 'scale(.86)';
-        setTimeout(function () { b.style.transform = ''; }, 90);
+        setTimeout(function () {
+          b.style.transform = '';
+          bar.classList.remove('open');                // 보냈으면 접기 — 화면 가림 최소화
+        }, 90);
       };
       bar.appendChild(b);
     });
+    var toggle = el('button', 'kpty-toggle', '🙌');
+    toggle.setAttribute('aria-label', '반응 보내기');
+    toggle.onclick = function () { bar.classList.toggle('open'); };
+    bar.appendChild(toggle);
     docBody.appendChild(bar);
 
     // 내 팀 뱃지
