@@ -900,7 +900,12 @@ async function enterStudent(){
     if(!sessionData || !sessionData.session){
       const { data: anonData, error: anonError } = await db.auth.signInAnonymously();
       if(anonError || !anonData || !anonData.session){
-        showError('인증에 실패했어요. 잠시 후 다시 시도해 주세요.');
+        const m = anonError && anonError.message ? anonError.message : '';
+        if(/anonymous.*disabled/i.test(m)){
+          showError('서버에서 익명 로그인이 꺼져 있어요. 선생님(관리자)에게 알려 주세요.');
+        } else {
+          showError('인증에 실패했어요. 잠시 후 다시 시도해 주세요.' + (m ? ' (' + m + ')' : ''));
+        }
         btn.disabled = false; updateEntryBtn();
         return;
       }
