@@ -23,7 +23,7 @@
   if (!M.supported()) { $('nosup').classList.remove('hidden'); return; }
 
   /* ---------- 상태 ---------- */
-  let ph = 0, sel = null, selS = null, selP = null, selA2 = null, playing = false, snap = true, beatSnap = true, playStart = 0;
+  let ph = 0, sel = null, selS = null, selP = null, selA2 = null, selV2 = null, playing = false, snap = true, beatSnap = true, playStart = 0;
   const selSet = new Set();                  // 다중 선택 (sel 은 패널 기준 클립)
   let selM = null;                           // 선택 마커
   let stage = 'tl';                          // 'tl' | 'src' — 스테이지가 무엇을 보여주는가
@@ -191,7 +191,7 @@
   const sc = document.createElement('canvas'), sctx = sc.getContext('2d');
   let TW = 0, TH = 0, DPR = 1;
   const HEAD = 56, RULER = 24;
-  const LANES = [{ k: 'P', h: 30, label: '부품' }, { k: 'S', h: 30, label: '자막' }, { k: 'V', h: 88, label: '영상' }, { k: 'A1', h: 48, label: '현장음' }, { k: 'A2', h: 36, label: '음악' }];
+  const LANES = [{ k: 'P', h: 40, label: '꾸미기' }, { k: 'S', h: 40, label: '자막' }, { k: 'V2', h: 32, label: '덧영상' }, { k: 'V', h: 88, label: '영상' }, { k: 'A1', h: 48, label: '현장음' }, { k: 'A2', h: 36, label: '음악' }];
   const LY = {}; { let y = RULER; LANES.forEach(l => { LY[l.k] = { y, h: l.h }; y += l.h; }); }
   const xOf = f => HEAD + (f - scrollF) * pxf;
   const frameOf = x => scrollF + (x - HEAD) / pxf;
@@ -214,6 +214,24 @@
     const steps = [1, 2, 5, 10, 15, 30, 60, 150, 300, 600, 900, 1800, 3600, 9000, 18000];
     for (const s of steps) if (s * pxf >= 90) return s;
     return 36000;
+  }
+
+  /* 겹침 줄 배치 — 정렬된 카드에 0/1 줄 부여 (겹치면 두 줄). 그리기·히트가 같은 결과를 쓴다 */
+  function laneRows(cards, endOf) {
+    const map = {}; let e0 = -1, e1 = -1, rows = 1;
+    for (const c2 of cards) {
+      const a = c2.at, b = endOf(c2);
+      if (a >= e0) { map[c2.id] = 0; e0 = b; }
+      else if (a >= e1) { map[c2.id] = 1; e1 = b; rows = 2; }
+      else if (e0 <= e1) { map[c2.id] = 0; e0 = b; rows = 2; }
+      else { map[c2.id] = 1; e1 = b; rows = 2; }
+    }
+    return { map, rows };
+  }
+  function rowGeom(L, rowsInfo, id) {
+    if (rowsInfo.rows === 1) return { y: L.y + 4, h: L.h - 8 };
+    const h = (L.h - 9) / 2, r = rowsInfo.map[id] || 0;
+    return { y: L.y + 3 + r * (h + 3), h };
   }
 
   function drawStatic() {
@@ -240,12 +258,27 @@
     { const amb = D.audio && D.audio.ambience; if (amb && amb.on && amb.src) { const gaps = A.ambGaps(); for (const gp of gaps) { const x0 = Math.max(HEAD, xOf(gp.at)), x1 = Math.min(TW, xOf(gp.at + gp.dur)); if (x1 - x0 < 1) continue; const y = A1.y + 4, h = A1.h - 8; ctx.save(); rr(ctx, x0, y, x1 - x0, h, 4); ctx.clip(); ctx.fillStyle = 'rgba(111,183,217,.10)'; ctx.fillRect(x0, y, x1 - x0, h); ctx.strokeStyle = 'rgba(111,183,217,.28)'; ctx.lineWidth = 1; ctx.beginPath(); for (let xx = x0 - h; xx < x1; xx += 8) { ctx.moveTo(xx, y + h); ctx.lineTo(xx + h, y); } ctx.stroke(); ctx.beginPath(); ctx.moveTo(x0, y + h / 2 + .5); ctx.lineTo(x1, y + h / 2 + .5); ctx.strokeStyle = 'rgba(111,183,217,.45)'; ctx.stroke(); if (x1 - x0 > 46) { ctx.fillStyle = 'rgba(160,205,228,.8)'; ctx.font = '600 10px Pretendard, sans-serif'; ctx.textBaseline = 'middle'; ctx.fillText('룸톤', x0 + 5, y + 8); } ctx.restore(); } } }
     // 전환 표시 (클립 시작에 작은 겹침 표)
     for (const c of D.V) if (c.transIn) { const x0 = xOf(c.at), w = Math.max(6, TR.durFrames(c.transIn) * pxf); if (x0 + w < HEAD || x0 > TW) continue; ctx.fillStyle = 'rgba(217,182,92,.28)'; ctx.fillRect(x0, V.y + 4, w, V.h - 8); ctx.fillStyle = GOLD; ctx.beginPath(); ctx.moveTo(x0, V.y + 4); ctx.lineTo(x0 + w, V.y + 4); ctx.lineTo(x0, V.y + 4 + Math.min(14, w)); ctx.closePath(); ctx.fill(); }
-    // 자막 카드
-    const SL = LY.S;
-    for (const sc2 of D.S) { const x0 = xOf(sc2.at), x1 = xOf(sc2.at + sc2.dur); if (x1 < HEAD || x0 > TW) continue; drawSub(ctx, sc2, x0, x1, SL.y + 4, SL.h - 8, sc2.id === selS); }
-    // 부품 카드 (겹치면 뒤 카드가 위에)
-    const PL = LY.P;
-    for (const pt of D.P) { const x0 = xOf(pt.at), x1 = xOf(pt.at + pt.dur); if (x1 < HEAD || x0 > TW) continue; drawPart(ctx, pt, x0, x1, PL.y + 4, PL.h - 8, pt.id === selP); }
+    // 자막 카드 (겹치면 자동 두 줄)
+    const SL = LY.S, sRows = laneRows(D.S, c2 => c2.at + c2.dur);
+    for (const sc2 of D.S) { const x0 = xOf(sc2.at), x1 = xOf(sc2.at + sc2.dur); if (x1 < HEAD || x0 > TW) continue; const g2 = rowGeom(SL, sRows, sc2.id); drawSub(ctx, sc2, x0, x1, g2.y, g2.h, sc2.id === selS); }
+    // 부품 카드 (겹치면 자동 두 줄, 같은 줄에선 뒤 카드가 위)
+    const PL = LY.P, pRows = laneRows(D.P, c2 => c2.at + c2.dur);
+    for (const pt of D.P) { const x0 = xOf(pt.at), x1 = xOf(pt.at + pt.dur); if (x1 < HEAD || x0 > TW) continue; const g2 = rowGeom(PL, pRows, pt.id); drawPart(ctx, pt, x0, x1, g2.y, g2.h, pt.id === selP); }
+    // 덧영상 카드
+    { const OL = LY.V2;
+      for (const o of (D.V2 || [])) {
+        const x0 = Math.max(HEAD - 2, xOf(o.at)), x1 = Math.min(TW + 2, xOf(o.at + o.dur)); if (x1 < HEAD || x0 > TW) continue;
+        const yy = OL.y + 3, hh = OL.h - 6, on = o.id === selV2;
+        ctx.save(); rr(ctx, x0, yy, Math.max(6, x1 - x0), hh, 5); ctx.clip();
+        ctx.fillStyle = on ? 'rgba(122,162,247,.34)' : 'rgba(122,162,247,.18)'; ctx.fillRect(x0, yy, x1 - x0, hh);
+        const m2 = P.media(o.media), s2 = M.get(o.media);
+        if (s2 && s2.thumbs && s2.thumbs.length) { const th = s2.thumbs[Math.min(s2.thumbs.length - 1, Math.floor(o.in / (s2.thumbEvery || 1)))]; if (th) { ctx.globalAlpha = .9; try { ctx.drawImage(th, x0 + 2, yy + 2, (hh - 4) * 16 / 9, hh - 4); } catch (e) {} ctx.globalAlpha = 1; } }
+        ctx.fillStyle = on ? '#dfe8ff' : '#aebde0'; ctx.font = '600 10.5px Pretendard, sans-serif'; ctx.textBaseline = 'middle';
+        ctx.fillText('⧉ ' + (m2 ? m2.name : '') , x0 + (hh - 4) * 16 / 9 + 8, yy + hh / 2 + .5);
+        ctx.restore();
+        if (on) { ctx.strokeStyle = GOLD; ctx.lineWidth = 1.5; rr(ctx, x0 + .75, yy + .75, Math.max(6, x1 - x0) - 1.5, hh - 1.5, 5); ctx.stroke(); }
+      }
+    }
     // 음악 카드 + 비트 마커
     const A2L = LY.A2, tot0 = P.total();
     for (const a of D.A2) { const x0 = xOf(a.at), x1 = xOf(a.at + a.out - a.in); if (x1 < HEAD || x0 > TW) continue; drawMusic(ctx, a, x0, x1, A2L.y + 4, A2L.h - 8, a.id === selA2, tot0); }
@@ -416,13 +449,14 @@
     if (drag && drag.type === 'slip') { const c = drag.clip, x0 = xOf(c.at), x1 = xOf(c.at + c.dur); ctx.fillStyle = 'rgba(217,182,92,.14)'; ctx.fillRect(Math.max(HEAD, x0), LY.V.y + 4, Math.min(TW, x1) - Math.max(HEAD, x0), LY.V.h - 8); ctx.fillStyle = GOLD; ctx.font = '700 11px Pretendard, sans-serif'; ctx.textBaseline = 'middle'; ctx.fillText('⇄ 슬립 ' + tc(Math.round(c.in * FPS / P.media(c.media).fps)) + ' → ' + tc(Math.round(c.out * FPS / P.media(c.media).fps)), Math.max(HEAD, x0) + 6, LY.V.y + LY.V.h - 12); }
     if (drag && drag.type === 'roll') { const c = P.clip(drag.prevId); if (c) { const x = Math.round(xOf(c.at + c.dur)) + .5; ctx.fillStyle = GOLD; rr(ctx, x - 4, LY.V.y + 4, 8, LY.V.h - 8, 3); ctx.fill(); ctx.fillStyle = '#1a1408'; ctx.fillRect(x - 1.5, LY.V.y + 12, 1, LY.V.h - 24); ctx.fillRect(x + .5, LY.V.y + 12, 1, LY.V.h - 24); ctx.fillStyle = GOLD; ctx.font = '700 11px Pretendard, sans-serif'; ctx.textBaseline = 'middle'; ctx.fillText('⇹ 롤 ' + tc(c.at + c.dur), x + 8, LY.V.y + LY.V.h - 12); } }
     // 호버 트림 손잡이
-    const hv = (drag && /^(trim|atrim|strim|ptrim|mtrim)$/.test(drag.type)) ? { kind: { trim: 'V', atrim: 'A1', strim: 'S', ptrim: 'P', mtrim: 'A2' }[drag.type], clip: drag.clip, s: drag.s, pt: drag.pt, a2: drag.a2, edge: drag.side } : hover;
-    if (hv && hv.edge && /^(V|A1|S|P|A2)$/.test(hv.kind)) {
+    const hv = (drag && /^(trim|atrim|strim|ptrim|mtrim|v2trim)$/.test(drag.type)) ? { kind: { trim: 'V', atrim: 'A1', strim: 'S', ptrim: 'P', mtrim: 'A2', v2trim: 'V2' }[drag.type], clip: drag.clip, s: drag.s, pt: drag.pt, a2: drag.a2, o: drag.o, edge: drag.side } : hover;
+    if (hv && hv.edge && /^(V|A1|S|P|A2|V2)$/.test(hv.kind)) {
       const L = LY[hv.kind]; let x0, x1;
       if (hv.kind === 'V') { x0 = xOf(hv.clip.at); x1 = xOf(hv.clip.at + hv.clip.dur); }
       else if (hv.kind === 'S') { x0 = xOf(hv.s.at); x1 = xOf(hv.s.at + hv.s.dur); }
       else if (hv.kind === 'P') { x0 = xOf(hv.pt.at); x1 = xOf(hv.pt.at + hv.pt.dur); }
       else if (hv.kind === 'A2') { x0 = xOf(hv.a2.at); x1 = xOf(hv.a2.at + hv.a2.out - hv.a2.in); }
+      else if (hv.kind === 'V2') { x0 = xOf(hv.o.at); x1 = xOf(hv.o.at + hv.o.dur); }
       else { const a = P.audioOf(hv.clip.id); if (!a) x0 = x1 = -99; else { x0 = xOf(a.at); x1 = xOf(a.at + a.dur); } }
       const x = hv.edge === 'in' ? x0 : x1 - 6;
       ctx.fillStyle = GOLD; rr(ctx, x, L.y + 4, 6, L.h - 8, 2); ctx.fill();
@@ -462,8 +496,10 @@
     if (y < RULER) { const mks = P.data.markers || []; for (let i = mks.length - 1; i >= 0; i--) { if (Math.abs(xOf(mks[i].at) - x) <= 7) return { kind: 'marker', mk: mks[i] }; } return { kind: 'ruler' }; }
     const lane = laneAt(y);
     if (lane === 'V') for (const c of P.data.V) { const x0 = xOf(c.at), x1 = xOf(c.at + c.dur); if (x >= x0 && x < x1) { const ez = Math.min(9, (x1 - x0) / 3); return { kind: 'V', clip: c, edge: x - x0 < ez ? 'in' : x1 - x <= ez ? 'out' : null }; } }
-    if (lane === 'S') for (const sc2 of P.data.S) { const x0 = xOf(sc2.at), x1 = xOf(sc2.at + sc2.dur); if (x >= x0 && x < x1) { const ez = Math.min(9, (x1 - x0) / 3); return { kind: 'S', s: sc2, edge: x - x0 < ez ? 'in' : x1 - x <= ez ? 'out' : null }; } }
-    if (lane === 'P') { const arr = P.data.P; for (let i = arr.length - 1; i >= 0; i--) { const pt = arr[i], x0 = xOf(pt.at), x1 = xOf(pt.at + pt.dur); if (x >= x0 && x < x1) { const ez = Math.min(9, (x1 - x0) / 3); return { kind: 'P', pt, edge: x - x0 < ez ? 'in' : x1 - x <= ez ? 'out' : null }; } } }
+    const inRow = (L, ri, id) => { const g2 = rowGeom(L, ri, id); return y >= g2.y - 2 && y <= g2.y + g2.h + 2; };
+    if (lane === 'S') { const ri = laneRows(P.data.S, c2 => c2.at + c2.dur); for (let i = P.data.S.length - 1; i >= 0; i--) { const sc2 = P.data.S[i], x0 = xOf(sc2.at), x1 = xOf(sc2.at + sc2.dur); if (x >= x0 && x < x1 && inRow(LY.S, ri, sc2.id)) { const ez = Math.min(9, (x1 - x0) / 3); return { kind: 'S', s: sc2, edge: x - x0 < ez ? 'in' : x1 - x <= ez ? 'out' : null }; } } }
+    if (lane === 'P') { const arr = P.data.P, ri = laneRows(arr, c2 => c2.at + c2.dur); for (let i = arr.length - 1; i >= 0; i--) { const pt = arr[i], x0 = xOf(pt.at), x1 = xOf(pt.at + pt.dur); if (x >= x0 && x < x1 && inRow(LY.P, ri, pt.id)) { const ez = Math.min(9, (x1 - x0) / 3); return { kind: 'P', pt, edge: x - x0 < ez ? 'in' : x1 - x <= ez ? 'out' : null }; } } }
+    if (lane === 'V2') { const arr = P.data.V2 || []; for (let i = arr.length - 1; i >= 0; i--) { const o = arr[i], x0 = xOf(o.at), x1 = xOf(o.at + o.dur); if (x >= x0 && x < x1) { const ez = Math.min(9, (x1 - x0) / 3); return { kind: 'V2', o, edge: x - x0 < ez ? 'in' : x1 - x <= ez ? 'out' : null }; } } }
     if (lane === 'A2') { const arr = P.data.A2; for (let i = arr.length - 1; i >= 0; i--) { const a = arr[i], x0 = xOf(a.at), x1 = xOf(a.at + a.out - a.in); if (x >= x0 && x < x1) { const ez = Math.min(9, (x1 - x0) / 3); return { kind: 'A2', a2: a, edge: x - x0 < ez ? 'in' : x1 - x <= ez ? 'out' : null }; } } }
     if (lane === 'A1') for (const a of P.data.A1) { const x0 = xOf(a.at), x1 = xOf(a.at + a.dur); if (x >= x0 && x < x1) { const ez = Math.min(9, (x1 - x0) / 3); return { kind: 'A1', clip: P.clip(a.clip), a, edge: x - x0 < ez ? 'in' : x1 - x <= ez ? 'out' : null }; } }
     return { kind: 'lane', lane };
@@ -485,6 +521,7 @@
     if (kind === 'P') for (const p of P.data.P) { if (p.id !== exceptId) out.push(p.at, p.at + p.dur); }
     else if (kind === 'S') for (const t of P.data.S) { if (t.id !== exceptId) out.push(t.at, t.at + t.dur); }
     else if (kind === 'A2') for (const a of P.data.A2) { if (a.id !== exceptId) out.push(a.at, a.at + a.out - a.in); }
+    else if (kind === 'V2') for (const o of (P.data.V2 || [])) { if (o.id !== exceptId) out.push(o.at, o.at + o.dur); }
     return out;
   }
   /* 카드 이동 스냅 — 시작·끝 양쪽을 재서 더 가까운 쪽으로 붙는다 (앞 카드 뒤에 딱 맞춰 붙기) */
@@ -501,7 +538,13 @@
     stop(); showStage('tl');
     const h = hitTest(x, y);
     if (h.kind === 'marker') { selectMarker(h.mk.id); P.commit(); drag = { type: 'mkmove', mk: h.mk, x0: x, orig: { at: h.mk.at } }; setPH(h.mk.at, { noScroll: true }); return; }
-    if (h.kind === 'ruler' || h.kind === 'lane') { if (h.kind === 'lane') { select(null); selectS(null); selectP(null); selectA2(null); } selectMarker(null); drag = { type: 'scrub' }; setRScale(0.5); tl.style.cursor = 'grabbing'; setPH(frameOf(x), { noScroll: true }); return; }
+    if (h.kind === 'ruler' || h.kind === 'lane') { if (h.kind === 'lane') { select(null); selectS(null); selectP(null); selectA2(null); selectV2(null); } selectMarker(null); drag = { type: 'scrub' }; setRScale(0.5); tl.style.cursor = 'grabbing'; setPH(frameOf(x), { noScroll: true }); return; }
+    if (h.kind === 'V2') {
+      selectV2(h.o.id); P.commit();
+      if (h.edge) drag = { type: 'v2trim', o: h.o, side: h.edge, x0: x, orig: { at: h.o.at, in: h.o.in, out: h.o.out, dur: h.o.dur } };
+      else drag = { type: 'v2move', o: h.o, x0: x, orig: { at: h.o.at, dur: h.o.dur } };
+      return;
+    }
     if (h.kind === 'P') {
       selectP(h.pt.id); P.commit();
       if (h.edge) drag = { type: 'ptrim', pt: h.pt, side: h.edge, x0: x, orig: { at: h.pt.at, dur: h.pt.dur } };
@@ -553,10 +596,10 @@
     const { x, y } = pos(e);
     if (!drag) {
       const h = hitTest(x, y);
-      const hid = hv => hv ? (hv.kind === 'S' ? hv.s.id : hv.kind === 'P' ? hv.pt.id : hv.kind === 'A2' ? hv.a2.id : hv.clip.id) : undefined;
-      const hname = hv => hv.kind === 'S' ? SB.plain(hv.s.text) : hv.kind === 'P' ? PT.label(hv.pt) : hv.kind === 'A2' ? '♪ ' + P.media(hv.a2.media).name : P.media(hv.clip.media).name;
+      const hid = hv => hv ? (hv.kind === 'S' ? hv.s.id : hv.kind === 'P' ? hv.pt.id : hv.kind === 'A2' ? hv.a2.id : hv.kind === 'V2' ? hv.o.id : hv.clip.id) : undefined;
+      const hname = hv => hv.kind === 'S' ? SB.plain(hv.s.text) : hv.kind === 'P' ? PT.label(hv.pt) : hv.kind === 'A2' ? '♪ ' + P.media(hv.a2.media).name : hv.kind === 'V2' ? '⧉ ' + P.media(hv.o.media).name : P.media(hv.clip.media).name;
       const prevEdge = hover && hover.edge, prevClip = hid(hover);
-      hover = /^(V|A1|S|P|A2)$/.test(h.kind) ? h : null;
+      hover = /^(V|A1|S|P|A2|V2)$/.test(h.kind) ? h : null;
       const phNear = Math.abs(x - xOf(ph)) <= 5 && x >= HEAD;
       tl.style.cursor = h.kind === 'marker' ? 'pointer' : hover && hover.edge ? ((e.ctrlKey || e.metaKey) && hover.kind === 'V' ? 'col-resize' : 'ew-resize') : phNear ? 'grab' : hover ? (e.altKey && hover.kind === 'V' ? 'move' : 'grab') : (x >= HEAD ? 'text' : 'default');
       if (x >= HEAD && y >= 0 && y <= TH) $('hover').textContent = tc(Math.max(0, frameOf(x))) + (hover ? ' · ' + hname(hover) : ''); else $('hover').textContent = '';
@@ -586,6 +629,17 @@
       const nx = P.data.V[P.clipIndex(prev.id) + 1];
       if (nx) drawTwoUp(prev.media, prev.freeze ? prev.in : prev.out - 1, nx.media, nx.in, '앞 클립 끝', '뒤 클립 시작');
       return;
+    }
+    if (drag.type === 'v2move' || drag.type === 'v2trim') {
+      const o = drag.o, dtl = (x - drag.x0) / pxf;
+      if (drag.type === 'v2move') { const sn = snapSpan(drag.orig.at + dtl, drag.orig.dur, laneEdges('V2', o.id)); drag.snapX = sn.x; P.updateV2(o.id, { at: Math.max(0, sn.f) }, { commit: false }); }
+      else {
+        const edge0 = drag.side === 'in' ? drag.orig.at : drag.orig.at + drag.orig.dur;
+        const sn = snapFrame(edge0 + dtl, laneEdges('V2', o.id)); drag.snapX = sn.x;
+        const cur = drag.side === 'in' ? o.at : o.at + o.dur;
+        P.trimV2(o.id, drag.side, sn.f - cur, { commit: false });
+      }
+      dirty = true; uiRefresh(); return;
     }
     if (drag.type === 'pmove' || drag.type === 'ptrim') {
       const d = drag.pt, dtl = (x - drag.x0) / pxf;
@@ -813,6 +867,7 @@
   function selectS(id) { if (selS === id) return; selS = id; dirty = true; draw(); refreshSubPanel(); }
   function selectP(id) { if (selP === id) return; selP = id; dirty = true; draw(); refreshPartPanel(); }
   function selectA2(id) { if (selA2 === id) return; selA2 = id; dirty = true; draw(); refreshMusicPanel(); }
+  function selectV2(id) { if (selV2 === id) return; selV2 = id; if (id) { select(null); selectS(null); selectP(null); selectA2(null); } dirty = true; draw(); refreshV2Panel(); }
   function selClip() { return sel ? P.clip(sel) : null; }
   function doSplit() { stop(); const c2 = P.split(ph); if (c2) select(c2.id); else toast('여기선 나눌 게 없어요 — 플레이헤드를 클립 안쪽으로'); }
   function doDelete() {
@@ -820,6 +875,7 @@
     if (selS) { P.removeS(selS); selectS(null); setPH(ph); return; }
     if (selP) { P.removeP(selP); selectP(null); setPH(ph); return; }
     if (selA2) { P.removeA2(selA2); selectA2(null); setPH(ph); return; }
+    if (selV2) { P.removeV2(selV2); selectV2(null); setPH(ph); return; }
     if (selM) { P.removeMarker(selM); selectMarker(null); setPH(ph); return; }
     const ids = selectedIds();
     if (ids.length > 1) { P.removeClips(ids); select(null); setPH(ph); toast('클립 ' + ids.length + '개를 지웠어요 (Ctrl+Z 로 되돌려요)', 1800); return; }
@@ -896,7 +952,7 @@
       case '=': case '+': setZoom(pxf * 1.3); break;
       case '-': case '_': setZoom(pxf / 1.3); break;
       case '\\': zoomFit(); break;
-      case 'Escape': select(null); selectS(null); selectP(null); selectA2(null); selectMarker(null); break;
+      case 'Escape': select(null); selectS(null); selectP(null); selectA2(null); selectV2(null); selectMarker(null); break;
     }
   });
   // 버튼·슬라이더에 포커스가 남으면 Space·화살표가 거기로 가므로 놓는 즉시 풀어 준다
@@ -1029,6 +1085,21 @@
     $('tgExpose').classList.toggle('on', !!L.autoExpose); $('tgBar').classList.toggle('on', !!L.cinemaBar);
   }
   // 자막
+  /* ---------- 14단계 패널: 덧영상 V2 ---------- */
+  const V2_POS_L = [['tl', '↖ 좌상'], ['tr', '↗ 우상'], ['c', '중앙'], ['bl', '↙ 좌하'], ['br', '↘ 우하'], ['full', '꽉 채움']];
+  V2_POS_L.forEach(([k, l]) => segBtn($('v2PosSeg'), k, l, () => { const o = selV2 && P.v2(selV2); if (o) { P.updateV2(o.id, { pos: k }); } }));
+  [['sm', '작게'], ['md', '중간'], ['lg', '절반']].forEach(([k, l]) => segBtn($('v2SizeSeg'), k, l, () => { const o = selV2 && P.v2(selV2); if (o) P.updateV2(o.id, { size: k }); }));
+  $('btnV2Del').onclick = () => { if (selV2) { stop(); P.removeV2(selV2); selectV2(null); setPH(ph); } };
+  function refreshV2Panel() {
+    const o = selV2 && P.v2(selV2);
+    $('v2None').classList.toggle('hidden', !!o); $('v2Body').classList.toggle('hidden', !o);
+    if (!o) return;
+    const m = P.media(o.media);
+    $('v2Name').textContent = m ? m.name : '';
+    $('v2Range').textContent = tc(o.at) + ' → ' + tc(o.at + o.dur) + ' · ' + secStr(o.dur);
+    Array.from($('v2PosSeg').children).forEach(b => b.classList.toggle('on', b.dataset.k === (o.pos || 'br')));
+    Array.from($('v2SizeSeg').children).forEach(b => { b.classList.toggle('on', b.dataset.k === (o.size || 'md')); b.disabled = o.pos === 'full'; });
+  }
   let subStyle = 'basic';
   (SB.CATS || [{ id: null }]).forEach(cat => {
     const items = SB.STYLES.filter(st => !cat.id || st.cat === cat.id); if (!items.length) return;
@@ -1095,7 +1166,7 @@
     stop();
     const pt = P.addP({ part: partId, at: Math.max(0, Math.round(at)) });
     if (!pt) return;
-    selectP(pt.id); select(null); selectS(null); selectA2(null);
+    selectP(pt.id); select(null); selectS(null); selectA2(null); selectV2(null);
     setPH(pt.at + Math.min(pt.dur - 1, Math.round(PT.meta(partId).thumbT * FPS)));
     if (PT.behind(pt) && SG) SG.load().then(ok => { if (!ok) toast('인물 컷아웃 모델을 못 불러와 부품이 그냥 앞에 그려져요', 4000); });
     toast(PT.def(partId).name + ' 을 놓았어요 — 오른쪽에서 문구를 바꾸세요', 1800);
@@ -1281,11 +1352,12 @@
       nm.querySelector('span').textContent = (m.kind === 'image' ? m.w + '×' + m.h : isAud ? '음악 · ' + Math.round(m.dur / m.fps) + '초' + (src && src.beats ? ' · 비트 ' + src.beats.length : '') : Math.round(m.dur / m.fps) + '초 · ' + m.w + '×' + m.h + ' ' + m.fps + 'fps' + (m.audio ? '' : ' · 무음')) + (used ? ' · 사용 ' + used : '');
       if (src && src.kind === 'video' && !src.analyzed) { const bar = document.createElement('div'); bar.className = 'bar'; bar.innerHTML = '<i></i>'; bar.querySelector('i').style.width = Math.round((binProg[m.id] || 0) * 100) + '%'; bar.dataset.id = m.id; nm.appendChild(bar); }
       el.appendChild(nm);
-      if (!isAud) { const add = document.createElement('span'); add.className = 'add'; add.textContent = '＋'; add.title = '통째로 타임라인 끝에 붙이기'; add.onclick = ev => { ev.stopPropagation(); stop(); showStage('tl'); const c = P.addClip(m.id); select(c.id); setPH(c.at); toast(m.name + ' 을 끝에 붙였어요', 1500); }; el.appendChild(add); }
+      if (!isAud) { const add = document.createElement('span'); add.className = 'add'; add.textContent = '＋'; add.title = '통째로 타임라인 끝에 붙이기'; add.onclick = ev => { ev.stopPropagation(); stop(); showStage('tl'); const c = P.addClip(m.id); select(c.id); setPH(c.at); toast(m.name + ' 을 끝에 붙였어요', 1500); }; el.appendChild(add);
+        const pip = document.createElement('span'); pip.className = 'add'; pip.textContent = '⧉'; pip.title = '덧영상으로 — 플레이헤드 자리, 영상 위 작은 화면'; pip.onclick = ev => { ev.stopPropagation(); stop(); showStage('tl'); const o = P.addV2(m.id, ph); if (o) { selectV2(o.id); setPH(o.at); toast(m.name + ' 을 덧영상으로 놓았어요 — 오른쪽에서 위치·크기', 2200); } }; el.appendChild(pip); }
       const x = document.createElement('span'); x.className = 'x'; x.textContent = '✕'; x.title = '미디어 제거 (타임라인에서도 빠져요)';
       x.onclick = ev => { ev.stopPropagation(); if (!confirm('"' + m.name + '" 을 지울까요? 타임라인의 클립도 함께 빠져요.')) return; stop(); if (srcCur && srcCur.media === m.id) { srcCur = null; srcMemo.delete(m.id); showStage('tl'); $('stageTabs').classList.add('hidden'); } P.removeMedia(m.id); M.remove(m.id); DB.delMedia(m.id); if (sel && !P.clip(sel)) select(null); if (selA2 && !P.a2(selA2)) selectA2(null); setPH(ph); refreshBin(); };
       el.appendChild(x);
-      if (isAud) el.onclick = () => { stop(); const a = P.addA2(m.id, ph); if (a) { selectA2(a.id); select(null); selectS(null); selectP(null); setPH(a.at); toast(m.name + ' 을 ' + tc(a.at) + ' 에 놓았어요', 1500); } };
+      if (isAud) el.onclick = () => { stop(); const a = P.addA2(m.id, ph); if (a) { selectA2(a.id); select(null); selectS(null); selectP(null); selectV2(null); setPH(a.at); toast(m.name + ' 을 ' + tc(a.at) + ' 에 놓았어요', 1500); } };
       else el.onclick = () => openSource(m.id);
       bin.appendChild(el);
     });
@@ -1363,8 +1435,9 @@
       if (selS && !P.subtitle(selS)) { selS = null; refreshSubPanel(); }
       if (selP && !P.part(selP)) { selP = null; refreshPartPanel(); }
       if (selA2 && !P.a2(selA2)) { selA2 = null; refreshMusicPanel(); }
+      if (selV2 && !P.v2(selV2)) { selV2 = null; refreshV2Panel(); }
       if (kind === 'look' || kind === 'load') paintPartThumbs();
-      if (!playing && (kind === 'look' || kind === 'S' || kind === 'P' || kind === 'change' || kind === 'load' || kind === 'undo' || kind === 'redo')) renderPreview();
+      if (!playing && (kind === 'look' || kind === 'S' || kind === 'P' || kind === 'V2' || kind === 'change' || kind === 'load' || kind === 'undo' || kind === 'redo')) renderPreview();
     }
     if (!drag) { const tot = P.total(); if (ph > Math.max(0, tot - 1)) ph = Math.max(0, tot - 1); }
     if (stage === 'src' && !playing && !drag) renderSource();
@@ -1399,7 +1472,7 @@
   }
 
   window.KMV_UI = { importFiles, setPH: f => setPH(f), get ph() { return ph; }, select, selectP, selectA2, placePart, play, stop, zoomFit, get pxf() { return pxf; }, get scrollF() { return scrollF; }, get selP() { return selP; }, get selA2() { return selA2; }, beatFrames,
-    get sel() { return sel; }, selectedIds, openSource, showStage, get stage() { return stage; }, get src() { return srcCur; }, setSrcPH, srcMark, srcPlace, shuttleTo, get shuttle() { return shuttle; }, get playing() { return playing || srcPlaying; }, doMarker, doCopy, doCut, doPaste, get clipboard() { return clipboard; }, get selM() { return selM; }, layout: { HEAD, RULER, LY }, xOf, frameOf };
+    get sel() { return sel; }, selectedIds, openSource, showStage, get stage() { return stage; }, get src() { return srcCur; }, setSrcPH, srcMark, srcPlace, shuttleTo, get shuttle() { return shuttle; }, get playing() { return playing || srcPlaying; }, doMarker, doCopy, doCut, doPaste, get clipboard() { return clipboard; }, get selM() { return selM; }, layout: { HEAD, RULER, LY }, xOf, frameOf, laneRows, rowGeom, selectV2, get selV2() { return selV2; } };
 
   /* ---------- 시작 ---------- */
   resize();

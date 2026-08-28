@@ -121,7 +121,7 @@ const trPanel = await page.evaluate(() => ({
 }));
 await page.evaluate(() => { KMV_UI.setPH(30); });
 const bb = await page.evaluate(() => { const r = document.getElementById('timeline').getBoundingClientRect(); return { x: r.x, y: r.y, pxf: KMV_UI.xOf(1) - KMV_UI.xOf(0) }; });
-await page.mouse.click(bb.x + await page.evaluate(() => KMV_UI.xOf(30)), bb.y + 128);   // V 레인의 첫 클립
+await page.mouse.click(bb.x + await page.evaluate(() => KMV_UI.xOf(30)), bb.y + 180);   // V 레인의 첫 클립 (레인: 눈금24+P40+S40+V2 32 → V 136~224)
 const trPanel2 = await page.evaluate(() => ({ bodyShown: !document.getElementById('trBody').classList.contains('hidden') }));
 ok(trPanel.h3.includes('화면 전환') && trPanel.inPanel && trPanel.noneShown && trPanel2.bodyShown, '화면 전환이 독립 패널로 — 클립 고르면 열림 (' + trPanel.h3.trim() + ')');
 

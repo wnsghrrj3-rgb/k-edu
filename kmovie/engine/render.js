@@ -71,7 +71,28 @@
   }
   function needsMask(t) { return partsAt(t).back.length > 0; }
 
-  function compose(ctx, W, H, t, c, img, tr, prevImg, mask) {
+  /* 덧영상(V2) 한 장 — 모서리/중앙 작은 화면(테두리·그림자) 또는 full(꽉) */
+  function rrPath(ctx, x, y, w, h, r) { r = Math.min(r, w / 2, h / 2); ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+  function drawOverlay(ctx, W, H, e) {
+    const P = g.KMV_PROJECT, m = P.media(e.o.media); if (!m || !e.img) return;
+    const rot = e.src ? e.src.rot : 0;
+    if (e.o.pos === 'full') { g.KMV_MEDIA.drawFit(ctx, e.img, W, H, rot); return; }
+    const SF = (P.V2_SIZE && P.V2_SIZE[e.o.size]) || 0.38, mg = Math.round(W * 0.035), rad = Math.max(3, W * 0.008);
+    let rw = Math.round(W * SF), rh = Math.round(rw * m.h / Math.max(1, m.w));
+    if (rh > H * 0.86) { rh = Math.round(H * 0.86); rw = Math.round(rh * m.w / Math.max(1, m.h)); }
+    const x = e.o.pos === 'tl' || e.o.pos === 'bl' ? mg : e.o.pos === 'c' ? (W - rw) >> 1 : W - mg - rw;
+    const y = e.o.pos === 'tl' || e.o.pos === 'tr' ? mg : e.o.pos === 'c' ? (H - rh) >> 1 : H - mg - rh;
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = W * 0.014; ctx.shadowOffsetY = W * 0.003;
+    rrPath(ctx, x, y, rw, rh, rad); ctx.fillStyle = '#000'; ctx.fill();
+    ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+    ctx.clip();
+    ctx.translate(x, y); g.KMV_MEDIA.drawFit(ctx, e.img, rw, rh, rot);
+    ctx.restore();
+    rrPath(ctx, x, y, rw, rh, rad); ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = Math.max(1.5, W * 0.0016); ctx.stroke();
+  }
+
+  function compose(ctx, W, H, t, c, img, tr, prevImg, mask, ov) {
     const P = g.KMV_PROJECT, PT = g.KMV_PARTS, theme = P.data.theme;
     drawClip(ctx, W, H, t, c, img);
     // ---- 전환 ----
@@ -96,6 +117,8 @@
         resetCtx(ctx); ctx.drawImage(cv, 0, 0);
       }
     }
+    // ---- 덧영상(V2) ----
+    if (ov && ov.length) { resetCtx(ctx); for (const e of ov) { drawOverlay(ctx, W, H, e); resetCtx(ctx); } }
     // ---- 자막 ----
     if (g.KMV_SUBTITLE) g.KMV_SUBTITLE.draw(ctx, W, H, t, P.data.S, theme, safeBottom(W, H));
     // ---- 부품(앞) ----
@@ -111,10 +134,22 @@
     if (PT) { const parts = partsAt(t); resetCtx(ctx); for (const pt of parts.back.concat(parts.front)) { PT.drawCard(ctx, W, H, pt, t, P.data.theme); resetCtx(ctx); } }
   }
 
-  /* 미리보기: 즉시 그림. {exact, idx, src, clip, pidx, psrc, segPending} */
+  function overlaysAt(t, exactHolder) {
+    const P = g.KMV_PROJECT, ov = [];
+    for (const o of (P.v2At ? P.v2At(t) : [])) {
+      const s2 = g.KMV_MEDIA.get(o.media); if (!s2) continue;
+      const oi = P.srcFrame(o, t);
+      let im = s2.cached(oi);
+      if (!im) { im = s2.nearest(oi); if (exactHolder) { exactHolder.exact = false; exactHolder.pend.push({ src: s2, idx: oi }); } s2.prefetch && s2.prefetch(oi); }
+      ov.push({ o, img: im, src: s2, idx: oi });
+    }
+    return ov;
+  }
+
+  /* 미리보기: 즉시 그림. {exact, idx, src, clip, pidx, psrc, segPending, ovPend} */
   function draw(ctx, W, H, t) {
     const P = g.KMV_PROJECT, c = P.clipAt(t);
-    if (!c) { emptyFrame(ctx, W, H, t); return { exact: true, empty: true }; }
+    if (!c) { emptyFrame(ctx, W, H, t); const eh = { exact: true, pend: [] }; const ov = overlaysAt(t, eh); if (ov.length) { resetCtx(ctx); for (const e of ov) { drawOverlay(ctx, W, H, e); resetCtx(ctx); } if (g.KMV_SUBTITLE) g.KMV_SUBTITLE.draw(ctx, W, H, t, P.data.S, P.data.theme); } return { exact: eh.exact, empty: true, ovPend: eh.pend }; }
     const src = g.KMV_MEDIA.get(c.media);
     if (!src) { black(ctx, W, H); return { exact: true, empty: true }; }
     const idx = P.srcFrame(c, t);
@@ -130,8 +165,10 @@
       mask = g.KMV_SEG.cached(c.media, idx);
       if (!mask) { mask = g.KMV_SEG.nearest(c.media, idx); segPending = true; }
     }
-    compose(ctx, W, H, t, c, img, tr, prevImg, mask);
-    return { exact: exact && !segPending, idx, src, clip: c, pidx: tr ? tr.pidx : -1, psrc, segPending, media: c.media };
+    const eh = { exact: true, pend: [] };
+    const ov = overlaysAt(t, eh);
+    compose(ctx, W, H, t, c, img, tr, prevImg, mask, ov);
+    return { exact: exact && !segPending && eh.exact, idx, src, clip: c, pidx: tr ? tr.pidx : -1, psrc, segPending, media: c.media, ovPend: eh.pend };
   }
 
   /* 내보내기: 정확 프레임·정확 마스크를 기다려 그림 */
@@ -147,8 +184,15 @@
     if (tr && tr.prev) { const psrc = g.KMV_MEDIA.get(tr.prev.media); if (psrc) { try { prevImg = (SH && await SH.exact(tr.prev.media, tr.pidx)) || await psrc.getFrame(tr.pidx, false); } catch (e) { prevImg = psrc.nearest(tr.pidx); } } }
     let mask = null;
     if (g.KMV_SEG && needsMask(t)) { try { mask = await g.KMV_SEG.mask(c.media, idx, img); } catch (e) { mask = null; } }
-    try { compose(ctx, W, H, t, c, img, tr, prevImg, mask); }
-    finally { for (const f of [img, prevImg]) if (f && f.kmvTemp) { try { f.close(); } catch (e) {} } }
+    const ov = [];
+    for (const o of (P.v2At ? P.v2At(t) : [])) {
+      const s2 = g.KMV_MEDIA.get(o.media); if (!s2) continue;
+      const oi = P.srcFrame(o, t);
+      let im = null; try { im = (SH && await SH.exact(o.media, oi)) || await s2.getFrame(oi, false); } catch (e) { im = s2.nearest(oi); }
+      ov.push({ o, img: im, src: s2, idx: oi });
+    }
+    try { compose(ctx, W, H, t, c, img, tr, prevImg, mask, ov); }
+    finally { for (const f of [img, prevImg].concat(ov.map(e => e.img))) if (f && f.kmvTemp) { try { f.close(); } catch (e) {} } }
   }
 
   /* 원본 프레임 하나를 그대로 (트림 드래그 중 경계 프레임 보기) */

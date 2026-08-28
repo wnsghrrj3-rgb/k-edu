@@ -36,7 +36,7 @@
   function blank() {
     return {
       v: 1, fps: FPS, w: W, h: H, theme: 'geumseong',
-      media: [], V: [], A1: [], A2: [], P: [], S: [], markers: [],
+      media: [], V: [], V2: [], A1: [], A2: [], P: [], S: [], markers: [],
       look: { lut: 'cinema-navy', strength: 0.6, autoExpose: false, target: { luma: 0.48, contrast: 1 }, cinemaBar: false, vignette: 0 },
       audio: { ducking: { on: true, depth: 12 }, ambience: { on: false, src: null, gain: 1 } },
     };
@@ -114,6 +114,7 @@
   function removeMedia(id) {
     commit();
     P.V = P.V.filter(c => c.media !== id);
+    P.V2 = (P.V2 || []).filter(o => o.media !== id);
     P.A2 = (P.A2 || []).filter(a => a.media !== id);
     P.media = P.media.filter(m => m.id !== id);
     if (P.audio.ambience && P.audio.ambience.src && P.audio.ambience.src.media === id) P.audio.ambience.src = null;
@@ -398,6 +399,48 @@
   function clearP() { if (!P.P.length) return; commit(); P.P = []; emit('P'); }
   function partsAt(t) { return P.P.filter(x => t >= x.at && t < x.at + x.dur); }
 
+  /* ---------- 14단계: 덧영상 V2 ----------
+     항목 { id, media, in, out(원본 프레임), at, dur(타임라인 프레임 — in/out 에서 파생), speed:'normal', pos, size }.
+     클립과 같은 모양이라 srcFrame·drawClip 을 그대로 쓴다. 소리는 없다(현장음·음악과 안 섞음).
+     pos: tl/tr/bl/br(모서리)·c(중앙)·full(꽉) · size: sm 28% / md 38% / lg 50% (full 은 무시). 겹침 허용 — 배열 뒤가 위. */
+  const V2_POS = ['tl', 'tr', 'bl', 'br', 'c', 'full'], V2_SIZE = { sm: 0.28, md: 0.38, lg: 0.5 };
+  function sortV2() { P.V2.sort((a, b) => a.at - b.at); }
+  function v2(id) { return (P.V2 || []).find(x => x.id === id) || null; }
+  function v2Dur(o, m) { return Math.max(1, Math.round((o.out - o.in) / m.fps * FPS)); }
+  function addV2(mediaId, at) {
+    const m = media(mediaId); if (!m || (m.kind !== 'video' && m.kind !== 'image')) return null;
+    commit();
+    const out = m.kind === 'image' ? IMAGE_DEFAULT : Math.min(m.dur, Math.round(10 * m.fps));   // 영상 기본 10초 (트림으로 늘림)
+    const x = { id: uid('o'), media: m.id, in: 0, out, at: Math.max(0, Math.round(at || 0)), speed: 'normal', freeze: false, pos: 'br', size: 'md' };
+    x.dur = m.kind === 'image' ? out : v2Dur(x, m);
+    P.V2.push(x); sortV2(); emit('V2'); return x;
+  }
+  function updateV2(id, patch, opt) {
+    const x = v2(id); if (!x) return;
+    if (!(opt && opt.commit === false)) commit();
+    Object.assign(x, patch);
+    x.at = Math.max(0, Math.round(x.at));
+    sortV2(); emit('V2');
+  }
+  /* 가장자리 트림 — dTl(타임라인 프레임). in 쪽은 at 이 같이 움직인다. 사진은 dur 만. */
+  function trimV2(id, side, dTl, opt) {
+    const x = v2(id); if (!x) return;
+    const m = media(x.media);
+    if (!(opt && opt.commit === false)) commit();
+    if (m.kind === 'image') {
+      if (side === 'in') { const d = clamp(Math.round(dTl), -x.at, x.dur - 10); x.at += d; x.dur -= d; x.out = x.in + x.dur; }
+      else { x.dur = Math.max(10, Math.round(x.dur + dTl)); x.out = x.in + x.dur; }
+    } else {
+      const dSrc = Math.round(dTl * m.fps / FPS);
+      if (side === 'in') { const d = clamp(dSrc, -x.in, x.out - x.in - Math.ceil(m.fps / 3)); x.in += d; x.at = Math.max(0, x.at + Math.round(d * FPS / m.fps)); }
+      else { x.out = clamp(x.out + dSrc, x.in + Math.ceil(m.fps / 3), m.dur); }
+      x.dur = v2Dur(x, m);
+    }
+    sortV2(); emit('V2');
+  }
+  function removeV2(id) { const i = P.V2.findIndex(x => x.id === id); if (i < 0) return; commit(); P.V2.splice(i, 1); emit('V2'); }
+  function v2At(t) { return (P.V2 || []).filter(x => t >= x.at && t < x.at + x.dur); }
+
   /* ---------- 4단계: 음악 A2 ----------
      항목 { id, media, in, out, at, vol, fadeIn, fadeOut } — in/out/at 전부 타임라인 프레임(음악 미디어 fps=30 고정). 길이 = out-in. */
   function sortA2() { P.A2.sort((a, b) => a.at - b.at); }
@@ -494,6 +537,7 @@
     P = Object.assign(b, json || {});
     P.V = (P.V || []).filter(c => media(c.media));
     P.A2 = (P.A2 || []).filter(a => media(a.media));
+    P.V2 = (P.V2 || []).filter(o => media(o.media)).map(o => Object.assign({ pos: 'br', size: 'md', speed: 'normal' }, o));
     P.P = (P.P || []).map(x => Object.assign({ p: {} }, x));
     P.markers = (P.markers || []).map(x => Object.assign({ text: '', color: 'gold' }, x));
     if (!P.audio) P.audio = b.audio; if (!P.audio.ducking) P.audio.ducking = { on: true, depth: 12 };
@@ -512,6 +556,7 @@
     addS, setS, subtitle, updateS, removeS, clearS, subtitleAt,
     part, addP, updateP, removeP, clearP, partsAt, partDefault,
     a2, addA2, updateA2, trimA2, removeA2, setDucking, a2At,
+    v2, addV2, updateV2, trimV2, removeV2, v2At, V2_POS, V2_SIZE,
     setAmbience, montage,
     slip, roll, insertRange, removeClips, moveClips, pasteClips, copyClips,
     marker, markerAt, addMarker, updateMarker, removeMarker, markerFrames,
