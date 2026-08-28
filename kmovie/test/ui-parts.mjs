@@ -60,7 +60,7 @@ const grid = await page.evaluate(() => ({
   cats: Array.from(document.querySelectorAll('#partGrid .cat')).map(e => e.textContent),
   cells: document.querySelectorAll('#partGrid .pc').length,
 }));
-ok(grid.cells === 12 && grid.cats.length >= 4 && grid.cats.includes('타이틀') && grid.cats.includes('정보'), '부품 패널: 분류 ' + grid.cats.length + '개 헤더 · 12칸 (' + grid.cats.join('/') + ')');
+ok(grid.cells === 12 && grid.cats.join('/') === '타이틀/정보 표시/인물 뒤 글자/화면 효과', '꾸미기 패널: 분류 4그룹 · 12칸 (' + grid.cats.join('/') + ')');
 
 // ---------- 자막 9종 · 분류 UI ----------
 const subUI = await page.evaluate(() => ({
@@ -112,6 +112,31 @@ const trPix = await page.evaluate(async () => {
   return out;
 });
 for (const t of ['push', 'cover', 'zoom', 'wipe', 'blur']) ok(Math.abs(trPix[t] - trPix.base) > 40, '전환 ' + t + ': 컷과 다른 합성 (Δ' + Math.abs(trPix[t] - trPix.base) + ')');
+
+// ---------- 화면 전환 독립 패널 — 클립 선택에 따라 열림 ----------
+const trPanel = await page.evaluate(() => ({
+  h3: document.querySelector('#trPanel h3') ? document.querySelector('#trPanel h3').textContent : '',
+  inPanel: !!document.querySelector('#trPanel #trType'),
+  noneShown: !document.getElementById('trNone').classList.contains('hidden'),
+}));
+await page.evaluate(() => { KMV_UI.setPH(30); });
+const bb = await page.evaluate(() => { const r = document.getElementById('timeline').getBoundingClientRect(); return { x: r.x, y: r.y, pxf: KMV_UI.xOf(1) - KMV_UI.xOf(0) }; });
+await page.mouse.click(bb.x + await page.evaluate(() => KMV_UI.xOf(30)), bb.y + 128);   // V 레인의 첫 클립
+const trPanel2 = await page.evaluate(() => ({ bodyShown: !document.getElementById('trBody').classList.contains('hidden') }));
+ok(trPanel.h3.includes('화면 전환') && trPanel.inPanel && trPanel.noneShown && trPanel2.bodyShown, '화면 전환이 독립 패널로 — 클립 고르면 열림 (' + trPanel.h3.trim() + ')');
+
+// ---------- 자석 스냅 — 앞 카드 끝에 딱 붙기 ----------
+const mag = await page.evaluate(() => { const P2 = KMV_PROJECT; P2.clearP(); const A = P2.addP({ part: 'tag', at: 0 }); const B = P2.addP({ part: 'tag', at: 170 }); KMV_UI.setPH(0); return { aEnd: A.at + A.dur, b: B.id, bAt: B.at, pxf: KMV_UI.xOf(1) - KMV_UI.xOf(0) }; });
+{
+  const py = bb.y + 39, grab = 3;                          // P 레인, 카드 앞 3f 지점을 잡는다
+  const gx = f => page.evaluate(fr => KMV_UI.xOf(fr), f);
+  await page.mouse.move(bb.x + await gx(mag.bAt + grab), py);
+  await page.mouse.down();
+  await page.mouse.move(bb.x + await gx(mag.aEnd + 0.45 + grab), py, { steps: 6 });   // 시작이 150.45 근처 — 자석 반경(7px) 안
+  await page.mouse.up();
+  const at = await page.evaluate(id => (KMV_PROJECT.data.P.find(q => q.id === id) || {}).at, mag.b);
+  ok(at === mag.aEnd, '자석 스냅: 카드가 앞 카드 끝(' + mag.aEnd + ')에 딱 붙음 (at=' + at + ')');
+}
 
 ok(errs.length === 0, '콘솔 오류 0' + (errs.length ? ' — ' + errs.slice(0, 3).join(' | ') : ''));
 console.log(`\n${n - fail}/${n} 통과`);

@@ -4,7 +4,7 @@
   var K = g.KM_PARTS, E = K.E, seg = K.seg;
   K.register({
     id: 'lightleak',
-    name: '광누출 전환',
+    name: '광누출',
     dur: 1.4,
     fields: [
       { k: 'tone', label: '색', def: 'warm', opts: ['warm', 'gold', 'cool'] },

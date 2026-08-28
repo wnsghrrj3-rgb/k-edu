@@ -479,6 +479,21 @@
     return { f: best, x: sx };
   }
 
+  /* 같은 레인의 다른 카드 가장자리 — 자석 스냅 후보 */
+  function laneEdges(kind, exceptId) {
+    const out = [];
+    if (kind === 'P') for (const p of P.data.P) { if (p.id !== exceptId) out.push(p.at, p.at + p.dur); }
+    else if (kind === 'S') for (const t of P.data.S) { if (t.id !== exceptId) out.push(t.at, t.at + t.dur); }
+    else if (kind === 'A2') for (const a of P.data.A2) { if (a.id !== exceptId) out.push(a.at, a.at + a.out - a.in); }
+    return out;
+  }
+  /* 카드 이동 스냅 — 시작·끝 양쪽을 재서 더 가까운 쪽으로 붙는다 (앞 카드 뒤에 딱 맞춰 붙기) */
+  function snapSpan(at, dur, extra) {
+    const a = snapFrame(at, extra), b = snapFrame(at + dur, extra);
+    const da = a.x == null ? Infinity : Math.abs(a.f - at), db = b.x == null ? Infinity : Math.abs(b.f - at - dur);
+    return db < da ? { f: b.f - dur, x: b.x } : { f: a.f, x: a.x };
+  }
+
   /* ---------- 마우스 ---------- */
   tl.addEventListener('mousedown', e => {
     if (e.button !== 0) return;
@@ -574,23 +589,23 @@
     }
     if (drag.type === 'pmove' || drag.type === 'ptrim') {
       const d = drag.pt, dtl = (x - drag.x0) / pxf;
-      if (drag.type === 'pmove') { const sn = snapFrame(drag.orig.at + dtl); drag.snapX = sn.x; P.updateP(d.id, { at: Math.max(0, sn.f) }, { commit: false }); }
-      else if (drag.side === 'in') { const sn = snapFrame(drag.orig.at + dtl); drag.snapX = sn.x; const at = clamp(sn.f, 0, drag.orig.at + drag.orig.dur - 10); P.updateP(d.id, { at, dur: drag.orig.at + drag.orig.dur - at }, { commit: false }); }
-      else { const sn = snapFrame(drag.orig.at + drag.orig.dur + dtl); drag.snapX = sn.x; P.updateP(d.id, { dur: Math.max(10, sn.f - drag.orig.at) }, { commit: false }); }
+      if (drag.type === 'pmove') { const sn = snapSpan(drag.orig.at + dtl, drag.orig.dur, laneEdges('P', d.id)); drag.snapX = sn.x; P.updateP(d.id, { at: Math.max(0, sn.f) }, { commit: false }); }
+      else if (drag.side === 'in') { const sn = snapFrame(drag.orig.at + dtl, laneEdges('P', d.id)); drag.snapX = sn.x; const at = clamp(sn.f, 0, drag.orig.at + drag.orig.dur - 10); P.updateP(d.id, { at, dur: drag.orig.at + drag.orig.dur - at }, { commit: false }); }
+      else { const sn = snapFrame(drag.orig.at + drag.orig.dur + dtl, laneEdges('P', d.id)); drag.snapX = sn.x; P.updateP(d.id, { dur: Math.max(10, sn.f - drag.orig.at) }, { commit: false }); }
       renderPreview(); return;
     }
     if (drag.type === 'mmove' || drag.type === 'mtrim') {
       const d = drag.a2, dtl = (x - drag.x0) / pxf;
-      if (drag.type === 'mmove') { const sn = snapFrame(drag.orig.at + dtl); drag.snapX = sn.x; P.updateA2(d.id, { at: Math.max(0, sn.f) }, { commit: false }); }
+      if (drag.type === 'mmove') { const sn = snapSpan(drag.orig.at + dtl, drag.orig.out - drag.orig.in, laneEdges('A2', d.id)); drag.snapX = sn.x; P.updateA2(d.id, { at: Math.max(0, sn.f) }, { commit: false }); }
       else if (drag.side === 'in') { const sn = snapFrame(drag.orig.at + dtl); drag.snapX = sn.x; P.updateA2(d.id, { at: drag.orig.at, in: drag.orig.in, out: drag.orig.out }, { commit: false }); P.trimA2(d.id, 'in', sn.f, { commit: false }); }
       else { const sn = snapFrame(drag.orig.at + (drag.orig.out - drag.orig.in) + dtl); drag.snapX = sn.x; P.updateA2(d.id, { out: drag.orig.out }, { commit: false }); P.trimA2(d.id, 'out', sn.f, { commit: false }); }
       return;
     }
     if (drag.type === 'smove' || drag.type === 'strim') {
       const d = drag.s, dtl = (x - drag.x0) / pxf;
-      if (drag.type === 'smove') { const sn = snapFrame(drag.orig.at + dtl); drag.snapX = sn.x; P.updateS(d.id, { at: Math.max(0, sn.f) }, { commit: false }); }
-      else if (drag.side === 'in') { const sn = snapFrame(drag.orig.at + dtl); drag.snapX = sn.x; const at = clamp(sn.f, 0, drag.orig.at + drag.orig.dur - 5); P.updateS(d.id, { at, dur: drag.orig.at + drag.orig.dur - at }, { commit: false }); }
-      else { const sn = snapFrame(drag.orig.at + drag.orig.dur + dtl); drag.snapX = sn.x; P.updateS(d.id, { dur: Math.max(5, sn.f - drag.orig.at) }, { commit: false }); }
+      if (drag.type === 'smove') { const sn = snapSpan(drag.orig.at + dtl, drag.orig.dur, laneEdges('S', d.id)); drag.snapX = sn.x; P.updateS(d.id, { at: Math.max(0, sn.f) }, { commit: false }); }
+      else if (drag.side === 'in') { const sn = snapFrame(drag.orig.at + dtl, laneEdges('S', d.id)); drag.snapX = sn.x; const at = clamp(sn.f, 0, drag.orig.at + drag.orig.dur - 5); P.updateS(d.id, { at, dur: drag.orig.at + drag.orig.dur - at }, { commit: false }); }
+      else { const sn = snapFrame(drag.orig.at + drag.orig.dur + dtl, laneEdges('S', d.id)); drag.snapX = sn.x; P.updateS(d.id, { dur: Math.max(5, sn.f - drag.orig.at) }, { commit: false }); }
       renderPreview(); return;
     }
     const c = drag.clip, m = P.media(c.media);
@@ -935,6 +950,7 @@
   function refreshPanel() {
     const c = selClip();
     $('clipNone').classList.toggle('hidden', !!c); $('clipBody').classList.toggle('hidden', !c);
+    $('trNone').classList.toggle('hidden', !!c); $('trBody').classList.toggle('hidden', !c);
     $('btnUndo').disabled = !P.canUndo(); $('btnRedo').disabled = !P.canRedo();
     if (!c) return;
     const m = P.media(c.media), a = P.audioOf(c.id);
@@ -1092,7 +1108,7 @@
     const r = tl.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
     const over = x >= HEAD && x <= r.width && y >= 0 && y <= r.height;
     partDrag.overTL = over;
-    if (over) { const sn = snapFrame(frameOf(x)); partDrag.f = Math.max(0, sn.f); }
+    if (over) { const sn = snapSpan(frameOf(x), partDrag.dur, laneEdges('P')); partDrag.f = Math.max(0, sn.f); }
     tl.style.cursor = over ? 'copy' : 'default';
     draw();
   });

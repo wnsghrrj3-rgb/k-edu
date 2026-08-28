@@ -29,9 +29,9 @@
   };
   const CATS = [
     { id: 'title',  name: '타이틀' },
-    { id: 'info',   name: '정보' },
-    { id: 'behind', name: '인물 뒤' },
-    { id: 'fx',     name: '효과' },
+    { id: 'info',   name: '정보 표시' },
+    { id: 'behind', name: '인물 뒤 글자' },
+    { id: 'fx',     name: '화면 효과' },
     { id: 'etc',    name: '기타' },
   ];
   const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
