@@ -10,7 +10,9 @@
      낯설면 예전처럼 decodeAudioData 통 디코드로 폴백(src.audio).
    · 분석(백그라운드): 썸네일(1초마다 160×90) · 모션량(프레임 차) · 파형(프레임별 RMS).
    · 사진: ImageBitmap 하나. 회전(폰 세로 영상)은 tkhd matrix 에서 읽는다.
-   · 음악(A2): mp3·wav·m4a·aac·ogg → decodeAudioData 만. 프레임은 30fps 기준 정수, 파형·비트 마커 분석.
+   · 음악(A2)도 스트리밍: mp3(프레임 파서)·m4a(mp4box)·ADTS aac(프레임 파서)는 압축 샘플 + Pcm,
+     wav 는 파일 바이트 직독(PcmWav). ogg·flac·낯선 코덱은 예전 통 디코드 폴백(20분 상한).
+     파형·비트는 압축 샘플 1패스 스트리밍으로 계산(전체 PCM 미보유). 프레임은 30fps 기준 정수.
    ============================================================ */
 (function (g) {
   'use strict';
@@ -18,7 +20,9 @@
   const CACHE_MAX = 150;               // VideoFrame 캐시 상한 (설계서 ≈90, 재생 여유분)
   const THUMB_W = 160, THUMB_H = 90;
   // 브라우저판 원본 상한. 데스크톱 껍데기(KMV_SHELL)가 붙으면 프록시 기준으로 limits 를 바꾼다.
-  const limits = { maxFile: 700 * 1024 * 1024, maxSec: 10 * 60 };
+  // 소리가 스트리밍이 된 뒤(7·8단계) 10분 → 15분 상향. 파일 크기 상한은 그대로(압축 샘플이 통째로 메모리).
+  const limits = { maxFile: 700 * 1024 * 1024, maxSec: 15 * 60 };
+  const MUSIC_MAX = 60 * 60, MUSIC_MAX_FULL = 20 * 60, MUSIC_MAX_BYTES = 300 * 1024 * 1024;
   let analyzePaused = false;                 // 재생·셔틀 중엔 분석을 쉬게 한다 (디코더 경쟁 방지)
   function setAnalyzePaused(v) { analyzePaused = !!v; }
   const MP4BOX_URL = 'https://cdn.jsdelivr.net/npm/mp4box@0.5.2/dist/mp4box.all.min.js';
@@ -146,6 +150,156 @@
     });
   }
 
+  /* ---------- 음악 파일 → 압축 샘플 (Pcm 입력과 같은 모양) ---------- */
+  function demuxA(buffer) {                                  // m4a(오디오만 있는 mp4)
+    return new Promise((resolve, reject) => {
+      const mp4 = g.MP4Box.createFile();
+      let a = null, na = 0, done = false;
+      mp4.onError = e => reject(new Error('m4a 를 읽을 수 없어요: ' + e));
+      mp4.onReady = info => {
+        const at = info.audioTracks && info.audioTracks[0];
+        if (!at) return reject(new Error('소리 트랙이 없어요'));
+        na = at.nb_samples;
+        const atrak = mp4.getTrackById(at.id);
+        let acodec = String(at.codec || '');
+        const adesc = audioDescription(atrak, acodec);
+        let achn = at.audio && at.audio.channel_count;
+        if (/^opus/i.test(acodec)) { acodec = 'opus'; if (adesc) achn = adesc[9]; }
+        a = { codec: acodec, timescale: at.timescale, samples: [],
+              sr: at.audio && at.audio.sample_rate, chn: achn,
+              desc: adesc, edit: editOffsetSec(atrak, at.timescale) };
+        mp4.setExtractionOptions(at.id, 'a', { nbSamples: 4000 });
+        mp4.start();
+      };
+      mp4.onSamples = (id, user, samples) => {
+        for (const s of samples) a.samples.push(s);
+        if (!done && a.samples.length >= na) { done = true; resolve(a); }
+      };
+      buffer.fileStart = 0;
+      try { mp4.appendBuffer(buffer); mp4.flush(); } catch (e) { return reject(new Error('m4a 구조를 읽는 중 오류: ' + (e.message || e))); }
+      setTimeout(() => { if (!done) { if (a && a.samples.length) { done = true; resolve(a); } else reject(new Error('소리 샘플을 꺼내지 못했어요')); } }, 1500);
+    });
+  }
+
+  /* mp3 프레임 파서 — MPEG1/2/2.5 Layer III. Xing/Info 메타 프레임은 버리고
+     LAME 태그의 인코더 지연이 있으면 edit(초)로 넘겨 Pcm 이 앞을 잘라내게 한다
+     (AAC 프라이밍과 같은 자리 — decodeAudioData 의 갭리스 처리와 맞춘다). */
+  const MP3_BR1 = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320];
+  const MP3_BR2 = [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160];
+  function parseMp3(u8) {
+    let p = 0;
+    if (u8.length > 10 && u8[0] === 0x49 && u8[1] === 0x44 && u8[2] === 0x33) {  // ID3v2
+      const sz = ((u8[6] & 127) << 21) | ((u8[7] & 127) << 14) | ((u8[8] & 127) << 7) | (u8[9] & 127);
+      p = 10 + sz + ((u8[5] & 0x10) ? 10 : 0);
+    }
+    const samples = []; let t = 0, sr0 = 0, chn = 2, edit = 0, junk = 0;
+    while (p + 4 <= u8.length) {
+      if (!(u8[p] === 0xFF && (u8[p + 1] & 0xE0) === 0xE0)) { p++; if (++junk > 1 << 20 && !samples.length) return null; continue; }
+      const b1 = u8[p + 1], b2 = u8[p + 2];
+      const ver = (b1 >> 3) & 3, layer = (b1 >> 1) & 3;                  // ver: 0=2.5 2=MPEG2 3=MPEG1
+      const brI = (b2 >> 4) & 15, srI = (b2 >> 2) & 3, pad = (b2 >> 1) & 1;
+      if (ver === 1 || layer !== 1 || brI === 0 || brI === 15 || srI === 3) { p++; continue; }   // Layer III 만
+      const srBase = [44100, 48000, 32000][srI];
+      const sr = ver === 3 ? srBase : ver === 2 ? srBase >> 1 : srBase >> 2;
+      const br = (ver === 3 ? MP3_BR1 : MP3_BR2)[brI] * 1000;
+      const size = Math.floor((ver === 3 ? 144 : 72) * br / sr) + pad;
+      if (size < 24 || p + size > u8.length) break;
+      const spf = ver === 3 ? 1152 : 576;
+      if (!samples.length) {                                             // 첫 프레임이 Xing/Info 면 메타 — 버림
+        const mono = ((u8[p + 3] >> 6) & 3) === 3;
+        const off = p + 4 + (ver === 3 ? (mono ? 17 : 32) : (mono ? 9 : 17));
+        const four = String.fromCharCode(u8[off] || 0, u8[off + 1] || 0, u8[off + 2] || 0, u8[off + 3] || 0);
+        if (four === 'Xing' || four === 'Info') {
+          for (let q = off; q < p + size - 24; q++) {                    // LAME/Lavc 태그의 delay(12bit)
+            const s4 = String.fromCharCode(u8[q], u8[q + 1], u8[q + 2], u8[q + 3]);
+            if (s4 === 'LAME' || s4 === 'Lavc' || s4 === 'Lavf') { edit = (((u8[q + 21] << 4) | (u8[q + 22] >> 4)) + 529) / sr; break; }
+          }
+          if (!edit) edit = (576 + 529) / sr;                            // 태그는 있는데 delay 를 못 읽음 — 관례값
+          p += size; continue;
+        }
+      }
+      sr0 = sr0 || sr; if (((u8[p + 3] >> 6) & 3) === 3) chn = Math.min(chn, 1);
+      samples.push({ cts: t, duration: spf, data: u8.slice(p, p + size) });
+      t += spf; p += size;
+    }
+    if (!samples.length || !sr0) return null;
+    return { codec: 'mp3', timescale: sr0, samples, sr: sr0, chn, desc: null, edit: edit || null };
+  }
+
+  /* ADTS .aac 프레임 파서 — 헤더째 넘긴다 (description 없음 = WebCodecs ADTS 모드) */
+  const ADTS_SR = [96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000, 7350];
+  function parseAdts(u8) {
+    let p = 0; const samples = []; let t = 0, sr0 = 0, chn = 2, aot = 2, junk = 0;
+    while (p + 7 <= u8.length) {
+      if (!(u8[p] === 0xFF && (u8[p + 1] & 0xF0) === 0xF0)) { p++; if (++junk > 1 << 20 && !samples.length) return null; continue; }
+      const prot = u8[p + 1] & 1, srI = (u8[p + 2] >> 2) & 15;
+      const len = ((u8[p + 3] & 3) << 11) | (u8[p + 4] << 3) | (u8[p + 5] >> 5);
+      if (srI > 12 || len < (prot ? 7 : 9) || p + len > u8.length) { p++; continue; }
+      const blocks = (u8[p + 6] & 3) + 1;
+      if (!samples.length) { sr0 = ADTS_SR[srI]; chn = Math.max(1, ((u8[p + 2] & 1) << 2) | ((u8[p + 3] >> 6) & 3)); aot = ((u8[p + 2] >> 6) & 3) + 1; }
+      samples.push({ cts: t, duration: 1024 * blocks, data: u8.slice(p, p + len) });
+      t += 1024 * blocks; p += len;
+    }
+    if (!samples.length || !sr0) return null;
+    return { codec: 'mp4a.40.' + aot, timescale: sr0, samples, sr: sr0, chn: Math.min(2, chn), desc: null, edit: null, adts: true };
+  }
+
+  /* wav 직독 — 파일 바이트가 곧 "압축 샘플". Pcm 과 같은 인터페이스(ensure/read/durSec). */
+  class PcmWav {
+    constructor(buffer) {
+      const dv = new DataView(buffer), u8 = new Uint8Array(buffer);
+      const tag = o => String.fromCharCode(u8[o], u8[o + 1], u8[o + 2], u8[o + 3]);
+      if (tag(0) !== 'RIFF' || tag(8) !== 'WAVE') throw new Error('wav 가 아니에요');
+      let p = 12, fmt = null, d0 = 0, dn = 0;
+      while (p + 8 <= u8.length) {
+        const id = tag(p), sz = dv.getUint32(p + 4, true);
+        if (id === 'fmt ') fmt = { af: dv.getUint16(p + 8, true), ch: dv.getUint16(p + 10, true), sr: dv.getUint32(p + 12, true), bits: dv.getUint16(p + 22, true) };
+        else if (id === 'data') { d0 = p + 8; dn = Math.min(sz, u8.length - d0); }
+        p += 8 + sz + (sz & 1);
+      }
+      if (!fmt || !dn) throw new Error('wav 구조를 읽지 못했어요');
+      let af = fmt.af;
+      if (af === 0xFFFE) af = fmt.bits === 32 ? 3 : 1;                   // WAVE_FORMAT_EXTENSIBLE — 근사
+      if (!((af === 1 && (fmt.bits === 8 || fmt.bits === 16 || fmt.bits === 24 || fmt.bits === 32)) || (af === 3 && fmt.bits === 32))) throw new Error('이 wav 형식(' + fmt.af + '/' + fmt.bits + 'bit)은 지원하지 않아요');
+      this.dv = dv; this.d0 = d0; this.af = af; this.bits = fmt.bits; this.chn = Math.max(1, fmt.ch);
+      this.sr = this.cfgSr = fmt.sr; this.ch = Math.min(2, this.chn);
+      this.total = Math.floor(dn / (this.chn * this.bits / 8));
+      this.durSec = this.total / this.sr;
+    }
+    dispose() { this.dv = null; }
+    ensure() { return Promise.resolve(); }
+    _at(s, c) {                                                          // 샘플 s, 채널 c → f32
+      const B = this.bits / 8, o = this.d0 + (s * this.chn + c) * B, dv = this.dv;
+      if (this.af === 3) return dv.getFloat32(o, true);
+      if (B === 2) return dv.getInt16(o, true) / 32768;
+      if (B === 1) return (dv.getUint8(o) - 128) / 128;
+      if (B === 3) { const v = dv.getUint8(o) | (dv.getUint8(o + 1) << 8) | (dv.getInt8(o + 2) << 16); return v / 8388608; }
+      return dv.getInt32(o, true) / 2147483648;
+    }
+    read(t0, n) {
+      const out = Array.from({ length: this.ch }, () => new Float32Array(n));
+      if (this.dv) {
+        let s0 = Math.round(t0 * this.sr);
+        for (let i = 0; i < n; i++) { const s = s0 + i; if (s < 0 || s >= this.total) continue; for (let c = 0; c < this.ch; c++) out[c][i] = this._at(s, c); }
+      }
+      return { sr: this.sr, ch: out };
+    }
+    /* 분석 1패스: 프레임 RMS(peaks) + 비트용 저역 포락(env, hop=512) */
+    scan(fps, nFrames) {
+      const peaks = new Float32Array(nFrames), env = [], hop = 512;
+      const k = Math.exp(-2 * Math.PI * 180 / this.sr), per = this.sr / fps;
+      let lp = 0, wAcc = 0, wCnt = 0, fAcc = 0, fCnt = 0, f = 0;
+      for (let s = 0; s < this.total; s++) {
+        let v = 0; for (let c = 0; c < this.ch; c++) v += this._at(s, c); v /= this.ch;
+        lp = lp * k + v * (1 - k); wAcc += lp * lp;
+        if (++wCnt === hop) { env.push(Math.sqrt(wAcc / hop)); wAcc = 0; wCnt = 0; }
+        if ((s & 3) === 0) { fAcc += v * v; fCnt++; }
+        if (s + 1 >= (f + 1) * per) { if (f < nFrames) peaks[f] = fCnt ? Math.sqrt(fAcc / fCnt) : 0; fAcc = 0; fCnt = 0; f++; }
+      }
+      return { peaks, env: Float32Array.from(env), envRate: this.sr / hop };
+    }
+  }
+
   /* ---------- 스트리밍 PCM (원본 소리) ----------
      압축 샘플만 들고 있다가 필요한 구간을 8초 청크 단위로 디코드.
      · 축: 0초 = elst media_time(AAC 프라이밍) 또는 첫 샘플 cts — decodeAudioData 와 같은 자리.
@@ -265,7 +419,7 @@
   }
   async function makePcm(a) {
     if (typeof AudioDecoder === 'undefined' || !a || !a.samples || !a.samples.length) return null;
-    if (/^mp4a/i.test(a.codec) && !a.desc) return null;                    // AAC 는 ASC 필수
+    if (/^mp4a/i.test(a.codec) && !a.desc && !a.adts) return null;          // AAC 는 ASC 필수 (ADTS 는 헤더가 대신)
     try {
       const cfg = { codec: a.codec, sampleRate: a.sr || 48000, numberOfChannels: Math.max(1, a.chn || 2) };
       if (a.desc) cfg.description = a.desc;
@@ -431,8 +585,8 @@
   }
 
   class AudioSource {
-    constructor(id, audio) { this.id = id; this.kind = 'audio'; this.audio = audio; this.w = 0; this.h = 0; this.rot = 0; this.fps = 30; this.durSec = audio.duration; this.frames = Math.max(1, Math.round(audio.duration * 30)); this.thumbs = []; this.thumbEvery = 1e9; this.motion = null; this.peaks = null; this.beats = null; this.analyzed = false; this.analyzing = false; }
-    cached() { return null; } nearest() { return null; } getFrame() { return Promise.resolve(null); } prefetch() {} dispose() { this.audio = null; }
+    constructor(id, o) { this.id = id; this.kind = 'audio'; this.audio = o.audio || null; this.pcm = o.pcm || null; this.w = 0; this.h = 0; this.rot = 0; this.fps = 30; this.durSec = this.pcm ? this.pcm.durSec : this.audio.duration; this.frames = Math.max(1, Math.round(this.durSec * 30)); this.thumbs = []; this.thumbEvery = 1e9; this.motion = null; this.peaks = null; this.beats = null; this.analyzed = false; this.analyzing = false; }
+    cached() { return null; } nearest() { return null; } getFrame() { return Promise.resolve(null); } prefetch() {} dispose() { this.audio = null; if (this.pcm) { this.pcm.dispose(); this.pcm = null; } }
   }
   function isAudioFile(file) { const name = file.name || ''; return /^audio\//.test(file.type) || /\.(mp3|wav|m4a|aac|ogg|oga|flac|weba)$/i.test(name); }
 
@@ -441,11 +595,26 @@
     id = id || uid('m');
     const name = file.name || '미디어';
     if (isAudioFile(file)) {
-      status && status('음악 푸는 중');
+      status && status('음악 읽는 중');
+      if (file.size > MUSIC_MAX_BYTES) throw new Error('음악 파일이 너무 커요 (' + Math.round(file.size / 1048576) + 'MB — ' + Math.round(MUSIC_MAX_BYTES / 1048576) + 'MB 이하만)');
+      const buf = await file.arrayBuffer(), u8 = new Uint8Array(buf);
+      const four = o => String.fromCharCode(u8[o] || 0, u8[o + 1] || 0, u8[o + 2] || 0, u8[o + 3] || 0);
+      let pcm = null;
+      try {                                                            // 1) 스트리밍 (압축 샘플 + 구간 디코드 / wav 직독)
+        if (four(0) === 'RIFF' && four(8) === 'WAVE') pcm = new PcmWav(buf);
+        else if (four(4) === 'ftyp') { await loadMp4box(); pcm = await makePcm(await demuxA(buf)); }
+        else if (u8[0] === 0xFF && (u8[1] & 0xF6) === 0xF0) pcm = await makePcm(parseAdts(u8));   // ADTS: 싱크 12비트 + layer 00
+        else if (/\.aac$/i.test(name)) pcm = await makePcm(parseAdts(u8));
+        else if (/\.mp3$/i.test(name) || four(0).slice(0, 3) === 'ID3' || (u8[0] === 0xFF && (u8[1] & 0xE0) === 0xE0)) pcm = await makePcm(parseMp3(u8));
+      } catch (e) { console.warn('[KMV media] music stream', e); pcm = null; }
+      if (pcm && pcm.durSec > MUSIC_MAX) { pcm.dispose(); throw new Error('음악은 ' + Math.round(MUSIC_MAX / 60) + '분 이하만'); }
       let audio = null;
-      try { audio = await g.KMV_AUDIO.decode(await file.arrayBuffer()); } catch (e) { throw new Error('이 음악 파일을 풀 수 없어요 (mp3·wav·m4a 권장)'); }
-      if (audio.duration > limits.maxSec * 2) throw new Error('음악은 20분 이하만');
-      const src = new AudioSource(id, audio);
+      if (!pcm) {                                                      // 2) 폴백 — 예전 통 디코드 (ogg·flac·낯선 코덱·구형 브라우저)
+        status && status('음악 푸는 중');
+        try { audio = await g.KMV_AUDIO.decode(buf.slice(0)); } catch (e) { throw new Error('이 음악 파일을 풀 수 없어요 (mp3·wav·m4a 권장)'); }
+        if (audio.duration > MUSIC_MAX_FULL) throw new Error('음악은 ' + Math.round(MUSIC_MAX_FULL / 60) + '분 이하만 (이 형식은 통으로 풀어야 해요 — mp3·m4a 로 바꾸면 ' + Math.round(MUSIC_MAX / 60) + '분까지)');
+      }
+      const src = new AudioSource(id, { audio, pcm });
       SRC.set(id, src);
       return { id, name, kind: 'audio', dur: src.frames, w: 0, h: 0, fps: 30, audio: true, rot: 0, blobKey: id };
     }
@@ -478,7 +647,7 @@
     }
     const src = new VideoSource(id, dm, audio);
     src.pcm = pcm;
-    if (src.durSec > limits.maxSec) { src.dispose(); throw new Error(Math.round(limits.maxSec / 60) + '분 이하 원본만 읽어요' + (limits.maxSec <= 10 * 60 ? ' — 긴 원본은 데스크톱판 몫' : ' — 폰에서 먼저 잘라 주세요')); }
+    if (src.durSec > limits.maxSec) { src.dispose(); throw new Error(Math.round(limits.maxSec / 60) + '분 이하 원본만 읽어요' + (limits.maxFile >= 1024 * 1024 * 1024 ? ' — 폰에서 먼저 잘라 주세요' : ' — 긴 원본은 데스크톱판 몫')); }
     SRC.set(id, src);
     const rotated = src.rot === 90 || src.rot === 270;
     return { id, name, kind: 'video', dur: src.frames, w: rotated ? src.h : src.w, h: rotated ? src.w : src.h, fps: src.fps, audio: !!(audio || pcm), rot: src.rot, blobKey: id };
@@ -496,9 +665,11 @@
     }
     return peaks;
   }
-  /* 스트리밍 파형: 압축 샘플 전체를 한 번 훑어 프레임 RMS 만 계산 (PCM 저장 없음) */
-  async function pcmPeaks(src) {
+  /* 스트리밍 분석: 압축 샘플 전체를 한 번 훑어 프레임 RMS(파형)를 계산 (PCM 저장 없음).
+     wantEnv 면 비트 마커용 저역 포락(hop=512, KMV_AUDIO.beats 와 같은 수식)도 같은 패스에서 뽑는다. */
+  async function pcmScan(src, wantEnv, onProgress) {
     const P = src.pcm, n = src.frames, acc = new Float64Array(n), cnt = new Float64Array(n);
+    const HOP = 512, envArr = []; const ev = { lp: 0, k: 0, wAcc: 0, wCnt: 0, sr: 0 };
     let err = null; const outs = [];
     const run = { in0: Math.round((P.pk[0] ? P.pk[0].t : 0) * 1e6), firstDur: P.pk[0] ? P.pk[0].d : 0, trim0: null };
     const dec = new AudioDecoder({ output: ad => outs.push(ad), error: e => { err = e; } });
@@ -519,6 +690,15 @@
           if (f < 0 || f >= n) continue;
           const v = mono[i] / C; acc[f] += v * v; cnt[f]++;
         }
+        if (wantEnv) {                                       // 저역 포락 — 모든 샘플, 출력 순서대로 연속
+          if (!ev.sr) { ev.sr = sr; ev.k = Math.exp(-2 * Math.PI * 180 / sr); }
+          const skip = t < 0 ? Math.min(N, Math.ceil(-t * sr)) : 0;   // 프라이밍(0초 이전)은 버림
+          for (let i = skip; i < N; i++) {
+            const v = mono[i] / C;
+            ev.lp = ev.lp * ev.k + v * (1 - ev.k); ev.wAcc += ev.lp * ev.lp;
+            if (++ev.wCnt === HOP) { envArr.push(Math.sqrt(ev.wAcc / HOP)); ev.wAcc = 0; ev.wCnt = 0; }
+          }
+        }
         ad.close();
       }
       outs.length = 0;
@@ -529,14 +709,15 @@
       try { dec.decode(new EncodedAudioChunk({ type: 'key', timestamp: Math.round(p.t * 1e6), duration: Math.max(0, Math.round(p.d * 1e6)), data: p.data })); } catch (e) { err = e; break; }
       if (dec.decodeQueueSize > 32) await new Promise(r => setTimeout(r, 2));
       if (outs.length > 64) drain();
+      if (onProgress && (i & 511) === 0) onProgress(i / P.pk.length);
     }
     try { await dec.flush(); } catch (e) {}
     try { dec.close(); } catch (e) {}
     drain();
-    if (err) console.warn('[KMV media] pcmPeaks', err);
+    if (err) console.warn('[KMV media] pcmScan', err);
     const peaks = new Float32Array(n);
     for (let f = 0; f < n; f++) peaks[f] = cnt[f] ? Math.sqrt(acc[f] / cnt[f]) : 0;
-    return peaks;
+    return { peaks, env: Float32Array.from(envArr), envRate: ev.sr ? ev.sr / HOP : 0 };
   }
 
   async function analyze(id, onProgress) {
@@ -544,15 +725,25 @@
     if (src.kind === 'audio') {
       src.analyzing = true;
       await new Promise(r => setTimeout(r, 0));
-      src.peaks = audioPeaks(src.audio, src.fps, src.frames);
-      try { src.beats = g.KMV_AUDIO.beats(src.audio); } catch (e) { src.beats = []; }
+      try {
+        if (src.pcm && src.pcm.scan) {                       // wav 직독 — 동기 1패스
+          const r = src.pcm.scan(src.fps, src.frames);
+          src.peaks = r.peaks; src.beats = g.KMV_AUDIO.beatsFromEnv(r.env, r.envRate);
+        } else if (src.pcm) {                                // mp3·m4a·aac — 스트리밍 디코드 1패스
+          const r = await pcmScan(src, true, onProgress);
+          src.peaks = r.peaks; src.beats = g.KMV_AUDIO.beatsFromEnv(r.env, r.envRate);
+        } else {                                             // 폴백 — 통 버퍼
+          src.peaks = audioPeaks(src.audio, src.fps, src.frames);
+          src.beats = g.KMV_AUDIO.beats(src.audio);
+        }
+      } catch (e) { console.warn('[KMV media] music analyze', e); if (!src.peaks) src.peaks = new Float32Array(src.frames); src.beats = src.beats || []; }
       src.analyzed = true; src.analyzing = false; onProgress && onProgress(1); return;
     }
     if (src.kind !== 'video') return;
     src.analyzing = true;
     // 파형
     if (src.pcm) {
-      try { src.peaks = await pcmPeaks(src); } catch (e) { console.warn('[KMV media] pcm peaks', e); }
+      try { src.peaks = (await pcmScan(src, false)).peaks; } catch (e) { console.warn('[KMV media] pcm peaks', e); }
     } else if (src.audio) {
       const ab = src.audio, n = src.frames, peaks = new Float32Array(n), per = ab.sampleRate / src.fps;
       const chs = []; for (let c = 0; c < ab.numberOfChannels; c++) chs.push(ab.getChannelData(c));

@@ -272,7 +272,26 @@
     return nodes;
   }
 
-  /* ---------- 비트 마커 (onset 휴리스틱) → 초 배열 ---------- */
+  /* ---------- 비트 마커 (onset 휴리스틱) → 초 배열 ----------
+     env = 저역 포락(hop 단위 RMS), envRate = 초당 env 개수. 통 버퍼(beats)와
+     스트리밍 분석(KMV_MEDIA pcmScan·PcmWav.scan)이 같은 봉우리 뽑기를 쓴다. */
+  function beatsFromEnv(env, envRate) {
+    const n = env ? env.length : 0;
+    if (n < 8 || !envRate) return [];
+    // 스펙트럴 플럭스 대용: 증가분만
+    const flux = new Float32Array(n); for (let i = 1; i < n; i++) flux[i] = Math.max(0, env[i] - env[i - 1]);
+    // 적응 문턱: 이동 평균(±0.35초) × 1.6 + 바닥, 봉우리 사이 최소 0.25초
+    const win = Math.round(0.35 * envRate), minGap = Math.round(0.25 * envRate);
+    const out = []; let last = -minGap;
+    const sorted = Array.from(flux).sort((a, b) => a - b), floor = (sorted[Math.floor(n * 0.5)] || 0) * 0.5;
+    for (let i = 0; i < n; i++) {
+      // 이동 평균 (앞뒤 win)
+      let m = 0, cnt = 0; for (let j = Math.max(0, i - win); j <= Math.min(n - 1, i + win); j++) { m += flux[j]; cnt++; } m /= cnt;
+      const th = m * 1.6 + floor;
+      if (flux[i] > th && flux[i] >= (flux[i - 1] || 0) && flux[i] >= (flux[i + 1] || 0) && i - last >= minGap) { out.push(i / envRate); last = i; }
+    }
+    return out;
+  }
   function beats(ab) {
     if (!ab) return [];
     const sr = ab.sampleRate, hop = 512, n = Math.floor(ab.length / hop);
@@ -285,20 +304,7 @@
       for (let s = s0; s < s0 + hop; s++) { let v = 0; for (let c = 0; c < chs.length; c++) v += chs[c][s]; v /= chs.length; lp = lp * k + v * (1 - k); acc += lp * lp; }
       env[i] = Math.sqrt(acc / hop);
     }
-    // 스펙트럴 플럭스 대용: 증가분만
-    const flux = new Float32Array(n); for (let i = 1; i < n; i++) flux[i] = Math.max(0, env[i] - env[i - 1]);
-    // 적응 문턱: 이동 평균(±0.35초) × 1.6 + 바닥, 봉우리 사이 최소 0.25초
-    const win = Math.round(0.35 * sr / hop), minGap = Math.round(0.25 * sr / hop);
-    let sum = 0; const q = [];
-    const out = []; let last = -minGap;
-    const sorted = Array.from(flux).sort((a, b) => a - b), floor = (sorted[Math.floor(n * 0.5)] || 0) * 0.5;
-    for (let i = 0; i < n; i++) {
-      // 이동 평균 (앞뒤 win)
-      let m = 0, cnt = 0; for (let j = Math.max(0, i - win); j <= Math.min(n - 1, i + win); j++) { m += flux[j]; cnt++; } m /= cnt;
-      const th = m * 1.6 + floor;
-      if (flux[i] > th && flux[i] >= (flux[i - 1] || 0) && flux[i] >= (flux[i + 1] || 0) && i - last >= minGap) { out.push(i * hop / sr); last = i; }
-    }
-    return out;
+    return beatsFromEnv(env, sr / hop);
   }
 
   /* ---------- 미리보기 재생 (창 펌프) ----------
@@ -436,6 +442,6 @@
     return out.filter(s => s.dur >= min);
   }
 
-  g.KMV_AUDIO = { ctx, decode, play, playSource, stop, now, isPlaying, nodeCount: () => (playing ? playing.nodes.length : 0), renderMix, ensureRange, segments, scheduleA1, scheduleA2, scheduleAmb, findRoomTone, ambGaps, ambBuffer, voice, beats, duckSpans, XF, SR, AMB_SEC,
+  g.KMV_AUDIO = { ctx, decode, play, playSource, stop, now, isPlaying, nodeCount: () => (playing ? playing.nodes.length : 0), renderMix, ensureRange, segments, scheduleA1, scheduleA2, scheduleAmb, findRoomTone, ambGaps, ambBuffer, voice, beats, beatsFromEnv, duckSpans, XF, SR, AMB_SEC,
     _tune: o => { if (o && o.win > 0) WIN_S = o.win; if (o && o.top > 0) TOP_S = o.top; } };
 })(typeof window !== 'undefined' ? window : globalThis);
