@@ -33,6 +33,9 @@
 
   main { display:grid; grid-template-columns:1fr 300px; min-height:0; }
   .stage-wrap { display:flex; flex-direction:column; min-width:0; min-height:0; padding:14px 14px 8px; gap:8px; }
+  .stage-row { flex:1; min-height:0; display:flex; gap:8px; }
+  #inspector { width:236px; flex:none; overflow:auto; border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:var(--panel); }
+  #inspector:has(#partEdit.hidden) { display:none; }
   .stage { flex:1; min-height:0; display:flex; align-items:center; justify-content:center; background:#000; border-radius:10px; position:relative; overflow:hidden; border:1px solid var(--line); }
   .stage canvas { width:100%; height:100%; object-fit:contain; display:block; }
   #empty { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; color:var(--sub); font-size:15px; pointer-events:none; }
@@ -174,10 +177,22 @@
         <div class="sp"></div>
         <span class="note" id="stageHint"></span>
       </div>
+      <div class="stage-row">
       <div class="stage" id="stage">
         <canvas id="preview" width="1920" height="1080"></canvas>
         <div class="lbl hidden" id="stageLbl"></div>
         <div id="empty"><b>영상을 여기로 끌어다 놓으세요</b><span>또는 위의 ＋ 가져오기</span><small>H.264 mp4/mov · 사진(jpg/png) · 브라우저판은 15분·700MB 이하 · 음악(mp3·wav·m4a) 60분</small></div>
+      </div>
+      <div id="inspector" class="panel">
+        <h3>카드 설정</h3>
+        <div id="partEdit" class="hidden">
+          <div class="sub2" id="partEditName"></div>
+          <div id="partFields"></div>
+          <div class="row"><label>길이</label><input type="number" id="partDur" min="0.5" max="120" step="0.5"><span class="v">초</span><div class="sp"></div><span class="note" id="partHoldNote"></span></div>
+          <div class="row" id="rowPartCut"><label>인물 뒤</label><button class="tog" id="tgPartCut"></button><span class="note">사람만 앞에 다시 얹어요 (AI 컷아웃)</span></div>
+          <div class="row"><span class="v" id="partEditTime" style="font-size:12px;color:var(--sub)"></span><div class="sp"></div><button id="btnPartDup" title="같은 카드 하나 더 (바로 뒤에)">복제</button><button id="btnPartDel" class="danger">삭제</button></div>
+        </div>
+      </div>
       </div>
       <canvas id="srcBar" class="hidden" height="34"></canvas>
       <div class="transport">
@@ -242,13 +257,6 @@
       <div class="panel" id="partPanel">
         <h3>타이틀·꾸미기<div class="sp"></div><span class="note" style="letter-spacing:0;text-transform:none;font-weight:400">끌어서 P 레인에 · 클릭은 플레이헤드에</span></h3>
         <div id="partGrid"></div>
-        <div id="partEdit" class="hidden">
-          <div class="sub2" id="partEditName"></div>
-          <div id="partFields"></div>
-          <div class="row"><label>길이</label><input type="number" id="partDur" min="0.5" max="120" step="0.5"><span class="v">초</span><div class="sp"></div><span class="note" id="partHoldNote"></span></div>
-          <div class="row" id="rowPartCut"><label>인물 뒤</label><button class="tog" id="tgPartCut"></button><span class="note">사람만 앞에 다시 얹어요 (AI 컷아웃)</span></div>
-          <div class="row"><span class="v" id="partEditTime" style="font-size:12px;color:var(--sub)"></span><div class="sp"></div><button id="btnPartDup" title="같은 카드 하나 더 (바로 뒤에)">복제</button><button id="btnPartDel" class="danger">삭제</button></div>
-        </div>
       </div>
       <div class="panel" id="subPanel">
         <h3>자막<div class="sp"></div><button id="btnSubClear" title="자막 전부 지우기">비우기</button></h3>

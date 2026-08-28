@@ -138,6 +138,22 @@ const mag = await page.evaluate(() => { const P2 = KMV_PROJECT; P2.clearP(); con
   ok(at === mag.aEnd, '자석 스냅: 카드가 앞 카드 끝(' + mag.aEnd + ')에 딱 붙음 (at=' + at + ')');
 }
 
+// ---------- 부품 설정이 재생 화면 옆 인스펙터로 ----------
+{
+  const ins = await page.evaluate(() => {
+    const P = KMV_PROJECT; P.clearP(); const A = P.addP({ part: 'tag', at: 0 });
+    const vis = () => { const el = document.getElementById('inspector'); const r = el.getBoundingClientRect(); return { w: r.width, shown: r.width > 0 && !document.getElementById('partEdit').classList.contains('hidden') }; };
+    const before = vis();
+    KMV_UI.selectP(A.id);
+    const on = vis();
+    const stage = document.getElementById('stage').getBoundingClientRect(), ir = document.getElementById('inspector').getBoundingClientRect();
+    KMV_UI.selectP(null);
+    const off = vis();
+    return { before: before.shown, on: on.shown, off: off.shown, beside: ir.left >= stage.right - 2 && Math.abs(ir.top - stage.top) < 40 };
+  });
+  ok(!ins.before && ins.on && !ins.off && ins.beside, '카드 설정 인스펙터: 선택 시 재생 화면 오른쪽에 (선택 전 ' + ins.before + ' → 선택 ' + ins.on + ' → 해제 ' + ins.off + ', 옆배치 ' + ins.beside + ')');
+}
+
 ok(errs.length === 0, '콘솔 오류 0' + (errs.length ? ' — ' + errs.slice(0, 3).join(' | ') : ''));
 console.log(`\n${n - fail}/${n} 통과`);
 await close(); srv.kill(); process.exit(fail ? 1 : 0);
