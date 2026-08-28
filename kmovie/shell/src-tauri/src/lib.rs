@@ -289,6 +289,17 @@ fn probe_packets(ffprobe: &Path, path: &Path) -> Result<(i64, Vec<i64>), String>
 /* ---------------- 프록시 ---------------- */
 
 impl Shell {
+    pub fn new(proxy_dir: PathBuf, ffmpeg: PathBuf, ffprobe: PathBuf) -> Shell {
+        Shell {
+            proxy_dir,
+            ffmpeg,
+            ffprobe,
+            metas: Mutex::new(HashMap::new()),
+            frames: Mutex::new(HashMap::new()),
+            exports: Mutex::new(HashMap::new()),
+            export_seq: Mutex::new(0),
+        }
+    }
     fn proxy_path(&self, hash: &str) -> PathBuf { self.proxy_dir.join(format!("{hash}.mp4")) }
     fn meta_path(&self, hash: &str) -> PathBuf { self.proxy_dir.join(format!("{hash}.json")) }
 
@@ -351,16 +362,17 @@ impl Shell {
         }
     }
 
-    fn make_proxy(&self, app: &AppHandle, path: &Path, hash: &str, size: u64, mtime: u64) -> Result<ProxyMeta, String> {
+    /// 원본 → 프록시. `emit(단계, 진행률)` 은 화면으로 가는 진행 보고(테스트에선 빈 클로저). Tauri 에 안 묶여 있어 cargo test 로 실 ffmpeg 검증이 된다.
+    fn make_proxy(&self, emit: &dyn Fn(&str, f64), path: &Path, hash: &str, size: u64, mtime: u64) -> Result<ProxyMeta, String> {
         let name = path.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| "영상".into());
-        let emit = |stage: &str, pct: f64| {
-            let _ = app.emit("kmv-proxy", Progress { path: path.to_string_lossy().to_string(), stage: stage.into(), pct });
-        };
         emit("정보 읽는 중", 0.0);
         let j = probe_json(&self.ffprobe, path)?;
         let st = j["streams"].get(0).ok_or("영상 트랙이 없어요")?;
-        let w = st["width"].as_u64().unwrap_or(0) as u32;
-        let h = st["height"].as_u64().unwrap_or(0) as u32;
+        let mut w = st["width"].as_u64().unwrap_or(0) as u32;
+        let mut h = st["height"].as_u64().unwrap_or(0) as u32;
+        // 폰 세로 영상: 저장은 가로(1920×1080)+회전 태그. ffmpeg 가 프록시·원화질 파이프 둘 다 자동으로 돌려 굽으니 화면에 알리는 크기도 돌린 뒤 기준으로.
+        let rot = st["side_data_list"].as_array().and_then(|a| a.iter().find_map(|d| d["rotation"].as_f64())).unwrap_or(0.0);
+        if ((rot.abs() as i64) % 180) == 90 { std::mem::swap(&mut w, &mut h); }
         let codec = st["codec_name"].as_str().unwrap_or("").to_string();
         let (tb_num, tb_den) = parse_ratio(st["time_base"].as_str().unwrap_or("1/90000")).ok_or("타임베이스를 읽을 수 없어요")?;
         let fps = parse_ratio(st["avg_frame_rate"].as_str().unwrap_or("30/1")).map(|(a, b)| a as f64 / b as f64).unwrap_or(30.0);
@@ -503,7 +515,12 @@ fn import_path(app: AppHandle, shell: State<'_, Shell>, path: String) -> Result<
     }
     let (meta, cached) = match shell.load_meta(&hash) {
         Some(mut m) => { m.path = path.clone(); m.used = now(); let _ = shell.save_meta(&m); (m, true) }
-        None => (shell.make_proxy(&app, &p, &hash, size, mtime)?, false),
+        None => {
+            let emit = |stage: &str, pct: f64| {
+                let _ = app.emit("kmv-proxy", Progress { path: path.clone(), stage: stage.into(), pct });
+            };
+            (shell.make_proxy(&emit, &p, &hash, size, mtime)?, false)
+        }
     };
     Ok(ImportInfo { kind: "video".into(), name, path, size, mtime, hash, bytes: meta.proxy_size, w: meta.w, h: meta.h, dur_sec: meta.dur_sec, fps: meta.fps, codec: meta.codec, cached })
 }
@@ -652,15 +669,7 @@ pub fn run() {
             let base = app.path().local_data_dir().unwrap_or_else(|_| std::env::temp_dir());
             let proxy_dir = base.join("KMovie").join("proxy");
             fs::create_dir_all(&proxy_dir)?;
-            let shell = Shell {
-                proxy_dir,
-                ffmpeg: find_bin("ffmpeg"),
-                ffprobe: find_bin("ffprobe"),
-                metas: Mutex::new(HashMap::new()),
-                frames: Mutex::new(HashMap::new()),
-                exports: Mutex::new(HashMap::new()),
-                export_seq: Mutex::new(0),
-            };
+            let shell = Shell::new(proxy_dir, find_bin("ffmpeg"), find_bin("ffprobe"));
             shell.sweep();
             app.manage(shell);
             let url = if online() { WebviewUrl::External(SITE.parse().expect("site url")) } else { WebviewUrl::App("offline.html".into()) };
@@ -679,4 +688,267 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("케이무비 껍데기 실행 실패");
+}
+
+/* ---------------- 테스트 (실 ffmpeg) ----------------
+   cargo test -- --nocapture   (ffmpeg·ffprobe 가 PATH 에 있어야 한다. 합성 원본 5종을 임시 폴더에 만든다)
+   프록시 규격·프레임 정렬(앞으로·뒤로 seek)·조각 읽기·해시 안정성·보관함 정리를 lib.rs 그 자체로 검증한다.
+   test/mock-backend.mjs 는 이제 참고용 — 정답은 여기. */
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::process::Command;
+    use std::sync::OnceLock;
+
+    struct Fx { dir: PathBuf, files: Vec<(&'static str, PathBuf)> }
+
+    fn ff(args: &[&str]) {
+        let st = Command::new("ffmpeg").args(["-hide_banner", "-loglevel", "error", "-y"]).args(args).status().expect("ffmpeg 실행");
+        assert!(st.success(), "fixture 생성 실패: {args:?}");
+    }
+
+    /// 합성 원본: 25fps · 60fps · 시작 오프셋 1.5s(30fps) · HEVC 10bit(폰 흉내) · VFR(프레임 빠짐, 폰 가변 프레임 흉내). 각 4초, 키프레임 1초.
+    fn fixtures() -> &'static Fx {
+        static FX: OnceLock<Fx> = OnceLock::new();
+        FX.get_or_init(|| {
+            let dir = std::env::temp_dir().join(format!("kmv-rs-fx-{}", std::process::id()));
+            fs::create_dir_all(&dir).unwrap();
+            let src = |rate: &str| format!("testsrc2=size=1280x720:rate={rate}");
+            let mk = |name: &str, rate: &str, extra: &[&str]| {
+                let out = dir.join(format!("{name}.mp4"));
+                let s0 = src(rate);
+                let mut a: Vec<&str> = vec!["-f", "lavfi", "-i", &s0, "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=48000", "-t", "4"];
+                a.extend_from_slice(extra);
+                let s = out.to_string_lossy().to_string();
+                let mut v: Vec<String> = a.iter().map(|x| x.to_string()).collect();
+                v.push(s);
+                let r: Vec<&str> = v.iter().map(|x| x.as_str()).collect();
+                ff(&r);
+                out
+            };
+            let mut files = Vec::new();
+            files.push(("orig25", mk("orig25", "25", &["-c:v", "libx264", "-preset", "ultrafast", "-g", "25", "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest"])));
+            files.push(("orig60", mk("orig60", "60", &["-c:v", "libx264", "-preset", "ultrafast", "-g", "60", "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest"])));
+            files.push(("orig30off", mk("orig30off", "30", &["-c:v", "libx264", "-preset", "ultrafast", "-g", "30", "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest", "-output_ts_offset", "1.5"])));
+            files.push(("hevc10", mk("hevc10", "30", &["-c:v", "libx265", "-preset", "ultrafast", "-x265-params", "log-level=none:keyint=30:min-keyint=30", "-pix_fmt", "yuv420p10le", "-tag:v", "hvc1", "-c:a", "aac", "-shortest"])));
+            // 세로 폰 영상 흉내: 가로로 인코딩한 뒤 회전 태그(display matrix 90°)만 얹는다 — 폰이 저장하는 방식 그대로
+            let flat = mk("rot90-flat", "30", &["-c:v", "libx264", "-preset", "ultrafast", "-g", "30", "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest"]);
+            let rot = dir.join("rot90.mp4");
+            ff(&["-display_rotation", "90", "-i", &flat.to_string_lossy(), "-c", "copy", &rot.to_string_lossy()]);
+            files.push(("rot90", rot));
+            files.push(("vfr", mk("vfr", "30", &["-vf", "select=not(eq(mod(n\\,7)\\,3))", "-fps_mode", "vfr", "-c:v", "libx264", "-preset", "ultrafast", "-g", "30", "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest"])));
+            Fx { dir, files }
+        })
+    }
+
+    fn shell(sub: &str) -> Shell {
+        let d = fixtures().dir.join(sub);
+        fs::create_dir_all(&d).unwrap();
+        Shell::new(d, PathBuf::from("ffmpeg"), PathBuf::from("ffprobe"))
+    }
+
+    fn import(sh: &Shell, p: &Path) -> (ProxyMeta, bool) {
+        let (hash, size, mtime) = file_hash(p).unwrap();
+        match sh.load_meta(&hash) {
+            Some(m) => (m, true),
+            None => (sh.make_proxy(&|_s, _p| {}, p, &hash, size, mtime).unwrap(), false),
+        }
+    }
+
+    /// 프록시 프레임 idx-1..=idx+1 을 원화질 파이프와 같은 규격(1920×1080 RGBA 레터박스)으로. passthrough 라 select 의 n = 샘플 번호.
+    fn proxy_frames(proxy: &Path, idx: i64) -> Vec<Vec<u8>> {
+        let lo = (idx - 1).max(0);
+        let out = Command::new("ffmpeg")
+            .args(["-v", "error", "-i"]).arg(proxy)
+            .args(["-vf", &format!("select=between(n\\,{lo}\\,{}),scale={FRAME_W}:{FRAME_H}:force_original_aspect_ratio=decrease:force_divisible_by=2,pad={FRAME_W}:{FRAME_H}:(ow-iw)/2:(oh-ih)/2:black,format=rgba", idx + 1),
+                "-fps_mode", "passthrough", "-frames:v", "3", "-f", "rawvideo", "pipe:1"])
+            .output().unwrap();
+        assert!(out.status.success());
+        let mut v: Vec<Vec<u8>> = out.stdout.chunks(FRAME_BYTES).map(|c| c.to_vec()).collect();
+        if idx == 0 { v.insert(0, Vec::new()); } // idx-1 자리 비움
+        assert_eq!(v.len(), 3, "프록시 프레임 {idx} 주변 3장");
+        v
+    }
+
+    fn diff(a: &[u8], b: &[u8]) -> f64 {
+        if a.is_empty() || b.is_empty() { return f64::INFINITY; }
+        let mut d = 0u64;
+        for i in (0..FRAME_BYTES).step_by(4) {
+            d += (a[i] as i64 - b[i] as i64).unsigned_abs() + (a[i + 1] as i64 - b[i + 1] as i64).unsigned_abs() + (a[i + 2] as i64 - b[i + 2] as i64).unsigned_abs();
+        }
+        d as f64 / (FRAME_BYTES as f64 * 0.75)
+    }
+
+    #[test]
+    fn rescale_matches_ffmpeg_near_inf() {
+        assert_eq!(rescale_rnd(1, 1, 2), 1);   // 0.5 → 1 (0 에서 먼 쪽)
+        assert_eq!(rescale_rnd(-1, 1, 2), -1);
+        assert_eq!(rescale_rnd(3, 1, 4), 1);   // 0.75 → 1
+        assert_eq!(rescale_rnd(1, 1, 4), 0);   // 0.25 → 0
+        assert_eq!(rescale_rnd(90000 * 7, 30, 90000), 210);
+    }
+
+    #[test]
+    fn plan_picks_keyframe_below_target_slot() {
+        let m = ProxyMeta { hash: String::new(), name: String::new(), path: String::new(), size: 0, mtime: 0, w: 0, h: 0, dur_sec: 0.0, fps: 30.0, codec: String::new(), proxy_size: 0, made: 0, used: 0,
+            tb_num: 1, tb_den: 90000, start_us: 0, first_pts: 0, keys: vec![0, 90000, 180000, 270000] };
+        assert_eq!(m.slot0(), 0);
+        assert_eq!(m.plan(0), (None, 0));           // 첫 GOP 는 seek 없이 처음부터
+        assert_eq!(m.plan(29), (None, 29));
+        let (ss, skip) = m.plan(30);                // 슬롯 30 = 키프레임 자체 → 그보다 작은 슬롯의 키프레임(0) 에서
+        assert!(ss.is_none() && skip == 30);
+        let (ss, skip) = m.plan(31);                // 키프레임 30(1.0s) 에서 시작, 슬롯 30 은 버림 → skip 1
+        assert!((ss.unwrap() - (1.0 - SEEK_EPS)).abs() < 1e-9 && skip == 1);
+        let (ss, skip) = m.plan(95);
+        assert!((ss.unwrap() - (3.0 - SEEK_EPS)).abs() < 1e-9 && skip == 5);
+        // 시작 오프셋 1.5s 원본: pts 135000 이 슬롯 0
+        let m2 = ProxyMeta { start_us: 1_500_000, first_pts: 135000, keys: vec![135000, 225000, 315000], ..m.clone() };
+        assert_eq!(m2.slot0(), 0);
+        assert_eq!(m2.slot(225000), 30);
+        let (ss, skip) = m2.plan(40);
+        assert!((ss.unwrap() - (2.5 - 1.5 - SEEK_EPS)).abs() < 1e-9 && skip == 10);
+    }
+
+    #[test]
+    fn hash_survives_rename_and_changes_on_edit() {
+        let fx = fixtures();
+        let src = &fx.files[0].1;
+        let (h1, _, _) = file_hash(src).unwrap();
+        let copy = fx.dir.join("renamed-copy.mp4");
+        fs::copy(src, &copy).unwrap();
+        let mt = fs::metadata(src).unwrap().modified().unwrap();
+        File::options().write(true).open(&copy).unwrap().set_modified(mt).unwrap();
+        let (h2, _, _) = file_hash(&copy).unwrap();
+        assert_eq!(h1, h2, "경로가 바뀌어도 같은 프록시");
+        let mut f = File::options().write(true).open(&copy).unwrap();
+        f.seek(SeekFrom::Start(100)).unwrap(); f.write_all(&[1, 2, 3, 4]).unwrap(); drop(f);
+        File::options().write(true).open(&copy).unwrap().set_modified(mt).unwrap();
+        let (h3, _, _) = file_hash(&copy).unwrap();
+        assert_ne!(h1, h3, "내용이 바뀌면 다른 해시");
+    }
+
+    #[test]
+    fn proxy_spec_and_meta() {
+        let sh = shell("spec");
+        for (name, p) in &fixtures().files {
+            let (m, cached) = import(&sh, p);
+            assert!(!cached, "{name}: 첫 가져오기");
+            if *name == "rot90" { assert_eq!((m.w, m.h), (720, 1280), "세로 폰 영상은 돌린 뒤 크기"); } else { assert_eq!((m.w, m.h), (1280, 720)); }
+            assert!(m.dur_sec > 3.5 && m.dur_sec < 4.6, "{name} dur {}", m.dur_sec);
+            assert!(!m.keys.is_empty(), "{name}: 키프레임 표");
+            assert!(m.keys.windows(2).all(|w| w[0] < w[1]));
+            // 첫 프레임 슬롯: 보통 0. 시작 오프셋 원본은 format.start_time(오디오 프라이밍 포함, 1.478s) 과 영상 첫 pts(1.5s) 가 달라 슬롯 1 — fps 필터도 거기서 시작하므로 프록시 idx 0 = 슬롯 1. plan() 이 slot0 으로 이걸 맞춘다.
+            let s0 = m.slot0();
+            assert!(s0 == 0 || (*name == "orig30off" && s0 == 1), "{name}: 첫 프레임 슬롯 {s0}");
+            let j = probe_json(&sh.ffprobe, &sh.proxy_path(&m.hash)).unwrap();
+            let st = &j["streams"][0];
+            assert_eq!(st["codec_name"], "h264", "{name}");
+            if *name == "rot90" { assert_eq!((st["width"].as_u64(), st["height"].as_u64()), (Some(720), Some(1280)), "{name}: 회전을 굽고 세로 720×1280"); }
+            else { assert_eq!(st["width"], 1280, "{name}: 긴 변 1280"); }
+            assert_eq!(st["avg_frame_rate"], "30/1", "{name}: 30fps 고정 (원본 {})", m.fps);
+            let pj = Command::new("ffprobe").args(["-v", "error", "-select_streams", "v:0", "-show_entries", "stream=profile,pix_fmt", "-of", "json"]).arg(sh.proxy_path(&m.hash)).output().unwrap();
+            let pj: serde_json::Value = serde_json::from_slice(&pj.stdout).unwrap();
+            assert_eq!(pj["streams"][0]["pix_fmt"], "yuv420p", "{name}: 10bit 도 8bit 로");
+            assert!(pj["streams"][0]["profile"].as_str().unwrap_or("").contains("Baseline"), "{name}: baseline");
+            if *name == "hevc10" { assert_eq!(m.codec, "hevc"); }
+            // 두 번째는 캐시
+            let (_, cached) = import(&sh, p);
+            assert!(cached, "{name}: 캐시 재사용");
+            // 프록시 프레임 수 = 원본 길이 × 30 근처 (fps 필터가 VFR 빈자리를 채운다)
+            let (_, keys) = probe_packets(&sh.ffprobe, &sh.proxy_path(&m.hash)).unwrap();
+            assert!(keys.len() >= 7, "{name}: GOP 15 → 4초에 키프레임 8개 근처, 실제 {}", keys.len());
+        }
+    }
+
+    #[test]
+    fn frame_pipe_matches_proxy_pixels() {
+        let sh = shell("frames");
+        let mut total = 0; let mut bad = 0; let mut spent = Duration::ZERO; let mut nread = 0u32;
+        for (name, p) in &fixtures().files {
+            let (m, _) = import(&sh, p);
+            let proxy = sh.proxy_path(&m.hash);
+            let mut sess: Option<FrameSession> = None;
+            let mut buf = vec![0u8; FRAME_BYTES];
+            for idx in [0i64, 1, 31, 90, 94, 110, 95, 60] {   // 95→60 은 뒤로 가기(재seek), 94→110 은 앞으로
+                let reopen = match &sess { Some(s) => idx < s.cur || idx - s.cur > REOPEN_GAP, None => true };
+                if reopen { sess = Some(sh.open_frames(&m, idx).unwrap()); }
+                let s = sess.as_mut().unwrap();
+                let t0 = std::time::Instant::now();
+                while s.cur < idx { assert!(read_frame(&mut s.out, &mut buf).unwrap(), "{name} idx {idx}: 끝 넘음(건너뛰기)"); s.cur += 1; nread += 1; }
+                assert!(read_frame(&mut s.out, &mut buf).unwrap(), "{name} idx {idx}: 끝 넘음");
+                s.cur += 1; nread += 1;
+                spent += t0.elapsed();
+                let refs = proxy_frames(&proxy, idx);
+                let d = diff(&buf, &refs[1]);
+                let dn = diff(&buf, &refs[0]).min(diff(&buf, &refs[2]));
+                total += 1;
+                // 이웃과 동점(dn ≈ d) 은 fps 필터가 같은 원본 프레임을 두 슬롯에 복제한 자리(25fps→30, VFR 빈자리) — 어긋남이 아니다
+                let ok = d <= 3.0 && dn + 0.05 >= d;
+                if !ok { bad += 1; }
+                eprintln!("{name} idx {idx} diff {d:.2} neighbor {dn:.2} {}", if ok { "ok" } else { "BAD" });
+            }
+        }
+        eprintln!("원화질 파이프 1080p RGBA: {nread}장 {:.1}ms/장 (seek 포함, 이 CPU 기준)", spent.as_secs_f64() * 1000.0 / nread as f64);
+        assert_eq!(bad, 0, "프레임 정렬 {total}중 {bad} 어긋남");
+        assert_eq!(total, 8 * fixtures().files.len());
+    }
+
+    #[test]
+    fn chunks_reassemble_exactly() {
+        let sh = shell("chunks");
+        let (m, _) = import(&sh, &fixtures().files[0].1);
+        let proxy = sh.proxy_path(&m.hash);
+        let whole = fs::read(&proxy).unwrap();
+        let mut got = Vec::new();
+        let mut off = 0u64;
+        loop {
+            let mut f = File::open(&proxy).unwrap();
+            f.seek(SeekFrom::Start(off)).unwrap();
+            let mut b = vec![0u8; 100_000.min(CHUNK_MAX)];
+            let n = f.read(&mut b).unwrap();
+            if n == 0 { break; }
+            got.extend_from_slice(&b[..n]);
+            off += n as u64;
+        }
+        assert_eq!(got, whole);
+        assert_eq!(m.proxy_size as usize, whole.len(), "ImportInfo.bytes = 프록시 크기");
+    }
+
+    #[test]
+    fn sweep_removes_stale_and_orphans() {
+        let sh = shell("sweep");
+        let (m, _) = import(&sh, &fixtures().files[0].1);
+        // 고아 mp4 · 고아 json · tmp
+        fs::write(sh.proxy_dir.join("orphan.mp4"), b"x").unwrap();
+        fs::write(sh.proxy_dir.join("ghost.json"), "{}").unwrap();
+        fs::write(sh.proxy_dir.join("half.tmp"), b"x").unwrap();
+        sh.sweep();
+        assert!(!sh.proxy_dir.join("orphan.mp4").exists());
+        assert!(!sh.proxy_dir.join("ghost.json").exists());
+        assert!(!sh.proxy_dir.join("half.tmp").exists());
+        assert!(sh.proxy_path(&m.hash).exists(), "방금 쓴 프록시는 남는다");
+        assert_eq!(sh.cache_info().count, 1);
+        // 31일 전 사용 → 정리
+        let mut old = m.clone();
+        old.used = now().saturating_sub((KEEP_DAYS + 1) * 86400);
+        sh.save_meta(&old).unwrap();
+        sh.sweep();
+        assert!(!sh.proxy_path(&m.hash).exists() && !sh.meta_path(&m.hash).exists(), "오래 안 쓴 프록시 정리");
+        assert_eq!(sh.cache_info().count, 0);
+    }
+
+    #[test]
+    fn rejects_unknown_kind_and_too_long() {
+        assert_eq!(kind_of(Path::new("a.MOV")), "video");
+        assert_eq!(kind_of(Path::new("a.HEIC")), "");
+        assert_eq!(kind_of(Path::new("b.jpg")), "image");
+        assert_eq!(kind_of(Path::new("c.m4a")), "audio");
+        let sh = shell("long");
+        let p = fixtures().dir.join("long.mp4");
+        // 컨테이너 duration 만 길게 보이도록 16분짜리 검은 영상(초저비트, 1fps) — 실제 인코딩은 몇 초
+        ff(&["-f", "lavfi", "-i", "color=c=black:size=64x64:rate=1", "-t", "961", "-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p", &p.to_string_lossy()]);
+        let (hash, size, mtime) = file_hash(&p).unwrap();
+        let e = sh.make_proxy(&|_s, _p| {}, &p, &hash, size, mtime).unwrap_err();
+        assert!(e.contains("15분"), "{e}");
+    }
 }

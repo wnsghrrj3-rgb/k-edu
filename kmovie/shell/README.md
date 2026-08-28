@@ -25,16 +25,17 @@ powershell -ExecutionPolicy Bypass -File scripts\get-ffmpeg.ps1
 cd src-tauri && cargo tauri dev
 cd src-tauri && cargo tauri build      # → target\release\bundle\nsis\KMovie_0.1.0_x64-setup.exe
 ```
-- 첫 빌드는 Tauri 의존성 컴파일로 10분 안팎. **이 Rust 코드는 아직 컴파일해 본 적 없다**(작성 환경에 cargo 없음) — 첫 `cargo tauri dev` 에서 오탈자를 잡는다. 규칙 자체는 `test/mock-backend.mjs`(같은 프로토콜의 Node 판)로 검증했다.
+- 첫 빌드는 Tauri 의존성 컴파일로 10분 안팎. Rust 는 리눅스에서 `cargo check`·`cargo test` 통과(2026-08-28, rustc 1.91 · tauri 2.11.5 · tauri-plugin-dialog 2.7.2, `Cargo.lock` 동봉) — 단 **Windows 타깃(`#[cfg(windows)]` 가지·WebView2·NSIS)은 준호 PC 첫 `cargo tauri dev` 가 첫 검증**이다.
 - 설치는 현재 사용자 범위(관리자 불필요). 서명 없음 → SmartScreen "추가 정보 → 실행" 안내 필요.
 - WebView2(엣지) 가 없는 아주 오래된 Windows 은 설치 시 Tauri 가 부트스트랩을 안내한다.
 
-## 테스트 (리눅스/맥, ffmpeg 필요)
+## 테스트 (리눅스/맥, ffmpeg·ffprobe 필요)
 ```
+cd src-tauri && cargo test -- --nocapture --test-threads=1   # 정답: lib.rs 자체. 합성 원본 6종(25·60fps·시작 오프셋·HEVC 10bit·세로 회전·VFR) × seek 8지점 = 48/48 픽셀 일치, 프록시 규격·캐시·해시·조각·정리·15분 거절
 sh test/make-fixtures.sh /tmp/kmv-fixtures
-D=/tmp/kmv-fixtures node test/frame-map.mjs   # 프레임 정렬 24/24 + 조각 읽기
-D=/tmp/kmv-fixtures node test/shell-js.mjs    # engine/shell.js ↔ mock 백엔드
+D=/tmp/kmv-fixtures node test/shell-js.mjs    # engine/shell.js ↔ mock 백엔드 (mock 은 이제 참고용)
 ```
+리눅스에서 Tauri 컴파일에 필요한 것: `apt install rustc-1.91 cargo-1.91 pkg-config libwebkit2gtk-4.1-dev libgtk-3-dev libsoup-3.0-dev librsvg2-dev` (또는 rustup) + `binaries/ffmpeg-<triple>` 빈 파일(외부 바이너리 검사용).
 
 ## 파일
 - `src-tauri/src/lib.rs` — 커맨드 14개(shell_info · pick_files · import_path · read_chunk · proxy_check · frame_next · frame_close · export_open/write/close · cache_info/clear · open_cache_dir · retry_online)
@@ -45,4 +46,5 @@ D=/tmp/kmv-fixtures node test/shell-js.mjs    # engine/shell.js ↔ mock 백엔�
 ## 정직 기록
 - ffmpeg 빌드는 GPL(libx264). 별도 프로세스 호출 + 라이선스 전문 동봉. LGPL 로 가려면 `h264_mf` 로 프록시 인코더 교체.
 - 원본 상한 15분(프록시 샘플과 PCM 이 브라우저 메모리에 다 올라감). 그보다 길면 폰에서 잘라 넣기.
-- 원본이 VFR(폰 가변 프레임) 이어도 두 파이프가 같은 규칙이라 정렬은 유지되지만, 실제 폰 HEVC 원본은 아직 안 돌려 봤다.
+- VFR·HEVC 10bit·세로 회전 태그는 합성 원본으로 정렬 검증됨(48/48). 실제 폰 촬영본(실 HEVC·실 VFR)은 아직 안 돌려 봤다.
+- 세로 폰 영상: ffmpeg 가 프록시·원화질 파이프 둘 다 자동 회전해 굽는다. meta w/h 도 돌린 뒤 크기(720×1280)로 보고(2026-08-28 수정).
