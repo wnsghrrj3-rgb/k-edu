@@ -248,7 +248,22 @@
     playing = { fromFrame, t0, nodes: scheduleA1(a, a.destination, fromFrame, t0).concat(scheduleA2(a, a.destination, fromFrame, t0), scheduleAmb(a, a.destination, fromFrame, t0)) };
     return t0;
   }
-  function now() { if (!playing) return null; return playing.fromFrame + (ctx().currentTime - playing.t0) * g.KMV_PROJECT.FPS; }
+  function now() { if (!playing) return null; return playing.fromFrame + (ctx().currentTime - playing.t0) * (playing.fps || g.KMV_PROJECT.FPS); }
+  /* 소스 모니터 재생 — 원본 소리를 원본 프레임 fromSrcFrame 부터. now() 는 원본 프레임 단위로 돌아온다 */
+  async function playSource(mediaId, fromSrcFrame) {
+    stop();
+    const P = g.KMV_PROJECT, m = P.media(mediaId), src = g.KMV_MEDIA.get(mediaId);
+    if (!m) return null;
+    const a = ctx();
+    if (a.state !== 'running') { try { await a.resume(); } catch (e) {} }
+    const t0 = a.currentTime + 0.06, nodes = [];
+    if (src && src.audio) {
+      const off = fromSrcFrame / m.fps;
+      if (off < src.audio.duration - 0.01) { const n = a.createBufferSource(); n.buffer = src.audio; n.connect(a.destination); n.start(t0, off); nodes.push(n); }
+    }
+    playing = { fromFrame: fromSrcFrame, t0, nodes, fps: m.fps, source: mediaId };
+    return t0;
+  }
   function stop() {
     if (!playing) return;
     playing.nodes.forEach(n => { try { n.stop(); } catch (e) {} try { n.disconnect(); } catch (e) {} });
@@ -294,5 +309,5 @@
     return out.filter(s => s.dur >= min);
   }
 
-  g.KMV_AUDIO = { ctx, decode, play, stop, now, isPlaying, renderMix, segments, scheduleA1, scheduleA2, scheduleAmb, findRoomTone, ambGaps, ambBuffer, voice, beats, duckSpans, XF, SR, AMB_SEC };
+  g.KMV_AUDIO = { ctx, decode, play, playSource, stop, now, isPlaying, renderMix, segments, scheduleA1, scheduleA2, scheduleAmb, findRoomTone, ambGaps, ambBuffer, voice, beats, duckSpans, XF, SR, AMB_SEC };
 })(typeof window !== 'undefined' ? window : globalThis);

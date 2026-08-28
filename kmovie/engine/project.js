@@ -36,7 +36,7 @@
   function blank() {
     return {
       v: 1, fps: FPS, w: W, h: H, theme: 'geumseong',
-      media: [], V: [], A1: [], A2: [], P: [], S: [],
+      media: [], V: [], A1: [], A2: [], P: [], S: [], markers: [],
       look: { lut: 'cinema-navy', strength: 0.6, autoExpose: false, target: { luma: 0.48, contrast: 1 }, cinemaBar: false, vignette: 0 },
       audio: { ducking: { on: true, depth: 12 }, ambience: { on: false, src: null, gain: 1 } },
     };
@@ -153,6 +153,11 @@
   function split(t) {                                   // S — 플레이헤드에서 분할
     const c = clipAt(t); if (!c || t === c.at) return null;
     commit();
+    return splitCore(t);
+  }
+  /* 분할의 알맹이 (commit 없음) — 삽입·덮어쓰기·붙여넣기가 안에서 같이 쓴다 */
+  function splitCore(t) {
+    const c = clipAt(t); if (!c || t === c.at) return null;
     const i = clipIndex(c.id);
     const c2 = Object.assign({}, c, { id: uid('c') });
     if (c.freeze) { const d1 = t - c.at; c2.dur = c.dur - d1; c.dur = d1; }
@@ -225,6 +230,108 @@
     relayout(); emit();
   }
   function relink(clipId) { const a = audioOf(clipId); if (!a || a.linked) return; commit(); a.linked = true; relayout(); emit(); }
+
+  /* ---------- 6단계: 프리미어급 컷 도구 ----------
+     슬립: 클립의 자리·길이는 그대로, 원본 구간(in/out)만 같이 민다 (Alt+몸통 끌기).
+     롤: 편집점 하나를 움직인다 — 앞 클립 out 과 뒤 클립 in 이 같이, 전체 길이는 그대로 (Ctrl+가장자리 끌기).
+     3점 편집: 소스 모니터의 I/O 구간을 플레이헤드에 삽입(,) 또는 덮어쓰기(.).
+     다중 선택: 여러 클립 한 번에 삭제·이동·복사·붙여넣기. 마커: 눈금자 위 메모, 스냅 후보. */
+  function slip(id, deltaSrc, opt) {
+    const c = clip(id); if (!c) return;
+    const m = media(c.media); if (m.kind === 'image') return;
+    if (!(opt && opt.commit === false)) commit();
+    const len = c.out - c.in;
+    let nin = Math.round(c.in + deltaSrc);
+    if (c.freeze) { nin = clamp(nin, 0, m.dur - 1); c.in = nin; c.out = nin + 1; }
+    else { nin = clamp(nin, 0, m.dur - len); c.in = nin; c.out = nin + len; }
+    const a = audioOf(c.id); if (a && a.linked === false) { a.linked = true; }   // J/L 은 슬립하면 링크로 복귀(원본 위치가 바뀌었으니)
+    relayout(); emit();
+  }
+  /* prevId 클립의 out 쪽 편집점을 deltaTl(타임라인 프레임) 만큼 민다. 다음 클립이 없으면 false */
+  function roll(prevId, deltaTl, opt) {
+    const i = clipIndex(prevId); if (i < 0 || i + 1 >= P.V.length) return false;
+    const a = P.V[i], b = P.V[i + 1], ma = media(a.media), mb = media(b.media);
+    deltaTl = Math.round(deltaTl); if (!deltaTl) return true;
+    if (!(opt && opt.commit === false)) commit();
+    const ka = a.freeze ? 1 : ma.fps / FPS * SPEED[a.speed].f, kb = b.freeze ? 1 : mb.fps / FPS * SPEED[b.speed].f;
+    // 앞 클립이 늘 수 있는 한도 / 뒤 클립이 줄 수 있는 한도 (각각 1프레임은 남긴다)
+    const maxA = a.freeze ? IMAGE_MAX - a.dur : (ma.kind === 'image' ? IMAGE_MAX : ma.dur) - a.out;      // 원본 프레임 단위
+    const minA = a.freeze ? -(a.dur - 1) : -(a.out - a.in - Math.max(1, Math.ceil(ka)));
+    const maxB = b.freeze ? b.dur - 1 : (b.out - b.in - Math.max(1, Math.ceil(kb)));                       // b 가 줄 수 있는 양(원본) — d>0
+    const minB = b.freeze ? -(IMAGE_MAX - b.dur) : -b.in;                                                    // b 가 늘 수 있는 양(원본, 음수) — d<0
+    let d = deltaTl;
+    d = clamp(d, Math.ceil(minA / ka), Math.floor(maxA / ka));
+    d = clamp(d, Math.ceil(minB / kb), Math.floor(maxB / kb));
+    if (a.freeze) a.dur += d; else a.out = Math.round(a.out + d * ka);
+    if (b.freeze) b.dur -= d; else b.in = Math.round(b.in + d * kb);
+    for (const x of [a, b]) { const au = audioOf(x.id); if (au && !au.linked) au.linked = true; }
+    relayout(); emit(); return true;
+  }
+  /* 소스 구간 → 타임라인. mode: 'insert'(플레이헤드에서 뒤를 밀며) | 'overwrite'(그 길이만큼 덮어씀) | 'append'(끝에) */
+  function insertRange(mediaId, range, t, mode) {
+    const m = media(mediaId); if (!m || m.kind === 'audio') return null;
+    commit();
+    const c = newClip(m);
+    if (range && m.kind !== 'image') { c.in = clamp(Math.round(range.in), 0, m.dur - 1); c.out = clamp(Math.round(range.out), c.in + 1, m.dur); }
+    else if (range && m.kind === 'image' && range.dur) c.out = clamp(Math.round(range.dur), 1, IMAGE_MAX);
+    const placed = placeCore(c, t, mode);
+    relayout(); emit(); return placed;
+  }
+  /* 클립 하나를 t 에 놓는 알맹이 (commit·relayout 없음). 반환: 놓인 클립 */
+  function placeCore(c, t, mode) {
+    const tot = total();
+    if (mode === 'append' || t == null || t >= tot) { c.at = tot; P.V.push(c); return c; }
+    t = Math.max(0, Math.round(t));
+    if (mode === 'overwrite') {
+      const L = clipDur(c), end = t + L;
+      splitCore(t); if (end < tot) splitCore(end);
+      relayout();
+      P.V = P.V.filter(x => !(x.at >= t && x.at + x.dur <= end));
+      let idx = P.V.findIndex(x => x.at >= t); if (idx < 0) idx = P.V.length;
+      P.V.splice(idx, 0, c); return c;
+    }
+    splitCore(t); relayout();
+    let idx = P.V.findIndex(x => x.at >= t); if (idx < 0) idx = P.V.length;
+    P.V.splice(idx, 0, c); return c;
+  }
+  function removeClips(ids) {
+    const set = new Set(ids); if (!P.V.some(c => set.has(c.id))) return;
+    commit(); P.V = P.V.filter(c => !set.has(c.id)); relayout(); emit();
+  }
+  /* 선택 클립들을 순서 유지한 채 toIndex(원래 배열 기준 삽입 위치) 로 */
+  function moveClips(ids, toIndex) {
+    const set = new Set(ids), picked = P.V.filter(c => set.has(c.id)); if (!picked.length) return;
+    toIndex = clamp(toIndex, 0, P.V.length);
+    const before = P.V.slice(0, toIndex).filter(c => !set.has(c.id)).length;
+    const rest = P.V.filter(c => !set.has(c.id));
+    if (picked.length === 1) { const i = clipIndex(picked[0].id); if (toIndex === i || toIndex === i + 1) return; }
+    commit();
+    rest.splice(before, 0, ...picked); P.V = rest; relayout(); emit();
+  }
+  /* 복사한 클립 JSON 들을 t 에 삽입(순서대로). A1 볼륨·J/L 은 같이 온다 */
+  function pasteClips(items, t) {
+    if (!items || !items.length) return [];
+    commit();
+    const made = [];
+    let at = t == null ? total() : Math.max(0, Math.round(t));
+    for (const it of items) {
+      const m = media(it.clip.media); if (!m) continue;
+      const c = Object.assign({}, it.clip, { id: uid('c') });
+      placeCore(c, at, at >= total() ? 'append' : 'insert'); relayout();
+      if (it.audio) P.A1.push(Object.assign({}, it.audio, { clip: c.id }));
+      at = c.at + c.dur; made.push(c);
+    }
+    relayout(); emit(); return made;
+  }
+  function copyClips(ids) { return ids.map(id => clip(id)).filter(Boolean).map(c => ({ clip: JSON.parse(JSON.stringify(c)), audio: audioOf(c.id) ? JSON.parse(JSON.stringify(audioOf(c.id))) : null })); }
+  /* 마커 { id, at, text, color } */
+  function sortM() { P.markers.sort((a, b) => a.at - b.at); }
+  function marker(id) { return P.markers.find(x => x.id === id) || null; }
+  function markerAt(t, tol) { tol = tol == null ? 0 : tol; for (const x of P.markers) if (Math.abs(x.at - t) <= tol) return x; return null; }
+  function addMarker(card) { commit(); const x = Object.assign({ id: uid('m'), at: 0, text: '', color: 'gold' }, card); x.at = Math.max(0, Math.round(x.at)); P.markers.push(x); sortM(); emit('M'); return x; }
+  function updateMarker(id, patch) { const x = marker(id); if (!x) return; commit(); Object.assign(x, patch); x.at = Math.max(0, Math.round(x.at)); sortM(); emit('M'); }
+  function removeMarker(id) { const i = P.markers.findIndex(x => x.id === id); if (i < 0) return; commit(); P.markers.splice(i, 1); emit('M'); }
+  function markerFrames() { return P.markers.map(x => x.at); }
 
   /* ---------- 3단계: 룩·켄 번즈·전환 ---------- */
   function setLook(clipId, patch, opt) {                // patch: {lut?, strength?, bright?, contrast?, sat?}. lut: undefined=프로젝트 따름, null=없음
@@ -388,6 +495,7 @@
     P.V = (P.V || []).filter(c => media(c.media));
     P.A2 = (P.A2 || []).filter(a => media(a.media));
     P.P = (P.P || []).map(x => Object.assign({ p: {} }, x));
+    P.markers = (P.markers || []).map(x => Object.assign({ text: '', color: 'gold' }, x));
     if (!P.audio) P.audio = b.audio; if (!P.audio.ducking) P.audio.ducking = { on: true, depth: 12 };
     if (!P.audio.ambience) P.audio.ambience = { on: false, src: null, gain: 1 }; if (P.audio.ambience.src && !media(P.audio.ambience.src.media)) P.audio.ambience.src = null; if (P.audio.ambience.gain == null) P.audio.ambience.gain = 1;
     relayout(); undoStack.length = 0; redoStack.length = 0; emit('load');
@@ -405,6 +513,8 @@
     part, addP, updateP, removeP, clearP, partsAt, partDefault,
     a2, addA2, updateA2, trimA2, removeA2, setDucking, a2At,
     setAmbience, montage,
+    slip, roll, insertRange, removeClips, moveClips, pasteClips, copyClips,
+    marker, markerAt, addMarker, updateMarker, removeMarker, markerFrames,
     commit, undo, redo, canUndo: () => undoStack.length > 0, canRedo: () => redoStack.length > 0,
     toJSON, load, reset,
   };

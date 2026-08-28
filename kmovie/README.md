@@ -28,6 +28,16 @@
 - `engine/shell.js` KMV_SHELL: `__TAURI__` 가 있을 때만 켜짐 — 경로 가져오기(껍데기 ffmpeg 프록시), 디스크 복원, 원화질 프레임(내보내기), 스트리밍 저장, 프록시 보관함. 브라우저에선 no-op.
 - `shell/` Tauri 2 껍데기(Windows 1차). 자세한 건 `shell/README.md`.
 
+## 6단계 컷 손맛 — 프리미어급 컷 도구 (2026-08-28)
+- 소스 모니터: 미디어 보관함 클릭 → 스테이지가 소스로 (탭 「타임라인 | 소스」). 소스 바(필름스트립) 스크럽, Space·JKL 로 원본 소리 그대로 재생, I/O 로 구간 → `,` 삽입(플레이헤드에서 뒤를 밀며) · `.` 덮어쓰기(그 길이만큼) · 「끝에」. I/O 는 원본마다 기억. 보관함 ＋ 는 통째로 끝에.
+- 슬립(Alt+몸통 끌기): 자리·길이 그대로, 원본 구간만 민다. 두 화면 미리보기(시작·끝).
+- 롤(Ctrl+가장자리 끌기): 편집점 하나만 — 앞 out·뒤 in 이 같이, 전체 길이 그대로. 두 화면 미리보기(앞 끝·뒤 시작). 스냅 됨.
+- 다중 선택: Shift+클릭 범위 · Ctrl+클릭 토글 · Ctrl+A. 묶음 이동(순서 유지)·Del·Ctrl+C/X/V(플레이헤드에 삽입, A1 볼륨·J/L 동반).
+- 마커: M 놓기(같은 자리 M = 이름), Shift+M 다음 · Ctrl+Shift+M 이전, 눈금자에서 끌어 이동·더블클릭 이름·Del. 스냅 후보. 프로젝트 패널에 목록.
+- JKL 셔틀: L 1×(소리) → 2× → 4×, J 역방향 1×/2×/4× (2× 이상·역방향은 무음 프레임 스텝), K 정지.
+- 모델(`engine/project.js`): slip · roll · insertRange(insert/overwrite/append) · removeClips · moveClips · copyClips/pasteClips · markers. `KMV_AUDIO.playSource`.
+- 검증: `test/model-cut.test.mjs`(node 51) · `test/ui-cut.mjs`(playwright headless 61, VP9 합성 원본).
+
 ## 파일
 - `index.html`, `kmovie.js` — UI·타임라인
 - `engine/shell.js` — 데스크톱 껍데기 접합점
@@ -43,4 +53,4 @@
 - `engine/export.js` — VideoEncoder/AudioEncoder + mp4-muxer
 
 ## 단축키
-Space 재생 · S 분할 · F 프리즈 · Q/W 플레이헤드까지 트림 · N 스냅 · Del 삭제 · ←→(Shift 10f) · ↑↓ 클립 이동 · Home/End · Ctrl+Z/Y · =/- 줌 · Alt+드래그 A1 트림
+Space 재생 · J/K/L 셔틀 · S 분할 · F 프리즈 · Q/W 플레이헤드까지 트림 · N 스냅 · Del 삭제 · ←→(Shift 10f) · ↑↓ 편집점 · Home/End · Ctrl+Z/Y · Ctrl+A/C/X/V · M 마커(Shift+M 다음·Ctrl+Shift+M 이전) · I/O 소스 구간 · , 삽입 · . 덮어쓰기 · Esc 타임라인 · =/- 줌 · Alt+드래그 A1 트림 · Alt+몸통 슬립 · Ctrl+가장자리 롤 · Shift/Ctrl+클릭 다중 선택

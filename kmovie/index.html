@@ -120,6 +120,27 @@
   #toast.show { opacity:1; }
   body.dragover .stage { outline:2px dashed var(--gold); outline-offset:-6px; }
   .badge { margin-left:10px; padding:2px 8px; border:1px solid var(--gold); border-radius:10px; color:var(--gold); font-size:11px; letter-spacing:.02em; }
+  .stage-tabs { display:flex; align-items:center; gap:6px; }
+  .stage-tabs button { padding:4px 12px; font-size:12px; border-radius:8px 8px 0 0; }
+  .stage-tabs button.on { border-color:var(--gold); color:var(--gold); background:#1d2840; }
+  .stage-tabs .io { color:var(--sub); font-size:12px; font-variant-numeric:tabular-nums; margin-left:6px; }
+  .stage.src { border-color:var(--gold); }
+  #srcBar { width:100%; height:34px; display:block; border-radius:6px; background:#0f1524; border:1px solid var(--line); cursor:text; }
+  #srcTools { display:flex; align-items:center; gap:6px; }
+  #srcTools button { padding:4px 10px; font-size:12px; }
+  #srcTools button.gold { padding:4px 12px; }
+  .stage .lbl { position:absolute; left:10px; bottom:8px; background:rgba(8,14,30,.7); color:var(--gold); font-size:11px; padding:2px 8px; border-radius:6px; pointer-events:none; }
+  #markerList { display:flex; flex-direction:column; gap:4px; margin-top:6px; }
+  .mk { display:flex; gap:6px; align-items:center; background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:3px 6px; cursor:pointer; }
+  .mk.on { border-color:var(--gold); }
+  .mk i { width:8px; height:8px; transform:rotate(45deg); background:var(--gold); flex:none; }
+  .mk input { flex:1; min-width:0; background:transparent; border:none; color:var(--txt); font:inherit; font-size:12px; padding:2px 0; }
+  .mk input:focus { outline:none; border-bottom:1px solid var(--gold); }
+  .mk .tm { font-size:10px; color:var(--sub); font-variant-numeric:tabular-nums; flex:none; }
+  .mk .x { color:var(--dim); font-size:13px; padding:0 3px; } .mk .x:hover { color:var(--danger); }
+  .mi .add { color:var(--sub); font-size:14px; padding:2px 6px; border:1px solid var(--line); border-radius:6px; }
+  .mi .add:hover { color:var(--gold); border-color:var(--gold); }
+  .mi.on { border-color:var(--gold); }
   #nosup { position:fixed; inset:0; background:var(--bg); z-index:100; display:flex; align-items:center; justify-content:center; text-align:center; line-height:1.8; padding:40px; }
 </style>
 </head>
@@ -142,10 +163,19 @@
 
   <main>
     <section class="stage-wrap">
-      <div class="stage">
+      <div class="stage-tabs hidden" id="stageTabs">
+        <button id="tabTL" class="on" title="타임라인 미리보기 (Esc)">타임라인</button>
+        <button id="tabSrc" title="소스 모니터 — 원본을 훑고 I/O 로 구간을 잡아요">소스</button>
+        <span class="io" id="srcIO"></span>
+        <div class="sp"></div>
+        <span class="note" id="stageHint"></span>
+      </div>
+      <div class="stage" id="stage">
         <canvas id="preview" width="1920" height="1080"></canvas>
+        <div class="lbl hidden" id="stageLbl"></div>
         <div id="empty"><b>영상을 여기로 끌어다 놓으세요</b><span>또는 위의 ＋ 가져오기</span><small>H.264 mp4/mov · 사진(jpg/png) · 브라우저판은 10분·700MB 이하</small></div>
       </div>
+      <canvas id="srcBar" class="hidden" height="34"></canvas>
       <div class="transport">
         <button id="tStart" class="ico" title="처음 (Home)">⏮</button>
         <button id="tPrevEdit" class="ico" title="이전 편집점 (↑)">⇤</button>
@@ -155,8 +185,13 @@
         <button id="tNextEdit" class="ico" title="다음 편집점 (↓)">⇥</button>
         <button id="tEnd" class="ico" title="끝 (End)">⏭</button>
         <span class="tc" id="tcCur">00:00:00</span><span class="tc dim">/</span><span class="tc dim" id="tcTot">00:00:00</span>
+        <div id="srcTools" class="hidden">
+          <div class="sep"></div>
+          <button id="srcIn" title="시작점 (I)">I 시작</button><button id="srcOut" title="끝점 (O)">O 끝</button>
+          <button id="srcInsert" class="gold" title="플레이헤드에 삽입 — 뒤 클립은 밀려요 (,)">삽입 ,</button><button id="srcOver" title="플레이헤드부터 그 길이만큼 덮어써요 (.)">덮어쓰기 .</button><button id="srcAppend" title="타임라인 끝에 붙여요">끝에</button>
+        </div>
         <div class="sp"></div>
-        <span class="hint">Space 재생 · S 분할 · Q/W 플레이헤드까지 트림 · F 프리즈 · Del 삭제 · Alt+소리띠 끌기 J/L컷 · 부품·자막·음악 카드는 끌어서 이동/트림 · Ctrl+휠 줌</span>
+        <span class="hint" id="hintTL">Space·JKL 재생 · S 분할 · Q/W 트림 · F 프리즈 · Alt+몸통 슬립 · Ctrl+가장자리 롤 · Shift/Ctrl+클릭 다중 선택 · Ctrl+C/X/V · M 마커 · I/O 소스 구간 · Ctrl+휠 줌</span>
       </div>
     </section>
     <aside class="side">
@@ -246,6 +281,8 @@
         <h3>프로젝트</h3>
         <div class="row" style="display:flex;gap:8px;font-size:13px"><span style="color:var(--sub)">전체</span><span id="pTot" class="v">0초</span><span style="color:var(--sub);margin-left:8px">클립</span><span id="pCnt" class="v">0</span></div>
         <div class="note" style="margin-top:8px">1920×1080 · 30fps · H.264 8Mbps · AAC<br><span id="saveNote">작업은 이 브라우저에 자동 저장돼요.</span></div>
+        <div class="row" style="margin-top:10px"><span style="color:var(--sub);font-size:12px">마커</span><div class="sp"></div><button id="btnMarker" style="padding:2px 8px;font-size:11px" title="플레이헤드에 마커 (M) · Shift+M 다음 · Ctrl+Shift+M 이전">＋ 마커 (M)</button></div>
+        <div id="markerList"></div>
         <div class="row" id="shellRow" hidden style="gap:6px;align-items:center;font-size:12px;margin-top:8px"><span id="shellCache" style="color:var(--sub)">프록시</span><div class="sp"></div><button id="btnCacheDir" style="padding:2px 8px;font-size:11px" title="프록시 폴더 열기">폴더</button><button id="btnCacheClear" style="padding:2px 8px;font-size:11px">비우기</button></div>
       </div>
     </aside>
