@@ -837,7 +837,10 @@ async function doSignup(){
   const btn = document.getElementById('signup-btn');
   btn.disabled=true; btn.textContent='가입 중...';
 
-  const { data, error } = await db.auth.signUp({ email, password: pw });
+  // 이름을 메타데이터에도 저장 — Confirm email ON 이면 가입 순간 세션이 없어
+  // 프로필을 못 만들므로, 첫 로그인 때 자가 복구가 이걸로 만들어 준다 (auth 쪽과 동일 규약)
+  const { data, error } = await db.auth.signUp({ email, password: pw,
+    options: { data: { role: 'teacher', teacher_name: name } } });
 
   if(error){
     setErr('signup', error.message);
@@ -845,9 +848,17 @@ async function doSignup(){
     return;
   }
 
-  // teachers 테이블에 등록
+  if(!data.session){
+    // 확인 메일 경로 — 메일 링크 클릭 후 로그인하면 자가 복구가 프로필을 만든다
+    setErr('signup', '✉️ 이메일로 인증 링크를 보냈어요. 메일함(스팸함 포함)을 확인한 뒤 로그인해 주세요.');
+    btn.disabled=false; btn.textContent='회원가입';
+    return;
+  }
+
+  // teachers 테이블에 등록 (email 은 초기 스키마의 NOT NULL 유산 — 반드시 채운다, 2026-08-28)
   const { error: tErr } = await db.from('teachers').insert({
     user_id: data.user.id,
+    email: data.user.email || email,
     name: name
   });
 
@@ -893,7 +904,7 @@ async function loadDashboard(user){
     const meta = (user && user.user_metadata) || {};
     if(meta.role === 'teacher' || meta.teacher_name){
       const { error: healErr } = await db.from('teachers').insert({
-        user_id: user.id, name: meta.teacher_name || '선생님', school: meta.teacher_school || ''
+        user_id: user.id, email: user.email || '', name: meta.teacher_name || '선생님', school: meta.teacher_school || ''
       });
       if(!healErr){
         const r2 = await db.from('teachers').select('*').eq('user_id', user.id).single();

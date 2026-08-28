@@ -444,7 +444,7 @@ async function doSignup(){
     if(selectedRole === 'teacher'){
       const tName = document.getElementById('signup-teacher-name').value.trim();
       const tSchool = document.getElementById('signup-teacher-school').value.trim();
-      await createTeacherProfile(data.user.id, tName, tSchool);
+      await createTeacherProfile(data.user.id, data.user.email || email, tName, tSchool);
       showToast('🎉 가입 완료! 환영합니다.');
       setTimeout(()=>{ location.replace(redirectTo); }, 800);
     } else {
@@ -477,6 +477,7 @@ async function ensureProfile(user){
   if(meta.role === 'teacher' || meta.teacher_name){
     const { error: healErr } = await db.from('teachers').insert({
       user_id: user.id,
+      email: user.email || '',
       name: meta.teacher_name || '선생님',
       school: meta.teacher_school || ''
     });
@@ -530,9 +531,11 @@ async function createStudentProfile(userId, nickname){
 // =============================================
 // 교사 프로필 생성
 // =============================================
-async function createTeacherProfile(userId, name, school){
+async function createTeacherProfile(userId, email, name, school){
+  // email 은 초기 스키마의 NOT NULL 유산 컬럼 — 반드시 채운다 (2026-08-28)
   await db.from('teachers').insert({
     user_id: userId,
+    email: email || '',
     name: name,
     school: school || ''
   });
