@@ -178,6 +178,12 @@
     if (f !== ph) { ph = Math.max(0, f); $('tcCur').textContent = tc(ph); feedStream(ph); renderPreview(); ensureVisible(ph); draw(); }
     rafId = requestAnimationFrame(loop);
   }
+  let uiRaf = 0;
+  function uiRefresh() {                                  // 드래그 중 화면 갱신은 프레임당 1회
+    if (!drag) { setPH(ph); return; }
+    if (uiRaf) return;
+    uiRaf = requestAnimationFrame(() => { uiRaf = 0; setPH(ph, { noScroll: true }); });
+  }
   function togglePlay() { if (stage === 'src') { srcPlaying || shuttle ? stop() : playSrc(); return; } (playing || shuttle) ? stop() : play(); }
 
   /* ---------- 타임라인 캔버스 ---------- */
@@ -480,7 +486,7 @@
     stop(); showStage('tl');
     const h = hitTest(x, y);
     if (h.kind === 'marker') { selectMarker(h.mk.id); P.commit(); drag = { type: 'mkmove', mk: h.mk, x0: x, orig: { at: h.mk.at } }; setPH(h.mk.at, { noScroll: true }); return; }
-    if (h.kind === 'ruler' || h.kind === 'lane') { if (h.kind === 'lane') { select(null); selectS(null); selectP(null); selectA2(null); } selectMarker(null); drag = { type: 'scrub' }; setPH(frameOf(x), { noScroll: true }); return; }
+    if (h.kind === 'ruler' || h.kind === 'lane') { if (h.kind === 'lane') { select(null); selectS(null); selectP(null); selectA2(null); } selectMarker(null); drag = { type: 'scrub' }; setRScale(0.5); tl.style.cursor = 'grabbing'; setPH(frameOf(x), { noScroll: true }); return; }
     if (h.kind === 'P') {
       selectP(h.pt.id); P.commit();
       if (h.edge) drag = { type: 'ptrim', pt: h.pt, side: h.edge, x0: x, orig: { at: h.pt.at, dur: h.pt.dur } };
@@ -536,13 +542,18 @@
       const hname = hv => hv.kind === 'S' ? SB.plain(hv.s.text) : hv.kind === 'P' ? PT.label(hv.pt) : hv.kind === 'A2' ? '♪ ' + P.media(hv.a2.media).name : P.media(hv.clip.media).name;
       const prevEdge = hover && hover.edge, prevClip = hid(hover);
       hover = /^(V|A1|S|P|A2)$/.test(h.kind) ? h : null;
-      tl.style.cursor = h.kind === 'marker' ? 'pointer' : hover && hover.edge ? ((e.ctrlKey || e.metaKey) && hover.kind === 'V' ? 'col-resize' : 'ew-resize') : hover ? (e.altKey && hover.kind === 'V' ? 'move' : 'grab') : (x >= HEAD ? 'text' : 'default');
+      const phNear = Math.abs(x - xOf(ph)) <= 5 && x >= HEAD;
+      tl.style.cursor = h.kind === 'marker' ? 'pointer' : hover && hover.edge ? ((e.ctrlKey || e.metaKey) && hover.kind === 'V' ? 'col-resize' : 'ew-resize') : phNear ? 'grab' : hover ? (e.altKey && hover.kind === 'V' ? 'move' : 'grab') : (x >= HEAD ? 'text' : 'default');
       if (x >= HEAD && y >= 0 && y <= TH) $('hover').textContent = tc(Math.max(0, frameOf(x))) + (hover ? ' · ' + hname(hover) : ''); else $('hover').textContent = '';
       const curId = hid(hover);
       if ((hover && hover.edge) !== prevEdge || curId !== prevClip) draw();
       return;
     }
-    if (drag.type === 'scrub') { setPH(frameOf(x), { noScroll: true }); return; }
+    if (drag.type === 'scrub') {
+      drag.px = x;
+      if (!drag.raf) drag.raf = requestAnimationFrame(() => { if (drag && drag.type === 'scrub') { drag.raf = 0; setPH(frameOf(drag.px), { noScroll: true }); } });
+      return;
+    }
     if (drag.type === 'mkmove') { const sn = snapFrame(drag.orig.at + (x - drag.x0) / pxf, [], true); drag.snapX = sn.x; P.updateMarker(drag.mk.id, { at: Math.max(0, sn.f) }); setPH(P.marker(drag.mk.id).at, { noScroll: true }); return; }
     if (drag.type === 'slip') {
       const c = drag.clip, m = P.media(c.media), k = m.fps / FPS * P.SPEED[c.speed].f;
@@ -622,10 +633,11 @@
   window.addEventListener('mouseup', () => {
     if (!drag) return;
     const d = drag; drag = null; tl.style.cursor = 'default';
+    if (d && d.type === 'scrub') { if (d.raf) { cancelAnimationFrame(d.raf); if (d.px != null) ph = clamp(Math.round(frameOf(d.px)), 0, Math.max(0, P.total() - 1)); } if (!playing && !shuttle) setRScale(1); setPH(ph, { noScroll: true }); }
     if (d.type === 'move' && d.moved) P.moveClips(d.ids, d.insert);
     else if (d.type === 'move' && d.ids.length > 1 && !d.shiftCtrl) select(d.clip.id);   // 여러 개 중 하나를 그냥 클릭 → 그것만
     if (d.type === 'mkmove') { dirty = true; refreshMarkerList(); }
-    if (/^(trim|atrim|strim|smove|ptrim|pmove|mtrim|mmove|slip|roll)$/.test(d.type)) { dirty = true; setPH(ph); if (d.type === 'strim' || d.type === 'smove') refreshSubPanel(); if (d.type === 'ptrim' || d.type === 'pmove') refreshPartPanel(); if (d.type === 'mtrim' || d.type === 'mmove') refreshMusicPanel(); }
+    if (/^(trim|atrim|strim|smove|ptrim|pmove|mtrim|mmove|slip|roll)$/.test(d.type)) { dirty = true; uiRefresh(); if (d.type === 'strim' || d.type === 'smove') refreshSubPanel(); if (d.type === 'ptrim' || d.type === 'pmove') refreshPartPanel(); if (d.type === 'mtrim' || d.type === 'mmove') refreshMusicPanel(); }
     draw();
   });
   tl.addEventListener('mouseleave', () => { if (!drag) { hover = null; $('hover').textContent = ''; draw(); } });
@@ -751,7 +763,8 @@
   let sbDrag = false;
   const sbFrame = e => { const r = sb.getBoundingClientRect(); const m = P.media(srcCur.media); return clamp((e.clientX - r.left) / r.width * m.dur, 0, m.dur - 1); };
   sb.addEventListener('mousedown', e => { if (!srcCur) return; stop(); sbDrag = true; setSrcPH(sbFrame(e)); });
-  window.addEventListener('mousemove', e => { if (sbDrag && srcCur) setSrcPH(sbFrame(e)); });
+  let sbRaf = 0, sbPx = 0;
+  window.addEventListener('mousemove', e => { if (!sbDrag || !srcCur) return; sbPx = sbFrame(e); if (!sbRaf) sbRaf = requestAnimationFrame(() => { sbRaf = 0; if (sbDrag && srcCur) setSrcPH(sbPx); }); });
   window.addEventListener('mouseup', () => { sbDrag = false; });
   new ResizeObserver(() => { if (stage === 'src') resizeSrcBar(); }).observe(sb.parentElement);
 
