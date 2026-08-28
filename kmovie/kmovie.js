@@ -495,13 +495,13 @@
   function hitTest(x, y) {
     if (y < RULER) { const mks = P.data.markers || []; for (let i = mks.length - 1; i >= 0; i--) { if (Math.abs(xOf(mks[i].at) - x) <= 7) return { kind: 'marker', mk: mks[i] }; } return { kind: 'ruler' }; }
     const lane = laneAt(y);
-    if (lane === 'V') for (const c of P.data.V) { const x0 = xOf(c.at), x1 = xOf(c.at + c.dur); if (x >= x0 && x < x1) { const ez = Math.min(9, (x1 - x0) / 3); return { kind: 'V', clip: c, edge: x - x0 < ez ? 'in' : x1 - x <= ez ? 'out' : null }; } }
+    if (lane === 'V') for (const c of P.data.V) { const x0 = xOf(c.at), x1 = xOf(c.at + c.dur); if (x >= x0 && x < x1) { const ez = Math.min(COARSE ? 16 : 9, (x1 - x0) / 3); return { kind: 'V', clip: c, edge: x - x0 < ez ? 'in' : x1 - x <= ez ? 'out' : null }; } }
     const inRow = (L, ri, id) => { const g2 = rowGeom(L, ri, id); return y >= g2.y - 2 && y <= g2.y + g2.h + 2; };
-    if (lane === 'S') { const ri = laneRows(P.data.S, c2 => c2.at + c2.dur); for (let i = P.data.S.length - 1; i >= 0; i--) { const sc2 = P.data.S[i], x0 = xOf(sc2.at), x1 = xOf(sc2.at + sc2.dur); if (x >= x0 && x < x1 && inRow(LY.S, ri, sc2.id)) { const ez = Math.min(9, (x1 - x0) / 3); return { kind: 'S', s: sc2, edge: x - x0 < ez ? 'in' : x1 - x <= ez ? 'out' : null }; } } }
-    if (lane === 'P') { const arr = P.data.P, ri = laneRows(arr, c2 => c2.at + c2.dur); for (let i = arr.length - 1; i >= 0; i--) { const pt = arr[i], x0 = xOf(pt.at), x1 = xOf(pt.at + pt.dur); if (x >= x0 && x < x1 && inRow(LY.P, ri, pt.id)) { const ez = Math.min(9, (x1 - x0) / 3); return { kind: 'P', pt, edge: x - x0 < ez ? 'in' : x1 - x <= ez ? 'out' : null }; } } }
-    if (lane === 'V2') { const arr = P.data.V2 || []; for (let i = arr.length - 1; i >= 0; i--) { const o = arr[i], x0 = xOf(o.at), x1 = xOf(o.at + o.dur); if (x >= x0 && x < x1) { const ez = Math.min(9, (x1 - x0) / 3); return { kind: 'V2', o, edge: x - x0 < ez ? 'in' : x1 - x <= ez ? 'out' : null }; } } }
-    if (lane === 'A2') { const arr = P.data.A2; for (let i = arr.length - 1; i >= 0; i--) { const a = arr[i], x0 = xOf(a.at), x1 = xOf(a.at + a.out - a.in); if (x >= x0 && x < x1) { const ez = Math.min(9, (x1 - x0) / 3); return { kind: 'A2', a2: a, edge: x - x0 < ez ? 'in' : x1 - x <= ez ? 'out' : null }; } } }
-    if (lane === 'A1') for (const a of P.data.A1) { const x0 = xOf(a.at), x1 = xOf(a.at + a.dur); if (x >= x0 && x < x1) { const ez = Math.min(9, (x1 - x0) / 3); return { kind: 'A1', clip: P.clip(a.clip), a, edge: x - x0 < ez ? 'in' : x1 - x <= ez ? 'out' : null }; } }
+    if (lane === 'S') { const ri = laneRows(P.data.S, c2 => c2.at + c2.dur); for (let i = P.data.S.length - 1; i >= 0; i--) { const sc2 = P.data.S[i], x0 = xOf(sc2.at), x1 = xOf(sc2.at + sc2.dur); if (x >= x0 && x < x1 && inRow(LY.S, ri, sc2.id)) { const ez = Math.min(COARSE ? 16 : 9, (x1 - x0) / 3); return { kind: 'S', s: sc2, edge: x - x0 < ez ? 'in' : x1 - x <= ez ? 'out' : null }; } } }
+    if (lane === 'P') { const arr = P.data.P, ri = laneRows(arr, c2 => c2.at + c2.dur); for (let i = arr.length - 1; i >= 0; i--) { const pt = arr[i], x0 = xOf(pt.at), x1 = xOf(pt.at + pt.dur); if (x >= x0 && x < x1 && inRow(LY.P, ri, pt.id)) { const ez = Math.min(COARSE ? 16 : 9, (x1 - x0) / 3); return { kind: 'P', pt, edge: x - x0 < ez ? 'in' : x1 - x <= ez ? 'out' : null }; } } }
+    if (lane === 'V2') { const arr = P.data.V2 || []; for (let i = arr.length - 1; i >= 0; i--) { const o = arr[i], x0 = xOf(o.at), x1 = xOf(o.at + o.dur); if (x >= x0 && x < x1) { const ez = Math.min(COARSE ? 16 : 9, (x1 - x0) / 3); return { kind: 'V2', o, edge: x - x0 < ez ? 'in' : x1 - x <= ez ? 'out' : null }; } } }
+    if (lane === 'A2') { const arr = P.data.A2; for (let i = arr.length - 1; i >= 0; i--) { const a = arr[i], x0 = xOf(a.at), x1 = xOf(a.at + a.out - a.in); if (x >= x0 && x < x1) { const ez = Math.min(COARSE ? 16 : 9, (x1 - x0) / 3); return { kind: 'A2', a2: a, edge: x - x0 < ez ? 'in' : x1 - x <= ez ? 'out' : null }; } } }
+    if (lane === 'A1') for (const a of P.data.A1) { const x0 = xOf(a.at), x1 = xOf(a.at + a.dur); if (x >= x0 && x < x1) { const ez = Math.min(COARSE ? 16 : 9, (x1 - x0) / 3); return { kind: 'A1', clip: P.clip(a.clip), a, edge: x - x0 < ez ? 'in' : x1 - x <= ez ? 'out' : null }; } }
     return { kind: 'lane', lane };
   }
   function pos(e) { const r = tl.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
@@ -532,8 +532,22 @@
   }
 
   /* ---------- 마우스 ---------- */
-  tl.addEventListener('mousedown', e => {
-    if (e.button !== 0) return;
+  /* 태블릿·터치: 포인터 이벤트로 통일. 손가락 두 개는 핀치 줌 */
+  const tlPtrs = new Map(); let pinch = null;
+  const COARSE = typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
+  tl.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    tlPtrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    try { tl.setPointerCapture(e.pointerId); } catch (e2) {}
+    if (tlPtrs.size === 2) {                              // 두 손가락 → 진행 중 드래그 취소, 핀치 시작
+      const [a, b] = [...tlPtrs.values()];
+      if (drag && drag.type === 'scrub' && !playing && !shuttle) setRScale(1);   // 스크럽 중이던 반해상도 복귀
+      drag = null; tl.style.cursor = 'default';
+      const r = tl.getBoundingClientRect(), midX = (a.x + b.x) / 2 - r.left;
+      pinch = { d0: Math.hypot(a.x - b.x, a.y - b.y), pxf0: pxf, midX };
+      return;
+    }
+    if (pinch) return;
     const { x, y } = pos(e); if (x < HEAD) return;
     stop(); showStage('tl');
     const h = hitTest(x, y);
@@ -592,7 +606,9 @@
     const first = P.clip(ids[0]);
     drag = { type: 'move', clip: h.clip, ids, x0: x, x, grab: x - xOf(first.at), moved: false, insert: P.clipIndex(ids[0]), shiftCtrl: e.shiftKey || ctrl };
   });
-  window.addEventListener('mousemove', e => {
+  window.addEventListener('pointermove', e => {
+    if (tlPtrs.has(e.pointerId)) tlPtrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinch) { if (tlPtrs.size >= 2) { const [a, b] = [...tlPtrs.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y); if (d > 8) setZoom(pinch.pxf0 * d / pinch.d0, pinch.midX); } return; }
     const { x, y } = pos(e);
     if (!drag) {
       const h = hitTest(x, y);
@@ -600,7 +616,7 @@
       const hname = hv => hv.kind === 'S' ? SB.plain(hv.s.text) : hv.kind === 'P' ? PT.label(hv.pt) : hv.kind === 'A2' ? '♪ ' + P.media(hv.a2.media).name : hv.kind === 'V2' ? '⧉ ' + P.media(hv.o.media).name : P.media(hv.clip.media).name;
       const prevEdge = hover && hover.edge, prevClip = hid(hover);
       hover = /^(V|A1|S|P|A2|V2)$/.test(h.kind) ? h : null;
-      const phNear = Math.abs(x - xOf(ph)) <= 5 && x >= HEAD;
+      const phNear = Math.abs(x - xOf(ph)) <= (COARSE ? 11 : 5) && x >= HEAD;
       tl.style.cursor = h.kind === 'marker' ? 'pointer' : hover && hover.edge ? ((e.ctrlKey || e.metaKey) && hover.kind === 'V' ? 'col-resize' : 'ew-resize') : phNear ? 'grab' : hover ? (e.altKey && hover.kind === 'V' ? 'move' : 'grab') : (x >= HEAD ? 'text' : 'default');
       if (x >= HEAD && y >= 0 && y <= TH) $('hover').textContent = tc(Math.max(0, frameOf(x))) + (hover ? ' · ' + hname(hover) : ''); else $('hover').textContent = '';
       const curId = hid(hover);
@@ -699,16 +715,20 @@
       P.audioTrim(c.id, drag.side, v, { commit: false });
     }
   });
-  window.addEventListener('mouseup', () => {
+  const tlPtrUp = e => {
+    if (e && e.pointerId != null) tlPtrs.delete(e.pointerId);
+    if (pinch && tlPtrs.size < 2) pinch = null;
     if (!drag) return;
     const d = drag; drag = null; tl.style.cursor = 'default';
     if (d && d.type === 'scrub') { if (d.raf) { cancelAnimationFrame(d.raf); if (d.px != null) ph = clamp(Math.round(frameOf(d.px)), 0, Math.max(0, P.total() - 1)); } if (!playing && !shuttle) setRScale(1); setPH(ph, { noScroll: true }); }
     if (d.type === 'move' && d.moved) P.moveClips(d.ids, d.insert);
     else if (d.type === 'move' && d.ids.length > 1 && !d.shiftCtrl) select(d.clip.id);   // 여러 개 중 하나를 그냥 클릭 → 그것만
     if (d.type === 'mkmove') { dirty = true; refreshMarkerList(); }
-    if (/^(trim|atrim|strim|smove|ptrim|pmove|mtrim|mmove|slip|roll)$/.test(d.type)) { dirty = true; uiRefresh(); if (d.type === 'strim' || d.type === 'smove') refreshSubPanel(); if (d.type === 'ptrim' || d.type === 'pmove') refreshPartPanel(); if (d.type === 'mtrim' || d.type === 'mmove') refreshMusicPanel(); }
+    if (/^(trim|atrim|strim|smove|ptrim|pmove|mtrim|mmove|slip|roll|v2move|v2trim)$/.test(d.type)) { dirty = true; uiRefresh(); if (d.type === 'strim' || d.type === 'smove') refreshSubPanel(); if (d.type === 'ptrim' || d.type === 'pmove') refreshPartPanel(); if (d.type === 'mtrim' || d.type === 'mmove') refreshMusicPanel(); if (d.type === 'v2move' || d.type === 'v2trim') refreshV2Panel(); }
     draw();
-  });
+  };
+  window.addEventListener('pointerup', tlPtrUp);
+  window.addEventListener('pointercancel', tlPtrUp);
   tl.addEventListener('mouseleave', () => { if (!drag) { hover = null; $('hover').textContent = ''; draw(); } });
   tl.addEventListener('wheel', e => {
     e.preventDefault(); const { x } = pos(e);
@@ -831,10 +851,10 @@
   }
   let sbDrag = false;
   const sbFrame = e => { const r = sb.getBoundingClientRect(); const m = P.media(srcCur.media); return clamp((e.clientX - r.left) / r.width * m.dur, 0, m.dur - 1); };
-  sb.addEventListener('mousedown', e => { if (!srcCur) return; stop(); sbDrag = true; setSrcPH(sbFrame(e)); });
+  sb.addEventListener('pointerdown', e => { if (!srcCur) return; stop(); sbDrag = true; try { sb.setPointerCapture(e.pointerId); } catch (e2) {} setSrcPH(sbFrame(e)); });
   let sbRaf = 0, sbPx = 0;
-  window.addEventListener('mousemove', e => { if (!sbDrag || !srcCur) return; sbPx = sbFrame(e); if (!sbRaf) sbRaf = requestAnimationFrame(() => { sbRaf = 0; if (sbDrag && srcCur) setSrcPH(sbPx); }); });
-  window.addEventListener('mouseup', () => { sbDrag = false; });
+  window.addEventListener('pointermove', e => { if (!sbDrag || !srcCur) return; sbPx = sbFrame(e); if (!sbRaf) sbRaf = requestAnimationFrame(() => { sbRaf = 0; if (sbDrag && srcCur) setSrcPH(sbPx); }); });
+  window.addEventListener('pointerup', () => { sbDrag = false; }); window.addEventListener('pointercancel', () => { sbDrag = false; });
   new ResizeObserver(() => { if (stage === 'src') resizeSrcBar(); }).observe(sb.parentElement);
 
   /* 두 화면 미리보기 — 슬립(시작·끝)·롤(앞 끝·뒤 시작). 왼쪽·오른쪽 각각 원본 프레임 하나 */
@@ -956,7 +976,7 @@
     }
   });
   // 버튼·슬라이더에 포커스가 남으면 Space·화살표가 거기로 가므로 놓는 즉시 풀어 준다
-  document.addEventListener('mouseup', () => { const a = document.activeElement; if (a && (a.tagName === 'BUTTON' || a.type === 'range')) a.blur(); });
+  document.addEventListener('pointerup', () => { const a = document.activeElement; if (a && (a.tagName === 'BUTTON' || a.type === 'range')) a.blur(); });
   function toggleSnap() { snap = !snap; $('btnSnap').classList.toggle('on', snap); toast(snap ? '스냅 켬' : '스냅 끔', 1200); }
 
   /* ---------- 트랜스포트·상단 버튼 ---------- */
@@ -1153,7 +1173,7 @@
       const cv = document.createElement('canvas'); cv.width = 240; cv.height = 135; el.appendChild(cv); partThumbs.set(def.id, cv);
       const b = document.createElement('b'); b.textContent = def.name; el.appendChild(b);
       const sm = document.createElement('small'); sm.textContent = def.dur + '초' + (meta.behind ? ' · 인물 뒤' : ''); el.appendChild(sm);
-      el.onmousedown = e => { if (e.button !== 0) return; e.preventDefault(); partDrag = { part: def.id, dur: P.partDefault(def.id).dur, x: e.clientX, y: e.clientY, moved: false, overTL: false, f: 0 }; };
+      el.onpointerdown = e => { if (e.pointerType === 'mouse' && e.button !== 0) return; e.preventDefault(); partDrag = { part: def.id, dur: P.partDefault(def.id).dur, x: e.clientX, y: e.clientY, moved: false, overTL: false, f: 0 }; };
       grid.appendChild(el);
     });
     paintPartThumbs();
@@ -1171,7 +1191,7 @@
     if (PT.behind(pt) && SG) SG.load().then(ok => { if (!ok) toast('인물 컷아웃 모델을 못 불러와 부품이 그냥 앞에 그려져요', 4000); });
     toast(PT.def(partId).name + ' 을 놓았어요 — 오른쪽에서 문구를 바꾸세요', 1800);
   }
-  window.addEventListener('mousemove', e => {
+  window.addEventListener('pointermove', e => {
     if (!partDrag) return;
     if (!partDrag.moved && Math.hypot(e.clientX - partDrag.x, e.clientY - partDrag.y) < 6) return;
     partDrag.moved = true;
@@ -1183,7 +1203,7 @@
     tl.style.cursor = over ? 'copy' : 'default';
     draw();
   });
-  window.addEventListener('mouseup', () => {
+  window.addEventListener('pointerup', () => {
     if (!partDrag) return;
     const d = partDrag; partDrag = null; $('partGhost').classList.add('hidden'); tl.style.cursor = 'default';
     if (!d.moved) placePart(d.part, ph);

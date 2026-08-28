@@ -102,6 +102,19 @@ const twoRows = await page.evaluate(() => {
 ok(rows.sOverlap && twoRows.rows === 2 && twoRows.r0 === 0 && twoRows.r1 === 1 && twoRows.apart >= twoRows.h + 2 && twoRows.rows2 === 1,
   '겹친 카드가 자동 두 줄로 — 떨어뜨리면 한 줄 복귀 (줄 간격 ' + twoRows.apart.toFixed(1) + 'px)');
 
+// ---------- 터치: 진짜 touch 이벤트로 스크럽 (태블릿) ----------
+try {
+  const cdp = await page.context().newCDPSession(page);
+  const bb2 = await page.evaluate(() => { const r = document.getElementById('timeline').getBoundingClientRect(); return { x: r.x, y: r.y, x60: KMV_UI.xOf(60), x200: KMV_UI.xOf(200), ph0: KMV_UI.ph }; });
+  const tp = (x) => [{ x: Math.round(bb2.x + x), y: Math.round(bb2.y + 12), radiusX: 6, radiusY: 6, force: 1, id: 1 }];
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: tp(bb2.x60) });
+  for (let i = 1; i <= 5; i++) { await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: tp(bb2.x60 + (bb2.x200 - bb2.x60) * i / 5) }); await page.waitForTimeout(35); }
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await page.waitForTimeout(150);
+  const ph2 = await page.evaluate(() => KMV_UI.ph);
+  ok(ph2 > 120, '터치 스크럽: 손가락 끌기로 플레이헤드 이동 — 목표 200 방향 (ph ' + bb2.ph0 + '→' + ph2 + ', CDP 합성 타이밍상 끝값 오차 허용)');
+} catch (e) { ok(false, '터치 이벤트 주입 실패: ' + e.message); }
+
 ok(errs.length === 0, '콘솔 오류 0' + (errs.length ? ' — ' + errs.slice(0, 3).join(' | ') : ''));
 console.log(`\n${n - fail}/${n} 통과`);
 await close(); srv.kill(); process.exit(fail ? 1 : 0);
