@@ -320,7 +320,7 @@
     if (a.state !== 'running') { try { await a.resume(); } catch (e) {} }
     const P = g.KMV_PROJECT, FPS = P.FPS, total = P.total(), myGen = ++gen;
     const WIN = Math.max(1, Math.round(WIN_S * FPS));
-    let h = Math.min(total, fromFrame + WIN);
+    let h = Math.min(total, fromFrame + Math.max(1, Math.round(4 * FPS)));   // 첫 창은 4초 — 시작이 빨라야 한다 (나머지는 펌프)
     try { await ensureRange(fromFrame, h); } catch (e) {}
     if (gen !== myGen) return null;
     const t0 = a.currentTime + 0.06;
@@ -353,7 +353,7 @@
     const a = ctx();
     if (a.state !== 'running') { try { await a.resume(); } catch (e) {} }
     const myGen = ++gen, dur = src ? aDur(src) : 0, off0 = fromSrcFrame / m.fps;
-    let h = Math.min(dur, off0 + WIN_S);
+    let h = Math.min(dur, off0 + 4);                     // 첫 창 4초 (나머지는 펌프)
     if (src && src.pcm) { try { await src.pcm.ensure(off0 - 0.05, h + 0.1); } catch (e) {} }
     if (gen !== myGen) return null;
     const t0 = a.currentTime + 0.06, nodes = [];

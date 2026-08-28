@@ -3,6 +3,7 @@
    ------------------------------------------------------------
    · 디먹스: mp4box.js (H.264 mp4/mov). HEVC·긴 파일은 껍데기 몫 → 안내.
    · 디코드: WebCodecs VideoDecoder. GOP(키프레임) 단위로 풀고 LRU 캐시.
+     캐시는 VideoFrame 이 아니라 ImageBitmap — 하드웨어 디코더의 출력 풀(몇 장)을 즉시 돌려준다.
      스크럽은 "최신 요청만" 디코드(중간 요청은 버림) → 가장 가까운 캐시 프레임 즉시, 정확 프레임 후속.
    · 오디오(원본): 통 PCM 을 올리지 않는다 — 압축 샘플(AAC·opus)만 두고
      필요한 구간을 AudioDecoder 로 8초 청크 단위 디코드(전 소스 합계 96MB LRU).
@@ -17,7 +18,8 @@
 (function (g) {
   'use strict';
 
-  const CACHE_MAX = 150;               // VideoFrame 캐시 상한 (설계서 ≈90, 재생 여유분)
+  const CACHE_MAX = 150;               // 프레임 캐시 장수 상한 (설계서 ≈90, 재생 여유분)
+  const CACHE_BYTES = 480 * 1024 * 1024;   // 프레임 캐시 바이트 예산 (ImageBitmap RGBA 기준)
   const THUMB_W = 160, THUMB_H = 90;
   // 브라우저판 원본 상한. 데스크톱 껍데기(KMV_SHELL)가 붙으면 프록시 기준으로 limits 를 바꾼다.
   // 소리가 스트리밍이 된 뒤(7·8단계) 10분 → 15분 상향. 파일 크기 상한은 그대로(압축 샘플이 통째로 메모리).
@@ -453,12 +455,14 @@
       this.fps = Math.abs(fps - Math.round(fps)) < 0.06 ? Math.round(fps) : Math.round(fps * 100) / 100;
       this.durSec = span;
       this.cache = new Map();
-      this.cacheMax = this.w * this.h > 2.2e6 ? 60 : CACHE_MAX;   // 4K 급은 캐시를 줄인다 (VideoFrame 메모리)
+      // 캐시는 ImageBitmap(RGBA) — 바이트 예산으로 상한 (1080p ≈57장 · 4K ≈20장)
+      this.cacheMax = Math.max(20, Math.min(CACHE_MAX, Math.floor(CACHE_BYTES / (this.w * this.h * 4))));
+      this._bmp = new Set(); this._disposed = false;
       this.decoder = null; this.chain = Promise.resolve(); this.latest = -1;
       this.thumbs = []; this.thumbEvery = Math.max(1, Math.round(this.fps)); this.motion = null; this.peaks = null;
       this.analyzed = false; this.analyzing = false;
     }
-    dispose() { if (this.pcm) this.pcm.dispose(); this.cache.forEach(f => { try { f.close(); } catch (e) {} }); this.cache.clear(); try { if (this.decoder) this.decoder.close(); } catch (e) {} this.thumbs.forEach(b => b.close && b.close()); }
+    dispose() { this._disposed = true; if (this.pcm) this.pcm.dispose(); this.cache.forEach(f => { try { f.close(); } catch (e) {} }); this.cache.clear(); try { if (this.decoder) this.decoder.close(); } catch (e) {} this.thumbs.forEach(b => b.close && b.close()); }
 
     gopOf(idx) { let lo = 0, hi = this.gops.length - 1; while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (this.gops[mid].first <= idx) lo = mid; else hi = mid - 1; } return lo; }
     cached(idx) { const f = this.cache.get(idx); if (f) { this.cache.delete(idx); this.cache.set(idx, f); } return f || null; }
@@ -487,12 +491,21 @@
       if (this.decoder && this.decoder.state === 'configured') return;
       if (this.decoder) { try { this.decoder.close(); } catch (e) {} }
       this.decoder = new VideoDecoder({
+        /* 실크롬 하드웨어 디코더의 출력 표면(VideoFrame)은 몇 장짜리 풀이다 — 닫지 않고
+           들고 있으면 디코더가 출력을 멈춘다(소프트웨어 디코드인 headless 는 안 걸리는 제약).
+           → 받자마자 ImageBitmap 으로 복사하고 VideoFrame 은 즉시 닫아 풀에 돌려준다.
+           캐시에는 비트맵만 남는다(그리기 호환 — drawFit·seg·필름스트립 전부 drawImage). */
         output: frame => {
           const idx = this.presOfUs.get(frame.timestamp);
           if (idx == null || idx < this.keepFrom) { frame.close(); return; }
-          const old = this.cache.get(idx); if (old) { try { old.close(); } catch (e) {} this.cache.delete(idx); }
-          this.cache.set(idx, frame);
-          this._evict(this.keepFrom);
+          const job = createImageBitmap(frame).then(bmp => {
+            try { frame.close(); } catch (e) {}
+            if (this._disposed || idx < this.keepFrom) { bmp.close(); return; }
+            const old = this.cache.get(idx); if (old) { try { old.close(); } catch (e) {} this.cache.delete(idx); }
+            this.cache.set(idx, bmp);
+            this._evict(this.keepFrom);
+          }).catch(() => { try { frame.close(); } catch (e) {} }).finally(() => this._bmp.delete(job));
+          this._bmp.add(job);
         },
         error: e => { console.error('[KMV media] decoder', e); this._decErr = e; },
       });
@@ -500,6 +513,7 @@
       this.decoder.configure(cfg);
       this.keepFrom = 0;
     }
+    _settle() { return this._bmp.size ? Promise.all(Array.from(this._bmp)).then(() => {}) : Promise.resolve(); }
     async _decodeGop(gi, target) {
       this._ensureDecoder();
       const gp = this.gops[gi];
@@ -512,6 +526,7 @@
         this.decoder.decode(new EncodedVideoChunk({ type: s.key ? 'key' : 'delta', timestamp: s.us, duration: Math.round(s.dur * 1e6 / this.ts), data: s.data }));
       }
       try { await this.decoder.flush(); } catch (e) { this._decErr = e; }
+      await this._settle();                                        // 비트맵 복사 완료까지 (cached 가 보이도록)
       if (this._decErr) { try { this.decoder.close(); } catch (e) {} this.decoder = null; }
     }
     /* ---------- 재생 스트림 ----------
@@ -532,7 +547,7 @@
     stopStream() { if (this._stream) this._stream.alive = false; this._stream = null; }
     _startStream(idx) {
       const st = this._stream = { alive: true, target: idx, base: idx, fed: idx - 1 };
-      const AHEAD = Math.max(20, Math.min((this.cacheMax || CACHE_MAX) - 20, Math.round(this.fps * 2)));
+      const AHEAD = Math.max(10, Math.min((this.cacheMax || CACHE_MAX) - 8, Math.round(this.fps * 2)));
       this.chain = this.chain.then(async () => {
         if (!st.alive) return;
         try { if (this.decoder) this.decoder.close(); } catch (e) {}
@@ -540,7 +555,9 @@
         this.keepFrom = Math.max(0, st.target - 6);
         this._decErr = null;
         let gi = this.gopOf(st.base), i = this.gops[gi].dec;
+        const i0 = i, tp0 = performance.now();            // 페이스: 첫 12장은 즉시, 이후 실시간 2배 — 시작 폭주가 소리 디코드를 굶기지 않게
         while (st.alive && this._stream === st && i < this.dec.length) {
+          if (i - i0 > 12 + (performance.now() - tp0) / 1000 * this.fps * 2) { await new Promise(r => setTimeout(r, 8)); continue; }
           const sm = this.dec[i];
           const pres = this.presOfUs.get(sm.us);
           if (pres != null && pres > st.fed) st.fed = pres;
@@ -550,7 +567,7 @@
           try { this.decoder.decode(new EncodedVideoChunk({ type: sm.key ? 'key' : 'delta', timestamp: sm.us, duration: Math.round(sm.dur * 1e6 / this.ts), data: sm.data })); } catch (e) { this._decErr = e; break; }
           i++;
         }
-        if (st.alive && this._stream === st && i >= this.dec.length) { try { await this.decoder.flush(); } catch (e) {} }   // 파일 끝에서만 flush
+        if (st.alive && this._stream === st && i >= this.dec.length) { try { await this.decoder.flush(); } catch (e) {} await this._settle(); }   // 파일 끝에서만 flush
         if (this._decErr) { try { this.decoder.close(); } catch (e) {} this.decoder = null; }
       }).catch(() => null);
     }
@@ -572,6 +589,7 @@
     }
     prefetch(idx) {
       idx = Math.max(0, Math.min(this.frames - 1, idx | 0));
+      if (this._stream && this._stream.alive) return;              // 재생 스트림이 앞서 채우는 중 — 뒤에 줄서지 않는다
       if (this.cache.has(idx) || this._pf === this.gopOf(idx)) return;
       const gi = this.gopOf(idx); this._pf = gi;
       this.chain = this.chain.then(async () => { if (!this.cache.has(idx)) await this._decodeGop(gi, this.gops[gi].first); }).catch(() => null);

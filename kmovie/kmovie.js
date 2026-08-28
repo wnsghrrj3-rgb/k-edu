@@ -119,8 +119,9 @@
     stopShuttle(); stopSrc();
     if (ph >= tot - 1) ph = 0;
     playStart = ph; playing = true; shuttle = 1; $('tPlay').textContent = '❚❚ 정지';
-    liveMode(true); feedStream(ph); renderPreview();
-    A.play(ph).then(() => { cancelAnimationFrame(rafId); rafId = requestAnimationFrame(loop); });
+    liveMode(true); renderPreview();
+    // 소리 선디코드가 끝난 뒤에 영상 스트림을 켠다 — 같이 켜면 시작 몇 초를 영상 디코드가 소리를 굶긴다
+    A.play(ph).then(() => { feedStream(ph); cancelAnimationFrame(rafId); rafId = requestAnimationFrame(loop); });
   }
   function stop() {
     stopShuttle(); stopSrc();
@@ -700,8 +701,8 @@
     srcPlaying = true; shuttle = 1; $('tPlay').textContent = '❚❚ 정지';
     liveMode(true); renderSource();
     const from = srcCur.ph;
-    { const src = M.get(m.id); if (src && src.streamTo) src.streamTo(from); }
     A.playSource(m.id, from).then(() => {
+      { const src = M.get(m.id); if (src && src.streamTo) src.streamTo(from); }
       cancelAnimationFrame(srcRaf);
       const loop = () => {
         if (!srcPlaying) return;
