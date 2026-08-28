@@ -4,3 +4,5 @@ cd "$(dirname "$0")" && mkdir -p fx
 ffmpeg -hide_banner -loglevel error -y -f lavfi -i "testsrc2=size=640x360:rate=30:duration=6" -f lavfi -i "sine=frequency=440:duration=6" -c:v libvpx-vp9 -b:v 600k -g 15 -c:a libopus -pix_fmt yuv420p fx/a.mp4
 ffmpeg -hide_banner -loglevel error -y -f lavfi -i "smptebars=size=640x360:rate=30:duration=6" -f lavfi -i "sine=frequency=660:duration=6" -c:v libvpx-vp9 -b:v 600k -g 15 -c:a libopus -pix_fmt yuv420p fx/b.mp4
 ls -la fx
+ffmpeg -hide_banner -loglevel error -y -f lavfi -i "testsrc2=size=1920x1080:rate=60:duration=12" -f lavfi -i "sine=frequency=440:duration=12" -c:v libvpx-vp9 -b:v 2M -cpu-used 5 -row-mt 1 -g 30 -c:a libopus -pix_fmt yuv420p -movflags +faststart fx/big.mp4
+ls -la fx

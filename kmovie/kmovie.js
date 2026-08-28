@@ -68,22 +68,40 @@
   let saveT = 0;
   function scheduleSave() { clearTimeout(saveT); saveT = setTimeout(() => DB.putKV('project', P.toJSON()).catch(e => console.warn('save', e)), 400); }
 
-  /* ---------- 미리보기 ---------- */
+  /* ---------- 미리보기 ----------
+     재생·셔틀 중엔 ① 미리보기를 1/2 해상도로(멈추면 원본 화질로 복귀) ② GOP 통 디코드(getFrame) 대신
+     재생 스트림(streamTo)이 캐시를 앞서 채우고 ③ 분석은 쉰다. 프리미어의 "재생 해상도 1/2"와 같은 원리. */
   const pv = $('preview'), pctx = pv.getContext('2d');
   let segToast = 0;
+  const live = () => playing || srcPlaying || shuttle !== 0;      // 어떤 형태로든 굴러가는 중
+  function setRScale(sc) {
+    const w = Math.round(PW * sc), h = Math.round(PH * sc);
+    if (pv.width !== w) { pv.width = w; pv.height = h; }
+  }
+  function liveMode(on) { setRScale(on ? 0.5 : 1); M.setAnalyzePaused(on); if (!on) M.stopStreams(); }
   function renderPreview() {
     if (stage === 'src') { renderSource(); return; }
     $('stageLbl').classList.add('hidden');
-    const r = R.draw(pctx, PW, PH, ph);
-    if (!r.exact && r.src) {
+    const W = pv.width, H = pv.height;
+    const r = R.draw(pctx, W, H, ph);
+    if (!r.exact && r.src && !live()) {
       const want = ph, job = ++previewJob;
-      if (r.segPending && !playing) {
+      if (r.segPending) {
         if (SG && SG.status() !== 'ready' && !segToast) { segToast = 1; toast('인물 컷아웃 모델을 처음 한 번 불러와요 (12MB)', 3500); }
-        r.src.getFrame(r.idx, true).then(f => f && SG.mask(r.media, r.idx, f)).then(() => { if (job === previewJob && ph === want && !playing && !drag) renderPreview(); }).catch(() => {});
-      } else r.src.getFrame(r.idx, true).then(f => { if (f && job === previewJob && ph === want && !playing && !drag) renderPreview(); }).catch(() => {});
+        r.src.getFrame(r.idx, true).then(f => f && SG.mask(r.media, r.idx, f)).then(() => { if (job === previewJob && ph === want && !live() && !drag) renderPreview(); }).catch(() => {});
+      } else r.src.getFrame(r.idx, true).then(f => { if (f && job === previewJob && ph === want && !live() && !drag) renderPreview(); }).catch(() => {});
     }
-    if (r.src && playing) r.src.prefetch(r.idx + 45);
     $('empty').classList.toggle('hidden', P.total() > 0 || P.data.P.length > 0);
+  }
+  /* 재생 스트림 먹이기: 지금 클립 + 경계 1초 전부터 다음 클립 미리 */
+  function feedStream(t) {
+    const c = P.clipAt(t); if (!c) return;
+    const src = M.get(c.media);
+    if (src && src.streamTo && !c.freeze) src.streamTo(P.srcFrame(c, t));
+    if (t >= c.at + c.dur - FPS) {
+      const nx = P.data.V[P.clipIndex(c.id) + 1];
+      if (nx && nx.media !== c.media && !nx.freeze) { const ns = M.get(nx.media); if (ns && ns.streamTo) ns.streamTo(nx.in); }
+    }
   }
   function setPH(f, opts) {
     const tot = P.total();
@@ -101,17 +119,19 @@
     stopShuttle(); stopSrc();
     if (ph >= tot - 1) ph = 0;
     playStart = ph; playing = true; shuttle = 1; $('tPlay').textContent = '❚❚ 정지';
+    liveMode(true); feedStream(ph); renderPreview();
     A.play(ph).then(() => { cancelAnimationFrame(rafId); rafId = requestAnimationFrame(loop); });
   }
   function stop() {
     stopShuttle(); stopSrc();
-    if (!playing) return;
+    if (!playing) { if (!live()) liveMode(false); return; }
     playing = false; shuttle = 0; A.stop(); cancelAnimationFrame(rafId);
     $('tPlay').textContent = '▶ 재생';
+    liveMode(false);
     setPH(ph);
   }
   /* ---------- JKL 셔틀 ---------- 1× 는 소리 있는 재생(play/playSrc), ±2·±4·역방향은 무음 프레임 스텝 */
-  function stopShuttle() { if (shRaf) cancelAnimationFrame(shRaf); shRaf = 0; if (shuttle !== 1 && shuttle !== 0) { shuttle = 0; $('tPlay').textContent = '▶ 재생'; } }
+  function stopShuttle() { if (shRaf) cancelAnimationFrame(shRaf); shRaf = 0; if (shuttle !== 1 && shuttle !== 0) { shuttle = 0; $('tPlay').textContent = '▶ 재생'; if (!playing && !srcPlaying) { liveMode(false); renderPreview(); } } }
   function shuttleTo(rate) {
     if (rate === 0) { stop(); return; }
     if (rate === 1) { if (stage === 'src') { if (!srcPlaying) { stopShuttle(); playSrc(); } } else if (!playing) { stopShuttle(); play(); } shuttle = 1; return; }
@@ -119,13 +139,25 @@
     if (srcPlaying) { srcPlaying = false; A.stop(); cancelAnimationFrame(srcRaf); }
     cancelAnimationFrame(shRaf);
     shuttle = rate; shT = performance.now(); shAcc = 0; $('tPlay').textContent = '❚❚ ' + (rate > 0 ? '▶' : '◀') + Math.abs(rate) + '×';
+    liveMode(true); stage === 'src' ? renderSource() : renderPreview();
     const step = () => {
       if (shuttle !== rate) return;
       const now = performance.now(); shAcc += (now - shT) / 1000 * rate * (stage === 'src' && srcCur ? P.media(srcCur.media).fps : FPS); shT = now;
       const df = shAcc > 0 ? Math.floor(shAcc) : Math.ceil(shAcc); shAcc -= df;
       if (df) {
-        if (stage === 'src' && srcCur) { const m = P.media(srcCur.media), nf = clamp(srcCur.ph + df, 0, m.dur - 1); if (nf === srcCur.ph) { stopShuttle(); $('tPlay').textContent = '▶ 재생'; return; } setSrcPH(nf); }
-        else { const tot = P.total(), nf = clamp(ph + df, 0, Math.max(0, tot - 1)); if (nf === ph) { stopShuttle(); $('tPlay').textContent = '▶ 재생'; return; } setPH(nf); const c = P.clipAt(ph), s2 = c && M.get(c.media); if (s2) s2.prefetch(P.srcFrame(c, ph) + Math.sign(rate) * 30); }
+        if (stage === 'src' && srcCur) {
+          const m = P.media(srcCur.media), src = M.get(m.id), nf = clamp(srcCur.ph + df, 0, m.dur - 1);
+          if (nf === srcCur.ph) { stopShuttle(); $('tPlay').textContent = '▶ 재생'; return; }
+          if (src) { if (rate > 0 && src.streamTo) src.streamTo(nf); else src.getFrame(nf, true).catch(() => {}); }
+          setSrcPH(nf);
+        }
+        else {
+          const tot = P.total(), nf = clamp(ph + df, 0, Math.max(0, tot - 1));
+          if (nf === ph) { stopShuttle(); $('tPlay').textContent = '▶ 재생'; return; }
+          setPH(nf);
+          const c = P.clipAt(ph), s2 = c && M.get(c.media);
+          if (s2) { if (rate > 0) feedStream(ph); else s2.getFrame(P.srcFrame(c, ph), true).catch(() => {}); }
+        }
       }
       shRaf = requestAnimationFrame(step);
     };
@@ -142,7 +174,7 @@
     const now = A.now(); if (now == null) return;
     const f = Math.max(playStart, Math.floor(now)), tot = P.total();
     if (f >= tot) { ph = tot - 1; stop(); return; }
-    if (f !== ph) { ph = Math.max(0, f); $('tcCur').textContent = tc(ph); renderPreview(); ensureVisible(ph); draw(); }
+    if (f !== ph) { ph = Math.max(0, f); $('tcCur').textContent = tc(ph); feedStream(ph); renderPreview(); ensureVisible(ph); draw(); }
     rafId = requestAnimationFrame(loop);
   }
   function togglePlay() { if (stage === 'src') { srcPlaying || shuttle ? stop() : playSrc(); return; } (playing || shuttle) ? stop() : play(); }
@@ -652,19 +684,23 @@
     const lbl = $('stageLbl'); lbl.classList.remove('hidden'); lbl.textContent = '소스 · ' + m.name + ' · ' + srcTc(srcCur.ph) + ' / ' + tc(Math.round(m.dur * FPS / m.fps));
     $('tcCur').textContent = srcTc(srcCur.ph); $('tcTot').textContent = tc(Math.round(m.dur * FPS / m.fps));
     if (!src) return;
-    const job = ++srcJob, idx = srcCur.ph;
-    if (m.kind === 'image') { R.drawSource(pctx, PW, PH, m.id, 0); return; }
+    const job = ++srcJob, idx = srcCur.ph, W = pv.width, H = pv.height;
+    const paint = f => { pctx.setTransform(1, 0, 0, 1, 0, 0); pctx.fillStyle = '#000'; pctx.fillRect(0, 0, W, H); M.drawFit(pctx, f, W, H, src.rot); };
+    if (m.kind === 'image') { R.drawSource(pctx, W, H, m.id, 0); return; }
     const img = src.cached(idx);
-    if (img) { pctx.setTransform(1, 0, 0, 1, 0, 0); pctx.fillStyle = '#000'; pctx.fillRect(0, 0, PW, PH); M.drawFit(pctx, img, PW, PH, src.rot); if (srcPlaying) src.prefetch(idx + 45); return; }
-    const near = src.nearest(idx); if (near) { pctx.setTransform(1, 0, 0, 1, 0, 0); pctx.fillStyle = '#000'; pctx.fillRect(0, 0, PW, PH); M.drawFit(pctx, near, PW, PH, src.rot); }
-    src.getFrame(idx, true).then(f => { if (f && job === srcJob && stage === 'src' && srcCur && srcCur.ph === idx) { pctx.setTransform(1, 0, 0, 1, 0, 0); pctx.fillStyle = '#000'; pctx.fillRect(0, 0, PW, PH); M.drawFit(pctx, f, PW, PH, src.rot); } if (srcPlaying) src.prefetch(idx + 45); }).catch(() => {});
+    if (img) { paint(img); return; }
+    const near = src.nearest(idx); if (near) paint(near);
+    if (live()) return;                                       // 재생·셔틀 중엔 스트림이 채운다 — 통 디코드 금지
+    src.getFrame(idx, true).then(f => { if (f && job === srcJob && stage === 'src' && srcCur && srcCur.ph === idx) paint(f); }).catch(() => {});
   }
   function playSrc() {
     if (!srcCur || srcPlaying) return; const m = P.media(srcCur.media); if (m.kind === 'image') return;
     stopShuttle();
     if (srcCur.ph >= m.dur - 1) srcCur.ph = 0;
     srcPlaying = true; shuttle = 1; $('tPlay').textContent = '❚❚ 정지';
+    liveMode(true); renderSource();
     const from = srcCur.ph;
+    { const src = M.get(m.id); if (src && src.streamTo) src.streamTo(from); }
     A.playSource(m.id, from).then(() => {
       cancelAnimationFrame(srcRaf);
       const loop = () => {
@@ -672,13 +708,13 @@
         const now = A.now(); if (now == null) { srcRaf = requestAnimationFrame(loop); return; }
         const f = Math.max(from, Math.floor(now));
         if (f >= m.dur) { srcCur.ph = m.dur - 1; stopSrc(); $('tPlay').textContent = '▶ 재생'; setSrcPH(srcCur.ph); return; }
-        if (f !== srcCur.ph) setSrcPH(f);
+        if (f !== srcCur.ph) { const src = M.get(m.id); if (src && src.streamTo) src.streamTo(f); setSrcPH(f); }
         srcRaf = requestAnimationFrame(loop);
       };
       srcRaf = requestAnimationFrame(loop);
     });
   }
-  function stopSrc() { if (!srcPlaying) return; srcPlaying = false; shuttle = 0; A.stop(); cancelAnimationFrame(srcRaf); $('tPlay').textContent = '▶ 재생'; if (srcCur) setSrcPH(srcCur.ph); }
+  function stopSrc() { if (!srcPlaying) return; srcPlaying = false; shuttle = 0; A.stop(); cancelAnimationFrame(srcRaf); $('tPlay').textContent = '▶ 재생'; liveMode(false); if (srcCur) setSrcPH(srcCur.ph); }
   function srcMark(side) {
     if (stage !== 'src' || !srcCur) return toast('미디어 보관함에서 원본을 클릭해 소스 모니터를 먼저 열어요', 2000);
     const m = P.media(srcCur.media);

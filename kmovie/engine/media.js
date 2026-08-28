@@ -16,6 +16,8 @@
   const THUMB_W = 160, THUMB_H = 90;
   // 브라우저판 원본 상한. 데스크톱 껍데기(KMV_SHELL)가 붙으면 프록시 기준으로 limits 를 바꾼다.
   const limits = { maxFile: 700 * 1024 * 1024, maxSec: 10 * 60 };
+  let analyzePaused = false;                 // 재생·셔틀 중엔 분석을 쉬게 한다 (디코더 경쟁 방지)
+  function setAnalyzePaused(v) { analyzePaused = !!v; }
   const MP4BOX_URL = 'https://cdn.jsdelivr.net/npm/mp4box@0.5.2/dist/mp4box.all.min.js';
 
   const SRC = new Map();               // media.id → 런타임 소스
@@ -120,6 +122,7 @@
       this.fps = Math.abs(fps - Math.round(fps)) < 0.06 ? Math.round(fps) : Math.round(fps * 100) / 100;
       this.durSec = span;
       this.cache = new Map();
+      this.cacheMax = this.w * this.h > 2.2e6 ? 60 : CACHE_MAX;   // 4K 급은 캐시를 줄인다 (VideoFrame 메모리)
       this.decoder = null; this.chain = Promise.resolve(); this.latest = -1;
       this.thumbs = []; this.thumbEvery = Math.max(1, Math.round(this.fps)); this.motion = null; this.peaks = null;
       this.analyzed = false; this.analyzing = false;
@@ -134,15 +137,16 @@
       return best;
     }
     _evict(protectFrom) {
-      if (this.cache.size <= CACHE_MAX) return;
+      const MAXN = this.cacheMax || CACHE_MAX;
+      if (this.cache.size <= MAXN) return;
       // 1) 지금 GOP 앞쪽(이미 지나간) 프레임부터 버린다 — 재생·내보내기는 앞으로만 간다
       for (const [k, f] of this.cache) {
-        if (this.cache.size <= CACHE_MAX) return;
+        if (this.cache.size <= MAXN) return;
         if (k >= protectFrom) continue;
         this.cache.delete(k); try { f.close(); } catch (e) {}
       }
       // 2) 그래도 넘치면(긴 GOP) 목표에서 가장 먼 것부터 — 상한 2배까지만 허용
-      while (this.cache.size > CACHE_MAX * 2) {
+      while (this.cache.size > MAXN * 2) {
         let far = null, fd = -1;
         this.cache.forEach((f, k) => { const d = Math.abs(k - protectFrom); if (d > fd) { fd = d; far = k; } });
         const f = this.cache.get(far); this.cache.delete(far); try { f.close(); } catch (e) {}
@@ -179,10 +183,52 @@
       try { await this.decoder.flush(); } catch (e) { this._decErr = e; }
       if (this._decErr) { try { this.decoder.close(); } catch (e) {} this.decoder = null; }
     }
+    /* ---------- 재생 스트림 ----------
+       재생 중엔 getFrame(GOP 통 디코드 + flush) 대신 이 파이프라인이 캐시를 앞서 채운다.
+       매 프레임 streamTo(idx) 만 부르면 됨: 목표를 따라가며 순차 디코드, flush 없음(끝에서만),
+       목표보다 AHEAD 프레임 이상 앞서면 쉼. 목표가 뒤로 갔거나 창을 벗어나면 키프레임부터 재시작. */
+    streamTo(idx) {
+      idx = Math.max(0, Math.min(this.frames - 1, idx | 0));
+      this.keepFrom = Math.max(0, idx - 6);
+      const st = this._stream;
+      if (st && st.alive) {
+        st.target = idx;
+        if (idx >= st.base && idx <= st.fed + 1) return;      // 창 안 — 이어서 감
+        st.alive = false;                                     // 창 밖(점프·역방향) — 재시작
+      }
+      this._startStream(idx);
+    }
+    stopStream() { if (this._stream) this._stream.alive = false; this._stream = null; }
+    _startStream(idx) {
+      const st = this._stream = { alive: true, target: idx, base: idx, fed: idx - 1 };
+      const AHEAD = Math.max(20, Math.min((this.cacheMax || CACHE_MAX) - 20, Math.round(this.fps * 2)));
+      this.chain = this.chain.then(async () => {
+        if (!st.alive) return;
+        try { if (this.decoder) this.decoder.close(); } catch (e) {}
+        this.decoder = null; this._ensureDecoder();
+        this.keepFrom = Math.max(0, st.target - 6);
+        this._decErr = null;
+        let gi = this.gopOf(st.base), i = this.gops[gi].dec;
+        while (st.alive && this._stream === st && i < this.dec.length) {
+          const sm = this.dec[i];
+          const pres = this.presOfUs.get(sm.us);
+          if (pres != null && pres > st.fed) st.fed = pres;
+          if (st.fed > st.target + AHEAD) { await new Promise(r => setTimeout(r, 12)); continue; }   // 충분히 앞섬 — 쉼
+          while (this.decoder && this.decoder.decodeQueueSize > 24) await new Promise(r => setTimeout(r, 2));
+          if (this._decErr || !st.alive || this._stream !== st) break;
+          try { this.decoder.decode(new EncodedVideoChunk({ type: sm.key ? 'key' : 'delta', timestamp: sm.us, duration: Math.round(sm.dur * 1e6 / this.ts), data: sm.data })); } catch (e) { this._decErr = e; break; }
+          i++;
+        }
+        if (st.alive && this._stream === st && i >= this.dec.length) { try { await this.decoder.flush(); } catch (e) {} }   // 파일 끝에서만 flush
+        if (this._decErr) { try { this.decoder.close(); } catch (e) {} this.decoder = null; }
+      }).catch(() => null);
+    }
+
     /* 정확한 프레임. coalesce=true 면 스크럽용: 더 새 요청이 오면 이 요청은 버리고 null */
     getFrame(idx, coalesce) {
       idx = Math.max(0, Math.min(this.frames - 1, idx | 0));
       const hit = this.cached(idx); if (hit) return Promise.resolve(hit);
+      this.stopStream();
       if (coalesce) this.latest = idx;
       const run = this.chain.then(async () => {
         if (coalesce && this.latest !== idx) return null;
@@ -325,6 +371,7 @@
       dec.configure(cfg);
       for (let i = 0; i < src.dec.length; i++) {
         const s = src.dec[i];
+        while (analyzePaused && !err) await new Promise(r => setTimeout(r, 200));    // 재생이 끝날 때까지 양보
         while (dec.decodeQueueSize > 16) await new Promise(r => setTimeout(r, 4));
         if (err) break;
         dec.decode(new EncodedVideoChunk({ type: s.key ? 'key' : 'delta', timestamp: s.us, data: s.data }));
@@ -355,7 +402,8 @@
   }
 
   g.KMV_MEDIA = {
-    supported, open, analyze, drawFit, isAudioFile, limits,
+    supported, open, analyze, drawFit, isAudioFile, limits, setAnalyzePaused,
+    stopStreams: () => { SRC.forEach(s => { if (s.stopStream) s.stopStream(); }); },
     get: id => SRC.get(id) || null,
     has: id => SRC.has(id),
     remove: id => { const s = SRC.get(id); if (s) { s.dispose(); SRC.delete(id); } },

@@ -38,6 +38,14 @@
 - 모델(`engine/project.js`): slip · roll · insertRange(insert/overwrite/append) · removeClips · moveClips · copyClips/pasteClips · markers. `KMV_AUDIO.playSource`.
 - 검증: `test/model-cut.test.mjs`(node 51) · `test/ui-cut.mjs`(playwright headless 61, VP9 합성 원본).
 
+## 재생 성능 (2026-08-28, 실촬영본 끊김 수정)
+실촬영 52분 타임라인에서 재생 불가 수준 끊김 → 원인 3개 수정:
+- 재생 스트림(`media.js streamTo`): 재생·앞셔틀 중엔 GOP 통 디코드+flush 대신 플레이헤드를 앞서가는 순차 디코드(파일 끝에서만 flush). 컷 경계 1초 전 다음 클립 예열. 정지·스크럽은 기존 getFrame.
+- 분석 일시정지(`setAnalyzePaused`): 재생·셔틀 중엔 백그라운드 분석(전 프레임 디코드)이 쉼 — 디코더 경쟁 제거.
+- 재생 중 미리보기 1/2 해상도: 캔버스 백킹만 960×540 (LUT 업로드·합성 4배 절감), 멈추면 원본 화질 복귀. 내보내기는 그대로 원본 해상도.
+- 4K급(>2.2MP) 원본은 프레임 캐시 60으로 축소 (VideoFrame 메모리).
+검증: `test/ui-play-perf.mjs` — 1080p60 원본에서 구버전 headless 0fps(정지) 재현, 수정판은 진행·반해상도 전환/복귀·분석 일시정지/재개·픽셀 일치 통과.
+
 ## 파일
 - `index.html`, `kmovie.js` — UI·타임라인
 - `engine/shell.js` — 데스크톱 껍데기 접합점
