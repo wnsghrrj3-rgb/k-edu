@@ -20,6 +20,10 @@
     lower3rd:  { cat: 'info',   hold: [1.4, 4.3],  thumbT: 2.2 },
     counter:   { cat: 'info',   hold: [2.5, 3.35], thumbT: 2.6 },
     tag:       { cat: 'info',   hold: [0.9, 4.3],  thumbT: 2.0 },
+    quote:     { cat: 'title',  hold: [1.8, 5.7],  thumbT: 3.2 },
+    chapter:   { cat: 'title',  hold: [1.5, 4.1],  thumbT: 2.4 },
+    credits:   { cat: 'title',  hold: [3.4, 6.9],  thumbT: 4.0 },
+    list:      { cat: 'info',   hold: [2.6, 6.9],  thumbT: 4.0 },
     sweep:     { cat: 'behind', hold: null,        thumbT: 4.0, behind: true },
     lightleak: { cat: 'fx',     hold: null,        thumbT: 0.7 },
   };

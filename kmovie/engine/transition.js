@@ -4,20 +4,35 @@
    V 클립 경계에만. 클립 c 의 transIn = { type, dur(프레임), dir }.
    t ∈ [c.at, c.at+dur) 동안 이전 클립(핸들: out 너머 프레임, 없으면 마지막 프레임)과 합성.
    첫 클립의 transIn 은 검정(또는 흰색)에서 시작하는 페이드가 된다.
-   목록은 여기서 닫는다: cut · dissolve · dipBlack · dipWhite · lightleak(부품) · sweep · whip
+   목록은 여기서 닫는다(분류별):
+   기본     cut · dissolve · dipBlack · dipWhite
+   움직임   push(밀기) · cover(덮기) · zoom(줌) · whip(휩 팬)
+   닦기     wipe(와이프) · sweep(금선 스윕)
+   빛·질감  lightleak(광누출) · blur(블러 디졸브)
    길이 프리셋 3: short 0.3s / normal 0.6s / long 1.0s
    결정적: 같은 (u, type) → 같은 합성.
    ============================================================ */
 (function (g) {
   'use strict';
+  const CATS = [
+    { id: 'base',  name: '기본' },
+    { id: 'move',  name: '움직임' },
+    { id: 'wipe',  name: '닦기' },
+    { id: 'light', name: '빛·질감' },
+  ];
   const TYPES = [
-    { id: 'cut',       name: '컷' },
-    { id: 'dissolve',  name: '디졸브' },
-    { id: 'dipBlack',  name: '딥 투 블랙' },
-    { id: 'dipWhite',  name: '딥 투 화이트' },
-    { id: 'lightleak', name: '광누출' },
-    { id: 'sweep',     name: '스윕 와이프', dirs: ['ltr', 'rtl'] },
-    { id: 'whip',      name: '휩 팬', dirs: ['ltr', 'rtl', 'ttb', 'btt'] },
+    { id: 'cut',       name: '컷',          cat: 'base' },
+    { id: 'dissolve',  name: '디졸브',      cat: 'base' },
+    { id: 'dipBlack',  name: '딥 투 블랙',  cat: 'base' },
+    { id: 'dipWhite',  name: '딥 투 화이트', cat: 'base' },
+    { id: 'push',      name: '밀기',        cat: 'move', dirs: ['ltr', 'rtl', 'ttb', 'btt'] },
+    { id: 'cover',     name: '덮기',        cat: 'move', dirs: ['ltr', 'rtl', 'ttb', 'btt'] },
+    { id: 'zoom',      name: '줌',          cat: 'move', dirs: ['in', 'out'] },
+    { id: 'whip',      name: '휩 팬',       cat: 'move', dirs: ['ltr', 'rtl', 'ttb', 'btt'] },
+    { id: 'wipe',      name: '와이프',      cat: 'wipe', dirs: ['ltr', 'rtl', 'ttb', 'btt'] },
+    { id: 'sweep',     name: '금선 스윕',   cat: 'wipe', dirs: ['ltr', 'rtl'] },
+    { id: 'lightleak', name: '광누출',      cat: 'light' },
+    { id: 'blur',      name: '블러 디졸브', cat: 'light' },
   ];
   const DURS = [{ id: 'short', name: '짧게', f: 9 }, { id: 'normal', name: '보통', f: 18 }, { id: 'long', name: '길게', f: 30 }];
   const inOutCubic = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -86,9 +101,67 @@
         drawShift(ctx, tmp, W, H, horiz ? off - W * sgn : 0, horiz ? 0 : off - H * sgn, horiz, vel, 1);
         break;
       }
+      case 'push': case 'cover': {                      // 밀기: 둘이 같이 이동 / 덮기: 새 클립이 위로 미끄러져 들어옴
+        const horiz = dir === 'ltr' || dir === 'rtl', sgn = (dir === 'ltr' || dir === 'ttb') ? 1 : -1;
+        const e = inOutCubic(u), span = horiz ? W : H, off = e * span * sgn;
+        const tmp = apply._tmp2 || (apply._tmp2 = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(W, H) : document.createElement('canvas'));
+        if (tmp.width !== W || tmp.height !== H) { tmp.width = W; tmp.height = H; }
+        const tc = tmp.getContext('2d'); tc.setTransform(1, 0, 0, 1, 0, 0); tc.globalAlpha = 1; tc.clearRect(0, 0, W, H); tc.drawImage(ctx.canvas, 0, 0);
+        ctx.globalAlpha = 1;
+        if (type === 'push') {                          // 이전은 밀려 나가고
+          ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+          if (prev) ctx.drawImage(prev, horiz ? off : 0, horiz ? 0 : off);
+          else { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); }
+          ctx.drawImage(tmp, horiz ? off - span * sgn : 0, horiz ? 0 : off - span * sgn);
+        } else {                                        // 덮기: 이전은 제자리, 새 것이 위로
+          prevOr('#000');
+          ctx.save();
+          ctx.shadowColor = 'rgba(0,0,0,0.4)'; ctx.shadowBlur = 40;
+          ctx.drawImage(tmp, horiz ? off - span * sgn : 0, horiz ? 0 : off - span * sgn);
+          ctx.restore();
+        }
+        break;
+      }
+      case 'zoom': {                                    // 줌 디졸브: in = 이전이 커지며 새 것으로, out = 이전이 물러나며
+        const e = inOutCubic(u), grow = dir === 'out' ? 1 / (1 + e * 0.35) : 1 + e * 0.35;
+        ctx.globalAlpha = 1 - e;
+        ctx.save();
+        ctx.translate(W / 2, H / 2); ctx.scale(grow, grow); ctx.translate(-W / 2, -H / 2);
+        prevOr('#000');
+        ctx.restore();
+        break;
+      }
+      case 'wipe': {                                    // 직선 와이프 — 부드러운 경계, 장식 없음
+        const e = inOutCubic(u), horiz = dir === 'ltr' || dir === 'rtl', span = horiz ? W : H;
+        const fwd = dir === 'ltr' || dir === 'ttb', edge = fwd ? span * e : span * (1 - e), soft = span * 0.06;
+        ctx.save(); ctx.globalAlpha = 1; ctx.beginPath();
+        if (horiz) { if (fwd) ctx.rect(edge, 0, W - edge, H); else ctx.rect(0, 0, edge, H); }
+        else { if (fwd) ctx.rect(0, edge, W, H - edge); else ctx.rect(0, 0, W, edge); }
+        ctx.clip(); prevOr('#000'); ctx.restore();
+        const g0 = fwd ? edge - soft : edge, g1 = fwd ? edge : edge + soft;
+        const grd = horiz ? ctx.createLinearGradient(g0, 0, g1, 0) : ctx.createLinearGradient(0, g0, 0, g1);
+        grd.addColorStop(0, 'rgba(0,0,0,0)'); grd.addColorStop(fwd ? 1 : 0, 'rgba(0,0,0,0.28)'); grd.addColorStop(fwd ? 0 : 1, 'rgba(0,0,0,0)');
+        ctx.globalAlpha = 1; ctx.fillStyle = grd;
+        if (horiz) ctx.fillRect(Math.min(g0, g1), 0, soft, H); else ctx.fillRect(0, Math.min(g0, g1), W, soft);
+        break;
+      }
+      case 'blur': {                                    // 블러 디졸브 — 흐려지며 겹침 (ctx.filter 없으면 디졸브로)
+        const e = inOutCubic(u), bl = Math.sin(Math.PI * u) * 18;
+        const hasF = 'filter' in ctx;
+        if (hasF) {
+          const tmp = apply._tmp3 || (apply._tmp3 = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(W, H) : document.createElement('canvas'));
+          if (tmp.width !== W || tmp.height !== H) { tmp.width = W; tmp.height = H; }
+          const tc = tmp.getContext('2d'); tc.setTransform(1, 0, 0, 1, 0, 0); tc.globalAlpha = 1; tc.filter = 'none'; tc.clearRect(0, 0, W, H); tc.drawImage(ctx.canvas, 0, 0);
+          ctx.globalAlpha = 1; ctx.filter = 'blur(' + bl.toFixed(1) + 'px)';
+          ctx.drawImage(tmp, 0, 0);
+          ctx.globalAlpha = 1 - e; prevOr('#000');
+          ctx.filter = 'none';
+        } else { ctx.globalAlpha = 1 - e; prevOr('#000'); }
+        break;
+      }
     }
     ctx.globalAlpha = 1;
   }
 
-  g.KMV_TRANSITION = { TYPES, DURS, durFrames, progress, apply };
+  g.KMV_TRANSITION = { CATS, TYPES, DURS, durFrames, progress, apply };
 })(typeof window !== 'undefined' ? window : globalThis);

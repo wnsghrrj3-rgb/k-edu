@@ -969,10 +969,14 @@
   segBtn($('kbSeg'), '', '없음', () => { const c = selClip(); if (c) P.setKenburns(c.id, null); });
   LK.KENBURNS.forEach(k => segBtn($('kbSeg'), k.id, k.name, () => { const c = selClip(); if (c) P.setKenburns(c.id, k.id); }));
   // 전환
-  TR.TYPES.forEach(t => { const o = document.createElement('option'); o.value = t.id; o.textContent = t.name; $('trType').appendChild(o); });
+  (TR.CATS || [{ id: null }]).forEach(cat => {
+    const items = TR.TYPES.filter(t => !cat.id || t.cat === cat.id); if (!items.length) return;
+    const box = cat.id ? document.createElement('optgroup') : $('trType'); if (cat.id) { box.label = cat.name; $('trType').appendChild(box); }
+    items.forEach(t => { const o = document.createElement('option'); o.value = t.id; o.textContent = t.name; box.appendChild(o); });
+  });
   $('trType').onchange = e => { const c = selClip(); if (!c) return; stop(); const type = e.target.value, def = TR.TYPES.find(t => t.id === type); const cur = c.transIn || {}; P.setTransition(c.id, type === 'cut' ? null : { type, dur: cur.dur || 'normal', dir: def.dirs ? (def.dirs.includes(cur.dir) ? cur.dir : def.dirs[0]) : undefined }); if (type !== 'cut') setPH(c.at + Math.round(TR.durFrames({ dur: cur.dur || 'normal' }) / 2)); };
   TR.DURS.forEach(d => segBtn($('trDurSeg'), d.id, d.name + ' ' + (d.f / FPS).toFixed(1) + 's', () => { const c = selClip(); if (c && c.transIn) P.setTransition(c.id, Object.assign({}, c.transIn, { dur: d.id })); }));
-  [['ltr', '→'], ['rtl', '←'], ['ttb', '↓'], ['btt', '↑']].forEach(([k, l]) => segBtn($('trDirSeg'), k, l, () => { const c = selClip(); if (c && c.transIn) P.setTransition(c.id, Object.assign({}, c.transIn, { dir: k })); }));
+  [['ltr', '→'], ['rtl', '←'], ['ttb', '↓'], ['btt', '↑'], ['in', '확대'], ['out', '축소']].forEach(([k, l]) => segBtn($('trDirSeg'), k, l, () => { const c = selClip(); if (c && c.transIn) P.setTransition(c.id, Object.assign({}, c.transIn, { dir: k })); }));
   // 프로젝트 룩
   const THEME_LIST = window.KM_PARTS ? Object.values(window.KM_PARTS.THEMES) : [{ id: 'geumseong', name: '금성초 네이비' }];
   THEME_LIST.forEach(t => segBtn($('themeSeg'), t.id, t.name.replace(/ 네이비| 초록/, ''), () => P.setTheme(t.id)));
@@ -996,7 +1000,12 @@
   }
   // 자막
   let subStyle = 'basic';
-  SB.STYLES.forEach(st => segBtn($('subStyleSeg'), st.id, st.name, () => { subStyle = st.id; const s2 = selS && P.subtitle(selS); if (s2) P.updateS(s2.id, { style: st.id }); else refreshSubPanel(); }, st.hint));
+  (SB.CATS || [{ id: null }]).forEach(cat => {
+    const items = SB.STYLES.filter(st => !cat.id || st.cat === cat.id); if (!items.length) return;
+    if (cat.id) { const h = document.createElement('div'); h.className = 'cat'; h.textContent = cat.name; $('subStyleSeg').appendChild(h); }
+    const row = document.createElement('div'); row.className = 'seg c3'; $('subStyleSeg').appendChild(row);
+    items.forEach(st => segBtn(row, st.id, st.name, () => { subStyle = st.id; const s2 = selS && P.subtitle(selS); if (s2) P.updateS(s2.id, { style: st.id }); else refreshSubPanel(); }, st.hint));
+  });
   $('btnSubAuto').onclick = () => {
     stop();
     const lines = $('subText').value.split(/\n/).map(x => x.trim()).filter(Boolean);
@@ -1018,7 +1027,7 @@
   function refreshSubPanel() {
     const s2 = selS && P.subtitle(selS);
     $('subEdit').classList.toggle('hidden', !s2);
-    Array.from($('subStyleSeg').children).forEach(b => b.classList.toggle('on', b.dataset.k === (s2 ? s2.style : subStyle)));
+    Array.from($('subStyleSeg').querySelectorAll('button')).forEach(b => b.classList.toggle('on', b.dataset.k === (s2 ? s2.style : subStyle)));
     if (s2) { if (document.activeElement !== $('subEditText')) $('subEditText').value = s2.text; $('subEditTime').textContent = tc(s2.at) + ' → ' + tc(s2.at + s2.dur) + ' · ' + secStr(s2.dur); }
     const list = $('subList'); list.innerHTML = '';
     P.data.S.forEach(c => {
