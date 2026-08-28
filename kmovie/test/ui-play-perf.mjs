@@ -1,6 +1,6 @@
 // 재생 성능·동작 검증 (준비: make-fixtures.sh 에 big.mp4 추가 생성 — 1080p60 12초 VP9)
 // 구버전(ea91ebf)은 이 조건에서 headless 0fps(완전 정지), 수정판은 굴러감: 1080p60 원본으로 실제 재생 프레임 진행 측정 + 반해상도·분석 일시정지·복귀·스트림 일치
-import { chromium } from 'playwright';
+import { launch } from './launch.mjs';
 import { spawn } from 'child_process';
 import path from 'path'; import { fileURLToPath } from 'url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -9,8 +9,7 @@ const DEPS = process.env.KMV_DEPS || path.join(HERE, 'node_modules'), FX = proce
 const srv = spawn('/usr/bin/python3', ['-m', 'http.server', String(PORT), '--bind', '127.0.0.1'], { cwd: ROOT, stdio: 'ignore' });
 await new Promise(r => setTimeout(r, 800));
 let n = 0, fail = 0; const ok = (c, m) => { n++; console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) fail++; };
-const browser = await chromium.launch({ headless: true, args: ['--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--use-angle=swiftshader', '--autoplay-policy=no-user-gesture-required'] });
-const page = await (await browser.newContext({ viewport: { width: 1500, height: 900 } })).newPage();
+const { page, close } = await launch({ width: 1500, height: 900 });
 const errs = []; page.on('pageerror', e => errs.push(String(e))); page.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
 await page.route('**/cdn.jsdelivr.net/**', route => { const u = route.request().url(); if (u.includes('mp4box')) return route.fulfill({ path: path.join(DEPS, 'mp4box/dist/mp4box.all.min.js'), contentType: 'application/javascript' }); if (u.includes('mp4-muxer')) return route.fulfill({ path: path.join(DEPS, 'mp4-muxer/build/mp4-muxer.js'), contentType: 'application/javascript' }); return route.fulfill({ body: '', contentType: 'text/css' }); });
 await page.goto(`http://127.0.0.1:${PORT}/kmovie/`); await page.waitForFunction(() => window.KMV_UI);
@@ -43,4 +42,4 @@ if (NEW) {
   ok(errs.length === 0, '콘솔 오류 0' + (errs.length ? ' — ' + errs.slice(0, 2).join(' | ') : ''));
   console.log(`\n${n - fail}/${n} 통과${fail ? ' — 실패 ' + fail : ''}`);
 }
-await browser.close(); srv.kill(); process.exit(fail ? 1 : 0);
+await close(); srv.kill(); process.exit(fail ? 1 : 0);

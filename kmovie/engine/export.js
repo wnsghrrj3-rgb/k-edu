@@ -3,7 +3,8 @@
    ------------------------------------------------------------
    kmake/video.js 파이프 확장. 1080p30 H.264 8Mbps + AAC 48k 스테레오.
    · 영상: KMV_RENDER.drawExact(t) 전 프레임 → VideoEncoder (배압 관리)
-   · 소리: KMV_AUDIO.renderMix (오프라인) → AudioEncoder
+   · 소리: KMV_AUDIO.renderMix 창 단위 스트리밍 — 15초 믹스가 나올 때마다
+     AudioEncoder 에 바로 흘린다 (전체 PCM 미보유, 긴 타임라인 안전).
    · 묶기: mp4-muxer. 파일 저장 창(showSaveFilePicker)이 되면 디스크로 바로
      흘려보내(메모리 0), 아니면 메모리에 모아 다운로드.
    · 데스크톱 껍데기(KMV_SHELL.active): 저장은 껍데기 파일 쓰기(StreamTarget), 원본이 연결된 클립의 프레임은
@@ -70,35 +71,41 @@
       const isAvc = /^avc/.test(vcodec);
       target = shellSave ? shellSave.target : toDisk ? new g.Mp4Muxer.FileSystemWritableFileStreamTarget(stream) : new g.Mp4Muxer.ArrayBufferTarget();
 
-      // 소리 믹스 먼저 (오프라인, 빠름)
+      // 소리: 15초 창마다 믹스 → 바로 인코드 (전체 PCM 을 들고 있지 않음)
       prog(0, '소리 섞는 중');
-      let mix = null, acodecOK = false;
+      const SRr = g.KMV_AUDIO.SR;
+      let acodecOK = false;
       try {
-        const sup = await AudioEncoder.isConfigSupported({ codec: 'mp4a.40.2', sampleRate: g.KMV_AUDIO.SR, numberOfChannels: 2, bitrate: 192000 });
+        const sup = await AudioEncoder.isConfigSupported({ codec: 'mp4a.40.2', sampleRate: SRr, numberOfChannels: 2, bitrate: 192000 });
         acodecOK = !!sup.supported;
       } catch (e) {}
-      if (acodecOK && (P.data.A1.length || (P.data.A2 && P.data.A2.length) || (P.data.audio && P.data.audio.ambience && P.data.audio.ambience.on && P.data.audio.ambience.src))) mix = await g.KMV_AUDIO.renderMix(total);
+      const wantAudio = acodecOK && (P.data.A1.length || (P.data.A2 && P.data.A2.length) || (P.data.audio && P.data.audio.ambience && P.data.audio.ambience.on && P.data.audio.ambience.src));
 
       muxer = new g.Mp4Muxer.Muxer({
         target,
         video: { codec: isAvc ? 'avc' : 'vp9', width: W, height: H },
-        audio: mix ? { codec: 'aac', sampleRate: g.KMV_AUDIO.SR, numberOfChannels: 2 } : undefined,
+        audio: wantAudio ? { codec: 'aac', sampleRate: SRr, numberOfChannels: 2 } : undefined,
         fastStart: toDisk ? false : 'in-memory',
       });
       encoder = new VideoEncoder({ output: (c, m) => muxer.addVideoChunk(c, m), error: e => { encErr = e; } });
       encoder.configure({ codec: vcodec, width: W, height: H, bitrate: BITRATE, framerate: FPS, latencyMode: 'quality' });
 
-      if (mix) {
+      if (wantAudio) {
         aenc = new AudioEncoder({ output: (c, m) => muxer.addAudioChunk(c, m), error: e => { encErr = e; } });
-        aenc.configure({ codec: 'mp4a.40.2', sampleRate: g.KMV_AUDIO.SR, numberOfChannels: 2, bitrate: 192000 });
-        const CH = 4800, L = mix.length, c0 = mix.getChannelData(0), c1 = mix.getChannelData(1);
-        for (let s = 0; s < L; s += CH) {
-          const n = Math.min(CH, L - s), data = new Float32Array(n * 2);
-          data.set(c0.subarray(s, s + n), 0); data.set(c1.subarray(s, s + n), n);
-          const ad = new AudioData({ format: 'f32-planar', sampleRate: g.KMV_AUDIO.SR, numberOfFrames: n, numberOfChannels: 2, timestamp: Math.round(s * 1e6 / g.KMV_AUDIO.SR), data });
-          aenc.encode(ad); ad.close();
-          if (aenc.encodeQueueSize > 16) await new Promise(r => setTimeout(r, 2));
-        }
+        aenc.configure({ codec: 'mp4a.40.2', sampleRate: SRr, numberOfChannels: 2, bitrate: 192000 });
+        await g.KMV_AUDIO.renderMix(total, async (mix, startFrame) => {
+          if (encErr) throw encErr;
+          const base = Math.round(startFrame / FPS * SRr);
+          const CH = 4800, L = mix.length, c0 = mix.getChannelData(0), c1 = mix.numberOfChannels > 1 ? mix.getChannelData(1) : c0;
+          for (let s = 0; s < L; s += CH) {
+            const n = Math.min(CH, L - s), data = new Float32Array(n * 2);
+            data.set(c0.subarray(s, s + n), 0); data.set(c1.subarray(s, s + n), n);
+            const ad = new AudioData({ format: 'f32-planar', sampleRate: SRr, numberOfFrames: n, numberOfChannels: 2, timestamp: Math.round((base + s) * 1e6 / SRr), data });
+            aenc.encode(ad); ad.close();
+            if (aenc.encodeQueueSize > 16) await new Promise(r => setTimeout(r, 2));
+          }
+          prog(0, '소리 섞는 중 ' + Math.round(startFrame / FPS) + '/' + Math.round(total / FPS) + '초');
+        });
         await aenc.flush();
       }
 

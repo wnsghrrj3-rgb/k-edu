@@ -2,7 +2,7 @@
 // 준비: test/ 에서  npm i mp4box@0.5.2 mp4-muxer@5.2.1  ·  bash make-fixtures.sh (ffmpeg, VP9/opus 6초 2개)
 // 실행: PLAYWRIGHT_BROWSERS_PATH=… node test/ui-cut.mjs   (jsdelivr 는 node_modules 로 대체 — 차단망에서도 돈다)
 // headless 는 rAF 가 드물게 돌아 재생·셔틀 검사는 느슨하게(프레임 수 > 몇) 둔다. 실크롬에선 정속.
-import { chromium } from 'playwright';
+import { launch } from './launch.mjs';
 import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path'; import { fileURLToPath } from 'url';
@@ -11,9 +11,7 @@ const ROOT = process.env.KMV_ROOT || path.resolve(HERE, '../..'), PORT = +(proce
 const srv = spawn('python3', ['-m', 'http.server', String(PORT), '--bind', '127.0.0.1'], { cwd: ROOT, stdio: 'ignore' });
 await new Promise(r => setTimeout(r, 800));
 let n = 0, fail = 0; const ok = (c, m) => { n++; console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) fail++; };
-const browser = await chromium.launch({ headless: true, args: ['--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--use-angle=swiftshader', '--autoplay-policy=no-user-gesture-required', '--enable-features=WebCodecs'] });
-const ctx = await browser.newContext({ viewport: { width: 1500, height: 900 } });
-const page = await ctx.newPage();
+const { page, close } = await launch({ width: 1500, height: 900 });
 const errs = []; page.on('console', m => { if (m.type() === 'error') errs.push(m.text()); }); page.on('pageerror', e => errs.push(String(e)));
 page.on('dialog', d => d.accept('마커이름'));
 await page.route('**/cdn.jsdelivr.net/**', route => {
@@ -164,4 +162,4 @@ await page.reload(); await page.waitForFunction(() => window.KMV_UI && KMV_PROJE
 ok((await page.evaluate(() => KMV_PROJECT.markerFrames())).join() === '45', '새로고침 후 마커 복원');
 ok(errs.length === 0, '콘솔 오류 0' + (errs.length ? ' — ' + errs.slice(0, 3).join(' | ') : ''));
 console.log(`\n${n - fail}/${n} 통과${fail ? ' — 실패 ' + fail : ''}`);
-await browser.close(); srv.kill(); process.exit(fail ? 1 : 0);
+await close(); srv.kill(); process.exit(fail ? 1 : 0);
