@@ -418,10 +418,15 @@ async function doSignup(){
   const btn = document.getElementById('btn-signup');
   btn.disabled = true; btn.textContent = '가입 중...';
 
-  // 학부모는 user_metadata.role='parent' 저장 (ensureProfile 식별용)
+  // 역할·이름을 user_metadata 에 저장 — Confirm email ON 이면 가입 순간 세션이 없어
+  // teachers 프로필을 못 만들므로, 첫 로그인 때 이 메타데이터로 자가 복구한다 (2026-08-27)
   const signUpOpts = selectedRole === 'parent'
     ? { email, password: pw, options: { data: { role: 'parent' } } }
-    : { email, password: pw };
+    : { email, password: pw, options: { data: {
+        role: 'teacher',
+        teacher_name: document.getElementById('signup-teacher-name').value.trim(),
+        teacher_school: document.getElementById('signup-teacher-school').value.trim()
+      } } };
   const { data, error } = await db.auth.signUp(signUpOpts);
   btn.disabled = false; btn.textContent = '회원가입';
 
@@ -465,6 +470,18 @@ async function ensureProfile(user){
     .maybeSingle();
 
   if(teacher) return true; // 교사면 프로필 OK
+
+  // 1-b) 교사 자가 복구 — 확인 메일 ON 경로: 가입 때 세션이 없어 프로필을 못 만들었음.
+  //      가입 시 저장한 메타데이터(teacher_name)로 첫 로그인 때 만들어 준다.
+  const meta = user.user_metadata || {};
+  if(meta.role === 'teacher' || meta.teacher_name){
+    const { error: healErr } = await db.from('teachers').insert({
+      user_id: user.id,
+      name: meta.teacher_name || '선생님',
+      school: meta.teacher_school || ''
+    });
+    if(!healErr) return true;
+  }
 
   // 2) 학부모 식별 — user_metadata.role === 'parent' 또는 parent_student_links 매핑 보유
   // 학부모는 별도 프로필 테이블 없음. signUp 시 user_metadata.role='parent' 저장됨.

@@ -874,10 +874,25 @@ async function doLogout(){
 // =============================================
 async function loadDashboard(user){
   // 교사 정보 조회
-  const { data: teacher } = await db.from('teachers')
+  let { data: teacher } = await db.from('teachers')
     .select('*')
     .eq('user_id', user.id)
     .single();
+
+  // 자가 복구 — 확인 메일 ON 으로 가입한 교사는 첫 로그인 전까지 teachers 행이 없다.
+  // 가입 때 저장한 메타데이터로 여기서 만들어 준다 (auth 쪽 ensureProfile 과 동일 규약, 2026-08-27)
+  if(!teacher){
+    const meta = (user && user.user_metadata) || {};
+    if(meta.role === 'teacher' || meta.teacher_name){
+      const { error: healErr } = await db.from('teachers').insert({
+        user_id: user.id, name: meta.teacher_name || '선생님', school: meta.teacher_school || ''
+      });
+      if(!healErr){
+        const r2 = await db.from('teachers').select('*').eq('user_id', user.id).single();
+        teacher = r2.data;
+      }
+    }
+  }
 
   if(!teacher){
     setErr('login','교사 정보를 찾을 수 없습니다. 회원가입을 먼저 해주세요.');
