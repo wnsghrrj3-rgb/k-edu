@@ -115,6 +115,20 @@ try {
   ok(ph2 > 120, '터치 스크럽: 손가락 끌기로 플레이헤드 이동 — 목표 200 방향 (ph ' + bb2.ph0 + '→' + ph2 + ', CDP 합성 타이밍상 끝값 오차 허용)');
 } catch (e) { ok(false, '터치 이벤트 주입 실패: ' + e.message); }
 
+// ---------- 선택 카드 ✕ 삭제 칩 (터치엔 Del 키가 없다) ----------
+{
+  const chip = await page.evaluate(() => {
+    const P = KMV_PROJECT; P.clearP(); const A = P.addP({ part: 'tag', at: 0 });
+    KMV_UI.selectP(A.id);
+    return { n0: P.data.P.length, chip: KMV_UI.delChip };
+  });
+  const bb = await page.evaluate(() => { const r = document.getElementById('timeline').getBoundingClientRect(); return { x: r.x, y: r.y }; });
+  ok(chip.chip && chip.chip.kind === 'P', '선택하면 ✕ 칩이 뜸 (' + JSON.stringify(chip.chip && { kind: chip.chip.kind, r: chip.chip.r }) + ')');
+  await page.mouse.click(bb.x + chip.chip.x, bb.y + chip.chip.y);
+  const after = await page.evaluate(() => ({ n: KMV_PROJECT.data.P.length, sel: KMV_UI.selP }));
+  ok(chip.n0 === 1 && after.n === 0 && !after.sel, '✕ 칩 누르면 카드 삭제·선택 해제');
+}
+
 ok(errs.length === 0, '콘솔 오류 0' + (errs.length ? ' — ' + errs.slice(0, 3).join(' | ') : ''));
 console.log(`\n${n - fail}/${n} 통과`);
 await close(); srv.kill(); process.exit(fail ? 1 : 0);

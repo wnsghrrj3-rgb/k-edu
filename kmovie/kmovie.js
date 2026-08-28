@@ -433,10 +433,28 @@
     if (!a.linked) ctx.setLineDash([4, 3]); ctx.stroke(); ctx.setLineDash([]);
   }
 
+  let delChip = null;                                     // 선택 카드의 ✕ 삭제 칩 {x,y,r,kind,id}
+  function drawDelChip(ctx, x1, y0, kind, id) {
+    const r = COARSE ? 11 : 8, cx2 = Math.min(TW - r - 2, Math.max(HEAD + r + 2, x1 - r - 3)), cy2 = y0 + r + 2;
+    ctx.beginPath(); ctx.arc(cx2, cy2, r, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(20,24,36,0.92)'; ctx.fill();
+    ctx.strokeStyle = '#e5484d'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.strokeStyle = '#ff8f95'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+    const a = r * 0.42; ctx.beginPath(); ctx.moveTo(cx2 - a, cy2 - a); ctx.lineTo(cx2 + a, cy2 + a); ctx.moveTo(cx2 + a, cy2 - a); ctx.lineTo(cx2 - a, cy2 + a); ctx.stroke();
+    delChip = { x: cx2, y: cy2, r: r + (COARSE ? 6 : 3), kind, id };
+  }
   function draw() {
     if (!TW) return;
     if (dirty) drawStatic();
     const ctx = tctx; ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(sc, 0, 0); ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    // 선택 카드 삭제 칩 (터치엔 Del 키가 없다)
+    delChip = null;
+    if (!drag && !playing) {
+      if (selP) { const pt = P.part(selP); if (pt) { const ri = laneRows(P.data.P, c2 => c2.at + c2.dur), g2 = rowGeom(LY.P, ri, pt.id); drawDelChip(ctx, xOf(pt.at + pt.dur), g2.y, 'P', pt.id); } }
+      else if (selS) { const sc2 = P.subtitle(selS); if (sc2) { const ri = laneRows(P.data.S, c2 => c2.at + c2.dur), g2 = rowGeom(LY.S, ri, sc2.id); drawDelChip(ctx, xOf(sc2.at + sc2.dur), g2.y, 'S', sc2.id); } }
+      else if (selV2) { const o = P.v2(selV2); if (o) drawDelChip(ctx, xOf(o.at + o.dur), LY.V2.y + 3, 'V2', o.id); }
+      else if (selA2) { const a = P.a2(selA2); if (a) drawDelChip(ctx, xOf(a.at + a.out - a.in), LY.A2.y + 4, 'A2', a.id); }
+    }
     // 드래그 안내
     if (drag && drag.type === 'move' && drag.moved) {
       const ins = drag.insert, D = P.data;
@@ -548,6 +566,18 @@
       return;
     }
     if (pinch) return;
+    { const { x: cx3, y: cy3 } = pos(e);
+      if (delChip && Math.hypot(cx3 - delChip.x, cy3 - delChip.y) <= delChip.r) {
+        stop();
+        const k = delChip.kind, id = delChip.id; delChip = null;
+        if (k === 'P') { P.removeP(id); selectP(null); }
+        else if (k === 'S') { P.removeS(id); selectS(null); }
+        else if (k === 'V2') { P.removeV2(id); selectV2(null); }
+        else if (k === 'A2') { P.removeA2(id); selectA2(null); }
+        setPH(ph); toast('지웠어요 (Ctrl+Z / ↩︎ 로 되돌려요)', 1400);
+        return;
+      }
+    }
     const { x, y } = pos(e); if (x < HEAD) return;
     stop(); showStage('tl');
     const h = hitTest(x, y);
@@ -1492,7 +1522,7 @@
   }
 
   window.KMV_UI = { importFiles, setPH: f => setPH(f), get ph() { return ph; }, select, selectP, selectA2, placePart, play, stop, zoomFit, get pxf() { return pxf; }, get scrollF() { return scrollF; }, get selP() { return selP; }, get selA2() { return selA2; }, beatFrames,
-    get sel() { return sel; }, selectedIds, openSource, showStage, get stage() { return stage; }, get src() { return srcCur; }, setSrcPH, srcMark, srcPlace, shuttleTo, get shuttle() { return shuttle; }, get playing() { return playing || srcPlaying; }, doMarker, doCopy, doCut, doPaste, get clipboard() { return clipboard; }, get selM() { return selM; }, layout: { HEAD, RULER, LY }, xOf, frameOf, laneRows, rowGeom, selectV2, get selV2() { return selV2; } };
+    get sel() { return sel; }, selectedIds, openSource, showStage, get stage() { return stage; }, get src() { return srcCur; }, setSrcPH, srcMark, srcPlace, shuttleTo, get shuttle() { return shuttle; }, get playing() { return playing || srcPlaying; }, doMarker, doCopy, doCut, doPaste, get clipboard() { return clipboard; }, get selM() { return selM; }, layout: { HEAD, RULER, LY }, xOf, frameOf, laneRows, rowGeom, selectV2, get selV2() { return selV2; }, get delChip() { return delChip; } };
 
   /* ---------- 시작 ---------- */
   resize();
