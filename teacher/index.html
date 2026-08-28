@@ -355,23 +355,26 @@ tr:hover td{background:#FAFBFC}
       <button class="login-tab" onclick="switchTab('signup')">회원가입</button>
     </div>
 
-    <!-- 로그인 폼 -->
-    <div id="form-login">
+    <!-- 로그인 폼 — form 요소: 엔터 제출 + 브라우저 비밀번호 관리자가 저장을 제안하게 (2026-08-28) -->
+    <form id="form-login" onsubmit="doLogin(); return false;">
       <div class="form-group">
         <label class="form-label">이메일</label>
-        <input class="form-input" type="email" id="login-email" placeholder="teacher@school.kr">
+        <input class="form-input" type="email" id="login-email" name="username" autocomplete="username" placeholder="teacher@school.kr">
       </div>
       <div class="form-group">
         <label class="form-label">비밀번호</label>
-        <input class="form-input" type="password" id="login-pw" placeholder="비밀번호 입력">
+        <input class="form-input" type="password" id="login-pw" name="password" autocomplete="current-password" placeholder="비밀번호 입력">
       </div>
-      <button class="form-btn" id="login-btn" onclick="doLogin()">로그인</button>
+      <button class="form-btn" id="login-btn" type="submit">로그인</button>
       <div class="form-check">
-        <input type="checkbox" id="remember-me">
+        <input type="checkbox" id="save-email-t">
+        <label for="save-email-t">아이디 저장</label>
+        <input type="checkbox" id="remember-me" style="margin-left:14px">
         <label for="remember-me">로그인 유지</label>
       </div>
+      <div class="form-note" style="font-size:12px;color:#A0AEC0;margin-top:6px;line-height:1.5">공용 컴퓨터에서는 둘 다 꺼 주세요. 비밀번호는 저장하지 않아요 — 저장은 브라우저에 맡깁니다.</div>
       <div class="form-err" id="login-err"></div>
-    </div>
+    </form>
 
     <!-- 회원가입 폼 -->
     <div id="form-signup" style="display:none">
@@ -791,6 +794,26 @@ function switchTab(tab){
 // =============================================
 // 로그인
 // =============================================
+// 아이디 저장 — /auth 화면과 같은 키를 써서 어느 로그인 화면에서든 이어진다 (2026-08-28)
+// 비밀번호는 저장하지 않는다: 교사 계정은 학생 개인정보에 닿아 공용 PC 평문 보관이 위험.
+// 비밀번호 자동 채움은 브라우저 관리자(OS 암호화)가 담당 — 위 form/autocomplete 배선이 그 신호.
+const SAVE_EMAIL_KEY_T = 'kedu_saved_email_v1';
+document.addEventListener('DOMContentLoaded', function(){
+  const box = document.getElementById('save-email-t');
+  const emailEl = document.getElementById('login-email');
+  if(!box || !emailEl) return;
+  try{
+    const saved = localStorage.getItem(SAVE_EMAIL_KEY_T);
+    if(saved){ emailEl.value = saved; box.checked = true; }
+  }catch(e){}
+  box.onchange = function(){
+    try{
+      if(box.checked) localStorage.setItem(SAVE_EMAIL_KEY_T, emailEl.value.trim());
+      else localStorage.removeItem(SAVE_EMAIL_KEY_T);
+    }catch(e){}
+  };
+});
+
 async function doLogin(){
   const email = document.getElementById('login-email').value.trim();
   const pw = document.getElementById('login-pw').value;
@@ -808,6 +831,11 @@ async function doLogin(){
     btn.disabled=false; btn.textContent='로그인';
     return;
   }
+
+  // 아이디 저장 갱신
+  try{
+    if(document.getElementById('save-email-t')?.checked) localStorage.setItem(SAVE_EMAIL_KEY_T, email);
+  }catch(e){}
 
   // remember-me 처리
   const remember = document.getElementById('remember-me').checked;
