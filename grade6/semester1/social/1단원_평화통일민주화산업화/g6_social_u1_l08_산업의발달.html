@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<!--
+K-edu 사회 6-1 · 1단원 평화 통일을 위한 노력, 민주화와 산업화 · 주제② 민주화와 산업화로 달라진 생활 모습 · 8차시(l08)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [6사07-02] · 교과서 p.37~39 · 지도서(대단원1 **10차시** 우리나라 산업의 발달 과정을
+  알아볼까요, 지도서 p.86~89) 근거
+학습 목표: 우리나라 산업의 발달 과정을 설명할 수 있다.
+수업 기법 및 전략: 돌아가며 말하기 · 모둠 토의
+⚠️ 엔진은 l01~l07에서 100% 승계. 1단원 색 #1D4ED8 그대로 — CSS 변수명·엔진 무수정.
+
+직접조작: 기우는 판(43번째 신규 패턴 — 한쪽이 커지면 다른 쪽이 줄어드는 형)
+  ⭐ 앞의 마흔두 종에서 **판은 채워지거나 자라기만 했다.**
+     카드를 놓으면 칸이 채워졌고, 걸음을 밟으면 줄이 늘었고, 요구가 되돌아오면 광장이 커졌다.
+     판의 한 자리가 채워질 때 **다른 자리가 그만큼 줄어든 일은 한 번도 없었다.**
+     (l06의 안과 밖조차 안쪽만 채워지고 바깥은 **그대로**였다 — 줄어든 것이 아니다.)
+     이번만 **공업 쪽이 커지는 만큼 농업 쪽이 줄어든다.**
+     까닭은 교과서 본문이 그렇게 적었기 때문이다 —
+     「경제 개발 5개년 계획을 추진해 수출을 통해 **농업 중심의 산업구조를 공업 중심으로 바꿔**
+      우리나라를 산업화하려고 노력했습니다」.
+  ⭐ **그래서 판의 칸 수 합은 어느 시점에도 달라지지 않는다.**
+     산업이 그냥 늘어난 것이 아니라 **중심이 옮겨 간 것**이기 때문이다.
+     합이 일정하다는 것은 문구가 아니라 **구조**다 — 농업 쪽을 따로 담는 상태가 아예 없고,
+     `sgFarm(st) = SG_TOTAL - sgInd(st)` 한 줄이 두 막대를 함께 그린다.
+  ⭐ **중심이 뒤집히는 자리는 학생이 판을 읽어서 찾는다.** 네 시대를 다 채우면
+     판이 묻는다 — 「공업 쪽이 농업 쪽보다 커진 때는 언제인가요?」
+     판이 그 자리를 미리 표시해 주지 않는다(완성 띠는 읽기를 마친 뒤에만 뜬다).
+  ⭐ **농업 쪽은 끝까지 사라지지 않는다.** 마지막에도 두 칸이 남는다 —
+     농업이 없어진 것이 아니라 **중심이 옮겨 간 것**이라는 뜻을 판이 스스로 말한다.
+  ① 시대마다 발달한 산업 3택 ×4(차례 고정 1950→1960→1970→1980년대 · 정답 자리 [1,0,2,1])
+     → 맞히면 공업 쪽이 그 시대의 이름을 달고 커지고, 농업 쪽이 **그만큼** 줄어든다.
+  ② 판 읽기 3택 — 「공업 쪽이 농업 쪽보다 커진 때는?」(조작 직결 · 정답 자리 2)
+  ③ 마무리 3택 = [스스로 활동] 「독일에 파견된 광부와 간호사들은 어떤 생각을 하면서 견뎠을까요?」
+     → 정답 = 지도서 예시 답안 원문(정답 자리 0)
+  ⚠️ 시대·산업·안내·읽기·마무리 전량 고정 리터럴 — 난수 0.
+  ⚠️ 가드 8종: ① 마무리 확정 후 전체 잠금 / ② 무효 시대·산업·읽기·마무리 번호(`Number.isInteger`) /
+     ③ 차례가 아닌 시대의 산업 무시(순서) — 판 불변 / ④ 이미 채운 시대 재선택 무시 — 판 불변 /
+     ⑤ 어긋난 산업을 골라도 판은 기울지 않는다(공·농 칸 수 불변) /
+     ⑥ 네 시대를 다 채우기 전 판 읽기 무시(순서) /
+     ⑦ 판을 읽기 전 마무리 무시(순서) · 읽기 확정 뒤 다시 읽기 무시 /
+     ⑧ 안내 표시 중 재클릭 무시(`sgBusy`).
+     재시도 허용(감점 없음), 조작에 점수 0. 발문은 `.sg-q`로 떼어 전 단계 상시 노출.
+
+지도서 근거(10차시 p.86~89):
+  [동기 유발] 밀가루 포대 사진에 쓰인 글자를 통해 알 수 있는 것 → 미국 국민이 기증한 밀가루입니다.
+  [본문·1950년대] 6·25 전쟁으로 우리나라의 여러 산업 시설이 파괴되고, 국토가 황폐해졌습니다.
+    정부는 이를 극복하려고 미국을 중심으로 한 여러 나라로부터 식량과 물자를 지원받았습니다.
+    다른 나라에서 지원받은 물자는 이 시기 산업 발전에 큰 도움이 됐습니다.
+    특히 밀가루, 설탕, 면직물 등 생활에 필요한 물건을 만드는 산업이 발달했습니다.
+  [본문·1960년대] 정부는 경제 개발 5개년 계획을 추진해 수출을 통해 농업 중심의 산업구조를
+    공업 중심으로 바꿔 우리나라를 산업화하려고 노력했습니다.
+    당시 우리나라는 풍부한 노동력을 바탕으로 신발, 가발, 의류 등과 같은 경공업 제품을 만들어
+    수출했습니다. 이 과정에서 제품의 생산, 운반, 수출에 필요한 발전소, 고속 국도, 항만 등의
+    건설이 활발하게 이뤄졌습니다.
+  [본문·1970년대] 정부는 철강, 조선, 석유 화학 등 중화학 공업을 발전시켰습니다.
+    높은 기술력이 필요한 중화학 공업을 발전시키려고 정부는 교육 시설과 연구소 등을 설립했습니다.
+    또한 기업들을 지원하여 대규모 공업 단지를 건설했습니다.
+    한편 정부는 광부와 간호사를 독일로 파견했습니다.
+    이들이 벌어들인 많은 외화는 우리나라의 산업화에 밑거름이 됐습니다.
+  [본문·1980년대] 국내 기업들은 세계에서 경쟁하려고 기술을 연구하고 개발했습니다.
+    이러한 노력으로 자동차, 정밀 기계, 전자 제품 등과 관련 있는 산업이 발달했습니다.
+    또한 중화학 공업이 더욱 발달하여 수출 규모가 커지면서 국민 소득이 급격히 늘어났고,
+    사람들의 생활 수준도 높아졌습니다.
+  [낱말] 경공업 = 신발, 가발, 의류 등 무게가 적게 나가는 물건을 만드는 공업.
+    중화학 공업 = 철, 배 등 무게가 많이 나가는 물건을 만드는 공업과 플라스틱, 고무 등
+    화학 제품을 만드는 공업을 함께 이르는 말.
+  [미디어 활동] 두 신문 기사를 읽고, 라면이 만들어진 까닭을 비교해 봅시다.
+    → 예시 답안 = 식량 부족을 해결하기 위해서였다. /
+      1960년대 라면은 식량 부족을 해결하려고 만들었고, 오늘날은 수출 상품으로 대량 생산되고 있다.
+    활동 의도 = 시대적 상황에 따라 같은 물건이더라도 목적이 다를 수 있다는 것을 알게 하는 활동이다.
+  [스스로 활동] 독일에 파견된 광부와 간호사들이 어떤 생각을 하면서 힘든 일을 견뎠을지 써 봅시다.
+    → 예시 답안 = 한국에 있는 가족들의 생활에 도움을 주고,
+      나라의 경제 발전에 보탬이 된다는 생각으로 힘든 일을 견뎠을 것 같다.
+    활동 의도 = 우리나라의 산업화를 위해 노력한 파독 광부와 간호사의 생각을 추체험하는 활동이다.
+  [핵심 질문] 정부가 경제 개발 5개년 계획을 시행한 까닭은 무엇인가요?
+    → 수출을 통해 농업 중심의 산업구조를 공업 중심으로 바꿔 우리나라를 산업화하기 위해서입니다.
+    1980년대에 이러한 산업들이 발달할 수 있었던 까닭은 무엇인가요?
+    → 국내 기업들이 세계에서 경쟁하려고 기술을 연구하고 개발했기 때문입니다.
+  [꼭 기억해요] 1 1960년대에 정부는 경제 개발 5개년 계획을 추진해 우리나라를 산업화하려고 노력했습니다.
+    2 1970~80년대에 우리나라는 중화학 공업이 발전하여 수출 규모가 커지면서 경제도 빠르게 성장했습니다.
+  [10차시 주요 내용 정리] ① 1950년대: 밀가루, 설탕, 면직물 등 생활에 필요한 물건을 만드는 산업이 발달함.
+    ② 1960년대: 풍부한 노동력을 바탕으로 신발, 가발, 의류 등 경공업 제품을 만들어 수출함.
+    ③ 1970년대: 높은 기술력을 바탕으로 철강, 조선, 석유 화학 등 중화학 공업이 발달함.
+    ④ 1980년대: 자동차, 전자 제품 등과 관련 있는 산업이 발달함.
+  [정리] 차시 예고 = 산업화로 달라진 사람들의 생활 모습 알아보기.
+⚠️ 설계 원칙:
+  · **11~12차시 이후 침범 0** — 「산업화로 달라진 생활 모습」은 **차시 예고 두 자리에서만**
+    (스모크가 개수 2 대조). 도시로의 이동·인구 집중·아파트·환경 문제·전태일·근로 기준법·
+    노동 환경·도시 재생·영상 편집 도구 0.
+  · **13~14차시 침범 0** — 생각을 펼쳐요·생각 그물·교실 놀이 0.
+  · **대단원2 이후 침범 0** — 국회·행정부·법원·선거·미디어 비평 0.
+  · **주제① 침범 0** — 「평화 통일」은 **META 한 자리**, 분단 0 · 북한 0,
+    휴전선·판문점·이산가족·만월대·겨레말·단일팀·금강산 0.
+    ⚠️ 이 차시의 「독일」은 교과서 본문 원문(광부와 간호사 파견)으로만 쓴다.
+  · **l05~l07 회수만** — 「6월 민주 항쟁」은 **되짚기 한 자리까지**(개수 1).
+    4·19 혁명 0 · 5·18 민주화 운동 0 · 직선제 0 · 간선제 0 · 박종철 0 · 이한열 0 · 전두환 0.
+  · **문항 내·본문 내 네 자리 연도 0** — 연대(1950년대~1980년대)는 이 차시의 학습 내용 자체이므로 쓰되
+    (지도서 「10차시 주요 내용 정리」가 연대로 정리한다), **특정 연도는 한 자리도 쓰지 않는다**
+    (스모크가 `\d{4}년(?!대)`을 0으로 대조). 인원·금액·나라 수·달러 수치 0.
+  · 교사용 참고 자료 0 — 참고 도서 두 종, 삼백 공업·미국의 원조 학술 서술,
+    파독 인원과 파견 기간, 포니·포니 엑셀·현대 자동차·세계 10대 자동차 생산국, 평택항,
+    한국 우표 포털 서비스·K-stamp, KTV 국민 방송 누리집, 라면 수출액·수입국 수·승용차 대수,
+    신문사 이름과 날짜, 기념 우표의 연도 목록, 활동지·평가 관점·평가 방법.
+  · **정직 원칙 세 곳** — ㉠ 판의 **칸 수는 실제 통계가 아니다.**
+    「중심이 농업에서 공업으로 옮겨 갔다」는 교과서의 서술을 나타낸 도식이며,
+    판 캡션과 완료 안내에 그렇게 적었다(비율·수치 0).
+    ㉡ 교과서 [스스로 활동]·[미디어 활동]의 빈칸은 지어내지 않고 **지도서 예시 답안 원문**만 둔다.
+    ㉢ 기념 우표는 **연도를 외우는 활동이 되지 않도록** 판·문항 어디에도 두지 않는다
+      (지도서 예시 답안 자체가 연대로만 서술한다).
+  · **학생 이름 0.** 정서 — 6·25 전쟁은 **1950년대의 배경으로 교과서가 말한 만큼만** 쓰고
+    전쟁 피해를 자세히 그리지 않는다. 가난과 굶주림으로 겁주지 않는다.
+    **독일로 간 광부와 간호사는 안쓰러운 대상이 아니라 힘든 일을 견뎌 낸 사람으로 쓴다.**
+    특정 정부·정치 세력을 편들거나 몰아세우지 않고 **교과서가 말하는 사실까지만** 쓴다.
+⚠️ goNextLesson = 허브(l09 미양산) — l09 양산 시 소프트체인 재배선.
+-->
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g6_social_u1_l08_v1">
+<title>우리나라 산업의 발달 과정을 알아볼까요 · 사회 6-1</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#1D4ED8; --green-d:#1E3A8A; --cyan:#3B82F6;
+  --bg:#EFF6FF; --bub:#DBEAFE; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#B45309; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-shrink:0}
+.ka-lb{background:#F1F5F9;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;
+  font-weight:700;color:var(--muted);font-size:clamp(11px,1.9vw,13px);display:flex;align-items:center;gap:6px}
+.ka-lb svg{width:14px;height:14px}
+.ka-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.ka-bar>div{height:100%;background:var(--green);border-radius:99px;transition:width .35s ease;width:5%}
+.ka-pg{font-size:clamp(11px,1.9vw,13px);color:var(--muted);font-weight:700;min-width:46px;text-align:right}
+.ka-sc{display:flex;align-items:center;gap:3px;background:var(--amber-bg);border-radius:99px;padding:5px 11px}
+.ka-sc svg{width:15px;height:15px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;color:var(--amber);font-size:clamp(14px,2.4vw,17px)}
+.ka-sc-u{font-size:11px;color:var(--amber);font-weight:700}
+
+/* 메인 */
+.ka-m{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;padding:4px 2px}
+.ka-tags{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ka-bg{display:inline-flex;align-items:center;gap:5px;background:var(--bub);color:var(--green-d);
+  border-radius:99px;padding:5px 12px;font-size:clamp(11px,1.9vw,13px);font-weight:700}
+.ka-bg svg{width:13px;height:13px}
+.ka-bg.s2{background:#E0F2FE;color:#075985}
+.ka-bg.s3{background:#DCFCE7;color:#166534}
+.ka-bg.s4{background:#FEF3C7;color:#92400E}
+.ka-bg.s5{background:#F3E8FF;color:#6B21A8}
+.ka-meta{font-size:clamp(10px,1.7vw,12px);color:#94A3B8;font-weight:600}
+.ka-t{font-size:clamp(19px,3.4vw,27px);font-weight:700;line-height:1.4;margin-bottom:10px}
+.ka-bub{background:var(--bub);border-radius:14px;padding:13px 18px;font-size:clamp(14px,2.4vw,18px);
+  line-height:1.7;margin-bottom:12px}
+.ka-emph{color:var(--green-d);font-weight:700}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.scene.wide{width:clamp(240px,44vw,420px)}
+.scene.wide svg{height:clamp(120px,20vw,200px)}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(15px,2.6vw,20px);font-weight:700;line-height:1.6;margin-bottom:12px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+.opt{background:#fff;border:2px solid var(--line);border-radius:13px;padding:13px 15px;cursor:pointer;
+  font-family:inherit;font-size:clamp(13px,2.2vw,16.5px);font-weight:500;text-align:left;line-height:1.5;transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:#16A34A;background:#DCFCE7;font-weight:700}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:11px;border-radius:12px;padding:12px 16px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;animation:fadeUp .3s ease both}
+.fb.ok{background:#DCFCE7;color:#166534;font-weight:700}
+.hint{margin-top:9px;background:var(--amber-bg);border-radius:11px;padding:10px 14px;
+  font-size:clamp(12.5px,2.1vw,15px);color:var(--amber);line-height:1.55}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:9px;width:100%;max-width:660px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFC;border-radius:12px;padding:11px 15px;
+  font-size:clamp(13px,2.2vw,16.5px);line-height:1.6}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'\2713';color:#fff;font-weight:800;font-size:14px}
+
+/* 직접조작 — 기우는 판(한쪽이 커지면 다른 쪽이 줄어드는 형) */
+.dw-wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dw-body{display:grid;grid-template-columns:1.05fr 1fr;gap:10px;align-items:start}
+.dw-canvas{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.dw-canvas svg{width:100%;height:auto;display:block}
+.dw-canvas .cvcap{padding:5px 6px;text-align:center;font-size:clamp(9.5px,1.6vw,11.5px);
+  color:var(--muted);font-weight:700;background:#F8FAFC}
+.dw-right{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dw-step{font-size:clamp(10.5px,1.75vw,13px);font-weight:800;color:var(--green)}
+.dw-msg{background:#F8FAFC;border:2px solid var(--line);border-left:4px solid var(--green);border-radius:10px;
+  padding:8px 12px;font-size:clamp(11.4px,1.93vw,13.8px);line-height:1.55;color:#334155;animation:fadeUp .3s ease both}
+.dw-msg.warn{border-left-color:var(--red)}
+.dw-msg b{color:var(--green)}
+.dw-card{background:#fff;border:2px solid var(--amber);border-radius:12px;padding:10px 12px;
+  font-size:clamp(12px,2.05vw,14.5px);line-height:1.55;animation:pop .35s ease both}
+.dw-card .pt{font-weight:800;color:var(--amber);margin-bottom:4px;font-size:clamp(12.5px,2.15vw,15px)}
+.sg-q{font-size:clamp(11.6px,1.97vw,14px);font-weight:800;color:var(--green);
+  background:var(--bub);border-radius:9px;padding:7px 11px;line-height:1.45}
+.sg-list{display:flex;flex-direction:column;gap:5px;max-height:190px;overflow-y:auto}
+.sg-list button{border:2px solid #CBD5E0;background:#fff;border-radius:9px;padding:7px 10px;cursor:pointer;
+  font-family:inherit;font-weight:700;color:var(--ink);font-size:clamp(10.4px,1.75vw,12.8px);transition:.15s;
+  text-align:left;line-height:1.45}
+.sg-list button:hover{border-color:var(--green);background:var(--bub)}
+.sg-list button.ok{border-color:var(--cyan);background:#EFF6FF;color:#93A9C9}
+.sg-list button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.sg-list button:disabled{border-color:#E2E8F0;background:#F8FAFC;color:#CBD5E0;cursor:default}
+.sg-num{display:inline-block;min-width:24px;font-weight:800;color:var(--green-d)}
+
+.sg-fin{display:flex;flex-direction:column;gap:5px}
+.sg-fin button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;padding:7px 10px;
+  cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.sg-fin button:hover{background:var(--bub)}
+.sg-fin button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+
+
+.sg-log{display:flex;flex-direction:column;gap:4px;max-height:150px;overflow-y:auto}
+.sg-log div{background:#F8FAFC;border:1px solid var(--line);border-left:3px solid var(--cyan);border-radius:8px;
+  padding:6px 9px;font-size:clamp(10.2px,1.72vw,12.4px);line-height:1.45;color:#334155}
+.sg-log div b{color:var(--green-d)}
+.paper{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:12px;padding:12px 16px;
+  font-size:clamp(12.5px,2.1vw,15px);line-height:1.65;color:#3F3A2C;max-width:660px;
+  animation:fadeUp .4s ease both}
+.paper .ph{font-weight:800;color:#8A6D3B;margin-bottom:6px;font-size:clamp(13px,2.2vw,16px)}
+.tipbox{background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(12.5px,2.1vw,15px);
+  line-height:1.6;color:#075985;max-width:660px}
+@media(max-width:620px){ .dw-body{grid-template-columns:1fr} }
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(29,78,216,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style>
+<script src="/kedu_gate.js"></script>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#B45309"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식 =====
+   ⚠️ 정직 원칙: 모든 그림은 내용을 나타낸 도식이며 실제 사진·자료가 아니다.
+   ⚠️ 정서 원칙 — 6·25 전쟁은 1950년대의 배경으로 교과서가 말한 만큼만 그린다.
+      전쟁 피해·굶주림을 자세히 그리지 않고, 겁주는 어휘를 쓰지 않는다.
+      독일로 간 광부와 간호사는 안쓰러운 대상이 아니라 **힘든 일을 견뎌 낸 사람**으로 그린다.
+      사람 형상 대신 물자·상자·편지·공장 같은 사물로만 그린다. */
+const SVG = {
+  // 1 동기 유발 — 밀가루 포대
+  sack:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F8FAFC"/>
+    <text x="160" y="22" font-size="11" fill="#1E3A8A" text-anchor="middle" font-weight="800">포대에 쓰인 글자는 무엇을 말할까요?</text>
+    <path d="M104 52 L216 52 L226 140 L94 140 Z" fill="#FFFDF5" stroke="#B45309" stroke-width="2"/>
+    <path d="M104 52 L216 52 L212 64 L108 64 Z" fill="#FEF3C7" stroke="#B45309" stroke-width="1.4"/>
+    <text x="160" y="92" font-size="9.6" fill="#92400E" text-anchor="middle" font-weight="800">미국 국민이</text>
+    <text x="160" y="106" font-size="9.6" fill="#92400E" text-anchor="middle" font-weight="800">기증한 밀가루</text>
+    <text x="160" y="126" font-size="8.2" fill="#64748B" text-anchor="middle">여러 나라에서 보내 준 물자예요</text>
+    <text x="160" y="160" font-size="9.2" fill="#94A3B8" text-anchor="middle">교과서에 실린 사진을 나타낸 도식이에요</text>
+    </svg>`,
+  // 2 1950년대 — 지원받은 물자와 생활에 필요한 물건
+  e50:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F8FAFC"/>
+    <text x="160" y="22" font-size="11" fill="#B45309" text-anchor="middle" font-weight="800">1950년대 — 생활에 필요한 물건을 만들다</text>
+    <rect x="14" y="38" width="112" height="52" rx="9" fill="#FEF3C7" stroke="#B45309" stroke-width="1.8"/>
+    <text x="70" y="58" font-size="8.6" fill="#92400E" text-anchor="middle" font-weight="800">여러 나라에서</text>
+    <text x="70" y="72" font-size="8.6" fill="#92400E" text-anchor="middle" font-weight="800">식량과 물자를 지원받다</text>
+    <path d="M132 64 L166 64" stroke="#94A3B8" stroke-width="1.8"/>
+    <path d="M162 60 L172 64 L162 68 Z" fill="#94A3B8"/>
+    <rect x="180" y="38" width="126" height="52" rx="9" fill="#fff" stroke="#B45309" stroke-width="1.8"/>
+    <text x="243" y="58" font-size="8.6" fill="#92400E" text-anchor="middle" font-weight="800">그 물자가 산업 발전에</text>
+    <text x="243" y="72" font-size="8.6" fill="#92400E" text-anchor="middle" font-weight="800">큰 도움이 되다</text>
+    <rect x="14" y="102" width="92" height="34" rx="8" fill="#fff" stroke="#CBD5E0" stroke-width="1.4"/>
+    <text x="60" y="124" font-size="9" fill="#334155" text-anchor="middle" font-weight="800">밀가루</text>
+    <rect x="114" y="102" width="92" height="34" rx="8" fill="#fff" stroke="#CBD5E0" stroke-width="1.4"/>
+    <text x="160" y="124" font-size="9" fill="#334155" text-anchor="middle" font-weight="800">설탕</text>
+    <rect x="214" y="102" width="92" height="34" rx="8" fill="#fff" stroke="#CBD5E0" stroke-width="1.4"/>
+    <text x="260" y="124" font-size="9" fill="#334155" text-anchor="middle" font-weight="800">면직물</text>
+    <text x="160" y="158" font-size="9.2" fill="#64748B" text-anchor="middle">생활에 필요한 물건을 만드는 산업이 발달했어요</text>
+    </svg>`,
+  // 3 1960년대 — 경공업과 건설
+  e60:`<svg viewBox="0 0 320 176"><rect width="320" height="176" fill="#F8FAFC"/>
+    <text x="160" y="22" font-size="11" fill="#1E3A8A" text-anchor="middle" font-weight="800">1960년대 — 경공업 제품을 만들어 수출하다</text>
+    <rect x="14" y="34" width="292" height="32" rx="9" fill="#DBEAFE" stroke="#1D4ED8" stroke-width="1.6"/>
+    <text x="160" y="54" font-size="9.2" fill="#1E3A8A" text-anchor="middle" font-weight="800">농업 중심의 산업구조를 공업 중심으로 바꾸려고 노력하다</text>
+    <rect x="14" y="76" width="92" height="34" rx="8" fill="#fff" stroke="#1D4ED8" stroke-width="1.4"/>
+    <text x="60" y="98" font-size="9" fill="#1E3A8A" text-anchor="middle" font-weight="800">신발</text>
+    <rect x="114" y="76" width="92" height="34" rx="8" fill="#fff" stroke="#1D4ED8" stroke-width="1.4"/>
+    <text x="160" y="98" font-size="9" fill="#1E3A8A" text-anchor="middle" font-weight="800">가발</text>
+    <rect x="214" y="76" width="92" height="34" rx="8" fill="#fff" stroke="#1D4ED8" stroke-width="1.4"/>
+    <text x="260" y="98" font-size="9" fill="#1E3A8A" text-anchor="middle" font-weight="800">의류</text>
+    <rect x="14" y="120" width="292" height="32" rx="9" fill="#fff" stroke="#3B82F6" stroke-width="1.5"/>
+    <text x="160" y="140" font-size="8.8" fill="#1E3A8A" text-anchor="middle" font-weight="800">발전소 · 고속 국도 · 항만 건설이 활발하게 이뤄지다</text>
+    <text x="160" y="168" font-size="9" fill="#64748B" text-anchor="middle">풍부한 노동력이 바탕이 됐어요</text>
+    </svg>`,
+  // 4 1970년대 — 중화학 공업
+  e70:`<svg viewBox="0 0 320 176"><rect width="320" height="176" fill="#F8FAFC"/>
+    <text x="160" y="22" font-size="11" fill="#4338CA" text-anchor="middle" font-weight="800">1970년대 — 중화학 공업을 발전시키다</text>
+    <rect x="14" y="34" width="92" height="34" rx="8" fill="#E0E7FF" stroke="#4338CA" stroke-width="1.5"/>
+    <text x="60" y="56" font-size="9" fill="#3730A3" text-anchor="middle" font-weight="800">철강</text>
+    <rect x="114" y="34" width="92" height="34" rx="8" fill="#E0E7FF" stroke="#4338CA" stroke-width="1.5"/>
+    <text x="160" y="56" font-size="9" fill="#3730A3" text-anchor="middle" font-weight="800">조선</text>
+    <rect x="214" y="34" width="92" height="34" rx="8" fill="#E0E7FF" stroke="#4338CA" stroke-width="1.5"/>
+    <text x="260" y="56" font-size="9" fill="#3730A3" text-anchor="middle" font-weight="800">석유 화학</text>
+    <rect x="14" y="80" width="292" height="30" rx="9" fill="#fff" stroke="#4338CA" stroke-width="1.5"/>
+    <text x="160" y="99" font-size="8.8" fill="#3730A3" text-anchor="middle" font-weight="800">높은 기술력이 필요해요 — 교육 시설과 연구소를 세우다</text>
+    <rect x="14" y="118" width="292" height="30" rx="9" fill="#fff" stroke="#4338CA" stroke-width="1.5"/>
+    <text x="160" y="137" font-size="8.8" fill="#3730A3" text-anchor="middle" font-weight="800">기업들을 지원하여 대규모 공업 단지를 건설하다</text>
+    <text x="160" y="166" font-size="9" fill="#64748B" text-anchor="middle">무게가 많이 나가는 물건과 화학 제품을 만드는 공업이에요</text>
+    </svg>`,
+  // 5 독일로 간 광부와 간호사 — 사람 형상 대신 편지와 상자로만
+  germ:`<svg viewBox="0 0 320 160"><rect width="320" height="160" fill="#F8FAFC"/>
+    <text x="160" y="22" font-size="11" fill="#1E3A8A" text-anchor="middle" font-weight="800">멀리서 보내 온 마음</text>
+    <rect x="18" y="40" width="108" height="60" rx="9" fill="#fff" stroke="#64748B" stroke-width="1.6"/>
+    <text x="72" y="64" font-size="8.6" fill="#334155" text-anchor="middle" font-weight="800">독일로 파견된</text>
+    <text x="72" y="78" font-size="8.6" fill="#334155" text-anchor="middle" font-weight="800">광부와 간호사</text>
+    <text x="72" y="92" font-size="7.6" fill="#64748B" text-anchor="middle">힘들고 고된 일을 견디다</text>
+    <path d="M132 70 L178 70" stroke="#1D4ED8" stroke-width="1.8"/>
+    <path d="M174 66 L184 70 L174 74 Z" fill="#1D4ED8"/>
+    <rect x="140" y="50" width="30" height="18" rx="3" fill="#DBEAFE" stroke="#1D4ED8" stroke-width="1.2"/>
+    <path d="M140 50 L155 61 L170 50" stroke="#1D4ED8" stroke-width="1.1" fill="none"/>
+    <rect x="192" y="40" width="112" height="60" rx="9" fill="#DBEAFE" stroke="#1D4ED8" stroke-width="1.8"/>
+    <text x="248" y="64" font-size="8.6" fill="#1E3A8A" text-anchor="middle" font-weight="800">벌어들인 외화가</text>
+    <text x="248" y="78" font-size="8.6" fill="#1E3A8A" text-anchor="middle" font-weight="800">산업화에 밑거름이 되다</text>
+    <text x="248" y="92" font-size="7.6" fill="#64748B" text-anchor="middle">가족의 생활비로도 쓰이다</text>
+    <text x="160" y="126" font-size="9.2" fill="#64748B" text-anchor="middle">고마운 마음으로 기억해요</text>
+    <text x="160" y="146" font-size="8.6" fill="#94A3B8" text-anchor="middle">교과서가 말하는 만큼만 나타낸 도식이에요</text>
+    </svg>`,
+  // 6 1980년대 — 기술 연구·개발과 자동차·전자 제품
+  e80:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F8FAFC"/>
+    <text x="160" y="22" font-size="11" fill="#BE185D" text-anchor="middle" font-weight="800">1980년대 — 기술을 연구하고 개발하다</text>
+    <rect x="14" y="34" width="292" height="30" rx="9" fill="#FBCFE8" stroke="#BE185D" stroke-width="1.6"/>
+    <text x="160" y="53" font-size="9" fill="#9D174D" text-anchor="middle" font-weight="800">국내 기업들이 세계에서 경쟁하려고 기술을 연구·개발하다</text>
+    <rect x="14" y="74" width="92" height="34" rx="8" fill="#fff" stroke="#BE185D" stroke-width="1.4"/>
+    <text x="60" y="96" font-size="9" fill="#9D174D" text-anchor="middle" font-weight="800">자동차</text>
+    <rect x="114" y="74" width="92" height="34" rx="8" fill="#fff" stroke="#BE185D" stroke-width="1.4"/>
+    <text x="160" y="96" font-size="9" fill="#9D174D" text-anchor="middle" font-weight="800">정밀 기계</text>
+    <rect x="214" y="74" width="92" height="34" rx="8" fill="#fff" stroke="#BE185D" stroke-width="1.4"/>
+    <text x="260" y="96" font-size="9" fill="#9D174D" text-anchor="middle" font-weight="800">전자 제품</text>
+    <rect x="14" y="118" width="292" height="30" rx="9" fill="#DCFCE7" stroke="#16A34A" stroke-width="1.5"/>
+    <text x="160" y="137" font-size="8.8" fill="#166534" text-anchor="middle" font-weight="800">수출 규모가 커지고 생활 수준도 높아지다</text>
+    </svg>`,
+  // 7 라면 — 같은 물건, 달라진 목적
+  ramen:`<svg viewBox="0 0 320 160"><rect width="320" height="160" fill="#F8FAFC"/>
+    <text x="160" y="22" font-size="11" fill="#1E3A8A" text-anchor="middle" font-weight="800">같은 물건, 달라진 목적</text>
+    <rect x="14" y="36" width="138" height="82" rx="10" fill="#FEF3C7" stroke="#B45309" stroke-width="1.8"/>
+    <text x="83" y="58" font-size="9" fill="#92400E" text-anchor="middle" font-weight="800">1960년대</text>
+    <text x="83" y="78" font-size="8.4" fill="#92400E" text-anchor="middle" font-weight="800">식량이 모자라던 때</text>
+    <text x="83" y="94" font-size="8.4" fill="#92400E" text-anchor="middle" font-weight="800">식량 부족을 해결하려고</text>
+    <text x="83" y="110" font-size="8.4" fill="#92400E" text-anchor="middle" font-weight="800">만들었어요</text>
+    <rect x="168" y="36" width="138" height="82" rx="10" fill="#DCFCE7" stroke="#16A34A" stroke-width="1.8"/>
+    <text x="237" y="58" font-size="9" fill="#166534" text-anchor="middle" font-weight="800">오늘날</text>
+    <text x="237" y="78" font-size="8.4" fill="#166534" text-anchor="middle" font-weight="800">세계 여러 나라로</text>
+    <text x="237" y="94" font-size="8.4" fill="#166534" text-anchor="middle" font-weight="800">수출하는 상품으로</text>
+    <text x="237" y="110" font-size="8.4" fill="#166534" text-anchor="middle" font-weight="800">대량 생산되고 있어요</text>
+    <text x="160" y="142" font-size="9.2" fill="#64748B" text-anchor="middle">시대에 따라 같은 물건도 목적이 달라질 수 있어요</text>
+    </svg>`,
+  // 8 정리 — 네 시대의 흐름
+  done:`<svg viewBox="0 0 320 150"><rect width="320" height="150" fill="#F8FAFC"/>
+    <text x="160" y="24" font-size="11.4" fill="#1E3A8A" text-anchor="middle" font-weight="800">농업 중심에서 공업 중심으로</text>
+    <rect x="10" y="44" width="68" height="42" rx="8" fill="#FEF3C7" stroke="#B45309" stroke-width="1.5"/>
+    <text x="44" y="62" font-size="8" fill="#92400E" text-anchor="middle" font-weight="800">1950년대</text>
+    <text x="44" y="76" font-size="7.2" fill="#92400E" text-anchor="middle" font-weight="800">생활에 필요한 물건</text>
+    <rect x="86" y="44" width="68" height="42" rx="8" fill="#DBEAFE" stroke="#1D4ED8" stroke-width="1.5"/>
+    <text x="120" y="62" font-size="8" fill="#1E3A8A" text-anchor="middle" font-weight="800">1960년대</text>
+    <text x="120" y="76" font-size="7.2" fill="#1E3A8A" text-anchor="middle" font-weight="800">경공업</text>
+    <rect x="162" y="44" width="68" height="42" rx="8" fill="#E0E7FF" stroke="#4338CA" stroke-width="1.5"/>
+    <text x="196" y="62" font-size="8" fill="#3730A3" text-anchor="middle" font-weight="800">1970년대</text>
+    <text x="196" y="76" font-size="7.2" fill="#3730A3" text-anchor="middle" font-weight="800">중화학 공업</text>
+    <rect x="238" y="44" width="68" height="42" rx="8" fill="#FBCFE8" stroke="#BE185D" stroke-width="1.5"/>
+    <text x="272" y="62" font-size="8" fill="#9D174D" text-anchor="middle" font-weight="800">1980년대</text>
+    <text x="272" y="76" font-size="7.2" fill="#9D174D" text-anchor="middle" font-weight="800">자동차·전자 제품</text>
+    <path d="M78 65 L84 65" stroke="#94A3B8" stroke-width="1.4"/>
+    <path d="M154 65 L160 65" stroke="#94A3B8" stroke-width="1.4"/>
+    <path d="M230 65 L236 65" stroke="#94A3B8" stroke-width="1.4"/>
+    <rect x="10" y="96" width="296" height="28" rx="9" fill="#DCFCE7" stroke="#16A34A" stroke-width="1.5"/>
+    <text x="160" y="114" font-size="9" fill="#166534" text-anchor="middle" font-weight="800">산업이 늘어난 것이 아니라 중심이 옮겨 간 것이에요</text>
+    <text x="160" y="142" font-size="8.8" fill="#94A3B8" text-anchor="middle">흐름을 나타낸 도식이에요</text>
+    </svg>`
+};
+function sceneCard(k,cap,extra){ return `<div class="scene ${extra||''}">${SVG[k]}${cap?`<div class="cap">${cap}</div>`:''}</div>`; }
+
+/* ===== 직접조작 — 기우는 판(43번째 신규 패턴 — 한쪽이 커지면 다른 쪽이 줄어드는 형) =====
+   ⭐ 앞의 마흔두 종에서 **판은 채워지거나 자라기만 했다.** 판의 한 자리가 채워질 때
+      **다른 자리가 그만큼 줄어든 일은 한 번도 없었다**(l06의 안과 밖조차 바깥은 그대로였다).
+      이번만 **공업 쪽이 커지는 만큼 농업 쪽이 줄어든다.**
+      까닭은 교과서 본문이 「농업 중심의 산업구조를 공업 중심으로 바꿔」라고 적었기 때문이다.
+   ⭐ **판의 칸 수 합은 어느 시점에도 달라지지 않는다** — 산업이 그냥 늘어난 것이 아니라
+      중심이 옮겨 간 것이기 때문이다. 이것은 문구가 아니라 구조다:
+      **농업 쪽을 따로 담는 상태가 아예 없고**, `sgFarm(st) = SG_TOTAL - sgInd(st)` 한 줄이
+      두 막대를 함께 그린다(한 숫자 `sgStep`이 판을 다 그린다).
+   ⭐ **중심이 뒤집히는 자리는 학생이 판을 읽어서 찾는다.** 판이 미리 표시해 주지 않는다 —
+      완성 띠는 판 읽기를 마친 뒤에만 뜬다.
+   ⭐ **농업 쪽은 끝까지 사라지지 않는다.** 마지막에도 두 칸이 남는다.
+   ⚠️ 가드 8종: ① 마무리 확정 후 전체 잠금 / ② 무효 시대·산업·읽기·마무리 번호(`Number.isInteger`) /
+      ③ 차례가 아닌 시대의 산업 무시(순서) — 판 불변 / ④ 이미 채운 시대 재선택 무시 — 판 불변 /
+      ⑤ 어긋난 산업을 골라도 판은 기울지 않는다(공·농 칸 수 불변) /
+      ⑥ 네 시대를 다 채우기 전 판 읽기 무시(순서) /
+      ⑦ 판을 읽기 전 마무리 무시(순서) · 읽기 확정 뒤 다시 읽기 무시 /
+      ⑧ 안내 표시 중 재클릭 무시(`sgBusy`).
+   ⚠️ 전량 고정 리터럴 — 난수 0. 발문은 `.sg-q`로 떼어 전 단계 상시 노출.
+   ⚠️ 정직 원칙 — 판의 칸 수는 **실제 통계가 아니라** 중심이 옮겨 가는 모습을 나타낸 도식이다. */
+const SG_TOTAL = 12;                                   // ★ 판의 칸 수 — 어느 시점에도 달라지지 않는다
+const SG_ERA   = ['1950년대','1960년대','1970년대','1980년대'];
+const SG_GROW  = [2,3,3,2];                            // 시대마다 공업 쪽이 커지는 칸 수(합 10 — 농업 두 칸은 끝까지 남는다)
+const SG_IND_S = ['생활에 필요한 물건','경공업','중화학 공업','자동차·전자 제품'];
+const SG_FILL  = ['#FEF3C7','#DBEAFE','#E0E7FF','#FBCFE8'];
+const SG_LINE  = ['#B45309','#1D4ED8','#4338CA','#BE185D'];
+
+/* 시대마다 발달한 산업 3택 — 전량 교과서 본문 원문. 정답 자리 [1,0,2,1]. */
+const SG_PICK = [
+  ['철, 배 등 무게가 많이 나가는 물건을 만드는 공업이 발달했어요',
+   '밀가루, 설탕, 면직물 등 생활에 필요한 물건을 만드는 산업이 발달했어요',
+   '자동차와 전자 제품을 만드는 산업이 발달했어요'],
+  ['신발, 가발, 의류 등 경공업 제품을 만들어 수출했어요',
+   '철강, 조선, 석유 화학 등 중화학 공업을 발전시켰어요',
+   '밀가루와 설탕을 만드는 산업이 처음으로 생겨났어요'],
+  ['자동차와 전자 제품을 수출하는 산업이 발달했어요',
+   '신발과 가발을 만드는 경공업이 처음으로 시작됐어요',
+   '철강, 조선, 석유 화학 등 중화학 공업이 발달했어요'],
+  ['밀가루와 면직물을 만드는 산업이 가장 크게 발달했어요',
+   '자동차, 정밀 기계, 전자 제품 등과 관련 있는 산업이 발달했어요',
+   '신발과 가발을 만드는 경공업이 처음으로 발달했어요']
+];
+const SG_PICK_OK = [1,0,2,1];
+/* ★ 어긋난 고르기 안내 — 어느 시대의 일인지만 짚어 준다.
+   ⚠️ 그 시대의 알맞은 산업 원문·짧은이름은 한 자리도 흘리지 않는다(스모크가 전수 대조). */
+const SG_NO = [
+  ['그것은 <b>1970년대</b>에 발달한 공업이에요. 이때는 그런 공업을 발전시킬 기술이 아직 없었어요.',
+   null,
+   '그것은 <b>1980년대</b>에 발달한 산업이에요. 훨씬 뒤의 일이에요.'],
+  [null,
+   '그것은 <b>1970년대</b>의 일이에요. 아직 높은 기술력을 갖추기 전이었어요.',
+   '그것은 <b>1950년대</b>에 이미 발달했던 산업이에요. 처음 생겨난 때가 아니에요.'],
+  ['그것은 <b>1980년대</b>의 일이에요. 조금 더 뒤를 생각해 봐요.',
+   '그것은 <b>1960년대</b>에 이미 시작된 일이에요.',
+   null],
+  ['그것은 <b>1950년대</b>에 발달했던 산업이에요.',
+   null,
+   '그것은 <b>1960년대</b>에 발달했던 공업이에요.']
+];
+/* 시대를 채울 때 판이 하는 말 — 커진 만큼 줄었고, 합은 그대로라는 것만 말한다. */
+const SG_OK_MSG = [
+  '여러 나라에서 지원받은 물자로 <b>생활에 필요한 물건</b>을 만들었어요.',
+  '풍부한 노동력을 바탕으로 <b>경공업</b> 제품을 만들어 수출했어요.',
+  '높은 기술력이 필요한 <b>중화학 공업</b>을 발전시켰어요.',
+  '기술을 연구하고 개발해 <b>자동차·정밀 기계·전자 제품</b> 산업이 발달했어요.'
+];
+
+/* 판 읽기 — 조작 직결. 판이 미리 표시해 주지 않는다. */
+const SG_READ = ['1950년대','1960년대','1970년대'];
+const SG_READ_OK = 2;
+const SG_READ_NO = [
+  '판을 다시 세어 봐요. 그때는 공업 쪽이 막 채워지기 시작했을 뿐이에요.',
+  '판을 다시 세어 봐요. 그때는 아직 <b>농업 쪽이 더 컸어요.</b>',
+  null
+];
+const SG_SHIFT = '농업 중심에서 공업 중심으로 — 산업 구조의 중심이 옮겨 갔어요';
+
+/* 마무리 — [스스로 활동] 파독 광부와 간호사 추체험. 정답 = 지도서 예시 답안 원문. */
+const SG_FIN = [
+  '한국에 있는 가족들의 생활에 도움을 주고, 나라의 경제 발전에 보탬이 된다는 생각으로 견뎠을 것 같아요',
+  '일을 조금만 하고도 많은 돈을 받을 수 있다는 생각으로 견뎠을 것 같아요',
+  '나라와는 상관없이 나 혼자만 잘살면 된다는 생각으로 견뎠을 것 같아요'
+];
+const SG_FIN_OK = 0;
+
+/* ⚠️ 공업·농업을 따로 담는 배열 상태는 두지 않는다 — 한 숫자 `sgStep`이 두 막대를 다 그린다.
+   ★ 합이 일정하다는 불변식이 코드 한 줄(`SG_TOTAL - sgInd`)로 보장된다. */
+function sgInd(st){ let n=0; for(let i=0;i<st.sgStep;i++) n+=SG_GROW[i]; return n; }
+function sgFarm(st){ return SG_TOTAL - sgInd(st); }
+function sgEraOf(j){ let a=0; for(let e=0;e<SG_GROW.length;e++){ a+=SG_GROW[e]; if(j<a) return e; } return SG_GROW.length-1; }
+function sgAllEra(st){ return st.sgStep >= SG_ERA.length; }
+
+/* 판 — 위가 농업 쪽 막대, 아래가 공업 쪽 막대, 그 아래가 시대 네 칸.
+   ⚠️ 아직 채워지지 않은 시대의 이름표는 판에 두지 않는다(미리 흘리지 않는다). */
+function sgCanvas(st){
+  const ind = sgInd(st), farm = sgFarm(st), CW = 24, X0 = 14;
+  let g='';
+  g+=`<rect x="8" y="6" width="304" height="238" rx="10" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="2"/>`;
+  const head = st.sgFin!=null ? '중심이 옮겨 가는 동안 판의 칸 수는 그대로였어요'
+    : (st.sgRead!=null ? '이제 마지막 물음이에요'
+      : (sgAllEra(st) ? '네 시대를 다 채웠어요 — 판을 읽어 봐요'
+        : `${SG_ERA[st.sgStep]}에는 어떤 산업이 발달했을까요?`));
+  g+=`<text x="160" y="22" font-size="10.4" fill="#1E3A8A" text-anchor="middle" font-weight="800">${head}</text>`;
+  /* 농업 쪽 — 공업 쪽이 커지는 만큼 줄어든다. */
+  g+=`<text x="14" y="46" font-size="9" fill="#166534" font-weight="800">농업 쪽</text>`;
+  g+=`<text data-farm-n="${farm}" x="302" y="46" font-size="8.6" fill="#166534" text-anchor="end" font-weight="800">${farm}칸</text>`;
+  for(let j=0;j<SG_TOTAL;j++){
+    const x = X0 + j*CW;
+    if(j<farm) g+=`<rect data-farm="${j}" x="${x}" y="52" width="23" height="32" rx="4" fill="#DCFCE7" stroke="#16A34A" stroke-width="1.3"/>`;
+    else g+=`<rect x="${x}" y="52" width="23" height="32" rx="4" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1" stroke-dasharray="3 3"/>`;
+  }
+  /* 공업 쪽 — 시대마다 제 색을 달고 커진다. */
+  g+=`<text x="14" y="110" font-size="9" fill="#1E3A8A" font-weight="800">공업 쪽</text>`;
+  g+=`<text data-ind-n="${ind}" x="302" y="110" font-size="8.6" fill="#1E3A8A" text-anchor="end" font-weight="800">${ind}칸</text>`;
+  for(let j=0;j<SG_TOTAL;j++){
+    const x = X0 + j*CW;
+    if(j<ind){ const e = sgEraOf(j);
+      g+=`<rect data-ind="${j}" data-era="${e}" x="${x}" y="116" width="23" height="32" rx="4" fill="${SG_FILL[e]}" stroke="${SG_LINE[e]}" stroke-width="1.3"/>`;
+    } else g+=`<rect x="${x}" y="116" width="23" height="32" rx="4" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1" stroke-dasharray="3 3"/>`;
+  }
+  /* 시대 네 칸 — 채운 시대에만 이름표가 붙는다. */
+  for(let e=0;e<SG_ERA.length;e++){
+    const x = 14 + e*74, on = st.sgStep>e;
+    g+=`<rect data-box="${e}" x="${x}" y="160" width="70" height="34" rx="7" fill="${on?SG_FILL[e]:'#fff'}" stroke="${on?SG_LINE[e]:'#CBD5E0'}" stroke-width="${on?1.6:1.2}"${on?'':' stroke-dasharray="4 3"'}/>`;
+    g+=`<text x="${x+35}" y="175" font-size="7.8" fill="${on?SG_LINE[e]:'#94A3B8'}" text-anchor="middle" font-weight="800">${SG_ERA[e]}</text>`;
+    if(on) g+=`<text data-name="${e}" x="${x+35}" y="188" font-size="7" fill="${SG_LINE[e]}" text-anchor="middle" font-weight="800">${SG_IND_S[e]}</text>`;
+  }
+  /* ★ 완성 띠 — 판 읽기를 마친 뒤에만 뜬다(코드에 단 한 자리). */
+  if(st.sgRead!=null){
+    g+=`<rect data-shift="1" x="12" y="206" width="296" height="28" rx="8" fill="#DCFCE7" stroke="#16A34A" stroke-width="1.6"/>`;
+    g+=`<text x="160" y="224" font-size="8.6" fill="#166534" text-anchor="middle" font-weight="800">${SG_SHIFT}</text>`;
+  } else {
+    g+=`<rect x="12" y="206" width="296" height="28" rx="8" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1.2" stroke-dasharray="4 3"/>`;
+  }
+  return `<svg viewBox="0 0 320 250"><rect width="320" height="250" fill="#ffffff"/>${g}</svg>`;
+}
+
+function sgPanel(st){
+  const done = st.sgFin!=null, all = sgAllEra(st), read = st.sgRead!=null;
+  const q = done
+    ? '농업이 사라진 것이 아니라 <b>중심</b>이 옮겨 간 것이에요.'
+    : (read ? '독일에 파견된 광부와 간호사들은 어떤 생각을 하면서 힘든 일을 견뎠을까요?'
+      : (all ? '공업 쪽이 농업 쪽보다 커진 때는 언제인가요?'
+        : `${SG_ERA[st.sgStep]}에는 어떤 산업이 발달했을까요?`));
+  let right = `<div class="sg-q">${q}</div>`;
+
+  if(done){
+    right+=`<div class="dw-card"><div class="pt">\uD83C\uDFED 농업 중심에서 공업 중심으로</div>
+      <div>공업 쪽이 커지는 만큼 농업 쪽이 줄었고, <b>판의 칸 수 합은 끝까지 그대로였어요.</b>
+      산업이 그냥 늘어난 것이 아니라 <b>중심이 옮겨 간 것</b>이기 때문이에요.
+      마지막에도 농업 쪽 두 칸이 남아 있어요 — 농업이 사라진 것은 아니에요.</div>
+      <div style="margin-top:5px;color:#64748B">판의 칸 수는 실제 통계가 아니라 중심이 옮겨 가는 모습을 나타낸 도식이에요.</div></div>`;
+  } else if(read){
+    right+=`<div class="dw-step">\uD83D\uDC77 [스스로 활동] 멀리서 일한 사람들</div>`;
+    right+=`<div class="sg-fin">${SG_FIN.map((f,k)=>
+      `<button class="${st.sgWrongF===k?'no':''}" onclick="sgFinish(${k})">${f}</button>`).join('')}</div>`;
+  } else if(all){
+    right+=`<div class="dw-step">\uD83D\uDD0D 판 읽기</div>`;
+    right+=`<div class="sg-fin">${SG_READ.map((r,k)=>
+      `<button class="${st.sgWrongR===k?'no':''}" onclick="sgReadPick(${k})">${r}</button>`).join('')}</div>`;
+  } else {
+    right+=`<div class="dw-step">\uD83C\uDFED ${SG_ERA[st.sgStep]} \u00B7 ${st.sgStep} / ${SG_ERA.length}</div>`;
+    right+=`<div class="sg-list">${SG_PICK[st.sgStep].map((p,k)=>
+      `<button class="${st.sgWrongP===k?'no':''}" onclick="sgPick(${st.sgStep},${k})">${p}</button>`).join('')}</div>`;
+  }
+  if(st.sgStep>0 && !done){
+    right+=`<div class="sg-log">${SG_ERA.slice(0,st.sgStep).map((e,i)=>
+      `<div><b>${e}</b> \u00B7 ${SG_IND_S[i]} \u2014 공업 쪽 +${SG_GROW[i]}칸 / 농업 쪽 \u2212${SG_GROW[i]}칸</div>`).join('')}</div>`;
+  }
+  if(st.sgMsg) right+=`<div class="dw-msg${st.sgWarn?' warn':''}">${st.sgMsg}</div>`;
+
+  return `<div class="dw-wrap">
+    <div style="text-align:center"><b style="color:var(--green)">\uD83C\uDFED 시대를 채울 때 두 쪽이 어떻게 달라지는지 살펴봐요</b></div>
+    <div class="dw-body">
+      <div class="dw-canvas">${sgCanvas(st)}<div class="cvcap">칸 수는 실제 통계가 아니라 중심이 옮겨 가는 모습을 나타낸 도식이에요</div></div>
+      <div class="dw-right">${right}</div>
+    </div>
+  </div>`;
+}
+
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "1단원 평화 통일을 위한 노력, 민주화와 산업화 · 주제② 민주화와 산업화로 달라진 생활 모습";
+
+// 확인 4 + 적용 4 — 정답 다양화 [1,3,0,2,3,1,0,2](각 자리 2회)
+// ⚠️ 11차시 이후 침범 0 · 문항 내 네 자리 연도 0(연대는 학습 내용) · 인원·금액·수치 0 ·
+//    교사용 참고 자료 0 · 주제① 소재 재현 0 · l05~l07 소재 재현 0.
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"<b>경공업</b>은 어떤 공업일까요?",
+   opts:["철, 배 등 무게가 많이 나가는 물건을 만드는 공업",
+         "신발, 가발, 의류 등 무게가 적게 나가는 물건을 만드는 공업",
+         "플라스틱, 고무 등 화학 제품을 만드는 공업",
+         "농사를 지어 곡식을 얻는 일"],
+   correct:1, pts:POINTS_BASIC, scene:"e60",
+   reason:"<b>경공업</b>은 신발, 가발, 의류 등 <b>무게가 적게 나가는 물건</b>을 만드는 공업이에요.",
+   h1:"교과서 [낱말] 풀이를 떠올려 봐요.",
+   h2:"무게가 <b>적게</b> 나가는 쪽이에요."},
+
+  {stem:"1950년대에 발달한 산업은 무엇일까요?",
+   opts:["철강과 조선을 만드는 산업",
+         "자동차와 전자 제품을 만드는 산업",
+         "신발과 가발을 만드는 경공업",
+         "밀가루, 설탕, 면직물 등 생활에 필요한 물건을 만드는 산업"],
+   correct:3, pts:POINTS_BASIC, scene:"e50",
+   reason:"여러 나라에서 지원받은 물자를 바탕으로 <b>밀가루, 설탕, 면직물 등 생활에 필요한 물건</b>을 만드는 산업이 발달했어요.",
+   h1:"그때 다른 나라에서 무엇을 지원받았나요?",
+   h2:"밀가루 포대 사진을 떠올려 봐요."},
+
+  {stem:"1960년대에 경공업이 발달할 수 있었던 까닭은 무엇일까요?",
+   opts:["당시 우리나라는 노동력이 풍부했기 때문에",
+         "이미 높은 기술력을 갖추고 있었기 때문에",
+         "다른 나라가 공장을 대신 지어 주었기 때문에",
+         "무거운 물건을 만드는 기계가 많았기 때문에"],
+   correct:0, pts:POINTS_BASIC, scene:"e60",
+   reason:"당시 우리나라는 <b>노동력이 풍부했기 때문</b>에 경공업 제품을 만들어 수출할 수 있었어요.",
+   h1:"경공업은 사람의 손이 많이 필요한 일이에요.",
+   h2:"그때 우리나라에 넉넉했던 것은 무엇이었을까요?"},
+
+  {stem:"1980년대에 발달한 산업은 무엇일까요?",
+   opts:["밀가루와 설탕을 만드는 산업",
+         "가발과 의류를 만드는 경공업",
+         "자동차, 정밀 기계, 전자 제품 등과 관련 있는 산업",
+         "물자를 지원받아 나누어 주는 일"],
+   correct:2, pts:POINTS_BASIC, scene:"e80",
+   reason:"국내 기업들이 기술을 연구하고 개발하면서 <b>자동차, 정밀 기계, 전자 제품</b> 등과 관련 있는 산업이 발달했어요.",
+   h1:"세계에서 경쟁하려고 무엇을 했나요?",
+   h2:"우리 기술로 만든 것을 수출하기 시작한 때예요."},
+
+  // 4단계 적용 (+15)
+  {stem:"판에서 <b>공업 쪽이 커질 때 농업 쪽이 줄어든</b> 까닭은 무엇일까요?",
+   opts:["판이 한 번에 한 칸만 그릴 수 있기 때문에",
+         "농업이 완전히 사라져 버렸기 때문에",
+         "공업 쪽 칸이 농업 쪽 칸보다 크기 때문에",
+         "산업이 그냥 늘어난 것이 아니라 중심이 농업에서 공업으로 옮겨 갔기 때문에"],
+   correct:3, pts:POINTS_APPLY, scene:"e60",
+   reason:"교과서는 <b>농업 중심의 산업구조를 공업 중심으로 바꾸려고 노력했다</b>고 적었어요. 그래서 판에서도 한쪽이 커지면 다른 쪽이 그만큼 줄어들어요.",
+   h1:"판의 칸 수 합은 달라졌나요?",
+   h2:"늘어난 것일까요, 옮겨 간 것일까요?"},
+
+  {stem:"판에서 <b>공업 쪽이 농업 쪽보다 커진 때</b>를 찾을 수 있었던 까닭은 무엇일까요?",
+   opts:["판이 시대마다 색을 다르게 칠했기 때문에",
+         "시대를 채울 때마다 두 쪽의 크기가 함께 바뀌어서 어느 때 뒤집혔는지 보였기 때문에",
+         "판이 처음부터 그 답을 적어 두었기 때문에",
+         "공업 쪽이 처음부터 더 컸기 때문에"],
+   correct:1, pts:POINTS_APPLY, scene:"e70",
+   reason:"판은 답을 미리 적어 주지 않았어요. <b>두 쪽이 함께 바뀌었기 때문에</b> 어느 때 공업 쪽이 더 커졌는지 세어 볼 수 있었어요.",
+   h1:"판이 그 자리를 미리 알려 주었나요?",
+   h2:"두 막대를 나란히 세어 보면 알 수 있었어요."},
+
+  {stem:"독일로 간 광부와 간호사들이 벌어들인 외화는 어떤 노릇을 했을까요?",
+   opts:["우리나라의 산업화에 밑거름이 됐어요",
+         "우리나라의 산업 시설을 모두 새로 지었어요",
+         "다른 나라에 물자를 지원하는 데 쓰였어요",
+         "경공업을 그만두게 만들었어요"],
+   correct:0, pts:POINTS_APPLY, scene:"germ",
+   reason:"이들이 벌어들인 많은 외화는 <b>우리나라의 산업화에 밑거름</b>이 됐어요. 그 돈은 가족의 생활비로도 쓰였어요.",
+   h1:"교과서 본문이 쓴 낱말을 떠올려 봐요.",
+   h2:"무엇이 자라도록 아래에서 받쳐 주는 것을 뜻하는 말이에요."},
+
+  {stem:"우리나라 산업의 발달 과정으로 <b>알맞지 않은</b> 것은 무엇일까요?",
+   opts:["1960년대에는 무게가 적게 나가는 물건을 만들어 수출했어요",
+         "1970년대에는 높은 기술력이 필요한 공업이 발달했어요",
+         "1980년대에는 산업이 발달했지만 수출 규모는 오히려 줄어들었어요",
+         "1950년대에는 생활에 필요한 물건을 만드는 산업이 발달했어요"],
+   correct:2, pts:POINTS_APPLY, scene:"done",
+   reason:"셋은 교과서가 말한 그대로예요. 1980년대에는 <b>수출 규모가 커지면서</b> 국민 소득이 늘어나고 생활 수준도 높아졌어요.",
+   h1:"1980년대에 수출은 늘었을까요, 줄었을까요?",
+   h2:"생활 수준이 높아진 까닭을 떠올려 봐요."}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — [동기 유발] 밀가루 포대
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">포대에 쓰인 글자는 무엇을 말할까요?</h2>
+  <div class="ka-bub">지난 시간에는 <b>6월 민주 항쟁</b>과 민주화로 달라진 모습을 알아봤어요. 오늘 교과서에는 커다란 <b>밀가루 포대</b> 사진이 실려 있어요. 포대에는 <span class="ka-emph">미국 국민이 기증한 밀가루</span>라고 쓰여 있어요. 우리나라가 밀가루를 지원받을 수밖에 없었던 까닭은 무엇이고, 그 밀가루로 무엇을 할 수 있었을까요? 오늘은 <b>우리나라 산업의 발달 과정</b>을 알아봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('sack','그때의 밀가루 포대','wide')}</div>
+    <div class="note">지원받은 물자로 무엇을 만들 수 있었을까요?</div></div>`});
+// 2 살펴보기 — 1950년대
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">1950년대 — 생활에 필요한 물건을 만들었어요</h2>
+  <div class="ka-bub"><b>6·25 전쟁으로 우리나라의 여러 산업 시설이 파괴되고, 국토가 황폐해졌어요.</b> 정부는 이를 극복하려고 미국을 중심으로 한 여러 나라로부터 <b>식량과 물자를 지원받았어요.</b> 다른 나라에서 지원받은 물자는 <span class="ka-emph">이 시기 산업 발전에 큰 도움이 됐어요.</span> 특히 <b>밀가루, 설탕, 면직물 등 생활에 필요한 물건을 만드는 산업</b>이 발달했어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('e50','지원받은 물자와 산업','wide')}</div>
+    <div class="note">가장 먼저 필요했던 것은 <b>살아가는 데 꼭 필요한 물건</b>이었어요.</div></div>`});
+// 3 살펴보기 — 1960년대 + [낱말] 경공업
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">1960년대 — 만들어 수출하기 시작했어요</h2>
+  <div class="ka-bub">정부는 <b>경제 개발 5개년 계획</b>을 추진해 수출을 통해 <span class="ka-emph">농업 중심의 산업구조를 공업 중심으로 바꿔</span> 우리나라를 산업화하려고 노력했어요. 당시 우리나라는 <b>풍부한 노동력</b>을 바탕으로 <b>신발, 가발, 의류 등과 같은 경공업 제품</b>을 만들어 수출했어요. 이 과정에서 제품의 생산, 운반, 수출에 필요한 <b>발전소, 고속 국도, 항만 등의 건설</b>이 활발하게 이뤄졌어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('e60','경공업과 건설','wide')}</div>
+    <div class="tipbox"><b>경공업</b>은 신발, 가발, 의류 등 <b>무게가 적게 나가는 물건</b>을 만드는 공업이에요.</div></div>`});
+// 4 살펴보기 — reveal ① [미디어 활동] 라면 두 기사
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">같은 물건인데 만든 까닭이 달라요</h2>
+  <div class="ka-grp">
+  <div class="paper"><div class="ph">\uD83D\uDCF0 그때의 신문 기사 — 전쟁 이후 극심한 식량난</div>
+    우리나라에서 라면이 처음 나온 것은 <b>식량 부족을 해결하기 위해서</b>였어요. 당시 우리나라는 전쟁으로 식량이 모자라 큰 어려움을 겪었어요. 밀가루로 만든 라면은 <b>쌀을 대신하면서도 쉽고 간단하게 먹을 수 있어서</b> 개발된 것으로 알려졌어요.</div>
+  <div class="paper"><div class="ph">\uD83D\uDCF0 오늘날의 신문 기사 — 라면 수출이 크게 늘다</div>
+    한국 문화가 세계로 뻗어 나가면서 그 관심이 <b>한국 라면</b>으로 이어지고 있어요. 지난해에는 <b>역대 가장 많은 나라가 한국 라면을 수입</b>했어요.</div>
+  ${st.revealed?`<div class="answer-box"><b>라면이 만들어진 까닭은?</b> <span class="ka-emph">식량 부족을 해결하기 위해서</span>였어요.<br><b>오늘날 라면과 어떻게 다를까요?</b> 그때의 라면은 식량 부족을 해결하려고 만들었고, <span class="ka-emph">오늘날은 수출 상품으로 대량 생산되고 있어요.</span></div>`
+    :`<div class="scene-row">${sceneCard('ramen','같은 물건, 달라진 목적','wide')}</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 5 살펴보기 — 1970년대 + [낱말] 중화학 공업 + 독일로 간 사람들
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">1970년대 — 무거운 것을 만들기 시작했어요</h2>
+  <div class="ka-bub">정부는 <b>철강, 조선, 석유 화학 등 중화학 공업</b>을 발전시켰어요. <span class="ka-emph">높은 기술력이 필요한</span> 중화학 공업을 발전시키려고 정부는 <b>교육 시설과 연구소 등을 설립</b>했어요. 또한 기업들을 지원하여 <b>대규모 공업 단지를 건설</b>했어요. 한편 정부는 <b>광부와 간호사를 독일로 파견</b>했어요. 이들이 벌어들인 많은 외화는 <span class="ka-emph">우리나라의 산업화에 밑거름</span>이 됐어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('e70','중화학 공업','wide')}${sceneCard('germ','멀리서 보내 온 마음','wide')}</div>
+    <div class="tipbox"><b>중화학 공업</b>은 <b>철, 배 등 무게가 많이 나가는 물건을 만드는 공업</b>과 <b>플라스틱, 고무 등 화학 제품을 만드는 공업</b>을 함께 이르는 말이에요.</div></div>`});
+// 6 살펴보기 — 1980년대 + reveal ② 핵심 질문
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">1980년대 — 우리 기술로 만들어 수출했어요</h2>
+  <div class="ka-bub">국내 기업들은 <b>세계에서 경쟁하려고 기술을 연구하고 개발</b>했어요. 이러한 노력으로 <b>자동차, 정밀 기계, 전자 제품 등과 관련 있는 산업</b>이 발달했어요. 또한 중화학 공업이 더욱 발달하여 <span class="ka-emph">수출 규모가 커지면서 국민 소득이 급격히 늘어났고, 사람들의 생활 수준도 높아졌어요.</span></div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('e80','기술 연구와 수출','wide')}</div>
+  ${st.revealed?`<div class="answer-box"><b>1980년대에 이러한 산업들이 발달할 수 있었던 까닭은?</b> <span class="ka-emph">국내 기업들이 세계에서 경쟁하려고 기술을 연구하고 개발했기 때문</span>이에요.</div>`
+    :`<div class="note">이 산업들이 발달할 수 있었던 까닭은 무엇일까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 7 살펴보기 — 직접조작(기우는 판)
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">공업 쪽이 커지면 농업 쪽은 어떻게 될까요?</h2>
+  <div class="ka-grp">${sgPanel(st)}</div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리: 요약 — 10차시 주요 내용 정리 원문
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 배운 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('done','오늘의 정리','wide')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">①</span><div><b style="color:var(--green)">1950년대</b> — 밀가루, 설탕, 면직물 등 <b>생활에 필요한 물건을 만드는 산업</b>이 발달했어요.</div></div>
+    <div class="sum-item"><span class="n">②</span><div><b style="color:var(--green)">1960년대</b> — 풍부한 노동력을 바탕으로 신발, 가발, 의류 등 <b>경공업 제품</b>을 만들어 수출했어요.</div></div>
+    <div class="sum-item"><span class="n">③</span><div><b style="color:var(--green)">1970년대</b> — 높은 기술력을 바탕으로 철강, 조선, 석유 화학 등 <b>중화학 공업</b>이 발달했어요.</div></div>
+    <div class="sum-item"><span class="n">④</span><div><b style="color:var(--green)">1980년대</b> — <b>자동차, 전자 제품</b> 등과 관련 있는 산업이 발달했어요.</div></div>
+    <div class="sum-item"><span class="n">★</span><div><b>중심이 옮겨 갔어요</b> — 산업이 그냥 늘어난 것이 아니라, 농업 중심이던 산업 구조의 중심이 공업으로 옮겨 갔어요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b style="color:var(--green)">산업화로 달라진 사람들의 생활 모습</b>을 알아봐요.</div></div>`});
+// 17 정리: 자기 평가 — 학습 목표 기준 3항
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"시대마다 발달한 산업을 말할 수 있어요",st)}
+    ${selfCheck(1,"경공업과 중화학 공업의 뜻을 말할 수 있어요",st)}
+    ${selfCheck(2,"산업 구조의 중심이 어떻게 옮겨 갔는지 설명할 수 있어요",st)}
+  </div><div class="note">별이 적게 채워진 곳은 앞 슬라이드를 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">오늘 공부를 마쳤어요!</h2>
+  <div class="ka-grp">
+    <div class="end-score">\u2B50 ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">다음은 <b style="color:var(--amber)">산업화로 달라진 사람들의 생활 모습</b>!</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">\u2B55 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g6_social_u1_l08";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  sgStep:0, sgRead:null, sgFin:null,
+  sgWrongP:null, sgWrongR:null, sgWrongF:null,
+  sgMsg:null, sgWarn:false, sgBusy:false,
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 \u2192';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+
+function sgRender(){ main.innerHTML = slides[state.idx].render(state); }
+/* ⚠️ 경고 경로 — 어긋난 고르기에만 쓴다. 판은 이 경로에서 한 칸도 기울지 않는다. */
+function sgHold(msg){
+  state.sgWarn=true; state.sgBusy=true; state.sgMsg=msg;
+  playThud(); sgRender();
+  setTimeout(()=>{ state.sgBusy=false; state.sgWarn=false; state.sgMsg=null;
+    state.sgWrongP=null; state.sgWrongR=null; state.sgWrongF=null; sgRender(); },1600);
+}
+
+/* ① 시대마다 발달한 산업 고르기 — ★ 이 함수가 이 패턴의 핵심 신규성이다.
+   맞히면 `sgStep`이 한 걸음 나아가고, 그 한 숫자가 **공업 쪽과 농업 쪽을 함께** 다시 그린다.
+   ★ 공업 쪽이 커지는 만큼 농업 쪽이 줄어들고, 판의 칸 수 합은 달라지지 않는다.
+   ⚠️ 어긋난 고르기에는 판이 한 칸도 기울지 않는다(가드⑤). */
+function sgPick(e,k){
+  if(state.sgFin!=null) return;                                        // 가드①
+  if(state.sgBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(e) || !Number.isInteger(k)) return;              // 가드②
+  if(e<0 || e>=SG_ERA.length || k<0 || k>=SG_PICK[e].length) return;    // 가드②
+  if(sgAllEra(state)) return;                                          // 가드④ 다 채운 뒤 재클릭 무시
+  if(e!==state.sgStep) return;                                         // 가드③ 차례가 아닌 시대 무시 — 판 불변
+  if(k===SG_PICK_OK[e]){
+    state.sgStep += 1;                                                 // ★ 한 숫자가 두 막대를 함께 바꾸는 유일한 자리
+    state.sgWrongP=null; state.sgWarn=false;
+    state.sgMsg = `${SG_OK_MSG[e]} 공업 쪽이 <b>${SG_GROW[e]}칸</b> 커지고 농업 쪽이 <b>그만큼</b> 줄었어요. 판의 칸 수 합은 그대로예요.`;
+    playChime(); sgRender(); return;
+  }
+  state.sgWrongP=k;                                                    // 가드⑤ 판은 기울지 않는다
+  sgHold(SG_NO[e][k]);
+}
+
+/* ② 판 읽기 — 네 시대를 다 채워야 열린다. 판이 그 자리를 미리 표시해 주지 않는다. */
+function sgReadPick(k){
+  if(state.sgFin!=null) return;                                        // 가드①
+  if(state.sgBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=SG_READ.length) return;         // 가드②
+  if(!sgAllEra(state)) return;                                         // 가드⑥ 네 시대 전 무시(순서)
+  if(state.sgRead!=null) return;                                       // 가드⑦ 읽기 확정 뒤 다시 읽기 무시
+  if(k===SG_READ_OK){
+    state.sgRead=k;                                                    // ★ 완성 띠가 뜨는 유일한 자리
+    state.sgWrongR=null; state.sgWarn=false;
+    state.sgMsg = '판을 보면 그때 <b>공업 쪽이 농업 쪽보다 커졌어요.</b> 산업 구조의 중심이 그때 옮겨 간 것이에요.';
+    playChime(); sgRender(); return;
+  }
+  state.sgWrongR=k;
+  sgHold(SG_READ_NO[k]);
+}
+
+/* ③ 마무리 — [스스로 활동] 파독 광부와 간호사 추체험. */
+function sgFinish(k){
+  if(state.sgFin!=null) return;                                        // 가드①
+  if(state.sgBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=SG_FIN.length) return;          // 가드②
+  if(state.sgRead==null) return;                                       // 가드⑦ 판을 읽기 전 무시(순서)
+  if(k===SG_FIN_OK){
+    state.sgFin=k;
+    state.sgWrongF=null; state.sgMsg=null; state.sgWarn=false;
+    playChime(); sgRender(); return;
+  }
+  state.sgWrongF=k;
+  sgHold(k===1
+    ? '많은 돈을 쉽게 벌려고 간 것이 아니에요. <b>힘들고 고된 일</b>을 견디며 외화를 벌었어요.'
+    : '혼자만 잘살려고 한 일이 아니에요. 이들이 보낸 돈은 <b>가족의 생활비</b>로 쓰였고, 나라의 경제 발전에도 보탬이 됐어요.');
+}
+
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2;
+    if(qs.hint>=2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">\uD83D\uDCD8 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 \u2192</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // l09 미양산 — 허브 복귀
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+</body>
+</html>
