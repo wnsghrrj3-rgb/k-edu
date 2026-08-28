@@ -293,3 +293,22 @@
 
   if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
 })();
+
+
+/* ── 케이라이브 동승 로더 (b안, 2026-08-27) ─────────────────────────────
+   학생 콘텐츠 경로에서만 /kedu_live_ride.js 를 싣는다. 문 없는 경로(교사·관리·
+   입구·라이브 자신)는 제외. 게이트 판정과 독립 — 실패해도 페이지에 영향 없음. */
+(function () {
+  try {
+    if (typeof document === 'undefined' || typeof location === 'undefined') return;
+    var p = (location.pathname || '/').toLowerCase();
+    var skip = ['/terms', '/privacy', '/auth', '/teacher', '/admin', '/parent', '/live',
+                '/classwork', '/kedu/teacher', '/kedu/hub', '/kple/host.html', '/kbattle/host.html',
+                '/archive', '/redesign', '/docs', '/design'];
+    for (var i = 0; i < skip.length; i++) if (p.indexOf(skip[i]) === 0) return;
+    if (document.getElementById('kedu-ride-js')) return;
+    var s = document.createElement('script');
+    s.id = 'kedu-ride-js'; s.src = '/kedu_live_ride.js'; s.defer = true;
+    (document.head || document.documentElement).appendChild(s);
+  } catch (e) {}
+})();

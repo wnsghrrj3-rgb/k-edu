@@ -72,16 +72,18 @@
 
 <div id="start">
   <h1>케이<span class="k">라이브</span></h1>
-  <p>학생들이 지금 무엇을 하는지 한 화면에서 봐요.<br>
-     타일을 누르면 그 학생 화면이 <b>반 전체</b>에 보여요.</p>
-  <button id="startBtn">라이브 시작</button>
+  <p>우리 반 학생들이 지금 무엇을 하는지 한 화면에서 봐요.<br>
+     학생은 <b>아무것도 입력하지 않아요</b> — 케이에듀를 쓰는 중이면 자동으로 떠요.</p>
+  <select id="classSel" style="display:none;font-family:'Gowun Dodum';font-size:15px;padding:10px 14px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink)"></select>
+  <button id="startBtn" disabled>학급 확인 중…</button>
+  <p id="startNote" style="font-size:13px"></p>
 </div>
 
 <div id="mon">
   <div id="bar">
     <span class="t">케이<span class="k">라이브</span></span>
     <span id="codeBox">····</span>
-    <span id="hint">학생: <b>keduclass.com/live</b> 에서 이 코드 입력</span>
+    <span id="hint">학생 입력 없음 — 케이에듀를 쓰는 우리 반 학생이 자동으로 떠요 (학생 화면엔 🔴 라이브 표시)</span>
     <span id="spacer"></span>
     <span id="count">0명</span>
     <button id="endBtn">라이브 종료</button>
@@ -89,7 +91,8 @@
   <div id="spotBar"></div>
   <div id="grid">
     <div id="empty"><div class="big">학생을 기다리는 중…</div>
-      학생이 <b>keduclass.com/live</b>에 코드를 넣으면 여기에 타일이 떠요.</div>
+      학생이 케이에듀 화면을 열면(또는 다음 화면으로 넘어가면) 여기에 타일이 떠요.<br>
+      켠 직후엔 학생 화면이 신호를 받기까지 잠깐 걸릴 수 있어요.</div>
   </div>
 </div>
 
@@ -98,20 +101,56 @@
   'use strict';
   var C = window.KLiveCore;
   var $ = function (id) { return document.getElementById(id); };
-  var roster = {}, spot = null, conn = null, code = null;
+  var roster = {}, spot = null, conn = null;
+  var db = getKeduDb();
+  var myClasses = [], cls = null;   // {id, code, label}
+
+  /* ── 내 학급 불러오기 (b안: 채널 = klive:{학급코드}) ── */
+  (function bootClasses() {
+    db.from('class_codes').select('id, code, label').eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .then(function (r) {
+        myClasses = (r && !r.error && r.data) || [];
+        var want = new URLSearchParams(location.search).get('code');
+        if (want) {
+          var hit = myClasses.filter(function (c) { return c.code === want.toUpperCase(); })[0];
+          if (hit) myClasses = [hit];
+        }
+        var btn = $('startBtn'), sel = $('classSel');
+        if (!myClasses.length) {
+          btn.textContent = '학급이 없어요';
+          $('startNote').textContent = '교사 대시보드에서 학급코드를 먼저 만들어 주세요.';
+          return;
+        }
+        if (myClasses.length > 1) {
+          sel.style.display = 'inline-block';
+          sel.innerHTML = myClasses.map(function (c, i) {
+            return '<option value="' + i + '">' + esc(c.label || c.code) + '</option>';
+          }).join('');
+        }
+        btn.disabled = false;
+        btn.textContent = '라이브 시작';
+      });
+  })();
 
   $('startBtn').onclick = function () {
-    code = C.makeCode();
+    if (!myClasses.length) return;
+    var i = myClasses.length > 1 ? (+$('classSel').value || 0) : 0;
+    cls = myClasses[i];
     $('start').style.display = 'none';
     $('mon').style.display = 'flex';
-    $('codeBox').textContent = code;
+    $('codeBox').textContent = cls.label || cls.code;
+    /* 개방 원장 — 학생 동승 스크립트가 이걸 보고 채널에 들어온다 (실패해도 ping 이 진실) */
+    db.rpc('open_for_class', { p_class_code_id: cls.id, p_content_key: 'feature:klive',
+      p_title: '케이라이브', p_kind: 'link', p_url: '/live/teacher.html', p_bundle_id: null })
+      .then(function () {}, function () {});
     open();
-    setInterval(render, 2000); // 생기 점 색 갱신
+    setInterval(render, 2000);              // 생기 점 색 갱신
+    setInterval(function () { send({ kind: 'ping' }); }, 10000); // 하트비트 — 학생 라이브 판정 근거
   };
 
   function open() {
-    var db = getKeduDb();
-    var ch = db.channel(C.channelName(code), { config: { broadcast: { self: false, ack: true } } });
+    var ch = db.channel(C.channelName(cls.code), { config: { broadcast: { self: false, ack: true } } });
     ch.on('broadcast', { event: 'kl' }, function (e) { if (e && e.payload) onMsg(e.payload); });
     ch.subscribe(function (status) {
       if (status === 'SUBSCRIBED') send({ kind: 'ping' }); // 먼저 와 있던 학생 즉시 재송신
@@ -190,7 +229,9 @@
     if (!confirm('라이브를 끝낼까요? 학생 화면의 라이브 표시가 사라져요.')) return;
     setSpot(null);
     send({ kind: 'end' });
-    location.reload();
+    var done = function () { location.reload(); };
+    if (cls) db.rpc('close_for_class', { p_class_code_id: cls.id, p_content_key: 'feature:klive' }).then(done, done);
+    else done();
   };
 
   function esc(s) { return String(s).replace(/[<>&"]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]; }); }
