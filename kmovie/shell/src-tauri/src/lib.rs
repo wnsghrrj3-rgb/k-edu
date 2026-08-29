@@ -20,7 +20,7 @@ const FPS: i64 = 30;
 const FRAME_W: u32 = 1920;
 const FRAME_H: u32 = 1080;
 const FRAME_BYTES: usize = (FRAME_W * FRAME_H * 4) as usize;
-const MAX_SEC: f64 = 15.0 * 60.0; // 껍데기 원본 상한(프록시 샘플+PCM 이 브라우저 메모리에 다 올라가므로)
+const MAX_SEC: f64 = 60.0 * 60.0; // 껍데기 원본 상한 — 엔진이 구간 읽기(지연 로드)·프록시 디스크 직독을 하므로 60분
 const MAX_SIDE_BYTES: u64 = 400 * 1024 * 1024; // 사진·음악 상한
 const CHUNK_MAX: usize = 32 * 1024 * 1024;
 const KEEP_DAYS: u64 = 30; // 안 쓴 프록시 보관 기간
@@ -392,7 +392,7 @@ impl Shell {
         emit("프레임 표 만드는 중", 0.02);
         let (first_pts, keys) = probe_packets(&self.ffprobe, path)?;
 
-        // 프록시 비트레이트: 길수록 낮게 (브라우저 메모리에 샘플이 통째로 올라간다)
+        // 프록시 비트레이트: 길수록 낮게 (엔진은 구간 읽기라 메모리 걱정은 없고 — 디스크 용량·인코드 시간 몫)
         let vbr = if dur_sec <= 300.0 { "6M" } else if dur_sec <= 600.0 { "4500k" } else { "3M" };
         let tmp = self.proxy_dir.join(format!("{hash}.tmp"));
         let dst = self.proxy_path(hash);
@@ -1161,10 +1161,10 @@ mod tests {
         assert_eq!(kind_of(Path::new("c.m4a")), "audio");
         let sh = shell("long");
         let p = fixtures().dir.join("long.mp4");
-        // 컨테이너 duration 만 길게 보이도록 16분짜리 검은 영상(초저비트, 1fps) — 실제 인코딩은 몇 초
-        ff(&["-f", "lavfi", "-i", "color=c=black:size=64x64:rate=1", "-t", "961", "-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p", &p.to_string_lossy()]);
+        // 컨테이너 duration 만 길게 보이도록 61분짜리 검은 영상(초저비트, 1fps) — 실제 인코딩은 몇 초
+        ff(&["-f", "lavfi", "-i", "color=c=black:size=64x64:rate=1", "-t", "3661", "-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p", &p.to_string_lossy()]);
         let (hash, size, mtime) = file_hash(&p).unwrap();
         let e = sh.make_proxy(&|_s, _p| {}, &p, &hash, size, mtime).unwrap_err();
-        assert!(e.contains("15분"), "{e}");
+        assert!(e.contains("60분"), "{e}");
     }
 }

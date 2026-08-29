@@ -10,3 +10,5 @@ ls -la fx
 ffmpeg -hide_banner -loglevel error -y -f lavfi -i "testsrc2=size=320x180:rate=30:duration=30" -f lavfi -i "sine=frequency=440:duration=30" -c:v libvpx-vp9 -b:v 300k -cpu-used 5 -g 15 -c:a libopus -pix_fmt yuv420p fx/au.mp4
 # ui-audio.mjs 용(AAC 디코더 있는 환경): H.264/AAC, t=2.0s 에 1kHz 클릭 + 낮은 220Hz 바닥 — elst 프라이밍·싱크 검증
 ffmpeg -hide_banner -loglevel error -y -f lavfi -i "testsrc2=size=320x180:rate=30:duration=10" -f lavfi -i "aevalsrc=if(between(t\,2\,2.01)\,0.9*sin(2*PI*1000*t)\,0.05*sin(2*PI*220*t)):s=48000:d=10" -c:v libx264 -profile:v baseline -g 15 -c:a aac -b:a 128k -pix_fmt yuv420p fx/aac.mp4
+# ui-lazy.mjs 용: 조각(fragmented) mp4 — moov 에 샘플 표가 없어 지연 디먹스가 통 읽기로 폴백해야 하는 구조
+ffmpeg -hide_banner -loglevel error -y -f lavfi -i "testsrc2=size=320x180:rate=30:duration=2" -f lavfi -i "sine=frequency=440:duration=2" -c:v libvpx-vp9 -b:v 200k -cpu-used 5 -g 15 -c:a libopus -pix_fmt yuv420p -movflags frag_keyframe+empty_moov fx/frag.mp4

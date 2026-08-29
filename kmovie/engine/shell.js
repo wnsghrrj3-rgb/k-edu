@@ -3,7 +3,8 @@
    ------------------------------------------------------------
    · window.__TAURI__ 가 있으면 active. 없으면(보통 브라우저) 전부 no-op — 브라우저판 코드 변화 0.
    · 가져오기: 껍데기가 경로만 잡고 ffmpeg 프록시(긴 변 1280·30fps·H.264)를 만든 뒤,
-     그 파일을 조각으로 받아 File 로 만들어 KMV_MEDIA.open 에 넘긴다. 사진·음악은 원본 그대로.
+     프록시는 디스크 직독 래퍼(slice → read_chunk)로 KMV_MEDIA.open 에 넘긴다 — 통째 메모리 0.
+     사진·음악은 원본을 조각으로 받아 File 로.
      File 에 kmvOrigin { path, hash, ... } 를 붙여 media.origin 으로 저장 → 새로고침 복원은 IndexedDB 대신 디스크.
    · 내보내기: drawExact 가 쓰는 프레임을 껍데기의 원화질 파이프(프록시 프레임 번호와 같은 프레임을 원본에서
      1920×1080 RGBA 로)로 바꾼다. 저장은 mp4-muxer StreamTarget → 껍데기 파일 쓰기(메모리 0).
@@ -38,9 +39,10 @@
     if (!active) return null;
     try { info = await invoke('shell_info'); } catch (e) { console.warn('[KMV shell] info', e); info = { ffmpeg: false }; }
     if (g.KMV_MEDIA && g.KMV_MEDIA.limits) {
-      // 프록시는 긴 변 1280·30fps 라 원본 한도 대신 껍데기 한도(시간)로. 파일 크기 한도는 프록시 기준으로 넉넉히.
-      g.KMV_MEDIA.limits.maxSec = (info && info.maxSec) || 15 * 60;
-      g.KMV_MEDIA.limits.maxFile = 1500 * 1024 * 1024;
+      // 프록시는 긴 변 1280·30fps. 엔진이 구간 읽기(지연 로드)를 하고 프록시도 디스크 직독 래퍼로
+      // 넘기므로 메모리 걱정 없이 60분까지 — 백엔드가 maxSec 을 주면 그 값을 따른다.
+      g.KMV_MEDIA.limits.maxSec = (info && info.maxSec) || 60 * 60;
+      g.KMV_MEDIA.limits.maxFile = 8 * 1024 * 1024 * 1024;
     }
     return info;
   }
@@ -75,6 +77,36 @@
     return parts;
   }
 
+  /* ---------- 디스크 직독 래퍼 ----------
+     엔진(KMV_MEDIA)이 쓰는 건 size · name · type · slice(a,b).arrayBuffer() 뿐이다.
+     영상 프록시를 통째로 메모리 File 로 만드는 대신, 필요한 구간만 read_chunk 로 읽는
+     Blob 모양 객체를 넘긴다 — 60분 프록시도 메모리 0. 사진·음악은 원본 File 그대로. */
+  async function readRange(where, off, len) {
+    const parts = []; let o = off;
+    while (o < off + len) {
+      const l = Math.min(CHUNK, off + len - o);
+      const buf = await invoke('read_chunk', Object.assign({ offset: o, len: l }, where));
+      const u8 = buf instanceof ArrayBuffer ? new Uint8Array(buf) : new Uint8Array(buf.buffer || buf);
+      if (!u8.length) break;
+      parts.push(u8); o += u8.length;
+    }
+    if (parts.length === 1) { const p = parts[0]; return p.byteOffset === 0 && p.byteLength === p.buffer.byteLength ? p.buffer : p.slice().buffer; }
+    let n = 0; parts.forEach(p => { n += p.length; });
+    const out = new Uint8Array(n); let q = 0; parts.forEach(p => { out.set(p, q); q += p.length; });
+    return out.buffer;
+  }
+  function diskFile(where, size, name, kind) {
+    return {
+      name, size, isDiskRef: true,
+      type: mimeOf(name) || (kind === 'video' ? 'video/mp4' : ''),
+      slice(a, b) {
+        a = Math.max(0, Math.min(size, a == null ? 0 : a)); b = Math.max(a, Math.min(size, b == null ? size : b));
+        return { size: b - a, arrayBuffer: () => readRange(where, a, b - a) };
+      },
+      arrayBuffer() { return readRange(where, 0, size); },
+    };
+  }
+
   /* 경로 → File (kmvOrigin 부착). hooks: { status(text), progress(pct, label) } */
   async function file(pathOrRef, hooks) {
     if (!active) throw new Error('데스크톱판이 아니에요');
@@ -91,10 +123,16 @@
     let r;
     try { r = await invoke('import_path', { path }); }
     finally { if (unlisten) { try { unlisten(); } catch (e) {} } }
-    hooks.status && hooks.status((r.cached ? '프록시 다시 쓰는 중' : '프록시 받는 중') + ' — ' + name);
+    hooks.status && hooks.status((r.cached ? '프록시 여는 중' : '프록시 여는 중') + ' — ' + name);
     const where = r.kind === 'video' ? { hash: r.hash } : { path };
-    const parts = await readAll(where, r.bytes, p => hooks.progress && hooks.progress(0.85 + p * 0.15, '프록시 받는 중 — ' + name));
-    const f = new File(parts, r.name || name, { type: mimeOf(r.name || name) || (r.kind === 'video' ? 'video/mp4' : '') });
+    let f;
+    if (r.kind === 'video') {
+      f = diskFile(where, r.bytes, r.name || name, 'video');   // 통째로 안 받는다 — 엔진이 구간만 읽는다
+      hooks.progress && hooks.progress(1, '프록시 준비 완료 — ' + name);
+    } else {
+      const parts = await readAll(where, r.bytes, p => hooks.progress && hooks.progress(0.85 + p * 0.15, '받는 중 — ' + name));
+      f = new File(parts, r.name || name, { type: mimeOf(r.name || name) });
+    }
     f.kmvOrigin = { path, hash: r.hash, name: r.name || name, kind: r.kind, size: r.size, mtime: r.mtime, w: r.w, h: r.h, durSec: r.durSec, fps: r.fps, codec: r.codec };
     return f;
   }

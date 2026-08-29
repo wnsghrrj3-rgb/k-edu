@@ -12,8 +12,14 @@ const SH = globalThis.KMV_SHELL;
 const info = await SH.init(); console.log('active', SH.active, 'limits', KMV_MEDIA.limits.maxSec, KMV_MEDIA.limits.maxFile / 1048576 | 0);
 const prog = []; const f = await SH.file(SH.ref(D + '/orig60.mp4'), { progress: (p, l) => prog.push([p.toFixed(2), l]), status: () => {} });
 const r = B.loadMeta(f.kmvOrigin.hash);
-const whole = Buffer.concat(f.parts.map(p => Buffer.from(p)));
-console.log('file', f.name, f.type, 'origin', f.kmvOrigin.kind, f.kmvOrigin.w + 'x' + f.kmvOrigin.h, 'bytes equal', whole.equals(fs.readFileSync(D + '/mockproxy/' + r.hash + '.mp4')), 'progress steps', prog.length, prog[prog.length - 1]);
+const proxyBytes = fs.readFileSync(D + '/mockproxy/' + r.hash + '.mp4');
+// 영상은 디스크 직독 래퍼 — 통째 arrayBuffer 와 중간 slice 가 프록시 파일 바이트와 같아야 한다
+const whole = Buffer.from(await f.arrayBuffer());
+const mid = Buffer.from(await f.slice(1000, 5000).arrayBuffer());
+console.log('file', f.name, f.type, 'diskRef', !!f.isDiskRef, 'size', f.size === proxyBytes.length,
+  'origin', f.kmvOrigin.kind, f.kmvOrigin.w + 'x' + f.kmvOrigin.h,
+  'bytes equal', whole.equals(proxyBytes), 'slice equal', mid.equals(proxyBytes.subarray(1000, 5000)),
+  'progress steps', prog.length, prog[prog.length - 1]);
 // 사진 경로 → 원본 그대로
 fs.writeFileSync(D + '/p.png', Buffer.from('89504e470d0a1a0a', 'hex'));
 const im = await SH.file(D + '/p.png'); console.log('image', im.kmvOrigin.kind, im.size, im.type);

@@ -23,7 +23,7 @@ await page.route('**/cdn.jsdelivr.net/**', route => {
 });
 await page.goto(`http://127.0.0.1:${PORT}/kmovie/`); await page.waitForFunction(() => window.KMV_UI);
 
-ok(await page.evaluate(() => KMV_MEDIA.limits.maxSec === 15 * 60), '브라우저판 원본 상한 15분 (소리 스트리밍 후 상향)');
+ok(await page.evaluate(() => KMV_MEDIA.limits.maxSec === 60 * 60), '브라우저판 원본 상한 60분 (구간 읽기 후 상향)');
 
 /* 파일 가져와서 소스 상태 + 정답지 비교를 돌려주는 공용 페이지 함수 */
 const importMusic = async file => {

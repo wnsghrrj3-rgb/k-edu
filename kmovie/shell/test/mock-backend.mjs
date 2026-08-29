@@ -29,7 +29,7 @@ export function plan(meta, idx) {
 }
 function ratio(s) { const [a, b = '1'] = String(s || '').split('/'); const A = +a, B = +b; return B ? [A, B] : null; }
 
-export function createBackend({ proxyDir, ffmpeg = 'ffmpeg', ffprobe = 'ffprobe', maxSec = 900 }) {
+export function createBackend({ proxyDir, ffmpeg = 'ffmpeg', ffprobe = 'ffprobe', maxSec = 3600 }) {
   fs.mkdirSync(proxyDir, { recursive: true });
   const metas = new Map(), frames = new Map(), exports = new Map();
   let expSeq = 0;

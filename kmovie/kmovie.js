@@ -1482,7 +1482,10 @@
         const meta = await M.open(f, null, s => status(s + ' — ' + f.name));
         if (f.kmvOrigin) meta.origin = f.kmvOrigin;   // 원본 경로·해시 — 복원은 디스크의 프록시에서
         P.addMedia(meta);
-        if (!f.kmvOrigin) DB.putMedia(meta.id, f, f.name).catch(e => console.warn('db', e));
+        if (!f.kmvOrigin) {
+          if (f.size <= 1500 * 1024 * 1024) DB.putMedia(meta.id, f, f.name).catch(e => console.warn('db', e));
+          else toast(f.name + ' — 원본이 커서 새로고침 복원 목록엔 못 넣어요. 새로고침하면 이 파일만 다시 넣어 주세요', 4500);
+        }
         if (meta.kind === 'audio') {
           const a = P.addA2(meta.id, P.data.A2.length ? ph : 0);
           refreshBin(); analyzeBg(meta.id); refreshStatus();

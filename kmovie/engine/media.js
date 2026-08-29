@@ -1,7 +1,10 @@
 /* ============================================================
    케이무비 미디어 층 (KMV_MEDIA) — 설계서 v1 §5
    ------------------------------------------------------------
-   · 디먹스: mp4box.js (H.264 mp4/mov). HEVC·긴 파일은 껍데기 몫 → 안내.
+   · 디먹스: mp4box.js (H.264 mp4/mov). HEVC 는 껍데기 몫 → 안내.
+   · 구간 읽기(지연 로드): moov(샘플 표)만 먼저 읽고, mdat 바이트는 GOP·오디오 구간 단위로
+     blob.slice 에서 필요할 때만 — 파일을 통째로 메모리에 올리지 않는다 (브라우저판 60분).
+     조각(fragmented) mp4 등 표를 못 뽑는 구조만 예전 통 읽기(15분·700MB)로 폴백.
    · 디코드: WebCodecs VideoDecoder. GOP(키프레임) 단위로 풀고 LRU 캐시.
      캐시는 VideoFrame 이 아니라 ImageBitmap — 하드웨어 디코더의 출력 풀(몇 장)을 즉시 돌려준다.
      스크럽은 "최신 요청만" 디코드(중간 요청은 버림) → 가장 가까운 캐시 프레임 즉시, 정확 프레임 후속.
@@ -22,8 +25,11 @@
   const CACHE_BYTES = 480 * 1024 * 1024;   // 프레임 캐시 바이트 예산 (ImageBitmap RGBA 기준)
   const THUMB_W = 160, THUMB_H = 90;
   // 브라우저판 원본 상한. 데스크톱 껍데기(KMV_SHELL)가 붙으면 프록시 기준으로 limits 를 바꾼다.
-  // 소리가 스트리밍이 된 뒤(7·8단계) 10분 → 15분 상향. 파일 크기 상한은 그대로(압축 샘플이 통째로 메모리).
-  const limits = { maxFile: 700 * 1024 * 1024, maxSec: 15 * 60 };
+  // 구간 읽기(지연 로드) 도입으로 15분·700MB → 60분·4GB: 파일을 통째로 안 올리고
+  // moov(샘플 표)만 읽은 뒤 바이트는 필요한 구간만 blob.slice 로 읽는다.
+  const limits = { maxFile: 4 * 1024 * 1024 * 1024, maxSec: 60 * 60 };
+  // 통 읽기 폴백(조각 mp4 등 moov 기반 샘플 표를 못 뽑는 구조) 전용 상한 — 예전 그대로.
+  const FULL_MAX_FILE = 700 * 1024 * 1024, FULL_MAX_SEC = 15 * 60;
   const MUSIC_MAX = 60 * 60, MUSIC_MAX_FULL = 20 * 60, MUSIC_MAX_BYTES = 300 * 1024 * 1024;
   let analyzePaused = false;                 // 재생·셔틀 중엔 분석을 쉬게 한다 (디코더 경쟁 방지)
   function setAnalyzePaused(v) { analyzePaused = !!v; }
@@ -45,6 +51,60 @@
   }
   function uid(pre) { return pre + Math.random().toString(36).slice(2, 9); }
   function supported() { return typeof VideoDecoder !== 'undefined' && typeof VideoEncoder !== 'undefined'; }
+
+  /* ---------- 구간 읽기(지연 로드) 도우미 ----------
+     blob 은 File·Blob 또는 껍데기의 디스크 직독 래퍼 — slice(a,b).arrayBuffer() 만 있으면 된다. */
+  async function readBytes(blob, a, b) {
+    return new Uint8Array(await blob.slice(a, b).arrayBuffer());
+  }
+  /* 흩어진 샘플 묶음 읽기: [{off,size}] 를 오프셋 순으로 gap 이하 틈은 붙여 한 번에 읽고,
+     items 순서 그대로 Uint8Array 뷰 배열을 돌려준다 (오디오 청크 다발·GOP 용). */
+  async function readRuns(blob, items, gap) {
+    gap = gap || 262144;
+    const order = items.map((it, i) => i).sort((x, y) => items[x].off - items[y].off);
+    const out = new Array(items.length);
+    let s = 0;
+    while (s < order.length) {
+      let e = s, end = items[order[s]].off + items[order[s]].size;
+      while (e + 1 < order.length && items[order[e + 1]].off <= end + gap) { e++; end = Math.max(end, items[order[e]].off + items[order[e]].size); }
+      const a0 = items[order[s]].off;
+      const u8 = await readBytes(blob, a0, end);
+      for (let k = s; k <= e; k++) { const it = items[order[k]]; out[order[k]] = u8.subarray(it.off - a0, it.off - a0 + it.size); }
+      s = e + 1;
+    }
+    return out;
+  }
+  /* 순차 읽기 창(재생 스트림·분석용): 8MB 창을 굴리며 범위를 돌려준다. drop() 으로 놓아준다. */
+  function fileCursor(blob, win) {
+    const W = win || (8 * 1024 * 1024);
+    let buf = null, b0 = 0, b1 = 0;
+    return {
+      async range(o0, o1) {
+        if (!(buf && o0 >= b0 && o1 <= b1)) {
+          const b = Math.min(blob.size, o0 + Math.max(W, o1 - o0));
+          buf = await readBytes(blob, o0, b); b0 = o0; b1 = b;
+        }
+        return buf.subarray(o0 - b0, o1 - b0);
+      },
+      drop() { buf = null; b0 = b1 = 0; },
+    };
+  }
+  /* 최상위 박스 스캔 — 헤더 16바이트씩만 읽어 moov·ftyp 위치를 찾는다 (moov 가 앞이든 뒤든). */
+  async function boxScan(blob) {
+    let p = 0; const out = [];
+    while (p + 8 <= blob.size && out.length < 64) {
+      const hd = new DataView((await readBytes(blob, p, Math.min(blob.size, p + 16))).buffer);
+      if (hd.byteLength < 8) break;
+      let sz = hd.getUint32(0), hdr = 8;
+      const typ = String.fromCharCode(hd.getUint8(4), hd.getUint8(5), hd.getUint8(6), hd.getUint8(7));
+      if (sz === 1) { if (hd.byteLength < 16) break; sz = hd.getUint32(8) * 4294967296 + hd.getUint32(12); hdr = 16; }
+      else if (sz === 0) sz = blob.size - p;
+      if (sz < hdr || !/^[\x20-\x7e]{4}$/.test(typ)) break;
+      out.push({ typ, off: p, size: sz });
+      p += sz;
+    }
+    return out;
+  }
 
   /* ---------- avcC → VideoDecoder description ---------- */
   function avcDescription(entry) {
@@ -149,6 +209,67 @@
       buffer.fileStart = 0;
       try { mp4.appendBuffer(buffer); mp4.flush(); } catch (e) { return reject(new Error('mp4 구조를 읽는 중 오류: ' + (e.message || e))); }
       setTimeout(() => { if (!done) { if (out.samples.length) { done = true; if (out.a && !out.a.samples.length) out.hasAudio = false; resolve(out); } else reject(new Error('영상 샘플을 꺼내지 못했어요 (손상되었거나 스트리밍용 mp4일 수 있어요)')); } }, 1500);
+    });
+  }
+
+  /* ---------- 지연 디먹스: moov(샘플 표)만 읽는다 ----------
+     mp4box 는 moov 만 먹여도 updateSampleLists 로 전체 샘플 표(원본 파일 절대 오프셋·크기·cts·is_sync)를
+     만든다 — mdat 바이트는 필요할 때 blob.slice 로 구간만 읽는다. demux() 와 같은 모양의 dm 을 돌려주되
+     samples 엔 data 대신 off·size 가 실리고 dm.lazy·dm.blob 이 붙는다. 조각(fragmented) mp4 등
+     moov 기반 표가 안 나오는 구조면 throw — 호출자가 통 읽기(demux)로 폴백한다. */
+  async function demuxLazy(file) {
+    const boxes = await boxScan(file);
+    const ftyp = boxes.find(b => b.typ === 'ftyp'), moov = boxes.find(b => b.typ === 'moov');
+    if (!moov) throw new Error('moov 를 찾지 못했어요');
+    if (moov.size > 64 * 1024 * 1024) throw new Error('moov 가 비정상적으로 커요');
+    const parts = [];
+    if (ftyp) parts.push(await readBytes(file, ftyp.off, ftyp.off + ftyp.size));
+    parts.push(await readBytes(file, moov.off, moov.off + moov.size));
+    let n = 0; parts.forEach(p => { n += p.length; });
+    const lean = new Uint8Array(n); let q = 0; parts.forEach(p => { lean.set(p, q); q += p.length; });
+    const ab = lean.buffer; ab.fileStart = 0;
+    return await new Promise((resolve, reject) => {
+      const mp4 = g.MP4Box.createFile();
+      let done = false;
+      mp4.onError = e => { if (!done) { done = true; reject(new Error('mp4 를 읽을 수 없어요: ' + e)); } };
+      mp4.onReady = info => {
+        if (done) return; done = true;
+        try {
+          const track = info.videoTracks && info.videoTracks[0];
+          if (!track) return reject(new Error('영상 트랙이 없어요'));
+          const codec = String(track.codec || '');
+          if (/^(hvc1|hev1|hvc|hev)/i.test(codec)) return reject(new Error('HEVC(H.265) 원본은 브라우저판에서 못 읽어요 — 폰 카메라 설정을 "호환성 우선(H.264)"으로 바꾸거나, 데스크톱판을 써 주세요'));
+          if (!/^(avc|vp09|av01)/i.test(codec)) return reject(new Error('지원하지 않는 코덱이에요 (' + codec + ') — H.264 mp4/mov 를 넣어 주세요'));
+          const trak = mp4.getTrackById(track.id);
+          const vs = trak.samples;
+          if (!vs || !vs.length || vs[0].offset == null) return reject(new Error('샘플 표를 만들지 못했어요 (조각 mp4?)'));
+          const out = {
+            lazy: true, blob: file,
+            codec, timescale: track.timescale, w: track.video.width, h: track.video.height,
+            rot: rotationOf(trak),
+            desc: /^avc/i.test(codec) ? avcDescription(trak.mdia.minf.stbl.stsd.entries[0]) : null,
+            samples: vs.map(s => ({ cts: s.cts, duration: s.duration, is_sync: !!s.is_sync, off: s.offset, size: s.size })),
+          };
+          const atrack = info.audioTracks && info.audioTracks[0];
+          out.hasAudio = !!atrack;
+          if (atrack) {
+            const atrak = mp4.getTrackById(atrack.id), as = atrak.samples;
+            if (as && as.length && as[0].offset != null) {
+              let acodec = String(atrack.codec || '');
+              const adesc = audioDescription(atrak, acodec);
+              let achn = atrack.audio && atrack.audio.channel_count;
+              if (/^opus/i.test(acodec)) { acodec = 'opus'; if (adesc) achn = adesc[9]; }
+              out.a = { lazy: true, blob: file, codec: acodec, timescale: atrack.timescale,
+                        samples: as.map(s => ({ cts: s.cts, duration: s.duration, off: s.offset, size: s.size })),
+                        sr: atrack.audio && atrack.audio.sample_rate, chn: achn,
+                        desc: adesc, edit: editOffsetSec(atrak, atrack.timescale) };
+            } else out.hasAudio = false;
+          }
+          resolve(out);
+        } catch (e) { reject(e); }
+      };
+      try { mp4.appendBuffer(ab); mp4.flush(); } catch (e) { if (!done) { done = true; reject(new Error('mp4 구조를 읽는 중 오류: ' + (e.message || e))); } }
+      setTimeout(() => { if (!done) { done = true; reject(new Error('moov 를 해석하지 못했어요')); } }, 3000);
     });
   }
 
@@ -312,9 +433,10 @@
   class Pcm {
     constructor(a) {
       this.codec = a.codec; this.desc = a.desc || null; this.cfgSr = a.sr || 48000; this.cfgCh = Math.max(1, a.chn || 2);
+      this.blob = a.lazy ? a.blob : null;                 // 지연 소스 — 샘플 바이트는 필요할 때 blob 에서
       const ts = a.timescale, first = a.samples.length ? a.samples[0].cts / ts : 0;
       this.base = a.edit != null ? a.edit : first;
-      this.pk = a.samples.map(s => ({ t: s.cts / ts - this.base, d: s.duration / ts, data: s.data }));
+      this.pk = a.samples.map(s => ({ t: s.cts / ts - this.base, d: s.duration / ts, data: s.data || null, off: s.off, size: s.size }));
       const last = this.pk[this.pk.length - 1];
       this.durSec = last ? Math.max(0, last.t + last.d) : 0;
       this.sr = null; this.ch = null;                    // 첫 디코드 출력에서 확정 (HE-AAC 등)
@@ -357,14 +479,17 @@
     async _decodeRun(t0, t1, ci0, ci1) {
       const pk = this.pk; if (!pk.length) return;
       let i0 = 0; for (let i = 0; i < pk.length; i++) { if (pk[i].t <= t0 - PCM_PRE) i0 = i; else break; }
+      let i1 = i0; while (i1 < pk.length && pk[i1].t < t1) i1++;
+      let views = null;                                   // 지연 소스 — 이 구간 바이트만 묶어 읽는다 (일시 보유)
+      if (this.blob && !pk[i0].data) { try { views = await readRuns(this.blob, pk.slice(i0, i1), 262144); } catch (e) { console.warn('[KMV media] pcm read', e); return; } }
       let err = null; const outs = [];
       const run = { in0: Math.round(pk[i0].t * 1e6), firstDur: pk[i0].d, trim0: null };   // 출력 ts 재사상용
       const dec = new AudioDecoder({ output: ad => outs.push(ad), error: e => { err = e; } });
       const cfg = { codec: this.codec, sampleRate: this.cfgSr, numberOfChannels: this.cfgCh }; if (this.desc) cfg.description = this.desc;
       try { dec.configure(cfg); } catch (e) { err = e; }
-      for (let i = i0; i < pk.length && !err; i++) {
-        const p = pk[i]; if (p.t >= t1) break;
-        try { dec.decode(new EncodedAudioChunk({ type: 'key', timestamp: Math.round(p.t * 1e6), duration: Math.max(0, Math.round(p.d * 1e6)), data: p.data })); } catch (e) { err = e; break; }
+      for (let i = i0; i < i1 && !err; i++) {
+        const p = pk[i];
+        try { dec.decode(new EncodedAudioChunk({ type: 'key', timestamp: Math.round(p.t * 1e6), duration: Math.max(0, Math.round(p.d * 1e6)), data: p.data || views[i - i0] })); } catch (e) { err = e; break; }
         if (dec.decodeQueueSize > 32) await new Promise(r => setTimeout(r, 2));
         if (outs.length > 64) this._drain(outs, ci0, ci1, run);
       }
@@ -437,9 +562,10 @@
       this.id = id; this.kind = 'video';
       this.codec = dm.codec; this.desc = dm.desc; this.rot = dm.rot;
       this.w = dm.w; this.h = dm.h; this.audio = audio; this.pcm = null; // audio: 폴백 AudioBuffer | null, pcm: 스트리밍 소리
+      this.lazy = !!dm.lazy; this.blob = dm.blob || null;               // 지연 소스 — 샘플 바이트는 blob 에서 구간만
       const ts = dm.timescale; this.ts = ts;
       // 표시 순서(cts) 정렬. samples 는 디코드 순서(dts)로 들어온다.
-      const dec = dm.samples.map((s, i) => ({ i, cts: s.cts, dur: s.duration, key: !!s.is_sync, data: s.data, us: Math.round(s.cts * 1e6 / ts) }));
+      const dec = dm.samples.map((s, i) => ({ i, cts: s.cts, dur: s.duration, key: !!s.is_sync, data: s.data || null, off: s.off, size: s.size, us: Math.round(s.cts * 1e6 / ts) }));
       const pres = dec.slice().sort((a, b) => a.cts - b.cts);
       this.dec = dec; this.pres = pres;
       this.presOfUs = new Map(); pres.forEach((s, k) => this.presOfUs.set(s.us, k));
@@ -462,7 +588,7 @@
       this.thumbs = []; this.thumbEvery = Math.max(1, Math.round(this.fps)); this.motion = null; this.peaks = null;
       this.analyzed = false; this.analyzing = false;
     }
-    dispose() { this._disposed = true; if (this.pcm) this.pcm.dispose(); this.cache.forEach(f => { try { f.close(); } catch (e) {} }); this.cache.clear(); try { if (this.decoder) this.decoder.close(); } catch (e) {} this.thumbs.forEach(b => b.close && b.close()); }
+    dispose() { this._disposed = true; if (this.pcm) this.pcm.dispose(); if (this._rd) this._rd.drop(); this.cache.forEach(f => { try { f.close(); } catch (e) {} }); this.cache.clear(); try { if (this.decoder) this.decoder.close(); } catch (e) {} this.thumbs.forEach(b => b.close && b.close()); }
 
     gopOf(idx) { let lo = 0, hi = this.gops.length - 1; while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (this.gops[mid].first <= idx) lo = mid; else hi = mid - 1; } return lo; }
     cached(idx) { const f = this.cache.get(idx); if (f) { this.cache.delete(idx); this.cache.set(idx, f); } return f || null; }
@@ -519,11 +645,13 @@
       const gp = this.gops[gi];
       this.keepFrom = Math.max(gp.first, target - 6);
       this._decErr = null;
-      for (let i = gp.dec; i < gp.decEnd; i++) {
+      let views = null;                                          // 지연 소스 — 이 GOP 바이트만 묶어 읽는다
+      if (this.lazy) { try { views = await readRuns(this.blob, this.dec.slice(gp.dec, gp.decEnd), 1024 * 1024); } catch (e) { this._decErr = e; } }
+      for (let i = gp.dec; i < gp.decEnd && !this._decErr; i++) {
         const s = this.dec[i];
         while (this.decoder.decodeQueueSize > 24) await new Promise(r => setTimeout(r, 2));
         if (this._decErr) break;
-        this.decoder.decode(new EncodedVideoChunk({ type: s.key ? 'key' : 'delta', timestamp: s.us, duration: Math.round(s.dur * 1e6 / this.ts), data: s.data }));
+        this.decoder.decode(new EncodedVideoChunk({ type: s.key ? 'key' : 'delta', timestamp: s.us, duration: Math.round(s.dur * 1e6 / this.ts), data: s.data || views[i - gp.dec] }));
       }
       try { await this.decoder.flush(); } catch (e) { this._decErr = e; }
       await this._settle();                                        // 비트맵 복사 완료까지 (cached 가 보이도록)
@@ -544,7 +672,7 @@
       }
       this._startStream(idx);
     }
-    stopStream() { if (this._stream) this._stream.alive = false; this._stream = null; }
+    stopStream() { if (this._stream) this._stream.alive = false; this._stream = null; if (this._rd) this._rd.drop(); }
     _startStream(idx) {
       const st = this._stream = { alive: true, target: idx, base: idx, fed: idx - 1 };
       const AHEAD = Math.max(10, Math.min((this.cacheMax || CACHE_MAX) - 8, Math.round(this.fps * 2)));
@@ -564,7 +692,13 @@
           if (st.fed > st.target + AHEAD) { await new Promise(r => setTimeout(r, 12)); continue; }   // 충분히 앞섬 — 쉼
           while (this.decoder && this.decoder.decodeQueueSize > 24) await new Promise(r => setTimeout(r, 2));
           if (this._decErr || !st.alive || this._stream !== st) break;
-          try { this.decoder.decode(new EncodedVideoChunk({ type: sm.key ? 'key' : 'delta', timestamp: sm.us, duration: Math.round(sm.dur * 1e6 / this.ts), data: sm.data })); } catch (e) { this._decErr = e; break; }
+          let bytes = sm.data;
+          if (!bytes) {                                              // 지연 소스 — 8MB 창을 굴리며 읽는다
+            if (!this._rd) this._rd = fileCursor(this.blob);
+            try { bytes = await this._rd.range(sm.off, sm.off + sm.size); } catch (e) { this._decErr = e; break; }
+            if (!st.alive || this._stream !== st) break;
+          }
+          try { this.decoder.decode(new EncodedVideoChunk({ type: sm.key ? 'key' : 'delta', timestamp: sm.us, duration: Math.round(sm.dur * 1e6 / this.ts), data: bytes })); } catch (e) { this._decErr = e; break; }
           i++;
         }
         if (st.alive && this._stream === st && i >= this.dec.length) { try { await this.decoder.flush(); } catch (e) {} await this._settle(); }   // 파일 끝에서만 flush
@@ -646,11 +780,17 @@
       return meta;
     }
     if (!supported()) throw new Error('이 브라우저는 영상 편집을 지원하지 않아요 — 크롬·엣지 최신 버전을 써 주세요');
-    if (file.size > limits.maxFile) throw new Error(limits.maxFile >= 1024 * 1024 * 1024 ? '이 원본은 너무 커요 (' + Math.round(file.size / 1048576) + 'MB)' : '브라우저판은 700MB 이하 원본만 — 긴 원본은 데스크톱판 몫이에요');
+    if (file.size > limits.maxFile) throw new Error('이 원본은 너무 커요 (' + Math.round(file.size / 1048576) + 'MB — ' + Math.round(limits.maxFile / 1073741824 * 10) / 10 + 'GB 이하만)');
     status && status('mp4 읽는 중');
     await loadMp4box();
-    const buf = await file.arrayBuffer();
-    const dm = await demux(buf);
+    let dm = null, buf = null;
+    try { dm = await demuxLazy(file); }                       // 1) 구간 읽기 — moov(샘플 표)만, 바이트는 지연
+    catch (e) { console.warn('[KMV media] lazy demux → 통 읽기 폴백', e.message || e); }
+    if (!dm) {                                                // 2) 폴백 — 통 읽기 (조각 mp4 등, 예전 상한)
+      if (file.size > FULL_MAX_FILE) throw new Error('이 mp4 는 통으로 읽어야 하는 구조라 ' + Math.round(FULL_MAX_FILE / 1048576) + 'MB 이하만 읽을 수 있어요');
+      buf = await file.arrayBuffer();
+      dm = await demux(buf);
+    }
     if (/^avc/i.test(dm.codec) && !dm.desc) throw new Error('H.264 설정(avcC)을 찾지 못했어요');
     const cfg = { codec: dm.codec, codedWidth: dm.w, codedHeight: dm.h }; if (dm.desc) cfg.description = dm.desc;
     const sup = await VideoDecoder.isConfigSupported(cfg);
@@ -659,13 +799,16 @@
     if (dm.hasAudio) {
       pcm = await makePcm(dm.a);
       if (!pcm) {                                             // 낯선 코덱·구형 브라우저 — 예전 방식(통 PCM)
-        status && status('소리 푸는 중');
-        try { audio = await g.KMV_AUDIO.decode(buf.slice(0)); } catch (e) { console.warn('[KMV media] audio decode', e); }
+        if (file.size <= FULL_MAX_FILE) {
+          status && status('소리 푸는 중');
+          try { audio = await g.KMV_AUDIO.decode(buf ? buf.slice(0) : await file.arrayBuffer()); } catch (e) { console.warn('[KMV media] audio decode', e); }
+        } else console.warn('[KMV media] 소리 코덱 폴백은 ' + Math.round(FULL_MAX_FILE / 1048576) + 'MB 이하만 — 소리 없이 엽니다');
       }
     }
     const src = new VideoSource(id, dm, audio);
     src.pcm = pcm;
-    if (src.durSec > limits.maxSec) { src.dispose(); throw new Error(Math.round(limits.maxSec / 60) + '분 이하 원본만 읽어요' + (limits.maxFile >= 1024 * 1024 * 1024 ? ' — 폰에서 먼저 잘라 주세요' : ' — 긴 원본은 데스크톱판 몫')); }
+    const capSec = dm.lazy ? limits.maxSec : Math.min(limits.maxSec, FULL_MAX_SEC);
+    if (src.durSec > capSec) { src.dispose(); throw new Error(Math.round(capSec / 60) + '분 이하 원본만 읽어요' + (dm.lazy ? ' — 더 긴 원본은 잘라서 넣어 주세요' : ' (통으로 읽어야 하는 구조)')); }
     SRC.set(id, src);
     const rotated = src.rot === 90 || src.rot === 270;
     return { id, name, kind: 'video', dur: src.frames, w: rotated ? src.h : src.w, h: rotated ? src.w : src.h, fps: src.fps, audio: !!(audio || pcm), rot: src.rot, blobKey: id };
@@ -721,10 +864,15 @@
       }
       outs.length = 0;
     };
+    const BLK = 768; let views = null, blk0 = 0;                 // 지연 소스 — 768샘플 블록씩 바이트를 읽어가며
     for (let i = 0; i < P.pk.length && !err; i++) {
       const p = P.pk[i];
       while (analyzePaused && !err) await new Promise(r => setTimeout(r, 200));
-      try { dec.decode(new EncodedAudioChunk({ type: 'key', timestamp: Math.round(p.t * 1e6), duration: Math.max(0, Math.round(p.d * 1e6)), data: p.data })); } catch (e) { err = e; break; }
+      if (P.blob && !p.data && (!views || i >= blk0 + BLK)) {
+        blk0 = i;
+        try { views = await readRuns(P.blob, P.pk.slice(i, Math.min(P.pk.length, i + BLK)), 262144); } catch (e) { err = e; break; }
+      }
+      try { dec.decode(new EncodedAudioChunk({ type: 'key', timestamp: Math.round(p.t * 1e6), duration: Math.max(0, Math.round(p.d * 1e6)), data: p.data || views[i - blk0] })); } catch (e) { err = e; break; }
       if (dec.decodeQueueSize > 32) await new Promise(r => setTimeout(r, 2));
       if (outs.length > 64) drain();
       if (onProgress && (i & 511) === 0) onProgress(i / P.pk.length);
@@ -779,7 +927,7 @@
     const motion = new Float32Array(src.frames);
     let prev = null, count = 0, err = null;
     const pendingThumbs = [];
-    const dec = new VideoDecoder({
+    const mkDec = () => new VideoDecoder({
       output: frame => {
         const idx = src.presOfUs.get(frame.timestamp);
         if (idx == null) { frame.close(); return; }
@@ -801,18 +949,31 @@
       },
       error: e => { err = e; },
     });
+    let dec = mkDec();
     try {
       const cfg = { codec: src.codec, codedWidth: src.w, codedHeight: src.h }; if (src.desc) cfg.description = src.desc;
       dec.configure(cfg);
+      const rd = src.lazy ? fileCursor(src.blob) : null;           // 분석 전용 읽기 창 (재생 창과 분리)
+      let tries = 0;
       for (let i = 0; i < src.dec.length; i++) {
-        const s = src.dec[i];
         while (analyzePaused && !err) await new Promise(r => setTimeout(r, 200));    // 재생이 끝날 때까지 양보
-        while (dec.decodeQueueSize > 16) await new Promise(r => setTimeout(r, 4));
-        if (err) break;
-        dec.decode(new EncodedVideoChunk({ type: s.key ? 'key' : 'delta', timestamp: s.us, data: s.data }));
+        while (dec.decodeQueueSize > 16 && !err) await new Promise(r => setTimeout(r, 4));
+        if (err) {
+          // 탐색(getFrame) 등 다른 디코더와 경쟁하다 죽을 수 있다 — 새 디코더로 키프레임부터 이어서
+          if (++tries > 4) break;
+          console.warn('[KMV media] analyze 디코더 재시작 ' + tries, err);
+          err = null; prev = null;
+          try { dec.close(); } catch (e) {}
+          await new Promise(r => setTimeout(r, 300));               // 경쟁 상대가 지나가게 잠깐 양보
+          dec = mkDec(); dec.configure(cfg);
+          while (i > 0 && !src.dec[i].key) i--;
+        }
+        const s = src.dec[i];
+        const bytes = s.data || await rd.range(s.off, s.off + s.size);
+        dec.decode(new EncodedVideoChunk({ type: s.key ? 'key' : 'delta', timestamp: s.us, data: bytes }));
       }
-      await dec.flush();
-      await Promise.all(pendingThumbs);
+      if (!err) { await dec.flush(); await Promise.all(pendingThumbs); }
+      else console.warn('[KMV media] analyze 재시도 소진', err);
     } catch (e) { err = e; console.warn('[KMV media] analyze', e); }
     try { dec.close(); } catch (e) {}
     // 모션량 정규화: 95퍼센타일을 1 로
