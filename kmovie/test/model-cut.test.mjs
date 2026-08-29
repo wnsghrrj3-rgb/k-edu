@@ -76,5 +76,46 @@ P.removeMarker(m1.id); eq(P.markerFrames(), [40], '마커 삭제'); P.undo(); eq
 const j = P.toJSON(); P.load(j); eq(P.markerFrames(), [20, 40], '저장·복원');
 P.load({ media: [vid('A', 3)], V: [] }); eq(P.data.markers, [], '옛 프로젝트(markers 없음) 복원');
 
+console.log('슬라이드 — 자리만 밀기 (내용·길이 그대로, 양옆이 받는다)');
+fresh(); { const s1 = P.addClip('A'), s2 = P.addClip('B'), s3 = P.addClip('A');
+P.trim(s1.id, 'out', 150); P.trim(s2.id, 'in', 30); P.trim(s2.id, 'out', 210); P.trim(s3.id, 'in', 60);  // A0-150 | B30-210 | A60-300
+const totS = P.total(), midDur = V()[1].dur, midIn = V()[1].in, midOut = V()[1].out;
+ok(P.slide(s2.id, 20), '슬라이드 +20 성공');
+eq(ins(), ['A:0-170', 'B:30-210', 'A:80-300'], '슬라이드 +20: 앞 out↑ 뒤 in↑, 가운데 그대로');
+ok(P.total() === totS && V()[1].dur === midDur && V()[1].in === midIn && V()[1].out === midOut, '전체 길이·가운데 내용 불변');
+ok(V()[1].at === 170, '가운데 자리 +20 (' + V()[1].at + ')');
+P.slide(s2.id, -1000); eq(ins(), ['A:0-90', 'B:30-210', 'A:0-300'], '슬라이드 하한: 뒤 클립 in 0 에서 멈춤 (앞은 그만큼만 줄어듦)');
+P.slide(s2.id, 1000); eq(ins(), ['A:0-300', 'B:30-210', 'A:210-300'], '슬라이드 상한: 앞 클립 원본 끝에서 멈춤');
+ok(P.total() === totS, '극단 슬라이드에도 전체 길이 그대로');
+ok(P.slide(s1.id, 10) === false && P.slide(s3.id, 10) === false, '맨 앞·맨 뒤 클립은 슬라이드 없음');
+}
+// 60fps 이웃과 슬라이드
+fresh(); { const t1 = P.addClip('C'), t2 = P.addClip('A'), t3 = P.addClip('B');
+P.trim(t1.id, 'out', 300); P.trim(t3.id, 'in', 60);   // C0-300(=150tl) | A0-300 | B60-300
+const totT = P.total(); P.slide(t2.id, 30);
+eq(ins(), ['C:0-360', 'A:0-300', 'B:90-300'], '60fps 앞 클립: out 은 원본 60프레임(=30tl)');
+ok(P.total() === totT, '60fps 슬라이드 길이 유지');
+}
+
+console.log('리프트 — 빈 자리(검은 화면), 뒤 클립은 그대로');
+fresh(); { const l1 = P.addClip('A'), l2 = P.addClip('B'), l3 = P.addClip('A');
+const totL = P.total(), at1 = V()[1].at, at2 = V()[2].at, d1 = V()[1].dur;
+eq(P.lift([l2.id]), 1, '리프트 1개');
+ok(V().length === 3 && V()[1].gap === true && V()[1].media === null, '가운데가 빈 자리로');
+ok(V()[1].dur === d1 && V()[1].at === at1 && V()[2].at === at2 && P.total() === totL, '길이·자리·전체 불변 (뒤 클립 안 밀림)');
+ok(P.clipAt(at1 + 5).gap === true, 'clipAt 도 빈 자리를 찾음 — 빈틈 없음 불변식 유지');
+eq(P.lift([V()[1].id]), 0, '빈 자리를 또 리프트 → 0');
+P.trim(V()[1].id, 'out', 90); ok(V()[1].dur === 90 && V()[2].at === at1 + 90, '빈 자리 길이 조절(트림) = 리플');
+P.undo(); P.undo(); eq(V().map(c => !!c.gap), [false, false, false], '리프트 undo');
+eq(P.lift([V()[0].id, V()[1].id]), 2, '잇닿은 2개 리프트');
+ok(V().length === 2 && V()[0].gap && V()[0].dur === at2 && !V()[1].gap, '잇닿은 빈 자리는 하나로 합침');
+ok(P.total() === totL, '합쳐도 전체 길이 그대로');
+const gp = V()[0].id;
+P.roll(gp, 30); ok(V()[0].dur === at2 + 30 && P.total() === totL, '빈 자리 out 롤: 빈 자리가 늘고 뒤가 줄어듦');
+const c2b = P.split(60); ok(c2b && V().length === 3 && V()[0].gap && V()[1].gap && V()[0].dur === 60, '빈 자리 분할');
+const j2 = P.toJSON(); P.load(j2); ok(V().some(c => c.gap), '빈 자리 저장·복원 생존 (media 없음 필터에 안 걸림)');
+const cp = P.copyClips([V()[0].id]); const made2 = P.pasteClips(cp, null); ok(made2.length === 1 && made2[0].gap, '빈 자리 복사·붙여넣기');
+}
+
 console.log(`\n${n - fail}/${n} 통과${fail ? ' — 실패 ' + fail : ''}`);
 process.exit(fail ? 1 : 0);

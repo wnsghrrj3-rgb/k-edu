@@ -238,8 +238,8 @@
      3점 편집: 소스 모니터의 I/O 구간을 플레이헤드에 삽입(,) 또는 덮어쓰기(.).
      다중 선택: 여러 클립 한 번에 삭제·이동·복사·붙여넣기. 마커: 눈금자 위 메모, 스냅 후보. */
   function slip(id, deltaSrc, opt) {
-    const c = clip(id); if (!c) return;
-    const m = media(c.media); if (m.kind === 'image') return;
+    const c = clip(id); if (!c || c.gap) return;
+    const m = media(c.media); if (!m || m.kind === 'image') return;
     if (!(opt && opt.commit === false)) commit();
     const len = c.out - c.in;
     let nin = Math.round(c.in + deltaSrc);
@@ -248,12 +248,10 @@
     const a = audioOf(c.id); if (a && a.linked === false) { a.linked = true; }   // J/L 은 슬립하면 링크로 복귀(원본 위치가 바뀌었으니)
     relayout(); emit();
   }
-  /* prevId 클립의 out 쪽 편집점을 deltaTl(타임라인 프레임) 만큼 민다. 다음 클립이 없으면 false */
-  function roll(prevId, deltaTl, opt) {
-    const i = clipIndex(prevId); if (i < 0 || i + 1 >= P.V.length) return false;
-    const a = P.V[i], b = P.V[i + 1], ma = media(a.media), mb = media(b.media);
-    deltaTl = Math.round(deltaTl); if (!deltaTl) return true;
-    if (!(opt && opt.commit === false)) commit();
+  /* a 는 뒤(out)를 d 만큼 늘이고 b 는 앞(in)을 d 만큼 줄인다 — 롤·슬라이드 공용 수식.
+     deltaTl: 타임라인 프레임(+ = a 가 늘어남). 한계로 잘린 실제 적용량을 돌려준다. */
+  function pairShift(a, b, deltaTl) {
+    const ma = media(a.media), mb = media(b.media);
     const ka = a.freeze ? 1 : ma.fps / FPS * SPEED[a.speed].f, kb = b.freeze ? 1 : mb.fps / FPS * SPEED[b.speed].f;
     // 앞 클립이 늘 수 있는 한도 / 뒤 클립이 줄 수 있는 한도 (각각 1프레임은 남긴다)
     const maxA = a.freeze ? IMAGE_MAX - a.dur : (ma.kind === 'image' ? IMAGE_MAX : ma.dur) - a.out;      // 원본 프레임 단위
@@ -266,7 +264,40 @@
     if (a.freeze) a.dur += d; else a.out = Math.round(a.out + d * ka);
     if (b.freeze) b.dur -= d; else b.in = Math.round(b.in + d * kb);
     for (const x of [a, b]) { const au = audioOf(x.id); if (au && !au.linked) au.linked = true; }
+    return d;
+  }
+  /* prevId 클립의 out 쪽 편집점을 deltaTl(타임라인 프레임) 만큼 민다. 다음 클립이 없으면 false */
+  function roll(prevId, deltaTl, opt) {
+    const i = clipIndex(prevId); if (i < 0 || i + 1 >= P.V.length) return false;
+    deltaTl = Math.round(deltaTl); if (!deltaTl) return true;
+    if (!(opt && opt.commit === false)) commit();
+    pairShift(P.V[i], P.V[i + 1], deltaTl);
     relayout(); emit(); return true;
+  }
+  /* 슬라이드 — 클립의 내용·길이는 그대로, 타임라인 위 자리만 민다.
+     앞 클립 out 이 늘고(줄고) 뒤 클립 in 이 줄어(늘어) 전체 길이 불변. 양옆에 클립이 있어야 한다. */
+  function slide(id, deltaTl, opt) {
+    const i = clipIndex(id); if (i <= 0 || i + 1 >= P.V.length) return false;
+    deltaTl = Math.round(deltaTl); if (!deltaTl) return true;
+    if (!(opt && opt.commit === false)) commit();
+    pairShift(P.V[i - 1], P.V[i + 1], deltaTl);
+    relayout(); emit(); return true;
+  }
+  /* 리프트 — 선택 클립을 같은 길이의 빈 자리(검은 화면)로 바꾼다. 뒤 클립은 밀리지 않는다.
+     빈 자리도 V 의 클립이라 "빈틈 없음" 불변식은 그대로다. 잇닿은 빈 자리는 하나로 합친다. */
+  function newGap(dur) {
+    return { id: uid('c'), media: null, gap: true, freeze: true, in: 0, out: 1, at: 0,
+      dur: Math.max(1, Math.round(dur)), speed: 'normal', look: null, kenburns: null, transIn: null };
+  }
+  function lift(ids) {
+    const set = new Set(ids);
+    let n = 0;
+    for (const c of P.V) if (set.has(c.id) && !c.gap) n++;
+    if (!n) return 0;
+    commit();
+    P.V = P.V.map(c => set.has(c.id) && !c.gap ? newGap(clipDur(c)) : c);
+    for (let i = P.V.length - 1; i > 0; i--) if (P.V[i].gap && P.V[i - 1].gap) { P.V[i - 1].dur += P.V[i].dur; P.V.splice(i, 1); }
+    relayout(); emit(); return n;
   }
   /* 소스 구간 → 타임라인. mode: 'insert'(플레이헤드에서 뒤를 밀며) | 'overwrite'(그 길이만큼 덮어씀) | 'append'(끝에) */
   function insertRange(mediaId, range, t, mode) {
@@ -316,7 +347,7 @@
     const made = [];
     let at = t == null ? total() : Math.max(0, Math.round(t));
     for (const it of items) {
-      const m = media(it.clip.media); if (!m) continue;
+      const m = media(it.clip.media); if (!m && !it.clip.gap) continue;
       const c = Object.assign({}, it.clip, { id: uid('c') });
       placeCore(c, at, at >= total() ? 'append' : 'insert'); relayout();
       if (it.audio) P.A1.push(Object.assign({}, it.audio, { clip: c.id }));
@@ -545,7 +576,7 @@
   function load(json) {
     const b = blank();
     P = Object.assign(b, json || {});
-    P.V = (P.V || []).filter(c => media(c.media));
+    P.V = (P.V || []).filter(c => c.gap || media(c.media));   // 빈 자리(리프트)는 미디어가 없어도 산다
     P.A2 = (P.A2 || []).filter(a => media(a.media));
     P.V2 = (P.V2 || []).filter(o => media(o.media)).map(o => Object.assign({ pos: 'br', size: 'md', speed: 'normal' }, o));
     P.P = (P.P || []).map(x => Object.assign({ p: {} }, x));
@@ -568,7 +599,7 @@
     a2, addA2, updateA2, trimA2, removeA2, setDucking, a2At,
     v2, addV2, updateV2, trimV2, removeV2, v2At, V2_POS, V2_SIZE,
     setAmbience, montage,
-    slip, roll, insertRange, removeClips, moveClips, pasteClips, copyClips,
+    slip, roll, slide, lift, insertRange, removeClips, moveClips, pasteClips, copyClips,
     marker, markerAt, addMarker, updateMarker, removeMarker, markerFrames,
     commit, undo, redo, canUndo: () => undoStack.length > 0, canRedo: () => redoStack.length > 0,
     toJSON, load, reset,

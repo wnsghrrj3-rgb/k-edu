@@ -157,6 +157,58 @@ p = await clipXY(3, 'mid'); await page.keyboard.down('Shift'); await page.mouse.
 await page.evaluate(() => KMV_UI.setPH(v => 0)); await page.evaluate(() => { const c = KMV_PROJECT.data.V[2]; KMV_UI.setPH(c.at + 20); }); await page.keyboard.press('q'); v = await V(); ok(v[2].in === 20 || v[2].dur === v[2].out - v[2].in, 'Q 트림 동작');
 await page.keyboard.press('Control+z'); await page.keyboard.press('Control+z'); await page.keyboard.press('Control+z');
 
+console.log('컷 층 잔여 — 슬라이드·리프트·익스트랙트·라쏘');
+// 알려진 상태로: A(0-150) | B(0-180) | A(30-180)
+await page.evaluate(() => { const P = KMV_PROJECT, U = KMV_UI; U.stop();
+  P.removeClips(P.data.V.map(c => c.id));
+  const m0 = P.data.media[0].id, m1 = P.data.media[1].id;
+  P.addClip(m0); P.addClip(m1); P.addClip(m0);
+  const W2 = P.data.V; P.trim(W2[0].id, 'out', 150); P.trim(W2[2].id, 'in', 30);
+  U.setPH(0); U.zoomFit();
+});
+const totS2 = await page.evaluate(() => KMV_PROJECT.total());
+p = await clipXY(1, 'mid');
+await page.keyboard.down('Control'); await page.keyboard.down('Alt');
+await page.mouse.move(p.x, p.y); await page.mouse.down(); await page.mouse.move(p.x + 400, p.y, { steps: 8 }); await page.mouse.up();
+await page.keyboard.up('Alt'); await page.keyboard.up('Control');
+v = await V();
+ok(v[0].out === 180 && v[2].in === 60 && v[1].in === 0 && v[1].out === 180, 'Ctrl+Alt+몸통 슬라이드: 앞 out 180 · 뒤 in 60 · 가운데 그대로 (' + v[0].out + '/' + v[2].in + ')');
+ok((await page.evaluate(() => KMV_PROJECT.total())) === totS2 && v[1].at === 180, '슬라이드 후 전체 길이 그대로 · 가운데 +30');
+await page.keyboard.press('Control+z'); v = await V(); ok(v[0].out === 150 && v[2].in === 30, '슬라이드 undo 한 번');
+
+// 라쏘: Shift+빈 곳(자막 레인 빈 자리에서 시작) 드래그 → V 클립 2개 선택
+const lassoFrom = await page.evaluate(() => { const r = document.getElementById('timeline').getBoundingClientRect(), L = KMV_UI.layout, V3 = KMV_PROJECT.data.V; return { x: r.left + KMV_UI.xOf(V3[2].at + V3[2].dur) - 5, y: r.top + L.LY.S.y + L.LY.S.h / 2 }; });
+const lassoTo = await page.evaluate(() => { const r = document.getElementById('timeline').getBoundingClientRect(), L = KMV_UI.layout; return { x: r.left + KMV_UI.xOf(KMV_PROJECT.data.V[1].at) + 5, y: r.top + L.LY.V.y + 2 }; });
+await page.keyboard.down('Shift'); await page.mouse.move(lassoFrom.x, lassoFrom.y); await page.mouse.down(); await page.mouse.move(lassoTo.x, lassoTo.y, { steps: 6 }); await page.mouse.up(); await page.keyboard.up('Shift');
+ok((await page.evaluate(() => KMV_UI.selectedIds().length)) === 2, 'Shift+빈 곳 드래그 라쏘 → 2개 선택');
+
+// 익스트랙트(') — 당겨서 지우기
+const totE = await page.evaluate(() => KMV_PROJECT.total());
+await page.keyboard.press("'");
+v = await V(); ok(v.length === 1 && v[0].at === 0, "' 익스트랙트: 당겨서 지움 (리플)");
+await page.keyboard.press('Control+z'); v = await V(); ok(v.length === 3 && (await page.evaluate(() => KMV_PROJECT.total())) === totE, '익스트랙트 undo');
+
+// 리프트(;) — 빈 자리, 뒤 클립은 그대로
+p = await clipXY(1, 'mid'); await page.mouse.click(p.x, p.y);
+const at2b = v[2].at, d1b = v[1].dur;
+await page.keyboard.press(';');
+v = await V();
+ok(v.length === 3 && v[1].media === null && v[1].dur === d1b && v[2].at === at2b && (await page.evaluate(() => KMV_PROJECT.total())) === totE, '; 리프트: 빈 자리 — 길이·뒤 클립 그대로');
+ok((await page.evaluate(() => KMV_PROJECT.data.V[1].gap === true)), '빈 자리 표식(gap)');
+await page.evaluate(() => KMV_UI.setPH(KMV_PROJECT.data.V[1].at + 10)); await page.waitForTimeout(150);
+const blk = await page.evaluate(() => { const c = document.getElementById('preview').getContext('2d'); const d = c.getImageData(960, 540, 1, 1).data; return d[0] + d[1] + d[2]; });
+ok(blk < 30, '빈 자리 미리보기 = 검은 화면 (' + blk + ')');
+await page.evaluate(() => KMV_UI.setPH(30)); await page.waitForTimeout(150);
+const real = await page.evaluate(() => { const c = document.getElementById('preview').getContext('2d'); const d = c.getImageData(960, 540, 1, 1).data; return d[0] + d[1] + d[2]; });
+ok(real > 30, '실제 클립 프레임은 그려짐 (' + real + ')');
+
+// 새로고침 후 빈 자리 생존 → 6개로 복구
+await page.waitForTimeout(700);
+await page.reload(); await page.waitForFunction(() => window.KMV_UI && KMV_PROJECT.data.V.length === 3, null, { timeout: 60000 });
+ok((await page.evaluate(() => KMV_PROJECT.data.V[1].gap === true && KMV_PROJECT.data.V[1].media === null)), '새로고침 후 빈 자리 생존');
+await page.evaluate(() => { const P = KMV_PROJECT; const m0 = P.data.media[0].id, m1 = P.data.media[1].id; P.addClip(m1); P.addClip(m0); P.addClip(m1); });
+await page.waitForTimeout(700);
+
 console.log('복원');
 await page.reload(); await page.waitForFunction(() => window.KMV_UI && KMV_PROJECT.data.V.length >= 6, null, { timeout: 60000 });
 ok((await page.evaluate(() => KMV_PROJECT.markerFrames())).join() === '45', '새로고침 후 마커 복원');

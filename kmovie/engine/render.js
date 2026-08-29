@@ -50,7 +50,7 @@
   function transitionAt(c, t) {
     const T = g.KMV_TRANSITION; if (!T) return null;
     const u = T.progress(c, t); if (u == null) return null;
-    const P = g.KMV_PROJECT, i = P.clipIndex(c.id), prev = i > 0 ? P.data.V[i - 1] : null;
+    const P = g.KMV_PROJECT, i = P.clipIndex(c.id), pv0 = i > 0 ? P.data.V[i - 1] : null, prev = pv0 && pv0.gap ? null : pv0;
     return { u, prev, pm: prev ? P.media(prev.media) : null, pidx: prev ? prevSrcFrame(prev, P.media(prev.media), t) : -1 };
   }
 
@@ -148,7 +148,7 @@
 
   /* 미리보기: 즉시 그림. {exact, idx, src, clip, pidx, psrc, segPending, ovPend} */
   function draw(ctx, W, H, t) {
-    const P = g.KMV_PROJECT, c = P.clipAt(t);
+    const P = g.KMV_PROJECT, c0 = P.clipAt(t), c = c0 && c0.gap ? null : c0;   // 빈 자리(리프트) = 검은 화면, 자막·부품·덧영상은 그대로
     if (!c) { emptyFrame(ctx, W, H, t); const eh = { exact: true, pend: [] }; const ov = overlaysAt(t, eh); if (ov.length) { resetCtx(ctx); for (const e of ov) { drawOverlay(ctx, W, H, e); resetCtx(ctx); } if (g.KMV_SUBTITLE) g.KMV_SUBTITLE.draw(ctx, W, H, t, P.data.S, P.data.theme); } return { exact: eh.exact, empty: true, ovPend: eh.pend }; }
     const src = g.KMV_MEDIA.get(c.media);
     if (!src) { black(ctx, W, H); return { exact: true, empty: true }; }
@@ -173,8 +173,23 @@
 
   /* 내보내기: 정확 프레임·정확 마스크를 기다려 그림 */
   async function drawExact(ctx, W, H, t) {
-    const P = g.KMV_PROJECT, c = P.clipAt(t);
-    if (!c) { emptyFrame(ctx, W, H, t); return; }
+    const P = g.KMV_PROJECT, c0 = P.clipAt(t), c = c0 && c0.gap ? null : c0;   // 빈 자리(리프트) = 검은 화면
+    if (!c) {
+      emptyFrame(ctx, W, H, t);
+      const SH0 = g.KMV_SHELL && g.KMV_SHELL.active ? g.KMV_SHELL : null, ov0 = [];
+      for (const o of (P.v2At ? P.v2At(t) : [])) {
+        const s2 = g.KMV_MEDIA.get(o.media); if (!s2) continue;
+        const oi = P.srcFrame(o, t);
+        let im = null; try { im = (SH0 && await SH0.exact(o.media, oi)) || await s2.getFrame(oi, false); } catch (e) { im = s2.nearest(oi); }
+        ov0.push({ o, img: im, src: s2, idx: oi });
+      }
+      if (ov0.length) {
+        resetCtx(ctx); for (const e of ov0) { drawOverlay(ctx, W, H, e); resetCtx(ctx); }
+        if (g.KMV_SUBTITLE) g.KMV_SUBTITLE.draw(ctx, W, H, t, P.data.S, P.data.theme, safeBottom(W, H));
+        for (const e of ov0) if (e.img && e.img.kmvTemp) { try { e.img.close(); } catch (er) {} }
+      }
+      return;
+    }
     const src = g.KMV_MEDIA.get(c.media);
     const idx = P.srcFrame(c, t);
     // 데스크톱 껍데기가 붙어 있으면 같은 번호의 프레임을 원본(원화질)에서 받는다. 실패하면 프록시 프레임.
