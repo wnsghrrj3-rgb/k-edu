@@ -9,7 +9,7 @@ use std::io::{BufRead, BufReader, Read, Seek, SeekFrom, Write};
 use std::net::{TcpStream, ToSocketAddrs};
 use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdout, Command, Stdio};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tauri::ipc::{InvokeBody, Request, Response};
 use tauri::{AppHandle, Emitter, Manager, State, WebviewUrl, WebviewWindowBuilder};
@@ -37,6 +37,7 @@ pub struct Shell {
     frames: Mutex<HashMap<String, FrameSession>>,
     exports: Mutex<HashMap<u32, File>>,
     export_seq: Mutex<u32>,
+    stts: Mutex<HashMap<String, Arc<Mutex<Option<Child>>>>>,
 }
 
 struct FrameSession {
@@ -123,6 +124,8 @@ pub struct ShellInfo {
     pub frame_w: u32,
     pub frame_h: u32,
     pub cache: CacheInfo,
+    pub whisper: bool,
+    pub whisper_model: String,
 }
 
 /* ---------------- 유틸 ---------------- */
@@ -298,6 +301,7 @@ impl Shell {
             frames: Mutex::new(HashMap::new()),
             exports: Mutex::new(HashMap::new()),
             export_seq: Mutex::new(0),
+            stts: Mutex::new(HashMap::new()),
         }
     }
     fn proxy_path(&self, hash: &str) -> PathBuf { self.proxy_dir.join(format!("{hash}.mp4")) }
@@ -476,6 +480,7 @@ fn online() -> bool {
 
 #[tauri::command(async)]
 fn shell_info(app: AppHandle, shell: State<'_, Shell>) -> ShellInfo {
+    let model = find_whisper_model(&shell.proxy_dir);
     let ver = cmd(&shell.ffmpeg).arg("-version").output().ok()
         .map(|o| String::from_utf8_lossy(&o.stdout).lines().next().unwrap_or("").to_string()).unwrap_or_default();
     ShellInfo {
@@ -487,6 +492,8 @@ fn shell_info(app: AppHandle, shell: State<'_, Shell>) -> ShellInfo {
         frame_w: FRAME_W,
         frame_h: FRAME_H,
         cache: shell.cache_info(),
+        whisper: model.is_some() && whisper_ok(&find_bin("whisper-cli")),
+        whisper_model: model.and_then(|p| p.file_name().map(|n| n.to_string_lossy().to_string())).unwrap_or_default(),
     }
 }
 
@@ -626,6 +633,162 @@ fn export_close(shell: State<'_, Shell>, id: u32, abort: bool) -> Result<(), Str
     Ok(())
 }
 
+/* ---------------- 받아쓰기 (whisper.cpp) ----------------
+   프록시(원본과 같은 시간축)의 소리를 16kHz 모노 wav 로 뽑아 whisper-cli 에 먹이고,
+   구간 JSON 을 초 단위 [{t0,t1,text}] 로 돌려준다. 결과는 <hash>.stt.json 캐시.
+   실행 파일: exe 옆 whisper-cli(.exe) → PATH. 모델: exe 옆 · exe\models · %LOCALAPPDATA%\KMovie\models
+   의 ggml*.bin 중 가장 큰 것 (small 권장 — README). */
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct SttSeg { pub t0: f64, pub t1: f64, pub text: String }
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct SttResult { pub segs: Vec<SttSeg> }
+
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SttProgress { pub hash: String, pub pct: f64, pub stage: String }
+
+fn find_whisper_model(proxy_dir: &Path) -> Option<PathBuf> {
+    let mut dirs: Vec<PathBuf> = Vec::new();
+    if let Some(d) = std::env::current_exe().ok().and_then(|p| p.parent().map(|d| d.to_path_buf())) {
+        dirs.push(d.join("models"));
+        dirs.push(d);
+    }
+    if let Some(d) = proxy_dir.parent() { dirs.push(d.join("models")); } // %LOCALAPPDATA%\KMovie\models
+    let mut best: Option<(u64, PathBuf)> = None;
+    for dir in dirs {
+        let Ok(rd) = fs::read_dir(&dir) else { continue };
+        for e in rd.flatten() {
+            let p = e.path();
+            let name = p.file_name().and_then(|n| n.to_str()).unwrap_or("");
+            if !(name.starts_with("ggml") && name.ends_with(".bin")) { continue; }
+            let size = fs::metadata(&p).map(|m| m.len()).unwrap_or(0);
+            if size < 1_000_000 { continue; }
+            if best.as_ref().map(|(s, _)| size > *s).unwrap_or(true) { best = Some((size, p)); }
+        }
+    }
+    best.map(|(_, p)| p)
+}
+
+fn whisper_ok(bin: &Path) -> bool {
+    if bin.is_absolute() && bin.exists() { return true; }
+    cmd(bin).arg("--help").stdout(Stdio::null()).stderr(Stdio::null()).stdin(Stdio::null())
+        .status().map(|s| s.success()).unwrap_or(false)
+}
+
+impl Shell {
+    fn stt_cache_path(&self, hash: &str) -> PathBuf { self.proxy_dir.join(format!("{hash}.stt.json")) }
+
+    fn transcribe_impl(&self, emit: &dyn Fn(f64, &str), whisper: &Path, model: &Path, hash: &str) -> Result<SttResult, String> {
+        if let Ok(text) = fs::read_to_string(self.stt_cache_path(hash)) {
+            if let Ok(r) = serde_json::from_str::<SttResult>(&text) { return Ok(r); }
+        }
+        let proxy = self.proxy_path(hash);
+        if !proxy.exists() { return Err("프록시가 없어요 — 원본을 다시 넣어 주세요".into()); }
+
+        // 소리 트랙이 없는 원본은 받아쓸 것도 없다 (빈 결과를 캐시)
+        // probe_json 은 -select_streams v:0 (영상만) — 소리는 따로 물어야 한다
+        let aout = cmd(&self.ffprobe)
+            .args(["-v", "error", "-select_streams", "a:0", "-show_entries", "stream=codec_type", "-of", "json"])
+            .arg(&proxy).stdin(Stdio::null()).output().map_err(|e| format!("ffprobe 실행 실패: {e}"))?;
+        let has_audio = serde_json::from_slice::<serde_json::Value>(&aout.stdout).ok()
+            .and_then(|j| j["streams"].as_array().map(|a| !a.is_empty())).unwrap_or(false);
+        if !has_audio {
+            let r = SttResult { segs: Vec::new() };
+            let _ = fs::write(self.stt_cache_path(hash), serde_json::to_string(&r).unwrap_or_default());
+            return Ok(r);
+        }
+
+        emit(0.01, "소리 뽑는 중");
+        let wav = self.proxy_dir.join(format!("{hash}.stt.wav"));
+        let _ = fs::remove_file(&wav);
+        let out = cmd(&self.ffmpeg)
+            .args(["-v", "error", "-nostdin", "-y", "-i"]).arg(&proxy)
+            .args(["-vn", "-ac", "1", "-ar", "16000", "-c:a", "pcm_s16le", "-f", "wav"]).arg(&wav)
+            .stdin(Stdio::null()).output().map_err(|e| format!("ffmpeg 실행 실패: {e}"))?;
+        if !out.status.success() {
+            let _ = fs::remove_file(&wav);
+            return Err(format!("소리를 뽑지 못했어요: {}", String::from_utf8_lossy(&out.stderr).trim().lines().last().unwrap_or("")));
+        }
+
+        emit(0.04, "받아쓰는 중");
+        let of = self.proxy_dir.join(format!("{hash}.stt.tmp"));       // whisper 가 .json 을 붙인다
+        let json_path = self.proxy_dir.join(format!("{hash}.stt.tmp.json"));
+        let _ = fs::remove_file(&json_path);
+        let child = cmd(whisper)
+            .args(["-m"]).arg(model)
+            .args(["-f"]).arg(&wav)
+            .args(["-l", "ko", "-oj", "-of"]).arg(&of)
+            .args(["-np", "-pp"])
+            .stdout(Stdio::null()).stderr(Stdio::piped()).stdin(Stdio::null())
+            .spawn().map_err(|e| format!("whisper 실행 실패: {e}"))?;
+
+        let slot = Arc::new(Mutex::new(Some(child)));
+        if let Ok(mut m) = self.stts.lock() { m.insert(hash.to_string(), slot.clone()); }
+        let err_pipe = slot.lock().ok().and_then(|mut c| c.as_mut().and_then(|c| c.stderr.take()));
+        let mut tail = String::new();
+        if let Some(errp) = err_pipe {
+            for line in BufReader::new(errp).lines().flatten() {
+                if let Some(i) = line.find("progress =") {
+                    if let Ok(pct) = line[i + 10..].trim().trim_end_matches('%').trim().parse::<f64>() {
+                        emit(0.04 + (pct / 100.0).clamp(0.0, 1.0) * 0.95, "받아쓰는 중");
+                        continue;
+                    }
+                }
+                tail = line;
+            }
+        }
+        let status = { let taken = slot.lock().ok().and_then(|mut c| c.take()); taken.map(|mut c| c.wait().map_err(|e| e.to_string())).transpose()? };
+        if let Ok(mut m) = self.stts.lock() { m.remove(hash); }
+        let _ = fs::remove_file(&wav);
+        let cancelled = status.is_none();                              // 취소가 child 를 kill+take 했다
+        if cancelled { let _ = fs::remove_file(&json_path); return Err("받아쓰기를 취소했어요".into()); }
+        if !status.map(|s| s.success()).unwrap_or(false) {
+            let _ = fs::remove_file(&json_path);
+            return Err(format!("whisper 가 실패했어요: {}", tail.trim()));
+        }
+
+        let text = fs::read_to_string(&json_path).map_err(|_| "whisper 결과 파일을 못 읽었어요".to_string())?;
+        let _ = fs::remove_file(&json_path);
+        let v: serde_json::Value = serde_json::from_str(&text).map_err(|e| format!("whisper 결과 해석 실패: {e}"))?;
+        let mut segs = Vec::new();
+        if let Some(arr) = v["transcription"].as_array() {
+            for s in arr {
+                let t0 = s["offsets"]["from"].as_f64().unwrap_or(-1.0) / 1000.0;
+                let t1 = s["offsets"]["to"].as_f64().unwrap_or(-1.0) / 1000.0;
+                let tx = s["text"].as_str().unwrap_or("").trim().to_string();
+                if t0 >= 0.0 && t1 > t0 && !tx.is_empty() { segs.push(SttSeg { t0, t1, text: tx }); }
+            }
+        }
+        let r = SttResult { segs };
+        let _ = fs::write(self.stt_cache_path(hash), serde_json::to_string(&r).unwrap_or_default());
+        emit(1.0, "완료");
+        Ok(r)
+    }
+}
+
+#[tauri::command(async)]
+fn transcribe(app: AppHandle, shell: State<'_, Shell>, hash: String) -> Result<SttResult, String> {
+    let model = find_whisper_model(&shell.proxy_dir).ok_or("whisper 모델(ggml-*.bin)을 못 찾았어요 — models 폴더에 넣어 주세요")?;
+    let bin = find_bin("whisper-cli");
+    let h = hash.clone();
+    let emit = move |pct: f64, stage: &str| {
+        let _ = app.emit("kmv-stt", SttProgress { hash: h.clone(), pct, stage: stage.into() });
+    };
+    shell.transcribe_impl(&emit, &bin, &model, &hash)
+}
+
+#[tauri::command(async)]
+fn transcribe_cancel(shell: State<'_, Shell>, hash: String) {
+    let slot = shell.stts.lock().ok().and_then(|m| m.get(&hash).cloned());
+    if let Some(slot) = slot {
+        if let Ok(mut c) = slot.lock() {
+            if let Some(mut child) = c.take() { let _ = child.kill(); let _ = child.wait(); }
+        }
+    }
+}
+
 #[tauri::command(async)]
 fn cache_info(shell: State<'_, Shell>) -> CacheInfo { shell.cache_info() }
 
@@ -636,7 +799,7 @@ fn cache_clear(shell: State<'_, Shell>) -> CacheInfo {
     if let Ok(rd) = fs::read_dir(&shell.proxy_dir) {
         for e in rd.flatten() {
             let p = e.path();
-            if matches!(p.extension().and_then(|x| x.to_str()), Some("mp4") | Some("json") | Some("tmp")) { let _ = fs::remove_file(p); }
+            if matches!(p.extension().and_then(|x| x.to_str()), Some("mp4") | Some("json") | Some("tmp") | Some("wav")) { let _ = fs::remove_file(p); }
         }
     }
     shell.cache_info()
@@ -684,7 +847,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             shell_info, pick_files, import_path, read_chunk, proxy_check,
             frame_next, frame_close, export_open, export_write, export_close,
-            cache_info, cache_clear, open_cache_dir, retry_online
+            cache_info, cache_clear, open_cache_dir, retry_online,
+            transcribe, transcribe_cancel
         ])
         .run(tauri::generate_context!())
         .expect("케이무비 껍데기 실행 실패");
@@ -745,6 +909,58 @@ mod tests {
         let d = fixtures().dir.join(sub);
         fs::create_dir_all(&d).unwrap();
         Shell::new(d, PathBuf::from("ffmpeg"), PathBuf::from("ffprobe"))
+    }
+
+    /// 받아쓰기 파이프: 실 ffmpeg 로 wav 를 뽑고, 가짜 whisper(-of 에 JSON 을 쓰는 스크립트)로
+    /// 인자 전달·진행률 파싱·JSON 해석·캐시·소리 없는 원본을 검증한다. (진짜 모델은 준호 PC 몫)
+    #[cfg(unix)]
+    #[test]
+    fn transcribe_fake_whisper() {
+        use std::os::unix::fs::PermissionsExt;
+        let sh = shell("stt");
+        let fx = fixtures();
+        let (meta, _) = import(&sh, &fx.files.iter().find(|(n, _)| *n == "orig25").unwrap().1);
+
+        let fake = fx.dir.join("fake-whisper.sh");
+        fs::write(&fake, "#!/bin/sh\nof=\"\"; prev=\"\"\nfor a in \"$@\"; do [ \"$prev\" = \"-of\" ] && of=\"$a\"; prev=\"$a\"; done\n[ -n \"$of\" ] || exit 1\necho 'whisper_print_progress_callback: progress =  50%' 1>&2\nprintf '%s' '{\"transcription\":[{\"offsets\":{\"from\":0,\"to\":1500},\"text\":\" 안녕하세요\"},{\"offsets\":{\"from\":1600,\"to\":3800},\"text\":\" 금성초등학교입니다\"}]}' > \"$of.json\"\necho run >> \"$of.runs\"\n").unwrap();
+        fs::set_permissions(&fake, fs::Permissions::from_mode(0o755)).unwrap();
+        let model = fx.dir.join("ggml-fake.bin");
+        fs::write(&model, vec![0u8; 1_100_000]).unwrap();
+
+        let seen = Mutex::new(Vec::new());
+        let emit = |p: f64, s: &str| { seen.lock().unwrap().push((p, s.to_string())); };
+        let r = sh.transcribe_impl(&emit, &fake, &model, &meta.hash).unwrap();
+        assert_eq!(r.segs.len(), 2);
+        assert!((r.segs[0].t0 - 0.0).abs() < 1e-9 && (r.segs[0].t1 - 1.5).abs() < 1e-9);
+        assert_eq!(r.segs[0].text, "안녕하세요");
+        assert_eq!(r.segs[1].text, "금성초등학교입니다");
+        let pts = seen.lock().unwrap().clone();
+        assert!(pts.iter().any(|(p, _)| (*p - (0.04 + 0.5 * 0.95)).abs() < 1e-6), "진행률 50% 가 매핑돼야: {pts:?}");
+        assert!(sh.stt_cache_path(&meta.hash).exists(), "결과가 캐시돼야");
+        assert!(!sh.proxy_dir.join(format!("{}.stt.wav", meta.hash)).exists(), "임시 wav 는 지워져야");
+
+        // 두 번째 호출은 캐시에서 — 가짜 whisper 가 다시 안 돈다
+        let runs = sh.proxy_dir.join(format!("{}.stt.tmp.runs", meta.hash));
+        let n0 = fs::read_to_string(&runs).map(|s| s.lines().count()).unwrap_or(0);
+        let r2 = sh.transcribe_impl(&emit, &fake, &model, &meta.hash).unwrap();
+        assert_eq!(r2.segs.len(), 2);
+        let n1 = fs::read_to_string(&runs).map(|s| s.lines().count()).unwrap_or(0);
+        assert_eq!(n0, n1, "캐시가 있으면 whisper 를 다시 안 돌려야");
+
+        // 소리 없는 원본 → 빈 결과 (whisper 호출 없이)
+        let mute = fx.dir.join("mute.mp4");
+        ff(&["-f", "lavfi", "-i", "testsrc2=size=640x360:rate=30", "-t", "2", "-an", "-c:v", "libx264", "-preset", "ultrafast", "-g", "30", "-pix_fmt", "yuv420p", &mute.to_string_lossy()]);
+        let (mmeta, _) = import(&sh, &mute);
+        let r3 = sh.transcribe_impl(&emit, &fake, &model, &mmeta.hash).unwrap();
+        assert!(r3.segs.is_empty(), "소리 없는 원본은 빈 결과");
+        assert!(sh.stt_cache_path(&mmeta.hash).exists());
+
+        // 모델 탐색: proxy 부모/models 의 ggml*.bin 을 찾는다
+        let mdir = sh.proxy_dir.parent().unwrap().join("models");
+        fs::create_dir_all(&mdir).unwrap();
+        fs::write(mdir.join("ggml-small.bin"), vec![0u8; 2_000_000]).unwrap();
+        let found = find_whisper_model(&sh.proxy_dir).expect("모델을 찾아야");
+        assert_eq!(found.file_name().unwrap().to_string_lossy(), "ggml-small.bin");
     }
 
     fn import(sh: &Shell, p: &Path) -> (ProxyMeta, bool) {

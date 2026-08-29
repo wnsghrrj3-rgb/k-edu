@@ -15,6 +15,12 @@
 - 슬롯 = ffmpeg 와 같은 정수 반올림(`av_rescale_q_rnd NEAR_INF`), format.start_time 오프셋까지 동일. seek 는 목표 슬롯보다 **작은** 슬롯의 마지막 키프레임에서 시작해 그 키프레임 슬롯은 버린다(60fps 원본의 같은 슬롯 경쟁까지 일치).
 - 25fps·60fps·시작 오프셋 1.478s 원본, seek 앞뒤 8지점 × 3파일 = 24/24 픽셀 일치.
 
+## 받아쓰기 (whisper.cpp — 선택)
+자막 패널의 「🎙 받아쓰기」는 껍데기에 whisper 가 있을 때만 작동한다. 두 개만 놓으면 켜진다:
+1. **whisper-cli.exe** — exe 옆(ffmpeg 와 같은 자리). https://github.com/ggml-org/whisper.cpp/releases 의 Windows 바이너리(zip)에서 `whisper-cli.exe` 하나만.
+2. **모델** — `%LOCALAPPDATA%\KMovie\models\` (또는 exe 옆 `models\`)에 `ggml-small.bin` (한국어는 small 이상 권장, ~466MB. tiny·base 는 한국어가 많이 틀린다). 받는 곳: https://huggingface.co/ggerganov/whisper.cpp/tree/main
+여러 모델이 있으면 가장 큰 파일을 쓴다. 결과는 프록시 옆 `<hash>.stt.json` 에 캐시돼 같은 원본은 두 번째부터 즉시.
+
 ## 빌드 (준호 Windows PC)
 ```
 # 1) 준비: Rust(rustup) · Node 18+ · Tauri CLI

@@ -357,6 +357,16 @@
   function sortS() { P.S.sort((a, b) => a.at - b.at); }
   function addS(card) { commit(); const s = Object.assign({ id: uid('s'), text: '', at: 0, dur: 2 * FPS, style: 'basic' }, card); P.S.push(s); sortS(); emit('S'); return s; }
   function setS(list) { commit(); P.S = list.map(c => Object.assign({ id: uid('s'), style: 'basic' }, c)); sortS(); emit('S'); }
+  function addManyS(cards) {                            // 받아쓰기 등 — undo 한 번으로 여러 장
+    if (!cards || !cards.length) return [];
+    commit();
+    const out = cards.map(c => {
+      const s = Object.assign({ id: uid('s'), text: '', at: 0, dur: 2 * FPS, style: 'basic' }, c);
+      s.at = Math.max(0, Math.round(s.at)); s.dur = Math.max(FPS / 3 | 0, Math.round(s.dur));
+      P.S.push(s); return s;
+    });
+    sortS(); emit('S'); return out;
+  }
   function subtitle(id) { return P.S.find(s => s.id === id) || null; }
   function updateS(id, patch, opt) {
     const s = subtitle(id); if (!s) return;
@@ -553,7 +563,7 @@
     media, clip, clipIndex, audioOf, clipAt, total, edges, srcFrame, clipDur, speedMap,
     addMedia, removeMedia, addClip, removeClip, move, split, trim, trimToPlayhead, freeze, setSpeed, setVol, audioTrim, relink,
     setLook, setProjectLook, setKenburns, setTransition, setTheme,
-    addS, setS, subtitle, updateS, removeS, clearS, subtitleAt,
+    addS, setS, addManyS, subtitle, updateS, removeS, clearS, subtitleAt,
     part, addP, updateP, removeP, clearP, partsAt, partDefault,
     a2, addA2, updateA2, trimA2, removeA2, setDucking, a2At,
     v2, addV2, updateV2, trimV2, removeV2, v2At, V2_POS, V2_SIZE,

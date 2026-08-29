@@ -1169,6 +1169,40 @@
     if (cards.length) { selectS(cards[0].id); setPH(cards[0].at); }
   };
   $('btnSubAdd').onclick = () => { stop(); const text = $('subText').value.split(/\n/).map(x => x.trim()).filter(Boolean)[0] || '자막'; const s2 = P.addS({ text, at: ph, dur: 2 * FPS, style: subStyle }); selectS(s2.id); setPH(ph); };
+  /* 받아쓰기 — 실제로 들리는 소리(A1, 소리 켠 카드)의 원본 구간만 whisper 로 받아써 자막 카드로 */
+  let sttBusy = false;
+  $('btnSubStt').onclick = async () => {
+    if (sttBusy) return;
+    stop();
+    if (!(SH && SH.sttReady && SH.sttReady())) return toast('받아쓰기는 데스크톱 케이무비에서 할 수 있어요 — whisper 모델(models 폴더의 ggml-*.bin)이 필요해요', 4200);
+    if (!P.total()) return toast('타임라인이 비어 있어요');
+    const ranges = [];
+    P.data.A1.forEach(a => {
+      if (!a.vol) return;                                  // 소리 끈 클립은 자막도 없다
+      const c = P.clip(a.clip); if (!c || c.freeze) return;
+      const m = P.media(c.media); if (!m || m.kind !== 'video' || !m.audio) return;
+      ranges.push({ media: m.id, mfps: m.fps || FPS, in: a.in, out: a.out, at: a.at, dur: a.dur });
+    });
+    if (!ranges.length) return toast('현장음이 있는 클립이 없어요');
+    const ids = [...new Set(ranges.map(r => r.media))];
+    const segsByMedia = {}; let skipped = 0;
+    sttBusy = true; OV.show('받아쓰는 중');
+    try {
+      for (let i = 0; i < ids.length; i++) {
+        const m = P.media(ids[i]);
+        if (!(m.origin && m.origin.hash)) { skipped++; continue; }   // 브라우저로 넣은 파일 — 원본 연결 없음
+        OV.set(i / ids.length, (m.name || '원본'));
+        const segs = await SH.stt(m, { progress: (p, stage) => OV.set((i + p) / ids.length, (stage || '받아쓰는 중') + ' — ' + (m.name || '') + ' ' + Math.round(p * 100) + '%') });
+        segsByMedia[ids[i]] = window.KMV_STT.tidy(segs || []);
+      }
+    } catch (e) { console.error(e); sttBusy = false; OV.hide(); return toast('받아쓰기 실패 — ' + (e.message || e), 5000); }
+    sttBusy = false; OV.hide();
+    const cards = window.KMV_STT.build(segsByMedia, ranges, FPS).map(c => Object.assign(c, { style: subStyle }));
+    if (!cards.length) return toast(skipped ? '원본 연결이 있는 파일에서 말소리를 못 찾았어요 (' + skipped + '개는 데스크톱에서 다시 넣어야 받아쓸 수 있어요)' : '말소리를 못 찾았어요', 4200);
+    const made = P.addManyS(cards);
+    toast('자막 ' + made.length + '개를 받아썼어요 — 카드를 눌러 문구를 다듬어 주세요' + (skipped ? ' (' + skipped + '개 파일은 원본 연결이 없어 건너뜀)' : ''), 4200);
+    selectS(made[0].id); setPH(made[0].at);
+  };
   $('btnSubClear').onclick = () => { if (!P.data.S.length) return; if (!confirm('자막을 전부 지울까요?')) return; P.clearS(); selectS(null); setPH(ph); };
   let subEditStart = null;
   $('subEditText').oninput = e => { const s2 = selS && P.subtitle(selS); if (s2) { if (subEditStart == null) subEditStart = s2.text; s2.text = e.target.value; dirty = true; renderPreview(); draw(); } };

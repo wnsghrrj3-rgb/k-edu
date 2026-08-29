@@ -153,6 +153,34 @@
     };
   }
 
+  /* ---------- 받아쓰기 (whisper.cpp) ----------
+     껍데기가 프록시 오디오(원본과 같은 시간축)를 whisper 로 받아쓴 뒤
+     구간 [{t0,t1,text}](초) 를 돌려준다. 결과는 프록시 옆 <hash>.stt.json 에 저장돼
+     같은 원본은 두 번째부터 즉시. 진행률은 kmv-stt 이벤트. */
+  const sttSeen = new Map();                       // hash → segs (세션 캐시)
+  const sttReady = () => !!(active && info && info.whisper);
+  async function stt(media, hooks) {
+    if (!sttReady()) throw new Error('받아쓰기는 데스크톱 케이무비에서만 할 수 있어요');
+    const origin = media && media.origin;
+    const hash = origin && origin.kind === 'video' && origin.hash;
+    if (!hash) throw new Error('원본 연결이 없는 파일이에요 — 데스크톱에서 다시 넣어 주세요');
+    if (sttSeen.has(hash)) return sttSeen.get(hash);
+    let unlisten = null;
+    if (T.event && T.event.listen) {
+      unlisten = await T.event.listen('kmv-stt', e => {
+        const p = e && e.payload; if (!p || p.hash !== hash) return;
+        hooks && hooks.progress && hooks.progress(Math.max(0, Math.min(1, +p.pct || 0)), p.stage || '');
+      });
+    }
+    try {
+      const r = await invoke('transcribe', { hash });
+      const segs = (r && r.segs) || [];
+      sttSeen.set(hash, segs);
+      return segs;
+    } finally { if (unlisten) { try { unlisten(); } catch (e) {} } }
+  }
+  const sttCancel = hash => active ? invoke('transcribe_cancel', { hash }).catch(() => {}) : Promise.resolve();
+
   /* ---------- 프록시 보관함 ---------- */
   const cacheInfo = () => active ? invoke('cache_info') : Promise.resolve(null);
   const cacheClear = () => active ? invoke('cache_clear') : Promise.resolve(null);
@@ -163,6 +191,7 @@
     active, get info() { return info; },
     init, listenDrop, pick, ref, file, restoreFile, hasOrigin, anyOrigin,
     exactBegin, exactEnd, exact, saveTarget,
+    sttReady, stt, sttCancel,
     cacheInfo, cacheClear, openCacheDir, fmtBytes,
     PathRef,
   };
