@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>케이학습리포트 | K-edu 교사</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../kedu_config.js"></script>
+<script src="../kedu_report_lib.js"></script>
+<style id="kedu-title-font">
+@font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
+:root{--kedu-title:'Hakgyoansim Moheomga','Jua',sans-serif}
+</style>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#5B8EF8;--primary-light:#EBF4FF;--primary-dark:#3B6FD8;
+  --pink:#FF85A1;--green:#38A169;--orange:#FFB347;--red:#E53E3E;--purple:#9F7AEA;
+  --bg:#F5F7FA;--card:#fff;--text:#1A202C;--sub:#718096;--border:#E2E8F0;
+  --radius:16px;--shadow:0 2px 16px rgba(0,0,0,.06);
+}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh;color:var(--text);-webkit-tap-highlight-color:transparent}
+
+.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.topbar-back{font-size:13px;color:var(--sub);text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:6px 10px;border-radius:8px;transition:all .15s}
+.topbar-back:hover{background:var(--primary-light);color:var(--primary)}
+.topbar-title{font-family:var(--kedu-title);font-size:16px}
+.topbar-btn{border:1px solid var(--border);background:var(--card);border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+.topbar-btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+
+.wrap{max-width:1040px;margin:0 auto;padding:24px 16px 60px}
+.center-state{text-align:center;padding:80px 20px;color:var(--sub)}
+.center-state .icon{font-size:40px;margin-bottom:12px}
+.center-state .ttl{font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px}
+.center-state .cta{display:inline-block;margin-top:16px;background:var(--primary);color:#fff;border-radius:10px;padding:10px 18px;text-decoration:none;font-size:14px;font-weight:600}
+.spin{display:inline-block;width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+.sec{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:18px}
+.sec-h{font-family:var(--kedu-title);font-size:16px;margin-bottom:4px}
+.sec-sub{font-size:12.5px;color:var(--sub);margin-bottom:14px}
+
+/* 막힌 차시 상위 3 */
+.stuck-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.stuck-card{border:1px solid var(--border);border-left:4px solid var(--red);border-radius:12px;padding:12px 14px}
+.stuck-card .l{font-size:14px;font-weight:700}
+.stuck-card .m{font-size:12px;color:var(--sub);margin-top:4px}
+.stuck-empty{font-size:13.5px;color:var(--sub);padding:8px 2px}
+
+/* 학급 주간 표 */
+.r-table{width:100%;border-collapse:collapse;font-size:13px}
+.r-table th{background:var(--primary-light);color:var(--primary-dark);font-weight:700;padding:9px 8px;text-align:left;white-space:nowrap}
+.r-table td{padding:9px 8px;border-bottom:1px solid var(--border);vertical-align:middle}
+.r-table tr:hover td{background:#FAFBFF;cursor:pointer}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.ctr{text-align:center}
+.dotrow{display:inline-flex;gap:3px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--border)}
+.dot.on{background:var(--green)}
+.dot.mo{box-shadow:0 0 0 2px var(--orange) inset}
+.pill{display:inline-block;font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px}
+.pill.solid{background:#E6FFFA;color:#2C7A7B}
+.pill.edge{background:#FEFCBF;color:#975A16}
+.pill.weak{background:#FED7D7;color:#C53030}
+.pill.watching{background:var(--border);color:var(--sub)}
+.legend{font-size:11.5px;color:var(--sub);margin-top:10px}
+.legend .dot{vertical-align:middle}
+
+/* 학생 카드 4단 */
+.four{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.four{grid-template-columns:1fr}}
+.q-card{border:1px solid var(--border);border-radius:12px;padding:14px}
+.q-card h3{font-size:13.5px;color:var(--primary-dark);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.q-num{background:var(--primary);color:#fff;border-radius:6px;font-size:11px;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;flex:none}
+.stat-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:10px}
+.stat{min-width:76px}
+.stat b{font-size:20px}
+.stat span{display:block;font-size:11px;color:var(--sub)}
+.trend{font-size:12px;color:var(--sub)}
+.trend b{color:var(--text)}
+.weekbar{display:flex;gap:8px;align-items:flex-end;margin:8px 0 2px}
+.weekbar .wb{flex:1;text-align:center}
+.wb .bar{background:var(--primary-light);border-radius:6px 6px 0 0;margin:0 auto;width:70%;min-height:4px}
+.wb .bar i{display:block;background:var(--primary);border-radius:6px 6px 0 0;width:100%}
+.wb .lb{font-size:10.5px;color:var(--sub);margin-top:4px}
+.lesson-line{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 2px;border-bottom:1px dashed var(--border);font-size:13px}
+.lesson-line:last-child{border-bottom:none}
+.lesson-line .nm{font-weight:600}
+.lesson-line .ev{font-size:11.5px;color:var(--sub)}
+.lesson-line .ev button{border:none;background:none;color:var(--primary);cursor:pointer;font-size:11.5px;text-decoration:underline;font-family:inherit}
+.mini{font-size:12px;color:var(--sub)}
+.step-card{display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;text-decoration:none;color:inherit}
+.step-card:hover{border-color:var(--primary)}
+.step-card .k{font-size:18px}
+.step-card .t{font-size:13px;font-weight:700}
+.step-card .w{font-size:11.5px;color:var(--sub)}
+.step-card .go{margin-left:auto;font-size:12px;color:var(--primary);font-weight:700;white-space:nowrap}
+.empty-note{font-size:13px;color:var(--sub);padding:6px 2px}
+
+/* 교사 한마디 */
+.cmt textarea{width:100%;border:1px solid var(--border);border-radius:10px;padding:10px;font-family:inherit;font-size:13.5px;min-height:70px;resize:vertical}
+.cmt-foot{display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap}
+.cmt-foot label{font-size:12.5px;color:var(--sub);display:flex;align-items:center;gap:5px}
+.cmt-foot .save{margin-left:auto;background:var(--primary);color:#fff;border:none;border-radius:9px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.cmt-msg{font-size:12px;color:var(--green)}
+
+/* 근거 모달 */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:200;padding:16px}
+.modal-bg.on{display:flex}
+.modal{background:#fff;border-radius:14px;max-width:520px;width:100%;max-height:78vh;overflow:auto;padding:18px}
+.modal h4{font-size:14.5px;margin-bottom:10px}
+.modal .close{float:right;border:none;background:none;font-size:18px;cursor:pointer;color:var(--sub)}
+.ev-row{display:flex;justify-content:space-between;font-size:12.5px;padding:6px 2px;border-bottom:1px dashed var(--border)}
+.ev-row .ok{color:var(--green);font-weight:700}
+.ev-row .no{color:var(--red);font-weight:700}
+
+/* 인쇄 — 학생 카드 A4 1장 (상담용) */
+@media print{
+  .topbar,.no-print{display:none!important}
+  body{background:#fff}
+  .wrap{max-width:none;padding:0}
+  .sec{box-shadow:none;border:1px solid #ddd;page-break-inside:avoid;margin-bottom:10px;padding:12px}
+  .four{gap:8px}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <a href="/teacher/" class="topbar-back" id="back-link">← 교사 대시보드로</a>
+    <span class="topbar-title" id="topbar-title">🧭 케이학습리포트</span>
+  </div>
+  <div class="topbar-right">
+    <button class="topbar-btn primary no-print" id="btn-print" style="display:none" onclick="window.print()">🖨️ 상담용 인쇄 (A4)</button>
+  </div>
+</div>
+
+<div class="wrap" id="app">
+  <div class="center-state"><div class="icon"><span class="spin"></span></div>
+    <div class="ttl">학습 기록을 모으는 중…</div><div class="desc">잠시만 기다려 주세요.</div></div>
+</div>
+
+<div class="modal-bg" id="ev-modal"><div class="modal">
+  <button class="close" onclick="document.getElementById('ev-modal').classList.remove('on')">✕</button>
+  <h4 id="ev-title">근거 시도 목록</h4>
+  <div id="ev-body"></div>
+</div></div>
+
+<script>
+const db = getKeduDb();
+const KR = window.KeduReport;
+let _teacher = null;
+let _evCache = {};   // lesson_id → scores rows (근거 열람)
+
+function esc(s){ return String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function q(name){ return new URLSearchParams(location.search).get(name); }
+function fmtDur(sec){ sec = Number(sec)||0; if(sec<60) return sec+'초'; const m=Math.floor(sec/60); return m<60? m+'분' : Math.floor(m/60)+'시간 '+(m%60)+'분'; }
+function statusKo(st){ return {solid:'탄탄', edge:'경계', weak:'취약', watching:'관찰 중'}[st] || st; }
+
+function showError(icon, ttl, desc){
+  document.getElementById('app').innerHTML =
+    `<div class="center-state"><div class="icon">${icon}</div><div class="ttl">${esc(ttl)}</div><div class="desc">${desc}</div><a class="cta" href="/teacher/">교사 대시보드로</a></div>`;
+}
+
+async function init(){
+  const { data: { session } } = await db.auth.getSession();
+  if(!session){ location.href = '/auth/?redirect=' + encodeURIComponent(location.href); return; }
+  const { data: t } = await db.from('teachers').select('id, name').eq('user_id', session.user.id).maybeSingle();
+  if(!t){ showError('🔒','교사 권한이 없습니다','본 리포트는 승인된 교사만 조회할 수 있습니다.'); return; }
+  _teacher = t;
+
+  const studentId = q('student_id');
+  let classCodeId = q('class_code_id');
+  if(studentId){ await loadStudent(studentId); return; }
+  if(!classCodeId){
+    const { data: cc } = await db.from('class_codes').select('id').eq('teacher_id', t.id).eq('is_active', true).order('created_at',{ascending:false}).limit(1);
+    if(cc && cc[0]) classCodeId = cc[0].id;
+  }
+  if(!classCodeId){ showError('📭','학급코드가 없습니다','학급코드를 먼저 생성하면 학급 리포트가 열립니다.'); return; }
+  await loadClass(classCodeId);
+}
+
+// =============================================
+// 학급 모드 — 학급이 먼저 (설계 §3-1)
+// =============================================
+async function loadClass(classCodeId){
+  const monday3 = KR.addDays(KR.mondayOf(KR.kstDateStr(new Date())), -14); // 최근 3주 시작
+  const [{ data: classRow }, { data: students, error: es }] = await Promise.all([
+    db.from('class_codes').select('id, code, label').eq('id', classCodeId).maybeSingle(),
+    db.from('student_data_summary').select('*').eq('class_code_id', classCodeId)
+  ]);
+  if(es || !classRow){ showError('🔒','학급을 불러올 수 없습니다', esc((es&&es.message)||'본인 소유 학급만 조회할 수 있습니다.')); return; }
+
+  const ids = (students||[]).map(s=>s.student_id).filter(Boolean);
+  let mastery=[], scores=[], morning=[];
+  if(ids.length){
+    const r = await Promise.all([
+      db.from('report_lesson_mastery').select('*').in('student_id', ids),
+      db.from('scores').select('student_id,lesson_id,question_id,is_correct,earned_at').in('student_id', ids).gte('earned_at', monday3+'T00:00:00+09:00').limit(8000),
+      db.from('report_morning_daily').select('student_id,run_date,subject').in('student_id', ids).gte('run_date', monday3)
+    ]);
+    mastery = r[0].data||[]; scores = r[1].data||[]; morning = r[2].data||[];
+  }
+
+  // 번호순 정렬 (이름 정렬 금지) — 닉네임 앞 숫자 우선, 없으면 닉네임
+  const list = (students||[]).slice().sort((a,b)=>{
+    const na = parseInt(a.nickname), nb = parseInt(b.nickname);
+    if(!isNaN(na)&&!isNaN(nb)) return na-nb;
+    if(!isNaN(na)) return -1; if(!isNaN(nb)) return 1;
+    return String(a.nickname||'').localeCompare(String(b.nickname||''),'ko');
+  });
+
+  // 막힌 차시 상위 3 — weak 학생 수 기준
+  const stuck = {};
+  mastery.forEach(m => { if(m.status==='weak'){ stuck[m.lesson_id]=(stuck[m.lesson_id]||0)+1; } });
+  const stuckTop = Object.entries(stuck).sort((a,b)=>b[1]-a[1]).slice(0,3);
+
+  // 학생별 이번 주 집계
+  const byStu = {};
+  list.forEach(s => byStu[s.student_id] = { scores:[], morning:[] });
+  scores.forEach(r => { if(byStu[r.student_id]) byStu[r.student_id].scores.push(r); });
+  morning.forEach(r => { if(byStu[r.student_id]) byStu[r.student_id].morning.push(r); });
+  const weakCount = {};
+  mastery.forEach(m => { if(m.status==='weak') weakCount[m.student_id]=(weakCount[m.student_id]||0)+1; });
+
+  const thisMonday = KR.mondayOf(KR.kstDateStr(new Date()));
+  const rows = list.map(s => {
+    const wk = KR.buildWeeks(byStu[s.student_id]?.scores, byStu[s.student_id]?.morning, 1)[0];
+    const dots = Object.keys(wk.days).map(d => {
+      const day = wk.days[d];
+      const on = day.selfQ>0 || day.lessons.size>0 || day.morning;
+      return `<span class="dot ${on?'on':''} ${day.morning?'mo':''}" title="${d}"></span>`;
+    }).join('');
+    const inactive = s.is_active === false;
+    return `<tr onclick="location.href='learning-report.html?student_id=${esc(s.student_id)}'" ${inactive?'style="opacity:.45"':''}>
+      <td><b>${esc(s.nickname||'—')}</b>${inactive?' <span class="mini">(정지)</span>':''}</td>
+      <td class="ctr"><span class="dotrow">${dots}</span></td>
+      <td class="num">${wk.lessonsDone.size + wk.lessonsTouched.size ? Math.max(wk.lessonsDone.size, wk.lessonsTouched.size) : 0}</td>
+      <td class="num">${wk.problems}</td>
+      <td class="num">${wk.morningCount}</td>
+      <td class="num">${wk.activeDays.size}일</td>
+      <td class="ctr">${weakCount[s.student_id] ? `<span class="pill weak">${weakCount[s.student_id]}</span>` : '<span class="mini">—</span>'}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('topbar-title').textContent = '🧭 케이학습리포트 — 우리 반';
+  document.getElementById('app').innerHTML = `
+    <div class="sec">
+      <div class="sec-h">🚧 이번에 막힌 차시</div>
+      <div class="sec-sub">취약(반복 오답·낮은 도달) 학생이 많은 차시 — 다음 수업의 보충 후보입니다.</div>
+      ${stuckTop.length ? `<div class="stuck-grid">${stuckTop.map(([lid,n])=>{
+        const p = KR.prettyLesson(lid);
+        return `<div class="stuck-card"><div class="l">${esc(p.label)}</div><div class="m">취약 학생 ${n}명</div></div>`;
+      }).join('')}</div>` : `<div class="stuck-empty">지금 학급 전체가 막힌 차시는 없습니다.</div>`}
+    </div>
+    <div class="sec">
+      <div class="sec-h">📅 이번 주 학습량 (${KR.fmtMD(thisMonday)}~)</div>
+      <div class="sec-sub">줄을 누르면 학생 카드로 들어갑니다.</div>
+      <table class="r-table">
+        <thead><tr><th>학생</th><th class="ctr">요일 흐름 (월~일)</th><th class="num">차시</th><th class="num">문항</th><th class="num">아침</th><th class="num">활동일</th><th class="ctr">취약</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="7" class="empty-note">학생이 없습니다.</td></tr>'}</tbody>
+      </table>
+      <div class="legend"><span class="dot on"></span> 학습한 날 · <span class="dot on mo"></span> 아침활동 포함 · 취약 = 반복해서 헷갈리거나 도달이 낮은 차시 수</div>
+    </div>`;
+}
+
+// =============================================
+// 학생 카드 — 네 질문 4단 (설계 §3-2)
+// =============================================
+async function loadStudent(studentId){
+  const monday3 = KR.addDays(KR.mondayOf(KR.kstDateStr(new Date())), -14);
+  const [{ data: sumRows }, { data: mastery }, { data: scores }, { data: wrongs }, { data: morning }, { data: cmtRows }] = await Promise.all([
+    db.from('student_data_summary').select('*').eq('student_id', studentId).limit(1),
+    db.from('report_lesson_mastery').select('*').eq('student_id', studentId),
+    db.from('scores').select('lesson_id,unit_id,question_id,is_correct,time_spent_sec,earned_at').eq('student_id', studentId).order('earned_at',{ascending:false}).limit(3000),
+    db.from('wrong_answers').select('*').eq('student_id', studentId),
+    db.from('report_morning_daily').select('*').eq('student_id', studentId).gte('run_date', monday3),
+    db.from('report_teacher_comments').select('*').eq('student_id', studentId).limit(1)
+  ]);
+  const s = sumRows && sumRows[0];
+  if(!s){ showError('🔒','조회 권한이 없거나 데이터가 없습니다','본인 학급 학생만 조회할 수 있습니다.'); return; }
+
+  const cls = KR.classify(mastery||[], wrongs||[]);
+  const weeks = KR.buildWeeks(scores||[], morning||[], 3);
+  const steps = KR.nextSteps(cls, mastery||[], scores||[]);
+  const cmt = (cmtRows && cmtRows[0]) || null;
+  _evCache = {}; (scores||[]).forEach(r => { if(r.lesson_id){ (_evCache[r.lesson_id]=_evCache[r.lesson_id]||[]).push(r); } });
+
+  // 최근 3주 추세
+  const w = weeks.map(x => x.problems + x.morningCount);
+  const arrow = w[2] > w[1] ? '↗ 늘고 있음' : (w[2] < w[1] ? '↘ 줄고 있음' : '→ 비슷함');
+  const maxW = Math.max(...w, 1);
+
+  const wkThis = weeks[2];
+  const morningBySubj = {};
+  (morning||[]).forEach(r => { const k = KR.SUBJECT_KO[r.subject]||r.subject; morningBySubj[k]=(morningBySubj[k]||0)+1; });
+
+  const lessonLine = (r, evBtn) => {
+    const p = KR.prettyLesson(r.lesson_id);
+    return `<div class="lesson-line">
+      <div><span class="nm">${esc(p.label)}</span>
+        <div class="ev">최근 ${r.recent_n}회 중 ${r.recent_correct}회 정답 · ${r.attempts_total}회 시도${evBtn?` · <button onclick="openEv('${esc(r.lesson_id)}')">근거 보기</button>`:''}</div></div>
+      <span class="pill ${r.status}">${statusKo(r.status)}</span>
+    </div>`;
+  };
+
+  const wrongLine = (wr) => {
+    const p = KR.prettyLesson(wr.lesson_id);
+    return `<div class="lesson-line">
+      <div><span class="nm">${esc(p.label)}</span>
+        <div class="ev">${esc(wr.question_id)} 문항 · ${wr.attempts}회 헷갈림 · <button onclick="openEv('${esc(wr.lesson_id)}')">근거 보기</button></div></div>
+      <span class="pill weak">반복 오답</span>
+    </div>`;
+  };
+
+  const stepCard = (st) => {
+    const p = KR.prettyLesson(st.lessonId);
+    const icon = { review:'🔁', lesson:'📖', continue:'▶️' }[st.kind] || '👉';
+    const inner = `<span class="k">${icon}</span><div><div class="t">${esc(p.label)}</div><div class="w">${esc(st.why)}</div></div><span class="go">${st.unitId?'열기 →':''}</span>`;
+    return st.unitId ? `<a class="step-card" href="${esc(st.unitId)}" target="_blank">${inner}</a>` : `<div class="step-card">${inner}</div>`;
+  };
+
+  document.getElementById('topbar-title').textContent = '🧭 학생 카드';
+  document.getElementById('back-link').href = 'learning-report.html';
+  document.getElementById('back-link').textContent = '← 우리 반으로';
+  document.getElementById('btn-print').style.display = '';
+  document.getElementById('app').innerHTML = `
+    <div class="sec">
+      <div class="sec-h">🎒 ${esc(s.nickname||'—')} <span class="mini">· ${esc(s.class_code||'')}</span></div>
+      <div class="sec-sub">규칙 기반 판정 — 모든 판정은 [근거 보기]로 시도 목록을 확인할 수 있습니다. 시도 3회 미만 차시는 판단을 보류합니다.</div>
+      <div class="four">
+
+        <div class="q-card"><h3><span class="q-num">1</span>얼마나 했는가</h3>
+          <div class="stat-row">
+            <div class="stat"><b>${wkThis.problems}</b><span>이번 주 문항</span></div>
+            <div class="stat"><b>${wkThis.morningCount}</b><span>아침활동</span></div>
+            <div class="stat"><b>${wkThis.activeDays.size}일</b><span>활동일</span></div>
+            <div class="stat"><b>${fmtDur(s.total_time_sec)}</b><span>누적 시간</span></div>
+          </div>
+          <div class="weekbar">${weeks.map((x,i)=>`<div class="wb"><div class="bar" style="height:52px"><i style="height:${Math.round(52*(x.problems+x.morningCount)/maxW)}px"></i></div><div class="lb">${KR.fmtMD(x.weekStart)}주</div></div>`).join('')}</div>
+          <div class="trend">최근 3주 <b>${arrow}</b>${Object.keys(morningBySubj).length?` · 아침: ${Object.entries(morningBySubj).map(([k,v])=>k+' '+v+'회').join(', ')}`:''}</div>
+        </div>
+
+        <div class="q-card"><h3><span class="q-num">2</span>무엇을 잘하는가</h3>
+          ${cls.solid.length ? cls.solid.slice(0,6).map(r=>lessonLine(r,true)).join('') : '<div class="empty-note">아직 탄탄 판정 차시가 없습니다 — 기록이 쌓이는 중입니다.</div>'}
+          ${cls.watching.length ? `<div class="mini" style="margin-top:8px">관찰 중 ${cls.watching.length}차시 (시도 3회 미만 — 판단 보류)</div>`:''}
+        </div>
+
+        <div class="q-card"><h3><span class="q-num">3</span>무엇이 부족한가</h3>
+          ${cls.repeatWrong.length ? cls.repeatWrong.slice(0,4).map(wrongLine).join('') : ''}
+          ${cls.weak.length ? cls.weak.slice(0,4).map(r=>lessonLine(r,true)).join('') : ''}
+          ${cls.edge.length ? cls.edge.slice(0,3).map(r=>lessonLine(r,true)).join('') : ''}
+          ${!cls.repeatWrong.length && !cls.weak.length && !cls.edge.length ? '<div class="empty-note">반복 오답도, 취약 차시도 없습니다.</div>':''}
+          <div class="mini" style="margin-top:6px">1회 오답은 취약으로 세지 않습니다 — 반복(2회 이상, 미해결)만 표시.</div>
+        </div>
+
+        <div class="q-card"><h3><span class="q-num">4</span>앞으로 무엇을</h3>
+          ${steps.length ? steps.map(stepCard).join('') : '<div class="empty-note">지금 권할 다음 걸음이 없습니다 — 새 차시로 나아가면 됩니다.</div>'}
+        </div>
+
+      </div>
+    </div>
+
+    <div class="sec no-print cmt">
+      <div class="sec-h">✍️ 교사 한마디</div>
+      <div class="sec-sub">학부모 성장 리포트에 함께 나갈 한 줄입니다. 체크해야만 학부모에게 보입니다.</div>
+      <textarea id="cmt-text" placeholder="예) 이번 주 받아쓰기에서 스스로 고쳐 쓰는 모습이 좋았습니다.">${esc(cmt?cmt.comment:'')}</textarea>
+      <div class="cmt-foot">
+        <label><input type="checkbox" id="cmt-vis" ${cmt&&cmt.visible_to_parent?'checked':''}> 학부모에게 보이기</label>
+        <span class="cmt-msg" id="cmt-msg"></span>
+        <button class="save" onclick="saveComment('${esc(studentId)}')">저장</button>
+      </div>
+    </div>`;
+}
+
+async function saveComment(studentId){
+  const comment = document.getElementById('cmt-text').value.trim();
+  const visible = document.getElementById('cmt-vis').checked;
+  const { error } = await db.from('report_teacher_comments').upsert({
+    student_id: studentId, comment, visible_to_parent: visible,
+    updated_by: _teacher.id, updated_at: new Date().toISOString()
+  }, { onConflict:'student_id' });
+  document.getElementById('cmt-msg').textContent = error ? '저장 실패: '+error.message : '저장되었습니다 ✓';
+}
+
+// 근거 열람 — 판정의 모든 근거는 DB 행으로 증명 (설계 §1 불변식)
+function openEv(lessonId){
+  const rows = (_evCache[lessonId]||[]).filter(r=>r.question_id!=='_lesson_summary_').slice(0,40);
+  const p = KR.prettyLesson(lessonId);
+  document.getElementById('ev-title').textContent = p.label + ' — 시도 목록';
+  document.getElementById('ev-body').innerHTML = rows.length ? rows.map(r=>
+    `<div class="ev-row"><span>${esc(r.question_id)} · ${new Date(r.earned_at).toLocaleDateString('ko-KR')}</span><span class="${r.is_correct?'ok':'no'}">${r.is_correct?'정답':'오답'}</span></div>`
+  ).join('') : '<div class="empty-note">최근 3천 건 내 시도가 없습니다.</div>';
+  document.getElementById('ev-modal').classList.add('on');
+}
+
+init();
+</script>
+</body>
+</html>

@@ -604,6 +604,7 @@ tr:hover td{background:#FAFBFC}
         <span id="rights-overdue-summary"></span>
         <button class="rights-export-btn" id="btn-export-class" onclick="exportClassCSV()" disabled>📥 학급 전체 CSV</button>
         <button class="rights-export-btn" id="btn-report-class" onclick="openClassReport()" disabled>📄 학급 전체 PDF</button>
+        <button class="rights-export-btn" id="btn-learning-report" onclick="openLearningReport()" disabled>🧭 케이학습리포트</button>
       </div>
     </div>
     <div class="rights-info">
@@ -1541,12 +1542,14 @@ async function loadRightsChannel(){
   const listWrap = document.getElementById('rights-list');
   const exportBtn = document.getElementById('btn-export-class');
   const reportBtn = document.getElementById('btn-report-class');
+  const lrBtn = document.getElementById('btn-learning-report');
   const overdueSummary = document.getElementById('rights-overdue-summary');
 
   if(!currentClassCode){
     listWrap.innerHTML = '<div class="rights-empty"><div class="empty-icon">🔒</div><p>학급코드를 먼저 생성해 주세요.</p></div>';
     exportBtn.disabled = true;
     if(reportBtn) reportBtn.disabled = true;
+    if(lrBtn) lrBtn.disabled = true;
     overdueSummary.innerHTML = '';
     rightsCache = [];
     return;
@@ -1563,12 +1566,14 @@ async function loadRightsChannel(){
     listWrap.innerHTML = `<div class="rights-empty"><div class="empty-icon">⚠️</div><p>데이터 조회 중 오류가 발생했어요.<br><span style="font-size:12px;color:var(--sub)">${escapeHtml(sumErr.message || '')}</span></p></div>`;
     exportBtn.disabled = true;
     if(reportBtn) reportBtn.disabled = true;
+    if(lrBtn) lrBtn.disabled = true;
     overdueSummary.innerHTML = '';
     rightsCache = [];
     return;
   }
 
   rightsCache = rows || [];
+  if(lrBtn) lrBtn.disabled = false;
 
   // 2) 미처리 요청 현황 (overdue/urgent 카운트만)
   // 학급 단위 요청(target_class_code_id) + 학급에 속한 학생 단위 요청(target_student_id) 둘 다 잡음
@@ -2211,6 +2216,14 @@ function exportStudentCSV(studentId){
 // 별도 페이지 teacher/report.html 새 탭 진입 — window.print() 인쇄 다이얼로그로 PDF 저장.
 // 학생별: ?student_id=...   학급 전체: ?class_code_id=...
 // =============================================
+function openLearningReport(){
+  if(!currentClassCode || !currentClassCode.id){
+    showToast('학급코드를 먼저 생성해 주세요.');
+    return;
+  }
+  window.open('learning-report.html?class_code_id=' + encodeURIComponent(currentClassCode.id), '_blank');
+}
+
 function openClassReport(){
   if(!currentClassCode || !currentClassCode.id){
     showToast('학급코드를 먼저 생성해 주세요.');
