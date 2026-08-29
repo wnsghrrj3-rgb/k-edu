@@ -9,7 +9,7 @@ use std::io::{BufRead, BufReader, Read, Seek, SeekFrom, Write};
 use std::net::{TcpStream, ToSocketAddrs};
 use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdout, Command, Stdio};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tauri::ipc::{InvokeBody, Request, Response};
 use tauri::{AppHandle, Emitter, Manager, State, WebviewUrl, WebviewWindowBuilder};
@@ -38,6 +38,7 @@ pub struct Shell {
     exports: Mutex<HashMap<u32, File>>,
     export_seq: Mutex<u32>,
     stts: Mutex<HashMap<String, Arc<Mutex<Option<Child>>>>>,
+    h264: OnceLock<Option<&'static str>>, // 이 ffmpeg 빌드의 H.264 인코더 (한 번만 조사)
 }
 
 struct FrameSession {
@@ -126,6 +127,7 @@ pub struct ShellInfo {
     pub cache: CacheInfo,
     pub whisper: bool,
     pub whisper_model: String,
+    pub h264_encoder: String, // 프록시에 쓸 인코더 (libx264 / h264_mf / libopenh264, 없으면 빈 문자열)
 }
 
 /* ---------------- 유틸 ---------------- */
@@ -144,6 +146,43 @@ fn cmd(bin: &Path) -> Command {
         c
     };
     c
+}
+
+/* ---------------- H.264 인코더 선택 (LGPL 대응) ----------------
+   ffmpeg 빌드가 GPL(gyan 등)이면 libx264, LGPL(BtbN lgpl 등)이면 Windows 미디어 파운데이션
+   h264_mf 또는 libopenh264 를 자동으로 고른다. 어떤 빌드를 옆에 놔도 코드는 같다.
+   libx264 전용 옵션(-preset 등)을 다른 인코더에 주면 ffmpeg 이 죽으므로 인자도 인코더별로. */
+
+const H264_PRIORITY: [&str; 3] = ["libx264", "h264_mf", "libopenh264"];
+
+/// `ffmpeg -encoders` 출력에서 비디오 인코더 이름만 뽑는다. 줄 형식: ` V....D libx264  설명`
+fn parse_encoders(text: &str) -> Vec<String> {
+    text.lines()
+        .filter_map(|l| {
+            let mut it = l.split_whitespace();
+            let flags = it.next()?;
+            let name = it.next()?;
+            if flags.len() >= 6 && flags.starts_with('V') && name != "=" { Some(name.to_string()) } else { None }
+        })
+        .collect()
+}
+
+fn pick_h264(names: &[String]) -> Option<&'static str> {
+    H264_PRIORITY.iter().copied().find(|w| names.iter().any(|n| n == w))
+}
+
+/// 프록시 인코드 인자 (규격: GOP 15 · 비트레이트 지정 — 인코더가 아는 옵션만).
+fn h264_args(enc: &str, vbr: &str) -> Vec<String> {
+    let s = |v: &[&str]| v.iter().map(|x| x.to_string()).collect::<Vec<String>>();
+    match enc {
+        "libx264" => s(&["-c:v", "libx264", "-preset", "veryfast", "-profile:v", "baseline", "-level", "4.0",
+            "-g", "15", "-keyint_min", "15", "-sc_threshold", "0", "-b:v", vbr, "-maxrate", vbr, "-bufsize", "12M"]),
+        // MF: -preset 없음(주면 즉사). -bf 0 = B프레임 끄기(baseline 에 가깝게), -g 는 요청이고 드라이버가 무시할 수 있음.
+        "h264_mf" => s(&["-c:v", "h264_mf", "-profile:v", "main", "-bf", "0", "-g", "15",
+            "-b:v", vbr, "-maxrate", vbr, "-bufsize", "12M"]),
+        _ => s(&["-c:v", "libopenh264", "-profile:v", "constrained_baseline", "-g", "15",
+            "-b:v", vbr, "-maxrate", vbr, "-bufsize", "12M"]),
+    }
 }
 
 /// exe 옆(sidecar) → PATH 순으로 ffmpeg/ffprobe 를 찾는다.
@@ -302,7 +341,18 @@ impl Shell {
             exports: Mutex::new(HashMap::new()),
             export_seq: Mutex::new(0),
             stts: Mutex::new(HashMap::new()),
+            h264: OnceLock::new(),
         }
+    }
+
+    /// 이 ffmpeg 빌드에서 쓸 H.264 프록시 인코더. GPL 빌드면 libx264, LGPL 빌드면 h264_mf(Windows)·libopenh264.
+    fn h264(&self) -> Result<&'static str, String> {
+        self.h264
+            .get_or_init(|| {
+                cmd(&self.ffmpeg).args(["-hide_banner", "-encoders"]).output().ok()
+                    .and_then(|o| pick_h264(&parse_encoders(&String::from_utf8_lossy(&o.stdout))))
+            })
+            .ok_or_else(|| "이 ffmpeg 에는 H.264 인코더가 없어요 — GPL 빌드(libx264)나 LGPL 빌드(Windows h264_mf / libopenh264)를 exe 옆에 놓아 주세요".into())
     }
     fn proxy_path(&self, hash: &str) -> PathBuf { self.proxy_dir.join(format!("{hash}.mp4")) }
     fn meta_path(&self, hash: &str) -> PathBuf { self.proxy_dir.join(format!("{hash}.json")) }
@@ -394,6 +444,7 @@ impl Shell {
 
         // 프록시 비트레이트: 길수록 낮게 (엔진은 구간 읽기라 메모리 걱정은 없고 — 디스크 용량·인코드 시간 몫)
         let vbr = if dur_sec <= 300.0 { "6M" } else if dur_sec <= 600.0 { "4500k" } else { "3M" };
+        let enc = self.h264()?; // 빌드에 따라 libx264 / h264_mf / libopenh264
         let tmp = self.proxy_dir.join(format!("{hash}.tmp"));
         let dst = self.proxy_path(hash);
         let _ = fs::remove_file(&tmp);
@@ -403,10 +454,9 @@ impl Shell {
             .args(["-v", "error", "-nostdin", "-y", "-progress", "pipe:1", "-i"]).arg(path)
             .args(["-map", "0:v:0", "-map", "0:a:0?", "-sn", "-dn",
                 "-vf", "scale='min(1280,iw)':'min(1280,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2,fps=30,format=yuv420p",
-                "-fps_mode", "passthrough",
-                "-c:v", "libx264", "-preset", "veryfast", "-profile:v", "baseline", "-level", "4.0", "-g", "15", "-keyint_min", "15", "-sc_threshold", "0",
-                "-b:v", vbr, "-maxrate", vbr, "-bufsize", "12M",
-                "-c:a", "aac", "-b:a", "128k", "-ac", "2", "-ar", "48000",
+                "-fps_mode", "passthrough"])
+            .args(h264_args(enc, vbr))
+            .args(["-c:a", "aac", "-b:a", "128k", "-ac", "2", "-ar", "48000",
                 "-movflags", "+faststart", "-f", "mp4"])
             .arg(&tmp)
             .stdout(Stdio::piped()).stderr(Stdio::piped()).stdin(Stdio::null())
@@ -494,6 +544,7 @@ fn shell_info(app: AppHandle, shell: State<'_, Shell>) -> ShellInfo {
         cache: shell.cache_info(),
         whisper: model.is_some() && whisper_ok(&find_bin("whisper-cli")),
         whisper_model: model.and_then(|p| p.file_name().map(|n| n.to_string_lossy().to_string())).unwrap_or_default(),
+        h264_encoder: shell.h264().unwrap_or("").to_string(),
     }
 }
 
@@ -909,6 +960,36 @@ mod tests {
         let d = fixtures().dir.join(sub);
         fs::create_dir_all(&d).unwrap();
         Shell::new(d, PathBuf::from("ffmpeg"), PathBuf::from("ffprobe"))
+    }
+
+    /// H.264 인코더 자동 선택 (LGPL 대응): 파싱·우선순위·인자·실 ffmpeg 조사.
+    #[test]
+    fn h264_select() {
+        // GPL 빌드(gyan full): libx264 와 h264_mf 가 둘 다 있어도 libx264 우선
+        let gpl = " V....D libx264              libx264 H.264\n V....D h264_mf              H264 via MediaFoundation\n A....D aac                  AAC";
+        assert_eq!(pick_h264(&parse_encoders(gpl)), Some("libx264"));
+        // LGPL Windows 빌드: h264_mf 만
+        let lgpl = "Encoders:\n V..... = Video\n ------\n V....D h264_mf              H264 via MediaFoundation\n V....D mpeg4                MPEG-4";
+        assert_eq!(pick_h264(&parse_encoders(lgpl)), Some("h264_mf"));
+        // openh264 만 있는 빌드
+        let oh = " V....D libopenh264          OpenH264";
+        assert_eq!(pick_h264(&parse_encoders(oh)), Some("libopenh264"));
+        // H.264 인코더 없음 (범례 줄 ` V..... = Video` 는 이름으로 안 잡혀야 함)
+        let none = "Encoders:\n V..... = Video\n V....D libvpx-vp9           VP9";
+        assert_eq!(pick_h264(&parse_encoders(none)), None);
+        assert!(!parse_encoders(none).iter().any(|n| n == "="));
+        // 인코더별 인자: MF 에 libx264 전용 옵션이 새면 실행이 죽는다
+        let mf = h264_args("h264_mf", "6M");
+        assert!(!mf.iter().any(|a| a == "-preset" || a == "-sc_threshold" || a == "-keyint_min"));
+        assert!(mf.windows(2).any(|w| w[0] == "-bf" && w[1] == "0"));
+        assert!(mf.windows(2).any(|w| w[0] == "-b:v" && w[1] == "6M"));
+        assert!(h264_args("libx264", "3M").windows(2).any(|w| w[0] == "-profile:v" && w[1] == "baseline"));
+        assert!(h264_args("libopenh264", "3M").iter().any(|a| a == "libopenh264"));
+        // 실 ffmpeg (이 환경은 GPL 빌드): 조사 성공 + 캐시 일관성
+        let sh = shell("enc");
+        let e = sh.h264().expect("이 환경 ffmpeg 에 H.264 인코더가 있어야 함");
+        assert_eq!(sh.h264().unwrap(), e);
+        assert!(H264_PRIORITY.contains(&e));
     }
 
     /// 받아쓰기 파이프: 실 ffmpeg 로 wav 를 뽑고, 가짜 whisper(-of 에 JSON 을 쓰는 스크립트)로

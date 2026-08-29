@@ -1,13 +1,20 @@
 # 케이무비 껍데기용 ffmpeg 사이드카 받기 (Windows PowerShell 5+)
-#   PS> .\scripts\get-ffmpeg.ps1
+#   PS> .\scripts\get-ffmpeg.ps1          # GPL 빌드(gyan, libx264 — 화질·속도 최선)
+#   PS> .\scripts\get-ffmpeg.ps1 -Lgpl    # LGPL 빌드(BtbN — 프록시는 h264_mf 로 자동 인코드)
+param([switch]$Lgpl)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 $bin  = Join-Path $root 'src-tauri\binaries'
 $tmp  = Join-Path $env:TEMP 'kmovie-ffmpeg'
 New-Item -ItemType Directory -Force -Path $bin, $tmp | Out-Null
 $zip = Join-Path $tmp 'ffmpeg.zip'
-Write-Host '→ gyan.dev ffmpeg-release-essentials.zip 받는 중…'
-Invoke-WebRequest -Uri 'https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip' -OutFile $zip
+if ($Lgpl) {
+  Write-Host '→ BtbN ffmpeg LGPL 빌드 받는 중… (libx264 없음 — 프록시는 h264_mf 자동 선택)'
+  Invoke-WebRequest -Uri 'https://github.com/BtbN/FFmpeg-Builds/releases/latest/download/ffmpeg-master-latest-win64-lgpl.zip' -OutFile $zip
+} else {
+  Write-Host '→ gyan.dev ffmpeg-release-essentials.zip 받는 중… (GPL — libx264)'
+  Invoke-WebRequest -Uri 'https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip' -OutFile $zip
+}
 Write-Host '→ 푸는 중…'
 Expand-Archive -Force -Path $zip -DestinationPath $tmp
 $dir = Get-ChildItem -Directory $tmp | Where-Object { $_.Name -like 'ffmpeg-*' } | Select-Object -First 1

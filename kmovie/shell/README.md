@@ -50,7 +50,7 @@ D=/tmp/kmv-fixtures node test/shell-js.mjs    # engine/shell.js ↔ mock 백엔�
 - 브라우저판 접합: `../engine/shell.js`(KMV_SHELL) — `__TAURI__` 없으면 전부 no-op
 
 ## 정직 기록
-- ffmpeg 빌드는 GPL(libx264). 별도 프로세스 호출 + 라이선스 전문 동봉. LGPL 로 가려면 `h264_mf` 로 프록시 인코더 교체.
+- ffmpeg 는 별도 프로세스 호출 + 라이선스 전문 동봉. **프록시 H.264 인코더는 빌드에서 자동 선택**(`libx264` → `h264_mf`(Windows 미디어 파운데이션) → `libopenh264` 순): 기본 GPL 빌드(gyan)면 libx264, LGPL 로 가려면 `scripts\get-ffmpeg.ps1 -Lgpl`(BtbN LGPL 빌드)만 받으면 코드 수정 없이 h264_mf 로 굽는다. 어떤 인코더가 잡혔는지는 shell_info 의 `h264Encoder`. MF 는 GOP 15 요청을 드라이버가 무시할 수 있음(그래도 프록시 자체 샘플 표를 읽으므로 동작은 같고, 탐색 시 GOP 디코드만 길어질 수 있음).
 - 원본 상한 15분(프록시 샘플과 PCM 이 브라우저 메모리에 다 올라감). 그보다 길면 폰에서 잘라 넣기.
 - VFR·HEVC 10bit·세로 회전 태그는 합성 원본으로 정렬 검증됨(48/48). 실제 폰 촬영본(실 HEVC·실 VFR)은 아직 안 돌려 봤다.
 - 세로 폰 영상: ffmpeg 가 프록시·원화질 파이프 둘 다 자동 회전해 굽는다. meta w/h 도 돌린 뒤 크기(720×1280)로 보고(2026-08-28 수정).
