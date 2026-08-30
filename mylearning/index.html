@@ -14,10 +14,11 @@
 </style>
 <style>
 /* =============================================
-   학생용 「내 학습」 — 설계 §4
+   학생용 「내 학습」 v2 — 설계 §4
    · 점수 숫자·등수·비교 없음
    · 금지어: 부족·미달·하위·시험·점수 → "한 번 더!"
    · 미동의 학생은 입구 자체가 없으므로 이 화면은 프로필 보유자 전용
+   · v2: 차시 이름을 지도 정본으로, 「내 지도」(단원별 차시 칸), 연속 학습일, 다음 걸음은 항상 있음
    ============================================= */
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -37,32 +38,49 @@ body.lower{font-size:17px}       /* 1·2학년 — 큰 글씨 */
 .card h2{font-family:var(--kedu-title);font-size:17px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
 body.lower .card h2{font-size:19px}
 .card h2 .ico{font-size:20px}
-
 /* ① 내가 한 것 — 요일 점 */
 .days{display:flex;justify-content:space-between;gap:6px}
 .day{flex:1;text-align:center}
 .day .c{width:38px;height:38px;border-radius:50%;background:var(--bg);border:2px solid var(--border);margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:17px}
 .day.on .c{background:var(--gc);border-color:var(--gc);color:#fff}
+.day.today .c{box-shadow:0 0 0 3px #fff,0 0 0 5px var(--gc)}
 .day .l{font-size:12px;color:var(--sub);margin-top:5px;font-weight:600}
 .day.today .l{color:var(--gc)}
-.streak{margin-top:12px;font-size:14.5px;text-align:center;color:var(--text)}
+.streak{margin-top:12px;font-size:14.5px;text-align:center;color:var(--text);line-height:1.6}
 body.lower .streak{font-size:16.5px}
-
+.streak b{color:var(--gc)}
 /* ② 탄탄한 것 — 뱃지 */
 .badges{display:flex;flex-wrap:wrap;gap:8px}
-.badge{display:inline-flex;align-items:center;gap:6px;background:#F0FAF4;border:1.5px solid #BEE3CE;color:#276749;border-radius:999px;padding:8px 14px;font-size:13.5px;font-weight:700}
+.badge{display:inline-flex;align-items:center;gap:6px;background:#F0FAF4;border:1.5px solid #BEE3CE;color:#276749;border-radius:999px;padding:8px 14px;font-size:13.5px;font-weight:700;line-height:1.3}
 body.lower .badge{font-size:15.5px;padding:10px 16px}
 .badge .s{font-size:15px}
-
+.badge small{font-weight:500;opacity:.75;font-size:.85em}
 /* ③ 다시 해볼 것 · ④ 다음 걸음 */
 .go-card{display:flex;align-items:center;gap:12px;border:1.5px solid var(--border);border-radius:16px;padding:13px 14px;margin-bottom:10px;text-decoration:none;color:inherit;background:#fff}
 .go-card:active{transform:scale(.99)}
 .go-card .k{font-size:24px;flex:none}
-.go-card .t{font-weight:700;font-size:15px}
+.go-card .t{font-weight:700;font-size:15px;line-height:1.35}
 body.lower .go-card .t{font-size:17px}
+.go-card .t small{font-weight:500;color:var(--sub);font-size:.8em;display:block}
 .go-card .w{font-size:12.5px;color:var(--sub);margin-top:2px}
 body.lower .go-card .w{font-size:14px}
 .go-card .go{margin-left:auto;flex:none;background:var(--gc);color:#fff;border-radius:999px;padding:8px 14px;font-size:13px;font-weight:700;white-space:nowrap}
+/* ⑤ 내 지도 — 단원별 차시 칸 */
+.unit{margin-bottom:12px}
+.unit:last-child{margin-bottom:0}
+.unit .t{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:14px;font-weight:700}
+body.lower .unit .t{font-size:16px}
+.unit .t span{font-size:12px;color:var(--sub);font-weight:500;white-space:nowrap}
+.unit .cells{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.unit .cells a,.unit .cells i{width:30px;height:30px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;text-decoration:none;color:var(--sub);background:#fff;border:1.5px dashed var(--border)}
+body.lower .unit .cells a,body.lower .unit .cells i{width:36px;height:36px;font-size:14px;border-radius:11px}
+.unit .cells .solid{background:#68D391;border-style:solid;border-color:#68D391;color:#fff}
+.unit .cells .edge{background:#F6E05E;border-style:solid;border-color:#F6E05E;color:#5F4B00}
+.unit .cells .weak,.unit .cells .retry{background:#FFE8CC;border-style:solid;border-color:#F6AD55;color:#7B341E}
+.unit .cells .watching,.unit .cells .touched{background:#EDF2F7;border-style:solid;border-color:#E2E8F0;color:#4A5568}
+.unit .cells .next{border-style:solid;border-color:var(--gc);color:var(--gc);box-shadow:0 0 0 3px color-mix(in srgb,var(--gc) 20%,transparent)}
+.map-legend{font-size:12px;color:var(--sub);margin-top:12px;line-height:1.9}
+.map-legend i{display:inline-block;width:12px;height:12px;border-radius:4px;vertical-align:-1px;margin-right:3px}
 .empty{color:var(--sub);font-size:14px;padding:6px 2px}
 body.lower .empty{font-size:16px}
 .note{font-size:12px;color:var(--sub);margin-top:10px}
@@ -74,24 +92,21 @@ body.lower .empty{font-size:16px}
 </style>
 </head>
 <body>
-
 <div class="top">
   <a class="back" href="/">← 처음으로</a>
   <h1>내 학습</h1>
   <button class="tts" id="tts-btn" onclick="speakPage()" title="읽어 주기">🔊 읽어 줘</button>
 </div>
-
 <div class="wrap" id="app">
   <div class="center"><div class="big"><span class="spin"></span></div>내 기록을 가져오는 중…</div>
 </div>
-
 <script>
 const db = getKeduDb();
 const KR = window.KeduReport;
 const GRADE_COLOR = {1:'#FF85A1',2:'#FFB347',3:'#3BAB72',4:'#FF7043',5:'#3D90F0',6:'#7E57C2'};
 let _speakText = '';
-
 function esc(s){ return String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function shortTitle(i){ return i.title || i.label; }
 
 async function init(){
   const { data: { session } } = await db.auth.getSession();
@@ -104,91 +119,106 @@ async function init(){
       `<div class="center"><div class="big">🌱</div>학급에 들어가면 내 학습을 볼 수 있어요.<br><a href="/">처음으로 가기</a></div>`;
     return;
   }
-
   const gc = GRADE_COLOR[p.grade] || '#5B8EF8';
   document.documentElement.style.setProperty('--gc', gc);
   if(p.grade && p.grade <= 2) document.body.classList.add('lower');
-
-  const monday3 = KR.addDays(KR.mondayOf(KR.kstDateStr(new Date())), -14);
+  const from = KR.addDays(KR.mondayOf(KR.today()), -120);
   const [{ data: mastery }, { data: scores }, { data: wrongs }, { data: morning }] = await Promise.all([
     db.from('report_lesson_mastery').select('*').eq('student_id', p.id),
-    db.from('scores').select('lesson_id,unit_id,question_id,is_correct,earned_at').eq('student_id', p.id).order('earned_at',{ascending:false}).limit(2000),
+    db.from('scores').select('lesson_id,unit_id,question_id,is_correct,earned_at').eq('student_id', p.id).order('earned_at',{ascending:false}).limit(3000),
     db.from('wrong_answers').select('*').eq('student_id', p.id).is('resolved_at', null),
-    db.from('report_morning_daily').select('student_id,run_date,subject').eq('student_id', p.id).gte('run_date', monday3)
+    db.from('report_morning_daily').select('student_id,run_date,subject').eq('student_id', p.id).gte('run_date', from)
   ]);
-
+  await KR.loadCatalog((mastery||[]).map(m=>m.lesson_id).concat((scores||[]).map(r=>r.lesson_id), (wrongs||[]).map(w=>w.lesson_id)));
   const cls = KR.classify(mastery||[], wrongs||[]);
-  const weeks = KR.buildWeeks(scores||[], morning||[], 1);
-  const wk = weeks[0];
-  const steps = KR.nextSteps(cls, mastery||[], scores||[]);
-  render(p, wk, cls, steps);
+  const wk = KR.buildWeeks(scores||[], morning||[], 1)[0];
+  const units = KR.unitProgress(scores||[], mastery||[]);
+  const steps = KR.nextSteps(cls, mastery||[], scores||[], units, 3);
+  const streak = KR.streak(scores||[], morning||[]);
+  render(p, wk, cls, steps, units, streak);
 }
 
-function render(p, wk, cls, steps){
-  const todayStr = KR.kstDateStr(new Date());
+function render(p, wk, cls, steps, units, streak){
+  const todayStr = KR.today();
   const DAY_KO = ['월','화','수','목','금','토','일'];
-  const dayKeys = Object.keys(wk.days);
-  const daysHtml = dayKeys.map((d,i) => {
+  const daysHtml = Object.keys(wk.days).map((d,i) => {
     const day = wk.days[d];
-    const on = day.selfQ>0 || day.lessons.size>0 || day.morning;
+    const on = day.selfQ>0 || day.lessons.size>0 || day.done.size>0 || day.morning;
     return `<div class="day ${on?'on':''} ${d===todayStr?'today':''}">
       <div class="c">${on?'⭐':''}</div><div class="l">${DAY_KO[i]}</div></div>`;
   }).join('');
-
   const nDays = wk.activeDays.size;
-  const streakMsg = nDays >= 5 ? '이번 주 '+nDays+'일이나 했어요. 정말 꾸준해요!'
-                  : nDays >= 3 ? '이번 주 '+nDays+'일 했어요. 좋은 흐름이에요!'
-                  : nDays >= 1 ? '이번 주 '+nDays+'일 했어요. 오늘도 한 걸음!'
+  const streakMsg = nDays >= 5 ? '이번 주 <b>'+nDays+'일</b>이나 했어요. 정말 꾸준해요!'
+                  : nDays >= 3 ? '이번 주 <b>'+nDays+'일</b> 했어요. 좋은 흐름이에요!'
+                  : nDays >= 1 ? '이번 주 <b>'+nDays+'일</b> 했어요. 오늘도 한 걸음!'
                   : '이번 주의 첫 별을 만들어 볼까요?';
+  const streakLine = streak >= 2 ? `<br>🔥 <b>${streak}일</b> 연속으로 하고 있어요!` : '';
+  const doneLine = wk.lessonsDone.size ? `<br>이번 주에 끝까지 한 차시 <b>${wk.lessonsDone.size}개</b>${wk.morningCount?`, 아침활동 <b>${wk.morningCount}번</b>`:''}` : (wk.morningCount?`<br>아침활동도 <b>${wk.morningCount}번</b>!`:'');
 
-  // 탄탄 뱃지 — 과목별로 묶어서
+  // 탄탄 뱃지 — 지도 정본 이름 (과목 · 차시 제목)
   const solidBadges = cls.solid.slice(0,8).map(r => {
-    const pl = KR.prettyLesson(r.lesson_id);
-    return `<span class="badge"><span class="s">🏅</span>${esc(pl.label)}</span>`;
+    const i = KR.lesson(r.lesson_id);
+    return `<span class="badge"><span class="s">🏅</span><span>${esc(shortTitle(i))}<br><small>${esc(i.subjectKo)}${i.unitNum?' '+i.unitNum+'단원':''}</small></span></span>`;
   }).join('');
 
-  // 다시 해볼 것 — "한 번 더!" (취약·반복 오답, 부정 표현 없음)
-  const retrySet = new Set();
-  const retry = [];
-  (cls.repeatWrong||[]).forEach(w => { if(!retrySet.has(w.lesson_id)){ retrySet.add(w.lesson_id); retry.push({lessonId:w.lesson_id, unitId:null, why:'헷갈렸던 문제, 다시 만나면 이길 수 있어요'}); } });
+  // 다시 해볼 것 — "한 번 더!" (반복 오답·취약, 부정 표현 없음)
+  const retrySet = new Set(); const retry = [];
+  (cls.repeatWrongLessons||[]).forEach(g => { if(!retrySet.has(g.lesson_id)){ retrySet.add(g.lesson_id); retry.push({lessonId:g.lesson_id, why:'헷갈렸던 문제, 다시 만나면 이길 수 있어요'}); } });
   (cls.weak||[]).forEach(r => { if(!retrySet.has(r.lesson_id)){ retrySet.add(r.lesson_id); retry.push({lessonId:r.lesson_id, unitId:r.unit_id, why:'한 번 더 하면 탄탄해져요'}); } });
-  const unitOf = {}; (cls.solid.concat(cls.edge, cls.weak, cls.watching)).forEach(r => { if(r.unit_id) unitOf[r.lesson_id]=r.unit_id; });
 
   const goCard = (item, icon, cta) => {
-    const pl = KR.prettyLesson(item.lessonId);
-    const url = item.unitId || unitOf[item.lessonId];
-    const inner = `<span class="k">${icon}</span><div><div class="t">${esc(pl.label)}</div><div class="w">${esc(item.why)}</div></div>${url?`<span class="go">${cta}</span>`:''}`;
+    const i = KR.lesson(item.lessonId);
+    const url = KR.lessonUrl(item.lessonId, item.unitId);
+    const inner = `<span class="k">${icon}</span><div><div class="t">${esc(shortTitle(i))}<small>${esc(i.subjectKo)}${i.unitNum?' '+i.unitNum+'단원':''}${i.unitName?' · '+esc(i.unitName):''}</small></div><div class="w">${esc(item.why)}</div></div>${url?`<span class="go">${cta}</span>`:''}`;
     return url ? `<a class="go-card" href="${esc(url)}">${inner}</a>` : `<div class="go-card">${inner}</div>`;
   };
+  const stepIcon = { review:'🔁', lesson:'📖', continue:'▶️', new:'✨' };
+  const stepCta = { review:'한 번 더!', lesson:'한 번 더!', continue:'이어서', new:'가 보기' };
 
-  const stepIcon = { review:'🔁', lesson:'📖', continue:'▶️' };
+  // 내 지도 — 손댄 단원의 차시 칸 (숫자 = 차시 번호, 색 = 상태). 취약은 '한 번 더' 색으로만.
+  const nextIds = new Set(steps.filter(s=>s.kind==='new').map(s=>s.lessonId));
+  const unitsHtml = units.map(u => {
+    const total = u.total ?? u.lessons.length;
+    const cells = u.lessons.map(l => {
+      const st = l.status === 'weak' ? 'retry' : l.status;
+      const cls2 = st + (nextIds.has(l.info.lessonId)?' next':'');
+      const label = (l.info.n || '·');
+      const tip = shortTitle(l.info) + (l.done ? ' · 끝까지 했어요' : l.status==='none' ? ' · 아직 안 열어봤어요' : '');
+      return l.info.url ? `<a class="${cls2}" href="${esc(l.info.url)}" title="${esc(tip)}">${esc(label)}</a>` : `<i class="${cls2}" title="${esc(tip)}">${esc(label)}</i>`;
+    }).join('');
+    return `<div class="unit"><div class="t">${esc(u.subjectKo)}${u.unitNum?' '+u.unitNum+'단원':''}${u.unitName?' · '+esc(u.unitName):''}<span>${u.done}/${total} 끝까지</span></div><div class="cells">${cells}</div></div>`;
+  }).join('');
 
   document.getElementById('app').innerHTML = `
     <div class="hello"><b>${esc(p.nickname||'친구')}</b>의 학습 이야기</div>
-
     <div class="card"><h2><span class="ico">⭐</span>내가 한 것</h2>
       <div class="days">${daysHtml}</div>
-      <div class="streak">${streakMsg}${wk.morningCount?` 아침활동도 ${wk.morningCount}번!`:''}</div>
+      <div class="streak">${streakMsg}${streakLine}${doneLine}</div>
     </div>
-
     <div class="card"><h2><span class="ico">🏅</span>탄탄한 것</h2>
-      ${solidBadges || '<div class="empty">뱃지가 곧 생길 거예요. 지금처럼만 하면 돼요!</div>'}
+      ${solidBadges ? `<div class="badges">${solidBadges}</div>` : '<div class="empty">뱃지가 곧 생길 거예요. 지금처럼만 하면 돼요!</div>'}
+      ${cls.solid.length>8?`<div class="note">그리고 ${cls.solid.length-8}개 더! 아래 내 지도의 초록 칸이에요.</div>`:''}
       ${cls.watching.length?`<div class="note">몇 개는 아직 지켜보는 중이에요 — 기록이 쌓이면 알려 줄게요.</div>`:''}
     </div>
-
     <div class="card"><h2><span class="ico">💪</span>다시 해볼 것</h2>
       ${retry.length ? retry.slice(0,3).map(it=>goCard(it,'💪','한 번 더!')).join('') : '<div class="empty">지금은 없어요. 멋져요!</div>'}
     </div>
-
     <div class="card"><h2><span class="ico">👟</span>다음 걸음</h2>
-      ${steps.length ? steps.map(st=>goCard(st, stepIcon[st.kind]||'👉', '가 보기')).join('') : '<div class="empty">새로운 차시로 나아가면 돼요!</div>'}
-    </div>`;
+      ${steps.length ? steps.map(st=>goCard(st, stepIcon[st.kind]||'👉', stepCta[st.kind]||'가 보기')).join('') : '<div class="empty">첫 차시를 열어 보면 여기에 다음 걸음이 생겨요!</div>'}
+    </div>
+    ${units.length ? `<div class="card"><h2><span class="ico">🗺️</span>내 지도</h2>
+      ${unitsHtml}
+      <div class="map-legend"><i style="background:#68D391"></i>탄탄 <i style="background:#F6E05E"></i>거의 다 왔어요 <i style="background:#FFE8CC;border:1px solid #F6AD55"></i>한 번 더 <i style="background:#EDF2F7"></i>해봤어요 <i style="border:1.5px dashed var(--border);background:#fff"></i>아직 · 칸을 누르면 그 차시로 가요</div>
+    </div>` : ''}`;
 
-  _speakText = `${p.nickname||'친구'}의 학습 이야기. ${streakMsg} `
-    + (cls.solid.length ? `탄탄한 것은 ${cls.solid.slice(0,3).map(r=>KR.prettyLesson(r.lesson_id).label).join(', ')} 이에요. ` : '')
-    + (retry.length ? `다시 해볼 것은 ${retry.slice(0,2).map(r=>KR.prettyLesson(r.lessonId).label).join(', ')} 이에요. 한 번 더 하면 탄탄해져요.` : '지금 다시 해볼 것은 없어요. 멋져요!');
+  const solidNames = cls.solid.slice(0,3).map(r=>shortTitle(KR.lesson(r.lesson_id)));
+  const retryNames = retry.slice(0,2).map(r=>shortTitle(KR.lesson(r.lessonId)));
+  _speakText = `${p.nickname||'친구'}의 학습 이야기. ` + streakMsg.replace(/<[^>]+>/g,'') + ' '
+    + (streak >= 2 ? `${streak}일 연속으로 하고 있어요! ` : '')
+    + (solidNames.length ? `탄탄한 것은 ${solidNames.join(', ')} 이에요. ` : '')
+    + (retryNames.length ? `다시 해볼 것은 ${retryNames.join(', ')} 이에요. 한 번 더 하면 탄탄해져요. ` : '지금 다시 해볼 것은 없어요. 멋져요! ')
+    + (steps.length ? `다음 걸음은 ${shortTitle(KR.lesson(steps[0].lessonId))} 이에요.` : '');
 }
-
 function speakPage(){
   if(!('speechSynthesis' in window) || !_speakText) return;
   speechSynthesis.cancel();
@@ -196,7 +226,6 @@ function speakPage(){
   u.lang = 'ko-KR'; u.rate = 0.95;
   speechSynthesis.speak(u);
 }
-
 init();
 </script>
 </body>

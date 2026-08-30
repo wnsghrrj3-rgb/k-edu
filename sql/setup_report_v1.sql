@@ -1,57 +1,90 @@
 -- =============================================
--- setup_report_v1.sql
+-- setup_report_v1.sql  (v1.1 — 2026-08-31 개정, 미적용 상태에서 갱신)
 -- 케이학습리포트 R0 — 집계 층 (규칙 기반, 외부 API 불요)
 -- 명세: handoff/kedu/학습리포트_설계_v1.md §2
 -- =============================================
 -- 정확성 불변식 (설계 §1):
---   · 표본 부족 시 판단 보류 — 시도 3회 미만이면 'watching' (억지 분석 금지)
---   · 최근 가중 — 도달 판정은 최근 5회 시도 기준 (옛 오답이 낙인되지 않게)
---   · 한 번 vs 계속 구분 — 반복 오답(attempts>=2, 미해결)만 취약 근거
--- 판정 숫자는 설계 §10 미결 — 준호 반 실측 후 조정 대상.
+--   · 표본 부족 시 판단 보류 — 문항 3개 미만이면 'watching' (억지 분석 금지)
+--   · 최근 가중 — 도달 판정은 "문항별 마지막 답"만 본다 (옛 오답이 낙인되지 않게).
+--     v1.0은 '최근 5답' 기준이었으나, 한 차시 10문항 풀이에서 최근 5답은
+--     한 회차의 후반 절반일 뿐이라 차시 도달을 대표하지 못한다 → v1.1에서 교정.
+--   · 한 번 vs 계속 구분 — 반복 오답(wrong_answers.attempts>=2, 미해결)만 취약 근거
+-- 판정 숫자(80/60·표본3)는 설계 §10 미결 — 준호 반 실측 후 조정 대상.
 --
 -- v1 판정 단위: 차시(lesson). 개념(concept) 단위는 케이학습지 E0(원장·태그)
--- 완성 후 concept_id 채워지면 동일 구조의 concept 뷰 추가 (자리만 잡음).
--- 멱등 (CREATE OR REPLACE / IF NOT EXISTS).
+-- 완성 후 concept_id 채워지면 동일 구조의 concept 뷰 추가 (§5 자리).
+-- 멱등 (DROP VIEW IF EXISTS → CREATE / IF NOT EXISTS). 재실행 안전.
 -- =============================================
 
 -- ---------------------------------------------
--- [1] report_lesson_mastery — 학생×차시 도달 판정
---   recent 창 = 최근 min(5, n)회. 비율 기준(80/60%)은
---   데이터진단_표준 7번과 동일 척도.
+-- [1] report_lesson_mastery — 학생×차시 도달 판정 (v1.1)
+--   q_n            = 답한 서로 다른 문항 수 (표본)
+--   q_latest_ok    = 그중 마지막 답이 정답인 문항 수 (최근 가중)
+--   status         = q_n<3 → watching / ok율 ≥80 solid / ≥60 edge / 그 외 weak
+--   recent_n·recent_correct = 최근 5답 (근거 표시용 보조 지표, 판정에 안 씀)
+--   runs·last_run_* = _lesson_summary_ 행(차시 끝 기록) 기준 회차·마지막 점수
 --   security_invoker → scores RLS 그대로 (교사=자기 학급, 학생=본인, 학부모=검증 자녀)
+--   ※ v1.0에서 열이 늘어 CREATE OR REPLACE가 거부되므로 DROP 후 재생성.
 -- ---------------------------------------------
-CREATE OR REPLACE VIEW report_lesson_mastery
+DROP VIEW IF EXISTS report_lesson_mastery;
+CREATE VIEW report_lesson_mastery
 WITH (security_invoker = true) AS
-WITH ranked AS (
+WITH q AS (                                  -- 문항 답(요약 행 제외)
   SELECT
-    s.student_id, s.lesson_id, s.unit_id, s.is_correct, s.earned_at,
-    ROW_NUMBER() OVER (
-      PARTITION BY s.student_id, s.lesson_id
-      ORDER BY s.earned_at DESC
-    ) AS rn
+    s.student_id, s.lesson_id, s.unit_id, s.question_id, s.is_correct,
+    s.earned_at, COALESCE(s.time_spent_sec, 0) AS time_spent_sec,
+    ROW_NUMBER() OVER (PARTITION BY s.student_id, s.lesson_id
+                       ORDER BY s.earned_at DESC)                    AS rn_all,
+    ROW_NUMBER() OVER (PARTITION BY s.student_id, s.lesson_id, s.question_id
+                       ORDER BY s.earned_at DESC)                    AS rn_q
   FROM scores s
   WHERE s.student_id IS NOT NULL
-    AND s.lesson_id IS NOT NULL
-    AND s.is_correct IS NOT NULL          -- _lesson_summary_ 행 제외
+    AND s.lesson_id  IS NOT NULL
+    AND s.is_correct IS NOT NULL
+    AND COALESCE(s.question_id, '') <> '_lesson_summary_'
+),
+agg AS (
+  SELECT
+    student_id, lesson_id,
+    MAX(unit_id)                                            AS unit_id,
+    COUNT(*)::int                                           AS attempts_total,
+    COUNT(*) FILTER (WHERE rn_all <= 5)::int                AS recent_n,
+    COUNT(*) FILTER (WHERE rn_all <= 5 AND is_correct)::int AS recent_correct,
+    COUNT(*) FILTER (WHERE rn_q = 1)::int                   AS q_n,
+    COUNT(*) FILTER (WHERE rn_q = 1 AND is_correct)::int    AS q_latest_ok,
+    COUNT(*) FILTER (WHERE is_correct)::int                 AS correct_total,
+    MIN(earned_at)                                          AS first_attempt_at,
+    MAX(earned_at)                                          AS last_attempt_at,
+    SUM(time_spent_sec)::int                                AS time_sec
+  FROM q
+  GROUP BY student_id, lesson_id
+),
+runs AS (                                    -- 차시 끝 기록(_lesson_summary_)
+  SELECT
+    s.student_id, s.lesson_id,
+    COUNT(*)::int AS runs,
+    (ARRAY_AGG(s.score     ORDER BY s.earned_at DESC))[1] AS last_run_score,
+    (ARRAY_AGG(s.max_score ORDER BY s.earned_at DESC))[1] AS last_run_max,
+    MAX(s.earned_at)                                       AS last_run_at
+  FROM scores s
+  WHERE s.student_id IS NOT NULL AND s.lesson_id IS NOT NULL
+    AND s.question_id = '_lesson_summary_'
+  GROUP BY s.student_id, s.lesson_id
 )
 SELECT
-  student_id,
-  lesson_id,
-  MAX(unit_id)                                            AS unit_id,   -- 재도전 링크용 경로
-  COUNT(*)::int                                           AS attempts_total,
-  COUNT(*) FILTER (WHERE rn <= 5)::int                    AS recent_n,
-  COUNT(*) FILTER (WHERE rn <= 5 AND is_correct)::int     AS recent_correct,
-  MAX(earned_at)                                          AS last_attempt_at,
+  a.student_id, a.lesson_id, a.unit_id,
+  a.attempts_total, a.recent_n, a.recent_correct, a.last_attempt_at,
   CASE
-    WHEN COUNT(*) < 3 THEN 'watching'   -- 표본 부족 → 판단 보류
-    WHEN COUNT(*) FILTER (WHERE rn <= 5 AND is_correct) * 100.0
-         / GREATEST(COUNT(*) FILTER (WHERE rn <= 5), 1) >= 80 THEN 'solid'
-    WHEN COUNT(*) FILTER (WHERE rn <= 5 AND is_correct) * 100.0
-         / GREATEST(COUNT(*) FILTER (WHERE rn <= 5), 1) >= 60 THEN 'edge'
+    WHEN a.q_n < 3 THEN 'watching'
+    WHEN a.q_latest_ok * 100.0 / GREATEST(a.q_n, 1) >= 80 THEN 'solid'
+    WHEN a.q_latest_ok * 100.0 / GREATEST(a.q_n, 1) >= 60 THEN 'edge'
     ELSE 'weak'
-  END                                                     AS status
-FROM ranked
-GROUP BY student_id, lesson_id;
+  END                                                     AS status,
+  a.q_n, a.q_latest_ok, a.correct_total, a.first_attempt_at, a.time_sec,
+  COALESCE(r.runs, 0)                                     AS runs,
+  r.last_run_score, r.last_run_max, r.last_run_at
+FROM agg a
+LEFT JOIN runs r ON r.student_id = a.student_id AND r.lesson_id = a.lesson_id;
 
 -- ---------------------------------------------
 -- [2] report_morning_daily — 학생×날짜 아침활동 (과목 포함)
@@ -89,7 +122,7 @@ CREATE TABLE IF NOT EXISTS report_teacher_comments (
 ALTER TABLE report_teacher_comments ENABLE ROW LEVEL SECURITY;
 
 -- 교사: 자기 학급 학생만 읽기/쓰기
-DO $$ BEGIN
+DO $do$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='report_teacher_comments' AND policyname='rtc_teacher_manage') THEN
     CREATE POLICY "rtc_teacher_manage" ON report_teacher_comments
       FOR ALL USING (
@@ -108,10 +141,10 @@ DO $$ BEGIN
         )
       );
   END IF;
-END $$;
+END $do$;
 
 -- 학부모: 검증 완료 자녀 + visible_to_parent = true 만 읽기
-DO $$ BEGIN
+DO $do$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='report_teacher_comments' AND policyname='rtc_parent_read') THEN
     CREATE POLICY "rtc_parent_read" ON report_teacher_comments
       FOR SELECT USING (
@@ -123,7 +156,7 @@ DO $$ BEGIN
         )
       );
   END IF;
-END $$;
+END $do$;
 
 -- ---------------------------------------------
 -- [4] 학부모 아침활동 열람 RLS
@@ -131,7 +164,7 @@ END $$;
 --   ※ 처리방침 열람 항목 문구에 '아침활동'을 명시 추가할지 준호 확인 필요.
 --   sp_parent_read(setup_parent_data_view.sql)와 동일한 verified 매핑 패턴.
 -- ---------------------------------------------
-DO $$ BEGIN
+DO $do$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='ma_submissions' AND policyname='ma_subs_parent_read') THEN
     CREATE POLICY "ma_subs_parent_read" ON ma_submissions
       FOR SELECT USING (
@@ -156,10 +189,44 @@ DO $$ BEGIN
         )
       );
   END IF;
-END $$;
+END $do$;
 
 -- ---------------------------------------------
--- [5] (자리) 케이학습지 attempts 합류 지점
+-- [5] report_parent_views — 학부모 리포트 열람 로그 (설계 §6: 학부모용만 audit)
+--   누가(parent_id)·누구를(student_id)·언제. 학부모 본인 INSERT만, 읽기는 관리자.
+--   성적 민감 데이터 열람 기록 — 처리방침 열람 로그 범주.
+-- ---------------------------------------------
+CREATE TABLE IF NOT EXISTS report_parent_views (
+  id          bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  parent_id   uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  student_id  uuid NOT NULL REFERENCES student_profiles(id) ON DELETE CASCADE,
+  period      text,                          -- 'week' | 'month'
+  viewed_at   timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_rpv_student ON report_parent_views(student_id, viewed_at DESC);
+ALTER TABLE report_parent_views ENABLE ROW LEVEL SECURITY;
+
+DO $do$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='report_parent_views' AND policyname='rpv_parent_insert') THEN
+    CREATE POLICY "rpv_parent_insert" ON report_parent_views
+      FOR INSERT WITH CHECK (
+        parent_id = auth.uid()
+        AND student_id IN (
+          SELECT psl.student_id FROM parent_student_links psl
+          WHERE psl.parent_id = auth.uid() AND psl.verified_at IS NOT NULL
+        )
+      );
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='report_parent_views' AND policyname='rpv_admin_read') THEN
+    CREATE POLICY "rpv_admin_read" ON report_parent_views
+      FOR SELECT USING (
+        EXISTS (SELECT 1 FROM teachers t WHERE t.user_id = auth.uid() AND t.is_admin = true)
+      );
+  END IF;
+END $do$;
+
+-- ---------------------------------------------
+-- [6] (자리) 케이학습지 attempts 합류 지점
 --   E0(문제 원장·개념 태그)·E1(쪽지) 완성 후, attempts 테이블을
 --   [1]과 동일 구조의 report_concept_mastery 뷰로 합류시킨다.
 --   지금은 만들지 않는다 — 태그 없는 리포트는 숫자 나열일 뿐 (설계 선행 조건).
@@ -169,10 +236,15 @@ NOTIFY pgrst, 'reload schema';
 
 -- =============================================
 -- [검증 쿼리]
--- (1) SELECT * FROM report_lesson_mastery LIMIT 5;
--- (2) SELECT * FROM report_morning_daily LIMIT 5;
--- (3) SELECT policyname FROM pg_policies WHERE tablename='report_teacher_comments';
+-- (1) SELECT status, count(*) FROM report_lesson_mastery GROUP BY 1;
+--     → watching/solid/edge/weak 분포 (빈 DB면 0행)
+-- (2) SELECT lesson_id, q_n, q_latest_ok, status, runs, last_run_score, last_run_max
+--       FROM report_lesson_mastery ORDER BY last_attempt_at DESC LIMIT 5;
+-- (3) SELECT * FROM report_morning_daily LIMIT 5;
+-- (4) SELECT policyname FROM pg_policies WHERE tablename='report_teacher_comments';
 --     → rtc_teacher_manage, rtc_parent_read
--- (4) SELECT policyname FROM pg_policies WHERE tablename='ma_submissions';
+-- (5) SELECT policyname FROM pg_policies WHERE tablename='ma_submissions';
 --     → 기존 정책 + ma_subs_parent_read
+-- (6) SELECT policyname FROM pg_policies WHERE tablename='report_parent_views';
+--     → rpv_parent_insert, rpv_admin_read
 -- =============================================

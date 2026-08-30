@@ -13,24 +13,33 @@
 :root{--kedu-title:'Hakgyoansim Moheomga','Jua',sans-serif}
 </style>
 <style>
+/* =============================================
+   교사용 케이학습리포트 v2 — 설계 §3
+   · 학급이 먼저(한눈에·막힌 차시·도달 지도·기간별 표), 학생이 다음(네 질문 4단 + 단원 진도)
+   · 정확이 우선 — weak/edge 를 숨기지 않는다. 모든 판정은 [근거]로 DB 행 증명
+   · 번호순 정렬(이름 정렬 금지) · 상담 인쇄 A4
+   ============================================= */
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
   --primary:#5B8EF8;--primary-light:#EBF4FF;--primary-dark:#3B6FD8;
   --pink:#FF85A1;--green:#38A169;--orange:#FFB347;--red:#E53E3E;--purple:#9F7AEA;
   --bg:#F5F7FA;--card:#fff;--text:#1A202C;--sub:#718096;--border:#E2E8F0;
+  --solid:#C6F6D5;--solid-t:#22543D;--edge:#FEFCBF;--edge-t:#744210;--weak:#FED7D7;--weak-t:#9B2C2C;
+  --watching:#EDF2F7;--watching-t:#4A5568;--touched:#E2E8F0;
   --radius:16px;--shadow:0 2px 16px rgba(0,0,0,.06);
 }
 body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh;color:var(--text);-webkit-tap-highlight-color:transparent}
 
-.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-.topbar-left{display:flex;align-items:center;gap:12px}
-.topbar-back{font-size:13px;color:var(--sub);text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:6px 10px;border-radius:8px;transition:all .15s}
+.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;gap:10px}
+.topbar-left{display:flex;align-items:center;gap:12px;min-width:0}
+.topbar-back{font-size:13px;color:var(--sub);text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:6px 10px;border-radius:8px;transition:all .15s;white-space:nowrap}
 .topbar-back:hover{background:var(--primary-light);color:var(--primary)}
-.topbar-title{font-family:var(--kedu-title);font-size:16px}
-.topbar-btn{border:1px solid var(--border);background:var(--card);border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+.topbar-title{font-family:var(--kedu-title);font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar-right{display:flex;gap:8px;align-items:center}
+.topbar-btn{border:1px solid var(--border);background:var(--card);border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap}
 .topbar-btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
 
-.wrap{max-width:1040px;margin:0 auto;padding:24px 16px 60px}
+.wrap{max-width:1080px;margin:0 auto;padding:22px 16px 60px}
 .center-state{text-align:center;padding:80px 20px;color:var(--sub)}
 .center-state .icon{font-size:40px;margin-bottom:12px}
 .center-state .ttl{font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px}
@@ -39,65 +48,129 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 @keyframes sp{to{transform:rotate(360deg)}}
 
 .sec{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:18px}
+.sec-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .sec-h{font-family:var(--kedu-title);font-size:16px;margin-bottom:4px}
-.sec-sub{font-size:12.5px;color:var(--sub);margin-bottom:14px}
+.sec-sub{font-size:12.5px;color:var(--sub);margin-bottom:14px;line-height:1.6}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#fff}
+.seg button{border:none;background:none;padding:7px 12px;font-size:12.5px;font-family:inherit;cursor:pointer;color:var(--sub);font-weight:600}
+.seg button.on{background:var(--primary);color:#fff}
+.mini{font-size:12px;color:var(--sub)}
+.empty-note{font-size:13px;color:var(--sub);padding:6px 2px}
+.pill{display:inline-block;font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;white-space:nowrap}
+.pill.solid{background:var(--solid);color:var(--solid-t)}
+.pill.edge{background:var(--edge);color:var(--edge-t)}
+.pill.weak{background:var(--weak);color:var(--weak-t)}
+.pill.watching{background:var(--watching);color:var(--watching-t)}
+.pill.touched{background:var(--touched);color:var(--sub)}
+.pill.repeat{background:#FEEBC8;color:#7B341E}
+
+/* 학급 요약 스트립 */
+.strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:6px}
+.strip .st{border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+.strip .st b{font-size:22px;display:block;line-height:1.1}
+.strip .st span{font-size:11.5px;color:var(--sub)}
+.strip .st .d{font-size:11.5px;margin-top:4px}
+.up{color:var(--green)} .down{color:var(--red)} .flat{color:var(--sub)}
 
 /* 막힌 차시 상위 3 */
 .stuck-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
 .stuck-card{border:1px solid var(--border);border-left:4px solid var(--red);border-radius:12px;padding:12px 14px}
-.stuck-card .l{font-size:14px;font-weight:700}
-.stuck-card .m{font-size:12px;color:var(--sub);margin-top:4px}
-.stuck-empty{font-size:13.5px;color:var(--sub);padding:8px 2px}
+.stuck-card .u{font-size:11.5px;color:var(--sub)}
+.stuck-card .l{font-size:14px;font-weight:700;margin-top:2px;line-height:1.35}
+.stuck-card .m{font-size:12px;color:var(--sub);margin-top:6px;line-height:1.6}
+.stuck-card .m b{color:var(--weak-t)}
+.stuck-card a{font-size:12px;color:var(--primary);text-decoration:none;font-weight:700}
 
-/* 학급 주간 표 */
+/* 도달 지도(히트맵) */
+.hm-wrap{overflow:auto;border:1px solid var(--border);border-radius:12px;max-height:520px}
+.hm{border-collapse:separate;border-spacing:0;font-size:12px}
+.hm th,.hm td{border-bottom:1px solid var(--border);border-right:1px solid #F0F3F7}
+.hm thead th{position:sticky;top:0;background:#fff;z-index:3;font-weight:600;color:var(--sub);vertical-align:bottom;padding:6px 4px}
+.hm thead tr.unit th{top:0;font-size:11px;color:var(--primary-dark);background:var(--primary-light);text-align:left;padding:5px 8px;white-space:nowrap;border-right:2px solid #fff}
+.hm thead tr.les th{top:27px;height:100px;width:30px;min-width:30px;max-width:30px}
+.hm thead tr.les th .v{writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;max-height:90px;overflow:hidden;text-overflow:ellipsis;font-size:11px;display:inline-block}
+.hm tbody th{position:sticky;left:0;background:#fff;z-index:2;text-align:left;padding:5px 10px;font-weight:700;white-space:nowrap;border-right:2px solid var(--border);cursor:pointer}
+.hm th.corner{position:sticky;left:0;z-index:4;background:#fff}
+.hm td{width:30px;height:28px;text-align:center;cursor:pointer;padding:0}
+.hm td i{display:block;width:22px;height:20px;border-radius:5px;margin:0 auto}
+.hm i.solid{background:#68D391}.hm i.edge{background:#F6E05E}.hm i.weak{background:#FC8181}.hm i.watching{background:#CBD5E0}.hm i.touched{background:#E2E8F0}.hm i.none{background:#fff;border:1px dashed #E2E8F0}
+.hm i.rep{outline:2px solid #DD6B20;outline-offset:-2px}
+.hm tbody tr:hover th{background:var(--primary-light)}
+.hm-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--sub);margin-top:10px;align-items:center}
+.hm-legend i{display:inline-block;width:14px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:4px}
+.hm-legend i.solid{background:#68D391}.hm-legend i.edge{background:#F6E05E}.hm-legend i.weak{background:#FC8181}.hm-legend i.watching{background:#CBD5E0}.hm-legend i.touched{background:#E2E8F0}.hm-legend i.none{background:#fff;border:1px dashed #CBD5E0}.hm-legend i.rep{background:#fff;outline:2px solid #DD6B20;outline-offset:-2px}
+
+/* 기간별 표 */
 .r-table{width:100%;border-collapse:collapse;font-size:13px}
 .r-table th{background:var(--primary-light);color:var(--primary-dark);font-weight:700;padding:9px 8px;text-align:left;white-space:nowrap}
-.r-table td{padding:9px 8px;border-bottom:1px solid var(--border);vertical-align:middle}
-.r-table tr:hover td{background:#FAFBFF;cursor:pointer}
+.r-table td{padding:8px;border-bottom:1px solid var(--border);vertical-align:middle}
+.r-table tbody tr:hover td{background:#FAFBFF;cursor:pointer}
+.r-table tfoot td{font-weight:700;background:#FAFBFF;border-top:2px solid var(--border)}
 .num{text-align:right;font-variant-numeric:tabular-nums}
 .ctr{text-align:center}
 .dotrow{display:inline-flex;gap:3px}
-.dot{width:10px;height:10px;border-radius:50%;background:var(--border)}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--border);display:inline-block}
 .dot.on{background:var(--green)}
 .dot.mo{box-shadow:0 0 0 2px var(--orange) inset}
-.pill{display:inline-block;font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px}
-.pill.solid{background:#E6FFFA;color:#2C7A7B}
-.pill.edge{background:#FEFCBF;color:#975A16}
-.pill.weak{background:#FED7D7;color:#C53030}
-.pill.watching{background:var(--border);color:var(--sub)}
-.legend{font-size:11.5px;color:var(--sub);margin-top:10px}
-.legend .dot{vertical-align:middle}
+.dot.today{outline:1.5px solid var(--primary);outline-offset:1px}
+.legend{font-size:11.5px;color:var(--sub);margin-top:10px;line-height:1.9}
+.acc{font-variant-numeric:tabular-nums}
+.acc.lo{color:var(--weak-t);font-weight:700}
+.bar-inl{display:inline-block;width:56px;height:8px;background:#EDF2F7;border-radius:4px;vertical-align:middle;overflow:hidden;margin-right:6px}
+.bar-inl i{display:block;height:100%;background:var(--primary)}
 
-/* 학생 카드 4단 */
+/* 학생 카드 */
+.stu-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.stu-head .nm{font-family:var(--kedu-title);font-size:20px}
+.stu-head .meta{font-size:12.5px;color:var(--sub)}
+.stu-head .nav{margin-left:auto;display:flex;gap:6px}
+.stu-head .nav a{font-size:12px;color:var(--primary);text-decoration:none;border:1px solid var(--border);border-radius:8px;padding:5px 10px}
 .four{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media(max-width:760px){.four{grid-template-columns:1fr}}
-.q-card{border:1px solid var(--border);border-radius:12px;padding:14px}
+.q-card{border:1px solid var(--border);border-radius:12px;padding:14px;min-width:0}
 .q-card h3{font-size:13.5px;color:var(--primary-dark);margin-bottom:10px;display:flex;align-items:center;gap:6px}
 .q-num{background:var(--primary);color:#fff;border-radius:6px;font-size:11px;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;flex:none}
 .stat-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:10px}
-.stat{min-width:76px}
+.stat{min-width:64px}
 .stat b{font-size:20px}
 .stat span{display:block;font-size:11px;color:var(--sub)}
-.trend{font-size:12px;color:var(--sub)}
+.trend{font-size:12px;color:var(--sub);line-height:1.7}
 .trend b{color:var(--text)}
-.weekbar{display:flex;gap:8px;align-items:flex-end;margin:8px 0 2px}
-.weekbar .wb{flex:1;text-align:center}
-.wb .bar{background:var(--primary-light);border-radius:6px 6px 0 0;margin:0 auto;width:70%;min-height:4px}
-.wb .bar i{display:block;background:var(--primary);border-radius:6px 6px 0 0;width:100%}
-.wb .lb{font-size:10.5px;color:var(--sub);margin-top:4px}
+.weekbar{display:flex;gap:6px;align-items:flex-end;margin:8px 0 2px}
+.weekbar .wb{flex:1;text-align:center;min-width:0}
+.wb .bar{background:var(--primary-light);border-radius:6px 6px 0 0;margin:0 auto;width:70%;min-height:4px;display:flex;flex-direction:column-reverse}
+.wb .bar i{display:block;background:var(--primary);width:100%}
+.wb .bar i.m{background:var(--orange)}
+.wb .lb{font-size:10.5px;color:var(--sub);margin-top:4px;white-space:nowrap}
+.wb .n{font-size:10.5px;color:var(--text);font-weight:700;height:14px}
 .lesson-line{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 2px;border-bottom:1px dashed var(--border);font-size:13px}
 .lesson-line:last-child{border-bottom:none}
-.lesson-line .nm{font-weight:600}
-.lesson-line .ev{font-size:11.5px;color:var(--sub)}
-.lesson-line .ev button{border:none;background:none;color:var(--primary);cursor:pointer;font-size:11.5px;text-decoration:underline;font-family:inherit}
-.mini{font-size:12px;color:var(--sub)}
+.lesson-line .nm{font-weight:600;line-height:1.35}
+.lesson-line .u{font-size:11px;color:var(--sub);display:block;font-weight:400}
+.lesson-line .ev{font-size:11.5px;color:var(--sub);margin-top:2px}
+.lesson-line .ev button{border:none;background:none;color:var(--primary);cursor:pointer;font-size:11.5px;text-decoration:underline;font-family:inherit;padding:0}
+.lesson-line .rt{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none}
+.lesson-line .rt a{font-size:11px;color:var(--primary);text-decoration:none}
 .step-card{display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;text-decoration:none;color:inherit}
 .step-card:hover{border-color:var(--primary)}
 .step-card .k{font-size:18px}
-.step-card .t{font-size:13px;font-weight:700}
+.step-card .t{font-size:13px;font-weight:700;line-height:1.35}
 .step-card .w{font-size:11.5px;color:var(--sub)}
 .step-card .go{margin-left:auto;font-size:12px;color:var(--primary);font-weight:700;white-space:nowrap}
-.empty-note{font-size:13px;color:var(--sub);padding:6px 2px}
+
+/* 단원 진도 */
+.units{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+.unit{border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+.unit .t{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.unit .t b{font-size:13.5px}
+.unit .t span{font-size:12px;color:var(--sub);white-space:nowrap}
+.unit .pb{height:8px;background:#EDF2F7;border-radius:4px;overflow:hidden;margin:8px 0}
+.unit .pb i{display:block;height:100%;background:var(--primary)}
+.unit .dots{display:flex;flex-wrap:wrap;gap:4px}
+.unit .dots i{width:16px;height:16px;border-radius:4px;display:inline-block}
+.unit .dots i.solid{background:#68D391}.unit .dots i.edge{background:#F6E05E}.unit .dots i.weak{background:#FC8181}.unit .dots i.watching{background:#CBD5E0}.unit .dots i.touched{background:#E2E8F0}.unit .dots i.none{background:#fff;border:1px dashed #CBD5E0}
+.unit .dots i.done{box-shadow:inset 0 0 0 2px rgba(0,0,0,.22)}
+.unit .m{font-size:11.5px;color:var(--sub);margin-top:6px}
 
 /* 교사 한마디 */
 .cmt textarea{width:100%;border:1px solid var(--border);border-radius:10px;padding:10px;font-family:inherit;font-size:13.5px;min-height:70px;resize:vertical}
@@ -105,24 +178,38 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 .cmt-foot label{font-size:12.5px;color:var(--sub);display:flex;align-items:center;gap:5px}
 .cmt-foot .save{margin-left:auto;background:var(--primary);color:#fff;border:none;border-radius:9px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
 .cmt-msg{font-size:12px;color:var(--green)}
+.print-cmt,.print-head{display:none}
 
 /* 근거 모달 */
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:200;padding:16px}
 .modal-bg.on{display:flex}
-.modal{background:#fff;border-radius:14px;max-width:520px;width:100%;max-height:78vh;overflow:auto;padding:18px}
-.modal h4{font-size:14.5px;margin-bottom:10px}
+.modal{background:#fff;border-radius:14px;max-width:560px;width:100%;max-height:80vh;overflow:auto;padding:18px}
+.modal h4{font-size:14.5px;margin-bottom:4px;padding-right:28px;line-height:1.4}
 .modal .close{float:right;border:none;background:none;font-size:18px;cursor:pointer;color:var(--sub)}
-.ev-row{display:flex;justify-content:space-between;font-size:12.5px;padding:6px 2px;border-bottom:1px dashed var(--border)}
-.ev-row .ok{color:var(--green);font-weight:700}
-.ev-row .no{color:var(--red);font-weight:700}
+.modal .sum{font-size:12px;color:var(--sub);margin-bottom:10px;line-height:1.6}
+.ev-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.ev-table th{text-align:left;color:var(--sub);font-weight:600;padding:5px 4px;border-bottom:1px solid var(--border)}
+.ev-table td{padding:6px 4px;border-bottom:1px dashed var(--border);vertical-align:top}
+.ev-table .ok{color:var(--green);font-weight:700}
+.ev-table .no{color:var(--red);font-weight:700}
+.ev-table .hist{font-family:ui-monospace,monospace;letter-spacing:1px}
+.ev-table .hist .o{color:var(--green)}.ev-table .hist .x{color:var(--red)}
+.ev-runs{font-size:12px;color:var(--sub);margin-top:10px;line-height:1.7}
 
-/* 인쇄 — 학생 카드 A4 1장 (상담용) */
+/* 인쇄 — 학생 카드 A4 (상담용) */
 @media print{
+  @page{size:A4;margin:12mm}
   .topbar,.no-print{display:none!important}
-  body{background:#fff}
+  body{background:#fff;font-size:11.5px}
   .wrap{max-width:none;padding:0}
-  .sec{box-shadow:none;border:1px solid #ddd;page-break-inside:avoid;margin-bottom:10px;padding:12px}
+  .sec{box-shadow:none;border:1px solid #ccc;page-break-inside:avoid;margin-bottom:8px;padding:10px 12px;border-radius:8px}
   .four{gap:8px}
+  .q-card{padding:10px;border-radius:8px}
+  .units{grid-template-columns:1fr 1fr;gap:8px}
+  .print-cmt{display:block;font-size:12px;line-height:1.7;background:#FFFBEB;border:1px solid #F6E05E;border-radius:8px;padding:10px}
+  .print-head{display:flex;justify-content:space-between;font-size:11.5px;color:#444;margin-bottom:8px}
+  .lesson-line .ev button,.lesson-line .rt a,.step-card .go{display:none}
+  .stat b{font-size:17px}
 }
 </style>
 </head>
@@ -134,6 +221,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
     <span class="topbar-title" id="topbar-title">🧭 케이학습리포트</span>
   </div>
   <div class="topbar-right">
+    <button class="topbar-btn no-print" id="btn-csv" style="display:none" onclick="copyCsv()">📋 표 복사</button>
     <button class="topbar-btn primary no-print" id="btn-print" style="display:none" onclick="window.print()">🖨️ 상담용 인쇄 (A4)</button>
   </div>
 </div>
@@ -143,9 +231,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
     <div class="ttl">학습 기록을 모으는 중…</div><div class="desc">잠시만 기다려 주세요.</div></div>
 </div>
 
-<div class="modal-bg" id="ev-modal"><div class="modal">
+<div class="modal-bg" id="ev-modal" onclick="if(event.target===this)this.classList.remove('on')"><div class="modal">
   <button class="close" onclick="document.getElementById('ev-modal').classList.remove('on')">✕</button>
   <h4 id="ev-title">근거 시도 목록</h4>
+  <div class="sum" id="ev-sum"></div>
   <div id="ev-body"></div>
 </div></div>
 
@@ -153,16 +242,34 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 const db = getKeduDb();
 const KR = window.KeduReport;
 let _teacher = null;
-let _evCache = {};   // lesson_id → scores rows (근거 열람)
+let _evCache = {};        // lesson_id → scores rows (근거 열람)
+let _evMastery = {};      // lesson_id → mastery row
+let _class = null;        // 학급 모드 데이터 (기간·과목 전환용)
+let _csv = '';
 
 function esc(s){ return String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function q(name){ return new URLSearchParams(location.search).get(name); }
-function fmtDur(sec){ sec = Number(sec)||0; if(sec<60) return sec+'초'; const m=Math.floor(sec/60); return m<60? m+'분' : Math.floor(m/60)+'시간 '+(m%60)+'분'; }
-function statusKo(st){ return {solid:'탄탄', edge:'경계', weak:'취약', watching:'관찰 중'}[st] || st; }
+function statusKo(st){ return KR.STATUS_KO[st] || st; }
+function accClass(p){ return p === null ? '' : (p < 60 ? 'acc lo' : 'acc'); }
+function accTxt(ok, n){ const p = KR.pct(ok, n); return p === null ? '—' : p + '%'; }
+function qNo(qid){ const m = String(qid||'').match(/(\d+)\s*$/); return m ? m[1]+'번' : String(qid||''); }
+function lessonTitle(i){ return (i.n ? i.n + '차시 ' : '') + (i.title || i.label); }
+function unitLabel(i){ return i.subjectKo + (i.unitNum ? ' ' + i.unitNum + '단원' : '') + (i.unitName ? ' · ' + i.unitName : ''); }
+function stuLink(sid){ return 'learning-report.html?student_id=' + encodeURIComponent(sid) + (_class ? '&class_code_id=' + encodeURIComponent(_class.classRow.id) : ''); }
 
 function showError(icon, ttl, desc){
   document.getElementById('app').innerHTML =
     `<div class="center-state"><div class="icon">${icon}</div><div class="ttl">${esc(ttl)}</div><div class="desc">${desc}</div><a class="cta" href="/teacher/">교사 대시보드로</a></div>`;
+}
+
+// 번호순 정렬 (이름 정렬 금지) — 닉네임 앞 숫자 우선
+function sortStudents(list){
+  return (list||[]).slice().sort((a,b)=>{
+    const na = parseInt(a.nickname), nb = parseInt(b.nickname);
+    if(!isNaN(na)&&!isNaN(nb)) return na-nb;
+    if(!isNaN(na)) return -1; if(!isNaN(nb)) return 1;
+    return String(a.nickname||'').localeCompare(String(b.nickname||''),'ko');
+  });
 }
 
 async function init(){
@@ -174,7 +281,7 @@ async function init(){
 
   const studentId = q('student_id');
   let classCodeId = q('class_code_id');
-  if(studentId){ await loadStudent(studentId); return; }
+  if(studentId){ await loadStudent(studentId, classCodeId); return; }
   if(!classCodeId){
     const { data: cc } = await db.from('class_codes').select('id').eq('teacher_id', t.id).eq('is_active', true).order('created_at',{ascending:false}).limit(1);
     if(cc && cc[0]) classCodeId = cc[0].id;
@@ -187,7 +294,8 @@ async function init(){
 // 학급 모드 — 학급이 먼저 (설계 §3-1)
 // =============================================
 async function loadClass(classCodeId){
-  const monday3 = KR.addDays(KR.mondayOf(KR.kstDateStr(new Date())), -14); // 최근 3주 시작
+  const thisMonday = KR.mondayOf(KR.today());
+  const from = KR.addDays(thisMonday, -28);   // 최근 5주 (4주 합 + 비교용)
   const [{ data: classRow }, { data: students, error: es }] = await Promise.all([
     db.from('class_codes').select('id, code, label').eq('id', classCodeId).maybeSingle(),
     db.from('student_data_summary').select('*').eq('class_code_id', classCodeId)
@@ -195,173 +303,291 @@ async function loadClass(classCodeId){
   if(es || !classRow){ showError('🔒','학급을 불러올 수 없습니다', esc((es&&es.message)||'본인 소유 학급만 조회할 수 있습니다.')); return; }
 
   const ids = (students||[]).map(s=>s.student_id).filter(Boolean);
-  let mastery=[], scores=[], morning=[];
+  let mastery=[], scores=[], morning=[], wrongs=[];
   if(ids.length){
     const r = await Promise.all([
       db.from('report_lesson_mastery').select('*').in('student_id', ids),
-      db.from('scores').select('student_id,lesson_id,question_id,is_correct,earned_at').in('student_id', ids).gte('earned_at', monday3+'T00:00:00+09:00').limit(8000),
-      db.from('report_morning_daily').select('student_id,run_date,subject').in('student_id', ids).gte('run_date', monday3)
+      db.from('scores').select('student_id,lesson_id,unit_id,question_id,is_correct,earned_at,time_spent_sec').in('student_id', ids).gte('earned_at', from+'T00:00:00+09:00').limit(15000),
+      db.from('report_morning_daily').select('student_id,run_date,subject').in('student_id', ids).gte('run_date', from),
+      db.from('wrong_answers').select('student_id,lesson_id,question_id,attempts,resolved_at,last_wrong_at').in('student_id', ids).is('resolved_at', null).gte('attempts', 2)
     ]);
-    mastery = r[0].data||[]; scores = r[1].data||[]; morning = r[2].data||[];
+    mastery = r[0].data||[]; scores = r[1].data||[]; morning = r[2].data||[]; wrongs = r[3].data||[];
   }
+  await KR.loadCatalog(mastery.map(m=>m.lesson_id).concat(scores.map(s=>s.lesson_id), wrongs.map(w=>w.lesson_id)));
 
-  // 번호순 정렬 (이름 정렬 금지) — 닉네임 앞 숫자 우선, 없으면 닉네임
-  const list = (students||[]).slice().sort((a,b)=>{
-    const na = parseInt(a.nickname), nb = parseInt(b.nickname);
-    if(!isNaN(na)&&!isNaN(nb)) return na-nb;
-    if(!isNaN(na)) return -1; if(!isNaN(nb)) return 1;
-    return String(a.nickname||'').localeCompare(String(b.nickname||''),'ko');
+  _class = { classRow, list: sortStudents(students), mastery, scores, morning, wrongs, period:'this', subject:'all' };
+  document.getElementById('topbar-title').textContent = '🧭 케이학습리포트 — 우리 반' + (classRow.label ? ' · ' + classRow.label : '');
+  document.getElementById('btn-csv').style.display = '';
+  renderClass();
+}
+
+function renderClass(){
+  const C = _class;
+  const byStu = {}; C.list.forEach(s => byStu[s.student_id] = { scores:[], morning:[] });
+  C.scores.forEach(r => { if(byStu[r.student_id]) byStu[r.student_id].scores.push(r); });
+  C.morning.forEach(r => { if(byStu[r.student_id]) byStu[r.student_id].morning.push(r); });
+
+  // ---- 기간 집계 ----
+  const thisMonday = KR.mondayOf(KR.today());
+  const periodLabel = { this:'이번 주', last:'지난 주', '4w':'최근 4주' }[C.period];
+  const rangeTxt = C.period === 'this' ? KR.fmtMD(thisMonday)+'~'
+                 : C.period === 'last' ? KR.fmtMD(KR.addDays(thisMonday,-7))+'~'+KR.fmtMD(KR.addDays(thisMonday,-1))
+                 : KR.fmtMD(KR.addDays(thisMonday,-21))+'~';
+  const agg = {};
+  C.list.forEach(s => {
+    const weeks = KR.buildWeeks(byStu[s.student_id].scores, byStu[s.student_id].morning, 5); // [-4..0]
+    const sel = C.period === '4w' ? weeks.slice(1) : [ C.period === 'this' ? weeks[4] : weeks[3] ];
+    const prev = C.period === '4w' ? null : (C.period === 'this' ? weeks[3] : weeks[2]);
+    const a = { problems:0, correct:0, morning:0, active:0, lessons:new Set(), done:new Set(), sec:0, days: sel.length===1 ? sel[0].days : null };
+    sel.forEach(w => { a.problems+=w.problems; a.correct+=w.correct; a.morning+=w.morningCount; a.active+=w.activeDays.size; a.sec+=w.sec;
+      w.lessonsTouched.forEach(l=>a.lessons.add(l)); w.lessonsDone.forEach(l=>a.done.add(l)); });
+    a.prev = prev ? prev.problems + prev.morningCount : null;
+    a.nWeak = C.mastery.filter(m=>m.student_id===s.student_id && m.status==='weak').length;
+    a.nRep = new Set(C.wrongs.filter(w=>w.student_id===s.student_id).map(w=>w.lesson_id)).size;
+    agg[s.student_id] = a;
   });
 
-  // 막힌 차시 상위 3 — weak 학생 수 기준
+  // ---- 학급 요약 ----
+  const tot = { problems:0, correct:0, morning:0, activeStudents:0, lessonsDone:0, cur:0, prev:0, flagged:0 };
+  C.list.forEach(s => { const a = agg[s.student_id]; tot.problems+=a.problems; tot.correct+=a.correct; tot.morning+=a.morning; tot.lessonsDone+=a.done.size;
+    if(a.active>0) tot.activeStudents++; tot.cur += a.problems + a.morning; if(a.prev!==null) tot.prev += a.prev; if(a.nWeak||a.nRep) tot.flagged++; });
+  const tr = KR.trendArrow(tot.prev, tot.cur);
+
+  // ---- 막힌 차시 상위 3 — 취약 학생 + 반복 오답 학생 (누적) ----
   const stuck = {};
-  mastery.forEach(m => { if(m.status==='weak'){ stuck[m.lesson_id]=(stuck[m.lesson_id]||0)+1; } });
-  const stuckTop = Object.entries(stuck).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  C.mastery.forEach(m => { if(m.status==='weak'){ const g = stuck[m.lesson_id] = stuck[m.lesson_id]||{weak:new Set(),rep:new Set()}; g.weak.add(m.student_id);} });
+  C.wrongs.forEach(w => { const g = stuck[w.lesson_id] = stuck[w.lesson_id]||{weak:new Set(),rep:new Set()}; g.rep.add(w.student_id); });
+  const stuckTop = Object.entries(stuck).map(([lid,g]) => ({ lid, n:new Set([...g.weak,...g.rep]).size, weak:g.weak.size, rep:g.rep.size }))
+    .sort((a,b)=>b.n-a.n || b.weak-a.weak).slice(0,3);
 
-  // 학생별 이번 주 집계
-  const byStu = {};
-  list.forEach(s => byStu[s.student_id] = { scores:[], morning:[] });
-  scores.forEach(r => { if(byStu[r.student_id]) byStu[r.student_id].scores.push(r); });
-  morning.forEach(r => { if(byStu[r.student_id]) byStu[r.student_id].morning.push(r); });
-  const weakCount = {};
-  mastery.forEach(m => { if(m.status==='weak') weakCount[m.student_id]=(weakCount[m.student_id]||0)+1; });
+  // ---- 도달 지도 — 학급이 손댄 차시(단원 순) × 학생 ----
+  const touched = new Set(); C.mastery.forEach(m => touched.add(m.lesson_id)); C.scores.forEach(r => { if(r.lesson_id) touched.add(r.lesson_id); });
+  const subjects = {}; [...touched].forEach(l => { const s = KR.lesson(l).subject||'_'; subjects[s]=(subjects[s]||0)+1; });
+  const subjKeys = Object.keys(subjects).sort((a,b)=>(KR.SUBJECT_ORDER[a]||9)-(KR.SUBJECT_ORDER[b]||9));
+  if(C.subject !== 'all' && !subjects[C.subject]) C.subject = 'all';
+  const cols = [...touched].filter(l => C.subject==='all' || (KR.lesson(l).subject||'_')===C.subject).sort(KR.cmpLesson);
+  const mByKey = {}; C.mastery.forEach(m => mByKey[m.student_id+'|'+m.lesson_id] = m);
+  const touchedByKey = new Set(C.scores.map(r => r.student_id+'|'+r.lesson_id));
+  const repByKey = new Set(C.wrongs.map(w => w.student_id+'|'+w.lesson_id));
+  const groups = []; cols.forEach(l => { const i = KR.lesson(l); const gk = unitLabel(i); const g = groups[groups.length-1]; if(g && g.key===gk) g.n++; else groups.push({key:gk, n:1}); });
+  const hmHtml = cols.length ? `<div class="hm-wrap"><table class="hm">
+    <thead>
+      <tr class="unit"><th class="corner"></th>${groups.map(g=>`<th colspan="${g.n}">${esc(g.key)}</th>`).join('')}</tr>
+      <tr class="les"><th class="corner">학생 ＼ 차시</th>${cols.map(l=>{const i=KR.lesson(l);return `<th title="${esc(i.label)}"><span class="v">${esc((i.n?i.n+'. ':'')+(i.title||i.label))}</span></th>`;}).join('')}</tr>
+    </thead>
+    <tbody>${C.list.map(s => `<tr><th onclick="location.href='${stuLink(s.student_id)}'">${esc(s.nickname||'—')}</th>${cols.map(l => {
+        const k = s.student_id+'|'+l; const m = mByKey[k];
+        const st = m ? m.status : (touchedByKey.has(k) ? 'touched' : 'none');
+        const rep = repByKey.has(k);
+        const tip = (m ? `${statusKo(st)} · 문항 ${m.q_n}개 중 ${m.q_latest_ok}개 마지막 답 정답` : (st==='touched'?'풀어봄(집계 대기)':'아직')) + (rep?' · 반복 오답 있음':'');
+        return `<td title="${esc(s.nickname||'')} · ${esc(KR.lesson(l).label)} — ${esc(tip)}" onclick="location.href='${stuLink(s.student_id)}'"><i class="${st} ${rep?'rep':''}"></i></td>`;
+      }).join('')}</tr>`).join('')}</tbody></table></div>
+    <div class="hm-legend"><span><i class="solid"></i>탄탄</span><span><i class="edge"></i>경계</span><span><i class="weak"></i>취약</span><span><i class="watching"></i>관찰 중(문항 3개 미만)</span><span><i class="touched"></i>풀어봄</span><span><i class="none"></i>아직</span><span><i class="rep"></i>반복 오답</span><span class="mini">· 칸을 누르면 학생 카드</span></div>`
+    : `<div class="empty-note">아직 학급이 손댄 차시가 없습니다.</div>`;
 
-  const thisMonday = KR.mondayOf(KR.kstDateStr(new Date()));
-  const rows = list.map(s => {
-    const wk = KR.buildWeeks(byStu[s.student_id]?.scores, byStu[s.student_id]?.morning, 1)[0];
-    const dots = Object.keys(wk.days).map(d => {
-      const day = wk.days[d];
-      const on = day.selfQ>0 || day.lessons.size>0 || day.morning;
-      return `<span class="dot ${on?'on':''} ${day.morning?'mo':''}" title="${d}"></span>`;
-    }).join('');
+  // ---- 기간별 표 ----
+  const todayStr = KR.today();
+  const rows = C.list.map(s => {
+    const a = agg[s.student_id];
+    const flow = a.days
+      ? `<span class="dotrow">${Object.keys(a.days).map(d => { const day = a.days[d]; const on = day.selfQ>0 || day.lessons.size>0 || day.done.size>0 || day.morning;
+          return `<span class="dot ${on?'on':''} ${day.morning?'mo':''} ${d===todayStr?'today':''}" title="${d}"></span>`; }).join('')}</span>`
+      : `<span class="bar-inl" title="활동일 ${a.active}/28"><i style="width:${Math.min(100,Math.round(100*a.active/28))}%"></i></span>${a.active}일`;
     const inactive = s.is_active === false;
-    return `<tr onclick="location.href='learning-report.html?student_id=${esc(s.student_id)}'" ${inactive?'style="opacity:.45"':''}>
+    const delta = a.prev === null ? null : (a.problems+a.morning) - a.prev;
+    return `<tr onclick="location.href='${stuLink(s.student_id)}'" ${inactive?'style="opacity:.45"':''}>
       <td><b>${esc(s.nickname||'—')}</b>${inactive?' <span class="mini">(정지)</span>':''}</td>
-      <td class="ctr"><span class="dotrow">${dots}</span></td>
-      <td class="num">${wk.lessonsDone.size + wk.lessonsTouched.size ? Math.max(wk.lessonsDone.size, wk.lessonsTouched.size) : 0}</td>
-      <td class="num">${wk.problems}</td>
-      <td class="num">${wk.morningCount}</td>
-      <td class="num">${wk.activeDays.size}일</td>
-      <td class="ctr">${weakCount[s.student_id] ? `<span class="pill weak">${weakCount[s.student_id]}</span>` : '<span class="mini">—</span>'}</td>
+      <td class="ctr">${flow}</td>
+      <td class="num">${a.done.size}<span class="mini">/${Math.max(a.lessons.size,a.done.size)}</span></td>
+      <td class="num">${a.problems}${delta!==null?` <span class="mini ${delta>0?'up':delta<0?'down':'flat'}">${delta>0?'+'+delta:delta<0?delta:'±0'}</span>`:''}</td>
+      <td class="num ${accClass(KR.pct(a.correct,a.problems))}">${accTxt(a.correct,a.problems)}</td>
+      <td class="num">${a.morning}</td>
+      <td class="num">${a.days?a.active+'일':KR.fmtDur(a.sec)}</td>
+      <td class="ctr">${a.nWeak?`<span class="pill weak">${a.nWeak}</span>`:''}${a.nRep?` <span class="pill repeat">${a.nRep}</span>`:''}${!a.nWeak&&!a.nRep?'<span class="mini">—</span>':''}</td>
     </tr>`;
   }).join('');
 
-  document.getElementById('topbar-title').textContent = '🧭 케이학습리포트 — 우리 반';
+  // CSV (상담·기록용, 번호순)
+  _csv = ['학생,완료차시,푼차시,문항,정답률,아침활동,활동일,취약차시,반복오답차시'].concat(C.list.map(s => { const a = agg[s.student_id];
+    return [s.nickname||'', a.done.size, a.lessons.size, a.problems, accTxt(a.correct,a.problems), a.morning, a.active, a.nWeak, a.nRep].join(','); })).join('\n');
+
   document.getElementById('app').innerHTML = `
     <div class="sec">
-      <div class="sec-h">🚧 이번에 막힌 차시</div>
-      <div class="sec-sub">취약(반복 오답·낮은 도달) 학생이 많은 차시 — 다음 수업의 보충 후보입니다.</div>
-      ${stuckTop.length ? `<div class="stuck-grid">${stuckTop.map(([lid,n])=>{
-        const p = KR.prettyLesson(lid);
-        return `<div class="stuck-card"><div class="l">${esc(p.label)}</div><div class="m">취약 학생 ${n}명</div></div>`;
-      }).join('')}</div>` : `<div class="stuck-empty">지금 학급 전체가 막힌 차시는 없습니다.</div>`}
+      <div class="sec-head"><div><div class="sec-h">📊 ${periodLabel} 한눈에 <span class="mini">(${rangeTxt})</span></div>
+        <div class="sec-sub">학급 전체 합계입니다. 순위·비교가 아니라 수업의 온도계로 보세요.</div></div>
+        <div class="seg no-print"><button class="${C.period==='this'?'on':''}" onclick="setPeriod('this')">이번 주</button><button class="${C.period==='last'?'on':''}" onclick="setPeriod('last')">지난 주</button><button class="${C.period==='4w'?'on':''}" onclick="setPeriod('4w')">최근 4주</button></div></div>
+      <div class="strip">
+        <div class="st"><b>${tot.activeStudents}<span class="mini">/${C.list.length}</span></b><span>학습에 참여한 학생</span></div>
+        <div class="st"><b>${tot.lessonsDone}</b><span>끝까지 한 차시(연인원)</span></div>
+        <div class="st"><b>${tot.problems}</b><span>푼 문항</span>${C.period!=='4w'?`<div class="d ${tr.dir}">${tr.text} · 이전 주 ${tot.prev}</div>`:''}</div>
+        <div class="st"><b class="${accClass(KR.pct(tot.correct,tot.problems))}">${accTxt(tot.correct,tot.problems)}</b><span>학급 정답률</span></div>
+        <div class="st"><b>${tot.morning}</b><span>아침활동 제출</span></div>
+        <div class="st"><b>${tot.flagged}</b><span>취약·반복 오답 있는 학생(누적)</span></div>
+      </div>
     </div>
     <div class="sec">
-      <div class="sec-h">📅 이번 주 학습량 (${KR.fmtMD(thisMonday)}~)</div>
-      <div class="sec-sub">줄을 누르면 학생 카드로 들어갑니다.</div>
+      <div class="sec-h">🚧 지금 막힌 차시</div>
+      <div class="sec-sub">취약(마지막 답 기준 도달 60% 미만) 또는 반복 오답 학생이 많은 차시 — 다음 수업의 보충 후보입니다. 누적 기준.</div>
+      ${stuckTop.length ? `<div class="stuck-grid">${stuckTop.map(x=>{
+        const i = KR.lesson(x.lid);
+        return `<div class="stuck-card"><div class="u">${esc(unitLabel(i))}</div><div class="l">${esc(lessonTitle(i))}</div><div class="m">학생 <b>${x.n}명</b> — 취약 ${x.weak}명 · 반복 오답 ${x.rep}명${i.url?` · <a href="${esc(i.url)}" target="_blank">차시 열기 →</a>`:''}</div></div>`;
+      }).join('')}</div>` : `<div class="empty-note">지금 학급 전체가 막힌 차시는 없습니다.</div>`}
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><div class="sec-h">🗺️ 차시 도달 지도</div>
+        <div class="sec-sub">학급이 손댄 차시 × 학생. 판정은 각 문항의 <b>마지막 답</b> 기준(옛 오답은 낙인되지 않음), 문항 3개 미만은 판단 보류. 누적 기준.</div></div>
+        ${subjKeys.length>1?`<div class="seg no-print"><button class="${C.subject==='all'?'on':''}" onclick="setSubject('all')">전체</button>${subjKeys.map(k=>`<button class="${C.subject===k?'on':''}" onclick="setSubject('${esc(k)}')">${esc(KR.SUBJECT_KO[k]||k)}</button>`).join('')}</div>`:''}</div>
+      ${hmHtml}
+    </div>
+    <div class="sec">
+      <div class="sec-h">📅 ${periodLabel} 학습량</div>
+      <div class="sec-sub">줄을 누르면 학생 카드로 들어갑니다. 번호순.</div>
       <table class="r-table">
-        <thead><tr><th>학생</th><th class="ctr">요일 흐름 (월~일)</th><th class="num">차시</th><th class="num">문항</th><th class="num">아침</th><th class="num">활동일</th><th class="ctr">취약</th></tr></thead>
-        <tbody>${rows || '<tr><td colspan="7" class="empty-note">학생이 없습니다.</td></tr>'}</tbody>
+        <thead><tr><th>학생</th><th class="ctr">${C.period==='4w'?'활동일 (28일 중)':'요일 흐름 (월~일)'}</th><th class="num">완료/푼 차시</th><th class="num">문항</th><th class="num">정답률</th><th class="num">아침</th><th class="num">${C.period==='4w'?'학습 시간':'활동일'}</th><th class="ctr">취약·반복</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="8" class="empty-note">학생이 없습니다.</td></tr>'}</tbody>
+        <tfoot><tr><td>학급 합계</td><td class="ctr mini">참여 ${tot.activeStudents}명</td><td class="num">${tot.lessonsDone}</td><td class="num">${tot.problems}</td><td class="num">${accTxt(tot.correct,tot.problems)}</td><td class="num">${tot.morning}</td><td></td><td class="ctr">${tot.flagged}명</td></tr></tfoot>
       </table>
-      <div class="legend"><span class="dot on"></span> 학습한 날 · <span class="dot on mo"></span> 아침활동 포함 · 취약 = 반복해서 헷갈리거나 도달이 낮은 차시 수</div>
+      <div class="legend"><span class="dot on"></span> 학습한 날 · <span class="dot on mo"></span> 아침활동 포함 · <span class="dot today"></span> 오늘 · 문항 옆 ±는 이전 주 대비(문항+아침) · 정답률 60% 미만은 붉게 · <span class="pill weak">n</span> 취약 차시 수 · <span class="pill repeat">n</span> 반복 오답이 있는 차시 수 (둘 다 누적)</div>
     </div>`;
+}
+function setPeriod(p){ _class.period = p; renderClass(); }
+function setSubject(s){ _class.subject = s; renderClass(); }
+async function copyCsv(){
+  try{ await navigator.clipboard.writeText(_csv); const b = document.getElementById('btn-csv'); b.textContent = '✓ 복사됨'; setTimeout(()=>b.textContent='📋 표 복사', 1500); }
+  catch(e){ alert('복사에 실패했습니다. 브라우저 권한을 확인해 주세요.'); }
 }
 
 // =============================================
-// 학생 카드 — 네 질문 4단 (설계 §3-2)
+// 학생 카드 — 네 질문 4단 + 단원 진도 (설계 §3-2)
 // =============================================
-async function loadStudent(studentId){
-  const monday3 = KR.addDays(KR.mondayOf(KR.kstDateStr(new Date())), -14);
+async function loadStudent(studentId, classCodeId){
+  const thisMonday = KR.mondayOf(KR.today());
+  const from6 = KR.addDays(thisMonday, -35);
   const [{ data: sumRows }, { data: mastery }, { data: scores }, { data: wrongs }, { data: morning }, { data: cmtRows }] = await Promise.all([
     db.from('student_data_summary').select('*').eq('student_id', studentId).limit(1),
     db.from('report_lesson_mastery').select('*').eq('student_id', studentId),
-    db.from('scores').select('lesson_id,unit_id,question_id,is_correct,time_spent_sec,earned_at').eq('student_id', studentId).order('earned_at',{ascending:false}).limit(3000),
+    db.from('scores').select('lesson_id,unit_id,question_id,is_correct,time_spent_sec,earned_at,score,max_score').eq('student_id', studentId).order('earned_at',{ascending:false}).limit(4000),
     db.from('wrong_answers').select('*').eq('student_id', studentId),
-    db.from('report_morning_daily').select('*').eq('student_id', studentId).gte('run_date', monday3),
+    db.from('report_morning_daily').select('*').eq('student_id', studentId).gte('run_date', from6),
     db.from('report_teacher_comments').select('*').eq('student_id', studentId).limit(1)
   ]);
   const s = sumRows && sumRows[0];
   if(!s){ showError('🔒','조회 권한이 없거나 데이터가 없습니다','본인 학급 학생만 조회할 수 있습니다.'); return; }
+  await KR.loadCatalog((mastery||[]).map(m=>m.lesson_id).concat((scores||[]).map(r=>r.lesson_id), (wrongs||[]).map(w=>w.lesson_id)));
+
+  // 학급 이웃(이전/다음 학생) — 상담 순회용
+  let nav = '';
+  const ccId = classCodeId || s.class_code_id;
+  if(ccId){
+    const { data: mates } = await db.from('student_data_summary').select('student_id,nickname').eq('class_code_id', ccId);
+    const list = sortStudents(mates||[]); const idx = list.findIndex(x=>x.student_id===studentId);
+    const link = (m, t) => m ? `<a href="learning-report.html?student_id=${encodeURIComponent(m.student_id)}&class_code_id=${encodeURIComponent(ccId)}">${t} ${esc(m.nickname||'')}</a>` : '';
+    nav = `<div class="nav no-print">${link(list[idx-1],'←')}${link(list[idx+1],'→')}</div>`;
+    document.getElementById('back-link').href = 'learning-report.html?class_code_id=' + encodeURIComponent(ccId);
+  } else document.getElementById('back-link').href = 'learning-report.html';
 
   const cls = KR.classify(mastery||[], wrongs||[]);
-  const weeks = KR.buildWeeks(scores||[], morning||[], 3);
-  const steps = KR.nextSteps(cls, mastery||[], scores||[]);
+  const weeks = KR.buildWeeks(scores||[], morning||[], 6);
+  const units = KR.unitProgress(scores||[], mastery||[]);
+  const steps = KR.nextSteps(cls, mastery||[], scores||[], units, 4);
+  const streak = KR.streak(scores||[], morning||[]);
   const cmt = (cmtRows && cmtRows[0]) || null;
   _evCache = {}; (scores||[]).forEach(r => { if(r.lesson_id){ (_evCache[r.lesson_id]=_evCache[r.lesson_id]||[]).push(r); } });
+  _evMastery = cls.byLesson;
 
-  // 최근 3주 추세
-  const w = weeks.map(x => x.problems + x.morningCount);
-  const arrow = w[2] > w[1] ? '↗ 늘고 있음' : (w[2] < w[1] ? '↘ 줄고 있음' : '→ 비슷함');
-  const maxW = Math.max(...w, 1);
-
-  const wkThis = weeks[2];
+  // 추세 (문항+아침) · 정답률 이번 주 vs 지난 주
+  const wkThis = weeks[5], wkLast = weeks[4];
+  const vol = weeks.map(x => x.problems + x.morningCount);
+  const tr = KR.trendArrow(vol[4], vol[5]);
+  const maxW = Math.max(...vol, 1);
+  const accThis = KR.pct(wkThis.correct, wkThis.problems), accLast = KR.pct(wkLast.correct, wkLast.problems);
+  const accLine = accThis === null ? '이번 주 문항 풀이 없음' : `이번 주 정답률 <b>${accThis}%</b>` + (accLast===null?'':` (지난 주 ${accLast}%)`);
   const morningBySubj = {};
-  (morning||[]).forEach(r => { const k = KR.SUBJECT_KO[r.subject]||r.subject; morningBySubj[k]=(morningBySubj[k]||0)+1; });
+  (morning||[]).filter(r => (r.run_date||'') >= wkThis.weekStart).forEach(r => { const k = KR.SUBJECT_KO[r.subject]||r.subject; morningBySubj[k]=(morningBySubj[k]||0)+1; });
+  const subjLine = Object.keys(wkThis.bySubject).sort((a,b)=>(KR.SUBJECT_ORDER[a]||9)-(KR.SUBJECT_ORDER[b]||9))
+    .map(k => { const b = wkThis.bySubject[k]; return `${KR.SUBJECT_KO[k]||k} ${b.q}문항${b.q?` (${KR.pct(b.ok,b.q)}%)`:''}`; }).join(' · ');
 
-  const lessonLine = (r, evBtn) => {
-    const p = KR.prettyLesson(r.lesson_id);
+  const lessonLine = (r) => {
+    const i = KR.lesson(r.lesson_id);
+    const url = KR.lessonUrl(r.lesson_id, r.unit_id);
     return `<div class="lesson-line">
-      <div><span class="nm">${esc(p.label)}</span>
-        <div class="ev">최근 ${r.recent_n}회 중 ${r.recent_correct}회 정답 · ${r.attempts_total}회 시도${evBtn?` · <button onclick="openEv('${esc(r.lesson_id)}')">근거 보기</button>`:''}</div></div>
-      <span class="pill ${r.status}">${statusKo(r.status)}</span>
+      <div><span class="nm">${esc(lessonTitle(i))}<span class="u">${esc(unitLabel(i))}</span></span>
+        <div class="ev">문항 ${r.q_n}개 중 ${r.q_latest_ok}개 마지막 답 정답 · ${r.attempts_total}번 답함${r.runs?` · ${r.runs}회 완료${r.last_run_max?` (마지막 ${r.last_run_score}/${r.last_run_max})`:''}`:''} · <button onclick="openEv('${esc(r.lesson_id)}')">근거</button></div></div>
+      <div class="rt"><span class="pill ${r.status}">${statusKo(r.status)}</span>${url?`<a href="${esc(url)}" target="_blank">열기 →</a>`:''}</div>
     </div>`;
   };
-
-  const wrongLine = (wr) => {
-    const p = KR.prettyLesson(wr.lesson_id);
+  const wrongLine = (g) => {
+    const i = KR.lesson(g.lesson_id);
+    const url = KR.lessonUrl(g.lesson_id, null);
     return `<div class="lesson-line">
-      <div><span class="nm">${esc(p.label)}</span>
-        <div class="ev">${esc(wr.question_id)} 문항 · ${wr.attempts}회 헷갈림 · <button onclick="openEv('${esc(wr.lesson_id)}')">근거 보기</button></div></div>
-      <span class="pill weak">반복 오답</span>
+      <div><span class="nm">${esc(lessonTitle(i))}<span class="u">${esc(unitLabel(i))}</span></span>
+        <div class="ev">${g.questions.map(w=>esc(qNo(w.question_id))+'('+w.attempts+'회)').join(', ')} 문항이 계속 헷갈림 · <button onclick="openEv('${esc(g.lesson_id)}')">근거</button></div></div>
+      <div class="rt"><span class="pill repeat">반복 오답</span>${url?`<a href="${esc(url)}" target="_blank">열기 →</a>`:''}</div>
     </div>`;
   };
-
   const stepCard = (st) => {
-    const p = KR.prettyLesson(st.lessonId);
-    const icon = { review:'🔁', lesson:'📖', continue:'▶️' }[st.kind] || '👉';
-    const inner = `<span class="k">${icon}</span><div><div class="t">${esc(p.label)}</div><div class="w">${esc(st.why)}</div></div><span class="go">${st.unitId?'열기 →':''}</span>`;
+    const i = KR.lesson(st.lessonId);
+    const icon = { review:'🔁', lesson:'📖', continue:'▶️', new:'✨' }[st.kind] || '👉';
+    const inner = `<span class="k">${icon}</span><div><div class="t">${esc(lessonTitle(i))} <span class="mini">${esc(i.subjectKo)}${i.unitNum?' '+i.unitNum+'단원':''}</span></div><div class="w">${esc(st.why)}</div></div><span class="go">${st.unitId?'열기 →':''}</span>`;
     return st.unitId ? `<a class="step-card" href="${esc(st.unitId)}" target="_blank">${inner}</a>` : `<div class="step-card">${inner}</div>`;
   };
+  const unitCard = (u) => {
+    const total = u.total ?? u.lessons.length;
+    const p = total ? Math.round(100*u.done/total) : 0;
+    return `<div class="unit"><div class="t"><b>${esc(u.subjectKo)}${u.unitNum?' '+u.unitNum+'단원':''}${u.unitName?' · '+esc(u.unitName):''}</b><span>${u.done}/${total} 완료${u.mapped?'':' (지도 밖)'}</span></div>
+      <div class="pb"><i style="width:${p}%"></i></div>
+      <div class="dots">${u.lessons.map(l=>`<i class="${l.status} ${l.done?'done':''}" title="${esc((l.info.n?l.info.n+'. ':'')+(l.info.title||l.info.lessonId))} — ${statusKo(l.status)}${l.done?' · 완료':''}"></i>`).join('')}</div>
+      <div class="m">${u.solid?`탄탄 ${u.solid}`:''}${u.weak?` · 취약 ${u.weak}`:''}${u.nextNew?` · 다음: ${esc((u.nextNew.n?u.nextNew.n+'. ':'')+u.nextNew.title)}`:' · 단원의 모든 차시를 시작했음'}</div></div>`;
+  };
 
-  document.getElementById('topbar-title').textContent = '🧭 학생 카드';
-  document.getElementById('back-link').href = 'learning-report.html';
+  document.getElementById('topbar-title').textContent = '🧭 학생 카드 — ' + (s.nickname||'');
   document.getElementById('back-link').textContent = '← 우리 반으로';
   document.getElementById('btn-print').style.display = '';
+  const lastAt = (mastery||[]).reduce((m,r)=> r.last_attempt_at && (!m || r.last_attempt_at>m) ? r.last_attempt_at : m, null);
   document.getElementById('app').innerHTML = `
+    <div class="print-head"><span>케이학습리포트 · 학생 카드</span><span>${esc(s.class_code||'')} ${esc(s.nickname||'')} · ${KR.today()} · 담임 ${esc(_teacher.name||'')}</span></div>
     <div class="sec">
-      <div class="sec-h">🎒 ${esc(s.nickname||'—')} <span class="mini">· ${esc(s.class_code||'')}</span></div>
-      <div class="sec-sub">규칙 기반 판정 — 모든 판정은 [근거 보기]로 시도 목록을 확인할 수 있습니다. 시도 3회 미만 차시는 판단을 보류합니다.</div>
+      <div class="stu-head"><span class="nm">🎒 ${esc(s.nickname||'—')}</span><span class="meta">${esc(s.class_code||'')}${s.grade?' · '+s.grade+'학년':''} · 누적 ${s.total_questions||0}문항 · ${KR.fmtDur(s.total_time_sec)}${lastAt?` · 마지막 학습 ${new Date(lastAt).toLocaleDateString('ko-KR')}`:''}</span>${nav}</div>
+      <div class="sec-sub" style="margin-top:8px">규칙 기반 판정 — 모든 판정은 [근거]로 시도 목록을 확인할 수 있습니다. 판정은 문항별 마지막 답 기준이며, 문항 3개 미만 차시는 판단을 보류합니다. 1회 오답은 취약으로 세지 않습니다.</div>
       <div class="four">
 
         <div class="q-card"><h3><span class="q-num">1</span>얼마나 했는가</h3>
           <div class="stat-row">
             <div class="stat"><b>${wkThis.problems}</b><span>이번 주 문항</span></div>
+            <div class="stat"><b>${wkThis.lessonsDone.size}<span class="mini">/${Math.max(wkThis.lessonsTouched.size,wkThis.lessonsDone.size)}</span></b><span>완료/푼 차시</span></div>
             <div class="stat"><b>${wkThis.morningCount}</b><span>아침활동</span></div>
             <div class="stat"><b>${wkThis.activeDays.size}일</b><span>활동일</span></div>
-            <div class="stat"><b>${fmtDur(s.total_time_sec)}</b><span>누적 시간</span></div>
+            <div class="stat"><b>${streak}일</b><span>연속 학습</span></div>
           </div>
-          <div class="weekbar">${weeks.map((x,i)=>`<div class="wb"><div class="bar" style="height:52px"><i style="height:${Math.round(52*(x.problems+x.morningCount)/maxW)}px"></i></div><div class="lb">${KR.fmtMD(x.weekStart)}주</div></div>`).join('')}</div>
-          <div class="trend">최근 3주 <b>${arrow}</b>${Object.keys(morningBySubj).length?` · 아침: ${Object.entries(morningBySubj).map(([k,v])=>k+' '+v+'회').join(', ')}`:''}</div>
+          <div class="weekbar">${weeks.map((x,i)=>{const h=52, t=x.problems+x.morningCount, hp=Math.round(h*x.problems/maxW), hm=Math.round(h*x.morningCount/maxW);return `<div class="wb"><div class="n">${t||''}</div><div class="bar" style="height:${h}px" title="문항 ${x.problems} · 아침 ${x.morningCount} · 활동 ${x.activeDays.size}일"><i class="m" style="height:${hm}px"></i><i style="height:${hp}px"></i></div><div class="lb">${i===5?'이번 주':KR.fmtMD(x.weekStart)}</div></div>`;}).join('')}</div>
+          <div class="trend">최근 6주(파랑 문항·주황 아침) · 이번 주는 지난 주보다 <b>${tr.text}</b> · ${accLine}${subjLine?`<br>${subjLine}`:''}${Object.keys(morningBySubj).length?`<br>아침: ${Object.entries(morningBySubj).map(([k,v])=>k+' '+v+'회').join(', ')}`:''}</div>
         </div>
 
         <div class="q-card"><h3><span class="q-num">2</span>무엇을 잘하는가</h3>
-          ${cls.solid.length ? cls.solid.slice(0,6).map(r=>lessonLine(r,true)).join('') : '<div class="empty-note">아직 탄탄 판정 차시가 없습니다 — 기록이 쌓이는 중입니다.</div>'}
-          ${cls.watching.length ? `<div class="mini" style="margin-top:8px">관찰 중 ${cls.watching.length}차시 (시도 3회 미만 — 판단 보류)</div>`:''}
+          ${cls.solid.length ? cls.solid.slice(0,6).map(lessonLine).join('') : '<div class="empty-note">아직 탄탄 판정 차시가 없습니다 — 기록이 쌓이는 중입니다.</div>'}
+          ${cls.solid.length>6?`<div class="mini" style="margin-top:6px">외 ${cls.solid.length-6}개 차시 탄탄 — 아래 단원 진도의 초록 칸</div>`:''}
+          ${cls.watching.length ? `<div class="mini" style="margin-top:8px">관찰 중 ${cls.watching.length}차시 (문항 3개 미만 — 판단 보류)</div>`:''}
         </div>
 
         <div class="q-card"><h3><span class="q-num">3</span>무엇이 부족한가</h3>
-          ${cls.repeatWrong.length ? cls.repeatWrong.slice(0,4).map(wrongLine).join('') : ''}
-          ${cls.weak.length ? cls.weak.slice(0,4).map(r=>lessonLine(r,true)).join('') : ''}
-          ${cls.edge.length ? cls.edge.slice(0,3).map(r=>lessonLine(r,true)).join('') : ''}
-          ${!cls.repeatWrong.length && !cls.weak.length && !cls.edge.length ? '<div class="empty-note">반복 오답도, 취약 차시도 없습니다.</div>':''}
-          <div class="mini" style="margin-top:6px">1회 오답은 취약으로 세지 않습니다 — 반복(2회 이상, 미해결)만 표시.</div>
+          ${cls.repeatWrongLessons.slice(0,4).map(wrongLine).join('')}
+          ${cls.weak.slice(0,4).map(lessonLine).join('')}
+          ${cls.edge.slice(0,3).map(lessonLine).join('')}
+          ${!cls.repeatWrongLessons.length && !cls.weak.length && !cls.edge.length ? '<div class="empty-note">반복 오답도, 취약·경계 차시도 없습니다.</div>':''}
+          ${(cls.weak.length>4||cls.edge.length>3)?`<div class="mini" style="margin-top:6px">취약 ${cls.weak.length} · 경계 ${cls.edge.length} 차시 — 전체는 단원 진도의 칸 색으로</div>`:''}
         </div>
 
         <div class="q-card"><h3><span class="q-num">4</span>앞으로 무엇을</h3>
-          ${steps.length ? steps.map(stepCard).join('') : '<div class="empty-note">지금 권할 다음 걸음이 없습니다 — 새 차시로 나아가면 됩니다.</div>'}
+          ${steps.length ? steps.map(stepCard).join('') : '<div class="empty-note">아직 기록이 없어 권할 다음 걸음이 없습니다 — 첫 차시를 열어 주세요.</div>'}
         </div>
 
       </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-h">📚 단원 진도</div>
+      <div class="sec-sub">손댄 단원만 보입니다. 칸 = 차시(단원 순서), 색 = 도달, 진한 테두리 = 끝까지 완료. 누적 기준.</div>
+      ${units.length ? `<div class="units">${units.map(unitCard).join('')}</div>` : '<div class="empty-note">아직 시작한 단원이 없습니다.</div>'}
     </div>
 
     <div class="sec no-print cmt">
@@ -370,10 +596,11 @@ async function loadStudent(studentId){
       <textarea id="cmt-text" placeholder="예) 이번 주 받아쓰기에서 스스로 고쳐 쓰는 모습이 좋았습니다.">${esc(cmt?cmt.comment:'')}</textarea>
       <div class="cmt-foot">
         <label><input type="checkbox" id="cmt-vis" ${cmt&&cmt.visible_to_parent?'checked':''}> 학부모에게 보이기</label>
-        <span class="cmt-msg" id="cmt-msg"></span>
+        <span class="cmt-msg" id="cmt-msg">${cmt&&cmt.updated_at?`마지막 저장 ${new Date(cmt.updated_at).toLocaleDateString('ko-KR')}`:''}</span>
         <button class="save" onclick="saveComment('${esc(studentId)}')">저장</button>
       </div>
-    </div>`;
+    </div>
+    ${cmt&&cmt.comment?`<div class="print-cmt">✍️ 교사 한마디 — ${esc(cmt.comment)}</div>`:''}`;
 }
 
 async function saveComment(studentId){
@@ -387,13 +614,27 @@ async function saveComment(studentId){
 }
 
 // 근거 열람 — 판정의 모든 근거는 DB 행으로 증명 (설계 §1 불변식)
+// 문항별: 이력(과거→최근 ○×) · 마지막 답 · 평균 시간. 아래에 완료 회차 점수.
 function openEv(lessonId){
-  const rows = (_evCache[lessonId]||[]).filter(r=>r.question_id!=='_lesson_summary_').slice(0,40);
-  const p = KR.prettyLesson(lessonId);
-  document.getElementById('ev-title').textContent = p.label + ' — 시도 목록';
-  document.getElementById('ev-body').innerHTML = rows.length ? rows.map(r=>
-    `<div class="ev-row"><span>${esc(r.question_id)} · ${new Date(r.earned_at).toLocaleDateString('ko-KR')}</span><span class="${r.is_correct?'ok':'no'}">${r.is_correct?'정답':'오답'}</span></div>`
-  ).join('') : '<div class="empty-note">최근 3천 건 내 시도가 없습니다.</div>';
+  const rows = (_evCache[lessonId]||[]).slice().sort((a,b)=>new Date(a.earned_at)-new Date(b.earned_at));
+  const i = KR.lesson(lessonId); const m = _evMastery[lessonId];
+  const byQ = {}; const runs = [];
+  rows.forEach(r => {
+    if(r.question_id === '_lesson_summary_'){ runs.push(r); return; }
+    if(r.is_correct===null||r.is_correct===undefined) return;
+    const g = byQ[r.question_id] = byQ[r.question_id] || { q:r.question_id, hist:[], sec:0, n:0, last:null, lastAt:null };
+    g.hist.push(r.is_correct); g.sec += Number(r.time_spent_sec)||0; g.n++; g.last = r.is_correct; g.lastAt = r.earned_at;
+  });
+  const numOf = s => { const mm = String(s).match(/(\d+)\s*$/); return mm ? Number(mm[1]) : 0; };
+  const qs = Object.values(byQ).sort((a,b)=> numOf(a.q) - numOf(b.q));
+  document.getElementById('ev-title').textContent = i.label + ' — 근거';
+  document.getElementById('ev-sum').innerHTML = m
+    ? `판정 <span class="pill ${m.status}">${statusKo(m.status)}</span> · 문항 ${m.q_n}개 중 마지막 답 정답 ${m.q_latest_ok}개 (${KR.pct(m.q_latest_ok,m.q_n)??'—'}%) · 총 ${m.attempts_total}번 답함 · 완료 ${m.runs||0}회 · 시간 ${KR.fmtDur(m.time_sec)}<br><span class="mini">아래 표는 최근 4천 건 범위. 판정은 DB 뷰(report_lesson_mastery)가 전체 기록으로 계산합니다.</span>`
+    : '<span class="mini">집계 뷰에 아직 없는 차시(요약만 있거나 집계 대기)</span>';
+  document.getElementById('ev-body').innerHTML = qs.length ? `<table class="ev-table"><thead><tr><th>문항</th><th>이력 (과거→최근)</th><th>마지막 답</th><th class="num">평균 시간</th></tr></thead><tbody>${qs.map(g=>
+    `<tr><td>${esc(qNo(g.q))}</td><td class="hist">${g.hist.map(h=>h?'<span class="o">○</span>':'<span class="x">×</span>').join('')} <span class="mini">${g.n}회</span></td><td class="${g.last?'ok':'no'}">${g.last?'정답':'오답'} <span class="mini">${new Date(g.lastAt).toLocaleDateString('ko-KR')}</span></td><td class="num">${g.sec&&g.n?Math.round(g.sec/g.n)+'초':'—'}</td></tr>`).join('')}</tbody></table>`
+    : '<div class="empty-note">최근 기록 범위 안에 문항 시도가 없습니다.</div>';
+  if(runs.length) document.getElementById('ev-body').innerHTML += `<div class="ev-runs">완료 회차: ${runs.map(r=>`${new Date(r.earned_at).toLocaleDateString('ko-KR')}${r.max_score?` ${r.score}/${r.max_score}`:''}${r.time_spent_sec?` (${KR.fmtDur(r.time_spent_sec)})`:''}`).join(' · ')}</div>`;
   document.getElementById('ev-modal').classList.add('on');
 }
 
