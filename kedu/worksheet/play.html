@@ -22,6 +22,8 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 /* 상단 */
 .bar{display:flex;align-items:center;gap:12px;padding:4px 0 16px}
+.bar .home{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--rule);background:var(--card);border-radius:8px;padding:9px 12px;font-size:15px;text-decoration:none;color:var(--ink-soft);line-height:1}
+.bar .home:hover{border-color:var(--rule-strong)}
 .bar button{border:1px solid var(--rule);background:var(--card);border-radius:8px;padding:9px 14px;font-size:15px;color:var(--ink-soft)}
 .bar button:hover{border-color:var(--rule-strong)}
 .tts.on{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
@@ -158,6 +160,7 @@ body.paper{background:#fff}
 </head>
 <body>
 <div class="app" id="app"></div>
+<script src="/kedu_back.js" data-mode="context"></script>
 
 <script>
 /* ===================== 케이학습지 렌더러 v0.1 =====================
@@ -171,6 +174,8 @@ const MODE = qs.get('mode') || 'screen';
 const SEED = Number(qs.get('seed')) || 1;
 const NUMWORD = ['영','하나','둘','셋','넷','다섯','여섯','일곱','여덟','아홉'];
 const STORE = 'kws:' + SET;
+const FROM_T = !!(window.KEDU_BACK && window.KEDU_BACK.fromTeacher);
+const BACK = FROM_T ? {label:'선생님 도구', href:'/?role=teacher'} : {label:'케이에듀 홈', href:'/'};
 
 /* 시드 난수 — 같은 시드면 같은 배치(자동 저장·복원 일관성) */
 function rng(seed){ let s = seed >>> 0 || 1; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
@@ -285,14 +290,14 @@ function renderCover(resume){
   app.innerHTML = `<div class="cover"><div class="badge">${DATA.kind === 'lesson_challenge' ? '도전 학습지' : '차시 학습지'}</div>
    <h1>${esc(DATA.title.replace(/ — .*/, ''))}</h1><p>1학년 수학 · ${Q.length}문제</p>
    ${resume ? `<p>${done}번까지 풀었어요. 이어서 할까요?</p><div class="row"><button class="big" data-nav="resume">이어서 풀기</button><button class="big ghost" data-nav="restart">처음부터</button></div>` : `<button class="big" data-nav="resume">시작</button>`}
-   <div class="alt"><a href="play.html?set=${SET}&mode=paper">시험지(A4)로 풀기</a><span>·</span><a href="./">학습지 목록</a></div></div>`;
+   <div class="alt"><a href="play.html?set=${SET}&mode=paper">시험지(A4)로 풀기</a><span>·</span><a href="./">학습지 목록</a><span>·</span><a href="${BACK.href}">${esc(BACK.label)}</a></div></div>`;
 
 }
 
 /* ---------- 문항 화면 ---------- */
 function renderQ(){
   const q = Q[idx]; const r = rng(SEED * 97 + idx); state.started = Date.now();
-  app.innerHTML = `<div class="bar"><button class="back" data-nav="back">← 앞으로</button><div class="dots">${Q.map((_, i) => `<i class="${i === idx ? 'now' : state.answers[i] ? (state.answers[i].ok ? 'done' : (state.answers[i].pending ? 'done' : 'wrong')) : ''}"></i>`).join('')}</div><button class="tts ${TTS.on ? 'on' : ''}" data-nav="tts" aria-label="읽어주기">🔊</button></div>
+  app.innerHTML = `<div class="bar"><a class="home" href="${BACK.href}" title="${esc(BACK.label)}" aria-label="${esc(BACK.label)}">🏠</a><button class="back" data-nav="back">← 앞으로</button><div class="dots">${Q.map((_, i) => `<i class="${i === idx ? 'now' : state.answers[i] ? (state.answers[i].ok ? 'done' : (state.answers[i].pending ? 'done' : 'wrong')) : ''}"></i>`).join('')}</div><button class="tts ${TTS.on ? 'on' : ''}" data-nav="tts" aria-label="읽어주기">🔊</button></div>
    <div class="q"><span class="num">${idx + 1}번${q.variant ? ' · 다시' : ''}</span><div class="stem" id="stem">${esc(q.stem)}</div><div class="asset">${drawAsset(q.asset, r)}</div><div id="ans"></div><div id="fb"></div></div>`;
 
   TTS.speak(q.stem);
@@ -383,7 +388,7 @@ function renderFinish(){
    <p>${Q.length}문제 중 ${okN}문제를 맞혔어요${pend ? ` · ${pend}문제는 선생님이 확인해요` : ''}</p>
    ${topMis ? `<div class="weak">이번에 연습할 것 하나 — <b>${MISNAME[topMis[0]] || '다시 차근차근 세기'}</b></div>` : ''}
    <div class="row">${wrong.length ? `<button class="big" data-nav="retry">다시 해볼까? (${wrong.length})</button>` : ''}<button class="big ghost" data-nav="again">처음부터</button></div>
-   <div class="alt"><a href="play.html?set=${SET}&mode=paper">시험지(A4)로 풀기</a><span>·</span><a href="./">학습지 목록</a></div></div>`;
+   <div class="alt"><a href="play.html?set=${SET}&mode=paper">시험지(A4)로 풀기</a><span>·</span><a href="./">학습지 목록</a><span>·</span><a href="${BACK.href}">${esc(BACK.label)}</a></div></div>`;
   TTS.speak(`${label}. ${Q.length}문제 중 ${okN}문제를 맞혔어요.` + (topMis ? ` 이번에 연습할 것은 ${MISNAME[topMis[0]] || ''}` : ''));
   window.__retryFrom = wrong;
 }
@@ -436,7 +441,7 @@ function renderPaper(){
      const mis = q.options ? x.opts.map((o, k) => o.mis ? `${circ[k]}→${o.mis}` : '').filter(Boolean).join(' ') : (q.reason_options ? q.reason_options.filter(o => o.mis).map(o => o.mis).join(' ') : '');
      return `<tr><td>${i + 1}</td><td>D${q.difficulty}</td><td>${q.kind}</td><td>${ans}</td><td>${q.concept}</td><td>${mis}</td></tr>`; }).join('')}</table>
    <p style="font-size:12px;color:#555;margin-top:14px">오개념 코드: M01 세기 누락·중복 · M02 수 읽기 혼동 · M03 기수성 · M05 기준 무시 · M06 순서 혼동 · M10 크기로 비교 (정본: handoff/kedu/worksheet/g1_math_u1/개념트리_오개념.md)</p></div>`;
-  app.innerHTML = `<div class="toolbar"><button onclick="window.print()">인쇄 / PDF 저장</button><button onclick="location.href='play.html?set=${SET}'">화면으로 풀기</button><button onclick="location.href='./'">학습지 목록</button></div>` + page(shuffled.slice(0, half), 0, 1) + page(shuffled.slice(half), half, 2) + key;
+  app.innerHTML = `<div class="toolbar"><button onclick="window.print()">인쇄 / PDF 저장</button><button onclick="location.href='play.html?set=${SET}'">화면으로 풀기</button><button onclick="location.href='./'">학습지 목록</button><button onclick="location.href='${BACK.href}'">${esc(BACK.label)}</button></div>` + page(shuffled.slice(0, half), 0, 1) + page(shuffled.slice(half), half, 2) + key;
 }
 </script>
 </body>

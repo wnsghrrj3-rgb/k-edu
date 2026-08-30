@@ -61,7 +61,7 @@
     '/grade4/semester1/science/','/grade4/semester1/social/','/grade5/semester1/korean/',
     '/grade5/semester1/math/','/grade5/semester1/science/','/grade5/semester1/social/',
     '/grade6/semester1/math/','/grade6/semester1/science/','/hub2/','/kbattle/','/kedu/activities/',
-    '/kedu/quiz/','/kedu/teacher/','/kedu/teacher/tools3/',
+    '/kedu/quiz/','/kedu/teacher/','/kedu/teacher/tools3/','/kedu/worksheet/',
     '/kpark/','/kpark/board/bolt/','/kpark/board/four/',
     '/kpark/board/ladder/','/kpark/board/land/','/kpark/board/mafia/','/kpark/board/mooncode/',
     '/kpark/board/rainbow/','/kpark/board/scale/','/kpark/board/tilemagic/','/kpark/board/travel/',
@@ -86,7 +86,8 @@
 
   function pathOnly(u) { var i = u.indexOf('?'); return i < 0 ? u : u.slice(0, i); }
   function dirOf(p) { return p.slice(0, p.lastIndexOf('/') + 1); }
-  function isIndex(p) { return p === '/' || /\/index\.html$/.test(p); }
+  /* 디렉터리 주소(/kedu/worksheet/)도 그 폴더의 index 로 본다 — 안 그러면 자기 자신을 부모로 지목한다 (2026-08-31) */
+  function isIndex(p) { return p === '/' || /\/index\.html$/.test(p) || /\/$/.test(p); }
 
   /* 구조상 부모 허브 — 없으면 null(=자격 홈이 맡는다) */
   function hubOf(p) {
