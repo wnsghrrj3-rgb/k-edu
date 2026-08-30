@@ -285,10 +285,82 @@
     return !!state.profile;
   };
 
+  // ============================================
+  // 엔진 자동 배선 (v2.1, 2026-08-31) — 케이학습리포트 재료
+  //   차시 페이지가 recordAnswer/recordLessonEnd 를 직접 부르지 않아도,
+  //   알려진 엔진 가족의 상태 전이를 잡아 같은 기록을 남긴다. 페이지 수정 0.
+  //   ① KA 가족(수학·과학 3~6학년 등 469차시): getQState(qid) 상태의
+  //      solved=true → 정답, wrongCount++ → 오답, saveProgress(true) → 차시 끝
+  //   ② 사회 state.q 가족(5·6학년 사회 41차시): state.q[i].done=true → 정답,
+  //      wrongCount++ → 오답 (차시 끝은 페이지가 직접 recordLessonEnd 호출)
+  //   끄기: <meta name="kedu-autowire" content="off">
+  //   중복 방지: 페이지가 recordAnswer 를 직접 부르는 가족은 위 구조가 없다
+  //   (tests/test_kedu_autowire.js 가 정적으로 강제).
+  // ============================================
+  function G(name){ try { return (0, eval)(name); } catch(e){ return undefined; } }
+
+  function hookProp(obj, prop, onChange){
+    if(!obj || typeof obj !== 'object') return;
+    var d = Object.getOwnPropertyDescriptor(obj, prop);
+    if(!d || !('value' in d) || !d.configurable) return;   // 이미 접근자면 손대지 않음
+    var v = d.value;
+    Object.defineProperty(obj, prop, {
+      enumerable: true, configurable: true,
+      get: function(){ return v; },
+      set: function(nv){ var ov = v; v = nv; try { onChange(ov, nv); } catch(e){} }
+    });
+  }
+
+  function autowireKA(){
+    if(typeof window.getQState !== 'function' || typeof window.saveProgress !== 'function') return false;
+    var orig = window.getQState;
+    var hooked = new WeakSet();
+    window.getQState = function(qid){
+      var st = orig.apply(this, arguments);
+      if(st && typeof st === 'object' && !hooked.has(st)){
+        hooked.add(st);
+        hookProp(st, 'solved', function(ov, nv){ if(nv === true && ov !== true) window.kedu.recordAnswer(qid, true, null, null); });
+        hookProp(st, 'wrongCount', function(ov, nv){ if(typeof nv === 'number' && nv > (ov || 0)) window.kedu.recordAnswer(qid, false, null, null); });
+      }
+      return st;
+    };
+    var origSave = window.saveProgress, ended = false;
+    window.saveProgress = function(done){
+      if(done && !ended){
+        ended = true;
+        var total = 0;
+        document.querySelectorAll('[data-q-points]').forEach(function(el){ total += parseInt(el.getAttribute('data-q-points'), 10) || 0; });
+        var sc = G('score'); if(typeof sc !== 'number') sc = 0;
+        window.kedu.recordLessonEnd(sc, total);
+      }
+      return origSave.apply(this, arguments);
+    };
+    return true;
+  }
+
+  function autowireSocial(){
+    var st = G('state');
+    if(!st || typeof st !== 'object' || !Array.isArray(st.q)) return false;
+    st.q.forEach(function(qs, i){
+      if(!qs || typeof qs !== 'object') return;
+      var qid = 'q' + (i + 1);
+      hookProp(qs, 'done', function(ov, nv){ if(nv === true && ov !== true) window.kedu.recordAnswer(qid, true, null, null); });
+      hookProp(qs, 'wrongCount', function(ov, nv){ if(typeof nv === 'number' && nv > (ov || 0)) window.kedu.recordAnswer(qid, false, null, null); });
+    });
+    return true;
+  }
+
+  function autowire(){
+    var meta = document.querySelector('meta[name="kedu-autowire"]');
+    if(meta && /^off$/i.test(meta.content || '')) return;
+    if(!document.querySelector('meta[name="kedu-lesson-id"]')) return;  // 차시 메타 없는 페이지는 대상 아님
+    try { window.kedu.autowired = autowireKA() ? 'ka' : (autowireSocial() ? 'social' : null); } catch(e){ window.kedu.autowired = null; }
+  }
+
   // DOM 로드 후 실행
   if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', function(){ init(); autowire(); });
   } else {
-    init();
+    init(); autowire();
   }
 })();
