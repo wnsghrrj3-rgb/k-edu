@@ -997,8 +997,18 @@
     ctx.restore();
   }
 
+  /* 생성 배경음악 — 파일 없이 스펙만으로 소스를 만든다(KMV_GEN). 분석도 필요 없다(비트·파형을 이미 안다). */
+  function addGen(meta) {
+    const G = g.KMV_GEN; if (!G || !meta || !meta.gen) return null;
+    const gs = G.source(meta.gen);
+    const src = new AudioSource(meta.id, { pcm: gs });
+    src.gen = meta.gen; src.beats = gs.beats.slice(); src.peaks = gs.peaks(30); src.frames = Math.max(1, Math.round(gs.durSec * 30)); src.analyzed = true;
+    SRC.set(meta.id, src);
+    return meta;
+  }
+
   g.KMV_MEDIA = {
-    supported, open, analyze, drawFit, isAudioFile, limits, setAnalyzePaused,
+    supported, open, analyze, addGen, drawFit, isAudioFile, limits, setAnalyzePaused,
     stopStreams: () => { SRC.forEach(s => { if (s.stopStream) s.stopStream(); }); },
     get: id => SRC.get(id) || null,
     has: id => SRC.has(id),

@@ -1415,13 +1415,90 @@
   $('duckDepth').oninput = e => { if (duckStart == null) duckStart = P.data.audio.ducking.depth; P.data.audio.ducking.depth = +e.target.value; $('duckDepthV').textContent = '-' + e.target.value + 'dB'; };
   $('duckDepth').onchange = e => { const v = +e.target.value; P.data.audio.ducking.depth = duckStart == null ? 12 : duckStart; duckStart = null; P.setDucking({ depth: v }); };
   $('tgBeat').onclick = () => { beatSnap = !beatSnap; $('tgBeat').classList.toggle('on', beatSnap); dirty = true; draw(); toast(beatSnap ? '박자 스냅 켬 — 클립 경계가 비트 마커에 붙어요' : '박자 스냅 끔', 1600); };
+  /* ---------- 생성 배경음악 (설계 v1 §2) ----------
+     케이무비가 직접 만드는 음악 — 파일이 없으니 미디어 메타에 스펙만 남고 새로고침 복원도 스펙으로 된다.
+     비트 격자는 BPM 그대로라 몽타주·박자 스냅이 어긋나지 않는다. */
+  const GEN = window.KMV_GEN, SFX = window.KMV_SFX;
+  const genSpec = { mood: 'morning', bpm: 0, key: '', seed: 1, len: 'video' };
+  let genPrev = null;
+  function genMood() { return GEN.mood(genSpec.mood); }
+  function genLenSec() {
+    if (genSpec.len === 'video') { const t = P.total(); return t ? t / FPS : 0; }
+    return +genSpec.len;
+  }
+  function genSpecNow() { const M = genMood(); return { mood: M.id, bpm: genSpec.bpm || M.bpm.def, key: genSpec.key || M.keys[0], seed: genSpec.seed, durSec: Math.max(8, genLenSec() || 60) }; }
+  function stopGenPrev() { if (genPrev) { try { genPrev.stop(); } catch (e) {} genPrev = null; } }
+  if (GEN) {
+    GEN.MOODS.forEach(m => segBtn($('genMoodSeg'), m.id, m.ko + ' — ' + m.desc, () => { genSpec.mood = m.id; genSpec.bpm = 0; genSpec.key = ''; refreshGenPanel(); }, m.desc));
+    ['video', '60', '120'].forEach((k, i) => segBtn($('genLenSeg'), k, ['영상 길이', '1분', '2분'][i], () => { genSpec.len = k; refreshGenPanel(); }));
+    $('genBpm').oninput = e => { genSpec.bpm = +e.target.value; $('genBpmV').textContent = e.target.value + ' BPM'; };
+    $('btnGenShuffle').onclick = () => { genSpec.seed = (genSpec.seed + 1) % 9973; stopGenPrev(); toast('다시 섞었어요 — 미리듣기로 확인해 보세요', 1600); };
+    $('btnGenPrev').onclick = async () => {
+      stop(); stopGenPrev();
+      const A = window.KMV_AUDIO, actx = A.ctx();
+      if (actx.state !== 'running') { try { await actx.resume(); } catch (e) {} }
+      const sp = genSpecNow(), src = GEN.source(sp), sec = Math.min(6, src.durSec);
+      const n = Math.round(sec * src.sr), r = src.read(0, n);
+      const buf = actx.createBuffer(2, n, src.sr);
+      buf.copyToChannel(r.ch[0], 0); buf.copyToChannel(r.ch[1], 1);
+      const node = actx.createBufferSource(); node.buffer = buf; node.connect(actx.destination); node.start();
+      genPrev = node; node.onended = () => { if (genPrev === node) genPrev = null; };
+      toast(genMood().ko + ' · ' + sp.bpm + 'BPM — 앞 ' + Math.round(sec) + '초', 1800);
+    };
+    $('btnGenPlace').onclick = () => {
+      stop(); stopGenPrev();
+      const sp = genSpecNow();
+      if (genSpec.len === 'video' && !P.total()) return toast('영상이 없어요 — 길이를 1분·2분으로 골라 주세요');
+      const id = 'gen' + Date.now().toString(36);
+      const { meta } = GEN.mediaMeta(sp, id);
+      M.addGen(meta); P.addMedia(meta);
+      const a = P.addA2(id, 0);
+      if (a) { const tot = P.total(); if (tot && meta.dur > tot) P.updateA2(a.id, { out: tot, fadeOut: Math.min(2 * FPS, tot) }, { commit: false }); selectA2(a.id); }
+      refreshBin(); refreshMusicPanel(); dirty = true; draw();
+      toast('배경음악을 만들어 놓았어요 — ' + genMood().ko + ' · ' + sp.bpm + 'BPM', 2400);
+    };
+  }
+  function refreshGenPanel() {
+    if (!GEN) return;
+    const M0 = genMood();
+    Array.from($('genMoodSeg').children).forEach(b => b.classList.toggle('on', b.dataset.k === genSpec.mood));
+    Array.from($('genLenSeg').children).forEach(b => b.classList.toggle('on', b.dataset.k === genSpec.len));
+    const bpmEl = $('genBpm'); bpmEl.min = M0.bpm.min; bpmEl.max = M0.bpm.max;
+    if (document.activeElement !== bpmEl) { bpmEl.value = genSpec.bpm || M0.bpm.def; $('genBpmV').textContent = bpmEl.value + ' BPM'; }
+    const ks = $('genKeySeg');
+    if (ks.dataset.mood !== M0.id) {
+      ks.innerHTML = ''; ks.dataset.mood = M0.id;
+      M0.keys.forEach(k => { const K = GEN.KEYS.find(x => x.id === k); segBtn(ks, k, K ? K.ko : k, () => { genSpec.key = k; refreshGenPanel(); }); });
+    }
+    const cur = genSpec.key || M0.keys[0];
+    Array.from(ks.children).forEach(b => b.classList.toggle('on', b.dataset.k === cur));
+  }
+
+  /* ---------- 효과음 (설계 v1 §3) ---------- */
+  const SFX_GAINS = [[0.6, '조용히'], [1, '그대로'], [1.6, '크게']];
+  if (SFX) {
+    $('tgSfx').onclick = () => { const cfg = P.data.audio.sfx || { on: false }; P.setSfx({ on: !cfg.on }); toast(!cfg.on ? '자동 효과음 켬 — 전환·타이틀·자막에 소리가 붙어요' : '자동 효과음 끔', 1800); };
+    SFX_GAINS.forEach(([v, l]) => segBtn($('sfxGainSeg'), String(v), l, () => P.setSfx({ gain: v })));
+    SFX.LIST.forEach(d => segBtn($('sfxTrySeg'), d.id, d.ko, () => { stop(); SFX.preview(d.id); }, d.ko));
+  }
+  function refreshSfxPanel() {
+    if (!SFX) return;
+    const cfg = P.data.audio.sfx || { on: false, gain: 1 };
+    $('tgSfx').classList.toggle('on', !!cfg.on);
+    $('rowSfxGain').classList.toggle('hidden', !cfg.on);
+    const n = cfg.on ? SFX.events().length : 0;
+    Array.from($('sfxGainSeg').children).forEach(b => b.classList.toggle('on', Math.abs(+b.dataset.k - (cfg.gain == null ? 1 : cfg.gain)) < 0.01));
+    const note = $('genNote'); if (note && cfg.on) note.dataset.n = n;
+    $('rowSfxTry').title = cfg.on ? '지금 타임라인에 붙은 효과음 ' + n + '개' : '';
+  }
+
   function refreshMusicPanel() {
     const a = selMusic();
     $('musicBody').classList.toggle('hidden', !a); $('musicNone').classList.toggle('hidden', !!a || P.data.A2.length > 0);
     const D = P.data.audio.ducking; $('tgDuck').classList.toggle('on', !!D.on); $('rowDuck').classList.toggle('hidden', !D.on);
     if (document.activeElement !== $('duckDepth')) { $('duckDepth').value = D.depth == null ? 12 : D.depth; $('duckDepthV').textContent = '-' + $('duckDepth').value + 'dB'; }
     $('tgBeat').classList.toggle('on', beatSnap);
-    refreshAmbPanel(); refreshMontPanel();
+    refreshAmbPanel(); refreshMontPanel(); refreshGenPanel(); refreshSfxPanel();
     if (!a) return;
     const m = P.media(a.media), src = M.get(a.media);
     $('mName').textContent = m.name; $('mName').title = m.name;
@@ -1619,6 +1696,7 @@
     for (let i = 0; i < json.media.length; i++) {
       const m = json.media[i]; OV.set(i / json.media.length, m.name);
       try {
+        if (m.gen) { const r = M.addGen(m); if (r) { ok.push(m); continue; } }
         let blob = null;
         if (m.origin && SH && SH.active) blob = await SH.restoreFile(m.origin, { status: t => OV.set(i / json.media.length, t), progress: (p, l) => OV.set((i + p) / json.media.length, l) });
         else { const rec = await DB.getMedia(m.blobKey || m.id); blob = rec && rec.blob; }

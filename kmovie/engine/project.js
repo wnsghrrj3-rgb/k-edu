@@ -38,7 +38,7 @@
       v: 1, fps: FPS, w: W, h: H, theme: 'geumseong',
       media: [], V: [], V2: [], A1: [], A2: [], P: [], S: [], markers: [],
       look: { lut: 'cinema-navy', strength: 0.6, autoExpose: false, target: { luma: 0.48, contrast: 1 }, cinemaBar: false, vignette: 0 },
-      audio: { ducking: { on: true, depth: 12 }, ambience: { on: false, src: null, gain: 1 } },
+      audio: { ducking: { on: true, depth: 12 }, ambience: { on: false, src: null, gain: 1 }, sfx: { on: false, gain: 1 } },
     };
   }
 
@@ -513,6 +513,8 @@
   }
   function removeA2(id) { const i = P.A2.findIndex(x => x.id === id); if (i < 0) return; commit(); P.A2.splice(i, 1); emit('A2'); }
   function setDucking(patch) { commit(); Object.assign(P.audio.ducking, patch); emit('A2'); }
+  /* audio.sfx { on, gain } — 전환·부품·자막에 붙는 효과음 전체 켜기/세기 (설계 v1 §3) */
+  function setSfx(patch, opt) { if (!(opt && opt.commit === false)) commit(); if (!P.audio.sfx) P.audio.sfx = { on: false, gain: 1 }; Object.assign(P.audio.sfx, patch); emit('A2'); }
   function a2At(t) { for (const x of P.A2) if (t >= x.at && t < x.at + (x.out - x.in)) return x; return null; }
 
 
@@ -582,6 +584,7 @@
     P.P = (P.P || []).map(x => Object.assign({ p: {} }, x));
     P.markers = (P.markers || []).map(x => Object.assign({ text: '', color: 'gold' }, x));
     if (!P.audio) P.audio = b.audio; if (!P.audio.ducking) P.audio.ducking = { on: true, depth: 12 };
+    if (!P.audio.sfx) P.audio.sfx = { on: false, gain: 1 }; if (P.audio.sfx.gain == null) P.audio.sfx.gain = 1;
     if (!P.audio.ambience) P.audio.ambience = { on: false, src: null, gain: 1 }; if (P.audio.ambience.src && !media(P.audio.ambience.src.media)) P.audio.ambience.src = null; if (P.audio.ambience.gain == null) P.audio.ambience.gain = 1;
     relayout(); undoStack.length = 0; redoStack.length = 0; emit('load');
   }
@@ -596,7 +599,7 @@
     setLook, setProjectLook, setKenburns, setTransition, setTheme,
     addS, setS, addManyS, subtitle, updateS, removeS, clearS, subtitleAt,
     part, addP, updateP, removeP, clearP, partsAt, partDefault,
-    a2, addA2, updateA2, trimA2, removeA2, setDucking, a2At,
+    a2, addA2, updateA2, trimA2, removeA2, setDucking, setSfx, a2At,
     v2, addV2, updateV2, trimV2, removeV2, v2At, V2_POS, V2_SIZE,
     setAmbience, montage,
     slip, roll, slide, lift, insertRange, removeClips, moveClips, pasteClips, copyClips,

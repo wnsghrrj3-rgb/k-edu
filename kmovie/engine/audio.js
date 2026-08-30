@@ -272,6 +272,32 @@
     return nodes;
   }
 
+  /* ---------- 효과음 SFX ----------
+     KMV_SFX.events() 가 뽑은 지점마다 짧은 합성 버퍼를 하나씩. 전용 게인(프로젝트 audio.sfx.gain)
+     한 단을 거쳐 A1·A2 와 섞인다 — 미리보기와 내보내기가 같은 함수를 쓴다. */
+  function scheduleSfx(actx, dest, fromFrame, t0, untilFrame, capFrame) {
+    const P = g.KMV_PROJECT, FPS = P.FPS, S = g.KMV_SFX, nodes = [];
+    if (!S) return nodes;
+    const cfg = P.data.audio && P.data.audio.sfx;
+    if (!cfg || !cfg.on) return nodes;
+    const master = cfg.gain == null ? 1 : cfg.gain;
+    for (const ev of S.events()) {
+      if (ev.at < fromFrame) continue;
+      if (untilFrame != null && ev.at >= untilFrame) continue;
+      const buf = S.buffer(actx, ev.id); if (!buf) continue;
+      const when = t0 + (ev.at - fromFrame) / FPS;
+      let dur = buf.duration;
+      if (capFrame != null) { const room = (capFrame - ev.at) / FPS; if (room <= 0.005) continue; dur = Math.min(dur, room); }
+      const node = actx.createBufferSource(); node.buffer = buf;
+      const gn = actx.createGain(); gn.gain.value = master * (ev.gain == null ? 1 : ev.gain) * 0.6;
+      if (dur < buf.duration) { gn.gain.setValueAtTime(gn.gain.value, when + Math.max(0, dur - 0.02)); gn.gain.linearRampToValueAtTime(0, when + dur); }
+      node.connect(gn); gn.connect(dest);
+      node.start(when, 0, dur);
+      nodes.push(node);
+    }
+    return nodes;
+  }
+
   /* ---------- 비트 마커 (onset 휴리스틱) → 초 배열 ----------
      env = 저역 포락(hop 단위 RMS), envRate = 초당 env 개수. 통 버퍼(beats)와
      스트리밍 분석(KMV_MEDIA pcmScan·PcmWav.scan)이 같은 봉우리 뽑기를 쓴다. */
@@ -324,7 +350,7 @@
     try { await ensureRange(fromFrame, h); } catch (e) {}
     if (gen !== myGen) return null;
     const t0 = a.currentTime + 0.06;
-    playing = { fromFrame, t0, nodes: scheduleA1(a, a.destination, fromFrame, t0, h, h).concat(scheduleA2(a, a.destination, fromFrame, t0, h, h), scheduleAmb(a, a.destination, fromFrame, t0, h, h)) };
+    playing = { fromFrame, t0, nodes: scheduleA1(a, a.destination, fromFrame, t0, h, h).concat(scheduleA2(a, a.destination, fromFrame, t0, h, h), scheduleAmb(a, a.destination, fromFrame, t0, h, h), scheduleSfx(a, a.destination, fromFrame, t0, h, h)) };
     const me = playing;
     let busy = false;
     const pump = async () => {
@@ -337,7 +363,7 @@
         await ensureRange(w0, w1);
         if (gen !== myGen || playing !== me) return;
         const tw = t0 + (w0 - fromFrame) / FPS;
-        me.nodes.push(...scheduleA1(a, a.destination, w0, tw, w1, w1), ...scheduleA2(a, a.destination, w0, tw, w1, w1), ...scheduleAmb(a, a.destination, w0, tw, w1, w1));
+        me.nodes.push(...scheduleA1(a, a.destination, w0, tw, w1, w1), ...scheduleA2(a, a.destination, w0, tw, w1, w1), ...scheduleAmb(a, a.destination, w0, tw, w1, w1), ...scheduleSfx(a, a.destination, w0, tw, w1, w1));
         h = w1;
       } finally { busy = false; }
     };
@@ -404,6 +430,7 @@
       scheduleA1(oac, oac.destination, w0, 0, w1);
       scheduleA2(oac, oac.destination, w0, 0, w1);
       scheduleAmb(oac, oac.destination, w0, 0, w1);
+      scheduleSfx(oac, oac.destination, w0, 0, w1);
       const buf = await oac.startRendering();
       if (onChunk) await onChunk(buf, w0); else chunks.push(buf);
     }
@@ -442,6 +469,6 @@
     return out.filter(s => s.dur >= min);
   }
 
-  g.KMV_AUDIO = { ctx, decode, play, playSource, stop, now, isPlaying, nodeCount: () => (playing ? playing.nodes.length : 0), renderMix, ensureRange, segments, scheduleA1, scheduleA2, scheduleAmb, findRoomTone, ambGaps, ambBuffer, voice, beats, beatsFromEnv, duckSpans, XF, SR, AMB_SEC,
+  g.KMV_AUDIO = { ctx, decode, play, playSource, stop, now, isPlaying, nodeCount: () => (playing ? playing.nodes.length : 0), renderMix, ensureRange, segments, scheduleA1, scheduleA2, scheduleAmb, scheduleSfx, findRoomTone, ambGaps, ambBuffer, voice, beats, beatsFromEnv, duckSpans, XF, SR, AMB_SEC,
     _tune: o => { if (o && o.win > 0) WIN_S = o.win; if (o && o.top > 0) TOP_S = o.top; } };
 })(typeof window !== 'undefined' ? window : globalThis);

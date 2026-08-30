@@ -79,7 +79,7 @@
         const sup = await AudioEncoder.isConfigSupported({ codec: 'mp4a.40.2', sampleRate: SRr, numberOfChannels: 2, bitrate: 192000 });
         acodecOK = !!sup.supported;
       } catch (e) {}
-      const wantAudio = acodecOK && (P.data.A1.length || (P.data.A2 && P.data.A2.length) || (P.data.audio && P.data.audio.ambience && P.data.audio.ambience.on && P.data.audio.ambience.src));
+      const wantAudio = acodecOK && (P.data.A1.length || (P.data.A2 && P.data.A2.length) || (P.data.audio && P.data.audio.ambience && P.data.audio.ambience.on && P.data.audio.ambience.src) || (P.data.audio && P.data.audio.sfx && P.data.audio.sfx.on));
 
       muxer = new g.Mp4Muxer.Muxer({
         target,
