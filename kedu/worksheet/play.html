@@ -139,6 +139,10 @@ body.paper{background:#fff}
 .pq .popts{margin:10px 0 0 30px;display:flex;flex-wrap:wrap;gap:10px 30px;font-size:15.5px}
 .pq .popts span::before{content:attr(data-n);display:inline-block;width:18px;height:18px;border:1px solid #666;border-radius:50%;text-align:center;line-height:16px;font-size:11px;margin-right:6px}
 .pq .pline{margin:12px 0 2px 30px;height:26px;border-bottom:1px solid #999;width:52%}
+.pq .pans{margin-top:10px;text-align:right;font-size:15px;color:#1A1A1A}
+.pq .pans em{font-style:normal;color:#666;margin-right:6px}
+.pq .pans .paren{display:inline-block;border-bottom:1px solid #1A1A1A;min-width:64px;text-align:center;margin:0 2px}
+.pq .pans .paren.wide{min-width:96px}
 .pq .pline.long{height:24px;width:100%;border-bottom:1px solid #999;margin-bottom:20px;box-shadow:0 24px 0 -23px #999,0 48px 0 -47px #999}
 .pq .pmatch{margin:12px 0 2px 30px;display:grid;grid-template-columns:104px 64px 104px;row-gap:14px;font-size:17px;align-items:center}
 .pq .pmatch .lft,.pq .pmatch .rgt{border:1px solid #999;border-radius:6px;text-align:center;padding:7px}
@@ -416,11 +420,12 @@ function renderPaper(){
   const title = DATA.title.replace(/ — .*/, ''); const sub = DATA.kind === 'lesson_challenge' ? '도전 학습지 ②' : '차시 학습지 ①';
   const half = Math.ceil(Qp.length / 2);
   const qhtml = (x, i) => { const q = x.q; let body = '';
-    if (q.kind === 'sa') body = `<div class="pline"></div>`;
-    else if (q.kind === 'essay') body = `<div class="pline long"></div>`;
+    const paren = (label, cls) => `<div class="pans"><em>${label}</em>(<span class="paren ${cls || ''}"></span>)</div>`;
+    if (q.kind === 'sa') body = paren('답', 'wide');
+    else if (q.kind === 'essay') body = `<div class="pans" style="text-align:left"><em>답</em>(<span class="paren"></span>)</div><div class="pline long"></div>`;
     else if (q.kind === 'match') body = `<div class="pmatch">${q.pairs.map(p => `<div class="lft">${paperOptText(p.l)}</div><div class="mid">·&nbsp;&nbsp;&nbsp;·</div><div class="rgt">${paperOptText(p.r)}</div>`).join('')}</div>`;
-    else if (q.kind === 'ox') body = `<div class="popts"><span data-n="O">맞아요</span><span data-n="X">틀려요</span></div><div class="popts" style="margin-top:6px">${q.reason_options.map((o, k) => `<span data-n="${circ[k]}">${esc(o.t)}</span>`).join('')}</div>`;
-    else body = `<div class="popts">${x.opts.map((o, k) => `<span data-n="${circ[k]}">${paperOptText(o.t)}</span>`).join('')}</div>`;
+    else if (q.kind === 'ox') body = `<div class="popts"><span data-n="O">맞아요</span><span data-n="X">틀려요</span></div><div class="popts" style="margin-top:8px">${q.reason_options.map((o, k) => `<span data-n="${circ[k]}">${esc(o.t)}</span>`).join('')}</div><div class="pans"><em>답</em>(<span class="paren"></span>)<em style="margin-left:14px">까닭</em>(<span class="paren"></span>)</div>`;
+    else body = `<div class="popts">${x.opts.map((o, k) => `<span data-n="${circ[k]}">${paperOptText(o.t)}</span>`).join('')}</div>` + paren('답');
     return `<div class="pq"><span class="pn">${i + 1}</span><span class="pstem">${esc(q.stem.replace(/\n/g, ' '))}</span>${paperAsset(q.asset)}${body}</div>`; };
   const page = (items, off, n) => `<div class="sheet"><div class="ph"><div><h1>${esc(title)}</h1><div class="meta">1학년 수학 · ${sub}</div></div><div class="idbox"><span>반</span><span>번호</span></div></div><div class="pbody">${items.map((x, i) => qhtml(x, off + i)).join('')}</div><div class="pfoot"><span>케이학습지 · keduclass.com</span><span>${n}</span></div></div>`;
   // 교사용 정답표
