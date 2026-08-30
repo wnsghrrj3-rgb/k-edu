@@ -122,26 +122,28 @@ textarea:focus{outline:2px solid var(--accent);outline-offset:0;background:var(-
 
 /* ===== 종이(A4) 모드 ===== */
 body.paper{background:#fff}
-.sheet{width:210mm;min-height:297mm;margin:0 auto;padding:17mm 17mm 14mm;background:#fff;color:#1A1A1A;font-family:'Gowun Dodum',sans-serif;position:relative}
+.sheet{width:210mm;height:297mm;margin:0 auto;padding:16mm 17mm 16mm;background:#fff;color:#1A1A1A;font-family:'Gowun Dodum',sans-serif;position:relative;display:flex;flex-direction:column;overflow:hidden}
+.pbody{flex:1;display:flex;flex-direction:column;justify-content:space-between;padding:4mm 0 8mm}
+.sheet.key-sheet{display:block;height:auto;min-height:297mm}
 .sheet+.sheet{page-break-before:always}
-.ph{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1.5px solid #1A1A1A;padding-bottom:9px;margin-bottom:16px}
+.ph{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1.5px solid #1A1A1A;padding-bottom:10px;margin-bottom:0;flex:none}
 .ph h1{margin:0;font-size:20px;font-weight:400;font-family:'Gowun Batang',serif}
 .ph .meta{font-size:12px;color:#666;margin-top:3px}
 .ph .idbox{display:flex;gap:8px;font-size:12px;color:#444}.ph .idbox span{border:1px solid #999;padding:6px 16px;min-width:64px;text-align:center}
-.pq{break-inside:avoid;margin:0 0 18px;font-size:15px;line-height:1.6}
+.pq{break-inside:avoid;margin:0;font-size:15.5px;line-height:1.75}
 .pq .pn{display:inline-block;width:22px;height:22px;border-radius:50%;border:1px solid #1A1A1A;text-align:center;line-height:20px;font-size:12px;margin-right:8px;vertical-align:middle}
 .pq .pstem{white-space:pre-line;display:inline}
-.pq .passet{margin:9px 0 8px 30px;font-size:26px;letter-spacing:8px;line-height:1.2}
+.pq .passet{margin:12px 0 10px 30px;font-size:26px;letter-spacing:10px;line-height:1.2}
 .pq .passet.small{font-size:17px;letter-spacing:6px}
 .pq .passet .pbox{display:inline-block;border:1px solid #1A1A1A;border-radius:4px;padding:5px 18px;font-size:15px;letter-spacing:0;vertical-align:middle;margin-left:8px}
-.pq .popts{margin:6px 0 0 30px;display:flex;flex-wrap:wrap;gap:8px 26px;font-size:15px}
+.pq .popts{margin:10px 0 0 30px;display:flex;flex-wrap:wrap;gap:10px 30px;font-size:15.5px}
 .pq .popts span::before{content:attr(data-n);display:inline-block;width:18px;height:18px;border:1px solid #666;border-radius:50%;text-align:center;line-height:16px;font-size:11px;margin-right:6px}
-.pq .pline{margin:10px 0 0 30px;height:30px;border-bottom:1px solid #666;width:55%}
-.pq .pline.long{height:64px;width:100%;border-bottom:1px solid #666}
-.pq .pmatch{margin:9px 0 0 30px;display:grid;grid-template-columns:110px 56px 110px;row-gap:12px;font-size:17px;align-items:center}
+.pq .pline{margin:12px 0 2px 30px;height:26px;border-bottom:1px solid #999;width:52%}
+.pq .pline.long{height:24px;width:100%;border-bottom:1px solid #999;margin-bottom:20px;box-shadow:0 24px 0 -23px #999,0 48px 0 -47px #999}
+.pq .pmatch{margin:12px 0 2px 30px;display:grid;grid-template-columns:104px 64px 104px;row-gap:14px;font-size:17px;align-items:center}
 .pq .pmatch .lft,.pq .pmatch .rgt{border:1px solid #999;border-radius:6px;text-align:center;padding:7px}
 .pq .pmatch .mid{text-align:center;color:#AAA}
-.pq .picto-p{border-collapse:collapse;margin:8px 0 0 30px;font-size:14px}.pq .picto-p td{border:1px solid #999;padding:6px 12px}.pq .picto-p td:last-child{font-size:20px;letter-spacing:6px}
+.pq .picto-p{border-collapse:collapse;margin:12px 0 4px 30px;font-size:14px}.pq .picto-p td{border:1px solid #999;padding:6px 12px}.pq .picto-p td:last-child{font-size:20px;letter-spacing:6px}
 .pfoot{position:absolute;bottom:9mm;left:17mm;right:17mm;display:flex;justify-content:space-between;font-size:10px;color:#999}
 .key{width:100%;border-collapse:collapse;font-size:12px}.key th,.key td{border:1px solid #999;padding:6px 8px;text-align:left;vertical-align:top}.key th{background:#F2F0EC;font-weight:400}
 .toolbar{position:fixed;top:14px;right:14px;display:flex;gap:8px;z-index:9}
@@ -420,9 +422,9 @@ function renderPaper(){
     else if (q.kind === 'ox') body = `<div class="popts"><span data-n="O">맞아요</span><span data-n="X">틀려요</span></div><div class="popts" style="margin-top:6px">${q.reason_options.map((o, k) => `<span data-n="${circ[k]}">${esc(o.t)}</span>`).join('')}</div>`;
     else body = `<div class="popts">${x.opts.map((o, k) => `<span data-n="${circ[k]}">${paperOptText(o.t)}</span>`).join('')}</div>`;
     return `<div class="pq"><span class="pn">${i + 1}</span><span class="pstem">${esc(q.stem.replace(/\n/g, ' '))}</span>${paperAsset(q.asset)}${body}</div>`; };
-  const page = (items, off, n) => `<div class="sheet"><div class="ph"><div><h1>${esc(title)}</h1><div class="meta">1학년 수학 · ${sub}</div></div><div class="idbox"><span>반</span><span>번호</span></div></div>${items.map((x, i) => qhtml(x, off + i)).join('')}<div class="pfoot"><span>케이학습지 · keduclass.com</span><span>${n}</span></div></div>`;
+  const page = (items, off, n) => `<div class="sheet"><div class="ph"><div><h1>${esc(title)}</h1><div class="meta">1학년 수학 · ${sub}</div></div><div class="idbox"><span>반</span><span>번호</span></div></div><div class="pbody">${items.map((x, i) => qhtml(x, off + i)).join('')}</div><div class="pfoot"><span>케이학습지 · keduclass.com</span><span>${n}</span></div></div>`;
   // 교사용 정답표
-  const key = `<div class="sheet"><div class="ph"><div><h1>${esc(title)} — 교사용</h1><div class="meta">정답 · 개념 · 오답 선택지의 오개념</div></div></div>
+  const key = `<div class="sheet key-sheet"><div class="ph"><div><h1>${esc(title)} — 교사용</h1><div class="meta">정답 · 개념 · 오답 선택지의 오개념</div></div></div>
    <table class="key"><tr><th>번호</th><th>난이도</th><th>유형</th><th>정답</th><th>개념</th><th>오답 → 오개념</th></tr>${shuffled.map((x, i) => { const q = x.q; let ans = '';
      if (q.kind === 'sa') ans = q.answer.join(' / '); else if (q.kind === 'essay') ans = q.answer_guide.answer + ' (채점: ' + q.answer_guide.scoring_points.join(' · ') + ')'; else if (q.kind === 'match') ans = q.pairs.map(p => `${paperOptText(p.l)}–${paperOptText(p.r)}`).join(', ');
      else if (q.kind === 'ox') ans = q.answer + ' / ' + circ[q.reason_options.findIndex(o => o.correct)]; else ans = circ[x.opts.findIndex(o => o.correct)] + ' ' + paperOptText(x.opts.find(o => o.correct).t);
