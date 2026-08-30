@@ -1315,7 +1315,7 @@
   $('btnSubDel').onclick = () => { if (selS) { P.removeS(selS); selectS(null); setPH(ph); } };
   function refreshSubPanel() {
     const s2 = selS && P.subtitle(selS);
-    $('subEdit').classList.toggle('hidden', !s2);
+    $('subEdit').classList.toggle('hidden', !s2); const scn = $('subCardNone'); if (scn) scn.classList.toggle('hidden', !!s2);
     Array.from($('subStyleSeg').querySelectorAll('button')).forEach(b => b.classList.toggle('on', b.dataset.k === (s2 ? s2.style : subStyle)));
     if (s2) { if (document.activeElement !== $('subEditText')) $('subEditText').value = s2.text; $('subEditTime').textContent = tc(s2.at) + ' → ' + tc(s2.at + s2.dur) + ' · ' + secStr(s2.dur); }
     const list = $('subList'); list.innerHTML = '';
