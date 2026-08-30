@@ -123,6 +123,16 @@
   #overlay .bar { height:8px; background:#0f1524; border-radius:8px; overflow:hidden; }
   #overlay .bar i { display:block; height:100%; width:0; background:linear-gradient(90deg, var(--gold), #f0d58a); transition:width .15s; }
   #overlay .lbl { display:flex; justify-content:space-between; color:var(--sub); font-size:12px; margin-top:8px; font-variant-numeric:tabular-nums; }
+  #projName { max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--gold); font-weight:700; font-size:13px; cursor:pointer; padding:0 6px; }
+  #projModal .box { width:560px; max-width:92vw; }
+  #projModal .prow { display:flex; align-items:center; gap:10px; padding:9px 10px; border:1px solid var(--line2); border-radius:10px; margin-top:7px; }
+  #projModal .prow.cur { border-color:var(--gold); background:rgba(212,175,55,.06); }
+  #projModal .pmain { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+  #projModal .pmain b { font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #projModal .pmain small { color:var(--sub); font-size:11px; }
+  #projModal .pact { display:flex; gap:4px; flex-shrink:0; }
+  #projModal .pact button { padding:3px 8px; font-size:11px; }
+  #projList { max-height:52vh; overflow:auto; margin-top:6px; }
   #toast { position:fixed; left:50%; bottom:310px; transform:translateX(-50%); background:#1c2740; border:1px solid var(--line2); color:var(--txt); padding:10px 16px; border-radius:10px; font-size:13px; opacity:0; pointer-events:none; transition:opacity .2s; z-index:60; max-width:70vw; }
   #toast.show { opacity:1; }
   body.dragover .stage { outline:2px dashed var(--gold); outline-offset:-6px; }
@@ -164,7 +174,8 @@
     <button id="btnRedo" class="ico" title="다시 (Ctrl+Shift+Z)" disabled>↷</button>
     <button id="btnSnap" class="ico on" title="스냅 (N)">🧲</button>
     <div class="sep"></div>
-    <button id="btnNew" title="비우고 새로">새로</button>
+    <span id="projName" title="누르면 이름을 바꿔요">새 작업</span>
+    <button id="btnNew" title="내 작업 목록 — 열기·새 작업·파일">📁 내 작업</button>
     <button id="btnExport" class="gold">MP4 내보내기</button>
   </header>
 
@@ -340,6 +351,14 @@
 </div>
 
 <div id="overlay" class="hidden"><div class="box"><h4 id="ovTitle">내보내는 중</h4><div class="bar"><i id="ovBar"></i></div><div class="lbl"><span id="ovLabel"></span><span id="ovPct">0%</span></div></div></div>
+<div id="projModal" class="hidden" style="position:fixed;inset:0;background:rgba(6,10,20,.82);display:flex;align-items:center;justify-content:center;z-index:55;backdrop-filter:blur(2px)">
+  <div class="box" style="background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:18px 20px">
+    <div style="display:flex;align-items:center;gap:8px"><h4 style="margin:0;font-size:15px">내 작업</h4><div class="sp" style="flex:1"></div><button id="btnProjNew" class="gold" style="font-size:12px">＋ 새 작업</button><button id="btnProjImport" style="font-size:12px" title=".kmv 파일 열기">파일 가져오기</button><button id="btnProjCopy" style="font-size:12px" title="지금 작업을 새 이름의 사본으로 저장">사본으로 저장</button><button id="btnProjClose" class="ico" title="닫기">✕</button></div>
+    <div class="note" id="projCloudNote" style="margin-top:8px"></div>
+    <div id="projList"></div>
+    <input id="kmvIn" type="file" accept=".kmv,application/json" hidden>
+  </div>
+</div>
 <div id="toast"></div>
 <div id="partGhost" class="hidden"></div>
 <div id="nosup" class="hidden"><div><b style="font-size:18px">이 브라우저는 케이무비를 지원하지 않아요</b><br>WebCodecs 가 필요해요 — 크롬·엣지 최신 버전(데스크톱)에서 열어 주세요.</div></div>
@@ -348,6 +367,8 @@
 <script src="https://cdn.jsdelivr.net/npm/mp4box@0.5.2/dist/mp4box.all.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.1/build/mp4-muxer.min.js" defer></script>
 <!-- 케이메이커 부품 — 복사 없이 그대로 (kmake/parts) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+<script src="../kedu_config.js" defer></script>
 <script src="../kmake/parts/parts.js" defer></script>
 <script src="../kmake/parts/p-opening.js" defer></script>
 <script src="../kmake/parts/p-section.js" defer></script>
@@ -372,6 +393,7 @@
 <script src="engine/stt.js" defer></script>
 <script src="engine/gen.js" defer></script>
 <script src="engine/sfx.js" defer></script>
+<script src="engine/store.js" defer></script>
 <script src="engine/render.js" defer></script>
 <script src="engine/export.js" defer></script>
 <script src="engine/shell.js" defer></script>

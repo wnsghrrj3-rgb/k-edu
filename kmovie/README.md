@@ -21,6 +21,7 @@
 - 인물 컷아웃 (`engine/seg.js`): "인물 뒤 흐르는 글자"는 부품 → 사람 컷아웃 순으로 합성. MediaPipe Selfie Segmentation 자체 호스팅(maker-playground/vendor/selfie-seg/, R134) 지연 로드, 프레임별 마스크 LRU 캐시, 켄 번즈 변환 동승. 카드별 "인물 뒤" 토글
 - 음악 A2 (`engine/audio.js`·`media.js`): mp3·wav·m4a 가져오기 → A2 레인, 파형, 볼륨, 페이드 인/아웃 프리셋, 영상 끝 맞춤, 오토 덕킹(A1 음성 구간 -depth dB, 진입 200ms/복귀 500ms), 비트 마커(onset 휴리스틱) → 클립 경계 스냅
 - 카드(S·P·A2) 공통 손맛: 끌어 이동·가장자리 트림·스냅·Del·undo
+- 내 작업 (`engine/store.js`): 편집 상태를 이름 붙은 작업 파일로 여러 개 — 이 브라우저(IndexedDB) + 케이에듀 계정(Supabase `kmovie_projects`, 로그인 시 4초 뒤 자동) + `.kmv` 파일 내보내기/가져오기. 원본 영상은 파일에 들어가지 않는다(기기에 남음) — 다른 기기에서 열면 원본 없는 클립은 빠지고 나머지만 열리며, 그 상태에선 계정 저장을 멈춘다(「사본으로 저장」으로 새 작업). 옛 단일 자동 저장은 「이전 작업」으로 이관
 - 배경음악 만들기 (`engine/gen.js`): 케이무비가 직접 합성하는 음악 — 무드 2종(아침 교실·잔잔한 엔딩)·템포·조성·다시 섞기(seed), 길이는 영상 끝에 맞춤. 샘플 없이 수식만이라 저작권·다운로드 0, 파일이 없으니 새로고침 복원도 스펙만으로 된다. **비트 격자는 BPM 그대로** — 박자 스냅·몽타주가 어긋나지 않는다
 - 효과음 (`engine/sfx.js`): 합성 18종이 전환·타이틀 부품·자막에 자동으로 붙는다(프로젝트 「자동 효과음」 토글·세기 3단, 카드마다 sfx:false 로 그 소리만 끔). `sfx/index.json` 에 같은 이름의 CC0 실음원을 넣으면 그쪽이 이긴다
 - 앰비언스 (`engine/audio.js` findRoomTone/ambGaps/scheduleAmb): 타임라인 원본에서 가장 조용한(무음 아닌) 1.5초 룸톤을 찾아 이음매 없는 루프로 만들고, A1 이 비는 구간(사진·프리즈·무음·볼륨 0)에 200ms 페이드로 깐다. 세기 3단(조용히/그대로/살짝 크게). A1 레인에 빗금 띠 "룸톤"
@@ -57,6 +58,7 @@
 - `engine/project.js` — 프로젝트 모델·편집 연산·undo
 - `engine/media.js` — mp4box 디먹스 + VideoDecoder GOP 캐시 + 분석(썸네일·움직임·파형)
 - `engine/audio.js` — 재생 클럭·A1 스케줄·오프라인 믹스·효과음 버스
+- `engine/store.js` — 작업 파일 저장소(로컬·계정·.kmv)
 - `engine/gen.js` — 생성 배경음악(악보 짜기·보이스 합성·구간 읽기)
 - `engine/sfx.js` — 효과음 18종 합성·자동 매핑
 - `engine/look.js` — LUT·노출·켄 번즈·비네트·시네마 바 (WebGL2, CPU 폴백)

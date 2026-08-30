@@ -52,8 +52,8 @@
     db: null,
     open() {
       return new Promise((res, rej) => {
-        const r = indexedDB.open('kmovie', 1);
-        r.onupgradeneeded = () => { const d = r.result; if (!d.objectStoreNames.contains('media')) d.createObjectStore('media', { keyPath: 'id' }); if (!d.objectStoreNames.contains('kv')) d.createObjectStore('kv'); };
+        const r = indexedDB.open('kmovie', 2);
+        r.onupgradeneeded = () => { const d = r.result; if (!d.objectStoreNames.contains('media')) d.createObjectStore('media', { keyPath: 'id' }); if (!d.objectStoreNames.contains('kv')) d.createObjectStore('kv'); if (!d.objectStoreNames.contains('projects')) d.createObjectStore('projects', { keyPath: 'id' }); };
         r.onsuccess = () => { this.db = r.result; res(); }; r.onerror = () => rej(r.error);
       });
     },
@@ -65,8 +65,33 @@
     getKV(k) { return this.tx('kv', 'readonly', s => s.get(k)); },
     clearAll() { return Promise.all([this.tx('media', 'readwrite', s => s.clear()), this.tx('kv', 'readwrite', s => s.clear())]); },
   };
-  let saveT = 0;
-  function scheduleSave() { clearTimeout(saveT); saveT = setTimeout(() => DB.putKV('project', P.toJSON()).catch(e => console.warn('save', e)), 400); }
+  /* ---------- 작업 파일 (KMV_STORE) ----------
+     현재 작업 = proj {id, name, degraded}. 변경 400ms 뒤 이 기기(IndexedDB)에, 4초 뒤 케이에듀 계정에 저장.
+     degraded = 다른 기기에서 열어 원본 없는 클립을 뺀 상태 → 계정 저장을 멈춘다(PC 작업을 폰이 덮어쓰지 않게). */
+  const ST = window.KMV_STORE;
+  const proj = { id: null, name: '새 작업', degraded: false, cloudAt: 0, cloudErr: null, saving: false };
+  let saveT = 0, cloudT = 0;
+  function rec() { return { id: proj.id, name: proj.name, doc: P.toJSON(), updatedAt: Date.now() }; }
+  function scheduleSave() {
+    if (!proj.id) return;
+    clearTimeout(saveT); saveT = setTimeout(() => { ST.save(rec(), { cloud: false }).catch(e => console.warn('save', e)); refreshSaveNote(); }, 400);
+    if (!proj.degraded) { clearTimeout(cloudT); cloudT = setTimeout(saveCloud, 4000); }
+  }
+  async function saveCloud() {
+    if (!proj.id || proj.degraded) return;
+    proj.saving = true; refreshSaveNote();
+    try { const r = await ST.save(rec()); proj.cloudErr = r.error || null; if (r.cloud) proj.cloudAt = Date.now(); }
+    catch (e) { proj.cloudErr = e; }
+    proj.saving = false; refreshSaveNote();
+  }
+  function refreshSaveNote() {
+    const el = $('saveNote'); if (!el) return;
+    const pn = $('projName'); if (pn) pn.textContent = proj.name || '새 작업';
+    if (proj.degraded) { el.textContent = '원본이 빠진 채 열린 작업이라 계정에는 저장하지 않아요 — 「내 작업」에서 사본으로 저장할 수 있어요.'; return; }
+    if (proj.saving) { el.textContent = '계정에 저장하는 중…'; return; }
+    if (proj.cloudErr) { el.textContent = '이 브라우저엔 저장됐어요 · 계정 저장은 실패(연결 확인)'; return; }
+    el.textContent = proj.cloudAt ? '이 브라우저 + 케이에듀 계정에 자동 저장돼요 · ' + new Date(proj.cloudAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '이 브라우저에 자동 저장돼요 · 로그인하면 계정에도 저장돼 다른 기기에서 열 수 있어요';
+  }
 
   /* ---------- 미리보기 ----------
      재생·셔틀 중엔 ① 미리보기를 1/2 해상도로(멈추면 원본 화질로 복귀) ② GOP 통 디코드(getFrame) 대신
@@ -1094,7 +1119,8 @@
   $('btnSnap').onclick = toggleSnap;
   $('btnImport').onclick = $('btnImport2').onclick = () => { if (SH && SH.active) SH.pick().then(refs => { if (refs.length) importFiles(refs); }); else $('fileIn').click(); };
   $('fileIn').onchange = e => { importFiles(Array.from(e.target.files)); e.target.value = ''; };
-  $('btnNew').onclick = async () => { if (!confirm('타임라인과 미디어를 모두 비울까요? (되돌릴 수 없어요)')) return; stop(); P.data.media.forEach(m => M.remove(m.id)); P.reset(); await DB.clearAll(); select(null); setPH(0); refreshBin(); zoomFit(); };
+  $('btnNew').onclick = () => openProjModal();
+  $('projName').onclick = () => renameCurrent();
   $('btnExport').onclick = async () => {
     stop();
     if (!P.total()) return toast('타임라인이 비어 있어요');
@@ -1686,13 +1712,16 @@
     draw();
   });
 
-  /* ---------- 복구 ---------- */
-  async function restore() {
-    try { await DB.open(); } catch (e) { console.warn('idb', e); }
-    let json = null; try { json = await DB.getKV('project'); } catch (e) {}
-    if (!json || !json.media || !json.media.length) return;
-    OV.show('지난 작업 불러오는 중');
-    const ok = [];
+  /* ---------- 작업 열기·복구 ----------
+     loadDoc(json): 미디어를 되살리고(원본은 이 기기 IndexedDB·껍데기 디스크에서, 생성 음악은 스펙만으로) P.load.
+     원본이 없는 미디어는 뺀다(그 클립도 함께) — 준호 결정(2026-08-31). 빠진 이름을 돌려준다. */
+  async function loadDoc(json, title) {
+    stop();
+    P.data.media.forEach(m => M.remove(m.id));
+    P.reset(); select(null);
+    if (!json || !json.media || !json.media.length) { refreshBin(); refreshStatus(); return { missing: [] }; }
+    OV.show(title || '작업 불러오는 중');
+    const ok = [], missing = [];
     for (let i = 0; i < json.media.length; i++) {
       const m = json.media[i]; OV.set(i / json.media.length, m.name);
       try {
@@ -1700,22 +1729,100 @@
         let blob = null;
         if (m.origin && SH && SH.active) blob = await SH.restoreFile(m.origin, { status: t => OV.set(i / json.media.length, t), progress: (p, l) => OV.set((i + p) / json.media.length, l) });
         else { const rec = await DB.getMedia(m.blobKey || m.id); blob = rec && rec.blob; }
-        if (!blob) continue;
+        if (!blob) { missing.push(m.name); continue; }
         const meta = await M.open(blob, m.id, s => OV.set(i / json.media.length, s + ' — ' + m.name));
         if (m.origin) meta.origin = blob.kmvOrigin || m.origin;
         ok.push(meta);
-      } catch (e) { console.warn('restore', m.name, e); }
+      } catch (e) { console.warn('restore', m.name, e); missing.push(m.name); }
     }
-    const wanted = json.media.length; json.media = ok;
+    json.media = ok;
     P.load(json);
     ok.forEach(m => analyzeBg(m.id));
     refreshBin(); refreshStatus();
     OV.hide();
-    if (ok.length < wanted) toast('일부 원본을 다시 찾지 못해 빠졌어요');
+    return { missing };
+  }
+  /* 작업 레코드를 현재 작업으로 */
+  async function openRecord(r) {
+    proj.id = r.id; proj.name = r.name || '새 작업'; proj.degraded = false; proj.cloudAt = r.where === 'cloud' || r.where === 'both' ? (r.cloudAt || r.updatedAt || 0) : 0; proj.cloudErr = null;
+    const { missing } = await loadDoc(r.doc ? JSON.parse(JSON.stringify(r.doc)) : null, '「' + proj.name + '」 여는 중');
+    await ST.local.setCurrent(proj.id);
+    zoomFit(); setPH(0);
+    if (missing.length) {
+      proj.degraded = true;
+      toast('이 기기에 없는 원본 ' + missing.length + '개(' + missing.slice(0, 3).join(', ') + (missing.length > 3 ? ' 외' : '') + ')는 그 클립과 함께 뺐어요 — 계정 저장은 멈춰요', 6000);
+    }
+    if (r.doc) { ST.local.put(Object.assign({}, r, { updatedAt: r.updatedAt || Date.now() })).catch(() => {}); }   // 클라우드에서 연 것도 이 기기에 사본
+    refreshSaveNote(); refreshProject();
+    return missing;
+  }
+  async function newProject(name) {
+    const r = ST.make({ media: [], V: [] }, name || ('새 작업 ' + new Date().toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })));
+    await openRecord(r);
+    await ST.save(rec(), { cloud: false });
+    refreshSaveNote();
+    return r;
+  }
+  function renameCurrent() {
+    const v = prompt('작업 이름', proj.name); if (v == null) return;
+    const name = v.trim() || proj.name; proj.name = name; ST.rename(proj.id, name).catch(() => {}); scheduleSave(); refreshSaveNote();
+  }
+  /* 시작: 현재 작업 id → 레코드. 없으면 옛 단일 저장(kv 'project')을 「이전 작업」으로 옮긴다. */
+  async function restore() {
+    try { await DB.open(); } catch (e) { console.warn('idb', e); }
+    ST.init(DB);
+    let cur = null; try { cur = await ST.local.current(); } catch (e) {}
+    let r = cur ? await ST.local.get(cur).catch(() => null) : null;
+    if (!r) {
+      let legacy = null; try { legacy = await DB.getKV('project'); } catch (e) {}
+      if (legacy && legacy.media && legacy.media.length) { r = ST.make(legacy, '이전 작업'); await ST.local.put(r); try { await DB.putKV('project', null); } catch (e) {} }
+    }
+    if (!r) { await newProject('새 작업'); return; }
+    await openRecord(r);
+    ST.cloud.ready().then(ok => { if (ok && !proj.degraded) saveCloud(); }).catch(() => {});
   }
 
+  /* ---------- 「내 작업」 모달 ---------- */
+  const fmtAgo = t => { if (!t) return ''; const d = Date.now() - t; if (d < 60e3) return '방금'; if (d < 3600e3) return Math.round(d / 60e3) + '분 전'; if (d < 86400e3) return Math.round(d / 3600e3) + '시간 전'; return new Date(t).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' }); };
+  async function openProjModal() {
+    stop();
+    const md = $('projModal'); md.classList.remove('hidden');
+    const ul = $('projList'); ul.innerHTML = '<div class="note">불러오는 중…</div>';
+    clearTimeout(saveT); await ST.save(rec(), { cloud: false }).catch(() => {});
+    let items = []; try { items = await ST.list(); } catch (e) { console.warn('list', e); }
+    const signed = await ST.cloud.ready().catch(() => false);
+    $('projCloudNote').textContent = signed ? '케이에듀 계정에 저장된 작업은 어느 기기에서든 여기 보여요. 원본 영상은 그 기기에 있어야 해요.' : '로그인하면 작업이 계정에도 저장돼 다른 기기에서 열 수 있어요. 지금은 이 브라우저에만 저장돼요.';
+    ul.innerHTML = '';
+    if (!items.length) ul.innerHTML = '<div class="note">아직 저장된 작업이 없어요.</div>';
+    for (const it of items) {
+      const row = document.createElement('div'); row.className = 'prow' + (it.id === proj.id ? ' cur' : '');
+      const where = it.where === 'both' ? '☁ 계정 · 이 기기' : it.where === 'cloud' ? '☁ 계정' : '💾 이 기기';
+      row.innerHTML = '<div class="pmain"><b></b><small></small></div><div class="pact"><button data-a="open" class="gold">열기</button><button data-a="rename" title="이름 바꾸기">이름</button><button data-a="file" title=".kmv 파일로 내려받기">파일</button><button data-a="del" class="danger">삭제</button></div>';
+      row.querySelector('b').textContent = it.name + (it.id === proj.id ? '  (지금 작업)' : '');
+      row.querySelector('small').textContent = where + ' · ' + fmtAgo(it.updatedAt) + ' · ' + secStr(Math.round((it.durSec || 0) * FPS)) + ' · 클립 ' + (it.clips || 0);
+      row.querySelector('[data-a="open"]').onclick = async () => { if (it.id === proj.id) { md.classList.add('hidden'); return; } const r = await ST.get(it.id); if (!r || !r.doc) return toast('이 작업을 불러오지 못했어요'); md.classList.add('hidden'); await openRecord(r); toast('「' + r.name + '」 열었어요', 1800); };
+      row.querySelector('[data-a="rename"]').onclick = async () => { const v = prompt('작업 이름', it.name); if (v == null) return; const name = v.trim() || it.name; await ST.rename(it.id, name); if (it.id === proj.id) { proj.name = name; refreshSaveNote(); } openProjModal(); };
+      row.querySelector('[data-a="file"]').onclick = async () => { const r = it.id === proj.id ? rec() : await ST.get(it.id); if (!r || !r.doc) return toast('파일로 만들지 못했어요'); ST.download(r); toast('.kmv 파일로 내려받아요 — 다른 기기에서 「파일 가져오기」', 2400); };
+      row.querySelector('[data-a="del"]').onclick = async () => { if (!confirm('「' + it.name + '」을 지울까요? (이 기기와 계정 모두에서 지워져요)')) return; await ST.remove(it.id); if (it.id === proj.id) await newProject(); openProjModal(); };
+      ul.appendChild(row);
+    }
+  }
+  $('btnProjClose').onclick = () => $('projModal').classList.add('hidden');
+  $('projModal').addEventListener('click', e => { if (e.target === $('projModal')) $('projModal').classList.add('hidden'); });
+  $('btnProjNew').onclick = async () => { $('projModal').classList.add('hidden'); await newProject(); toast('새 작업을 열었어요 — 이름은 위 제목을 눌러 바꿔요', 2400); };
+  $('btnProjCopy').onclick = async () => {
+    const r = ST.make(P.toJSON(), proj.name + ' 사본'); proj.id = r.id; proj.name = r.name; proj.degraded = false; proj.cloudAt = 0; proj.cloudErr = null;
+    await ST.save(rec()); await ST.local.setCurrent(r.id); refreshSaveNote(); $('projModal').classList.add('hidden'); toast('「' + r.name + '」으로 저장했어요', 2200);
+  };
+  $('btnProjImport').onclick = () => $('kmvIn').click();
+  $('kmvIn').onchange = async e => {
+    const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return;
+    try { const r = await ST.fromFile(f); $('projModal').classList.add('hidden'); await openRecord(r); await ST.save(rec()); refreshSaveNote(); toast('「' + r.name + '」 파일을 열었어요', 2200); }
+    catch (err) { toast(err.message || '작업 파일을 읽지 못했어요', 3000); }
+  };
+
   window.KMV_UI = { importFiles, setPH: f => setPH(f), get ph() { return ph; }, select, selectP, selectA2, placePart, play, stop, zoomFit, get pxf() { return pxf; }, get scrollF() { return scrollF; }, get selP() { return selP; }, get selA2() { return selA2; }, beatFrames,
-    get sel() { return sel; }, selectedIds, openSource, showStage, get stage() { return stage; }, get src() { return srcCur; }, setSrcPH, srcMark, srcPlace, shuttleTo, get shuttle() { return shuttle; }, get playing() { return playing || srcPlaying; }, doMarker, doCopy, doCut, doPaste, get clipboard() { return clipboard; }, get selM() { return selM; }, layout: { HEAD, RULER, LY }, xOf, frameOf, laneRows, rowGeom, selectV2, get selV2() { return selV2; }, get delChip() { return delChip; } };
+    get sel() { return sel; }, selectedIds, openSource, showStage, get stage() { return stage; }, get src() { return srcCur; }, setSrcPH, srcMark, srcPlace, shuttleTo, get shuttle() { return shuttle; }, get playing() { return playing || srcPlaying; }, doMarker, doCopy, doCut, doPaste, get clipboard() { return clipboard; }, get selM() { return selM; }, layout: { HEAD, RULER, LY }, xOf, frameOf, laneRows, rowGeom, selectV2, get selV2() { return selV2; }, get delChip() { return delChip; }, get proj() { return proj; }, openRecord, newProject, loadDoc, saveCloud, openProjModal };
 
   /* ---------- 시작 ---------- */
   resize();
@@ -1739,5 +1846,6 @@
 
   (SH && SH.active ? SH.init().then(refreshShellRow) : Promise.resolve())
     .then(() => { if (SH && SH.active && SH.info && SH.info.ffmpeg === false) toast('ffmpeg 를 찾지 못했어요 — 설치가 온전한지 확인해 주세요', 6000); })
-    .then(restore).then(() => { zoomFit(); setPH(0); refreshShellRow(); });
+    .then(restore).then(() => { refreshShellRow(); });
+  window.addEventListener('pagehide', () => { if (proj.id) { clearTimeout(saveT); ST.save(rec(), { cloud: false }).catch(() => {}); } });
 })();
