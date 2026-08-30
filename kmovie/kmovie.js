@@ -1520,7 +1520,7 @@
 
   function refreshMusicPanel() {
     const a = selMusic();
-    $('musicBody').classList.toggle('hidden', !a); $('musicNone').classList.toggle('hidden', !!a || P.data.A2.length > 0);
+    $('musicBody').classList.toggle('hidden', !a); $('musicNone').classList.toggle('hidden', P.data.A2.length > 0); const mcn = $('musicCardNone'); if (mcn) mcn.classList.toggle('hidden', !!a);
     const D = P.data.audio.ducking; $('tgDuck').classList.toggle('on', !!D.on); $('rowDuck').classList.toggle('hidden', !D.on);
     if (document.activeElement !== $('duckDepth')) { $('duckDepth').value = D.depth == null ? 12 : D.depth; $('duckDepthV').textContent = '-' + $('duckDepth').value + 'dB'; }
     $('tgBeat').classList.toggle('on', beatSnap);
