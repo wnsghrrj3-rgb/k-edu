@@ -82,13 +82,28 @@ window.PG = (() => {
     /* 생태계 접점(2026-08-10) — 케이에듀로 돌아가는 문. R92가 「자체 내비 보유」로
        context 모드를 걸었지만 정작 자체 출구가 이주에서 누락돼, 탈출 수단이 해시
        히스토리 뒤로가기 연타뿐이었다(준호 내비 전수 감사에서 발견). */
-    const exitBtn = `<button class="pg-nav-item" data-navexit><span class="ico">🏠</span><span class="txt">케이에듀</span></button><div class="pg-nav-div"></div>`;
+    /* 2026-08-31 — 나가는 문을 자격에 맞게. 문구가 늘 「케이에듀」 하나로 굳어 있어,
+       선생님 도구를 거쳐 들어온 교사가 자기 자리로 돌아가는 문을 화면에서 못 봤다
+       (실제 목적지는 맞았지만 이름이 그렇게 말해 주지 않았다). 교사 맥락이면
+       ① 선생님 도구 ② 케이에듀 홈 두 문을 나란히 세우고, 그 외에는 한 문만 둔다. */
+    const KB = window.KEDU_BACK || {};
+    const asTeacher = KB.role === 'teacher' || KB.fromTeacher === true;
+    const exitBtn = (asTeacher
+      ? `<button class="pg-nav-item" data-navexit="/teacher/index.html"><span class="ico">🧑‍🏫</span><span class="txt">선생님 도구</span></button>`
+        + `<button class="pg-nav-item" data-navexit="/"><span class="ico">🏠</span><span class="txt">케이에듀 홈</span></button>`
+      : `<button class="pg-nav-item" data-navexit=""><span class="ico">🏠</span><span class="txt">케이에듀</span></button>`
+    ) + `<div class="pg-nav-div"></div>`;
     document.getElementById('pgNav').innerHTML = exitBtn + navList().map(([k, ico, n]) =>
       k === '--div' ? `<div class="pg-nav-div"></div>` :
       `<button class="pg-nav-item ${state.screen === k ? 'on' : ''}" data-nav="${k}"><span class="ico">${ico}</span><span class="txt">${n}</span></button>`).join('') + modeBtn;
     document.querySelectorAll('[data-nav]').forEach((b) => b.onclick = () => go(b.dataset.nav));
-    const xb = document.querySelector('[data-navexit]');
-    if (xb) xb.onclick = () => { if (window.KEDU_BACK && window.KEDU_BACK.go) window.KEDU_BACK.go(); else location.href = '/'; };
+    document.querySelectorAll('[data-navexit]').forEach((b) => b.onclick = () => {
+      const to = b.dataset.navexit, K = window.KEDU_BACK;
+      if (to && K && K.goTo) K.goTo(to);          /* 목적지 지정 — 발자국도 그 지점까지 정리 */
+      else if (to) location.href = to;
+      else if (K && K.go) K.go();                 /* 지정 없음 — 공용 판정에 맡긴다 */
+      else location.href = '/';
+    });
     const mb = document.querySelector('[data-navmode]'); if (mb) mb.onclick = toggleNavMode;
     /* 헤더 + variant 전환 */
     const v = state.variants[state.screen] || scr.variants[0];

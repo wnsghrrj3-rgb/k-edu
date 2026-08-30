@@ -211,6 +211,18 @@
     location.href = target;
   }
 
+  /* 지정한 곳으로 나가기 (2026-08-31) — 자체 내비를 가진 도구가 「선생님 도구」·「케이에듀 홈」
+     처럼 목적지를 직접 고를 때 쓴다. location.href 로 그냥 튀면 발자국이 아래로 더 쌓여
+     다음 나가기 판정이 틀어지므로, goBack 과 똑같이 트레일을 그 지점까지 잘라 준다. */
+  function goTo(target) {
+    var t = readTrail(), cut = -1;
+    for (var i = t.length - 1; i >= 0; i--) if (pathOnly(t[i]) === pathOnly(target)) { cut = i; break; }
+    if (cut >= 0) t = t.slice(0, cut + 1); else t = [target];
+    writeTrail(t);
+    try { sessionStorage.setItem(BACKFLAG, '1'); } catch (e) {}
+    location.href = target;
+  }
+
   var label = atHome ? '🏠 케이에듀로 가기' : (pathOnly(dest) === '/teacher/index.html' ? '← 선생님 도구' : '← 나가기');
   var href  = dest;
   var prev  = atHome ? null : dest;   /* 아래 겹침·문구 규칙이 쓰는 「한 층 위가 있는가」 표시 */
@@ -220,7 +232,7 @@
   var mode  = script && script.getAttribute('data-mode');
   var mount = script && script.getAttribute('data-mount');
 
-  window.KEDU_BACK = { el: null, label: label, href: href, fromTeacher: fromTeacher, go: goBack };
+  window.KEDU_BACK = { el: null, label: label, href: href, fromTeacher: fromTeacher, role: role, go: goBack, goTo: goTo };
   if (mode === 'context') return; /* 버튼 없이 맥락만 제공 (케이뮤지엄·케이메이크처럼 자체 버튼이 있는 화면) */
 
   /* 2) 공용 스타일 (1회 주입) */
