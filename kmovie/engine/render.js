@@ -39,6 +39,9 @@
     if (g.KMV_LOOK) g.KMV_LOOK.apply(ctx, W, H, t, c, P.data.look);
   }
 
+  /* 홀드 컷 등장: 첫 6프레임은 첫 프레임에 머문다 (사진 같은 등장) */
+  function holdIdx(c, t) { const P = g.KMV_PROJECT; if (c.fadeIn && c.fadeIn.type === 'hold' && t - c.at < 6) return P.srcFrame(c, c.at); return P.srcFrame(c, t); }
+
   let prevCv = null;
   function prevCanvas(W, H) {
     if (!prevCv) prevCv = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(W, H) : Object.assign(document.createElement('canvas'), { width: W, height: H });
@@ -93,8 +96,15 @@
   }
 
   function compose(ctx, W, H, t, c, img, tr, prevImg, mask, ov) {
-    const P = g.KMV_PROJECT, PT = g.KMV_PARTS, theme = P.data.theme;
-    drawClip(ctx, W, H, t, c, img);
+    const P = g.KMV_PROJECT, PT = g.KMV_PARTS, theme = P.data.theme, FX = g.KMV_FX, TH = g.KM_PARTS ? g.KM_PARTS.THEMES[theme] : null;
+    // ---- 클립 등장/퇴장 페이드 (KMV_FX.clip) ----
+    let drawFn = dctx => drawClip(dctx, W, H, t, c, img);
+    if (FX && (c.fadeIn || c.fadeOut)) {
+      const k = t - c.at, uIn = c.fadeIn && FX.VISUAL(c.fadeIn.type) ? FX.clipU(c.fadeIn, k, c.dur, 'in') : null, uOut = c.fadeOut && FX.VISUAL(c.fadeOut.type) ? FX.clipU(c.fadeOut, k, c.dur, 'out') : null;
+      if (uOut != null) { const inner = drawFn; drawFn = dctx => FX.clip(dctx, W, H, c.fadeOut.type, uOut, inner, TH); }
+      if (uIn != null) { const inner = drawFn; drawFn = dctx => FX.clip(dctx, W, H, c.fadeIn.type, uIn, inner, TH); }
+    }
+    drawFn(ctx);
     // ---- 전환 ----
     if (tr) {
       let pc = null;
@@ -152,7 +162,7 @@
     if (!c) { emptyFrame(ctx, W, H, t); const eh = { exact: true, pend: [] }; const ov = overlaysAt(t, eh); if (ov.length) { resetCtx(ctx); for (const e of ov) { drawOverlay(ctx, W, H, e); resetCtx(ctx); } if (g.KMV_SUBTITLE) g.KMV_SUBTITLE.draw(ctx, W, H, t, P.data.S, P.data.theme); } return { exact: eh.exact, empty: true, ovPend: eh.pend }; }
     const src = g.KMV_MEDIA.get(c.media);
     if (!src) { black(ctx, W, H); return { exact: true, empty: true }; }
-    const idx = P.srcFrame(c, t);
+    const idx = holdIdx(c, t);
     let img = src.cached(idx), exact = !!img;
     if (!img) img = src.nearest(idx);
     const tr = transitionAt(c, t); let prevImg = null, psrc = null;
@@ -191,7 +201,7 @@
       return;
     }
     const src = g.KMV_MEDIA.get(c.media);
-    const idx = P.srcFrame(c, t);
+    const idx = holdIdx(c, t);
     // 데스크톱 껍데기가 붙어 있으면 같은 번호의 프레임을 원본(원화질)에서 받는다. 실패하면 프록시 프레임.
     const SH = g.KMV_SHELL && g.KMV_SHELL.active ? g.KMV_SHELL : null;
     const img = (SH && await SH.exact(c.media, idx)) || await src.getFrame(idx, false);

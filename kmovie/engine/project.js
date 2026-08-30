@@ -377,6 +377,8 @@
     if (!(opt && opt.commit === false)) commit();
     Object.assign(P.look, patch); emit('look');
   }
+  /* 클립 등장/퇴장 페이드 (KMV_FX.CLIP) — side 'in'|'out', spec null | {type, dur:'short'|'normal'|'long'} */
+  function setFade(clipId, side, spec) { const c = clip(clipId); if (!c) return; commit(); const key = side === 'out' ? 'fadeOut' : 'fadeIn'; c[key] = spec && spec.type ? Object.assign({ dur: 'normal' }, spec) : null; emit(); }
   function setKenburns(clipId, id) { const c = clip(clipId); if (!c) return; commit(); c.kenburns = id || null; emit(); }
   function setTransition(clipId, tr) {                  // tr: null | {type, dur:'short'|'normal'|'long', dir?}
     const c = clip(clipId); if (!c) return; commit();
@@ -596,7 +598,7 @@
     on: fn => listeners.push(fn),
     media, clip, clipIndex, audioOf, clipAt, total, edges, srcFrame, clipDur, speedMap,
     addMedia, removeMedia, addClip, removeClip, move, split, trim, trimToPlayhead, freeze, setSpeed, setVol, audioTrim, relink,
-    setLook, setProjectLook, setKenburns, setTransition, setTheme,
+    setLook, setProjectLook, setKenburns, setFade, setTransition, setTheme,
     addS, setS, addManyS, subtitle, updateS, removeS, clearS, subtitleAt,
     part, addP, updateP, removeP, clearP, partsAt, partDefault,
     a2, addA2, updateA2, trimA2, removeA2, setDucking, setSfx, a2At,

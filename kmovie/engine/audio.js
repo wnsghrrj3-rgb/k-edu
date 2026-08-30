@@ -106,11 +106,14 @@
         const gn = actx.createGain();
         const vol = a.vol == null ? 1 : a.vol;
         // 페이드는 조각 전체 길이 기준 — 창 경계에서 잘려 이어져도 게인 값이 연속
-        const lenWall = s.dur / FPS, f = Math.min(XF, lenWall / 2), pos0 = skip / FPS;
-        const gAt = p => { let v = vol; if (f > 0) { if (p < f) v *= p / f; const q = lenWall - p; if (q < f) v *= Math.max(0, q / f); } return v; };
+        const lenWall = s.dur / FPS, pos0 = skip / FPS;
+        // 「소리만 페이드」 등장/퇴장(KMV_FX audioOnly): 크로스페이드 80ms 대신 1초(길게 30f)·0.6초(보통)·0.3초(짧게)
+        const fxSec = fd => fd && fd.type === 'audioOnly' ? (fd.dur === 'long' ? 1 : fd.dur === 'short' ? 0.3 : 0.6) : 0;
+        const fIn = Math.min(Math.max(XF, fxSec(c.fadeIn)), lenWall / 2), fOut = Math.min(Math.max(XF, fxSec(c.fadeOut)), lenWall / 2), f = fIn;
+        const gAt = p => { let v = vol; if (fIn > 0 && p < fIn) v *= p / fIn; const q = lenWall - p; if (fOut > 0 && q < fOut) v *= Math.max(0, q / fOut); return v; };
         gn.gain.setValueAtTime(gAt(pos0), when);
-        if (pos0 < f) gn.gain.linearRampToValueAtTime(vol, when + (f - pos0));
-        const foS = Math.max(pos0, lenWall - f);
+        if (pos0 < fIn) gn.gain.linearRampToValueAtTime(vol, when + (fIn - pos0));
+        const foS = Math.max(pos0, lenWall - fOut);
         gn.gain.setValueAtTime(gAt(foS), when + (foS - pos0));
         gn.gain.linearRampToValueAtTime(0, when + (lenWall - pos0));
         node.connect(gn); gn.connect(dest);

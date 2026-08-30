@@ -52,7 +52,8 @@
   /* ---------- 텍스트 (자간 수동 — node-canvas 는 letterSpacing 미지원) ---------- */
   var FONT_STACK = '"Pretendard", "Noto Sans CJK KR", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif';
 
-  function font(weight, size) { return weight + ' ' + size + 'px ' + FONT_STACK; }
+  var FONT_OVERRIDE = null;                                   // 케이무비 카드 글꼴(p._font = 패밀리명) — frame() 동안만
+  function font(weight, size) { return weight + ' ' + size + 'px ' + (FONT_OVERRIDE ? '"' + FONT_OVERRIDE + '", ' : '') + FONT_STACK; }
 
   function textWidth(ctx, text, ls) {
     ls = ls || 0;
@@ -156,9 +157,9 @@
     if (!d) throw new Error('없는 부품: ' + id);
     var P = Object.assign(defaults(id), p || {});
     var T = typeof theme === 'string' ? THEMES[theme] : (theme || THEMES.geumseong);
+    var prevFont = FONT_OVERRIDE; FONT_OVERRIDE = P._font || null;
     ctx.save();
-    d.draw(ctx, W, H, t, P, T);
-    ctx.restore();
+    try { d.draw(ctx, W, H, t, P, T); } finally { ctx.restore(); FONT_OVERRIDE = prevFont; }
   }
 
   g.KM_PARTS = {

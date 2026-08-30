@@ -17,9 +17,9 @@
     opening:   { cat: 'title',  hold: [2.6, 5.2],  thumbT: 3.0 },
     section:   { cat: 'title',  hold: [1.6, 3.35], thumbT: 2.0 },
     knockout:  { cat: 'title',  hold: [1.7, 3.2],  thumbT: 2.2 },
-    lower3rd:  { cat: 'info',   hold: [1.4, 4.3],  thumbT: 2.2 },
-    counter:   { cat: 'info',   hold: [2.5, 3.35], thumbT: 2.6 },
-    tag:       { cat: 'info',   hold: [0.9, 4.3],  thumbT: 2.0 },
+    lower3rd:  { cat: 'info',   hold: [1.4, 4.3],  thumbT: 2.2, anchor: [0.06, 0.9] },
+    counter:   { cat: 'info',   hold: [2.5, 3.35], thumbT: 2.6, anchor: [0.08, 0.5] },
+    tag:       { cat: 'info',   hold: [0.9, 4.3],  thumbT: 2.0, anchor: [0.05, 0.09] },
     quote:     { cat: 'title',  hold: [1.8, 5.7],  thumbT: 3.2 },
     chapter:   { cat: 'title',  hold: [1.5, 4.1],  thumbT: 2.4 },
     credits:   { cat: 'title',  hold: [3.4, 6.9],  thumbT: 4.0 },
@@ -67,11 +67,36 @@
   }
 
   /* 한 카드 그리기 — 호출자가 transform·alpha 를 초기화해 둔다 */
+  /* 카드 설정(글꼴·크기·세로 위치·등장/퇴장 효과)을 부품 그리기 바깥에서 씌운다 — 부품 정의는 손대지 않는다. */
   function drawCard(ctx, W, H, card, t, theme) {
     const k = K(); if (!k || !def(card.part)) return;
     const lf = t - card.at; if (lf < 0 || lf >= card.dur) return;
-    try { k.frame(card.part, ctx, W, H, remap(card, lf, g.KMV_PROJECT.FPS), card.p, theme); }
+    const FX = g.KMV_FX, s = H / 1080;
+    let p = card.p;
+    if (card.font && FX) { const fam = FX.family(card.font); if (fam) p = Object.assign({}, card.p, { _font: fam }); }
+    let fx = null;
+    if (FX && (card.fxIn || card.fxOut)) {
+      const dIn = card.fxIn ? Math.min(FX.durF(card.fxIn.dur), card.dur) : 0, dOut = card.fxOut ? Math.min(FX.durF(card.fxOut.dur), card.dur) : 0;
+      if (card.fxIn && lf < dIn) fx = FX.text(card.fxIn.type, (lf + 0.5) / dIn, 1, { s });
+      else if (card.fxOut && card.dur - lf <= dOut) fx = FX.textOut(card.fxOut.type, card.fxIn ? card.fxIn.type : 'fade', 1 - (card.dur - lf - 0.5) / dOut, 1, { s });
+      else if (card.fxIn && card.fxIn.type === 'breathe') fx = FX.text('breathe', 1, 1, { s });
+      if (fx && fx.per) { const q = fx.per(0, 1, {}); fx.alpha *= q.alpha; fx.dy += q.dy; }   // 글자 단위 효과는 카드 전체로
+      if (fx && fx.reveal < 1) fx.alpha *= fx.reveal;
+    }
+    const sizeK = clamp((card.size == null ? 100 : card.size) / 100, 0.4, 2.5), dy = (card.y || 0) / 100 * H;
+    const an = (META[card.part] && META[card.part].anchor) || [0.5, 0.5], ax = W * an[0], ay = H * an[1];   // 크기는 부품이 붙어 있는 자리를 축으로(모서리 부품이 화면 밖으로 안 밀리게)
+    ctx.save();
+    if (sizeK !== 1 || dy || fx) {
+      let sc = sizeK * (fx ? (fx.scale || 1) * (fx.breathe ? 1 + 0.015 * Math.sin(2 * Math.PI * (lf / 30) / 6) : 1) : 1);
+      ctx.translate(ax, ay + dy + (fx ? fx.dy || 0 : 0)); ctx.scale(sc, sc);
+      if (fx && fx.skew) ctx.transform(1, 0, fx.skew, 1, 0, 0);
+      ctx.translate(-ax, -ay);
+      if (fx) { ctx.globalAlpha *= clamp(fx.alpha, 0, 1); if (fx.blur > 0.2 && 'filter' in ctx) ctx.filter = 'blur(' + fx.blur.toFixed(1) + 'px)'; }
+    }
+    try { if (!fx || fx.alpha > 0.003) k.frame(card.part, ctx, W, H, remap(card, lf, g.KMV_PROJECT.FPS), p, theme); }
     catch (e) { console.warn('[KMV parts]', card.part, e); }
+    ctx.filter = 'none';
+    ctx.restore();
   }
 
   /* 카드 이름표(타임라인·목록용) — 대표 문구 */

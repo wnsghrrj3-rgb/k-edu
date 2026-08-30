@@ -1151,6 +1151,7 @@
     $('clipNone').classList.toggle('hidden', !!c); $('clipBody').classList.toggle('hidden', !c);
     $('trNone').classList.toggle('hidden', !!c); $('trBody').classList.toggle('hidden', !c);
     $('btnUndo').disabled = !P.canUndo(); $('btnRedo').disabled = !P.canRedo();
+    if (c) refreshClipFx();
     if (!c) return;
     if (c.gap) {                                        // 빈 자리 — 길이만 조절
       $('cName').textContent = '빈 자리'; $('cName').title = '리프트로 생긴 검은 화면';
@@ -1254,6 +1255,73 @@
     Array.from($('v2PosSeg').children).forEach(b => b.classList.toggle('on', b.dataset.k === (o.pos || 'br')));
     Array.from($('v2SizeSeg').children).forEach(b => { b.classList.toggle('on', b.dataset.k === (o.size || 'md')); b.disabled = o.pos === 'full'; });
   }
+  /* ---------- 설정 열 조절기 (KMV_FX) — 글꼴·크기·위치·색·등장/퇴장 ----------
+     자막 카드 → P.updateS, 부품 카드 → P.updateP, 클립 → P.setFade. 슬라이더는 끄는 동안 commit 없이, 놓으면 한 커밋. */
+  const FX = window.KMV_FX;
+  function fillSelect(sel, list, none, byCat) {
+    sel.innerHTML = '';
+    if (none) { const o = document.createElement('option'); o.value = ''; o.textContent = none; sel.appendChild(o); }
+    if (byCat) {
+      const cats = []; list.forEach(x => { if (!cats.includes(x.cat)) cats.push(x.cat); });
+      cats.forEach(c => { const og = document.createElement('optgroup'); og.label = c; list.filter(x => x.cat === c).forEach(x => { const o = document.createElement('option'); o.value = x.id; o.textContent = x.ko; og.appendChild(o); }); sel.appendChild(og); });
+    } else list.forEach(x => { const o = document.createElement('option'); o.value = x.id; o.textContent = x.ko; sel.appendChild(o); });
+  }
+  function setOn(seg, k) { Array.from(seg.children).forEach(b => b.classList.toggle('on', b.dataset.k === String(k))); }
+  /* 등장/퇴장 한 줄: select + 길이 seg. get() → 현재 spec, set(spec) → 저장 */
+  function fxRow(selId, durId, list, get, set) {
+    const sel = $(selId), seg = $(durId);
+    fillSelect(sel, list, '없음', true);
+    FX.DURS.forEach(d => segBtn(seg, d.id, d.ko, () => { const cur = get(); if (cur && cur.type) set({ type: cur.type, dur: d.id }); }));
+    sel.onchange = () => { const cur = get(); set(sel.value ? { type: sel.value, dur: (cur && cur.dur) || 'normal' } : null); };
+    return { refresh() { const cur = get(); sel.value = cur && cur.type ? cur.type : ''; seg.classList.toggle('hidden', !(cur && cur.type)); setOn(seg, cur && cur.dur || 'normal'); } };
+  }
+  /* 슬라이더: 끄는 동안 commit 없이 반영, 놓으면 한 커밋 */
+  function slider(id, vId, fmt, getCard, apply) {
+    let start = null;
+    $(id).oninput = e => { const c = getCard(); if (!c) return; if (start == null) start = c; apply(+e.target.value, false); $(vId).textContent = fmt(+e.target.value); };
+    $(id).onchange = e => { const c = getCard(); if (!c) return; start = null; apply(+e.target.value, true); };
+  }
+  if (FX) {
+    // 자막 카드
+    fillSelect($('subFont'), FX.FONTS, '기본 (프리텐다드)', true);
+    $('subFont').onchange = () => { const s2 = selS && P.subtitle(selS); if (!s2) return; const id = $('subFont').value || null; FX.loadFont(id).then(() => { if (!playing) renderPreview(); }); P.updateS(s2.id, { font: id }); };
+    slider('subSize', 'subSizeV', v => v + '%', () => selS && P.subtitle(selS), (v, done) => { const s2 = P.subtitle(selS); P.updateS(s2.id, { size: v }, { commit: done }); });
+    slider('subY', 'subYV', v => String(v), () => selS && P.subtitle(selS), (v, done) => { const s2 = P.subtitle(selS); P.updateS(s2.id, { y: v }, { commit: done }); });
+    [['', '자동'], ['top', '위'], ['mid', '가운데'], ['bottom', '아래']].forEach(([k, l]) => segBtn($('subPosSeg'), k, l, () => { const s2 = selS && P.subtitle(selS); if (s2) P.updateS(s2.id, { pos: k || null }); }));
+    [['', '테마'], ['white', '흰'], ['gold', '금'], ['navy', '네이비'], ['black', '검정']].forEach(([k, l]) => segBtn($('subColorSeg'), k, l, () => { const s2 = selS && P.subtitle(selS); if (s2) P.updateS(s2.id, { color: k || null }); }));
+    const subIn = fxRow('subFxIn', 'subFxInDur', FX.TEXT, () => { const s2 = selS && P.subtitle(selS); return s2 ? s2.fxIn : null; }, spec => { const s2 = selS && P.subtitle(selS); if (s2) P.updateS(s2.id, { fxIn: spec }); });
+    const subOut = fxRow('subFxOut', 'subFxOutDur', FX.TEXT_OUT.map(x => Object.assign({ cat: '퇴장' }, x)), () => { const s2 = selS && P.subtitle(selS); return s2 ? s2.fxOut : null; }, spec => { const s2 = selS && P.subtitle(selS); if (s2) P.updateS(s2.id, { fxOut: spec }); });
+    // 부품 카드
+    fillSelect($('partFont'), FX.FONTS, '기본 (프리텐다드)', true);
+    $('partFont').onchange = () => { const pt = selPart(); if (!pt) return; const id = $('partFont').value || null; FX.loadFont(id).then(() => { PT.invalidateThumbs && PT.invalidateThumbs(); if (!playing) renderPreview(); }); P.updateP(pt.id, { font: id }); };
+    slider('partSize', 'partSizeV', v => v + '%', selPart, (v, done) => { P.updateP(selPart().id, { size: v }, { commit: done }); });
+    slider('partY', 'partYV', v => String(v), selPart, (v, done) => { P.updateP(selPart().id, { y: v }, { commit: done }); });
+    const partIn = fxRow('partFxIn', 'partFxInDur', FX.TEXT.filter(x => !['type', 'chars', 'words', 'lines', 'underline', 'maskUp', 'split', 'sweep', 'barFirst', 'ink', 'brush', 'countUp'].includes(x.id)), () => { const pt = selPart(); return pt ? pt.fxIn : null; }, spec => { const pt = selPart(); if (pt) P.updateP(pt.id, { fxIn: spec }); });
+    const partOut = fxRow('partFxOut', 'partFxOutDur', FX.TEXT_OUT.map(x => Object.assign({ cat: '퇴장' }, x)), () => { const pt = selPart(); return pt ? pt.fxOut : null; }, spec => { const pt = selPart(); if (pt) P.updateP(pt.id, { fxOut: spec }); });
+    // 클립 등장/퇴장
+    const clipIn = fxRow('clipFadeIn', 'clipFadeInDur', FX.CLIP, () => { const c = selClip(); return c ? c.fadeIn : null; }, spec => { const c = selClip(); if (c) P.setFade(c.id, 'in', spec); });
+    const clipOut = fxRow('clipFadeOut', 'clipFadeOutDur', FX.CLIP, () => { const c = selClip(); return c ? c.fadeOut : null; }, spec => { const c = selClip(); if (c) P.setFade(c.id, 'out', spec); });
+    window.__kmvFxRows = { subIn, subOut, partIn, partOut, clipIn, clipOut };
+  }
+  function refreshSubFx(s2) {
+    if (!FX || !s2) return;
+    if (document.activeElement !== $('subFont')) $('subFont').value = s2.font || '';
+    if (document.activeElement !== $('subSize')) { $('subSize').value = s2.size == null ? 100 : s2.size; $('subSizeV').textContent = $('subSize').value + '%'; }
+    if (document.activeElement !== $('subY')) { $('subY').value = s2.y || 0; $('subYV').textContent = String(s2.y || 0); }
+    setOn($('subPosSeg'), s2.pos || ''); setOn($('subColorSeg'), s2.color || '');
+    window.__kmvFxRows.subIn.refresh(); window.__kmvFxRows.subOut.refresh();
+    if (s2.font) FX.loadFont(s2.font);
+  }
+  function refreshPartFx(pt) {
+    if (!FX || !pt) return;
+    if (document.activeElement !== $('partFont')) $('partFont').value = pt.font || '';
+    if (document.activeElement !== $('partSize')) { $('partSize').value = pt.size == null ? 100 : pt.size; $('partSizeV').textContent = $('partSize').value + '%'; }
+    if (document.activeElement !== $('partY')) { $('partY').value = pt.y || 0; $('partYV').textContent = String(pt.y || 0); }
+    window.__kmvFxRows.partIn.refresh(); window.__kmvFxRows.partOut.refresh();
+    if (pt.font) FX.loadFont(pt.font);
+  }
+  function refreshClipFx() { if (FX && window.__kmvFxRows) { window.__kmvFxRows.clipIn.refresh(); window.__kmvFxRows.clipOut.refresh(); } }
+
   let subStyle = 'basic';
   (SB.CATS || [{ id: null }]).forEach(cat => {
     const items = SB.STYLES.filter(st => !cat.id || st.cat === cat.id); if (!items.length) return;
@@ -1261,6 +1329,7 @@
     const row = document.createElement('div'); row.className = 'seg c3'; $('subStyleSeg').appendChild(row);
     items.forEach(st => segBtn(row, st.id, st.name, () => { subStyle = st.id; const s2 = selS && P.subtitle(selS); if (s2) P.updateS(s2.id, { style: st.id }); else refreshSubPanel(); }, st.hint));
   });
+  { const sel = $('subDefStyle'); SB.STYLES.forEach(st => { const o = document.createElement('option'); o.value = st.id; o.textContent = st.name + ' — ' + st.hint; sel.appendChild(o); }); sel.value = subStyle; sel.onchange = () => { subStyle = sel.value; }; }
   $('btnSubAuto').onclick = () => {
     stop();
     const lines = $('subText').value.split(/\n/).map(x => x.trim()).filter(Boolean);
@@ -1317,7 +1386,7 @@
     const s2 = selS && P.subtitle(selS);
     $('subEdit').classList.toggle('hidden', !s2); const scn = $('subCardNone'); if (scn) scn.classList.toggle('hidden', !!s2);
     Array.from($('subStyleSeg').querySelectorAll('button')).forEach(b => b.classList.toggle('on', b.dataset.k === (s2 ? s2.style : subStyle)));
-    if (s2) { if (document.activeElement !== $('subEditText')) $('subEditText').value = s2.text; $('subEditTime').textContent = tc(s2.at) + ' → ' + tc(s2.at + s2.dur) + ' · ' + secStr(s2.dur); }
+    if (s2) { if (document.activeElement !== $('subEditText')) $('subEditText').value = s2.text; $('subEditTime').textContent = tc(s2.at) + ' → ' + tc(s2.at + s2.dur) + ' · ' + secStr(s2.dur); refreshSubFx(s2); }
     const list = $('subList'); list.innerHTML = '';
     P.data.S.forEach(c => {
       const el = document.createElement('div'); el.className = 'sc' + (c.id === selS ? ' on' : '');
@@ -1419,6 +1488,7 @@
     $('rowPartCut').classList.toggle('hidden', !m.behind);
     $('tgPartCut').classList.toggle('on', PT.behind(pt));
     $('partEditTime').textContent = tc(pt.at) + ' → ' + tc(pt.at + pt.dur);
+    refreshPartFx(pt);
   }
   $('partDur').onchange = e => { const pt = selPart(); if (pt) { stop(); P.updateP(pt.id, { dur: Math.round(clamp(+e.target.value, 0.5, 120) * FPS) }); } };
   $('tgPartCut').onclick = () => { const pt = selPart(); if (!pt) return; const next = !PT.behind(pt); P.updateP(pt.id, { cut: next }); if (next && SG) SG.load(); };
@@ -1821,7 +1891,7 @@
     catch (err) { toast(err.message || '작업 파일을 읽지 못했어요', 3000); }
   };
 
-  window.KMV_UI = { importFiles, setPH: f => setPH(f), get ph() { return ph; }, select, selectP, selectA2, placePart, play, stop, zoomFit, get pxf() { return pxf; }, get scrollF() { return scrollF; }, get selP() { return selP; }, get selA2() { return selA2; }, beatFrames,
+  window.KMV_UI = { importFiles, setPH: f => setPH(f), get ph() { return ph; }, select, selectP, selectA2, selectS, placePart, play, stop, zoomFit, get pxf() { return pxf; }, get scrollF() { return scrollF; }, get selP() { return selP; }, get selA2() { return selA2; }, beatFrames,
     get sel() { return sel; }, selectedIds, openSource, showStage, get stage() { return stage; }, get src() { return srcCur; }, setSrcPH, srcMark, srcPlace, shuttleTo, get shuttle() { return shuttle; }, get playing() { return playing || srcPlaying; }, doMarker, doCopy, doCut, doPaste, get clipboard() { return clipboard; }, get selM() { return selM; }, layout: { HEAD, RULER, LY }, xOf, frameOf, laneRows, rowGeom, selectV2, get selV2() { return selV2; }, get delChip() { return delChip; }, get proj() { return proj; }, openRecord, newProject, loadDoc, saveCloud, openProjModal };
 
   /* ---------- 시작 ---------- */

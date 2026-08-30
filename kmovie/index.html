@@ -53,6 +53,11 @@
   .side .col { min-height:0; overflow:auto; border-left:1px solid var(--line); }
   .side .col:first-child { border-left:0; }
   .side .colTitle { position:sticky; top:0; z-index:2; background:var(--panel); padding:8px 14px 6px; font-size:11px; color:var(--sub); letter-spacing:2px; border-bottom:1px solid var(--line); }
+  #colSet .none { display:none; }
+  #clipPanel:has(#clipBody.hidden), #trPanel:has(#trBody.hidden), #subCardPanel:has(#subEdit.hidden), #v2Panel:has(#v2Body.hidden), #musicCardPanel:has(#musicBody.hidden) { display:none; }
+  #colSet select { flex:1; min-width:0; background:#0f1524; color:var(--txt); border:1px solid var(--line2); border-radius:6px; padding:3px 6px; font-size:12px; }
+  #colSet .fxrow { display:flex; gap:6px; align-items:center; flex:1; }
+  #colSet .fxrow .seg { flex:none; }
   @media (max-width:1460px) { aside.side { display:flex; flex-direction:column; overflow:auto; } .side .col { overflow:visible; border-left:0; } .side .colTitle { position:static; } }
   .panel { padding:12px 14px; border-bottom:1px solid var(--line); }
   .panel h3 { margin:0 0 8px; font-size:11px; color:var(--gold); letter-spacing:2px; text-transform:uppercase; display:flex; align-items:center; gap:8px; }
@@ -228,6 +233,11 @@
         <div id="partEdit" class="hidden">
           <div class="sub2" id="partEditName"></div>
           <div id="partFields"></div>
+          <div class="row"><label>글꼴</label><select id="partFont"></select></div>
+          <div class="row"><label>크기</label><input type="range" id="partSize" min="50" max="200" value="100"><span class="v" id="partSizeV" style="width:40px;text-align:right">100%</span></div>
+          <div class="row"><label>위치</label><input type="range" id="partY" min="-30" max="30" value="0"><span class="v" id="partYV" style="width:40px;text-align:right">0</span></div>
+          <div class="row"><label>등장</label><div class="fxrow"><select id="partFxIn"></select><div class="seg c3" id="partFxInDur"></div></div></div>
+          <div class="row"><label>퇴장</label><div class="fxrow"><select id="partFxOut"></select><div class="seg c3" id="partFxOutDur"></div></div></div>
           <div class="row"><label>길이</label><input type="number" id="partDur" min="0.5" max="120" step="0.5"><span class="v">초</span><div class="sp"></div><span class="note" id="partHoldNote"></span></div>
           <div class="row" id="rowPartCut"><label>인물 뒤</label><button class="tog" id="tgPartCut"></button><span class="note">사람만 앞에 다시 얹어요 (AI 컷아웃)</span></div>
           <div class="row"><span class="v" id="partEditTime" style="font-size:12px;color:var(--sub)"></span><div class="sp"></div><button id="btnPartDup" title="같은 카드 하나 더 (바로 뒤에)">복제</button><button id="btnPartDel" class="danger">삭제</button></div>
@@ -251,6 +261,9 @@
           <div class="row"><label>대비</label><input type="range" id="cContrast" min="50" max="160" value="100"><span class="v" id="cContrastV" style="width:34px;text-align:right">100</span></div>
           <div class="row"><label>채도</label><input type="range" id="cSat" min="0" max="180" value="100"><span class="v" id="cSatV" style="width:34px;text-align:right">100</span></div>
           <div class="row" id="rowKb"><label>켄 번즈</label><div class="seg c3" id="kbSeg"></div></div>
+          <div class="sub2">등장 · 퇴장</div>
+          <div class="row"><label>등장</label><div class="fxrow"><select id="clipFadeIn"></select><div class="seg c3" id="clipFadeInDur"></div></div></div>
+          <div class="row"><label>퇴장</label><div class="fxrow"><select id="clipFadeOut"></select><div class="seg c3" id="clipFadeOutDur"></div></div></div>
         </div>
       </div>
       <div class="panel" id="trPanel">
@@ -265,7 +278,15 @@
       <div class="panel" id="subCardPanel">
         <h3>자막 카드</h3>
         <div id="subCardNone" class="none">S 레인의 자막을 고르면<br>문구·구간을 여기서 고쳐요. 스타일은 도구상자 「자막」에서.</div>
-        <div id="subEdit" class="hidden"><div class="row"><label>문구</label><input type="text" id="subEditText" style="flex:1"></div><div class="row"><label>구간</label><span class="v" id="subEditTime"></span><div class="sp"></div><button id="btnSubDel" class="danger">삭제</button></div></div>
+        <div id="subEdit" class="hidden"><div class="row"><label>문구</label><input type="text" id="subEditText" style="flex:1"></div>
+          <div class="row"><label>스타일</label><div id="subStyleSeg" style="display:flex;flex-direction:column;gap:5px;flex:1"></div></div>
+          <div class="row"><label>글꼴</label><select id="subFont"></select></div>
+          <div class="row"><label>크기</label><input type="range" id="subSize" min="50" max="200" value="100"><span class="v" id="subSizeV" style="width:40px;text-align:right">100%</span></div>
+          <div class="row"><label>위치</label><div class="seg c4" id="subPosSeg"></div></div>
+          <div class="row"><label>미세</label><input type="range" id="subY" min="-30" max="30" value="0"><span class="v" id="subYV" style="width:40px;text-align:right">0</span></div>
+          <div class="row"><label>색</label><div class="seg" id="subColorSeg"></div></div>
+          <div class="row"><label>등장</label><div class="fxrow"><select id="subFxIn"></select><div class="seg c3" id="subFxInDur"></div></div></div>
+          <div class="row"><label>퇴장</label><div class="fxrow"><select id="subFxOut"></select><div class="seg c3" id="subFxOutDur"></div></div></div><div class="row"><label>구간</label><span class="v" id="subEditTime"></span><div class="sp"></div><button id="btnSubDel" class="danger">삭제</button></div></div>
       </div>
       <div class="panel" id="v2Panel">
         <h3>덧영상<div class="sp"></div><span class="note" style="letter-spacing:0;text-transform:none;font-weight:400">영상 위에 작은 화면(PIP)</span></h3>
@@ -305,7 +326,7 @@
         <h3>자막<div class="sp"></div><button id="btnSubClear" title="자막 전부 지우기">비우기</button></h3>
         <textarea id="subText" placeholder="한 줄에 한 문장씩 붙여넣고 [자동 배치] — 현장음의 말하는 구간에 나눠 놓아요"></textarea>
         <div class="row" style="margin-top:6px"><button id="btnSubStt" title="원본의 말소리를 whisper 가 받아써 자막 카드로 놓아요 — 데스크톱 케이무비 전용" style="flex:1">🎙 받아쓰기</button><button id="btnSubAuto" class="gold" style="flex:1">자동 배치</button><button id="btnSubAdd" title="플레이헤드에 자막 카드 하나">＋ 여기에</button></div>
-        <div class="row"><label>스타일</label><div id="subStyleSeg" style="display:flex;flex-direction:column;gap:5px;flex:1"></div></div>
+        <div class="row"><label>새 자막</label><select id="subDefStyle" style="flex:1;background:#0f1524;color:var(--txt);border:1px solid var(--line2);border-radius:6px;padding:3px 6px;font-size:12px"></select></div>
         <div id="subList"></div>
       </div>
       <div class="panel" id="musicPanel">
@@ -414,6 +435,7 @@
 <script src="engine/gen.js" defer></script>
 <script src="engine/sfx.js" defer></script>
 <script src="engine/store.js" defer></script>
+<script src="engine/fx.js" defer></script>
 <script src="engine/render.js" defer></script>
 <script src="engine/export.js" defer></script>
 <script src="engine/shell.js" defer></script>
