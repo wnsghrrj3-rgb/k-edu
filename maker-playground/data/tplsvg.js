@@ -339,9 +339,21 @@ window.MK_TPLSVG = (() => {
     const DP = opts.DOMParser || (typeof DOMParser !== 'undefined' ? DOMParser : null);
     const XS = opts.XMLSerializer || (typeof XMLSerializer !== 'undefined' ? XMLSerializer : null);
     if (!DP || !XS) return { ok: false, msg: 'SVG 파서를 쓸 수 없는 환경' };
-    const doc = new DP().parseFromString(String(svgText), 'image/svg+xml');
-    const root = doc.documentElement;
-    if (!root || /parsererror/i.test(root.tagName || '')) return { ok: false, msg: 'SVG 를 읽을 수 없어요' };
+    /* SVG 는 XML 이라 맨 & 하나로 파일 전체가 안 열린다. 손으로 쓰거나 생성한
+       SVG 에서 흔한 실수(Tomato & Burrata)라 엔티티가 아닌 & 만 감싸 재시도한다.
+       고쳐서 열렸다면 원본도 손보라고 note 로 알린다 — 썸네일은 브라우저가 원본
+       SVG 를 직접 읽으므로, 파서만 통과해서는 카드가 빈 채로 뜬다. */
+    const AMP = /&(?!(?:[a-zA-Z][a-zA-Z0-9]*|#\d+|#x[0-9A-Fa-f]+);)/g;
+    const broken = (d) => !d || !d.documentElement || /parsererror/i.test(d.documentElement.tagName || '')
+      || !!(d.getElementsByTagName && d.getElementsByTagName('parsererror').length);
+    let doc = new DP().parseFromString(String(svgText), 'image/svg+xml');
+    let healed = false;
+    if (broken(doc) && AMP.test(String(svgText))) {
+      doc = new DP().parseFromString(String(svgText).replace(AMP, '&amp;'), 'image/svg+xml');
+      healed = !broken(doc);
+    }
+    const root = doc && doc.documentElement;
+    if (broken(doc)) return { ok: false, msg: 'SVG 를 읽을 수 없어요 — XML 문법 오류' };
     const serOne = (n) => { try { return new XS().serializeToString(n); } catch (_) { return ''; } };
 
     const vbAttr = (attr(root, 'viewBox') || '').trim().split(/[\s,]+/).map(Number);
@@ -370,6 +382,7 @@ window.MK_TPLSVG = (() => {
 
     const elements = [];
     const notes = [];
+    if (healed) notes.push('원본 SVG 에 감싸지 않은 & 가 있어 고쳐 읽었어요 — 원본도 &amp; 로 고치세요');
     let background = null;
 
     const walk = (parent, off) => {

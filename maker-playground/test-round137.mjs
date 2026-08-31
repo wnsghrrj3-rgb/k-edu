@@ -141,6 +141,35 @@ for (const t of T.CATALOG) {
   if (bad2.length) bad++;
 }
 
+
+/* ---- 깨진 SVG 방어 ----
+   SVG 는 XML 이라 감싸지 않은 & 하나로 파일 전체가 안 열린다. 생성한 SVG 에서
+   흔한 실수라 파서가 고쳐 읽되, 원본도 고치라고 알려야 한다 — 썸네일은
+   브라우저가 원본을 직접 읽으므로 파서만 통과하면 카드가 빈 채로 뜬다. */
+{
+  const sv = global.window; const g5 = {}; global.window = g5;
+  const req5 = createRequire(import.meta.url);
+  delete req5.cache[req5.resolve('./data/tplsvg.js')]; req5('./data/tplsvg.js');
+  const opts5 = { DOMParser: dom.window.DOMParser, XMLSerializer: dom.window.XMLSerializer };
+  const amp = '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="#fff"/><text x="10" y="50" font-size="12" fill="#000">Tomato & Burrata</text></svg>';
+  const r5 = g5.MK_TPLSVG.parse(amp, opts5);
+  const okHeal = r5.ok && r5.elements.length === 1 && r5.elements[0].text === 'Tomato & Burrata'
+    && r5.notes.some((n) => n.includes('&amp;'));
+  console.log((okHeal ? '✅ ' : '❌ ') + '감싸지 않은 & 는 고쳐 읽고 원본 수정을 알린다');
+  const r6 = g5.MK_TPLSVG.parse('<svg><rect', opts5);
+  console.log((!r6.ok ? '✅ ' : '❌ ') + '정말 깨진 SVG 는 실패로 돌려준다');
+  if (!okHeal || r6.ok) bad++;
+  /* 원본 파일에 그 실수가 남아 있으면 썸네일이 빈다 */
+  let dirty = [];
+  for (const t of T.CATALOG) {
+    const raw = fs.readFileSync(`assets/templates/${t.pack}/${t.file}`, 'utf8');
+    if (/&(?!(?:[a-zA-Z][a-zA-Z0-9]*|#\d+|#x[0-9A-Fa-f]+);)/.test(raw)) dirty.push(t.id);
+  }
+  console.log((dirty.length ? '❌ ' : '✅ ') + '원본 SVG 전부 XML 로 유효' + (dirty.length ? ' — ' + dirty.join(', ') : ''));
+  if (dirty.length) bad++;
+  global.window = sv;
+}
+
 console.log('\nMK_EASY quickAudit', JSON.stringify(window.MK_EASY.quickAudit()));
 // 에디터 배선 계약
 const ed = fs.readFileSync('screens/editor.js', 'utf8');
