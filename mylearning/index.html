@@ -148,11 +148,12 @@ async function init(){
   document.documentElement.style.setProperty('--gc', gc);
   if(p.grade && p.grade <= 2) document.body.classList.add('lower');
   const from = KR.addDays(KR.mondayOf(KR.today()), -120);
-  const [{ data: mastery }, { data: scores }, { data: wrongs }, { data: morning }] = await Promise.all([
+  const [{ data: mastery }, { data: scores }, { data: wrongs }, { data: morning }, { data: conceptRows }] = await Promise.all([
     db.from('report_lesson_mastery').select('*').eq('student_id', p.id),
     db.from('scores').select('lesson_id,unit_id,question_id,is_correct,earned_at').eq('student_id', p.id).order('earned_at',{ascending:false}).limit(3000),
     db.from('wrong_answers').select('*').eq('student_id', p.id).is('resolved_at', null),
-    db.from('report_morning_daily').select('student_id,run_date,subject').eq('student_id', p.id).gte('run_date', from)
+    db.from('report_morning_daily').select('student_id,run_date,subject').eq('student_id', p.id).gte('run_date', from),
+    db.from('report_concept_mastery').select('*').eq('student_id', p.id)
   ]);
   await KR.loadCatalog((mastery||[]).map(m=>m.lesson_id).concat((scores||[]).map(r=>r.lesson_id), (wrongs||[]).map(w=>w.lesson_id)));
   const cls = KR.classify(mastery||[], wrongs||[]);
@@ -160,10 +161,12 @@ async function init(){
   const units = KR.unitProgress(scores||[], mastery||[]);
   const steps = KR.nextSteps(cls, mastery||[], scores||[], units, 3);
   const streak = KR.streak(scores||[], morning||[]);
-  render(p, wk, cls, steps, units, streak);
+  if((conceptRows||[]).length) await KR.loadConcepts(db);
+  const cmap = KR.conceptMap(conceptRows||[]);
+  render(p, wk, cls, steps, units, streak, cmap);
 }
 
-function render(p, wk, cls, steps, units, streak){
+function render(p, wk, cls, steps, units, streak, cmap){
   const todayStr = KR.today();
   const DAY_KO = ['월','화','수','목','금','토','일'];
   const daysHtml = Object.keys(wk.days).map((d,i) => {
@@ -243,6 +246,8 @@ function render(p, wk, cls, steps, units, streak){
     </div>
     <div class="card"><h2><span class="ico">💪</span>다시 해볼 것</h2>
       ${retry.length ? retry.slice(0,3).map(it=>goCard(it,'💪','한 번 더!')).join('') : '<div class="empty">지금은 없어요. 멋져요!</div>'}
+      ${(cmap && cmap.weak.length) ? `<div class="note">${cmap.weak.slice(0,2).map(c=>`「${c.info.name}」은 한 번 더 보면 좋아요.`).join(' ')}</div>` : ''}
+      ${(cmap && cmap.solid.length) ? `<div class="note">「${cmap.solid.slice(0,2).map(c=>c.info.name).join('」와 「')}」은 이제 탄탄해요!</div>` : ''}
     </div>
     <div class="card"><h2><span class="ico">👟</span>다음 걸음</h2>
       ${steps.length ? steps.map(st=>goCard(st, stepIcon[st.kind]||'👉', stepCta[st.kind]||'가 보기')).join('') : '<div class="empty">첫 차시를 열어 보면 여기에 다음 걸음이 생겨요!</div>'}

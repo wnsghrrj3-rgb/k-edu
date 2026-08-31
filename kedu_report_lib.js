@@ -1,5 +1,5 @@
 // =============================================
-// 케이학습리포트 공용 라이브러리 (kedu_report_lib.js v2 — 2026-08-31)
+// 케이학습리포트 공용 라이브러리 (kedu_report_lib.js v3 — 2026-08-31)
 // 명세: handoff/kedu/학습리포트_설계_v1.md
 // 교사(R1)·학생(R2)·학부모(R3) 세 화면이 같은 집계 위의 세 스킨이 되도록
 // 계산은 여기서 한 번만 짓는다 (설계 §0). 규칙 기반 — 외부 API 호출 없음.
@@ -10,6 +10,11 @@
 //  · 일별 시리즈(dailySeries)·연속 학습일(streak)·주간 과목별 집계·정확률
 //  · 다음 걸음 4순위: 반복 오답 → 취약 차시 → 하다 만 차시 → 단원의 다음 새 차시
 //  · report_lesson_mastery v1.1 열(q_n·q_latest_ok·runs·last_run_*) 사용
+//
+// v3 변경 (케이학습지 합류):
+//  · 개념 사전 해석 — 원장(concepts·misconceptions) 우선, 파일(_concepts.json) 대체
+//  · report_concept_mastery → conceptMap(), report_misconception → misconceptionTop()
+//  · 학습지 세트(lesson_id 'ws:{set}') 이름·URL 해석 — wsSetId/wsLabel/wsUrl
 // =============================================
 (function(){
   'use strict';
@@ -333,6 +338,104 @@
     return info.url || fallback || null;
   }
 
+
+  // =============================================
+  // 6-2. 개념 사전 · 개념 도달 (v3, 2026-08-31 — 케이학습지 합류)
+  //   개념 코드('M1-1-C2')·오개념 코드('M07')를 사람 말로 옮긴다.
+  //   사전 정본 = /kedu/worksheet/data/_concepts.json (한 번만 불러 캐시).
+  //   차시 도달과 같은 규칙 위에 서므로 화면은 status 색을 그대로 재사용한다.
+  // =============================================
+  const CONCEPTS_URL = '/kedu/worksheet/data/_concepts.json';
+  let _dict = null;                      // { concepts:{}, misconceptions:{} }
+  let _dictPromise = null;
+
+  //   정본 순서: ① 케이학습지 원장(concepts·misconceptions 표) ② 파일 사전(_concepts.json).
+  //   원장이 적재되면 학년·과목이 늘어도 화면은 그대로다. 원장 적용 전에도 리포트가
+  //   서도록 파일 사전을 뒤에 둔다.
+  function loadConcepts(db){
+    if(_dict) return Promise.resolve(_dict);
+    if(_dictPromise) return _dictPromise;
+    const fromFile = () => fetch(CONCEPTS_URL)
+      .then(r => r.ok ? r.json() : null)
+      .catch(() => null);
+    const fromBank = db ? Promise.all([
+        db.from('concepts').select('code,name,subject,unit_code,lesson_no,ord,achievement_codes'),
+        db.from('misconceptions').select('code,title,teacher_hint,concept_codes')
+      ]).then(res => {
+        const cs = (res[0] && res[0].data) || [], ms = (res[1] && res[1].data) || [];
+        if(!cs.length) return null;
+        const out = { concepts:{}, misconceptions:{} };
+        cs.forEach(r => { out.concepts[r.code] = { name:r.name, full:r.name, subject:r.subject || '',
+          unitName:'', lesson:r.lesson_no ? ('L' + String(r.lesson_no).padStart(2,'0')) : '',
+          order:r.ord || 0, achievement:(r.achievement_codes || [])[0] || '' }; });
+        ms.forEach(r => { out.misconceptions[r.code] = { text:r.title, hint:r.teacher_hint || '',
+          concepts:r.concept_codes || [] }; });
+        return out;
+      }).catch(() => null) : Promise.resolve(null);
+    _dictPromise = fromBank
+      .then(d => d || fromFile())
+      .then(j => { _dict = j || { concepts:{}, misconceptions:{} }; return _dict; });
+    return _dictPromise;
+  }
+
+  // 개념 코드 → { code, name, full, subject, subjectKo, unitName, lesson, order, known }
+  function concept(code){
+    const c = (_dict && _dict.concepts && _dict.concepts[code]) || null;
+    if(!c) return { code, name:String(code||''), full:String(code||''), subject:'', subjectKo:'',
+                    unitName:'', lesson:'', order:999, known:false };
+    return { code, name:c.name, full:c.full || c.name, subject:c.subject || '',
+             subjectKo:SUBJECT_KO[c.subject] || '', unitName:c.unitName || '',
+             lesson:c.lesson || '', order:c.order || 999, achievement:c.achievement || '', known:true };
+  }
+
+  // 오개념 코드 → { code, text, hint, concepts:[], known }
+  function misconception(code){
+    const m = (_dict && _dict.misconceptions && _dict.misconceptions[code]) || null;
+    if(!m) return { code, text:String(code||''), hint:'', concepts:[], known:false };
+    return { code, text:m.text, hint:m.hint || '', concepts:m.concepts || [], known:true };
+  }
+
+  // report_concept_mastery 행 → 사전 붙이고 개념 순서로 정렬
+  //   반환 { list:[{...row, info, rate}], byCode:{}, solid, edge, weak, watching }
+  function conceptMap(conceptRows){
+    const out = { list:[], byCode:{}, solid:[], edge:[], weak:[], watching:[] };
+    (conceptRows || []).forEach(r => {
+      const row = Object.assign({}, r, {
+        info: concept(r.concept_code),
+        rate: pct(r.q_latest_ok, r.q_n)
+      });
+      out.list.push(row); out.byCode[r.concept_code] = row;
+      (out[r.status] || out.watching).push(row);
+    });
+    out.list.sort((a,b) => (a.info.order||999) - (b.info.order||999) ||
+                            String(a.concept_code).localeCompare(String(b.concept_code)));
+    return out;
+  }
+
+  // report_misconception 행 → 반복(n>=2)·미해결 우선. 화면은 상위 몇 개만 쓴다.
+  //   불변식: 한 번 짚은 오개념은 '반복'이 아니다 (설계 §1).
+  function misconceptionTop(misRows, minN, max){
+    minN = minN || 2;
+    return (misRows || [])
+      .filter(r => (r.n || 0) >= minN)
+      .map(r => Object.assign({}, r, { info: misconception(r.mis_code), concept: concept(r.concept_code) }))
+      .sort((a,b) => (b.still_open === true) - (a.still_open === true) ||
+                     (b.n || 0) - (a.n || 0) ||
+                     new Date(b.last_at || 0) - new Date(a.last_at || 0))
+      .slice(0, max || 5);
+  }
+
+  // 학습지 세트 키 ↔ lesson_id
+  function wsSetId(lessonId){ const r = String(lessonId || ''); return r.startsWith('ws:') ? r.slice(3) : null; }
+  function wsUrl(setId){ return '/kedu/worksheet/play.html?set=' + encodeURIComponent(setId); }
+  // 세트 키 → 사람이 읽는 이름 ('g1_math_u1_L02_basic' → '2차시 · 기본')
+  function wsLabel(setId){
+    const m = String(setId || '').match(/^g(\d)_([a-z]+)_u(\d+)_(?:L(\d+)_(basic|challenge)|review_([a-d]))$/i);
+    if(!m) return String(setId || '');
+    if(m[6]) return '단원 종합 ' + m[6].toUpperCase() + '형';
+    return Number(m[4]) + '차시 · ' + (m[5].toLowerCase() === 'basic' ? '기본' : '도전');
+  }
+
   // =============================================
   // 7. 다음 걸음 조립 (설계 §1-④) — 규칙 기반, 최대 3개
   //   ① 반복 오답 차시 다시 풀기 → ② weak 차시 한 번 더
@@ -384,6 +487,9 @@
     // 집계
     dailySeries, dayActive, buildWeeks, streak, trendArrow, pct,
     classify, unitProgress, nextSteps,
+    // 개념 (v3 — 케이학습지 합류)
+    loadConcepts, concept, misconception, conceptMap, misconceptionTop,
+    wsSetId, wsUrl, wsLabel,
     WATCHING_NOTE, STATUS_KO, SUBJECT_KO, SUBJECT_ORDER
   };
 })();

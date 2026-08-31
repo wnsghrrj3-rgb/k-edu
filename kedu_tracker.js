@@ -1,5 +1,8 @@
 // =============================================
-// K-edu 학습 추적 + 인증 가드 (kedu_tracker.js v2)
+// K-edu 학습 추적 + 인증 가드 (kedu_tracker.js v2.3 — 2026-08-31)
+// v2.3: 케이학습지 합류 — window.KEDU_LESSON_ID/UNIT, setLessonId(),
+//       recordAnswer 개념 코드(concept_code)·오개념(misconception_code) 기록
+//       — 열 이름은 케이학습지 원장(sql/setup_worksheet_bank.sql)과 같은 것을 쓴다
 // 작성: 2026-04-28
 // 명세: handoff/kedu/standards/데이터진단_표준.md
 // 적합성: 학습데이터는 학급코드 학생만 저장. 방문집계(page_visits)는 익명·개인식별 없음.
@@ -11,7 +14,8 @@
 //   <script src="/kedu_tracker.js"></script>
 //
 // 페이지 코드 API (선택):
-//   window.kedu.recordAnswer(questionId, isCorrect, timeSpentSec, conceptId)
+//   window.kedu.recordAnswer(questionId, isCorrect, timeSpentSec, conceptId, meta)
+//   window.kedu.setLessonId(id)   — 한 파일이 여러 차시/세트를 그리는 페이지(케이학습지)용
 //   window.kedu.recordLessonEnd(score, total)
 //   window.kedu.recordHomeworkDone(assignmentId)
 //
@@ -35,6 +39,7 @@
     session: null,
     profile: null,         // student_profiles row (없으면 null = 추적 X)
     lessonId: null,
+    unitId: null,          // 기본 location.pathname. window.KEDU_LESSON_UNIT 로 덮어씀
     pageStartTs: null
   };
 
@@ -143,6 +148,9 @@
   }
 
   function resolveLessonId(path){
+    // 0순위: window.KEDU_LESSON_ID — 한 파일이 여러 세트를 그리는 페이지(케이학습지 play.html)
+    if(window.KEDU_LESSON_ID) return String(window.KEDU_LESSON_ID).trim();
+
     // 1순위: <meta name="kedu-lesson-id">
     var meta = document.querySelector('meta[name="kedu-lesson-id"]');
     if(meta && meta.content) return meta.content.trim();
@@ -157,6 +165,7 @@
 
   function startLesson(path){
     state.lessonId = resolveLessonId(path);
+    state.unitId   = window.KEDU_LESSON_UNIT ? String(window.KEDU_LESSON_UNIT) : location.pathname;
     state.pageStartTs = Date.now();
     // 차시 시작 자체는 별도 INSERT 안 함.
     // 첫 recordAnswer 시점에 스코어가 쌓이고, recordLessonEnd가 누계 기록.
@@ -176,22 +185,29 @@
    * @param {string}  questionId    차시 내 문제 식별자 (예: 'q1', 'q12')
    * @param {boolean} isCorrect     정오
    * @param {number}  timeSpentSec  풀이 소요 초 (없으면 0)
-   * @param {number}  conceptId     lesson_concepts.id (선택)
+   * @param {number|string} conceptId  lesson_concepts.id (숫자) 또는 개념 코드 문자열
+   *                                    (케이학습지 'M1-1-C2' — concept_code 열로 간다)
+   * @param {object}  meta          { mis:'M07' } 오개념 코드 등 (선택)
    */
-  window.kedu.recordAnswer = function(questionId, isCorrect, timeSpentSec, conceptId){
+  window.kedu.recordAnswer = function(questionId, isCorrect, timeSpentSec, conceptId, meta){
     if(!state.profile || !state.lessonId) return;
 
     var row = {
       student_id:   state.profile.id,
       lesson_id:    state.lessonId,
-      unit_id:      location.pathname,
+      unit_id:      state.unitId || location.pathname,
       question_id:  String(questionId),
       is_correct:   !!isCorrect,
       time_spent_sec: Number(timeSpentSec) || 0,
       score:        isCorrect ? 1 : 0,
       max_score:    1
     };
-    if(conceptId) row.concept_id = conceptId;
+    // 숫자면 lesson_concepts FK, 문자열이면 개념 코드(학습지 원장 문법)
+    if(conceptId || conceptId === 0){
+      if(typeof conceptId === 'number' || /^\d+$/.test(String(conceptId))) row.concept_id = Number(conceptId);
+      else row.concept_code = String(conceptId);
+    }
+    if(meta && meta.mis) row.misconception_code = String(meta.mis);
 
     state.client.from('scores').insert(row)
       .then(function(){}).catch(function(){});
@@ -254,7 +270,7 @@
     state.client.from('scores').insert({
       student_id:   state.profile.id,
       lesson_id:    state.lessonId,
-      unit_id:      location.pathname,
+      unit_id:      state.unitId || location.pathname,
       question_id:  '_lesson_summary_',
       is_correct:   null,
       score:        Number(score) || 0,
@@ -275,6 +291,19 @@
       completed_at:  new Date().toISOString()
     }, { onConflict: 'assignment_id,student_id' })
       .then(function(){}).catch(function(){});
+  };
+
+  /**
+   * 차시/세트 전환 — 한 파일이 여러 개를 그리는 페이지(케이학습지 play.html)용.
+   * 시간 기준도 여기서 다시 시작한다.
+   * @param {string} id      lesson_id (예: 'ws:g1_math_u1_L02_basic')
+   * @param {string} unitId  선택 — 되돌아갈 경로 (기본 현재 경로)
+   */
+  window.kedu.setLessonId = function(id, unitId){
+    if(!id) return;
+    state.lessonId = String(id).trim();
+    if(unitId) state.unitId = String(unitId);
+    state.pageStartTs = Date.now();
   };
 
   /**

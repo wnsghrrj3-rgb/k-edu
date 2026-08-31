@@ -98,6 +98,24 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 .hm tbody tr:hover th{background:var(--primary-light)}
 .hm-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--sub);margin-top:10px;align-items:center}
 .hm-legend i{display:inline-block;width:14px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:4px}
+/* 개념 지도 (v3 — 케이학습지 합류) */
+.cm{border-collapse:separate;border-spacing:0;font-size:12px;width:100%}
+.cm th,.cm td{border-bottom:1px solid var(--border);border-right:1px solid #F0F3F7}
+.cm thead th{background:#fff;font-weight:600;color:var(--sub);padding:6px 6px;font-size:11.5px;line-height:1.35;vertical-align:bottom}
+.cm tbody th{text-align:left;padding:5px 10px;font-weight:700;white-space:nowrap;cursor:pointer}
+.cm tbody tr:hover th{background:var(--primary-light)}
+.cm td{height:28px;text-align:center;padding:0}
+.cm td i{display:block;width:24px;height:20px;border-radius:5px;margin:0 auto}
+.cm i.solid{background:#68D391}.cm i.edge{background:#F6E05E}.cm i.weak{background:#FC8181}.cm i.watching{background:#CBD5E0}.cm i.none{background:#fff;border:1px dashed #E2E8F0}
+.mis-list{display:grid;gap:8px;margin-top:10px}
+.w-line{font-size:13px;padding:4px 0;border-bottom:1px dotted var(--border)}
+.ws-list{display:grid;gap:6px;margin-top:8px;font-size:13px}
+.ws-row{display:flex;justify-content:space-between;gap:10px;border:1px solid var(--border);border-radius:10px;padding:8px 12px}
+.ws-row .r{color:var(--sub);font-size:12.5px;white-space:nowrap}
+.mis-row{border:1px solid var(--border);border-left:4px solid #DD6B20;border-radius:10px;padding:10px 12px;font-size:13px}
+.mis-row .t{font-weight:700}
+.mis-row .h{color:var(--sub);font-size:12.5px;margin-top:3px}
+.mis-row .who{color:var(--sub);font-size:12px;margin-top:4px}
 .hm-legend i.solid{background:#68D391}.hm-legend i.edge{background:#F6E05E}.hm-legend i.weak{background:#FC8181}.hm-legend i.watching{background:#CBD5E0}.hm-legend i.touched{background:#E2E8F0}.hm-legend i.none{background:#fff;border:1px dashed #CBD5E0}.hm-legend i.rep{background:#fff;outline:2px solid #DD6B20;outline-offset:-2px}
 
 /* 기간별 표 */
@@ -303,19 +321,23 @@ async function loadClass(classCodeId){
   if(es || !classRow){ showError('🔒','학급을 불러올 수 없습니다', esc((es&&es.message)||'본인 소유 학급만 조회할 수 있습니다.')); return; }
 
   const ids = (students||[]).map(s=>s.student_id).filter(Boolean);
-  let mastery=[], scores=[], morning=[], wrongs=[];
+  let mastery=[], scores=[], morning=[], wrongs=[], concepts=[], miscons=[];
   if(ids.length){
     const r = await Promise.all([
       db.from('report_lesson_mastery').select('*').in('student_id', ids),
       db.from('scores').select('student_id,lesson_id,unit_id,question_id,is_correct,earned_at,time_spent_sec').in('student_id', ids).gte('earned_at', from+'T00:00:00+09:00').limit(15000),
       db.from('report_morning_daily').select('student_id,run_date,subject').in('student_id', ids).gte('run_date', from),
-      db.from('wrong_answers').select('student_id,lesson_id,question_id,attempts,resolved_at,last_wrong_at').in('student_id', ids).is('resolved_at', null).gte('attempts', 2)
+      db.from('wrong_answers').select('student_id,lesson_id,question_id,attempts,resolved_at,last_wrong_at').in('student_id', ids).is('resolved_at', null).gte('attempts', 2),
+      db.from('report_concept_mastery').select('*').in('student_id', ids),
+      db.from('report_misconception').select('*').in('student_id', ids)
     ]);
     mastery = r[0].data||[]; scores = r[1].data||[]; morning = r[2].data||[]; wrongs = r[3].data||[];
+    concepts = r[4].data||[]; miscons = r[5].data||[];
   }
+  if(concepts.length || miscons.length) await KR.loadConcepts(db);
   await KR.loadCatalog(mastery.map(m=>m.lesson_id).concat(scores.map(s=>s.lesson_id), wrongs.map(w=>w.lesson_id)));
 
-  _class = { classRow, list: sortStudents(students), mastery, scores, morning, wrongs, period:'this', subject:'all' };
+  _class = { classRow, list: sortStudents(students), mastery, scores, morning, wrongs, concepts, miscons, period:'this', subject:'all' };
   document.getElementById('topbar-title').textContent = '🧭 케이학습리포트 — 우리 반' + (classRow.label ? ' · ' + classRow.label : '');
   document.getElementById('btn-csv').style.display = '';
   renderClass();
@@ -370,6 +392,7 @@ function renderClass(){
   const touchedByKey = new Set(C.scores.map(r => r.student_id+'|'+r.lesson_id));
   const repByKey = new Set(C.wrongs.map(w => w.student_id+'|'+w.lesson_id));
   const groups = []; cols.forEach(l => { const i = KR.lesson(l); const gk = unitLabel(i); const g = groups[groups.length-1]; if(g && g.key===gk) g.n++; else groups.push({key:gk, n:1}); });
+  const conceptHtml = buildConceptSection(C, byStu);
   const hmHtml = cols.length ? `<div class="hm-wrap"><table class="hm">
     <thead>
       <tr class="unit"><th class="corner"></th>${groups.map(g=>`<th colspan="${g.n}">${esc(g.key)}</th>`).join('')}</tr>
@@ -439,6 +462,7 @@ function renderClass(){
         ${subjKeys.length>1?`<div class="seg no-print"><button class="${C.subject==='all'?'on':''}" onclick="setSubject('all')">전체</button>${subjKeys.map(k=>`<button class="${C.subject===k?'on':''}" onclick="setSubject('${esc(k)}')">${esc(KR.SUBJECT_KO[k]||k)}</button>`).join('')}</div>`:''}</div>
       ${hmHtml}
     </div>
+    ${conceptHtml}
     <div class="sec">
       <div class="sec-h">📅 ${periodLabel} 학습량</div>
       <div class="sec-sub">줄을 누르면 학생 카드로 들어갑니다. 번호순.</div>
@@ -450,6 +474,56 @@ function renderClass(){
       <div class="legend"><span class="dot on"></span> 학습한 날 · <span class="dot on mo"></span> 아침활동 포함 · <span class="dot today"></span> 오늘 · 문항 옆 ±는 이전 주 대비(문항+아침) · 정답률 60% 미만은 붉게 · <span class="pill weak">n</span> 취약 차시 수 · <span class="pill repeat">n</span> 반복 오답이 있는 차시 수 (둘 다 누적)</div>
     </div>`;
 }
+
+/* ---- 🧠 개념 지도 (v3, 케이학습지 합류) ----
+   차시 도달 지도가 "어디까지 갔나"라면, 이건 "무엇을 아는가".
+   개념 태그가 붙은 기록이 하나도 없으면 칸 자체를 그리지 않는다(빈 표 금지). */
+function buildConceptSection(C, byStu){
+  const rows = C.concepts || [], mis = C.miscons || [];
+  if(!rows.length && !mis.length) return '';
+  const map = KR.conceptMap(rows);
+  const codes = []; const seen = new Set();
+  map.list.forEach(r => { if(!seen.has(r.concept_code)){ seen.add(r.concept_code); codes.push(r.concept_code); } });
+  const byStuCode = {};
+  rows.forEach(r => { (byStuCode[r.student_id] = byStuCode[r.student_id] || {})[r.concept_code] = r; });
+
+  const head = codes.map(c => { const i = KR.concept(c);
+    return `<th title="${esc(i.full)}">${esc(i.name)}</th>`; }).join('');
+  const body = C.list.map(st => {
+    const mine = byStuCode[st.student_id] || {};
+    const tds = codes.map(c => { const r = mine[c];
+      const stt = r ? r.status : 'none';
+      const tip = r ? `${KR.concept(c).name} — ${statusKo(stt)} (${r.q_latest_ok}/${r.q_n} 문항)` : `${KR.concept(c).name} — 아직 기록 없음`;
+      return `<td title="${esc(tip)}" onclick="location.href='${stuLink(st.student_id)}'"><i class="${stt}"></i></td>`;
+    }).join('');
+    return `<tr><th onclick="location.href='${stuLink(st.student_id)}'">${esc(st.nickname || '학생')}</th>${tds}</tr>`;
+  }).join('');
+
+  // 반 단위 반복 오개념 — 학생 수가 많은 것부터
+  const byMis = {};
+  mis.filter(m => (m.n||0) >= 2).forEach(m => {
+    const g = byMis[m.mis_code] = byMis[m.mis_code] || { code:m.mis_code, students:[], n:0, open:0 };
+    const st = C.list.find(x => x.student_id === m.student_id);
+    g.students.push(st ? (st.nickname || '학생') : '학생'); g.n += (m.n||0); if(m.still_open) g.open++;
+  });
+  const misTop = Object.values(byMis).sort((a,b) => b.students.length - a.students.length || b.n - a.n).slice(0, 5);
+  const misHtml = misTop.length ? `<div class="mis-list">${misTop.map(g => { const i = KR.misconception(g.code);
+      return `<div class="mis-row"><div class="t">${esc(i.text)}</div>
+        ${i.hint ? `<div class="h">👉 ${esc(i.hint)}</div>` : ''}
+        <div class="who">학생 ${g.students.length}명 — ${esc(g.students.slice(0,6).join(', '))}${g.students.length>6?' 외':''} · 아직 안 풀린 학생 ${g.open}명</div></div>`;
+    }).join('')}</div>` : '<div class="empty-note">같은 곳에서 두 번 이상 걸린 오개념은 아직 없습니다.</div>';
+
+  return `<div class="sec">
+      <div class="sec-head"><div><div class="sec-h">🧠 개념 도달 지도</div>
+        <div class="sec-sub">차시가 <b>어디까지 갔나</b>라면 개념은 <b>무엇을 아는가</b>. 케이학습지 문항의 개념 태그를 모아 같은 규칙(마지막 답·표본 3)으로 판정합니다.</div></div></div>
+      ${codes.length ? `<div class="hm-wrap"><table class="cm"><thead><tr><th></th>${head}</tr></thead><tbody>${body}</tbody></table></div>` : ''}
+      <div class="hm-legend"><span><i class="solid"></i>탄탄</span><span><i class="edge"></i>경계</span><span><i class="weak"></i>취약</span><span><i class="watching"></i>관찰 중</span><span><i class="none"></i>기록 없음</span></div>
+      <div class="sec-h" style="margin-top:16px">🩹 반에서 자주 걸리는 곳</div>
+      <div class="sec-sub">두 번 이상 같은 오개념을 고른 경우만 셉니다 — 한 번 틀린 건 취약이 아닙니다.</div>
+      ${misHtml}
+    </div>`;
+}
+
 function setPeriod(p){ _class.period = p; renderClass(); }
 function setSubject(s){ _class.subject = s; renderClass(); }
 async function copyCsv(){
@@ -463,17 +537,24 @@ async function copyCsv(){
 async function loadStudent(studentId, classCodeId){
   const thisMonday = KR.mondayOf(KR.today());
   const from6 = KR.addDays(thisMonday, -35);
-  const [{ data: sumRows }, { data: mastery }, { data: scores }, { data: wrongs }, { data: morning }, { data: cmtRows }] = await Promise.all([
+  const [{ data: sumRows }, { data: mastery }, { data: scores }, { data: wrongs }, { data: morning }, { data: cmtRows },
+         { data: conceptRows }, { data: misRows }, { data: wsRows }] = await Promise.all([
     db.from('student_data_summary').select('*').eq('student_id', studentId).limit(1),
     db.from('report_lesson_mastery').select('*').eq('student_id', studentId),
     db.from('scores').select('lesson_id,unit_id,question_id,is_correct,time_spent_sec,earned_at,score,max_score').eq('student_id', studentId).order('earned_at',{ascending:false}).limit(4000),
     db.from('wrong_answers').select('*').eq('student_id', studentId),
     db.from('report_morning_daily').select('*').eq('student_id', studentId).gte('run_date', from6),
-    db.from('report_teacher_comments').select('*').eq('student_id', studentId).limit(1)
+    db.from('report_teacher_comments').select('*').eq('student_id', studentId).limit(1),
+    db.from('report_concept_mastery').select('*').eq('student_id', studentId),
+    db.from('report_misconception').select('*').eq('student_id', studentId),
+    db.from('report_worksheet_runs').select('*').eq('student_id', studentId)
   ]);
   const s = sumRows && sumRows[0];
   if(!s){ showError('🔒','조회 권한이 없거나 데이터가 없습니다','본인 학급 학생만 조회할 수 있습니다.'); return; }
   await KR.loadCatalog((mastery||[]).map(m=>m.lesson_id).concat((scores||[]).map(r=>r.lesson_id), (wrongs||[]).map(w=>w.lesson_id)));
+  if((conceptRows||[]).length || (misRows||[]).length) await KR.loadConcepts(db);
+  const cmap = KR.conceptMap(conceptRows||[]);
+  const misTop = KR.misconceptionTop(misRows||[], 2, 4);
 
   // 학급 이웃(이전/다음 학생) — 상담 순회용
   let nav = '';
@@ -575,6 +656,9 @@ async function loadStudent(studentId, classCodeId){
           ${cls.edge.slice(0,3).map(lessonLine).join('')}
           ${!cls.repeatWrongLessons.length && !cls.weak.length && !cls.edge.length ? '<div class="empty-note">반복 오답도, 취약·경계 차시도 없습니다.</div>':''}
           ${(cls.weak.length>4||cls.edge.length>3)?`<div class="mini" style="margin-top:6px">취약 ${cls.weak.length} · 경계 ${cls.edge.length} 차시 — 전체는 단원 진도의 칸 색으로</div>`:''}
+          ${(cmap.weak.length||cmap.edge.length) ? `<div class="mini" style="margin-top:10px">개념으로 보면</div>
+            ${cmap.weak.concat(cmap.edge).slice(0,4).map(c => `<div class="w-line"><b>${esc(c.info.name)}</b> — ${statusKo(c.status)} (문항 ${c.q_n}개 중 ${c.q_latest_ok}개 정답)</div>`).join('')}` : ''}
+          ${misTop.length ? `<div class="mis-list" style="margin-top:10px">${misTop.map(m => `<div class="mis-row"><div class="t">${esc(m.info.text)}</div>${m.info.hint?`<div class="h">👉 ${esc(m.info.hint)}</div>`:''}<div class="who">${m.n}번 — ${esc(m.concept.name)}${m.still_open?' · 아직 안 풀림':' · 지금은 맞힘'}</div></div>`).join('')}</div>` : ''}
         </div>
 
         <div class="q-card"><h3><span class="q-num">4</span>앞으로 무엇을</h3>
@@ -584,6 +668,15 @@ async function loadStudent(studentId, classCodeId){
       </div>
     </div>
 
+    ${(wsRows||[]).length ? `<div class="sec">
+      <div class="sec-h">✍️ 푼 학습지</div>
+      <div class="sec-sub">케이학습지 세트 풀이. 점수는 마지막 한 판 기준이고, 개념 판정에는 모든 답이 들어갑니다.</div>
+      <div class="ws-list">${(wsRows||[]).slice().sort((a,b)=>new Date(b.last_attempt_at||0)-new Date(a.last_attempt_at||0)).map(w => {
+        const sid = KR.wsSetId(w.lesson_id) || w.set_id;
+        const sc = (w.last_run_score!=null && w.last_run_max) ? `${w.last_run_score}/${w.last_run_max}점` : `${w.correct_total}/${w.attempts_total}문항`;
+        return `<div class="ws-row"><span><a href="${esc(KR.wsUrl(sid))}" target="_blank">${esc(KR.wsLabel(sid))}</a></span><span class="r">${sc} · ${w.runs||0}판 · ${esc(new Date(w.last_attempt_at).toLocaleDateString('ko-KR'))}</span></div>`;
+      }).join('')}</div>
+    </div>` : ''}
     <div class="sec">
       <div class="sec-h">📚 단원 진도</div>
       <div class="sec-sub">손댄 단원만 보입니다. 칸 = 차시(단원 순서), 색 = 도달, 진한 테두리 = 끝까지 완료. 누적 기준.</div>

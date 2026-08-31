@@ -194,11 +194,28 @@ if (new URLSearchParams(location.search).get('quiz')){
 }
 </script>
 
+<!-- 케이학습리포트 합류 (2026-08-31) — 학급코드 학생의 풀이만 scores 로 간다.
+     lesson_id = 'ws:{set}' (차시 도달 지도에서 제외, 개념 지도로 합류)
+     화면 모드에서만 싣는다. 종이(A4) 모드는 기록 없음. -->
 <script>
-/* ===================== 케이학습지 렌더러 v0.2 =====================
+(function(){
+  var q = new URLSearchParams(location.search);
+  if((q.get('mode') || 'screen') !== 'screen') return;
+  if(q.get('quiz')) return;                       // 쪽지는 kedu_quiz.js 가 원장에 직접 기록
+  var set = q.get('set') || 'g1_math_u1_L01_basic';
+  window.KEDU_LESSON_ID   = 'ws:' + set;
+  window.KEDU_LESSON_UNIT = location.pathname + '?set=' + encodeURIComponent(set);
+  ['/kedu_config.js', 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2', '/kedu_tracker.js']
+    .forEach(function(src){ document.write('<script src="' + src + '"><\/script>'); });
+})();
+</script>
+
+<script>
+/* ===================== 케이학습지 렌더러 v0.3 =====================
    URL: play.html?set=g1_math_u1_L01_basic[&mode=paper][&seed=123]
    문항 정본 = data/{set}.json (questions 행 형식). 화면·종이는 여기서만 그린다.
-   seam: window.kedu.recordAnswer(questionId, isCorrect, timeSpentSec, conceptId) 있으면 호출.
+   기록: 화면 모드에서 kedu_tracker 를 싣고 lesson_id='ws:{set}' 로 scores 에 남긴다.
+   문항 = recordAnswer('q{seq}', 정오, 초, 개념코드, {mis}) · 세트 끝 = recordLessonEnd(맞은 수, 총 수).
 =================================================================== */
 const qs = new URLSearchParams(location.search);
 const QUIZ = qs.get('quiz') || null;              // 쪽지: 원장에서 조립된 세트 id
@@ -443,7 +460,8 @@ function grade(q, ok, detail){
       try { window.keduQuiz.record({ questionId: q.qcode || `q${q.seq}`, qid: q.qid || null,
                                      ok, sec: t, concept: q.concept, mis: detail?.mis || null }); } catch(e){}
     } else if (window.kedu && window.kedu.recordAnswer){
-      try { window.kedu.recordAnswer(`${SET}:q${q.seq}`, ok, t, q.concept); } catch(e){}
+      // 파일 학습지 — 문항 키는 차시와 같은 문법(q{seq}), 개념·오개념 코드 동봉
+      try { window.kedu.recordAnswer(`q${q.seq}`, ok, t, q.concept, {mis: (detail && detail.mis) || null}); } catch(e){}
     }
   }
   showFB(q, ok, detail);
@@ -530,6 +548,8 @@ function renderFinish(){
    <div class="alt">${QUIZ ? '' : `<a href="play.html?set=${SET}&mode=paper">시험지(A4)로 풀기</a><span>·</span><a href="./">학습지 목록</a><span>·</span>`}<a href="${BACK.href}">${esc(BACK.label)}</a></div></div>`;
   if (QUIZ && window.keduQuiz) try { window.keduQuiz.recordEnd(okN, Q.length, null); } catch(e){}
   TTS.speak(`${label}. ${Q.length}문제 중 ${okN}문제를 맞혔어요.` + (topMis ? ` 이번에 연습할 것은 ${MISNAME[topMis[0]] || ''}` : ''));
+  // 세트 끝 기록 — 한 판(전체)만 회차로 센다. '다시 해볼까?'(부분 재출제)는 문항 기록만 남는다.
+  if (!state.retry && window.kedu && window.kedu.recordLessonEnd) try { window.kedu.recordLessonEnd(okN, Q.length); } catch(e){}
   window.__retryFrom = wrong;
 }
 
