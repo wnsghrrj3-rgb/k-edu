@@ -85,7 +85,7 @@ ok(b5.length === 1 && b5[0].dur === 10, 'build — 아주 짧은 말도 최소 F
 // ---------- UI: 브라우저(쉘 없음)에선 안내만 ----------
 await page.setInputFiles('#fileIn', [path.join(FX, 'a.mp4')]);
 await page.waitForFunction(() => KMV_PROJECT.data.V.length === 1, null, { timeout: 90000 });
-await page.click('#btnSubStt');
+await page.evaluate(() => KMV_UI.tab('sub')); await page.click('#btnSubStt');
 const toast1 = await page.evaluate(() => document.getElementById('toast').textContent);
 ok(/데스크톱/.test(toast1) && (await page.evaluate(() => KMV_PROJECT.data.S.length)) === 0, 'UI — 쉘 없으면 데스크톱 안내 토스트, 카드 없음');
 
@@ -104,7 +104,7 @@ await page.evaluate(() => {
   };
   KMV_PROJECT.data.media[0].origin = { kind: 'video', hash: 'fx-a' };
 });
-await page.click('#btnSubStt');
+await page.evaluate(() => KMV_UI.tab('sub')); await page.click('#btnSubStt');
 await page.waitForFunction(() => KMV_PROJECT.data.S.length > 0, null, { timeout: 15000 });
 const st1 = await page.evaluate(() => ({ S: KMV_PROJECT.data.S.map(s => ({ text: s.text, at: s.at, dur: s.dur, style: s.style })), calls: window.__sttCalls, toast: document.getElementById('toast').textContent }));
 ok(st1.S.length === 2, 'UI — 받아쓴 자막 2개 ([음악] 은 걸러짐): ' + JSON.stringify(st1.S.map(s => s.text)));
@@ -122,7 +122,7 @@ ok((await page.evaluate(() => KMV_PROJECT.data.S.length)) === 2, 'UI — redo �
 
 // ---------- UI: 소리 끈 클립은 받아쓰지 않음 ----------
 await page.evaluate(() => { KMV_PROJECT.data.S = []; KMV_PROJECT.data.A1.forEach(a => a.vol = 0); });
-await page.click('#btnSubStt');
+await page.evaluate(() => KMV_UI.tab('sub')); await page.click('#btnSubStt');
 await new Promise(r => setTimeout(r, 300));
 const st2 = await page.evaluate(() => ({ S: KMV_PROJECT.data.S.length, toast: document.getElementById('toast').textContent }));
 ok(st2.S === 0 && /현장음/.test(st2.toast), 'UI — 소리 전부 끄면 「현장음이 있는 클립이 없어요」');
@@ -130,7 +130,7 @@ await page.evaluate(() => { KMV_PROJECT.data.A1.forEach(a => a.vol = 1); });
 
 // ---------- UI: 원본 연결 없는 파일은 건너뛰고 알림 ----------
 await page.evaluate(() => { delete KMV_PROJECT.data.media[0].origin; });
-await page.click('#btnSubStt');
+await page.evaluate(() => KMV_UI.tab('sub')); await page.click('#btnSubStt');
 await new Promise(r => setTimeout(r, 300));
 const st3 = await page.evaluate(() => ({ S: KMV_PROJECT.data.S.length, toast: document.getElementById('toast').textContent }));
 ok(st3.S === 0 && /원본 연결/.test(st3.toast), 'UI — origin 없는 파일은 건너뛰며 이유를 말함');

@@ -1152,6 +1152,18 @@
   applyLayout();
   window.addEventListener('resize', applyLayout);
 
+  /* 도구상자 탭 — 타이틀·꾸미기 / 자막 / 음악 / 룩 / 프로젝트 중 하나만 (이 브라우저에 기억) */
+  let toolTab = 'parts'; try { toolTab = localStorage.getItem('kmv.tab') || 'parts'; } catch (e) {}
+  function setTab(id) {
+    if (!document.querySelector('#toolTabs [data-tab="' + id + '"]')) id = 'parts';
+    toolTab = id; try { localStorage.setItem('kmv.tab', id); } catch (e) {}
+    document.querySelectorAll('#toolTabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === id));
+    document.querySelectorAll('#colTools .panel[data-tab]').forEach(pn => pn.classList.toggle('tabOn', pn.dataset.tab === id));
+    $('colTools').scrollTop = 0;
+  }
+  document.querySelectorAll('#toolTabs button').forEach(b => { b.onclick = () => setTab(b.dataset.tab); });
+  setTab(toolTab);
+
   /* 미디어 띠 보이기/숨기기 — 이 브라우저에 기억 */
   let mediaOn = true; try { mediaOn = localStorage.getItem('kmv.media') !== '0'; } catch (e) {}
   function applyMedia() { document.body.classList.toggle('hide-media', !mediaOn); $('tgColMedia').classList.toggle('on', mediaOn); resize(); }
@@ -1620,7 +1632,7 @@
   function genSpecNow() { const M = genMood(); return { mood: M.id, bpm: genSpec.bpm || M.bpm.def, key: genSpec.key || M.keys[0], seed: genSpec.seed, durSec: Math.max(8, genLenSec() || 60) }; }
   function stopGenPrev() { if (genPrev) { try { genPrev.stop(); } catch (e) {} genPrev = null; } }
   if (GEN) {
-    GEN.MOODS.forEach(m => segBtn($('genMoodSeg'), m.id, m.ko + ' — ' + m.desc, () => { genSpec.mood = m.id; genSpec.bpm = 0; genSpec.key = ''; refreshGenPanel(); }, m.desc));
+    GEN.MOODS.forEach(m => segBtn($('genMoodSeg'), m.id, m.ko, () => { genSpec.mood = m.id; genSpec.bpm = 0; genSpec.key = ''; refreshGenPanel(); }, m.desc));
     ['video', '60', '120'].forEach((k, i) => segBtn($('genLenSeg'), k, ['영상 길이', '1분', '2분'][i], () => { genSpec.len = k; refreshGenPanel(); }));
     $('genBpm').oninput = e => { genSpec.bpm = +e.target.value; $('genBpmV').textContent = e.target.value + ' BPM'; };
     $('btnGenShuffle').onclick = () => { genSpec.seed = (genSpec.seed + 1) % 9973; stopGenPrev(); toast('다시 섞었어요 — 미리듣기로 확인해 보세요', 1600); };
@@ -1987,7 +1999,7 @@
   };
 
   window.KMV_UI = { importFiles, setPH: f => setPH(f), get ph() { return ph; }, select, selectP, selectA2, selectS, placePart, play, stop, zoomFit, get pxf() { return pxf; }, get scrollF() { return scrollF; }, get selP() { return selP; }, get selA2() { return selA2; }, beatFrames,
-    get sel() { return sel; }, selectedIds, openSource, showStage, get stage() { return stage; }, get src() { return srcCur; }, setSrcPH, srcMark, srcPlace, shuttleTo, get shuttle() { return shuttle; }, get playing() { return playing || srcPlaying; }, doMarker, doCopy, doCut, doPaste, get clipboard() { return clipboard; }, get selM() { return selM; }, layout: { HEAD, RULER, LY }, xOf, frameOf, laneRows, rowGeom, selectV2, get selV2() { return selV2; }, get delChip() { return delChip; }, get proj() { return proj; }, openRecord, newProject, loadDoc, saveCloud, openProjModal };
+    get sel() { return sel; }, selectedIds, openSource, showStage, get stage() { return stage; }, get src() { return srcCur; }, setSrcPH, srcMark, srcPlace, shuttleTo, get shuttle() { return shuttle; }, get playing() { return playing || srcPlaying; }, doMarker, doCopy, doCut, doPaste, get clipboard() { return clipboard; }, get selM() { return selM; }, layout: { HEAD, RULER, LY }, xOf, frameOf, laneRows, rowGeom, selectV2, get selV2() { return selV2; }, get delChip() { return delChip; }, get proj() { return proj; }, openRecord, newProject, loadDoc, saveCloud, openProjModal, tab: setTab, get toolTab() { return toolTab; } };
 
   /* ---------- 시작 ---------- */
   resize();

@@ -91,7 +91,7 @@ for (const m of allM) ok(m.notes > 60 && m.insts >= 3 && m.fin && m.rms > 0.02 &
 
 /* ---------- 3. UI — 놓기·A2 카드·비트 ---------- */
 await page.evaluate(() => { document.getElementById('genLenSeg').querySelector('[data-k="60"]').click(); });
-await page.click('#btnGenPlace');
+await page.evaluate(() => KMV_UI.tab('music')); await page.click('#btnGenPlace');
 const placed = await page.evaluate(() => {
   const D = KMV_PROJECT.data, a = D.A2[0], m = KMV_PROJECT.media(a.media), s = KMV_MEDIA.get(a.media);
   return { n: D.A2.length, gen: !!m.gen, kind: m.kind, name: m.name, dur: a.out - a.in, fadeIn: a.fadeIn, fadeOut: a.fadeOut,

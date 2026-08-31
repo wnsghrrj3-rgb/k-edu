@@ -192,6 +192,21 @@ const mag = await page.evaluate(() => { const P2 = KMV_PROJECT; P2.clearP(); con
   await page.evaluate(() => { const P = KMV_PROJECT; for (const x of [...P.data.P]) if (x.part === 'stamp' || x.part === 'ribbon') P.removeP(x.id); });
 }
 
+// ---------- 도구상자 탭 — 위에서 골라 하나만 ----------
+{
+  const tb = await page.evaluate(() => {
+    const vis = id => document.getElementById(id).getBoundingClientRect().height > 0;
+    const tabs = Array.from(document.querySelectorAll('#toolTabs button')).map(b => b.textContent);
+    KMV_UI.tab('parts'); const a = { parts: vis('partPanel'), sub: vis('subPanel'), music: vis('musicPanel'), look: vis('lookPanel'), proj: vis('projPanel') };
+    document.querySelector('#toolTabs [data-tab="music"]').click(); const b = { parts: vis('partPanel'), music: vis('musicPanel'), on: document.querySelector('#toolTabs button.on').dataset.tab, saved: localStorage.getItem('kmv.tab') };
+    KMV_UI.tab('parts');
+    return { tabs, a, b };
+  });
+  ok(tb.tabs.join('/') === '타이틀·꾸미기/자막/음악/룩/프로젝트', '도구상자 탭 5개 (' + tb.tabs.join('/') + ')');
+  ok(tb.a.parts && !tb.a.sub && !tb.a.music && !tb.a.look && !tb.a.proj, '탭 하나만 보인다 (타이틀·꾸미기)');
+  ok(!tb.b.parts && tb.b.music && tb.b.on === 'music' && tb.b.saved === 'music', '음악 탭 클릭 → 음악만, 기억됨');
+}
+
 ok(errs.length === 0, '콘솔 오류 0' + (errs.length ? ' — ' + errs.slice(0, 3).join(' | ') : ''));
 console.log(`\n${n - fail}/${n} 통과`);
 await close(); srv.kill(); process.exit(fail ? 1 : 0);

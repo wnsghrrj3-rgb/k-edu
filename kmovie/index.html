@@ -82,6 +82,13 @@
   .side #colSet { width:var(--setW); } .side #colTools { width:var(--toolsW); }
   .side .split.v { border-left:1px solid var(--line); }
   .side .colTitle { position:sticky; top:0; z-index:2; background:var(--panel); padding:8px 14px 6px; font-size:11px; color:var(--sub); letter-spacing:2px; border-bottom:1px solid var(--line); }
+  /* 도구상자 탭 — 세로 나열 대신 위에서 골라 하나만 */
+  .tabs { position:sticky; top:0; z-index:2; display:flex; gap:2px; padding:6px 8px 0; background:var(--panel); border-bottom:1px solid var(--line); }
+  .tabs button { flex:1; border:0; border-bottom:2px solid transparent; background:transparent; color:var(--sub); font-size:12px; padding:7px 2px 8px; border-radius:6px 6px 0 0; white-space:nowrap; }
+  .tabs button:hover { color:var(--txt); background:rgba(255,255,255,.04); }
+  .tabs button.on { color:var(--gold); border-bottom-color:var(--gold); font-weight:700; }
+  #colTools .panel[data-tab]:not(.tabOn) { display:none; }
+  #colTools .panel[data-tab] { border-bottom:0; }
   #colSet .none { display:none; }
   #clipPanel:has(#clipBody.hidden), #trPanel:has(#trBody.hidden), #subCardPanel:has(#subEdit.hidden), #v2Panel:has(#v2Body.hidden), #musicCardPanel:has(#musicBody.hidden) { display:none; }
   #colSet select { flex:1; min-width:0; background:#0f1524; color:var(--txt); border:1px solid var(--line2); border-radius:6px; padding:3px 6px; font-size:12px; }
@@ -355,24 +362,24 @@
       </div>
       <div class="split v" id="splitTools" title="끌어서 도구상자 너비 · 더블클릭 기본값"></div>
       <div class="col" id="colTools">
-        <div class="colTitle">도구상자</div>
-      <div class="panel" id="partPanel">
+        <div class="tabs" id="toolTabs"><button data-tab="parts">타이틀·꾸미기</button><button data-tab="sub">자막</button><button data-tab="music">음악</button><button data-tab="look">룩</button><button data-tab="proj">프로젝트</button></div>
+      <div class="panel" id="partPanel" data-tab="parts">
         <h3>타이틀·꾸미기<div class="sp"></div><span class="note" style="letter-spacing:0;text-transform:none;font-weight:400">끌어서 P 레인에 · 클릭은 플레이헤드에</span></h3>
         <div id="partGrid"></div>
       </div>
-      <div class="panel" id="subPanel">
+      <div class="panel" id="subPanel" data-tab="sub">
         <h3>자막<div class="sp"></div><button id="btnSubClear" title="자막 전부 지우기">비우기</button></h3>
         <textarea id="subText" placeholder="한 줄에 한 문장씩 붙여넣고 [자동 배치] — 현장음의 말하는 구간에 나눠 놓아요"></textarea>
         <div class="row" style="margin-top:6px"><button id="btnSubStt" title="원본의 말소리를 whisper 가 받아써 자막 카드로 놓아요 — 데스크톱 케이무비 전용" style="flex:1">🎙 받아쓰기</button><button id="btnSubAuto" class="gold" style="flex:1">자동 배치</button><button id="btnSubAdd" title="플레이헤드에 자막 카드 하나">＋ 여기에</button></div>
         <div class="row"><label>새 자막</label><select id="subDefStyle" style="flex:1;background:#0f1524;color:var(--txt);border:1px solid var(--line2);border-radius:6px;padding:3px 6px;font-size:12px"></select></div>
         <div id="subList"></div>
       </div>
-      <div class="panel" id="musicPanel">
+      <div class="panel" id="musicPanel" data-tab="music">
         <h3>음악<div class="sp"></div><button id="btnMusicImport">＋ 음악 파일</button></h3>
-        <div id="musicNone" class="note">mp3·wav·m4a 를 넣거나 아래에서 만들면 A2 레인에 놓여요.<br>현장음에서 말하는 동안은 음악이 자동으로 내려가요.</div>
+        <div id="musicNone" class="note">mp3·wav·m4a 또는 아래에서 만들기</div>
         <div class="sub2">배경음악 만들기</div>
-        <div class="note" id="genNote">케이무비가 직접 만들어요 — 저작권 걱정 없이, 영상 길이에 딱 맞게, 박자는 정확하게.</div>
-        <div class="row"><label>무드</label><div class="seg" id="genMoodSeg" style="flex-direction:column;gap:5px;flex:1"></div></div>
+        <div class="note" id="genNote">저작권 없음 · 영상 길이에 맞춤 · 박자 정확</div>
+        <div class="row"><label>무드</label><div class="seg c3" id="genMoodSeg" style="flex-wrap:wrap;gap:4px;flex:1"></div></div>
         <div class="row"><label>템포</label><input type="range" id="genBpm" min="56" max="136" value="92"><span class="v" id="genBpmV" style="width:52px;text-align:right">92 BPM</span></div>
         <div class="row"><label>조성</label><div class="seg c3" id="genKeySeg"></div></div>
         <div class="row"><label>길이</label><div class="seg c3" id="genLenSeg"></div></div>
@@ -396,7 +403,7 @@
         <div class="row"><label>구간</label><div class="seg" id="montPickSeg"></div></div>
         <div class="row"><button id="btnMontage" class="gold" style="flex:1">몽타주 깔기</button></div>
       </div>
-      <div class="panel" id="lookPanel">
+      <div class="panel" id="lookPanel" data-tab="look">
         <h3>룩 (프로젝트)</h3>
         <div class="row"><label>테마</label><div class="seg c3" id="themeSeg"></div></div>
         <div class="row"><label>LUT</label><div class="seg c4" id="lutSeg"></div></div>
@@ -406,7 +413,7 @@
         <div class="row"><label>시네마 바</label><button class="tog" id="tgBar"></button><span class="note">2.39:1 레터박스</span></div>
         <div class="row"><label>비네트</label><input type="range" id="vig" min="0" max="100" value="0"><span class="v" id="vigV" style="width:34px;text-align:right">0%</span></div>
       </div>
-      <div class="panel" id="projPanel">
+      <div class="panel" id="projPanel" data-tab="proj">
         <h3>프로젝트</h3>
         <div class="row" style="display:flex;gap:8px;font-size:13px"><span style="color:var(--sub)">전체</span><span id="pTot" class="v">0초</span><span style="color:var(--sub);margin-left:8px">클립</span><span id="pCnt" class="v">0</span></div>
         <div class="note" style="margin-top:8px">1920×1080 · 30fps · H.264 8Mbps · AAC<br><span id="saveNote">작업은 이 브라우저에 자동 저장돼요.</span></div>
