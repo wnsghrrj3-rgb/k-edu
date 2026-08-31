@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<!--
+K-edu 사회 6-1 · 1단원 평화 통일을 위한 노력, 민주화와 산업화 · [생각을 펼쳐요] · 10차시(l10)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [6사07-01]+[6사07-02] 통합 적용 · 교과서 p.46~47 · 지도서(대단원1 **13차시**
+  생각을 펼쳐요 — 숨은 글씨를 활용하여 그림 완성하기, 지도서 p.108~109) 근거
+학습 목표: 「평화 통일을 위한 노력, 민주화와 산업화」에서 공부한 내용을 바탕으로 창의·융합 활동을 할 수 있다.
+융합 교과: 사회 · 미술 / 핵심 역량: 창의적 사고력 · 정보 활용 능력
+수업 기법 및 전략: 돌아가며 말하기 · 숨은 글씨를 활용하여 그림 완성하기
+⚠️ 엔진은 l01~l09에서 100% 승계. 1단원 색 #1D4ED8 그대로 — CSS 변수명·엔진 무수정.
+⚠️ META는 주제 표기 대신 **단원 수준 활동**으로 둔다 — 13차시는 단원 전체를 바탕으로 하는
+   창의·융합 활동이고, 지도서 동기 유발이 단원 다섯 갈래를 모두 되짚기 때문이다(5-1 u3 l10 선례 승계).
+
+직접조작: 숨은 글씨 그림 판(45번째 신규 패턴 — 같은 획이 그림이면서 글씨인 형 · 판이 두 번 읽히는 형)
+  ⭐ 앞의 마흔네 종에서 **판은 한 번만 읽혔다.** 무엇을 놓으면 그것이 그 자리의 뜻이었고,
+     다 놓은 뒤에 판을 다시 보아도 같은 것이 같은 뜻으로 보였다.
+     l05의 「거슬러 오르는 판」이 마지막에 방향을 뒤집어 다시 읽어 주었지만,
+     그때 다시 읽힌 것은 **줄의 차례**였지 줄 자체가 다른 것이 된 것은 아니었다.
+     이번만 **판에 아무것도 더 놓지 않고 아무것도 지우지 않았는데 같은 획이 다른 것으로 읽힌다** —
+     그림으로 보면 팔·몸·머리이고, 글씨로 보면 「시」와 「위」의 획이다.
+     근거는 교과서가 그런 활동을 두었다는 것 —
+     「숨긴 글씨를 진하게 나타내고, 나머지 부분은 색칠해 그림을 완성합니다.」
+  ⭐ **획 수는 두 읽기 사이에서 하나도 달라지지 않는다.** 이것은 문구가 아니라 **구조**다 —
+     **글씨 획을 따로 담는 상태가 아예 없고**, `hwWordMask(st) = st.hwLaid & HW_HIDE`
+     한 줄이 진해질 획을 다 고른다. 그래서 진한 획은 언제나 놓인 획의 **부분집합**이고,
+     「글씨를 찾으면 획이 더 생기는 판」은 만들어질 수 없다.
+  ⭐ **진하게 하기 전에는 열두 획이 서로 구별되지 않는다.** 어느 획이 글씨인지 판이 미리 표시하지 않는다 —
+     같은 색, 같은 굵기다(l01 「열린 단추들이 서로 구별되지 않음」 규약 승계).
+     l02의 「접어 두는 형」과 견주면 — 거기서는 판이 **판정을 미뤘고**,
+     여기서는 판정할 것이 아예 없고 **읽는 방법만 바뀐다.**
+  ⭐ **획을 놓는 자리에는 옳고 그름이 없다.** 그림을 그리는 데 정답이 없기 때문이고,
+     그래서 **정답 상수 자체가 코드에 없다**(`HW_PUT_OK` 부재).
+     l04의 「갈래가 갈리는 판」도 고르기 자리에 판정을 두지 않았지만,
+     거기서는 고른 갈래가 **뒤의 걸음을 통째로 바꿨다.** 여기서는 무엇을 먼저 놓아도 판이 같다 —
+     달라지는 것은 **읽는 방법**뿐이다.
+  ① **획 열둘 놓기**(순서 자유 · 판정 0 · 놓을 때마다 장면이 그려진다)
+  ② **「숨긴 글씨를 진하게」**(획은 하나도 더해지거나 빠지지 않고 여섯 획만 진해진다)
+     → **숨은 글씨 3택**(판을 읽어서 고른다 · 정답 자리 1)
+  ③ 마무리 3택 = 지도서 전개 원문(정답 자리 2)
+  ⚠️ 획·좌표·보기 차례·안내 전량 고정 리터럴 — 난수 0.
+  ⚠️ 가드 8종: ① 마무리 확정 후 전체 잠금 / ② 무효 획·글씨·마무리 번호(`Number.isInteger`) /
+     ③ 열두 획을 다 놓기 전 「진하게」 무시(순서) / ④ 이미 놓은 획 재선택 무시 — 판 불변 /
+     ⑤ 진하게 하기 전 글씨 3택 무시(순서) / ⑥ 글씨를 맞히기 전 마무리 무시(순서) /
+     ⑦ **진하게 한 뒤 획 재클릭 무시 — 판 불변**(그림은 다 그려졌다) /
+     ⑧ 안내 표시 중 재클릭 무시(`hwBusy`).
+     재시도 허용(감점 없음), 조작에 점수 0. 발문은 `.hw-q`로 떼어 전 단계 상시 노출.
+
+지도서 근거(13차시 p.108~109):
+  [동기 유발] 「평화 통일을 위한 노력, 민주화와 산업화」에서 공부한 내용은 무엇인가요?
+    → 분단의 아픔을 간직한 장소를 찾아보고, 평화의 장소로 바꾸기 위한 노력을 살펴봤습니다. /
+      평화 통일을 위해 우리가 할 수 있는 일을 실천했습니다. /
+      우리나라의 민주주의가 어떻게 발전하였는지 주요 사건을 중심으로 살펴봤습니다. /
+      시대별로 우리나라의 산업이 어떻게 발전했는지 살펴봤습니다.
+  [학습 문제] 단원에서 공부한 내용을 바탕으로 창의·융합 활동을 해 봅시다.
+  [전개] 숨은 글씨 그림이란 무엇일까요? →
+    사건에 어울리는 글씨를 떠올리고, 떠오르는 장면 속에 글씨를 숨겨 그림을 그리는 활동입니다.
+  [교과서 이렇게 해 봐요] ① 이 단원에서 공부한 역사적 사건 중 하나를 쓰고, 그와 관련 있는 단어를 씁니다.
+    ② 그림으로 표현할 단어를 정하고, 글씨에 그림을 어떻게 그릴지 생각합니다.
+    ③ 숨긴 글씨를 진하게 나타내고, 나머지 부분은 색칠해 그림을 완성합니다. / 준비물 = 색칠 도구
+  [교과서 예시 2종] 역사적 사건 = 6월 민주 항쟁 · 숨은 글씨 = 시위 ·
+      그림 설명 = 6월 민주 항쟁에서 시위하던 시민들의 모습이 생각나서 「시위」라는 글씨에 그림을 그렸어요. /
+    역사적 사건 = 6월 민주 항쟁 · 숨은 글씨 = 선거 ·
+      그림 설명 = 6월 민주 항쟁의 결과 대통령 직선제가 시행돼서 「선거」라는 글씨에 그림을 그렸어요.
+  [전개] 그리는 방법 → 내가 생각한 단어 중에서 그림을 표현할 단어를 정합니다. /
+    단어와 어울리는 그림을 그려 보며, 글씨를 어떻게 숨길 수 있을지 생각해 봅니다. /
+    숨은 글씨를 진하게 나타내고, 나머지 부분은 채색합니다.
+  [지도서 예시 답안 1] 역사적 사건 = 4·19 혁명 / 6월 민주 항쟁 · 숨은 글씨 = 혁명 / 분노 ·
+    그림 설명 = 학생들이 거리로 나와 민주주의를 외치는 4·19 혁명의 모습을 그림. /
+      정부의 독재에 분노하고 직선제를 요구하는 모습을 그림.
+  [교과서 활동 2] 친구들의 그림에서 숨은 글씨를 찾고 느낀 점을 써 봅시다(친구 이름·숨은 글씨·느낀 점).
+  [지도서 예시 답안 2] 숨은 글씨 = 혁명 · 느낀 점 = 여러 사람을 이용해 글자를 숨긴 것이 재밌었다. /
+    숨은 글씨 = 분노 · 느낀 점 = 사람들이 마스크를 쓴 장면을 글씨로 바꾼 것이 흥미로웠다.
+  [전개] 친구들의 작품을 공유할 때는 온라인 도구를 활용하여 댓글을 남기거나 별점을 매기며 진행할 수 있다.
+  [전개] 친구들의 작품을 살펴보면서 느낀 점 →
+    우리 반 친구들의 아이디어가 정말 놀랍고, 역사적 사건에 관해 다시 생각해 볼 수 있는 뜻깊은 시간이었습니다.
+  [지도 방법] 관련 있는 사건 중에서 하나를 선정하여 떠오르는 장면을 생각해 보도록 한다. /
+    내가 떠올린 장면을 그림으로 어떻게 나타낼 것인지 생각해 보고, 관련 있는 글씨를 어떻게 숨길지
+    고민해 보도록 한다. / 숨은 글씨를 활용하여 그림을 완성하고, 친구들의 작품과 비교해 보도록 한다. /
+    친구들의 작품 속에 숨어 있는 글씨를 발견해 보고, 인상 깊었던 점을 발표해 보도록 한다.
+  [정리] 차시 예고 = 단원 마무리.
+⚠️ 정직 원칙 네 곳:
+  ㉠ **화면이 그리기를 대신하지 않는다.** 이 차시의 진짜 활동은 학생이 **색칠 도구로 종이에**
+     자기 그림을 그리는 일이다. 조작이 다루는 것은 **획 하나가 그림이면서 글씨가 되는 구조**까지이고,
+     완료 카드에 그렇게 적었다.
+  ㉡ 교과서 [이렇게 해 봐요]의 빈칸은 지어내지 않고 **교과서 예시 원문**(6월 민주 항쟁 / 시위·선거)과
+     **지도서 예시 답안 원문**(4·19 혁명 / 혁명·분노)만 둔다.
+  ㉢ **누리집에서 찾아 보여 주는 실제 숨은 글씨 그림 작품은 재현하지 않는다** — 남의 작품이기 때문이다.
+     판의 장면은 교과서 예시 원문(시위하던 시민들의 모습)을 나타낸 **도식**이다.
+  ㉣ **친구 이름은 두지 않는다** — 지도서 예시 답안의 이름 자리도 「어느 친구」로만 쓴다(학생 이름 0 규약).
+⚠️ 설계 원칙:
+  · **14차시 침범 0** — 생각 그물·교실 놀이 0. 「단원 마무리」는 **차시 예고 두 자리에서만**.
+  · **대단원2 이후 침범 0** — 국회·행정부·법원·선거 관리·모의 선거·미디어 비평 0
+    (이 차시의 「선거」는 교과서 예시의 숨은 글씨 낱말로만).
+  · **[재미있게 확인해요] 가로세로 퍼즐 재현 0**(11~12차시 몫 · l09 규약 승계) — 퍼즐 낱말·자음 모음 0.
+  · **l01~l09는 회수만** — 이 차시는 단원 수준 활동이라 되짚기가 정당하다(지도서 동기 유발 원문).
+    다만 **새 사실 0** — 이미 배운 것만 되짚고, 새 소재·새 자료를 들이지 않는다.
+    「6월 민주 항쟁」·「4·19 혁명」은 교과서·지도서 예시 원문 자리와 되짚기 자리까지만(스모크가 개수 대조).
+  · **파일 전체에 네 자리 연도 0 · 연대 0 · 통계·금액·거리 수치 0**(l08~l09 규약 승계).
+  · 교사용 참고 자료 0 — 서울 1호선, 경부 고속 국도 건설 배경, 판자촌, 강남 개발, 대중문화 역사,
+    프로 야구, 전태일 기념관 누리집·VR 답사, 활동지·평가 관점·평가 방법.
+  · **학생 이름 0 · 인물 이름 0.**
+  · 정서 — 이 단원의 무거운 사건을 다시 다루는 자리다. 폭력·유혈 묘사 0, 무기 그림 0,
+    사람이 쓰러지는 그림 0, 겁주는 어휘 0. **시위하는 모습은 든 팔과 나란히 잡은 손, 깃발로만 그린다.**
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g6_social_u1_l10_v1">
+<title>[생각을 펼쳐요] 숨은 글씨를 활용하여 그림 완성하기 · 사회 6-1</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#1D4ED8; --green-d:#1E3A8A; --cyan:#3B82F6;
+  --bg:#EFF6FF; --bub:#DBEAFE; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#B45309; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-shrink:0}
+.ka-lb{background:#F1F5F9;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;
+  font-weight:700;color:var(--muted);font-size:clamp(11px,1.9vw,13px);display:flex;align-items:center;gap:6px}
+.ka-lb svg{width:14px;height:14px}
+.ka-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.ka-bar>div{height:100%;background:var(--green);border-radius:99px;transition:width .35s ease;width:5%}
+.ka-pg{font-size:clamp(11px,1.9vw,13px);color:var(--muted);font-weight:700;min-width:46px;text-align:right}
+.ka-sc{display:flex;align-items:center;gap:3px;background:var(--amber-bg);border-radius:99px;padding:5px 11px}
+.ka-sc svg{width:15px;height:15px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;color:var(--amber);font-size:clamp(14px,2.4vw,17px)}
+.ka-sc-u{font-size:11px;color:var(--amber);font-weight:700}
+
+/* 메인 */
+.ka-m{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;padding:4px 2px}
+.ka-tags{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ka-bg{display:inline-flex;align-items:center;gap:5px;background:var(--bub);color:var(--green-d);
+  border-radius:99px;padding:5px 12px;font-size:clamp(11px,1.9vw,13px);font-weight:700}
+.ka-bg svg{width:13px;height:13px}
+.ka-bg.s2{background:#E0F2FE;color:#075985}
+.ka-bg.s3{background:#DCFCE7;color:#166534}
+.ka-bg.s4{background:#FEF3C7;color:#92400E}
+.ka-bg.s5{background:#F3E8FF;color:#6B21A8}
+.ka-meta{font-size:clamp(10px,1.7vw,12px);color:#94A3B8;font-weight:600}
+.ka-t{font-size:clamp(19px,3.4vw,27px);font-weight:700;line-height:1.4;margin-bottom:10px}
+.ka-bub{background:var(--bub);border-radius:14px;padding:13px 18px;font-size:clamp(14px,2.4vw,18px);
+  line-height:1.7;margin-bottom:12px}
+.ka-emph{color:var(--green-d);font-weight:700}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.scene.wide{width:clamp(240px,44vw,420px)}
+.scene.wide svg{height:clamp(120px,20vw,200px)}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(15px,2.6vw,20px);font-weight:700;line-height:1.6;margin-bottom:12px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+.opt{background:#fff;border:2px solid var(--line);border-radius:13px;padding:13px 15px;cursor:pointer;
+  font-family:inherit;font-size:clamp(13px,2.2vw,16.5px);font-weight:500;text-align:left;line-height:1.5;transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:#16A34A;background:#DCFCE7;font-weight:700}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:11px;border-radius:12px;padding:12px 16px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;animation:fadeUp .3s ease both}
+.fb.ok{background:#DCFCE7;color:#166534;font-weight:700}
+.hint{margin-top:9px;background:var(--amber-bg);border-radius:11px;padding:10px 14px;
+  font-size:clamp(12.5px,2.1vw,15px);color:var(--amber);line-height:1.55}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:9px;width:100%;max-width:660px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFC;border-radius:12px;padding:11px 15px;
+  font-size:clamp(13px,2.2vw,16.5px);line-height:1.6}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'\2713';color:#fff;font-weight:800;font-size:14px}
+
+/* 직접조작 — 숨은 글씨 그림 판(같은 획이 그림이면서 글씨인 형) */
+.dw-wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dw-body{display:grid;grid-template-columns:1.05fr 1fr;gap:10px;align-items:start}
+.dw-canvas{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.dw-canvas svg{width:100%;height:auto;display:block}
+.dw-canvas .cvcap{padding:5px 6px;text-align:center;font-size:clamp(9.5px,1.6vw,11.5px);
+  color:var(--muted);font-weight:700;background:#F8FAFC}
+.dw-right{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dw-step{font-size:clamp(10.5px,1.75vw,13px);font-weight:800;color:var(--green)}
+.dw-msg{background:#F8FAFC;border:2px solid var(--line);border-left:4px solid var(--green);border-radius:10px;
+  padding:8px 12px;font-size:clamp(11.4px,1.93vw,13.8px);line-height:1.55;color:#334155;animation:fadeUp .3s ease both}
+.dw-msg.warn{border-left-color:var(--red)}
+.dw-msg b{color:var(--green)}
+.dw-card{background:#fff;border:2px solid var(--amber);border-radius:12px;padding:10px 12px;
+  font-size:clamp(12px,2.05vw,14.5px);line-height:1.55;animation:pop .35s ease both}
+.dw-card .pt{font-weight:800;color:var(--amber);margin-bottom:4px;font-size:clamp(12.5px,2.15vw,15px)}
+.hw-q{font-size:clamp(11.6px,1.97vw,14px);font-weight:800;color:var(--green);
+  background:var(--bub);border-radius:9px;padding:7px 11px;line-height:1.45}
+.hw-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;max-height:196px;overflow-y:auto}
+.hw-grid button{border:2px solid #CBD5E0;background:#fff;border-radius:9px;padding:7px 6px;cursor:pointer;
+  font-family:inherit;font-weight:700;color:var(--ink);font-size:clamp(10px,1.7vw,12.2px);transition:.15s;
+  text-align:left;line-height:1.35}
+.hw-grid button:hover{border-color:var(--green);background:var(--bub)}
+.hw-grid button:disabled{border-color:#E2E8F0;background:#F8FAFC;color:#CBD5E0;cursor:default}
+.hw-bold{border:2px solid var(--amber);background:#FFF8E1;color:var(--amber);border-radius:10px;
+  padding:9px 10px;cursor:pointer;font-family:inherit;font-weight:800;
+  font-size:clamp(11px,1.85vw,13.4px);line-height:1.4}
+.hw-bold:hover{background:#FEF3C7}
+.hw-bold:disabled{border-color:#E2E8F0;background:#F8FAFC;color:#CBD5E0;cursor:default}
+.hw-list{display:flex;flex-direction:column;gap:5px}
+.hw-list button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;padding:7px 10px;
+  cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.hw-list button:hover{background:var(--bub)}
+.hw-list button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.paper{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:12px;padding:12px 16px;
+  font-size:clamp(12.5px,2.1vw,15px);line-height:1.65;color:#3F3A2C;max-width:660px;
+  animation:fadeUp .4s ease both}
+.paper .ph{font-weight:800;color:#8A6D3B;margin-bottom:6px;font-size:clamp(13px,2.2vw,16px)}
+.tipbox{background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(12.5px,2.1vw,15px);
+  line-height:1.6;color:#075985;max-width:660px}
+@media(max-width:620px){ .dw-body{grid-template-columns:1fr} }
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(29,78,216,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style>
+<script src="/kedu_gate.js"></script>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#B45309"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식 =====
+   ⚠️ 정직 원칙: 모든 그림은 활동 방법을 나타낸 도식이며 실제 작품이 아니다.
+      누리집에서 찾아 보는 실제 숨은 글씨 그림 작품은 남의 작품이라 재현하지 않는다.
+   ⚠️ 정서 원칙 — 시위하는 모습은 든 팔과 나란히 잡은 손, 깃발로만 그린다.
+      폭력·유혈 묘사 0, 무기 그림 0, 사람이 쓰러지는 그림 0. */
+const SVG = {
+  // 1 동기 유발 — 이 단원에서 공부한 다섯 갈래
+  back5:`<svg viewBox="0 0 320 176"><rect width="320" height="176" fill="#F8FAFC"/>
+    <text x="160" y="22" font-size="11" fill="#1E3A8A" text-anchor="middle" font-weight="800">이 단원에서 무엇을 공부했나요?</text>
+    <rect x="14" y="36" width="140" height="40" rx="9" fill="#fff" stroke="#1D4ED8" stroke-width="1.6"/>
+    <text x="84" y="53" font-size="8.2" fill="#1E3A8A" text-anchor="middle" font-weight="800">아픔이 담긴 장소와</text>
+    <text x="84" y="66" font-size="8.2" fill="#1E3A8A" text-anchor="middle" font-weight="800">평화의 장소로 바꾼 노력</text>
+    <rect x="166" y="36" width="140" height="40" rx="9" fill="#fff" stroke="#1D4ED8" stroke-width="1.6"/>
+    <text x="236" y="53" font-size="8.2" fill="#1E3A8A" text-anchor="middle" font-weight="800">평화 통일을 위해</text>
+    <text x="236" y="66" font-size="8.2" fill="#1E3A8A" text-anchor="middle" font-weight="800">우리가 할 수 있는 일</text>
+    <rect x="14" y="84" width="140" height="40" rx="9" fill="#DBEAFE" stroke="#1D4ED8" stroke-width="1.6"/>
+    <text x="84" y="101" font-size="8.2" fill="#1E3A8A" text-anchor="middle" font-weight="800">우리나라의 민주주의가</text>
+    <text x="84" y="114" font-size="8.2" fill="#1E3A8A" text-anchor="middle" font-weight="800">어떻게 발전해 왔는지</text>
+    <rect x="166" y="84" width="140" height="40" rx="9" fill="#DBEAFE" stroke="#1D4ED8" stroke-width="1.6"/>
+    <text x="236" y="101" font-size="8.2" fill="#1E3A8A" text-anchor="middle" font-weight="800">시대별로 우리나라의</text>
+    <text x="236" y="114" font-size="8.2" fill="#1E3A8A" text-anchor="middle" font-weight="800">산업이 어떻게 발전했는지</text>
+    <rect x="14" y="132" width="292" height="26" rx="8" fill="#FEF3C7" stroke="#B45309" stroke-width="1.6"/>
+    <text x="160" y="149" font-size="8.8" fill="#92400E" text-anchor="middle" font-weight="800">오늘은 공부한 내용을 바탕으로 창의·융합 활동을 해요</text>
+    </svg>`,
+  // 2 숨은 글씨 그림이란 — 같은 획, 두 가지 읽기
+  hidden:`<svg viewBox="0 0 320 176"><rect width="320" height="176" fill="#F8FAFC"/>
+    <text x="160" y="22" font-size="11" fill="#1E3A8A" text-anchor="middle" font-weight="800">같은 획이 두 가지로 읽혀요</text>
+    <rect x="14" y="34" width="140" height="106" rx="10" fill="#fff" stroke="#CBD5E0" stroke-width="1.6"/>
+    <text x="84" y="52" font-size="8.6" fill="#64748B" text-anchor="middle" font-weight="800">그림으로 보면</text>
+    <path d="M84 70 L62 110 M84 70 L106 110" stroke="#94A3B8" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+    <path d="M126 66 L126 114" stroke="#94A3B8" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+    <text x="84" y="130" font-size="7.6" fill="#64748B" text-anchor="middle" font-weight="800">팔을 들고 선 사람</text>
+    <path d="M160 86 L178 86" stroke="#94A3B8" stroke-width="1.8"/>
+    <path d="M174 82 L184 86 L174 90 Z" fill="#94A3B8"/>
+    <rect x="190" y="34" width="116" height="106" rx="10" fill="#EFF6FF" stroke="#1D4ED8" stroke-width="1.8"/>
+    <text x="248" y="52" font-size="8.6" fill="#1E3A8A" text-anchor="middle" font-weight="800">글씨로 보면</text>
+    <path d="M232 70 L212 110 M232 70 L252 110" stroke="#1D4ED8" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <path d="M272 66 L272 114" stroke="#1D4ED8" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <text x="248" y="130" font-size="7.6" fill="#1E3A8A" text-anchor="middle" font-weight="800">글씨의 획</text>
+    <text x="160" y="164" font-size="9" fill="#94A3B8" text-anchor="middle">획은 그대로인데 읽는 방법만 달라져요</text>
+    </svg>`,
+  // 3 [이렇게 해 봐요] 세 걸음
+  steps:`<svg viewBox="0 0 320 176"><rect width="320" height="176" fill="#F8FAFC"/>
+    <text x="160" y="22" font-size="11" fill="#1E3A8A" text-anchor="middle" font-weight="800">이렇게 해 봐요</text>
+    <rect x="14" y="36" width="292" height="34" rx="9" fill="#fff" stroke="#1D4ED8" stroke-width="1.5"/>
+    <circle cx="34" cy="53" r="10" fill="#DBEAFE" stroke="#1D4ED8" stroke-width="1.2"/>
+    <text x="34" y="57" font-size="9.4" fill="#1E3A8A" text-anchor="middle" font-weight="800">1</text>
+    <text x="176" y="57" font-size="8.4" fill="#1E3A8A" text-anchor="middle" font-weight="800">공부한 역사적 사건 하나와 관련 있는 낱말을 쓰기</text>
+    <rect x="14" y="76" width="292" height="34" rx="9" fill="#fff" stroke="#1D4ED8" stroke-width="1.5"/>
+    <circle cx="34" cy="93" r="10" fill="#DBEAFE" stroke="#1D4ED8" stroke-width="1.2"/>
+    <text x="34" y="97" font-size="9.4" fill="#1E3A8A" text-anchor="middle" font-weight="800">2</text>
+    <text x="176" y="97" font-size="8.4" fill="#1E3A8A" text-anchor="middle" font-weight="800">그림으로 나타낼 낱말을 정하고 어떻게 숨길지 생각하기</text>
+    <rect x="14" y="116" width="292" height="34" rx="9" fill="#FEF3C7" stroke="#B45309" stroke-width="1.6"/>
+    <circle cx="34" cy="133" r="10" fill="#FFF8E1" stroke="#B45309" stroke-width="1.2"/>
+    <text x="34" y="137" font-size="9.4" fill="#92400E" text-anchor="middle" font-weight="800">3</text>
+    <text x="176" y="137" font-size="8.4" fill="#92400E" text-anchor="middle" font-weight="800">숨긴 글씨는 진하게, 나머지 부분은 색칠해 그림 완성하기</text>
+    <text x="160" y="168" font-size="9" fill="#94A3B8" text-anchor="middle">준비물은 색칠 도구예요</text>
+    </svg>`,
+  // 4 교과서 예시 두 장
+  ex1:`<svg viewBox="0 0 320 176"><rect width="320" height="176" fill="#F8FAFC"/>
+    <text x="160" y="22" font-size="11" fill="#1E3A8A" text-anchor="middle" font-weight="800">교과서에는 이런 예시가 있어요</text>
+    <rect x="14" y="34" width="140" height="112" rx="10" fill="#FFFDF5" stroke="#E7D9A8" stroke-width="1.8"/>
+    <text x="84" y="52" font-size="8" fill="#8A6D3B" text-anchor="middle" font-weight="800">역사적 사건 · 6월 민주 항쟁</text>
+    <rect x="34" y="60" width="100" height="42" rx="7" fill="#fff" stroke="#CBD5E0" stroke-width="1.2"/>
+    <text x="84" y="88" font-size="21" fill="#1D4ED8" text-anchor="middle" font-weight="800">시위</text>
+    <text x="84" y="118" font-size="7.6" fill="#8A6D3B" text-anchor="middle" font-weight="800">시위하던 시민들의 모습이</text>
+    <text x="84" y="130" font-size="7.6" fill="#8A6D3B" text-anchor="middle" font-weight="800">생각나서 그렸어요</text>
+    <rect x="166" y="34" width="140" height="112" rx="10" fill="#FFFDF5" stroke="#E7D9A8" stroke-width="1.8"/>
+    <text x="236" y="52" font-size="8" fill="#8A6D3B" text-anchor="middle" font-weight="800">역사적 사건 · 6월 민주 항쟁</text>
+    <rect x="186" y="60" width="100" height="42" rx="7" fill="#fff" stroke="#CBD5E0" stroke-width="1.2"/>
+    <text x="236" y="88" font-size="21" fill="#1D4ED8" text-anchor="middle" font-weight="800">선거</text>
+    <text x="236" y="118" font-size="7.6" fill="#8A6D3B" text-anchor="middle" font-weight="800">그 결과 대통령 직선제가</text>
+    <text x="236" y="130" font-size="7.6" fill="#8A6D3B" text-anchor="middle" font-weight="800">시행돼서 그렸어요</text>
+    <text x="160" y="166" font-size="9" fill="#94A3B8" text-anchor="middle">교과서 예시를 나타낸 도식이에요</text>
+    </svg>`,
+  // 5 지도서 예시 답안 — 다른 사건, 다른 낱말
+  ex2:`<svg viewBox="0 0 320 176"><rect width="320" height="176" fill="#F8FAFC"/>
+    <text x="160" y="22" font-size="11" fill="#1E3A8A" text-anchor="middle" font-weight="800">다른 사건과 낱말로도 그릴 수 있어요</text>
+    <rect x="14" y="34" width="140" height="112" rx="10" fill="#fff" stroke="#1D4ED8" stroke-width="1.6"/>
+    <text x="84" y="52" font-size="8" fill="#1E3A8A" text-anchor="middle" font-weight="800">역사적 사건 · 4·19 혁명</text>
+    <rect x="34" y="60" width="100" height="42" rx="7" fill="#EFF6FF" stroke="#1D4ED8" stroke-width="1.2"/>
+    <text x="84" y="88" font-size="21" fill="#1D4ED8" text-anchor="middle" font-weight="800">혁명</text>
+    <text x="84" y="118" font-size="7.6" fill="#1E3A8A" text-anchor="middle" font-weight="800">거리로 나와 민주주의를</text>
+    <text x="84" y="130" font-size="7.6" fill="#1E3A8A" text-anchor="middle" font-weight="800">외치는 모습을 그렸어요</text>
+    <rect x="166" y="34" width="140" height="112" rx="10" fill="#fff" stroke="#1D4ED8" stroke-width="1.6"/>
+    <text x="236" y="52" font-size="8" fill="#1E3A8A" text-anchor="middle" font-weight="800">역사적 사건 · 6월 민주 항쟁</text>
+    <rect x="186" y="60" width="100" height="42" rx="7" fill="#EFF6FF" stroke="#1D4ED8" stroke-width="1.2"/>
+    <text x="236" y="88" font-size="21" fill="#1D4ED8" text-anchor="middle" font-weight="800">분노</text>
+    <text x="236" y="118" font-size="7.6" fill="#1E3A8A" text-anchor="middle" font-weight="800">독재에 분노하고 직선제를</text>
+    <text x="236" y="130" font-size="7.6" fill="#1E3A8A" text-anchor="middle" font-weight="800">요구하는 모습을 그렸어요</text>
+    <text x="160" y="166" font-size="9" fill="#94A3B8" text-anchor="middle">지도서 예시 답안을 나타낸 도식이에요</text>
+    </svg>`,
+  // 6 친구 작품에서 숨은 글씨 찾기
+  share:`<svg viewBox="0 0 320 176"><rect width="320" height="176" fill="#F8FAFC"/>
+    <text x="160" y="22" font-size="11" fill="#1E3A8A" text-anchor="middle" font-weight="800">친구의 그림에서 숨은 글씨를 찾아봐요</text>
+    <rect x="14" y="36" width="88" height="66" rx="9" fill="#fff" stroke="#CBD5E0" stroke-width="1.5"/>
+    <path d="M58 54 L40 88 M58 54 L76 88" stroke="#94A3B8" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <rect x="116" y="36" width="88" height="66" rx="9" fill="#fff" stroke="#CBD5E0" stroke-width="1.5"/>
+    <path d="M160 52 m-13,0 a13,13 0 1,0 26,0 a13,13 0 1,0 -26,0" stroke="#94A3B8" stroke-width="3" fill="none"/>
+    <path d="M136 84 L184 84" stroke="#94A3B8" stroke-width="3" stroke-linecap="round"/>
+    <rect x="218" y="36" width="88" height="66" rx="9" fill="#fff" stroke="#CBD5E0" stroke-width="1.5"/>
+    <path d="M240 50 L240 90 M240 50 L282 50 M282 50 L282 70 M240 70 L282 70" stroke="#94A3B8" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <rect x="14" y="112" width="292" height="42" rx="9" fill="#DBEAFE" stroke="#1D4ED8" stroke-width="1.6"/>
+    <text x="160" y="130" font-size="8.6" fill="#1E3A8A" text-anchor="middle" font-weight="800">친구 이름 · 숨은 글씨 · 느낀 점을 적어요</text>
+    <text x="160" y="145" font-size="8" fill="#1E3A8A" text-anchor="middle">온라인 도구로 댓글을 남기거나 별점을 매길 수도 있어요</text>
+    </svg>`,
+  // 7 정리
+  done:`<svg viewBox="0 0 320 176"><rect width="320" height="176" fill="#F8FAFC"/>
+    <text x="160" y="24" font-size="11.6" fill="#1E3A8A" text-anchor="middle" font-weight="800">오늘의 정리</text>
+    <rect x="14" y="38" width="292" height="34" rx="9" fill="#fff" stroke="#1D4ED8" stroke-width="1.5"/>
+    <text x="160" y="59" font-size="8.8" fill="#1E3A8A" text-anchor="middle" font-weight="800">사건에 어울리는 글씨를 떠올리고, 장면 속에 글씨를 숨겨 그려요</text>
+    <rect x="14" y="78" width="292" height="34" rx="9" fill="#fff" stroke="#1D4ED8" stroke-width="1.5"/>
+    <text x="160" y="99" font-size="8.8" fill="#1E3A8A" text-anchor="middle" font-weight="800">숨긴 글씨는 진하게, 나머지 부분은 색칠해서 완성해요</text>
+    <rect x="14" y="118" width="292" height="34" rx="9" fill="#DCFCE7" stroke="#16A34A" stroke-width="1.6"/>
+    <text x="160" y="139" font-size="8.8" fill="#166534" text-anchor="middle" font-weight="800">친구의 그림에서도 숨은 글씨를 찾고 느낀 점을 나눠요</text>
+    </svg>`
+};
+function sceneCard(k,cap,extra){ return `<div class="scene ${extra||''}">${SVG[k]}${cap?`<div class="cap">${cap}</div>`:''}</div>`; }
+
+/* ===== 직접조작: 숨은 글씨 그림 판(45번째 신규 패턴 — 같은 획이 그림이면서 글씨인 형) =====
+   ⭐ 앞의 마흔네 종에서 **판은 한 번만 읽혔다.** 이번만 판에 아무것도 더 놓지 않고
+      아무것도 지우지 않았는데 **같은 획이 다른 것으로 읽힌다.**
+   ⭐ **글씨 획을 따로 담는 상태가 아예 없다** — `hwWordMask(st) = st.hwLaid & HW_HIDE`
+      한 줄이 진해질 획을 다 고르므로 진한 획은 언제나 놓인 획의 부분집합이고,
+      두 읽기 사이에서 **획 수가 달라질 수 없다.**
+   ⭐ **획을 놓는 자리에는 옳고 그름이 없다** — 그림을 그리는 데 정답이 없기 때문이고,
+      그래서 정답 상수 자체가 코드에 없다(`HW_PUT_OK` 부재).
+   ⚠️ 가드 8종: ① 마무리 확정 후 전체 잠금 / ② 무효 획·글씨·마무리 번호(`Number.isInteger`) /
+      ③ 열두 획을 다 놓기 전 「진하게」 무시(순서) / ④ 이미 놓은 획 재선택 무시 — 판 불변 /
+      ⑤ 진하게 하기 전 글씨 3택 무시(순서) / ⑥ 글씨를 맞히기 전 마무리 무시(순서) /
+      ⑦ 진하게 한 뒤 획 재클릭 무시 — 판 불변 / ⑧ 안내 표시 중 재클릭 무시(`hwBusy`).
+   ⚠️ opbody 분리자는 `const HW_N = 12;` — 스칼라라 파생 접두 충돌이 없다(l03·l09 규약 승계). */
+const HW_N = 12;
+
+/* ★ 어느 획이 글씨의 획인가 — 이 마스크 하나가 다 정한다(획 0~5).
+   글씨 획을 담는 배열·집합을 따로 두지 않는다. */
+const HW_HIDE = 0b000000111111;
+
+/* 열두 획의 짧은이름 — 앞의 여섯은 글씨의 획이기도 하다(판은 그것을 미리 표시하지 않는다). */
+const HW_PART = [
+  '왼쪽으로 든 팔','오른쪽으로 든 팔','똑바로 선 몸',
+  '앞에 선 사람의 머리','나란히 잡은 손','땅을 딛고 선 다리',
+  '손에 든 깃발','뒤에 선 사람들','거리의 바닥',
+  '길가의 건물','건물의 창문','하늘에 뜬 해'
+];
+
+/* 판이 그리는 장면 — 교과서 예시 원문.
+   ⚠️ 이 이름에는 숨은 글씨가 들어 있으므로 **글씨를 읽어 낸 뒤 완료 카드에서만** 쓴다.
+      그리는 동안 판은 「떠오른 장면」이라고만 말한다(미리 노출 0). */
+const HW_SCENE = '시위하던 시민들의 모습';
+
+/* 숨은 글씨 3택 — 셋 다 교과서·지도서에 나온 낱말이다(지어냄 0). 정답 자리 1. */
+const HW_WORD = ['선거','시위','눈물'];
+const HW_WORD_OK = 1;
+/* 어긋난 보기 안내 — ⚠️ 알맞은 글씨를 흘리지 않는다(판을 다시 읽으라고만 한다). */
+const HW_WORD_NO = [
+  '「선거」는 교과서의 <b>다른 예시</b>에 나온 숨은 글씨예요. 판에서 <b>진해진 획</b>을 다시 읽어 봐요.',
+  '',
+  '「눈물」도 이 단원을 떠올릴 때 나올 수 있는 낱말이지만, 판에서 <b>진해진 획</b>이 그리는 글씨는 아니에요.'
+];
+
+/* ★ 완성 띠 — 글씨를 읽어 낸 뒤에만 뜬다(코드에 단 한 자리). */
+const HW_BAND = '같은 획이 그림이면서 글씨였어요';
+
+/* 마무리 3택 — 지도서 전개 원문. 정답 자리 2. */
+const HW_FIN = [
+  '떠오르는 장면과 상관없이 아무 글씨나 크게 쓰는 활동이에요',
+  '글씨는 쓰지 않고 그림만 예쁘게 그리는 활동이에요',
+  '사건에 어울리는 글씨를 떠올리고, 떠오르는 장면 속에 글씨를 숨겨 그림을 그리는 활동이에요'
+];
+const HW_FIN_OK = 2;
+
+function hwBit(i){ return 1<<i; }
+function hwCount(m){ let n=0; for(let i=0;i<HW_N;i++){ if(m & hwBit(i)) n++; } return n; }
+/* ⚠️ 글씨 획을 따로 담는 상태는 두지 않는다 — 이 한 줄이 진해질 획을 다 고른다. */
+function hwWordMask(st){ return st.hwLaid & HW_HIDE; }
+function hwAllLaid(st){ return hwCount(st.hwLaid)===HW_N; }
+function hwPhase(st){
+  if(st.hwFin!=null) return 'done';
+  if(st.hwRead!=null) return 'fin';
+  return st.hwDeep ? 'read' : 'draw';
+}
+
+/* 획 하나를 그린다.
+   ⚠️ 진하게 하기 전에는 열두 획이 **같은 색·같은 굵기**다 — 어느 획이 글씨인지 판이 미리 표시하지 않는다. */
+function hwShape(i,deep){
+  const c = deep ? '#1D4ED8' : '#94A3B8';
+  const w = deep ? 5.4 : 3.2;
+  const a = `data-st="${i}" data-c="${deep?'d':'n'}" stroke="${c}" stroke-width="${w}" fill="none" stroke-linecap="round" stroke-linejoin="round"`;
+  const D = [
+    'M96 84 L68 148',
+    'M96 84 L124 148',
+    'M146 80 L146 152',
+    'M224 96 m-19,0 a19,19 0 1,0 38,0 a19,19 0 1,0 -38,0',
+    'M186 130 L262 130',
+    'M224 130 L224 166',
+    'M40 52 L40 100 M40 52 L74 60 L40 70 Z',
+    'M248 62 m-7,0 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0 M272 62 m-7,0 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0 M296 62 m-7,0 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0',
+    'M22 172 L298 172',
+    'M22 172 L22 104 L56 104 L56 172',
+    'M28 112 h10 v10 h-10 Z M42 112 h10 v10 h-10 Z M28 132 h10 v10 h-10 Z M42 132 h10 v10 h-10 Z',
+    'M170 50 m-10,0 a10,10 0 1,0 20,0 a10,10 0 1,0 -20,0 M170 32 L170 36 M170 64 L170 68 M152 50 L156 50 M184 50 L188 50'
+  ];
+  return `<path ${a} d="${D[i]}"/>`;
+}
+
+function hwCanvas(st){
+  const laid=st.hwLaid, deepM = st.hwDeep ? hwWordMask(st) : 0;
+  const nS=hwCount(laid), nD=hwCount(deepM), ph=hwPhase(st);
+  let g='';
+  g+=`<rect x="8" y="6" width="304" height="238" rx="10" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="2"/>`;
+  const head = (ph==='done') ? '한 장의 그림에 글씨가 숨어 있었어요'
+    : (ph==='fin' ? '진해진 획이 글씨를 이루고 있었어요'
+      : (ph==='read' ? '획은 그대로예요 — 여섯 획만 진해졌어요'
+        : (hwAllLaid(st) ? '장면을 다 그렸어요 — 이제 숨긴 글씨를 진하게 해 봐요'
+          : '획을 하나씩 놓아 장면을 그려 봐요')));
+  g+=`<text x="160" y="22" font-size="10.4" fill="#1E3A8A" text-anchor="middle" font-weight="800">${head}</text>`;
+  /* 도화지 */
+  g+=`<rect x="14" y="30" width="292" height="152" rx="9" fill="#FFFDF5" stroke="#E7D9A8" stroke-width="1.6"/>`;
+  /* 놓인 획만 그린다 — 아직 놓지 않은 자리는 밑그림조차 두지 않는다. */
+  for(let i=0;i<HW_N;i++){
+    if(laid & hwBit(i)) g+=hwShape(i, !!(deepM & hwBit(i)));
+  }
+  g+=`<text data-stn="${nS}" x="160" y="196" font-size="8.4" fill="#64748B" text-anchor="middle" font-weight="800">놓은 획 ${nS} / ${HW_N}</text>`;
+  g+=`<text data-deepn="${nD}" x="272" y="196" font-size="8.4" fill="#1E3A8A" text-anchor="middle" font-weight="800">진한 획 ${nD}</text>`;
+  /* ★ 완성 띠 — 글씨를 읽어 낸 뒤에만 뜬다(코드에 단 한 자리). */
+  if(st.hwRead!=null){
+    g+=`<rect data-band="1" x="12" y="208" width="296" height="28" rx="8" fill="#DCFCE7" stroke="#16A34A" stroke-width="1.6"/>`;
+    g+=`<text x="160" y="226" font-size="8.8" fill="#166534" text-anchor="middle" font-weight="800">${HW_BAND}</text>`;
+  } else {
+    g+=`<rect x="12" y="208" width="296" height="28" rx="8" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1.2" stroke-dasharray="4 3"/>`;
+  }
+  return `<svg viewBox="0 0 320 250"><rect width="320" height="250" fill="#ffffff"/>${g}</svg>`;
+}
+
+function hwPanel(st){
+  const ph=hwPhase(st), n=hwCount(st.hwLaid);
+  const q = ph==='done'
+    ? '같은 획이 <b>그림</b>이면서 <b>글씨</b>였어요.'
+    : (ph==='fin' ? '숨은 글씨 그림이란 어떤 활동일까요?'
+      : (ph==='read' ? '판에 <b>진해진 획</b>을 읽어 봐요 — 무슨 글씨가 숨어 있나요?'
+        : (hwAllLaid(st) ? '장면을 다 그렸어요. 이제 <b>숨긴 글씨를 진하게</b> 나타내 봐요.'
+          : '떠오른 장면을 획으로 그려 봐요. <b>어느 획부터 놓아도 좋아요.</b>')));
+  let right = `<div class="hw-q">${q}</div>`;
+
+  if(ph==='done'){
+    right+=`<div class="dw-card"><div class="pt">\uD83D\uDD8D\uFE0F 획은 하나도 늘거나 줄지 않았어요</div>
+      <div>진하게 하기 전에도 <b>열두 획이 모두 놓여 있었어요.</b> 달라진 것은 <b>진하기</b>뿐이에요 \u2014
+      그래서 같은 획이 <b>그림</b>으로도, <b>글씨</b>로도 읽혀요.</div>
+      <div style="margin-top:5px">이 판이 그린 장면은 교과서 예시의 <b>${HW_SCENE}</b>이에요.
+      이 판은 <b>방법을 익히는 도식</b>이에요. 진짜 활동은
+      <b>색칠 도구로 종이에</b> 내가 고른 사건과 낱말로 <b>직접 그리는 것</b>이에요.</div></div>`;
+  } else if(ph==='fin'){
+    right+=`<div class="dw-step">\uD83D\uDCDD 오늘의 마무리</div>`;
+    right+=`<div class="hw-list">${HW_FIN.map((f,k)=>
+      `<button class="${st.hwWrongF===k?'no':''}" onclick="hwFinish(${k})">${f}</button>`).join('')}</div>`;
+  } else if(ph==='read'){
+    right+=`<div class="dw-step">\uD83D\uDD0D 숨은 글씨 찾기</div>`;
+    right+=`<div class="hw-list">${HW_WORD.map((f,k)=>
+      `<button class="${st.hwWrongR===k?'no':''}" onclick="hwPick(${k})">${f}</button>`).join('')}</div>`;
+  } else {
+    right+=`<div class="dw-step">\u270F\uFE0F 장면 그리기 \u00B7 ${n} / ${HW_N}</div>`;
+    right+=`<div class="hw-grid">${HW_PART.map((p,i)=>{
+      const on = !!(st.hwLaid & hwBit(i));
+      return `<button ${on?'disabled':''} onclick="hwPut(${i})">${on?'\u2713 ':''}${p}</button>`;
+    }).join('')}</div>`;
+    right+=`<button class="hw-bold" ${hwAllLaid(st)?'':'disabled'} onclick="hwBold()">\uD83D\uDD8A\uFE0F 숨긴 글씨를 진하게</button>`;
+  }
+  if(st.hwMsg) right+=`<div class="dw-msg${st.hwWarn?' warn':''}">${st.hwMsg}</div>`;
+
+  return `<div class="dw-wrap">
+    <div style="text-align:center"><b style="color:var(--green)">\uD83D\uDD8D\uFE0F 같은 획이 그림이면서 글씨가 돼요</b></div>
+    <div class="dw-body">
+      <div class="dw-canvas">${hwCanvas(st)}<div class="cvcap">숨은 글씨 그림을 그리는 방법을 나타낸 도식이에요</div></div>
+      <div class="dw-right">${right}</div>
+    </div>
+  </div>`;
+}
+
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "1단원 평화 통일을 위한 노력, 민주화와 산업화 · [생각을 펼쳐요]";
+// 확인 4 + 적용 4 — 정답 다양화 [3,1,2,0,0,2,1,3](각 자리 2회)
+// ⚠️ 14차시 침범 0 · 파일 전체 네 자리 연도·연대 0 · 수치 0 ·
+//    교사용 참고 자료 0 · [재미있게 확인해요] 퍼즐 낱말 0 · l01~l09는 되짚기만(새 사실 0).
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"숨은 글씨 그림은 어떤 활동일까요?",
+   opts:["글씨는 쓰지 않고 그림만 크게 그리는 활동이에요",
+         "그림은 그리지 않고 글씨만 예쁘게 쓰는 활동이에요",
+         "아무 낱말이나 골라 크게 써 놓는 활동이에요",
+         "사건에 어울리는 글씨를 떠올리고, 떠오르는 장면 속에 글씨를 숨겨 그림을 그리는 활동이에요"],
+   correct:3, pts:POINTS_BASIC, scene:"hidden",
+   reason:"숨은 글씨 그림은 사건에 어울리는 글씨를 떠올리고, 떠오르는 장면 속에 글씨를 숨겨 그림을 그리는 활동이에요.",
+   h1:"글씨만 있는 것도, 그림만 있는 것도 아니에요.",
+   h2:"장면 「속에」 글씨를 숨기는 것이 이 활동의 핵심이에요."},
+
+  {stem:"[이렇게 해 봐요]에서 가장 먼저 하는 일은 무엇인가요?",
+   opts:["숨긴 글씨를 진하게 나타내요",
+         "이 단원에서 공부한 역사적 사건 하나를 고르고, 그와 관련 있는 낱말을 써요",
+         "나머지 부분을 색칠해 그림을 완성해요",
+         "친구의 그림에서 숨은 글씨를 찾아요"],
+   correct:1, pts:POINTS_BASIC, scene:"steps",
+   reason:"먼저 이 단원에서 공부한 역사적 사건 중 하나를 쓰고, 그와 관련 있는 낱말을 써요.",
+   h1:"그리기 전에 정해야 하는 것이 있어요.",
+   h2:"무엇을 그릴지 정하려면 사건과 낱말이 먼저예요."},
+
+  {stem:"숨긴 글씨는 어떻게 나타내나요?",
+   opts:["숨긴 글씨를 흐리게 하고 나머지도 흐리게 해요",
+         "숨긴 글씨를 지우고 나머지만 색칠해요",
+         "숨긴 글씨는 진하게 나타내고, 나머지 부분은 색칠해요",
+         "숨긴 글씨와 나머지를 똑같은 진하기로 두어요"],
+   correct:2, pts:POINTS_BASIC, scene:"steps",
+   reason:"숨긴 글씨는 진하게 나타내고, 나머지 부분은 색칠해 그림을 완성해요.",
+   h1:"글씨가 드러나 보이려면 나머지와 달라야 해요.",
+   h2:"교과서 세 번째 걸음을 떠올려 봐요."},
+
+  {stem:"그림을 완성한 뒤 친구들과 함께 하는 일로 알맞은 것은 무엇인가요?",
+   opts:["친구의 그림에서 숨은 글씨를 찾고 느낀 점을 써요",
+         "친구의 그림에 점수를 매겨 등수를 정해요",
+         "친구의 그림은 보지 않고 내 그림만 다시 봐요",
+         "친구의 그림을 똑같이 따라 그려요"],
+   correct:0, pts:POINTS_BASIC, scene:"share",
+   reason:"교과서 두 번째 활동은 친구들의 그림에서 숨은 글씨를 찾고 느낀 점을 쓰는 것이에요.",
+   h1:"이 활동은 나 혼자 끝내는 활동이 아니에요.",
+   h2:"찾아보고, 느낀 점을 나누는 자리예요."},
+
+  // 4단계 적용 (+15)
+  {stem:"판에서 같은 획이 그림이면서 글씨일 수 있었던 까닭은 무엇인가요?",
+   opts:["장면을 이루는 획 가운데 몇 개가 그대로 글씨의 획이 되도록 그렸기 때문이에요",
+         "글씨를 먼저 쓰고, 그림을 그 위에 새로 덧그렸기 때문이에요",
+         "진하게 할 때 판이 글씨 획을 새로 그려 넣었기 때문이에요",
+         "그림과 글씨를 따로 그려 나란히 두었기 때문이에요"],
+   correct:0, pts:POINTS_APPLY, scene:"hidden",
+   reason:"팔·몸·머리처럼 장면을 이루는 획이 그대로 글씨의 획이 되도록 그렸어요. 그래서 하나의 획이 두 가지로 읽혀요.",
+   h1:"판에 놓은 획은 처음부터 끝까지 열둘이었어요.",
+   h2:"따로 그린 것이 아니라, 같은 획이 두 몫을 했어요."},
+
+  {stem:"「숨긴 글씨를 진하게」를 누르기 전에는 글씨가 보이지 않았어요. 그 까닭은 무엇인가요?",
+   opts:["글씨 획이 아직 판에 놓여 있지 않았기 때문이에요",
+         "판이 글씨 획을 감춰 두었다가 나중에 꺼냈기 때문이에요",
+         "획은 모두 놓여 있었지만 진하기가 같아서 그림으로만 읽혔기 때문이에요",
+         "글씨 획이 그림 획보다 작게 그려져 있었기 때문이에요"],
+   correct:2, pts:POINTS_APPLY, scene:"hidden",
+   reason:"획은 이미 모두 놓여 있었어요. 진하기가 모두 같아서 어느 획이 글씨인지 알 수 없었을 뿐이에요.",
+   h1:"진하게 하기 전과 뒤의 획 수를 견주어 봐요.",
+   h2:"획은 하나도 늘거나 줄지 않았어요."},
+
+  {stem:"4·19 혁명을 떠올려 그림을 그린 친구가 있어요. 그림 설명으로 알맞은 것은 무엇인가요?",
+   opts:["아무 장면이나 떠올려 그렸어요",
+         "학생들이 거리로 나와 민주주의를 외치는 모습을 그렸어요",
+         "앞으로 일어날 일을 상상해서 그렸어요",
+         "역사와 상관없는 풍경을 그렸어요"],
+   correct:1, pts:POINTS_APPLY, scene:"ex2",
+   reason:"고른 사건에서 실제로 떠오르는 장면을 그려야 해요. 거리로 나와 민주주의를 외치는 모습이 그런 장면이에요.",
+   h1:"그림은 내가 고른 사건과 이어져야 해요.",
+   h2:"공부한 사건에서 떠오른 장면을 그려요."},
+
+  {stem:"이 활동을 하는 태도로 <b>알맞지 않은</b> 것은 무엇인가요?",
+   opts:["공부한 사건 가운데 인상 깊었던 장면을 떠올려 봐요",
+         "떠올린 장면을 어떻게 나타낼지, 글씨를 어떻게 숨길지 생각해 봐요",
+         "친구들의 작품에서 인상 깊었던 점을 이야기해 봐요",
+         "내 그림만 보고, 친구들의 그림에서는 숨은 글씨를 찾지 않아요"],
+   correct:3, pts:POINTS_APPLY, scene:"share",
+   reason:"친구들의 작품 속에 숨어 있는 글씨를 찾아보고 인상 깊었던 점을 나누는 것까지가 이 활동이에요.",
+   h1:"교과서에는 활동이 두 개 있어요.",
+   h2:"두 번째 활동은 친구들의 그림을 보는 자리예요."}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — [동기 유발] 단원에서 공부한 내용 떠올리기
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">이 단원에서 공부한 내용을 떠올려 봐요</h2>
+  <div class="ka-bub">우리는 이 단원에서 <b>분단의 아픔이 담긴 장소</b>를 찾아보고 <b>평화의 장소로 바꾸려는 노력</b>을 살펴봤어요. <b>평화 통일을 위해 우리가 할 수 있는 일</b>도 실천해 봤고요. 또 <b>우리나라의 민주주의가 어떻게 발전해 왔는지</b> 주요 사건을 중심으로 살펴보고, <b>시대별로 우리나라의 산업이 어떻게 발전했는지</b>도 알아봤어요. 오늘은 <span class="ka-emph">공부한 내용을 바탕으로 창의·융합 활동</span>을 해요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('back5','공부한 내용 되짚기','wide')}</div>
+    <div class="note">가장 <b>인상 깊었던 장면</b>은 무엇이었나요?</div></div>`});
+// 2 살펴보기 — 숨은 글씨 그림이란
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">숨은 글씨 그림이 무엇일까요?</h2>
+  <div class="ka-bub"><b>숨은 글씨 그림</b>은 <span class="ka-emph">사건에 어울리는 글씨를 떠올리고, 떠오르는 장면 속에 글씨를 숨겨 그림을 그리는 활동</span>이에요. 신기한 점이 하나 있어요 \u2014 <b>그림의 획과 글씨의 획이 따로 있지 않아요.</b> 같은 획을 <b>그림으로도, 글씨로도</b> 읽을 수 있게 그리는 거예요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('hidden','같은 획, 두 가지 읽기','wide')}</div>
+    <div class="note">그래서 <b>진하기만 달라져도</b> 그림이 글씨가 돼요.</div></div>`});
+// 3 살펴보기 — reveal ① [이렇게 해 봐요]
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">이렇게 그려요</h2>
+  <div class="ka-bub">교과서는 세 걸음을 알려 줘요. <b>\u2460 이 단원에서 공부한 역사적 사건 중 하나를 쓰고, 그와 관련 있는 단어를 씁니다.</b> <b>\u2461 그림으로 표현할 단어를 정하고, 글씨에 그림을 어떻게 그릴지 생각합니다.</b> <b>\u2462 숨긴 글씨를 진하게 나타내고, 나머지 부분은 색칠해 그림을 완성합니다.</b></div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('steps','세 걸음','wide')}</div>
+  <div class="tipbox">준비물은 <b>색칠 도구</b>예요. 종이에 직접 그리는 활동이에요.</div>
+  ${st.revealed?`<div class="answer-box"><b>숨은 글씨 그림을 그리려면 어떻게 해야 할까요?</b> <span class="ka-emph">내가 생각한 단어 중에서 그림으로 표현할 단어를 정해요.</span> <span class="ka-emph">단어와 어울리는 그림을 그려 보며, 글씨를 어떻게 숨길 수 있을지 생각해 봐요.</span> <span class="ka-emph">숨은 글씨를 진하게 나타내고, 나머지 부분은 채색해요.</span></div>`
+    :`<div class="note">숨은 글씨 그림을 그리려면 어떻게 해야 할까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 4 살펴보기 — 교과서 예시 두 장
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">교과서 예시를 살펴봐요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('ex1','교과서 예시 두 장','wide')}</div>
+  <div class="paper"><div class="ph">\uD83D\uDD8D\uFE0F 그림 설명</div>
+    \u2460 숨은 글씨 <b>시위</b> \u2014 <b>「6월 민주 항쟁에서 시위하던 시민들의 모습이 생각나서 '시위'라는 글씨에 그림을 그렸어요.」</b>
+    <div style="margin-top:6px">\u2461 숨은 글씨 <b>선거</b> \u2014 <b>「6월 민주 항쟁의 결과 대통령 직선제가 시행돼서 '선거'라는 글씨에 그림을 그렸어요.」</b></div></div>
+  <div class="note">같은 사건이라도 <b>떠오르는 낱말</b>은 사람마다 달라요.</div></div>`});
+// 5 살펴보기 — reveal ② 지도서 예시 답안
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">어떤 낱말이 떠오르나요?</h2>
+  <div class="ka-bub">이 단원에서 <b>인상 깊었거나 흥미로웠던 역사적 사건</b>을 하나 골라 봐요. 그리고 그 사건과 관련해서 <span class="ka-emph">생각나는 낱말</span>을 떠올려 봐요. 낱말이 정해지면 그 낱말을 <b>어떤 장면 속에 숨길지</b> 생각해 보는 거예요.</div>
+  <div class="ka-grp">
+  ${st.revealed?`<div class="scene-row">${sceneCard('ex2','다른 사건, 다른 낱말','wide')}</div>
+    <div class="answer-box"><b>어떤 사건에서 어떤 낱말이 떠오를까요?</b> <span class="ka-emph">4·19 혁명을 떠올리면 「혁명」이 떠올라 \u2014 학생들이 거리로 나와 민주주의를 외치는 모습을 그렸어요.</span> <span class="ka-emph">6월 민주 항쟁을 떠올리면 「분노」가 떠올라 \u2014 독재에 분노하고 직선제를 요구하는 모습을 그렸어요.</span></div>`
+    :`<div class="note">사건 하나를 고르고, 떠오르는 낱말을 생각해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 6 살펴보기 — 친구들의 그림에서 숨은 글씨 찾기
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">친구의 그림에서도 글씨를 찾아봐요</h2>
+  <div class="ka-bub">그림을 완성했으면 친구들에게 작품을 <b>설명</b>해요. 그리고 <span class="ka-emph">친구들의 그림에서 숨은 글씨를 찾고 느낀 점을 써요.</span> 어느 친구의 그림에서는 <b>「여러 사람을 이용해 글자를 숨긴 것이 재밌었다」</b>는 느낌이, 또 어느 친구의 그림에서는 <b>「사람들이 마스크를 쓴 장면을 글씨로 바꾼 것이 흥미로웠다」</b>는 느낌이 들 수 있어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('share','친구의 그림 살펴보기','wide')}</div>
+    <div class="tipbox">친구들의 작품은 <b>온라인 도구</b>로 나눌 수도 있어요 \u2014 댓글을 남기거나 별점을 매기면서요.</div></div>`});
+// 7 살펴보기 — 직접조작(숨은 글씨 그림 판)
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">같은 획이 그림이면서 글씨가 돼요</h2>
+  <div class="ka-grp">${hwPanel(st)}</div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 활동을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('done','오늘의 정리','wide')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">\u2460</span><div><b style="color:var(--green)">사건과 낱말 정하기</b> \u2014 이 단원에서 공부한 역사적 사건 하나를 고르고, 그와 관련 있는 <b>낱말</b>을 떠올려요.</div></div>
+    <div class="sum-item"><span class="n">\u2461</span><div><b style="color:var(--green)">숨길 방법 생각하기</b> \u2014 낱말과 어울리는 장면을 그려 보며 <b>글씨를 어떻게 숨길지</b> 생각해요.</div></div>
+    <div class="sum-item"><span class="n">\u2462</span><div><b style="color:var(--green)">완성하기</b> \u2014 <b>숨긴 글씨는 진하게</b> 나타내고, <b>나머지 부분은 색칠</b>해 그림을 완성해요.</div></div>
+    <div class="sum-item"><span class="n">\u2463</span><div><b style="color:var(--amber)">함께 나누기</b> \u2014 친구들의 그림에서 <b>숨은 글씨를 찾고 느낀 점</b>을 써요.</div></div>
+    <div class="sum-item"><span class="n">\u2605</span><div><b>같은 획, 두 가지 읽기</b> \u2014 획을 더하거나 지우지 않아도 <b>진하기</b>만 달라지면 그림이 글씨가 돼요.</div></div>
+  </div>
+  <div class="note">친구들의 아이디어를 보면 <b>역사적 사건에 관해 다시 생각해 볼 수 있어요.</b> 다음 시간에는 <b style="color:var(--green)">단원 마무리</b>를 해요.</div></div>`});
+// 17 정리: 스스로 돌아보기 — 지도서 지도 방법 원문 3항
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"공부한 사건 가운데 하나를 골라 떠오르는 장면을 생각해 봤어요",st)}
+    ${selfCheck(1,"떠올린 장면을 어떻게 나타낼지, 관련 있는 글씨를 어떻게 숨길지 생각해 봤어요",st)}
+    ${selfCheck(2,"친구들의 작품 속에 숨어 있는 글씨를 찾고 인상 깊었던 점을 이야기했어요",st)}
+  </div><div class="note">별이 적게 채워진 곳은 앞 슬라이드를 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">오늘 공부를 마쳤어요!</h2>
+  <div class="ka-grp">
+    <div class="end-score">\u2B50 ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">다음은 <b style="color:var(--amber)">단원 마무리</b>!</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">\u2B55 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g6_social_u1_l10";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  hwLaid:0, hwDeep:false, hwRead:null, hwFin:null,
+  hwWrongR:null, hwWrongF:null,
+  hwMsg:null, hwWarn:false, hwBusy:false,
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 \u2192';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+function hwRender(){ main.innerHTML = slides[state.idx].render(state); }
+/* ⚠️ 경고 경로 — 어긋난 글씨·마무리에만 쓴다. 판은 이 경로에서 한 자리도 달라지지 않는다. */
+function hwHold(msg){
+  state.hwWarn=true; state.hwBusy=true; state.hwMsg=msg;
+  playThud(); hwRender();
+  setTimeout(()=>{ state.hwBusy=false; state.hwWarn=false; state.hwMsg=null;
+    state.hwWrongR=null; state.hwWrongF=null; hwRender(); },1600);
+}
+
+/* ① 획 놓기 — ⚠️ 판정이 없다(그림을 그리는 데 옳고 그름이 없다).
+   어느 획부터 놓아도 되고, 다 놓으면 같은 장면이 된다. */
+function hwPut(i){
+  if(state.hwFin!=null) return;                                        // 가드①
+  if(state.hwBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(i) || i<0 || i>=HW_N) return;                    // 가드②
+  if(state.hwDeep) return;                                             // 가드⑦ 진하게 한 뒤 획 재클릭 무시 — 판 불변
+  if(state.hwLaid & hwBit(i)) return;                                  // 가드④ 이미 놓은 획 재선택 무시 — 판 불변
+  state.hwLaid |= hwBit(i);
+  state.hwMsg = hwAllLaid(state)
+    ? '장면을 다 그렸어요. 이제 <b>숨긴 글씨를 진하게</b> 나타내 봐요.'
+    : `<b>${HW_PART[i]}</b>을(를) 놓았어요.`;
+  state.hwWarn=false;
+  playBlip(); hwRender();
+}
+
+/* ② 숨긴 글씨를 진하게 — ★ 이 함수가 이 패턴의 핵심 신규성이다.
+   획을 하나도 더하거나 지우지 않고 `hwDeep` 하나만 켠다.
+   어느 획이 진해지는지는 `hwWordMask`가 정하므로 진한 획은 언제나 놓인 획의 부분집합이다. */
+function hwBold(){
+  if(state.hwFin!=null) return;                                        // 가드①
+  if(state.hwBusy) return;                                             // 가드⑧
+  if(state.hwDeep) return;
+  if(!hwAllLaid(state)) return;                                        // 가드③ 열두 획 전 진하게 무시(순서)
+  state.hwDeep = true;                                                 // ★ 판이 두 번째로 읽히는 유일한 자리
+  state.hwMsg = '획은 <b>하나도 더하거나 지우지 않았어요.</b> 여섯 획만 <b>진해졌을 뿐</b>이에요.';
+  state.hwWarn=false;
+  playChime(); hwRender();
+}
+
+/* ③ 숨은 글씨 3택 — 판을 읽어서 고른다.
+   ⚠️ 어긋난 보기에 알맞은 글씨를 흘리지 않는다(판을 다시 읽으라고만 한다). */
+function hwPick(k){
+  if(state.hwFin!=null) return;                                        // 가드①
+  if(state.hwBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=HW_WORD.length) return;         // 가드②
+  if(!state.hwDeep) return;                                            // 가드⑤ 진하게 전 글씨 3택 무시(순서)
+  if(state.hwRead!=null) return;
+  if(k===HW_WORD_OK){
+    state.hwRead=k; state.hwWrongR=null; state.hwWarn=false;
+    state.hwMsg='같은 획이 <b>그림</b>이면서 <b>글씨</b>였어요. 획을 더하지 않고도 두 가지로 읽혀요.';
+    playChime(); hwRender(); return;
+  }
+  state.hwWrongR=k;
+  hwHold(HW_WORD_NO[k]);
+}
+
+/* ④ 마무리 — 지도서 전개 원문. 글씨를 읽어 낸 뒤에만 열린다. */
+function hwFinish(k){
+  if(state.hwFin!=null) return;                                        // 가드①
+  if(state.hwBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=HW_FIN.length) return;          // 가드②
+  if(state.hwRead==null) return;                                       // 가드⑥ 글씨를 맞히기 전 마무리 무시(순서)
+  if(k===HW_FIN_OK){
+    state.hwFin=k; state.hwWrongF=null; state.hwMsg=null; state.hwWarn=false;
+    playChime(); hwRender(); return;
+  }
+  state.hwWrongF=k;
+  hwHold(k===0
+    ? '아무 글씨나 쓰는 것이 아니에요. <b>사건에 어울리는 글씨</b>를 떠올리는 데서 시작해요.'
+    : '그림만 그리는 것도 아니에요. 장면 <b>속에 글씨를 숨기는 것</b>이 이 활동이에요.');
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2;
+    if(qs.hint>=2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">\uD83D\uDCD8 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 \u2192</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // l11 미양산 — 허브 복귀
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+</body>
+</html>
