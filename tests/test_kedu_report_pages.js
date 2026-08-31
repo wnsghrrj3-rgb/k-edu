@@ -155,7 +155,7 @@ async function open(file, role, url){
 
   // ── ③ 학생 「내 학습」 ────────────────────────────────────
   {
-    const { doc, errors } = await open('mylearning/index.html', 'student', 'https://keduclass.com/mylearning/');
+    const { doc, win, errors } = await open('mylearning/index.html', 'student', 'https://keduclass.com/mylearning/');
     const txt = doc.getElementById('app').textContent;
     ok(errors.length === 0, '내 학습: JS 오류 없음 ' + errors.join(' | '));
     ok(!/부족|미달|하위|시험|점수|취약|등수/.test(txt), '내 학습: 금지어 없음');
@@ -169,6 +169,24 @@ async function open(file, role, url){
     ok(doc.querySelectorAll('.unit .cells a, .unit .cells i').length >= 7, '내 학습: 내 지도 차시 칸');
     ok(doc.querySelector('.unit .cells .next'), '내 학습: 다음 새 차시 강조');
     ok(doc.querySelectorAll('.go-card').length >= 3, '내 학습: 다음 걸음 카드');
+    ok(/background:#EEF4FF/.test(doc.querySelector('.badge')?.getAttribute('style')||''), '내 학습: 뱃지 = 과목별 색(수학)');
+
+    // 특별 뱃지는 완주 단원·연속일이 있어야 뜬다 — 공유 데이터엔 없으므로 직접 그려 확인
+    const KRw = win.KeduReport;
+    const sc = [0,1,2,3,4,5,6].map(d => ({ lesson_id:L1, question_id:'q1', is_correct:true, earned_at:iso(-d,10) }));
+    const wk7 = KRw.buildWeeks(sc, [], 1)[0];
+    win.render({ nickname:'1번', grade:1 },
+      wk7,
+      { solid:[{lesson_id:L1}], watching:[], weak:[], repeatWrongLessons:[] },
+      [],
+      [{ subjectKo:'수학', unitNum:1, unitName:'9까지의 수', total:3, done:3, lessons:[] },
+       { subjectKo:'국어', unitNum:2, unitName:'받침이 있는 글자', total:4, done:1, lessons:[] }],
+      7);
+    const t3 = doc.getElementById('app').textContent;
+    const tros = doc.querySelectorAll('.tro');
+    ok(tros.length === 2 && /단원을 끝까지!/.test(t3) && /9까지의 수/.test(tros[0].textContent), '내 학습: 특별 뱃지 — 완주 단원만(3/3 O, 1/4 X)');
+    ok(/일주일 개근/.test(t3) && /7일째 이어 가는 중/.test(t3), '내 학습: 특별 뱃지 — 연속 학습 단계');
+    ok(!/부족|미달|하위|시험|점수|취약|등수/.test(t3), '내 학습: 뱃지 문구 금지어 없음');
   }
 
   // ── ④ 학부모 성장 리포트 ─────────────────────────────────

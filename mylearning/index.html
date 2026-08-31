@@ -49,12 +49,23 @@ body.lower .card h2{font-size:19px}
 .streak{margin-top:12px;font-size:14.5px;text-align:center;color:var(--text);line-height:1.6}
 body.lower .streak{font-size:16.5px}
 .streak b{color:var(--gc)}
-/* ② 탄탄한 것 — 뱃지 */
+/* ② 탄탄한 것 — 뱃지 v3
+   · 특별 뱃지(.tro) = 단원 완주 · 연속 학습 · 아침 지킴이 — 큰 카드, 데이터 있을 때만
+   · 차시 뱃지(.badge) = 탄탄해진 차시 — 과목별 색·심볼로 구분(전에는 전부 같은 초록 🏅) */
+.tros{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:12px}
+.tro{display:flex;align-items:center;gap:10px;border-radius:16px;padding:11px 14px 11px 11px;border:1.5px solid;line-height:1.35;flex:1 1 190px;min-width:0}
+.tro .m{width:38px;height:38px;flex:none;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:21px;background:#fff}
+.tro .t{font-family:var(--kedu-title);font-size:14.5px;display:block}
+.tro .d{font-size:12.5px;opacity:.8;font-weight:500;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.lower .tro .t{font-size:16.5px}
+body.lower .tro .d{font-size:14px}
+body.lower .tro .m{width:44px;height:44px;font-size:25px}
 .badges{display:flex;flex-wrap:wrap;gap:8px}
-.badge{display:inline-flex;align-items:center;gap:6px;background:#F0FAF4;border:1.5px solid #BEE3CE;color:#276749;border-radius:999px;padding:8px 14px;font-size:13.5px;font-weight:700;line-height:1.3}
-body.lower .badge{font-size:15.5px;padding:10px 16px}
-.badge .s{font-size:15px}
-.badge small{font-weight:500;opacity:.75;font-size:.85em}
+.badge{display:inline-flex;align-items:center;gap:7px;background:#F7F8FA;border:1.5px solid #E2E8F0;color:#2D3142;border-radius:999px;padding:8px 14px 8px 9px;font-size:13.5px;font-weight:700;line-height:1.3}
+body.lower .badge{font-size:15.5px;padding:10px 16px 10px 11px}
+.badge .s{width:26px;height:26px;flex:none;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;border:1px solid rgba(0,0,0,.06)}
+body.lower .badge .s{width:30px;height:30px;font-size:16px}
+.badge small{font-weight:500;opacity:.7;font-size:.85em}
 /* ③ 다시 해볼 것 · ④ 다음 걸음 */
 .go-card{display:flex;align-items:center;gap:12px;border:1.5px solid var(--border);border-radius:16px;padding:13px 14px;margin-bottom:10px;text-decoration:none;color:inherit;background:#fff}
 .go-card:active{transform:scale(.99)}
@@ -104,6 +115,20 @@ body.lower .empty{font-size:16px}
 const db = getKeduDb();
 const KR = window.KeduReport;
 const GRADE_COLOR = {1:'#FF85A1',2:'#FFB347',3:'#3BAB72',4:'#FF7043',5:'#3D90F0',6:'#7E57C2'};
+// 과목별 뱃지 얼굴 — 뱃지가 8개 붙어도 무엇을 해냈는지 한눈에 갈리도록 색·심볼을 나눈다
+const SUBJ_BADGE = {
+  국어:{ico:'📗',bg:'#F0FAF4',bd:'#BEE3CE'},
+  수학:{ico:'📘',bg:'#EEF4FF',bd:'#C3D4F7'},
+  과학:{ico:'🔬',bg:'#F3F0FD',bd:'#D3C8F2'},
+  사회:{ico:'🏛️',bg:'#FFF6E8',bd:'#F5D9AE'},
+  영어:{ico:'🅰️',bg:'#FFF0F3',bd:'#F7C6D0'}
+};
+const SUBJ_FALLBACK = {ico:'⭐',bg:'#F7F8FA',bd:'#E2E8F0'};
+// 연속 학습 단계 — 아래에서부터 처음 걸리는 것 하나만 준다
+const STREAK_TIERS = [
+  {n:20,t:'스무 밤 연속',ico:'🌟'}, {n:14,t:'두 주 연속',ico:'💎'},
+  {n:7, t:'일주일 개근',ico:'🔥'}, {n:5, t:'닷새 연속',ico:'🔥'}, {n:3, t:'사흘 연속',ico:'✨'}
+];
 let _speakText = '';
 function esc(s){ return String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function shortTitle(i){ return i.title || i.label; }
@@ -155,10 +180,25 @@ function render(p, wk, cls, steps, units, streak){
   const streakLine = streak >= 2 ? `<br>🔥 <b>${streak}일</b> 연속으로 하고 있어요!` : '';
   const doneLine = wk.lessonsDone.size ? `<br>이번 주에 끝까지 한 차시 <b>${wk.lessonsDone.size}개</b>${wk.morningCount?`, 아침활동 <b>${wk.morningCount}번</b>`:''}` : (wk.morningCount?`<br>아침활동도 <b>${wk.morningCount}번</b>!`:'');
 
-  // 탄탄 뱃지 — 지도 정본 이름 (과목 · 차시 제목)
+  // ── 특별 뱃지 — 차시 하나보다 큰 성취. 이미 계산해 둔 값만 쓴다(새 질의 없음)
+  const tros = [];
+  const doneUnits = (units||[]).filter(u => (u.total ?? u.lessons.length) > 0 && u.done === (u.total ?? u.lessons.length));
+  doneUnits.slice(0,2).forEach(u => {
+    const f = SUBJ_BADGE[u.subjectKo] || SUBJ_FALLBACK;
+    tros.push({ico:'🏆', bg:f.bg, bd:f.bd, t:'단원을 끝까지!',
+      d:`${u.subjectKo}${u.unitNum?' '+u.unitNum+'단원':''}${u.unitName?' · '+u.unitName:''}`});
+  });
+  const tier = STREAK_TIERS.find(t => streak >= t.n);
+  if(tier) tros.push({ico:tier.ico, bg:'#FFF4EC', bd:'#F8CFAE', t:tier.t, d:`${streak}일째 이어 가는 중이에요`});
+  if(wk.morningCount >= 3) tros.push({ico:'🌅', bg:'#FFFBEB', bd:'#F2E2A8', t:'아침 지킴이', d:`이번 주 아침활동 ${wk.morningCount}번`});
+  const trosHtml = tros.slice(0,4).map(b =>
+    `<div class="tro" style="background:${b.bg};border-color:${b.bd}"><span class="m">${b.ico}</span><span><b class="t">${esc(b.t)}</b><span class="d">${esc(b.d)}</span></span></div>`).join('');
+
+  // 탄탄 뱃지 — 지도 정본 이름 (과목별 색·심볼)
   const solidBadges = cls.solid.slice(0,8).map(r => {
     const i = KR.lesson(r.lesson_id);
-    return `<span class="badge"><span class="s">🏅</span><span>${esc(shortTitle(i))}<br><small>${esc(i.subjectKo)}${i.unitNum?' '+i.unitNum+'단원':''}</small></span></span>`;
+    const f = SUBJ_BADGE[i.subjectKo] || SUBJ_FALLBACK;
+    return `<span class="badge" style="background:${f.bg};border-color:${f.bd}"><span class="s">${f.ico}</span><span>${esc(shortTitle(i))}<br><small>${esc(i.subjectKo)}${i.unitNum?' '+i.unitNum+'단원':''}</small></span></span>`;
   }).join('');
 
   // 다시 해볼 것 — "한 번 더!" (반복 오답·취약, 부정 표현 없음)
@@ -196,7 +236,8 @@ function render(p, wk, cls, steps, units, streak){
       <div class="streak">${streakMsg}${streakLine}${doneLine}</div>
     </div>
     <div class="card"><h2><span class="ico">🏅</span>탄탄한 것</h2>
-      ${solidBadges ? `<div class="badges">${solidBadges}</div>` : '<div class="empty">뱃지가 곧 생길 거예요. 지금처럼만 하면 돼요!</div>'}
+      ${trosHtml ? `<div class="tros">${trosHtml}</div>` : ''}
+      ${solidBadges ? `<div class="badges">${solidBadges}</div>` : (trosHtml ? '' : '<div class="empty">뱃지가 곧 생길 거예요. 지금처럼만 하면 돼요!</div>')}
       ${cls.solid.length>8?`<div class="note">그리고 ${cls.solid.length-8}개 더! 아래 내 지도의 초록 칸이에요.</div>`:''}
       ${cls.watching.length?`<div class="note">몇 개는 아직 지켜보는 중이에요 — 기록이 쌓이면 알려 줄게요.</div>`:''}
     </div>
@@ -215,6 +256,7 @@ function render(p, wk, cls, steps, units, streak){
   const retryNames = retry.slice(0,2).map(r=>shortTitle(KR.lesson(r.lessonId)));
   _speakText = `${p.nickname||'친구'}의 학습 이야기. ` + streakMsg.replace(/<[^>]+>/g,'') + ' '
     + (streak >= 2 ? `${streak}일 연속으로 하고 있어요! ` : '')
+    + (tros.length ? `새로 받은 뱃지는 ${tros.slice(0,2).map(b=>b.t).join(', ')} 이에요. ` : '')
     + (solidNames.length ? `탄탄한 것은 ${solidNames.join(', ')} 이에요. ` : '')
     + (retryNames.length ? `다시 해볼 것은 ${retryNames.join(', ')} 이에요. 한 번 더 하면 탄탄해져요. ` : '지금 다시 해볼 것은 없어요. 멋져요! ')
     + (steps.length ? `다음 걸음은 ${shortTitle(KR.lesson(steps[0].lessonId))} 이에요.` : '');
