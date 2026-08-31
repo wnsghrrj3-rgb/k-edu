@@ -14,7 +14,7 @@
       { k: 'speed', label: '속도', def: 'slow', opts: ['slow', 'normal'] },
     ],
     draw: function (ctx, W, H, t, p, T) {
-      var s = H / 1080, size = 300 * s;
+      var s = H / 1080, size = 300 * s * (p._size || 1);   // 크기 훅(케이무비 카드 설정)
       var a = life(t, 0, 0.9, 7.1, 8, E.outCubic, E.inCubic);
       if (a <= 0.002) return;
       ctx.save();
@@ -22,8 +22,10 @@
       var tw = K.textWidth(ctx, p.text, -6 * s);
       var travel = (p.speed === 'normal' ? 1.0 : 0.62) * (W + tw); // 전체 길이 동안 이동 거리
       var x0 = W / 2 - tw / 2 + travel / 2;                          // t=4초에 글자 중앙이 화면 중앙
-      var x = x0 - travel * (t / 8);
-      var y = p.y === 'top' ? H * 0.30 : p.y === 'bottom' ? H * 0.82 : H * 0.5 + size * 0.36;
+      var x = x0 - travel * (t / 8) + W * (p._dx || 0);
+      // 초점 훅: 케이무비에서 기준점을 고르면 그 세로 자리에(가로는 어차피 흐른다), 아니면 부품의 세로 위치 옵션
+      var y = p._ay != null ? H * p._ay + size * 0.36 : p.y === 'top' ? H * 0.30 : p.y === 'bottom' ? H * 0.82 : H * 0.5 + size * 0.36;
+      y += H * (p._dy || 0);
       var color = p.style === 'accent' ? T.accent : T.text;
       if (p.style === 'outline') {
         ctx.globalAlpha = a * 0.9; ctx.strokeStyle = color; ctx.lineWidth = 3 * s; ctx.lineJoin = 'round';

@@ -14,7 +14,10 @@
       { k: 'exit',  label: '퇴장', def: 'zoom', opts: ['zoom', 'fade'] },
     ],
     draw: function (ctx, W, H, t, p, T) {
-      var s = H / 1080, cx = W / 2, cy = H / 2;
+      var s = H / 1080;
+      // 초점·크기 훅(케이무비 카드 설정) — 없으면 예전 그대로 화면 중앙·기본 크기. 덮개는 언제나 화면 꽉.
+      var cx = W * (p._ax != null ? p._ax : 0.5) + W * (p._dx || 0), cy = H * (p._ay != null ? p._ay : 0.5) + H * (p._dy || 0);
+      var sizeK = p._size || 1;
       var cov = p.cover === 'black' ? '#07090f' : p.cover === 'white' ? '#F4F1EA' : T.primary;
       var subCol = p.cover === 'white' ? T.primary : T.accent;
       var inU = seg(t, 0, 0.9, E.outExpo);
@@ -24,7 +27,7 @@
       var z = 1;
       if (p.exit === 'zoom') z = 1 + 14 * seg(t, 3.2, 5.0, E.inExpo);
       var scale = z * (1.12 - 0.12 * inU); // 등장 시 아주 살짝 축소되며 자리잡음
-      var size = 340 * s;
+      var size = 340 * s * sizeK;
 
       ctx.save();
       // 덮개 (전면)
@@ -44,10 +47,10 @@
         if (sa > 0.002) {
           ctx.save();
           ctx.translate(cx, cy); ctx.scale(scale, scale); ctx.translate(-cx, -cy);
-          K.drawText(ctx, p.sub, cx, cy + size * 0.36 + 70 * s, { size: 22 * s, weight: 600, ls: 8 * s, color: subCol, align: 'center', alpha: sa });
+          K.drawText(ctx, p.sub, cx, cy + size * 0.36 + 70 * s * sizeK, { size: 22 * s * sizeK, weight: 600, ls: 8 * s * sizeK, color: subCol, align: 'center', alpha: sa });
           // 글자 위·아래 얇은 금선
           ctx.fillStyle = K.rgba(subCol, 0.8 * sa);
-          var lw = 560 * s * seg(t, 0.7, 1.6, E.outExpo);
+          var lw = 560 * s * sizeK * seg(t, 0.7, 1.6, E.outExpo);
           ctx.fillRect(cx - lw / 2, cy - size * 0.62, lw, 2 * s);
           ctx.restore();
         }

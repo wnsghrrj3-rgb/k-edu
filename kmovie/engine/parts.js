@@ -16,7 +16,7 @@
   const META = {
     opening:   { cat: 'title',  hold: [2.6, 5.2],  thumbT: 3.0 },
     section:   { cat: 'title',  hold: [1.6, 3.35], thumbT: 2.0 },
-    knockout:  { cat: 'title',  hold: [1.7, 3.2],  thumbT: 2.2 },
+    knockout:  { cat: 'title',  hold: [1.7, 3.2],  thumbT: 2.2, layer: true, self: true },   // 덮개를 뚫는 부품 — 제 층에서 그려야 촬영본이 글자 안에 남는다; 크기·초점은 부품이 직접(덮개는 항상 꽉)
     lower3rd:  { cat: 'info',   hold: [1.4, 4.3],  thumbT: 2.2, anchor: [0.06, 0.9] },
     counter:   { cat: 'info',   hold: [2.5, 3.35], thumbT: 2.6, anchor: [0.08, 0.5] },
     tag:       { cat: 'info',   hold: [0.9, 4.3],  thumbT: 2.0, anchor: [0.05, 0.09] },
@@ -24,7 +24,7 @@
     chapter:   { cat: 'title',  hold: [1.5, 4.1],  thumbT: 2.4 },
     credits:   { cat: 'title',  hold: [3.4, 6.9],  thumbT: 4.0 },
     list:      { cat: 'info',   hold: [2.6, 6.9],  thumbT: 4.0 },
-    sweep:     { cat: 'behind', hold: null,        thumbT: 4.0, behind: true },
+    sweep:     { cat: 'behind', hold: null,        thumbT: 4.0, behind: true, self: true },   // 흐르는 경로는 그대로, 글자 크기·초점만 부품이 직접
     lightleak: { cat: 'fx',     hold: null,        thumbT: 0.7 },
     // 방송 자막 부품 16종 (p-broadcast.js) — font 는 카드 글꼴 기본값(카드에서 바꿀 수 있음)
     extrude:   { cat: 'bc', hold: [1.4, 4.1], thumbT: 2.0, font: 'blackhan' },
@@ -32,7 +32,7 @@
     headline:  { cat: 'bc', hold: [1.1, 5.2], thumbT: 2.0, font: 'notosans' },
     ticker:    { cat: 'bc', hold: null,       thumbT: 3.0, font: 'gothica1' },
     nameplate: { cat: 'bc', hold: [1.3, 4.2], thumbT: 2.2, font: 'notoserif' },
-    stamp:     { cat: 'bc', hold: [0.5, 3.3], thumbT: 1.2, font: 'dohyeon' },
+    stamp:     { cat: 'bc', hold: [0.5, 3.3], thumbT: 1.2, font: 'dohyeon', layer: true },   // 잉크 뜯김이 destination-out — 제 층에서
     flip:      { cat: 'bc', hold: [1.2, 4.3], thumbT: 2.4, font: 'montserrat' },
     vertical:  { cat: 'bc', hold: [1.8, 5.2], thumbT: 3.0, font: 'songmyung' },
     marker:    { cat: 'bc', hold: [1.1, 4.2], thumbT: 2.0, font: 'nanumpen' },
@@ -52,7 +52,23 @@
     { id: 'fx',     name: '화면 효과' },
     { id: 'etc',    name: '기타' },
   ];
+  /* 초점(기준점) 9곳 — 크기를 키울 때의 축이자, 스스로 자리를 정하는 부품(뚫린 글자·흐르는 글자)엔 글자가 놓이는 자리 */
+  const ANCHORS = [
+    { id: 'tl', name: '↖', ax: 0.12, ay: 0.16 }, { id: 't', name: '↑', ax: 0.5, ay: 0.16 }, { id: 'tr', name: '↗', ax: 0.88, ay: 0.16 },
+    { id: 'l',  name: '←', ax: 0.12, ay: 0.5  }, { id: 'c', name: '·', ax: 0.5, ay: 0.5  }, { id: 'r',  name: '→', ax: 0.88, ay: 0.5  },
+    { id: 'bl', name: '↙', ax: 0.12, ay: 0.84 }, { id: 'b', name: '↓', ax: 0.5, ay: 0.84 }, { id: 'br', name: '↘', ax: 0.88, ay: 0.84 },
+  ];
+  function anchorOf(card) { if (!card.anchor) return null; const a = ANCHORS.find(x => x.id === card.anchor); return a ? [a.ax, a.ay] : null; }
   const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+  const SIZE_MIN = 0.25, SIZE_MAX = 3;
+  /* 제 층(투명 캔버스) — destination-out 같은 뚫기 연산이 아래 촬영본을 지우지 않게 */
+  let layerCv = null;
+  function layerCanvas(W, H) {
+    if (!layerCv) layerCv = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(W, H) : Object.assign(document.createElement('canvas'), { width: W, height: H });
+    if (layerCv.width !== W || layerCv.height !== H) { layerCv.width = W; layerCv.height = H; }
+    const c = layerCv.getContext('2d'); c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1; c.globalCompositeOperation = 'source-over'; c.filter = 'none'; c.clearRect(0, 0, W, H);
+    return layerCv;
+  }
 
   function K() { return g.KM_PARTS || null; }
   function def(id) { const k = K(); return k ? k.get(id) : null; }
@@ -85,7 +101,17 @@
   }
 
   /* 한 카드 그리기 — 호출자가 transform·alpha 를 초기화해 둔다 */
-  /* 카드 설정(글꼴·크기·세로 위치·등장/퇴장 효과)을 부품 그리기 바깥에서 씌운다 — 부품 정의는 손대지 않는다. */
+  /* 카드 설정(글꼴·크기·초점·가로/세로·등장/퇴장 효과)을 부품 그리기 바깥에서 씌운다.
+     - 보통 부품: 초점(기준점)을 축으로 크기, 가로/세로 만큼 평행 이동.
+     - self 부품(뚫린 글자·흐르는 글자): 축 변환 대신 p._size/_ax/_ay/_dx/_dy 를 넘겨 부품이 스스로 자리·크기를 정한다
+       (뚫린 글자의 덮개는 항상 화면 꽉 — 바깥에서 축소하면 가장자리가 비어 버린다).
+     - layer 부품(뚫기 연산): 제 층에 그린 뒤 얹는다 — 아래 촬영본이 글자 안에 남는다. */
+  function geom(card, W, H) {
+    const m = META[card.part] || {};
+    const sizeK = clamp((card.size == null ? 100 : card.size) / 100, SIZE_MIN, SIZE_MAX);
+    const an = anchorOf(card) || m.anchor || [0.5, 0.5];
+    return { sizeK, ax: an[0], ay: an[1], dx: (card.x || 0) / 100, dy: (card.y || 0) / 100, set: !!card.anchor, self: !!m.self, layer: !!m.layer };
+  }
   function drawCard(ctx, W, H, card, t, theme) {
     const k = K(); if (!k || !def(card.part)) return;
     const lf = t - card.at; if (lf < 0 || lf >= card.dur) return;
@@ -102,18 +128,26 @@
       if (fx && fx.per) { const q = fx.per(0, 1, {}); fx.alpha *= q.alpha; fx.dy += q.dy; }   // 글자 단위 효과는 카드 전체로
       if (fx && fx.reveal < 1) fx.alpha *= fx.reveal;
     }
-    const sizeK = clamp((card.size == null ? 100 : card.size) / 100, 0.4, 2.5), dy = (card.y || 0) / 100 * H;
-    const an = (META[card.part] && META[card.part].anchor) || [0.5, 0.5], ax = W * an[0], ay = H * an[1];   // 크기는 부품이 붙어 있는 자리를 축으로(모서리 부품이 화면 밖으로 안 밀리게)
+    if (fx && fx.alpha <= 0.003) return;
+    const gm = geom(card, W, H), ax = W * gm.ax, ay = H * gm.ay;
+    if (gm.self) p = Object.assign({}, p, { _size: gm.sizeK, _ax: gm.set ? gm.ax : null, _ay: gm.set ? gm.ay : null, _dx: gm.dx, _dy: gm.dy });
+    const outerK = gm.self ? 1 : gm.sizeK, odx = gm.self ? 0 : gm.dx * W, ody = gm.self ? 0 : gm.dy * H;
+    const paint = c2 => {
+      c2.save();
+      if (outerK !== 1 || odx || ody || fx) {
+        let sc = outerK * (fx ? (fx.scale || 1) * (fx.breathe ? 1 + 0.015 * Math.sin(2 * Math.PI * (lf / 30) / 6) : 1) : 1);
+        c2.translate(ax + odx, ay + ody + (fx ? fx.dy || 0 : 0)); c2.scale(sc, sc);
+        if (fx && fx.skew) c2.transform(1, 0, fx.skew, 1, 0, 0);
+        c2.translate(-ax, -ay);
+      }
+      try { k.frame(card.part, c2, W, H, remap(card, lf, g.KMV_PROJECT.FPS), p, theme); }
+      catch (e) { console.warn('[KMV parts]', card.part, e); }
+      c2.restore();
+    };
     ctx.save();
-    if (sizeK !== 1 || dy || fx) {
-      let sc = sizeK * (fx ? (fx.scale || 1) * (fx.breathe ? 1 + 0.015 * Math.sin(2 * Math.PI * (lf / 30) / 6) : 1) : 1);
-      ctx.translate(ax, ay + dy + (fx ? fx.dy || 0 : 0)); ctx.scale(sc, sc);
-      if (fx && fx.skew) ctx.transform(1, 0, fx.skew, 1, 0, 0);
-      ctx.translate(-ax, -ay);
-      if (fx) { ctx.globalAlpha *= clamp(fx.alpha, 0, 1); if (fx.blur > 0.2 && 'filter' in ctx) ctx.filter = 'blur(' + fx.blur.toFixed(1) + 'px)'; }
-    }
-    try { if (!fx || fx.alpha > 0.003) k.frame(card.part, ctx, W, H, remap(card, lf, g.KMV_PROJECT.FPS), p, theme); }
-    catch (e) { console.warn('[KMV parts]', card.part, e); }
+    if (fx) { ctx.globalAlpha *= clamp(fx.alpha, 0, 1); if (fx.blur > 0.2 && 'filter' in ctx) ctx.filter = 'blur(' + fx.blur.toFixed(1) + 'px)'; }
+    if (gm.layer) { const cv = layerCanvas(W, H); paint(cv.getContext('2d')); ctx.drawImage(cv, 0, 0); }
+    else paint(ctx);
     ctx.filter = 'none';
     ctx.restore();
   }
@@ -146,7 +180,8 @@
     const FX = g.KMV_FX, fid = m.font, fam = FX && fid ? FX.family(fid) : null;
     const pp = Object.assign({}, p || k.defaults(partId), fam ? { _font: fam } : {});
     ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
-    try { k.frame(partId, ctx, w, h, tt, pp, themeId); } catch (e) {}
+    if (m.layer) { const cv = layerCanvas(w, h); try { k.frame(partId, cv.getContext('2d'), w, h, tt, pp, themeId); } catch (e) {} ctx.drawImage(cv, 0, 0); }
+    else { try { k.frame(partId, ctx, w, h, tt, pp, themeId); } catch (e) {} }
     ctx.restore();
     if (m.behind && !bg) { ctx.fillStyle = 'rgba(30,34,44,0.9)'; ctx.beginPath(); ctx.arc(w * 0.5, h * 0.42, h * 0.16, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.moveTo(w * 0.34, h); ctx.quadraticCurveTo(w * 0.5, h * 0.5, w * 0.66, h); ctx.closePath(); ctx.fill(); }
   }
@@ -163,5 +198,5 @@
     return cv;
   }
 
-  g.KMV_PARTS = { CATS, META, ready, list, def, meta, behind, canBehind, remap, drawCard, label, thumb, paintThumb, clamp };
+  g.KMV_PARTS = { CATS, META, ANCHORS, SIZE_MIN, SIZE_MAX, ready, list, def, meta, behind, canBehind, remap, geom, drawCard, label, thumb, paintThumb, clamp };
 })(typeof window !== 'undefined' ? window : globalThis);

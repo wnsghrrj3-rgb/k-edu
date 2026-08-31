@@ -1351,7 +1351,11 @@
     fillSelect($('partFont'), FX.FONTS, '기본 (프리텐다드)', true);
     $('partFont').onchange = () => { const pt = selPart(); if (!pt) return; const id = $('partFont').value || null; FX.loadFont(id).then(() => { PT.invalidateThumbs && PT.invalidateThumbs(); if (!playing) renderPreview(); }); P.updateP(pt.id, { font: id }); };
     slider('partSize', 'partSizeV', v => v + '%', selPart, (v, done) => { P.updateP(selPart().id, { size: v }, { commit: done }); });
+    slider('partX', 'partXV', v => String(v), selPart, (v, done) => { P.updateP(selPart().id, { x: v }, { commit: done }); });
     slider('partY', 'partYV', v => String(v), selPart, (v, done) => { P.updateP(selPart().id, { y: v }, { commit: done }); });
+    // 초점(기준점) 9곳 — 크기의 축 · 뚫린 글자/흐르는 글자는 글자가 놓이는 자리. 「자동」= 부품이 정한 자리
+    PT.ANCHORS.forEach(a => segBtn($('partAnchorSeg'), a.id, a.name, () => { const pt = selPart(); if (pt) P.updateP(pt.id, { anchor: pt.anchor === a.id ? null : a.id }); }));
+    $('btnPartAnchorAuto').onclick = () => { const pt = selPart(); if (pt) P.updateP(pt.id, { anchor: null }); };
     const partIn = fxRow('partFxIn', 'partFxInDur', FX.TEXT.filter(x => !['type', 'chars', 'words', 'lines', 'underline', 'maskUp', 'split', 'sweep', 'barFirst', 'ink', 'brush', 'countUp'].includes(x.id)), () => { const pt = selPart(); return pt ? pt.fxIn : null; }, spec => { const pt = selPart(); if (pt) P.updateP(pt.id, { fxIn: spec }); });
     const partOut = fxRow('partFxOut', 'partFxOutDur', FX.TEXT_OUT.map(x => Object.assign({ cat: '퇴장' }, x)), () => { const pt = selPart(); return pt ? pt.fxOut : null; }, spec => { const pt = selPart(); if (pt) P.updateP(pt.id, { fxOut: spec }); });
     // 클립 등장/퇴장
@@ -1372,7 +1376,9 @@
     if (!FX || !pt) return;
     if (document.activeElement !== $('partFont')) $('partFont').value = pt.font || (PT.meta(pt.part) && PT.meta(pt.part).font) || '';
     if (document.activeElement !== $('partSize')) { $('partSize').value = pt.size == null ? 100 : pt.size; $('partSizeV').textContent = $('partSize').value + '%'; }
+    if (document.activeElement !== $('partX')) { $('partX').value = pt.x || 0; $('partXV').textContent = String(pt.x || 0); }
     if (document.activeElement !== $('partY')) { $('partY').value = pt.y || 0; $('partYV').textContent = String(pt.y || 0); }
+    setOn($('partAnchorSeg'), pt.anchor || ''); $('btnPartAnchorAuto').classList.toggle('on', !pt.anchor);
     window.__kmvFxRows.partIn.refresh(); window.__kmvFxRows.partOut.refresh();
     if (pt.font) FX.loadFont(pt.font);
   }
