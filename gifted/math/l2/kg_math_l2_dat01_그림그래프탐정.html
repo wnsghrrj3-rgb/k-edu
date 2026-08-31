@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<!--
+  kg_math_l2_dat01 — 그림그래프 탐정 [케이영재 수학 · L2 EXPLORER 17호 · DAT 연구소 1/1]
+  트랙: 케이영재 / Lab: Data / Level: L2 EXPLORER (트랙 스킨 v2 「신호기」) / 깊이: D1~D8
+  base: kg_math_l3_pat01 (골격·CSS·초기화 계승) + kg_math_l3_pat02 (엔진 공통부 계승)
+        + kg_math_l3_com01 (칩·단추줄·숫자패드 계승)
+        + kg_math_l2_num01~l2_pro01 (L2 규약 단언 계승)
+  신규 시각 언어 0 — 그림은 com01 `chip` 의 `.sum-chip` 한 알이고,
+                    누르는 것은 전부 com01 `stepBtn` 의 `.cal-month-btn` 단추다 (고른 것은 `.on`).
+                    도전 세 판만 pat01 숫자패드(`.q-pad`·`.q-display`)를 쓴다 — 수를 적을 물음이라서다.
+                    14호가 세운 깃발 줄(`.cal-grid`)과 com01 `renderRoad` 는 한 칸도 쓰지 않는다.
+  신규 메카닉 0 — 단추를 눌러 값을 바꾸는 것은 com01 단추줄의 `.on` 토글이다.
+  탐구 5단계: 미션(1~3) 탐험(4~7) 발견(8~11) 도전(12~15) 창조(16~18)
+  핵심 수학: 그림 수를 세면 누가 많이 모았는지 알 것 같다
+             → 그림이 더 많은 쪽이 병은 더 적을 수 있다
+             → 그림 한 개가 나타내는 수를 알아야 그림그래프가 읽힌다 (알맹이)
+             → 큰 그림과 작은 그림이 한 줄에 함께 붙기 때문이다 (까닭)
+             → 같은 병을 안내판만 바꿔 다시 붙이면 그림 수가 달라진다 (학생이 만드는 반례)
+             → 한 개가 나타내는 수를 키우면 그림이 적어진다 (확장 한 방향)
+  이웃 차시와의 선 (같은 연구소 위아래 레벨을 읽고 그었다):
+    · l1_dat01 우리 반 조사단 = 질문 → 모으기 → 그림그래프 읽기. 모으는 일은 그쪽 몫이다.
+      여기서는 이미 모아 붙인 그래프에서 시작한다 — 무엇을 물어볼지 정하는 대목이 없다.
+    · l3_dat01 그래프가 숨긴 것 = 같은 것을 달리 보이게 하는 표현이 그쪽 몫이다.
+      막대·눈금·손잡이·척도·인상을 한 글자도 쓰지 않는다. 길이가 몇 배로 보이는지,
+      어디서 시작하는지는 건드리지 않는다 — 여기는 **그림 한 개의 값**까지다.
+    · l2_pro01 뽑기 상자 예언가 (16호) = 뽑기·딱지·상자가 그쪽 몫이다.
+    · l2_com01 색칠 경우 세기 (14호) = 깃발·색칠이 그쪽 몫이다. l2_com02 = 악수·짝짓기.
+    · l2_pat01 입력 출력 요술 상자 · l2_num01 나머지 보물 상자 = 상자 세계가 그쪽 몫이다.
+    · l3_geo03 쌓기나무 그림자 = 그림자·설계도가 그쪽 몫이다. l2_log01~03 = 쪽지·거짓말.
+    ⚠「그림」은 편성 설계서가 못 박은 이 차시 제목의 낱말(그림그래프)이라 금지 목록에 넣지 않는다
+      (사이클 71·72 규약). 대신 이웃의 그림 세계(그림자·나무 그림·막대 그림·설계도)를 막는다.
+      「탐정」도 같은 까닭으로 쓰되, 「수사·수사관·의뢰」는 l3_geo03·l3_log 의 것이라 안 쓴다.
+  점수 100 = 탐험 15 + 추측 10 + 발견 20(q9 10 + q10 10) + 도전 15(3판 × 5)
+             + 확장 20(ext1 10 + ext2 10) + 창조 20(create1 10 + create2 10)
+  힌트: H1/H2/H3 3단 (감점 없음, 답 비노출)
+  ⚠ 순수 로직은 「큰 그림 수 곱하기 나타내는 수」라는 식을 쥐고 있지 않다 —
+    그림을 풀어 병을 낱낱이 늘어놓고 하나씩 센다. 다시 붙일 때도 나눗셈을 쓰지 않는다.
+  ⚠ 수치는 tests/verify_kg_l2_dat01.py 로 코딩 전에 선검증했다 (1,290건 · 독립 구현 둘).
+    선검증이 못 박은 것:
+      ㉠ 그림 수 줄(가 다 라 나)과 병 수 줄(라 다 나 가)에서 **맨 앞과 맨 뒤가 자리를 맞바꾼다.**
+      ㉡ 후보 넷을 돌려 보면 줄이 세 갈래로 갈린다 — 한 개가 병 한 개일 때만 그림 수가 곧 병 수다.
+      ㉢ 되찾기는 외길이다 — 큰 그림 한 개가 병 다섯일 때만 그 모둠이 병 열하나가 된다.
+      ㉣ 거짓 논지 넷이 이 무대에서 실제로 깨진다
+         (그림 많은 쪽이 병도 많다 · 큰 그림만 세면 된다 · 그림 수 차이가 곧 병 수 차이 ·
+          작은 그림은 무시해도 된다).
+      ㉤ 큰 그림을 열로 잡으면 ㉡·㉣ 가 원리상 안 깨져 다섯으로 내렸다.
+      ㉥ 창조 임무 가는 외길이고, 임무 나는 여러 길이다.
+      ㉦ 학생이 세는 가장 큰 수는 스물 — L2 §4 두 자리 안.
+  ⛔ 규약: 문자식 금지 / 차단 어휘 금지 / 이모지 슬라이드당 ≤2
+  ⛔ L2 규약(설계_L2_레벨톤_v1.md): 문장 길이 상한 · 화면 수 ≤999 · 계산 수 ≤99 ·
+     한 화면 조작 요소 ≤12 · 논지 5겹 · 확장 한 방향
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="kg_math_l2_dat01_v1">
+<title>그림그래프 탐정 · 케이영재 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#F4F2EC; --ink:#17161C; --ink-soft:#5A5762;
+  --coral:#7B4DFF; --coral-deep:#5B2EE0; --coral-soft:#E7DEFF;
+  --teal:#3B5BA5; --teal-deep:#2C4480; --teal-soft:#DDE4F5;
+  --gold:#9BBF00; --emph:#FF5714; --line:#17161C; --mark:#D6F94C;
+  --f-title:'Black Han Sans',sans-serif; --f-body:'Noto Sans KR',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:4px 4px 0 rgba(23,22,28,.92);
+  --fs-title: clamp(26px, 4.2vw, 46px);
+  --fs-heading: clamp(23px, 3.5vw, 35px);
+  --fs-body: clamp(19px, 2.9vw, 27px);
+  --fs-caption: clamp(17px, 2.6vw, 24px);
+  --fs-label: clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --mw-sm: min(720px, 96vw);
+  --mw-lg: min(880px, 96vw);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; word-break:keep-all; overflow-wrap:break-word; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+@keyframes ka-glow { 0%,100%{box-shadow:0 0 0 0 rgba(14,138,95,.4);} 50%{box-shadow:0 0 0 10px rgba(14,138,95,0);} }
+
+.ka { background:var(--paper); width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; color:var(--ink); position:relative; overflow:hidden; }
+.ka-h { display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); padding:clamp(11px,1.7vw,15px) clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:hover { transform:translateY(-1px); }
+.ka-pill { font-family:var(--f-title); background:var(--coral); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-where { font-size:clamp(14px,1.6vw,18px); color:var(--ink-soft); flex-shrink:1; }
+.ka-where b { color:var(--ink); }
+.ka-bar { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:46vw; }
+.ka-dot { width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s, background .2s; }
+.ka-dot:hover { transform:scale(1.2); }
+.ka-dot.active { background:var(--coral); transform:scale(1.3); }
+.ka-dot.done { background:var(--teal); }
+.ka-score { font-family:var(--f-title); background:#D6F94C; color:#17161C; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); padding:0; border-radius:50%; cursor:pointer; flex-shrink:0; color:var(--coral-deep); font-size:clamp(13px,2vw,16px); width:clamp(32px,4.5vw,38px); height:clamp(32px,4.5vw,38px); display:flex; align-items:center; justify-content:center; }
+
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; justify-content:safe center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; justify-content:safe center; gap:clamp(7px,1.2vw,11px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(8px,1.4vh,16px) clamp(16px,4vw,48px); overflow-x:hidden; overflow-y:auto; scrollbar-width:none; -ms-overflow-style:none; }
+.slide::-webkit-scrollbar { width:0; height:0; }
+.slide.active { display:flex; }
+.slide-title { font-family:var(--f-title); font-size:var(--fs-title); line-height:1.18; color:var(--ink); font-weight:400; text-align:center; flex-shrink:0; }
+.slide-sub { font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(10px,1.6vw,16px); left:clamp(16px,4vw,40px); font-family:var(--f-title); color:var(--coral); font-size:clamp(13px,1.9vw,18px); letter-spacing:.4px; z-index:5; }
+
+.ka-f { display:flex; justify-content:flex-end; gap:12px; padding:clamp(12px,1.7vw,16px) clamp(16px,4vw,40px); background:linear-gradient(to top, var(--paper) 62%, transparent); flex-shrink:0; }
+.ka-prev, .ka-hint, .ka-next { font-family:var(--f-title); font-size:clamp(15px,1.9vw,22px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(10px,1.4vw,15px) clamp(20px,2.8vw,38px); cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translateY(-2px); }
+.ka-prev { margin-right:auto; }
+.ka-hint { color:#17161C; border-color:#17161C; }
+.ka-next { background:var(--coral); color:#fff; border-color:var(--coral); }
+.ka-prev:disabled, .ka-next:disabled { opacity:.35; cursor:default; transform:none; }
+.ka-hint:disabled { opacity:.4; cursor:default; }
+
+.concept-box { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,18px) clamp(18px,2.8vw,28px); border-radius:20px; font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); text-align:center; line-height:1.5; box-shadow:var(--shadow); }
+.concept-box strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.intro-q { font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; }
+.intro-q strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.goal-list { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); font-size:var(--fs-caption); color:var(--ink); max-width:var(--mw-sm); }
+.goal-list li { background:#fff; border:2px solid var(--line); padding:clamp(7px,1.3vw,11px) clamp(14px,2.6vw,20px); border-radius:16px; list-style:none; box-shadow:var(--shadow); }
+.goal-list li strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+.mission-card { background:#fff; border:3px solid var(--coral-soft); border-radius:26px; padding:clamp(16px,3vw,26px) clamp(20px,3.8vw,34px); max-width:var(--mw-sm); text-align:center; box-shadow:0 6px 0 var(--coral-soft); font-size:var(--fs-body); line-height:1.6; }
+.mission-card strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+
+/* ── 달력 격자 ── */
+.cal-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.1vw,10px); }
+.cal-head { display:flex; align-items:center; gap:clamp(8px,1.6vw,14px); }
+.cal-title { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--coral-deep); }
+.cal-month-btn { font-family:var(--f-title); font-size:var(--fs-label); background:#fff; border:2px solid var(--line); border-radius:999px; padding:4px 12px; cursor:pointer; color:var(--ink-soft); }
+.cal-month-btn.on { background:var(--coral); color:#fff; border-color:var(--coral); }
+.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:clamp(3px,0.6vw,5px); background:#fff; border:2px solid var(--line); border-radius:18px; padding:clamp(8px,1.4vw,12px); box-shadow:var(--shadow); }
+.cal-dow { font-family:var(--f-title); font-size:clamp(12px,1.7vw,16px); color:var(--ink-soft); text-align:center; padding-bottom:2px; }
+.cal-dow.sun { color:var(--emph); }
+.cal-cell { width:clamp(34px,6.2vw,54px); height:clamp(30px,5.4vw,46px); display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:clamp(15px,2.4vw,22px); color:var(--ink); background:var(--paper); border-radius:10px; cursor:pointer; transition:background .15s, transform .1s; user-select:none; }
+.cal-cell:hover { background:var(--coral-soft); }
+.cal-cell.empty { background:transparent; cursor:default; }
+.cal-cell.sel { background:var(--coral); color:#fff; animation:ka-pop .3s ease; }
+.cal-cell.diag-a { outline:3px solid var(--gold); outline-offset:-3px; }
+.cal-cell.diag-b { outline:3px solid var(--teal); outline-offset:-3px; }
+.cal-cell.center-cell { background:var(--emph); color:#fff; }
+.cal-info { display:flex; gap:clamp(8px,1.6vw,14px); flex-wrap:wrap; justify-content:center; min-height:2.2em; align-items:center; }
+.sum-chip { font-family:var(--f-title); font-size:var(--fs-caption); padding:clamp(5px,1vw,8px) clamp(12px,2.2vw,18px); border-radius:999px; background:#fff; border:2px solid var(--line); }
+.sum-chip.a { border-color:var(--gold); color:#5E7500; }
+.sum-chip.b { border-color:var(--teal); color:var(--teal-deep); }
+.sum-chip.tot { border-color:var(--coral); color:var(--coral-deep); }
+.cal-msg { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--coral-deep); min-height:1.5em; text-align:center; }
+.cal-msg.wrong { color:var(--emph); }
+
+/* ── 사례 테이블 ── */
+.case-table { border-collapse:collapse; background:#fff; border-radius:16px; overflow:hidden; box-shadow:var(--shadow); font-size:var(--fs-caption); }
+.case-table th { font-family:var(--f-title); font-weight:400; background:var(--coral-soft); color:var(--coral-deep); padding:clamp(6px,1.1vw,10px) clamp(12px,2.2vw,20px); }
+.case-table td { font-family:var(--f-num); font-weight:800; text-align:center; padding:clamp(6px,1.1vw,10px) clamp(12px,2.2vw,20px); border-top:1px solid var(--line); }
+.case-count { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); }
+.case-count b { color:var(--coral-deep); font-size:1.2em; }
+
+/* ── 관찰·추측 선택 ── */
+.pick-list { display:flex; flex-direction:column; gap:clamp(7px,1.3vw,11px); width:100%; max-width:var(--mw-sm); }
+.pick-item { background:#fff; border:3px solid var(--line); border-radius:18px; padding:clamp(10px,1.8vw,15px) clamp(16px,3vw,24px); font-size:var(--fs-body); cursor:pointer; transition:border-color .2s, transform .12s; text-align:left; font-family:var(--f-body); color:var(--ink); }
+.pick-item:hover { border-color:var(--coral); }
+.pick-item.on { border-color:var(--coral); background:var(--coral-soft); animation:ka-pop .3s ease; }
+.pick-item .tag { font-family:var(--f-title); color:var(--coral-deep); margin-right:8px; }
+
+/* ── 구조 시각화 ── */
+.struct-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.5vw,13px); }
+.struct-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(6px,1.1vw,9px); }
+.struct-cell { width:clamp(76px,13vw,120px); height:clamp(52px,9vw,80px); background:#fff; border:3px solid var(--coral-soft); border-radius:14px; display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:clamp(19px,3vw,30px); color:var(--coral-deep); box-shadow:0 4px 0 var(--coral-soft); }
+.struct-cell.hl-a { border-color:var(--gold); box-shadow:0 4px 0 var(--gold); }
+.struct-cell.hl-b { border-color:var(--teal); box-shadow:0 4px 0 var(--teal-soft); }
+.struct-eq { font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center; }
+.struct-eq .star { color:var(--emph); }
+.arrow-note { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); background:#fff; border:2px solid var(--line); border-radius:999px; padding:5px 16px; cursor:pointer; transition:transform .15s; }
+.arrow-note.revealed { color:var(--coral-deep); border-color:var(--coral); animation:ka-glow 1.4s ease 1; }
+
+/* ── 문제 공통 ── */
+.q-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.5vw,13px); max-width:var(--mw-lg); width:100%; }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; font-weight:400; }
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-sm); }
+.mcq-opts.one-col { grid-template-columns:1fr; }
+.mcq-opt { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,1.9vw,15px); font-family:var(--f-title); font-size:var(--fs-body); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .2s; box-shadow:0 6px 0 var(--coral-soft); font-weight:400; }
+.mcq-opt:hover { border-color:var(--coral); }
+.mcq-opt:active { transform:translateY(4px); box-shadow:none; }
+.mcq-opt.correct { border-color:var(--coral-deep); background:var(--coral); color:#fff; box-shadow:0 6px 0 var(--coral-deep); animation:ka-pop .5s ease; }
+.mcq-opt.wrong { border-color:var(--emph); background:#FFE3D6; color:var(--ink); animation:ka-shake .35s; }
+.mcq-hint { font-family:var(--f-title); font-size:var(--fs-caption); color:#17161C; background:#D6F94C; border-radius:16px; padding:clamp(8px,1.5vw,12px) clamp(14px,2.6vw,20px); max-width:var(--mw-sm); text-align:center; display:none; }
+.mcq-hint.show { display:block; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); color:var(--coral-deep); min-height:1.4em; text-align:center; }
+.q-fb.wrong { color:var(--emph); }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:clamp(30px,5vw,54px); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:20px; padding:clamp(8px,1.5vw,13px) clamp(24px,4.4vw,42px); min-width:clamp(110px,20vw,180px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.q-pad { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(6px,1.2vw,10px); max-width:clamp(280px,56vw,460px); }
+.q-key { background:#fff; border:2px solid var(--line); border-radius:14px; padding:clamp(7px,1.4vw,11px) 0; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, background .15s; box-shadow:0 4px 0 var(--line); }
+.q-key:hover { background:var(--coral-soft); border-color:var(--coral); }
+.q-key:active { transform:translateY(3px); box-shadow:none; }
+.q-key.fn { background:#D6F94C; color:#17161C; font-family:var(--f-title); font-size:var(--fs-caption); border-color:#17161C; box-shadow:0 4px 0 #17161C; }
+
+/* ── 모양 실험실 ── */
+.shape-pick { display:flex; gap:clamp(8px,1.5vw,13px); flex-wrap:wrap; justify-content:center; }
+.shape-btn { background:#fff; border:3px solid var(--line); border-radius:16px; padding:clamp(8px,1.4vw,12px) clamp(12px,2.2vw,18px); cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:5px; transition:border-color .2s, transform .12s; }
+.shape-btn:hover { border-color:var(--coral); }
+.shape-btn.on { border-color:var(--coral); background:var(--coral-soft); }
+.shape-mini { display:grid; grid-template-columns:repeat(3, clamp(10px,1.8vw,15px)); gap:2px; }
+.shape-mini i { display:block; width:clamp(10px,1.8vw,15px); height:clamp(10px,1.8vw,15px); border-radius:3px; background:var(--line); }
+.shape-mini i.f { background:var(--coral); }
+.shape-name { font-family:var(--f-title); font-size:var(--fs-label); color:var(--ink); }
+.rule-build { display:flex; align-items:center; gap:clamp(6px,1.2vw,10px); flex-wrap:wrap; justify-content:center; font-family:var(--f-title); font-size:var(--fs-body); }
+.rule-slot { background:#fff; border:3px dashed var(--coral); border-radius:14px; min-width:clamp(72px,13vw,120px); padding:clamp(6px,1.1vw,9px) clamp(10px,1.8vw,14px); text-align:center; color:var(--coral-deep); font-family:var(--f-num); font-weight:800; cursor:pointer; }
+.rule-slot.filled { border-style:solid; background:var(--coral-soft); }
+.rule-choice { display:flex; gap:clamp(6px,1.1vw,9px); flex-wrap:wrap; justify-content:center; }
+.rule-chip { background:#fff; border:2px solid var(--line); border-radius:999px; padding:clamp(5px,1vw,8px) clamp(12px,2.2vw,18px); font-family:var(--f-title); font-size:var(--fs-caption); cursor:pointer; transition:transform .12s, border-color .15s; }
+.rule-chip:hover { border-color:var(--coral); transform:translateY(-2px); }
+
+/* ── 탐정 카드·마무리 ── */
+.detective-card { background:#fff; border:3px solid var(--gold); border-radius:26px; padding:clamp(16px,3vw,26px) clamp(20px,3.8vw,34px); max-width:var(--mw-sm); width:100%; box-shadow:0 8px 0 var(--mark); display:flex; flex-direction:column; gap:clamp(7px,1.3vw,11px); }
+.dc-row { display:flex; justify-content:space-between; gap:14px; font-size:var(--fs-caption); border-bottom:1px dashed var(--line); padding-bottom:6px; }
+.dc-row b { font-family:var(--f-title); font-weight:400; color:var(--coral-deep); }
+.dc-title { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; }
+.wrap-score { font-family:var(--f-num); font-weight:800; font-size:clamp(56px,10vw,110px); color:var(--coral-deep); line-height:1; }
+.wrap-msg { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); }
+.home-card { background:var(--teal-soft); border-radius:20px; padding:clamp(12px,2.2vw,18px) clamp(18px,3.2vw,26px); font-size:var(--fs-caption); color:var(--teal-deep); max-width:var(--mw-sm); text-align:center; line-height:1.55; }
+.next-mini { display:flex; gap:clamp(8px,1.5vw,13px); flex-wrap:wrap; justify-content:center; }
+.next-chip { font-family:var(--f-title); font-size:var(--fs-label); background:#fff; border:2px solid var(--line); border-radius:999px; padding:6px 16px; color:var(--ink-soft); }
+
+/* ═══ 케이영재 스킨 v2 「신호기」 — 트랙 전용 (헌법 v1.3 §3-α · skin_v2_signal.py 가 단일 원본) ═══
+   굵은 먹선 + 오프셋 통그림자 + 보라·라임. 레이아웃 값(크기·간격)은 건드리지 않는다. */
+.ka-h { border-bottom:3px solid var(--ink); }
+.ka-prev, .ka-hint, .ka-next { box-shadow:3px 3px 0 var(--ink); }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translate(-1px,-1px); box-shadow:4px 4px 0 var(--ink); }
+.ka-prev:active, .ka-hint:active, .ka-next:active { transform:translate(3px,3px); box-shadow:0 0 0 var(--ink); }
+.ka-hint { background:var(--mark); }
+.ka-pill { border:2px solid var(--ink); box-shadow:2px 2px 0 var(--ink); }
+.ka-score { border:2px solid var(--ink); box-shadow:2px 2px 0 var(--ink); }
+.ka-dot { background:#CBC8BF; }
+.mcq-opt { border-color:var(--ink); box-shadow:5px 5px 0 var(--ink); }
+.mcq-opt.correct { box-shadow:5px 5px 0 var(--coral-deep); }
+.detective-card { border-color:var(--ink); }
+.mission-card { border-color:var(--ink); box-shadow:6px 6px 0 var(--ink); }
+.cal-cell { border:2px solid var(--ink); }
+.cal-cell.empty { border-color:transparent; background:transparent; }
+
+/* ═══ 공용 부품 CSS (com01 정의 문자 그대로 추출·주입 — 손으로 옮겨 적지 않는다) ═══ */
+/* 그림은 pat01 `.sum-chip` 한 알이고, 누르는 것은 pat01 `.cal-month-btn` 단추다
+   — 새 시각 언어 0. 여기서 들여오는 것은 그것을 담는 줄과 눈금뿐이다. */
+.chip-row { display:flex; gap:clamp(5px,1vw,9px); justify-content:center; flex-wrap:wrap; margin:6px 0; }
+.vox-btns { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+.lab-meter { display:flex; align-items:baseline; justify-content:center; gap:8px; margin:6px 0; }
+.lab-label { font-size:var(--fs-label); color:var(--ink-soft); font-family:var(--f-title); }
+.lab-count { font-family:var(--f-title); font-size:var(--fs-h1); color:var(--coral-deep); min-width:2.2em; text-align:center; }
+</style>
+</head>
+<body>
+<div class="ka">
+  <header class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 나가기</button>
+    <span class="ka-pill">케이영재</span>
+    <span class="ka-where"><b>그림그래프 탐정</b> · 자료 연구소</span>
+    <div class="ka-bar" id="dots"></div>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </header>
+
+  <main class="ka-m" id="main">
+
+    <!-- 슬1 · 미션: 네 모둠이 모은 빈 병 -->
+    <section class="slide">
+      <span class="stage-badge">미션 1/3</span>
+      <h1 class="slide-title">네 모둠이 모았다</h1>
+      <p class="slide-sub">빈 병 모으기가 끝났다</p>
+      <div class="chip-row" id="s1-teams"></div>
+      <div class="concept-box">네 모둠이 빈 병을 모았다.
+        모은 병을 그림그래프로 붙여 두었다.</div>
+    </section>
+
+    <!-- 슬2 · 미션: 그림은 두 가지 -->
+    <section class="slide">
+      <span class="stage-badge">미션 2/3</span>
+      <h1 class="slide-title">그림은 두 가지</h1>
+      <p class="slide-sub">큰 그림과 작은 그림</p>
+      <div class="chip-row" id="s2-kinds"></div>
+      <div class="concept-box">작은 그림 한 개는 병 한 개다.
+        큰 그림 한 개는 그보다 많다.</div>
+    </section>
+
+    <!-- 슬3 · 미션: 오늘의 물음 -->
+    <section class="slide">
+      <span class="stage-badge">미션 3/3</span>
+      <h1 class="slide-title">오늘의 물음</h1>
+      <p class="slide-sub">안내판이 없어졌다</p>
+      <div class="concept-box">큰 그림 한 개가 병 몇 개를 나타내는지
+        적어 둔 안내판이 없어졌다.</div>
+      <div class="concept-box">그림만 세어서 누가 가장 많이 모았는지
+        말할 수 있을까.</div>
+    </section>
+
+    <!-- 슬4 · 탐험: 그림을 세어 보자 -->
+    <section class="slide" data-q-id="explore">
+      <span class="stage-badge">탐험 1/4</span>
+      <h1 class="slide-title">그림을 세어 보자</h1>
+      <div class="q-stage">
+        <p class="q-prompt">모둠을 눌러 붙은 그림을 세어 보자</p>
+        <div class="vox-btns" id="s4-btns"></div>
+        <div class="chip-row" id="s4-graph"></div>
+        <div class="lab-meter"><span class="lab-label">그림 수</span><span class="lab-count" id="s4-count">—</span></div>
+        <div class="cal-msg" id="s4-msg">모둠을 눌러 보자</div>
+        <div class="chip-row" id="s4-seen"></div>
+        <p class="q-fb" id="fb-explore"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["모둠 단추를 눌러 보자.","네 모둠을 다 눌러야 한다.","그림을 하나씩 세면 된다."]'></div>
+    </section>
+
+    <!-- 슬5 · 탐험: 그림 수로 줄 세우기 (엔진 훅 cur === 4) -->
+    <section class="slide">
+      <span class="stage-badge">탐험 2/4</span>
+      <h1 class="slide-title">그림 수로 줄 세우기</h1>
+      <p class="slide-sub">내가 센 그림 수다</p>
+      <div class="chip-row" id="s5-row"></div>
+      <p class="case-count" id="s5-count"></p>
+      <div class="concept-box">그림이 많은 차례대로 줄을 세웠다.
+        이대로 병이 많은 차례라고 해도 될까.</div>
+    </section>
+
+    <!-- 슬6 · 탐험: 안내판을 바꿔 보자 -->
+    <section class="slide">
+      <span class="stage-badge">탐험 3/4</span>
+      <h1 class="slide-title">안내판을 바꿔 보자</h1>
+      <p class="slide-sub">큰 그림 한 개를 이렇게 정하면</p>
+      <div class="vox-btns" id="s6-btns"></div>
+      <div class="cal-msg" id="s6-msg">안내판을 눌러 보자</div>
+      <div class="chip-row" id="s6-row"></div>
+      <div class="concept-box">그림은 그대로인데 줄이 달라진다.
+        안내판이 줄을 바꾼다.</div>
+    </section>
+
+    <!-- 슬7 · 탐험: 나의 추측 -->
+    <section class="slide" data-q-id="conjecture">
+      <span class="stage-badge">탐험 4/4</span>
+      <h1 class="slide-title">내 추측을 고르자</h1>
+      <div class="q-stage">
+        <p class="q-prompt">그림이 많은 모둠이 병도 많을까?</p>
+        <div class="mcq-opts one-col" id="conj-opts">
+          <button class="mcq-opt" data-c="0">그림이 많은 모둠이 병도 많다</button>
+          <button class="mcq-opt" data-c="1">큰 그림만 세면 된다</button>
+          <button class="mcq-opt" data-c="2">그림 수 차이가 곧 병 수 차이다</button>
+          <button class="mcq-opt" data-c="3">그림만 세어서는 말할 수 없다</button>
+        </div>
+        <p class="q-fb" id="conj-fb"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["아직 몰라도 된다.","내 생각을 골라 두자.","고른 뒤에 이어서 보자."]'></div>
+    </section>
+
+    <!-- 슬8 · 발견: 한 모둠의 병 수가 남아 있었다 -->
+    <section class="slide">
+      <span class="stage-badge">발견 1/4</span>
+      <h1 class="slide-title">기록 하나가 남았다</h1>
+      <p class="slide-sub" id="s8-sub"></p>
+      <div class="chip-row" id="s8-pics"></div>
+      <div class="vox-btns" id="s8-btns"></div>
+      <div class="cal-msg" id="s8-msg">늘어놓기를 눌러 보자</div>
+      <div class="chip-row" id="s8-line"></div>
+      <div class="concept-box">작은 그림은 한 개가 병 한 개다.
+        그것을 덜어 내면 큰 그림 몫만 남는다.</div>
+    </section>
+
+    <!-- 슬9 · 발견: 큰 그림 한 개는 -->
+    <section class="slide" data-q-id="q9">
+      <span class="stage-badge">발견 2/4</span>
+      <h1 class="slide-title">큰 그림 한 개는</h1>
+      <div class="q-stage">
+        <p class="q-prompt" id="q9-prompt"></p>
+        <div class="chip-row" id="q9-in"></div>
+        <div class="mcq-opts" id="q9-opts"></div>
+        <p class="q-fb" id="fb-q9"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["그 모둠 그림을 다시 보자.","작은 그림을 먼저 덜어 내자.","남은 병이 큰 그림 한 개 몫이다."]'></div>
+    </section>
+
+    <!-- 슬10 · 발견: 두 줄을 견주자 -->
+    <section class="slide">
+      <span class="stage-badge">발견 3/4</span>
+      <h1 class="slide-title">두 줄을 견주자</h1>
+      <p class="slide-sub">안내판을 되찾았다</p>
+      <div class="vox-btns" id="s10-btns"></div>
+      <div class="cal-msg" id="s10-msg">줄을 눌러 보자</div>
+      <div class="chip-row" id="s10-row"></div>
+      <div class="concept-box">그림이 가장 많던 모둠이
+        병은 가장 적었다.</div>
+    </section>
+
+    <!-- 슬11 · 발견: 왜 달라졌을까 -->
+    <section class="slide" data-q-id="q10">
+      <span class="stage-badge">발견 4/4</span>
+      <h1 class="slide-title">왜 달라졌을까</h1>
+      <div class="q-stage">
+        <p class="q-prompt">그림 수 줄과 병 수 줄이 다른 까닭은?</p>
+        <div class="mcq-opts one-col" id="q10-opts"></div>
+        <p class="q-fb" id="fb-q10"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["두 줄을 나란히 놓고 보자.","한 모둠에 붙은 그림을 다시 보자.","그림에는 두 가지가 있었다."]'></div>
+    </section>
+
+    <!-- 슬12 · 도전: 안내판을 알 때 읽기 -->
+    <section class="slide" data-q-id="ver">
+      <span class="stage-badge">도전 1/4</span>
+      <h1 class="slide-title">이제 읽어 보자</h1>
+      <div class="q-stage">
+        <p class="q-prompt" id="ver-prompt"></p>
+        <div class="chip-row" id="ver-in"></div>
+        <div class="q-display" id="disp-ver">&nbsp;</div>
+        <div class="q-pad" id="pad-ver"></div>
+        <p class="q-fb" id="fb-ver"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["큰 그림부터 세자.","큰 그림 한 개는 병 다섯이다.","작은 그림을 더하면 된다."]'></div>
+    </section>
+
+    <!-- 슬13 · 도전: 다시 붙여 보자 (반례) -->
+    <section class="slide" data-q-id="ext1">
+      <span class="stage-badge">도전 2/4</span>
+      <h1 class="slide-title">다시 붙여 보자</h1>
+      <div class="q-stage">
+        <p class="q-prompt" id="e1-prompt"></p>
+        <div class="chip-row" id="e1-in"></div>
+        <div class="vox-btns" id="e1-btns"></div>
+        <div class="cal-msg" id="e1-msg">안내판을 눌러 보자</div>
+        <div class="chip-row" id="e1-row"></div>
+        <div class="lab-meter"><span class="lab-label">그림 수</span><span class="lab-count" id="e1-count">—</span></div>
+        <p class="q-fb" id="fb-ext1"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["안내판 셋을 다 눌러 보자.","병 수는 그대로다.","붙은 그림 수를 적어 두자."]'></div>
+    </section>
+
+    <!-- 슬14 · 도전: 안내판을 키우면 -->
+    <section class="slide" data-q-id="ext2">
+      <span class="stage-badge">도전 3/4</span>
+      <h1 class="slide-title">안내판을 키우면</h1>
+      <div class="q-stage">
+        <p class="q-prompt" id="e2-prompt"></p>
+        <div class="vox-btns" id="e2-btns"></div>
+        <div class="chip-row" id="e2-row"></div>
+        <div class="lab-meter"><span class="lab-label">그림 수</span><span class="lab-count" id="e2-count">—</span></div>
+        <div class="mcq-opts" id="ext2-opts"></div>
+        <p class="q-fb" id="fb-ext2"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["세 안내판을 다 눌러 보자.","붙은 그림 수를 견주자.","큰 쪽부터 보자."]'></div>
+    </section>
+
+    <!-- 슬15 · 도전: 오늘 만난 그래프 -->
+    <section class="slide">
+      <span class="stage-badge">도전 4/4</span>
+      <h1 class="slide-title">오늘 만난 그래프</h1>
+      <p class="slide-sub">네 모둠을 다시 본다</p>
+      <div class="chip-row" id="s15-r1"></div>
+      <div class="chip-row" id="s15-r2"></div>
+      <div class="chip-row" id="s15-r3"></div>
+      <div class="concept-box">그림 수와 병 수는 다른 것이다.
+        안내판을 알아야 그림그래프가 읽힌다.</div>
+    </section>
+
+    <!-- 슬16 · 창조: 그림을 가장 적게 -->
+    <section class="slide" data-q-id="create1">
+      <span class="stage-badge">창조 1/3</span>
+      <h1 class="slide-title">그림을 가장 적게</h1>
+      <div class="q-stage">
+        <p class="q-prompt" id="c1-goal"></p>
+        <div class="vox-btns" id="c1-bigs"></div>
+        <div class="vox-btns" id="c1-smalls"></div>
+        <div class="chip-row" id="c1-stage"></div>
+        <div class="lab-meter"><span class="lab-label">병 수</span><span class="lab-count" id="c1-val">—</span><span class="lab-label">그림 수</span><span class="lab-count" id="c1-pics">—</span></div>
+        <p class="q-fb" id="fb-create1"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["큰 그림부터 늘려 보자.","병 수를 먼저 맞추자.","그림 수가 더 적은 길이 있다."]'></div>
+    </section>
+
+    <!-- 슬17 · 창조: 적은 쪽이 더 많게 -->
+    <section class="slide" data-q-id="create2">
+      <span class="stage-badge">창조 2/3</span>
+      <h1 class="slide-title">적은 쪽이 더 많게</h1>
+      <div class="q-stage">
+        <p class="q-prompt" id="c2-goal"></p>
+        <div class="vox-btns" id="c2-bs"></div>
+        <div class="chip-row" id="c2-b"></div>
+        <div class="vox-btns" id="c2-as"></div>
+        <div class="chip-row" id="c2-a"></div>
+        <div class="lab-meter"><span class="lab-label">나 병 수</span><span class="lab-count" id="c2-vb">—</span><span class="lab-label">가 병 수</span><span class="lab-count" id="c2-va">—</span></div>
+        <div class="chip-row" id="c2-found"></div>
+        <p class="q-fb" id="fb-create2"></p>
+      </div>
+      <div class="mcq-hint" data-hints='["나 모둠부터 정하자.","나 모둠에 큰 그림을 몰아 보자.","가 모둠은 작은 그림을 많이."]'></div>
+    </section>
+
+    <!-- 슬18 · 창조: 탐정 기록증 -->
+    <section class="slide">
+      <span class="stage-badge">창조 3/3</span>
+      <h1 class="slide-title">탐정 기록증</h1>
+      <div class="detective-card">
+        <div class="dc-title">오늘의 기록</div>
+        <div class="dc-row" id="card-r1"></div>
+        <div class="dc-row" id="card-r2"></div>
+        <div class="dc-row" id="card-r3"></div>
+      </div>
+      <div class="concept-box">그림 한 개가 나타내는 수를 알아야
+        그림그래프를 읽을 수 있다.</div>
+      <p class="wrap-score">점수 <b id="final-score">0</b></p>
+      <p class="wrap-msg" id="wrap-msg"></p>
+    </section>
+
+  </main>
+
+  <footer class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next" id="next" onclick="goNext()">다음 →</button>
+  </footer>
+</div>
+
+<script>
+/* ═══════════ KGiftedCore — 순수 로직 (DOM 무의존, 테스트 대상) ═══════════
+   그림을 「몇 개짜리」로 쥐지 않는다 — 풀어서 병을 낱낱이 늘어놓고 센다.
+   ★value() 는 곱셈을 한 번도 쓰지 않는다. 큰 그림 하나를 풀면 병 여럿이 나오고,
+     그 병을 하나씩 세면 값이 나온다. 「큰 그림 수 곱하기 나타내는 수」라는 식은
+     코드 안에 없다 — 학생이 발견할 몫이다 (헌법 §3-6).
+   ★refit() 도 나눗셈을 쓰지 않는다. 큰 그림을 하나씩 얹으며 남는 병을 덜어 갈 뿐이다.
+   하니스가 「닫힌 식」이라는 독립 구현과 전 구간 전수 대조한다. */
+const KGiftedCore = {
+  LESSON: 'kg_math_l2_dat01',
+  SCORE_PLAN: { explore: 15, conjecture: 10, q9: 10, q10: 10, ver: 15, ext1: 10, ext2: 10, create1: 10, create2: 10 },
+
+  /* ── 모둠 이름 ── */
+  TEAMS: ['가', '나', '다', '라'],
+
+  /* ── 무대 상수 (선검증 _dat01_확정.json 과 빌더가 맞대어 본다) ── */
+  BIG: 5, SMALL: 1,
+  EX_PICS: [[0, 9], [2, 0], [1, 6], [3, 1]],
+  CAND_BIG: [1, 2, 5, 10],
+  Q_TEAM: 2, Q_TOTAL: 11,
+  VER_PICS: [[2, 3], [1, 7], [3, 0]],
+  CT_PICS: [2, 4], CT_VALUE: 14, CT_BIGS: [2, 5, 10],
+  EXT_VALUE: 20, EXT_BIGS: [2, 5, 10],
+  C1_TARGET: 16, C1_BIGS: [0, 1, 2, 3], C1_SMALLS: [0, 1, 2, 3, 4, 5, 6],
+  C2_AN: 5, C2_BN: 3, C2_ABS: [0, 1, 2, 3, 4, 5], C2_BBS: [0, 1, 2, 3],
+
+  name(k) { return this.TEAMS[k] || ''; },
+
+  /* ── 그림을 풀어 병을 낱낱이 늘어놓는다 ── 큰 그림 하나에서 병 여럿이 나온다 ── */
+  spread(bigN, smallN, bigVal) {
+    const out = [];
+    for (let i = 0; i < bigN; i++) {
+      for (let j = 0; j < bigVal; j++) out.push('big');
+    }
+    for (let i = 0; i < smallN; i++) out.push('small');
+    return out;
+  },
+  /* ── 늘어놓은 병을 하나씩 센다 ── */
+  value(bigN, smallN, bigVal) {
+    const sp = this.spread(bigN, smallN, bigVal);
+    let n = 0;
+    for (let i = 0; i < sp.length; i++) n = n + 1;
+    return n;
+  },
+  /* ── 붙은 그림을 하나씩 센다 (큰 것도 작은 것도 한 개는 한 개다) ── */
+  pics(bigN, smallN) {
+    let n = 0;
+    for (let i = 0; i < bigN; i++) n = n + 1;
+    for (let i = 0; i < smallN; i++) n = n + 1;
+    return n;
+  },
+  /* ── 네 모둠의 병 수 · 그림 수 ── */
+  valuesOf(bigVal) {
+    const out = [];
+    for (let i = 0; i < this.EX_PICS.length; i++) out.push(this.value(this.EX_PICS[i][0], this.EX_PICS[i][1], bigVal));
+    return out;
+  },
+  picsOf() {
+    const out = [];
+    for (let i = 0; i < this.EX_PICS.length; i++) out.push(this.pics(this.EX_PICS[i][0], this.EX_PICS[i][1]));
+    return out;
+  },
+  /* ── 많은 것부터 하나씩 집어낸다 ── 정렬 지름길이 아니다 ── */
+  rank(list) {
+    const left = [];
+    for (let i = 0; i < list.length; i++) left.push(i);
+    const out = [];
+    while (left.length > 0) {
+      let bi = 0;
+      for (let i = 1; i < left.length; i++) if (list[left[i]] > list[left[bi]]) bi = i;
+      out.push(left[bi]);
+      left.splice(bi, 1);
+    }
+    return out;
+  },
+  /* ── 같은 병을 다른 안내판으로 다시 붙인다 ── 큰 그림을 하나씩 얹어 간다 ── */
+  refit(val, bigVal) {
+    let left = val, big = 0;
+    while (left >= bigVal) { left = left - bigVal; big = big + 1; }
+    return { big: big, small: left, pics: this.pics(big, left) };
+  },
+  /* ── 안내판 후보가 맞는가 ── 늘어놓아 세어 대 본다 ── */
+  fits(bigN, smallN, bigVal, total) { return this.value(bigN, smallN, bigVal) === total; },
+
+  /* ── 창조 검사기 ── 수와 판정만 돌려준다. 어느 자리가 답인지는 담지 않는다 (§3-6) ── */
+  judge1(bigN, smallN) {
+    const v = this.value(bigN, smallN, this.BIG);
+    const p = this.pics(bigN, smallN);
+    const least = this.refit(this.C1_TARGET, this.BIG).pics;
+    return { val: v, pics: p, hit: v === this.C1_TARGET && p === least };
+  },
+  judge2(ab, bb) {
+    const va = this.value(ab, this.C2_AN - ab, this.BIG);
+    const vb = this.value(bb, this.C2_BN - bb, this.BIG);
+    return { va: va, vb: vb, hit: va < vb };
+  }
+};
+if (typeof module !== 'undefined' && module.exports) module.exports = KGiftedCore;
+if (typeof window !== 'undefined') window.KGiftedCore = KGiftedCore;
+
+/* ═══════════ 엔진 (base: kg_math_l3_pat01 · pat02 공통부 · com01 칩·단추줄·패드 계승 · 힌트 3단) ═══════════ */
+const TOTAL = 18;
+const LESSON_ID = 'kg_math_l2_dat01';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+const HINT_MAX = 3;
+/* 무대 상수는 KGiftedCore 가 쥔다 (모둠 · 그림) */
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+/* ═══ 화면 맞춤 — 슬라이드가 프레임보다 길면 균일 축소 (제목이 헤더 뒤로 잘리는 것 방지) ═══ */
+const FIT_MIN = 0.55, FIT_STEP = 0.04;
+let fitPending = false;
+function fitActiveSlide() {
+  const el = document.querySelector('.slide.active');
+  if (!el) return;
+  if (el.style.zoom) el.style.zoom = '';
+  if (!(window.CSS && CSS.supports && CSS.supports('zoom', '0.9'))) return;
+  if (!el.clientHeight) return;
+  let k = 1;
+  for (let i = 0; i < 16 && el.scrollHeight > el.clientHeight + 1; i++) {
+    k = Math.max(FIT_MIN, k - FIT_STEP);
+    el.style.zoom = k;
+    if (k === FIT_MIN) break;
+  }
+}
+function scheduleFit() {
+  if (fitPending) return;
+  fitPending = true;
+  requestAnimationFrame(() => { fitPending = false; fitActiveSlide(); });
+}
+window.addEventListener('resize', scheduleFit);
+window.addEventListener('orientationchange', scheduleFit);
+document.addEventListener('click', scheduleFit, true);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(scheduleFit);
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.querySelectorAll('#dots .ka-dot').forEach((d, i) => { d.classList.toggle('active', i === cur); d.classList.toggle('done', i < cur); });
+  document.getElementById('prev').disabled = cur === 0;
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.hintLevel >= HINT_MAX; }
+  else { hintBtn.disabled = true; }
+  if (cur === TOTAL - 1) {
+    document.getElementById('next').textContent = '마치기 →';
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('wrap-msg').textContent = wrapMsg(score);
+    saveProgress(true);
+  } else { document.getElementById('next').textContent = '다음 →'; }
+  if (cur === 4) renderCaseTable();
+  if (cur === 17) renderAgentCard();
+  fitActiveSlide();
+}
+function saveProgress(done) {
+  const data = { cur, score, done, startedAt, finishedAt: done ? Date.now() : null, qState, cases: exploreCases, conj: conjPicked, myRule: myRuleText };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function wrapMsg(s) {
+  if (s >= 100) return '전설의 그림그래프 탐정!';
+  if (s >= 80) return '멋지게 읽어 냈다!';
+  if (s >= 60) return '읽는 눈이 자라났다!';
+  return '안내판은 또 있다. 다시 해도 좋다!';
+}
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+function showHint() {
+  const qid = currentQId(); if (!qid) return;
+  const st = getQState(qid); if (st.hintLevel >= HINT_MAX) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint'); if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[Math.min(st.hintLevel, hints.length) - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= HINT_MAX;
+}
+
+
+/* ═══ 칩·단추·패드 공통 (com01 정의 문자 그대로 추출·주입) ═══ */
+function chip(elId, text, kind) {
+  const s = document.createElement('span');
+  s.className = 'sum-chip ' + (kind || 'a');
+  s.textContent = text;
+  document.getElementById(elId).appendChild(s);
+}
+function buildPad(padId, dispId, maxLen, onSubmit) {
+  const pad = document.getElementById(padId);
+  const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '←', '확인'];
+  let val = '';
+  const draw = () => { document.getElementById(dispId).textContent = val || '\u00A0'; };
+  keys.forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'q-key' + (k === '←' || k === '확인' ? ' fn' : '');
+    b.textContent = k;
+    b.addEventListener('click', () => {
+      if (k === '←') val = val.slice(0, -1);
+      else if (k === '확인') { if (val !== '') { const v = parseInt(val, 10); if (onSubmit(v) !== false) val = ''; } }
+      else if (val.length < maxLen) val += k;
+      draw();
+    });
+    pad.appendChild(b);
+  });
+  draw();
+}
+function stepBtn(wrapId, label, fn) {
+  const b = document.createElement('button');
+  b.className = 'cal-month-btn';
+  b.textContent = label;
+  b.addEventListener('click', fn);
+  document.getElementById(wrapId).appendChild(b);
+  return b;
+}
+function clearChips(id) { const e = document.getElementById(id); if (e) e.innerHTML = ''; }
+
+/* ═══════════ 진행 상태 ═══════════
+   엔진 saveProgress 가 이 셋을 읽는다. 첫 렌더보다 앞에 선다 (사이클 24 TDZ 회귀 차단). */
+const exploreCases = [];
+let conjPicked = null;
+let myRuleText = '';
+
+/* ═══════════ 그리기 공통 ═══════════
+   신규 시각 언어 0 — 그림은 com01 `chip` 의 알이고, 누르는 것은 com01 `stepBtn` 의 단추다. */
+function setText(id, t) { const e = document.getElementById(id); if (e) e.textContent = t; }
+function setMsg(id, t, wrong) {
+  const e = document.getElementById(id);
+  if (!e) return;
+  e.textContent = t;
+  if (wrong) e.classList.add('wrong'); else e.classList.remove('wrong');
+}
+function gae(m) { return String(m) + ' 개'; }
+/* 그림그래프 한 줄 — 큰 그림은 진한 알, 작은 그림은 옅은 알 */
+function drawGraph(elId, bigN, smallN) {
+  clearChips(elId);
+  for (let i = 0; i < bigN; i++) chip(elId, '큰', 'b');
+  for (let i = 0; i < smallN; i++) chip(elId, '작', 'a');
+  if (bigN + smallN === 0) chip(elId, '없음', 'tot');
+}
+/* 풀어 놓은 병을 낱낱이 늘어놓는다 */
+function drawBottles(elId, list) {
+  clearChips(elId);
+  for (let i = 0; i < list.length; i++) chip(elId, '병', list[i] === 'big' ? 'b' : 'a');
+}
+/* 모둠 이름과 수를 많은 차례대로 늘어놓는다 */
+function drawRank(elId, nums, unit) {
+  const S = KGiftedCore;
+  clearChips(elId);
+  const ord = S.rank(nums);
+  for (let i = 0; i < ord.length; i++) chip(elId, S.name(ord[i]) + ' ' + String(nums[ord[i]]) + ' ' + unit, i === 0 ? 'tot' : 'a');
+}
+/* 보기 그리기 공통 */
+function renderOpts(elId, labels, fn) {
+  const el = document.getElementById(elId);
+  el.innerHTML = '';
+  for (let i = 0; i < labels.length; i++) {
+    (function (k) {
+      const b = document.createElement('button');
+      b.className = 'mcq-opt';
+      b.setAttribute('data-c', String(k));
+      b.textContent = labels[k];
+      b.addEventListener('click', () => fn(k, b, el));
+      el.appendChild(b);
+    })(i);
+  }
+}
+/* 한 줄에서 고른 단추만 도드라지게 */
+function markOn(list, vals, v) {
+  for (let i = 0; i < list.length; i++) {
+    if (vals[i] === v) list[i].classList.add('on'); else list[i].classList.remove('on');
+  }
+}
+
+/* ═══════════ 슬1 · 슬2 미션 견본 ═══════════ */
+(function () {
+  const S = KGiftedCore;
+  for (let k = 0; k < S.TEAMS.length; k++) chip('s1-teams', S.name(k) + ' 모둠', 'a');
+  chip('s2-kinds', '큰 그림', 'b');
+  chip('s2-kinds', '작은 그림', 'a');
+})();
+
+/* ═══════════ 슬4 탐험 · 그림을 세어 보자 ═══════════ */
+const s4Btns = [];
+function s4Draw(k) {
+  const S = KGiftedCore;
+  const p = S.EX_PICS[k];
+  drawGraph('s4-graph', p[0], p[1]);
+  setText('s4-count', gae(S.pics(p[0], p[1])));
+  clearChips('s4-seen');
+  for (let i = 0; i < exploreCases.length; i++) {
+    const t = exploreCases[i];
+    chip('s4-seen', S.name(t) + ' ' + gae(S.pics(S.EX_PICS[t][0], S.EX_PICS[t][1])), 'a');
+  }
+  markOn(s4Btns, [0, 1, 2, 3], k);
+}
+(function () {
+  const S = KGiftedCore;
+  const el = document.getElementById('s4-btns');
+  el.innerHTML = '';
+  for (let k = 0; k < S.TEAMS.length; k++) {
+    (function (kk) {
+      s4Btns.push(stepBtn('s4-btns', S.name(kk) + ' 모둠', () => {
+        const st = getQState('explore');
+        let seen = false;
+        for (let i = 0; i < exploreCases.length; i++) if (exploreCases[i] === kk) seen = true;
+        if (!seen) exploreCases.push(kk);
+        s4Draw(kk);
+        if (exploreCases.length >= S.TEAMS.length) {
+          if (!st.solved) {
+            st.solved = true;
+            addScore(S.SCORE_PLAN.explore);
+            setText('fb-explore', '네 모둠을 다 세었다.');
+          }
+          setMsg('s4-msg', '네 모둠을 다 세었다', false);
+        } else {
+          setMsg('s4-msg', S.name(kk) + ' 모둠을 세었다', false);
+        }
+        saveProgress(false);
+      }));
+    })(k);
+  }
+})();
+
+/* ═══════════ 슬5 탐험 · 그림 수로 줄 세우기 (엔진 훅 cur === 4) ═══════════ */
+function renderCaseTable() {
+  const S = KGiftedCore;
+  if (exploreCases.length < S.TEAMS.length) {
+    clearChips('s5-row');
+    setText('s5-count', '아직 다 세지 않았다');
+    return;
+  }
+  drawRank('s5-row', S.picsOf(), '개');
+  setText('s5-count', '그림이 가장 많은 모둠이 맨 앞이다');
+}
+
+/* ═══════════ 슬6 탐험 · 안내판을 바꿔 보자 ═══════════ */
+const s6Btns = [];
+(function () {
+  const S = KGiftedCore;
+  const el = document.getElementById('s6-btns');
+  el.innerHTML = '';
+  for (let i = 0; i < S.CAND_BIG.length; i++) {
+    (function (v) {
+      s6Btns.push(stepBtn('s6-btns', '큰 그림 = ' + gae(v), () => {
+        drawRank('s6-row', S.valuesOf(v), '개');
+        setMsg('s6-msg', '큰 그림 한 개를 ' + gae(v) + ' 로 보았다', false);
+        markOn(s6Btns, S.CAND_BIG, v);
+      }));
+    })(S.CAND_BIG[i]);
+  }
+})();
+
+/* ═══════════ 슬7 탐험 · 나의 추측 ═══════════ */
+const CONJ = ['그림이 많은 모둠이 병도 많다', '큰 그림만 세면 된다', '그림 수 차이가 곧 병 수 차이다', '그림만 세어서는 말할 수 없다'];
+document.querySelectorAll('#conj-opts .mcq-opt').forEach(b => {
+  b.addEventListener('click', () => {
+    const st = getQState('conjecture');
+    document.querySelectorAll('#conj-opts .mcq-opt').forEach(o => o.classList.remove('sel'));
+    b.classList.add('sel');
+    conjPicked = CONJ[parseInt(b.getAttribute('data-c'), 10)];
+    setText('conj-fb', '추측을 적어 두었다. 이어서 살펴보자.');
+    if (!st.solved) { st.solved = true; addScore(KGiftedCore.SCORE_PLAN.conjecture); }
+    saveProgress(false);
+  });
+});
+
+/* ═══════════ 슬8 발견 · 기록 하나가 남았다 ═══════════
+   병 수는 코어가 쥔 무대 상수다 (학생 기록이 아니다). 학생이 덜 세었어도 발견은 선다. */
+let s8Open = false;
+function s8Draw() {
+  const S = KGiftedCore;
+  const p = S.EX_PICS[S.Q_TEAM];
+  drawGraph('s8-pics', p[0], p[1]);
+  if (!s8Open) {
+    clearChips('s8-line');
+    setMsg('s8-msg', '늘어놓기를 눌러 보자', false);
+    return;
+  }
+  const line = [];
+  for (let i = 0; i < p[1]; i++) line.push('small');
+  drawBottles('s8-line', line);
+  setMsg('s8-msg', '작은 그림 몫을 늘어놓았다', false);
+}
+(function () {
+  const S = KGiftedCore;
+  setText('s8-sub', S.name(S.Q_TEAM) + ' 모둠은 병 ' + gae(S.Q_TOTAL) + ' 를 모았다');
+  const el = document.getElementById('s8-btns');
+  el.innerHTML = '';
+  stepBtn('s8-btns', '늘어놓기', () => { s8Open = true; s8Draw(); });
+  stepBtn('s8-btns', '접기', () => { s8Open = false; s8Draw(); });
+})();
+s8Draw();
+
+/* ═══════════ 슬9 발견 · 큰 그림 한 개는 ═══════════ */
+const Q9_OPTS = ['1 개', '2 개', '5 개', '10 개'];
+const Q9_IDX = 2;
+(function () {
+  const S = KGiftedCore;
+  const p = S.EX_PICS[S.Q_TEAM];
+  setText('q9-prompt', S.name(S.Q_TEAM) + ' 모둠은 병 ' + gae(S.Q_TOTAL) + ' 다. 큰 그림 한 개는?');
+  drawGraph('q9-in', p[0], p[1]);
+})();
+renderOpts('q9-opts', Q9_OPTS, (k, b, el) => {
+  const S = KGiftedCore, st = getQState('q9');
+  if (st.solved) return;
+  if (k === Q9_IDX) {
+    b.classList.add('correct');
+    st.solved = true;
+    addScore(S.SCORE_PLAN.q9);
+    setText('fb-q9', '맞다. 안내판을 되찾았다.');
+  } else {
+    b.classList.add('wrong');
+    setText('fb-q9', '작은 그림을 먼저 덜어 내 보자.');
+  }
+  saveProgress(false);
+});
+
+/* ═══════════ 슬10 발견 · 두 줄을 견주자 ═══════════ */
+const s10Btns = [];
+(function () {
+  const S = KGiftedCore;
+  const el = document.getElementById('s10-btns');
+  el.innerHTML = '';
+  s10Btns.push(stepBtn('s10-btns', '그림 수로', () => {
+    drawRank('s10-row', S.picsOf(), '개');
+    setMsg('s10-msg', '그림이 많은 차례다', false);
+    markOn(s10Btns, [0, 1], 0);
+  }));
+  s10Btns.push(stepBtn('s10-btns', '병 수로', () => {
+    drawRank('s10-row', S.valuesOf(S.BIG), '개');
+    setMsg('s10-msg', '병이 많은 차례다', false);
+    markOn(s10Btns, [0, 1], 1);
+  }));
+})();
+
+/* ═══════════ 슬11 발견 · 왜 달라졌을까 ═══════════ */
+const Q10_OPTS = ['그림을 잘못 세었기 때문이다', '모둠이 넷이기 때문이다',
+                  '한 그림에 큰 것과 작은 것이 있기 때문이다', '그림이 너무 많기 때문이다'];
+const Q10_IDX = 2;
+renderOpts('q10-opts', Q10_OPTS, (k, b, el) => {
+  const S = KGiftedCore, st = getQState('q10');
+  if (st.solved) return;
+  if (k === Q10_IDX) {
+    b.classList.add('correct');
+    st.solved = true;
+    addScore(S.SCORE_PLAN.q10);
+    setText('fb-q10', '맞다. 한 개가 다 같은 것이 아니다.');
+  } else {
+    b.classList.add('wrong');
+    setText('fb-q10', '한 모둠에 붙은 그림을 다시 보자.');
+  }
+  saveProgress(false);
+});
+
+/* ═══════════ 슬12 도전 · 이제 읽어 보자 ═══════════ */
+let verRound = 0;
+function verDraw() {
+  const S = KGiftedCore;
+  const p = S.VER_PICS[verRound];
+  setText('ver-prompt', String(verRound + 1) + '판. 이 모둠의 병은 몇 개일까?');
+  drawGraph('ver-in', p[0], p[1]);
+}
+buildPad('pad-ver', 'disp-ver', 3, (v) => {
+  const S = KGiftedCore, st = getQState('ver');
+  if (st.solved) return true;
+  const p = S.VER_PICS[verRound];
+  if (v === S.value(p[0], p[1], S.BIG)) {
+    addScore(5);
+    verRound = verRound + 1;
+    if (verRound >= S.VER_PICS.length) {
+      st.solved = true;
+      verRound = S.VER_PICS.length - 1;
+      setText('fb-ver', '세 판을 다 읽어 냈다.');
+    } else {
+      setText('fb-ver', '맞다. 다음 판이다.');
+    }
+    verDraw();
+  } else {
+    setText('fb-ver', '큰 그림부터 세어 보자.');
+  }
+  saveProgress(false);
+  return true;
+});
+verDraw();
+
+/* ═══════════ 슬13 도전 · 다시 붙여 보자 (반례) ═══════════ */
+const e1Seen = {};
+const e1Btns = [];
+(function () {
+  const S = KGiftedCore;
+  setText('e1-prompt', '병 ' + gae(S.CT_VALUE) + ' 를 다른 안내판으로 다시 붙이자');
+  drawGraph('e1-in', S.CT_PICS[0], S.CT_PICS[1]);
+  const el = document.getElementById('e1-btns');
+  el.innerHTML = '';
+  for (let i = 0; i < S.CT_BIGS.length; i++) {
+    (function (v) {
+      e1Btns.push(stepBtn('e1-btns', '큰 그림 = ' + gae(v), () => {
+        const st = getQState('ext1');
+        const r = S.refit(S.CT_VALUE, v);
+        drawGraph('e1-row', r.big, r.small);
+        setText('e1-count', gae(r.pics));
+        setMsg('e1-msg', '같은 병인데 그림이 ' + gae(r.pics) + ' 다', false);
+        markOn(e1Btns, S.CT_BIGS, v);
+        e1Seen[String(v)] = r.pics;
+        let n = 0;
+        for (const kk in e1Seen) if (e1Seen[kk] > 0 || e1Seen[kk] === 0) n = n + 1;
+        if (n >= S.CT_BIGS.length) {
+          if (!st.solved) {
+            st.solved = true;
+            addScore(S.SCORE_PLAN.ext1);
+            setText('fb-ext1', '병 수는 그대로인데 그림 수가 달라졌다.');
+          }
+        } else {
+          setText('fb-ext1', '다른 안내판도 눌러 보자.');
+        }
+        saveProgress(false);
+      }));
+    })(S.CT_BIGS[i]);
+  }
+})();
+
+/* ═══════════ 슬14 도전 · 안내판을 키우면 ═══════════ */
+const e2Btns = [];
+(function () {
+  const S = KGiftedCore;
+  setText('e2-prompt', '병 ' + gae(S.EXT_VALUE) + ' 를 안내판마다 붙여 보자');
+  const el = document.getElementById('e2-btns');
+  el.innerHTML = '';
+  for (let i = 0; i < S.EXT_BIGS.length; i++) {
+    (function (v) {
+      e2Btns.push(stepBtn('e2-btns', '큰 그림 = ' + gae(v), () => {
+        const r = S.refit(S.EXT_VALUE, v);
+        drawGraph('e2-row', r.big, r.small);
+        setText('e2-count', gae(r.pics));
+        markOn(e2Btns, S.EXT_BIGS, v);
+      }));
+    })(S.EXT_BIGS[i]);
+  }
+})();
+const EXT2_OPTS = ['그림이 많아진다', '그림 수는 그대로다', '그림이 적어진다', '알 수 없다'];
+const EXT2_IDX = 2;
+renderOpts('ext2-opts', EXT2_OPTS, (k, b, el) => {
+  const S = KGiftedCore, st = getQState('ext2');
+  if (st.solved) return;
+  if (k === EXT2_IDX) {
+    b.classList.add('correct');
+    st.solved = true;
+    addScore(S.SCORE_PLAN.ext2);
+    setText('fb-ext2', '맞다. 한 개가 클수록 적게 붙는다.');
+  } else {
+    b.classList.add('wrong');
+    setText('fb-ext2', '세 안내판을 다 눌러 견주어 보자.');
+  }
+  saveProgress(false);
+});
+
+/* ═══════════ 슬15 도전 · 오늘 만난 그래프 ═══════════ */
+(function () {
+  const S = KGiftedCore;
+  const pics = S.picsOf(), vals = S.valuesOf(S.BIG);
+  const op = S.rank(pics), ov = S.rank(vals);
+  for (let i = 0; i < op.length; i++) chip('s15-r1', S.name(op[i]) + ' ' + gae(pics[op[i]]), i === 0 ? 'tot' : 'a');
+  for (let i = 0; i < ov.length; i++) chip('s15-r2', S.name(ov[i]) + ' ' + gae(vals[ov[i]]), i === 0 ? 'tot' : 'b');
+  chip('s15-r3', '그림 수 맨 앞 ' + S.name(op[0]), 'a');
+  chip('s15-r3', '병 수 맨 앞 ' + S.name(ov[0]), 'b');
+})();
+
+/* ═══════════ 슬16 창조 · 그림을 가장 적게 ═══════════ */
+(function () {
+  const S = KGiftedCore;
+  let bigN = S.C1_BIGS[0], smallN = S.C1_SMALLS[0];
+  const bb = [], sb = [];
+  function draw() {
+    const st = getQState('create1');
+    drawGraph('c1-stage', bigN, smallN);
+    markOn(bb, S.C1_BIGS, bigN);
+    markOn(sb, S.C1_SMALLS, smallN);
+    const r = S.judge1(bigN, smallN);
+    setText('c1-val', gae(r.val));
+    setText('c1-pics', gae(r.pics));
+    if (r.hit) {
+      if (!st.solved) {
+        st.solved = true;
+        addScore(S.SCORE_PLAN.create1);
+        myRuleText = '큰 ' + String(bigN) + ' · 작은 ' + String(smallN);
+      }
+      setText('fb-create1', '됐다. 이보다 적게는 못 붙인다.');
+    } else if (r.val === S.C1_TARGET) {
+      setText('fb-create1', '병 수는 맞다. 그림을 더 줄여 보자.');
+    } else {
+      setText('fb-create1', '병이 ' + gae(r.val) + ' 다. 다시 골라 보자.');
+    }
+    saveProgress(false);
+  }
+  setText('c1-goal', '병 ' + gae(S.C1_TARGET) + ' 를 그림 가장 적게 붙이자');
+  document.getElementById('c1-bigs').innerHTML = '';
+  document.getElementById('c1-smalls').innerHTML = '';
+  for (let i = 0; i < S.C1_BIGS.length; i++) {
+    (function (v) { bb.push(stepBtn('c1-bigs', '큰 ' + String(v), () => { bigN = v; draw(); })); })(S.C1_BIGS[i]);
+  }
+  for (let i = 0; i < S.C1_SMALLS.length; i++) {
+    (function (v) { sb.push(stepBtn('c1-smalls', '작은 ' + String(v), () => { smallN = v; draw(); })); })(S.C1_SMALLS[i]);
+  }
+  draw();
+})();
+
+/* ═══════════ 슬17 창조 · 적은 쪽이 더 많게 ═══════════
+   나 모둠(그림 셋) 줄이 먼저다 — 적은 쪽을 먼저 정하는 것이 이 임무의 차례다. */
+const c2Found = {};
+(function () {
+  const S = KGiftedCore;
+  let ab = S.C2_ABS[0], bb = S.C2_BBS[0];
+  const abtn = [], bbtn = [];
+  function draw() {
+    const st = getQState('create2');
+    drawGraph('c2-a', ab, S.C2_AN - ab);
+    drawGraph('c2-b', bb, S.C2_BN - bb);
+    markOn(abtn, S.C2_ABS, ab);
+    markOn(bbtn, S.C2_BBS, bb);
+    const r = S.judge2(ab, bb);
+    setText('c2-va', gae(r.va));
+    setText('c2-vb', gae(r.vb));
+    if (r.hit) {
+      const key = String(ab) + '|' + String(bb);
+      if (!c2Found[key]) {
+        c2Found[key] = true;
+        chip('c2-found', '나 큰 ' + String(bb) + ' · 가 큰 ' + String(ab), 'tot');
+      }
+      let found = 0;
+      for (const kk in c2Found) if (c2Found[kk]) found = found + 1;
+      if (found >= 2) {
+        if (!st.solved) { st.solved = true; addScore(S.SCORE_PLAN.create2); }
+        setText('fb-create2', '두 길을 찾았다. 그림이 적어도 병은 더 많다.');
+      } else {
+        setText('fb-create2', '한 길을 찾았다. 다른 길도 찾자.');
+      }
+    } else {
+      setText('fb-create2', '나 모둠이 더 많아야 한다. 다시 골라 보자.');
+    }
+    saveProgress(false);
+  }
+  setText('c2-goal', '가 모둠 그림 ' + gae(S.C2_AN) + ' · 나 모둠 그림 ' + gae(S.C2_BN) + ' — 나가 병이 더 많게');
+  document.getElementById('c2-bs').innerHTML = '';
+  document.getElementById('c2-as').innerHTML = '';
+  for (let i = 0; i < S.C2_BBS.length; i++) {
+    (function (v) { bbtn.push(stepBtn('c2-bs', '나 큰 ' + String(v), () => { bb = v; draw(); })); })(S.C2_BBS[i]);
+  }
+  for (let i = 0; i < S.C2_ABS.length; i++) {
+    (function (v) { abtn.push(stepBtn('c2-as', '가 큰 ' + String(v), () => { ab = v; draw(); })); })(S.C2_ABS[i]);
+  }
+  draw();
+})();
+
+/* ═══════════ 슬18 창조 · 탐정 기록증 (엔진 훅 cur === 17) ═══════════ */
+function renderAgentCard() {
+  const S = KGiftedCore;
+  setText('card-r1', '센 모둠 ' + gae(exploreCases.length));
+  setText('card-r2', '내 추측 ' + (conjPicked ? conjPicked : '아직 없음'));
+  setText('card-r3', '가장 적게 붙인 길 ' + (myRuleText ? myRuleText : '아직 없음'));
+}
+
+/* ═══════════ 초기화 ═══════════ */
+(function init() {
+  const dots = document.getElementById('dots');
+  for (let i = 0; i < TOTAL; i++) {
+    const d = document.createElement('span');
+    d.className = 'ka-dot';
+    d.addEventListener('click', () => { cur = i; updateUI(); });
+    dots.appendChild(d);
+  }
+  updateUI();
+})();
+</script>
+</body>
+</html>
