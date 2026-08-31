@@ -44,6 +44,9 @@
 
 | 28 | setup_report_v1.sql | 2026-08-31 작성(v1.1) · **2026-08-31 실행 확인함**(전문 180줄 한 번에 Success) | 케이학습리포트 R0 집계층 — `report_lesson_mastery`(판정 = 문항별 마지막 답 q_n·q_latest_ok, 문항<3 watching, runs·last_run_*) · `report_morning_daily` · `report_teacher_comments`(+rtc_teacher_manage·rtc_parent_read) · 학부모 아침활동 RLS(ma_subs_parent_read·ma_sess_parent_read) · `report_parent_views`(학부모 열람 로그, rpv_parent_insert·rpv_admin_read). DROP VIEW 후 재생성이라 재실행 안전. 검산: `SELECT column_name FROM information_schema.columns WHERE table_name='report_lesson_mastery'` 에 q_n·runs 있으면 v1.1 |
 
+| 29 | setup_worksheet_bank.sql | 2026-08-31 작성 · **미적용** | 케이학습지 E1 문항 원장 — `concepts`(개념 트리) · `misconceptions`(오개념 사전) · `question_bank`(문항, payload jsonb 가 학습지 JSON 무손실 사본) · `quiz_sets`/`quiz_set_items`(교사가 조립한 쪽지) · `scores` 열 4개 추가(quiz_set_id·question_bank_id·concept_code·misconception_code) · `get_quiz_set()` RPC(학생은 우리 반에 열린 쪽지만 받는다) · 뷰 `quiz_misconception_dist`(오개념 분포) · `quiz_item_stats`(문항 정답률). 배포는 새 표 없이 기존 `class_openings` 에 `content_key='quiz:<set_id>'` 한 줄로 나간다. 검산 `SELECT count(*) FROM question_bank;` |
+| 30 | seed_worksheet_g1_math_u1.sql (+ _part2) | 2026-08-31 작성 · **미적용** | 1학년 수학 1단원 적재 — 개념 7 · 오개념 11 · 문항 240(part1 차시 140, part2 단원 종합 100). qcode UNIQUE UPSERT 라 재실행 안전. 29번 먼저 실행. 검산 `SELECT count(*) FROM question_bank;` → 240 |
+
 ## 새 SQL 추가 룰
 
 1. 파일은 이 폴더(`sql/`)에 `setup_이름.sql`로 추가
