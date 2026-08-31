@@ -105,6 +105,21 @@ window.MK_TPLSVG = (() => {
     { id: 'class-schedule-01', name: 'Weekly Class Schedule', ko: '주간 시간표', category: 'education', width: 1600, height: 1100, pack: 'pack05', file: '25_class_schedule.svg',
       contentType: 'activity', style: '소프트', styleId: 'st-soft', styleEn: 'Pastel', ratio: '3:2', difficulty: '쉬움', rec: true,
       desc: '요일 기둥에 파스텔 칸을 얹은 가로 시간표', uses: '주간 시간표·학급 게시·가정 배부', tags: ['시간표', '학급운영', '주간'], hints: ['칸 색으로 과목을 구분', '칸을 복제해 늘리세요'] },
+    { id: 'newsletter-01', name: 'Newsletter', ko: '소식지', category: 'newsletter', width: 1080, height: 1350, pack: 'pack06', file: '26_newsletter.svg',
+      contentType: 'poster', style: '페이퍼', styleId: 'st-paper', styleEn: 'Editorial', ratio: '4:5', difficulty: '보통', rec: true,
+      desc: '신문처럼 단을 나눠 글을 앉힌 소식면', uses: '학급 소식지·주간 알림·학년 신문', tags: ['소식지', '신문', '학급운영'], hints: ['머리기사 하나만 크게', '단은 둘까지가 읽힌다'] },
+    { id: 'gym-promo-01', name: 'Gym Promotion', ko: '운동 홍보', category: 'fitness', width: 1080, height: 1350, pack: 'pack06', file: '27_gym_promo.svg',
+      contentType: 'poster', style: '볼드', styleId: 'st-bold', styleEn: 'Energetic', ratio: '4:5', difficulty: '쉬움', rec: false,
+      desc: '검정 바탕에 강한 대비로 미는 홍보면', uses: '체육대회·운동부 모집·건강 캠페인', tags: ['체육', '홍보', '볼드'], hints: ['문장 하나로 밀 것', '숫자를 크게'] },
+    { id: 'photo-collage-01', name: 'Photo Collage', ko: '사진 콜라주', category: 'photo', width: 1080, height: 1350, pack: 'pack06', file: '28_photo_collage.svg',
+      contentType: 'sns', style: '소프트', styleId: 'st-soft', styleEn: 'Scrapbook', ratio: '4:5', difficulty: '쉬움', rec: true,
+      desc: '기울어진 사진 자리 넷을 겹쳐 놓은 스크랩면', uses: '학급 앨범·행사 기록·소식 카드', tags: ['사진', '콜라주', '기록'], hints: ['색 판을 눌러 「이미지 교체」로 실제 사진을', '기울기는 그대로 두는 편이 자연스럽다'] },
+    { id: 'workshop-01', name: 'Workshop Poster', ko: '연수 안내', category: 'event', width: 1080, height: 1350, pack: 'pack06', file: '29_workshop_poster.svg',
+      contentType: 'poster', style: '에듀', styleId: 'st-edu', styleEn: 'Friendly', ratio: '4:5', difficulty: '쉬움', rec: true,
+      desc: '일정과 대상을 부드럽게 정리한 안내면', uses: '연수 안내·학부모 교실·체험 프로그램', tags: ['연수', '안내', '일정'], hints: ['일정은 세 줄까지', '신청 방법을 아래 크게'] },
+    { id: 'business-card-01', name: 'Business Card', ko: '이름표·명함', category: 'business', width: 1050, height: 600, pack: 'pack06', file: '30_business_card.svg',
+      contentType: 'activity', style: '모던', styleId: 'st-modern', styleEn: 'Premium', ratio: '7:4', difficulty: '쉬움', rec: false,
+      desc: '작은 가로판에 이름과 연락을 담은 카드', uses: '학급 이름표·역할 카드·쿠폰·명함', tags: ['이름표', '카드', '학급운영'], hints: ['이름만 크게, 나머지는 작게', '복제해서 여러 장 찍어 쓰세요'] },
   ];
 
   const CATS = [['', '전체'], ['poster', '포스터'], ['event', '행사'], ['education', '교육'], ['promotion', '홍보'], ['social', '소셜']];
