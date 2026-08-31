@@ -30,7 +30,9 @@ sec('1. 등록');
   T('중복 설치 방어', PK.install().already === true && TPL.list({}).filter((t2) => /^pk-/.test(t2.templateId)).length === 8);
   const cats = new Set(PK.PACK.map((p) => p.category));
   T('8 카테고리 전 커버', ['발표자료', '카드뉴스', '영상', '포스터', '학습지', '썸네일', '활동자료', 'SNS'].every((c) => cats.has(c)), [...cats].join(','));
-  T('레지스트리 총계 = 기존 20 + 팩 8', TPL.list({}).length === 28, 'n=' + TPL.list({}).length);
+  /* 팩은 뒤로도 늘어난다(R137 SVG 팩 등) — 계약의 뜻은 「전부 등록됐다」이지
+     「28종만 있다」가 아니다. 전원 등록은 바로 위 줄이 이미 잰다. */
+  T('레지스트리 총계 ≥ 기존 20 + 팩 8', TPL.list({}).length >= 28, 'n=' + TPL.list({}).length);
   T('오버레이 승계 (style·animation·ai)', PK.ids.every((id) => { const r = TPL.resolve(id); return r && r.style && r.animation && r.template._overlay.ai.hints.length; }));
 }
 
@@ -135,7 +137,7 @@ sec('6. 실렌더 썸네일');
 {
   PG.go('templates');
   const cards = [...window.document.querySelectorAll('.mk-tplcard')];
-  T('전 카드 실타이포 썸네일', cards.length === 28 && cards.every((c) => /<text/.test(c.innerHTML)), 'n=' + cards.length);
+  T('전 카드 실타이포 썸네일', cards.length === TPL.list({}).length && cards.every((c) => /<text/.test(c.innerHTML)), 'n=' + cards.length + '/' + TPL.list({}).length);
   T('팩 팔레트 실색 노출', cards.filter((c) => /#2F6B54|#182230|#FFD166/i.test(c.innerHTML)).length >= 3);
   const pk = cards.find((c) => /개념 한 장/.test(c.textContent)); pk.click();
   T('모달 스테이지 실렌더', /<text/.test((window.document.querySelector('.stage') || { innerHTML: '' }).innerHTML));

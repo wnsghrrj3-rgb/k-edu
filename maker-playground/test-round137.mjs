@@ -38,17 +38,40 @@ for (const t of T.CATALOG) {
   const r = T.applyTo(doc, 0, p, t);
   const s = doc.scenes[0];
   if (!r.ok || s.elements.length !== p.elements.length || s.width !== t.width) { console.log('❌ 적용', t.id, r); bad++; }
-  console.log((a.ok ? '✅' : '❌'), t.id.padEnd(22), `요소 ${a.count}개 (편집가능 ${a.native} · 조각 ${a.frags})`, '씬', s.width + '×' + s.height, s.background);
+  console.log((a.ok ? '✅' : '❌'), (t.pack + ' ' + t.id).padEnd(30), `요소 ${a.count}개 (편집가능 ${a.native} · 조각 ${a.frags})`, '씬', s.width + '×' + s.height, s.background);
   if (p.notes.length) p.notes.forEach((n) => console.log('      · ' + n));
 }
 
 /* ---- 굳힌 팩(tplpack01.js) 드리프트 — build 를 재실행해 커밋본과 비교 ---- */
 {
   const mod = await import('./tplpack-build.mjs');
-  const fresh = mod.build();
-  const onDisk = fs.readFileSync('./data/tplpack01.js', 'utf8');
-  console.log((fresh === onDisk ? '✅ ' : '❌ ') + '굳힌 팩이 원본 SVG 와 일치 (drift 0)');
-  if (fresh !== onDisk) { console.log('   → node maker-playground/tplpack-build.mjs 를 다시 돌려 함께 커밋할 것'); bad++; }
+  for (const k of mod.packs()) {
+    const out = './data/svg' + k + '.js';
+    const fresh = mod.build(k);
+    const onDisk = fs.existsSync(out) ? fs.readFileSync(out, 'utf8') : '';
+    const same = fresh === onDisk;
+    console.log((same ? '✅ ' : '❌ ') + `굳힌 ${k} 이 원본 SVG 와 일치 (drift 0)`);
+    if (!same) { console.log('   → node maker-playground/tplpack-build.mjs 를 다시 돌려 함께 커밋할 것'); bad++; }
+  }
+}
+
+/* ---- 이름 충돌 가드 ----
+   data/tplpack.js 의 MK_TPLPACK(실전 템플릿 팩 v1)과 전역을 겹치면 그쪽
+   install·ids·PACK 이 통째로 사라진다. 한 번 실제로 겹쳤던 자리다. */
+{
+  const savedW = global.window;
+  const g = {}; global.window = g;
+  const req3 = createRequire(import.meta.url);
+  for (const f of ['./data/sample.js', './data/assets.js', './data/templates.js', './data/tplpack.js',
+                   './data/tplsvg.js', './data/svgpack01.js', './data/svgpack02.js']) {
+    delete req3.cache[req3.resolve(f)]; req3(f);
+  }
+  const okOld = !!(g.MK_TPLPACK && g.MK_TPLPACK.install && Array.isArray(g.MK_TPLPACK.ids) && g.MK_TPLPACK.ids.length === 8);
+  const okNew = !!(g.MK_SVGPACK && Object.keys(g.MK_SVGPACK).length === g.MK_TPLSVG.CATALOG.length);
+  console.log((okOld ? '✅ ' : '❌ ') + '기존 MK_TPLPACK 무사 (실전 팩 8종 API 보존)');
+  console.log((okNew ? '✅ ' : '❌ ') + `MK_SVGPACK 에 전 팩 적재 (${g.MK_SVGPACK ? Object.keys(g.MK_SVGPACK).length : 0}종)`);
+  if (!okOld || !okNew) bad++;
+  global.window = savedW;
 }
 
 /* ---- Template Engine 등록 — Templates 화면에 실제로 서는가 ---- */
@@ -57,7 +80,8 @@ for (const t of T.CATALOG) {
   const g = {};
   global.window = g;
   const req2 = createRequire(import.meta.url);
-  for (const f of ['./data/sample.js', './data/assets.js', './data/templates.js', './data/tplsvg.js', './data/tplpack01.js']) {
+  for (const f of ['./data/sample.js', './data/assets.js', './data/templates.js', './data/tplpack.js',
+                   './data/tplsvg.js', './data/svgpack01.js', './data/svgpack02.js']) {
     delete req2.cache[req2.resolve(f)]; req2(f);
   }
   const E = g.MK_TPL;
@@ -72,7 +96,7 @@ for (const t of T.CATALOG) {
     /* 카드가 요구하는 필드가 하나라도 비면 그리드에서 조용히 깨진다 */
     if (t && !E.resolve(id)) { console.log('❌ resolve 실패 ' + id); bad++; }
   });
-  console.log((ids.length >= want.length + 8 ? '✅ ' : '❌ ') + `전체 목록 ${ids.length}종 (기존 8 + 팩 ${want.length})`);
+  console.log((ids.length >= want.length + 16 ? '✅ ' : '❌ ') + `전체 목록 ${ids.length}종 (샘플 8 + 실전 8 + SVG 팩 ${want.length})`);
   /* 씬 배경이 밝기 판정과 어긋나면 글자가 배경에 묻힌다 */
   want.forEach((id) => {
     const sc = E.get(id).scenes[0];
@@ -91,9 +115,11 @@ const ed = fs.readFileSync('screens/editor.js', 'utf8');
   console.log((re.test(ed) ? '✅ ' : '❌ ') + n));
 for (const f of ['../maker-playground/index.html', '../maker/index.html']) {
   const h = fs.readFileSync(f, 'utf8');
-  const two = /tplsvg\.js/.test(h) && /tplpack01\.js/.test(h);
+  const packFiles = ['svgpack01.js', 'svgpack02.js'];
+  const two = /tplsvg\.js/.test(h) && packFiles.every((f) => h.includes(f));
   /* 순서 계약: MK_TPL(templates.js) → 파서 → 팩. 뒤집히면 등록이 조용히 실패한다 */
-  const order = h.indexOf('templates.js') < h.indexOf('tplsvg.js') && h.indexOf('tplsvg.js') < h.indexOf('tplpack01.js');
+  const order = h.indexOf('templates.js') < h.indexOf('tplsvg.js')
+    && packFiles.every((f) => h.indexOf('tplsvg.js') < h.indexOf(f));
   console.log(((two && order) ? '✅ ' : '❌ ') + '스크립트 등록·순서 ' + f);
   if (!(two && order)) bad++;
 }

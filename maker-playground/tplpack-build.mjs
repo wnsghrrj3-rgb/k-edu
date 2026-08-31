@@ -24,7 +24,17 @@ import { JSDOM } from 'jsdom';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
 
-export function build() {
+export function packs() {
+  const dom = new JSDOM('');
+  const prev = global.window; global.window = { };
+  delete require.cache[require.resolve('./data/tplsvg.js')];
+  require('./data/tplsvg.js');
+  const ks = [...new Set(global.window.MK_TPLSVG.CATALOG.map((t) => t.pack))];
+  global.window = prev; dom.window.close();
+  return ks;
+}
+
+export function build(packKey) {
   const dom = new JSDOM('');
   const g = { window: {} };
   const prev = global.window;
@@ -37,7 +47,7 @@ export function build() {
   const opts = { DOMParser: dom.window.DOMParser, XMLSerializer: dom.window.XMLSerializer };
   const packs = {}, regs = [];
 
-  for (const t of T.CATALOG) {
+  for (const t of T.CATALOG.filter((x) => x.pack === packKey)) {
     const file = path.join(HERE, 'assets', 'templates', t.pack, t.file);
     const p = T.parse(fs.readFileSync(file, 'utf8'), opts);
     if (!p.ok) throw new Error(t.id + ' 파싱 실패: ' + p.msg);
@@ -63,18 +73,22 @@ export function build() {
     }, ov: { styleId: ${J(t.styleId)}, animationId: 'an-none', assetIds: [],
       ai: { recommended: ${t.rec}, tags: ${J(t.tags)}, hints: ${J(t.hints)} } } },`).join('\n');
 
+  const NUM = packKey.replace(/[^0-9]/g, '') || '01';
   return `/* ============================================================
-   MK_TPLPACK — SVG 템플릿 팩 01 (자동 생성 — 손으로 고치지 말 것)
+   MK_SVGPACK — SVG 템플릿 ${packKey} (자동 생성 — 손으로 고치지 말 것)
    ------------------------------------------------------------
-   원본: assets/templates/pack01/*.svg
+   원본: assets/templates/${packKey}/*.svg
    생성: node maker-playground/tplpack-build.mjs
    MK_TPLSVG 파서가 SVG 를 요소로 푼 결과를 굳힌 것이다. 로드되면
    Template Engine 레지스트리에 바로 등록돼 Templates 화면에 선다.
+   ⚠ 이름 주의: data/tplpack.js 의 MK_TPLPACK 은 별개 모듈이다(실전 템플릿
+   팩 v1). 전역명을 겹치면 그쪽 API(install·ids)가 통째로 사라진다.
    ============================================================ */
-window.MK_TPLPACK = (() => {
-  const PACK = {
+window.MK_SVGPACK = (() => {
+  const PACK = window.MK_SVGPACK || {};   /* 팩은 여러 장 — 앞 팩에 덧쌓는다 */
+  Object.assign(PACK, {
 ${body}
-  };
+  });
 
   /* Template Engine 등록 — MK_TPL 이 없으면 조용히 건너뛴다(파서만 쓰는 환경) */
   const REG = [
@@ -90,6 +104,9 @@ ${reg}
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  fs.writeFileSync(path.join(HERE, 'data', 'tplpack01.js'), build());
-  console.log('data/tplpack01.js 생성 완료');
+  for (const k of packs()) {
+    const out = 'svg' + k + '.js';
+    fs.writeFileSync(path.join(HERE, 'data', out), build(k));
+    console.log('data/' + out + ' 생성 완료');
+  }
 }

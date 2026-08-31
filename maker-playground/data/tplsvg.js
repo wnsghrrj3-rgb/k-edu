@@ -45,6 +45,21 @@ window.MK_TPLSVG = (() => {
     { id: 'collage-social-01', name: 'Weekend City Mood', ko: '콜라주 소셜', category: 'social', width: 1080, height: 1080, pack: 'pack01', file: '05_collage_social.svg',
       contentType: 'sns', style: '소프트', styleId: 'st-soft', styleEn: 'Collage', ratio: '1:1', difficulty: '쉬움', rec: true,
       desc: '색 카드를 기울여 겹친 정사각 게시물', uses: '학급 SNS·소식 카드·모집 공지', tags: ['SNS', '콜라주', '카드'], hints: ['카드 색만 바꿔도 분위기가 산다'] },
+    { id: 'youtube-thumbnail-01', name: '시간은 왜 빨리 가는가', ko: '유튜브 썸네일', category: 'youtube', width: 1280, height: 720, pack: 'pack02', file: '06_youtube_thumbnail.svg',
+      contentType: 'thumbnail', style: '볼드', styleId: 'st-bold', styleEn: 'Bold', ratio: '16:9', difficulty: '쉬움', rec: true,
+      desc: '질문 한 줄과 큰 글자로 미는 영상 표지', uses: '수업 영상 표지·학급 유튜브·강의 썸네일', tags: ['썸네일', '유튜브', '영상'], hints: ['제목은 두 줄·열 글자 안쪽', '얼굴이나 도형 하나만 우측에'] },
+    { id: 'presentation-cover-01', name: 'Build Better Learning', ko: '발표 표지', category: 'presentation', width: 1600, height: 900, pack: 'pack02', file: '07_presentation_cover.svg',
+      contentType: 'presentation', style: '모던', styleId: 'st-modern', styleEn: 'Corporate', ratio: '16:9', difficulty: '쉬움', rec: true,
+      desc: '왼쪽 띠와 흰 판으로 나눈 발표 표지', uses: '연수 발표·프로젝트 보고·수업 공개', tags: ['발표', '표지', '모던'], hints: ['부제는 한 문장으로', '왼쪽 띠의 목차는 세 줄까지'] },
+    { id: 'wedding-invitation-01', name: 'Elegant Wedding Invitation', ko: '청첩장', category: 'invitation', width: 1080, height: 1350, pack: 'pack02', file: '08_wedding_invitation.svg',
+      contentType: 'poster', style: '페이퍼', styleId: 'st-paper', styleEn: 'Elegant', ratio: '4:5', difficulty: '보통', rec: false,
+      desc: '가운데 정렬과 잎사귀 장식의 초대장', uses: '청첩장·초대장·감사장', tags: ['초대장', '우아', '행사'], hints: ['이름과 날짜만 크게', '나머지는 작게 눕힐 것'] },
+    { id: 'restaurant-promo-01', name: 'Pasta Night', ko: '음식 홍보', category: 'food', width: 1080, height: 1350, pack: 'pack02', file: '09_restaurant_promo.svg',
+      contentType: 'poster', style: '소프트', styleId: 'st-soft', styleEn: 'Warm', ratio: '4:5', difficulty: '쉬움', rec: false,
+      desc: '가운데 접시를 세운 따뜻한 홍보면', uses: '급식 안내·바자회·먹거리 행사', tags: ['홍보', '음식', '행사'], hints: ['가운데 원들을 옮겨 다른 음식으로', '값과 버튼은 아래 두 자리'] },
+    { id: 'school-notice-01', name: 'School Parent Notice', ko: '학부모 안내문', category: 'education', width: 1080, height: 1350, pack: 'pack02', file: '10_school_notice.svg',
+      contentType: 'poster', style: '에듀', styleId: 'st-edu', styleEn: 'Notice', ratio: '4:5', difficulty: '쉬움', rec: true,
+      desc: '머리띠·점 목록·문의 상자로 된 안내문', uses: '가정통신문·학부모 안내·학급 공지', tags: ['안내', '학부모', '가정통신문'], hints: ['목록은 세 줄이 읽기 좋다', '문의 상자에 연락 방법을'] },
   ];
 
   const CATS = [['', '전체'], ['poster', '포스터'], ['event', '행사'], ['education', '교육'], ['promotion', '홍보'], ['social', '소셜']];
@@ -268,6 +283,9 @@ window.MK_TPLSVG = (() => {
 
         const shapeish = tag === 'rect' || tag === 'circle' || tag === 'ellipse';
         const simple = shapeish && solid(fill) && !stroke && !filt && t.plain;
+        /* 칠도 있고 테두리도 있는 판 — 통째로 구우면 큰 카드가 색조차 못 바꾸는
+           덩어리가 된다. 칠은 네이티브 도형으로 두고 테두리만 위에 조각으로 얹는다. */
+        const filledStroked = shapeish && solid(fill) && solid(stroke) && !filt && t.plain;
 
         const covers = tag === 'rect'
           && num(attr(n, 'x')) + off.tx <= vb.x + 0.5 && num(attr(n, 'y')) + off.ty <= vb.y + 0.5
@@ -284,6 +302,17 @@ window.MK_TPLSVG = (() => {
           if (background == null && covers) { background = fill; return; }
           const el = boxEl(n, W, H, off, '');
           if (el) elements.push(el);
+          return;
+        }
+
+        if (filledStroked) {
+          const body = boxEl(n, W, H, off, '');
+          if (body) elements.push(body);
+          const line = n.cloneNode(true);
+          line.setAttribute('fill', 'none');
+          const fr = fragEl(line, W, H, off, vb, defs, serOne);
+          if (fr) { fr.label = '테두리'; elements.push(fr); }
+          notes.push('칠+테두리 도형은 칠(편집 가능)과 테두리(조각) 둘로 나뉘어요');
           return;
         }
 
@@ -308,8 +337,8 @@ window.MK_TPLSVG = (() => {
   const CACHE = {};
   function load(id, cb) {
     if (CACHE[id]) return cb(CACHE[id]);
-    /* 굳힌 팩(tplpack01.js)이 있으면 즉시 — 파싱은 빌드 때 이미 끝났다 */
-    const baked = window.MK_TPLPACK && window.MK_TPLPACK[id];
+    /* 굳힌 팩(svgpack01.js)이 있으면 즉시 — 파싱은 빌드 때 이미 끝났다 */
+    const baked = window.MK_SVGPACK && window.MK_SVGPACK[id];
     if (baked) { CACHE[id] = { ok: true, ...baked }; return cb(CACHE[id]); }
     const url = urlOf(id);
     if (!url || typeof fetch !== 'function') return cb({ ok: false, msg: '템플릿을 찾을 수 없어요' });
@@ -342,7 +371,10 @@ window.MK_TPLSVG = (() => {
       if (e.kind === 'text' && (!e.text || !(e.size > 0))) v.push(i + ':빈 텍스트');
       if (e.kind === 'image' && !e.src && !solid(e.fill)) v.push(i + ':칠도 그림도 없음');
       if (e.kind === 'image' && !(e.h > 0)) v.push(i + ':높이');
-      if (e.x < -10 || e.y < -10 || e.x > 105 || e.y > 105) v.push(i + ':화면 밖');
+      /* 화면 밖 판정은 「캔버스와 조금도 겹치지 않는가」로 잰다. 가장자리에서
+         잘려 나가는 장식(모서리 원 등)은 원본 디자인의 의도지 오류가 아니다. */
+      const ew = e.w || 0, eh = e.kind === 'text' ? (e.size || 0) * 1.4 : (e.h || 0);
+      if (e.x + ew < 0 || e.x > 100 || e.y + eh < 0 || e.y > 100) v.push(i + ':화면 밖');
     });
     /* 같은 입력 = 같은 결과 */
     const again = parse(svgText, opts);
