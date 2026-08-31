@@ -120,6 +120,21 @@ window.MK_TPLSVG = (() => {
     { id: 'business-card-01', name: 'Business Card', ko: '이름표·명함', category: 'business', width: 1050, height: 600, pack: 'pack06', file: '30_business_card.svg',
       contentType: 'activity', style: '모던', styleId: 'st-modern', styleEn: 'Premium', ratio: '7:4', difficulty: '쉬움', rec: false,
       desc: '작은 가로판에 이름과 연락을 담은 카드', uses: '학급 이름표·역할 카드·쿠폰·명함', tags: ['이름표', '카드', '학급운영'], hints: ['이름만 크게, 나머지는 작게', '복제해서 여러 장 찍어 쓰세요'] },
+    { id: 'movie-poster-01', name: 'Movie Poster', ko: '영화 포스터', category: 'movie', width: 1080, height: 1350, pack: 'pack08', file: '36_movie_poster.svg',
+      contentType: 'poster', style: '볼드', styleId: 'st-bold', styleEn: 'Cinematic', ratio: '4:5', difficulty: '쉬움', rec: false,
+      desc: '어두운 바탕에 제목만 세운 영화식 포스터', uses: '학급 영화제·영상 상영회·연극 홍보', tags: ['영화', '포스터', '어두움'], hints: ['제목 한 단어가 가장 세다', '아래 정보는 작게'] },
+    { id: 'realestate-social-01', name: 'Property Social Post', ko: '공간 소개 카드', category: 'realestate', width: 1080, height: 1080, pack: 'pack08', file: '37_realestate_social.svg',
+      contentType: 'sns', style: '모던', styleId: 'st-modern', styleEn: 'Clean', ratio: '1:1', difficulty: '쉬움', rec: false,
+      desc: '사진 자리와 정보 줄로 나눈 정사각 소개면', uses: '교실 소개·학교 공간 안내·시설 홍보', tags: ['소개', 'SNS', '공간'], hints: ['위 판을 눌러 「이미지 교체」로 실제 사진을', '정보는 세 줄까지'] },
+    { id: 'worksheet-01', name: 'Learning Sheet', ko: '학습 정리지', category: 'education', width: 1600, height: 1100, pack: 'pack08', file: '38_teacher_worksheet.svg',
+      contentType: 'worksheet', style: '에듀', styleId: 'st-edu', styleEn: 'Classroom', ratio: '3:2', difficulty: '쉬움', rec: true,
+      desc: '질문 칸 셋과 밑줄로 짜인 수업 마무리 학습지', uses: '배움 공책·수업 정리·되돌아보기 활동', tags: ['학습지', '수업', '정리'], hints: ['질문만 바꾸면 어느 과목에나 쓰인다', '밑줄은 복제해 늘리세요'] },
+    { id: 'grand-opening-01', name: 'Grand Opening', ko: '개장 안내', category: 'business', width: 1080, height: 1350, pack: 'pack08', file: '39_grand_opening.svg',
+      contentType: 'poster', style: '행사', styleId: 'st-event', styleEn: 'Pop', ratio: '4:5', difficulty: '쉬움', rec: false,
+      desc: '노랑 바탕에 색 원을 던진 팝 스타일 안내면', uses: '학급 가게·바자회 개장·부스 안내', tags: ['개장', '행사', '팝'], hints: ['인사말 두 줄이 주인공', '주황 글자는 색을 바꾸면 더 잘 읽힌다'] },
+    { id: 'quote-social-01', name: 'Quote Card', ko: '문구 카드', category: 'social', width: 1080, height: 1080, pack: 'pack08', file: '40_quote_social.svg',
+      contentType: 'sns', style: '소프트', styleId: 'st-soft', styleEn: 'Minimal', ratio: '1:1', difficulty: '쉬움', rec: true,
+      desc: '한 문장만 놓은 조용한 정사각 카드', uses: '오늘의 문장·급훈 게시·학급 SNS', tags: ['문구', 'SNS', '한문장'], hints: ['문장은 두 줄까지', '여백을 겁내지 말 것'] },
   ];
 
   const CATS = [['', '전체'], ['poster', '포스터'], ['event', '행사'], ['education', '교육'], ['promotion', '홍보'], ['social', '소셜']];
