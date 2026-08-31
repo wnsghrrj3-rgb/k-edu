@@ -112,6 +112,24 @@ window.MK_SCREENS.editor = (() => {
       <input class="mk-input" data-stockq="${tag}" value="${(ed().stockQ || '').replace(/"/g, '&quot;')}" placeholder="재료 검색 — 벚꽃·별밤·격자·노을·뱃지…" style="width:100%" aria-label="재료 검색">
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px" data-stockgrid="${tag}">${stockGridHTML(tag)}</div>
       <p class="ed-note" style="margin:6px 0 0">내장 생성 그래픽 ${MK_STOCK.LIB.length}종 — 저작권 걱정 0</p></div>` : '';
+  /* ---- 캐릭터 서랍 (MK_CHARS — 파일 자산) ----
+     MK_STOCK 이 절차생성 SVG 라면 이쪽은 실제 이미지 팩이다. 톤이 달라
+     같은 격자에 섞지 않고 서랍을 따로 둔다. */
+  const charGridHTML = () => {
+    if (!window.MK_CHARS) return '';
+    const hits = MK_CHARS.search(ed().charQ || '', ed().charCat || '').slice(0, 24);
+    return hits.map((c) => `<button data-char="${c.id}" title="${c.name} · ${c.cat}" style="padding:4px;border:1px solid var(--mk-border);border-radius:8px;cursor:pointer;background:var(--mk-surface,#fff);display:grid;place-items:center;aspect-ratio:1"><img src="${MK_CHARS.srcOf(c.id)}" alt="${c.name}" loading="lazy" style="max-width:100%;max-height:100%;display:block;object-fit:contain"></button>`).join('')
+      || '<span class="ed-note">검색 결과 없음 — 예) 강아지·말풍선·모자·발자국</span>';
+  };
+  const charBlock = () => window.MK_CHARS ? `<div class="ph-item" style="display:block;cursor:default">
+      <b style="display:block;margin-bottom:6px">🐶 캐릭터 (${MK_CHARS.PACKS[0].name})</b>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px">
+        ${[['', '전체']].concat(MK_CHARS.CATS.map((c) => [c, c])).map(([k, n]) =>
+          `<button data-charcat="${k}" class="pg-variant ${(ed().charCat || '') === k ? 'on' : ''}" style="padding:2px 8px;font-size:12px">${n}</button>`).join('')}
+      </div>
+      <input class="mk-input" data-charq value="${(ed().charQ || '').replace(/"/g, '&quot;')}" placeholder="캐릭터 검색 — 강아지·말풍선·모자·발자국…" style="width:100%" aria-label="캐릭터 검색">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px" data-chargrid>${charGridHTML()}</div>
+      <p class="ed-note" style="margin:6px 0 0">캐릭터 자산 ${MK_CHARS.LIB.length}종 — 넣은 뒤 크기·회전·좌우반전 모두 됩니다</p></div>` : '';
   const DETAIL_R41 = {
     tpl: () => `<button class="ph-item" data-pane="go-templates">템플릿 둘러보기 → (Templates 화면)</button>
       <button class="ph-item" data-pane="go-ai">스타일 바꾸기 → AI 편집에서 (색·테마 명령)</button>`,
@@ -122,7 +140,8 @@ window.MK_SCREENS.editor = (() => {
     el: () => `<button class="ph-item" data-pane="add-box">도형 넣기 (색 상자)</button>
       <button class="ph-item" data-pane="add-table">표 넣기</button>
       <button class="ph-item" data-pane="add-chart">차트 넣기 (막대)</button>
-      ${offBtn('아이콘·스티커', '재료 미입고')}`,
+      ${charBlock()}
+      ${offBtn('아이콘·스티커 (플랫 SVG)', '재료 미입고')}`,
     photo: () => `<button class="ph-item" data-pane="ins-image">내 사진 파일 넣기 (8MB)</button>
       ${window.MK_SEG ? `<button class="ph-item" data-pane="person-swap">🪄 인물 바꾸기 — 선택한 사진 속 사람을 오리고·지우고·바꿔요</button>` : ''}
       ${window.MK_TOON ? `<button class="ph-item" data-pane="toon">🎭 캐릭터 필터 — 선택한 사진을 만화·스케치·픽셀로 (6가지)</button>` : ''}
@@ -559,6 +578,27 @@ window.MK_SCREENS.editor = (() => {
         PG.render();
       });
       bindStock(root);
+      /* ---- 캐릭터 서랍 실배선 — 원본 비율 유지해서 삽입 ---- */
+      const bindChars = (scope) => scope.querySelectorAll('[data-char]').forEach((b) => b.onclick = () => {
+        const it = window.MK_CHARS.get(b.dataset.char); if (!it) return;
+        const src = window.MK_CHARS.srcOf(it.id);
+        const sc = doc.scenes[e.sceneIdx];
+        const sw = +sc.width || 1280, sh = +sc.height || 720;
+        const w = it.h > it.w ? 22 : 30;                          /* 세로 긴 캐릭터는 좁게 */
+        const h = Math.min(92, w * (it.h / it.w) * (sw / sh));
+        H.push('캐릭터 넣기 — ' + it.name);
+        sc.elements.push({ kind: 'image', x: 34, y: Math.max(2, 50 - h / 2), w, h, fit: 'contain', label: it.name, src });
+        e.selEl = sc.elements.length - 1;
+        PG.render();
+      });
+      bindChars(root);
+      const redrawChars = () => {
+        const grid = root.querySelector('[data-chargrid]');
+        if (grid) { grid.innerHTML = charGridHTML(); bindChars(grid); }
+      };
+      const cq = root.querySelector('[data-charq]');
+      if (cq) cq.oninput = () => { e.charQ = cq.value; redrawChars(); };
+      root.querySelectorAll('[data-charcat]').forEach((b) => b.onclick = () => { e.charCat = b.dataset.charcat; PG.render(); });
       root.querySelectorAll('[data-stockq]').forEach((inp) => inp.oninput = () => {
         e.stockQ = inp.value;                                    /* 그리드만 부분 갱신 — 입력 포커스 유지 */
         const grid = root.querySelector(`[data-stockgrid="${inp.dataset.stockq}"]`);
