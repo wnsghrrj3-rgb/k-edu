@@ -186,6 +186,13 @@ body.paper{background:#fff}
 <body>
 <div class="app" id="app"></div>
 <script src="/kedu_back.js" data-mode="context"></script>
+<!-- 쪽지 모드(?quiz=)에서만 원장에 붙는다. 파일 학습지는 이 스크립트를 부르지 않는다. -->
+<script>
+if (new URLSearchParams(location.search).get('quiz')){
+  ['/kedu_config.js','https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2','/kedu_quiz.js']
+    .forEach(function(src){ document.write('<script src="' + src + '"><\/script>'); });
+}
+</script>
 
 <script>
 /* ===================== 케이학습지 렌더러 v0.2 =====================
@@ -194,13 +201,14 @@ body.paper{background:#fff}
    seam: window.kedu.recordAnswer(questionId, isCorrect, timeSpentSec, conceptId) 있으면 호출.
 =================================================================== */
 const qs = new URLSearchParams(location.search);
+const QUIZ = qs.get('quiz') || null;              // 쪽지: 원장에서 조립된 세트 id
 const SET = qs.get('set') || 'g1_math_u1_L01_basic';
 const MODE = qs.get('mode') || 'screen';
 const SEED = Number(qs.get('seed')) || 1;
 const NUMWORD = ['영','하나','둘','셋','넷','다섯','여섯','일곱','여덟','아홉'];
 const ORD = ['','첫째','둘째','셋째','넷째','다섯째','여섯째','일곱째','여덟째','아홉째'];
-const STORE = 'kws:' + SET;
-const KINDNAME = k => ({lesson_basic:'차시 학습지', lesson_challenge:'도전 학습지', unit_review:'단원 종합', unit_extra:'심화 학습지', wrong_variant:'오답 변형'}[k] || '학습지');
+const STORE = 'kws:' + (QUIZ ? 'quiz:' + QUIZ : SET);
+const KINDNAME = k => ({lesson_basic:'차시 학습지', lesson_challenge:'도전 학습지', unit_review:'단원 종합', unit_extra:'심화 학습지', wrong_variant:'오답 변형', quiz:'쪽지'}[k] || '학습지');
 const FROM_T = !!(window.KEDU_BACK && window.KEDU_BACK.fromTeacher);
 const BACK = FROM_T ? {label:'선생님 도구', href:'/?role=teacher'} : {label:'케이에듀 홈', href:'/'};
 
@@ -385,8 +393,23 @@ function save(){ try { localStorage.setItem(STORE, JSON.stringify({idx, answers:
 function load(){ try { return JSON.parse(localStorage.getItem(STORE) || 'null'); } catch(e){ return null; } }
 
 const app = document.getElementById('app');
-fetch(`data/${SET}.json`).then(r => r.json()).then(d => { DATA = d; MODE === 'paper' ? renderPaper() : start(); })
-  .catch(() => { app.innerHTML = `<div class="cover"><h1>학습지를 찾을 수 없어요</h1><p>주소의 set 값을 확인해 주세요: ${esc(SET)}</p></div>`; });
+/* 정본은 둘 중 하나 — 파일(자기주도·미리보기) 또는 원장(교사가 조립한 쪽지).
+   어느 쪽이든 아래 렌더러가 받는 모양은 같다. */
+const source = QUIZ
+  ? new Promise(res => {
+      const wait = () => window.keduQuiz ? res(window.keduQuiz.load(QUIZ)) : setTimeout(wait, 150);
+      wait();
+    })
+  : fetch(`data/${SET}.json`).then(r => r.json());
+
+source.then(d => {
+  if (!d) throw new Error('no-set');
+  DATA = d; MODE === 'paper' ? renderPaper() : start();
+}).catch(() => {
+  app.innerHTML = QUIZ
+    ? `<div class="cover"><h1>쪽지를 열 수 없어요</h1><p>선생님이 아직 열지 않았거나, 이미 닫힌 쪽지예요.</p><div class="alt"><a href="/">케이에듀 홈</a></div></div>`
+    : `<div class="cover"><h1>학습지를 찾을 수 없어요</h1><p>주소의 set 값을 확인해 주세요: ${esc(SET)}</p></div>`;
+});
 
 function start(){
   Q = DATA.questions.map(prep); const saved = load();
@@ -398,7 +421,7 @@ function renderCover(resume){
   app.innerHTML = `<div class="cover"><div class="badge">${KINDNAME(DATA.kind)}</div>
    <h1>${esc(DATA.title.replace(/ — .*/, ''))}</h1><p>${esc(DATA.header || '1학년 수학')} · ${Q.length}문제</p>
    ${resume ? `<p>${done}번까지 풀었어요. 이어서 할까요?</p><div class="row"><button class="big" data-nav="resume">이어서 풀기</button><button class="big ghost" data-nav="restart">처음부터</button></div>` : `<button class="big" data-nav="resume">시작</button>`}
-   <div class="alt"><a href="play.html?set=${SET}&mode=paper">시험지(A4)로 풀기</a><span>·</span><a href="./">학습지 목록</a><span>·</span><a href="${BACK.href}">${esc(BACK.label)}</a></div></div>`;
+   <div class="alt">${QUIZ ? '' : `<a href="play.html?set=${SET}&mode=paper">시험지(A4)로 풀기</a><span>·</span><a href="./">학습지 목록</a><span>·</span>`}<a href="${BACK.href}">${esc(BACK.label)}</a></div></div>`;
 
 }
 
@@ -415,7 +438,14 @@ function renderQ(){
 }
 function grade(q, ok, detail){
   const t = Math.round((Date.now() - state.started) / 1000); state.answers[idx] = Object.assign({ok, t}, detail || {}); save();
-  if (window.kedu && window.kedu.recordAnswer && !detail?.pending) try { window.kedu.recordAnswer(`${SET}:q${q.seq}`, ok, t, q.concept); } catch(e){}
+  if (!detail?.pending){
+    if (QUIZ && window.keduQuiz){
+      try { window.keduQuiz.record({ questionId: q.qcode || `q${q.seq}`, qid: q.qid || null,
+                                     ok, sec: t, concept: q.concept, mis: detail?.mis || null }); } catch(e){}
+    } else if (window.kedu && window.kedu.recordAnswer){
+      try { window.kedu.recordAnswer(`${SET}:q${q.seq}`, ok, t, q.concept); } catch(e){}
+    }
+  }
   showFB(q, ok, detail);
 }
 function showFB(q, ok, detail){
@@ -490,13 +520,15 @@ function widgetEssay(q, el, r, prev){
 function renderFinish(){
   const all = Q.map((q, i) => ({q, a: state.answers[i] || {}})); const wrong = all.filter(x => !x.a.ok && !x.a.pending); const pend = all.filter(x => x.a.pending).length; const okN = all.filter(x => x.a.ok).length;
   const misCount = {}; wrong.forEach(x => { if (x.a.mis) misCount[x.a.mis] = (misCount[x.a.mis] || 0) + 1; }); const topMis = Object.entries(misCount).sort((a, b) => b[1] - a[1])[0];
-  const MISNAME = {M01:'하나씩 짚으며 빠짐없이 세기', M02:'수를 바르게 읽기', M03:'마지막에 센 수가 모두의 수예요', M05:'묻는 줄부터 찾기', M06:'수의 순서 익히기', M10:'크기 말고 개수로 세기'};
+  const MISFALLBACK = {M01:'하나씩 짚으며 빠짐없이 세기', M02:'수를 바르게 읽기', M03:'마지막에 센 수가 모두의 수예요', M05:'묻는 줄부터 찾기', M06:'수의 순서 익히기', M10:'크기 말고 개수로 세기'};
+  const MISNAME = new Proxy({}, { get: (_, k) => (QUIZ && window.keduQuiz && window.keduQuiz.misName(k)) || MISFALLBACK[k] });
   const label = wrong.length === 0 ? '참 잘했어요' : wrong.length <= 2 ? '잘했어요' : '끝까지 했어요';
   app.innerHTML = `<div class="finish"><div class="stamp">${label}<small>${new Date().getMonth()+1}월 ${new Date().getDate()}일</small></div><h2>${esc(DATA.title.replace(/ — .*/, ''))}</h2>
    <p>${Q.length}문제 중 ${okN}문제를 맞혔어요${pend ? ` · ${pend}문제는 선생님이 확인해요` : ''}</p>
    ${topMis ? `<div class="weak">이번에 연습할 것 하나 — <b>${MISNAME[topMis[0]] || '다시 차근차근 세기'}</b></div>` : ''}
    <div class="row">${wrong.length ? `<button class="big" data-nav="retry">다시 해볼까? (${wrong.length})</button>` : ''}<button class="big ghost" data-nav="again">처음부터</button></div>
-   <div class="alt"><a href="play.html?set=${SET}&mode=paper">시험지(A4)로 풀기</a><span>·</span><a href="./">학습지 목록</a><span>·</span><a href="${BACK.href}">${esc(BACK.label)}</a></div></div>`;
+   <div class="alt">${QUIZ ? '' : `<a href="play.html?set=${SET}&mode=paper">시험지(A4)로 풀기</a><span>·</span><a href="./">학습지 목록</a><span>·</span>`}<a href="${BACK.href}">${esc(BACK.label)}</a></div></div>`;
+  if (QUIZ && window.keduQuiz) try { window.keduQuiz.recordEnd(okN, Q.length, null); } catch(e){}
   TTS.speak(`${label}. ${Q.length}문제 중 ${okN}문제를 맞혔어요.` + (topMis ? ` 이번에 연습할 것은 ${MISNAME[topMis[0]] || ''}` : ''));
   window.__retryFrom = wrong;
 }
