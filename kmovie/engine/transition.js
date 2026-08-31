@@ -16,15 +16,24 @@
   'use strict';
   const CATS = [
     { id: 'base',  name: '기본' },
+    { id: 'dip',   name: '딥' },
+    { id: 'light', name: '빛·질감' },
     { id: 'move',  name: '움직임' },
     { id: 'wipe',  name: '닦기' },
-    { id: 'light', name: '빛·질감' },
   ];
   const TYPES = [
     { id: 'cut',       name: '컷',          cat: 'base' },
-    { id: 'dissolve',  name: '디졸브',      cat: 'base' },
-    { id: 'dipBlack',  name: '딥 투 블랙',  cat: 'base' },
-    { id: 'dipWhite',  name: '딥 투 화이트', cat: 'base' },
+    { id: 'dissolve',  name: '크로스 디졸브', cat: 'base' },
+    { id: 'film',      name: '필름 디졸브',  cat: 'base' },
+    { id: 'smooth',    name: '스무스 컷',    cat: 'base' },
+    { id: 'dipBlack',  name: '딥 투 블랙',  cat: 'dip' },
+    { id: 'dipWhite',  name: '딥 투 화이트', cat: 'dip' },
+    { id: 'dipNavy',   name: '딥 투 네이비', cat: 'dip' },
+    { id: 'warmDip',   name: '웜 딥',        cat: 'dip' },
+    { id: 'exposure',  name: '노출 디졸브',  cat: 'light' },
+    { id: 'luma',      name: '루마 와이프',  cat: 'light' },
+    { id: 'glow',      name: '글로우 디졸브', cat: 'light' },
+    { id: 'dirblur',   name: '방향 블러 디졸브', cat: 'move', dirs: ['ltr', 'rtl', 'ttb', 'btt'] },
     { id: 'push',      name: '밀기',        cat: 'move', dirs: ['ltr', 'rtl', 'ttb', 'btt'] },
     { id: 'cover',     name: '덮기',        cat: 'move', dirs: ['ltr', 'rtl', 'ttb', 'btt'] },
     { id: 'zoom',      name: '줌',          cat: 'move', dirs: ['in', 'out'] },
@@ -62,6 +71,62 @@
     switch (type) {
       case 'dissolve': {
         ctx.globalAlpha = 1 - inOutCubic(u); prevOr('#000'); break;
+      }
+      case 'film': {                                    // 필름 디졸브 — 감마 보정 알파: 겹치는 중간이 어두워지지 않는다
+        const e = inOutCubic(u), ga = Math.pow(1 - e, 0.6);
+        ctx.globalAlpha = ga; prevOr('#000'); break;
+      }
+      case 'smooth': {                                  // 스무스 컷 — 짧은 블렌드 + 미세 줌 (점프컷 완화)
+        const e = inOutCubic(u), z = 1 + 0.015 * (1 - e);
+        ctx.save(); ctx.translate(W / 2, H / 2); ctx.scale(z, z); ctx.translate(-W / 2, -H / 2);
+        ctx.globalAlpha = Math.pow(1 - e, 1.4); prevOr('#000'); ctx.restore(); break;
+      }
+      case 'dipNavy': case 'warmDip': {
+        const col = type === 'dipNavy' ? ((theme && theme.primary) || '#0B2545') : '#E8C79A';
+        if (u < 0.5) { ctx.globalAlpha = 1; prevOr(col); ctx.globalAlpha = outCubic(u * 2) * (type === 'warmDip' ? 0.92 : 1); ctx.fillStyle = col; ctx.fillRect(0, 0, W, H); }
+        else { ctx.globalAlpha = (1 - inCubic((u - 0.5) * 2)) * (type === 'warmDip' ? 0.92 : 1); ctx.fillStyle = col; ctx.fillRect(0, 0, W, H); }
+        if (type === 'warmDip') { const fl = Math.pow(Math.max(0, 1 - Math.abs(u - 0.5) / 0.5), 2); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = fl * 0.35; ctx.fillStyle = '#fff1d0'; ctx.fillRect(0, 0, W, H); ctx.globalCompositeOperation = 'source-over'; }
+        break;
+      }
+      case 'exposure': {                                // 노출 디졸브 — 밝아지며 겹침 (lighter 로 더한 뒤 가라앉힘)
+        const e = inOutCubic(u), fl = Math.sin(Math.PI * u);
+        ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = (1 - e) * (1 + fl * 0.5); prevOr('#000');
+        ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = fl * 0.22; ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H); break;
+      }
+      case 'luma': {                                    // 루마 와이프 — 이전 클립의 밝은 픽셀부터 다음 클립으로
+        const e = inOutCubic(u);
+        if (!prev) { ctx.globalAlpha = 1 - e; prevOr('#000'); break; }
+        const tmp = apply._tmp4 || (apply._tmp4 = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(W, H) : document.createElement('canvas'));
+        if (tmp.width !== W || tmp.height !== H) { tmp.width = W; tmp.height = H; }
+        const tc = tmp.getContext('2d'); tc.setTransform(1, 0, 0, 1, 0, 0); tc.globalAlpha = 1; tc.globalCompositeOperation = 'source-over'; tc.drawImage(prev, 0, 0);
+        const id = tc.getImageData(0, 0, W, H), d = id.data, th = e * 1.1, soft = 0.12;      // 밝기 > 문턱이면 새 클립(투명)
+        for (let i = 0; i < d.length; i += 4) { const l = (d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114) / 255; const a = 1 - Math.min(1, Math.max(0, (th - l) / soft + 1)); d[i + 3] = Math.round(255 * Math.max(0, 1 - a)); }
+        tc.putImageData(id, 0, 0);
+        ctx.globalAlpha = 1; ctx.drawImage(tmp, 0, 0); break;
+      }
+      case 'glow': {                                    // 글로우 디졸브 — 하이라이트 블룸 + 크로스
+        const e = inOutCubic(u), bl = Math.sin(Math.PI * u);
+        if ('filter' in ctx) {
+          const tmp = apply._tmp5 || (apply._tmp5 = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(W, H) : document.createElement('canvas'));
+          if (tmp.width !== W || tmp.height !== H) { tmp.width = W; tmp.height = H; }
+          const tc = tmp.getContext('2d'); tc.setTransform(1, 0, 0, 1, 0, 0); tc.globalAlpha = 1; tc.filter = 'none'; tc.clearRect(0, 0, W, H); tc.drawImage(ctx.canvas, 0, 0);
+          ctx.globalAlpha = 1 - e; prevOr('#000');
+          ctx.globalCompositeOperation = 'lighter'; ctx.filter = 'blur(' + (bl * 14 * W / 1920).toFixed(1) + 'px) brightness(1.15)'; ctx.globalAlpha = bl * 0.55; ctx.drawImage(tmp, 0, 0);
+          ctx.filter = 'none'; ctx.globalCompositeOperation = 'source-over';
+        } else { ctx.globalAlpha = 1 - e; prevOr('#000'); }
+        break;
+      }
+      case 'dirblur': {                                 // 방향 블러 디졸브 — 4방향 모션 블러 + 크로스
+        const horiz = dir === 'ltr' || dir === 'rtl', sgn = (dir === 'ltr' || dir === 'ttb') ? 1 : -1;
+        const e = inOutCubic(u), vel = Math.sin(Math.PI * u) * 0.6;
+        const tmp = apply._tmp6 || (apply._tmp6 = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(W, H) : document.createElement('canvas'));
+        if (tmp.width !== W || tmp.height !== H) { tmp.width = W; tmp.height = H; }
+        const tc = tmp.getContext('2d'); tc.setTransform(1, 0, 0, 1, 0, 0); tc.globalAlpha = 1; tc.clearRect(0, 0, W, H); tc.drawImage(ctx.canvas, 0, 0);
+        ctx.globalAlpha = 1; ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+        const off = e * 0.08 * (horiz ? W : H) * sgn;
+        if (prev) drawShift(ctx, prev, W, H, horiz ? off : 0, horiz ? 0 : off, horiz, vel, 1 - e); else { ctx.globalAlpha = 1 - e; ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); }
+        drawShift(ctx, tmp, W, H, horiz ? off - 0.08 * W * sgn : 0, horiz ? 0 : off - 0.08 * H * sgn, horiz, vel, e);
+        break;
       }
       case 'dipBlack': case 'dipWhite': {
         const col = type === 'dipBlack' ? '#000' : '#fff';

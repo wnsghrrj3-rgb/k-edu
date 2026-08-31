@@ -60,6 +60,80 @@
       },
     },
     {
+      id: 'calm', ko: '차분한 소개', desc: '피아노 코드 + 낮은 현 패드 + 부드러운 킥 (내레이션 밑)',
+      bpm: { def: 76, min: 66, max: 86 }, keys: ['F', 'Bb', 'C'],
+      prog: [[0, 'maj7'], [9, 'min7'], [5, 'maj7'], [7, 'sus']], intro: 2, outro: 4,
+      bar(o) {
+        const root = 41 + o.chord[0], v = chordMidi(root, o.chord[1]);
+        const s = o.section, last = s === 'outro' && o.lastBar;
+        [v[0] + 12, v[1] + 12, v[2] + 12, v[3] + 12].forEach((m, i) => o.push({ inst: 'pad', midi: m, t: o.t0, dur: o.spb * 4 * (last ? 2.4 : 1.06), vel: 0.13, pan: (i - 1.5) * 0.28 }));
+        // 피아노 코드: 1박·3박(뒤박은 살짝 늦게, 약하게)
+        const hits = last ? [0] : s === 'intro' ? [0] : [0, 2.02];
+        hits.forEach((b, i) => [v[1] + 12, v[2] + 12, v[3] + 12].forEach((m, j) => o.push({ inst: 'piano', midi: m, t: o.t0 + b * o.spb + j * 0.012, dur: last ? o.spb * 6 : o.spb * 1.9, vel: (i ? 0.22 : 0.3) * (s === 'intro' ? 0.8 : 1), pan: (j - 1) * 0.25 })));
+        if (s !== 'intro') { o.push({ inst: 'bass', midi: root - 12, t: o.t0, dur: o.spb * 3.6, vel: 0.28 }); if (!last) o.push({ inst: 'kick', midi: 0, t: o.t0, dur: 0.3, vel: 0.22 }); }
+        if ((s === 'A' || s === 'B') && !last) o.push({ inst: 'kick', midi: 0, t: o.t0 + o.spb * 2, dur: 0.3, vel: 0.16 });
+        if (s === 'B' && o.bar % 2 === 1 && !last) o.push({ inst: 'piano', midi: v[3] + 24, t: o.t0 + o.spb * 3, dur: o.spb * 1.4, vel: 0.2, pan: 0.3 });
+        if (last) o.push({ inst: 'bell', midi: v[0] + 36, t: o.t0 + o.spb, dur: 3.6, vel: 0.18 });
+      },
+    },
+    {
+      id: 'spark', ko: '설렘', desc: '피아노 8분음 + 벨 + 브러시 드럼 + 서브 베이스 (활동·행사 몽타주)',
+      bpm: { def: 112, min: 100, max: 124 }, keys: ['D', 'A', 'G'],
+      prog: [[0, 'maj'], [9, 'min'], [5, 'maj'], [7, 'maj']], intro: 2, outro: 4,
+      bar(o) {
+        const root = 50 + o.chord[0], v = chordMidi(root, o.chord[1]);
+        const s = o.section, last = s === 'outro' && o.lastBar;
+        [v[0] + 12, v[2] + 12].forEach((m, i) => o.push({ inst: 'pad', midi: m, t: o.t0, dur: o.spb * 4 * (last ? 2.2 : 1.04), vel: 0.12, pan: i ? 0.3 : -0.3 }));
+        const arp = [v[0] + 12, v[2] + 12, v[3] + 12, v[1] + 24, v[3] + 12, v[2] + 12];
+        const pat = s === 'intro' ? [0, -1, 1, -1, 2, -1, 3, -1] : s === 'B' ? [3, 4, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 2, 3, 1, 2];
+        for (let i = 0; i < 8; i++) { const k = pat[i]; if (k < 0) continue; if (last && i > 1) break; o.push({ inst: 'piano', midi: arp[k], t: o.t0 + i * o.spb / 2, dur: last ? o.spb * 5 : o.spb * 0.7, vel: (i % 2 ? 0.28 : 0.4) * (s === 'intro' ? 0.75 : 1), pan: (o.rand() - 0.5) * 0.4 }); }
+        if (s !== 'intro') { [0, 1.5, 2, 3].forEach((b, i) => { if (last && i) return; o.push({ inst: 'bass', midi: root - 12, t: o.t0 + b * o.spb, dur: o.spb * (i === 1 ? 0.45 : 0.9), vel: i ? 0.22 : 0.3 }); }); }
+        if ((s === 'A' || s === 'B') && !last) {
+          for (let i = 0; i < 8; i++) o.push({ inst: 'shaker', midi: 0, t: o.t0 + i * o.spb / 2, dur: 0.12, vel: i % 2 ? 0.08 : 0.15, pan: 0.25 });
+          [0, 2].forEach(b => o.push({ inst: 'kick', midi: 0, t: o.t0 + b * o.spb, dur: 0.3, vel: 0.26 }));
+          if (o.bar % 2 === 0) o.push({ inst: 'bell', midi: v[1] + 36, t: o.t0 + o.spb * 3.5, dur: 1.2, vel: 0.14, pan: -0.2 });
+        }
+        if (last) o.push({ inst: 'bell', midi: v[0] + 24, t: o.t0, dur: 3.2, vel: 0.22 });
+      },
+    },
+    {
+      id: 'warm', ko: '따뜻한', desc: '일렉 피아노 + 패드 + 핑거 베이스 (인터뷰·인물)',
+      bpm: { def: 84, min: 74, max: 94 }, keys: ['Eb', 'Bb', 'F'],
+      prog: [[0, 'maj7'], [2, 'min7'], [7, 'sus'], [0, 'maj7']], intro: 2, outro: 4,
+      bar(o) {
+        const root = 39 + o.chord[0], v = chordMidi(root, o.chord[1]);
+        const s = o.section, last = s === 'outro' && o.lastBar;
+        [v[0] + 12, v[1] + 12, v[2] + 12].forEach((m, i) => o.push({ inst: 'pad', midi: m, t: o.t0, dur: o.spb * 4 * (last ? 2.4 : 1.06), vel: 0.12, pan: (i - 1) * 0.3 }));
+        // EP 코드: 1박에 살짝 벌려 치고, 3.5박에 짧게
+        [v[1] + 12, v[2] + 12, v[3] + 12].forEach((m, j) => o.push({ inst: 'ep', midi: m, t: o.t0 + j * 0.02, dur: last ? o.spb * 6 : o.spb * 2.6, vel: 0.3 * (s === 'intro' ? 0.8 : 1), pan: (j - 1) * 0.22 }));
+        if (!last && s !== 'intro') [v[2] + 12, v[3] + 12].forEach((m, j) => o.push({ inst: 'ep', midi: m, t: o.t0 + o.spb * 3.5 + j * 0.02, dur: o.spb * 0.6, vel: 0.2, pan: 0.15 }));
+        if (s !== 'intro') { o.push({ inst: 'bass', midi: root - 12, t: o.t0, dur: o.spb * 1.4, vel: 0.3 }); if (!last) { o.push({ inst: 'bass', midi: root - 12 + 7, t: o.t0 + o.spb * 2.5, dur: o.spb * 0.6, vel: 0.2 }); o.push({ inst: 'bass', midi: root - 12, t: o.t0 + o.spb * 3, dur: o.spb * 0.9, vel: 0.24 }); } }
+        if ((s === 'A' || s === 'B') && !last) [1, 3].forEach(b => o.push({ inst: 'shaker', midi: 0, t: o.t0 + b * o.spb, dur: 0.16, vel: 0.1, pan: 0.2 }));
+        if (s === 'B' && !last) o.push({ inst: 'bell', midi: v[3] + 24, t: o.t0 + o.spb * 2, dur: 1.6, vel: 0.12, pan: -0.25 });
+      },
+    },
+    {
+      id: 'lively', ko: '활기', desc: '피아노 스타카토 + 클랩 + 킥 + 하이햇 (운동회·동아리)',
+      bpm: { def: 124, min: 112, max: 136 }, keys: ['G', 'C', 'D'],
+      prog: [[0, 'maj'], [5, 'maj'], [9, 'min'], [7, 'maj']], intro: 2, outro: 4,
+      bar(o) {
+        const root = 55 + o.chord[0], v = chordMidi(root, o.chord[1]);
+        const s = o.section, last = s === 'outro' && o.lastBar;
+        [v[0] + 12, v[1] + 12, v[2] + 12].forEach((m, i) => o.push({ inst: 'pad', midi: m, t: o.t0, dur: o.spb * 4 * (last ? 2 : 1.03), vel: 0.1, pan: (i - 1) * 0.3 }));
+        // 스타카토 코드: 1·2.5·3 박 (팝 리듬)
+        const hits = last ? [0] : s === 'intro' ? [0, 2] : [0, 1.5, 2.5, 3];
+        hits.forEach((b, i) => [v[1], v[2], v[3]].forEach((m, j) => o.push({ inst: 'piano', midi: m, t: o.t0 + b * o.spb + j * 0.008, dur: last ? o.spb * 5 : o.spb * 0.35, vel: (i === 0 ? 0.36 : 0.26) * (s === 'intro' ? 0.8 : 1), pan: (j - 1) * 0.2 })));
+        if (s !== 'intro') [0, 1, 2, 3].forEach((b, i) => { if (last && i) return; o.push({ inst: 'bass', midi: root - 24 + (i === 3 ? 7 : 0), t: o.t0 + b * o.spb, dur: o.spb * 0.8, vel: i % 2 ? 0.22 : 0.3 }); });
+        if ((s === 'A' || s === 'B') && !last) {
+          [0, 1, 2, 3].forEach(b => o.push({ inst: 'kick', midi: 0, t: o.t0 + b * o.spb, dur: 0.3, vel: 0.3 }));
+          [1, 3].forEach(b => o.push({ inst: 'clap', midi: 0, t: o.t0 + b * o.spb, dur: 0.25, vel: 0.24 }));
+          for (let i = 0; i < 8; i++) o.push({ inst: 'hat', midi: 0, t: o.t0 + i * o.spb / 2, dur: 0.08, vel: i % 2 ? 0.07 : 0.12, pan: 0.3 });
+          if (s === 'B' && o.bar % 2 === 0) o.push({ inst: 'piano', midi: v[3] + 12, t: o.t0 + o.spb * 3.5, dur: o.spb * 0.4, vel: 0.3, pan: 0.3 });
+        }
+        if (last) { o.push({ inst: 'clap', midi: 0, t: o.t0, dur: 0.3, vel: 0.28 }); o.push({ inst: 'bell', midi: v[0] + 24, t: o.t0, dur: 3, vel: 0.2 }); }
+      },
+    },
+    {
       id: 'ending', ko: '잔잔한 엔딩', desc: '피아노 단음 + 긴 패드 + 벨 한 번 (엔딩 카드용)',
       bpm: { def: 64, min: 56, max: 72 }, keys: ['A', 'E', 'C'],
       prog: [[9, 'min7'], [5, 'maj7'], [0, 'maj'], [7, 'sus']], intro: 2, outro: 4,
@@ -177,6 +251,24 @@
         x[i] = hp * Math.exp(-t / 0.028) * 0.5;
       }
       reverb(x, sr, 0.35);
+    } else if (inst === 'ep') {
+      // 일렉 피아노: FM 1쌍(비율 1, 낮은 인덱스) + 3배음 살짝, 부드러운 감쇠
+      for (let i = 0; i < n; i++) {
+        const t = i / sr, idx = 1.4 * Math.exp(-t / 0.5), e = Math.exp(-t / Math.max(0.3, dur * 0.7)) * (t < 0.004 ? t / 0.004 : 1) * (t > dur ? Math.exp(-(t - dur) / 0.15) : 1);
+        x[i] = (Math.sin(TAU * f * t + idx * Math.sin(TAU * f * t)) + 0.12 * Math.sin(TAU * f * 3 * t)) * e * 0.26;
+      }
+      reverb(x, sr, 0.7);
+    } else if (inst === 'clap') {
+      const R = rnd(9191); let prev = 0;
+      for (let i = 0; i < n; i++) {
+        const t = i / sr, w = R() - 0.5, hp = w - prev; prev = w;
+        const burst = (t < 0.012 ? 1 : t < 0.024 ? 0.7 : t < 0.036 ? 0.5 : 0) + Math.exp(-(t - 0.036) / 0.09) * (t >= 0.036 ? 1 : 0);
+        x[i] = hp * burst * 0.55;
+      }
+      reverb(x, sr, 0.5);
+    } else if (inst === 'hat') {
+      const R = rnd(3131); let prev = 0;
+      for (let i = 0; i < n; i++) { const t = i / sr, w = R() - 0.5, hp = w - prev; prev = w; x[i] = hp * Math.exp(-t / 0.018) * 0.45; }
     } else if (inst === 'kick') {
       for (let i = 0; i < n; i++) {
         const t = i / sr, ff = 45 + 55 * Math.exp(-t / 0.045);
@@ -225,7 +317,7 @@
       for (let i = lo; i < notes.length; i++) {
         const nt = notes[i]; if (nt.t >= t1) break;
         if (nt.t + nt.len <= t0) continue;
-        const buf = voiceBuf(nt.inst, nt.inst === 'shaker' || nt.inst === 'kick' ? 1 : hz(nt.midi), nt.dur, sr);
+        const buf = voiceBuf(nt.inst, (nt.inst === 'shaker' || nt.inst === 'kick' || nt.inst === 'clap' || nt.inst === 'hat') ? 1 : hz(nt.midi), nt.dur, sr);
         const base = Math.round(nt.t * sr) - s0;             // 출력 배열에서 이 음이 시작하는 자리
         const p = clamp(nt.pan || 0, -1, 1), gl = nt.vel * Math.sqrt((1 - p) / 2) * 1.414, gr = nt.vel * Math.sqrt((1 + p) / 2) * 1.414;
         let j = Math.max(0, -base), jEnd = Math.min(buf.length, n - base);

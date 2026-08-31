@@ -42,7 +42,7 @@ const pl = await page.evaluate(() => {
     lastPad: e.notes.filter(x => x.inst === 'pad').slice(-1)[0].dur,
   };
 });
-ok(pl.moods === 2, '무드 2종 (아침 교실·잔잔한 엔딩)');
+ok(pl.moods === 6, '무드 6종 (아침 교실·차분한 소개·설렘·따뜻한·활기·잔잔한 엔딩)');
 ok(pl.bars >= 23 && pl.bars <= 24 && Math.abs(pl.dur - 60) < 5, `60초 요청 → ${pl.bars}마디 · ${pl.dur.toFixed(1)}초`);
 ok(pl.same, '결정적 — 같은 스펙이면 악보가 같다');
 ok(pl.diff, 'seed 를 바꾸면 악보가 달라진다(다시 섞기)');
@@ -80,6 +80,14 @@ ok(rd.rms > 0.02 && rd.peak < 1.0, `소리가 실제로 난다 — RMS ${rd.rms.
 ok(rd.dLR > 0, '좌우가 다르다(팬 적용)');
 ok(rd.tmax < 1e-6, '끝을 넘어선 구간은 무음');
 ok(rd.peaksLen === Math.round(rd.durSec * 30) && rd.peaksMax > 0.3, `파형 근사 ${rd.peaksLen}프레임 (A2 카드용)`);
+
+/* 전 무드 — 악보가 나오고, 소리가 나고, 유한하고, 클리핑 없음 */
+const allM = await page.evaluate(() => KMV_GEN.MOODS.map(m => {
+  const sp = { mood: m.id, bpm: m.bpm.def, key: m.keys[0], seed: 1, durSec: 40 }, pl = KMV_GEN.plan(sp), src = KMV_GEN.source(sp), n = src.sr * 3, r = src.read(8, n);
+  let rms = 0, peak = 0, fin = true; for (let i = 0; i < n; i++) { const v = r.ch[0][i]; if (!isFinite(v)) fin = false; rms += v * v; peak = Math.max(peak, Math.abs(v)); }
+  return { id: m.id, notes: pl.notes.length, insts: [...new Set(pl.notes.map(x => x.inst))].length, rms: Math.sqrt(rms / n), peak, fin, bpm: pl.bpm, beats: pl.beats.length };
+}));
+for (const m of allM) ok(m.notes > 60 && m.insts >= 3 && m.fin && m.rms > 0.02 && m.peak < 1, `무드 ${m.id} — 음 ${m.notes}개·악기 ${m.insts}·RMS ${m.rms.toFixed(3)}·피크 ${m.peak.toFixed(2)}·${m.bpm}BPM`);
 
 /* ---------- 3. UI — 놓기·A2 카드·비트 ---------- */
 await page.evaluate(() => { document.getElementById('genLenSeg').querySelector('[data-k="60"]').click(); });
@@ -219,7 +227,7 @@ const ui = await page.evaluate(() => {
   document.getElementById('genMoodSeg').querySelector('[data-k="morning"]').click();
   return r;
 });
-ok(ui.moods === 2 && ui.keys === 3, '무드 2칸·조성 3칸');
+ok(ui.moods === 6 && ui.keys === 3, '무드 6칸·조성 3칸');
 ok(ui.min === 56 && ui.max === 72 && ui.val === 64, '무드를 바꾸면 템포 범위도 그 무드 것으로 (엔딩 56~72, 기본 64)');
 ok(ui.tries === 18, '효과음 들어보기 18칸');
 

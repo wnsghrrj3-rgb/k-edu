@@ -61,6 +61,7 @@
     push: 'whooshShort', cover: 'whooshShort', wipe: 'whooshShort',
     zoom: 'whooshLong', whip: 'whooshLong',
     sweep: 'lightSweep', lightleak: 'lightSweep', blur: 'breath',
+    film: null, smooth: null, dipNavy: 'impactSoft', warmDip: 'lightSweep', exposure: 'lightSweep', luma: 'breath', glow: 'sparkle', dirblur: 'whooshShort',
   };
   const PART_SFX = {                     // 부품 → 효과음
     opening: 'subBoom', section: 'impactSoft', knockout: 'impactLow', lower3rd: 'popSoft',

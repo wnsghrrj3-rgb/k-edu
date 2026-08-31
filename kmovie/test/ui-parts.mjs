@@ -1,4 +1,4 @@
-// 케이무비 10단계 — 부품 12종·전환 12종(분류)·자막 9종(분류) 검증.
+// 케이무비 10단계 — 부품 12종·전환 20종(분류 5, 설계 v1 신규 8)·자막 9종(분류) 검증.
 // 준비: bash make-fixtures.sh (fx/a.mp4, fx/b.mp4) · npm i
 // 실행: KMV_ELECTRON=$PWD/node_modules/electron/dist/electron xvfb-run -a node ui-parts.mjs
 import { launch } from './launch.mjs';
@@ -97,21 +97,21 @@ const trSel = await page.evaluate(() => ({
   groups: Array.from(document.querySelectorAll('#trType optgroup')).map(o => o.label),
   opts: document.querySelectorAll('#trType option').length,
 }));
-ok(trSel.types === 12 && trSel.opts === 12 && trSel.groups.join('/') === '기본/움직임/닦기/빛·질감', '전환 12종 · 분류 4그룹 (' + trSel.groups.join('/') + ')');
+ok(trSel.types === 20 && trSel.opts === 20 && trSel.groups.join('/') === '기본/딥/빛·질감/움직임/닦기', '전환 20종 · 분류 5그룹 (' + trSel.groups.join('/') + ')');
 const trPix = await page.evaluate(async () => {
   const P = KMV_PROJECT, c2 = P.data.V[1];
   const cv = new OffscreenCanvas(1920, 1080), c = cv.getContext('2d');
   const snap = async () => { await KMV_RENDER.drawExact(c, 1920, 1080, c2.at + 9); const d = c.getImageData(0, 0, 1920, 1080).data; let s = 0; for (let i = 0; i < d.length; i += 4096) s += d[i] + d[i + 1] + d[i + 2]; return s; };
   P.setTransition(c2.id, null); const base = await snap();
   const out = { base };
-  for (const [type, dir] of [['push', 'ltr'], ['cover', 'ttb'], ['zoom', 'in'], ['wipe', 'rtl'], ['blur', null]]) {
+  for (const [type, dir] of [['push', 'ltr'], ['cover', 'ttb'], ['zoom', 'in'], ['wipe', 'rtl'], ['blur', null], ['film', null], ['smooth', null], ['dipNavy', null], ['warmDip', null], ['exposure', null], ['luma', null], ['glow', null], ['dirblur', 'ltr']]) {
     P.setTransition(c2.id, { type, dur: 'normal', dir: dir || undefined });
     out[type] = await snap();
   }
   P.setTransition(c2.id, null);
   return out;
 });
-for (const t of ['push', 'cover', 'zoom', 'wipe', 'blur']) ok(Math.abs(trPix[t] - trPix.base) > 40, '전환 ' + t + ': 컷과 다른 합성 (Δ' + Math.abs(trPix[t] - trPix.base) + ')');
+for (const t of ['push', 'cover', 'zoom', 'wipe', 'blur', 'film', 'smooth', 'dipNavy', 'warmDip', 'exposure', 'luma', 'glow', 'dirblur']) ok(Math.abs(trPix[t] - trPix.base) > 40, '전환 ' + t + ': 컷과 다른 합성 (Δ' + Math.abs(trPix[t] - trPix.base) + ')');
 
 // ---------- 화면 전환 독립 패널 — 클립 선택에 따라 열림 ----------
 const trPanel = await page.evaluate(() => ({
