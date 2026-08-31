@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<!--
+K-edu 사회 6-1 · 1단원 평화 통일을 위한 노력, 민주화와 산업화 · 단원 마무리 · 11차시(l11)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [6사07-01]+[6사07-02] 통합 정리 · 교과서 p.48~51 · 지도서(대단원1 **14차시**
+  단원 마무리 — 생각 그물을 완성해요 / 교실 놀이를 함께해요, 지도서 p.110~111) 근거
+학습 목표: 「평화 통일을 위한 노력, 민주화와 산업화」에서 공부한 내용을 생각 그물과 교실 놀이로 정리할 수 있다.
+수업 기법 및 전략: 돌아가며 말하기 · 교실 놀이 하기
+⚠️ 엔진은 l01~l10에서 100% 승계. 1단원 색 #1D4ED8 그대로 — CSS 변수명·엔진 무수정.
+⚠️ META는 주제 표기 대신 **단원 수준 활동**으로 둔다 — 14차시는 단원 전체를 정리하는 자리다
+   (l10 「[생각을 펼쳐요]」 선례 승계).
+
+직접조작: 카드 뒤집기 놀이 판(46번째 신규 패턴 — 판이 도로 감추는 형 · 판에 남지 않은 것이 다음 걸음을 정하는 형)
+  ⭐ 앞의 마흔다섯 종에서 **판은 한 번 드러난 것을 도로 감춘 적이 없다.**
+     놓은 것은 놓인 채로 있었고, 어긋난 고르기는 판을 **그대로 두었을 뿐**(가드 「판 불변」)
+     이미 드러난 것을 지우지는 않았다. l10에서 진해진 획조차 옅어지지 않았다.
+     이번만 **드러난 것이 도로 덮인다** — 짝이 맞지 않으면 두 장이 다시 뒤집혀
+     판은 뒤집기 전과 글자 하나 다르지 않게 돌아간다.
+     근거는 교과서 규칙 원문 —
+     「문제와 정답이 맞지 않으면 다시 뒤집어 제자리에 놓고 카드의 내용을 기억합니다.」
+  ⭐ **그래서 판에는 진행이 남지 않는다. 앞으로 나아간 것은 학생의 기억뿐이다.**
+     이것은 문구가 아니라 **구조**다 — **「본 적 있음」을 담는 상태가 코드에 아예 없고**(`cdSeen` 부재),
+     앞면이 보이는 카드는 `cdFaceUp(st) = st.cdTaken | st.cdOpen` **한 줄**이 다 고른다.
+     어긋난 순간 `cdOpen`이 0이 되므로 **뒤집어 본 카드를 판이 기억해 주는 자리가 없다.**
+  ⭐ **판은 어긋난 두 장이 무엇이었는지 안내에 적지 않는다.** 판이 적어 두면 그것이 곧 기억을
+     대신해 주기 때문이다(l10 「알맞은 글씨를 흘리지 않는다」 규약 승계 — 다만 여기서는
+     **이미 보여 준 것까지 도로 감춘다**는 점이 다르다).
+  ⭐ **가져간 쌍은 도로 감춰지지 않는다** — `cdTaken`은 줄지 않는다(단조 증가).
+     되감기는 **아직 가져가지 않은 두 장**에만 일어난다.
+  ① **카드 두 장씩 뒤집기**(순서 자유 · 여섯 쌍 · 짝이면 가져가고, 어긋나면 두 장이 다시 뒤집힌다)
+  ② **놀이 규칙 3택** = 교과서 규칙 원문(정답 자리 0)
+  ③ 마무리 3택 = 지도서 학습 내용 정리 원문(정답 자리 2)
+  ⚠️ 카드 내용·자리·보기 차례·안내 전량 고정 리터럴 — 난수 0.
+  ⚠️ 가드 8종: ① 마무리 확정 후 전체 잠금 / ② 무효 카드·규칙·마무리 번호(`Number.isInteger`) /
+     ③ 이미 가져간 카드 재클릭 무시 — 판 불변 /
+     ④ 지금 열려 있는 카드 재클릭 무시 — 판 불변(같은 장으로 짝 만들기 0) /
+     ⑤ 두 장이 열린 뒤 판정이 끝나기 전 다른 카드 무시(`cdBusy` · 순서) /
+     ⑥ 여섯 쌍을 다 가져가기 전 규칙 3택 무시(순서) /
+     ⑦ 규칙을 맞히기 전 마무리 무시(순서) /
+     ⑧ 놀이가 끝난 뒤(규칙 확정 뒤) 카드 클릭 무시 — 판 불변.
+     재시도 허용(감점 없음), 조작에 점수 0. 발문은 `.cd-q`로 떼어 전 단계 상시 노출.
+
+지도서 근거(14차시 p.110~111):
+  [동기 유발] 단원에서 공부한 내용은 무엇인가요? →
+    분단에 따른 문제점과 분단의 아픔이 담긴 장소를 배웠습니다. /
+    평화 통일을 위한 다양한 노력에 관해 배우고 우리가 할 수 있는 일을 실천했습니다. /
+    4·19 혁명, 5·18 민주화 운동과 민주화를 위한 사람들의 노력을 배웠습니다. /
+    6월 민주 항쟁과 민주화로 달라진 모습을 배웠습니다. /
+    우리나라 산업의 발달 과정과 산업화로 달라진 사람들의 생활 모습을 배웠습니다.
+  [학습 문제] 단원에서 공부한 내용을 다양한 방법으로 정리해 봅시다.
+  [전개 ①] ‘생각 그물을 완성해요’ 해결하기 — 공부한 내용 떠올리며 빈칸 채우기.
+    [지도 방법] 생각 그물의 빈칸을 채우면서 공부한 내용을 정리하도록 지도한다. /
+      학생들이 공부한 내용을 떠올리며 스스로 할 수 있도록 지도한다.
+  [전개 ②] ‘교실 놀이를 함께해요’ 활동하기 — 놀이 방법 숙지하여 교실 놀이 하기.
+    [놀이 활동 목표] 카드 뒤집기 놀이를 하며 「평화 통일을 위한 노력, 민주화와 산업화」에서
+      공부한 내용을 정리할 수 있다. / [놀이 준비물] 카드(1인 6~8장)
+    [교과서 이렇게 해 봐요] ① 4명씩 모둠을 만들고, 활동 자료의 카드를 모두 뜯습니다.
+      ② 친구들과 내용이 겹치지 않도록 교과서 범위 중 하나를 선택한 다음, 카드를 두 장씩 짝지어
+         문제와 답을 씁니다. 한 명이 세 쌍 또는 네 쌍의 카드를 만듭니다.
+      ③ 모든 카드를 뒤집어 놓고, 가위바위보로 순서를 정한 후 시계 방향으로 한 명씩
+         두 장의 카드를 뒤집습니다.
+      ④ 카드 두 장을 뒤집어서 문제와 정답이 맞으면 카드를 가져가고, 문제와 정답이 맞지 않으면
+         다시 뒤집어 제자리에 놓고 카드의 내용을 기억합니다.
+      ⑤ 모든 카드가 없어질 때까지 진행하고 각각 가지고 있는 카드 수로 순위를 정합니다.
+    [놀이를 할 때 유의점] 놀이를 하며 단원에서 공부한 내용을 정리할 수 있도록 지도한다. /
+      짝 활동이나 모둠별 활동으로 활용할 수 있다.
+  [교과서 카드 예시 3쌍 원문] 「1987년 6월 민주 항쟁의 결과로 시행된 선거 제도」 ↔ 「대통령 직선제」 /
+    「1970년대에 발달한 철강, 조선, 석유 화학 등의 산업」 ↔ 「중화학 공업」 /
+    「나라가 분단되지 않았으면 치르지 않아도 될 비용」 ↔ 「분단 비용」
+  [정리] 학습 내용 정리 = 평화 통일을 위한 노력에 관해 알아봤습니다. /
+    민주화와 산업화로 달라진 생활 모습에 관해 살펴봤습니다.
+  [정리] 차시 예고 = 다음 시간에는 「민주주의와 시민 참여」 도입 활동을 하겠습니다.
+⚠️ 정직 원칙 네 곳:
+  ㉠ **화면이 교실 놀이를 대신하지 않는다.** 진짜 활동은 **4명씩 모둠을 만들어 활동 자료의 카드를
+     뜯고, 손으로 문제와 답을 적어** 함께 노는 일이다. 조작이 다루는 것은
+     **뒤집어 본 것을 판이 기억해 주지 않는다**는 구조까지이고, 완료 카드에 그렇게 적었다.
+  ㉡ **생각 그물을 통째로 대신하지 않는다** — 두 칸만 비워 두고 [답 보기]로 확인한다
+     (5-1 u2 l10 규약 승계). 나머지 칸은 교과서 생각 그물 원문 그대로 둔다.
+  ㉢ **학생 이름·친구 이름 0** — 교과서 놀이 그림의 이름 자리도 「어느 친구」로만 쓴다.
+  ㉣ **승패를 성적처럼 다루지 않는다** — 교과서 규칙의 「가지고 있는 카드 수로 순위를 정합니다」는
+     놀이 방법을 알려 주는 자리에서 **원문으로만** 말하고, 판에는 순위·등수를 두지 않는다.
+     조작에 점수 0.
+⚠️ 설계 원칙:
+  · **대단원2 이후 선행 침범 0** — 차시 예고에서 단원 이름(민주주의와 시민 참여)만 말한다.
+    모의 선거·선거 공약·선거 관리·국회·행정부·법원·미디어 전부 0.
+    ⚠️ 「대통령 직선제」·「3·15 부정 선거」는 **교과서 카드 예시·생각 그물 원문**이라 유지한다
+    (1단원에서 배운 사건의 결과·원인으로만 쓰고, 2단원의 선거 제도 학습으로 넘어가지 않는다).
+  · **단원 평가 재현 0** — 교과서 p.52~53 / 지도서 p.112~115의 20문항은 교사용이다(l10 규약 승계).
+  · **[재미있게 확인해요] 가로세로 퍼즐 재현 0**(11~12차시 몫 · l09~l10 규약 승계).
+  · **새 사실 0** — 이미 배운 것만 되짚는다. 단원 전체 회수는 정당하다(생각 그물이 그 자리다).
+  · **인물 이름 0** · **학생 이름 0.**
+  · 교사용 참고 자료 0 — 탐구 질문 기반 프로젝트, GRASPS, 평가 계획·평가 방법, 활동 자료 번호.
+  · 정서 — 이 단원의 무거운 사건을 다시 다루는 자리다. 무기·진압 낱말 0,
+    사람이 다치는 묘사 0(쓰러·다치·사망·희생 0), 겁주는 어휘 0.
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g6_social_u1_l11_v1">
+<title>1단원 마무리 — 생각 그물·교실 놀이 · 사회 6-1</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#1D4ED8; --green-d:#1E3A8A; --cyan:#3B82F6;
+  --bg:#EFF6FF; --bub:#DBEAFE; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#B45309; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-shrink:0}
+.ka-lb{background:#F1F5F9;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;
+  font-weight:700;color:var(--muted);font-size:clamp(11px,1.9vw,13px);display:flex;align-items:center;gap:6px}
+.ka-lb svg{width:14px;height:14px}
+.ka-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.ka-bar>div{height:100%;background:var(--green);border-radius:99px;transition:width .35s ease;width:5%}
+.ka-pg{font-size:clamp(11px,1.9vw,13px);color:var(--muted);font-weight:700;min-width:46px;text-align:right}
+.ka-sc{display:flex;align-items:center;gap:3px;background:var(--amber-bg);border-radius:99px;padding:5px 11px}
+.ka-sc svg{width:15px;height:15px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;color:var(--amber);font-size:clamp(14px,2.4vw,17px)}
+.ka-sc-u{font-size:11px;color:var(--amber);font-weight:700}
+
+/* 메인 */
+.ka-m{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;padding:4px 2px}
+.ka-tags{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ka-bg{display:inline-flex;align-items:center;gap:5px;background:var(--bub);color:var(--green-d);
+  border-radius:99px;padding:5px 12px;font-size:clamp(11px,1.9vw,13px);font-weight:700}
+.ka-bg svg{width:13px;height:13px}
+.ka-bg.s2{background:#E0F2FE;color:#075985}
+.ka-bg.s3{background:#DCFCE7;color:#166534}
+.ka-bg.s4{background:#FEF3C7;color:#92400E}
+.ka-bg.s5{background:#F3E8FF;color:#6B21A8}
+.ka-meta{font-size:clamp(10px,1.7vw,12px);color:#94A3B8;font-weight:600}
+.ka-t{font-size:clamp(19px,3.4vw,27px);font-weight:700;line-height:1.4;margin-bottom:10px}
+.ka-bub{background:var(--bub);border-radius:14px;padding:13px 18px;font-size:clamp(14px,2.4vw,18px);
+  line-height:1.7;margin-bottom:12px}
+.ka-emph{color:var(--green-d);font-weight:700}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.scene.wide{width:clamp(240px,44vw,420px)}
+.scene.wide svg{height:clamp(120px,20vw,200px)}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(15px,2.6vw,20px);font-weight:700;line-height:1.6;margin-bottom:12px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+.opt{background:#fff;border:2px solid var(--line);border-radius:13px;padding:13px 15px;cursor:pointer;
+  font-family:inherit;font-size:clamp(13px,2.2vw,16.5px);font-weight:500;text-align:left;line-height:1.5;transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:#16A34A;background:#DCFCE7;font-weight:700}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:11px;border-radius:12px;padding:12px 16px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;animation:fadeUp .3s ease both}
+.fb.ok{background:#DCFCE7;color:#166534;font-weight:700}
+.hint{margin-top:9px;background:var(--amber-bg);border-radius:11px;padding:10px 14px;
+  font-size:clamp(12.5px,2.1vw,15px);color:var(--amber);line-height:1.55}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:9px;width:100%;max-width:660px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFC;border-radius:12px;padding:11px 15px;
+  font-size:clamp(13px,2.2vw,16.5px);line-height:1.6}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'\2713';color:#fff;font-weight:800;font-size:14px}
+
+/* 직접조작 — 카드 뒤집기 놀이 판(판이 도로 감추는 형) */
+.dw-wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dw-body{display:grid;grid-template-columns:1.05fr 1fr;gap:10px;align-items:start}
+.dw-canvas{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.dw-canvas svg{width:100%;height:auto;display:block}
+.dw-canvas .cvcap{padding:5px 6px;text-align:center;font-size:clamp(9.5px,1.6vw,11.5px);
+  color:var(--muted);font-weight:700;background:#F8FAFC}
+.dw-right{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dw-step{font-size:clamp(10.5px,1.75vw,13px);font-weight:800;color:var(--green)}
+.dw-msg{background:#F8FAFC;border:2px solid var(--line);border-left:4px solid var(--green);border-radius:10px;
+  padding:8px 12px;font-size:clamp(11.4px,1.93vw,13.8px);line-height:1.55;color:#334155;animation:fadeUp .3s ease both}
+.dw-msg.warn{border-left-color:var(--red)}
+.dw-msg b{color:var(--green)}
+.dw-card{background:#fff;border:2px solid var(--amber);border-radius:12px;padding:10px 12px;
+  font-size:clamp(12px,2.05vw,14.5px);line-height:1.55;animation:pop .35s ease both}
+.dw-card .pt{font-weight:800;color:var(--amber);margin-bottom:4px;font-size:clamp(12.5px,2.15vw,15px)}
+.cd-q{font-size:clamp(11.6px,1.97vw,14px);font-weight:800;color:var(--green);
+  background:var(--bub);border-radius:9px;padding:7px 11px;line-height:1.45}
+.cd-list{display:flex;flex-direction:column;gap:5px}
+.cd-list button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;padding:7px 10px;
+  cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.cd-list button:hover{background:var(--bub)}
+.cd-list button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.paper{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:12px;padding:12px 16px;
+  font-size:clamp(12.5px,2.1vw,15px);line-height:1.65;color:#3F3A2C;max-width:660px;
+  animation:fadeUp .4s ease both}
+.paper .ph{font-weight:800;color:#8A6D3B;margin-bottom:6px;font-size:clamp(13px,2.2vw,16px)}
+.tipbox{background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(12.5px,2.1vw,15px);
+  line-height:1.6;color:#075985;max-width:660px}
+@media(max-width:620px){ .dw-body{grid-template-columns:1fr} }
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(29,78,216,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style>
+<script src="/kedu_gate.js"></script>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#B45309"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식 =====
+   ⚠️ 정직 원칙: 모든 그림은 활동 방법과 생각 그물의 짜임을 나타낸 도식이며 실제 활동지가 아니다.
+   ⚠️ 정서 원칙 — 무기·진압 그림 0, 사람이 다치는 그림 0. */
+const SVG = {
+  // 1 동기 유발 — 단원에서 공부한 다섯 갈래(지도서 14차시 원문)
+  recall5:`<svg viewBox="0 0 320 176"><rect width="320" height="176" fill="#F8FAFC"/>
+    <text x="160" y="20" font-size="11" fill="#1E3A8A" text-anchor="middle" font-weight="800">이 단원에서 무엇을 공부했나요?</text>
+    <rect x="12" y="30" width="146" height="34" rx="9" fill="#fff" stroke="#1D4ED8" stroke-width="1.6"/>
+    <text x="85" y="45" font-size="7.8" fill="#1E3A8A" text-anchor="middle" font-weight="800">분단에 따른 문제점과</text>
+    <text x="85" y="56" font-size="7.8" fill="#1E3A8A" text-anchor="middle" font-weight="800">아픔이 담긴 장소</text>
+    <rect x="162" y="30" width="146" height="34" rx="9" fill="#fff" stroke="#1D4ED8" stroke-width="1.6"/>
+    <text x="235" y="45" font-size="7.8" fill="#1E3A8A" text-anchor="middle" font-weight="800">평화 통일을 위한 노력과</text>
+    <text x="235" y="56" font-size="7.8" fill="#1E3A8A" text-anchor="middle" font-weight="800">우리가 실천한 일</text>
+    <rect x="12" y="70" width="146" height="34" rx="9" fill="#DBEAFE" stroke="#1D4ED8" stroke-width="1.6"/>
+    <text x="85" y="85" font-size="7.8" fill="#1E3A8A" text-anchor="middle" font-weight="800">4·19 혁명, 5·18 민주화 운동과</text>
+    <text x="85" y="96" font-size="7.8" fill="#1E3A8A" text-anchor="middle" font-weight="800">사람들의 노력</text>
+    <rect x="162" y="70" width="146" height="34" rx="9" fill="#DBEAFE" stroke="#1D4ED8" stroke-width="1.6"/>
+    <text x="235" y="85" font-size="7.8" fill="#1E3A8A" text-anchor="middle" font-weight="800">6월 민주 항쟁과</text>
+    <text x="235" y="96" font-size="7.8" fill="#1E3A8A" text-anchor="middle" font-weight="800">민주화로 달라진 모습</text>
+    <rect x="12" y="110" width="296" height="26" rx="8" fill="#DBEAFE" stroke="#1D4ED8" stroke-width="1.6"/>
+    <text x="160" y="127" font-size="8.4" fill="#1E3A8A" text-anchor="middle" font-weight="800">산업의 발달 과정과 산업화로 달라진 생활 모습</text>
+    <rect x="12" y="142" width="296" height="24" rx="8" fill="#FEF3C7" stroke="#B45309" stroke-width="1.6"/>
+    <text x="160" y="158" font-size="8.6" fill="#92400E" text-anchor="middle" font-weight="800">오늘은 공부한 내용을 다양한 방법으로 정리해요</text>
+    </svg>`,
+  // 2 생각 그물 ① — 평화 통일을 위한 노력(교과서 p.48 짜임)
+  web1:`<svg viewBox="0 0 320 176"><rect width="320" height="176" fill="#F8FAFC"/>
+    <rect x="110" y="72" width="100" height="32" rx="10" fill="#1D4ED8"/>
+    <text x="160" y="86" font-size="8.6" fill="#fff" text-anchor="middle" font-weight="800">평화 통일을</text>
+    <text x="160" y="98" font-size="8.6" fill="#fff" text-anchor="middle" font-weight="800">위한 노력</text>
+    <path d="M110 80 L74 44" stroke="#1D4ED8" stroke-width="1.6" fill="none"/>
+    <path d="M210 80 L246 44" stroke="#1D4ED8" stroke-width="1.6" fill="none"/>
+    <path d="M160 104 L160 128" stroke="#1D4ED8" stroke-width="1.6" fill="none"/>
+    <rect x="8" y="14" width="132" height="32" rx="9" fill="#fff" stroke="#1D4ED8" stroke-width="1.4"/>
+    <text x="74" y="28" font-size="7.4" fill="#1E3A8A" text-anchor="middle" font-weight="800">분단의 아픔이 담긴 장소</text>
+    <text x="74" y="40" font-size="7" fill="#64748B" text-anchor="middle">휴전선 · 아바이 마을 등</text>
+    <rect x="180" y="14" width="132" height="32" rx="9" fill="#fff" stroke="#1D4ED8" stroke-width="1.4"/>
+    <text x="246" y="28" font-size="7.4" fill="#1E3A8A" text-anchor="middle" font-weight="800">국가의 노력</text>
+    <text x="246" y="40" font-size="7" fill="#64748B" text-anchor="middle">정치적 · 경제적 · 문화적 노력</text>
+    <rect x="34" y="128" width="252" height="36" rx="9" fill="#fff" stroke="#1D4ED8" stroke-width="1.4"/>
+    <text x="160" y="142" font-size="7.4" fill="#1E3A8A" text-anchor="middle" font-weight="800">분단에 따른 문제점</text>
+    <text x="160" y="155" font-size="7" fill="#64748B" text-anchor="middle">실향민과 이산가족 · 언어와 생활 방식의 차이 · 한반도 긴장감</text>
+    </svg>`,
+  // 3 생각 그물 ② — 민주화와 산업화로 달라진 생활 모습(교과서 p.49 짜임)
+  web2:`<svg viewBox="0 0 320 176"><rect width="320" height="176" fill="#F8FAFC"/>
+    <rect x="108" y="72" width="104" height="32" rx="10" fill="#1D4ED8"/>
+    <text x="160" y="86" font-size="8.4" fill="#fff" text-anchor="middle" font-weight="800">민주화와 산업화로</text>
+    <text x="160" y="98" font-size="8.4" fill="#fff" text-anchor="middle" font-weight="800">달라진 생활 모습</text>
+    <path d="M108 80 L72 44" stroke="#1D4ED8" stroke-width="1.6" fill="none"/>
+    <path d="M212 80 L248 44" stroke="#1D4ED8" stroke-width="1.6" fill="none"/>
+    <path d="M160 104 L160 126" stroke="#1D4ED8" stroke-width="1.6" fill="none"/>
+    <rect x="6" y="14" width="132" height="32" rx="9" fill="#fff" stroke="#1D4ED8" stroke-width="1.4"/>
+    <text x="72" y="28" font-size="7.4" fill="#1E3A8A" text-anchor="middle" font-weight="800">민주주의가 발전한 길</text>
+    <text x="72" y="40" font-size="7" fill="#64748B" text-anchor="middle">4·19 혁명 · 5·18 민주화 운동 · 6월 민주 항쟁</text>
+    <rect x="182" y="14" width="132" height="32" rx="9" fill="#fff" stroke="#1D4ED8" stroke-width="1.4"/>
+    <text x="248" y="28" font-size="7.4" fill="#1E3A8A" text-anchor="middle" font-weight="800">산업의 발달 과정</text>
+    <text x="248" y="40" font-size="7" fill="#64748B" text-anchor="middle">경공업에서 중화학 공업으로</text>
+    <rect x="30" y="126" width="260" height="38" rx="9" fill="#fff" stroke="#1D4ED8" stroke-width="1.4"/>
+    <text x="160" y="140" font-size="7.4" fill="#1E3A8A" text-anchor="middle" font-weight="800">산업화의 성과와 한계</text>
+    <text x="160" y="153" font-size="7" fill="#64748B" text-anchor="middle">아파트 건설 · 고속 국도 확대 · 가전제품 보급</text>
+    <text x="160" y="162" font-size="7" fill="#64748B" text-anchor="middle">일자리와 주택 부족 · 도시와 농촌 간 격차</text>
+    </svg>`,
+  // 4 카드 만들기(교과서 이렇게 해 봐요 ①②)
+  cards:`<svg viewBox="0 0 320 176"><rect width="320" height="176" fill="#F8FAFC"/>
+    <text x="160" y="20" font-size="11" fill="#1E3A8A" text-anchor="middle" font-weight="800">먼저 카드를 만들어요</text>
+    <rect x="12" y="30" width="296" height="30" rx="9" fill="#fff" stroke="#1D4ED8" stroke-width="1.5"/>
+    <circle cx="32" cy="45" r="9" fill="#DBEAFE" stroke="#1D4ED8" stroke-width="1.2"/>
+    <text x="32" y="48" font-size="8.6" fill="#1E3A8A" text-anchor="middle" font-weight="800">1</text>
+    <text x="176" y="48" font-size="8" fill="#1E3A8A" text-anchor="middle" font-weight="800">4명씩 모둠을 만들고, 활동 자료의 카드를 모두 뜯어요</text>
+    <rect x="12" y="66" width="296" height="30" rx="9" fill="#fff" stroke="#1D4ED8" stroke-width="1.5"/>
+    <circle cx="32" cy="81" r="9" fill="#DBEAFE" stroke="#1D4ED8" stroke-width="1.2"/>
+    <text x="32" y="84" font-size="8.6" fill="#1E3A8A" text-anchor="middle" font-weight="800">2</text>
+    <text x="176" y="84" font-size="8" fill="#1E3A8A" text-anchor="middle" font-weight="800">내용이 겹치지 않게 교과서 범위를 하나 골라요</text>
+    <rect x="12" y="102" width="296" height="30" rx="9" fill="#FEF3C7" stroke="#B45309" stroke-width="1.6"/>
+    <circle cx="32" cy="117" r="9" fill="#FFF8E1" stroke="#B45309" stroke-width="1.2"/>
+    <text x="32" y="120" font-size="8.6" fill="#92400E" text-anchor="middle" font-weight="800">3</text>
+    <text x="176" y="120" font-size="8" fill="#92400E" text-anchor="middle" font-weight="800">카드를 두 장씩 짝지어 문제와 답을 써요</text>
+    <text x="160" y="150" font-size="8.4" fill="#64748B" text-anchor="middle" font-weight="800">한 명이 세 쌍 또는 네 쌍의 카드를 만들어요</text>
+    <text x="160" y="165" font-size="8" fill="#94A3B8" text-anchor="middle">준비물은 카드(한 사람에 여섯에서 여덟 장)예요</text>
+    </svg>`,
+  // 5 놀이 방법(교과서 규칙 원문)
+  rule:`<svg viewBox="0 0 320 176"><rect width="320" height="176" fill="#F8FAFC"/>
+    <text x="160" y="20" font-size="11" fill="#1E3A8A" text-anchor="middle" font-weight="800">카드 뒤집기 놀이 방법</text>
+    <rect x="12" y="30" width="296" height="28" rx="9" fill="#fff" stroke="#1D4ED8" stroke-width="1.5"/>
+    <text x="160" y="48" font-size="8.2" fill="#1E3A8A" text-anchor="middle" font-weight="800">모든 카드를 뒤집어 놓고, 가위바위보로 순서를 정해요</text>
+    <rect x="12" y="64" width="296" height="28" rx="9" fill="#fff" stroke="#1D4ED8" stroke-width="1.5"/>
+    <text x="160" y="82" font-size="8.2" fill="#1E3A8A" text-anchor="middle" font-weight="800">시계 방향으로 한 명씩 두 장의 카드를 뒤집어요</text>
+    <rect x="12" y="98" width="144" height="30" rx="9" fill="#DCFCE7" stroke="#16A34A" stroke-width="1.6"/>
+    <text x="84" y="112" font-size="7.8" fill="#166534" text-anchor="middle" font-weight="800">문제와 정답이 맞으면</text>
+    <text x="84" y="123" font-size="7.8" fill="#166534" text-anchor="middle" font-weight="800">카드를 가져가요</text>
+    <rect x="164" y="98" width="144" height="30" rx="9" fill="#FEF3C7" stroke="#B45309" stroke-width="1.6"/>
+    <text x="236" y="112" font-size="7.8" fill="#92400E" text-anchor="middle" font-weight="800">맞지 않으면 다시 뒤집어</text>
+    <text x="236" y="123" font-size="7.8" fill="#92400E" text-anchor="middle" font-weight="800">제자리에 놓고 기억해요</text>
+    <rect x="12" y="134" width="296" height="30" rx="9" fill="#DBEAFE" stroke="#1D4ED8" stroke-width="1.5"/>
+    <text x="160" y="148" font-size="8" fill="#1E3A8A" text-anchor="middle" font-weight="800">모든 카드가 없어질 때까지 진행하고,</text>
+    <text x="160" y="159" font-size="8" fill="#1E3A8A" text-anchor="middle" font-weight="800">각각 가지고 있는 카드 수로 순위를 정해요</text>
+    </svg>`,
+  // 6 다시 뒤집기 — 판이 도로 감춘다
+  flip:`<svg viewBox="0 0 320 176"><rect width="320" height="176" fill="#F8FAFC"/>
+    <text x="160" y="20" font-size="11" fill="#1E3A8A" text-anchor="middle" font-weight="800">맞지 않으면 도로 뒤집혀요</text>
+    <rect x="14" y="34" width="88" height="66" rx="9" fill="#fff" stroke="#B45309" stroke-width="1.6"/>
+    <text x="58" y="52" font-size="7.6" fill="#92400E" text-anchor="middle" font-weight="800">두 장을 뒤집어</text>
+    <text x="58" y="64" font-size="7.6" fill="#92400E" text-anchor="middle" font-weight="800">앞면을 봐요</text>
+    <rect x="26" y="72" width="28" height="20" rx="4" fill="#FFF8E1" stroke="#B45309" stroke-width="1.2"/>
+    <rect x="62" y="72" width="28" height="20" rx="4" fill="#FFF8E1" stroke="#B45309" stroke-width="1.2"/>
+    <path d="M110 66 L132 66" stroke="#94A3B8" stroke-width="1.8"/>
+    <path d="M128 62 L138 66 L128 70 Z" fill="#94A3B8"/>
+    <rect x="144" y="34" width="88" height="66" rx="9" fill="#fff" stroke="#CBD5E0" stroke-width="1.6"/>
+    <text x="188" y="52" font-size="7.6" fill="#64748B" text-anchor="middle" font-weight="800">짝이 아니면</text>
+    <text x="188" y="64" font-size="7.6" fill="#64748B" text-anchor="middle" font-weight="800">다시 뒤집어요</text>
+    <rect x="156" y="72" width="28" height="20" rx="4" fill="#1D4ED8"/>
+    <rect x="192" y="72" width="28" height="20" rx="4" fill="#1D4ED8"/>
+    <path d="M240 66 L262 66" stroke="#94A3B8" stroke-width="1.8"/>
+    <path d="M258 62 L268 66 L258 70 Z" fill="#94A3B8"/>
+    <rect x="274" y="34" width="34" height="66" rx="9" fill="#DBEAFE" stroke="#1D4ED8" stroke-width="1.6"/>
+    <text x="291" y="60" font-size="7.4" fill="#1E3A8A" text-anchor="middle" font-weight="800">판은</text>
+    <text x="291" y="71" font-size="7.4" fill="#1E3A8A" text-anchor="middle" font-weight="800">그대로</text>
+    <rect x="14" y="110" width="294" height="52" rx="10" fill="#DCFCE7" stroke="#16A34A" stroke-width="1.6"/>
+    <text x="161" y="128" font-size="8.6" fill="#166534" text-anchor="middle" font-weight="800">판에는 아무것도 남지 않아요</text>
+    <text x="161" y="143" font-size="8" fill="#166534" text-anchor="middle">뒤집어 본 카드를 판이 표시해 주지 않기 때문이에요</text>
+    <text x="161" y="155" font-size="8" fill="#166534" text-anchor="middle">기억하는 일은 놀이하는 사람의 몫이에요</text>
+    </svg>`,
+  // 7 정리
+  done:`<svg viewBox="0 0 320 176"><rect width="320" height="176" fill="#F8FAFC"/>
+    <text x="160" y="24" font-size="11.6" fill="#1E3A8A" text-anchor="middle" font-weight="800">오늘의 정리</text>
+    <rect x="14" y="38" width="292" height="34" rx="9" fill="#fff" stroke="#1D4ED8" stroke-width="1.5"/>
+    <text x="160" y="59" font-size="8.8" fill="#1E3A8A" text-anchor="middle" font-weight="800">생각 그물의 빈칸을 채우며 공부한 내용을 정리해요</text>
+    <rect x="14" y="78" width="292" height="34" rx="9" fill="#fff" stroke="#1D4ED8" stroke-width="1.5"/>
+    <text x="160" y="99" font-size="8.8" fill="#1E3A8A" text-anchor="middle" font-weight="800">카드 뒤집기 놀이로 문제와 정답을 짝지어 봐요</text>
+    <rect x="14" y="118" width="292" height="34" rx="9" fill="#DCFCE7" stroke="#16A34A" stroke-width="1.6"/>
+    <text x="160" y="139" font-size="8.8" fill="#166534" text-anchor="middle" font-weight="800">맞지 않은 카드는 다시 뒤집어 놓고 내용을 기억해요</text>
+    </svg>`
+};
+function sceneCard(k,cap,extra){ return `<div class="scene ${extra||''}">${SVG[k]}${cap?`<div class="cap">${cap}</div>`:''}</div>`; }
+
+/* ===== 직접조작: 카드 뒤집기 놀이 판(46번째 신규 패턴 — 판이 도로 감추는 형) =====
+   ⭐ 앞의 마흔다섯 종에서 **판은 한 번 드러난 것을 도로 감춘 적이 없다.**
+      이번만 짝이 맞지 않으면 두 장이 **다시 뒤집혀** 판이 뒤집기 전으로 돌아간다.
+   ⭐ **「본 적 있음」을 담는 상태가 코드에 아예 없다**(`cdSeen` 부재) —
+      앞면이 보이는 카드는 `cdFaceUp(st) = st.cdTaken | st.cdOpen` 한 줄이 다 고르고,
+      어긋난 순간 `cdOpen`이 0이 되므로 **뒤집어 본 카드를 판이 기억해 주는 자리가 없다.**
+      그래서 앞으로 나아간 것은 판이 아니라 **학생의 기억**뿐이다.
+   ⭐ **가져간 쌍은 도로 감춰지지 않는다** — `cdTaken`은 줄지 않는다(단조 증가).
+      되감기는 **아직 가져가지 않은 두 장**에만 일어난다(`cdHide`가 코드에 단 하나).
+   ⚠️ 가드 8종: ① 마무리 확정 후 전체 잠금 / ② 무효 카드·규칙·마무리 번호(`Number.isInteger`) /
+      ③ 이미 가져간 카드 재클릭 무시 — 판 불변 / ④ 지금 열려 있는 카드 재클릭 무시 — 판 불변 /
+      ⑤ 두 장이 열린 뒤 판정이 끝나기 전 다른 카드 무시(`cdBusy` · 순서) /
+      ⑥ 여섯 쌍을 다 가져가기 전 규칙 3택 무시(순서) / ⑦ 규칙을 맞히기 전 마무리 무시(순서) /
+      ⑧ 놀이가 끝난 뒤 카드 클릭 무시 — 판 불변.
+   ⚠️ opbody 분리자는 `const CD_N = 12;` — 스칼라라 파생 접두 충돌이 없다(l03·l09·l10 규약 승계). */
+const CD_N = 12;
+
+/* 여섯 쌍 — ⚠️ 전량 교과서·지도서 원문(지어냄 0).
+   0~2 = 교과서 [교실 놀이를 함께해요] 카드 예시 원문 3쌍
+   3~5 = 교과서 [생각 그물을 완성해요] 원문에서 뽑은 3쌍 */
+const CD_PAIR = [
+  { q:['1987년 6월 민주 항쟁의','결과로 시행된','선거 제도'], a:['대통령','직선제'] },
+  { q:['1970년대에 발달한','철강, 조선, 석유 화학','등의 산업'], a:['중화학','공업'] },
+  { q:['나라가 분단되지','않았으면 치르지','않아도 될 비용'], a:['분단 비용'] },
+  { q:['3·15 부정 선거가','원인이 되어','일어난 사건'], a:['4·19 혁명'] },
+  { q:['군인들의 권력 장악에','맞서 민주주의를 지키려는','시민의 의지를 보여 준 사건'], a:['5·18','민주화 운동'] },
+  { q:['실향민과 함께, 분단으로','고향을 잃고','가족과 헤어진 사람들'], a:['이산가족'] }
+];
+
+/* 열두 자리의 배치 — 고정 리터럴(난수 0). [쌍 번호, 0=문제 · 1=정답] */
+const CD_POS = [
+  [2,0],[0,1],[4,0],
+  [1,1],[5,1],[3,0],
+  [0,0],[2,1],[1,0],
+  [4,1],[3,1],[5,0]
+];
+
+/* ★ 완성 띠 — 여섯 쌍을 다 가져간 뒤에만 뜬다(코드에 단 한 자리). */
+const CD_BAND = '판은 그대로 돌아왔고, 나아간 것은 내 기억이었어요';
+
+/* 놀이 규칙 3택 — 교과서 규칙 원문. 정답 자리 0. */
+const CD_RULE = [
+  '다시 뒤집어 제자리에 놓고, 카드의 내용을 기억해요',
+  '맞을 때까지 두 장을 앞면인 채로 놓아 둬요',
+  '맞지 않은 두 장은 놀이에서 빼 둬요'
+];
+const CD_RULE_OK = 0;
+/* ⚠️ 어긋난 보기 안내 — 카드의 내용을 적지 않는다(적어 두면 판이 기억을 대신하게 된다). */
+const CD_RULE_NO = [
+  '',
+  '판에서도 그렇게 하지 않았어요. 짝이 아니었던 두 장이 <b>어떻게 되었는지</b> 떠올려 봐요.',
+  '빼 두면 다시 만날 수 없어요. 짝이 아니었던 두 장이 <b>어디로 갔는지</b> 떠올려 봐요.'
+];
+
+/* 마무리 3택 — 지도서 학습 내용 정리 원문. 정답 자리 2. */
+const CD_FIN = [
+  '단원 마무리는 놀이에서 이긴 사람을 정하는 시간이에요',
+  '단원 마무리는 새로운 내용을 처음 배우는 시간이에요',
+  '평화 통일을 위한 노력에 관해 알아보고, 민주화와 산업화로 달라진 생활 모습을 살펴봤어요'
+];
+const CD_FIN_OK = 2;
+
+function cdBit(i){ return 1<<i; }
+function cdCount(m){ let n=0; for(let i=0;i<CD_N;i++){ if(m & cdBit(i)) n++; } return n; }
+/* ★ 앞면이 보이는 카드를 정하는 자리 — 코드에 이 한 줄뿐이다.
+   ⚠️ 「본 적 있음」을 담는 상태를 따로 두지 않는다(`cdSeen` 부재). */
+function cdFaceUp(st){ return st.cdTaken | st.cdOpen; }
+function cdOpenList(st){ const r=[]; for(let i=0;i<CD_N;i++){ if(st.cdOpen & cdBit(i)) r.push(i); } return r; }
+function cdAllTaken(st){ return cdCount(st.cdTaken)===CD_N; }
+function cdText(i){ const [p,s]=CD_POS[i]; return s===0 ? CD_PAIR[p].q : CD_PAIR[p].a; }
+function cdPhase(st){
+  if(st.cdFin!=null) return 'done';
+  if(st.cdRule!=null) return 'fin';
+  return cdAllTaken(st) ? 'rule' : 'play';
+}
+
+/* 카드 한 장을 그린다.
+   ⚠️ 뒤집힌 카드는 열두 장이 서로 구별되지 않는다 — 같은 색·같은 크기·같은 무늬다
+      (l01 「열린 단추들이 서로 구별되지 않음」·l10 「열두 획이 서로 구별되지 않음」 규약 승계). */
+function cdCardSVG(st,i){
+  const X=[11,113,215], Y=[30,72,114,156], W=94, H=38;
+  const x=X[i%3], y=Y[Math.floor(i/3)];
+  const up = !!(cdFaceUp(st) & cdBit(i));
+  const taken = !!(st.cdTaken & cdBit(i));
+  const live = cdPhase(st)==='play';
+  const a = `data-cd="${i}" data-f="${up?(taken?'t':'o'):'x'}"`;
+  if(!up){
+    return `<g ${a}${live?` style="cursor:pointer" onclick="cdFlip(${i})"`:''}>`
+      + `<rect x="${x}" y="${y}" width="${W}" height="${H}" rx="7" fill="#1D4ED8" stroke="#1E3A8A" stroke-width="1.4"/>`
+      + `<text x="${x+W/2}" y="${y+H/2+4}" font-size="12" fill="#DBEAFE" text-anchor="middle" font-weight="800">?</text></g>`;
+  }
+  const lines = cdText(i);
+  const fill = taken ? '#DCFCE7' : '#FFF8E1';
+  const edge = taken ? '#16A34A' : '#B45309';
+  const ink  = taken ? '#166534' : '#92400E';
+  const y0 = lines.length===1 ? [y+23] : (lines.length===2 ? [y+16,y+27] : [y+13,y+23,y+33]);
+  let t='';
+  for(let k=0;k<lines.length;k++){
+    t += `<text x="${x+W/2}" y="${y0[k]}" font-size="6.4" fill="${ink}" text-anchor="middle" font-weight="800">${lines[k]}</text>`;
+  }
+  return `<g ${a}><rect x="${x}" y="${y}" width="${W}" height="${H}" rx="7" fill="${fill}" stroke="${edge}" stroke-width="1.5"/>${t}</g>`;
+}
+
+function cdCanvas(st){
+  const ph=cdPhase(st), pairs=cdCount(st.cdTaken)/2, nOpen=cdCount(st.cdOpen);
+  let g='';
+  g+=`<rect x="6" y="6" width="308" height="238" rx="10" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="2"/>`;
+  const head = (ph==='play')
+    ? (nOpen===0 ? '카드 두 장을 뒤집어 봐요'
+      : (nOpen===1 ? '한 장을 뒤집었어요 — 한 장 더 뒤집어요' : '두 장을 뒤집었어요'))
+    : (ph==='rule' ? '모든 카드가 없어졌어요' : '판은 처음 그대로였어요');
+  g+=`<text x="160" y="20" font-size="10.4" fill="#1E3A8A" text-anchor="middle" font-weight="800">${head}</text>`;
+  for(let i=0;i<CD_N;i++) g+=cdCardSVG(st,i);
+  g+=`<text data-pairs="${pairs}" x="160" y="206" font-size="8.4" fill="#64748B" text-anchor="middle" font-weight="800">가져간 쌍 ${pairs} / 6</text>`;
+  /* ★ 완성 띠 — 여섯 쌍을 다 가져간 뒤에만 뜬다(코드에 단 한 자리). */
+  if(cdAllTaken(st)){
+    g+=`<rect data-band="1" x="10" y="214" width="300" height="26" rx="8" fill="#DCFCE7" stroke="#16A34A" stroke-width="1.6"/>`;
+    g+=`<text x="160" y="231" font-size="8.6" fill="#166534" text-anchor="middle" font-weight="800">${CD_BAND}</text>`;
+  } else {
+    g+=`<rect x="10" y="214" width="300" height="26" rx="8" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1.2" stroke-dasharray="4 3"/>`;
+  }
+  return `<svg viewBox="0 0 320 250"><rect width="320" height="250" fill="#ffffff"/>${g}</svg>`;
+}
+
+function cdPanel(st){
+  const ph=cdPhase(st), pairs=cdCount(st.cdTaken)/2, nOpen=cdCount(st.cdOpen);
+  const q = ph==='done'
+    ? '판은 <b>도로 감췄고</b>, 나아간 것은 <b>내 기억</b>이었어요.'
+    : (ph==='fin' ? '오늘 단원 마무리에서 무엇을 정리했나요?'
+      : (ph==='rule' ? '문제와 정답이 <b>맞지 않으면</b> 어떻게 하나요?'
+        : (nOpen===1 ? '한 장 더 뒤집어 봐요. <b>문제와 정답이 맞으면</b> 두 장을 가져가요.'
+          : '카드를 <b>두 장씩</b> 뒤집어 봐요. <b>어느 자리부터 뒤집어도 좋아요.</b>')));
+  let right = `<div class="cd-q">${q}</div>`;
+
+  if(ph==='done'){
+    right+=`<div class="dw-card"><div class="pt">\uD83C\uDCCF 판은 아무것도 기억해 주지 않았어요</div>
+      <div>짝이 아닐 때마다 두 장이 <b>다시 뒤집혀</b> 판은 뒤집기 전과 <b>똑같아졌어요.</b>
+      뒤집어 본 카드를 판이 표시해 주지 않았으니, 앞으로 나아간 것은 <b>내 기억</b>뿐이에요.</div>
+      <div style="margin-top:5px">이 판은 <b>놀이 방법을 익히는 도식</b>이에요. 진짜 활동은
+      <b>4명씩 모둠을 만들어</b> 카드를 뜯고 <b>손으로 문제와 답을 적어</b> 친구들과 함께 노는 것이에요.</div></div>`;
+  } else if(ph==='fin'){
+    right+=`<div class="dw-step">\uD83D\uDCDD 오늘의 마무리</div>`;
+    right+=`<div class="cd-list">${CD_FIN.map((f,k)=>
+      `<button class="${st.cdWrongF===k?'no':''}" onclick="cdFinish(${k})">${f}</button>`).join('')}</div>`;
+  } else if(ph==='rule'){
+    right+=`<div class="dw-step">\uD83C\uDCCF 놀이 규칙 되짚기</div>`;
+    right+=`<div class="cd-list">${CD_RULE.map((f,k)=>
+      `<button class="${st.cdWrongR===k?'no':''}" onclick="cdRulePick(${k})">${f}</button>`).join('')}</div>`;
+  } else {
+    right+=`<div class="dw-step">\uD83C\uDCCF 카드 뒤집기 \u00B7 가져간 쌍 ${pairs} / 6</div>`;
+    right+=`<div class="tipbox" style="font-size:clamp(11px,1.85vw,13.2px);padding:8px 11px">
+      뒤집은 카드가 <b>짝이 아니면</b> 두 장은 <b>다시 뒤집혀요.</b> 판은 어느 자리에 무엇이 있었는지
+      <b>표시해 주지 않아요</b> \u2014 기억하는 일은 <b>놀이하는 사람의 몫</b>이에요.</div>`;
+  }
+  if(st.cdMsg) right+=`<div class="dw-msg${st.cdWarn?' warn':''}">${st.cdMsg}</div>`;
+
+  return `<div class="dw-wrap">
+    <div style="text-align:center"><b style="color:var(--green)">\uD83C\uDCCF 짝이 아니면 판이 도로 감춰요</b></div>
+    <div class="dw-body">
+      <div class="dw-canvas">${cdCanvas(st)}<div class="cvcap">교실 놀이 방법을 나타낸 도식이에요</div></div>
+      <div class="dw-right">${right}</div>
+    </div>
+  </div>`;
+}
+
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "1단원 평화 통일을 위한 노력, 민주화와 산업화 · 단원 마무리";
+// 확인 4 + 적용 4 — 정답 다양화 [0,2,3,1,1,3,2,0](각 자리 2회)
+// ⚠️ 대단원2 이후 선행 침범 0 · 단원 평가 20문항 재현 0 · 새 사실 0 · 인물 이름 0 · 학생 이름 0.
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"카드 두 장을 뒤집어 <b>문제와 정답이 맞으면</b> 어떻게 하나요?",
+   opts:["그 카드를 가져가요",
+         "그대로 앞면인 채로 놓아 둬요",
+         "다시 뒤집어 제자리에 놓아요",
+         "다른 친구에게 넘겨줘요"],
+   correct:0, pts:POINTS_BASIC, scene:"rule",
+   reason:"문제와 정답이 맞으면 그 두 장을 가져가요. 모든 카드가 없어질 때까지 놀이를 이어 가요.",
+   h1:"맞았을 때와 맞지 않았을 때가 서로 달라요.",
+   h2:"맞은 카드는 판에서 사라져요."},
+
+  {stem:"카드 두 장을 뒤집어 <b>문제와 정답이 맞지 않으면</b> 어떻게 하나요?",
+   opts:["맞을 때까지 앞면인 채로 놓아 둬요",
+         "맞지 않은 카드는 놀이에서 빼 둬요",
+         "다시 뒤집어 제자리에 놓고, 카드의 내용을 기억해요",
+         "짝이 맞는 카드를 찾아 옆에 놓아 줘요"],
+   correct:2, pts:POINTS_BASIC, scene:"flip",
+   reason:"맞지 않으면 다시 뒤집어 제자리에 놓고 카드의 내용을 기억해요. 기억해 두었다가 다음 차례에 쓰는 것이에요.",
+   h1:"판에는 아무 표시도 남지 않아요.",
+   h2:"기억하는 일은 놀이하는 사람의 몫이에요."},
+
+  {stem:"놀이를 하기 전 <b>카드를 만드는 방법</b>으로 알맞은 것은 무엇인가요?",
+   opts:["아무 낱말이나 골라 한 장씩 써요",
+         "네 명이 똑같은 교과서 범위를 골라 써요",
+         "카드에는 문제만 쓰고 답은 쓰지 않아요",
+         "내용이 겹치지 않도록 교과서 범위를 하나 골라, 카드를 두 장씩 짝지어 문제와 답을 써요"],
+   correct:3, pts:POINTS_BASIC, scene:"cards",
+   reason:"친구들과 내용이 겹치지 않도록 교과서 범위 중 하나를 고른 다음, 카드를 두 장씩 짝지어 문제와 답을 써요.",
+   h1:"카드는 언제나 두 장이 한 쌍이에요.",
+   h2:"친구와 같은 범위를 고르면 내용이 겹쳐요."},
+
+  {stem:"놀이의 <b>순위</b>는 어떻게 정하나요?",
+   opts:["가장 먼저 카드를 뒤집은 사람이 이겨요",
+         "모든 카드가 없어질 때까지 하고, 각각 가지고 있는 카드 수로 정해요",
+         "문제를 가장 많이 만든 사람이 이겨요",
+         "순위는 놀이를 시작하기 전에 미리 정해요"],
+   correct:1, pts:POINTS_BASIC, scene:"rule",
+   reason:"모든 카드가 없어질 때까지 진행하고, 각각 가지고 있는 카드 수로 순위를 정해요.",
+   h1:"놀이는 카드가 다 없어져야 끝나요.",
+   h2:"손에 남은 카드가 몇 장인지 세어 봐요."},
+
+  // 4단계 적용 (+15)
+  {stem:"판에서 짝이 맞지 않은 두 장이 다시 뒤집혔어요. 그때 <b>판은 어떻게 되었나요?</b>",
+   opts:["뒤집어 본 자리에 표시가 남았어요",
+         "뒤집기 전과 똑같아졌어요 — 앞으로 나아간 것은 내 기억뿐이었어요",
+         "이미 가져간 카드까지 함께 도로 뒤집혔어요",
+         "짝이 아니었던 두 장이 판에서 사라졌어요"],
+   correct:1, pts:POINTS_APPLY, scene:"flip",
+   reason:"두 장이 다시 뒤집히면 판은 뒤집기 전과 똑같아져요. 이미 가져간 쌍은 그대로 남고요. 달라진 것은 내가 본 것을 기억한다는 점뿐이에요.",
+   h1:"판을 뒤집기 전과 견주어 봐요.",
+   h2:"판에는 아무것도 더해지거나 지워지지 않았어요."},
+
+  {stem:"판은 뒤집어 본 카드가 무엇이었는지 <b>표시해 주지 않았어요.</b> 그 까닭은 무엇인가요?",
+   opts:["표시할 자리가 판에 모자라기 때문이에요",
+         "카드가 열두 장보다 많아지면 표시할 수 없기 때문이에요",
+         "표시해 주면 놀이가 너무 빨리 끝나 재미가 없기 때문이에요",
+         "카드의 내용을 기억하는 일이 이 놀이를 하는 사람의 몫이기 때문이에요"],
+   correct:3, pts:POINTS_APPLY, scene:"flip",
+   reason:"교과서는 맞지 않은 카드를 다시 뒤집어 놓고 그 내용을 기억하라고 해요. 기억하는 일이 이 놀이의 몫이라서 판이 대신 표시해 주지 않아요.",
+   h1:"교과서 규칙의 마지막 말을 떠올려 봐요.",
+   h2:"판이 적어 두면 기억할 일이 없어져요."},
+
+  {stem:"생각 그물의 빈칸이에요. <b>「1970년대에 발달한 철강, 조선, 석유 화학 등의 산업」</b>은 무엇인가요?",
+   opts:["경공업",
+         "분단 비용",
+         "중화학 공업",
+         "대통령 직선제"],
+   correct:2, pts:POINTS_APPLY, scene:"web2",
+   reason:"철강, 조선, 석유 화학처럼 무거운 제품이나 화학 제품을 만드는 산업을 중화학 공업이라고 해요.",
+   h1:"가벼운 물건을 만드는 공업과 짝을 이루는 말이에요.",
+   h2:"철강·조선·석유 화학을 한 낱말로 묶어 봐요."},
+
+  {stem:"단원을 정리하는 태도로 <b>알맞지 않은</b> 것은 무엇인가요?",
+   opts:["놀이에서 이긴 사람만 이 단원을 잘 공부한 것이라고 생각해요",
+         "생각 그물의 빈칸을 채우며 공부한 내용을 스스로 떠올려 봐요",
+         "카드를 만들 때 친구들과 내용이 겹치지 않게 범위를 나눠요",
+         "짝이 아니었던 카드의 내용을 기억해 두었다가 다음 차례에 써요"],
+   correct:0, pts:POINTS_APPLY, scene:"done",
+   reason:"놀이의 승패로 공부를 가늠하지 않아요. 낱말을 떠올려 문제와 정답을 짝지어 본 것이 오늘의 공부예요.",
+   h1:"단원 마무리는 정리하는 시간이에요.",
+   h2:"이기고 지는 것보다 떠올려 본 것이 남아요."}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — [동기 유발] 단원에서 공부한 내용 떠올리기
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">이 단원에서 공부한 내용을 떠올려 봐요</h2>
+  <div class="ka-bub">우리는 <b>분단에 따른 문제점과 아픔이 담긴 장소</b>를 배웠어요. <b>평화 통일을 위한 다양한 노력</b>을 알아보고 <b>우리가 할 수 있는 일</b>도 실천했고요. <b>4·19 혁명, 5·18 민주화 운동과 민주화를 위한 사람들의 노력</b>, <b>6월 민주 항쟁과 민주화로 달라진 모습</b>도 배웠어요. <b>우리나라 산업의 발달 과정과 산업화로 달라진 생활 모습</b>까지요. 오늘은 <span class="ka-emph">공부한 내용을 다양한 방법으로 정리</span>해요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('recall5','단원에서 공부한 내용','wide')}</div>
+    <div class="note">두 가지 방법으로 정리해요 \u2014 <b>생각 그물</b>과 <b>교실 놀이</b>예요.</div></div>`});
+// 2 살펴보기 — reveal ① 생각 그물 「평화 통일을 위한 노력」
+slides.push({stage:2,badge:"생각 그물",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">생각 그물 \u2460 \u2014 평화 통일을 위한 노력</h2>
+  <div class="ka-bub"><b>생각 그물</b>은 공부한 내용을 <span class="ka-emph">가운데 낱말에서 가지를 뻗어 정리</span>하는 방법이에요. 교과서 생각 그물에는 <b>빈칸</b>이 있어요. 여기서는 <b>두 칸</b>만 함께 확인하고, 나머지는 교과서에 <b>직접 채워 봐요.</b></div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('web1','평화 통일을 위한 노력','wide')}</div>
+  <div class="paper"><div class="ph">\u270F\uFE0F 빈칸 두 곳</div>
+    \u2460 분단에 따른 문제점 \u2014 <b>실향민과 (&nbsp;&nbsp;&nbsp;&nbsp;)</b>: 분단으로 고향을 잃고 가족과 헤어짐.
+    <div style="margin-top:6px">\u2461 국가의 정치적 노력 \u2014 7\u00B74 남북 공동 성명, 남북 기본 합의서 채택, <b>(&nbsp;&nbsp;&nbsp;&nbsp;) 회담</b> 등</div></div>
+  ${st.revealed?`<div class="answer-box"><b>빈칸에 알맞은 말은?</b> \u2460 <span class="ka-emph">이산가족</span> \u2461 <span class="ka-emph">남북 정상</span></div>`
+    :`<div class="note">공부한 내용을 떠올리며 스스로 채워 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 3 살펴보기 — reveal ② 생각 그물 「민주화와 산업화로 달라진 생활 모습」
+slides.push({stage:2,badge:"생각 그물",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">생각 그물 \u2461 \u2014 민주화와 산업화로 달라진 생활 모습</h2>
+  <div class="ka-bub">두 번째 가지예요. <b>민주주의가 발전한 길</b>과 <b>산업의 발달 과정</b>, 그리고 <b>산업화의 성과와 한계</b>가 한자리에 모여요. 여기에도 <span class="ka-emph">빈칸 두 곳</span>이 있어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('web2','민주화와 산업화로 달라진 생활 모습','wide')}</div>
+  <div class="paper"><div class="ph">\u270F\uFE0F 빈칸 두 곳</div>
+    \u2460 6월 민주 항쟁 \u2014 영향: 대통령 <b>(&nbsp;&nbsp;&nbsp;&nbsp;)</b> 시행, 지방 자치제 시행, 시민 참여 확대 등
+    <div style="margin-top:6px">\u2461 산업의 발달 과정 \u2014 1970년대: <b>(&nbsp;&nbsp;&nbsp;&nbsp;)</b> 공업 발달</div></div>
+  ${st.revealed?`<div class="answer-box"><b>빈칸에 알맞은 말은?</b> \u2460 <span class="ka-emph">직선제</span> \u2461 <span class="ka-emph">중화학</span></div>`
+    :`<div class="note">공부한 내용을 떠올리며 스스로 채워 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 4 살펴보기 — 교실 놀이 준비: 카드 만들기
+slides.push({stage:2,badge:"교실 놀이",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">교실 놀이를 함께해요 \u2014 먼저 카드를 만들어요</h2>
+  <div class="ka-bub"><b>4명씩 모둠</b>을 만들고 활동 자료의 카드를 모두 뜯어요. 그다음 <span class="ka-emph">친구들과 내용이 겹치지 않도록 교과서 범위 중 하나를 골라</span>, <b>카드를 두 장씩 짝지어 문제와 답을 써요.</b> 한 명이 <b>세 쌍 또는 네 쌍</b>의 카드를 만들어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('cards','카드 만들기','wide')}</div>
+    <div class="tipbox">준비물은 <b>카드</b>예요 \u2014 한 사람에 여섯에서 여덟 장이에요.</div></div>`});
+// 5 살펴보기 — 놀이 방법
+slides.push({stage:2,badge:"교실 놀이",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">카드 뒤집기 놀이 방법</h2>
+  <div class="ka-bub"><b>모든 카드를 뒤집어 놓고</b>, 가위바위보로 순서를 정한 뒤 <b>시계 방향으로 한 명씩 두 장의 카드를 뒤집어요.</b> <span class="ka-emph">문제와 정답이 맞으면 카드를 가져가고, 맞지 않으면 다시 뒤집어 제자리에 놓고 카드의 내용을 기억해요.</span> <b>모든 카드가 없어질 때까지</b> 진행하고, 각각 가지고 있는 카드 수로 순위를 정해요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('rule','놀이 방법','wide')}</div>
+    <div class="note">짝 활동으로도, 모둠 활동으로도 할 수 있어요.</div></div>`});
+// 6 살펴보기 — 다시 뒤집기(판이 도로 감춘다)
+slides.push({stage:2,badge:"교실 놀이",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">맞지 않으면 도로 뒤집혀요</h2>
+  <div class="ka-bub">이 놀이에는 재미있는 점이 하나 있어요. 카드를 뒤집어 <b>앞면을 보았는데도</b>, 짝이 아니면 <span class="ka-emph">두 장이 다시 뒤집혀 판이 뒤집기 전과 똑같아져요.</span> 판에는 <b>아무 표시도 남지 않아요.</b> 그러니 앞으로 나아가는 것은 판이 아니라 <b>내 기억</b>이에요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('flip','다시 뒤집기','wide')}</div>
+    <div class="note">그래서 교과서는 <b>「카드의 내용을 기억합니다」</b>라고 적었어요.</div></div>`});
+// 7 살펴보기 — 직접조작(카드 뒤집기 놀이 판)
+slides.push({stage:2,badge:"교실 놀이",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">카드 뒤집기 놀이를 해 봐요</h2>
+  <div class="ka-grp">${cdPanel(st)}</div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부를 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('done','오늘의 정리','wide')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">\u2460</span><div><b style="color:var(--green)">생각 그물 완성하기</b> \u2014 빈칸을 채우며 <b>평화 통일을 위한 노력</b>에 관해 알아본 내용을 정리해요.</div></div>
+    <div class="sum-item"><span class="n">\u2461</span><div><b style="color:var(--green)">생각 그물 완성하기</b> \u2014 <b>민주화와 산업화로 달라진 생활 모습</b>도 한자리에 모아 봐요.</div></div>
+    <div class="sum-item"><span class="n">\u2462</span><div><b style="color:var(--green)">카드 만들기</b> \u2014 내용이 겹치지 않게 범위를 나누고, <b>두 장씩 짝지어 문제와 답</b>을 써요.</div></div>
+    <div class="sum-item"><span class="n">\u2463</span><div><b style="color:var(--amber)">카드 뒤집기 놀이</b> \u2014 맞으면 가져가고, <b>맞지 않으면 다시 뒤집어 놓고 내용을 기억</b>해요.</div></div>
+    <div class="sum-item"><span class="n">\u2605</span><div><b>판은 기억해 주지 않아요</b> \u2014 도로 뒤집힌 자리에는 아무 표시도 남지 않아요. 나아가는 것은 <b>내 기억</b>이에요.</div></div>
+  </div>
+  <div class="note">이기고 지는 것보다 <b>떠올려 본 것</b>이 오늘의 공부예요. 다음 시간에는 <b style="color:var(--green)">민주주의와 시민 참여</b> 도입 활동을 해요.</div></div>`});
+// 17 정리: 스스로 돌아보기 — 지도서 지도 방법 원문 3항
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"생각 그물의 빈칸을 채우면서 공부한 내용을 정리했어요",st)}
+    ${selfCheck(1,"공부한 내용을 떠올리며 스스로 채워 보려고 했어요",st)}
+    ${selfCheck(2,"카드 뒤집기 놀이를 하며 단원에서 공부한 내용을 정리했어요",st)}
+  </div><div class="note">별이 적게 채워진 곳은 앞 슬라이드를 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">1단원 공부를 마쳤어요!</h2>
+  <div class="ka-grp">
+    <div class="end-score">\u2B50 ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">다음은 <b style="color:var(--amber)">민주주의와 시민 참여</b>!</div>
+  </div>`;
+}});
+
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">\u2B55 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g6_social_u1_l11";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  cdTaken:0, cdOpen:0, cdRule:null, cdFin:null,
+  cdWrongR:null, cdWrongF:null,
+  cdMsg:null, cdWarn:false, cdBusy:false,
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 \u2192';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+function cdRender(){ main.innerHTML = slides[state.idx].render(state); }
+/* ⚠️ 경고 경로 — 어긋난 규칙·마무리에만 쓴다. 판은 이 경로에서 한 자리도 달라지지 않는다. */
+function cdHold(msg){
+  state.cdWarn=true; state.cdBusy=true; state.cdMsg=msg;
+  playThud(); cdRender();
+  setTimeout(()=>{ state.cdBusy=false; state.cdWarn=false; state.cdMsg=null;
+    state.cdWrongR=null; state.cdWrongF=null; cdRender(); },1600);
+}
+
+/* ★ 되감기 — 이 패턴의 핵심 신규성이다.
+   아직 가져가지 않은 두 장만 도로 감춘다(`cdOpen`을 0으로).
+   ⚠️ `cdTaken`은 건드리지 않는다 — 가져간 쌍은 도로 감춰지지 않는다.
+   ⚠️ 「본 적 있음」을 어디에도 적어 두지 않는다 — 기억은 판이 아니라 사람 몫이다.
+   판에서 카드를 도로 감추는 자리는 코드에 이 함수 하나뿐이다. */
+function cdHide(){
+  state.cdOpen = 0;
+  state.cdBusy = false; state.cdWarn = false;
+  state.cdMsg = '짝이 아니었어요. 두 장을 <b>다시 뒤집어 제자리에 놓았어요.</b> 무엇이 있었는지 <b>기억해 둬요.</b>';
+  cdRender();
+}
+
+/* ① 카드 뒤집기 — 두 장을 뒤집으면 그 자리에서 판정한다. */
+function cdFlip(i){
+  if(state.cdFin!=null) return;                                        // 가드①
+  if(state.cdRule!=null) return;                                       // 가드⑧ 놀이가 끝난 뒤 카드 클릭 무시 — 판 불변
+  if(!Number.isInteger(i) || i<0 || i>=CD_N) return;                   // 가드②
+  if(state.cdBusy) return;                                             // 가드⑤ 판정이 끝나기 전 다른 카드 무시(순서)
+  if(state.cdTaken & cdBit(i)) return;                                 // 가드③ 이미 가져간 카드 재클릭 무시 — 판 불변
+  if(state.cdOpen & cdBit(i)) return;                                  // 가드④ 지금 열려 있는 카드 재클릭 무시 — 판 불변
+
+  state.cdOpen |= cdBit(i);
+  state.cdWarn = false;
+  if(cdCount(state.cdOpen) < 2){
+    state.cdMsg = '한 장을 뒤집었어요. 이제 <b>한 장 더</b> 뒤집어요.';
+    playBlip(); cdRender(); return;
+  }
+  const [a,b] = cdOpenList(state);
+  if(CD_POS[a][0] === CD_POS[b][0]){
+    state.cdTaken |= state.cdOpen;                                     // 가져가기 — cdTaken은 줄지 않는다
+    state.cdOpen = 0;
+    state.cdMsg = cdAllTaken(state)
+      ? '모든 카드가 없어졌어요. 판은 <b>처음 그대로</b>인데, 나아간 것은 <b>내 기억</b>이었어요.'
+      : '문제와 정답이 <b>맞았어요.</b> 두 장을 <b>가져가요.</b>';
+    playChime(); cdRender(); return;
+  }
+  /* 어긋남 — 두 장을 잠깐 보여 주었다가 도로 감춘다(교과서 규칙 원문). */
+  state.cdBusy = true;
+  state.cdMsg = '문제와 정답이 <b>맞지 않아요.</b> 두 장을 잘 봐 두세요.';
+  playThud(); cdRender();
+  setTimeout(cdHide, 1600);
+}
+
+/* ② 놀이 규칙 3택 — 여섯 쌍을 다 가져간 뒤에만 열린다.
+   ⚠️ 어긋난 안내에 카드의 내용을 적지 않는다. */
+function cdRulePick(k){
+  if(state.cdFin!=null) return;                                        // 가드①
+  if(state.cdBusy) return;
+  if(!Number.isInteger(k) || k<0 || k>=CD_RULE.length) return;         // 가드②
+  if(!cdAllTaken(state)) return;                                       // 가드⑥ 여섯 쌍 전 규칙 3택 무시(순서)
+  if(state.cdRule!=null) return;
+  if(k===CD_RULE_OK){
+    state.cdRule=k; state.cdWrongR=null; state.cdWarn=false;
+    state.cdMsg='맞아요. <b>다시 뒤집어 제자리에 놓고, 카드의 내용을 기억</b>해요.';
+    playChime(); cdRender(); return;
+  }
+  state.cdWrongR=k;
+  cdHold(CD_RULE_NO[k]);
+}
+
+/* ③ 마무리 3택 — 지도서 학습 내용 정리 원문. 규칙을 맞힌 뒤에만 열린다. */
+function cdFinish(k){
+  if(state.cdFin!=null) return;                                        // 가드①
+  if(state.cdBusy) return;
+  if(!Number.isInteger(k) || k<0 || k>=CD_FIN.length) return;          // 가드②
+  if(state.cdRule==null) return;                                       // 가드⑦ 규칙을 맞히기 전 마무리 무시(순서)
+  if(k===CD_FIN_OK){
+    state.cdFin=k; state.cdWrongF=null; state.cdMsg=null; state.cdWarn=false;
+    playChime(); cdRender(); return;
+  }
+  state.cdWrongF=k;
+  cdHold(k===0
+    ? '단원 마무리는 <b>이긴 사람을 정하는 자리</b>가 아니에요. 공부한 내용을 정리하는 자리예요.'
+    : '오늘은 <b>새로 배우는 자리</b>가 아니에요. 이 단원에서 <b>이미 공부한 내용</b>을 정리했어요.');
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2;
+    if(qs.hint>=2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">\uD83D\uDCD8 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 \u2192</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // 1단원 마지막 차시 · 2단원 미양산 — 허브 복귀
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+</body>
+</html>
