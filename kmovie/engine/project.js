@@ -352,6 +352,41 @@
     let idx = P.V.findIndex(x => x.at >= t); if (idx < 0) idx = P.V.length;
     P.V.splice(idx, 0, c); return c;
   }
+  /* ---------- 자동 편집(KMV_AUTO) 이 쓰는 묶음 조작 ---------- */
+  /* 타임라인 구간들 [{at,dur}] 을 한꺼번에 잘라낸다(리플) — undo 한 번.
+     자막·부품·덧영상·마커는 시각이 따라오고(잘린 구간 안은 사라짐, 걸친 카드는 줄어듦), 음악은 시작만 따라온다(길이 유지).
+     opt.follow === false 면 V 만. → 실제로 잘라낸 프레임 수 */
+  function removeRanges(ranges, opt) {
+    const AU = g.KMV_AUTO;
+    const rs = (ranges || []).map(r => ({ at: Math.max(0, Math.round(r.at)), dur: Math.round(r.dur) })).filter(r => r.dur > 0 && r.at < total()).sort((a, b) => a.at - b.at);
+    if (!rs.length) return 0;
+    commit();
+    const before = total();
+    for (let i = rs.length - 1; i >= 0; i--) {                                // 뒤부터 — 앞 구간 시각이 안 흔들린다
+      const a = rs[i].at, b = Math.min(total(), rs[i].at + rs[i].dur);
+      if (b <= a) continue;
+      if (clipAt(b) && clipAt(b).at !== b) splitCore(b);
+      if (clipAt(a) && clipAt(a).at !== a) splitCore(a);
+      P.V = P.V.filter(c => !(c.at >= a && c.at + c.dur <= b));
+      relayout();
+    }
+    if (!(opt && opt.follow === false) && AU) {
+      P.S = AU.remapCards(P.S, rs); P.P = AU.remapCards(P.P, rs); P.V2 = AU.remapCards(P.V2, rs);
+      P.A2 = AU.remapCards(P.A2, rs, true); P.markers = AU.remapPoints(P.markers, rs);
+    }
+    emit();
+    return before - total();
+  }
+  /* 여러 프레임에서 한 번에 분할(undo 한 번) — 장면 나누기. → 실제로 나뉜 수 */
+  function splitMany(frames) {
+    const fs = [...new Set((frames || []).map(t => Math.round(t)))].filter(t => t > 0 && t < total()).sort((a, b) => b - a);
+    if (!fs.length) return 0;
+    commit();
+    let n = 0;
+    for (const t of fs) { if (splitCore(t)) n++; }
+    emit();
+    return n;
+  }
   function removeClips(ids) {
     const set = new Set(ids); if (!P.V.some(c => set.has(c.id))) return;
     commit(); P.V = P.V.filter(c => !set.has(c.id)); relayout(); emit();
@@ -630,7 +665,7 @@
     a2, addA2, updateA2, trimA2, removeA2, setDucking, setSfx, a2At,
     v2, addV2, updateV2, trimV2, removeV2, v2At, V2_POS, V2_SIZE,
     setAmbience, montage,
-    slip, roll, slide, lift, insertRange, removeClips, moveClips, pasteClips, copyClips,
+    slip, roll, slide, lift, insertRange, removeClips, moveClips, pasteClips, copyClips, removeRanges, splitMany,
     marker, markerAt, addMarker, updateMarker, removeMarker, markerFrames,
     commit, undo, redo, canUndo: () => undoStack.length > 0, canRedo: () => redoStack.length > 0,
     toJSON, load, reset,

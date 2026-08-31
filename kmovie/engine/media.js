@@ -979,6 +979,7 @@
     // 모션량 정규화: 95퍼센타일을 1 로
     const sorted = Array.from(motion).sort((a, b) => a - b);
     const p95 = sorted[Math.floor(sorted.length * 0.95)] || 1;
+    src.diff = Float32Array.from(motion);                   // 정규화 전 원값(평균 절대 차 0..1) — 장면 경계(컷) 찾기용, 정규화하면 큰 움직임과 컷이 같은 1 로 뭉개진다
     for (let i = 0; i < motion.length; i++) motion[i] = Math.min(1, motion[i] / p95);
     src.motion = motion; src.analyzed = true; src.analyzing = false;
     onProgress && onProgress(1);
