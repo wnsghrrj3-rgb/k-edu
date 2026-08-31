@@ -27,13 +27,24 @@ window.MK_TPLSVG = (() => {
 
   const BASE = '/maker-playground/assets/templates/';
 
-  /* templates.json 을 그대로 옮긴 카탈로그. 팩을 늘릴 때는 여기 한 줄. */
+  /* templates.json 을 옮긴 카탈로그 + Template Engine 등록에 필요한 메타.
+     팩을 늘릴 때는 여기 한 줄 + SVG 파일 + `node tplpack-build.mjs`. */
   const CATALOG = [
-    { id: 'editorial-poster-01', name: 'Editorial Ideas Matter', ko: '에디토리얼 포스터', category: 'poster', width: 1080, height: 1350, pack: 'pack01', file: '01_editorial_poster.svg', style: 'editorial, magazine, typography' },
-    { id: 'neon-event-01', name: 'Neon Creative Night', ko: '네온 행사 포스터', category: 'event', width: 1080, height: 1350, pack: 'pack01', file: '02_neon_event.svg', style: 'neon, dark, futuristic' },
-    { id: 'kids-science-01', name: 'Kids Science Day', ko: '어린이 과학의 날', category: 'education', width: 1080, height: 1350, pack: 'pack01', file: '03_kids_science.svg', style: 'kids, science, playful' },
-    { id: 'luxury-product-01', name: 'Signature Collection', ko: '시그니처 컬렉션', category: 'promotion', width: 1080, height: 1350, pack: 'pack01', file: '04_luxury_product.svg', style: 'luxury, minimal, product' },
-    { id: 'collage-social-01', name: 'Weekend City Mood', ko: '콜라주 소셜', category: 'social', width: 1080, height: 1080, pack: 'pack01', file: '05_collage_social.svg', style: 'collage, lifestyle, social' },
+    { id: 'editorial-poster-01', name: 'Editorial Ideas Matter', ko: '에디토리얼 포스터', category: 'poster', width: 1080, height: 1350, pack: 'pack01', file: '01_editorial_poster.svg',
+      contentType: 'poster', style: '페이퍼', styleId: 'st-paper', styleEn: 'Editorial', ratio: '4:5', difficulty: '보통', rec: true,
+      desc: '여백과 타이포로 미는 잡지식 포스터', uses: '전시 안내·행사 포스터·학급 게시물', tags: ['포스터', '타이포', '잡지'], hints: ['제목 두 줄을 넘기지 말 것', '아래 문장은 한 문장으로'] },
+    { id: 'neon-event-01', name: 'Neon Creative Night', ko: '네온 행사 포스터', category: 'event', width: 1080, height: 1350, pack: 'pack01', file: '02_neon_event.svg',
+      contentType: 'poster', style: '볼드', styleId: 'st-bold', styleEn: 'Neon', ratio: '4:5', difficulty: '보통', rec: true,
+      desc: '어두운 바탕에 네온으로 시선을 끄는 행사 포스터', uses: '학예회·동아리 발표·저녁 행사', tags: ['행사', '네온', '포스터'], hints: ['글자 수 적을수록 산다', '버튼 문구는 두 단어'] },
+    { id: 'kids-science-01', name: 'Kids Science Day', ko: '어린이 과학의 날', category: 'education', width: 1080, height: 1350, pack: 'pack01', file: '03_kids_science.svg',
+      contentType: 'poster', style: '에듀', styleId: 'st-edu', styleEn: 'Kids', ratio: '4:5', difficulty: '쉬움', rec: true,
+      desc: '질문 한 줄을 크게 세우는 수업·과학 안내', uses: '과학의 날·수업 안내·복도 게시', tags: ['교육', '과학', '어린이'], hints: ['질문형 제목이 잘 맞는다', '설명은 두 줄까지'] },
+    { id: 'luxury-product-01', name: 'Signature Collection', ko: '시그니처 컬렉션', category: 'promotion', width: 1080, height: 1350, pack: 'pack01', file: '04_luxury_product.svg',
+      contentType: 'poster', style: '모던', styleId: 'st-modern', styleEn: 'Luxury', ratio: '4:5', difficulty: '보통', rec: false,
+      desc: '검정·금색으로 하나만 보여 주는 소개면', uses: '작품 소개·전시 대표작·홍보물', tags: ['홍보', '미니멀', '소개'], hints: ['가운데 하나만 남길 것', '설명은 짧게'] },
+    { id: 'collage-social-01', name: 'Weekend City Mood', ko: '콜라주 소셜', category: 'social', width: 1080, height: 1080, pack: 'pack01', file: '05_collage_social.svg',
+      contentType: 'sns', style: '소프트', styleId: 'st-soft', styleEn: 'Collage', ratio: '1:1', difficulty: '쉬움', rec: true,
+      desc: '색 카드를 기울여 겹친 정사각 게시물', uses: '학급 SNS·소식 카드·모집 공지', tags: ['SNS', '콜라주', '카드'], hints: ['카드 색만 바꿔도 분위기가 산다'] },
   ];
 
   const CATS = [['', '전체'], ['poster', '포스터'], ['event', '행사'], ['education', '교육'], ['promotion', '홍보'], ['social', '소셜']];
@@ -210,6 +221,21 @@ window.MK_TPLSVG = (() => {
     let defs = '';
     each(root, (n) => { if ((n.tagName || '').toLowerCase() === 'defs') defs += serOne(n); });
 
+    /* 그라디언트 대표색 — 요소 스키마엔 그라디언트 자리가 없다. 조각으로 굽는
+       도형은 원본 그대로 살지만, 글자색과 씬 배경색은 단색 하나로 정해야 한다.
+       (씬 배경색이 틀리면 렌더러의 명암 판정이 뒤집혀 글자가 배경에 묻힌다.) */
+    const GRAD = {};
+    const collectGrad = (n) => each(n, (c) => {
+      const tg = (c.tagName || '').toLowerCase();
+      if (tg === 'lineargradient' || tg === 'radialgradient') {
+        const id = attr(c, 'id'); const stops = [];
+        each(c, (st) => { const col = attr(st, 'stop-color'); if (col) stops.push(col); });
+        if (id && stops.length) GRAD[id] = { first: stops[0], mid: stops[Math.floor(stops.length / 2)] };
+      } else collectGrad(c);
+    });
+    collectGrad(root);
+    const gradOf = (v) => { const m = /^url\(#([^)]+)\)/.exec(String(v || '')); return m ? GRAD[m[1]] : null; };
+
     const elements = [];
     const notes = [];
     let background = null;
@@ -235,20 +261,27 @@ window.MK_TPLSVG = (() => {
           const el = textEl(n, W, H, off);
           if (el) elements.push(el);
           if (attr(n, 'font-style') === 'italic') notes.push('기울임(italic)은 요소에 자리가 없어 곧게 들어가요');
-          if (!solid(fill) && fill) { /* 그라디언트 글자 — 색만 근사 */ notes.push('그라디언트 글자는 단색으로 들어가요'); }
+          const gt = gradOf(fill);
+          if (el && gt) { el.color = gt.mid; notes.push('그라디언트 글자는 대표 단색으로 들어가요'); }
           return;
         }
 
         const shapeish = tag === 'rect' || tag === 'circle' || tag === 'ellipse';
         const simple = shapeish && solid(fill) && !stroke && !filt && t.plain;
 
+        const covers = tag === 'rect'
+          && num(attr(n, 'x')) + off.tx <= vb.x + 0.5 && num(attr(n, 'y')) + off.ty <= vb.y + 0.5
+          && num(attr(n, 'width')) >= W - 0.5 && num(attr(n, 'height')) >= H - 0.5;
+        /* 화면을 덮는 그라디언트 판 — 조각으로는 남기되(진짜 그라디언트가 보인다)
+           씬 배경색도 대표색으로 잡는다. 안 그러면 흰색으로 남아 명암 판정이 뒤집힌다. */
+        if (covers && background == null) {
+          const gb = gradOf(fill);
+          if (gb) background = gb.first;
+        }
+
         if (simple) {
-          /* 화면 전체를 덮는 첫 사각형 = 배경 */
-          if (background == null && tag === 'rect'
-            && num(attr(n, 'x')) + off.tx <= vb.x + 0.5 && num(attr(n, 'y')) + off.ty <= vb.y + 0.5
-            && num(attr(n, 'width')) >= W - 0.5 && num(attr(n, 'height')) >= H - 0.5) {
-            background = fill; return;
-          }
+          /* 화면 전체를 덮는 첫 단색 사각형 = 배경 (요소로 둘 필요가 없다) */
+          if (background == null && covers) { background = fill; return; }
           const el = boxEl(n, W, H, off, '');
           if (el) elements.push(el);
           return;
@@ -275,6 +308,9 @@ window.MK_TPLSVG = (() => {
   const CACHE = {};
   function load(id, cb) {
     if (CACHE[id]) return cb(CACHE[id]);
+    /* 굳힌 팩(tplpack01.js)이 있으면 즉시 — 파싱은 빌드 때 이미 끝났다 */
+    const baked = window.MK_TPLPACK && window.MK_TPLPACK[id];
+    if (baked) { CACHE[id] = { ok: true, ...baked }; return cb(CACHE[id]); }
     const url = urlOf(id);
     if (!url || typeof fetch !== 'function') return cb({ ok: false, msg: '템플릿을 찾을 수 없어요' });
     fetch(url).then((r) => (r.ok ? r.text() : Promise.reject(new Error('http ' + r.status))))
