@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * 케이학습리포트 공용 계산 — kedu_report_lib.js v2
- *  ① 차시 이름 해석: /kedu_map 정본으로 단원명·제목·URL (현행 794개 kedu-lesson-id 메타 중 770개 지도 적중)
+ *  ① 차시 이름 해석: /kedu_map 정본으로 단원명·제목·URL (현행 794개 kedu-lesson-id 메타 중 794개 지도 적중 — g6 국어·사회 지도 합류로 폴백 0)
  *  ② 폴백 라벨(지도 밖 id·구형 id)이 원문 id 를 그대로 노출하지 않음
  *  ③ 주간·일별·연속일 집계 (KST) · 요약 행(_lesson_summary_)은 문항으로 안 셈
  *  ④ classify 불변식: 1회 오답은 취약 아님, watching 은 판단 보류
@@ -39,7 +39,10 @@ const KR = win.KeduReport;
   await KR.loadCatalog(metas);
   const hit = metas.filter(id => KR.lesson(id).mapped).length;
   ok(metas.length > 700, '메타 lesson-id 수집 ' + metas.length);
-  ok(hit / metas.length > 0.9, '지도 적중률 ' + hit + '/' + metas.length);
+  // 지도는 build_kedu_map.js 산출물이라 새 차시를 지으면 재생성 전까지 잠깐 벌어진다.
+  // 그 틈을 0.98 로 좁혀 둔다 — 떨어지면 지도 재생성이 밀렸다는 신호(미적중 id 를 찍는다).
+  ok(hit / metas.length >= 0.98, '지도 적중률 ' + hit + '/' + metas.length +
+     ' — 지도 밖: ' + metas.filter(id => !KR.lesson(id).mapped).slice(0, 5).join(', '));
   const l = KR.lesson('g1_math_u1_l02-03_v1');
   ok(l.mapped && l.unitName === '9까지의 수' && /1, 2, 3, 4, 5/.test(l.title), '1학년 수학 1단원 2차시 해석: ' + l.label);
   ok(l.url && l.url.startsWith('/grade1/'), '지도 URL ' + l.url);
@@ -50,8 +53,14 @@ const KR = win.KeduReport;
   ok(s2.mapped && s2.semester === 2, '2학기 id 해석 ' + s2.label);
 
   // ── ② 폴백 ─────────────────────────────────────────────
-  const fb = KR.lesson('g6_social_u1_l03_v1');   // 지도에 없는 id
-  ok(!fb.mapped && fb.label === '사회 1단원 · 3차시', '지도 밖 폴백 라벨 ' + fb.label);
+  // 지도 밖 = 아직 안 지은 차시(track soon — 파일이 없어 lessonId 도 없음)
+  const fb = KR.lesson('g6_social_u2_l03_v1');
+  ok(!fb.mapped && fb.label === '사회 2단원 · 3차시', '지도 밖 폴백 라벨 ' + fb.label);
+  // g6 국어·사회는 2026-08-31 지도 합류 — 전에는 위 폴백으로 떨어지던 24차시
+  const g6s = KR.lesson('g6_social_u1_l03_v1');
+  ok(g6s.mapped && g6s.unitName === '평화 통일을 위한 노력, 민주화와 산업화', 'g6 사회 해석 ' + g6s.label);
+  const g6k = KR.lesson('g6_kor_u2_l14_v1');
+  ok(g6k.mapped && g6k.subjectKo === '국어' && g6k.unitName === '바르게 고쳐 써요', 'g6 국어 해석 ' + g6k.label);
   const fb2 = KR.lesson('g1_korean_01_글자의짜임');
   ok(fb2.label === '국어 1. 글자의짜임', '구형 id 폴백 ' + fb2.label);
   ok(KR.lesson('random_page').label === 'random_page', '완전 미지 id 는 원문');
