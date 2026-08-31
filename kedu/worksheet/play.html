@@ -65,6 +65,23 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .rule .cell.next{border-style:dashed;color:var(--muted)}
 .pair-boxes{display:flex;gap:22px;font-size:24px;align-items:center;letter-spacing:6px}
 .pair-boxes .b{background:var(--card);border:1px solid var(--rule-strong);border-radius:8px;padding:16px 20px}
+.numline{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.numline .c{min-width:46px;height:52px;display:flex;align-items:center;justify-content:center;background:var(--card);border:1px solid var(--rule-strong);border-radius:8px;font-size:24px;font-family:'Gowun Batang',serif}
+.numline .c.blank{border-style:dashed;color:var(--muted);background:var(--tint)}
+.numline .c.mark{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.ordrow{display:flex;flex-direction:column;gap:8px;align-items:center;max-width:100%}
+.ordrow .items{display:flex;gap:10px;font-size:34px;line-height:1}
+.ordrow .items span{width:46px;text-align:center}
+.ordrow .items span.mark{background:var(--accent-soft);border-radius:8px;outline:2px solid var(--accent)}
+.ordrow .arrow{display:flex;justify-content:space-between;width:100%;font-size:14px;color:var(--muted)}
+.cmp{display:flex;flex-direction:column;gap:10px}
+.cmp .r{display:flex;align-items:center;gap:12px}
+.cmp .r em{font-style:normal;font-size:16px;color:var(--ink-soft);min-width:62px;text-align:right}
+.cmp .r .g{display:flex;gap:8px;font-size:30px;line-height:1}
+.plate{display:flex;flex-direction:column;align-items:center;gap:8px}
+.plate .tray{min-width:180px;min-height:86px;border:1px solid var(--rule-strong);border-radius:14px;background:var(--tint);display:flex;align-items:center;justify-content:center;gap:10px;font-size:34px;padding:12px 18px}
+.plate .tray.empty::after{content:'비어 있어요';font-size:15px;color:var(--muted)}
+.plate em{font-style:normal;font-size:15px;color:var(--muted)}
 
 /* 답 */
 .opts{display:grid;gap:9px;margin-top:8px}
@@ -149,6 +166,14 @@ body.paper{background:#fff}
 .pq .pmatch{margin:12px 0 2px 30px;display:grid;grid-template-columns:104px 64px 104px;row-gap:14px;font-size:17px;align-items:center}
 .pq .pmatch .lft,.pq .pmatch .rgt{border:1px solid #999;border-radius:6px;text-align:center;padding:7px}
 .pq .pmatch .mid{text-align:center;color:#AAA}
+.pq .pnum{margin:10px 0 8px 30px;display:flex;gap:5px}
+.pq .pnum span{min-width:26px;height:30px;border:1px solid #1A1A1A;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:15px}
+.pq .pnum span.blank{border-style:dashed}
+.pq .pord{margin:10px 0 8px 30px;font-size:22px;letter-spacing:8px}
+.pq .pord .mk{outline:1px solid #1A1A1A;border-radius:4px}
+.pq .pcmp{margin:10px 0 8px 30px;font-size:13px;line-height:1.9}
+.pq .pcmp b{font-weight:400;display:inline-block;min-width:52px}
+.pq .pplate{margin:10px 0 8px 30px;border:1px solid #1A1A1A;border-radius:8px;display:inline-block;padding:8px 18px;font-size:20px;letter-spacing:8px;min-width:120px;text-align:center}
 .pq .picto-p{border-collapse:collapse;margin:12px 0 4px 30px;font-size:14px}.pq .picto-p td{border:1px solid #999;padding:6px 12px}.pq .picto-p td:last-child{font-size:20px;letter-spacing:6px}
 .pfoot{position:absolute;bottom:9mm;left:17mm;right:17mm;display:flex;justify-content:space-between;font-size:10px;color:#999}
 .key{width:100%;border-collapse:collapse;font-size:12px}.key th,.key td{border:1px solid #999;padding:6px 8px;text-align:left;vertical-align:top}.key th{background:#F2F0EC;font-weight:400}
@@ -163,7 +188,7 @@ body.paper{background:#fff}
 <script src="/kedu_back.js" data-mode="context"></script>
 
 <script>
-/* ===================== 케이학습지 렌더러 v0.1 =====================
+/* ===================== 케이학습지 렌더러 v0.2 =====================
    URL: play.html?set=g1_math_u1_L01_basic[&mode=paper][&seed=123]
    문항 정본 = data/{set}.json (questions 행 형식). 화면·종이는 여기서만 그린다.
    seam: window.kedu.recordAnswer(questionId, isCorrect, timeSpentSec, conceptId) 있으면 호출.
@@ -173,7 +198,9 @@ const SET = qs.get('set') || 'g1_math_u1_L01_basic';
 const MODE = qs.get('mode') || 'screen';
 const SEED = Number(qs.get('seed')) || 1;
 const NUMWORD = ['영','하나','둘','셋','넷','다섯','여섯','일곱','여덟','아홉'];
+const ORD = ['','첫째','둘째','셋째','넷째','다섯째','여섯째','일곱째','여덟째','아홉째'];
 const STORE = 'kws:' + SET;
+const KINDNAME = k => ({lesson_basic:'차시 학습지', lesson_challenge:'도전 학습지', unit_review:'단원 종합', unit_extra:'심화 학습지', wrong_variant:'오답 변형'}[k] || '학습지');
 const FROM_T = !!(window.KEDU_BACK && window.KEDU_BACK.fromTeacher);
 const BACK = FROM_T ? {label:'선생님 도구', href:'/?role=teacher'} : {label:'케이에듀 홈', href:'/'};
 
@@ -204,6 +231,10 @@ function drawAsset(a, r){
     case 'picto_table': return `<table class="picto">${a.rows.map(rw => `<tr><td>${esc(rw.label)}</td><td>${rw.item.repeat(rw.n)}</td></tr>`).join('')}</table>`;
     case 'rule': return `<div class="rule">${a.cells.map(n => `<div class="cell">${'●'.repeat(n)}</div><span>→</span>`).join('')}<div class="cell next">?</div></div>`;
     case 'pair_boxes': return `<div class="pair-boxes"><div class="b">${'●'.repeat(a.left)}</div><div class="b">${'●'.repeat(a.right)}</div></div>`;
+    case 'number_line': return `<div class="numline">${a.cells.map(c => c === null || c === '?' ? `<div class="c blank">?</div>` : `<div class="c${a.mark != null && Number(c) === a.mark ? ' mark' : ''}">${esc(c)}</div>`).join('')}</div>`;
+    case 'ordinal_row': return `<div class="ordrow"><div class="items">${a.items.map((it, i) => `<span class="${a.mark === i + 1 ? 'mark' : ''}">${it}</span>`).join('')}</div><div class="arrow"><span>${a.dir === 'right' ? '' : '← 왼쪽'}</span><span>${a.dir === 'right' ? '오른쪽 →' : '오른쪽 →'}</span></div></div>`;
+    case 'compare_groups': return `<div class="cmp">${a.rows.map(rw => `<div class="r"><em>${esc(rw.label)}</em><div class="g">${Array.from({length:rw.n}, () => `<span>${rw.item}</span>`).join('')}</div></div>`).join('')}</div>`;
+    case 'plate': return `<div class="plate"><div class="tray${a.n === 0 ? ' empty' : ''}">${Array.from({length:a.n}, () => `<span>${a.item}</span>`).join('')}</div>${a.label ? `<em>${esc(a.label)}</em>` : ''}</div>`;
   }
   return '';
 }
@@ -214,6 +245,8 @@ function optText(t){ if (typeof t !== 'object') return String(t); if (t.type ===
 function makeVariant(q, r){
   const v = JSON.parse(JSON.stringify(q)); const rule = q.variant_rule; if (!rule) return v; v.variant = true;
   const a = v.asset;
+  const POOL = rule.pool || [1,2,3,4,5];                 // 이 문항이 다룰 수의 후보
+  const RNG_ = rule.range || [Math.min.apply(null, POOL), Math.max.apply(null, POOL)];
   const numOpts = (n, lo, hi) => { // 정답 n, 오답은 n±1 안에서 (오개념 태그 유지)
     const wrong = [n - 1, n + 1, n - 2, n + 2].filter(x => x >= lo && x <= hi && x !== n);
     const mis = q.options.filter(o => !o.correct).map(o => o.mis || o.mis_target);
@@ -229,11 +262,18 @@ function makeVariant(q, r){
   }
   if (a && a.type === 'hidden_group'){ a.total = rint(rule.total[0], rule.total[1], r); a.visible = rint(1, a.total - 1, r); const ans = a.total - a.visible;
     v.stem = `병아리 ${a.total}마리가 있었어요. 지금 ${a.visible}마리가 보여요. 상자 뒤에 숨은 병아리는 몇 마리인가요?`;
-    v.options = [{t:String(ans), correct:true}, {t:String(a.visible), mis:'M03'}, {t:String(a.total), mis:'M03'}]; return v; }
+    const alt = [a.visible, a.total, ans + 1, ans - 1].filter(x => x >= 0 && x <= 9 && x !== ans);
+    const uniq = alt.filter((x, i) => alt.indexOf(x) === i).slice(0, 2);
+    v.options = [{t:String(ans), correct:true}].concat(uniq.map(x => ({t:String(x), mis:'M03'})));
+    v.explanation = [`보이는 ${a.visible}마리에서 이어 세면 ${a.total}마리가 돼요.`, `그래서 숨은 병아리는 ${ans}마리예요.`, `${a.visible}은 보이는 수, ${a.total}은 전체 수예요.`]; return v; }
   if (a && a.type === 'picto_table'){ const items = pick(rule.items, r); a.rows.forEach((rw, i) => { rw.item = items[i]; rw.n = rint(rule.n[0], rule.n[1], r); }); const rw = a.rows[1];
     v.stem = `과일 가게 그림표예요. ${a.rows[0].label} 칸에는 ${a.rows[0].item}가 ${a.rows[0].n}개, ${rw.label} 칸에는 ${rw.item}가 ${rw.n}개 있어요. ${rw.label}는 몇 개인가요?`;
-    const other = a.rows[0].n, third = rw.n + (rw.n < 5 ? 1 : -1); v.options = [{t:String(rw.n), correct:true}, {t:String(other === rw.n ? other + 1 : other), mis:'M05'}, {t:String(third), mis:'M01'}]; return v; }
-  if (q.kind === 'blank' && rule.blank_pos){ const pos = rint(rule.blank_pos[0], rule.blank_pos[1], r); const words = [1,2,3,4,5].map(n => n === pos ? '□' : NUMWORD[n]);
+    const used = [rw.n]; const take = cand => { for (const x of cand){ if (x >= 0 && x <= 9 && used.indexOf(x) < 0){ used.push(x); return x; } } return null; };
+    const d1 = take([a.rows[0].n, rw.n + 1, rw.n - 1, rw.n + 2]); const d2 = take([rw.n + 1, rw.n - 1, rw.n + 2, rw.n - 2]);
+    v.options = [{t:String(rw.n), correct:true}, {t:String(d1), mis:'M05'}, {t:String(d2), mis:'M01'}];
+    v.explanation = [`${rw.label} 칸의 그림만 세어요 — ${rw.n}개예요.`, `${a.rows[0].n}은 ${a.rows[0].label} 칸의 수예요.`, '표에서는 읽을 줄을 손가락으로 짚으세요.']; return v; }
+  if (q.kind === 'blank' && rule.blank_pos){ const seq = rule.seq || [1,2,3,4,5]; const pos = rule.pool ? pick(POOL, r) : rint(rule.blank_pos[0], rule.blank_pos[1], r);
+    const words = seq.map(n => n === pos ? '□' : NUMWORD[n]);
     v.stem = `수를 세는 말이에요. 빈칸에 알맞은 말을 고르세요.\n${words.join(' — ')}`; const w = [pos + 2, pos - 2, pos + 1, pos - 1].filter(x => x >= 1 && x <= 9 && x !== pos).slice(0, 2);
     v.options = [{t:NUMWORD[pos], correct:true}, {t:NUMWORD[w[0]], mis:'M06'}, {t:NUMWORD[w[1]], mis:'M06'}]; return v; }
   if (q.kind === 'error' && rule.error_type){ const n = rint(rule.n[0], rule.n[1], r); const item = pick(rule.item || ['🍬'], r); const type = pick(rule.error_type, r); const name = pick(['민수','지우','하늘','보라'], r);
@@ -246,18 +286,86 @@ function makeVariant(q, r){
     const ok = type === 'double' ? '같은 것을 두 번 세었어요' : '하나를 빠뜨리고 세었어요'; const other = type === 'double' ? '하나를 빠뜨리고 세었어요' : '같은 것을 두 번 세었어요';
     v.options = [{t:ok, correct:true, mis_target:'M01'}, {t:`정말 ${count}개예요`, mis:'M03'}, {t:other, mis:'M01'}];
     v.explanation = [type === 'double' ? `'${NUMWORD[k]}'을 두 번 말했어요 — 같은 것을 두 번 센 거예요.` : `하나를 빼먹고 세었어요.`, `바르게 세면 ${seq.join(', ')} — ${n}개예요.`, '하나씩 짚으며 한 번씩만 세어 보세요.']; return v; }
-  if (q.kind === 'match' && rule.n_pool){ const ns = shuffle([1,2,3,4,5], r).slice(0, q.pairs.length); v.pairs = q.pairs.map((p, i) => { const n = ns[i];
+  if (q.kind === 'match' && rule.n_pool){ const ns = shuffle(rule.pool || [1,2,3,4,5], r).slice(0, q.pairs.length); v.pairs = q.pairs.map((p, i) => { const n = ns[i];
       const left = typeof p.l === 'object' ? {type:'dots', n} : String(n); const right = typeof p.r === 'object' ? {type:'dots', n} : (/^\d$/.test(p.r) ? String(n) : NUMWORD[n]); return {l:left, r:right}; }); return v; }
   if (q.kind === 'sa' && rule.n && !a){ const n = rint(rule.n[0], rule.n[1], r); v.stem = q.stem.replace(/\d/, n); v.answer = [String(n)]; return v; }
   if (q.kind === 'mc' && rule.n && !a && /수수께끼/.test(q.stem)){ const n = rint(rule.n[0], rule.n[1], r); v.stem = `수수께끼예요. "나는 ${NUMWORD[n-1]} 바로 다음 수이고, ${NUMWORD[n+1]} 바로 앞의 수예요." 나는 누구일까요?`;
     v.options = [{t:String(n), correct:true}, {t:String(n-1), mis:'M06'}, {t:String(n+1), mis:'M06'}]; return v; }
-  if (q.kind === 'mc' && rule.n && !a){ const n = rint(rule.n[0], rule.n[1], r); v.stem = q.stem.replace(/\d/, n); const ws = shuffle([1,2,3,4,5].filter(x => x !== n), r).slice(0, 2);
+  if (q.kind === 'mc' && rule.n && !a){ const n = rint(rule.n[0], rule.n[1], r); v.stem = q.stem.replace(/\d/, n); const ws = shuffle(POOL.filter(x => x !== n), r).slice(0, 2);
     v.options = [{t:NUMWORD[n], correct:true}, {t:NUMWORD[ws[0]], mis:'M02'}, {t:NUMWORD[ws[1]], mis:'M02'}]; return v; }
-  if (q.kind === 'ox' && rule.truth){ const n = rint(rule.n[0], rule.n[1], r); const item = pick(rule.item, r); const truth = pick(rule.truth, r); const said = truth === 'O' ? n : (n === 5 ? 4 : n + 1);
+  if (q.kind === 'ox' && rule.truth){ const n = rint(rule.n[0], rule.n[1], r); const item = pick(rule.item, r); const truth = pick(rule.truth, r); const said = truth === 'O' ? n : (n === RNG_[1] ? n - 1 : n + 1);
     v.stem = `${item.repeat(n)}의 수는 '${NUMWORD[said]}'입니다.`; v.answer = truth; v.reason_options = [{t: truth === 'O' ? `${NUMWORD.slice(1, n+1).join(', ')} — ${n}개라서` : `세어 보면 ${NUMWORD[n]}, ${n}개라서`, correct:true}, {t:'모양이 크니까', mis:'M10'}];
     v.explanation = [`세어 보면 ${n}개, '${NUMWORD[n]}'이에요.`, truth === 'O' ? '맞는 말이에요.' : `'${NUMWORD[said]}'은 틀렸어요.`, '수를 셀 때는 개수만 보세요.']; return v; }
   if (q.kind === 'sa' && rule.start && /규칙/.test(q.stem)){ const s = rint(rule.start[0], rule.start[1], r); v.asset = {type:'rule', cells:[s, s+1, s+2]}; v.answer = [String(s + 3)];
     v.stem = '점이 규칙대로 늘어나요. 다음 칸의 점은 몇 개인가요? 숫자로 쓰세요.'; v.explanation = ['점이 1개씩 늘어나는 규칙이에요.', `${s}, ${s+1}, ${s+2} 다음이니까 ${s+3}이에요.`, '각 칸의 점을 세어 규칙을 먼저 찾아보세요.']; return v; }
+
+  /* --- v0.2: 3~7차시 개념 변형 --- */
+  // 순서수(몇째) — C3
+  if (a && a.type === 'ordinal_row' && rule.ordinal){
+    const pool = rule.ordinal.items || ['🐶','🐱','🐰','🐻','🦊','🐼','🐯','🐨','🦁'];
+    const items = shuffle(pool, r).slice(0, a.items.length); a.items = items;
+    const pos = rint(1, items.length, r);
+    if (rule.ordinal.ask === 'which'){
+      delete a.mark; v.stem = `왼쪽에서 ${ORD[pos]}에 있는 것은 무엇인가요?`;
+      const ws = shuffle(items.filter((_, i) => i !== pos - 1), r).slice(0, 2);
+      v.options = [{t:items[pos - 1], correct:true}].concat(ws.map(w => ({t:w, mis:'M05'})));
+      v.explanation = [`왼쪽부터 첫째, 둘째… 하고 세어요.`, `${ORD[pos]}는 ${items[pos - 1]}예요.`, '어느 쪽에서 세는지 먼저 확인하세요.'];
+    } else {
+      a.mark = pos; v.stem = '왼쪽에서 세면 표시된 것은 몇째인가요?';
+      const ws = [pos + 1, pos - 1, pos + 2].filter(x => x >= 1 && x <= items.length && x !== pos).slice(0, 2);
+      v.options = [{t:ORD[pos], correct:true}].concat(ws.map(w => ({t:ORD[w], mis:'M04'})));
+      v.explanation = ['왼쪽부터 첫째, 둘째… 하고 세어요.', `표시된 것은 ${ORD[pos]}예요.`, `${ORD[pos]}는 한 개를 가리키는 말이에요 — ${pos}개와 달라요.`];
+    }
+    return v;
+  }
+  // 수의 순서(배열판 빈칸) — C4
+  if (a && a.type === 'number_line' && rule.seqline){
+    const cfg = rule.seqline; const len = cfg.len || 6; const lo = cfg.from != null ? cfg.from : 1; const hi = cfg.max != null ? cfg.max : 9;
+    const start = rint(lo, Math.max(lo, hi - len + 1), r); const desc = cfg.dir === 'down';
+    const nums = Array.from({length:len}, (_, i) => desc ? start + len - 1 - i : start + i);
+    const bi = rint(1, len - 2, r); const ans = nums[bi];
+    a.cells = nums.map((n, i) => i === bi ? null : String(n)); delete a.mark;
+    v.stem = desc ? '수를 거꾸로 늘어놓았어요. 빈칸에 알맞은 수는 무엇인가요?' : '수를 순서대로 늘어놓았어요. 빈칸에 알맞은 수는 무엇인가요?';
+    if (q.kind === 'sa') v.answer = [String(ans)];
+    else { const ws = [ans + 1, ans - 1, ans + 2].filter(x => x >= 0 && x <= 9 && x !== ans).slice(0, 2);
+      v.options = [{t:String(ans), correct:true}].concat(ws.map(w => ({t:String(w), mis:'M06'}))); }
+    v.explanation = [desc ? '9, 8, 7… 거꾸로 세는 순서예요.' : '1, 2, 3… 순서대로 세는 순서예요.', `${nums[bi - 1]} 다음은 ${ans}예요.`, '배열판을 손가락으로 짚으며 세어 보세요.'];
+    return v;
+  }
+  // 1만큼 더 큰 수·작은 수 — C5
+  if (rule.neighbor){
+    const [lo, hi] = rule.neighbor.range || [1, 8];
+    const n = rint(lo, hi, r); const up = rule.neighbor.dir === 'both' ? (r() < 0.5) : rule.neighbor.dir !== 'down';
+    const ans = up ? n + 1 : n - 1;
+    v.stem = `${n}보다 1만큼 더 ${up ? '큰' : '작은'} 수는 무엇인가요?`;
+    if (a && a.type === 'number_line'){ a.cells = ['0','1','2','3','4','5','6','7','8','9']; a.mark = n; }
+    if (q.kind === 'sa') v.answer = [String(ans)];
+    else v.options = [{t:String(ans), correct:true}, {t:String(up ? n - 1 : n + 1), mis:'M07'}, {t:String(n), mis:'M07'}];
+    v.explanation = [`수 배열판에서 ${n} 바로 ${up ? '오른쪽' : '왼쪽'}을 보세요.`, `${n}보다 1만큼 더 ${up ? '큰' : '작은'} 수는 ${ans}예요.`, '오른쪽으로 가면 커지고 왼쪽으로 가면 작아져요.'];
+    return v;
+  }
+  // 0 — C6
+  if (a && a.type === 'plate' && rule.zero){
+    const n = rint(0, rule.zero.max != null ? rule.zero.max : 3, r); const item = pick(rule.zero.item || ['🍪'], r);
+    a.n = n; a.item = item; a.label = '';
+    v.stem = '접시에 남은 것은 몇 개인가요? 숫자로 쓰세요.';
+    if (q.kind === 'sa') v.answer = [String(n)];
+    else v.options = [{t:String(n), correct:true}, {t:String(n + 1), mis:'M08'}, {t:n === 0 ? '1' : '0', mis:'M09'}];
+    v.explanation = [n === 0 ? '아무것도 없으면 0이에요.' : `하나씩 세어 보면 ${n}개예요.`, '0도 수예요 — 없는 것을 나타내요.', '접시를 다 비우면 0, 하나 놓으면 1이에요.'];
+    return v;
+  }
+  // 크기 비교 — C7
+  if (a && a.type === 'compare_groups' && rule.compare){
+    const pr = pick(rule.compare.pairs, r); const [lo, hi] = rule.compare.n || [1, 9];
+    let x = rint(lo, hi, r); let y = rint(lo, hi, r); if (y === x) y = (x === hi) ? x - 1 : x + 1;
+    a.rows = [{label:pr[0].label, item:pr[0].item, n:x}, {label:pr[1].label, item:pr[1].item, n:y}];
+    const askMore = rule.compare.ask !== 'less';
+    const win = askMore ? (x > y ? pr[0] : pr[1]) : (x < y ? pr[0] : pr[1]); const lose = (win === pr[0]) ? pr[1] : pr[0];
+    v.stem = `${pr[0].label}와 ${pr[1].label} 중에서 더 ${askMore ? '많은' : '적은'} 것은 무엇인가요?`;
+    v.options = [{t:win.label, correct:true}, {t:lose.label, mis:'M11'}, {t:'수가 같아요', mis:'M10'}];
+    v.explanation = [`${pr[0].label} ${x}개, ${pr[1].label} ${y}개예요.`, `${win.label}가 더 ${askMore ? '많' : '적'}아요.`, '하나씩 짝지어 보면 남는 쪽이 더 많아요.'];
+    return v;
+  }
   return v;
 }
 
@@ -287,8 +395,8 @@ function start(){
 }
 function renderCover(resume){
   const done = Object.keys(state.answers).length;
-  app.innerHTML = `<div class="cover"><div class="badge">${DATA.kind === 'lesson_challenge' ? '도전 학습지' : '차시 학습지'}</div>
-   <h1>${esc(DATA.title.replace(/ — .*/, ''))}</h1><p>1학년 수학 · ${Q.length}문제</p>
+  app.innerHTML = `<div class="cover"><div class="badge">${KINDNAME(DATA.kind)}</div>
+   <h1>${esc(DATA.title.replace(/ — .*/, ''))}</h1><p>${esc(DATA.header || '1학년 수학')} · ${Q.length}문제</p>
    ${resume ? `<p>${done}번까지 풀었어요. 이어서 할까요?</p><div class="row"><button class="big" data-nav="resume">이어서 풀기</button><button class="big ghost" data-nav="restart">처음부터</button></div>` : `<button class="big" data-nav="resume">시작</button>`}
    <div class="alt"><a href="play.html?set=${SET}&mode=paper">시험지(A4)로 풀기</a><span>·</span><a href="./">학습지 목록</a><span>·</span><a href="${BACK.href}">${esc(BACK.label)}</a></div></div>`;
 
@@ -416,14 +524,18 @@ function paperAsset(a){
     case 'picto_table': return `<table class="picto-p">${a.rows.map(rw => `<tr><td>${esc(rw.label)}</td><td>${rw.item.repeat(rw.n)}</td></tr>`).join('')}</table>`;
     case 'rule': return `<div class="passet small">${a.cells.map(n => '●'.repeat(n)).join(' → ')} → <span class="pbox">&nbsp;&nbsp;</span></div>`;
     case 'pair_boxes': return `<div class="passet small"><span class="pbox">${'●'.repeat(a.left)}</span> <span class="pbox">${'●'.repeat(a.right)}</span></div>`;
+    case 'number_line': return `<div class="pnum">${a.cells.map(c => c === null || c === '?' ? `<span class="blank">&nbsp;</span>` : `<span>${esc(c)}</span>`).join('')}</div>`;
+    case 'ordinal_row': return `<div class="pord">${a.items.map((it, i) => `<span class="${a.mark === i + 1 ? 'mk' : ''}">${it}</span>`).join('')}<span style="font-size:12px;letter-spacing:0"> (왼쪽 → 오른쪽)</span></div>`;
+    case 'compare_groups': return `<div class="pcmp">${a.rows.map(rw => `<div><b>${esc(rw.label)}</b> ${rw.item.repeat(rw.n)}</div>`).join('')}</div>`;
+    case 'plate': return `<div class="pplate">${a.n === 0 ? '(비어 있음)' : a.item.repeat(a.n)}</div>`;
   } return '';
 }
 function paperOptText(t){ return typeof t === 'object' ? (t.type === 'dots' ? '●'.repeat(t.n) : t.item.repeat(t.n)) : esc(t); }
 function renderPaper(){
   document.body.classList.add('paper'); const Qp = DATA.questions.map(prep); const r = rng(SEED); const circ = ['①','②','③','④'];
   const shuffled = Qp.map((q, i) => ({q, opts: q.options ? shuffle(q.options.map((o, k) => Object.assign({k}, o)), rng(SEED * 97 + i)) : null}));
-  const title = DATA.title.replace(/ — .*/, ''); const sub = DATA.kind === 'lesson_challenge' ? '도전 학습지 ②' : '차시 학습지 ①';
-  const half = Math.ceil(Qp.length / 2);
+  const title = DATA.title.replace(/ — .*/, ''); const sub = KINDNAME(DATA.kind) + (DATA.form ? ' ' + DATA.form : '');
+  const PER = Qp.length <= 12 ? Math.ceil(Qp.length / 2) : 9;
   const qhtml = (x, i) => { const q = x.q; let body = '';
     const paren = (label, cls) => `<div class="pans"><em>${label}</em>(<span class="paren ${cls || ''}"></span>)</div>`;
     if (q.kind === 'sa') body = paren('답', 'wide');
@@ -432,7 +544,7 @@ function renderPaper(){
     else if (q.kind === 'ox') body = `<div class="popts"><span data-n="O">맞아요</span><span data-n="X">틀려요</span></div><div class="popts" style="margin-top:8px">${q.reason_options.map((o, k) => `<span data-n="${circ[k]}">${esc(o.t)}</span>`).join('')}</div><div class="pans"><em>답</em>(<span class="paren"></span>)<em style="margin-left:14px">까닭</em>(<span class="paren"></span>)</div>`;
     else body = `<div class="popts">${x.opts.map((o, k) => `<span data-n="${circ[k]}">${paperOptText(o.t)}</span>`).join('')}</div>` + paren('답');
     return `<div class="pq"><span class="pn">${i + 1}</span><span class="pstem">${esc(q.stem.replace(/\n/g, ' '))}</span>${paperAsset(q.asset)}${body}</div>`; };
-  const page = (items, off, n) => `<div class="sheet"><div class="ph"><div><h1>${esc(title)}</h1><div class="meta">1학년 수학 · ${sub}</div></div><div class="idbox"><span>반</span><span>번호</span></div></div><div class="pbody">${items.map((x, i) => qhtml(x, off + i)).join('')}</div><div class="pfoot"><span>케이학습지 · keduclass.com</span><span>${n}</span></div></div>`;
+  const page = (items, off, n) => `<div class="sheet"><div class="ph"><div><h1>${esc(title)}</h1><div class="meta">${esc(DATA.header || '1학년 수학')} · ${sub}</div></div><div class="idbox"><span>반</span><span>번호</span></div></div><div class="pbody">${items.map((x, i) => qhtml(x, off + i)).join('')}</div><div class="pfoot"><span>케이학습지 · keduclass.com</span><span>${n}</span></div></div>`;
   // 교사용 정답표
   const key = `<div class="sheet key-sheet"><div class="ph"><div><h1>${esc(title)} — 교사용</h1><div class="meta">정답 · 개념 · 오답 선택지의 오개념</div></div></div>
    <table class="key"><tr><th>번호</th><th>난이도</th><th>유형</th><th>정답</th><th>개념</th><th>오답 → 오개념</th></tr>${shuffled.map((x, i) => { const q = x.q; let ans = '';
@@ -440,8 +552,8 @@ function renderPaper(){
      else if (q.kind === 'ox') ans = q.answer + ' / ' + circ[q.reason_options.findIndex(o => o.correct)]; else ans = circ[x.opts.findIndex(o => o.correct)] + ' ' + paperOptText(x.opts.find(o => o.correct).t);
      const mis = q.options ? x.opts.map((o, k) => o.mis ? `${circ[k]}→${o.mis}` : '').filter(Boolean).join(' ') : (q.reason_options ? q.reason_options.filter(o => o.mis).map(o => o.mis).join(' ') : '');
      return `<tr><td>${i + 1}</td><td>D${q.difficulty}</td><td>${q.kind}</td><td>${ans}</td><td>${q.concept}</td><td>${mis}</td></tr>`; }).join('')}</table>
-   <p style="font-size:12px;color:#555;margin-top:14px">오개념 코드: M01 세기 누락·중복 · M02 수 읽기 혼동 · M03 기수성 · M05 기준 무시 · M06 순서 혼동 · M10 크기로 비교 (정본: handoff/kedu/worksheet/g1_math_u1/개념트리_오개념.md)</p></div>`;
-  app.innerHTML = `<div class="toolbar"><button onclick="window.print()">인쇄 / PDF 저장</button><button onclick="location.href='play.html?set=${SET}'">화면으로 풀기</button><button onclick="location.href='./'">학습지 목록</button><button onclick="location.href='${BACK.href}'">${esc(BACK.label)}</button></div>` + page(shuffled.slice(0, half), 0, 1) + page(shuffled.slice(half), half, 2) + key;
+   <p style="font-size:12px;color:#555;margin-top:14px">오개념 코드: M01 세기 누락·중복 · M02 수 읽기 혼동 · M03 기수성 · M04 몇째/몇 개 혼동 · M05 기준 방향 무시 · M06 순서 흐트러짐 · M07 크다/작다 방향 반대 · M08 0을 수로 인정 못함 · M09 0과 1 혼동 · M10 길이로 비교 · M11 많다/적다 반대 (정본: handoff/kedu/worksheet/g1_math_u1/개념트리_오개념.md)</p></div>`;
+  app.innerHTML = `<div class="toolbar"><button onclick="window.print()">인쇄 / PDF 저장</button><button onclick="location.href='play.html?set=${SET}'">화면으로 풀기</button><button onclick="location.href='./'">학습지 목록</button><button onclick="location.href='${BACK.href}'">${esc(BACK.label)}</button></div>` + (() => { let out = '', pg = 0; for (let i = 0; i < shuffled.length; i += PER){ pg++; out += page(shuffled.slice(i, i + PER), i, pg); } return out; })() + key;
 }
 </script>
 </body>
