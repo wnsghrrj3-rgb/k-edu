@@ -43,7 +43,7 @@
         { tl: c.at + d1 + d2, dur: d - d1 - d2, src: inSec + len * 0.8, rate: 1 },
       ];
     }
-    return [{ tl: c.at, dur: c.dur, src: inSec, rate: P.SPEED[c.speed].f }];
+    return [{ tl: c.at, dur: c.dur, src: inSec, rate: P.SPEED[c.speed].f, ramp: c.ramp && P.RAMP[c.ramp] > 0 && P.SPEED[c.speed].f !== 1 ? c : null }];
   }
 
   /* ---------- 스트리밍 소리 헬퍼 ---------- */
@@ -67,6 +67,7 @@
       const m = P.media(c.media), src = M.get(m.id); if (!src || !src.pcm) continue;
       for (const s of segments(a, c, m)) {
         const st = Math.max(s.tl, f0), en = Math.min(s.tl + s.dur, f1); if (en <= st) continue;
+        if (s.ramp) { const S = u => (P.srcFrame(c, c.at + u * c.dur) - c.in) / m.fps; jobs.push(src.pcm.ensure(s.src + S((st - s.tl) / s.dur) - 0.05, s.src + S(Math.min(1, (en - s.tl) / s.dur)) + 0.1)); continue; }
         jobs.push(src.pcm.ensure(s.src + (st - s.tl) / FPS * s.rate - 0.05, s.src + (en - s.tl) / FPS * s.rate + 0.1));
       }
     }
@@ -75,6 +76,7 @@
       const st = Math.max(a.at, f0), en = Math.min(a.at + (a.out - a.in), f1); if (en <= st) continue;
       jobs.push(src.pcm.ensure((a.in + st - a.at) / FPS - 0.05, (a.in + en - a.at) / FPS + 0.1));
     }
+    for (const a of P.data.A1) { const c = P.clip(a.clip); if (c && denoiseLevelOf(c) && !profCache.has(c.media)) jobs.push(noiseProfile(c.media).catch(() => null)); }
     const amb = P.data.audio && P.data.audio.ambience;
     if (amb && amb.on && amb.src) {
       const m = P.media(amb.src.media), S = M.get(amb.src.media);
@@ -99,10 +101,23 @@
         const durSec = (s.dur - skip) / FPS;
         let durPlay = capFrame != null ? Math.min(durSec, (capFrame - (s.tl + skip)) / FPS) : durSec;
         if (durPlay <= 0.001) continue;
-        const srcOff = s.src + skip / FPS * s.rate;
+        let srcOff = s.src + skip / FPS * s.rate, needSec = durPlay * s.rate, curve = null;
+        if (s.ramp) {                                     // 속도 램프 — 원본 위치·소모량·재생 배속 곡선을 같은 매핑(srcFrame)에서
+          const cR = s.ramp, len = (cR.out - cR.in) / m.fps, u0 = skip / s.dur, u1 = (skip + durPlay * FPS) / s.dur;
+          const S = u => (P.srcFrame(cR, cR.at + u * cR.dur) - cR.in) / Math.max(1, cR.out - cR.in);   // 원본 진행(정수 프레임 기준 — 영상과 정확히 같은 축)
+          srcOff = s.src + S(u0) * len; needSec = Math.max(0.01, (S(Math.min(1, u1)) - S(u0)) * len);
+          const N = 48; curve = new Float32Array(N); for (let i = 0; i < N; i++) curve[i] = Math.max(0.05, P.rateAt(cR, u0 + (u1 - u0) * i / (N - 1)));
+        }
         if (srcOff >= aDur(src)) continue;
-        const bf = bufFor(actx, src, srcOff, durPlay * s.rate + 0.05);
+        let bf = bufFor(actx, src, srcOff, needSec + 0.05);
+        const dl = denoiseLevelOf(c);
+        if (dl && profCache.get(m.id)) {                  // 잡음 줄이기 — 이 조각만 복사해 정리(원본 버퍼는 안 건드림)
+          if (bf.offset) { const sr = bf.buffer.sampleRate, s0 = Math.floor(bf.offset * sr), n = Math.min(bf.buffer.length - s0, Math.ceil((needSec + 0.05) * sr)); const nb = actx.createBuffer(bf.buffer.numberOfChannels, Math.max(1, n), sr); for (let ch = 0; ch < nb.numberOfChannels; ch++) nb.copyToChannel(bf.buffer.getChannelData(ch).subarray(s0, s0 + n), ch); bf = { buffer: nb, offset: 0 }; }
+          const chs = []; for (let ch = 0; ch < bf.buffer.numberOfChannels; ch++) chs.push(bf.buffer.getChannelData(ch));
+          denoiseBuf(chs, profCache.get(m.id), dl);
+        }
         const node = actx.createBufferSource(); node.buffer = bf.buffer; node.playbackRate.value = s.rate;
+        if (curve) { try { node.playbackRate.setValueCurveAtTime(curve, when, Math.max(0.01, durPlay)); } catch (e) {} }
         const gn = actx.createGain();
         const vol = a.vol == null ? 1 : a.vol;
         // 페이드는 조각 전체 길이 기준 — 창 경계에서 잘려 이어져도 게인 값이 연속
@@ -117,7 +132,7 @@
         gn.gain.setValueAtTime(gAt(foS), when + (foS - pos0));
         gn.gain.linearRampToValueAtTime(0, when + (lenWall - pos0));
         node.connect(gn); gn.connect(dest);
-        node.start(when, bf.offset, durPlay * s.rate);
+        node.start(when, bf.offset, curve ? needSec : durPlay * s.rate);
         nodes.push(node);
       }
     }
@@ -181,6 +196,94 @@
     return nodes;
   }
 
+
+  /* ---------- 잡음 줄이기 (스펙트럴 게이트) ----------
+     리졸브 "Noise Reduction"·프리미어 "DeNoise" 의 원리: 그 원본에서 가장 조용한 1.5초(룸톤 탐색과 같은 규칙)를 잡음 지문으로 삼아
+     주파수마다 지문보다 조금 큰 만큼만 남긴다(스펙트럴 서브트랙션 + 시간 스무딩으로 "물방울 소리" 억제). 결정적 — 미리보기 = 내보내기.
+     클립마다 c.denoise: 'light' | 'strong'. 지문은 원본마다 한 번 계산해 캐시. */
+  const NFFT = 1024, HOP = 256, DEN = { light: { a: 1.6, floor: 0.16, sm: 0.55 }, strong: { a: 2.6, floor: 0.07, sm: 0.7 } };
+  const hann = (() => { const w = new Float32Array(NFFT); for (let i = 0; i < NFFT; i++) w[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / NFFT); return w; })();
+  const bitrev = (() => { const r = new Uint16Array(NFFT); const b = Math.log2(NFFT); for (let i = 0; i < NFFT; i++) { let x = i, y = 0; for (let k = 0; k < b; k++) { y = (y << 1) | (x & 1); x >>= 1; } r[i] = y; } return r; })();
+  const cosT = new Float32Array(NFFT / 2), sinT = new Float32Array(NFFT / 2);
+  for (let i = 0; i < NFFT / 2; i++) { cosT[i] = Math.cos(2 * Math.PI * i / NFFT); sinT[i] = Math.sin(2 * Math.PI * i / NFFT); }
+  function fft(re, im, inv) {                     // 제자리 radix-2, 길이 NFFT
+    for (let i = 0; i < NFFT; i++) { const j = bitrev[i]; if (j > i) { let t = re[i]; re[i] = re[j]; re[j] = t; t = im[i]; im[i] = im[j]; im[j] = t; } }
+    for (let size = 2; size <= NFFT; size <<= 1) {
+      const half = size >> 1, step = NFFT / size;
+      for (let i = 0; i < NFFT; i += size) for (let j = 0; j < half; j++) {
+        const k = j * step, wr = cosT[k], wi = inv ? sinT[k] : -sinT[k];
+        const a = i + j, b = a + half, xr = re[b] * wr - im[b] * wi, xi = re[b] * wi + im[b] * wr;
+        re[b] = re[a] - xr; im[b] = im[a] - xi; re[a] += xr; im[a] += xi;
+      }
+    }
+    if (inv) for (let i = 0; i < NFFT; i++) { re[i] /= NFFT; im[i] /= NFFT; }
+  }
+  /* 지문: 조용한 구간 pcm → 평균 진폭 스펙트럼(빈 0..N/2) */
+  function spectrumOf(x) {
+    const bins = NFFT / 2 + 1, acc = new Float32Array(bins), re = new Float32Array(NFFT), im = new Float32Array(NFFT);
+    let n = 0;
+    for (let off = 0; off + NFFT <= x.length; off += HOP) {
+      for (let i = 0; i < NFFT; i++) { re[i] = x[off + i] * hann[i]; im[i] = 0; }
+      fft(re, im, false);
+      for (let k = 0; k < bins; k++) acc[k] += Math.hypot(re[k], im[k]);
+      n++;
+    }
+    if (n) for (let k = 0; k < bins; k++) acc[k] /= n;
+    return acc;
+  }
+  const profCache = new Map();
+  /* 원본 mediaId 의 잡음 지문(채널별) — 가장 조용한 1.5초. 없으면 null */
+  function quietWindow(mediaId) {
+    const P = g.KMV_PROJECT, m = P.media(mediaId), src = g.KMV_MEDIA.get(mediaId);
+    if (!m || !src || !src.peaks) return null;
+    const pk = src.peaks, n = pk.length, win = Math.round(AMB_SEC * m.fps); if (n < win + 2) return { in: 0, out: Math.min(n, win) };
+    const sorted = Array.from(pk).sort((a, b) => a - b), q90 = sorted[Math.floor(n * 0.9)] || 0, silent = Math.max(1e-4, q90 * 0.002);
+    let best = null; const step = Math.max(1, Math.round(m.fps / 10));
+    for (let i = 0; i + win <= n; i += step) {
+      let sum = 0, sq = 0, mx = 0; for (let j = i; j < i + win; j++) { sum += pk[j]; sq += pk[j] * pk[j]; if (pk[j] > mx) mx = pk[j]; }
+      if (mx <= silent) continue;
+      const mean = sum / win, sd = Math.sqrt(Math.max(0, sq / win - mean * mean)), score = mean + sd * 2;
+      if (!best || score < best.score) best = { in: i, out: i + win, score };
+    }
+    return best;
+  }
+  async function noiseProfile(mediaId) {
+    if (profCache.has(mediaId)) return profCache.get(mediaId);
+    const P = g.KMV_PROJECT, m = P.media(mediaId), src = g.KMV_MEDIA.get(mediaId);
+    if (!m || !src || !hasA(src)) return null;
+    const w = quietWindow(mediaId); if (!w) return null;
+    const t0 = w.in / m.fps, t1 = w.out / m.fps;
+    let chs, sr;
+    if (src.pcm) { await src.pcm.ensure(t0 - 0.05, t1 + 0.05); const r = src.pcm.read(t0, Math.round((t1 - t0) * (src.pcm.sr || 48000))); chs = r.ch; sr = r.sr; }
+    else { const ab = src.audio; sr = ab.sampleRate; chs = []; for (let c = 0; c < ab.numberOfChannels; c++) chs.push(ab.getChannelData(c).subarray(Math.floor(t0 * sr), Math.floor(t1 * sr))); }
+    const prof = { sr, ch: chs.map(spectrumOf), win: w };
+    profCache.set(mediaId, prof); return prof;
+  }
+  /* 버퍼(채널별 Float32Array)를 제자리에서 정리. 반환: 처리했는지 */
+  function denoiseBuf(chs, prof, level) {
+    const cfg = DEN[level] || DEN.light; if (!prof) return false;
+    const bins = NFFT / 2 + 1, re = new Float32Array(NFFT), im = new Float32Array(NFFT);
+    for (let c = 0; c < chs.length; c++) {
+      const x = chs[c], noise = prof.ch[Math.min(c, prof.ch.length - 1)], n = x.length;
+      const out = new Float32Array(n + NFFT), gain = new Float32Array(bins).fill(1);
+      for (let off = 0; off < n; off += HOP) {
+        for (let i = 0; i < NFFT; i++) { const v = off + i < n ? x[off + i] : 0; re[i] = v * hann[i]; im[i] = 0; }
+        fft(re, im, false);
+        for (let k = 0; k < bins; k++) {
+          const mag = Math.hypot(re[k], im[k]), gRaw = mag > 1e-9 ? Math.max(cfg.floor, 1 - cfg.a * noise[k] / mag) : cfg.floor;
+          gain[k] = gain[k] * cfg.sm + gRaw * (1 - cfg.sm);                       // 시간 스무딩 — 게인이 튀지 않게
+          const gk = gain[k]; re[k] *= gk; im[k] *= gk;
+          if (k > 0 && k < NFFT / 2) { re[NFFT - k] = re[k]; im[NFFT - k] = -im[k]; }   // 켤레 대칭 유지
+        }
+        fft(re, im, true);
+        for (let i = 0; i < NFFT; i++) out[off + i] += re[i] * hann[i];
+      }
+      const norm = 1 / (1.5 * (NFFT / HOP) / 4);                                       // hann² 겹침 합(=1.5) 보정
+      for (let i = 0; i < n; i++) x[i] = out[i] * norm;
+    }
+    return true;
+  }
+  function denoiseLevelOf(c) { return c && c.denoise && DEN[c.denoise] ? c.denoise : null; }
 
   /* ---------- 앰비언스(룸톤) ----------
      · findRoomTone(): 타임라인에 쓰인 영상 원본들의 peaks(프레임 RMS) 에서 가장 조용하면서 "완전 무음은 아닌" 1.5초 창을 고른다.
@@ -472,6 +575,6 @@
     return out.filter(s => s.dur >= min);
   }
 
-  g.KMV_AUDIO = { ctx, decode, play, playSource, stop, now, isPlaying, nodeCount: () => (playing ? playing.nodes.length : 0), renderMix, ensureRange, segments, scheduleA1, scheduleA2, scheduleAmb, scheduleSfx, findRoomTone, ambGaps, ambBuffer, voice, beats, beatsFromEnv, duckSpans, XF, SR, AMB_SEC,
+  g.KMV_AUDIO = { ctx, decode, play, playSource, stop, now, isPlaying, nodeCount: () => (playing ? playing.nodes.length : 0), renderMix, ensureRange, segments, scheduleA1, scheduleA2, scheduleAmb, scheduleSfx, noiseProfile, denoiseBuf, quietWindow, profileFrom: (chs, sr) => ({ sr, ch: chs.map(spectrumOf) }), findRoomTone, ambGaps, ambBuffer, voice, beats, beatsFromEnv, duckSpans, XF, SR, AMB_SEC,
     _tune: o => { if (o && o.win > 0) WIN_S = o.win; if (o && o.top > 0) TOP_S = o.top; } };
 })(typeof window !== 'undefined' ? window : globalThis);

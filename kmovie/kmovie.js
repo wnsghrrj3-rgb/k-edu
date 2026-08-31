@@ -380,7 +380,8 @@
     ctx.fillStyle = 'rgba(8,14,30,.78)'; ctx.fillRect(x0, y, w, band);
     const sp = P.SPEED[c.speed];
     let label = (c.freeze ? '❚❚ 정지 · ' : m.kind === 'image' ? '사진 · ' : '') + m.name;
-    if (sp.badge) label = sp.badge + ' · ' + label;
+    if (sp.badge) label = sp.badge + (c.ramp && c.ramp !== 'none' ? '↗' : '') + ' · ' + label;
+    if (c.denoise) label = '🔇 ' + label;
     ctx.fillStyle = selected ? GOLD : '#dfe6f3'; ctx.font = (c.freeze || sp.badge ? '700 ' : '600 ') + '11px Pretendard, sans-serif'; ctx.textBaseline = 'middle';
     ctx.fillText(label, vx0 + 6, y + band / 2 + 0.5, Math.max(10, vx1 - vx0 - 10));
     ctx.restore();
@@ -1144,6 +1145,8 @@
   /* ---------- 우측 패널: 클립 ---------- */
   const speedSeg = $('speedSeg');
   Object.keys(P.SPEED).forEach(k => { const b = document.createElement('button'); b.textContent = P.SPEED[k].label; b.dataset.k = k; b.onclick = () => { const c = selClip(); if (c) { stop(); P.setSpeed(c.id, k); } }; speedSeg.appendChild(b); });
+  [['none', '없음'], ['short', '짧게'], ['normal', '보통'], ['long', '길게']].forEach(([k, l]) => segBtn($('rampSeg'), k, l, () => { const c = selClip(); if (c) { stop(); P.setRamp(c.id, k); } }, '슬로·타임랩스로 부드럽게 들어가고 나오는 구간'));
+  [['none', '없음'], ['light', '약하게'], ['strong', '강하게']].forEach(([k, l]) => segBtn($('denoiseSeg'), k, l, () => { const c = selClip(); if (c) { stop(); P.setDenoise(c.id, k); } }, '이 원본의 가장 조용한 구간을 잡음 지문으로 삼아 웅웅거림·히스를 줄여요'));
   let volStart = null;
   $('vol').oninput = e => { const c = selClip(); if (!c) return; const a = P.audioOf(c.id); if (a) { if (volStart == null) volStart = a.vol == null ? 1 : a.vol; a.vol = +e.target.value / 100; $('volV').textContent = e.target.value + '%'; dirty = true; draw(); } };
   $('vol').onchange = e => { const c = selClip(); if (!c) return; const a = P.audioOf(c.id); if (a) { const v = +e.target.value / 100; a.vol = volStart == null ? 1 : volStart; volStart = null; P.setVol(c.id, v); } };
@@ -1175,6 +1178,9 @@
     $('cDur').textContent = secStr(c.dur) + ' · ' + tc(c.at) + ' 부터';
     $('rowSpeed').classList.toggle('hidden', c.freeze || m.kind === 'image');
     Array.from(speedSeg.children).forEach(b => b.classList.toggle('on', b.dataset.k === c.speed));
+    const rampOK = !c.freeze && m.kind === 'video' && c.speed !== 'normal' && c.speed !== 'hit';
+    $('rowRamp').classList.toggle('hidden', !rampOK); setOn($('rampSeg'), c.ramp || 'none');
+    $('rowDenoise').classList.toggle('hidden', c.freeze || m.kind !== 'video' || !m.audio); setOn($('denoiseSeg'), c.denoise || 'none');
     $('rowFreeze').classList.toggle('hidden', !c.freeze); if (c.freeze) $('freezeSec').value = (c.dur / FPS).toFixed(1);
     $('rowVol').classList.toggle('hidden', !a); if (a) { $('vol').value = Math.round((a.vol == null ? 1 : a.vol) * 100); $('volV').textContent = $('vol').value + '%'; }
     $('rowLink').classList.toggle('hidden', !a || a.linked);
@@ -1235,6 +1241,7 @@
   $('vig').oninput = e => { if (vigStart == null) vigStart = P.data.look.vignette || 0; P.data.look.vignette = +e.target.value / 100; $('vigV').textContent = e.target.value + '%'; renderPreview(); };
   $('vig').onchange = e => { const v = +e.target.value / 100; P.data.look.vignette = vigStart == null ? 0 : vigStart; vigStart = null; P.setProjectLook({ vignette: v }); };
   $('tgExpose').onclick = () => P.setProjectLook({ autoExpose: !P.data.look.autoExpose });
+  $('tgMatch').onclick = () => P.setProjectLook({ colorMatch: !P.data.look.colorMatch });
   $('tgBar').onclick = () => P.setProjectLook({ cinemaBar: !P.data.look.cinemaBar });
   function refreshLookPanel() {
     const L = P.data.look;
@@ -1242,7 +1249,7 @@
     Array.from($('lutSeg').children).forEach(b => b.classList.toggle('on', b.dataset.k === (L.lut || 'none')));
     $('lutStr').value = Math.round((L.strength == null ? 0.6 : L.strength) * 100); $('lutStrV').textContent = $('lutStr').value + '%';
     $('vig').value = Math.round((L.vignette || 0) * 100); $('vigV').textContent = $('vig').value + '%';
-    $('tgExpose').classList.toggle('on', !!L.autoExpose); $('tgBar').classList.toggle('on', !!L.cinemaBar);
+    $('tgExpose').classList.toggle('on', !!L.autoExpose); $('tgMatch').classList.toggle('on', !!L.colorMatch); $('tgBar').classList.toggle('on', !!L.cinemaBar);
   }
   // 자막
   /* ---------- 14단계 패널: 덧영상 V2 ---------- */

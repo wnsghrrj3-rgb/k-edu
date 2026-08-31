@@ -23,14 +23,35 @@
     lapse:  { f: 4,       label: '타임랩스 4×', badge: '4×' },
   };
   /* 타임라인 진행 u(0..1) → 원본 진행 s(0..1). 히트 슬로: 앞 20% 정속 → 가운데 60% 를 0.3배 → 뒤 20% 정속 */
-  function speedMap(speed, u) {
+  /* 속도 램프 — 슬로·타임랩스로 "부드럽게 들어가고 나오는" 구간(클립 길이의 비율). 프리미어 타임 리맵의 베지어 램프와 같은 역할.
+     클립 길이는 그대로 두고 안쪽 매핑만 굽힌다: 양 끝은 정속(1×), 가운데가 프리셋 속도 — 원본 소모량이 같도록 가운데 속도를 살짝 보정. */
+  const RAMP = { none: 0, short: 0.15, normal: 0.25, long: 0.4 };
+  const ss = x => x * x * (3 - 2 * x), ssInt = x => x * x * x - x * x * x * x / 2;          // smoothstep 과 그 적분
+  /* w(u) 의 적분 — w 는 [0,R] 에서 0→1, 가운데 1, [1-R,1] 에서 1→0 */
+  function rampW(u, R) {
+    if (R <= 0) return u;
+    if (u < R) return R * ssInt(u / R);
+    if (u < 1 - R) return R * 0.5 + (u - R);
+    const x = (u - (1 - R)) / R;
+    return R * 0.5 + (1 - 2 * R) + R * (0.5 - ssInt(1 - x));
+  }
+  function rampCurve(f, R) { const S1 = R + f * (1 - R); return { S: u => (u - rampW(u, R) + f * rampW(u, R)) / S1, r: u => { const w = u < R ? ss(u / R) : u < 1 - R ? 1 : ss((1 - u) / R); return (1 - w + f * w) / S1 * f; } }; }
+  function speedMap(speed, u, ramp) {
     if (speed === 'hit') {
       const x = u * 2.4;
       if (x < 0.2) return x;
       if (x < 2.2) return 0.2 + (x - 0.2) * 0.3;
       return 0.8 + (x - 2.2);
     }
+    const R = RAMP[ramp] || 0, f = SPEED[speed] ? SPEED[speed].f : 1;
+    if (R > 0 && f !== 1) return rampCurve(f, R).S(clamp(u, 0, 1));
     return u;
+  }
+  /* 타임라인 진행 u 에서의 원본 재생 배속(소리 playbackRate 용) — 램프 없으면 프리셋 배속 그대로 */
+  function rateAt(c, u) {
+    const R = RAMP[c.ramp] || 0, f = SPEED[c.speed] ? SPEED[c.speed].f : 1;
+    if (c.speed === 'hit' || R <= 0 || f === 1) return f;
+    return rampCurve(f, R).r(clamp(u, 0, 1));
   }
 
   function blank() {
@@ -73,7 +94,7 @@
   function srcFrame(c, t) {
     if (c.freeze) return c.in;
     const u = clamp((t - c.at) / c.dur, 0, 0.999999);
-    const s = speedMap(c.speed, u);
+    const s = speedMap(c.speed, u, c.ramp);
     return c.in + Math.min(c.out - 1, Math.floor(s * (c.out - c.in)));
   }
 
@@ -216,6 +237,11 @@
     const c = clip(id); if (!c || c.freeze || !SPEED[speed] || c.speed === speed) return;
     commit(); c.speed = speed; relayout(); emit();
   }
+  function setRamp(id, ramp) {
+    const c = clip(id); if (!c || c.freeze || RAMP[ramp] == null || (c.ramp || 'none') === ramp) return;
+    commit(); c.ramp = ramp === 'none' ? undefined : ramp; emit();
+  }
+  function setDenoise(id, level) { const c = clip(id); if (!c || c.freeze) return; const v = level === 'light' || level === 'strong' ? level : undefined; if ((c.denoise || undefined) === v) return; commit(); c.denoise = v; emit(); }
   function setVol(clipId, vol) {
     const a = audioOf(clipId); if (!a) return;
     commit(); a.vol = clamp(vol, 0, 2); emit();
@@ -593,11 +619,11 @@
   function reset() { P = blank(); undoStack.length = 0; redoStack.length = 0; emit('load'); }
 
   g.KMV_PROJECT = {
-    FPS, W, H, SPEED, IMAGE_DEFAULT, FREEZE_DEFAULT,
+    FPS, W, H, SPEED, RAMP, IMAGE_DEFAULT, FREEZE_DEFAULT, rateAt,
     get data() { return P; },
     on: fn => listeners.push(fn),
     media, clip, clipIndex, audioOf, clipAt, total, edges, srcFrame, clipDur, speedMap,
-    addMedia, removeMedia, addClip, removeClip, move, split, trim, trimToPlayhead, freeze, setSpeed, setVol, audioTrim, relink,
+    addMedia, removeMedia, addClip, removeClip, move, split, trim, trimToPlayhead, freeze, setSpeed, setRamp, setDenoise, setVol, audioTrim, relink,
     setLook, setProjectLook, setKenburns, setFade, setTransition, setTheme,
     addS, setS, addManyS, subtitle, updateS, removeS, clearS, subtitleAt,
     part, addP, updateP, removeP, clearP, partsAt, partDefault,

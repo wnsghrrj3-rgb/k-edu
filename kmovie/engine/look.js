@@ -56,16 +56,16 @@
     const cached = statCache.get(mediaId);
     if (cached && cached.n === thumbs.length) return cached;
     if (!thumbs.length) return null;
-    let sum = 0, sum2 = 0, cnt = 0;
+    let sum = 0, sum2 = 0, cnt = 0, sr = 0, sg = 0, sb = 0;
     const step = Math.max(1, Math.floor(thumbs.length / 24));
     for (let i = 0; i < thumbs.length; i += step) {
       try { sctx.drawImage(thumbs[i], 0, 0, 64, 36); } catch (e) { continue; }
       const d = sctx.getImageData(0, 0, 64, 36).data;
-      for (let j = 0; j < d.length; j += 4) { const l = (0.2126 * d[j] + 0.7152 * d[j + 1] + 0.0722 * d[j + 2]) / 255; sum += l; sum2 += l * l; cnt++; }
+      for (let j = 0; j < d.length; j += 4) { const l = (0.2126 * d[j] + 0.7152 * d[j + 1] + 0.0722 * d[j + 2]) / 255; sum += l; sum2 += l * l; cnt++; sr += d[j]; sg += d[j + 1]; sb += d[j + 2]; }
     }
     if (!cnt) return null;
     const mean = sum / cnt, sd = Math.sqrt(Math.max(0, sum2 / cnt - mean * mean));
-    const st = { luma: mean, contrast: sd, n: thumbs.length };
+    const st = { luma: mean, contrast: sd, n: thumbs.length, r: sr / cnt / 255, g: sg / cnt / 255, b: sb / cnt / 255 };
     statCache.set(mediaId, st); return st;
   }
   /* 노출 정규화 계수 — out = (in - luma) * gain + target.luma + offset 형태를 gain/offset 두 개로 */
@@ -79,6 +79,16 @@
     gain = 1 + (gain - 1) * k;
     const off = ((tg.luma || 0.48) - st.luma) * k;
     return { gain, off: clamp(off, -0.18, 0.18) };
+  }
+
+  /* 색 맞춤(컬러 매치) — 그레이 월드: 원본의 채널 평균이 서로 같아지도록(색 온도가 다른 클립들을 한 작품처럼).
+     리졸브 "Color Match"·프리미어 "Comparison View → Match" 의 자동 부분. 채널 게인 0.8~1.25 로 묶고 strength 로 섞는다. */
+  function whiteBalance(c, look) {
+    if (!look || !look.colorMatch) return [1, 1, 1];
+    const st = stats(c.media); if (!st || st.r == null) return [1, 1, 1];
+    const cl = c.look || {}; if (cl.colorMatch === false) return [1, 1, 1];
+    const k = clamp(look.matchStrength == null ? 0.8 : look.matchStrength, 0, 1), m = (st.r + st.g + st.b) / 3; if (m < 0.02) return [1, 1, 1];
+    return [st.r, st.g, st.b].map(v => 1 + (clamp(m / Math.max(0.02, v), 0.8, 1.25) - 1) * k);
   }
 
   /* ---------- 켄 번즈 ---------- */
@@ -101,9 +111,9 @@
   precision highp float; precision highp sampler3D;
   in vec2 v; out vec4 o;
   uniform sampler2D src; uniform sampler3D lut; uniform float lutN;
-  uniform float uUseLut, uStrength, uGain, uOff, uBright, uContrast, uSat, uVig;
+  uniform float uUseLut, uStrength, uGain, uOff, uBright, uContrast, uSat, uVig; uniform vec3 uWB;
   void main(){
-    vec3 c = texture(src, v).rgb;
+    vec3 c = texture(src, v).rgb * uWB;
     // 1. 노출 정규화 (중간 회색 기준 대비 gain, 평균 이동 off)
     c = (c - 0.5) * uGain + 0.5 + uOff;
     c = clamp(c, 0.0, 1.0);
@@ -144,7 +154,7 @@
       const srcTex = gl.createTexture(); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, srcTex);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      const u = {}; ['src', 'lut', 'lutN', 'uUseLut', 'uStrength', 'uGain', 'uOff', 'uBright', 'uContrast', 'uSat', 'uVig'].forEach(n => { u[n] = gl.getUniformLocation(prog, n); });
+      const u = {}; ['src', 'lut', 'lutN', 'uUseLut', 'uStrength', 'uGain', 'uOff', 'uBright', 'uContrast', 'uSat', 'uVig', 'uWB'].forEach(n => { u[n] = gl.getUniformLocation(prog, n); });
       gl.uniform1i(u.src, 0); gl.uniform1i(u.lut, 1);
       gl.viewport(0, 0, W, H);
       GL = { gl, canvas, prog, srcTex, lutTex: new Map(), u };
@@ -172,18 +182,18 @@
     const ex = exposure(c, look);
     return {
       lut: lut && cubes.has(lut) ? lut : null, strength: clamp(strength, 0, 1),
-      gain: ex.gain, off: ex.off,
+      gain: ex.gain, off: ex.off, wb: whiteBalance(c, look),
       bright: clamp(cl.bright || 0, -0.3, 0.3), contrast: clamp(cl.contrast == null ? 1 : cl.contrast, 0.5, 1.6), sat: clamp(cl.sat == null ? 1 : cl.sat, 0, 1.8),
       vig: clamp(look.vignette || 0, 0, 1), cinemaBar: !!look.cinemaBar,
     };
   }
-  function isIdentity(p) { return !p.lut && p.gain === 1 && p.off === 0 && p.bright === 0 && p.contrast === 1 && p.sat === 1 && p.vig === 0; }
+  function isIdentity(p) { return !p.lut && p.gain === 1 && p.off === 0 && p.wb[0] === 1 && p.wb[1] === 1 && p.wb[2] === 1 && p.bright === 0 && p.contrast === 1 && p.sat === 1 && p.vig === 0; }
 
   /* CPU 경로 — 같은 수식 (WebGL 없을 때만) */
   function applyCPU(ctx, W, H, p) {
     const im = ctx.getImageData(0, 0, W, H), d = im.data, cube = p.lut && cubes.get(p.lut), N = cube && cube.N;
     for (let i = 0; i < d.length; i += 4) {
-      let r = d[i] / 255, gg = d[i + 1] / 255, b = d[i + 2] / 255;
+      let r = d[i] / 255 * p.wb[0], gg = d[i + 1] / 255 * p.wb[1], b = d[i + 2] / 255 * p.wb[2];
       r = clamp((r - 0.5) * p.gain + 0.5 + p.off, 0, 1); gg = clamp((gg - 0.5) * p.gain + 0.5 + p.off, 0, 1); b = clamp((b - 0.5) * p.gain + 0.5 + p.off, 0, 1);
       if (cube) { const ri = Math.round(r * (N - 1)), gi = Math.round(gg * (N - 1)), bi = Math.round(b * (N - 1)), k = ((bi * N + gi) * N + ri) * 3;
         r += (cube.data[k] / 255 - r) * p.strength; gg += (cube.data[k + 1] / 255 - gg) * p.strength; b += (cube.data[k + 2] / 255 - b) * p.strength; }
@@ -209,7 +219,7 @@
         const L = p.lut ? lutTexture(G, p.lut) : null;
         if (L) { gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_3D, L.tex); gl.uniform1f(G.u.lutN, L.N); }
         gl.uniform1f(G.u.uUseLut, L ? 1 : 0); gl.uniform1f(G.u.uStrength, p.strength);
-        gl.uniform1f(G.u.uGain, p.gain); gl.uniform1f(G.u.uOff, p.off);
+        gl.uniform1f(G.u.uGain, p.gain); gl.uniform1f(G.u.uOff, p.off); gl.uniform3f(G.u.uWB, p.wb[0], p.wb[1], p.wb[2]);
         gl.uniform1f(G.u.uBright, p.bright); gl.uniform1f(G.u.uContrast, p.contrast); gl.uniform1f(G.u.uSat, p.sat); gl.uniform1f(G.u.uVig, p.vig);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
@@ -223,5 +233,5 @@
     }
   }
 
-  g.KMV_LOOK = { LUTS, KENBURNS, ready, apply, kenburns, stats, resolve, exposure, hasLut: id => cubes.has(id), _parseCube: parseCube };
+  g.KMV_LOOK = { LUTS, KENBURNS, ready, apply, applyCPU, kenburns, stats, resolve, exposure, whiteBalance, hasLut: id => cubes.has(id), _parseCube: parseCube };
 })(typeof window !== 'undefined' ? window : globalThis);
