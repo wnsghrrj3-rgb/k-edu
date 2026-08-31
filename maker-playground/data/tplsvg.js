@@ -150,6 +150,21 @@ window.MK_TPLSVG = (() => {
     { id: 'pet-adoption-01', name: 'Pet Adoption', ko: '반려동물 안내', category: 'pet', width: 1080, height: 1350, pack: 'pack09', file: '45_pet_adoption.svg',
       contentType: 'poster', style: '소프트', styleId: 'st-soft', styleEn: 'Warm', ratio: '4:5', difficulty: '쉬움', rec: false,
       desc: '동그란 도형을 모아 만든 따뜻한 안내면', uses: '동물 사랑 캠페인·생명 존중 수업·학급 게시', tags: ['동물', '캠페인', '따뜻함'], hints: ['도형을 옮겨 다른 동물로', '작은 라벨은 색을 진하게'] },
+    { id: 'tech-conference-01', name: 'Tech Conference', ko: '발표회 안내', category: 'event', width: 1080, height: 1350, pack: 'pack10', file: '46_tech_conference.svg',
+      contentType: 'poster', style: '모던', styleId: 'st-modern', styleEn: 'Futuristic', ratio: '4:5', difficulty: '보통', rec: false,
+      desc: '어두운 바탕에 격자를 깔고 제목을 세운 발표회면', uses: '프로젝트 발표회·정보 수업 행사·과학전', tags: ['발표회', '행사', '격자'], hints: ['격자 선은 옮기거나 지워도 된다', '제목은 두 줄까지'] },
+    { id: 'school-invite-01', name: 'School Notice', ko: '학예회 초대장', category: 'education', width: 1080, height: 1350, pack: 'pack10', file: '47_korean_school_notice.svg',
+      contentType: 'poster', style: '소프트', styleId: 'st-soft', styleEn: 'Warm', ratio: '4:5', difficulty: '쉬움', rec: true,
+      desc: '일시·장소 칸을 갖춘 한국어 학부모 초대장', uses: '학예회 초대·공개수업 안내·학급 행사', tags: ['초대장', '학예회', '학부모'], hints: ['일시·장소만 바꾸면 바로 나간다', '주황 글자는 조금 더 진하게 하면 잘 읽힌다'] },
+    { id: 'brand-moodboard-01', name: 'Brand Moodboard', ko: '무드보드', category: 'branding', width: 1600, height: 1100, pack: 'pack10', file: '48_brand_moodboard.svg',
+      contentType: 'presentation', style: '페이퍼', styleId: 'st-paper', styleEn: 'Editorial', ratio: '3:2', difficulty: '보통', rec: false,
+      desc: '색 견본과 판을 늘어놓은 가로 정리면', uses: '색 조사·디자인 수업·모둠 자료 정리', tags: ['무드보드', '색', '정리'], hints: ['색 칸을 눌러 색을 바꿔 보세요', '판은 복제해 늘릴 수 있다'] },
+    { id: 'travel-itinerary-01', name: 'Travel Itinerary', ko: '일정표', category: 'travel', width: 1080, height: 1350, pack: 'pack10', file: '49_travel_itinerary.svg',
+      contentType: 'poster', style: '에듀', styleId: 'st-edu', styleEn: 'Clean', ratio: '4:5', difficulty: '쉬움', rec: true,
+      desc: '날짜별로 줄을 나눠 적는 일정면', uses: '현장체험 일정·수학여행 안내·행사 순서', tags: ['일정', '체험학습', '안내'], hints: ['줄을 복제해 날짜를 늘리세요', '한 줄에 한 일정'] },
+    { id: 'course-promo-01', name: 'Course Promotion', ko: '수업 안내', category: 'education', width: 1080, height: 1350, pack: 'pack10', file: '50_course_promo.svg',
+      contentType: 'poster', style: '볼드', styleId: 'st-bold', styleEn: 'Creator', ratio: '4:5', difficulty: '쉬움', rec: false,
+      desc: '형광 연두 머리판에 강한 글자를 얹은 모집면', uses: '방과후 수업 모집·동아리 안내·특강 홍보', tags: ['수업', '모집', '볼드'], hints: ['차시 수와 대상을 아래 칸에', '제목 두 줄이 주인공'] },
   ];
 
   const CATS = [['', '전체'], ['poster', '포스터'], ['event', '행사'], ['education', '교육'], ['promotion', '홍보'], ['social', '소셜']];
@@ -165,6 +180,10 @@ window.MK_TPLSVG = (() => {
   /* SVG 에서 fill 을 안 적으면 검정이다. 속성이 없다고 「칠이 없다」로 읽으면
      멀쩡한 도형이 통째로 조각이 된다(팩 05 시간표의 기둥 5개가 그랬다). */
   const fillOf = (n) => { const v = attr(n, 'fill'); return v == null ? '#000000' : v; };
+  /* SVG 에서 부모 → 자식으로 물려지는 표현 속성들 */
+  const INHERITED = ['fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin',
+    'opacity', 'fill-opacity', 'stroke-opacity', 'font-family', 'font-size', 'font-weight',
+    'font-style', 'letter-spacing', 'text-anchor'];
   const r2 = (v) => Math.round(v * 100) / 100;
 
   /* transform="translate(a b)" 만 좌표로 흡수한다. rotate 는 요소 rot 으로
@@ -425,8 +444,17 @@ window.MK_TPLSVG = (() => {
         const filt = attr(n, 'filter');
 
         if (tag === 'g') {
-          /* translate·rotate 없는 순수 묶음이면 파고들어 자식을 개별 요소로 남긴다 */
-          if (t.plain && !t.rot) return walk(n, { tx: off.tx + t.tx, ty: off.ty + t.ty });
+          /* translate·rotate 없는 순수 묶음이면 파고들어 자식을 개별 요소로 남긴다.
+             내려가기 전에 SVG 상속 속성을 자식에게 물려준다 — 묶음에 stroke 를
+             한 번 주고 자식 선에는 안 적는 건 흔한 손버릇인데, 자기 노드만 보면
+             「테두리 없는 선」으로 읽혀 멀쩡한 격자가 통째로 조각이 된다. */
+          if (t.plain && !t.rot) {
+            INHERITED.forEach((k) => {
+              const v = attr(n, k); if (v == null) return;
+              each(n, (c) => { if (c.getAttribute && c.getAttribute(k) == null) c.setAttribute(k, v); });
+            });
+            return walk(n, { tx: off.tx + t.tx, ty: off.ty + t.ty });
+          }
           const f = fragEl(n, W, H, off, vb, defs, serOne);
           if (f) { elements.push(f); notes.push('묶음(g) 은 조각으로 — 회전·변형이 걸려 있어요'); }
           return;
