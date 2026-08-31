@@ -90,6 +90,21 @@ window.MK_TPLSVG = (() => {
     { id: 'certificate-01', name: 'Achievement Certificate', ko: '상장', category: 'education', width: 1600, height: 1100, pack: 'pack04', file: '20_certificate.svg',
       contentType: 'activity', style: '페이퍼', styleId: 'st-paper', styleEn: 'Formal', ratio: '3:2', difficulty: '쉬움', rec: true,
       desc: '테두리와 가운데 정렬로 격식을 세운 가로 상장', uses: '학급 상장·표창·수료증', tags: ['상장', '표창', '학급운영'], hints: ['이름과 사유만 바꾸면 된다', '아래 서명 줄은 지워도 좋다'] },
+    { id: 'podcast-cover-01', name: 'Podcast Cover', ko: '방송 표지', category: 'podcast', width: 1080, height: 1080, pack: 'pack05', file: '21_podcast_cover.svg',
+      contentType: 'thumbnail', style: '볼드', styleId: 'st-bold', styleEn: 'Pop', ratio: '1:1', difficulty: '쉬움', rec: false,
+      desc: '형광색 바탕에 제목만 큼직하게 세운 정사각 표지', uses: '학급 방송·팟캐스트·영상 표지', tags: ['표지', '방송', '정사각'], hints: ['제목은 두 줄까지', '색 하나로 밀 것'] },
+    { id: 'recruitment-01', name: 'Recruitment Poster', ko: '모집 안내', category: 'business', width: 1080, height: 1350, pack: 'pack05', file: '22_recruitment.svg',
+      contentType: 'poster', style: '모던', styleId: 'st-modern', styleEn: 'Clean', ratio: '4:5', difficulty: '쉬움', rec: true,
+      desc: '조건과 지원 방법을 줄 세운 깔끔한 모집면', uses: '동아리 모집·도우미 모집·봉사 안내', tags: ['모집', '안내', '동아리'], hints: ['조건은 세 줄까지', '지원 방법을 맨 아래 크게'] },
+    { id: 'infographic-01', name: 'Process Infographic', ko: '과정 도식', category: 'infographic', width: 1080, height: 1350, pack: 'pack05', file: '23_infographic.svg',
+      contentType: 'poster', style: '에듀', styleId: 'st-edu', styleEn: 'Modern', ratio: '4:5', difficulty: '보통', rec: true,
+      desc: '번호와 세로 줄기로 단계를 잇는 도식', uses: '실험 절차·학습 단계·활동 순서 게시', tags: ['도식', '단계', '수업'], hints: ['단계는 넷까지가 읽힌다', '한 단계에 한 문장'] },
+    { id: 'flash-sale-story-01', name: 'Flash Sale Story', ko: '세로 스토리', category: 'social', width: 1080, height: 1920, pack: 'pack05', file: '24_flash_sale_story.svg',
+      contentType: 'sns', style: '행사', styleId: 'st-event', styleEn: 'Vibrant', ratio: '9:16', difficulty: '쉬움', rec: false,
+      desc: '휴대폰 화면을 꽉 채우는 세로 알림면', uses: '학급 SNS 스토리·급한 공지·행사 알림', tags: ['SNS', '스토리', '세로'], hints: ['한 화면에 한 메시지', '글자는 가운데로'] },
+    { id: 'class-schedule-01', name: 'Weekly Class Schedule', ko: '주간 시간표', category: 'education', width: 1600, height: 1100, pack: 'pack05', file: '25_class_schedule.svg',
+      contentType: 'activity', style: '소프트', styleId: 'st-soft', styleEn: 'Pastel', ratio: '3:2', difficulty: '쉬움', rec: true,
+      desc: '요일 기둥에 파스텔 칸을 얹은 가로 시간표', uses: '주간 시간표·학급 게시·가정 배부', tags: ['시간표', '학급운영', '주간'], hints: ['칸 색으로 과목을 구분', '칸을 복제해 늘리세요'] },
   ];
 
   const CATS = [['', '전체'], ['poster', '포스터'], ['event', '행사'], ['education', '교육'], ['promotion', '홍보'], ['social', '소셜']];
@@ -102,6 +117,9 @@ window.MK_TPLSVG = (() => {
   const num = (v, d) => { const n = parseFloat(v); return isFinite(n) ? n : (d || 0); };
   const attr = (n, k) => (n.getAttribute ? n.getAttribute(k) : null);
   const solid = (v) => !!v && v !== 'none' && v.charAt(0) !== 'u';   /* url(#..) 배제 */
+  /* SVG 에서 fill 을 안 적으면 검정이다. 속성이 없다고 「칠이 없다」로 읽으면
+     멀쩡한 도형이 통째로 조각이 된다(팩 05 시간표의 기둥 5개가 그랬다). */
+  const fillOf = (n) => { const v = attr(n, 'fill'); return v == null ? '#000000' : v; };
   const r2 = (v) => Math.round(v * 100) / 100;
 
   /* transform="translate(a b)" 만 좌표로 흡수한다. rotate 는 요소 rot 으로
@@ -196,7 +214,7 @@ window.MK_TPLSVG = (() => {
       kind: 'text', x: r2(Math.max(-2, bx)), y: r2(top), w: r2(wpc),
       size: r2(fs / H * 100), text: raw, weight: num(attr(n, 'font-weight'), 400) || 400,
     };
-    const fill = attr(n, 'fill'); if (solid(fill)) el.color = fill;
+    const fill = fillOf(n); if (solid(fill)) el.color = fill;
     if (align) el.align = align;
     /* 자간 정본 이름은 letterSpacing (em 배수) — tracking 은 R114 가 걷어낸 옛 이름 */
     if (ls) el.letterSpacing = r2(ls / fs);
@@ -219,7 +237,7 @@ window.MK_TPLSVG = (() => {
     }
     if (!(w > 0 && h > 0)) return null;
     const el = {
-      kind: 'image', label: label || '', fill: attr(n, 'fill'),
+      kind: 'image', label: label || '', fill: fillOf(n),
       x: r2((x + off.tx) / W * 100), y: r2((y + off.ty) / H * 100),
       w: r2(w / W * 100), h: r2(h / H * 100),
     };
@@ -237,14 +255,23 @@ window.MK_TPLSVG = (() => {
      기울어진 선·곡선(path)은 여기 자리가 없어 조각으로 남는다. */
   function shapeEl(n, W, H, off) {
     const tag = (n.tagName || '').toLowerCase();
-    const stroke = attr(n, 'stroke'), fill = attr(n, 'fill');
+    const stroke = attr(n, 'stroke'), fill = fillOf(n);
     const sw = num(attr(n, 'stroke-width'), 1);
     let x, y, w, h, shape = 'rect', round = 0;
     if (tag === 'line') {
       const x1 = num(attr(n, 'x1')), y1 = num(attr(n, 'y1')), x2 = num(attr(n, 'x2')), y2 = num(attr(n, 'y2'));
-      if (Math.abs(y2 - y1) > 0.5) return null;          /* 수평이 아니면 조각으로 */
-      shape = 'line'; x = Math.min(x1, x2); w = Math.abs(x2 - x1);
-      h = Math.max(sw, 1); y = y1 - h / 2;
+      const dx = Math.abs(x2 - x1), dy = Math.abs(y2 - y1);
+      if (dx > 0.5 && dy > 0.5) return null;             /* 기울어진 선은 조각으로 */
+      if (dy <= 0.5) {                                   /* 수평 — render 의 VEC.line 이 그대로 그린다 */
+        shape = 'line'; x = Math.min(x1, x2); w = dx; h = Math.max(sw, 1); y = y1 - h / 2;
+      } else {
+        /* 수직 — VEC.line 은 가로 전용이라 얇은 사각형으로 세운다.
+           끝이 둥근 선(stroke-linecap=round)이면 모서리도 둥글게. */
+        shape = 'rect'; y = Math.min(y1, y2); h = dy; w = Math.max(sw, 1); x = x1 - w / 2;
+        const el2 = { vertical: true };
+        if (attr(n, 'stroke-linecap') === 'round') round = 999;
+        void el2;
+      }
     } else if (tag === 'rect') {
       x = num(attr(n, 'x')); y = num(attr(n, 'y'));
       w = num(attr(n, 'width')); h = num(attr(n, 'height'));
@@ -262,7 +289,10 @@ window.MK_TPLSVG = (() => {
       w: r2(w / W * 100), h: r2(h / H * 100),
     };
     if (shape === 'line') { el.stroke = stroke || '#1F2733'; el.strokeWidth = r2(sw); el.fill = 'none'; }
-    else {
+    else if (tag === 'line') {                            /* 세운 선 — 칠로 그린다 */
+      el.fill = stroke || '#1F2733';
+      if (round) el.radius = 999;
+    } else {
       el.fill = solid(fill) ? fill : 'none';
       if (solid(stroke)) { el.stroke = stroke; el.strokeWidth = r2(sw); }
       if (shape === 'rect' && round > 0) el.radius = round >= Math.min(w, h) / 2 - 0.5 ? 999 : Math.round(round);
@@ -332,7 +362,7 @@ window.MK_TPLSVG = (() => {
         const tag = (n.tagName || '').toLowerCase();
         if (tag === 'defs' || tag === 'title' || tag === 'desc' || tag === 'style' || tag === 'metadata') return;
         const t = readTransform(attr(n, 'transform'));
-        const fill = attr(n, 'fill');
+        const fill = fillOf(n);
         const stroke = attr(n, 'stroke');
         const filt = attr(n, 'filter');
 
@@ -435,11 +465,16 @@ window.MK_TPLSVG = (() => {
     if (!p.ok) return { ok: false, violations: ['파싱 실패: ' + p.msg] };
     if (!p.elements.length) v.push('요소 0개');
     p.elements.forEach((e, i) => {
-      if (e.kind !== 'text' && e.kind !== 'image') v.push(i + ':알 수 없는 kind');
+      if (!['text', 'image', 'shape'].includes(e.kind)) v.push(i + ':알 수 없는 kind');
+      if (e.kind === 'shape') {
+        if (!['rect', 'ellipse', 'line'].includes(e.shape)) v.push(i + ':shape 종류');
+        if (e.stroke && !(e.strokeWidth > 0)) v.push(i + ':굵기 없는 테두리');
+        if (!solid(e.fill) && !solid(e.stroke)) v.push(i + ':칠도 테두리도 없음');
+      }
       ['x', 'y', 'w'].forEach((k) => { if (typeof e[k] !== 'number' || !isFinite(e[k])) v.push(i + ':' + k); });
       if (e.kind === 'text' && (!e.text || !(e.size > 0))) v.push(i + ':빈 텍스트');
       if (e.kind === 'image' && !e.src && !solid(e.fill)) v.push(i + ':칠도 그림도 없음');
-      if (e.kind === 'image' && !(e.h > 0)) v.push(i + ':높이');
+      if (e.kind !== 'text' && !(e.h > 0)) v.push(i + ':높이');
       /* 화면 밖 판정은 「캔버스와 조금도 겹치지 않는가」로 잰다. 가장자리에서
          잘려 나가는 장식(모서리 원 등)은 원본 디자인의 의도지 오류가 아니다. */
       const ew = e.w || 0, eh = e.kind === 'text' ? (e.size || 0) * 1.4 : (e.h || 0);
