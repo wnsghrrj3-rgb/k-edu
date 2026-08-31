@@ -1120,6 +1120,38 @@
   $('btnSnap').onclick = toggleSnap;
   $('btnImport').onclick = $('btnImport2').onclick = () => { if (SH && SH.active) SH.pick().then(refs => { if (refs.length) importFiles(refs); }); else $('fileIn').click(); };
   $('fileIn').onchange = e => { importFiles(Array.from(e.target.files)); e.target.value = ''; };
+  /* ---------- 창 크기 조절 — 손잡이 끌기 (설정 너비·도구상자 너비·미디어 띠 높이·타임라인 높이). 이 브라우저에 기억 ---------- */
+  const LAYOUT_DEF = { tlH: 344, setW: 300, toolsW: 300, binH: 64 };
+  const LAYOUT_LIM = { tlH: [160, 0.7], setW: [220, 520], toolsW: [220, 560], binH: [48, 160] };
+  let layout = Object.assign({}, LAYOUT_DEF);
+  try { Object.assign(layout, JSON.parse(localStorage.getItem('kmv.layout') || '{}')); } catch (e) {}
+  function applyLayout() {
+    const maxTl = Math.round(window.innerHeight * LAYOUT_LIM.tlH[1]);
+    layout.tlH = clamp(layout.tlH, LAYOUT_LIM.tlH[0], Math.max(LAYOUT_LIM.tlH[0], maxTl));
+    layout.setW = clamp(layout.setW, LAYOUT_LIM.setW[0], LAYOUT_LIM.setW[1]); layout.toolsW = clamp(layout.toolsW, LAYOUT_LIM.toolsW[0], LAYOUT_LIM.toolsW[1]); layout.binH = clamp(layout.binH, LAYOUT_LIM.binH[0], LAYOUT_LIM.binH[1]);
+    const st = document.documentElement.style;
+    st.setProperty('--tlH', layout.tlH + 'px'); st.setProperty('--setW', layout.setW + 'px'); st.setProperty('--toolsW', layout.toolsW + 'px'); st.setProperty('--binH', layout.binH + 'px');
+    try { localStorage.setItem('kmv.layout', JSON.stringify(layout)); } catch (e) {}
+    resize();
+  }
+  function splitter(id, key, axis, sign) {
+    const el = $(id); if (!el) return;
+    el.addEventListener('pointerdown', e => {
+      e.preventDefault(); el.setPointerCapture(e.pointerId); el.classList.add('on');
+      const x0 = e.clientX, y0 = e.clientY, v0 = layout[key];
+      const move = ev => { const d = axis === 'x' ? ev.clientX - x0 : ev.clientY - y0; layout[key] = v0 + d * sign; applyLayout(); };
+      const up = ev => { el.classList.remove('on'); el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up); try { el.releasePointerCapture(ev.pointerId); } catch (er) {} };
+      el.addEventListener('pointermove', move); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+    });
+    el.addEventListener('dblclick', () => { layout[key] = LAYOUT_DEF[key]; applyLayout(); });
+  }
+  splitter('splitTl', 'tlH', 'y', -1);         // 위로 끌면 타임라인이 커진다
+  splitter('splitBin', 'binH', 'y', 1);        // 아래로 끌면 띠가 커진다
+  splitter('splitSet', 'setW', 'x', -1);       // 왼쪽으로 끌면 설정 창이 넓어진다
+  splitter('splitTools', 'toolsW', 'x', -1);
+  applyLayout();
+  window.addEventListener('resize', applyLayout);
+
   /* 미디어 띠 보이기/숨기기 — 이 브라우저에 기억 */
   let mediaOn = true; try { mediaOn = localStorage.getItem('kmv.media') !== '0'; } catch (e) {}
   function applyMedia() { document.body.classList.toggle('hide-media', !mediaOn); $('tgColMedia').classList.toggle('on', mediaOn); resize(); }
