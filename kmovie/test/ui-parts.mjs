@@ -202,7 +202,7 @@ const mag = await page.evaluate(() => { const P2 = KMV_PROJECT; P2.clearP(); con
     KMV_UI.tab('parts');
     return { tabs, a, b };
   });
-  ok(tb.tabs.join('/') === '타이틀·꾸미기/자막/음악/룩/프로젝트', '도구상자 탭 5개 (' + tb.tabs.join('/') + ')');
+  ok(tb.tabs.join('/') === '타이틀·꾸미기/자막/음악/자동/룩/프로젝트', '도구상자 탭 6개 (' + tb.tabs.join('/') + ')');
   ok(tb.a.parts && !tb.a.sub && !tb.a.music && !tb.a.look && !tb.a.proj, '탭 하나만 보인다 (타이틀·꾸미기)');
   ok(!tb.b.parts && tb.b.music && tb.b.on === 'music' && tb.b.saved === 'music', '음악 탭 클릭 → 음악만, 기억됨');
 }

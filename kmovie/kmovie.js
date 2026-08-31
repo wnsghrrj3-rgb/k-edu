@@ -14,7 +14,7 @@
    ============================================================ */
 (function () {
   'use strict';
-  const P = window.KMV_PROJECT, M = window.KMV_MEDIA, A = window.KMV_AUDIO, R = window.KMV_RENDER, LK = window.KMV_LOOK, TR = window.KMV_TRANSITION, SB = window.KMV_SUBTITLE, PT = window.KMV_PARTS, SG = window.KMV_SEG, SH = window.KMV_SHELL;
+  const P = window.KMV_PROJECT, M = window.KMV_MEDIA, A = window.KMV_AUDIO, R = window.KMV_RENDER, LK = window.KMV_LOOK, TR = window.KMV_TRANSITION, SB = window.KMV_SUBTITLE, PT = window.KMV_PARTS, SG = window.KMV_SEG, SH = window.KMV_SHELL, AU = window.KMV_AUTO;
   const FPS = P.FPS, PW = P.W, PH = P.H;
   const $ = id => document.getElementById(id);
   const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -33,6 +33,8 @@
   let shuttle = 0, shRaf = 0, shT = 0, shAcc = 0;   // JKL: ±1·±2·±4 (1× 은 소리 있는 재생, 나머지는 무음 스텝)
   let clipboard = [];
   let montRange = 'all', montEvery = 2, montPick = 'motion';   // 몽타주 깔기 설정(세션)
+  let silPad = 9, silMin = 24, silEdge = true, scnLevel = 'mid';   // 자동 편집 설정(세션)
+  let autoPrev = { sil: [], cuts: [] };                            // 자동 편집 미리보기 — 화면에만, 모델 아님
   let pxf = 2, scrollF = 0;
   let drag = null, hover = null, dirty = true, previewJob = 0, rafId = 0;
   let partDrag = null;                       // 부품 목록에서 끌어오는 중 {part, dur, x, y, moved, overTL, f}
@@ -318,6 +320,27 @@
       ctx.strokeStyle = on ? GOLD : 'rgba(217,182,92,.35)'; ctx.setLineDash([2, 4]); ctx.beginPath(); ctx.moveTo(x, RULER); ctx.lineTo(x, TH); ctx.stroke(); ctx.setLineDash([]);
       ctx.fillStyle = on ? '#fff' : GOLD; ctx.beginPath(); ctx.moveTo(x, RULER - 13); ctx.lineTo(x + 5, RULER - 8); ctx.lineTo(x, RULER - 3); ctx.lineTo(x - 5, RULER - 8); ctx.closePath(); ctx.fill();
       if (mk.text) { ctx.font = '600 10px Pretendard, sans-serif'; ctx.textBaseline = 'middle'; const tw = Math.min(140, ctx.measureText(mk.text).width + 8); ctx.fillStyle = 'rgba(217,182,92,.85)'; rr(ctx, x + 7, RULER - 15, tw, 13, 3); ctx.fill(); ctx.fillStyle = '#1a1408'; ctx.fillText(mk.text, x + 11, RULER - 8.5, tw - 8); }
+    }
+    // 자동 편집 미리보기 — 잘라낼 무음(붉은 빗금 띠)·나눌 자리(붉은 세로선). 누르기 전까지는 화면에만 있다
+    if (autoPrev.sil.length) {
+      for (const r of autoPrev.sil) {
+        const x0 = Math.max(HEAD, xOf(r.at)), x1 = Math.min(TW, xOf(r.at + r.dur)); if (x1 - x0 < 1) continue;
+        const y = V.y + 4, h = V.h - 8;
+        ctx.save(); rr(ctx, x0, y, x1 - x0, h, 4); ctx.clip();
+        ctx.fillStyle = 'rgba(224,108,108,.20)'; ctx.fillRect(x0, y, x1 - x0, h);
+        ctx.strokeStyle = 'rgba(224,108,108,.42)'; ctx.lineWidth = 1; ctx.beginPath();
+        for (let xx = x0 - h; xx < x1; xx += 9) { ctx.moveTo(xx, y + h); ctx.lineTo(xx + h, y); }
+        ctx.stroke();
+        if (x1 - x0 > 52) { ctx.fillStyle = 'rgba(245,190,190,.9)'; ctx.font = '600 10px Pretendard, sans-serif'; ctx.textBaseline = 'middle'; ctx.fillText('잘라냄', x0 + 5, y + 9); }
+        ctx.restore();
+      }
+    }
+    if (autoPrev.cuts.length) {
+      for (const f of autoPrev.cuts) {
+        const x = Math.round(xOf(f)) + .5; if (x < HEAD || x > TW) continue;
+        ctx.strokeStyle = 'rgba(224,108,108,.85)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, V.y + 2); ctx.lineTo(x, V.y + V.h - 2); ctx.stroke();
+        ctx.fillStyle = 'rgba(224,108,108,.9)'; ctx.beginPath(); ctx.moveTo(x - 4, V.y + 2); ctx.lineTo(x + 4, V.y + 2); ctx.lineTo(x, V.y + 8); ctx.closePath(); ctx.fill();
+      }
     }
     // 라쏘 상자
     if (drag && drag.type === 'lasso') {
@@ -1781,6 +1804,164 @@
     toast('몽타주 ' + r.done + '개를 ' + montEvery + '박 간격에 맞췄어요' + (r.short ? ' · 원본이 짧아 다 못 채운 클립 ' + r.short + '개' : '') + (r.done < ids.length ? ' · 비트가 끝나 ' + (ids.length - r.done) + '개는 그대로' : ''), 3200);
   };
 
+  /* ---------- 도구상자 「자동」 — 노가다를 찾아 주는 자리 (KMV_AUTO) ----------
+     원칙: 찾기는 화면에만 그린다(모델 무변경). 실제로 손대는 건 [잘라내기]·[나누기]·[지우기] 를
+     누를 때뿐이고, 전부 undo 한 번으로 되돌아간다. 판단이 애매한 것(흔들림·좋은 장면·군소리)은
+     고치지 않고 마커·표시까지만 — 자동 컷은 넣지 않는다(헌법: 컷 수·순서는 사람 것). */
+  function clearAutoPrev() { if (autoPrev.sil.length || autoPrev.cuts.length) { autoPrev = { sil: [], cuts: [] }; dirty = true; } }
+  /* 원본 프레임 → 타임라인 프레임 (한 클립 안, 배속·램프 포함). 한 번 훑어 여러 개를 한꺼번에 */
+  function srcToTl(c, srcFrames) {
+    const want = [...new Set(srcFrames)].sort((a, b) => a - b), out = new Map();
+    if (!want.length || !c.dur) return out;
+    let wi = 0;
+    while (wi < want.length && want[wi] < P.srcFrame(c, c.at)) wi++;        // 클립 시작보다 앞 = 이 클립엔 없음
+    for (let t = c.at; t < c.at + c.dur && wi < want.length; t++) {
+      const sf = P.srcFrame(c, t);
+      while (wi < want.length && want[wi] <= sf) { out.set(want[wi], t); wi++; }
+    }
+    return out;
+  }
+  /* 타임라인의 영상 클립을 원본 분석값과 함께 훑는다 (프리즈·빈 자리·사진·분석 전은 건너뜀) */
+  function eachAnalyzed(fn) {
+    let skipped = 0;
+    for (const c of P.data.V) {
+      if (c.gap || c.freeze) continue;
+      const m = P.media(c.media); if (!m || m.kind !== 'video') continue;
+      const src = M.get(m.id); if (!src) { skipped++; continue; }
+      if (!src.analyzed) skipped++;
+      fn(c, m, src);
+    }
+    return skipped;
+  }
+
+  // 무음 잘라내기
+  [['6', '짧게'], ['9', '보통'], ['15', '넉넉히']].forEach(([k, l]) => segBtn($('silPadSeg'), k, l, () => { silPad = +k; clearAutoPrev(); refreshAutoPanel(); draw(); }, '말소리 앞뒤에 남겨 둘 여유'));
+  [['15', '0.5초'], ['24', '0.8초'], ['45', '1.5초']].forEach(([k, l]) => segBtn($('silMinSeg'), k, l, () => { silMin = +k; clearAutoPrev(); refreshAutoPanel(); draw(); }, '이보다 긴 무음만 잘라요'));
+  $('tgSilEdge').onclick = () => { silEdge = !silEdge; clearAutoPrev(); refreshAutoPanel(); draw(); };
+  function findSilences(quiet) {
+    if (!P.total()) { if (!quiet) toast('타임라인이 비어 있어요'); return null; }
+    const busy = refreshStatusCount();
+    const voice = A.voice();
+    if (!voice.length) { if (!quiet) toast(busy ? '아직 현장음 분석 중이에요 — 잠시 후 다시 눌러 주세요' : '말소리를 못 찾았어요 — 소리 켠 영상 클립이 있어야 해요', 3000); return null; }
+    const rs = AU.silences(voice, P.total(), { pad: silPad, min: silMin, edge: silEdge });
+    return { rs, busy };
+  }
+  $('btnSilFind').onclick = () => {
+    stop();
+    const r = findSilences(); if (!r) return;
+    autoPrev = { sil: r.rs, cuts: [] }; dirty = true; draw(); refreshAutoPanel();
+    if (!r.rs.length) return toast('잘라낼 무음이 없어요 — 최소 길이를 줄이거나 여유를 짧게 해 보세요', 3200);
+    toast('무음 ' + r.rs.length + '곳 · ' + secStr(AU.sum(r.rs)) + ' — 타임라인의 빗금 자리예요' + (r.busy ? ' (아직 분석 중인 원본 ' + r.busy + '개)' : ''), 3400);
+  };
+  $('btnSilCut').onclick = () => {
+    stop();
+    let rs = autoPrev.sil;
+    if (!rs.length) { const r = findSilences(); if (!r) return; rs = r.rs; }
+    if (!rs.length) return toast('잘라낼 무음이 없어요');
+    const n = rs.length, cut = P.removeRanges(rs);
+    clearAutoPrev();
+    if (!cut) return toast('잘라낼 게 없었어요');
+    toast('무음 ' + n + '곳 · ' + secStr(cut) + ' 를 잘라냈어요 — 자막·꾸미기·마커도 따라왔어요 (Ctrl+Z)', 3600);
+  };
+
+  // 장면 나누기
+  const SCN = { low: { k: 7, absMin: 0.14 }, mid: {}, high: { k: 3.5, absMin: 0.07, iso: 0.55 } };
+  [['low', '둔감'], ['mid', '보통'], ['high', '예민']].forEach(([k, l]) => segBtn($('scnSeg'), k, l, () => { scnLevel = k; clearAutoPrev(); refreshAutoPanel(); draw(); }));
+  function findScenes(quiet) {
+    if (!P.data.V.length) { if (!quiet) toast('타임라인이 비어 있어요'); return null; }
+    const out = [];
+    const busy = eachAnalyzed((c, m, src) => {
+      if (!src.diff || !src.diff.length) return;
+      const cuts = AU.sceneCuts(src.diff, SCN[scnLevel] || {});
+      if (!cuts.length) return;
+      const map = srcToTl(c, cuts);
+      for (const t of map.values()) if (t - c.at >= 3 && c.at + c.dur - t >= 3) out.push(t);   // 클립 가장자리 3f 안은 이미 컷
+    });
+    return { frames: [...new Set(out)].sort((a, b) => a - b), busy };
+  }
+  $('btnScnFind').onclick = () => {
+    stop();
+    const r = findScenes(); if (!r) return;
+    autoPrev = { sil: [], cuts: r.frames }; dirty = true; draw(); refreshAutoPanel();
+    if (!r.frames.length) return toast(r.busy ? '아직 분석 중인 원본이 ' + r.busy + '개 있어요 — 잠시 후 다시 눌러 주세요' : '장면이 바뀌는 자리를 못 찾았어요 — 민감도를 예민하게 해 보세요', 3200);
+    toast('장면 경계 ' + r.frames.length + '곳 — 타임라인의 붉은 선이에요', 3000);
+  };
+  $('btnScnSplit').onclick = () => {
+    stop();
+    let fs = autoPrev.cuts;
+    if (!fs.length) { const r = findScenes(); if (!r) return; fs = r.frames; }
+    if (!fs.length) return toast('나눌 자리가 없어요');
+    const n = P.splitMany(fs);
+    clearAutoPrev();
+    toast(n ? '장면 ' + n + '곳에서 나눴어요 (Ctrl+Z 로 되돌려요)' : '이미 나뉘어 있어요', 3000);
+  };
+
+  // 표시만 하기 — 흔들린 곳 · 좋은 장면
+  function markRanges(kind) {
+    stop();
+    if (!P.data.V.length) return toast('타임라인이 비어 있어요');
+    const marks = [];
+    const busy = eachAnalyzed((c, m, src) => {
+      if (!src.motion || !src.motion.length) return;
+      const rows = kind === 'shake' ? AU.shakes(src.motion) : AU.highlights(src.motion, src.peaks || new Float32Array(src.motion.length), { win: Math.round(2 * m.fps), top: 3 });
+      if (!rows.length) return;
+      const map = srcToTl(c, rows.map(r => r.at));
+      for (const r of rows) { const t = map.get(r.at); if (t != null) marks.push({ at: t, text: kind === 'shake' ? '흔들림' : '좋은 장면' }); }
+    });
+    if (!marks.length) return toast(busy ? '아직 분석 중인 원본이 ' + busy + '개 있어요 — 잠시 후 다시 눌러 주세요' : (kind === 'shake' ? '흔들린 곳을 못 찾았어요' : '고를 만한 곳을 못 찾았어요'), 3000);
+    const made = P.addMarkers(marks);
+    toast((kind === 'shake' ? '흔들린 곳 ' : '좋은 장면 ') + made.length + '곳에 마커를 찍었어요 — Shift+M 으로 넘어가며 보세요 (Ctrl+Z)', 3600);
+  }
+  $('btnShake').onclick = () => markRanges('shake');
+  $('btnHigh').onclick = () => markRanges('high');
+
+  // 군소리 정리
+  function fillerCount() {
+    let words = 0, whole = 0;
+    for (const s of P.data.S) { words += AU.fillers(s.text).length; if (AU.fillerOnly(s.text)) whole++; }
+    return { words, whole };
+  }
+  $('btnFillFind').onclick = () => {
+    if (!P.data.S.length) return toast('자막 카드가 없어요 — 받아쓰기나 자동 배치로 먼저 자막을 놓아 주세요', 3400);
+    const f = fillerCount();
+    refreshAutoPanel();
+    toast(f.words ? '군소리 ' + f.words + '개' + (f.whole ? ' · 통째로 군소리인 카드 ' + f.whole + '장' : '') : '군소리를 못 찾았어요', 3000);
+  };
+  $('btnFillStrip').onclick = () => {
+    if (!P.data.S.length) return toast('자막 카드가 없어요', 2400);
+    const next = []; let changed = 0, dropped = 0;
+    for (const s of P.data.S) {
+      if (AU.fillerOnly(s.text)) { dropped++; continue; }
+      const t = AU.stripFillers(s.text);
+      if (t !== s.text) changed++;
+      next.push(Object.assign({}, s, { text: t }));
+    }
+    if (!changed && !dropped) return toast('지울 군소리가 없어요');
+    P.setS(next);
+    toast('군소리를 지웠어요 — 문장 ' + changed + '개 손질' + (dropped ? ' · 통째로 군소리인 카드 ' + dropped + '장 삭제' : '') + ' (Ctrl+Z)', 3600);
+  };
+
+  function refreshAutoPanel() {
+    if (!AU) { $('autoPanel').querySelectorAll('button').forEach(b => { b.disabled = true; }); $('silNote').textContent = '자동 편집 모듈을 못 불러왔어요 (engine/auto.js).'; return; }
+    Array.from($('silPadSeg').children).forEach(b => b.classList.toggle('on', +b.dataset.k === silPad));
+    Array.from($('silMinSeg').children).forEach(b => b.classList.toggle('on', +b.dataset.k === silMin));
+    Array.from($('scnSeg').children).forEach(b => b.classList.toggle('on', b.dataset.k === scnLevel));
+    $('tgSilEdge').classList.toggle('on', silEdge);
+    const busy = refreshStatusCount();
+    $('silNote').textContent = autoPrev.sil.length
+      ? '잘라낼 무음 ' + autoPrev.sil.length + '곳 · ' + secStr(AU.sum(autoPrev.sil)) + ' (타임라인 빗금) — [잘라내기] 를 누르면 그때 잘라요'
+      : busy ? '현장음 분석 중인 원본이 ' + busy + '개 있어요 — 끝나면 더 정확해요'
+        : '말과 말 사이 조용한 곳을 찾아 한 번에 잘라내요. 자막·꾸미기·덧영상·마커는 따라옵니다.';
+    $('scnNote').textContent = autoPrev.cuts.length
+      ? '나눌 자리 ' + autoPrev.cuts.length + '곳 (타임라인 붉은 선) — [나누기] 를 누르면 그때 나눠요'
+      : '한 원본 안에서 화면이 확 바뀌는 자리(하드 컷)를 찾아 클립을 나눠요.';
+    const f = P.data.S.length ? fillerCount() : null;
+    $('fillNote').textContent = !f ? '받아쓴 자막에서 “어·음·그·저기” 같은 말버릇을 찾아 지워요. 자막 카드가 아직 없어요.'
+      : f.words ? '군소리 ' + f.words + '개' + (f.whole ? ' · 통째로 군소리인 카드 ' + f.whole + '장' : '') + ' — [지우기] 는 낱말만 빼고 문장은 남겨요'
+        : '군소리를 못 찾았어요. 뜻이 있는 말(“그 학교”의 “그”)은 일부러 안 건드려요.';
+    $('btnFillStrip').disabled = !f || !(f.words || f.whole);
+  }
+
   /* ---------- 우측 패널: 미디어 ---------- */
   function refreshBin() {
     const bin = $('bin'); bin.innerHTML = '';
@@ -1883,6 +2064,8 @@
     scheduleSave(); if (!drag) refreshBin();
     if (!drag) {
       refreshLookPanel(); refreshSubPanel(); refreshPartPanel(); refreshMusicPanel();
+      if (kind !== 'M') clearAutoPrev();                 // 시각이 밀리면 찾아 둔 자리는 못 믿는다 (마커만 놓은 건 그대로)
+      refreshAutoPanel();
       if (selS && !P.subtitle(selS)) { selS = null; refreshSubPanel(); }
       if (selP && !P.part(selP)) { selP = null; refreshPartPanel(); }
       if (selA2 && !P.a2(selA2)) { selA2 = null; refreshMusicPanel(); }
@@ -2005,11 +2188,11 @@
   };
 
   window.KMV_UI = { importFiles, setPH: f => setPH(f), get ph() { return ph; }, select, selectP, selectA2, selectS, placePart, play, stop, zoomFit, get pxf() { return pxf; }, get scrollF() { return scrollF; }, get selP() { return selP; }, get selA2() { return selA2; }, beatFrames,
-    get sel() { return sel; }, selectedIds, openSource, showStage, get stage() { return stage; }, get src() { return srcCur; }, setSrcPH, srcMark, srcPlace, shuttleTo, get shuttle() { return shuttle; }, get playing() { return playing || srcPlaying; }, doMarker, doCopy, doCut, doPaste, get clipboard() { return clipboard; }, get selM() { return selM; }, layout: { HEAD, RULER, LY }, xOf, frameOf, laneRows, rowGeom, selectV2, get selV2() { return selV2; }, get delChip() { return delChip; }, get proj() { return proj; }, openRecord, newProject, loadDoc, saveCloud, openProjModal, tab: setTab, get toolTab() { return toolTab; } };
+    get sel() { return sel; }, selectedIds, openSource, showStage, get stage() { return stage; }, get src() { return srcCur; }, setSrcPH, srcMark, srcPlace, shuttleTo, get shuttle() { return shuttle; }, get playing() { return playing || srcPlaying; }, doMarker, doCopy, doCut, doPaste, get clipboard() { return clipboard; }, get selM() { return selM; }, layout: { HEAD, RULER, LY }, xOf, frameOf, laneRows, rowGeom, selectV2, get selV2() { return selV2; }, get delChip() { return delChip; }, get proj() { return proj; }, openRecord, newProject, loadDoc, saveCloud, openProjModal, tab: setTab, get toolTab() { return toolTab; }, get autoPrev() { return autoPrev; } };
 
   /* ---------- 시작 ---------- */
   resize();
-  refreshBin(); refreshPanel(); refreshProject(); refreshLookPanel(); refreshSubPanel(); buildPartGrid(); refreshPartPanel(); refreshMusicPanel(); refreshMarkerList();
+  refreshBin(); refreshPanel(); refreshProject(); refreshLookPanel(); refreshSubPanel(); buildPartGrid(); refreshPartPanel(); refreshMusicPanel(); refreshAutoPanel(); refreshMarkerList();
   document.fonts && document.fonts.ready.then(() => { paintPartThumbs(); if (!playing) renderPreview(); });
   LK.ready().then(() => { if (P.total()) renderPreview(); });
   $('zoom').value = Math.round(1000 * Math.log(pxf / MIN_PXF) / Math.log(MAX_PXF / MIN_PXF));

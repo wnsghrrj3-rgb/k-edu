@@ -422,6 +422,21 @@
   function marker(id) { return P.markers.find(x => x.id === id) || null; }
   function markerAt(t, tol) { tol = tol == null ? 0 : tol; for (const x of P.markers) if (Math.abs(x.at - t) <= tol) return x; return null; }
   function addMarker(card) { commit(); const x = Object.assign({ id: uid('m'), at: 0, text: '', color: 'gold' }, card); x.at = Math.max(0, Math.round(x.at)); P.markers.push(x); sortM(); emit('M'); return x; }
+  /* 마커 여러 개를 undo 한 번으로 (자동 편집의 "표시만 하기") — 같은 프레임에 이미 있으면 건너뜀 */
+  function addMarkers(list) {
+    const rows = (list || []).filter(x => x);
+    if (!rows.length) return [];
+    commit();
+    const out = [];
+    for (const card of rows) {
+      const at = Math.max(0, Math.round(card.at || 0));
+      if (P.markers.some(m => m.at === at)) continue;
+      const x = Object.assign({ id: uid('m'), text: '', color: 'gold' }, card, { at });
+      P.markers.push(x); out.push(x);
+    }
+    sortM(); emit('M');
+    return out;
+  }
   function updateMarker(id, patch) { const x = marker(id); if (!x) return; commit(); Object.assign(x, patch); x.at = Math.max(0, Math.round(x.at)); sortM(); emit('M'); }
   function removeMarker(id) { const i = P.markers.findIndex(x => x.id === id); if (i < 0) return; commit(); P.markers.splice(i, 1); emit('M'); }
   function markerFrames() { return P.markers.map(x => x.at); }
@@ -666,7 +681,7 @@
     v2, addV2, updateV2, trimV2, removeV2, v2At, V2_POS, V2_SIZE,
     setAmbience, montage,
     slip, roll, slide, lift, insertRange, removeClips, moveClips, pasteClips, copyClips, removeRanges, splitMany,
-    marker, markerAt, addMarker, updateMarker, removeMarker, markerFrames,
+    marker, markerAt, addMarker, addMarkers, updateMarker, removeMarker, markerFrames,
     commit, undo, redo, canUndo: () => undoStack.length > 0, canRedo: () => redoStack.length > 0,
     toJSON, load, reset,
   };
