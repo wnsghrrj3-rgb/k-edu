@@ -25,27 +25,42 @@ function walk(d){ fs.readdirSync(d, { withFileTypes:true }).forEach(e => { const
 const isKA = s => /function getQState\(qid\)/.test(s) && /function saveProgress\(/.test(s) && /data-q-points/.test(s);
 const isSocial = s => /q:\s*Q\.map\(\(\)=>\(\{done:false/.test(s) && /qs\.wrongCount\+\+/.test(s);
 const direct = s => /kedu\.recordAnswer\(/.test(s);
-const EXCEPT = /(_game_\d+|_adv_\d+_|g1_math_u4_0[1-7]|g1_math_u1_l01|g1_math_u1_l12|g1_math_u5_04_)/;   // 예외: 게임·심화·1학년 활동형 (배선 미정)
+// pick 가족 — [data-answer] 묶음 안에 [data-pick] 선택지가 실제로 들어 있는 차시만
+// (속성 두 개가 흩어져 있기만 한 페이지는 제외되어야 하므로 파서로 확인한다)
+const pickGroups = s => {
+  if (!/data-answer="/.test(s) || !/data-pick="/.test(s)) return 0;
+  const doc = new JSDOM(s).window.document;
+  return [...doc.querySelectorAll('[data-answer]')].filter(g => g.querySelector('[data-pick]')).length;
+};
+const isPick = s => pickGroups(s) > 0;
+// 예외 = 리포트 대상 아님으로 확정한 차시
+//   게임 10 · 심화/응용/올림피아드 6 : 정오 판정이 없거나 도달 판정에 넣지 않기로 함
+//   u4_06(문장 빈칸 끌어놓기) · u5_04(짝맞추기) : 엔진이 제각각, 배선 보류
+//   u1_l01(단원 도입) · u1_l12(마무리) : 채점 요소 자체가 없음
+const EXCEPT = /(_game_\d+|_adv_\d+_|g1_math_u4_06_|g1_math_u1_l01|g1_math_u1_l12|g1_math_u5_04_)/;
 const only = lessons.filter(l => /^grade[1-6]\//.test(l.f));
-let nDirect = 0, nKA = 0, nSoc = 0, nExc = 0, nMiss = [], overlap = [];
+let nDirect = 0, nKA = 0, nSoc = 0, nPick = 0, nExc = 0, nMiss = [], overlap = [];
 only.forEach(l => {
-  const d = direct(l.s), k = isKA(l.s), so = isSocial(l.s);
-  if (d && (k || so)) overlap.push(l.f);
-  if (d) nDirect++; else if (k) nKA++; else if (so) nSoc++; else if (EXCEPT.test(l.f)) nExc++; else nMiss.push(l.f);
+  const d = direct(l.s), k = isKA(l.s), so = isSocial(l.s), pk = isPick(l.s);
+  if (d && (k || so || pk)) overlap.push(l.f);
+  if (k && pk) overlap.push(l.f);
+  if (d) nDirect++; else if (k) nKA++; else if (so) nSoc++; else if (pk) nPick++;
+  else if (EXCEPT.test(l.f)) nExc++; else nMiss.push(l.f);
 });
 ok(overlap.length === 0, '중복 기록 위험(직접 배선 + 자동 배선 구조 동시 보유) 0 — ' + overlap.slice(0,3).join(','));
 ok(nMiss.length === 0, '배선 누락(직접·자동·예외 어디에도 없음) 0 — ' + nMiss.slice(0,5).join(','));
-ok(nKA >= 460 && nSoc >= 40, `자동 배선 가족: KA ${nKA} · 사회 ${nSoc}`);
-console.log(`  메타 차시 ${only.length} = 직접 ${nDirect} + 자동(KA ${nKA} + 사회 ${nSoc}) + 예외 ${nExc} + 누락 ${nMiss.length}`);
+ok(nKA >= 460 && nSoc >= 40 && nPick === 6, `자동 배선 가족: KA ${nKA} · 사회 ${nSoc} · pick ${nPick}`);
+ok(nExc === 20, `예외 20(게임 10·심화 6·보류 4) — 실제 ${nExc}`);
+console.log(`  메타 차시 ${only.length} = 직접 ${nDirect} + 자동(KA ${nKA} + 사회 ${nSoc} + pick ${nPick}) + 예외 ${nExc} + 누락 ${nMiss.length}`);
 
 // ── jsdom 공통 ─────────────────────────────────────────────
 function openLesson(file, opts){
   opts = opts || {};
   const inserts = [], upserts = [], updates = [];
   let html = rd(file).replace(/<script src="https:\/\/cdn\.jsdelivr\.net[^>]*><\/script>/g, '')
-    .replace(/<script src="\/kedu_config\.js"><\/script>/, '<script>var KEDU_AUTH_GATE=false;</script>')
-    .replace(/<script src="\/kedu_tracker\.js"><\/script>/, '<script>' + rd('kedu_tracker.js').replace(/<\/script>/g, '<\\/script>') + '</script>')
-    .replace(/<script src="\/kedu_(gate|boxbar|collect|kbox_adapter|lesson_bridge|back|resume|fit|accordion|tier|ga)\.js"><\/script>/g, '');
+    .replace(/<script src="[^"]*kedu_config\.js"><\/script>/, '<script>var KEDU_AUTH_GATE=false;</script>')
+    .replace(/<script src="[^"]*kedu_tracker\.js"><\/script>/, '<script>' + rd('kedu_tracker.js').replace(/<\/script>/g, '<\\/script>') + '</script>')
+    .replace(/<script src="[^"]*kedu_(gate|boxbar|collect|kbox_adapter|lesson_bridge|back|resume|fit|accordion|tier|ga)\.js"><\/script>/g, '');
   if (opts.autowireOff) html = html.replace('<head>', '<head><meta name="kedu-autowire" content="off">');
   const vc = new VirtualConsole(); const errors = [];
   vc.on('jsdomError', e => { if (!/not implemented|Could not load/i.test(String(e.message||e))) errors.push(String(e.message||e)); });
@@ -112,6 +127,35 @@ function openLesson(file, opts){
     ok(sc.length === 2 && sc[0].r.is_correct === false && sc[1].r.is_correct === true && sc[0].r.question_id === 'q1', '사회: pick 오답→정답 = scores 2행 (q1)');
     ok(st.q[0].done === true && st.q[0].wrongCount === 1, '사회: 페이지 상태는 그대로 (done·wrongCount)');
     ok(errors.length === 0, '사회: JS 오류 없음 ' + errors.slice(0,2).join(' | '));
+  }
+
+  // ── ④-b pick 가족(1학년 활동형) ────────────────────────
+  {
+    const file = only.find(l => isPick(l.s) && /u4_02/.test(l.f)).f;
+    const { win, doc, inserts, errors } = openLesson(file);
+    await sleep(80);
+    ok(win.kedu && win.kedu.autowired === 'pick', 'pick: autowired=pick (' + file.split('/').pop() + ')');
+    const g = [...doc.querySelectorAll('[data-answer]')].find(x => x.querySelector('[data-pick]') && /^\d+$/.test(x.dataset.ap || ''));
+    const ans = g.dataset.answer;
+    const wrong = [...g.querySelectorAll('[data-pick]')].find(b => b.dataset.pick !== ans);
+    const right = [...g.querySelectorAll('[data-pick]')].find(b => b.dataset.pick === ans);
+    wrong.click(); await sleep(20);
+    right.click(); await sleep(20);
+    right.click(); await sleep(10);
+    const sc = inserts.filter(x => x.t === 'scores' && x.r.question_id !== '_lesson_summary_');
+    ok(sc.length === 2 && sc[0].r.is_correct === false && sc[1].r.is_correct === true, 'pick: 오답→정답 = scores 2행, 재클릭은 기록 안 함');
+    ok(sc[0].r.question_id === 'q' + g.dataset.ap, 'pick: question_id = 슬라이드 번호 (q' + g.dataset.ap + ')');
+    ok(inserts.some(x => x.t === 'wrong_answers'), 'pick: 오답노트 기록');
+    // 누계 점수 수신 → 마지막 슬라이드 도달 시 끝 기록 1회
+    win.eval('addScore(7)');
+    const T = win.eval('TOTAL');
+    win.eval('cur = ' + (T - 2));
+    win.goNext(); await sleep(20);
+    win.goNext(); await sleep(20);
+    const ends = inserts.filter(x => x.t === 'scores' && x.r.question_id === '_lesson_summary_');
+    ok(ends.length === 1, 'pick: 끝 기록 1회 (중복 없음)');
+    ok(ends[0] && ends[0].r.score === win.eval('score') && ends[0].r.max_score > 0, `pick: 끝 점수 ${ends[0] && ends[0].r.score}/${ends[0] && ends[0].r.max_score}`);
+    ok(errors.length === 0, 'pick: JS 오류 없음 ' + errors.slice(0,2).join(' | '));
   }
 
   // ── ⑤ 끄기 메타 ───────────────────────────────────────

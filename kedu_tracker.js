@@ -293,6 +293,8 @@
   //      solved=true → 정답, wrongCount++ → 오답, saveProgress(true) → 차시 끝
   //   ② 사회 state.q 가족(5·6학년 사회 41차시): state.q[i].done=true → 정답,
   //      wrongCount++ → 오답 (차시 끝은 페이지가 직접 recordLessonEnd 호출)
+  //   ③ pick 가족(1학년 활동형 6차시): [data-answer] 묶음의 [data-pick] 클릭 정오,
+  //      차시 끝은 마지막 슬라이드 도달 시 (누계 점수는 keduTracker.recordScore 수신)
   //   끄기: <meta name="kedu-autowire" content="off">
   //   중복 방지: 페이지가 recordAnswer 를 직접 부르는 가족은 위 구조가 없다
   //   (tests/test_kedu_autowire.js 가 정적으로 강제).
@@ -350,11 +352,86 @@
     return true;
   }
 
+  // ③ pick 가족 (1학년 활동형 6차시: g1 math u4_01~05·07)
+  //    묶음 [data-answer] 안의 선택지 [data-pick] 클릭 → 정오.
+  //    qid 는 묶음의 숫자형 data-* (data-ap/tos/wlc/reason/q = 슬라이드 번호), 없으면 순번.
+  //    차시 끝은 마지막 슬라이드 도달 시 1회. 누계 점수는 페이지가 부르던
+  //    window.keduTracker.recordScore(id, score) 를 받아 두었다가 그때 함께 보낸다.
+  function pickQid(g, i){
+    var a = g.attributes;
+    for(var k = 0; k < a.length; k++){
+      var n = a[k].name;
+      if(n.indexOf('data-') !== 0 || n === 'data-answer' || n === 'data-pick') continue;
+      if(/^\d+$/.test(a[k].value)) return 'q' + a[k].value;
+    }
+    return 'q' + (i + 1);
+  }
+
+  function pickMaxScore(){
+    var total = 0, sc = document.scripts;
+    for(var i = 0; i < sc.length; i++){
+      if(sc[i].src) continue;
+      var t = sc[i].textContent || '';
+      (t.match(/addScore\(\s*\d+\s*\)/g) || []).forEach(function(m){ total += parseInt(m.replace(/\D/g, ''), 10) || 0; });
+      (t.match(/attempts\s*===\s*1\s*\?\s*\d+/g) || []).forEach(function(m){ total += parseInt(m.replace(/\D/g, ''), 10) || 0; });
+    }
+    return total;
+  }
+
+  function bindActivityEnd(){
+    var lastScore = 0, ended = false, total = pickMaxScore();
+    window.keduTracker = window.keduTracker || {};
+    if(typeof window.keduTracker.recordScore !== 'function'){
+      window.keduTracker.recordScore = function(_lessonId, score){ lastScore = Number(score) || 0; };
+    }
+    function end(){
+      if(ended) return;
+      ended = true;
+      window.kedu.recordLessonEnd(lastScore, total);
+    }
+    function atLast(){
+      var c = G('cur'), t = G('TOTAL');
+      return typeof c === 'number' && typeof t === 'number' && c >= t - 1;
+    }
+    var origNext = window.goNext;
+    if(typeof origNext === 'function'){
+      window.goNext = function(){
+        if(atLast()) end();                       // 마지막 슬라이드에서 한 번 더 = 나가기
+        var r = origNext.apply(this, arguments);
+        if(atLast()) end();                       // 마지막 슬라이드에 막 도착
+        return r;
+      };
+    }
+    window.addEventListener('pagehide', function(){ if(atLast()) end(); });
+  }
+
+  function autowirePick(){
+    var groups = [], all = document.querySelectorAll('[data-answer]');
+    for(var i = 0; i < all.length; i++){ if(all[i].querySelector('[data-pick]')) groups.push(all[i]); }
+    if(!groups.length) return false;
+    groups.forEach(function(g, i){
+      var qid = pickQid(g, i), ans = g.getAttribute('data-answer'), solved = false;
+      g.addEventListener('click', function(e){
+        if(solved) return;
+        var b = e.target && e.target.closest ? e.target.closest('[data-pick]') : null;
+        if(!b || !g.contains(b)) return;
+        if(b.getAttribute('data-pick') === ans){ solved = true; window.kedu.recordAnswer(qid, true, null, null); }
+        else window.kedu.recordAnswer(qid, false, null, null);
+      }, true);
+    });
+    bindActivityEnd();
+    return true;
+  }
+
   function autowire(){
     var meta = document.querySelector('meta[name="kedu-autowire"]');
     if(meta && /^off$/i.test(meta.content || '')) return;
     if(!document.querySelector('meta[name="kedu-lesson-id"]')) return;  // 차시 메타 없는 페이지는 대상 아님
-    try { window.kedu.autowired = autowireKA() ? 'ka' : (autowireSocial() ? 'social' : null); } catch(e){ window.kedu.autowired = null; }
+    try {
+      window.kedu.autowired = autowireKA() ? 'ka'
+        : (autowireSocial() ? 'social'
+        : (autowirePick() ? 'pick' : null));
+    } catch(e){ window.kedu.autowired = null; }
   }
 
   // DOM 로드 후 실행
