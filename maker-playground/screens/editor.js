@@ -268,6 +268,24 @@ window.MK_SCREENS.editor = (() => {
         return `<div class="ed-el ${sel}" data-el="${i}" data-editable="1" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight};line-height:1.3;color:${col}${al}${tr};white-space:pre-wrap${lay}${rotSty(el)}"><span class="ed-txt">${body}</span>${hd}</div>`;
       }
       const hd2 = e.selEl === i ? '<i class="hd tl"></i><i class="hd tr"></i><i class="hd bl"></i><i class="hd br"></i><i class="hd tm"></i><i class="hd bm"></i><i class="hd ml"></i><i class="hd mr"></i><i class="hd rot"></i>' : '';
+      /* ---- 순수 도형 (kind:'shape') ----
+         내보내기(render.js)는 진작부터 stroke·타원·선을 그릴 수 있었는데
+         화면이 이 kind 를 몰라, 테두리 있는 도형은 전부 이미지 조각으로
+         구워 넣는 수밖에 없었다. 화면을 내보내기 쪽에 맞춘다.
+         SVG 의 stroke 는 선 중앙 정렬, CSS border 는 안쪽이라 얇은 선에서
+         반 픽셀 차가 나지만 템플릿 테두리 두께(1~3px)에서는 눈에 띄지 않는다. */
+      if (el.kind === 'shape') {
+        const swPx = (el.strokeWidth || 0) / (scene.width || 1280) * CW;
+        const isLine = el.shape === 'line';
+        const sFill = isLine ? `;background:${el.stroke || el.fill || '#1F2733'}`
+          : (el.fill && el.fill !== 'none' ? `;background:${el.fill}` : '');
+        const sBd = (!isLine && el.stroke && el.stroke !== 'none' && swPx > 0)
+          ? `;border:${Math.max(1, swPx).toFixed(1)}px solid ${el.stroke};box-sizing:border-box` : '';
+        const sRd = el.shape === 'ellipse' ? ';border-radius:50%'
+          : (el.radius ? `;border-radius:${el.radius > 100 ? '50%' : (el.radius / (scene.width || 1280) * CW).toFixed(1) + 'px'}` : '');
+        const sOp = (el.opacity != null && el.opacity < 1) ? `;opacity:${el.opacity}` : '';
+        return `<div class="ed-el img-ph has-fill ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%${sFill}${sBd}${sRd}${sOp}${rotSty(el)}">${hd2}</div>`;
+      }
       const fillCls = el.fill && el.fill !== 'none' ? 'has-fill' : '', fillSty = el.fill && el.fill !== 'none' ? `;background:${el.fill}` : '';
       /* 모서리는 씬 좌표(px)로 저장하고 화면 배율로 환산한다. 종전엔 화면 px 을
          그대로 써서 줌·씬 크기가 바뀌면 둥글기만 홀로 어긋났다. */
@@ -319,6 +337,16 @@ window.MK_SCREENS.editor = (() => {
           <div class="fld row2"><span><label>투명도</label>${num('100%')}</span><span><label>회전</label>${num('0°')}</span></div>
         </details>
         <p class="hint">내용 입력만 실동작 — 나머지는 외형 검토용</p>`;
+    } else if (s && s.kind === 'shape') {
+      const isLine = s.shape === 'line';
+      const hex = (v, d) => (/^#[0-9A-Fa-f]{6}$/.test(v || '') ? v : d);
+      body = `<h3>도형 속성</h3>
+        ${fld('모양', `<select class="mk-input" data-ed="sh-shape">${[['rect', '사각형'], ['ellipse', '타원'], ['line', '선']].map(([v, n]) => `<option value="${v}" ${(s.shape || 'rect') === v ? 'selected' : ''}>${n}</option>`).join('')}</select>`)}
+        ${isLine ? '' : `<div class="fld row2"><span><label>칠</label><input type="color" class="mk-input" data-ed="sh-fill" value="${hex(s.fill, '#FFFFFF')}"></span><span><label>모서리</label><input type="number" class="mk-input" data-ed="sh-radius" min="0" max="999" value="${s.radius || 0}"></span></div>`}
+        <div class="fld row2"><span><label>${isLine ? '선 색' : '테두리 색'}</label><input type="color" class="mk-input" data-ed="sh-stroke" value="${hex(s.stroke, '#1F2733')}"></span><span><label>굵기</label><input type="number" class="mk-input" data-ed="sh-strokew" min="0" max="80" value="${s.strokeWidth || 0}"></span></div>
+        <div class="fld row2"><span><label>투명도</label><input type="number" class="mk-input" data-ed="sh-opacity" min="0" max="100" value="${Math.round((s.opacity != null ? s.opacity : 1) * 100)}"></span><span><label>회전</label><input type="number" class="mk-input" data-ed="sh-rot" min="-180" max="180" value="${s.rot || 0}"></span></div>
+        ${isLine ? '<p class="hint">선은 가로로만 그어집니다 — 기울이려면 회전을 쓰세요</p>' : ''}
+        <p class="hint">전부 실동작 — 굵기·모서리는 장면 좌표(px) 기준이라 내보내기와 같습니다</p>`;
     } else if (s) {
       body = `<h3>이미지 속성</h3>
         ${fld('', M().Button({ label: '이미지 교체', kind: 'secondary', attrs: 'data-ed="img-swap" style="width:100%"' }))}
@@ -364,6 +392,13 @@ window.MK_SCREENS.editor = (() => {
         const mls = T && T.letterSpacingEm ? `;letter-spacing:${T.letterSpacingEm}em` : (el.tracking ? `;letter-spacing:${el.tracking}em` : '');
         const lay = T ? `;line-height:${T.lineHeight};white-space:pre` : '';
         return `<span style="left:${el.x}%;top:${el.y}%;width:${el.w}%;font-size:${fs}px;font-weight:${el.weight || 400};color:${col}${al}${mls}${lay}">${body}</span>`;
+      }
+      if (el.kind === 'shape') {
+        const isLine = el.shape === 'line';
+        const bgc = isLine ? (el.stroke || el.fill || '#1F2733') : (el.fill && el.fill !== 'none' ? el.fill : 'transparent');
+        const bd = (!isLine && el.stroke && el.stroke !== 'none') ? `;box-shadow:inset 0 0 0 1px ${el.stroke}` : '';
+        const rd = el.shape === 'ellipse' ? ';border-radius:50%' : (el.radius ? ';border-radius:2px' : '');
+        return `<i style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;background:${bgc};opacity:${el.opacity != null ? el.opacity : 1}${bd}${rd}"></i>`;
       }
       if (el.src && (el.video === true || el.kind === 'video' || /^data:video\//.test(el.src))) return `<video src="${el.src}" muted preload="metadata" aria-hidden="true" style="position:absolute;left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;object-fit:${el.fit === 'contain' ? 'contain' : 'cover'};pointer-events:none"></video>`;   /* R39 — 영상 첫 프레임 미니 */
       if (el.src) return `<i style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;background-image:url('${el.src}');background-size:${el.fit === 'contain' ? 'contain' : 'cover'};background-position:center;background-repeat:no-repeat;opacity:1"></i>`;   /* R36 실이미지 미니 */
@@ -809,6 +844,22 @@ window.MK_SCREENS.editor = (() => {
         const cv = root.querySelector(`.ed-el[data-el="${e.selEl}"] .ed-txt`) || root.querySelector(`.ed-el[data-el="${e.selEl}"]`);
         if (cv) cv.textContent = te.value;
       }; }
+      /* 도형 속성 실배선 — 값 하나가 바뀔 때마다 되돌리기 지점을 남긴다 */
+      {
+        const S2 = () => doc.scenes[e.sceneIdx].elements[e.selEl];
+        const bind = (key, label, fn) => {
+          const n = root.querySelector(`[data-ed="sh-${key}"]`); if (!n) return;
+          const ev = n.type === 'color' ? 'onchange' : 'oninput';
+          n[ev] = () => { const el2 = S2(); if (!el2) return; H.push(label); fn(el2, n.value); PG.render(); };
+        };
+        bind('shape', '도형 모양', (el2, v) => { el2.shape = v; if (v === 'line' && !el2.strokeWidth) el2.strokeWidth = 4; });
+        bind('fill', '도형 칠', (el2, v) => { el2.fill = v; });
+        bind('stroke', '도형 테두리 색', (el2, v) => { el2.stroke = v; if (!el2.strokeWidth) el2.strokeWidth = 2; });
+        bind('strokew', '테두리 굵기', (el2, v) => { const n2 = Math.max(0, +v || 0); el2.strokeWidth = n2; if (!n2) delete el2.stroke; });
+        bind('radius', '모서리', (el2, v) => { el2.radius = Math.max(0, +v || 0); });
+        bind('opacity', '투명도', (el2, v) => { el2.opacity = Math.min(1, Math.max(0, (+v || 0) / 100)); });
+        bind('rot', '회전', (el2, v) => { el2.rot = +v || 0; });
+      }
       const sw = root.querySelector('[data-ed="img-swap"]');
       if (sw) sw.onclick = () => {
         if (window.MK_LIVE) {                            /* R36 — 진짜 파일 선택 → 실이미지 교체 */

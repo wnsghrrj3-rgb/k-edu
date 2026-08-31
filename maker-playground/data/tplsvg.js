@@ -60,6 +60,21 @@ window.MK_TPLSVG = (() => {
     { id: 'school-notice-01', name: 'School Parent Notice', ko: '학부모 안내문', category: 'education', width: 1080, height: 1350, pack: 'pack02', file: '10_school_notice.svg',
       contentType: 'poster', style: '에듀', styleId: 'st-edu', styleEn: 'Notice', ratio: '4:5', difficulty: '쉬움', rec: true,
       desc: '머리띠·점 목록·문의 상자로 된 안내문', uses: '가정통신문·학부모 안내·학급 공지', tags: ['안내', '학부모', '가정통신문'], hints: ['목록은 세 줄이 읽기 좋다', '문의 상자에 연락 방법을'] },
+    { id: 'fashion-sale-01', name: 'New Drop Fashion Sale', ko: '세일 안내', category: 'fashion', width: 1080, height: 1350, pack: 'pack03', file: '11_fashion_sale.svg',
+      contentType: 'poster', style: '볼드', styleId: 'st-bold', styleEn: 'Street', ratio: '4:5', difficulty: '쉬움', rec: false,
+      desc: '큰 글자와 라임색으로 미는 거리 감성 편집면', uses: '바자회·알뜰장터·동아리 모집', tags: ['홍보', '세일', '볼드'], hints: ['숫자를 제일 크게', '색은 두 가지까지'] },
+    { id: 'travel-poster-01', name: 'Escape Somewhere New', ko: '여행 포스터', category: 'travel', width: 1080, height: 1350, pack: 'pack03', file: '12_travel_poster.svg',
+      contentType: 'poster', style: '페이퍼', styleId: 'st-paper', styleEn: 'Scenic', ratio: '4:5', difficulty: '보통', rec: false,
+      desc: '풍경 삽화를 얹은 여행 안내면', uses: '수학여행·현장체험·캠프 안내', tags: ['여행', '체험학습', '안내'], hints: ['풍경 조각은 통째로 옮겨 쓰세요', '글자는 위아래로만'] },
+    { id: 'cafe-menu-01', name: 'Slow Morning Cafe Menu', ko: '메뉴판', category: 'menu', width: 1080, height: 1350, pack: 'pack03', file: '13_cafe_menu.svg',
+      contentType: 'poster', style: '소프트', styleId: 'st-soft', styleEn: 'Warm', ratio: '4:5', difficulty: '쉬움', rec: false,
+      desc: '품목과 값을 줄 맞춰 세운 메뉴판', uses: '알뜰장터 가격표·급식 안내·행사 부스', tags: ['메뉴', '가격표', '행사'], hints: ['줄 간격을 일정하게', '품목은 여섯 줄까지'] },
+    { id: 'realestate-01', name: 'Modern Property Flyer', ko: '건물 소개 전단', category: 'realestate', width: 1080, height: 1350, pack: 'pack03', file: '14_realestate_flyer.svg',
+      contentType: 'poster', style: '모던', styleId: 'st-modern', styleEn: 'Premium', ratio: '4:5', difficulty: '보통', rec: false,
+      desc: '큰 사진 자리와 정보 줄로 나눈 소개 전단', uses: '학교 시설 안내·공간 소개·입학 홍보', tags: ['소개', '전단', '미니멀'], hints: ['위 사진 자리에 실제 사진을', '정보는 세 항목까지'] },
+    { id: 'music-festival-01', name: 'Loud Weekend Festival', ko: '축제 포스터', category: 'event', width: 1080, height: 1350, pack: 'pack03', file: '15_music_festival.svg',
+      contentType: 'poster', style: '행사', styleId: 'st-event', styleEn: 'Brutalist', ratio: '4:5', difficulty: '쉬움', rec: true,
+      desc: '색면을 크게 부딪히는 축제 포스터', uses: '학예회·축제·동아리 공연', tags: ['축제', '행사', '공연'], hints: ['이름 목록은 굵게 나열', '색면은 세 덩이까지'] },
   ];
 
   const CATS = [['', '전체'], ['poster', '포스터'], ['event', '행사'], ['education', '교육'], ['promotion', '홍보'], ['social', '소셜']];
@@ -168,7 +183,8 @@ window.MK_TPLSVG = (() => {
     };
     const fill = attr(n, 'fill'); if (solid(fill)) el.color = fill;
     if (align) el.align = align;
-    if (ls) el.tracking = r2(ls / fs);
+    /* 자간 정본 이름은 letterSpacing (em 배수) — tracking 은 R114 가 걷어낸 옛 이름 */
+    if (ls) el.letterSpacing = r2(ls / fs);
     const t = readTransform(attr(n, 'transform')); if (t.rot) el.rot = r2(t.rot);
     return el;
   }
@@ -195,6 +211,47 @@ window.MK_TPLSVG = (() => {
     /* 모서리: 반지름이 짧은 변의 절반에 닿으면 알약·원이다 */
     if (round >= Math.min(w, h) / 2 - 0.5) el.radius = 999;
     else if (round > 0) el.radius = Math.round(round);
+    const op = attr(n, 'opacity'); if (op != null && num(op, 1) < 1) el.opacity = num(op, 1);
+    const t = readTransform(attr(n, 'transform')); if (t.rot) el.rot = r2(t.rot);
+    return el;
+  }
+
+  /* 테두리가 필요한 도형 → kind:'shape' (내보내기 render.js 가 이미 그리는 계약)
+     · rect/circle/ellipse: 칠 + 테두리 + 모서리
+     · line: 가로선만 (render.js 의 VEC.line 이 요소 상자 중앙에 수평으로 긋는다)
+     기울어진 선·곡선(path)은 여기 자리가 없어 조각으로 남는다. */
+  function shapeEl(n, W, H, off) {
+    const tag = (n.tagName || '').toLowerCase();
+    const stroke = attr(n, 'stroke'), fill = attr(n, 'fill');
+    const sw = num(attr(n, 'stroke-width'), 1);
+    let x, y, w, h, shape = 'rect', round = 0;
+    if (tag === 'line') {
+      const x1 = num(attr(n, 'x1')), y1 = num(attr(n, 'y1')), x2 = num(attr(n, 'x2')), y2 = num(attr(n, 'y2'));
+      if (Math.abs(y2 - y1) > 0.5) return null;          /* 수평이 아니면 조각으로 */
+      shape = 'line'; x = Math.min(x1, x2); w = Math.abs(x2 - x1);
+      h = Math.max(sw, 1); y = y1 - h / 2;
+    } else if (tag === 'rect') {
+      x = num(attr(n, 'x')); y = num(attr(n, 'y'));
+      w = num(attr(n, 'width')); h = num(attr(n, 'height'));
+      round = num(attr(n, 'rx'), num(attr(n, 'ry'), 0));
+    } else if (tag === 'circle') {
+      const r = num(attr(n, 'r')); x = num(attr(n, 'cx')) - r; y = num(attr(n, 'cy')) - r; w = r * 2; h = r * 2; shape = 'ellipse';
+    } else if (tag === 'ellipse') {
+      const rx = num(attr(n, 'rx')), ry = num(attr(n, 'ry'));
+      x = num(attr(n, 'cx')) - rx; y = num(attr(n, 'cy')) - ry; w = rx * 2; h = ry * 2; shape = 'ellipse';
+    } else return null;
+    if (!(w > 0 && h > 0)) return null;
+    const el = {
+      kind: 'shape', shape, label: '',
+      x: r2((x + off.tx) / W * 100), y: r2((y + off.ty) / H * 100),
+      w: r2(w / W * 100), h: r2(h / H * 100),
+    };
+    if (shape === 'line') { el.stroke = stroke || '#1F2733'; el.strokeWidth = r2(sw); el.fill = 'none'; }
+    else {
+      el.fill = solid(fill) ? fill : 'none';
+      if (solid(stroke)) { el.stroke = stroke; el.strokeWidth = r2(sw); }
+      if (shape === 'rect' && round > 0) el.radius = round >= Math.min(w, h) / 2 - 0.5 ? 999 : Math.round(round);
+    }
     const op = attr(n, 'opacity'); if (op != null && num(op, 1) < 1) el.opacity = num(op, 1);
     const t = readTransform(attr(n, 'transform')); if (t.rot) el.rot = r2(t.rot);
     return el;
@@ -305,15 +362,12 @@ window.MK_TPLSVG = (() => {
           return;
         }
 
-        if (filledStroked) {
-          const body = boxEl(n, W, H, off, '');
-          if (body) elements.push(body);
-          const line = n.cloneNode(true);
-          line.setAttribute('fill', 'none');
-          const fr = fragEl(line, W, H, off, vb, defs, serOne);
-          if (fr) { fr.label = '테두리'; elements.push(fr); }
-          notes.push('칠+테두리 도형은 칠(편집 가능)과 테두리(조각) 둘로 나뉘어요');
-          return;
+        /* 테두리가 붙는 도형·수평선은 순수 도형으로 — 조각이 아니라 진짜 요소다 */
+        const strokable = (shapeish || tag === 'line') && !filt && t.plain
+          && solid(stroke) && (tag === 'line' || solid(fill) || !fill || fill === 'none');
+        if (strokable) {
+          const sh = shapeEl(n, W, H, off);
+          if (sh) { elements.push(sh); return; }
         }
 
         const f = fragEl(n, W, H, off, vb, defs, serOne);

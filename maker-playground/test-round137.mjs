@@ -63,7 +63,7 @@ for (const t of T.CATALOG) {
   const g = {}; global.window = g;
   const req3 = createRequire(import.meta.url);
   for (const f of ['./data/sample.js', './data/assets.js', './data/templates.js', './data/tplpack.js',
-                   './data/tplsvg.js', './data/svgpack01.js', './data/svgpack02.js']) {
+                   './data/tplsvg.js', './data/svgpack01.js', './data/svgpack02.js', './data/svgpack03.js']) {
     delete req3.cache[req3.resolve(f)]; req3(f);
   }
   const okOld = !!(g.MK_TPLPACK && g.MK_TPLPACK.install && Array.isArray(g.MK_TPLPACK.ids) && g.MK_TPLPACK.ids.length === 8);
@@ -81,7 +81,7 @@ for (const t of T.CATALOG) {
   global.window = g;
   const req2 = createRequire(import.meta.url);
   for (const f of ['./data/sample.js', './data/assets.js', './data/templates.js', './data/tplpack.js',
-                   './data/tplsvg.js', './data/svgpack01.js', './data/svgpack02.js']) {
+                   './data/tplsvg.js', './data/svgpack01.js', './data/svgpack02.js', './data/svgpack03.js']) {
     delete req2.cache[req2.resolve(f)]; req2(f);
   }
   const E = g.MK_TPL;
@@ -107,6 +107,39 @@ for (const t of T.CATALOG) {
   global.window = savedWindow;   /* 앞 블록의 MK_EASY 를 되돌린다 */
 }
 
+/* ---- 순수 도형(kind:'shape') 계약 ----
+   화면(editor.js)과 내보내기(render.js)가 같은 필드를 읽어야 한다.
+   render.js 는 el.shape/fill/stroke/strokeWidth 를 보고, 화면도 이제 같다. */
+{
+  const ed2 = fs.readFileSync('screens/editor.js', 'utf8');
+  const rd2 = fs.readFileSync('data/render.js', 'utf8');
+  [['화면이 shape 를 그린다', /el\.kind === 'shape'/.test(ed2)],
+   ['도형 속성 패널', /s\.kind === 'shape'/.test(ed2) && /data-ed="sh-stroke"/.test(ed2)],
+   ['속성 실배선', /bind\('strokew'/.test(ed2)],
+   ['미니 씬도 shape', (ed2.match(/el\.kind === 'shape'/g) || []).length >= 2],
+   ['내보내기가 stroke 를 읽는다', /stroke: el\.stroke/.test(rd2)],
+  ].forEach(([n, c]) => { console.log((c ? '✅ ' : '❌ ') + n); if (!c) bad++; });
+
+  /* 파서가 낸 도형이 그 계약을 지키는가 */
+  const g2 = {}; const sv = global.window; global.window = g2;
+  const req4 = createRequire(import.meta.url);
+  for (const f of ['./data/tplsvg.js', './data/svgpack01.js', './data/svgpack02.js', './data/svgpack03.js']) { delete req4.cache[req4.resolve(f)]; req4(f); }
+  let shapes = 0, frags = 0, bad2 = [];
+  Object.entries(g2.MK_SVGPACK).forEach(([id, p2]) => p2.elements.forEach((e, i) => {
+    if (e.kind === 'shape') {
+      shapes++;
+      if (!['rect', 'ellipse', 'line'].includes(e.shape)) bad2.push(id + '#' + i + ':shape');
+      if (e.stroke && !(e.strokeWidth > 0)) bad2.push(id + '#' + i + ':굵기 없는 테두리');
+      if (e.shape === 'line' && !e.stroke) bad2.push(id + '#' + i + ':색 없는 선');
+    }
+    if (e.src) frags++;
+  }));
+  global.window = sv;
+  console.log((bad2.length ? '❌ ' : '✅ ') + `순수 도형 ${shapes}개 계약 준수` + (bad2.length ? ' — ' + bad2.join(', ') : ''));
+  console.log(`   조각으로 남은 것 ${frags}개 (곡선 path·그라디언트·필터)`);
+  if (bad2.length) bad++;
+}
+
 console.log('\nMK_EASY quickAudit', JSON.stringify(window.MK_EASY.quickAudit()));
 // 에디터 배선 계약
 const ed = fs.readFileSync('screens/editor.js', 'utf8');
@@ -115,7 +148,7 @@ const ed = fs.readFileSync('screens/editor.js', 'utf8');
   console.log((re.test(ed) ? '✅ ' : '❌ ') + n));
 for (const f of ['../maker-playground/index.html', '../maker/index.html']) {
   const h = fs.readFileSync(f, 'utf8');
-  const packFiles = ['svgpack01.js', 'svgpack02.js'];
+  const packFiles = ['svgpack01.js', 'svgpack02.js', 'svgpack03.js'];
   const two = /tplsvg\.js/.test(h) && packFiles.every((f) => h.includes(f));
   /* 순서 계약: MK_TPL(templates.js) → 파서 → 팩. 뒤집히면 등록이 조용히 실패한다 */
   const order = h.indexOf('templates.js') < h.indexOf('tplsvg.js')
