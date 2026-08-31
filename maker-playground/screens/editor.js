@@ -112,8 +112,23 @@ window.MK_SCREENS.editor = (() => {
       <input class="mk-input" data-stockq="${tag}" value="${(ed().stockQ || '').replace(/"/g, '&quot;')}" placeholder="재료 검색 — 벚꽃·별밤·격자·노을·뱃지…" style="width:100%" aria-label="재료 검색">
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px" data-stockgrid="${tag}">${stockGridHTML(tag)}</div>
       <p class="ed-note" style="margin:6px 0 0">내장 생성 그래픽 ${MK_STOCK.LIB.length}종 — 저작권 걱정 0</p></div>` : '';
+  /* ---- 템플릿 서랍 (MK_TPLSVG — SVG 를 요소로 풀어 현재 장면에 앉힌다) ---- */
+  const tplGridHTML = () => {
+    if (!window.MK_TPLSVG) return '';
+    const hits = MK_TPLSVG.list(ed().tplCat || '');
+    return hits.map((t) => `<button data-tpl="${t.id}" title="${t.ko} · ${t.name}" style="padding:0;border:1px solid var(--mk-border);border-radius:8px;overflow:hidden;cursor:pointer;background:var(--mk-surface,#fff);display:block"><img src="${MK_TPLSVG.urlOf(t.id)}" alt="${t.ko}" loading="lazy" style="width:100%;aspect-ratio:${t.width}/${t.height};display:block;object-fit:cover"><span style="display:block;font-size:11px;padding:4px 5px;text-align:left;color:var(--mk-text,#1F2733);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.ko}</span></button>`).join('')
+      || '<span class="ed-note">이 갈래에는 아직 템플릿이 없어요</span>';
+  };
+  const tplBlock = () => window.MK_TPLSVG ? `<div class="ph-item" style="display:block;cursor:default">
+      <b style="display:block;margin-bottom:6px">📄 템플릿으로 시작</b>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px">
+        ${MK_TPLSVG.CATS.map(([k, n]) => `<button data-tplcat="${k}" class="pg-variant ${(ed().tplCat || '') === k ? 'on' : ''}" style="padding:2px 8px;font-size:12px">${n}</button>`).join('')}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px" data-tplgrid>${tplGridHTML()}</div>
+      <p class="ed-note" style="margin:6px 0 0">누르면 <b>지금 장면</b>에 앉습니다 — 글자·도형은 그대로 골라 고칠 수 있어요 (되돌리기 가능)</p></div>` : '';
   const DETAIL_R41 = {
-    tpl: () => `<button class="ph-item" data-pane="go-templates">템플릿 둘러보기 → (Templates 화면)</button>
+    tpl: () => `${tplBlock()}
+      <button class="ph-item" data-pane="go-templates">템플릿 둘러보기 → (Templates 화면)</button>
       <button class="ph-item" data-pane="go-ai">스타일 바꾸기 → AI 편집에서 (색·테마 명령)</button>`,
     text: () => `<button class="ph-item" data-pane="add-title">제목 추가</button>
       <button class="ph-item" data-pane="add-sub">부제목 추가</button>
@@ -254,7 +269,9 @@ window.MK_SCREENS.editor = (() => {
       }
       const hd2 = e.selEl === i ? '<i class="hd tl"></i><i class="hd tr"></i><i class="hd bl"></i><i class="hd br"></i><i class="hd tm"></i><i class="hd bm"></i><i class="hd ml"></i><i class="hd mr"></i><i class="hd rot"></i>' : '';
       const fillCls = el.fill && el.fill !== 'none' ? 'has-fill' : '', fillSty = el.fill && el.fill !== 'none' ? `;background:${el.fill}` : '';
-      const rad = el.radius ? `;border-radius:${el.radius > 100 ? '50%' : el.radius + 'px'}` : '';
+      /* 모서리는 씬 좌표(px)로 저장하고 화면 배율로 환산한다. 종전엔 화면 px 을
+         그대로 써서 줌·씬 크기가 바뀌면 둥글기만 홀로 어긋났다. */
+      const rad = el.radius ? `;border-radius:${el.radius > 100 ? '50%' : (el.radius / (scene.width || 1280) * CW).toFixed(1) + 'px'}` : '';
       const cut = el.cutout ? ';background:none;border:1px dashed var(--mk-border)' : '';
       if (el.src) {                                    /* R36 실이미지 — dataURL 실표시, 라벨은 걷는다 */
         const fit = el.fit === 'contain' ? 'contain' : 'cover';
@@ -558,7 +575,25 @@ window.MK_SCREENS.editor = (() => {
         }
         PG.render();
       });
+      /* 캔버스 알약 알림 — MK_EASY 유무와 무관하게 쓰인다(템플릿 적용 등) */
+      let quickToast = () => {};
       bindStock(root);
+      /* ---- 템플릿 서랍 실배선 — SVG 를 요소로 풀어 지금 장면에 앉힌다 ---- */
+      const bindTpl = (scope) => scope.querySelectorAll('[data-tpl]').forEach((b) => b.onclick = () => {
+        const meta = window.MK_TPLSVG.get(b.dataset.tpl); if (!meta) return;
+        b.disabled = true;
+        window.MK_TPLSVG.load(meta.id, (p2) => {
+          b.disabled = false;
+          if (!p2 || !p2.ok) return alert((p2 && p2.msg) || '템플릿을 불러오지 못했어요');
+          H.push('템플릿 적용 — ' + meta.ko);
+          const r = window.MK_TPLSVG.applyTo(doc, e.sceneIdx, p2, meta);
+          e.selEl = null;
+          PG.render();
+          if (r.ok) quickToast(r.msg);
+        });
+      });
+      bindTpl(root);
+      root.querySelectorAll('[data-tplcat]').forEach((b) => b.onclick = () => { e.tplCat = b.dataset.tplcat; PG.render(); });
       root.querySelectorAll('[data-stockq]').forEach((inp) => inp.oninput = () => {
         e.stockQ = inp.value;                                    /* 그리드만 부분 갱신 — 입력 포커스 유지 */
         const grid = root.querySelector(`[data-stockgrid="${inp.dataset.stockq}"]`);
@@ -803,7 +838,7 @@ window.MK_SCREENS.editor = (() => {
         /* F2 — 빠른동작 알약 */
         /* 빠른동작 결과 알림 — 종전엔 r.msg 를 버려서, 바뀐 게 없는 동작(사진에
            스타일·개선)이 「눌러도 아무 반응 없음」으로 보였다. 삭제만 눈에 띈 까닭. */
-        const quickToast = (msg) => {
+        quickToast = (msg) => {
           const wrap = root.querySelector('.ed-canvaswrap') || root;
           const old2 = wrap.querySelector('[data-easytoast]'); if (old2) old2.remove();
           const t = document.createElement('div');

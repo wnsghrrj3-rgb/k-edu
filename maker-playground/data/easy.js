@@ -140,10 +140,10 @@ window.MK_EASY = (() => {
      않기 때문. 그래서 사진의 「스타일」은 렌더러가 실제로 읽는 축(radius·fit)을 돈다. */
   const STYLE_CYCLE_IMG = [
     { name: '각지게', set: { radius: 0, fit: 'cover' } },
-    { name: '둥글게', set: { radius: 14, fit: 'cover' } },
-    { name: '많이 둥글게', set: { radius: 32, fit: 'cover' } },
+    { name: '둥글게', set: { radius: 26, fit: 'cover' } },
+    { name: '많이 둥글게', set: { radius: 60, fit: 'cover' } },
     { name: '원형', set: { radius: 999, fit: 'cover' } },
-    { name: '전체 보이기', set: { radius: 14, fit: 'contain' } },
+    { name: '전체 보이기', set: { radius: 26, fit: 'contain' } },
   ];
   const QUICK = [
     { id: 'improve', icon: '✨', label: (el) => '개선' },
