@@ -16,6 +16,7 @@ export async function launch(viewport) {
     });
     const page = await app.firstWindow();
     await page.setViewportSize(viewport);
+    await page.route('**/fonts.googleapis.com/**', r => r.fulfill({ body: '', contentType: 'text/css' }));   // 차단망 — 글꼴은 프리텐다드 폴백
     // Electron 렌더러엔 window.prompt 가 없다 → 테스트의 dialog 핸들러(d.accept(값))와
     // 같은 값을 돌려주는 폴리필(핸들러 없으면 null=취소). chromium 경로는 그대로 진짜 dialog.
     await page.addInitScript(() => { window.prompt = () => (window.__kmvPromptVal === undefined ? null : window.__kmvPromptVal); });
@@ -30,5 +31,6 @@ export async function launch(viewport) {
   const { chromium } = await import('playwright');
   const browser = await chromium.launch({ headless: true, args: ['--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--use-angle=swiftshader', '--autoplay-policy=no-user-gesture-required', '--enable-features=WebCodecs'] });
   const page = await (await browser.newContext({ viewport })).newPage();
+  await page.route('**/fonts.googleapis.com/**', r => r.fulfill({ body: '', contentType: 'text/css' }));
   return { page, close: () => browser.close() };
 }

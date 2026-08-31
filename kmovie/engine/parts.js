@@ -26,11 +26,29 @@
     list:      { cat: 'info',   hold: [2.6, 6.9],  thumbT: 4.0 },
     sweep:     { cat: 'behind', hold: null,        thumbT: 4.0, behind: true },
     lightleak: { cat: 'fx',     hold: null,        thumbT: 0.7 },
+    // 방송 자막 부품 16종 (p-broadcast.js) — font 는 카드 글꼴 기본값(카드에서 바꿀 수 있음)
+    extrude:   { cat: 'bc', hold: [1.4, 4.1], thumbT: 2.0, font: 'blackhan' },
+    glass:     { cat: 'bc', hold: [1.2, 4.2], thumbT: 2.2, font: 'pretendard' },
+    headline:  { cat: 'bc', hold: [1.1, 5.2], thumbT: 2.0, font: 'notosans' },
+    ticker:    { cat: 'bc', hold: null,       thumbT: 3.0, font: 'gothica1' },
+    nameplate: { cat: 'bc', hold: [1.3, 4.2], thumbT: 2.2, font: 'notoserif' },
+    stamp:     { cat: 'bc', hold: [0.5, 3.3], thumbT: 1.2, font: 'dohyeon' },
+    flip:      { cat: 'bc', hold: [1.2, 4.3], thumbT: 2.4, font: 'montserrat' },
+    vertical:  { cat: 'bc', hold: [1.8, 5.2], thumbT: 3.0, font: 'songmyung' },
+    marker:    { cat: 'bc', hold: [1.1, 4.2], thumbT: 2.0, font: 'nanumpen' },
+    countdown: { cat: 'bc', hold: null,       thumbT: 0.5, font: 'bebas' },
+    ribbon:    { cat: 'bc', hold: [0.9, 4.2], thumbT: 2.0, font: 'jua' },
+    bubble:    { cat: 'bc', hold: [0.6, 3.3], thumbT: 1.5, font: 'gaegu' },
+    live:      { cat: 'bc', hold: [1.0, 7.5], thumbT: 2.0, font: 'inter' },
+    split:     { cat: 'bc', hold: [1.2, 4.2], thumbT: 2.2, font: 'pretendard' },
+    reflect:   { cat: 'bc', hold: [1.5, 4.2], thumbT: 2.4, font: 'playfair' },
+    outline:   { cat: 'bc', hold: [0.8, 4.3], thumbT: 1.6, font: 'jua' },
   };
   const CATS = [
     { id: 'title',  name: '타이틀' },
     { id: 'info',   name: '정보 표시' },
     { id: 'behind', name: '인물 뒤 글자' },
+    { id: 'bc',     name: '방송 자막' },
     { id: 'fx',     name: '화면 효과' },
     { id: 'etc',    name: '기타' },
   ];
@@ -73,7 +91,8 @@
     const lf = t - card.at; if (lf < 0 || lf >= card.dur) return;
     const FX = g.KMV_FX, s = H / 1080;
     let p = card.p;
-    if (card.font && FX) { const fam = FX.family(card.font); if (fam) p = Object.assign({}, card.p, { _font: fam }); }
+    const fontId = card.font || (META[card.part] && META[card.part].font) || null;
+    if (fontId && FX) { const fam = FX.family(fontId); if (fam) p = Object.assign({}, card.p, { _font: fam }); FX.loadFont(fontId); }
     let fx = null;
     if (FX && (card.fxIn || card.fxOut)) {
       const dIn = card.fxIn ? Math.min(FX.durF(card.fxIn.dur), card.dur) : 0, dOut = card.fxOut ? Math.min(FX.durF(card.fxOut.dur), card.dur) : 0;

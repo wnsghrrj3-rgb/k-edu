@@ -1326,7 +1326,7 @@
   }
   function refreshPartFx(pt) {
     if (!FX || !pt) return;
-    if (document.activeElement !== $('partFont')) $('partFont').value = pt.font || '';
+    if (document.activeElement !== $('partFont')) $('partFont').value = pt.font || (PT.meta(pt.part) && PT.meta(pt.part).font) || '';
     if (document.activeElement !== $('partSize')) { $('partSize').value = pt.size == null ? 100 : pt.size; $('partSizeV').textContent = $('partSize').value + '%'; }
     if (document.activeElement !== $('partY')) { $('partY').value = pt.y || 0; $('partYV').textContent = String(pt.y || 0); }
     window.__kmvFxRows.partIn.refresh(); window.__kmvFxRows.partOut.refresh();

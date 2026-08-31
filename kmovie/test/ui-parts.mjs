@@ -35,9 +35,23 @@ const parts = await page.evaluate(() => {
   }
   return { ids, drawn };
 });
-ok(parts.ids.length === 12, '부품 12종 등록 (' + parts.ids.join(', ') + ')');
+ok(parts.ids.length === 28, '부품 28종 등록 (기존 12 + 방송 자막 16)');
 for (const id of ['quote', 'chapter', 'list', 'credits']) ok(typeof parts.drawn[id] === 'number' && parts.drawn[id] > 150, '새 부품 ' + id + ' 그려짐 (픽셀 ' + parts.drawn[id] + ')');
-ok(Object.values(parts.drawn).every(v => typeof v === 'number' && v > 50), '기존 부품 8종도 전부 그려짐');
+ok(Object.values(parts.drawn).every(v => typeof v === 'number' && v > 50), '28종 전부 그려짐 (throw 0)' + (Object.entries(parts.drawn).filter(([k, v]) => !(typeof v === 'number' && v > 50)).map(([k, v]) => ' ' + k + ':' + v).join('') || ''));
+/* 방송 자막 16종 — 카드로 그려도(글꼴 기본값·홀드) 픽셀·결정성 */
+const bc = await page.evaluate(() => {
+  const ids = ['extrude', 'glass', 'headline', 'ticker', 'nameplate', 'stamp', 'flip', 'vertical', 'marker', 'countdown', 'ribbon', 'bubble', 'live', 'split', 'reflect', 'outline'];
+  const cv = new OffscreenCanvas(480, 270), c = cv.getContext('2d'), out = {};
+  for (const id of ids) {
+    const d0 = KMV_PROJECT.partDefault(id), card = { part: id, at: 0, dur: Math.round(KM_PARTS.get(id).dur * 30), p: d0.p };
+    const shot = () => { c.clearRect(0, 0, 480, 270); KMV_PARTS.drawCard(c, 480, 270, card, Math.round(KMV_PARTS.meta(id).thumbT * 30), 'geumseong'); return c.getImageData(0, 0, 480, 270).data; };
+    const a = shot(), b = shot(); let px = 0, same = true; for (let i = 0; i < a.length; i += 4) { if (a[i + 3] > 8) px++; if (a[i] !== b[i] || a[i + 3] !== b[i + 3]) same = false; }
+    out[id] = { px, same, font: KMV_PARTS.meta(id).font, cat: KMV_PARTS.meta(id).cat };
+  }
+  return out;
+});
+ok(Object.values(bc).every(v => v.px > 200 && v.same && v.font && v.cat === 'bc'), '방송 자막 16종 — 카드 그리기 픽셀·결정적·글꼴 기본값·분류 「방송 자막」');
+ok(new Set(Object.values(bc).map(v => v.font)).size >= 12, '글꼴 기본값이 12종 이상 서로 다름 (' + [...new Set(Object.values(bc).map(v => v.font))].join(',') + ')');
 
 // ---------- 새 부품 홀드 재매핑 — 늘려도 등장·퇴장 원속도, 단조증가 ----------
 const remap = await page.evaluate(() => {
@@ -60,7 +74,7 @@ const grid = await page.evaluate(() => ({
   cats: Array.from(document.querySelectorAll('#partGrid .cat')).map(e => e.textContent),
   cells: document.querySelectorAll('#partGrid .pc').length,
 }));
-ok(grid.cells === 12 && grid.cats.join('/') === '타이틀/정보 표시/인물 뒤 글자/화면 효과', '꾸미기 패널: 분류 4그룹 · 12칸 (' + grid.cats.join('/') + ')');
+ok(grid.cells === 28 && grid.cats.join('/') === '타이틀/정보 표시/인물 뒤 글자/방송 자막/화면 효과', '꾸미기 패널: 분류 5그룹 · 28칸 (' + grid.cats.join('/') + ')');
 
 // ---------- 자막 9종 · 분류 UI ----------
 const subUI = await page.evaluate(() => ({
