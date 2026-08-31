@@ -1455,6 +1455,9 @@
       const b = document.createElement('b'); b.textContent = def.name; el.appendChild(b);
       const sm = document.createElement('small'); sm.textContent = def.dur + '초' + (meta.behind ? ' · 인물 뒤' : ''); el.appendChild(sm);
       el.onpointerdown = e => { if (e.pointerType === 'mouse' && e.button !== 0) return; e.preventDefault(); partDrag = { part: def.id, dur: P.partDefault(def.id).dur, x: e.clientX, y: e.clientY, moved: false, overTL: false, f: 0 }; };
+      el.onpointerenter = e => { if (e.pointerType !== 'mouse') return; peekHover(def.id, el); };
+      el.onpointerleave = e => { if (e.pointerType !== 'mouse') return; peekLeave(def.id); };
+      el.ondblclick = () => { peekHide(true); placePart(def.id, ph); };
       grid.appendChild(el);
     });
     paintPartThumbs();
@@ -1487,10 +1490,58 @@
   window.addEventListener('pointerup', () => {
     if (!partDrag) return;
     const d = partDrag; partDrag = null; $('partGhost').classList.add('hidden'); tl.style.cursor = 'default';
-    if (!d.moved) placePart(d.part, ph);
-    else if (d.overTL) placePart(d.part, d.f);
+    if (!d.moved) peekPin(d.part);
+    else if (d.overTL) { peekHide(true); placePart(d.part, d.f); }
     else draw();
   });
+
+  /* ---------- 부품 미리보기 (peek) — 타일에 올리면 움직임을 재생해 보여 주고, 클릭하면 고정 + 「넣기」 ----------
+     큰 창은 지금 플레이헤드 화면 위에 부품을 얹어 재생(실제 넣었을 때와 같은 자리·같은 배경), 타일 자체도 같이 움직인다. */
+  const peek = { id: null, el: null, pinned: false, raf: 0, t0: 0, timer: 0 };
+  const pk = $('partPeek'), pkCv = pk.querySelector('canvas'), pkCtx = pkCv.getContext('2d'), pkProg = pk.querySelector('.pk-prog i');
+  function peekPlace(el) {
+    const r = el.getBoundingClientRect(), w = 400, h = 225 + 44;
+    let x = r.left - w - 14, y = Math.min(window.innerHeight - h - 12, Math.max(12, r.top - 20));
+    if (x < 12) x = Math.min(window.innerWidth - w - 12, r.right + 14);
+    pk.style.left = x + 'px'; pk.style.top = y + 'px';
+  }
+  function peekStart(id, el) {
+    const def = PT.def(id); if (!def) return;
+    peek.id = id; peek.el = el; peek.t0 = performance.now();
+    $('pkName').textContent = def.name; pk.classList.remove('hidden'); peekPlace(el);
+    cancelAnimationFrame(peek.raf);
+    const tile = partThumbs.get(id), tctx = tile && tile.getContext('2d');
+    const loop = () => {
+      if (peek.id !== id) return;
+      const cyc = def.dur + 0.7, t = ((performance.now() - peek.t0) / 1000) % cyc, tt = Math.min(def.dur - 1 / FPS, t);
+      const bg = P.total() ? pv : null;
+      paintThumbInto(pkCtx, 480, 270, id, tt, bg);
+      if (tctx) { tctx.clearRect(0, 0, 240, 135); PT.paintThumb(tctx, 240, 135, id, null, P.data.theme, tt, null); }
+      pkProg.style.width = Math.round(tt / def.dur * 100) + '%'; $('pkTime').textContent = tt.toFixed(1) + ' / ' + def.dur + '초';
+      peek.raf = requestAnimationFrame(loop);
+    };
+    loop();
+  }
+  function paintThumbInto(ctx, w, h, id, tt, bg) { ctx.clearRect(0, 0, w, h); PT.paintThumb(ctx, w, h, id, null, P.data.theme, tt, bg); }
+  function peekHover(id, el) { if (peek.pinned) return; clearTimeout(peek.timer); peek.timer = setTimeout(() => peekStart(id, el), 180); }
+  function peekLeave(id) { clearTimeout(peek.timer); if (peek.pinned) return; peekStop(); }
+  function peekStop() {
+    cancelAnimationFrame(peek.raf); const id = peek.id; peek.id = null; pk.classList.add('hidden');
+    if (id) { const tile = partThumbs.get(id); const th = PT.thumb(id, null, P.data.theme, 240, 135); if (tile && th) { const c = tile.getContext('2d'); c.clearRect(0, 0, 240, 135); c.drawImage(th, 0, 0); } }
+  }
+  function peekPin(id) {
+    const el = $('partGrid').querySelector('.pc[data-id="' + id + '"]'); if (!el) return;
+    if (peek.pinned && peek.id === id) { peekHide(true); return; }
+    peek.pinned = true; peekStart(id, el);
+    $('partGrid').querySelectorAll('.pc.peek').forEach(x => x.classList.remove('peek')); el.classList.add('peek');
+  }
+  function peekHide(all) { peek.pinned = false; peekStop(); $('partGrid').querySelectorAll('.pc.peek').forEach(x => x.classList.remove('peek')); }
+  $('pkPlace').onclick = () => { const id = peek.id; peekHide(true); if (id) placePart(id, ph); };
+  $('pkClose').onclick = () => peekHide(true);
+  pk.addEventListener('pointerenter', () => clearTimeout(peek.timer));
+  pk.addEventListener('pointerleave', () => { if (!peek.pinned) peekStop(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && peek.pinned) peekHide(true); });
+  window.KMV_PEEK = { get id() { return peek.id; }, get pinned() { return peek.pinned; }, pin: peekPin, hide: peekHide };
   function selPart() { return selP ? P.part(selP) : null; }
   let partFieldStart = null;
   function buildPartFields(pt) {

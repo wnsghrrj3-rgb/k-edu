@@ -168,6 +168,30 @@ const mag = await page.evaluate(() => { const P2 = KMV_PROJECT; P2.clearP(); con
   ok(!ins.before && ins.on && !ins.off && ins.beside, '카드 설정 인스펙터: 선택 시 재생 화면 오른쪽에 (선택 전 ' + ins.before + ' → 선택 ' + ins.on + ' → 해제 ' + ins.off + ', 옆배치 ' + ins.beside + ')');
 }
 
+// ---------- 부품 미리보기 — 올리면 재생, 클릭 고정 + 넣기, 더블클릭 놓기 ----------
+{
+  const tile = page.locator('#partGrid .pc[data-id="stamp"]');
+  await tile.hover(); await page.waitForTimeout(500);
+  const hov = await page.evaluate(() => { const pk = document.getElementById('partPeek'); const r = pk.getBoundingClientRect(); const c = pk.querySelector('canvas').getContext('2d').getImageData(0, 0, 480, 270).data; let px = 0; for (let i = 3; i < c.length; i += 64) if (c[i] > 8) px++; return { shown: !pk.classList.contains('hidden') && r.width > 0, id: KMV_PEEK.id, pinned: KMV_PEEK.pinned, px, name: document.getElementById('pkName').textContent, n0: KMV_PROJECT.data.P.length }; });
+  await page.waitForTimeout(400);
+  const t2 = await page.evaluate(() => document.getElementById('pkTime').textContent);
+  await page.mouse.move(5, 5); await page.waitForTimeout(150);
+  const gone = await page.evaluate(() => document.getElementById('partPeek').classList.contains('hidden'));
+  ok(hov.shown && hov.id === 'stamp' && !hov.pinned && hov.px > 50 && /스탬프/.test(hov.name) && /초/.test(t2) && gone, `올리면 미리보기 창(재생 중 ${t2}) · 떠나면 사라짐 · 넣지 않음`);
+  const n0 = hov.n0;
+  await tile.click(); await page.waitForTimeout(250);
+  await page.mouse.move(5, 5); await page.waitForTimeout(200);
+  const pinned = await page.evaluate(() => ({ pinned: KMV_PEEK.pinned, shown: !document.getElementById('partPeek').classList.contains('hidden'), n: KMV_PROJECT.data.P.length, mark: document.querySelector('#partGrid .pc[data-id="stamp"]').classList.contains('peek') }));
+  ok(pinned.pinned && pinned.shown && pinned.n === n0 && pinned.mark, '클릭 = 미리보기 고정(떠나도 남음), 아직 안 넣음');
+  await page.click('#pkPlace'); await page.waitForTimeout(150);
+  const placed = await page.evaluate(() => ({ n: KMV_PROJECT.data.P.length, last: KMV_PROJECT.data.P.some(x => x.part === 'stamp'), hidden: document.getElementById('partPeek').classList.contains('hidden'), parts: KMV_PROJECT.data.P.map(x => x.part + '@' + x.at).join(','), ph: KMV_UI.ph, peekId: KMV_PEEK.id }));
+  ok(placed.n === n0 + 1 && placed.last && placed.hidden, '「넣기」 → 플레이헤드에 놓이고 창 닫힘');
+  await page.locator('#partGrid .pc[data-id="ribbon"]').dblclick(); await page.waitForTimeout(150);
+  const dbl = await page.evaluate(() => ({ n: KMV_PROJECT.data.P.length, last: KMV_PROJECT.data.P.map(x => x.part).includes('ribbon') }));
+  ok(dbl.n === n0 + 2 && dbl.last, '더블클릭 = 바로 놓기');
+  await page.evaluate(() => { const P = KMV_PROJECT; for (const x of [...P.data.P]) if (x.part === 'stamp' || x.part === 'ribbon') P.removeP(x.id); });
+}
+
 ok(errs.length === 0, '콘솔 오류 0' + (errs.length ? ' — ' + errs.slice(0, 3).join(' | ') : ''));
 console.log(`\n${n - fail}/${n} 통과`);
 await close(); srv.kill(); process.exit(fail ? 1 : 0);

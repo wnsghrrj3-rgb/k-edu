@@ -128,6 +128,28 @@
 
   /* ---------- 썸네일 (결정적·캐시) ---------- */
   const thumbCache = new Map();
+  /* 썸네일 한 장을 ctx 에 그린다 — bg 가 있으면 그 그림(현재 미리보기 프레임) 위에, 없으면 조용한 두 톤 배경 위에 */
+  function paintThumb(ctx, w, h, partId, p, themeId, tt, bg) {
+    const k = K(); if (!k) return;
+    const m = meta(partId);
+    if (bg) { try { ctx.drawImage(bg, 0, 0, w, h); } catch (e) { bg = null; } }
+    if (!bg) {
+      const grd = ctx.createLinearGradient(0, 0, 0, h);
+      grd.addColorStop(0, '#5a6f92'); grd.addColorStop(0.55, '#8a9ab5'); grd.addColorStop(0.56, '#6d7a5e'); grd.addColorStop(1, '#4a5440');
+      ctx.fillStyle = grd; ctx.fillRect(0, 0, w, h);
+    }
+    if (m.behind && !bg) { // 인물 실루엣 (뒤에 글자가 지나가는 걸 보여 준다)
+      ctx.fillStyle = 'rgba(30,34,44,0.9)';
+      ctx.beginPath(); ctx.arc(w * 0.5, h * 0.42, h * 0.16, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(w * 0.34, h); ctx.quadraticCurveTo(w * 0.5, h * 0.5, w * 0.66, h); ctx.closePath(); ctx.fill();
+    }
+    const FX = g.KMV_FX, fid = m.font, fam = FX && fid ? FX.family(fid) : null;
+    const pp = Object.assign({}, p || k.defaults(partId), fam ? { _font: fam } : {});
+    ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+    try { k.frame(partId, ctx, w, h, tt, pp, themeId); } catch (e) {}
+    ctx.restore();
+    if (m.behind && !bg) { ctx.fillStyle = 'rgba(30,34,44,0.9)'; ctx.beginPath(); ctx.arc(w * 0.5, h * 0.42, h * 0.16, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.moveTo(w * 0.34, h); ctx.quadraticCurveTo(w * 0.5, h * 0.5, w * 0.66, h); ctx.closePath(); ctx.fill(); }
+  }
   function thumb(partId, p, themeId, w, h, t) {
     const k = K(); if (!k) return null;
     w = w || 240; h = h || 135;
@@ -135,22 +157,11 @@
     const key = partId + '|' + JSON.stringify(p || {}) + '|' + themeId + '|' + w + 'x' + h + '|' + tt;
     if (thumbCache.has(key)) return thumbCache.get(key);
     const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
-    const ctx = cv.getContext('2d');
-    // 촬영본을 대신하는 조용한 배경 — 하늘·운동장 느낌의 두 톤
-    const grd = ctx.createLinearGradient(0, 0, 0, h);
-    grd.addColorStop(0, '#5a6f92'); grd.addColorStop(0.55, '#8a9ab5'); grd.addColorStop(0.56, '#6d7a5e'); grd.addColorStop(1, '#4a5440');
-    ctx.fillStyle = grd; ctx.fillRect(0, 0, w, h);
-    if (m.behind) { // 인물 실루엣 (뒤에 글자가 지나가는 걸 보여 준다)
-      ctx.fillStyle = 'rgba(30,34,44,0.9)';
-      ctx.beginPath(); ctx.arc(w * 0.5, h * 0.42, h * 0.16, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.moveTo(w * 0.34, h); ctx.quadraticCurveTo(w * 0.5, h * 0.5, w * 0.66, h); ctx.closePath(); ctx.fill();
-    }
-    try { k.frame(partId, ctx, w, h, tt, p || k.defaults(partId), themeId); } catch (e) {}
-    if (m.behind) { ctx.fillStyle = 'rgba(30,34,44,0.9)'; ctx.beginPath(); ctx.arc(w * 0.5, h * 0.42, h * 0.16, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.moveTo(w * 0.34, h); ctx.quadraticCurveTo(w * 0.5, h * 0.5, w * 0.66, h); ctx.closePath(); ctx.fill(); }
+    paintThumb(cv.getContext('2d'), w, h, partId, p, themeId, tt, null);
     if (thumbCache.size > 120) thumbCache.delete(thumbCache.keys().next().value);
     thumbCache.set(key, cv);
     return cv;
   }
 
-  g.KMV_PARTS = { CATS, META, ready, list, def, meta, behind, canBehind, remap, drawCard, label, thumb, clamp };
+  g.KMV_PARTS = { CATS, META, ready, list, def, meta, behind, canBehind, remap, drawCard, label, thumb, paintThumb, clamp };
 })(typeof window !== 'undefined' ? window : globalThis);
