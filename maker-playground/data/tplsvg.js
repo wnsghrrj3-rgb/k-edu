@@ -135,6 +135,21 @@ window.MK_TPLSVG = (() => {
     { id: 'quote-social-01', name: 'Quote Card', ko: '문구 카드', category: 'social', width: 1080, height: 1080, pack: 'pack08', file: '40_quote_social.svg',
       contentType: 'sns', style: '소프트', styleId: 'st-soft', styleEn: 'Minimal', ratio: '1:1', difficulty: '쉬움', rec: true,
       desc: '한 문장만 놓은 조용한 정사각 카드', uses: '오늘의 문장·급훈 게시·학급 SNS', tags: ['문구', 'SNS', '한문장'], hints: ['문장은 두 줄까지', '여백을 겁내지 말 것'] },
+    { id: 'y2k-event-01', name: 'Y2K Event', ko: 'Y2K 행사면', category: 'event', width: 1080, height: 1350, pack: 'pack09', file: '41_y2k_event.svg',
+      contentType: 'poster', style: '볼드', styleId: 'st-bold', styleEn: 'Y2K', ratio: '4:5', difficulty: '쉬움', rec: false,
+      desc: '형광 연두에 크롬 느낌을 얹은 젊은 행사면', uses: '학예회·동아리 공연·청소년 행사', tags: ['행사', 'Y2K', '형광'], hints: ['제목은 두 단어로 끊을 것', '흰 글자는 색을 바꾸면 더 잘 읽힌다'] },
+    { id: 'museum-exhibition-01', name: 'Museum Exhibition', ko: '전시 안내', category: 'culture', width: 1080, height: 1350, pack: 'pack09', file: '42_museum_exhibition.svg',
+      contentType: 'poster', style: '페이퍼', styleId: 'st-paper', styleEn: 'Swiss', ratio: '4:5', difficulty: '보통', rec: true,
+      desc: '판을 크게 나눠 세운 스위스풍 전시면', uses: '작품 전시·학급 갤러리·과학전 안내', tags: ['전시', '갤러리', '편집'], hints: ['제목·기간·장소 셋만 남길 것', '판 색으로 분위기를 잡는다'] },
+    { id: 'school-election-01', name: 'School Election', ko: '학급 선거', category: 'education', width: 1080, height: 1350, pack: 'pack09', file: '43_school_election.svg',
+      contentType: 'poster', style: '에듀', styleId: 'st-edu', styleEn: 'Friendly', ratio: '4:5', difficulty: '쉬움', rec: true,
+      desc: '기호와 이름을 크게 세운 선거 벽보', uses: '학급 임원 선거·전교 회장 선거·공약 게시', tags: ['선거', '학급운영', '벽보'], hints: ['기호와 이름이 주인공', '공약은 세 줄까지'] },
+    { id: 'finance-report-01', name: 'Quarterly Report', ko: '실적 보고', category: 'business', width: 1600, height: 900, pack: 'pack09', file: '44_finance_report.svg',
+      contentType: 'presentation', style: '모던', styleId: 'st-modern', styleEn: 'Professional', ratio: '16:9', difficulty: '보통', rec: false,
+      desc: '수치와 꺾은선으로 정리한 가로 보고 표지', uses: '학급 통계 발표·설문 결과·프로젝트 보고', tags: ['보고', '통계', '발표'], hints: ['큰 숫자 하나가 중심', '작은 라벨은 색을 진하게'] },
+    { id: 'pet-adoption-01', name: 'Pet Adoption', ko: '반려동물 안내', category: 'pet', width: 1080, height: 1350, pack: 'pack09', file: '45_pet_adoption.svg',
+      contentType: 'poster', style: '소프트', styleId: 'st-soft', styleEn: 'Warm', ratio: '4:5', difficulty: '쉬움', rec: false,
+      desc: '동그란 도형을 모아 만든 따뜻한 안내면', uses: '동물 사랑 캠페인·생명 존중 수업·학급 게시', tags: ['동물', '캠페인', '따뜻함'], hints: ['도형을 옮겨 다른 동물로', '작은 라벨은 색을 진하게'] },
   ];
 
   const CATS = [['', '전체'], ['poster', '포스터'], ['event', '행사'], ['education', '교육'], ['promotion', '홍보'], ['social', '소셜']];
