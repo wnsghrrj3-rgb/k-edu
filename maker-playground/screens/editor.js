@@ -841,12 +841,46 @@ window.MK_SCREENS.editor = (() => {
       /* ================= Round 35 — MK_EASY 라이브 배선 (전부 가드·추가만) ================= */
       if (window.MK_EASY) {
         /* F2 — 빠른동작 알약 */
+        /* 빠른동작 결과 알림 — 종전엔 r.msg 를 버려서, 바뀐 게 없는 동작(사진에
+           스타일·개선)이 「눌러도 아무 반응 없음」으로 보였다. 삭제만 눈에 띈 까닭. */
+        const quickToast = (msg) => {
+          const wrap = root.querySelector('.ed-canvaswrap') || root;
+          const old2 = wrap.querySelector('[data-easytoast]'); if (old2) old2.remove();
+          const t = document.createElement('div');
+          t.setAttribute('data-easytoast', '1');
+          t.textContent = msg;
+          t.style.cssText = 'position:absolute;left:50%;bottom:18px;transform:translateX(-50%);z-index:40;'
+            + 'background:rgba(31,39,51,.92);color:#fff;font-size:13px;font-weight:600;padding:7px 14px;'
+            + 'border-radius:999px;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.18)';
+          if (getComputedStyle(wrap).position === 'static') wrap.style.position = 'relative';
+          wrap.appendChild(t);
+          setTimeout(() => t.remove(), 2200);
+        };
+        /* 자리 그대로 새 파일 앉히기 — 실사진 교체 경로(img-swap 과 같은 처방) */
+        const quickPickFile = () => {
+          if (!window.MK_LIVE) return;
+          const inp = document.createElement('input');
+          inp.type = 'file'; inp.accept = 'image/*,video/*';
+          inp.onchange = () => MK_LIVE.fileToSrc(inp.files && inp.files[0], (src, err) => {
+            if (err) return alert(err);
+            if (!src) return;
+            const f = inp.files[0];
+            H.push('이미지 교체');
+            const k2 = /^video\//.test(f.type) ? 'video' : 'image';
+            MK_LIVE.replaceWithSrc(doc, e.sceneIdx, e.selEl, { name: f.name.replace(/\.[^.]+$/, ''), kind: k2, src });
+            PG.render();
+            if (k2 === 'video') MK_LIVE.fitSceneToClipSrc(doc, e.sceneIdx, src, (fr) => { if (fr && fr.changed) PG.render(); });
+          });
+          inp.click();
+        };
         root.querySelectorAll('[data-easyq]').forEach((b) => b.onclick = (ev) => {
           ev.stopPropagation();
           H.push('빠른동작 — ' + b.dataset.easyq);
           const r = MK_EASY.quickRun(doc, e.sceneIdx, e.selEl, b.dataset.easyq);
           if (r.deselect) e.selEl = null;
+          if (r.pickFile) return quickPickFile();
           PG.render();
+          if (r.msg) quickToast(r.msg);
           if (r.edit) { const te2 = document.querySelector('[data-ed="text-edit"]'); if (te2) te2.focus(); }
         });
         /* F5 — 호버 칩 */

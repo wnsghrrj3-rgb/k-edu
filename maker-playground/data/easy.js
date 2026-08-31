@@ -136,6 +136,15 @@ window.MK_EASY = (() => {
     { name: '차분', set: { weight: 500, color: '#2E8C7F' } },
   ];
   const STYLE_CYCLE_BOX = ['#E3F1EE', '#FBE9E4', '#F5F1E6', '#E8EAF6', '#EEF2F0'];
+  /* 실사진(el.src)에는 fill 이 보이지 않는다 — 렌더러가 src 일 때 background 를 그리지
+     않기 때문. 그래서 사진의 「스타일」은 렌더러가 실제로 읽는 축(radius·fit)을 돈다. */
+  const STYLE_CYCLE_IMG = [
+    { name: '각지게', set: { radius: 0, fit: 'cover' } },
+    { name: '둥글게', set: { radius: 14, fit: 'cover' } },
+    { name: '많이 둥글게', set: { radius: 32, fit: 'cover' } },
+    { name: '원형', set: { radius: 999, fit: 'cover' } },
+    { name: '전체 보이기', set: { radius: 14, fit: 'contain' } },
+  ];
   const QUICK = [
     { id: 'improve', icon: '✨', label: (el) => '개선' },
     { id: 'replace', icon: '🖼', label: (el) => kindOf(el) === 'text' ? '고치기' : '교체' },
@@ -149,10 +158,18 @@ window.MK_EASY = (() => {
     if (action === 'delete') { s.elements.splice(ei, 1); return { ok: true, msg: '삭제했어요', deselect: true }; }
     if (action === 'replace') {
       if (kindOf(el) === 'text') return { ok: true, msg: '바로 고쳐 쓰세요', edit: true };
+      /* 실사진이 앉아 있는 자리는 media 를 바꿔 봐야 화면이 그대로다(렌더러는 src 를
+         본다). 자리 그대로 새 파일을 앉히도록 파일 고르기로 넘긴다. */
+      if (el.src) return { ok: true, msg: '바꿔 넣을 파일을 고르세요', pickFile: true };
       return replace(doc, si, ei, { name: '추천 이미지', kind: 'image', id: 'as-auto' });
     }
     if (action === 'style') {
       el._sty = ((el._sty || 0) + 1);
+      if (el.src && kindOf(el) !== 'text') {
+        const st = STYLE_CYCLE_IMG[el._sty % STYLE_CYCLE_IMG.length];
+        el.radius = st.set.radius; el.fit = st.set.fit;
+        return { ok: true, msg: `스타일 — ${st.name}` };
+      }
       if (kindOf(el) === 'text') {
         const st = STYLE_CYCLE_TEXT[el._sty % STYLE_CYCLE_TEXT.length];
         el.weight = st.set.weight; if (st.set.color) el.color = st.set.color; else delete el.color;
@@ -537,6 +554,11 @@ window.MK_EASY = (() => {
       if (el.color && Math.abs(lum(el.color) - lum(s.background)) < 0.25) { delete el.color; did.push('대비 살리기'); }
       const t0 = el.text; el.text = String(el.text || '').replace(/[ \t]+$/gm, '');
       if (el.text !== t0) did.push('공백 정리');
+    }
+    if (el.src && kindOf(el) !== 'text') {
+      if (el.fit !== 'contain' && el.fit !== 'cover') { el.fit = 'contain'; did.push('잘리지 않게'); }
+      if (el.w < 8) { const r = el.h / Math.max(1, el.w); el.w = 18; el.h = Math.min(92, 18 * r); did.push('보이는 크기로'); }
+      if (el.opacity != null && el.opacity < 0.35) { el.opacity = 1; did.push('진하게'); }
     }
     if (el.x < 0 || el.x + el.w > 100 || el.y < 0 || el.y > 100) {
       el.x = clamp(el.x, 0, 100 - el.w); el.y = clamp(el.y, 0, 96); did.push('화면 안으로');
