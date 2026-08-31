@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>케이학습지 — 쪽지 만들기</title>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#FBF9F5;--card:#fff;--ink:#2E3338;--soft:#5A6169;--muted:#8B9199;--rule:#E3DED4;--tint:#F3F0EA}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);font-family:'Gowun Dodum',sans-serif;color:var(--ink)}
+.wrap{max-width:1080px;margin:0 auto;padding:40px 18px 80px}
+h1{font-family:'Gowun Batang',serif;font-size:26px;font-weight:700;margin:0 0 4px}
+.sub{color:var(--muted);font-size:15px;margin:0 0 26px}
+.tabs{display:flex;gap:6px;border-bottom:1px solid var(--rule);margin-bottom:22px}
+.tabs button{background:none;border:0;border-bottom:2px solid transparent;padding:10px 16px;font:inherit;font-size:15px;color:var(--muted);cursor:pointer}
+.tabs button.on{color:var(--ink);border-bottom-color:var(--ink)}
+.cols{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start}
+@media(max-width:860px){.cols{grid-template-columns:1fr}}
+.panel{background:var(--card);border:1px solid var(--rule);border-radius:12px;padding:18px 20px}
+.panel h2{font-family:'Gowun Batang',serif;font-size:16px;font-weight:700;margin:0 0 14px;color:var(--soft)}
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+select,input[type=text]{font:inherit;font-size:14px;padding:7px 10px;border:1px solid var(--rule);border-radius:8px;background:#fff;color:var(--ink)}
+.qlist{max-height:560px;overflow:auto;border-top:1px solid var(--rule)}
+.q{display:flex;gap:10px;padding:12px 4px;border-bottom:1px solid var(--rule);cursor:pointer;align-items:flex-start}
+.q:hover{background:var(--tint)}
+.q.sel{background:#F0F4F0}
+.q .chk{flex:0 0 20px;height:20px;border:1.5px solid var(--rule);border-radius:5px;margin-top:2px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff}
+.q.sel .chk{background:#4A7A5C;border-color:#4A7A5C}
+.q .body{flex:1;min-width:0}
+.q .stem{font-size:14.5px;line-height:1.55;white-space:pre-wrap;word-break:break-word}
+.tagrow{margin-top:6px;display:flex;flex-wrap:wrap;gap:5px}
+.tag{font-size:11.5px;padding:2px 7px;border-radius:99px;background:var(--tint);color:var(--soft)}
+.tag.d1{background:#EEF3EE;color:#4A7A5C}.tag.d2{background:#EDF1F5;color:#4A6A8A}
+.tag.d3{background:#F5F0E8;color:#8A6A3A}.tag.d4{background:#F5EDED;color:#8A4A4A}
+.tag.mis{background:#F7F1F1;color:#9A5A5A}
+.cart{list-style:none;margin:0;padding:0;max-height:360px;overflow:auto}
+.cart li{display:flex;gap:8px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--rule);font-size:13.5px}
+.cart .n{flex:0 0 20px;color:var(--muted)}
+.cart .x{flex:0 0 auto;background:none;border:0;color:var(--muted);cursor:pointer;font:inherit;font-size:15px}
+.btn{font:inherit;font-size:15px;padding:10px 18px;border-radius:8px;border:0;background:var(--ink);color:var(--paper);cursor:pointer}
+.btn.ghost{background:#fff;color:var(--soft);border:1px solid var(--rule)}
+.btn:disabled{opacity:.4;cursor:default}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.mixbar{display:flex;gap:4px;margin:10px 0 4px}
+.mixbar div{height:6px;border-radius:3px}
+.hint{font-size:13px;color:var(--muted);line-height:1.7;margin-top:10px}
+.setrow{padding:14px 0;border-bottom:1px solid var(--rule)}
+.setrow h3{font-size:16px;font-weight:400;margin:0 0 4px}
+.setrow .meta{font-size:13px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:14px;margin-top:8px}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--rule)}
+th{color:var(--muted);font-weight:400;font-size:12.5px}
+.gate{padding:60px 0;text-align:center;color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:11px 20px;border-radius:8px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>쪽지 만들기</h1>
+  <p class="sub">문항 원장에서 골라 담고, 우리 반에 엽니다. 학생은 링크 없이 자기 화면에서 만납니다.</p>
+  <div class="tabs">
+    <button data-tab="build" class="on">조립</button>
+    <button data-tab="mine">내 쪽지</button>
+  </div>
+  <div id="view"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="/kedu_back.js" data-mode="context"></script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ===================== 케이학습지 쪽지 조립 v1 =====================
+   명세: handoff/kedu/평가모듈_설계_v1.md §11 E1
+   원칙: 배포는 새 우주를 만들지 않는다 — 기존 「우리 반에 열기」(class_openings)에
+         content_key = 'quiz:<set_id>' 한 줄로 나간다.
+=================================================================== */
+const db = getKeduDb();
+const view = document.getElementById('view');
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const DIFFNAME = {1:'D1 기본', 2:'D2 적용', 3:'D3 도전', 4:'D4 심화'};
+const KINDNAME = {mc:'선택', sa:'단답', ox:'OX', error:'오류찾기', blank:'빈칸', data:'자료읽기', match:'연결', essay:'서술'};
+
+let ME = null, BANK = [], CONCEPTS = [], CLASSES = [], CART = [], TAB = 'build';
+
+function toast(msg){ const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('on'); setTimeout(() => t.classList.remove('on'), 2200); }
+
+/* ---------- 입장 ---------- */
+(async function boot(){
+  view.innerHTML = `<div class="gate">불러오는 중…</div>`;
+  const { data:{ session } } = await db.auth.getSession();
+  if (!session){ view.innerHTML = `<div class="gate">선생님 로그인이 필요해요.<br><br><a class="btn" href="/auth/?redirect=${encodeURIComponent(location.href)}">로그인</a></div>`; return; }
+
+  const { data: t } = await db.from('teachers').select('id, name').eq('user_id', session.user.id).maybeSingle();
+  if (!t){ view.innerHTML = `<div class="gate">교사 계정이 아니에요.</div>`; return; }
+  ME = t;
+
+  const [{ data: qs }, { data: cs }, { data: cc }] = await Promise.all([
+    db.from('question_bank')
+      .select('id, qcode, grade, subject, unit_code, lesson_code, concept_code, difficulty, qkind, stem, misconception_codes, source_kind')
+      .eq('is_active', true).order('grade').order('unit_code').order('lesson_code').order('difficulty').limit(2000),
+    db.from('concepts').select('code, name, lesson_no, unit_code, grade').eq('is_active', true).order('ord'),
+    db.from('class_codes').select('id, code, is_active').eq('teacher_id', t.id).eq('is_active', true)
+  ]);
+
+  // 원장이 비어 있으면 승인 대기이거나 시드 미적용 — 둘을 구분해서 말해 준다.
+  if (!qs){ view.innerHTML = `<div class="gate">문항 원장을 읽을 수 없어요.<br>승인된 선생님 계정만 원장을 볼 수 있어요.</div>`; return; }
+
+  BANK = qs; CONCEPTS = cs || []; CLASSES = cc || [];
+  render();
+})();
+
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+  TAB = b.dataset.tab;
+  document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b));
+  render();
+});
+
+function render(){ TAB === 'build' ? renderBuild() : renderMine(); }
+
+/* ---------- 조립 화면 ---------- */
+function filtered(){
+  const g = f('fGrade'), u = f('fUnit'), l = f('fLesson'), c = f('fConcept'), d = f('fDiff'), k = f('fKind'), qword = (f('fWord') || '').trim();
+  return BANK.filter(q =>
+    (!g || String(q.grade) === g) && (!u || q.unit_code === u) &&
+    (!l || q.lesson_code === l) && (!c || q.concept_code === c) &&
+    (!d || String(q.difficulty) === d) && (!k || q.qkind === k) &&
+    (!qword || q.stem.includes(qword)));
+}
+function f(id){ const el = document.getElementById(id); return el ? el.value : ''; }
+const uniq = (arr) => [...new Set(arr.filter(Boolean))].sort();
+
+function renderBuild(){
+  const grades = uniq(BANK.map(q => q.grade)), units = uniq(BANK.map(q => q.unit_code));
+  const lessons = uniq(BANK.map(q => q.lesson_code)), kinds = uniq(BANK.map(q => q.qkind));
+  view.innerHTML = `<div class="cols">
+    <div class="panel">
+      <h2>문항 원장 <span style="color:var(--muted);font-weight:400">${BANK.length}문항</span></h2>
+      <div class="filters">
+        <select id="fGrade"><option value="">전체 학년</option>${grades.map(g => `<option>${g}</option>`).join('')}</select>
+        <select id="fUnit"><option value="">전체 단원</option>${units.map(u => `<option>${u}</option>`).join('')}</select>
+        <select id="fLesson"><option value="">전체 차시</option>${lessons.map(l => `<option>${l}</option>`).join('')}</select>
+        <select id="fConcept"><option value="">전체 개념</option>${CONCEPTS.map(c => `<option value="${c.code}">${c.lesson_no ? c.lesson_no + '차시 · ' : ''}${esc(c.name)}</option>`).join('')}</select>
+        <select id="fDiff"><option value="">전체 난이도</option>${[1,2,3,4].map(d => `<option value="${d}">${DIFFNAME[d]}</option>`).join('')}</select>
+        <select id="fKind"><option value="">전체 유형</option>${kinds.map(k => `<option value="${k}">${KINDNAME[k] || k}</option>`).join('')}</select>
+        <input type="text" id="fWord" placeholder="발문 검색" style="width:130px">
+      </div>
+      <div class="qlist" id="qlist"></div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <h2>담은 문항 <span id="cartN" style="color:var(--muted);font-weight:400"></span></h2>
+        <div class="mixbar" id="mixbar"></div>
+        <div class="hint" id="mixtext"></div>
+        <ul class="cart" id="cart"></ul>
+        <input type="text" id="title" placeholder="쪽지 이름 (예: 1단원 수 세기 쪽지)" style="width:100%;margin-top:14px">
+        <div class="row">
+          <button class="btn" id="save" disabled>쪽지 저장</button>
+          <button class="btn ghost" id="clear">비우기</button>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:16px">
+        <h2>빠른 조립</h2>
+        <div class="filters">
+          <select id="qaConcept">${CONCEPTS.map(c => `<option value="${c.code}">${c.lesson_no ? c.lesson_no + '차시 · ' : ''}${esc(c.name)}</option>`).join('')}</select>
+          <select id="qaN">${[5,8,10,15].map(n => `<option value="${n}"${n === 10 ? ' selected' : ''}>${n}문항</option>`).join('')}</select>
+          <select id="qaMix"><option value="basic">기본 배합</option><option value="challenge">도전 배합</option></select>
+        </div>
+        <button class="btn ghost" id="qaGo">배합대로 담기</button>
+        <p class="hint">기본 = D1·D2 위주, 도전 = D3·D4 위주. 같은 개념 안에서 유형이 겹치지 않도록 골라 담습니다.</p>
+      </div>
+    </div>
+  </div>`;
+
+  ['fGrade','fUnit','fLesson','fConcept','fDiff','fKind'].forEach(id => document.getElementById(id).onchange = drawList);
+  document.getElementById('fWord').oninput = drawList;
+  document.getElementById('clear').onclick = () => { CART = []; drawList(); drawCart(); };
+  document.getElementById('save').onclick = saveSet;
+  document.getElementById('qaGo').onclick = quickAssemble;
+  drawList(); drawCart();
+}
+
+function drawList(){
+  const list = filtered();
+  document.getElementById('qlist').innerHTML = list.length
+    ? list.map(q => {
+        const on = CART.some(x => x.id === q.id);
+        const cname = (CONCEPTS.find(c => c.code === q.concept_code) || {}).name || q.concept_code || '';
+        return `<div class="q ${on ? 'sel' : ''}" data-id="${q.id}">
+          <div class="chk">${on ? '✓' : ''}</div>
+          <div class="body">
+            <div class="stem">${esc(q.stem)}</div>
+            <div class="tagrow">
+              <span class="tag d${q.difficulty}">${DIFFNAME[q.difficulty]}</span>
+              <span class="tag">${KINDNAME[q.qkind] || q.qkind}</span>
+              ${q.lesson_code ? `<span class="tag">${esc(q.lesson_code)}</span>` : ''}
+              <span class="tag">${esc(cname)}</span>
+              ${(q.misconception_codes || []).map(m => `<span class="tag mis">${esc(m)}</span>`).join('')}
+            </div>
+          </div></div>`;
+      }).join('')
+    : `<div class="hint" style="padding:24px 0;text-align:center">조건에 맞는 문항이 없어요.</div>`;
+
+  document.getElementById('qlist').querySelectorAll('.q').forEach(el => el.onclick = () => {
+    const q = BANK.find(x => x.id === el.dataset.id);
+    const i = CART.findIndex(x => x.id === q.id);
+    i >= 0 ? CART.splice(i, 1) : CART.push(q);
+    drawList(); drawCart();
+  });
+}
+
+function drawCart(){
+  document.getElementById('cartN').textContent = CART.length ? `${CART.length}문항` : '';
+  document.getElementById('save').disabled = CART.length === 0;
+  const mix = [1,2,3,4].map(d => CART.filter(q => q.difficulty === d).length);
+  const colors = ['#8FB09A','#8FA6C0','#C7AE84','#C08F8F'];
+  document.getElementById('mixbar').innerHTML = CART.length
+    ? mix.map((n, i) => n ? `<div style="flex:${n};background:${colors[i]}"></div>` : '').join('') : '';
+  document.getElementById('mixtext').textContent = CART.length
+    ? mix.map((n, i) => n ? `D${i+1} ${n}` : null).filter(Boolean).join(' · ') : '왼쪽에서 문항을 눌러 담으세요.';
+  document.getElementById('cart').innerHTML = CART.map((q, i) =>
+    `<li><span class="n">${i+1}</span><span style="flex:1">${esc(q.stem.slice(0, 46))}${q.stem.length > 46 ? '…' : ''}</span><button class="x" data-i="${i}">✕</button></li>`).join('');
+  document.getElementById('cart').querySelectorAll('.x').forEach(b => b.onclick = () => { CART.splice(Number(b.dataset.i), 1); drawList(); drawCart(); });
+}
+
+/* 빠른 조립 — 개념 하나에서 배합대로. 유형이 한쪽으로 쏠리지 않게 라운드로빈으로 고른다. */
+function quickAssemble(){
+  const code = f('qaConcept'), n = Number(f('qaN')), mode = f('qaMix');
+  const want = mode === 'basic' ? [0.4, 0.4, 0.2, 0] : [0, 0.2, 0.5, 0.3];
+  const pool = BANK.filter(q => q.concept_code === code && !CART.some(x => x.id === q.id));
+  if (!pool.length) return toast('그 개념에 남은 문항이 없어요.');
+  const added = [];
+  want.forEach((ratio, di) => {
+    const need = Math.round(n * ratio);
+    const byKind = {};
+    pool.filter(q => q.difficulty === di + 1).forEach(q => (byKind[q.qkind] = byKind[q.qkind] || []).push(q));
+    const kinds = Object.keys(byKind);
+    for (let i = 0; added.filter(q => q.difficulty === di + 1).length < need && kinds.length; i++){
+      const k = kinds[i % kinds.length], q = (byKind[k] || []).shift();
+      if (q) added.push(q);
+      if (!byKind[k] || !byKind[k].length) kinds.splice(kinds.indexOf(k), 1), i--;
+    }
+  });
+  if (!added.length) return toast('배합에 맞는 문항이 부족해요.');
+  CART = CART.concat(added);
+  drawList(); drawCart();
+  toast(`${added.length}문항 담았어요.`);
+}
+
+/* ---------- 저장 ---------- */
+async function saveSet(){
+  const title = (document.getElementById('title').value || '').trim() || '쪽지';
+  const first = CART[0];
+  const { data: set, error } = await db.from('quiz_sets').insert({
+    teacher_id: ME.id, title, kind: 'quiz',
+    subject: first.subject, grade: first.grade, unit_code: first.unit_code
+  }).select('id').single();
+  if (error) return toast('저장하지 못했어요. 승인된 선생님 계정인지 확인해 주세요.');
+
+  const items = CART.map((q, i) => ({ set_id: set.id, ord: i + 1, question_id: q.id }));
+  const { error: e2 } = await db.from('quiz_set_items').insert(items);
+  if (e2) return toast('문항을 담지 못했어요.');
+
+  CART = []; TAB = 'mine';
+  document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x.dataset.tab === 'mine'));
+  render();
+  toast('쪽지를 저장했어요. 이제 우리 반에 열면 됩니다.');
+}
+
+/* ---------- 내 쪽지 ---------- */
+async function renderMine(){
+  view.innerHTML = `<div class="gate">불러오는 중…</div>`;
+  const { data: sets } = await db.from('quiz_sets')
+    .select('id, title, kind, grade, subject, unit_code, created_at, quiz_set_items(count)')
+    .eq('teacher_id', ME.id).eq('is_archived', false).order('created_at', { ascending: false });
+
+  if (!sets || !sets.length){
+    view.innerHTML = `<div class="panel"><p class="hint" style="margin:0">아직 만든 쪽지가 없어요. 「조립」 탭에서 문항을 담아 보세요.</p></div>`;
+    return;
+  }
+
+  // 어느 반에 열려 있는지 — 개방 원장을 한 번에 읽는다.
+  const keys = sets.map(s => 'quiz:' + s.id);
+  const { data: opens } = await db.from('class_openings')
+    .select('class_code_id, content_key').in('content_key', keys);
+  const openMap = {};
+  (opens || []).forEach(o => (openMap[o.content_key] = openMap[o.content_key] || []).push(o.class_code_id));
+
+  view.innerHTML = `<div class="panel">${sets.map(s => {
+    const n = (s.quiz_set_items && s.quiz_set_items[0] && s.quiz_set_items[0].count) || 0;
+    const openedIn = openMap['quiz:' + s.id] || [];
+    const names = openedIn.map(id => (CLASSES.find(c => c.id === id) || {}).code).filter(Boolean);
+    return `<div class="setrow">
+      <h3>${esc(s.title)}</h3>
+      <div class="meta">${n}문항 · ${s.grade}학년 · ${new Date(s.created_at).toLocaleDateString('ko-KR')}
+        ${names.length ? ` · <b>열린 반: ${names.map(esc).join(', ')}</b>` : ' · 아직 열지 않음'}</div>
+      <div class="row">
+        <select data-cls="${s.id}">${CLASSES.length ? CLASSES.map(c => `<option value="${c.id}">${esc(c.code)}</option>`).join('') : '<option value="">학급 없음</option>'}</select>
+        <button class="btn" data-open="${s.id}" ${CLASSES.length ? '' : 'disabled'}>우리 반에 열기</button>
+        <button class="btn ghost" data-prev="${s.id}">미리보기</button>
+        <button class="btn ghost" data-res="${s.id}">결과 보기</button>
+      </div>
+      <div id="res-${s.id}"></div>
+    </div>`;
+  }).join('')}</div>`;
+
+  view.querySelectorAll('[data-open]').forEach(b => b.onclick = () => openForClass(b.dataset.open, sets));
+  view.querySelectorAll('[data-prev]').forEach(b => b.onclick = () => window.open('play.html?quiz=' + b.dataset.prev, '_blank'));
+  view.querySelectorAll('[data-res]').forEach(b => b.onclick = () => showResult(b.dataset.res));
+}
+
+async function openForClass(setId, sets){
+  const sel = view.querySelector(`[data-cls="${setId}"]`);
+  const classId = sel && sel.value;
+  if (!classId) return toast('학급코드를 먼저 만들어 주세요.');
+  const s = sets.find(x => x.id === setId);
+  const { error } = await db.rpc('open_for_class', {
+    p_class_code_id: classId,
+    p_content_key: 'quiz:' + setId,
+    p_title: s.title,
+    p_kind: 'quiz',
+    p_url: '/kedu/worksheet/play.html?quiz=' + setId
+  });
+  if (error) return toast('열지 못했어요. 승인된 선생님 계정인지 확인해 주세요.');
+  toast('우리 반에 열었어요.');
+  renderMine();
+}
+
+/* 결과 = 점수가 아니라 '어디서 어떻게 틀렸나' */
+async function showResult(setId){
+  const box = document.getElementById('res-' + setId);
+  if (box.dataset.on){ box.innerHTML = ''; box.dataset.on = ''; return; }
+  box.dataset.on = '1';
+  box.innerHTML = `<p class="hint">불러오는 중…</p>`;
+
+  const [{ data: mis }, { data: items }] = await Promise.all([
+    db.from('quiz_misconception_dist').select('*').eq('quiz_set_id', setId).order('hits', { ascending: false }),
+    db.from('quiz_item_stats').select('*').eq('quiz_set_id', setId).order('pct_correct')
+  ]);
+
+  if ((!mis || !mis.length) && (!items || !items.length)){
+    box.innerHTML = `<p class="hint">아직 푼 학생이 없어요.</p>`;
+    return;
+  }
+  const qname = id => { const q = BANK.find(x => x.id === id); return q ? q.stem.slice(0, 40) : '(문항)'; };
+  box.innerHTML = `
+    ${mis && mis.length ? `<table><tr><th>막힌 곳</th><th>학생</th><th>횟수</th><th>이렇게 도와주세요</th></tr>
+      ${mis.map(m => `<tr><td>${esc(m.misconception_title || m.misconception_code || '기타')}</td>
+        <td>${m.students}명</td><td>${m.hits}</td><td style="color:var(--soft)">${esc(m.teacher_hint || '')}</td></tr>`).join('')}</table>` : ''}
+    ${items && items.length ? `<table><tr><th>정답률이 낮은 문항</th><th>정답률</th><th>응답</th></tr>
+      ${items.slice(0, 5).map(it => `<tr><td>${esc(qname(it.question_bank_id))}…</td><td>${it.pct_correct}%</td><td>${it.n}</td></tr>`).join('')}</table>` : ''}
+    <p class="hint">정답률이 20% 아래이거나 100%인 문항은 원장에서 손볼 후보예요.</p>`;
+}
+</script>
+</body>
+</html>
