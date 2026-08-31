@@ -24,6 +24,7 @@ require('./data/tplsvg.js');
 const T = window.MK_TPLSVG;
 const opts = { DOMParser: dom.window.DOMParser, XMLSerializer: dom.window.XMLSerializer };
 let bad = 0;
+const PACK_FILES = fs.readdirSync('./data').filter((f) => /^svgpack\d+\.js$/.test(f)).sort().map((f) => './data/' + f);
 if (!fs.existsSync('./data/tplsvg.js')) { console.log('❌ tplsvg.js 없음 — 전제 실패'); process.exit(1); }
 for (const t of T.CATALOG) {
   const f = 'assets/templates/' + t.pack + '/' + t.file;
@@ -63,7 +64,7 @@ for (const t of T.CATALOG) {
   const g = {}; global.window = g;
   const req3 = createRequire(import.meta.url);
   for (const f of ['./data/sample.js', './data/assets.js', './data/templates.js', './data/tplpack.js',
-                   './data/tplsvg.js', './data/svgpack01.js', './data/svgpack02.js', './data/svgpack03.js']) {
+                   './data/tplsvg.js', ...PACK_FILES]) {
     delete req3.cache[req3.resolve(f)]; req3(f);
   }
   const okOld = !!(g.MK_TPLPACK && g.MK_TPLPACK.install && Array.isArray(g.MK_TPLPACK.ids) && g.MK_TPLPACK.ids.length === 8);
@@ -81,7 +82,7 @@ for (const t of T.CATALOG) {
   global.window = g;
   const req2 = createRequire(import.meta.url);
   for (const f of ['./data/sample.js', './data/assets.js', './data/templates.js', './data/tplpack.js',
-                   './data/tplsvg.js', './data/svgpack01.js', './data/svgpack02.js', './data/svgpack03.js']) {
+                   './data/tplsvg.js', ...PACK_FILES]) {
     delete req2.cache[req2.resolve(f)]; req2(f);
   }
   const E = g.MK_TPL;
@@ -123,7 +124,7 @@ for (const t of T.CATALOG) {
   /* 파서가 낸 도형이 그 계약을 지키는가 */
   const g2 = {}; const sv = global.window; global.window = g2;
   const req4 = createRequire(import.meta.url);
-  for (const f of ['./data/tplsvg.js', './data/svgpack01.js', './data/svgpack02.js', './data/svgpack03.js']) { delete req4.cache[req4.resolve(f)]; req4(f); }
+  for (const f of ['./data/tplsvg.js', ...PACK_FILES]) { delete req4.cache[req4.resolve(f)]; req4(f); }
   let shapes = 0, frags = 0, bad2 = [];
   Object.entries(g2.MK_SVGPACK).forEach(([id, p2]) => p2.elements.forEach((e, i) => {
     if (e.kind === 'shape') {
@@ -148,7 +149,8 @@ const ed = fs.readFileSync('screens/editor.js', 'utf8');
   console.log((re.test(ed) ? '✅ ' : '❌ ') + n));
 for (const f of ['../maker-playground/index.html', '../maker/index.html']) {
   const h = fs.readFileSync(f, 'utf8');
-  const packFiles = ['svgpack01.js', 'svgpack02.js', 'svgpack03.js'];
+  /* 팩은 계속 늘어난다 — 목록을 못 박지 않고 디스크에서 센다 */
+  const packFiles = fs.readdirSync('./data').filter((f) => /^svgpack\d+\.js$/.test(f)).sort();
   const two = /tplsvg\.js/.test(h) && packFiles.every((f) => h.includes(f));
   /* 순서 계약: MK_TPL(templates.js) → 파서 → 팩. 뒤집히면 등록이 조용히 실패한다 */
   const order = h.indexOf('templates.js') < h.indexOf('tplsvg.js')

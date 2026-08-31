@@ -75,6 +75,21 @@ window.MK_TPLSVG = (() => {
     { id: 'music-festival-01', name: 'Loud Weekend Festival', ko: '축제 포스터', category: 'event', width: 1080, height: 1350, pack: 'pack03', file: '15_music_festival.svg',
       contentType: 'poster', style: '행사', styleId: 'st-event', styleEn: 'Brutalist', ratio: '4:5', difficulty: '쉬움', rec: true,
       desc: '색면을 크게 부딪히는 축제 포스터', uses: '학예회·축제·동아리 공연', tags: ['축제', '행사', '공연'], hints: ['이름 목록은 굵게 나열', '색면은 세 덩이까지'] },
+    { id: 'beauty-launch-01', name: 'Beauty Product Launch', ko: '신제품 소개', category: 'beauty', width: 1080, height: 1350, pack: 'pack04', file: '16_beauty_launch.svg',
+      contentType: 'poster', style: '소프트', styleId: 'st-soft', styleEn: 'Soft', ratio: '4:5', difficulty: '쉬움', rec: false,
+      desc: '부드러운 색과 여백으로 하나를 세우는 소개면', uses: '작품 소개·동아리 결과물·전시 안내', tags: ['소개', '부드러움', '전시'], hints: ['가운데 하나만 크게', '글자는 아래로 몰 것'] },
+    { id: 'book-cover-01', name: 'Book Cover', ko: '책 표지', category: 'book', width: 1080, height: 1350, pack: 'pack04', file: '17_book_cover.svg',
+      contentType: 'poster', style: '페이퍼', styleId: 'st-paper', styleEn: 'Literary', ratio: '4:5', difficulty: '쉬움', rec: true,
+      desc: '도형 하나와 제목으로 미는 표지', uses: '문집·학급 앨범·독후활동 표지', tags: ['표지', '문집', '독서'], hints: ['제목·지은이만 남길 것', '가운데 도형 색으로 분위기 조절'] },
+    { id: 'birthday-invite-01', name: 'Birthday Invitation', ko: '생일 초대장', category: 'invitation', width: 1080, height: 1350, pack: 'pack04', file: '18_birthday_invite.svg',
+      contentType: 'poster', style: '행사', styleId: 'st-event', styleEn: 'Party', ratio: '4:5', difficulty: '쉬움', rec: true,
+      desc: '알록달록한 어린이 초대장', uses: '생일 초대·학급 행사·파티 안내', tags: ['초대장', '생일', '어린이'], hints: ['날짜·장소를 크게', '이름은 손글씨 느낌으로'] },
+    { id: 'app-promo-01', name: 'App Promotion', ko: '앱 소개', category: 'digital', width: 1080, height: 1350, pack: 'pack04', file: '19_app_promo.svg',
+      contentType: 'poster', style: '모던', styleId: 'st-modern', styleEn: 'Dark Tech', ratio: '4:5', difficulty: '보통', rec: false,
+      desc: '어두운 바탕에 화면 목업을 세운 소개면', uses: '만든 것 소개·정보 수업 발표·프로젝트 홍보', tags: ['소개', '앱', '어두움'], hints: ['가운데 목업 안 줄만 바꿔도 된다', '기능은 세 줄까지'] },
+    { id: 'certificate-01', name: 'Achievement Certificate', ko: '상장', category: 'education', width: 1600, height: 1100, pack: 'pack04', file: '20_certificate.svg',
+      contentType: 'activity', style: '페이퍼', styleId: 'st-paper', styleEn: 'Formal', ratio: '3:2', difficulty: '쉬움', rec: true,
+      desc: '테두리와 가운데 정렬로 격식을 세운 가로 상장', uses: '학급 상장·표창·수료증', tags: ['상장', '표창', '학급운영'], hints: ['이름과 사유만 바꾸면 된다', '아래 서명 줄은 지워도 좋다'] },
   ];
 
   const CATS = [['', '전체'], ['poster', '포스터'], ['event', '행사'], ['education', '교육'], ['promotion', '홍보'], ['social', '소셜']];
