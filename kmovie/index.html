@@ -21,7 +21,25 @@
   button.ico { padding:6px 9px; min-width:34px; }
   input[type=range] { accent-color:var(--gold); }
 
-  #app { display:grid; grid-template-rows:48px 1fr 344px; height:100%; }
+  #app { display:grid; grid-template-rows:48px 1fr auto 344px; height:100%; }
+  /* 미디어 띠 — 화면과 타임라인 사이 가로 한 줄(세로 목록은 복잡하다 — 준호). 헤더 「미디어」 로 접고 편다. */
+  .bin-strip { border-top:1px solid var(--line); background:var(--panel); padding:2px 14px 4px; min-height:0; display:flex; align-items:center; gap:10px; }
+  body.hide-media .bin-strip { display:none; }
+  .bin-panel { padding:0; border-bottom:0; display:flex; align-items:center; gap:10px; flex:1; min-width:0; }
+  .bin-panel h3 { margin:0; flex:none; flex-direction:column; gap:4px; align-items:flex-start; }
+  .bin-panel h3 .sp { display:none; }
+  .bin-strip #bin { flex:1; min-width:0; flex-direction:row; overflow-x:auto; overflow-y:hidden; gap:6px; padding:2px 0 3px; scrollbar-width:thin; }
+  .bin-strip .mi { flex-direction:column; align-items:stretch; width:118px; flex:none; padding:0; gap:0; position:relative; overflow:hidden; }
+  .bin-strip .mi canvas, .bin-strip .mi .ph { width:100%; height:64px; border-radius:7px 7px 0 0; }
+  .bin-strip .mi .nm { padding:2px 6px 3px; }
+  .bin-strip .mi .nm b { font-size:10.5px; }
+  .bin-strip .mi .nm span { display:none; }
+  .bin-strip .mi .nm .bar { margin-top:2px; }
+  .bin-strip .mi .add, .bin-strip .mi .x { position:absolute; top:4px; background:rgba(6,10,20,.72); border-radius:5px; padding:0 5px; font-size:12px; line-height:17px; }
+  .bin-strip .mi .add { right:26px; } .bin-strip .mi .add + .add { right:48px; } .bin-strip .mi .x { right:4px; }
+  .bin-strip .bin-empty { padding:6px 2px; font-size:11px; }
+  header .colTg button { padding:3px 8px; font-size:11px; color:var(--sub); }
+  header .colTg button.on { color:var(--txt); border-color:var(--gold); }
   header.top { display:flex; align-items:center; gap:10px; padding:0 16px; border-bottom:1px solid var(--line); background:var(--panel); }
   header .back { color:var(--sub); text-decoration:none; font-size:13px; margin-right:6px; }
   header .back:hover { color:var(--txt); }
@@ -185,6 +203,8 @@
     <button id="btnRedo" class="ico" title="다시 (Ctrl+Shift+Z)" disabled>↷</button>
     <button id="btnSnap" class="ico on" title="스냅 (N)">🧲</button>
     <div class="sep"></div>
+    <button id="tgColMedia" class="on" title="미디어 띠 보이기/숨기기">미디어</button>
+    <div class="sep"></div>
     <span id="projName" title="누르면 이름을 바꿔요">새 작업</span>
     <button id="btnNew" title="내 작업 목록 — 열기·새 작업·파일">📁 내 작업</button>
     <button id="btnExport" class="gold">MP4 내보내기</button>
@@ -314,10 +334,6 @@
       </div>
       <div class="col" id="colTools">
         <div class="colTitle">도구상자</div>
-      <div class="panel" id="binPanel">
-        <h3>미디어<div class="sp"></div><button id="btnImport2">＋</button></h3>
-        <div id="bin"></div>
-      </div>
       <div class="panel" id="partPanel">
         <h3>타이틀·꾸미기<div class="sp"></div><span class="note" style="letter-spacing:0;text-transform:none;font-weight:400">끌어서 P 레인에 · 클릭은 플레이헤드에</span></h3>
         <div id="partGrid"></div>
@@ -379,6 +395,12 @@
     </aside>
   </main>
 
+  <section class="bin-strip" id="binStrip">
+      <div class="panel bin-panel" id="binPanel">
+        <h3>미디어<div class="sp"></div><button id="btnImport2">＋</button></h3>
+        <div id="bin"></div>
+      </div>
+  </section>
   <section class="tl-wrap">
     <div class="tl-bar">
       <span class="zi" id="zoomOut">−</span><input type="range" id="zoom" min="0" max="1000" value="500"><span class="zi" id="zoomIn">＋</span>

@@ -1119,6 +1119,11 @@
   $('btnSnap').onclick = toggleSnap;
   $('btnImport').onclick = $('btnImport2').onclick = () => { if (SH && SH.active) SH.pick().then(refs => { if (refs.length) importFiles(refs); }); else $('fileIn').click(); };
   $('fileIn').onchange = e => { importFiles(Array.from(e.target.files)); e.target.value = ''; };
+  /* 미디어 띠 보이기/숨기기 — 이 브라우저에 기억 */
+  let mediaOn = true; try { mediaOn = localStorage.getItem('kmv.media') !== '0'; } catch (e) {}
+  function applyMedia() { document.body.classList.toggle('hide-media', !mediaOn); $('tgColMedia').classList.toggle('on', mediaOn); resize(); }
+  $('tgColMedia').onclick = () => { mediaOn = !mediaOn; try { localStorage.setItem('kmv.media', mediaOn ? '1' : '0'); } catch (e) {} applyMedia(); };
+  applyMedia();
   $('btnNew').onclick = () => openProjModal();
   $('projName').onclick = () => renameCurrent();
   $('btnExport').onclick = async () => {
