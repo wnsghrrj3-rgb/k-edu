@@ -23,7 +23,7 @@
     msel: [],               /* R103 — Shift 다중 선택 (상태 기본값 — enter 없이도 안전) */
     crop: null,             /* R105 — 자르기 모드 {idx, sc, d:{x,y,w,h}} (초안 — 확인 전 문서 무변형) */
     focal: null,            /* R106 — 세밀 초점 모드 {idx, sc, d:{x,y}, nar} (초안 — 확인 전 문서 무변형) */
-    zoom: 100, nav: 'scenes', dock: false,
+    zoom: 100, baseW: null, nav: 'scenes', dock: false,
     undo: [], redo: [], savedAt: null, svarMsg: '', notice: '', smartMsg: '',
   };
   const proj = () => window.MK_PROJ.get(WS.projectId);
@@ -127,7 +127,23 @@
   };
 
   /* ================= 중앙: Canvas ================= */
-  const BASE_W = 560;
+  /* R138 — 캔버스 기준폭 실측. 560px 고정이던 값이 1280 화면에서 남는 폭(레일·
+     내비패널·속성패널·앱 사이드바를 빼면 ≈490px)을 넘겨, 줌이 100%인데도 캔버스
+     오른쪽이 그대로 잘려 나갔다(준호 보고, 2026-09-01). 이제 남은 영역을 재서
+     100% = 「영역에 꽉 맞음」이 되게 한다. 실측 전 첫 렌더에서만 FALLBACK_W. */
+  const FALLBACK_W = 560;
+  const measureBase = () => {
+    const wrap = document.querySelector('.ws-canvaswrap');
+    if (!wrap || !wrap.clientWidth) return null;
+    const cs = getComputedStyle(wrap);
+    const aw = wrap.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    const ah = wrap.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+    if (!(aw > 0) || !(ah > 0)) return null;
+    const s2 = scene() || { width: 16, height: 9 };
+    /* 폭·높이 둘 다 만족하는 쪽으로 — 세로 긴 장면이 위아래로 잘리지 않게 */
+    return Math.max(240, Math.floor(Math.min(aw, ah * s2.width / s2.height)));
+  };
+  const BASE_W = () => WS.baseW || FALLBACK_W;
   let lastTap = null;    /* R106 — 더블탭 감지 {i, t} — 렌더마다 재배선돼도 살아남게 모듈 스코프 (dblclick 은 preventDefault 지형에서 못 믿는다) */
   /* R55 — 선택 핸들: 코너 4 + 좌우변 2 (리사이즈는 MK_LIVE.resizeTo, #/editor R36 동일 규약) */
   const WSHD = '<i class="ws-hd tl"></i><i class="ws-hd tr"></i><i class="ws-hd bl"></i><i class="ws-hd br"></i><i class="ws-hd ml"></i><i class="ws-hd mr"></i>'
@@ -191,7 +207,7 @@
   };
   /* 캔버스 실픽셀 — 회전 수학은 % 가 아니라 px 공간에서만 성립한다 */
   const cpx = () => { const s2 = scene() || { width: 16, height: 9 };
-    const CW = Math.round(BASE_W * WS.zoom / 100); return { CW, CH: Math.round(CW * s2.height / s2.width) }; };
+    const CW = Math.round(BASE_W() * WS.zoom / 100); return { CW, CH: Math.round(CW * s2.height / s2.width) }; };
   /* R105 — 자르기 오버레이 조각 (스크림 4 + 상자 + 코너 4 + 확인 바) */
   const cropLayer = (d) => {
     const P = (v) => (Math.max(0, v) * 100).toFixed(2);
@@ -221,7 +237,7 @@
     if (WS.crop && (WS.crop.sc !== WS.sceneIdx || !sc.elements[WS.crop.idx] || !sc.elements[WS.crop.idx].src)) WS.crop = null;
     /* R106 — 세밀 초점 모드 자동 종료 (장면 이동·요소 소실·contain 전환 포함) */
     if (WS.focal && (WS.focal.sc !== WS.sceneIdx || !sc.elements[WS.focal.idx] || !sc.elements[WS.focal.idx].src || sc.elements[WS.focal.idx].fit === 'contain')) WS.focal = null;
-    const CW = Math.round(BASE_W * WS.zoom / 100), CH = Math.round(CW * sc.height / sc.width);
+    const CW = Math.round(BASE_W() * WS.zoom / 100), CH = Math.round(CW * sc.height / sc.width);
     const els = sc.elements.map((el, i) => {
       const on = (WS.sel && WS.sel.idx === i && WS.sel.type !== 'scene') || WS.msel.indexOf(i) >= 0 ? 'sel' : '';
       const hd = on && WS.msel.indexOf(i) < 0 ? WSHD : '';   /* R103 — 다중 선택은 외곽만, 핸들 없음 */
@@ -588,6 +604,23 @@
         });
         PG.render();
       };
+
+      /* R138 — 캔버스 기준폭 실측 동기화. 렌더 뒤 한 번 재고, 창·패널 크기가
+         바뀌면 다시 잰다. 재렌더가 폭을 되바꾸는 진동은 3패스에서 끊는다. */
+      const syncBase = () => {
+        const v = measureBase();
+        if (!v) return;
+        if (Math.abs(v - (WS.baseW || 0)) <= 2) { WS._fitPass = 0; return; }
+        if ((WS._fitPass = (WS._fitPass || 0) + 1) > 3) return;
+        WS.baseW = v; PG.render();
+      };
+      if (WS._ro) { WS._ro.disconnect(); WS._ro = null; }
+      const wrapEl = root.querySelector('.ws-canvaswrap');
+      if (wrapEl && window.ResizeObserver) {
+        WS._ro = new ResizeObserver(() => syncBase());
+        WS._ro.observe(wrapEl);
+      }
+      syncBase();
 
       /* 상단 */
       const act = {
