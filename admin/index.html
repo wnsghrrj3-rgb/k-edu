@@ -209,6 +209,12 @@ details.fold .fold-body{padding-top:18px}
 </style>
   <script src="/kedu_gate.js"></script>
 <script src="/kedu_boxbar.js"></script>
+<script>
+(function(){ try {
+  var has = Object.keys(localStorage).some(function(k){ return /^sb-.*-auth-token$/.test(k); });
+  if(has) document.write('<style id="kedu-login-hold">#login-screen{display:none!important}</style>');
+} catch(e){} })();
+</script>
 </head>
 <body>
 
@@ -1166,6 +1172,8 @@ function checkSession(){
       await db.auth.signOut();
     }
   }
+
+  if(!currentAdmin) document.getElementById('kedu-login-hold')?.remove();   // 세션 없음·관리자 아님 → 로그인 화면
 
   document.getElementById('login-pw').addEventListener('keydown', e=>{
     if(e.key==='Enter') doLogin();
