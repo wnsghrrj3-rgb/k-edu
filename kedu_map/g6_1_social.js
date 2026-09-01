@@ -104,14 +104,14 @@ window.KEDU_MAP["g6_1_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u1_l10",
+     "lessonId": "g6_social_u1_l10_v1",
      "n": "10",
-     "title": "[생각을 펼쳐요]",
+     "title": "[생각을 펼쳐요] 숨은 글씨를 활용하여 그림 완성하기",
      "sub": "② 민주화와 산업화로 달라진 생활 모습",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/social/1단원_평화통일민주화산업화/g6_social_u1_l10_생각을펼쳐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,

@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<!--
+  g1_math_u5_l05 — 수 배열에서 규칙을 찾아볼까요 [1학년 2학기 5단원 05차시]
+  회수 키(lesson-id·STORAGE_KEY) = g1_2_math_u5_l05 — 1학기 g1_math_u5_l05 과 부딪히지 않도록 학기를 넣었다
+  ════════════════════════════════════════════════════════════
+  원본: kedu/curriculum/math/g1_2/unit5/05차_수배열에서규칙을찾아볼까요/draft.html
+  지도서: 수학 1-2 교사용 지도서 p.276-277 / 교과서 116-117
+  표준: kedu/curriculum/standards/표준.md (통합 표준 v1) + 차시운영_표준.md
+  섀시: g1 2학기 공용 (CSS + 데이터 구동 5부품 pad·two·mcq·match·judge)
+  신설 부품: pat·patgrid·numseq·numtable·floor·rulecard (5단원)
+  디자인 계승: g1 1학기 5단원 재수정_v1 (저학년 v1 토큰 · 학교안심 모험가)
+
+  학습 본질: 가상 현실 화면 속 자동차 번호판(3, 7 / 1, 1, 6 / 4, 4, 9)에서 되풀이되는 수를 찾아 빈칸을 채우고, 뛰어 세기 전략으로 1씩·2씩 커지거나 2씩 작아지는 수 배열(15,16,… / 1,3,5,… / 28,26,…)의 규칙을 찾으며, 5, 7, 7처럼 나만의 수 규칙을 만들어 친구와 주고받는다.
+  오개념 직격: 반복되는 부분의 첫 부분을 빠뜨리고 「1, 6, 1」처럼 중간부터 말함(지도서 276) · 뛰어 세기 규칙에서 앞뒤 수의 차를 보지 못함(277) · 「1, 5, 5, 1, 5, 5, 1, 1」처럼 반복과 무관한 수를 씀(283)
+  지도서 금지: 규칙을 말할 때 「☐부터 시작하여 ☐씩 커진다·작아진다」(지도서 279) · 「증가 규칙」(교사용) 대신 「몇씩 커진다」 · 수는 100 이하(1단원 범위)
+  점수: 기본 4슬 × 10점(q8~q11) + 응용 4슬 × 15점(q12~q15) = 100점 · 18슬 5단계
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g1_2_math_u5_l05_v1">
+<title>수 배열에서 규칙을 찾아볼까요 · K-edu 1학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style id="kedu-title-font">/* 케이에듀 제목 폰트 토큰 (2026-07-04, 학교안심 모험가) */
+@font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
+:root{--kedu-title:'Hakgyoansim Moheomga','Jua',sans-serif;--kedu-round:'Jua',sans-serif}
+</style>
+<style>
+
+:root {
+  --fs-title:   clamp(27px, 4.4vw, 50px);
+  --fs-heading: clamp(24px, 3.7vw, 37px);
+  --fs-body:    clamp(21px, 3.2vw, 31px);
+  --fs-caption: clamp(19px, 2.9vw, 27px);
+  --fs-label:   clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --em-md: clamp(44px, 7vw, 80px);
+  --em-lg: clamp(66px, 10.5vw, 124px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(780px, 96vw);
+  --mw-lg: min(860px, 96vw);
+  --blue:#1976D2; --blue-d:#1565C0; --blue-l:#42A5F5; --blue-p:#E3F2FD; --blue-bg:#F0F7FF;
+  --amber:#F57F17; --amber-l:#FFB300; --amber-p:#FFF8E1; --amber-d:#BF360C;
+  --green:#2E7D32; --green-l:#66BB6A; --green-p:#E8F5E9;
+  --red:#C62828; --red-p:#FFCDD2;
+  --gray:#607D8B; --gray-l:#B0BEC5;
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:#F0F7FF; display:flex; align-items:center; justify-content:center; font-family:var(--kedu-round,'Jua',sans-serif); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+
+@keyframes ka-fadeUp { from{opacity:0;transform:translateY(14px);} to{opacity:1;transform:none;} }
+@keyframes ka-pop { 0%{opacity:0;transform:scale(.3);} 60%{opacity:1;transform:scale(1.15);} 100%{opacity:1;transform:scale(1);} }
+@keyframes ka-popBig { 0%{opacity:0;transform:scale(.3);} 60%{opacity:1;transform:scale(1.25);} 100%{opacity:1;transform:scale(1);} }
+@keyframes ka-pulse { 0%,100%{transform:scale(1);box-shadow:0 4px 14px rgba(66,165,245,.32);} 50%{transform:scale(1.04);box-shadow:0 6px 20px rgba(66,165,245,.5);} }
+@keyframes ka-shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-6px);} 75%{transform:translateX(6px);} }
+@keyframes ka-bar-grow { from{transform:scaleY(.3);opacity:0;} to{transform:scaleY(1);opacity:1;} }
+@keyframes ka-cube-pop { 0%{opacity:0;transform:scale(.5);} 60%{opacity:1;transform:scale(1.15);} 100%{opacity:1;transform:scale(1);} }
+
+/* ───── 골격 ───── */
+.ka { background:#fff; width:100vw; height:100vh; height:100dvh; padding:clamp(8px,1.5vw,14px) clamp(12px,2.2vw,22px); color:#333; display:flex; flex-direction:column; position:relative; overflow:hidden; }
+.ka-h { display:flex; align-items:center; gap:clamp(6px,1.2vw,10px); margin-bottom:clamp(6px,1.2vw,10px); flex-shrink:0; }
+.ka-lb { background:#F4F4F8; border:none; padding:clamp(4px,.9vw,7px) clamp(8px,1.5vw,12px); border-radius:clamp(8px,1.5vw,12px); cursor:pointer; font-family:inherit; color:#555; flex-shrink:0; font-size:var(--fs-label); }
+.ka-bar { flex:1; height:clamp(3px,.5vw,5px); background:var(--blue-bg); border-radius:999px; overflow:hidden; min-width:clamp(40px,6vw,80px); }
+.ka-bar > div { height:100%; background:var(--blue-l); border-radius:999px; transition:width .45s ease; }
+.ka-pg { color:var(--blue); font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-label); flex-shrink:0; }
+.ka-score { color:var(--amber); font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-label); flex-shrink:0; background:var(--amber-p); padding:clamp(3px,.7vw,5px) clamp(8px,1.5vw,12px); border-radius:clamp(8px,1.5vw,12px); }
+.ka-mute { background:#F4F4F8; border:none; padding:clamp(4px,.9vw,7px); border-radius:clamp(8px,1.5vw,12px); cursor:pointer; flex-shrink:0; color:var(--blue); font-size:clamp(12px,2vw,16px); width:clamp(28px,4.5vw,36px); height:clamp(28px,4.5vw,36px); display:flex; align-items:center; justify-content:center; }
+
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; gap:clamp(8px,1.5vw,14px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(10px,2vw,20px) 0; overflow:hidden; }
+.slide.active { display:flex; }
+.slide-title { font-size:var(--fs-title); margin:0; line-height:1.3; color:var(--blue); font-weight:400; text-align:center; flex-shrink:0; font-family:var(--kedu-title); }
+.slide-sub { font-size:var(--fs-caption); color:var(--gray); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(8px,1.5vw,14px); left:clamp(12px,2.2vw,22px); background:var(--blue-p); color:var(--blue); padding:clamp(3px,.6vw,5px) clamp(8px,1.5vw,12px); border-radius:999px; font-size:clamp(10px,1.6vw,13px); font-family:'Nunito',sans-serif; font-weight:800; z-index:5; }
+
+.ka-f { display:grid; grid-template-columns:1fr 1fr 1.3fr; gap:clamp(6px,1.2vw,10px); padding-top:clamp(6px,1.2vw,10px); flex-shrink:0; }
+.ka-prev,.ka-hint,.ka-next { border:none; padding:clamp(8px,1.6vw,12px) clamp(10px,2vw,16px); border-radius:clamp(10px,1.7vw,14px); font-family:inherit; font-size:clamp(13px,2.2vw,17px); cursor:pointer; transition:all .2s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev { background:#F4F4F8; color:#6E6E78; }
+.ka-hint { background:var(--amber-p); color:var(--amber); }
+.ka-hint:hover { background:#FFECB3; }
+.ka-next { background:var(--blue-l); color:#fff; box-shadow:0 4px 14px rgba(66,165,245,.32); font-size:clamp(14px,2.4vw,18px); }
+.ka-next:hover { background:var(--blue); }
+.ka-next.hl { animation:ka-pulse 1.8s ease-in-out infinite; }
+.ka-prev:disabled,.ka-next:disabled { opacity:.4; cursor:not-allowed; animation:none; }
+.ka-hint:disabled { opacity:.5; cursor:not-allowed; }
+
+/* ───── 공용 무대 ───── */
+.stage { display:flex; flex-direction:column; align-items:center; gap:clamp(11px,2.2vw,19px); max-width:var(--mw-lg); width:100%; }
+.stage.narrow { max-width:var(--mw-md); }
+.cap { font-size:var(--fs-body); color:#6D4C41; text-align:center; line-height:1.5; max-width:var(--mw-md); }
+.cap strong { color:var(--amber-d); }
+.cap.sm { font-size:var(--fs-caption); }
+.prompt { font-size:var(--fs-heading); color:#333; text-align:center; line-height:1.35; }
+.prompt strong { color:var(--amber-d); }
+.row { display:flex; gap:clamp(10px,2vw,18px); align-items:center; justify-content:center; flex-wrap:wrap; }
+.row.tight { gap:clamp(6px,1.2vw,10px); }
+.col { display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.2vw,10px); }
+
+/* ───── 목표 카드 ───── */
+.goal-card { background:#fff; border:clamp(3px,.5vw,4px) solid var(--blue-l); border-radius:clamp(18px,3vw,28px); padding:clamp(19px,3.4vw,34px) clamp(23px,4.2vw,42px); display:flex; flex-direction:column; align-items:center; gap:clamp(13px,2.4vw,20px); max-width:var(--mw-md); }
+.goal-title { font-size:var(--fs-heading); color:var(--blue-d); text-align:center; font-family:var(--kedu-title); }
+.goal-emojis { font-size:var(--em-md); display:flex; gap:clamp(10px,2vw,16px); }
+.goal-list { font-size:var(--fs-body); color:var(--blue); text-align:left; line-height:1.6; }
+.goal-list li { list-style:none; padding:clamp(4px,.8vw,7px) 0; }
+.goal-list li::before { content:'✓ '; color:var(--green-l); font-family:'Nunito',sans-serif; font-weight:800; }
+
+/* ───── 묶음·낱개 (tens & ones) ───── */
+.tao-row { display:flex; gap:clamp(10px,2vw,18px); align-items:flex-end; justify-content:center; background:#FAFAFA; padding:clamp(9px,1.8vw,15px) clamp(13px,2.6vw,21px); border-radius:clamp(14px,2.6vw,22px); border:clamp(3px,.5vw,4px) solid var(--gray-l); }
+.tao-row.compact { min-height:auto; padding:clamp(7px,1.4vw,11px) clamp(9px,1.8vw,15px); }
+.tao-g { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,.8vw,7px); }
+.tao-lb { font-size:var(--fs-label); color:var(--gray); }
+.tao-tens { display:flex; gap:clamp(3px,.7vw,6px); align-items:flex-end; flex-wrap:wrap; max-width:clamp(200px,34vw,340px); justify-content:center; }
+.tao-ones { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(3px,.5vw,4px); align-items:flex-end; max-width:clamp(120px,18vw,160px); min-height:clamp(20px,3vw,26px); }
+.tao-ones.empty { border:clamp(2px,.4vw,3px) dashed var(--gray-l); border-radius:clamp(8px,1.5vw,12px); padding:clamp(5px,1vw,9px) clamp(13px,2.6vw,21px); display:flex; align-items:center; justify-content:center; color:var(--gray-l); min-width:clamp(76px,11vw,110px); }
+.tao-ones.empty::before { content:'0'; font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(32px,5vw,52px); }
+.bar10 { display:flex; flex-direction:column-reverse; gap:clamp(1px,.2vw,2px); padding:clamp(3px,.5vw,4px); background:linear-gradient(135deg,var(--amber-l) 0%,var(--amber) 100%); border:clamp(2px,.4vw,3px) solid var(--amber-d); border-radius:clamp(4px,.7vw,6px); animation:ka-bar-grow .5s ease both; }
+.bar10 i { display:block; width:clamp(16px,2.5vw,23px); height:clamp(8px,1.3vw,12px); background:rgba(255,255,255,.4); border:1px solid rgba(191,54,12,.3); border-radius:2px; }
+.cube { width:clamp(18px,2.7vw,24px); height:clamp(18px,2.7vw,24px); background:linear-gradient(135deg,var(--blue-l) 0%,var(--blue) 100%); border:clamp(2px,.4vw,3px) solid #0D47A1; border-radius:clamp(4px,.7vw,6px); animation:ka-cube-pop .4s ease both; }
+.tao-eq { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(26px,4.2vw,42px); color:var(--blue-d); align-self:center; }
+.bignum { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(48px,7.4vw,84px); color:var(--blue-d); background:var(--blue-p); padding:clamp(9px,1.8vw,15px) clamp(17px,3.2vw,27px); border-radius:clamp(14px,2.6vw,22px); border:clamp(3px,.5vw,4px) solid var(--blue-d); line-height:1; }
+.bignum.sm { font-size:clamp(36px,5.6vw,58px); padding:clamp(7px,1.4vw,11px) clamp(13px,2.4vw,20px); }
+.bignum.lg { font-size:clamp(64px,10vw,110px); }
+.bignum.amber { color:var(--amber-d); background:var(--amber-p); border-color:var(--amber); }
+.bignum.green { color:var(--green); background:var(--green-p); border-color:var(--green-l); }
+
+/* ───── 읽기 카드 ───── */
+.rw { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,.8vw,8px); }
+.rw-han, .rw-kor { font-size:clamp(28px,4.6vw,44px); color:var(--blue-d); padding:clamp(7px,1.4vw,12px) clamp(14px,2.6vw,24px); border-radius:clamp(14px,2.6vw,22px); border:clamp(3px,.5vw,4px) solid; font-family:var(--kedu-title); }
+.rw-han { background:var(--amber-p); border-color:var(--amber); }
+.rw-kor { background:var(--green-p); border-color:var(--green-l); }
+.rw-tag { font-size:var(--fs-label); color:var(--gray); }
+
+/* ───── 물건 묶음 그림 ───── */
+.goods { display:flex; gap:clamp(6px,1.3vw,11px); align-items:flex-end; justify-content:center; flex-wrap:wrap; padding:clamp(9px,1.8vw,15px); background:var(--blue-bg); border-radius:clamp(14px,2.6vw,22px); max-width:var(--mw-md); }
+.gbundle { display:flex; flex-direction:column; align-items:center; gap:clamp(3px,.6vw,5px); }
+.gbundle-e { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(1px,.3vw,3px); padding:clamp(3px,.6vw,5px); background:#fff; border:clamp(2px,.4vw,3px) solid var(--blue-l); border-radius:clamp(7px,1.3vw,11px); }
+.gbundle-e span { font-size:clamp(15px,2.4vw,22px); line-height:1.05; animation:ka-pop .3s ease both; }
+.gloose { display:flex; gap:clamp(2px,.4vw,4px); flex-wrap:wrap; max-width:clamp(90px,14vw,130px); padding:clamp(3px,.6vw,5px); border:clamp(2px,.4vw,3px) dashed var(--gray-l); border-radius:clamp(7px,1.3vw,11px); align-content:flex-end; }
+.gloose span { font-size:clamp(15px,2.4vw,22px); line-height:1.05; animation:ka-pop .3s ease both; }
+.glabel { font-size:var(--fs-label); color:var(--blue); }
+
+/* ───── 숫자 입력 (pad) ───── */
+.q-display { background:var(--blue-p); border-radius:clamp(14px,2.6vw,22px); padding:clamp(11px,2.2vw,19px) clamp(24px,4.4vw,40px); font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(38px,6vw,64px); color:var(--blue); min-width:clamp(130px,20vw,186px); text-align:center; line-height:1; border:clamp(3px,.5vw,4px) solid var(--blue-d); }
+.q-display.empty { color:#B5D8F0; }
+.q-display.correct { background:#C8E6C9; color:var(--green); border-color:var(--green); }
+.q-display.wrong { background:var(--red-p); color:var(--red); border-color:var(--red); animation:ka-shake .4s ease; }
+.q-display.active { border-color:var(--amber); background:var(--amber-p); color:var(--amber); }
+.q-pad { display:grid; grid-template-columns:repeat(6,1fr); gap:clamp(4px,.9vw,7px); max-width:clamp(320px,56vw,470px); }
+.q-pad-btn { background:#fff; border:clamp(2px,.4vw,3px) solid var(--blue-d); border-radius:clamp(9px,1.7vw,14px); padding:clamp(6px,1.3vw,11px); font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(18px,2.9vw,26px); color:var(--blue); cursor:pointer; transition:all .15s; }
+.q-pad-btn:hover { background:var(--blue-p); }
+.q-pad-btn:disabled { opacity:.4; cursor:not-allowed; }
+.q-pad-btn.clear { background:var(--amber-p); color:var(--amber); border-color:var(--amber); }
+.q-unit { font-size:var(--fs-heading); color:#333; }
+.two-cell { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,.8vw,7px); }
+.two-cell .q-display { font-size:clamp(32px,5vw,52px); min-width:clamp(96px,15vw,140px); padding:clamp(9px,1.8vw,15px) clamp(16px,3vw,26px); }
+
+/* ───── 4지선다 (mcq) ───── */
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.6vw,14px); max-width:var(--mw-md); width:100%; }
+.mcq-opts.one { grid-template-columns:1fr; }
+.mcq-opts.four { grid-template-columns:repeat(4,1fr); }
+.mcq-opt { background:#fff; border:clamp(3px,.5vw,4px) solid var(--blue-l); border-radius:clamp(13px,2.4vw,20px); padding:clamp(11px,2.2vw,18px) clamp(9px,1.8vw,15px); font-family:inherit; font-size:clamp(20px,3.2vw,30px); color:var(--blue-d); cursor:pointer; transition:all .18s; line-height:1.3; }
+.mcq-opt:hover:not(:disabled) { background:var(--blue-p); transform:translateY(-2px); }
+.mcq-opt:disabled { cursor:not-allowed; }
+.mcq-opt.correct { background:#C8E6C9; border-color:var(--green); color:var(--green); }
+.mcq-opt.wrong { background:var(--red-p); border-color:var(--red); color:var(--red); animation:ka-shake .4s ease; }
+.mcq-opt.dim { opacity:.4; }
+.mcq-opt .big { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(38px,6vw,64px); display:block; line-height:1.05; }
+.mcq-opt .sign { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(52px,8.4vw,92px); display:block; line-height:1; }
+
+/* ───── 매칭 (match) ───── */
+.match-slots { display:flex; gap:clamp(10px,2vw,19px); flex-wrap:wrap; justify-content:center; }
+.match-slot { min-width:clamp(128px,20vw,186px); height:clamp(56px,8.4vw,78px); border:clamp(3px,.5vw,4px) dashed var(--blue-l); border-radius:clamp(12px,2.2vw,18px); display:flex; align-items:center; justify-content:center; font-size:clamp(23px,3.7vw,33px); color:#B5D8F0; background:var(--blue-bg); transition:all .3s; padding:0 clamp(8px,1.5vw,13px); font-family:var(--kedu-title); }
+.match-slot .slot-tag { position:absolute; }
+.match-slot.filled { border-style:solid; color:var(--blue-d); }
+.match-slot.han { border-color:var(--amber); background:var(--amber-p); }
+.match-slot.kor { border-color:var(--green-l); background:var(--green-p); }
+.match-slot.correct { background:#C8E6C9; border-color:var(--green); color:var(--green); }
+.match-cards { display:flex; gap:clamp(7px,1.4vw,12px); flex-wrap:wrap; justify-content:center; }
+.match-card { font-size:clamp(22px,3.5vw,32px); padding:clamp(9px,1.8vw,15px) clamp(14px,2.6vw,22px); border-radius:clamp(12px,2.2vw,18px); border:clamp(3px,.5vw,4px) solid var(--blue-l); background:#fff; color:var(--blue-d); cursor:pointer; transition:all .2s; font-family:var(--kedu-title); }
+.match-card:hover:not(.used) { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,.1); }
+.match-card.used { opacity:.32; cursor:not-allowed; pointer-events:none; }
+.match-card.wrong { animation:ka-shake .4s ease; }
+.match-slot-label { font-size:var(--fs-label); color:var(--gray); text-align:center; }
+
+/* ───── ○✕ 판정 (judge) ───── */
+.jd-list { display:flex; flex-direction:column; gap:clamp(7px,1.4vw,12px); max-width:var(--mw-md); width:100%; }
+.jd-row { display:flex; gap:clamp(9px,1.8vw,15px); align-items:center; justify-content:space-between; background:#fff; border:clamp(2.5px,.45vw,3.5px) solid var(--gray-l); border-radius:clamp(13px,2.4vw,20px); padding:clamp(9px,1.8vw,15px) clamp(13px,2.4vw,20px); transition:all .2s; }
+.jd-row.correct { border-color:var(--green); background:var(--green-p); }
+.jd-row.wrong { border-color:var(--red); background:var(--red-p); animation:ka-shake .4s ease; }
+.jd-text { font-size:clamp(19px,3vw,28px); color:var(--blue-d); text-align:left; flex:1; line-height:1.35; }
+.jd-text b { font-family:'Nunito',sans-serif; font-weight:800; color:var(--amber-d); }
+.jd-btns { display:flex; gap:clamp(5px,1vw,9px); flex-shrink:0; }
+.jd-btn { background:#F4F4F8; border:clamp(2.5px,.45vw,3.5px) solid transparent; border-radius:clamp(10px,1.9vw,15px); padding:clamp(5px,1.1vw,9px) clamp(10px,1.9vw,16px); font-size:clamp(20px,3.2vw,30px); cursor:pointer; transition:all .15s; color:var(--gray); font-family:'Nunito',sans-serif; font-weight:800; }
+.jd-btn:hover:not(:disabled) { background:var(--blue-p); }
+.jd-btn.picked { background:var(--amber-p); border-color:var(--amber); color:var(--amber); }
+.jd-btn:disabled { cursor:not-allowed; }
+
+/* ───── 수 배열표 ───── */
+.numgrid { display:grid; grid-template-columns:repeat(10,1fr); gap:clamp(2px,.45vw,4px); max-width:var(--mw-lg); width:100%; }
+.numgrid b { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(12px,1.9vw,19px); color:var(--blue-d); background:#fff; border:clamp(1.5px,.28vw,2.5px) solid var(--blue-l); border-radius:clamp(5px,.9vw,8px); padding:clamp(4px,.85vw,8px) 0; text-align:center; line-height:1; }
+.numgrid b.hole { background:var(--amber-p); border-color:var(--amber); border-style:dashed; color:var(--amber); }
+.numgrid b.mark { background:var(--blue-p); }
+.numgrid b.hundred { background:var(--green-p); border-color:var(--green); color:var(--green); }
+.numgrid b.even { background:#FFE0E6; border-color:#F06292; color:#AD1457; }
+.numgrid b.odd { background:#DFF2FE; border-color:#4FC3F7; color:#01579B; }
+.numline { display:flex; gap:clamp(3px,.6vw,6px); align-items:center; justify-content:center; flex-wrap:wrap; }
+.numline b { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(20px,3.2vw,30px); color:var(--blue-d); background:#fff; border:clamp(2.5px,.45vw,3.5px) solid var(--blue-l); border-radius:clamp(8px,1.5vw,13px); padding:clamp(7px,1.4vw,12px) clamp(9px,1.8vw,15px); line-height:1; }
+.numline b.hole { background:var(--amber-p); border-color:var(--amber); border-style:dashed; color:var(--amber); }
+.numline b.on { background:var(--blue-p); }
+
+/* ───── 비교 무대 ───── */
+.cmp-wrap { display:flex; gap:clamp(11px,2.2vw,20px); align-items:center; justify-content:center; flex-wrap:wrap; }
+.cmp-side { display:flex; flex-direction:column; align-items:center; gap:clamp(5px,1vw,9px); background:#FAFAFA; border:clamp(3px,.5vw,4px) solid var(--gray-l); border-radius:clamp(14px,2.6vw,22px); padding:clamp(9px,1.8vw,15px) clamp(11px,2.2vw,18px); }
+.cmp-name { font-size:var(--fs-label); color:var(--gray); }
+.cmp-sign { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(50px,8vw,88px); color:var(--amber-d); line-height:1; }
+.cmp-sign.slot { color:#B5D8F0; }
+
+/* ───── 정리 ───── */
+.sum-card { background:#fff; border:clamp(3px,.5vw,4px) solid var(--green-l); border-radius:clamp(18px,3vw,28px); padding:clamp(15px,2.8vw,26px) clamp(19px,3.4vw,34px); display:flex; flex-direction:column; align-items:center; gap:clamp(9px,1.8vw,15px); max-width:var(--mw-md); }
+.sum-msg { font-size:var(--fs-body); color:var(--green); text-align:center; line-height:1.5; }
+.sum-msg strong { color:var(--amber-d); }
+.sum-cells { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(5px,1.1vw,9px); width:100%; }
+.sum-cell { background:var(--blue-bg); border-radius:clamp(8px,1.5vw,12px); padding:clamp(5px,1.1vw,9px) clamp(3px,.7vw,7px); display:flex; flex-direction:column; align-items:center; gap:clamp(2px,.4vw,4px); border:clamp(2px,.4vw,3px) solid var(--blue-l); }
+.sum-cell u { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(20px,3.3vw,30px); color:var(--blue-d); line-height:1; text-decoration:none; }
+.sum-cell i { font-size:clamp(9px,1.5vw,13px); color:var(--gray); font-family:'Nunito',sans-serif; font-weight:800; font-style:normal; }
+.wrap-msg { font-size:var(--fs-heading); color:var(--amber); font-family:var(--kedu-title); }
+.self-row { display:flex; gap:clamp(9px,1.8vw,15px); align-items:center; justify-content:space-between; width:100%; background:#fff; border:clamp(2.5px,.45vw,3.5px) solid var(--gray-l); border-radius:clamp(14px,2.6vw,22px); padding:clamp(9px,1.8vw,15px) clamp(13px,2.6vw,21px); }
+.self-label { font-size:var(--fs-body); color:var(--blue); text-align:left; }
+.self-btns { display:flex; gap:clamp(5px,1.1vw,9px); }
+.self-btn { background:#F4F4F8; border:clamp(2.5px,.45vw,3.5px) solid transparent; border-radius:clamp(10px,1.9vw,15px); padding:clamp(5px,1.1vw,9px); font-size:clamp(19px,3vw,27px); cursor:pointer; transition:all .15s; min-width:clamp(38px,6vw,54px); }
+.self-btn:hover { background:var(--blue-p); }
+.self-btn.picked { background:var(--amber-p); border-color:var(--amber); }
+.next-card { background:linear-gradient(135deg,var(--amber-p) 0%,#FFE082 100%); border:clamp(4px,.6vw,5px) solid var(--amber); border-radius:clamp(22px,3.6vw,32px); padding:clamp(22px,4vw,40px) clamp(26px,4.6vw,44px); display:flex; flex-direction:column; align-items:center; gap:clamp(13px,2.4vw,22px); max-width:var(--mw-md); }
+.next-emoji { font-size:var(--em-lg); animation:ka-popBig .7s ease both; }
+.next-msg { font-size:var(--fs-heading); color:var(--amber-d); text-align:center; line-height:1.4; font-family:var(--kedu-title); }
+.next-msg strong { color:var(--blue-d); }
+
+/* ───── 피드백 ───── */
+.q-fb { font-size:var(--fs-caption); min-height:1.5em; color:var(--green); text-align:center; line-height:1.4; }
+.q-fb.wrong { color:var(--red); }
+.mcq-hint { font-size:var(--fs-caption); color:var(--amber); min-height:1.3em; text-align:center; }
+.warncard { background:var(--red-p); border:clamp(3px,.5vw,4px) solid var(--red); border-radius:clamp(14px,2.6vw,22px); padding:clamp(11px,2.2vw,18px) clamp(15px,2.8vw,25px); font-size:var(--fs-caption); color:var(--red); text-align:center; line-height:1.45; max-width:var(--mw-md); }
+.warncard b { font-family:'Nunito',sans-serif; font-weight:800; }
+.okcard { background:var(--green-p); border:clamp(3px,.5vw,4px) solid var(--green); border-radius:clamp(14px,2.6vw,22px); padding:clamp(11px,2.2vw,18px) clamp(15px,2.8vw,25px); font-size:var(--fs-caption); color:var(--green); text-align:center; line-height:1.45; max-width:var(--mw-md); }
+.okcard b { font-family:'Nunito',sans-serif; font-weight:800; }
+.speech { background:#fff; border:clamp(2.5px,.45vw,3.5px) solid var(--blue-l); border-radius:clamp(14px,2.6vw,22px); padding:clamp(9px,1.8vw,15px) clamp(14px,2.6vw,22px); font-size:var(--fs-caption); color:var(--blue-d); text-align:center; line-height:1.4; max-width:var(--mw-md); }
+.speech strong { color:var(--amber-d); }
+
+/* ───── 십 배열판 (tenframe) ───── */
+.tenframe { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(3px,.6vw,5px); padding:clamp(6px,1.2vw,10px); background:#fff; border:clamp(3px,.5vw,4px) solid var(--blue-d); border-radius:clamp(10px,1.9vw,16px); }
+.tenframe.wide { grid-template-columns:repeat(10,1fr); }
+.tf-cell { width:clamp(24px,3.8vw,40px); height:clamp(24px,3.8vw,40px); border-radius:50%; border:clamp(2px,.35vw,3px) dashed var(--gray-l); background:#FAFAFA; }
+.tf-cell.a { background:radial-gradient(circle at 34% 30%,#FF8A9B,#E53950); border:clamp(2px,.35vw,3px) solid #AD1457; border-style:solid; animation:ka-cube-pop .35s ease both; }
+.tf-cell.b { background:radial-gradient(circle at 34% 30%,#7EC8F5,#1976D2); border:clamp(2px,.35vw,3px) solid #0D47A1; border-style:solid; animation:ka-cube-pop .35s ease both; }
+.tf-cell.g { background:radial-gradient(circle at 34% 30%,#A5D6A7,#2E7D32); border:clamp(2px,.35vw,3px) solid #1B5E20; border-style:solid; animation:ka-cube-pop .35s ease both; }
+.tf-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,.8vw,7px); }
+.tf-lb { font-size:var(--fs-label); color:var(--gray); }
+
+/* ───── 물건 줄 (dotrow) ───── */
+.dotrow { display:flex; gap:clamp(4px,.9vw,8px); flex-wrap:wrap; justify-content:center; align-items:center; padding:clamp(8px,1.6vw,14px); background:var(--blue-bg); border-radius:clamp(12px,2.2vw,18px); max-width:var(--mw-md); }
+.dotrow span { font-size:clamp(24px,3.9vw,40px); line-height:1.05; position:relative; animation:ka-pop .3s ease both; }
+.dotrow span.gone { opacity:.3; }
+.dotrow span.gone::after { content:'✕'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--red); font-family:'Nunito',sans-serif; font-weight:800; font-size:.8em; }
+
+/* ───── 연결 모형 사슬 (chain) ───── */
+.chain { display:flex; gap:clamp(2px,.4vw,3px); flex-wrap:wrap; justify-content:center; align-items:center; padding:clamp(7px,1.4vw,12px); background:#FAFAFA; border:clamp(3px,.5vw,4px) solid var(--gray-l); border-radius:clamp(12px,2.2vw,18px); max-width:var(--mw-md); }
+.chain i { display:block; width:clamp(20px,3.1vw,30px); height:clamp(20px,3.1vw,30px); border-radius:clamp(4px,.7vw,6px); border:clamp(2px,.35vw,3px) solid; animation:ka-cube-pop .35s ease both; }
+.chain i.a { background:linear-gradient(135deg,#FF8A9B,#E53950); border-color:#AD1457; }
+.chain i.b { background:linear-gradient(135deg,#7EC8F5,#1976D2); border-color:#0D47A1; }
+.chain i.c { background:linear-gradient(135deg,#A5D6A7,#2E7D32); border-color:#1B5E20; }
+.chain .gap { width:clamp(9px,1.7vw,15px); height:1px; background:none; border:none; animation:none; }
+
+/* ───── 물건 카드 (objcard) ───── */
+.objs { display:flex; gap:clamp(8px,1.6vw,14px); justify-content:center; flex-wrap:wrap; max-width:var(--mw-lg); }
+.obj { display:flex; flex-direction:column; align-items:center; gap:clamp(3px,.6vw,5px); background:#fff; border:clamp(3px,.5vw,4px) solid var(--blue-l); border-radius:clamp(12px,2.2vw,18px); padding:clamp(7px,1.4vw,12px) clamp(10px,2vw,17px); animation:ka-pop .35s ease both; }
+.obj em { font-size:clamp(30px,4.8vw,50px); font-style:normal; line-height:1.05; }
+.obj b { font-size:var(--fs-label); color:var(--gray); font-weight:400; }
+.obj.on { border-color:var(--amber); background:var(--amber-p); }
+.obj u { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(24px,3.8vw,38px); color:var(--blue-d); text-decoration:none; line-height:1; }
+
+
+/* ───── 반복 무늬 (pat) — 5단원 시그니처 ───── */
+/* 반복되는 부분을 한 줄로 그리고, 묶음 표시(pu)로 「반복되는 부분」을 눈에 보이게 한다 — 교과서 110 의 ○ 묶음. */
+.patwrap { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,.8vw,7px); max-width:var(--mw-lg); }
+.pat-lb { font-size:var(--fs-label); color:var(--gray); }
+.patrow { display:flex; gap:clamp(4px,.8vw,7px); align-items:flex-end; justify-content:center; flex-wrap:wrap; padding:clamp(7px,1.4vw,12px) clamp(9px,1.8vw,15px); background:#fff; border:clamp(3px,.5vw,4px) solid var(--blue-l); border-radius:clamp(12px,2.2vw,18px); }
+.pt { display:flex; align-items:center; justify-content:center; width:clamp(42px,6.6vw,70px); height:clamp(42px,6.6vw,70px); border-radius:clamp(8px,1.5vw,12px); background:#FAFAFA; border:clamp(2px,.35vw,3px) solid var(--gray-l); font-size:clamp(26px,4.2vw,44px); line-height:1; animation:ka-pop .3s ease both; }
+.patrow.sm .pt { width:clamp(34px,5.2vw,54px); height:clamp(34px,5.2vw,54px); font-size:clamp(20px,3.3vw,34px); }
+.pt.hole { border-style:dashed; border-color:var(--amber); background:var(--amber-p); color:var(--amber); font-family:'Nunito',sans-serif; font-weight:800; }
+.pt.on { border-color:var(--amber); box-shadow:0 0 0 3px var(--amber-p); }
+.pt.tile { border-color:rgba(0,0,0,.18); }
+.pt.tile.y{background:#FFD54F} .pt.tile.b{background:#42A5F5} .pt.tile.r{background:#EF5350} .pt.tile.g{background:#66BB6A} .pt.tile.p{background:#AB47BC} .pt.tile.o{background:#FFA726} .pt.tile.k{background:#37474F} .pt.tile.w{background:#fff} .pt.tile.pk{background:#F48FB1}
+.pt.shp { font-family:'Nunito',sans-serif; font-weight:800; }
+.pt.shp.b{color:#1976D2} .pt.shp.o{color:#FB8C00} .pt.shp.r{color:#E53935} .pt.shp.g{color:#43A047} .pt.shp.p{color:#8E24AA} .pt.shp.y{color:#F9A825} .pt.shp.k{color:#37474F} .pt.shp.pk{color:#EC407A}
+.pt.em.lg { font-size:clamp(34px,5.4vw,56px); } .pt.em.sm { font-size:clamp(18px,2.9vw,30px); }
+.pt.num { font-family:'Nunito',sans-serif; font-weight:800; color:var(--blue-d); background:var(--blue-bg); border-color:var(--blue-l); font-size:clamp(22px,3.5vw,36px); }
+.pt.gl { font-family:var(--kedu-title); color:var(--blue-d); font-size:clamp(24px,3.8vw,40px); }
+.pu { display:flex; gap:clamp(4px,.8vw,7px); padding:clamp(3px,.6vw,5px) clamp(4px,.8vw,7px) clamp(6px,1.1vw,9px); border-bottom:clamp(3px,.5vw,4px) solid var(--amber); border-radius:0 0 clamp(10px,1.8vw,14px) clamp(10px,1.8vw,14px); }
+.pu:not(.full) { border-bottom-style:dashed; }
+.mcq-opt .pt { display:inline-flex; width:clamp(30px,4.6vw,44px); height:clamp(30px,4.6vw,44px); font-size:clamp(18px,3vw,30px); margin:0 2px; vertical-align:middle; animation:none; }
+.match-card .pt, .jd-text .pt { display:inline-flex; width:clamp(24px,3.8vw,36px); height:clamp(24px,3.8vw,36px); font-size:clamp(15px,2.5vw,24px); margin:0 1px; vertical-align:middle; animation:none; }
+.match-slot-label .pt { display:inline-flex; width:clamp(22px,3.4vw,32px); height:clamp(22px,3.4vw,32px); font-size:clamp(13px,2.2vw,21px); margin:0 1px; vertical-align:middle; animation:none; }
+
+/* ───── 무늬 판 (patgrid) ───── */
+.patgrid { display:grid; grid-template-columns:repeat(var(--nc),1fr); gap:clamp(3px,.6vw,5px); padding:clamp(7px,1.4vw,12px); background:#fff; border:clamp(3px,.5vw,4px) solid var(--blue-l); border-radius:clamp(12px,2.2vw,18px); }
+.patgrid .pt { width:clamp(40px,6vw,62px); height:clamp(40px,6vw,62px); animation:none; }
+.patgrid.sm .pt { width:clamp(30px,4.6vw,48px); height:clamp(30px,4.6vw,48px); font-size:clamp(18px,3vw,30px); }
+
+/* ───── 수 배열표 (numtable) ───── */
+.numtable { display:grid; grid-template-columns:repeat(var(--nc),1fr); gap:clamp(2px,.45vw,4px); max-width:var(--mw-lg); width:100%; padding:clamp(5px,1vw,9px); background:#fff; border:clamp(3px,.5vw,4px) solid var(--blue-l); border-radius:clamp(12px,2.2vw,18px); }
+.numtable b { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(13px,2vw,20px); color:#333; background:#FAFAFA; border:clamp(1.5px,.28vw,2.5px) solid var(--gray-l); border-radius:clamp(5px,.9vw,8px); padding:clamp(5px,1vw,9px) 0; text-align:center; line-height:1; }
+.numtable.sm b { font-size:clamp(11px,1.7vw,17px); padding:clamp(3px,.7vw,6px) 0; }
+.numtable b.hole { background:var(--amber-p); border-color:var(--amber); border-style:dashed; color:var(--amber); }
+.numtable b.c1 { background:#BBDEFB; border-color:#42A5F5; color:#0D47A1; }
+.numtable b.c2 { background:#F8BBD0; border-color:#F06292; color:#880E4F; }
+.numtable b.c3 { background:#C8E6C9; border-color:#66BB6A; color:#1B5E20; }
+.numtable b.c4 { background:#FFE082; border-color:#FFB300; color:#E65100; }
+
+/* ───── 로봇 바닥 (floor) — 교과서 124~125 ───── */
+.floorwrap { display:flex; gap:clamp(6px,1.2vw,10px); align-items:center; justify-content:center; max-width:var(--mw-lg); }
+.floor-side { display:flex; flex-direction:column; justify-content:space-around; align-self:stretch; }
+.floor-side i { font-size:var(--fs-label); color:var(--gray); font-style:normal; white-space:nowrap; }
+.floor-note { font-size:var(--fs-label); color:var(--amber-d); text-align:center; line-height:1.25; background:var(--amber-p); border:2px solid var(--amber); border-radius:clamp(8px,1.5vw,12px); padding:clamp(4px,.8vw,7px); }
+.patgrid.floor { border-color:var(--gray-l); }
+
+/* ───── 규칙 말 카드 (rulecard) — 「☐부터 시작하여 ☐씩 커져요」(지도서 279) ───── */
+.rulecard { display:flex; align-items:center; gap:clamp(8px,1.6vw,14px); background:var(--amber-p); border:clamp(3px,.5vw,4px) solid var(--amber); border-radius:999px; padding:clamp(7px,1.4vw,12px) clamp(16px,3vw,26px); max-width:var(--mw-md); }
+.rulecard em { font-style:normal; font-size:clamp(24px,3.8vw,38px); }
+.rulecard span { font-size:var(--fs-caption); color:var(--amber-d); line-height:1.35; }
+.rulecard strong { color:var(--blue-d); }
+
+</style>
+<script src="/kedu_gate.js"></script>
+<script src="/kedu_boxbar.js"></script>
+</head>
+<body>
+<div class="ka">
+  <header class="ka-h">
+    <button class="ka-lb" onclick="goHub()">차시 목록</button>
+    <div class="ka-bar"><div id="bar" style="width:0%"></div></div>
+    <span class="ka-pg" id="pg">1 / 18</span>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </header>
+
+  <main class="ka-m">
+    <div class="slide active" data-stage="도입">
+      <div class="stage-badge">도입 · 흥미</div>
+      <h2 class="slide-title">화면 속 번호판을 보세요</h2>
+<div class="stage"><div class="objs"><div class="obj"><em>🚗</em><u>2727</u><b>자동차 번호판</b></div><div class="obj"><em>🚌</em><u>5678</u><b>버스 번호판</b></div><div class="obj"><em>🚏</em><u>3737</u><b>정류장 번호</b></div></div><p class="cap">가상 현실 체험 화면에 <strong>수</strong>가 잔뜩 있어요.<br>자동차 번호판에도 <strong>규칙</strong>이 숨어 있을까요?</p></div>
+
+    </div>
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입 · 목표</div>
+      <h2 class="slide-title">오늘의 목표</h2>
+<div class="stage narrow"><div class="goal-card"><div class="goal-emojis">🔢 🔍</div><p class="goal-title">수 배열에서<br>규칙을 찾아요!</p><ul class="goal-list"><li>되풀이되는 수를 찾아 빈칸을 채워요</li><li>몇씩 커지는지, 작아지는지 찾아요</li><li>나만의 수 규칙을 만들어요</li></ul></div></div>
+
+    </div>
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입 · 떠올리기</div>
+      <h2 class="slide-title">지난 시간에 이렇게 배웠어요</h2>
+<div class="stage"><div class="patwrap"><span class="pat-lb">네모, 별, 별</span><div class="patrow" data-pat="s:sq:r,s:star:y,s:star:y|s:sq:r,s:star:y,s:star:y,s:sq:r,s:star:y,s:star:y"><span class="pu full"><span class="pt shp r">■</span><span class="pt shp y">★</span><span class="pt shp y">★</span></span><span class="pu full"><span class="pt shp r">■</span><span class="pt shp y">★</span><span class="pt shp y">★</span></span></div></div><p class="cap">모양으로 <strong>반복되는 부분</strong>을 만들어 무늬를 꾸몄어요.<br>수도 똑같이 <strong>되풀이</strong>될 수 있어요!</p></div>
+
+    </div>
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 개념</div>
+      <h2 class="slide-title">되풀이되는 수를 찾아요</h2>
+<div class="stage"><div class="patwrap"><span class="pat-lb">기차 칸의 수</span><div class="numline numseq" data-seq="3,7,3,7,3,7,3,7" data-rule="rep:3,7"><b class="on">3</b><b class="on">7</b><b class="">3</b><b class="">7</b><b class="">3</b><b class="">7</b><b class="">3</b><b class="">7</b></div></div><div class="patwrap"><span class="pat-lb">번호판의 수</span><div class="numline numseq" data-seq="1,1,6,1,1,6,1,1,6" data-rule="rep:1,1,6"><b class="on">1</b><b class="on">1</b><b class="on">6</b><b class="">1</b><b class="">1</b><b class="">6</b><b class="">1</b><b class="">1</b><b class="">6</b></div></div><p class="cap"><strong>3, 7</strong>이 되풀이돼요. <strong>1, 1, 6</strong>이 되풀이돼요.<br>되풀이되는 부분은 <strong>처음부터</strong> 찾아요 — 「1, 6, 1」이 아니라 「1, 1, 6」!</p></div>
+
+    </div>
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 개념</div>
+      <h2 class="slide-title">규칙을 찾아 빈칸을 채워요</h2>
+<div class="stage"><div class="patwrap"><span class="pat-lb">4, 4, 9 가 되풀이돼요</span><div class="numline numseq" data-seq="4,4,9,4,4,9,4,4,9" data-rule="rep:4,4,9"><b class="">4</b><b class="">4</b><b class="">9</b><b class="">4</b><b class="">4</b><b class="">9</b><b class="hole">?</b><b class="">4</b><b class="hole">?</b></div></div><p class="cap">되풀이되는 부분에 ○ 를 하면서 찾으면<br>빈칸에 올 수를 <strong>미리 알 수</strong> 있어요.</p></div>
+
+    </div>
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 개념</div>
+      <h2 class="slide-title">몇씩 커지는지 찾아요</h2>
+<div class="stage"><div class="patwrap"><span class="pat-lb">풍선의 수 — 1씩 커져요</span><div class="numline numseq" data-seq="15,16,17,18,19,20" data-rule="step:1"><b class="on">15</b><b class="">16</b><b class="">17</b><b class="">18</b><b class="">19</b><b class="">20</b></div></div><div class="patwrap"><span class="pat-lb">꽃의 수 — 2씩 커져요</span><div class="numline numseq" data-seq="1,3,5,7,9,11,13" data-rule="step:2"><b class="on">1</b><b class="">3</b><b class="">5</b><b class="">7</b><b class="">9</b><b class="">11</b><b class="">13</b></div></div><p class="cap"><strong>15 부터 시작하여 1 씩</strong> 커져요. <strong>1 부터 시작하여 2 씩</strong> 커져요.<br>옆의 수와 얼마나 차이 나는지 <strong>뛰어 세기</strong>로 찾아요.</p></div>
+
+    </div>
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 개념</div>
+      <h2 class="slide-title">작아지는 규칙도 있어요</h2>
+<div class="stage"><div class="patwrap"><span class="pat-lb">의자의 수 — 2씩 작아져요</span><div class="numline numseq" data-seq="28,26,24,22,20,18" data-rule="step:-2"><b class="on">28</b><b class="">26</b><b class="">24</b><b class="">22</b><b class="">20</b><b class="">18</b></div></div><div class="rulecard"><em>🔁</em><span><strong>28</strong> 부터 시작하여 <strong>2</strong> 씩 작아져요</span></div><p class="cap">규칙을 말할 땐 <strong>「몇부터 시작하여 몇씩 커져요·작아져요」</strong>라고 말해요.</p></div>
+
+    </div>
+    <div class="slide" data-stage="기본문제" data-q-id="q8" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <h2 class="slide-title">기차 칸의 빈칸은?</h2>
+<div class="stage"><div class="patwrap"><div class="numline numseq" data-seq="3,7,3,7,3,7" data-rule="rep:3,7"><b class="">3</b><b class="">7</b><b class="">3</b><b class="">7</b><b class="">3</b><b class="hole">?</b></div></div><p class="cap"><strong>3, 7</strong>이 되풀이돼요. <strong>?</strong> 에 올 수를 고르세요.</p><div class="q-part" data-part="mcq" data-ok="3 다음엔 7!"><div class="mcq-opts four"><button class="mcq-opt" data-ok="1" data-miss="">7</button><button class="mcq-opt" data-ok="0" data-miss="3 다음엔 7 이 와요.">3</button><button class="mcq-opt" data-ok="0" data-miss="이 배열에는 3 과 7 만 있어요.">8</button><button class="mcq-opt" data-ok="0" data-miss="이 배열에는 3 과 7 만 있어요.">4</button></div></div></div>
+<p class="mcq-hint" data-hints='["3, 7, 3, 7 … 번갈아 와요.", "? 바로 앞이 3 이에요."]'></p><div class="q-fb"></div>
+    </div>
+    <div class="slide" data-stage="기본문제" data-q-id="q9" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <h2 class="slide-title">번호판의 빈칸은?</h2>
+<div class="stage"><div class="patwrap"><div class="numline numseq" data-seq="4,4,9,4,4,9,4,4,9" data-rule="rep:4,4,9"><b class="">4</b><b class="">4</b><b class="">9</b><b class="">4</b><b class="">4</b><b class="hole">?</b><b class="">4</b><b class="">4</b><b class="">9</b></div></div><p class="cap"><strong>4, 4, 9</strong>가 되풀이돼요. 빈칸의 수를 써 보세요.</p><div class="q-part" data-part="pad" data-answer="9" data-shown="1" data-ok="4, 4 다음엔 9!" data-miss="4 가 둘 온 다음엔 9 가 와요."><div class="row"><div class="q-display empty">?</div></div><div class="q-pad"><button class="q-pad-btn" data-v="1">1</button><button class="q-pad-btn" data-v="2">2</button><button class="q-pad-btn" data-v="3">3</button><button class="q-pad-btn" data-v="4">4</button><button class="q-pad-btn" data-v="5">5</button><button class="q-pad-btn" data-v="6">6</button><button class="q-pad-btn" data-v="7">7</button><button class="q-pad-btn" data-v="8">8</button><button class="q-pad-btn" data-v="9">9</button><button class="q-pad-btn" data-v="0">0</button><button class="q-pad-btn clear" data-v="c">지움</button><button class="q-pad-btn clear" data-v="ok">확인</button></div></div></div>
+<p class="mcq-hint" data-hints='["되풀이되는 부분은 4, 4, 9 예요.", "? 앞에 4 가 둘 있어요. 그다음은?"]'></p><div class="q-fb"></div>
+    </div>
+    <div class="slide" data-stage="기본문제" data-q-id="q10" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <h2 class="slide-title">풍선의 빈칸은?</h2>
+<div class="stage"><div class="patwrap"><div class="numline numseq" data-seq="15,16,17,18,19,20" data-rule="step:1"><b class="">15</b><b class="">16</b><b class="hole">?</b><b class="">18</b><b class="">19</b><b class="">20</b></div></div><p class="cap"><strong>15 부터 시작하여 1 씩</strong> 커져요. 빈칸의 수를 써 보세요.</p><div class="q-part" data-part="pad" data-answer="17" data-ok="16 다음은 17!" data-miss="16 보다 1 만큼 더 큰 수예요."><div class="row"><div class="q-display empty">?</div></div><div class="q-pad"><button class="q-pad-btn" data-v="1">1</button><button class="q-pad-btn" data-v="2">2</button><button class="q-pad-btn" data-v="3">3</button><button class="q-pad-btn" data-v="4">4</button><button class="q-pad-btn" data-v="5">5</button><button class="q-pad-btn" data-v="6">6</button><button class="q-pad-btn" data-v="7">7</button><button class="q-pad-btn" data-v="8">8</button><button class="q-pad-btn" data-v="9">9</button><button class="q-pad-btn" data-v="0">0</button><button class="q-pad-btn clear" data-v="c">지움</button><button class="q-pad-btn clear" data-v="ok">확인</button></div></div></div>
+<p class="mcq-hint" data-hints='["16 바로 다음 수예요.", "16 보다 1 만큼 크고 18 보다 1 만큼 작아요."]'></p><div class="q-fb"></div>
+    </div>
+    <div class="slide" data-stage="기본문제" data-q-id="q11" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <h2 class="slide-title">수 배열과 규칙을 이어 보세요</h2>
+<div class="stage"><div class="q-part" data-part="match" data-ok="몇씩 커지고 작아지는지 잘 이었어요!"><div class="match-slots"><div class="col"><span class="match-slot-label">10, 11, 12, 13</span><div class="match-slot a" data-k="a">?</div></div><div class="col"><span class="match-slot-label">2, 4, 6, 8</span><div class="match-slot b" data-k="b">?</div></div><div class="col"><span class="match-slot-label">20, 18, 16, 14</span><div class="match-slot c" data-k="c">?</div></div></div><div class="match-cards"><button class="match-card" data-k="a" data-ok="1" data-miss="">10 부터 1 씩 커져요</button><button class="match-card" data-k="b" data-ok="1" data-miss="">2 부터 2 씩 커져요</button><button class="match-card" data-k="c" data-ok="1" data-miss="">20 부터 2 씩 작아져요</button><button class="match-card" data-k="a" data-ok="0" data-miss="10, 11, 12 는 1 씩 커져요.">10 부터 2 씩 커져요</button></div></div></div>
+<p class="mcq-hint" data-hints='["옆의 수와 얼마나 차이 나는지 보세요.", "수가 커지는지 작아지는지도 보세요."]'></p><div class="q-fb"></div>
+    </div>
+    <div class="slide" data-stage="응용문제" data-q-id="q12" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <h2 class="slide-title">빈칸 두 개는?</h2>
+<div class="stage"><div class="patwrap"><div class="numline numseq" data-seq="1,1,6,1,1,6,1,1" data-rule="rep:1,1,6"><b class="">1</b><b class="">1</b><b class="">6</b><b class="">1</b><b class="">1</b><b class="hole">?</b><b class="hole">?</b><b class="">1</b></div></div><p class="cap"><strong>1, 1, 6</strong>이 되풀이돼요. 빈칸 두 개의 수를 <strong>순서대로</strong> 써 보세요.</p><div class="q-part" data-part="two" data-answer-a="6" data-answer-b="1" data-ok="1, 1 다음엔 6, 그다음엔 다시 1!" data-miss="되풀이되는 부분 1, 1, 6 을 처음부터 짚어 보세요."><div class="row"><div class="two-cell"><span class="tao-lb">앞 빈칸</span><div class="q-display empty" data-cell="a">?</div></div><span class="q-unit"></span><div class="two-cell"><span class="tao-lb">뒤 빈칸</span><div class="q-display empty" data-cell="b">?</div></div><span class="q-unit"></span></div><div class="q-pad"><button class="q-pad-btn" data-v="1">1</button><button class="q-pad-btn" data-v="2">2</button><button class="q-pad-btn" data-v="3">3</button><button class="q-pad-btn" data-v="4">4</button><button class="q-pad-btn" data-v="5">5</button><button class="q-pad-btn" data-v="6">6</button><button class="q-pad-btn" data-v="7">7</button><button class="q-pad-btn" data-v="8">8</button><button class="q-pad-btn" data-v="9">9</button><button class="q-pad-btn" data-v="0">0</button><button class="q-pad-btn clear" data-v="c">지움</button><button class="q-pad-btn clear" data-v="ok">확인</button></div></div></div>
+<p class="mcq-hint" data-hints='["1, 1, 6 을 처음부터 되풀이해 짚어 보세요.", "앞 빈칸 앞에 1 이 둘 있어요."]'></p><div class="q-fb"></div>
+    </div>
+    <div class="slide" data-stage="응용문제" data-q-id="q13" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <h2 class="slide-title">의자의 빈칸은?</h2>
+<div class="stage"><div class="patwrap"><div class="numline numseq" data-seq="28,26,24,22,20,18" data-rule="step:-2"><b class="">28</b><b class="">26</b><b class="">24</b><b class="hole">?</b><b class="">20</b><b class="">18</b></div></div><p class="cap"><strong>28 부터 시작하여 2 씩</strong> 작아져요. 빈칸의 수를 써 보세요.</p><div class="q-part" data-part="pad" data-answer="22" data-ok="24 보다 2 만큼 작은 22!" data-miss="24 보다 2 만큼 작은 수예요."><div class="row"><div class="q-display empty">?</div></div><div class="q-pad"><button class="q-pad-btn" data-v="1">1</button><button class="q-pad-btn" data-v="2">2</button><button class="q-pad-btn" data-v="3">3</button><button class="q-pad-btn" data-v="4">4</button><button class="q-pad-btn" data-v="5">5</button><button class="q-pad-btn" data-v="6">6</button><button class="q-pad-btn" data-v="7">7</button><button class="q-pad-btn" data-v="8">8</button><button class="q-pad-btn" data-v="9">9</button><button class="q-pad-btn" data-v="0">0</button><button class="q-pad-btn clear" data-v="c">지움</button><button class="q-pad-btn clear" data-v="ok">확인</button></div></div></div>
+<p class="mcq-hint" data-hints='["24 에서 2 만큼 거꾸로 세어 보세요.", "24 보다 2 작고 20 보다 2 커요."]'></p><div class="q-fb"></div>
+    </div>
+    <div class="slide" data-stage="응용문제" data-q-id="q14" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <h2 class="slide-title">규칙을 바르게 말했나요?</h2>
+<div class="stage"><div class="patwrap"><div class="numline numseq" data-seq="1,1,6,1,1,6,1,1,6" data-rule="rep:1,1,6"><b class="">1</b><b class="">1</b><b class="">6</b><b class="">1</b><b class="">1</b><b class="">6</b><b class="">1</b><b class="">1</b><b class="">6</b></div></div><div class="q-part" data-part="judge" data-ok="되풀이되는 부분을 바르게 보았어요!"><div class="jd-list"><div class="jd-row" data-ok="o" data-miss="처음부터 1, 1, 6 이 되풀이돼요."><span class="jd-text"><b>1, 1, 6</b>이 되풀이돼요.</span><span class="jd-btns"><button class="jd-btn" data-p="o">○</button><button class="jd-btn" data-p="x">✕</button></span></div><div class="jd-row" data-ok="x" data-miss="1 다음이 또 1 이니 커지는 규칙이 아니에요."><span class="jd-text"><b>1 부터 시작하여 1 씩</b> 커져요.</span><span class="jd-btns"><button class="jd-btn" data-p="o">○</button><button class="jd-btn" data-p="x">✕</button></span></div><div class="jd-row" data-ok="x" data-miss="다른 수라도 되풀이되면 규칙이에요."><span class="jd-text">같은 수만 있어야 규칙이에요.</span><span class="jd-btns"><button class="jd-btn" data-p="o">○</button><button class="jd-btn" data-p="x">✕</button></span></div></div></div></div>
+<p class="mcq-hint" data-hints='["수가 커지는지, 되풀이되는지 보세요.", "1, 1, 6 이 몇 번 나오나요?"]'></p><div class="q-fb"></div>
+    </div>
+    <div class="slide" data-stage="응용문제" data-q-id="q15" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <h2 class="slide-title">내가 만든 규칙의 빈칸은?</h2>
+<div class="stage"><div class="patwrap"><div class="numline numseq" data-seq="5,7,7,5,7,7,5,7,7" data-rule="rep:5,7,7"><b class="">5</b><b class="">7</b><b class="">7</b><b class="">5</b><b class="">7</b><b class="">7</b><b class="hole">?</b><b class="">7</b><b class="">7</b></div></div><div class="rulecard"><em>🧒</em><span>나는 <strong>5, 7, 7</strong> 이 되풀이되는 규칙을 만들었어</span></div><p class="cap">친구가 말한 규칙을 듣고 <strong>빈칸</strong>의 수를 써 보세요.</p><div class="q-part" data-part="pad" data-answer="5" data-shown="1" data-ok="7, 7 다음엔 다시 5!" data-miss="7 이 둘 온 다음엔 5 가 와요."><div class="row"><div class="q-display empty">?</div></div><div class="q-pad"><button class="q-pad-btn" data-v="1">1</button><button class="q-pad-btn" data-v="2">2</button><button class="q-pad-btn" data-v="3">3</button><button class="q-pad-btn" data-v="4">4</button><button class="q-pad-btn" data-v="5">5</button><button class="q-pad-btn" data-v="6">6</button><button class="q-pad-btn" data-v="7">7</button><button class="q-pad-btn" data-v="8">8</button><button class="q-pad-btn" data-v="9">9</button><button class="q-pad-btn" data-v="0">0</button><button class="q-pad-btn clear" data-v="c">지움</button><button class="q-pad-btn clear" data-v="ok">확인</button></div></div></div>
+<p class="mcq-hint" data-hints='["되풀이되는 부분은 5, 7, 7 이에요.", "? 앞에 7 이 둘 있어요. 그다음은?"]'></p><div class="q-fb"></div>
+    </div>
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리 · 배운 내용</div>
+      <h2 class="slide-title">오늘 배운 내용</h2>
+<div class="stage"><div class="sum-card"><p class="sum-msg">수도 <strong>되풀이</strong>될 수 있고, <strong>몇씩 커지거나 작아질</strong> 수 있어요.<br>규칙은 「<strong>몇부터 시작하여 몇씩</strong>」이라고 말해요.</p><div class="patwrap"><div class="numline numseq" data-seq="1,3,5,7" data-rule="step:2"><b class="">1</b><b class="">3</b><b class="">5</b><b class="">7</b></div></div></div></div>
+
+    </div>
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리 · 자기 평가</div>
+      <h2 class="slide-title">오늘 어땠나요?</h2>
+<div class="stage narrow"><p class="wrap-msg" id="wrap-msg">잘했어요!</p><div class="self-row"><span class="self-label">되풀이되는 수를 찾을 수 있나요?</span><span class="self-btns"><button class="self-btn">😀</button><button class="self-btn">🙂</button><button class="self-btn">🤔</button></span></div><div class="self-row"><span class="self-label">몇씩 커지는지 말할 수 있나요?</span><span class="self-btns"><button class="self-btn">😀</button><button class="self-btn">🙂</button><button class="self-btn">🤔</button></span></div><div class="self-row"><span class="self-label">오늘 공부가 즐거웠나요?</span><span class="self-btns"><button class="self-btn">😀</button><button class="self-btn">🙂</button><button class="self-btn">🤔</button></span></div></div>
+
+    </div>
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리 · 예고</div>
+      <h2 class="slide-title">다음 시간엔요…</h2>
+<div class="next-card"><div class="next-emoji">🗄️</div><p class="next-msg">신발장 번호처럼 <strong>수 배열표</strong>에서 규칙을 찾아요.<br>가로, 세로, 비스듬히 어떤 규칙이 있을까요?</p></div>
+
+    </div>
+  </main>
+
+  <footer class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next" id="next" onclick="goNext()">다음 →</button>
+  </footer>
+</div>
+
+<script>
+const STORAGE_KEY = 'kedu_progress_g1_2_math_u5_l05';
+
+// ═══════════ 상태 ═══════════
+const TOTAL = 18;
+let cur = 0, score = 0, muted = false, qState = {};
+const startedAt = Date.now();
+const QIDS = ['q8','q9','q10','q11','q12','q13','q14','q15'];
+
+function getQState(qid){ if(!qState[qid]) qState[qid]={solved:false,attempts:0,wrongCount:0,hintLevel:0}; return qState[qid]; }
+function currentSlide(){ return document.querySelectorAll('.slide')[cur]; }
+function currentQId(){ const s=currentSlide(); return s?s.dataset.qId:null; }
+
+function updateUI(){
+  document.querySelectorAll('.slide').forEach((s,i)=>s.classList.toggle('active', i===cur));
+  document.getElementById('pg').textContent = (cur+1)+' / '+TOTAL;
+  document.getElementById('bar').style.width = ((cur+1)/TOTAL*100)+'%';
+  document.getElementById('prev').disabled = cur===0;
+  const qid = currentQId(), hintBtn = document.getElementById('hint');
+  if(qid){ const st=getQState(qid); hintBtn.disabled = st.solved || st.hintLevel>=2; }
+  else hintBtn.disabled = true;
+  const nb = document.getElementById('next');
+  if(cur===TOTAL-1){ nb.textContent='마치기 →'; saveProgress(true); } else nb.textContent='다음 →';
+  const wm = document.getElementById('wrap-msg');
+  if(wm && cur===15) wm.textContent = wrapMsg(score);
+}
+function wrapMsg(s){ if(s>=100) return '완벽해요!'; if(s>=80) return '정말 잘했어요!'; if(s>=60) return '잘했어요!'; return '다시 해도 좋아요!'; }
+function goNext(){ if(cur<TOTAL-1){ cur++; saveProgress(false); updateUI(); } }
+function goPrev(){ if(cur>0){ cur--; updateUI(); } }
+function goHub(){ saveProgress(false); location.href='../index.html'; }
+function toggleMute(){ muted=!muted; document.getElementById('mute').textContent = muted?'🔇':'🔊'; }
+function addScore(n){ score+=n; document.getElementById('score').textContent='⭐ '+score; }
+function showHint(){
+  const qid=currentQId(); if(!qid) return;
+  const st=getQState(qid); if(st.solved||st.hintLevel>=2) return;
+  const el=currentSlide().querySelector('.mcq-hint'); if(!el) return;
+  const hints=JSON.parse(el.dataset.hints||'[]');
+  st.hintLevel++; el.textContent='💡 '+hints[st.hintLevel-1];
+  document.getElementById('hint').disabled = st.hintLevel>=2;
+}
+function pointsForQ(qid){
+  const s=document.querySelector('[data-q-id="'+qid+'"]');
+  const base=parseInt(s.dataset.qPoints||'0',10), st=getQState(qid);
+  if(st.hintLevel===2) return Math.max(0,base-5);
+  if(st.hintLevel===1) return Math.max(0,base-2);
+  return base;
+}
+function solveQ(slide, qid, fbEl, okMsg){
+  const st=getQState(qid);
+  if(st.solved) return;
+  st.solved=true;
+  addScore(pointsForQ(qid));
+  if(fbEl){ fbEl.classList.remove('wrong'); fbEl.innerHTML='⭕ '+(okMsg||'맞았어요!'); }
+  document.getElementById('hint').disabled=true;
+  document.getElementById('next').classList.add('hl');
+  saveProgress(false);
+}
+function missQ(qid, fbEl, msg){
+  const st=getQState(qid); st.attempts++; st.wrongCount++;
+  if(fbEl){ fbEl.classList.add('wrong'); fbEl.innerHTML='❌ '+(msg||'다시 한번 볼까요?'); }
+}
+
+// ═══════════ 부품 1 — 숫자 입력 (pad) ═══════════
+function setupPad(part){
+  const slide=part.closest('.slide'), qid=slide.dataset.qId;
+  const ans=parseInt(part.dataset.answer,10);
+  const maxLen=(part.dataset.maxlen? parseInt(part.dataset.maxlen,10):String(ans).length);
+  const disp=part.querySelector('.q-display'), fb=slide.querySelector('.q-fb');
+  const okMsg=part.dataset.ok||'', missMsg=part.dataset.miss||'';
+  let buf='';
+  function render(){ disp.textContent = buf===''?'?':buf; disp.classList.toggle('empty', buf===''); }
+  function check(){
+    if(buf==='') return;
+    if(parseInt(buf,10)===ans){
+      disp.classList.remove('wrong'); disp.classList.add('correct');
+      part.querySelectorAll('.q-pad-btn').forEach(b=>b.disabled=true);
+      solveQ(slide,qid,fb,okMsg);
+    } else {
+      disp.classList.add('wrong');
+      missQ(qid,fb,missMsg);
+      setTimeout(()=>{ disp.classList.remove('wrong'); buf=''; render(); }, 700);
+    }
+  }
+  part.querySelectorAll('.q-pad-btn').forEach(b=>{
+    b.addEventListener('click',()=>{
+      if(getQState(qid).solved) return;
+      const v=b.dataset.v;
+      if(v==='c'){ buf=''; render(); return; }
+      if(v==='ok'){ check(); return; }
+      if(buf.length<maxLen){ buf+=v; render(); }
+      if(buf.length===maxLen) setTimeout(check,220);
+    });
+  });
+  render();
+}
+
+// ═══════════ 부품 2 — 묶음·낱개 두 칸 입력 (two) ═══════════
+function setupTwo(part){
+  const slide=part.closest('.slide'), qid=slide.dataset.qId;
+  const a=parseInt(part.dataset.answerA,10), b=parseInt(part.dataset.answerB,10);
+  const dA=part.querySelector('[data-cell="a"]'), dB=part.querySelector('[data-cell="b"]');
+  const fb=slide.querySelector('.q-fb');
+  const okMsg=part.dataset.ok||'', missMsg=part.dataset.miss||'';
+  let vA='', vB='', active='a';
+  function render(){
+    dA.textContent = vA===''?'?':vA; dA.classList.toggle('empty', vA==='');
+    dB.textContent = vB===''?'?':vB; dB.classList.toggle('empty', vB==='');
+    dA.classList.toggle('active', active==='a' && !getQState(qid).solved);
+    dB.classList.toggle('active', active==='b' && !getQState(qid).solved);
+  }
+  function check(){
+    if(vA===''||vB==='') return;
+    if(parseInt(vA,10)===a && parseInt(vB,10)===b){
+      dA.classList.remove('active','wrong'); dB.classList.remove('active','wrong');
+      dA.classList.add('correct'); dB.classList.add('correct');
+      part.querySelectorAll('.q-pad-btn').forEach(x=>x.disabled=true);
+      solveQ(slide,qid,fb,okMsg);
+    } else {
+      dA.classList.add('wrong'); dB.classList.add('wrong');
+      missQ(qid,fb,missMsg);
+      setTimeout(()=>{ dA.classList.remove('wrong'); dB.classList.remove('wrong'); vA=''; vB=''; active='a'; render(); }, 800);
+    }
+  }
+  dA.addEventListener('click',()=>{ if(!getQState(qid).solved){ active='a'; render(); } });
+  dB.addEventListener('click',()=>{ if(!getQState(qid).solved){ active='b'; render(); } });
+  part.querySelectorAll('.q-pad-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      if(getQState(qid).solved) return;
+      const v=btn.dataset.v;
+      if(v==='c'){ vA=''; vB=''; active='a'; render(); return; }
+      if(v==='ok'){ check(); return; }
+      if(active==='a'){ vA=v; active='b'; } else { vB=v; }
+      render();
+      if(vA!==''&&vB!=='') setTimeout(check,240);
+    });
+  });
+  render();
+}
+
+// ═══════════ 부품 3 — 4지선다 (mcq) ═══════════
+function setupMcq(part){
+  const slide=part.closest('.slide'), qid=slide.dataset.qId;
+  const fb=slide.querySelector('.q-fb');
+  const okMsg=part.dataset.ok||'';
+  part.querySelectorAll('.mcq-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      if(getQState(qid).solved) return;
+      if(btn.dataset.ok==='1'){
+        btn.classList.add('correct');
+        part.querySelectorAll('.mcq-opt').forEach(o=>{ o.disabled=true; if(o!==btn) o.classList.add('dim'); });
+        solveQ(slide,qid,fb,okMsg);
+      } else {
+        btn.classList.add('wrong');
+        missQ(qid,fb,btn.dataset.miss||'');
+        setTimeout(()=>btn.classList.remove('wrong'),600);
+      }
+    });
+  });
+}
+
+// ═══════════ 부품 4 — 매칭 (match) ═══════════
+function setupMatch(part){
+  const slide=part.closest('.slide'), qid=slide.dataset.qId;
+  const fb=slide.querySelector('.q-fb');
+  const okMsg=part.dataset.ok||'';
+  const need=part.querySelectorAll('.match-slot').length;
+  let done=0;
+  part.querySelectorAll('.match-card').forEach(card=>{
+    card.addEventListener('click',()=>{
+      if(getQState(qid).solved) return;
+      const k=card.dataset.k;
+      const slot=part.querySelector('.match-slot[data-k="'+k+'"]:not(.filled)');
+      if(slot && card.dataset.ok==='1'){
+        slot.textContent=card.textContent;
+        slot.classList.add('filled','correct');
+        card.classList.add('used');
+        done++;
+        if(done>=need) solveQ(slide,qid,fb,okMsg);
+      } else {
+        card.classList.add('wrong');
+        missQ(qid,fb,card.dataset.miss||'');
+        setTimeout(()=>card.classList.remove('wrong'),600);
+      }
+    });
+  });
+}
+
+// ═══════════ 부품 5 — ○✕ 판정 (judge) ═══════════
+function setupJudge(part){
+  const slide=part.closest('.slide'), qid=slide.dataset.qId;
+  const fb=slide.querySelector('.q-fb');
+  const okMsg=part.dataset.ok||'';
+  const rows=[...part.querySelectorAll('.jd-row')];
+  let done=0;
+  rows.forEach(row=>{
+    row.querySelectorAll('.jd-btn').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        if(getQState(qid).solved || row.dataset.done==='1') return;
+        const pick=btn.dataset.p, want=row.dataset.ok;
+        if(pick===want){
+          row.dataset.done='1';
+          row.classList.add('correct');
+          btn.classList.add('picked');
+          row.querySelectorAll('.jd-btn').forEach(b=>b.disabled=true);
+          done++;
+          if(done>=rows.length) solveQ(slide,qid,fb,okMsg);
+        } else {
+          row.classList.add('wrong');
+          missQ(qid,fb,row.dataset.miss||'');
+          setTimeout(()=>row.classList.remove('wrong'),600);
+        }
+      });
+    });
+  });
+}
+
+// ═══════════ 자기 평가 ═══════════
+function setupSelf(){
+  document.querySelectorAll('.self-row').forEach(row=>{
+    row.querySelectorAll('.self-btn').forEach(b=>{
+      b.addEventListener('click',()=>{
+        row.querySelectorAll('.self-btn').forEach(x=>x.classList.remove('picked'));
+        b.classList.add('picked');
+      });
+    });
+  });
+}
+
+// ═══════════ 진도 저장 (차시운영 §4) ═══════════
+function saveProgress(completed){
+  const wrongArr=[], hintArr=[];
+  QIDS.forEach(qid=>{ const st=getQState(qid); wrongArr.push(st.wrongCount); hintArr.push(st.hintLevel); });
+  const prev=loadProgress();
+  const data={
+    score:score, max_score:100, completed:completed,
+    completed_at: completed? new Date().toISOString() : (prev?prev.completed_at:null),
+    first_attempt_score: prev && prev.first_attempt_score!=null ? prev.first_attempt_score : (completed?score:null),
+    attempt_count: prev ? (prev.attempt_count||1) : 1,
+    hint_used:hintArr, wrong_count:wrongArr,
+    duration_sec: Math.floor((Date.now()-startedAt)/1000) + (prev?(prev.duration_sec||0):0),
+    last_slide: cur+1
+  };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e){}
+}
+function loadProgress(){ try { const r=localStorage.getItem(STORAGE_KEY); return r?JSON.parse(r):null; } catch(e){ return null; } }
+
+// ═══════════ 기동 ═══════════
+document.querySelectorAll('.q-part').forEach(p=>{
+  const k=p.dataset.part;
+  if(k==='pad') setupPad(p);
+  else if(k==='two') setupTwo(p);
+  else if(k==='mcq') setupMcq(p);
+  else if(k==='match') setupMatch(p);
+  else if(k==='judge') setupJudge(p);
+});
+setupSelf();
+document.querySelectorAll('.slide').forEach(s=>{
+  s.addEventListener('click',()=>{ document.getElementById('next').classList.remove('hl'); });
+});
+updateUI();
+
+</script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit.js"></script>
+</body>
+</html>

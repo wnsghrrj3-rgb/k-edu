@@ -435,6 +435,103 @@ window.KEDU_MAP["g1_2_math"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 5,
+   "name": "규칙 찾기",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g1_math_u5_l01",
+     "lessonId": "g1_2_math_u5_l01_v1",
+     "n": "1",
+     "title": "단원 도입 — 안전 체험관에서 규칙을 찾아요",
+     "sub": null,
+     "url": "/grade1/semester2/math/5단원_규칙찾기/g1_math_u5_l01_단원도입.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u5_l02",
+     "lessonId": "g1_2_math_u5_l02_v1",
+     "n": "2",
+     "title": "규칙을 찾아볼까요",
+     "sub": null,
+     "url": "/grade1/semester2/math/5단원_규칙찾기/g1_math_u5_l02_규칙을찾아볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u5_l03",
+     "lessonId": "g1_2_math_u5_l03_v1",
+     "n": "3",
+     "title": "규칙을 만들어 볼까요 (1) — 물건으로 만들어요",
+     "sub": null,
+     "url": "/grade1/semester2/math/5단원_규칙찾기/g1_math_u5_l03_규칙을만들어볼까요_1.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u5_l04",
+     "lessonId": "g1_2_math_u5_l04_v1",
+     "n": "4",
+     "title": "규칙을 만들어 볼까요 (2) — 무늬로 만들어요",
+     "sub": null,
+     "url": "/grade1/semester2/math/5단원_규칙찾기/g1_math_u5_l04_규칙을만들어볼까요_2.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u5_l05",
+     "lessonId": "g1_2_math_u5_l05_v1",
+     "n": "5",
+     "title": "수 배열에서 규칙을 찾아볼까요",
+     "sub": null,
+     "url": "/grade1/semester2/math/5단원_규칙찾기/g1_math_u5_l05_수배열에서규칙을찾아볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u5_l06",
+     "lessonId": "g1_2_math_u5_l06_v1",
+     "n": "6",
+     "title": "수 배열표에서 규칙을 찾아볼까요",
+     "sub": null,
+     "url": "/grade1/semester2/math/5단원_규칙찾기/g1_math_u5_l06_수배열표에서규칙을찾아볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u5_l07",
+     "lessonId": "g1_2_math_u5_l07_v1",
+     "n": "7",
+     "title": "규칙을 여러 가지 방법으로 나타내 볼까요",
+     "sub": null,
+     "url": "/grade1/semester2/math/5단원_규칙찾기/g1_math_u5_l07_규칙을여러가지방법으로나타내볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u5_l08",
+     "lessonId": "g1_2_math_u5_l08_v1",
+     "n": "8",
+     "title": "수학이랑 확인해요 (단원 평가)",
+     "sub": null,
+     "url": "/grade1/semester2/math/5단원_규칙찾기/g1_math_u5_l08_수학이랑확인해요_단원평가.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u5_l09",
+     "lessonId": "g1_2_math_u5_l09_v1",
+     "n": "9",
+     "title": "수학이랑 만들어요 — 로봇과 함께 바닥을 꾸며요",
+     "sub": null,
+     "url": "/grade1/semester2/math/5단원_규칙찾기/g1_math_u5_l09_수학이랑만들어요.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };
