@@ -16,8 +16,18 @@
   'use strict';
 
   function safeBottom(W, H) { const L = g.KMV_PROJECT.data.look; return L && L.cinemaBar && W > H ? Math.round((H - W / 2.39) / 2) : 0; }
-  /* 이 클립을 이 화면에 어떻게 채울지 (스마트 리프레임) — 화면비가 원본과 같으면 null */
-  function fillOf(c, W, H, src, t) { const RF = g.KMV_REFRAME; return RF && src ? RF.fill(c, W, H, src, g.KMV_PROJECT.srcFrame(c, t)) : null; }
+  /* 이 클립을 이 화면에 어떻게 채울지 (스마트 리프레임 + 흔들림 잡기) — 둘 다 없으면 null */
+  function fillOf(c, W, H, src, t) {
+    const RF = g.KMV_REFRAME, ST = g.KMV_STAB;
+    if (!src) return null;
+    const idx = g.KMV_PROJECT.srcFrame(c, t);
+    const f = RF ? RF.fill(c, W, H, src, idx) : null;
+    if (!ST || !c.stab) return f;
+    const o = ST.offset(src, c.stab, idx);                                  // 분석 전이면 null — 예전 그대로
+    if (!o) return f;
+    const base = f || (c.fill === 'none' ? {} : { cover: true, cx: 0.5, cy: 0.5 });
+    return Object.assign({}, base, { zoom: o.zoom, sx: o.sx, sy: o.sy });
+  }
   function black(ctx, W, H) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); }
 
   /* 이전 클립의 "핸들" 원본 프레임 — out 너머로 이어 가고, 원본 끝이면 마지막 프레임 */

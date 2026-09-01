@@ -925,7 +925,10 @@
     const SW = 96, SH = 54;
     const cv = new OffscreenCanvas(SW, SH), ctx = cv.getContext('2d', { willReadFrequently: true });
     const motion = new Float32Array(src.frames);
-    let prev = null, count = 0, err = null;
+    const ST = g.KMV_STAB;                                   // 흔들림 잡기 — 이 훑기에 얹는다(추가 디코드 0)
+    const shake = ST ? { x: new Float32Array(src.frames), y: new Float32Array(src.frames), ok: new Uint8Array(src.frames), cut: new Uint8Array(src.frames) } : null;
+    if (shake) src.shake = shake;
+    let prev = null, prevProf = null, count = 0, err = null;
     const pendingThumbs = [];
     const mkDec = () => new VideoDecoder({
       output: frame => {
@@ -937,6 +940,12 @@
         for (let i = 0, j = 0; i < d.length; i += 4, j++) cur[j] = (d[i] * 77 + d[i + 1] * 151 + d[i + 2] * 28) >> 8;
         if (prev) { let sum = 0; for (let j = 0; j < cur.length; j++) sum += Math.abs(cur[j] - prev[j]); motion[idx] = sum / cur.length / 255; }
         prev = cur;
+        if (shake) {
+          const pf = ST.profile(cur, SW, SH);
+          if (prevProf) { const e = ST.estimate(prevProf, pf); shake.x[idx] = e.dx; shake.y[idx] = e.dy; shake.ok[idx] = e.ok ? 1 : 0; }
+          if (motion[idx] > 0.10) shake.cut[idx] = 1;        // 장면 경계 — 여기서 궤적을 끊는다 (auto.sceneCuts 와 같은 문턱)
+          prevProf = pf;
+        }
         if (idx % src.thumbEvery === 0) {
           const k = idx / src.thumbEvery;
           const tc = new OffscreenCanvas(THUMB_W, THUMB_H), tctx = tc.getContext('2d');
@@ -962,7 +971,7 @@
           // 탐색(getFrame) 등 다른 디코더와 경쟁하다 죽을 수 있다 — 새 디코더로 키프레임부터 이어서
           if (++tries > 4) break;
           console.warn('[KMV media] analyze 디코더 재시작 ' + tries, err);
-          err = null; prev = null;
+          err = null; prev = null; prevProf = null;
           try { dec.close(); } catch (e) {}
           await new Promise(r => setTimeout(r, 300));               // 경쟁 상대가 지나가게 잠깐 양보
           dec = mkDec(); dec.configure(cfg);
@@ -987,19 +996,22 @@
 
   /* 원본(회전 포함)을 W×H 안에 비율 유지로 꽉 채워 그림 — 렌더·썸네일 공용 */
   /* fill = {cover:true, cx, cy} 면 화면을 꽉 채우도록 키우고(cover) 초점(cx,cy: 원본 0~1)이 가운데로 오게 민다.
+     fill.zoom(>1) 은 더 키워 여백을 만들고, fill.sx·sy(화면 크기 비율) 만큼 민다 — 흔들림 잡기가 쓴다.
      화면 밖으로 빈틈이 생기지 않도록 이동량은 잘린 만큼으로 한계를 둔다. 없으면 예전 그대로 레터박스(contain). */
   function drawFit(ctx, img, W, H, rot, iw, ih, fill) {
     iw = iw || img.displayWidth || img.width; ih = ih || img.displayHeight || img.height;
     const rotated = rot === 90 || rot === 270;
     const dw = rotated ? ih : iw, dh = rotated ? iw : ih;
     const cover = !!(fill && fill.cover);
-    const sc = cover ? Math.max(W / dw, H / dh) : Math.min(W / dw, H / dh);
+    const zoom = fill && fill.zoom > 1 ? fill.zoom : 1;
+    const sc = (cover ? Math.max(W / dw, H / dh) : Math.min(W / dw, H / dh)) * zoom;
     let px = 0, py = 0;
-    if (cover) {
+    if (cover || zoom > 1) {
       const ox = Math.max(0, dw * sc - W) / 2, oy = Math.max(0, dh * sc - H) / 2;
-      const cx = fill.cx == null ? 0.5 : fill.cx, cy = fill.cy == null ? 0.5 : fill.cy;
-      px = Math.max(-ox, Math.min(ox, (0.5 - cx) * dw * sc));
-      py = Math.max(-oy, Math.min(oy, (0.5 - cy) * dh * sc));
+      const cx = fill && fill.cx != null ? fill.cx : 0.5, cy = fill && fill.cy != null ? fill.cy : 0.5;
+      const shx = (fill && fill.sx ? fill.sx : 0) * W, shy = (fill && fill.sy ? fill.sy : 0) * H;
+      px = Math.max(-ox, Math.min(ox, (0.5 - cx) * dw * sc + shx));
+      py = Math.max(-oy, Math.min(oy, (0.5 - cy) * dh * sc + shy));
     }
     ctx.save();
     ctx.translate(W / 2 + px, H / 2 + py);

@@ -250,6 +250,8 @@
     const c = clip(id); if (!c || c.freeze || RAMP[ramp] == null || (c.ramp || 'none') === ramp) return;
     commit(); c.ramp = ramp === 'none' ? undefined : ramp; emit();
   }
+  /* 흔들림 잡기 — 없음 / 약하게(a) / 강하게(b). 보정 표는 분석이 남긴 흔들림 기록에서 KMV_STAB 이 만든다 */
+  function setStab(id, level) { const c = clip(id); if (!c || c.freeze) return; const v = level === 'a' || level === 'b' ? level : undefined; if ((c.stab || undefined) === v) return; commit(); c.stab = v; emit(); }
   function setDenoise(id, level) { const c = clip(id); if (!c || c.freeze) return; const v = level === 'light' || level === 'strong' ? level : undefined; if ((c.denoise || undefined) === v) return; commit(); c.denoise = v; emit(); }
   function setFill(id, v) { const c = clip(id); if (!c) return; const nv = FILLS.indexOf(v) > 0 ? v : undefined; if ((c.fill || undefined) === nv) return; commit(); c.fill = nv; emit(); }
   function setVol(clipId, vol) {
@@ -697,7 +699,7 @@
     get data() { return P; },
     on: fn => listeners.push(fn),
     media, clip, clipIndex, audioOf, clipAt, total, edges, srcFrame, clipDur, speedMap,
-    addMedia, removeMedia, addClip, removeClip, move, split, trim, trimToPlayhead, freeze, setSpeed, setRamp, setDenoise, setVol, audioTrim, relink,
+    addMedia, removeMedia, addClip, removeClip, move, split, trim, trimToPlayhead, freeze, setSpeed, setRamp, setDenoise, setStab, setVol, audioTrim, relink,
     setLook, setProjectLook, setKenburns, setFade, setTransition, setTheme,
     addS, setS, addManyS, subtitle, updateS, removeS, clearS, subtitleAt,
     part, addP, updateP, removeP, clearP, partsAt, partDefault,

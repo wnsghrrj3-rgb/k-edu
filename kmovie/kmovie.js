@@ -406,6 +406,7 @@
     let label = (c.freeze ? '❚❚ 정지 · ' : m.kind === 'image' ? '사진 · ' : '') + m.name;
     if (sp.badge) label = sp.badge + (c.ramp && c.ramp !== 'none' ? '↗' : '') + ' · ' + label;
     if (c.denoise) label = '🔇 ' + label;
+    if (c.stab) label = '◎ ' + label;
     ctx.fillStyle = selected ? GOLD : '#dfe6f3'; ctx.font = (c.freeze || sp.badge ? '700 ' : '600 ') + '11px Pretendard, sans-serif'; ctx.textBaseline = 'middle';
     ctx.fillText(label, vx0 + 6, y + band / 2 + 0.5, Math.max(10, vx1 - vx0 - 10));
     ctx.restore();
@@ -1217,6 +1218,7 @@
   [['none', '없음'], ['short', '짧게'], ['normal', '보통'], ['long', '길게']].forEach(([k, l]) => segBtn($('rampSeg'), k, l, () => { const c = selClip(); if (c) { stop(); P.setRamp(c.id, k); } }, '슬로·타임랩스로 부드럽게 들어가고 나오는 구간'));
   [['none', '없음'], ['light', '약하게'], ['strong', '강하게']].forEach(([k, l]) => segBtn($('denoiseSeg'), k, l, () => { const c = selClip(); if (c) { stop(); P.setDenoise(c.id, k); } }, '이 원본의 가장 조용한 구간을 잡음 지문으로 삼아 웅웅거림·히스를 줄여요'));
   // 클립 채우기 (스마트 리프레임) — 화면비가 원본과 다를 때만 보인다
+  [['none', '없음'], ['a', '약하게'], ['b', '강하게']].forEach(([k, l]) => segBtn($('stabSeg'), k, l, () => { const c = selClip(); if (c) { stop(); P.setStab(c.id, k); renderPreview(); } }, '손으로 든 카메라의 잔떨림을 줄여요 — 화면을 조금 키워 그만큼 반대로 밀어요'));
   [['auto', '자동'], ['center', '가운데'], ['a', ''], ['b', ''], ['none', '안 채움']].forEach(([k, l]) => segBtn($('fitSeg'), k, l, () => { const c = selClip(); if (c) { P.setFill(c.id, k); renderPreview(); } }, k === 'auto' ? '원본에서 볼거리가 몰린 쪽을 남기고 잘라요' : k === 'none' ? '자르지 않고 위아래(또는 좌우)에 검은 띠를 둬요' : ''));
   // 프로젝트 화면비
   P.ASPECTS.forEach(a => segBtn($('aspectSeg'), a.id, a.short, () => { if (P.setAspect(a.id)) { stop(); setRScale(1); refreshAspect(); renderPreview(); toast(a.label + ' · ' + a.w + '×' + a.h + ' 로 바꿨어요', 2200); } }, a.label + ' · ' + a.w + '×' + a.h));
@@ -1260,6 +1262,10 @@
     const rampOK = !c.freeze && m.kind === 'video' && c.speed !== 'normal' && c.speed !== 'hit';
     $('rowRamp').classList.toggle('hidden', !rampOK); setOn($('rampSeg'), c.ramp || 'none');
     $('rowDenoise').classList.toggle('hidden', c.freeze || m.kind !== 'video' || !m.audio); setOn($('denoiseSeg'), c.denoise || 'none');
+    const stabOK = !c.freeze && m.kind === 'video';
+    $('rowStab').classList.toggle('hidden', !stabOK); setOn($('stabSeg'), c.stab || 'none');
+    const ssrc = stabOK ? M.get(c.media) : null;
+    $('stabNote').classList.toggle('hidden', !(stabOK && c.stab && (!ssrc || !ssrc.shake || !ssrc.analyzed)));
     refreshFillRow(c);
     $('rowFreeze').classList.toggle('hidden', !c.freeze); if (c.freeze) $('freezeSec').value = (c.dur / FPS).toFixed(1);
     $('rowVol').classList.toggle('hidden', !a); if (a) { $('vol').value = Math.round((a.vol == null ? 1 : a.vol) * 100); $('volV').textContent = $('vol').value + '%'; }
@@ -2009,7 +2015,7 @@
       if (!isAud) { const add = document.createElement('span'); add.className = 'add'; add.textContent = '＋'; add.title = '통째로 타임라인 끝에 붙이기'; add.onclick = ev => { ev.stopPropagation(); stop(); showStage('tl'); const c = P.addClip(m.id); select(c.id); setPH(c.at); toast(m.name + ' 을 끝에 붙였어요', 1500); }; el.appendChild(add);
         const pip = document.createElement('span'); pip.className = 'add'; pip.textContent = '⧉'; pip.title = '덧영상으로 — 플레이헤드 자리, 영상 위 작은 화면'; pip.onclick = ev => { ev.stopPropagation(); stop(); showStage('tl'); const o = P.addV2(m.id, ph); if (o) { selectV2(o.id); setPH(o.at); toast(m.name + ' 을 덧영상으로 놓았어요 — 오른쪽에서 위치·크기', 2200); } }; el.appendChild(pip); }
       const x = document.createElement('span'); x.className = 'x'; x.textContent = '✕'; x.title = '미디어 제거 (타임라인에서도 빠져요)';
-      x.onclick = ev => { ev.stopPropagation(); if (!confirm('"' + m.name + '" 을 지울까요? 타임라인의 클립도 함께 빠져요.')) return; stop(); if (srcCur && srcCur.media === m.id) { srcCur = null; srcMemo.delete(m.id); showStage('tl'); $('stageTabs').classList.add('hidden'); } P.removeMedia(m.id); M.remove(m.id); DB.delMedia(m.id); if (sel && !P.clip(sel)) select(null); if (selA2 && !P.a2(selA2)) selectA2(null); setPH(ph); refreshBin(); };
+      x.onclick = ev => { ev.stopPropagation(); if (!confirm('"' + m.name + '" 을 지울까요? 타임라인의 클립도 함께 빠져요.')) return; stop(); if (srcCur && srcCur.media === m.id) { srcCur = null; srcMemo.delete(m.id); showStage('tl'); $('stageTabs').classList.add('hidden'); } P.removeMedia(m.id); M.remove(m.id); DB.delMedia(m.id); if (window.KMV_STAB) KMV_STAB.forget(m.id); if (window.KMV_REFRAME) KMV_REFRAME.forget(m.id); if (sel && !P.clip(sel)) select(null); if (selA2 && !P.a2(selA2)) selectA2(null); setPH(ph); refreshBin(); };
       el.appendChild(x);
       if (isAud) el.onclick = () => { stop(); const a = P.addA2(m.id, ph); if (a) { selectA2(a.id); select(null); selectS(null); selectP(null); selectV2(null); setPH(a.at); toast(m.name + ' 을 ' + tc(a.at) + ' 에 놓았어요', 1500); } };
       else el.onclick = () => openSource(m.id);
