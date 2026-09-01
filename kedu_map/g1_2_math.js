@@ -15,7 +15,7 @@ window.KEDU_MAP["g1_2_math"] = {
    "lessons": [
     {
      "key": "g1_math_u1_l01",
-     "lessonId": "g1_math_u1_l01_v1",
+     "lessonId": "g1_2_math_u1_l01_v1",
      "n": "1",
      "title": "단원 도입 — 시장에 갔어요",
      "sub": null,
@@ -25,7 +25,7 @@ window.KEDU_MAP["g1_2_math"] = {
     },
     {
      "key": "g1_math_u1_l02",
-     "lessonId": "g1_math_u1_l02_v1",
+     "lessonId": "g1_2_math_u1_l02_v1",
      "n": "2",
      "title": "60, 70, 80, 90을 알아볼까요",
      "sub": null,
@@ -35,7 +35,7 @@ window.KEDU_MAP["g1_2_math"] = {
     },
     {
      "key": "g1_math_u1_l03",
-     "lessonId": "g1_math_u1_l03_v1",
+     "lessonId": "g1_2_math_u1_l03_v1",
      "n": "3",
      "title": "99까지의 수를 알아볼까요 (1) — 낱개가 늘어나요",
      "sub": null,
@@ -45,7 +45,7 @@ window.KEDU_MAP["g1_2_math"] = {
     },
     {
      "key": "g1_math_u1_l04",
-     "lessonId": "g1_math_u1_l04_v1",
+     "lessonId": "g1_2_math_u1_l04_v1",
      "n": "4",
      "title": "99까지의 수를 알아볼까요 (2) — 묶음이 늘어나요",
      "sub": null,
@@ -55,7 +55,7 @@ window.KEDU_MAP["g1_2_math"] = {
     },
     {
      "key": "g1_math_u1_l05",
-     "lessonId": "g1_math_u1_l05_v1",
+     "lessonId": "g1_2_math_u1_l05_v1",
      "n": "5",
      "title": "수를 넣어 이야기를 해 볼까요",
      "sub": null,
@@ -65,7 +65,7 @@ window.KEDU_MAP["g1_2_math"] = {
     },
     {
      "key": "g1_math_u1_l06",
-     "lessonId": "g1_math_u1_l06_v1",
+     "lessonId": "g1_2_math_u1_l06_v1",
      "n": "6",
      "title": "수의 순서를 알아볼까요",
      "sub": null,
@@ -75,7 +75,7 @@ window.KEDU_MAP["g1_2_math"] = {
     },
     {
      "key": "g1_math_u1_l07",
-     "lessonId": "g1_math_u1_l07_v1",
+     "lessonId": "g1_2_math_u1_l07_v1",
      "n": "7",
      "title": "수의 크기를 비교해 볼까요",
      "sub": null,
@@ -85,7 +85,7 @@ window.KEDU_MAP["g1_2_math"] = {
     },
     {
      "key": "g1_math_u1_l08",
-     "lessonId": "g1_math_u1_l08_v1",
+     "lessonId": "g1_2_math_u1_l08_v1",
      "n": "8",
      "title": "짝수와 홀수를 알아볼까요",
      "sub": null,
@@ -95,7 +95,7 @@ window.KEDU_MAP["g1_2_math"] = {
     },
     {
      "key": "g1_math_u1_l09",
-     "lessonId": "g1_math_u1_l09_v1",
+     "lessonId": "g1_2_math_u1_l09_v1",
      "n": "9",
      "title": "수학이랑 확인해요 (단원 평가)",
      "sub": null,
@@ -105,7 +105,7 @@ window.KEDU_MAP["g1_2_math"] = {
     },
     {
      "key": "g1_math_u1_l10",
-     "lessonId": "g1_math_u1_l10_v1",
+     "lessonId": "g1_2_math_u1_l10_v1",
      "n": "10",
      "title": "수학이랑 만들어요 — 나의 가게",
      "sub": null,
