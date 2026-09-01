@@ -956,9 +956,10 @@ async function loadDashboard(user){
   if(!teacher){
     const meta = (user && user.user_metadata) || {};
     if(meta.role === 'teacher' || meta.teacher_name){
-      const { error: healErr } = await db.from('teachers').insert({
-        user_id: user.id, email: user.email || '', name: meta.teacher_name || '선생님', school: meta.teacher_school || ''
-      });
+      const healRow = { user_id: user.id, email: user.email || '', name: meta.teacher_name || '선생님', school: meta.teacher_school || '' };
+      if(meta.teacher_school_id) healRow.school_id = meta.teacher_school_id; else if(meta.teacher_school) healRow.school_request = meta.teacher_school;
+      let { error: healErr } = await db.from('teachers').insert(healRow);
+      if(healErr && /school_id|school_request/.test(healErr.message || '')){ delete healRow.school_id; delete healRow.school_request; ({ error: healErr } = await db.from('teachers').insert(healRow)); }
       if(!healErr){
         const r2 = await db.from('teachers').select('*').eq('user_id', user.id).single();
         teacher = r2.data;

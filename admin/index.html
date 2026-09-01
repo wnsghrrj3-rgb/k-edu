@@ -294,10 +294,10 @@ details.fold .fold-body{padding-top:18px}
       <div class="table-scroll">
         <table>
           <thead><tr>
-            <th>이름</th><th>이메일</th><th>학급코드</th><th>학생</th><th>가입일</th><th>승인</th><th>권한</th>
+            <th>이름</th><th>이메일</th><th>학교</th><th>학급코드</th><th>학생</th><th>가입일</th><th>승인</th><th>권한</th>
           </tr></thead>
           <tbody id="teacher-body">
-            <tr><td colspan="7"><div class="empty-state">등록된 교사가 없어요.</div></td></tr>
+            <tr><td colspan="8"><div class="empty-state">등록된 교사가 없어요.</div></td></tr>
           </tbody>
         </table>
       </div>
@@ -967,6 +967,35 @@ async function togglePremium(id, checked){
 const APV_LABEL = { pending:'대기', auto:'자동승인', approved:'승인', rejected:'반려' };
 const APV_CLASS = { pending:'pending', auto:'free', approved:'free', rejected:'rejected' };
 
+
+// 학교 칸 — 지정됨 / 신청 글자 / 없음. 클릭하면 검색해 지정 (sql/setup_schools.sql admin_set_teacher_school)
+function schoolCell(t){
+  const set = t.school_id
+    ? `<span>${esc(t.school || '')}</span>`
+    : t.school_request
+      ? `<span style="color:var(--amber)" title="목록에 없어 직접 적은 학교">${esc(t.school_request)}</span> <span class="table-badge pending">미지정</span>`
+      : `<span style="color:var(--faint)">${esc(t.school || '—')}</span> <span class="table-badge rejected">미지정</span>`;
+  return `${set} <button class="apv-btn" style="padding:3px 8px;font-size:12px;margin-left:4px" onclick="pickSchool('${t.id}', this)">${t.school_id ? '바꾸기' : '지정'}</button>`;
+}
+async function pickSchool(teacherId, btn){
+  const q = prompt('학교 이름(두 글자 이상). 앞에 시·도를 붙이면 좁혀져요 — 예) 서울 금성');
+  if(!q) return;
+  const m = q.trim().match(/^(서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)\s+(.+)$/);
+  const OFFICE = {서울:'7010000',부산:'7150000',대구:'7240000',인천:'7310000',광주:'7380000',대전:'7430000',울산:'7480000',세종:'9300000',경기:'7530000',강원:'7801000',충북:'8000000',충남:'8140000',전북:'8321000',전남:'8490000',경북:'8750000',경남:'9010000',제주:'9290000'};
+  const { data, error } = await db.rpc('search_schools', { p_q: m ? m[2] : q.trim(), p_office: m ? OFFICE[m[1]] : null });
+  if(error){ showToast('학교 표가 아직 없어요 — sql/setup_schools.sql 을 먼저 실행하세요.'); return; }
+  if(!data || !data.length){ showToast('그 이름의 초등학교가 없어요.'); return; }
+  let pick = data[0];
+  if(data.length > 1){
+    const n = prompt(data.map((r,i)=>`${i+1}. ${r.name} — ${r.office_short} ${r.district} (${r.road_addr})`).join('\n') + '\n\n번호를 입력하세요');
+    const i = parseInt(n, 10); if(!i || !data[i-1]) return; pick = data[i-1];
+  }
+  const { error: e2 } = await db.rpc('admin_set_teacher_school', { p_teacher_id: teacherId, p_school_id: pick.id });
+  if(e2){ showToast('지정 실패: ' + (e2.message || '')); return; }
+  showToast(`${pick.name}(${pick.office_short} ${pick.district})로 지정했어요.`);
+  await loadTeachers();
+}
+
 async function fetchTeacherRows(){
   const { data, error } = await db.rpc('admin_teacher_list');
   if(!error && data) return data;
@@ -998,8 +1027,8 @@ async function loadTeachers(){
       const edu = t.is_edu_email ? ' <span class="table-badge free" title="교육청 도메인">교육청</span>' : '';
       return `<tr>
         <td><strong>${esc(t.name)}</strong>${t.approval==='rejected' ? ' <span class="table-badge rejected">반려됨</span>' : ''}</td>
-        <td>${esc(t.school || '-')}</td>
-        <td style="font-size:12px">${esc(t.email || '-')}${edu}</td>
+        <td>${schoolCell(t)}</td>
+        <td style="font-size:12px">${esc(t.email || '-')}${edu}${t.email_office_match === true ? ' <span class="table-badge free" title="메일 도메인이 학교 소속 교육청과 일치">교육청 일치</span>' : t.email_office_match === false && t.is_edu_email ? ' <span class="table-badge pending" title="교육청 메일이지만 학교 소속 시·도와 다름">다른 시·도</span>' : ''}</td>
         <td style="font-size:12px;max-width:260px;white-space:normal">${esc(t.approval_note || '-').replace(/나이스증명 ([0-9A-Za-z-]+)/, '나이스증명 <b style="color:#2563eb" title="나이스 대국민서비스(neis.go.kr) → 증명서 진위확인에서 이 번호로 확인">$1</b>')}</td>
         <td>${req}</td>
         <td>
@@ -1041,6 +1070,7 @@ async function loadTeachers(){
     html += `<tr>
       <td><div class="teacher-row"><div class="teacher-avatar">${initial}</div><strong>${esc(t.name)}</strong></div></td>
       <td style="font-size:12px;color:var(--sub)">${esc(t.email || (t.user_id ? t.user_id.slice(0,8)+'...' : '-'))}</td>
+      <td>${schoolCell(t)}</td>
       <td><code style="background:var(--bg);padding:2px 8px;border-radius:4px;font-size:13px">${codeStr}</code></td>
       <td>${studentCount}명</td>
       <td>${created}</td>

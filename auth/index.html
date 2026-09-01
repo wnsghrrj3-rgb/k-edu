@@ -37,6 +37,20 @@ body{font-family:'Gowun Dodum',sans-serif;background:#F5F7FA;min-height:100vh;di
 .form-group input,.form-group select{width:100%;height:46px;border:1.5px solid #E2E8F0;border-radius:12px;padding:0 14px;font-size:15px;font-family:'Gowun Dodum',sans-serif;outline:none;transition:border-color .2s}
 .form-group input:focus,.form-group select:focus{border-color:#5B8EF8}
 .form-group input::placeholder{color:#CBD5E0}
+/* 학교 고르기 (2026-09-02) */
+.sch-row{display:flex;gap:8px}
+.sch-row select{width:96px;flex:none;padding:0 8px}
+.sch-list{margin-top:6px;border:1.5px solid #E2E8F0;border-radius:12px;max-height:220px;overflow:auto;background:#fff}
+.sch-item{padding:10px 14px;cursor:pointer;border-bottom:1px solid #F1F4F8;font-size:14px}
+.sch-item:last-child{border-bottom:none}
+.sch-item:hover{background:#F5F8FF}
+.sch-item small{display:block;color:#718096;font-size:12px;margin-top:2px}
+.sch-item.msg{color:#718096;cursor:default}
+.sch-picked{margin-top:8px;padding:10px 14px;border-radius:12px;background:#EEF4FF;font-size:14px;display:flex;align-items:center;gap:10px}
+.sch-picked button,.sch-none button{background:none;border:none;color:#3B6FD8;cursor:pointer;font-family:inherit;font-size:13px;text-decoration:underline;padding:0}
+.sch-picked button{margin-left:auto}
+.sch-none{margin-top:6px;font-size:12px;color:#718096}
+
 
 /* 역할 선택 */
 .role-picker{display:flex;gap:10px;margin-bottom:20px}
@@ -185,8 +199,29 @@ footer strong{color:#718096;font-weight:500}
         <input type="text" id="signup-teacher-name" placeholder="실명 입력" maxlength="20">
       </div>
       <div class="form-group" id="group-teacher-school" style="display:none">
-        <label>학교명</label>
-        <input type="text" id="signup-teacher-school" placeholder="소속 학교" maxlength="30">
+        <label>학교</label>
+        <div class="sch-row">
+          <select id="sch-office" onchange="schSearch()">
+            <option value="">시·도</option>
+            <option value="7010000">서울</option><option value="7150000">부산</option><option value="7240000">대구</option>
+            <option value="7310000">인천</option><option value="7380000">광주</option><option value="7430000">대전</option>
+            <option value="7480000">울산</option><option value="9300000">세종</option><option value="7530000">경기</option>
+            <option value="7801000">강원</option><option value="8000000">충북</option><option value="8140000">충남</option>
+            <option value="8321000">전북</option><option value="8490000">전남</option><option value="8750000">경북</option>
+            <option value="9010000">경남</option><option value="9290000">제주</option>
+          </select>
+          <input type="text" id="sch-q" placeholder="학교 이름 두 글자 이상" maxlength="30" autocomplete="off" oninput="schSearch()" onfocus="schSearch()">
+        </div>
+        <div class="sch-list" id="sch-list" hidden></div>
+        <div class="sch-picked" id="sch-picked" hidden>
+          <span id="sch-picked-text"></span>
+          <button type="button" onclick="schClear()">바꾸기</button>
+        </div>
+        <div class="sch-none" id="sch-none" hidden>
+          목록에 없나요? <button type="button" onclick="schManual()">우리 학교가 없어요</button>
+        </div>
+        <input type="text" id="signup-teacher-school" placeholder="학교 이름과 주소를 적어 주세요 (확인 후 등록해 드려요)" maxlength="60" hidden>
+        <input type="hidden" id="signup-teacher-school-id" value="">
       </div>
 
       <!-- 동의 체크박스 (T05 — 처리방침 v2 시행 가능 조건) -->
@@ -290,6 +325,57 @@ function pickRole(role){
   const hint = document.getElementById('edu-mail-hint');
   if(hint) hint.style.display = isTeacher ? 'block' : 'none';
 }
+
+
+// =============================================
+// 학교 고르기 — schools 표(sql/setup_schools.sql)에서 검색해 school_id 를 잡는다.
+//   글자 입력은 저장하지 않는다(같은 이름 학교가 전국에 여럿). 표 미적용이면 옛 글자 입력으로 내려간다.
+// =============================================
+let _schTimer = null, _schPicked = null, _schManual = false;
+function schSearch(){
+  const q = document.getElementById('sch-q').value.trim();
+  const office = document.getElementById('sch-office').value;
+  const list = document.getElementById('sch-list');
+  clearTimeout(_schTimer);
+  if(q.length < 2){ list.hidden = true; list.innerHTML = ''; return; }
+  _schTimer = setTimeout(async ()=>{
+    const { data, error } = await db.rpc('search_schools', { p_q: q, p_office: office || null });
+    if(error){ schManual(true); return; }               // 표 미적용 — 글자 입력으로
+    list.hidden = false;
+    if(!data || !data.length){
+      list.innerHTML = '<div class="sch-item msg">이 이름의 초등학교가 없어요' + (office ? ' — 시·도를 바꿔 보세요' : '') + '</div>';
+      document.getElementById('sch-none').hidden = false; return;
+    }
+    list.innerHTML = data.map(r => `<div class="sch-item" onclick='schPick(${JSON.stringify(r)})'>${esc(r.name)}<small>${esc(r.office_short)} ${esc(r.district)} · ${esc(r.road_addr)}${r.founding && r.founding !== '공립' ? ' · ' + esc(r.founding) : ''}</small></div>`).join('');
+    document.getElementById('sch-none').hidden = false;
+  }, 220);
+}
+function schPick(r){
+  _schPicked = r; _schManual = false;
+  document.getElementById('signup-teacher-school-id').value = r.id;
+  document.getElementById('signup-teacher-school').value = `${r.name} (${r.office_short} ${r.district})`;
+  document.getElementById('sch-picked-text').textContent = `${r.name} · ${r.office_short} ${r.district}`;
+  document.getElementById('sch-picked').hidden = false;
+  document.getElementById('sch-list').hidden = true; document.getElementById('sch-none').hidden = true;
+  document.querySelector('.sch-row').hidden = true;
+}
+function schClear(){
+  _schPicked = null; _schManual = false;
+  document.getElementById('signup-teacher-school-id').value = '';
+  document.getElementById('signup-teacher-school').value = ''; document.getElementById('signup-teacher-school').hidden = true;
+  document.getElementById('sch-picked').hidden = true;
+  document.querySelector('.sch-row').hidden = false; document.getElementById('sch-q').value = ''; document.getElementById('sch-q').focus();
+}
+function schManual(silent){
+  _schPicked = null; _schManual = true;
+  document.getElementById('signup-teacher-school-id').value = '';
+  const t = document.getElementById('signup-teacher-school'); t.hidden = false; t.value = document.getElementById('sch-q').value.trim(); t.focus();
+  document.getElementById('sch-list').hidden = true; document.getElementById('sch-none').hidden = true;
+  document.querySelector('.sch-row').hidden = true;
+  document.getElementById('sch-picked-text').textContent = silent ? '학교 이름을 직접 적어 주세요' : '목록에 없는 학교 — 이름과 주소를 적어 주세요';
+  document.getElementById('sch-picked').hidden = false;
+}
+function esc(v){ return String(v==null?'':v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 // =============================================
 // 로그인
@@ -412,6 +498,9 @@ async function doSignup(){
   if(selectedRole === 'teacher'){
     const tName = document.getElementById('signup-teacher-name').value.trim();
     if(!tName){ showMsg('signup-msg','이름을 입력해주세요.','error'); return; }
+    const sid = document.getElementById('signup-teacher-school-id').value;
+    const sTxt = document.getElementById('signup-teacher-school').value.trim();
+    if(!sid && !sTxt){ showMsg('signup-msg','학교를 골라 주세요. 목록에 없으면 「우리 학교가 없어요」로 적어 주세요.','error'); return; }
   }
   // 학부모: 추가 입력 없음 (이메일+비번+동의만)
 
@@ -429,7 +518,8 @@ async function doSignup(){
     : { email, password: pw, options: { emailRedirectTo: landing, data: {
         role: 'teacher',
         teacher_name: document.getElementById('signup-teacher-name').value.trim(),
-        teacher_school: document.getElementById('signup-teacher-school').value.trim()
+        teacher_school: document.getElementById('signup-teacher-school').value.trim(),
+        teacher_school_id: document.getElementById('signup-teacher-school-id').value || null
       } } };
   const { data, error } = await db.auth.signUp(signUpOpts);
   btn.disabled = false; btn.textContent = '회원가입';
@@ -448,7 +538,7 @@ async function doSignup(){
     if(selectedRole === 'teacher'){
       const tName = document.getElementById('signup-teacher-name').value.trim();
       const tSchool = document.getElementById('signup-teacher-school').value.trim();
-      await createTeacherProfile(data.user.id, data.user.email || email, tName, tSchool);
+      await createTeacherProfile(data.user.id, data.user.email || email, tName, tSchool, document.getElementById('signup-teacher-school-id').value || null);
       showToast('🎉 가입 완료! 환영합니다.');
       setTimeout(()=>{ location.replace(redirectTo); }, 800);
     } else {
@@ -479,12 +569,7 @@ async function ensureProfile(user){
   //      가입 시 저장한 메타데이터(teacher_name)로 첫 로그인 때 만들어 준다.
   const meta = user.user_metadata || {};
   if(meta.role === 'teacher' || meta.teacher_name){
-    const { error: healErr } = await db.from('teachers').insert({
-      user_id: user.id,
-      email: user.email || '',
-      name: meta.teacher_name || '선생님',
-      school: meta.teacher_school || ''
-    });
+    const healErr = await createTeacherProfile(user.id, user.email || '', meta.teacher_name || '선생님', meta.teacher_school || '', meta.teacher_school_id || null);
     if(!healErr) return true;
   }
 
@@ -535,14 +620,16 @@ async function createStudentProfile(userId, nickname){
 // =============================================
 // 교사 프로필 생성
 // =============================================
-async function createTeacherProfile(userId, email, name, school){
+async function createTeacherProfile(userId, email, name, school, schoolId){
   // email 은 초기 스키마의 NOT NULL 유산 컬럼 — 반드시 채운다 (2026-08-28)
-  await db.from('teachers').insert({
-    user_id: userId,
-    email: email || '',
-    name: name,
-    school: school || ''
-  });
+  const row = { user_id: userId, email: email || '', name: name, school: school || '' };
+  if(schoolId) row.school_id = schoolId; else if(school) row.school_request = school;
+  let { error } = await db.from('teachers').insert(row);
+  if(error && /school_id|school_request/.test(error.message || '')){   // schools SQL 미적용 DB
+    delete row.school_id; delete row.school_request;
+    ({ error } = await db.from('teachers').insert(row));
+  }
+  return error;
 }
 
 // =============================================
