@@ -283,8 +283,10 @@ function showError(icon, ttl, desc){
 }
 
 // 번호순 정렬 (이름 정렬 금지) — 닉네임 앞 숫자 우선
+function nameOf(s){ return (s && s.seat_no != null ? `<span class="mini" style="font-variant-numeric:tabular-nums;margin-right:5px">${s.seat_no}</span>` : '') + esc((s && s.nickname) || '—'); }
 function sortStudents(list){
   return (list||[]).slice().sort((a,b)=>{
+    if(a.seat_no != null || b.seat_no != null){ if(a.seat_no == null) return 1; if(b.seat_no == null) return -1; if(a.seat_no !== b.seat_no) return a.seat_no - b.seat_no; }
     const na = parseInt(a.nickname), nb = parseInt(b.nickname);
     if(!isNaN(na)&&!isNaN(nb)) return na-nb;
     if(!isNaN(na)) return -1; if(!isNaN(nb)) return 1;
@@ -320,9 +322,9 @@ async function loadClass(classCodeId){
     db.from('class_codes').select('id, code, label').eq('id', classCodeId).maybeSingle(),
     db.from('student_data_summary').select('*').eq('class_code_id', classCodeId),
     // 교사가 명단을 등록했지만 아직 입장하지 않은 학생 — 명단 그대로 표에 보인다 (2026-09-02 준호 요청)
-    db.from('student_seats').select('id, nickname, claimed_by').eq('class_code_id', classCodeId).is('claimed_by', null)
+    db.from('student_seats').select('id, nickname, seat_no, claimed_by').eq('class_code_id', classCodeId).is('claimed_by', null)
   ]);
-  const pendingSeats = sortStudents((seatsRaw||[]).map(x => ({ student_id: 'seat:'+x.id, nickname: x.nickname, pending: true })));
+  const pendingSeats = sortStudents((seatsRaw||[]).map(x => ({ student_id: 'seat:'+x.id, nickname: x.nickname, seat_no: x.seat_no, pending: true })));
   if(es || !classRow){ showError('🔒','학급을 불러올 수 없습니다', esc((es&&es.message)||'본인 소유 학급만 조회할 수 있습니다.')); return; }
 
   const ids = (students||[]).map(s=>s.student_id).filter(Boolean);
@@ -403,13 +405,13 @@ function renderClass(){
       <tr class="unit"><th class="corner"></th>${groups.map(g=>`<th colspan="${g.n}">${esc(g.key)}</th>`).join('')}</tr>
       <tr class="les"><th class="corner">학생 ＼ 차시</th>${cols.map(l=>{const i=KR.lesson(l);return `<th title="${esc(i.label)}"><span class="v">${esc((i.n?i.n+'. ':'')+(i.title||i.label))}</span></th>`;}).join('')}</tr>
     </thead>
-    <tbody>${C.list.map(s => `<tr><th onclick="location.href='${stuLink(s.student_id)}'">${esc(s.nickname||'—')}</th>${cols.map(l => {
+    <tbody>${C.list.map(s => `<tr><th onclick="location.href='${stuLink(s.student_id)}'">${nameOf(s)}</th>${cols.map(l => {
         const k = s.student_id+'|'+l; const m = mByKey[k];
         const st = m ? m.status : (touchedByKey.has(k) ? 'touched' : 'none');
         const rep = repByKey.has(k);
         const tip = (m ? `${statusKo(st)} · 문항 ${m.q_n}개 중 ${m.q_latest_ok}개 마지막 답 정답` : (st==='touched'?'풀어봄(집계 대기)':'아직')) + (rep?' · 반복 오답 있음':'');
         return `<td title="${esc(s.nickname||'')} · ${esc(KR.lesson(l).label)} — ${esc(tip)}" onclick="location.href='${stuLink(s.student_id)}'"><i class="${st} ${rep?'rep':''}"></i></td>`;
-      }).join('')}</tr>`).join('')}${(C.pending||[]).map(s => `<tr class="pending"><th title="명단에는 있지만 아직 학급코드로 입장하지 않았어요">${esc(s.nickname)} <span class="mini">입장 전</span></th>${cols.map(()=>'<td><i class="none"></i></td>').join('')}</tr>`).join('')}</tbody></table></div>
+      }).join('')}</tr>`).join('')}${(C.pending||[]).map(s => `<tr class="pending"><th title="명단에는 있지만 아직 학급코드로 입장하지 않았어요">${nameOf(s)} <span class="mini">입장 전</span></th>${cols.map(()=>'<td><i class="none"></i></td>').join('')}</tr>`).join('')}</tbody></table></div>
     <div class="hm-legend"><span><i class="solid"></i>탄탄</span><span><i class="edge"></i>경계</span><span><i class="weak"></i>취약</span><span><i class="watching"></i>관찰 중(문항 3개 미만)</span><span><i class="touched"></i>풀어봄</span><span><i class="none"></i>아직</span><span><i class="rep"></i>반복 오답</span><span class="mini">· 칸을 누르면 학생 카드</span></div>`
     : `<div class="empty-note">아직 학급이 손댄 차시가 없습니다.</div>`;
 
@@ -424,7 +426,7 @@ function renderClass(){
     const inactive = s.is_active === false;
     const delta = a.prev === null ? null : (a.problems+a.morning) - a.prev;
     return `<tr onclick="location.href='${stuLink(s.student_id)}'" ${inactive?'style="opacity:.45"':''}>
-      <td><b>${esc(s.nickname||'—')}</b>${inactive?' <span class="mini">(정지)</span>':''}</td>
+      <td><b>${nameOf(s)}</b>${inactive?' <span class="mini">(정지)</span>':''}</td>
       <td class="ctr">${flow}</td>
       <td class="num">${a.done.size}<span class="mini">/${Math.max(a.lessons.size,a.done.size)}</span></td>
       <td class="num">${a.problems}${delta!==null?` <span class="mini ${delta>0?'up':delta<0?'down':'flat'}">${delta>0?'+'+delta:delta<0?delta:'±0'}</span>`:''}</td>
@@ -434,7 +436,7 @@ function renderClass(){
       <td class="ctr">${a.nWeak?`<span class="pill weak">${a.nWeak}</span>`:''}${a.nRep?` <span class="pill repeat">${a.nRep}</span>`:''}${!a.nWeak&&!a.nRep?'<span class="mini">—</span>':''}</td>
     </tr>`;
   }).join('') + (C.pending||[]).map(s => `<tr class="pending" title="명단에는 있지만 아직 학급코드로 입장하지 않았어요">
-      <td><b>${esc(s.nickname)}</b> <span class="mini">입장 전</span></td><td colspan="7" class="mini">학급코드 ${esc(C.classRow.code||'')} 와 이 이름으로 들어오면 여기부터 채워져요</td></tr>`).join('');
+      <td><b>${nameOf(s)}</b> <span class="mini">입장 전</span></td><td colspan="7" class="mini">학급코드 ${esc(C.classRow.code||'')} 와 이 이름으로 들어오면 여기부터 채워져요</td></tr>`).join('');
 
   // CSV (상담·기록용, 번호순)
   _csv = ['학생,완료차시,푼차시,문항,정답률,아침활동,활동일,취약차시,반복오답차시'].concat(C.list.map(s => { const a = agg[s.student_id];
