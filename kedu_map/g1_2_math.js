@@ -629,6 +629,43 @@ window.KEDU_MAP["g1_2_math"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 7,
+   "name": "수학이랑 안전",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g1_math_u7_l01",
+     "lessonId": "g1_2_math_u7_l01_v1",
+     "n": "1",
+     "title": "준비해요·계획해요 — 안전 약속을 정해요",
+     "sub": null,
+     "url": "/grade1/semester2/math/7단원_수학이랑안전/g1_math_u7_l01_학교에서지켜야할안전약속을정해요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u7_l02",
+     "lessonId": "g1_2_math_u7_l02_v1",
+     "n": "2",
+     "title": "해 봐요 — 안전 표지판을 만들어요",
+     "sub": null,
+     "url": "/grade1/semester2/math/7단원_수학이랑안전/g1_math_u7_l02_안전표지판을만들어요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u7_l03",
+     "lessonId": "g1_2_math_u7_l03_v1",
+     "n": "3",
+     "title": "마무리해요 — 안전을 다짐해요",
+     "sub": null,
+     "url": "/grade1/semester2/math/7단원_수학이랑안전/g1_math_u7_l03_안전을다짐해요.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };
