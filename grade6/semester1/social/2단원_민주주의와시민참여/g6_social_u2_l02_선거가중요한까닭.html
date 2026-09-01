@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<!--
+K-edu 사회 6-1 · 2단원 민주주의와 시민 참여 · 주제① 민주주의와 선거 · 2차시(l02)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [6사08-01] · 교과서 p.61~63 · 지도서(대단원2 **3차시** 선거가 중요한 까닭을 알아볼까요,
+  지도서 p.137~143) 근거
+학습 목표: 선거가 중요한 까닭을 설명할 수 있다.
+수업 기법 및 전략: 돌아가며 말하기 · 의견 나누기
+⚠️ 엔진은 대단원1 l01~l11 · 대단원2 l01에서 100% 승계. 2단원 색 #C2410C 유지 · CSS 변수명 무수정.
+
+직접조작: 다시 세어도 판이 달라지지 않는 판(48번째 신규 패턴 — 부동(不動)의 형)
+  ⭐ 앞의 마흔일곱 종에서 학생이 누른 **알맞은 조작은 언제나 판을 바꿨다.**
+     47번째(첫 길이 막히는 판)에서도 길이 막혔을 뿐 판은 달라졌다 — 「직접 가 봄」 표시가 새로 남았다.
+     이번만 **알맞고 필요한 조작인데 판의 어떤 값도 바꾸지 않는 자리**가 들어간다.
+     다시 세기(재검표)는 몇 번을 눌러도 두 쪽의 표를 그대로 둔다.
+     근거는 교과서 낱말 풀이 원문 「재검표 = 선거의 개표 결과를 두고서 잘못이나 실수가 있는지
+     확인하기 위해 개표한 것을 직접 다시 검사함」 — 확인하는 일이지 결과를 바꾸는 일이 아니다.
+  ⭐ **판을 움직이는 것은 새로 들어온 한 표 하나뿐이다.**
+     같던 두 쪽은 다시 세어서가 아니라 **아직 참여하지 않았던 사람의 한 표**로 갈린다.
+     근거는 교과서 본문 원문 「선거는 민주주의 국가에서 국민 주권을 실현하는 가장 기본적이고
+     중요한 방법입니다. 국민은 선거에 적극적으로 참여하여 소중한 한 표를 행사해야 합니다」.
+  ⭐ **누구를 먼저 보내도 결과는 갈린다.** 세 사람의 뜻은 고정 리터럴이라, 어느 한 사람만 보내도
+     같던 표가 반드시 갈라진다 — 다만 **누가 참여하느냐에 따라 갈리는 쪽이 달라진다.**
+  ⭐ **유권자는 한 명도 사라지지 않는다** — 유권자 칸을 그리는 자리가 코드에 단 하나이고
+     그 수는 언제나 `VC_N`이다.
+  ⭐ **표는 어느 경로로도 줄지 않는다** — 다시 세기로도, 재클릭으로도 줄지 않는다(단조 증가).
+  ⚠️ 46번째(도로 감추는 형)와의 대비 — 거기서는 판이 달라졌다가 **되돌아왔다.**
+     여기서는 **애초에 움직이지 않는다.** 되감김이 아니라 부동이다.
+  ① **다시 세기**(재검표 — 몇 번이든 눌러도 되고, 눌러도 판은 그대로다)
+  ② **참여하러 가기**(아직 투표하지 않은 세 사람 · 한 사람의 한 표로 결과가 갈린다)
+  ③ [미디어 활동] 3택 = 다시 세어 본 까닭(지도서 예시 답안 원문)
+  ④ 마무리 3택 = 국민이 선거에 참여하는 것이 중요한 까닭(지도서 예시 답안 원문)
+  ⚠️ 표·뜻·3택 전량 고정 리터럴 — 난수 0. VC_WILL이 고정이라 결과가 매번 같다.
+  ⚠️ 가드 9종: ① 마무리 확정 후 전체 잠금 / ② 무효 번호(`Number.isInteger`·범위) /
+     ③ 이미 참여한 사람 재클릭 무시 — 판 불변 / ④ 세 사람이 다 참여한 뒤 클릭 무시 /
+     ⑤ 첫 재검표 전 참여 무시(순서 — 같은 표를 겪지 않고 건너뛸 수 없다) /
+     ⑥ [미디어 활동] 확정 후 재선택 무시 / ⑦ 전원 참여 전 [미디어 활동] 무시(순서) /
+     ⑧ [미디어 활동] 전 마무리 무시(순서) / ⑨ 안내 표시 중 재클릭 무시(`vcBusy`).
+     재시도 허용(감점 없음), 조작에 점수 0. 발문은 `.vc-q`로 떼어 전 단계 상시 노출.
+
+지도서 근거(대단원2 3차시 p.137~143):
+  [본문 61쪽] 선거로 뽑힌 대표는 국민의 행복한 삶과 미래를 위해 나라의 중요한 일을 결정하고,
+    헌법과 법률에 따라 일합니다.
+  [핵심 질문] 선거에서 어떤 사람을 대표로 뽑아야 할까요? → 국민을 위해 열심히 일할 사람 /
+    국민이 더 살기 좋은 환경에서 생활할 수 있도록 노력하는 사람 / 도덕적으로 올바르고 공정한 사람.
+  [핵심 질문] 대표를 뽑는 선거가 중요한 까닭은? → 대표는 나라의 중요한 일을 결정하기 때문 /
+    대표를 잘못 뽑으면 나라 경제나 국민의 삶이 어려워질 수 있고 민주주의가 위기를 맞을 수 있기 때문.
+  [본문 62쪽] 선거는 민주주의 국가에서 국민 주권을 실현하는 가장 기본적이고 중요한 방법입니다.
+    국민은 선거에 적극적으로 참여하여 소중한 한 표를 행사해야 합니다.
+  [낱말] 국민 주권 = 나라의 중요한 일을 결정하는 최고의 권력인 주권이 국민에게 있음.
+  [낱말] 재검표 = 선거의 개표 결과를 두고서 잘못이나 실수가 있는지 확인하기 위해
+    개표한 것을 직접 다시 검사함.
+  [미디어 활동 · 내용 파악] 다시 검사한 까닭 예시 답안 = 개표 결과 두 후보의 득표수가
+    같게 나왔기 때문이다.
+  [미디어 활동 · 정보 활용] 국민이 선거에 참여하는 것이 중요한 까닭 예시 답안 =
+    한 표 차이로 선거의 결과가 달라질 수 있기 때문이다 / 국민의 선거 참여로 당선자가 바뀔 수 있고
+    그에 따라 정치가 달라질 수 있기 때문이다 / 국민의 선거 참여로 대표가 바뀔 수 있고
+    우리가 사는 사회가 변화할 수 있기 때문이다.
+  [본문 63쪽] 선거로 뽑힌 대표가 지역 발전을 위해 열심히 일하면 지역이 변화하고
+    사람들이 더 살기 좋은 환경에서 생활할 수 있습니다.
+  [친구와 활동] 지역의 대표를 잘 뽑으면 어떤 변화가 생길지 쓰고 친구들과 이야기하기.
+    예시 답안 = 사람들이 더 살기 좋은 환경에서 생활할 수 있게 될 것이다 / 교육 환경이 좋아질 것이다 /
+    안전한 지역이 될 것이다 / 지역 경제가 더욱 발전할 것이다.
+  [꼭 기억해요] 1 선거로 뽑힌 대표는 헌법과 법률에 따라 국민을 위해 일합니다. (○)
+    2 선거는 민주주의 국가에서 ( 국민 주권 )을 실현하는 가장 기본적이고 중요한 방법입니다.
+  [3차시 주요 내용 정리] 1. 선거가 중요한 까닭: 대표는 나라의 중요한 일을 결정하기 때문
+    2. 선거에 참여하는 것이 중요한 까닭: 선거는 민주주의 국가에서 국민 주권을 실현하는
+    가장 기본적이고 중요한 방법이고, 국민의 선거 참여로 선거의 결과와 정치가 달라질 수 있기 때문
+    3. 선거를 통한 변화: 대표가 지역 발전을 위해 열심히 일하면 지역이 변화하고
+    사람들이 더 살기 좋은 환경에서 생활할 수 있음.
+  [정리] 차시 예고 = 선거 과정 알아보기.
+⚠️ 설계 원칙:
+  · **3차시 이후 침범 0** — 선거 과정·선거 원칙(보통·평등·직접·비밀)·사전 투표·투표소 설치 0,
+    모의 선거·선거 공약·선거 운동·선거 관리 기관 0. 차시 예고 자리에서 **이름만.**
+  · **l01(2차시) 재현 최소** — 선거의 뜻·유권자 낱말 풀이·민주주의의 꽃은 l01 몫이라 문항으로 내지 않는다.
+  · **주제②·③ 침범 0** — 국회·행정부·법원·권력 분립 0, 미디어의 의미·역할·비판적 분석 0.
+    「[미디어 활동]」은 **교과서 활동 이름**으로만 쓴다(대단원1 l01 · 대단원2 l01 선례 승계).
+  · **대단원1 재현 0** — 분단·평화 통일·4·19 혁명·5·18 민주화 운동·6월 민주 항쟁·산업화 0.
+  · **정치적 중립** — 실제 정당·후보자·정치인 이름 0, 실제 선거 결과·연도·득표수 0.
+    판의 두 갈래는 이름 없이 **㉮ · ㉯ 기호**로만 두고, 유권자는 **번호·기호**로만 둔다.
+  · 교사용 참고 자료 0 — 참고 도서, 이야기 동영상, 대의 민주주의·정치적 무관심·스윙 보트 자료,
+    평가 관점·평가 방법, 신문사 이름과 날짜, 누리집 주소, 영상 링크, 활동지 쪽수.
+  · **문항 내 연도·득표수·투표율 0.** 「한 표 차이」는 낱말로만 쓴다.
+  · **정서** — 교과서 만화의 전쟁·죽음·파괴 서사는 **쓰지 않는다.** 대표를 잘못 뽑은 결과는
+    지도서 예시 답안 수준(나라 경제와 국민의 삶이 어려워질 수 있다)으로만 다룬다.
+    투표하지 않는 사람을 나무라지 않는다. 겁주는 어휘 0.
+  · **정직 원칙 세 곳** — ㉠ 화면이 실제 선거나 개표를 대신하지 않는다. 판이 다루는 것은
+    **왜 한 표가 중요한가**이다. ㉡ [친구와 활동]의 이야기는 판이 대신 말하지 않는다 —
+    **지도서 예시 답안 원문**만 [답 보기]로 둔다. ㉢ 판의 ㉮ · ㉯는 **뜻이 갈리는 두 갈래를 나타낸 도식**일 뿐
+    실제 후보나 실제 선거 결과가 아니다.
+  · **학생 이름·친구 이름 0.**
+⚠️ goNextLesson = 허브 복귀(l03 미양산 — 양산 시 재배선).
+-->
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g6_social_u2_l02_v1">
+<title>선거가 중요한 까닭을 알아볼까요 · 사회 6-1</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#C2410C; --green-d:#9A3412; --cyan:#EA580C;
+  --bg:#FFF7ED; --bub:#FFEDD5; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#B45309; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-shrink:0}
+.ka-lb{background:#F1F5F9;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;
+  font-weight:700;color:var(--muted);font-size:clamp(11px,1.9vw,13px);display:flex;align-items:center;gap:6px}
+.ka-lb svg{width:14px;height:14px}
+.ka-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.ka-bar>div{height:100%;background:var(--green);border-radius:99px;transition:width .35s ease;width:5%}
+.ka-pg{font-size:clamp(11px,1.9vw,13px);color:var(--muted);font-weight:700;min-width:46px;text-align:right}
+.ka-sc{display:flex;align-items:center;gap:3px;background:var(--amber-bg);border-radius:99px;padding:5px 11px}
+.ka-sc svg{width:15px;height:15px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;color:var(--amber);font-size:clamp(14px,2.4vw,17px)}
+.ka-sc-u{font-size:11px;color:var(--amber);font-weight:700}
+
+/* 메인 */
+.ka-m{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;padding:4px 2px}
+.ka-tags{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ka-bg{display:inline-flex;align-items:center;gap:5px;background:var(--bub);color:var(--green-d);
+  border-radius:99px;padding:5px 12px;font-size:clamp(11px,1.9vw,13px);font-weight:700}
+.ka-bg svg{width:13px;height:13px}
+.ka-bg.s2{background:#E0F2FE;color:#075985}
+.ka-bg.s3{background:#DCFCE7;color:#166534}
+.ka-bg.s4{background:#FEF3C7;color:#92400E}
+.ka-bg.s5{background:#F3E8FF;color:#6B21A8}
+.ka-meta{font-size:clamp(10px,1.7vw,12px);color:#94A3B8;font-weight:600}
+.ka-t{font-size:clamp(19px,3.4vw,27px);font-weight:700;line-height:1.4;margin-bottom:10px}
+.ka-bub{background:var(--bub);border-radius:14px;padding:13px 18px;font-size:clamp(14px,2.4vw,18px);
+  line-height:1.7;margin-bottom:12px}
+.ka-emph{color:var(--green-d);font-weight:700}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.scene.wide{width:clamp(240px,44vw,420px)}
+.scene.wide svg{height:clamp(120px,20vw,200px)}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(15px,2.6vw,20px);font-weight:700;line-height:1.6;margin-bottom:12px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+.opt{background:#fff;border:2px solid var(--line);border-radius:13px;padding:13px 15px;cursor:pointer;
+  font-family:inherit;font-size:clamp(13px,2.2vw,16.5px);font-weight:500;text-align:left;line-height:1.5;transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:#16A34A;background:#DCFCE7;font-weight:700}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:11px;border-radius:12px;padding:12px 16px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;animation:fadeUp .3s ease both}
+.fb.ok{background:#DCFCE7;color:#166534;font-weight:700}
+.hint{margin-top:9px;background:var(--amber-bg);border-radius:11px;padding:10px 14px;
+  font-size:clamp(12.5px,2.1vw,15px);color:var(--amber);line-height:1.55}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:9px;width:100%;max-width:660px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFC;border-radius:12px;padding:11px 15px;
+  font-size:clamp(13px,2.2vw,16.5px);line-height:1.6}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'\2713';color:#fff;font-weight:800;font-size:14px}
+
+/* 직접조작 — 다시 세어도 판이 달라지지 않는 판(부동의 형) */
+.dw-wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dw-body{display:grid;grid-template-columns:1.05fr 1fr;gap:10px;align-items:start}
+.dw-canvas{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.dw-canvas svg{width:100%;height:auto;display:block}
+.dw-canvas .cvcap{padding:5px 6px;text-align:center;font-size:clamp(9.5px,1.6vw,11.5px);
+  color:var(--muted);font-weight:700;background:#F8FAFC}
+.dw-right{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dw-step{font-size:clamp(10.5px,1.75vw,13px);font-weight:800;color:var(--green)}
+.dw-msg{background:#F8FAFC;border:2px solid var(--line);border-left:4px solid var(--green);border-radius:10px;
+  padding:8px 12px;font-size:clamp(11.4px,1.93vw,13.8px);line-height:1.55;color:#334155;animation:fadeUp .3s ease both}
+.dw-msg.warn{border-left-color:var(--amber)}
+.dw-msg b{color:var(--green)}
+.dw-card{background:#fff;border:2px solid var(--amber);border-radius:12px;padding:10px 12px;
+  font-size:clamp(12px,2.05vw,14.5px);line-height:1.55;animation:pop .35s ease both}
+.dw-card .pt{font-weight:800;color:var(--amber);margin-bottom:4px;font-size:clamp(12.5px,2.15vw,15px)}
+.vc-q{font-size:clamp(11.6px,1.97vw,14px);font-weight:800;color:var(--green);
+  background:var(--bub);border-radius:9px;padding:7px 11px;line-height:1.45}
+.vc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.vc-grid button{border:2px solid #CBD5E0;background:#fff;border-radius:9px;padding:8px 2px;cursor:pointer;
+  font-family:inherit;font-weight:800;color:var(--ink);font-size:clamp(10.4px,1.75vw,12.8px);transition:.15s;
+  line-height:1.3;text-align:center}
+.vc-grid button:hover{border-color:var(--green);background:var(--bub)}
+.vc-grid button.ok{border-color:var(--cyan);background:#FFF7ED;color:#C79A7A}
+.vc-grid button.no{border-color:var(--amber);background:var(--amber-bg);animation:shakeNo .4s ease}
+.vc-grid button:disabled{border-color:#E2E8F0;background:#F8FAFC;color:#CBD5E0;cursor:default}
+.vc-again{border:2px solid var(--cyan);background:#FFF7ED;color:var(--green-d);border-radius:10px;
+  padding:9px 10px;cursor:pointer;font-family:inherit;font-weight:800;
+  font-size:clamp(11px,1.87vw,13.5px);text-align:center;line-height:1.45;animation:pop .35s ease both}
+.vc-again:hover{background:var(--bub)}
+.vc-src{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:10px;padding:8px 11px;
+  font-size:clamp(10.8px,1.83vw,13px);line-height:1.5;color:#3F3A2C}
+.vc-fin{display:flex;flex-direction:column;gap:5px}
+.vc-fin button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;padding:7px 10px;
+  cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.vc-fin button:hover{background:var(--bub)}
+.vc-fin button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.paper{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:12px;padding:12px 16px;
+  font-size:clamp(12.5px,2.1vw,15px);line-height:1.65;color:#3F3A2C;max-width:660px;
+  animation:fadeUp .4s ease both}
+.paper .ph{font-weight:800;color:#8A6D3B;margin-bottom:6px;font-size:clamp(13px,2.2vw,16px)}
+.tipbox{background:#FFEDD5;border-radius:12px;padding:11px 16px;font-size:clamp(12.5px,2.1vw,15px);
+  line-height:1.6;color:#7C2D12;max-width:660px}
+@media(max-width:620px){ .dw-body{grid-template-columns:1fr} }
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(194,65,12,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style>
+<script src="/kedu_gate.js"></script>
+</head>
+
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#B45309"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식 =====
+   ⚠️ 정직 원칙: 모든 그림은 내용을 나타낸 도식이며 실제 사진·자료가 아니다.
+   ⚠️ 정치적 중립: 실제 정당·후보자·정치인·선거 결과 0. 사람은 이름 없이 번호·기호로만 그린다.
+   ⚠️ 정서: 교과서 만화의 전쟁·죽음·파괴 서사는 그리지 않는다. */
+const SVG = {
+  // 1 들어가기 — 뽑힌 대표가 헌법과 법률에 따라 일하는 자리
+  lead:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    <text x="160" y="20" font-size="11.2" fill="#9A3412" text-anchor="middle" font-weight="800">뽑힌 대표가 하는 일</text>
+    <rect x="18" y="30" width="130" height="126" rx="12" fill="#fff" stroke="#C2410C" stroke-width="2"/>
+    <text x="83" y="46" font-size="8.4" fill="#9A3412" text-anchor="middle" font-weight="800">나라의 중요한 일을 정하는 자리</text>
+    <circle cx="52" cy="70" r="10" fill="#C2410C"/>
+    <text x="52" y="74" font-size="8.6" fill="#fff" text-anchor="middle" font-weight="800">1</text>
+    <circle cx="83" cy="70" r="10" fill="#EA580C"/>
+    <text x="83" y="74" font-size="8.6" fill="#fff" text-anchor="middle" font-weight="800">2</text>
+    <circle cx="114" cy="70" r="10" fill="#9A3412"/>
+    <text x="114" y="74" font-size="8.6" fill="#fff" text-anchor="middle" font-weight="800">3</text>
+    <rect x="30" y="90" width="106" height="20" rx="6" fill="#FFEDD5"/>
+    <text x="83" y="104" font-size="7.6" fill="#7C2D12" text-anchor="middle" font-weight="800">헌법과 법률에 따라</text>
+    <rect x="30" y="114" width="106" height="20" rx="6" fill="#FEF3C7"/>
+    <text x="83" y="128" font-size="7.6" fill="#92400E" text-anchor="middle" font-weight="800">국민을 위해 일해요</text>
+    <path d="M156 92 L184 92" stroke="#C2410C" stroke-width="2.4" stroke-linecap="round"/>
+    <path d="M178 86 L186 92 L178 98" stroke="#C2410C" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="192" y="30" width="110" height="126" rx="12" fill="#fff" stroke="#EA580C" stroke-width="2"/>
+    <text x="247" y="46" font-size="8.4" fill="#9A3412" text-anchor="middle" font-weight="800">국민의 행복한 삶과 미래</text>
+    <rect x="204" y="56" width="86" height="30" rx="7" fill="#FFEDD5"/>
+    <text x="247" y="75" font-size="8" fill="#7C2D12" text-anchor="middle" font-weight="700">살기 좋은 환경</text>
+    <rect x="204" y="92" width="86" height="30" rx="7" fill="#FFEDD5"/>
+    <text x="247" y="111" font-size="8" fill="#7C2D12" text-anchor="middle" font-weight="700">안전한 우리 동네</text>
+    <rect x="204" y="128" width="86" height="20" rx="7" fill="#FEF3C7"/>
+    <text x="247" y="142" font-size="7.6" fill="#92400E" text-anchor="middle" font-weight="800">그래서 선거가 중요해요</text>
+  </svg>`,
+  // 2 살펴보기 — 잘 뽑은 길과 잘못 뽑은 길(겁주는 그림 0 · 저울 도식)
+  scale:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    <text x="160" y="20" font-size="11.2" fill="#9A3412" text-anchor="middle" font-weight="800">대표를 어떻게 뽑느냐에 따라</text>
+    <rect x="18" y="30" width="132" height="122" rx="12" fill="#fff" stroke="#EA580C" stroke-width="2"/>
+    <text x="84" y="46" font-size="8.6" fill="#9A3412" text-anchor="middle" font-weight="800">잘 살펴보고 뽑으면</text>
+    <rect x="30" y="54" width="108" height="18" rx="6" fill="#FFEDD5"/>
+    <text x="84" y="67" font-size="7.4" fill="#7C2D12" text-anchor="middle" font-weight="700">국민을 위해 열심히 일할 사람</text>
+    <rect x="30" y="76" width="108" height="18" rx="6" fill="#FFEDD5"/>
+    <text x="84" y="89" font-size="7.4" fill="#7C2D12" text-anchor="middle" font-weight="700">도덕적으로 올바르고 공정한 사람</text>
+    <rect x="30" y="100" width="108" height="40" rx="7" fill="#FEF3C7"/>
+    <text x="84" y="116" font-size="7.8" fill="#92400E" text-anchor="middle" font-weight="800">나라의 중요한 일이</text>
+    <text x="84" y="130" font-size="7.8" fill="#92400E" text-anchor="middle" font-weight="800">잘 결정돼요</text>
+    <rect x="170" y="30" width="132" height="122" rx="12" fill="#fff" stroke="#CBD5E0" stroke-width="2"/>
+    <text x="236" y="46" font-size="8.6" fill="#64748B" text-anchor="middle" font-weight="800">살펴보지 않고 뽑으면</text>
+    <rect x="182" y="54" width="108" height="18" rx="6" fill="#F1F5F9"/>
+    <text x="236" y="67" font-size="7.4" fill="#64748B" text-anchor="middle" font-weight="700">한 가지 말만 보고 뽑기</text>
+    <rect x="182" y="76" width="108" height="18" rx="6" fill="#F1F5F9"/>
+    <text x="236" y="89" font-size="7.4" fill="#64748B" text-anchor="middle" font-weight="700">무엇을 할 사람인지 모르기</text>
+    <rect x="182" y="100" width="108" height="40" rx="7" fill="#F8FAFC"/>
+    <text x="236" y="116" font-size="7.8" fill="#64748B" text-anchor="middle" font-weight="800">나라 경제와 국민의 삶이</text>
+    <text x="236" y="130" font-size="7.8" fill="#64748B" text-anchor="middle" font-weight="800">어려워질 수 있어요</text>
+  </svg>`,
+  // 3 확인 — 한 표
+  one:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    <text x="160" y="20" font-size="11.2" fill="#9A3412" text-anchor="middle" font-weight="800">소중한 한 표</text>
+    <rect x="60" y="34" width="90" height="106" rx="8" fill="#fff" stroke="#C2410C" stroke-width="2"/>
+    <rect x="72" y="46" width="66" height="16" rx="4" fill="#FFEDD5"/>
+    <rect x="72" y="66" width="66" height="16" rx="4" fill="#FFEDD5"/>
+    <rect x="72" y="86" width="66" height="16" rx="4" fill="#FFEDD5"/>
+    <rect x="72" y="106" width="66" height="16" rx="4" fill="#FDBA74"/>
+    <text x="105" y="118" font-size="8.4" fill="#7C2D12" text-anchor="middle" font-weight="800">나의 한 표</text>
+    <text x="105" y="153" font-size="8.6" fill="#9A3412" text-anchor="middle" font-weight="800">한 사람이 한 표씩</text>
+    <path d="M162 88 L192 88" stroke="#C2410C" stroke-width="2.4" stroke-linecap="round"/>
+    <path d="M186 82 L194 88 L186 94" stroke="#C2410C" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="200" y="34" width="100" height="106" rx="10" fill="#fff" stroke="#EA580C" stroke-width="2"/>
+    <text x="250" y="52" font-size="8.6" fill="#9A3412" text-anchor="middle" font-weight="800">그 한 표로</text>
+    <rect x="212" y="60" width="76" height="22" rx="6" fill="#FEF3C7"/>
+    <text x="250" y="75" font-size="7.8" fill="#92400E" text-anchor="middle" font-weight="800">결과가 달라져요</text>
+    <rect x="212" y="88" width="76" height="22" rx="6" fill="#FFEDD5"/>
+    <text x="250" y="103" font-size="7.8" fill="#7C2D12" text-anchor="middle" font-weight="800">대표가 바뀌어요</text>
+    <rect x="212" y="116" width="76" height="18" rx="6" fill="#FFEDD5"/>
+    <text x="250" y="129" font-size="7.4" fill="#7C2D12" text-anchor="middle" font-weight="700">사회가 달라져요</text>
+    <text x="250" y="153" font-size="8.6" fill="#9A3412" text-anchor="middle" font-weight="800">한 표 차이의 힘</text>
+  </svg>`,
+  // 4 확인 — 국민 주권
+  crown:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    <text x="160" y="20" font-size="11.2" fill="#9A3412" text-anchor="middle" font-weight="800">국민 주권</text>
+    <rect x="26" y="30" width="268" height="46" rx="10" fill="#fff" stroke="#C2410C" stroke-width="2"/>
+    <text x="160" y="49" font-size="8.8" fill="#9A3412" text-anchor="middle" font-weight="800">나라의 중요한 일을 결정하는 최고의 권력</text>
+    <text x="160" y="66" font-size="8.8" fill="#9A3412" text-anchor="middle" font-weight="800">주권</text>
+    <path d="M160 82 L160 100" stroke="#C2410C" stroke-width="2.4" stroke-linecap="round"/>
+    <path d="M154 94 L160 102 L166 94" stroke="#C2410C" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="26" y="106" width="268" height="48" rx="10" fill="#FEF3C7" stroke="#B45309" stroke-width="2"/>
+    <text x="160" y="126" font-size="9.4" fill="#92400E" text-anchor="middle" font-weight="800">그 권력은 국민에게 있어요</text>
+    <circle cx="112" cy="141" r="7" fill="#C2410C"/>
+    <circle cx="136" cy="141" r="7" fill="#EA580C"/>
+    <circle cx="160" cy="141" r="7" fill="#C2410C"/>
+    <circle cx="184" cy="141" r="7" fill="#EA580C"/>
+    <circle cx="208" cy="141" r="7" fill="#C2410C"/>
+  </svg>`,
+  // 5 미디어 활동 — 뉴스 기사(다시 세어 본 까닭) · 지어낸 신문사·날짜 0
+  recount:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    <rect x="24" y="18" width="272" height="134" rx="10" fill="#FFFDF5" stroke="#E7D9A8" stroke-width="2"/>
+    <text x="160" y="38" font-size="10.6" fill="#8A6D3B" text-anchor="middle" font-weight="800">뉴스 기사</text>
+    <line x1="40" y1="46" x2="280" y2="46" stroke="#E7D9A8" stroke-width="1.6"/>
+    <text x="160" y="63" font-size="8.8" fill="#3F3A2C" text-anchor="middle" font-weight="800">두 쪽의 표가 같게 나왔어요</text>
+    <rect x="46" y="72" width="98" height="34" rx="7" fill="#fff" stroke="#C2410C" stroke-width="1.6"/>
+    <text x="95" y="86" font-size="8" fill="#9A3412" text-anchor="middle" font-weight="800">㉮ 쪽</text>
+    <text x="95" y="99" font-size="8" fill="#9A3412" text-anchor="middle" font-weight="700">같은 수</text>
+    <rect x="176" y="72" width="98" height="34" rx="7" fill="#fff" stroke="#EA580C" stroke-width="1.6"/>
+    <text x="225" y="86" font-size="8" fill="#9A3412" text-anchor="middle" font-weight="800">㉯ 쪽</text>
+    <text x="225" y="99" font-size="8" fill="#9A3412" text-anchor="middle" font-weight="700">같은 수</text>
+    <text x="160" y="93" font-size="11" fill="#B45309" text-anchor="middle" font-weight="800">=</text>
+    <rect x="46" y="114" width="228" height="26" rx="7" fill="#FEF3C7"/>
+    <text x="160" y="131" font-size="8.2" fill="#92400E" text-anchor="middle" font-weight="800">그래서 개표한 것을 직접 다시 검사했어요</text>
+  </svg>`,
+  // 6 친구와 활동 — 선거로 달라진 지역
+  town:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    <text x="160" y="20" font-size="11.2" fill="#9A3412" text-anchor="middle" font-weight="800">대표가 열심히 일하면</text>
+    <rect x="22" y="30" width="276" height="122" rx="12" fill="#fff" stroke="#C2410C" stroke-width="2"/>
+    <rect x="36" y="66" width="46" height="52" rx="5" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.4"/>
+    <rect x="46" y="78" width="10" height="10" rx="2" fill="#C2410C"/>
+    <rect x="62" y="78" width="10" height="10" rx="2" fill="#C2410C"/>
+    <rect x="46" y="94" width="10" height="10" rx="2" fill="#C2410C"/>
+    <rect x="62" y="94" width="10" height="10" rx="2" fill="#C2410C"/>
+    <text x="59" y="132" font-size="7.4" fill="#7C2D12" text-anchor="middle" font-weight="800">배움의 자리</text>
+    <rect x="94" y="54" width="46" height="64" rx="5" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.4"/>
+    <circle cx="117" cy="76" r="9" fill="#FDBA74"/>
+    <rect x="106" y="92" width="22" height="18" rx="3" fill="#C2410C"/>
+    <text x="117" y="132" font-size="7.4" fill="#7C2D12" text-anchor="middle" font-weight="800">체험의 자리</text>
+    <rect x="152" y="72" width="46" height="46" rx="5" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.4"/>
+    <path d="M160 100 L190 100" stroke="#C2410C" stroke-width="3" stroke-linecap="round"/>
+    <path d="M160 90 L190 90" stroke="#FDBA74" stroke-width="3" stroke-linecap="round"/>
+    <text x="175" y="132" font-size="7.4" fill="#7C2D12" text-anchor="middle" font-weight="800">안전한 길</text>
+    <rect x="210" y="60" width="72" height="58" rx="5" fill="#FEF3C7" stroke="#B45309" stroke-width="1.4"/>
+    <text x="246" y="82" font-size="7.6" fill="#92400E" text-anchor="middle" font-weight="800">사람들이</text>
+    <text x="246" y="96" font-size="7.6" fill="#92400E" text-anchor="middle" font-weight="800">더 살기 좋은</text>
+    <text x="246" y="110" font-size="7.6" fill="#92400E" text-anchor="middle" font-weight="800">환경에서 생활</text>
+    <text x="246" y="132" font-size="7.4" fill="#7C2D12" text-anchor="middle" font-weight="800">우리 지역의 변화</text>
+  </svg>`,
+  // 7 정리
+  wrap:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    <text x="160" y="22" font-size="11.4" fill="#9A3412" text-anchor="middle" font-weight="800">오늘의 정리</text>
+    <rect x="26" y="34" width="268" height="30" rx="8" fill="#fff" stroke="#C2410C" stroke-width="1.8"/>
+    <text x="160" y="54" font-size="8.6" fill="#9A3412" text-anchor="middle" font-weight="800">대표는 나라의 중요한 일을 결정해요</text>
+    <rect x="26" y="70" width="268" height="30" rx="8" fill="#fff" stroke="#EA580C" stroke-width="1.8"/>
+    <text x="160" y="90" font-size="8.6" fill="#9A3412" text-anchor="middle" font-weight="800">국민의 참여로 결과가 달라질 수 있어요</text>
+    <rect x="26" y="106" width="268" height="30" rx="8" fill="#FEF3C7" stroke="#B45309" stroke-width="1.8"/>
+    <text x="160" y="126" font-size="8.6" fill="#92400E" text-anchor="middle" font-weight="800">지역이 변화하고 더 살기 좋아져요</text>
+    <text x="160" y="155" font-size="8.4" fill="#64748B" text-anchor="middle" font-weight="700">그래서 선거가 중요해요</text>
+  </svg>`
+};
+function sceneCard(k,cap,extra){ return `<div class="scene ${extra||''}">${SVG[k]}${cap?`<div class="cap">${cap}</div>`:''}</div>`; }
+
+/* ===== 직접조작 — 다시 세어도 판이 달라지지 않는 판(48번째 신규 패턴 — 부동(不動)의 형) =====
+   ⭐ 앞의 마흔일곱 종에서 학생이 누른 **알맞은 조작은 언제나 판을 바꿨다.**
+      47번째(첫 길이 막히는 판)에서도 길이 막혔을 뿐 판은 달라졌다(「직접 가 봄」 표시가 남았다).
+      이번만 **알맞고 필요한 조작인데 판의 어떤 값도 바꾸지 않는 자리**가 들어간다 —
+      다시 세기(재검표)는 몇 번을 눌러도 두 쪽의 표를 그대로 둔다.
+      근거는 교과서 낱말 풀이 원문 「재검표 = 개표 결과를 두고서 잘못이나 실수가 있는지
+      확인하기 위해 개표한 것을 직접 다시 검사함」 — 확인하는 일이지 결과를 바꾸는 일이 아니다.
+   ⭐ **판을 움직이는 것은 새로 들어온 한 표 하나뿐이다.**
+   ⭐ **누구를 보내도 갈린다 — 다만 누가 참여하느냐에 따라 갈리는 쪽이 달라진다.**
+   ⭐ **유권자는 한 명도 사라지지 않는다** — 유권자 칸을 그리는 자리가 코드에 단 하나이고 그 수는 언제나 VC_N.
+   ⭐ **표는 어느 경로로도 줄지 않는다** — 다시 세기로도, 재클릭으로도 줄지 않는다.
+   ⚠️ 46번째(도로 감추는 형)와의 대비 — 거기서는 판이 달라졌다가 되돌아왔다.
+      여기서는 **애초에 움직이지 않는다.** 되감김이 아니라 부동이다.
+   ⚠️ 가드 9종: ① 마무리 확정 후 전체 잠금 / ② 무효 번호(Number.isInteger·범위) /
+      ③ 이미 참여한 사람 재클릭 무시 — 판 불변 / ④ 세 사람이 다 참여한 뒤 클릭 무시 /
+      ⑤ 첫 재검표 전 참여 무시(순서) / ⑥ [미디어 활동] 확정 후 재선택 무시 /
+      ⑦ 전원 참여 전 [미디어 활동] 무시(순서) / ⑧ [미디어 활동] 전 마무리 무시(순서) /
+      ⑨ 안내 표시 중 재클릭 무시(vcBusy).
+   ⚠️ 전량 고정 리터럴 — 난수 0. 발문은 `.vc-q`로 떼어 전 단계 상시 노출. */
+const VC_N = 11;
+const VC_DONE = 8;                                // 이미 투표를 마친 유권자
+const VC_LATE = 3;                                // 아직 투표하지 않은 유권자
+const VC_A0 = 4;                                  // 첫 개표에서 ㉮ 쪽에 모인 표 — 고정 리터럴
+const VC_B0 = 4;                                  // 첫 개표에서 ㉯ 쪽에 모인 표 — 고정 리터럴(같은 수)
+const VC_WILL = [0, 0, 1];                        // 늦은 세 사람의 뜻 — 고정 리터럴(난수 0 · 실제 인물 0)
+const VC_MARK = ['\u326E', '\u326F'];             // 두 갈래는 이름 없이 기호로만 둔다(정치적 중립)
+/* 안내 — 어느 문구에도 「틀렸다」는 말이 없다. 다시 세는 일도, 아직 참여하지 않은 것도 잘못이 아니다. */
+const VC_BEFORE  = '아직 <b>다시 세어 보지</b> 않았어요. 같게 나온 표를 먼저 확인해 봐요.';
+const VC_ALREADY = '그 사람은 <b>이미 한 표를 냈어요.</b> 한 사람이 낼 수 있는 표는 하나예요. 판은 그대로예요.';
+const VC_ALLIN   = '세 사람이 <b>모두 참여했어요.</b> 더 낼 표가 없어요. 판은 그대로예요.';
+const VC_MEDIA = [                                // [미디어 활동] 뉴스 기사를 읽고 — 다시 세어 본 까닭
+  '개표 결과 두 쪽의 표가 같게 나왔기 때문이에요',
+  '표를 세는 일이 재미있기 때문이에요',
+  '세어 본 결과를 바꾸고 싶었기 때문이에요'
+];
+const VC_MEDIA_OK = 0;                            // 지도서 예시 답안 원문
+const VC_MEDIA_NO = [
+  '',
+  '재미로 하는 일이 아니에요. <b>잘못이나 실수가 있는지 확인하려고</b> 다시 검사하는 일이에요.',
+  '다시 세는 일은 <b>결과를 바꾸는 일이 아니에요.</b> 판에서도 몇 번을 다시 세었지만 표는 그대로였지요.'
+];
+const VC_FIN = [                                  // 「국민이 선거에 참여하는 것이 중요한 까닭은?」
+  '뽑힌 대표가 가장 힘이 세기 때문이에요',
+  '한 표 차이로 선거의 결과가 달라질 수 있고, 국민의 참여로 대표가 바뀌면 우리가 사는 사회도 달라질 수 있기 때문이에요',
+  '표를 세는 시간을 줄일 수 있기 때문이에요'
+];
+const VC_FIN_OK = 1;                              // 지도서 예시 답안 원문
+const VC_FIN_NO = [
+  '누가 더 힘이 센지를 정하는 일이 아니에요. <b>국민의 뜻</b>을 담는 일이에요.',
+  '',
+  '빨리 끝내려고 하는 일이 아니에요. 판에서도 <b>한 표</b>가 결과를 갈랐지요.'
+];
+
+/* ⚠️ 표를 세는 자리는 여기 두 곳뿐이고, **다시 센 횟수(vcCount)는 어디에도 쓰이지 않는다.**
+   그래서 몇 번을 다시 세어도 두 쪽의 표는 달라질 수 없다(부동의 구조적 보장). */
+function vcA(st){ let n=VC_A0; st.vcNew.forEach(i=>{ if(VC_WILL[i]===0) n++; }); return n; }
+function vcB(st){ let n=VC_B0; st.vcNew.forEach(i=>{ if(VC_WILL[i]===1) n++; }); return n; }
+function vcResult(st){ const a=vcA(st), b=vcB(st); return a===b ? null : (a>b ? 0 : 1); }
+function vcAllIn(st){ return st.vcNew.length>=VC_LATE; }
+
+/* 판 — 위는 두 갈래의 표, 가운데는 결과 띠와 다시 센 횟수, 아래는 유권자 열한 사람.
+   ⚠️ 유권자 칸을 그리는 자리는 **여기 한 곳뿐**이고 그 수는 언제나 VC_N이다(사라지지 않음의 구조적 보장). */
+function vcCanvas(st){
+  const a=vcA(st), b=vcB(st), r=vcResult(st);
+  let g='';
+  g+=`<rect x="8" y="6" width="304" height="238" rx="10" fill="#FFF7ED" stroke="#FED7AA" stroke-width="2"/>`;
+  const head = st.vcFin!=null ? '소중한 한 표가 결과를 갈랐어요'
+    : (r==null ? '두 쪽의 표가 같아요 \u2014 결과가 정해지지 않았어요'
+      : `${VC_MARK[r]} 쪽으로 결과가 갈렸어요`);
+  g+=`<text x="160" y="22" font-size="10.6" fill="#9A3412" text-anchor="middle" font-weight="800">${head}</text>`;
+  // 두 갈래의 표 더미 — 표 칸을 그리는 자리도 한 곳뿐이다
+  [[22,a,'#C2410C','a'],[166,b,'#EA580C','b']].forEach((p,side)=>{
+    const x0=p[0], n=p[1], col=p[2], key=p[3];
+    g+=`<rect x="${x0}" y="30" width="132" height="86" rx="9" fill="#fff" stroke="${col}" stroke-width="1.8"/>`;
+    g+=`<text x="${x0+66}" y="45" font-size="9" fill="#9A3412" text-anchor="middle" font-weight="800">${VC_MARK[side]} 쪽 ${n}표</text>`;
+    for(let k=0;k<n;k++){
+      const cx=x0+8+(k%3)*40, cy=52+Math.floor(k/3)*26;
+      g+=`<rect data-slip="${key}" x="${cx}" y="${cy}" width="36" height="20" rx="4" fill="#FFEDD5" stroke="${col}" stroke-width="1.2"/>`;
+    }
+  });
+  g+=`<rect data-ta="${a}" data-tb="${b}" x="22" y="30" width="0" height="0" fill="none"/>`;
+  // 결과 띠
+  g+=`<rect data-result="${r==null?'x':r}" x="22" y="120" width="276" height="24" rx="7" fill="${r==null?'#F1F5F9':'#FEF3C7'}"/>`;
+  g+=`<text x="160" y="136" font-size="8.6" fill="${r==null?'#64748B':'#92400E'}" text-anchor="middle" font-weight="800">${
+    r==null ? '표가 같아서 결과를 정할 수 없어요' : `${VC_MARK[r]} 쪽이 한 표 더 많아요`}</text>`;
+  // 다시 센 횟수 — 이 수는 표를 세는 데 쓰이지 않는다
+  g+=`<text data-recount="${st.vcCount}" x="160" y="158" font-size="8.2" fill="#B45309" text-anchor="middle" font-weight="800">다시 세어 본 횟수 ${st.vcCount}</text>`;
+  // 유권자 열한 사람 — 코드에 단 하나뿐인 자리
+  g+=`<text x="160" y="176" font-size="8.4" fill="#9A3412" text-anchor="middle" font-weight="800">유권자 ${VC_N}명</text>`;
+  for(let i=0;i<VC_N;i++){
+    const cx=40+(i%6)*48, cy=196+Math.floor(i/6)*30;
+    const late = i>=VC_DONE, joined = late && st.vcNew.indexOf(i-VC_DONE)>=0;
+    const voted = !late || joined;
+    g+=`<circle data-vc="${i}"${late?' data-late="1"':''}${joined?' data-joined="1"':''} cx="${cx}" cy="${cy}" r="11" fill="${voted?'#FDBA74':'#F8FAFC'}" stroke="${late?'#B45309':'#EA580C'}" stroke-width="1.6"${late&&!joined?' stroke-dasharray="3 3"':''}/>`;
+    g+=`<text x="${cx}" y="${cy+4}" font-size="8.6" fill="#9A3412" text-anchor="middle" font-weight="800">${i+1}</text>`;
+  }
+  g+=`<rect data-voters="${VC_N}" x="22" y="180" width="0" height="0" fill="none"/>`;
+  return `<svg viewBox="0 0 320 250"><rect width="320" height="250" fill="#ffffff"/>${g}</svg>`;
+}
+
+function vcPanel(st){
+  const done = st.vcFin!=null, all = vcAllIn(st), med = st.vcMedia!=null;
+  const q = done
+    ? '국민의 참여로 선거의 결과가 달라질 수 있어요.'
+    : (med ? '국민이 선거에 <b>참여하는 것</b>이 중요한 까닭은 무엇일까요?'
+      : (all ? '뉴스 기사를 읽고, 개표한 것을 <b>다시 검사한 까닭</b>을 찾아봅시다.'
+        : (st.vcCount>0 ? '아직 <b>투표하지 않은 사람</b>이 세 명 있어요. 한 사람을 투표하러 보내 봐요.'
+          : '두 쪽의 표가 <b>같게</b> 나왔어요. 먼저 다시 세어 볼까요?')));
+  let right = `<div class="vc-q">${q}</div>`;
+
+  if(done){
+    right+=`<div class="dw-card"><div class="pt">\uD83D\uDDF3\uFE0F 판을 움직인 것은 무엇이었나요</div>
+      <div>몇 번을 <b>다시 세어도</b> 두 쪽의 표는 그대로였어요. 같던 표를 가른 것은
+      아직 참여하지 않았던 사람의 <b>한 표</b>였어요.</div>
+      <div style="margin-top:5px;color:#64748B">그래서 국민은 선거에 적극적으로 참여하여 <b>소중한 한 표</b>를 행사해야 해요.</div></div>`;
+  } else if(med){
+    right+=`<div class="vc-src"><b>\uD83D\uDCF0 뉴스 기사에서</b><br>
+      단 한 표 차이로 선거의 결과가 달라질 수 있다고 했어요.</div>`;
+    right+=`<div class="vc-fin">${VC_FIN.map((f,k)=>
+      `<button class="${st.vcWrongF===k?'no':''}" onclick="vcFinish(${k})">${f}</button>`).join('')}</div>`;
+  } else if(all){
+    right+=`<div class="dw-step">\uD83D\uDCF0 미디어 활동</div>`;
+    right+=`<div class="vc-src">세 사람이 모두 참여했어요. 그런데 처음에 <b>다시 세어 본 까닭</b>은 무엇이었을까요?</div>`;
+    right+=`<div class="vc-fin">${VC_MEDIA.map((s,k)=>
+      `<button class="${st.vcWrongM===k?'no':''}" onclick="vcPickMedia(${k})">${s}</button>`).join('')}</div>`;
+  } else {
+    right+=`<div class="dw-step">\uD83D\uDD01 다시 세기 \u2014 몇 번을 눌러도 괜찮아요</div>`;
+    right+=`<button class="vc-again" onclick="vcAgain()">\u21BA 개표한 것을 다시 세어 보기</button>`;
+    if(st.vcCount>0){
+      right+=`<div class="dw-step">\uD83D\uDEB6 아직 투표하지 않은 사람</div>`;
+      right+=`<div class="vc-grid">${Array.from({length:VC_LATE},(_,i)=>{
+        const j = st.vcNew.indexOf(i)>=0;
+        return `<button class="${j?'ok':''}${st.vcWrongV===i?' no':''}" onclick="vcVoter(${i})">${VC_DONE+i+1}번</button>`;
+      }).join('')}</div>`;
+    }
+  }
+  if(st.vcMsg) right+=`<div class="dw-msg${st.vcWarn?' warn':''}">${st.vcMsg}</div>`;
+
+  return `<div class="dw-wrap">
+    <div style="text-align:center"><b style="color:var(--green)">\uD83D\uDD01 다시 세어 보고, 무엇이 판을 움직이는지 살펴봐요</b></div>
+    <div class="dw-body">
+      <div class="dw-canvas">${vcCanvas(st)}<div class="cvcap">다시 세기는 확인하는 일이에요</div></div>
+      <div class="dw-right">${right}</div>
+    </div>
+  </div>`;
+}
+
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "2단원 민주주의와 시민 참여 · 주제① 민주주의와 선거";
+
+// 확인 4 + 적용 4 — 정답 다양화 [1,3,0,2,0,2,3,1](각 자리 2회)
+// ⚠️ 3차시 이후 침범 0 · 주제②③ 침범 0 · 대단원1 재현 0 · 문항 내 연도·득표수 0 · 실제 정당·인물 0.
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"선거로 뽑힌 대표는 <b>무엇에 따라</b> 일할까요?",
+   opts:["자기가 하고 싶은 대로 일한다",
+         "헌법과 법률에 따라 국민을 위해 일한다",
+         "가장 재산이 많은 사람의 뜻에 따라 일한다",
+         "아무 일도 하지 않아도 된다"],
+   correct:1, pts:POINTS_BASIC, scene:"lead",
+   reason:"선거로 뽑힌 대표는 국민의 행복한 삶과 미래를 위해 나라의 중요한 일을 결정하고, <b>헌법과 법률에 따라</b> 일해요.",
+   h1:"교과서 [꼭 기억해요] 1번을 떠올려 봐요.",
+   h2:"대표는 마음대로가 아니라 <b>정해진 규칙</b>에 따라 일해요."},
+
+  {stem:"선거는 민주주의 국가에서 <b>무엇을 실현하는</b> 가장 기본적이고 중요한 방법일까요?",
+   opts:["표를 빨리 세는 일",
+         "대표의 재산을 늘리는 일",
+         "회의를 오래 하는 일",
+         "국민 주권"],
+   correct:3, pts:POINTS_BASIC, scene:"crown",
+   reason:"선거는 민주주의 국가에서 <b>국민 주권</b>을 실현하는 가장 기본적이고 중요한 방법이에요.",
+   h1:"교과서 [꼭 기억해요] 2번의 빈칸을 떠올려 봐요.",
+   h2:"나라의 주인이 누구인지와 이어지는 말이에요."},
+
+  {stem:"<b>국민 주권</b>이란 무엇일까요?",
+   opts:["나라의 중요한 일을 결정하는 최고의 권력인 주권이 국민에게 있다는 것",
+         "주권이 대표 한 사람에게만 있다는 것",
+         "주권을 다른 나라에 넘겨준다는 것",
+         "주권이 아예 없는 상태를 말하는 것"],
+   correct:0, pts:POINTS_BASIC, scene:"crown",
+   reason:"국민 주권은 나라의 중요한 일을 결정하는 <b>최고의 권력인 주권이 국민에게 있음</b>을 뜻해요.",
+   h1:"교과서 낱말 풀이를 살펴봐요.",
+   h2:"가장 높은 힘을 누가 가지고 있나요?"},
+
+  {stem:"<b>재검표</b>는 무엇을 하는 일일까요?",
+   opts:["표를 더 만들어서 넣는 일",
+         "세어 본 결과를 바꾸어 적는 일",
+         "잘못이나 실수가 있는지 확인하려고 개표한 것을 직접 다시 검사하는 일",
+         "투표를 처음부터 다시 하는 일"],
+   correct:2, pts:POINTS_BASIC, scene:"recount",
+   reason:"재검표는 개표 결과를 두고서 <b>잘못이나 실수가 있는지 확인하려고</b> 개표한 것을 직접 다시 검사하는 일이에요.",
+   h1:"교과서 낱말 풀이를 살펴봐요.",
+   h2:"판에서 몇 번을 다시 세어도 표가 그대로였던 것을 떠올려 봐요."},
+
+  // 4단계 적용 (+15)
+  {stem:"판에서 <b>다시 세어 봐도 두 쪽의 표가 그대로였던</b> 까닭은 무엇일까요?",
+   opts:["다시 세는 일은 확인하는 일이지 결과를 바꾸는 일이 아니기 때문에",
+         "판이 고장 났기 때문에",
+         "학생이 눌러야 할 곳을 잘못 눌렀기 때문에",
+         "표가 몰래 사라졌기 때문에"],
+   correct:0, pts:POINTS_APPLY, scene:"recount",
+   reason:"다시 세는 일은 <b>잘못이나 실수가 있는지 확인하는 일</b>이에요. 그래서 몇 번을 눌러도 판은 그대로였고, 감점도 없었어요.",
+   h1:"다시 세어 본 뒤에 판이 학생을 나무랐나요?",
+   h2:"확인하는 일과 <b>바꾸는 일</b>은 서로 달라요."},
+
+  {stem:"판에서 <b>같던 두 쪽의 표를 갈라 놓은 것</b>은 무엇이었나요?",
+   opts:["다시 세어 본 횟수",
+         "표를 세는 순서",
+         "아직 참여하지 않았던 사람의 한 표",
+         "판에 남아 있던 빈자리의 수"],
+   correct:2, pts:POINTS_APPLY, scene:"one",
+   reason:"판을 움직인 것은 다시 세기가 아니라 <b>새로 들어온 한 표</b>였어요. 그래서 한 사람의 참여가 소중해요.",
+   h1:"다시 세기만 계속했을 때 결과가 정해졌나요?",
+   h2:"판이 달라진 것은 <b>누가 새로 참여했을 때</b>였어요."},
+
+  {stem:"국민이 선거에 <b>참여하는 것</b>이 중요한 까닭으로 알맞은 것은 무엇일까요?",
+   opts:["표를 세는 시간을 줄일 수 있기 때문에",
+         "참여하지 않아도 결과가 똑같기 때문에",
+         "대표가 스스로 다음 대표를 정하기 때문에",
+         "한 표 차이로 결과가 달라질 수 있고, 대표가 바뀌면 우리가 사는 사회도 달라질 수 있기 때문에"],
+   correct:3, pts:POINTS_APPLY, scene:"one",
+   reason:"한 표 차이로 선거의 결과가 달라질 수 있어요. 국민의 참여로 대표가 바뀌면 <b>우리가 사는 사회도 변화할 수 있어요.</b>",
+   h1:"판에서 마지막 한 표가 무엇을 갈랐는지 떠올려 봐요.",
+   h2:"결과가 달라지면 그다음에는 무엇이 달라질까요?"},
+
+  {stem:"지역의 대표를 잘 뽑고, 대표가 지역 발전을 위해 열심히 일하면 어떤 변화가 생길까요?",
+   opts:["지역에는 아무 변화도 생기지 않는다",
+         "지역이 변화하고 사람들이 더 살기 좋은 환경에서 생활할 수 있다",
+         "지역에 사는 사람이 모두 대표가 된다",
+         "지역의 일을 아무도 결정하지 않게 된다"],
+   correct:1, pts:POINTS_APPLY, scene:"town",
+   reason:"대표가 지역 발전을 위해 열심히 일하면 <b>지역이 변화하고 사람들이 더 살기 좋은 환경에서 생활</b>할 수 있어요.",
+   h1:"교과서 인터뷰에서 무엇이 좋아졌다고 했나요?",
+   h2:"배움의 자리·안전한 길·일자리를 떠올려 봐요."}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — 뽑힌 대표가 하는 일
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">대표를 뽑는 일이 왜 중요할까요?</h2>
+  <div class="ka-bub">선거로 뽑힌 대표는 <b>국민의 행복한 삶과 미래</b>를 위해 나라의 중요한 일을 결정하고, <b>헌법과 법률에 따라</b> 일해요. 나라의 중요한 일을 정하는 사람을 고르는 일이니 <span class="ka-emph">그 일을 누구에게 맡길지가 아주 중요해요.</span> 오늘은 <span class="ka-emph">선거가 중요한 까닭</span>을 알아봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('lead','뽑힌 대표가 하는 일','wide')}</div>
+    <div class="note">선거에서 어떤 사람을 대표로 뽑아야 할까요?</div></div>`});
+// 2 살펴보기 — 잘 뽑은 길과 살펴보지 않고 뽑은 길
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">대표를 어떻게 뽑느냐에 따라 달라져요</h2>
+  <div class="ka-bub">대표는 <b>나라의 중요한 일을 결정</b>해요. 그래서 <span class="ka-emph">국민을 위해 열심히 일할 사람, 도덕적으로 올바르고 공정한 사람</span>을 잘 살펴보고 뽑아야 해요. 살펴보지 않고 뽑으면 <b>나라 경제와 국민의 삶이 어려워질 수 있어요.</b></div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('scale','두 갈래의 길','wide')}</div>
+    <div class="tipbox">한 가지 말만 보고 뽑기보다, 그 사람이 <b>무엇을 어떻게 하겠다는지</b>를 함께 살펴봐요.</div></div>`});
+// 3 살펴보기 — 직접조작(다시 세어도 달라지지 않는 판)
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">다시 세어 보고, 무엇이 판을 움직이는지 살펴봐요</h2>
+  <div class="ka-grp">${vcPanel(st)}</div>`});
+// 4 살펴보기 — 국민 주권과 소중한 한 표
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">한 표가 왜 소중할까요?</h2>
+  <div class="ka-bub">선거는 민주주의 국가에서 <b>국민 주권을 실현하는 가장 기본적이고 중요한 방법</b>이에요. 그래서 <span class="ka-emph">국민은 선거에 적극적으로 참여하여 소중한 한 표를 행사해야 해요.</span></div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('crown','국민 주권','wide')}</div>
+    <div class="tipbox"><b>국민 주권</b>이란 나라의 중요한 일을 결정하는 <b>최고의 권력인 주권이 국민에게 있음</b>을 뜻해요.</div></div>`});
+// 5 살펴보기 — reveal: [미디어 활동] 다시 검사한 까닭
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">개표한 것을 왜 다시 검사했을까요?</h2>
+  <div class="ka-grp">
+  <div class="paper"><div class="ph">\uD83D\uDCF0 미디어 활동 \u2014 뉴스 기사를 읽고</div>
+    기사에는 개표 결과 <b>두 쪽의 표가 같게 나왔다</b>는 이야기가 나와요.
+    그래서 개표한 것을 직접 다시 검사했지요. 왜 그랬을지 먼저 스스로 생각해 보고 눌러요.</div>
+  <div class="scene-row">${sceneCard('recount','뉴스 기사','wide')}</div>
+  ${st.revealed?`<div class="answer-box"><b>개표 결과 두 쪽의 표가 같게 나왔기 때문</b>이에요. 다시 검사하는 일은 <span class="ka-emph">잘못이나 실수가 있는지 확인하는 일</span>이지, 결과를 바꾸는 일이 아니에요.</div>`
+    :`<div class="note">먼저 스스로 떠올려 본 다음에 눌러요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 6 살펴보기 — 선거로 생긴 지역의 변화
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">선거로 우리 지역이 달라져요</h2>
+  <div class="ka-bub">선거로 뽑힌 대표가 <b>지역 발전을 위해 열심히 일하면</b> 지역이 변화하고 <span class="ka-emph">사람들이 더 살기 좋은 환경에서 생활할 수 있어요.</span> 배우고 체험할 자리가 늘고, 길이 더 안전해지기도 해요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('town','우리 지역의 변화','wide')}</div>
+    <div class="tipbox"><b>재검표</b>란 개표 결과를 두고서 잘못이나 실수가 있는지 확인하려고 <b>개표한 것을 직접 다시 검사</b>하는 일이에요.</div></div>`});
+// 7 살펴보기 — reveal: [친구와 활동] 지역의 대표를 잘 뽑으면
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">지역의 대표를 잘 뽑으면 어떤 변화가 생길까요?</h2>
+  <div class="ka-grp">
+  <div class="paper"><div class="ph">\uD83D\uDDE3\uFE0F 친구와 활동 \u2014 돌아가며 말하기\u00B7의견 나누기</div>
+    우리 지역에 무엇이 달라지면 좋을지 먼저 스스로 떠올려 보고,
+    아래 단추로 다른 사람들의 이야기를 살펴봐요.</div>
+  <div class="scene-row">${sceneCard('scale','잘 살펴보고 뽑기','wide')}</div>
+  ${st.revealed?`<div class="answer-box">\u00B7 사람들이 <b>더 살기 좋은 환경</b>에서 생활할 수 있게 될 거예요.<br>\u00B7 <b>교육 환경</b>이 좋아질 거예요.<br>\u00B7 <b>안전한 지역</b>이 될 거예요.<br>\u00B7 <b>지역 경제</b>가 더욱 발전할 거예요.</div>`
+    :`<div class="note">우리 지역의 어떤 점이 바뀌면 좋을까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리: 요약 — 3차시 주요 내용 정리 원문
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 배운 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('wrap','오늘의 정리','wide')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">①</span><div><b style="color:var(--green)">선거가 중요한 까닭</b> \u2014 대표는 나라의 중요한 일을 결정하기 때문이에요.</div></div>
+    <div class="sum-item"><span class="n">②</span><div><b style="color:var(--green)">참여가 중요한 까닭 하나</b> \u2014 선거는 민주주의 국가에서 국민 주권을 실현하는 가장 기본적이고 중요한 방법이에요.</div></div>
+    <div class="sum-item"><span class="n">③</span><div><b style="color:var(--green)">참여가 중요한 까닭 둘</b> \u2014 국민의 선거 참여로 선거의 결과와 대표가 달라질 수 있어요.</div></div>
+    <div class="sum-item"><span class="n">④</span><div><b style="color:var(--green)">선거를 통한 변화</b> \u2014 대표가 지역 발전을 위해 열심히 일하면 지역이 변화하고 사람들이 더 살기 좋은 환경에서 생활할 수 있어요.</div></div>
+    <div class="sum-item"><span class="n">★</span><div><b>다시 세기</b>는 잘못이나 실수가 있는지 확인하는 일이에요. 결과를 가른 것은 <b>소중한 한 표</b>였어요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b style="color:var(--green)">선거 과정</b>을 알아봐요.</div></div>`});
+// 17 정리: 자기 평가 — 학습 목표 기준 3항
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"선거가 중요한 까닭을 말할 수 있어요",st)}
+    ${selfCheck(1,"국민이 선거에 참여하는 것이 중요한 까닭을 말할 수 있어요",st)}
+    ${selfCheck(2,"선거로 지역에 생기는 변화를 설명할 수 있어요",st)}
+  </div><div class="note">별이 적게 채워진 곳은 앞 슬라이드를 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">오늘 공부를 마쳤어요!</h2>
+  <div class="ka-grp">
+    <div class="end-score">\u2B50 ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">다음은 <b style="color:var(--amber)">선거 과정</b>!</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">\u2B55 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g6_social_u2_l02";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  vcCount:0, vcNew:[], vcMedia:null, vcFin:null,
+  vcWrongV:null, vcWrongM:null, vcWrongF:null,
+  vcMsg:null, vcWarn:false, vcBusy:false,
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 \u2192';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+function vcRender(){ main.innerHTML = slides[state.idx].render(state); }
+function vcHold(msg){
+  state.vcWarn=true; state.vcBusy=true; state.vcMsg=msg;
+  playThud(); vcRender();
+  setTimeout(()=>{ state.vcBusy=false; state.vcWarn=false; state.vcMsg=null;
+    state.vcWrongV=null; state.vcWrongM=null; state.vcWrongF=null; vcRender(); },1600);
+}
+
+/* ① 다시 세기 — ★ 이 함수가 이 패턴의 핵심 신규성이다.
+   알맞고 필요한 조작인데 **판의 어떤 값도 바꾸지 않는다.**
+   늘어나는 것은 다시 센 횟수뿐이고, 그 수는 표를 세는 데 쓰이지 않는다.
+   ⚠️ 몇 번을 눌러도 된다 — 감점 0 · 경고 0 · 횟수 제한 0. */
+function vcAgain(){
+  if(state.vcFin!=null) return;                                        // 가드①
+  if(state.vcBusy) return;                                             // 가드⑨
+  state.vcCount++;
+  state.vcWrongV=null; state.vcWarn=false;
+  state.vcMsg = (vcResult(state)==null)
+    ? `다시 세어 봤어요. ${VC_MARK[0]} ${vcA(state)}표 · ${VC_MARK[1]} ${vcB(state)}표 \u2014 처음과 <b>똑같아요.</b> 다시 세는 일은 잘못이나 실수가 있는지 <b>확인하는 일</b>이지, 결과를 바꾸는 일이 아니에요.`
+    : `다시 세어 봤어요. ${VC_MARK[0]} ${vcA(state)}표 · ${VC_MARK[1]} ${vcB(state)}표 \u2014 <b>그대로예요.</b> 판을 움직인 것은 다시 세기가 아니라 <b>새로 들어온 한 표</b>였어요.`;
+  playBlip(); vcRender();
+}
+
+/* ② 참여하러 가기 — 판을 움직이는 유일한 자리.
+   ⚠️ 첫 재검표 전에는 열리지 않는다(같은 표를 겪지 않고 건너뛸 수 없다 · 가드⑤). */
+function vcVoter(i){
+  if(state.vcFin!=null) return;                                        // 가드①
+  if(state.vcBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(i) || i<0 || i>=VC_LATE) return;                // 가드②
+  if(state.vcCount<1){ state.vcWrongV=i; vcHold(VC_BEFORE); return; }  // 가드⑤ 순서
+  if(vcAllIn(state)){ state.vcWrongV=i; vcHold(VC_ALLIN); return; }    // 가드④ 전원 참여 뒤 — 판 불변
+  if(state.vcNew.indexOf(i)>=0){                                       // 가드③ 이미 참여한 사람 — 판 불변
+    state.vcWrongV=i; vcHold(VC_ALREADY); return; }
+  const first = state.vcNew.length===0;
+  state.vcNew.push(i); state.vcWrongV=null; state.vcWarn=false;
+  const r=vcResult(state);
+  state.vcMsg = first
+    ? `<b>${VC_DONE+i+1}번</b>이 한 표를 냈어요. 같던 두 쪽이 <b>단 한 표</b>로 갈렸어요 \u2014 ${VC_MARK[0]} ${vcA(state)}표 · ${VC_MARK[1]} ${vcB(state)}표.`
+    : `<b>${VC_DONE+i+1}번</b>도 한 표를 냈어요 \u2014 ${VC_MARK[0]} ${vcA(state)}표 · ${VC_MARK[1]} ${vcB(state)}표. 지금은 ${VC_MARK[r]} 쪽이 한 표 더 많아요.`;
+  if(vcAllIn(state)) playChime(); else playBlip();
+  vcRender();
+}
+
+/* ③ [미디어 활동] — 뉴스 기사를 읽고 다시 검사한 까닭 */
+function vcPickMedia(k){
+  if(state.vcFin!=null) return;                                        // 가드①
+  if(state.vcBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(k) || k<0 || k>=VC_MEDIA.length) return;        // 가드②
+  if(!vcAllIn(state)) return;                                          // 가드⑦ 전원 참여 전 무시(순서)
+  if(state.vcMedia!=null) return;                                      // 가드⑥ 확정 후 재선택 무시
+  if(k===VC_MEDIA_OK){
+    state.vcMedia=k; state.vcWrongM=null; state.vcWarn=false;
+    state.vcMsg = '두 쪽의 표가 <b>같게 나왔기 때문</b>에 개표한 것을 직접 다시 검사한 거예요.';
+    playChime(); vcRender(); return;
+  }
+  state.vcWrongM=k;
+  vcHold(VC_MEDIA_NO[k]);
+}
+
+/* ④ 마무리 — 「국민이 선거에 참여하는 것이 중요한 까닭」 */
+function vcFinish(k){
+  if(state.vcFin!=null) return;                                        // 가드①
+  if(state.vcBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(k) || k<0 || k>=VC_FIN.length) return;          // 가드②
+  if(state.vcMedia==null) return;                                      // 가드⑧ [미디어 활동] 전 무시(순서)
+  if(k===VC_FIN_OK){
+    state.vcFin=k; state.vcWrongF=null; state.vcMsg=null; state.vcWarn=false;
+    playChime(); vcRender(); return;
+  }
+  state.vcWrongF=k;
+  vcHold(VC_FIN_NO[k]);
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2;
+    if(qs.hint>=2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">\uD83D\uDCD8 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 \u2192</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // l03 미양산 — 양산 시 재배선
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+</body>
+</html>
