@@ -114,14 +114,14 @@ window.KEDU_MAP["g6_1_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u1_l11",
+     "lessonId": "g6_social_u1_l11_v1",
      "n": "11",
      "title": "1단원 마무리 — 생각 그물·교실 놀이",
      "sub": "② 민주화와 산업화로 달라진 생활 모습",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/social/1단원_평화통일민주화산업화/g6_social_u1_l11_단원마무리.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   },
