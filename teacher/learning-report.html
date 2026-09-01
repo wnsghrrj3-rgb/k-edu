@@ -137,6 +137,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 .bar-inl{display:inline-block;width:56px;height:8px;background:#EDF2F7;border-radius:4px;vertical-align:middle;overflow:hidden;margin-right:6px}
 .bar-inl i{display:block;height:100%;background:var(--primary)}
 
+tr.pending th, tr.pending td{opacity:.55;cursor:default}
 /* 학생 카드 */
 .stu-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .stu-head .nm{font-family:var(--kedu-title);font-size:20px}
@@ -315,10 +316,13 @@ async function init(){
 async function loadClass(classCodeId){
   const thisMonday = KR.mondayOf(KR.today());
   const from = KR.addDays(thisMonday, -28);   // 최근 5주 (4주 합 + 비교용)
-  const [{ data: classRow }, { data: students, error: es }] = await Promise.all([
+  const [{ data: classRow }, { data: students, error: es }, { data: seatsRaw }] = await Promise.all([
     db.from('class_codes').select('id, code, label').eq('id', classCodeId).maybeSingle(),
-    db.from('student_data_summary').select('*').eq('class_code_id', classCodeId)
+    db.from('student_data_summary').select('*').eq('class_code_id', classCodeId),
+    // 교사가 명단을 등록했지만 아직 입장하지 않은 학생 — 명단 그대로 표에 보인다 (2026-09-02 준호 요청)
+    db.from('student_seats').select('id, nickname, claimed_by').eq('class_code_id', classCodeId).is('claimed_by', null)
   ]);
+  const pendingSeats = sortStudents((seatsRaw||[]).map(x => ({ student_id: 'seat:'+x.id, nickname: x.nickname, pending: true })));
   if(es || !classRow){ showError('🔒','학급을 불러올 수 없습니다', esc((es&&es.message)||'본인 소유 학급만 조회할 수 있습니다.')); return; }
 
   const ids = (students||[]).map(s=>s.student_id).filter(Boolean);
@@ -338,7 +342,7 @@ async function loadClass(classCodeId){
   if(concepts.length || miscons.length) await KR.loadConcepts(db);
   await KR.loadCatalog(mastery.map(m=>m.lesson_id).concat(scores.map(s=>s.lesson_id), wrongs.map(w=>w.lesson_id)));
 
-  _class = { classRow, list: sortStudents(students), mastery, scores, morning, wrongs, concepts, miscons, period:'this', subject:'all' };
+  _class = { classRow, list: sortStudents(students), pending: pendingSeats, mastery, scores, morning, wrongs, concepts, miscons, period:'this', subject:'all' };
   document.getElementById('topbar-title').textContent = '🧭 케이학습리포트 — 우리 반' + (classRow.label ? ' · ' + classRow.label : '');
   document.getElementById('btn-csv').style.display = '';
   renderClass();
@@ -405,7 +409,7 @@ function renderClass(){
         const rep = repByKey.has(k);
         const tip = (m ? `${statusKo(st)} · 문항 ${m.q_n}개 중 ${m.q_latest_ok}개 마지막 답 정답` : (st==='touched'?'풀어봄(집계 대기)':'아직')) + (rep?' · 반복 오답 있음':'');
         return `<td title="${esc(s.nickname||'')} · ${esc(KR.lesson(l).label)} — ${esc(tip)}" onclick="location.href='${stuLink(s.student_id)}'"><i class="${st} ${rep?'rep':''}"></i></td>`;
-      }).join('')}</tr>`).join('')}</tbody></table></div>
+      }).join('')}</tr>`).join('')}${(C.pending||[]).map(s => `<tr class="pending"><th title="명단에는 있지만 아직 학급코드로 입장하지 않았어요">${esc(s.nickname)} <span class="mini">입장 전</span></th>${cols.map(()=>'<td><i class="none"></i></td>').join('')}</tr>`).join('')}</tbody></table></div>
     <div class="hm-legend"><span><i class="solid"></i>탄탄</span><span><i class="edge"></i>경계</span><span><i class="weak"></i>취약</span><span><i class="watching"></i>관찰 중(문항 3개 미만)</span><span><i class="touched"></i>풀어봄</span><span><i class="none"></i>아직</span><span><i class="rep"></i>반복 오답</span><span class="mini">· 칸을 누르면 학생 카드</span></div>`
     : `<div class="empty-note">아직 학급이 손댄 차시가 없습니다.</div>`;
 
@@ -429,7 +433,8 @@ function renderClass(){
       <td class="num">${a.days?a.active+'일':KR.fmtDur(a.sec)}</td>
       <td class="ctr">${a.nWeak?`<span class="pill weak">${a.nWeak}</span>`:''}${a.nRep?` <span class="pill repeat">${a.nRep}</span>`:''}${!a.nWeak&&!a.nRep?'<span class="mini">—</span>':''}</td>
     </tr>`;
-  }).join('');
+  }).join('') + (C.pending||[]).map(s => `<tr class="pending" title="명단에는 있지만 아직 학급코드로 입장하지 않았어요">
+      <td><b>${esc(s.nickname)}</b> <span class="mini">입장 전</span></td><td colspan="7" class="mini">학급코드 ${esc(C.classRow.code||'')} 와 이 이름으로 들어오면 여기부터 채워져요</td></tr>`).join('');
 
   // CSV (상담·기록용, 번호순)
   _csv = ['학생,완료차시,푼차시,문항,정답률,아침활동,활동일,취약차시,반복오답차시'].concat(C.list.map(s => { const a = agg[s.student_id];

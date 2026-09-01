@@ -662,6 +662,15 @@ let currentProfile = null; // student_profiles row
 // 초기화: Auth 세션 확인 + UI 분기 (로그인 → user-area / 비로그인 → entry-card)
 // =============================================
 (async function init(){
+  // 알림장 링크(/?code=ABC123)로 왔으면 학급코드를 채워 두고 이름 칸에 커서 (2026-09-02)
+  try {
+    const pre = new URLSearchParams(location.search).get('code');
+    if(pre){
+      const ci = document.getElementById('entry-class-code');
+      if(ci){ ci.value = pre.toUpperCase().slice(0,12); }
+      setTimeout(()=>{ try { document.getElementById('entry-card')?.scrollIntoView({block:'center'}); document.getElementById('entry-nickname')?.focus(); updateEntryBtn(); } catch(e){} }, 300);
+    }
+  } catch(e){}
   try {
     const { data:{ session } } = await db.auth.getSession();
     if(session && session.user){
