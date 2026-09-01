@@ -70,12 +70,32 @@ window.MK_TPL = (() => {
     return { ...src, ...ov };
   };
 
-  const list = () => sources().map((t) => get(t.templateId));
+  /* 장면 내용 서명 — 제목·id 만 다르고 그림이 같은 클론을 가려낸다 */
+  const sceneSig = (t) => JSON.stringify(t.scenes);
 
-  /* register — 확장점: 새 템플릿(scene 소스 + 오버레이 동시) 등록 */
+  /* list — 갤러리에 내보내는 목록. 같은 그림을 두 번 보여 주지 않는다.
+     get(id) 는 여기서 거른 것도 그대로 찾아 주므로 마켓 설치·resolve·load
+     경로는 손상되지 않는다 — 감추는 건 목록뿐이다. */
+  const list = () => {
+    const seen = new Set(), out = [];
+    for (const t of sources()) {
+      const sig = sceneSig(t);
+      if (seen.has(sig)) continue;      /* 먼저 등록된 쪽을 남긴다(샘플 원본 우선) */
+      seen.add(sig);
+      out.push(get(t.templateId));
+    }
+    return out;
+  };
+
+  /* register — 확장점: 새 템플릿(scene 소스 + 오버레이 동시) 등록.
+     같은 templateId 는 덮어쓴다. 마켓 설치 브리지가 같은 아이템을 여러 사용자에게
+     설치할 때마다 register 를 부르는데, 예전엔 그때마다 EXTRA 에 쌓여
+     갤러리에 똑같은 카드가 3장씩 뜨고 get() 은 첫 장만 찾아 나머지는
+     닿지도 않는 유령이 됐다. */
   function register(template, overlay) {
     template._overlay = overlay;
-    EXTRA.push(template);
+    const i = EXTRA.findIndex((t) => t.templateId === template.templateId);
+    if (i >= 0) EXTRA[i] = template; else EXTRA.push(template);
     return get(template.templateId);
   }
 

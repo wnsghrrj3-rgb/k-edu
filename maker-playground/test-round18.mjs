@@ -169,7 +169,10 @@ T('플러그인 브리지 — MK_PLUGIN 실설치', P._reg.has('mkt-wordcloud') 
 window.PG.loadEditorDoc();
 const cmdR = P.execCommand('wordcloud.make');
 T('브리지 플러그인 명령 실행 — 장면 생성', cmdR && cmdR.scene != null);
-T('템플릿 브리지 — MK_TPL 등재', window.MK_TPL.list().some((t) => t.templateId === 'mkt-pres-minimal'));
+/* 브리지의 계약은 「레지스트리 등재」다 — get() 이 그걸 정확히 본다.
+   list() 는 갤러리 목록이라 같은 그림의 클론을 접는다(이 시드의 payload 는
+   샘플 템플릿 복사본이라 접힌다). 등재 여부를 list() 로 재면 그 둘이 섞인다. */
+T('템플릿 브리지 — MK_TPL 등재', !!window.MK_TPL.get('mkt-pres-minimal'));
 const instRec = X.installedOf('u-t1').find((i) => i.itemId === 'mk-chart-edu');
 T('에셋 브리지 기록', instRec && instRec.bridge === 'assets');
 T('브랜드 킷 레코드 설치', X.installedOf('u-biz').find((i) => i.itemId === 'mk-brand-mint').bridge === 'record');
