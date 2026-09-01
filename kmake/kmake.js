@@ -106,7 +106,7 @@ function renderTemplates() {
     all.map(t => `<button class="tpl-card" data-tpl="${t.id}">
       <div class="tpl-thumb">${t.svg}</div>
       <div class="tpl-name">${t.name}</div>
-      <div class="tpl-badge">${t.langName ? t.langName + ' · ' : ''}✨ 바로 쓰기</div>
+      <div class="tpl-badge">${t.langName ? t.langName + ' · ' : ''}${t.pages ? `📑 ${t.pages}장 세트` : '✨ 바로 쓰기'}</div>
     </button>`).join('') + `</div>`;
   wrap.querySelectorAll('.tchip').forEach(c => c.onclick = () => {
     if (c.dataset.k === 'cat') tplCat = c.dataset.v; else tplLang = c.dataset.v;
@@ -743,6 +743,7 @@ function buildPanel(o) {
     <div class="field"><label>높이</label><input id="pH" value="${Math.round(o.getScaledHeight())}" inputmode="numeric"></div></div></div>`;
   // 📸 사진 (마스크·보정 — photo.js)
   if (o.type === 'image' && o.kmType !== 'background') h += KM_PHOTO.panelHTML(o);
+  else if (isPhotoSlot(o)) h += `<div class="panel-sec"><h3>사진</h3><button class="tb-btn primary" id="pSwap" style="width:100%;justify-content:center">📷 사진 넣기</button></div>`;
   // ✨ 움직임 (모션 엔진)
   h += KM_MOTION.panelHTML(o);
   // 슬롯
@@ -773,6 +774,7 @@ function bindPanel(o, isText) {
   if ($('pW')) $('pW').onchange = e => { const v = parseInt(e.target.value); if (v > 0) { o.scaleToWidth(v); render(); pushHistory(); syncPanelDims(); } };
   if ($('pH')) $('pH').onchange = e => { const v = parseInt(e.target.value); if (v > 0) { o.scaleToHeight(v); render(); pushHistory(); syncPanelDims(); } };
   KM_MOTION.bindPanel(o);
+  if ($('pSwap')) $('pSwap').onclick = () => { imgTarget = o; document.getElementById('imgInput').click(); };
   if (o.type === 'image' && o.kmType !== 'background') KM_PHOTO.bindPanel(o, {
     render, pushHistory,
     rebuildPanel: buildPanel,
@@ -797,10 +799,20 @@ function syncPanelDims() {
   if (w) w.value = Math.round(o.getScaledWidth());
   if (h) h.value = Math.round(o.getScaledHeight());
 }
+/* 사진칸 판정 — 발표 세트(dv-*)의 사진 대역은 실사가 붙기 전까지 rect 로 서 있다.
+   kmSlot.kind==='photo' 면 rect 라도 「사진 바꾸기」를 붙인다. 교체 경로는
+   imgInput 핸들러가 이미 t.left/top/originX/originY/angle/kmSlot 을 상속하므로
+   rect 든 image 든 같은 자리·같은 각도로 갈아 끼워진다. */
+function isPhotoSlot(o) {
+  return o && (
+    (o.type === 'image' && o.kmType !== 'background')
+    || (o.kmSlot && o.kmSlot.kind === 'photo')
+  );
+}
 function buildFillPanel(o) {
   let h = '';
   if (o.type === 'textbox') h = `<div class="fill-card"><div class="fill-tag">📝 ${esc((o.kmSlot && o.kmSlot.label) || '텍스트')}</div><div class="field"><label>여기를 바꾸세요</label><textarea id="fText" autofocus>${esc(o.text)}</textarea></div></div>`;
-  else if (o.type === 'image') h = `<div class="fill-card"><div class="fill-tag">🖼 ${esc((o.kmSlot && o.kmSlot.label) || '사진')}</div><button class="tb-btn primary" id="fSwap" style="width:100%;justify-content:center">📷 사진 바꾸기</button></div>`;
+  else if (isPhotoSlot(o)) h = `<div class="fill-card"><div class="fill-tag">🖼 ${esc((o.kmSlot && o.kmSlot.label) || '사진')}</div><button class="tb-btn primary" id="fSwap" style="width:100%;justify-content:center">📷 사진 바꾸기</button>${o.type !== 'image' ? `<div class="fill-hint" style="margin-top:6px;font-size:12px;opacity:.7">아직 빈 칸이에요 — 사진을 넣으면 이 자리에 맞춰 들어갑니다</div>` : ''}</div>`;
   panel.innerHTML = h;
   const $ = id => document.getElementById(id);
   if ($('fText')) $('fText').oninput = e => { o.set('text', e.target.value); canvas.requestRenderAll(); };
@@ -834,7 +846,7 @@ function drawSlotHints() {
     ctx.lineWidth = 2;
     ctx.setLineDash([6, 4]);
     ctx.strokeRect(r.left - 4, r.top - 4, r.width + 8, r.height + 8);
-    const label = '✏️ ' + (o.kmSlot.label || (o.type === 'image' ? '사진' : '글자'));
+    const label = '✏️ ' + (o.kmSlot.label || (isPhotoSlot(o) ? '사진' : '글자'));
     ctx.font = '700 12px "Gowun Dodum", "Noto Sans KR", sans-serif';
     const tw = ctx.measureText(label).width;
     const cx = r.left - 4, cy = r.top - 4 - 20;
