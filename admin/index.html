@@ -3,214 +3,200 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>K-edu 슈퍼 어드민</title>
-<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<title>케이에듀 관리</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../kedu_config.js"></script>
-<style id="kedu-title-font">/* 케이에듀 제목 폰트 토큰 — 교체 시 이 블록만 수정 (2026-07-04, 학교안심 모험가) */
-@font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
-:root{--kedu-title:'Hakgyoansim Moheomga','Jua',sans-serif}
-</style>
 <style>
+/* 관리 장부 — 준호 혼자 보는 화면. 장식 없이 읽히는 순서대로. 2026-09-02 재설계 */
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --primary:#5B8EF8;--primary-light:#EBF4FF;--primary-dark:#3B6FD8;
-  --pink:#FF85A1;--green:#38A169;--orange:#FFB347;--red:#E53E3E;--purple:#7E57C2;
-  --bg:#F0F2F5;--card:#fff;--text:#1A202C;--sub:#718096;--border:#E2E8F0;
-  --radius:16px;--shadow:0 2px 16px rgba(0,0,0,.06);
+  --ink:#1F2933;--text:#3E4C59;--sub:#7B8794;--faint:#9AA5B1;
+  --line:#E4E7EB;--line-strong:#CBD2D9;--bg:#FFFFFF;--wash:#F5F7FA;
+  --navy:#1B3A6B;--navy-soft:#E8EEF7;
+  --amber:#9A5B00;--amber-soft:#FFF4E0;
+  --red:#A61B1B;--red-soft:#FBEAEA;--green:#1E6B3A;--green-soft:#E6F3EA;
+  --sans:'IBM Plex Sans KR',system-ui,sans-serif;
+  /* 옛 클래스가 참조하는 토큰 — 값만 새로 */
+  --primary:var(--navy);--primary-light:var(--navy-soft);--card:#fff;--border:var(--line);--radius:6px;--shadow:none;
 }
-body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh;color:var(--text)}
+html{font-size:15px}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;line-height:1.55;-webkit-font-smoothing:antialiased}
+a{color:var(--navy)}
+button,input{font-family:inherit}
+:focus-visible{outline:2px solid var(--navy);outline-offset:2px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
-/* NAV */
-.nav{background:linear-gradient(135deg,#1A202C,#2D3748);padding:0 28px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-.nav-logo{font-family:var(--kedu-title);font-size:22px;display:flex;align-items:center;gap:8px;text-decoration:none;color:#fff}
-.nav-logo .logo-text{background:linear-gradient(135deg,#5B8EF8,#FF85A1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.nav-badge{font-size:10px;background:var(--red);color:#fff;padding:3px 10px;border-radius:50px;font-weight:700;letter-spacing:.5px}
-.nav-right{display:flex;align-items:center;gap:12px}
-.nav-name{font-size:13px;color:rgba(255,255,255,.7)}
-.nav-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:6px 14px;font-size:13px;color:rgba(255,255,255,.8);cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:all .15s}
-.nav-btn:hover{background:rgba(255,255,255,.2)}
+/* 상단 줄 */
+.nav{height:52px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 32px;position:sticky;top:0;background:#fff;z-index:100}
+.nav-logo{text-decoration:none;color:var(--ink);font-weight:600;font-size:15px;display:flex;align-items:baseline;gap:10px}
+.nav-logo .logo-text{letter-spacing:-.01em}
+.nav-badge{font-size:12px;font-weight:500;color:var(--sub)}
+.nav-right{display:flex;align-items:center;gap:18px}
+.nav-name{font-size:13px;color:var(--sub)}
+.nav-btn{background:none;border:none;padding:0;font-size:13px;color:var(--navy);cursor:pointer;text-decoration:none}
+.nav-btn:hover{text-decoration:underline}
+.session-bar{display:none;font-size:12px;color:var(--sub);text-align:center;padding:6px;border-bottom:1px solid var(--line);background:var(--wash)}
+.session-bar.active{display:block}
+.session-bar .timer{font-variant-numeric:tabular-nums;color:var(--text)}
 
-/* LOGIN */
-.login-wrap{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 56px);padding:24px}
-.login-card{background:var(--card);border-radius:24px;padding:48px 40px;width:100%;max-width:400px;box-shadow:0 8px 40px rgba(0,0,0,.1);text-align:center}
-.login-logo{font-family:var(--kedu-title);font-size:36px;margin-bottom:4px}
-.login-logo span{background:linear-gradient(135deg,var(--primary),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.login-sub{font-size:14px;color:var(--sub);margin-bottom:8px}
-.login-warn{font-size:12px;color:var(--red);background:#FFF5F5;padding:8px 14px;border-radius:8px;margin-bottom:24px}
-.form-group{margin-bottom:16px;text-align:left}
-.form-label{font-size:13px;font-weight:600;color:var(--sub);margin-bottom:6px;display:block}
-.form-input{width:100%;height:48px;border:2px solid var(--border);border-radius:12px;padding:0 16px;font-size:15px;font-family:'Noto Sans KR',sans-serif;outline:none;transition:border-color .2s}
-.form-input:focus{border-color:var(--primary)}
-.form-btn{width:100%;height:50px;background:linear-gradient(135deg,#1A202C,#2D3748);color:#fff;border:none;border-radius:12px;font-family:var(--kedu-title);font-size:18px;cursor:pointer;margin-top:8px;transition:opacity .15s}
-.form-btn:hover{opacity:.9}
+/* 로그인 */
+.login-wrap{display:flex;justify-content:center;padding:96px 24px}
+.login-card{width:100%;max-width:360px}
+.login-logo{font-size:22px;font-weight:600;color:var(--ink);letter-spacing:-.01em}
+.login-sub{font-size:14px;color:var(--sub);margin-bottom:28px}
+.login-warn{display:none}
+.form-group{margin-bottom:14px}
+.form-label{font-size:13px;color:var(--sub);display:block;margin-bottom:6px}
+.form-input{width:100%;height:42px;border:1px solid var(--line-strong);border-radius:6px;padding:0 12px;font-size:15px;outline:none;background:#fff}
+.form-input:focus{border-color:var(--navy)}
+.form-btn{width:100%;height:42px;background:var(--navy);color:#fff;border:none;border-radius:6px;font-size:15px;font-weight:500;cursor:pointer;margin-top:6px}
 .form-btn:disabled{opacity:.5;cursor:not-allowed}
+.form-check{display:flex;align-items:center;gap:8px;margin-top:14px}
+.form-check input{width:16px;height:16px;accent-color:var(--navy)}
+.form-check label{font-size:13px;color:var(--sub)}
 .form-err{font-size:13px;color:var(--red);margin-top:10px;min-height:20px}
 
-/* DASHBOARD */
-.dash{display:none;max-width:1080px;margin:0 auto;padding:32px 24px 64px}
+/* 본문 */
+.dash{display:none;max-width:960px;margin:0 auto;padding:40px 32px 80px}
 .dash.active{display:block}
-.section-title{font-family:var(--kedu-title);font-size:20px;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.sec{margin-bottom:56px}
+.sec-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid var(--ink)}
+.sec-head h2{font-size:18px;font-weight:600;color:var(--ink);letter-spacing:-.01em}
+.sec-head h2 .n{font-weight:400;color:var(--sub);margin-left:8px;font-size:15px}
+.sec-head .aside{font-size:13px;color:var(--sub)}
+.sec-note{font-size:13px;color:var(--sub);margin-bottom:14px}
+.section-title{display:none}
 
-/* STAT CARDS */
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px}
-.stat-card{background:var(--card);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:transform .15s}
-.stat-card:hover{transform:translateY(-2px)}
-.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:var(--sc,var(--primary))}
-.stat-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.stat-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px}
-.stat-change{font-size:12px;font-weight:600;padding:3px 8px;border-radius:50px}
-.stat-change.up{color:var(--green);background:#F0FFF4}
-.stat-change.neutral{color:var(--sub);background:var(--bg)}
-.stat-num{font-family:var(--kedu-title);font-size:32px;color:var(--text);line-height:1.1}
+/* 표 */
+.table-wrap{margin-bottom:0}
+.table-header{display:none}
+.table-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:560px}
+th{text-align:left;padding:8px 10px;font-size:12px;font-weight:500;color:var(--sub);border-bottom:1px solid var(--line-strong);white-space:nowrap}
+td{padding:11px 10px;font-size:14px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+td strong{font-weight:600;color:var(--ink)}
+td code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;background:var(--wash);padding:2px 6px;border-radius:4px;color:var(--ink)}
+.empty-state{padding:22px 10px;color:var(--sub);font-size:14px}
+.empty-state .empty-icon{display:none}
+
+/* 승인 대기 — 이 화면의 본업. 행이 크다 */
+#pending-body td{padding:16px 10px;font-size:15px}
+#pending-body td strong{font-size:16px}
+#pending-body td:last-child{text-align:right}
+#pending-body tr:first-child td{border-top:none}
+.table-badge{display:inline-block;font-size:12px;font-weight:500;padding:2px 8px;border-radius:4px;vertical-align:middle}
+.table-badge.free{background:var(--green-soft);color:var(--green)}
+.table-badge.premium{background:var(--red-soft);color:var(--red)}
+.table-badge.pending{background:var(--amber-soft);color:var(--amber)}
+.table-badge.rejected{background:var(--wash);color:var(--sub)}
+.apv-btn{font-size:13px;font-weight:500;padding:7px 14px;border-radius:5px;border:1px solid var(--line-strong);background:#fff;color:var(--text);cursor:pointer;margin-right:6px;white-space:nowrap}
+.apv-btn.ok{background:var(--navy);border-color:var(--navy);color:#fff}
+.apv-btn.no{color:var(--red)}
+.apv-btn.no:hover{background:var(--red-soft)}
+.apv-btn:disabled{opacity:.5;cursor:not-allowed}
+.policy-row{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--sub);margin-top:14px;padding-top:12px;border-top:1px solid var(--line);flex-wrap:wrap}
+.policy-row code{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--text)}
+.policy-row .sw{margin-left:auto;display:flex;align-items:center;gap:8px;color:var(--text)}
+.policy-row .sw input{width:16px;height:16px;accent-color:var(--navy)}
+
+/* 교사 목록 */
+.teacher-row{display:flex;align-items:center;gap:10px}
+.teacher-avatar{display:none}
+.admin-tag{font-size:12px;color:var(--navy);font-weight:600}
+
+/* 현황 — 카드 아닌 숫자 줄 */
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:28px}
+.stat-card{padding:18px 16px 16px;border-right:1px solid var(--line)}
+.stat-card:first-child{padding-left:0}
+.stat-card:last-child{border-right:none}
+.stat-top{display:flex;justify-content:space-between;align-items:center;min-height:18px}
+.stat-icon{display:none}
+.stat-change{font-size:12px;color:var(--sub)}
+.stat-change.up{color:var(--green)}
+.stat-num{font-size:30px;font-weight:600;color:var(--ink);line-height:1.1;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 .stat-label{font-size:13px;color:var(--sub);margin-top:4px}
 
-/* CHART */
-.chart-wrap{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:28px;margin-bottom:32px}
-.chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
-.chart-header h3{font-family:var(--kedu-title);font-size:18px}
-.chart-tabs{display:flex;gap:4px;background:var(--bg);border-radius:8px;padding:3px}
-.chart-tab{padding:6px 14px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Noto Sans KR',sans-serif;background:transparent;color:var(--sub);transition:all .15s}
-.chart-tab.active{background:var(--card);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.1)}
-.chart-area{position:relative;height:220px;display:flex;align-items:flex-end;gap:0;padding:0 0 28px}
+/* 방문 추이 */
+.chart-wrap{margin-bottom:32px}
+.chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.chart-header h3{font-size:14px;font-weight:500;color:var(--text)}
+.chart-tabs{display:flex;gap:2px}
+.chart-tab{padding:4px 10px;border:1px solid var(--line);background:#fff;color:var(--sub);font-size:12px;cursor:pointer;border-radius:4px}
+.chart-tab.active{border-color:var(--ink);color:var(--ink)}
+.chart-area{position:relative;height:180px;display:flex;align-items:flex-end;padding:0 0 26px}
 .chart-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;position:relative}
-.chart-bar{width:60%;max-width:48px;border-radius:8px 8px 0 0;background:linear-gradient(180deg,var(--primary),#85B0FF);min-height:4px;transition:height .5s cubic-bezier(.4,0,.2,1);position:relative;cursor:pointer}
-.chart-bar:hover{opacity:.85}
-.chart-bar .tooltip{position:absolute;top:-32px;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;font-size:11px;padding:4px 10px;border-radius:6px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s}
+.chart-bar{width:60%;max-width:36px;background:var(--navy);opacity:.85;min-height:2px;position:relative;cursor:default;transition:height .3s}
+.chart-bar.today{opacity:1;background:var(--ink)}
+.chart-bar .tooltip{position:absolute;top:-28px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:11px;padding:3px 8px;border-radius:4px;white-space:nowrap;opacity:0;pointer-events:none}
 .chart-bar:hover .tooltip{opacity:1}
-.chart-bar.today{background:linear-gradient(180deg,var(--pink),#FFB3C6)}
-.chart-label{font-size:11px;color:var(--sub);margin-top:8px;position:absolute;bottom:-24px}
-.chart-zero{position:absolute;bottom:28px;left:0;right:0;border-bottom:1px dashed var(--border)}
+.chart-label{font-size:11px;color:var(--sub);position:absolute;bottom:-22px}
+.chart-zero{position:absolute;bottom:26px;left:0;right:0;border-bottom:1px solid var(--line-strong)}
 
-/* TABS for content sections */
-.content-tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
-.content-tab{padding:8px 18px;border:2px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Noto Sans KR',sans-serif;background:var(--card);color:var(--sub);transition:all .15s}
-.content-tab.active{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
-
-/* TABLE */
-.table-wrap{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:32px}
-.table-header{padding:20px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px}
-.table-header h3{font-family:var(--kedu-title);font-size:18px}
-.table-actions{display:flex;gap:8px;align-items:center}
-.table-search{height:36px;padding:0 14px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:'Noto Sans KR',sans-serif;outline:none;width:200px}
-.table-search:focus{border-color:var(--primary)}
-.table-badge{font-size:12px;padding:4px 10px;border-radius:50px;font-weight:600}
-.table-badge.free{background:#F0FFF4;color:var(--green)}
-.table-badge.premium{background:#FFF5F5;color:var(--red)}
-.table-scroll{overflow-x:auto}
-table{width:100%;border-collapse:collapse;min-width:600px}
-th{text-align:left;padding:12px 20px;font-size:12px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;background:var(--bg);border-bottom:1px solid var(--border)}
-td{padding:12px 20px;font-size:13px;border-bottom:1px solid var(--border)}
-tr:last-child td{border-bottom:none}
-tr:hover td{background:#FAFBFC}
-
-/* TOGGLE */
-.toggle{position:relative;width:44px;height:24px;cursor:pointer}
-.toggle input{opacity:0;width:0;height:0}
-.toggle .slider{position:absolute;inset:0;background:var(--border);border-radius:24px;transition:background .2s}
-.toggle .slider::before{content:'';position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:transform .2s}
-.toggle input:checked+.slider{background:var(--primary)}
-.toggle input:checked+.slider::before{transform:translateX(20px)}
-
-/* EMPTY */
-.empty-state{text-align:center;padding:48px 20px;color:var(--sub)}
-.empty-state .empty-icon{font-size:48px;margin-bottom:12px}
-
-/* TOAST */
-.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;padding:12px 24px;border-radius:50px;font-size:14px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none}
-.toast.show{opacity:1}
-
-/* ANIMATIONS */
-@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-.fade-up{animation:fadeUp .4s ease both}
-
-/* TEACHER LIST */
-.teacher-row{display:flex;align-items:center;gap:12px}
-.teacher-avatar{width:32px;height:32px;border-radius:50%;background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--primary)}
-.admin-tag{font-size:10px;background:var(--red);color:#fff;padding:2px 8px;border-radius:50px;font-weight:700}
-.table-badge.pending{background:#FFFBEA;color:#7A5A1A}
-.table-badge.rejected{background:#F3F4F6;color:#6B7280}
-.apv-btn{font-size:12px;padding:5px 12px;border-radius:8px;border:1px solid transparent;cursor:pointer;font-weight:600;margin-right:4px}
-.apv-btn.ok{background:var(--green);color:#fff}
-.apv-btn.no{background:#fff;color:var(--red);border-color:var(--red)}
-.apv-btn:disabled{opacity:.5;cursor:not-allowed}
-.policy-row{display:flex;align-items:center;gap:12px;padding:12px 16px;background:#F7F9FC;border:1px solid #E3E8EF;border-radius:10px;font-size:13px;margin-bottom:14px;flex-wrap:wrap}
-.policy-row .sw{margin-left:auto;display:flex;align-items:center;gap:8px}
-.policy-row code{background:#fff;padding:2px 8px;border-radius:4px;font-size:12px}
-
-/* SESSION */
-.form-check{display:flex;align-items:center;gap:8px;margin:12px 0 4px;justify-content:flex-start}
-.form-check input[type=checkbox]{width:18px;height:18px;accent-color:var(--primary);cursor:pointer}
-.form-check label{font-size:13px;color:var(--sub);cursor:pointer;user-select:none}
-.session-bar{background:rgba(91,142,248,.1);border-bottom:1px solid rgba(91,142,248,.2);padding:6px 28px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px;color:var(--primary);font-weight:500;display:none}
-.session-bar.active{display:flex}
-.session-bar .timer{font-family:var(--kedu-title);font-size:13px}
-
-/* ANALYTICS SECTIONS */
-.analytics-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:32px}
-.analytics-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px;overflow:hidden}
-.analytics-card h3{font-family:var(--kedu-title);font-size:17px;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+/* 접힌 분석 */
+details.fold{border-top:1px solid var(--line);padding:14px 0}
+details.fold:last-of-type{border-bottom:1px solid var(--line)}
+details.fold summary{cursor:pointer;font-size:14px;color:var(--text);list-style:none;display:flex;align-items:center;gap:8px}
+details.fold summary::-webkit-details-marker{display:none}
+details.fold summary::before{content:'';width:6px;height:6px;border-right:1.5px solid var(--sub);border-bottom:1.5px solid var(--sub);transform:rotate(-45deg);transition:transform .15s;margin-left:2px}
+details.fold[open] summary::before{transform:rotate(45deg)}
+details.fold summary .aside{margin-left:auto;font-size:12px;color:var(--faint)}
+details.fold .fold-body{padding-top:18px}
+.analytics-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px}
 .analytics-card.full{grid-column:1/-1}
-
-/* POPULAR PAGES TABLE */
-.pop-table{width:100%;border-collapse:collapse;font-size:13px}
-.pop-table th{text-align:left;padding:8px 12px;font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid var(--border)}
-.pop-table td{padding:8px 12px;border-bottom:1px solid var(--border)}
+.analytics-card h3{font-size:13px;font-weight:500;color:var(--sub);margin-bottom:10px}
+.pop-table{width:100%;border-collapse:collapse;font-size:14px}
+.pop-table th{text-align:left;padding:6px 8px;font-size:12px;font-weight:500;color:var(--sub);border-bottom:1px solid var(--line-strong)}
+.pop-table td{padding:7px 8px;border-bottom:1px solid var(--line)}
 .pop-table tr:last-child td{border-bottom:none}
-.pop-table tr:hover td{background:#FAFBFC}
-.pop-rank{font-family:var(--kedu-title);font-size:16px;color:var(--primary)}
-.pop-path{font-size:12px;color:var(--sub);margin-top:2px}
-
-/* CATEGORY BARS */
-.cat-bar-wrap{margin-bottom:12px}
-.cat-bar-label{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;font-weight:500}
-.cat-bar-track{height:24px;background:var(--bg);border-radius:8px;overflow:hidden}
-.cat-bar-fill{height:100%;border-radius:8px;display:flex;align-items:center;padding-left:10px;font-size:11px;font-weight:600;color:#fff;min-width:30px;transition:width .6s ease}
-
-/* HOURLY CHART */
-.hourly-chart{display:flex;align-items:flex-end;gap:2px;height:140px;padding-bottom:24px;position:relative}
+.pop-rank{font-variant-numeric:tabular-nums;color:var(--sub);font-size:13px}
+.pop-path{font-size:12px;color:var(--faint);margin-top:1px}
+.cat-bar-wrap{margin-bottom:10px}
+.cat-bar-label{display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px}
+.cat-bar-track{height:8px;background:var(--wash);border-radius:2px;overflow:hidden}
+.cat-bar-fill{height:100%;background:var(--navy)!important;color:transparent;font-size:0;min-width:2px;transition:width .4s}
+.hourly-chart{display:flex;align-items:flex-end;gap:2px;height:110px;padding-bottom:22px;position:relative}
 .hourly-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;height:100%;justify-content:flex-end}
-.hourly-bar{width:100%;max-width:20px;border-radius:4px 4px 0 0;background:linear-gradient(180deg,var(--primary),#85B0FF);min-height:2px;transition:height .4s ease;cursor:pointer;position:relative}
-.hourly-bar:hover{opacity:.8}
-.hourly-bar .h-tip{position:absolute;top:-28px;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;font-size:10px;padding:3px 8px;border-radius:4px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s}
+.hourly-bar{width:100%;max-width:16px;background:var(--navy);opacity:.7;min-height:2px;position:relative;transition:height .3s}
+.hourly-bar .h-tip{position:absolute;top:-26px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:10px;padding:2px 6px;border-radius:3px;white-space:nowrap;opacity:0;pointer-events:none}
 .hourly-bar:hover .h-tip{opacity:1}
-.hourly-label{font-size:9px;color:var(--sub);position:absolute;bottom:-18px}
-.hourly-peak{background:linear-gradient(180deg,var(--pink),#FFB3C6)!important}
+.hourly-label{font-size:10px;color:var(--faint);position:absolute;bottom:-16px}
+.hourly-peak{opacity:1!important;background:var(--ink)!important}
 
-/* STAT CARD 5th */
-.stats{grid-template-columns:repeat(5,1fr)}
+/* 콘텐츠 관리 */
+.content-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.content-tab{padding:4px 12px;border:1px solid var(--line);border-radius:4px;font-size:13px;cursor:pointer;background:#fff;color:var(--sub)}
+.content-tab.active{border-color:var(--ink);color:var(--ink)}
+.table-actions{display:flex;gap:10px;align-items:center;margin-bottom:12px}
+.table-search{height:34px;padding:0 10px;border:1px solid var(--line-strong);border-radius:5px;font-size:13px;outline:none;width:220px}
+.table-search:focus{border-color:var(--navy)}
+.toggle{position:relative;width:36px;height:20px;cursor:pointer;display:inline-block}
+.toggle input{opacity:0;width:0;height:0}
+.toggle .slider{position:absolute;inset:0;background:var(--line-strong);border-radius:20px;transition:background .15s}
+.toggle .slider::before{content:'';position:absolute;height:14px;width:14px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:transform .15s}
+.toggle input:checked+.slider{background:var(--navy)}
+.toggle input:checked+.slider::before{transform:translateX(16px)}
 
-@media(max-width:900px){
-  .analytics-grid{grid-template-columns:1fr}
-  .stats{grid-template-columns:repeat(3,1fr)}
-}
-@media(max-width:768px){
-  .stats{grid-template-columns:1fr 1fr}
-  .nav{padding:0 16px}
-  .dash{padding:24px 16px 48px}
-  .chart-area{height:160px}
-}
-@media(max-width:480px){
-  .stats{grid-template-columns:1fr}
-  .login-card{padding:32px 20px}
-}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:6px;font-size:14px;z-index:999;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+.fade-up{animation:none}
+.kedu-footer{margin-top:0;padding:18px 32px;border-top:1px solid var(--line);font-size:12px;color:var(--faint)}
+.kedu-footer strong{color:var(--sub);font-weight:500}
+.kedu-footer a{color:var(--navy);text-decoration:none;margin-left:10px}
 
-/* FOOTER (T04) */
-.kedu-footer{margin-top:48px;padding:18px 24px;border-top:1px solid #E2E8F0;text-align:center;font-size:12px;color:#A0AEC0;letter-spacing:.3px;background:#fff}
-.kedu-footer strong{color:#718096;font-weight:500}
-.kedu-footer a{color:#5B8EF8;text-decoration:none;margin-left:10px}
-.kedu-footer a:hover{text-decoration:underline}
+@media(max-width:900px){.analytics-grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(3,1fr)}.stat-card:nth-child(3){border-right:none}}
+@media(max-width:640px){.stats{grid-template-columns:1fr 1fr}.stat-card{border-right:none}.nav,.dash{padding-left:18px;padding-right:18px}.sec-head{flex-direction:column;gap:4px}}
 </style>
   <script src="/kedu_gate.js"></script>
 <script src="/kedu_boxbar.js"></script>
 </head>
 <body>
 
-<!-- NAV -->
 <nav class="nav">
   <a class="nav-logo" href="../index.html">
-    <span class="logo-text">K-edu</span>
-    <span class="nav-badge">ADMIN</span>
+    <span class="logo-text">케이에듀</span>
+    <span class="nav-badge">관리</span>
   </a>
   <div class="nav-right" id="nav-right" style="display:none">
     <span class="nav-name" id="nav-name"></span>
@@ -219,216 +205,178 @@ tr:hover td{background:#FAFBFC}
   </div>
 </nav>
 
-<!-- LOGIN -->
 <div class="login-wrap" id="login-screen">
   <div class="login-card">
-    <div class="login-logo"><span>K-edu</span></div>
-    <div class="login-sub">슈퍼 어드민</div>
-    <div class="login-warn">⚠️ 관리자 권한이 필요합니다</div>
+    <div class="login-logo">케이에듀 관리</div>
+    <div class="login-sub">관리자 계정으로만 들어올 수 있어요.</div>
+    <div class="login-warn"></div>
     <div class="form-group">
-      <label class="form-label">이메일</label>
-      <input class="form-input" type="email" id="login-email" placeholder="admin@keduclass.com">
+      <label class="form-label" for="login-email">이메일</label>
+      <input class="form-input" type="email" id="login-email" autocomplete="username">
     </div>
     <div class="form-group">
-      <label class="form-label">비밀번호</label>
-      <input class="form-input" type="password" id="login-pw" placeholder="비밀번호">
+      <label class="form-label" for="login-pw">비밀번호</label>
+      <input class="form-input" type="password" id="login-pw" autocomplete="current-password">
     </div>
-    <button class="form-btn" id="login-btn" onclick="doLogin()">관리자 로그인</button>
+    <button class="form-btn" id="login-btn" onclick="doLogin()">로그인</button>
     <div class="form-check">
       <input type="checkbox" id="remember-me">
-      <label for="remember-me">로그인 유지</label>
+      <label for="remember-me">이 기기에서 로그인 유지</label>
     </div>
     <div class="form-err" id="login-err"></div>
   </div>
 </div>
 
-<!-- SESSION BAR -->
 <div class="session-bar" id="session-bar">
-  🔒 세션 유지 중 · 남은 시간: <span class="timer" id="session-countdown">30:00</span>
+  세션 남은 시간 <span class="timer" id="session-countdown">30:00</span>
 </div>
 
-<!-- DASHBOARD -->
 <div class="dash" id="dashboard">
 
-  <!-- STATS -->
-  <div class="section-title fade-up">📊 오늘의 현황</div>
-  <div class="stats">
-    <div class="stat-card fade-up" style="--sc:var(--primary)">
-      <div class="stat-top">
-        <div class="stat-icon" style="background:var(--primary-light)">👀</div>
-        <span class="stat-change neutral" id="visit-change">-</span>
-      </div>
-      <div class="stat-num" id="stat-visits-today">-</div>
-      <div class="stat-label">오늘 방문자</div>
+  <!-- 1. 승인 대기 — 이 화면에서 할 일 -->
+  <section class="sec">
+    <div class="sec-head">
+      <h2>승인 대기<span class="n" id="pending-count">0명</span></h2>
+      <span class="aside">승인하면 그 교사는 바로 학급을 만들 수 있어요</span>
     </div>
-    <div class="stat-card fade-up" style="--sc:var(--green)">
-      <div class="stat-top">
-        <div class="stat-icon" style="background:#F0FFF4">👨‍🎓</div>
-      </div>
-      <div class="stat-num" id="stat-total-students">-</div>
-      <div class="stat-label">전체 학생</div>
-    </div>
-    <div class="stat-card fade-up" style="--sc:var(--orange)">
-      <div class="stat-top">
-        <div class="stat-icon" style="background:#FFFAF0">👩‍🏫</div>
-      </div>
-      <div class="stat-num" id="stat-total-teachers">-</div>
-      <div class="stat-label">전체 교사</div>
-    </div>
-    <div class="stat-card fade-up" style="--sc:var(--purple)">
-      <div class="stat-top">
-        <div class="stat-icon" style="background:#F5F0FF">📚</div>
-      </div>
-      <div class="stat-num" id="stat-total-classes">-</div>
-      <div class="stat-label">활성 학급</div>
-    </div>
-    <div class="stat-card fade-up" style="--sc:var(--pink)">
-      <div class="stat-top">
-        <div class="stat-icon" style="background:#FFF0F3">🔗</div>
-      </div>
-      <div class="stat-num" id="stat-unique-sessions">-</div>
-      <div class="stat-label">오늘 유니크 세션</div>
-    </div>
-  </div>
-
-  <!-- VISITOR CHART -->
-  <div class="chart-wrap fade-up">
-    <div class="chart-header">
-      <h3>📈 방문자 추이</h3>
-      <div class="chart-tabs">
-        <button class="chart-tab active" onclick="loadChart(7)">7일</button>
-        <button class="chart-tab" onclick="loadChart(14)">14일</button>
-        <button class="chart-tab" onclick="loadChart(30)">30일</button>
-      </div>
-    </div>
-    <div style="position:relative">
-      <div class="chart-zero"></div>
-      <div class="chart-area" id="chart-area">
-        <!-- bars dynamically generated -->
-      </div>
-    </div>
-  </div>
-
-  <!-- ANALYTICS: POPULAR PAGES + CATEGORY -->
-  <div class="section-title fade-up">🔍 방문 분석 (최근 30일)</div>
-  <div class="analytics-grid">
-    <!-- A. 인기 페이지 TOP 10 -->
-    <div class="analytics-card full fade-up">
-      <h3>🏆 인기 페이지 TOP 10</h3>
+    <div class="table-wrap">
       <div class="table-scroll">
-        <table class="pop-table">
-          <thead><tr><th>순위</th><th>페이지</th><th>조회수</th><th>유니크 방문자</th></tr></thead>
-          <tbody id="popular-body">
-            <tr><td colspan="4" style="text-align:center;padding:24px;color:var(--sub)">로딩 중...</td></tr>
+        <table>
+          <thead><tr>
+            <th>이름</th><th>학교</th><th>이메일</th><th>신청 내용</th><th>신청일</th><th></th>
+          </tr></thead>
+          <tbody id="pending-body">
+            <tr><td colspan="6"><div class="empty-state">대기 중인 교사가 없어요.</div></td></tr>
           </tbody>
         </table>
       </div>
     </div>
+    <div class="policy-row">
+      <span>교육청 메일 자동승인</span>
+      <span>끄면 모든 가입을 여기서 직접 승인해요. 켜면 교육청 도메인 가입은 바로 승인돼요.</span>
+      <label class="sw"><input type="checkbox" id="policy-auto" onchange="togglePolicy(this)"> <span id="policy-auto-label">끔</span></label>
+    </div>
+  </section>
 
-    <!-- B. 과목별 방문 비율 -->
-    <div class="analytics-card fade-up">
-      <h3>📚 과목별 방문 비율</h3>
-      <div id="category-bars">
-        <p style="text-align:center;color:var(--sub);padding:24px 0">로딩 중...</p>
+  <!-- 2. 교사 -->
+  <section class="sec">
+    <div class="sec-head">
+      <h2>교사<span class="n" id="teacher-count">0명</span></h2>
+    </div>
+    <div class="table-wrap">
+      <div class="table-scroll">
+        <table>
+          <thead><tr>
+            <th>이름</th><th>이메일</th><th>학급코드</th><th>학생</th><th>가입일</th><th>승인</th><th>권한</th>
+          </tr></thead>
+          <tbody id="teacher-body">
+            <tr><td colspan="7"><div class="empty-state">등록된 교사가 없어요.</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. 현황 -->
+  <section class="sec">
+    <div class="sec-head">
+      <h2>현황</h2>
+      <span class="aside" id="stats-date"></span>
+    </div>
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-top"><span class="stat-change" id="visit-change"></span></div>
+        <div class="stat-num" id="stat-visits-today">–</div>
+        <div class="stat-label">오늘 페이지 조회</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-top"></div>
+        <div class="stat-num" id="stat-unique-sessions">–</div>
+        <div class="stat-label">오늘 방문 세션</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-top"></div>
+        <div class="stat-num" id="stat-total-classes">–</div>
+        <div class="stat-label">활성 학급</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-top"></div>
+        <div class="stat-num" id="stat-total-students">–</div>
+        <div class="stat-label">학급에 들어온 학생</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-top"></div>
+        <div class="stat-num" id="stat-total-teachers">–</div>
+        <div class="stat-label">교사 계정</div>
       </div>
     </div>
 
-    <!-- C. 시간대별 방문 패턴 -->
-    <div class="analytics-card fade-up">
-      <h3>🕐 시간대별 방문 패턴</h3>
-      <div class="hourly-chart" id="hourly-chart">
-        <p style="text-align:center;color:var(--sub);padding:24px 0;width:100%">로딩 중...</p>
+    <div class="chart-wrap">
+      <div class="chart-header">
+        <h3>하루 페이지 조회</h3>
+        <div class="chart-tabs">
+          <button class="chart-tab active" onclick="loadChart(7)">7일</button>
+          <button class="chart-tab" onclick="loadChart(14)">14일</button>
+          <button class="chart-tab" onclick="loadChart(30)">30일</button>
+        </div>
+      </div>
+      <div style="position:relative">
+        <div class="chart-zero"></div>
+        <div class="chart-area" id="chart-area"></div>
       </div>
     </div>
-  </div>
 
-  <!-- CONTENT MANAGEMENT -->
-  <div class="section-title fade-up">📦 콘텐츠 관리</div>
-  <div class="content-tabs" id="content-tabs">
-    <button class="content-tab active" data-cat="all" onclick="filterContent('all',this)">전체</button>
-    <button class="content-tab" data-cat="korean" onclick="filterContent('korean',this)">국어</button>
-    <button class="content-tab" data-cat="math" onclick="filterContent('math',this)">수학</button>
-    <button class="content-tab" data-cat="english" onclick="filterContent('english',this)">영어</button>
-    <button class="content-tab" data-cat="premium" onclick="filterContent('premium',this)">프리미엄만</button>
-  </div>
-  <div class="table-wrap fade-up">
-    <div class="table-header">
-      <h3>콘텐츠 목록</h3>
-      <div class="table-actions">
-        <input class="table-search" type="text" placeholder="🔍 검색..." id="content-search" oninput="searchContent()">
-        <span class="table-badge free" id="content-count">0개</span>
+    <details class="fold">
+      <summary>많이 본 페이지 · 과목 비율 · 시간대<span class="aside">최근 30일</span></summary>
+      <div class="fold-body">
+        <div class="analytics-grid">
+          <div class="analytics-card full">
+            <h3>많이 본 페이지 10</h3>
+            <div class="table-scroll">
+              <table class="pop-table">
+                <thead><tr><th>순위</th><th>페이지</th><th>조회</th><th>세션</th></tr></thead>
+                <tbody id="popular-body"><tr><td colspan="4" style="color:var(--sub);padding:16px 8px">불러오는 중</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="analytics-card">
+            <h3>과목 비율</h3>
+            <div id="category-bars"><p style="color:var(--sub)">불러오는 중</p></div>
+          </div>
+          <div class="analytics-card">
+            <h3>시간대</h3>
+            <div class="hourly-chart" id="hourly-chart"><p style="color:var(--sub);width:100%">불러오는 중</p></div>
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="table-scroll">
-      <table>
-        <thead><tr>
-          <th>제목</th>
-          <th>카테고리</th>
-          <th>학년</th>
-          <th>난이도</th>
-          <th>프리미엄</th>
-          <th>상태</th>
-        </tr></thead>
-        <tbody id="content-body">
-          <tr><td colspan="6"><div class="empty-state"><div class="empty-icon">📦</div><p>contents 테이블에 데이터를 등록해주세요.</p></div></td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
+    </details>
 
-  <!-- TEACHER APPROVAL (생태계설계 v2 §D-4 · sql/setup_teacher_approval.sql) -->
-  <div class="section-title fade-up">🔑 교사 확인(승인)</div>
-  <div class="policy-row fade-up">
-    <span>교육청 메일 자동승인 <code>auto_approve_edu_domains</code></span>
-    <span style="color:var(--sub)">1단계=끔(수동 승인만) · 2단계=켬(도메인 일치 시 자동 승인, 코드 무변경)</span>
-    <label class="sw"><input type="checkbox" id="policy-auto" onchange="togglePolicy(this)"> <span id="policy-auto-label">끔</span></label>
-  </div>
-  <div class="table-wrap fade-up">
-    <div class="table-header">
-      <h3>승인 대기</h3>
-      <span class="table-badge pending" id="pending-count">0명</span>
-    </div>
-    <div class="table-scroll">
-      <table>
-        <thead><tr>
-          <th>이름</th>
-          <th>학교</th>
-          <th>이메일</th>
-          <th>신청 메모</th>
-          <th>신청일</th>
-          <th>처리</th>
-        </tr></thead>
-        <tbody id="pending-body">
-          <tr><td colspan="6"><div class="empty-state"><p>대기 중인 교사가 없습니다.</p></div></td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- TEACHER LIST -->
-  <div class="section-title fade-up">👩‍🏫 교사 목록</div>
-  <div class="table-wrap fade-up">
-    <div class="table-header">
-      <h3>등록된 교사</h3>
-      <span class="table-badge free" id="teacher-count">0명</span>
-    </div>
-    <div class="table-scroll">
-      <table>
-        <thead><tr>
-          <th>이름</th>
-          <th>이메일</th>
-          <th>학급코드</th>
-          <th>학생 수</th>
-          <th>가입일</th>
-          <th>승인</th>
-          <th>권한</th>
-        </tr></thead>
-        <tbody id="teacher-body">
-          <tr><td colspan="7"><div class="empty-state"><p>등록된 교사가 없습니다.</p></div></td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
+    <details class="fold">
+      <summary>콘텐츠 원장<span class="aside" id="content-count">0개</span></summary>
+      <div class="fold-body">
+        <div class="content-tabs" id="content-tabs">
+          <button class="content-tab active" data-cat="all" onclick="filterContent('all',this)">전체</button>
+          <button class="content-tab" data-cat="korean" onclick="filterContent('korean',this)">국어</button>
+          <button class="content-tab" data-cat="math" onclick="filterContent('math',this)">수학</button>
+          <button class="content-tab" data-cat="english" onclick="filterContent('english',this)">영어</button>
+          <button class="content-tab" data-cat="premium" onclick="filterContent('premium',this)">프리미엄만</button>
+        </div>
+        <div class="table-actions">
+          <input class="table-search" type="text" placeholder="제목 검색" id="content-search" oninput="searchContent()">
+        </div>
+        <div class="table-wrap">
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>제목</th><th>과목</th><th>학년</th><th>난이도</th><th>프리미엄</th><th>상태</th></tr></thead>
+              <tbody id="content-body">
+                <tr><td colspan="6"><div class="empty-state">contents 표에 등록된 항목이 없어요.</div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </details>
+  </section>
 
 </div>
 
@@ -509,6 +457,7 @@ async function initDashboard(){
   document.getElementById('dashboard').classList.add('active');
   document.getElementById('nav-right').style.display = 'flex';
   document.getElementById('nav-name').textContent = currentAdmin.name + ' (관리자)';
+  const sd = document.getElementById('stats-date'); if(sd) sd.textContent = new Date().toLocaleDateString('ko-KR', {year:'numeric', month:'long', day:'numeric', weekday:'short'});
 
   // 병렬 로드
   await Promise.all([
@@ -560,8 +509,9 @@ async function loadStats(){
   }
 
   // 전체 학생
-  const { count: totalStudents } = await db.from('students')
-    .select('*', { count: 'exact', head: true });
+  const { count: totalStudents } = await db.from('student_profiles')
+    .select('*', { count: 'exact', head: true })
+    .not('class_code_id', 'is', null);
   document.getElementById('stat-total-students').textContent = totalStudents || 0;
 
   // 전체 교사
@@ -827,12 +777,12 @@ function renderContents(){
   const tbody = document.getElementById('content-body');
 
   if(filtered.length === 0){
-    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><p>해당 조건의 콘텐츠가 없습니다.</p></div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state">이 조건에 맞는 항목이 없어요.</div></td></tr>';
     return;
   }
 
   const catNames = { korean:'국어', math:'수학', english:'영어', science:'과학', social:'사회' };
-  const stars = n => '⭐'.repeat(n);
+  const stars = n => n ? '●'.repeat(n) + '○'.repeat(Math.max(0, 3 - n)) : '–';
 
   tbody.innerHTML = filtered.map(c => `
     <tr>
@@ -908,7 +858,7 @@ async function loadTeachers(){
   document.getElementById('pending-count').textContent = pending.filter(t=>t.approval==='pending').length + '명';
   if(pending.length){
     pbody.innerHTML = pending.map(t => {
-      const req = t.approval_requested_at ? new Date(t.approval_requested_at).toLocaleDateString('ko-KR') : '<span style="color:var(--sub)">미신청</span>';
+      const req = t.approval_requested_at ? new Date(t.approval_requested_at).toLocaleDateString('ko-KR') : '<span style="color:var(--faint)">아직 신청 안 함</span>';
       const edu = t.is_edu_email ? ' <span class="table-badge free" title="교육청 도메인">교육청</span>' : '';
       return `<tr>
         <td><strong>${esc(t.name)}</strong>${t.approval==='rejected' ? ' <span class="table-badge rejected">반려됨</span>' : ''}</td>
@@ -923,7 +873,7 @@ async function loadTeachers(){
       </tr>`;
     }).join('');
   } else {
-    pbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><p>대기 중인 교사가 없습니다.</p></div></td></tr>';
+    pbody.innerHTML = '<tr><td colspan="6"><div class="empty-state">대기 중인 교사가 없어요.</div></td></tr>';
   }
 
   // 전체 교사 표 — 학급코드·학생 수는 종전대로 행마다 조회
@@ -939,7 +889,7 @@ async function loadTeachers(){
     let codeStr = '-';
     if(codes && codes.length > 0){
       codeStr = codes[0].code;
-      const { count } = await db.from('students')
+      const { count } = await db.from('student_profiles')
         .select('*', { count:'exact', head:true })
         .eq('class_code_id', codes[0].id);
       studentCount = count || 0;
@@ -970,8 +920,8 @@ async function setApproval(teacherId, status, btn){
   if(status === 'rejected' && !confirm('이 교사를 반려할까요? 학급 개설·케이박스·아침활동이 잠깁니다.')) return;
   if(btn) btn.disabled = true;
   const { error } = await db.rpc('admin_set_teacher_approval', { p_teacher_id: teacherId, p_status: status });
-  if(error){ showToast('⚠️ 처리 실패: ' + (error.message || '')); if(btn) btn.disabled = false; return; }
-  showToast(status === 'approved' ? '✅ 승인했어요. 해당 교사는 바로 학급을 만들 수 있어요.' : '⛔ 반려했어요.');
+  if(error){ showToast('처리 실패: ' + (error.message || '')); if(btn) btn.disabled = false; return; }
+  showToast(status === 'approved' ? '승인했어요. 이 교사는 바로 학급을 만들 수 있어요.' : '반려했어요.');
   await loadTeachers();
 }
 
@@ -982,16 +932,16 @@ async function loadPolicySwitch(){
   if(!cb) return;
   if(!data){ cb.disabled = true; lb.textContent = 'SQL 미적용'; return; }
   const on = data.value === true;
-  cb.checked = on; lb.textContent = on ? '켬 (2단계)' : '끔 (1단계)';
+  cb.checked = on; lb.textContent = on ? '켬' : '끔';
 }
 
 async function togglePolicy(cb){
   const on = cb.checked;
   if(on && !confirm('교육청 메일 도메인 자동승인을 켤까요? (2단계) 이후 가입하는 교육청 메일 교사는 바로 승인됩니다.')){ cb.checked = false; return; }
   const { error } = await db.rpc('admin_set_policy', { p_key:'auto_approve_edu_domains', p_value: on });
-  if(error){ showToast('⚠️ 정책 변경 실패: ' + (error.message || '')); cb.checked = !on; return; }
-  document.getElementById('policy-auto-label').textContent = on ? '켬 (2단계)' : '끔 (1단계)';
-  showToast(on ? '🔓 교육청 도메인 자동승인 켬' : '🔒 자동승인 끔 — 수동 승인만');
+  if(error){ showToast('정책 변경 실패: ' + (error.message || '')); cb.checked = !on; return; }
+  document.getElementById('policy-auto-label').textContent = on ? '켬' : '끔';
+  showToast(on ? '교육청 메일 자동승인을 켰어요.' : '자동승인을 껐어요. 여기서 직접 승인해요.');
 }
 
 function esc(v){ return String(v==null?'':v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
