@@ -116,7 +116,11 @@ window.MK_SCREENS.editor = (() => {
   const tplGridHTML = () => {
     if (!window.MK_TPLSVG) return '';
     const hits = MK_TPLSVG.list(ed().tplCat || '');
-    return hits.map((t) => `<button data-tpl="${t.id}" title="${t.ko} · ${t.name}" style="padding:0;border:1px solid var(--mk-border);border-radius:8px;overflow:hidden;cursor:pointer;background:var(--mk-surface,#fff);display:block"><img src="${MK_TPLSVG.urlOf(t.id)}" alt="${t.ko}" loading="lazy" style="width:100%;aspect-ratio:${t.width}/${t.height};display:block;object-fit:cover"><span style="display:block;font-size:11px;padding:4px 5px;text-align:left;color:var(--mk-text,#1F2733);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.ko}</span></button>`).join('')
+    return hits.map((t) => {
+      const n = MK_TPLSVG.pagesOf(t.id);
+      const badge = n > 1 ? `<span style="position:absolute;right:5px;top:5px;background:rgba(31,39,51,.86);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:999px">${n}장</span>` : '';
+      return `<button data-tpl="${t.id}" title="${t.ko} · ${t.name}${n > 1 ? ` · ${n}장 세트` : ''}" style="position:relative;padding:0;border:1px solid var(--mk-border);border-radius:8px;overflow:hidden;cursor:pointer;background:var(--mk-surface,#fff);display:block"><img src="${MK_TPLSVG.urlOf(t.id)}" alt="${t.ko}" loading="lazy" style="width:100%;aspect-ratio:${t.width}/${t.height};display:block;object-fit:cover">${badge}<span style="display:block;font-size:11px;padding:4px 5px;text-align:left;color:var(--mk-text,#1F2733);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.ko}</span></button>`;
+    }).join('')
       || '<span class="ed-note">이 갈래에는 아직 템플릿이 없어요</span>';
   };
   const tplBlock = () => window.MK_TPLSVG ? `<div class="ph-item" style="display:block;cursor:default">
@@ -125,7 +129,7 @@ window.MK_SCREENS.editor = (() => {
         ${MK_TPLSVG.CATS.map(([k, n]) => `<button data-tplcat="${k}" class="pg-variant ${(ed().tplCat || '') === k ? 'on' : ''}" style="padding:2px 8px;font-size:12px">${n}</button>`).join('')}
       </div>
       <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px" data-tplgrid>${tplGridHTML()}</div>
-      <p class="ed-note" style="margin:6px 0 0">누르면 <b>지금 장면</b>에 앉습니다 — 글자·도형은 그대로 골라 고칠 수 있어요 (되돌리기 가능)</p></div>` : '';
+      <p class="ed-note" style="margin:6px 0 0">누르면 <b>지금 장면</b>에 앉습니다. <b>N장</b> 표시가 붙은 발표 세트는 그 장수만큼 <b>뒤에 이어 붙습니다</b> — 어느 쪽이든 되돌리기 됩니다</p></div>` : '';
   const DETAIL_R41 = {
     tpl: () => `${tplBlock()}
       <button class="ph-item" data-pane="go-templates">템플릿 둘러보기 → (Templates 화면)</button>
@@ -623,6 +627,7 @@ window.MK_SCREENS.editor = (() => {
           H.push('템플릿 적용 — ' + meta.ko);
           const r = window.MK_TPLSVG.applyTo(doc, e.sceneIdx, p2, meta);
           e.selEl = null;
+          if (r.pages) e.sceneIdx = Math.min(doc.scenes.length - 1, e.sceneIdx);   /* 세트의 첫 장으로 */
           PG.render();
           if (r.ok) quickToast(r.msg);
         });

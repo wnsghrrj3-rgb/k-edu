@@ -47,13 +47,25 @@ export function build(packKey) {
   const opts = { DOMParser: dom.window.DOMParser, XMLSerializer: dom.window.XMLSerializer };
   const packs = {}, regs = [];
 
-  for (const t of T.CATALOG.filter((x) => x.pack === packKey)) {
-    const file = path.join(HERE, 'assets', 'templates', t.pack, t.file);
-    const p = T.parse(fs.readFileSync(file, 'utf8'), opts);
-    if (!p.ok) throw new Error(t.id + ' 파싱 실패: ' + p.msg);
+  const one = (t, file) => {
+    const p = T.parse(fs.readFileSync(path.join(HERE, 'assets', 'templates', t.pack, file), 'utf8'), opts);
+    if (!p.ok) throw new Error(`${t.id}/${file} 파싱 실패: ${p.msg}`);
     if (p.width !== t.width || p.height !== t.height)
-      throw new Error(`${t.id} 크기 불일치 — 카탈로그 ${t.width}x${t.height}, 실제 ${p.width}x${p.height}`);
-    packs[t.id] = { width: p.width, height: p.height, background: p.background, elements: p.elements, notes: p.notes };
+      throw new Error(`${t.id}/${file} 크기 불일치 — 카탈로그 ${t.width}x${t.height}, 실제 ${p.width}x${p.height}`);
+    return p;
+  };
+  for (const t of T.CATALOG.filter((x) => x.pack === packKey)) {
+    if (t.slides) {
+      /* 여러 장짜리 — 장마다 따로 풀어 pages 로 굳힌다 */
+      const pages = t.slides.map((sl) => {
+        const p = one(t, sl.file);
+        return { name: sl.name, width: p.width, height: p.height, background: p.background, elements: p.elements };
+      });
+      packs[t.id] = { width: t.width, height: t.height, background: pages[0].background, pages };
+    } else {
+      const p = one(t, t.file);
+      packs[t.id] = { width: p.width, height: p.height, background: p.background, elements: p.elements, notes: p.notes };
+    }
     regs.push(t);
   }
 
@@ -68,8 +80,10 @@ export function build(packKey) {
       contentType: ${J(t.contentType)}, category: ${J(KO_CAT[t.contentType] || t.category)}, style: ${J(t.style)}, styleEn: ${J(t.styleEn)},
       ratio: ${J(t.ratio)}, difficulty: ${J(t.difficulty)}, targetUser: 'teacher', gradeRange: '전학년',
       uses: ${J(t.uses)}, tags: ${J(t.tags)}, recent: false, svgTemplate: ${J(t.id)},
-      scenes: [{ id: 'p1', name: ${J(t.ko)}, width: ${t.width}, height: ${t.height}, duration: 5,
-        background: ${J(packs[t.id].background)}, transition: 'fade', order: 0, elements: PACK[${J(t.id)}].elements }],
+      pageCount: ${t.slides ? t.slides.length : 1},
+      scenes: ${t.slides
+        ? `PACK[${J(t.id)}].pages.map((pg, i) => ({ id: 'p' + (i + 1), name: ${J(t.ko)} + ' ' + pg.name, width: pg.width, height: pg.height, duration: 5, background: pg.background, transition: 'fade', order: i, elements: pg.elements }))`
+        : `[{ id: 'p1', name: ${J(t.ko)}, width: ${t.width}, height: ${t.height}, duration: 5, background: ${J(packs[t.id].background)}, transition: 'fade', order: 0, elements: PACK[${J(t.id)}].elements }]`},
     }, ov: { styleId: ${J(t.styleId)}, animationId: 'an-none', assetIds: [],
       ai: { recommended: ${t.rec}, tags: ${J(t.tags)}, hints: ${J(t.hints)} } } },`).join('\n');
 

@@ -165,12 +165,38 @@ window.MK_TPLSVG = (() => {
     { id: 'course-promo-01', name: 'Course Promotion', ko: '수업 안내', category: 'education', width: 1080, height: 1350, pack: 'pack10', file: '50_course_promo.svg',
       contentType: 'poster', style: '볼드', styleId: 'st-bold', styleEn: 'Creator', ratio: '4:5', difficulty: '쉬움', rec: false,
       desc: '형광 연두 머리판에 강한 글자를 얹은 모집면', uses: '방과후 수업 모집·동아리 안내·특강 홍보', tags: ['수업', '모집', '볼드'], hints: ['차시 수와 대상을 아래 칸에', '제목 두 줄이 주인공'] },
+
+    /* ---- 여러 장짜리 발표 세트 ----
+       slides 를 가지면 멀티다. 파서도 등록 경로도 단일과 같은 것을 쓰되,
+       템플릿 하나가 scenes 여덟 개로 선다. */
+    { id: 'pres01', name: 'Midnight Strategy', ko: '전략 발표 세트', category: 'presentation', width: 1600, height: 900, pack: 'pres01',
+      slides: [{ name: '표지', file: '01_cover.svg' }, { name: '목차', file: '02_agenda.svg' }, { name: '구획', file: '03_section.svg' }, { name: '내용', file: '04_content.svg' }, { name: '수치', file: '05_data.svg' }, { name: '비교', file: '06_comparison.svg' }, { name: '일정', file: '07_roadmap.svg' }, { name: '맺음', file: '08_closing.svg' }],
+      contentType: 'presentation', style: '모던', styleId: 'st-modern', styleEn: 'Midnight', ratio: '16:9', difficulty: '보통', rec: false,
+      desc: '어두운 남색에 금색을 얹은 여덟 장 짜리 발표 세트', uses: '연구 발표·사업 계획·학교 기획 보고', tags: ['발표', '전략', '세트'], hints: ['표지·목차·구획·내용·수치·비교·일정·맺음 여덟 장이 한 벌', '장을 지우거나 복제해 길이를 맞추세요'] },
+    { id: 'pres02', name: 'Bright Classroom', ko: '탐구 발표 세트', category: 'presentation', width: 1600, height: 900, pack: 'pres02',
+      slides: [{ name: '표지', file: '01_cover.svg' }, { name: '목차', file: '02_agenda.svg' }, { name: '구획', file: '03_section.svg' }, { name: '내용', file: '04_content.svg' }, { name: '사진', file: '05_gallery.svg' }, { name: '수치', file: '06_data.svg' }, { name: '내용', file: '07_content.svg' }, { name: '맺음', file: '08_closing.svg' }],
+      contentType: 'presentation', style: '에듀', styleId: 'st-edu', styleEn: 'Classroom', ratio: '16:9', difficulty: '쉬움', rec: true,
+      desc: '아이보리 바탕에 주황을 쓴 한국어 수업 발표 세트', uses: '탐구 발표·수업 공개·모둠 발표', tags: ['발표', '수업', '탐구'], hints: ['한국어로 짜여 있어 문구만 바꾸면 된다', '작은 라벨(AGENDA 등)은 색을 진하게 하면 잘 읽힌다'] },
+    { id: 'pres03', name: 'Swiss Editorial', ko: '편집 발표 세트', category: 'presentation', width: 1600, height: 900, pack: 'pres03',
+      slides: [{ name: '표지', file: '01_cover.svg' }, { name: '목차', file: '02_agenda.svg' }, { name: '구획', file: '03_section.svg' }, { name: '내용', file: '04_content.svg' }, { name: '인용', file: '05_quote.svg' }, { name: '수치', file: '06_data.svg' }, { name: '사진', file: '07_gallery.svg' }, { name: '맺음', file: '08_closing.svg' }],
+      contentType: 'presentation', style: '페이퍼', styleId: 'st-paper', styleEn: 'Swiss', ratio: '16:9', difficulty: '보통', rec: false,
+      desc: '여백과 격자로 미는 스위스풍 발표 세트', uses: '디자인 발표·작품 소개·전시 설명', tags: ['발표', '편집', '여백'], hints: ['글자 수를 줄일수록 사는 판', '인용 장을 빼도 흐름이 유지된다'] },
+    { id: 'pres04', name: 'Future Grid', ko: '기술 발표 세트', category: 'presentation', width: 1600, height: 900, pack: 'pres04',
+      slides: [{ name: '표지', file: '01_cover.svg' }, { name: '목차', file: '02_agenda.svg' }, { name: '구획', file: '03_section.svg' }, { name: '내용', file: '04_content.svg' }, { name: '일정', file: '05_roadmap.svg' }, { name: '수치', file: '06_data.svg' }, { name: '일정', file: '07_roadmap.svg' }, { name: '맺음', file: '08_closing.svg' }],
+      contentType: 'presentation', style: '볼드', styleId: 'st-bold', styleEn: 'Grid', ratio: '16:9', difficulty: '보통', rec: false,
+      desc: '어두운 바탕에 격자를 깔아 세운 기술 발표 세트', uses: '정보 수업 발표·시스템 소개·프로젝트 보고', tags: ['발표', '기술', '격자'], hints: ['격자 선은 옮기거나 지워도 된다', '일정 장이 둘이라 하나는 지워도 좋다'] },
+    { id: 'pres05', name: 'Warm Portfolio', ko: '포트폴리오 세트', category: 'presentation', width: 1600, height: 900, pack: 'pres05',
+      slides: [{ name: '표지', file: '01_cover.svg' }, { name: '목차', file: '02_agenda.svg' }, { name: '내용', file: '03_content.svg' }, { name: '내용', file: '04_content.svg' }, { name: '사진', file: '05_gallery.svg' }, { name: '비교', file: '06_comparison.svg' }, { name: '내용', file: '07_content.svg' }, { name: '맺음', file: '08_closing.svg' }],
+      contentType: 'presentation', style: '소프트', styleId: 'st-soft', styleEn: 'Warm', ratio: '16:9', difficulty: '쉬움', rec: true,
+      desc: '따뜻한 미색으로 작품을 늘어놓는 발표 세트', uses: '학생 포트폴리오·프로젝트 정리·작품 발표', tags: ['발표', '포트폴리오', '작품'], hints: ['사진 장의 색 판을 눌러 「이미지 교체」로 실제 작품을', '장을 복제해 작품 수를 늘리세요'] },
   ];
 
   const CATS = [['', '전체'], ['poster', '포스터'], ['event', '행사'], ['education', '교육'], ['promotion', '홍보'], ['social', '소셜']];
 
   const get = (id) => CATALOG.find((t) => t.id === id) || null;
-  const urlOf = (id) => { const t = get(id); return t ? BASE + t.pack + '/' + t.file : null; };
+  const fileOf = (t, i) => (t.slides ? t.slides[i || 0].file : t.file);
+  const urlOf = (id, i) => { const t = get(id); return t ? BASE + t.pack + '/' + fileOf(t, i) : null; };
+  const pagesOf = (id) => { const t = get(id); return t && t.slides ? t.slides.length : 1; };
   const list = (cat) => (cat ? CATALOG.filter((t) => t.category === cat) : CATALOG.slice());
 
   /* ---------------- 작은 도구 ---------------- */
@@ -525,6 +551,9 @@ window.MK_TPLSVG = (() => {
     /* 굳힌 팩(svgpack01.js)이 있으면 즉시 — 파싱은 빌드 때 이미 끝났다 */
     const baked = window.MK_SVGPACK && window.MK_SVGPACK[id];
     if (baked) { CACHE[id] = { ok: true, ...baked }; return cb(CACHE[id]); }
+    /* 굳힌 팩이 없고 여러 장짜리면 런타임 조립은 하지 않는다 — 빌드가 정본이다 */
+    const meta0 = get(id);
+    if (meta0 && meta0.slides) return cb({ ok: false, msg: '발표 세트를 불러오지 못했어요' });
     const url = urlOf(id);
     if (!url || typeof fetch !== 'function') return cb({ ok: false, msg: '템플릿을 찾을 수 없어요' });
     fetch(url).then((r) => (r.ok ? r.text() : Promise.reject(new Error('http ' + r.status))))
@@ -533,14 +562,37 @@ window.MK_TPLSVG = (() => {
   }
 
   /* ---------------- 씬에 앉히기 ---------------- */
+  const clone = (v) => JSON.parse(JSON.stringify(v));
+  const seat = (s, page, name) => {
+    s.width = page.width; s.height = page.height;
+    s.background = page.background;
+    s.elements = clone(page.elements);
+    if (name) s.name = name;
+    return s;
+  };
+
+  /* 단일이면 지금 장면을 갈아입히고, 여러 장짜리면 장면들을 뒤에 잇는다.
+     발표 세트를 「현재 장면 교체」로 처리하면 일곱 장이 갈 곳이 없다. */
   function applyTo(doc, si, parsed, meta) {
-    const s = doc && doc.scenes && doc.scenes[si];
-    if (!s) return { ok: false, msg: '장면이 없어요' };
+    if (!doc || !doc.scenes) return { ok: false, msg: '문서가 없어요' };
     if (!parsed || !parsed.ok) return { ok: false, msg: (parsed && parsed.msg) || '템플릿을 읽지 못했어요' };
-    s.width = parsed.width; s.height = parsed.height;
-    s.background = parsed.background;
-    s.elements = JSON.parse(JSON.stringify(parsed.elements));
-    if (meta && meta.ko) s.name = meta.ko;
+
+    if (parsed.pages) {
+      const cur = doc.scenes[si];
+      const empty = cur && !(cur.elements || []).length;   /* 빈 장면이면 그 자리부터 채운다 */
+      const made = parsed.pages.map((pg, i) => seat(
+        (empty && i === 0) ? cur : { id: 'p' + Date.now().toString(36) + i, transition: 'fade', duration: 5, elements: [] },
+        pg, (meta && meta.ko ? meta.ko + ' ' : '') + (pg.name || (i + 1) + '장')));
+      const add = empty ? made.slice(1) : made;
+      const at = (si != null ? si : doc.scenes.length - 1) + 1;
+      doc.scenes.splice(at, 0, ...add);
+      doc.scenes.forEach((sc, i) => { sc.order = i; });
+      return { ok: true, count: made.length, pages: made.length, msg: `발표 세트 적용 — ${made.length}장 추가` };
+    }
+
+    const s = doc.scenes[si];
+    if (!s) return { ok: false, msg: '장면이 없어요' };
+    seat(s, parsed, meta && meta.ko);
     return { ok: true, count: s.elements.length, msg: `템플릿 적용 — 요소 ${s.elements.length}개` };
   }
 
@@ -572,5 +624,5 @@ window.MK_TPLSVG = (() => {
     return { ok: !v.length, violations: v, native: p.native, frags: p.frags, count: p.elements.length };
   }
 
-  return { CATALOG, CATS, BASE, get, urlOf, list, parse, load, applyTo, audit };
+  return { CATALOG, CATS, BASE, get, urlOf, fileOf, pagesOf, list, parse, load, applyTo, audit };
 })();

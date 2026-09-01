@@ -24,9 +24,10 @@ require('./data/tplsvg.js');
 const T = window.MK_TPLSVG;
 const opts = { DOMParser: dom.window.DOMParser, XMLSerializer: dom.window.XMLSerializer };
 let bad = 0;
-const PACK_FILES = fs.readdirSync('./data').filter((f) => /^svgpack\d+\.js$/.test(f)).sort().map((f) => './data/' + f);
+const PACK_FILES = fs.readdirSync('./data').filter((f) => /^svg(pack|pres)\d+\.js$/.test(f)).sort().map((f) => './data/' + f);
 if (!fs.existsSync('./data/tplsvg.js')) { console.log('❌ tplsvg.js 없음 — 전제 실패'); process.exit(1); }
 for (const t of T.CATALOG) {
+  if (t.slides) continue;   /* 여러 장짜리는 아래 발표 세트 블록에서 잰다 */
   const f = 'assets/templates/' + t.pack + '/' + t.file;
   if (!fs.existsSync(f)) { console.log('❌ 파일 없음', f); bad++; continue; }
   const a = T.audit(fs.readFileSync(f, 'utf8'), opts);
@@ -90,9 +91,11 @@ for (const t of T.CATALOG) {
   const want = g.MK_TPLSVG.CATALOG.map((t) => 'tpl-' + t.id);
   want.forEach((id) => {
     const t = E.get(id);
-    const okReg = !!t && t.scenes && t.scenes.length === 1 && t.scenes[0].elements.length > 0
+    const want2 = (g.MK_TPLSVG.CATALOG.find((c) => 'tpl-' + c.id === id) || {}).slides;
+    const nWant = want2 ? want2.length : 1;
+    const okReg = !!t && t.scenes && t.scenes.length === nWant && t.scenes.every((sc) => sc.elements.length > 0)
       && !!t.ai && !!t.style && !!t.contentType && !!t.ratio;
-    console.log((okReg ? '✅ ' : '❌ ') + '레지스트리 등록 ' + id + (t ? ` — ${t.category}/${t.style} · 요소 ${t.scenes[0].elements.length}개` : ''));
+    console.log((okReg ? '✅ ' : '❌ ') + '레지스트리 등록 ' + id + (t ? ` — ${t.category}/${t.style} · ${t.scenes.length > 1 ? t.scenes.length + '장' : '요소 ' + t.scenes[0].elements.length + '개'}` : ''));
     if (!okReg) bad++;
     /* 카드가 요구하는 필드가 하나라도 비면 그리드에서 조용히 깨진다 */
     if (t && !E.resolve(id)) { console.log('❌ resolve 실패 ' + id); bad++; }
@@ -100,9 +103,10 @@ for (const t of T.CATALOG) {
   console.log((ids.length >= want.length + 16 ? '✅ ' : '❌ ') + `전체 목록 ${ids.length}종 (샘플 8 + 실전 8 + SVG 팩 ${want.length})`);
   /* 씬 배경이 밝기 판정과 어긋나면 글자가 배경에 묻힌다 */
   want.forEach((id) => {
-    const sc = E.get(id).scenes[0];
-    const noColor = sc.elements.filter((e) => e.kind === 'text' && !e.color).length;
-    if (noColor) { console.log('❌ 색 없는 글자 ' + id + ' — ' + noColor + '개'); bad++; }
+    E.get(id).scenes.forEach((sc, i) => {
+      const noColor = sc.elements.filter((e) => e.kind === 'text' && !e.color).length;
+      if (noColor) { console.log(`❌ 색 없는 글자 ${id}${i ? ' ' + (i + 1) + '장' : ''} — ${noColor}개`); bad++; }
+    });
   });
   console.log('✅ 모든 글자에 색이 박혔다 (배경 명암 판정과 무관하게 읽힌다)');
   global.window = savedWindow;   /* 앞 블록의 MK_EASY 를 되돌린다 */
@@ -126,7 +130,9 @@ for (const t of T.CATALOG) {
   const req4 = createRequire(import.meta.url);
   for (const f of ['./data/tplsvg.js', ...PACK_FILES]) { delete req4.cache[req4.resolve(f)]; req4(f); }
   let shapes = 0, frags = 0, bad2 = [];
-  Object.entries(g2.MK_SVGPACK).forEach(([id, p2]) => p2.elements.forEach((e, i) => {
+  /* 팩 항목은 단일(elements)이거나 여러 장(pages[].elements)이다 */
+  const allPages = (p2) => (p2.pages ? p2.pages : [p2]);
+  Object.entries(g2.MK_SVGPACK).forEach(([id, p2]) => allPages(p2).forEach((pg) => pg.elements.forEach((e, i) => {
     if (e.kind === 'shape') {
       shapes++;
       if (!['rect', 'ellipse', 'line'].includes(e.shape)) bad2.push(id + '#' + i + ':shape');
@@ -134,7 +140,7 @@ for (const t of T.CATALOG) {
       if (e.shape === 'line' && !e.stroke) bad2.push(id + '#' + i + ':색 없는 선');
     }
     if (e.src) frags++;
-  }));
+  })));
   global.window = sv;
   console.log((bad2.length ? '❌ ' : '✅ ') + `순수 도형 ${shapes}개 계약 준수` + (bad2.length ? ' — ' + bad2.join(', ') : ''));
   console.log(`   조각으로 남은 것 ${frags}개 (곡선 path·그라디언트·필터)`);
@@ -162,12 +168,65 @@ for (const t of T.CATALOG) {
   /* 원본 파일에 그 실수가 남아 있으면 썸네일이 빈다 */
   let dirty = [];
   for (const t of T.CATALOG) {
-    const raw = fs.readFileSync(`assets/templates/${t.pack}/${t.file}`, 'utf8');
-    if (/&(?!(?:[a-zA-Z][a-zA-Z0-9]*|#\d+|#x[0-9A-Fa-f]+);)/.test(raw)) dirty.push(t.id);
+    for (const fl of (t.slides ? t.slides.map((s2) => s2.file) : [t.file])) {
+      const raw = fs.readFileSync(`assets/templates/${t.pack}/${fl}`, 'utf8');
+      if (/&(?!(?:[a-zA-Z][a-zA-Z0-9]*|#\d+|#x[0-9A-Fa-f]+);)/.test(raw)) dirty.push(t.id + '/' + fl);
+    }
   }
   console.log((dirty.length ? '❌ ' : '✅ ') + '원본 SVG 전부 XML 로 유효' + (dirty.length ? ' — ' + dirty.join(', ') : ''));
   if (dirty.length) bad++;
   global.window = sv;
+}
+
+
+/* ---- 여러 장짜리 발표 세트 ----
+   템플릿 하나가 scenes 여덟 개로 서고, 적용은 「교체」가 아니라 「뒤에 잇기」다.
+   교체로 처리하면 일곱 장이 갈 곳이 없다. */
+{
+  const savedW6 = global.window; const g6 = {}; global.window = g6;
+  const req6 = createRequire(import.meta.url);
+  for (const f of ['./data/sample.js', './data/assets.js', './data/templates.js', './data/tplpack.js',
+                   './data/tplsvg.js', ...PACK_FILES]) { delete req6.cache[req6.resolve(f)]; req6(f); }
+  const T6 = g6.MK_TPLSVG, E6 = g6.MK_TPL;
+  const multi = T6.CATALOG.filter((t) => t.slides);
+  multi.forEach((t) => {
+    const reg = E6.get('tpl-' + t.id);
+    const okM = reg && reg.scenes.length === t.slides.length && reg.pageCount === t.slides.length
+      && reg.scenes.every((s) => s.width === t.width && s.height === t.height && s.elements.length > 0)
+      && !!E6.resolve('tpl-' + t.id);
+    console.log((okM ? '✅ ' : '❌ ') + `발표 세트 ${t.id} — 씬 ${reg ? reg.scenes.length : 0}장`);
+    if (!okM) bad++;
+    /* 같은 세트 안에서는 크기·푸터가 한 벌이어야 한다 */
+    const sizes = new Set(reg.scenes.map((s) => s.width + 'x' + s.height));
+    if (sizes.size !== 1) { console.log('❌ 세트 안 크기가 갈림 ' + t.id); bad++; }
+  });
+  const pk = g6.MK_SVGPACK[multi[0].id];
+  {
+    const doc = { scenes: [{ id: 'a', width: 1280, height: 720, background: '#fff', elements: [] }] };
+    T6.applyTo(doc, 0, { ok: true, ...pk }, multi[0]);
+    const okE = doc.scenes.length === 8 && doc.scenes[0].width === 1600;
+    console.log((okE ? '✅ ' : '❌ ') + '빈 장면에 적용하면 그 자리부터 채운다');
+    if (!okE) bad++;
+  }
+  {
+    const doc = { scenes: [
+      { id: 'a', width: 1280, height: 720, background: '#fff', elements: [{ kind: 'text', x: 1, y: 1, w: 9, size: 5, text: '앞' }] },
+      { id: 'b', width: 1280, height: 720, background: '#fff', elements: [{ kind: 'text', x: 1, y: 1, w: 9, size: 5, text: '뒤' }] }] };
+    T6.applyTo(doc, 0, { ok: true, ...pk }, multi[0]);
+    const okI = doc.scenes.length === 10 && doc.scenes[0].elements[0].text === '앞'
+      && doc.scenes[9].elements[0].text === '뒤' && doc.scenes.every((s, i) => s.order === i);
+    console.log((okI ? '✅ ' : '❌ ') + '내용 있는 장면 뒤에 이어 붙이고 order 를 다시 매긴다');
+    if (!okI) bad++;
+  }
+  {
+    const doc = { scenes: [{ id: 'a', width: 1280, height: 720, background: '#fff', elements: [{ kind: 'text', x: 1, y: 1, w: 9, size: 5, text: '옛' }] }] };
+    const single = T6.CATALOG.find((t) => !t.slides);
+    T6.applyTo(doc, 0, { ok: true, ...g6.MK_SVGPACK[single.id] }, single);
+    const okS = doc.scenes.length === 1 && doc.scenes[0].width === single.width;
+    console.log((okS ? '✅ ' : '❌ ') + '단일 템플릿은 종전대로 현재 장면을 갈아입힌다');
+    if (!okS) bad++;
+  }
+  global.window = savedW6;
 }
 
 console.log('\nMK_EASY quickAudit', JSON.stringify(window.MK_EASY.quickAudit()));
@@ -179,7 +238,7 @@ const ed = fs.readFileSync('screens/editor.js', 'utf8');
 for (const f of ['../maker-playground/index.html', '../maker/index.html']) {
   const h = fs.readFileSync(f, 'utf8');
   /* 팩은 계속 늘어난다 — 목록을 못 박지 않고 디스크에서 센다 */
-  const packFiles = fs.readdirSync('./data').filter((f) => /^svgpack\d+\.js$/.test(f)).sort();
+  const packFiles = fs.readdirSync('./data').filter((f) => /^svg(pack|pres)\d+\.js$/.test(f)).sort();
   const two = /tplsvg\.js/.test(h) && packFiles.every((f) => h.includes(f));
   /* 순서 계약: MK_TPL(templates.js) → 파서 → 팩. 뒤집히면 등록이 조용히 실패한다 */
   const order = h.indexOf('templates.js') < h.indexOf('tplsvg.js')
