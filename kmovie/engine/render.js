@@ -15,7 +15,9 @@
 (function (g) {
   'use strict';
 
-  function safeBottom(W, H) { const L = g.KMV_PROJECT.data.look; return L && L.cinemaBar ? Math.round((H - W / 2.39) / 2) : 0; }
+  function safeBottom(W, H) { const L = g.KMV_PROJECT.data.look; return L && L.cinemaBar && W > H ? Math.round((H - W / 2.39) / 2) : 0; }
+  /* 이 클립을 이 화면에 어떻게 채울지 (스마트 리프레임) — 화면비가 원본과 같으면 null */
+  function fillOf(c, W, H, src, t) { const RF = g.KMV_REFRAME; return RF && src ? RF.fill(c, W, H, src, g.KMV_PROJECT.srcFrame(c, t)) : null; }
   function black(ctx, W, H) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); }
 
   /* 이전 클립의 "핸들" 원본 프레임 — out 너머로 이어 가고, 원본 끝이면 마지막 프레임 */
@@ -33,7 +35,7 @@
     if (img) {
       const kb = g.KMV_LOOK ? g.KMV_LOOK.kenburns(c, t) : null;
       if (kb) { ctx.save(); ctx.translate(W / 2 + kb.dx * W, H / 2 + kb.dy * H); ctx.scale(kb.s, kb.s); ctx.translate(-W / 2, -H / 2); }
-      g.KMV_MEDIA.drawFit(ctx, img, W, H, src.rot);
+      g.KMV_MEDIA.drawFit(ctx, img, W, H, src.rot, null, null, fillOf(c, W, H, src, t));
       if (kb) ctx.restore();
     }
     if (g.KMV_LOOK) g.KMV_LOOK.apply(ctx, W, H, t, c, P.data.look);
@@ -122,7 +124,7 @@
         resetCtx(cx); cx.globalCompositeOperation = 'destination-in';
         const kb = g.KMV_LOOK ? g.KMV_LOOK.kenburns(c, t) : null;
         if (kb) { cx.translate(W / 2 + kb.dx * W, H / 2 + kb.dy * H); cx.scale(kb.s, kb.s); cx.translate(-W / 2, -H / 2); }
-        cx.drawImage(mask, 0, 0, W, H);                       // 마스크는 fit 좌표계 — 켄 번즈 변환을 같이 탄다
+        g.KMV_MEDIA.drawFit(cx, mask, W, H, 0, mask.width, mask.height, fillOf(c, W, H, g.KMV_MEDIA.get(c.media), t));   // 마스크는 fit 좌표계 — 켄 번즈·리프레임을 같이 탄다
         resetCtx(cx);
         resetCtx(ctx); ctx.drawImage(cv, 0, 0);
       }

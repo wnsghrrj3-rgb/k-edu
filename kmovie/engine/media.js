@@ -986,13 +986,23 @@
   }
 
   /* 원본(회전 포함)을 W×H 안에 비율 유지로 꽉 채워 그림 — 렌더·썸네일 공용 */
-  function drawFit(ctx, img, W, H, rot, iw, ih) {
+  /* fill = {cover:true, cx, cy} 면 화면을 꽉 채우도록 키우고(cover) 초점(cx,cy: 원본 0~1)이 가운데로 오게 민다.
+     화면 밖으로 빈틈이 생기지 않도록 이동량은 잘린 만큼으로 한계를 둔다. 없으면 예전 그대로 레터박스(contain). */
+  function drawFit(ctx, img, W, H, rot, iw, ih, fill) {
     iw = iw || img.displayWidth || img.width; ih = ih || img.displayHeight || img.height;
     const rotated = rot === 90 || rot === 270;
     const dw = rotated ? ih : iw, dh = rotated ? iw : ih;
-    const sc = Math.min(W / dw, H / dh);
+    const cover = !!(fill && fill.cover);
+    const sc = cover ? Math.max(W / dw, H / dh) : Math.min(W / dw, H / dh);
+    let px = 0, py = 0;
+    if (cover) {
+      const ox = Math.max(0, dw * sc - W) / 2, oy = Math.max(0, dh * sc - H) / 2;
+      const cx = fill.cx == null ? 0.5 : fill.cx, cy = fill.cy == null ? 0.5 : fill.cy;
+      px = Math.max(-ox, Math.min(ox, (0.5 - cx) * dw * sc));
+      py = Math.max(-oy, Math.min(oy, (0.5 - cy) * dh * sc));
+    }
     ctx.save();
-    ctx.translate(W / 2, H / 2);
+    ctx.translate(W / 2 + px, H / 2 + py);
     if (rot) ctx.rotate(rot * Math.PI / 180);
     try { ctx.drawImage(img, -iw * sc / 2, -ih * sc / 2, iw * sc, ih * sc); } catch (e) { /* 닫힌 프레임 */ }
     ctx.restore();

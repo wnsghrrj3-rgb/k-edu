@@ -104,7 +104,9 @@
 
   function drawCard(ctx, W, H, t, card, T, safe) {
     const a0 = alphaOf(card, t); if (a0 <= 0.002) return;
-    const FX = g.KMV_FX, s = H / 1080, st = card.style || 'basic', hiOK = st === 'kicker' || st === 'pop';   // {강조} 색은 키커·팝에서만
+    /* 크기 기준은 짧은 변 — 세로(1080×1920) 화면에서도 글씨가 화면 폭에 비해 알맞게 나온다.
+       줄바꿈 글자 수는 화면 폭에 비례해 줄인다(가로 16:9 에서는 wk=1 이라 예전 그대로). */
+    const FX = g.KMV_FX, s = Math.min(W, H) / 1080, wk = W / (1920 * s), st = card.style || 'basic', hiOK = st === 'kicker' || st === 'pop';   // {강조} 색은 키커·팝에서만
     const sizeK = clamp((card.size == null ? 100 : card.size) / 100, 0.4, 2.5);
     const size = (st === 'docu' ? 42 : st === 'kicker' ? 60 : st === 'pop' ? 64 : st === 'caption' ? 30 : st === 'gold' ? 52 : st === 'bar' ? 46 : 55) * s * sizeK;
     const weight = st === 'docu' ? 400 : st === 'pop' ? 800 : st === 'caption' ? 600 : st === 'gold' ? 500 : 700;
@@ -123,7 +125,7 @@
     let cursor = false;
     if (st === 'type' && fx && fx.reveal < 1) cursor = true;
     else if (st === 'type' && k < card.dur - FADE) cursor = Math.floor(k / 8) % 2 === 0;
-    const lines = wrap(text, st === 'docu' ? 26 : st === 'caption' ? 30 : st === 'gold' ? 24 : 22).map(tokens);
+    const lines = wrap(text, Math.max(8, Math.round((st === 'docu' ? 26 : st === 'caption' ? 30 : st === 'gold' ? 24 : 22) * wk))).map(tokens);
     ctx.save();
     ctx.font = fontOf(card, weight, size); ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
     if (fx && fx.ls) ls += fx.ls;
@@ -152,7 +154,7 @@
     // 배경 — 박스·띠
     const barK = fx && fx.bar != null ? fx.bar : 1;
     if (st === 'box') {
-      const bw = (Math.max(...widths) + pad * 2) * barK, bh = lines.length * lh + pad * 1.1, bx = 120 * s, by = y0 - size - pad * 0.45;
+      const bw = (Math.max(...widths) + pad * 2) * barK, bh = lines.length * lh + pad * 1.1, bx = Math.min(120 * s, W * 0.06), by = y0 - size - pad * 0.45;
       ctx.fillStyle = 'rgba(6,10,20,0.62)'; ctx.fillRect(bx, by, bw, bh);
       ctx.fillStyle = T.accent; ctx.fillRect(bx, by, 6 * s, bh);
     } else if (st === 'bar') {
@@ -168,7 +170,7 @@
       ctx.fillRect((W - bw) / 2 - 26 * s, gy1, bw + 52 * s, 2 * s);
     } else if (st === 'caption') {                       // 금점
       ctx.fillStyle = T.accent;
-      ctx.beginPath(); ctx.arc(96 * s, y0 - size * 0.34, 5 * s, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(Math.min(96 * s, W * 0.05), y0 - size * 0.34, 5 * s, 0, Math.PI * 2); ctx.fill();
     }
     const words = fx && fx.per ? wordMap(lines) : null;
     let base = 0;

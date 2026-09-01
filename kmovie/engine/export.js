@@ -41,7 +41,7 @@
     opt = opt || {};
     if (busy) return;
     if (typeof VideoEncoder === 'undefined') throw new Error('이 브라우저는 영상 저장을 지원하지 않아요 (크롬·엣지 최신 버전)');
-    const P = g.KMV_PROJECT, FPS = P.FPS, W = P.W, H = P.H;
+    const P = g.KMV_PROJECT, FPS = P.FPS, W = P.w ? P.w() : P.W, H = P.h ? P.h() : P.H;
     const total = P.total();
     if (!total) throw new Error('타임라인이 비어 있어요');
     const prog = opt.onProgress || (() => {});

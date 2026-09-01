@@ -226,7 +226,7 @@
         ctx.drawImage(G.canvas, 0, 0, W, H);
       } else applyCPU(ctx, W, H, p);
     }
-    if (p.cinemaBar) {                                  // 2.39:1 레터박스
+    if (p.cinemaBar && W > H) {                         // 2.39:1 레터박스 (가로 화면에서만)
       const bh = Math.round((H - W / 2.39) / 2);
       ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.fillStyle = '#000';
       ctx.fillRect(0, 0, W, bh); ctx.fillRect(0, H - bh, W, bh);

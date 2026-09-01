@@ -15,7 +15,8 @@
 (function () {
   'use strict';
   const P = window.KMV_PROJECT, M = window.KMV_MEDIA, A = window.KMV_AUDIO, R = window.KMV_RENDER, LK = window.KMV_LOOK, TR = window.KMV_TRANSITION, SB = window.KMV_SUBTITLE, PT = window.KMV_PARTS, SG = window.KMV_SEG, SH = window.KMV_SHELL, AU = window.KMV_AUTO;
-  const FPS = P.FPS, PW = P.W, PH = P.H;
+  const FPS = P.FPS;
+  const PW = () => P.w(), PH = () => P.h();          // 화면비는 프로젝트가 정한다 (가로 16:9 · 세로 9:16 · 정사각)
   const $ = id => document.getElementById(id);
   const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
   const GOLD = '#D9B65C';
@@ -102,8 +103,8 @@
   let segToast = 0;
   const live = () => playing || srcPlaying || shuttle !== 0;      // 어떤 형태로든 굴러가는 중
   function setRScale(sc) {
-    const w = Math.round(PW * sc), h = Math.round(PH * sc);
-    if (pv.width !== w) { pv.width = w; pv.height = h; }
+    const w = Math.round(PW() * sc), h = Math.round(PH() * sc);
+    if (pv.width !== w || pv.height !== h) { pv.width = w; pv.height = h; }
   }
   function liveMode(on) { setRScale(on ? 0.5 : 1); M.setAnalyzePaused(on); if (!on) M.stopStreams(); }
   function renderPreview() {
@@ -826,7 +827,7 @@
         }
         P.trim(c.id, drag.side, v, { commit: false });
         const idx = drag.side === 'in' ? c.in : c.out - 1;   // 경계 프레임 미리보기 (프리미어처럼)
-        R.drawSource(pctx, PW, PH, c.media, idx);
+        R.drawSource(pctx, PW(), PH(), c.media, idx);
       }
       return;
     }
@@ -988,11 +989,12 @@
   let twoJob = 0;
   function drawTwoUp(mediaA, idxA, mediaB, idxB, labelA, labelB) {
     const job = ++twoJob;
-    pctx.setTransform(1, 0, 0, 1, 0, 0); pctx.fillStyle = '#000'; pctx.fillRect(0, 0, PW, PH);
-    const half = [[mediaA, idxA, 0, labelA], [mediaB, idxB, PW / 2, labelB]];
-    const paint = (src, img, x) => { pctx.save(); pctx.setTransform(1, 0, 0, 1, x, PH / 4); M.drawFit(pctx, img, PW / 2, PH / 2, src.rot); pctx.restore(); };
-    const label = (x, txt, f, m) => { pctx.setTransform(1, 0, 0, 1, 0, 0); pctx.fillStyle = 'rgba(8,14,30,.75)'; pctx.fillRect(x + 20, PH * 3 / 4 + 20, 420, 48); pctx.fillStyle = GOLD; pctx.font = '700 28px Pretendard, sans-serif'; pctx.textBaseline = 'middle'; pctx.fillText(txt + ' · ' + tc(Math.round(f * FPS / m.fps)), x + 36, PH * 3 / 4 + 44); };
-    pctx.fillStyle = '#243050'; pctx.fillRect(PW / 2 - 2, 0, 4, PH);
+    const pw = PW(), phh = PH(), sK = Math.min(pw, phh) / 1080;
+    pctx.setTransform(1, 0, 0, 1, 0, 0); pctx.fillStyle = '#000'; pctx.fillRect(0, 0, pw, phh);
+    const half = [[mediaA, idxA, 0, labelA], [mediaB, idxB, pw / 2, labelB]];
+    const paint = (src, img, x) => { pctx.save(); pctx.setTransform(1, 0, 0, 1, x, phh / 4); M.drawFit(pctx, img, pw / 2, phh / 2, src.rot); pctx.restore(); };
+    const label = (x, txt, f, m) => { pctx.setTransform(1, 0, 0, 1, 0, 0); pctx.fillStyle = 'rgba(8,14,30,.75)'; pctx.fillRect(x + 20 * sK, phh * 3 / 4 + 20 * sK, Math.min(420 * sK, pw / 2 - 40 * sK), 48 * sK); pctx.fillStyle = GOLD; pctx.font = '700 ' + Math.round(28 * sK) + 'px Pretendard, sans-serif'; pctx.textBaseline = 'middle'; pctx.fillText(txt + ' · ' + tc(Math.round(f * FPS / m.fps)), x + 36 * sK, phh * 3 / 4 + 44 * sK); };
+    pctx.fillStyle = '#243050'; pctx.fillRect(pw / 2 - 2, 0, 4, phh);
     half.forEach(([mid, idx, x, lb]) => {
       const src = M.get(mid), m = P.media(mid); if (!src || !m) return;
       let img = src.cached(idx) || src.nearest(idx); if (img) paint(src, img, x); label(x, lb, idx, m);
@@ -1202,7 +1204,7 @@
     OV.show('MP4 내보내는 중');
     try {
       const r = await window.KMV_EXPORT.exportMP4({ onProgress: (p, l) => OV.set(p, l) });
-      if (r) toast('저장 완료 · ' + Math.round(r.seconds) + '초 · 1920×1080' + (r.toDisk ? ' · ' + r.name : '') + (/^avc/.test(r.codec) ? '' : ' · 이 브라우저엔 H.264 인코더가 없어 VP9 로 저장했어요'), 6000);
+      if (r) toast('저장 완료 · ' + Math.round(r.seconds) + '초 · ' + PW() + '×' + PH() + (r.toDisk ? ' · ' + r.name : '') + (/^avc/.test(r.codec) ? '' : ' · 이 브라우저엔 H.264 인코더가 없어 VP9 로 저장했어요'), 6000);
     } catch (e) { console.error(e); toast('내보내기 실패: ' + (e.message || e), 5000); }
     OV.hide();
   };
@@ -1214,6 +1216,16 @@
   Object.keys(P.SPEED).forEach(k => { const b = document.createElement('button'); b.textContent = P.SPEED[k].label; b.dataset.k = k; b.onclick = () => { const c = selClip(); if (c) { stop(); P.setSpeed(c.id, k); } }; speedSeg.appendChild(b); });
   [['none', '없음'], ['short', '짧게'], ['normal', '보통'], ['long', '길게']].forEach(([k, l]) => segBtn($('rampSeg'), k, l, () => { const c = selClip(); if (c) { stop(); P.setRamp(c.id, k); } }, '슬로·타임랩스로 부드럽게 들어가고 나오는 구간'));
   [['none', '없음'], ['light', '약하게'], ['strong', '강하게']].forEach(([k, l]) => segBtn($('denoiseSeg'), k, l, () => { const c = selClip(); if (c) { stop(); P.setDenoise(c.id, k); } }, '이 원본의 가장 조용한 구간을 잡음 지문으로 삼아 웅웅거림·히스를 줄여요'));
+  // 클립 채우기 (스마트 리프레임) — 화면비가 원본과 다를 때만 보인다
+  [['auto', '자동'], ['center', '가운데'], ['a', ''], ['b', ''], ['none', '안 채움']].forEach(([k, l]) => segBtn($('fitSeg'), k, l, () => { const c = selClip(); if (c) { P.setFill(c.id, k); renderPreview(); } }, k === 'auto' ? '원본에서 볼거리가 몰린 쪽을 남기고 잘라요' : k === 'none' ? '자르지 않고 위아래(또는 좌우)에 검은 띠를 둬요' : ''));
+  // 프로젝트 화면비
+  P.ASPECTS.forEach(a => segBtn($('aspectSeg'), a.id, a.short, () => { if (P.setAspect(a.id)) { stop(); setRScale(1); refreshAspect(); renderPreview(); toast(a.label + ' · ' + a.w + '×' + a.h + ' 로 바꿨어요', 2200); } }, a.label + ' · ' + a.w + '×' + a.h));
+  function refreshAspect() {
+    setOn($('aspectSeg'), P.aspect());
+    const ar = PW() + '/' + PH();
+    $('exFmt').textContent = PW() + '×' + PH();
+    document.querySelectorAll('#partPeek canvas, .pc canvas').forEach(cv => { cv.style.aspectRatio = ar; });
+  }
   let volStart = null;
   $('vol').oninput = e => { const c = selClip(); if (!c) return; const a = P.audioOf(c.id); if (a) { if (volStart == null) volStart = a.vol == null ? 1 : a.vol; a.vol = +e.target.value / 100; $('volV').textContent = e.target.value + '%'; dirty = true; draw(); } };
   $('vol').onchange = e => { const c = selClip(); if (!c) return; const a = P.audioOf(c.id); if (a) { const v = +e.target.value / 100; a.vol = volStart == null ? 1 : volStart; volStart = null; P.setVol(c.id, v); } };
@@ -1248,6 +1260,7 @@
     const rampOK = !c.freeze && m.kind === 'video' && c.speed !== 'normal' && c.speed !== 'hit';
     $('rowRamp').classList.toggle('hidden', !rampOK); setOn($('rampSeg'), c.ramp || 'none');
     $('rowDenoise').classList.toggle('hidden', c.freeze || m.kind !== 'video' || !m.audio); setOn($('denoiseSeg'), c.denoise || 'none');
+    refreshFillRow(c);
     $('rowFreeze').classList.toggle('hidden', !c.freeze); if (c.freeze) $('freezeSec').value = (c.dur / FPS).toFixed(1);
     $('rowVol').classList.toggle('hidden', !a); if (a) { $('vol').value = Math.round((a.vol == null ? 1 : a.vol) * 100); $('volV').textContent = $('vol').value + '%'; }
     $('rowLink').classList.toggle('hidden', !a || a.linked);
@@ -1270,7 +1283,19 @@
     Array.from($('trDurSeg').children).forEach(b => b.classList.toggle('on', b.dataset.k === (tr.dur || 'normal')));
     Array.from($('trDirSeg').children).forEach(b => { const ok = def.dirs && def.dirs.includes(b.dataset.k); b.classList.toggle('hidden', !ok); b.classList.toggle('on', b.dataset.k === (tr.dir || (def.dirs && def.dirs[0]))); });
   }
-  function refreshProject() { $('pTot').textContent = secStr(P.total()); $('pCnt').textContent = P.data.V.length + (selSet.size > 1 ? ' (선택 ' + selSet.size + ')' : ''); if (stage !== 'src') $('tcTot').textContent = tc(P.total()); }
+  /* 채우기 행 — 잘리는 축(좌우냐 위아래냐)에 맞춰 이름을 바꾼다 */
+  function refreshFillRow(c) {
+    const RF = window.KMV_REFRAME, src = c && !c.gap ? M.get(c.media) : null;
+    const ax = RF && src ? RF.axis(PW(), PH(), src) : null;
+    $('rowFit').classList.toggle('hidden', !ax);
+    $('fitNote').classList.toggle('hidden', !ax);
+    if (!ax) return;
+    const seg = $('fitSeg').children;
+    seg[2].textContent = ax === 'x' ? '왼쪽' : '위'; seg[3].textContent = ax === 'x' ? '오른쪽' : '아래';
+    setOn($('fitSeg'), c.fill || 'auto');
+    $('fitNote').textContent = ax === 'x' ? '화면보다 넓은 원본이라 좌우를 잘라 채워요.' : '화면보다 높은 원본이라 위아래를 잘라 채워요.';
+  }
+  function refreshProject() { refreshAspect(); $('pTot').textContent = secStr(P.total()); $('pCnt').textContent = P.data.V.length + (selSet.size > 1 ? ' (선택 ' + selSet.size + ')' : ''); if (stage !== 'src') $('tcTot').textContent = tc(P.total()); }
 
   /* ---------- 3단계 패널: 룩·켄 번즈·전환·자막 ---------- */
   function segBtn(parent, k, label, fn, title) { const b = document.createElement('button'); b.textContent = label; b.dataset.k = k; if (title) b.title = title; b.onclick = fn; parent.appendChild(b); return b; }
@@ -2060,6 +2085,7 @@
     if (selM && !P.marker(selM)) selM = null;
     if (srcCur && !P.media(srcCur.media)) { srcCur = null; if (stage === 'src') showStage('tl'); $('stageTabs').classList.add('hidden'); }
     refreshMarkerList();
+    if (kind === 'load' || kind === 'aspect' || kind === 'undo' || kind === 'redo') setRScale(live() ? 0.5 : 1);
     refreshPanel(); refreshProject();
     scheduleSave(); if (!drag) refreshBin();
     if (!drag) {

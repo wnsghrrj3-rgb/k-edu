@@ -26,6 +26,15 @@
   /* 속도 램프 — 슬로·타임랩스로 "부드럽게 들어가고 나오는" 구간(클립 길이의 비율). 프리미어 타임 리맵의 베지어 램프와 같은 역할.
      클립 길이는 그대로 두고 안쪽 매핑만 굽힌다: 양 끝은 정속(1×), 가운데가 프리셋 속도 — 원본 소모량이 같도록 가운데 속도를 살짝 보정. */
   const RAMP = { none: 0, short: 0.15, normal: 0.25, long: 0.4 };
+  /* 화면비 — 가로(유튜브)·세로(쇼츠·릴스)·정사각. 짧은 변은 1080 으로 고정(부품·자막 크기 기준이 짧은 변). */
+  const ASPECTS = [
+    { id: '16:9', label: '가로 16:9', short: '가로', w: 1920, h: 1080 },
+    { id: '9:16', label: '세로 9:16', short: '세로', w: 1080, h: 1920 },
+    { id: '1:1',  label: '정사각 1:1', short: '정사각', w: 1080, h: 1080 },
+  ];
+  /* 클립 채우기(스마트 리프레임) — 화면비가 원본과 다를 때 어디를 남기고 자를지.
+     auto = 원본 그림에서 볼거리가 몰린 쪽(KMV_REFRAME), a/b = 앞쪽(왼·위)/뒤쪽(오른·아래), none = 안 자르고 레터박스. */
+  const FILLS = ['auto', 'center', 'a', 'b', 'none'];
   const ss = x => x * x * (3 - 2 * x), ssInt = x => x * x * x - x * x * x * x / 2;          // smoothstep 과 그 적분
   /* w(u) 의 적분 — w 는 [0,R] 에서 0→1, 가운데 1, [1-R,1] 에서 1→0 */
   function rampW(u, R) {
@@ -242,6 +251,7 @@
     commit(); c.ramp = ramp === 'none' ? undefined : ramp; emit();
   }
   function setDenoise(id, level) { const c = clip(id); if (!c || c.freeze) return; const v = level === 'light' || level === 'strong' ? level : undefined; if ((c.denoise || undefined) === v) return; commit(); c.denoise = v; emit(); }
+  function setFill(id, v) { const c = clip(id); if (!c) return; const nv = FILLS.indexOf(v) > 0 ? v : undefined; if ((c.fill || undefined) === nv) return; commit(); c.fill = nv; emit(); }
   function setVol(clipId, vol) {
     const a = audioOf(clipId); if (!a) return;
     commit(); a.vol = clamp(vol, 0, 2); emit();
@@ -668,8 +678,22 @@
   }
   function reset() { P = blank(); undoStack.length = 0; redoStack.length = 0; emit('load'); }
 
+  /* ---------- 화면비 ---------- */
+  function w() { return P.w || W; }
+  function h() { return P.h || H; }
+  function aspect() { const a = ASPECTS.find(x => x.w === w() && x.h === h()); return a ? a.id : '16:9'; }
+  function portrait() { return h() > w(); }
+  function setAspect(id) {
+    const a = ASPECTS.find(x => x.id === id); if (!a) return false;
+    if (P.w === a.w && P.h === a.h) return false;
+    commit(); P.w = a.w; P.h = a.h;
+    if (P.look && P.look.cinemaBar && a.h >= a.w) P.look.cinemaBar = false;   // 세로·정사각엔 시네마 바가 없다
+    emit('aspect'); return true;
+  }
+
   g.KMV_PROJECT = {
-    FPS, W, H, SPEED, RAMP, IMAGE_DEFAULT, FREEZE_DEFAULT, rateAt,
+    FPS, W, H, SPEED, RAMP, ASPECTS, FILLS, IMAGE_DEFAULT, FREEZE_DEFAULT, rateAt,
+    w, h, aspect, portrait, setAspect, setFill,
     get data() { return P; },
     on: fn => listeners.push(fn),
     media, clip, clipIndex, audioOf, clipAt, total, edges, srcFrame, clipDur, speedMap,

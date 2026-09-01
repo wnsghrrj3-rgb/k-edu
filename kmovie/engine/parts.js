@@ -112,10 +112,20 @@
     const an = anchorOf(card) || m.anchor || [0.5, 0.5];
     return { sizeK, ax: an[0], ay: an[1], dx: (card.x || 0) / 100, dy: (card.y || 0) / 100, set: !!card.anchor, self: !!m.self, layer: !!m.layer };
   }
+  /* 부품 무대 — 부품은 16:9(짧은 변 1080) 기준으로 그려져 있다. 세로·정사각 화면에서는
+     짧은 변 크기의 무대를 만들어 그 안에 그리고, 기준점(위/가운데/아래)에 맞춰 무대를 화면에 붙인다.
+     가로 16:9 에서는 무대 = 화면이라 예전과 완전히 같다. (뚫린 글자 같은 self·layer 부품은 화면 전체를 쓴다) */
+  function stage(W, H, ay, full) {
+    const bh = full ? H : Math.min(H, W);
+    const y = bh >= H ? 0 : ay < 0.34 ? 0 : ay > 0.66 ? H - bh : Math.round((H - bh) / 2);
+    return { h: bh, y };
+  }
   function drawCard(ctx, W, H, card, t, theme) {
     const k = K(); if (!k || !def(card.part)) return;
     const lf = t - card.at; if (lf < 0 || lf >= card.dur) return;
-    const FX = g.KMV_FX, s = H / 1080;
+    const gm0 = geom(card, W, H), st = stage(W, H, gm0.ay, gm0.self || gm0.layer);
+    const BH = st.h, BY = st.y;
+    const FX = g.KMV_FX, s = BH / 1080;
     let p = card.p;
     const fontId = card.font || (META[card.part] && META[card.part].font) || null;
     if (fontId && FX) { const fam = FX.family(fontId); if (fam) p = Object.assign({}, card.p, { _font: fam }); FX.loadFont(fontId); }
@@ -129,9 +139,9 @@
       if (fx && fx.reveal < 1) fx.alpha *= fx.reveal;
     }
     if (fx && fx.alpha <= 0.003) return;
-    const gm = geom(card, W, H), ax = W * gm.ax, ay = H * gm.ay;
+    const gm = gm0, ax = W * gm.ax, ay = BH * gm.ay;
     if (gm.self) p = Object.assign({}, p, { _size: gm.sizeK, _ax: gm.set ? gm.ax : null, _ay: gm.set ? gm.ay : null, _dx: gm.dx, _dy: gm.dy });
-    const outerK = gm.self ? 1 : gm.sizeK, odx = gm.self ? 0 : gm.dx * W, ody = gm.self ? 0 : gm.dy * H;
+    const outerK = gm.self ? 1 : gm.sizeK, odx = gm.self ? 0 : gm.dx * W, ody = gm.self ? 0 : gm.dy * BH;
     const paint = c2 => {
       c2.save();
       if (outerK !== 1 || odx || ody || fx) {
@@ -140,13 +150,14 @@
         if (fx && fx.skew) c2.transform(1, 0, fx.skew, 1, 0, 0);
         c2.translate(-ax, -ay);
       }
-      try { k.frame(card.part, c2, W, H, remap(card, lf, g.KMV_PROJECT.FPS), p, theme); }
+      try { k.frame(card.part, c2, W, BH, remap(card, lf, g.KMV_PROJECT.FPS), p, theme); }
       catch (e) { console.warn('[KMV parts]', card.part, e); }
       c2.restore();
     };
     ctx.save();
+    if (BY) ctx.translate(0, BY);
     if (fx) { ctx.globalAlpha *= clamp(fx.alpha, 0, 1); if (fx.blur > 0.2 && 'filter' in ctx) ctx.filter = 'blur(' + fx.blur.toFixed(1) + 'px)'; }
-    if (gm.layer) { const cv = layerCanvas(W, H); paint(cv.getContext('2d')); ctx.drawImage(cv, 0, 0); }
+    if (gm.layer) { const cv = layerCanvas(W, BH); paint(cv.getContext('2d')); ctx.drawImage(cv, 0, 0); }
     else paint(ctx);
     ctx.filter = 'none';
     ctx.restore();
@@ -198,5 +209,5 @@
     return cv;
   }
 
-  g.KMV_PARTS = { CATS, META, ANCHORS, SIZE_MIN, SIZE_MAX, ready, list, def, meta, behind, canBehind, remap, geom, drawCard, label, thumb, paintThumb, clamp };
+  g.KMV_PARTS = { CATS, META, ANCHORS, SIZE_MIN, SIZE_MAX, ready, list, def, meta, behind, canBehind, remap, geom, stage, drawCard, label, thumb, paintThumb, clamp };
 })(typeof window !== 'undefined' ? window : globalThis);
