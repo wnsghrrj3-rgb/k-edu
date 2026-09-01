@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<!--
+  g1_math_u6_l09 — 수학이랑 만들어요 — 명령어를 만들어요 [1학년 2학기 6단원 09차시]
+  회수 키(lesson-id·STORAGE_KEY) = g1_2_math_u6_l09 — 1학기 g1_math_u6_l09 과 부딪히지 않도록 학기를 넣었다
+  ════════════════════════════════════════════════════════════
+  원본: kedu/curriculum/math/g1_2/unit6/09차_수학이랑만들어요/draft.html
+  지도서: 수학 1-2 교사용 지도서 p.310-311 / 교과서 144-145
+  표준: kedu/curriculum/standards/표준.md (통합 표준 v1) + 차시운영_표준.md
+  섀시: g1 2학기 공용 (CSS + 데이터 구동 5부품 pad·two·mcq·match·judge)
+  신설 부품: numblock·nbrow·vcalc·pairup·board·topcard·cmdcard (6단원)
+  계승 부품: tenframe·chain·eq·steps·bingo (4단원) · objs·dotrow·numline·numgrid (공통)
+  디자인 계승: g1 1학기 5단원 재수정_v1 (저학년 v1 토큰 · 학교안심 모험가)
+
+  학습 본질: 로봇이 두 자리 수를 계산하도록 명령어를 차례로 붙여 34+21=55, 58-12=46 을 만든다. 「10개씩 묶음끼리 계산해요」와 「낱개끼리 계산해요」는 순서를 바꾸어도 답이 같지만, 순서를 바꿀 수 없는 명령어도 있다는 것을 안다(지도서 311). 언플러그드 코딩과 잇는 차시다.
+  오개념 직격: ★자릿수를 낱낱의 수로만 말함 — 「3과 2를 더하고, 4와 1을 더해요」라고 함(지도서 311). 「3을 10개씩 묶음, 4를 낱개로 바꾸어 말해 보세요」로 되돌린다
+  지도서 금지: 「십의 자리·일의 자리」·「자릿값」 미사용 — 명령어도 「10개씩 묶음」·「낱개」로 쓴다
+  점수: 기본 4슬 × 10점(q8~q11) + 응용 4슬 × 15점(q12~q15) = 100점 · 18슬 5단계
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g1_2_math_u6_l09_v1">
+<title>수학이랑 만들어요 — 명령어를 만들어요 · K-edu 1학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style id="kedu-title-font">/* 케이에듀 제목 폰트 토큰 (2026-07-04, 학교안심 모험가) */
+@font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
+:root{--kedu-title:'Hakgyoansim Moheomga','Jua',sans-serif;--kedu-round:'Jua',sans-serif}
+</style>
+<style>
+
+:root {
+  --fs-title:   clamp(27px, 4.4vw, 50px);
+  --fs-heading: clamp(24px, 3.7vw, 37px);
+  --fs-body:    clamp(21px, 3.2vw, 31px);
+  --fs-caption: clamp(19px, 2.9vw, 27px);
+  --fs-label:   clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --em-md: clamp(44px, 7vw, 80px);
+  --em-lg: clamp(66px, 10.5vw, 124px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(780px, 96vw);
+  --mw-lg: min(860px, 96vw);
+  --blue:#1976D2; --blue-d:#1565C0; --blue-l:#42A5F5; --blue-p:#E3F2FD; --blue-bg:#F0F7FF;
+  --amber:#F57F17; --amber-l:#FFB300; --amber-p:#FFF8E1; --amber-d:#BF360C;
+  --green:#2E7D32; --green-l:#66BB6A; --green-p:#E8F5E9;
+  --red:#C62828; --red-p:#FFCDD2;
+  --gray:#607D8B; --gray-l:#B0BEC5;
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:#F0F7FF; display:flex; align-items:center; justify-content:center; font-family:var(--kedu-round,'Jua',sans-serif); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+
+@keyframes ka-fadeUp { from{opacity:0;transform:translateY(14px);} to{opacity:1;transform:none;} }
+@keyframes ka-pop { 0%{opacity:0;transform:scale(.3);} 60%{opacity:1;transform:scale(1.15);} 100%{opacity:1;transform:scale(1);} }
+@keyframes ka-popBig { 0%{opacity:0;transform:scale(.3);} 60%{opacity:1;transform:scale(1.25);} 100%{opacity:1;transform:scale(1);} }
+@keyframes ka-pulse { 0%,100%{transform:scale(1);box-shadow:0 4px 14px rgba(66,165,245,.32);} 50%{transform:scale(1.04);box-shadow:0 6px 20px rgba(66,165,245,.5);} }
+@keyframes ka-shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-6px);} 75%{transform:translateX(6px);} }
+@keyframes ka-bar-grow { from{transform:scaleY(.3);opacity:0;} to{transform:scaleY(1);opacity:1;} }
+@keyframes ka-cube-pop { 0%{opacity:0;transform:scale(.5);} 60%{opacity:1;transform:scale(1.15);} 100%{opacity:1;transform:scale(1);} }
+
+/* ───── 골격 ───── */
+.ka { background:#fff; width:100vw; height:100vh; height:100dvh; padding:clamp(8px,1.5vw,14px) clamp(12px,2.2vw,22px); color:#333; display:flex; flex-direction:column; position:relative; overflow:hidden; }
+.ka-h { display:flex; align-items:center; gap:clamp(6px,1.2vw,10px); margin-bottom:clamp(6px,1.2vw,10px); flex-shrink:0; }
+.ka-lb { background:#F4F4F8; border:none; padding:clamp(4px,.9vw,7px) clamp(8px,1.5vw,12px); border-radius:clamp(8px,1.5vw,12px); cursor:pointer; font-family:inherit; color:#555; flex-shrink:0; font-size:var(--fs-label); }
+.ka-bar { flex:1; height:clamp(3px,.5vw,5px); background:var(--blue-bg); border-radius:999px; overflow:hidden; min-width:clamp(40px,6vw,80px); }
+.ka-bar > div { height:100%; background:var(--blue-l); border-radius:999px; transition:width .45s ease; }
+.ka-pg { color:var(--blue); font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-label); flex-shrink:0; }
+.ka-score { color:var(--amber); font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-label); flex-shrink:0; background:var(--amber-p); padding:clamp(3px,.7vw,5px) clamp(8px,1.5vw,12px); border-radius:clamp(8px,1.5vw,12px); }
+.ka-mute { background:#F4F4F8; border:none; padding:clamp(4px,.9vw,7px); border-radius:clamp(8px,1.5vw,12px); cursor:pointer; flex-shrink:0; color:var(--blue); font-size:clamp(12px,2vw,16px); width:clamp(28px,4.5vw,36px); height:clamp(28px,4.5vw,36px); display:flex; align-items:center; justify-content:center; }
+
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; gap:clamp(8px,1.5vw,14px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(10px,2vw,20px) 0; overflow:hidden; }
+.slide.active { display:flex; }
+.slide-title { font-size:var(--fs-title); margin:0; line-height:1.3; color:var(--blue); font-weight:400; text-align:center; flex-shrink:0; font-family:var(--kedu-title); }
+.slide-sub { font-size:var(--fs-caption); color:var(--gray); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(8px,1.5vw,14px); left:clamp(12px,2.2vw,22px); background:var(--blue-p); color:var(--blue); padding:clamp(3px,.6vw,5px) clamp(8px,1.5vw,12px); border-radius:999px; font-size:clamp(10px,1.6vw,13px); font-family:'Nunito',sans-serif; font-weight:800; z-index:5; }
+
+.ka-f { display:grid; grid-template-columns:1fr 1fr 1.3fr; gap:clamp(6px,1.2vw,10px); padding-top:clamp(6px,1.2vw,10px); flex-shrink:0; }
+.ka-prev,.ka-hint,.ka-next { border:none; padding:clamp(8px,1.6vw,12px) clamp(10px,2vw,16px); border-radius:clamp(10px,1.7vw,14px); font-family:inherit; font-size:clamp(13px,2.2vw,17px); cursor:pointer; transition:all .2s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev { background:#F4F4F8; color:#6E6E78; }
+.ka-hint { background:var(--amber-p); color:var(--amber); }
+.ka-hint:hover { background:#FFECB3; }
+.ka-next { background:var(--blue-l); color:#fff; box-shadow:0 4px 14px rgba(66,165,245,.32); font-size:clamp(14px,2.4vw,18px); }
+.ka-next:hover { background:var(--blue); }
+.ka-next.hl { animation:ka-pulse 1.8s ease-in-out infinite; }
+.ka-prev:disabled,.ka-next:disabled { opacity:.4; cursor:not-allowed; animation:none; }
+.ka-hint:disabled { opacity:.5; cursor:not-allowed; }
+
+/* ───── 공용 무대 ───── */
+.stage { display:flex; flex-direction:column; align-items:center; gap:clamp(11px,2.2vw,19px); max-width:var(--mw-lg); width:100%; }
+.stage.narrow { max-width:var(--mw-md); }
+.cap { font-size:var(--fs-body); color:#6D4C41; text-align:center; line-height:1.5; max-width:var(--mw-md); }
+.cap strong { color:var(--amber-d); }
+.cap.sm { font-size:var(--fs-caption); }
+.prompt { font-size:var(--fs-heading); color:#333; text-align:center; line-height:1.35; }
+.prompt strong { color:var(--amber-d); }
+.row { display:flex; gap:clamp(10px,2vw,18px); align-items:center; justify-content:center; flex-wrap:wrap; }
+.row.tight { gap:clamp(6px,1.2vw,10px); }
+.col { display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.2vw,10px); }
+
+/* ───── 목표 카드 ───── */
+.goal-card { background:#fff; border:clamp(3px,.5vw,4px) solid var(--blue-l); border-radius:clamp(18px,3vw,28px); padding:clamp(19px,3.4vw,34px) clamp(23px,4.2vw,42px); display:flex; flex-direction:column; align-items:center; gap:clamp(13px,2.4vw,20px); max-width:var(--mw-md); }
+.goal-title { font-size:var(--fs-heading); color:var(--blue-d); text-align:center; font-family:var(--kedu-title); }
+.goal-emojis { font-size:var(--em-md); display:flex; gap:clamp(10px,2vw,16px); }
+.goal-list { font-size:var(--fs-body); color:var(--blue); text-align:left; line-height:1.6; }
+.goal-list li { list-style:none; padding:clamp(4px,.8vw,7px) 0; }
+.goal-list li::before { content:'✓ '; color:var(--green-l); font-family:'Nunito',sans-serif; font-weight:800; }
+
+/* ───── 묶음·낱개 (tens & ones) ───── */
+.tao-row { display:flex; gap:clamp(10px,2vw,18px); align-items:flex-end; justify-content:center; background:#FAFAFA; padding:clamp(9px,1.8vw,15px) clamp(13px,2.6vw,21px); border-radius:clamp(14px,2.6vw,22px); border:clamp(3px,.5vw,4px) solid var(--gray-l); }
+.tao-row.compact { min-height:auto; padding:clamp(7px,1.4vw,11px) clamp(9px,1.8vw,15px); }
+.tao-g { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,.8vw,7px); }
+.tao-lb { font-size:var(--fs-label); color:var(--gray); }
+.tao-tens { display:flex; gap:clamp(3px,.7vw,6px); align-items:flex-end; flex-wrap:wrap; max-width:clamp(200px,34vw,340px); justify-content:center; }
+.tao-ones { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(3px,.5vw,4px); align-items:flex-end; max-width:clamp(120px,18vw,160px); min-height:clamp(20px,3vw,26px); }
+.tao-ones.empty { border:clamp(2px,.4vw,3px) dashed var(--gray-l); border-radius:clamp(8px,1.5vw,12px); padding:clamp(5px,1vw,9px) clamp(13px,2.6vw,21px); display:flex; align-items:center; justify-content:center; color:var(--gray-l); min-width:clamp(76px,11vw,110px); }
+.tao-ones.empty::before { content:'0'; font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(32px,5vw,52px); }
+.bar10 { display:flex; flex-direction:column-reverse; gap:clamp(1px,.2vw,2px); padding:clamp(3px,.5vw,4px); background:linear-gradient(135deg,var(--amber-l) 0%,var(--amber) 100%); border:clamp(2px,.4vw,3px) solid var(--amber-d); border-radius:clamp(4px,.7vw,6px); animation:ka-bar-grow .5s ease both; }
+.bar10 i { display:block; width:clamp(16px,2.5vw,23px); height:clamp(8px,1.3vw,12px); background:rgba(255,255,255,.4); border:1px solid rgba(191,54,12,.3); border-radius:2px; }
+.cube { width:clamp(18px,2.7vw,24px); height:clamp(18px,2.7vw,24px); background:linear-gradient(135deg,var(--blue-l) 0%,var(--blue) 100%); border:clamp(2px,.4vw,3px) solid #0D47A1; border-radius:clamp(4px,.7vw,6px); animation:ka-cube-pop .4s ease both; }
+.tao-eq { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(26px,4.2vw,42px); color:var(--blue-d); align-self:center; }
+.bignum { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(48px,7.4vw,84px); color:var(--blue-d); background:var(--blue-p); padding:clamp(9px,1.8vw,15px) clamp(17px,3.2vw,27px); border-radius:clamp(14px,2.6vw,22px); border:clamp(3px,.5vw,4px) solid var(--blue-d); line-height:1; }
+.bignum.sm { font-size:clamp(36px,5.6vw,58px); padding:clamp(7px,1.4vw,11px) clamp(13px,2.4vw,20px); }
+.bignum.lg { font-size:clamp(64px,10vw,110px); }
+.bignum.amber { color:var(--amber-d); background:var(--amber-p); border-color:var(--amber); }
+.bignum.green { color:var(--green); background:var(--green-p); border-color:var(--green-l); }
+
+/* ───── 읽기 카드 ───── */
+.rw { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,.8vw,8px); }
+.rw-han, .rw-kor { font-size:clamp(28px,4.6vw,44px); color:var(--blue-d); padding:clamp(7px,1.4vw,12px) clamp(14px,2.6vw,24px); border-radius:clamp(14px,2.6vw,22px); border:clamp(3px,.5vw,4px) solid; font-family:var(--kedu-title); }
+.rw-han { background:var(--amber-p); border-color:var(--amber); }
+.rw-kor { background:var(--green-p); border-color:var(--green-l); }
+.rw-tag { font-size:var(--fs-label); color:var(--gray); }
+
+/* ───── 물건 묶음 그림 ───── */
+.goods { display:flex; gap:clamp(6px,1.3vw,11px); align-items:flex-end; justify-content:center; flex-wrap:wrap; padding:clamp(9px,1.8vw,15px); background:var(--blue-bg); border-radius:clamp(14px,2.6vw,22px); max-width:var(--mw-md); }
+.gbundle { display:flex; flex-direction:column; align-items:center; gap:clamp(3px,.6vw,5px); }
+.gbundle-e { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(1px,.3vw,3px); padding:clamp(3px,.6vw,5px); background:#fff; border:clamp(2px,.4vw,3px) solid var(--blue-l); border-radius:clamp(7px,1.3vw,11px); }
+.gbundle-e span { font-size:clamp(15px,2.4vw,22px); line-height:1.05; animation:ka-pop .3s ease both; }
+.gloose { display:flex; gap:clamp(2px,.4vw,4px); flex-wrap:wrap; max-width:clamp(90px,14vw,130px); padding:clamp(3px,.6vw,5px); border:clamp(2px,.4vw,3px) dashed var(--gray-l); border-radius:clamp(7px,1.3vw,11px); align-content:flex-end; }
+.gloose span { font-size:clamp(15px,2.4vw,22px); line-height:1.05; animation:ka-pop .3s ease both; }
+.glabel { font-size:var(--fs-label); color:var(--blue); }
+
+/* ───── 숫자 입력 (pad) ───── */
+.q-display { background:var(--blue-p); border-radius:clamp(14px,2.6vw,22px); padding:clamp(11px,2.2vw,19px) clamp(24px,4.4vw,40px); font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(38px,6vw,64px); color:var(--blue); min-width:clamp(130px,20vw,186px); text-align:center; line-height:1; border:clamp(3px,.5vw,4px) solid var(--blue-d); }
+.q-display.empty { color:#B5D8F0; }
+.q-display.correct { background:#C8E6C9; color:var(--green); border-color:var(--green); }
+.q-display.wrong { background:var(--red-p); color:var(--red); border-color:var(--red); animation:ka-shake .4s ease; }
+.q-display.active { border-color:var(--amber); background:var(--amber-p); color:var(--amber); }
+.q-pad { display:grid; grid-template-columns:repeat(6,1fr); gap:clamp(4px,.9vw,7px); max-width:clamp(320px,56vw,470px); }
+.q-pad-btn { background:#fff; border:clamp(2px,.4vw,3px) solid var(--blue-d); border-radius:clamp(9px,1.7vw,14px); padding:clamp(6px,1.3vw,11px); font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(18px,2.9vw,26px); color:var(--blue); cursor:pointer; transition:all .15s; }
+.q-pad-btn:hover { background:var(--blue-p); }
+.q-pad-btn:disabled { opacity:.4; cursor:not-allowed; }
+.q-pad-btn.clear { background:var(--amber-p); color:var(--amber); border-color:var(--amber); }
+.q-unit { font-size:var(--fs-heading); color:#333; }
+.two-cell { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,.8vw,7px); }
+.two-cell .q-display { font-size:clamp(32px,5vw,52px); min-width:clamp(96px,15vw,140px); padding:clamp(9px,1.8vw,15px) clamp(16px,3vw,26px); }
+
+/* ───── 4지선다 (mcq) ───── */
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.6vw,14px); max-width:var(--mw-md); width:100%; }
+.mcq-opts.one { grid-template-columns:1fr; }
+.mcq-opts.four { grid-template-columns:repeat(4,1fr); }
+.mcq-opt { background:#fff; border:clamp(3px,.5vw,4px) solid var(--blue-l); border-radius:clamp(13px,2.4vw,20px); padding:clamp(11px,2.2vw,18px) clamp(9px,1.8vw,15px); font-family:inherit; font-size:clamp(20px,3.2vw,30px); color:var(--blue-d); cursor:pointer; transition:all .18s; line-height:1.3; }
+.mcq-opt:hover:not(:disabled) { background:var(--blue-p); transform:translateY(-2px); }
+.mcq-opt:disabled { cursor:not-allowed; }
+.mcq-opt.correct { background:#C8E6C9; border-color:var(--green); color:var(--green); }
+.mcq-opt.wrong { background:var(--red-p); border-color:var(--red); color:var(--red); animation:ka-shake .4s ease; }
+.mcq-opt.dim { opacity:.4; }
+.mcq-opt .big { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(38px,6vw,64px); display:block; line-height:1.05; }
+.mcq-opt .sign { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(52px,8.4vw,92px); display:block; line-height:1; }
+
+/* ───── 매칭 (match) ───── */
+.match-slots { display:flex; gap:clamp(10px,2vw,19px); flex-wrap:wrap; justify-content:center; }
+.match-slot { min-width:clamp(128px,20vw,186px); height:clamp(56px,8.4vw,78px); border:clamp(3px,.5vw,4px) dashed var(--blue-l); border-radius:clamp(12px,2.2vw,18px); display:flex; align-items:center; justify-content:center; font-size:clamp(23px,3.7vw,33px); color:#B5D8F0; background:var(--blue-bg); transition:all .3s; padding:0 clamp(8px,1.5vw,13px); font-family:var(--kedu-title); }
+.match-slot .slot-tag { position:absolute; }
+.match-slot.filled { border-style:solid; color:var(--blue-d); }
+.match-slot.han { border-color:var(--amber); background:var(--amber-p); }
+.match-slot.kor { border-color:var(--green-l); background:var(--green-p); }
+.match-slot.correct { background:#C8E6C9; border-color:var(--green); color:var(--green); }
+.match-cards { display:flex; gap:clamp(7px,1.4vw,12px); flex-wrap:wrap; justify-content:center; }
+.match-card { font-size:clamp(22px,3.5vw,32px); padding:clamp(9px,1.8vw,15px) clamp(14px,2.6vw,22px); border-radius:clamp(12px,2.2vw,18px); border:clamp(3px,.5vw,4px) solid var(--blue-l); background:#fff; color:var(--blue-d); cursor:pointer; transition:all .2s; font-family:var(--kedu-title); }
+.match-card:hover:not(.used) { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,.1); }
+.match-card.used { opacity:.32; cursor:not-allowed; pointer-events:none; }
+.match-card.wrong { animation:ka-shake .4s ease; }
+.match-slot-label { font-size:var(--fs-label); color:var(--gray); text-align:center; }
+
+/* ───── ○✕ 판정 (judge) ───── */
+.jd-list { display:flex; flex-direction:column; gap:clamp(7px,1.4vw,12px); max-width:var(--mw-md); width:100%; }
+.jd-row { display:flex; gap:clamp(9px,1.8vw,15px); align-items:center; justify-content:space-between; background:#fff; border:clamp(2.5px,.45vw,3.5px) solid var(--gray-l); border-radius:clamp(13px,2.4vw,20px); padding:clamp(9px,1.8vw,15px) clamp(13px,2.4vw,20px); transition:all .2s; }
+.jd-row.correct { border-color:var(--green); background:var(--green-p); }
+.jd-row.wrong { border-color:var(--red); background:var(--red-p); animation:ka-shake .4s ease; }
+.jd-text { font-size:clamp(19px,3vw,28px); color:var(--blue-d); text-align:left; flex:1; line-height:1.35; }
+.jd-text b { font-family:'Nunito',sans-serif; font-weight:800; color:var(--amber-d); }
+.jd-btns { display:flex; gap:clamp(5px,1vw,9px); flex-shrink:0; }
+.jd-btn { background:#F4F4F8; border:clamp(2.5px,.45vw,3.5px) solid transparent; border-radius:clamp(10px,1.9vw,15px); padding:clamp(5px,1.1vw,9px) clamp(10px,1.9vw,16px); font-size:clamp(20px,3.2vw,30px); cursor:pointer; transition:all .15s; color:var(--gray); font-family:'Nunito',sans-serif; font-weight:800; }
+.jd-btn:hover:not(:disabled) { background:var(--blue-p); }
+.jd-btn.picked { background:var(--amber-p); border-color:var(--amber); color:var(--amber); }
+.jd-btn:disabled { cursor:not-allowed; }
+
+/* ───── 수 배열표 ───── */
+.numgrid { display:grid; grid-template-columns:repeat(10,1fr); gap:clamp(2px,.45vw,4px); max-width:var(--mw-lg); width:100%; }
+.numgrid b { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(12px,1.9vw,19px); color:var(--blue-d); background:#fff; border:clamp(1.5px,.28vw,2.5px) solid var(--blue-l); border-radius:clamp(5px,.9vw,8px); padding:clamp(4px,.85vw,8px) 0; text-align:center; line-height:1; }
+.numgrid b.hole { background:var(--amber-p); border-color:var(--amber); border-style:dashed; color:var(--amber); }
+.numgrid b.mark { background:var(--blue-p); }
+.numgrid b.hundred { background:var(--green-p); border-color:var(--green); color:var(--green); }
+.numgrid b.even { background:#FFE0E6; border-color:#F06292; color:#AD1457; }
+.numgrid b.odd { background:#DFF2FE; border-color:#4FC3F7; color:#01579B; }
+.numline { display:flex; gap:clamp(3px,.6vw,6px); align-items:center; justify-content:center; flex-wrap:wrap; }
+.numline b { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(20px,3.2vw,30px); color:var(--blue-d); background:#fff; border:clamp(2.5px,.45vw,3.5px) solid var(--blue-l); border-radius:clamp(8px,1.5vw,13px); padding:clamp(7px,1.4vw,12px) clamp(9px,1.8vw,15px); line-height:1; }
+.numline b.hole { background:var(--amber-p); border-color:var(--amber); border-style:dashed; color:var(--amber); }
+.numline b.on { background:var(--blue-p); }
+
+/* ───── 비교 무대 ───── */
+.cmp-wrap { display:flex; gap:clamp(11px,2.2vw,20px); align-items:center; justify-content:center; flex-wrap:wrap; }
+.cmp-side { display:flex; flex-direction:column; align-items:center; gap:clamp(5px,1vw,9px); background:#FAFAFA; border:clamp(3px,.5vw,4px) solid var(--gray-l); border-radius:clamp(14px,2.6vw,22px); padding:clamp(9px,1.8vw,15px) clamp(11px,2.2vw,18px); }
+.cmp-name { font-size:var(--fs-label); color:var(--gray); }
+.cmp-sign { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(50px,8vw,88px); color:var(--amber-d); line-height:1; }
+.cmp-sign.slot { color:#B5D8F0; }
+
+/* ───── 정리 ───── */
+.sum-card { background:#fff; border:clamp(3px,.5vw,4px) solid var(--green-l); border-radius:clamp(18px,3vw,28px); padding:clamp(15px,2.8vw,26px) clamp(19px,3.4vw,34px); display:flex; flex-direction:column; align-items:center; gap:clamp(9px,1.8vw,15px); max-width:var(--mw-md); }
+.sum-msg { font-size:var(--fs-body); color:var(--green); text-align:center; line-height:1.5; }
+.sum-msg strong { color:var(--amber-d); }
+.sum-cells { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(5px,1.1vw,9px); width:100%; }
+.sum-cell { background:var(--blue-bg); border-radius:clamp(8px,1.5vw,12px); padding:clamp(5px,1.1vw,9px) clamp(3px,.7vw,7px); display:flex; flex-direction:column; align-items:center; gap:clamp(2px,.4vw,4px); border:clamp(2px,.4vw,3px) solid var(--blue-l); }
+.sum-cell u { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(20px,3.3vw,30px); color:var(--blue-d); line-height:1; text-decoration:none; }
+.sum-cell i { font-size:clamp(9px,1.5vw,13px); color:var(--gray); font-family:'Nunito',sans-serif; font-weight:800; font-style:normal; }
+.wrap-msg { font-size:var(--fs-heading); color:var(--amber); font-family:var(--kedu-title); }
+.self-row { display:flex; gap:clamp(9px,1.8vw,15px); align-items:center; justify-content:space-between; width:100%; background:#fff; border:clamp(2.5px,.45vw,3.5px) solid var(--gray-l); border-radius:clamp(14px,2.6vw,22px); padding:clamp(9px,1.8vw,15px) clamp(13px,2.6vw,21px); }
+.self-label { font-size:var(--fs-body); color:var(--blue); text-align:left; }
+.self-btns { display:flex; gap:clamp(5px,1.1vw,9px); }
+.self-btn { background:#F4F4F8; border:clamp(2.5px,.45vw,3.5px) solid transparent; border-radius:clamp(10px,1.9vw,15px); padding:clamp(5px,1.1vw,9px); font-size:clamp(19px,3vw,27px); cursor:pointer; transition:all .15s; min-width:clamp(38px,6vw,54px); }
+.self-btn:hover { background:var(--blue-p); }
+.self-btn.picked { background:var(--amber-p); border-color:var(--amber); }
+.next-card { background:linear-gradient(135deg,var(--amber-p) 0%,#FFE082 100%); border:clamp(4px,.6vw,5px) solid var(--amber); border-radius:clamp(22px,3.6vw,32px); padding:clamp(22px,4vw,40px) clamp(26px,4.6vw,44px); display:flex; flex-direction:column; align-items:center; gap:clamp(13px,2.4vw,22px); max-width:var(--mw-md); }
+.next-emoji { font-size:var(--em-lg); animation:ka-popBig .7s ease both; }
+.next-msg { font-size:var(--fs-heading); color:var(--amber-d); text-align:center; line-height:1.4; font-family:var(--kedu-title); }
+.next-msg strong { color:var(--blue-d); }
+
+/* ───── 피드백 ───── */
+.q-fb { font-size:var(--fs-caption); min-height:1.5em; color:var(--green); text-align:center; line-height:1.4; }
+.q-fb.wrong { color:var(--red); }
+.mcq-hint { font-size:var(--fs-caption); color:var(--amber); min-height:1.3em; text-align:center; }
+.warncard { background:var(--red-p); border:clamp(3px,.5vw,4px) solid var(--red); border-radius:clamp(14px,2.6vw,22px); padding:clamp(11px,2.2vw,18px) clamp(15px,2.8vw,25px); font-size:var(--fs-caption); color:var(--red); text-align:center; line-height:1.45; max-width:var(--mw-md); }
+.warncard b { font-family:'Nunito',sans-serif; font-weight:800; }
+.okcard { background:var(--green-p); border:clamp(3px,.5vw,4px) solid var(--green); border-radius:clamp(14px,2.6vw,22px); padding:clamp(11px,2.2vw,18px) clamp(15px,2.8vw,25px); font-size:var(--fs-caption); color:var(--green); text-align:center; line-height:1.45; max-width:var(--mw-md); }
+.okcard b { font-family:'Nunito',sans-serif; font-weight:800; }
+.speech { background:#fff; border:clamp(2.5px,.45vw,3.5px) solid var(--blue-l); border-radius:clamp(14px,2.6vw,22px); padding:clamp(9px,1.8vw,15px) clamp(14px,2.6vw,22px); font-size:var(--fs-caption); color:var(--blue-d); text-align:center; line-height:1.4; max-width:var(--mw-md); }
+.speech strong { color:var(--amber-d); }
+
+/* ───── 십 배열판 (tenframe) ───── */
+.tenframe { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(3px,.6vw,5px); padding:clamp(6px,1.2vw,10px); background:#fff; border:clamp(3px,.5vw,4px) solid var(--blue-d); border-radius:clamp(10px,1.9vw,16px); }
+.tenframe.wide { grid-template-columns:repeat(10,1fr); }
+.tf-cell { width:clamp(24px,3.8vw,40px); height:clamp(24px,3.8vw,40px); border-radius:50%; border:clamp(2px,.35vw,3px) dashed var(--gray-l); background:#FAFAFA; }
+.tf-cell.a { background:radial-gradient(circle at 34% 30%,#FF8A9B,#E53950); border:clamp(2px,.35vw,3px) solid #AD1457; border-style:solid; animation:ka-cube-pop .35s ease both; }
+.tf-cell.b { background:radial-gradient(circle at 34% 30%,#7EC8F5,#1976D2); border:clamp(2px,.35vw,3px) solid #0D47A1; border-style:solid; animation:ka-cube-pop .35s ease both; }
+.tf-cell.g { background:radial-gradient(circle at 34% 30%,#A5D6A7,#2E7D32); border:clamp(2px,.35vw,3px) solid #1B5E20; border-style:solid; animation:ka-cube-pop .35s ease both; }
+.tf-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,.8vw,7px); }
+.tf-lb { font-size:var(--fs-label); color:var(--gray); }
+
+/* ───── 물건 줄 (dotrow) ───── */
+.dotrow { display:flex; gap:clamp(4px,.9vw,8px); flex-wrap:wrap; justify-content:center; align-items:center; padding:clamp(8px,1.6vw,14px); background:var(--blue-bg); border-radius:clamp(12px,2.2vw,18px); max-width:var(--mw-md); }
+.dotrow span { font-size:clamp(24px,3.9vw,40px); line-height:1.05; position:relative; animation:ka-pop .3s ease both; }
+.dotrow span.gone { opacity:.3; }
+.dotrow span.gone::after { content:'✕'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--red); font-family:'Nunito',sans-serif; font-weight:800; font-size:.8em; }
+
+/* ───── 연결 모형 사슬 (chain) ───── */
+.chain { display:flex; gap:clamp(2px,.4vw,3px); flex-wrap:wrap; justify-content:center; align-items:center; padding:clamp(7px,1.4vw,12px); background:#FAFAFA; border:clamp(3px,.5vw,4px) solid var(--gray-l); border-radius:clamp(12px,2.2vw,18px); max-width:var(--mw-md); }
+.chain i { display:block; width:clamp(20px,3.1vw,30px); height:clamp(20px,3.1vw,30px); border-radius:clamp(4px,.7vw,6px); border:clamp(2px,.35vw,3px) solid; animation:ka-cube-pop .35s ease both; }
+.chain i.a { background:linear-gradient(135deg,#FF8A9B,#E53950); border-color:#AD1457; }
+.chain i.b { background:linear-gradient(135deg,#7EC8F5,#1976D2); border-color:#0D47A1; }
+.chain i.c { background:linear-gradient(135deg,#A5D6A7,#2E7D32); border-color:#1B5E20; }
+.chain .gap { width:clamp(9px,1.7vw,15px); height:1px; background:none; border:none; animation:none; }
+
+/* ───── 물건 카드 (objcard) ───── */
+.objs { display:flex; gap:clamp(8px,1.6vw,14px); justify-content:center; flex-wrap:wrap; max-width:var(--mw-lg); }
+.obj { display:flex; flex-direction:column; align-items:center; gap:clamp(3px,.6vw,5px); background:#fff; border:clamp(3px,.5vw,4px) solid var(--blue-l); border-radius:clamp(12px,2.2vw,18px); padding:clamp(7px,1.4vw,12px) clamp(10px,2vw,17px); animation:ka-pop .35s ease both; }
+.obj em { font-size:clamp(30px,4.8vw,50px); font-style:normal; line-height:1.05; }
+.obj b { font-size:var(--fs-label); color:var(--gray); font-weight:400; }
+.obj.on { border-color:var(--amber); background:var(--amber-p); }
+.obj u { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(24px,3.8vw,38px); color:var(--blue-d); text-decoration:none; line-height:1; }
+
+
+/* ───── 식 스트립 (eqstrip) — 4·2단원 계승 ───── */
+.eqstrip { display:flex; gap:clamp(5px,1vw,9px); align-items:center; justify-content:center; flex-wrap:wrap; }
+.eq-tok { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(30px,4.9vw,52px); color:var(--blue-d); background:var(--blue-p); border:clamp(3px,.5vw,4px) solid var(--blue-d); border-radius:clamp(10px,1.9vw,16px); padding:clamp(5px,1vw,9px) clamp(11px,2.1vw,18px); line-height:1; min-width:clamp(48px,7.4vw,78px); text-align:center; }
+.eq-tok.op { background:none; border:none; color:var(--amber-d); min-width:0; padding:0 clamp(2px,.4vw,4px); font-size:clamp(28px,4.5vw,48px); }
+.eq-tok.hole { background:var(--amber-p); border-color:var(--amber); border-style:dashed; color:var(--amber); }
+.eq-tok.res { background:var(--green-p); border-color:var(--green); color:var(--green); }
+.eq-tok.mark { background:#FFE0E6; border-color:#F06292; color:#AD1457; }
+.eq-tok.sm { font-size:clamp(23px,3.7vw,38px); min-width:clamp(38px,5.8vw,60px); padding:clamp(4px,.8vw,7px) clamp(8px,1.5vw,13px); }
+
+/* ───── 단계 계산 (steps) ───── */
+.steps { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); align-items:center; background:#fff; border:clamp(3px,.5vw,4px) solid var(--amber); border-radius:clamp(14px,2.6vw,22px); padding:clamp(11px,2.1vw,18px) clamp(15px,2.8vw,25px); }
+.step-row { display:flex; gap:clamp(6px,1.2vw,10px); align-items:center; }
+.step-no { font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-label); color:#fff; background:var(--amber); border-radius:999px; width:clamp(20px,3vw,26px); height:clamp(20px,3vw,26px); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+
+/* ───── 수 모형 (numblock) — 6단원 시그니처 ───── */
+/* 지도서 291 — 십 모형은 일 모형의 10배 크기라야 「낱개 10개 = 10개씩 묶음 1개」가 눈에 보인다.
+   그래서 십 모형 높이 = 일 모형 한 칸 × 10 으로 못박는다(--nbu 하나로 둘이 묶여 있다). */
+.numblock { --nbu:clamp(9px,1.45vw,14px); display:flex; gap:clamp(9px,1.8vw,15px); align-items:flex-end; justify-content:center; background:#FAFAFA; border:clamp(3px,.5vw,4px) solid var(--gray-l); border-radius:clamp(14px,2.6vw,22px); padding:clamp(9px,1.8vw,15px) clamp(11px,2.2vw,18px); }
+.numblock.sm { --nbu:clamp(6px,1vw,10px); padding:clamp(6px,1.2vw,10px) clamp(8px,1.5vw,13px); }
+.nb-g { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,.8vw,7px); }
+.nb-lb { font-size:var(--fs-label); color:var(--gray); }
+.nb-tens { display:flex; gap:clamp(3px,.6vw,5px); align-items:flex-end; min-height:calc(var(--nbu)*10); }
+.nb-ten { width:var(--nbu); height:calc(var(--nbu)*10); background:linear-gradient(135deg,var(--amber-l) 0%,var(--amber) 100%); border:clamp(1.5px,.28vw,2.5px) solid var(--amber-d); border-radius:clamp(2px,.4vw,3px); background-image:repeating-linear-gradient(to bottom,rgba(255,255,255,.55) 0,rgba(255,255,255,.55) 1px,transparent 1px,transparent var(--nbu)); animation:ka-bar-grow .45s ease both; }
+.nb-ones { display:grid; grid-template-columns:repeat(5,var(--nbu)); gap:clamp(2px,.4vw,4px); align-content:flex-end; min-height:var(--nbu); }
+.nb-one { width:var(--nbu); height:var(--nbu); background:linear-gradient(135deg,var(--blue-l) 0%,var(--blue) 100%); border:clamp(1.5px,.28vw,2.5px) solid #0D47A1; border-radius:clamp(2px,.4vw,3px); animation:ka-cube-pop .35s ease both; }
+.nb-ten.gone, .nb-one.gone { opacity:.28; filter:grayscale(.7); position:relative; }
+.nb-ten.gone::after, .nb-one.gone::after { content:''; position:absolute; inset:-2px; background:linear-gradient(to bottom right,transparent 45%,var(--red) 45%,var(--red) 55%,transparent 55%); }
+.nb-num { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(26px,4.2vw,42px); color:var(--blue-d); align-self:center; }
+.nbrow { display:flex; gap:clamp(7px,1.4vw,12px); align-items:center; justify-content:center; flex-wrap:wrap; max-width:var(--mw-lg); }
+.nbrow .nb-op { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(30px,4.8vw,50px); color:var(--amber-d); }
+
+/* ───── 세로 셈 (vcalc) — 형식화 자리 ───── */
+/* 10개씩 묶음 자리와 낱개 자리를 열로 못박는다. 자리를 안 맞춰 쓰면 열이 어긋난 것이 보인다(익힘 84). */
+.vcalc { display:inline-flex; flex-direction:column; gap:clamp(4px,.8vw,7px); background:#fff; border:clamp(3px,.5vw,4px) solid var(--blue-l); border-radius:clamp(14px,2.6vw,22px); padding:clamp(11px,2.1vw,18px) clamp(15px,2.8vw,24px); }
+.vc-head { display:grid; grid-template-columns:clamp(28px,4.4vw,44px) repeat(2,clamp(46px,7.2vw,74px)); gap:clamp(3px,.6vw,5px); }
+.vc-head span { font-size:var(--fs-label); color:var(--gray); text-align:center; line-height:1.15; }
+.vc-grid { display:grid; grid-template-columns:clamp(28px,4.4vw,44px) repeat(2,clamp(46px,7.2vw,74px)); gap:clamp(3px,.6vw,5px); }
+.vc-c { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(30px,4.9vw,52px); color:var(--blue-d); text-align:center; line-height:1.15; }
+.vc-c.hole { color:var(--amber); }
+.vc-op { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(28px,4.5vw,46px); color:var(--amber-d); text-align:center; line-height:1.15; }
+.vc-line { grid-column:1 / -1; height:clamp(3px,.5vw,4px); background:var(--blue-d); border-radius:2px; margin:clamp(2px,.4vw,4px) 0; }
+.vc-res { display:contents; }
+.vcalc.res .vc-res .vc-c { color:var(--green); }
+.vcalc.bad { border-color:var(--red); background:#FFF6F6; }
+.vc-tag { font-size:var(--fs-label); color:var(--gray); text-align:center; }
+
+/* ───── 짝 짓기 (pairup) — 일대일대응 ───── */
+.pairup { display:flex; flex-direction:column; gap:clamp(5px,1vw,9px); background:#FAFAFA; border:clamp(3px,.5vw,4px) solid var(--gray-l); border-radius:clamp(14px,2.6vw,22px); padding:clamp(9px,1.8vw,15px); max-width:var(--mw-lg); }
+.pu-line { display:flex; gap:clamp(2px,.45vw,4px); flex-wrap:wrap; justify-content:center; }
+.pu-col { display:flex; flex-direction:column; align-items:center; gap:clamp(1px,.25vw,2px); }
+.pu-col i { font-style:normal; font-size:clamp(17px,2.7vw,26px); line-height:1.05; animation:ka-pop .3s ease both; }
+.pu-col.solo { background:var(--amber-p); border:clamp(1.5px,.28vw,2.5px) dashed var(--amber); border-radius:clamp(4px,.8vw,7px); }
+.pu-col.solo i.blank { visibility:hidden; }
+.pu-lb { font-size:var(--fs-label); color:var(--gray); text-align:center; }
+
+/* ───── 놀이판 (board) — 사방치기 · 말판 ───── */
+.board { display:flex; flex-direction:column; gap:clamp(3px,.6vw,5px); align-items:center; background:#fff; border:clamp(3px,.5vw,4px) solid var(--green-l); border-radius:clamp(14px,2.6vw,22px); padding:clamp(9px,1.8vw,15px); max-width:var(--mw-lg); }
+.bd-row { display:flex; gap:clamp(3px,.6vw,5px); justify-content:center; }
+.bd-c { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(15px,2.4vw,24px); color:var(--green); background:var(--green-p); border:clamp(2px,.4vw,3px) solid var(--green-l); border-radius:clamp(6px,1.2vw,10px); padding:clamp(6px,1.2vw,11px) clamp(7px,1.4vw,13px); text-align:center; line-height:1.1; min-width:clamp(52px,8vw,86px); }
+.bd-c.word { font-family:var(--kedu-round),'Jua',sans-serif; font-weight:400; font-size:clamp(12px,1.9vw,18px); color:var(--gray); background:#FAFAFA; border-color:var(--gray-l); }
+.bd-c.on { background:var(--amber-p); border-color:var(--amber); color:var(--amber-d); }
+.bd-c.big { font-size:clamp(22px,3.5vw,34px); min-width:clamp(58px,9vw,96px); }
+
+/* ───── 빙고판 (bingo) — 4단원 계승 ───── */
+.bingo { display:grid; grid-template-columns:repeat(3,1fr); gap:clamp(4px,.9vw,8px); padding:clamp(8px,1.6vw,14px); background:#fff; border:clamp(3px,.5vw,4px) solid var(--blue-d); border-radius:clamp(12px,2.2vw,18px); }
+.bingo b { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(22px,3.5vw,34px); color:var(--blue-d); background:var(--blue-bg); border:clamp(2.5px,.45vw,3.5px) solid var(--blue-l); border-radius:clamp(8px,1.5vw,13px); padding:clamp(8px,1.6vw,15px) clamp(11px,2.1vw,19px); text-align:center; line-height:1; }
+.bingo b.hit { background:var(--amber-p); border-color:var(--amber); color:var(--amber-d); animation:ka-pop .35s ease both; }
+
+/* ───── 팽이 카드 (topcard) — 색칠 놀이, 교과서 140 ───── */
+.tops { display:flex; gap:clamp(6px,1.2vw,11px); flex-wrap:wrap; justify-content:center; max-width:var(--mw-lg); }
+.topcard { display:flex; flex-direction:column; align-items:center; gap:clamp(2px,.4vw,4px); background:#fff; border:clamp(3px,.5vw,4px) solid var(--gray-l); border-radius:50% 50% 45% 45%; padding:clamp(8px,1.6vw,14px) clamp(10px,2vw,17px) clamp(12px,2.2vw,19px); animation:ka-pop .35s ease both; }
+.topcard em { font-style:normal; font-size:clamp(17px,2.7vw,26px); line-height:1; }
+.topcard span { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(15px,2.4vw,23px); color:var(--blue-d); line-height:1; white-space:nowrap; }
+.topcard.paint { background:var(--amber-p); border-color:var(--amber); }
+.topcard.paint span { color:var(--amber-d); }
+
+/* ───── 명령어 카드 (cmdcard) — 09차 언플러그드 ───── */
+.cmds { display:flex; gap:clamp(4px,.9vw,8px); align-items:center; justify-content:center; flex-wrap:wrap; max-width:var(--mw-lg); }
+.cmd { display:flex; align-items:center; gap:clamp(4px,.8vw,7px); background:#fff; border:clamp(3px,.5vw,4px) solid var(--blue-l); border-radius:clamp(10px,1.9vw,16px); padding:clamp(7px,1.4vw,12px) clamp(11px,2.1vw,18px); font-size:var(--fs-caption); color:var(--blue-d); line-height:1.2; animation:ka-pop .3s ease both; }
+.cmd u { font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-label); color:#fff; background:var(--blue-l); border-radius:999px; width:clamp(20px,3vw,26px); height:clamp(20px,3vw,26px); display:flex; align-items:center; justify-content:center; flex-shrink:0; text-decoration:none; }
+.cmd.hole { border-style:dashed; border-color:var(--amber); background:var(--amber-p); color:var(--amber); }
+.cmd-arrow { font-family:'Nunito',sans-serif; font-weight:800; color:var(--gray); font-size:clamp(15px,2.4vw,22px); }
+
+</style>
+<script src="/kedu_gate.js"></script>
+<script src="/kedu_boxbar.js"></script>
+</head>
+<body>
+<div class="ka">
+  <header class="ka-h">
+    <button class="ka-lb" onclick="goHub()">차시 목록</button>
+    <div class="ka-bar"><div id="bar" style="width:0%"></div></div>
+    <span class="ka-pg" id="pg">1 / 18</span>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </header>
+
+  <main class="ka-m">
+    <div class="slide active" data-stage="도입">
+      <div class="stage-badge">도입 · 흥미</div>
+      <h2 class="slide-title">로봇에게 명령어를 주어요</h2>
+<div class="stage"><div class="objs"><div class="obj"><em>🤖</em><b>계산 로봇</b></div><div class="obj"><em>🃏</em><b>명령어 카드</b></div></div><p class="cap">로봇은 <strong>명령어</strong>가 있어야 움직여요.<br>두 자리 수를 계산하는 명령어를 우리가 만들어 줘요!</p></div>
+
+    </div>
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입 · 목표</div>
+      <h2 class="slide-title">오늘의 목표</h2>
+<div class="stage narrow"><div class="goal-card"><div class="goal-emojis">🤖 🃏</div><p class="goal-title">명령어를<br>만들어 봐요!</p><ul class="goal-list"><li>계산 순서를 명령어로 나타내요</li><li>순서를 바꾸어도 되는지 알아봐요</li><li>만든 명령어로 직접 계산해요</li></ul></div></div>
+
+    </div>
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입 · 떠올리기</div>
+      <h2 class="slide-title">이렇게 계산했어요</h2>
+<div class="stage"><div class="vcalc res" data-vc="34|21|+|1"><div class="vc-head"><span></span><span>10개씩<br>묶음 자리</span><span>낱개<br>자리</span></div><div class="vc-grid"><span class="vc-op"></span><span class="vc-c t " data-col="t">3</span><span class="vc-c o " data-col="o">4</span><span class="vc-op">+</span><span class="vc-c t " data-col="t">2</span><span class="vc-c o " data-col="o">1</span><span class="vc-line"></span><span class="vc-res"><span class="vc-op"></span><span class="vc-c t " data-col="t">5</span><span class="vc-c o " data-col="o">5</span></span></div><span class="vc-tag">자리를 맞추어</span></div><p class="cap">낱개끼리 더하고, 10개씩 묶음끼리 더했어요.<br>이 <strong>차례</strong>를 명령어로 만들어 봐요.</p></div>
+
+    </div>
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 개념</div>
+      <h2 class="slide-title">덧셈 명령어를 붙여요</h2>
+<div class="stage"><div class="cmds" data-cmd="10개씩 묶음끼리 더해요|낱개끼리 더해요|답을 써요"><span class="cmd"><u>1</u>10개씩 묶음끼리 더해요</span><span class="cmd-arrow">▶</span><span class="cmd"><u>2</u>낱개끼리 더해요</span><span class="cmd-arrow">▶</span><span class="cmd"><u>3</u>답을 써요</span></div><div class="eqstrip"><span class="eq-tok">34</span><span class="eq-tok op">+</span><span class="eq-tok">21</span><span class="eq-tok op">=</span><span class="eq-tok res">55</span></div><p class="cap">명령어를 <strong>차례로</strong> 붙이면 로봇이 계산해요.<br>묶음 3개와 2개는 5개, 낱개 4개와 1개는 5개 → 55!</p></div>
+
+    </div>
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 개념</div>
+      <h2 class="slide-title">순서를 바꾸어도 될까요?</h2>
+<div class="stage"><div class="cmds" data-cmd="낱개끼리 더해요|10개씩 묶음끼리 더해요|답을 써요"><span class="cmd"><u>1</u>낱개끼리 더해요</span><span class="cmd-arrow">▶</span><span class="cmd"><u>2</u>10개씩 묶음끼리 더해요</span><span class="cmd-arrow">▶</span><span class="cmd"><u>3</u>답을 써요</span></div><div class="eqstrip"><span class="eq-tok">34</span><span class="eq-tok op">+</span><span class="eq-tok">21</span><span class="eq-tok op">=</span><span class="eq-tok res">55</span></div><p class="cap">순서를 바꾸어도 답은 <strong>똑같아요</strong>.<br>같은 모형끼리만 계산하면 어느 쪽을 먼저 해도 돼요.</p></div>
+
+    </div>
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 개념</div>
+      <h2 class="slide-title">뺄셈 명령어도 만들어요</h2>
+<div class="stage"><div class="cmds" data-cmd="10개씩 묶음끼리 빼요|낱개끼리 빼요|답을 써요"><span class="cmd"><u>1</u>10개씩 묶음끼리 빼요</span><span class="cmd-arrow">▶</span><span class="cmd"><u>2</u>낱개끼리 빼요</span><span class="cmd-arrow">▶</span><span class="cmd"><u>3</u>답을 써요</span></div><div class="eqstrip"><span class="eq-tok">58</span><span class="eq-tok op">-</span><span class="eq-tok">12</span><span class="eq-tok op">=</span><span class="eq-tok res">46</span></div><p class="cap">뺄셈도 똑같아요. 묶음 5개에서 1개를 빼면 4개,<br>낱개 8개에서 2개를 빼면 6개 → 46!</p></div>
+
+    </div>
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 개념</div>
+      <h2 class="slide-title">순서를 바꿀 수 없는 명령어도 있어요</h2>
+<div class="stage"><div class="cmds" data-cmd="신발을 신어요|문을 열어요|밖으로 나가요"><span class="cmd"><u>1</u>신발을 신어요</span><span class="cmd-arrow">▶</span><span class="cmd"><u>2</u>문을 열어요</span><span class="cmd-arrow">▶</span><span class="cmd"><u>3</u>밖으로 나가요</span></div><div class="warncard">이 명령어는 순서를 바꾸면 <b>안 돼요</b>. 문을 열기 전에 밖으로 나갈 수는 없으니까요.</div><p class="cap">계산 결과가 이상하면 <strong>명령어 순서를 바꿔</strong> 봐요.<br>바꾸어도 되는 명령어인지 늘 살펴야 해요.</p></div>
+
+    </div>
+    <div class="slide" data-stage="기본문제" data-q-id="q8" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <h2 class="slide-title">로봇이 계산한 답은?</h2>
+<div class="stage"><div class="cmds" data-cmd="10개씩 묶음끼리 더해요|낱개끼리 더해요|답을 써요"><span class="cmd"><u>1</u>10개씩 묶음끼리 더해요</span><span class="cmd-arrow">▶</span><span class="cmd"><u>2</u>낱개끼리 더해요</span><span class="cmd-arrow">▶</span><span class="cmd"><u>3</u>답을 써요</span></div><div class="eqstrip"><span class="eq-tok">34</span><span class="eq-tok op">+</span><span class="eq-tok">21</span><span class="eq-tok op">=</span><span class="eq-tok hole">?</span></div><p class="cap">명령어를 차례로 따라 계산해 보세요.</p><div class="q-part" data-part="pad" data-answer="55" data-ok="명령어를 잘 따랐어요!" data-miss="10개씩 묶음은 3 + 2, 낱개는 4 + 1이에요."><div class="row"><div class="q-display empty">?</div></div><div class="q-pad"><button class="q-pad-btn" data-v="1">1</button><button class="q-pad-btn" data-v="2">2</button><button class="q-pad-btn" data-v="3">3</button><button class="q-pad-btn" data-v="4">4</button><button class="q-pad-btn" data-v="5">5</button><button class="q-pad-btn" data-v="6">6</button><button class="q-pad-btn" data-v="7">7</button><button class="q-pad-btn" data-v="8">8</button><button class="q-pad-btn" data-v="9">9</button><button class="q-pad-btn" data-v="0">0</button><button class="q-pad-btn clear" data-v="c">지움</button><button class="q-pad-btn clear" data-v="ok">확인</button></div></div></div>
+<p class="mcq-hint" data-hints='["10개씩 묶음끼리 먼저 더해 보세요.", "3 + 2 = 5, 4 + 1 = 5예요."]'></p><div class="q-fb"></div>
+    </div>
+    <div class="slide" data-stage="기본문제" data-q-id="q9" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <h2 class="slide-title">뺄셈 로봇의 답은?</h2>
+<div class="stage"><div class="cmds" data-cmd="10개씩 묶음끼리 빼요|낱개끼리 빼요|답을 써요"><span class="cmd"><u>1</u>10개씩 묶음끼리 빼요</span><span class="cmd-arrow">▶</span><span class="cmd"><u>2</u>낱개끼리 빼요</span><span class="cmd-arrow">▶</span><span class="cmd"><u>3</u>답을 써요</span></div><div class="eqstrip"><span class="eq-tok">58</span><span class="eq-tok op">-</span><span class="eq-tok">12</span><span class="eq-tok op">=</span><span class="eq-tok hole">?</span></div><p class="cap">명령어를 차례로 따라 계산해 보세요.</p><div class="q-part" data-part="pad" data-answer="46" data-ok="명령어를 잘 따랐어요!" data-miss="10개씩 묶음은 5 − 1, 낱개는 8 − 2예요."><div class="row"><div class="q-display empty">?</div></div><div class="q-pad"><button class="q-pad-btn" data-v="1">1</button><button class="q-pad-btn" data-v="2">2</button><button class="q-pad-btn" data-v="3">3</button><button class="q-pad-btn" data-v="4">4</button><button class="q-pad-btn" data-v="5">5</button><button class="q-pad-btn" data-v="6">6</button><button class="q-pad-btn" data-v="7">7</button><button class="q-pad-btn" data-v="8">8</button><button class="q-pad-btn" data-v="9">9</button><button class="q-pad-btn" data-v="0">0</button><button class="q-pad-btn clear" data-v="c">지움</button><button class="q-pad-btn clear" data-v="ok">확인</button></div></div></div>
+<p class="mcq-hint" data-hints='["10개씩 묶음끼리 먼저 빼 보세요.", "5 − 1 = 4, 8 − 2 = 6이에요."]'></p><div class="q-fb"></div>
+    </div>
+    <div class="slide" data-stage="기본문제" data-q-id="q10" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <h2 class="slide-title">빈 명령어에 무엇이 들어갈까요?</h2>
+<div class="stage"><div class="cmds" data-cmd="10개씩 묶음끼리 더해요|낱개끼리 더해요|답을 써요"><span class="cmd"><u>1</u>10개씩 묶음끼리 더해요</span><span class="cmd-arrow">▶</span><span class="cmd hole"><u>2</u>?</span><span class="cmd-arrow">▶</span><span class="cmd"><u>3</u>답을 써요</span></div><p class="cap">덧셈 로봇의 두 번째 명령어가 지워졌어요. 무엇이 들어가야 할까요?</p><div class="q-part" data-part="mcq" data-ok="같은 모형끼리 계산해요!"><div class="mcq-opts one"><button class="mcq-opt" data-ok="1" data-miss="">낱개끼리 더해요</button><button class="mcq-opt" data-ok="0" data-miss="덧셈 로봇이에요. 더해야 해요.">낱개끼리 빼요</button><button class="mcq-opt" data-ok="0" data-miss="이어 붙이는 것은 더하기가 아니에요.">두 수를 이어 붙여요</button><button class="mcq-opt" data-ok="0" data-miss="묶음은 이미 더했어요.">10개씩 묶음끼리 한 번 더 더해요</button></div></div></div>
+<p class="mcq-hint" data-hints='["첫 명령어에서 무엇을 계산했나요?", "남은 것은 낱개예요."]'></p><div class="q-fb"></div>
+    </div>
+    <div class="slide" data-stage="기본문제" data-q-id="q11" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <h2 class="slide-title">각 자리를 계산해 보세요</h2>
+<div class="stage"><div class="eqstrip"><span class="eq-tok sm">12</span><span class="eq-tok op">+</span><span class="eq-tok sm">34</span></div><p class="cap">12 + 34 에서 <strong>10개씩 묶음끼리</strong> 더하면 묶음이 몇 개,<br><strong>낱개끼리</strong> 더하면 낱개가 몇 개일까요?</p><div class="q-part" data-part="two" data-answer-a="4" data-answer-b="6" data-ok="같은 모형끼리 계산했어요!" data-miss="묶음은 1개와 3개, 낱개는 2개와 4개예요."><div class="row"><div class="two-cell"><span class="tao-lb">묶음 수</span><div class="q-display empty" data-cell="a">?</div></div><span class="q-unit"></span><div class="two-cell"><span class="tao-lb">낱개 수</span><div class="q-display empty" data-cell="b">?</div></div><span class="q-unit"></span></div><div class="q-pad"><button class="q-pad-btn" data-v="1">1</button><button class="q-pad-btn" data-v="2">2</button><button class="q-pad-btn" data-v="3">3</button><button class="q-pad-btn" data-v="4">4</button><button class="q-pad-btn" data-v="5">5</button><button class="q-pad-btn" data-v="6">6</button><button class="q-pad-btn" data-v="7">7</button><button class="q-pad-btn" data-v="8">8</button><button class="q-pad-btn" data-v="9">9</button><button class="q-pad-btn" data-v="0">0</button><button class="q-pad-btn clear" data-v="c">지움</button><button class="q-pad-btn clear" data-v="ok">확인</button></div></div></div>
+<p class="mcq-hint" data-hints='["12는 묶음 1개와 낱개 2개예요.", "1 + 3 = 4, 2 + 4 = 6이에요."]'></p><div class="q-fb"></div>
+    </div>
+    <div class="slide" data-stage="응용문제" data-q-id="q12" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <h2 class="slide-title">로봇이 계산한 답은?</h2>
+<div class="stage"><div class="cmds" data-cmd="낱개끼리 더해요|10개씩 묶음끼리 더해요|답을 써요"><span class="cmd"><u>1</u>낱개끼리 더해요</span><span class="cmd-arrow">▶</span><span class="cmd"><u>2</u>10개씩 묶음끼리 더해요</span><span class="cmd-arrow">▶</span><span class="cmd"><u>3</u>답을 써요</span></div><div class="eqstrip"><span class="eq-tok">42</span><span class="eq-tok op">+</span><span class="eq-tok">15</span><span class="eq-tok op">=</span><span class="eq-tok hole">?</span></div><p class="cap">순서를 바꾼 명령어예요. 답을 구해 보세요.</p><div class="q-part" data-part="pad" data-answer="57" data-ok="순서를 바꾸어도 답은 같아요!" data-miss="낱개는 2 + 5, 10개씩 묶음은 4 + 1이에요."><div class="row"><div class="q-display empty">?</div></div><div class="q-pad"><button class="q-pad-btn" data-v="1">1</button><button class="q-pad-btn" data-v="2">2</button><button class="q-pad-btn" data-v="3">3</button><button class="q-pad-btn" data-v="4">4</button><button class="q-pad-btn" data-v="5">5</button><button class="q-pad-btn" data-v="6">6</button><button class="q-pad-btn" data-v="7">7</button><button class="q-pad-btn" data-v="8">8</button><button class="q-pad-btn" data-v="9">9</button><button class="q-pad-btn" data-v="0">0</button><button class="q-pad-btn clear" data-v="c">지움</button><button class="q-pad-btn clear" data-v="ok">확인</button></div></div></div>
+<p class="mcq-hint" data-hints='["낱개끼리 먼저 더해 보세요.", "2 + 5 = 7, 4 + 1 = 5예요."]'></p><div class="q-fb"></div>
+    </div>
+    <div class="slide" data-stage="응용문제" data-q-id="q13" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <h2 class="slide-title">맞으면 ○, 틀리면 ✕</h2>
+<div class="stage"><p class="cap">34 + 21의 명령어에 대해 판단해 보세요.</p><div class="q-part" data-part="judge" data-ok="자리를 밝혀 말할 수 있어요!"><div class="jd-list"><div class="jd-row" data-ok="x" data-miss="3은 10개씩 묶음의 수예요. 낱낱의 수로만 말하면 안 돼요."><span class="jd-text">「3과 2를 더하고, 4와 1을 더해요」라고 말해요.</span><span class="jd-btns"><button class="jd-btn" data-p="o">○</button><button class="jd-btn" data-p="x">✕</button></span></div><div class="jd-row" data-ok="o" data-miss="자리마다 무엇을 뜻하는지 밝혀 말해요."><span class="jd-text">「10개씩 묶음끼리 더하고, 낱개끼리 더해요」라고 말해요.</span><span class="jd-btns"><button class="jd-btn" data-p="o">○</button><button class="jd-btn" data-p="x">✕</button></span></div><div class="jd-row" data-ok="o" data-miss="같은 모형끼리만 계산하면 순서는 상관없어요."><span class="jd-text">두 명령어의 순서를 바꾸어도 답은 같아요.</span><span class="jd-btns"><button class="jd-btn" data-p="o">○</button><button class="jd-btn" data-p="x">✕</button></span></div></div></div></div>
+<p class="mcq-hint" data-hints='["34의 3은 무엇을 뜻할까요?", "「3」이 아니라 「10개씩 묶음 3개」예요."]'></p><div class="q-fb"></div>
+    </div>
+    <div class="slide" data-stage="응용문제" data-q-id="q14" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <h2 class="slide-title">뺄셈 로봇의 답은?</h2>
+<div class="stage"><div class="cmds" data-cmd="10개씩 묶음끼리 빼요|낱개끼리 빼요|답을 써요"><span class="cmd"><u>1</u>10개씩 묶음끼리 빼요</span><span class="cmd-arrow">▶</span><span class="cmd"><u>2</u>낱개끼리 빼요</span><span class="cmd-arrow">▶</span><span class="cmd"><u>3</u>답을 써요</span></div><div class="eqstrip"><span class="eq-tok">65</span><span class="eq-tok op">-</span><span class="eq-tok">54</span><span class="eq-tok op">=</span><span class="eq-tok hole">?</span></div><p class="cap">명령어를 차례로 따라 계산해 보세요.</p><div class="q-part" data-part="pad" data-answer="11" data-ok="같은 모형끼리 뺐어요!" data-miss="10개씩 묶음은 6 − 5, 낱개는 5 − 4예요."><div class="row"><div class="q-display empty">?</div></div><div class="q-pad"><button class="q-pad-btn" data-v="1">1</button><button class="q-pad-btn" data-v="2">2</button><button class="q-pad-btn" data-v="3">3</button><button class="q-pad-btn" data-v="4">4</button><button class="q-pad-btn" data-v="5">5</button><button class="q-pad-btn" data-v="6">6</button><button class="q-pad-btn" data-v="7">7</button><button class="q-pad-btn" data-v="8">8</button><button class="q-pad-btn" data-v="9">9</button><button class="q-pad-btn" data-v="0">0</button><button class="q-pad-btn clear" data-v="c">지움</button><button class="q-pad-btn clear" data-v="ok">확인</button></div></div></div>
+<p class="mcq-hint" data-hints='["10개씩 묶음끼리 먼저 빼 보세요.", "6 − 5 = 1, 5 − 4 = 1이에요."]'></p><div class="q-fb"></div>
+    </div>
+    <div class="slide" data-stage="응용문제" data-q-id="q15" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <h2 class="slide-title">47 − 23은 얼마일까요?</h2>
+<div class="stage"><div class="cmds" data-cmd="낱개끼리 빼요|10개씩 묶음끼리 빼요|답을 써요"><span class="cmd"><u>1</u>낱개끼리 빼요</span><span class="cmd-arrow">▶</span><span class="cmd"><u>2</u>10개씩 묶음끼리 빼요</span><span class="cmd-arrow">▶</span><span class="cmd"><u>3</u>답을 써요</span></div><p class="cap">순서를 바꾼 뺄셈 명령어로 47 − 23을 계산하면 얼마일까요?</p><div class="q-part" data-part="mcq" data-ok="순서를 바꾸어도 답은 같아요!"><div class="mcq-opts four"><button class="mcq-opt" data-ok="1" data-miss="">24</button><button class="mcq-opt" data-ok="0" data-miss="낱개는 7 − 3 = 4예요.">26</button><button class="mcq-opt" data-ok="0" data-miss="빼는 식이에요. 더하면 안 돼요.">70</button><button class="mcq-opt" data-ok="0" data-miss="10개씩 묶음은 4 − 2 = 2예요.">14</button></div></div></div>
+<p class="mcq-hint" data-hints='["낱개끼리 먼저 빼 보세요.", "7 − 3 = 4, 4 − 2 = 2예요."]'></p><div class="q-fb"></div>
+    </div>
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리 · 요약</div>
+      <h2 class="slide-title">이 단원을 마치며</h2>
+<div class="stage"><div class="sum-card"><div class="sum-cells"><div class="sum-cell"><u>34+21</u><i>55</i></div><div class="sum-cell"><u>58−12</u><i>46</i></div><div class="sum-cell"><u>42+15</u><i>57</i></div><div class="sum-cell"><u>65−54</u><i>11</i></div><div class="sum-cell"><u>47−23</u><i>24</i></div></div><p class="sum-msg">로봇 명령어로 계산 <strong>차례</strong>를 나타냈어요.<br>같은 모형끼리만 계산하면 <strong>순서를 바꾸어도</strong> 답은 같아요. 두 자리 수의 덧셈과 뺄셈, 이제 자신 있어요!</p></div></div>
+
+    </div>
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리 · 자기 평가</div>
+      <h2 class="slide-title">스스로 돌아봐요</h2>
+<div class="stage narrow"><p class="wrap-msg" id="wrap-msg">잘했어요!</p><div class="self-row"><span class="self-label">계산 차례를 명령어로 나타낼 수 있어요</span><span class="self-btns"><button class="self-btn">😀</button><button class="self-btn">🙂</button><button class="self-btn">🤔</button></span></div><div class="self-row"><span class="self-label">10개씩 묶음과 낱개로 밝혀 말할 수 있어요</span><span class="self-btns"><button class="self-btn">😀</button><button class="self-btn">🙂</button><button class="self-btn">🤔</button></span></div><div class="self-row"><span class="self-label">순서를 바꾸어도 되는지 살필 수 있어요</span><span class="self-btns"><button class="self-btn">😀</button><button class="self-btn">🙂</button><button class="self-btn">🤔</button></span></div></div>
+
+    </div>
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리 · 다음</div>
+      <h2 class="slide-title">다음에는</h2>
+<div class="stage narrow"><div class="next-card"><div class="next-emoji">🎓</div><p class="next-msg">1학년 수학을 모두 마쳤어요!<br>2학년에서는 <strong>더 큰 수</strong>도<br>더하고 빼게 될 거예요.</p></div></div>
+
+    </div>
+  </main>
+
+  <footer class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next" id="next" onclick="goNext()">다음 →</button>
+  </footer>
+</div>
+
+<script>
+const STORAGE_KEY = 'kedu_progress_g1_2_math_u6_l09';
+
+// ═══════════ 상태 ═══════════
+const TOTAL = 18;
+let cur = 0, score = 0, muted = false, qState = {};
+const startedAt = Date.now();
+const QIDS = ['q8','q9','q10','q11','q12','q13','q14','q15'];
+
+function getQState(qid){ if(!qState[qid]) qState[qid]={solved:false,attempts:0,wrongCount:0,hintLevel:0}; return qState[qid]; }
+function currentSlide(){ return document.querySelectorAll('.slide')[cur]; }
+function currentQId(){ const s=currentSlide(); return s?s.dataset.qId:null; }
+
+function updateUI(){
+  document.querySelectorAll('.slide').forEach((s,i)=>s.classList.toggle('active', i===cur));
+  document.getElementById('pg').textContent = (cur+1)+' / '+TOTAL;
+  document.getElementById('bar').style.width = ((cur+1)/TOTAL*100)+'%';
+  document.getElementById('prev').disabled = cur===0;
+  const qid = currentQId(), hintBtn = document.getElementById('hint');
+  if(qid){ const st=getQState(qid); hintBtn.disabled = st.solved || st.hintLevel>=2; }
+  else hintBtn.disabled = true;
+  const nb = document.getElementById('next');
+  if(cur===TOTAL-1){ nb.textContent='마치기 →'; saveProgress(true); } else nb.textContent='다음 →';
+  const wm = document.getElementById('wrap-msg');
+  if(wm && cur===15) wm.textContent = wrapMsg(score);
+}
+function wrapMsg(s){ if(s>=100) return '완벽해요!'; if(s>=80) return '정말 잘했어요!'; if(s>=60) return '잘했어요!'; return '다시 해도 좋아요!'; }
+function goNext(){ if(cur<TOTAL-1){ cur++; saveProgress(false); updateUI(); } }
+function goPrev(){ if(cur>0){ cur--; updateUI(); } }
+function goHub(){ saveProgress(false); location.href='../index.html'; }
+function toggleMute(){ muted=!muted; document.getElementById('mute').textContent = muted?'🔇':'🔊'; }
+function addScore(n){ score+=n; document.getElementById('score').textContent='⭐ '+score; }
+function showHint(){
+  const qid=currentQId(); if(!qid) return;
+  const st=getQState(qid); if(st.solved||st.hintLevel>=2) return;
+  const el=currentSlide().querySelector('.mcq-hint'); if(!el) return;
+  const hints=JSON.parse(el.dataset.hints||'[]');
+  st.hintLevel++; el.textContent='💡 '+hints[st.hintLevel-1];
+  document.getElementById('hint').disabled = st.hintLevel>=2;
+}
+function pointsForQ(qid){
+  const s=document.querySelector('[data-q-id="'+qid+'"]');
+  const base=parseInt(s.dataset.qPoints||'0',10), st=getQState(qid);
+  if(st.hintLevel===2) return Math.max(0,base-5);
+  if(st.hintLevel===1) return Math.max(0,base-2);
+  return base;
+}
+function solveQ(slide, qid, fbEl, okMsg){
+  const st=getQState(qid);
+  if(st.solved) return;
+  st.solved=true;
+  addScore(pointsForQ(qid));
+  if(fbEl){ fbEl.classList.remove('wrong'); fbEl.innerHTML='⭕ '+(okMsg||'맞았어요!'); }
+  document.getElementById('hint').disabled=true;
+  document.getElementById('next').classList.add('hl');
+  saveProgress(false);
+}
+function missQ(qid, fbEl, msg){
+  const st=getQState(qid); st.attempts++; st.wrongCount++;
+  if(fbEl){ fbEl.classList.add('wrong'); fbEl.innerHTML='❌ '+(msg||'다시 한번 볼까요?'); }
+}
+
+// ═══════════ 부품 1 — 숫자 입력 (pad) ═══════════
+function setupPad(part){
+  const slide=part.closest('.slide'), qid=slide.dataset.qId;
+  const ans=parseInt(part.dataset.answer,10);
+  const maxLen=(part.dataset.maxlen? parseInt(part.dataset.maxlen,10):String(ans).length);
+  const disp=part.querySelector('.q-display'), fb=slide.querySelector('.q-fb');
+  const okMsg=part.dataset.ok||'', missMsg=part.dataset.miss||'';
+  let buf='';
+  function render(){ disp.textContent = buf===''?'?':buf; disp.classList.toggle('empty', buf===''); }
+  function check(){
+    if(buf==='') return;
+    if(parseInt(buf,10)===ans){
+      disp.classList.remove('wrong'); disp.classList.add('correct');
+      part.querySelectorAll('.q-pad-btn').forEach(b=>b.disabled=true);
+      solveQ(slide,qid,fb,okMsg);
+    } else {
+      disp.classList.add('wrong');
+      missQ(qid,fb,missMsg);
+      setTimeout(()=>{ disp.classList.remove('wrong'); buf=''; render(); }, 700);
+    }
+  }
+  part.querySelectorAll('.q-pad-btn').forEach(b=>{
+    b.addEventListener('click',()=>{
+      if(getQState(qid).solved) return;
+      const v=b.dataset.v;
+      if(v==='c'){ buf=''; render(); return; }
+      if(v==='ok'){ check(); return; }
+      if(buf.length<maxLen){ buf+=v; render(); }
+      if(buf.length===maxLen) setTimeout(check,220);
+    });
+  });
+  render();
+}
+
+// ═══════════ 부품 2 — 묶음·낱개 두 칸 입력 (two) ═══════════
+function setupTwo(part){
+  const slide=part.closest('.slide'), qid=slide.dataset.qId;
+  const a=parseInt(part.dataset.answerA,10), b=parseInt(part.dataset.answerB,10);
+  const dA=part.querySelector('[data-cell="a"]'), dB=part.querySelector('[data-cell="b"]');
+  const fb=slide.querySelector('.q-fb');
+  const okMsg=part.dataset.ok||'', missMsg=part.dataset.miss||'';
+  let vA='', vB='', active='a';
+  function render(){
+    dA.textContent = vA===''?'?':vA; dA.classList.toggle('empty', vA==='');
+    dB.textContent = vB===''?'?':vB; dB.classList.toggle('empty', vB==='');
+    dA.classList.toggle('active', active==='a' && !getQState(qid).solved);
+    dB.classList.toggle('active', active==='b' && !getQState(qid).solved);
+  }
+  function check(){
+    if(vA===''||vB==='') return;
+    if(parseInt(vA,10)===a && parseInt(vB,10)===b){
+      dA.classList.remove('active','wrong'); dB.classList.remove('active','wrong');
+      dA.classList.add('correct'); dB.classList.add('correct');
+      part.querySelectorAll('.q-pad-btn').forEach(x=>x.disabled=true);
+      solveQ(slide,qid,fb,okMsg);
+    } else {
+      dA.classList.add('wrong'); dB.classList.add('wrong');
+      missQ(qid,fb,missMsg);
+      setTimeout(()=>{ dA.classList.remove('wrong'); dB.classList.remove('wrong'); vA=''; vB=''; active='a'; render(); }, 800);
+    }
+  }
+  dA.addEventListener('click',()=>{ if(!getQState(qid).solved){ active='a'; render(); } });
+  dB.addEventListener('click',()=>{ if(!getQState(qid).solved){ active='b'; render(); } });
+  part.querySelectorAll('.q-pad-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      if(getQState(qid).solved) return;
+      const v=btn.dataset.v;
+      if(v==='c'){ vA=''; vB=''; active='a'; render(); return; }
+      if(v==='ok'){ check(); return; }
+      if(active==='a'){ vA=v; active='b'; } else { vB=v; }
+      render();
+      if(vA!==''&&vB!=='') setTimeout(check,240);
+    });
+  });
+  render();
+}
+
+// ═══════════ 부품 3 — 4지선다 (mcq) ═══════════
+function setupMcq(part){
+  const slide=part.closest('.slide'), qid=slide.dataset.qId;
+  const fb=slide.querySelector('.q-fb');
+  const okMsg=part.dataset.ok||'';
+  part.querySelectorAll('.mcq-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      if(getQState(qid).solved) return;
+      if(btn.dataset.ok==='1'){
+        btn.classList.add('correct');
+        part.querySelectorAll('.mcq-opt').forEach(o=>{ o.disabled=true; if(o!==btn) o.classList.add('dim'); });
+        solveQ(slide,qid,fb,okMsg);
+      } else {
+        btn.classList.add('wrong');
+        missQ(qid,fb,btn.dataset.miss||'');
+        setTimeout(()=>btn.classList.remove('wrong'),600);
+      }
+    });
+  });
+}
+
+// ═══════════ 부품 4 — 매칭 (match) ═══════════
+function setupMatch(part){
+  const slide=part.closest('.slide'), qid=slide.dataset.qId;
+  const fb=slide.querySelector('.q-fb');
+  const okMsg=part.dataset.ok||'';
+  const need=part.querySelectorAll('.match-slot').length;
+  let done=0;
+  part.querySelectorAll('.match-card').forEach(card=>{
+    card.addEventListener('click',()=>{
+      if(getQState(qid).solved) return;
+      const k=card.dataset.k;
+      const slot=part.querySelector('.match-slot[data-k="'+k+'"]:not(.filled)');
+      if(slot && card.dataset.ok==='1'){
+        slot.textContent=card.textContent;
+        slot.classList.add('filled','correct');
+        card.classList.add('used');
+        done++;
+        if(done>=need) solveQ(slide,qid,fb,okMsg);
+      } else {
+        card.classList.add('wrong');
+        missQ(qid,fb,card.dataset.miss||'');
+        setTimeout(()=>card.classList.remove('wrong'),600);
+      }
+    });
+  });
+}
+
+// ═══════════ 부품 5 — ○✕ 판정 (judge) ═══════════
+function setupJudge(part){
+  const slide=part.closest('.slide'), qid=slide.dataset.qId;
+  const fb=slide.querySelector('.q-fb');
+  const okMsg=part.dataset.ok||'';
+  const rows=[...part.querySelectorAll('.jd-row')];
+  let done=0;
+  rows.forEach(row=>{
+    row.querySelectorAll('.jd-btn').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        if(getQState(qid).solved || row.dataset.done==='1') return;
+        const pick=btn.dataset.p, want=row.dataset.ok;
+        if(pick===want){
+          row.dataset.done='1';
+          row.classList.add('correct');
+          btn.classList.add('picked');
+          row.querySelectorAll('.jd-btn').forEach(b=>b.disabled=true);
+          done++;
+          if(done>=rows.length) solveQ(slide,qid,fb,okMsg);
+        } else {
+          row.classList.add('wrong');
+          missQ(qid,fb,row.dataset.miss||'');
+          setTimeout(()=>row.classList.remove('wrong'),600);
+        }
+      });
+    });
+  });
+}
+
+// ═══════════ 자기 평가 ═══════════
+function setupSelf(){
+  document.querySelectorAll('.self-row').forEach(row=>{
+    row.querySelectorAll('.self-btn').forEach(b=>{
+      b.addEventListener('click',()=>{
+        row.querySelectorAll('.self-btn').forEach(x=>x.classList.remove('picked'));
+        b.classList.add('picked');
+      });
+    });
+  });
+}
+
+// ═══════════ 진도 저장 (차시운영 §4) ═══════════
+function saveProgress(completed){
+  const wrongArr=[], hintArr=[];
+  QIDS.forEach(qid=>{ const st=getQState(qid); wrongArr.push(st.wrongCount); hintArr.push(st.hintLevel); });
+  const prev=loadProgress();
+  const data={
+    score:score, max_score:100, completed:completed,
+    completed_at: completed? new Date().toISOString() : (prev?prev.completed_at:null),
+    first_attempt_score: prev && prev.first_attempt_score!=null ? prev.first_attempt_score : (completed?score:null),
+    attempt_count: prev ? (prev.attempt_count||1) : 1,
+    hint_used:hintArr, wrong_count:wrongArr,
+    duration_sec: Math.floor((Date.now()-startedAt)/1000) + (prev?(prev.duration_sec||0):0),
+    last_slide: cur+1
+  };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e){}
+}
+function loadProgress(){ try { const r=localStorage.getItem(STORAGE_KEY); return r?JSON.parse(r):null; } catch(e){ return null; } }
+
+// ═══════════ 기동 ═══════════
+document.querySelectorAll('.q-part').forEach(p=>{
+  const k=p.dataset.part;
+  if(k==='pad') setupPad(p);
+  else if(k==='two') setupTwo(p);
+  else if(k==='mcq') setupMcq(p);
+  else if(k==='match') setupMatch(p);
+  else if(k==='judge') setupJudge(p);
+});
+setupSelf();
+document.querySelectorAll('.slide').forEach(s=>{
+  s.addEventListener('click',()=>{ document.getElementById('next').classList.remove('hl'); });
+});
+updateUI();
+
+</script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit.js"></script>
+</body>
+</html>

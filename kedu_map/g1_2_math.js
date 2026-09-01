@@ -532,6 +532,103 @@ window.KEDU_MAP["g1_2_math"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 6,
+   "name": "덧셈과 뺄셈(3)",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g1_math_u6_l01",
+     "lessonId": "g1_2_math_u6_l01_v1",
+     "n": "1",
+     "title": "단원 도입 — 우리 전통을 알아봐요",
+     "sub": null,
+     "url": "/grade1/semester2/math/6단원_덧셈과뺄셈3/g1_math_u6_l01_단원도입.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u6_l02",
+     "lessonId": "g1_2_math_u6_l02_v1",
+     "n": "2",
+     "title": "덧셈을 알아볼까요 (1) — 공깃돌을 세어요",
+     "sub": null,
+     "url": "/grade1/semester2/math/6단원_덧셈과뺄셈3/g1_math_u6_l02_덧셈을알아볼까요_1.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u6_l03",
+     "lessonId": "g1_2_math_u6_l03_v1",
+     "n": "3",
+     "title": "덧셈을 알아볼까요 (2) — 같은 모형끼리 더해요",
+     "sub": null,
+     "url": "/grade1/semester2/math/6단원_덧셈과뺄셈3/g1_math_u6_l03_덧셈을알아볼까요_2.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u6_l04",
+     "lessonId": "g1_2_math_u6_l04_v1",
+     "n": "4",
+     "title": "뺄셈을 알아볼까요 (1) — 딱지를 견주어요",
+     "sub": null,
+     "url": "/grade1/semester2/math/6단원_덧셈과뺄셈3/g1_math_u6_l04_뺄셈을알아볼까요_1.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u6_l05",
+     "lessonId": "g1_2_math_u6_l05_v1",
+     "n": "5",
+     "title": "뺄셈을 알아볼까요 (2) — 같은 모형끼리 빼요",
+     "sub": null,
+     "url": "/grade1/semester2/math/6단원_덧셈과뺄셈3/g1_math_u6_l05_뺄셈을알아볼까요_2.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u6_l06",
+     "lessonId": "g1_2_math_u6_l06_v1",
+     "n": "6",
+     "title": "덧셈과 뺄셈을 해 볼까요 (1) — 이야기를 식으로",
+     "sub": null,
+     "url": "/grade1/semester2/math/6단원_덧셈과뺄셈3/g1_math_u6_l06_덧셈과뺄셈을해볼까요_1.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u6_l07",
+     "lessonId": "g1_2_math_u6_l07_v1",
+     "n": "7",
+     "title": "덧셈과 뺄셈을 해 볼까요 (2) — 놀이로 익혀요",
+     "sub": null,
+     "url": "/grade1/semester2/math/6단원_덧셈과뺄셈3/g1_math_u6_l07_덧셈과뺄셈을해볼까요_2.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u6_l08",
+     "lessonId": "g1_2_math_u6_l08_v1",
+     "n": "8",
+     "title": "수학이랑 확인해요 (단원 평가)",
+     "sub": null,
+     "url": "/grade1/semester2/math/6단원_덧셈과뺄셈3/g1_math_u6_l08_수학이랑확인해요_단원평가.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_math_u6_l09",
+     "lessonId": "g1_2_math_u6_l09_v1",
+     "n": "9",
+     "title": "수학이랑 만들어요 — 명령어를 만들어요",
+     "sub": null,
+     "url": "/grade1/semester2/math/6단원_덧셈과뺄셈3/g1_math_u6_l09_수학이랑만들어요.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };

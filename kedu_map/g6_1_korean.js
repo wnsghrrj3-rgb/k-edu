@@ -171,6 +171,83 @@ window.KEDU_MAP["g6_1_korean"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 3,
+   "name": "절차를 지키며 토론해요",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g6_korean_u3_l01",
+     "lessonId": "g6_kor_u3_l01_v1",
+     "n": "1",
+     "title": "단원 시작 — 배울 내용 살펴보기",
+     "sub": null,
+     "url": "/grade6/semester1/korean/3단원_절차를지키며토론해요/g6_kor_u3_l01.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g6_korean_u3_l02",
+     "lessonId": "g6_kor_u3_l02_03_v1",
+     "n": "2~3",
+     "title": "토론의 절차와 규칙 이해하기",
+     "sub": null,
+     "url": "/grade6/semester1/korean/3단원_절차를지키며토론해요/g6_kor_u3_l02_03.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g6_korean_u3_l04",
+     "lessonId": "g6_kor_u3_l04_05_v1",
+     "n": "4~5",
+     "title": "학급 문제에 대하여 토론하기",
+     "sub": null,
+     "url": "/grade6/semester1/korean/3단원_절차를지키며토론해요/g6_kor_u3_l04_05.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g6_korean_u3_l06",
+     "lessonId": "g6_kor_u3_l06_07_v1",
+     "n": "6~7",
+     "title": "타당한 이유나 근거를 제시하는 방법 알기",
+     "sub": null,
+     "url": "/grade6/semester1/korean/3단원_절차를지키며토론해요/g6_kor_u3_l06_07.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g6_korean_u3_l08",
+     "lessonId": "g6_kor_u3_l08_10_v1",
+     "n": "8~10",
+     "title": "사회 문제에 대하여 토론하기",
+     "sub": null,
+     "url": "/grade6/semester1/korean/3단원_절차를지키며토론해요/g6_kor_u3_l08_10.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g6_korean_u3_l11",
+     "lessonId": "g6_kor_u3_l11_12_v1",
+     "n": "11~12",
+     "title": "배운 내용 실천하기 — 주제를 정하여 토론하기",
+     "sub": null,
+     "url": "/grade6/semester1/korean/3단원_절차를지키며토론해요/g6_kor_u3_l11_12.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g6_korean_u3_l13",
+     "lessonId": "g6_kor_u3_l13_v1",
+     "n": "13",
+     "title": "단원 마무리하기 (정리 · 기초 다지기)",
+     "sub": null,
+     "url": "/grade6/semester1/korean/3단원_절차를지키며토론해요/g6_kor_u3_l13.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };
