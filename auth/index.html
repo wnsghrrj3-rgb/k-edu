@@ -420,9 +420,13 @@ async function doSignup(){
 
   // 역할·이름을 user_metadata 에 저장 — Confirm email ON 이면 가입 순간 세션이 없어
   // teachers 프로필을 못 만들므로, 첫 로그인 때 이 메타데이터로 자가 복구한다 (2026-08-27)
+  // 확인 메일 링크의 착지 = 이 페이지(/auth/). 여기 checkSession 이 teachers 행을 자가 복구한 뒤
+  // 역할 홈으로 보낸다 — Site URL(홈)로 떨어지면 교사 행 없이 교사 공간 문 앞에서 막힌다 (2026-09-02).
+  // ※ Supabase Auth → URL Configuration → Redirect URLs 에 https://keduclass.com/auth/** 가 있어야 유효.
+  const landing = location.origin + '/auth/?redirect=' + encodeURIComponent(selectedRole === 'parent' ? '/parent/' : '/teacher/');
   const signUpOpts = selectedRole === 'parent'
-    ? { email, password: pw, options: { data: { role: 'parent' } } }
-    : { email, password: pw, options: { data: {
+    ? { email, password: pw, options: { emailRedirectTo: landing, data: { role: 'parent' } } }
+    : { email, password: pw, options: { emailRedirectTo: landing, data: {
         role: 'teacher',
         teacher_name: document.getElementById('signup-teacher-name').value.trim(),
         teacher_school: document.getElementById('signup-teacher-school').value.trim()

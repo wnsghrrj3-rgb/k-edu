@@ -91,6 +91,15 @@
             return;
           }
           if (!row) {
+            /* 확인 메일 뒤 첫 접속 — 교사로 가입했지만 teachers 행이 아직 없다.
+               교사 대시보드가 user_metadata 로 행을 만들어 주므로 그리로 보낸다 (2026-09-02). */
+            var meta = (session.user && session.user.user_metadata) || {};
+            if (meta.role === 'teacher' || meta.teacher_name) {
+              overlay('🍎', '교사 정보를 마무리할게요',
+                '가입은 됐고, 교사 대시보드에 한 번 들르면 준비가 끝나요.',
+                '교사 대시보드 →', '/teacher/', false);
+              return;
+            }
             overlay('🍎', '교사 계정이 아니에요',
               '이 공간은 교사 확인을 마친 선생님만 사용할 수 있어요.<br>학부모님은 학부모 대시보드를 이용해 주세요.',
               '학부모 대시보드 →', '/parent/', false);
