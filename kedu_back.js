@@ -282,6 +282,72 @@
   }
   if (KBOX) { if (document.body) buildKboxBar(); else document.addEventListener('DOMContentLoaded', buildKboxBar); }
 
+  /* 2-1) 케이박스 자동 복귀 (2026-09-02, 준호 폰 피드백: 끝나도 정적이라 뒤로가기를 눌러야 했다)
+     차시가 끝나는 신호를 잡아 알아서 받은 박스로 돌아간다.
+       · window.kedu.recordLessonEnd(score,total)  — 자기주도 엔진 자동 배선(KA·사회·pick)의 차시 끝 신호
+         → 이때 KBox.submit 으로 점수 봉투까지 보낸다(교사 채점 패널에 🧮 자동 채점으로 뜸)
+       · window.KBox.submit(...) 이 ok 로 끝나면 — 케이퀴즈·활동처럼 도구가 직접 제출하는 가족
+     두 신호 중 먼저 오는 것 1회만. 어느 스크립트가 먼저 실려도 되게 20초간 살펴서 건다. */
+  function armKboxAutoReturn() {
+    if (!KBOX) return;
+    var returned = false;
+    function note(msg) {
+      var n = document.getElementById('kedu-kbox-note');
+      if (!n) {
+        n = document.createElement('div'); n.id = 'kedu-kbox-note';
+        n.style.cssText = 'position:fixed;left:50%;bottom:calc(64px + env(safe-area-inset-bottom,0));transform:translateX(-50%);'
+          + 'z-index:2147483001;background:#1a2540;color:#fff;font-weight:800;font-size:15px;padding:12px 18px;'
+          + 'border-radius:14px;box-shadow:0 4px 16px rgba(0,0,0,.3);font-family:inherit;white-space:nowrap';
+        document.body.appendChild(n);
+      }
+      n.textContent = msg;
+    }
+    function leave() {
+      if (returned) return; returned = true;
+      try { note('다 했어요! 박스로 돌아가요 🎉'); } catch (e) {}
+      setTimeout(function () { goTo(KBOX.done); }, 1300);
+    }
+    var hookedEnd = false, hookedSub = false;
+    function tryHook() {
+      if (!hookedSub && window.KBox && typeof window.KBox.submit === 'function' && !window.KBox.__kbAutoReturn) {
+        hookedSub = true; window.KBox.__kbAutoReturn = true;
+        var os = window.KBox.submit;
+        window.KBox.submit = function () {
+          var r; try { r = os.apply(this, arguments); } catch (e) { r = Promise.reject(e); }
+          return Promise.resolve(r).then(function (res) {
+            if (res && (res.status === 'ok' || res.status === 'dup')) leave();
+            return res;
+          }, function (e) { return { status: 'error', message: String(e && e.message || e) }; });
+        };
+      }
+      if (!hookedEnd && window.kedu && typeof window.kedu.recordLessonEnd === 'function') {
+        hookedEnd = true;
+        var oe = window.kedu.recordLessonEnd;
+        window.kedu.recordLessonEnd = function (score, total) {
+          var r; try { r = oe.apply(this, arguments); } catch (e) {}
+          var p = Promise.resolve(null);
+          try {
+            if (window.KBox && window.KBox.active && typeof window.KBox.submit === 'function') {
+              p = Promise.resolve(window.KBox.submit({
+                tool: 'selfstudy', kind: 'auto',
+                score: (typeof score === 'number') ? score : null,
+                max: (typeof total === 'number' && total > 0) ? total : null,
+                detail: {}
+              }));
+            }
+          } catch (e) {}
+          p.then(leave, leave);
+          return r;
+        };
+      }
+      return hookedEnd && hookedSub;
+    }
+    if (!tryHook()) {
+      var n = 0, iv = setInterval(function () { if (tryHook() || ++n > 80) clearInterval(iv); }, 250);
+    }
+  }
+  if (KBOX) armKboxAutoReturn();
+
   if (mode === 'context') return; /* 버튼 없이 맥락만 제공 (케이뮤지엄·케이메이크처럼 자체 버튼이 있는 화면) */
 
   /* 2) 공용 스타일 (1회 주입) */

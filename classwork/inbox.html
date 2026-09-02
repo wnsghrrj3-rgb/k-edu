@@ -261,7 +261,7 @@ async function openBox(id, doneItemId){
     const idx = current.items.findIndex(x=> x.id===doneItemId);
     if(idx>=0){
       const it = current.items[idx];
-      if(it.kind==='quiz' || it.submitted){ toast(it.kind==='quiz' ? '점수가 올라왔어요 ⭐' : '이미 제출한 활동이에요 — 다시 제출할 수도 있어요'); }
+      if(it.kind==='quiz' || it.submitted){ toast((it.payload && it.payload.score!=null) ? '다 했어요! 점수가 올라갔어요 ⭐' : '제출됐어요 ✓ 선생님께 남길 말은 다시 제출로'); }
       else { setTimeout(()=>{ const b=document.getElementById('sb-'+idx); if(b && !b.classList.contains('on')) toggleSubmit(idx); const t=document.getElementById('sb-'+idx); t && t.scrollIntoView({behavior:'smooth',block:'center'}); }, 80); }
     }
   }
@@ -304,6 +304,10 @@ function renderTasks(){
       graded = `<div class="graded"><div class="graded-score">⭐ ${it.score!=null? esc(String(it.score))+'점' : '확인 완료'}</div>${it.feedback? `<div class="graded-fb">${esc(it.feedback)}</div>`:''}</div>`;
     } else if(it.submitted){
       action = `<button class="t-btn t-redo" onclick="toggleSubmit(${idx})">✏️ 다시 제출</button>`;
+      if(it.payload && it.payload.score!=null){
+        const mx = (it.payload.max!=null) ? ' / '+esc(String(it.payload.max)) : '';
+        graded = `<div class="graded"><div class="graded-score">✓ 다 했어요 · ${esc(String(it.payload.score))}${mx}점</div></div>`;
+      }
     } else {
       action = `<button class="t-btn t-do" onclick="toggleSubmit(${idx})">✓ 다 했어요</button>`;
     }
