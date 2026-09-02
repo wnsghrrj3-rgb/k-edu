@@ -211,14 +211,14 @@ window.KEDU_MAP["g6_1_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u2_l09",
+     "lessonId": "g6_social_u2_l09_v1",
      "n": "9",
      "title": "국가기관의 권력을 나누는 까닭을 알아볼까요 / [할 수 있어요] 권력을 나누는 이유 탐구하기",
      "sub": "② 국가기관과 권력 분립",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/social/2단원_민주주의와시민참여/g6_social_u2_l09_나눠맡아요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
