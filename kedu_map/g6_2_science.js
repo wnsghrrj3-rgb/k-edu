@@ -32,6 +32,16 @@ window.KEDU_MAP["g6_2_science"] = {
      "url": "/grade6/semester2/science/1단원_계절의변화/g6_sci_u1_l02_태양고도측정기.html",
      "track": "tb",
      "ready": true
+    },
+    {
+     "key": "g6_science_u1_l03",
+     "lessonId": "g6_s2_sci_u1_l03_v1",
+     "n": "3~4",
+     "title": "하루 동안 태양 고도, 그림자 길이, 기온의 관계는?",
+     "sub": null,
+     "url": "/grade6/semester2/science/1단원_계절의변화/g6_sci_u1_l03_고도그림자기온.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }
