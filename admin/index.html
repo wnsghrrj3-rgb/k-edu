@@ -289,7 +289,10 @@ details.fold .fold-body{padding-top:18px}
   <section class="sec">
     <div class="sec-head">
       <h2>승인 대기<span class="n" id="pending-count">0명</span></h2>
-      <span class="aside">승인하면 그 교사는 바로 학급을 만들 수 있어요</span>
+      <span class="aside">
+        <button class="apv-btn ok" id="approve-all-btn" style="margin-right:8px" onclick="approveAllPending()" hidden>모두 승인</button>
+        <label style="font-size:12px;color:var(--sub);cursor:pointer"><input type="checkbox" id="pending-auto-refresh" onchange="togglePendingRefresh(this)"> 자동 새로고침</label>
+      </span>
     </div>
     <div class="table-wrap">
       <div class="table-scroll">
@@ -302,6 +305,18 @@ details.fold .fold-body{padding-top:18px}
           </tbody>
         </table>
       </div>
+    </div>
+    <div class="policy-row" id="training-row">
+      <span>연수 모드</span>
+      <span id="training-state">코드를 켜면 그 코드로 가입한 교사는 승인을 기다리지 않고 바로 열려요. 연수장에서만 쓰고 끄세요.</span>
+      <span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <input type="text" id="training-code" maxlength="20" placeholder="예) 금성2026" style="width:130px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px">
+        <select id="training-hours" style="padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:13px">
+          <option value="4">4시간</option><option value="8" selected>8시간</option><option value="24">하루</option><option value="72">3일</option>
+        </select>
+        <button class="apv-btn ok" onclick="setTraining()">켜기</button>
+        <button class="apv-btn no" id="training-off" onclick="clearTraining()" hidden>끄기</button>
+      </span>
     </div>
     <div class="policy-row">
       <span>교육청 메일 자동승인</span>
@@ -1129,6 +1144,7 @@ async function fetchTeacherRows(){
 async function loadTeachers(){
   const teachers = await fetchTeacherRows();
   await loadPolicySwitch();
+  await loadTraining();
 
   const tbody = document.getElementById('teacher-body');
   const pbody = document.getElementById('pending-body');
@@ -1142,7 +1158,10 @@ async function loadTeachers(){
 
   // 승인 대기 표
   const pending = teachers.filter(t => t.approval === 'pending' || t.approval === 'rejected');
-  document.getElementById('pending-count').textContent = pending.filter(t=>t.approval==='pending').length + '명';
+  const nPending = pending.filter(t=>t.approval==='pending').length;
+  document.getElementById('pending-count').textContent = nPending + '명';
+  const allBtn = document.getElementById('approve-all-btn');
+  if(allBtn){ allBtn.hidden = nPending < 2; allBtn.textContent = `모두 승인 (${nPending}명)`; }
   if(pending.length){
     pbody.innerHTML = pending.map(t => {
       const req = t.approval_requested_at ? new Date(t.approval_requested_at).toLocaleDateString('ko-KR') : '<span style="color:var(--faint)">아직 신청 안 함</span>';
@@ -1211,6 +1230,58 @@ async function setApproval(teacherId, status, btn){
   if(error){ showToast('처리 실패: ' + (error.message || '')); if(btn) btn.disabled = false; return; }
   showToast(status === 'approved' ? '승인했어요. 이 교사는 바로 학급을 만들 수 있어요.' : '반려했어요.');
   await loadTeachers();
+}
+
+// ---- 연수 모드 (sql/setup_training_mode.sql #38) ----
+async function loadTraining(){
+  const st = document.getElementById('training-state');
+  const off = document.getElementById('training-off');
+  const { data, error } = await db.rpc('admin_training_status');
+  if(error){ st.innerHTML = '<span class="ok">SQL #38(setup_training_mode.sql) 미적용 — 연수 모드는 아직 못 켜요.</span>'; off.hidden = true; return; }
+  if(!data){
+    st.textContent = '지금 꺼져 있어요. 코드를 켜면 그 코드로 가입한 교사는 승인 없이 바로 열려요.';
+    off.hidden = true; return;
+  }
+  const until = new Date(data.until);
+  const mins = Math.max(0, Math.round((until - Date.now())/60000));
+  st.innerHTML = `켜짐 — 코드 <b style="font-size:16px;letter-spacing:1px">${esc(data.code)}</b> · ${until.toLocaleString('ko-KR')}까지 (${mins >= 60 ? Math.floor(mins/60)+'시간 '+(mins%60)+'분' : mins+'분'} 남음)`;
+  off.hidden = false;
+  document.getElementById('training-code').value = data.code;
+}
+
+async function setTraining(){
+  const code = document.getElementById('training-code').value.trim();
+  const hours = parseInt(document.getElementById('training-hours').value, 10) || 8;
+  if(code.length < 4){ showToast('코드는 4자 이상으로 정해 주세요.'); return; }
+  const { error } = await db.rpc('admin_set_training', { p_code: code, p_hours: hours, p_label: '연수' });
+  if(error){ showToast('켜기 실패: ' + (error.message || '')); return; }
+  showToast(`연수 모드를 켰어요. 칠판에 「${code.toUpperCase()}」를 적어 주세요.`);
+  await loadTraining();
+}
+
+async function clearTraining(){
+  if(!confirm('연수 모드를 끌까요? 이후 가입은 다시 승인 대기로 들어옵니다.')) return;
+  const { error } = await db.rpc('admin_clear_training');
+  if(error){ showToast('끄기 실패: ' + (error.message || '')); return; }
+  showToast('연수 모드를 껐어요.');
+  await loadTraining();
+}
+
+async function approveAllPending(){
+  if(!confirm('대기 중인 교사를 모두 승인할까요?')) return;
+  const { data, error } = await db.rpc('admin_approve_all_pending');
+  if(error){ showToast('일괄 승인 실패: ' + (error.message || '')); return; }
+  showToast(`${data || 0}명을 승인했어요.`);
+  await loadTeachers();
+}
+
+let PENDING_TIMER = null;
+function togglePendingRefresh(cb){
+  if(PENDING_TIMER){ clearInterval(PENDING_TIMER); PENDING_TIMER = null; }
+  if(cb.checked){
+    PENDING_TIMER = setInterval(() => { loadTeachers(); loadTraining(); }, 20000);
+    showToast('20초마다 새로고침해요. 연수가 끝나면 꺼 주세요.');
+  }
 }
 
 async function loadPolicySwitch(){

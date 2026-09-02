@@ -224,6 +224,11 @@ footer strong{color:#718096;font-weight:500}
         <input type="text" id="signup-teacher-school" placeholder="학교 이름과 주소를 적어 주세요 (확인 후 등록해 드려요)" maxlength="60" hidden>
         <input type="hidden" id="signup-teacher-school-id" value="">
       </div>
+      <div class="form-group" id="group-teacher-code" style="display:none">
+        <label>연수 코드 <span style="font-weight:400;color:#888;font-size:12px">(선택)</span></label>
+        <input type="text" id="signup-teacher-code" placeholder="연수에서 알려드린 코드가 있으면 적어 주세요" maxlength="20" autocomplete="off">
+        <div style="font-size:12px;color:#888;margin-top:4px">코드를 적으면 승인을 기다리지 않고 바로 쓸 수 있어요.</div>
+      </div>
 
       <!-- 동의 체크박스 (T05 — 처리방침 v2 시행 가능 조건) -->
       <div class="consent-box">
@@ -323,6 +328,7 @@ function pickRole(role){
   document.getElementById('group-nickname').style.display = 'none';
   document.getElementById('group-teacher-name').style.display = isTeacher ? 'block' : 'none';
   document.getElementById('group-teacher-school').style.display = isTeacher ? 'block' : 'none';
+  document.getElementById('group-teacher-code').style.display = isTeacher ? 'block' : 'none';
   const hint = document.getElementById('edu-mail-hint');
   if(hint) hint.style.display = isTeacher ? 'block' : 'none';
 }
@@ -531,7 +537,8 @@ async function doSignup(){
         role: 'teacher',
         teacher_name: document.getElementById('signup-teacher-name').value.trim(),
         teacher_school: document.getElementById('signup-teacher-school').value.trim(),
-        teacher_school_id: document.getElementById('signup-teacher-school-id').value || null
+        teacher_school_id: document.getElementById('signup-teacher-school-id').value || null,
+        teacher_signup_code: (document.getElementById('signup-teacher-code')?.value || '').trim() || null
       } } };
   const { data, error } = await db.auth.signUp(signUpOpts);
   btn.disabled = false; btn.textContent = '회원가입';
@@ -550,7 +557,7 @@ async function doSignup(){
     if(selectedRole === 'teacher'){
       const tName = document.getElementById('signup-teacher-name').value.trim();
       const tSchool = document.getElementById('signup-teacher-school').value.trim();
-      await createTeacherProfile(data.user.id, data.user.email || email, tName, tSchool, document.getElementById('signup-teacher-school-id').value || null);
+      await createTeacherProfile(data.user.id, data.user.email || email, tName, tSchool, document.getElementById('signup-teacher-school-id').value || null, (document.getElementById('signup-teacher-code')?.value || '').trim());
       showToast('🎉 가입 완료! 환영합니다.');
       setTimeout(()=>{ location.replace(redirectTo); }, 800);
     } else {
@@ -581,7 +588,7 @@ async function ensureProfile(user){
   //      가입 시 저장한 메타데이터(teacher_name)로 첫 로그인 때 만들어 준다.
   const meta = user.user_metadata || {};
   if(meta.role === 'teacher' || meta.teacher_name){
-    const healErr = await createTeacherProfile(user.id, user.email || '', meta.teacher_name || '선생님', meta.teacher_school || '', meta.teacher_school_id || null);
+    const healErr = await createTeacherProfile(user.id, user.email || '', meta.teacher_name || '선생님', meta.teacher_school || '', meta.teacher_school_id || null, meta.teacher_signup_code || '');
     if(!healErr) return true;
   }
 
@@ -632,11 +639,17 @@ async function createStudentProfile(userId, nickname){
 // =============================================
 // 교사 프로필 생성
 // =============================================
-async function createTeacherProfile(userId, email, name, school, schoolId){
+async function createTeacherProfile(userId, email, name, school, schoolId, signupCode){
   // email 은 초기 스키마의 NOT NULL 유산 컬럼 — 반드시 채운다 (2026-08-28)
   const row = { user_id: userId, email: email || '', name: name, school: school || '' };
   if(schoolId) row.school_id = schoolId; else if(school) row.school_request = school;
+  // 연수 코드 — DB 트리거가 판정 후 즉시 비운다(sql/setup_training_mode.sql #38). 저장되지 않는다.
+  if(signupCode) row.signup_code = signupCode;
   let { error } = await db.from('teachers').insert(row);
+  if(error && /signup_code/.test(error.message || '')){                // #38 미적용 DB
+    delete row.signup_code;
+    ({ error } = await db.from('teachers').insert(row));
+  }
   if(error && /school_id|school_request/.test(error.message || '')){   // schools SQL 미적용 DB
     delete row.school_id; delete row.school_request;
     ({ error } = await db.from('teachers').insert(row));

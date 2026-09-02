@@ -539,6 +539,11 @@ tr:hover td{background:#FAFBFC}
         <input type="text" id="approval-note" maxlength="200" placeholder="예) ○○초등학교 3학년 담임" style="flex:1;min-width:220px;padding:8px 12px;border:1px solid #d5dbe3;border-radius:8px;font-size:13px">
         <button class="code-btn primary" style="margin:0;padding:8px 16px;font-size:13px" onclick="requestApproval()">확인 신청</button>
       </div>
+      <div id="approval-training" style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <span style="font-size:12px;color:#667">연수 코드를 받으셨나요?</span>
+        <input type="text" id="approval-code" maxlength="20" autocomplete="off" placeholder="연수 코드" style="width:150px;padding:8px 12px;border:1px solid #d5dbe3;border-radius:8px;font-size:13px">
+        <button class="code-btn" style="margin:0;padding:8px 16px;font-size:13px" onclick="claimTrainingCode()">바로 열기</button>
+      </div>
     </span>
   </div>
 
@@ -958,7 +963,9 @@ async function loadDashboard(user){
     if(meta.role === 'teacher' || meta.teacher_name){
       const healRow = { user_id: user.id, email: user.email || '', name: meta.teacher_name || '선생님', school: meta.teacher_school || '' };
       if(meta.teacher_school_id) healRow.school_id = meta.teacher_school_id; else if(meta.teacher_school) healRow.school_request = meta.teacher_school;
+      if(meta.teacher_signup_code) healRow.signup_code = meta.teacher_signup_code;   // #38 트리거가 판정 후 비운다
       let { error: healErr } = await db.from('teachers').insert(healRow);
+      if(healErr && /signup_code/.test(healErr.message || '')){ delete healRow.signup_code; ({ error: healErr } = await db.from('teachers').insert(healRow)); }
       if(healErr && /school_id|school_request/.test(healErr.message || '')){ delete healRow.school_id; delete healRow.school_request; ({ error: healErr } = await db.from('teachers').insert(healRow)); }
       if(!healErr){
         const r2 = await db.from('teachers').select('*').eq('user_id', user.id).single();
@@ -1110,6 +1117,16 @@ async function requestApproval(){
   currentTeacher.approval_requested_at = new Date().toISOString();
   renderApprovalBanner();
   showToast('✅ 확인 신청을 보냈어요. 확인되면 바로 열려요.');
+}
+
+async function claimTrainingCode(){
+  const code = document.getElementById('approval-code')?.value.trim() || '';
+  if(code.length < 4){ showToast('연수 코드를 적어 주세요.'); return; }
+  const { data, error } = await db.rpc('claim_training_code', { p_code: code });
+  if(error){ showToast('⚠️ 확인 실패: ' + (error.message || '')); return; }
+  if(data !== true){ showToast('코드가 맞지 않거나 기간이 지났어요. 연수 담당 선생님께 확인해 주세요.'); return; }
+  showToast('✅ 열렸어요! 잠시만요…');
+  setTimeout(() => location.reload(), 700);
 }
 
 function renderWipeCountdown(){
