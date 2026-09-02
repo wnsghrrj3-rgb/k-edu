@@ -19,6 +19,7 @@
 | `live/` | 케이라이브 (실시간 모니터·스포트라이트) | `klive-core.js` 순수 로직 + 학생 `index.html` + 교사 `teacher.html` + `tests/` |
 | `terms/ privacy/ docs/` | 약관·개인정보·내부 문서 | |
 | `archive/` | 폐기 콘텐츠 보관 | old-math-content |
+| `audit/` + `.github/workflows/audit*.yml` | **케이점검** — 전 영역 자동 점검(규칙 r01~r20)·`/admin` 보고·승인 뒤 자동 수정 | `audit/README.md` 가 정본. 새 영역은 `audit/config.json` areas 에 한 줄 |
 
 ## kedu/ 내부
 

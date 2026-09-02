@@ -189,6 +189,31 @@ details.fold .fold-body{padding-top:18px}
 .flow p{font-size:14px;color:var(--text);line-height:1.7}
 .flow p b{font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
 .flow .hint{font-size:13px;color:var(--sub)}
+/* 케이점검 (코드·콘텐츠) */
+.au-head{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:baseline;font-size:13px;color:var(--sub);margin-bottom:12px}
+.au-head b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.au-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.au-chip{border:1px solid var(--line-strong);background:#fff;border-radius:999px;padding:3px 10px;font-size:12px;color:var(--text);cursor:pointer}
+.au-chip.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.au-chip .n{opacity:.7;margin-left:4px;font-variant-numeric:tabular-nums}
+.au-list{list-style:none;border-top:1px solid var(--line)}
+.au-list li{display:grid;grid-template-columns:auto 1fr auto;gap:10px 12px;align-items:start;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
+.au-sev{width:8px;height:8px;border-radius:50%;margin-top:6px}
+.au-sev.high{background:var(--red)}.au-sev.mid{background:var(--amber)}.au-sev.low{background:var(--faint)}
+.au-msg{color:var(--text);line-height:1.55}
+.au-msg .f{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--ink);word-break:break-all}
+.au-msg .a{color:var(--sub);margin-right:6px}
+.au-msg code{background:var(--wash);padding:0 4px;border-radius:3px;font-size:12px}
+.au-tag{display:inline-block;font-size:11px;padding:1px 6px;border-radius:3px;margin-left:6px;vertical-align:1px}
+.au-tag.fix{background:var(--green-soft);color:var(--green)}
+.au-tag.st{background:var(--wash);color:var(--sub)}
+.au-act{display:flex;gap:4px;white-space:nowrap}
+.au-act button{border:1px solid var(--line-strong);background:#fff;border-radius:4px;padding:3px 8px;font-size:12px;color:var(--text);cursor:pointer}
+.au-act button.ok{border-color:var(--green);color:var(--green)}
+.au-act button:hover{background:var(--wash)}
+.au-empty{padding:18px 0;font-size:13px;color:var(--sub)}
+.au-more{margin-top:10px;font-size:13px}
+@media(max-width:640px){.au-list li{grid-template-columns:auto 1fr}.au-act{grid-column:2}}
 /* 점검 */
 .checks{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;font-size:14px}
 .checks li{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line)}
@@ -428,6 +453,16 @@ details.fold .fold-body{padding-top:18px}
       </div>
     </details>
 
+    <details class="fold" open>
+      <summary>케이점검<span class="aside" id="au-aside">코드·콘텐츠 자동 점검</span></summary>
+      <div class="fold-body">
+        <div class="au-head" id="au-head"><span>불러오는 중</span></div>
+        <div class="au-chips" id="au-chips"></div>
+        <ul class="au-list" id="au-list"></ul>
+        <div class="au-more" id="au-more"></div>
+      </div>
+    </details>
+
     <details class="fold">
       <summary>점검<span class="aside">DB 적용 상태</span></summary>
       <div class="fold-body">
@@ -526,6 +561,92 @@ async function loadOverview(){
   ].join('');
 }
 
+// =============================================================
+// 케이점검 — GitHub Actions(audit.yml) 가 올린 admin_audit_* (sql/setup_admin_audit.sql #37)
+//   승인 = 자동 수정 가능하면 audit-fix.yml 이 고쳐 커밋(2시간 주기) · 아니면 「내가 할 일」로 남음
+//   무시 = 다시 검출돼도 안 보임 · 되돌리기 = open
+// =============================================================
+const AU = { runs: null, items: [], area: '전체', status: 'open', limit: 60 };
+const AU_SEV = { high: '🔴', mid: '🟠', low: '🟡' };
+const AU_ST = { open: '확인 대기', approved: '승인됨', ignored: '무시', applied: '고침', resolved: '사라짐' };
+const auMsg = m => esc(m).replace(/`([^`]+)`/g, '<code>$1</code>');
+
+async function loadAudit(){
+  const head = document.getElementById('au-head'), list = document.getElementById('au-list');
+  const { data: runs, error } = await db.from('admin_audit_runs').select('*').order('id', { ascending: false }).limit(1);
+  if(error){
+    head.innerHTML = '<span class="ok">아직 점검 장부가 없어요 — <b>sql/setup_admin_audit.sql(#37)</b> 을 Supabase 에서 실행하고, GitHub Secrets 에 <b>SUPABASE_SERVICE_KEY</b> 를 넣으면 다음 새벽부터 여기가 채워져요.</span>';
+    list.innerHTML = ''; return;
+  }
+  if(!runs || !runs.length){
+    head.innerHTML = '아직 점검 기록이 없어요. GitHub → Actions → <b>케이점검</b> → Run workflow 로 처음 한 번 돌리면 채워져요 (그 뒤엔 매일 새벽 3시 + 푸시 때마다 자동).';
+    list.innerHTML = ''; return;
+  }
+  AU.run = runs[0];
+  const { data: items } = await db.from('admin_audit_findings').select('fingerprint,rule,area,severity,file,line,msg,fixable,status,note,first_seen,last_seen,applied_commit')
+    .in('status', ['open','approved','ignored','applied']).order('last_seen', { ascending: false }).limit(2000);
+  AU.items = items || [];
+  renderAudit();
+}
+
+function renderAudit(){
+  const r = AU.run, head = document.getElementById('au-head');
+  const open = AU.items.filter(i => i.status === 'open');
+  const cnt = s => open.filter(i => i.severity === s).length;
+  head.innerHTML = `<span>마지막 점검 <b>${REL(r.ran_at)}</b> · 커밋 <span class="mono">${esc(r.commit || '')}</span> · 파일 <b>${r.files_scanned}</b>개</span>
+    <span>확인 대기 🔴 <b>${cnt('high')}</b> 🟠 <b>${cnt('mid')}</b> 🟡 <b>${cnt('low')}</b></span>
+    <span>승인됨 <b>${AU.items.filter(i => i.status === 'approved').length}</b> · 고침 <b>${AU.items.filter(i => i.status === 'applied').length}</b> · 무시 <b>${AU.items.filter(i => i.status === 'ignored').length}</b></span>`;
+  document.getElementById('au-aside').textContent = open.length ? `확인 대기 ${open.length}건` : '확인 대기 없음';
+
+  // 칩: 상태 → 영역
+  const pool = AU.items.filter(i => i.status === AU.status);
+  const areas = {}; pool.forEach(i => areas[i.area] = (areas[i.area] || 0) + 1);
+  const areaList = Object.entries(areas).sort((a, b) => b[1] - a[1]);
+  if(AU.area !== '전체' && !areas[AU.area]) AU.area = '전체';
+  document.getElementById('au-chips').innerHTML =
+    ['open','approved','applied','ignored'].map(s => `<button class="au-chip ${AU.status === s ? 'on' : ''}" onclick="auSet('status','${s}')">${AU_ST[s]}<span class="n">${AU.items.filter(i => i.status === s).length}</span></button>`).join('')
+    + '<span style="width:100%"></span>'
+    + `<button class="au-chip ${AU.area === '전체' ? 'on' : ''}" onclick="auSet('area','전체')">전체<span class="n">${pool.length}</span></button>`
+    + areaList.map(([a, n]) => `<button class="au-chip ${AU.area === a ? 'on' : ''}" onclick="auSet('area','${esc(a)}')">${esc(a)}<span class="n">${n}</span></button>`).join('');
+
+  const order = { high: 0, mid: 1, low: 2 };
+  const rows = pool.filter(i => AU.area === '전체' || i.area === AU.area).sort((a, b) => order[a.severity] - order[b.severity] || a.area.localeCompare(b.area) || (a.file || '').localeCompare(b.file || ''));
+  const list = document.getElementById('au-list');
+  if(!rows.length){ list.innerHTML = `<li class="au-empty">${AU.status === 'open' ? '확인할 게 없어요. 깨끗해요.' : '해당 항목이 없어요.'}</li>`; document.getElementById('au-more').innerHTML = ''; return; }
+  const shown = rows.slice(0, AU.limit);
+  list.innerHTML = shown.map(i => {
+    const act = AU.status === 'open'
+      ? `<button class="ok" onclick="auDecide('${i.fingerprint}','approved')">${i.fixable ? '승인·자동수정' : '승인(내가 할 일)'}</button><button onclick="auDecide('${i.fingerprint}','ignored')">무시</button>`
+      : `<button onclick="auDecide('${i.fingerprint}','open')">되돌리기</button>`;
+    return `<li><span class="au-sev ${i.severity}" title="${i.severity}"></span>
+      <div class="au-msg"><span class="a">[${esc(i.area)}]</span>${i.file ? `<span class="f">${esc(i.file)}${i.line ? ':' + i.line : ''}</span><br>` : ''}${auMsg(i.msg)}
+        ${i.fixable ? '<span class="au-tag fix">자동 수정 가능</span>' : ''}<span class="au-tag st">${esc(i.rule)} · 처음 ${REL(i.first_seen)}</span>
+        ${i.applied_commit ? `<span class="au-tag st">커밋 ${esc(i.applied_commit)}</span>` : ''}${i.note ? `<div class="hint">${esc(i.note)}</div>` : ''}</div>
+      <div class="au-act">${act}</div></li>`;
+  }).join('');
+  const more = document.getElementById('au-more');
+  more.innerHTML = rows.length > AU.limit ? `<a href="#" onclick="AU.limit+=100;renderAudit();return false">${rows.length - AU.limit}건 더 보기</a>` : '';
+  if(AU.status === 'open' && rows.length > 1) more.innerHTML += ` <span class="hint">· 이 목록 전부 <a href="#" onclick="auDecideAll('ignored');return false">무시</a> / 자동 수정 가능한 것 전부 <a href="#" onclick="auDecideAll('approved');return false">승인</a></span>`;
+}
+
+function auSet(k, v){ AU[k] = v; if(k === 'status') AU.area = '전체'; AU.limit = 60; renderAudit(); }
+
+async function auDecide(fp, status){
+  const { error } = await db.rpc('admin_audit_decide', { p_fingerprint: fp, p_status: status });
+  if(error){ showToast('상태를 바꾸지 못했어요: ' + error.message); return; }
+  const it = AU.items.find(i => i.fingerprint === fp); if(it){ it.status = status; }
+  showToast(status === 'approved' ? (it && it.fixable ? '승인 — 다음 수정 주기(2시간 안)에 자동으로 고쳐 커밋돼요' : '승인 — 「승인됨」 탭에 내가 할 일로 남아요') : status === 'ignored' ? '무시했어요 — 다시 검출돼도 안 보여요' : '되돌렸어요');
+  renderAudit();
+}
+async function auDecideAll(status){
+  const pool = AU.items.filter(i => i.status === 'open' && (AU.area === '전체' || i.area === AU.area) && (status !== 'approved' || i.fixable));
+  if(!pool.length){ showToast('해당 항목이 없어요'); return; }
+  if(!confirm(`${pool.length}건을 ${status === 'approved' ? '승인' : '무시'}할까요?`)) return;
+  const { data, error } = await db.rpc('admin_audit_decide_many', { p_fingerprints: pool.map(i => i.fingerprint), p_status: status });
+  if(error){ showToast('실패: ' + error.message); return; }
+  pool.forEach(i => i.status = status); showToast(`${data}건 처리`); renderAudit();
+}
+
 // =============================================
 // 로그인
 // =============================================
@@ -597,6 +718,7 @@ async function initDashboard(){
   // 병렬 로드
   await Promise.all([
     loadOverview(),
+    loadAudit(),
     loadStats(),
     loadChart(7),
     loadPopularPages(),

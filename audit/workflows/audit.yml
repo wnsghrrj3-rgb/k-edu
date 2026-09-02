@@ -1,0 +1,61 @@
+name: 케이점검
+
+# 매일 새벽 3시(KST) + main 푸시 + 손으로. 결과는 Supabase(admin_audit_*)로 올라가 /admin 「점검」에 뜬다.
+on:
+  schedule:
+    - cron: '0 18 * * *'        # 18:00 UTC = 03:00 KST
+  push:
+    branches: [main]
+    paths-ignore: ['audit/out/**']
+  workflow_dispatch:
+
+concurrency:
+  group: kedu-audit
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: 소스 받기
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2          # r20(AI 검토)이 직전 커밋과의 차이를 본다
+
+      - name: Node 준비
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: 의존성(jsdom 등)
+        run: npm ci --no-audit --no-fund --ignore-scripts
+
+      - name: 점검 실행
+        id: run
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}   # 없으면 r20 은 조용히 건너뜀
+        run: |
+          node audit/inspector.js || true
+          echo "high=$(node -p "require('./audit/out/report.json').totals.high")" >> "$GITHUB_OUTPUT"
+
+      - name: 요약
+        if: always()
+        run: cat audit/out/report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Supabase 로 올리기
+        if: always()
+        env:
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_SERVICE_KEY" ]; then echo "::warning::SUPABASE_SERVICE_KEY 시크릿이 없어 관리 화면에 올리지 못함 (요약·아티팩트만)"; exit 0; fi
+          node audit/upload.js
+
+      - name: 결과 묶기
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: 케이점검-보고
+          path: audit/out/
+          retention-days: 30
