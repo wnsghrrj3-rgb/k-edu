@@ -1,5 +1,6 @@
 // =============================================
-// K-edu 학습 추적 + 인증 가드 (kedu_tracker.js v2.3 — 2026-08-31)
+// K-edu 학습 추적 + 인증 가드 (kedu_tracker.js v2.4 — 2026-09-02)
+// v2.4: 진단 창구 kedu.debug() — 조용히 삼키던 초기화 실패를 step/err 로 남긴다
 // v2.3: 케이학습지 합류 — window.KEDU_LESSON_ID/UNIT, setLessonId(),
 //       recordAnswer 개념 코드(concept_code)·오개념(misconception_code) 기록
 //       — 열 이름은 케이학습지 원장(sql/setup_worksheet_bank.sql)과 같은 것을 쓴다
@@ -40,8 +41,16 @@
     profile: null,         // student_profiles row (없으면 null = 추적 X)
     lessonId: null,
     unitId: null,          // 기본 location.pathname. window.KEDU_LESSON_UNIT 로 덮어씀
-    pageStartTs: null
+    pageStartTs: null,
+    step: 'created',       // v2.4 진단 — 초기화가 어디까지 갔나
+    err: null              // v2.4 진단 — 삼켜지던 오류를 여기 남긴다
   };
+
+  // v2.4 — 초기화 단계 표시. 조용한 실패를 kedu.debug() 로 볼 수 있게 한다.
+  function mark(step, err){
+    state.step = step;
+    if(err) state.err = (err && err.message) ? err.message : String(err);
+  }
 
   function init(){
     if(typeof window.supabase === 'undefined' ||
@@ -52,6 +61,7 @@
 
     try {
       state.client = getKeduDb();
+      mark('client');
       var path = location.pathname;
 
       // --- 방문 집계 (익명, 개인식별 없음) ---
@@ -80,14 +90,17 @@
       if(SKIP.test(path)) return;
 
       // 로그인 여부 확인. 무로그인 = 저장 X.
+      mark('getSession');
       state.client.auth.getSession().then(function(result){
         state.session = result.data.session || null;
-        if(!state.session) return;        // 무로그인 → 추적 X (적합성)
+        if(!state.session){ mark('no-session'); return; }   // 무로그인 → 추적 X (적합성)
+        mark('session-ok');
         loadProfileAndStart(path);
-      });
+      }, function(e){ mark('getSession-failed', e); });
 
     } catch(e){
-      // 추적 실패해도 페이지 동작 영향 없음
+      // 추적 실패해도 페이지 동작 영향 없음 — 다만 v2.4부터 흔적은 남긴다
+      mark('init-threw', e);
     }
   }
 
@@ -129,11 +142,11 @@
       .eq('user_id', state.session.user.id)
       .maybeSingle()
       .then(function(res){
-        if(!res || !res.data || !res.data.class_code_id) {
-          // 학급코드 미매핑 = 추적 X (교사·학부모·미가입학생)
-          return;
-        }
+        if(res && res.error) { mark('profile-error', res.error); return; }
+        if(!res || !res.data) { mark('profile-none'); return; }
+        if(!res.data.class_code_id) { mark('profile-no-class'); return; }
         state.profile = res.data;
+        mark('tracking');
 
         // last_seen_at 갱신
         state.client.from('student_profiles')
@@ -144,7 +157,7 @@
         // 차시 시작 기록
         startLesson(path);
       })
-      .catch(function(){ /* silent */ });
+      .catch(function(e){ mark('profile-threw', e); });
   }
 
   function resolveLessonId(path){
@@ -314,6 +327,24 @@
     return !!state.profile;
   };
 
+  /**
+   * v2.4 — 왜 기록이 안 되는지 한 줄로 보는 창구.
+   * step 이 'tracking' 이 아니면 그 값이 멈춘 지점이다.
+   *   no-session / profile-none / profile-no-class / profile-error / init-threw ...
+   */
+  window.kedu.debug = function(){
+    return {
+      version:    '2.4',
+      step:       state.step,
+      err:        state.err,
+      hasSession: !!state.session,
+      studentId:  state.profile ? state.profile.id : null,
+      lessonId:   state.lessonId,
+      unitId:     state.unitId,
+      autowired:  window.kedu.autowired || null
+    };
+  };
+
   // ============================================
   // 엔진 자동 배선 (v2.1, 2026-08-31) — 케이학습리포트 재료
   //   차시 페이지가 recordAnswer/recordLessonEnd 를 직접 부르지 않아도,
@@ -470,3 +501,4 @@
     init(); autowire();
   }
 })();
+
