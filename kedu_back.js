@@ -41,6 +41,25 @@
   try { fromTeacher = sessionStorage.getItem(KEY) === '1'; } catch (e) {}
 
   /* ============================================================
+     0.5) 케이박스 맥락 (2026-09-02) — 학생이 받은 박스에서 「▶ 열기」로 들어온 화면
+     주소에 cwb(박스)·cwi(항목)가 있으면 이 화면은 박스 과제다.
+     · 좌상단 나가기 = 「📦 박스로 돌아가기」 (허브가 아니라 받은 박스로)
+     · 하단에 「✓ 다 했어요」 띠 — 누르면 받은 박스로 돌아가 그 항목의 제출 칸이 열린다.
+       (제출 자체는 inbox 에서 학생이 「제출하기」를 눌러 확정 — 여기서 몰래 제출하지 않는다.
+        자동 채점 도구(케이퀴즈·활동)는 어댑터가 봉투를 이미 보냈으므로 돌아가면 점수가 보인다.)
+     ============================================================ */
+  var KBOX = null;
+  try {
+    var kq = new URLSearchParams(location.search);
+    var kcwb = kq.get('cwb'), kcwi = kq.get('cwi');
+    if (kcwb && kcwi && /^[0-9a-f-]{36}$/i.test(kcwb) && /^[0-9a-f-]{36}$/i.test(kcwi)) {
+      KBOX = { cwb: kcwb, cwi: kcwi,
+               back: '/classwork/inbox.html?box=' + encodeURIComponent(kcwb),
+               done: '/classwork/inbox.html?box=' + encodeURIComponent(kcwb) + '&done=' + encodeURIComponent(kcwi) };
+    }
+  } catch (e) {}
+
+  /* ============================================================
      1.5) 돌아갈 곳 판정 v2 (2026-08-27 · 동선 점검 트랙)
      v1 은 발자국(트레일)만 믿었다 → 발자국을 안 찍는 페이지가 끼면 한 층 건너뛰고,
      새 탭이면 발자국이 없어 홈으로 떨어지고, 옆 차시로 넘어가면 형제 차시로 나갔다.
@@ -202,7 +221,7 @@
   var dest = resolveBack();
   var atHome = pathOnly(dest) === '/' || pathOnly(dest) === '/index.html';
 
-  function goBack() {
+  var goBack = function () {
     var t = readTrail(), target = resolveBack();
     var cut = -1;
     for (var i = t.length - 1; i >= 0; i--) if (t[i] === target) { cut = i; break; }
@@ -210,7 +229,7 @@
     writeTrail(t);
     try { sessionStorage.setItem(BACKFLAG, '1'); } catch (e) {}
     location.href = target;
-  }
+  };
 
   /* 지정한 곳으로 나가기 (2026-08-31) — 자체 내비를 가진 도구가 「선생님 도구」·「케이에듀 홈」
      처럼 목적지를 직접 고를 때 쓴다. location.href 로 그냥 튀면 발자국이 아래로 더 쌓여
@@ -227,13 +246,42 @@
   var label = atHome ? '🏠 케이에듀로 가기' : (pathOnly(dest) === '/teacher/index.html' ? '← 선생님 도구' : '← 나가기');
   var href  = dest;
   var prev  = atHome ? null : dest;   /* 아래 겹침·문구 규칙이 쓰는 「한 층 위가 있는가」 표시 */
+  if (KBOX) { label = '📦 박스로 돌아가기'; href = KBOX.back; prev = KBOX.back; atHome = false;
+              goBack = function () { goTo(KBOX.back); }; }
 
   var script = document.currentScript ||
     (function () { var s = document.getElementsByTagName('script'); return s[s.length - 1]; })();
   var mode  = script && script.getAttribute('data-mode');
   var mount = script && script.getAttribute('data-mount');
 
-  window.KEDU_BACK = { el: null, label: label, href: href, fromTeacher: fromTeacher, role: role, go: goBack, goTo: goTo };
+  window.KEDU_BACK = { el: null, label: label, href: href, fromTeacher: fromTeacher, role: role, go: goBack, goTo: goTo, kbox: KBOX };
+  /* 2-0) 케이박스 「다 했어요」 띠 — 어떤 도구 화면이든(자체 버튼이 있어도) 하단에 한 줄 */
+  function buildKboxBar() {
+    if (!KBOX || document.getElementById('kedu-kbox-bar')) return;
+    if (!document.getElementById('kedu-kbox-style')) {
+      var kst = document.createElement('style'); kst.id = 'kedu-kbox-style';
+      kst.textContent = ''
+        + '#kedu-kbox-bar{position:fixed;left:0;right:0;bottom:0;z-index:2147483000;display:flex;gap:8px;'
+        + 'justify-content:flex-end;align-items:center;padding:8px 10px calc(8px + env(safe-area-inset-bottom,0));'
+        + 'pointer-events:none;font-family:inherit}'
+        + '#kedu-kbox-bar a{pointer-events:auto;display:inline-flex;align-items:center;gap:6px;padding:11px 16px;'
+        + 'border-radius:14px;font-weight:800;font-size:14.5px;line-height:1;text-decoration:none;white-space:nowrap;'
+        + 'box-shadow:0 3px 12px rgba(0,0,0,.25);font-family:inherit}'
+        + '#kedu-kbox-bar .kb-box{background:#fff;color:#1a2540}'
+        + '#kedu-kbox-bar .kb-done{background:#22A06B;color:#fff}'
+        + '@media(max-width:480px){#kedu-kbox-bar a{padding:12px 14px;font-size:14px}}';
+      document.head.appendChild(kst);
+    }
+    var bar = document.createElement('div'); bar.id = 'kedu-kbox-bar';
+    var a1 = document.createElement('a'); a1.className = 'kb-box'; a1.href = KBOX.back; a1.textContent = '📦 박스로';
+    a1.onclick = function (e) { e.preventDefault(); goTo(KBOX.back); };
+    var a2 = document.createElement('a'); a2.className = 'kb-done'; a2.href = KBOX.done; a2.textContent = '✓ 다 했어요';
+    a2.onclick = function (e) { e.preventDefault(); goTo(KBOX.done); };
+    bar.appendChild(a1); bar.appendChild(a2);
+    document.body.appendChild(bar);
+  }
+  if (KBOX) { if (document.body) buildKboxBar(); else document.addEventListener('DOMContentLoaded', buildKboxBar); }
+
   if (mode === 'context') return; /* 버튼 없이 맥락만 제공 (케이뮤지엄·케이메이크처럼 자체 버튼이 있는 화면) */
 
   /* 2) 공용 스타일 (1회 주입) */

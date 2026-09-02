@@ -170,6 +170,13 @@ function kquizSeed(itemId, profileId){
   return (h>>>0);
 }
 // 케이퀴즈 항목 열기 URL — cwb/cwi 딥링크 + (seed 없으면) per-student seed 부여
+function boxOpenUrl(it){
+  if(!it.url) return '';
+  if(/^https?:\/\//i.test(it.url) && it.url.indexOf(location.origin)!==0) return it.url;   // 바깥 링크는 그대로
+  if(/[?&]cwb=/.test(it.url)) return it.url;
+  var sep = it.url.indexOf('?')>=0 ? '&' : '?';
+  return it.url + sep + 'cwb=' + encodeURIComponent(current.bundle.id) + '&cwi=' + encodeURIComponent(it.id);
+}
 function quizOpenUrl(it){
   if(!it.url) return '';
   var sep = it.url.indexOf('?')>=0 ? '&' : '?';
@@ -197,6 +204,7 @@ let current = null;     // 열어본 박스 상세
   await loadInbox();
   document.getElementById('loading').style.display = 'none';
   document.getElementById('wrap').style.display = 'block';
+  openFromQuery();
 })();
 
 function showGate(){
@@ -237,7 +245,7 @@ function renderList(){
   }).join('');
 }
 
-async function openBox(id){
+async function openBox(id, doneItemId){
   let data;
   try { ({ data } = await db.rpc('cw_open_bundle', { p_bundle_id:id })); } catch(e){ return toast('박스를 여는 데 실패했어요'); }
   if(!data || data.status!=='ok'){ return toast('박스를 찾을 수 없어요'); }
@@ -248,6 +256,23 @@ async function openBox(id){
   document.getElementById('s-list').classList.remove('on');
   document.getElementById('s-detail').classList.add('on');
   window.scrollTo(0,0);
+  // 도구 화면의 「✓ 다 했어요」로 돌아온 경우 — 그 항목의 제출 칸을 펼쳐 준다 (제출 확정은 학생이 「제출하기」)
+  if(doneItemId){
+    const idx = current.items.findIndex(x=> x.id===doneItemId);
+    if(idx>=0){
+      const it = current.items[idx];
+      if(it.kind==='quiz' || it.submitted){ toast(it.kind==='quiz' ? '점수가 올라왔어요 ⭐' : '이미 제출한 활동이에요 — 다시 제출할 수도 있어요'); }
+      else { setTimeout(()=>{ const b=document.getElementById('sb-'+idx); if(b && !b.classList.contains('on')) toggleSubmit(idx); const t=document.getElementById('sb-'+idx); t && t.scrollIntoView({behavior:'smooth',block:'center'}); }, 80); }
+    }
+  }
+}
+// 진입 주소 ?box=<bundle>&done=<item> — 도구 화면 하단 띠에서 돌아올 때
+function openFromQuery(){
+  try {
+    const q = new URLSearchParams(location.search);
+    const box = q.get('box'), done = q.get('done');
+    if(box){ history.replaceState(null, '', location.pathname); openBox(box, done||null); }
+  } catch(e){}
 }
 function backToList(){
   document.getElementById('s-detail').classList.remove('on');
@@ -260,9 +285,10 @@ function renderTasks(){
   wrap.innerHTML = current.items.map((it,idx)=>{
     const k = KINDS[it.kind] || KINDS.link;
     const isQuiz = it.kind==='quiz';
-    const openHref = isQuiz ? quizOpenUrl(it) : it.url;
+    // 모든 항목에 cwb/cwi 를 실어 같은 탭에서 연다 — 도구 화면의 kedu_back.js 가 「📦 박스로 돌아가기」·「✓ 다 했어요」 띠를 그린다 (2026-09-02)
+    const openHref = isQuiz ? quizOpenUrl(it) : boxOpenUrl(it);
     const openLabel = isQuiz ? (it.submitted?'▶ 다시 풀기':'▶ 문제 풀기') : '▶ 열기';
-    const open = openHref ? `<a class="t-btn t-open" href="${esc(openHref)}" target="_blank" rel="noopener">${openLabel}</a>` : '';
+    const open = openHref ? `<a class="t-btn t-open" href="${esc(openHref)}">${openLabel}</a>` : '';
     let action, graded='', comment='';
     if(isQuiz){
       // 케이퀴즈: 플레이어에서 자동 채점·제출 → 수동 제출 버튼 없음. 제출되면 점수 표시.
