@@ -302,10 +302,17 @@
       }
       n.textContent = msg;
     }
+    var lastScore = null, lastMax = null, lastRes = null;
     function leave() {
       if (returned) return; returned = true;
       try { note('다 했어요! 박스로 돌아가요 🎉'); } catch (e) {}
-      setTimeout(function () { goTo(KBOX.done); }, 1300);
+      /* 점수·결과를 주소에도 실어 보낸다 — 도구 화면에서의 제출이 어떤 이유로든 안 됐을 때
+         inbox 가 같은 봉투로 한 번 더 제출한다(inbox 는 세션·RPC 가 검증된 곳). 상태도 함께 보내 원인이 보이게. */
+      var u = KBOX.done;
+      if (typeof lastScore === 'number') u += '&score=' + encodeURIComponent(lastScore);
+      if (typeof lastMax === 'number') u += '&max=' + encodeURIComponent(lastMax);
+      if (lastRes && lastRes.status) u += '&st=' + encodeURIComponent(String(lastRes.status).slice(0, 40));
+      setTimeout(function () { goTo(u); }, 1300);
     }
     var hookedEnd = false, hookedSub = false;
     function tryHook() {
@@ -315,9 +322,10 @@
         window.KBox.submit = function () {
           var r; try { r = os.apply(this, arguments); } catch (e) { r = Promise.reject(e); }
           return Promise.resolve(r).then(function (res) {
+            lastRes = res || null;
             if (res && (res.status === 'ok' || res.status === 'dup')) leave();
             return res;
-          }, function (e) { return { status: 'error', message: String(e && e.message || e) }; });
+          }, function (e) { lastRes = { status: 'error' }; return { status: 'error', message: String(e && e.message || e) }; });
         };
       }
       if (!hookedEnd && window.kedu && typeof window.kedu.recordLessonEnd === 'function') {
@@ -325,6 +333,8 @@
         var oe = window.kedu.recordLessonEnd;
         window.kedu.recordLessonEnd = function (score, total) {
           var r; try { r = oe.apply(this, arguments); } catch (e) {}
+          lastScore = (typeof score === 'number') ? score : null;
+          lastMax = (typeof total === 'number' && total > 0) ? total : null;
           var p = Promise.resolve(null);
           try {
             if (window.KBox && window.KBox.active && typeof window.KBox.submit === 'function') {
@@ -336,7 +346,7 @@
               }));
             }
           } catch (e) {}
-          p.then(leave, leave);
+          p.then(function (res) { if (res && res.status && !lastRes) lastRes = res; leave(); }, leave);
           return r;
         };
       }
