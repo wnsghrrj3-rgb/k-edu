@@ -499,6 +499,83 @@ window.KEDU_MAP["g1_2_korean"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 7,
+   "name": "무엇이 중요할까요",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g1_korean_u7_l01",
+     "lessonId": "g1_2_kor_u7_l01_02_v1",
+     "n": "1·2",
+     "title": "단원 시작 — 배울 내용 살펴보기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/7단원_무엇이중요할까요/g1_kor_u7_l01_02.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u7_l03",
+     "lessonId": "g1_2_kor_u7_l03_04_v1",
+     "n": "3·4",
+     "title": "무엇을 설명하는지 생각하며 글 읽기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/7단원_무엇이중요할까요/g1_kor_u7_l03_04.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u7_l05",
+     "lessonId": "g1_2_kor_u7_l05_06_v1",
+     "n": "5·6",
+     "title": "글을 읽고 새롭게 안 점 말하기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/7단원_무엇이중요할까요/g1_kor_u7_l05_06.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u7_l07",
+     "lessonId": "g1_2_kor_u7_l07_09_v1",
+     "n": "7·8·9",
+     "title": "겪은 일을 정리하는 방법 알기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/7단원_무엇이중요할까요/g1_kor_u7_l07_09.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u7_l10",
+     "lessonId": "g1_2_kor_u7_l10_11_v1",
+     "n": "10·11",
+     "title": "겪은 일이 잘 드러나는 글 쓰기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/7단원_무엇이중요할까요/g1_kor_u7_l10_11.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u7_l12",
+     "lessonId": "g1_2_kor_u7_l12_13_v1",
+     "n": "12·13",
+     "title": "배운 내용 실천하기 (칭찬하는 글 쓰기)",
+     "sub": null,
+     "url": "/grade1/semester2/korean/7단원_무엇이중요할까요/g1_kor_u7_l12_13.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u7_l14",
+     "lessonId": "g1_2_kor_u7_l14_15_v1",
+     "n": "14·15",
+     "title": "단원 마무리하기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/7단원_무엇이중요할까요/g1_kor_u7_l14_15.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };
