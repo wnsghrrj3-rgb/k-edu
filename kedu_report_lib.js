@@ -1,5 +1,6 @@
 // =============================================
-// 케이학습리포트 공용 라이브러리 (kedu_report_lib.js v3 — 2026-08-31)
+// 케이학습리포트 공용 라이브러리 (kedu_report_lib.js v3.1 — 2026-09-02)
+// v3.1: 학습지(ws:)·쪽지(quiz:) 기록을 차시 집계(도달 지도·단원 진도·하다 만 차시·반복 오답 차시)에서 제외 — isLessonId()
 // 명세: handoff/kedu/학습리포트_설계_v1.md
 // 교사(R1)·학생(R2)·학부모(R3) 세 화면이 같은 집계 위의 세 스킨이 되도록
 // 계산은 여기서 한 번만 짓는다 (설계 §0). 규칙 기반 — 외부 API 호출 없음.
@@ -163,6 +164,10 @@
   function fmtMD(dateStr){ return Number(dateStr.slice(5,7)) + '/' + Number(dateStr.slice(8,10)); }
   function today(){ return kstDateStr(new Date()); }
   function isSummary(r){ return r && r.question_id === '_lesson_summary_'; }
+  // 차시인가 — 학습지('ws:{set}')·쪽지('quiz:{id}')는 차시가 아니다. 차시 지도·단원 진도·다음 걸음에서 제외 (v3.1, 2026-09-02)
+  function isLessonId(id){ return !!id && !/^(ws|quiz):/.test(String(id)); }
+  // 학습지 세트 id → 과목 (g1_math_u1_L01_basic → math). 과목별 주간 집계용
+  function wsSubject(lessonId){ const m = /^(?:ws|quiz):g\d_([a-z]+)_/.exec(String(lessonId||'')); return m ? m[1] : null; }
 
   // =============================================
   // 3. 일별 시리즈 — 모든 시간 집계의 기초
@@ -176,12 +181,13 @@
       const ds = kstDateStr(r.earned_at);
       const day = days[ds]; if(!day) return;
       day.sec += Number(r.time_spent_sec)||0;
-      if(isSummary(r)){ if(r.lesson_id) day.done.add(r.lesson_id); return; }
+      const isL = isLessonId(r.lesson_id);
+      if(isSummary(r)){ if(isL) day.done.add(r.lesson_id); return; }   // 학습지 회차는 차시 완료가 아니다
       if(r.is_correct === null || r.is_correct === undefined) return;
-      day.q++; if(r.is_correct) day.ok++;
+      day.q++; if(r.is_correct) day.ok++;                              // 문항 수에는 학습지도 든다
       if(r.lesson_id){
-        day.lessons.add(r.lesson_id);
-        const subj = lesson(r.lesson_id).subject || '_';
+        if(isL) day.lessons.add(r.lesson_id);
+        const subj = (isL ? lesson(r.lesson_id).subject : wsSubject(r.lesson_id)) || '_';
         const bs = day.bySubject[subj] = day.bySubject[subj] || { q:0, ok:0 };
         bs.q++; if(r.is_correct) bs.ok++;
       }
@@ -263,7 +269,7 @@
       .sort((a,b) => (b.attempts||0) - (a.attempts||0) || new Date(b.last_wrong_at||0) - new Date(a.last_wrong_at||0));
     // 반복 오답을 차시 단위로 묶기 (문항 수·최대 반복)
     const byL = {};
-    out.repeatWrong.forEach(w => {
+    out.repeatWrong.filter(w => isLessonId(w.lesson_id)).forEach(w => {   // 학습지 반복 오답은 개념 쪽(misconceptionTop)이 맡는다
       const g = byL[w.lesson_id] = byL[w.lesson_id] || { lesson_id:w.lesson_id, questions:[], maxAttempts:0, last:null };
       g.questions.push(w); g.maxAttempts = Math.max(g.maxAttempts, w.attempts||0);
       if(!g.last || new Date(w.last_wrong_at) > new Date(g.last)) g.last = w.last_wrong_at;
@@ -285,11 +291,11 @@
   function unitProgress(scoreRows, masteryRows){
     const doneSet = new Set(), touched = new Set(), lastAt = {};
     (scoreRows || []).forEach(r => {
-      if(!r.lesson_id) return;
+      if(!isLessonId(r.lesson_id)) return;
       if(isSummary(r)) doneSet.add(r.lesson_id); else if(r.is_correct !== null && r.is_correct !== undefined) touched.add(r.lesson_id);
       const t = new Date(r.earned_at).getTime(); if(!lastAt[r.lesson_id] || t > lastAt[r.lesson_id]) lastAt[r.lesson_id] = t;
     });
-    const mastery = {}; (masteryRows || []).forEach(m => { mastery[m.lesson_id] = m; touched.add(m.lesson_id); const t = new Date(m.last_attempt_at||0).getTime(); if(!lastAt[m.lesson_id]||t>lastAt[m.lesson_id]) lastAt[m.lesson_id]=t; });
+    const mastery = {}; (masteryRows || []).forEach(m => { if(!isLessonId(m.lesson_id)) return; mastery[m.lesson_id] = m; touched.add(m.lesson_id); const t = new Date(m.last_attempt_at||0).getTime(); if(!lastAt[m.lesson_id]||t>lastAt[m.lesson_id]) lastAt[m.lesson_id]=t; });
     const all = new Set([...doneSet, ...touched]);
     const units = {};
     all.forEach(lid => {
@@ -459,7 +465,7 @@
       const ended = new Set(); const started = {};
       (scoreRows || []).forEach(r => { if(isSummary(r) && r.lesson_id) ended.add(r.lesson_id); });
       (scoreRows || []).forEach(r => {
-        if(!isSummary(r) && r.lesson_id && !ended.has(r.lesson_id)){
+        if(!isSummary(r) && isLessonId(r.lesson_id) && !ended.has(r.lesson_id)){
           const t = new Date(r.earned_at).getTime();
           if(!started[r.lesson_id] || t > started[r.lesson_id].t) started[r.lesson_id] = { t, unitId:r.unit_id };
         }
@@ -489,7 +495,7 @@
     classify, unitProgress, nextSteps,
     // 개념 (v3 — 케이학습지 합류)
     loadConcepts, concept, misconception, conceptMap, misconceptionTop,
-    wsSetId, wsUrl, wsLabel,
+    wsSetId, wsUrl, wsLabel, isLessonId, wsSubject,
     WATCHING_NOTE, STATUS_KO, SUBJECT_KO, SUBJECT_ORDER
   };
 })();

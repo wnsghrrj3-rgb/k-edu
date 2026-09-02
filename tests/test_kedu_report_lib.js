@@ -54,8 +54,26 @@ const KR = win.KeduReport;
 
   // ── ② 폴백 ─────────────────────────────────────────────
   // 지도 밖 = 아직 안 지은 차시(track soon — 파일이 없어 lessonId 도 없음)
-  const fb = KR.lesson('g6_social_u2_l03_v1');
-  ok(!fb.mapped && fb.label === '사회 2단원 · 3차시', '지도 밖 폴백 라벨 ' + fb.label);
+  // (g6 사회 2단원 l03 은 09-02 사회 양산으로 지도에 들어와 폴백 사례를 존재하지 않는 단원으로 교체)
+  const fb = KR.lesson('g6_social_u9_l03_v1');
+  ok(!fb.mapped && fb.label === '사회 9단원 · 3차시', '지도 밖 폴백 라벨 ' + fb.label);
+
+  // v3.1 — 학습지·쪽지는 차시가 아니다
+  ok(KR.isLessonId('g1_math_u1_l02-03_v1') && !KR.isLessonId('ws:g1_math_u1_L01_basic') && !KR.isLessonId('quiz:abc') && !KR.isLessonId(null), 'isLessonId 판별');
+  ok(KR.wsSubject('ws:g1_math_u1_L01_basic') === 'math' && KR.wsSubject('g1_math_u1_l02-03_v1') === null, 'wsSubject 해석');
+  { const rows = [
+      { lesson_id:'ws:g1_math_u1_L01_basic', unit_id:'/kedu/worksheet/play.html', question_id:'q1', is_correct:true, earned_at:'2026-09-02T02:00:00Z' },
+      { lesson_id:'ws:g1_math_u1_L01_basic', unit_id:'/kedu/worksheet/play.html', question_id:'_lesson_summary_', is_correct:null, earned_at:'2026-09-02T02:05:00Z' },
+      { lesson_id:'g1_math_u1_l02-03_v1', unit_id:'/grade1/semester1/math/x', question_id:'q1', is_correct:true, earned_at:'2026-09-02T03:00:00Z' } ];
+    const up = KR.unitProgress(rows, []);
+    ok(!JSON.stringify(up).includes('ws:'), '단원 진도에 학습지 세트가 안 섞임');
+    const ds = KR.dailySeries(rows, [], '2026-09-01', '2026-09-03');
+    const d = ds['2026-09-02'];
+    ok(d.q === 2 && d.lessons.size === 1 && d.done.size === 0 && (d.bySubject.math||{}).q === 2, '일별: 학습지 문항은 세되 차시로는 안 잡힘 ' + JSON.stringify({q:d.q,l:d.lessons.size,done:d.done.size}));
+    const ns = KR.nextSteps({ repeatWrongLessons:[], weak:[] }, [], rows, up, 4);
+    ok(!JSON.stringify(ns).includes('ws:'), '다음 걸음의 「하다 만 차시」에 학습지 없음');
+    const cls = KR.classify([], [{ lesson_id:'ws:g1_math_u1_L01_basic', question_id:'q2', attempts:3, resolved_at:null, last_wrong_at:'2026-09-02T02:00:00Z' }]);
+    ok(cls.repeatWrong.length === 1 && cls.repeatWrongLessons.length === 0, '학습지 반복 오답은 차시 묶음에서 제외(개념 쪽으로)'); }
   // g6 국어·사회는 2026-08-31 지도 합류 — 전에는 위 폴백으로 떨어지던 24차시
   const g6s = KR.lesson('g6_social_u1_l03_v1');
   ok(g6s.mapped && g6s.unitName === '평화 통일을 위한 노력, 민주화와 산업화', 'g6 사회 해석 ' + g6s.label);

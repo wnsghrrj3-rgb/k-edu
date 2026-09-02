@@ -390,7 +390,8 @@ function renderClass(){
     .sort((a,b)=>b.n-a.n || b.weak-a.weak).slice(0,3);
 
   // ---- 도달 지도 — 학급이 손댄 차시(단원 순) × 학생 ----
-  const touched = new Set(); C.mastery.forEach(m => touched.add(m.lesson_id)); C.scores.forEach(r => { if(r.lesson_id) touched.add(r.lesson_id); });
+  // 학습지('ws:')·쪽지('quiz:')는 차시가 아니다 — 개념 도달 지도가 맡는다 (2026-09-02 실데이터에서 ws: 열이 끼어드는 것 확인·교정)
+  const touched = new Set(); C.mastery.forEach(m => { if(KR.isLessonId(m.lesson_id)) touched.add(m.lesson_id); }); C.scores.forEach(r => { if(KR.isLessonId(r.lesson_id)) touched.add(r.lesson_id); });
   const subjects = {}; [...touched].forEach(l => { const s = KR.lesson(l).subject||'_'; subjects[s]=(subjects[s]||0)+1; });
   const subjKeys = Object.keys(subjects).sort((a,b)=>(KR.SUBJECT_ORDER[a]||9)-(KR.SUBJECT_ORDER[b]||9));
   if(C.subject !== 'all' && !subjects[C.subject]) C.subject = 'all';
