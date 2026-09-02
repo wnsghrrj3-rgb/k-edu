@@ -177,9 +177,9 @@ footer strong{color:#718096;font-weight:500}
       </div>
       <div class="form-group">
         <label>이메일</label>
-        <input type="email" id="signup-email" placeholder="example@email.com" autocomplete="email">
+        <input type="email" id="signup-email" placeholder="이름@sen.go.kr" autocomplete="email">
         <div id="edu-mail-hint" style="margin-top:6px;font-size:12px;color:#3b82f6;line-height:1.5">
-          가입 후 교사 대시보드에서 <b>학교명·직위</b>를 적어 신청하면 관리자가 확인한 뒤 열어드려요. 교육청 메일(@sen.go.kr 등)로 가입하면 확인이 빨라요.
+          교사는 <b>교육청 메일</b>(@sen.go.kr · @goe.go.kr 등 시·도교육청 주소)로만 가입할 수 있습니다. 가입 후 교사 대시보드에서 학교·직위를 확인해 열어드립니다.
         </div>
       </div>
       <div class="form-group">
@@ -313,6 +313,29 @@ function switchTab(tab){
 // =============================================
 // 역할 선택
 // =============================================
+// 교육청 메일 강제 (2026-09-03 준호 결정 — 교사는 교육청 메일로만 가입)
+//   정본 = edu_offices.domain(setup_schools.sql, anon 읽기 허용). 못 읽으면 내장 17개로.
+//   규칙 = 정확 일치 또는 하위 도메인(a.sen.go.kr). #23 kedu_email_is_edu 와 같은 판정.
+const EDU_DOMAINS_FALLBACK = ['sen.go.kr','pen.go.kr','dge.go.kr','ice.go.kr','gen.go.kr','dje.go.kr','use.go.kr','goe.go.kr',
+  'gwe.go.kr','cbe.go.kr','cne.go.kr','jbe.go.kr','jne.go.kr','gbe.kr','gne.go.kr','jje.go.kr','sje.go.kr'];
+let _eduDomains = null;
+async function eduDomains(){
+  if(_eduDomains) return _eduDomains;
+  try{
+    const { data } = await db.from('edu_offices').select('domain');
+    const list = (data||[]).map(r => String(r.domain||'').toLowerCase()).filter(Boolean);
+    _eduDomains = list.length ? list : EDU_DOMAINS_FALLBACK;
+  }catch(_){ _eduDomains = EDU_DOMAINS_FALLBACK; }
+  return _eduDomains;
+}
+function isEduEmail(email, domains){
+  const at = String(email||'').toLowerCase().split('@');
+  if(at.length !== 2 || !at[0] || !at[1]) return false;
+  const d = at[1];
+  return (domains||EDU_DOMAINS_FALLBACK).some(x => d === x || d.endsWith('.' + x));
+}
+window.isEduEmail = isEduEmail;
+
 function pickRole(role){
   // 처리방침 v2.1 제2조 3 정합: 학생 셀프 가입 차단 — 'teacher' 또는 'parent'만 허용
   if(role !== 'teacher' && role !== 'parent') return;
@@ -328,6 +351,8 @@ function pickRole(role){
   document.getElementById('group-teacher-code').style.display = isTeacher ? 'block' : 'none';
   const hint = document.getElementById('edu-mail-hint');
   if(hint) hint.style.display = isTeacher ? 'block' : 'none';
+  const em = document.getElementById('signup-email');
+  if(em) em.placeholder = isTeacher ? '이름@sen.go.kr' : 'example@email.com';
 }
 
 
@@ -511,6 +536,10 @@ async function doSignup(){
   }
 
   if(selectedRole === 'teacher'){
+    if(!isEduEmail(email, await eduDomains())){
+      showMsg('signup-msg','교사는 교육청 메일(@sen.go.kr · @goe.go.kr 등)로만 가입할 수 있습니다. 학교에서 쓰는 교육청 계정 주소로 가입해 주세요.','error');
+      return;
+    }
     const tName = document.getElementById('signup-teacher-name').value.trim();
     if(!tName){ showMsg('signup-msg','이름을 입력해주세요.','error'); return; }
     const sid = document.getElementById('signup-teacher-school-id').value;
