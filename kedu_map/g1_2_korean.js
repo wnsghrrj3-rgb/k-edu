@@ -335,6 +335,83 @@ window.KEDU_MAP["g1_2_korean"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 5,
+   "name": "생각을 키워요",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g1_korean_u5_l01",
+     "lessonId": "g1_2_kor_u5_l01_02_v1",
+     "n": "1·2",
+     "title": "단원 시작 — 배울 내용 살펴보기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/5단원_생각을키워요/g1_kor_u5_l01_02.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u5_l03",
+     "lessonId": "g1_2_kor_u5_l03_v1",
+     "n": "3",
+     "title": "한글을 소중히 여기기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/5단원_생각을키워요/g1_kor_u5_l03.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u5_l04",
+     "lessonId": "g1_2_kor_u5_l04_05_v1",
+     "n": "4·5",
+     "title": "글자에 관심 가지기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/5단원_생각을키워요/g1_kor_u5_l04_05.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u5_l06",
+     "lessonId": "g1_2_kor_u5_l06_07_v1",
+     "n": "6·7",
+     "title": "책에 흥미 가지기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/5단원_생각을키워요/g1_kor_u5_l06_07.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u5_l08",
+     "lessonId": "g1_2_kor_u5_l08_09_v1",
+     "n": "8·9",
+     "title": "글을 읽고 생각이나 느낌 나누기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/5단원_생각을키워요/g1_kor_u5_l08_09.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u5_l10",
+     "lessonId": "g1_2_kor_u5_l10_11_v1",
+     "n": "10·11",
+     "title": "배운 내용 실천하기 (독서 계획 세우기)",
+     "sub": null,
+     "url": "/grade1/semester2/korean/5단원_생각을키워요/g1_kor_u5_l10_11.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u5_l12",
+     "lessonId": "g1_2_kor_u5_l12_13_v1",
+     "n": "12·13",
+     "title": "단원 마무리하기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/5단원_생각을키워요/g1_kor_u5_l12_13.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };
