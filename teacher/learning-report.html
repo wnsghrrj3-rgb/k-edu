@@ -138,6 +138,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 .bar-inl i{display:block;height:100%;background:var(--primary)}
 
 tr.pending th, tr.pending td{opacity:.55;cursor:default}
+tr.pending{display:none}
+body.show-pending tr.pending{display:table-row}
+.btn-pending{margin-left:8px;font:inherit;font-size:12px;color:#4a5568;background:#f1f5f9;border:1px solid #dbe3ec;border-radius:6px;padding:2px 9px;cursor:pointer}
+.btn-pending:hover{background:#e6edf6}
 /* 학생 카드 */
 .stu-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .stu-head .nm{font-family:var(--kedu-title);font-size:20px}
@@ -294,6 +298,13 @@ function sortStudents(list){
   });
 }
 
+let _pendN = 0;
+function togglePending(){
+  const on = document.body.classList.toggle('show-pending');
+  document.querySelectorAll('.btn-pending').forEach(b => { b.textContent = (on?'입장 전 ':'입장 전 ') + _pendN + '명 ' + (on?'숨기기':'보기'); });
+}
+window.togglePending = togglePending;
+
 async function init(){
   const { data: { session } } = await db.auth.getSession();
   if(!session){ location.href = '/auth/?redirect=' + encodeURIComponent(location.href); return; }
@@ -400,6 +411,7 @@ function renderClass(){
   const touchedByKey = new Set(C.scores.map(r => r.student_id+'|'+r.lesson_id));
   const repByKey = new Set(C.wrongs.map(w => w.student_id+'|'+w.lesson_id));
   const groups = []; cols.forEach(l => { const i = KR.lesson(l); const gk = unitLabel(i); const g = groups[groups.length-1]; if(g && g.key===gk) g.n++; else groups.push({key:gk, n:1}); });
+  _pendN = (C.pending||[]).length;
   const conceptHtml = buildConceptSection(C, byStu);
   const hmHtml = cols.length ? `<div class="hm-wrap"><table class="hm">
     <thead>
@@ -413,7 +425,7 @@ function renderClass(){
         const tip = (m ? `${statusKo(st)} · 문항 ${m.q_n}개 중 ${m.q_latest_ok}개 마지막 답 정답` : (st==='touched'?'풀어봄(집계 대기)':'아직')) + (rep?' · 반복 오답 있음':'');
         return `<td title="${esc(s.nickname||'')} · ${esc(KR.lesson(l).label)} — ${esc(tip)}" onclick="location.href='${stuLink(s.student_id)}'"><i class="${st} ${rep?'rep':''}"></i></td>`;
       }).join('')}</tr>`).join('')}${(C.pending||[]).map(s => `<tr class="pending"><th title="명단에는 있지만 아직 학급코드로 입장하지 않았어요">${nameOf(s)} <span class="mini">입장 전</span></th>${cols.map(()=>'<td><i class="none"></i></td>').join('')}</tr>`).join('')}</tbody></table></div>
-    <div class="hm-legend"><span><i class="solid"></i>탄탄</span><span><i class="edge"></i>경계</span><span><i class="weak"></i>취약</span><span><i class="watching"></i>관찰 중(문항 3개 미만)</span><span><i class="touched"></i>풀어봄</span><span><i class="none"></i>아직</span><span><i class="rep"></i>반복 오답</span><span class="mini">· 칸을 누르면 학생 카드</span></div>`
+    <div class="hm-legend"><span><i class="solid"></i>탄탄</span><span><i class="edge"></i>경계</span><span><i class="weak"></i>취약</span><span><i class="watching"></i>관찰 중(문항 3개 미만)</span><span><i class="touched"></i>풀어봄</span><span><i class="none"></i>아직</span><span><i class="rep"></i>반복 오답</span><span class="mini">· 칸을 누르면 학생 카드</span>${_pendN?`<button class="btn-pending no-print" onclick="togglePending()">입장 전 ${_pendN}명 보기</button>`:''}</div>`
     : `<div class="empty-note">아직 학급이 손댄 차시가 없습니다.</div>`;
 
   // ---- 기간별 표 ----
@@ -480,7 +492,7 @@ function renderClass(){
         <tbody>${rows || '<tr><td colspan="8" class="empty-note">학생이 없습니다.</td></tr>'}</tbody>
         <tfoot><tr><td>학급 합계</td><td class="ctr mini">참여 ${tot.activeStudents}명</td><td class="num">${tot.lessonsDone}</td><td class="num">${tot.problems}</td><td class="num">${accTxt(tot.correct,tot.problems)}</td><td class="num">${tot.morning}</td><td></td><td class="ctr">${tot.flagged}명</td></tr></tfoot>
       </table>
-      <div class="legend"><span class="dot on"></span> 학습한 날 · <span class="dot on mo"></span> 아침활동 포함 · <span class="dot today"></span> 오늘 · 문항 옆 ±는 이전 주 대비(문항+아침) · 정답률 60% 미만은 붉게 · <span class="pill weak">n</span> 취약 차시 수 · <span class="pill repeat">n</span> 반복 오답이 있는 차시 수 (둘 다 누적)</div>
+      <div class="legend"><span class="dot on"></span> 학습한 날 · <span class="dot on mo"></span> 아침활동 포함 · <span class="dot today"></span> 오늘 · 문항 옆 ±는 이전 주 대비(문항+아침) · 정답률 60% 미만은 붉게 · <span class="pill weak">n</span> 취약 차시 수 · <span class="pill repeat">n</span> 반복 오답이 있는 차시 수 (둘 다 누적)${_pendN?`<button class="btn-pending no-print" onclick="togglePending()">입장 전 ${_pendN}명 보기</button>`:''}</div>
     </div>`;
 }
 
@@ -627,7 +639,7 @@ async function loadStudent(studentId, classCodeId){
     return `<div class="unit"><div class="t"><b>${esc(u.subjectKo)}${u.unitNum?' '+u.unitNum+'단원':''}${u.unitName?' · '+esc(u.unitName):''}</b><span>${u.done}/${total} 완료${u.mapped?'':' (지도 밖)'}</span></div>
       <div class="pb"><i style="width:${p}%"></i></div>
       <div class="dots">${u.lessons.map(l=>`<i class="${l.status} ${l.done?'done':''}" title="${esc((l.info.n?l.info.n+'. ':'')+(l.info.title||l.info.lessonId))} — ${statusKo(l.status)}${l.done?' · 완료':''}"></i>`).join('')}</div>
-      <div class="m">${u.solid?`탄탄 ${u.solid}`:''}${u.weak?` · 취약 ${u.weak}`:''}${u.nextNew?` · 다음: ${esc((u.nextNew.n?u.nextNew.n+'. ':'')+u.nextNew.title)}`:' · 단원의 모든 차시를 시작했음'}</div></div>`;
+      <div class="m">${[u.solid?`차시 탄탄 ${u.solid}`:'', u.weak?`차시 취약 ${u.weak}`:'', u.nextNew?`다음: ${esc((u.nextNew.n?u.nextNew.n+'. ':'')+u.nextNew.title)}`:'단원의 모든 차시를 시작했음'].filter(Boolean).join(' · ')}</div></div>`;
   };
 
   document.getElementById('topbar-title').textContent = '🧭 학생 카드 — ' + (s.nickname||'');
@@ -638,7 +650,7 @@ async function loadStudent(studentId, classCodeId){
     <div class="print-head"><span>케이학습리포트 · 학생 카드</span><span>${esc(s.class_code||'')} ${esc(s.nickname||'')} · ${KR.today()} · 담임 ${esc(_teacher.name||'')}</span></div>
     <div class="sec">
       <div class="stu-head"><span class="nm">🎒 ${esc(s.nickname||'—')}</span><span class="meta">${esc(s.class_code||'')}${s.grade?' · '+s.grade+'학년':''} · 누적 ${s.total_questions||0}문항 · ${KR.fmtDur(s.total_time_sec)}${lastAt?` · 마지막 학습 ${new Date(lastAt).toLocaleDateString('ko-KR')}`:''}</span>${nav}</div>
-      <div class="sec-sub" style="margin-top:8px">규칙 기반 판정 — 모든 판정은 [근거]로 시도 목록을 확인할 수 있습니다. 판정은 문항별 마지막 답 기준이며, 문항 3개 미만 차시는 판단을 보류합니다. 1회 오답은 취약으로 세지 않습니다.</div>
+      <div class="sec-sub" style="margin-top:8px">규칙 기반 판정 — 모든 판정은 [근거]로 시도 목록을 확인할 수 있습니다. 판정은 문항별 마지막 답 기준이며, 문항 3개 미만 차시는 판단을 보류합니다. 1회 오답은 취약으로 세지 않습니다. <b>차시 판정과 개념 판정은 서로 다를 수 있습니다</b> — 차시는 그 차시 안의 문항으로, 개념은 여러 차시·학습지에 흩어진 같은 개념의 문항을 모아 봅니다.</div>
       <div class="four">
 
         <div class="q-card"><h3><span class="q-num">1</span>얼마나 했는가</h3>
@@ -663,9 +675,9 @@ async function loadStudent(studentId, classCodeId){
           ${cls.repeatWrongLessons.slice(0,4).map(wrongLine).join('')}
           ${cls.weak.slice(0,4).map(lessonLine).join('')}
           ${cls.edge.slice(0,3).map(lessonLine).join('')}
-          ${!cls.repeatWrongLessons.length && !cls.weak.length && !cls.edge.length ? '<div class="empty-note">반복 오답도, 취약·경계 차시도 없습니다.</div>':''}
+          ${!cls.repeatWrongLessons.length && !cls.weak.length && !cls.edge.length ? ((cmap.weak.length||cmap.edge.length||misTop.length) ? '<div class="empty-note">차시로는 걸리는 곳이 없습니다 — 개념으로 보면 아래와 같습니다.</div>' : '<div class="empty-note">반복 오답도, 취약·경계 차시도 없습니다.</div>'):''}
           ${(cls.weak.length>4||cls.edge.length>3)?`<div class="mini" style="margin-top:6px">취약 ${cls.weak.length} · 경계 ${cls.edge.length} 차시 — 전체는 단원 진도의 칸 색으로</div>`:''}
-          ${(cmap.weak.length||cmap.edge.length) ? `<div class="mini" style="margin-top:10px">개념으로 보면</div>
+          ${(cmap.weak.length||cmap.edge.length) ? `<div class="mini" style="margin-top:10px">개념으로 보면 <span style="opacity:.7">(여러 차시·학습지에 흩어진 같은 개념을 모아 본 것)</span></div>
             ${cmap.weak.concat(cmap.edge).slice(0,4).map(c => `<div class="w-line"><b>${esc(c.info.name)}</b> — ${statusKo(c.status)} (문항 ${c.q_n}개 중 ${c.q_latest_ok}개 정답)</div>`).join('')}` : ''}
           ${misTop.length ? `<div class="mis-list" style="margin-top:10px">${misTop.map(m => `<div class="mis-row"><div class="t">${esc(m.info.text)}</div>${m.info.hint?`<div class="h">👉 ${esc(m.info.hint)}</div>`:''}<div class="who">${m.n}번 — ${esc(m.concept.name)}${m.still_open?' · 아직 안 풀림':' · 지금은 맞힘'}</div></div>`).join('')}</div>` : ''}
         </div>

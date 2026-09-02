@@ -48,6 +48,7 @@ const wrongs = [
   { student_id:S1, lesson_id:L1, question_id:'g1_math_u1_l02-03_s2', attempts:1, resolved_at:iso(-3), last_wrong_at:iso(-3) },
 ];
 const morning = [ { student_id:S1, run_date:ymd(-1), subject:'math' }, { student_id:S1, run_date:ymd(0), subject:'hanja' } ];
+const seats = [ { id:'seat-9', nickname:'9번', seat_no:9, class_code_id:CC, claimed_by:null } ];
 const comments = [ { student_id:S1, comment:'스스로 고쳐 쓰는 모습이 좋았습니다.', visible_to_parent:true, updated_at:iso(-1) } ];
 
 // ── 가짜 supabase 질의 빌더 ─────────────────────────────────
@@ -60,7 +61,7 @@ function fakeDb(role){
     report_morning_daily: morning, report_teacher_comments: comments,
     student_profiles: [{ id:S1, nickname:'1번', grade:1, class_code_id:CC, user_id:'u-student' }],
     parent_student_links: [{ student_id:S1, parent_id:'u-parent', verified_at:iso(-10) }],
-    report_parent_views: [],
+    report_parent_views: [], student_seats: seats,
   };
   const build = (name) => {
     let rows = (tables[name]||[]).slice(); let single = false;
@@ -121,9 +122,9 @@ async function open(file, role, url){
     ok(/9까지의 수/.test(txt) && /순서를 알아볼까요/.test(txt), '교사 학급: 단원명·차시 제목 정본 표시');
     ok(!RAW_ID.test(txt), '교사 학급: 원문 lesson_id 미노출');
     ok(/사회 1단원 · 3차시/.test(doc.querySelector('.hm').textContent + ' ' + txt) || /사회 1단원/.test(txt), '교사 학급: 지도 밖 id 폴백 라벨(사회 1단원)');
-    const rows = [...doc.querySelectorAll('.r-table tbody tr')].map(tr => tr.querySelector('td b').textContent);
+    const rows = [...doc.querySelectorAll('.r-table tbody tr:not(.pending)')].map(tr => tr.querySelector('td b').textContent);
     ok(rows.join(',') === '1번,2번', '교사 학급: 번호순 정렬 ' + rows.join(','));
-    ok(doc.querySelectorAll('.hm tbody tr').length === 2 && doc.querySelectorAll('.hm thead tr.les th').length >= 5, '교사 학급: 도달 지도 2행 × 차시열');
+    ok(doc.querySelectorAll('.hm tbody tr:not(.pending)').length === 2 && doc.querySelectorAll('.hm thead tr.les th').length >= 5, '교사 학급: 도달 지도 2행 × 차시열');
     ok(doc.querySelector('.hm i.rep'), '교사 학급: 반복 오답 칸 표시');
     ok(/1번.*학생 1명/s.test(doc.querySelector('.stuck-grid')?.textContent||'') || /학생 1명/.test(doc.querySelector('.stuck-grid')?.textContent||''), '교사 학급: 막힌 차시 카드');
     win.setPeriod('4w'); const t4 = doc.getElementById('app').textContent;
@@ -131,6 +132,19 @@ async function open(file, role, url){
     win.setPeriod('last'); ok(/지난 주 한눈에/.test(doc.getElementById('app').textContent), '교사 학급: 지난 주 전환');
     win.setSubject('korean'); ok(doc.querySelectorAll('.hm thead tr.les th').length === 2, '교사 학급: 과목 필터(국어 1열+모서리)');
     const csv = win.eval('_csv'); ok(csv && csv.split('\n').length === 3 && /^학생,/.test(csv), '교사 학급: CSV 3줄');
+    // 입장 전 학생 접기 (2026-09-03)
+    win.setSubject('all'); win.setPeriod('this');
+    const pendTr = doc.querySelectorAll('tr.pending');
+    ok(pendTr.length === 2, '교사 학급: 입장 전 줄이 지도·표 둘 다에 1줄씩 ' + pendTr.length);
+    ok(/tr\.pending\{display:none\}/.test(doc.documentElement.innerHTML.replace(/\s/g,'')) ||
+       /tr\.pending\{display:none\}/.test([...doc.querySelectorAll('style')].map(x=>x.textContent).join('').replace(/\s/g,'')),
+       '교사 학급: 입장 전 줄 기본 접힘(CSS)');
+    const btns = doc.querySelectorAll('.btn-pending');
+    ok(btns.length === 2 && /입장 전 1명 보기/.test(btns[0].textContent), '교사 학급: 입장 전 토글 단추 2개 · 인원 표시 ' + (btns[0]&&btns[0].textContent));
+    win.togglePending();
+    ok(doc.body.classList.contains('show-pending') && /입장 전 1명 숨기기/.test(doc.querySelector('.btn-pending').textContent), '교사 학급: 토글 켜기 — 문구 전환');
+    win.togglePending();
+    ok(!doc.body.classList.contains('show-pending') && /입장 전 1명 보기/.test(doc.querySelector('.btn-pending').textContent), '교사 학급: 토글 끄기 — 되돌아옴');
   }
 
   // ── ② 교사 학생 카드 ─────────────────────────────────────
@@ -151,6 +165,17 @@ async function open(file, role, url){
     ok(doc.querySelectorAll('.ev-table .hist .x').length === 1 && doc.querySelectorAll('.ev-table .hist .o').length === 2, '학생 카드: 근거 ○× 이력');
     ok(/교사 한마디/.test(txt) && doc.getElementById('cmt-text').value.includes('고쳐 쓰는'), '학생 카드: 교사 한마디 로드');
     ok(/스스로 고쳐 쓰는/.test(doc.querySelector('.print-cmt')?.textContent||''), '학생 카드: 인쇄용 한마디');
+    // 차시 판정 ↔ 개념 판정 말 어긋남 정합 (2026-09-03)
+    ok(/차시 판정과 개념 판정은 서로 다를 수 있습니다/.test(txt), '학생 카드: 머리에 차시·개념 구분 안내');
+    const unitMs = [...doc.querySelectorAll('.unit .m')].map(x => x.textContent);
+    ok(unitMs.some(t => /차시 탄탄 1/.test(t)) && unitMs.some(t => /차시 취약 1/.test(t)), '학생 카드: 단원 진도가 차시 기준임을 밝힘 ' + unitMs.join(' | '));
+    ok(unitMs.every(t => !/^\s*·/.test(t)), '학생 카드: 단원 진도 줄 앞에 점이 붙지 않음 ' + unitMs.join(' | '));
+    const q3 = [...doc.querySelectorAll('.q-card')].find(c => /무엇이 부족한가/.test(c.textContent));
+    ok(q3 && !/취약·경계 차시도 없습니다/.test(q3.textContent), '학생 카드: 차시 취약이 있으면 「없습니다」 문구 안 뜸');
+    const src = rd('teacher/learning-report.html');
+    ok(/차시로는 걸리는 곳이 없습니다 — 개념으로 보면 아래와 같습니다/.test(src) &&
+       /cmap\.weak\.length\|\|cmap\.edge\.length\|\|misTop\.length/.test(src),
+       '학생 카드: 차시엔 없고 개념엔 있을 때 이어주는 문구 분기 존재');
   }
 
   // ── ③ 학생 「내 학습」 ────────────────────────────────────
