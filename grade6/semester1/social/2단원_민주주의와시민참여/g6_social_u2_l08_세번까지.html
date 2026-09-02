@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<!--
+K-edu 사회 6-1 · 2단원 민주주의와 시민 참여 · 주제② 국가기관과 권력 분립 · 8차시(l08)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [6사08-02] · 교과서 p.83~85 · 지도서(대단원2 **10차시** 법원에서 하는 일을 알아볼까요,
+  지도서 p.191~197) 근거.
+학습 목표: 법원에서 하는 일을 설명할 수 있다.
+수업 기법 및 전략: 돌아가며 말하기 · 의견 나누기
+⚠️ 엔진은 대단원1 l01~l11 · 대단원2 l01~l07에서 100% 승계. 2단원 색 #C2410C 유지 · CSS 변수명 무수정.
+
+⚠️ 파일명을 `세번까지`로 지었다(배선 예외 대신). l07이 「법원」을 개수 ≤3, 「판결」을 개수 ≤2,
+   「삼심」을 개수 0으로 재고 있어서 파일명에 그 낱말이 들어가면 재배선이 곧바로 그 가드를 깨뜨린다.
+   겹치지 않는 이름을 골라 예외를 만들지 않았다(l05 `나랏일` · l06 `법이되기까지` · l07 `나라살림` 선례 승계).
+
+직접조작: 판정이 최종이 아닌 판(54번째 신규 패턴 — 같은 사건을 다시 물으면 판정이 바뀔 수 있고,
+  물을 수 있는 횟수에 상한이 있는 형)
+  ⭐ 앞의 쉰세 종에서 **판이 한 번 내린 판정은 그 자리에서 끝이었다.** 48번째(부동의 형)에서는
+     다시 세어도 판이 **한 글자도 달라지지 않았고**, 37번째(접어 두는 형)에서는 판정을 **미뤘을 뿐**
+     답은 처음부터 정해져 있었으며, 52번째(걸음이 물러나는 형)에서는 되돌려 보내면 걸음이
+     **물러났지 판정이 바뀌지는 않았다.** 이번만 **판이 내린 판정이 최종이 아니다** — 같은 사건을
+     다시 물으면 더 위의 법원이 다시 판정하고, 세 번째 판정에서 **결과가 뒤집힌다.**
+     근거는 교과서 84쪽 본문 원문 「하나의 사건에 대해 세 번까지 재판을 받을 수 있도록 한 삼심
+     제도를 두어 잘못된 판결로 억울한 일이 생기는 것을 막고 있습니다」와 [미디어 활동] 기사
+     「3심에서 뒤집힌 재판 결과」.
+  ⭐ **48번째(부동의 형)와의 정면 대비** — 거기서는 다시 세는 일이 **확인**이라 판이 움직이지
+     않았고, 여기서는 다시 묻는 일이 **다시 판정**이라 결과가 바뀔 수 있다.
+  ⭐ **52번째와의 대비** — 거기서는 되돌려 보내면 걸음이 **아래로 물러났다.** 여기서는 다시 물을
+     때마다 사건이 **위의 법원으로 올라가고**, 한 번 올라간 자리는 다시 내려오지 않는다(단조 증가).
+  ⭐ **그리고 물을 수 있는 횟수에 상한이 있다.** 47번째(첫 길이 막히는 판)에서 길이 막혔을 때는
+     「다른 길로 가 볼까요」 단추가 **새로 열렸다.** 여기서는 세 번째 판정 뒤에 다시 묻는 단추가
+     **사라지고 아무 단추도 새로 열리지 않는다** — 그것이 교과서가 말한 「세 번까지」다.
+  ⭐ **사건은 한 글자도 달라지지 않는다** — 세 판정을 지나는 동안 판에 적힌 사건은 같은 문자열이고
+     그것을 그리는 자리도 코드에 단 하나다. 달라지는 것은 **어느 법원이 판정했는가**와 **판정**뿐이다.
+  ⭐ **지금의 판정이 무엇인지를 따로 담는 상태가 코드에 아예 없다** — `jdVerdict(st)` **한 줄**이
+     그것을 다 정하고, `JD_RULING[`을 읽는 자리도 그 한 곳뿐이다. 그래서 「묻지 않았는데 바뀐 판정」도
+     「세 번을 넘긴 판정」도 만들어질 수 없다.
+  ⭐ **다시 묻는 자리에는 옳고 그름이 없다**(`JD_ASK_OK` 부재 · 무판정 · 감점 0). 교과서가
+     「재판을 받을 수 있도록」이라고만 적었으므로 판이 대신 판정하지 않는다.
+  ① **법원이 하는 일 세 장면 잇기**(교과서 83쪽 세 장면 ↔ 법원이 하는 일 셋 · 순서 자유 · 판정 있음)
+  ② **한 사건을 세 번까지 묻기**(1심 → 2심 → 3심 · 다시 묻기는 무판정 · 세 번째에 판정이 뒤집힘 ·
+     세 번째 뒤에는 다시 물을 수 없음)
+  ③ **공정한 재판을 위한 제도 세 가지 세우기**(지도서 활동지 상황 1·2·3 ↔ 제도 · 순서 자유 · 판정 있음)
+  ④ 마무리 3택 = 재판이 공정하게 이루어져야 하는 까닭(지도서 핵심 질문 예시 답안 원문)
+  ⚠️ 장면·사건·판정·제도·3택 전량 고정 리터럴 — 난수 0(`JD_RULING=[0,0,1]` 한 줄이 세 판정을 통째로 정한다).
+  ⚠️ 가드 9종: ① 마무리 확정 후 전체 잠금 / ② 무효 번호(`Number.isInteger`·범위) /
+     ③ 세 장면을 다 잇기 전 재판 열기 무시(순서) — 판 불변 / ④ 이미 이은 장면 재클릭 — 판 불변 /
+     ⑤ **세 번째 판정 뒤 다시 묻기 무시 — 판 불변(상한)** / ⑥ 세 번째 판정 전 제도 세우기 무시(순서) — 판 불변 /
+     ⑦ 이미 세운 제도 재클릭 — 판 불변 / ⑧ 세 제도를 다 세우기 전 마무리 무시(순서) /
+     ⑨ 안내 표시 중 재클릭 무시(`jdBusy`).
+     재시도 허용(감점 없음), 조작에 점수 0. 발문은 `.jd-q`로 떼어 전 단계 상시 노출. 상태 열쇠 12개.
+
+⚠️ 정직 원칙 네 곳
+  ㉠ **판의 사건은 교과서 84쪽 [미디어 활동] 기사를 옮긴 자리이지 실제 재판 절차를 그대로 옮긴
+     것이 아니다**(캔버스 캡션에 명시). 기사에서 밑줄을 긋고 써 보는 활동은 교실 몫이다.
+  ㉡ **판정의 내용을 지어내지 않는다** — 기사가 적은 만큼(1심·2심은 병원 측, 3심은 환자의 가족이
+     손해 배상을 받음)까지만 쓰고, 재판이 어떻게 진행되는지의 자세한 절차는 교과서가 말하지
+     않았으므로 판이 그 이상 말하지 않는다.
+  ㉢ **다시 묻는 자리에 옳고 그름을 두지 않는다.**
+  ㉣ **어느 쪽도 나쁜 쪽으로 그리지 않는다** — 재판에서 진 쪽을 나쁘게 그리지 않고, 병원도 기사가
+     적은 만큼(「일부 잘못된 판단을 했다는 것을 인정받아」)까지만 쓴다.
+
+⚠️ 설계 원칙
+  · **11~12차시 침범 0** — **독재 0 · 균형 0 · 감시 0 · 견제 0** · 「권력 분립」은 **META 주제명 한 자리뿐**.
+  · **l06·l07 재현 최소** — 국무총리 0 · 행정 각부 0 · 국무 회의 0 · 법률안 0 · 거부권 0 · 국정 감사 0 ·
+    예산안 0 · 국회의원 0. 「행정부」는 지난 시간 되짚기 자리까지(개수 ≤2).
+  · **주제① 재현 0** — 선거·공약·유권자·후보자·기표소 전부 0.
+  · **대단원1 재현 0 · 대단원3 침범 0.**
+  · **정치적 중립** — 우리나라의 실제 정당·정치인 0, 실제 사건·연도·신문사 이름·금액 0(교과서 기사의
+    출처·날짜·「벌금 100만 원」은 옮기지 않는다). 어느 기관도 나쁜 곳으로 그리지 않는다.
+  · 교사용 참고 자료 0 — 참고 도서 세 종, 헌법 조항(제103조·제109조), 사법권·심급 제도·증거 재판주의·
+    공개 재판주의·민사 재판·형사 재판·행정 재판·가사·소년·특허·군사·선거 재판, 판사·원고·피고·기소·
+    소송, 법원 어린이 누리집·커리어넷·「사법부 홍보 비디오」, 국무 회의·감사원 전부 0.
+    (「피고인」·「위자료」·「손해 배상」은 교과서 낱말 풀이 원문이라 쓴다.)
+  · **파일 전체에 네 자리 연도 0 · 금액·인원 수치 0**(CSS 밖 스코프로 대조 — l09 규약 승계).
+  · 정서 — 기사의 무거운 부분(사망·뇌출혈)은 옮기지 않고 「환자에게 큰 피해가 생겼다」까지만 쓴다.
+    사람이 다치거나 괴로워하는 묘사 0 · 범죄 장면은 교과서 83쪽이 적은 만큼만(「훔」 ≤2) ·
+    **학생 이름 0 · 실제 지역 이름 0.**
+
+⚠️ goNextLesson = 허브 복귀(l09 미양산 — 양산 시 재배선).
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g6_social_u2_l08_v1">
+<title>법원에서 하는 일을 알아볼까요 · 사회 6-1</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#C2410C; --green-d:#9A3412; --cyan:#EA580C;
+  --bg:#FFF7ED; --bub:#FFEDD5; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#B45309; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-shrink:0}
+.ka-lb{background:#F1F5F9;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;
+  font-weight:700;color:var(--muted);font-size:clamp(11px,1.9vw,13px);display:flex;align-items:center;gap:6px}
+.ka-lb svg{width:14px;height:14px}
+.ka-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.ka-bar>div{height:100%;background:var(--green);border-radius:99px;transition:width .35s ease;width:5%}
+.ka-pg{font-size:clamp(11px,1.9vw,13px);color:var(--muted);font-weight:700;min-width:46px;text-align:right}
+.ka-sc{display:flex;align-items:center;gap:3px;background:var(--amber-bg);border-radius:99px;padding:5px 11px}
+.ka-sc svg{width:15px;height:15px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;color:var(--amber);font-size:clamp(14px,2.4vw,17px)}
+.ka-sc-u{font-size:11px;color:var(--amber);font-weight:700}
+
+/* 메인 */
+.ka-m{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;padding:4px 2px}
+.ka-tags{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ka-bg{display:inline-flex;align-items:center;gap:5px;background:var(--bub);color:var(--green-d);
+  border-radius:99px;padding:5px 12px;font-size:clamp(11px,1.9vw,13px);font-weight:700}
+.ka-bg svg{width:13px;height:13px}
+.ka-bg.s2{background:#E0F2FE;color:#075985}
+.ka-bg.s3{background:#DCFCE7;color:#166534}
+.ka-bg.s4{background:#FEF3C7;color:#92400E}
+.ka-bg.s5{background:#F3E8FF;color:#6B21A8}
+.ka-meta{font-size:clamp(10px,1.7vw,12px);color:#94A3B8;font-weight:600}
+.ka-t{font-size:clamp(19px,3.4vw,27px);font-weight:700;line-height:1.4;margin-bottom:10px}
+.ka-bub{background:var(--bub);border-radius:14px;padding:13px 18px;font-size:clamp(14px,2.4vw,18px);
+  line-height:1.7;margin-bottom:12px}
+.ka-emph{color:var(--green-d);font-weight:700}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.scene.wide{width:clamp(240px,44vw,420px)}
+.scene.wide svg{height:clamp(120px,20vw,200px)}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(15px,2.6vw,20px);font-weight:700;line-height:1.6;margin-bottom:12px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+.opt{background:#fff;border:2px solid var(--line);border-radius:13px;padding:13px 15px;cursor:pointer;
+  font-family:inherit;font-size:clamp(13px,2.2vw,16.5px);font-weight:500;text-align:left;line-height:1.5;transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:#16A34A;background:#DCFCE7;font-weight:700}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:11px;border-radius:12px;padding:12px 16px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;animation:fadeUp .3s ease both}
+.fb.ok{background:#DCFCE7;color:#166534;font-weight:700}
+.hint{margin-top:9px;background:var(--amber-bg);border-radius:11px;padding:10px 14px;
+  font-size:clamp(12.5px,2.1vw,15px);color:var(--amber);line-height:1.55}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:9px;width:100%;max-width:660px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFC;border-radius:12px;padding:11px 15px;
+  font-size:clamp(13px,2.2vw,16.5px);line-height:1.6}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'\2713';color:#fff;font-weight:800;font-size:14px}
+
+/* 직접조작 — 판정이 최종이 아닌 판 */
+.dw-wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dw-body{display:grid;grid-template-columns:1.05fr 1fr;gap:10px;align-items:start}
+.dw-canvas{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.dw-canvas svg{width:100%;height:auto;display:block}
+.dw-canvas .cvcap{padding:5px 6px;text-align:center;font-size:clamp(9.5px,1.6vw,11.5px);
+  color:var(--muted);font-weight:700;background:#F8FAFC}
+.dw-right{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dw-step{font-size:clamp(10.5px,1.75vw,13px);font-weight:800;color:var(--green)}
+.dw-msg{background:#F8FAFC;border:2px solid var(--line);border-left:4px solid var(--green);border-radius:10px;
+  padding:8px 12px;font-size:clamp(11.4px,1.93vw,13.8px);line-height:1.55;color:#334155;animation:fadeUp .3s ease both}
+.dw-msg.warn{border-left-color:var(--amber)}
+.dw-msg b{color:var(--green)}
+.dw-card{background:#fff;border:2px solid var(--amber);border-radius:12px;padding:10px 12px;
+  font-size:clamp(12px,2.05vw,14.5px);line-height:1.55;animation:pop .35s ease both}
+.dw-card .pt{font-weight:800;color:var(--amber);margin-bottom:4px;font-size:clamp(12.5px,2.15vw,15px)}
+.jd-q{font-size:clamp(11.6px,1.97vw,14px);font-weight:800;color:var(--green);
+  background:var(--bub);border-radius:9px;padding:7px 11px;line-height:1.45}
+.jd-fin{display:flex;flex-direction:column;gap:5px}
+.jd-fin button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;padding:7px 10px;
+  cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.jd-fin button:hover{background:var(--bub)}
+.jd-fin button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.jd-list{display:flex;flex-direction:column;gap:5px;max-height:206px;overflow-y:auto}
+.jd-list button{border:2px solid #CBD5E0;background:#fff;border-radius:10px;padding:7px 10px;cursor:pointer;
+  font-family:inherit;font-weight:700;color:var(--ink);font-size:clamp(10.6px,1.8vw,13px);transition:.15s;
+  line-height:1.4;text-align:left}
+.jd-list button:hover{border-color:var(--green);background:var(--bub)}
+.jd-list button.ok{border-color:var(--cyan);background:#FFF7ED;color:#C79A7A}
+.jd-list button.no{border-color:var(--amber);background:var(--amber-bg);animation:shakeNo .4s ease}
+.jd-list button:disabled{border-color:#E2E8F0;background:#F8FAFC;color:#CBD5E0;cursor:default}
+.jd-ask{border:2px solid var(--green);background:var(--bub);color:var(--green-d);border-radius:10px;
+  padding:9px 10px;cursor:pointer;font-family:inherit;font-weight:800;
+  font-size:clamp(11px,1.87vw,13.4px);text-align:center;line-height:1.4}
+.jd-ask:hover{background:#FFE4CC}
+.jd-note{background:#F8FAFC;border:2px dashed #CBD5E0;border-radius:10px;padding:7px 10px;
+  font-size:clamp(10.4px,1.76vw,12.4px);line-height:1.5;color:#64748B}
+.jd-casenote{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:10px;padding:8px 11px;
+  font-size:clamp(10.8px,1.83vw,13px);line-height:1.5;color:#3F3A2C}
+.jd-casenote b{color:#8A6D3B}
+.paper{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:12px;padding:12px 16px;
+  font-size:clamp(12.5px,2.1vw,15px);line-height:1.65;color:#3F3A2C;max-width:660px;
+  animation:fadeUp .4s ease both}
+.paper .ph{font-weight:800;color:#8A6D3B;margin-bottom:6px;font-size:clamp(13px,2.2vw,16px)}
+.tipbox{background:#FFEDD5;border-radius:12px;padding:11px 16px;font-size:clamp(12.5px,2.1vw,15px);
+  line-height:1.6;color:#7C2D12;max-width:660px}
+@media(max-width:620px){ .dw-body{grid-template-columns:1fr} }
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(194,65,12,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style>
+<script src="/kedu_gate.js"></script>
+</head>
+
+
+
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#B45309"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식 =====
+   ⚠️ 정직 원칙: 모든 그림은 내용을 나타낸 도식이며 실제 사진·조직도가 아니다.
+   ⚠️ 정치적 중립: 우리나라의 실제 정당·정치인 0. 기관은 사람 형상이 아니라 건물과 표찰로만 그린다. */
+const SVG = {
+  // 1 들어가기 — 정의의 여신상(지도서 동기 유발 · 저울과 책 · 사람 형상 대신 물건으로만)
+  open:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    <text x="160" y="19" font-size="11" fill="#9A3412" text-anchor="middle" font-weight="800">무엇을 들고 있을까요?</text>
+    <path d="M100 40 L100 130" stroke="#C2410C" stroke-width="3"/>
+    <path d="M60 52 L140 52" stroke="#C2410C" stroke-width="2.4"/>
+    <path d="M60 52 L52 84 M60 52 L68 84" stroke="#EA580C" stroke-width="1.4"/><path d="M50 84 L70 84 L66 92 L54 92 Z" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.3"/>
+    <path d="M140 52 L132 84 M140 52 L148 84" stroke="#EA580C" stroke-width="1.4"/><path d="M130 84 L150 84 L146 92 L134 92 Z" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.3"/>
+    <text x="100" y="150" font-size="8.6" fill="#9A3412" text-anchor="middle" font-weight="800">저울</text>
+    <rect x="196" y="56" width="70" height="52" rx="4" fill="#fff" stroke="#C2410C" stroke-width="1.8"/>
+    <path d="M231 56 L231 108" stroke="#EA580C" stroke-width="1.4"/>
+    <path d="M204 70 L224 70 M204 80 L224 80 M204 90 L224 90 M238 70 L258 70 M238 80 L258 80 M238 90 L258 90" stroke="#FDBA74" stroke-width="1.3"/>
+    <text x="231" y="150" font-size="8.6" fill="#9A3412" text-anchor="middle" font-weight="800">법전</text>
+    <text x="160" y="164" font-size="7.8" fill="#64748B" text-anchor="middle" font-weight="700">공정하게 · 정해진 법률에 따라</text></svg>`,
+  // 2 살펴보기 — 법원의 뜻
+  court:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <text x="160" y="18" font-size="11" fill="#9A3412" text-anchor="middle" font-weight="800">법원은 어떤 곳인가요</text>
+    <rect x="14" y="30" width="292" height="40" rx="10" fill="#FFF7ED" stroke="#C2410C" stroke-width="1.6"/>
+    <text x="160" y="47" font-size="8.4" fill="#9A3412" text-anchor="middle" font-weight="800">사람들 사이에 다툼이 생기거나 범죄가 발생했을 때</text>
+    <text x="160" y="61" font-size="8.4" fill="#9A3412" text-anchor="middle" font-weight="800">재판을 통해 옳고 그름을 가리는 국가기관</text>
+    <rect x="14" y="80" width="292" height="40" rx="10" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.5"/>
+    <text x="160" y="97" font-size="8.4" fill="#9A3412" text-anchor="middle" font-weight="800">법을 어긴 사람을 처벌하여</text>
+    <text x="160" y="111" font-size="8.4" fill="#9A3412" text-anchor="middle" font-weight="800">사회 질서를 유지해요</text>
+    <rect x="52" y="130" width="216" height="26" rx="8" fill="#fff" stroke="#EA580C" stroke-width="1.3"/>
+    <text x="160" y="147" font-size="8.2" fill="#B45309" text-anchor="middle" font-weight="800">개인과 국가, 지방 자치 단체 사이의 갈등도 해결해요</text></svg>`,
+  // 3 살펴보기 — 법원에서 하는 일 세 장면(교과서 83쪽)
+  three:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    <text x="160" y="17" font-size="11" fill="#9A3412" text-anchor="middle" font-weight="800">법원에서 하는 일 세 가지</text>
+    ${[['개인 간의','갈등을 해결'],['법을 어긴 사람을','처벌'],['개인과 국가 사이의','갈등을 해결']].map((t,i)=>{
+      const x=12+i*102;
+      return `<rect x="${x}" y="30" width="94" height="86" rx="9" fill="#fff" stroke="#EA580C" stroke-width="1.5"/>
+      <rect x="${x+27}" y="42" width="40" height="26" rx="4" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.2"/>
+      <path d="M${x+35} 42 L${x+35} 34 M${x+47} 42 L${x+47} 34 M${x+59} 42 L${x+59} 34" stroke="#EA580C" stroke-width="1.6"/>
+      <text x="${x+47}" y="88" font-size="7.4" fill="#C2410C" text-anchor="middle" font-weight="800">${t[0]}</text>
+      <text x="${x+47}" y="102" font-size="7.4" fill="#9A3412" text-anchor="middle" font-weight="800">${t[1]}</text>`;}).join('')}
+    <rect x="12" y="126" width="296" height="30" rx="8" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.3"/>
+    <text x="160" y="145" font-size="8.2" fill="#9A3412" text-anchor="middle" font-weight="800">모두 재판을 통해 옳고 그름을 가려요</text></svg>`,
+  // 4 살펴보기 — reveal: 법원이 없다면
+  none:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <text x="160" y="18" font-size="11" fill="#9A3412" text-anchor="middle" font-weight="800">법원이 없다면 어떤 일이 생길까요</text>
+    <rect x="20" y="34" width="120" height="54" rx="9" fill="#F8FAFC" stroke="#CBD5E0" stroke-width="1.6" stroke-dasharray="4 3"/>
+    <text x="80" y="56" font-size="9" fill="#94A3B8" text-anchor="middle" font-weight="800">법원</text>
+    <text x="80" y="72" font-size="7.2" fill="#94A3B8" text-anchor="middle" font-weight="700">없다면?</text>
+    <rect x="180" y="34" width="120" height="54" rx="9" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.6"/>
+    <text x="240" y="52" font-size="8" fill="#9A3412" text-anchor="middle" font-weight="800">다툼과 갈등</text>
+    <text x="240" y="66" font-size="8" fill="#9A3412" text-anchor="middle" font-weight="800">옳고 그름</text>
+    <text x="240" y="80" font-size="7" fill="#B45309" text-anchor="middle" font-weight="700">누가 가려 줄까요?</text>
+    <path d="M142 60 L178 60" stroke="#EA580C" stroke-width="2"/><path d="M172 56 L178 60 L172 64 Z" fill="#EA580C"/>
+    <rect x="20" y="100" width="280" height="26" rx="8" fill="#FFF7ED" stroke="#EA580C" stroke-width="1.3"/>
+    <text x="160" y="117" font-size="8.2" fill="#9A3412" text-anchor="middle" font-weight="800">떠올려 보고 답을 확인해요</text>
+    <rect x="20" y="134" width="280" height="24" rx="8" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.2"/>
+    <text x="160" y="150" font-size="8.2" fill="#9A3412" text-anchor="middle" font-weight="800">법원은 사회 질서를 유지하는 국가기관이에요</text></svg>`,
+  // 6 살펴보기 — 공정한 재판을 위한 제도(교과서 84쪽)
+  fair:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    <text x="160" y="18" font-size="11" fill="#9A3412" text-anchor="middle" font-weight="800">공정한 재판을 위한 제도</text>
+    ${[['법원의 독립','법관의 신분 보장'],['삼심 제도','세 번까지 재판'],['재판의 과정과','결과 공개']].map((t,i)=>{
+      const x=10+i*102;
+      return `<rect x="${x}" y="30" width="96" height="70" rx="9" fill="#fff" stroke="#EA580C" stroke-width="1.5"/>
+      <rect x="${x+30}" y="40" width="36" height="8" rx="2" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.1"/>
+      <text x="${x+48}" y="70" font-size="7.8" fill="#C2410C" text-anchor="middle" font-weight="800">${t[0]}</text>
+      <text x="${x+48}" y="86" font-size="6.8" fill="#9A3412" text-anchor="middle" font-weight="700">${t[1]}</text>`;}).join('')}
+    <rect x="10" y="110" width="300" height="46" rx="9" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.3"/>
+    <text x="160" y="128" font-size="8.2" fill="#9A3412" text-anchor="middle" font-weight="800">국민의 자유와 권리를 보장하려면</text>
+    <text x="160" y="144" font-size="8.2" fill="#9A3412" text-anchor="middle" font-weight="800">재판이 공정하게 이루어져야 해요</text></svg>`,
+  // 7 살펴보기 — reveal: [별별 직업] 변호사(사람 형상 대신 상담 탁자와 서류로만)
+  lawyer:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <text x="160" y="19" font-size="11" fill="#9A3412" text-anchor="middle" font-weight="800">어려움에 처한 사람을 법을 이용해 도와줘요</text>
+    <rect x="60" y="34" width="200" height="66" rx="12" fill="#FFF7ED" stroke="#C2410C" stroke-width="1.8"/>
+    <rect x="80" y="48" width="70" height="38" rx="5" fill="#fff" stroke="#EA580C" stroke-width="1.3"/>
+    <path d="M88 58 L142 58 M88 66 L142 66 M88 74 L128 74" stroke="#FDBA74" stroke-width="1.4"/>
+    <rect x="170" y="48" width="70" height="38" rx="5" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.3"/>
+    <text x="205" y="71" font-size="8.4" fill="#9A3412" text-anchor="middle" font-weight="800">법률 상담</text>
+    <rect x="14" y="110" width="292" height="46" rx="9" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.3"/>
+    <text x="160" y="128" font-size="8.2" fill="#9A3412" text-anchor="middle" font-weight="800">개인 간의 다툼이나 범죄 사건이 발생했을 때</text>
+    <text x="160" y="144" font-size="8.2" fill="#9A3412" text-anchor="middle" font-weight="800">의뢰인을 도와 변호를 해 줘요</text></svg>`,
+  // 16 정리
+  wrap:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    <text x="160" y="20" font-size="11.4" fill="#9A3412" text-anchor="middle" font-weight="800">오늘의 정리</text>
+    ${[['★','재판을 통해 옳고 그름을 가리는 국가기관'],['①','다툼·범죄 \u2014 재판을 통해 옳고 그름을 가려요'],['②','법을 어긴 사람을 처벌해 사회 질서를 유지해요'],['③','개인과 국가, 지방 자치 단체 사이의 갈등을 해결해요']].map((t,i)=>{
+      const y=32+i*32;
+      return `<rect x="16" y="${y}" width="288" height="26" rx="7" fill="#fff" stroke="#EA580C" stroke-width="1.3"/>
+      <text x="30" y="${y+17}" font-size="9.4" fill="#C2410C" font-weight="800">${t[0]}</text>
+      <text x="172" y="${y+17}" font-size="7.6" fill="#9A3412" text-anchor="middle" font-weight="800">${t[1]}</text>`;}).join('')}
+    <text x="160" y="166" font-size="8.2" fill="#64748B" text-anchor="middle" font-weight="700">모두 법원에서 하는 일이에요</text></svg>`,
+  // 18 종료
+  done:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <circle cx="160" cy="80" r="46" fill="#FFEDD5" stroke="#EA580C" stroke-width="2"/>
+    <path d="M138 80 L154 96 L184 64" stroke="#C2410C" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="160" y="150" font-size="11" fill="#9A3412" text-anchor="middle" font-weight="800">법원에서 하는 일을 알아봤어요</text></svg>`
+};
+function sceneCard(key,cap,extra){ return `<div class="scene ${extra||''}">${SVG[key]||''}${cap?`<div class="cap">${cap}</div>`:''}</div>`; }
+
+/* ===== 직접조작 — 판정이 최종이 아닌 판(54번째 신규 패턴) =====
+   ⭐ 앞의 쉰세 종에서 **판이 한 번 내린 판정은 그 자리에서 끝이었다.** 이번만 판이 내린 판정이
+      **최종이 아니다** — 같은 사건을 다시 물으면 더 위의 법원이 다시 판정하고, 세 번째 판정에서
+      결과가 뒤집힌다. 그리고 세 번째 뒤에는 **다시 물을 수 없다**(상한).
+   ⭐ **48번째(부동의 형)와의 정면 대비** — 거기서는 다시 세어도 판이 움직이지 않았다.
+   ⭐ **지금의 판정이 무엇인가**는 `jdVerdict(st)` 한 줄이 다 정한다. 그것을 따로 담는 상태가
+      코드에 없고, `JD_RULING[`을 읽는 자리도 코드에 단 하나다.
+   ⭐ **다시 묻는 자리에는 옳고 그름이 없다**(정답 상수 부재 · 무판정).
+   ⚠️ 가드 9종은 파일 머리 주석 참조. 전량 고정 리터럴 — 난수 0. */
+const JD_MAX = 3;
+/* 법원에서 하는 일 세 가지 \u2014 교과서 83쪽 원문 */
+const JD_JOB = ['법을 지키지 않은 사람을 처벌합니다','개인 간에 발생하는 갈등을 해결해 줍니다','개인과 국가, 지방 자치 단체 사이에 생긴 갈등을 해결해 줍니다'];
+const JD_JOB_S = ['법을 어긴 사람을 처벌','개인 간의 갈등 해결','개인과 국가 사이의 갈등 해결'];
+/* 세 장면 \u2014 교과서 83쪽 그림 원문(말풍선) */
+const JD_SCENE = [
+  '층간 소음이 생길 줄 몰랐습니다. \u2014 소음 때문에 밤에 잠을 잘 수가 없습니다. \u2014 피해에 대한 위자료를 지급하세요.',
+  '피고인은 무인 편의점에서 물건을 훔쳤습니다. 증거 영상을 제출합니다. \u2014 물건을 훔친 것이 인정되어 벌금을 선고합니다.',
+  '도로 공사 때문에 우리 집이 피해를 봤어요. \u2014 국가는 피해자에게 피해 비용을 보상하세요.'
+];
+const JD_SCENE_S = ['층간 소음 \u2014 위자료','무인 편의점 \u2014 벌금','도로 공사 \u2014 피해 보상'];
+/* ⚠️ 장면 j가 보여 주는 법원의 일 \u2014 이 한 줄이 장면과 일의 대응을 통째로 정한다(난수 0). */
+const JD_KIND = [1, 0, 2];
+/* 한 사건 \u2014 교과서 84쪽 [미디어 활동] 기사를 옮긴 자리. ★ 이 문구는 코드에 단 하나이고, 판에 그리는 자리도 단 하나다. */
+const JD_CASE = '환자의 가족은 수술이 잘못되어 환자에게 큰 피해가 생겼다며 병원에 손해 배상을 요구했고, 병원 측은 적절한 치료를 했다며 배상을 거부했다.';
+const JD_CASE_S = '환자의 가족 \u2194 병원 \u2014 손해 배상';
+/* 세 번의 재판 \u2014 교과서 84쪽 도식 원문 */
+const JD_COURT = ['지방 법원','고등 법원','대법원'];
+const JD_LEVEL_S = ['1심','2심','3심'];
+/* 판정 두 갈래 \u2014 기사가 적은 만큼만 */
+const JD_SIDE = ['병원 측이 이겼어요 \u2014 배상하지 않아도 돼요','환자의 가족이 이겼어요 \u2014 손해 배상을 받아요'];
+/* ⚠️ 판정 k는 k번째 재판의 결과 \u2014 이 한 줄이 세 판정을 통째로 정한다(난수 0). 기사 원문: 「2심 재판까지 지면서 \u2026 3심 재판에서 \u2026 손해 배상을 받을 수 있었다」 */
+const JD_RULING = [0, 0, 1];
+/* 다시 물을 때 판이 하는 말 \u2014 ⚠️ 어느 문구에도 옳고 그름이 없다 */
+const JD_ASK_MSG = [
+  '<b>지방 법원</b>이 판정을 내렸어요(1심). 이 판정이 끝일까요? 원칙적으로 하나의 사건에 대해 <b>세 번까지</b> 재판을 받을 수 있어요.',
+  '<b>고등 법원</b>이 같은 사건을 다시 판정했어요(2심). 판정은 그대로예요. 아직 <b>한 번 더</b> 물을 수 있어요.',
+  '<b>대법원</b>이 같은 사건을 다시 판정했어요(3심). <b>판정이 뒤집혔어요.</b> 사건은 한 글자도 달라지지 않았는데 결과가 달라졌어요. 이제 더는 물을 수 없어요.'
+];
+/* 공정한 재판을 위한 제도 \u2014 지도서 활동지 상황 1\u00B72\u00B73 원문 ↔ 교과서 84쪽 본문 원문 */
+const JD_SIT = ['법관이 외부의 간섭을 받아 판결을 내린다면?','한 번의 재판으로 판결 내용이 정해진다면?','재판의 과정과 결과를 모두 비공개로 하면?'];
+const JD_SIT_S = ['외부의 간섭','한 번의 재판','모두 비공개'];
+const JD_FIX = ['원칙적으로 하나의 사건에 대해 세 번까지 재판을 받을 수 있도록 한 삼심 제도를 두어요','특별한 경우를 제외하고 재판의 과정과 결과를 공개해요','법원은 다른 국가기관의 영향을 받지 않고 독립적으로 운영되며, 헌법으로 법관의 신분을 보장해요'];
+const JD_FIX_S = ['삼심 제도','과정과 결과 공개','법원의 독립·법관의 신분 보장'];
+/* ⚠️ 상황 i를 막는 제도 \u2014 이 한 줄이 대응을 통째로 정한다(난수 0). */
+const JD_FIXOF = [2, 0, 1];
+/* ④ 마무리 \u2014 재판이 공정하게 이루어져야 하는 까닭(지도서 핵심 질문 예시 답안 원문) */
+const JD_FIN = [
+  '재판을 빨리 끝내기 위해서예요',
+  '국민의 자유와 권리를 보장하기 위해서예요',
+  '법원이 다른 국가기관보다 힘이 세지기 위해서예요'
+];
+const JD_FIN_OK = 1;
+const JD_FIN_NO = [
+  '빨리 끝내는 것이 목적이라면 <b>세 번까지</b> 재판을 받을 수 있게 두지 않았을 거예요.',
+  '',
+  '법원은 다른 국가기관의 영향을 받지 않고 <b>독립적으로</b> 운영될 뿐, 힘을 키우려는 자리가 아니에요.'
+];
+/* 안내 \u2014 어느 문구에도 「틀렸다」는 말이 없다 */
+const JD_ALREADY_J = '그 장면은 <b>이미 이었어요.</b> 판은 그대로예요.';
+const JD_ORDER_K = '먼저 <b>장면</b>을 하나 골라 봐요.';
+const JD_WRONG_K = '그 장면이 보여 주는 일이 아니에요. 말풍선을 다시 읽어 봐요 \u2014 <b>누구와 누구</b> 사이의 일인지, <b>무엇을</b> 요구하는지.';
+const JD_ORDER_A = '먼저 <b>세 장면</b>을 모두 이어 봐요.';
+const JD_ORDER_S = '먼저 사건을 <b>세 번까지</b> 물어 봐요.';
+const JD_ALREADY_S = '그 상황은 <b>이미 세웠어요.</b> 판은 그대로예요.';
+const JD_ORDER_F = '먼저 <b>상황</b>을 하나 골라 봐요.';
+const JD_WRONG_F = '그 상황을 막는 제도가 아니에요. 상황이 <b>무엇을</b> 걱정하는지 다시 읽어 봐요.';
+/* 받침 처리 \u2014 안내문에 「을(를)」 병기가 남지 않게 한다 */
+function jdJ(s){ const c=s.charCodeAt(s.length-1); return (c>=0xAC00&&c<=0xD7A3) ? ((c-0xAC00)%28!==0) : false; }
+
+/* ★ JD_KIND를 읽는 자리는 여기 한 곳뿐이다. */
+function jdKindOf(j){ return JD_KIND[j]; }
+/* ★ JD_FIXOF를 읽는 자리는 여기 한 곳뿐이다. */
+function jdFixOf(i){ return JD_FIXOF[i]; }
+/* ★ 이 한 줄이 「지금의 판정이 무엇인가」를 다 정한다 \u2014 그것을 따로 담는 상태가 코드에 없다.
+   묻지 않았으면(-1) 판정이 없고, JD_RULING[을 읽는 자리도 여기 한 곳뿐이다. */
+function jdVerdict(st){ return st.jdLevel>0 ? JD_RULING[st.jdLevel-1] : -1; }
+function jdBits(m,n){ const r=[]; for(let k=0;k<n;k++){ if(m & (1<<k)) r.push(k); } return r; }
+function jdAllLink(st){ return st.jdLink === (1<<JD_SCENE.length)-1; }
+function jdAllFix(st){ return st.jdFix === (1<<JD_SIT.length)-1; }
+function jdDone(st){ return st.jdLevel >= JD_MAX; }
+function jdSceneOf(st,k){ for(let j=0;j<JD_SCENE.length;j++){ if((st.jdLink & (1<<j)) && jdKindOf(j)===k) return j; } return -1; }
+function jdReady(st){ return jdAllFix(st); }
+
+/* 판 \u2014 위는 세 장면, 가운데는 세 법원의 계단과 사건 카드, 아래는 제도 세 칸.
+   ⚠️ 판정 문구를 그리는 자리는 **여기 한 곳뿐**이고, 무엇을 그릴지는 `jdVerdict(st)`가 정한다.
+   ⚠️ 사건(`JD_CASE_S`)을 그리는 자리도 **여기 한 곳뿐**이다. */
+function jdCanvas(st){
+  const fin = st.jdFin!=null;
+  const linkN = jdBits(st.jdLink,JD_SCENE.length).length, fixN = jdBits(st.jdFix,JD_SIT.length).length;
+  const v = jdVerdict(st);
+  let g='';
+  g+=`<rect x="8" y="6" width="304" height="238" rx="10" fill="#FFF7ED" stroke="#FED7AA" stroke-width="2"/>`;
+  const head = fin ? '재판이 공정해야 국민의 자유와 권리가 지켜져요'
+    : (jdReady(st) ? '공정한 재판을 위한 제도를 모두 세웠어요'
+      : (jdDone(st) ? '세 번째 판정에서 결과가 뒤집혔어요 \u2014 더는 물을 수 없어요'
+        : (st.jdLevel>0 ? `${JD_COURT[st.jdLevel-1]}이 판정했어요 \u2014 이 판정이 끝일까요?`
+          : (linkN<JD_SCENE.length ? '장면이 보여 주는 법원의 일을 이어 봐요' : '한 사건을 재판에 부쳐 봐요'))));
+  g+=`<text x="160" y="19" font-size="9.6" fill="#9A3412" text-anchor="middle" font-weight="800">${head}</text>`;
+  for(let k=0;k<JD_JOB.length;k++){
+    const sj = jdSceneOf(st,k), got = sj>=0, x = 12 + k*100;
+    g+=`<rect data-job="${k}" data-scene="${sj}" x="${x}" y="26" width="96" height="34" rx="7" fill="${got?'#fff':'#F8FAFC'}" stroke="${got?'#C2410C':'#CBD5E0'}" stroke-width="${got?1.7:1.2}"${got?'':' stroke-dasharray="4 3"'}/>`;
+    g+=`<text x="${x+48}" y="40" font-size="6.6" fill="${got?'#9A3412':'#94A3B8'}" text-anchor="middle" font-weight="800">${JD_JOB_S[k]}</text>`;
+    g+=`<text x="${x+48}" y="53" font-size="6.2" fill="${got?'#B45309':'#CBD5E0'}" text-anchor="middle" font-weight="700">${got?JD_SCENE_S[sj]:'아직 잇지 않았어요'}</text>`;
+  }
+  for(let k=0;k<JD_MAX;k++){
+    const reached = st.jdLevel>k, now = st.jdLevel===k+1, x = 12 + k*16, y = 150 - k*40;
+    g+=`<rect data-court="${k}" data-reached="${reached?1:0}" data-now="${now?1:0}" x="${x}" y="${y}" width="180" height="36" rx="7" fill="${reached?(now?'#FFEDD5':'#fff'):'#F8FAFC'}" stroke="${reached?'#C2410C':'#CBD5E0'}" stroke-width="${now?2:(reached?1.5:1.2)}"${reached?'':' stroke-dasharray="4 3"'}/>`;
+    g+=`<text x="${x+10}" y="${y+15}" font-size="7.4" fill="${reached?'#9A3412':'#94A3B8'}" font-weight="800">${JD_LEVEL_S[k]} \u00B7 ${JD_COURT[k]}</text>`;
+    g+=`<text x="${x+10}" y="${y+28}" font-size="6.4" fill="${reached?'#B45309':'#CBD5E0'}" font-weight="700">${reached?(now?'지금 판정한 법원':'판정을 내렸던 법원'):'아직 묻지 않았어요'}</text>`;
+  }
+  const caseOn = jdAllLink(st);
+  g+=`<rect data-case="${caseOn?1:0}" x="228" y="70" width="80" height="116" rx="8" fill="${caseOn?'#FFFDF5':'#F8FAFC'}" stroke="${caseOn?'#E7D9A8':'#CBD5E0'}" stroke-width="1.5"${caseOn?'':' stroke-dasharray="4 3"'}/>`;
+  g+=`<text x="268" y="86" font-size="7" fill="${caseOn?'#8A6D3B':'#94A3B8'}" text-anchor="middle" font-weight="800">${caseOn?'한 사건':'사건'}</text>`;
+  g+=`<text data-casetxt="${caseOn?1:0}" x="268" y="104" font-size="6.2" fill="${caseOn?'#3F3A2C':'#CBD5E0'}" text-anchor="middle" font-weight="700">${caseOn?JD_CASE_S.split(' \u2014 ')[0]:'\u00B7'}</text>`;
+  g+=`<text x="268" y="116" font-size="6.2" fill="${caseOn?'#3F3A2C':'#CBD5E0'}" text-anchor="middle" font-weight="700">${caseOn?JD_CASE_S.split(' \u2014 ')[1]:'\u00B7'}</text>`;
+  g+=`<text x="268" y="138" font-size="6" fill="#8A6D3B" text-anchor="middle" font-weight="800">${st.jdLevel>0?'판정':''}</text>`;
+  g+=`<text data-verdict="${v}" x="268" y="152" font-size="6" fill="${v===1?'#C2410C':'#3F3A2C'}" text-anchor="middle" font-weight="800">${v<0?'\u00B7':(v===1?'환자의 가족이 이겼어요':'병원 측이 이겼어요')}</text>`;
+  g+=`<text x="268" y="166" font-size="5.8" fill="${v>=0?'#8A6D3B':'#CBD5E0'}" text-anchor="middle" font-weight="700">${v<0?'':(v===1?'손해 배상을 받아요':'배상하지 않아도 돼요')}</text>`;
+  g+=`<text x="268" y="180" font-size="5.8" fill="#B45309" text-anchor="middle" font-weight="800">${st.jdLevel>0?`물은 횟수 ${st.jdLevel} / ${JD_MAX}`:''}</text>`;
+  for(let i=0;i<JD_SIT.length;i++){
+    const fx = !!(st.jdFix & (1<<i)), x = 12 + i*100, y = 194;
+    g+=`<rect data-sit="${i}" data-fixed="${fx?1:0}" x="${x}" y="${y}" width="96" height="30" rx="7" fill="${fx?'#fff':'#F8FAFC'}" stroke="${fx?'#C2410C':(jdDone(st)?'#CBD5E0':'#E2E8F0')}" stroke-width="${fx?1.6:1.1}"${fx?'':' stroke-dasharray="4 3"'}/>`;
+    g+=`<text x="${x+48}" y="${y+12}" font-size="6.4" fill="${jdDone(st)?'#9A3412':'#E2E8F0'}" text-anchor="middle" font-weight="800">${jdDone(st)?JD_SIT_S[i]:'\u00B7'}</text>`;
+    g+=`<text x="${x+48}" y="${y+24}" font-size="6" fill="${fx?'#B45309':'#CBD5E0'}" text-anchor="middle" font-weight="700">${jdDone(st)?(fx?JD_FIX_S[jdFixOf(i)]:'아직 세우지 않았어요'):''}</text>`;
+  }
+  g+=`<text x="20" y="240" font-size="7.4" fill="#B45309" font-weight="800">이은 장면 ${linkN} / ${JD_SCENE.length} \u00B7 세운 제도 ${fixN} / ${JD_SIT.length}</text>`;
+  g+=`<rect data-linkn="${linkN}" data-leveln="${st.jdLevel}" data-fixn="${fixN}" x="14" y="116" width="0" height="0" fill="none"/>`;
+  return `<svg viewBox="0 0 320 250"><rect width="320" height="250" fill="#ffffff"/>${g}</svg>`;
+}
+
+function jdPanel(st){
+  const fin = st.jdFin!=null, allL = jdAllLink(st), done = jdDone(st);
+  const q = fin
+    ? '법원은 <b>재판</b>을 통해 옳고 그름을 가리고, 재판이 <b>공정</b>하도록 여러 제도를 두어요.'
+    : (jdReady(st) ? '재판이 <b>공정하게</b> 이루어져야 하는 까닭은 무엇일까요?'
+      : (done ? (st.jdOpenF==null ? '상황을 하나 골라 봐요. 이런 일을 막으려고 어떤 제도를 두었을까요?'
+                                   : '이 상황을 막으려고 우리나라는 <b>어떤 제도</b>를 두었을까요?')
+        : (allL ? (st.jdLevel===0 ? '한 사건이 있어요. 법원에 <b>재판</b>을 열어 봐요.'
+                                  : '이 판정이 <b>끝</b>일까요? 다시 물으면 어떻게 될까요?')
+          : (st.jdOpen==null ? '장면을 하나 골라 봐요. 어느 것부터 골라도 돼요.'
+                             : '이 장면은 법원이 하는 일 가운데 <b>어느 것</b>을 보여 주나요?'))));
+  let right = `<div class="jd-q">${q}</div>`;
+
+  if(fin){
+    right+=`<div class="dw-card"><div class="pt">\u2696\uFE0F 판정은 최종이 아니었어요</div>
+      <div>같은 사건을 다시 물을 때마다 <b>더 위의 법원</b>이 다시 판정했고, 세 번째 판정에서 <b>결과가 뒤집혔어요.</b> 사건은 한 글자도 달라지지 않았는데 결과가 달라진 거예요. 그래서 우리나라는 <b>세 번까지</b> 재판을 받을 수 있게 두어 잘못된 판결로 억울한 일이 생기는 것을 막아요.</div>
+      <div style="margin-top:5px">그리고 세 번째 뒤에는 <b>더는 물을 수 없었어요.</b> 그것이 「세 번까지」예요. 다시 묻는 데에는 옳고 그름이 없었어요.</div>
+      <div style="margin-top:5px;color:#64748B">교과서 84쪽 기사에서 <b>환자의 가족과 병원 측의 주장에 밑줄을 긋고</b>, 삼심 제도가 없다면 어떤 일이 일어날지 <b>써 보는</b> 것은 교실에서 하는 활동이에요. 화면이 그 활동을 대신하지 않아요.</div></div>`;
+  } else if(jdReady(st)){
+    right+=`<div class="jd-fin">${JD_FIN.map((f,k)=>
+      `<button class="${st.jdWrongF===k?'no':''}" onclick="jdFinish(${k})">${f}</button>`).join('')}</div>`;
+  } else if(done){
+    if(st.jdOpenF==null){
+      right+=`<div class="dw-step">\uD83D\uDEE1\uFE0F 상황 고르기 \u2014 어떤 일이 일어날까요?</div>`;
+      right+=`<div class="jd-list">${JD_SIT.map((s,i)=>{
+        const on = !!(st.jdFix & (1<<i));
+        return `<button class="${on?'ok':''}" onclick="jdSit(${i})">${on?'\u2713 ':''}${s}</button>`;
+      }).join('')}</div>`;
+    } else {
+      right+=`<div class="dw-step">\uD83C\uDFDB\uFE0F 이 상황을 막는 제도</div>`;
+      right+=`<div class="jd-note">${JD_SIT[st.jdOpenF]}</div>`;
+      right+=`<div class="jd-list">${JD_FIX.map((f,k)=>
+        `<button class="${st.jdWrongK2===k?'no':''}" onclick="jdFix(${k})">${f}</button>`).join('')}</div>`;
+    }
+  } else if(allL){
+    right+=`<div class="dw-step">\uD83D\uDD01 다시 묻기 \u2014 이 자리에는 정답이 없어요</div>`;
+    right+=`<div class="jd-casenote"><b>${JD_CASE}</b><br>원칙적으로 하나의 사건에 대해 <b>세 번까지</b> 재판을 받을 수 있어요. 어느 쪽을 눌러도 판이 옳고 그름을 말하지 않아요.</div>`;
+    right+=`<div class="jd-fin"><button class="jd-ask" onclick="jdAsk()">${st.jdLevel===0?'\u2696\uFE0F 재판을 열어요':'\u2B06\uFE0F 다시 물어요 \u2014 더 위의 법원으로'}</button></div>`;
+  } else {
+    if(st.jdOpen==null){
+      right+=`<div class="dw-step">\uD83D\uDDE8\uFE0F 장면 고르기</div>`;
+      right+=`<div class="jd-list">${JD_SCENE.map((c,j)=>{
+        const on = !!(st.jdLink & (1<<j));
+        return `<button class="${on?'ok':''}" onclick="jdPick(${j})">${on?'\u2713 ':''}${c}</button>`;
+      }).join('')}</div>`;
+    } else {
+      right+=`<div class="dw-step">\u2696\uFE0F 법원이 하는 일 가운데 어느 것일까요</div>`;
+      right+=`<div class="jd-note">${JD_SCENE[st.jdOpen]}</div>`;
+      right+=`<div class="jd-list">${JD_JOB.map((m,k)=>
+        `<button class="${st.jdWrongK===k?'no':''}" onclick="jdLink(${k})">${m}</button>`).join('')}</div>`;
+    }
+  }
+  if(st.jdMsg) right+=`<div class="dw-msg${st.jdWarn?' warn':''}">${st.jdMsg}</div>`;
+
+  return `<div class="dw-wrap">
+    <div style="text-align:center"><b style="color:var(--green)">\u2696\uFE0F 판정은 최종이 아니에요 \u2014 세 번까지 물을 수 있어요</b></div>
+    <div class="dw-body">
+      <div class="dw-canvas">${jdCanvas(st)}<div class="cvcap">판의 사건은 교과서 84쪽 기사를 옮긴 자리예요. 실제 재판이 어떻게 진행되는지를 그대로 옮긴 것은 아니에요. 판정은 기사가 적은 만큼만 써요.</div></div>
+      <div class="dw-right">${right}</div>
+    </div>
+  </div>`;
+}
+
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "2단원 민주주의와 시민 참여 · 주제② 국가기관과 권력 분립";
+
+// 확인 4 + 적용 4 — 정답 다양화 [0,2,1,3,1,3,2,0](각 자리 2회)
+// ⚠️ 11~12차시 침범 0 · l06·l07 재현 최소 · 문항 내 연도·금액·수치 0 · 실제 정당·정치인 0.
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"<b>법원</b>에 관한 설명으로 알맞은 것은?",
+   opts:["사람들 사이에 다툼이 생기거나 범죄가 발생했을 때 재판을 통해 옳고 그름을 가리는 국가기관이에요","국민을 대표해 법을 만드는 국가기관이에요",
+         "법에 따라 나라의 살림을 맡아 하는 국가기관이에요","나라의 중요한 일을 결정하는 국가기관이에요"],
+   correct:0, pts:POINTS_BASIC, scene:"court",
+   h1:"교과서는 「재판을 통해」라는 말로 법원을 설명했어요.",
+   h2:"옳고 그름을 <b>가리는</b> 곳이에요.",
+   reason:"<b>법원</b>은 사람들 사이에 다툼이 생기거나 범죄가 발생했을 때 <b>재판</b>을 통해 옳고 그름을 가리고, 법을 어긴 사람을 처벌하여 사회 질서를 유지하는 국가기관이에요."},
+  {stem:"법원에서 하는 일로 <b>알맞지 않은</b> 것은?",
+   opts:["법을 지키지 않은 사람을 처벌해요","개인 간에 발생하는 갈등을 해결해 줘요",
+         "나라의 살림에 쓸 돈을 거두어들여요","개인과 국가, 지방 자치 단체 사이에 생긴 갈등을 해결해 줘요"],
+   correct:2, pts:POINTS_BASIC, scene:"three",
+   h1:"판의 맨 위 세 칸에 적혀 있던 일을 떠올려 봐요.",
+   h2:"법원이 하는 일은 모두 <b>재판</b>과 관련 있어요.",
+   reason:"법원은 <b>재판</b>을 통해 갈등을 해결하고 법을 어긴 사람을 처벌해요. 돈을 거두어들이는 일은 법원이 하는 일이 아니에요."},
+  {stem:"법을 어겼다고 판단해 검사가 재판에 세운 사람을 무엇이라고 할까요?",
+   opts:["피해자","피고인","의뢰인","법관"],
+   correct:1, pts:POINTS_BASIC,
+   h1:"교과서 83쪽 낱말 풀이를 떠올려 봐요.",
+   h2:"판의 두 번째 장면 말풍선이 「\u2026은 무인 편의점에서」로 시작했어요.",
+   reason:"<b>피고인</b>은 법을 어겼다고 판단해 검사가 재판에 세운 사람이에요."},
+  {stem:"공정한 재판을 위한 우리나라의 제도로 알맞은 것은?",
+   opts:["법원은 다른 국가기관과 협의하여 운영돼요","재판의 과정과 결과는 모두 비공개로 해요",
+         "하나의 사건은 한 번의 재판으로 끝나요","법원은 다른 국가기관의 영향을 받지 않고 독립적으로 운영돼요"],
+   correct:3, pts:POINTS_BASIC, scene:"fair",
+   h1:"교과서 [꼭 기억해요] 1번을 떠올려 봐요.",
+   h2:"법원은 <b>독립적</b>이에요.",
+   reason:"우리나라 법원은 다른 국가기관의 영향을 받지 않고 <b>독립적으로</b> 운영되며, 헌법으로 법관의 신분을 보장해요.(첫 번째 보기는 교과서 [꼭 기억해요]에서 알맞지 않은 문장이었어요.)"},
+  // 4단계 적용 (+15)
+  {stem:"판에서 <b>같은 사건</b>인데도 세 번째 판정에서 <b>결과가 뒤집혔어요.</b> 그것이 가능했던 까닭으로 알맞은 것은?",
+   opts:["사건의 내용이 세 번째에 달라졌기 때문이에요","다시 물을 때마다 더 위의 법원이 다시 판정했기 때문이에요",
+         "판이 세 번째에는 무조건 결과를 바꾸기 때문이에요","환자의 가족이 세 번째에 새로 요구했기 때문이에요"],
+   correct:1, pts:POINTS_APPLY,
+   h1:"판에서 사건 카드의 글자는 <b>한 번도</b> 달라지지 않았어요.",
+   h2:"달라진 것은 <b>어느 법원</b>이 판정했는가였어요.",
+   reason:"<b>다시 물을 때마다 더 위의 법원이 다시 판정했기 때문</b>이에요. 우리나라는 하나의 사건에 대해 세 번까지 재판을 받을 수 있는 삼심 제도를 두어 잘못된 판결로 억울한 일이 생기는 것을 막아요."},
+  {stem:"판에서 <b>세 번째 판정 뒤</b>에는 「다시 물어요」 단추가 사라졌어요. 그 까닭으로 알맞은 것은?",
+   opts:["판정이 뒤집혀서 더 물을 필요가 없기 때문이에요","판이 고장 났기 때문이에요",
+         "다른 사건으로 바꾸어야 하기 때문이에요","원칙적으로 하나의 사건에 대해 세 번까지만 재판을 받을 수 있기 때문이에요"],
+   correct:3, pts:POINTS_APPLY,
+   h1:"판에 「물은 횟수 3 / 3」이 적혀 있었어요.",
+   h2:"교과서가 「<b>세 번까지</b>」라고 적었어요.",
+   reason:"<b>원칙적으로 하나의 사건에 대해 세 번까지만 재판을 받을 수 있기 때문</b>이에요. 그것이 삼심 제도예요."},
+  {stem:"교과서 84쪽 기사의 상황에서 <b>삼심 제도가 없다면</b> 어떤 일이 일어날까요?",
+   opts:["병원이 더 빨리 배상했을 거예요","재판이 더 공정해졌을 거예요",
+         "잘못된 판결로 손해 배상을 받지 못하는 등 억울한 일이 생길 수 있어요","환자의 가족이 더 많은 법원에 물을 수 있었을 거예요"],
+   correct:2, pts:POINTS_APPLY,
+   h1:"판에서 환자의 가족은 <b>1심과 2심</b>에서 졌어요.",
+   h2:"세 번째가 없었다면 결과는 <b>2심</b>에서 끝났을 거예요.",
+   reason:"삼심 제도가 없었다면 <b>잘못된 판결로 손해 배상을 받지 못하는 등 억울한 일</b>이 생길 수 있었어요. 그래서 세 번까지 재판을 받을 수 있게 두어요."},
+  {stem:"공정한 재판을 위한 제도로 <b>알맞지 않은</b> 것은?",
+   opts:["재판의 과정과 결과를 모두 비공개로 해요","법원은 다른 국가기관의 영향을 받지 않고 독립적으로 운영돼요",
+         "하나의 사건에 대해 세 번까지 재판을 받을 수 있어요","헌법으로 법관의 신분을 보장해요"],
+   correct:0, pts:POINTS_APPLY, scene:"fair",
+   h1:"판의 맨 아래 세 칸에 세웠던 제도를 떠올려 봐요.",
+   h2:"재판의 과정과 결과를 <b>비공개</b>로 하면 국민이 재판의 결과를 믿지 못할 수도 있어요.",
+   reason:"재판 결과의 공정성을 확보하기 위해 특별한 경우를 제외하고 재판의 과정과 결과를 <b>공개</b>해요. 모두 비공개로 하는 것은 공정한 재판을 위한 제도가 아니에요."}
+];
+
+const slides = [];
+// 1 들어가기 — [동기 유발] 정의의 여신상
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">저울과 법전은 무엇을 뜻할까요?</h2>
+  <div class="ka-bub">지난 시간에는 행정부에서 하는 일을 알아봤어요. 오늘은 <span class="ka-emph">법원에서 하는 일</span>을 알아봐요. 우리나라 대법원에 세워진 정의의 여신상은 한 손에는 <b>저울</b>을, 한 손에는 <b>책</b>을 들고 있어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('open','정의의 여신상','wide')}</div>
+    <div class="note">\u00B7 저울 \u2014 공정하게 법을 적용하겠다는 뜻인 것 같아요.<br>\u00B7 책은 법전 \u2014 정해진 법률에 따라 재판을 하겠다는 뜻인 것 같아요.</div></div>`});
+// 2 살펴보기 — 법원의 뜻
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">법원은 어떤 곳일까요?</h2>
+  <div class="ka-bub">법원은 사람들 사이에 다툼이 생기거나 범죄가 발생했을 때 <b>재판</b>을 통해 <span class="ka-emph">옳고 그름을 가리고</span>, 법을 어긴 사람을 처벌하여 <b>사회 질서를 유지</b>하는 국가기관이에요. 또한 개인과 국가, 지방 자치 단체 사이에 생긴 갈등을 해결하기도 해요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('court','법원','wide')}</div>
+    <div class="note"><b>피고인</b> \u2014 법을 어겼다고 판단해 검사가 재판에 세운 사람이에요.</div></div>`});
+// 3 살펴보기 — 법원에서 하는 일 세 장면(교과서 83쪽)
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">법원에서 하는 일은 무엇일까요?</h2>
+  <div class="ka-bub">① <b>개인 간에 발생하는 갈등</b>을 해결해 줘요. ② <b>법을 지키지 않은 사람</b>을 처벌해요. ③ <span class="ka-emph">개인과 국가, 지방 자치 단체 사이에 생긴 갈등</span>을 해결해 줘요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('three','세 가지 일','wide')}</div>
+    <div class="tipbox"><b>위자료</b> \u2014 불법 행위로 생기는 손해 가운데 정신적 고통이나 피해에 대한 배상금이에요.<br><b>손해 배상</b> \u2014 법률에 따라 남에게 끼친 손해를 물어 주는 일이에요.</div></div>`});
+// 4 살펴보기 — reveal: 법원이 없다면
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">법원이 없다면 어떤 일이 생길까요?</h2>
+  <div class="ka-grp">
+  <div class="paper"><div class="ph">\uD83D\uDCAC 돌아가며 말하기 \u2014 의견 나누기</div>
+    법을 지키지 않은 사람을 아무도 처벌할 수 없다면 어떻게 될까요? 먼저 떠올려 보고 눌러요.</div>
+  <div class="scene-row">${sceneCard('none','법원이 없다면','wide')}</div>
+  ${st.revealed?`<div class="answer-box">\u00B7 법을 지키지 않는 사람이 <b>많아질</b> 것 같아요.<br>
+    \u00B7 법을 지키지 않은 사람을 제대로 처벌할 수 없어 <b>사회 질서가 혼란스러워질</b> 것 같아요.<br>
+    \u00B7 사람들 사이에 <b>다툼과 갈등이 늘어날</b> 것 같아요.</div>`
+    :`<div class="note">옳고 그름을 가려 줄 곳이 없다면?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 5 살펴보기 — 직접조작(판정이 최종이 아닌 판)
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">판정은 최종이 아니에요 \u2014 세 번까지 물을 수 있어요</h2>
+  <div class="ka-grp">${jdPanel(st)}</div>`});
+// 6 살펴보기 — 공정한 재판을 위한 제도(교과서 84쪽)
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">재판이 공정하려면 무엇이 필요할까요?</h2>
+  <div class="ka-bub">국민의 자유와 권리를 보장하려면 재판이 <span class="ka-emph">공정하게</span> 이루어져야 해요. 우리나라 법원은 다른 국가기관의 영향을 받지 않고 <b>독립적으로 운영</b>되며, 헌법으로 <b>법관의 신분을 보장</b>해요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('fair','세 가지 제도','wide')}</div>
+    <div class="tipbox">우리나라는 원칙적으로 하나의 사건에 대해 <b>세 번까지 재판</b>을 받을 수 있도록 한 <b>삼심 제도</b>를 두어 잘못된 판결로 억울한 일이 생기는 것을 막고 있어요. 또한 재판 결과의 공정성을 확보하기 위해 특별한 경우를 제외하고 <b>재판의 과정과 결과를 공개</b>해요.</div></div>`});
+// 7 살펴보기 — reveal: [별별 직업] 변호사
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">[별별 직업] 변호사는 어떤 일을 하나요?</h2>
+  <div class="ka-grp">
+  <div class="paper"><div class="ph">\uD83D\uDD0E 어려움에 처한 사람을 법을 이용해 도와줘요!</div>
+    개인 간의 다툼이나 범죄 사건이 발생했을 때 <b>의뢰인을 도와 변호</b>를 해 줘요. 법과 관련한 일로 고민이 있는 사람에게 <b>법률 상담</b>을 해 주거나 기업, 단체 등을 대신해 법적인 문제를 해결해 주기도 해요.</div>
+  <div class="scene-row">${sceneCard('lawyer','변호사','wide')}</div>
+  ${st.revealed?`<div class="answer-box">\u00B7 법학 전문 대학원을 졸업해 <b>변호사 자격시험</b>에 합격해야 해요.<br>
+    \u00B7 사건을 체계적으로 분석하고 추리하여 문제를 해결할 수 있는 <b>논리력</b>과, 자신의 생각을 말과 글로 조리 있게 표현할 수 있는 <b>언어 능력</b>이 필요해요.<br>
+    \u00B7 자신의 생각과 감정을 잘 알고, 자신을 돌아보며 감정을 조절할 수 있는 <b>자기 성찰 능력</b>도 중요해요.</div>`
+    :`<div class="note">변호사가 되려면 어떤 것이 필요할까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리: 요약 — 10차시 주요 내용 정리 원문
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 배운 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('wrap','오늘의 정리','wide')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">★</span><div><b style="color:var(--green)">법원</b> \u2014 사람들 사이에 다툼이 생기거나 범죄가 발생했을 때 재판을 통해 옳고 그름을 가리고, 법을 어긴 사람을 처벌하여 사회 질서를 유지하는 국가기관이에요.</div></div>
+    <div class="sum-item"><span class="n">①</span><div><b style="color:var(--green)">법원에서 하는 일</b> \u2014 재판을 통해 옳고 그름을 가림 \u00B7 법을 어긴 사람을 처벌해 사회 질서를 유지함 \u00B7 개인과 국가, 지방 자치 단체 사이에 생긴 갈등을 해결함.</div></div>
+    <div class="sum-item"><span class="n">②</span><div><b style="color:var(--green)">공정한 재판을 위한 제도</b> \u2014 법원의 독립과 법관의 신분 보장, 삼심 제도, 재판의 과정과 결과 공개.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b style="color:var(--green)">국가기관의 권력을 나누는 까닭</b>을 알아봐요.</div></div>`});
+// 17 정리: 자기 평가
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"법원에서 하는 일을 설명할 수 있어요",st)}
+    ${selfCheck(1,"공정한 재판을 위한 제도의 필요성을 말할 수 있어요",st)}
+    ${selfCheck(2,"재판이 공정하게 이루어져야 하는 까닭에 관심을 갖게 됐어요",st)}
+  </div><div class="note">별이 적게 채워진 곳은 앞 슬라이드를 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">오늘 공부를 마쳤어요!</h2>
+  <div class="ka-grp">
+    <div class="scene-row">${sceneCard('done','','wide')}</div>
+    <div class="end-score">\u2B50 ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">다음은 <b style="color:var(--amber)">국가기관의 권력을 나누는 까닭</b>!</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">\u2B55 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g6_social_u2_l08";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  jdLink:0, jdOpen:null, jdLevel:0, jdFix:0, jdOpenF:null, jdFin:null,
+  jdWrongK:null, jdWrongK2:null, jdWrongF:null,
+  jdMsg:null, jdWarn:false, jdBusy:false,
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 \u2192';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+
+
+function jdRender(){ main.innerHTML = slides[state.idx].render(state); }
+function jdHold(msg){
+  state.jdWarn=true; state.jdBusy=true; state.jdMsg=msg;
+  playThud(); jdRender();
+  setTimeout(()=>{ state.jdBusy=false; state.jdWarn=false; state.jdMsg=null;
+    state.jdWrongK=null; state.jdWrongK2=null; state.jdWrongF=null; jdRender(); },1600);
+}
+
+/* ① 장면 고르기 — ⚠️ 판정 0(고르는 자리에는 옳고 그름이 없다) · 순서 자유 */
+function jdPick(j){
+  if(state.jdFin!=null) return;                                        // 가드①
+  if(state.jdBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(j) || j<0 || j>=JD_SCENE.length) return;        // 가드②
+  if(state.jdLink & (1<<j)){ jdHold(JD_ALREADY_J); return; }           // 가드④ 판 불변
+  state.jdOpen = j; state.jdWarn=false; state.jdMsg=null;
+  playBlip(); jdRender();
+}
+
+/* ① 일 잇기 — 판정 있음. ⚠️ 어긋나도 판은 그대로이고 안내가 알맞은 일을 짚지 않는다. */
+function jdLink(k){
+  if(state.jdFin!=null) return;                                        // 가드①
+  if(state.jdBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(k) || k<0 || k>=JD_JOB.length) return;          // 가드②
+  if(state.jdOpen==null){ jdHold(JD_ORDER_K); return; }                // 순서 — 판 불변
+  const j = state.jdOpen;
+  if(jdKindOf(j)!==k){                                                 // 어긋남 — 판 불변
+    state.jdWrongK=k; jdHold(JD_WRONG_K); return; }
+  state.jdLink |= 1<<j; state.jdOpen=null; state.jdWrongK=null; state.jdWarn=false;
+  state.jdMsg = jdAllLink(state)
+    ? `이 장면은 <b>\u300C${JD_JOB_S[k]}\u300D</b>이었어요. 세 장면을 <b>모두</b> 이었어요. 이제 한 사건을 재판에 부쳐 봐요.`
+    : `이 장면은 <b>\u300C${JD_JOB_S[k]}\u300D</b>이었어요.`;
+  if(jdAllLink(state)) playChime(); else playBlip();
+  jdRender();
+}
+
+/* ② 다시 묻기 — ★ 이 함수가 이 패턴의 핵심 신규성이다.
+   ⚠️ 옳고 그름이 없다(정답 상수 부재). 같은 사건을 다시 물으면 **더 위의 법원이 다시 판정**하고,
+      지금의 판정은 `jdVerdict`가 정한다. 세 번째 뒤에는 **다시 물을 수 없다**(상한). 인자를 받지 않는다. */
+function jdAsk(){
+  if(state.jdFin!=null) return;                                        // 가드①
+  if(state.jdBusy) return;                                             // 가드⑨
+  if(!jdAllLink(state)){ jdHold(JD_ORDER_A); return; }                 // 가드③ 순서 — 판 불변
+  if(state.jdLevel >= JD_MAX) return;                                  // 가드⑤ 상한 — 판 불변
+  state.jdLevel += 1;                                                  // ★ 사건이 위로 올라가는 자리는 여기 한 곳뿐
+  state.jdWarn=false; state.jdMsg = JD_ASK_MSG[state.jdLevel-1];
+  if(jdDone(state)) playChime(); else playBlip();
+  jdRender();
+}
+
+/* ③ 상황 고르기 — ⚠️ 판정 0 · 순서 자유 */
+function jdSit(i){
+  if(state.jdFin!=null) return;                                        // 가드①
+  if(state.jdBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(i) || i<0 || i>=JD_SIT.length) return;          // 가드②
+  if(!jdDone(state)){ jdHold(JD_ORDER_S); return; }                    // 가드⑥ 순서 — 판 불변
+  if(state.jdFix & (1<<i)){ jdHold(JD_ALREADY_S); return; }            // 가드⑦ 판 불변
+  state.jdOpenF = i; state.jdWarn=false; state.jdMsg=null;
+  playBlip(); jdRender();
+}
+
+/* ③ 제도 세우기 — 판정 있음. ⚠️ 어긋나도 판은 그대로이고 안내가 알맞은 제도를 짚지 않는다. */
+function jdFix(k){
+  if(state.jdFin!=null) return;                                        // 가드①
+  if(state.jdBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(k) || k<0 || k>=JD_FIX.length) return;          // 가드②
+  if(state.jdOpenF==null){ jdHold(JD_ORDER_F); return; }               // 순서 — 판 불변
+  const i = state.jdOpenF;
+  if(jdFixOf(i)!==k){                                                  // 어긋남 — 판 불변
+    state.jdWrongK2=k; jdHold(JD_WRONG_F); return; }
+  state.jdFix |= 1<<i; state.jdOpenF=null; state.jdWrongK2=null; state.jdWarn=false;
+  state.jdMsg = jdAllFix(state)
+    ? `<b>\u300C${JD_FIX_S[k]}\u300D</b>이 그 상황을 막아요. 공정한 재판을 위한 제도를 <b>모두</b> 세웠어요.`
+    : `<b>\u300C${JD_FIX_S[k]}\u300D</b>이 그 상황을 막아요.`;
+  if(jdAllFix(state)) playChime(); else playBlip();
+  jdRender();
+}
+
+/* ④ 마무리 — 「재판이 공정하게 이루어져야 하는 까닭은 무엇인가요」 */
+function jdFinish(k){
+  if(state.jdFin!=null) return;                                        // 가드①
+  if(state.jdBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(k) || k<0 || k>=JD_FIN.length) return;          // 가드②
+  if(!jdReady(state)) return;                                          // 가드⑧ 순서 — 판 불변
+  if(k===JD_FIN_OK){
+    state.jdFin=k; state.jdWrongF=null; state.jdMsg=null; state.jdWarn=false;
+    playChime(); jdRender(); return;
+  }
+  state.jdWrongF=k;
+  jdHold(JD_FIN_NO[k]);
+}
+
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2;
+    if(qs.hint>=2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">\uD83D\uDCD8 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 \u2192</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // l09 미양산 — 양산 시 재배선
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+</body>
+</html>

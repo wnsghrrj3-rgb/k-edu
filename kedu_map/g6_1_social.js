@@ -201,14 +201,14 @@ window.KEDU_MAP["g6_1_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u2_l08",
+     "lessonId": "g6_social_u2_l08_v1",
      "n": "8",
      "title": "법원에서 하는 일을 알아볼까요 / [별별 직업] 변호사",
      "sub": "② 국가기관과 권력 분립",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/social/2단원_민주주의와시민참여/g6_social_u2_l08_세번까지.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
