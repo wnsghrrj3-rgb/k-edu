@@ -13,6 +13,12 @@ window.KEDU_MAP_INDEX = [
   "ready": 69
  },
  {
+  "key": "g1_2_korean",
+  "units": 1,
+  "lessons": 7,
+  "ready": 7
+ },
+ {
   "key": "g1_2_math",
   "units": 7,
   "lessons": 61,
@@ -104,9 +110,9 @@ window.KEDU_MAP_INDEX = [
  },
  {
   "key": "g6_1_korean",
-  "units": 3,
-  "lessons": 22,
-  "ready": 22
+  "units": 6,
+  "lessons": 45,
+  "ready": 45
  },
  {
   "key": "g6_1_math",
@@ -124,6 +130,6 @@ window.KEDU_MAP_INDEX = [
   "key": "g6_1_social",
   "units": 3,
   "lessons": 36,
-  "ready": 11
+  "ready": 14
  }
 ];

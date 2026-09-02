@@ -131,34 +131,34 @@ window.KEDU_MAP["g6_1_social"] = {
    "kind": "unit",
    "lessons": [
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u2_l01",
+     "lessonId": "g6_social_u2_l01_v1",
      "n": "1",
      "title": "민주주의에서 선거가 무엇인지 알아볼까요",
      "sub": "① 민주주의와 선거",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/social/2단원_민주주의와시민참여/g6_social_u2_l01_선거란무엇일까.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u2_l02",
+     "lessonId": "g6_social_u2_l02_v1",
      "n": "2",
      "title": "선거가 중요한 까닭을 알아볼까요",
      "sub": "① 민주주의와 선거",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/social/2단원_민주주의와시민참여/g6_social_u2_l02_선거가중요한까닭.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u2_l03",
+     "lessonId": "g6_social_u2_l03_v1",
      "n": "3",
      "title": "선거 과정을 알아볼까요 / [별별 직업] 선거 관리 위원회 공무원",
      "sub": "① 민주주의와 선거",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/social/2단원_민주주의와시민참여/g6_social_u2_l03_선거과정.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,

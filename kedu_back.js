@@ -55,7 +55,7 @@
   var HUB_DIRS = [
     '/admin/','/auth/','/board/','/classwork/','/draw/','/draw/coloring/','/draw/masterpiece/','/english/',
     '/english/v3/','/english/v3/samples/','/gifted/','/grade1/semester1/korean/',
-    '/grade1/semester1/math/','/grade1/semester2/math/','/grade2/semester1/korean/','/grade2/semester1/math/',
+    '/grade1/semester1/math/','/grade1/semester2/korean/','/grade1/semester2/math/','/grade2/semester1/korean/','/grade2/semester1/math/',
     '/grade3/semester1/korean/','/grade3/semester1/math/','/grade3/semester1/science/',
     '/grade3/semester1/social/','/grade4/semester1/korean/','/grade4/semester1/math/',
     '/grade4/semester1/science/','/grade4/semester1/social/','/grade5/semester1/korean/',
