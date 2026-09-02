@@ -258,6 +258,83 @@ window.KEDU_MAP["g1_2_korean"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 4,
+   "name": "감동을 나누어요",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g1_korean_u4_l01",
+     "lessonId": "g1_2_kor_u4_l01_02_v1",
+     "n": "1·2",
+     "title": "단원 시작 — 배울 내용 살펴보기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/4단원_감동을나누어요/g1_kor_u4_l01_02.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u4_l03",
+     "lessonId": "g1_2_kor_u4_l03_05_v1",
+     "n": "3·4·5",
+     "title": "누가 무엇을 했는지 생각하며 이야기 듣기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/4단원_감동을나누어요/g1_kor_u4_l03_05.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u4_l06",
+     "lessonId": "g1_2_kor_u4_l06_07_v1",
+     "n": "6·7",
+     "title": "이야기를 읽고 일이 일어난 차례 정리하기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/4단원_감동을나누어요/g1_kor_u4_l06_07.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u4_l08",
+     "lessonId": "g1_2_kor_u4_l08_09_v1",
+     "n": "8·9",
+     "title": "만화 영화를 보고 있었던 일 정리하기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/4단원_감동을나누어요/g1_kor_u4_l08_09.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u4_l10",
+     "lessonId": "g1_2_kor_u4_l10_11_v1",
+     "n": "10·11",
+     "title": "만화 영화를 보고 감동적인 장면 나누기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/4단원_감동을나누어요/g1_kor_u4_l10_11.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u4_l12",
+     "lessonId": "g1_2_kor_u4_l12_13_v1",
+     "n": "12·13",
+     "title": "배운 내용 실천하기 (감동적인 장면 그리기)",
+     "sub": null,
+     "url": "/grade1/semester2/korean/4단원_감동을나누어요/g1_kor_u4_l12_13.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u4_l14",
+     "lessonId": "g1_2_kor_u4_l14_15_v1",
+     "n": "14·15",
+     "title": "단원 마무리하기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/4단원_감동을나누어요/g1_kor_u4_l14_15.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };
