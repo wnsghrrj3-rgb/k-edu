@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<!--
+K-edu 사회 6-1 · 2단원 민주주의와 시민 참여 · 주제② 국가기관과 권력 분립 · 6차시(l06)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [6사08-02] · 교과서 p.77~79 · 지도서(대단원2 **8차시** 국회에서 하는 일을 알아볼까요,
+  지도서 p.177~179) 근거.
+학습 목표: 국회에서 하는 일을 설명할 수 있다.
+수업 기법 및 전략: 모둠 토의 · 의견 나누기
+⚠️ 엔진은 대단원1 l01~l11 · 대단원2 l01~l05에서 100% 승계. 2단원 색 #C2410C 유지 · CSS 변수명 무수정.
+
+⚠️ 파일명을 `법이되기까지`로 지었다(배선 예외 대신). l05가 「국회에서 하는 일」을 개수 ≤2로 재고 있고
+   「법률안」·「심의」·「거부권」·「감시」·「견제」·「국회의원」을 개수 0으로 재고 있어서, 파일명에 그 낱말이
+   들어가면 재배선이 곧바로 그 가드를 깨뜨린다. 겹치지 않는 이름을 골라 예외를 만들지 않았다(l05 선례).
+
+직접조작: 미는 자리와 끝내는 자리가 다른 판(52번째 신규 패턴 — 판의 걸음이 처음으로 물러나는 형)
+  ⭐ 앞의 쉰한 종에서 **판의 걸음은 한 번도 줄어들지 않았다.** 47번째(첫 길이 막히는 판)에서 첫 길이
+     닫혔을 때도 「직접 가 봄」 표시가 새로 남아 판은 앞으로만 갔고, 42번째(되돌아온 요구가 판을 키우는
+     판)에서 요구가 세 번 되돌아왔을 때도 광장은 **자라기만** 했으며, 46번째(도로 감추는 형)의 되감김조차
+     **가져간 쌍은 건드리지 않아** 진행은 언제나 단조였다.
+     이번만 **판의 걸음 수가 실제로 줄어든다** — 되돌려 보내면 법률안이 국회로 돌아가 걸음이 물러난다.
+     근거는 교과서 77쪽 말풍선 원문 「대통령은 새로운 법에 관한 의견이 다르면 거부권을 행사할 수 있어요」.
+  ⭐ **그리고 그 물림은 국회 자리에서 일어나지 않는다** — 걸음을 미는 단추는 앞 세 걸음에만 있고,
+     마지막 걸음은 **대통령 칸의 두 단추 중 하나로만** 일어난다. 세 걸음을 다 밀어도 미는 단추가 사라진다.
+     ⚠️ 47번째(첫 길이 막히는 판)와의 대비 — 거기서는 **판이 막는 자리를 미리 정해 두었고** 학생이
+     스스로 길을 닫아야 했다. 여기서는 **막는 자리가 아니라 손이 닿는 자리 자체가 다르다.**
+  ⭐ **법률이 되었는지를 따로 담는 상태가 코드에 아예 없다** — `lwLaw(st) = st.lwStep >= LW_N`
+     **한 줄**이 그것을 다 정하고, 그 줄이 코드에 단 하나이며 `LW_WHO[`를 읽는 자리도 **단 하나**
+     (`lwWhoOf`)다. 그래서 「밀지 않았는데 법률이 된 판」도 「서명하지 않았는데 시행된 판」도
+     만들어질 수 없다.
+  ⭐ **되돌려 보내는 자리에는 옳고 그름이 없다**(`LW_SIGN_OK` 부재 · 무판정). 교과서가 「행사할 수
+     있어요」라고만 적었으므로 판이 대신 판정하지 않는다. 몇 번을 되돌려도 감점 0이고, 판이
+     「그러면 안 돼요」라고 말하지 않는다.
+  ① **법이 만들어지는 걸음 3 밀기**(교과서 77쪽 원문 · 국민 → 국회의원 → 국회 · 차례 고정 · 무판정)
+  ② **대통령 칸 — 서명하기 / 되돌려 보내기**(무판정 · 되돌려 보내면 걸음이 물러나 다시 심의한다)
+  ③ **국회가 하는 다른 일 3건 세우기**(교과서 79쪽 원문 · 순서 자유 · 무판정)
+  ④ 마무리 3택 = 대통령이 법률안에 서명하는 까닭(지도서 예시 답안 원문)
+  ⚠️ 걸음·자리·일·3택 전량 고정 리터럴 — 난수 0(`LW_WHO=[0,1,1,2]` 한 줄이 자리 대응을 통째로 정한다).
+  ⚠️ 가드 9종: ① 마무리 확정 후 전체 잠금 / ② 무효 번호(`Number.isInteger`·범위) /
+     ③ **마지막 걸음은 미는 단추로 밀 수 없음 — 판 불변**(핵심 가드) / ④ 법률이 된 뒤 밀기 무시 /
+     ⑤ 마지막 걸음 차례가 아닐 때 대통령 칸 무시(순서) — 판 불변 /
+     ⑥ 법률이 되기 전 다른 일 세우기 무시(순서) — 판 불변 / ⑦ 이미 세운 일 재클릭 — 판 불변 /
+     ⑧ 세 일을 다 세우기 전 마무리 무시(순서) / ⑨ 안내 표시 중 재클릭 무시(`lwBusy`).
+     재시도 허용(감점 없음), 조작에 점수 0. 발문은 `.lw-q`로 떼어 전 단계 상시 노출. 상태 열쇠 10개.
+
+⚠️ 정직 원칙 네 곳
+  ㉠ **화면이 [친구와 활동] 법률안 제안서 쓰기를 대신하지 않는다.** 진짜 활동은 교실에서 모둠이
+     우리 생활에서 개선이 필요한 문제를 찾아 제안서를 쓰는 일이고, 판이 다루는 자리는 **법이
+     만들어지는 걸음**까지다. 완료 카드에 그렇게 적었다.
+  ㉡ **되돌려 보내는 자리에 옳고 그름을 두지 않는다** — 교과서가 「행사할 수 있어요」라고만 적었다.
+  ㉢ **국회가 하는 일은 교과서 원문 한 줄씩까지만** — 어떻게 심사하는지의 자세한 절차는 교과서가
+     말하지 않았으므로 판이 그 이상 말하지 않는다.
+  ㉣ **판의 걸음은 실제 나라의 절차를 그대로 옮긴 것이 아니라 교과서 77쪽 그림을 판으로 옮긴 자리다**
+     — 캔버스 캡션에 명시(스모크가 대조).
+
+⚠️ 설계 원칙
+  · **9차시 이후 침범 0** — 국무총리 0 · 행정 각부 0 · 행정부가 하는 일 상세 0.
+    (「행정부」는 국정 감사의 대상으로 교과서 79쪽 원문이 말한 자리까지.)
+  · **10차시 침범 0** — 삼심 0 · 법관 0 · 공개 재판 0 · 대법원 0 · 대법원장 0.
+  · **11~12차시 침범 0** — **독재 0 · 균형 0** · 「권력 분립」은 **META 주제명 한 자리뿐(개수 1)** ·
+    「감시」·「견제」는 교과서 77쪽 본문 원문 자리까지(개수 ≤5).
+  · **주제① 재현 최소** — 「선거」는 교과서 8차시 본문 원문 자리까지(개수 ≤2) · 공약·유권자·후보자·
+    기표소·모의 선거 0. 「투표」는 교과서 걸음 원문 자리까지.
+  · **대단원1 재현 0 · 대단원3 침범 0.**
+  · **정치적 중립** — 우리나라의 실제 정당·정치인 0, 실제 법률 이름 0, 실제 사건·연도 0.
+    되돌려 보내기를 옳은 일로도 그른 일로도 그리지 않는다. 어느 기관도 나쁜 곳으로 그리지 않는다.
+  · 교사용 참고 자료 0 — 참고 도서 다섯 종, 「헌법」 조항과 입법권, 탄핵·국정 조사·상임 위원회·
+    본회의·재적 의원 과반수, 기한 일수, 대한민국 어린이 국회 누리집 주소,
+    활동지 신문 기사(신문사 이름·날짜·금액·인원) 전부 0.
+  · **파일 전체에 네 자리 연도 0 · 금액·통계 수치 0**(CSS 밖 스코프로 대조 — l09 규약 승계).
+  · 정서 — 교과서가 예로 든 「학교 폭력」은 **교과서가 말한 만큼만** 쓰고 겁주지 않는다.
+    사람이 다치거나 괴로워하는 묘사 0. **학생 이름 0 · 실제 지역 이름 0.**
+
+⚠️ goNextLesson = 허브 복귀(l07 미양산 — 양산 시 재배선).
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g6_social_u2_l06_v1">
+<title>국회에서 하는 일을 알아볼까요 · 사회 6-1</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#C2410C; --green-d:#9A3412; --cyan:#EA580C;
+  --bg:#FFF7ED; --bub:#FFEDD5; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#B45309; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-shrink:0}
+.ka-lb{background:#F1F5F9;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;
+  font-weight:700;color:var(--muted);font-size:clamp(11px,1.9vw,13px);display:flex;align-items:center;gap:6px}
+.ka-lb svg{width:14px;height:14px}
+.ka-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.ka-bar>div{height:100%;background:var(--green);border-radius:99px;transition:width .35s ease;width:5%}
+.ka-pg{font-size:clamp(11px,1.9vw,13px);color:var(--muted);font-weight:700;min-width:46px;text-align:right}
+.ka-sc{display:flex;align-items:center;gap:3px;background:var(--amber-bg);border-radius:99px;padding:5px 11px}
+.ka-sc svg{width:15px;height:15px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;color:var(--amber);font-size:clamp(14px,2.4vw,17px)}
+.ka-sc-u{font-size:11px;color:var(--amber);font-weight:700}
+
+/* 메인 */
+.ka-m{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;padding:4px 2px}
+.ka-tags{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ka-bg{display:inline-flex;align-items:center;gap:5px;background:var(--bub);color:var(--green-d);
+  border-radius:99px;padding:5px 12px;font-size:clamp(11px,1.9vw,13px);font-weight:700}
+.ka-bg svg{width:13px;height:13px}
+.ka-bg.s2{background:#E0F2FE;color:#075985}
+.ka-bg.s3{background:#DCFCE7;color:#166534}
+.ka-bg.s4{background:#FEF3C7;color:#92400E}
+.ka-bg.s5{background:#F3E8FF;color:#6B21A8}
+.ka-meta{font-size:clamp(10px,1.7vw,12px);color:#94A3B8;font-weight:600}
+.ka-t{font-size:clamp(19px,3.4vw,27px);font-weight:700;line-height:1.4;margin-bottom:10px}
+.ka-bub{background:var(--bub);border-radius:14px;padding:13px 18px;font-size:clamp(14px,2.4vw,18px);
+  line-height:1.7;margin-bottom:12px}
+.ka-emph{color:var(--green-d);font-weight:700}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.scene.wide{width:clamp(240px,44vw,420px)}
+.scene.wide svg{height:clamp(120px,20vw,200px)}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(15px,2.6vw,20px);font-weight:700;line-height:1.6;margin-bottom:12px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+.opt{background:#fff;border:2px solid var(--line);border-radius:13px;padding:13px 15px;cursor:pointer;
+  font-family:inherit;font-size:clamp(13px,2.2vw,16.5px);font-weight:500;text-align:left;line-height:1.5;transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:#16A34A;background:#DCFCE7;font-weight:700}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:11px;border-radius:12px;padding:12px 16px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;animation:fadeUp .3s ease both}
+.fb.ok{background:#DCFCE7;color:#166534;font-weight:700}
+.hint{margin-top:9px;background:var(--amber-bg);border-radius:11px;padding:10px 14px;
+  font-size:clamp(12.5px,2.1vw,15px);color:var(--amber);line-height:1.55}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:9px;width:100%;max-width:660px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFC;border-radius:12px;padding:11px 15px;
+  font-size:clamp(13px,2.2vw,16.5px);line-height:1.6}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'\2713';color:#fff;font-weight:800;font-size:14px}
+
+/* 직접조작 — 미는 자리와 끝내는 자리가 다른 판 */
+.dw-wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dw-body{display:grid;grid-template-columns:1.05fr 1fr;gap:10px;align-items:start}
+.dw-canvas{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.dw-canvas svg{width:100%;height:auto;display:block}
+.dw-canvas .cvcap{padding:5px 6px;text-align:center;font-size:clamp(9.5px,1.6vw,11.5px);
+  color:var(--muted);font-weight:700;background:#F8FAFC}
+.dw-right{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dw-step{font-size:clamp(10.5px,1.75vw,13px);font-weight:800;color:var(--green)}
+.dw-msg{background:#F8FAFC;border:2px solid var(--line);border-left:4px solid var(--green);border-radius:10px;
+  padding:8px 12px;font-size:clamp(11.4px,1.93vw,13.8px);line-height:1.55;color:#334155;animation:fadeUp .3s ease both}
+.dw-msg.warn{border-left-color:var(--amber)}
+.dw-msg b{color:var(--green)}
+.dw-card{background:#fff;border:2px solid var(--amber);border-radius:12px;padding:10px 12px;
+  font-size:clamp(12px,2.05vw,14.5px);line-height:1.55;animation:pop .35s ease both}
+.dw-card .pt{font-weight:800;color:var(--amber);margin-bottom:4px;font-size:clamp(12.5px,2.15vw,15px)}
+.lw-q{font-size:clamp(11.6px,1.97vw,14px);font-weight:800;color:var(--green);
+  background:var(--bub);border-radius:9px;padding:7px 11px;line-height:1.45}
+.lw-fin{display:flex;flex-direction:column;gap:5px}
+.lw-fin button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;padding:7px 10px;
+  cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.lw-fin button:hover{background:var(--bub)}
+.lw-fin button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.lw-list{display:flex;flex-direction:column;gap:5px;max-height:206px;overflow-y:auto}
+.lw-list button{border:2px solid #CBD5E0;background:#fff;border-radius:10px;padding:7px 10px;cursor:pointer;
+  font-family:inherit;font-weight:700;color:var(--ink);font-size:clamp(10.6px,1.8vw,13px);transition:.15s;
+  line-height:1.4;text-align:left}
+.lw-list button:hover{border-color:var(--green);background:var(--bub)}
+.lw-list button.ok{border-color:var(--cyan);background:#FFF7ED;color:#C79A7A}
+.lw-list button.no{border-color:var(--amber);background:var(--amber-bg);animation:shakeNo .4s ease}
+.lw-list button:disabled{border-color:#E2E8F0;background:#F8FAFC;color:#CBD5E0;cursor:default}
+.lw-push{border:2px solid var(--green);background:var(--bub);color:var(--green-d);border-radius:10px;
+  padding:9px 10px;cursor:pointer;font-family:inherit;font-weight:800;
+  font-size:clamp(11px,1.87vw,13.4px);text-align:center;line-height:1.4}
+.lw-push:hover{background:#FFE4CC}
+.lw-note{background:#F8FAFC;border:2px dashed #CBD5E0;border-radius:10px;padding:7px 10px;
+  font-size:clamp(10.4px,1.76vw,12.4px);line-height:1.5;color:#64748B}
+.lw-seatnote{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:10px;padding:8px 11px;
+  font-size:clamp(10.8px,1.83vw,13px);line-height:1.5;color:#3F3A2C}
+.lw-seatnote b{color:#8A6D3B}
+.paper{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:12px;padding:12px 16px;
+  font-size:clamp(12.5px,2.1vw,15px);line-height:1.65;color:#3F3A2C;max-width:660px;
+  animation:fadeUp .4s ease both}
+.paper .ph{font-weight:800;color:#8A6D3B;margin-bottom:6px;font-size:clamp(13px,2.2vw,16px)}
+.tipbox{background:#FFEDD5;border-radius:12px;padding:11px 16px;font-size:clamp(12.5px,2.1vw,15px);
+  line-height:1.6;color:#7C2D12;max-width:660px}
+@media(max-width:620px){ .dw-body{grid-template-columns:1fr} }
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(194,65,12,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style>
+<script src="/kedu_gate.js"></script>
+</head>
+
+
+
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#B45309"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식 =====
+   ⚠️ 정직 원칙: 모든 그림은 내용을 나타낸 도식이며 실제 사진·자료가 아니다.
+   ⚠️ 정치적 중립: 우리나라의 실제 정당·정치인 0. 기관은 사람 형상이 아니라 건물과 표찰로만 그린다. */
+const SVG = {
+  // 1 들어가기 — 국회 의사당(건물 도식 · 사람 형상 0)
+  open:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    <text x="160" y="19" font-size="11" fill="#9A3412" text-anchor="middle" font-weight="800">이곳은 어디일까요?</text>
+    <rect x="58" y="96" width="204" height="42" rx="4" fill="#fff" stroke="#C2410C" stroke-width="1.8"/>
+    <path d="M78 96 L78 74 M96 96 L96 74 M114 96 L114 74 M206 96 L206 74 M224 96 L224 74 M242 96 L242 74" stroke="#EA580C" stroke-width="2.4"/>
+    <rect x="70" y="66" width="180" height="9" rx="2" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.4"/>
+    <rect x="132" y="60" width="56" height="16" rx="3" fill="#fff" stroke="#C2410C" stroke-width="1.5"/>
+    <path d="M134 60 Q160 34 186 60 Z" fill="#FFEDD5" stroke="#C2410C" stroke-width="1.6"/>
+    <rect x="46" y="138" width="228" height="8" rx="3" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.3"/>
+    <text x="160" y="160" font-size="8.6" fill="#9A3412" text-anchor="middle" font-weight="800">여기에서 일하는 사람들은 어떤 일을 할까요?</text></svg>`,
+  // 2 살펴보기 — 국회와 국회를 이루는 사람들
+  house:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <text x="160" y="18" font-size="11" fill="#9A3412" text-anchor="middle" font-weight="800">국회는 어떤 곳인가요</text>
+    <rect x="14" y="30" width="292" height="40" rx="10" fill="#FFF7ED" stroke="#C2410C" stroke-width="1.6"/>
+    <text x="160" y="47" font-size="8.4" fill="#9A3412" text-anchor="middle" font-weight="800">국민의 뜻에 따라 나라 운영의 근거가 되는 법을 만드는 곳</text>
+    <text x="160" y="61" font-size="8.4" fill="#9A3412" text-anchor="middle" font-weight="800">나랏일이 잘 운영되는지 살펴보는 국가기관</text>
+    <rect x="14" y="80" width="292" height="40" rx="10" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.5"/>
+    <text x="160" y="97" font-size="8.4" fill="#9A3412" text-anchor="middle" font-weight="800">국회를 이루는 사람들은 국민을 대신해</text>
+    <text x="160" y="111" font-size="8.4" fill="#9A3412" text-anchor="middle" font-weight="800">나라의 중요한 일을 결정하는 국민의 대표예요</text>
+    <rect x="60" y="130" width="200" height="26" rx="8" fill="#fff" stroke="#EA580C" stroke-width="1.3"/>
+    <text x="160" y="147" font-size="8.2" fill="#B45309" text-anchor="middle" font-weight="800">우리나라에서는 4년마다 선거로 뽑아요</text></svg>`,
+  // 3 살펴보기 — 법이 만들어지는 과정 4단계(교과서 77쪽 원문)
+  flow:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    <text x="160" y="17" font-size="11" fill="#9A3412" text-anchor="middle" font-weight="800">법이 만들어지는 과정</text>
+    ${[['①','국민의 요구가 늘어나요'],['②','국회에 법률안을 제출해요'],['③','심의하고 투표하여 결정해요'],['④','서명하여 알리고 시행해요']].map((t,i)=>{
+      const y=26+i*34;
+      return `<rect x="16" y="${y}" width="288" height="27" rx="7" fill="#fff" stroke="#EA580C" stroke-width="1.4"/>
+      <text x="28" y="${y+18}" font-size="10" fill="#C2410C" font-weight="800">${t[0]}</text>
+      <text x="168" y="${y+18}" font-size="8.6" fill="#9A3412" text-anchor="middle" font-weight="800">${t[1]}</text>
+      ${i<3?`<path d="M160 ${y+27} L160 ${y+33}" stroke="#FDBA74" stroke-width="2"/>`:''}`;}).join('')}
+    <text x="160" y="166" font-size="8" fill="#64748B" text-anchor="middle" font-weight="700">앞의 세 걸음과 마지막 걸음은 하는 자리가 달라요</text></svg>`,
+  // 4 살펴보기 — 서명하는 까닭(reveal)
+  sign:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <text x="160" y="18" font-size="11" fill="#9A3412" text-anchor="middle" font-weight="800">마지막에 서명이 필요한 까닭은 무엇일까요</text>
+    <rect x="20" y="34" width="120" height="54" rx="9" fill="#FFF7ED" stroke="#C2410C" stroke-width="1.6"/>
+    <text x="80" y="56" font-size="9" fill="#9A3412" text-anchor="middle" font-weight="800">국회</text>
+    <text x="80" y="72" font-size="7.6" fill="#B45309" text-anchor="middle" font-weight="700">법을 만들어요</text>
+    <rect x="180" y="34" width="120" height="54" rx="9" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.6"/>
+    <text x="240" y="56" font-size="9" fill="#9A3412" text-anchor="middle" font-weight="800">대통령</text>
+    <text x="240" y="72" font-size="7.6" fill="#B45309" text-anchor="middle" font-weight="700">서명하여 시행해요</text>
+    <path d="M142 54 L178 54" stroke="#EA580C" stroke-width="2"/><path d="M172 50 L178 54 L172 58 Z" fill="#EA580C"/>
+    <path d="M178 70 L142 70" stroke="#FDBA74" stroke-width="2" stroke-dasharray="4 3"/><path d="M148 66 L142 70 L148 74 Z" fill="#FDBA74"/>
+    <rect x="20" y="100" width="280" height="26" rx="8" fill="#FFF7ED" stroke="#EA580C" stroke-width="1.3"/>
+    <text x="160" y="117" font-size="8.2" fill="#9A3412" text-anchor="middle" font-weight="800">의견이 다르면 되돌려 보낼 수도 있어요</text>
+    <rect x="20" y="134" width="280" height="24" rx="8" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.2"/>
+    <text x="160" y="150" font-size="8.2" fill="#9A3412" text-anchor="middle" font-weight="800">두 자리가 서로 나눠 맡고 있어요</text></svg>`,
+  // 6 살펴보기 — 국회에서 하는 다른 일 세 가지(교과서 79쪽 원문)
+  jobs:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    <text x="160" y="18" font-size="11" fill="#9A3412" text-anchor="middle" font-weight="800">국회에서 하는 다른 일</text>
+    ${[['국정 감사','나라를 잘 운영하는지','확인하고 감독해요'],['예산안 심의','나라 살림에 쓸 계획을','살펴보고 정해요'],['인사 청문회','일을 맡을 사람이','알맞은지 살펴봐요']].map((t,i)=>{
+      const x=10+i*102;
+      return `<rect x="${x}" y="30" width="98" height="88" rx="9" fill="#fff" stroke="#EA580C" stroke-width="1.5"/>
+      <rect x="${x+22}" y="42" width="54" height="8" rx="2" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.1"/>
+      <path d="M${x+30} 50 L${x+30} 64 M${x+42} 50 L${x+42} 64 M${x+56} 50 L${x+56} 64 M${x+68} 50 L${x+68} 64" stroke="#FDBA74" stroke-width="1.3"/>
+      <text x="${x+49}" y="82" font-size="8.6" fill="#C2410C" text-anchor="middle" font-weight="800">${t[0]}</text>
+      <text x="${x+49}" y="96" font-size="7" fill="#9A3412" text-anchor="middle" font-weight="700">${t[1]}</text>
+      <text x="${x+49}" y="108" font-size="7" fill="#9A3412" text-anchor="middle" font-weight="700">${t[2]}</text>`;}).join('')}
+    <rect x="10" y="128" width="300" height="30" rx="8" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.3"/>
+    <text x="160" y="147" font-size="8.2" fill="#9A3412" text-anchor="middle" font-weight="800">모두 국민을 대표해서 하는 일이에요</text></svg>`,
+  // 7 살펴보기 — 국회가 이런 일을 하는 까닭(reveal)
+  why:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <text x="160" y="19" font-size="11" fill="#9A3412" text-anchor="middle" font-weight="800">국회가 이런 일을 하는 까닭은 무엇일까요</text>
+    <rect x="100" y="30" width="120" height="34" rx="9" fill="#FFF7ED" stroke="#C2410C" stroke-width="1.7"/>
+    <text x="160" y="51" font-size="9.4" fill="#9A3412" text-anchor="middle" font-weight="800">국민</text>
+    <path d="M160 64 L160 82" stroke="#EA580C" stroke-width="2"/><path d="M156 76 L160 82 L164 76 Z" fill="#EA580C"/>
+    <rect x="100" y="84" width="120" height="34" rx="9" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.6"/>
+    <text x="160" y="105" font-size="9.4" fill="#9A3412" text-anchor="middle" font-weight="800">국회</text>
+    <rect x="14" y="128" width="292" height="30" rx="8" fill="#FFF7ED" stroke="#EA580C" stroke-width="1.3"/>
+    <text x="160" y="147" font-size="8.2" fill="#9A3412" text-anchor="middle" font-weight="800">국회는 국민을 대표하는 기관이기 때문이에요</text></svg>`,
+  // 16 정리
+  wrap:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    <text x="160" y="20" font-size="11.4" fill="#9A3412" text-anchor="middle" font-weight="800">오늘의 정리</text>
+    ${[['①','법을 만들고, 고치거나 없애기도 해요'],['②','나라를 잘 운영하는지 확인해요'],['③','나라 살림에 쓸 계획을 살펴보고 정해요'],['④','일을 맡을 사람이 알맞은지 살펴봐요']].map((t,i)=>{
+      const y=32+i*32;
+      return `<rect x="16" y="${y}" width="288" height="26" rx="7" fill="#fff" stroke="#EA580C" stroke-width="1.3"/>
+      <text x="30" y="${y+17}" font-size="9.4" fill="#C2410C" font-weight="800">${t[0]}</text>
+      <text x="170" y="${y+17}" font-size="8.4" fill="#9A3412" text-anchor="middle" font-weight="800">${t[1]}</text>`;}).join('')}
+    <text x="160" y="166" font-size="8.2" fill="#64748B" text-anchor="middle" font-weight="700">모두 국회에서 하는 일이에요</text></svg>`,
+  // 18 종료
+  done:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <circle cx="160" cy="80" r="46" fill="#FFEDD5" stroke="#EA580C" stroke-width="2"/>
+    <path d="M138 80 L154 96 L184 64" stroke="#C2410C" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="160" y="150" font-size="11" fill="#9A3412" text-anchor="middle" font-weight="800">국회에서 하는 일을 알아봤어요</text></svg>`
+};
+function sceneCard(key,cap,extra){ return `<div class="scene ${extra||''}">${SVG[key]||''}${cap?`<div class="cap">${cap}</div>`:''}</div>`; }
+
+/* ===== 직접조작 — 미는 자리와 끝내는 자리가 다른 판(52번째 신규 패턴) =====
+   ⭐ 앞의 쉰한 종에서 **판의 걸음은 한 번도 줄어들지 않았다.** 이번만 걸음이 실제로 물러난다 —
+      되돌려 보내면 법률안이 국회로 돌아가 앞 걸음으로 물러난다.
+   ⭐ **그 물림은 국회 자리에서 일어나지 않는다** — 미는 단추는 앞 세 걸음에만 있고,
+      마지막 걸음은 **대통령 칸의 두 단추 중 하나로만** 일어난다.
+   ⭐ **법률이 되었는지를 따로 담는 상태가 코드에 아예 없다** — `lwLaw(st)` 한 줄이 그것을 다 정하고,
+      `LW_WHO`를 읽는 자리는 `lwWhoOf` 단 하나다.
+   ⭐ **되돌려 보내는 자리에는 옳고 그름이 없다**(정답 상수 부재 · 무판정).
+   ⚠️ 가드 9종은 파일 머리 주석 참조. 전량 고정 리터럴 — 난수 0. */
+const LW_N = 4;
+/* 법이 만들어지는 걸음 넷 \u2014 교과서 77쪽 그림 원문 */
+const LW_STEP = [
+  '학교 폭력으로 고통받는 학생이 많아져 대책을 마련해 달라는 국민의 요구가 늘어났습니다.',
+  '국민의 요구에 따라 국회의원이 학교 폭력 예방과 관련한 법률안을 국회에 제출합니다.',
+  '국회에서 국회의원들이 모여 법률안의 내용을 심의하고 투표하여 결정합니다.',
+  '대통령이 법률안에 서명하여 새 법률을 널리 알리고 시행합니다.'
+];
+/* 판에 적히는 짧은이름 */
+const LW_STEP_S = [
+  '국민의 요구가 늘어났어요',
+  '국회에 법률안을 제출했어요',
+  '심의하고 투표하여 결정했어요',
+  '서명하여 알리고 시행했어요'
+];
+/* 자리 셋 \u2014 국민 / 국회 / 대통령 */
+const LW_SEAT = ['국민','국회','대통령'];
+/* ⚠️ 걸음 k를 하는 자리 \u2014 이 한 줄이 「미는 자리」와 「끝내는 자리」를 통째로 정한다.
+   앞 세 걸음은 미는 단추로 밀리고, 마지막 걸음은 대통령 칸에서만 일어난다. */
+const LW_WHO = [0, 1, 1, 2];
+/* 국회에서 하는 다른 일 셋 \u2014 교과서 79쪽 원문 */
+const LW_JOB = ['국정 감사','예산안 심의','인사 청문회'];
+const LW_JOB_DO = [
+  '나라를 잘 운영하는지 확인하고 감독하며, 잘못된 일이 있으면 바로잡도록 요구해요.',
+  '한 해 동안 나라 살림에 쓰겠다고 계획한 예산안을 살펴보고 정하며, 잘 사용했는지 살펴봐요.',
+  '일을 맡을 사람이 그 일을 하는 데 알맞은 능력을 갖췄는지 살펴봐요.'
+];
+const LW_JOB_S = ['나라를 잘 운영하는지 확인','나라 살림 계획을 살펴봄','맡을 사람이 알맞은지 살펴봄'];
+/* 되돌려 보냈을 때 판이 하는 말 \u2014 ⚠️ 어느 문구에도 옳고 그름이 없다 */
+const LW_BACK_MSG = '법률안이 <b>국회로 되돌아왔어요.</b> 국회의원들이 <b>다시 심의</b>합니다 \u2014 판의 걸음이 한 걸음 물러났어요.';
+const LW_SIGN_MSG = '대통령이 법률안에 <b>서명</b>했어요. 새 법률을 널리 알리고 <b>시행</b>합니다.';
+/* ④ 마무리 \u2014 대통령이 법률안에 서명하는 까닭(지도서 예시 답안 원문) */
+const LW_FIN = [
+  '법을 만드는 일을 대통령이 대신 하기 위해서예요',
+  '국회에서 마음대로 법을 만들지 못하게 하기 위해서예요',
+  '법률안을 더 빨리 시행하기 위해서예요'
+];
+const LW_FIN_OK = 1;
+const LW_FIN_NO = [
+  '대통령이 법을 <b>대신 만드는</b> 것이 아니에요. 법을 만드는 일은 국회가 해요.',
+  '',
+  '<b>빨리</b> 하기 위해서가 아니에요. 판에서 되돌려 보낼 수 있었던 까닭을 떠올려 봐요.'
+];
+/* 안내 \u2014 어느 문구에도 「틀렸다」는 말이 없다 */
+const LW_NOT_MINE = '여기서부터는 <b>국회의 손이 닿지 않아요.</b> 마지막 걸음은 <b>대통령</b>이 하는 일이에요.';
+const LW_ALREADY_J = '그 일은 <b>이미 세웠어요.</b> 판은 그대로예요.';
+const LW_ORDER_J = '먼저 <b>법이 만들어지는 걸음</b>을 끝까지 밟아 봐요.';
+/* 받침 처리 \u2014 안내문에 「을(를)」 병기가 남지 않게 한다 */
+function lwJ(s){ const c=s.charCodeAt(s.length-1); return (c>=0xAC00&&c<=0xD7A3) ? ((c-0xAC00)%28!==0) : false; }
+
+/* ★ LW_WHO를 읽는 자리는 여기 한 곳뿐이다. */
+function lwWhoOf(k){ return LW_WHO[k]; }
+/* ★ 이 한 줄이 「법률이 되었는가」를 다 정한다 \u2014 그것을 따로 담는 상태가 코드에 없다. */
+function lwLaw(st){ return st.lwStep >= LW_N; }
+function lwTurnSeat(st){ return lwLaw(st) ? -1 : lwWhoOf(st.lwStep); }
+function lwPushable(st){ return !lwLaw(st) && lwTurnSeat(st)!==2; }
+function lwBits(m){ const r=[]; for(let j=0;j<LW_JOB.length;j++){ if(m & (1<<j)) r.push(j); } return r; }
+function lwAllJob(st){ return st.lwJob === (1<<LW_JOB.length)-1; }
+
+/* 판 \u2014 위는 자리 세 칸, 가운데는 걸음 네 줄, 아래는 국회가 하는 다른 일 세 칸.
+   ⚠️ 걸음 줄을 그리는 자리는 **여기 한 곳뿐**이고, 몇 걸음까지 왔는지는 `state.lwStep`이 정한다. */
+function lwCanvas(st){
+  const law = lwLaw(st), turn = lwTurnSeat(st), jn = lwBits(st.lwJob).length;
+  let g='';
+  g+=`<rect x="8" y="6" width="304" height="238" rx="10" fill="#FFF7ED" stroke="#FED7AA" stroke-width="2"/>`;
+  const head = st.lwFin!=null ? '국회는 법을 만들고, 나랏일이 잘 운영되는지 살펴봐요'
+    : (law ? (lwAllJob(st) ? '국회가 하는 일을 모두 세웠어요' : '법률이 시행됐어요 \u2014 국회가 하는 다른 일도 세워 봐요')
+      : (st.lwStep===3 ? '여기서부터는 대통령 칸의 차례예요' : '법이 만들어지는 걸음을 밀어 봐요'));
+  g+=`<text x="160" y="21" font-size="10.2" fill="#9A3412" text-anchor="middle" font-weight="800">${head}</text>`;
+  for(let j=0;j<3;j++){
+    const on = (turn===j), x = 12 + j*100;
+    g+=`<rect data-seat="${j}" data-turn="${on?1:0}" x="${x}" y="28" width="96" height="34" rx="8" fill="${on?'#fff':'#F8FAFC'}" stroke="${on?'#C2410C':'#CBD5E0'}" stroke-width="${on?1.9:1.2}"${on?'':' stroke-dasharray="4 3"'}/>`;
+    g+=`<text x="${x+48}" y="45" font-size="9" fill="${on?'#9A3412':'#94A3B8'}" text-anchor="middle" font-weight="800">${LW_SEAT[j]}</text>`;
+    g+=`<text x="${x+48}" y="56" font-size="6.6" fill="${on?'#B45309':'#CBD5E0'}" text-anchor="middle" font-weight="700">${on?'지금 이 자리의 차례':'\u00B7'}</text>`;
+  }
+  g+=`<text x="20" y="78" font-size="8.6" fill="#B45309" font-weight="800">법이 만들어지는 걸음 \u2014 ${Math.min(st.lwStep,LW_N)} / ${LW_N} \u00B7 되돌려 보낸 횟수 ${st.lwBack}</text>`;
+  for(let k=0;k<LW_N;k++){
+    const on = st.lwStep > k, y = 84 + k*26;
+    g+=`<rect data-step="${k}" data-on="${on?1:0}" x="14" y="${y}" width="292" height="23" rx="6" fill="${on?'#fff':'#F8FAFC'}" stroke="${on?'#C2410C':'#CBD5E0'}" stroke-width="${on?1.6:1.1}"${on?'':' stroke-dasharray="4 3"'}/>`;
+    g+=`<text x="26" y="${y+15}" font-size="8" fill="${on?'#C2410C':'#CBD5E0'}" font-weight="800">${['\u2460','\u2461','\u2462','\u2463'][k]}</text>`;
+    g+=`<text x="168" y="${y+15}" font-size="7.5" fill="${on?'#9A3412':'#94A3B8'}" text-anchor="middle" font-weight="800">${on?LW_STEP_S[k]:'아직이에요'}</text>`;
+    g+=`<text x="292" y="${y+15}" font-size="6.4" fill="${on?'#B45309':'#CBD5E0'}" text-anchor="end" font-weight="700">${LW_SEAT[lwWhoOf(k)]}</text>`;
+  }
+  g+=`<text x="20" y="198" font-size="8.6" fill="#B45309" font-weight="800">국회가 하는 다른 일 \u2014 세운 일 ${jn} / ${LW_JOB.length}</text>`;
+  for(let j=0;j<LW_JOB.length;j++){
+    const set = !!(st.lwJob & (1<<j)), x = 12 + j*100;
+    g+=`<rect data-job="${j}" data-set="${set?1:0}" x="${x}" y="202" width="96" height="38" rx="8" fill="${set?'#fff':'#F8FAFC'}" stroke="${set?'#C2410C':'#CBD5E0'}" stroke-width="${set?1.8:1.2}"${set?'':' stroke-dasharray="4 3"'}/>`;
+    g+=`<text x="${x+48}" y="219" font-size="8.2" fill="${set?'#9A3412':'#94A3B8'}" text-anchor="middle" font-weight="800">${set?LW_JOB[j]:'아직'}</text>`;
+    g+=`<text x="${x+48}" y="232" font-size="6.2" fill="${set?'#B45309':'#CBD5E0'}" text-anchor="middle" font-weight="700">${set?LW_JOB_S[j]:'세우지 않았어요'}</text>`;
+  }
+  g+=`<rect data-stepn="${Math.min(st.lwStep,LW_N)}" data-backn="${st.lwBack}" data-lawn="${law?1:0}" data-jobn="${jn}" x="14" y="84" width="0" height="0" fill="none"/>`;
+  return `<svg viewBox="0 0 320 250"><rect width="320" height="250" fill="#ffffff"/>${g}</svg>`;
+}
+
+function lwPanel(st){
+  const fin = st.lwFin!=null, law = lwLaw(st), allJ = lwAllJob(st), turn = lwTurnSeat(st);
+  const q = fin
+    ? '법을 만드는 일은 국회가 하고, <b>마지막 서명</b>은 대통령이 했어요. 두 자리가 <b>나눠 맡고</b> 있어요.'
+    : (allJ ? '<b>대통령이 법률안에 서명</b>하는 까닭은 무엇일까요?'
+      : (law ? '<b>국회가 하는 다른 일</b>도 세워 봐요. 어느 것부터 세워도 돼요.'
+        : (turn===2 ? '마지막 걸음은 <b>대통령 칸</b>에서 일어나요. 서명할까요, 되돌려 보낼까요?'
+          : `지금은 <b>\u300C${LW_SEAT[turn]}\u300D</b> 자리의 차례예요. 걸음을 밀어 봐요.`)));
+  let right = `<div class="lw-q">${q}</div>`;
+
+  if(fin){
+    right+=`<div class="dw-card"><div class="pt">\uD83C\uDFDB\uFE0F 판이 물러났던 까닭</div>
+      <div>되돌려 보내면 법률안이 <b>국회로 돌아가</b> 다시 심의해요. 그래서 판의 걸음이 <b>물러났어요.</b></div>
+      <div style="margin-top:5px">마지막 걸음을 국회 자리에서 밀 수 없었던 것은 판이 막았기 때문이 아니에요. <b>그 걸음을 하는 자리가 달랐기 때문</b>이에요. 대통령과 국회가 <b>힘을 나눠</b> 맡고 있어요.</div>
+      <div style="margin-top:5px;color:#64748B">우리 생활에서 고쳤으면 하는 일을 찾아 <b>법률안 제안서</b>를 써 보는 것은 교실에서 모둠 친구들과 함께 하는 활동이에요. 화면이 그 활동을 대신하지 않아요.</div></div>`;
+  } else if(allJ){
+    right+=`<div class="lw-fin">${LW_FIN.map((f,k)=>
+      `<button class="${st.lwWrongF===k?'no':''}" onclick="lwFinish(${k})">${f}</button>`).join('')}</div>`;
+  } else if(law){
+    right+=`<div class="dw-step">\uD83C\uDFDB\uFE0F 국회가 하는 다른 일 세우기</div>`;
+    right+=`<div class="lw-list">${LW_JOB.map((o,j)=>{
+      const on = !!(st.lwJob & (1<<j));
+      return `<button class="${on?'ok':''}${st.lwWrongJ===j?' no':''}" onclick="lwSet(${j})">${on?'\u2713 ':''}${o} \u2014 ${LW_JOB_DO[j]}</button>`;
+    }).join('')}</div>`;
+  } else if(turn===2){
+    right+=`<div class="dw-step">\u270D\uFE0F 대통령 칸 \u2014 이 자리에는 정답이 없어요</div>`;
+    right+=`<div class="lw-seatnote"><b>대통령은 새로운 법에 관한 의견이 다르면 거부권을 행사할 수 있어요.</b><br>어느 쪽을 골라도 판이 옳고 그름을 말하지 않아요.</div>`;
+    right+=`<div class="lw-fin">
+      <button onclick="lwSign(0)">\u270D\uFE0F 서명하기 \u2014 새 법률을 널리 알리고 시행해요</button>
+      <button onclick="lwSign(1)">\u21A9\uFE0F 되돌려 보내기 \u2014 국회에서 다시 심의해요</button></div>`;
+  } else {
+    right+=`<div class="dw-step">\u25B6 걸음 밀기</div>`;
+    right+=`<div class="lw-note">${LW_STEP[st.lwStep]}</div>`;
+    right+=`<button class="lw-push" onclick="lwPush()">\u25B6 \u300C${LW_SEAT[turn]}\u300D 자리의 걸음을 밀어요</button>`;
+  }
+  if(st.lwMsg) right+=`<div class="dw-msg${st.lwWarn?' warn':''}">${st.lwMsg}</div>`;
+
+  return `<div class="dw-wrap">
+    <div style="text-align:center"><b style="color:var(--green)">\uD83C\uDFDB\uFE0F 미는 자리와 끝내는 자리가 달라요</b></div>
+    <div class="dw-body">
+      <div class="dw-canvas">${lwCanvas(st)}<div class="cvcap">판의 걸음은 교과서 77쪽 그림을 옮긴 자리예요. 실제 나라의 절차를 그대로 옮긴 것은 아니에요.</div></div>
+      <div class="dw-right">${right}</div>
+    </div>
+  </div>`;
+}
+
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "2단원 민주주의와 시민 참여 · 주제② 국가기관과 권력 분립";
+
+// 확인 4 + 적용 4 — 정답 다양화 [2,0,3,1,1,3,0,2](각 자리 2회)
+// ⚠️ 9차시 이후 침범 0 · 주제① 재현 최소 · 문항 내 연도·금액·수치 0 · 실제 정당·정치인 0.
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"국회에 관한 설명으로 알맞은 것은?",
+   opts:["법에 따라 판결을 내려 다툼을 해결하는 국가기관이에요","법을 바탕으로 나라의 일을 집행하는 국가기관이에요",
+         "법을 만들고, 나랏일이 잘 운영되는지 감시하고 견제하는 국가기관이에요","다른 나라의 법을 대신 만들어 주는 국가기관이에요"],
+   correct:2, pts:POINTS_BASIC, scene:"house",
+   h1:"교과서는 「법을 만들고」로 시작하는 한 문장으로 적었어요.",
+   h2:"법을 만드는 일과 나랏일을 살펴보는 일을 함께 해요.",
+   reason:"<b>국회</b>는 법을 만들고, 나랏일이 잘 운영되는지 <b>감시하고 견제하는</b> 국가기관이에요."},
+  {stem:"<b>법률안</b>의 뜻으로 알맞은 것은?",
+   opts:["법률이 될 사항을 정리해 국회에 제출하는 문서예요","이미 만들어져 시행되고 있는 법이에요",
+         "나라 살림을 위한 돈을 어디에 어떻게 나눠 쓸지 계획한 것이에요","어떤 일을 토의하여 적절한지 판단하는 일이에요"],
+   correct:0, pts:POINTS_BASIC, scene:"flow",
+   h1:"아직 법이 된 것이 아니에요.",
+   h2:"국회에 <b>제출하는 문서</b>예요.",
+   reason:"<b>법률안</b>은 법률이 될 사항을 정리해 국회에 제출하는 문서예요.(오답 셋은 각각 법·예산안·심의의 뜻이에요.)"},
+  {stem:"법률안의 내용을 <b>심의하고 투표하여</b> 결정하는 곳은 어디일까요?",
+   opts:["법원","행정부","국민","국회"],
+   correct:3, pts:POINTS_BASIC, scene:"flow",
+   h1:"판에서 세 번째 걸음을 맡은 자리예요.",
+   h2:"법을 만드는 국가기관이에요.",
+   reason:"<b>국회</b>에서 국회의원들이 모여 법률안의 내용을 심의하고 투표하여 결정해요."},
+  {stem:"국회는 국정 감사를 통해 <b>어디</b>가 법에 따라 나라를 잘 운영하고 있는지 확인하나요?",
+   opts:["법원","행정부","국민","국회"],
+   correct:1, pts:POINTS_BASIC, scene:"jobs",
+   h1:"교과서 [꼭 기억해요] 2번을 떠올려 봐요.",
+   h2:"법을 바탕으로 나라의 일을 집행하는 곳이에요.",
+   reason:"국회는 국정 감사를 통해 <b>행정부</b>가 법에 따라 나라를 잘 운영하고 있는지 확인해요."},
+  // 4단계 적용 (+15)
+  {stem:"판에서 걸음을 세 번 밀었더니 <b>더는 밀 수 없었어요.</b> 그 까닭으로 알맞은 것은?",
+   opts:["판이 걸음 수를 셋으로 정해 두었기 때문이에요","마지막 걸음은 대통령이 하는 일이기 때문이에요",
+         "국회가 세 걸음까지만 일할 수 있기 때문이에요","법률안을 아직 제출하지 않았기 때문이에요"],
+   correct:1, pts:POINTS_APPLY,
+   h1:"판에는 걸음이 넷 있었어요.",
+   h2:"마지막 걸음 옆에 적힌 자리 이름을 떠올려 봐요.",
+   reason:"판이 막은 것이 아니에요. <b>마지막 걸음을 하는 자리가 달랐기 때문</b>이에요. 서명은 대통령이 하는 일이에요."},
+  {stem:"판에서 <b>되돌려 보내기</b>를 누르자 걸음이 한 걸음 물러났어요. 그 까닭으로 알맞은 것은?",
+   opts:["판이 잘못된 조작이라고 벌을 준 것이에요","법률안이 사라져 버렸기 때문이에요",
+         "국회가 걸음을 하나 잃었기 때문이에요","법률안이 국회로 되돌아가 다시 심의하게 됐기 때문이에요"],
+   correct:3, pts:POINTS_APPLY,
+   h1:"판은 감점을 하지 않았어요.",
+   h2:"법률안이 어디로 돌아갔는지 떠올려 봐요.",
+   reason:"<b>법률안이 국회로 되돌아가 다시 심의하게 됐기 때문</b>이에요. 되돌려 보내는 일은 옳고 그름이 있는 일이 아니라, 의견이 다를 때 할 수 있는 일이에요."},
+  {stem:"국회가 예산안을 자세히 살펴보는 까닭으로 알맞은 것은?",
+   opts:["나라의 예산은 대부분 국민의 세금으로 마련하기 때문이에요","예산을 국회가 직접 나누어 쓰기 때문이에요",
+         "예산안을 만드는 곳이 국회이기 때문이에요","예산이 남으면 국회가 가지기 때문이에요"],
+   correct:0, pts:POINTS_APPLY, scene:"jobs",
+   h1:"그 돈이 어디에서 나온 것인지 떠올려 봐요.",
+   h2:"국회는 <b>국민의 대표 기관</b>이에요.",
+   reason:"나라의 예산은 대부분 <b>국민의 세금</b>으로 마련해요. 그래서 국민의 대표 기관인 국회에서 예산을 자세히 살펴봐요."},
+  {stem:"국회에서 하는 일로 <b>알맞지 않은</b> 것은?",
+   opts:["법을 만들고, 법을 고치거나 없애기도 해요","국정 감사를 통해 나라를 잘 운영하는지 확인해요",
+         "법에 따라 판결을 내려 다툼을 해결해요","인사 청문회를 통해 일을 맡을 사람이 알맞은지 살펴봐요"],
+   correct:2, pts:POINTS_APPLY, scene:"jobs",
+   h1:"판에 세운 일은 셋이었어요.",
+   h2:"판결을 내리는 일은 다른 국가기관이 해요.",
+   reason:"판결을 내려 다툼을 해결하는 일은 <b>법원</b>이 하는 일이에요. 국회는 법을 만들고, 국정 감사·예산안 심의·인사 청문회를 해요."}
+];
+
+const slides = [];
+// 1 들어가기 — [동기 유발] 국회 의사당
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">이곳에서는 어떤 일을 할까요?</h2>
+  <div class="ka-bub">지난 시간에는 우리나라 국가기관에는 무엇이 있는지 알아봤어요. 오늘은 그 가운데 <span class="ka-emph">국회에서 하는 일</span>을 알아봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('open','국회 의사당','wide')}</div>
+    <div class="note">여기에서 일하는 사람들은 <b>어떤 일</b>을 할까요?</div></div>`});
+// 2 살펴보기 — 국회와 국회를 이루는 사람들
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">국회는 어떤 곳일까요?</h2>
+  <div class="ka-bub">국회는 <b>법을 만들고</b>, 나랏일이 잘 운영되는지 <span class="ka-emph">감시하고 견제하는 국가기관</span>이에요. 국회를 구성하는 국회의원은 국민을 대신해 나라의 중요한 일을 결정하는 <b>국민의 대표</b>로, 우리나라에서는 4년마다 선거로 선출돼요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('house','국회와 국회의원','wide')}</div>
+    <div class="note">국회에서는 국민의 뜻에 따라 <b>나라 운영의 근거가 되는 법</b>을 만들고, 법을 고치거나 없애기도 해요.</div></div>`});
+// 3 살펴보기 — 법이 만들어지는 과정(교과서 77쪽 원문)
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">법은 어떻게 만들어질까요?</h2>
+  <div class="ka-bub">① 학교 폭력으로 고통받는 학생이 많아져 <b>대책을 마련해 달라는 국민의 요구</b>가 늘어났어요. ② 국민의 요구에 따라 <b>국회의원이 법률안을 국회에 제출</b>해요. ③ 국회에서 국회의원들이 모여 <b>법률안의 내용을 심의하고 투표하여 결정</b>해요. ④ <span class="ka-emph">대통령이 법률안에 서명하여 새 법률을 널리 알리고 시행</span>해요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('flow','법이 만들어지는 과정','wide')}</div>
+    <div class="tipbox"><b>법률안</b> \u2014 법률이 될 사항을 정리해 국회에 제출하는 문서예요.<br><b>심의</b> \u2014 어떤 일을 토의하여 적절한지 판단하는 일이에요.</div></div>`});
+// 4 살펴보기 — reveal: 서명하는 까닭
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">마지막에 대통령이 서명하는 까닭은?</h2>
+  <div class="ka-grp">
+  <div class="paper"><div class="ph">\uD83D\uDCAC 모둠 토의 \u2014 의견 나누기</div>
+    법을 만드는 일은 국회가 하는데, 마지막 걸음은 왜 대통령이 할까요? 먼저 떠올려 보고 눌러요.</div>
+  <div class="scene-row">${sceneCard('sign','두 자리가 나눠 맡아요','wide')}</div>
+  ${st.revealed?`<div class="answer-box">\u00B7 <b>국회에서 마음대로 법을 만들지 못하게</b> 하기 위해서예요.<br>
+    \u00B7 <b>대통령과 국회가 힘을 나눠 갖기</b> 위해서예요.<br>
+    \u00B7 대통령은 새로운 법에 관한 의견이 다르면 <b>거부권을 행사할 수 있어요.</b></div>`
+    :`<div class="note">한 자리가 처음부터 끝까지 다 하면 어떻게 될까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 5 살펴보기 — 직접조작(미는 자리와 끝내는 자리가 다른 판)
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">미는 자리와 끝내는 자리가 달라요</h2>
+  <div class="ka-grp">${lwPanel(st)}</div>`});
+// 6 살펴보기 — 국회에서 하는 다른 일
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">국회에서는 또 어떤 일을 할까요?</h2>
+  <div class="ka-bub">국회는 <b>국정 감사</b>를 통해 행정부가 법에 따라 나라를 잘 운영하고 있는지 확인하며, 행정부의 <b>예산안을 심의</b>하고 정해요. 또한 <span class="ka-emph">인사 청문회</span>를 통해 일을 맡을 사람이 그 일을 하는 데 알맞은 능력을 갖췄는지 살펴봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('jobs','국회에서 하는 다른 일','wide')}</div>
+    <div class="tipbox"><b>예산안</b> \u2014 나라 살림을 위한 돈을 어디에 어떻게 나눠 쓸지 계획한 것이에요. 나라의 예산은 대부분 <b>국민의 세금</b>으로 마련하기 때문에 국민의 대표 기관인 국회에서 자세히 살펴봐요.</div></div>`});
+// 7 살펴보기 — reveal: 국회가 이런 일을 하는 까닭
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">국회가 이런 일을 하는 까닭은 무엇일까요?</h2>
+  <div class="ka-grp">
+  <div class="paper"><div class="ph">\uD83D\uDD0E 핵심 질문 \u2014 국회가 하는 일의 까닭</div>
+    판에서 국회가 하는 일을 세워 봤어요. 국회가 이런 일을 하는 까닭을 떠올려 보고 눌러요.</div>
+  <div class="scene-row">${sceneCard('why','국민의 대표 기관','wide')}</div>
+  ${st.revealed?`<div class="answer-box">\u00B7 국회는 <b>국민을 대표하는 기관</b>이므로, 행정부가 나라를 잘 운영하는지 살펴보기 위해서예요.<br>
+    \u00B7 <b>한 명 또는 한 집단</b>의 힘으로 나라의 일이 결정되지 않도록 하기 위해서예요.<br>
+    \u00B7 <b>국민의 의견을 반영하기</b> 위해서예요.</div>`
+    :`<div class="note">국회는 누구를 대표하는 기관일까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리: 요약 — 8차시 주요 내용 정리 원문
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 배운 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('wrap','오늘의 정리','wide')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">★</span><div><b style="color:var(--green)">국회</b> \u2014 국민의 뜻에 따라 나라 운영의 근거가 되는 법을 만들고, 나랏일이 잘 운영되는지 감시하고 견제하는 국가기관이에요.</div></div>
+    <div class="sum-item"><span class="n">①</span><div><b style="color:var(--green)">법을 만들어요</b> \u2014 법을 고치거나 없애기도 해요.</div></div>
+    <div class="sum-item"><span class="n">②</span><div><b style="color:var(--green)">국정 감사</b> \u2014 행정부가 나라를 잘 운영하는지 확인해요.</div></div>
+    <div class="sum-item"><span class="n">③</span><div><b style="color:var(--green)">예산안 심의</b> \u2014 나라 운영에 필요한 예산안을 살펴보고 정해요.</div></div>
+    <div class="sum-item"><span class="n">④</span><div><b style="color:var(--green)">인사 청문회</b> \u2014 일을 맡을 사람이 알맞은 능력을 갖췄는지 확인해요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b style="color:var(--green)">행정부에서 하는 일</b>을 알아봐요.</div></div>`});
+// 17 정리: 자기 평가
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"국회에서 하는 일을 설명할 수 있어요",st)}
+    ${selfCheck(1,"법이 만들어지는 과정을 차례대로 말할 수 있어요",st)}
+    ${selfCheck(2,"나라의 일이 어떻게 결정되는지 관심을 갖는 태도를 지니게 됐어요",st)}
+  </div><div class="note">별이 적게 채워진 곳은 앞 슬라이드를 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">오늘 공부를 마쳤어요!</h2>
+  <div class="ka-grp">
+    <div class="scene-row">${sceneCard('done','','wide')}</div>
+    <div class="end-score">\u2B50 ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">다음은 <b style="color:var(--amber)">행정부에서 하는 일</b>!</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">\u2B55 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g6_social_u2_l06";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  lwStep:0, lwBack:0, lwJob:0, lwFin:null,
+  lwWrongP:null, lwWrongJ:null, lwWrongF:null,
+  lwMsg:null, lwWarn:false, lwBusy:false,
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 \u2192';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+
+
+function lwRender(){ main.innerHTML = slides[state.idx].render(state); }
+function lwHold(msg){
+  state.lwWarn=true; state.lwBusy=true; state.lwMsg=msg;
+  playThud(); lwRender();
+  setTimeout(()=>{ state.lwBusy=false; state.lwWarn=false; state.lwMsg=null;
+    state.lwWrongP=null; state.lwWrongJ=null; state.lwWrongF=null; lwRender(); },1600);
+}
+
+/* ① 걸음 밀기 — ⚠️ 판정 0. 앞 세 걸음만 이 단추로 밀린다.
+   ★ 가드③이 이 패턴의 한 축이다 — 마지막 걸음은 미는 단추로는 밀 수 없다. */
+function lwPush(){
+  if(state.lwFin!=null) return;                                        // 가드①
+  if(state.lwBusy) return;                                             // 가드⑨
+  if(lwLaw(state)) return;                                             // 가드④ 법률이 된 뒤 밀기 무시
+  if(!lwPushable(state)){                                              // 가드③ 마지막 걸음 — 판 불변
+    state.lwWrongP=state.lwStep; lwHold(LW_NOT_MINE); return; }
+  const k = state.lwStep;
+  state.lwStep += 1;                                                   // ★ 걸음이 늘어나는 자리는 여기 한 곳뿐
+  state.lwWrongP=null; state.lwWarn=false;
+  const sjo = lwJ(LW_STEP_S[k]) ? '\uC774' : '\uAC00';
+  state.lwMsg = (lwTurnSeat(state)===2)
+    ? `<b>\u300C${LW_STEP_S[k]}\u300D</b>${sjo} 판에 놓였어요. 여기까지가 <b>국회의 몫</b>이에요 \u2014 마지막 걸음은 <b>대통령 칸</b>에서 일어나요.`
+    : `<b>\u300C${LW_STEP_S[k]}\u300D</b>${sjo} 판에 놓였어요. 다음은 <b>\u300C${LW_SEAT[lwTurnSeat(state)]}\u300D</b> 자리의 차례예요.`;
+  playBlip();
+  lwRender();
+}
+
+/* ② 대통령 칸 — ★ 이 함수가 이 패턴의 핵심 신규성이다.
+   ⚠️ 옳고 그름이 없다(정답 상수 부재). 되돌려 보내면 **판의 걸음이 물러난다.** */
+function lwSign(k){
+  if(state.lwFin!=null) return;                                        // 가드①
+  if(state.lwBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(k) || k<0 || k>1) return;                       // 가드②
+  if(lwTurnSeat(state)!==2) return;                                    // 가드⑤ 순서 — 판 불변
+  if(k===0){
+    state.lwStep += 1;
+    state.lwWarn=false; state.lwMsg = LW_SIGN_MSG;
+    playChime(); lwRender(); return;
+  }
+  state.lwStep -= 1;                                                   // ★ 걸음이 줄어드는 자리는 여기 한 곳뿐
+  state.lwBack += 1;
+  state.lwWarn=false; state.lwMsg = LW_BACK_MSG;
+  playBlip(); lwRender();
+}
+
+/* ③ 국회가 하는 다른 일 세우기 — ⚠️ 판정 0 · 순서 자유 */
+function lwSet(j){
+  if(state.lwFin!=null) return;                                        // 가드①
+  if(state.lwBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(j) || j<0 || j>=LW_JOB.length) return;          // 가드②
+  if(!lwLaw(state)){                                                   // 가드⑥ 순서 — 판 불변
+    state.lwWrongJ=j; lwHold(LW_ORDER_J); return; }
+  if(state.lwJob & (1<<j)){                                            // 가드⑦ 이미 세운 일 — 판 불변
+    state.lwWrongJ=j; lwHold(LW_ALREADY_J); return; }
+  state.lwJob |= 1<<j; state.lwWrongJ=null; state.lwWarn=false;
+  const ojo = lwJ(LW_JOB[j]) ? '\uC744' : '\uB97C';
+  state.lwMsg = lwAllJob(state)
+    ? `<b>\u300C${LW_JOB[j]}\u300D</b>${ojo} 세웠어요 \u2014 ${LW_JOB_DO[j]} 국회가 하는 일을 <b>모두</b> 세웠어요.`
+    : `<b>\u300C${LW_JOB[j]}\u300D</b>${ojo} 세웠어요 \u2014 ${LW_JOB_DO[j]}`;
+  if(lwAllJob(state)) playChime(); else playBlip();
+  lwRender();
+}
+
+/* ④ 마무리 — 「대통령이 법률안에 서명하는 까닭」 */
+function lwFinish(k){
+  if(state.lwFin!=null) return;                                        // 가드①
+  if(state.lwBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(k) || k<0 || k>=LW_FIN.length) return;          // 가드②
+  if(!lwAllJob(state)) return;                                         // 가드⑧ 세 일 전 무시(순서)
+  if(k===LW_FIN_OK){
+    state.lwFin=k; state.lwWrongF=null; state.lwMsg=null; state.lwWarn=false;
+    playChime(); lwRender(); return;
+  }
+  state.lwWrongF=k;
+  lwHold(LW_FIN_NO[k]);
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2;
+    if(qs.hint>=2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">\uD83D\uDCD8 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 \u2192</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // l07 미양산 — 양산 시 재배선
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+</body>
+</html>
