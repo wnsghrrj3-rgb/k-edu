@@ -100,6 +100,10 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--bg);min-height:100vh;
 .sub-tag{font-size:11.5px;color:#fff;padding:3px 10px;border-radius:50px}
 .sub-comment{font-size:13.5px;color:#4A5568;background:var(--bg);border-radius:10px;padding:10px 13px;line-height:1.5;margin-bottom:12px}
 .sub-comment.empty{color:var(--faint)}
+.sub-auto{font-size:13px;color:#1F6F4A;background:#EAF7F0;border-radius:10px;padding:8px 12px;margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sub-auto a{color:#1F6F4A;font-weight:700}
+.auto-fill{margin-left:auto;border:0;background:#22A06B;color:#fff;font-family:inherit;font-size:12px;font-weight:700;padding:5px 11px;border-radius:50px;cursor:pointer}
+.sub-re{font-size:11.5px;color:#B45309;background:#FEF3C7;padding:3px 9px;border-radius:50px;font-weight:700}
 .grade-row{display:flex;gap:8px;align-items:stretch}
 .grade-score{width:96px;flex-shrink:0;text-align:center}
 .grade-fb{flex:1}
@@ -752,10 +756,18 @@ async function openGrading(id){
   g.classList.add('on'); g.setAttribute('aria-hidden','false');
   try {
     const { data } = await db.from('cw_submissions')
-      .select('id,item_id,student_profile_id,payload,status,score,feedback, student_profiles(nickname), cw_items(title,kind)')
+      .select('id,item_id,student_profile_id,payload,status,score,feedback,auto_score,auto_max,auto_kind,spent_sec,resubmitted, student_profiles(nickname), cw_items(title,kind)')
       .eq('bundle_id', id).order('submitted_at', { ascending:true });
     grSubs = data || [];
-  } catch(e){ grSubs = []; }
+  } catch(e){
+    // 증분2(setup_classwork2.sql) 미적용 DB — 옛 열만으로 다시 (자동점수는 payload 에서 읽는다)
+    try {
+      const { data:d2 } = await db.from('cw_submissions')
+        .select('id,item_id,student_profile_id,payload,status,score,feedback, student_profiles(nickname), cw_items(title,kind)')
+        .eq('bundle_id', id).order('submitted_at', { ascending:true });
+      grSubs = d2 || [];
+    } catch(e2){ grSubs = []; }
+  }
   if(grSubs.some(s=> s.payload && s.payload.tool === 'activity')) await loadActCatalog();
   renderGrading();
 }
@@ -873,15 +885,29 @@ function renderGrading(){
     const k = KINDS[s.cw_items?.kind] || KINDS.link;
     const who = s.student_profiles?.nickname || '학생';
     const isAct = s.payload?.tool === 'activity';
+    // 자동점수: 증분2 열 우선, 없으면 봉투(payload)에서 — 전 도구 공통
+    const aS = (s.auto_score != null) ? s.auto_score : (s.payload?.score ?? null);
+    const aM = (s.auto_max   != null) ? s.auto_max   : (s.payload?.max   ?? null);
+    const aK = s.auto_kind || s.payload?.kind || null;
+    const spent = (s.spent_sec != null) ? s.spent_sec : (s.payload?.spent_sec ?? null);
+    const pct = (aS!=null && aM) ? Math.round(aS/aM*100) : null;
+    const hasAuto = aS != null && aK !== 'artifact';
     const comment = isAct
-      ? `자동 채점 ${s.payload.score ?? '-'} / ${s.payload.max ?? '-'} · 시도 ${(s.payload.detail?.attempts)||1}회`
+      ? `자동 채점 ${aS ?? '-'} / ${aM ?? '-'} · 시도 ${(s.payload?.detail?.attempts)||1}회`
       : s.payload?.comment;
     const isG = s.status==='graded';
+    const autoLine = hasAuto && !isAct
+      ? `<div class="sub-auto">🧮 자동 채점 <b>${aS}${aM!=null?' / '+aM:''}</b>${pct!=null?` · ${pct}%`:''}${spent!=null?` · ${Math.max(1,Math.round(spent/60))}분`:''}${pct!=null?`<button class="auto-fill" onclick="fillAuto(${idx},${pct})">점수로 넣기</button>`:''}</div>`
+      : '';
+    const artiLine = (aK === 'artifact' && s.payload?.artifact_url)
+      ? `<div class="sub-auto">🎨 작품 제출 <a href="${esc(s.payload.artifact_url)}" target="_blank" rel="noopener">열어보기</a></div>` : '';
+    const reLine = s.resubmitted ? `<span class="sub-re">🔁 재제출</span>` : '';
     return `<div class="sub ${isG?'graded':''}">
       <div class="sub-top">
         <span class="sub-who">🐾 ${esc(who)}</span>
-        <span class="sub-tag" style="background:${k.hex}">${k.i} ${esc(s.cw_items?.title||'')}</span>
+        <span class="sub-tag" style="background:${k.hex}">${k.i} ${esc(s.cw_items?.title||'')}</span>${reLine}
       </div>
+      ${autoLine}${artiLine}
       <div class="sub-comment ${comment?'':'empty'}">${comment? esc(comment) : '남긴 말 없음'}</div>
       <div class="grade-row">
         <input class="inp grade-score" id="gs-${idx}" type="number" min="0" max="100" placeholder="점수" value="${s.score!=null?s.score:''}">
@@ -893,11 +919,18 @@ function renderGrading(){
   }).join('');
   body.innerHTML = html;
 }
+function fillAuto(idx, pct){
+  const el = document.getElementById('gs-'+idx);
+  if(el){ el.value = pct; el.focus(); }
+}
 async function saveGrade(subId, idx){
   const scoreRaw = document.getElementById('gs-'+idx).value.trim();
   const fb = document.getElementById('gf-'+idx).value.trim();
   const patch = { feedback: fb, status:'graded', graded_at:new Date().toISOString(), graded_by: currentTeacher.id,
                   score: scoreRaw==='' ? null : Number(scoreRaw) };
+  // 채점하면 재제출 뱃지는 내린다(확인했다는 뜻). 증분2 미적용 DB면 이 키는 조용히 빠진다.
+  const hasRe = grSubs.some(x=> x && Object.prototype.hasOwnProperty.call(x,'resubmitted'));
+  if(hasRe) patch.resubmitted = false;
   try {
     const { error } = await db.from('cw_submissions').update(patch).eq('id', subId);
     if(error) throw error;

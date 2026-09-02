@@ -59,3 +59,5 @@
 1. 파일은 이 폴더(`sql/`)에 `setup_이름.sql`로 추가
 2. Supabase에서 실행 후 이 표에 한 줄 추가 (커밋일·용도)
 3. 코드 주석에서 SQL을 언급할 때는 `sql/파일명` 경로로 표기
+
+| 32 | setup_classwork2.sql | 2026-09-02 작성 · **⏳ 미실행** | 케이박스 증분 2 — 결과봉투 자동점수 + 채점 보존. `cw_submissions` 열 5개(auto_score·auto_max·auto_kind·spent_sec·resubmitted) + 기존 제출분 payload→열 백필 + `cw_submit` v2. **핵심 교정**: 현행 cw_submit 은 재제출 시 status 를 'submitted' 로 되돌려 교사 채점이 '안 한 것'처럼 보였다 → v2 는 채점 완료 행의 status·score·feedback 을 보존하고 자동점수·답안만 갱신하며 `resubmitted=true` 뱃지를 세운다. SPEC §2-1·§2-2(§2-3~2-5 학부모 코드·report.html 은 미채택 — 학부모는 parent/growth.html 로 일원화). 의존 #14·#15·#17. 재실행 안전. 검산 `SELECT column_name FROM information_schema.columns WHERE table_name='cw_submissions' AND column_name IN ('auto_score','auto_max','auto_kind','spent_sec','resubmitted');` → 5행. 미적용 상태에서도 채점 패널은 폴백(옛 열 재조회 + payload 에서 자동점수 표시)으로 정상 동작 |
