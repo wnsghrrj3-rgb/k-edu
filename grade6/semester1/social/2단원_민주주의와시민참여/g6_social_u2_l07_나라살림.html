@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<!--
+K-edu 사회 6-1 · 2단원 민주주의와 시민 참여 · 주제② 국가기관과 권력 분립 · 7차시(l07)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [6사08-02] · 교과서 p.80~82 · 지도서(대단원2 **9차시** 행정부에서 하는 일을 알아볼까요,
+  지도서 p.184~189) 근거.
+학습 목표: 행정부에서 하는 일을 설명할 수 있다.
+수업 기법 및 전략: 돌아가며 말하기 · 의견 나누기
+⚠️ 엔진은 대단원1 l01~l11 · 대단원2 l01~l06에서 100% 승계. 2단원 색 #C2410C 유지 · CSS 변수명 무수정.
+
+⚠️ 파일명을 `나라살림`으로 지었다(배선 예외 대신). l06이 「국무총리」·「행정 각부」를 개수 0으로 재고
+   있어서 파일명에 그 낱말이 들어가면 재배선이 곧바로 그 가드를 깨뜨린다. 겹치지 않는 이름을 골라
+   예외를 만들지 않았다(l05 `나랏일` · l06 `법이되기까지` 선례 승계).
+
+직접조작: 자리가 비어도 일이 옮겨 가는 판(53번째 신규 패턴 — 한 자리의 몫을 다른 자리가 대신 지는 형)
+  ⭐ 앞의 쉰두 종에서 **자리가 비면 그 자리의 몫도 함께 비었다.** 47번째(첫 길이 막히는 판)에서
+     회의장 자리가 차서 길이 닫혔을 때 그 자리에서 할 일도 함께 없어졌고, 51번째(맡을 곳이 없으면
+     일이 쌓이는 판)에서 맡을 곳이 없는 일은 **누구에게도 가지 않고 그대로 쌓였다.**
+     이번만 **자리가 비어도 그 자리의 일이 사라지지 않고 옆자리로 옮겨 간다** — 대통령이 임무를
+     수행할 수 없는 상황이 되면 국무총리가 대통령의 임무를 대신한다. 근거는 교과서 80쪽 본문 원문
+     「대통령이 임무를 수행할 수 없는 상황이 생기면 대통령의 임무를 대신합니다」.
+  ⭐ **51번째와의 정면 대비** — 거기서는 맡을 곳이 없어 일이 **쌓였고**(멈췄고), 여기서는 맡을 곳이
+     비어도 **대신할 자리가 있어 이어진다.** 나라의 살림은 멈출 수 없기 때문이다.
+  ⭐ **46번째(도로 감추는 형)와의 대비** — 거기서는 드러난 것이 **도로 덮였다.** 여기서는 어느
+     시점에도 대통령의 일이 판에서 **사라지지 않는다** — 지는 자리만 바뀔 뿐이다.
+  ⭐ **대신 맡는 동안에도 국무총리의 본래 몫은 그대로다** — 두 몫을 **함께** 진다. 하나가 다른
+     하나를 밀어내지 않는다(스모크가 구조로 대조).
+  ⭐ **대통령의 일을 지금 어느 자리가 지고 있는지를 따로 담는 상태가 코드에 아예 없다** —
+     `agHolder(st) = st.agAway ? 1 : 0` **한 줄**이 그것을 다 정하고, 그 줄이 코드에 단 하나이며
+     `AG_DUTY`를 그리는 자리도 **단 하나**, `AG_OWNER[`를 읽는 자리도 **단 하나**(`agOwnerOf`)다.
+  ⭐ **자리를 비우고 되돌리는 데에는 옳고 그름이 없다**(`AG_AWAY_OK` 부재 · 무판정). 교과서가
+     「상황이 생기면 대신합니다」라고만 적었으므로 판이 대신 판정하지 않는다. 감점 0.
+  ① **행정부를 이루는 자리 3 세우기**(대통령 / 국무총리 / 행정 각부 · 순서 자유 · 무판정 · 교과서 원문)
+  ② **카드 뉴스 4장을 행정 각부에 나눠 맡기기**(교과서 [스스로 활동] · 순서 자유 · 판정 있음)
+  ③ **대통령 자리가 비는 자리**(무판정 · 비우면 국무총리가 대통령의 일을 대신 지고, 돌아오면 되돌아간다)
+  ④ 마무리 3택 = 행정 각부가 하는 일(지도서 핵심 질문 예시 답안 원문)
+  ⚠️ 자리·카드·부·3택 전량 고정 리터럴 — 난수 0(`AG_OWNER=[0,3,1,2]` 한 줄이 카드↔부 대응을 통째로 정한다).
+  ⚠️ 가드 9종: ① 마무리 확정 후 전체 잠금 / ② 무효 번호(`Number.isInteger`·범위) /
+     ③ 세 자리를 다 세우기 전 카드 고르기 무시(순서) — 판 불변 / ④ 이미 세운 자리 재클릭 — 판 불변 /
+     ⑤ 카드를 고르기 전 부 고르기 무시(순서) — 판 불변 / ⑥ 이미 맡긴 카드 재클릭 — 판 불변 /
+     ⑦ 네 일을 다 맡기기 전, 또는 상태와 어긋난 자리 비우기·돌아오기 무시 — 판 불변 /
+     ⑧ 자리를 비웠다 돌아오기 전 마무리 무시(순서) / ⑨ 안내 표시 중 재클릭 무시(`agBusy`).
+     재시도 허용(감점 없음), 조작에 점수 0. 발문은 `.ag-q`로 떼어 전 단계 상시 노출. 상태 열쇠 11개.
+
+⚠️ 정직 원칙 네 곳
+  ㉠ **화면이 [친구와 활동] 행정 각부 조사를 대신하지 않는다.** 진짜 활동은 교실에서 행정 각부
+     하나를 골라 하는 일을 조사하고 친구들과 이야기하는 일이고, 판이 다루는 자리는 **업무를 나눠
+     맡는 구조**까지다. 완료 카드에 그렇게 적었다.
+  ㉡ **각 부가 하는 일을 지어내지 않는다** — 교과서가 부마다 하는 일을 따로 적지 않았으므로 판은
+     부 이름과 교과서 [스스로 활동]의 카드 뉴스까지만 쓰고 그 이상 말하지 않는다.
+  ㉢ **자리를 비우는 자리에 옳고 그름을 두지 않는다.**
+  ㉣ **판의 자리는 실제 나라의 조직도를 그대로 옮긴 것이 아니라 교과서 80~81쪽을 판으로 옮긴
+     자리다**(캔버스 캡션에 명시). 교과서 말풍선대로 **행정부 조직은 새로 만들어지거나 조정되고
+     이름이 바뀌기도 한다**는 것을 판이 스스로 말한다.
+
+⚠️ 설계 원칙
+  · **10차시 침범 0** — 삼심 0 · 법관 0 · 공개 재판 0 · 대법원 0 · 대법원장 0.
+    「법원」은 **차시 예고 자리까지**(개수 ≤3), 「판결」은 확인 문항 오답 보기 자리까지(개수 ≤2).
+  · **11~12차시 침범 0** — **독재 0 · 균형 0 · 감시 0 · 견제 0** ·
+    「권력 분립」은 **META 주제명 한 자리뿐(개수 1 대조)**.
+  · **l06 재현 최소** — 법률안 0 · 거부권 0 · 국정 감사 0 · 예산안 0 · 국회의원 0 ·
+    「인사 청문회」는 교과서 [꼭 기억해요] 2번 오답 원문 자리까지(개수 ≤2) ·
+    「심의」는 교과서 「행정부 최고 심의 기관」 원문 자리까지(개수 ≤4).
+  · **주제① 재현 0** — 선거·공약·유권자·후보자·기표소·모의 선거 **전부 0**(교과서 원문 「국민이
+    선출한 대통령」의 「선출」은 유지).
+  · **대단원1 재현 0 · 대단원3 침범 0.**
+  · **정치적 중립** — 우리나라의 실제 정당·정치인 0, 실제 대통령 이름 0, 실제 정책·사건·연도 0.
+    어느 기관도 나쁜 곳으로 그리지 않는다. 대통령이 자리를 비우는 일을 옳은 일로도 그른 일로도
+    그리지 않고, 그 까닭도 교과서가 적은 만큼(「임무를 수행할 수 없는 상황」)까지만 쓴다.
+  · 교사용 참고 자료 0 — 참고 도서 다섯 종, 감사원, 국무 조정실·처·청·위원회, 중앙 정부·지방 정부·
+    지방 자치 제도, 정기 국회·임시 국회, 국무 회의의 정족수와 심의 항목 수, 어린이 정부 포털·
+    대한민국 정책 브리핑 누리집, 활동지 신문 기사(신문사 이름·날짜·금액) 전부 0.
+  · **파일 전체에 네 자리 연도 0 · 금액·인원 수치 0**(CSS 밖 스코프로 대조 — l09 규약 승계).
+  · 정서 — 대통령이 자리를 비우는 자리를 무섭거나 큰일 난 일로 그리지 않는다. 사람이 다치거나
+    괴로워하는 묘사 0. **학생 이름 0 · 실제 지역 이름 0.**
+
+⚠️ goNextLesson = 허브 복귀(l08 미양산 — 양산 시 재배선).
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g6_social_u2_l07_v1">
+<title>행정부에서 하는 일을 알아볼까요 · 사회 6-1</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#C2410C; --green-d:#9A3412; --cyan:#EA580C;
+  --bg:#FFF7ED; --bub:#FFEDD5; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#B45309; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-shrink:0}
+.ka-lb{background:#F1F5F9;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;
+  font-weight:700;color:var(--muted);font-size:clamp(11px,1.9vw,13px);display:flex;align-items:center;gap:6px}
+.ka-lb svg{width:14px;height:14px}
+.ka-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.ka-bar>div{height:100%;background:var(--green);border-radius:99px;transition:width .35s ease;width:5%}
+.ka-pg{font-size:clamp(11px,1.9vw,13px);color:var(--muted);font-weight:700;min-width:46px;text-align:right}
+.ka-sc{display:flex;align-items:center;gap:3px;background:var(--amber-bg);border-radius:99px;padding:5px 11px}
+.ka-sc svg{width:15px;height:15px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;color:var(--amber);font-size:clamp(14px,2.4vw,17px)}
+.ka-sc-u{font-size:11px;color:var(--amber);font-weight:700}
+
+/* 메인 */
+.ka-m{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;padding:4px 2px}
+.ka-tags{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ka-bg{display:inline-flex;align-items:center;gap:5px;background:var(--bub);color:var(--green-d);
+  border-radius:99px;padding:5px 12px;font-size:clamp(11px,1.9vw,13px);font-weight:700}
+.ka-bg svg{width:13px;height:13px}
+.ka-bg.s2{background:#E0F2FE;color:#075985}
+.ka-bg.s3{background:#DCFCE7;color:#166534}
+.ka-bg.s4{background:#FEF3C7;color:#92400E}
+.ka-bg.s5{background:#F3E8FF;color:#6B21A8}
+.ka-meta{font-size:clamp(10px,1.7vw,12px);color:#94A3B8;font-weight:600}
+.ka-t{font-size:clamp(19px,3.4vw,27px);font-weight:700;line-height:1.4;margin-bottom:10px}
+.ka-bub{background:var(--bub);border-radius:14px;padding:13px 18px;font-size:clamp(14px,2.4vw,18px);
+  line-height:1.7;margin-bottom:12px}
+.ka-emph{color:var(--green-d);font-weight:700}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.scene.wide{width:clamp(240px,44vw,420px)}
+.scene.wide svg{height:clamp(120px,20vw,200px)}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(15px,2.6vw,20px);font-weight:700;line-height:1.6;margin-bottom:12px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+.opt{background:#fff;border:2px solid var(--line);border-radius:13px;padding:13px 15px;cursor:pointer;
+  font-family:inherit;font-size:clamp(13px,2.2vw,16.5px);font-weight:500;text-align:left;line-height:1.5;transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:#16A34A;background:#DCFCE7;font-weight:700}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:11px;border-radius:12px;padding:12px 16px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;animation:fadeUp .3s ease both}
+.fb.ok{background:#DCFCE7;color:#166534;font-weight:700}
+.hint{margin-top:9px;background:var(--amber-bg);border-radius:11px;padding:10px 14px;
+  font-size:clamp(12.5px,2.1vw,15px);color:var(--amber);line-height:1.55}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:9px;width:100%;max-width:660px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFC;border-radius:12px;padding:11px 15px;
+  font-size:clamp(13px,2.2vw,16.5px);line-height:1.6}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'\2713';color:#fff;font-weight:800;font-size:14px}
+
+/* 직접조작 — 자리가 비어도 일이 옮겨 가는 판 */
+.dw-wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dw-body{display:grid;grid-template-columns:1.05fr 1fr;gap:10px;align-items:start}
+.dw-canvas{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.dw-canvas svg{width:100%;height:auto;display:block}
+.dw-canvas .cvcap{padding:5px 6px;text-align:center;font-size:clamp(9.5px,1.6vw,11.5px);
+  color:var(--muted);font-weight:700;background:#F8FAFC}
+.dw-right{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dw-step{font-size:clamp(10.5px,1.75vw,13px);font-weight:800;color:var(--green)}
+.dw-msg{background:#F8FAFC;border:2px solid var(--line);border-left:4px solid var(--green);border-radius:10px;
+  padding:8px 12px;font-size:clamp(11.4px,1.93vw,13.8px);line-height:1.55;color:#334155;animation:fadeUp .3s ease both}
+.dw-msg.warn{border-left-color:var(--amber)}
+.dw-msg b{color:var(--green)}
+.dw-card{background:#fff;border:2px solid var(--amber);border-radius:12px;padding:10px 12px;
+  font-size:clamp(12px,2.05vw,14.5px);line-height:1.55;animation:pop .35s ease both}
+.dw-card .pt{font-weight:800;color:var(--amber);margin-bottom:4px;font-size:clamp(12.5px,2.15vw,15px)}
+.ag-q{font-size:clamp(11.6px,1.97vw,14px);font-weight:800;color:var(--green);
+  background:var(--bub);border-radius:9px;padding:7px 11px;line-height:1.45}
+.ag-fin{display:flex;flex-direction:column;gap:5px}
+.ag-fin button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;padding:7px 10px;
+  cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.ag-fin button:hover{background:var(--bub)}
+.ag-fin button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.ag-list{display:flex;flex-direction:column;gap:5px;max-height:206px;overflow-y:auto}
+.ag-list button{border:2px solid #CBD5E0;background:#fff;border-radius:10px;padding:7px 10px;cursor:pointer;
+  font-family:inherit;font-weight:700;color:var(--ink);font-size:clamp(10.6px,1.8vw,13px);transition:.15s;
+  line-height:1.4;text-align:left}
+.ag-list button:hover{border-color:var(--green);background:var(--bub)}
+.ag-list button.ok{border-color:var(--cyan);background:#FFF7ED;color:#C79A7A}
+.ag-list button.no{border-color:var(--amber);background:var(--amber-bg);animation:shakeNo .4s ease}
+.ag-list button:disabled{border-color:#E2E8F0;background:#F8FAFC;color:#CBD5E0;cursor:default}
+.ag-push{border:2px solid var(--green);background:var(--bub);color:var(--green-d);border-radius:10px;
+  padding:9px 10px;cursor:pointer;font-family:inherit;font-weight:800;
+  font-size:clamp(11px,1.87vw,13.4px);text-align:center;line-height:1.4}
+.ag-push:hover{background:#FFE4CC}
+.ag-note{background:#F8FAFC;border:2px dashed #CBD5E0;border-radius:10px;padding:7px 10px;
+  font-size:clamp(10.4px,1.76vw,12.4px);line-height:1.5;color:#64748B}
+.ag-seatnote{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:10px;padding:8px 11px;
+  font-size:clamp(10.8px,1.83vw,13px);line-height:1.5;color:#3F3A2C}
+.ag-seatnote b{color:#8A6D3B}
+.paper{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:12px;padding:12px 16px;
+  font-size:clamp(12.5px,2.1vw,15px);line-height:1.65;color:#3F3A2C;max-width:660px;
+  animation:fadeUp .4s ease both}
+.paper .ph{font-weight:800;color:#8A6D3B;margin-bottom:6px;font-size:clamp(13px,2.2vw,16px)}
+.tipbox{background:#FFEDD5;border-radius:12px;padding:11px 16px;font-size:clamp(12.5px,2.1vw,15px);
+  line-height:1.6;color:#7C2D12;max-width:660px}
+@media(max-width:620px){ .dw-body{grid-template-columns:1fr} }
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(194,65,12,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style>
+<script src="/kedu_gate.js"></script>
+</head>
+
+
+
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#B45309"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식 =====
+   ⚠️ 정직 원칙: 모든 그림은 내용을 나타낸 도식이며 실제 사진·조직도가 아니다.
+   ⚠️ 정치적 중립: 우리나라의 실제 정당·정치인 0. 기관은 사람 형상이 아니라 건물과 표찰로만 그린다. */
+const SVG = {
+  // 1 들어가기 — 나라의 살림을 맡아 하는 곳(건물 도식 · 사람 형상 0)
+  open:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    <text x="160" y="19" font-size="11" fill="#9A3412" text-anchor="middle" font-weight="800">나라의 살림은 누가 맡아 할까요?</text>
+    <rect x="66" y="86" width="188" height="52" rx="5" fill="#fff" stroke="#C2410C" stroke-width="1.8"/>
+    <path d="M92 86 L92 62 M116 86 L116 62 M204 86 L204 62 M228 86 L228 62" stroke="#EA580C" stroke-width="2.4"/>
+    <rect x="78" y="54" width="164" height="9" rx="2" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.4"/>
+    <rect x="132" y="34" width="56" height="20" rx="4" fill="#fff" stroke="#C2410C" stroke-width="1.5"/>
+    <text x="160" y="48" font-size="8" fill="#9A3412" text-anchor="middle" font-weight="800">나라 살림</text>
+    <rect x="54" y="138" width="212" height="8" rx="3" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.3"/>
+    <text x="160" y="162" font-size="8.6" fill="#9A3412" text-anchor="middle" font-weight="800">여기에서는 어떤 일을 할까요?</text></svg>`,
+  // 2 살펴보기 — 행정부의 뜻
+  gov:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <text x="160" y="18" font-size="11" fill="#9A3412" text-anchor="middle" font-weight="800">행정부는 어떤 곳인가요</text>
+    <rect x="14" y="30" width="292" height="40" rx="10" fill="#FFF7ED" stroke="#C2410C" stroke-width="1.6"/>
+    <text x="160" y="47" font-size="8.4" fill="#9A3412" text-anchor="middle" font-weight="800">국회에서 만든 법에 따라</text>
+    <text x="160" y="61" font-size="8.4" fill="#9A3412" text-anchor="middle" font-weight="800">나라의 살림을 맡아 하는 국가기관</text>
+    <rect x="14" y="80" width="292" height="40" rx="10" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.5"/>
+    <text x="160" y="97" font-size="8.4" fill="#9A3412" text-anchor="middle" font-weight="800">대통령, 국무총리,</text>
+    <text x="160" y="111" font-size="8.4" fill="#9A3412" text-anchor="middle" font-weight="800">여러 개의 행정 각부 등으로 구성돼요</text>
+    <rect x="52" y="130" width="216" height="26" rx="8" fill="#fff" stroke="#EA580C" stroke-width="1.3"/>
+    <text x="160" y="147" font-size="8.2" fill="#B45309" text-anchor="middle" font-weight="800">국민의 안전하고 편리한 삶을 위해 일해요</text></svg>`,
+  // 3 살펴보기 — 행정부의 구성(교과서 80쪽)
+  org:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    <text x="160" y="17" font-size="11" fill="#9A3412" text-anchor="middle" font-weight="800">행정부는 어떻게 이루어질까요</text>
+    <rect x="96" y="26" width="128" height="28" rx="8" fill="#fff" stroke="#C2410C" stroke-width="1.7"/>
+    <text x="160" y="44" font-size="9.2" fill="#9A3412" text-anchor="middle" font-weight="800">대통령</text>
+    <path d="M160 54 L160 66" stroke="#EA580C" stroke-width="2"/><path d="M156 60 L160 66 L164 60 Z" fill="#EA580C"/>
+    <rect x="96" y="68" width="128" height="28" rx="8" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.6"/>
+    <text x="160" y="86" font-size="9.2" fill="#9A3412" text-anchor="middle" font-weight="800">국무총리</text>
+    <path d="M160 96 L160 106" stroke="#EA580C" stroke-width="2"/>
+    <path d="M40 106 L280 106" stroke="#EA580C" stroke-width="2"/>
+    ${[0,1,2,3].map(j=>`<path d="M${40+j*80} 106 L${40+j*80} 116" stroke="#EA580C" stroke-width="2"/>
+      <rect x="${12+j*80}" y="116" width="56" height="26" rx="7" fill="#fff" stroke="#EA580C" stroke-width="1.4"/>
+      <text x="${40+j*80}" y="133" font-size="7.4" fill="#B45309" text-anchor="middle" font-weight="800">행정 각부</text>`).join('')}
+    <text x="160" y="160" font-size="8" fill="#64748B" text-anchor="middle" font-weight="700">행정 각부는 업무를 나눠 맡아요</text></svg>`,
+  // 4 살펴보기 — reveal: 대통령이 임무를 수행할 수 없으면(자리와 몫)
+  hand:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <text x="160" y="18" font-size="11" fill="#9A3412" text-anchor="middle" font-weight="800">그 자리의 일은 어떻게 될까요</text>
+    <rect x="20" y="34" width="120" height="54" rx="9" fill="#F8FAFC" stroke="#CBD5E0" stroke-width="1.6" stroke-dasharray="4 3"/>
+    <text x="80" y="56" font-size="9" fill="#94A3B8" text-anchor="middle" font-weight="800">대통령</text>
+    <text x="80" y="72" font-size="7.2" fill="#94A3B8" text-anchor="middle" font-weight="700">지금은 임무를 수행할 수 없어요</text>
+    <rect x="180" y="34" width="120" height="54" rx="9" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.6"/>
+    <text x="240" y="56" font-size="9" fill="#9A3412" text-anchor="middle" font-weight="800">국무총리</text>
+    <text x="240" y="72" font-size="7.2" fill="#B45309" text-anchor="middle" font-weight="700">대통령의 임무를 대신해요</text>
+    <path d="M142 60 L178 60" stroke="#EA580C" stroke-width="2"/><path d="M172 56 L178 60 L172 64 Z" fill="#EA580C"/>
+    <rect x="20" y="100" width="280" height="26" rx="8" fill="#FFF7ED" stroke="#EA580C" stroke-width="1.3"/>
+    <text x="160" y="117" font-size="8.2" fill="#9A3412" text-anchor="middle" font-weight="800">자리가 비어도 그 일은 사라지지 않아요</text>
+    <rect x="20" y="134" width="280" height="24" rx="8" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.2"/>
+    <text x="160" y="150" font-size="8.2" fill="#9A3412" text-anchor="middle" font-weight="800">나라의 살림은 멈출 수 없기 때문이에요</text></svg>`,
+  // 6 살펴보기 — 행정 각부와 카드 뉴스(교과서 81쪽 [스스로 활동])
+  cards:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    <text x="160" y="18" font-size="11" fill="#9A3412" text-anchor="middle" font-weight="800">행정 각부는 어떤 일을 할까요</text>
+    ${[['경제','나라 살림'],['교육','배우는 일'],['외교','다른 나라'],['환경','환경 지키기']].map((t,i)=>{
+      const x=10+i*76;
+      return `<rect x="${x}" y="30" width="72" height="70" rx="9" fill="#fff" stroke="#EA580C" stroke-width="1.5"/>
+      <rect x="${x+14}" y="40" width="44" height="8" rx="2" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.1"/>
+      <path d="M${x+22} 48 L${x+22} 60 M${x+36} 48 L${x+36} 60 M${x+50} 48 L${x+50} 60" stroke="#FDBA74" stroke-width="1.3"/>
+      <text x="${x+36}" y="76" font-size="8.6" fill="#C2410C" text-anchor="middle" font-weight="800">${t[0]}</text>
+      <text x="${x+36}" y="90" font-size="6.6" fill="#9A3412" text-anchor="middle" font-weight="700">${t[1]}</text>`;}).join('')}
+    <rect x="10" y="110" width="300" height="46" rx="9" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.3"/>
+    <text x="160" y="128" font-size="8.2" fill="#9A3412" text-anchor="middle" font-weight="800">경제, 교육, 외교, 국방, 환경 등의 업무를 나눠 맡아서</text>
+    <text x="160" y="144" font-size="8.2" fill="#9A3412" text-anchor="middle" font-weight="800">국민의 안전하고 편리한 삶을 위해 다양한 일을 해요</text></svg>`,
+  // 7 살펴보기 — reveal: 국무 회의(교과서 80쪽 원문)
+  meet:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <text x="160" y="19" font-size="11" fill="#9A3412" text-anchor="middle" font-weight="800">나라의 중요한 일은 어떻게 의논할까요</text>
+    <rect x="60" y="30" width="200" height="70" rx="12" fill="#FFF7ED" stroke="#C2410C" stroke-width="1.8"/>
+    ${[0,1,2,3,4].map(j=>`<rect x="${76+j*34}" y="44" width="24" height="16" rx="4" fill="#fff" stroke="#EA580C" stroke-width="1.2"/>`).join('')}
+    <rect x="94" y="70" width="132" height="18" rx="5" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.3"/>
+    <text x="160" y="83" font-size="8.4" fill="#9A3412" text-anchor="middle" font-weight="800">국무 회의</text>
+    <rect x="14" y="110" width="292" height="46" rx="9" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.3"/>
+    <text x="160" y="128" font-size="8.2" fill="#9A3412" text-anchor="middle" font-weight="800">대통령, 국무총리, 행정 각부의 장을 비롯한 국무 위원들이</text>
+    <text x="160" y="144" font-size="8.2" fill="#9A3412" text-anchor="middle" font-weight="800">나라의 중요한 일이나 정책을 의논해요</text></svg>`,
+  // 16 정리
+  wrap:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    <text x="160" y="20" font-size="11.4" fill="#9A3412" text-anchor="middle" font-weight="800">오늘의 정리</text>
+    ${[['★','법에 따라 나라의 살림을 맡아 하는 국가기관'],['①','대통령 \u2014 나라의 중요한 일을 결정해요'],['②','국무총리 \u2014 대통령을 보좌하고 행정 각부를 관리해요'],['③','행정 각부 \u2014 업무를 나눠 맡아 다양한 일을 해요']].map((t,i)=>{
+      const y=32+i*32;
+      return `<rect x="16" y="${y}" width="288" height="26" rx="7" fill="#fff" stroke="#EA580C" stroke-width="1.3"/>
+      <text x="30" y="${y+17}" font-size="9.4" fill="#C2410C" font-weight="800">${t[0]}</text>
+      <text x="172" y="${y+17}" font-size="8" fill="#9A3412" text-anchor="middle" font-weight="800">${t[1]}</text>`;}).join('')}
+    <text x="160" y="166" font-size="8.2" fill="#64748B" text-anchor="middle" font-weight="700">모두 행정부에서 하는 일이에요</text></svg>`,
+  // 18 종료
+  done:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <circle cx="160" cy="80" r="46" fill="#FFEDD5" stroke="#EA580C" stroke-width="2"/>
+    <path d="M138 80 L154 96 L184 64" stroke="#C2410C" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="160" y="150" font-size="11" fill="#9A3412" text-anchor="middle" font-weight="800">행정부에서 하는 일을 알아봤어요</text></svg>`
+};
+function sceneCard(key,cap,extra){ return `<div class="scene ${extra||''}">${SVG[key]||''}${cap?`<div class="cap">${cap}</div>`:''}</div>`; }
+
+/* ===== 직접조작 — 자리가 비어도 일이 옮겨 가는 판(53번째 신규 패턴) =====
+   ⭐ 앞의 쉰두 종에서 **자리가 비면 그 자리의 몫도 함께 비었다.** 이번만 자리가 비어도
+      그 자리의 일이 **사라지지 않고 옆자리로 옮겨 간다.**
+   ⭐ **51번째(맡을 곳이 없으면 일이 쌓이는 판)와의 정면 대비** — 거기서는 맡을 곳이 없어
+      일이 쌓였고, 여기서는 맡을 곳이 비어도 대신할 자리가 있어 이어진다.
+   ⭐ **대통령의 일을 지금 어느 자리가 지고 있는가**는 `agHolder(st)` 한 줄이 다 정한다.
+      그것을 따로 담는 상태가 코드에 없고, `AG_DUTY`를 그리는 자리도 코드에 단 하나다.
+   ⭐ **자리를 비우고 되돌리는 데에는 옳고 그름이 없다**(정답 상수 부재 · 무판정).
+   ⚠️ 가드 9종은 파일 머리 주석 참조. 전량 고정 리터럴 — 난수 0. */
+const AG_N = 3;
+/* 행정부를 이루는 자리 셋 \u2014 교과서 80쪽 본문 원문 */
+const AG_SEAT = ['대통령','국무총리','행정 각부'];
+const AG_SEAT_DO = [
+  '국민이 선출한 대통령은 행정부의 최고 책임자이자 우리나라의 대표로, 나라의 중요한 일을 결정합니다.',
+  '국무총리는 대통령을 보좌하고 행정 각부를 관리하며, 대통령이 임무를 수행할 수 없는 상황이 생기면 대통령의 임무를 대신합니다.',
+  '행정 각부는 경제, 교육, 외교, 국방, 환경 등의 업무를 나눠 맡아서 국민의 안전하고 편리한 삶을 위해 다양한 일을 합니다.'
+];
+/* 판에 적히는 짧은이름 \u2014 위 두 칸의 본래 몫 */
+const AG_SEAT_S = ['행정부의 최고 책임자이자 우리나라의 대표','대통령을 보좌하고 행정 각부를 관리해요'];
+/* ★ 대통령의 일 \u2014 이 문구는 코드에 단 하나이고, 판에 그리는 자리도 단 하나다. */
+const AG_DUTY = '나라의 중요한 일을 결정해요';
+/* 행정 각부 네 곳 \u2014 교과서 81쪽 [스스로 활동] 보기 원문 */
+const AG_MIN = ['교육부','재정 경제부','외교부','기후 에너지 환경부'];
+/* 카드 뉴스 네 장 \u2014 교과서 81쪽 [스스로 활동] · 지도서 예시 답안 원문 */
+const AG_CARD = [
+  '학생들이 꿈꾸는 장래 희망에 관해 이야기하는 카드 뉴스',
+  '국립 공원의 아름다움을 소개하는 카드 뉴스',
+  '우리나라의 경제 정책 방향에 관해 이야기하는 카드 뉴스',
+  '다른 나라와 함께한 외교와 관련한 내용을 담은 카드 뉴스'
+];
+const AG_CARD_S = ['장래 희망 이야기','국립 공원의 아름다움','경제 정책 방향','외교와 관련한 내용'];
+/* ⚠️ 카드 j를 만든 부 \u2014 이 한 줄이 카드와 부의 대응을 통째로 정한다(난수 0). */
+const AG_OWNER = [0, 3, 1, 2];
+/* 자리를 비우고 되돌릴 때 판이 하는 말 \u2014 ⚠️ 어느 문구에도 옳고 그름이 없다 */
+const AG_AWAY_MSG = '대통령이 <b>임무를 수행할 수 없는 상황</b>이 됐어요. 그런데 <b>나라의 중요한 일을 결정하는 일</b>은 판에서 사라지지 않았어요 \u2014 <b>국무총리</b> 자리로 옮겨 갔어요.';
+const AG_BACK_MSG = '대통령이 <b>돌아왔어요.</b> 대신 맡았던 일을 <b>대통령이 다시</b> 맡아요 \u2014 판이 비기 전과 같아졌어요.';
+/* ④ 마무리 \u2014 행정 각부가 하는 일(지도서 핵심 질문 예시 답안 원문) */
+const AG_FIN = [
+  '나라의 중요한 일을 각 부가 저마다 따로 결정해요',
+  '경제, 교육, 외교, 국방, 환경 등의 업무를 나눠 맡아서 국민의 안전하고 편리한 삶을 위해 다양한 일을 해요',
+  '한 곳에서 나라의 모든 업무를 도맡아 처리해요'
+];
+const AG_FIN_OK = 1;
+const AG_FIN_NO = [
+  '나라의 중요한 일이나 정책은 <b>국무 회의</b>를 열어 <b>함께</b> 의논해요.',
+  '',
+  '행정 각부는 업무를 <b>나눠</b> 맡아요. 한 곳이 모든 일을 도맡지 않아요.'
+];
+/* 안내 \u2014 어느 문구에도 「틀렸다」는 말이 없다 */
+const AG_ALREADY_S = '그 자리는 <b>이미 세웠어요.</b> 판은 그대로예요.';
+const AG_ORDER_C = '먼저 <b>행정부를 이루는 자리</b> 셋을 모두 세워 봐요.';
+const AG_ALREADY_C = '그 카드 뉴스는 <b>이미 맡겼어요.</b> 판은 그대로예요.';
+const AG_ORDER_M = '먼저 <b>카드 뉴스</b>를 하나 골라 봐요.';
+const AG_ORDER_A = '먼저 <b>카드 뉴스 넷</b>을 모두 나눠 맡겨 봐요.';
+const AG_WRONG_M = '그 부에서 만든 카드 뉴스가 아니에요. 카드 뉴스에 담긴 <b>내용</b>을 다시 읽어 봐요.';
+/* 받침 처리 \u2014 안내문에 「을(를)」 병기가 남지 않게 한다 */
+function agJ(s){ const c=s.charCodeAt(s.length-1); return (c>=0xAC00&&c<=0xD7A3) ? ((c-0xAC00)%28!==0) : false; }
+
+/* ★ AG_OWNER를 읽는 자리는 여기 한 곳뿐이다. */
+function agOwnerOf(j){ return AG_OWNER[j]; }
+/* ★ 이 한 줄이 「대통령의 일을 지금 어느 자리가 지고 있는가」를 다 정한다
+   \u2014 그것을 따로 담는 상태가 코드에 없다. */
+function agHolder(st){ return st.agAway ? 1 : 0; }
+function agBits(m,n){ const r=[]; for(let k=0;k<n;k++){ if(m & (1<<k)) r.push(k); } return r; }
+function agAllSeat(st){ return st.agSeat === (1<<AG_N)-1; }
+function agAllJob(st){ return st.agJob === (1<<AG_CARD.length)-1; }
+function agCardOf(st,m){ for(let j=0;j<AG_CARD.length;j++){ if((st.agJob & (1<<j)) && agOwnerOf(j)===m) return j; } return -1; }
+function agReady(st){ return agAllJob(st) && st.agBack>0 && !st.agAway; }
+
+/* 판 \u2014 위는 대통령·국무총리 두 칸, 가운데는 행정 각부 띠, 아래는 부 네 줄.
+   ⚠️ 대통령의 일(`AG_DUTY`)을 그리는 자리는 **여기 한 곳뿐**이고,
+      어느 칸에 그릴지는 `agHolder(st)`가 정한다. */
+function agCanvas(st){
+  const fin = st.agFin!=null;
+  const seatN = agBits(st.agSeat,AG_N).length, jobN = agBits(st.agJob,AG_CARD.length).length;
+  const dutyAt = (st.agSeat & 1) ? agHolder(st) : -1;
+  const set2 = !!(st.agSeat & 4);
+  let g='';
+  g+=`<rect x="8" y="6" width="304" height="238" rx="10" fill="#FFF7ED" stroke="#FED7AA" stroke-width="2"/>`;
+  const head = fin ? '행정 각부가 업무를 나눠 맡아 나라의 살림을 해요'
+    : (st.agAway ? '대통령 자리가 비었어요 \u2014 그 일은 어디에 있나요?'
+      : (agReady(st) ? '대통령이 돌아왔어요 \u2014 판이 비기 전과 같아졌어요'
+        : (agAllJob(st) ? '나라의 일을 모두 나눠 맡겼어요'
+          : (seatN<AG_N ? '행정부를 이루는 자리를 세워 봐요' : '카드 뉴스를 어느 부에서 만들었을지 맡겨 봐요'))));
+  g+=`<text x="160" y="20" font-size="10" fill="#9A3412" text-anchor="middle" font-weight="800">${head}</text>`;
+  for(let i=0;i<2;i++){
+    const set = !!(st.agSeat & (1<<i)), empty = (i===0 && st.agAway), on = set && !empty, x = 12 + i*152;
+    g+=`<rect data-seat="${i}" data-set="${set?1:0}" data-empty="${empty?1:0}" x="${x}" y="28" width="144" height="52" rx="8" fill="${on?'#fff':'#F8FAFC'}" stroke="${on?'#C2410C':'#CBD5E0'}" stroke-width="${on?1.9:1.2}"${on?'':' stroke-dasharray="4 3"'}/>`;
+    g+=`<text x="${x+72}" y="45" font-size="9" fill="${set?'#9A3412':'#94A3B8'}" text-anchor="middle" font-weight="800">${set?AG_SEAT[i]:'아직이에요'}</text>`;
+    g+=`<text x="${x+72}" y="58" font-size="6.4" fill="${on?'#B45309':'#CBD5E0'}" text-anchor="middle" font-weight="700">${empty?'지금은 임무를 수행할 수 없어요':(set?AG_SEAT_S[i]:'세우지 않았어요')}</text>`;
+    g+=`<text data-duty="${dutyAt===i?1:0}" x="${x+72}" y="71" font-size="6.6" fill="#C2410C" text-anchor="middle" font-weight="800">${dutyAt===i?AG_DUTY:'\u00B7'}</text>`;
+  }
+  g+=`<rect data-seat="2" data-set="${set2?1:0}" data-empty="0" x="12" y="86" width="296" height="24" rx="8" fill="${set2?'#fff':'#F8FAFC'}" stroke="${set2?'#C2410C':'#CBD5E0'}" stroke-width="${set2?1.7:1.2}"${set2?'':' stroke-dasharray="4 3"'}/>`;
+  g+=`<text x="160" y="102" font-size="8.4" fill="${set2?'#9A3412':'#94A3B8'}" text-anchor="middle" font-weight="800">${set2?`행정 각부 \u2014 나눠 맡은 일 ${jobN} / ${AG_CARD.length}`:'행정 각부 \u2014 아직 세우지 않았어요'}</text>`;
+  for(let m=0;m<AG_MIN.length;m++){
+    const cj = agCardOf(st,m), y = 116 + m*30, got = cj>=0;
+    g+=`<rect data-min="${m}" data-card="${cj}" x="14" y="${y}" width="292" height="26" rx="6" fill="${got?'#fff':'#F8FAFC'}" stroke="${got?'#C2410C':(set2?'#CBD5E0':'#E2E8F0')}" stroke-width="${got?1.6:1.1}"${got?'':' stroke-dasharray="4 3"'}/>`;
+    g+=`<text x="26" y="${y+17}" font-size="7.6" fill="${set2?(got?'#9A3412':'#94A3B8'):'#E2E8F0'}" font-weight="800">${set2?AG_MIN[m]:'\u00B7'}</text>`;
+    g+=`<text x="206" y="${y+17}" font-size="7.2" fill="${got?'#B45309':'#CBD5E0'}" text-anchor="middle" font-weight="800">${set2?(got?AG_CARD_S[cj]:'아직 맡은 일이 없어요'):''}</text>`;
+  }
+  g+=`<text x="20" y="240" font-size="7.6" fill="#B45309" font-weight="800">세운 자리 ${seatN} / ${AG_N} \u00B7 자리를 비운 횟수 ${st.agBack}</text>`;
+  g+=`<rect data-seatn="${seatN}" data-jobn="${jobN}" data-awayn="${st.agAway?1:0}" data-backn="${st.agBack}" x="14" y="116" width="0" height="0" fill="none"/>`;
+  return `<svg viewBox="0 0 320 250"><rect width="320" height="250" fill="#ffffff"/>${g}</svg>`;
+}
+
+function agPanel(st){
+  const fin = st.agFin!=null, allS = agAllSeat(st), allJ = agAllJob(st);
+  const q = fin
+    ? '행정 각부는 업무를 <b>나눠 맡고</b>, 자리가 비면 그 일을 <b>다른 자리가 대신</b> 맡아요.'
+    : (agReady(st) ? '<b>행정 각부</b>는 어떤 일을 할까요?'
+      : (allJ ? (st.agAway ? '대통령의 일은 지금 <b>어느 자리</b>에 있나요? 판을 보고 확인한 뒤 되돌려 봐요.'
+                          : '대통령이 <b>임무를 수행할 수 없는 상황</b>이 되면 그 일은 어떻게 될까요?')
+        : (allS ? (st.agOpen==null ? '카드 뉴스를 하나 골라 봐요. 어느 것부터 골라도 돼요.'
+                                   : '이 카드 뉴스는 <b>어느 부</b>에서 만들었을까요?')
+          : '<b>행정부</b>를 이루는 자리를 세워 봐요. 어느 자리부터 세워도 돼요.')));
+  let right = `<div class="ag-q">${q}</div>`;
+
+  if(fin){
+    right+=`<div class="dw-card"><div class="pt">\uD83C\uDFDB\uFE0F 자리가 비어도 일은 사라지지 않았어요</div>
+      <div>대통령이 임무를 수행할 수 없는 상황이 됐을 때 <b>나라의 중요한 일을 결정하는 일</b>은 없어지지 않고 <b>국무총리</b> 자리로 옮겨 갔어요. <b>나라의 살림은 멈출 수 없기 때문</b>이에요.</div>
+      <div style="margin-top:5px">대신 맡는 동안에도 국무총리의 <b>본래 몫은 그대로</b>였어요. 두 몫을 <b>함께</b> 진 거예요. 대통령이 돌아오자 판은 비기 전과 <b>같아졌어요.</b></div>
+      <div style="margin-top:5px;color:#64748B">행정 각부 가운데 하나를 골라 <b>하는 일을 조사해</b> 친구들과 이야기하는 것은 교실에서 하는 활동이에요. 화면이 그 활동을 대신하지 않아요.</div></div>`;
+  } else if(agReady(st)){
+    right+=`<div class="ag-fin">${AG_FIN.map((f,k)=>
+      `<button class="${st.agWrongF===k?'no':''}" onclick="agFinish(${k})">${f}</button>`).join('')}</div>`;
+  } else if(allJ){
+    right+=`<div class="dw-step">\uD83D\uDD01 자리 \u2014 이 자리에는 정답이 없어요</div>`;
+    right+=`<div class="ag-seatnote"><b>대통령이 임무를 수행할 수 없는 상황이 생기면 국무총리가 대통령의 임무를 대신합니다.</b><br>어느 쪽을 눌러도 판이 옳고 그름을 말하지 않아요.</div>`;
+    right+=`<div class="ag-fin">
+      <button onclick="agTurn(1)"${st.agAway?' disabled':''}>\u26A0\uFE0F 대통령이 임무를 수행할 수 없어요</button>
+      <button onclick="agTurn(0)"${st.agAway?'':' disabled'}>\u21A9\uFE0F 대통령이 돌아왔어요</button></div>`;
+  } else if(allS){
+    if(st.agOpen==null){
+      right+=`<div class="dw-step">\uD83D\uDCF0 카드 뉴스 고르기</div>`;
+      right+=`<div class="ag-list">${AG_CARD.map((c,j)=>{
+        const on = !!(st.agJob & (1<<j));
+        return `<button class="${on?'ok':''}" onclick="agPick(${j})">${on?'\u2713 ':''}${c}</button>`;
+      }).join('')}</div>`;
+    } else {
+      right+=`<div class="dw-step">\uD83C\uDFE2 어느 부에서 만들었을까요</div>`;
+      right+=`<div class="ag-note">${AG_CARD[st.agOpen]}</div>`;
+      right+=`<div class="ag-list">${AG_MIN.map((m,k)=>
+        `<button class="${st.agWrongM===k?'no':''}" onclick="agGive(${k})">${m}</button>`).join('')}</div>`;
+    }
+  } else {
+    right+=`<div class="dw-step">\u25B6 행정부를 이루는 자리 세우기</div>`;
+    right+=`<div class="ag-list">${AG_SEAT.map((s,i)=>{
+      const on = !!(st.agSeat & (1<<i));
+      return `<button class="${on?'ok':''}" onclick="agSet(${i})">${on?'\u2713 ':''}${s} \u2014 ${AG_SEAT_DO[i]}</button>`;
+    }).join('')}</div>`;
+  }
+  if(st.agMsg) right+=`<div class="dw-msg${st.agWarn?' warn':''}">${st.agMsg}</div>`;
+
+  return `<div class="dw-wrap">
+    <div style="text-align:center"><b style="color:var(--green)">\uD83C\uDFDB\uFE0F 자리가 비어도 일은 사라지지 않아요</b></div>
+    <div class="dw-body">
+      <div class="dw-canvas">${agCanvas(st)}<div class="cvcap">판의 자리는 교과서 80~81쪽을 옮긴 자리예요. 실제 나라의 조직도를 그대로 옮긴 것은 아니에요. 행정부 조직은 새로 만들어지거나 조정되고, 이름이 바뀌기도 해요.</div></div>
+      <div class="dw-right">${right}</div>
+    </div>
+  </div>`;
+}
+
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "2단원 민주주의와 시민 참여 · 주제② 국가기관과 권력 분립";
+
+// 확인 4 + 적용 4 — 정답 다양화 [1,3,0,2,2,0,3,1](각 자리 2회)
+// ⚠️ 10차시 침범 0 · l06 재현 최소 · 문항 내 연도·금액·수치 0 · 실제 정당·정치인 0.
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"<b>행정부</b>에 관한 설명으로 알맞은 것은?",
+   opts:["국민을 대표해 법을 만드는 국가기관이에요","국회에서 만든 법에 따라 나라의 살림을 맡아 하는 국가기관이에요",
+         "법에 따라 판결을 내려 다툼을 해결하는 국가기관이에요","다른 나라의 살림을 대신 맡아 하는 국가기관이에요"],
+   correct:1, pts:POINTS_BASIC, scene:"gov",
+   h1:"교과서는 「\u2026 법에 따라」로 시작하는 한 문장으로 적었어요.",
+   h2:"법을 만드는 곳과 나라의 살림을 맡는 곳은 서로 달라요.",
+   reason:"<b>행정부</b>는 국회에서 만든 법에 따라 <b>나라의 살림</b>을 맡아 하는 국가기관이에요."},
+  {stem:"<b>대통령</b>이 하는 일로 알맞은 것은?",
+   opts:["대통령을 보좌하고 행정 각부를 관리해요","경제, 교육, 외교 등의 업무를 나눠 맡아요",
+         "행정 각부 가운데 한 곳을 맡아 그곳의 일만 해요","행정부의 최고 책임자이자 우리나라의 대표로, 나라의 중요한 일을 결정해요"],
+   correct:3, pts:POINTS_BASIC, scene:"org",
+   h1:"판의 맨 위 칸에 적혀 있던 몫이에요.",
+   h2:"우리나라를 <b>대표</b>하는 자리예요.",
+   reason:"<b>대통령</b>은 행정부의 최고 책임자이자 우리나라의 대표로, 나라의 중요한 일을 결정해요.(첫 번째 보기는 국무총리, 두 번째 보기는 행정 각부가 하는 일이에요.)"},
+  {stem:"<b>국무총리</b>가 하는 일로 알맞은 것은?",
+   opts:["대통령을 보좌하고 행정 각부를 관리해요","나라의 중요한 일을 혼자 결정해요",
+         "국민의 뜻을 모아 법을 만드는 일을 해요","다른 나라의 대표를 대신해 회의에 참석해요"],
+   correct:0, pts:POINTS_BASIC, scene:"org",
+   h1:"판에서 대통령 칸 옆에 있던 자리예요.",
+   h2:"대통령을 <b>돕고</b>, 행정 각부를 <b>관리</b>해요.",
+   reason:"<b>국무총리</b>는 대통령을 보좌하고 행정 각부를 관리하며, 대통령이 임무를 수행할 수 없는 상황이 생기면 대통령의 임무를 대신해요."},
+  {stem:"대통령, 국무총리, 행정 각부의 장을 비롯한 국무 위원들이 나라의 중요한 일이나 정책을 의논하려고 여는 <b>행정부 최고 심의 기관</b>은 무엇일까요?",
+   opts:["국회","인사 청문회","국무 회의","행정 각부"],
+   correct:2, pts:POINTS_BASIC, scene:"meet",
+   h1:"교과서 [꼭 기억해요] 2번을 떠올려 봐요.",
+   h2:"이름에 「회의」가 들어가요.",
+   reason:"대통령, 국무총리, 행정 각부의 장을 비롯한 국무 위원들은 <b>국무 회의</b>를 열어 나라의 중요한 일이나 정책을 의논해요."},
+  // 4단계 적용 (+15)
+  {stem:"판에서 <b>대통령 자리가 비었는데도</b> 「나라의 중요한 일을 결정해요」가 판에서 사라지지 않았어요. 그 까닭으로 알맞은 것은?",
+   opts:["판이 그 일을 잠시 숨겨 두었기 때문이에요","대통령의 일이 없어져도 괜찮기 때문이에요",
+         "국무총리가 대통령의 임무를 대신 맡았기 때문이에요","행정 각부가 그 일을 똑같이 나눠 가졌기 때문이에요"],
+   correct:2, pts:POINTS_APPLY,
+   h1:"판에서 그 글자가 <b>어느 칸으로</b> 옮겨 갔는지 떠올려 봐요.",
+   h2:"대통령 옆자리가 두 몫을 함께 지고 있었어요.",
+   reason:"<b>국무총리가 대통령의 임무를 대신 맡았기 때문</b>이에요. 자리가 비어도 그 일은 사라지지 않아요 \u2014 나라의 살림은 멈출 수 없기 때문이에요."},
+  {stem:"판에서 <b>대통령이 돌아오자</b> 판이 비기 전과 같아졌어요. 그 까닭으로 알맞은 것은?",
+   opts:["대신 맡았던 일을 대통령이 다시 맡았기 때문이에요","국무총리 자리가 사라졌기 때문이에요",
+         "판이 처음부터 다시 시작됐기 때문이에요","행정 각부가 맡은 일이 모두 지워졌기 때문이에요"],
+   correct:0, pts:POINTS_APPLY,
+   h1:"판에서 행정 각부가 맡은 일은 그대로 있었어요.",
+   h2:"옮겨 갔던 일이 <b>제자리</b>로 돌아왔어요.",
+   reason:"<b>대신 맡았던 일을 대통령이 다시 맡았기 때문</b>이에요. 국무총리는 대통령이 임무를 수행할 수 없는 동안에만 그 임무를 대신해요."},
+  {stem:"<b>국립 공원의 아름다움</b>을 소개하는 카드 뉴스를 만든 곳으로 알맞은 것은?",
+   opts:["교육부","재정 경제부","외교부","기후 에너지 환경부"],
+   correct:3, pts:POINTS_APPLY, scene:"cards",
+   h1:"카드 뉴스에 담긴 <b>내용</b>이 무엇과 관련 있는지 봐요.",
+   h2:"자연과 <b>환경</b>을 맡은 곳이에요.",
+   reason:"국립 공원의 아름다움과 관련한 내용이므로 <b>기후 에너지 환경부</b>에서 만든 카드 뉴스예요."},
+  {stem:"행정부에 관한 설명으로 <b>알맞지 않은</b> 것은?",
+   opts:["국회에서 만든 법에 따라 나라의 살림을 맡아 해요","나라의 살림을 맡아 하려고 스스로 법을 만들어요",
+         "대통령, 국무총리, 여러 개의 행정 각부 등으로 구성돼요","행정 각부는 업무를 나눠 맡아 국민의 안전하고 편리한 삶을 위해 일해요"],
+   correct:1, pts:POINTS_APPLY, scene:"gov",
+   h1:"행정부는 법을 <b>만드는</b> 곳일까요, 법에 <b>따르는</b> 곳일까요?",
+   h2:"법을 만드는 일은 다른 국가기관이 해요.",
+   reason:"행정부는 스스로 법을 만들지 않아요. <b>국회에서 만든 법에 따라</b> 나라의 살림을 맡아 해요."}
+];
+
+const slides = [];
+// 1 들어가기 — [동기 유발] 대통령이 하는 일 예상하기
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">나라의 살림은 누가 맡아 할까요?</h2>
+  <div class="ka-bub">지난 시간에는 국회에서 하는 일을 알아봤어요. 오늘은 <span class="ka-emph">행정부에서 하는 일</span>을 알아봐요. 대통령은 어떤 일을 할까요?</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('open','나라의 살림','wide')}</div>
+    <div class="note">\u00B7 나라의 중요한 일을 결정할 것 같아요. \u00B7 국민의 안전을 위한 일을 할 것 같아요.<br>\u00B7 우리나라를 대표해서 다른 나라의 대표들을 만나 중요한 문제를 협의할 것 같아요.</div></div>`});
+// 2 살펴보기 — 행정부의 뜻
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">행정부는 어떤 곳일까요?</h2>
+  <div class="ka-bub">행정부는 <b>국회에서 만든 법에 따라</b> <span class="ka-emph">나라의 살림을 맡아 하는 국가기관</span>이에요. 대통령, 국무총리, <b>여러 개의 행정 각부</b> 등으로 구성돼요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('gov','행정부','wide')}</div>
+    <div class="note">행정부는 <b>국민의 안전하고 편리한 삶</b>을 위해 다양한 일을 해요.</div></div>`});
+// 3 살펴보기 — 행정부의 구성(교과서 80쪽)
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">행정부는 어떻게 이루어질까요?</h2>
+  <div class="ka-bub">국민이 선출한 <b>대통령</b>은 행정부의 최고 책임자이자 우리나라의 대표로, 나라의 중요한 일을 결정해요. <b>국무총리</b>는 대통령을 보좌하고 행정 각부를 관리하며, <span class="ka-emph">대통령이 임무를 수행할 수 없는 상황이 생기면 대통령의 임무를 대신</span>해요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('org','행정부의 구성','wide')}</div>
+    <div class="tipbox">국무총리는 <b>대통령이 직접 지명</b>하고, <b>국회의 동의</b>를 얻어 임명돼요.<br>행정부 조직은 필요에 따라 <b>새로 만들어지거나 조정</b>되고, 이름이 바뀌기도 해요.</div></div>`});
+// 4 살펴보기 — reveal: 자리가 비면 그 일은 어떻게 될까
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">그 자리가 비면 그 일은 어떻게 될까요?</h2>
+  <div class="ka-grp">
+  <div class="paper"><div class="ph">\uD83D\uDCAC 돌아가며 말하기 \u2014 의견 나누기</div>
+    대통령이 임무를 수행할 수 없는 상황이 생기면, 나라의 중요한 일을 결정하는 일은 어떻게 될까요? 먼저 떠올려 보고 눌러요.</div>
+  <div class="scene-row">${sceneCard('hand','자리와 몫','wide')}</div>
+  ${st.revealed?`<div class="answer-box">\u00B7 <b>국무총리가 대통령의 임무를 대신</b>해요.<br>
+    \u00B7 자리가 비어도 <b>그 일은 사라지지 않아요.</b><br>
+    \u00B7 <b>나라의 살림은 멈출 수 없기 때문</b>이에요.</div>`
+    :`<div class="note">그 일을 아무도 맡지 않으면 어떻게 될까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 5 살펴보기 — 직접조작(자리가 비어도 일이 옮겨 가는 판)
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">자리가 비어도 일은 사라지지 않아요</h2>
+  <div class="ka-grp">${agPanel(st)}</div>`});
+// 6 살펴보기 — 행정 각부(교과서 81쪽 [스스로 활동])
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">행정 각부는 어떤 일을 할까요?</h2>
+  <div class="ka-bub">행정 각부는 <b>경제, 교육, 외교, 국방, 환경</b> 등의 업무를 <span class="ka-emph">나눠 맡아서</span> 국민의 안전하고 편리한 삶을 위해 다양한 일을 해요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('cards','업무를 나눠 맡아요','wide')}</div>
+    <div class="tipbox">보건 복지부는 <b>국민의 건강을 위협하는 각종 질병과 식품으로부터 국민을 보호</b>해요. 이렇게 행정 각부가 하는 일은 우리 생활에 <b>큰 도움</b>을 줘요.</div></div>`});
+// 7 살펴보기 — reveal: 국무 회의
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">나라의 중요한 일은 어떻게 의논할까요?</h2>
+  <div class="ka-grp">
+  <div class="paper"><div class="ph">\uD83D\uDD0E 핵심 질문 \u2014 나라의 중요한 일을 의논하는 자리</div>
+    행정 각부가 저마다 따로 정하면 어떻게 될까요? 떠올려 보고 눌러요.</div>
+  <div class="scene-row">${sceneCard('meet','국무 회의','wide')}</div>
+  ${st.revealed?`<div class="answer-box">\u00B7 대통령, 국무총리, 행정 각부의 장을 비롯한 국무 위원들은 <b>국무 회의</b>를 열어요.<br>
+    \u00B7 국무 회의는 <b>행정부 최고 심의 기관</b>이에요.<br>
+    \u00B7 나라의 중요한 일이나 <b>정책</b>을 함께 의논해요.</div>`
+    :`<div class="note">여럿이 모여 함께 의논하는 자리가 있어요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리: 요약 — 9차시 주요 내용 정리 원문
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 배운 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('wrap','오늘의 정리','wide')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">★</span><div><b style="color:var(--green)">행정부</b> \u2014 법에 따라 나라의 살림을 맡아 하는 국가기관이에요.</div></div>
+    <div class="sum-item"><span class="n">①</span><div><b style="color:var(--green)">대통령</b> \u2014 행정부의 최고 책임자이자 우리나라의 대표로, 국가의 중요한 일을 결정해요.</div></div>
+    <div class="sum-item"><span class="n">②</span><div><b style="color:var(--green)">국무총리</b> \u2014 대통령을 보좌하고 행정 각부를 관리해요.</div></div>
+    <div class="sum-item"><span class="n">③</span><div><b style="color:var(--green)">행정 각부</b> \u2014 경제, 교육, 외교, 국방, 환경 등의 업무를 나눠 맡아서 국민의 안전하고 편리한 삶을 위해 다양한 일을 해요.</div></div>
+    <div class="sum-item"><span class="n">④</span><div><b style="color:var(--green)">국무 회의</b> \u2014 나라의 중요한 일이나 정책을 의논하는 행정부 최고 심의 기관이에요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b style="color:var(--green)">법원에서 하는 일</b>을 알아봐요.</div></div>`});
+// 17 정리: 자기 평가
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"행정부에서 하는 일을 설명할 수 있어요",st)}
+    ${selfCheck(1,"대통령·국무총리·행정 각부가 하는 일을 구분할 수 있어요",st)}
+    ${selfCheck(2,"행정부가 하는 일이 우리 생활에 주는 도움에 관심을 갖게 됐어요",st)}
+  </div><div class="note">별이 적게 채워진 곳은 앞 슬라이드를 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">오늘 공부를 마쳤어요!</h2>
+  <div class="ka-grp">
+    <div class="scene-row">${sceneCard('done','','wide')}</div>
+    <div class="end-score">\u2B50 ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">다음은 <b style="color:var(--amber)">법원에서 하는 일</b>!</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">\u2B55 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g6_social_u2_l07";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  agSeat:0, agJob:0, agOpen:null, agAway:false, agBack:0, agFin:null,
+  agWrongM:null, agWrongF:null,
+  agMsg:null, agWarn:false, agBusy:false,
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 \u2192';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+
+
+function agRender(){ main.innerHTML = slides[state.idx].render(state); }
+function agHold(msg){
+  state.agWarn=true; state.agBusy=true; state.agMsg=msg;
+  playThud(); agRender();
+  setTimeout(()=>{ state.agBusy=false; state.agWarn=false; state.agMsg=null;
+    state.agWrongM=null; state.agWrongF=null; agRender(); },1600);
+}
+
+/* ① 행정부를 이루는 자리 세우기 — ⚠️ 판정 0 · 순서 자유 */
+function agSet(i){
+  if(state.agFin!=null) return;                                        // 가드①
+  if(state.agBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(i) || i<0 || i>=AG_N) return;                   // 가드②
+  if(state.agSeat & (1<<i)){ agHold(AG_ALREADY_S); return; }           // 가드④ 판 불변
+  state.agSeat |= 1<<i; state.agWarn=false;
+  const sjo = agJ(AG_SEAT[i]) ? '\uC744' : '\uB97C';
+  state.agMsg = agAllSeat(state)
+    ? `<b>\u300C${AG_SEAT[i]}\u300D</b>${sjo} 세웠어요 \u2014 ${AG_SEAT_DO[i]} 행정부를 이루는 자리를 <b>모두</b> 세웠어요.`
+    : `<b>\u300C${AG_SEAT[i]}\u300D</b>${sjo} 세웠어요 \u2014 ${AG_SEAT_DO[i]}`;
+  if(agAllSeat(state)) playChime(); else playBlip();
+  agRender();
+}
+
+/* ② 카드 뉴스 고르기 — ⚠️ 판정 0(고르는 자리에는 옳고 그름이 없다) */
+function agPick(j){
+  if(state.agFin!=null) return;                                        // 가드①
+  if(state.agBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(j) || j<0 || j>=AG_CARD.length) return;         // 가드②
+  if(!agAllSeat(state)){ agHold(AG_ORDER_C); return; }                 // 가드③ 순서 — 판 불변
+  if(state.agJob & (1<<j)){ agHold(AG_ALREADY_C); return; }            // 가드⑥ 판 불변
+  state.agOpen = j; state.agWarn=false; state.agMsg=null;
+  playBlip(); agRender();
+}
+
+/* ② 부 고르기 — 판정 있음. ⚠️ 어긋나도 판은 그대로이고 안내가 주인 부를 짚지 않는다. */
+function agGive(m){
+  if(state.agFin!=null) return;                                        // 가드①
+  if(state.agBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(m) || m<0 || m>=AG_MIN.length) return;          // 가드②
+  if(state.agOpen==null){ agHold(AG_ORDER_M); return; }                // 가드⑤ 순서 — 판 불변
+  const j = state.agOpen;
+  if(agOwnerOf(j)!==m){                                                // 어긋남 — 판 불변
+    state.agWrongM=m; agHold(AG_WRONG_M); return; }
+  state.agJob |= 1<<j; state.agOpen=null; state.agWrongM=null; state.agWarn=false;
+  state.agMsg = agAllJob(state)
+    ? `<b>\u300C${AG_MIN[m]}\u300D</b>에서 만든 카드 뉴스였어요. 나라의 일을 <b>모두</b> 나눠 맡겼어요.`
+    : `<b>\u300C${AG_MIN[m]}\u300D</b>에서 만든 카드 뉴스였어요.`;
+  if(agAllJob(state)) playChime(); else playBlip();
+  agRender();
+}
+
+/* ③ 자리 비우기·돌아오기 — ★ 이 함수가 이 패턴의 핵심 신규성이다.
+   ⚠️ 옳고 그름이 없다(정답 상수 부재). 자리가 비어도 **대통령의 일은 사라지지 않고**
+      `agHolder`가 가리키는 자리로 옮겨 간다. */
+function agTurn(k){
+  if(state.agFin!=null) return;                                        // 가드①
+  if(state.agBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(k) || k<0 || k>1) return;                       // 가드②
+  if(!agAllJob(state)) return;                                         // 가드⑦ 순서 — 판 불변
+  if((k===1) === state.agAway) return;                                 // 가드⑦ 어긋난 상태 — 판 불변
+  if(k===1){
+    state.agAway = true;                                               // ★ 자리가 비는 자리는 여기 한 곳뿐
+    state.agBack += 1;
+    state.agWarn=false; state.agMsg = AG_AWAY_MSG;
+    playBlip(); agRender(); return;
+  }
+  state.agAway = false;                                                // ★ 자리가 돌아오는 자리도 여기 한 곳뿐
+  state.agWarn=false; state.agMsg = AG_BACK_MSG;
+  playChime(); agRender();
+}
+
+/* ④ 마무리 — 「행정 각부는 어떤 일을 하나요」 */
+function agFinish(k){
+  if(state.agFin!=null) return;                                        // 가드①
+  if(state.agBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(k) || k<0 || k>=AG_FIN.length) return;          // 가드②
+  if(!agReady(state)) return;                                          // 가드⑧ 순서 — 판 불변
+  if(k===AG_FIN_OK){
+    state.agFin=k; state.agWrongF=null; state.agMsg=null; state.agWarn=false;
+    playChime(); agRender(); return;
+  }
+  state.agWrongF=k;
+  agHold(AG_FIN_NO[k]);
+}
+
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2;
+    if(qs.hint>=2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">\uD83D\uDCD8 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 \u2192</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // l08 미양산 — 양산 시 재배선
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+</body>
+</html>

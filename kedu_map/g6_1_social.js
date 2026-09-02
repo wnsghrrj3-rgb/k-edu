@@ -191,14 +191,14 @@ window.KEDU_MAP["g6_1_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u2_l07",
+     "lessonId": "g6_social_u2_l07_v1",
      "n": "7",
      "title": "행정부에서 하는 일을 알아볼까요",
      "sub": "② 국가기관과 권력 분립",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/social/2단원_민주주의와시민참여/g6_social_u2_l07_나라살림.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
