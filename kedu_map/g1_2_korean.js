@@ -171,6 +171,93 @@ window.KEDU_MAP["g1_2_korean"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 3,
+   "name": "그림일기를 써요",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g1_korean_u3_l01",
+     "lessonId": "g1_2_kor_u3_l01_v1",
+     "n": "1",
+     "title": "단원 시작 — 배울 내용 살펴보기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/3단원_그림일기를써요/g1_kor_u3_l01.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u3_l02",
+     "lessonId": "g1_2_kor_u3_l02_03_v1",
+     "n": "2·3",
+     "title": "여러 사람 앞에서 발표하는 자세 알아보기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/3단원_그림일기를써요/g1_kor_u3_l02_03.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u3_l04",
+     "lessonId": "g1_2_kor_u3_l04_05_v1",
+     "n": "4·5",
+     "title": "자신이 경험한 일이 잘 드러나게 발표하기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/3단원_그림일기를써요/g1_kor_u3_l04_05.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u3_l06",
+     "lessonId": "g1_2_kor_u3_l06_07_v1",
+     "n": "6·7",
+     "title": "기억에 남는 일을 문장으로 말하기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/3단원_그림일기를써요/g1_kor_u3_l06_07.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u3_l08",
+     "lessonId": "g1_2_kor_u3_l08_09_v1",
+     "n": "8·9",
+     "title": "그림일기를 쓰는 방법 알기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/3단원_그림일기를써요/g1_kor_u3_l08_09.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u3_l10",
+     "lessonId": "g1_2_kor_u3_l10_11_v1",
+     "n": "10·11",
+     "title": "경험한 일을 그림일기로 쓰기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/3단원_그림일기를써요/g1_kor_u3_l10_11.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u3_l12",
+     "lessonId": "g1_2_kor_u3_l12_13_v1",
+     "n": "12·13",
+     "title": "배운 내용 실천하기 (글과 그림으로 나타내기)",
+     "sub": null,
+     "url": "/grade1/semester2/korean/3단원_그림일기를써요/g1_kor_u3_l12_13.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u3_l14",
+     "lessonId": "g1_2_kor_u3_l14_15_v1",
+     "n": "14·15",
+     "title": "단원 마무리하기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/3단원_그림일기를써요/g1_kor_u3_l14_15.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };
