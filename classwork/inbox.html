@@ -341,11 +341,13 @@ async function doSubmit(idx){
   const it = current.items[idx];
   const comment = (document.getElementById('sc-'+idx).value||'').trim();
   try {
-    const { data } = await db.rpc('cw_submit', { p_bundle_id: current.bundle.id, p_item_id: it.id, p_payload: { comment } });
+    // 남긴 말만 다시 내도 도구가 보낸 점수 봉투(score/max/tool…)는 지운다 — 종전엔 {comment} 로 덮어 교사 화면 자동점수가 사라졌다 (2026-09-02)
+    const payload = Object.assign({}, (it.payload && typeof it.payload==='object') ? it.payload : {}, { comment });
+    const { data } = await db.rpc('cw_submit', { p_bundle_id: current.bundle.id, p_item_id: it.id, p_payload: payload });
     if(!data || data.status!=='ok'){ return toast('제출에 실패했어요'); }
   } catch(e){ return toast('제출에 실패했어요'); }
   // 로컬 상태 갱신 후 재렌더
-  it.submitted = true; it.status = 'submitted'; it.payload = { ...(it.payload||{}), comment };
+  it.submitted = true; if(it.status!=='graded') it.status = 'submitted'; it.payload = { ...(it.payload||{}), comment };
   renderTasks();
   toast('제출했어요! 잘했어요 🎉');
 }
