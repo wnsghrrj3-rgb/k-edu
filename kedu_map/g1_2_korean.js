@@ -412,6 +412,93 @@ window.KEDU_MAP["g1_2_korean"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 6,
+   "name": "문장을 읽고 써요",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g1_korean_u6_l01",
+     "lessonId": "g1_2_kor_u6_l01_v1",
+     "n": "1",
+     "title": "단원 시작 — 배울 내용 살펴보기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/6단원_문장을읽고써요/g1_kor_u6_l01.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u6_l02",
+     "lessonId": "g1_2_kor_u6_l02_03_v1",
+     "n": "2·3",
+     "title": "생각을 문장으로 나타내기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/6단원_문장을읽고써요/g1_kor_u6_l02_03.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u6_l04",
+     "lessonId": "g1_2_kor_u6_l04_05_v1",
+     "n": "4·5",
+     "title": "시를 읽고 자신의 생각을 문장으로 나타내기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/6단원_문장을읽고써요/g1_kor_u6_l04_05.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u6_l06",
+     "lessonId": "g1_2_kor_u6_l06_07_v1",
+     "n": "6·7",
+     "title": "낱말을 바르게 쓰고 읽기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/6단원_문장을읽고써요/g1_kor_u6_l06_07.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u6_l08",
+     "lessonId": "g1_2_kor_u6_l08_09_v1",
+     "n": "8·9",
+     "title": "문장을 자연스럽게 띄어 읽기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/6단원_문장을읽고써요/g1_kor_u6_l08_09.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u6_l10",
+     "lessonId": "g1_2_kor_u6_l10_12_v1",
+     "n": "10·11·12",
+     "title": "글의 의미를 생각하며 읽기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/6단원_문장을읽고써요/g1_kor_u6_l10_12.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u6_l13",
+     "lessonId": "g1_2_kor_u6_l13_14_v1",
+     "n": "13·14",
+     "title": "배운 내용 실천하기 (목소리 연극)",
+     "sub": null,
+     "url": "/grade1/semester2/korean/6단원_문장을읽고써요/g1_kor_u6_l13_14.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u6_l15",
+     "lessonId": "g1_2_kor_u6_l15_16_v1",
+     "n": "15·16",
+     "title": "단원 마무리하기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/6단원_문장을읽고써요/g1_kor_u6_l15_16.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };
