@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<!--
+K-edu 사회 6-1 · 2단원 민주주의와 시민 참여 · 주제③ 민주주의와 미디어 · 11차시(l11)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [6사08-03] · 교과서 p.95~100 · 지도서(대단원2 **14~15차시** 민주주의에서 미디어의 역할을
+  알아볼까요 / [풍덩 사회 속으로] 1인 미디어로 정보의 생산자가 돼요, 지도서 p.223~229) 근거.
+학습 목표: 민주주의에서 미디어의 역할을 설명할 수 있다.
+수업 기법 및 전략: 사례 분석하기 · 돌아가며 말하기
+⚠️ 엔진은 대단원1 l01~l11 · 대단원2 l01~l10에서 100% 승계. 2단원 색 #C2410C 유지 · CSS 변수명 무수정.
+
+⚠️ 파일명을 `모아요`로 지었다(배선 예외 대신). l10이 「미디어의 역할」·「여론」·「사회문제」·「허위」·
+   「조작 정보」·「거짓」·「비판적」·「국회」·「행정부」·「법원」을 개수 0으로, 「역할」을 개수 2(차시 예고
+   두 자리)로 재고 있어서 파일명에 그 낱말이 들어가면 재배선이 곧바로 그 가드를 깨뜨린다.
+   겹치지 않는 이름을 골라 예외를 만들지 않았다
+   (l05 `나랏일` · l06 `법이되기까지` · l07 `나라살림` · l08 `세번까지` · l09 `나눠맡아요` ·
+    l10 `주고받아요` 선례 승계).
+
+직접조작: 한 걸음이 판의 두 자리를 함께 올리는 판 · 쌓인 수가 아니라 갈래가 차야 열리는 형
+  (57번째 신규 패턴)
+  ⭐ 앞의 쉰여섯 종에서 **한 걸음은 언제나 판의 한 자리만 움직였다.** 50번째(잣대를 세워야 걸러지는
+     판)에서도 세운 잣대 하나가 걸러진 것 하나를 늘렸고, 55번째(가리키는 자리가 사라지는 판)와
+     56번째(잣대를 걷어 내야 답이 나오는 판)에서는 판의 무엇인가가 **줄었다.** 이번만 **한 걸음이
+     두 자리를 함께 올린다** — 자료를 역할에 담을 때마다 그 **역할 칸**과 **모인 생각 줄**이 같은
+     걸음에 함께 오른다. 근거는 교과서 98쪽 본문 원문 「미디어를 이용해 주고받는 여러 정보와
+     사람들의 생각은 이러한 의사 결정을 하는 데 영향을 미칩니다」 — 미디어가 역할을 할 때마다
+     그 정보는 역할 쪽에도 쌓이고 사람들의 생각 쪽에도 함께 쌓인다.
+  ⭐ **56번째와의 정면 대비** — 거기서는 판이 재는 물음이 **줄어들수록** 답에 가까워졌고,
+     여기서는 **늘어나되 두 자리가 함께** 오른다.
+  ⭐ **50번째와의 대비** — 거기서 늘어난 것은 **한 자리**였다. 한 걸음에 두 자리가 오르는 자리는
+     여기가 처음이다.
+  ⭐ **판이 여는 조건은 쌓인 수가 아니라 갈래다** — `RL_NEED` 한 줄이 그것을 정한다.
+     **모인 생각이 넷인데 열리지 않고, 셋인데 열리는 길이 실제로 있다**(갈래 둘 / 갈래 셋).
+     판이 세는 것이 개수가 아니라 갈래인 자리는 여기가 처음이다.
+  ⭐ **갈래 수를 따로 담는 상태가 코드에 아예 없다** — `rlKinds(st)` **한 줄**이 그것을 다 정하고,
+     `rlSum(st)` 한 줄이 모인 생각을 정하며, `RL_OWNER[`를 읽는 자리도 `rlOwnerOf` **단 하나**,
+     `RL_PAIROF[`를 읽는 자리도 **단 하나**, `data-kinds`를 그리는 자리도 **단 하나**다.
+  ⭐ **의사 결정을 여는 자리와 빗대는 말을 고르는 자리에는 옳고 그름이 없다**
+     (`RL_DEC_OK` 부재 · 무판정 · 감점 0 · `rlDecide()`는 인자 0).
+  ① **자료 여섯을 역할 셋에 담기**(교과서 95~99쪽 자료 · 순서 자유 · 판정 있음 ·
+     **`RL_OWNER=[0,1,2,1,0,2]`** 한 줄) — ★ 한 걸음마다 역할 칸과 모인 생각 줄이 함께 오른다
+  ② **의사 결정 열기**(무판정 · **갈래 셋이 차야 열린다** — 모인 생각이 더 많아도 갈래가 둘이면 판 불변)
+  ③ **빗대는 말 둘에 까닭 짝짓기**(안내소·파수꾼 ↔ 지도서 예시 답안 원문 · 순서 자유 · 판정 있음 ·
+     **`RL_PAIROF=[0,1]`** 한 줄)
+  ④ 마무리 3택 = 민주주의에서 미디어가 중요한 까닭(지도서 「주요 내용 정리」 2 원문)
+  ⚠️ 자료·역할·빗대는 말·3택 전량 고정 리터럴 — 난수 0.
+  ⚠️ 가드 9종: ① 마무리 확정 후 전체 잠금 / ② 무효 번호(`Number.isInteger`·범위) /
+     ③ **갈래가 셋이 되기 전 의사 결정 무시 — 판 불변**(핵심 가드) / ④ 이미 담은 자료 재클릭 — 판 불변 /
+     ⑤ 이미 연 의사 결정 재클릭 — 판 불변 / ⑥ 여섯을 다 담고 의사 결정을 열기 전 빗대는 말 고르기
+     무시(순서) — 판 불변 / ⑦ 이미 짝지은 빗대는 말 재클릭 — 판 불변 / ⑧ 두 빗대는 말을 다 짝짓기 전
+     마무리 무시(순서) / ⑨ 안내 표시 중 재클릭 무시(`rlBusy`).
+     재시도 허용(감점 없음), 조작에 점수 0. 발문은 `.rl-q`로 떼어 전 단계 상시 노출. 상태 열쇠 12개.
+
+⚠️ 정직 원칙 네 곳
+  ㉠ **판의 역할 칸은 교과서 95~99쪽 자료를 옮긴 자리이지 미디어의 역할을 수로 잰 것이 아니다**
+     — 담긴 수는 판이 받은 자료의 개수일 뿐이다(캔버스 캡션).
+  ㉡ **하나의 자료에서 여러 역할을 함께 읽을 수도 있다** — 판은 교과서와 지도서가 짚은 역할 하나만
+     담는다(캔버스 캡션). 판이 담지 않은 읽기를 틀렸다고 하지 않는다.
+  ㉢ **빗대는 말에는 옳고 그름이 없다** — 지도서가 안내소와 파수꾼을 둘 다 예시 답안으로 들었다.
+     판이 재는 것은 빗댄 말이 아니라 그 **까닭**이다(정직 문면 명시).
+  ㉣ **[친구와 활동] 문제 해결 방법에 관한 내 입장을 쓰고 이야기하는 활동과 [스스로 활동] 문장
+     완성하기는 교실 몫이다**(완료 카드 명시 · 리빌 예시 답안에 「내 문장은 내가 직접 적어요」 병기).
+
+⚠️ 설계 원칙
+  · **16차시 침범 0** — 허위 0 · 조작 정보 0 · 거짓 0 · 가짜 0. 「비판적」은 **차시 예고 두 자리뿐**.
+  · **17~18차시 침범 0** — 이용 습관 0 · 피라미드 0 · 대응 0.
+  · **19~20차시 침범 0** — 뉴스 기사 작성 0 · 생각 그물 0 · 물레방아 0.
+  · **주제② 재현 0** — 국회·행정부·법원·국가기관·권력 분립·견제·균형 전부 0. 교과서 95쪽 ㉯의
+    「국회」는 화면에 옮기지 않고 「법을 만들어 달라는 요구」까지만 적었다.
+  · **주제① 재현 0** — 선거·공약·유권자·후보자·기표소·투표율 전부 0. 교과서 96쪽 세 사례 가운데
+    선거 관련 공익 광고는 화면에 옮기지 않았다.
+  · **l10 재현 최소** — 미디어의 뜻·종류(신문·방송·사회 관계망 서비스의 특징)는 다시 가르치지 않는다.
+  · **대단원1 재현 0 · 대단원3 침범 0.**
+  · **정치적 중립** — 실제 정당·정치인 0, 실제 정책·사건·연도 0, 실제 부처·방송사·신문사·누리집·
+    상표 이름 0(교과서 96쪽 기사 출처와 99쪽 부처 이름은 옮기지 않았다).
+  · 교사용 참고 자료 0 — 참고 도서 네 종, 프레이밍, 의제 설정, 환경 감시·상관관계 조정·문화 전수·
+    오락 기능, 미디어 리터러시, 매스 미디어, 대중 매체, 올드 미디어·뉴 미디어, 아테네·아고라·
+    데모크라시·아리스토텔레스, 여론, 딥페이크 전부 0.
+  · **파일 전체에 네 자리 연도 0 · 금액·인원 수치 0**(CSS 밖 스코프).
+  · 정서 — 미디어를 나쁜 것으로도 무서운 것으로도 그리지 않는다(내용을 따져 보는 일은 뒤 차시 몫이다).
+    돌고래 사례는 교과서 98~99쪽이 적은 만큼까지만 쓰고, 동물이 다치는 묘사를 넣지 않는다.
+    사람이 다치는 묘사 0 · 겁주는 어휘 0 · **학생 이름 0 · 실제 지역 이름 0.**
+
+⚠️ goNextLesson = 허브 복귀(l12 미양산 — 양산 시 재배선).
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g6_social_u2_l11_v1">
+<title>민주주의에서 미디어의 역할을 알아볼까요 · 사회 6-1</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#C2410C; --green-d:#9A3412; --cyan:#EA580C;
+  --bg:#FFF7ED; --bub:#FFEDD5; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#B45309; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-shrink:0}
+.ka-lb{background:#F1F5F9;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;
+  font-weight:700;color:var(--muted);font-size:clamp(11px,1.9vw,13px);display:flex;align-items:center;gap:6px}
+.ka-lb svg{width:14px;height:14px}
+.ka-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.ka-bar>div{height:100%;background:var(--green);border-radius:99px;transition:width .35s ease;width:5%}
+.ka-pg{font-size:clamp(11px,1.9vw,13px);color:var(--muted);font-weight:700;min-width:46px;text-align:right}
+.ka-sc{display:flex;align-items:center;gap:3px;background:var(--amber-bg);border-radius:99px;padding:5px 11px}
+.ka-sc svg{width:15px;height:15px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;color:var(--amber);font-size:clamp(14px,2.4vw,17px)}
+.ka-sc-u{font-size:11px;color:var(--amber);font-weight:700}
+
+/* 메인 */
+.ka-m{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;padding:4px 2px}
+.ka-tags{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ka-bg{display:inline-flex;align-items:center;gap:5px;background:var(--bub);color:var(--green-d);
+  border-radius:99px;padding:5px 12px;font-size:clamp(11px,1.9vw,13px);font-weight:700}
+.ka-bg svg{width:13px;height:13px}
+.ka-bg.s2{background:#E0F2FE;color:#075985}
+.ka-bg.s3{background:#DCFCE7;color:#166534}
+.ka-bg.s4{background:#FEF3C7;color:#92400E}
+.ka-bg.s5{background:#F3E8FF;color:#6B21A8}
+.ka-meta{font-size:clamp(10px,1.7vw,12px);color:#94A3B8;font-weight:600}
+.ka-t{font-size:clamp(19px,3.4vw,27px);font-weight:700;line-height:1.4;margin-bottom:10px}
+.ka-bub{background:var(--bub);border-radius:14px;padding:13px 18px;font-size:clamp(14px,2.4vw,18px);
+  line-height:1.7;margin-bottom:12px}
+.ka-emph{color:var(--green-d);font-weight:700}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.scene.wide{width:clamp(240px,44vw,420px)}
+.scene.wide svg{height:clamp(120px,20vw,200px)}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(15px,2.6vw,20px);font-weight:700;line-height:1.6;margin-bottom:12px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+.opt{background:#fff;border:2px solid var(--line);border-radius:13px;padding:13px 15px;cursor:pointer;
+  font-family:inherit;font-size:clamp(13px,2.2vw,16.5px);font-weight:500;text-align:left;line-height:1.5;transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:#16A34A;background:#DCFCE7;font-weight:700}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:11px;border-radius:12px;padding:12px 16px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;animation:fadeUp .3s ease both}
+.fb.ok{background:#DCFCE7;color:#166534;font-weight:700}
+.hint{margin-top:9px;background:var(--amber-bg);border-radius:11px;padding:10px 14px;
+  font-size:clamp(12.5px,2.1vw,15px);color:var(--amber);line-height:1.55}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:9px;width:100%;max-width:660px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFC;border-radius:12px;padding:11px 15px;
+  font-size:clamp(13px,2.2vw,16.5px);line-height:1.6}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'\2713';color:#fff;font-weight:800;font-size:14px}
+
+/* 직접조작 — 잣대를 걷어 내야 답이 나오는 판 */
+.dw-wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dw-body{display:grid;grid-template-columns:1.05fr 1fr;gap:10px;align-items:start}
+.dw-canvas{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.dw-canvas svg{width:100%;height:auto;display:block}
+.dw-canvas .cvcap{padding:5px 6px;text-align:center;font-size:clamp(9.5px,1.6vw,11.5px);
+  color:var(--muted);font-weight:700;background:#F8FAFC}
+.dw-right{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dw-step{font-size:clamp(10.5px,1.75vw,13px);font-weight:800;color:var(--green)}
+.dw-msg{background:#F8FAFC;border:2px solid var(--line);border-left:4px solid var(--green);border-radius:10px;
+  padding:8px 12px;font-size:clamp(11.4px,1.93vw,13.8px);line-height:1.55;color:#334155;animation:fadeUp .3s ease both}
+.dw-msg.warn{border-left-color:var(--amber)}
+.dw-msg b{color:var(--green)}
+.dw-card{background:#fff;border:2px solid var(--amber);border-radius:12px;padding:10px 12px;
+  font-size:clamp(12px,2.05vw,14.5px);line-height:1.55;animation:pop .35s ease both}
+.dw-card .pt{font-weight:800;color:var(--amber);margin-bottom:4px;font-size:clamp(12.5px,2.15vw,15px)}
+.rl-q{font-size:clamp(11.6px,1.97vw,14px);font-weight:800;color:var(--green);
+  background:var(--bub);border-radius:9px;padding:7px 11px;line-height:1.45}
+.rl-fin{display:flex;flex-direction:column;gap:5px}
+.rl-fin button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;padding:7px 10px;
+  cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.rl-fin button:hover{background:var(--bub)}
+.rl-fin button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.rl-list{display:flex;flex-direction:column;gap:5px;max-height:206px;overflow-y:auto}
+.rl-list button{border:2px solid #CBD5E0;background:#fff;border-radius:10px;padding:7px 10px;cursor:pointer;
+  font-family:inherit;font-weight:700;color:var(--ink);font-size:clamp(10.6px,1.8vw,13px);transition:.15s;
+  line-height:1.4;text-align:left}
+.rl-list button:hover{border-color:var(--green);background:var(--bub)}
+.rl-list button.ok{border-color:var(--cyan);background:#FFF7ED;color:#C79A7A}
+.rl-list button.no{border-color:var(--amber);background:var(--amber-bg);animation:shakeNo .4s ease}
+.rl-list button:disabled{border-color:#E2E8F0;background:#F8FAFC;color:#CBD5E0;cursor:default}
+.rl-dec{border:2px solid var(--amber);background:#FFFBEB;color:#B45309;border-radius:10px;padding:8px 10px;
+  cursor:pointer;font-family:inherit;font-weight:800;font-size:clamp(10.5px,1.75vw,12.6px);text-align:center}
+.rl-dec:hover{background:#FEF3C7}
+.rl-dec.on{border-color:var(--cyan);background:#FFF7ED;color:#C79A7A}
+.rl-note{background:#F8FAFC;border:2px dashed #CBD5E0;border-radius:10px;padding:7px 10px;
+  font-size:clamp(10.4px,1.76vw,12.4px);line-height:1.5;color:#64748B}
+.rl-keynote{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:10px;padding:8px 11px;
+  font-size:clamp(10.8px,1.83vw,13px);line-height:1.5;color:#3F3A2C}
+.rl-keynote b{color:#8A6D3B}
+.paper{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:12px;padding:12px 16px;
+  font-size:clamp(12.5px,2.1vw,15px);line-height:1.65;color:#3F3A2C;max-width:660px;
+  animation:fadeUp .4s ease both}
+.paper .ph{font-weight:800;color:#8A6D3B;margin-bottom:6px;font-size:clamp(13px,2.2vw,16px)}
+.tipbox{background:#FFEDD5;border-radius:12px;padding:11px 16px;font-size:clamp(12.5px,2.1vw,15px);
+  line-height:1.6;color:#7C2D12;max-width:660px}
+@media(max-width:620px){ .dw-body{grid-template-columns:1fr} }
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(194,65,12,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style>
+<script src="/kedu_gate.js"></script>
+</head>
+
+
+
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#B45309"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식 =====
+   ⚠️ 정직 원칙: 모든 그림은 내용을 나타낸 도식이며 실제 사진·화면 갈무리가 아니다.
+   ⚠️ 정치적 중립: 실제 부처·방송사·신문사·누리집·상표 이름 0. 사람 형상 대신 말풍선과 표찰로만 그린다. */
+const SVG = {
+  // 1 들어가기 — 지난 시간(미디어의 뜻) → 오늘(미디어가 하는 일)
+  open:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    <text x="160" y="19" font-size="11" fill="#9A3412" text-anchor="middle" font-weight="800">민주주의에서 미디어는 왜 필요할까요?</text>
+    <rect x="14" y="30" width="130" height="52" rx="9" fill="#fff" stroke="#CBD5E0" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <text x="79" y="50" font-size="7.6" fill="#94A3B8" text-anchor="middle" font-weight="800">지난 시간</text>
+    <text x="79" y="66" font-size="7.6" fill="#94A3B8" text-anchor="middle" font-weight="800">미디어가 무엇인지</text>
+    <path d="M148 56 H172" stroke="#EA580C" stroke-width="2"/>
+    <path d="M166 51 L173 56 L166 61 Z" fill="#EA580C"/>
+    <rect x="176" y="30" width="130" height="52" rx="9" fill="#fff" stroke="#C2410C" stroke-width="2"/>
+    <text x="241" y="50" font-size="7.6" fill="#C2410C" text-anchor="middle" font-weight="800">오늘</text>
+    <text x="241" y="66" font-size="7.6" fill="#C2410C" text-anchor="middle" font-weight="800">미디어가 하는 일</text>
+    <rect x="14" y="92" width="292" height="30" rx="8" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.3"/>
+    <text x="160" y="111" font-size="8.2" fill="#9A3412" text-anchor="middle" font-weight="800">사람들이 무엇을 정할 때 필요한 정보를 어디에서 얻을까요?</text>
+    <text x="160" y="140" font-size="8.6" fill="#B45309" text-anchor="middle" font-weight="800">미디어는 많은 사람에게 같은 내용의 정보를</text>
+    <text x="160" y="156" font-size="8.6" fill="#B45309" text-anchor="middle" font-weight="800">한꺼번에 전할 수 있어요</text></svg>`,
+  // 2 살펴보기 — 역할 ① 새로운 사실을 신속하게 전달(교과서 95쪽)
+  fact:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <text x="160" y="18" font-size="11" fill="#9A3412" text-anchor="middle" font-weight="800">미디어가 전한 두 가지 소식</text>
+    <rect x="14" y="28" width="140" height="76" rx="10" fill="#FFFDF5" stroke="#E7D9A8" stroke-width="2"/>
+    <text x="84" y="45" font-size="8" fill="#8A6D3B" text-anchor="middle" font-weight="800">㉮ 신고 시스템 소식</text>
+    <path d="M28 54 H140 M28 62 H140 M28 70 H116" stroke="#C9B98A" stroke-width="1.4"/>
+    <text x="84" y="86" font-size="6.6" fill="#8A6D3B" text-anchor="middle" font-weight="800">보호 구역에 방치된 전동 킥보드를</text>
+    <text x="84" y="97" font-size="6.6" fill="#8A6D3B" text-anchor="middle" font-weight="800">발견 즉시 옮긴다는 소식</text>
+    <rect x="166" y="28" width="140" height="76" rx="10" fill="#F8FAFC" stroke="#94A3B8" stroke-width="2"/>
+    <text x="236" y="45" font-size="8" fill="#334155" text-anchor="middle" font-weight="800">㉯ 법을 만들어 달라는 소식</text>
+    <path d="M180 54 H292 M180 62 H292 M180 70 H268" stroke="#CBD5E0" stroke-width="1.4"/>
+    <text x="236" y="86" font-size="6.6" fill="#334155" text-anchor="middle" font-weight="800">방치를 막는 법을 만들어 달라는</text>
+    <text x="236" y="97" font-size="6.6" fill="#334155" text-anchor="middle" font-weight="800">시민들의 요구가 커진다는 소식</text>
+    <rect x="14" y="114" width="292" height="42" rx="8" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.3"/>
+    <text x="160" y="131" font-size="8" fill="#9A3412" text-anchor="middle" font-weight="800">소식을 읽은 사람들이 움직여요</text>
+    <text x="160" y="147" font-size="8" fill="#B45309" text-anchor="middle" font-weight="800">— 미디어는 새로운 사실을 신속하게 전해요</text></svg>`,
+  // 4 살펴보기 — 역할 ② 사회적인 가치나 규범 제시(교과서 96쪽)
+  value:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    <text x="160" y="19" font-size="11" fill="#9A3412" text-anchor="middle" font-weight="800">미디어에 담긴 가치와 규범</text>
+    ${[['📺','편견과 차별이 없는','말을 쓰자고 권해요'],['📰','어린이 프로그램에','자폐 아동 캐릭터가 나와요']].map((t,i)=>{
+      const x=14+i*152;
+      return `<rect x="${x}" y="30" width="140" height="72" rx="9" fill="#fff" stroke="#EA580C" stroke-width="1.6"/>
+      <text x="${x+70}" y="54" font-size="16" text-anchor="middle">${t[0]}</text>
+      <text x="${x+70}" y="76" font-size="7" fill="#9A3412" text-anchor="middle" font-weight="800">${t[1]}</text>
+      <text x="${x+70}" y="90" font-size="7" fill="#9A3412" text-anchor="middle" font-weight="800">${t[2]}</text>`;}).join('')}
+    <rect x="14" y="110" width="292" height="46" rx="8" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.3"/>
+    <text x="160" y="127" font-size="7.8" fill="#9A3412" text-anchor="middle" font-weight="800">사람들은 이런 정보를 보며 사회에서 중요하게 여기는</text>
+    <text x="160" y="141" font-size="7.8" fill="#9A3412" text-anchor="middle" font-weight="800">가치나 규범이 무엇인지 알게 돼요</text>
+    <text x="160" y="153" font-size="7" fill="#B45309" text-anchor="middle" font-weight="800">— 그리고 그것을 존중하는 태도를 길러요</text></svg>`,
+  // 5 살펴보기 — 역할 ③ 사회문제 지목·해결 방안 제시(교과서 97쪽)
+  issue:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <text x="160" y="18" font-size="11" fill="#9A3412" text-anchor="middle" font-weight="800">미디어가 짚은 문제와 내놓은 해결 방법</text>
+    <rect x="14" y="28" width="128" height="62" rx="9" fill="#FFFDF5" stroke="#E7D9A8" stroke-width="1.8"/>
+    <text x="78" y="45" font-size="7.6" fill="#8A6D3B" text-anchor="middle" font-weight="800">지목한 문제</text>
+    <text x="78" y="62" font-size="6.6" fill="#8A6D3B" text-anchor="middle" font-weight="800">논밭을 없애고 산에 나무를 베어</text>
+    <text x="78" y="74" font-size="6.6" fill="#8A6D3B" text-anchor="middle" font-weight="800">태양광 발전 시설을 세웠어요</text>
+    <path d="M146 59 H174" stroke="#EA580C" stroke-width="2"/>
+    <path d="M168 54 L175 59 L168 64 Z" fill="#EA580C"/>
+    <rect x="178" y="28" width="128" height="62" rx="9" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.8"/>
+    <text x="242" y="45" font-size="7.6" fill="#9A3412" text-anchor="middle" font-weight="800">내놓은 해결 방법</text>
+    <text x="242" y="62" font-size="6.6" fill="#9A3412" text-anchor="middle" font-weight="800">도시의 건물 지붕과 주차장에</text>
+    <text x="242" y="74" font-size="6.6" fill="#9A3412" text-anchor="middle" font-weight="800">태양광 패널을 설치해요</text>
+    <rect x="14" y="98" width="292" height="26" rx="8" fill="#F8FAFC" stroke="#CBD5E0" stroke-width="1.3"/>
+    <text x="160" y="115" font-size="7.6" fill="#334155" text-anchor="middle" font-weight="800">읽은 사람들이 댓글로 서로 다른 생각을 나눠요</text>
+    <text x="160" y="140" font-size="8" fill="#9A3412" text-anchor="middle" font-weight="800">사람들은 사회문제를 여러 관점에서 이해하고</text>
+    <text x="160" y="156" font-size="8" fill="#B45309" text-anchor="middle" font-weight="800">해결책을 찾기도 해요</text></svg>`,
+  // 7 살펴보기 — [풍덩 사회 속으로] 1인 미디어(교과서 100쪽)
+  solo:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    <text x="160" y="19" font-size="11" fill="#9A3412" text-anchor="middle" font-weight="800">누구나 정보를 만드는 사람이 될 수 있어요</text>
+    ${[['🎬','내가 직접','만들어요'],['📤','미디어를 통해','함께 나눠요'],['🔔','관심 있는 것을','구독하거나 폴로해요']].map((t,i)=>{
+      const x=10+i*102;
+      return `<rect x="${x}" y="30" width="96" height="72" rx="9" fill="#fff" stroke="#EA580C" stroke-width="1.6"/>
+      <text x="${x+48}" y="52" font-size="15" text-anchor="middle">${t[0]}</text>
+      <text x="${x+48}" y="74" font-size="6.8" fill="#9A3412" text-anchor="middle" font-weight="800">${t[1]}</text>
+      <text x="${x+48}" y="88" font-size="6.8" fill="#9A3412" text-anchor="middle" font-weight="800">${t[2]}</text>`;}).join('')}
+    <rect x="14" y="112" width="292" height="44" rx="8" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.3"/>
+    <text x="160" y="129" font-size="8" fill="#9A3412" text-anchor="middle" font-weight="800">개인이 글, 사진, 영상 등을 만들어 나누는 것이 1인 미디어예요</text>
+    <text x="160" y="147" font-size="8" fill="#B45309" text-anchor="middle" font-weight="800">여러 사람이 자기 생각을 더 활발하게 나눌 수 있게 됐어요</text></svg>`,
+  // 16 정리
+  wrap:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    <text x="160" y="20" font-size="11.4" fill="#9A3412" text-anchor="middle" font-weight="800">오늘의 정리</text>
+    ${[['①','많은 사람에게 영향을 미치는 새로운 사실을 신속하게 전해요'],['②','사회적인 가치나 규범을 제시해요'],['③','사회문제를 지목하고 해결 방안을 제시해요'],['★','주고받은 정보와 생각이 의사 결정에 영향을 미쳐요']].map((t,i)=>{
+      const y=32+i*32;
+      return `<rect x="16" y="${y}" width="288" height="26" rx="7" fill="#fff" stroke="#EA580C" stroke-width="1.3"/>
+      <text x="30" y="${y+17}" font-size="9.4" fill="#C2410C" font-weight="800">${t[0]}</text>
+      <text x="172" y="${y+17}" font-size="7.4" fill="#9A3412" text-anchor="middle" font-weight="800">${t[1]}</text>`;}).join('')}
+    <text x="160" y="166" font-size="8.2" fill="#64748B" text-anchor="middle" font-weight="700">그래서 민주주의에서 미디어가 중요해요</text></svg>`,
+  // 18 종료
+  done:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <circle cx="160" cy="80" r="46" fill="#FFEDD5" stroke="#EA580C" stroke-width="2"/>
+    <path d="M138 80 L154 96 L184 64" stroke="#C2410C" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="160" y="150" font-size="11" fill="#9A3412" text-anchor="middle" font-weight="800">민주주의에서 미디어가 하는 일을 알아봤어요</text></svg>`
+};
+function sceneCard(key,cap,extra){ return `<div class="scene ${extra||''}">${SVG[key]||''}${cap?`<div class="cap">${cap}</div>`:''}</div>`; }
+
+/* ===== 직접조작 — 한 걸음이 판의 두 자리를 함께 올리는 판(57번째 신규 패턴) =====
+   ⭐ 앞의 쉰여섯 종에서 **한 걸음은 언제나 판의 한 자리만 움직였다.** 이번만 자료를 역할에 담을 때마다
+      **역할 칸**과 **모인 생각 줄**이 같은 걸음에 함께 오른다.
+   ⭐ **판이 여는 조건은 쌓인 수가 아니라 갈래다**(`RL_NEED` 한 줄) — 모인 생각이 넷인데 열리지 않고
+      셋인데 열리는 길이 실제로 있다.
+   ⭐ **갈래 수를 따로 담는 상태가 코드에 없다** — `rlKinds(st)` 한 줄이 그것을 다 정하고,
+      `RL_OWNER[`를 읽는 자리도 `rlOwnerOf` 한 곳뿐이다.
+   ⭐ **의사 결정을 여는 자리와 빗대는 말을 고르는 자리에 옳고 그름이 없다**(정답 상수 부재 · 감점 0).
+   ⚠️ 가드 9종은 파일 머리 주석 참조. 전량 고정 리터럴 — 난수 0. */
+
+/* 민주주의에서 미디어의 역할 셋 — 지도서 「14~15차시 주요 내용 정리」 1 원문 */
+const RL_ROLE = ['새로운 사실을 신속하게 전달해요','사회적인 가치나 규범을 제시해요','사회문제를 지목하고 해결 방안을 제시해요'];
+const RL_ROLE_S = ['새로운 사실','가치나 규범','문제와 해결 방안'];
+/* 판이 받는 자료 여섯 — 교과서 95~99쪽 */
+const RL_CASE = ['㉠ 보호 구역에 방치된 전동 킥보드를 발견 즉시 옮긴다는 소식',
+                 '㉡ 편견과 차별이 없는 말을 쓰자고 권하는 텔레비전 프로그램',
+                 '㉢ 논밭과 산에 세운 태양광 발전 시설의 문제와 해결 방법을 알린 글',
+                 '㉣ 어린이 프로그램에 자폐 아동 캐릭터가 나온다는 신문 기사',
+                 '㉤ 새로운 돌고래를 동물원이나 수족관에 들일 수 없게 됐다는 소식',
+                 '㉥ 돌고래가 바다로 돌아가기까지를 담은 방송'];
+const RL_CASE_S = ['㉠ 킥보드 소식','㉡ 말 프로그램','㉢ 태양광 글','㉣ 어린이 프로그램','㉤ 돌고래 소식','㉥ 돌고래 방송'];
+const RL_CASE_D = ['방치된 전동 킥보드를 옮긴다는 <b>새로운 사실</b>을 사람들이 곧바로 알게 됐어요.',
+                   '어떤 말을 쓰는 것이 좋은지 <b>사회에서 중요하게 여기는 가치</b>를 보여 줘요.',
+                   '무엇이 문제인지 밝히고 <b>해결 방법</b>까지 함께 내놓았어요.',
+                   '서로 다름을 이해하고 존중하는 것이 중요하다는 <b>가치</b>를 보여 줘요.',
+                   '새로 정해진 일을 사람들이 <b>신속하게</b> 알게 됐어요.',
+                   '돌고래 쇼의 <b>문제와 그 해결 방안</b>을 더 많은 사람이 이해하게 됐어요.'];
+/* ⚠️ 자료 i가 담기는 역할 — 이 한 줄이 판의 대답을 통째로 정한다(난수 0). */
+const RL_OWNER = [0, 1, 2, 1, 0, 2];
+/* ★ 판이 열리는 조건 — 쌓인 수가 아니라 갈래다. 이 한 줄이 그것을 정한다. */
+const RL_NEED = 3;
+/* ③ 빗대는 말과 까닭 — 지도서 예시 답안 원문 두 가지 */
+const RL_LIKE = ['안내소','파수꾼'];
+const RL_WHY = ['사람들이 의사 결정을 하는 데 필요한 다양한 정보를 제공하기 때문이에요',
+                '중요한 사실을 알리고 사회문제를 지목한 뒤 그것이 해결되도록 사람들의 생각을 모으기 때문이에요'];
+const RL_WHY_S = ['필요한 정보를 줘요','생각을 모아 줘요'];
+/* ⚠️ 빗대는 말 j가 가리키는 까닭 자리 — 이 한 줄이 대응을 통째로 정한다(난수 0). */
+const RL_PAIROF = [0, 1];
+/* ④ 마무리 — 민주주의에서 미디어가 중요한 까닭(지도서 「주요 내용 정리」 2 원문) */
+const RL_FIN = ['미디어를 이용해 주고받는 여러 정보와 사람들의 생각은 사회문제에 관한 의사 결정을 하는 데 영향을 미쳐요',
+                '미디어는 사람들이 정보를 주고받지 못하게 막아요',
+                '미디어는 언제나 한 사람에게만 정보를 전해요'];
+const RL_FIN_OK = 0;
+const RL_FIN_NO = ['',
+  '판에서 자료를 담을 때마다 <b>모인 생각</b>이 함께 늘어났어요. 미디어는 정보를 주고받게 해 줘요.',
+  '미디어를 이용하면 <b>많은 사람</b>에게 같은 내용의 정보를 한꺼번에 전할 수 있어요.'];
+/* 안내 — ⚠️ 여는 자리와 고르는 자리 어디에도 「틀렸다」는 말이 없다 */
+const RL_LOCK_M = '아직 <b>채워지지 않은 갈래</b>가 있어요. 판은 모인 생각이 몇인지가 아니라 <b>갈래가 몇 가지 채워졌는지</b>를 봐요. 판은 그대로예요.';
+const RL_ALREADY_C = '그 자료는 <b>이미 담았어요.</b> 판은 그대로예요.';
+const RL_ALREADY_D = '의사 결정은 <b>이미 열었어요.</b> 판은 그대로예요.';
+const RL_ORDER_R = '먼저 <b>자료</b>를 하나 골라 봐요.';
+const RL_WRONG_R = '그 역할에 담을 자료가 아니에요. 이 자료가 사람들에게 무엇을 알려 주는지 다시 읽어 봐요.';
+const RL_ORDER_L = '먼저 <b>자료 여섯</b>을 모두 담고 <b>의사 결정</b>을 열어 봐요.';
+const RL_ALREADY_L = '그 말은 <b>이미 짝지었어요.</b> 판은 그대로예요.';
+const RL_ORDER_W = '먼저 <b>빗대는 말</b>을 하나 골라 봐요.';
+const RL_WRONG_W = '그 말에 붙는 까닭이 아니에요. 그 말이 무엇을 해 주는 곳인지 떠올려 봐요.';
+
+/* ★ RL_OWNER를 읽는 자리는 여기 한 곳뿐이다. */
+function rlOwnerOf(i){ return RL_OWNER[i]; }
+/* ★ RL_PAIROF를 읽는 자리는 여기 한 곳뿐이다. */
+function rlWhyOf(j){ return RL_PAIROF[j]; }
+function rlBits(m,n){ const r=[]; for(let k=0;k<n;k++){ if(m & (1<<k)) r.push(k); } return r; }
+/* ★ 이 한 줄이 「지금 모인 생각이 몇인가」를 다 정한다 — 담은 자료마다 하나씩 오른다. */
+function rlSum(st){ return st.rlOwn.filter(v=>v>=0).length; }
+/* ★ 이 한 줄이 「지금 채워진 갈래가 몇인가」를 다 정한다 —
+   그것을 따로 담는 상태가 코드에 없다. 모인 생각이 늘어도 이 값은 그대로일 수 있다. */
+function rlKinds(st){ let n=0; for(let r=0;r<RL_ROLE.length;r++){ if(st.rlOwn.indexOf(r)>=0) n++; } return n; }
+/* 역할 r에 담긴 자료 수 — 판이 그리는 두 자리 가운데 하나 */
+function rlCnt(st,r){ return st.rlOwn.filter(v=>v===r).length; }
+function rlCanOpen(st){ return rlKinds(st) >= RL_NEED; }
+function rlAllOwn(st){ return st.rlOwn.every(v=>v>=0); }
+function rlAllPair(st){ return st.rlPair === (1<<RL_LIKE.length)-1; }
+function rlLikeOpen(st){ return rlAllOwn(st) && st.rlDec; }
+function rlReady(st){ return rlAllPair(st); }
+
+/* 판 — 위는 역할 세 칸, 가운데는 자료 여섯 칸, 아래는 모인 생각·갈래·의사 결정·빗대는 말.
+   ⚠️ 갈래를 그리는 자리는 **여기 한 곳뿐**이고, 값은 `rlKinds(st)`가 정한다. */
+function rlCanvas(st){
+  const fin = st.rlFin!=null;
+  const sum = rlSum(st), kinds = rlKinds(st), open = rlCanOpen(st);
+  const pairN = rlBits(st.rlPair,RL_LIKE.length).length;
+  let g='';
+  g+=`<rect x="8" y="6" width="304" height="268" rx="10" fill="#FFF7ED" stroke="#FED7AA" stroke-width="2"/>`;
+  const head = fin ? '주고받은 정보와 생각이 의사 결정에 영향을 미쳐요'
+    : (rlReady(st) ? '빗대는 말 둘에 까닭을 모두 붙였어요'
+      : (rlLikeOpen(st) ? '민주주의에서 미디어는 무엇과 같을까요'
+        : (st.rlDec ? '남은 자료도 마저 담아 봐요'
+          : (open ? '갈래 셋이 다 채워졌어요 — 의사 결정을 열 수 있어요'
+            : '아직 채워지지 않은 갈래가 있어요'))));
+  g+=`<text x="160" y="19" font-size="9.4" fill="#9A3412" text-anchor="middle" font-weight="800">${head}</text>`;
+  for(let r=0;r<RL_ROLE.length;r++){
+    const n = rlCnt(st,r), x = 12 + r*100;
+    g+=`<rect data-role="${r}" data-cnt="${n}" x="${x}" y="26" width="96" height="42" rx="7" fill="${n>0?'#fff':'#F8FAFC'}" stroke="${n>0?'#C2410C':'#CBD5E0'}" stroke-width="${n>0?1.7:1.2}"${n>0?'':' stroke-dasharray="4 3"'}/>`;
+    g+=`<text x="${x+48}" y="42" font-size="6.8" fill="${n>0?'#9A3412':'#94A3B8'}" text-anchor="middle" font-weight="800">${RL_ROLE_S[r]}</text>`;
+    g+=`<text x="${x+48}" y="60" font-size="7.4" fill="${n>0?'#C2410C':'#CBD5E0'}" text-anchor="middle" font-weight="800">${n>0?('담긴 자료 '+n):'아직 비었어요'}</text>`;
+  }
+  for(let i=0;i<RL_CASE.length;i++){
+    const own = st.rlOwn[i], put = own>=0, x = 12 + (i%3)*100, y = 74 + Math.floor(i/3)*32;
+    g+=`<rect data-case="${i}" data-own="${own}" x="${x}" y="${y}" width="96" height="28" rx="6" fill="${put?'#fff':'#F8FAFC'}" stroke="${put?'#EA580C':'#CBD5E0'}" stroke-width="${put?1.5:1.1}"${put?'':' stroke-dasharray="3 3"'}/>`;
+    g+=`<text x="${x+48}" y="${y+12}" font-size="6.4" fill="${put?'#9A3412':'#94A3B8'}" text-anchor="middle" font-weight="800">${RL_CASE_S[i]}</text>`;
+    g+=`<text x="${x+48}" y="${y+23}" font-size="6" fill="${put?'#B45309':'#CBD5E0'}" text-anchor="middle" font-weight="800">${put?RL_ROLE_S[own]:'아직 담지 않았어요'}</text>`;
+  }
+  g+=`<rect x="12" y="140" width="296" height="22" rx="7" fill="${sum>0?'#FFEDD5':'#fff'}" stroke="${sum>0?'#EA580C':'#CBD5E0'}" stroke-width="1.4"${sum>0?'':' stroke-dasharray="4 3"'}/>`;
+  g+=`<text data-sum="${sum}" x="160" y="155" font-size="7.6" fill="${sum>0?'#9A3412':'#94A3B8'}" text-anchor="middle" font-weight="800">모인 생각 ${sum} / 6 — 자료를 담을 때마다 함께 올라요</text>`;
+  g+=`<rect x="12" y="166" width="296" height="22" rx="7" fill="${open?'#FFEDD5':'#fff'}" stroke="${open?'#C2410C':'#CBD5E0'}" stroke-width="1.5"${open?'':' stroke-dasharray="4 3"'}/>`;
+  g+=`<text data-kinds="${kinds}" x="160" y="181" font-size="7.6" fill="${open?'#C2410C':'#94A3B8'}" text-anchor="middle" font-weight="800">채워진 갈래 ${kinds} / 3 — ${open?'판이 열려요':'모인 생각이 많아도 열리지 않아요'}</text>`;
+  g+=`<rect data-dec="${st.rlDec?1:0}" x="12" y="192" width="296" height="26" rx="7" fill="${st.rlDec?'#fff':'#F1F5F9'}" stroke="${st.rlDec?'#C2410C':'#E2E8F0'}" stroke-width="${st.rlDec?2:1.1}"${st.rlDec?'':' stroke-dasharray="4 3"'}/>`;
+  g+=`<text x="160" y="209" font-size="7.4" fill="${st.rlDec?'#C2410C':'#CBD5E0'}" text-anchor="middle" font-weight="800">${st.rlDec?'사회문제에 관한 의사 결정에 영향을 미쳐요':'의사 결정 — 아직 열리지 않았어요'}</text>`;
+  for(let j=0;j<RL_LIKE.length;j++){
+    const pd = !!(st.rlPair & (1<<j)), x = 12 + j*148, lo = rlLikeOpen(st);
+    g+=`<rect data-like="${j}" data-paired="${pd?1:0}" x="${x}" y="222" width="144" height="28" rx="7" fill="${pd?'#fff':'#F8FAFC'}" stroke="${pd?'#C2410C':(lo?'#CBD5E0':'#E2E8F0')}" stroke-width="${pd?1.6:1.1}"${pd?'':' stroke-dasharray="4 3"'}/>`;
+    g+=`<text x="${x+72}" y="234" font-size="6.8" fill="${lo?'#9A3412':'#E2E8F0'}" text-anchor="middle" font-weight="800">${lo?RL_LIKE[j]:'·'}</text>`;
+    g+=`<text x="${x+72}" y="245" font-size="6.2" fill="${pd?'#B45309':'#CBD5E0'}" text-anchor="middle" font-weight="800">${lo?(pd?RL_WHY_S[rlWhyOf(j)]:'아직 짝짓지 않았어요'):''}</text>`;
+  }
+  g+=`<rect x="12" y="254" width="296" height="16" rx="6" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.1"/>`;
+  g+=`<text x="160" y="265" font-size="6.4" fill="#9A3412" text-anchor="middle" font-weight="800">담은 자료 ${sum} / 6 · 채워진 갈래 ${kinds} / 3 · 짝지은 말 ${pairN} / 2</text>`;
+  g+=`<rect data-pairn="${pairN}" x="14" y="253" width="0" height="0" fill="none"/>`;
+  return `<svg viewBox="0 0 320 280"><rect width="320" height="280" fill="#ffffff"/>${g}</svg>`;
+}
+
+function rlPanel(st){
+  const fin = st.rlFin!=null, lo = rlLikeOpen(st);
+  const q = fin
+    ? '자료를 담을 때마다 <b>역할 칸</b>과 <b>모인 생각</b>이 함께 올랐어요. 판이 열린 것은 모인 수가 커서가 아니라 <b>갈래가 다 채워졌기</b> 때문이에요.'
+    : (rlReady(st) ? '민주주의에서 <b>미디어가 중요한 까닭</b>은 무엇일까요?'
+      : (lo ? (st.rlOpenL==null ? '빗대는 말을 하나 골라 봐요. 어느 것부터 골라도 돼요.'
+                                : '이 말에 붙는 <b>까닭</b>은 무엇일까요?')
+        : (st.rlPick==null ? '자료를 하나 골라 봐요. 어느 것부터 골라도 돼요.'
+                           : '이 자료는 미디어의 <b>어떤 역할</b>을 보여 줄까요?')));
+  let right = `<div class="rl-q">${q}</div>`;
+
+  if(fin){
+    right+=`<div class="dw-card"><div class="pt">🗞️ 두 자리가 함께 오르는 판이었어요</div>
+      <div>자료를 역할에 담을 때마다 <b>역할 칸</b>과 <b>모인 생각</b>이 <b>같은 걸음에 함께</b> 올랐어요. 미디어가 하는 일은 그때마다 사람들 사이에 생각도 함께 쌓아요.</div>
+      <div style="margin-top:5px">그런데 판은 모인 생각이 몇인지로 열리지 않았어요. <b>세 갈래가 다 채워져야</b> 열렸어요. 모인 생각이 넷이어도 갈래가 둘이면 판은 그대로였어요. 민주주의에서 미디어가 중요한 까닭은 <b>주고받는 정보와 생각이 사회문제에 관한 의사 결정에 영향을 미치기</b> 때문이에요.</div>
+      <div style="margin-top:5px;color:#64748B">태양광 발전 시설의 해결 방법에 관한 <b>내 입장을 댓글로 쓰고 친구들과 이야기하는</b> 활동과, 민주주의에서 미디어를 무엇에 빗댈지 <b>내 문장으로 적어 보는</b> 활동은 교실에서 하는 활동이에요. 화면이 그 활동을 대신하지 않아요.</div></div>`;
+  } else if(rlReady(st)){
+    right+=`<div class="rl-fin">${RL_FIN.map((f,k)=>
+      `<button class="${st.rlWrongF===k?'no':''}" onclick="rlFinish(${k})">${f}</button>`).join('')}</div>`;
+  } else if(lo){
+    if(st.rlOpenL==null){
+      right+=`<div class="dw-step">💬 빗대는 말 고르기 — 이 자리에는 옳고 그름이 없어요</div>`;
+      right+=`<div class="rl-keynote">민주주의에서 미디어는 무엇과 같을까요? <b>안내소든 파수꾼이든 좋아요.</b> 판이 재는 것은 빗댄 말이 아니라 그 <b>까닭</b>이에요.</div>`;
+      right+=`<div class="rl-list">${RL_LIKE.map((c,j)=>{
+        const on = !!(st.rlPair & (1<<j));
+        return `<button class="${on?'ok':''}" onclick="rlLikeSel(${j})">${on?'✓ ':''}${c}</button>`;
+      }).join('')}</div>`;
+    } else {
+      right+=`<div class="dw-step">🔎 왜냐하면…</div>`;
+      right+=`<div class="rl-note">민주주의에서 미디어는 <b>${RL_LIKE[st.rlOpenL]}</b>과 같은 역할을 해요.</div>`;
+      right+=`<div class="rl-list">${RL_WHY.map((f,k)=>
+        `<button class="${st.rlWrongW===k?'no':''}" onclick="rlWhy(${k})">${f}</button>`).join('')}</div>`;
+    }
+  } else if(st.rlPick==null){
+    right+=`<div class="dw-step">🗂 자료를 역할에 담기</div>`;
+    right+=`<div class="rl-keynote">자료를 담을 때마다 <b>역할 칸</b>과 <b>모인 생각</b>이 <b>함께</b> 올라요. 판은 모인 수가 아니라 <b>세 갈래가 다 채워졌는지</b>를 봐요.</div>`;
+    right+=`<div class="rl-list">${RL_CASE.map((c,i)=>{
+      const put = st.rlOwn[i]>=0;
+      return `<button class="${put?'ok':''}" onclick="rlCase(${i})">${put?'✓ ':''}${c}</button>`;
+    }).join('')}</div>`;
+    right+=`<button class="rl-dec${st.rlDec?' on':''}" onclick="rlDecide()">${st.rlDec?'✓ 의사 결정을 열었어요':'🔓 의사 결정 열기'}</button>`;
+  } else {
+    right+=`<div class="dw-step">🗂 어떤 역할일까요?</div>`;
+    right+=`<div class="rl-note">${RL_CASE[st.rlPick]}</div>`;
+    right+=`<div class="rl-list">${RL_ROLE.map((r,k)=>
+      `<button class="${st.rlWrongR===k?'no':''}" onclick="rlRole(${k})">${r}</button>`).join('')}</div>`;
+  }
+  if(st.rlMsg) right+=`<div class="dw-msg${st.rlWarn?' warn':''}">${st.rlMsg}</div>`;
+
+  return `<div class="dw-wrap">
+    <div style="text-align:center"><b style="color:var(--green)">🗞️ 담을 때마다 두 자리가 함께 올라요</b></div>
+    <div class="dw-body">
+      <div class="dw-canvas">${rlCanvas(st)}<div class="cvcap">역할 칸에 적힌 수는 판이 받은 <b>자료의 개수</b>일 뿐이고, 미디어의 역할을 수로 잰 것이 아니에요. 하나의 자료에서 여러 역할을 함께 읽을 수도 있고, 판은 교과서가 짚은 역할 하나만 담아요.</div></div>
+      <div class="dw-right">${right}</div>
+    </div>
+  </div>`;
+}
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "2단원 민주주의와 시민 참여 · 주제③ 민주주의와 미디어";
+
+// 확인 4 + 적용 4 — 정답 다양화 [2,0,3,1,3,1,0,2](각 자리 2회)
+// ⚠️ 16차시 이후 침범 0 · 주제①② 재현 0 · 문항 내 연도·수치 0 · 실제 정당·정치인·상표 0.
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"민주주의에서 <b>미디어가 하는 일</b>로 알맞은 것은?",
+   opts:["사람들이 정보를 주고받지 못하게 막아요","언제나 한 사람에게만 정보를 전해요",
+         "많은 사람에게 영향을 미치는 새로운 사실을 신속하게 전해요","옛날에 있었던 일만 전해요"],
+   correct:2, pts:POINTS_BASIC, scene:"fact",
+   h1:"미디어를 이용하면 많은 사람에게 같은 내용의 정보를 한꺼번에 전할 수 있어요.",
+   h2:"<b>새로운 사실</b>을 <b>신속하게</b> 전해요.",
+   reason:"미디어는 많은 사람에게 영향을 미치는 <b>새로운 사실을 신속하게 전달</b>해요."},
+  {stem:"편견과 차별이 없는 말을 쓰자고 <b>권하는 텔레비전 프로그램</b>에서 알 수 있는 미디어의 역할은?",
+   opts:["사회적인 가치나 규범을 제시해요","오직 새로운 사실만 전해요",
+         "사람들이 정보를 고르지 못하게 해요","옛날의 생활 모습만 알려 줘요"],
+   correct:0, pts:POINTS_BASIC, scene:"value",
+   h1:"어떤 말을 쓰는 것이 좋은지 알려 주는 프로그램이에요.",
+   h2:"사회에서 중요하게 여기는 <b>가치나 규범</b>을 보여 줘요.",
+   reason:"미디어로 전달되는 정보에는 사회에서 중요하게 여기는 <b>가치나 규범</b>이 담겨 있어요. 사람들은 그것을 존중하는 태도를 기를 수 있어요."},
+  {stem:"논밭과 산에 세운 <b>태양광 발전 시설의 문제와 해결 방법</b>을 알린 글에서 알 수 있는 미디어의 역할은?",
+   opts:["옛날의 모습을 그대로 보여 줘요","가치나 규범만 제시해요",
+         "사람마다 서로 다른 정보를 전해요","사회문제를 지목하고 해결 방안을 제시해요"],
+   correct:3, pts:POINTS_BASIC, scene:"issue",
+   h1:"그 글은 무엇이 문제인지 밝히고 방법까지 함께 적었어요.",
+   h2:"문제를 <b>지목</b>하고 <b>해결 방안</b>을 내놓았어요.",
+   reason:"미디어는 <b>사회문제가 무엇인지 밝히고</b>, 그 원인과 미칠 영향을 알려 주며 <b>해결 방안</b> 등을 제시해요."},
+  {stem:"민주주의에서 <b>미디어가 중요한 까닭</b>으로 알맞은 것은?",
+   opts:["미디어가 사람들의 생각을 하나로 정해 주기 때문이에요",
+         "주고받는 여러 정보와 사람들의 생각이 사회문제에 관한 의사 결정에 영향을 미치기 때문이에요",
+         "미디어가 모든 일을 대신 처리해 주기 때문이에요","미디어가 정보를 감춰 주기 때문이에요"],
+   correct:1, pts:POINTS_BASIC,
+   h1:"주권이 국민에게 있는 민주주의에서는 국민의 뜻을 바탕으로 정해요.",
+   h2:"주고받는 정보와 생각이 <b>의사 결정</b>에 영향을 미쳐요.",
+   reason:"미디어를 이용해 주고받는 여러 정보와 사람들의 생각은 사회문제에 관한 <b>의사 결정</b>을 하는 데 영향을 미쳐요."},
+  // 4단계 적용 (+15)
+  {stem:"판에서 <b>모인 생각이 넷</b>인데도 의사 결정이 <b>열리지 않은</b> 때가 있었어요. 그 까닭으로 알맞은 것은?",
+   opts:["담은 자료가 모자랐기 때문이에요","판이 답을 몰래 바꿨기 때문이에요",
+         "모인 생각은 반드시 여섯이 되어야 하기 때문이에요",
+         "판은 모인 수가 아니라 세 갈래가 다 채워졌는지를 보기 때문이에요"],
+   correct:3, pts:POINTS_APPLY,
+   h1:"같은 갈래만 여러 번 담으면 모인 생각은 늘어도 갈래는 그대로예요.",
+   h2:"판이 여는 조건은 <b>갈래 셋</b>이었어요.",
+   reason:"<b>판은 모인 수가 아니라 세 갈래가 다 채워졌는지를 보기 때문</b>이에요. 그래서 모인 생각이 셋이어도 갈래가 셋이면 열려요."},
+  {stem:"판에서 자료를 <b>하나 담을 때마다</b> 함께 오른 두 자리는 무엇인가요?",
+   opts:["역할 칸과 빗대는 말","역할 칸과 모인 생각",
+         "모인 생각과 채워진 갈래","채워진 갈래와 빗대는 말"],
+   correct:1, pts:POINTS_APPLY,
+   h1:"자료를 담을 때마다 그 역할 칸의 수가 하나 늘었어요.",
+   h2:"같은 걸음에 아래쪽 <b>모인 생각</b>도 함께 하나 올랐어요.",
+   reason:"<b>역할 칸과 모인 생각</b>이 같은 걸음에 함께 올랐어요. 미디어가 하는 일은 그때마다 사람들 사이에 생각도 함께 쌓아요."},
+  {stem:"돌고래를 바다로 돌려보내기까지 <b>미디어가 한 일</b>로 알맞은 것은?",
+   opts:["문제를 알리고, 사람들이 생각을 나누게 하고, 새로 정해진 일까지 전했어요",
+         "사람들이 생각을 나누지 못하게 막았어요","돌고래의 모습만 보여 주고 끝냈어요",
+         "한 사람에게만 소식을 전했어요"],
+   correct:0, pts:POINTS_APPLY,
+   h1:"방송으로 알려진 뒤 사람들이 인터넷 게시판에 글을 썼어요.",
+   h2:"마지막에는 새로 정해진 일까지 신속하게 알려졌어요.",
+   reason:"미디어는 <b>해결해야 할 사회문제를 알리고</b>, 사람들이 여러 관점에서 이해하며 <b>생각을 나누게</b> 했고, <b>새로운 사실</b>까지 신속하게 전했어요."},
+  {stem:"<b>1인 미디어</b>에 관한 설명으로 알맞지 <b>않은</b> 것은?",
+   opts:["개인이 글, 사진, 영상 등을 만들어 다른 사람들과 나누는 것이에요",
+         "사람들은 관심 있는 1인 미디어를 구독하거나 폴로하며 정보를 얻어요",
+         "1인 미디어가 늘면서 정보를 만드는 사람은 오히려 줄어들었어요",
+         "여러 사람이 자기 생각을 더 활발하게 나눌 수 있게 됐어요"],
+   correct:2, pts:POINTS_APPLY, scene:"solo",
+   h1:"교과서 100쪽은 이제 <b>누구나</b> 정보의 생산자가 될 수 있다고 적었어요.",
+   h2:"만드는 사람이 줄어든 것이 아니라 <b>늘어났어요.</b>",
+   reason:"1인 미디어가 활성화되면서 이제는 <b>누구나 정보의 생산자</b>가 될 수 있어요. 나머지 셋은 모두 알맞은 설명이에요."}
+];
+const slides = [];
+// 1 들어가기 — 동기 유발(지도서 14~15차시 도입)
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">민주주의에서 미디어는 왜 필요할까요?</h2>
+  <div class="ka-bub">지난 시간에는 <b>미디어가 무엇인지</b> 알아봤어요. 오늘은 민주주의에서 미디어가 하는 <span class="ka-emph">역할</span>을 알아봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('open','오늘 알아볼 것','wide')}</div>
+    <div class="note">· 사람들이 무엇을 함께 정할 때 <b>필요한 정보</b>를 얻는 데 필요해요.<br>· 미디어를 이용하면 많은 사람에게 <b>같은 내용의 정보</b>를 효율적으로 전달할 수 있어요.</div></div>`});
+// 2 살펴보기 — 역할 ① 새로운 사실을 신속하게 전달(교과서 95쪽)
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">미디어는 새로운 사실을 전해요</h2>
+  <div class="ka-bub">사람들은 신문, 라디오, 텔레비전, 스마트폰, 컴퓨터 등 다양한 미디어를 이용해 <span class="ka-emph">많은 사람에게 영향을 미치는 새로운 사실을 신속하게</span> 확인할 수 있어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('fact','미디어가 전한 소식','wide')}</div>
+    <div class="tipbox"><b>개인형 이동 장치</b> — 전동 킥보드와 같이 전기를 이용해 움직이는 저속의 소형 운송 수단.</div></div>`});
+// 3 살펴보기 — reveal: [스스로 활동] 교과서 95쪽
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">[스스로 활동] 이 정보가 사람들에게 어떤 영향을 미칠까요?</h2>
+  <div class="ka-grp">
+  <div class="paper"><div class="ph">🔍 사례 분석하기</div>
+    <b>㉮</b>는 보호 구역에 방치된 전동 킥보드를 발견 즉시 다른 곳으로 옮기고 신고를 받는다는 소식이에요. <b>㉯</b>는 무단 방치를 막는 <b>법을 만들어 달라</b>는 시민들의 요구가 커지고 있다는 소식이에요. 먼저 떠올려 보고 눌러요.</div>
+  <div class="scene-row">${sceneCard('fact','두 가지 소식','wide')}</div>
+  ${st.revealed?`<div class="answer-box">· <b>㉮</b> — 보호 구역에 방치된 전동 킥보드를 다른 곳으로 <b>옮겨 달라는 신고가 늘어날</b> 것이에요.<br>
+    · <b>㉯</b> — 개인형 이동 장치를 무단 방치한 업체에 책임을 묻는 <b>법이 만들어져</b> 사람들이 더 안전한 환경에서 생활할 수 있을 것이에요.<br>
+    · 이 사례에 드러난 역할 — 미디어는 많은 사람에게 영향을 미치는 <b>새로운 사실을 신속하게 전달</b>해요.</div>`
+    :`<div class="note">두 소식을 읽은 사람들은 어떻게 움직일까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 4 살펴보기 — 역할 ② 사회적인 가치나 규범 제시(교과서 96쪽)
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">미디어는 가치나 규범을 보여 줘요</h2>
+  <div class="ka-bub">미디어로 전달되는 정보에는 사회에서 중요하게 여기는 <span class="ka-emph">가치나 규범</span> 등이 담겨 있어요. 사람들은 미디어에서 얻은 정보를 바탕으로 사회적인 가치나 규범을 <b>존중하는 태도</b>를 기를 수 있어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('value','미디어에 담긴 가치와 규범','wide')}</div>
+    <div class="tipbox"><b>[미디어 활동]</b> 어린이 프로그램에 자폐 아동 캐릭터를 등장시킨 까닭은 <b>발달 장애 아동의 특성을 알고 이해할 수 있는 장을 마련하기 위해서</b>예요.<br>이 프로그램의 의도를 강조하는 홍보 문구 — <b>발달 장애 아동을 이해하며 존중과 다양성의 가치를 키우는 프로그램</b>.</div></div>`});
+// 5 살펴보기 — 역할 ③ 사회문제 지목·해결 방안 제시(교과서 97쪽)
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">미디어는 사회문제를 짚고 해결 방안을 내놓아요</h2>
+  <div class="ka-bub">미디어는 <span class="ka-emph">사회문제가 무엇인지 밝히고</span>, 그 원인과 사람들에게 미칠 영향을 알려 주며 <span class="ka-emph">해결 방안</span> 등을 제시해요. 이를 통해 사람들은 사회문제를 다양한 관점에서 이해하고 해결책을 찾기도 해요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('issue','짚은 문제와 내놓은 방법','wide')}</div>
+    <div class="tipbox"><b>관점</b> — 사물이나 현상을 관찰할 때, 그 사람이 보고 생각하는 태도나 방향 또는 처지.</div>
+    <div class="note"><b>[친구와 활동]</b> 이 글이 내놓은 해결 방법에 관한 <b>내 입장을 댓글로 쓰고 친구들과 이야기해 보는</b> 활동은 교실에서 해요.</div></div>`});
+// 6 살펴보기 — 직접조작(한 걸음이 두 자리를 함께 올리는 판)
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">담을 때마다 두 자리가 함께 올라요</h2>
+  <div class="ka-grp">${rlPanel(st)}</div>`});
+// 7 살펴보기 — reveal: [풍덩 사회 속으로] 1인 미디어(교과서 100쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">[풍덩 사회 속으로] 1인 미디어로 정보의 생산자가 돼요</h2>
+  <div class="ka-grp">
+  <div class="paper"><div class="ph">💬 돌아가며 말하기</div>
+    개인이 글, 사진, 영상 등과 같은 정보를 만들어 미디어를 통해 다른 사람들과 공유하는 것을 <b>1인 미디어</b>라고 해요. 1인 미디어가 활성화되면서 무엇이 달라졌을까요?</div>
+  <div class="scene-row">${sceneCard('solo','1인 미디어','wide')}</div>
+  ${st.revealed?`<div class="answer-box">· 사람들은 정보의 소비자에서 <b>누구나 정보의 생산자</b>가 될 수 있게 됐어요.<br>
+    · 민주주의에서 다양한 사람이 자신의 생각을 <b>더욱 활발하게 소통</b>할 수 있게 됐어요.<br>
+    <span style="color:#64748B">내가 이용해 본 1인 미디어는 내가 직접 적어요.</span></div>`
+    :`<div class="note">누가 정보를 만들 수 있게 됐을까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  <div class="tipbox"><b>폴로(follow)</b> — 주로 사회 관계망 서비스에서 특정 운영자의 게시물을 지속적으로 볼 수 있게 구독하는 것.</div>
+  </div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리: 요약 — 14~15차시 주요 내용 정리 원문
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 배운 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('wrap','오늘의 정리','wide')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">①</span><div><b style="color:var(--green)">새로운 사실</b> — 많은 사람에게 영향을 미치는 새로운 사실을 신속하게 전달해요.</div></div>
+    <div class="sum-item"><span class="n">②</span><div><b style="color:var(--green)">가치나 규범</b> — 사회적인 가치나 규범을 제시해요.</div></div>
+    <div class="sum-item"><span class="n">③</span><div><b style="color:var(--green)">사회문제</b> — 사회문제를 지목하고 그것의 해결 방안을 제시해요.</div></div>
+    <div class="sum-item"><span class="n">★</span><div><b style="color:var(--green)">중요한 까닭</b> — 미디어를 이용해 주고받는 여러 정보와 사람들의 생각은 사회문제에 관한 의사 결정을 하는 데 영향을 미쳐요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 미디어의 내용을 <b style="color:var(--green)">비판적</b>으로 분석해야 하는 까닭을 알아봐요.</div></div>`});
+// 17 정리: 자기 평가
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 평가해요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"민주주의에서 미디어의 역할을 설명할 수 있어요",st)}
+    ${selfCheck(1,"민주주의에서 미디어가 중요한 까닭을 설명할 수 있어요",st)}
+    ${selfCheck(2,"1인 미디어가 무엇인지 설명할 수 있어요",st)}
+  </div><div class="note">별이 적게 채워진 곳은 앞 슬라이드를 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">오늘 공부를 마쳤어요!</h2>
+  <div class="ka-grp">
+    <div class="scene-row">${sceneCard('done','','wide')}</div>
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">다음은 미디어의 내용을 <b style="color:var(--amber)">비판적</b>으로 분석해야 하는 까닭!</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">\u2B55 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g6_social_u2_l11";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  rlOwn:[-1,-1,-1,-1,-1,-1], rlPick:null, rlDec:false, rlOpenL:null, rlPair:0, rlFin:null,
+  rlWrongR:null, rlWrongW:null, rlWrongF:null,
+  rlMsg:null, rlWarn:false, rlBusy:false,
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 \u2192';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+
+function rlRender(){ main.innerHTML = slides[state.idx].render(state); }
+function rlHold(msg){
+  state.rlWarn=true; state.rlBusy=true; state.rlMsg=msg;
+  playThud(); rlRender();
+  setTimeout(()=>{ state.rlBusy=false; state.rlWarn=false; state.rlMsg=null;
+    state.rlWrongR=null; state.rlWrongW=null; state.rlWrongF=null; rlRender(); },1600);
+}
+
+/* ① 자료 고르기 — ⚠️ 판정 0 · 순서 자유(어느 자료부터 골라도 된다) */
+function rlCase(i){
+  if(state.rlFin!=null) return;                                        // 가드①
+  if(state.rlBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(i) || i<0 || i>=RL_CASE.length) return;         // 가드②
+  if(state.rlOwn[i]>=0){ rlHold(RL_ALREADY_C); return; }               // 가드④ 판 불변
+  state.rlPick = i; state.rlWarn=false; state.rlMsg=null;
+  playBlip(); rlRender();
+}
+
+/* ① 역할에 담기 — ★ 이 함수가 이 패턴의 핵심 신규성이다.
+   한 걸음이 판의 **두 자리**(그 역할 칸과 모인 생각 줄)를 함께 올린다.
+   ⚠️ 어긋나도 판은 그대로이고 안내가 알맞은 역할을 짚지 않는다. */
+function rlRole(k){
+  if(state.rlFin!=null) return;                                        // 가드①
+  if(state.rlBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(k) || k<0 || k>=RL_ROLE.length) return;         // 가드②
+  if(state.rlPick==null){ rlHold(RL_ORDER_R); return; }                // 순서 — 판 불변
+  const i = state.rlPick;
+  if(rlOwnerOf(i)!==k){                                                // 어긋남 — 판 불변
+    state.rlWrongR=k; rlHold(RL_WRONG_R); return; }
+  const wasOpen = rlCanOpen(state);
+  state.rlOwn[i] = k;                                                  // ★ 담는 자리는 여기 한 곳뿐
+  state.rlPick=null; state.rlWrongR=null; state.rlWarn=false;
+  state.rlMsg = rlAllOwn(state)
+    ? `<b>「${RL_CASE_S[i]}」</b>를 담았어요. 자료 여섯을 <b>모두</b> 담았어요 — 모인 생각 ${rlSum(state)} · 채워진 갈래 ${rlKinds(state)}.`
+    : `<b>「${RL_CASE_S[i]}」</b>를 담았어요. ${RL_CASE_D[i]} 모인 생각 <b>${rlSum(state)}</b> · 채워진 갈래 <b>${rlKinds(state)}</b>.`;
+  if(!wasOpen && rlCanOpen(state)) playChime(); else playBlip();
+  rlRender();
+}
+
+/* ② 의사 결정 열기 — ⚠️ 판정 0 · 인자 0. ★ 여는 조건은 쌓인 수가 아니라 갈래다. */
+function rlDecide(){
+  if(state.rlFin!=null) return;                                        // 가드①
+  if(state.rlBusy) return;                                             // 가드⑨
+  if(state.rlDec){ rlHold(RL_ALREADY_D); return; }                     // 가드⑤ 판 불변
+  if(!rlCanOpen(state)){ rlHold(RL_LOCK_M); return; }                  // 가드③ ★핵심 — 판 불변
+  state.rlDec = true; state.rlWarn=false;
+  state.rlMsg = `세 갈래가 <b>다 채워졌어요.</b> 주고받은 정보와 사람들의 생각이 사회문제에 관한 <b>의사 결정</b>에 영향을 미쳐요.`;
+  playChime(); rlRender();
+}
+
+/* ③ 빗대는 말 고르기 — ⚠️ 판정 0(안내소든 파수꾼이든 좋다) · 순서 자유 */
+function rlLikeSel(j){
+  if(state.rlFin!=null) return;                                        // 가드①
+  if(state.rlBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(j) || j<0 || j>=RL_LIKE.length) return;         // 가드②
+  if(!rlLikeOpen(state)){ rlHold(RL_ORDER_L); return; }                // 가드⑥ 순서 — 판 불변
+  if(state.rlPair & (1<<j)){ rlHold(RL_ALREADY_L); return; }           // 가드⑦ 판 불변
+  state.rlOpenL = j; state.rlWarn=false; state.rlMsg=null;
+  playBlip(); rlRender();
+}
+
+/* ③ 까닭 짝짓기 — 판정 있음. ⚠️ 어긋나도 판은 그대로이고 안내가 알맞은 까닭을 짚지 않는다. */
+function rlWhy(k){
+  if(state.rlFin!=null) return;                                        // 가드①
+  if(state.rlBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(k) || k<0 || k>=RL_WHY.length) return;          // 가드②
+  if(state.rlOpenL==null){ rlHold(RL_ORDER_W); return; }               // 순서 — 판 불변
+  const j = state.rlOpenL;
+  if(rlWhyOf(j)!==k){                                                  // 어긋남 — 판 불변
+    state.rlWrongW=k; rlHold(RL_WRONG_W); return; }
+  state.rlPair |= 1<<j; state.rlOpenL=null; state.rlWrongW=null; state.rlWarn=false;
+  state.rlMsg = rlAllPair(state)
+    ? `<b>「${RL_WHY_S[k]}」</b> — 빗대는 말 둘에 까닭을 <b>모두</b> 붙였어요.`
+    : `<b>「${RL_WHY_S[k]}」</b>예요.`;
+  if(rlAllPair(state)) playChime(); else playBlip();
+  rlRender();
+}
+
+/* ④ 마무리 — 「민주주의에서 미디어가 중요한 까닭은?」 */
+function rlFinish(k){
+  if(state.rlFin!=null) return;                                        // 가드①
+  if(state.rlBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(k) || k<0 || k>=RL_FIN.length) return;          // 가드②
+  if(!rlReady(state)) return;                                          // 가드⑧ 순서 — 판 불변
+  if(k===RL_FIN_OK){
+    state.rlFin=k; state.rlWrongF=null; state.rlMsg=null; state.rlWarn=false;
+    playChime(); rlRender(); return;
+  }
+  state.rlWrongF=k;
+  rlHold(RL_FIN_NO[k]);
+}
+
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2;
+    if(qs.hint>=2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">\uD83D\uDCD8 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 \u2192</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // l11 미양산 — 양산 시 재배선
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+</body>
+</html>
