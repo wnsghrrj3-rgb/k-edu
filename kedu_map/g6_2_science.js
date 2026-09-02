@@ -42,6 +42,16 @@ window.KEDU_MAP["g6_2_science"] = {
      "url": "/grade6/semester2/science/1단원_계절의변화/g6_sci_u1_l03_고도그림자기온.html",
      "track": "tb",
      "ready": true
+    },
+    {
+     "key": "g6_science_u1_l04",
+     "lessonId": "g6_s2_sci_u1_l04_v1",
+     "n": "5~6",
+     "title": "계절별 태양의 남중 고도와 낮의 길이의 관계는?",
+     "sub": null,
+     "url": "/grade6/semester2/science/1단원_계절의변화/g6_sci_u1_l04_남중고도낮길이.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }
