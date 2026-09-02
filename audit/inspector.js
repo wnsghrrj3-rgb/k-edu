@@ -62,7 +62,10 @@ const findings = [];
  *  severity: high | mid | low
  *  fix: { type, ...params }  — fix.js 가 아는 type 만 자동 수정 대상
  */
+const SECRET_RE = /ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-ant-[A-Za-z0-9\-_]{20,}|AKIA[0-9A-Z]{16}|eyJ[A-Za-z0-9_-]{20,}\.eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}/g;
+const scrub = t => String(t).replace(SECRET_RE, '[가림]');
 function add(f) {
+  f.msg = scrub(f.msg); if (f.fix) for (const k of Object.keys(f.fix)) if (typeof f.fix[k] === 'string') f.fix[k] = scrub(f.fix[k]);
   f.area = f.area || (f.file ? areaOf(f.file) : '공용');
   if (f.file && isCritical(f.file) && f.severity === 'mid' && CFG.critical_bump_rules.includes(f.rule)) f.severity = 'high'; // 입구·계정·관리의 깨진 링크·구문은 한 단계 올림
   const key = [f.rule, f.file || '', f.msg.replace(/\d+줄/g, '').slice(0, 160)].join('|');

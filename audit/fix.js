@@ -50,16 +50,36 @@ const FIXERS = {
   },
 };
 
+/* 보안 — 자동 수정이 손댈 수 있는 곳의 상한 */
+const MAX_PER_RUN = 300;
+const FORBIDDEN = [/^\.github\//, /^audit\//, /^node_modules\//, /^kedu_config\.js$/, /^vercel\.json$/, /^package(-lock)?\.json$/, /^sql\/(?!APPLIED\.md$)/, /^\.gitignore$/];
+const safePath = f => typeof f === 'string' && !f.includes('..') && !f.startsWith('/') && !FORBIDDEN.some(r => r.test(f));
+
 async function main() {
   const local = process.argv.includes('--local');
+  const cp = require('child_process');
+  /* 항상 로컬에서 방금 다시 점검한 결과를 정본으로 쓴다 — DB 의 fix 지시는 「어느 지문을 승인했나」만 알려준다.
+     (service_role 키가 새어 DB 줄이 조작돼도, 이 레포에서 지금 실제로 검출된 항목의 실제 fix 만 적용된다) */
+  cp.spawnSync(process.execPath, [path.join(__dirname, 'inspector.js'), '--quiet'], { cwd: ROOT, stdio: 'ignore' });
+  const fresh = new Map(JSON.parse(rd('audit/out/report.json')).findings.filter(f => f.fixable).map(f => [f.fingerprint, f]));
   let items = [];
-  if (local) items = JSON.parse(rd('audit/out/report.json')).findings.filter(f => f.fixable);
+  if (local) items = [...fresh.values()];
   else {
     const { fetchApproved } = require('./upload.js');
-    items = await fetchApproved();
+    const approved = await fetchApproved();
+    for (const a of approved) {
+      if (!/^[0-9a-f]{16}$/.test(a.fingerprint || '')) continue;
+      const f = fresh.get(a.fingerprint);
+      if (!f) { items.push({ fingerprint: a.fingerprint, _skip: '지금 레포에서는 검출되지 않음 (이미 고쳤거나 DB 줄이 어긋남)' }); continue; }
+      items.push(f);
+    }
   }
+  if (items.length > MAX_PER_RUN) { console.log(`상한 ${MAX_PER_RUN} 초과 (${items.length}) — 앞 ${MAX_PER_RUN}건만`); items = items.slice(0, MAX_PER_RUN); }
   const results = {};
   for (const f of items) {
+    if (f._skip) { results[f.fingerprint] = { ok: false, why: f._skip }; continue; }
+    if (!safePath(f.file)) { results[f.fingerprint] = { ok: false, why: '자동 수정 금지 경로', file: f.file }; continue; }
+    if (f.fix && f.fix.to && !safePath(String(f.fix.to).replace(/^\//, ''))) { results[f.fingerprint] = { ok: false, why: '대상 경로 금지', file: f.file }; continue; }
     const fn = FIXERS[f.fix && f.fix.type];
     if (!fn) { results[f.fingerprint] = { ok: false, why: '자동 수정 종류 아님' }; continue; }
     try { results[f.fingerprint] = { ...fn(f), file: f.file, type: f.fix.type }; }

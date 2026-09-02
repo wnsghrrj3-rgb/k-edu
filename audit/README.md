@@ -74,6 +74,19 @@ node audit/fix.js --local        # report.json 의 fixable 전부 고침 (승인
    `POST https://api.github.com/repos/wnsghrrj3-rgb/k-edu/dispatches` · 헤더 `Authorization: Bearer <repo 권한 토큰>` · 본문 `{"event_type":"audit-approved"}`
    → 승인 즉시 audit-fix.yml 이 돈다. 안 걸어도 2시간 주기로 돈다.
 
+## 보안 — 겹겹이
+
+| 층 | 어디 | 무엇 |
+|---|---|---|
+| 1 | Supabase RLS | `admin_audit_*` 읽기는 `kedu_is_admin()` 만. 교사·학생·비로그인은 0줄 |
+| 2 | Supabase GRANT | anon·authenticated 의 INSERT/UPDATE/DELETE 권한 자체를 REVOKE — RLS 가 뚫려도 브라우저 역할은 못 쓴다. 상태 변경은 RPC 두 개뿐(관리자 검사·상태값·지문 형식·500건 상한) |
+| 3 | 결정 기록 | `admin_audit_decisions` 에 누가(auth.uid)·언제·무엇을 승인/무시했는지 남고 지울 수 없다(관리자도 읽기만) |
+| 4 | 워크플로 권한 | `audit.yml` 은 `contents: read` + `persist-credentials: false`. 쓰기는 `audit-fix.yml` 만. npm 은 `--ignore-scripts` |
+| 5 | 수정기 불신 원칙 | `fix.js` 는 DB 의 fix 지시를 쓰지 않는다 — 레포에서 **지금 다시 점검**해 같은 지문이 실제로 검출될 때만, 그 로컬 결과의 fix 만 적용. service_role 키가 새어 DB 줄을 조작해도 임의 파일 변경 불가 |
+| 6 | 경로 허용 목록 | 수정기·워크플로 둘 다 `.github/ audit/ sql/(APPLIED.md 제외) kedu_config.js vercel.json package*` 는 손대면 전부 되돌리고 중단. 한 번에 300파일 상한 |
+| 7 | 비밀 가림 | 보고 문면·오류 메시지에서 토큰·JWT 는 `[가림]` 으로 치환. r11 이 레포 안 시크릿을 매일 훑는다. `upload.js` 는 키가 service_role 이 아니면 시작 안 함 |
+| 8 | 비밀 보관 | service_role 키는 GitHub Secrets 에만. 브라우저(`/admin`)는 anon 키 + 로그인 세션만 |
+
 ## 새 규칙 추가
 
 `audit/rules.js` 배열에 `{ id:'rNN', name, run(ctx) }` 한 항목. `ctx.add({ rule, severity, file, line, msg, fix })`.

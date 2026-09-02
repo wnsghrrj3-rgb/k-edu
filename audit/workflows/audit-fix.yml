@@ -57,6 +57,13 @@ jobs:
           node audit/inspector.js --rules=r04,r09 --quiet || true
           node -e "const r=require('./audit/out/report.json');const h=r.findings.filter(f=>f.severity==='high');if(h.length){console.log(h.map(f=>f.file+' '+f.msg).join('\n'));}"
 
+      - name: 수정 대상 검문 (금지 경로가 섞였으면 전부 중단)
+        if: steps.chk.outputs.none != '1'
+        run: |
+          BAD=$(git status --porcelain | awk '{print $2}' | grep -E '^(\.github/|audit/|sql/[^A]|kedu_config\.js|vercel\.json|package)' || true)
+          if [ -n "$BAD" ]; then echo "::error::자동 수정이 금지 경로를 건드림: $BAD"; git checkout -- .; exit 1; fi
+          N=$(git status --porcelain | wc -l); if [ "$N" -gt 300 ]; then echo "::error::한 번에 ${N}개 파일 — 상한 초과, 중단"; git checkout -- .; exit 1; fi
+
       - name: 커밋·푸시
         if: steps.chk.outputs.none != '1'
         id: push

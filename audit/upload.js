@@ -14,18 +14,25 @@ const fs = require('fs'), path = require('path');
 const ROOT = path.resolve(__dirname, '..');
 const URL_ = process.env.SUPABASE_URL || (/KEDU_SUPABASE_URL\s*=\s*'([^']+)'/.exec(fs.readFileSync(path.join(ROOT, 'kedu_config.js'), 'utf8')) || [])[1];
 const KEY = process.env.SUPABASE_SERVICE_KEY;
+/* 키가 service_role 이 아니면(anon 을 잘못 넣었거나 조작) 시작조차 안 한다 */
+function assertServiceKey() {
+  if (!KEY) throw new Error('SUPABASE_SERVICE_KEY 가 없음');
+  let role = ''; try { role = JSON.parse(Buffer.from(KEY.split('.')[1], 'base64').toString()).role; } catch {}
+  if (role !== 'service_role') throw new Error('SUPABASE_SERVICE_KEY 가 service_role 키가 아님 (anon 키를 넣은 듯)');
+  if (!/^https:\/\/[a-z0-9]+\.supabase\.co$/.test(URL_ || '')) throw new Error('SUPABASE_URL 형식이 이상함');
+}
 const H = () => ({ 'apikey': KEY, 'Authorization': 'Bearer ' + KEY, 'Content-Type': 'application/json' });
 
 async function rest(pathq, opt = {}) {
   const r = await fetch(URL_ + '/rest/v1/' + pathq, { ...opt, headers: { ...H(), ...(opt.headers || {}) } });
   const t = await r.text();
-  if (!r.ok) throw new Error(`${opt.method || 'GET'} ${pathq} → ${r.status} ${t.slice(0, 300)}`);
+  if (!r.ok) throw new Error(`${opt.method || 'GET'} ${pathq.split('?')[0]} → ${r.status} ${t.replace(/eyJ[A-Za-z0-9_.-]+/g, '[가림]').slice(0, 300)}`);
   return t ? JSON.parse(t) : null;
 }
 const chunk = (a, n) => { const o = []; for (let i = 0; i < a.length; i += n) o.push(a.slice(i, i + n)); return o; };
 
 async function upload() {
-  if (!KEY) throw new Error('SUPABASE_SERVICE_KEY 가 없음');
+  assertServiceKey();
   const rep = JSON.parse(fs.readFileSync(path.join(ROOT, 'audit/out/report.json'), 'utf8'));
   const [run] = await rest('admin_audit_runs', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ ran_at: rep.ran_at, commit: rep.commit, files_scanned: rep.files_scanned, duration_ms: rep.duration_ms, total: rep.totals.total, high: rep.totals.high, mid: rep.totals.mid, low: rep.totals.low, by_area: rep.by_area, rules: rep.rules.map(r => ({ id: r.id, name: r.name, ok: r.ok, ms: r.ms })) }) });
   const now = new Date().toISOString();
@@ -44,11 +51,13 @@ async function upload() {
 }
 
 async function fetchApproved() {
-  if (!KEY) throw new Error('SUPABASE_SERVICE_KEY 가 없음');
+  assertServiceKey();
   return rest('admin_audit_findings?select=fingerprint,file,fix,rule&status=eq.approved&fixable=is.true');
 }
 
 async function markApplied(commit) {
+  assertServiceKey();
+  if (!/^[0-9a-f]{0,40}$/.test(commit)) throw new Error('commit 형식');
   const res = JSON.parse(fs.readFileSync(path.join(ROOT, 'audit/out/fixed.json'), 'utf8'));
   const now = new Date().toISOString();
   for (const [fp, r] of Object.entries(res)) {

@@ -9,6 +9,9 @@ on:
     paths-ignore: ['audit/out/**']
   workflow_dispatch:
 
+permissions:
+  contents: read           # 점검은 읽기만. 쓰기는 audit-fix.yml 만 갖는다.
+
 concurrency:
   group: kedu-audit
   cancel-in-progress: true
@@ -22,6 +25,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 2          # r20(AI 검토)이 직전 커밋과의 차이를 본다
+          persist-credentials: false   # 이후 단계·npm 스크립트가 깃 자격증명을 못 쓰게
 
       - name: Node 준비
         uses: actions/setup-node@v4
