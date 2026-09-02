@@ -480,17 +480,32 @@ async function deleteBundle(id){
       subCount = count || 0;
     } catch(e){}
   }
+  // 「우리 반에 열기」로 생긴 카드면 원장(class_openings)도 같이 닫는다 — 카드만 지우면 문은 열려 있던 것
+  // (2026-09-03 준호: "그냥 케이박스에서 삭제하면 되는 거 아니야?" — 교사 직관 = 카드 삭제는 곧 닫기)
+  let openings = [];
+  try {
+    const { data } = await db.from('class_openings').select('class_code_id,content_key,title').eq('bundle_id', id);
+    openings = data || [];
+  } catch(e){}
+  const openNote = openings.length ? `\n우리 반에 열어 둔 「${openings[0].title || b.title}」도 함께 닫혀요.` : '';
   const msg = b.status==='sent'
-    ? `「${b.title}」 박스를 삭제할까요?\n\n학생 받은함에서 사라지고` + (subCount ? `, 학생 제출 ${subCount}개와 채점도 함께 지워져요.` : ` 되돌릴 수 없어요.`)
-    : `「${b.title}」(작성 중) 박스를 삭제할까요?`;
+    ? `「${b.title}」 박스를 삭제할까요?\n\n학생 받은함에서 사라지고` + (subCount ? `, 학생 제출 ${subCount}개와 채점도 함께 지워져요.` : ` 되돌릴 수 없어요.`) + openNote
+    : `「${b.title}」(작성 중) 박스를 삭제할까요?` + openNote;
   if(!confirm(msg)) return;
+  let closed = 0;
+  for (const o of openings) {
+    try {
+      const r = await db.rpc('close_for_class', { p_class_code_id: o.class_code_id, p_content_key: o.content_key });
+      if(!r.error) closed += (r.data || 0);
+    } catch(e){}
+  }
   try {
     const { error } = await db.from('cw_bundles').delete().eq('id', id);
     if(error) throw error;
-  } catch(e){ return toast('삭제하지 못했어요'); }
+  } catch(e){ return toast(closed ? '열어 둔 건 닫았지만 박스는 삭제하지 못했어요' : '삭제하지 못했어요'); }
   bundles = bundles.filter(x=> x.id!==id);
   render();
-  toast('박스를 삭제했어요');
+  toast(closed ? '박스를 삭제하고 우리 반에 열어 둔 것도 닫았어요' : '박스를 삭제했어요');
 }
 
 // ============ 빌더 ============

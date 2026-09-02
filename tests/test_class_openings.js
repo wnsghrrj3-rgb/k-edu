@@ -222,6 +222,18 @@ function boxWin({ url, title = '케이파크 | 케이에듀', meta = '', db }) {
     if (fs.existsSync(path.join(R, e))) ok(rd(e).includes('/kedu_boxbar.js'), '입구 boxbar 미탑재: ' + e);
   }
 
+  // ── ⑤ 케이박스 카드 삭제 = 원장 닫기 (2026-09-03) ───────────────
+  {
+    const c = rd('classwork/index.html');
+    const fn = c.match(/async function deleteBundle\(id\)\{[\s\S]*?\n\}/)[0];
+    ok(/from\('class_openings'\)\.select\([^)]*\)\.eq\('bundle_id', id\)/.test(fn), 'classwork 삭제: bundle_id 로 원장을 찾지 않음');
+    ok(/for \(const o of openings\) \{[\s\S]*?db\.rpc\('close_for_class', \{ p_class_code_id: o\.class_code_id, p_content_key: o\.content_key \}\)/.test(fn), 'classwork 삭제: 찾은 원장 줄마다 close_for_class 를 부르지 않음');
+    ok(fn.indexOf("rpc('close_for_class'") < fn.indexOf("from('cw_bundles').delete()"), 'classwork 삭제: 원장 닫기가 카드 삭제보다 뒤');
+    ok(fn.indexOf("if(!confirm(msg)) return;") < fn.indexOf("rpc('close_for_class'"), 'classwork 삭제: 확인 전에 원장을 닫는다');
+    ok(/함께 닫혀요/.test(fn), 'classwork 삭제: 확인창이 닫힘을 미리 알리지 않음');
+    ok(/열어 둔 것도 닫았어요/.test(fn), 'classwork 삭제: 결과 토스트가 닫힘을 말하지 않음');
+  }
+
   console.log(`우리 반에 열기 게이트 — ${pass} PASS / ${fail} FAIL`);
   process.exit(fail ? 1 : 0);
 })();
