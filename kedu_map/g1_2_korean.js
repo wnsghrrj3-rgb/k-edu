@@ -84,6 +84,93 @@ window.KEDU_MAP["g1_2_korean"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 2,
+   "name": "낱말을 정확하게 읽어요",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g1_korean_u2_l01",
+     "lessonId": "g1_2_kor_u2_l01_02_v1",
+     "n": "1·2",
+     "title": "단원 시작 — 배울 내용 살펴보기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/2단원_낱말을정확하게읽어요/g1_kor_u2_l01_02.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u2_l03",
+     "lessonId": "g1_2_kor_u2_l03_04_v1",
+     "n": "3·4",
+     "title": "글자의 짜임 알기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/2단원_낱말을정확하게읽어요/g1_kor_u2_l03_04.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u2_l05",
+     "lessonId": "g1_2_kor_u2_l05_06_v1",
+     "n": "5·6",
+     "title": "받침에 주의하며 문장 쓰기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/2단원_낱말을정확하게읽어요/g1_kor_u2_l05_06.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u2_l07",
+     "lessonId": "g1_2_kor_u2_l07_08_v1",
+     "n": "7·8",
+     "title": "받침이 있는 낱말에 주의하며 글 읽기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/2단원_낱말을정확하게읽어요/g1_kor_u2_l07_08.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u2_l09",
+     "lessonId": "g1_2_kor_u2_l09_10_v1",
+     "n": "9·10",
+     "title": "글쓴이가 하고 싶은 말 찾기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/2단원_낱말을정확하게읽어요/g1_kor_u2_l09_10.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u2_l11",
+     "lessonId": "g1_2_kor_u2_l11_12_v1",
+     "n": "11·12",
+     "title": "글을 읽고 인물의 생각 알기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/2단원_낱말을정확하게읽어요/g1_kor_u2_l11_12.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u2_l13",
+     "lessonId": "g1_2_kor_u2_l13_v1",
+     "n": "13",
+     "title": "배운 내용 실천하기 (겹받침 낱말 카드)",
+     "sub": null,
+     "url": "/grade1/semester2/korean/2단원_낱말을정확하게읽어요/g1_kor_u2_l13.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g1_korean_u2_l14",
+     "lessonId": "g1_2_kor_u2_l14_15_v1",
+     "n": "14·15",
+     "title": "단원 마무리하기",
+     "sub": null,
+     "url": "/grade1/semester2/korean/2단원_낱말을정확하게읽어요/g1_kor_u2_l14_15.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };

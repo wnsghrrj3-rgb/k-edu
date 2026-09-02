@@ -161,14 +161,14 @@ window.KEDU_MAP["g6_1_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u2_l04",
+     "lessonId": "g6_social_u2_l04_v1",
      "n": "4",
      "title": "모의 선거를 통해 선거에 참여해 볼까요 / [할 수 있어요] 선거 공약 평가하기",
      "sub": "① 민주주의와 선거",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/social/2단원_민주주의와시민참여/g6_social_u2_l04_모의선거.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
