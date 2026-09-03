@@ -139,6 +139,7 @@ ok(/no such school/.test(setFn) && /s\.is_active/.test(setFn), '★ 없는 학�
 ok(/school_request = NULL/.test(setFn), '학교를 고르면 직접 적은 이름은 지운다');
 ok(!/approval|is_admin|user_id/.test(setFn), '★★ 학교 지정이 승인·관리자 열을 건드리지 않는다(#23 보호 규칙)');
 ok(!/kedu_teacher_approved\(\)/.test(setFn), '승인 대기 교사도 학교를 고를 수 있다(가입 직후 자리)');
+ok(/school_id IS NOT NULL\) THEN[\s\S]{0,80}school already set/.test(setFn), '★★ v1.3 학교는 본인이 한 번만 — 이미 있으면 거부(다른 학교 할 일판으로 옮겨 가는 구멍 차단)');
 ok(sql.includes('GRANT EXECUTE ON FUNCTION my_school() TO authenticated;')
    && sql.includes('GRANT EXECUTE ON FUNCTION set_my_school(text) TO authenticated;'), '내 학교 RPC GRANT');
 
@@ -187,7 +188,8 @@ const clJs = (html.split('async function closeSchoolTask(id, archive)')[1] || ''
 ok(/if\(!archive && !confirm\(/.test(clJs), '내리기는 묻고, 보관은 바로');
 [ 'id="schooltask-school"', 'id="schooltask-school-pick"', 'id="schooltask-school-q"',
   'function loadMySchool()', 'function searchMySchool()', 'function setMySchool(',
-  'onclick="toggleSchoolPick()"' ].forEach(k => ok(html.includes(k), '학교 지정 UI 누락: ' + k));
+  'function toggleSchoolPick()' ].forEach(k => ok(html.includes(k), '학교 지정 UI 누락: ' + k));
+ok(!/onclick="toggleSchoolPick\(\)">바꾸기/.test(html), '★ v1.3 학교가 있으면 「바꾸기」 단추 없음(본인 변경 없음)');
 const msFn = (html.split('async function loadMySchool()')[1] || '').split('function toggleSchoolPick()')[0];
 ok(/if\(error\)\{ box\.textContent = ''; return; \}/.test(msFn), '폴백 — my_school RPC 없으면 조용히 지나간다');
 ok(/addBtn\.hidden = true/.test(msFn), '★ 학교가 없으면 올리기 단추를 감춘다(서버도 막지만 화면에서 먼저)');

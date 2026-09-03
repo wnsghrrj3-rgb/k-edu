@@ -1,6 +1,6 @@
 -- =============================================================
 -- K-edu 「우리 학교 할 일판」 — 생태계설계_v2_공개준비 §J-10
--- 작성: 2026-09-03 · v1.1 2026-09-03(받는 사람 고르기) · v1.2 2026-09-03(누가 안 했나 명단 · 모두 완료면 보관함)
+-- 작성: 2026-09-03 · v1.1 2026-09-03(받는 사람 고르기) · v1.2 2026-09-03(누가 안 했나 명단 · 모두 완료면 보관함) · v1.3(학교는 본인이 한 번만 — 바꾸기는 관리자)
 -- 왜: 금성초는 나이스 메신저·밴드를 실질적으로 안 써서 학교 안 소식이 잘 놓친다.
 --     전체 공유해 두면 **확인 전까지 대시보드 상단에 남고, 기한이 다가올수록 색이 짙어지는** 판.
 --     댓글·채팅·파일 없음(준호 결정). 학교 단위 기준선 = teachers.school_id(setup_schools.sql #36).
@@ -335,6 +335,11 @@ BEGIN
   v_tid := cw_my_teacher_id();
   IF v_tid IS NULL THEN
     RAISE EXCEPTION 'teacher required' USING ERRCODE = 'insufficient_privilege';
+  END IF;
+  -- ★ v1.3 한 번만 — 이미 학교가 있으면 본인이 못 바꾼다(승인된 교사가 다른 학교로 옮겨 그 학교 할 일판을 보는 구멍).
+  --    바꾸려면 준호가 /admin `admin_set_teacher_school` 로.
+  IF EXISTS (SELECT 1 FROM teachers WHERE id = v_tid AND school_id IS NOT NULL) THEN
+    RAISE EXCEPTION 'school already set' USING ERRCODE = 'insufficient_privilege';
   END IF;
   SELECT s.name || ' (' || o.short || ' ' || s.district || ')'
     INTO v_label

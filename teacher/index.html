@@ -1615,7 +1615,7 @@ async function loadMySchool(){
     const where = [mySchoolRow.office_short, mySchoolRow.district].filter(Boolean).join(' ');
     box.innerHTML = `🏫 우리 학교 — <b style="color:var(--text)">${escHtml(mySchoolRow.school_name)}</b>`
       + (where ? ` <span style="font-size:11.5px">${escHtml(where)}</span>` : '')
-      + ` <button class="code-btn outline" style="margin-left:8px;padding:3px 10px;font-size:11.5px" onclick="toggleSchoolPick()">바꾸기</button>`;
+      + ` <span style="font-size:11px;margin-left:6px">(학교를 바꾸려면 관리자에게 알려 주세요)</span>`;   // v1.3 본인 변경 없음 — 다른 학교 할 일판을 보는 구멍
     pick.hidden = true;
     if(addBtn) addBtn.hidden = false;
   } else {
@@ -1652,7 +1652,7 @@ async function searchMySchool(){
 }
 async function setMySchool(id){
   const { data, error } = await db.rpc('set_my_school', { p_school_id: id });
-  if(error){ showToast('⚠️ 학교 지정 실패: ' + (error.message || '')); return; }
+  if(error){ showToast(/already set/.test(error.message||'') ? '⚠️ 학교는 한 번만 고를 수 있어요. 바꾸려면 관리자에게 알려 주세요.' : '⚠️ 학교 지정 실패: ' + (error.message || '')); return; }
   showToast('🏫 ' + (data || '학교를 지정했어요.'));
   document.getElementById('schooltask-school-results').innerHTML = '';
   document.getElementById('schooltask-school-q').value = '';
