@@ -95,7 +95,17 @@
   #colSet select { flex:1; min-width:0; background:#0f1524; color:var(--txt); border:1px solid var(--line2); border-radius:6px; padding:3px 6px; font-size:12px; }
   #colSet .fxrow { display:flex; gap:6px; align-items:center; flex:1; }
   #colSet .fxrow .seg { flex:none; }
-  @media (max-width:1460px) { aside.side { flex-direction:column; overflow:auto; width:var(--setW); } .side .col { overflow:visible; width:auto; } .side .colTitle { position:static; } .split.v { display:none; } }
+  /* 좁은 화면(태블릿·폰·1460px 미만): 설정과 도구상자를 포개 스크롤하게 하면 아래 것(도구상자)이 안 보여 "조정할 게 없다"가 된다 →
+     위쪽 「설정 | 도구상자」 탭으로 하나씩, 각자 창 높이를 다 쓰고 각자 스크롤. 카드를 고르면 설정으로, 도구를 찾으면 도구상자로. */
+  #sideTabs { display:none; flex:none; }
+  @media (max-width:1460px) {
+    aside.side { flex-direction:column; overflow:hidden; width:max(var(--setW), 340px); }
+    #sideTabs { display:flex; position:static; }
+    .side .col { flex:1 1 auto; overflow:auto; width:auto; min-height:0; }
+    .side .colTitle { display:none; }
+    aside.side[data-side="set"] #colTools, aside.side[data-side="tools"] #colSet { display:none; }
+    .split.v { display:none; }
+  }
   .panel { padding:12px 14px; border-bottom:1px solid var(--line); }
   .panel h3 { margin:0 0 8px; font-size:11px; color:var(--gold); letter-spacing:2px; text-transform:uppercase; display:flex; align-items:center; gap:8px; }
   .panel h3 .sp { flex:1; }
@@ -290,7 +300,8 @@
         <span class="hint" id="hintTL">Space·JKL 재생 · S 분할 · Q/W 트림 · F 프리즈 · Alt+몸통 슬립 · Ctrl+가장자리 롤 · Ctrl+Alt+몸통 슬라이드 · Shift/Ctrl+클릭·Shift+빈 곳 드래그 다중 선택 · ; 리프트 · ' 익스트랙트 · Ctrl+C/X/V · M 마커 · I/O 소스 구간 · Ctrl+휠 줌</span>
       </div>
     </section>
-    <aside class="side">
+    <aside class="side" data-side="set">
+      <div class="tabs sideTabs" id="sideTabs"><button data-side="set" class="on">설정</button><button data-side="tools">도구상자</button></div>
       <div class="split v" id="splitSet" title="끌어서 설정 창 너비 · 더블클릭 기본값"></div>
       <div class="col" id="colSet">
         <div class="colTitle">설정</div>

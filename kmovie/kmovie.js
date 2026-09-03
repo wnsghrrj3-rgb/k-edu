@@ -1119,14 +1119,15 @@
     else if (mode === 'range' && id) { const V = P.data.V, i0 = sel ? P.clipIndex(sel) : -1, i1 = P.clipIndex(id); if (i0 < 0) { selSet.clear(); selSet.add(id); sel = id; } else { for (let i = Math.min(i0, i1); i <= Math.max(i0, i1); i++) selSet.add(V[i].id); } }
     else { if (sel === id && selSet.size === (id ? 1 : 0)) { selAuto = false; return; } selSet.clear(); if (id) selSet.add(id); sel = id; }
     selAuto = false;
+    if (id && sideSelPending) setSide('set');
     dirty = true; draw(); refreshPanel(); refreshMontPanel();
   }
   function selectMarker(id) { if (selM === id) return; selM = id; dirty = true; draw(); refreshMarkerList(); }
   function selectedIds() { return P.data.V.filter(c => selSet.has(c.id)).map(c => c.id); }
-  function selectS(id) { if (selS === id) return; selS = id; dirty = true; draw(); refreshSubPanel(); }
-  function selectP(id) { if (selP === id) return; selP = id; dirty = true; draw(); refreshPartPanel(); }
-  function selectA2(id) { if (selA2 === id) return; selA2 = id; dirty = true; draw(); refreshMusicPanel(); }
-  function selectV2(id) { if (selV2 === id) return; selV2 = id; if (id) { select(null); selectS(null); selectP(null); selectA2(null); } dirty = true; draw(); refreshV2Panel(); }
+  function selectS(id) { if (selS === id) return; selS = id; if (id && sideSelPending) setSide('set'); dirty = true; draw(); refreshSubPanel(); }
+  function selectP(id) { if (selP === id) return; selP = id; if (id && sideSelPending) setSide('set'); dirty = true; draw(); refreshPartPanel(); }
+  function selectA2(id) { if (selA2 === id) return; selA2 = id; if (id && sideSelPending) setSide('set'); dirty = true; draw(); refreshMusicPanel(); }
+  function selectV2(id) { if (selV2 === id) return; selV2 = id; if (id) { select(null); selectS(null); selectP(null); selectA2(null); if (sideSelPending) setSide('set'); } dirty = true; draw(); refreshV2Panel(); }
   function selClip() { return sel ? P.clip(sel) : null; }
   function doSplit() { stop(); const c2 = P.split(ph); if (c2) select(c2.id); else toast('여기선 나눌 게 없어요 — 플레이헤드를 클립 안쪽으로'); }
   function doDelete() {
@@ -1297,9 +1298,16 @@
     document.querySelectorAll('#toolTabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === id));
     document.querySelectorAll('#colTools .panel[data-tab]').forEach(pn => pn.classList.toggle('tabOn', pn.dataset.tab === id));
     $('colTools').scrollTop = 0;
+    if (typeof setSide === 'function' && id === 'proj') setSide('tools');
   }
   document.querySelectorAll('#toolTabs button').forEach(b => { b.onclick = () => setTab(b.dataset.tab); });
   setTab(toolTab);
+  /* 좁은 화면 — 오른쪽 창 「설정 | 도구상자」 탭 (1460px 이상에선 CSS 가 탭을 숨기고 두 열이 나란히라 무의미) */
+  var sideSelPending = false;
+  function setSide(id) { const a = document.querySelector('aside.side'); if (!a) return; a.dataset.side = id === 'tools' ? 'tools' : 'set'; document.querySelectorAll('#sideTabs button').forEach(b => b.classList.toggle('on', b.dataset.side === a.dataset.side)); }
+  document.querySelectorAll('#sideTabs button').forEach(b => { b.onclick = () => setSide(b.dataset.side); });
+  document.querySelectorAll('#toolTabs button').forEach(b => { b.addEventListener('click', () => setSide('tools')); });
+  $('timeline').addEventListener('pointerdown', () => { sideSelPending = true; setTimeout(() => { sideSelPending = false; }, 0); }, true);
 
   /* 미디어 띠 보이기/숨기기 — 이 브라우저에 기억 */
   let mediaOn = true; try { mediaOn = localStorage.getItem('kmv.media') !== '0'; } catch (e) {}
@@ -2510,7 +2518,7 @@
   };
 
   window.KMV_UI = { importFiles, setPH: f => setPH(f), get ph() { return ph; }, select, selectP, selectA2, selectS, placePart, play, stop, zoomFit, get pxf() { return pxf; }, get scrollF() { return scrollF; }, get selP() { return selP; }, get selA2() { return selA2; }, beatFrames,
-    get sel() { return sel; }, selectedIds, openSource, showStage, get stage() { return stage; }, get src() { return srcCur; }, setSrcPH, srcMark, srcPlace, shuttleTo, get shuttle() { return shuttle; }, get playing() { return playing || srcPlaying; }, doMarker, doCopy, doCut, doPaste, get clipboard() { return clipboard; }, get selM() { return selM; }, layout: { HEAD, RULER, LY }, xOf, frameOf, laneRows, rowGeom, selectV2, get selV2() { return selV2; }, get delChip() { return delChip; }, get proj() { return proj; }, openRecord, newProject, loadDoc, saveCloud, saveNow, openRemote, saveState, openProjModal, relinkFiles, refreshRelink, db: DB, saveToWorkDir, pickWorkDir, get workDir() { return workDir; }, tab: setTab, get toolTab() { return toolTab; }, get autoPrev() { return autoPrev; } };
+    get sel() { return sel; }, selectedIds, openSource, showStage, get stage() { return stage; }, get src() { return srcCur; }, setSrcPH, srcMark, srcPlace, shuttleTo, get shuttle() { return shuttle; }, get playing() { return playing || srcPlaying; }, doMarker, doCopy, doCut, doPaste, get clipboard() { return clipboard; }, get selM() { return selM; }, layout: { HEAD, RULER, LY }, xOf, frameOf, laneRows, rowGeom, selectV2, get selV2() { return selV2; }, get delChip() { return delChip; }, get proj() { return proj; }, openRecord, newProject, loadDoc, saveCloud, saveNow, openRemote, saveState, openProjModal, relinkFiles, refreshRelink, db: DB, setSide, saveToWorkDir, pickWorkDir, get workDir() { return workDir; }, tab: setTab, get toolTab() { return toolTab; }, get autoPrev() { return autoPrev; } };
 
   /* ---------- 시작 ---------- */
   resize();
