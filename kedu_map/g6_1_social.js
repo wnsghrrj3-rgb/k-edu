@@ -271,14 +271,14 @@ window.KEDU_MAP["g6_1_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u2_l15",
+     "lessonId": "g6_social_u2_l15_v1",
      "n": "15",
      "title": "2단원 마무리 — 생각 그물·교실 놀이",
-     "sub": "③ 민주주의와 미디어",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "sub": "단원 마무리",
+     "url": "/grade6/semester1/social/2단원_민주주의와시민참여/g6_social_u2_l15_번갈아요.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   },
