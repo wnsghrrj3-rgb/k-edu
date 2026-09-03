@@ -109,8 +109,12 @@
     else if (ok) toast('저장했어요 (이 기기 + 케이에듀 계정)', 1500);
     return ok;
   }
-  /* Ctrl+S — 이 기기 + 계정에 지금 바로. 로그인이 없으면 이 기기에만. */
+  /* Ctrl+S / 「저장」 — 이 기기 + 계정에 지금 바로(로그인이 없으면 이 기기에만) + 작업 폴더가 있으면 .kmv 도. */
   async function saveNow() {
+    await saveNowCore();
+    await saveToWorkDir({ silent: true });
+  }
+  async function saveNowCore() {
     if (!proj.id) return;
     clearTimeout(saveT);
     if (proj.otherTab) { toast('다른 탭에서 열려 있는 작업이라 이 탭에선 저장하지 않아요 — 그 탭에서 저장해요', 3200); return; }
@@ -2382,7 +2386,7 @@
      없으면 옛 단일 저장(kv 'project')을 「이전 작업」으로 옮긴다. */
   async function restore() {
     try { await DB.open(); } catch (e) { console.warn('idb', e); }
-    ST.init(DB);
+    ST.init(DB); await loadWorkDir();
     let cur = null; try { cur = await ST.local.current(); } catch (e) {}
     let r = cur ? await ST.local.get(cur).catch(() => null) : null;
     if (r) r.where = 'local';
@@ -2394,6 +2398,43 @@
     await openRecord(r);
     // 계정에 이 작업의 더 새 사본이 있으면(다른 기기가 저장) 열지는 않고 알려만 준다 — 여는 건 「내 작업」에서 준호가
     ST.cloud.get(r.id).then(c => { if (c && (c.updatedAt || 0) > (r.updatedAt || 0)) { proj.cloudAt = c.updatedAt; toast('다른 기기에서 「' + proj.name + '」 을 더 나중에 저장했어요 — 그걸 열려면 「내 작업」에서 불러와요', 5000); refreshSaveNote(); } else if (c) { proj.cloudAt = c.updatedAt || 0; refreshSaveNote(); } }).catch(() => {});
+  }
+  /* ---------- 작업 폴더 — 작업을 마칠 때 <이름>.kmv 를 준호가 고른 폴더에 (편집 상태만, 수십 KB) ----------
+     File System Access API(크롬·엣지 데스크톱)가 있으면 폴더를 한 번 고르고 그 뒤론 「저장」 때마다 같은 파일을 덮어쓴다. 없으면(폰·파이어폭스) .kmv 내려받기로 대신. */
+  let workDir = null;
+  async function loadWorkDir() { try { workDir = (await DB.getKV('workDir')) || null; } catch (e) { workDir = null; } refreshWorkDirNote(); }
+  const canPickDir = () => typeof window.showDirectoryPicker === 'function';
+  async function pickWorkDir() {
+    if (!canPickDir()) { toast('이 브라우저는 폴더 지정을 지원하지 않아요 — 「파일」로 .kmv 를 내려받아 두세요', 3200); return null; }
+    try { const h = await window.showDirectoryPicker({ mode: 'readwrite', id: 'kmovie-work', startIn: 'documents' }); workDir = h; try { await DB.putKV('workDir', h); } catch (e) {} refreshWorkDirNote(); toast('작업 폴더: ' + h.name + ' — 「저장」 때마다 여기에도 작업 파일을 써요', 3000); return h; }
+    catch (e) { if (e && e.name !== 'AbortError') toast('폴더를 열지 못했어요'); return null; }
+  }
+  async function dirPermitted(h, ask) {
+    try { if (!h.queryPermission) return true; if ((await h.queryPermission({ mode: 'readwrite' })) === 'granted') return true; if (!ask) return false; return (await h.requestPermission({ mode: 'readwrite' })) === 'granted'; } catch (e) { return false; }
+  }
+  /* opt.silent = 「저장」에 딸려 쓰는 경우(폴더 없으면 조용히), opt.pick = 폴더가 없으면 고르게 */
+  async function saveToWorkDir(opt) {
+    opt = opt || {};
+    if (!proj.id) return false;
+    const r = rec();
+    if (!workDir) {
+      if (opt.silent) return false;
+      if (!canPickDir()) { ST.download(r); toast('.kmv 파일로 내려받아요 (' + Math.max(1, Math.round(ST.fileBytes(r) / 1024)) + ' KB) — 영상은 안 들어가요', 2600); return true; }
+      if (!(await pickWorkDir())) return false;
+    }
+    if (!(await dirPermitted(workDir, !opt.silent))) { if (!opt.silent) toast('작업 폴더에 쓸 권한이 없어요 — 폴더를 다시 골라 주세요', 3000); return false; }
+    try {
+      const w = await ST.writeToDir(workDir, r);
+      proj.dirAt = Date.now(); refreshWorkDirNote();
+      if (!opt.silent) toast('작업 폴더에 저장했어요: ' + w.name + ' (' + Math.max(1, Math.round(w.bytes / 1024)) + ' KB · 영상은 안 들어가요)', 2600);
+      return true;
+    } catch (e) { console.warn('workDir', e); if (!opt.silent) toast('작업 폴더에 쓰지 못했어요 (' + (e && e.message || e) + ') — 폴더를 다시 골라 보세요', 3200); return false; }
+  }
+  function refreshWorkDirNote() {
+    const el = $('workDirNote'), b = $('btnWorkDir'); if (!el) return;
+    if (!canPickDir()) { el.textContent = '이 브라우저(폰 등)는 폴더 지정이 안 돼요 — 「파일」 버튼으로 .kmv 를 내려받아 두세요.'; if (b) b.hidden = true; return; }
+    if (b) b.hidden = false;
+    el.textContent = workDir ? '작업 폴더: ' + workDir.name + ' — 「저장」 때마다 <작업 이름>.kmv 를 여기에도 써요(영상 없이 수십 KB)' + (proj.dirAt ? ' · ' + new Date(proj.dirAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '') : '작업 폴더를 고르면 「저장」 때마다 <작업 이름>.kmv 를 그 폴더에도 써 둬요(영상은 안 들어가 수십 KB).';
   }
   /* 「파일 다시 연결」 — 다른 기기에서 저장한 작업을 열었는데 원본이 없어 뺀 클립을, 그 영상 파일을 골라 넣어 되살린다(이름 → 크기 순으로 맞춤). */
   function refreshRelink() {
@@ -2428,6 +2469,7 @@
     clearTimeout(saveT); await ST.save(rec(), { cloud: false }).catch(() => {});
     let items = []; try { items = await ST.list(); } catch (e) { console.warn('list', e); }
     const signed = await ST.cloud.ready().catch(() => false);
+    refreshWorkDirNote();
     $('projCloudNote').textContent = signed ? '케이에듀 계정에 저장된 작업은 어느 기기에서든 여기 보여요. 원본 영상은 그 기기에 있어야 해요.' : '로그인하면 작업이 계정에도 저장돼 다른 기기에서 열 수 있어요. 지금은 이 브라우저에만 저장돼요.';
     ul.innerHTML = '';
     if (!items.length) ul.innerHTML = '<div class="note">아직 저장된 작업이 없어요.</div>';
@@ -2455,6 +2497,8 @@
   $('btnProjImport').onclick = () => $('kmvIn').click();
   $('btnOpenRemote').onclick = () => openRemote();
   $('btnSave').onclick = () => saveNow();
+  $('btnWorkDir').onclick = () => pickWorkDir();
+  $('btnSaveDir').onclick = () => saveToWorkDir({ pick: true });
   $('btnRelink').onclick = () => $('relinkIn').click();
   $('relinkIn').onchange = async e => { const fs = [...(e.target.files || [])]; e.target.value = ''; await relinkFiles(fs); };
   $('pkFav').onclick = () => { if (peek.id) toggleFav(peek.id); };
@@ -2466,7 +2510,7 @@
   };
 
   window.KMV_UI = { importFiles, setPH: f => setPH(f), get ph() { return ph; }, select, selectP, selectA2, selectS, placePart, play, stop, zoomFit, get pxf() { return pxf; }, get scrollF() { return scrollF; }, get selP() { return selP; }, get selA2() { return selA2; }, beatFrames,
-    get sel() { return sel; }, selectedIds, openSource, showStage, get stage() { return stage; }, get src() { return srcCur; }, setSrcPH, srcMark, srcPlace, shuttleTo, get shuttle() { return shuttle; }, get playing() { return playing || srcPlaying; }, doMarker, doCopy, doCut, doPaste, get clipboard() { return clipboard; }, get selM() { return selM; }, layout: { HEAD, RULER, LY }, xOf, frameOf, laneRows, rowGeom, selectV2, get selV2() { return selV2; }, get delChip() { return delChip; }, get proj() { return proj; }, openRecord, newProject, loadDoc, saveCloud, saveNow, openRemote, saveState, openProjModal, relinkFiles, refreshRelink, db: DB, tab: setTab, get toolTab() { return toolTab; }, get autoPrev() { return autoPrev; } };
+    get sel() { return sel; }, selectedIds, openSource, showStage, get stage() { return stage; }, get src() { return srcCur; }, setSrcPH, srcMark, srcPlace, shuttleTo, get shuttle() { return shuttle; }, get playing() { return playing || srcPlaying; }, doMarker, doCopy, doCut, doPaste, get clipboard() { return clipboard; }, get selM() { return selM; }, layout: { HEAD, RULER, LY }, xOf, frameOf, laneRows, rowGeom, selectV2, get selV2() { return selV2; }, get delChip() { return delChip; }, get proj() { return proj; }, openRecord, newProject, loadDoc, saveCloud, saveNow, openRemote, saveState, openProjModal, relinkFiles, refreshRelink, db: DB, saveToWorkDir, pickWorkDir, get workDir() { return workDir; }, tab: setTab, get toolTab() { return toolTab; }, get autoPrev() { return autoPrev; } };
 
   /* ---------- 시작 ---------- */
   resize();

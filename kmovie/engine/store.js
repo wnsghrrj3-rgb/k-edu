@@ -152,6 +152,14 @@
     a.download = (rec.name || '케이무비 작업').replace(/[\\/:*?"<>|]+/g, '_') + FILE_EXT;
     document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800);
   }
+  /* 작업 폴더(File System Access API)에 <이름>.kmv 로 쓰기 — 편집 상태만이라 작다(영상 바이트 0). 돌려주는 값 { name, bytes } */
+  async function writeToDir(dir, rec) {
+    const text = fileText(rec), name = (rec.name || '케이무비 작업').replace(/[\\/:*?"<>|]+/g, '_') + FILE_EXT;
+    const fh = await dir.getFileHandle(name, { create: true });
+    const w = await fh.createWritable(); await w.write(text); await w.close();
+    return { name, bytes: new Blob([text]).size };
+  }
+  function fileBytes(rec) { return new Blob([fileText(rec)]).size; }
   function parse(text) {
     const j = JSON.parse(text);
     if (!j || j.app !== 'kmovie' || !j.doc || !Array.isArray(j.doc.V)) throw new Error('케이무비 작업 파일이 아니에요');
@@ -162,7 +170,7 @@
 
   g.KMV_STORE = {
     FILE_EXT, init: db => { DB = db; }, uuid, summary,
-    local, cloud, list, get, make, save, remove, rename, download, parse, fromFile, iso,
+    local, cloud, list, get, make, save, remove, rename, download, writeToDir, fileBytes, parse, fromFile, iso,
     _reset: () => { dbc = null; sessionP = null; sessionNow = null; authHooked = false; },
   };
 })(typeof window !== 'undefined' ? window : globalThis);

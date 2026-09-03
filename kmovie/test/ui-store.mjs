@@ -146,6 +146,31 @@ const s9 = await page.evaluate(async () => ({ name: KMV_UI.proj.name, S: KMV_PRO
 ok(s9.name === '이전 작업' && s9.S[0] === '옛날 작업' && s9.music === 1, '옛 단일 저장 → 「이전 작업」 레코드로 이관');
 ok(!s9.legacy, '이관 뒤 옛 자리는 비움');
 
+/* ---------- 8. 작업 폴더 — 「저장」 때마다 <이름>.kmv 를 폴더에(가짜 File System Access), 크기 작음 ---------- */
+const W = await page.evaluate(async () => {
+  window.__dirFiles = {}; const mk = name => ({ name, kind: 'directory', queryPermission: async () => 'granted', requestPermission: async () => 'granted',
+    getFileHandle: async (fn) => ({ createWritable: async () => { let buf = ''; return { write: async t => { buf += t; }, close: async () => { window.__dirFiles[fn] = buf; } }; } }) });
+  window.showDirectoryPicker = async () => mk('내 작업');
+  KMV_UI.proj.name = '금성초 소개'; await KMV_STORE.rename(KMV_UI.proj.id, '금성초 소개');
+  const before = Object.keys(window.__dirFiles).length;
+  document.getElementById('btnNew').click(); await new Promise(r => setTimeout(r, 300));
+  const noteBefore = document.getElementById('workDirNote').textContent;
+  await KMV_UI.saveToWorkDir({ pick: true });
+  const files1 = Object.keys(window.__dirFiles);
+  const j = JSON.parse(window.__dirFiles['금성초 소개.kmv'] || '{}');
+  KMV_PROJECT.addS({ text: '폴더 저장 뒤', at: 5, dur: 30, style: 'gold' });
+  await KMV_UI.saveNow();
+  const j2 = JSON.parse(window.__dirFiles['금성초 소개.kmv'] || '{}');
+  const bytes = new Blob([window.__dirFiles['금성초 소개.kmv']]).size;
+  return { before, noteBefore, files1, dir: KMV_UI.workDir && KMV_UI.workDir.name, app: j.app, V: j.doc && j.doc.V.length, hasBlob: /"blob"|base64/.test(window.__dirFiles['금성초 소개.kmv']), S2: j2.doc && j2.doc.S.map(x => x.text), bytes, note: document.getElementById('workDirNote').textContent };
+});
+ok(W.before === 0 && /폴더를 고르면/.test(W.noteBefore), '모달에 작업 폴더 안내(아직 없음)');
+ok(W.files1.length === 1 && W.files1[0] === '금성초 소개.kmv' && W.dir === '내 작업' && W.app === 'kmovie' && Array.isArray(W.V === undefined ? [] : [W.V]), '「폴더에 저장」 → 폴더 고르고 <이름>.kmv 한 개');
+ok(W.S2 && W.S2.includes('폴더 저장 뒤'), '그 뒤 「저장」(Ctrl+S) 때마다 같은 파일을 덮어씀(새 자막 포함)');
+ok(!W.hasBlob && W.bytes < 200 * 1024, '작업 파일은 영상 없이 작다 (' + Math.round(W.bytes / 1024) + ' KB)');
+ok(/작업 폴더: 내 작업/.test(W.note), '안내에 폴더 이름');
+await page.evaluate(() => { document.getElementById('btnProjClose').click(); });
+
 ok(errs.length === 0, '콘솔 오류 0' + (errs.length ? ' — ' + errs.slice(0, 3).join(' | ') : ''));
 console.log(`\n${n - fail}/${n} 통과`);
 try { fs.unlinkSync(kmvPath); } catch (e) {}
