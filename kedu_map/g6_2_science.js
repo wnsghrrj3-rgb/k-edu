@@ -62,6 +62,16 @@ window.KEDU_MAP["g6_2_science"] = {
      "url": "/grade6/semester2/science/1단원_계절의변화/g6_sci_u1_l05_태양에너지양.html",
      "track": "tb",
      "ready": true
+    },
+    {
+     "key": "g6_science_u1_l06",
+     "lessonId": "g6_s2_sci_u1_l06_v1",
+     "n": "8~9",
+     "title": "계절 변화의 원인을 찾아라!",
+     "sub": null,
+     "url": "/grade6/semester2/science/1단원_계절의변화/g6_sci_u1_l06_계절변화원인.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }
