@@ -251,14 +251,14 @@ window.KEDU_MAP["g6_1_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u2_l13",
+     "lessonId": "g6_social_u2_l13_v1",
      "n": "13",
      "title": "미디어를 올바르게 이용하는 태도를 길러 볼까요 / [별별 직업] 미디어 비평가",
      "sub": "③ 민주주의와 미디어",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/social/2단원_민주주의와시민참여/g6_social_u2_l13_하나라도걸리면.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
