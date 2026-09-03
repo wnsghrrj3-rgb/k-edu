@@ -195,6 +195,48 @@ BEGIN
 END $fn$;
 GRANT EXECUTE ON FUNCTION close_school_task(uuid) TO authenticated;
 
+-- ── 내 학교 보기·고치기 ─────────────────────────────────────
+-- ⚠️ 왜 여기 있나: 할 일판이 통째로 school_id 에 걸려 있는데, **교사가 자기 학교를 고칠 자리가
+--    없었다.** 가입 화면에서 목록에 없어 이름만 적은 사람은 school_request 로만 남고 school_id 는
+--    NULL 이라 할 일판이 영영 안 보인다. 지금까지는 준호가 /admin 에서 한 명씩 지정해야 했다 —
+--    연수 모드로 승인 병목을 없앤 것과 **같은 병목이 학교 지정에서 재발**한다.
+--    그래서 본인이 직접 고르게 한다.
+-- ⚠️ 권한 아님 — school_id 는 등급·승인과 무관한 소속 표시다(#23 보호 트리거가 지키는
+--    approval·is_admin·user_id 는 건드리지 않는다). 승인 대기 교사도 고를 수 있다(가입 직후 자리).
+CREATE OR REPLACE FUNCTION my_school()
+RETURNS TABLE (school_id text, school_name text, office_short text, district text, school_request text)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $fn$
+  SELECT t.school_id, COALESCE(s.name,''), COALESCE(o.short,''), COALESCE(s.district,''), COALESCE(t.school_request,'')
+    FROM teachers t
+    LEFT JOIN schools s ON s.id = t.school_id
+    LEFT JOIN edu_offices o ON o.code = s.office_code
+   WHERE t.user_id = auth.uid()
+   LIMIT 1
+$fn$;
+GRANT EXECUTE ON FUNCTION my_school() TO authenticated;
+
+CREATE OR REPLACE FUNCTION set_my_school(p_school_id text)
+RETURNS text LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $fn$
+DECLARE v_tid uuid; v_label text;
+BEGIN
+  v_tid := cw_my_teacher_id();
+  IF v_tid IS NULL THEN
+    RAISE EXCEPTION 'teacher required' USING ERRCODE = 'insufficient_privilege';
+  END IF;
+  SELECT s.name || ' (' || o.short || ' ' || s.district || ')'
+    INTO v_label
+    FROM schools s JOIN edu_offices o ON o.code = s.office_code
+   WHERE s.id = p_school_id AND s.is_active;
+  IF v_label IS NULL THEN
+    RAISE EXCEPTION 'no such school' USING ERRCODE = 'invalid_parameter_value';
+  END IF;
+  -- ★ 자기 행만. 학교 지정과 함께 school_request(직접 적은 글자)는 지운다.
+  UPDATE teachers SET school_id = p_school_id, school = v_label, school_request = NULL
+   WHERE id = v_tid;
+  RETURN v_label;
+END $fn$;
+GRANT EXECUTE ON FUNCTION set_my_school(text) TO authenticated;
+
 -- ---------------------------------------------------------------
 -- 검산
 --   SELECT count(*) FROM school_tasks;                                     → 0 (첫 실행)
@@ -202,7 +244,7 @@ GRANT EXECUTE ON FUNCTION close_school_task(uuid) TO authenticated;
 --   SELECT count(*) FROM pg_policies WHERE tablename='school_task_reads';  → 1
 --   SELECT proname FROM pg_proc WHERE proname IN
 --     ('kedu_my_school_id','list_school_tasks','add_school_task',
---      'mark_school_task','close_school_task');                            → 5행
+--      'mark_school_task','close_school_task','my_school','set_my_school'); → 7행
 --   SELECT * FROM list_school_tasks();                                     → 0 rows (할 일 없음)
 --   -- 준호 계정으로: SELECT kedu_my_school_id();                          → 금성초 학교ID (NULL 이면 학교 지정 먼저)
 -- ---------------------------------------------------------------

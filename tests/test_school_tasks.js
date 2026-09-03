@@ -91,6 +91,17 @@ ok(/kedu_is_admin\(\) OR \(school_id = v_sid AND created_by = v_tid\)/.test(clos
   .forEach(k => ok(sql.includes('GRANT EXECUTE ON FUNCTION ' + k), 'GRANT 누락: ' + k));
 ok(!/TO anon/.test(sql), '★ anon 에게는 아무것도 열지 않는다(학교 내부 정보)');
 
+/* ── 내 학교 보기·고치기 (연수 병목 차단) ── */
+[ 'FUNCTION my_school()', 'FUNCTION set_my_school(' ].forEach(k => ok(sql.includes(k), 'SQL 누락: ' + k));
+const setFn = (sql.split('FUNCTION set_my_school(')[1] || '').split('GRANT EXECUTE ON FUNCTION set_my_school')[0];
+ok(/WHERE id = v_tid/.test(setFn), '★ 학교 지정은 자기 행만 고친다');
+ok(/no such school/.test(setFn) && /s\.is_active/.test(setFn), '★ 없는 학교·닫힌 학교는 지정 못 한다');
+ok(/school_request = NULL/.test(setFn), '학교를 고르면 직접 적은 이름은 지운다');
+ok(!/approval|is_admin|user_id/.test(setFn), '★★ 학교 지정이 승인·관리자 열을 건드리지 않는다(#23 보호 규칙)');
+ok(!/kedu_teacher_approved\(\)/.test(setFn), '승인 대기 교사도 학교를 고를 수 있다(가입 직후 자리)');
+ok(sql.includes('GRANT EXECUTE ON FUNCTION my_school() TO authenticated;')
+   && sql.includes('GRANT EXECUTE ON FUNCTION set_my_school(text) TO authenticated;'), '내 학교 RPC GRANT');
+
 // ── ② 교사 화면 ─────────────────────────────────────────────
 const html = rd('teacher/index.html');
 [ 'id="schooltask-wrap"', 'id="schooltask-list"', 'id="schooltask-past-wrap"', 'id="schooltask-done-wrap"',
@@ -115,6 +126,14 @@ ok(/data-urgency="\$\{t\.urgency\}"/.test(rowFn) && /data-bucket="\$\{t\.bucket\
 ok(/t\.mine/.test(rowFn) && /closeSchoolTask/.test(rowFn), '내리기는 올린 사람에게만 보인다');
 ok(/escHtml\(t\.title\)/.test(rowFn) && /escHtml\(t\.detail\)/.test(rowFn), '★ 제목·내용 이스케이프');
 ok(!/댓글|파일 첨부|채팅/.test(html.split('§J-10')[1] || ''), '★ 댓글·파일·채팅 없음(설계 결정)');
+[ 'id="schooltask-school"', 'id="schooltask-school-pick"', 'id="schooltask-school-q"',
+  'function loadMySchool()', 'function searchMySchool()', 'function setMySchool(',
+  'onclick="toggleSchoolPick()"' ].forEach(k => ok(html.includes(k), '학교 지정 UI 누락: ' + k));
+const msFn = (html.split('async function loadMySchool()')[1] || '').split('function toggleSchoolPick()')[0];
+ok(/if\(error\)\{ box\.textContent = ''; return; \}/.test(msFn), '폴백 — my_school RPC 없으면 조용히 지나간다');
+ok(/addBtn\.hidden = true/.test(msFn), '★ 학교가 없으면 올리기 단추를 감춘다(서버도 막지만 화면에서 먼저)');
+ok(/pick\.hidden = false/.test(msFn), '★ 학교가 없으면 고르기 칸이 저절로 열린다');
+ok(/escHtml\(mySchoolRow\.school_request\)/.test(msFn), '직접 적은 이름도 이스케이프');
 /* ★ 결정 ② — 아침 메일 v1 에는 싣지 않는다. 메일 쪽 어디에도 배선 0 */
 const mailFiles = ['morning/index.html', 'morning/teacher.html', 'sql/setup_morning.sql', 'sql/setup_morning_review.sql'];
 ok(mailFiles.every(f => { try { return !/school_task/.test(rd(f)); } catch (e) { return true; } }),
@@ -144,7 +163,10 @@ ok(mailFiles.every(f => { try { return !/school_task/.test(rd(f)); } catch (e) {
   if (REV) code = code.replace("bucket === 'past'", "bucket === '__none__'");   // 역검증: 지난 일 칸 해체
   w.eval('function escHtml(v){return String(v==null?"":v).replace(/[&<>"\']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\\"":"&quot;","\'":"&#39;"}[c]));}');
   w.eval('function showToast(){}');
-  w.db = { rpc: async () => ({ data: rows, error: null }) };
+  const school = { school_id: 'B000012345', school_name: '금성초등학교', office_short: '서울', district: '중랑구', school_request: '' };
+  w.db = { rpc: async (fn) => fn === 'my_school'
+    ? ({ data: [school], error: null })
+    : ({ data: rows, error: null }) };
   w.eval(code);
   await w.loadSchoolTasks();
 
@@ -169,6 +191,19 @@ ok(mailFiles.every(f => { try { return !/school_task/.test(rd(f)); } catch (e) {
   w.toggleSchoolTaskFold('past');
   ok(d.getElementById('schooltask-past').hidden === false && d.getElementById('schooltask-past-caret').textContent === '▾',
      'jsdom — 지난 일 접기 토글');
+  ok(d.getElementById('schooltask-school').innerHTML.indexOf('금성초등학교') >= 0, 'jsdom — 우리 학교 이름 표시');
+  ok(d.getElementById('schooltask-school-pick').hidden === true, 'jsdom — 학교가 있으면 고르기 칸은 닫힘');
+  ok(d.getElementById('schooltask-add-btn').hidden === false, 'jsdom — 학교가 있으면 올리기 단추가 보인다');
+  // ★ 학교 미지정 교사 — 연수 때 준호가 한 명씩 지정하지 않아도 되는 자리
+  w.db.rpc = async (fn) => fn === 'my_school'
+    ? ({ data: [{ school_id: null, school_name: '', office_short: '', district: '', school_request: '금성초' }], error: null })
+    : ({ data: [], error: null });
+  await w.loadSchoolTasks();
+  ok(d.getElementById('schooltask-school-pick').hidden === false, '★★ jsdom — 학교 미지정이면 고르기 칸이 저절로 열린다');
+  ok(d.getElementById('schooltask-school').innerHTML.indexOf('아직 지정되지 않았어요') >= 0, 'jsdom — 미지정 안내');
+  ok(d.getElementById('schooltask-school').innerHTML.indexOf('금성초') >= 0, 'jsdom — 직접 적었던 이름을 되보여 준다');
+  ok(d.getElementById('schooltask-add-btn').hidden === true, '★ jsdom — 학교가 없으면 올리기 단추가 감춰진다');
+
   // 빈 목록 폴백
   w.db.rpc = async () => ({ data: [], error: null });
   await w.loadSchoolTasks();

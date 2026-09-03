@@ -561,6 +561,15 @@ tr:hover td{background:#FAFBFC}
       <span class="table-count" id="schooltask-count">0개</span>
       <button class="code-btn outline" id="schooltask-add-btn" style="margin:0 0 0 auto;padding:6px 14px;font-size:12.5px" onclick="toggleSchoolTaskForm()">＋ 올리기</button>
     </div>
+    <!-- 우리 학교 — 지정 안 됐으면 여기서 바로 고른다(연수 때 준호가 한 명씩 지정하지 않게) -->
+    <div id="schooltask-school" style="padding:10px 20px;border-top:1px solid var(--border);font-size:12.5px;color:var(--sub)"></div>
+    <div id="schooltask-school-pick" hidden style="padding:0 20px 12px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <input type="text" id="schooltask-school-q" maxlength="40" placeholder="학교 이름 (예: 금성초)" style="flex:1;min-width:200px;padding:9px 12px;border:1px solid #d5dbe3;border-radius:8px;font-size:13.5px">
+        <button class="code-btn" style="margin:0;padding:8px 16px;font-size:13px" onclick="searchMySchool()">찾기</button>
+      </div>
+      <div id="schooltask-school-results" style="margin-top:8px"></div>
+    </div>
     <div id="schooltask-form" hidden style="padding:12px 20px;border-top:1px solid var(--border);background:#FAFBFD">
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <input type="text" id="schooltask-title" maxlength="120" placeholder="할 일 (예: 방과후 수요조사 제출)" style="flex:1;min-width:220px;padding:9px 12px;border:1px solid #d5dbe3;border-radius:8px;font-size:13.5px">
@@ -1558,6 +1567,60 @@ function toggleSchoolTaskForm(){
   f.hidden = !f.hidden;
   if(!f.hidden){ const t = document.getElementById('schooltask-title'); t && t.focus(); }
 }
+// 우리 학교 지정 — ★ 가입 때 목록에서 못 고른 교사(school_request 만 있는 사람)는 할 일판이
+// 통째로 안 보인다. 종전엔 준호가 /admin 에서 한 명씩 지정해야 했다 — 본인이 고르게 한다.
+let mySchoolRow = null;
+async function loadMySchool(){
+  const box = document.getElementById('schooltask-school');
+  const pick = document.getElementById('schooltask-school-pick');
+  if(!box) return;
+  const { data, error } = await db.rpc('my_school');
+  if(error){ box.textContent = ''; return; }        // 폴백 — SQL 미적용
+  mySchoolRow = (data && data[0]) || null;
+  const addBtn = document.getElementById('schooltask-add-btn');
+  if(mySchoolRow && mySchoolRow.school_id){
+    const where = [mySchoolRow.office_short, mySchoolRow.district].filter(Boolean).join(' ');
+    box.innerHTML = `🏫 우리 학교 — <b style="color:var(--text)">${escHtml(mySchoolRow.school_name)}</b>`
+      + (where ? ` <span style="font-size:11.5px">${escHtml(where)}</span>` : '')
+      + ` <button class="code-btn outline" style="margin-left:8px;padding:3px 10px;font-size:11.5px" onclick="toggleSchoolPick()">바꾸기</button>`;
+    pick.hidden = true;
+    if(addBtn) addBtn.hidden = false;
+  } else {
+    const asked = mySchoolRow && mySchoolRow.school_request;
+    box.innerHTML = `🏫 <b style="color:var(--orange)">학교가 아직 지정되지 않았어요.</b> 학교를 고르면 우리 학교 할 일판이 보여요.`
+      + (asked ? ` <span style="font-size:11.5px">(적어 주신 이름: ${escHtml(mySchoolRow.school_request)})</span>` : '');
+    pick.hidden = false;
+    if(addBtn) addBtn.hidden = true;                 // 학교가 없으면 올리기도 막는다(서버도 막지만 화면에서 먼저)
+  }
+}
+function toggleSchoolPick(){
+  const pick = document.getElementById('schooltask-school-pick');
+  if(!pick) return;
+  pick.hidden = !pick.hidden;
+  if(!pick.hidden){ const q = document.getElementById('schooltask-school-q'); q && q.focus(); }
+}
+async function searchMySchool(){
+  const q = (document.getElementById('schooltask-school-q').value || '').trim();
+  const box = document.getElementById('schooltask-school-results');
+  if(q.length < 1){ box.innerHTML = ''; return; }
+  const { data, error } = await db.rpc('search_schools', { p_q: q, p_office: null });
+  if(error){ box.innerHTML = '<span style="font-size:12.5px;color:var(--sub)">학교 목록을 불러올 수 없어요.</span>'; return; }
+  const rows = data || [];
+  box.innerHTML = rows.length ? rows.map(r =>
+    `<div style="display:flex;gap:10px;align-items:center;padding:7px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:5px;font-size:13px">
+      <span style="flex:1;min-width:0">${escHtml(r.name)} <span style="color:var(--sub);font-size:11.5px">${escHtml((r.office_short||'') + ' ' + (r.district||''))}</span></span>
+      <button class="code-btn primary" style="margin:0;padding:4px 12px;font-size:11.5px" onclick="setMySchool('${escHtml(r.id)}')">고르기</button>
+    </div>`).join('') : '<span style="font-size:12.5px;color:var(--sub)">찾는 학교가 없으면 관리자에게 알려 주세요.</span>';
+}
+async function setMySchool(id){
+  const { data, error } = await db.rpc('set_my_school', { p_school_id: id });
+  if(error){ showToast('⚠️ 학교 지정 실패: ' + (error.message || '')); return; }
+  showToast('🏫 ' + (data || '학교를 지정했어요.'));
+  document.getElementById('schooltask-school-results').innerHTML = '';
+  document.getElementById('schooltask-school-q').value = '';
+  await loadMySchool();
+  await loadSchoolTasks();
+}
 async function loadSchoolTasks(){
   const wrap = document.getElementById('schooltask-wrap');
   if(!wrap) return;
@@ -1565,6 +1628,7 @@ async function loadSchoolTasks(){
   if(error){ wrap.hidden = true; return; }          // 폴백 — SQL 미적용이면 카드 자체를 숨긴다
   const rows = data || [];
   wrap.hidden = false;
+  await loadMySchool();
   const todo = rows.filter(t => t.bucket === 'todo');
   const past = rows.filter(t => t.bucket === 'past');
   const done = rows.filter(t => t.bucket === 'done');
