@@ -133,6 +133,12 @@ window.KEDU_MAP_INDEX = [
   "ready": 21
  },
  {
+  "key": "g6_2_math",
+  "units": 6,
+  "lessons": 58,
+  "ready": 0
+ },
+ {
   "key": "g6_2_science",
   "units": 1,
   "lessons": 4,
