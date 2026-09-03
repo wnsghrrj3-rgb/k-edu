@@ -275,7 +275,7 @@ window.KEDU_MAP["g6_1_social"] = {
      "lessonId": "g6_social_u2_l15_v1",
      "n": "15",
      "title": "2단원 마무리 — 생각 그물·교실 놀이",
-     "sub": "단원 마무리",
+     "sub": "③ 민주주의와 미디어",
      "url": "/grade6/semester1/social/2단원_민주주의와시민참여/g6_social_u2_l15_번갈아요.html",
      "track": "tb",
      "ready": true

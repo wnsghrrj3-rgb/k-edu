@@ -1186,50 +1186,48 @@ function dotMove(a, b, o){
   const bad = (o.only === 'b');
   const shownA = bad ? a : A;
   const CW = 30, Y = 92, YT = 46;
+  // 🔴 자연수는 소수점이 안 보인다 — 8 은 8.0 과 같다(교과서 66).
+  //    옮길 칸이 모자라면 그 자리에 0 을 **연하게 채워 그린다**. 안 그리면
+  //    (자연수)÷(소수) 자리에서 ∨→∧ 장면이 통째로 사라진다.
+  const padOf = function(s, kk){ const d = _decs(s); return Math.max(0, kk - d); };
   // 갈고리 : 왼쪽에 나누는 수, 오른쪽에 나누어지는 수
-  function put(s, x0, col){
-    let g = '', x = x0;
+  function put(s, x0, col, pad){
+    let g = '', x = x0, dotX = -1;
     for (let i = 0; i < s.length; i++){
       const w = s[i] === '.' ? 15 : CW;
+      if (s[i] === '.') dotX = x + w / 2;
       g += '<text x="' + (x + w / 2) + '" y="' + Y + '" font-size="33" fill="' + col + '" text-anchor="middle">' + s[i] + '</text>';
       x += w;
     }
-    return { g: g, end: x };
+    const hadDot = dotX >= 0;
+    if (!hadDot) dotX = x;                       // 자연수 — 소수점은 끝자리 바로 뒤
+    for (let i = 0; i < (pad || 0); i++){
+      g += '<text x="' + (x + CW / 2) + '" y="' + Y + '" font-size="33" fill="var(--coral-deep)" opacity="0.42" text-anchor="middle">0</text>';
+      x += CW;
+    }
+    // 옮긴 자리 = 소수점에서 오른쪽으로 숫자 k칸
+    const newX = dotX + (hadDot ? 7.5 : 0) + k * CW;
+    return { g: g, end: x, dotX: dotX, newX: newX };
   }
   const L0 = 46;
-  const pb = put(b, L0, 'var(--ink-soft)');
+  const pb = put(b, L0, 'var(--ink-soft)', padOf(b, k));
   const hookX = pb.end + 14;
-  const pa = put(a, hookX + 10, 'var(--ink-soft)');
+  const pa = put(a, hookX + 10, 'var(--ink-soft)', bad ? 0 : padOf(a, k));
   let g = pb.g + pa.g;
   g += '<path d="M ' + hookX + ' ' + (Y + 12) + ' Q ' + (hookX + 9) + ' ' + (Y - 2) + ' ' + (hookX + 11) + ' ' + (Y - 26)
      + ' L ' + (pa.end + 6) + ' ' + (Y - 26) + '" fill="none" stroke="var(--ink)" stroke-width="3.5" stroke-linecap="round"/>';
   // 소수점 자리 → 새 자리 화살표
-  function mark(s, x0, moveIt){
-    let g2 = '', x = x0, dotX = -1, endX = -1, idx = 0;
-    for (let i = 0; i < s.length; i++){
-      const w = s[i] === '.' ? 15 : CW;
-      if (s[i] === '.') dotX = x + w / 2;
-      x += w;
-    }
-    // 옮긴 자리 = 소수점에서 오른쪽으로 숫자 k칸
-    if (dotX < 0) return g2;
-    let cx = dotX, cnt = 0, xx = x0;
-    for (let i = 0; i < s.length; i++){
-      const w = s[i] === '.' ? 15 : CW;
-      if (s[i] !== '.' && xx > dotX){ cnt++; if (cnt === k){ endX = xx + w; break; } }
-      xx += w;
-    }
-    if (endX < 0) endX = xx;
-    g2 += '<text x="' + dotX + '" y="' + (Y + 26) + '" font-size="20" fill="var(--ink-soft)" text-anchor="middle">∨</text>';
+  function mark(m, moveIt){
+    let g2 = '<text x="' + m.dotX + '" y="' + (Y + 26) + '" font-size="20" fill="var(--ink-soft)" text-anchor="middle">∨</text>';
     if (moveIt){
-      g2 += '<path d="M ' + dotX + ' ' + (Y + 34) + ' Q ' + ((dotX + endX) / 2) + ' ' + (Y + 58) + ' ' + endX + ' ' + (Y + 36)
+      g2 += '<path d="M ' + m.dotX + ' ' + (Y + 34) + ' Q ' + ((m.dotX + m.newX) / 2) + ' ' + (Y + 58) + ' ' + m.newX + ' ' + (Y + 36)
           + '" fill="none" stroke="var(--coral)" stroke-width="3" marker-end="url(#dmArrow)"/>';
-      g2 += '<text x="' + endX + '" y="' + (Y + 26) + '" font-size="22" fill="var(--coral-deep)" text-anchor="middle">∧</text>';
+      g2 += '<text x="' + m.newX + '" y="' + (Y + 26) + '" font-size="22" fill="var(--coral-deep)" text-anchor="middle">∧</text>';
     }
     return g2;
   }
-  g += mark(b, L0, true);
-  g += mark(a, hookX + 10, !bad);
+  g += mark(pb, true);
+  g += mark(pa, !bad);
   // 옮긴 뒤의 식
   const line = o.ask ? '?' : (shownA + ' ÷ ' + B);
   const col = bad ? 'var(--emph)' : 'var(--teal-deep)';
