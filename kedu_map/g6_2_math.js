@@ -335,94 +335,94 @@ window.KEDU_MAP["g6_2_math"] = {
    "kind": "unit",
    "lessons": [
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u4_l01",
+     "lessonId": "g6_2_math_u4_l01_v1",
      "n": "1",
      "title": "비례식과 비례배분을 만나 보자",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/4단원_비례식과비례배분/g6_math_u4_l01_비례식과비례배분을만나보자.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u4_l02",
+     "lessonId": "g6_2_math_u4_l02_v1",
      "n": "2",
      "title": "비의 성질을 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/4단원_비례식과비례배분/g6_math_u4_l02_비의성질을알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u4_l03",
+     "lessonId": "g6_2_math_u4_l03_v1",
      "n": "3",
      "title": "비의 성질을 이용해요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/4단원_비례식과비례배분/g6_math_u4_l03_비의성질을이용해요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u4_l04",
+     "lessonId": "g6_2_math_u4_l04_v1",
      "n": "4",
      "title": "비례식을 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/4단원_비례식과비례배분/g6_math_u4_l04_비례식을알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u4_l05",
+     "lessonId": "g6_2_math_u4_l05_v1",
      "n": "5",
      "title": "비례식의 성질을 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/4단원_비례식과비례배분/g6_math_u4_l05_비례식의성질을알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u4_l06",
+     "lessonId": "g6_2_math_u4_l06_v1",
      "n": "6",
      "title": "비례식을 활용해요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/4단원_비례식과비례배분/g6_math_u4_l06_비례식을활용해요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u4_l07",
+     "lessonId": "g6_2_math_u4_l07_v1",
      "n": "7",
      "title": "비례배분을 해요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/4단원_비례식과비례배분/g6_math_u4_l07_비례배분을해요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u4_l08",
+     "lessonId": "g6_2_math_u4_l08_v1",
      "n": "8",
      "title": "알쏭달쏭 수익 나누기",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/4단원_비례식과비례배분/g6_math_u4_l08_알쏭달쏭수익나누기.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u4_l09",
+     "lessonId": "g6_2_math_u4_l09_v1",
      "n": "9",
      "title": "스스로 마무리해요 (단원 평가)",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/4단원_비례식과비례배분/g6_math_u4_l09_스스로마무리해요.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   },
