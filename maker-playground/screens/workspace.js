@@ -514,14 +514,16 @@
             return `<label class="cx-prow"><span>${d.label}</span><input type="range" min="${d.min}" max="${d.max}" step="${d.step}" value="${v}" data-ws-padj="${k}" data-stop><b data-ws-pval="${k}">${d.def === 1 ? Math.round(v * 100) + '%' : v + d.unit}</b></label>`;
           }).join('');
           photoCtl =
-            (el.src ? `<button class="cx-scenebtn primary" data-ws-preplace>🖼 사진 바꾸기</button>` : '') +
+            `<button class="cx-scenebtn primary" data-ws-preplace>🖼 ${el.src ? '사진 바꾸기' : '사진 올리기'}</button>` +
+            (el.src ? '' : `<div class="cx-hint">사진을 올리면 필터·보정·자르기가 열려요</div>`) +
+            (!el.src ? '' :
             `<label class="cx-field"><span>필터</span></label><div class="cx-fchips">${chips}</div>` +
             `<label class="cx-field"><span>사진 보정</span></label><div class="cx-padj">${sliders}</div>` +
             `<label class="cx-field"><span>모양 · 뒤집기</span></label><div class="cx-shrow">${PH.SHAPES.map((s2) =>
               `<button class="cx-shb${PH.shapeOf(el) === s2.id ? ' on' : ''}" data-ws-pshape="${s2.id}" title="${s2.name}">${s2.icon}</button>`).join('')}<i></i>` +
               `<button class="cx-shb${el.flipH ? ' on' : ''}" data-ws-pflip="h" title="좌우 뒤집기">⇋</button>` +
               `<button class="cx-shb${el.flipV ? ' on' : ''}" data-ws-pflip="v" title="상하 뒤집기">⥮</button>` +
-              (el.src ? `<button class="cx-shb${PH.cropOf(el) ? ' on' : ''}" data-ws-pcrop title="자르기">✂</button>` : '') + `</div>` +
+              `<button class="cx-shb${PH.cropOf(el) ? ' on' : ''}" data-ws-pcrop title="자르기">✂</button></div>`) +
             (el.src && PH.cropOf(el) ? `<button class="cx-scenebtn" data-ws-pcrop0>✂ 자르기 해제</button>` : '') + /* R105 */
             (PH.isEdited(el) ? `<button class="cx-scenebtn" data-ws-preset0>↩ 원래대로</button>` : '');
         }
