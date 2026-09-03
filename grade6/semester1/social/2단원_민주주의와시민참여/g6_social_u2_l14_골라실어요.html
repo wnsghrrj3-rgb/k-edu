@@ -1,0 +1,1026 @@
+<!--
+K-edu 사회 6-1 · 2단원 민주주의와 시민 참여 · [생각을 펼쳐요] · 14차시(l14)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [6사08-01]+[6사08-02]+[6사08-03] 통합 적용 · 교과서 p.110~111 · 지도서(대단원2 **19차시**
+  「생각을 펼쳐요 — 주제를 선택하여 뉴스 기사를 작성해 봅시다」, 지도서 p.254~255) 근거.
+학습 목표: 단원에서 공부한 내용을 바탕으로 창의·융합 활동을 할 수 있다.
+융합 교과: 사회, 국어 · 핵심 역량: 창의적 사고력 · 비판적 사고력
+수업 기법 및 전략: 다양한 방법(설문지, 인터넷 검색, 면담 등)으로 자료 조사하기 · 협력적 글쓰기
+META = "2단원 민주주의와 시민 참여 · [생각을 펼쳐요]"(단원 수준 창의·융합 활동이라 주제 표기 대신
+  단원 활동으로 — 5-1 u3 l10 · 6-1 u1 l10 선례 승계).
+⚠️ 엔진은 대단원1 l01~l11 · 대단원2 l01~l13에서 100% 승계. 2단원 색 #C2410C 유지 · CSS 변수명 무수정.
+
+⚠️ 파일명을 `골라실어요`로 지었다(배선 예외 대신). l13이 「뉴스 기사」·「생각 그물」·「물레방아」·
+   「기사문」을 개수 0으로, 「생각을 펼쳐요」를 차시 예고 두 자리(≤2)로 재고 있어서 파일명에 그
+   낱말이 들어가면 재배선이 곧바로 그 가드를 깨뜨린다. 겹치지 않는 이름을 골라 예외를 만들지
+   않았다(l05 `나랏일` · l06 `법이되기까지` · l07 `나라살림` · l08 `세번까지` · l09 `나눠맡아요` ·
+   l10 `주고받아요` · l11 `모아요` · l12 `따져봐요` · l13 `하나라도걸리면` 선례 승계).
+
+직접조작: 검토표의 답이 판이 아니라 내가 담은 것에서 나오는 판 · 정답 상수가 코드에 없는 형
+  (60번째 신규 패턴)
+  ⭐ 앞의 쉰아홉 종에서 **정답은 언제나 판 안에 리터럴로 있었다** — `MD_ANS`·`CK_ANS`·`PW_OWNER`·
+     `AG_OWNER`·`EP_MAKE`처럼 판이 무엇을 정답으로 삼는지는 **학생이 무엇을 하든 달라지지 않는
+     상수**였다. 37번째(접어 두는 형)조차 판정을 **미뤘을 뿐** 답은 처음부터 정해져 있었고,
+     54번째(판정이 최종이 아닌 판)에서 판정이 바뀔 때도 그 값은 `JD_RULING` 리터럴이었다.
+     이번만 **검토표의 답을 정해 두는 상수가 코드에 아예 없다**(`NW_OK` 부재 — 구조로 대조).
+     세 기준의 답은 `nwAnswer(m)` **한 줄**이 **학생이 기사에 담은 조각에서 그때그때 계산**한다.
+  ⭐ 근거는 이 차시가 **내가 쓴 기사를 기준에 따라 검토하는** 활동이라는 것이다(교과서 111쪽 4).
+     검토표의 답은 기사의 좋고 나쁨이 아니라 **그 기사에 그런 것이 있는지 없는지**이므로,
+     기사가 달라지면 답도 달라진다. 판이 미리 답을 쥐고 있을 수가 없다.
+  ⭐ **그래서 같은 물음이 두 번 서로 다른 답을 받는다** — 조각을 바꿔 다시 쓰면 검토표의 답이
+     실제로 뒤집힌다. ⚠️ **54번째와의 대비** — 거기서 달라지는 판정은 **판이 심급마다 정해 둔
+     것**이었고 학생이 한 일은 「다시 묻기」뿐이었다. 여기서는 **달라지게 만드는 것이 학생이고,
+     달라지는 값은 어디에도 적혀 있지 않다.**
+  ⭐ **핵심 가드 — 판이 「조각이 다른가」가 아니라 「답이 달라질 길이 남아 있는가」로 막는다.**
+     두 번째 기사에 조각을 실을 때, 그 조각을 실으면 넷을 채우는 **어느 길로 가도** 세 답이 첫
+     기사와 같아질 수밖에 없으면 판이 받지 않는다(`nwCanDiffer` 한 줄 · 판 불변). 조각이 달라도
+     답이 같으면 막고, 조각이 겹쳐도 답이 달라질 길이 있으면 받는다.
+     ⭐ **판이 지금 걸음만 보지 않고 남은 길까지 내다본다** — 그래서 두 번째 기사에는 **막다른 길이
+     생기지 않는다**(도달 가능한 모든 자리에서 받아 주는 조각이 하나라도 있음을 전수로 대조).
+  ⭐ **판이 검토표의 답을 미리 알려 주지 않는다** — 답하지 않은 줄의 칸은 비어 있고, 두 기사의
+     답이 몇 줄 달라졌는지도 **두 번째 검토를 마친 뒤에만** 그린다(미리 노출 0을 시점 전수로 대조).
+  ① **조각 담기**(조사한 내용 여섯 중 넷 · 순서 자유 · **무판정** — 무엇을 담아도 받는다)
+  ② **검토표 세 줄에 답하기**(넷을 다 담아야 열린다 · 판정 있음 · ★ 답은 내 기사에서 계산된다)
+  ③ **조각을 바꿔 다시 써 보기**(세 줄을 다 답해야 열린다 · ★ 핵심 가드 · 다시 검토표 세 줄)
+  ④ 마무리 3택 = 뉴스 기사를 작성하고 검토한 후 알게 된 점(지도서 19차시 예시 답안 5 원문)
+  ⚠️ 조각·기준·안내 전량 고정 리터럴 — 난수 0.
+  ⚠️ 가드 9종: ① 마무리 확정 후 전체 잠금 / ② 무효 번호(`Number.isInteger`·범위) /
+     ③ 조각 넷을 다 담기 전 검토 무시(순서) — 판 불변 / ④ 이미 담은 조각·이미 답한 줄 재클릭
+     무시 — 판 불변 / ⑤ 넷을 담은 뒤 다섯째 조각 담기 무시 — 판 불변 /
+     ⑥ 검토를 마치기 전 「다시 써 보기」 무시(순서) — 판 불변 /
+     ⑦ **두 번째 기사의 세 답이 첫 기사와 똑같아지는 조각 무시 — 판 불변**(핵심 가드) /
+     ⑧ 두 번째 검토를 마치기 전 마무리 무시(순서) — 판 불변 · 검토를 시작한 뒤 원고 고치기 무시 /
+     ⑨ 안내 표시 중 재클릭 무시(`nwBusy`).
+     재시도 허용(감점 없음), 조작에 점수 0. 발문은 `.nw-q`로 떼어 전 단계 상시 노출. 상태 열쇠 10개.
+
+⚠️ 정직 원칙 네 곳
+  ㉠ **판에 놓인 조각 넷은 지도서 19차시 예시 답안의 기사를 옮긴 자리이지 실제로 있었던 일이
+     아니다**(캔버스 캡션). 실제 학교의 방송이 아니므로 요일 밖의 자세한 시각은 옮기지 않았다.
+  ㉡ **나머지 조각 둘은 교과서 111쪽 기준 「사실을 과장하거나 왜곡한 것이 있나요?」가 가리키는
+     자리를 판이 지어 놓은 것**이며 예시 답안 원문이 아니다(캔버스 캡션 명시).
+  ㉢ **실제 조사(설문지·인터넷 검색·면담)와 기사 쓰기는 교실 몫**이다. 화면이 다루는 자리는
+     **무엇을 싣고 무엇을 싣지 않는가**까지다(완료 카드 명시).
+  ㉣ **기준 「같은 주제로 작성된 기사의 내용에서 서로 다른 점이 있나요?」는 친구가 쓴 기사가 있어야
+     답할 수 있으므로 판에 두지 않았다.** 그 기준은 슬라이드와 문항에서만 다룬다(교실 몫 명시).
+
+⚠️ 설계 원칙
+  · **20차시(단원 마무리) 침범 0** — 생각 그물 0 · 교실 놀이 0 · 잠금 풀기 0 · 단원 평가 0.
+    「단원 마무리」는 **차시 예고 두 자리뿐**.
+  · **단원 수준 회수는 정당** — 이 차시는 단원에서 공부한 내용을 바탕으로 하는 창의·융합 활동이라
+    주제①②③을 되짚는 것이 지도서 학습 문제 자체다. 다만 **새 사실 0** — 「선거」·「국회」·
+    「행정부」·「법원」·「미디어」는 되짚기와 보기 자리까지만 쓰고 그 내용을 다시 가르치지 않는다.
+  · **l10~l13 재현 최소** — 허위 조작 정보 구별 방법 넷의 문면 0 · 이용 습관 점검표 0 ·
+    「비판적으로 분석」은 되짚기 자리까지. **「딥페이크」 개수 0 유지**(l12·l13 규약 승계).
+  · **대단원1 재현 0 · 대단원3 침범 0.**
+  · **정치적 중립** — 실제 정당·정치인 0, 실제 선거·사건·연도 0, 실제 누리집·방송사·신문사·
+    상표·기관 이름 0, **나라 이름 0**, 실제 지역 이름 0.
+  · 교사용 참고 자료 0 — 참고 도서 세 종, 미디어 리터러시, 필터 버블, 확증 편향, 알고리즘,
+    통계 사이트와 이용자 수, 게이트 키핑이라는 **학술 용어 자체**(뜻은 지도서 해설 원문대로
+    풀어 쓰되 용어는 쓰지 않는다), 교육 플랫폼 주소, 활동지 쪽수 전부 0.
+  · **파일 전체에 네 자리 연도 0 · 금액·인원·비율 수치 0 · 시각 수치 0**(CSS 밖 스코프).
+  · 정서 — 기사를 쓰는 일을 어렵거나 무서운 일로 그리지 않고 **골라서 싣는 일**로 쓴다.
+    사람이 다치는 묘사 0 · 겁주는 어휘 0 · 사람 형상 대신 칸과 말풍선으로만 그린다 ·
+    **학생 이름 0 · 실제 지역 이름 0 · 유명인 0.**
+
+⚠️ goNextLesson = 허브 복귀(l15 미양산 — 양산 시 재배선).
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g6_social_u2_l14_v1">
+<title>[생각을 펼쳐요] 주제를 선택하여 뉴스 기사를 작성해 봅시다 · 사회 6-1</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#C2410C; --green-d:#9A3412; --cyan:#EA580C;
+  --bg:#FFF7ED; --bub:#FFEDD5; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#B45309; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-shrink:0}
+.ka-lb{background:#F1F5F9;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;
+  font-weight:700;color:var(--muted);font-size:clamp(11px,1.9vw,13px);display:flex;align-items:center;gap:6px}
+.ka-lb svg{width:14px;height:14px}
+.ka-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.ka-bar>div{height:100%;background:var(--green);border-radius:99px;transition:width .35s ease;width:5%}
+.ka-pg{font-size:clamp(11px,1.9vw,13px);color:var(--muted);font-weight:700;min-width:46px;text-align:right}
+.ka-sc{display:flex;align-items:center;gap:3px;background:var(--amber-bg);border-radius:99px;padding:5px 11px}
+.ka-sc svg{width:15px;height:15px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;color:var(--amber);font-size:clamp(14px,2.4vw,17px)}
+.ka-sc-u{font-size:11px;color:var(--amber);font-weight:700}
+
+/* 메인 */
+.ka-m{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;padding:4px 2px}
+.ka-tags{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ka-bg{display:inline-flex;align-items:center;gap:5px;background:var(--bub);color:var(--green-d);
+  border-radius:99px;padding:5px 12px;font-size:clamp(11px,1.9vw,13px);font-weight:700}
+.ka-bg svg{width:13px;height:13px}
+.ka-bg.s2{background:#E0F2FE;color:#075985}
+.ka-bg.s3{background:#DCFCE7;color:#166534}
+.ka-bg.s4{background:#FEF3C7;color:#92400E}
+.ka-bg.s5{background:#F3E8FF;color:#6B21A8}
+.ka-meta{font-size:clamp(10px,1.7vw,12px);color:#94A3B8;font-weight:600}
+.ka-t{font-size:clamp(19px,3.4vw,27px);font-weight:700;line-height:1.4;margin-bottom:10px}
+.ka-bub{background:var(--bub);border-radius:14px;padding:13px 18px;font-size:clamp(14px,2.4vw,18px);
+  line-height:1.7;margin-bottom:12px}
+.ka-emph{color:var(--green-d);font-weight:700}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.scene.wide{width:clamp(240px,44vw,420px)}
+.scene.wide svg{height:clamp(120px,20vw,200px)}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(15px,2.6vw,20px);font-weight:700;line-height:1.6;margin-bottom:12px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+.opt{background:#fff;border:2px solid var(--line);border-radius:13px;padding:13px 15px;cursor:pointer;
+  font-family:inherit;font-size:clamp(13px,2.2vw,16.5px);font-weight:500;text-align:left;line-height:1.5;transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:#16A34A;background:#DCFCE7;font-weight:700}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:11px;border-radius:12px;padding:12px 16px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;animation:fadeUp .3s ease both}
+.fb.ok{background:#DCFCE7;color:#166534;font-weight:700}
+.hint{margin-top:9px;background:var(--amber-bg);border-radius:11px;padding:10px 14px;
+  font-size:clamp(12.5px,2.1vw,15px);color:var(--amber);line-height:1.55}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:9px;width:100%;max-width:660px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFC;border-radius:12px;padding:11px 15px;
+  font-size:clamp(13px,2.2vw,16.5px);line-height:1.6}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'\2713';color:#fff;font-weight:800;font-size:14px}
+
+/* 직접조작 — 자리마다 같은 답이 다른 뜻을 갖는 판 */
+.dw-wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dw-body{display:grid;grid-template-columns:1.05fr 1fr;gap:10px;align-items:start}
+.dw-canvas{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.dw-canvas svg{width:100%;height:auto;display:block}
+.dw-canvas .cvcap{padding:5px 6px;text-align:center;font-size:clamp(9.5px,1.6vw,11.5px);
+  color:var(--muted);font-weight:700;background:#F8FAFC}
+.dw-right{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dw-step{font-size:clamp(10.5px,1.75vw,13px);font-weight:800;color:var(--green)}
+.dw-msg{background:#F8FAFC;border:2px solid var(--line);border-left:4px solid var(--green);border-radius:10px;
+  padding:8px 12px;font-size:clamp(11.4px,1.93vw,13.8px);line-height:1.55;color:#334155;animation:fadeUp .3s ease both}
+.dw-msg.warn{border-left-color:var(--amber)}
+.dw-msg b{color:var(--green)}
+.dw-card{background:#fff;border:2px solid var(--amber);border-radius:12px;padding:10px 12px;
+  font-size:clamp(12px,2.05vw,14.5px);line-height:1.55;animation:pop .35s ease both}
+.dw-card .pt{font-weight:800;color:var(--amber);margin-bottom:4px;font-size:clamp(12.5px,2.15vw,15px)}
+.nw-q{font-size:clamp(11.6px,1.97vw,14px);font-weight:800;color:var(--green);
+  background:var(--bub);border-radius:9px;padding:7px 11px;line-height:1.45}
+.nw-fin{display:flex;flex-direction:column;gap:5px}
+.nw-fin button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;padding:7px 10px;
+  cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.nw-fin button:hover{background:var(--bub)}
+.nw-fin button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.nw-act{display:flex;flex-direction:column;gap:5px}
+.nw-act button{border:2px solid #CBD5E0;background:#fff;border-radius:10px;padding:8px 10px;cursor:pointer;
+  font-family:inherit;font-weight:800;color:var(--ink);font-size:clamp(10.6px,1.8vw,13px);transition:.15s;
+  line-height:1.4;text-align:left}
+.nw-act button:hover{border-color:var(--green);background:var(--bub)}
+.nw-act button.a2{border-color:var(--amber);background:#FFFBEB;color:#B45309}
+.nw-act button.a3{border-color:var(--cyan);background:#FFF7ED;color:var(--green-d)}
+.nw-act button.a4{border-style:dashed}
+.nw-list{display:flex;flex-direction:column;gap:5px;max-height:236px;overflow:auto}
+.nw-list button{border:2px solid #CBD5E0;background:#fff;border-radius:10px;padding:7px 9px;cursor:pointer;
+  font-family:inherit;font-weight:700;color:#334155;text-align:left;line-height:1.45;
+  font-size:clamp(10px,1.7vw,12px)}
+.nw-list button:hover{border-color:var(--green);background:var(--bub)}
+.nw-list button.on{border-color:var(--cyan);background:#FFF7ED;color:var(--green-d)}
+.nw-list button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.nw-act button{width:100%}
+.nw-rows{display:flex;flex-direction:column;gap:5px}
+.nw-row{border:2px solid #CBD5E0;border-radius:10px;padding:6px 8px;background:#fff}
+.nw-row.done{border-color:var(--cyan);background:#FFF7ED}
+.nw-row.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.nw-rq{font-size:clamp(10.2px,1.73vw,12.2px);font-weight:700;color:#334155;line-height:1.45;margin-bottom:4px}
+.nw-yn{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.nw-yn button{border:2px solid #CBD5E0;background:#fff;border-radius:9px;padding:5px 6px;cursor:pointer;
+  font-family:inherit;font-weight:800;color:var(--ink);font-size:clamp(10px,1.7vw,12.2px)}
+.nw-yn button:hover{border-color:var(--green);background:var(--bub)}
+.nw-done{display:flex;justify-content:space-between;gap:6px;font-size:clamp(9.8px,1.66vw,11.8px);font-weight:800}
+.nw-done .a{color:var(--green-d)}
+.nw-done .m{color:#B45309}
+.nw-done .m.safe{color:#166534}
+.nw-judge{display:flex;flex-direction:column;gap:5px}
+.nw-judge button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;padding:7px 10px;
+  cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.nw-judge button:hover{background:var(--bub)}
+.nw-judge button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.nw-note{background:#F8FAFC;border:2px dashed #CBD5E0;border-radius:10px;padding:7px 10px;
+  font-size:clamp(10.4px,1.76vw,12.4px);line-height:1.5;color:#64748B}
+.nw-keynote{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:10px;padding:8px 11px;
+  font-size:clamp(10.8px,1.83vw,13px);line-height:1.5;color:#3F3A2C}
+.nw-keynote b{color:#8A6D3B}
+.paper{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:12px;padding:12px 16px;
+  font-size:clamp(12.5px,2.1vw,15px);line-height:1.65;color:#3F3A2C;max-width:660px;
+  animation:fadeUp .4s ease both}
+.paper .ph{font-weight:800;color:#8A6D3B;margin-bottom:6px;font-size:clamp(13px,2.2vw,16px)}
+.tipbox{background:#FFEDD5;border-radius:12px;padding:11px 16px;font-size:clamp(12.5px,2.1vw,15px);
+  line-height:1.6;color:#7C2D12;max-width:660px}
+@media(max-width:620px){ .dw-body{grid-template-columns:1fr} }
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(194,65,12,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style>
+<script src="/kedu_gate.js"></script>
+</head>
+
+
+
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#B45309"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식 =====
+   ⚠️ 정직 원칙: 모든 그림은 내용을 나타낸 도식이며 실제 사진·화면 갈무리가 아니다.
+   ⚠️ 정치적 중립: 실제 방송사·신문사·누리집·기관·상표 이름 0. 사람 형상 대신 말풍선과 표찰로만 그린다. */
+const SVG = {
+  // 1 들어가기 — 일기와 뉴스(지도서 19차시 동기 유발)
+  open:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    <text x="160" y="19" font-size="11" fill="#9A3412" text-anchor="middle" font-weight="800">일기에는 무엇을 쓰나요?</text>
+    <rect x="16" y="30" width="130" height="58" rx="9" fill="#fff" stroke="#C2410C" stroke-width="1.8"/>
+    <text x="81" y="49" font-size="8" fill="#C2410C" text-anchor="middle" font-weight="800">일기</text>
+    <text x="81" y="63" font-size="7" fill="#64748B" text-anchor="middle" font-weight="700">기억에 남는 일을 써요</text>
+    <text x="81" y="77" font-size="7" fill="#64748B" text-anchor="middle" font-weight="700">하루를 그대로 쓰지 않아요</text>
+    <path d="M 152 59 L 172 59" stroke="#EA580C" stroke-width="2.4" fill="none" marker-end="url(#ah1)"/>
+    <defs><marker id="ah1" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#EA580C"/></marker></defs>
+    <rect x="178" y="30" width="126" height="58" rx="9" fill="#FFFDF5" stroke="#B45309" stroke-width="1.8"/>
+    <text x="241" y="49" font-size="8" fill="#8A6D3B" text-anchor="middle" font-weight="800">뉴스</text>
+    <text x="241" y="63" font-size="7" fill="#8A6D3B" text-anchor="middle" font-weight="700">잘 알려지지 않은</text>
+    <text x="241" y="77" font-size="7" fill="#8A6D3B" text-anchor="middle" font-weight="700">새로운 소식을 전해요</text>
+    <rect x="16" y="98" width="288" height="26" rx="8" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.4"/>
+    <text x="160" y="115" font-size="8" fill="#9A3412" text-anchor="middle" font-weight="800">매일 되풀이되는 일은 굳이 기록하지 않아요 — 골라서 써요</text>
+    <rect x="16" y="132" width="288" height="24" rx="8" fill="#fff" stroke="#CBD5E0" stroke-width="1.3" stroke-dasharray="4 3"/>
+    <text x="160" y="148" font-size="8" fill="#64748B" text-anchor="middle" font-weight="800">그래서 무엇을 싣고 무엇을 싣지 않을지 정하는 일이 중요해요</text></svg>`,
+  // 2 살펴보기 — 보기 네 갈래(교과서 110쪽 1)
+  topic:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    <text x="160" y="18" font-size="10.4" fill="#9A3412" text-anchor="middle" font-weight="800">뉴스 기사로 쓸 주제 고르기</text>
+    <rect x="14" y="26" width="140" height="40" rx="8" fill="#fff" stroke="#C2410C" stroke-width="1.6"/>
+    <text x="84" y="42" font-size="7.8" fill="#C2410C" text-anchor="middle" font-weight="800">최근 우리 학교에서</text>
+    <text x="84" y="55" font-size="7.8" fill="#C2410C" text-anchor="middle" font-weight="800">일어난 일</text>
+    <rect x="166" y="26" width="140" height="40" rx="8" fill="#fff" stroke="#C2410C" stroke-width="1.6"/>
+    <text x="236" y="42" font-size="7.8" fill="#C2410C" text-anchor="middle" font-weight="800">초등학생들이</text>
+    <text x="236" y="55" font-size="7.8" fill="#C2410C" text-anchor="middle" font-weight="800">겪는 문제</text>
+    <rect x="14" y="72" width="140" height="40" rx="8" fill="#fff" stroke="#C2410C" stroke-width="1.6"/>
+    <text x="84" y="88" font-size="7.8" fill="#C2410C" text-anchor="middle" font-weight="800">우리 지역 관련</text>
+    <text x="84" y="101" font-size="7.8" fill="#C2410C" text-anchor="middle" font-weight="800">소식</text>
+    <rect x="166" y="72" width="140" height="40" rx="8" fill="#FFFDF5" stroke="#B45309" stroke-width="1.6" stroke-dasharray="4 3"/>
+    <text x="236" y="88" font-size="7.8" fill="#8A6D3B" text-anchor="middle" font-weight="800">나만의 주제</text>
+    <text x="236" y="101" font-size="7" fill="#8A6D3B" text-anchor="middle" font-weight="700">내가 정해서 소개해요</text>
+    <rect x="14" y="120" width="292" height="36" rx="8" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.4"/>
+    <text x="160" y="134" font-size="7.4" fill="#9A3412" text-anchor="middle" font-weight="800">기사가 될 만한 일 — 최근에 생기거나 밝혀진 일 · 영향을 받는 사람이 많은 일</text>
+    <text x="160" y="148" font-size="7.4" fill="#9A3412" text-anchor="middle" font-weight="800">평범하거나 쉽게 겪을 수 없는 일</text></svg>`,
+  // 3 살펴보기 — 조사한 내용과 출처 두 칸(교과서 110쪽 2)
+  src:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    <text x="160" y="18" font-size="10.4" fill="#9A3412" text-anchor="middle" font-weight="800">조사한 내용과 출처는 함께 적어요</text>
+    <rect x="14" y="26" width="188" height="30" rx="7" fill="#FFEDD5" stroke="#C2410C" stroke-width="1.5"/>
+    <text x="108" y="45" font-size="8.6" fill="#9A3412" text-anchor="middle" font-weight="800">조사한 내용</text>
+    <rect x="210" y="26" width="96" height="30" rx="7" fill="#FFEDD5" stroke="#C2410C" stroke-width="1.5"/>
+    <text x="258" y="45" font-size="8.6" fill="#9A3412" text-anchor="middle" font-weight="800">출처</text>
+    <rect x="14" y="60" width="188" height="40" rx="7" fill="#fff" stroke="#CBD5E0" stroke-width="1.3"/>
+    <text x="22" y="76" font-size="7" fill="#334155" font-weight="700">조사해서 알게 된 것을 적어요</text>
+    <text x="22" y="90" font-size="7" fill="#334155" font-weight="700">사실과 다른 내용은 적지 않아요</text>
+    <rect x="210" y="60" width="96" height="40" rx="7" fill="#fff" stroke="#CBD5E0" stroke-width="1.3"/>
+    <text x="258" y="76" font-size="7" fill="#334155" text-anchor="middle" font-weight="700">어디에서</text>
+    <text x="258" y="90" font-size="7" fill="#334155" text-anchor="middle" font-weight="700">알아낸 것인지</text>
+    <rect x="14" y="106" width="292" height="24" rx="7" fill="#fff" stroke="#B45309" stroke-width="1.4"/>
+    <text x="160" y="122" font-size="7.6" fill="#8A6D3B" text-anchor="middle" font-weight="800">조사 방법 — 설문지 · 인터넷 검색 · 면담 조사</text>
+    <rect x="14" y="136" width="292" height="20" rx="7" fill="#FFEDD5"/>
+    <text x="160" y="150" font-size="7.4" fill="#9A3412" text-anchor="middle" font-weight="800">조사할 때에도 허위 조작 정보에 주의해요</text></svg>`,
+  // 4 살펴보기 — 검토 기준 넷(교과서 111쪽 4)
+  crit:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    <text x="160" y="17" font-size="10.4" fill="#9A3412" text-anchor="middle" font-weight="800">기사를 검토하는 기준 넷</text>
+    <rect x="14" y="24" width="292" height="28" rx="7" fill="#fff" stroke="#C2410C" stroke-width="1.5"/>
+    <text x="22" y="42" font-size="7.6" fill="#334155" font-weight="700">1. 기사의 내용이 사실인가요?</text>
+    <rect x="14" y="56" width="292" height="28" rx="7" fill="#fff" stroke="#C2410C" stroke-width="1.5"/>
+    <text x="22" y="74" font-size="7.6" fill="#334155" font-weight="700">2. 사실을 과장하거나 왜곡한 것이 있나요?</text>
+    <rect x="14" y="88" width="292" height="28" rx="7" fill="#fff" stroke="#C2410C" stroke-width="1.5"/>
+    <text x="22" y="106" font-size="7.6" fill="#334155" font-weight="700">3. 내용을 뒷받침할 출처가 제시되어 있나요?</text>
+    <rect x="14" y="120" width="292" height="28" rx="7" fill="#FFFDF5" stroke="#B45309" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <text x="22" y="138" font-size="7.6" fill="#8A6D3B" font-weight="700">4. 같은 주제인데 서로 다른 점이 있나요?</text>
+    <text x="160" y="162" font-size="7" fill="#94A3B8" text-anchor="middle" font-weight="700">4번은 친구가 쓴 기사가 있어야 답할 수 있어요 — 교실에서 해요</text></svg>`,
+  // 6 살펴보기 — 같은 일인데 다른 기사(지도서 19차시 해설 원문 풀어 쓰기)
+  gate:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    <text x="160" y="18" font-size="10.4" fill="#9A3412" text-anchor="middle" font-weight="800">같은 일인데 기사가 달라요</text>
+    <rect x="112" y="26" width="96" height="26" rx="8" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.5"/>
+    <text x="160" y="43" font-size="8.2" fill="#9A3412" text-anchor="middle" font-weight="800">같은 하나의 일</text>
+    <path d="M 140 54 L 84 68" stroke="#C2410C" stroke-width="2" fill="none" marker-end="url(#ah2)"/>
+    <path d="M 180 54 L 236 68" stroke="#C2410C" stroke-width="2" fill="none" marker-end="url(#ah2)"/>
+    <defs><marker id="ah2" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#C2410C"/></marker></defs>
+    <rect x="14" y="72" width="140" height="52" rx="8" fill="#fff" stroke="#C2410C" stroke-width="1.6"/>
+    <text x="84" y="89" font-size="8" fill="#C2410C" text-anchor="middle" font-weight="800">내가 쓴 기사</text>
+    <text x="84" y="103" font-size="7" fill="#64748B" text-anchor="middle" font-weight="700">이 조각을 실었어요</text>
+    <text x="84" y="116" font-size="7" fill="#64748B" text-anchor="middle" font-weight="700">저 조각은 싣지 않았어요</text>
+    <rect x="166" y="72" width="140" height="52" rx="8" fill="#FFFDF5" stroke="#B45309" stroke-width="1.6"/>
+    <text x="236" y="89" font-size="8" fill="#8A6D3B" text-anchor="middle" font-weight="800">친구가 쓴 기사</text>
+    <text x="236" y="103" font-size="7" fill="#8A6D3B" text-anchor="middle" font-weight="700">다른 조각을 실었어요</text>
+    <text x="236" y="116" font-size="7" fill="#8A6D3B" text-anchor="middle" font-weight="700">그래서 내용이 달라요</text>
+    <rect x="14" y="130" width="292" height="26" rx="8" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.4"/>
+    <text x="160" y="147" font-size="7.6" fill="#9A3412" text-anchor="middle" font-weight="800">무엇이 기사가 될 만한지 정하는 것은 사람이나 모둠에 따라 달라질 수 있어요</text></svg>`,
+  // 16 정리
+  wrap:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    <text x="160" y="19" font-size="10.8" fill="#9A3412" text-anchor="middle" font-weight="800">오늘의 정리</text>
+    <rect x="14" y="28" width="292" height="26" rx="8" fill="#fff" stroke="#C2410C" stroke-width="1.5"/>
+    <text x="160" y="45" font-size="8" fill="#9A3412" text-anchor="middle" font-weight="800">주제 고르기 → 조사하고 정리하기 → 기사 쓰기 → 기준에 따라 검토하기</text>
+    <rect x="14" y="60" width="292" height="26" rx="8" fill="#FFFDF5" stroke="#B45309" stroke-width="1.5"/>
+    <text x="160" y="77" font-size="8" fill="#8A6D3B" text-anchor="middle" font-weight="800">무엇을 싣고 무엇을 싣지 않을지 내가 정해요</text>
+    <rect x="14" y="92" width="292" height="26" rx="8" fill="#fff" stroke="#EA580C" stroke-width="1.5"/>
+    <text x="160" y="109" font-size="8" fill="#9A3412" text-anchor="middle" font-weight="800">기사가 달라지면 검토표의 답도 달라져요</text>
+    <rect x="14" y="124" width="292" height="30" rx="8" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.5"/>
+    <text x="160" y="143" font-size="8.4" fill="#9A3412" text-anchor="middle" font-weight="800">출처를 분명하게 밝혀야 읽는 사람에게 신뢰를 줄 수 있어요</text></svg>`,
+  // 18 종료
+  done:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    <circle cx="160" cy="76" r="40" fill="#FFEDD5" stroke="#C2410C" stroke-width="2.4"/>
+    <path d="M 142 76 L 155 90 L 180 62" stroke="#C2410C" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="160" y="140" font-size="12" fill="#9A3412" text-anchor="middle" font-weight="800">골라 싣고, 기준에 따라 검토해요!</text></svg>`
+};
+function sceneCard(key,cap,extra){ return `<div class="scene ${extra||''}">${SVG[key]||''}${cap?`<div class="cap">${cap}</div>`:''}</div>`; }
+
+/* ===== 직접조작 — 검토표의 답이 판이 아니라 내가 담은 것에서 나오는 판(60번째 신규 패턴) =====
+   ⭐ 앞의 쉰아홉 종에서 **정답은 언제나 판 안에 리터럴로 있었다.** 이번만 **검토표의 답을 정해 두는
+      상수가 코드에 아예 없다**(`NW_OK` 부재) — `nwAnswer(m)` 한 줄이 **학생이 담은 조각에서**
+      세 답을 그때그때 계산한다.
+   ⭐ **같은 물음이 두 번 서로 다른 답을 받는다** — 조각을 바꿔 다시 쓰면 답이 실제로 뒤집힌다.
+   ⭐ **핵심 가드는 「조각이 다른가」가 아니라 「답이 달라지는가」로 막는다**(가드⑦).
+   ⚠️ 가드 9종은 파일 머리 주석 참조. 전량 고정 리터럴 — 난수 0. */
+
+const NW_N = 6;      /* 조사한 내용 조각 여섯 */
+const NW_PICK = 4;   /* 기사에 싣는 줄 넷 */
+const NW_ALL = (1<<NW_N) - 1;
+
+/* 조각 여섯 — ㉮㉯㉰㉱는 지도서 19차시 예시 답안의 기사를 옮긴 자리이고,
+   ㉲㉳은 교과서 111쪽 기준 2가 가리키는 자리를 판이 지어 놓은 것이다(캔버스 캡션 명시). */
+const NW_LINE = [
+  '지난주부터 시작된 점심시간 음악 방송이 학생들에게 큰 호응을 얻고 있다.',
+  '점심시간 음악 방송은 매주 월요일과 수요일 점심시간에 진행된다.',
+  '방송에서는 학생들이 보낸 사연과 신청곡을 들려준다.',
+  '우리 반 학생 대부분이 음악 방송을 유익하다고 응답했다(출처: 우리 반 대상 설문 조사).',
+  '점심시간 음악 방송은 학교를 뜨겁게 달군 폭발적인 인기의 최고 방송이다.',
+  '점심시간 음악 방송을 싫어하는 학생은 한 명도 없다.'];
+const NW_LINE_S = ['큰 호응을 얻고 있어요','월요일과 수요일에 해요','사연과 신청곡을 들려줘요',
+  '설문 조사 결과 — 출처 있음','뜨겁게 달군 최고 방송','싫어하는 학생은 없대요'];
+const NW_TITLE = '뜨거운 반응을 불러일으킨 점심시간 음악 방송';
+
+/* ★ 이 세 줄이 조각의 성질을 다 정한다 — 어느 조각이 사실인지 · 과장인지 · 출처를 함께 적었는지. */
+const NW_FACT = 0b011111;   /* ㉳만 사실이 아니다(대부분이 유익하다고 응답 — 「한 명도 없다」와 어긋난다) */
+const NW_HYPE = 0b010000;   /* ㉲ — 사실이되 과장된 표현 */
+const NW_SRC  = 0b001000;   /* ㉱ — 출처를 함께 적었다 */
+
+/* 교과서 111쪽 검토 기준 — 판에 두는 것은 셋뿐이다(4번은 친구의 기사가 있어야 답할 수 있다). */
+const NW_C = ['기사의 내용이 사실인가요?',
+  '기사의 내용 중 사실을 과장하거나 왜곡한 것이 있나요?',
+  '기사에 드러난 내용을 뒷받침할 출처가 제시되어 있나요?'];
+const NW_C_S = ['내용이 사실인가요','과장·왜곡이 있나요','출처가 있나요'];
+const NW_CN = 3;
+const NW_YN = ['그렇지 않다','그렇다'];
+
+/* 마무리 — 지도서 19차시 예시 답안 5 원문 */
+const NW_FIN = ['기사를 길게 쓸수록 읽는 사람에게 신뢰를 줄 수 있다',
+  '뉴스 기사를 작성할 때는 출처를 분명하게 밝혀야 읽는 사람에게 신뢰를 줄 수 있다',
+  '눈길을 끌도록 사실보다 과장해서 써야 사람들이 많이 읽는다'];
+const NW_FIN_OK = 1;
+const NW_FIN_NO = ['길이가 신뢰를 만들지는 않아요. 읽는 사람이 믿을 수 있게 하는 것은 <b>어디에서 알아낸 것인지</b>예요.',
+  '',
+  '과장해서 쓰면 <b>사실을 왜곡</b>하게 돼요. 기사는 눈길보다 <b>사실</b>이 먼저예요.'];
+
+/* 안내 — 어긋난 답에는 왜 그런지만 말하고 다른 줄의 답을 흘리지 않는다. */
+const NW_NO_C = ['내 기사에 실린 줄을 다시 읽어 봐요. <b>사실이 아닌 줄</b>이 있는지 살펴봐요. 판은 그대로예요.',
+  '내 기사에 실린 줄을 다시 읽어 봐요. <b>과장하거나 왜곡한 줄</b>이 있는지 살펴봐요. 판은 그대로예요.',
+  '내 기사에 실린 줄을 다시 읽어 봐요. <b>어디에서 알아낸 것인지</b> 적힌 줄이 있는지 살펴봐요. 판은 그대로예요.'];
+const NW_ALREADY_L = '이 조각은 <b>이미 실었어요.</b> 판은 그대로예요.';
+const NW_ALREADY_C = '이 줄은 <b>이미 답했어요.</b> 판은 그대로예요.';
+const NW_FULL = '기사에 실을 줄은 <b>넷</b>이에요. 자리가 다 찼어요. 판은 그대로예요.';
+const NW_LOCK_L = '검토를 시작한 뒤에는 <b>기사를 고칠 수 없어요.</b> 판은 그대로예요.';
+const NW_ORDER_C = '아직 <b>기사가 다 되지 않았어요.</b> 조각 넷을 실은 뒤에 검토해요. 판은 그대로예요.';
+const NW_ORDER_A = '아직 <b>검토가 끝나지 않았어요.</b> 세 줄을 다 답한 뒤에 다시 써 봐요. 판은 그대로예요.';
+const NW_ORDER_F = '아직 <b>두 번째 검토가 끝나지 않았어요.</b> 판은 그대로예요.';
+const NW_SAME = '이 조각을 실으면 검토표의 <b>세 답이 첫 기사와 똑같아질 수밖에 없어요.</b> 견줄 것이 없어요. 다른 조각을 실어 봐요. 판은 그대로예요.';
+
+/* ★ 이 한 줄이 검토표의 세 답을 다 정한다 — 정답 상수는 코드에 없다. */
+function nwAnswer(m){
+  return [ (m & ~NW_FACT & NW_ALL)===0 ? 1 : 0,
+           (m & NW_HYPE)!==0 ? 1 : 0,
+           (m & NW_SRC)!==0 ? 1 : 0 ];
+}
+function nwBits(m){ let n=0; for(let k=0;k<NW_N;k++){ if(m & (1<<k)) n++; } return n; }
+function nwSet(m){ const r=[]; for(let k=0;k<NW_N;k++){ if(!(m & (1<<k))) r.push(k); } return r; }
+/* ★ 판이 지금 걸음만 보지 않고 **남은 길까지 내다보고** 막는다 —
+   이 원고를 넷까지 채웠을 때 첫 기사와 답이 달라지는 길이 하나라도 남아 있는가.
+   ⚠️ 이 한 줄 덕분에 두 번째 기사에서 **막다른 길이 생기지 않는다**(전수로 대조). */
+function nwCanDiffer(m, first){
+  const need = NW_PICK - nwBits(m);
+  if(need < 0) return false;
+  const rest = nwSet(m), fa = nwAnswer(first);
+  let found = false;
+  const go=(idx, cur, left)=>{
+    if(found) return;
+    if(left===0){ if(!nwSame(nwAnswer(cur), fa)) found=true; return; }
+    if(idx>=rest.length || rest.length-idx < left) return;
+    go(idx+1, cur | (1<<rest[idx]), left-1);
+    go(idx+1, cur, left);
+  };
+  go(0, m, need);
+  return found;
+}
+function nwSame(a,b){ return a[0]===b[0] && a[1]===b[1] && a[2]===b[2]; }
+function nwFull(st){ return nwBits(st.nwMask) >= NW_PICK; }
+function nwChecked(st){ return st.nwDone === (1<<NW_CN)-1; }
+function nwRound(st){ return st.nwFirst==null ? 0 : 1; }
+/* 두 기사의 답이 몇 줄 달라졌는지 — 두 번째 검토를 마친 뒤에만 판에 그린다. */
+function nwDiff(st){
+  if(st.nwFirst==null) return -1;
+  const a=nwAnswer(st.nwFirst), b=nwAnswer(st.nwMask);
+  let n=0; for(let i=0;i<NW_CN;i++){ if(a[i]!==b[i]) n++; } return n;
+}
+
+/* 판 — 위는 기사 원고, 가운데는 검토표 세 줄, 아래는 두 기사를 견주는 줄.
+   ⚠️ 답하지 않은 줄의 칸은 비어 있다 — 판이 검토표의 답을 미리 알려 주지 않는다. */
+function nwCanvas(st){
+  const fin = st.nwFin!=null, r = nwRound(st), full = nwFull(st), ck = nwChecked(st);
+  const filled = nwBits(st.nwMask);
+  const done2 = r===1 && ck;
+  let g='';
+  g+=`<rect x="8" y="6" width="304" height="268" rx="10" fill="#FFF7ED" stroke="#FED7AA" stroke-width="2"/>`;
+  const head = fin ? '기사가 달라지면 검토표의 답도 달라져요'
+    : (done2 ? '두 번째 기사도 검토했어요 — 견줘 봐요'
+      : (ck ? '검토를 마쳤어요 — 조각을 바꿔 다시 써 볼까요'
+        : (full ? '기사가 다 됐어요 — 이제 기준에 답해요'
+          : (r===1 ? '두 번째 기사에 실을 조각을 골라요' : '기사에 실을 조각을 골라요'))));
+  g+=`<text x="160" y="19" font-size="9.4" fill="#9A3412" text-anchor="middle" font-weight="800">${head}</text>`;
+  /* 기사 원고 */
+  g+=`<rect data-round="${r}" data-fill="${filled}" x="12" y="26" width="296" height="100" rx="8" fill="#fff" stroke="#C2410C" stroke-width="1.8"/>`;
+  g+=`<rect x="18" y="32" width="284" height="16" rx="5" fill="#FFEDD5"/>`;
+  g+=`<text x="160" y="43" font-size="7" fill="#9A3412" text-anchor="middle" font-weight="800">${r===1?'두 번째 기사':'첫 기사'} · ${NW_TITLE}</text>`;
+  const put=[]; for(let i=0;i<NW_N;i++){ if(st.nwMask & (1<<i)) put.push(i); }
+  for(let j=0;j<NW_PICK;j++){
+    const i = put[j], has = i!=null, y = 52 + j*17;
+    g+=`<rect data-line="${j}" data-piece="${has?i:-1}" x="18" y="${y}" width="284" height="15" rx="5" fill="${has?'#FFFDF5':'#F8FAFC'}" stroke="${has?'#B45309':'#CBD5E0'}" stroke-width="1.1"${has?'':' stroke-dasharray="3 3"'}/>`;
+    g+=`<text x="24" y="${y+10.5}" font-size="6.4" fill="${has?'#8A6D3B':'#CBD5E0'}" font-weight="800">${has?`${'㉮㉯㉰㉱㉲㉳'[i]} ${NW_LINE_S[i]}`:'아직 비어 있어요'}</text>`;
+  }
+  /* 검토표 세 줄 — 답한 줄만 답을 보인다 */
+  for(let c=0;c<NW_CN;c++){
+    const dn = !!(st.nwDone & (1<<c)), y = 132 + c*26;
+    const av = dn ? nwAnswer(st.nwMask)[c] : -1;
+    g+=`<rect data-crit="${c}" data-cans="${av}" x="12" y="${y}" width="296" height="22" rx="7" fill="${dn?'#fff':'#F8FAFC'}" stroke="${dn?'#C2410C':'#CBD5E0'}" stroke-width="${dn?1.7:1.1}"${dn?'':' stroke-dasharray="4 3"'}/>`;
+    g+=`<text x="20" y="${y+14}" font-size="6.8" fill="${dn?'#9A3412':'#94A3B8'}" font-weight="800">${c+1}. ${NW_C_S[c]}</text>`;
+    g+=`<rect x="212" y="${y+3}" width="88" height="16" rx="6" fill="${dn?'#FFEDD5':'#F1F5F9'}"/>`;
+    g+=`<text x="256" y="${y+14}" font-size="6.4" fill="${dn?'#9A3412':'#CBD5E0'}" text-anchor="middle" font-weight="800">${dn?NW_YN[av]:'아직'}</text>`;
+  }
+  /* 두 기사를 견주는 줄 — 첫 기사의 세 답은 두 번째 회전에서 보이고, 달라진 줄 수는 두 번째 검토를 마친 뒤에만 */
+  const fa = st.nwFirst!=null ? nwAnswer(st.nwFirst) : [-1,-1,-1];
+  const dv = done2 ? nwDiff(st) : -1;
+  g+=`<rect data-fa0="${fa[0]}" data-fa1="${fa[1]}" data-fa2="${fa[2]}" data-diff="${dv}" x="12" y="210" width="296" height="24" rx="7" fill="${dv>0?'#FFEDD5':'#F8FAFC'}" stroke="${dv>0?'#C2410C':'#E2E8F0'}" stroke-width="${dv>0?2:1.1}"${dv>0?'':' stroke-dasharray="4 3"'}/>`;
+  const cmp = st.nwFirst==null ? '아직 첫 기사만 있어요'
+    : (done2 ? `첫 기사와 견주니 ${dv} 줄이 달라졌어요` : `첫 기사의 답 — ${fa.map((v,i)=>`${i+1}. ${NW_YN[v]}`).join(' · ')}`);
+  g+=`<text x="160" y="226" font-size="7.2" fill="${dv>0?'#9A3412':'#94A3B8'}" text-anchor="middle" font-weight="800">${cmp}</text>`;
+  g+=`<rect x="12" y="240" width="296" height="16" rx="6" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.1"/>`;
+  g+=`<text x="160" y="251" font-size="6.4" fill="#9A3412" text-anchor="middle" font-weight="800">실은 줄 ${filled} / ${NW_PICK} · 답한 기준 ${nwBits(st.nwDone)} / ${NW_CN}</text>`;
+  g+=`<rect x="12" y="260" width="296" height="14" rx="6" fill="#fff" stroke="#CBD5E0" stroke-width="1"/>`;
+  g+=`<text x="160" y="270" font-size="6.2" fill="#64748B" text-anchor="middle" font-weight="800">검토표의 답은 판이 아니라 내가 실은 줄에서 나와요</text>`;
+  return `<svg viewBox="0 0 320 280"><rect width="320" height="280" fill="#ffffff"/>${g}</svg>`;
+}
+
+function nwPanel(st){
+  const fin = st.nwFin!=null, r = nwRound(st), full = nwFull(st), ck = nwChecked(st);
+  const done2 = r===1 && ck;
+  const q = fin
+    ? '판은 검토표의 답을 <b>가지고 있지 않았어요.</b> 답은 <b>내가 실은 줄</b>에서 나왔어요.'
+    : (done2 ? '기사를 <b>쓰고 검토한 뒤</b> 알게 된 점은 무엇일까요?'
+      : (ck ? '조각을 바꿔 다시 쓰면 검토표의 답이 <b>어떻게 달라질까요?</b>'
+        : (full ? '내 기사를 읽고 기준에 <b>그렇다 / 그렇지 않다</b>로 답해 봐요.'
+          : (r===1 ? '이번에는 <b>다른 조각</b>을 실어 봐요. 어느 것부터 실어도 좋아요.'
+            : '조사한 조각 여섯 가운데 <b>넷</b>을 골라 기사에 실어요. 어느 것부터 실어도 좋아요.'))));
+  let right = `<div class="nw-q">${q}</div>`;
+
+  if(fin){
+    right+=`<div class="dw-card"><div class="pt">📰 골라 싣고 검토해요</div>
+      <div>첫 기사와 두 번째 기사는 <b>같은 조사 내용</b>에서 나왔는데 검토표의 답이 달라졌어요. 판이 답을 정해 둔 것이 아니라 <b>내가 무엇을 실었는지</b>가 답을 만들었기 때문이에요.</div>
+      <div style="margin-top:5px">그래서 같은 일을 두고도 <b>사람이나 모둠에 따라 기사가 달라져요.</b> 기사를 쓸 때에는 <b>출처를 분명하게 밝혀야</b> 읽는 사람에게 신뢰를 줄 수 있어요.</div>
+      <div style="margin-top:5px;color:#64748B">주제를 정해 <b>설문지·인터넷 검색·면담</b>으로 직접 조사하고 기사를 쓰는 일, 그리고 <b>친구가 쓴 기사를 기준에 따라 검토하는</b> 일은 교실에서 하는 활동이에요. 화면이 그 활동을 대신하지 않아요.</div></div>`;
+  } else if(done2){
+    right+=`<div class="nw-fin">${NW_FIN.map((f,k)=>
+      `<button class="${st.nwWrongF===k?'no':''}" onclick="nwFinish(${k})">${f}</button>`).join('')}</div>`;
+  } else if(ck){
+    right+=`<div class="dw-step">✍ 조각을 바꿔 다시 써 보기</div>`;
+    right+=`<div class="nw-keynote">검토표의 답은 <b>판에 적혀 있지 않아요.</b> 내가 실은 줄에서 나와요. 조각을 바꾸면 답도 달라지는지 <b>직접 확인</b>해 봐요.</div>`;
+    right+=`<div class="nw-act"><button onclick="nwAgain()">📝 조각을 바꿔 다시 써 보기</button></div>`;
+  } else if(full){
+    right+=`<div class="dw-step">🔎 기준에 답해요</div>`;
+    right+=`<div class="nw-rows">${NW_C.map((cc,c)=>{
+      const dn = !!(st.nwDone & (1<<c));
+      if(dn) return `<div class="nw-row done"><div class="nw-done"><span class="a">${c+1}. ${NW_YN[nwAnswer(st.nwMask)[c]]}</span><span class="m">✓ 내 기사와 맞아요</span></div></div>`;
+      return `<div class="nw-row${st.nwWrongC===c?' no':''}"><div class="nw-rq">${c+1}. ${cc}</div>
+        <div class="nw-yn"><button onclick="nwCheck(${c},1)">그렇다</button><button onclick="nwCheck(${c},0)">그렇지 않다</button></div></div>`;
+    }).join('')}</div>`;
+  } else {
+    right+=`<div class="dw-step">📝 기사에 실을 조각을 골라요</div>`;
+    right+=`<div class="nw-keynote">이 자리에는 <b>옳고 그름이 없어요.</b> 무엇을 실어도 판이 받아요. 다만 <b>무엇을 실었는지</b>가 뒤의 검토표를 정해요.</div>`;
+    right+=`<div class="nw-list">${NW_LINE.map((t,i)=>{
+      const has = !!(st.nwMask & (1<<i));
+      return `<button class="${has?'on':''}${st.nwWrongL===i?' no':''}" onclick="nwPut(${i})">${'㉮㉯㉰㉱㉲㉳'[i]} ${t}</button>`;
+    }).join('')}</div>`;
+  }
+  if(st.nwMsg) right+=`<div class="dw-msg${st.nwWarn?' warn':''}">${st.nwMsg}</div>`;
+
+  return `<div class="dw-wrap">
+    <div style="text-align:center"><b style="color:var(--green)">📰 무엇을 실을지 내가 정해요</b></div>
+    <div class="dw-body">
+      <div class="dw-canvas">${nwCanvas(st)}<div class="cvcap">㉮㉯㉰㉱은 지도서 예시 답안의 기사를 옮긴 자리이고 ㉲㉳은 <b>과장하거나 왜곡한 줄이 어떤 것인지</b> 보이려고 판이 지어 놓은 것이에요. <b>실제로 있었던 일이 아니에요.</b></div></div>
+      <div class="dw-right">${right}</div>
+    </div>
+  </div>`;
+}
+
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "2단원 민주주의와 시민 참여 · [생각을 펼쳐요]";
+
+// 확인 4 + 적용 4 — 정답 다양화 [1,2,0,3,0,3,1,2](각 자리 2회)
+// ⚠️ 20차시 침범 0 · 새 사실 0 · 문항 내 연도·수치 0 · 실제 정당·정치인·기관·상표 0.
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"<b>뉴스</b>란 무엇인가요?",
+   opts:["누구나 이미 알고 있는 이야기","사람들에게 잘 알려지지 않은 새로운 소식",
+         "지어낸 이야기를 재미있게 꾸민 글","한 사람만 알고 있어야 하는 비밀"],
+   correct:1, pts:POINTS_BASIC, scene:"open",
+   h1:"일기와 견주어 봐요. 일기는 <b>내 하루</b>를 적어요.",
+   h2:"뉴스는 <b>새로 알려지는</b> 소식이에요.",
+   reason:"<b>뉴스</b>는 사람들에게 잘 알려지지 않은 새로운 소식이나, 새로운 소식을 전해 주는 방송의 프로그램을 뜻해요."},
+  {stem:"기사가 될 만한 일의 조건으로 <b>알맞지 않은</b> 것은?",
+   opts:["최근에 생기거나 밝혀진 일","영향을 받는 사람이 많은 일",
+         "날마다 똑같이 되풀이되는 일","평범하거나 쉽게 겪을 수 없는 일"],
+   correct:2, pts:POINTS_BASIC, scene:"topic",
+   h1:"일기에 <b>하루 일과 전체</b>를 그대로 쓰지 않는 까닭을 떠올려 봐요.",
+   h2:"매일 되풀이되는 일은 <b>새로운 소식</b>이 아니에요.",
+   reason:"날마다 되풀이되는 일은 새로운 소식이 아니어서 기사가 될 만한 일에 들지 않아요."},
+  {stem:"기사를 쓰는 데 필요한 내용을 <b>조사하는 방법</b>으로 알맞은 것은?",
+   opts:["설문지·인터넷 검색·면담 조사로 알아봐요","떠오르는 대로 지어서 적어요",
+         "친구가 한 말만 그대로 옮겨요","제목만 보고 짐작해서 적어요"],
+   correct:0, pts:POINTS_BASIC, scene:"src",
+   h1:"기사에 실을 내용은 <b>알아본 것</b>이어야 해요.",
+   h2:"여러 <b>조사 방법</b>을 함께 쓸 수 있어요.",
+   reason:"설문지, 인터넷 검색, 면담 조사 등 다양한 방법으로 조사해요."},
+  {stem:"조사한 내용을 정리할 때 <b>주의할 점</b>으로 알맞은 것은?",
+   opts:["재미있게 보이도록 조금 부풀려 적어요","출처는 길어지니 적지 않아요",
+         "확인되지 않은 소문도 그대로 적어요","사실과 다르거나 왜곡된 내용을 적지 않아요"],
+   correct:3, pts:POINTS_BASIC, scene:"src",
+   h1:"조사할 때에도 <b>허위 조작 정보</b>에 주의해야 해요.",
+   h2:"기사에 실리는 것은 <b>사실</b>이어야 해요.",
+   reason:"조사한 내용을 정리할 때에는 사실과 다르거나 왜곡된 내용을 기록하지 않도록 주의해요."},
+  // 4단계 적용 (+15)
+  {stem:"조작에서 <b>같은 검토표인데 첫 기사와 두 번째 기사의 답이 달랐어요.</b> 그 까닭으로 알맞은 것은?",
+   opts:["검토표의 답이 <b>내가 실은 줄</b>에서 나오기 때문이에요","판이 미리 정해 둔 답을 번갈아 보여 주기 때문이에요",
+         "두 번째에는 기준이 다른 것으로 바뀌기 때문이에요","기사를 두 번 쓰면 점수가 올라가기 때문이에요"],
+   correct:0, pts:POINTS_APPLY, scene:"crit",
+   h1:"판에는 <b>정답이 적혀 있지 않았어요.</b>",
+   h2:"달라진 것은 <b>기사에 실은 줄</b>이었어요.",
+   reason:"검토표는 기사에 <b>그런 줄이 있는지 없는지</b>를 묻는 것이라, 기사가 달라지면 답도 달라져요."},
+  {stem:"조작에서 <b>어떤 조각을 실으려 하자 판이 받지 않았어요.</b> 그 까닭으로 알맞은 것은?",
+   opts:["그 조각이 사실이 아니어서 실을 수 없기 때문이에요","이미 네 줄을 다 채워서 자리가 없었기 때문이에요",
+         "그 조각은 첫 기사에도 실었던 것이기 때문이에요","그 조각을 실으면 검토표의 세 답이 첫 기사와 똑같아지기 때문이에요"],
+   correct:3, pts:POINTS_APPLY, scene:"gate",
+   h1:"판은 조각이 <b>겹치는지</b>를 본 것이 아니었어요.",
+   h2:"판이 본 것은 <b>답이 달라지는지</b>였어요.",
+   reason:"두 기사를 견주려면 <b>답이 달라져야</b> 해요. 그래서 답이 똑같아지는 조각은 받지 않았어요."},
+  {stem:"같은 일을 두고 썼는데 <b>친구의 기사와 내 기사의 내용이 다를 수 있는</b> 까닭은?",
+   opts:["기사에는 정해진 내용이 하나뿐이기 때문이에요","무엇이 기사가 될 만한지 정하는 것은 사람에 따라 달라질 수 있기 때문이에요",
+         "먼저 쓴 사람의 기사만 사실이기 때문이에요","조사를 많이 한 사람의 기사가 언제나 옳기 때문이에요"],
+   correct:1, pts:POINTS_APPLY, scene:"gate",
+   h1:"같은 일이라도 <b>고르는 사람</b>이 달라요.",
+   h2:"무엇을 싣고 무엇을 싣지 않을지는 <b>정하는 사람</b>에게 달렸어요.",
+   reason:"같은 일을 다루더라도 무엇이 기사가 될 만한지 정하는 것은 사람이나 모둠에 따라 달라질 수 있어요."},
+  {stem:"뉴스 기사를 쓰고 검토하는 태도로 <b>알맞지 않은</b> 것은?",
+   opts:["기사에 실은 내용의 출처를 분명하게 밝혀요","친구의 기사도 기준에 따라 꼼꼼히 검토해요",
+         "눈길을 끌려고 사실보다 부풀려 써요","조사한 내용 가운데 무엇을 실을지 스스로 정해요"],
+   correct:2, pts:POINTS_APPLY, scene:"wrap",
+   h1:"기사에서 가장 먼저 지켜야 할 것은 <b>사실</b>이에요.",
+   h2:"부풀려 쓰면 <b>왜곡</b>하게 돼요.",
+   reason:"사실보다 부풀려 쓰면 사실을 <b>과장하거나 왜곡</b>하게 돼요. 기사는 눈길보다 사실이 먼저예요."}
+];
+
+const slides = [];
+// 1 들어가기 — 동기 유발(지도서 19차시 도입 · 일기와 뉴스)
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">일기에는 무엇을 쓰고, 뉴스는 무엇을 전할까요?</h2>
+  <div class="ka-bub">일기를 쓸 때에는 그날 있었던 일 가운데 <span class="ka-emph">기억에 남는 일</span>을 골라 써요. 하루 일과를 그대로 다 쓰지 않는 까닭은 <span class="ka-emph">매일 되풀이되는 일</span>을 굳이 기록할 필요가 없기 때문이에요. 그렇다면 <span class="ka-emph">뉴스</span>는 무엇을 전할까요?</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('open','오늘 해 볼 것','wide')}</div>
+    <div class="note">· 오늘은 이 단원에서 공부한 내용을 바탕으로 <b>창의·융합 활동</b>을 해요.<br>· 융합 교과는 <b>사회·국어</b>이고, <b>창의적 사고력</b>과 <b>비판적 사고력</b>을 길러요.</div></div>`});
+// 2 살펴보기 — 교과서 110쪽 1: 보기에서 주제 고르기
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">1 뉴스 기사로 쓸 주제를 한 가지 골라요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('topic','보기 네 갈래','wide')}</div>
+    <div class="tipbox"><b>보기</b> — 최근 우리 학교에서 일어난 일(학급 회장 선거, 전교 어린이 회의 주요 활동 등) · 초등학생들이 겪는 문제 · 우리 지역 관련 소식 · <b>나만의 주제</b></div>
+    <div class="note">주제는 <b>개인으로도 모둠으로도</b> 정할 수 있어요. 나만의 주제를 정할 때에는 <b>기사가 될 만한 일의 조건</b>을 참고해요.</div></div>`});
+// 3 살펴보기 — reveal: 교과서 110쪽 2 조사와 출처
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">2 필요한 내용을 조사해서 정리해요</h2>
+  <div class="ka-grp">
+  <div class="paper"><div class="ph">🔍 자료 조사하기</div>
+    고른 주제로 기사를 쓰려면 <b>필요한 내용을 조사</b>해야 해요. 교과서 정리 칸은 <b>조사한 내용</b>과 <b>출처</b> 두 칸으로 되어 있어요. 조사할 때에는 무엇에 주의해야 할까요? 먼저 떠올려 보고 눌러요.</div>
+  <div class="scene-row">${sceneCard('src','조사한 내용과 출처','wide')}</div>
+  ${st.revealed?`<div class="answer-box">· <b>설문지, 인터넷 검색, 면담 조사</b> 등 다양한 방법을 활용해요.<br>
+    · 조사하는 과정에서 <b>허위 조작 정보</b>에 주의해요.<br>
+    · <b>사실과 다르거나 왜곡된 내용</b>을 기록하지 않도록 유의해요.<br>
+    <span style="color:#64748B">실제 조사와 정리는 교실에서 해요. 화면이 그 활동을 대신하지 않아요.</span></div>`
+    :`<div class="note">조사할 때 무엇에 주의해야 할까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 4 살펴보기 — 교과서 111쪽 4: 검토 기준 넷
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">3·4 기사를 쓰고, 기준에 따라 검토해요</h2>
+  <div class="ka-bub">조사한 내용을 바탕으로 <span class="ka-emph">기사 제목·작성일·작성자</span>를 적고 기사를 써요. 그다음에는 친구들이 쓴 기사를 <span class="ka-emph">기준에 따라 검토</span>해요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('crit','검토 기준 넷','wide')}</div>
+    <div class="note">검토표의 답은 기사의 좋고 나쁨이 아니라 <b>그 기사에 그런 것이 있는지 없는지</b>예요. 그래서 <b>기사가 달라지면 답도 달라져요.</b></div></div>`});
+// 5 살펴보기 — 직접조작(검토표의 답이 내가 담은 것에서 나오는 판)
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">무엇을 실을지 내가 정해요</h2>
+  <div class="ka-grp">${nwPanel(st)}</div>`});
+// 6 살펴보기 — reveal: 같은 일인데 기사가 다른 까닭
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">같은 주제인데 기사가 서로 달라요</h2>
+  <div class="ka-grp">
+  <div class="paper"><div class="ph">📰 기준 4를 읽어요</div>
+    검토 기준 가운데 <b>「같은 주제로 작성된 기사의 내용에서 서로 다른 점이 있나요?」</b>는 친구가 쓴 기사가 있어야 답할 수 있어요. 그런데 같은 일을 두고 썼는데 왜 내용이 달라질까요? 먼저 떠올려 보고 눌러요.</div>
+  <div class="scene-row">${sceneCard('gate','같은 일, 다른 기사','wide')}</div>
+  ${st.revealed?`<div class="answer-box">· 같은 일을 다루더라도 <b>무엇이 기사가 될 만한지 정하는 것</b>은 사람이나 모둠에 따라 달라질 수 있어요.<br>
+    · 민주주의 사회에서는 사람마다 <b>다양한 관점</b>이 있어요.<br>
+    · 그래서 친구의 기사를 검토할 때에도 그 점을 <b>염두에 두고</b> 읽어요.<br>
+    <span style="color:#64748B">친구의 기사를 실제로 읽고 검토하는 일은 교실에서 해요.</span></div>`
+    :`<div class="note">같은 일인데 왜 기사가 달라질까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 7 살펴보기 — reveal: 교과서 111쪽 5 알게 된 점
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">5 기사를 쓰고 검토한 뒤 알게 된 점</h2>
+  <div class="ka-grp">
+  <div class="paper"><div class="ph">✍ 협력적 글쓰기</div>
+    모둠에서 기사를 쓸 때에는 각자 <b>서로 다른 주제</b>의 기사를 써서 종합할 수도 있고, <b>하나의 기사를 여러 사람이 돌아가며</b> 쓸 수도 있어요. 그렇게 쓰고 검토한 뒤에는 무엇을 알게 될까요? 먼저 떠올려 보고 눌러요.</div>
+  <div class="scene-row">${sceneCard('wrap','알게 된 점','wide')}</div>
+  ${st.revealed?`<div class="answer-box">· 기사를 쓸 때에는 <b>출처를 분명하게 밝혀야</b> 읽는 사람에게 신뢰를 줄 수 있다는 것을 알게 됐어요.<br>
+    · 친구의 기사를 읽고 <b>우리 지역과 관련한 소식</b>을 알게 됐어요.<br>
+    · 친구의 기사를 읽고 <b>초등학생들이 겪는 문제와 해결 방안</b>을 생각해 보게 됐어요.<br>
+    <span style="color:#64748B">내가 알게 된 점은 <b>내가 직접 적어요.</b></span></div>`
+    :`<div class="note">기사를 쓰고 검토한 뒤 알게 된 점은 무엇일까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리: 요약
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 활동을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('wrap','오늘의 정리','wide')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">①</span><div><b style="color:var(--green)">주제 고르기</b> — 보기에서 한 가지를 고르거나 <b>나만의 주제</b>를 정해요.</div></div>
+    <div class="sum-item"><span class="n">②</span><div><b style="color:var(--green)">조사하기</b> — 설문지·인터넷 검색·면담 조사로 알아보고 <b>출처</b>를 함께 적어요.</div></div>
+    <div class="sum-item"><span class="n">③</span><div><b style="color:var(--green)">기사 쓰기</b> — 조사한 것 가운데 <b>무엇을 실을지</b> 내가 정해요.</div></div>
+    <div class="sum-item"><span class="n">④</span><div><b style="color:var(--green)">검토하기</b> — 사실인지 · 과장하거나 왜곡한 것이 있는지 · 출처가 있는지 · 같은 주제인데 다른 점이 있는지 살펴봐요.</div></div>
+    <div class="sum-item"><span class="n">★</span><div><b style="color:var(--green)">알게 된 점</b> — 출처를 분명하게 밝혀야 읽는 사람에게 <b>신뢰</b>를 줄 수 있어요.</div></div>
+  </div>
+  <div class="note">실제로 주제를 정해 조사하고 기사를 쓰는 일, 친구의 기사를 검토하는 일은 <b>교실에서</b> 해요. 다음 시간에는 <b style="color:var(--green)">단원 마무리</b>를 해요.</div></div>`});
+// 17 정리: 자기 평가
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 활동을 스스로 평가해요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"기사가 될 만한 주제를 고르고 필요한 내용을 조사하는 방법을 알아요",st)}
+    ${selfCheck(1,"조사한 것 가운데 무엇을 실을지 정해 기사를 쓸 수 있어요",st)}
+    ${selfCheck(2,"기준에 따라 기사를 검토하고, 같은 주제라도 기사가 달라질 수 있음을 설명할 수 있어요",st)}
+  </div><div class="note">별이 적게 채워진 곳은 앞 슬라이드를 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">오늘 공부를 마쳤어요!</h2>
+  <div class="ka-grp">
+    <div class="scene-row">${sceneCard('done','','wide')}</div>
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">다음은 <b style="color:var(--amber)">단원 마무리</b>!</div>
+  </div>`;
+}});
+
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">\u2B55 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g6_social_u2_l14";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  nwMask:0, nwFirst:null, nwDone:0, nwFin:null,
+  nwWrongL:null, nwWrongC:null, nwWrongF:null,
+  nwMsg:null, nwWarn:false, nwBusy:false,
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 \u2192';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+
+function nwRender(){ main.innerHTML = slides[state.idx].render(state); }
+function nwHold(msg){
+  state.nwWarn=true; state.nwBusy=true; state.nwMsg=msg;
+  playThud(); nwRender();
+  setTimeout(()=>{ state.nwBusy=false; state.nwWarn=false; state.nwMsg=null;
+    state.nwWrongL=null; state.nwWrongC=null; state.nwWrongF=null; nwRender(); },1600);
+}
+
+/* ① 조각을 기사에 싣기 — 무판정. 무엇을 실어도 판이 받는다.
+   ★ 다만 두 번째 기사에서는 **검토표의 세 답이 첫 기사와 똑같아질 수밖에 없는 조각**을 받지
+      않는다(가드⑦). 판이 보는 것은 「조각이 겹치는가」가 아니라 「답이 달라질 길이 남아 있는가」다.
+   ⚠️ 순서 자유 — 어느 조각부터 실어도 좋다. */
+function nwPut(i){
+  if(state.nwFin!=null) return;                                        // 가드①
+  if(state.nwBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(i) || i<0 || i>=NW_N) return;                   // 가드②
+  if(state.nwDone!==0){ nwHold(NW_LOCK_L); return; }                   // 가드⑧ 판 불변
+  if(state.nwMask & (1<<i)){ nwHold(NW_ALREADY_L); return; }           // 가드④ 판 불변
+  if(nwBits(state.nwMask) >= NW_PICK){ nwHold(NW_FULL); return; }      // 가드⑤ 판 불변
+  if(state.nwFirst!=null && !nwCanDiffer(state.nwMask | (1<<i), state.nwFirst)){
+    state.nwWrongL=i; nwHold(NW_SAME); return;                         // 가드⑦ ★핵심 — 판 불변
+  }
+  state.nwMask |= 1 << i;                                              // ★ 싣는 자리는 여기 한 곳뿐
+  state.nwWarn=false; state.nwWrongL=null;
+  state.nwMsg = nwFull(state)
+    ? `<b>기사가 다 됐어요.</b> 이제 기준에 답해 봐요. 답은 <b>내가 실은 줄</b>에서 나와요.`
+    : `<b>실었어요.</b> 지금 <b>${nwBits(state.nwMask)} / ${NW_PICK}</b>줄이에요.`;
+  playBlip(); nwRender();
+}
+
+/* ② 검토표 한 줄에 답하기 — ★ 이 함수가 이 패턴의 핵심 신규성이다.
+   판정은 있지만 **정답 상수가 코드에 없다.** 답은 `nwAnswer(state.nwMask)`가
+   **학생이 실은 줄에서** 그때그때 계산한다. 기사가 달라지면 같은 물음의 답도 달라진다. */
+function nwCheck(c,v){
+  if(state.nwFin!=null) return;                                        // 가드①
+  if(state.nwBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(c) || c<0 || c>=NW_CN) return;                  // 가드②
+  if(!Number.isInteger(v) || v<0 || v>1) return;                       // 가드②
+  if(!nwFull(state)){ nwHold(NW_ORDER_C); return; }                    // 가드③ 순서 — 판 불변
+  if(state.nwDone & (1<<c)){ nwHold(NW_ALREADY_C); return; }           // 가드④ 판 불변
+  if(v !== nwAnswer(state.nwMask)[c]){ state.nwWrongC=c; nwHold(NW_NO_C[c]); return; } // 판 불변
+  state.nwDone |= 1 << c;                                              // ★ 답을 채우는 자리는 여기 한 곳뿐
+  state.nwWarn=false; state.nwWrongC=null;
+  state.nwMsg = nwChecked(state)
+    ? (nwRound(state)===1
+        ? `<b>두 번째 검토를 마쳤어요.</b> 첫 기사와 견주니 <b>${nwDiff(state)} 줄</b>이 달라졌어요. 판이 답을 바꾼 것이 아니라 <b>내가 실은 줄</b>이 달라진 거예요.`
+        : `<b>검토를 마쳤어요.</b> 이 답은 판에 적혀 있던 것이 아니라 <b>내가 실은 줄</b>에서 나온 거예요.`)
+    : `<b>맞았어요.</b> 내 기사를 잘 읽었어요. 남은 기준은 <b>${NW_CN - nwBits(state.nwDone)}</b>줄이에요.`;
+  playBlip(); nwRender();
+}
+
+/* ③ 조각을 바꿔 다시 써 보기 — 첫 기사를 그대로 두고 두 번째 기사를 새로 연다.
+   ⚠️ 첫 기사의 세 답도 따로 담지 않는다 — `nwAnswer(state.nwFirst)`가 그때그때 계산한다. */
+function nwAgain(){
+  if(state.nwFin!=null) return;                                        // 가드①
+  if(state.nwBusy) return;                                             // 가드⑨
+  if(!nwChecked(state)){ nwHold(NW_ORDER_A); return; }                 // 가드⑥ 순서 — 판 불변
+  if(state.nwFirst!=null){ nwHold(NW_ORDER_A); return; }               // 가드⑥ 두 번만 쓴다 — 판 불변
+  state.nwFirst = state.nwMask;                                        // ★ 첫 기사를 옮겨 두는 자리는 여기 한 곳뿐
+  state.nwMask = 0; state.nwDone = 0;
+  state.nwWarn=false; state.nwWrongL=null; state.nwWrongC=null;
+  state.nwMsg = `<b>두 번째 기사를 열었어요.</b> 이번에는 <b>다른 조각</b>을 실어 봐요. 검토표의 답이 첫 기사와 <b>똑같아지는 조각</b>은 판이 받지 않아요.`;
+  playChime(); nwRender();
+}
+
+/* ④ 마무리 — 「뉴스 기사를 작성하고 검토한 후 알게 된 점」(지도서 19차시 예시 답안 5 원문) */
+function nwFinish(k){
+  if(state.nwFin!=null) return;                                        // 가드①
+  if(state.nwBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(k) || k<0 || k>=NW_FIN.length) return;          // 가드②
+  if(!(nwRound(state)===1 && nwChecked(state))){ nwHold(NW_ORDER_F); return; } // 가드⑧ 순서 — 판 불변
+  if(k===NW_FIN_OK){
+    state.nwFin=k; state.nwWrongF=null; state.nwMsg=null; state.nwWarn=false;
+    playChime(); nwRender(); return;
+  }
+  state.nwWrongF=k;
+  nwHold(NW_FIN_NO[k]);
+}
+
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2;
+    if(qs.hint>=2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">\uD83D\uDCD8 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 \u2192</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // l15 미양산 — 양산 시 재배선
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+</body>
+</html>

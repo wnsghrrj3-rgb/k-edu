@@ -261,14 +261,14 @@ window.KEDU_MAP["g6_1_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u2_l14",
+     "lessonId": "g6_social_u2_l14_v1",
      "n": "14",
-     "title": "[생각을 펼쳐요]",
+     "title": "[생각을 펼쳐요] 주제를 선택하여 뉴스 기사를 작성해 봅시다",
      "sub": "③ 민주주의와 미디어",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/social/2단원_민주주의와시민참여/g6_social_u2_l14_골라실어요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
