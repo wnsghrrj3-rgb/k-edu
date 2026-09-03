@@ -1112,7 +1112,22 @@ function schoolCell(t){
     : t.school_request
       ? `<span style="color:var(--amber)" title="목록에 없어 직접 적은 학교">${esc(t.school_request)}</span> <span class="table-badge pending">미지정</span>`
       : `<span style="color:var(--faint)">${esc(t.school || '—')}</span> <span class="table-badge rejected">미지정</span>`;
-  return `${set} <button class="apv-btn" style="padding:3px 8px;font-size:12px;margin-left:4px" onclick="pickSchool('${t.id}', this)">${t.school_id ? '바꾸기' : '지정'}</button>`;
+  const sa = SCHOOL_ADMIN_IDS.has(t.id);
+  const saBtn = t.school_id
+    ? ` <button class="apv-btn" style="padding:3px 8px;font-size:12px;margin-left:4px;${sa ? 'background:#DCFCE7;color:#166534;border-color:#86EFAC' : ''}" title="학교 관리자 — 그 학교 할 일판을 전부(골라 보낸 것까지) 보고 우리 학교 현황을 본다" onclick="toggleSchoolAdmin('${t.id}', ${sa ? 'false' : 'true'})">${sa ? '🏫 학교 관리자' : '관리자 지정'}</button>` : '';
+  return `${set} <button class="apv-btn" style="padding:3px 8px;font-size:12px;margin-left:4px" onclick="pickSchool('${t.id}', this)">${t.school_id ? '바꾸기' : '지정'}</button>${saBtn}`;
+}
+// v1.4 학교 관리자 (sql/setup_school_tasks.sql set_school_admin) — 학교당 첫 관리자는 여기서, 그 뒤는 관리자가 교사 화면에서 추가
+let SCHOOL_ADMIN_IDS = new Set();
+async function loadSchoolAdminIds(){
+  const { data, error } = await db.rpc('admin_list_school_admins');
+  SCHOOL_ADMIN_IDS = new Set(error ? [] : (data || []).map(r => r.id));
+}
+async function toggleSchoolAdmin(teacherId, on){
+  const { error } = await db.rpc('set_school_admin', { p_teacher_id: teacherId, p_on: on });
+  if(error){ showToast('학교 관리자 ' + (on ? '지정' : '해제') + ' 실패: ' + (error.message || '') + (/does not exist/.test(error.message||'') ? ' — sql/setup_school_tasks.sql v1.4 를 먼저 실행하세요.' : '')); return; }
+  showToast(on ? '🏫 학교 관리자로 지정했어요.' : '학교 관리자를 해제했어요.');
+  await loadTeachers();
 }
 async function pickSchool(teacherId, btn){
   const q = prompt('학교 이름(두 글자 이상). 앞에 시·도를 붙이면 좁혀져요 — 예) 서울 금성');
@@ -1142,6 +1157,7 @@ async function fetchTeacherRows(){
 }
 
 async function loadTeachers(){
+  await loadSchoolAdminIds();
   const teachers = await fetchTeacherRows();
   await loadPolicySwitch();
   await loadTraining();

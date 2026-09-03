@@ -107,14 +107,14 @@ ok(/OR s\.created_by = me\.tid/.test(listWhere) && /g\.teacher_id = me\.tid/.tes
 ok(/DROP FUNCTION IF EXISTS add_school_task\(text, text, date\);/.test(sql), '★ 옛 3인자 add_school_task 제거 — PostgREST 오버로드 충돌 방지');
 ok(/DROP FUNCTION IF EXISTS list_school_tasks\(\);[\s\S]{0,200}CREATE OR REPLACE FUNCTION list_school_tasks\(\)/.test(sql), '★ 반환형이 바뀐 list_school_tasks 는 DROP 뒤 CREATE(재실행 안전)');
 ok(/p_to uuid\[\] DEFAULT NULL/.test(addFn), '올리기에 p_to(기본 NULL = 모두)');
-ok(/t\.school_id = v_sid AND t\.approval = 'approved' AND t\.id <> v_tid/.test(addFn),
+ok(/t\.school_id = v_sid AND t\.approval IN \('auto','approved'\) AND t\.id <> v_tid/.test(addFn),
    '★ 받는 사람은 같은 학교 승인 교사만, 자기 자신 제외(다른 학교 id 는 조용히 버림)');
 ok(/CASE WHEN EXISTS \(SELECT 1 FROM school_task_targets g WHERE g\.task_id = s\.id\)/.test(listFn) && /AS teacher_count/.test(listFn),
    '★ 골랐으면 「확인 n / N」의 N 은 고른 사람 수');
 ok(/AS targeted/.test(listFn) && /AS to_names/.test(listFn), '목록에 targeted·to_names');
 ok(/kedu_task_visible\(p_task_id\)/.test(markFn), '★ 확인 표시도 수신자만 남길 수 있다');
 const ltFn = (sql.split('FUNCTION list_school_teachers()')[1] || '').split('GRANT EXECUTE ON FUNCTION list_school_teachers')[0];
-ok(/t\.school_id = kedu_my_school_id\(\)/.test(ltFn) && /t\.approval = 'approved'/.test(ltFn) && /t\.id <> cw_my_teacher_id\(\)/.test(ltFn),
+ok(/t\.school_id = kedu_my_school_id\(\)/.test(ltFn) && /t\.approval IN \('auto','approved'\)/.test(ltFn) && /t\.id <> cw_my_teacher_id\(\)/.test(ltFn),
    '★ 고르기 목록 = 우리 학교 승인 교사, 나 제외');
 ok(sql.includes('GRANT EXECUTE ON FUNCTION list_school_teachers() TO authenticated;'), '고르기 목록 GRANT');
 
@@ -130,6 +130,36 @@ ok(/\(SELECT n FROM tcount\) - CASE WHEN s\.created_by IS NOT NULL/.test(listFn)
 const arFn = (sql.split('FUNCTION list_school_tasks_archived()')[1] || '').split('GRANT EXECUTE ON FUNCTION list_school_tasks_archived')[0];
 ok(/s\.created_by = cw_my_teacher_id\(\) AND s\.closed_at IS NOT NULL/.test(arFn), '★ 보관함 = 내가 올려서 내린 것만');
 ok(sql.includes('GRANT EXECUTE ON FUNCTION school_task_status(uuid) TO authenticated;') && sql.includes('GRANT EXECUTE ON FUNCTION list_school_tasks_archived() TO authenticated;'), 'v1.2 GRANT');
+
+/* ── v1.4 학교 관리자 (결정 ⑥) ── */
+ok(!/approval = 'approved'/.test(sql), "★ 승인 기준은 approval IN ('auto','approved') — 'approved' 만 세는 자리 0(kedu_teacher_approved 와 같은 기준)");
+ok(/ALTER TABLE teachers ADD COLUMN school_role text/.test(sql) && /column_name='school_role'/.test(sql), 'school_role 열(멱등)');
+const saFn = (sql.split('FUNCTION kedu_is_school_admin()')[1] || '').split('GRANT EXECUTE ON FUNCTION kedu_is_school_admin')[0];
+ok(/school_role = 'admin' AND t\.school_id IS NOT NULL AND t\.approval IN \('auto','approved'\)/.test(saFn), '★ 학교 관리자 = school_role admin + 학교 있음 + 승인');
+const gFn = (sql.split('FUNCTION kedu_guard_school_role()')[1] || '').split('DROP TRIGGER IF EXISTS trg_teachers_guard_school_role')[0];
+ok(/NEW\.school_role IS DISTINCT FROM OLD\.school_role/.test(gFn) && /kedu\.school_role_set/.test(gFn) && /NEW\.school_role := OLD\.school_role/.test(gFn),
+   '★★ school_role 은 본인이 못 바꾼다 — RPC 안(GUC) 또는 준호만, 아니면 트리거가 되돌린다');
+ok(/CREATE TRIGGER trg_teachers_guard_school_role BEFORE UPDATE ON teachers/.test(sql), '보호 트리거 배선');
+ok(/NEW\.school_id IS DISTINCT FROM OLD\.school_id THEN\s+NEW\.school_role := NULL/.test(gFn), '★ 학교가 바뀌면 관리자 역할은 떨어진다(다른 학교로 옮겨 가며 권한을 들고 가지 않게)');
+const ssFn = (sql.split('FUNCTION set_school_admin(')[1] || '').split('GRANT EXECUTE ON FUNCTION set_school_admin')[0];
+ok(/kedu_is_admin\(\) OR \(kedu_is_school_admin\(\) AND v_sid = kedu_my_school_id\(\)\)/.test(ssFn), '★ 지정은 준호 또는 같은 학교 관리자만');
+ok(/cannot remove self/.test(ssFn), '자기 자신 해제 못 함(마지막 관리자 보호)');
+ok(/set_config\('kedu\.school_role_set', '1', true\)/.test(ssFn), '트랜잭션 지역 GUC 로 트리거 통과');
+ok(/school_id = v_sid AND approval IN \('auto','approved'\)/.test(ssFn), '대상은 같은 학교 승인 교사만');
+ok(/OR kedu_is_school_admin\(\) \)/.test(visFn), '★★ 학교 관리자는 골라 보낸 것도 본다(준호 결정 ⑥)');
+ok(/OR me\.sadmin \)/.test(listWhere) && /kedu_is_school_admin\(\) AS sadmin/.test(listFn), '목록 RPC 도 관리자에게 전부');
+ok(/AS recipient/.test(listFn), '내가 받는 사람인지(관리자 열람 구분)');
+ok(/not a recipient/.test(markFn) && /NOT EXISTS \(SELECT 1 FROM school_task_targets g WHERE g\.task_id = p_task_id AND g\.teacher_id = v_tid\)/.test(markFn),
+   '★★ 관리자는 「보는」 사람 — 골라 보낸 할 일에 받는 사람이 아니면 확인 표시를 못 남긴다(n/N 넘침 방지)');
+ok(/OR kedu_is_admin\(\) OR kedu_is_school_admin\(\)/.test(stFn), '명단은 관리자도');
+const ovFn = (sql.split('FUNCTION school_teacher_overview()')[1] || '').split('GRANT EXECUTE ON FUNCTION school_teacher_overview')[0];
+ok(/WHERE kedu_is_school_admin\(\) OR kedu_is_admin\(\)/.test(ovFn), '★ 현황은 관리자만(아니면 0행)');
+ok(/tt\.id IS DISTINCT FROM t\.created_by/.test(ovFn) && /AS pending|x\.teacher_id IS NULL/.test(ovFn), '교사별 미확인 = 받은 열린 할 일 중 확인 없는 것, 올린 사람 제외');
+const laFn = (sql.split('FUNCTION list_school_admins()')[1] || '').split('GRANT EXECUTE ON FUNCTION list_school_admins')[0];
+ok(/t\.school_id = kedu_my_school_id\(\)/.test(laFn), '관리자 목록도 우리 학교만');
+ok(/WHERE kedu_is_admin\(\) AND t\.school_role = 'admin'/.test(sql), '/admin 용 전체 목록은 준호만');
+['set_school_admin(uuid, boolean)','list_school_admins()','admin_list_school_admins()','school_teacher_overview()','kedu_is_school_admin()']
+  .forEach(k => ok(sql.includes('GRANT EXECUTE ON FUNCTION ' + k + ' TO authenticated;'), 'v1.4 GRANT: ' + k));
 
 /* ── 내 학교 보기·고치기 (연수 병목 차단) ── */
 [ 'FUNCTION my_school()', 'FUNCTION set_my_school(' ].forEach(k => ok(sql.includes(k), 'SQL 누락: ' + k));
@@ -186,6 +216,15 @@ const arJs = (html.split('async function loadSchoolTaskArchive()')[1] || '').spl
 ok(/if\(error\)\{ wrap\.hidden = true; return; \}/.test(arJs), '★ 폴백 — v1.2 SQL 미적용이면 보관함 칸만 숨긴다');
 const clJs = (html.split('async function closeSchoolTask(id, archive)')[1] || '').split('async function loadSchoolTaskArchive')[0];
 ok(/if\(!archive && !confirm\(/.test(clJs), '내리기는 묻고, 보관은 바로');
+/* v1.4 화면 */
+[ 'id="schooltask-overview-btn"', 'id="schooltask-overview"', 'function loadSchoolAdmins()', 'function toggleSchoolOverview()', 'function addSchoolAdmin()',
+  "db.rpc('list_school_admins')", "db.rpc('school_teacher_overview')", "db.rpc('set_school_admin'" ].forEach(k => ok(html.includes(k), 'v1.4 UI 누락: ' + k));
+ok(/t\.recipient === false && !t\.mine/.test(rowFn) && /👁 관리자 열람/.test(rowFn), '★ 관리자 열람(받는 사람 아님)엔 확인 단추 대신 배지');
+ok(/await loadSchoolAdmins\(\);[\s\S]{0,120}const todo = rows\.filter/.test(loadFn), '★ 관리자 여부를 줄 그리기 전에 안다');
+const laJs = (html.split('async function loadSchoolAdmins()')[1] || '').split('async function toggleSchoolOverview()')[0];
+ok(/if\(error\)\{ isSchoolAdmin = false;[^}]*btn\.hidden = true; return; \}/.test(laJs), '★ 폴백 — v1.4 SQL 미적용이면 관리자 아님·단추 숨김');
+const adminHtml = rd('admin/index.html');
+['function toggleSchoolAdmin(', "db.rpc('admin_list_school_admins')", "db.rpc('set_school_admin'", '관리자 지정'].forEach(k => ok(adminHtml.includes(k), '/admin 학교 관리자 UI 누락: ' + k));
 [ 'id="schooltask-school"', 'id="schooltask-school-pick"', 'id="schooltask-school-q"',
   'function loadMySchool()', 'function searchMySchool()', 'function setMySchool(',
   'function toggleSchoolPick()' ].forEach(k => ok(html.includes(k), '학교 지정 UI 누락: ' + k));
@@ -254,6 +293,33 @@ ok(mailFiles.every(f => { try { return !/school_task/.test(rd(f)); } catch (e) {
   ok(h.indexOf('확인 1 / 2명') >= 0, 'jsdom — 확인한 사람 수(골랐으면 분모는 고른 수)');
   ok(h.indexOf('김하늘, 이바다에게') >= 0, '★ jsdom — 내가 골라 보낸 할 일엔 받는 사람 이름');
   ok(h.indexOf('확인 3 / 9명') >= 0, 'jsdom — 전체 공유는 분모가 학교 교사 수');
+  // ★ v1.4 학교 관리자 — 골라 보낸 남의 할 일도 보이되 확인 단추 대신 배지, 현황 펼침
+  const adminRows = rows.concat([{ id:'t6', title:'교장 결재 서류', detail:'', due_date:'2026-09-09', days_left:6, urgency:'normal',
+      bucket:'todo', mine:false, done:false, done_count:0, teacher_count:1, created_by_name:'이', created_at:'', targeted:true, to_names:'김하늘', recipient:false }]);
+  w.db.rpc = async (fn) => fn === 'my_school' ? ({ data: [school], error: null })
+    : fn === 'list_school_admins' ? ({ data: [{ id:'ME', name:'준호', is_me:true }], error: null })
+    : fn === 'school_teacher_overview' ? ({ data: [{ teacher_id:'T1', name:'김하늘', class_label:'3-2', pending:2, done:1, is_admin:false }, { teacher_id:'T2', name:'이바다', class_label:'', pending:0, done:3, is_admin:true }], error: null })
+    : fn === 'list_school_tasks_archived' ? ({ data: [], error: null })
+    : ({ data: adminRows, error: null });
+  await w.loadSchoolTasks();
+  ok(d.getElementById('schooltask-overview-btn').hidden === false, 'jsdom — 관리자면 현황 단추');
+  const h6 = d.querySelector('[data-stask="t6"]');
+  ok(h6 && h6.innerHTML.indexOf('👁 관리자 열람') >= 0 && h6.innerHTML.indexOf("markSchoolTask('t6'") < 0, '★★ jsdom — 남이 골라 보낸 할 일: 보이되 확인 단추 없음');
+  ok(h6.innerHTML.indexOf('김하늘에게') >= 0, 'jsdom — 관리자에겐 받는 사람 이름');
+  ok(d.getElementById('stask-status-t2') !== null, 'jsdom — 관리자는 남의 할 일 명단 자리도 있다');
+  await w.toggleSchoolOverview();
+  const ov = d.getElementById('schooltask-overview');
+  ok(ov.hidden === false && ov.innerHTML.indexOf('⏳ 2') >= 0 && ov.innerHTML.indexOf('김하늘') >= 0, '★ jsdom — 현황: 미확인 2건 교사가 빨강');
+  ok(ov.innerHTML.indexOf('미확인 1명 · 다 확인 1명') >= 0, 'jsdom — 현황 요약');
+  ok(d.querySelectorAll('#schooltask-admin-pick option').length === 1, 'jsdom — 관리자 추가 목록엔 아직 관리자 아닌 사람만');
+  // 관리자 아님 — 단추 숨김, 골라 보낸 남의 것은 애초에 안 옴
+  w.db.rpc = async (fn) => fn === 'my_school' ? ({ data: [school], error: null })
+    : fn === 'list_school_admins' ? ({ data: [{ id:'X', name:'이바다', is_me:false }], error: null })
+    : fn === 'list_school_tasks_archived' ? ({ data: [], error: null })
+    : ({ data: rows, error: null });
+  await w.loadSchoolTasks();
+  ok(d.getElementById('schooltask-overview-btn').hidden === true, '★ jsdom — 관리자 아니면 현황 단추 없음');
+  ok(d.getElementById('schooltask-school').innerHTML.indexOf('학교 관리자: 이바다') >= 0, 'jsdom — 누가 관리자인지는 모두에게');
   // ★ 명단 — 누가 안 했나
   w.db.rpc = async (fn, args) => fn === 'my_school' ? ({ data: [school], error: null })
     : fn === 'school_task_status' ? ({ data: [{ teacher_id:'T1', name:'김하늘', class_label:'3-2', done:false, done_at:null }, { teacher_id:'T2', name:'이바다', class_label:'', done:true, done_at:'2026-09-03' }], error: null })
