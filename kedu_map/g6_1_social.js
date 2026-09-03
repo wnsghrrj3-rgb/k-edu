@@ -288,14 +288,14 @@ window.KEDU_MAP["g6_1_social"] = {
    "kind": "unit",
    "lessons": [
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u3_l01",
+     "lessonId": "g6_social_u3_l01_v1",
      "n": "1",
      "title": "지구본과 세계지도를 살펴볼까요 / [풍덩] 지도에 담긴 세계의 모습은 실제와 다를 수 있어요",
      "sub": "① 세계를 표현하는 다양한 자료",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/social/3단원_지구대륙그리고국가들/g6_social_u3_l01_나란히봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
