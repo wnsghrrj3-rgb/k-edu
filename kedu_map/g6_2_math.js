@@ -121,114 +121,114 @@ window.KEDU_MAP["g6_2_math"] = {
    "kind": "unit",
    "lessons": [
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u2_l01",
+     "lessonId": "g6_2_math_u2_l01_v1",
      "n": "1",
      "title": "공간과 입체를 만나 보자",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/2단원_공간과입체/g6_math_u2_l01_공간과입체를만나보자.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u2_l02",
+     "lessonId": "g6_2_math_u2_l02_v1",
      "n": "2",
      "title": "여러 방향에서 보고 모양을 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/2단원_공간과입체/g6_math_u2_l02_여러방향에서보고모양을알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u2_l03",
+     "lessonId": "g6_2_math_u2_l03_v1",
      "n": "3",
      "title": "여러 방향에서 본 모양을 그려요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/2단원_공간과입체/g6_math_u2_l03_여러방향에서본모양을그려요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u2_l04",
+     "lessonId": "g6_2_math_u2_l04_v1",
      "n": "4",
      "title": "쌓기나무 개수를 구해요 ①",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/2단원_공간과입체/g6_math_u2_l04_쌓기나무개수를구해요1.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u2_l05",
+     "lessonId": "g6_2_math_u2_l05_v1",
      "n": "5",
      "title": "쌓기나무 개수를 구해요 ②-1",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/2단원_공간과입체/g6_math_u2_l05_쌓기나무개수를구해요2_1.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u2_l06",
+     "lessonId": "g6_2_math_u2_l06_v1",
      "n": "6",
      "title": "쌓기나무 개수를 구해요 ②-2",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/2단원_공간과입체/g6_math_u2_l06_쌓기나무개수를구해요2_2.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u2_l07",
+     "lessonId": "g6_2_math_u2_l07_v1",
      "n": "7",
      "title": "쌓은 모양을 알아봐요 ①",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/2단원_공간과입체/g6_math_u2_l07_쌓은모양을알아봐요1.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u2_l08",
+     "lessonId": "g6_2_math_u2_l08_v1",
      "n": "8",
      "title": "쌓은 모양을 알아봐요 ②",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/2단원_공간과입체/g6_math_u2_l08_쌓은모양을알아봐요2.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u2_l09",
+     "lessonId": "g6_2_math_u2_l09_v1",
      "n": "9",
      "title": "여러 가지 모양을 만들어요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/2단원_공간과입체/g6_math_u2_l09_여러가지모양을만들어요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u2_l10",
+     "lessonId": "g6_2_math_u2_l10_v1",
      "n": "10",
      "title": "아리송아리송 쌓기나무 쌓기",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/2단원_공간과입체/g6_math_u2_l10_아리송아리송쌓기나무쌓기.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u2_l11",
+     "lessonId": "g6_2_math_u2_l11_v1",
      "n": "11",
      "title": "스스로 마무리해요 (단원 평가)",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/2단원_공간과입체/g6_math_u2_l11_스스로마무리해요.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   },
