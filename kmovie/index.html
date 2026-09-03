@@ -142,6 +142,10 @@
   .sc .t { flex:1; min-width:0; font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .sc .tm { font-size:10px; color:var(--sub); font-variant-numeric:tabular-nums; flex:none; }
   .sc .x { color:var(--dim); font-size:13px; padding:0 3px; } .sc .x:hover { color:var(--danger); }
+  .sc .cut { color:var(--dim); font-size:12px; padding:0 3px; } .sc .cut:hover { color:var(--gold); }
+  #myStyles .chip { display:inline-flex; align-items:center; gap:3px; background:var(--panel2); border:1px solid var(--line2); border-radius:12px; padding:1px 4px 1px 8px; font-size:11.5px; cursor:pointer; }
+  #myStyles .chip:hover { border-color:var(--gold); } #myStyles .chip i { font-style:normal; color:var(--dim); padding:0 3px; } #myStyles .chip i:hover { color:var(--danger); }
+  #myStyles .none { font-size:11px; color:var(--dim); padding:2px 0; }
   #subText { width:100%; min-height:64px; resize:vertical; font-size:12px; line-height:1.5; }
   .note { color:var(--dim); font-size:11.5px; line-height:1.6; }
   #partGrid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
@@ -322,9 +326,11 @@
           <div class="note hidden" id="fitNote"></div>
           <div class="row" id="rowFreeze"><label>정지 길이</label><input type="number" id="freezeSec" min="0.5" max="60" step="0.5"><span class="v">초</span></div>
           <div class="row" id="rowVol"><label>소리</label><input type="range" id="vol" min="0" max="150" value="100"><span class="v" id="volV" style="width:38px;text-align:right">100%</span></div>
+          <div class="row" id="rowJL"><label>J/L 컷</label><button id="btnJcut" title="J 컷 — 이 클립의 소리가 영상보다 0.5초 먼저 시작해요 (앞 컷 위로 소리가 먼저 들어옴). 누를 때마다 0.5초씩">◀ 소리 먼저 0.5초</button><button id="btnLcut" title="L 컷 — 이 클립의 소리가 영상이 끝난 뒤 0.5초 더 이어져요 (뒤 컷 위로 소리가 남음). 누를 때마다 0.5초씩">소리 나중 0.5초 ▶</button></div>
           <div class="row" id="rowLink"><label>소리 띠</label><span class="v" id="linkState"></span><div class="sp"></div><button id="btnRelink">링크 복원</button></div>
           <div class="row"><div class="sp"></div><button id="btnFreeze" title="플레이헤드 프레임을 정지 클립으로 (F)">프리즈</button><button id="btnSplit" title="플레이헤드에서 분할 (S)">분할</button><button id="btnDel" class="danger" title="리플 삭제 (Del)">삭제</button></div>
           <div class="sub2">룩 (이 클립)</div>
+          <div class="note hidden" id="matchNote"></div>
           <div class="row"><label>LUT</label><div class="seg c3" id="clipLutSeg"></div></div>
           <div class="row"><label>밝기</label><input type="range" id="cBright" min="-30" max="30" value="0"><span class="v" id="cBrightV" style="width:34px;text-align:right">0</span></div>
           <div class="row"><label>대비</label><input type="range" id="cContrast" min="50" max="160" value="100"><span class="v" id="cContrastV" style="width:34px;text-align:right">100</span></div>
@@ -355,7 +361,8 @@
           <div class="row"><label>미세</label><input type="range" id="subY" min="-30" max="30" value="0"><span class="v" id="subYV" style="width:40px;text-align:right">0</span></div>
           <div class="row"><label>색</label><div class="seg" id="subColorSeg"></div></div>
           <div class="row"><label>등장</label><div class="fxrow"><select id="subFxIn"></select><div class="seg c3" id="subFxInDur"></div></div></div>
-          <div class="row"><label>퇴장</label><div class="fxrow"><select id="subFxOut"></select><div class="seg c3" id="subFxOutDur"></div></div></div><div class="row"><label>구간</label><span class="v" id="subEditTime"></span><div class="sp"></div><button id="btnSubDel" class="danger">삭제</button></div></div>
+          <div class="row"><label>퇴장</label><div class="fxrow"><select id="subFxOut"></select><div class="seg c3" id="subFxOutDur"></div></div></div><div class="row"><label>내 스타일</label><div id="myStyles" style="display:flex;flex-wrap:wrap;gap:4px;flex:1"></div><button id="btnStyleSave" title="이 카드의 스타일·글꼴·크기·위치·색·등장·퇴장을 이름 붙여 저장해요 — 작업 파일과 함께 남고, 「새 자막」 기본값으로도 고를 수 있어요">저장</button></div>
+          <div class="row"><label>구간</label><span class="v" id="subEditTime"></span><div class="sp"></div><button id="btnSubCut" title="이 자막 구간만큼 영상·소리를 잘라내요 (리플 · Ctrl+Z 한 번)">✂ 이 말 잘라내기</button><button id="btnSubDel" class="danger">삭제</button></div></div>
       </div>
       <div class="panel" id="v2Panel">
         <h3>덧영상<div class="sp"></div><span class="note" style="letter-spacing:0;text-transform:none;font-weight:400">영상 위에 작은 화면(PIP)</span></h3>
@@ -409,6 +416,9 @@
         <div class="row"><label>자동 효과음</label><button class="tog" id="tgSfx"></button><span class="note">전환·타이틀·자막에 어울리는 소리가 자동으로 붙어요</span></div>
         <div class="row" id="rowSfxGain"><label>세기</label><div class="seg c3" id="sfxGainSeg"></div></div>
         <div class="row" id="rowSfxTry"><label>들어보기</label><div class="seg" id="sfxTrySeg" style="flex-wrap:wrap;gap:4px;flex:1"></div></div>
+        <div class="sub2">소리 크기 (내보내기)</div>
+        <div class="row"><label>-14 LUFS</label><button class="tog" id="tgLoud"></button><span class="note">내보낼 때 전체 소리 크기를 유튜브 기준(-14 LUFS)에 맞춰요 · 피크 -1dB 한도</span></div>
+        <div class="note hidden" id="loudNote"></div>
         <div class="sub2">덕킹·박자 (프로젝트)</div>
         <div class="row"><label>자동 덕킹</label><button class="tog" id="tgDuck"></button><span class="note">말하는 동안 음악을 낮춰요</span></div>
         <div class="row" id="rowDuck"><label>깊이</label><input type="range" id="duckDepth" min="3" max="24" value="12"><span class="v" id="duckDepthV" style="width:44px;text-align:right">-12dB</span></div>
@@ -450,6 +460,8 @@
         <div class="row"><label>강도</label><input type="range" id="lutStr" min="0" max="100" value="60"><span class="v" id="lutStrV" style="width:34px;text-align:right">60%</span></div>
         <div class="row"><label>노출 맞춤</label><button class="tog" id="tgExpose"></button><span class="note">클립마다 밝기·대비를 한 작품처럼</span></div>
         <div class="row"><label>색 맞춤</label><button class="tog" id="tgMatch"></button><span class="note">색 온도가 다른 클립을 한 작품처럼 (자동 화이트밸런스)</span></div>
+        <div class="row"><label>샷 색 맞춤</label><button id="btnShotMatch" title="타임라인에서 고른 클립을 기준으로 다른 클립들의 색 균형·밝기·대비를 맞춰요 (Ctrl+Z 한 번)">고른 클립 기준으로 맞추기</button><button id="btnShotMatchOff" title="샷 색 맞춤을 전부 풀어요">해제</button></div>
+        <div class="note" id="shotMatchNote">클립 하나를 고르고 누르면 나머지가 그 클립 색을 따라가요.</div>
         <div class="row"><label>시네마 바</label><button class="tog" id="tgBar"></button><span class="note">2.39:1 레터박스</span></div>
         <div class="row"><label>비네트</label><input type="range" id="vig" min="0" max="100" value="0"><span class="v" id="vigV" style="width:34px;text-align:right">0%</span></div>
       </div>
@@ -539,6 +551,7 @@
 <script src="engine/reframe.js" defer></script>
 <script src="engine/stab.js" defer></script>
 <script src="engine/render.js" defer></script>
+<script src="engine/loud.js" defer></script>
 <script src="engine/export.js" defer></script>
 <script src="engine/shell.js" defer></script>
 <script src="kmovie.js" defer></script>

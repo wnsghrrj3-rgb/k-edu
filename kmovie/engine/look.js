@@ -91,6 +91,20 @@
     return [st.r, st.g, st.b].map(v => 1 + (clamp(m / Math.max(0.02, v), 0.8, 1.25) - 1) * k);
   }
 
+  /* 샷 색 맞춤(컬러 매치, 클립 기준) — 리졸브 "Shot Match"·프리미어 "Match" 의 자동 부분.
+     기준 원본의 통계(채널 균형·평균 휘도·대비)에 다른 원본을 맞추는 계수 {wb, gain, off}. 썸네일 통계라 결정적.
+     wb 는 채널/평균 비율의 비(회색 균형 차이만 — 밝기는 gain/off 가), gain 은 표준편차 비, off 는 gain 을 적용한 뒤의 평균 차.
+     strength(기본 0.8)로 섞고 0.75~1.35 로 묶는다 — 통계가 다른 장면(밝은 운동장 vs 어두운 복도)을 억지로 같게 만들지 않도록. */
+  function matchParams(refMediaId, mediaId, strength) {
+    const R = stats(refMediaId), S = stats(mediaId); if (!R || !S || R.r == null || S.r == null) return null;
+    const k = clamp(strength == null ? 0.8 : strength, 0, 1);
+    const rm = (R.r + R.g + R.b) / 3, sm = (S.r + S.g + S.b) / 3; if (rm < 0.02 || sm < 0.02) return null;
+    const wb = ['r', 'g', 'b'].map(ch => { const a = R[ch] / rm, b = Math.max(0.02, S[ch] / sm); return +(1 + (clamp(a / b, 0.75, 1.35) - 1) * k).toFixed(4); });
+    let gain = (R.contrast > 0.02 && S.contrast > 0.02) ? clamp(R.contrast / S.contrast, 0.75, 1.35) : 1; gain = 1 + (gain - 1) * k;
+    const off = clamp((R.luma - ((S.luma - 0.5) * gain + 0.5)) * k, -0.18, 0.18);
+    return { wb, gain: +gain.toFixed(4), off: +off.toFixed(4) };
+  }
+
   /* ---------- 켄 번즈 ---------- */
   function kenburns(c, t) {
     if (!c.kenburns) return null;
@@ -179,10 +193,13 @@
     const cl = c.look || {};
     const lut = cl.lut === undefined ? (look.lut || null) : cl.lut;        // 클립 lut: undefined=프로젝트 따름, null=없음
     const strength = cl.strength != null ? cl.strength : (look.strength == null ? 0.6 : look.strength);
-    const ex = exposure(c, look);
+    const ex = exposure(c, look), mt = cl.match, wb0 = whiteBalance(c, look);
+    // 샷 색 맞춤은 노출 정규화 뒤에 얹는다: (c·G+O)·g+o = c·(G·g) + (O·g+o)
+    const gain = mt && mt.gain != null ? ex.gain * mt.gain : ex.gain, off = mt ? ex.off * (mt.gain == null ? 1 : mt.gain) + (mt.off || 0) : ex.off;
+    const wb = mt && mt.wb ? wb0.map((v, i) => v * (mt.wb[i] == null ? 1 : mt.wb[i])) : wb0;
     return {
       lut: lut && cubes.has(lut) ? lut : null, strength: clamp(strength, 0, 1),
-      gain: ex.gain, off: ex.off, wb: whiteBalance(c, look),
+      gain, off, wb,
       bright: clamp(cl.bright || 0, -0.3, 0.3), contrast: clamp(cl.contrast == null ? 1 : cl.contrast, 0.5, 1.6), sat: clamp(cl.sat == null ? 1 : cl.sat, 0, 1.8),
       vig: clamp(look.vignette || 0, 0, 1), cinemaBar: !!look.cinemaBar,
     };
@@ -233,5 +250,5 @@
     }
   }
 
-  g.KMV_LOOK = { LUTS, KENBURNS, ready, apply, applyCPU, kenburns, stats, resolve, exposure, whiteBalance, hasLut: id => cubes.has(id), _parseCube: parseCube };
+  g.KMV_LOOK = { LUTS, KENBURNS, ready, apply, applyCPU, kenburns, stats, resolve, exposure, whiteBalance, matchParams, hasLut: id => cubes.has(id), _parseCube: parseCube };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -15,7 +15,7 @@
 
   const BITRATE = 8_000_000, KEY_EVERY = 60, QUEUE_MAX = 8;
   const MUXER_URL = 'vendor/mp4-muxer.js';   // 레포 동봉(5.2.2) — 폴백 로드용
-  let busy = false;
+  let busy = false, lastLoud = null;   // lastLoud: 마지막 내보내기의 라우드니스 측정 {lufs,peak,gainDb,target}
 
   function loadMuxer() {
     return new Promise((res, rej) => {
@@ -93,6 +93,16 @@
       encoder.configure({ codec: vcodec, width: W, height: H, bitrate: BITRATE, framerate: FPS, latencyMode: 'quality' });
 
       if (wantAudio) {
+        // -14 LUFS 맞춤: 1패스로 믹스를 재고(영상 없이 소리만이라 빠르다) 게인 하나를 정한다 — 전 구간 같은 게인(압축 아님)
+        let lgain = 1; lastLoud = null;
+        const LC = P.data.audio && P.data.audio.loudness;
+        if (LC && LC.on && g.KMV_LOUD) {
+          prog(0, '소리 크기 재는 중');
+          const mt = g.KMV_LOUD.meter(SRr, 2);
+          await g.KMV_AUDIO.renderMix(total, async (mix, startFrame) => { aborted(); mt.push([mix.getChannelData(0), mix.numberOfChannels > 1 ? mix.getChannelData(1) : mix.getChannelData(0)]); });
+          const r = mt.result(), gdb = g.KMV_LOUD.gainDb(r.lufs, r.peak, LC.target);
+          lgain = Math.pow(10, gdb / 20); lastLoud = { lufs: r.lufs, peak: r.peak, gainDb: gdb, target: LC.target == null ? -14 : LC.target };
+        }
         aenc = new AudioEncoder({ output: (c, m) => muxer.addAudioChunk(c, m), error: e => { encErr = e; } });
         aenc.configure({ codec: 'mp4a.40.2', sampleRate: SRr, numberOfChannels: 2, bitrate: 192000 });
         await g.KMV_AUDIO.renderMix(total, async (mix, startFrame) => {
@@ -102,6 +112,7 @@
           for (let s = 0; s < L; s += CH) {
             const n = Math.min(CH, L - s), data = new Float32Array(n * 2);
             data.set(c0.subarray(s, s + n), 0); data.set(c1.subarray(s, s + n), n);
+            if (lgain !== 1) for (let i = 0; i < data.length; i++) data[i] *= lgain;
             const ad = new AudioData({ format: 'f32-planar', sampleRate: SRr, numberOfFrames: n, numberOfChannels: 2, timestamp: Math.round((base + s) * 1e6 / SRr), data });
             aenc.encode(ad); ad.close();
             if (aenc.encodeQueueSize > 16) await new Promise(r => setTimeout(r, 2));
@@ -154,5 +165,5 @@
     }
   }
 
-  g.KMV_EXPORT = { exportMP4, isBusy: () => busy };
+  g.KMV_EXPORT = { exportMP4, isBusy: () => busy, lastLoud: () => lastLoud };
 })(typeof window !== 'undefined' ? window : globalThis);

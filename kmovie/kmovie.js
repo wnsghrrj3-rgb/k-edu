@@ -1310,6 +1310,15 @@
   $('vol').onchange = e => { const c = selClip(); if (!c) return; const a = P.audioOf(c.id); if (a) { const v = +e.target.value / 100; a.vol = volStart == null ? 1 : volStart; volStart = null; P.setVol(c.id, v); } };
   $('freezeSec').onchange = e => { const c = selClip(); if (c && c.freeze) { stop(); P.trim(c.id, 'out', Math.round(clamp(+e.target.value, 0.5, 60) * FPS)); setPH(ph); } };
   $('btnRelink').onclick = () => { const c = selClip(); if (c) { stop(); P.relink(c.id); } };
+  /* J/L 컷 버튼 — Alt+드래그(audioTrim)와 같은 길, 0.5초씩. J: 소리 in 을 앞으로(앞 컷 위로 소리가 먼저), L: 소리 out 을 뒤로(뒤 컷 위로 소리가 남음) */
+  function jlCut(side) {
+    const c = selClip(); if (!c || c.gap || c.freeze) return; const a = P.audioOf(c.id), m = P.media(c.media); if (!a || !m) return;
+    if (c.speed !== 'normal') return toast('J/L 컷은 정속 클립에서만 돼요');
+    stop(); const step = Math.max(1, Math.round(0.5 * m.fps));
+    if (side === 'in') { if (a.in <= 0) return toast('원본 앞에 더 당길 소리가 없어요'); P.audioTrim(c.id, 'in', a.in - step); toast('J 컷 — 소리가 ' + secStr(Math.round((c.in - P.audioOf(c.id).in) * FPS / m.fps)) + ' 먼저 시작해요', 2000); }
+    else { if (a.out >= m.dur) return toast('원본 뒤에 더 이을 소리가 없어요'); P.audioTrim(c.id, 'out', a.out + step); toast('L 컷 — 소리가 ' + secStr(Math.round((P.audioOf(c.id).out - c.out) * FPS / m.fps)) + ' 더 이어져요', 2000); }
+  }
+  $('btnJcut').onclick = () => jlCut('in'); $('btnLcut').onclick = () => jlCut('out');
   $('btnFreeze').onclick = doFreeze; $('btnSplit').onclick = doSplit; $('btnDel').onclick = doDelete;
 
   function refreshPanel() {
@@ -1318,6 +1327,7 @@
     $('trNone').classList.toggle('hidden', !!c); $('trBody').classList.toggle('hidden', !c);
     $('btnUndo').disabled = !P.canUndo(); $('btnRedo').disabled = !P.canRedo();
     if (c) refreshClipFx();
+    if (typeof refreshLookPanel === 'function' && $('shotMatchNote')) refreshLookPanel();   // 샷 색 맞춤 안내는 고른 클립을 따라간다
     if (!c) return;
     if (c.gap) {                                        // 빈 자리 — 길이만 조절
       $('cName').textContent = '빈 자리'; $('cName').title = '리프트로 생긴 검은 화면';
@@ -1325,7 +1335,7 @@
       $('cDur').textContent = secStr(c.dur) + ' · ' + tc(c.at) + ' 부터';
       $('rowSpeed').classList.add('hidden');
       $('rowFreeze').classList.remove('hidden'); $('freezeSec').value = (c.dur / FPS).toFixed(1);
-      $('rowVol').classList.add('hidden'); $('rowLink').classList.add('hidden');
+      $('rowVol').classList.add('hidden'); $('rowLink').classList.add('hidden'); $('rowJL').classList.add('hidden'); $('matchNote').classList.add('hidden');
       $('btnFreeze').disabled = true;
       $('trBody').classList.add('hidden'); $('trNone').classList.remove('hidden');
       return;
@@ -1346,11 +1356,13 @@
     refreshFillRow(c);
     $('rowFreeze').classList.toggle('hidden', !c.freeze); if (c.freeze) $('freezeSec').value = (c.dur / FPS).toFixed(1);
     $('rowVol').classList.toggle('hidden', !a); if (a) { $('vol').value = Math.round((a.vol == null ? 1 : a.vol) * 100); $('volV').textContent = $('vol').value + '%'; }
+    $('rowJL').classList.toggle('hidden', !a || c.freeze || c.speed !== 'normal' || m.kind !== 'video');
     $('rowLink').classList.toggle('hidden', !a || a.linked);
     if (a && !a.linked) $('linkState').textContent = 'J/L 컷 (' + (a.in < c.in ? '소리 먼저' : '') + (a.out > c.out ? (a.in < c.in ? '·' : '') + '소리 나중' : '') + ')';
     $('btnFreeze').disabled = c.freeze || m.kind === 'image';
     // 룩 (클립)
     const cl = c.look || {};
+    { const mt = cl.match, rc = mt && P.clip(mt.ref), rm = rc && P.media(rc.media); $('matchNote').classList.toggle('hidden', !mt); if (mt) $('matchNote').textContent = '샷 색 맞춤 적용 중' + (rm ? ' — 기준: ' + rm.name : '') + ' (룩 탭에서 해제)'; }
     const lutKey = cl.lut === undefined ? 'inherit' : (cl.lut === null ? 'none' : cl.lut);
     Array.from($('clipLutSeg').children).forEach(b => b.classList.toggle('on', b.dataset.k === lutKey));
     $('cBright').value = Math.round((cl.bright || 0) * 100); $('cBrightV').textContent = $('cBright').value;
@@ -1418,6 +1430,13 @@
   $('tgExpose').onclick = () => P.setProjectLook({ autoExpose: !P.data.look.autoExpose });
   $('tgMatch').onclick = () => P.setProjectLook({ colorMatch: !P.data.look.colorMatch });
   $('tgBar').onclick = () => P.setProjectLook({ cinemaBar: !P.data.look.cinemaBar });
+  $('btnShotMatch').onclick = () => {
+    const c = selClip(); if (!c || c.gap) return toast('기준이 될 클립을 타임라인에서 먼저 골라 주세요');
+    const src = M.get(c.media); if (!src || !(src.thumbs || []).some(Boolean)) return toast('기준 클립 분석이 아직이에요 — 잠시 뒤 다시');
+    const r = P.matchLooks(c.id); if (!r) return toast('맞출 수 없어요');
+    toast(r.done ? '클립 ' + r.done + '개를 「' + P.media(c.media).name + '」 색에 맞췄어요' + (r.skipped ? ' (분석 전 ' + r.skipped + '개는 건너뜀)' : '') + ' — Ctrl+Z 로 되돌려요' : (r.skipped ? '다른 클립 분석이 아직이에요 — 잠시 뒤 다시' : '맞출 다른 클립이 없어요'), 3200);
+  };
+  $('btnShotMatchOff').onclick = () => { const n = P.clearMatch(); toast(n ? '샷 색 맞춤을 풀었어요 (' + n + '개)' : '적용된 샷 색 맞춤이 없어요'); };
   function refreshLookPanel() {
     const L = P.data.look;
     Array.from($('themeSeg').children).forEach(b => b.classList.toggle('on', b.dataset.k === P.data.theme));
@@ -1425,6 +1444,7 @@
     $('lutStr').value = Math.round((L.strength == null ? 0.6 : L.strength) * 100); $('lutStrV').textContent = $('lutStr').value + '%';
     $('vig').value = Math.round((L.vignette || 0) * 100); $('vigV').textContent = $('vig').value + '%';
     $('tgExpose').classList.toggle('on', !!L.autoExpose); $('tgMatch').classList.toggle('on', !!L.colorMatch); $('tgBar').classList.toggle('on', !!L.cinemaBar);
+    { const n = P.data.V.filter(c => c.look && c.look.match).length, c = selClip(); $('shotMatchNote').textContent = n ? '샷 색 맞춤 적용 중 — 클립 ' + n + '개' : (c && !c.gap ? '「' + (P.media(c.media) || {}).name + '」 을 기준으로 나머지 클립 색을 맞춰요' : '클립 하나를 고르고 누르면 나머지가 그 클립 색을 따라가요'); $('btnShotMatchOff').classList.toggle('hidden', !n); }
   }
   // 자막
   /* ---------- 14단계 패널: 덧영상 V2 ---------- */
@@ -1529,12 +1549,12 @@
     if (!lines.length) return toast('먼저 문장을 한 줄에 하나씩 넣어 주세요');
     if (!P.total()) return toast('타임라인이 비어 있어요');
     const voice = A.voice();
-    const cards = SB.distribute(lines, voice, P.total(), FPS).map(c => Object.assign(c, { style: subStyle }));
+    const cards = SB.distribute(lines, voice, P.total(), FPS).map(c => Object.assign(c, newSubFields()));
     P.setS(cards); $('subText').value = '';
     toast(voice.length ? '말하는 구간 ' + voice.length + '곳에 나눠 놓았어요 — 카드를 끌어서 손보세요' : '음성 구간을 못 찾아 전체 길이에 고르게 놓았어요', 3000);
     if (cards.length) { selectS(cards[0].id); setPH(cards[0].at); }
   };
-  $('btnSubAdd').onclick = () => { stop(); const text = $('subText').value.split(/\n/).map(x => x.trim()).filter(Boolean)[0] || '자막'; const s2 = P.addS({ text, at: ph, dur: 2 * FPS, style: subStyle }); selectS(s2.id); setPH(ph); };
+  $('btnSubAdd').onclick = () => { stop(); const text = $('subText').value.split(/\n/).map(x => x.trim()).filter(Boolean)[0] || '자막'; const s2 = P.addS(Object.assign({ text, at: ph, dur: 2 * FPS }, newSubFields())); selectS(s2.id); setPH(ph); };
   /* 받아쓰기 — 실제로 들리는 소리(A1, 소리 켠 카드)의 원본 구간만 whisper 로 받아써 자막 카드로 */
   let sttBusy = false;
   $('btnSubStt').onclick = async () => {
@@ -1563,7 +1583,7 @@
       }
     } catch (e) { console.error(e); sttBusy = false; OV.hide(); return toast('받아쓰기 실패 — ' + (e.message || e), 5000); }
     sttBusy = false; OV.hide();
-    const cards = window.KMV_STT.build(segsByMedia, ranges, FPS).map(c => Object.assign(c, { style: subStyle }));
+    const cards = window.KMV_STT.build(segsByMedia, ranges, FPS).map(c => Object.assign(c, newSubFields()));
     if (!cards.length) return toast(skipped ? '원본 연결이 있는 파일에서 말소리를 못 찾았어요 (' + skipped + '개는 데스크톱에서 다시 넣어야 받아쓸 수 있어요)' : '말소리를 못 찾았어요', 4200);
     const made = P.addManyS(cards);
     toast('자막 ' + made.length + '개를 받아썼어요 — 카드를 눌러 문구를 다듬어 주세요' + (skipped ? ' (' + skipped + '개 파일은 원본 연결이 없어 건너뜀)' : ''), 4200);
@@ -1575,18 +1595,60 @@
   $('subEditText').onchange = e => { const s2 = selS && P.subtitle(selS); if (s2) { const v = e.target.value; if (subEditStart != null) s2.text = subEditStart; subEditStart = null; P.updateS(s2.id, { text: v }); } };
   $('subEditText').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } };
   $('btnSubDel').onclick = () => { if (selS) { P.removeS(selS); selectS(null); setPH(ph); } };
+  /* 「이 말 잘라내기」 — 자막 구간만큼 리플 삭제(영상·소리·다른 카드 따라옴, undo 1회). 텍스트 기반 편집: 받아쓰기 자막에서 군더더기 문장을 통째로 */
+  function cutSub(id) {
+    const s2 = P.subtitle(id); if (!s2) return; if (!P.total()) return toast('타임라인이 비어 있어요');
+    stop(); const at = s2.at, n = P.removeRanges([{ at: s2.at, dur: s2.dur }]);
+    if (!n) return toast('잘라낼 영상 구간이 없어요 (자막이 영상 밖에 있어요)');
+    selectS(null); setPH(Math.min(at, Math.max(0, P.total() - 1)));
+    toast('「' + (SB.plain(s2.text) || '자막').slice(0, 18) + '」 ' + secStr(n) + ' 잘라냈어요 — Ctrl+Z 로 되돌려요', 3000);
+  }
+  $('btnSubCut').onclick = () => { if (selS) cutSub(selS); };
+  /* 내 스타일 */
+  $('btnStyleSave').onclick = () => {
+    const s2 = selS && P.subtitle(selS); if (!s2) return;
+    const name = window.prompt('이 자막의 스타일을 어떤 이름으로 저장할까요?', SB.STYLES.find(x => x.id === s2.style) ? (SB.STYLES.find(x => x.id === s2.style).name + (s2.font ? ' · ' + s2.font : '')) : '내 스타일');
+    if (name == null || !String(name).trim()) return;
+    const st = P.addStyle(name, s2); if (st) { toast('「' + st.name + '」 저장 — 이 카드·새 자막에 바로 쓸 수 있어요', 2600); }
+  };
+  function refreshMyStyles() {
+    const box = $('myStyles'); box.innerHTML = '';
+    const list = P.data.styles || [];
+    if (!list.length) { const n = document.createElement('span'); n.className = 'none'; n.textContent = '없음 — 지금 모양을 「저장」'; box.appendChild(n); }
+    list.forEach(st => {
+      const ch = document.createElement('span'); ch.className = 'chip'; ch.dataset.id = st.id; ch.title = '이 카드에 「' + st.name + '」 입히기';
+      const t = document.createElement('span'); t.textContent = st.name; ch.appendChild(t);
+      const x = document.createElement('i'); x.textContent = '✕'; x.title = '이 스타일 지우기'; x.onclick = ev => { ev.stopPropagation(); P.removeStyle(st.id); toast('「' + st.name + '」 지움'); }; ch.appendChild(x);
+      ch.onclick = () => { const s2 = selS && P.subtitle(selS); if (s2) { P.applyStyle(s2.id, st.id); if (s2.font && FX) FX.loadFont(s2.font); } };
+      box.appendChild(ch);
+    });
+    // 「새 자막」 select 의 내 스타일 그룹
+    const sel = $('subDefStyle'); let og = sel.querySelector('optgroup[data-my]');
+    if (!list.length) { if (og) og.remove(); if (/^my:/.test(subStyle)) { subStyle = 'basic'; sel.value = subStyle; } return; }
+    if (!og) { og = document.createElement('optgroup'); og.label = '내 스타일'; og.dataset.my = '1'; sel.appendChild(og); }
+    og.innerHTML = ''; list.forEach(st => { const o = document.createElement('option'); o.value = 'my:' + st.id; o.textContent = st.name; og.appendChild(o); });
+    if (/^my:/.test(subStyle) && !P.styleOf(subStyle.slice(3))) subStyle = 'basic';
+    sel.value = subStyle;
+  }
+  /* 새 자막 기본값 — 기본 스타일 하나 또는 「내 스타일」 전부 */
+  function newSubFields() {
+    if (/^my:/.test(subStyle)) { const st = P.styleOf(subStyle.slice(3)); if (st) { const o = {}; P.STYLE_KEYS.forEach(k => { if (st[k] != null) o[k] = JSON.parse(JSON.stringify(st[k])); }); if (!o.style) o.style = 'basic'; return o; } return { style: 'basic' }; }
+    return { style: subStyle };
+  }
   function refreshSubPanel() {
     const s2 = selS && P.subtitle(selS);
     $('subEdit').classList.toggle('hidden', !s2); const scn = $('subCardNone'); if (scn) scn.classList.toggle('hidden', !!s2);
-    Array.from($('subStyleSeg').querySelectorAll('button')).forEach(b => b.classList.toggle('on', b.dataset.k === (s2 ? s2.style : subStyle)));
+    Array.from($('subStyleSeg').querySelectorAll('button')).forEach(b => b.classList.toggle('on', b.dataset.k === (s2 ? s2.style : (/^my:/.test(subStyle) ? ((P.styleOf(subStyle.slice(3)) || {}).style || 'basic') : subStyle))));
     if (s2) { if (document.activeElement !== $('subEditText')) $('subEditText').value = s2.text; $('subEditTime').textContent = tc(s2.at) + ' → ' + tc(s2.at + s2.dur) + ' · ' + secStr(s2.dur); refreshSubFx(s2); }
+    refreshMyStyles();
     const list = $('subList'); list.innerHTML = '';
     P.data.S.forEach(c => {
       const el = document.createElement('div'); el.className = 'sc' + (c.id === selS ? ' on' : '');
       const t = document.createElement('span'); t.className = 't'; t.textContent = SB.plain(c.text) || '(빈 자막)';
       const tm = document.createElement('span'); tm.className = 'tm'; tm.textContent = tc(c.at);
+      const cut = document.createElement('span'); cut.className = 'cut'; cut.textContent = '✂'; cut.title = '이 말 잘라내기 — 자막 구간의 영상·소리를 잘라내요'; cut.onclick = ev => { ev.stopPropagation(); cutSub(c.id); };
       const x = document.createElement('span'); x.className = 'x'; x.textContent = '✕'; x.onclick = ev => { ev.stopPropagation(); P.removeS(c.id); if (selS === c.id) selectS(null); setPH(ph); };
-      el.append(t, tm, x); el.onclick = () => { selectS(c.id); setPH(c.at); };
+      el.append(t, tm, cut, x); el.onclick = () => { selectS(c.id); setPH(c.at); };
       list.appendChild(el);
     });
   }
@@ -1839,8 +1901,16 @@
     SFX_GAINS.forEach(([v, l]) => segBtn($('sfxGainSeg'), String(v), l, () => P.setSfx({ gain: v })));
     SFX.LIST.forEach(d => segBtn($('sfxTrySeg'), d.id, d.ko, () => { stop(); SFX.preview(d.id); }, d.ko));
   }
+  $('tgLoud').onclick = () => { const cfg = P.data.audio.loudness || { on: false }; P.setLoudness({ on: !cfg.on }); toast(!cfg.on ? '내보낼 때 전체 소리 크기를 -14 LUFS 로 맞춰요' : '소리 크기 맞춤 끔', 1800); };
+  function refreshLoudPanel() {
+    const cfg = P.data.audio.loudness || { on: false }; $('tgLoud').classList.toggle('on', !!cfg.on);
+    const ll = window.KMV_EXPORT && KMV_EXPORT.lastLoud && KMV_EXPORT.lastLoud();
+    $('loudNote').classList.toggle('hidden', !(cfg.on && ll));
+    if (cfg.on && ll) $('loudNote').textContent = isFinite(ll.lufs) ? '마지막 내보내기: 원래 ' + ll.lufs.toFixed(1) + ' LUFS · 피크 ' + (ll.peak > 0 ? (20 * Math.log10(ll.peak)).toFixed(1) : '-∞') + ' dBFS → ' + (ll.gainDb >= 0 ? '+' : '') + ll.gainDb.toFixed(1) + ' dB 올려/내려 ' + ll.target + ' LUFS' + (ll.gainDb < ll.target - ll.lufs - 0.05 ? ' (피크 한도로 덜 올림)' : '') : '마지막 내보내기: 소리가 없어 그대로';
+  }
   function refreshSfxPanel() {
     if (!SFX) return;
+    refreshLoudPanel();
     const cfg = P.data.audio.sfx || { on: false, gain: 1 };
     $('tgSfx').classList.toggle('on', !!cfg.on);
     $('rowSfxGain').classList.toggle('hidden', !cfg.on);

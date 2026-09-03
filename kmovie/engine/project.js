@@ -66,9 +66,9 @@
   function blank() {
     return {
       v: 1, fps: FPS, w: W, h: H, theme: 'geumseong',
-      media: [], V: [], V2: [], A1: [], A2: [], P: [], S: [], markers: [],
+      media: [], V: [], V2: [], A1: [], A2: [], P: [], S: [], markers: [], styles: [],
       look: { lut: 'cinema-navy', strength: 0.6, autoExpose: false, target: { luma: 0.48, contrast: 1 }, cinemaBar: false, vignette: 0 },
-      audio: { ducking: { on: true, depth: 12 }, ambience: { on: false, src: null, gain: 1 }, sfx: { on: false, gain: 1 } },
+      audio: { ducking: { on: true, depth: 12 }, ambience: { on: false, src: null, gain: 1 }, sfx: { on: false, gain: 1 }, loudness: { on: false, target: -14 } },
     };
   }
 
@@ -604,6 +604,56 @@
   function removeA2(id) { const i = P.A2.findIndex(x => x.id === id); if (i < 0) return; commit(); P.A2.splice(i, 1); emit('A2'); }
   function setDucking(patch) { commit(); Object.assign(P.audio.ducking, patch); emit('A2'); }
   /* audio.sfx { on, gain } — 전환·부품·자막에 붙는 효과음 전체 켜기/세기 (설계 v1 §3) */
+  /* audio.loudness { on, target } — 내보낼 때 전체 소리 크기를 target LUFS 로 (유튜브 -14). 측정·게인은 export.js. */
+  function setLoudness(patch, opt) { if (!(opt && opt.commit === false)) commit(); if (!P.audio.loudness) P.audio.loudness = { on: false, target: -14 }; Object.assign(P.audio.loudness, patch); emit('A2'); }
+
+  /* ---------- 자막 「내 스타일」 — 카드의 스타일·글꼴·크기·위치·색·등장·퇴장을 이름 붙여 프로젝트에 저장(작업 파일과 함께 다른 기기로) ---------- */
+  const STYLE_KEYS = ['style', 'font', 'size', 'pos', 'y', 'color', 'fxIn', 'fxOut'];
+  function styleFields(card) { const o = {}; STYLE_KEYS.forEach(k => { o[k] = card && card[k] != null ? JSON.parse(JSON.stringify(card[k])) : null; }); return o; }
+  function styleOf(id) { return (P.styles || []).find(x => x.id === id) || null; }
+  function addStyle(name, card) {
+    name = String(name || '').trim(); if (!name) return null;
+    commit(); if (!P.styles) P.styles = [];
+    const same = P.styles.find(x => x.name === name);
+    const st = Object.assign({ id: same ? same.id : uid('st'), name }, styleFields(card));
+    if (same) Object.assign(same, st); else P.styles.push(st);
+    emit('S'); return same || st;
+  }
+  function removeStyle(id) { const i = (P.styles || []).findIndex(x => x.id === id); if (i < 0) return false; commit(); P.styles.splice(i, 1); emit('S'); return true; }
+  /* 저장한 스타일을 카드에 입힌다(undo 1회). 없는 값(null)은 카드에서 지운다 — 저장 당시 모습 그대로. */
+  function applyStyle(cardId, styleId, opt) {
+    const s = subtitle(cardId), st = styleOf(styleId); if (!s || !st) return false;
+    if (!(opt && opt.commit === false)) commit();
+    STYLE_KEYS.forEach(k => { if (st[k] == null) delete s[k]; else s[k] = JSON.parse(JSON.stringify(st[k])); });
+    if (!s.style) s.style = 'basic';
+    emit('S'); return true;
+  }
+
+  /* ---------- 샷 색 맞춤 — 고른 클립을 기준으로 다른 클립의 색 균형·밝기·대비를 맞춘다(썸네일 통계, 결정적).
+     계산은 KMV_LOOK.matchParams, 결과 숫자는 클립 look.match 에 저장(같은 값이 미리보기·내보내기·다른 기기). undo 1회. ---------- */
+  function matchLooks(refId) {
+    const LK = g.KMV_LOOK, ref = clip(refId); if (!LK || !LK.matchParams || !ref || ref.gap) return null;
+    const res = { done: 0, skipped: 0, ref: refId };
+    const plan = [];
+    for (const c of P.V) {
+      if (c.gap) continue;
+      if (c.id === ref.id || c.media === ref.media) { plan.push([c, null]); continue; }
+      const mp = LK.matchParams(ref.media, c.media); if (!mp) { res.skipped++; continue; }
+      plan.push([c, Object.assign({ ref: ref.id }, mp)]); res.done++;
+    }
+    commit();
+    for (const [c, mp] of plan) {
+      const cl = Object.assign({}, c.look || {}); if (mp) cl.match = mp; else delete cl.match;
+      c.look = Object.keys(cl).length ? cl : null;
+    }
+    emit(); return res;
+  }
+  function clearMatch() {
+    if (!P.V.some(c => c.look && c.look.match)) return 0;
+    commit(); let n = 0;
+    for (const c of P.V) { if (c.look && c.look.match) { delete c.look.match; if (!Object.keys(c.look).length) c.look = null; n++; } }
+    emit(); return n;
+  }
   function setSfx(patch, opt) { if (!(opt && opt.commit === false)) commit(); if (!P.audio.sfx) P.audio.sfx = { on: false, gain: 1 }; Object.assign(P.audio.sfx, patch); emit('A2'); }
   function a2At(t) { for (const x of P.A2) if (t >= x.at && t < x.at + (x.out - x.in)) return x; return null; }
 
@@ -676,6 +726,8 @@
     if (!P.audio) P.audio = b.audio; if (!P.audio.ducking) P.audio.ducking = { on: true, depth: 12 };
     if (!P.audio.sfx) P.audio.sfx = { on: false, gain: 1 }; if (P.audio.sfx.gain == null) P.audio.sfx.gain = 1;
     if (!P.audio.ambience) P.audio.ambience = { on: false, src: null, gain: 1 }; if (P.audio.ambience.src && !media(P.audio.ambience.src.media)) P.audio.ambience.src = null; if (P.audio.ambience.gain == null) P.audio.ambience.gain = 1;
+    if (!P.audio.loudness) P.audio.loudness = { on: false, target: -14 }; if (P.audio.loudness.target == null) P.audio.loudness.target = -14;
+    P.styles = (P.styles || []).filter(x => x && x.id && x.name);
     relayout(); undoStack.length = 0; redoStack.length = 0; emit('load');
   }
   function reset() { P = blank(); undoStack.length = 0; redoStack.length = 0; emit('load'); }
@@ -703,7 +755,8 @@
     setLook, setProjectLook, setKenburns, setFade, setTransition, setTheme,
     addS, setS, addManyS, subtitle, updateS, removeS, clearS, subtitleAt,
     part, addP, updateP, removeP, clearP, partsAt, partDefault,
-    a2, addA2, updateA2, trimA2, removeA2, setDucking, setSfx, a2At,
+    a2, addA2, updateA2, trimA2, removeA2, setDucking, setSfx, setLoudness, a2At,
+    STYLE_KEYS, styleFields, styleOf, addStyle, removeStyle, applyStyle, matchLooks, clearMatch,
     v2, addV2, updateV2, trimV2, removeV2, v2At, V2_POS, V2_SIZE,
     setAmbience, montage,
     slip, roll, slide, lift, insertRange, removeClips, moveClips, pasteClips, copyClips, removeRanges, splitMany,
