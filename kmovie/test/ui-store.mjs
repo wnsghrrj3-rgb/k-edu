@@ -21,7 +21,7 @@ await page.route('**/cdn.jsdelivr.net/**', route => {
   if (u.includes('mp4-muxer')) return route.fulfill({ path: path.join(DEPS, 'mp4-muxer/build/mp4-muxer.js'), contentType: 'application/javascript' });
   return route.fulfill({ body: '', contentType: 'application/javascript' });    // supabase-js 는 빈 스크립트 → 클라우드 꺼짐
 });
-const goto = async () => { await page.goto(`http://127.0.0.1:${PORT}/kmovie/`); await page.waitForFunction(() => window.KMV_UI && KMV_UI.proj && KMV_UI.proj.id); };
+const goto = async () => { await page.goto(`http://127.0.0.1:${PORT}/kmovie/`); await page.waitForFunction(() => window.KMV_UI && KMV_UI.proj && KMV_UI.proj.id); for (let i = 0; i < 100; i++) { if (await page.evaluate(() => KMV_STORE.local.get(KMV_UI.proj.id).then(r => !!r, () => false))) break; await page.waitForTimeout(50); } };   // 첫 「새 작업」 레코드가 IDB 에 실제로 써진 뒤 진행(openRecord→save 사이 경주 방지)
 await goto();
 const importVideo = async file => { await page.setInputFiles('#fileIn', [path.join(FX, file)]); await page.waitForFunction(f => KMV_PROJECT.data.media.some(m => m.name === f) && KMV_MEDIA.get(KMV_PROJECT.data.media.find(m => m.name === f).id), file, { timeout: 60000 }); };
 
