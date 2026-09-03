@@ -573,7 +573,7 @@ tr:hover td{background:#FAFBFC}
     <div id="schooltask-school" style="padding:10px 20px;border-top:1px solid var(--border);font-size:12.5px;color:var(--sub)"></div>
     <div id="schooltask-school-pick" hidden style="padding:0 20px 12px">
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-        <input type="text" id="schooltask-school-q" maxlength="40" placeholder="학교 이름 (예: 금성초)" style="flex:1;min-width:200px;padding:9px 12px;border:1px solid #d5dbe3;border-radius:8px;font-size:13.5px">
+        <input type="text" id="schooltask-school-q" maxlength="40" placeholder="학교 이름 두 글자 이상 (예: 금성)" autocomplete="off" oninput="searchMySchoolSoon()" onkeydown="if(event.key==='Enter'){event.preventDefault();searchMySchool();}" style="flex:1;min-width:200px;padding:9px 12px;border:1px solid #d5dbe3;border-radius:8px;font-size:13.5px">
         <button class="code-btn" style="margin:0;padding:8px 16px;font-size:13px" onclick="searchMySchool()">찾기</button>
       </div>
       <div id="schooltask-school-results" style="margin-top:8px"></div>
@@ -584,9 +584,17 @@ tr:hover td{background:#FAFBFC}
         <input type="date" id="schooltask-due" style="padding:9px 12px;border:1px solid #d5dbe3;border-radius:8px;font-size:13.5px">
       </div>
       <textarea id="schooltask-detail" maxlength="1000" rows="2" placeholder="자세한 내용 (선택)" style="width:100%;margin-top:8px;padding:9px 12px;border:1px solid #d5dbe3;border-radius:8px;font-size:13px;resize:vertical;font-family:inherit"></textarea>
+      <!-- 받는 사람 (v1.1 — 준호 결정 ④): 기본은 우리 학교 모두, 「고르기」로 특정 선생님만 -->
+      <div id="schooltask-to" style="margin-top:8px;font-size:12.5px;color:var(--sub);display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span>받는 사람:</span>
+        <label style="display:inline-flex;gap:4px;align-items:center;cursor:pointer"><input type="radio" name="schooltask-to-mode" value="all" checked onchange="setSchoolTaskToMode('all')"> 우리 학교 모두</label>
+        <label style="display:inline-flex;gap:4px;align-items:center;cursor:pointer"><input type="radio" name="schooltask-to-mode" value="pick" onchange="setSchoolTaskToMode('pick')"> 고른 선생님만</label>
+        <span id="schooltask-to-count" style="font-weight:700;color:var(--text)"></span>
+      </div>
+      <div id="schooltask-to-list" hidden style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;max-height:160px;overflow:auto;padding:8px;border:1px solid var(--border);border-radius:8px;background:#fff"></div>
       <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
         <button class="code-btn primary" style="margin:0;padding:8px 18px;font-size:13px" onclick="addSchoolTask()">올리기</button>
-        <span style="font-size:12px;color:var(--sub)">우리 학교 선생님 모두에게 보여요. 확인하기 전까지는 사라지지 않아요.</span>
+        <span id="schooltask-to-hint" style="font-size:12px;color:var(--sub)">우리 학교 선생님 모두에게 보여요. 확인하기 전까지는 사라지지 않아요.</span>
       </div>
     </div>
     <div id="schooltask-list"></div>
@@ -1519,6 +1527,7 @@ function copyCode(){
 // 우리 학교 할 일판 (§J-10) — sql/setup_school_tasks.sql
 // 준호 결정(2026-09-03): ① 올리기 = 승인된 같은 학교 교사 누구나 ② 아침 메일 미포함(대시보드만)
 //                        ③ 기한이 지나도 확인 전까지 남는다 — 「지난 일」 칸으로 내려갈 뿐
+//                        ④ (v1.1) 받는 사람 = 우리 학교 모두 / 고른 선생님만 — 골랐으면 그 사람(+올린 사람)에게만 뜬다
 // ⚠️ 급함 색은 서버가 준 urgency 를 그대로 쓴다(브라우저 시간대로 다시 세지 않는다).
 // =============================================
 const STASK_TONE = {
@@ -1557,7 +1566,7 @@ function staskRow(t){
         <span style="font-size:12px;color:${tone.ink};font-weight:600">${escHtml(staskDue(t))}</span>
       </div>
       ${detail}
-      <div style="margin-top:4px;font-size:11.5px;color:var(--sub)">${who} 올림 · 확인 ${t.done_count} / ${t.teacher_count}명</div>
+      <div style="margin-top:4px;font-size:11.5px;color:var(--sub)">${who} 올림 · 확인 ${t.done_count} / ${t.teacher_count}명${t.targeted ? ' · <span title="' + escHtml(t.to_names||'') + '">👤 ' + (t.mine && t.to_names ? escHtml(t.to_names) + '에게' : '나에게') + '</span>' : ''}</div>
     </div>
     <div style="display:flex;gap:6px;align-items:flex-start;flex-shrink:0">${act}${mineBtn}</div>
   </div>`;
@@ -1607,12 +1616,17 @@ function toggleSchoolPick(){
   pick.hidden = !pick.hidden;
   if(!pick.hidden){ const q = document.getElementById('schooltask-school-q'); q && q.focus(); }
 }
+let _mySchoolTimer = null;
+function searchMySchoolSoon(){ clearTimeout(_mySchoolTimer); _mySchoolTimer = setTimeout(searchMySchool, 250); }
 async function searchMySchool(){
   const q = (document.getElementById('schooltask-school-q').value || '').trim();
   const box = document.getElementById('schooltask-school-results');
   if(q.length < 1){ box.innerHTML = ''; return; }
-  const { data, error } = await db.rpc('search_schools', { p_q: q, p_office: null });
-  if(error){ box.innerHTML = '<span style="font-size:12.5px;color:var(--sub)">학교 목록을 불러올 수 없어요.</span>'; return; }
+  box.innerHTML = '<span style="font-size:12.5px;color:var(--sub)">찾는 중…</span>';
+  let data, error;
+  try { ({ data, error } = await db.rpc('search_schools', { p_q: q, p_office: null })); }
+  catch (e) { error = e; }
+  if(error){ box.innerHTML = '<span style="font-size:12.5px;color:var(--orange)">학교 목록을 불러올 수 없어요 — ' + escHtml(error.message || String(error)) + '</span>'; return; }
   const rows = data || [];
   box.innerHTML = rows.length ? rows.map(r =>
     `<div style="display:flex;gap:10px;align-items:center;padding:7px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:5px;font-size:13px">
@@ -1656,14 +1670,50 @@ async function loadSchoolTasks(){
   document.getElementById('schooltask-done-count').textContent = done.length;
   document.getElementById('schooltask-done').innerHTML = done.map(staskRow).join('');
 }
+// 받는 사람 고르기 (v1.1) — 「고른 선생님만」이면 우리 학교 승인 교사 목록에서 체크
+let schoolTaskToMode = 'all', schoolTeachers = null;
+async function setSchoolTaskToMode(mode){
+  schoolTaskToMode = mode;
+  const list = document.getElementById('schooltask-to-list');
+  const hint = document.getElementById('schooltask-to-hint');
+  if(mode === 'all'){
+    list.hidden = true;
+    if(hint) hint.textContent = '우리 학교 선생님 모두에게 보여요. 확인하기 전까지는 사라지지 않아요.';
+    updateSchoolTaskToCount();
+    return;
+  }
+  list.hidden = false;
+  if(hint) hint.textContent = '고른 선생님에게만 보여요. 다른 선생님 화면에는 뜨지 않아요.';
+  if(!schoolTeachers){
+    list.innerHTML = '<span style="font-size:12px;color:var(--sub)">불러오는 중…</span>';
+    const { data, error } = await db.rpc('list_school_teachers');
+    if(error){ list.innerHTML = '<span style="font-size:12px;color:var(--orange)">선생님 목록을 불러올 수 없어요 — ' + escHtml(error.message||'') + '</span>'; return; }
+    schoolTeachers = data || [];
+  }
+  list.innerHTML = schoolTeachers.length
+    ? schoolTeachers.map(t => `<label style="display:inline-flex;gap:5px;align-items:center;padding:4px 10px;border:1px solid var(--border);border-radius:999px;font-size:12.5px;cursor:pointer;background:#F8FAFC">
+        <input type="checkbox" class="schooltask-to-cb" value="${escHtml(t.id)}" onchange="updateSchoolTaskToCount()"> ${escHtml(t.name || '(이름 없음)')}${t.class_label ? ' <span style="color:var(--sub)">' + escHtml(t.class_label) + '</span>' : ''}</label>`).join('')
+    : '<span style="font-size:12px;color:var(--sub)">아직 우리 학교에 승인된 다른 선생님이 없어요.</span>';
+  updateSchoolTaskToCount();
+}
+function pickedSchoolTaskTo(){
+  return [...document.querySelectorAll('.schooltask-to-cb:checked')].map(cb => cb.value);
+}
+function updateSchoolTaskToCount(){
+  const c = document.getElementById('schooltask-to-count');
+  if(!c) return;
+  c.textContent = schoolTaskToMode === 'pick' ? pickedSchoolTaskTo().length + '명 고름' : '';
+}
 async function addSchoolTask(){
   const ti = document.getElementById('schooltask-title');
   const de = document.getElementById('schooltask-detail');
   const du = document.getElementById('schooltask-due');
   const title = (ti.value || '').trim();
   if(title.length < 2){ showToast('할 일을 두 글자 이상 적어 주세요.'); return; }
+  const to = schoolTaskToMode === 'pick' ? pickedSchoolTaskTo() : [];
+  if(schoolTaskToMode === 'pick' && !to.length){ showToast('받을 선생님을 한 명 이상 골라 주세요.'); return; }
   const { error } = await db.rpc('add_school_task', {
-    p_title: title, p_detail: (de.value || '').trim(), p_due: du.value || null
+    p_title: title, p_detail: (de.value || '').trim(), p_due: du.value || null, p_to: to.length ? to : null
   });
   if(error){
     showToast(/school required/.test(error.message||'') ? '⚠️ 학교가 지정돼 있어야 올릴 수 있어요.'
@@ -1672,8 +1722,9 @@ async function addSchoolTask(){
     return;
   }
   ti.value = ''; de.value = ''; du.value = '';
+  document.querySelectorAll('.schooltask-to-cb').forEach(cb => { cb.checked = false; });
   document.getElementById('schooltask-form').hidden = true;
-  showToast('📌 우리 학교 할 일판에 올렸어요.');
+  showToast(to.length ? '📌 ' + to.length + '명에게 올렸어요.' : '📌 우리 학교 할 일판에 올렸어요.');
   await loadSchoolTasks();
 }
 async function markSchoolTask(id, done){
@@ -1683,7 +1734,7 @@ async function markSchoolTask(id, done){
   await loadSchoolTasks();
 }
 async function closeSchoolTask(id){
-  if(!confirm('이 할 일을 내릴까요? 우리 학교 선생님 모두의 화면에서 사라져요.')) return;
+  if(!confirm('이 할 일을 내릴까요? 받은 선생님 모두의 화면에서 사라져요.')) return;
   const { error } = await db.rpc('close_school_task', { p_task_id: id });
   if(error){ showToast('⚠️ 내리기 실패: ' + (error.message || '')); return; }
   showToast('🗂️ 내렸어요.');

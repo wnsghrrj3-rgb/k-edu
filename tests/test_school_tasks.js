@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * 우리 학교 할 일판 게이트 — 생태계설계 v2 §J-10
- *  ① sql/setup_school_tasks.sql — 표 둘·제약·RLS 셋·RPC 다섯
+ *  ① sql/setup_school_tasks.sql — 표 셋·제약·RLS 셋·RPC 일곱 (+v1.1 받는 사람 고르기 — 결정 ④)
  *  ② teacher/index.html — 대시보드 상단 카드 · 세 칸(할 일/지난 일/확인함) · 올리기·확인·내리기 배선 · 폴백
  *
  * ⚠️ 이 트랙 규칙 3: 일부러 깨서 빨간불을 본 것만 초록으로 친다 → `--rev` 로 역검증.
@@ -86,10 +86,37 @@ ok(/closed_at = now\(\)/.test(closeFn) && !/DELETE FROM school_tasks/.test(close
 ok(/kedu_is_admin\(\) OR \(school_id = v_sid AND created_by = v_tid\)/.test(closeFn),
    '내리기는 올린 사람 또는 관리자만');
 /* 권한 */
-['list_school_tasks() TO authenticated', 'add_school_task(text, text, date) TO authenticated',
+['list_school_tasks() TO authenticated', 'add_school_task(text, text, date, uuid[]) TO authenticated',
  'mark_school_task(uuid, boolean) TO authenticated', 'close_school_task(uuid) TO authenticated']
   .forEach(k => ok(sql.includes('GRANT EXECUTE ON FUNCTION ' + k), 'GRANT 누락: ' + k));
 ok(!/TO anon/.test(sql), '★ anon 에게는 아무것도 열지 않는다(학교 내부 정보)');
+
+/* ── v1.1 받는 사람 고르기 (결정 ④) — 「내가 고른 선생님한테만」 ── */
+ok(sql.includes('CREATE TABLE IF NOT EXISTS school_task_targets'), '수신자 표');
+ok(/ALTER TABLE school_task_targets ENABLE ROW LEVEL SECURITY/.test(sql) && !/CREATE POLICY [a-z_]+ ON school_task_targets/.test(sql),
+   '★ 수신자 표는 RLS 켜고 정책 0 — 클라이언트 직접 접근 0(RPC 전용)');
+const visFn = (sql.split('FUNCTION kedu_task_visible(')[1] || '').split('GRANT EXECUTE ON FUNCTION kedu_task_visible')[0];
+ok(/SECURITY DEFINER/.test(visFn), '★ 가시성 함수는 SECURITY DEFINER(정책 없는 표를 읽어야 하므로)');
+ok(/NOT EXISTS \(SELECT 1 FROM school_task_targets g WHERE g\.task_id = s\.id\)/.test(visFn), '수신자 없으면 학교 전체');
+ok(/s\.created_by = cw_my_teacher_id\(\)/.test(visFn), '올린 사람은 늘 본다');
+ok(/g\.teacher_id = cw_my_teacher_id\(\)/.test(visFn), '★★ 고른 사람만 본다(결정 ④)');
+ok(/s\.school_id = kedu_my_school_id\(\)/.test(visFn), '★ 가시성 안에서도 학교 벽을 다시 본다');
+ok(/kedu_task_visible\(id\)/.test(selPol), '★★ 읽기 정책에 수신자 벽 — 골랐으면 서버에서 다른 교사를 막는다');
+ok(/OR s\.created_by = me\.tid/.test(listWhere) && /g\.teacher_id = me\.tid/.test(listWhere) && /NOT EXISTS \(SELECT 1 FROM school_task_targets g WHERE g\.task_id = s\.id\)/.test(listWhere),
+   '★★ 목록 RPC 도 같은 세 갈래(전체 / 올린 사람 / 고른 사람)');
+ok(/DROP FUNCTION IF EXISTS add_school_task\(text, text, date\);/.test(sql), '★ 옛 3인자 add_school_task 제거 — PostgREST 오버로드 충돌 방지');
+ok(/DROP FUNCTION IF EXISTS list_school_tasks\(\);[\s\S]{0,200}CREATE OR REPLACE FUNCTION list_school_tasks\(\)/.test(sql), '★ 반환형이 바뀐 list_school_tasks 는 DROP 뒤 CREATE(재실행 안전)');
+ok(/p_to uuid\[\] DEFAULT NULL/.test(addFn), '올리기에 p_to(기본 NULL = 모두)');
+ok(/t\.school_id = v_sid AND t\.approval = 'approved' AND t\.id <> v_tid/.test(addFn),
+   '★ 받는 사람은 같은 학교 승인 교사만, 자기 자신 제외(다른 학교 id 는 조용히 버림)');
+ok(/CASE WHEN EXISTS \(SELECT 1 FROM school_task_targets g WHERE g\.task_id = s\.id\)/.test(listFn) && /AS teacher_count/.test(listFn),
+   '★ 골랐으면 「확인 n / N」의 N 은 고른 사람 수');
+ok(/AS targeted/.test(listFn) && /AS to_names/.test(listFn), '목록에 targeted·to_names');
+ok(/kedu_task_visible\(p_task_id\)/.test(markFn), '★ 확인 표시도 수신자만 남길 수 있다');
+const ltFn = (sql.split('FUNCTION list_school_teachers()')[1] || '').split('GRANT EXECUTE ON FUNCTION list_school_teachers')[0];
+ok(/t\.school_id = kedu_my_school_id\(\)/.test(ltFn) && /t\.approval = 'approved'/.test(ltFn) && /t\.id <> cw_my_teacher_id\(\)/.test(ltFn),
+   '★ 고르기 목록 = 우리 학교 승인 교사, 나 제외');
+ok(sql.includes('GRANT EXECUTE ON FUNCTION list_school_teachers() TO authenticated;'), '고르기 목록 GRANT');
 
 /* ── 내 학교 보기·고치기 (연수 병목 차단) ── */
 [ 'FUNCTION my_school()', 'FUNCTION set_my_school(' ].forEach(k => ok(sql.includes(k), 'SQL 누락: ' + k));
@@ -126,6 +153,15 @@ ok(/data-urgency="\$\{t\.urgency\}"/.test(rowFn) && /data-bucket="\$\{t\.bucket\
 ok(/t\.mine/.test(rowFn) && /closeSchoolTask/.test(rowFn), '내리기는 올린 사람에게만 보인다');
 ok(/escHtml\(t\.title\)/.test(rowFn) && /escHtml\(t\.detail\)/.test(rowFn), '★ 제목·내용 이스케이프');
 ok(!/댓글|파일 첨부|채팅/.test(html.split('§J-10')[1] || ''), '★ 댓글·파일·채팅 없음(설계 결정)');
+/* v1.1 화면 — 받는 사람 */
+[ 'name="schooltask-to-mode"', 'id="schooltask-to-list"', 'function setSchoolTaskToMode(', 'function pickedSchoolTaskTo()',
+  "db.rpc('list_school_teachers')", 'p_to: to.length ? to : null', 'onkeydown="if(event.key===\'Enter\')', 'oninput="searchMySchoolSoon()"' ]
+  .forEach(k => ok(html.includes(k), '받는 사람·검색 UI 누락: ' + k));
+const addJs = (html.split('async function addSchoolTask()')[1] || '').split('async function markSchoolTask(')[0];
+ok(/schoolTaskToMode === 'pick' && !to\.length/.test(addJs), '★ 「고른 선생님만」인데 아무도 안 골랐으면 올리지 않는다');
+ok(/t\.targeted \?/.test(rowFn) && /escHtml\(t\.to_names/.test(rowFn), '골라서 보낸 할 일은 줄에 표시(이름 이스케이프)');
+const schJs = (html.split('async function searchMySchool()')[1] || '').split('async function setMySchool(')[0];
+ok(/escHtml\(error\.message/.test(schJs), '★ 학교 찾기 실패는 원인 문구를 화면에 보인다(조용히 삼키지 않는다)');
 [ 'id="schooltask-school"', 'id="schooltask-school-pick"', 'id="schooltask-school-q"',
   'function loadMySchool()', 'function searchMySchool()', 'function setMySchool(',
   'onclick="toggleSchoolPick()"' ].forEach(k => ok(html.includes(k), '학교 지정 UI 누락: ' + k));
@@ -144,7 +180,7 @@ ok(mailFiles.every(f => { try { return !/school_task/.test(rd(f)); } catch (e) {
   const REV = process.argv.includes('--rev');
   const rows = [
     { id:'t1', title:'수요조사 제출', detail:'', due_date:'2026-09-04', days_left:1, urgency:'red',
-      bucket:'todo', mine:true, done:false, done_count:1, teacher_count:9, created_by_name:'준호', created_at:'' },
+      bucket:'todo', mine:true, done:false, done_count:1, teacher_count:2, created_by_name:'준호', created_at:'', targeted:true, to_names:'김하늘, 이바다' },
     { id:'t2', title:'교재 신청', detail:'2학기분', due_date:'2026-09-10', days_left:7, urgency:'normal',
       bucket:'todo', mine:false, done:false, done_count:3, teacher_count:9, created_by_name:'김', created_at:'' },
     { id:'t3', title:'안전 점검표', detail:'', due_date:'2026-08-30', days_left:-4, urgency:'past',
@@ -186,7 +222,32 @@ ok(mailFiles.every(f => { try { return !/school_task/.test(rd(f)); } catch (e) {
   ok(h.indexOf('오늘·내일') >= 0 && h.indexOf('1일 남음') >= 0, 'jsdom — 남은 날 표시');
   ok(d.getElementById('schooltask-past').innerHTML.indexOf('4일 지남') >= 0, 'jsdom — 지난 날 표시');
   ok((h.match(/closeSchoolTask/g) || []).length === 1, 'jsdom — 내리기는 내가 올린 하나에만');
-  ok(h.indexOf('확인 1 / 9명') >= 0, 'jsdom — 확인한 사람 수');
+  ok(h.indexOf('확인 1 / 2명') >= 0, 'jsdom — 확인한 사람 수(골랐으면 분모는 고른 수)');
+  ok(h.indexOf('김하늘, 이바다에게') >= 0, '★ jsdom — 내가 골라 보낸 할 일엔 받는 사람 이름');
+  ok(h.indexOf('확인 3 / 9명') >= 0, 'jsdom — 전체 공유는 분모가 학교 교사 수');
+  // ★ 받는 사람 고르기 — 목록을 받아 체크한 것만 p_to 로 간다
+  let sentArgs = null;
+  w.db.rpc = async (fn, args) => fn === 'my_school' ? ({ data: [school], error: null })
+    : fn === 'list_school_teachers' ? ({ data: [{ id:'T1', name:'김하늘', class_label:'3-2' }, { id:'T2', name:'이바다', class_label:'' }], error: null })
+    : fn === 'add_school_task' ? (sentArgs = args, { data: 'x', error: null })
+    : ({ data: rows, error: null });
+  await w.setSchoolTaskToMode('pick');
+  ok(d.getElementById('schooltask-to-list').hidden === false && d.querySelectorAll('.schooltask-to-cb').length === 2, 'jsdom — 고르기 목록 2명');
+  ok(d.getElementById('schooltask-to-list').innerHTML.indexOf('3-2') >= 0, 'jsdom — 학급 표시');
+  d.getElementById('schooltask-title').value = '수요조사';
+  await w.addSchoolTask();
+  ok(sentArgs === null, '★ jsdom — 아무도 안 고르면 올리지 않는다');
+  d.querySelectorAll('.schooltask-to-cb')[1].checked = true; w.updateSchoolTaskToCount();
+  ok(d.getElementById('schooltask-to-count').textContent === '1명 고름', 'jsdom — 고른 수 표시');
+  d.getElementById('schooltask-title').value = '수요조사';
+  await w.addSchoolTask();
+  ok(sentArgs && Array.isArray(sentArgs.p_to) && sentArgs.p_to.join() === 'T2', '★★ jsdom — 체크한 사람 id 만 p_to 로 간다');
+  await w.setSchoolTaskToMode('all');
+  d.getElementById('schooltask-title').value = '수요조사'; sentArgs = null;
+  await w.addSchoolTask();
+  ok(sentArgs && sentArgs.p_to === null, '★ jsdom — 「모두」면 p_to 는 null');
+  w.db.rpc = async (fn) => fn === 'my_school' ? ({ data: [school], error: null }) : ({ data: rows, error: null });
+  await w.loadSchoolTasks();
   // 접기
   w.toggleSchoolTaskFold('past');
   ok(d.getElementById('schooltask-past').hidden === false && d.getElementById('schooltask-past-caret').textContent === '▾',
