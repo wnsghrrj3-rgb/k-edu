@@ -1668,7 +1668,7 @@
     const b = document.createElement('b'); b.textContent = def.name; el.appendChild(b);
     const sm = document.createElement('small'); sm.textContent = def.dur + '초' + (meta.behind ? ' · 인물 뒤' : ''); el.appendChild(sm);
     const st = document.createElement('i'); st.className = 'star'; st.textContent = favParts.has(def.id) ? '★' : '☆'; st.title = '즐겨찾기'; st.onpointerdown = e => { e.stopPropagation(); e.preventDefault(); }; st.onclick = e => { e.stopPropagation(); toggleFav(def.id); }; el.appendChild(st);
-    el.onpointerdown = e => { if (e.pointerType === 'mouse' && e.button !== 0) return; e.preventDefault(); partDrag = { part: def.id, dur: P.partDefault(def.id).dur, x: e.clientX, y: e.clientY, moved: false, overTL: false, f: 0 }; };
+    el.onpointerdown = e => { if (e.pointerType === 'touch') return; /* 손가락은 스크롤·탭(미리보기) — 끌어 놓기는 마우스·펜만 (15단계 touch-action:none 이 목록 스크롤을 막던 것) */ if (e.pointerType === 'mouse' && e.button !== 0) return; e.preventDefault(); partDrag = { part: def.id, dur: P.partDefault(def.id).dur, x: e.clientX, y: e.clientY, moved: false, overTL: false, f: 0 }; };
     el.onpointerenter = e => { if (e.pointerType !== 'mouse') return; peekHover(def.id, el); };
     el.onpointerleave = e => { if (e.pointerType !== 'mouse') return; peekLeave(def.id); };
     el.ondblclick = () => { peekHide(true); placePart(def.id, ph); };

@@ -52,6 +52,23 @@ if (sup.opened) {
   ok(!/hvcC/.test(sup.msg), 'hvcC description 생성됨 (설정 없음 오류 아님)');
 }
 
+// ---------- 시험 디코드(probeDecode): H.264 첫 키프레임은 true, 깨진 바이트는 false(4초 안) ----------
+const pr = await page.evaluate(async () => {
+  const r = await fetch('/kmovie/test/fx/aac.mp4'); const f = new File([await r.blob()], 'aac.mp4', { type: 'video/mp4' });
+  const dm = await KMV_MEDIA._demuxLazy(f);
+  const cfg = { codec: dm.codec, codedWidth: dm.w, codedHeight: dm.h, description: dm.desc };
+  const t0 = performance.now(); const good = await KMV_MEDIA._probe(dm, cfg); const t1 = performance.now();
+  const bad = { ...dm, samples: [{ is_sync: true, data: new Uint8Array(64) }] };
+  const t2 = performance.now(); const b = await KMV_MEDIA._probe(bad, cfg); const t3 = performance.now();
+  return { good, goodMs: t1 - t0, bad: b, badMs: t3 - t2 };
+});
+ok(pr.good === true, 'probeDecode: H.264 첫 키프레임 → true (' + (pr.goodMs | 0) + 'ms)');
+ok(pr.bad === false && pr.badMs < 4500, 'probeDecode: 깨진 바이트 → false (' + (pr.badMs | 0) + 'ms)');
+
+// ---------- 손가락: 부품 타일은 세로 스크롤 허용(touch-action pan-y), 끌기는 마우스만 ----------
+const ta = await page.evaluate(() => { KMV_UI.tab && KMV_UI.tab('parts'); const el = document.querySelector('#partGrid .pc'); return el ? getComputedStyle(el).touchAction : null; });
+ok(ta === 'pan-y', '부품 타일 touch-action pan-y (' + ta + ')');
+
 // ---------- 회귀: H.264 는 그대로 ----------
 const h264 = await page.evaluate(async () => {
   const r = await fetch('/kmovie/test/fx/aac.mp4'); const f = new File([await r.blob()], 'aac.mp4', { type: 'video/mp4' });

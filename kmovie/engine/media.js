@@ -754,6 +754,25 @@
   function isAudioFile(file) { const name = file.name || ''; return /^audio\//.test(file.type) || /\.(mp3|wav|m4a|aac|ogg|oga|flac|weba)$/i.test(name); }
 
   /* ---------- 가져오기 ---------- */
+  /* 첫 키프레임 시험 디코드 — 4초 안에 프레임이 하나라도 나오면 true. 디코더는 바로 닫는다. */
+  async function probeDecode(dm, cfg) {
+    const first = dm.samples.find(x => x.is_sync) || dm.samples[0];
+    if (!first) return false;
+    let bytes = first.data;
+    if (!bytes) { try { bytes = await readBytes(dm.blob, first.off, first.off + first.size); } catch (e) { return false; } }
+    return await new Promise(resolve => {
+      let done = false, dec = null;
+      const fin = v => { if (done) return; done = true; clearTimeout(tm); try { dec && dec.close(); } catch (e) {} resolve(v); };
+      const tm = setTimeout(() => fin(false), 4000);
+      try {
+        dec = new VideoDecoder({ output: f => { try { f.close(); } catch (e) {} fin(true); }, error: () => fin(false) });
+        dec.configure(cfg);
+        dec.decode(new EncodedVideoChunk({ type: 'key', timestamp: 0, data: bytes }));
+        dec.flush().then(() => { if (!done) fin(false); }, () => fin(false));
+      } catch (e) { fin(false); }
+    });
+  }
+
   async function open(file, id, status) {
     id = id || uid('m');
     const name = file.name || '미디어';
@@ -811,6 +830,13 @@
       // HEVC 는 브라우저가 소프트웨어 디코더를 안 싣는다 — 폰·PC 의 하드웨어 디코더가 있어야만 열린다.
       if (isHevc(dm.codec)) throw new Error('HEVC(H.265) 원본인데 이 기기·브라우저에 HEVC 하드웨어 디코더가 없어요 (' + dm.codec + ') — 최신 크롬으로 열거나, 폰 카메라 설정을 "호환성 우선(H.264)"으로 바꿔 찍거나, 데스크톱판(프록시)을 써 주세요');
       throw new Error('이 영상 코덱을 이 브라우저에서 풀 수 없어요 (' + dm.codec + ')');
+    }
+    // HEVC 는 isConfigSupported 가 "된다"고 해 놓고 실제 하드웨어 디코더가 프레임을 안 뱉는 기기가 있다(빈 화면으로 열림).
+    // 첫 키프레임 하나를 실제로 풀어 보고 안 나오면 열지 않는다 — 열려 놓고 검은 화면보다 거절이 낫다.
+    if (isHevc(dm.codec)) {
+      status && status('HEVC 디코더 확인 중');
+      const ok = await probeDecode(dm, cfg);
+      if (!ok) throw new Error('HEVC(H.265) 원본 — 이 기기의 하드웨어 디코더가 첫 프레임을 풀지 못했어요 (' + dm.codec + ') — 폰 카메라 설정을 "호환성 우선(H.264)"으로 바꿔 찍거나, 데스크톱판(프록시)을 써 주세요');
     }
     let audio = null, pcm = null;
     if (dm.hasAudio) {
@@ -1054,5 +1080,6 @@
     has: id => SRC.has(id),
     remove: id => { const s = SRC.get(id); if (s) { s.dispose(); SRC.delete(id); } },
     THUMB_W, THUMB_H,
+    _probe: probeDecode, _demuxLazy: demuxLazy,      // 테스트 훅
   };
 })(typeof window !== 'undefined' ? window : globalThis);
