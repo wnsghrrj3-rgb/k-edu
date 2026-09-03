@@ -33,7 +33,7 @@
   const MUSIC_MAX = 60 * 60, MUSIC_MAX_FULL = 20 * 60, MUSIC_MAX_BYTES = 300 * 1024 * 1024;
   let analyzePaused = false;                 // 재생·셔틀 중엔 분석을 쉬게 한다 (디코더 경쟁 방지)
   function setAnalyzePaused(v) { analyzePaused = !!v; }
-  const MP4BOX_URL = 'https://cdn.jsdelivr.net/npm/mp4box@0.5.2/dist/mp4box.all.min.js';
+  const MP4BOX_URL = 'vendor/mp4box.all.min.js';   // 레포 동봉(0.5.4) — 폴백 로드용
 
   const SRC = new Map();               // media.id → 런타임 소스
   let mp4boxReady = null;

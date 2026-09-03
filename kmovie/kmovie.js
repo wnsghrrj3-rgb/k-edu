@@ -69,32 +69,103 @@
     clearAll() { return Promise.all([this.tx('media', 'readwrite', s => s.clear()), this.tx('kv', 'readwrite', s => s.clear())]); },
   };
   /* ---------- 작업 파일 (KMV_STORE) ----------
-     현재 작업 = proj {id, name, degraded}. 변경 400ms 뒤 이 기기(IndexedDB)에, 4초 뒤 케이에듀 계정에 저장.
-     degraded = 다른 기기에서 열어 원본 없는 클립을 뺀 상태 → 계정 저장을 멈춘다(PC 작업을 폰이 덮어쓰지 않게). */
+     현재 작업 = proj {id, name, degraded, cloudAt}. 변경 400ms 뒤 이 기기(IndexedDB)에, 손을 멈추고 CLOUD_MS 뒤 케이에듀 계정에.
+     · cloudAt = 내가 마지막으로 본 계정 시각(낙관적 잠금 기준). 계정이 그보다 새면(다른 기기가 저장) 덮어쓰지 않고 conflict.
+     · degraded = 다른 기기에서 열어 원본 없는 클립을 뺀 상태 → 계정 저장을 멈춘다(PC 작업을 폰이 덮어쓰지 않게).
+     · otherTab = 같은 브라우저의 다른 탭이 먼저 열려 있음(navigator.locks) → 이 탭은 자동 저장을 쉰다(서로 덮어쓰지 않게).
+     · Ctrl+S = 지금 바로 계정까지. 탭을 숨기거나 닫을 때도 한 번(닫을 땐 keepalive). */
   const ST = window.KMV_STORE;
-  const proj = { id: null, name: '새 작업', degraded: false, cloudAt: 0, cloudErr: null, saving: false };
-  let saveT = 0, cloudT = 0;
+  const CLOUD_MS = 10000, RETRY_MS = 30000;
+  const proj = { id: null, name: '새 작업', degraded: false, cloudAt: 0, cloudErr: null, saving: false, dirty: false, conflict: null, otherTab: false, savedAt: 0 };
+  let saveT = 0, cloudT = 0, retryT = 0;
   function rec() { return { id: proj.id, name: proj.name, doc: P.toJSON(), updatedAt: Date.now() }; }
+  const cloudAllowed = () => proj.id && !proj.degraded && !proj.otherTab && !proj.conflict;
   function scheduleSave() {
     if (!proj.id) return;
-    clearTimeout(saveT); saveT = setTimeout(() => { ST.save(rec(), { cloud: false }).catch(e => console.warn('save', e)); refreshSaveNote(); }, 400);
-    if (!proj.degraded) { clearTimeout(cloudT); cloudT = setTimeout(saveCloud, 4000); }
+    proj.dirty = true; refreshSaveNote();
+    if (proj.otherTab) return;
+    clearTimeout(saveT); saveT = setTimeout(() => { ST.save(rec(), { cloud: false }).then(() => { proj.savedAt = Date.now(); refreshSaveNote(); }).catch(e => console.warn('save', e)); }, 400);
+    if (cloudAllowed()) { clearTimeout(cloudT); cloudT = setTimeout(saveCloud, CLOUD_MS); }
   }
-  async function saveCloud() {
-    if (!proj.id || proj.degraded) return;
+  async function saveCloud(opt) {
+    clearTimeout(cloudT); clearTimeout(retryT);
+    if (!cloudAllowed()) return false;
+    if (proj.saving) { proj.dirty = true; return false; }
     proj.saving = true; refreshSaveNote();
-    try { const r = await ST.save(rec()); proj.cloudErr = r.error || null; if (r.cloud) proj.cloudAt = Date.now(); }
-    catch (e) { proj.cloudErr = e; }
+    let ok = false;
+    try {
+      const r = await ST.save(rec(), { baseAt: proj.cloudAt });
+      proj.savedAt = Date.now();
+      if (r.conflict) { proj.conflict = { remoteAt: r.remoteAt }; proj.cloudErr = null; }
+      else { proj.cloudErr = r.error || null; if (r.cloud) { proj.cloudAt = r.at || Date.now(); proj.dirty = false; ok = true; } }
+    } catch (e) { proj.cloudErr = e; }
     proj.saving = false; refreshSaveNote();
+    if (proj.conflict) { try { setTab('proj'); } catch (e) {} toast('다른 기기에서 이 작업을 저장했어요 — 「다른 기기 것 열기」 또는 「사본으로 저장」 중 골라요 (프로젝트 탭)', 6000); }
+    else if (proj.cloudErr) { retryT = setTimeout(() => saveCloud(), RETRY_MS); if (opt && opt.manual) toast('이 브라우저엔 저장됐어요 · 계정 저장은 실패 — 잠시 뒤 다시 시도해요', 3000); }
+    else if (ok && opt && opt.manual) toast('저장했어요 (이 브라우저 + 케이에듀 계정)', 1500);
+    return ok;
+  }
+  /* Ctrl+S — 이 기기 + 계정에 지금 바로. 로그인이 없으면 이 기기에만. */
+  async function saveNow() {
+    if (!proj.id) return;
+    clearTimeout(saveT);
+    if (proj.otherTab) { toast('다른 탭에서 열려 있는 작업이라 이 탭에선 저장하지 않아요 — 그 탭에서 저장해요', 3200); return; }
+    if (proj.degraded) { await ST.save(rec(), { cloud: false }); proj.savedAt = Date.now(); refreshSaveNote(); toast('이 브라우저에 저장했어요 (원본이 빠진 작업이라 계정엔 저장하지 않아요)', 2600); return; }
+    if (proj.conflict) { await ST.save(rec(), { cloud: false }); proj.savedAt = Date.now(); refreshSaveNote(); toast('이 브라우저에 저장했어요 — 계정은 다른 기기가 먼저 저장해서 「다른 기기 것 열기」·「사본으로 저장」 중 골라요', 4000); return; }
+    const signed = await ST.cloud.ready().catch(() => false);
+    if (!signed) { await ST.save(rec(), { cloud: false }); proj.savedAt = Date.now(); proj.dirty = false; refreshSaveNote(); toast('이 브라우저에 저장했어요 (로그인하면 계정에도)', 2000); return; }
+    await saveCloud({ manual: true });
+  }
+  function saveState() {
+    if (proj.otherTab) return 'off';
+    if (proj.conflict) return 'conflict';
+    if (proj.saving) return 'saving';
+    if (proj.cloudErr) return 'err';
+    if (proj.dirty && !proj.degraded) return 'dirty';
+    return 'ok';
   }
   function refreshSaveNote() {
-    const el = $('saveNote'); if (!el) return;
+    const el = $('saveNote'), dot = $('saveDot'), st = saveState();
     const pn = $('projName'); if (pn) pn.textContent = proj.name || '새 작업';
+    if (dot) { dot.dataset.st = st; dot.title = { off: '다른 탭에서 열려 있어 이 탭은 저장을 쉬어요', conflict: '다른 기기가 먼저 저장했어요 — 프로젝트 탭에서 골라요', saving: '계정에 저장하는 중', err: '이 브라우저엔 저장됨 · 계정 저장 실패(잠시 뒤 다시)', dirty: '이 브라우저에 저장됨 · 계정엔 잠시 뒤 (Ctrl+S 로 지금)', ok: proj.cloudAt ? '이 브라우저 + 계정에 저장됨 (Ctrl+S)' : '이 브라우저에 저장됨 (Ctrl+S)' }[st]; }
+    const act = $('saveConflict'); if (act) act.hidden = !proj.conflict;
+    if (!el) return;
+    if (proj.otherTab) { el.textContent = '이 작업이 다른 탭에서 열려 있어요 — 이 탭은 자동 저장을 쉬어요(서로 덮어쓰지 않게). 편집은 그 탭에서 해요.'; return; }
+    if (proj.conflict) { el.textContent = '다른 기기에서 이 작업을 ' + new Date(proj.conflict.remoteAt).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) + '에 저장했어요. 이 탭의 편집은 이 브라우저에만 남아 있어요.'; return; }
     if (proj.degraded) { el.textContent = '원본이 빠진 채 열린 작업이라 계정에는 저장하지 않아요 — 「내 작업」에서 사본으로 저장할 수 있어요.'; return; }
     if (proj.saving) { el.textContent = '계정에 저장하는 중…'; return; }
-    if (proj.cloudErr) { el.textContent = '이 브라우저엔 저장됐어요 · 계정 저장은 실패(연결 확인)'; return; }
-    el.textContent = proj.cloudAt ? '이 브라우저 + 케이에듀 계정에 자동 저장돼요 · ' + new Date(proj.cloudAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '이 브라우저에 자동 저장돼요 · 로그인하면 계정에도 저장돼 다른 기기에서 열 수 있어요';
+    if (proj.cloudErr) { el.textContent = '이 브라우저엔 저장됐어요 · 계정 저장은 실패(연결 확인, 잠시 뒤 다시 시도해요) · Ctrl+S'; return; }
+    el.textContent = proj.cloudAt ? '이 브라우저 + 케이에듀 계정에 자동 저장돼요 · ' + new Date(proj.cloudAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) + (proj.dirty ? ' · 편집 중(잠시 뒤 계정에, Ctrl+S 로 지금)' : '') : '이 브라우저에 자동 저장돼요 · 로그인하면 계정에도 저장돼 다른 기기에서 열 수 있어요 · Ctrl+S';
   }
+  /* 충돌 해소 — 다른 기기 것으로 바꾸기 */
+  async function openRemote() {
+    if (!proj.conflict || !proj.id) return;
+    const r = await ST.cloud.get(proj.id).catch(() => null);
+    if (!r || !r.doc) return toast('계정에서 불러오지 못했어요');
+    proj.conflict = null;
+    await openRecord(Object.assign(r, { where: 'cloud', cloudAt: r.updatedAt }));
+    toast('다른 기기에서 저장한 「' + proj.name + '」 로 바꿨어요', 2200);
+  }
+  /* 같은 브라우저 다른 탭 — 한 작업은 한 탭만 자동 저장 */
+  let tabLockRelease = null, tabLockId = null, tabLockP = null;
+  async function claimTab(id) {
+    if (tabLockId === id && !proj.otherTab) return true;                 // 같은 작업을 이미 잡고 있음
+    if (tabLockRelease) { tabLockRelease(); tabLockRelease = null; try { await tabLockP; } catch (e) {} }   // 놓고, 실제로 풀릴 때까지 기다린다
+    tabLockId = id; proj.otherTab = false;
+    if (!id || !navigator.locks || !navigator.locks.request) return true;
+    return new Promise(res => {
+      tabLockP = navigator.locks.request('kmv-proj-' + id, { ifAvailable: true }, lock => {
+        if (!lock) { proj.otherTab = true; res(false); return; }
+        res(true);
+        return new Promise(rel => { tabLockRelease = rel; });   // 탭이 살아 있는 동안 잡고 있는다
+      }).catch(() => res(true));
+    });
+  }
+  document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState === 'hidden') { if (proj.id && !proj.otherTab) { clearTimeout(saveT); ST.save(rec(), { cloud: false }).catch(() => {}); if (cloudAllowed() && proj.dirty) saveCloud(); } return; }
+    // 다시 보일 때: 쉬던 탭이면 자리가 비었는지 다시 본다 — 비었으면 저장소의 최신 사본으로 다시 열고 이 탭이 이어받는다
+    if (proj.otherTab && proj.id) { const got = await claimTab(proj.id); if (got) { const r = await ST.get(proj.id).catch(() => null); if (r && r.doc) { await openRecord(r); toast('다른 탭이 닫혀 이 탭이 이어받았어요', 2200); } else refreshSaveNote(); } }
+  });
 
   /* ---------- 미리보기 ----------
      재생·셔틀 중엔 ① 미리보기를 1/2 해상도로(멈추면 원본 화질로 복귀) ② GOP 통 디코드(getFrame) 대신
@@ -1076,6 +1147,8 @@
     if (k === ' ') { e.preventDefault(); togglePlay(); return; }
     if (ctrl && (k === 'z' || k === 'Z')) { e.preventDefault(); stop(); if (e.shiftKey ? P.redo() : P.undo()) setPH(ph); return; }
     if (ctrl && (k === 'y' || k === 'Y')) { e.preventDefault(); stop(); if (P.redo()) setPH(ph); return; }
+    if (ctrl && (k === 's' || k === 'S' || k === 'ㄴ')) { e.preventDefault(); saveNow(); return; }
+    if (k === 'Escape' && exportAbort) { e.preventDefault(); $('ovCancel').onclick(); return; }
     if (ctrl && (k === 'a' || k === 'A' || k === 'ㅁ')) { e.preventDefault(); stop(); showStage('tl'); select(null, 'all'); return; }
     if (ctrl && (k === 'c' || k === 'C' || k === 'ㅊ')) { e.preventDefault(); doCopy(); return; }
     if (ctrl && (k === 'x' || k === 'X' || k === 'ㅌ')) { e.preventDefault(); doCut(); return; }
@@ -1197,16 +1270,20 @@
   applyMedia();
   $('btnNew').onclick = () => openProjModal();
   $('projName').onclick = () => renameCurrent();
+  let exportAbort = null;
+  $('ovCancel').onclick = () => { if (exportAbort) { exportAbort.abort(); $('ovLabel').textContent = '취소하는 중…'; } };
   $('btnExport').onclick = async () => {
     stop();
     if (!P.total()) return toast('타임라인이 비어 있어요');
     const analyzing = P.data.media.some(m => { const s = M.get(m.id); return s && s.kind === 'video' && !s.analyzed; });
     if (analyzing) toast('분석이 끝나기 전에도 내보낼 수 있어요 — 결과물은 같아요', 3000);
     OV.show('MP4 내보내는 중');
+    const ac = new AbortController(); exportAbort = ac; $('ovCancel').hidden = false;
     try {
-      const r = await window.KMV_EXPORT.exportMP4({ onProgress: (p, l) => OV.set(p, l) });
+      const r = await window.KMV_EXPORT.exportMP4({ onProgress: (p, l) => OV.set(p, l), signal: ac.signal });
       if (r) toast('저장 완료 · ' + Math.round(r.seconds) + '초 · ' + PW() + '×' + PH() + (r.toDisk ? ' · ' + r.name : '') + (/^avc/.test(r.codec) ? '' : ' · 이 브라우저엔 H.264 인코더가 없어 VP9 로 저장했어요'), 6000);
-    } catch (e) { console.error(e); toast('내보내기 실패: ' + (e.message || e), 5000); }
+    } catch (e) { if (e && e.name === 'AbortError') toast('내보내기를 취소했어요 — 작업은 그대로예요', 2500); else { console.error(e); toast('내보내기 실패: ' + (e.message || e), 5000); } }
+    exportAbort = null; $('ovCancel').hidden = true;
     OV.hide();
   };
   $('zoom').oninput = e => { const v = +e.target.value / 1000; pxf = MIN_PXF * Math.pow(MAX_PXF / MIN_PXF, v); clampScroll(); dirty = true; draw(); };
@@ -1515,33 +1592,50 @@
   }
 
   /* ---------- 4단계 패널: 부품 P ---------- */
-  const partThumbs = new Map();              // partId → canvas 요소 (목록)
+  const partThumbs = new Map();              // partId → canvas 요소들 (목록 — 즐겨찾기·최근 칸에 같은 부품이 또 나올 수 있음)
+  /* 즐겨찾기(★)·최근 쓴 것 — 부품 28종이 되면서 찾는 시간이 늘어 목록 맨 위에 두 칸을 둔다. localStorage 만(기기별). */
+  const FAV_KEY = 'kmv.favParts', RECENT_KEY = 'kmv.recentParts', RECENT_MAX = 8;
+  const favParts = new Set((() => { try { return JSON.parse(localStorage.getItem(FAV_KEY) || '[]'); } catch (e) { return []; } })());
+  let recentParts = (() => { try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); } catch (e) { return []; } })();
+  function toggleFav(id) { if (favParts.has(id)) favParts.delete(id); else favParts.add(id); try { localStorage.setItem(FAV_KEY, JSON.stringify([...favParts])); } catch (e) {} buildPartGrid(); refreshPeekFav(); }
+  function noteRecent(id) { recentParts = [id, ...recentParts.filter(x => x !== id)].slice(0, RECENT_MAX); try { localStorage.setItem(RECENT_KEY, JSON.stringify(recentParts)); } catch (e) {} buildPartGrid(); }
+  function refreshPeekFav() { const b = $('pkFav'); if (b && peek.id) { b.classList.toggle('on', favParts.has(peek.id)); b.textContent = favParts.has(peek.id) ? '★' : '☆'; } }
+  function partTile(def, meta) {
+    const el = document.createElement('div'); el.className = 'pc' + (favParts.has(def.id) ? ' fav' : ''); el.dataset.id = def.id; el.title = def.name + ' · ' + def.dur + '초 — 클릭: 미리보기 / 더블클릭: 플레이헤드에 놓기 / 끌기: P 레인에 놓기';
+    const cv = document.createElement('canvas'); cv.width = 240; cv.height = 135; el.appendChild(cv); if (!partThumbs.has(def.id)) partThumbs.set(def.id, []); partThumbs.get(def.id).push(cv);
+    const b = document.createElement('b'); b.textContent = def.name; el.appendChild(b);
+    const sm = document.createElement('small'); sm.textContent = def.dur + '초' + (meta.behind ? ' · 인물 뒤' : ''); el.appendChild(sm);
+    const st = document.createElement('i'); st.className = 'star'; st.textContent = favParts.has(def.id) ? '★' : '☆'; st.title = '즐겨찾기'; st.onpointerdown = e => { e.stopPropagation(); e.preventDefault(); }; st.onclick = e => { e.stopPropagation(); toggleFav(def.id); }; el.appendChild(st);
+    el.onpointerdown = e => { if (e.pointerType === 'mouse' && e.button !== 0) return; e.preventDefault(); partDrag = { part: def.id, dur: P.partDefault(def.id).dur, x: e.clientX, y: e.clientY, moved: false, overTL: false, f: 0 }; };
+    el.onpointerenter = e => { if (e.pointerType !== 'mouse') return; peekHover(def.id, el); };
+    el.onpointerleave = e => { if (e.pointerType !== 'mouse') return; peekLeave(def.id); };
+    el.ondblclick = () => { peekHide(true); placePart(def.id, ph); };
+    return el;
+  }
   function buildPartGrid() {
     const grid = $('partGrid'); grid.innerHTML = ''; partThumbs.clear();
     if (!PT || !PT.ready()) { grid.innerHTML = '<div class="note">부품(kmake/parts)을 불러오지 못했어요 — 네트워크를 확인해 주세요.</div>'; return; }
+    const all = PT.list(), byId = new Map(all.map(x => [x.def.id, x]));
+    const head = (txt, cls) => { const h = document.createElement('div'); h.className = 'cat' + (cls ? ' ' + cls : ''); h.textContent = txt; grid.appendChild(h); };
+    const favs = [...favParts].filter(id => byId.has(id)), rec = recentParts.filter(id => byId.has(id));
+    if (favs.length) { head('★ 즐겨찾기', 'quick'); favs.forEach(id => grid.appendChild(partTile(byId.get(id).def, byId.get(id).meta))); }
+    if (rec.length) { head('최근 쓴 것', 'quick'); rec.forEach(id => grid.appendChild(partTile(byId.get(id).def, byId.get(id).meta))); }
     let cat = null;
-    PT.list().forEach(({ def, meta }) => {
-      if (meta.cat !== cat) { cat = meta.cat; const h = document.createElement('div'); h.className = 'cat'; h.textContent = (PT.CATS.find(c => c.id === cat) || {}).name || cat; grid.appendChild(h); }
-      const el = document.createElement('div'); el.className = 'pc'; el.dataset.id = def.id; el.title = def.name + ' · ' + def.dur + '초 — 클릭: 플레이헤드에 놓기 / 끌기: P 레인에 놓기';
-      const cv = document.createElement('canvas'); cv.width = 240; cv.height = 135; el.appendChild(cv); partThumbs.set(def.id, cv);
-      const b = document.createElement('b'); b.textContent = def.name; el.appendChild(b);
-      const sm = document.createElement('small'); sm.textContent = def.dur + '초' + (meta.behind ? ' · 인물 뒤' : ''); el.appendChild(sm);
-      el.onpointerdown = e => { if (e.pointerType === 'mouse' && e.button !== 0) return; e.preventDefault(); partDrag = { part: def.id, dur: P.partDefault(def.id).dur, x: e.clientX, y: e.clientY, moved: false, overTL: false, f: 0 }; };
-      el.onpointerenter = e => { if (e.pointerType !== 'mouse') return; peekHover(def.id, el); };
-      el.onpointerleave = e => { if (e.pointerType !== 'mouse') return; peekLeave(def.id); };
-      el.ondblclick = () => { peekHide(true); placePart(def.id, ph); };
-      grid.appendChild(el);
+    all.forEach(({ def, meta }) => {
+      if (meta.cat !== cat) { cat = meta.cat; head((PT.CATS.find(c => c.id === cat) || {}).name || cat); }
+      grid.appendChild(partTile(def, meta));
     });
     paintPartThumbs();
   }
   function paintPartThumbs() {
     if (!PT || !PT.ready()) return;
-    partThumbs.forEach((cv, id) => { const th = PT.thumb(id, null, P.data.theme, 240, 135); if (th) { const c = cv.getContext('2d'); c.clearRect(0, 0, 240, 135); c.drawImage(th, 0, 0); } });
+    partThumbs.forEach((cvs, id) => { const th = PT.thumb(id, null, P.data.theme, 240, 135); if (th) cvs.forEach(cv => { const c = cv.getContext('2d'); c.clearRect(0, 0, 240, 135); c.drawImage(th, 0, 0); }); });
   }
   function placePart(partId, at) {
     stop();
     const pt = P.addP({ part: partId, at: Math.max(0, Math.round(at)) });
     if (!pt) return;
+    noteRecent(partId);
     selectP(pt.id); select(null); selectS(null); selectA2(null); selectV2(null);
     setPH(pt.at + Math.min(pt.dur - 1, Math.round(PT.meta(partId).thumbT * FPS)));
     if (PT.behind(pt) && SG) SG.load().then(ok => { if (!ok) toast('인물 컷아웃 모델을 못 불러와 부품이 그냥 앞에 그려져요', 4000); });
@@ -1582,7 +1676,8 @@
     peek.id = id; peek.el = el; peek.t0 = performance.now();
     $('pkName').textContent = def.name; pk.classList.remove('hidden'); peekPlace(el);
     cancelAnimationFrame(peek.raf);
-    const tile = partThumbs.get(id), tctx = tile && tile.getContext('2d');
+    const tile = el && el.querySelector('canvas'), tctx = tile && tile.getContext('2d');   // 그 타일만(즐겨찾기 칸에 같은 부품이 또 있어도)
+    refreshPeekFav();
     const loop = () => {
       if (peek.id !== id) return;
       const cyc = def.dur + 0.7, t = ((performance.now() - peek.t0) / 1000) % cyc, tt = Math.min(def.dur - 1 / FPS, t);
@@ -1599,7 +1694,7 @@
   function peekLeave(id) { clearTimeout(peek.timer); if (peek.pinned) return; peekStop(); }
   function peekStop() {
     cancelAnimationFrame(peek.raf); const id = peek.id; peek.id = null; pk.classList.add('hidden');
-    if (id) { const tile = partThumbs.get(id); const th = PT.thumb(id, null, P.data.theme, 240, 135); if (tile && th) { const c = tile.getContext('2d'); c.clearRect(0, 0, 240, 135); c.drawImage(th, 0, 0); } }
+    if (id) { const th = PT.thumb(id, null, P.data.theme, 240, 135); if (th) (partThumbs.get(id) || []).forEach(tile => { const c = tile.getContext('2d'); c.clearRect(0, 0, 240, 135); c.drawImage(th, 0, 0); }); }
   }
   function peekPin(id) {
     const el = $('partGrid').querySelector('.pc[data-id="' + id + '"]'); if (!el) return;
@@ -2093,7 +2188,7 @@
     refreshMarkerList();
     if (kind === 'load' || kind === 'aspect' || kind === 'undo' || kind === 'redo') setRScale(live() ? 0.5 : 1);
     refreshPanel(); refreshProject();
-    scheduleSave(); if (!drag) refreshBin();
+    if (kind !== 'load') scheduleSave(); if (!drag) refreshBin();   // 불러온 직후는 편집이 아니다(계정에 다시 올릴 일 없음)
     if (!drag) {
       refreshLookPanel(); refreshSubPanel(); refreshPartPanel(); refreshMusicPanel();
       if (kind !== 'M') clearAutoPrev();                 // 시각이 밀리면 찾아 둔 자리는 못 믿는다 (마커만 놓은 건 그대로)
@@ -2117,7 +2212,7 @@
     stop();
     P.data.media.forEach(m => M.remove(m.id));
     P.reset(); select(null);
-    if (!json || !json.media || !json.media.length) { refreshBin(); refreshStatus(); return { missing: [] }; }
+    if (!json || !json.media || !json.media.length) { if (json) P.load(Object.assign({}, json, { media: [] })); refreshBin(); refreshStatus(); return { missing: [] }; }   // 미디어 없는 작업(자막·부품만)도 내용은 살린다
     OV.show(title || '작업 불러오는 중');
     const ok = [], missing = [];
     for (let i = 0; i < json.media.length; i++) {
@@ -2142,7 +2237,9 @@
   }
   /* 작업 레코드를 현재 작업으로 */
   async function openRecord(r) {
-    proj.id = r.id; proj.name = r.name || '새 작업'; proj.degraded = false; proj.cloudAt = r.where === 'cloud' || r.where === 'both' ? (r.cloudAt || r.updatedAt || 0) : 0; proj.cloudErr = null;
+    clearTimeout(saveT); clearTimeout(cloudT); clearTimeout(retryT);
+    proj.id = r.id; proj.name = r.name || '새 작업'; proj.degraded = false; proj.cloudAt = r.cloudAt || (r.where === 'cloud' || r.where === 'both' ? (r.updatedAt || 0) : 0); proj.cloudErr = null; proj.conflict = null; proj.dirty = false; proj.savedAt = 0;
+    await claimTab(r.id);
     const { missing } = await loadDoc(r.doc ? JSON.parse(JSON.stringify(r.doc)) : null, '「' + proj.name + '」 여는 중');
     await ST.local.setCurrent(proj.id);
     zoomFit(); setPH(0);
@@ -2158,7 +2255,8 @@
     const r = ST.make({ media: [], V: [] }, name || ('새 작업 ' + new Date().toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })));
     await openRecord(r);
     await ST.save(rec(), { cloud: false });
-    refreshSaveNote();
+    proj.dirty = true; refreshSaveNote();
+    ST.cloud.ready().then(ok => { if (ok && cloudAllowed()) saveCloud(); }).catch(() => {});
     return r;
   }
   function renameCurrent() {
@@ -2170,14 +2268,16 @@
     try { await DB.open(); } catch (e) { console.warn('idb', e); }
     ST.init(DB);
     let cur = null; try { cur = await ST.local.current(); } catch (e) {}
-    let r = cur ? await ST.local.get(cur).catch(() => null) : null;
+    let r = cur ? await ST.get(cur).catch(() => null) : null;     // 로컬·계정 중 더 새 사본 (옛 사본이 계정을 덮지 않게)
     if (!r) {
       let legacy = null; try { legacy = await DB.getKV('project'); } catch (e) {}
       if (legacy && legacy.media && legacy.media.length) { r = ST.make(legacy, '이전 작업'); await ST.local.put(r); try { await DB.putKV('project', null); } catch (e) {} }
     }
     if (!r) { await newProject('새 작업'); return; }
     await openRecord(r);
-    ST.cloud.ready().then(ok => { if (ok && !proj.degraded) saveCloud(); }).catch(() => {});
+    // 계정에 올리는 건 이 기기 사본이 더 새거나(다른 기기가 못 본 편집) 계정에 아직 없을 때만
+    if (r.where === 'local' && r.cloudOk !== false && (!r.cloudAt || (r.localAt || 0) > r.cloudAt)) { proj.dirty = true; ST.cloud.ready().then(ok => { if (ok && cloudAllowed()) saveCloud(); }).catch(() => {}); }
+    else if (r.where === 'cloud') toast('다른 기기에서 저장한 최신 「' + proj.name + '」 을 열었어요', 2200);
   }
 
   /* ---------- 「내 작업」 모달 ---------- */
@@ -2209,10 +2309,14 @@
   $('projModal').addEventListener('click', e => { if (e.target === $('projModal')) $('projModal').classList.add('hidden'); });
   $('btnProjNew').onclick = async () => { $('projModal').classList.add('hidden'); await newProject(); toast('새 작업을 열었어요 — 이름은 위 제목을 눌러 바꿔요', 2400); };
   $('btnProjCopy').onclick = async () => {
-    const r = ST.make(P.toJSON(), proj.name + ' 사본'); proj.id = r.id; proj.name = r.name; proj.degraded = false; proj.cloudAt = 0; proj.cloudErr = null;
-    await ST.save(rec()); await ST.local.setCurrent(r.id); refreshSaveNote(); $('projModal').classList.add('hidden'); toast('「' + r.name + '」으로 저장했어요', 2200);
+    const r = ST.make(P.toJSON(), proj.name + ' 사본'); proj.id = r.id; proj.name = r.name; proj.degraded = false; proj.cloudAt = 0; proj.cloudErr = null; proj.conflict = null; proj.dirty = false;
+    await claimTab(r.id);
+    const sv = await ST.save(rec()); if (sv.cloud) proj.cloudAt = sv.at || Date.now(); await ST.local.setCurrent(r.id); refreshSaveNote(); $('projModal').classList.add('hidden'); toast('「' + r.name + '」으로 저장했어요', 2200);
   };
   $('btnProjImport').onclick = () => $('kmvIn').click();
+  $('btnOpenRemote').onclick = () => openRemote();
+  $('pkFav').onclick = () => { if (peek.id) toggleFav(peek.id); };
+  $('btnConflictCopy').onclick = () => $('btnProjCopy').onclick();
   $('kmvIn').onchange = async e => {
     const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return;
     try { const r = await ST.fromFile(f); $('projModal').classList.add('hidden'); await openRecord(r); await ST.save(rec()); refreshSaveNote(); toast('「' + r.name + '」 파일을 열었어요', 2200); }
@@ -2220,7 +2324,7 @@
   };
 
   window.KMV_UI = { importFiles, setPH: f => setPH(f), get ph() { return ph; }, select, selectP, selectA2, selectS, placePart, play, stop, zoomFit, get pxf() { return pxf; }, get scrollF() { return scrollF; }, get selP() { return selP; }, get selA2() { return selA2; }, beatFrames,
-    get sel() { return sel; }, selectedIds, openSource, showStage, get stage() { return stage; }, get src() { return srcCur; }, setSrcPH, srcMark, srcPlace, shuttleTo, get shuttle() { return shuttle; }, get playing() { return playing || srcPlaying; }, doMarker, doCopy, doCut, doPaste, get clipboard() { return clipboard; }, get selM() { return selM; }, layout: { HEAD, RULER, LY }, xOf, frameOf, laneRows, rowGeom, selectV2, get selV2() { return selV2; }, get delChip() { return delChip; }, get proj() { return proj; }, openRecord, newProject, loadDoc, saveCloud, openProjModal, tab: setTab, get toolTab() { return toolTab; }, get autoPrev() { return autoPrev; } };
+    get sel() { return sel; }, selectedIds, openSource, showStage, get stage() { return stage; }, get src() { return srcCur; }, setSrcPH, srcMark, srcPlace, shuttleTo, get shuttle() { return shuttle; }, get playing() { return playing || srcPlaying; }, doMarker, doCopy, doCut, doPaste, get clipboard() { return clipboard; }, get selM() { return selM; }, layout: { HEAD, RULER, LY }, xOf, frameOf, laneRows, rowGeom, selectV2, get selV2() { return selV2; }, get delChip() { return delChip; }, get proj() { return proj; }, openRecord, newProject, loadDoc, saveCloud, saveNow, openRemote, saveState, openProjModal, tab: setTab, get toolTab() { return toolTab; }, get autoPrev() { return autoPrev; } };
 
   /* ---------- 시작 ---------- */
   resize();
@@ -2245,5 +2349,5 @@
   (SH && SH.active ? SH.init().then(refreshShellRow) : Promise.resolve())
     .then(() => { if (SH && SH.active && SH.info && SH.info.ffmpeg === false) toast('ffmpeg 를 찾지 못했어요 — 설치가 온전한지 확인해 주세요', 6000); })
     .then(restore).then(() => { refreshShellRow(); });
-  window.addEventListener('pagehide', () => { if (proj.id) { clearTimeout(saveT); ST.save(rec(), { cloud: false }).catch(() => {}); } });
+  window.addEventListener('pagehide', () => { if (proj.id && !proj.otherTab) { clearTimeout(saveT); const r = rec(); ST.save(r, { cloud: false }).catch(() => {}); if (cloudAllowed() && proj.dirty) { const sm = ST.summary(r.doc); ST.cloud.putKeepalive(Object.assign(r, sm), proj.cloudAt); } } });
 })();

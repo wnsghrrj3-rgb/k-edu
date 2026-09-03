@@ -13,7 +13,7 @@
 
   const FILE_EXT = '.kmv', FILE_V = 1;
   let DB = null;                                              // kmovie.js 의 IndexedDB 래퍼(projects 스토어 필요)
-  let dbc = null, sessionP = null;
+  let dbc = null, sessionP = null, sessionNow = null, authHooked = false;   // sessionNow: keepalive 저장용 동기 사본(토큰 갱신을 따라간다)
 
   const uuid = () => (g.crypto && crypto.randomUUID) ? crypto.randomUUID() : 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
   function summary(doc) {
@@ -41,9 +41,11 @@
     if (sessionP) return sessionP;
     const c = client();
     sessionP = c ? c.auth.getSession().then(r => (r && r.data && r.data.session) || null).catch(() => null) : Promise.resolve(null);
-    sessionP.then(s => { if (!s) sessionP = null; });    // 로그인 없으면 다음에 다시 물어본다
+    sessionP.then(s => { sessionNow = s; if (!s) sessionP = null; });    // 로그인 없으면 다음에 다시 물어본다
+    if (c && !authHooked) { authHooked = true; try { c.auth.onAuthStateChange((ev, s) => { sessionNow = s || null; if (!s) sessionP = null; }); } catch (e) {} }
     return sessionP;
   }
+  const iso = ms => new Date(ms || Date.now()).toISOString();
   const cloud = {
     async ready() { return !!(await session()); },
     async list() {
@@ -59,12 +61,42 @@
       const r = q.data; if (!r) return null;
       return { id: r.id, name: r.name, doc: r.doc, durSec: +r.dur_sec || 0, clips: r.clips | 0, updatedAt: Date.parse(r.updated_at) };
     },
-    async put(rec) {
-      const s = await session(); if (!s) return false;
-      const row = { id: rec.id, user_id: s.user.id, name: rec.name, doc: rec.doc, dur_sec: rec.durSec || 0, clips: rec.clips | 0, updated_at: new Date(rec.updatedAt || Date.now()).toISOString() };
-      const q = await client().from('kmovie_projects').upsert(row, { onConflict: 'id' });
+    /* 계정에 있는 행의 시각만 (없으면 null) */
+    async stamp(id) {
+      const s = await session(); if (!s) return null;
+      const q = await client().from('kmovie_projects').select('updated_at').eq('id', id).maybeSingle();
       if (q.error) throw q.error;
-      return true;
+      return q.data ? Date.parse(q.data.updated_at) : null;
+    },
+    /* 낙관적 잠금 저장. baseAt = 내가 마지막으로 본 계정 시각(ms). 계정 행이 그보다 새면 덮어쓰지 않고 conflict 로 돌려준다.
+       baseAt 이 0(이 기기에서만 살던 작업)인데 계정에 이미 행이 있으면 그것도 conflict — 옛 사본이 새 작업을 덮는 길을 막는다.
+       돌려주는 값: { ok, at } | { conflict:true, remoteAt } */
+    async put(rec, baseAt) {
+      const s = await session(); if (!s) return { ok: false };
+      const row = { id: rec.id, user_id: s.user.id, name: rec.name, doc: rec.doc, dur_sec: rec.durSec || 0, clips: rec.clips | 0, updated_at: iso(rec.updatedAt) };
+      const c = client();
+      if (baseAt) {
+        const u = await c.from('kmovie_projects').update(row).eq('id', rec.id).lte('updated_at', iso(baseAt + 1)).select('id');
+        if (u.error) throw u.error;
+        if (u.data && u.data.length) return { ok: true, at: rec.updatedAt };
+      }
+      const remoteAt = await cloud.stamp(rec.id);
+      if (remoteAt == null) { const i = await c.from('kmovie_projects').insert(row); if (i.error) throw i.error; return { ok: true, at: rec.updatedAt }; }
+      if (baseAt && remoteAt <= baseAt + 1) { const u2 = await c.from('kmovie_projects').update(row).eq('id', rec.id); if (u2.error) throw u2.error; return { ok: true, at: rec.updatedAt }; }
+      return { conflict: true, remoteAt };
+    },
+    /* 창을 닫을 때 — keepalive fetch 로 REST 에 직접(대기 안 함). 본문 한도(약 64KB) 넘으면 보내지 않고 false. */
+    putKeepalive(rec, baseAt) {
+      try {
+        const c = client(); if (!c || !g.fetch) return false;
+        const url = c.supabaseUrl || (c.rest && c.rest.url && c.rest.url.replace(/\/rest\/v1\/?$/, '')), key = c.supabaseKey;
+        const tok = sessionNow && sessionNow.access_token; if (!url || !key || !tok) return false;
+        const body = JSON.stringify({ name: rec.name, doc: rec.doc, dur_sec: rec.durSec || 0, clips: rec.clips | 0, updated_at: iso(rec.updatedAt) });
+        if (body.length > 60000 || !baseAt) return false;
+        const q = url + '/rest/v1/kmovie_projects?id=eq.' + encodeURIComponent(rec.id) + '&updated_at=lte.' + encodeURIComponent(iso(baseAt + 1));
+        g.fetch(q, { method: 'PATCH', keepalive: true, headers: { apikey: key, Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json', Prefer: 'return=minimal' }, body }).catch(() => {});
+        return true;
+      } catch (e) { return false; }
     },
     async del(id) {
       const s = await session(); if (!s) return false;
@@ -86,19 +118,25 @@
     }
     return [...map.values()].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)).map(r => Object.assign(r, { cloudOk: C !== null }));
   }
-  /* 가장 새 사본을 준다(로컬 vs 클라우드 중 updatedAt 큰 쪽) */
+  /* 가장 새 사본을 준다(로컬 vs 클라우드 중 updatedAt 큰 쪽). localAt·cloudAt 을 같이 돌려줘 시작 때 어느 쪽을 올릴지 정한다. */
   async function get(id) {
     const l = await local.get(id).catch(() => null);
-    let c = null; try { c = await cloud.get(id); } catch (e) { console.warn('[KMV store] cloud get', e); }
-    if (l && c) return (c.updatedAt || 0) > (l.updatedAt || 0) ? Object.assign(c, { where: 'cloud' }) : Object.assign(l, { where: 'local' });
-    return l ? Object.assign(l, { where: 'local' }) : (c ? Object.assign(c, { where: 'cloud' }) : null);
+    let c = null, cloudOk = true; try { c = await cloud.get(id); } catch (e) { cloudOk = false; console.warn('[KMV store] cloud get', e); }
+    const tag = (r, where) => Object.assign(r, { where, localAt: l ? (l.updatedAt || 0) : 0, cloudAt: c ? (c.updatedAt || 0) : 0, cloudOk });
+    if (l && c) return (c.updatedAt || 0) > (l.updatedAt || 0) ? tag(c, 'cloud') : tag(l, 'local');
+    return l ? tag(l, 'local') : (c ? tag(c, 'cloud') : null);
   }
   function make(doc, name) { const sm = summary(doc); return { id: uuid(), name: name || '새 작업', doc, updatedAt: Date.now(), durSec: sm.durSec, clips: sm.clips }; }
+  /* opt.cloud=false → 로컬만. opt.baseAt → 낙관적 잠금 기준 시각. 돌려주는 값 { cloud, at?, conflict?, remoteAt?, error? } */
   async function save(rec, opt) {
     const sm = summary(rec.doc); rec.durSec = sm.durSec; rec.clips = sm.clips; rec.updatedAt = Date.now();
     await local.put(rec); await local.setCurrent(rec.id);
     if (opt && opt.cloud === false) return { cloud: false };
-    try { return { cloud: await cloud.put(rec) }; } catch (e) { console.warn('[KMV store] cloud put', e); return { cloud: false, error: e }; }
+    try {
+      const r = await cloud.put(rec, opt && opt.baseAt);
+      if (r.conflict) return { cloud: false, conflict: true, remoteAt: r.remoteAt };
+      return { cloud: !!r.ok, at: r.at };
+    } catch (e) { console.warn('[KMV store] cloud put', e); return { cloud: false, error: e }; }
   }
   async function remove(id) { await local.del(id); try { await cloud.del(id); } catch (e) { console.warn('[KMV store] cloud del', e); } }
   async function rename(id, name) {
@@ -124,7 +162,7 @@
 
   g.KMV_STORE = {
     FILE_EXT, init: db => { DB = db; }, uuid, summary,
-    local, cloud, list, get, make, save, remove, rename, download, parse, fromFile,
-    _reset: () => { dbc = null; sessionP = null; },
+    local, cloud, list, get, make, save, remove, rename, download, parse, fromFile, iso,
+    _reset: () => { dbc = null; sessionP = null; sessionNow = null; authHooked = false; },
   };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -14,7 +14,7 @@
   'use strict';
 
   const BITRATE = 8_000_000, KEY_EVERY = 60, QUEUE_MAX = 8;
-  const MUXER_URL = 'https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.1/build/mp4-muxer.min.js';
+  const MUXER_URL = 'vendor/mp4-muxer.js';   // 레포 동봉(5.2.2) — 폴백 로드용
   let busy = false;
 
   function loadMuxer() {
@@ -45,6 +45,8 @@
     const total = P.total();
     if (!total) throw new Error('타임라인이 비어 있어요');
     const prog = opt.onProgress || (() => {});
+    const sig = opt.signal || null;                                    // AbortSignal — 취소 버튼
+    const aborted = () => { if (sig && sig.aborted) { const e = new Error('내보내기를 취소했어요'); e.name = 'AbortError'; throw e; } };
     busy = true;
     let encoder = null, aenc = null, muxer = null, stream = null, encErr = null;
     const name = opt.fileName || '케이무비.mp4';
@@ -94,7 +96,7 @@
         aenc = new AudioEncoder({ output: (c, m) => muxer.addAudioChunk(c, m), error: e => { encErr = e; } });
         aenc.configure({ codec: 'mp4a.40.2', sampleRate: SRr, numberOfChannels: 2, bitrate: 192000 });
         await g.KMV_AUDIO.renderMix(total, async (mix, startFrame) => {
-          if (encErr) throw encErr;
+          if (encErr) throw encErr; aborted();
           const base = Math.round(startFrame / FPS * SRr);
           const CH = 4800, L = mix.length, c0 = mix.getChannelData(0), c1 = mix.numberOfChannels > 1 ? mix.getChannelData(1) : c0;
           for (let s = 0; s < L; s += CH) {
@@ -118,7 +120,7 @@
       const cv = new OffscreenCanvas(W, H), ctx = cv.getContext('2d');
       const t0 = performance.now();
       for (let t = 0; t < total; t++) {
-        if (encErr) throw encErr;
+        if (encErr) throw encErr; aborted();
         await g.KMV_RENDER.drawExact(ctx, W, H, t);
         const vf = new VideoFrame(cv, { timestamp: Math.round(t * 1e6 / FPS), duration: Math.round(1e6 / FPS) });
         await waitQueue(encoder);
@@ -130,6 +132,7 @@
           await new Promise(r => setTimeout(r, 0));
         }
       }
+      aborted();
       prog(1, '마무리 중');
       await encoder.flush();
       if (encErr) throw encErr;

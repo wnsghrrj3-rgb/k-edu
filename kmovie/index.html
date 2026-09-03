@@ -155,7 +155,12 @@
   #partPeek .pk-bar b { font-size:13px; } #partPeek .pk-bar span { color:var(--sub); font-variant-numeric:tabular-nums; }
   #partPeek .pk-bar button { font-size:12px; padding:4px 9px; }
   #partPeek .pk-prog { height:2px; background:var(--line); } #partPeek .pk-prog i { display:block; height:100%; width:0; background:var(--gold); }
-  .pc { background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:5px; cursor:grab; }
+  .pc { background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:5px; cursor:grab; position:relative; }
+  .pc .star { position:absolute; top:7px; right:7px; font-style:normal; font-size:13px; line-height:1; color:#fff; opacity:0; text-shadow:0 1px 3px rgba(0,0,0,.8); cursor:pointer; padding:2px; }
+  .pc:hover .star, .pc.fav .star { opacity:1; } .pc.fav .star { color:var(--gold); }
+  @media (pointer:coarse) { .pc .star { opacity:.85; } }
+  #partGrid .cat.quick { color:var(--gold); border-top:0; }
+  #pkFav.on { color:var(--gold); }
   .pc:hover { border-color:var(--gold); }
   .pc.on, .pc.peek { border-color:var(--gold); box-shadow:0 0 0 1px var(--gold) inset; }
   .pc canvas { width:100%; display:block; border-radius:5px; background:#000; aspect-ratio:16/9; }
@@ -180,6 +185,13 @@
   #overlay .bar { height:8px; background:#0f1524; border-radius:8px; overflow:hidden; }
   #overlay .bar i { display:block; height:100%; width:0; background:linear-gradient(90deg, var(--gold), #f0d58a); transition:width .15s; }
   #overlay .lbl { display:flex; justify-content:space-between; color:var(--sub); font-size:12px; margin-top:8px; font-variant-numeric:tabular-nums; }
+  #saveDot { width:9px; height:9px; border-radius:50%; background:#5ec27a; flex:none; box-shadow:0 0 0 2px rgba(255,255,255,.06); transition:background .2s; }
+  #saveDot[data-st="dirty"] { background:#e2b64a; }
+  #saveDot[data-st="saving"] { background:#e2b64a; animation:kmvPulse 1s infinite; }
+  #saveDot[data-st="err"], #saveDot[data-st="conflict"] { background:#e25c5c; }
+  #saveDot[data-st="off"] { background:#777; }
+  @keyframes kmvPulse { 50% { opacity:.35; } }
+  #saveConflict button { padding:2px 8px; font-size:11px; }
   #projName { max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--gold); font-weight:700; font-size:13px; cursor:pointer; padding:0 6px; }
   #projModal .box { width:560px; max-width:92vw; }
   #projModal .prow { display:flex; align-items:center; gap:10px; padding:9px 10px; border:1px solid var(--line2); border-radius:10px; margin-top:7px; }
@@ -233,7 +245,7 @@
     <div class="sep"></div>
     <button id="tgColMedia" class="on" title="미디어 띠 보이기/숨기기">미디어</button>
     <div class="sep"></div>
-    <span id="projName" title="누르면 이름을 바꿔요">새 작업</span>
+    <span id="saveDot" data-st="ok" title="저장 상태"></span><span id="projName" title="누르면 이름을 바꿔요">새 작업</span>
     <button id="btnNew" title="내 작업 목록 — 열기·새 작업·파일">📁 내 작업</button>
     <button id="btnExport" class="gold">MP4 내보내기</button>
   </header>
@@ -447,6 +459,7 @@
         <div class="row" style="margin-top:8px"><label>화면비</label><div class="seg c3" id="aspectSeg"></div></div>
         <div class="note" id="aspNote">가로는 유튜브·홈페이지, 세로는 쇼츠·릴스, 정사각은 게시글용이에요. 바꾸면 클립을 화면에 꽉 채우고 볼거리가 있는 쪽을 남겨요 (클립 「채우기」에서 바꿀 수 있어요).</div>
         <div class="note" style="margin-top:8px"><span id="exFmt">1920×1080</span> · 30fps · H.264 8Mbps · AAC<br><span id="saveNote">작업은 이 브라우저에 자동 저장돼요.</span></div>
+        <div class="row" id="saveConflict" hidden style="gap:6px;margin-top:6px"><button id="btnOpenRemote" class="gold" title="다른 기기에서 저장한 최신 사본으로 바꿔요 (이 탭의 편집은 버려요)">다른 기기 것 열기</button><button id="btnConflictCopy" title="이 탭의 편집을 새 이름의 작업으로 따로 저장해요">사본으로 저장</button></div>
         <div class="row" style="margin-top:10px"><span style="color:var(--sub);font-size:12px">마커</span><div class="sp"></div><button id="btnMarker" style="padding:2px 8px;font-size:11px" title="플레이헤드에 마커 (M) · Shift+M 다음 · Ctrl+Shift+M 이전">＋ 마커 (M)</button></div>
         <div id="markerList"></div>
         <div class="row" id="shellRow" hidden style="gap:6px;align-items:center;font-size:12px;margin-top:8px"><span id="shellCache" style="color:var(--sub)">프록시</span><div class="sp"></div><button id="btnCacheDir" style="padding:2px 8px;font-size:11px" title="프록시 폴더 열기">폴더</button><button id="btnCacheClear" style="padding:2px 8px;font-size:11px">비우기</button></div>
@@ -475,7 +488,7 @@
   </section>
 </div>
 
-<div id="overlay" class="hidden"><div class="box"><h4 id="ovTitle">내보내는 중</h4><div class="bar"><i id="ovBar"></i></div><div class="lbl"><span id="ovLabel"></span><span id="ovPct">0%</span></div></div></div>
+<div id="overlay" class="hidden"><div class="box"><h4 id="ovTitle">내보내는 중</h4><div class="bar"><i id="ovBar"></i></div><div class="lbl"><span id="ovLabel"></span><span id="ovPct">0%</span></div><div style="text-align:right;margin-top:10px"><button id="ovCancel" hidden style="font-size:12px;padding:4px 12px" title="내보내기를 멈춰요 (Esc)">취소</button></div></div></div>
 <div id="projModal" class="hidden" style="position:fixed;inset:0;background:rgba(6,10,20,.82);display:flex;align-items:center;justify-content:center;z-index:55;backdrop-filter:blur(2px)">
   <div class="box" style="background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:18px 20px">
     <div style="display:flex;align-items:center;gap:8px"><h4 style="margin:0;font-size:15px">내 작업</h4><div class="sp" style="flex:1"></div><button id="btnProjNew" class="gold" style="font-size:12px">＋ 새 작업</button><button id="btnProjImport" style="font-size:12px" title=".kmv 파일 열기">파일 가져오기</button><button id="btnProjCopy" style="font-size:12px" title="지금 작업을 새 이름의 사본으로 저장">사본으로 저장</button><button id="btnProjClose" class="ico" title="닫기">✕</button></div>
@@ -484,14 +497,14 @@
     <input id="kmvIn" type="file" accept=".kmv,application/json" hidden>
   </div>
 </div>
-<div id="partPeek" class="hidden"><canvas width="480" height="270"></canvas><div class="pk-prog"><i></i></div><div class="pk-bar"><b id="pkName"></b><span id="pkTime"></span><div class="sp"></div><button id="pkPlace" class="gold" title="플레이헤드 자리에 이 부품을 놓아요">＋ 넣기</button><button id="pkClose" class="ico" title="닫기">✕</button></div></div>
+<div id="partPeek" class="hidden"><canvas width="480" height="270"></canvas><div class="pk-prog"><i></i></div><div class="pk-bar"><b id="pkName"></b><span id="pkTime"></span><div class="sp"></div><button id="pkFav" class="ico" title="즐겨찾기 — 부품 목록 맨 위에 모아요">☆</button><button id="pkPlace" class="gold" title="플레이헤드 자리에 이 부품을 놓아요">＋ 넣기</button><button id="pkClose" class="ico" title="닫기">✕</button></div></div>
 <div id="toast"></div>
 <div id="partGhost" class="hidden"></div>
 <div id="nosup" class="hidden"><div><b style="font-size:18px">이 브라우저는 케이무비를 지원하지 않아요</b><br>WebCodecs 가 필요해요 — 크롬·엣지 최신 버전(데스크톱)에서 열어 주세요.</div></div>
 
 <!-- 외부 2개: mp4box(디먹스)·mp4-muxer(묶기). 실패해도 화면은 뜨고, 필요할 때 다시 시도한다 -->
-<script src="https://cdn.jsdelivr.net/npm/mp4box@0.5.2/dist/mp4box.all.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.1/build/mp4-muxer.min.js" defer></script>
+<script src="vendor/mp4box.all.min.js" defer></script>   <!-- 레포 안에 둠(mp4box 0.5.4 BSD-3) — CDN 이 막혀도 편집기가 뜬다 -->
+<script src="vendor/mp4-muxer.js" defer></script>   <!-- mp4-muxer 5.2.2 MIT -->
 <!-- 케이메이커 부품 — 복사 없이 그대로 (kmake/parts) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="../kedu_config.js" defer></script>
