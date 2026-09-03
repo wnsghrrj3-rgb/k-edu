@@ -3,7 +3,7 @@
 학교 홍보 영상용 컷 편집기. 설치 없이 Chrome에서 동작 (WebCodecs).
 
 ## 2단계 클립층 ✅
-- 가져오기: mp4 (H.264/VP9/AV1 영상 + AAC/Opus 소리), 이미지. HEVC 미지원.
+- 가져오기: mp4 (H.264/HEVC/VP9/AV1 영상 + AAC/Opus 소리), 이미지. HEVC 는 브라우저에 하드웨어 디코더가 있을 때만(`VideoDecoder.isConfigSupported` 가 판정 — 갤럭시 크롬·Windows 크롬 대부분 OK, 없으면 안내 후 거절).
 - 타임라인: V 단일 트랙(빈틈 없음), A1 연동/해제(J·L컷), 프리즈, 분할, 트림(리플), 이동, 스냅
 - 속도: 정속/슬로/히트/랩스
 - 재생: AudioContext 마스터 클럭

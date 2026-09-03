@@ -18,3 +18,5 @@ ffmpeg -hide_banner -loglevel error -y -f lavfi -i "testsrc2=size=1280x720" -fra
 ffmpeg -hide_banner -loglevel error -y -loop 1 -framerate 30 -t 4 -i fx/still.png \
   -vf "crop=640:360:x='320+30*sin(2*PI*n/5)':y='180+24*sin(2*PI*n/7)'" \
   -c:v libvpx-vp9 -b:v 1200k -cpu-used 5 -row-mt 1 -g 30 -pix_fmt yuv420p -r 30 fx/shake.mp4
+# ui-hevc.mjs 용: HEVC(hvc1) 3초 — 디먹스가 hvcC 로 description 을 만들고 isConfigSupported 에 맡기는지 (HW 디코더 없는 환경은 새 안내로 거절)
+ffmpeg -hide_banner -loglevel error -y -f lavfi -i "testsrc2=size=640x360:rate=30:duration=3" -f lavfi -i "sine=frequency=440:duration=3" -c:v libx265 -tag:v hvc1 -x265-params log-level=none -g 15 -c:a aac -b:a 96k -pix_fmt yuv420p fx/hevc.mp4

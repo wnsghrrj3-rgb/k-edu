@@ -1,7 +1,7 @@
 /* ============================================================
    케이무비 미디어 층 (KMV_MEDIA) — 설계서 v1 §5
    ------------------------------------------------------------
-   · 디먹스: mp4box.js (H.264 mp4/mov). HEVC 는 껍데기 몫 → 안내.
+   · 디먹스: mp4box.js (H.264/HEVC/VP9/AV1 mp4/mov). HEVC 는 하드웨어 디코더가 있을 때만(isConfigSupported 가 판정).
    · 구간 읽기(지연 로드): moov(샘플 표)만 먼저 읽고, mdat 바이트는 GOP·오디오 구간 단위로
      blob.slice 에서 필요할 때만 — 파일을 통째로 메모리에 올리지 않는다 (브라우저판 60분).
      조각(fragmented) mp4 등 표를 못 뽑는 구조만 예전 통 읽기(15분·700MB)로 폴백.
@@ -123,6 +123,19 @@
     box.PPS.forEach(s => { parts.push((s.length >> 8) & 255, s.length & 255); s.nalu.forEach(b => parts.push(b)); });
     return new Uint8Array(parts);
   }
+  /* 코덱별 VideoDecoder description — avc: avcC 본문, hvc1/hev1: hvcC 본문(HEVCDecoderConfigurationRecord),
+     vp09·av01: 없음. hev1 은 파라미터가 스트림 안에 있어 hvcC 가 없어도 되지만 있으면 같이 준다. */
+  function videoDescription(entry, codec) {
+    if (/^avc/i.test(codec)) return avcDescription(entry);
+    if (/^(hvc1|hev1|hvc|hev)/i.test(codec)) {
+      const d = boxBody(entry.hvcC);
+      // mp4box 0.5.x 의 hvcC 쓰기 결함: min_spatial_segmentation_idc 앞 예약 4비트(1111)를 0 으로 쓴다(15<<24 오타) → 원본대로 복원
+      if (d && d.length > 14) d[13] |= 0xF0;
+      return d;
+    }
+    return null;
+  }
+  function isHevc(codec) { return /^(hvc1|hev1|hvc|hev)/i.test(codec); }
   function rotationOf(trak) {
     try {
       const m = Array.from(trak.tkhd.matrix).map(v => v > 0x7fffffff ? v - 0x100000000 : v); // uint32 → 부호 있는 16.16
@@ -176,14 +189,13 @@
         track = info.videoTracks && info.videoTracks[0];
         if (!track) return reject(new Error('영상 트랙이 없어요'));
         const codec = String(track.codec || '');
-        if (/^(hvc1|hev1|hvc|hev)/i.test(codec)) return reject(new Error('HEVC(H.265) 원본은 브라우저판에서 못 읽어요 — 폰 카메라 설정을 "호환성 우선(H.264)"으로 바꾸거나, 데스크톱판(4단계)을 기다려 주세요'));
-        if (!/^(avc|vp09|av01)/i.test(codec)) return reject(new Error('지원하지 않는 코덱이에요 (' + codec + ') — H.264 mp4/mov 를 넣어 주세요'));
+        if (!/^(avc|hvc1|hev1|hvc|hev|vp09|av01)/i.test(codec)) return reject(new Error('지원하지 않는 코덱이에요 (' + codec + ') — H.264/HEVC mp4/mov 를 넣어 주세요'));
         nb = track.nb_samples;
         const trak = mp4.getTrackById(track.id);
         out.codec = codec; out.timescale = track.timescale;
         out.w = track.video.width; out.h = track.video.height;
         out.rot = rotationOf(trak);
-        out.desc = /^avc/i.test(codec) ? avcDescription(trak.mdia.minf.stbl.stsd.entries[0]) : null;  // vp09·av01 은 description 불필요
+        out.desc = videoDescription(trak.mdia.minf.stbl.stsd.entries[0], codec);  // vp09·av01 은 description 불필요
         atrack = info.audioTracks && info.audioTracks[0];
         out.hasAudio = !!atrack;
         if (atrack) {
@@ -238,8 +250,7 @@
           const track = info.videoTracks && info.videoTracks[0];
           if (!track) return reject(new Error('영상 트랙이 없어요'));
           const codec = String(track.codec || '');
-          if (/^(hvc1|hev1|hvc|hev)/i.test(codec)) return reject(new Error('HEVC(H.265) 원본은 브라우저판에서 못 읽어요 — 폰 카메라 설정을 "호환성 우선(H.264)"으로 바꾸거나, 데스크톱판을 써 주세요'));
-          if (!/^(avc|vp09|av01)/i.test(codec)) return reject(new Error('지원하지 않는 코덱이에요 (' + codec + ') — H.264 mp4/mov 를 넣어 주세요'));
+          if (!/^(avc|hvc1|hev1|hvc|hev|vp09|av01)/i.test(codec)) return reject(new Error('지원하지 않는 코덱이에요 (' + codec + ') — H.264/HEVC mp4/mov 를 넣어 주세요'));
           const trak = mp4.getTrackById(track.id);
           const vs = trak.samples;
           if (!vs || !vs.length || vs[0].offset == null) return reject(new Error('샘플 표를 만들지 못했어요 (조각 mp4?)'));
@@ -247,7 +258,7 @@
             lazy: true, blob: file,
             codec, timescale: track.timescale, w: track.video.width, h: track.video.height,
             rot: rotationOf(trak),
-            desc: /^avc/i.test(codec) ? avcDescription(trak.mdia.minf.stbl.stsd.entries[0]) : null,
+            desc: videoDescription(trak.mdia.minf.stbl.stsd.entries[0], codec),
             samples: vs.map(s => ({ cts: s.cts, duration: s.duration, is_sync: !!s.is_sync, off: s.offset, size: s.size })),
           };
           const atrack = info.audioTracks && info.audioTracks[0];
@@ -792,9 +803,15 @@
       dm = await demux(buf);
     }
     if (/^avc/i.test(dm.codec) && !dm.desc) throw new Error('H.264 설정(avcC)을 찾지 못했어요');
+    if (/^hvc1/i.test(dm.codec) && !dm.desc) throw new Error('HEVC 설정(hvcC)을 찾지 못했어요');
     const cfg = { codec: dm.codec, codedWidth: dm.w, codedHeight: dm.h }; if (dm.desc) cfg.description = dm.desc;
-    const sup = await VideoDecoder.isConfigSupported(cfg);
-    if (!sup.supported) throw new Error('이 영상 코덱을 이 브라우저에서 풀 수 없어요 (' + dm.codec + ')');
+    let sup = null;
+    try { sup = await VideoDecoder.isConfigSupported(cfg); } catch (e) { sup = { supported: false }; }
+    if (!sup || !sup.supported) {
+      // HEVC 는 브라우저가 소프트웨어 디코더를 안 싣는다 — 폰·PC 의 하드웨어 디코더가 있어야만 열린다.
+      if (isHevc(dm.codec)) throw new Error('HEVC(H.265) 원본인데 이 기기·브라우저에 HEVC 하드웨어 디코더가 없어요 (' + dm.codec + ') — 최신 크롬으로 열거나, 폰 카메라 설정을 "호환성 우선(H.264)"으로 바꿔 찍거나, 데스크톱판(프록시)을 써 주세요');
+      throw new Error('이 영상 코덱을 이 브라우저에서 풀 수 없어요 (' + dm.codec + ')');
+    }
     let audio = null, pcm = null;
     if (dm.hasAudio) {
       pcm = await makePcm(dm.a);
