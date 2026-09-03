@@ -1,0 +1,430 @@
+<!--
+K-edu 「우리 반 이름 출력」 (teacher/print.html) — 2026-09-03
+왜: 교사 화면에 이미 번호+이름 명단(student_seats.seat_no·nickname, SQL #35)이 있다.
+    학기 초에 그 명단으로 손으로 다시 적는 일(이름 스티커·책상 명패·뽑기 제비)을 없앤다.
+⚠️ Supabase 새 표·RPC 0 — 있는 명단을 읽기만 하고 인쇄는 브라우저가 한다(서버가 할 일이 없다).
+⚠️ 명단을 못 읽어도 쓸 수 있다 — 붙여넣기 칸이 언제나 열려 있다(폴백, 공개준비 규칙 5).
+⚠️ 보정값(위·왼쪽 mm)은 프린터마다 다르므로 **그 기기의 localStorage** 에 남긴다. 서버에 올리지 않는다.
+
+⚠️⚠️ 라벨 여백에 관한 정직한 표기(화면에도 적었다)
+   폼텍 칸 크기(99.1×33.9 등)는 공개 규격이지만 **여백은 급지·기기마다 1~2mm 밀린다.**
+   그래서 이 파일의 기본 여백은 「칸을 A4 가운데에 놓았을 때」로 계산한 값이고,
+   반드시 「테두리만 시험 인쇄」로 한 장 뽑아 맞춘 뒤 쓰도록 안내한다.
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>우리 반 이름 출력 · 케이에듀</title>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--primary:#5B8EF8;--primary-light:#EBF4FF;--green:#38A169;--orange:#DD6B20;--red:#E53E3E;
+  --bg:#F5F7FA;--card:#fff;--text:#1A202C;--sub:#718096;--border:#E2E8F0;--radius:14px}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--text)}
+.wrap{max-width:1180px;margin:0 auto;padding:18px 16px 60px}
+h1{font-size:22px;font-weight:700;margin-bottom:4px}
+.lead{font-size:13.5px;color:var(--sub);line-height:1.6;margin-bottom:16px}
+.lead b{color:var(--text)}
+.panel{background:var(--card);border-radius:var(--radius);box-shadow:0 2px 14px rgba(0,0,0,.06);padding:16px 18px;margin-bottom:14px}
+.panel h2{font-size:15px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row + .row{margin-top:9px}
+label.f{font-size:12.5px;color:var(--sub);font-weight:700;min-width:74px}
+select,input[type=text],input[type=number],textarea{font-family:inherit;font-size:13.5px;padding:8px 11px;
+  border:1px solid #d5dbe3;border-radius:9px;background:#fff;color:var(--text)}
+textarea{width:100%;resize:vertical;line-height:1.6}
+.btn{font-family:inherit;font-weight:700;font-size:13.5px;padding:9px 18px;border:none;border-radius:10px;cursor:pointer;
+  background:#EDF2F7;color:var(--text)}
+.btn.p{background:var(--primary);color:#fff}
+.btn.o{background:#fff;border:1.5px solid var(--border);color:var(--sub)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{padding:7px 14px;border:1.5px solid var(--border);border-radius:999px;background:#fff;cursor:pointer;
+  font-size:13px;font-weight:700;color:var(--sub);font-family:inherit}
+.chip.on{border-color:var(--primary);background:var(--primary-light);color:var(--primary)}
+.hintbox{background:#FFF7ED;border-left:4px solid var(--orange);border-radius:10px;padding:10px 14px;
+  font-size:12.5px;line-height:1.65;color:#7C2D12;margin-top:10px}
+.hintbox b{color:#9A3412}
+.count{font-size:12.5px;color:var(--sub)}
+.count b{color:var(--primary);font-size:14px}
+
+/* 미리보기 — 실제 인쇄 판을 그대로 축소해 보여 준다 */
+#preview-outer{overflow:auto;background:#E9EDF2;border-radius:12px;padding:16px;display:flex;justify-content:center}
+#preview-scale{transform-origin:top center}
+.sheet{position:relative;background:#fff;box-shadow:0 1px 8px rgba(0,0,0,.18)}
+.sheet + .sheet{margin-top:10mm}
+.cell{position:absolute;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;font-family:'Gowun Dodum','Noto Sans KR',sans-serif}
+.cell .no{font-weight:700;color:#64748B;line-height:1.1}
+.cell .nm{font-weight:700;color:#1A202C;line-height:1.15;word-break:keep-all}
+.cell .sub{color:#94A3B8;line-height:1.2}
+.cell .pic{opacity:.9}
+.cell.b-solid{border:.35mm solid #334155;border-radius:1mm}
+.cell.b-round{border:.35mm solid #334155;border-radius:4mm}
+.cell.b-dash{border:.3mm dashed #64748B;border-radius:1mm}
+.cell.b-double{border:.9mm double #334155;border-radius:1mm}
+.cell.b-cut{border:.25mm dashed #A0AEC0}
+.foldline{position:absolute;left:0;right:0;border-top:.25mm dashed #CBD5E0}
+.foldtxt{position:absolute;font-size:2.6mm;color:#A0AEC0;font-family:'Noto Sans KR',sans-serif}
+.flip{transform:rotate(180deg)}
+
+@media print{
+  body{background:#fff}
+  .noprint{display:none !important}
+  .wrap{max-width:none;padding:0;margin:0}
+  #preview-outer{overflow:visible;background:#fff;padding:0;display:block}
+  #preview-scale{transform:none !important}
+  .sheet{box-shadow:none;margin:0;page-break-after:always;break-after:page}
+  .sheet:last-child{page-break-after:auto;break-after:auto}
+}
+</style>
+<script src="/kedu_teacher_gate.js"></script>
+</head>
+<body>
+<div class="wrap">
+
+<div class="noprint">
+  <h1>🖨️ 우리 반 이름 출력</h1>
+  <div class="lead">
+    학급 명단(<b>번호 + 이름</b>)으로 이름 스티커·책상 명패·뽑기 제비를 바로 뽑아요.
+    명단은 이미 들어 있는 것을 그대로 씁니다 — <b>따로 저장하지 않아요.</b>
+    <a href="/teacher/" style="color:var(--primary);text-decoration:none;font-weight:700">← 대시보드</a>
+  </div>
+
+  <!-- ① 명단 -->
+  <div class="panel">
+    <h2>① 명단 <span class="count" id="cnt">불러오는 중…</span></h2>
+    <div class="row">
+      <button class="btn o" id="reload" onclick="loadSeats()">🔄 우리 반 명단 다시 불러오기</button>
+      <button class="btn o" onclick="togglePaste()">✏️ 직접 붙여넣기</button>
+    </div>
+    <div id="paste-wrap" hidden style="margin-top:10px">
+      <textarea id="paste" rows="5" placeholder="한 줄에 한 명. 번호가 있으면 앞에 적어요.&#10;1 김하늘&#10;2 이바다&#10;3 박구름"></textarea>
+      <div class="row" style="margin-top:8px">
+        <button class="btn p" onclick="applyPaste()">이 명단으로 바꾸기</button>
+        <span class="count">번호 없이 이름만 적어도 돼요(위에서부터 1번).</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ② 무엇을 -->
+  <div class="panel">
+    <h2>② 무엇을 만들까요</h2>
+    <div class="chips" id="kinds"></div>
+    <div class="row" style="margin-top:12px">
+      <label class="f">용지·규격</label>
+      <select id="preset" onchange="render()"></select>
+      <span class="count" id="preset-note"></span>
+    </div>
+    <div class="row">
+      <label class="f">내용</label>
+      <select id="content" onchange="render()">
+        <option value="no_name">번호 + 이름</option>
+        <option value="name">이름만</option>
+        <option value="no_name_class">번호 + 이름 + 학급</option>
+      </select>
+      <label class="f" style="min-width:auto;margin-left:6px">1명당</label>
+      <input type="number" id="percount" value="1" min="1" max="40" style="width:74px" onchange="render()">
+      <span class="count">장 (사물함·책상·학용품에 여러 장 붙일 때)</span>
+    </div>
+    <div class="row">
+      <label class="f">학급 이름</label>
+      <input type="text" id="classlabel" maxlength="20" placeholder="예: 3학년 2반" style="width:170px" onchange="render()">
+      <span class="count">「번호 + 이름 + 학급」을 고를 때만 쓰여요.</span>
+    </div>
+  </div>
+
+  <!-- ③ 꾸미기 -->
+  <div class="panel">
+    <h2>③ 꾸미기</h2>
+    <div class="row">
+      <label class="f">테두리</label>
+      <div class="chips" id="borders"></div>
+    </div>
+    <div class="row">
+      <label class="f">그림</label>
+      <div class="chips" id="pics"></div>
+    </div>
+    <div class="row">
+      <label class="f">글자 크기</label>
+      <input type="range" id="fontscale" min="60" max="150" value="100" oninput="render()" style="width:190px">
+      <span class="count" id="fontscale-v">100%</span>
+    </div>
+  </div>
+
+  <!-- ④ 맞추기 -->
+  <div class="panel">
+    <h2>④ 인쇄 위치 맞추기</h2>
+    <div class="row">
+      <label class="f">위로/아래로</label>
+      <input type="number" id="offy" value="0" step="0.5" min="-15" max="15" style="width:82px" onchange="render()"> mm
+      <label class="f" style="margin-left:10px">왼/오른쪽</label>
+      <input type="number" id="offx" value="0" step="0.5" min="-15" max="15" style="width:82px" onchange="render()"> mm
+      <button class="btn o" onclick="testPrint()">🧪 테두리만 시험 인쇄</button>
+    </div>
+    <div class="hintbox">
+      <b>라벨지는 첫 장을 꼭 시험 인쇄해 보세요.</b> 칸 크기는 규격대로지만 <b>여백은 프린터마다 1~2mm 밀립니다.</b>
+      「테두리만 시험 인쇄」로 한 장 뽑아 라벨지에 겹쳐 보고, 밀린 만큼 위 숫자로 맞추면 그다음부터는 그대로 쓰면 돼요.
+      맞춘 값은 <b>이 컴퓨터에만</b> 저장돼요.<br>
+      인쇄 창에서 <b>여백 「없음」</b>, <b>배율 100%</b>, <b>배경 그래픽 켜기</b>로 두세요.
+    </div>
+  </div>
+
+  <div class="panel" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <button class="btn p" onclick="window.print()" style="font-size:15px;padding:12px 28px">🖨️ 인쇄하기</button>
+    <span class="count" id="sheetinfo"></span>
+  </div>
+</div>
+
+<div id="preview-outer">
+  <div id="preview-scale"><div id="preview"></div></div>
+</div>
+</div>
+
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* =============================================================
+   규격표 — A4 210×297mm 기준. 칸 크기는 공개 규격, **여백은 가운데 정렬로 계산한 기본값**이다.
+   ⚠️ 실제 라벨지는 급지·기기에 따라 1~2mm 밀리므로 화면의 「인쇄 위치 맞추기」로 보정한다.
+   page: [가로mm, 세로mm] · cell: [가로mm, 세로mm] · gap: [칸 사이 가로, 세로]
+   ============================================================= */
+const A4 = [210, 297], A4L = [297, 210];
+const SPECS = [
+  // ── 이름 스티커(라벨지) ──
+  { id:'f3107', kind:'sticker', label:'폼텍 3107 · 16칸 (99.1×33.9)', page:A4, cols:2, rows:8, cell:[99.1,33.9], gap:[0,0] },
+  { id:'f3108', kind:'sticker', label:'폼텍 3108 · 14칸 (99.1×38.1)', page:A4, cols:2, rows:7, cell:[99.1,38.1], gap:[0,0] },
+  { id:'f3106', kind:'sticker', label:'폼텍 3106 · 24칸 (64×34)',     page:A4, cols:3, rows:8, cell:[64,34],     gap:[0,0] },
+  { id:'f3105', kind:'sticker', label:'폼텍 3105 · 21칸 (63.5×38.1)', page:A4, cols:3, rows:7, cell:[63.5,38.1], gap:[0,0] },
+  { id:'f3102', kind:'sticker', label:'폼텍 3102 · 40칸 (47×26.9)',   page:A4, cols:4, rows:10, cell:[47,26.9],  gap:[0,0] },
+  { id:'f3116', kind:'sticker', label:'폼텍 3116 · 6칸 (99.1×93.1)',  page:A4, cols:2, rows:3, cell:[99.1,93.1], gap:[0,0] },
+  { id:'cut24', kind:'sticker', label:'라벨지 없이 · A4에 24칸 (가위로 자르기)', page:A4, cols:3, rows:8, cell:[62,32], gap:[4,3], cut:true },
+  { id:'cut12', kind:'sticker', label:'라벨지 없이 · A4에 12칸 (가위로 자르기)', page:A4, cols:2, rows:6, cell:[92,42], gap:[6,4], cut:true },
+  // ── 명패·이름표 ──
+  { id:'desk',  kind:'plate', label:'책상 명패 · A4 가로 1장에 1명 (반 접기)', page:A4L, cols:1, rows:1, cell:[257,170], gap:[0,0], fold:true },
+  { id:'desk2', kind:'plate', label:'책상 명패 · A4 세로 1장에 2명 (반 접기)', page:A4,  cols:1, rows:2, cell:[186,130], gap:[0,6], fold:true },
+  { id:'tag',   kind:'plate', label:'목걸이 이름표 · 10칸 (90×55)',           page:A4, cols:2, rows:5, cell:[90,55], gap:[6,3], cut:true },
+  { id:'tagbig',kind:'plate', label:'목걸이 이름표 · 6칸 (95×85)',            page:A4, cols:2, rows:3, cell:[95,85], gap:[6,4], cut:true },
+  // ── 뽑기 제비·번호 카드 ──
+  { id:'draw32',kind:'draw', label:'뽑기 제비 · 32칸 (45×30)',  page:A4, cols:4, rows:8, cell:[45,30], gap:[3,2], cut:true },
+  { id:'draw18',kind:'draw', label:'뽑기 제비 · 18칸 (60×45)',  page:A4, cols:3, rows:6, cell:[60,45], gap:[4,3], cut:true },
+  { id:'card8', kind:'draw', label:'번호 카드 · 8칸 (95×65)',   page:A4, cols:2, rows:4, cell:[95,65], gap:[6,4], cut:true }
+];
+const KINDS = [
+  { id:'sticker', label:'🏷️ 이름 스티커' },
+  { id:'plate',   label:'📛 명패·이름표' },
+  { id:'draw',    label:'🎲 뽑기 제비·번호 카드' }
+];
+const BORDERS = [
+  { id:'none',   label:'없음',   cls:'' },
+  { id:'solid',  label:'실선',   cls:'b-solid' },
+  { id:'round',  label:'둥근',   cls:'b-round' },
+  { id:'dash',   label:'점선',   cls:'b-dash' },
+  { id:'double', label:'이중',   cls:'b-double' }
+];
+/* 그림 — 인라인 SVG(외부 요청 0). currentColor 로 그려 테두리 색과 어울리게 한다. */
+const PICS = {
+  none:  '',
+  star:  '<path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/>',
+  heart: '<path d="M12 21S3.5 14.7 3.5 9.2A4.7 4.7 0 0 1 12 6.6a4.7 4.7 0 0 1 8.5 2.6C20.5 14.7 12 21 12 21z"/>',
+  pencil:'<path d="M4 20l1-4L16.5 4.5a2 2 0 0 1 2.8 2.8L8 18.9 4 20z"/>',
+  book:  '<path d="M3 5c3-1.2 6-1.2 9 0v14c-3-1.2-6-1.2-9 0V5zm18 0c-3-1.2-6-1.2-9 0v14c3-1.2 6-1.2 9 0V5z"/>',
+  flower:'<circle cx="12" cy="12" r="2.6"/><circle cx="12" cy="6.2" r="3"/><circle cx="12" cy="17.8" r="3"/><circle cx="6.2" cy="12" r="3"/><circle cx="17.8" cy="12" r="3"/>',
+  cloud: '<path d="M7 18a4.2 4.2 0 0 1 .3-8.4A5.4 5.4 0 0 1 17.6 10 3.9 3.9 0 0 1 17 18H7z"/>',
+  rocket:'<path d="M12 2c3.4 2.2 5.2 5.7 5.2 9.4L19 15l-3 .6-1.6 3-2.4-2-2.4 2-1.6-3L5 15l1.8-3.6C6.8 7.7 8.6 4.2 12 2z"/>',
+  leaf:  '<path d="M20 4C10 4 4 9 4 16c0 2 .6 3.4.6 3.4S8 12 20 10c0 0-7.6 2.6-11.4 9.6C13 21 20 17 20 4z"/>'
+};
+const PIC_LABEL = { none:'없음', star:'별', heart:'하트', pencil:'연필', book:'책', flower:'꽃', cloud:'구름', rocket:'로켓', leaf:'잎' };
+
+const LS_KEY = 'kedu_print_names_v1';   // ⚠️ 보정값·고른 값은 이 기기에만 남는다(서버 아님)
+let students = [];      // [{no, name}]
+let ui = { kind:'sticker', preset:'f3107', border:'solid', pic:'none', test:false };
+
+/* ── 명단 ────────────────────────────────────────────────── */
+function esc(v){ return String(v==null?'':v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+async function loadSeats(){
+  const cnt = document.getElementById('cnt');
+  cnt.textContent = '불러오는 중…';
+  try{
+    const db = getKeduDb();
+    const { data:{ session } } = await db.auth.getSession();
+    if(!session){ cnt.textContent = '로그인하면 우리 반 명단을 바로 불러와요. (지금은 붙여넣기로 쓸 수 있어요)'; return; }
+    const { data: t } = await db.from('teachers').select('id').eq('user_id', session.user.id).maybeSingle();
+    if(!t){ cnt.textContent = '교사 계정이 아니에요. 붙여넣기로 쓸 수 있어요.'; return; }
+    const { data: cc } = await db.from('class_codes').select('id, label').eq('teacher_id', t.id)
+      .eq('is_active', true).order('created_at', { ascending:false }).limit(1);
+    const cls = cc && cc[0];
+    if(!cls){ cnt.textContent = '학급코드가 아직 없어요. 붙여넣기로 쓸 수 있어요.'; return; }
+    if(cls.label && !document.getElementById('classlabel').value) document.getElementById('classlabel').value = cls.label;
+    const { data: seats, error } = await db.from('student_seats')
+      .select('nickname, seat_no').eq('class_code_id', cls.id);
+    if(error){ cnt.textContent = '명단을 불러오지 못했어요. 붙여넣기로 쓸 수 있어요.'; return; }
+    const rows = (seats || []).slice();
+    rows.sort((a,b)=>(a.seat_no??999)-(b.seat_no??999) || String(a.nickname).localeCompare(String(b.nickname),'ko'));
+    students = rows.map((r,i)=>({ no: r.seat_no || (i+1), name: r.nickname }));
+    cnt.innerHTML = students.length ? '우리 반 <b>' + students.length + '</b>명' : '명단이 비어 있어요. 붙여넣기로 쓸 수 있어요.';
+    render();
+  }catch(e){
+    cnt.textContent = '명단을 불러오지 못했어요. 붙여넣기로 쓸 수 있어요.';
+  }
+}
+function togglePaste(){ const w = document.getElementById('paste-wrap'); w.hidden = !w.hidden; }
+function applyPaste(){
+  const lines = (document.getElementById('paste').value || '').split('\n').map(s=>s.trim()).filter(Boolean);
+  students = lines.map((line,i)=>{
+    const m = line.match(/^(\d{1,2})[.\s)\-]+(.+)$/);
+    return m ? { no: parseInt(m[1],10), name: m[2].trim() } : { no: i+1, name: line };
+  });
+  document.getElementById('cnt').innerHTML = '붙여넣은 명단 <b>' + students.length + '</b>명';
+  render();
+}
+
+/* ── 화면 만들기 ─────────────────────────────────────────── */
+function specOf(id){ return SPECS.find(s=>s.id===id) || SPECS[0]; }
+function buildChips(){
+  document.getElementById('kinds').innerHTML = KINDS.map(k =>
+    `<button class="chip ${ui.kind===k.id?'on':''}" onclick="pickKind('${k.id}')">${k.label}</button>`).join('');
+  document.getElementById('borders').innerHTML = BORDERS.map(b =>
+    `<button class="chip ${ui.border===b.id?'on':''}" onclick="pickBorder('${b.id}')">${b.label}</button>`).join('');
+  document.getElementById('pics').innerHTML = Object.keys(PICS).map(p =>
+    `<button class="chip ${ui.pic===p?'on':''}" onclick="pickPic('${p}')">${PIC_LABEL[p]}</button>`).join('');
+  const sel = document.getElementById('preset');
+  const list = SPECS.filter(s=>s.kind===ui.kind);
+  sel.innerHTML = list.map(s=>`<option value="${s.id}">${esc(s.label)}</option>`).join('');
+  if(!list.some(s=>s.id===ui.preset)) ui.preset = list[0].id;
+  sel.value = ui.preset;
+}
+function pickKind(k){ ui.kind = k; const first = SPECS.find(s=>s.kind===k); ui.preset = first.id; buildChips(); render(); }
+function pickBorder(b){ ui.border = b; buildChips(); render(); }
+function pickPic(p){ ui.pic = p; buildChips(); render(); }
+function testPrint(){ ui.test = true; render(); window.print(); ui.test = false; render(); }
+
+function picSvg(size, color){
+  if(ui.pic === 'none' || !PICS[ui.pic]) return '';
+  return `<svg class="pic" viewBox="0 0 24 24" width="${size}mm" height="${size}mm" fill="${color}">${PICS[ui.pic]}</svg>`;
+}
+function cellHTML(item, sp, fs){
+  const bd = BORDERS.find(b=>b.id===ui.border) || BORDERS[0];
+  const cls = 'cell ' + (sp.cut && ui.border==='none' ? 'b-cut' : bd.cls);
+  if(!item) return { cls, inner:'' };
+  const mode = document.getElementById('content').value;
+  const classLabel = (document.getElementById('classlabel').value || '').trim();
+  const nameMM = Math.min(sp.cell[1] * 0.42, sp.cell[0] * 0.20) * fs;
+  const noMM   = nameMM * 0.5;
+  const subMM  = nameMM * 0.34;
+  const picMM  = Math.min(nameMM * 0.9, sp.cell[1] * 0.3);
+  let inner = '';
+  if(ui.pic !== 'none') inner += picSvg(picMM, '#94A3B8');
+  if(mode !== 'name') inner += `<div class="no" style="font-size:${noMM}mm">${esc(item.no)}</div>`;
+  inner += `<div class="nm" style="font-size:${nameMM}mm">${esc(item.name)}</div>`;
+  if(mode === 'no_name_class' && classLabel) inner += `<div class="sub" style="font-size:${subMM}mm">${esc(classLabel)}</div>`;
+  return { cls, inner };
+}
+/* 책상 명패 — 반으로 접어 세우면 양쪽에서 읽히도록 위 절반을 뒤집어 찍는다. */
+function plateHTML(item, sp, fs){
+  const bd = BORDERS.find(b=>b.id===ui.border) || BORDERS[0];
+  const half = sp.cell[1] / 2;
+  const one = (flip) => {
+    const c = cellHTML(item, { cell:[sp.cell[0], half], cut:false }, fs);
+    return `<div class="cell ${flip?'flip':''}" style="left:0;top:${flip?0:half}mm;width:${sp.cell[0]}mm;height:${half}mm">${c.inner}</div>`;
+  };
+  return { cls:'cell ' + bd.cls, inner: one(true) + one(false)
+    + `<div class="foldline" style="top:${half}mm"></div>`
+    + `<div class="foldtxt" style="left:2mm;top:${half+0.6}mm">여기를 접어요</div>` };
+}
+
+function render(){
+  const sp = specOf(document.getElementById('preset').value);
+  ui.preset = sp.id;
+  const fs = parseInt(document.getElementById('fontscale').value, 10) / 100;
+  document.getElementById('fontscale-v').textContent = Math.round(fs*100) + '%';
+  const per = Math.max(1, Math.min(40, parseInt(document.getElementById('percount').value, 10) || 1));
+  const offx = parseFloat(document.getElementById('offx').value) || 0;
+  const offy = parseFloat(document.getElementById('offy').value) || 0;
+
+  const [pw, ph] = sp.page, [cw, ch] = sp.cell, [gx, gy] = sp.gap;
+  const totalW = sp.cols * cw + (sp.cols - 1) * gx;
+  const totalH = sp.rows * ch + (sp.rows - 1) * gy;
+  const mLeft = (pw - totalW) / 2 + offx;         // ⚠️ 가운데 정렬 기본값 + 보정
+  const mTop  = (ph - totalH) / 2 + offy;
+  document.getElementById('preset-note').textContent =
+    `${sp.cols}×${sp.rows} = ${sp.cols*sp.rows}칸 · 한 칸 ${cw}×${ch}mm` + (sp.cut ? ' · 잘라 쓰는 형' : '');
+
+  // 인쇄 용지 크기 — 가로 명패는 A4 가로로 나간다
+  let pageStyle = document.getElementById('pagesize');
+  if(!pageStyle){ pageStyle = document.createElement('style'); pageStyle.id = 'pagesize'; document.head.appendChild(pageStyle); }
+  pageStyle.textContent = `@page{ size:${pw}mm ${ph}mm; margin:0 }`;
+
+  // 뽑을 목록 — 1명당 여러 장(사물함·책상·학용품)
+  let items = [];
+  if(ui.test){ items = []; }
+  else { students.forEach(s => { for(let k=0;k<per;k++) items.push(s); }); }
+  const perSheet = sp.cols * sp.rows;
+  const sheets = ui.test ? 1 : Math.max(1, Math.ceil(items.length / perSheet));
+  document.getElementById('sheetinfo').textContent =
+    ui.test ? '시험 인쇄 — 테두리만 한 장' : `${items.length}칸 · 종이 ${sheets}장`;
+
+  let out = '';
+  for(let s=0; s<sheets; s++){
+    out += `<div class="sheet" style="width:${pw}mm;height:${ph}mm">`;
+    for(let r=0; r<sp.rows; r++){
+      for(let c=0; c<sp.cols; c++){
+        const idx = s*perSheet + r*sp.cols + c;
+        const item = items[idx];
+        const left = mLeft + c*(cw+gx), top = mTop + r*(ch+gy);
+        const built = (sp.fold && item) ? plateHTML(item, sp, fs) : cellHTML(item, sp, fs);
+        out += `<div class="${built.cls}" data-cell="${idx}" data-filled="${item?1:0}"
+          style="left:${left}mm;top:${top}mm;width:${cw}mm;height:${ch}mm">${built.inner}</div>`;
+      }
+    }
+    out += '</div>';
+  }
+  document.getElementById('preview').innerHTML = out;
+  fitPreview(pw);
+  save();
+}
+function fitPreview(pwMM){
+  const outer = document.getElementById('preview-outer');
+  const box = document.getElementById('preview-scale');
+  const avail = outer.clientWidth - 32;
+  const mmPx = 96 / 25.4;
+  const scale = Math.min(1, avail / (pwMM * mmPx));
+  box.style.transform = 'scale(' + scale + ')';
+  box.style.height = (box.firstElementChild ? box.firstElementChild.getBoundingClientRect().height * scale : 0) + 'px';
+}
+window.addEventListener('resize', ()=>{ const sp = specOf(ui.preset); fitPreview(sp.page[0]); });
+
+/* ── 고른 값·보정값 기억 (이 기기에만) ───────────────────── */
+function save(){
+  try{ localStorage.setItem(LS_KEY, JSON.stringify({
+    kind:ui.kind, preset:ui.preset, border:ui.border, pic:ui.pic,
+    offx:document.getElementById('offx').value, offy:document.getElementById('offy').value,
+    content:document.getElementById('content').value, per:document.getElementById('percount').value,
+    fontscale:document.getElementById('fontscale').value, classlabel:document.getElementById('classlabel').value
+  })); }catch(e){}
+}
+function restore(){
+  try{
+    const p = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
+    if(!p) return;
+    if(p.kind) ui.kind = p.kind;
+    if(p.preset) ui.preset = p.preset;
+    if(p.border) ui.border = p.border;
+    if(p.pic) ui.pic = p.pic;
+    if(p.offx!=null) document.getElementById('offx').value = p.offx;
+    if(p.offy!=null) document.getElementById('offy').value = p.offy;
+    if(p.content) document.getElementById('content').value = p.content;
+    if(p.per) document.getElementById('percount').value = p.per;
+    if(p.fontscale) document.getElementById('fontscale').value = p.fontscale;
+    if(p.classlabel) document.getElementById('classlabel').value = p.classlabel;
+  }catch(e){}
+}
+
+restore();
+buildChips();
+render();
+loadSeats();
+</script>
+</body>
+</html>
