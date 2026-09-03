@@ -14,104 +14,104 @@ window.KEDU_MAP["g6_2_math"] = {
    "kind": "unit",
    "lessons": [
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u1_l01",
+     "lessonId": "g6_2_math_u1_l01_v1",
      "n": "1",
      "title": "분수의 나눗셈을 만나 보자",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/1단원_분수의나눗셈/g6_math_u1_l01_분수의나눗셈을만나보자.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u1_l02",
+     "lessonId": "g6_2_math_u1_l02_v1",
      "n": "2",
      "title": "(분수)÷(분수)를 계산해요 ①",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/1단원_분수의나눗셈/g6_math_u1_l02_분수나누기분수를계산해요1.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u1_l03",
+     "lessonId": "g6_2_math_u1_l03_v1",
      "n": "3",
      "title": "(분수)÷(분수)를 계산해요 ②",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/1단원_분수의나눗셈/g6_math_u1_l03_분수나누기분수를계산해요2.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u1_l04",
+     "lessonId": "g6_2_math_u1_l04_v1",
      "n": "4",
      "title": "(분수)÷(분수)를 계산해요 ③",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/1단원_분수의나눗셈/g6_math_u1_l04_분수나누기분수를계산해요3.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u1_l05",
+     "lessonId": "g6_2_math_u1_l05_v1",
      "n": "5",
      "title": "(자연수)÷(분수)를 계산해요 ①",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/1단원_분수의나눗셈/g6_math_u1_l05_자연수나누기분수를계산해요1.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u1_l06",
+     "lessonId": "g6_2_math_u1_l06_v1",
      "n": "6",
      "title": "(자연수)÷(분수)를 계산해요 ②",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/1단원_분수의나눗셈/g6_math_u1_l06_자연수나누기분수를계산해요2.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u1_l07",
+     "lessonId": "g6_2_math_u1_l07_v1",
      "n": "7",
      "title": "(분수)÷(분수)를 분수의 곱셈으로 나타내어 계산해요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/1단원_분수의나눗셈/g6_math_u1_l07_분수나누기분수를분수의곱셈으로나타내어계산해요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u1_l08",
+     "lessonId": "g6_2_math_u1_l08_v1",
      "n": "8",
      "title": "대분수의 나눗셈을 해요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/1단원_분수의나눗셈/g6_math_u1_l08_대분수의나눗셈을해요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u1_l09",
+     "lessonId": "g6_2_math_u1_l09_v1",
      "n": "9",
      "title": "조각조각 타일로 학교 꾸미기",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/1단원_분수의나눗셈/g6_math_u1_l09_조각조각타일로학교꾸미기.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u1_l10",
+     "lessonId": "g6_2_math_u1_l10_v1",
      "n": "10",
      "title": "스스로 마무리해요 (단원 평가)",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/1단원_분수의나눗셈/g6_math_u1_l10_스스로마무리해요.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   },
