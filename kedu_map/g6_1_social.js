@@ -231,14 +231,14 @@ window.KEDU_MAP["g6_1_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u2_l11",
+     "lessonId": "g6_social_u2_l11_v1",
      "n": "11",
      "title": "민주주의에서 미디어의 역할을 알아볼까요 / [풍덩] 1인 미디어로 정보의 생산자가 돼요",
      "sub": "③ 민주주의와 미디어",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/social/2단원_민주주의와시민참여/g6_social_u2_l11_모아요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
