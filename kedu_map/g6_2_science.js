@@ -52,6 +52,16 @@ window.KEDU_MAP["g6_2_science"] = {
      "url": "/grade6/semester2/science/1단원_계절의변화/g6_sci_u1_l04_남중고도낮길이.html",
      "track": "tb",
      "ready": true
+    },
+    {
+     "key": "g6_science_u1_l05",
+     "lessonId": "g6_s2_sci_u1_l05_v1",
+     "n": "7",
+     "title": "태양 고도와 태양 에너지양의 관계는?",
+     "sub": null,
+     "url": "/grade6/semester2/science/1단원_계절의변화/g6_sci_u1_l05_태양에너지양.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }
