@@ -62,7 +62,9 @@
       });
     },
     tx(store, mode, fn) { return new Promise((res, rej) => { if (!this.db) return res(null); const t = this.db.transaction(store, mode); const q = fn(t.objectStore(store)); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }); },
-    putMedia(id, blob, name) { return this.tx('media', 'readwrite', s => s.put({ id, blob, name })); },
+    putMedia(id, blob, name) { return this.tx('media', 'readwrite', s => s.put({ id, blob, name, size: blob && blob.size })); },
+    /* 이름+크기가 같은 원본을 이 기기에서 찾는다 — 다른 기기에서 저장한 작업을 열 때 id 가 달라도 같은 파일이면 붙이려고 */
+    findMedia(name, size) { return new Promise((res, rej) => { if (!this.db) return res([]); const out = []; const q = this.db.transaction('media', 'readonly').objectStore('media').openCursor(); q.onsuccess = () => { const c = q.result; if (!c) return res(out); const r = c.value; if (r && r.name === name && ((r.size || (r.blob && r.blob.size)) === size || !size)) out.push({ id: r.id, blob: r.blob, name: r.name }); c.continue(); }; q.onerror = () => rej(q.error); }); },
     getMedia(id) { return this.tx('media', 'readonly', s => s.get(id)); },
     delMedia(id) { return this.tx('media', 'readwrite', s => s.delete(id)); },
     putKV(k, v) { return this.tx('kv', 'readwrite', s => s.put(v, k)); },
@@ -70,15 +72,17 @@
     clearAll() { return Promise.all([this.tx('media', 'readwrite', s => s.clear()), this.tx('kv', 'readwrite', s => s.clear())]); },
   };
   /* ---------- 작업 파일 (KMV_STORE) ----------
-     현재 작업 = proj {id, name, degraded, cloudAt}. 변경 400ms 뒤 이 기기(IndexedDB)에, 손을 멈추고 CLOUD_MS 뒤 케이에듀 계정에.
+     현재 작업 = proj {id, name, degraded, cloudAt}. 변경 400ms 뒤 이 기기(IndexedDB)에 자동 저장. **계정(케이에듀) 저장은 「저장」(Ctrl+S)을 눌렀을 때만** —
+     시작할 때도 이 기기의 마지막 작업만 열고 계정 사본은 절대 자동으로 열지 않는다(다른 기기 것은 「내 작업」에서 불러온다). 프리미어처럼: 작업 파일만 오가고 영상은 기기 것.
+     · 다른 기기에서 저장한 작업을 열면 원본은 이 기기에서 이름+크기로 찾아 붙인다(DB.findMedia). 없으면 그 클립은 빼고 「파일 다시 연결」로 넣을 수 있다.
      · cloudAt = 내가 마지막으로 본 계정 시각(낙관적 잠금 기준). 계정이 그보다 새면(다른 기기가 저장) 덮어쓰지 않고 conflict.
      · degraded = 다른 기기에서 열어 원본 없는 클립을 뺀 상태 → 계정 저장을 멈춘다(PC 작업을 폰이 덮어쓰지 않게).
      · otherTab = 같은 브라우저의 다른 탭이 먼저 열려 있음(navigator.locks) → 이 탭은 자동 저장을 쉰다(서로 덮어쓰지 않게).
-     · Ctrl+S = 지금 바로 계정까지. 탭을 숨기거나 닫을 때도 한 번(닫을 땐 keepalive). */
+     · 탭을 숨기거나 닫을 때는 이 기기에만 한 번 더 저장한다(계정엔 안 올림 — 저장을 누른 것만 계정에). */
   const ST = window.KMV_STORE;
-  const CLOUD_MS = 10000, RETRY_MS = 30000;
-  const proj = { id: null, name: '새 작업', degraded: false, cloudAt: 0, cloudErr: null, saving: false, dirty: false, conflict: null, otherTab: false, savedAt: 0 };
-  let saveT = 0, cloudT = 0, retryT = 0;
+  const RETRY_MS = 30000;
+  const proj = { id: null, name: '새 작업', degraded: false, cloudAt: 0, cloudErr: null, saving: false, dirty: false, conflict: null, otherTab: false, savedAt: 0, missing: [], fullRec: null };
+  let saveT = 0, retryT = 0;
   function rec() { return { id: proj.id, name: proj.name, doc: P.toJSON(), updatedAt: Date.now() }; }
   const cloudAllowed = () => proj.id && !proj.degraded && !proj.otherTab && !proj.conflict;
   function scheduleSave() {
@@ -86,10 +90,9 @@
     proj.dirty = true; refreshSaveNote();
     if (proj.otherTab) return;
     clearTimeout(saveT); saveT = setTimeout(() => { ST.save(rec(), { cloud: false }).then(() => { proj.savedAt = Date.now(); refreshSaveNote(); }).catch(e => console.warn('save', e)); }, 400);
-    if (cloudAllowed()) { clearTimeout(cloudT); cloudT = setTimeout(saveCloud, CLOUD_MS); }
   }
   async function saveCloud(opt) {
-    clearTimeout(cloudT); clearTimeout(retryT);
+    clearTimeout(retryT);
     if (!cloudAllowed()) return false;
     if (proj.saving) { proj.dirty = true; return false; }
     proj.saving = true; refreshSaveNote();
@@ -102,8 +105,8 @@
     } catch (e) { proj.cloudErr = e; }
     proj.saving = false; refreshSaveNote();
     if (proj.conflict) { try { setTab('proj'); } catch (e) {} toast('다른 기기에서 이 작업을 저장했어요 — 「다른 기기 것 열기」 또는 「사본으로 저장」 중 골라요 (프로젝트 탭)', 6000); }
-    else if (proj.cloudErr) { retryT = setTimeout(() => saveCloud(), RETRY_MS); if (opt && opt.manual) toast('이 브라우저엔 저장됐어요 · 계정 저장은 실패 — 잠시 뒤 다시 시도해요', 3000); }
-    else if (ok && opt && opt.manual) toast('저장했어요 (이 브라우저 + 케이에듀 계정)', 1500);
+    else if (proj.cloudErr) { retryT = setTimeout(() => saveCloud(), RETRY_MS); toast('이 기기엔 저장됐어요 · 계정 저장은 실패 — 잠시 뒤 다시 시도해요', 3000); }
+    else if (ok) toast('저장했어요 (이 기기 + 케이에듀 계정)', 1500);
     return ok;
   }
   /* Ctrl+S — 이 기기 + 계정에 지금 바로. 로그인이 없으면 이 기기에만. */
@@ -111,10 +114,10 @@
     if (!proj.id) return;
     clearTimeout(saveT);
     if (proj.otherTab) { toast('다른 탭에서 열려 있는 작업이라 이 탭에선 저장하지 않아요 — 그 탭에서 저장해요', 3200); return; }
-    if (proj.degraded) { await ST.save(rec(), { cloud: false }); proj.savedAt = Date.now(); refreshSaveNote(); toast('이 브라우저에 저장했어요 (원본이 빠진 작업이라 계정엔 저장하지 않아요)', 2600); return; }
+    if (proj.degraded) { await ST.save(rec(), { cloud: false }); proj.savedAt = Date.now(); refreshSaveNote(); toast('이 기기에 저장했어요 (원본이 빠진 작업이라 계정엔 저장하지 않아요 — 프로젝트 탭 「파일 다시 연결」)', 3200); return; }
     if (proj.conflict) { await ST.save(rec(), { cloud: false }); proj.savedAt = Date.now(); refreshSaveNote(); toast('이 브라우저에 저장했어요 — 계정은 다른 기기가 먼저 저장해서 「다른 기기 것 열기」·「사본으로 저장」 중 골라요', 4000); return; }
     const signed = await ST.cloud.ready().catch(() => false);
-    if (!signed) { await ST.save(rec(), { cloud: false }); proj.savedAt = Date.now(); proj.dirty = false; refreshSaveNote(); toast('이 브라우저에 저장했어요 (로그인하면 계정에도)', 2000); return; }
+    if (!signed) { await ST.save(rec(), { cloud: false }); proj.savedAt = Date.now(); proj.dirty = false; refreshSaveNote(); toast('이 기기에 저장했어요 (로그인하면 계정에도 저장돼 다른 기기에서 불러올 수 있어요)', 2400); return; }
     await saveCloud({ manual: true });
   }
   function saveState() {
@@ -128,15 +131,15 @@
   function refreshSaveNote() {
     const el = $('saveNote'), dot = $('saveDot'), st = saveState();
     const pn = $('projName'); if (pn) pn.textContent = proj.name || '새 작업';
-    if (dot) { dot.dataset.st = st; dot.title = { off: '다른 탭에서 열려 있어 이 탭은 저장을 쉬어요', conflict: '다른 기기가 먼저 저장했어요 — 프로젝트 탭에서 골라요', saving: '계정에 저장하는 중', err: '이 브라우저엔 저장됨 · 계정 저장 실패(잠시 뒤 다시)', dirty: '이 브라우저에 저장됨 · 계정엔 잠시 뒤 (Ctrl+S 로 지금)', ok: proj.cloudAt ? '이 브라우저 + 계정에 저장됨 (Ctrl+S)' : '이 브라우저에 저장됨 (Ctrl+S)' }[st]; }
+    if (dot) { dot.dataset.st = st; dot.title = { off: '다른 탭에서 열려 있어 이 탭은 저장을 쉬어요', conflict: '다른 기기가 먼저 저장했어요 — 프로젝트 탭에서 골라요', saving: '계정에 저장하는 중', err: '이 브라우저엔 저장됨 · 계정 저장 실패(잠시 뒤 다시)', dirty: '이 기기에 저장됨 · 계정엔 「저장」(Ctrl+S)을 눌러야 올라가요', ok: proj.cloudAt ? '이 기기 + 계정에 저장됨' : '이 기기에 저장됨 (계정은 「저장」)' }[st]; }
     const act = $('saveConflict'); if (act) act.hidden = !proj.conflict;
     if (!el) return;
     if (proj.otherTab) { el.textContent = '이 작업이 다른 탭에서 열려 있어요 — 이 탭은 자동 저장을 쉬어요(서로 덮어쓰지 않게). 편집은 그 탭에서 해요.'; return; }
     if (proj.conflict) { el.textContent = '다른 기기에서 이 작업을 ' + new Date(proj.conflict.remoteAt).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) + '에 저장했어요. 이 탭의 편집은 이 브라우저에만 남아 있어요.'; return; }
-    if (proj.degraded) { el.textContent = '원본이 빠진 채 열린 작업이라 계정에는 저장하지 않아요 — 「내 작업」에서 사본으로 저장할 수 있어요.'; return; }
+    if (proj.degraded) { el.textContent = '이 기기에 없는 원본이 빠진 채 열렸어요 — 그 영상을 이 기기에 넣고 「파일 다시 연결」하면 돌아와요. 이 상태로는 계정에 저장하지 않아요(다른 기기 작업을 덮지 않게).'; return; }
     if (proj.saving) { el.textContent = '계정에 저장하는 중…'; return; }
-    if (proj.cloudErr) { el.textContent = '이 브라우저엔 저장됐어요 · 계정 저장은 실패(연결 확인, 잠시 뒤 다시 시도해요) · Ctrl+S'; return; }
-    el.textContent = proj.cloudAt ? '이 브라우저 + 케이에듀 계정에 자동 저장돼요 · ' + new Date(proj.cloudAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) + (proj.dirty ? ' · 편집 중(잠시 뒤 계정에, Ctrl+S 로 지금)' : '') : '이 브라우저에 자동 저장돼요 · 로그인하면 계정에도 저장돼 다른 기기에서 열 수 있어요 · Ctrl+S';
+    if (proj.cloudErr) { el.textContent = '이 기기엔 저장됐어요 · 계정 저장은 실패(연결 확인, 잠시 뒤 다시 시도해요)'; return; }
+    el.textContent = (proj.cloudAt ? '계정에 마지막 저장 ' + new Date(proj.cloudAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) + (proj.dirty ? ' · 그 뒤 편집은 이 기기에만(「저장」으로 계정에)' : '') : '이 기기에 자동 저장돼요 · 계정에는 「저장」(Ctrl+S)을 눌렀을 때만 올라가요') + ' · 다른 기기에서는 「내 작업」에서 불러와요(영상은 그 기기에 있어야 해요)';
   }
   /* 충돌 해소 — 다른 기기 것으로 바꾸기 */
   async function openRemote() {
@@ -163,7 +166,7 @@
     });
   }
   document.addEventListener('visibilitychange', async () => {
-    if (document.visibilityState === 'hidden') { if (proj.id && !proj.otherTab) { clearTimeout(saveT); ST.save(rec(), { cloud: false }).catch(() => {}); if (cloudAllowed() && proj.dirty) saveCloud(); } return; }
+    if (document.visibilityState === 'hidden') { if (proj.id && !proj.otherTab) { clearTimeout(saveT); ST.save(rec(), { cloud: false }).catch(() => {}); } return; }
     // 다시 보일 때: 쉬던 탭이면 자리가 비었는지 다시 본다 — 비었으면 저장소의 최신 사본으로 다시 열고 이 탭이 이어받는다
     if (proj.otherTab && proj.id) { const got = await claimTab(proj.id); if (got) { const r = await ST.get(proj.id).catch(() => null); if (r && r.doc) { await openRecord(r); toast('다른 탭이 닫혀 이 탭이 이어받았어요', 2200); } else refreshSaveNote(); } }
   });
@@ -2253,6 +2256,7 @@
         }
         const meta = await M.open(f, null, s => status(s + ' — ' + f.name));
         if (f.kmvOrigin) meta.origin = f.kmvOrigin;   // 원본 경로·해시 — 복원은 디스크의 프록시에서
+        meta.size = f.size || 0;                        // 다른 기기에서 열 때 이름+크기로 같은 파일을 찾는 열쇠
         P.addMedia(meta);
         if (!f.kmvOrigin) {
           if (f.size <= 1500 * 1024 * 1024) DB.putMedia(meta.id, f, f.name).catch(e => console.warn('db', e));
@@ -2322,12 +2326,20 @@
         if (m.gen) { const r = M.addGen(m); if (r) { ok.push(m); continue; } }
         let blob = null;
         if (m.origin && SH && SH.active) blob = await SH.restoreFile(m.origin, { status: t => OV.set(i / json.media.length, t), progress: (p, l) => OV.set((i + p) / json.media.length, l) });
-        else { const rec = await DB.getMedia(m.blobKey || m.id); blob = rec && rec.blob; }
-        if (!blob) { missing.push(m.name); continue; }
+        else {
+          const rec = await DB.getMedia(m.blobKey || m.id); blob = rec && rec.blob;
+          if (!blob && m.name) {   // 다른 기기에서 저장한 작업 — 이 기기에 같은 파일(이름+크기)이 있으면 그걸로 붙인다
+            const hit = (await DB.findMedia(m.name, m.size || 0).catch(() => []))[0];
+            if (hit && hit.blob) { blob = hit.blob; m.blobKey = hit.id; }
+          }
+        }
+        if (!blob) { missing.push(m); continue; }
         const meta = await M.open(blob, m.id, s => OV.set(i / json.media.length, s + ' — ' + m.name));
         if (m.origin) meta.origin = blob.kmvOrigin || m.origin;
+        if (m.blobKey && m.blobKey !== m.id) meta.blobKey = m.blobKey;
+        meta.size = m.size || blob.size || 0;
         ok.push(meta);
-      } catch (e) { console.warn('restore', m.name, e); missing.push(m.name); }
+      } catch (e) { console.warn('restore', m.name, e); missing.push(m); }
     }
     json.media = ok;
     P.load(json);
@@ -2338,47 +2350,73 @@
   }
   /* 작업 레코드를 현재 작업으로 */
   async function openRecord(r) {
-    clearTimeout(saveT); clearTimeout(cloudT); clearTimeout(retryT);
+    clearTimeout(saveT); clearTimeout(retryT);
     proj.id = r.id; proj.name = r.name || '새 작업'; proj.degraded = false; proj.cloudAt = r.cloudAt || (r.where === 'cloud' || r.where === 'both' ? (r.updatedAt || 0) : 0); proj.cloudErr = null; proj.conflict = null; proj.dirty = false; proj.savedAt = 0;
+    proj.missing = []; proj.fullRec = r.doc ? JSON.parse(JSON.stringify({ id: r.id, name: r.name, doc: r.doc, updatedAt: r.updatedAt, where: r.where, cloudAt: proj.cloudAt })) : null;   // 원본이 빠져도 「파일 다시 연결」로 되살릴 원본 레코드
     await claimTab(r.id);
     const { missing } = await loadDoc(r.doc ? JSON.parse(JSON.stringify(r.doc)) : null, '「' + proj.name + '」 여는 중');
     await ST.local.setCurrent(proj.id);
     zoomFit(); setPH(0);
     if (missing.length) {
-      proj.degraded = true;
-      toast('이 기기에 없는 원본 ' + missing.length + '개(' + missing.slice(0, 3).join(', ') + (missing.length > 3 ? ' 외' : '') + ')는 그 클립과 함께 뺐어요 — 계정 저장은 멈춰요', 6000);
+      proj.degraded = true; proj.missing = missing.map(m => ({ id: m.id, name: m.name, size: m.size || 0 }));
+      const names = missing.map(m => m.name);
+      try { setTab('proj'); } catch (e) {}
+      toast('이 기기에 없는 원본 ' + missing.length + '개(' + names.slice(0, 3).join(', ') + (missing.length > 3 ? ' 외' : '') + ')는 그 클립과 함께 뺐어요 — 같은 영상을 이 기기에 넣고 프로젝트 탭 「파일 다시 연결」', 7000);
     }
-    if (r.doc) { ST.local.put(Object.assign({}, r, { updatedAt: r.updatedAt || Date.now() })).catch(() => {}); }   // 클라우드에서 연 것도 이 기기에 사본
-    refreshSaveNote(); refreshProject();
-    return missing;
+    if (r.doc) { ST.local.put(Object.assign({}, r, { updatedAt: r.updatedAt || Date.now() })).catch(() => {}); }   // 계정에서 연 것도 이 기기에 사본
+    refreshSaveNote(); refreshProject(); refreshRelink();
+    return missing.map(m => m.name);
   }
   async function newProject(name) {
     const r = ST.make({ media: [], V: [] }, name || ('새 작업 ' + new Date().toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })));
     await openRecord(r);
     await ST.save(rec(), { cloud: false });
     proj.dirty = true; refreshSaveNote();
-    ST.cloud.ready().then(ok => { if (ok && cloudAllowed()) saveCloud(); }).catch(() => {});
     return r;
   }
   function renameCurrent() {
     const v = prompt('작업 이름', proj.name); if (v == null) return;
     const name = v.trim() || proj.name; proj.name = name; ST.rename(proj.id, name).catch(() => {}); scheduleSave(); refreshSaveNote();
   }
-  /* 시작: 현재 작업 id → 레코드. 없으면 옛 단일 저장(kv 'project')을 「이전 작업」으로 옮긴다. */
+  /* 시작: 이 기기에서 마지막에 하던 작업(로컬)만 연다 — 계정 사본은 절대 자동으로 열지 않는다(다른 기기 것은 「내 작업」에서 불러온다).
+     없으면 옛 단일 저장(kv 'project')을 「이전 작업」으로 옮긴다. */
   async function restore() {
     try { await DB.open(); } catch (e) { console.warn('idb', e); }
     ST.init(DB);
     let cur = null; try { cur = await ST.local.current(); } catch (e) {}
-    let r = cur ? await ST.get(cur).catch(() => null) : null;     // 로컬·계정 중 더 새 사본 (옛 사본이 계정을 덮지 않게)
+    let r = cur ? await ST.local.get(cur).catch(() => null) : null;
+    if (r) r.where = 'local';
     if (!r) {
       let legacy = null; try { legacy = await DB.getKV('project'); } catch (e) {}
       if (legacy && legacy.media && legacy.media.length) { r = ST.make(legacy, '이전 작업'); await ST.local.put(r); try { await DB.putKV('project', null); } catch (e) {} }
     }
     if (!r) { await newProject('새 작업'); return; }
     await openRecord(r);
-    // 계정에 올리는 건 이 기기 사본이 더 새거나(다른 기기가 못 본 편집) 계정에 아직 없을 때만
-    if (r.where === 'local' && r.cloudOk !== false && (!r.cloudAt || (r.localAt || 0) > r.cloudAt)) { proj.dirty = true; ST.cloud.ready().then(ok => { if (ok && cloudAllowed()) saveCloud(); }).catch(() => {}); }
-    else if (r.where === 'cloud') toast('다른 기기에서 저장한 최신 「' + proj.name + '」 을 열었어요', 2200);
+    // 계정에 이 작업의 더 새 사본이 있으면(다른 기기가 저장) 열지는 않고 알려만 준다 — 여는 건 「내 작업」에서 준호가
+    ST.cloud.get(r.id).then(c => { if (c && (c.updatedAt || 0) > (r.updatedAt || 0)) { proj.cloudAt = c.updatedAt; toast('다른 기기에서 「' + proj.name + '」 을 더 나중에 저장했어요 — 그걸 열려면 「내 작업」에서 불러와요', 5000); refreshSaveNote(); } else if (c) { proj.cloudAt = c.updatedAt || 0; refreshSaveNote(); } }).catch(() => {});
+  }
+  /* 「파일 다시 연결」 — 다른 기기에서 저장한 작업을 열었는데 원본이 없어 뺀 클립을, 그 영상 파일을 골라 넣어 되살린다(이름 → 크기 순으로 맞춤). */
+  function refreshRelink() {
+    const row = $('relinkRow'); if (!row) return;
+    row.hidden = !(proj.missing && proj.missing.length);
+    if (!row.hidden) $('relinkNames').textContent = '이 기기에 없는 원본 ' + proj.missing.length + '개: ' + proj.missing.map(m => m.name).join(', ');
+  }
+  async function relinkFiles(files) {
+    if (!proj.missing.length || !files.length) return;
+    if (proj.dirty && !confirm('원본을 붙여 작업을 다시 열면 이 기기에서 연 뒤 편집한 내용은 버려져요. 계속할까요?')) return;
+    const left = proj.missing.slice(), hit = [], miss = [];
+    for (const f of files) {
+      let i = left.findIndex(m => m.name === f.name && (!m.size || m.size === f.size)); if (i < 0) i = left.findIndex(m => m.name === f.name); if (i < 0) i = left.findIndex(m => m.size && m.size === f.size);
+      if (i < 0) { miss.push(f.name); continue; }
+      const m = left.splice(i, 1)[0];
+      if (f.size <= 1500 * 1024 * 1024) await DB.putMedia(m.id, f, f.name).catch(e => console.warn('db', e));
+      hit.push(m.name);
+    }
+    if (!hit.length) return toast('고른 파일이 빠진 원본과 안 맞아요 (' + miss.join(', ') + ') — 이름이나 크기가 같아야 해요', 4000);
+    const base = proj.fullRec || (await ST.cloud.get(proj.id).catch(() => null)) || (await ST.local.get(proj.id).catch(() => null));
+    if (!base || !base.doc) return toast('원본 작업을 찾지 못했어요');
+    await openRecord(Object.assign({}, base, { where: base.where || 'local', cloudAt: proj.cloudAt }));
+    toast('원본 ' + hit.length + '개를 다시 연결했어요' + (proj.missing.length ? ' — 아직 없는 것 ' + proj.missing.length + '개' : '') + (miss.length ? ' · 안 맞은 파일: ' + miss.join(', ') : ''), 4000);
   }
 
   /* ---------- 「내 작업」 모달 ---------- */
@@ -2416,16 +2454,19 @@
   };
   $('btnProjImport').onclick = () => $('kmvIn').click();
   $('btnOpenRemote').onclick = () => openRemote();
+  $('btnSave').onclick = () => saveNow();
+  $('btnRelink').onclick = () => $('relinkIn').click();
+  $('relinkIn').onchange = async e => { const fs = [...(e.target.files || [])]; e.target.value = ''; await relinkFiles(fs); };
   $('pkFav').onclick = () => { if (peek.id) toggleFav(peek.id); };
   $('btnConflictCopy').onclick = () => $('btnProjCopy').onclick();
   $('kmvIn').onchange = async e => {
     const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return;
-    try { const r = await ST.fromFile(f); $('projModal').classList.add('hidden'); await openRecord(r); await ST.save(rec()); refreshSaveNote(); toast('「' + r.name + '」 파일을 열었어요', 2200); }
+    try { const r = await ST.fromFile(f); $('projModal').classList.add('hidden'); await openRecord(r); await ST.save(rec(), { cloud: false }); proj.dirty = true; refreshSaveNote(); toast('「' + r.name + '」 파일을 열었어요 — 계정에도 두려면 「저장」', 2600); }
     catch (err) { toast(err.message || '작업 파일을 읽지 못했어요', 3000); }
   };
 
   window.KMV_UI = { importFiles, setPH: f => setPH(f), get ph() { return ph; }, select, selectP, selectA2, selectS, placePart, play, stop, zoomFit, get pxf() { return pxf; }, get scrollF() { return scrollF; }, get selP() { return selP; }, get selA2() { return selA2; }, beatFrames,
-    get sel() { return sel; }, selectedIds, openSource, showStage, get stage() { return stage; }, get src() { return srcCur; }, setSrcPH, srcMark, srcPlace, shuttleTo, get shuttle() { return shuttle; }, get playing() { return playing || srcPlaying; }, doMarker, doCopy, doCut, doPaste, get clipboard() { return clipboard; }, get selM() { return selM; }, layout: { HEAD, RULER, LY }, xOf, frameOf, laneRows, rowGeom, selectV2, get selV2() { return selV2; }, get delChip() { return delChip; }, get proj() { return proj; }, openRecord, newProject, loadDoc, saveCloud, saveNow, openRemote, saveState, openProjModal, tab: setTab, get toolTab() { return toolTab; }, get autoPrev() { return autoPrev; } };
+    get sel() { return sel; }, selectedIds, openSource, showStage, get stage() { return stage; }, get src() { return srcCur; }, setSrcPH, srcMark, srcPlace, shuttleTo, get shuttle() { return shuttle; }, get playing() { return playing || srcPlaying; }, doMarker, doCopy, doCut, doPaste, get clipboard() { return clipboard; }, get selM() { return selM; }, layout: { HEAD, RULER, LY }, xOf, frameOf, laneRows, rowGeom, selectV2, get selV2() { return selV2; }, get delChip() { return delChip; }, get proj() { return proj; }, openRecord, newProject, loadDoc, saveCloud, saveNow, openRemote, saveState, openProjModal, relinkFiles, refreshRelink, db: DB, tab: setTab, get toolTab() { return toolTab; }, get autoPrev() { return autoPrev; } };
 
   /* ---------- 시작 ---------- */
   resize();
@@ -2450,5 +2491,5 @@
   (SH && SH.active ? SH.init().then(refreshShellRow) : Promise.resolve())
     .then(() => { if (SH && SH.active && SH.info && SH.info.ffmpeg === false) toast('ffmpeg 를 찾지 못했어요 — 설치가 온전한지 확인해 주세요', 6000); })
     .then(restore).then(() => { refreshShellRow(); });
-  window.addEventListener('pagehide', () => { if (proj.id && !proj.otherTab) { clearTimeout(saveT); const r = rec(); ST.save(r, { cloud: false }).catch(() => {}); if (cloudAllowed() && proj.dirty) { const sm = ST.summary(r.doc); ST.cloud.putKeepalive(Object.assign(r, sm), proj.cloudAt); } } });
+  window.addEventListener('pagehide', () => { if (proj.id && !proj.otherTab) { clearTimeout(saveT); ST.save(rec(), { cloud: false }).catch(() => {}); } });   // 닫을 땐 이 기기에만 — 계정은 「저장」을 누른 것만
 })();

@@ -29,18 +29,29 @@ const dump = async () => { DBROWS = await page.evaluate(() => [...window.__fakeD
 const goto = async () => { await page.goto(`http://127.0.0.1:${PORT}/kmovie/`); await page.waitForFunction(() => window.KMV_UI && KMV_UI.proj && KMV_UI.proj.id); };
 const st = () => page.evaluate(() => ({ id: KMV_UI.proj.id, name: KMV_UI.proj.name, cloudAt: KMV_UI.proj.cloudAt, dirty: KMV_UI.proj.dirty, conflict: !!KMV_UI.proj.conflict, otherTab: KMV_UI.proj.otherTab, state: KMV_UI.saveState(), dot: document.getElementById('saveDot').dataset.st, note: document.getElementById('saveNote').textContent, btn: !document.getElementById('saveConflict').hidden, rows: [...window.__fakeDb.rows.values()].map(r => ({ id: r.id, name: r.name, S: (r.doc.S || []).length, at: r.updated_at })) }));
 
-/* ---------- 1. 로그인 환경 — 새 작업이 계정에 올라감 ---------- */
+/* ---------- 1. 로그인 환경 — 새 작업은 「저장」을 누르기 전엔 계정에 안 올라감 ---------- */
 await goto();
-await page.waitForFunction(() => KMV_UI.proj.cloudAt > 0, null, { timeout: 15000 });
+await page.waitForTimeout(1500);
 let s = await st();
-ok(s.rows.length === 1 && s.rows[0].id === s.id && s.cloudAt > 0, '처음 열면 새 작업이 계정에 한 줄 (cloudAt 기록)');
-ok(s.dot === 'ok' && /계정에 자동 저장/.test(s.note), '상태 점 초록 · 안내 문구 「계정에 자동 저장」');
+ok(s.rows.length === 0 && s.cloudAt === 0, '처음 열어도 계정엔 아무것도 안 씀 (저장을 누른 것만 계정에)');
+ok(s.dot === 'dirty' && /「저장」/.test(s.note), '상태 점 노랑 · 안내 문구 「저장(Ctrl+S)을 눌렀을 때만」');
+const hasBtn = await page.evaluate(() => { const b = document.getElementById('btnSave'); return !!b && b.offsetParent !== null && b.textContent.trim() === '저장'; });
+ok(hasBtn, '헤더에 「저장」 버튼');
 
 /* ---------- 2. 편집 → dirty(노랑) → Ctrl+S → 즉시 계정 저장(초록) ---------- */
 await page.evaluate(() => { KMV_PROJECT.addS({ text: '금성초', at: 10, dur: 60, style: 'gold' }); });
 await page.waitForTimeout(600);
 s = await st();
-ok(s.dirty && s.dot === 'dirty' && s.rows[0].S === 0, '편집 직후 — 이 브라우저엔 저장, 계정엔 아직(점 노랑, 계정 자막 0)');
+ok(s.dirty && s.dot === 'dirty' && s.rows.length === 0, '편집 직후 — 이 기기엔 저장, 계정엔 아직(점 노랑, 계정 행 0)');
+await page.waitForTimeout(11000);
+s = await st();
+ok(s.rows.length === 0, '11초 기다려도 계정엔 안 올라감 (자동 계정 저장 없음)');
+await page.click('#btnSave');
+await page.waitForFunction(() => !KMV_UI.proj.dirty && !KMV_UI.proj.saving, null, { timeout: 8000 });
+s = await st();
+ok(!s.dirty && s.dot === 'ok' && s.rows.length === 1 && s.rows[0].S === 1, '「저장」 버튼 → 계정에 한 줄(자막 1) · 점 초록');
+await page.evaluate(() => { KMV_PROJECT.addS({ text: '둘째', at: 200, dur: 30, style: 'gold' }); }); await page.waitForTimeout(600);
+await page.evaluate(() => { KMV_PROJECT.removeS(KMV_PROJECT.data.S[1].id); }); await page.waitForTimeout(600);
 await page.keyboard.press('Control+s');
 await page.waitForFunction(() => !KMV_UI.proj.dirty && !KMV_UI.proj.saving, null, { timeout: 8000 });
 s = await st();
@@ -93,27 +104,39 @@ s = await st();
 ok(s.id !== before && /사본/.test(s.name) && s.rows.length === 2 && s.rows.some(r => r.id === s.id && r.S === 3), '「사본으로 저장」 → 새 id 로 계정에 새 줄(자막 3) · 원래 줄은 그대로');
 ok(!s.btn && s.dot === 'ok', '충돌 버튼 사라지고 점 초록');
 
-/* ---------- 5. 시작 때 옛 로컬 사본이 계정을 덮지 않음 ---------- */
+/* ---------- 5. 시작 = 이 기기 사본만 — 계정 사본은 자동으로 열지도, 올리지도 않음 ---------- */
 const curId = s.id;
-// (a) 계정이 더 새 — 로컬은 옛것 : 새로고침하면 계정 쪽을 열고, 계정 행은 그대로
-await page.evaluate(() => { const r = window.__fakeDb.rows.get(KMV_UI.proj.id); r.name = '계정이 더 새'; r.updated_at = new Date(Date.now() + 20000).toISOString(); });
+// (a) 계정이 더 새(다른 기기가 저장) : 새로고침해도 이 기기 것을 열고, 계정엔 쓰기 0, 안내만
+const localName = s.name; const localS5 = await page.evaluate(() => KMV_PROJECT.data.S.length);
+await page.evaluate(() => { const r = window.__fakeDb.rows.get(KMV_UI.proj.id); r.name = '계정이 더 새'; r.updated_at = new Date(Date.now() + 20000).toISOString(); r.doc = Object.assign({}, r.doc, { S: [] }); window.__fakeDb.log.length = 0; });
 await dump();
 await goto(); await seed();
 await page.waitForTimeout(1500);
 s = await st();
-ok(s.id === curId && s.name === '계정이 더 새' && !s.conflict, '(a) 계정이 더 새면 새로고침 때 계정 사본을 연다');
+const S5a = await page.evaluate(() => KMV_PROJECT.data.S.length);
+ok(s.id === curId && s.name === localName && S5a === localS5 && !s.conflict, '(a) 계정이 더 새여도 시작은 이 기기 사본(이름·자막 ' + localS5 + ' 그대로)');
 const logA = await page.evaluate(() => window.__fakeDb.log.filter(l => /^(update|insert|upsert)/.test(l)));
-ok(logA.length === 0 && s.rows.find(r => r.id === curId).name === '계정이 더 새', '(a) 옛 로컬 사본이 계정을 덮어쓰지 않음 (쓰기 0회)');
-// (b) 로컬이 더 새 — 계정은 옛것 : 새로고침하면 로컬을 열고 계정에 올린다
+ok(logA.length === 0 && s.rows.find(r => r.id === curId).name === '계정이 더 새', '(a) 계정엔 쓰기 0회 (다른 기기 것 그대로)');
+const toastA = await page.evaluate(() => document.body.innerText);
+ok(/다른 기기에서/.test(toastA) && /내 작업/.test(toastA), '(a) "다른 기기에서 더 나중에 저장 — 내 작업에서 불러와요" 안내');
+// (b) 로컬이 더 새 : 새로고침해도 계정엔 안 올림(저장을 눌러야) — 점 노랑
 await page.evaluate(() => { KMV_PROJECT.addS({ text: '로컬이 새', at: 500, dur: 30, style: 'gold' }); });
 await page.waitForTimeout(600);
 await page.evaluate(() => { const r = window.__fakeDb.rows.get(KMV_UI.proj.id); r.name = '계정은 옛것'; r.updated_at = new Date(Date.now() - 60000).toISOString(); r.doc = Object.assign({}, r.doc, { S: [] }); window.__fakeDb.log.length = 0; });
 await dump();
 await goto(); await seed();
-await page.waitForFunction(() => !KMV_UI.proj.dirty && KMV_UI.proj.cloudAt > 0, null, { timeout: 15000 });
+await page.waitForTimeout(1500);
 s = await st();
-const row5 = s.rows.find(r => r.id === curId);
-ok(s.id === curId && row5.S >= 1 && row5.name !== '계정은 옛것', '(b) 로컬이 더 새면 계정에 올린다 (자막 도착)');
+const logB = await page.evaluate(() => window.__fakeDb.log.filter(l => /^(update|insert|upsert)/.test(l)));
+ok(s.id === curId && logB.length === 0 && s.rows.find(r => r.id === curId).name === '계정은 옛것', '(b) 로컬이 더 새여도 자동으로 안 올림 (쓰기 0회)');
+// (c) 「내 작업」에서 계정 것을 불러오면 그때 계정 사본을 연다
+await page.evaluate(async id => { const r = await KMV_STORE.cloud.get(id); await KMV_UI.openRecord(Object.assign(r, { where: 'cloud', cloudAt: r.updatedAt })); }, curId);
+await page.waitForTimeout(300);
+s = await st();
+const S5c = await page.evaluate(() => KMV_PROJECT.data.S.length);
+ok(s.name === '계정은 옛것' && S5c === 0, '(c) 「내 작업」 불러오기는 계정 사본을 연다 (계정 이름·자막 0)');
+await page.keyboard.press('Control+s');
+await page.waitForFunction(() => !KMV_UI.proj.dirty && !KMV_UI.proj.saving, null, { timeout: 8000 });
 
 /* ---------- 6. 같은 브라우저 다른 탭 — 자동 저장 쉼 ---------- */
 await page.evaluate(async id => { await KMV_UI.newProject('딴 작업'); window.__hold = navigator.locks.request('kmv-proj-' + id, () => new Promise(r => { window.__release = r; })); await new Promise(r => setTimeout(r, 80)); const r = await KMV_STORE.get(id); await KMV_UI.openRecord(r); }, curId);
@@ -133,17 +156,18 @@ await page.waitForFunction(() => !KMV_UI.proj.otherTab, null, { timeout: 8000 })
 s = await st();
 ok(!s.otherTab && s.dot !== 'off', '첫 탭이 놓으면(다시 보일 때) 이 탭이 이어받음');
 
-/* ---------- 7. 탭 닫힘 — keepalive PATCH ---------- */
+/* ---------- 7. 탭 닫힘·숨김 — 이 기기에만, 계정엔 안 올림 ---------- */
 const kp = await page.evaluate(async () => {
   const calls = []; const orig = window.fetch; window.fetch = (u, o) => { calls.push({ u: String(u), o }); return Promise.resolve({ ok: true }); };
+  window.__fakeDb.log.length = 0;
   KMV_PROJECT.addS({ text: '닫기 직전', at: 700, dur: 30, style: 'gold' });
   window.dispatchEvent(new Event('pagehide'));
-  await new Promise(r => setTimeout(r, 100)); window.fetch = orig;
-  return calls.map(c => ({ u: c.u, keep: c.o && c.o.keepalive, m: c.o && c.o.method, auth: c.o && c.o.headers && c.o.headers.Authorization, body: c.o && JSON.parse(c.o.body) }));
+  await new Promise(r => setTimeout(r, 300)); window.fetch = orig;
+  const loc = await KMV_STORE.local.get(KMV_UI.proj.id);
+  return { fetches: calls.length, writes: window.__fakeDb.log.filter(l => /^(update|insert|upsert)/.test(l)).length, localHas: !!(loc && loc.doc.S.some(x => x.text === '닫기 직전')) };
 });
-ok(kp.length === 1 && kp[0].keep === true && kp[0].m === 'PATCH', '닫힐 때 keepalive PATCH 1회');
-ok(/kmovie_projects\?id=eq\./.test(kp[0].u) && /updated_at=lte\./.test(kp[0].u) && kp[0].auth === 'Bearer tok', 'REST 주소에 id·낙관적 잠금(updated_at lte)·토큰');
-ok(kp[0].body && kp[0].body.doc && kp[0].body.doc.S.some(x => x.text === '닫기 직전'), '본문에 마지막 편집 포함');
+ok(kp.fetches === 0 && kp.writes === 0, '닫힐 때 계정엔 아무것도 안 보냄 (keepalive 없음)');
+ok(kp.localHas, '닫힐 때 마지막 편집은 이 기기에 저장됨');
 
 ok(errs.length === 0, '콘솔 오류 0' + (errs.length ? ' — ' + errs.slice(0, 3).join(' | ') : ''));
 console.log(`\n${n - fail}/${n} 통과`);

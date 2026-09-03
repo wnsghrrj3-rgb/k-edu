@@ -18,7 +18,7 @@ await page.route('**/cdn.jsdelivr.net/**', route => {
   if (u.includes('mp4-muxer')) return route.fulfill({ path: path.join(DEPS, 'mp4-muxer/build/mp4-muxer.js'), contentType: 'application/javascript' });
   return route.fulfill({ body: '', contentType: 'text/css' });
 });
-await page.goto(`http://127.0.0.1:${PORT}/kmovie/`); await page.waitForFunction(() => window.KMV_UI && window.KM_PARTS && window.KMV_PARTS);
+await page.goto(`http://127.0.0.1:${PORT}/kmovie/`); await page.waitForFunction(() => window.KMV_UI && window.KM_PARTS && window.KMV_PARTS && KMV_UI.proj && KMV_UI.proj.id); for (let i = 0; i < 100; i++) { if (await page.evaluate(() => KMV_STORE.local.get(KMV_UI.proj.id).then(r => !!r, () => false))) break; await page.waitForTimeout(50); }   // 시작 복원(restore→newProject→save)이 끝난 뒤 편집(그 전에 편집하면 P.reset 에 지워진다)
 
 /* 공용: "촬영본" = 마젠타 꽉 채운 캔버스 위에 카드 한 장을 그리고 픽셀을 본다 */
 const R = await page.evaluate(() => {
@@ -107,9 +107,9 @@ ok(U.a2 == null && U.a3 == null, '같은 칸 다시 클릭 · 「자동」= 초�
 ok(U.x === 25 && U.y === -15 && U.size === 260, '가로·세로·크기 슬라이더 → 카드 (x 25 · y −15 · size 260)');
 ok(U.undo1 && U.afterUndo == null, '초점 바꾸기는 undo 로 되돌아간다');
 ok(U.sizeMax === 300 && U.sizeMin === 25 && U.xMin === -40, '크기 슬라이더 25~300 · 가로 ±40');
-await page.waitForTimeout(900);
-const S = await page.evaluate(async id => { const r = await KMV_STORE.local.get(KMV_UI.proj.id); const p = r.doc.P.find(x => x.id === id); return p ? { x: p.x, y: p.y, size: p.size } : null; }, U.id);
-ok(S && S.x === 25 && S.y === -15 && S.size === 260, '작업 파일에 가로·세로·크기가 저장된다');
+const MEM = await page.evaluate(id => { const p = KMV_PROJECT.part(id); return p ? { x: p.x, y: p.y, size: p.size, dirty: KMV_UI.proj.dirty, id: KMV_UI.proj.id } : null; }, U.id);
+let S = null; for (let i = 0; i < 40 && !(S && S.size === 260); i++) { await page.waitForTimeout(150); S = await page.evaluate(async id => { const r = await KMV_STORE.local.get(KMV_UI.proj.id); const p = r && r.doc.P.find(x => x.id === id); return p ? { x: p.x, y: p.y, size: p.size } : null; }, U.id); }   // 400ms 자동 저장이 끝날 때까지 폴링(고정 대기는 IDB 쓰기가 늦으면 흔들림)
+ok(S && S.x === 25 && S.y === -15 && S.size === 260, '작업 파일에 가로·세로·크기가 저장된다' + (S && S.size === 260 ? '' : ' — ' + JSON.stringify(S) + ' mem=' + JSON.stringify(MEM)));
 
 /* 미리보기 경로(compose)에서도 제 층 — 실제 스테이지 캔버스에서 뚫린 글자 안이 검정이 아니다 */
 const V = await page.evaluate(async () => {

@@ -82,7 +82,33 @@ const s6 = await page.evaluate(async () => {
 ok(s6.missing.length === 1 && s6.missing[0] === 'C0287.MP4', '이 기기에 없는 원본 1개(C0287.MP4)를 찾아냄');
 ok(s6.V === 1 && !s6.media.includes('C0287.MP4') && s6.tot === s6.keepDur && s6.at0 === 0, '그 클립만 빠지고 나머지 클립은 남음 (빈틈 없이 당겨짐)');
 ok(s6.S === 1 && s6.A2 === 1 && s6.media.some(x => /배경음악/.test(x)), '자막·생성 배경음악은 파일 없이 그대로');
-ok(s6.degraded && /계정에는 저장하지 않아요/.test(s6.note), 'degraded — 계정 저장 멈춤 안내');
+ok(s6.degraded && /계정에 저장하지 않아요/.test(s6.note) && /파일 다시 연결/.test(s6.note), 'degraded — 계정 저장 멈춤 + 「파일 다시 연결」 안내');
+const s6r = await page.evaluate(() => { const row = document.getElementById('relinkRow'); return { shown: !row.hidden && row.offsetParent !== null, txt: document.getElementById('relinkNames').textContent, missing: KMV_UI.proj.missing.map(m => m.name) }; });
+ok(s6r.shown && /C0287\.MP4/.test(s6r.txt) && s6r.missing.length === 1, '프로젝트 탭 「파일 다시 연결」 줄 노출(빠진 이름)');
+/* 6-2. 「파일 다시 연결」 — 이름이 같은 파일을 고르면 그 클립이 되살아남 */
+await page.evaluate(() => { document.getElementById('relinkIn').__handled = 0; });
+{ const tmp = path.join(HERE, 'fx', 'C0287.MP4'); fs.copyFileSync(path.join(FX, 'b.mp4'), tmp);
+  await page.setInputFiles('#relinkIn', [tmp]);
+  await page.waitForFunction(() => !KMV_UI.proj.degraded && KMV_PROJECT.data.V.length === 2, null, { timeout: 60000 });
+  fs.unlinkSync(tmp); }
+const s6d = await page.evaluate(() => { const D = KMV_PROJECT.data; return { V: D.V.length, media: D.media.map(m => m.name), degraded: KMV_UI.proj.degraded, missing: KMV_UI.proj.missing.length, S: D.S.length, A2: D.A2.length, at0: D.V[0].at, m0: D.V[0].media, rowHidden: document.getElementById('relinkRow').hidden }; });
+ok(s6d.V === 2 && s6d.media.includes('C0287.MP4') && s6d.m0 === 'pcOnly1' && s6d.at0 === 0, '「파일 다시 연결」 → 빠졌던 클립이 원래 자리로 돌아옴');
+ok(!s6d.degraded && s6d.missing === 0 && s6d.rowHidden && s6d.S === 1 && s6d.A2 === 1, '되살린 뒤 degraded 해제·줄 숨김·자막·음악 그대로');
+/* 6-3. 다른 기기에서 저장한 작업 — id 는 달라도 이름+크기가 같은 원본이 이 기기에 있으면 자동으로 붙음 */
+const s6e = await page.evaluate(async () => {
+  const doc = KMV_PROJECT.toJSON();
+  const mine = doc.media.find(m => m.name === 'a.mp4');
+  doc.media = doc.media.map(m => m.name === 'a.mp4' ? Object.assign({}, m, { id: 'phoneId77', blobKey: undefined }) : m);
+  doc.V = doc.V.map(c => c.media === mine.id ? Object.assign({}, c, { media: 'phoneId77' }) : c);
+  const r = KMV_STORE.make(doc, '폰에서 저장한 것');
+  const missing = await KMV_UI.openRecord(r);
+  const D = KMV_PROJECT.data; const m = D.media.find(x => x.id === 'phoneId77');
+  return { missing, V: D.V.length, degraded: KMV_UI.proj.degraded, has: !!m && KMV_MEDIA.has('phoneId77'), blobKey: m && m.blobKey, size: mine.size };
+});
+ok(s6e.missing.length === 0 && s6e.V === 2 && !s6e.degraded && s6e.has && s6e.size > 0, '다른 id 라도 이름+크기가 같은 원본을 이 기기에서 찾아 자동 연결 (degraded 아님)');
+ok(s6e.blobKey && s6e.blobKey !== 'phoneId77', '찾은 원본의 IDB 키를 blobKey 로 기억(다음 열기는 바로)');
+await page.evaluate(async () => { const doc = KMV_PROJECT.toJSON(); doc.media = doc.media.filter(m => m.id !== 'phoneId77'); doc.V = doc.V.filter(c => c.media !== 'phoneId77'); const r = KMV_STORE.make(doc, 'PC에서 만든 것'); await KMV_UI.openRecord(r); });
+await page.evaluate(async () => { const doc = KMV_PROJECT.toJSON(); const D = doc; const keep = D.media.find(m => m.name === 'C0287.MP4'); D.media = D.media.filter(m => m.id !== keep.id); D.V = D.V.filter(c => c.media !== keep.id); D.media.unshift({ id: 'pcOnly1', name: 'C0287.MP4', kind: 'video', dur: 300, w: 3840, h: 2160, fps: 24, audio: true, rot: 0, size: 123 }); D.V.unshift({ id: 'cx', media: 'pcOnly1', in: 0, out: 120, at: 0, dur: 120, speed: 'normal' }); D.V = D.V.map((c, i) => Object.assign({}, c, { at: i === 0 ? 0 : D.V[0].dur })); await KMV_UI.db.delMedia('pcOnly1'); await KMV_UI.openRecord(KMV_STORE.make(D, 'PC에서 만든 것')); });
 const s6b = await page.evaluate(async () => { await KMV_UI.saveCloud(); return { at: KMV_UI.proj.cloudAt, saving: KMV_UI.proj.saving }; });
 ok(!s6b.at && !s6b.saving, 'degraded 상태에선 saveCloud 가 아무것도 안 함');
 await page.click('#btnNew'); await page.waitForFunction(() => document.querySelectorAll('#projModal .prow').length >= 1);
