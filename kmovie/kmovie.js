@@ -27,6 +27,7 @@
   let ph = 0, sel = null, selS = null, selP = null, selA2 = null, selV2 = null, playing = false, snap = true, beatSnap = true, playStart = 0;
   const selSet = new Set();                  // 다중 선택 (sel 은 패널 기준 클립)
   let selM = null;                           // 선택 마커
+  let selAuto = false;                       // 설정 창 따라가기로 자동 선택된 클립인지 (followPH)
   let stage = 'tl';                          // 'tl' | 'src' — 스테이지가 무엇을 보여주는가
   let srcCur = null;                         // 소스 모니터 { media, ph, in, out }
   const srcMemo = new Map();                 // media → { ph, in, out } (원본마다 I/O 기억)
@@ -178,17 +179,33 @@
     if (pv.width !== w || pv.height !== h) { pv.width = w; pv.height = h; }
   }
   function liveMode(on) { setRScale(on ? 0.5 : 1); M.setAnalyzePaused(on); if (!on) M.stopStreams(); }
+  let previewWant = -1, previewTries = 0;        // 같은 플레이헤드 자리에서 정확 프레임을 몇 번 받아왔나 (무한 재그리기 방지)
   function renderPreview() {
     if (stage === 'src') { renderSource(); return; }
     $('stageLbl').classList.add('hidden');
     const W = pv.width, H = pv.height;
     const r = R.draw(pctx, W, H, ph);
-    if (!r.exact && r.src && !live()) {
-      const want = ph, job = ++previewJob;
-      if (r.segPending) {
-        if (SG && SG.status() !== 'ready' && !segToast) { segToast = 1; toast('인물 컷아웃 모델을 처음 한 번 불러와요 (12MB)', 3500); }
-        r.src.getFrame(r.idx, true).then(f => f && SG.mask(r.media, r.idx, f)).then(() => { if (job === previewJob && ph === want && !live() && !drag) renderPreview(); }).catch(() => {});
-      } else r.src.getFrame(r.idx, true).then(f => { if (f && job === previewJob && ph === want && !live() && !drag) renderPreview(); }).catch(() => {});
+    if (r.exact) previewTries = 0;
+    if (!r.exact && !live()) {
+      /* 정확 프레임이 아니면 빠진 것을 받아온 뒤 한 번 더 그린다.
+         빠진 것 = 메인 프레임 / 전환 이전 클립 프레임 / 덧영상(V2) 프레임 / 인물 마스크.
+         예전엔 메인 프레임만 기다렸는데, 메인은 이미 캐시에 있고 덧영상만 없으면 getFrame 이 즉시 풀려
+         renderPreview → draw → renderPreview … 가 마이크로태스크만으로 무한히 돌아 화면 전체가 멎었다
+         (ui-lanes 덧영상 이동에서 재현). 이제 실제로 없는 것만 기다리고, 기다릴 게 없으면 그냥 둔다.
+         같은 자리에서 3번 받아와도 정확해지지 않으면(캐시 예산에 밀려나는 경우) 더 돌지 않는다. */
+      const want = ph;
+      if (previewWant !== want) { previewWant = want; previewTries = 0; }
+      if (previewTries < 3) {
+        const job = ++previewJob, pend = [];
+        if (r.src && !r.src.cached(r.idx)) pend.push(r.src.getFrame(r.idx, true));
+        if (r.psrc && r.pidx >= 0 && !r.psrc.cached(r.pidx)) pend.push(r.psrc.getFrame(r.pidx, false));
+        for (const e of (r.ovPend || [])) if (!e.src.cached(e.idx)) pend.push(e.src.getFrame(e.idx, false));
+        if (r.segPending && r.src) {
+          if (SG && SG.status() !== 'ready' && !segToast) { segToast = 1; toast('인물 컷아웃 모델을 처음 한 번 불러와요 (12MB)', 3500); }
+          pend.push(r.src.getFrame(r.idx, true).then(f => f && SG.mask(r.media, r.idx, f)));
+        }
+        if (pend.length) { previewTries++; Promise.all(pend).then(() => { if (job === previewJob && ph === want && !live() && !drag) renderPreview(); }).catch(() => {}); }
+      }
     }
     $('empty').classList.toggle('hidden', P.total() > 0 || P.data.P.length > 0);
   }
@@ -209,6 +226,19 @@
     if (!(opts && opts.noPreview)) renderPreview();
     if (!(opts && opts.noScroll)) ensureVisible(ph);
     draw();
+    followPH();
+  }
+  /* 설정 창 따라가기 — 아무것도 고르지 않았으면 플레이헤드 아래 클립을 자동으로 고른다.
+     (준호: "작업창에서 영상이 어떤지 파악이 안 된다, 조정할 게 전혀 없다" — 가져오기 직후 설정 열이 비어 있던 것.)
+     자동으로 고른 선택은 selAuto 로 표시해 플레이헤드가 다음 클립으로 넘어가면 같이 따라간다. 손으로 고르면 따라가기가 멈춘다. */
+  function followPH() {
+    if (selS || selP || selA2 || selV2) return;
+    if (sel && !selAuto) return;
+    if (selSet.size > 1) return;
+    const c = P.clipAt(ph);
+    if (!c) { if (sel && selAuto) { selAuto = false; select(null); } return; }
+    if (sel === c.id) return;
+    select(c.id); selAuto = true;
   }
 
   /* ---------- 재생 (오디오 시계가 마스터) ---------- */
@@ -1080,7 +1110,8 @@
     if (mode === 'all') { selSet.clear(); P.data.V.forEach(c => selSet.add(c.id)); sel = P.data.V.length ? P.data.V[0].id : null; }
     else if (mode === 'toggle' && id) { if (selSet.has(id)) { selSet.delete(id); if (sel === id) sel = selSet.size ? [...selSet][selSet.size - 1] : null; } else { selSet.add(id); sel = id; } }
     else if (mode === 'range' && id) { const V = P.data.V, i0 = sel ? P.clipIndex(sel) : -1, i1 = P.clipIndex(id); if (i0 < 0) { selSet.clear(); selSet.add(id); sel = id; } else { for (let i = Math.min(i0, i1); i <= Math.max(i0, i1); i++) selSet.add(V[i].id); } }
-    else { if (sel === id && selSet.size === (id ? 1 : 0)) return; selSet.clear(); if (id) selSet.add(id); sel = id; }
+    else { if (sel === id && selSet.size === (id ? 1 : 0)) { selAuto = false; return; } selSet.clear(); if (id) selSet.add(id); sel = id; }
+    selAuto = false;
     dirty = true; draw(); refreshPanel(); refreshMontPanel();
   }
   function selectMarker(id) { if (selM === id) return; selM = id; dirty = true; draw(); refreshMarkerList(); }
@@ -2235,7 +2266,7 @@
         }
         const c = P.addClip(meta.id);
         refreshBin(); analyzeBg(meta.id); refreshStatus();
-        if (files.length === 1) { select(c.id); setPH(c.at); }
+        if (!files.length && !importQueue.length) { select(c.id); selAuto = true; setPH(c.at); }   // 마지막 파일이면 그 클립을 골라(따라가기 표시) 플레이헤드도 — 예전 files.length===1 은 '남은' 개수라 파일 하나만 넣으면 안 골라져 설정 열이 비었다
       } catch (e) { console.error(e); toast(f.name + ' — ' + (e.message || e), 5000); }
       if (!files.length && importQueue.length) files.push(...importQueue.splice(0));  // 읽는 중 들어온 파일 이어서
     }
@@ -2250,7 +2281,7 @@
 
   /* ---------- 프로젝트 변경 반응 ---------- */
   P.on(kind => {
-    dirty = true;
+    dirty = true; previewTries = 0;                     // 모델이 바뀌면 미리보기 정확 프레임을 다시 받아온다
     for (const id of [...selSet]) if (!P.clip(id)) selSet.delete(id);
     if (sel && !P.clip(sel)) sel = selSet.size ? [...selSet][0] : null;
     if (selM && !P.marker(selM)) selM = null;

@@ -737,7 +737,7 @@
       if (this._stream && this._stream.alive) return;              // 재생 스트림이 앞서 채우는 중 — 뒤에 줄서지 않는다
       if (this.cache.has(idx) || this._pf === this.gopOf(idx)) return;
       const gi = this.gopOf(idx); this._pf = gi;
-      this.chain = this.chain.then(async () => { if (!this.cache.has(idx)) await this._decodeGop(gi, this.gops[gi].first); }).catch(() => null);
+      this.chain = this.chain.then(async () => { if (!this.cache.has(idx)) await this._decodeGop(gi, this.gops[gi].first); }).catch(() => null).then(() => { if (this._pf === gi) this._pf = -1; });   // 끝나면 표시를 지운다 — 같은 GOP 가 캐시에서 밀려난 뒤 다시 prefetch 할 수 있게 (예전엔 영영 건너뛰었다)
     }
   }
 

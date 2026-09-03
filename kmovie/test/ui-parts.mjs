@@ -131,13 +131,13 @@ for (const t of ['push', 'cover', 'zoom', 'wipe', 'blur', 'film', 'smooth', 'dip
 const trPanel = await page.evaluate(() => ({
   h3: document.querySelector('#trPanel h3') ? document.querySelector('#trPanel h3').textContent : '',
   inPanel: !!document.querySelector('#trPanel #trType'),
-  noneShown: !document.getElementById('trNone').classList.contains('hidden'),
+  autoShown: !document.getElementById('trBody').classList.contains('hidden'),   // 46 따라가기: 고르지 않아도 플레이헤드 아래 클립이 자동 선택돼 이미 열려 있다
 }));
 await page.evaluate(() => { KMV_UI.setPH(30); });
 const bb = await page.evaluate(() => { const r = document.getElementById('timeline').getBoundingClientRect(); return { x: r.x, y: r.y, pxf: KMV_UI.xOf(1) - KMV_UI.xOf(0) }; });
 await page.mouse.click(bb.x + await page.evaluate(() => KMV_UI.xOf(30)), bb.y + 180);   // V 레인의 첫 클립 (레인: 눈금24+P40+S40+V2 32 → V 136~224)
 const trPanel2 = await page.evaluate(() => ({ bodyShown: !document.getElementById('trBody').classList.contains('hidden') }));
-ok(trPanel.h3.includes('화면 전환') && trPanel.inPanel && trPanel.noneShown && trPanel2.bodyShown, '화면 전환이 독립 패널로 — 클립 고르면 열림 (' + trPanel.h3.trim() + ')');
+ok(trPanel.h3.includes('화면 전환') && trPanel.inPanel && trPanel.autoShown && trPanel2.bodyShown, '화면 전환이 독립 패널로 — 플레이헤드 아래 클립을 따라 열림·클릭해도 유지 (' + trPanel.h3.trim() + ')');
 
 // ---------- 자석 스냅 — 앞 카드 끝에 딱 붙기 ----------
 const mag = await page.evaluate(() => { const P2 = KMV_PROJECT; P2.clearP(); const A = P2.addP({ part: 'tag', at: 0 }); const B = P2.addP({ part: 'tag', at: 170 }); KMV_UI.setPH(0); return { aEnd: A.at + A.dur, b: B.id, bAt: B.at, pxf: KMV_UI.xOf(1) - KMV_UI.xOf(0) }; });

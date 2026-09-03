@@ -129,6 +129,37 @@ try {
   ok(chip.n0 === 1 && after.n === 0 && !after.sel, '✕ 칩 누르면 카드 삭제·선택 해제');
 }
 
+// ---------- 46: 미리보기 무한 재그리기(덧영상 프레임만 없을 때) + 설정 열 따라가기(followPH) ----------
+{
+  // (a) 메인 프레임은 캐시에 있고 덧영상 프레임만 없는 상태 → 예전엔 renderPreview 가 마이크로태스크로 무한히 돌아 evaluate 가 영영 안 돌아왔다
+  const hang = await Promise.race([page.evaluate(async () => {
+    const P = KMV_PROJECT; P.clearP(); KMV_UI.select(null);
+    const o = P.data.V2[0]; if (!o) return { skip: true };
+    const s2 = KMV_MEDIA.get(o.media);
+    KMV_UI.setPH(o.at + 10); await new Promise(r => setTimeout(r, 300));
+    const t0 = performance.now();
+    for (const k of [...s2.cache.keys()]) { const f = s2.cache.get(k); s2.cache.delete(k); if (f && f.close) f.close(); }   // 덧영상 캐시만 비움 (메인 a 는 그대로)
+    KMV_UI.setPH(o.at + 11);                                    // 동기 — 여기서 돌아오지 않던 것
+    const dt = performance.now() - t0;
+    // 잠시 뒤 정확 프레임으로 다시 그려졌는지
+    let exact = false; for (let i = 0; i < 40 && !exact; i++) { await new Promise(r => setTimeout(r, 100)); const cv = new OffscreenCanvas(160, 90); exact = KMV_RENDER.draw(cv.getContext('2d'), 160, 90, KMV_UI.ph).exact; }
+    return { dt, exact, ph: KMV_UI.ph };
+  }), new Promise(r => setTimeout(() => r({ timeout: true }), 15000))]);
+  ok(!hang.timeout && !hang.skip && hang.dt < 3000, '덧영상 프레임만 없을 때 setPH 가 돌아옴 (' + (hang.timeout ? '멈춤' : Math.round(hang.dt) + 'ms') + ')');
+  ok(hang.exact === true, '덧영상 프레임을 받아온 뒤 정확 프레임으로 다시 그려짐');
+  // (b) 설정 열 따라가기 — 아무것도 안 고르면 플레이헤드 아래 클립이 자동으로 골라져 클립 패널이 찬다
+  const fol = await page.evaluate(() => {
+    const P = KMV_PROJECT, $ = id => document.getElementById(id);
+    KMV_UI.select(null); KMV_UI.setPH(5);
+    const a = { hidden: $('clipBody').classList.contains('hidden'), name: $('cName').textContent, tot: P.total() };
+    KMV_UI.setPH(P.total() - 1);                                 // 마지막 프레임 (예전 WIP 가 여기서 멈췄다고 기록)
+    const b = { hidden: $('clipBody').classList.contains('hidden'), ph: KMV_UI.ph };
+    return { a, b };
+  });
+  ok(!fol.a.hidden && fol.a.name.length > 0, '따라가기: 고른 것 없이 플레이헤드만 있어도 클립 패널이 참 (' + fol.a.name + ')');
+  ok(!fol.b.hidden && fol.b.ph === fol.a.tot - 1, '따라가기: 마지막 프레임에서도 돌아오고 패널 유지 (ph ' + fol.b.ph + ')');
+}
+
 ok(errs.length === 0, '콘솔 오류 0' + (errs.length ? ' — ' + errs.slice(0, 3).join(' | ') : ''));
 console.log(`\n${n - fail}/${n} 통과`);
 await close(); srv.kill(); process.exit(fail ? 1 : 0);
