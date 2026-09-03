@@ -140,6 +140,8 @@ body{background:var(--nh-paper);color:var(--nh-ink)}
 .nh-entry-btn{margin-top:14px;width:100%;border:0;cursor:pointer;background:var(--nh-ink);color:var(--nh-paper);font-family:'Gowun Dodum',sans-serif;font-size:14.5px;padding:13px 0;border-radius:10px;transition:background .2s}
 .nh-entry-btn:hover{background:var(--nh-board-deep)}
 .nh-entry-btn:disabled{opacity:.55;cursor:not-allowed}
+.nh-pin-hint{margin-top:8px;font-size:12px;color:var(--nh-ink-soft);line-height:1.5}
+.nh-pin-row input{letter-spacing:.35em}
 .nh-error{display:none;margin-top:10px;font-size:13px;color:#8E2B24;background:rgba(180,55,47,.09);border-radius:8px;padding:8px 11px;line-height:1.45}
 .nh-error.show{display:block}
 .nh-doors{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:clamp(26px,4vw,38px)}
@@ -283,7 +285,7 @@ footer .footer-text{flex:1;text-align:center}
 @media(min-width:901px){
   .nh-entry.is-on{display:grid;grid-template-columns:1fr 1fr;gap:2px 18px}
   .nh-entry .nh-entry-btn{grid-column:1 / -1}
-  .nh-entry .nh-consent,.nh-entry .nh-error,.nh-entry .nh-entry-head{grid-column:1 / -1}
+  .nh-entry .nh-consent,.nh-entry .nh-error,.nh-entry .nh-entry-head,.nh-entry .nh-pin-hint{grid-column:1 / -1}
 }
 /* 문 — 슬림 카드 */
 .nh-doors{margin-top:clamp(16px,2.2vw,22px);gap:14px}
@@ -385,6 +387,16 @@ footer{padding-top:8px;padding-bottom:10px}
           <label for="entry-nickname">닉네임</label>
           <input class="nh-input" id="entry-nickname" type="text" placeholder="동의 받은 반만 · 없으면 비워 두세요" maxlength="20" autocomplete="off">
         </div>
+        <!-- 비밀번호(4자리) — 서버가 pin_setup / pin_required 로 말해 줄 때만 열린다 (sql/setup_seat_pin.sql #40) -->
+        <div class="nh-entry-row nh-pin-row" id="entry-pin-row" style="display:none">
+          <label for="entry-pin" id="entry-pin-label">비밀번호</label>
+          <input class="nh-input" id="entry-pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="숫자 4자리" autocomplete="off">
+        </div>
+        <div class="nh-entry-row nh-pin-row" id="entry-pin2-row" style="display:none">
+          <label for="entry-pin2">한 번 더</label>
+          <input class="nh-input" id="entry-pin2" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="같은 숫자 4자리" autocomplete="off">
+        </div>
+        <div class="nh-pin-hint" id="entry-pin-hint" style="display:none"></div>
         <label class="nh-consent" id="entry-consent-wrap" style="display:none">
           <input type="checkbox" id="entry-consent-check">
           <span>학부모님이 가정통신문을 통해 케이에듀 개인정보 처리에 사전 동의했음을 확인했어요. <a href="/privacy/" target="_blank">처리방침 보기</a></span>
@@ -726,7 +738,9 @@ let currentProfile = null; // student_profiles row
   }
 
   // 닉네임 유무 → 동의 체크·버튼 라벨 동기화
-  document.getElementById('entry-nickname').addEventListener('input', updateEntryBtn);
+  document.getElementById('entry-nickname').addEventListener('input', () => { setPinMode(null); updateEntryBtn(); });
+  document.getElementById('entry-class-code').addEventListener('input', () => { setPinMode(null); updateEntryBtn(); });
+  ['entry-pin','entry-pin2','entry-nickname','entry-class-code'].forEach(id => document.getElementById(id).addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); enterStudent(); } }));
 
   // URL로 진입 단계 결정 (없으면 역할 선택 유지)
   applyEntryRoute();
@@ -867,8 +881,31 @@ function guestExit(){
 function updateEntryBtn(){
   const nick = (document.getElementById('entry-nickname').value || '').trim();
   document.getElementById('entry-consent-wrap').style.display = nick ? 'flex' : 'none';
+  if(!nick) setPinMode(null);
   const btn = document.getElementById('entry-btn');
-  if(!btn.disabled) btn.textContent = nick ? '입장' : '이름 없이 입장';
+  if(!btn.disabled) btn.textContent = !nick ? '이름 없이 입장' : (_pinMode === 'setup' ? '비밀번호 정하고 입장' : '입장');
+}
+
+// 비밀번호 칸 — 서버 상태에 따라 열린다: 'setup'(처음·초기화 뒤 정하기) / 'enter'(넣기) / null(숨김)
+let _pinMode = null;
+function setPinMode(mode){
+  _pinMode = mode;
+  const row = document.getElementById('entry-pin-row'), row2 = document.getElementById('entry-pin2-row');
+  const hint = document.getElementById('entry-pin-hint'), lab = document.getElementById('entry-pin-label');
+  if(!row) return;
+  row.style.display  = mode ? 'flex' : 'none';
+  row2.style.display = mode === 'setup' ? 'flex' : 'none';
+  hint.style.display = mode ? 'block' : 'none';
+  if(mode === 'setup'){
+    lab.textContent = '비밀번호 정하기';
+    hint.textContent = '처음이에요! 나만 아는 숫자 4자리를 정해요. 잊으면 담임 선생님이 다시 정하게 해 줘요.';
+  } else if(mode === 'enter'){
+    lab.textContent = '비밀번호';
+    hint.textContent = '정했던 숫자 4자리를 넣어요.';
+  } else {
+    document.getElementById('entry-pin').value = '';
+    document.getElementById('entry-pin2').value = '';
+  }
 }
 
 // =============================================
@@ -912,6 +949,18 @@ async function enterStudent(){
   if(nick.length > 20){ showError('닉네임은 20자 이내로 입력해 주세요.'); nickInput.focus(); return; }
   if(!consent.checked){ showError('처리방침 동의를 확인해 주세요.'); return; }
 
+  // 비밀번호(4자리) — 칸이 열려 있을 때만 보낸다. 정하기 모드는 두 번 같게.
+  const pinInput = document.getElementById('entry-pin');
+  let pin = null;
+  if(_pinMode){
+    pin = (pinInput.value || '').replace(/\D/g, '');
+    if(pin.length !== 4){ showError('비밀번호는 숫자 4자리예요.'); pinInput.focus(); return; }
+    if(_pinMode === 'setup'){
+      const pin2 = (document.getElementById('entry-pin2').value || '').replace(/\D/g, '');
+      if(pin !== pin2){ showError('두 번 넣은 비밀번호가 서로 달라요. 같게 넣어 주세요.'); document.getElementById('entry-pin2').focus(); return; }
+    }
+  }
+
   btn.disabled = true; btn.textContent = '확인 중...';
 
   try {
@@ -934,11 +983,22 @@ async function enterStudent(){
       currentUser = sessionData.session.user;
     }
 
-    // 2) claim_seat RPC 호출
-    const { data: claim, error: claimError } = await db.rpc('claim_seat', {
-      p_class_code: code,
-      p_nickname: nick
-    });
+    // 2) claim_seat_v2 RPC — 학급코드 + 이름 + 비밀번호 (sql/setup_seat_pin.sql #40)
+    //    fresh_session: 이 기기의 익명 세션이 다른 학생 것 → 새 세션을 만들어 한 번만 다시 보낸다
+    let claim = null, claimError = null;
+    for(let attempt = 0; attempt < 2; attempt++){
+      ({ data: claim, error: claimError } = await db.rpc('claim_seat_v2', { p_class_code: code, p_nickname: nick, p_pin: pin }));
+      if(claimError || !claim || claim.status !== 'fresh_session') break;
+      await db.auth.signOut();
+      const { data: anonData, error: anonError } = await db.auth.signInAnonymously();
+      if(anonError || !anonData || !anonData.session){ claim = { status: 'no_session' }; break; }
+      currentUser = anonData.user;
+    }
+
+    if(claimError && /claim_seat_v2|schema cache/i.test(claimError.message || '')){
+      // 폴백(규칙 5): SQL #40 미적용이면 종전 v1(이름만)로 — 학생 화면이 막히지 않게
+      ({ data: claim, error: claimError } = await db.rpc('claim_seat', { p_class_code: code, p_nickname: nick }));
+    }
 
     if(claimError){
       showError('네트워크 오류가 발생했어요. 잠시 후 다시 시도해 주세요.');
@@ -947,6 +1007,32 @@ async function enterStudent(){
     }
 
     const status = claim && claim.status;
+
+    // 비밀번호 단계 — 칸을 열고 멈춘다(입장 전). 서버가 아무것도 쓰지 않은 상태.
+    if(status === 'pin_setup' || status === 'pin_required'){
+      setPinMode(status === 'pin_setup' ? 'setup' : 'enter');
+      btn.disabled = false; updateEntryBtn();
+      setTimeout(() => pinInput.focus(), 30);
+      return;
+    }
+    if(status === 'pin_wrong'){
+      showError((claim.message || '비밀번호가 달라요.') + (claim.left != null ? ' 남은 횟수 ' + claim.left + '번.' : ''));
+      pinInput.value = ''; pinInput.focus();
+      btn.disabled = false; updateEntryBtn();
+      return;
+    }
+    if(status === 'pin_locked'){
+      const m = Math.max(1, Math.ceil((claim.wait_sec || 300) / 60));
+      showError((claim.message || '비밀번호를 여러 번 틀려서 잠시 잠겼어요.') + ' 약 ' + m + '분 뒤에 다시 해 보세요.');
+      btn.disabled = false; updateEntryBtn();
+      return;
+    }
+    if(status === 'pin_invalid'){
+      showError(claim.message || '비밀번호는 숫자 4자리예요.'); pinInput.focus();
+      btn.disabled = false; updateEntryBtn();
+      return;
+    }
+    if(status === 'created' || status === 'reclaim') setPinMode(null);
 
     if(status === 'created' || status === 'reclaim'){
       // 성공 — 프로필 로드 + UI 전환
@@ -971,7 +1057,7 @@ async function enterStudent(){
     }
 
     if(status === 'taken'){
-      showError(claim.message || '이미 다른 기기에서 사용 중인 닉네임이에요. 다른 닉네임을 선택하거나 담임 선생님께 문의하세요.');
+      showError(claim.message || '다른 기기에서 쓰고 있는 이름이에요. 담임 선생님께 비밀번호 초기화를 부탁하세요.');
     } else if(status === 'inactive'){
       showError(claim.message || '처리정지된 학생이에요. 담임 선생님께 문의하세요.');
     } else if(status === 'no_session'){
