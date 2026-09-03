@@ -1,6 +1,6 @@
 -- =============================================================
 -- K-edu 「우리 학교 할 일판」 — 생태계설계_v2_공개준비 §J-10
--- 작성: 2026-09-03 · v1.1 2026-09-03(받는 사람 고르기 — 준호 요구 「내가 선택한 사람들한테만」)
+-- 작성: 2026-09-03 · v1.1 2026-09-03(받는 사람 고르기) · v1.2 2026-09-03(누가 안 했나 명단 · 모두 완료면 보관함)
 -- 왜: 금성초는 나이스 메신저·밴드를 실질적으로 안 써서 학교 안 소식이 잘 놓친다.
 --     전체 공유해 두면 **확인 전까지 대시보드 상단에 남고, 기한이 다가올수록 색이 짙어지는** 판.
 --     댓글·채팅·파일 없음(준호 결정). 학교 단위 기준선 = teachers.school_id(setup_schools.sql #36).
@@ -11,6 +11,8 @@
 --   ③ 기한이 지난 일 = **「지난 일」 칸으로 내려가되 남는다** (자동 숨김 아님 — 확인 전까지 사라지지 않는다)
 --   ④ (v1.1) 받는 사람 = **우리 학교 모두** 또는 **고른 교사만** — 고르면 그 교사(+올린 사람)에게만 뜬다.
 --      수신자 표 school_task_targets 가 비어 있으면 학교 전체, 있으면 그 사람들만. 학교 벽(①~③)은 그대로 위에 얹힌다.
+--   ⑤ (v1.2) 올린 사람은 「확인 n/N」의 명단(누가 했고 안 했나)을 본다 — 올린 사람 자신은 N 에서 뺀다.
+--      모두 확인하면 올린 사람에게 「모두 확인 — 보관하기」 → closed_at(=내리기와 같은 자리) → 「보관함」 칸에서 본다(이력 그대로).
 --
 -- 의존: setup_tables.sql(teachers) · setup_schools.sql(schools, teachers.school_id)
 --       setup_teacher_approval.sql(kedu_teacher_approved, kedu_is_admin) · cw_my_teacher_id()
@@ -124,6 +126,7 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $fn$
   WITH me AS (
     SELECT cw_my_teacher_id() AS tid, kedu_my_school_id() AS sid
   ), tcount AS (
+    -- 학교 전체 공유의 분모(올린 사람은 각 행에서 뺀다 — 아래 CASE)
     SELECT count(*)::int AS n FROM teachers t, me
      WHERE me.sid IS NOT NULL AND t.school_id = me.sid AND t.approval = 'approved'
   )
@@ -140,11 +143,13 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $fn$
               ELSE 'todo' END AS bucket,
          (s.created_by IS NOT NULL AND s.created_by = me.tid) AS mine,
          (r.teacher_id IS NOT NULL) AS done,
-         (SELECT count(*)::int FROM school_task_reads x WHERE x.task_id = s.id) AS done_count,
-         -- ★ 받는 사람을 골랐으면 분모는 그 사람 수, 아니면 학교 승인 교사 수
+         -- ★ v1.2 올린 사람 자신은 분자·분모 모두에서 뺀다(자기 할 일을 자기가 확인하는 건 세지 않는다)
+         (SELECT count(*)::int FROM school_task_reads x WHERE x.task_id = s.id AND x.teacher_id IS DISTINCT FROM s.created_by) AS done_count,
+         -- ★ 받는 사람을 골랐으면 분모는 그 사람 수, 아니면 학교 승인 교사 수(올린 사람 제외)
          CASE WHEN EXISTS (SELECT 1 FROM school_task_targets g WHERE g.task_id = s.id)
               THEN (SELECT count(*)::int FROM school_task_targets g WHERE g.task_id = s.id)
-              ELSE (SELECT n FROM tcount) END AS teacher_count,
+              ELSE (SELECT n FROM tcount) - CASE WHEN s.created_by IS NOT NULL AND EXISTS (SELECT 1 FROM teachers t2 WHERE t2.id = s.created_by AND t2.school_id = me.sid AND t2.approval = 'approved') THEN 1 ELSE 0 END
+              END AS teacher_count,
          COALESCE(ct.name, '') AS created_by_name,
          s.created_at,
          EXISTS (SELECT 1 FROM school_task_targets g WHERE g.task_id = s.id) AS targeted,
@@ -210,6 +215,50 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $fn$
    ORDER BY t.name
 $fn$;
 GRANT EXECUTE ON FUNCTION list_school_teachers() TO authenticated;
+
+-- ── 누가 했고 안 했나 (v1.2 — 올린 사람 또는 관리자만) ─────────
+-- 받는 사람 = 골랐으면 그 명단, 아니면 우리 학교 승인 교사 전체(올린 사람 제외). 확인 표시가 있으면 done.
+CREATE OR REPLACE FUNCTION school_task_status(p_task_id uuid)
+RETURNS TABLE (teacher_id uuid, name text, class_label text, done boolean, done_at timestamptz)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $fn$
+  WITH t AS (
+    SELECT s.id, s.school_id, s.created_by FROM school_tasks s
+     WHERE s.id = p_task_id AND s.school_id = kedu_my_school_id()
+       AND (s.created_by = cw_my_teacher_id() OR kedu_is_admin())
+  ), who AS (
+    SELECT g.teacher_id FROM school_task_targets g, t WHERE g.task_id = t.id
+    UNION
+    SELECT tt.id FROM teachers tt, t
+     WHERE NOT EXISTS (SELECT 1 FROM school_task_targets g WHERE g.task_id = t.id)
+       AND tt.school_id = t.school_id AND tt.approval = 'approved' AND tt.id IS DISTINCT FROM t.created_by
+  )
+  SELECT w.teacher_id, COALESCE(tt.name,''),
+         COALESCE((SELECT c.label FROM class_codes c WHERE c.teacher_id = tt.id AND c.is_active ORDER BY c.created_at DESC LIMIT 1), ''),
+         (r.teacher_id IS NOT NULL), r.done_at
+    FROM who w
+    JOIN teachers tt ON tt.id = w.teacher_id
+    LEFT JOIN school_task_reads r ON r.task_id = p_task_id AND r.teacher_id = w.teacher_id
+   ORDER BY (r.teacher_id IS NOT NULL), tt.name
+$fn$;
+GRANT EXECUTE ON FUNCTION school_task_status(uuid) TO authenticated;
+
+-- ── 보관함 (v1.2 — 내가 올려서 내린 것: 모두 확인 뒤 보관 / 중간에 내림) ──
+CREATE OR REPLACE FUNCTION list_school_tasks_archived()
+RETURNS TABLE (id uuid, title text, due_date date, closed_at timestamptz, done_count int, teacher_count int, targeted boolean, to_names text)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $fn$
+  SELECT s.id, s.title, s.due_date, s.closed_at,
+         (SELECT count(*)::int FROM school_task_reads x WHERE x.task_id = s.id AND x.teacher_id IS DISTINCT FROM s.created_by),
+         CASE WHEN EXISTS (SELECT 1 FROM school_task_targets g WHERE g.task_id = s.id)
+              THEN (SELECT count(*)::int FROM school_task_targets g WHERE g.task_id = s.id)
+              ELSE (SELECT count(*)::int FROM teachers t WHERE t.school_id = s.school_id AND t.approval = 'approved' AND t.id IS DISTINCT FROM s.created_by) END,
+         EXISTS (SELECT 1 FROM school_task_targets g WHERE g.task_id = s.id),
+         COALESCE((SELECT string_agg(tt.name, ', ' ORDER BY tt.name) FROM school_task_targets g JOIN teachers tt ON tt.id = g.teacher_id WHERE g.task_id = s.id), '')
+    FROM school_tasks s
+   WHERE s.school_id = kedu_my_school_id() AND s.created_by = cw_my_teacher_id() AND s.closed_at IS NOT NULL
+   ORDER BY s.closed_at DESC
+   LIMIT 100
+$fn$;
+GRANT EXECUTE ON FUNCTION list_school_tasks_archived() TO authenticated;
 
 -- ── 확인 표시 켜기·끄기 (멱등) ───────────────────────────────
 -- ⚠️ 다른 학교 할 일에는 표시를 남길 수 없다 — 학교 대조를 함수 안에서 한 번 더 한다(RLS 와 이중).
@@ -310,7 +359,7 @@ GRANT EXECUTE ON FUNCTION set_my_school(text) TO authenticated;
 --   SELECT proname FROM pg_proc WHERE proname IN
 --     ('kedu_my_school_id','list_school_tasks','add_school_task',
 --      'mark_school_task','close_school_task','my_school','set_my_school',
---      'kedu_task_visible','list_school_teachers');                        → 9행 (add_school_task 는 1행만 — 3인자 옛것이 남아 있으면 안 된다)
+--      'kedu_task_visible','list_school_teachers','school_task_status','list_school_tasks_archived'); → 11행 (add_school_task 는 1행만)
 --   SELECT * FROM list_school_tasks();                                     → 0 rows (할 일 없음)
 --   -- 준호 계정으로: SELECT kedu_my_school_id();                          → 금성초 학교ID (NULL 이면 학교 지정 먼저)
 -- ---------------------------------------------------------------
