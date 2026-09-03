@@ -72,6 +72,16 @@ window.KEDU_MAP["g6_2_science"] = {
      "url": "/grade6/semester2/science/1단원_계절의변화/g6_sci_u1_l06_계절변화원인.html",
      "track": "tb",
      "ready": true
+    },
+    {
+     "key": "g6_science_u1_l07",
+     "lessonId": "g6_s2_sci_u1_l07_v1",
+     "n": "10~11",
+     "title": "창의가 팡팡 — 계절 축제 안내 자료 만들기",
+     "sub": null,
+     "url": "/grade6/semester2/science/1단원_계절의변화/g6_sci_u1_l07_창의가팡팡.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }
