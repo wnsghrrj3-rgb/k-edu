@@ -552,6 +552,41 @@ tr:hover td{background:#FAFBFC}
     <span class="wipe-text" id="wipe-banner-text"></span>
   </div>
 
+  <!-- 우리 학교 할 일판 (생태계설계 v2 §J-10 · sql/setup_school_tasks.sql) -->
+  <!-- 준호 결정(09-03): 올리기 = 승인된 같은 학교 교사 누구나 / 아침 메일 미포함 / 기한 지나도 확인 전까지 남음 -->
+  <!-- ⚠️ 폴백 — SQL 미적용(RPC 없음)이거나 학교 미지정이면 이 카드는 통째로 숨는다(종전 화면 그대로) -->
+  <div class="table-wrap fade-up" id="schooltask-wrap" hidden>
+    <div class="table-header">
+      <h3>📌 우리 학교 할 일</h3>
+      <span class="table-count" id="schooltask-count">0개</span>
+      <button class="code-btn outline" id="schooltask-add-btn" style="margin:0 0 0 auto;padding:6px 14px;font-size:12.5px" onclick="toggleSchoolTaskForm()">＋ 올리기</button>
+    </div>
+    <div id="schooltask-form" hidden style="padding:12px 20px;border-top:1px solid var(--border);background:#FAFBFD">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <input type="text" id="schooltask-title" maxlength="120" placeholder="할 일 (예: 방과후 수요조사 제출)" style="flex:1;min-width:220px;padding:9px 12px;border:1px solid #d5dbe3;border-radius:8px;font-size:13.5px">
+        <input type="date" id="schooltask-due" style="padding:9px 12px;border:1px solid #d5dbe3;border-radius:8px;font-size:13.5px">
+      </div>
+      <textarea id="schooltask-detail" maxlength="1000" rows="2" placeholder="자세한 내용 (선택)" style="width:100%;margin-top:8px;padding:9px 12px;border:1px solid #d5dbe3;border-radius:8px;font-size:13px;resize:vertical;font-family:inherit"></textarea>
+      <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+        <button class="code-btn primary" style="margin:0;padding:8px 18px;font-size:13px" onclick="addSchoolTask()">올리기</button>
+        <span style="font-size:12px;color:var(--sub)">우리 학교 선생님 모두에게 보여요. 확인하기 전까지는 사라지지 않아요.</span>
+      </div>
+    </div>
+    <div id="schooltask-list"></div>
+    <div id="schooltask-past-wrap" hidden style="border-top:1px solid var(--border)">
+      <div style="padding:10px 20px;font-size:12.5px;font-weight:700;color:#78716C;cursor:pointer" onclick="toggleSchoolTaskFold('past')">
+        <span id="schooltask-past-caret">▸</span> 지난 일 <span id="schooltask-past-count">0</span>개 — 기한은 지났지만 아직 확인하지 않았어요
+      </div>
+      <div id="schooltask-past" hidden></div>
+    </div>
+    <div id="schooltask-done-wrap" hidden style="border-top:1px solid var(--border)">
+      <div style="padding:10px 20px;font-size:12.5px;font-weight:700;color:var(--sub);cursor:pointer" onclick="toggleSchoolTaskFold('done')">
+        <span id="schooltask-done-caret">▸</span> 확인함 <span id="schooltask-done-count">0</span>개
+      </div>
+      <div id="schooltask-done" hidden></div>
+    </div>
+  </div>
+
   <!-- STATS -->
   <div class="stats">
     <div class="stat-card fade-up" style="--sc:var(--primary)">
@@ -996,6 +1031,9 @@ async function loadDashboard(user){
 
   // 학급코드 로드
   await loadClassCode();
+
+  // 우리 학교 할 일판 (§J-10) — 대시보드 상단
+  await loadSchoolTasks();
 
   // 우리 반에 열린 활동 (§F)
   await loadOpenings();
@@ -1460,6 +1498,126 @@ function copyCode(){
 // 학생 목록
 // =============================================
 // =============================================
+// =============================================
+// 우리 학교 할 일판 (§J-10) — sql/setup_school_tasks.sql
+// 준호 결정(2026-09-03): ① 올리기 = 승인된 같은 학교 교사 누구나 ② 아침 메일 미포함(대시보드만)
+//                        ③ 기한이 지나도 확인 전까지 남는다 — 「지난 일」 칸으로 내려갈 뿐
+// ⚠️ 급함 색은 서버가 준 urgency 를 그대로 쓴다(브라우저 시간대로 다시 세지 않는다).
+// =============================================
+const STASK_TONE = {
+  past:   { bar:'#78716C', chip:'#F5F5F4', ink:'#57534E', label:'기한 지남' },
+  red:    { bar:'#E53E3E', chip:'#FEE2E2', ink:'#B91C1C', label:'오늘·내일' },
+  orange: { bar:'#DD6B20', chip:'#FFEDD5', ink:'#9A3412', label:'곧' },
+  normal: { bar:'#5B8EF8', chip:'#EBF4FF', ink:'#3B6FD8', label:'예정' },
+  none:   { bar:'#CBD5E0', chip:'#F1F5F9', ink:'#718096', label:'기한 없음' }
+};
+let schoolTaskFold = { past:false, done:false };
+function staskDue(t){
+  if(!t.due_date) return '기한 없음';
+  const d = new Date(t.due_date + 'T00:00:00');
+  const md = (d.getMonth()+1) + '월 ' + d.getDate() + '일';
+  if(t.days_left == null) return md;
+  if(t.days_left === 0) return md + ' (오늘)';
+  if(t.days_left > 0)  return md + ' (' + t.days_left + '일 남음)';
+  return md + ' (' + (-t.days_left) + '일 지남)';
+}
+function staskRow(t){
+  const tone = STASK_TONE[t.urgency] || STASK_TONE.none;
+  const mineBtn = t.mine
+    ? `<button class="code-btn outline" style="padding:5px 10px;font-size:11.5px;flex-shrink:0" onclick="closeSchoolTask('${t.id}')">내리기</button>` : '';
+  const act = t.done
+    ? `<button class="code-btn outline" style="padding:5px 12px;font-size:11.5px;flex-shrink:0" onclick="markSchoolTask('${t.id}',false)">되돌리기</button>`
+    : `<button class="code-btn primary" style="margin:0;padding:5px 14px;font-size:11.5px;flex-shrink:0" onclick="markSchoolTask('${t.id}',true)">확인</button>`;
+  const detail = t.detail
+    ? `<div style="margin-top:3px;font-size:12.5px;color:var(--sub);line-height:1.55;white-space:pre-wrap">${escHtml(t.detail)}</div>` : '';
+  const who = t.created_by_name ? escHtml(t.created_by_name) + ' 선생님' : '누군가';
+  return `<div data-stask="${t.id}" data-urgency="${t.urgency}" data-bucket="${t.bucket}"
+      style="display:flex;gap:12px;padding:12px 20px;border-top:1px solid var(--border);border-left:4px solid ${tone.bar};${t.done?'opacity:.6;':''}">
+    <div style="flex:1;min-width:0">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span style="padding:2px 9px;border-radius:999px;background:${tone.chip};color:${tone.ink};font-size:11px;font-weight:700">${tone.label}</span>
+        <b style="font-size:14px;${t.done?'text-decoration:line-through':''}">${escHtml(t.title)}</b>
+        <span style="font-size:12px;color:${tone.ink};font-weight:600">${escHtml(staskDue(t))}</span>
+      </div>
+      ${detail}
+      <div style="margin-top:4px;font-size:11.5px;color:var(--sub)">${who} 올림 · 확인 ${t.done_count} / ${t.teacher_count}명</div>
+    </div>
+    <div style="display:flex;gap:6px;align-items:flex-start;flex-shrink:0">${act}${mineBtn}</div>
+  </div>`;
+}
+function toggleSchoolTaskFold(which){
+  schoolTaskFold[which] = !schoolTaskFold[which];
+  const box = document.getElementById('schooltask-' + which);
+  const caret = document.getElementById('schooltask-' + which + '-caret');
+  if(box) box.hidden = !schoolTaskFold[which];
+  if(caret) caret.textContent = schoolTaskFold[which] ? '▾' : '▸';
+}
+function toggleSchoolTaskForm(){
+  const f = document.getElementById('schooltask-form');
+  if(!f) return;
+  f.hidden = !f.hidden;
+  if(!f.hidden){ const t = document.getElementById('schooltask-title'); t && t.focus(); }
+}
+async function loadSchoolTasks(){
+  const wrap = document.getElementById('schooltask-wrap');
+  if(!wrap) return;
+  const { data, error } = await db.rpc('list_school_tasks');
+  if(error){ wrap.hidden = true; return; }          // 폴백 — SQL 미적용이면 카드 자체를 숨긴다
+  const rows = data || [];
+  wrap.hidden = false;
+  const todo = rows.filter(t => t.bucket === 'todo');
+  const past = rows.filter(t => t.bucket === 'past');
+  const done = rows.filter(t => t.bucket === 'done');
+  document.getElementById('schooltask-count').textContent = (todo.length + past.length) + '개';
+  const list = document.getElementById('schooltask-list');
+  // 학교 미지정 교사는 목록이 통째로 비어 온다(RPC 가 NULL school 을 빈 결과로 돌려준다) — 안내 한 줄
+  list.innerHTML = todo.length
+    ? todo.map(staskRow).join('')
+    : `<div class="empty-state" style="border-top:1px solid var(--border)"><div class="empty-icon">📭</div>
+        <p>${(past.length||done.length) ? '확인할 할 일이 없어요.' : '아직 올라온 할 일이 없어요. 학교가 지정돼 있어야 보여요.'}</p></div>`;
+  const pw = document.getElementById('schooltask-past-wrap');
+  pw.hidden = !past.length;
+  document.getElementById('schooltask-past-count').textContent = past.length;
+  document.getElementById('schooltask-past').innerHTML = past.map(staskRow).join('');
+  const dw = document.getElementById('schooltask-done-wrap');
+  dw.hidden = !done.length;
+  document.getElementById('schooltask-done-count').textContent = done.length;
+  document.getElementById('schooltask-done').innerHTML = done.map(staskRow).join('');
+}
+async function addSchoolTask(){
+  const ti = document.getElementById('schooltask-title');
+  const de = document.getElementById('schooltask-detail');
+  const du = document.getElementById('schooltask-due');
+  const title = (ti.value || '').trim();
+  if(title.length < 2){ showToast('할 일을 두 글자 이상 적어 주세요.'); return; }
+  const { error } = await db.rpc('add_school_task', {
+    p_title: title, p_detail: (de.value || '').trim(), p_due: du.value || null
+  });
+  if(error){
+    showToast(/school required/.test(error.message||'') ? '⚠️ 학교가 지정돼 있어야 올릴 수 있어요.'
+      : /approval/.test(error.message||'') ? '⚠️ 승인된 선생님만 올릴 수 있어요.'
+      : '⚠️ 올리기 실패: ' + (error.message || ''));
+    return;
+  }
+  ti.value = ''; de.value = ''; du.value = '';
+  document.getElementById('schooltask-form').hidden = true;
+  showToast('📌 우리 학교 할 일판에 올렸어요.');
+  await loadSchoolTasks();
+}
+async function markSchoolTask(id, done){
+  const { error } = await db.rpc('mark_school_task', { p_task_id: id, p_done: !!done });
+  if(error){ showToast('⚠️ 실패: ' + (error.message || '')); return; }
+  showToast(done ? '✅ 확인했어요.' : '↩️ 되돌렸어요.');
+  await loadSchoolTasks();
+}
+async function closeSchoolTask(id){
+  if(!confirm('이 할 일을 내릴까요? 우리 학교 선생님 모두의 화면에서 사라져요.')) return;
+  const { error } = await db.rpc('close_school_task', { p_task_id: id });
+  if(error){ showToast('⚠️ 내리기 실패: ' + (error.message || '')); return; }
+  showToast('🗂️ 내렸어요.');
+  await loadSchoolTasks();
+}
+
 // 우리 반에 열린 활동 (§F 「우리 반에 열기」) — 원장 class_openings, 닫기는 close_for_class RPC
 // =============================================
 const OPEN_KIND_LABEL = { kteacher:'케이티처', selfstudy:'자기주도', klab:'케이랩', kple:'케이플', kmake:'케이메이커', english:'영어', quiz:'케이퀴즈', activity:'활동', link:'링크' };
