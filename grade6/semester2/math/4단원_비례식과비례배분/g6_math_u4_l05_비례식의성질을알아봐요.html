@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<!--
+  g6_math_u4_l05 — 비례식의 성질을 알아봐요 [6학년 2학기 4단원 05차시, 단일 40분]
+  단원: 6학년 2학기 4단원 「비례식과 비례배분」 / 지도서 251~296 · 교과서 86~87
+  base: g4_math_u6_l04(엔진·채점부·공통 CSS 계승) / 부품 ratioTape · propEq · divideBar · ratioChain · dblLine(U1 공유) · ratioCard(6-1 U4 승계)
+  성격: 비례식의 성질 — 외항의 곱 = 내항의 곱 · 성질을 이용해 □ 구하기
+  ★ 오개념 훅: ★외항·내항 대신 전항끼리·후항끼리 곱함(마무리 8번 오류 유형) · ⛔증명 금지, 귀납적으로 확인
+  ★ 왜 그럴까 슬롯 = 슬7 : 왜 두 곱이 같은가 — 규칙을 외운 것이 아니라 **비율이 같아서** 생기는 결과(지도서 261 셋째)
+  🔑 회수 키: meta·JS 모두 g6_2_math_u4_l05 (파일명·KEDU_MAP.key 는 g6_math_ 그대로 — 설계도 §2-2)
+  ⛔ 규약: 문자식 금지 / 권유형 종결 금지 / 이모지 슬라이드당 ≤2 / `나머지`·`π` 금지 / 기약분수 강제 없음
+  점수: 기본 4×10 + 응용 4×15 = 100 / mcq 정답 위치 q9=3 · q11=1 · q13=2 · q15=4 / pad 정답 q8=70 · q10=12 · q12=100 · q14=147
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g6_2_math_u4_l05_v1">
+<title>비례식의 성질을 알아봐요 · K-edu 6학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#FBF7F1; --ink:#243043; --ink-soft:#62708A;
+  --coral:#7C3AED; --coral-deep:#5B21B6; --coral-soft:#E9DDFB;
+  --teal:#0F766E; --teal-deep:#0B5A54; --teal-soft:#D3EDE9;
+  --gold:#F6B526; --emph:#F0451F; --line:#E4DACB; --mark:#FFE08A;
+  --f-title:'Do Hyeon',sans-serif; --f-body:'Gowun Dodum',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:0 14px 34px -18px rgba(36,48,67,.4);
+  --fs-title: clamp(26px, 4.2vw, 46px);
+  --fs-heading: clamp(24px, 3.7vw, 37px);
+  --fs-body: clamp(20px, 3.0vw, 29px);
+  --fs-caption: clamp(19px, 2.9vw, 27px);
+  --fs-label: clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --em-md: clamp(44px, 7vw, 80px);
+  --em-lg: clamp(66px, 10vw, 122px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(760px, 96vw);
+  --mw-lg: min(840px, 96vw);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+@keyframes ka-swap-r { 0%{transform:translateX(0); opacity:1;} 50%{transform:translateX(20px); opacity:.3;} 100%{transform:translateX(0); opacity:1;} }
+@keyframes ka-mark { from{background-size:0 100%;} to{background-size:100% 100%;} }
+
+/* ───── 컨테이너 ───── */
+.ka { background:var(--paper); width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; color:var(--ink); position:relative; overflow:hidden; }
+
+/* ───── 상단바 (topbar) ───── */
+.ka-h { display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); padding:clamp(11px,1.7vw,15px) clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:hover { transform:translateY(-1px); }
+.ka-pill { font-family:var(--f-title); background:var(--coral); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-where { font-size:clamp(14px,1.6vw,18px); color:var(--ink-soft); flex-shrink:1; }
+.ka-where b { color:var(--ink); }
+.ka-bar { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:46vw; }
+.ka-dot { width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s, background .2s; }
+.ka-dot:hover { transform:scale(1.2); }
+.ka-dot.active { background:var(--coral); transform:scale(1.3); }
+.ka-dot.done { background:var(--teal); }
+.ka-score { font-family:var(--f-title); background:#FFF8E1; color:#F57F17; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); padding:0; border-radius:50%; cursor:pointer; flex-shrink:0; color:var(--coral-deep); font-size:clamp(13px,2vw,16px); width:clamp(32px,4.5vw,38px); height:clamp(32px,4.5vw,38px); display:flex; align-items:center; justify-content:center; }
+
+/* ───── 본문 ───── */
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; gap:clamp(7px,1.3vw,12px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(8px,1.4vh,16px) clamp(16px,4vw,48px); overflow:hidden; }
+.slide.active { display:flex; }
+.slide-title { font-family:var(--f-title); font-size:var(--fs-title); margin:0; line-height:1.18; color:var(--ink); font-weight:400; text-align:center; flex-shrink:0; }
+.slide-sub { font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(10px,1.6vw,16px); left:clamp(16px,4vw,40px); font-family:var(--f-title); color:var(--coral); font-size:clamp(13px,1.9vw,18px); letter-spacing:.4px; z-index:5; }
+
+/* ───── 하단 내비 ───── */
+.ka-f { display:flex; justify-content:flex-end; gap:12px; padding:clamp(12px,1.7vw,16px) clamp(16px,4vw,40px); background:linear-gradient(to top, var(--paper) 62%, transparent); flex-shrink:0; }
+.ka-prev, .ka-hint, .ka-next { font-family:var(--f-title); font-size:clamp(15px,1.9vw,22px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(10px,1.4vw,15px) clamp(20px,2.8vw,38px); cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translateY(-2px); }
+.ka-prev { margin-right:auto; }
+.ka-hint { color:#F57F17; border-color:#FFE08A; }
+.ka-next { background:var(--coral); color:#fff; border-color:var(--coral); }
+.ka-prev:disabled, .ka-next:disabled { opacity:.35; cursor:default; transform:none; }
+.ka-hint:disabled { opacity:.4; cursor:default; }
+
+/* ───── 공통 콘텐츠 ───── */
+.concept-box { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,18px) clamp(18px,2.8vw,28px); border-radius:20px; font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); text-align:center; line-height:1.5; box-shadow:var(--shadow); }
+.concept-box strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.big-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-lg); line-height:1; }
+.intro-q { font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; }
+.intro-q strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.goal-list { display:flex; flex-direction:column; gap:clamp(7px,1.4vw,11px); font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); }
+.goal-list li { background:#fff; border:2px solid var(--line); padding:clamp(8px,1.5vw,12px) clamp(14px,2.6vw,20px); border-radius:16px; list-style:none; box-shadow:var(--shadow); }
+.goal-list li strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+.recall-box { background:var(--teal-soft); padding:clamp(14px,2.8vw,22px) clamp(20px,3.6vw,30px); border-radius:22px; font-size:var(--fs-body); color:var(--teal-deep); max-width:var(--mw-sm); text-align:center; line-height:1.6; }
+.recall-box strong { color:var(--teal-deep); font-family:var(--f-title); font-weight:400; }
+.scene { background:#fff; border:3px solid var(--coral-soft); border-radius:28px; padding:clamp(18px,3.4vw,30px) clamp(22px,4.2vw,38px); display:flex; flex-direction:column; gap:clamp(10px,2vw,16px); align-items:center; min-width:clamp(280px,50vw,460px); box-shadow:0 6px 0 var(--coral-soft); }
+.pencil-row { display:flex; gap:clamp(4px,0.8vw,8px); font-size:var(--em-sm); flex-wrap:wrap; justify-content:center; max-width:var(--mw-sm); color:var(--ink); }
+
+/* ───── place_value_block (모형) ───── */
+.pv-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.pv-row { display:flex; gap:clamp(10px,2.2vw,20px); align-items:flex-end; justify-content:center; flex-wrap:wrap; }
+.pv-group { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,0.8vw,7px); }
+.pv-label { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.pv-block svg { display:block; }
+.swap-arrow { font-size:var(--em-sm); color:var(--coral); animation:ka-swap-r 1.6s ease-in-out infinite; }
+.exchange-eq { font-size:var(--fs-heading); color:var(--ink); display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); flex-wrap:wrap; justify-content:center; }
+
+/* ───── number_line ───── */
+.nl-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(12px,2.4vw,20px); max-width:var(--mw-lg); width:100%; }
+.nl-svg { width:min(760px,94vw); height:auto; }
+.nl-svg .nl-tick text { font-family:var(--f-num); font-weight:800; fill:var(--ink-soft); }
+.nl-pick { cursor:pointer; }
+.nl-pick:hover circle { fill:var(--coral-soft); }
+.nl-pick.correct circle { fill:var(--teal); }
+.nl-pick.wrong circle { fill:var(--coral-soft); }
+
+/* ───── 100의 여러 의미 ───── */
+.mean-grid { display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-sm); width:100%; }
+.mean-item { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,17px) clamp(16px,3vw,24px); border-radius:18px; font-size:var(--fs-body); color:var(--ink); text-align:center; box-shadow:var(--shadow); }
+.mean-item strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+
+/* ───── 문제 공통 ───── */
+.q-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; font-weight:400; }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:20px; padding:clamp(8px,1.6vw,14px) clamp(24px,4.6vw,44px); min-width:clamp(120px,22vw,200px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.q-pad { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(6px,1.2vw,10px); max-width:clamp(280px,56vw,460px); }
+.q-key { background:#fff; border:2px solid var(--line); border-radius:14px; padding:clamp(7px,1.5vw,12px) 0; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, background .15s, border-color .15s; box-shadow:0 4px 0 var(--line); }
+.q-key:hover { background:var(--coral-soft); border-color:var(--coral); }
+.q-key:active { transform:translateY(3px); box-shadow:none; }
+.q-key.fn { background:#FFF8E1; color:#F57F17; font-family:var(--f-title); font-size:var(--fs-body); border-color:#FFE08A; box-shadow:0 4px 0 #FFE08A; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); color:var(--teal-deep); min-height:1.4em; text-align:center; }
+.q-fb.wrong { color:var(--emph); }
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-sm); }
+.mcq-opt { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,15px); font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .2s; box-shadow:0 6px 0 var(--coral-soft); font-weight:400; }
+.mcq-opt:hover { border-color:var(--coral); }
+.mcq-opt:active { transform:translateY(4px); box-shadow:none; }
+.mcq-opt.correct { border-color:var(--teal-deep); background:var(--teal); color:#fff; box-shadow:0 6px 0 var(--teal-deep); animation:ka-pop .5s ease; }
+.mcq-opt.wrong { border-color:var(--emph); background:#FFE0DA; color:var(--coral-deep); animation:ka-shake .35s; }
+.mcq-hint { font-family:var(--f-title); font-size:var(--fs-body); color:#F57F17; background:#FFF8E1; border-radius:16px; padding:clamp(8px,1.6vw,12px) clamp(14px,2.6vw,20px); max-width:var(--mw-sm); text-align:center; display:none; }
+.mcq-hint.show { display:block; }
+
+/* ───── trace ───── */
+.trace-row { display:flex; gap:clamp(12px,2.4vw,22px); justify-content:center; flex-wrap:wrap; }
+.trace-cell { width:clamp(64px,12vw,110px); height:clamp(84px,16vw,150px); border:5px dashed var(--coral-soft); border-radius:20px; display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:#D8C4B8; cursor:pointer; transition:all .2s; background:#fff; }
+.trace-cell.done { color:var(--coral-deep); border-style:solid; border-color:var(--coral); background:var(--coral-soft); }
+
+/* ───── match ───── */
+.match-stage { display:flex; flex-direction:column; gap:clamp(8px,1.5vw,13px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.match-cols { display:flex; gap:clamp(20px,4vw,48px); }
+.match-col { display:flex; flex-direction:column; gap:clamp(6px,1.1vw,9px); }
+.match-card { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(16px,3vw,26px); font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .15s; min-width:clamp(70px,13vw,108px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.match-card:hover { border-color:var(--coral); }
+.match-card.sel { border-color:var(--gold); background:var(--mark); }
+.match-card.matched { border-color:var(--teal-deep); background:var(--teal); color:#fff; cursor:default; box-shadow:0 5px 0 var(--teal-deep); }
+
+/* ───── multi judge ───── */
+.judge-grid { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); max-width:var(--mw-sm); width:100%; }
+.judge-item { display:flex; align-items:center; gap:clamp(10px,2vw,16px); background:#fff; border:3px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(14px,2.6vw,20px); box-shadow:0 5px 0 var(--coral-soft); }
+.judge-text { flex:1; font-size:var(--fs-body); color:var(--ink); text-align:left; }
+.judge-text strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.judge-btns { display:flex; gap:clamp(6px,1.2vw,10px); }
+.judge-btn { border:3px solid var(--line); border-radius:14px; padding:clamp(6px,1.2vw,10px) clamp(12px,2.4vw,18px); font-family:var(--f-title); font-size:var(--fs-heading); cursor:pointer; background:#fff; color:var(--ink-soft); transition:transform .1s; }
+.judge-btn:active { transform:translateY(3px); }
+.judge-btn.pick-o { background:var(--teal-soft); color:var(--teal-deep); border-color:var(--teal); }
+.judge-btn.pick-x { background:var(--coral-soft); color:var(--coral-deep); border-color:var(--coral); }
+.judge-item.right { border-color:var(--teal-deep); box-shadow:0 5px 0 var(--teal-deep); }
+.judge-item.miss { border-color:var(--emph); animation:ka-shake .35s; }
+
+/* ───── 정리/자기평가/다음 ───── */
+.summary-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.summary-card { background:#fff; border:2px solid var(--line); border-radius:22px; padding:clamp(18px,3.4vw,30px); font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; box-shadow:var(--shadow); }
+.summary-card strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.wrap-msg { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--coral-deep); }
+.self-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(14px,2.6vw,22px); }
+.self-row { display:flex; gap:clamp(12px,2.4vw,20px); flex-wrap:wrap; justify-content:center; }
+.self-btn { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,16px) clamp(14px,2.8vw,22px); cursor:pointer; display:flex; flex-direction:column; gap:clamp(3px,0.7vw,6px); align-items:center; transition:transform .12s, border-color .15s; box-shadow:0 6px 0 var(--coral-soft); }
+.self-btn:hover { border-color:var(--coral); }
+.self-btn:active { transform:translateY(4px); box-shadow:none; }
+.self-btn.selected { border-color:var(--gold); background:var(--mark); }
+.self-btn-stars { font-size:var(--em-sm); color:var(--gold); }
+.self-btn-name { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.next-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-md); }
+.next-card { background:var(--teal-soft); border-radius:22px; padding:clamp(20px,3.8vw,32px); display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); align-items:center; }
+.next-emojis { font-size:var(--em-md); }
+.next-label { font-size:var(--fs-body); color:var(--teal-deep); text-align:center; }
+.home-prompt { font-size:var(--fs-caption); color:var(--coral-deep); background:var(--coral-soft); border-radius:18px; padding:clamp(12px,2.4vw,18px) clamp(18px,3.4vw,28px); text-align:center; }
+
+
+  /* 세로셈 (3학년 덧셈·뺄셈) */
+  .vadd { display:inline-grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:clamp(2px,0.6vw,4px) clamp(8px,1.6vw,14px); font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--ink); justify-items:center; align-items:center; background:#fff; border:2px solid var(--line); border-radius:18px; padding:clamp(12px,2vw,20px) clamp(18px,3vw,30px); box-shadow:var(--shadow); }
+  .vadd .op { color:var(--coral-deep); }
+  .vadd .ln { grid-column:1/-1; width:100%; height:3px; background:var(--ink); border-radius:2px; }
+  .vadd .sum { color:var(--coral-deep); }
+  .pv-sum-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-md); }
+
+/* ───── 약분과 통분 부품 ───── */
+.ef-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(9px,1.8vw,16px); width:100%; }
+.fr-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(9px,1.8vw,16px); width:100%; }
+.fr-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); width:100%; max-width:var(--mw-lg); }
+.fr-svg { width:100%; height:auto; display:block; max-width:min(700px,94vw); margin:0 auto; }
+.fr-svg text { font-family:'Nunito',sans-serif; font-weight:800; }
+.fr-svg text.kor { font-family:'Do Hyeon',sans-serif; font-weight:400; }
+.fr-note { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; }
+
+/* 세로 분수 표기 */
+.fr-f { display:inline-flex; flex-direction:column; align-items:center; vertical-align:middle; line-height:1.05; margin:0 0.14em; }
+.fr-f > .fr-n { font-family:var(--f-num); font-weight:800; padding:0 0.2em; }
+.fr-f > .fr-d { font-family:var(--f-num); font-weight:800; padding:0 0.2em; border-top:3px solid currentColor; margin-top:2px; }
+.fr-mix { display:inline-flex; align-items:center; gap:0.18em; vertical-align:middle; }
+.fr-mix > .fr-w { font-family:var(--f-num); font-weight:800; }
+
+/* 분수 칩 */
+.fr-chips { display:flex; flex-wrap:wrap; gap:clamp(6px,1.2vw,11px); justify-content:center; max-width:var(--mw-md); }
+.fr-chip { font-size:var(--fs-heading); color:var(--ink); background:#fff; border:3px solid var(--line); border-radius:16px; padding:clamp(5px,1vw,9px) clamp(11px,2.2vw,18px); box-shadow:0 4px 0 var(--line); }
+.fr-chip.hi { color:#fff; background:var(--coral); border-color:var(--coral-deep); box-shadow:0 4px 0 var(--coral-deep); }
+.fr-chip.hi2 { color:#fff; background:var(--teal); border-color:var(--teal-deep); box-shadow:0 4px 0 var(--teal-deep); }
+.fr-chip.both { color:var(--ink); background:var(--mark); border-color:var(--gold); box-shadow:0 4px 0 var(--gold); }
+.fr-chip.dim { color:#C7CEDA; }
+
+/* 식 줄 */
+.fr-lines { display:flex; flex-direction:column; gap:clamp(6px,1.1vw,10px); align-items:center; }
+.fr-line { display:flex; align-items:center; gap:clamp(8px,1.6vw,14px); font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); }
+.fr-line .fr-lead { font-family:var(--f-title); font-size:var(--fs-label); color:var(--ink-soft); min-width:3.6em; text-align:right; }
+.fr-line.final { color:var(--coral-deep); }
+.fr-line.bad { color:var(--emph); }
+.fr-line.bad .fr-lead { color:var(--emph); }
+
+/* 두 갈래 대조 */
+.fr-pair { display:flex; gap:clamp(14px,3vw,34px); flex-wrap:wrap; justify-content:center; align-items:flex-start; }
+.fr-col { display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.2vw,10px); background:#fff; border:2px solid var(--line); border-radius:20px; padding:clamp(10px,2vw,18px) clamp(12px,2.4vw,22px); box-shadow:var(--shadow); }
+.fr-col.bad { border-color:#F3C4B7; background:#FFF6F3; }
+.fr-col.good { border-color:var(--teal-soft); background:#F5FBFA; }
+.fr-caph { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); }
+.fr-col.bad .fr-caph { color:var(--emph); }
+.fr-col.good .fr-caph { color:var(--teal-deep); }
+
+/* ───── 비례식과 비례배분 부품 (6-2 U4) ───── */
+.rt-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); width:100%; max-width:var(--mw-lg); }
+.rt-svg { width:100%; height:auto; display:block; max-width:min(680px,93vw); margin:0 auto; }
+.rt-svg text { font-family:'Nunito',sans-serif; font-weight:800; }
+.rt-svg text.kor { font-family:'Do Hyeon',sans-serif; font-weight:400; }
+.rt-note { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; }
+
+/* 이중수직선 (U1 공유) */
+.dv-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); width:100%; max-width:var(--mw-lg); }
+.dv-svg { width:100%; height:auto; display:block; max-width:min(700px,94vw); margin:0 auto; }
+.dv-svg text { font-family:'Nunito',sans-serif; font-weight:800; }
+.dv-svg text.kor { font-family:'Do Hyeon',sans-serif; font-weight:400; }
+.fr-note { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; }
+
+/* 비 카드 (6-1 U4 승계) */
+.rc-card { display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.2vw,10px); background:#fff; border:3px solid var(--line); border-radius:22px; padding:clamp(12px,2.4vw,20px) clamp(18px,3.6vw,32px); box-shadow:0 5px 0 var(--line); }
+.rc-expr { display:flex; align-items:baseline; gap:clamp(8px,1.6vw,14px); font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(32px,5.2vw,54px); color:var(--ink); }
+.rc-expr .rc-colon { color:var(--ink-soft); }
+.rc-expr .rc-a { color:var(--coral-deep); }
+.rc-expr .rc-b { color:var(--teal-deep); }
+.rc-expr .rc-hide { color:var(--ink-soft); background:var(--paper); border:3px dashed var(--line); border-radius:12px; padding:0 clamp(10px,2vw,16px); }
+.rc-labels { display:flex; gap:clamp(14px,2.8vw,26px); }
+.rc-tag { display:flex; flex-direction:column; align-items:center; gap:2px; }
+.rc-tag .rc-t1 { font-family:var(--f-title); font-size:var(--fs-label); color:var(--ink); }
+.rc-tag .rc-t2 { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); }
+.rc-tag.a .rc-t1 { color:var(--coral-deep); }
+.rc-tag.b .rc-t1 { color:var(--teal-deep); }
+.rc-read { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; }
+
+/* 규칙·설명 카드 (U2·U3 승계) */
+.rl-cards { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,11px); align-items:center; width:100%; }
+.rl-card { display:flex; align-items:center; gap:clamp(9px,1.8vw,16px); background:#fff; border:3px solid var(--line); border-radius:18px; padding:clamp(7px,1.4vw,12px) clamp(13px,2.6vw,22px); box-shadow:0 4px 0 var(--line); font-size:var(--fs-heading); color:var(--ink); }
+.rl-card .rl-lead { font-family:var(--f-title); font-size:var(--fs-label); color:var(--ink-soft); min-width:5.2em; text-align:right; }
+.rl-card .rl-body { font-family:var(--f-title); }
+.rl-card .rl-body b { font-family:'Nunito',sans-serif; font-weight:800; color:var(--coral-deep); }
+.rl-card.final { border-color:var(--teal); box-shadow:0 4px 0 var(--teal-deep); color:var(--teal-deep); }
+.rl-card.final .rl-lead { color:var(--teal-deep); }
+.rl-card.bad { border-color:#F3C4B7; background:#FFF6F3; color:var(--emph); }
+.rl-card.bad .rl-lead { color:var(--emph); }
+</style>
+<script src="/kedu_gate.js"></script>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 목록</button>
+    <span class="ka-pill">5차시</span>
+    <span class="ka-where">수학 6-2 · <b>4. 비례식과 비례배분</b></span>
+    <div class="ka-bar" id="dots"></div>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+  <div class="ka-m">
+    <div class="slide active" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">태양 고도 측정기</h2>
+      <div class="intro-q">민지와 다운이는 하루 동안 <strong>태양 고도</strong>와 그림자 길이가<br>어떻게 달라지는지 알아보고 있어요.<br>햇빛이 잘 드는 곳에 막대를 세우고 그림자 길이를 재었어요.</div>
+    </div>
+
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">두 사람이 잰 값</h2>
+      <div class="ef-stage">
+        <div id="m-i2"></div>
+        <div class="concept-box">민지의 막대는 5 cm, 그림자는 7 cm 예요.<br>다운이의 막대는 10 cm, 그림자는 14 cm 예요.<br>비례식으로 쓰면 <strong>5：7 = 10：14</strong> 예요.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">오늘의 질문</h2>
+      <div class="intro-q">이 비례식에서 외항은 5와 14, 내항은 7과 10 이에요.<br><strong>외항의 곱</strong>과 <strong>내항의 곱</strong>을 견주면 어떻게 될까?</div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 ① · 견주어 보자</div>
+      <h2 class="slide-title">5：7 = 10：14 에서</h2>
+      <div class="ef-stage">
+        <div id="m-e1"></div>
+        <div class="concept-box">외항의 곱은 5×14 = <strong>70</strong> 이에요.<br>내항의 곱은 7×10 = <strong>70</strong> 이에요.<br>두 곱이 <strong>같아요</strong>.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 ② · 다른 비례식에서도</div>
+      <h2 class="slide-title">여러 경우로 확인해 보자</h2>
+      <div class="ef-stage">
+        <div id="m-e2"></div>
+        <div class="concept-box">9：12 = 3：4 에서 외항의 곱은 9×4 = 36,<br>내항의 곱은 12×3 = <strong>36</strong> 이에요.<br>여러 비례식에서 해 봐도 언제나 두 곱이 같아요.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 ③ · 성질을 쓰면</div>
+      <h2 class="slide-title">□를 구할 수 있어요</h2>
+      <div class="ef-stage">
+        <div id="m-e3"></div>
+        <div class="concept-box">8：6 = 12：□ 에서 내항의 곱은 6×12 = 72 예요.<br>외항의 곱 8×□ 도 72 여야 하니 <strong>□ = 9</strong> 예요.<br>이렇게 비례식을 완성할 수 있어요.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 ④ · ★왜 그럴까</div>
+      <h2 class="slide-title">왜 두 곱이 같을까</h2>
+      <div class="ef-stage">
+        <div id="m-e4"></div>
+        <div class="concept-box">비례식은 <strong>두 비의 비율이 같다</strong>는 뜻이에요.<br>비율이 같기 때문에 생기는 <strong>결과</strong>가 바로 두 곱이 같다는 것이에요.<br>외워야 할 규칙이 아니라 여러 경우에서 확인되는 성질이에요.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q8" data-q-points="10" data-answer="70">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">비례식 <strong>5：7 = 10：14</strong> 에서 <strong>외항의 곱</strong>은?</div>
+        <div class="ef-stage"><div id="m-q8"></div></div>
+        <div class="q-display" id="q8-display">?</div>
+        <div class="q-pad" id="q8-pad"></div>
+        <div class="mcq-hint" data-hints='["외항은 바깥쪽 두 수 5와 14 예요.","5×14를 계산해 보자."]'></div>
+        <div class="q-fb" id="q8-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q9" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <!-- q9 — 익힘·교과서 87쪽 원문. 5×4=20, 2×10=20 으로 같다 -->
+      <div class="q-stage">
+        <div class="q-prompt">외항의 곱과 내항의 곱을 견주어 <strong>비례식</strong>인 것을 찾으면?</div>
+        <div class="ef-stage"><div id="m-q9"></div></div>
+        <div class="mcq-opts" id="q9-opts">
+          <button class="mcq-opt" data-correct="0">7：14 = 6：13</button>
+          <button class="mcq-opt" data-correct="0">13：8 = 5：3</button>
+          <button class="mcq-opt" data-correct="1">5：2 = 10：4</button>
+          <button class="mcq-opt" data-correct="0">3：5 = 4：6</button>
+        </div>
+        <div class="mcq-hint" data-hints='["바깥쪽 두 수의 곱과 안쪽 두 수의 곱을 각각 구해요.","5×4 와 2×10 을 견주어 보자."]'></div>
+        <div class="q-fb" id="q9-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q10" data-q-points="10" data-answer="12">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt"><strong>10：8 = 15：□</strong> 에서 □에 알맞은 수는?</div>
+        <div class="ef-stage"><div id="m-q10"></div></div>
+        <div class="q-display" id="q10-display">?</div>
+        <div class="q-pad" id="q10-pad"></div>
+        <div class="mcq-hint" data-hints='["내항의 곱 8×15 를 먼저 구해요.","10×□ = 120 이 되는 □를 찾아요."]'></div>
+        <div class="q-fb" id="q10-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q11" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt"><strong>3：11 = □：22</strong> 에서 □에 알맞은 수는?</div>
+        <div class="ef-stage"><div id="m-q11"></div></div>
+        <div class="mcq-opts" id="q11-opts">
+          <button class="mcq-opt" data-correct="1">6</button>
+          <button class="mcq-opt" data-correct="0">5</button>
+          <button class="mcq-opt" data-correct="0">8</button>
+          <button class="mcq-opt" data-correct="0">33</button>
+        </div>
+        <div class="mcq-hint" data-hints='["외항의 곱 3×22 를 먼저 구해요.","11×□ = 66 이 되는 □를 찾아요."]'></div>
+        <div class="q-fb" id="q11-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q12" data-q-points="15" data-answer="100">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt"><strong>4：□ = 1：25</strong> 에서 □에 알맞은 수는?</div>
+        <div class="ef-stage"><div id="m-q12"></div></div>
+        <div class="q-display" id="q12-display">?</div>
+        <div class="q-pad" id="q12-pad"></div>
+        <div class="mcq-hint" data-hints='["외항의 곱 4×25 를 먼저 구해요.","□×1 = 100 이 되는 □를 찾아요."]'></div>
+        <div class="q-fb" id="q12-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q13" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <!-- q13 — 익힘 5번 원문. 14×□=168 이므로 □=12, ㉢의 6은 오답 -->
+      <div class="q-stage">
+        <div class="q-prompt"><strong>14：8 = 21：□</strong> 는 비례식이에요.<br><strong>바르게</strong> 설명한 것은?</div>
+        <div class="ef-stage"><div id="m-q13"></div></div>
+        <div class="mcq-opts" id="q13-opts">
+          <button class="mcq-opt" data-correct="0">14：8 과 21：□ 의 비율은 서로 다릅니다</button>
+          <button class="mcq-opt" data-correct="1">외항의 곱 14×□ 와 내항의 곱 8×21 은 같습니다</button>
+          <button class="mcq-opt" data-correct="0">□에 알맞은 수는 6입니다</button>
+          <button class="mcq-opt" data-correct="0">내항은 14와 □입니다</button>
+        </div>
+        <div class="mcq-hint" data-hints='["비례식이면 두 비의 비율이 같아요.","외항의 곱과 내항의 곱은 언제나 같아요."]'></div>
+        <div class="q-fb" id="q13-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q14" data-q-points="15" data-answer="147">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt"><strong>21：28 = 3：7</strong> 은 비례식이 아니에요.<br>이 식의 <strong>외항의 곱</strong>은?</div>
+        <div class="ef-stage"><div id="m-q14"></div></div>
+        <div class="q-display" id="q14-display">?</div>
+        <div class="q-pad" id="q14-pad"></div>
+        <div class="mcq-hint" data-hints='["외항은 바깥쪽 두 수 21과 7 이에요.","21×7을 계산해 보자."]'></div>
+        <div class="q-fb" id="q14-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q15" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <!-- q15 — 익힘 4번 원문. ★×1.2=6 이므로 ★=5 -->
+      <div class="q-stage">
+        <div class="q-prompt"><strong>4：★ = 1.2：☆</strong> 에서 <strong>내항의 곱이 6</strong> 이에요.<br>★에 알맞은 수는?</div>
+        <div class="ef-stage"><div id="m-q15"></div></div>
+        <div class="mcq-opts" id="q15-opts">
+          <button class="mcq-opt" data-correct="0">1.2</button>
+          <button class="mcq-opt" data-correct="0">6</button>
+          <button class="mcq-opt" data-correct="0">4</button>
+          <button class="mcq-opt" data-correct="1">5</button>
+        </div>
+        <div class="mcq-hint" data-hints='["내항은 ★과 1.2 예요.","★×1.2 = 6 이 되는 ★을 찾아요."]'></div>
+        <div class="q-fb" id="q15-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 배운 것</h2>
+      <div class="summary-stage">
+        <div class="summary-card">비례식에서 <strong>외항의 곱</strong>과 <strong>내항의 곱</strong>은 같아요.<br>이 성질을 이용하면 □가 있는 비례식을 풀 수 있어요.<br>두 곱이 같은지 확인하면 비례식인지 아닌지도 알 수 있어요.</div>
+        <div class="wrap-msg" id="wrap-msg"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 공부는 어땠나요?</h2>
+      <div class="self-stage">
+        <div class="self-row">
+          <button class="self-btn"><div class="self-btn-stars">★</div><div class="self-btn-name">조금 어려웠어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★</div><div class="self-btn-name">잘 했어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★★</div><div class="self-btn-name">아주 잘 했어요</div></button>
+        </div>
+        <div class="q-fb" id="self-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">다음 시간</h2>
+      <div class="next-stage">
+        <div class="next-card">
+          <div class="next-emojis">⚖️</div>
+          <div class="next-label">비례식을 활용해요</div>
+        </div>
+        <div class="home-prompt">생활 속 문제를 비례식으로 해결해 봐요</div>
+      </div>
+    </div>
+
+  </div>
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+<script>
+const TOTAL = 18;
+const LESSON_ID = 'g6_2_math_u4_l05';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.querySelectorAll('#dots .ka-dot').forEach((d, i) => { d.classList.toggle('active', i === cur); d.classList.toggle('done', i < cur); });
+  document.getElementById('prev').disabled = cur === 0;
+
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.solved || st.hintLevel >= 2; }
+  else { hintBtn.disabled = true; }
+
+  if (cur === TOTAL - 1) { document.getElementById('next').textContent = '마치기 →'; saveProgress(true); }
+  else { document.getElementById('next').textContent = '다음 →'; }
+
+  if (cur === 15) { document.getElementById('wrap-msg').textContent = wrapMsg(score); }
+}
+
+function saveProgress(done) {
+  const data = { cur, score, done, startedAt, finishedAt: done ? Date.now() : null, qState };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function wrapMsg(s) {
+  if (s >= 100) return '완벽해요!';
+  if (s >= 80) return '정말 잘했어요!';
+  if (s >= 60) return '잘했어요!';
+  return '다시 해도 좋아요!';
+}
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } else { saveProgress(true); location.href='../index.html'; } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+function showHint() {
+  const qid = currentQId(); if (!qid) return;
+  const st = getQState(qid); if (st.solved || st.hintLevel >= 2) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint'); if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[st.hintLevel - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= 2;
+}
+function pointsForQ(qid) {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  const base = parseInt(slide.dataset.qPoints || '0', 10);
+  const st = getQState(qid);
+  if (st.hintLevel === 2) return Math.max(0, base - 5);
+  if (st.hintLevel === 1) return Math.max(0, base - 2);
+  return base;
+}
+
+// ══════════════════════════════════════════════════════════════
+// 5-1 수학 3단원 「약분과 통분」 부품 라이브러리 v1
+//   - fr(n, d, w)             : 세로 분수 표기(대분수는 w)
+//   - fx(str)                 : "3/4 = 6/8" 문자열의 a/b 를 자동으로 세로 분수화
+//   - fracStrip(num,den,o)    : 분수 띠. o.split=k → 재귀 분할(각 칸을 k등분)
+//   - fracBars(rows,o)        : 띠 여러 줄 — 크기가 같은 분수는 색칠 폭이 같다
+//   - fracCompare(a,b,o)      : 두 띠 상하 배치. o.common=공통분모 → 통분 눈금 삽입
+//   - decLine(items,o)        : 0~1 수직선에 분수·소수를 함께 찍는다
+//   - fracChips(items,o)      : 분수 칩 나열. o.hi/o.hi2/o.both/o.dim (인덱스)
+//   - fracLines(rows,o)       : 식 줄 나열
+//   - frPair(a,b)             : 두 갈래 대조(잘못된 길 / 옳은 길)
+//   ★ 모든 띠 부품은 data-frac(="num/den") 을 심어 검증기가 역산한다.
+//   ★ 재귀적 분할: 1/3 을 2등분하면 2/6 — 자른 횟수가 늘어도 양은 그대로.
+// ══════════════════════════════════════════════════════════════
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+function gcd(a,b){ a=Math.abs(a); b=Math.abs(b); while(b){ const t=a%b; a=b; b=t; } return a; }
+function lcm(a,b){ return a/gcd(a,b)*b; }
+
+// ───── 분수 표기 ─────
+function fr(n, d, w){
+  const core = '<span class="fr-f"><span class="fr-n">'+esc(n)+'</span>'
+             + '<span class="fr-d">'+esc(d)+'</span></span>';
+  if (w === undefined || w === null || w === '') return core;
+  return '<span class="fr-mix"><span class="fr-w">'+esc(w)+'</span>'+core+'</span>';
+}
+
+// "3/4 = 6/8" · "1 2/3" 형태를 자동 변환. 그 밖의 글자는 그대로 둔다.
+function fx(str){
+  return String(str)
+    .replace(/(\d+)\s+(\d+)\/(\d+)/g, function(_,w,n,d){ return fr(n,d,w); })
+    .replace(/(\d+)\/(\d+)/g, function(_,n,d){ return fr(n,d); });
+}
+
+// ───── 띠 한 줄 SVG(내부 공용) ─────
+//   x,y,w,h · num/den · opt{ split, color, dashOnly, commonTicks }
+function _bar(x, y, w, h, num, den, opt){
+  opt = opt || {};
+  const fill = opt.color === 'b' ? 'var(--teal)' : 'var(--coral)';
+  const soft = opt.color === 'b' ? 'var(--teal-soft)' : 'var(--coral-soft)';
+  let g = '';
+  g += '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="8" fill="'+soft+'" stroke="var(--line)" stroke-width="3"/>';
+  // 색칠
+  const cw = w * num / den;
+  if (num > 0) g += '<rect x="'+x+'" y="'+y+'" width="'+cw.toFixed(2)+'" height="'+h+'" rx="8" fill="'+fill+'" opacity="0.85"/>';
+  // 기본 눈금
+  for (let i = 1; i < den; i++){
+    const gx = (x + w * i / den).toFixed(2);
+    g += '<line x1="'+gx+'" y1="'+y+'" x2="'+gx+'" y2="'+(y+h)+'" stroke="#fff" stroke-width="3"/>';
+  }
+  // 재귀 분할 눈금(점선) — 원래 칸은 그대로 두고 그 안을 더 자른다
+  const k = opt.split || 0;
+  if (k > 1){
+    const tot = den * k;
+    for (let i = 1; i < tot; i++){
+      if (i % k === 0) continue;
+      const gx = (x + w * i / tot).toFixed(2);
+      g += '<line x1="'+gx+'" y1="'+y+'" x2="'+gx+'" y2="'+(y+h)+'" stroke="#fff" stroke-width="2" stroke-dasharray="5 4"/>';
+    }
+  }
+  // 공통분모 눈금(통분) — 굵은 흰 점선
+  if (opt.commonTicks && opt.commonTicks > den){
+    const tot = opt.commonTicks;
+    for (let i = 1; i < tot; i++){
+      if (i % (tot/den) === 0) continue;
+      const gx = (x + w * i / tot).toFixed(2);
+      g += '<line x1="'+gx+'" y1="'+y+'" x2="'+gx+'" y2="'+(y+h)+'" stroke="#fff" stroke-width="2" stroke-dasharray="6 4"/>';
+    }
+  }
+  g += '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="8" fill="none" stroke="var(--line)" stroke-width="3"/>';
+  return g;
+}
+
+// SVG 안 세로 분수
+function _svgFrac(cx, cy, n, d, col, size){
+  const s = size || 26;
+  const c = col || 'var(--ink)';
+  return '<text x="'+cx+'" y="'+(cy-6)+'" font-size="'+s+'" fill="'+c+'" text-anchor="middle">'+esc(n)+'</text>'
+       + '<line x1="'+(cx-16)+'" y1="'+(cy+1)+'" x2="'+(cx+16)+'" y2="'+(cy+1)+'" stroke="'+c+'" stroke-width="3"/>'
+       + '<text x="'+cx+'" y="'+(cy+30)+'" font-size="'+s+'" fill="'+c+'" text-anchor="middle">'+esc(d)+'</text>';
+}
+
+// ───── fracStrip ─────
+function fracStrip(num, den, o){
+  o = o || {};
+  const W = 700, H = 132, x = 96, w = 560, y = 44, h = 56;
+  let g = '';
+  g += _svgFrac(46, y + h/2 - 8, num, den, o.color === 'b' ? 'var(--teal-deep)' : 'var(--coral-deep)');
+  g += _bar(x, y, w, h, num, den, o);
+  g += '<text class="kor" x="'+x+'" y="'+(y-14)+'" font-size="20" fill="var(--ink-soft)" text-anchor="middle">0</text>';
+  g += '<text class="kor" x="'+(x+w)+'" y="'+(y-14)+'" font-size="20" fill="var(--ink-soft)" text-anchor="middle">1</text>';
+  if (o.split > 1){
+    const rn = num * o.split, rd = den * o.split;
+    g += _svgFrac(x + w + 34, y + h/2 - 8, rn, rd, 'var(--emph)', 24);
+    g += '<text class="kor" x="'+(W/2)+'" y="'+(y+h+34)+'" font-size="19" fill="var(--ink-soft)" text-anchor="middle">'
+       + '한 칸을 ' + o.split + '등분해도 색칠한 양은 그대로</text>';
+  } else if (o.rightLabel){
+    g += '<text class="kor" x="'+(x+w+22)+'" y="'+(y+h/2+2)+'" font-size="19" fill="var(--ink-soft)" text-anchor="start">'+esc(o.rightLabel)+'</text>';
+  }
+  const note = o.note ? '<div class="fr-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="fr-wrap" data-frac="'+num+'/'+den+'">'
+       + '<svg class="fr-svg" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">'+g+'</svg>'
+       + note + '</div>';
+}
+
+// ───── fracBars : rows = [[num,den], ...] ─────
+function fracBars(rows, o){
+  o = o || {};
+  const W = 700, x = 96, w = 560, h = 46, gap = 22, top = 34;
+  const H = top + rows.length * (h + gap) + 6;
+  let g = '';
+  g += '<text class="kor" x="'+x+'" y="'+(top-10)+'" font-size="19" fill="var(--ink-soft)" text-anchor="middle">0</text>';
+  g += '<text class="kor" x="'+(x+w)+'" y="'+(top-10)+'" font-size="19" fill="var(--ink-soft)" text-anchor="middle">1</text>';
+  rows.forEach(function(r, i){
+    const y = top + i * (h + gap);
+    const hi = o.hi && o.hi.indexOf(i) !== -1;
+    g += _svgFrac(46, y + h/2 - 6, r[0], r[1], hi ? 'var(--emph)' : 'var(--coral-deep)', 23);
+    g += _bar(x, y, w, h, r[0], r[1], { color: o.color });
+  });
+  // 색칠 끝선이 모두 같음을 보여 주는 세로 안내선
+  if (o.guide){
+    const gx = (x + w * rows[0][0] / rows[0][1]).toFixed(2);
+    g += '<line x1="'+gx+'" y1="'+(top-4)+'" x2="'+gx+'" y2="'+(top + rows.length*(h+gap) - gap + 4)+'" stroke="var(--emph)" stroke-width="3" stroke-dasharray="7 5"/>';
+  }
+  const note = o.note ? '<div class="fr-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="fr-wrap" data-bars="'+rows.map(r=>r[0]+'/'+r[1]).join(',')+'">'
+       + '<svg class="fr-svg" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">'+g+'</svg>'
+       + note + '</div>';
+}
+
+// ───── fracCompare : a,b = [num,den] · o.common = 공통분모 ─────
+function fracCompare(a, b, o){
+  o = o || {};
+  const W = 700, x = 96, w = 560, h = 52, top = 36, gap = 30;
+  const H = top + h*2 + gap + (o.common ? 42 : 12);
+  const cm = o.common || 0;
+  let g = '';
+  g += '<text class="kor" x="'+x+'" y="'+(top-10)+'" font-size="19" fill="var(--ink-soft)" text-anchor="middle">0</text>';
+  g += '<text class="kor" x="'+(x+w)+'" y="'+(top-10)+'" font-size="19" fill="var(--ink-soft)" text-anchor="middle">1</text>';
+  g += _svgFrac(46, top + h/2 - 6, a[0], a[1], 'var(--coral-deep)', 24);
+  g += _bar(x, top, w, h, a[0], a[1], { color:'a', commonTicks: cm });
+  const y2 = top + h + gap;
+  g += _svgFrac(46, y2 + h/2 - 6, b[0], b[1], 'var(--teal-deep)', 24);
+  g += _bar(x, y2, w, h, b[0], b[1], { color:'b', commonTicks: cm });
+  if (cm){
+    const an = a[0] * cm / a[1], bn = b[0] * cm / b[1];
+    g += '<text class="kor" x="'+(x+w+18)+'" y="'+(top+h/2+2)+'" font-size="19" fill="var(--coral-deep)" text-anchor="start">'+an+'칸</text>';
+    g += '<text class="kor" x="'+(x+w+18)+'" y="'+(y2+h/2+2)+'" font-size="19" fill="var(--teal-deep)" text-anchor="start">'+bn+'칸</text>';
+    g += '<text class="kor" x="'+(W/2)+'" y="'+(H-10)+'" font-size="19" fill="var(--ink-soft)" text-anchor="middle">'
+       + '같은 ' + cm + '칸으로 맞추면 ' + an + '칸과 ' + bn + '칸 — ' + (an>bn?'위':'아래') + '가 더 크다</text>';
+  }
+  const note = o.note ? '<div class="fr-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="fr-wrap" data-cmp="'+a[0]+'/'+a[1]+'|'+b[0]+'/'+b[1]+'">'
+       + '<svg class="fr-svg" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">'+g+'</svg>'
+       + note + '</div>';
+}
+
+// ───── decLine : items = [{v, label, kind:'frac'|'dec', n, d}] ─────
+function decLine(items, o){
+  o = o || {};
+  const W = 700, H = 150, x = 60, w = 580, y = 96;
+  const max = o.max || 1;
+  let g = '';
+  g += '<line x1="'+x+'" y1="'+y+'" x2="'+(x+w)+'" y2="'+y+'" stroke="var(--ink-soft)" stroke-width="4"/>';
+  const steps = o.steps || 10;
+  for (let i = 0; i <= steps; i++){
+    const gx = (x + w * i / steps).toFixed(2);
+    const big = (i % 5 === 0);
+    g += '<line x1="'+gx+'" y1="'+(y-(big?12:7))+'" x2="'+gx+'" y2="'+(y+(big?12:7))+'" stroke="var(--ink-soft)" stroke-width="'+(big?4:2)+'"/>';
+    if (big) g += '<text x="'+gx+'" y="'+(y+36)+'" font-size="20" fill="var(--ink-soft)" text-anchor="middle">'+(max*i/steps)+'</text>';
+  }
+  items.forEach(function(it, i){
+    const gx = (x + w * it.v / max);
+    const col = i === 0 ? 'var(--coral)' : 'var(--teal)';
+    const deep = i === 0 ? 'var(--coral-deep)' : 'var(--teal-deep)';
+    const up = (i % 2 === 0);
+    const ty = up ? y - 30 : y + 62;
+    g += '<circle cx="'+gx.toFixed(2)+'" cy="'+y+'" r="9" fill="'+col+'" stroke="#fff" stroke-width="3"/>';
+    if (it.kind === 'frac') g += _svgFrac(gx, up ? ty - 16 : ty + 6, it.n, it.d, deep, 23);
+    else g += '<text x="'+gx.toFixed(2)+'" y="'+ty+'" font-size="24" fill="'+deep+'" text-anchor="middle">'+esc(it.label)+'</text>';
+  });
+  const note = o.note ? '<div class="fr-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="fr-wrap" data-line="'+items.map(i=>i.v).join(',')+'">'
+       + '<svg class="fr-svg" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">'+g+'</svg>'
+       + note + '</div>';
+}
+
+// ───── fracChips : items = ["3/4", "6/8", ...] · o.hi 등은 인덱스 배열 ─────
+function fracChips(items, o){
+  o = o || {};
+  const cls = (i) => 'fr-chip'
+    + (o.both && o.both.indexOf(i)!==-1 ? ' both'
+      : o.hi && o.hi.indexOf(i)!==-1 ? ' hi'
+      : o.hi2 && o.hi2.indexOf(i)!==-1 ? ' hi2' : '')
+    + (o.dim && o.dim.indexOf(i)!==-1 ? ' dim' : '');
+  const body = items.map((v, i) => '<div class="'+cls(i)+'">'+fx(v)+'</div>').join('');
+  const note = o.note ? '<div class="fr-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="fr-wrap" data-chips="'+esc(items.join(','))+'">'
+       + '<div class="fr-chips">'+body+'</div>'+note+'</div>';
+}
+
+// ───── fracLines : rows = [{lead, expr, cls}] ─────
+function fracLines(rows, o){
+  o = o || {};
+  const body = rows.map(r => '<div class="fr-line '+(r.cls||'')+'">'
+      + '<span class="fr-lead">'+esc(r.lead||'')+'</span><span>'+fx(r.expr)+'</span></div>').join('');
+  const note = o.note ? '<div class="fr-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="fr-wrap"><div class="fr-lines">'+body+'</div>'+note+'</div>';
+}
+
+function frPair(a, b){
+  const col = (c) => '<div class="fr-col '+(c.kind||'')+'">'
+      + '<div class="fr-caph">'+esc(c.cap)+'</div>' + c.body + '</div>';
+  return '<div class="fr-pair">' + col(a) + col(b) + '</div>';
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// U4 「비례식과 비례배분」 부품
+//   - dblLine(o)                 : 이중수직선 (U1 공유 · 지도서 262 [그림 1][그림 2])
+//   - ratioTape(a, b, o)         : 이중 테이프 모델 (지도서 262 [그림 3] · 단원 시그니처 ①)
+//   - ratioChain(rows, o)        : 비의 성질 사슬 — ×n / ÷n 화살표
+//   - propEq(a, b, c, d, o)      : 비례식 카드 (단원 시그니처 ② · 외항·내항 색 분리)
+//   - divideBar(total, a, b, o)  : 비례배분 막대 (단원 시그니처 ③)
+//   - ratioCard(a, b, o)         : 비 카드 (6-1 U4 승계)
+//   - ruleCards(rows, o)         : 규칙·설명 카드 줄 (U2·U3 승계)
+//   ★ data-dbl / data-tape / data-rchain / data-prop / data-divbar / data-ratio 로 역산한다.
+// ══════════════════════════════════════════════════════════════
+
+// ───── dblLine : 이중수직선 (U1 부품 그대로 · 지도서 262 가 이 단원 대표 모델로 지목) ─────
+//   o.top / o.bot = {name, pts:[{p, v}]}   p = 0~1 상대 위치
+//   o.up / o.dn   = [{a, b, l}]            변화 화살표(위/아래)
+//   o.calc = [an, ad, bn, bd, qn, qd]      data-dbl (몫 독립 재계산)
+function dblLine(o){
+  o = o || {};
+  const W = 700, X0 = 72, X1 = 636, YT = 78, YB = 186;
+  const px = p => X0 + (X1 - X0) * p;
+  let g = '';
+  [YT, YB].forEach(y => {
+    g += '<line x1="'+X0+'" y1="'+y+'" x2="'+X1+'" y2="'+y+'" stroke="var(--ink)" stroke-width="3"/>';
+    g += '<path d="M'+X1+' '+(y-7)+' L'+(X1+14)+' '+y+' L'+X1+' '+(y+7)+' Z" fill="var(--ink)"/>';
+  });
+  function tick(y, p){ g += '<line x1="'+px(p)+'" y1="'+(y-9)+'" x2="'+px(p)+'" y2="'+(y+9)+'" stroke="var(--ink)" stroke-width="3"/>'; }
+  function val(x, y, v, col){
+    const m = String(v).match(/^(\d+)\/(\d+)$/);
+    if (m) return _svgFrac(x, y - 12, +m[1], +m[2], col, 21);
+    return '<text x="'+x+'" y="'+y+'" font-size="23" fill="'+col+'" text-anchor="middle">'+esc(String(v))+'</text>';
+  }
+  (o.top && o.top.pts || []).forEach(t => { tick(YT, t.p); g += val(px(t.p), YT - 16, t.v, t.v === '?' ? 'var(--emph)' : 'var(--ink)'); });
+  (o.bot && o.bot.pts || []).forEach(t => { tick(YB, t.p); g += val(px(t.p), YB + 40, t.v, t.v === '?' ? 'var(--emph)' : 'var(--ink)'); });
+  if (o.top && o.top.name) g += '<text class="kor" x="'+(X1+18)+'" y="'+(YT+8)+'" font-size="19" fill="var(--ink-soft)" text-anchor="end" dy="-30">'+esc(o.top.name)+'</text>';
+  if (o.bot && o.bot.name) g += '<text class="kor" x="'+(X1+18)+'" y="'+(YB+64)+'" font-size="19" fill="var(--ink-soft)" text-anchor="end">'+esc(o.bot.name)+'</text>';
+  function arrow(list, y, dir){
+    (list || []).forEach(a => {
+      const xa = px(a.a), xb = px(a.b), mid = (xa + xb) / 2;
+      const yy = y + dir * 34;
+      g += '<path d="M'+xa+' '+(y + dir*10)+' Q '+mid+' '+(yy + dir*16)+' '+xb+' '+(y + dir*10)+'" fill="none" stroke="var(--coral)" stroke-width="3"/>';
+      const hx = xb, hy = y + dir*10;
+      g += '<path d="M'+(hx-6)+' '+(hy + dir*11)+' L'+hx+' '+hy+' L'+(hx+8)+' '+(hy + dir*13)+'" fill="none" stroke="var(--coral)" stroke-width="3"/>';
+      g += '<text x="'+mid+'" y="'+(yy + dir*22)+'" font-size="21" fill="var(--coral-deep)" text-anchor="middle">'+esc(a.l)+'</text>';
+    });
+  }
+  arrow(o.up, YT, -1);
+  arrow(o.dn, YB, +1);
+  const data = o.calc ? (' data-dbl="'+o.calc.join(',')+'"') : '';
+  return '<div class="dv-wrap"'+data+'>'
+       + '<svg class="dv-svg" viewBox="0 0 '+W+' 268" xmlns="http://www.w3.org/2000/svg">'+g+'</svg>'
+       + (o.note ? '<div class="fr-note">'+esc(o.note)+'</div>' : '') + '</div>';
+}
+
+// ───── ratioTape : 이중 테이프 모델 (지도서 262 [그림 3]) ─────
+//   위 띠 a칸 · 아래 띠 b칸 을 **같은 크기 칸**으로 그린다. k 를 주면 한 묶음을 k번 되풀이해
+//   a×k : b×k 가 되고, 묶음마다 옅은 테를 둘러 「같은 비가 되풀이된다」를 눈에 보이게 한다.
+//   o = { la, lb (띠 이름) · k (묶음 수, 기본 1) · unit · ask:'top'|'bot' (칸 수 글자 감춤) · note }
+//   data-tape="a,b,k"
+function ratioTape(a, b, o){
+  o = o || {};
+  const k = o.k || 1;
+  const na = a * k, nb = b * k, mx = Math.max(na, nb);
+  const W = 700, X0 = 128, BW = 520, H = 52, GAP = 30;
+  const cw = BW / mx;
+  const YA = 44, YB = YA + H + GAP;
+  let g = '';
+  function tape(y, n, per, col, label, hide){
+    g += '<rect x="'+X0+'" y="'+y+'" width="'+(cw*n)+'" height="'+H+'" fill="'+col+'" opacity="0.78" stroke="var(--ink)" stroke-width="3" rx="6"/>';
+    for (let i = 1; i < n; i++){
+      const lx = X0 + cw*i;
+      g += '<line x1="'+lx+'" y1="'+y+'" x2="'+lx+'" y2="'+(y+H)+'" stroke="#fff" stroke-width="2.5"/>';
+    }
+    // 묶음 테 — per 칸마다
+    for (let b2 = 0; b2 < k; b2++){
+      const bx = X0 + cw*per*b2;
+      g += '<rect x="'+(bx+1.5)+'" y="'+(y-6)+'" width="'+(cw*per-3)+'" height="'+(H+12)+'" fill="none" stroke="var(--ink-soft)" stroke-width="2.5" stroke-dasharray="6 4" rx="9"/>';
+    }
+    g += '<text class="kor" x="'+(X0-14)+'" y="'+(y+H/2+8)+'" font-size="21" fill="var(--ink-soft)" text-anchor="end">'+esc(label||'')+'</text>';
+    const tx = X0 + cw*n + 16;
+    g += '<text x="'+tx+'" y="'+(y+H/2+9)+'" font-size="26" fill="'+(hide ? 'var(--emph)' : 'var(--ink)')+'">'
+       + (hide ? '?' : esc(String(n) + (o.unit || '')))+'</text>';
+  }
+  tape(YA, na, a, 'var(--coral)', o.la || '', o.ask === 'top');
+  tape(YB, nb, b, 'var(--teal)',  o.lb || '', o.ask === 'bot');
+  const HH = YB + H + 34;
+  g += '<text class="kor" x="'+(W/2)+'" y="'+(HH-6)+'" font-size="20" fill="var(--ink-soft)" text-anchor="middle">'
+     + esc('한 묶음은 ' + a + '칸과 ' + b + '칸 · 묶음 ' + k + '개') + '</text>';
+  return '<div class="rt-wrap" data-tape="'+a+','+b+','+k+'">'
+       + '<svg class="rt-svg" viewBox="0 0 '+W+' '+HH+'" xmlns="http://www.w3.org/2000/svg">'+g+'</svg>'
+       + (o.note ? '<div class="rt-note">'+esc(o.note)+'</div>' : '') + '</div>';
+}
+
+// ───── ratioChain : 비의 성질 사슬 ─────
+//   rows = [{a, b, op}]  op = 다음 줄로 가는 화살표 글자('×2'·'÷7'). 마지막 줄 op 는 무시.
+//   전항 줄과 후항 줄에 **같은 화살표**를 그려 「같은 수를 곱하거나 나눈다」를 보인다.
+//   o = { ask (마지막 줄 값을 ? 로 감춤) · bad:true (잘못된 길 — 붉은 테) · note }
+//   data-rchain="a1:b1|op1|a2:b2|op2|..."   ⚠️ 검증기가 op 를 실제로 적용해 다음 줄과 맞춘다.
+function ratioChain(rows, o){
+  o = o || {};
+  const n = rows.length;
+  const W = 700, X0 = 96, STEP = Math.min(190, (W - X0 - 90) / Math.max(1, n - 1));
+  const YT = 62, YB = 150;
+  let g = '';
+  rows.forEach(function(r, i){
+    const x = X0 + STEP * i;
+    const last = (i === n - 1);
+    const hide = last && o.ask;
+    const col = o.bad ? 'var(--emph)' : (last ? 'var(--teal-deep)' : 'var(--ink)');
+    g += '<text x="'+x+'" y="'+YT+'" font-size="30" fill="'+col+'" text-anchor="middle">'+(hide ? '?' : esc(String(r.a)))+'</text>';
+    g += '<text x="'+x+'" y="'+YB+'" font-size="30" fill="'+col+'" text-anchor="middle">'+(hide ? '?' : esc(String(r.b)))+'</text>';
+    g += '<text x="'+x+'" y="'+((YT+YB)/2+7)+'" font-size="24" fill="var(--ink-soft)" text-anchor="middle">：</text>';
+    if (!last){
+      const x2 = X0 + STEP * (i + 1), mid = (x + x2) / 2;
+      [[YT - 30, -1], [YB + 26, 1]].forEach(function(p){
+        const y = p[0];
+        g += '<path d="M'+(x+30)+' '+y+' L'+(x2-30)+' '+y+'" fill="none" stroke="var(--coral)" stroke-width="3"/>';
+        g += '<path d="M'+(x2-38)+' '+(y-6)+' L'+(x2-28)+' '+y+' L'+(x2-38)+' '+(y+6)+'" fill="none" stroke="var(--coral)" stroke-width="3"/>';
+        g += '<text x="'+mid+'" y="'+(y + p[1]*10 - (p[1] < 0 ? 0 : -18))+'" font-size="22" fill="var(--coral-deep)" text-anchor="middle">'+esc(r.op || '')+'</text>';
+      });
+    }
+  });
+  const data = rows.map(function(r, i){
+    return String(r.a) + ':' + String(r.b) + (i < n - 1 ? '|' + (r.op || '') + '|' : '');
+  }).join('');
+  return '<div class="rt-wrap'+(o.bad ? ' bad' : '')+'" data-rchain="'+esc(data)+'">'
+       + '<svg class="rt-svg" viewBox="0 0 '+W+' 200" xmlns="http://www.w3.org/2000/svg">'+g+'</svg>'
+       + (o.note ? '<div class="rt-note">'+esc(o.note)+'</div>' : '') + '</div>';
+}
+
+// ───── propEq : 비례식 카드 (단원 시그니처 ②) ─────
+//   a：b = c：d 를 그린다. **외항 = a·d (바깥 두 칸) / 내항 = b·c (안쪽 두 칸)**.
+//   o = { ask:'a'|'b'|'c'|'d' (그 칸을 □ 로 감춤) · mark:true (외항·내항 이음선)
+//         · mult:true (외항의 곱·내항의 곱을 아래에 적음 — ⛔ 문항 슬롯 금지)
+//         · bad:true (비례식이 아닌 식 — 붉은 테) · note }
+//   data-prop="a,b,c,d;ask=..;mult=1"
+function propEq(a, b, c, d, o){
+  o = o || {};
+  const W = 700, Y = 84;
+  const cells = [String(a), String(b), String(c), String(d)];
+  const xs = [136, 268, 432, 564];
+  let g = '';
+  cells.forEach(function(v, i){
+    const outer = (i === 0 || i === 3);
+    const hidden = o.ask === 'abcd'[i];
+    const col = o.bad ? 'var(--emph)' : (outer ? 'var(--coral-deep)' : 'var(--teal-deep)');
+    if (hidden){
+      g += '<rect x="'+(xs[i]-34)+'" y="'+(Y-44)+'" width="68" height="60" fill="var(--paper)" stroke="var(--line)" stroke-width="3" stroke-dasharray="7 5" rx="10"/>';
+      g += '<text x="'+xs[i]+'" y="'+Y+'" font-size="34" fill="var(--ink-soft)" text-anchor="middle">□</text>';
+    } else {
+      g += '<text x="'+xs[i]+'" y="'+Y+'" font-size="38" fill="'+col+'" text-anchor="middle">'+esc(v)+'</text>';
+    }
+  });
+  g += '<text x="202" y="'+Y+'" font-size="30" fill="var(--ink-soft)" text-anchor="middle">：</text>';
+  g += '<text x="498" y="'+Y+'" font-size="30" fill="var(--ink-soft)" text-anchor="middle">：</text>';
+  g += '<text x="350" y="'+Y+'" font-size="36" fill="'+(o.bad ? 'var(--emph)' : 'var(--ink)')+'" text-anchor="middle">=</text>';
+  let H = Y + 46;
+  if (o.mark){
+    g += '<path d="M136 '+(Y+22)+' Q 350 '+(Y+82)+' 564 '+(Y+22)+'" fill="none" stroke="var(--coral)" stroke-width="3"/>';
+    g += '<text class="kor" x="350" y="'+(Y+96)+'" font-size="20" fill="var(--coral-deep)" text-anchor="middle">외항</text>';
+    g += '<path d="M268 '+(Y-58)+' Q 350 '+(Y-96)+' 432 '+(Y-58)+'" fill="none" stroke="var(--teal)" stroke-width="3"/>';
+    g += '<text class="kor" x="350" y="'+(Y-102)+'" font-size="20" fill="var(--teal-deep)" text-anchor="middle">내항</text>';
+    H = Y + 116;
+  }
+  if (o.mult){
+    const y2 = H + 34;
+    g += '<text class="kor" x="180" y="'+y2+'" font-size="21" fill="var(--coral-deep)">'+esc('외항의 곱')+'</text>';
+    g += '<text x="330" y="'+y2+'" font-size="25" fill="var(--coral-deep)">'+esc(a+' × '+d+' = '+(Number(a)*Number(d)))+'</text>';
+    g += '<text class="kor" x="180" y="'+(y2+40)+'" font-size="21" fill="var(--teal-deep)">'+esc('내항의 곱')+'</text>';
+    g += '<text x="330" y="'+(y2+40)+'" font-size="25" fill="var(--teal-deep)">'+esc(b+' × '+c+' = '+(Number(b)*Number(c)))+'</text>';
+    H = y2 + 62;
+  }
+  const meta = a+','+b+','+c+','+d+(o.ask ? ';ask='+o.ask : '')+(o.mult ? ';mult=1' : '')+(o.bad ? ';bad=1' : '');
+  const top = o.mark ? 116 : 8;
+  return '<div class="rt-wrap" data-prop="'+esc(meta)+'">'
+       + '<svg class="rt-svg" viewBox="0 '+(o.mark ? -34 : 8)+' '+W+' '+(H - (o.mark ? -34 : 8))+'" xmlns="http://www.w3.org/2000/svg">'+g+'</svg>'
+       + (o.note ? '<div class="rt-note">'+esc(o.note)+'</div>' : '') + '</div>';
+}
+
+// ───── divideBar : 비례배분 막대 (단원 시그니처 ③) ─────
+//   전체를 (a+b)칸으로 갈라 앞 a칸·뒤 b칸을 색으로 나눈다. 각 몫 = total × a/(a+b).
+//   ⛔ 「전체를 항의 수로 나눔」(오개념 4) 을 막으려고 **칸 수 = a+b** 를 항상 그린다.
+//   o = { la, lb · unit · ask:'a'|'b'|'both' (몫 감춤 — data 에도 실어 하니스가 대조한다)
+//         · frac:true (분수 표기 함께)
+//         · bad:{a:..,b:..} (잘못 나눈 장면 — 붉은 테, 몫은 넘겨 준 값 그대로) · note }
+//   data-divbar="total,a,b"
+function divideBar(total, a, b, o){
+  o = o || {};
+  const n = a + b;
+  const W = 700, X0 = 60, BW = 580, Y = 62, H = 66;
+  const cw = BW / n;
+  const qa = o.bad ? o.bad.a : (total * a / n);
+  const qb = o.bad ? o.bad.b : (total * b / n);
+  let g = '';
+  for (let i = 0; i < n; i++){
+    g += '<rect x="'+(X0 + cw*i)+'" y="'+Y+'" width="'+cw+'" height="'+H+'" fill="'+(i < a ? 'var(--coral)' : 'var(--teal)')+'" opacity="0.78"/>';
+    g += '<line x1="'+(X0 + cw*i)+'" y1="'+Y+'" x2="'+(X0 + cw*i)+'" y2="'+(Y+H)+'" stroke="#fff" stroke-width="2.5"/>';
+  }
+  g += '<rect x="'+X0+'" y="'+Y+'" width="'+BW+'" height="'+H+'" fill="none" stroke="'+(o.bad ? 'var(--emph)' : 'var(--ink)')+'" stroke-width="3.5" rx="7"/>';
+  g += '<line x1="'+(X0 + cw*a)+'" y1="'+(Y-10)+'" x2="'+(X0 + cw*a)+'" y2="'+(Y+H+10)+'" stroke="'+(o.bad ? 'var(--emph)' : 'var(--ink)')+'" stroke-width="4"/>';
+  g += '<text class="kor" x="'+(X0 + BW/2)+'" y="'+(Y-22)+'" font-size="21" fill="var(--ink-soft)" text-anchor="middle">'
+     + esc('전체 ' + total + (o.unit || '') + ' 를 ' + n + '칸으로') + '</text>';
+  function leg(x, w, col, name, cnt, q, hide){
+    const cx = x + w/2, y2 = Y + H + 34;
+    g += '<text class="kor" x="'+cx+'" y="'+y2+'" font-size="20" fill="'+col+'" text-anchor="middle">'+esc((name||'') + ' ' + cnt + '칸')+'</text>';
+    if (o.frac)
+      g += '<text x="'+cx+'" y="'+(y2+32)+'" font-size="22" fill="'+col+'" text-anchor="middle">'+esc(total + ' × ' + cnt + '/' + n)+'</text>';
+    g += '<text x="'+cx+'" y="'+(y2 + (o.frac ? 68 : 36))+'" font-size="28" fill="'+(hide ? 'var(--emph)' : col)+'" text-anchor="middle">'
+       + (hide ? '?' : esc(String(q) + (o.unit || ''))) + '</text>';
+  }
+  const hideA = o.ask === 'a' || o.ask === 'both';
+  const hideB = o.ask === 'b' || o.ask === 'both';
+  leg(X0, cw*a, 'var(--coral-deep)', o.la, a, qa, hideA);
+  leg(X0 + cw*a, cw*b, 'var(--teal-deep)', o.lb, b, qb, hideB);
+  const HH = Y + H + (o.frac ? 116 : 84);
+  return '<div class="rt-wrap" data-divbar="'+total+','+a+','+b+(o.ask ? ';ask='+o.ask : '')+(o.bad ? ';bad=1' : '')+'">'
+       + '<svg class="rt-svg" viewBox="0 0 '+W+' '+HH+'" xmlns="http://www.w3.org/2000/svg">'+g+'</svg>'
+       + (o.note ? '<div class="rt-note">'+esc(o.note)+'</div>' : '') + '</div>';
+}
+
+// ───── ratioCard : 비 카드 (6-1 U4 승계) ─────
+function ratioCard(a, b, o){
+  o = o || {};
+  const front = o.ask === 'front' ? '<span class="rc-hide">?</span>' : '<span class="rc-a">'+esc(a)+'</span>';
+  const back  = o.ask === 'back'  ? '<span class="rc-hide">?</span>' : '<span class="rc-b">'+esc(b)+'</span>';
+  const note = o.note ? '<div class="rt-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="rt-wrap" data-ratio="'+esc(a)+':'+esc(b)+(o.ask ? ';ask='+o.ask : '')+'">'
+       + '<div class="rc-card">'
+       + '<div class="rc-expr">'+front+'<span class="rc-colon">：</span>'+back+'</div>'
+       + '<div class="rc-labels">'
+       + '<div class="rc-tag a"><span class="rc-t1">'+esc(o.la || '전항')+'</span><span class="rc-t2">앞의 수</span></div>'
+       + '<div class="rc-tag b"><span class="rc-t1">'+esc(o.lb || '후항')+'</span><span class="rc-t2">뒤의 수</span></div>'
+       + '</div></div>' + note + '</div>';
+}
+
+// ───── ruleCards : 규칙·설명 카드 줄 (U2·U3 승계) ─────
+function ruleCards(rows, o){
+  o = o || {};
+  const body = rows.map(function(r){
+    return '<div class="rl-card '+(r.cls || '')+'">'
+         + '<span class="rl-lead">'+esc(r.lead || '')+'</span>'
+         + '<span class="rl-body">'+(r.body || '')+'</span></div>';
+  }).join('');
+  return '<div class="rt-wrap"><div class="rl-cards">'+body+'</div>'
+       + (o.note ? '<div class="rt-note">'+esc(o.note)+'</div>' : '') + '</div>';
+}
+
+(function renderModels(){
+  document.getElementById('m-i2').innerHTML =
+    propEq(5,7,10,14,{mark:true});
+  document.getElementById('m-e1').innerHTML =
+    propEq(5,7,10,14,{mult:true});
+  document.getElementById('m-e2').innerHTML =
+    propEq(9,12,3,4,{mult:true});
+  document.getElementById('m-e3').innerHTML =
+    propEq(8,6,12,9,{mark:true,ask:'d'});
+  document.getElementById('m-e4').innerHTML =
+    ruleCards([{lead:'비례식',body:'두 비의 <b>비율</b>이 같다'},{lead:'그 결과',body:'외항의 곱 = 내항의 곱',cls:'final'},{lead:'확인 방법',body:'여러 비례식에서 곱을 구해 견주어 봐요'}]);
+  document.getElementById('m-q8').innerHTML =
+    propEq(5,7,10,14,{mark:true});
+  document.getElementById('m-q9').innerHTML =
+    ruleCards([{lead:'성질',body:'비례식에서 외항의 곱과 내항의 곱은 같아요'}]);
+  document.getElementById('m-q10').innerHTML =
+    propEq(10,8,15,12,{ask:'d'});
+  document.getElementById('m-q11').innerHTML =
+    propEq(3,11,6,22,{ask:'c'});
+  document.getElementById('m-q12').innerHTML =
+    propEq(4,100,1,25,{ask:'b'});
+  document.getElementById('m-q13').innerHTML =
+    propEq(14,8,21,12,{ask:'d'});
+  document.getElementById('m-q14').innerHTML =
+    propEq(21,28,3,7,{bad:true});
+  document.getElementById('m-q15').innerHTML =
+    propEq(4,5,'1.2','☆',{ask:'b'});
+})();
+
+function setupPad(qid, correct, padId, displayId, fbId, doneMsg, maxLen) {
+  maxLen = maxLen || 6;
+  const pad = document.getElementById(padId);
+  const display = document.getElementById(displayId);
+  const fb = document.getElementById(fbId);
+  let buf = '';
+  const keys = ['1','2','3','4','5','6','7','8','9','0'];
+  keys.forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'q-key'; b.textContent = k;
+    b.addEventListener('click', () => {
+      const st = getQState(qid); if (st.solved) return;
+      if (buf.length < maxLen) { buf += k; display.textContent = buf; }
+    });
+    pad.appendChild(b);
+  });
+  const del = document.createElement('button');
+  del.className = 'q-key fn'; del.textContent = '지움';
+  del.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    buf = buf.slice(0, -1); display.textContent = buf || '?';
+  });
+  pad.appendChild(del);
+  const ok = document.createElement('button');
+  ok.className = 'q-key fn'; ok.textContent = '확인'; ok.style.gridColumn = 'span 4';
+  ok.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    st.attempts++;
+    if (parseInt(buf, 10) === correct) {
+      st.solved = true;
+      const earn = pointsForQ(qid); addScore(earn);
+      fb.classList.remove('wrong');
+      fb.textContent = (doneMsg || '정답이에요!') + ' +' + earn + '점';
+      updateUI();
+    } else {
+      st.wrongCount++;
+      fb.classList.add('wrong'); fb.textContent = '다시 계산해 보자';
+    }
+  });
+  pad.appendChild(ok);
+}
+
+function setupMcq(qid, doneMsg){
+  document.querySelectorAll('#'+qid+'-opts .mcq-opt').forEach(o=>{
+    o.addEventListener('click', ()=>{
+      const st=getQState(qid); if(st.solved) return;
+      st.attempts++;
+      const fb=document.getElementById(qid+'-fb');
+      if(o.dataset.correct==='1'){
+        st.solved=true; o.classList.add('correct');
+        const earn=pointsForQ(qid); addScore(earn);
+        fb.classList.remove('wrong'); fb.textContent=(doneMsg||'정답이에요!')+' +'+earn+'점';
+        updateUI();
+      } else {
+        st.wrongCount++; o.classList.add('wrong');
+        fb.classList.add('wrong'); fb.textContent='다시 골라 보세요';
+        setTimeout(()=>o.classList.remove('wrong'),500);
+      }
+    });
+  });
+}
+
+setupPad('q8', 70, 'q8-pad','q8-display','q8-fb','맞아요! 5×14 = 70 이에요', 6);
+setupMcq('q9','맞아요! 두 곱이 모두 20 이에요');
+setupPad('q10', 12, 'q10-pad','q10-display','q10-fb','맞아요! □ = 12 예요', 6);
+setupMcq('q11','맞아요! □ = 6 이에요');
+setupPad('q12', 100, 'q12-pad','q12-display','q12-fb','맞아요! □ = 100 이에요', 6);
+setupMcq('q13','맞아요! 두 곱은 언제나 같아요');
+setupPad('q14', 147, 'q14-pad','q14-display','q14-fb','맞아요! 147 이에요 (내항의 곱 84와 달라요)', 6);
+setupMcq('q15','맞아요! ★ = 5 예요');
+
+
+// ───── 슬17 자기 평가 ─────
+document.querySelectorAll('.self-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.self-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('self-fb').textContent = '응답이 기록됐어요. 다음 차시에서 만나요!';
+  });
+});
+
+// ───── 진도 복원 ─────
+(function restore() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data.cur != null) cur = Math.min(data.cur, TOTAL - 1);
+    if (data.score != null) score = data.score;
+    document.getElementById('score').textContent = '⭐ ' + score;
+  } catch(e) {}
+})();
+
+(function buildDots(){ const w=document.getElementById('dots'); for(let i=0;i<TOTAL;i++){ const d=document.createElement('div'); d.className='ka-dot'; d.onclick=()=>{ cur=i; saveProgress(false); updateUI(); }; w.appendChild(d); } })();
+
+updateUI();
+</script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit.js"></script>
+</body>
+</html>
