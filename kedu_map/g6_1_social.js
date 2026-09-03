@@ -298,14 +298,14 @@ window.KEDU_MAP["g6_1_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u3_l02",
+     "lessonId": "g6_social_u3_l02_v1",
      "n": "2",
      "title": "디지털 영상 지도를 살펴볼까요 / [디지털+ 할 수 있어요] 디지털 영상 지도로 세계의 모습 살펴보기",
      "sub": "① 세계를 표현하는 다양한 자료",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/social/3단원_지구대륙그리고국가들/g6_social_u3_l02_적어야남아요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
