@@ -338,14 +338,14 @@ window.KEDU_MAP["g6_1_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u3_l06",
+     "lessonId": "g6_social_u3_l06_v1",
      "n": "6",
      "title": "아시아와 오세아니아의 여러 나라를 살펴볼까요 / [별별 직업] 외교관",
      "sub": "② 세계 여러 국가의 위치와 영토 모습",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/social/3단원_지구대륙그리고국가들/g6_social_u3_l06_손에남아요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
