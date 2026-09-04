@@ -107,5 +107,29 @@ T('T9 tplsvg 로 푼 텍스트 선택 → 크기·위치 입력', () => {
   return q('[data-ws-tsize]') && q('[data-ws-num="x"]') ? true : '입력 없음';
 });
 
+console.log('--- ④ 글꼴 미리보기 버튼 ---');
+T('T10 글꼴 버튼 — 각 칸이 자기 글꼴로 내 글자를 그리고, 누르면 el.font', () => {
+  WSS().sceneIdx = 0; w.PG.go('workspace');
+  const n = select('.ws-el.text[data-ws-el]'); if (!n) return '텍스트 없음';
+  const i = +n.dataset.wsEl; const el = model(i);
+  const bs = [...w.document.querySelectorAll('[data-ws-tfontb]')]; if (bs.length < 5) return '버튼 ' + bs.length;
+  const jua = bs.find((b) => b.dataset.wsTfontb === 'Jua'); if (!jua) return '주아 없음';
+  if (!/Jua/.test(jua.querySelector('span').getAttribute('style'))) return '칸이 자기 글꼴로 안 그림';
+  const sample = (el.text || '').trim().slice(0, 10);
+  if (sample && !jua.querySelector('span').textContent.startsWith(sample.slice(0, 4))) return '내 글자가 아님: ' + jua.querySelector('span').textContent;
+  jua.click();
+  const el2 = model(i); if (el2.font !== 'Jua') return 'font=' + el2.font;
+  const on = w.document.querySelector('[data-ws-tfontb].on'); return on && on.dataset.wsTfontb === 'Jua' ? true : '선택 표시 없음';
+});
+T('T11 hover 는 문서를 안 건드리고 캔버스 DOM 만 잠시', () => {
+  const n = select('.ws-el.text[data-ws-el]'); const i = +n.dataset.wsEl;
+  const b = w.document.querySelector('[data-ws-tfontb="Gaegu"]'); if (!b) return '없음';
+  b.dispatchEvent(new w.Event('mouseenter'));
+  const dom2 = q(`.ws-el[data-ws-el="${i}"]`); if (!/Gaegu/.test(dom2.style.fontFamily)) return '미리보기 안 입힘';
+  if (model(i).font === 'Gaegu') return 'hover 가 문서를 바꿈';
+  b.dispatchEvent(new w.Event('mouseleave'));
+  return /Gaegu/.test(dom2.style.fontFamily) ? '되돌리기 안 됨' : true;
+});
+
 console.log(`\n${fail ? '❌' : '✅'} R138  ${pass} passed · ${fail} failed`);
 process.exit(fail ? 1 : 0);

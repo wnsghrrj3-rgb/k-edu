@@ -484,7 +484,12 @@
               (st2.shadow && st2.shadow.color ? `text-shadow:${st2.shadow.x || 0}em ${st2.shadow.y || 0}em ${(st2.shadow.blur || 0) / 2}em ${st2.shadow.color};` : '');
             return `<button class="cx-tsp" data-ws-tsp="${p.id}" title="${m.esc(p.hint)}"><span style="${prev}">가나</span><small>${m.esc(p.name)}</small></button>`;
           }).join('');
-          const fonts = TS.FONTS.map((f2) => `<option value="${f2.family}"${el.font === f2.family || (!el.font && f2.family === 'Pretendard') ? ' selected' : ''}>${m.esc(f2.name)}</option>`).join('');
+          /* R136 — 글꼴은 이름이 아니라 그 글꼴로 그린 내 글자로 고른다. 올리면 캔버스 미리보기, 누르면 확정 */
+          const sample = (el.text || '').replace(/\s+/g, ' ').trim().slice(0, 10) || '가나다 Abc';
+          const fonts = TS.FONTS.map((f2) => {
+            const on = el.font === f2.family || (!el.font && f2.family === 'Pretendard');
+            return `<button class="cx-fontb${on ? ' on' : ''}" data-ws-tfontb="${f2.family}" title="${m.esc(f2.name)}"><span style="font-family:'${f2.family}',sans-serif">${m.esc(sample)}</span><small>${m.esc(f2.name.split(' — ')[0].replace(' (기본)', ''))}</small></button>`;
+          }).join('');
           const cols = TS.COLORS.map((c2) => `<button class="cx-swb${el.color === c2 ? ' on' : ''}" data-ws-tcol="${c2}" style="background:${c2}"></button>`).join('');
           const bgs = TS.BGS.map((b2, bi) => b2 === null
             ? `<button class="cx-swb none${!el.bg ? ' on' : ''}" data-ws-tbg="none" title="배경 없음">∅</button>`
@@ -492,7 +497,7 @@
           const alignBtn = (a2, ic) => `<button class="cx-alb${(el.align || 'left') === a2 ? ' on' : ''}" data-ws-tal="${a2}">${ic}</button>`;
           styleCtl =
             `<label class="cx-field"><span>스타일</span></label><div class="cx-tsps">${presets}</div>` +
-            `<label class="cx-field"><span>글꼴</span><select data-ws-tfont>${fonts}</select></label>` +
+            `<label class="cx-field"><span>글꼴 — 올리면 미리보기</span></label><div class="cx-fonts">${fonts}</div>` +
             `<label class="cx-field"><span>글자색</span></label><div class="cx-sws">${cols}</div>` +
             `<label class="cx-field"><span>배경</span></label><div class="cx-sws">${bgs}</div>` +
             `<label class="cx-field"><span>정렬</span></label><div class="cx-als">${alignBtn('left', '⯇')}${alignBtn('center', '≡')}${alignBtn('right', '⯈')}</div>` +
@@ -1391,6 +1396,19 @@
         root.querySelectorAll('[data-ws-tsp]').forEach((b) => b.onclick = () => {
           const el = selEl(); if (!el || el.kind !== 'text') return;
           snap(); TS.applyPreset(el, b.dataset.wsTsp); R();
+        });
+        /* R136 — 글꼴 버튼: hover = 캔버스 글자에 잠시 입혀 보기(문서 무변형), click = 확정 */
+        root.querySelectorAll('[data-ws-tfontb]').forEach((fb) => {
+          const fam = fb.dataset.wsTfontb;
+          const dom = () => root.querySelector(`[data-ws-el="${WS.sel && WS.sel.idx}"]`);
+          fb.onmouseenter = () => { const d2 = dom(); if (d2) { d2.dataset.wsFontPrev = d2.style.fontFamily || ''; d2.style.fontFamily = `'${fam}', sans-serif`; } };
+          fb.onmouseleave = () => { const d2 = dom(); if (d2 && d2.dataset.wsFontPrev != null) { d2.style.fontFamily = d2.dataset.wsFontPrev; delete d2.dataset.wsFontPrev; } };
+          fb.onclick = () => {
+            const el = selEl(); if (!el || el.kind !== 'text') return;
+            snap();
+            if (fam === 'Pretendard') delete el.font; else el.font = fam;
+            R();
+          };
         });
         const fsel = root.querySelector('[data-ws-tfont]');
         if (fsel) fsel.onchange = () => {
