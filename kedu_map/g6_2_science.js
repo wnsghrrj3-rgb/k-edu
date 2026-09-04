@@ -119,6 +119,16 @@ window.KEDU_MAP["g6_2_science"] = {
      "url": "/grade6/semester2/science/2단원_물질의연소/g6_sci_u2_l01_열려라과학.html",
      "track": "tb",
      "ready": true
+    },
+    {
+     "key": "g6_science_u2_l02",
+     "lessonId": "g6_s2_sci_u2_l02_v1",
+     "n": "2",
+     "title": "서로 다른 물질을 섞으면 어떻게 될까?",
+     "sub": null,
+     "url": "/grade6/semester2/science/2단원_물질의연소/g6_sci_u2_l02_물질섞기.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }
