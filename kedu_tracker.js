@@ -64,6 +64,18 @@
       mark('client');
       var path = location.pathname;
 
+      // --- 이어서 하기 발자국 (2026-09-04, 이 기기 안·localStorage) ---
+      // 자기주도 차시 화면이 열리면 학년·학기·과목별 「마지막 차시」를 남긴다.
+      // 홈 과목 화면과 단원 목록이 이걸 읽어 「▶ 이어서 하기 — 다음 차시」 카드를 띄운다(kedu_next.js).
+      // 개인식별 없음·서버 전송 없음. 서버 동기는 나중 몫(kedu_resume 와 같은 순서: 먼저 기기 안).
+      try {
+        var lm = path.match(/^\/grade([1-6])\/semester([12])\/([a-z]+)\/(.+\.html)$/);
+        if(lm && lm[4] !== 'index.html'){
+          localStorage.setItem('kedu_last:'+lm[1]+'_'+lm[2]+'_'+lm[3], JSON.stringify({
+            file: decodeURIComponent(lm[4]), title: (document.title||'').replace(/\s*[·|—-]\s*(K-edu|케이에듀).*$/,'').trim(), at: Date.now() }));
+        }
+      } catch(e){}
+
       // --- 방문 집계 (익명, 개인식별 없음) ---
       // page_visits: page_path + 임의 세션ID만 기록. 사용자 정보 저장 X.
       // 로그인 여부와 무관하게 동작 (관리자 대시보드 방문 통계용).

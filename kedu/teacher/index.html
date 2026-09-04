@@ -133,6 +133,11 @@ main{flex:1; width:100%; max-width:880px; margin:0 auto; padding:44px 24px 56px;
 }
 .subject-card.ready{cursor:pointer;}
 .subject-card.ready:hover{border-color:var(--c-accent); transform:translateY(-2px); box-shadow:var(--c-shadow-md);}
+.sem-toggle{display:inline-flex;border:1px solid var(--c-line,#ddd);border-radius:999px;background:#fff;padding:3px;gap:2px;margin-bottom:14px}
+.sem-toggle button{border:0;background:transparent;border-radius:999px;padding:6px 16px;font-family:'Gowun Dodum',sans-serif;font-weight:700;font-size:14px;color:var(--c-text-mute,#777);cursor:pointer}
+.sem-toggle button.on{background:var(--c-accent,#1f2933);color:#fff}
+body.kt3 .sem-toggle{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12)}
+body.kt3 .sem-toggle button.on{color:#0c1622}
 .subject-card.disabled{background:var(--c-line-soft); cursor:not-allowed; box-shadow:none;}
 .subject-card .sc-ic{
   width:46px; height:46px; border-radius:10px; flex-shrink:0;
@@ -226,7 +231,14 @@ body.kt3 .subject-card.ready .sc-status{background:var(--c-accent); color:#0c162
       <span class="sep">›</span><span class="cur" id="bc-grade">1학년</span>
     </div>
 
-    <div class="grade-badge"><span class="b-num" id="badge-num">1</span><span>학년 수업</span></div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div class="grade-badge"><span class="b-num" id="badge-num">1</span><span>학년 수업</span></div>
+      <!-- 학기 토글 (2026-09-04) — 자기주도 홈과 같은 자리·같은 저장 키(kedu_semester). 2학기 실물은 아직 없어 잠금 표시. -->
+      <div class="sem-toggle" id="sem-toggle" role="radiogroup" aria-label="학기">
+        <button type="button" data-sem="1" onclick="setSemester(1)">1학기</button>
+        <button type="button" data-sem="2" onclick="setSemester(2)">2학기</button>
+      </div>
+    </div>
     <div class="ptitle">어떤 <span class="ac">과목</span>을 수업할까요?</div>
     <div class="psub">준비된 과목은 차시 목록으로 바로 들어갑니다. 준비 중인 과목은 곧 추가됩니다.</div>
 
@@ -267,6 +279,9 @@ const SUB_HIGH = [
 
 let curGrade = null;
 let onSubject = false;
+/* 학기 — 자기주도 홈과 같은 키를 쓴다. 저장값이 없으면 오늘 날짜로(3~7월 1학기, 8~2월 2학기). */
+let curSemester = (function(){ const v = +localStorage.getItem('kedu_semester'); if(v===1||v===2) return v; const m = new Date().getMonth()+1; return (m>=3&&m<=7)?1:2; })();
+function setSemester(s){ curSemester = +s; localStorage.setItem('kedu_semester', s); if(curGrade) pickGrade(curGrade, true); }
 
 // ----- 학년 그리드 렌더 -----
 (function renderGrades(){
@@ -293,10 +308,11 @@ window.addEventListener("popstate", function(){
 });
 
 // ----- 학년 선택 → 과목 화면 -----
-function pickGrade(g){
+function pickGrade(g, rerender){
   curGrade = g;
   document.getElementById("bc-grade").textContent = g + "학년";
   document.getElementById("badge-num").textContent = g;
+  document.querySelectorAll('#sem-toggle button').forEach(b => b.classList.toggle('on', +b.dataset.sem === curSemester));
 
   const subs = (g <= 2) ? SUB_LOW : SUB_HIGH;
   const grid = document.getElementById("subject-grid");
@@ -304,7 +320,8 @@ function pickGrade(g){
 
   subs.forEach(sub => {
     const key = g + "_" + sub.id;
-    const info = READY[key];
+    // 케이티처 실물은 지금 1학기뿐 — 2학기는 학년·과목을 가리지 않고 「준비 중」으로 잠근다.
+    const info = curSemester === 1 ? READY[key] : null;
     const ready = !!info;
 
     const card = document.createElement("div");
@@ -312,7 +329,7 @@ function pickGrade(g){
 
     const meta = ready
       ? `${info.units}개 단원 · ${info.lessons}차시`
-      : "준비 중인 과목이에요";
+      : (curSemester === 2 ? "2학기 수업은 준비 중이에요" : "준비 중인 과목이에요");
 
     card.innerHTML = `
       <div class="sc-ic">${sub.i}</div>
@@ -326,6 +343,7 @@ function pickGrade(g){
     grid.appendChild(card);
   });
 
+  if(rerender) return;   // 학기만 바꾼 경우 — 화면·이력은 그대로
   show("s-subject");
   onSubject = true;
   try { history.pushState({ kt: 'subject' }, ''); } catch(e) {}
