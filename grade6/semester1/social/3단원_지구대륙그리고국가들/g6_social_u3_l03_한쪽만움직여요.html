@@ -1,0 +1,1070 @@
+<!--
+K-edu 사회 6-1 · 3단원 지구, 대륙 그리고 국가들 · 주제① 세계를 표현하는 다양한 자료 · 3차시(l03)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [6사09-01] · 교과서 p.130~133 · 지도서(대단원3 **5~6차시** 「위도와 경도를 알아볼까요」,
+  지도서 p.290~293) 근거.
+학습 목표: 위도와 경도를 설명할 수 있다.
+수업 기법 및 전략: 개념 파악하기 · 미디어 분석하기
+META = "3단원 지구, 대륙 그리고 국가들 · 주제① 세계를 표현하는 다양한 자료"
+⚠️ 엔진은 대단원1·2와 3단원 l01·l02에서 100% 승계. **3단원 색 #047857** 승계(변수명 유지 · 엔진 무수정).
+
+⚠️ 파일명을 `한쪽만움직여요`로 지었다(배선 예외 대신). l02가 「위도」·「경도」를 **개수 ≤2**로,
+   적도·본초 자오선·시차·북반구·남반구·일사량·대륙 이름·나라 이름·「대양」·「영토」를 **개수 0**으로
+   재고 있어서 파일명에 그 낱말이 들어가면 재배선이 곧바로 그 가드를 건드린다. 겹치지 않는 이름을
+   골라 예외를 만들지 않았다(u2 l05 `나랏일` ~ u3 l02 `적어야남아요` 선례 승계).
+
+직접조작: 따로 도는 두 잣대의 판 · 한쪽으로 옮기면 한 잣대만 움직이고 다른 잣대는 미동도 하지 않는 형
+         (64번째 신규 패턴)
+  ⭐ 앞의 예순세 종에서 **판이 재는 잣대는 언제나 하나로 이어져 있었다.** 43번째(기우는 판)에서 한쪽이
+     커질 때 다른 쪽이 줄어든 것도 **두 자리가 한 잣대로 묶여 있었기** 때문이고, 44번째(빛과 그늘이 함께
+     자라는 판)에서 두 자리가 함께 오른 것도 **한 걸음이 두 자리를 함께 만들었기** 때문이며,
+     63번째(배율을 옮기는 판)에서 배율을 옮기면 **판이 통째로 달라졌다.** 어느 판에서도 **한 걸음이
+     판의 한쪽에 닿고 다른 쪽에는 아예 닿지 않은 적이 없다.**
+  ⭐ 이번만 **판에 서로 만나지 않는 두 잣대가 있다.** 남북으로 옮기면 **햇볕 칸만** 달라지고 시각 칸은
+     글자 하나 달라지지 않는다. 동서로 옮기면 **시각 칸만** 달라지고 햇볕 칸은 글자 하나 달라지지
+     않는다. 근거는 교과서 131쪽 본문이 「지구는 둥글어서 **위도에 따라** 햇볕을 받는 양이 다릅니다」라
+     했고, 133쪽 본문이 「**경도에 따라** 시각이 달라져 시차가 발생합니다」라 했다는 것이다.
+  ⭐ **58번째(되돌려도 함께 되돌아오지 않는 판)와의 대비** — 거기서는 판의 한쪽만 되돌아왔지만
+     되돌리는 걸음은 **판 전체를 겨눈 한 걸음**이었다. 여기서는 걸음 자체가 **두 갈래로 갈려 있고**
+     각 걸음이 닿는 자리가 처음부터 다르다.
+  ⭐ **적도에서 떨어진 만큼이 같으면 햇볕 칸도 같다** — 북위 30°와 남위 30°의 햇볕 칸이 글자까지
+     같다(`mvBand`가 적도에서 떨어진 만큼만 센다). 그래서 「북쪽이 언제나 춥다」는 오개념이 **판에서
+     직접 무너진다.**
+  ⭐ **햇볕을 정하는 자리와 시각을 정하는 자리가 코드에 한 줄씩뿐이다** — `mvSun(st)` 한 줄이
+     `st.mvLat`만 읽고, `mvTime(st)` 한 줄이 `st.mvLon`만 읽는다. **`MV_SUN[`·`MV_TIME[`를 읽는 자리도
+     각각 그 한 줄뿐**이고, 남북 처리기 본문에 `mvLon`이 0, 동서 처리기 본문에 `mvLat`이 0이다.
+  ⭐ **판은 한 번에 한 축만 연다** — 남북 단계에서는 동서 단추가 화면에 없고, 동서 단계에서는 남북
+     단추가 화면에 없다. 두 잣대가 따로 돈다는 것이 화면 구조로도 드러난다.
+  ⭐ **옮기는 자리에 옳고 그름이 없다**(`MV_MOVE_OK` 부재 · 무판정 · 감점 0).
+  ① **남북으로 옮기기**(위선 일곱 · 햇볕 갈래 넷 가운데 **셋 이상**을 겪어야 다음이 열린다 ·
+     ★ 옮길 때마다 햇볕 칸이 달라지고 **시각 칸은 미동도 하지 않는다**)
+  ② **동서로 옮기기**(경선 다섯 · 서경 쪽·본초 자오선·동경 쪽 **세 갈래를 다 겪어야** 열린다 ·
+     ★ 옮길 때마다 시각 칸이 달라지고 **햇볕 칸은 미동도 하지 않는다**)
+  ③ **판 읽기 3택**(★ 남북으로 옮겼을 때 시각 칸이 왜 그대로였는지 **학생이 판을 읽어 낸다**)
+  ④ 마무리 3택 = 지도서 「5~6차시 주요 내용 정리」 원문
+  ⚠️ 위선·경선·햇볕 칸·시각 칸·안내 전량 고정 리터럴 — 난수 0.
+  ⚠️ 가드 9종: ① 마무리 확정 후 전체 잠금 / ② 무효 번호(`Number.isInteger`·범위) /
+     ③ 판 끝을 넘어가는 이동 무시 — 판 불변 · 안내는 「여기가 판의 끝이에요」까지만 /
+     ④ 햇볕 갈래 셋을 겪기 전 「동서로 옮기기」 무시(순서) — 판 불변 /
+     ⑤ **지금 열려 있지 않은 축으로 옮기기 무시 — 판 불변**(핵심 가드 · 한 번에 한 축) /
+     ⑥ 경도 갈래 셋을 겪기 전 판 읽기 무시(순서) — 판 불변 /
+     ⑦ 판 읽기를 마친 뒤 다시 읽기 무시 — 판 불변 /
+     ⑧ 판을 읽기 전 마무리 무시(순서) — 판 불변 /
+     ⑨ 안내 표시 중 재클릭 무시(`mvBusy`).
+     재시도 허용(감점 없음), 조작에 점수 0. 발문은 `.mv-q`로 떼어 전 단계 상시 노출. 상태 열쇠 13개.
+
+⚠️ 정직 원칙 네 곳
+  ㉠ **판의 자리는 실제 나라·도시의 이름을 옮기지 않고 위도·경도의 이름으로만 둔다** — 나라와 대륙의
+     이름은 **뒤 차시** 몫이다(캔버스 캡션 명시).
+  ㉡ **판의 그림은 지구본과 세계지도에 그려 놓은 선을 나타낸 도식이지 실제 지도가 아니다**(캡션).
+  ㉢ **위도대에 해당하는 나라를 찾는 활동과 경도별로 나라를 나누는 활동은 교실 몫이다** — 화면이
+     다루는 자리는 **한쪽으로 옮기면 무엇이 달라지고 무엇이 달라지지 않는가**까지다(완료 카드 명시).
+  ㉣ **판의 시각 칸은 시각이 같은지 다른지까지만 말하고 몇 시인지는 말하지 않는다** — 나라마다
+     기준이 되는 경선을 정해 그 경선의 시각을 쓰기 때문이다(교과서 133쪽 본문 원문).
+
+⚠️ 설계 원칙
+  · **7차시 침범 0** — 「위치를 표현」 0 · 「위치 표현」 0(위도와 경도로 위치를 나타내는 일은 7차시 몫이라
+    판이 두 이름을 **따로따로** 보여 줄 뿐 하나로 묶지 않는다).
+  · **8차시 이후 침범 0** — **대륙 이름 0 · 대양 이름 0 · 나라 이름 0 · 도시 이름 0** · 「대양」 0 ·
+    「영토」 0 · 「대륙」은 단원명 자리까지 ≤2.
+  · **l01·l02 재현 최소** — 「지구본」·「세계지도」는 교과서 130쪽 [동기 유발]·본문 원문 자리까지 각 ≤6 ·
+    「디지털 영상 지도」는 되짚기 한 자리까지 ≤2 · 두 자료의 좋은 점·아쉬운 점을 다시 가르치지 않는다.
+  · **대단원1·2 재현 0**(선거·국회·행정부·법원·권력 분립·미디어·평화 통일·민주화·산업화·헌법·인권 전부 0).
+  · **정치적 중립** — 실제 나라·정부·기관·상표·누리집·신문사·천문대 이름 0.
+  · 교사용 참고 자료 0(참고 도서 · 지리 위도·천문 위도·지심 위도 · 도·분·초 · 국제 자오선 회의 ·
+    평행선·법선·적도면 · 크리스마스 풍경 · 신문 기사와 두 도시의 시각 · 여러 도시의 시각표 ·
+    활동 자료 번호·쪽수 · 평가 계획).
+  · **파일 전체에 네 자리 연도 0 · 시각 수치 0 · 거리 수치 0 · 쪽수 0 · 금액 0 · 비율 0**
+    (CSS·`\u` 이스케이프 밖 스코프 — **각도는 이 차시의 학습 내용이라 쓴다**).
+  · 정서 — **어느 위도도 어느 경도도 더 좋은 자리로 그리지 않는다**(햇볕이 적게 드는 자리를 모자란
+    자리로 쓰지 않는다) · 사람 형상 대신 칸과 선으로만 그린다 ·
+    **학생 이름 0 · 실제 지역 이름 0 · 유명인 0.**
+
+⚠️ goNextLesson = 허브 복귀(3단원 4차시 미양산 — 양산 시 재배선).
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g6_social_u3_l03_v1">
+<title>위도와 경도를 알아볼까요 · 지구, 대륙 그리고 국가들 · 사회 6-1</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#047857; --green-d:#065F46; --cyan:#0D9488;
+  --bg:#ECFDF5; --bub:#D1FAE5; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#B45309; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-shrink:0}
+.ka-lb{background:#F1F5F9;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;
+  font-weight:700;color:var(--muted);font-size:clamp(11px,1.9vw,13px);display:flex;align-items:center;gap:6px}
+.ka-lb svg{width:14px;height:14px}
+.ka-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.ka-bar>div{height:100%;background:var(--green);border-radius:99px;transition:width .35s ease;width:5%}
+.ka-pg{font-size:clamp(11px,1.9vw,13px);color:var(--muted);font-weight:700;min-width:46px;text-align:right}
+.ka-sc{display:flex;align-items:center;gap:3px;background:var(--amber-bg);border-radius:99px;padding:5px 11px}
+.ka-sc svg{width:15px;height:15px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;color:var(--amber);font-size:clamp(14px,2.4vw,17px)}
+.ka-sc-u{font-size:11px;color:var(--amber);font-weight:700}
+
+/* 메인 */
+.ka-m{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;padding:4px 2px}
+.ka-tags{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ka-bg{display:inline-flex;align-items:center;gap:5px;background:var(--bub);color:var(--green-d);
+  border-radius:99px;padding:5px 12px;font-size:clamp(11px,1.9vw,13px);font-weight:700}
+.ka-bg svg{width:13px;height:13px}
+.ka-bg.s2{background:#E0F2FE;color:#075985}
+.ka-bg.s3{background:#DCFCE7;color:#166534}
+.ka-bg.s4{background:#FEF3C7;color:#92400E}
+.ka-bg.s5{background:#F3E8FF;color:#6B21A8}
+.ka-meta{font-size:clamp(10px,1.7vw,12px);color:#94A3B8;font-weight:600}
+.ka-t{font-size:clamp(19px,3.4vw,27px);font-weight:700;line-height:1.4;margin-bottom:10px}
+.ka-bub{background:var(--bub);border-radius:14px;padding:13px 18px;font-size:clamp(14px,2.4vw,18px);
+  line-height:1.7;margin-bottom:12px}
+.ka-emph{color:var(--green-d);font-weight:700}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.scene.wide{width:clamp(240px,44vw,420px)}
+.scene.wide svg{height:clamp(120px,20vw,200px)}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(15px,2.6vw,20px);font-weight:700;line-height:1.6;margin-bottom:12px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+.opt{background:#fff;border:2px solid var(--line);border-radius:13px;padding:13px 15px;cursor:pointer;
+  font-family:inherit;font-size:clamp(13px,2.2vw,16.5px);font-weight:500;text-align:left;line-height:1.5;transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:#16A34A;background:#DCFCE7;font-weight:700}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:11px;border-radius:12px;padding:12px 16px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;animation:fadeUp .3s ease both}
+.fb.ok{background:#DCFCE7;color:#166534;font-weight:700}
+.hint{margin-top:9px;background:var(--amber-bg);border-radius:11px;padding:10px 14px;
+  font-size:clamp(12.5px,2.1vw,15px);color:var(--amber);line-height:1.55}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:9px;width:100%;max-width:660px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFC;border-radius:12px;padding:11px 15px;
+  font-size:clamp(13px,2.2vw,16.5px);line-height:1.6}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'\2713';color:#fff;font-weight:800;font-size:14px}
+
+/* 직접조작 — 같은 물음의 답이 자료마다 갈리는 판 */
+.dw-wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dw-body{display:grid;grid-template-columns:1.05fr 1fr;gap:10px;align-items:start}
+.dw-canvas{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.dw-canvas svg{width:100%;height:auto;display:block}
+.dw-canvas .cvcap{padding:5px 6px;text-align:center;font-size:clamp(9.5px,1.6vw,11.5px);
+  color:var(--muted);font-weight:700;background:#F8FAFC}
+.dw-right{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dw-step{font-size:clamp(10.5px,1.75vw,13px);font-weight:800;color:var(--green)}
+.dw-msg{background:#F8FAFC;border:2px solid var(--line);border-left:4px solid var(--green);border-radius:10px;
+  padding:8px 12px;font-size:clamp(11.4px,1.93vw,13.8px);line-height:1.55;color:#334155;animation:fadeUp .3s ease both}
+.dw-msg.warn{border-left-color:var(--amber)}
+.dw-msg b{color:var(--green)}
+.dw-card{background:#fff;border:2px solid var(--amber);border-radius:12px;padding:10px 12px;
+  font-size:clamp(12px,2.05vw,14.5px);line-height:1.55;animation:pop .35s ease both}
+.dw-card .pt{font-weight:800;color:var(--amber);margin-bottom:4px;font-size:clamp(12.5px,2.15vw,15px)}
+.mv-q{font-size:clamp(11.6px,1.97vw,14px);font-weight:800;color:var(--green);
+  background:#ECFDF5;border-left:4px solid var(--green);border-radius:0 8px 8px 0;padding:6px 9px;line-height:1.45}
+.mv-pad{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}
+.mv-pad button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;padding:9px 4px;
+  cursor:pointer;font-family:inherit;font-weight:800;font-size:clamp(10px,1.7vw,12.4px);line-height:1.35}
+.mv-pad button:hover{background:var(--bub)}
+.mv-pad button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.mv-pad .sp{visibility:hidden}
+.mv-go{display:flex;flex-direction:column;gap:5px}
+.mv-go button{border:2px solid var(--green);background:#D1FAE5;color:var(--green-d);border-radius:10px;padding:8px 10px;
+  cursor:pointer;font-family:inherit;font-weight:800;font-size:clamp(10.5px,1.8vw,13px);line-height:1.45}
+.mv-go button:hover{background:#A7F3D0}
+.mv-go button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.mv-read{display:flex;flex-direction:column;gap:5px}
+.mv-read button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;padding:7px 10px;
+  cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.mv-read button:hover{background:var(--bub)}
+.mv-read button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.mv-fin{display:flex;flex-direction:column;gap:5px}
+.mv-fin button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;padding:7px 10px;
+  cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.mv-fin button:hover{background:var(--bub)}
+.mv-fin button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.mv-note{background:#F8FAFC;border:2px dashed #CBD5E0;border-radius:10px;padding:7px 10px;
+  font-size:clamp(10.4px,1.76vw,12.4px);line-height:1.5;color:#64748B}
+.mv-seen{display:flex;flex-direction:column;gap:4px;max-height:150px;overflow:auto}
+.mv-seen .row{border:2px solid var(--line);border-radius:9px;padding:5px 8px;background:#F8FAFC;
+  font-size:clamp(9.8px,1.66vw,11.6px);font-weight:700;color:#94A3B8;line-height:1.4}
+.mv-seen .row.on{border-color:var(--green);background:#ECFDF5;color:var(--green-d)}
+.paper{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:12px;padding:12px 16px;
+  font-size:clamp(12.5px,2.1vw,15px);line-height:1.65;color:#3F3A2C;max-width:660px;
+  animation:fadeUp .4s ease both}
+.paper .ph{font-weight:800;color:#8A6D3B;margin-bottom:6px;font-size:clamp(13px,2.2vw,16px)}
+.tipbox{background:#D1FAE5;border-radius:12px;padding:11px 16px;font-size:clamp(12.5px,2.1vw,15px);
+  line-height:1.6;color:#7C2D12;max-width:660px}
+@media(max-width:620px){ .dw-body{grid-template-columns:1fr} }
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(4,120,87,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style>
+<script src="/kedu_gate.js"></script>
+</head>
+
+
+
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#B45309"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식 =====
+   ⚠️ 정직 원칙: 모든 그림은 내용을 나타낸 도식이며 실제 지구본·세계지도·사진이 아니다.
+   ⚠️ 대륙 이름·대양 이름·나라 이름·도시 이름 0 — 뒤 차시 몫이라 선과 칸으로만 그린다.
+   ⚠️ 사람 형상 대신 칸과 선으로만 그린다. */
+const SVG = {
+  // 1 들어가기 — [동기 유발] 지구본·세계지도의 가로선과 세로선
+  open:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#ECFDF5"/>
+    <text x="160" y="19" font-size="11" fill="#065F46" text-anchor="middle" font-weight="800">가로선과 세로선이 보이나요?</text>
+    <rect x="20" y="32" width="122" height="118" rx="10" fill="#fff" stroke="#047857" stroke-width="1.8"/>
+    <text x="81" y="47" font-size="8" fill="#047857" text-anchor="middle" font-weight="800">가로선</text>
+    <line x1="28" y1="60" x2="134" y2="60" stroke="#0D9488" stroke-width="1.4"/>
+    <line x1="28" y1="80" x2="134" y2="80" stroke="#0D9488" stroke-width="2.4"/>
+    <line x1="28" y1="100" x2="134" y2="100" stroke="#0D9488" stroke-width="1.4"/>
+    <line x1="28" y1="120" x2="134" y2="120" stroke="#0D9488" stroke-width="1.4"/>
+    <text x="81" y="140" font-size="7" fill="#64748B" text-anchor="middle">가로로 그어져 있어요</text>
+    <rect x="178" y="32" width="122" height="118" rx="10" fill="#fff" stroke="#047857" stroke-width="1.8"/>
+    <text x="239" y="47" font-size="8" fill="#047857" text-anchor="middle" font-weight="800">세로선</text>
+    <line x1="200" y1="56" x2="200" y2="126" stroke="#0D9488" stroke-width="1.4"/>
+    <line x1="220" y1="56" x2="220" y2="126" stroke="#0D9488" stroke-width="1.4"/>
+    <line x1="239" y1="56" x2="239" y2="126" stroke="#0D9488" stroke-width="2.4"/>
+    <line x1="258" y1="56" x2="258" y2="126" stroke="#0D9488" stroke-width="1.4"/>
+    <line x1="278" y1="56" x2="278" y2="126" stroke="#0D9488" stroke-width="1.4"/>
+    <text x="239" y="140" font-size="7" fill="#64748B" text-anchor="middle">세로로 그어져 있어요</text></svg>`,
+  // 2 위도 — 적도를 기준으로 남북으로
+  lat:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <text x="160" y="18" font-size="10.4" fill="#065F46" text-anchor="middle" font-weight="800">가로선인 위선은 위도를 나타내요</text>
+    <rect x="46" y="28" width="228" height="128" rx="10" fill="#F8FAFC" stroke="#CBD5E0" stroke-width="1.2"/>
+    <line x1="52" y1="44" x2="268" y2="44" stroke="#94A3B8" stroke-width="1.2"/>
+    <text x="40" y="47" font-size="7" fill="#64748B" text-anchor="end">90°</text>
+    <line x1="52" y1="66" x2="268" y2="66" stroke="#94A3B8" stroke-width="1.2"/>
+    <text x="40" y="69" font-size="7" fill="#64748B" text-anchor="end">60°</text>
+    <line x1="52" y1="88" x2="268" y2="88" stroke="#94A3B8" stroke-width="1.2"/>
+    <text x="40" y="91" font-size="7" fill="#64748B" text-anchor="end">30°</text>
+    <line x1="52" y1="110" x2="268" y2="110" stroke="#047857" stroke-width="2.6"/>
+    <text x="40" y="113" font-size="7.4" fill="#047857" text-anchor="end" font-weight="800">0°</text>
+    <line x1="52" y1="132" x2="268" y2="132" stroke="#94A3B8" stroke-width="1.2"/>
+    <text x="40" y="135" font-size="7" fill="#64748B" text-anchor="end">30°</text>
+    <text x="286" y="70" font-size="7.4" fill="#047857" font-weight="800">북위</text>
+    <text x="286" y="136" font-size="7.4" fill="#047857" font-weight="800">남위</text>
+    <text x="160" y="105" font-size="7.6" fill="#047857" text-anchor="middle" font-weight="800">적도 — 위도의 기준이 되는 선</text>
+    <text x="160" y="152" font-size="7" fill="#64748B" text-anchor="middle">북쪽과 남쪽으로 각각 90°씩 나뉘어요</text></svg>`,
+  // 3 위도별 햇볕을 받는 양의 차이
+  sun:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFFBEB"/>
+    <text x="160" y="18" font-size="10.4" fill="#B45309" text-anchor="middle" font-weight="800">위도에 따라 햇볕을 받는 양이 달라요</text>
+    <rect x="18" y="30" width="136" height="120" rx="10" fill="#fff" stroke="#B45309" stroke-width="1.6"/>
+    <text x="86" y="45" font-size="8" fill="#B45309" text-anchor="middle" font-weight="800">적도 가까이</text>
+    <line x1="60" y1="56" x2="60" y2="104" stroke="#F59E0B" stroke-width="2"/>
+    <line x1="86" y1="56" x2="86" y2="104" stroke="#F59E0B" stroke-width="2"/>
+    <line x1="112" y1="56" x2="112" y2="104" stroke="#F59E0B" stroke-width="2"/>
+    <rect x="54" y="106" width="64" height="12" rx="4" fill="#FDE68A" stroke="#B45309" stroke-width="1.2"/>
+    <text x="86" y="132" font-size="7" fill="#78350F" text-anchor="middle">수직에 가깝게 들어와</text>
+    <text x="86" y="143" font-size="7" fill="#78350F" text-anchor="middle">좁은 지역에 열이 모여요</text>
+    <rect x="166" y="30" width="136" height="120" rx="10" fill="#fff" stroke="#0D9488" stroke-width="1.6"/>
+    <text x="234" y="45" font-size="8" fill="#0D9488" text-anchor="middle" font-weight="800">극에 가까이</text>
+    <line x1="188" y1="56" x2="206" y2="104" stroke="#F59E0B" stroke-width="2"/>
+    <line x1="214" y1="56" x2="232" y2="104" stroke="#F59E0B" stroke-width="2"/>
+    <line x1="240" y1="56" x2="258" y2="104" stroke="#F59E0B" stroke-width="2"/>
+    <rect x="180" y="106" width="112" height="12" rx="4" fill="#CCFBF1" stroke="#0D9488" stroke-width="1.2"/>
+    <text x="234" y="132" font-size="7" fill="#134E4A" text-anchor="middle">비스듬하게 들어와</text>
+    <text x="234" y="143" font-size="7" fill="#134E4A" text-anchor="middle">넓은 지역으로 열이 퍼져요</text></svg>`,
+  // 4 북반구와 남반구의 계절 차이
+  season:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <text x="160" y="18" font-size="10.4" fill="#065F46" text-anchor="middle" font-weight="800">두 반구의 계절이 서로 반대예요</text>
+    <circle cx="160" cy="92" r="17" fill="#FDE68A" stroke="#B45309" stroke-width="1.6"/>
+    <text x="160" y="95" font-size="7.2" fill="#78350F" text-anchor="middle" font-weight="800">태양</text>
+    <g><ellipse cx="62" cy="92" rx="30" ry="34" fill="#F8FAFC" stroke="#047857" stroke-width="1.6"/>
+      <line x1="34" y1="92" x2="90" y2="92" stroke="#047857" stroke-width="1.6"/>
+      <text x="62" y="74" font-size="7" fill="#B45309" text-anchor="middle" font-weight="800">여름</text>
+      <text x="62" y="112" font-size="7" fill="#0D9488" text-anchor="middle" font-weight="800">겨울</text>
+      <text x="62" y="140" font-size="7.2" fill="#64748B" text-anchor="middle">북쪽이 태양 쪽으로</text>
+      <text x="62" y="150" font-size="7.2" fill="#64748B" text-anchor="middle">기울어졌을 때</text></g>
+    <g><ellipse cx="258" cy="92" rx="30" ry="34" fill="#F8FAFC" stroke="#047857" stroke-width="1.6"/>
+      <line x1="230" y1="92" x2="286" y2="92" stroke="#047857" stroke-width="1.6"/>
+      <text x="258" y="74" font-size="7" fill="#0D9488" text-anchor="middle" font-weight="800">겨울</text>
+      <text x="258" y="112" font-size="7" fill="#B45309" text-anchor="middle" font-weight="800">여름</text>
+      <text x="258" y="140" font-size="7.2" fill="#64748B" text-anchor="middle">남쪽이 태양 쪽으로</text>
+      <text x="258" y="150" font-size="7.2" fill="#64748B" text-anchor="middle">기울어졌을 때</text></g>
+    <text x="160" y="128" font-size="7" fill="#64748B" text-anchor="middle">기울어진 채로</text>
+    <text x="160" y="138" font-size="7" fill="#64748B" text-anchor="middle">돌기 때문이에요</text></svg>`,
+  // 5 경도 — 본초 자오선을 기준으로 동서로
+  lon:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <text x="160" y="18" font-size="10.4" fill="#065F46" text-anchor="middle" font-weight="800">세로선인 경선은 경도를 나타내요</text>
+    <rect x="30" y="28" width="260" height="112" rx="10" fill="#F8FAFC" stroke="#CBD5E0" stroke-width="1.2"/>
+    <line x1="70" y1="36" x2="70" y2="120" stroke="#94A3B8" stroke-width="1.2"/>
+    <text x="70" y="132" font-size="7" fill="#64748B" text-anchor="middle">60°</text>
+    <line x1="115" y1="36" x2="115" y2="120" stroke="#94A3B8" stroke-width="1.2"/>
+    <text x="115" y="132" font-size="7" fill="#64748B" text-anchor="middle">30°</text>
+    <line x1="160" y1="36" x2="160" y2="120" stroke="#047857" stroke-width="2.6"/>
+    <text x="160" y="132" font-size="7.4" fill="#047857" text-anchor="middle" font-weight="800">0°</text>
+    <line x1="205" y1="36" x2="205" y2="120" stroke="#94A3B8" stroke-width="1.2"/>
+    <text x="205" y="132" font-size="7" fill="#64748B" text-anchor="middle">30°</text>
+    <line x1="250" y1="36" x2="250" y2="120" stroke="#94A3B8" stroke-width="1.2"/>
+    <text x="250" y="132" font-size="7" fill="#64748B" text-anchor="middle">60°</text>
+    <text x="92" y="48" font-size="7.4" fill="#047857" text-anchor="middle" font-weight="800">서경</text>
+    <text x="228" y="48" font-size="7.4" fill="#047857" text-anchor="middle" font-weight="800">동경</text>
+    <text x="160" y="72" font-size="7.4" fill="#047857" text-anchor="middle" font-weight="800">본초 자오선</text>
+    <text x="160" y="84" font-size="7" fill="#64748B" text-anchor="middle">경도의 기준이 되는 선</text>
+    <text x="160" y="156" font-size="7" fill="#64748B" text-anchor="middle">동쪽과 서쪽으로 각각 180°씩 나뉘어요</text></svg>`,
+  // 6 시차
+  gap:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#ECFDF5"/>
+    <text x="160" y="19" font-size="10.6" fill="#065F46" text-anchor="middle" font-weight="800">경도에 따라 시각이 달라져요</text>
+    <circle cx="160" cy="92" r="42" fill="#fff" stroke="#047857" stroke-width="2"/>
+    <path d="M160 50 A42 42 0 0 1 160 134 Z" fill="#FEF3C7"/>
+    <path d="M160 50 A42 42 0 0 0 160 134 Z" fill="#E2E8F0"/>
+    <line x1="160" y1="46" x2="160" y2="138" stroke="#047857" stroke-width="1.6" stroke-dasharray="3 3"/>
+    <text x="196" y="96" font-size="7.4" fill="#B45309" text-anchor="middle" font-weight="800">낮</text>
+    <text x="124" y="96" font-size="7.4" fill="#475569" text-anchor="middle" font-weight="800">밤</text>
+    <text x="160" y="150" font-size="7.6" fill="#065F46" text-anchor="middle" font-weight="800">지구가 하루에 한 바퀴씩 스스로 회전해요</text>
+    <rect x="14" y="52" width="72" height="34" rx="8" fill="#fff" stroke="#0D9488" stroke-width="1.4"/>
+    <text x="50" y="66" font-size="7" fill="#0D9488" text-anchor="middle" font-weight="800">시차</text>
+    <text x="50" y="78" font-size="6.4" fill="#64748B" text-anchor="middle">지역의 시간 차이</text>
+    <rect x="234" y="52" width="72" height="34" rx="8" fill="#fff" stroke="#0D9488" stroke-width="1.4"/>
+    <text x="270" y="66" font-size="7" fill="#0D9488" text-anchor="middle" font-weight="800">경도가 다르면</text>
+    <text x="270" y="78" font-size="6.4" fill="#64748B" text-anchor="middle">시각도 달라요</text></svg>`,
+  // 7 기준이 되는 경선
+  base:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <text x="160" y="19" font-size="10.4" fill="#065F46" text-anchor="middle" font-weight="800">나라마다 기준이 되는 경선을 정해요</text>
+    <rect x="22" y="34" width="276" height="72" rx="10" fill="#F8FAFC" stroke="#047857" stroke-width="1.6"/>
+    <line x1="70" y1="42" x2="70" y2="98" stroke="#CBD5E0" stroke-width="1.2"/>
+    <line x1="118" y1="42" x2="118" y2="98" stroke="#047857" stroke-width="2.6"/>
+    <line x1="166" y1="42" x2="166" y2="98" stroke="#CBD5E0" stroke-width="1.2"/>
+    <line x1="214" y1="42" x2="214" y2="98" stroke="#047857" stroke-width="2.6"/>
+    <line x1="262" y1="42" x2="262" y2="98" stroke="#CBD5E0" stroke-width="1.2"/>
+    <text x="118" y="114" font-size="7" fill="#047857" text-anchor="middle" font-weight="800">기준이 되는 경선</text>
+    <text x="214" y="114" font-size="7" fill="#047857" text-anchor="middle" font-weight="800">기준이 되는 경선</text>
+    <text x="160" y="70" font-size="7.6" fill="#065F46" text-anchor="middle" font-weight="800">그 경선의 시각을 함께 써요</text>
+    <text x="160" y="140" font-size="7.4" fill="#64748B" text-anchor="middle">시차로 생기는 교류의 불편함을 줄이려고</text>
+    <text x="160" y="153" font-size="7.4" fill="#64748B" text-anchor="middle">이렇게 정해서 쓰고 있어요</text></svg>`,
+  // 정리
+  sum:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#ECFDF5"/>
+    <text x="160" y="20" font-size="11" fill="#065F46" text-anchor="middle" font-weight="800">오늘의 정리</text>
+    <rect x="16" y="32" width="136" height="118" rx="10" fill="#fff" stroke="#047857" stroke-width="1.8"/>
+    <text x="84" y="50" font-size="9" fill="#047857" text-anchor="middle" font-weight="800">위도</text>
+    <line x1="26" y1="62" x2="142" y2="62" stroke="#CBD5E0" stroke-width="1.2"/>
+    <line x1="26" y1="80" x2="142" y2="80" stroke="#047857" stroke-width="2.2"/>
+    <line x1="26" y1="98" x2="142" y2="98" stroke="#CBD5E0" stroke-width="1.2"/>
+    <text x="84" y="118" font-size="7" fill="#64748B" text-anchor="middle">적도를 기준으로</text>
+    <text x="84" y="130" font-size="7" fill="#64748B" text-anchor="middle">남북으로 얼마나</text>
+    <text x="84" y="142" font-size="7" fill="#64748B" text-anchor="middle">떨어져 있는지</text>
+    <rect x="168" y="32" width="136" height="118" rx="10" fill="#fff" stroke="#047857" stroke-width="1.8"/>
+    <text x="236" y="50" font-size="9" fill="#047857" text-anchor="middle" font-weight="800">경도</text>
+    <line x1="206" y1="60" x2="206" y2="100" stroke="#CBD5E0" stroke-width="1.2"/>
+    <line x1="236" y1="60" x2="236" y2="100" stroke="#047857" stroke-width="2.2"/>
+    <line x1="266" y1="60" x2="266" y2="100" stroke="#CBD5E0" stroke-width="1.2"/>
+    <text x="236" y="118" font-size="7" fill="#64748B" text-anchor="middle">본초 자오선을 기준으로</text>
+    <text x="236" y="130" font-size="7" fill="#64748B" text-anchor="middle">동서로 얼마나</text>
+    <text x="236" y="142" font-size="7" fill="#64748B" text-anchor="middle">떨어져 있는지</text></svg>`,
+  done:`<svg viewBox="0 0 320 150"><rect width="320" height="150" fill="#ECFDF5"/>
+    <circle cx="160" cy="66" r="34" fill="#fff" stroke="#047857" stroke-width="2.4"/>
+    <line x1="128" y1="56" x2="192" y2="56" stroke="#CBD5E0" stroke-width="1.4"/>
+    <line x1="126" y1="66" x2="194" y2="66" stroke="#047857" stroke-width="2.2"/>
+    <line x1="128" y1="76" x2="192" y2="76" stroke="#CBD5E0" stroke-width="1.4"/>
+    <line x1="160" y1="33" x2="160" y2="99" stroke="#047857" stroke-width="2.2"/>
+    <text x="160" y="122" font-size="11" fill="#065F46" text-anchor="middle" font-weight="800">위도와 경도를 알아봤어요!</text>
+    <text x="160" y="138" font-size="7.6" fill="#64748B" text-anchor="middle">한쪽으로 옮기면 한쪽만 달라졌어요</text></svg>`
+};
+function sceneCard(key,cap,extra){ return `<div class="scene ${extra||''}">${SVG[key]||''}${cap?`<div class="cap">${cap}</div>`:''}</div>`; }
+
+/* ===== 직접조작 — 따로 도는 두 잣대의 판(64번째 신규 패턴) =====
+   ⭐ 앞의 예순세 종에서 **판이 재는 잣대는 언제나 하나로 이어져 있었다.** 43번째(기우는 판)에서 한쪽이
+      커질 때 다른 쪽이 줄어든 것도 두 자리가 **한 잣대로 묶여 있었기** 때문이고, 44번째(빛과 그늘이
+      함께 자라는 판)에서 두 자리가 함께 오른 것도 **한 걸음이 두 자리를 함께 만들었기** 때문이며,
+      63번째(배율을 옮기는 판)에서 배율을 옮기면 **판이 통째로 달라졌다.**
+   ⭐ 이번만 **판에 서로 만나지 않는 두 잣대가 있다.** 남북으로 옮기면 햇볕 칸만 달라지고 **시각 칸은
+      글자 하나 달라지지 않는다.** 동서로 옮기면 시각 칸만 달라지고 **햇볕 칸은 글자 하나 달라지지
+      않는다.** 근거는 교과서 131쪽 「위도에 따라 햇볕을 받는 양이 다릅니다」와 133쪽 「경도에 따라
+      시각이 달라져 시차가 발생합니다」이다.
+   ⭐ **적도에서 떨어진 만큼이 같으면 햇볕 칸도 같다** — 북위 30°와 남위 30°의 햇볕 칸이 글자까지 같다.
+   ⭐ **햇볕을 정하는 자리와 시각을 정하는 자리가 코드에 한 줄씩뿐이다** — `mvSun`은 `mvLat`만,
+      `mvTime`은 `mvLon`만 읽는다. 남북 처리기에 `mvLon` 0, 동서 처리기에 `mvLat` 0.
+   ⭐ **판은 한 번에 한 축만 연다** — 지금 열려 있지 않은 축으로는 옮길 수 없다(핵심 가드).
+   ⚠️ 전량 고정 리터럴 — 난수 0. 조작에 점수 0. 옮기는 자리에 옳고 그름 0. */
+const MV_LAT_N = 7;   /* 위선 일곱 */
+const MV_LON_N = 5;   /* 경선 다섯 */
+const MV_LAT_MID = 3; /* 가운데 = 적도 */
+const MV_LON_MID = 2; /* 가운데 = 본초 자오선 */
+const MV_SUN_NEED = 3;  /* 햇볕 갈래 넷 가운데 셋 이상을 겪어야 다음이 열린다 */
+const MV_SIDE_NEED = 3; /* 서경 쪽 · 본초 자오선 · 동경 쪽 세 갈래를 다 겪어야 열린다 */
+
+/* 위선 일곱 — 교과서 130쪽 그림의 눈금 그대로(북쪽·남쪽으로 각각 90°씩) */
+const MV_LAT_S = ['북위 90°','북위 60°','북위 30°','적도 0°','남위 30°','남위 60°','남위 90°'];
+/* 경선 다섯 — 교과서 132쪽 그림의 눈금 그대로(동쪽·서쪽으로 각각 180°씩 나뉜 가운데 이 자리들) */
+const MV_LON_S = ['서경 60°','서경 30°','본초 자오선 0°','동경 30°','동경 60°'];
+
+/* ★ 햇볕 갈래 넷 — 적도에서 떨어진 만큼으로만 갈린다(교과서 131쪽 본문·말풍선 원문 계열). */
+const MV_SUN = [
+  '햇볕이 수직에 가깝게 들어와 좁은 지역에 열이 모여요',
+  '햇볕이 적도에서보다 비스듬하게 들어와요',
+  '햇볕이 더 비스듬하게 들어와 넓게 퍼져요',
+  '햇볕이 가장 비스듬하게 들어와 가장 넓게 퍼져요'
+];
+/* ★ 시각 갈래 다섯 — 경선 자리마다 다르다. 몇 시인지는 말하지 않는다(정직 원칙 ㉣). */
+const MV_TIME = [
+  '서경 60°의 시각이에요 — 본초 자오선과 시각이 달라요',
+  '서경 30°의 시각이에요 — 본초 자오선과 시각이 달라요',
+  '본초 자오선의 시각이에요',
+  '동경 30°의 시각이에요 — 본초 자오선과 시각이 달라요',
+  '동경 60°의 시각이에요 — 본초 자오선과 시각이 달라요'
+];
+
+const MV_READ = [
+  '시각은 경도에 따라 달라지는데, 남북으로 옮기면 경도가 달라지지 않기 때문이에요',
+  '시각은 어느 자리에서나 똑같기 때문이에요',
+  '남북으로는 아직 멀리 가지 않았기 때문이에요'
+];
+const MV_READ_OK = 0;
+const MV_READ_NO = [
+  '',
+  '동서로 옮겼을 때 시각 칸이 <b>달라졌던 것</b>을 떠올려 봐요. 판은 그대로예요.',
+  '남북으로 아무리 멀리 가도 <b>시각 칸은 그대로였어요.</b> 다시 살펴봐요. 판은 그대로예요.'
+];
+
+const MV_FIN = [
+  '위도와 경도는 둘 다 적도를 기준으로 삼아요',
+  '위도는 동서로, 경도는 남북으로 얼마나 떨어져 있는지를 나타내요',
+  '위도는 적도를 기준으로 남북으로, 경도는 본초 자오선을 기준으로 동서로 얼마나 떨어져 있는지를 나타내요'
+];
+const MV_FIN_OK = 2;
+const MV_FIN_NO = [
+  '경도의 기준이 되는 선은 <b>따로 있어요.</b> 다시 생각해 봐요.',
+  '가로선과 세로선 가운데 <b>어느 쪽이 위선</b>이었는지 다시 떠올려 봐요.',
+  ''
+];
+
+/* ★ 핵심 가드 안내 — 지금 열려 있지 않은 축으로는 옮길 수 없다. */
+const MV_LOCK_NS = '지금은 <b>동서로 옮기는 차례</b>예요. 남북으로는 옮길 수 없어요. 판은 그대로예요.';
+const MV_LOCK_EW = '지금은 <b>남북으로 옮기는 차례</b>예요. 동서로는 옮길 수 없어요. 판은 그대로예요.';
+const MV_EDGE = '<b>여기가 판의 끝이에요.</b> 다른 쪽으로 옮겨 봐요. 판은 그대로예요.';
+const MV_ORDER_E = '아직 <b>햇볕 칸이 달라지는 자리를 충분히 겪지 않았어요.</b> 남북으로 더 옮겨 봐요. 판은 그대로예요.';
+const MV_ORDER_R = '아직 <b>동서로 세 갈래를 다 겪지 않았어요.</b> 더 옮겨 봐요. 판은 그대로예요.';
+const MV_READ_DONE = '판은 <b>이미 다시 읽었어요.</b> 판은 그대로예요.';
+const MV_ORDER_F = '아직 <b>판을 다시 읽지 않았어요.</b> 판은 그대로예요.';
+
+/* ★ 적도에서 떨어진 만큼 — 햇볕 갈래를 정하는 한 줄. */
+function mvBand(lat){ return Math.abs(lat - MV_LAT_MID); }
+/* ★ 본초 자오선에서 어느 쪽인지 — 0 서경 쪽 · 1 본초 자오선 · 2 동경 쪽. */
+function mvSide(lon){ return lon < MV_LON_MID ? 0 : lon > MV_LON_MID ? 2 : 1; }
+/* ★★ 햇볕은 `mvLat`만 읽는다 — `MV_SUN[`를 읽는 자리도 여기 한 곳뿐. */
+function mvSun(st){ return MV_SUN[mvBand(st.mvLat)]; }
+/* ★★ 시각은 `mvLon`만 읽는다 — `MV_TIME[`를 읽는 자리도 여기 한 곳뿐. */
+function mvTime(st){ return MV_TIME[st.mvLon]; }
+function mvSeenS(st){ let n=0; for(let i=0;i<4;i++){ if(st.mvSeenS & (1<<i)) n++; } return n; }
+function mvSeenT(st){ let n=0; for(let i=0;i<3;i++){ if(st.mvSeenT & (1<<i)) n++; } return n; }
+function mvOpenEW(st){ return mvSeenS(st) >= MV_SUN_NEED; }
+function mvOpenRead(st){ return st.mvPhase===1 && mvSeenT(st) >= MV_SIDE_NEED; }
+
+function mvCanvas(st){
+  const fin = st.mvFin!=null, read = st.mvRead!=null;
+  const head = fin ? '두 잣대를 모두 살펴봤어요'
+    : read ? '이제 오늘 공부한 것을 정리해요'
+    : mvOpenRead(st) ? '동서로도 옮겨 봤어요 — 판을 다시 읽어 볼까요?'
+    : st.mvPhase===1 ? '동서로 옮겨 봐요 — 무엇이 달라지나요?'
+    : '남북으로 옮겨 봐요 — 무엇이 달라지나요?';
+
+  /* 위선 일곱 — 적도만 굵게 */
+  const rows = MV_LAT_S.map((s,k)=>{
+    const eq = k===MV_LAT_MID;
+    return `<line x1="20" y1="${34+k*16}" x2="300" y2="${34+k*16}" stroke="${eq?'#047857':'#CBD5E0'}" stroke-width="${eq?2.2:1}"/>`;
+  }).join('');
+  /* 경선 다섯 — 본초 자오선만 굵게 */
+  const cols = MV_LON_S.map((s,j)=>{
+    const pm = j===MV_LON_MID;
+    return `<line x1="${26+j*62}" y1="30" x2="${26+j*62}" y2="134" stroke="${pm?'#047857':'#CBD5E0'}" stroke-width="${pm?2.2:1}"/>`;
+  }).join('');
+
+  const px = 26 + st.mvLon*62, py = 34 + st.mvLat*16;
+
+  return `<svg viewBox="0 0 320 280" data-lat="${st.mvLat}" data-lon="${st.mvLon}" data-band="${mvBand(st.mvLat)}" data-side="${mvSide(st.mvLon)}" data-phase="${st.mvPhase}" data-seens="${mvSeenS(st)}" data-seent="${mvSeenT(st)}" data-read="${read?1:0}" data-fin="${fin?1:0}">
+    <rect width="320" height="280" fill="#fff"/>
+    <rect x="12" y="8" width="296" height="16" rx="6" fill="#D1FAE5"/>
+    <text x="160" y="20" font-size="8" fill="#065F46" text-anchor="middle" font-weight="800">${head}</text>
+    <rect x="12" y="28" width="296" height="112" rx="9" fill="#F8FAFC" stroke="#047857" stroke-width="1.4"/>
+    ${rows}${cols}
+    <circle cx="${px}" cy="${py}" r="5.4" fill="#B45309" stroke="#fff" stroke-width="1.6"/>
+    <rect x="12" y="146" width="144" height="22" rx="7" fill="#ECFDF5" stroke="#047857" stroke-width="1.2"/>
+    <text x="84" y="160" font-size="7.4" fill="#065F46" text-anchor="middle" font-weight="800" data-latname="1">${MV_LAT_S[st.mvLat]}</text>
+    <rect x="164" y="146" width="144" height="22" rx="7" fill="#ECFDF5" stroke="#047857" stroke-width="1.2"/>
+    <text x="236" y="160" font-size="7.4" fill="#065F46" text-anchor="middle" font-weight="800" data-lonname="1">${MV_LON_S[st.mvLon]}</text>
+    <rect x="12" y="174" width="144" height="54" rx="8" fill="#FFFBEB" stroke="#B45309" stroke-width="1.6"/>
+    <text x="84" y="187" font-size="7" fill="#B45309" text-anchor="middle" font-weight="800">햇볕 칸</text>
+    <rect x="${84-(14+mvBand(st.mvLat)*16)}" y="192" width="${28+mvBand(st.mvLat)*32}" height="8" rx="3" fill="#FDE68A" stroke="#B45309" stroke-width=".9"/>
+    <text x="84" y="213" font-size="6.2" fill="#78350F" text-anchor="middle" font-weight="700" data-sun="1">${mvSun(st)}</text>
+    <text x="84" y="222" font-size="5.8" fill="#B45309" text-anchor="middle">남북으로 옮기면 달라져요</text>
+    <rect x="164" y="174" width="144" height="54" rx="8" fill="#F0FDFA" stroke="#0D9488" stroke-width="1.6"/>
+    <text x="236" y="187" font-size="7" fill="#0D9488" text-anchor="middle" font-weight="800">시각 칸</text>
+    <circle cx="236" cy="200" r="7" fill="#fff" stroke="#0D9488" stroke-width="1.2"/>
+    <text x="236" y="213" font-size="6.2" fill="#134E4A" text-anchor="middle" font-weight="700" data-time="1">${mvTime(st)}</text>
+    <text x="236" y="222" font-size="5.8" fill="#0D9488" text-anchor="middle">동서로 옮기면 달라져요</text>
+    <rect x="12" y="234" width="296" height="16" rx="6" fill="#F8FAFC"/>
+    <text x="160" y="245" font-size="6.4" fill="#64748B" text-anchor="middle" font-weight="700" data-guide="1">${st.mvPhase===1?'지금은 동서로만 옮길 수 있어요':'지금은 남북으로만 옮길 수 있어요'}</text>
+    <rect x="12" y="256" width="296" height="18" rx="6" fill="#F1F5F9"/>
+    <text x="160" y="268" font-size="6.6" fill="#64748B" text-anchor="middle" font-weight="700" data-band2="1">겪어 본 햇볕 갈래 ${mvSeenS(st)} / 4 · 겪어 본 동서 갈래 ${mvSeenT(st)} / 3</text>
+  </svg>`;
+}
+
+function mvPanel(st){
+  const fin = st.mvFin!=null, read = st.mvRead!=null;
+  const q = fin ? '두 잣대를 모두 살펴봤어요.'
+    : read ? '오늘 공부한 내용을 어떻게 정리하면 좋을까요?'
+    : mvOpenRead(st) ? '남북으로 옮겼을 때 시각 칸이 한 번도 달라지지 않았어요. 왜 그랬을까요?'
+    : st.mvPhase===1 ? '동서로 옮겨 가며 두 칸이 어떻게 달라지는지 살펴봐요.'
+    : '남북으로 옮겨 가며 두 칸이 어떻게 달라지는지 살펴봐요.';
+  let right = `<div class="mv-q">${q}</div>`;
+
+  if(fin){
+    right += `<div class="dw-card"><div class="pt">\uD83E\uDDED 두 잣대를 살펴봤어요</div>
+      남북으로 옮겼을 때는 <b>햇볕 칸만</b> 달라졌고 시각 칸은 그대로였어요.
+      동서로 옮겼을 때는 <b>시각 칸만</b> 달라졌고 햇볕 칸은 그대로였어요.
+      햇볕을 받는 양은 <b>위도</b>에 따라, 시각은 <b>경도</b>에 따라 달라지기 때문이에요.<br>
+      그리고 <b>북위 30°와 남위 30°의 햇볕 칸이 같았어요</b> — 적도에서 떨어진 만큼이 같으면 햇볕도 같아요.<br>
+      <span style="color:#64748B">판의 자리는 <b>위도와 경도의 이름</b>일 뿐 실제 나라나 도시가 아니에요.
+      위도대에 해당하는 나라를 찾고 경도별로 나라를 나누어 보는 활동은 <b>교실에서</b> 세계지도와 지구본을
+      펴고 해요. 시각 칸도 <b>같은지 다른지</b>까지만 말해요 — 나라마다 기준이 되는 경선을 정해 그 경선의
+      시각을 쓰기 때문이에요.</span></div>`;
+  } else if(read){
+    right += `<div class="dw-step">\uD83D\uDCDA 오늘의 정리</div>`;
+    right += `<div class="mv-fin">${MV_FIN.map((t,k)=>`<button class="${st.mvWrongF===k?'no':''}" onclick="mvFinish(${k})">${t}</button>`).join('')}</div>`;
+  } else if(mvOpenRead(st)){
+    right += `<div class="dw-step">\uD83D\uDD0E 판을 다시 읽어요</div>`;
+    right += `<div class="mv-note">남북으로 옮겼을 때 <b>시각 칸이 어땠는지</b> 떠올려 보고 골라요.</div>`;
+    right += `<div class="mv-read">${MV_READ.map((t,k)=>`<button class="${st.mvWrongR===k?'no':''}" onclick="mvReadPick(${k})">${t}</button>`).join('')}</div>`;
+  } else if(st.mvPhase===1){
+    right += `<div class="dw-step">\u2194 동서로 옮겨요</div>`;
+    right += `<div class="mv-pad"><button onclick="mvEW(-1)">\u2190 서쪽으로</button><button class="sp" disabled>·</button><button onclick="mvEW(1)">동쪽으로 \u2192</button></div>`;
+    right += `<div class="mv-note">동서로 옮기면 <b>시각 칸만</b> 달라져요. 햇볕 칸은 그대로예요.</div>`;
+    right += `<div class="mv-seen">${['서경 쪽에 서 봤어요','본초 자오선에 서 봤어요','동경 쪽에 서 봤어요'].map((t,k)=>`<div class="row ${(st.mvSeenT&(1<<k))?'on':''}">${(st.mvSeenT&(1<<k))?'\u2713 ':'\u00b7 '}${t}</div>`).join('')}</div>`;
+  } else {
+    right += `<div class="dw-step">\u2195 남북으로 옮겨요</div>`;
+    right += `<div class="mv-pad"><button class="sp" disabled>·</button><button onclick="mvNS(-1)">\u2191 북쪽으로</button><button class="sp" disabled>·</button></div>`;
+    right += `<div class="mv-pad"><button class="sp" disabled>·</button><button onclick="mvNS(1)">\u2193 남쪽으로</button><button class="sp" disabled>·</button></div>`;
+    right += `<div class="mv-note">남북으로 옮기면 <b>햇볕 칸만</b> 달라져요. 시각 칸은 그대로예요.</div>`;
+    right += `<div class="mv-seen">${['적도 자리에 서 봤어요','적도에서 조금 떨어진 자리에 서 봤어요','더 떨어진 자리에 서 봤어요','가장 멀리 떨어진 자리에 서 봤어요'].map((t,k)=>`<div class="row ${(st.mvSeenS&(1<<k))?'on':''}">${(st.mvSeenS&(1<<k))?'\u2713 ':'\u00b7 '}${t}</div>`).join('')}</div>`;
+    right += `<div class="mv-go"><button class="${st.mvWrongE?'no':''}" onclick="mvNext()">\u2194 이제 동서로 옮겨 봐요</button></div>`;
+  }
+  if(st.mvMsg) right += `<div class="dw-msg${st.mvWarn?' warn':''}">${st.mvMsg}</div>`;
+
+  return `<div class="dw-wrap">
+    <div style="text-align:center"><b style="color:var(--green)">\uD83E\uDDED 한쪽으로 옮겨 봐요</b></div>
+    <div class="dw-body">
+      <div class="dw-canvas">${mvCanvas(st)}<div class="cvcap">판의 <b>자리</b>는 위도와 경도의 이름일 뿐 실제 나라나 도시가 아니에요. 그림은 지구본과 세계지도에 그려 놓은 <b>선</b>을 나타낸 도식이지 실제 지도가 아니에요.</div></div>
+      <div class="dw-right">${right}</div>
+    </div>
+  </div>`;
+}
+
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "3단원 지구, 대륙 그리고 국가들 · 주제① 세계를 표현하는 다양한 자료";
+
+// 확인 4 + 적용 4 — 정답 다양화 [1,3,0,2,2,0,3,1](각 자리 2회)
+// ⚠️ 대륙 이름·대양 이름·나라 이름·도시 이름 0 · 문항 내 연도·시각·거리 수치 0(각도는 학습 내용).
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"<b>위도</b>는 무엇을 나타내나요?",
+   opts:["본초 자오선을 기준으로 동서로 얼마나 떨어져 있는지를 나타내요",
+         "적도를 기준으로 남북으로 얼마나 떨어져 있는지를 나타내요",
+         "지구가 하루에 한 바퀴 도는 데 걸리는 시간을 나타내요",
+         "땅의 높낮이를 나타내요"],
+   correct:1, pts:POINTS_BASIC, scene:"lat",
+   h1:"위도의 기준이 되는 선은 <b>적도</b>예요.",
+   h2:"가로선인 <b>위선</b>이 위도를 나타내요.",
+   reason:"<b>위도</b>는 적도를 기준으로 남북으로 얼마나 떨어져 있는지를 나타내요. 북쪽과 남쪽으로 각각 90°씩 나뉘어요."},
+  {stem:"<b>경도</b>는 무엇을 나타내나요?",
+   opts:["적도를 기준으로 남북으로 얼마나 떨어져 있는지를 나타내요",
+         "바다의 깊이를 나타내요","햇볕을 받는 양을 나타내요",
+         "본초 자오선을 기준으로 동서로 얼마나 떨어져 있는지를 나타내요"],
+   correct:3, pts:POINTS_BASIC, scene:"lon",
+   h1:"경도의 기준이 되는 선은 <b>본초 자오선</b>이에요.",
+   h2:"세로선인 <b>경선</b>이 경도를 나타내요.",
+   reason:"<b>경도</b>는 본초 자오선을 기준으로 동서로 얼마나 떨어져 있는지를 나타내요. 동쪽과 서쪽으로 각각 180°씩 나뉘어요."},
+  {stem:"위도는 적도를 기준으로 북쪽과 남쪽으로 <b>각각 얼마씩</b> 나뉘나요?",
+   opts:["각각 90°씩 나뉘어요","각각 30°씩 나뉘어요","각각 180°씩 나뉘어요","각각 360°씩 나뉘어요"],
+   correct:0, pts:POINTS_BASIC, scene:"lat",
+   h1:"적도가 0°이고, 북쪽 끝과 남쪽 끝이 각각 가장 큰 값이에요.",
+   h2:"조작의 판에서 가장 위와 가장 아래 자리의 이름을 떠올려 봐요.",
+   reason:"위도는 적도를 기준으로 <b>북쪽과 남쪽으로 각각 90°씩</b> 나뉘어요. 적도를 기준으로 북쪽을 북위, 남쪽을 남위라고 해요."},
+  {stem:"<b>시차</b>는 무엇인가요?",
+   opts:["땅의 넓이 차이예요","바다와 육지의 차이예요",
+         "세계 각 지역의 시간 차이예요","계절이 바뀌는 차례예요"],
+   correct:2, pts:POINTS_BASIC, scene:"gap",
+   h1:"지구는 하루에 한 바퀴씩 <b>스스로 회전</b>해요.",
+   h2:"그래서 경도에 따라 <b>시각</b>이 달라져요.",
+   reason:"<b>시차</b>는 세계 각 지역의 시간 차이예요. 지구가 하루에 한 바퀴씩 스스로 회전하기 때문에 경도에 따라 시각이 달라져 시차가 생겨요."},
+  // 4단계 적용 (+15)
+  {stem:"적도에 가까운 곳의 기온이 <b>높은 까닭</b>은 무엇인가요?",
+   opts:["햇볕이 비스듬하게 들어와 넓은 지역으로 열이 퍼지기 때문이에요",
+         "햇볕이 아예 들지 않기 때문이에요",
+         "햇볕이 수직에 가깝게 들어와 좁은 지역에 열이 모이기 때문이에요",
+         "지구가 하루에 한 바퀴씩 스스로 회전하기 때문이에요"],
+   correct:2, pts:POINTS_APPLY, scene:"sun",
+   h1:"조작의 판에서 <b>햇볕 띠</b>가 가장 좁았던 자리를 떠올려 봐요.",
+   h2:"같은 양의 햇볕이 <b>좁은 곳에 모이면</b> 어떻게 될까요?",
+   reason:"저위도 지역은 햇볕이 <b>수직에 가깝게</b> 들어와 <b>좁은 지역에 열이 모여</b> 기온이 높아요. 고위도 지역은 햇볕이 비스듬하게 들어와 넓은 지역으로 열이 퍼져 기온이 낮아요."},
+  {stem:"한쪽 반구가 여름일 때 <b>맞은편 반구가 겨울인 까닭</b>은 무엇인가요?",
+   opts:["지구가 기울어진 상태로 태양 주위를 돌기 때문이에요",
+         "맞은편 반구가 더 좁기 때문이에요",
+         "맞은편 반구에는 햇볕이 아예 들지 않기 때문이에요",
+         "지구가 하루에 한 바퀴씩 스스로 회전하기 때문이에요"],
+   correct:0, pts:POINTS_APPLY, scene:"season",
+   h1:"계절의 변화는 지구가 <b>어떻게 도는지</b>와 이어져 있어요.",
+   h2:"한쪽이 태양 쪽으로 <b>기울어지면</b> 그쪽이 햇볕을 많이 받아요.",
+   reason:"지구는 <b>기울어진 상태로 태양 주위를 돌기</b> 때문에 계절의 변화가 나타나요. 한쪽 반구가 태양 쪽으로 기울어지면 그쪽은 여름이 되고 맞은편은 겨울이 되어, 두 반구의 계절이 서로 반대로 나타나요."},
+  {stem:"조작에서 <b>남북으로 옮겼는데 시각 칸이 한 번도 달라지지 않았어요.</b> 왜 그랬을까요?",
+   opts:["시각은 어느 자리에서나 똑같기 때문이에요",
+         "남북으로는 아직 멀리 가지 않았기 때문이에요",
+         "판이 시각을 잠시 멈춰 두었기 때문이에요",
+         "시각은 경도에 따라 달라지는데, 남북으로 옮기면 경도가 달라지지 않기 때문이에요"],
+   correct:3, pts:POINTS_APPLY, scene:"gap",
+   h1:"시각을 달라지게 하는 것은 위도일까요, <b>경도</b>일까요?",
+   h2:"남북으로 옮기면 <b>위도</b>만 달라져요.",
+   reason:"시각은 <b>경도</b>에 따라 달라져요. 남북으로 옮기면 위도만 달라지고 경도는 그대로이므로 시각 칸도 그대로였어요."},
+  {stem:"조작에서 <b>동서로 옮겼는데 햇볕 칸이 한 번도 달라지지 않았어요.</b> 왜 그랬을까요?",
+   opts:["동서로 옮기면 햇볕이 사라지기 때문이에요",
+         "햇볕을 받는 양은 위도에 따라 달라지는데, 동서로 옮기면 위도가 달라지지 않기 때문이에요",
+         "햇볕은 어느 자리에서나 똑같이 들어오기 때문이에요",
+         "동서로는 아직 멀리 가지 않았기 때문이에요"],
+   correct:1, pts:POINTS_APPLY, scene:"sun",
+   h1:"햇볕을 받는 양을 달라지게 하는 것은 <b>위도</b>예요.",
+   h2:"동서로 옮기면 <b>경도</b>만 달라져요.",
+   reason:"햇볕을 받는 양은 <b>위도</b>에 따라 달라져요. 동서로 옮기면 경도만 달라지고 위도는 그대로이므로 햇볕 칸도 그대로였어요."}
+];
+
+/* ===== 슬라이드 18매 ===== */
+const slides=[];
+// 1 들어가기
+slides.push({stage:1,badge:"들어가기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s1">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">가로선과 세로선을 본 적이 있나요?</h2>
+  <div class="ka-grp">
+  <div class="paper"><div class="ph">\uD83C\uDF0D 지난 시간에는</div>
+    디지털 영상 지도를 살펴봤어요. 오늘은 지구본과 세계지도에 그려 놓은 <b>가로선</b>과 <b>세로선</b>을 살펴봐요.</div>
+  <div class="scene-row">${sceneCard('open','가로선과 세로선','wide')}</div>
+  <div class="tipbox">지구본과 세계지도에는 위치를 쉽게 찾을 수 있도록 <b>가상으로 그려 놓은 선</b>이 있어요.
+    가로선인 <b>위선</b>은 위도를 나타내고, 세로선인 <b>경선</b>은 경도를 나타내요.</div>
+  <div class="note">오늘은 <b>위도</b>와 <b>경도</b>가 무엇인지 알아봐요.</div></div>`});
+// 2 살펴보기 — 위도
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">위도는 무엇인가요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('lat','위선과 위도','wide')}</div>
+    <div class="tipbox"><b>위도</b>는 <b>적도</b>를 기준으로 남북으로 얼마나 떨어져 있는지를 나타내며,
+      북쪽과 남쪽으로 각각 <b>90°씩</b> 나뉘어요. 적도를 기준으로 북쪽을 <b>북위</b>, 남쪽을 <b>남위</b>라고 해요.</div>
+    <div class="note"><b>적도</b>는 위도 0°로, 위도의 기준이 되는 선이에요.</div></div>`});
+// 3 살펴보기 — reveal: 햇볕을 받는 양과 계절
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">위도에 따라 무엇이 달라질까요?</h2>
+  <div class="ka-grp">
+  <div class="paper"><div class="ph">\uD83E\uDDE9 먼저 생각해 봐요</div>
+    지구는 둥글어요. 그래서 적도에 가까운 곳과 극에 가까운 곳은 햇볕이 <b>어떻게</b> 다르게 들어올까요?
+    먼저 떠올려 보고 눌러요.</div>
+  <div class="scene-row">${sceneCard('sun','햇볕을 받는 양의 차이','wide')}</div>
+  ${st.revealed?`<div class="answer-box">· 지구는 둥글어서 <b>위도에 따라 햇볕을 받는 양이 달라요.</b><br>
+    · 같은 면적의 땅일 때 <b>저위도 지역</b>은 햇볕을 많이 받아 기온이 높아요 — 햇볕이 수직에 가깝게 들어와 좁은 지역에 열이 모여요.<br>
+    · <b>고위도 지역</b>은 햇볕을 적게 받아 기온이 낮아요 — 햇볕이 비스듬하게 들어와 넓은 지역으로 열이 퍼져요.<br>
+    · 같은 양의 햇볕이 <b>고위도 지역으로 갈수록 넓게 퍼져요.</b><br>
+    · 지구는 <b>기울어진 상태로 태양 주위를 돌기</b> 때문에 계절의 변화가 나타나고, 두 반구의 계절이 서로 반대로 나타나요.</div>`
+    :`<div class="note">둥근 지구에 햇볕이 들어오면 어디가 더 많이 받을까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 4 살펴보기 — 직접조작(따로 도는 두 잣대의 판)
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">한쪽으로 옮겨 봐요</h2>
+  <div class="ka-grp">${mvPanel(st)}</div>`});
+// 5 살펴보기 — 경도
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">경도는 무엇인가요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('lon','경선과 경도','wide')}</div>
+    <div class="tipbox"><b>경도</b>는 <b>본초 자오선</b>을 기준으로 동서로 얼마나 떨어져 있는지를 나타내며,
+      동쪽과 서쪽으로 각각 <b>180°씩</b> 나뉘어요. 같은 경도인 지점을 연결한 <b>경선</b>은 북극과 남극을 지나는
+      세로선으로 나타나요. 본초 자오선을 기준으로 동쪽을 <b>동경</b>, 서쪽을 <b>서경</b>이라고 해요.</div>
+    <div class="note"><b>본초 자오선</b>은 경도 0° 선이에요. 지구본을 이용하면 모든 경선이 북극과 남극으로 모이는 것을 볼 수 있어요.</div></div>`});
+// 6 살펴보기 — reveal: 시차
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">경도에 따라 무엇이 달라질까요?</h2>
+  <div class="ka-grp">
+  <div class="paper"><div class="ph">\uD83E\uDDE9 먼저 생각해 봐요</div>
+    다른 곳에서 열리는 경기를 새벽에 본 적이 있나요? 그곳은 낮인데 여기는 왜 밤일까요? 먼저 떠올려 보고 눌러요.</div>
+  <div class="scene-row">${sceneCard('gap','시차','wide')}</div>
+  ${st.revealed?`<div class="answer-box">· 지구는 <b>하루에 한 바퀴씩 스스로 회전하기</b> 때문에 경도에 따라 시각이 달라져 <b>시차</b>가 생겨요.<br>
+    · <b>시차</b>는 세계 각 지역의 <b>시간 차이</b>예요.<br>
+    · 그래서 어느 지역이 아침일 때 다른 지역은 저녁일 수 있어요.</div>`
+    :`<div class="note">지구는 하루에 몇 바퀴를 스스로 돌까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 7 살펴보기 — reveal: 기준이 되는 경선
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">시차가 있으면 불편하지 않을까요?</h2>
+  <div class="ka-grp">
+  <div class="paper"><div class="ph">\uD83E\uDDE9 먼저 생각해 봐요</div>
+    같은 나라 안에서도 자리마다 경도가 조금씩 달라요. 그러면 시각을 어떻게 정해야 서로 편할까요?</div>
+  <div class="scene-row">${sceneCard('base','기준이 되는 경선','wide')}</div>
+  ${st.revealed?`<div class="answer-box">· 시차로 생기는 지역 간 <b>교류의 불편함을 줄이려고</b> 나라마다 <b>기준이 되는 경선</b>을 정해 그 경선의 시각을 사용해요.<br>
+    · 국토가 가로로 긴 나라들은 <b>여러 개의 시각</b>을 쓰기도 하고 <b>하나의 통일된 시각</b>을 쓰기도 해요.<br>
+    <span style="color:#64748B">그래서 판의 시각 칸도 <b>같은지 다른지</b>까지만 말하고 몇 시인지는 말하지 않아요.</span></div>`
+    :`<div class="note">자리마다 시각이 다 다르면 어떤 일이 생길까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리: 요약
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부한 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('sum','오늘의 정리','wide')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">①</span><div><b style="color:var(--green)">위도</b> — 적도를 기준으로 남북으로 얼마나 떨어져 있는지를 나타내요.</div></div>
+    <div class="sum-item"><span class="n">②</span><div><b style="color:var(--green)">햇볕을 받는 양</b> — 지구는 둥글어서 위도에 따라 햇볕을 받는 양이 달라요.</div></div>
+    <div class="sum-item"><span class="n">③</span><div><b style="color:var(--green)">두 반구의 계절</b> — 두 반구의 계절이 서로 반대로 나타나요.</div></div>
+    <div class="sum-item"><span class="n">④</span><div><b style="color:var(--green)">경도</b> — 본초 자오선을 기준으로 동서로 얼마나 떨어져 있는지를 나타내요.</div></div>
+    <div class="sum-item"><span class="n">⑤</span><div><b style="color:var(--green)">시차</b> — 경도에 따라 시각이 달라져 시차가 생겨요.</div></div>
+    <div class="sum-item"><span class="n">★</span><div><b style="color:var(--green)">오늘의 조작</b> — 남북으로 옮기면 <b>햇볕 칸만</b> 달라지고, 동서로 옮기면 <b>시각 칸만</b> 달라졌어요. 두 잣대가 <b>따로</b> 돌아요.</div></div>
+  </div>
+  <div class="note">위도대에 해당하는 나라를 찾고 경도별로 나라를 나누어 보는 활동은 <b>교실에서</b> 세계지도와 지구본을 펴고 해요.</div></div>`});
+// 17 정리: 자기 평가
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 활동을 스스로 평가해요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"위도가 무엇인지 설명할 수 있어요",st)}
+    ${selfCheck(1,"경도가 무엇인지 설명할 수 있어요",st)}
+    ${selfCheck(2,"위도와 경도에 따라 무엇이 달라지는지 이야기할 수 있어요",st)}
+  </div><div class="note">별이 적게 채워진 곳은 앞 슬라이드를 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">오늘 공부를 마쳤어요!</h2>
+  <div class="ka-grp">
+    <div class="scene-row">${sceneCard('done','','wide')}</div>
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">다음 시간에는 지구본과 세계지도에서 <b style="color:var(--amber)">위치를 나타내는 방법</b>을 알아봐요!</div>
+  </div>`;
+}});
+
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">\u2B55 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g6_social_u3_l03";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  mvLat:MV_LAT_MID, mvLon:MV_LON_MID, mvSeenS:1, mvSeenT:0, mvPhase:0, mvRead:null, mvFin:null,
+  mvWrongE:false, mvWrongR:null, mvWrongF:null,
+  mvMsg:null, mvWarn:false, mvBusy:false,
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 \u2192';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+
+function mvRender(){ main.innerHTML = slides[state.idx].render(state); }
+function mvHold(msg){
+  state.mvWarn=true; state.mvBusy=true; state.mvMsg=msg;
+  playThud(); mvRender();
+  setTimeout(()=>{ state.mvBusy=false; state.mvWarn=false; state.mvMsg=null;
+    state.mvWrongE=false; state.mvWrongR=null; state.mvWrongF=null; mvRender(); },1600);
+}
+
+/* ① 남북으로 옮기기 — ★ 이 함수가 이 패턴의 핵심 신규성이다.
+   위도만 바뀐다. 이 본문에는 `mvLon`을 건드리는 자리가 **하나도 없다.**
+   ★ 옮기는 자리에는 옳고 그름이 없다(정답 상수 부재 · 감점 0). */
+function mvNS(d){
+  if(state.mvFin!=null) return;                                        // 가드①
+  if(state.mvBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(d) || (d!==1 && d!==-1)) return;                // 가드②
+  if(state.mvPhase!==0){ mvHold(MV_LOCK_NS); return; }                 // 가드⑤ ★핵심 — 판 불변
+  const nx = state.mvLat + d;
+  if(nx<0 || nx>=MV_LAT_N){ mvHold(MV_EDGE); return; }                 // 가드③ 판 불변
+  state.mvLat = nx;                                                    // ★ 위도가 바뀌는 자리는 여기 한 곳뿐
+  state.mvSeenS |= 1 << mvBand(state.mvLat);
+  state.mvWarn=false; state.mvWrongE=false;
+  state.mvMsg = `<b>${MV_LAT_S[state.mvLat]}</b>(으)로 옮겼어요. <b>햇볕 칸</b>을 살펴봐요 — 시각 칸은 그대로예요.`;
+  playBlip(); mvRender();
+}
+
+/* ② 동서로 옮기기 — 경도만 바뀐다. 이 본문에는 `mvLat`을 건드리는 자리가 **하나도 없다.** */
+function mvEW(d){
+  if(state.mvFin!=null) return;                                        // 가드①
+  if(state.mvBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(d) || (d!==1 && d!==-1)) return;                // 가드②
+  if(state.mvPhase!==1){ mvHold(MV_LOCK_EW); return; }                 // 가드⑤ ★핵심 — 판 불변
+  const nx = state.mvLon + d;
+  if(nx<0 || nx>=MV_LON_N){ mvHold(MV_EDGE); return; }                 // 가드③ 판 불변
+  state.mvLon = nx;                                                    // ★ 경도가 바뀌는 자리는 여기 한 곳뿐
+  state.mvSeenT |= 1 << mvSide(state.mvLon);
+  state.mvWarn=false;
+  state.mvMsg = `<b>${MV_LON_S[state.mvLon]}</b>(으)로 옮겼어요. <b>시각 칸</b>을 살펴봐요 — 햇볕 칸은 그대로예요.`;
+  playBlip(); mvRender();
+}
+
+/* ③ 축 바꾸기 — 햇볕 갈래 셋을 겪어야 열린다(순서). */
+function mvNext(){
+  if(state.mvFin!=null) return;                                        // 가드①
+  if(state.mvBusy) return;                                             // 가드⑨
+  if(state.mvPhase!==0) return;                                        // 이미 동서 차례
+  if(!mvOpenEW(state)){ state.mvWrongE=true; mvHold(MV_ORDER_E); return; } // 가드④ 순서 — 판 불변
+  state.mvPhase = 1;
+  state.mvSeenT |= 1 << mvSide(state.mvLon);
+  state.mvWarn=false; state.mvWrongE=false;
+  state.mvMsg = `이제 <b>동서로</b> 옮겨 봐요. 이번에는 무엇이 달라지는지 살펴봐요.`;
+  playBlip(); mvRender();
+}
+
+/* ④ 판 다시 읽기 — 판이 표시해 주지 않고 학생이 판을 읽어서 찾는다. */
+function mvReadPick(k){
+  if(state.mvFin!=null) return;                                        // 가드①
+  if(state.mvBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(k) || k<0 || k>=MV_READ.length) return;         // 가드②
+  if(!mvOpenRead(state)){ mvHold(MV_ORDER_R); return; }                // 가드⑥ 순서 — 판 불변
+  if(state.mvRead!=null){ mvHold(MV_READ_DONE); return; }              // 가드⑦ 판 불변
+  if(k!==MV_READ_OK){ state.mvWrongR=k; mvHold(MV_READ_NO[k]); return; }
+  state.mvRead=k; state.mvWrongR=null; state.mvMsg=null; state.mvWarn=false;
+  playBlip(); mvRender();
+}
+
+/* ⑤ 마무리 — 지도서 「5~6차시 주요 내용 정리」 원문 */
+function mvFinish(k){
+  if(state.mvFin!=null) return;                                        // 가드①
+  if(state.mvBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(k) || k<0 || k>=MV_FIN.length) return;          // 가드②
+  if(state.mvRead==null){ mvHold(MV_ORDER_F); return; }                // 가드⑧ 순서 — 판 불변
+  if(k===MV_FIN_OK){
+    state.mvFin=k; state.mvWrongF=null; state.mvMsg=null; state.mvWarn=false;
+    playChime(); mvRender(); return;
+  }
+  state.mvWrongF=k;
+  mvHold(MV_FIN_NO[k]);
+}
+
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2;
+    if(qs.hint>=2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">\uD83D\uDCD8 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 \u2192</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // 3단원 4차시 미양산 — 양산 시 재배선
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+</body>
+</html>

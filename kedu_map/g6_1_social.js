@@ -308,14 +308,14 @@ window.KEDU_MAP["g6_1_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u3_l03",
+     "lessonId": "g6_social_u3_l03_v1",
      "n": "3",
      "title": "위도와 경도를 알아볼까요",
      "sub": "① 세계를 표현하는 다양한 자료",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/social/3단원_지구대륙그리고국가들/g6_social_u3_l03_한쪽만움직여요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
