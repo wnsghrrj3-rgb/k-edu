@@ -305,6 +305,11 @@ tr:hover td{background:#FAFBFC}
 .seat-card .seat-pin.none{opacity:.7}
 .seat-card .seat-pin-reset{font-size:11px;padding:2px 8px;border-radius:50px;border:1px solid var(--border);background:var(--bg);color:var(--sub);cursor:pointer;flex-shrink:0}
 .seat-card .seat-pin-reset:hover{border-color:#b45309;color:#b45309}
+.seat-card .seat-consent{display:flex;align-items:center;gap:4px;font-size:11px;flex-shrink:0;cursor:pointer;user-select:none;color:var(--sub)}
+.seat-card .seat-consent input{width:15px;height:15px;cursor:pointer;margin:0}
+.seat-card .seat-consent.on{color:#1f7a4d;font-weight:600}
+.seat-card.no-consent{opacity:.72}
+.seat-card.no-consent .seat-status{background:#fff7e6;color:#8a6d1f;border:1px solid #f0d9a8}
 .seat-delete{background:none;border:none;color:var(--sub);font-size:16px;cursor:pointer;padding:0 4px;line-height:1;transition:color .15s}
 .seat-delete:hover{color:var(--red)}
 .seat-delete[disabled]{opacity:.3;cursor:not-allowed}
@@ -1336,7 +1341,7 @@ async function loadClassCode(){
             본 학급 학생들의 학부모(법정대리인)로부터 가정통신문(별지 제1호 양식)을 통해 케이에듀 개인정보 처리에 관한 사전 서면 동의를 받았음을 확인합니다.</span>
           </label>
           <div style="margin-top:8px;padding-left:28px;font-size:12px;color:#6b7a90">
-            ※ 미동의 학생은 학급에 포함하지 마세요. 동의서 원본은 학교 학칙에 따라 별도 보관해 주세요.
+            ※ 동의서를 내지 않은 학생은 명단에서 「동의」를 끄면 됩니다 — 그 학생은 같은 코드·이름으로 들어와도 구경만 되고 기록이 저장되지 않아요. 동의서 원본은 학교 학칙에 따라 별도 보관해 주세요.
             <a href="/privacy/" target="_blank" style="color:#3b82f6;text-decoration:none">처리방침 보기 →</a>
           </div>
         </div>
@@ -1485,7 +1490,7 @@ async function promoteToConsent(){
     '이 학급을 저장형(동의 완료)으로 전환합니다.\n\n' +
     '본 학급 학생들의 학부모(법정대리인)로부터 가정통신문(별지 제1호 양식)을 통해\n' +
     '케이에듀 개인정보 처리에 관한 사전 서면 동의를 받았음을 확인합니다.\n\n' +
-    '※ 미동의 학생은 학급에 포함하지 마세요. 동의서 원본은 학교 학칙에 따라 별도 보관해 주세요.\n\n' +
+    '※ 동의서를 내지 않은 학생은 명단에서 「동의」를 끄면 됩니다(구경만 되고 기록 저장 없음). 동의서 원본은 학교 학칙에 따라 별도 보관해 주세요.\n\n' +
     '전환 후 학생 슬롯(닉네임 명단)을 등록하면 닉네임 입장·기록 저장이 시작됩니다.'
   );
   if(!ok) return;
@@ -2231,6 +2236,7 @@ function closeStudentDetail(){
 // =============================================
 let _seatsCache = [];
 let _seatPinCols = false;   // SQL #40(학생 비밀번호) 적용 여부 — 목록 조회 결과로 판정
+let _seatConsentCol = false; // SQL #42(학생별 동의) 적용 여부 — 목록 조회 결과로 판정
 // 2026-09-04 준호 결정: 연수 전 학생 비밀번호를 되돌린다(학급코드+이름만 입장, SQL #41).
 // 표·열은 남겨 두므로 다시 켤 때는 이 스위치를 true 로 되돌리고 sql/setup_seat_pin.sql 을 재실행한다.
 const SEAT_PIN_UI = false;
@@ -2261,10 +2267,18 @@ async function loadSeatsList(){
 
   // 비밀번호 상태(pin_set_at·pin_reset_at)는 SQL #40 뒤에만 있다 — 미적용이면 종전 열로 내려간다(폴백)
   let { data: seats, error } = await db.from('student_seats')
-    .select('id, nickname, seat_no, claim_code, claimed_by, claimed_at, created_at, pin_set_at, pin_reset_at')
+    .select('id, nickname, seat_no, claim_code, claimed_by, claimed_at, created_at, pin_set_at, pin_reset_at, consent, consent_at')
     .eq('class_code_id', currentClassCode.id)
     .order('created_at', { ascending: true });
-  _seatPinCols = !error;
+  _seatPinCols = !error; _seatConsentCol = !error;
+  if(error && /consent/.test(error.message || '')){
+    // SQL #42 미적용 — 동의 열 없이(전원 저장형) 종전대로
+    ({ data: seats, error } = await db.from('student_seats')
+      .select('id, nickname, seat_no, claim_code, claimed_by, claimed_at, created_at, pin_set_at, pin_reset_at')
+      .eq('class_code_id', currentClassCode.id)
+      .order('created_at', { ascending: true }));
+    _seatPinCols = !error;
+  }
   if(error && /pin_set_at|pin_reset_at/.test(error.message || '')){
     ({ data: seats, error } = await db.from('student_seats')
       .select('id, nickname, seat_no, claim_code, claimed_by, claimed_at, created_at')
@@ -2284,9 +2298,10 @@ async function loadSeatsList(){
   const claimed = _seatsCache.filter(s => s.claimed_by).length;
   const unclaimed = total - claimed;
 
+  const consented = _seatConsentCol ? _seatsCache.filter(s => s.consent === true).length : null;
   const summary = `
     <div class="seats-summary">
-      <span><b>${total}</b>명 등록 · 입장 <b>${claimed}</b> · 대기 <b>${unclaimed}</b></span>
+      <span><b>${total}</b>명 등록 · 입장 <b>${claimed}</b> · 대기 <b>${unclaimed}</b>${consented !== null ? ` · 동의 <b>${consented}</b>` : ''}</span>
       <span style="font-size:12px;opacity:.85">${escapeHtml(currentClassCode.label || currentClassCode.code)}</span>
     </div>
   `;
@@ -2302,8 +2317,13 @@ async function loadSeatsList(){
     listHtml = `<div class="seats-list">` +
       _seatsCache.map(s => {
         const isClaimed = !!s.claimed_by;
-        const cls = isClaimed ? 'claimed' : 'unclaimed';
-        const statusText = isClaimed ? '✓ 입장' : '대기';
+        const noConsent = _seatConsentCol && s.consent !== true;
+        const cls = (isClaimed ? 'claimed' : 'unclaimed') + (noConsent ? ' no-consent' : '');
+        const statusText = noConsent ? '구경만' : (isClaimed ? '✓ 입장' : '대기');
+        // 학생별 동의(#42) — 끄면 그 학생은 게스트(구경)로만 들어오고 기록이 저장되지 않는다
+        const consentHtml = _seatConsentCol
+          ? `<label class="seat-consent ${s.consent ? 'on' : ''}" title="${s.consent ? '학부모 동의 O — 기록 저장' : '동의 전 — 구경만, 기록 저장 없음'}"><input type="checkbox" ${s.consent ? 'checked' : ''} onchange="setSeatConsent('${s.id}', this.checked)">동의</label>`
+          : '';
         const delBtn = isClaimed
           ? `<button class="seat-delete" disabled title="입장한 학생은 삭제할 수 없어요. 권리 행사 채널에서 삭제하세요.">×</button>`
           : `<button class="seat-delete" onclick="deleteSeat('${s.id}', '${escapeHtml(s.nickname).replace(/'/g, "\\'")}')" title="슬롯 삭제">×</button>`;
@@ -2322,7 +2342,8 @@ async function loadSeatsList(){
         return `
           <div class="seat-card ${cls}">
             <span class="seat-nick" title="${escapeHtml(s.nickname)}">${s.seat_no ? `<span style="color:var(--sub);font-variant-numeric:tabular-nums;margin-right:6px">${s.seat_no}</span>` : ''}${escapeHtml(s.nickname)}</span>
-            ${pinHtml}
+            ${consentHtml}
+            ${noConsent ? '' : pinHtml}
             <span class="seat-status">${statusText}</span>
             ${delBtn}
           </div>`;
@@ -2333,6 +2354,7 @@ async function loadSeatsList(){
   const actions = `
     <div class="seats-action-row">
       <button class="rights-export-btn ghost" onclick="closeSeatsModal()">닫기</button>
+      ${_seatConsentCol && total > 0 ? `<button class="rights-export-btn ghost" onclick="setAllSeatsConsent(true)" title="명단 전원을 동의로 표시">전체 동의</button><button class="rights-export-btn ghost" onclick="setAllSeatsConsent(false)" title="명단 전원을 동의 전으로">전체 해제</button>` : ''}
       <button class="rights-export-btn" onclick="openBulkModal()">➕ 일괄 추가</button>
     </div>
   `;
@@ -2340,6 +2362,7 @@ async function loadSeatsList(){
   const note = `
     <div class="modal-note" style="margin-top:14px">
       <b>📌 학생 진입 흐름</b> — 학생은 메인 페이지(<code>keduclass.com</code>)에서 <b>학급코드 + 본인 이름</b>만 넣으면 입장합니다. 별도 회원가입·비밀번호 없음.<br>
+      ${_seatConsentCol ? `<b>📌 학생별 동의</b> — 학부모 동의서를 받은 학생만 <b>동의</b>를 켜 주세요. 켜진 학생은 입장하면 학습 기록이 저장돼요. 꺼진 학생은 같은 코드·이름으로 들어와도 <b>구경만</b> 되고 아무것도 저장되지 않아요(이미 쌓인 기록은 지우지 않고 멈춤 — 삭제는 권리 행사 채널). 새로 붙여넣은 학생은 동의 전으로 시작해요.<br>` : ''}
       <b>📌 슬롯 삭제 제약</b> — 이미 입장한 학생(녹색 ✓)은 슬롯 삭제로 제거할 수 없어요. <b>권리 행사 채널의 [삭제]</b> 메뉴를 사용하세요 (제8조 5항 정합).
     </div>
   `;
@@ -2356,6 +2379,25 @@ function openBulkModal(){
 
 function closeBulkModal(){
   document.getElementById('bulk-modal').classList.remove('show');
+}
+
+// 학생별 동의 표시 — sql/setup_seat_consent.sql #42 set_seats_consent(본인 학급·승인 교사만)
+async function setSeatConsent(seatId, on){
+  const { error } = await db.rpc('set_seats_consent', { p_seat_ids: [seatId], p_consent: !!on });
+  if(error){ showToast('바꾸지 못했어요: ' + (error.message || '')); await loadSeatsList(); return; }
+  const s = _seatsCache.find(x => x.id === seatId);
+  showToast(`${s ? s.nickname : '학생'} — ${on ? '동의 O · 기록 저장' : '동의 전 · 구경만'}`);
+  await loadSeatsList();
+}
+async function setAllSeatsConsent(on){
+  const ids = _seatsCache.filter(s => (s.consent === true) !== !!on).map(s => s.id);
+  if(!ids.length){ showToast(on ? '이미 전원 동의예요.' : '이미 전원 동의 전이에요.'); return; }
+  if(!confirm(on
+    ? `${ids.length}명을 동의로 표시할까요?\n학부모 동의서를 실제로 받은 학생만 켜 주세요.`
+    : `${ids.length}명을 동의 전으로 돌릴까요?\n입장했던 학생은 구경만 되고 기록 저장이 멈춰요(기존 기록은 그대로).`)) return;
+  const { error } = await db.rpc('set_seats_consent', { p_seat_ids: ids, p_consent: !!on });
+  if(error){ showToast('바꾸지 못했어요: ' + (error.message || '')); }
+  await loadSeatsList();
 }
 
 // 비밀번호 초기화 — sql/setup_seat_pin.sql #40 reset_seat_pin(본인 학급·승인 교사만). 기록은 건드리지 않는다.

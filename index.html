@@ -1034,6 +1034,19 @@ async function enterStudent(){
     }
     if(status === 'created' || status === 'reclaim') setPinMode(null);
 
+    // 학생별 동의 전(#42) — 서버가 아무것도 만들지 않았다. 익명 세션도 버리고 게스트(구경)로만 들어간다. 이름은 이 기기에도 남기지 않는다.
+    if(status === 'guest_seat'){
+      setPinMode(null);
+      try { await db.auth.signOut(); } catch(e){}
+      currentUser = null;
+      if(window.KeduTier && KeduTier.setGuest){
+        showGuestUI(KeduTier.setGuest(code, claim.class_label, claim.grade));
+      }
+      showToast(claim.message || '아직 학부모 동의 전이라 기록은 저장되지 않아요.');
+      btn.disabled = false; updateEntryBtn();
+      return;
+    }
+
     if(status === 'created' || status === 'reclaim'){
       // 성공 — 프로필 로드 + UI 전환
       await loadProfile();

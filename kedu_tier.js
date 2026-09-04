@@ -214,6 +214,7 @@
     resolve: resolve,          // async 전체 판별
     guest: readGuest,          // 동기 — 게스트 상태만
     enterGuest: enterGuest,    // 게스트 입장 시도
+    setGuest: setGuest,        // 서버가 guest_seat(학생별 동의 전)로 돌려보낼 때 — 이름은 저장하지 않는다
     clearGuest: clearGuest,    // 게스트 나가기
     canSave: function (tierObj) {   // 서버 저장 허용 여부 — 유일한 판정 창구
       return !!(tierObj && tierObj.tier === 'student');
