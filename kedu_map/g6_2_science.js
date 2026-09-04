@@ -82,6 +82,16 @@ window.KEDU_MAP["g6_2_science"] = {
      "url": "/grade6/semester2/science/1단원_계절의변화/g6_sci_u1_l07_창의가팡팡.html",
      "track": "tb",
      "ready": true
+    },
+    {
+     "key": "g6_science_u1_l08",
+     "lessonId": "g6_s2_sci_u1_l08_v1",
+     "n": "12~13",
+     "title": "과학이 톡톡 — 태양 에너지를 많이 받기 위한 노력!",
+     "sub": null,
+     "url": "/grade6/semester2/science/1단원_계절의변화/g6_sci_u1_l08_과학이톡톡.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }
