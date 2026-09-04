@@ -107,7 +107,9 @@ ok(/비밀번호 아직/.test(te), '아직 표시 누락');
 ok(/async function resetSeatPin\(seatId, nickname\)/.test(te) && /db\.rpc\('reset_seat_pin', \{ p_seat_id: seatId \}\)/.test(te), 'reset RPC 호출 누락');
 ok(/if\(!confirm\(/.test(between(te, 'async function resetSeatPin', 'await loadSeatsList')), '초기화 확인창 누락');
 ok(/학습 기록은 그대로예요/.test(te), '초기화가 기록을 지우지 않는다는 문면 누락');
-ok(/if\(_seatPinCols\)\{/.test(te), '열 없으면 PIN 표시를 통째로 숨기지 않음');
+// 2026-09-04 되돌림(SQL #41): 명단의 PIN 표시는 스위치로 꺼 둔다. 표·열·RPC 는 그대로 남아 다시 켤 수 있다.
+ok(/if\(_seatPinCols && SEAT_PIN_UI\)\{/.test(te), '열 없으면 PIN 표시를 통째로 숨기지 않음');
+ok(/const SEAT_PIN_UI = false;/.test(te), 'PIN 표시 스위치가 꺼져 있지 않다(2026-09-04 되돌림)');
 
 // ── 인라인 스크립트 문법
 [['index.html', ix], ['teacher/index.html', te]].forEach(([f, s]) => {
