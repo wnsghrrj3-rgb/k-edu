@@ -318,14 +318,14 @@ window.KEDU_MAP["g6_1_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u3_l04",
+     "lessonId": "g6_social_u3_l04_v1",
      "n": "4",
      "title": "지구본과 세계지도에서 위치를 표현해 볼까요 / [별별 직업] 공간 정보 연구원",
      "sub": "① 세계를 표현하는 다양한 자료",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/social/3단원_지구대륙그리고국가들/g6_social_u3_l04_만나야정해져요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
