@@ -274,6 +274,25 @@
 
   /* ================= 우: Context Panel — 선택 대상별 전환 ================= */
   const field = (label, val) => `<label class="cx-field"><span>${label}</span><input type="text" value="${M().esc(String(val))}" readonly></label>`;
+  /* R135 — 위치·크기·글자 크기·굵기를 패널에서 직접 숫자로 (모든 템플릿 요소 공통).
+     캔버스 드래그·핸들과 같은 el.x/y/w/h/size/weight 를 쓴다 — 별도 상태 없음.
+     input: 캔버스 DOM 즉시 반영(재렌더 없음) · change: snap 1회 + R() 커밋 */
+  const numIn = (key, val, min, max, step, unit) =>
+    `<label class="cx-nf"><span>${key === 'x' ? 'X' : key === 'y' ? 'Y' : key === 'w' ? '폭' : key === 'h' ? '높이' : key}</span>` +
+    `<input type="number" value="${val}" min="${min}" max="${max}" step="${step}" data-ws-num="${key}" data-stop><i>${unit}</i></label>`;
+  const geomCtl = (el) => {
+    const r1 = (v) => Math.round((+v || 0) * 10) / 10;
+    const isText = el.kind === 'text';
+    return `<label class="cx-field"><span>위치 · 크기 (%)</span></label>` +
+      `<div class="cx-nrow">${numIn('x', r1(el.x), -50, 150, 0.5, '%')}${numIn('y', r1(el.y), -50, 150, 0.5, '%')}</div>` +
+      `<div class="cx-nrow">${numIn('w', r1(el.w), 2, 200, 0.5, '%')}${isText ? '' : numIn('h', r1(el.h), 2, 200, 0.5, '%')}</div>`;
+  };
+  const WEIGHTS = [[300, '가늘게'], [400, '보통'], [500, '중간'], [700, '굵게'], [900, '아주 굵게']];
+  const textSizeCtl = (el) => {
+    const sz = Math.round((+el.size || 3) * 10) / 10, wt = +el.weight || 400;
+    return `<label class="cx-prow" style="margin-bottom:6px"><span>글자 크기</span><input type="range" min="1" max="20" step="0.5" value="${sz}" data-ws-tsize data-stop><b data-ws-tsizev>${sz}</b></label>` +
+      `<label class="cx-field"><span>굵기</span><select data-ws-tweight data-stop>${WEIGHTS.map(([v, n]) => `<option value="${v}"${wt === v ? ' selected' : ''}>${n} (${v})</option>`).join('')}</select></label>`;
+  };
   /* R47 — 채우기 방식 컨트롤 (cover=꽉 채우기·잘림 / contain=원본 전체) */
   const fitCtl = (el, idx) => {
     const cur = el.fit === 'contain' ? 'contain' : 'cover';
@@ -480,7 +499,7 @@
             `<button class="cx-scenebtn" data-ws-tsall>✨ 이 스타일을 모든 장면 글자에</button>`;
         }
         body = `<label class="cx-field"><span>내용</span><textarea data-ws-txt="${sel.idx}" rows="3">${m.esc(el.text)}</textarea></label>` +
-          field('크기', el.size) + field('굵기', el.weight || 400) + field('폭', el.w + '%') + styleCtl;
+          textSizeCtl(el) + geomCtl(el) + styleCtl;
       } else if (sel.type === 'video') {
         title = '영상';
         /* R127 — 「볼륨 100%」 죽은 표기를 실컨트롤로. 클립 소리는 기본 켬 —
@@ -490,11 +509,11 @@
           `<button class="cx-shb${!el.mute ? ' on' : ''}" data-ws-vmute="0" title="소리 켬">🔊 켬</button>` +
           `<button class="cx-shb${el.mute ? ' on' : ''}" data-ws-vmute="1" title="소리 끔">🔇 끔</button><i></i></div>` +
           (el.mute ? '' : `<label class="cx-prow"><span>볼륨</span><input type="range" min="0" max="100" step="5" value="${vv}" data-ws-vvol data-stop><b data-ws-vvolb>${vv}%</b></label>`);
-        body = field('클립', el.label || '영상') + fitCtl(el, sel.idx) + focalCtl(el, sel.idx) + sndCtl +
+        body = field('클립', el.label || '영상') + geomCtl(el) + fitCtl(el, sel.idx) + focalCtl(el, sel.idx) + sndCtl +
           `<div class="cx-hint">소리는 미리보기·영상 저장에 실려요 · 트리밍·속도 — 후속</div>`;
       } else if (sel.type === 'shape') {
         title = '도형';
-        body = field('종류', el.label || '도형') + field('채움', '단색') + field('테두리', '없음');
+        body = field('종류', el.label || '도형') + geomCtl(el) + field('채움', '단색') + field('테두리', '없음');
       } else {
         title = '이미지';
         /* R101 — 사진 보정·필터 실컨트롤 (MK_PHOTO). 클릭 첫 행동 = 사진 바꾸기(§11) */
@@ -527,7 +546,7 @@
             (el.src && PH.cropOf(el) ? `<button class="cx-scenebtn" data-ws-pcrop0>✂ 자르기 해제</button>` : '') + /* R105 */
             (PH.isEdited(el) ? `<button class="cx-scenebtn" data-ws-preset0>↩ 원래대로</button>` : '');
         }
-        body = field('이름', el.label || '이미지') + field('크기', el.w + '×' + el.h + '%') + photoCtl + fitCtl(el, sel.idx) + focalCtl(el, sel.idx);
+        body = field('이름', el.label || '이미지') + photoCtl + geomCtl(el) + fitCtl(el, sel.idx) + focalCtl(el, sel.idx);
       }
       body += rotCtl(el);                              /* R107 — 회전은 요소 종류를 가리지 않는다 */
     }
@@ -1150,6 +1169,43 @@
           if (elDom) elDom.innerHTML = m.esc(txt.value).replace(/\n/g, '<br>');
         };
         txt.onchange = () => R();
+      }
+      /* R135 — 위치·크기 숫자 입력 (모든 요소 종류). input = 캔버스 DOM 직갱신, change = snap + R() */
+      {
+        const selEl = () => WS.sel && WS.sel.idx != null && WS.sel.type !== 'scene' ? scene().elements[WS.sel.idx] : null;
+        const selDom = () => root.querySelector(`[data-ws-el="${WS.sel && WS.sel.idx}"]`);
+        const cl = (v, a, b) => Math.min(b, Math.max(a, v));
+        root.querySelectorAll('[data-ws-num]').forEach((inp) => {
+          const key = inp.dataset.wsNum; let armed = false;
+          const apply = () => {
+            const el = selEl(); if (!el) return null;
+            let v = parseFloat(inp.value); if (!isFinite(v)) return null;
+            v = Math.round(cl(v, +inp.min, +inp.max) * 10) / 10;
+            if (!armed) { snap(); armed = true; }
+            el[key] = v;
+            const dom = selDom();
+            if (dom) dom.style[key === 'x' ? 'left' : key === 'y' ? 'top' : key === 'w' ? 'width' : 'height'] = v + '%';
+            return v;
+          };
+          inp.oninput = apply;
+          inp.onchange = () => { if (apply() != null) R(); };
+          inp.onkeydown = (ev) => { if (ev.key === 'Enter') { inp.blur(); } ev.stopPropagation(); };
+        });
+        const ts = root.querySelector('[data-ws-tsize]');
+        if (ts) {
+          let armed = false;
+          ts.oninput = () => {
+            const el = selEl(); if (!el) return;
+            if (!armed) { snap(); armed = true; }
+            el.size = Math.round(cl(+ts.value, 1, 20) * 10) / 10;
+            const lab = root.querySelector('[data-ws-tsizev]'); if (lab) lab.textContent = el.size;
+            const dom = selDom(), c = cpx();
+            if (dom) dom.style.fontSize = (el.size / 100 * c.CH).toFixed(1) + 'px';  /* 미리보기 근사 — 커밋 시 R() 이 정본 배치로 */
+          };
+          ts.onchange = () => { armed = false; R(); };
+        }
+        const tw = root.querySelector('[data-ws-tweight]');
+        if (tw) tw.onchange = () => { const el = selEl(); if (!el) return; snap(); el.weight = +tw.value || 400; R(); };
       }
       const ab = root.querySelector('[data-ws-anim]'); if (ab) ab.onclick = () => PG.go('animation');
       /* R47 — 채우기 방식 */
