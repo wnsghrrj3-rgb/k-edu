@@ -1,0 +1,1377 @@
+<!DOCTYPE html>
+<!--
+  g6_math_u6_l10 — 스스로 마무리해요 [6학년 2학기 6단원 10차시, 단일 40분]
+  단원: 6학년 2학기 6단원 「원기둥, 원뿔, 구」 / 지도서 341~381 · 교과서 140~142
+  base: g4_math_u6_l04(엔진·채점부·공통 CSS 계승) / 부품 solid3 · solidRow · solidRot · cylNet · viewFront · solidCalc
+  성격: 단원 평가 — 지도서 378 문항 분석 7축(분류 · 돌리기 · 구성 요소 · 전개도 이해 · 전개도 그리기 · 성질 · 비교)
+  ★ 오개념 훅: ★모선을 높이로, 옆면을 원으로, 밑면을 1개로 — 마무리 6 이 모아 놓은 세 가지 잘못
+  ★ 왜 그럴까 슬롯 = 슬7 : 왜 옆면의 가로가 밑면의 둘레인가 — 감아 붙일 때 밑면의 테두리와 딱 맞아야 원기둥이 된다
+  🔑 회수 키: meta·JS 모두 g6_2_math_u6_l10 (파일명·KEDU_MAP.key 는 g6_math_ 그대로 — 설계도 §2-2)
+  ⛔ 규약: 문자식 금지 / 권유형 종결 금지 / 이모지 슬라이드당 ≤2 / `나머지`·`π` 금지 / 기약분수 강제 없음
+  점수: 기본 4×10 + 응용 4×15 = 100 / mcq 정답 위치 q8=3 · q9=1 · q10=4 · q12=2 · q13=3 / pad 정답 q11=2 · q14=3 · q15=4
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g6_2_math_u6_l10_v1">
+<title>스스로 마무리해요 · K-edu 6학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#FBF7F1; --ink:#243043; --ink-soft:#62708A;
+  --coral:#15803D; --coral-deep:#10632F; --coral-soft:#D8EFDF;
+  --teal:#B45309; --teal-deep:#92400E; --teal-soft:#FBE8CC;
+  --gold:#F6B526; --emph:#F0451F; --line:#E4DACB; --mark:#FFE08A;
+  --f-title:'Do Hyeon',sans-serif; --f-body:'Gowun Dodum',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:0 14px 34px -18px rgba(36,48,67,.4);
+  --fs-title: clamp(26px, 4.2vw, 46px);
+  --fs-heading: clamp(24px, 3.7vw, 37px);
+  --fs-body: clamp(20px, 3.0vw, 29px);
+  --fs-caption: clamp(19px, 2.9vw, 27px);
+  --fs-label: clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --em-md: clamp(44px, 7vw, 80px);
+  --em-lg: clamp(66px, 10vw, 122px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(760px, 96vw);
+  --mw-lg: min(840px, 96vw);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+@keyframes ka-swap-r { 0%{transform:translateX(0); opacity:1;} 50%{transform:translateX(20px); opacity:.3;} 100%{transform:translateX(0); opacity:1;} }
+@keyframes ka-mark { from{background-size:0 100%;} to{background-size:100% 100%;} }
+
+/* ───── 컨테이너 ───── */
+.ka { background:var(--paper); width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; color:var(--ink); position:relative; overflow:hidden; }
+
+/* ───── 상단바 (topbar) ───── */
+.ka-h { display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); padding:clamp(11px,1.7vw,15px) clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:hover { transform:translateY(-1px); }
+.ka-pill { font-family:var(--f-title); background:var(--coral); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-where { font-size:clamp(14px,1.6vw,18px); color:var(--ink-soft); flex-shrink:1; }
+.ka-where b { color:var(--ink); }
+.ka-bar { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:46vw; }
+.ka-dot { width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s, background .2s; }
+.ka-dot:hover { transform:scale(1.2); }
+.ka-dot.active { background:var(--coral); transform:scale(1.3); }
+.ka-dot.done { background:var(--teal); }
+.ka-score { font-family:var(--f-title); background:#FFF8E1; color:#F57F17; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); padding:0; border-radius:50%; cursor:pointer; flex-shrink:0; color:var(--coral-deep); font-size:clamp(13px,2vw,16px); width:clamp(32px,4.5vw,38px); height:clamp(32px,4.5vw,38px); display:flex; align-items:center; justify-content:center; }
+
+/* ───── 본문 ───── */
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; gap:clamp(7px,1.3vw,12px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(8px,1.4vh,16px) clamp(16px,4vw,48px); overflow:hidden; }
+.slide.active { display:flex; }
+.slide-title { font-family:var(--f-title); font-size:var(--fs-title); margin:0; line-height:1.18; color:var(--ink); font-weight:400; text-align:center; flex-shrink:0; }
+.slide-sub { font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(10px,1.6vw,16px); left:clamp(16px,4vw,40px); font-family:var(--f-title); color:var(--coral); font-size:clamp(13px,1.9vw,18px); letter-spacing:.4px; z-index:5; }
+
+/* ───── 하단 내비 ───── */
+.ka-f { display:flex; justify-content:flex-end; gap:12px; padding:clamp(12px,1.7vw,16px) clamp(16px,4vw,40px); background:linear-gradient(to top, var(--paper) 62%, transparent); flex-shrink:0; }
+.ka-prev, .ka-hint, .ka-next { font-family:var(--f-title); font-size:clamp(15px,1.9vw,22px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(10px,1.4vw,15px) clamp(20px,2.8vw,38px); cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translateY(-2px); }
+.ka-prev { margin-right:auto; }
+.ka-hint { color:#F57F17; border-color:#FFE08A; }
+.ka-next { background:var(--coral); color:#fff; border-color:var(--coral); }
+.ka-prev:disabled, .ka-next:disabled { opacity:.35; cursor:default; transform:none; }
+.ka-hint:disabled { opacity:.4; cursor:default; }
+
+/* ───── 공통 콘텐츠 ───── */
+.concept-box { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,18px) clamp(18px,2.8vw,28px); border-radius:20px; font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); text-align:center; line-height:1.5; box-shadow:var(--shadow); }
+.concept-box strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.big-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-lg); line-height:1; }
+.intro-q { font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; }
+.intro-q strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.goal-list { display:flex; flex-direction:column; gap:clamp(7px,1.4vw,11px); font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); }
+.goal-list li { background:#fff; border:2px solid var(--line); padding:clamp(8px,1.5vw,12px) clamp(14px,2.6vw,20px); border-radius:16px; list-style:none; box-shadow:var(--shadow); }
+.goal-list li strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+.recall-box { background:var(--teal-soft); padding:clamp(14px,2.8vw,22px) clamp(20px,3.6vw,30px); border-radius:22px; font-size:var(--fs-body); color:var(--teal-deep); max-width:var(--mw-sm); text-align:center; line-height:1.6; }
+.recall-box strong { color:var(--teal-deep); font-family:var(--f-title); font-weight:400; }
+.scene { background:#fff; border:3px solid var(--coral-soft); border-radius:28px; padding:clamp(18px,3.4vw,30px) clamp(22px,4.2vw,38px); display:flex; flex-direction:column; gap:clamp(10px,2vw,16px); align-items:center; min-width:clamp(280px,50vw,460px); box-shadow:0 6px 0 var(--coral-soft); }
+.pencil-row { display:flex; gap:clamp(4px,0.8vw,8px); font-size:var(--em-sm); flex-wrap:wrap; justify-content:center; max-width:var(--mw-sm); color:var(--ink); }
+
+/* ───── place_value_block (모형) ───── */
+.pv-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.pv-row { display:flex; gap:clamp(10px,2.2vw,20px); align-items:flex-end; justify-content:center; flex-wrap:wrap; }
+.pv-group { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,0.8vw,7px); }
+.pv-label { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.pv-block svg { display:block; }
+.swap-arrow { font-size:var(--em-sm); color:var(--coral); animation:ka-swap-r 1.6s ease-in-out infinite; }
+.exchange-eq { font-size:var(--fs-heading); color:var(--ink); display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); flex-wrap:wrap; justify-content:center; }
+
+/* ───── number_line ───── */
+.nl-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(12px,2.4vw,20px); max-width:var(--mw-lg); width:100%; }
+.nl-svg { width:min(760px,94vw); height:auto; }
+.nl-svg .nl-tick text { font-family:var(--f-num); font-weight:800; fill:var(--ink-soft); }
+.nl-pick { cursor:pointer; }
+.nl-pick:hover circle { fill:var(--coral-soft); }
+.nl-pick.correct circle { fill:var(--teal); }
+.nl-pick.wrong circle { fill:var(--coral-soft); }
+
+/* ───── 100의 여러 의미 ───── */
+.mean-grid { display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-sm); width:100%; }
+.mean-item { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,17px) clamp(16px,3vw,24px); border-radius:18px; font-size:var(--fs-body); color:var(--ink); text-align:center; box-shadow:var(--shadow); }
+.mean-item strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+
+/* ───── 문제 공통 ───── */
+.q-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; font-weight:400; }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:20px; padding:clamp(8px,1.6vw,14px) clamp(24px,4.6vw,44px); min-width:clamp(120px,22vw,200px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.q-pad { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(6px,1.2vw,10px); max-width:clamp(280px,56vw,460px); }
+.q-key { background:#fff; border:2px solid var(--line); border-radius:14px; padding:clamp(7px,1.5vw,12px) 0; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, background .15s, border-color .15s; box-shadow:0 4px 0 var(--line); }
+.q-key:hover { background:var(--coral-soft); border-color:var(--coral); }
+.q-key:active { transform:translateY(3px); box-shadow:none; }
+.q-key.fn { background:#FFF8E1; color:#F57F17; font-family:var(--f-title); font-size:var(--fs-body); border-color:#FFE08A; box-shadow:0 4px 0 #FFE08A; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); color:var(--teal-deep); min-height:1.4em; text-align:center; }
+.q-fb.wrong { color:var(--emph); }
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-sm); }
+.mcq-opt { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,15px); font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .2s; box-shadow:0 6px 0 var(--coral-soft); font-weight:400; }
+.mcq-opt:hover { border-color:var(--coral); }
+.mcq-opt:active { transform:translateY(4px); box-shadow:none; }
+.mcq-opt.correct { border-color:var(--teal-deep); background:var(--teal); color:#fff; box-shadow:0 6px 0 var(--teal-deep); animation:ka-pop .5s ease; }
+.mcq-opt.wrong { border-color:var(--emph); background:#FFE0DA; color:var(--coral-deep); animation:ka-shake .35s; }
+.mcq-hint { font-family:var(--f-title); font-size:var(--fs-body); color:#F57F17; background:#FFF8E1; border-radius:16px; padding:clamp(8px,1.6vw,12px) clamp(14px,2.6vw,20px); max-width:var(--mw-sm); text-align:center; display:none; }
+.mcq-hint.show { display:block; }
+
+/* ───── trace ───── */
+.trace-row { display:flex; gap:clamp(12px,2.4vw,22px); justify-content:center; flex-wrap:wrap; }
+.trace-cell { width:clamp(64px,12vw,110px); height:clamp(84px,16vw,150px); border:5px dashed var(--coral-soft); border-radius:20px; display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:#D8C4B8; cursor:pointer; transition:all .2s; background:#fff; }
+.trace-cell.done { color:var(--coral-deep); border-style:solid; border-color:var(--coral); background:var(--coral-soft); }
+
+/* ───── match ───── */
+.match-stage { display:flex; flex-direction:column; gap:clamp(8px,1.5vw,13px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.match-cols { display:flex; gap:clamp(20px,4vw,48px); }
+.match-col { display:flex; flex-direction:column; gap:clamp(6px,1.1vw,9px); }
+.match-card { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(16px,3vw,26px); font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .15s; min-width:clamp(70px,13vw,108px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.match-card:hover { border-color:var(--coral); }
+.match-card.sel { border-color:var(--gold); background:var(--mark); }
+.match-card.matched { border-color:var(--teal-deep); background:var(--teal); color:#fff; cursor:default; box-shadow:0 5px 0 var(--teal-deep); }
+
+/* ───── multi judge ───── */
+.judge-grid { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); max-width:var(--mw-sm); width:100%; }
+.judge-item { display:flex; align-items:center; gap:clamp(10px,2vw,16px); background:#fff; border:3px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(14px,2.6vw,20px); box-shadow:0 5px 0 var(--coral-soft); }
+.judge-text { flex:1; font-size:var(--fs-body); color:var(--ink); text-align:left; }
+.judge-text strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.judge-btns { display:flex; gap:clamp(6px,1.2vw,10px); }
+.judge-btn { border:3px solid var(--line); border-radius:14px; padding:clamp(6px,1.2vw,10px) clamp(12px,2.4vw,18px); font-family:var(--f-title); font-size:var(--fs-heading); cursor:pointer; background:#fff; color:var(--ink-soft); transition:transform .1s; }
+.judge-btn:active { transform:translateY(3px); }
+.judge-btn.pick-o { background:var(--teal-soft); color:var(--teal-deep); border-color:var(--teal); }
+.judge-btn.pick-x { background:var(--coral-soft); color:var(--coral-deep); border-color:var(--coral); }
+.judge-item.right { border-color:var(--teal-deep); box-shadow:0 5px 0 var(--teal-deep); }
+.judge-item.miss { border-color:var(--emph); animation:ka-shake .35s; }
+
+/* ───── 정리/자기평가/다음 ───── */
+.summary-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.summary-card { background:#fff; border:2px solid var(--line); border-radius:22px; padding:clamp(18px,3.4vw,30px); font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; box-shadow:var(--shadow); }
+.summary-card strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.wrap-msg { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--coral-deep); }
+.self-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(14px,2.6vw,22px); }
+.self-row { display:flex; gap:clamp(12px,2.4vw,20px); flex-wrap:wrap; justify-content:center; }
+.self-btn { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,16px) clamp(14px,2.8vw,22px); cursor:pointer; display:flex; flex-direction:column; gap:clamp(3px,0.7vw,6px); align-items:center; transition:transform .12s, border-color .15s; box-shadow:0 6px 0 var(--coral-soft); }
+.self-btn:hover { border-color:var(--coral); }
+.self-btn:active { transform:translateY(4px); box-shadow:none; }
+.self-btn.selected { border-color:var(--gold); background:var(--mark); }
+.self-btn-stars { font-size:var(--em-sm); color:var(--gold); }
+.self-btn-name { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.next-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-md); }
+.next-card { background:var(--teal-soft); border-radius:22px; padding:clamp(20px,3.8vw,32px); display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); align-items:center; }
+.next-emojis { font-size:var(--em-md); }
+.next-label { font-size:var(--fs-body); color:var(--teal-deep); text-align:center; }
+.home-prompt { font-size:var(--fs-caption); color:var(--coral-deep); background:var(--coral-soft); border-radius:18px; padding:clamp(12px,2.4vw,18px) clamp(18px,3.4vw,28px); text-align:center; }
+
+
+  /* 세로셈 (3학년 덧셈·뺄셈) */
+  .vadd { display:inline-grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:clamp(2px,0.6vw,4px) clamp(8px,1.6vw,14px); font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--ink); justify-items:center; align-items:center; background:#fff; border:2px solid var(--line); border-radius:18px; padding:clamp(12px,2vw,20px) clamp(18px,3vw,30px); box-shadow:var(--shadow); }
+  .vadd .op { color:var(--coral-deep); }
+  .vadd .ln { grid-column:1/-1; width:100%; height:3px; background:var(--ink); border-radius:2px; }
+  .vadd .sum { color:var(--coral-deep); }
+  .pv-sum-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-md); }
+
+/* ───── 약분과 통분 부품 ───── */
+.ef-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(9px,1.8vw,16px); width:100%; }
+.fr-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(9px,1.8vw,16px); width:100%; }
+.fr-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); width:100%; max-width:var(--mw-lg); }
+.fr-svg { width:100%; height:auto; display:block; max-width:min(700px,94vw); margin:0 auto; }
+.fr-svg text { font-family:'Nunito',sans-serif; font-weight:800; }
+.fr-svg text.kor { font-family:'Do Hyeon',sans-serif; font-weight:400; }
+.fr-note { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; }
+
+/* 세로 분수 표기 */
+.fr-f { display:inline-flex; flex-direction:column; align-items:center; vertical-align:middle; line-height:1.05; margin:0 0.14em; }
+.fr-f > .fr-n { font-family:var(--f-num); font-weight:800; padding:0 0.2em; }
+.fr-f > .fr-d { font-family:var(--f-num); font-weight:800; padding:0 0.2em; border-top:3px solid currentColor; margin-top:2px; }
+.fr-mix { display:inline-flex; align-items:center; gap:0.18em; vertical-align:middle; }
+.fr-mix > .fr-w { font-family:var(--f-num); font-weight:800; }
+
+/* 분수 칩 */
+.fr-chips { display:flex; flex-wrap:wrap; gap:clamp(6px,1.2vw,11px); justify-content:center; max-width:var(--mw-md); }
+.fr-chip { font-size:var(--fs-heading); color:var(--ink); background:#fff; border:3px solid var(--line); border-radius:16px; padding:clamp(5px,1vw,9px) clamp(11px,2.2vw,18px); box-shadow:0 4px 0 var(--line); }
+.fr-chip.hi { color:#fff; background:var(--coral); border-color:var(--coral-deep); box-shadow:0 4px 0 var(--coral-deep); }
+.fr-chip.hi2 { color:#fff; background:var(--teal); border-color:var(--teal-deep); box-shadow:0 4px 0 var(--teal-deep); }
+.fr-chip.both { color:var(--ink); background:var(--mark); border-color:var(--gold); box-shadow:0 4px 0 var(--gold); }
+.fr-chip.dim { color:#C7CEDA; }
+
+/* 식 줄 */
+.fr-lines { display:flex; flex-direction:column; gap:clamp(6px,1.1vw,10px); align-items:center; }
+.fr-line { display:flex; align-items:center; gap:clamp(8px,1.6vw,14px); font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); }
+.fr-line .fr-lead { font-family:var(--f-title); font-size:var(--fs-label); color:var(--ink-soft); min-width:3.6em; text-align:right; }
+.fr-line.final { color:var(--coral-deep); }
+.fr-line.bad { color:var(--emph); }
+.fr-line.bad .fr-lead { color:var(--emph); }
+
+/* 두 갈래 대조 */
+.fr-pair { display:flex; gap:clamp(14px,3vw,34px); flex-wrap:wrap; justify-content:center; align-items:flex-start; }
+.fr-col { display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.2vw,10px); background:#fff; border:2px solid var(--line); border-radius:20px; padding:clamp(10px,2vw,18px) clamp(12px,2.4vw,22px); box-shadow:var(--shadow); }
+.fr-col.bad { border-color:#F3C4B7; background:#FFF6F3; }
+.fr-col.good { border-color:var(--teal-soft); background:#F5FBFA; }
+.fr-caph { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); }
+.fr-col.bad .fr-caph { color:var(--emph); }
+.fr-col.good .fr-caph { color:var(--teal-deep); }
+
+/* ───── 원기둥·원뿔·구 부품 (6-2 U6) ───── */
+.sl-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); width:100%; max-width:var(--mw-lg); }
+.sl-svg { width:100%; height:auto; display:block; max-width:min(690px,94vw); margin:0 auto; }
+.sl-svg text { font-family:'Nunito',sans-serif; font-weight:800; }
+.sl-svg text.kor { font-family:'Do Hyeon',sans-serif; font-weight:400; }
+.sl-note { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; }
+
+/* 계산 카드 (U5 circleCalc 골격 승계) */
+.sc-cards { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,11px); align-items:stretch; width:100%; max-width:min(560px,92vw); }
+.sc-card { display:flex; align-items:center; gap:clamp(9px,1.8vw,16px); background:#fff; border:3px solid var(--line); border-radius:18px; padding:clamp(7px,1.4vw,12px) clamp(13px,2.6vw,22px); box-shadow:0 4px 0 var(--line); }
+.sc-step { font-family:var(--f-title); font-size:var(--fs-label); color:var(--ink-soft); min-width:3.4em; text-align:right; flex-shrink:0; }
+.sc-body { font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-heading); color:var(--ink); }
+.sc-body .kor { font-family:var(--f-title); font-weight:400; color:var(--ink-soft); }
+.sc-card.last { border-color:var(--teal); box-shadow:0 4px 0 var(--teal-deep); }
+.sc-card.last .sc-step, .sc-card.last .sc-body { color:var(--teal-deep); }
+.sc-card.bad { border-color:#F3C4B7; background:#FFF6F3; }
+.sc-card.bad .sc-step, .sc-card.bad .sc-body { color:var(--emph); }
+.sc-hide { color:var(--emph); background:var(--paper); border:3px dashed var(--line); border-radius:10px; padding:0 clamp(10px,2vw,16px); }
+.sc-cap { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; }
+
+/* 위·앞·옆 비교표 */
+.vf-tbl { border-collapse:separate; border-spacing:0; width:100%; max-width:min(620px,94vw); background:#fff; border:3px solid var(--line); border-radius:16px; overflow:hidden; box-shadow:0 4px 0 var(--line); }
+.vf-tbl th, .vf-tbl td { padding:clamp(4px,1vw,9px) clamp(5px,1.2vw,12px); text-align:center; border-bottom:2px solid var(--line); }
+.vf-tbl tr:last-child th, .vf-tbl tr:last-child td { border-bottom:none; }
+.vf-tbl th { font-family:var(--f-title); font-weight:400; font-size:var(--fs-label); color:var(--ink-soft); background:var(--paper); }
+.vf-tbl td { font-family:var(--f-title); font-weight:400; font-size:var(--fs-body); color:var(--ink); }
+.vf-tbl td.hid { color:var(--emph); }
+.vf-cell { display:block; margin:0 auto; }
+</style>
+<script src="/kedu_gate.js"></script>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 목록</button>
+    <span class="ka-pill">10차시</span>
+    <span class="ka-where">수학 6-2 · <b>6. 원기둥, 원뿔, 구</b></span>
+    <div class="ka-bar" id="dots"></div>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+  <div class="ka-m">
+    <div class="slide active" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">한 단원을 마무리해요</h2>
+      <div class="intro-q">원기둥 · 원뿔 · 구를 모두 배웠어요.<br>이제 배운 내용을 <strong>문제로 정리</strong>해요.<br>헷갈렸던 자리를 다시 짚어 봐요.</div>
+    </div>
+
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">세 가지 정의</h2>
+      <div class="ef-stage">
+        <div id="m-i2"></div>
+        <div class="concept-box"><strong>원기둥</strong> = 서로 평행하고 합동인 두 원을 면으로 하는 입체도형.<br><strong>원뿔</strong> = 한 원을 면으로 하는 입체도형.<br><strong>구</strong> = 반으로 나눈 원을 지름을 기준으로 한 바퀴 돌려서 만든 입체도형.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">오늘의 질문</h2>
+      <div class="intro-q">정의를 외우는 것만으로는 부족해요.<br><strong>아닌 것</strong>을 가려내고 <strong>까닭</strong>을 댈 수 있어야 해요.<br>여덟 문제로 확인해요.</div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 되짚기 ①</div>
+      <h2 class="slide-title">돌려서 만들기</h2>
+      <div class="ef-stage">
+        <div id="m-e1"></div>
+        <div class="concept-box"><strong>직사각형</strong>을 돌리면 원기둥,<br><strong>직각삼각형</strong>을 돌리면 원뿔,<br><strong>반으로 나눈 원</strong>을 돌리면 구가 만들어져요.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 되짚기 ②</div>
+      <h2 class="slide-title">구성 요소</h2>
+      <div class="ef-stage">
+        <div id="m-e2"></div>
+        <div class="concept-box">원기둥 &mdash; 밑면 2개 · 옆면(굽은 면) · 높이(두 밑면 사이의 거리).<br>원뿔 &mdash; 밑면 1개 · 옆면 · 원뿔의 꼭짓점 · 모선 · 높이.<br>구 &mdash; 구의 중심 1개 · 구의 반지름(무수히 많고 길이가 같아요).</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 되짚기 ③</div>
+      <h2 class="slide-title">전개도</h2>
+      <div class="ef-stage">
+        <div id="m-e3"></div>
+        <div class="concept-box">밑면의 지름이 8 cm 인 원기둥이라면<br>옆면의 가로는 <strong>8 &times; 3.14 = 25.12</strong> cm 예요.<br>옆면의 세로는 원기둥의 높이와 같아요.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · ★왜 그럴까</div>
+      <h2 class="slide-title">다시 한번, 왜 밑면의 둘레일까</h2>
+      <div class="ef-stage">
+        <div id="m-e4"></div>
+        <div class="concept-box">전개도의 옆면을 <strong>감아 붙여야</strong> 원기둥이 돼요.<br>감았을 때 테두리가 밑면인 원의 <strong>둘레</strong>에 딱 맞아야 해요.<br>그래서 옆면의 가로는 지름이 아니라 <strong>둘레</strong>예요.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q8" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">가 ~ 바 가운데 <strong>구</strong>는 어느 것인가요?</div>
+        <div class="ef-stage"><div id="m-q8"></div></div>
+        <div class="mcq-opts" id="q8-opts">
+          <button class="mcq-opt" data-correct="0">가</button>
+          <button class="mcq-opt" data-correct="0">다</button>
+          <button class="mcq-opt" data-correct="1">라</button>
+          <button class="mcq-opt" data-correct="0">바</button>
+        </div>
+        <div class="mcq-hint" data-hints='["어느 방향에서 보아도 모양이 같아요.","평평한 면이 하나도 없어요."]'></div>
+        <div class="q-fb" id="q8-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q9" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt"><strong>지름을 따라 반으로 나눈 원</strong>을 한 직선을 기준으로 한 바퀴 돌리면<br>어떤 입체도형이 되나요?</div>
+        <div class="ef-stage"><div id="m-q9"></div></div>
+        <div class="mcq-opts" id="q9-opts">
+          <button class="mcq-opt" data-correct="1">구</button>
+          <button class="mcq-opt" data-correct="0">원기둥</button>
+          <button class="mcq-opt" data-correct="0">원뿔</button>
+          <button class="mcq-opt" data-correct="0">반원</button>
+        </div>
+        <div class="mcq-hint" data-hints='["직사각형은 원기둥, 직각삼각형은 원뿔이 됐어요.","남은 하나예요."]'></div>
+        <div class="q-fb" id="q9-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q10" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">원뿔의 꼭짓점과 밑면인 원의 둘레의 한 점을 이은 선분을 무엇이라고 하나요?</div>
+        <div class="ef-stage"><div id="m-q10"></div></div>
+        <div class="mcq-opts" id="q10-opts">
+          <button class="mcq-opt" data-correct="0">높이</button>
+          <button class="mcq-opt" data-correct="0">밑면</button>
+          <button class="mcq-opt" data-correct="0">옆면</button>
+          <button class="mcq-opt" data-correct="1">모선</button>
+        </div>
+        <div class="mcq-hint" data-hints='["원의 한가운데가 아니라 테두리까지 이어요.","비스듬히 내려가는 선분이에요."]'></div>
+        <div class="q-fb" id="q10-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q11" data-q-points="10" data-answer="2">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt"><strong>원기둥</strong>의 밑면은 몇 개인가요?</div>
+        <div class="ef-stage"><div id="m-q11"></div></div>
+        <div class="q-display" id="q11-display">?</div>
+        <div class="q-pad" id="q11-pad"></div>
+        <div class="mcq-hint" data-hints='["서로 평행하고 합동인 원이 몇 개였나요?","원뿔과 견줘 봐요."]'></div>
+        <div class="q-fb" id="q11-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q12" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <!-- 지도서 379 마무리 4 오답 유형 — 밑면 위치 조건만 남겨 묻는다 -->
+      <div class="q-stage">
+        <div class="q-prompt">이 그림이 원기둥의 전개도가 <strong>될 수 없는</strong> 까닭은 무엇인가요?</div>
+        <div class="ef-stage"><div id="m-q12"></div></div>
+        <div class="mcq-opts" id="q12-opts">
+          <button class="mcq-opt" data-correct="0">옆면이 직사각형이 아니어서</button>
+          <button class="mcq-opt" data-correct="1">두 밑면이 마주 보는 위치에 있지 않아 접으면 겹쳐서</button>
+          <button class="mcq-opt" data-correct="0">두 밑면이 합동이 아니어서</button>
+          <button class="mcq-opt" data-correct="0">밑면이 원이 아니어서</button>
+        </div>
+        <div class="mcq-hint" data-hints='["옆면과 두 원의 모양은 문제가 없어요.","옆면을 감았을 때 두 원이 어디로 갈지 그려 봐요."]'></div>
+        <div class="q-fb" id="q12-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q13" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <!-- 교과서 142 마무리 6 원문 — ★오개념 ⑦·②·전개도 옆면을 한자리에 모은 문항 -->
+      <div class="q-stage">
+        <div class="q-prompt"><strong>바르게</strong> 설명한 것은 무엇인가요?</div>
+        <div class="ef-stage"><div id="m-q13"></div></div>
+        <div class="mcq-opts" id="q13-opts">
+          <button class="mcq-opt" data-correct="0">원기둥의 밑면은 1개입니다</button>
+          <button class="mcq-opt" data-correct="0">원기둥의 전개도에서 옆면은 원입니다</button>
+          <button class="mcq-opt" data-correct="1">구의 중심은 1개이고 구의 반지름은 무수히 많습니다</button>
+          <button class="mcq-opt" data-correct="0">원뿔의 높이는 원뿔의 꼭짓점과 밑면인 원의 둘레의 한 점을 이은 선분입니다</button>
+        </div>
+        <div class="mcq-hint" data-hints='["원기둥의 밑면 수와 전개도의 옆면 모양을 먼저 지워요.","마지막 설명은 모선의 뜻이에요."]'></div>
+        <div class="q-fb" id="q13-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q14" data-q-points="15" data-answer="3">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">어떤 원기둥의 전개도에서 옆면의 가로가 <strong>18.84 cm</strong> 예요.<br>이 원기둥 밑면의 <strong>반지름</strong>은 몇 cm 인가요?</div>
+        <div class="ef-stage"><div id="m-q14"></div></div>
+        <div class="q-display" id="q14-display">?</div>
+        <div class="q-pad" id="q14-pad"></div>
+        <div class="mcq-hint" data-hints='["옆면의 가로는 밑면의 둘레예요. 먼저 지름을 구해요.","구한 지름을 2로 나누면 반지름이에요."]'></div>
+        <div class="q-fb" id="q14-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q15" data-q-points="15" data-answer="4">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">어떤 원기둥의 전개도에서 옆면의 가로가 <strong>12.56 cm</strong>, 세로가 4 cm 예요.<br>이 원기둥 밑면의 <strong>지름</strong>은 몇 cm 인가요?</div>
+        <div class="ef-stage"><div id="m-q15"></div></div>
+        <div class="q-display" id="q15-display">?</div>
+        <div class="q-pad" id="q15-pad"></div>
+        <div class="mcq-hint" data-hints='["세로 4 cm 는 높이예요. 지금 묻는 것은 지름이에요.","12.56 ÷ 3.14 를 계산해요."]'></div>
+        <div class="q-fb" id="q15-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 배운 것</h2>
+      <div class="summary-stage">
+        <div class="summary-card">원기둥 · 원뿔 · 구의 <strong>정의</strong>와 <strong>구성 요소</strong>를 정리했어요.<br>전개도는 옆면이 직사각형, 두 밑면이 마주 보는 합동인 원이어야 해요.<br>옆면의 <strong>가로 = 밑면의 둘레</strong> · <strong>세로 = 높이</strong>.</div>
+        <div class="wrap-msg" id="wrap-msg"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 공부는 어땠나요?</h2>
+      <div class="self-stage">
+        <div class="self-row">
+          <button class="self-btn"><div class="self-btn-stars">★</div><div class="self-btn-name">조금 어려웠어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★</div><div class="self-btn-name">잘 했어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★★</div><div class="self-btn-name">아주 잘 했어요</div></button>
+        </div>
+        <div class="q-fb" id="self-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">다음 시간</h2>
+      <div class="next-stage">
+        <div class="next-card">
+          <div class="next-emojis">🎉</div>
+          <div class="next-label">6학년 2학기 수학 끝!</div>
+        </div>
+        <div class="home-prompt">여섯 단원을 모두 마쳤어요</div>
+      </div>
+    </div>
+
+  </div>
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+<script>
+const TOTAL = 18;
+const LESSON_ID = 'g6_2_math_u6_l10';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.querySelectorAll('#dots .ka-dot').forEach((d, i) => { d.classList.toggle('active', i === cur); d.classList.toggle('done', i < cur); });
+  document.getElementById('prev').disabled = cur === 0;
+
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.solved || st.hintLevel >= 2; }
+  else { hintBtn.disabled = true; }
+
+  if (cur === TOTAL - 1) { document.getElementById('next').textContent = '마치기 →'; saveProgress(true); }
+  else { document.getElementById('next').textContent = '다음 →'; }
+
+  if (cur === 15) { document.getElementById('wrap-msg').textContent = wrapMsg(score); }
+}
+
+function saveProgress(done) {
+  const data = { cur, score, done, startedAt, finishedAt: done ? Date.now() : null, qState };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function wrapMsg(s) {
+  if (s >= 100) return '완벽해요!';
+  if (s >= 80) return '정말 잘했어요!';
+  if (s >= 60) return '잘했어요!';
+  return '다시 해도 좋아요!';
+}
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } else { saveProgress(true); location.href='../index.html'; } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+function showHint() {
+  const qid = currentQId(); if (!qid) return;
+  const st = getQState(qid); if (st.solved || st.hintLevel >= 2) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint'); if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[st.hintLevel - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= 2;
+}
+function pointsForQ(qid) {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  const base = parseInt(slide.dataset.qPoints || '0', 10);
+  const st = getQState(qid);
+  if (st.hintLevel === 2) return Math.max(0, base - 5);
+  if (st.hintLevel === 1) return Math.max(0, base - 2);
+  return base;
+}
+
+// ══════════════════════════════════════════════════════════════
+// 5-1 수학 3단원 「약분과 통분」 부품 라이브러리 v1
+//   - fr(n, d, w)             : 세로 분수 표기(대분수는 w)
+//   - fx(str)                 : "3/4 = 6/8" 문자열의 a/b 를 자동으로 세로 분수화
+//   - fracStrip(num,den,o)    : 분수 띠. o.split=k → 재귀 분할(각 칸을 k등분)
+//   - fracBars(rows,o)        : 띠 여러 줄 — 크기가 같은 분수는 색칠 폭이 같다
+//   - fracCompare(a,b,o)      : 두 띠 상하 배치. o.common=공통분모 → 통분 눈금 삽입
+//   - decLine(items,o)        : 0~1 수직선에 분수·소수를 함께 찍는다
+//   - fracChips(items,o)      : 분수 칩 나열. o.hi/o.hi2/o.both/o.dim (인덱스)
+//   - fracLines(rows,o)       : 식 줄 나열
+//   - frPair(a,b)             : 두 갈래 대조(잘못된 길 / 옳은 길)
+//   ★ 모든 띠 부품은 data-frac(="num/den") 을 심어 검증기가 역산한다.
+//   ★ 재귀적 분할: 1/3 을 2등분하면 2/6 — 자른 횟수가 늘어도 양은 그대로.
+// ══════════════════════════════════════════════════════════════
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+function gcd(a,b){ a=Math.abs(a); b=Math.abs(b); while(b){ const t=a%b; a=b; b=t; } return a; }
+function lcm(a,b){ return a/gcd(a,b)*b; }
+
+// ───── 분수 표기 ─────
+function fr(n, d, w){
+  const core = '<span class="fr-f"><span class="fr-n">'+esc(n)+'</span>'
+             + '<span class="fr-d">'+esc(d)+'</span></span>';
+  if (w === undefined || w === null || w === '') return core;
+  return '<span class="fr-mix"><span class="fr-w">'+esc(w)+'</span>'+core+'</span>';
+}
+
+// "3/4 = 6/8" · "1 2/3" 형태를 자동 변환. 그 밖의 글자는 그대로 둔다.
+function fx(str){
+  return String(str)
+    .replace(/(\d+)\s+(\d+)\/(\d+)/g, function(_,w,n,d){ return fr(n,d,w); })
+    .replace(/(\d+)\/(\d+)/g, function(_,n,d){ return fr(n,d); });
+}
+
+// ───── 띠 한 줄 SVG(내부 공용) ─────
+//   x,y,w,h · num/den · opt{ split, color, dashOnly, commonTicks }
+function _bar(x, y, w, h, num, den, opt){
+  opt = opt || {};
+  const fill = opt.color === 'b' ? 'var(--teal)' : 'var(--coral)';
+  const soft = opt.color === 'b' ? 'var(--teal-soft)' : 'var(--coral-soft)';
+  let g = '';
+  g += '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="8" fill="'+soft+'" stroke="var(--line)" stroke-width="3"/>';
+  // 색칠
+  const cw = w * num / den;
+  if (num > 0) g += '<rect x="'+x+'" y="'+y+'" width="'+cw.toFixed(2)+'" height="'+h+'" rx="8" fill="'+fill+'" opacity="0.85"/>';
+  // 기본 눈금
+  for (let i = 1; i < den; i++){
+    const gx = (x + w * i / den).toFixed(2);
+    g += '<line x1="'+gx+'" y1="'+y+'" x2="'+gx+'" y2="'+(y+h)+'" stroke="#fff" stroke-width="3"/>';
+  }
+  // 재귀 분할 눈금(점선) — 원래 칸은 그대로 두고 그 안을 더 자른다
+  const k = opt.split || 0;
+  if (k > 1){
+    const tot = den * k;
+    for (let i = 1; i < tot; i++){
+      if (i % k === 0) continue;
+      const gx = (x + w * i / tot).toFixed(2);
+      g += '<line x1="'+gx+'" y1="'+y+'" x2="'+gx+'" y2="'+(y+h)+'" stroke="#fff" stroke-width="2" stroke-dasharray="5 4"/>';
+    }
+  }
+  // 공통분모 눈금(통분) — 굵은 흰 점선
+  if (opt.commonTicks && opt.commonTicks > den){
+    const tot = opt.commonTicks;
+    for (let i = 1; i < tot; i++){
+      if (i % (tot/den) === 0) continue;
+      const gx = (x + w * i / tot).toFixed(2);
+      g += '<line x1="'+gx+'" y1="'+y+'" x2="'+gx+'" y2="'+(y+h)+'" stroke="#fff" stroke-width="2" stroke-dasharray="6 4"/>';
+    }
+  }
+  g += '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="8" fill="none" stroke="var(--line)" stroke-width="3"/>';
+  return g;
+}
+
+// SVG 안 세로 분수
+function _svgFrac(cx, cy, n, d, col, size){
+  const s = size || 26;
+  const c = col || 'var(--ink)';
+  return '<text x="'+cx+'" y="'+(cy-6)+'" font-size="'+s+'" fill="'+c+'" text-anchor="middle">'+esc(n)+'</text>'
+       + '<line x1="'+(cx-16)+'" y1="'+(cy+1)+'" x2="'+(cx+16)+'" y2="'+(cy+1)+'" stroke="'+c+'" stroke-width="3"/>'
+       + '<text x="'+cx+'" y="'+(cy+30)+'" font-size="'+s+'" fill="'+c+'" text-anchor="middle">'+esc(d)+'</text>';
+}
+
+// ───── fracStrip ─────
+function fracStrip(num, den, o){
+  o = o || {};
+  const W = 700, H = 132, x = 96, w = 560, y = 44, h = 56;
+  let g = '';
+  g += _svgFrac(46, y + h/2 - 8, num, den, o.color === 'b' ? 'var(--teal-deep)' : 'var(--coral-deep)');
+  g += _bar(x, y, w, h, num, den, o);
+  g += '<text class="kor" x="'+x+'" y="'+(y-14)+'" font-size="20" fill="var(--ink-soft)" text-anchor="middle">0</text>';
+  g += '<text class="kor" x="'+(x+w)+'" y="'+(y-14)+'" font-size="20" fill="var(--ink-soft)" text-anchor="middle">1</text>';
+  if (o.split > 1){
+    const rn = num * o.split, rd = den * o.split;
+    g += _svgFrac(x + w + 34, y + h/2 - 8, rn, rd, 'var(--emph)', 24);
+    g += '<text class="kor" x="'+(W/2)+'" y="'+(y+h+34)+'" font-size="19" fill="var(--ink-soft)" text-anchor="middle">'
+       + '한 칸을 ' + o.split + '등분해도 색칠한 양은 그대로</text>';
+  } else if (o.rightLabel){
+    g += '<text class="kor" x="'+(x+w+22)+'" y="'+(y+h/2+2)+'" font-size="19" fill="var(--ink-soft)" text-anchor="start">'+esc(o.rightLabel)+'</text>';
+  }
+  const note = o.note ? '<div class="fr-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="fr-wrap" data-frac="'+num+'/'+den+'">'
+       + '<svg class="fr-svg" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">'+g+'</svg>'
+       + note + '</div>';
+}
+
+// ───── fracBars : rows = [[num,den], ...] ─────
+function fracBars(rows, o){
+  o = o || {};
+  const W = 700, x = 96, w = 560, h = 46, gap = 22, top = 34;
+  const H = top + rows.length * (h + gap) + 6;
+  let g = '';
+  g += '<text class="kor" x="'+x+'" y="'+(top-10)+'" font-size="19" fill="var(--ink-soft)" text-anchor="middle">0</text>';
+  g += '<text class="kor" x="'+(x+w)+'" y="'+(top-10)+'" font-size="19" fill="var(--ink-soft)" text-anchor="middle">1</text>';
+  rows.forEach(function(r, i){
+    const y = top + i * (h + gap);
+    const hi = o.hi && o.hi.indexOf(i) !== -1;
+    g += _svgFrac(46, y + h/2 - 6, r[0], r[1], hi ? 'var(--emph)' : 'var(--coral-deep)', 23);
+    g += _bar(x, y, w, h, r[0], r[1], { color: o.color });
+  });
+  // 색칠 끝선이 모두 같음을 보여 주는 세로 안내선
+  if (o.guide){
+    const gx = (x + w * rows[0][0] / rows[0][1]).toFixed(2);
+    g += '<line x1="'+gx+'" y1="'+(top-4)+'" x2="'+gx+'" y2="'+(top + rows.length*(h+gap) - gap + 4)+'" stroke="var(--emph)" stroke-width="3" stroke-dasharray="7 5"/>';
+  }
+  const note = o.note ? '<div class="fr-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="fr-wrap" data-bars="'+rows.map(r=>r[0]+'/'+r[1]).join(',')+'">'
+       + '<svg class="fr-svg" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">'+g+'</svg>'
+       + note + '</div>';
+}
+
+// ───── fracCompare : a,b = [num,den] · o.common = 공통분모 ─────
+function fracCompare(a, b, o){
+  o = o || {};
+  const W = 700, x = 96, w = 560, h = 52, top = 36, gap = 30;
+  const H = top + h*2 + gap + (o.common ? 42 : 12);
+  const cm = o.common || 0;
+  let g = '';
+  g += '<text class="kor" x="'+x+'" y="'+(top-10)+'" font-size="19" fill="var(--ink-soft)" text-anchor="middle">0</text>';
+  g += '<text class="kor" x="'+(x+w)+'" y="'+(top-10)+'" font-size="19" fill="var(--ink-soft)" text-anchor="middle">1</text>';
+  g += _svgFrac(46, top + h/2 - 6, a[0], a[1], 'var(--coral-deep)', 24);
+  g += _bar(x, top, w, h, a[0], a[1], { color:'a', commonTicks: cm });
+  const y2 = top + h + gap;
+  g += _svgFrac(46, y2 + h/2 - 6, b[0], b[1], 'var(--teal-deep)', 24);
+  g += _bar(x, y2, w, h, b[0], b[1], { color:'b', commonTicks: cm });
+  if (cm){
+    const an = a[0] * cm / a[1], bn = b[0] * cm / b[1];
+    g += '<text class="kor" x="'+(x+w+18)+'" y="'+(top+h/2+2)+'" font-size="19" fill="var(--coral-deep)" text-anchor="start">'+an+'칸</text>';
+    g += '<text class="kor" x="'+(x+w+18)+'" y="'+(y2+h/2+2)+'" font-size="19" fill="var(--teal-deep)" text-anchor="start">'+bn+'칸</text>';
+    g += '<text class="kor" x="'+(W/2)+'" y="'+(H-10)+'" font-size="19" fill="var(--ink-soft)" text-anchor="middle">'
+       + '같은 ' + cm + '칸으로 맞추면 ' + an + '칸과 ' + bn + '칸 — ' + (an>bn?'위':'아래') + '가 더 크다</text>';
+  }
+  const note = o.note ? '<div class="fr-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="fr-wrap" data-cmp="'+a[0]+'/'+a[1]+'|'+b[0]+'/'+b[1]+'">'
+       + '<svg class="fr-svg" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">'+g+'</svg>'
+       + note + '</div>';
+}
+
+// ───── decLine : items = [{v, label, kind:'frac'|'dec', n, d}] ─────
+function decLine(items, o){
+  o = o || {};
+  const W = 700, H = 150, x = 60, w = 580, y = 96;
+  const max = o.max || 1;
+  let g = '';
+  g += '<line x1="'+x+'" y1="'+y+'" x2="'+(x+w)+'" y2="'+y+'" stroke="var(--ink-soft)" stroke-width="4"/>';
+  const steps = o.steps || 10;
+  for (let i = 0; i <= steps; i++){
+    const gx = (x + w * i / steps).toFixed(2);
+    const big = (i % 5 === 0);
+    g += '<line x1="'+gx+'" y1="'+(y-(big?12:7))+'" x2="'+gx+'" y2="'+(y+(big?12:7))+'" stroke="var(--ink-soft)" stroke-width="'+(big?4:2)+'"/>';
+    if (big) g += '<text x="'+gx+'" y="'+(y+36)+'" font-size="20" fill="var(--ink-soft)" text-anchor="middle">'+(max*i/steps)+'</text>';
+  }
+  items.forEach(function(it, i){
+    const gx = (x + w * it.v / max);
+    const col = i === 0 ? 'var(--coral)' : 'var(--teal)';
+    const deep = i === 0 ? 'var(--coral-deep)' : 'var(--teal-deep)';
+    const up = (i % 2 === 0);
+    const ty = up ? y - 30 : y + 62;
+    g += '<circle cx="'+gx.toFixed(2)+'" cy="'+y+'" r="9" fill="'+col+'" stroke="#fff" stroke-width="3"/>';
+    if (it.kind === 'frac') g += _svgFrac(gx, up ? ty - 16 : ty + 6, it.n, it.d, deep, 23);
+    else g += '<text x="'+gx.toFixed(2)+'" y="'+ty+'" font-size="24" fill="'+deep+'" text-anchor="middle">'+esc(it.label)+'</text>';
+  });
+  const note = o.note ? '<div class="fr-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="fr-wrap" data-line="'+items.map(i=>i.v).join(',')+'">'
+       + '<svg class="fr-svg" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">'+g+'</svg>'
+       + note + '</div>';
+}
+
+// ───── fracChips : items = ["3/4", "6/8", ...] · o.hi 등은 인덱스 배열 ─────
+function fracChips(items, o){
+  o = o || {};
+  const cls = (i) => 'fr-chip'
+    + (o.both && o.both.indexOf(i)!==-1 ? ' both'
+      : o.hi && o.hi.indexOf(i)!==-1 ? ' hi'
+      : o.hi2 && o.hi2.indexOf(i)!==-1 ? ' hi2' : '')
+    + (o.dim && o.dim.indexOf(i)!==-1 ? ' dim' : '');
+  const body = items.map((v, i) => '<div class="'+cls(i)+'">'+fx(v)+'</div>').join('');
+  const note = o.note ? '<div class="fr-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="fr-wrap" data-chips="'+esc(items.join(','))+'">'
+       + '<div class="fr-chips">'+body+'</div>'+note+'</div>';
+}
+
+// ───── fracLines : rows = [{lead, expr, cls}] ─────
+function fracLines(rows, o){
+  o = o || {};
+  const body = rows.map(r => '<div class="fr-line '+(r.cls||'')+'">'
+      + '<span class="fr-lead">'+esc(r.lead||'')+'</span><span>'+fx(r.expr)+'</span></div>').join('');
+  const note = o.note ? '<div class="fr-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="fr-wrap"><div class="fr-lines">'+body+'</div>'+note+'</div>';
+}
+
+function frPair(a, b){
+  const col = (c) => '<div class="fr-col '+(c.kind||'')+'">'
+      + '<div class="fr-caph">'+esc(c.cap)+'</div>' + c.body + '</div>';
+  return '<div class="fr-pair">' + col(a) + col(b) + '</div>';
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// U6 「원기둥, 원뿔, 구」 부품
+//   - solid3(kind, o)        : 겨냥도 — 원기둥·원뿔·구 + 구성 요소 라벨 (단원 시그니처)
+//   - solidRow(items, o)     : 가·나·다 분류판 (카탈로그 밖 추가)
+//   - solidRot(shape, o)     : 평면도형을 막대에 붙여 한 바퀴 돌리기
+//   - cylNet(o)              : 원기둥의 전개도 — 옆면 가로 = 밑면의 둘레 (픽셀 역산)
+//   - viewFront(o)           : 위·앞·옆에서 본 모양 (mode:'table' | 'area')
+//   - solidCalc(kind, d, o)  : 공식 → 넣기 → 답 3단 카드 (카탈로그 밖 추가)
+//   ★ data-solid / data-row / data-rot / data-net / data-view / data-farea / data-calc 로 역산한다.
+//   ⛔ 화면 글자에 원주율 기호를 쓰지 않는다 — 「원주율」·3.14 로만.
+//   ⛔ 회전체·직원기둥·대원 같은 중학교 용어를 화면에 쓰지 않는다.
+// ══════════════════════════════════════════════════════════════
+
+const PI314 = 3.14;
+function _r2(x){ return Math.round(x * 100) / 100; }
+function _num(x){ const v = _r2(x); return (Math.abs(v - Math.round(v)) < 1e-9) ? String(Math.round(v)) : String(v); }
+
+// 라벨 한글 이름 — 교과서 126·133·134 원문 그대로
+const SL_LABEL = { base:'밑면', side:'옆면', h:'높이', gen:'모선',
+                   apex:'원뿔의 꼭짓점', center:'구의 중심', r:'구의 반지름',
+                   d:'밑면의 지름' };
+// 입체별로 허용되는 라벨 — 하니스가 이 표로 「원기둥에 모선」 같은 자리를 잡는다
+//   ('d' 는 구성 요소 이름이 아니라 치수 표시다 — 원기둥·원뿔에만 붙는다)
+const SL_OK = { cyl:['base','side','h','d'], cone:['base','side','h','gen','apex','d'],
+                sphere:['center','r'] };
+// 밑면 수 · 꼭짓점 수 · 평평한 면 수 (교과서 135 「평평한 면이 원기둥은 2개, 원뿔은 1개, 구는 없습니다」)
+const SL_FACT = { cyl:[2,0,2], cone:[1,1,1], sphere:[0,0,0] };
+
+function _slTag(v, u, hide){ return hide ? '?' : (String(v) + ' ' + u); }
+
+// ───── solid3 : 겨냥도 ─────
+//   kind = 'cyl' | 'cone' | 'sphere'
+//   o = { d(밑면 지름) · r · h(높이) · gen(모선 길이) · unit
+//       · show:['base','side','h','gen','apex','center','r']
+//       · ask:'h'|'d'|'gen'|'r'    해당 치수를 ? 로 감춤
+//       · note }
+function solid3(kind, o){
+  o = o || {};
+  const u = o.unit || 'cm';
+  const show = o.show || [];
+  const W = 700, CX = 350;
+  const RX = 96, RY = 30;                 // 밑면 타원
+  const TY = 82, BY = 250;                // 위 밑면 / 아래 밑면 중심 y
+  const INK = 'var(--ink)', SOFT = 'var(--teal-soft)', CD = 'var(--coral-deep)', TD = 'var(--teal-deep)';
+  let g = '';
+
+  if (kind === 'cyl'){
+    g += '<path d="M'+(CX-RX)+' '+TY+' L'+(CX-RX)+' '+BY+' A'+RX+' '+RY+' 0 0 0 '+(CX+RX)+' '+BY
+       + ' L'+(CX+RX)+' '+TY+' Z" fill="'+SOFT+'" stroke="'+INK+'" stroke-width="3.5"/>';
+    g += '<ellipse cx="'+CX+'" cy="'+BY+'" rx="'+RX+'" ry="'+RY+'" fill="none" stroke="'+INK+'" stroke-width="3.5" stroke-dasharray="8 6"/>';
+    g += '<ellipse cx="'+CX+'" cy="'+TY+'" rx="'+RX+'" ry="'+RY+'" fill="#fff" stroke="'+INK+'" stroke-width="3.5"/>';
+  } else if (kind === 'cone'){
+    const AY = 62;                        // 꼭짓점
+    g += '<path d="M'+CX+' '+AY+' L'+(CX-RX)+' '+BY+' A'+RX+' '+RY+' 0 0 0 '+(CX+RX)+' '+BY+' Z" '
+       + 'fill="'+SOFT+'" stroke="'+INK+'" stroke-width="3.5"/>';
+    g += '<ellipse cx="'+CX+'" cy="'+BY+'" rx="'+RX+'" ry="'+RY+'" fill="none" stroke="'+INK+'" stroke-width="3.5" stroke-dasharray="8 6"/>';
+    g += '<path d="M'+(CX-RX)+' '+BY+' A'+RX+' '+RY+' 0 0 0 '+(CX+RX)+' '+BY+'" fill="none" stroke="'+INK+'" stroke-width="3.5"/>';
+  } else {
+    const SR = 104, SCY = 166;
+    g += '<circle cx="'+CX+'" cy="'+SCY+'" r="'+SR+'" fill="'+SOFT+'" stroke="'+INK+'" stroke-width="3.5"/>';
+    g += '<ellipse cx="'+CX+'" cy="'+SCY+'" rx="'+SR+'" ry="34" fill="none" stroke="'+INK+'" stroke-width="2.5" stroke-dasharray="7 6" opacity="0.55"/>';
+  }
+
+  // ── 구성 요소 라벨 ──
+  function kor(x, y, t, col, anch){
+    return '<text class="kor" x="'+x+'" y="'+y+'" font-size="21" fill="'+(col||'var(--ink-soft)')+'" text-anchor="'+(anch||'middle')+'">'+esc(t)+'</text>';
+  }
+  function val(x, y, t, col, anch){
+    return '<text x="'+x+'" y="'+y+'" font-size="24" fill="'+(col||CD)+'" text-anchor="'+(anch||'middle')+'">'+esc(t)+'</text>';
+  }
+  const has = k => show.indexOf(k) !== -1;
+
+  if (kind === 'cyl'){
+    if (has('base')){
+      g += kor(CX, TY + 7, '밑면');
+      g += kor(CX, BY + 8, '밑면');
+    }
+    if (has('side')) g += kor(CX - RX - 12, 172, '옆면', 'var(--ink-soft)', 'end');
+    if (has('h')){
+      // 높이 = 두 밑면 사이의 거리 — 밑면에 수직인 선분
+      g += '<line x1="'+(CX+RX+34)+'" y1="'+TY+'" x2="'+(CX+RX+34)+'" y2="'+BY+'" stroke="'+TD+'" stroke-width="3.5"/>';
+      g += '<line x1="'+(CX+RX+26)+'" y1="'+TY+'" x2="'+(CX+RX+42)+'" y2="'+TY+'" stroke="'+TD+'" stroke-width="3"/>';
+      g += '<line x1="'+(CX+RX+26)+'" y1="'+BY+'" x2="'+(CX+RX+42)+'" y2="'+BY+'" stroke="'+TD+'" stroke-width="3"/>';
+      g += kor(CX+RX+52, 160, '높이', TD, 'start');
+      if (o.h != null) g += val(CX+RX+52, 190, _slTag(o.h, u, o.ask === 'h'), TD, 'start');
+    }
+    if (o.d != null && has('d')){
+      g += '<line x1="'+(CX-RX)+'" y1="'+TY+'" x2="'+(CX+RX)+'" y2="'+TY+'" stroke="'+CD+'" stroke-width="3.5"/>';
+      g += val(CX, TY - 16, _slTag(o.d, u, o.ask === 'd'), CD);
+      g += kor(CX, TY - 40, '밑면의 지름', CD);
+    }
+  } else if (kind === 'cone'){
+    const AY = 62;
+    if (has('base')) g += kor(CX, BY + 8, '밑면');
+    if (has('side')) g += kor(CX - 78, 196, '옆면', 'var(--ink-soft)', 'end');
+    if (has('apex')){
+      g += '<circle cx="'+CX+'" cy="'+AY+'" r="6" fill="'+INK+'"/>';
+      g += kor(CX + 14, AY - 8, '원뿔의 꼭짓점', 'var(--ink-soft)', 'start');
+    }
+    if (has('gen')){
+      // 모선 = 꼭짓점과 밑면인 원의 둘레의 한 점을 이은 선분 → 끝점이 타원 위에 있어야 한다
+      g += '<line x1="'+CX+'" y1="'+AY+'" x2="'+(CX+RX)+'" y2="'+BY+'" stroke="'+CD+'" stroke-width="4"/>';
+      g += kor(CX + 74, 128, '모선', CD, 'start');
+      if (o.gen != null) g += val(CX + 74, 156, _slTag(o.gen, u, o.ask === 'gen'), CD, 'start');
+    }
+    if (has('h')){
+      // 높이 = 꼭짓점에서 밑면에 수직으로 내린 선분의 길이 → 반드시 수직선
+      g += '<line x1="'+CX+'" y1="'+AY+'" x2="'+CX+'" y2="'+BY+'" stroke="'+TD+'" stroke-width="3.5" stroke-dasharray="9 6"/>';
+      g += '<path d="M'+(CX)+' '+(BY-15)+' L'+(CX+15)+' '+(BY-15)+' L'+(CX+15)+' '+BY+'" fill="none" stroke="'+TD+'" stroke-width="2.5"/>';
+      g += kor(CX - 12, 148, '높이', TD, 'end');
+      if (o.h != null) g += val(CX - 12, 176, _slTag(o.h, u, o.ask === 'h'), TD, 'end');
+    }
+    if (o.d != null && has('d')){
+      g += '<line x1="'+(CX-RX)+'" y1="'+(BY+RY)+'" x2="'+(CX+RX)+'" y2="'+(BY+RY)+'" stroke="'+CD+'" stroke-width="3.5"/>';
+      g += val(CX, BY + RY + 30, _slTag(o.d, u, o.ask === 'd'), CD);
+      g += kor(CX, BY + RY + 54, '밑면의 지름', CD);
+    }
+  } else {
+    const SR = 104, SCY = 166;
+    if (has('center')){
+      g += '<circle cx="'+CX+'" cy="'+SCY+'" r="6" fill="'+INK+'"/>';
+      g += kor(CX - 12, SCY - 12, '구의 중심', 'var(--ink-soft)', 'end');
+    }
+    if (has('r')){
+      g += '<line x1="'+CX+'" y1="'+SCY+'" x2="'+(CX+SR)+'" y2="'+SCY+'" stroke="'+TD+'" stroke-width="4"/>';
+      g += kor(CX + SR/2, SCY - 14, '구의 반지름', TD);
+      if (o.r != null) g += val(CX + SR/2, SCY + 32, _slTag(o.r, u, o.ask === 'r'), TD);
+    }
+  }
+
+  const f = SL_FACT[kind];
+  const meta = [kind, 'bases=' + f[0], 'apex=' + f[1], 'flat=' + f[2],
+                'labels=' + show.join('|'),
+                'h=' + (o.h != null ? o.h : ''), 'd=' + (o.d != null ? o.d : ''),
+                'gen=' + (o.gen != null ? o.gen : ''), 'r=' + (o.r != null ? o.r : ''),
+                'ask=' + (o.ask || '')].join(';');
+  return '<div class="sl-wrap" data-solid="' + esc(meta) + '">'
+       + '<svg class="sl-svg" viewBox="0 0 ' + W + ' 330" xmlns="http://www.w3.org/2000/svg">' + g + '</svg>'
+       + (o.note ? '<div class="sl-note">' + esc(o.note) + '</div>' : '') + '</div>';
+}
+
+// ───── solidRow : 가·나·다 분류판 ─────
+//   items = ['cyl','cone','sphere','taper','tri','quad','pyr','tripyr','half','ovoid']
+//   o = { labels:['가','나','다',...] · pick:'나,라' (정답 표시) · ask:true · note }
+//   ⚠️ 'taper' = 마주 보는 두 면이 합동이 아닌 통 (교과서 125 '다') — ★오개념 ① 직격.
+//      중학교 용어를 쓰지 않으므로 화면에는 이름을 적지 않는다.
+const SL_NAME = { cyl:'원기둥', cone:'원뿔', sphere:'구', taper:'합동이 아닌 두 원',
+                  tri:'삼각기둥', quad:'사각기둥', pyr:'사각뿔', tripyr:'삼각뿔',
+                  half:'반쪽 공', ovoid:'달걀 모양' };
+
+function _glyph(kind, cx, cy, s){
+  const INK = 'var(--ink)', SOFT = 'var(--teal-soft)';
+  const rx = 30 * s, ry = 10 * s, hh = 34 * s;
+  const T = cy - hh, B = cy + hh;
+  let g = '';
+  if (kind === 'cyl'){
+    g += '<path d="M'+(cx-rx)+' '+T+' L'+(cx-rx)+' '+B+' A'+rx+' '+ry+' 0 0 0 '+(cx+rx)+' '+B+' L'+(cx+rx)+' '+T+' Z" fill="'+SOFT+'" stroke="'+INK+'" stroke-width="3"/>';
+    g += '<ellipse cx="'+cx+'" cy="'+T+'" rx="'+rx+'" ry="'+ry+'" fill="#fff" stroke="'+INK+'" stroke-width="3"/>';
+  } else if (kind === 'taper'){
+    const rx2 = 17 * s, ry2 = 6 * s;
+    g += '<path d="M'+(cx-rx2)+' '+T+' L'+(cx-rx)+' '+B+' A'+rx+' '+ry+' 0 0 0 '+(cx+rx)+' '+B+' L'+(cx+rx2)+' '+T+' Z" fill="'+SOFT+'" stroke="'+INK+'" stroke-width="3"/>';
+    g += '<ellipse cx="'+cx+'" cy="'+T+'" rx="'+rx2+'" ry="'+ry2+'" fill="#fff" stroke="'+INK+'" stroke-width="3"/>';
+  } else if (kind === 'cone'){
+    g += '<path d="M'+cx+' '+T+' L'+(cx-rx)+' '+B+' A'+rx+' '+ry+' 0 0 0 '+(cx+rx)+' '+B+' Z" fill="'+SOFT+'" stroke="'+INK+'" stroke-width="3"/>';
+    g += '<path d="M'+(cx-rx)+' '+B+' A'+rx+' '+ry+' 0 0 0 '+(cx+rx)+' '+B+'" fill="none" stroke="'+INK+'" stroke-width="3"/>';
+  } else if (kind === 'sphere'){
+    g += '<circle cx="'+cx+'" cy="'+cy+'" r="'+(hh*0.92)+'" fill="'+SOFT+'" stroke="'+INK+'" stroke-width="3"/>';
+    g += '<ellipse cx="'+cx+'" cy="'+cy+'" rx="'+(hh*0.92)+'" ry="'+(hh*0.3)+'" fill="none" stroke="'+INK+'" stroke-width="2" stroke-dasharray="6 5" opacity="0.55"/>';
+  } else if (kind === 'half'){
+    const R2 = hh * 0.92;
+    g += '<path d="M'+(cx-R2)+' '+cy+' A'+R2+' '+R2+' 0 0 1 '+(cx+R2)+' '+cy+' Z" fill="'+SOFT+'" stroke="'+INK+'" stroke-width="3"/>';
+    g += '<ellipse cx="'+cx+'" cy="'+cy+'" rx="'+R2+'" ry="'+(R2*0.3)+'" fill="#fff" stroke="'+INK+'" stroke-width="3"/>';
+  } else if (kind === 'ovoid'){
+    g += '<ellipse cx="'+cx+'" cy="'+cy+'" rx="'+(hh*0.68)+'" ry="'+(hh*1.0)+'" fill="'+SOFT+'" stroke="'+INK+'" stroke-width="3"/>';
+  } else if (kind === 'tri'){
+    g += '<path d="M'+(cx-rx)+' '+(T+ry)+' L'+cx+' '+T+' L'+(cx+rx)+' '+(T+ry)+' L'+(cx+rx)+' '+B+' L'+cx+' '+(B-ry)+' L'+(cx-rx)+' '+B+' Z" fill="'+SOFT+'" stroke="'+INK+'" stroke-width="3"/>';
+    g += '<path d="M'+(cx-rx)+' '+(T+ry)+' L'+cx+' '+T+' L'+(cx+rx)+' '+(T+ry)+' Z" fill="#fff" stroke="'+INK+'" stroke-width="3"/>';
+    g += '<line x1="'+cx+'" y1="'+T+'" x2="'+cx+'" y2="'+(B-ry)+'" stroke="'+INK+'" stroke-width="2.5"/>';
+  } else if (kind === 'quad'){
+    const k = 14 * s;
+    g += '<path d="M'+(cx-rx)+' '+(T+k)+' L'+(cx-rx+k)+' '+T+' L'+(cx+rx)+' '+T+' L'+(cx+rx)+' '+(B-k)+' L'+(cx+rx-k)+' '+B+' L'+(cx-rx)+' '+B+' Z" fill="'+SOFT+'" stroke="'+INK+'" stroke-width="3"/>';
+    g += '<path d="M'+(cx-rx)+' '+(T+k)+' L'+(cx-rx+k)+' '+T+' L'+(cx+rx)+' '+T+' L'+(cx+rx-k)+' '+(T+k)+' Z" fill="#fff" stroke="'+INK+'" stroke-width="3"/>';
+    g += '<line x1="'+(cx+rx-k)+'" y1="'+(T+k)+'" x2="'+(cx+rx-k)+'" y2="'+B+'" stroke="'+INK+'" stroke-width="2.5"/>';
+  } else if (kind === 'pyr'){
+    const k = 12 * s;
+    g += '<path d="M'+cx+' '+T+' L'+(cx-rx)+' '+(B-k)+' L'+(cx-rx+k)+' '+B+' L'+(cx+rx)+' '+B+' Z" fill="'+SOFT+'" stroke="'+INK+'" stroke-width="3"/>';
+    g += '<line x1="'+cx+'" y1="'+T+'" x2="'+(cx-rx+k)+'" y2="'+B+'" stroke="'+INK+'" stroke-width="2.5"/>';
+  } else if (kind === 'tripyr'){
+    g += '<path d="M'+cx+' '+T+' L'+(cx-rx)+' '+B+' L'+(cx+rx)+' '+(B-8*s)+' Z" fill="'+SOFT+'" stroke="'+INK+'" stroke-width="3"/>';
+    g += '<path d="M'+cx+' '+T+' L'+(cx-rx)+' '+B+' L'+(cx+6*s)+' '+(B+4*s)+' Z" fill="#fff" stroke="'+INK+'" stroke-width="3" opacity="0.9"/>';
+  }
+  return g;
+}
+
+function solidRow(items, o){
+  o = o || {};
+  const HAN = ['가','나','다','라','마','바','사','아'];
+  const labels = o.labels || HAN.slice(0, items.length);
+  const n = items.length;
+  const cols = (n <= 3) ? n : Math.ceil(n / 2);
+  const rows = Math.ceil(n / cols);
+  const CW = Math.min(200, Math.floor(660 / cols)), CH = 128;
+  const W = cols * CW + 20, H = rows * CH + 16;
+  const s = Math.min(1, CW / 176);
+  let g = '';
+  items.forEach(function(k, i){
+    const r = Math.floor(i / cols), c = i % cols;
+    const cx = 10 + c * CW + CW / 2, cy = 8 + r * CH + 54;
+    g += _glyph(k, cx, cy, s);
+    g += '<text class="kor" x="'+cx+'" y="'+(8 + r*CH + CH - 8)+'" font-size="22" fill="var(--ink-soft)" text-anchor="middle">'+esc(labels[i])+'</text>';
+  });
+  const meta = items.map(function(k, i){ return labels[i] + '=' + k; }).join(';');
+  return '<div class="sl-wrap" data-row="' + esc(meta) + '" data-pick="' + esc(o.pick || '') + '">'
+       + '<svg class="sl-svg" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">' + g + '</svg>'
+       + (o.note ? '<div class="sl-note">' + esc(o.note) + '</div>' : '') + '</div>';
+}
+
+// ───── solidRot : 막대에 붙여 한 바퀴 돌리기 ─────
+//   shape = 'rect'(직사각형) → 원기둥 | 'rtri'(직각삼각형) → 원뿔 | 'semi'(반으로 나눈 원) → 구
+//   o = { a(막대에서 뻗은 길이 = 밑면의 반지름 / 구는 반지름) · b(막대에 붙인 변 = 높이)
+//       · unit · ask:'d'|'h' · note }
+//   ⇒ 밑면의 지름 = a × 2 · 높이 = b   (익힘 87-4 · 91-4 원문 관계)
+//   ⛔ 화면에는 「돌려서 만든 입체도형」까지만 쓴다.
+const ROT_MAP = { rect:'cyl', rtri:'cone', semi:'sphere' };
+function solidRot(shape, o){
+  o = o || {};
+  const u = o.unit || 'cm';
+  const res = ROT_MAP[shape];
+  const INK = 'var(--ink)', SOFT = 'var(--teal-soft)', CD = 'var(--coral-deep)', TD = 'var(--teal-deep)';
+  const AX = 150;                 // 막대(축) x
+  const TOP = 70, BOT = 250;      // 도형 세로 범위
+  const WID = 92;                 // 축에서 뻗은 폭(픽셀)
+  let g = '';
+  // 막대
+  g += '<line x1="'+AX+'" y1="42" x2="'+AX+'" y2="288" stroke="var(--ink-soft)" stroke-width="7" stroke-linecap="round"/>';
+  g += '<text class="kor" x="'+AX+'" y="308" font-size="20" fill="var(--ink-soft)" text-anchor="middle">막대</text>';
+  if (shape === 'rect'){
+    g += '<rect x="'+AX+'" y="'+TOP+'" width="'+WID+'" height="'+(BOT-TOP)+'" fill="'+SOFT+'" stroke="'+INK+'" stroke-width="3.5"/>';
+  } else if (shape === 'rtri'){
+    g += '<path d="M'+AX+' '+TOP+' L'+AX+' '+BOT+' L'+(AX+WID)+' '+BOT+' Z" fill="'+SOFT+'" stroke="'+INK+'" stroke-width="3.5"/>';
+    g += '<path d="M'+AX+' '+(BOT-16)+' L'+(AX+16)+' '+(BOT-16)+' L'+(AX+16)+' '+BOT+'" fill="none" stroke="'+INK+'" stroke-width="2.5"/>';
+  } else {
+    const R = (BOT - TOP) / 2, MY = (TOP + BOT) / 2;
+    g += '<path d="M'+AX+' '+TOP+' A'+R+' '+R+' 0 0 1 '+AX+' '+BOT+' Z" fill="'+SOFT+'" stroke="'+INK+'" stroke-width="3.5"/>';
+    g += '<circle cx="'+AX+'" cy="'+MY+'" r="5" fill="'+INK+'"/>';
+  }
+  // 치수
+  const midY = (TOP + BOT) / 2;
+  g += '<text x="'+(AX + WID/2)+'" y="'+(TOP - 14)+'" font-size="23" fill="'+CD+'" text-anchor="middle">'+esc(o.a + ' ' + u)+'</text>';
+  g += '<text x="'+(AX - 14)+'" y="'+midY+'" font-size="23" fill="'+TD+'" text-anchor="end">'+esc(o.b + ' ' + u)+'</text>';
+  // 화살표 + 결과
+  g += '<path d="M275 166 L345 166" stroke="var(--ink-soft)" stroke-width="5"/>';
+  g += '<path d="M345 166 L330 156 L330 176 Z" fill="var(--ink-soft)"/>';
+  g += '<text class="kor" x="310" y="146" font-size="19" fill="var(--ink-soft)" text-anchor="middle">한 바퀴</text>';
+  g += _glyph(res, 500, 166, 1.5);
+  const dia = o.a * 2;
+  if (res !== 'sphere'){
+    g += '<text class="kor" x="500" y="290" font-size="20" fill="var(--ink-soft)" text-anchor="middle">밑면의 지름 '
+       + esc(_slTag(dia, u, o.ask === 'd')) + ' · 높이 ' + esc(_slTag(o.b, u, o.ask === 'h')) + '</text>';
+  } else {
+    g += '<text class="kor" x="500" y="290" font-size="20" fill="var(--ink-soft)" text-anchor="middle">구의 반지름 '
+       + esc(_slTag(o.a, u, o.ask === 'r')) + '</text>';
+  }
+  const meta = [shape, res, o.a, o.b, (res === 'sphere' ? o.a : dia), (res === 'sphere' ? '' : o.b),
+                'ask=' + (o.ask || '')].join(',');
+  return '<div class="sl-wrap" data-rot="' + esc(meta) + '">'
+       + '<svg class="sl-svg" viewBox="0 0 700 330" xmlns="http://www.w3.org/2000/svg">' + g + '</svg>'
+       + (o.note ? '<div class="sl-note">' + esc(o.note) + '</div>' : '') + '</div>';
+}
+
+// ───── cylNet : 원기둥의 전개도 ─────
+//   o = { r(밑면의 반지름) · h(높이) · unit
+//       · show:['w','sh','r']   w=옆면의 가로 · sh=옆면의 세로 · r=밑면의 반지름
+//       · ask:'w'|'sh'|'r'
+//       · mark:true             교과서 127 — 밑면의 둘레와 맞닿는 곳(빨강) · 높이와 같은 곳(파랑)
+//       · bad:'notrect'|'overlap'|'diff'   전개도가 될 수 없는 것 (교과서 128 나·다·라)
+//       · note }
+//   🔴 픽셀 규약: W(옆면 가로 픽셀) = PD(밑면 지름 픽셀) × 3.14 — 라벨과 그림을 함께 맞춘다.
+function cylNet(o){
+  o = o || {};
+  const u = o.unit || 'cm';
+  const r = o.r, d = r * 2, h = o.h;
+  const show = o.show || [];
+  const INK = 'var(--ink)', SOFT = 'var(--teal-soft)', CD = 'var(--coral-deep)', TD = 'var(--teal-deep)';
+  // 스케일 — 도형 전체가 한 배율이어야 「높이 = 옆면의 세로」가 눈으로도 참이 된다
+  let PD = 66;                                   // 밑면 지름 픽셀 (기본)
+  if (PD * h / d > 128) PD = 128 * d / h;        // 옆면이 너무 길면 줄인다
+  if (PD * PI314 > 470) PD = 470 / PI314;        // 옆면 가로가 화면을 넘으면 줄인다
+  PD = Math.round(PD * 100) / 100;
+  const W = Math.round(PD * PI314 * 100) / 100;  // ★ 옆면 가로 = 밑면 둘레
+  const SH = Math.round(PD * h / d * 100) / 100; // 옆면 세로 = 높이 (같은 배율)
+  const X0 = Math.round((700 - W) / 2 * 100) / 100;
+  const GAP = 8;
+  const TY = 46, RY0 = TY + PD / 2;              // 위 밑면 중심 y
+  const SY = TY + PD + GAP;                      // 옆면 위쪽 y
+  const BY = SY + SH + GAP;                      // 아래 밑면 위쪽 y
+  const CXm = X0 + W / 2;
+  let g = '';
+
+  const bad = o.bad || '';
+  // 옆면
+  if (bad === 'notrect'){
+    g += '<path d="M'+X0+' '+SY+' L'+(X0+W)+' '+(SY+14)+' L'+(X0+W)+' '+(SY+SH)+' L'+X0+' '+(SY+SH-14)+' Z" '
+       + 'fill="'+SOFT+'" stroke="'+INK+'" stroke-width="3.5"/>';
+  } else {
+    g += '<rect x="'+X0+'" y="'+SY+'" width="'+W+'" height="'+SH+'" fill="'+SOFT+'" stroke="'+INK+'" stroke-width="3.5"/>';
+  }
+  // 밑면 두 개
+  const R1 = PD / 2, R2 = (bad === 'diff') ? PD / 2 * 0.62 : PD / 2;
+  if (bad === 'overlap'){
+    // 두 원이 옆면 기준 같은 쪽 — 마주 보지 않아 접으면 겹친다 (교과서 128 '다')
+    g += '<circle cx="'+(CXm - PD*0.62)+'" cy="'+RY0+'" r="'+R1+'" fill="#fff" stroke="'+INK+'" stroke-width="3.5"/>';
+    g += '<circle cx="'+(CXm + PD*0.62)+'" cy="'+RY0+'" r="'+R2+'" fill="#fff" stroke="'+INK+'" stroke-width="3.5"/>';
+  } else {
+    g += '<circle cx="'+CXm+'" cy="'+RY0+'" r="'+R1+'" fill="#fff" stroke="'+INK+'" stroke-width="3.5"/>';
+    g += '<circle cx="'+CXm+'" cy="'+(BY + PD/2)+'" r="'+R2+'" fill="#fff" stroke="'+INK+'" stroke-width="3.5"/>';
+  }
+  // 교과서 127 색 표시
+  if (o.mark){
+    g += '<line x1="'+X0+'" y1="'+SY+'" x2="'+(X0+W)+'" y2="'+SY+'" stroke="var(--emph)" stroke-width="6"/>';
+    g += '<line x1="'+X0+'" y1="'+SY+'" x2="'+X0+'" y2="'+(SY+SH)+'" stroke="#2563EB" stroke-width="6"/>';
+  }
+  function kor(x, y, t, col, anch){
+    return '<text class="kor" x="'+x+'" y="'+y+'" font-size="20" fill="'+(col||'var(--ink-soft)')+'" text-anchor="'+(anch||'middle')+'">'+esc(t)+'</text>';
+  }
+  const has = k => show.indexOf(k) !== -1;
+  const wVal = _r2(d * PI314);
+  if (has('w')){
+    g += '<text x="'+CXm+'" y="'+(SY - 8)+'" font-size="24" fill="'+CD+'" text-anchor="middle">'
+       + esc(_slTag(_num(wVal), u, o.ask === 'w')) + '</text>';
+    g += kor(CXm, SY + SH / 2 + 8, '옆면의 가로', CD);
+  }
+  if (has('sh')){
+    g += '<text x="'+(X0 - 12)+'" y="'+(SY + SH/2)+'" font-size="24" fill="'+TD+'" text-anchor="end">'
+       + esc(_slTag(h, u, o.ask === 'sh')) + '</text>';
+    g += kor(X0 - 12, SY + SH/2 + 24, '옆면의 세로', TD, 'end');
+  }
+  if (has('r')){
+    const rcx = (bad === 'overlap') ? (CXm - PD*0.62) : CXm;
+    g += '<line x1="'+rcx+'" y1="'+RY0+'" x2="'+(rcx + R1)+'" y2="'+RY0+'" stroke="'+TD+'" stroke-width="3"/>';
+    g += '<text x="'+(rcx + R1 + 10)+'" y="'+(RY0 + 7)+'" font-size="22" fill="'+TD+'" text-anchor="start">'
+       + esc(_slTag(r, u, o.ask === 'r')) + '</text>';
+  }
+  const H = Math.ceil(BY + PD + 26);
+  const ratio = (bad === 'notrect') ? 0 : Math.round(W / PD * 100) / 100;
+  const meta = [r, h, PD, W, SH, ratio, _num(wVal)].join(',') + ';bad=' + bad + ';ask=' + (o.ask || '');
+  return '<div class="sl-wrap" data-net="' + esc(meta) + '">'
+       + '<svg class="sl-svg" viewBox="0 0 700 ' + H + '" xmlns="http://www.w3.org/2000/svg">' + g + '</svg>'
+       + (o.note ? '<div class="sl-note">' + esc(o.note) + '</div>' : '') + '</div>';
+}
+
+// ───── viewFront : 위·앞·옆에서 본 모양 ─────
+//   mode 'table' : o = { solids:['cyl','cone','sphere'] · dirs:['위','앞','옆'] · ask:'cone-앞' }
+//   mode 'area'  : o = { tri:{b,h} · rect:{w,v} · ask:'rect-w'|'rect-v' }  (l09 해결하는 수학)
+const VIEW_OF = { cyl:{ '위':'원', '앞':'직사각형', '옆':'직사각형' },
+                  cone:{ '위':'원', '앞':'삼각형', '옆':'삼각형' },
+                  sphere:{ '위':'원', '앞':'원', '옆':'원' } };
+
+function _shapeCell(name){
+  const INK = 'var(--ink)', SOFT = 'var(--teal-soft)';
+  let g = '';
+  if (name === '원') g += '<circle cx="34" cy="30" r="24" fill="'+SOFT+'" stroke="'+INK+'" stroke-width="3"/>';
+  else if (name === '직사각형') g += '<rect x="10" y="10" width="48" height="40" fill="'+SOFT+'" stroke="'+INK+'" stroke-width="3"/>';
+  else g += '<path d="M34 6 L60 54 L8 54 Z" fill="'+SOFT+'" stroke="'+INK+'" stroke-width="3"/>';
+  return '<svg class="vf-cell" width="68" height="60" viewBox="0 0 68 60" xmlns="http://www.w3.org/2000/svg">' + g + '</svg>';
+}
+
+function viewFront(o){
+  o = o || {};
+  if (o.mode === 'area'){
+    const t = o.tri, r = o.rect, u = o.unit || 'cm';
+    const INK = 'var(--ink)', SOFT = 'var(--teal-soft)', CD = 'var(--coral-deep)', TD = 'var(--teal-deep)';
+    let g = '';
+    // 삼각형 (원뿔을 앞에서 본 모양)
+    g += '<path d="M170 60 L262 216 L78 216 Z" fill="'+SOFT+'" stroke="'+INK+'" stroke-width="3.5"/>';
+    g += '<line x1="170" y1="60" x2="170" y2="216" stroke="'+TD+'" stroke-width="3" stroke-dasharray="8 6"/>';
+    g += '<text x="182" y="146" font-size="23" fill="'+TD+'" text-anchor="start">'+esc(t.h + ' ' + u)+'</text>';
+    g += '<text x="170" y="248" font-size="23" fill="'+CD+'" text-anchor="middle">'+esc(t.b + ' ' + u)+'</text>';
+    g += '<text class="kor" x="170" y="40" font-size="20" fill="var(--ink-soft)" text-anchor="middle">원뿔을 앞에서 본 모양</text>';
+    // 직사각형 (원기둥을 앞에서 본 모양)
+    g += '<rect x="430" y="96" width="176" height="120" fill="'+SOFT+'" stroke="'+INK+'" stroke-width="3.5"/>';
+    g += '<text x="518" y="248" font-size="23" fill="'+CD+'" text-anchor="middle">'
+       + esc(_slTag(r.w, u, o.ask === 'rect-w')) + '</text>';
+    g += '<text x="416" y="162" font-size="23" fill="'+TD+'" text-anchor="end">'
+       + esc(_slTag(r.v, u, o.ask === 'rect-v')) + '</text>';
+    g += '<text class="kor" x="518" y="76" font-size="20" fill="var(--ink-soft)" text-anchor="middle">원기둥을 앞에서 본 모양</text>';
+    const ta = _r2(t.b * t.h / 2);
+    const meta = ['tri', t.b, t.h, _num(ta), 'rect', r.w, r.v, _num(_r2(r.w * r.v))].join(',') + ';ask=' + (o.ask || '');
+    return '<div class="sl-wrap" data-farea="' + esc(meta) + '">'
+         + '<svg class="sl-svg" viewBox="0 0 700 268" xmlns="http://www.w3.org/2000/svg">' + g + '</svg>'
+         + (o.note ? '<div class="sl-note">' + esc(o.note) + '</div>' : '') + '</div>';
+  }
+  const solids = o.solids || ['cyl', 'cone', 'sphere'];
+  const dirs = o.dirs || ['위', '앞', '옆'];
+  const ask = o.ask || '';
+  let head = '<tr><th>입체도형</th>';
+  dirs.forEach(function(dd){ head += '<th>' + esc(dd) + '에서 본 모양</th>'; });
+  head += '</tr>';
+  let body = '', data = [];
+  solids.forEach(function(k){
+    let row = '<tr><th>' + esc(SL_NAME[k]) + '</th>';
+    const cells = [];
+    dirs.forEach(function(dd){
+      const nm = VIEW_OF[k][dd];
+      cells.push(nm);
+      row += (ask === (k + '-' + dd))
+        ? '<td class="hid">?</td>'
+        : '<td>' + _shapeCell(nm) + '<span>' + esc(nm) + '</span></td>';
+    });
+    row += '</tr>';
+    body += row;
+    data.push(k + ':' + cells.join('|'));
+  });
+  return '<div class="sl-wrap" data-view="' + esc(data.join(';')) + '" data-view-ask="' + esc(ask) + '">'
+       + '<table class="vf-tbl">' + head + body + '</table>'
+       + (o.note ? '<div class="sl-note">' + esc(o.note) + '</div>' : '') + '</div>';
+}
+
+// ───── solidCalc : 공식 → 넣기 → 답 (U5 circleCalc 골격 승계) ─────
+//   kind = 'netW'   (옆면의 가로) = (밑면의 지름) × (원주율)        d = {d}
+//        | 'netWR'  (옆면의 가로) = (반지름) × 2 × (원주율)         d = {r}
+//        | 'netD'   (밑면의 지름) = (옆면의 가로) ÷ (원주율)        d = {w}
+//        | 'dia'    (밑면의 지름) = (반지름) × 2                    d = {r}
+//        | 'triA'   (삼각형의 넓이) = (밑변) × (높이) ÷ 2           d = {b,h}
+//        | 'rectW'  (직사각형의 가로) = (넓이) ÷ (세로)             d = {a,v}
+//        | 'rectV'  (직사각형의 세로) = (넓이) ÷ (가로)             d = {a,w}
+//   o = { unit · ask:true · bad:'...' · cap }
+function solidCalc(kind, d, o){
+  o = o || {};
+  const u = o.unit || 'cm';
+  let form, mid, val, unit = u;
+  if (kind === 'netW'){
+    form = '(옆면의 가로) = (밑면의 지름) × (원주율)';
+    mid = d.d + ' × 3.14'; val = _r2(d.d * PI314);
+  } else if (kind === 'netWR'){
+    form = '(옆면의 가로) = (밑면의 반지름) × 2 × (원주율)';
+    mid = d.r + ' × 2 × 3.14'; val = _r2(d.r * 2 * PI314);
+  } else if (kind === 'netD'){
+    form = '(밑면의 지름) = (옆면의 가로) ÷ (원주율)';
+    mid = d.w + ' ÷ 3.14'; val = _r2(d.w / PI314);
+  } else if (kind === 'dia'){
+    form = '(밑면의 지름) = (밑면의 반지름) × 2';
+    mid = d.r + ' × 2'; val = _r2(d.r * 2);
+  } else if (kind === 'triA'){
+    form = '(삼각형의 넓이) = (밑변) × (높이) ÷ 2';
+    mid = d.b + ' × ' + d.h + ' ÷ 2'; val = _r2(d.b * d.h / 2); unit = u + '\u00B2';
+  } else if (kind === 'rectW'){
+    form = '(직사각형의 가로) = (넓이) ÷ (세로)';
+    mid = d.a + ' ÷ ' + d.v; val = _r2(d.a / d.v);
+  } else if (kind === 'rectV'){
+    form = '(직사각형의 세로) = (넓이) ÷ (가로)';
+    mid = d.a + ' ÷ ' + d.w; val = _r2(d.a / d.w);
+  } else {
+    return '<div class="sl-note">부품 미지원</div>';
+  }
+  const ansTxt = o.ask ? '<span class="sc-hide">?</span>' : (_num(val) + ' ' + unit);
+  let cards = '';
+  cards += '<div class="sc-card"><span class="sc-step">공식</span><span class="sc-body kor">'+esc(form)+'</span></div>';
+  cards += '<div class="sc-card"><span class="sc-step">넣기</span><span class="sc-body">'+esc(mid)+'</span></div>';
+  if (o.bad)
+    cards += '<div class="sc-card bad"><span class="sc-step">잘못</span><span class="sc-body">'+esc(o.bad)+'</span></div>';
+  cards += '<div class="sc-card last"><span class="sc-step">답</span><span class="sc-body">'+ansTxt+'</span></div>';
+  const key = kind + '|' + mid.replace(/\s/g, '') + '|' + _num(val);
+  return '<div class="sl-wrap" data-calc="'+esc(key)+'"><div class="sc-cards">'+cards+'</div>'
+       + (o.cap ? '<div class="sc-cap">'+esc(o.cap)+'</div>' : '') + '</div>';
+}
+
+(function renderModels(){
+  document.getElementById('m-i2').innerHTML =
+    solidRow(['cyl','cone','sphere'], { labels:['원기둥','원뿔','구'] });
+  document.getElementById('m-e1').innerHTML =
+    solidRot('rect', { a:2, b:6, unit:'cm' });
+  document.getElementById('m-e2').innerHTML =
+    solid3('cone', { d:10, h:8, gen:10, show:['base','side','apex','gen','h'], unit:'cm' });
+  document.getElementById('m-e3').innerHTML =
+    cylNet({ r:4, h:6, unit:'cm', show:['w','sh','r'] });
+  document.getElementById('m-e4').innerHTML =
+    cylNet({ r:4, h:6, unit:'cm', show:['w'], mark:true });
+  document.getElementById('m-q8').innerHTML =
+    solidRow(['cyl','tri','pyr','sphere','cyl','cone'], { labels:['가','나','다','라','마','바'] });
+  document.getElementById('m-q12').innerHTML =
+    cylNet({ r:2, h:5, unit:'cm', bad:'overlap' });
+  document.getElementById('m-q14').innerHTML =
+    cylNet({ r:3, h:5, unit:'cm', show:['w','sh'] });
+  document.getElementById('m-q15').innerHTML =
+    cylNet({ r:2, h:4, unit:'cm', show:['w','sh'] });
+})();
+
+function setupPad(qid, correct, padId, displayId, fbId, doneMsg, maxLen) {
+  maxLen = maxLen || 6;
+  const pad = document.getElementById(padId);
+  const display = document.getElementById(displayId);
+  const fb = document.getElementById(fbId);
+  let buf = '';
+  const keys = ['1','2','3','4','5','6','7','8','9','0'];
+  keys.forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'q-key'; b.textContent = k;
+    b.addEventListener('click', () => {
+      const st = getQState(qid); if (st.solved) return;
+      if (buf.length < maxLen) { buf += k; display.textContent = buf; }
+    });
+    pad.appendChild(b);
+  });
+  const del = document.createElement('button');
+  del.className = 'q-key fn'; del.textContent = '지움';
+  del.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    buf = buf.slice(0, -1); display.textContent = buf || '?';
+  });
+  pad.appendChild(del);
+  const ok = document.createElement('button');
+  ok.className = 'q-key fn'; ok.textContent = '확인'; ok.style.gridColumn = 'span 4';
+  ok.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    st.attempts++;
+    if (parseInt(buf, 10) === correct) {
+      st.solved = true;
+      const earn = pointsForQ(qid); addScore(earn);
+      fb.classList.remove('wrong');
+      fb.textContent = (doneMsg || '정답이에요!') + ' +' + earn + '점';
+      updateUI();
+    } else {
+      st.wrongCount++;
+      fb.classList.add('wrong'); fb.textContent = '다시 계산해 보자';
+    }
+  });
+  pad.appendChild(ok);
+}
+
+function setupMcq(qid, doneMsg){
+  document.querySelectorAll('#'+qid+'-opts .mcq-opt').forEach(o=>{
+    o.addEventListener('click', ()=>{
+      const st=getQState(qid); if(st.solved) return;
+      st.attempts++;
+      const fb=document.getElementById(qid+'-fb');
+      if(o.dataset.correct==='1'){
+        st.solved=true; o.classList.add('correct');
+        const earn=pointsForQ(qid); addScore(earn);
+        fb.classList.remove('wrong'); fb.textContent=(doneMsg||'정답이에요!')+' +'+earn+'점';
+        updateUI();
+      } else {
+        st.wrongCount++; o.classList.add('wrong');
+        fb.classList.add('wrong'); fb.textContent='다시 골라 보세요';
+        setTimeout(()=>o.classList.remove('wrong'),500);
+      }
+    });
+  });
+}
+
+setupMcq('q8','맞아요! 라가 구예요');
+setupMcq('q9','맞아요! 구가 돼요');
+setupMcq('q10','맞아요! 모선이에요');
+setupPad('q11', 2, 'q11-pad','q11-display','q11-fb','맞아요! 2개예요', 6);
+setupMcq('q12','맞아요! 마주 보는 위치에 있어야 해요');
+setupMcq('q13','맞아요! 구의 중심은 1개, 반지름은 무수히 많아요');
+setupPad('q14', 3, 'q14-pad','q14-display','q14-fb','맞아요! 18.84 ÷ 3.14 ÷ 2 = 3 cm 예요', 6);
+setupPad('q15', 4, 'q15-pad','q15-display','q15-fb','맞아요! 12.56 ÷ 3.14 = 4 cm 예요', 6);
+
+
+// ───── 슬17 자기 평가 ─────
+document.querySelectorAll('.self-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.self-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('self-fb').textContent = '응답이 기록됐어요. 다음 차시에서 만나요!';
+  });
+});
+
+// ───── 진도 복원 ─────
+(function restore() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data.cur != null) cur = Math.min(data.cur, TOTAL - 1);
+    if (data.score != null) score = data.score;
+    document.getElementById('score').textContent = '⭐ ' + score;
+  } catch(e) {}
+})();
+
+(function buildDots(){ const w=document.getElementById('dots'); for(let i=0;i<TOTAL;i++){ const d=document.createElement('div'); d.className='ka-dot'; d.onclick=()=>{ cur=i; saveProgress(false); updateUI(); }; w.appendChild(d); } })();
+
+updateUI();
+</script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit.js"></script>
+</body>
+</html>

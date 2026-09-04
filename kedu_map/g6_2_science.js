@@ -104,23 +104,6 @@ window.KEDU_MAP["g6_2_science"] = {
      "ready": true
     }
    ]
-  },
-  {
-   "num": 2,
-   "name": "물질의 연소",
-   "kind": "unit",
-   "lessons": [
-    {
-     "key": "g6_science_u2_l01",
-     "lessonId": "g6_s2_sci_u2_l01_v1",
-     "n": "1",
-     "title": "열려라 과학 — 불씨가 살아나는 병을 찾아라!",
-     "sub": null,
-     "url": "/grade6/semester2/science/2단원_물질의연소/g6_sci_u2_l01_열려라과학.html",
-     "track": "tb",
-     "ready": true
-    }
-   ]
   }
  ]
 };
