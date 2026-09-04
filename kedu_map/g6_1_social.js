@@ -328,14 +328,14 @@ window.KEDU_MAP["g6_1_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u3_l05",
+     "lessonId": "g6_social_u3_l05_v1",
      "n": "5",
      "title": "세계의 대륙과 대양을 알아볼까요",
      "sub": "② 세계 여러 국가의 위치와 영토 모습",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/social/3단원_지구대륙그리고국가들/g6_social_u3_l05_둘레가정해줘요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,

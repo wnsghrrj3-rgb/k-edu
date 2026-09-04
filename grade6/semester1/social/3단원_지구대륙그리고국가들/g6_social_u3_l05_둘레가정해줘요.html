@@ -1,0 +1,992 @@
+<!--
+K-edu 사회 6-1 · 3단원 지구, 대륙 그리고 국가들 · 주제② 세계 여러 국가의 위치와 영토 모습 · 5차시(l05)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [6사09-02] · 교과서 p.138~140 · 지도서(대단원3 **8차시** 「세계의 대륙과 대양을 알아볼까요」,
+  지도서 p.310~316) 근거. ⚠️ 성취기준 전환 [6사09-01] → [6사09-02] · META의 주제명도 주제②로 바뀐다.
+학습 목표: 세계의 대륙과 대양의 위치와 특징을 설명할 수 있다.
+수업 기법 및 전략: 개념 파악하기 · 지도 읽기
+META = "3단원 지구, 대륙 그리고 국가들 · 주제② 세계 여러 국가의 위치와 영토 모습"
+⚠️ 엔진은 대단원1·2와 3단원 l01~l04에서 100% 승계. **3단원 색 #047857** 승계(변수명 유지 · 엔진 무수정).
+
+⚠️ 파일명을 `둘레가정해줘요`로 지었다(배선 예외 대신). l04가 **대륙 이름·대양 이름·도시 이름을 개수 0**으로,
+   「대륙」을 **≤3**, 「대양」을 **≤1**, 「영토」를 **0**, 「시차」·「햇볕」·「북반구」·「남반구」를 **0**으로 재고 있어서
+   파일명에 그 낱말이 들어가면 재배선이 곧바로 그 가드를 건드린다. 겹치지 않는 이름을 골랐다
+   (u2 l05 `나랏일` ~ u3 l04 `만나야정해져요` 선례 승계).
+
+직접조작: 한 걸음이 채우는 자리의 수가 걸음마다 다른 판 · 놓은 조각이 아니라 그 조각의 둘레가
+         채워지는 형(66번째 신규 패턴)
+  ⭐ 앞의 예순다섯 종에서 **한 걸음이 판에 미치는 크기는 언제나 같았다.** 57번째(한 걸음이 판의 두 자리를
+     함께 올리는 판)에서도 한 걸음이 올리는 자리는 **언제나 둘**이었고, 44번째(빛과 그늘이 함께 자라는
+     판)에서도 **언제나 한 쌍**이었으며, 65번째(두 걸음이 만나야 정해지는 판)에서 한 걸음이 후보를
+     줄이는 몫도 **언제나 같았다**(25 → 5 → 1). **어느 판에서도 한 걸음이 얼마나 채우는지가 걸음마다
+     달라진 적이 없다.**
+  ⭐ 이번만 **한 걸음이 채우는 자리의 수를 걸음이 정한다.** 아시아를 놓으면 **세 바다**의 둘레가 함께
+     차고, 오세아니아를 놓으면 **두 바다**가 차고, 남극 대륙을 놓으면 **한 바다**만 찬다. 근거는 교과서
+     139쪽이 대양을 **그 대양을 둘러싼 대륙들로** 설명한다는 것이다 — 「태평양은 아시아, 오세아니아,
+     북아메리카, 남아메리카 대륙 사이에 있습니다」·「남극해는 남극 대륙을 둘러싸고 있는 바다입니다」.
+     대륙마다 맞닿은 바다의 수가 다르므로 한 걸음이 채우는 자리의 수도 걸음마다 다르다.
+  ⭐ **손을 댄 자리와 채워지는 자리가 다르다** — 대륙을 놓으면 채워지는 것은 그 대륙 칸이 아니라
+     **그 대륙이 맞닿은 바다의 둘레 칸**이다. 바다는 스스로 이름을 갖지 않고 **둘레의 육지가 정해 준다.**
+  ⭐ **남극해는 오직 한 대륙만이 채운다** — 여섯 대륙을 다 놓아도 남극 대륙을 놓지 않으면 남극해의
+     둘레는 **텅 비어 있다**. 판이 「아직 둘레가 비었어요」라고 말한다.
+  ⭐ **둘레를 따로 담는 상태가 코드에 아예 없다** — `rmRim(st,o)` **한 줄**이 각 바다의 둘레를 다 정하고
+     (`그 바다의 둘레 대륙 ∧ 지금까지 놓은 대륙`), `RM_RIM[`을 읽는 자리도 그 한 줄뿐이다. 그래서
+     「놓지 않은 대륙이 둘레에 그려지는 판」도 「걸음마다 같은 수만큼 채우는 판」도 만들어질 수 없다.
+  ⭐ **어느 대륙부터 놓아도 완주 판이 글자까지 같다**(순서 자유 · 스모크가 여러 순열로 전수 대조).
+  ⭐ **놓는 자리에는 옳고 그름이 없다**(`RM_PUT_OK` 부재 · 어느 대륙을 놓아도 판이 받는다 · 감점 0).
+     옳고 그름은 **둘레를 다 채운 뒤 바다의 이름을 붙일 때**에만 온다.
+  ① **대륙 일곱 놓기**(순서 자유 · 무판정 · 놓을 때마다 그 대륙이 맞닿은 바다의 둘레가 함께 찬다)
+  ② **바다 다섯에 이름 붙이기 3택**(둘레를 보고 어느 바다인지 학생이 읽어 낸다 · 차례 고정 ㉮~㉲)
+  ③ 마무리 3택 = 지도서 「8차시 주요 내용 정리」 원문
+  ⚠️ 대륙·대양·둘레·안내 전량 고정 리터럴 — 난수 0.
+  ⚠️ 가드 9종: ① 마무리 확정 후 전체 잠금 / ② 무효 번호(`Number.isInteger`·범위) /
+     ③ 이미 놓은 대륙 다시 놓기 무시 — 판 불변 /
+     ④ **일곱 대륙을 다 놓기 전 이름 붙이기 무시 — 판 불변**(핵심 순서 가드 · 둘레가 다 차야
+        바다의 이름을 알 수 있다) /
+     ⑤ 일곱을 다 놓은 뒤 다시 놓기 무시 — 판 불변 /
+     ⑥ 어긋난 이름 — 판 불변(안내에 알맞은 바다 이름 0) /
+     ⑦ 다섯 이름을 다 붙인 뒤 더 붙이기 무시 — 판 불변 /
+     ⑧ 다섯 이름을 다 붙이기 전 마무리 무시(순서) — 판 불변 /
+     ⑨ 안내 표시 중 재클릭 무시(`rmBusy`).
+     재시도 허용(감점 없음), 조작에 점수 0. 발문은 `.rm-q`로 떼어 전 단계 상시 노출. 상태 열쇠 8개.
+
+⚠️ 정직 원칙 네 곳
+  ㉠ **판의 그림은 대륙과 대양이 맞닿은 것을 나타낸 도식이지 실제 세계지도나 지구본이 아니다**(캡션).
+     대륙과 대양의 실제 모양·넓이·자리는 교실에서 지구본과 세계지도를 펴고 살펴본다.
+  ㉡ **판에는 나라의 이름을 옮기지 않는다** — 나라의 위치와 영토 모습은 다음 차시들 몫이다.
+     [생각을 열어요]의 세 나라는 교과서 138쪽 원문이라 들어가기 한 자리에서만 쓴다.
+  ㉢ **붙임딱지를 붙이는 활동은 교실 몫**이다 — 교과서 [스스로 활동]의 붙임딱지 활동은 손으로 하는
+     일이라 화면이 대신하지 않는다(완료 카드 명시).
+  ㉣ **넓이는 교과서가 말한 차례까지만** — 판은 넓이를 그리지 않고 **둘레만** 보여 준다. 어느 대륙과
+     대양이 얼마나 넓은지는 교실에서 지구본과 세계지도를 펴고 견준다.
+
+⚠️ 설계 원칙
+  · **9차시 이후 침범 0** — 나라의 위치·영토 모습·영토 특징을 다루지 않는다. 「영토」는 제목 밖
+    **META·들어가기·차시 예고 세 자리까지 ≤4**(주제명이 「위치와 영토 모습」이라 META에 든다).
+    9~12차시가 여는 나라 이름은 **개수 0**(l04가 연 아홉 — 케냐·인도네시아·에콰도르·영국·프랑스·
+    알제리·미국·브라질·오스트레일리아 — 도 여기서는 재현 0). ⚠️ **접두 함정** — 「인도」는
+    「인도양」·「인도네시아」의 앞부분이라 개수로 재면 헛돈다. 금지 목록에서 뺀다(l04 교훈 승계).
+  · **13~14차시 침범 0** — 여행 경로·생각 그물·말판 놀이·「생각을 펼쳐요」·「단원 마무리」 0.
+  · **주제① 재현 최소** — 위선·경선·위도·경도·본초 자오선·시차·디지털 영상 지도는 되짚기 한 자리까지.
+    「지구본」·「세계지도」는 이 차시 교과서 원문(「지구본이나 세계지도에서」·다음 시간 준비물)이라
+    각 ≤8. ⚠️ **「북반구」·「남반구」·「적도」는 이 차시 [스스로 활동] 원문이라 여기서 열린다**
+    (l03에서는 0이었다 — 그 차시의 가드는 그 차시의 것이니 건드리지 않는다).
+  · **대단원1·2 재현 0**(선거·국회·행정부·법원·권력 분립·미디어·평화 통일·민주화·산업화·헌법·인권 0).
+  · **정치적 중립** — 정부·기관·상표·누리집·신문사 이름 0 · 실제 지역 이름 0 ·
+    **어느 대륙도 어느 대양도 어느 나라도 더 좋거나 나쁘게 그리지 않는다.**
+  · 교사용 참고 자료 0(참고 도서 · 수리적 위치와 지리적 위치 · GPS와 인공위성 · 히파르코스와
+    바빌로니아 · 마젤란과 세계 일주 · 섬과 해협의 이름 · 해류와 어장 · 무역과 항로 · 해수면 상승 ·
+    활동 자료 번호·쪽수 · 평가 계획 · 그림책 만들기 프로젝트).
+  · **파일 전체에 네 자리 연도 0 · 쪽수 0 · 금액 0 · 거리 수치 0 · 시각 수치 0 · 각도 0**
+    (CSS·`\u` 이스케이프 밖 스코프 — ⚠️ **「약 70 %」는 교과서 138쪽 본문 원문이라 살펴보기
+    한 자리에서만 쓰고 문항에는 0으로 둔다**).
+  · 정서 — 남극 대륙은 교과서 원문이 말한 만큼(「사람이 살기 어려워요」)까지만 쓰고 무서운 곳으로
+    그리지 않는다 · 사람 형상 대신 칸과 선으로만 그린다 · **학생 이름 0 · 유명인 0.**
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g6_social_u3_l05_v1">
+<title>세계의 대륙과 대양을 알아볼까요 · 지구, 대륙 그리고 국가들 · 사회 6-1</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#047857; --green-d:#065F46; --cyan:#0D9488;
+  --bg:#ECFDF5; --bub:#D1FAE5; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#B45309; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-shrink:0}
+.ka-lb{background:#F1F5F9;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;
+  font-weight:700;color:var(--muted);font-size:clamp(11px,1.9vw,13px);display:flex;align-items:center;gap:6px}
+.ka-lb svg{width:14px;height:14px}
+.ka-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.ka-bar>div{height:100%;background:var(--green);border-radius:99px;transition:width .35s ease;width:5%}
+.ka-pg{font-size:clamp(11px,1.9vw,13px);color:var(--muted);font-weight:700;min-width:46px;text-align:right}
+.ka-sc{display:flex;align-items:center;gap:3px;background:var(--amber-bg);border-radius:99px;padding:5px 11px}
+.ka-sc svg{width:15px;height:15px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;color:var(--amber);font-size:clamp(14px,2.4vw,17px)}
+.ka-sc-u{font-size:11px;color:var(--amber);font-weight:700}
+
+/* 메인 */
+.ka-m{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;padding:4px 2px}
+.ka-tags{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ka-bg{display:inline-flex;align-items:center;gap:5px;background:var(--bub);color:var(--green-d);
+  border-radius:99px;padding:5px 12px;font-size:clamp(11px,1.9vw,13px);font-weight:700}
+.ka-bg svg{width:13px;height:13px}
+.ka-bg.s2{background:#E0F2FE;color:#075985}
+.ka-bg.s3{background:#DCFCE7;color:#166534}
+.ka-bg.s4{background:#FEF3C7;color:#92400E}
+.ka-bg.s5{background:#F3E8FF;color:#6B21A8}
+.ka-meta{font-size:clamp(10px,1.7vw,12px);color:#94A3B8;font-weight:600}
+.ka-t{font-size:clamp(19px,3.4vw,27px);font-weight:700;line-height:1.4;margin-bottom:10px}
+.ka-bub{background:var(--bub);border-radius:14px;padding:13px 18px;font-size:clamp(14px,2.4vw,18px);
+  line-height:1.7;margin-bottom:12px}
+.ka-emph{color:var(--green-d);font-weight:700}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.scene.wide{width:clamp(240px,44vw,420px)}
+.scene.wide svg{height:clamp(120px,20vw,200px)}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(15px,2.6vw,20px);font-weight:700;line-height:1.6;margin-bottom:12px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+.opt{background:#fff;border:2px solid var(--line);border-radius:13px;padding:13px 15px;cursor:pointer;
+  font-family:inherit;font-size:clamp(13px,2.2vw,16.5px);font-weight:500;text-align:left;line-height:1.5;transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:#16A34A;background:#DCFCE7;font-weight:700}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:11px;border-radius:12px;padding:12px 16px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;animation:fadeUp .3s ease both}
+.fb.ok{background:#DCFCE7;color:#166534;font-weight:700}
+.hint{margin-top:9px;background:var(--amber-bg);border-radius:11px;padding:10px 14px;
+  font-size:clamp(12.5px,2.1vw,15px);color:var(--amber);line-height:1.55}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:9px;width:100%;max-width:660px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFC;border-radius:12px;padding:11px 15px;
+  font-size:clamp(13px,2.2vw,16.5px);line-height:1.6}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'\2713';color:#fff;font-weight:800;font-size:14px}
+
+/* 직접조작 — 두 잣대가 만나야 자리가 하나로 정해지는 판 */
+.dw-wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dw-body{display:grid;grid-template-columns:1.05fr 1fr;gap:10px;align-items:start}
+.dw-canvas{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.dw-canvas svg{width:100%;height:auto;display:block}
+.dw-canvas .cvcap{padding:5px 6px;text-align:center;font-size:clamp(9.5px,1.6vw,11.5px);
+  color:var(--muted);font-weight:700;background:#F8FAFC}
+.dw-right{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dw-step{font-size:clamp(10.5px,1.75vw,13px);font-weight:800;color:var(--green)}
+.dw-msg{background:#F8FAFC;border:2px solid var(--line);border-left:4px solid var(--green);border-radius:10px;
+  padding:8px 12px;font-size:clamp(11.4px,1.93vw,13.8px);line-height:1.55;color:#334155;animation:fadeUp .3s ease both}
+.dw-msg.warn{border-left-color:var(--amber)}
+.dw-msg b{color:var(--green)}
+.dw-card{background:#fff;border:2px solid var(--amber);border-radius:12px;padding:10px 12px;
+  font-size:clamp(12px,2.05vw,14.5px);line-height:1.55;animation:pop .35s ease both}
+.dw-card .pt{font-weight:800;color:var(--amber);margin-bottom:4px;font-size:clamp(12.5px,2.15vw,15px)}
+.rm-q{font-size:clamp(11.6px,1.97vw,14px);font-weight:800;color:var(--green);
+  background:#ECFDF5;border-left:4px solid var(--green);border-radius:0 8px 8px 0;padding:6px 9px;line-height:1.45}
+.rm-pad{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px}
+.rm-pad button.on{border-color:var(--green);background:#D1FAE5;color:var(--green-d)}
+.rm-go button.er{border-color:#CBD5E0;background:#F8FAFC;color:#64748B}
+.rm-go button.er:hover{background:#F1F5F9}
+.rm-pad button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;padding:9px 4px;
+  cursor:pointer;font-family:inherit;font-weight:800;font-size:clamp(10px,1.7vw,12.4px);line-height:1.35}
+.rm-pad button:hover{background:var(--bub)}
+.rm-pad button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.rm-pad .sp{visibility:hidden}
+.rm-go{display:flex;flex-direction:column;gap:5px}
+.rm-go button{border:2px solid var(--green);background:#D1FAE5;color:var(--green-d);border-radius:10px;padding:8px 10px;
+  cursor:pointer;font-family:inherit;font-weight:800;font-size:clamp(10.5px,1.8vw,13px);line-height:1.45}
+.rm-go button:hover{background:#A7F3D0}
+.rm-go button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.rm-pick{display:flex;flex-direction:column;gap:5px}
+.rm-pick button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;padding:7px 10px;
+  cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.rm-pick button:hover{background:var(--bub)}
+.rm-pick button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.rm-fin{display:flex;flex-direction:column;gap:5px}
+.rm-fin button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;padding:7px 10px;
+  cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.rm-fin button:hover{background:var(--bub)}
+.rm-fin button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.rm-note{background:#F8FAFC;border:2px dashed #CBD5E0;border-radius:10px;padding:7px 10px;
+  font-size:clamp(10.4px,1.76vw,12.4px);line-height:1.5;color:#64748B}
+.rm-seen{display:flex;flex-direction:column;gap:4px;max-height:150px;overflow:auto}
+.rm-seen .row{border:2px solid var(--line);border-radius:9px;padding:5px 8px;background:#F8FAFC;
+  font-size:clamp(9.8px,1.66vw,11.6px);font-weight:700;color:#94A3B8;line-height:1.4}
+.rm-seen .row.on{border-color:var(--green);background:#ECFDF5;color:var(--green-d)}
+.paper{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:12px;padding:12px 16px;
+  font-size:clamp(12.5px,2.1vw,15px);line-height:1.65;color:#3F3A2C;max-width:660px;
+  animation:fadeUp .4s ease both}
+.paper .ph{font-weight:800;color:#8A6D3B;margin-bottom:6px;font-size:clamp(13px,2.2vw,16px)}
+.tipbox{background:#D1FAE5;border-radius:12px;padding:11px 16px;font-size:clamp(12.5px,2.1vw,15px);
+  line-height:1.6;color:#7C2D12;max-width:660px}
+@media(max-width:620px){ .dw-body{grid-template-columns:1fr} }
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(4,120,87,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style>
+<script src="/kedu_gate.js"></script>
+</head>
+
+
+
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#B45309"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식 =====
+   ⚠️ 정직 원칙: 모든 그림은 내용을 나타낸 도식이며 실제 세계지도·지구본·사진이 아니다.
+   ⚠️ 나라 이름은 [생각을 열어요] 원문 세 나라만, 들어가기 씬 한 자리에서만 쓴다.
+   ⚠️ 사람 형상 대신 칸과 선으로만 그린다. */
+const SVG = {
+  // 1 들어가기 — [생각을 열어요] 영토의 모양이 독특한 나라들
+  open:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#ECFDF5"/>
+    <text x="160" y="19" font-size="11" fill="#065F46" text-anchor="middle" font-weight="800">영토의 모양이 독특한 나라들</text>
+    <rect x="12" y="30" width="94" height="86" rx="10" fill="#fff" stroke="#047857" stroke-width="1.6"/>
+    <path d="M52 46 L62 46 L62 76 L74 76 L74 92 L52 92 Z" fill="#D1FAE5" stroke="#047857" stroke-width="1.6"/>
+    <text x="59" y="106" font-size="7.4" fill="#065F46" text-anchor="middle" font-weight="800">이탈리아</text>
+    <rect x="113" y="30" width="94" height="86" rx="10" fill="#fff" stroke="#047857" stroke-width="1.6"/>
+    <rect x="153" y="44" width="14" height="50" rx="4" fill="#D1FAE5" stroke="#047857" stroke-width="1.6"/>
+    <text x="160" y="106" font-size="7.4" fill="#065F46" text-anchor="middle" font-weight="800">칠레</text>
+    <rect x="214" y="30" width="94" height="86" rx="10" fill="#fff" stroke="#047857" stroke-width="1.6"/>
+    <path d="M236 50 Q266 56 276 86 Q262 88 256 70 Q248 58 234 60 Z" fill="#D1FAE5" stroke="#047857" stroke-width="1.6"/>
+    <text x="261" y="106" font-size="7.4" fill="#065F46" text-anchor="middle" font-weight="800">소말리아</text>
+    <rect x="12" y="124" width="296" height="34" rx="8" fill="#FFFBEB" stroke="#B45309" stroke-width="1.2"/>
+    <text x="160" y="138" font-size="7.6" fill="#B45309" text-anchor="middle" font-weight="800">우리나라의 영토는 어떻게 생겼을까요?</text>
+    <text x="160" y="151" font-size="6.8" fill="#92400E" text-anchor="middle" font-weight="700">칸과 선으로 나타낸 도식이에요 \u2014 실제 모양은 지구본과 세계지도에서 찾아요</text>
+  </svg>`,
+  // 2 살펴보기 — 대륙 = 바다로 둘러싸인 커다란 육지
+  land:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#E0F2FE"/>
+    <text x="160" y="19" font-size="11" fill="#075985" text-anchor="middle" font-weight="800">바다로 둘러싸인 커다란 육지</text>
+    <rect x="14" y="28" width="292" height="112" rx="10" fill="#BAE6FD" stroke="#0284C7" stroke-width="1.6"/>
+    <path d="M70 52 Q118 40 168 54 Q214 66 208 96 Q172 122 116 116 Q66 106 62 82 Z" fill="#D1FAE5" stroke="#047857" stroke-width="2"/>
+    <text x="136" y="86" font-size="10" fill="#065F46" text-anchor="middle" font-weight="800">대륙</text>
+    <text x="250" y="60" font-size="7.6" fill="#075985" text-anchor="middle" font-weight="800">바다</text>
+    <text x="250" y="72" font-size="7.6" fill="#075985" text-anchor="middle" font-weight="800">바다</text>
+    <text x="250" y="112" font-size="7.6" fill="#075985" text-anchor="middle" font-weight="800">바다</text>
+    <text x="160" y="156" font-size="7.6" fill="#0F172A" text-anchor="middle" font-weight="700">둘레가 모두 바다예요 \u2014 그래서 대륙이에요</text>
+  </svg>`,
+  // 3 살펴보기 — 대양 = 세계의 바다 가운데 넓은 바다
+  sea:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <text x="160" y="19" font-size="11" fill="#075985" text-anchor="middle" font-weight="800">세계의 바다 가운데 넓은 바다</text>
+    <rect x="14" y="28" width="292" height="112" rx="10" fill="#E0F2FE" stroke="#0284C7" stroke-width="1.6"/>
+    <rect x="28" y="44" width="120" height="80" rx="8" fill="#BAE6FD" stroke="#0369A1" stroke-width="2"/>
+    <text x="88" y="88" font-size="10" fill="#075985" text-anchor="middle" font-weight="800">대양</text>
+    <rect x="164" y="44" width="52" height="34" rx="6" fill="#E0F2FE" stroke="#7DD3FC" stroke-width="1.4"/>
+    <rect x="224" y="44" width="52" height="34" rx="6" fill="#E0F2FE" stroke="#7DD3FC" stroke-width="1.4"/>
+    <rect x="164" y="88" width="52" height="34" rx="6" fill="#E0F2FE" stroke="#7DD3FC" stroke-width="1.4"/>
+    <rect x="224" y="88" width="52" height="34" rx="6" fill="#E0F2FE" stroke="#7DD3FC" stroke-width="1.4"/>
+    <text x="220" y="134" font-size="6.8" fill="#0369A1" text-anchor="middle" font-weight="700">여러 바다 가운데</text>
+    <text x="160" y="156" font-size="7.6" fill="#0F172A" text-anchor="middle" font-weight="700">넓은 바다를 대양이라고 해요</text>
+  </svg>`,
+  // 4 살펴보기 — 넓은 차례(교과서 원문 차례 · 수치 0)
+  wide:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F8FAFC"/>
+    <text x="160" y="19" font-size="11" fill="#065F46" text-anchor="middle" font-weight="800">넓은 차례로 늘어놓으면</text>
+    <rect x="20" y="34" width="86" height="96" rx="9" fill="#BAE6FD" stroke="#0369A1" stroke-width="1.8"/>
+    <text x="63" y="76" font-size="9.4" fill="#075985" text-anchor="middle" font-weight="800">태평양</text>
+    <text x="63" y="90" font-size="7" fill="#0369A1" text-anchor="middle" font-weight="700">가장 넓어요</text>
+    <rect x="117" y="52" width="86" height="78" rx="9" fill="#E0F2FE" stroke="#0284C7" stroke-width="1.6"/>
+    <text x="160" y="86" font-size="9" fill="#075985" text-anchor="middle" font-weight="800">대서양</text>
+    <text x="160" y="99" font-size="7" fill="#0369A1" text-anchor="middle" font-weight="700">두 번째</text>
+    <rect x="214" y="70" width="86" height="60" rx="9" fill="#F0F9FF" stroke="#7DD3FC" stroke-width="1.6"/>
+    <text x="257" y="96" font-size="9" fill="#075985" text-anchor="middle" font-weight="800">인도양</text>
+    <text x="257" y="108" font-size="7" fill="#0369A1" text-anchor="middle" font-weight="700">세 번째</text>
+    <text x="160" y="150" font-size="7.4" fill="#64748B" text-anchor="middle" font-weight="700">넓은 차례를 나타낸 도식이에요 \u2014 실제 넓이를 잰 것이 아니에요</text>
+  </svg>`,
+  // 5 살펴보기 — 북반구·남반구에 주로 속한 대륙
+  half:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <text x="160" y="18" font-size="10.6" fill="#065F46" text-anchor="middle" font-weight="800">적도에 선을 그어 보면</text>
+    <rect x="14" y="26" width="292" height="52" rx="8" fill="#ECFDF5" stroke="#047857" stroke-width="1.4"/>
+    <text x="160" y="42" font-size="8" fill="#065F46" text-anchor="middle" font-weight="800">북반구에 주로 속한 대륙</text>
+    <text x="160" y="60" font-size="8.6" fill="#065F46" text-anchor="middle" font-weight="700">아시아 \u00b7 유럽 \u00b7 아프리카 \u00b7 북아메리카</text>
+    <line x1="14" y1="84" x2="306" y2="84" stroke="#DC2626" stroke-width="2.4" stroke-dasharray="6 3"/>
+    <text x="286" y="80" font-size="7.4" fill="#DC2626" text-anchor="middle" font-weight="800">적도</text>
+    <rect x="14" y="92" width="292" height="52" rx="8" fill="#FFFBEB" stroke="#B45309" stroke-width="1.4"/>
+    <text x="160" y="108" font-size="8" fill="#B45309" text-anchor="middle" font-weight="800">남반구에 주로 속한 대륙</text>
+    <text x="160" y="126" font-size="8.6" fill="#92400E" text-anchor="middle" font-weight="700">오세아니아 \u00b7 남아메리카 \u00b7 남극 대륙</text>
+    <text x="160" y="160" font-size="7.4" fill="#64748B" text-anchor="middle" font-weight="700">대륙은 남반구보다 북반구에 더 많이 분포해요</text>
+  </svg>`,
+  // 16 정리
+  sum:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F8FAFC"/>
+    <text x="160" y="22" font-size="12" fill="#065F46" text-anchor="middle" font-weight="800">오늘의 정리</text>
+    <rect x="16" y="36" width="136" height="52" rx="9" fill="#D1FAE5" stroke="#047857" stroke-width="1.6"/>
+    <text x="84" y="56" font-size="9.6" fill="#065F46" text-anchor="middle" font-weight="800">대륙</text>
+    <text x="84" y="72" font-size="7.2" fill="#065F46" text-anchor="middle" font-weight="700">바다로 둘러싸인 커다란 육지</text>
+    <rect x="168" y="36" width="136" height="52" rx="9" fill="#BAE6FD" stroke="#0369A1" stroke-width="1.6"/>
+    <text x="236" y="56" font-size="9.6" fill="#075985" text-anchor="middle" font-weight="800">대양</text>
+    <text x="236" y="72" font-size="7.2" fill="#075985" text-anchor="middle" font-weight="700">세계의 바다 가운데 넓은 바다</text>
+    <rect x="16" y="98" width="288" height="26" rx="8" fill="#fff" stroke="#047857" stroke-width="1.2"/>
+    <text x="160" y="114" font-size="7" fill="#065F46" text-anchor="middle" font-weight="700">아시아 \u00b7 오세아니아 \u00b7 유럽 \u00b7 아프리카 \u00b7 북아메리카 \u00b7 남아메리카 \u00b7 남극 대륙</text>
+    <rect x="16" y="130" width="288" height="26" rx="8" fill="#fff" stroke="#0369A1" stroke-width="1.2"/>
+    <text x="160" y="146" font-size="7.6" fill="#075985" text-anchor="middle" font-weight="700">태평양 \u00b7 대서양 \u00b7 인도양 \u00b7 북극해 \u00b7 남극해</text>
+  </svg>`,
+  // 18 종료
+  done:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#ECFDF5"/>
+    <circle cx="160" cy="76" r="42" fill="#fff" stroke="#047857" stroke-width="2.4"/>
+    <path d="M124 76 Q160 60 196 76" stroke="#0284C7" stroke-width="2" fill="none"/>
+    <path d="M124 90 Q160 74 196 90" stroke="#0284C7" stroke-width="2" fill="none"/>
+    <path d="M138 58 Q160 48 182 58" stroke="#047857" stroke-width="2" fill="none"/>
+    <text x="160" y="140" font-size="11.4" fill="#065F46" text-anchor="middle" font-weight="800">대륙과 대양을 알아봤어요!</text>
+  </svg>`
+};
+function sceneCard(key,cap,extra){ return `<div class="scene ${extra||''}">${SVG[key]||''}${cap?`<div class="cap">${cap}</div>`:''}</div>`; }
+
+/* ===== 직접조작 — 한 걸음이 채우는 자리의 수가 걸음마다 다른 판(66번째 신규 패턴) =====
+   ⭐ 앞의 예순다섯 종에서 **한 걸음이 판에 미치는 크기는 언제나 같았다.** 57번째는 언제나 두 자리,
+      44번째는 언제나 한 쌍, 65번째는 언제나 같은 몫으로 후보를 줄였다.
+   ⭐ 이번만 **한 걸음이 채우는 자리의 수를 걸음이 정한다.** 아시아를 놓으면 세 바다의 둘레가 함께
+      차고, 남극 대륙을 놓으면 한 바다만 찬다. 근거는 교과서 139쪽이 대양을 **그 대양을 둘러싼
+      대륙들로** 설명한다는 것이다.
+   ⭐ **손을 댄 자리와 채워지는 자리가 다르다** — 바다는 스스로 이름을 갖지 않고 둘레의 육지가 정해 준다.
+   ⭐ **둘레를 따로 담는 상태가 코드에 아예 없다** — `rmRim(st,o)` 한 줄이 다 정한다.
+   ⭐ **남극해는 오직 한 대륙만이 채운다**(여섯을 놓아도 비어 있다).
+   ⭐ **어느 대륙부터 놓아도 완주 판이 같다**(순서 자유).
+   ⚠️ 전량 고정 리터럴 — 난수 0. 조작에 점수 0. 놓는 자리에 옳고 그름 0. */
+const RM_LAND_N = 7;   /* 대륙 일곱 */
+const RM_SEA_N = 5;    /* 대양 다섯 */
+
+/* 대륙 일곱 — 교과서 138쪽 본문 원문 차례 */
+const RM_LAND = ['아시아','오세아니아','유럽','아프리카','북아메리카','남아메리카','남극 대륙'];
+/* 대양 다섯 — 교과서 138쪽 본문 원문 차례 */
+const RM_SEA = ['태평양','대서양','인도양','북극해','남극해'];
+const RM_SEA_M = ['\u32AE','\u32AF','\u32B0','\u32B1','\u32B2'];
+
+/* ★★ 각 바다의 둘레 — 교과서 139쪽 대양 설명 원문 그대로.
+   태평양 = 아시아·오세아니아·북아메리카·남아메리카 / 대서양 = 유럽·아프리카·북아메리카·남아메리카
+   인도양 = 아시아·아프리카·오세아니아 / 북극해 = 아시아·유럽·북아메리카 / 남극해 = 남극 대륙 */
+const RM_ALL = (1<<RM_LAND_N)-1;
+const RM_RIM = [
+  (1<<0)|(1<<1)|(1<<4)|(1<<5),
+  (1<<2)|(1<<3)|(1<<4)|(1<<5),
+  (1<<0)|(1<<1)|(1<<3),
+  (1<<0)|(1<<2)|(1<<4),
+  (1<<6)
+];
+
+/* 대양 설명 — 교과서 139쪽 원문 */
+const RM_SEA_D = [
+  '가장 넓은 대양입니다. 아시아, 오세아니아, 북아메리카, 남아메리카 대륙 사이에 있습니다.',
+  '두 번째로 넓은 대양입니다. 유럽, 아프리카, 북아메리카, 남아메리카 대륙으로 둘러싸여 있습니다.',
+  '세 번째로 넓은 대양입니다. 아시아, 아프리카, 오세아니아 대륙에 접해 있습니다.',
+  '아시아, 유럽, 북아메리카 대륙에 둘러싸인 북극 주변의 바다입니다. 대부분 얼음으로 덮여 있습니다.',
+  '남극 대륙을 둘러싸고 있는 바다입니다.'
+];
+
+/* 바다마다 3택 — 둘레를 보고 어느 바다인지 읽어 낸다. 정답 자리 [1,0,2,2,0] */
+const RM_PICK = [
+  ['북극해','태평양','인도양'],
+  ['대서양','남극해','태평양'],
+  ['북극해','대서양','인도양'],
+  ['인도양','남극해','북극해'],
+  ['남극해','태평양','대서양']
+];
+const RM_PICK_OK = [1,0,2,2,0];
+/* ★ 어긋난 안내 — 알맞은 바다의 이름을 흘리지 않는다(둘레만 짚어 준다). */
+const RM_PICK_NO = [
+  ['이 둘레에는 <b>오세아니아</b>와 <b>남아메리카</b>도 있어요. 북극 주변의 바다는 이 대륙들과 맞닿지 않아요. 판은 그대로예요.','',
+   '이 둘레에는 <b>북아메리카</b>와 <b>남아메리카</b>도 있어요. 세 번째로 넓은 대양의 둘레와는 달라요. 판은 그대로예요.'],
+  ['','이 둘레에는 <b>유럽</b>과 <b>아프리카</b>가 있어요. 남극 대륙을 둘러싸고 있는 바다가 아니에요. 판은 그대로예요.',
+   '이 둘레에는 <b>유럽</b>이 있어요. 가장 넓은 대양의 둘레에는 유럽이 없어요. 판은 그대로예요.'],
+  ['이 둘레에는 <b>오세아니아</b>가 있어요. 북극 주변의 바다와는 달라요. 판은 그대로예요.',
+   '이 둘레에는 <b>아시아</b>가 있어요. 두 번째로 넓은 대양의 둘레에는 아시아가 없어요. 판은 그대로예요.',''],
+  ['이 둘레에는 <b>유럽</b>이 있어요. 세 번째로 넓은 대양의 둘레에는 유럽이 없어요. 판은 그대로예요.',
+   '이 둘레에는 <b>아시아</b>와 <b>유럽</b>이 있어요. 남극 대륙을 둘러싸고 있는 바다가 아니에요. 판은 그대로예요.',''],
+  ['','이 둘레에는 <b>남극 대륙</b> 하나뿐이에요. 가장 넓은 대양의 둘레는 이보다 많아요. 판은 그대로예요.',
+   '이 둘레에는 <b>남극 대륙</b> 하나뿐이에요. 두 번째로 넓은 대양의 둘레는 이보다 많아요. 판은 그대로예요.']
+];
+
+/* 마무리 3택 — 지도서 「8차시 주요 내용 정리」 원문 */
+const RM_FIN = [
+  '대륙은 세계의 바다 가운데 넓은 바다이고, 대양은 바다로 둘러싸인 커다란 육지예요',
+  '대륙은 바다로 둘러싸인 커다란 육지이고, 대양은 세계의 바다 가운데 넓은 바다예요',
+  '대륙과 대양은 모두 바다를 가리키는 말이에요'
+];
+const RM_FIN_OK = 1;
+const RM_FIN_NO = [
+  '두 낱말이 <b>서로 바뀌었어요.</b> 바다로 둘러싸인 커다란 육지가 무엇인지 다시 떠올려 봐요.',
+  '',
+  '둘 가운데 하나는 <b>육지</b>를 가리키는 말이었어요. 다시 생각해 봐요.'
+];
+
+/* 안내 상수 */
+const RM_DUP = '이 대륙은 <b>이미 놓았어요.</b> 아직 놓지 않은 대륙을 놓아 봐요. 판은 그대로예요.';
+const RM_DONE_PUT = '일곱 대륙을 <b>모두 놓았어요.</b> 이제 바다의 이름을 붙여 봐요. 판은 그대로예요.';
+const RM_ORDER_N = '아직 <b>대륙을 다 놓지 않았어요.</b> 둘레가 다 차야 어느 바다인지 알 수 있어요. 판은 그대로예요.';
+const RM_NAMED_DONE = '다섯 바다의 이름을 <b>모두 붙였어요.</b> 판은 그대로예요.';
+const RM_ORDER_F = '아직 <b>바다의 이름을 다 붙이지 않았어요.</b> 판은 그대로예요.';
+
+/* ★★ 둘레 — 이 한 줄이 다섯 바다의 둘레를 다 정한다. 둘레를 따로 담는 상태가 코드에 없다. */
+function rmRim(st,o){ return RM_RIM[o] & st.rmPut; }
+function rmBits(m){ let n=0; for(let i=0;i<RM_LAND_N;i++){ if((m>>i)&1) n++; } return n; }
+function rmAllPut(st){ return rmBits(st.rmPut)===RM_LAND_N; }
+function rmAllNamed(st){ return st.rmNamed>=RM_SEA_N; }
+function rmFilled(st){ let n=0; for(let o=0;o<RM_SEA_N;o++){ n+=rmBits(rmRim(st,o)); } return n; }
+
+function rmCanvas(st){
+  const fin = st.rmFin!=null, named = st.rmNamed, allput = rmAllPut(st);
+  const head = fin ? '대륙과 대양을 정리했어요'
+    : rmAllNamed(st) ? '다섯 바다에 이름을 다 붙였어요 \u2014 이제 정리해요'
+    : allput ? '둘레를 보고 어느 바다인지 골라 봐요'
+    : '대륙을 놓으면 그 대륙이 맞닿은 바다의 둘레가 채워져요';
+
+  /* 대륙 일곱 칸 — 놓은 것만 이름이 보인다. */
+  const lands = RM_LAND.map((s,c)=>{
+    const on = (st.rmPut>>c)&1;
+    const x = 12 + (c%4)*74, y = c<4 ? 30 : 60;
+    return `<rect x="${x}" y="${y}" width="70" height="26" rx="7" fill="${on?'#D1FAE5':'#F8FAFC'}" stroke="${on?'#047857':'#E2E8F0'}" stroke-width="${on?1.4:1}"/>
+      <text x="${x+35}" y="${y+16}" font-size="6.6" fill="${on?'#065F46':'#CBD5E0'}" text-anchor="middle" font-weight="800" data-land="${c}">${on?s:'아직'}</text>`;
+  }).join('');
+
+  /* 바다 다섯 줄 — 둘레 칸은 놓은 대륙만 채워진다. */
+  const seas = RM_SEA.map((s,o)=>{
+    const y = 96 + o*32;
+    const rim = rmRim(st,o);
+    /* ★ 판은 RM_RIM을 직접 읽지 않는다 — 둘레 전체도 rmRim 한 줄을 거쳐 얻는다. */
+    const full = rmRim({rmPut:RM_ALL},o);
+    const chips = RM_LAND.map((t,c)=>{
+      if(!((full>>c)&1)) return null;
+      return {t:t, on:((rim>>c)&1)?1:0};
+    }).filter(x=>x);
+    const chipsvg = chips.map((h,k)=>`<rect x="${86+k*54}" y="${y+7}" width="52" height="15" rx="5" fill="${h.on?'#BAE6FD':'#F1F5F9'}" stroke="${h.on?'#0369A1':'#E2E8F0'}" stroke-width="1"/>
+      <text x="${112+k*54}" y="${y+17.6}" font-size="5.4" fill="${h.on?'#075985':'#CBD5E0'}" text-anchor="middle" font-weight="800" data-chip="${h.on}">${h.on?h.t:'\u00b7'}</text>`).join('');
+    const done = o < named;
+    return `<g data-sea="${o}" data-rimn="${rmBits(rim)}">
+      <rect x="12" y="${y}" width="296" height="28" rx="7" fill="${done?'#ECFDF5':'#fff'}" stroke="${done?'#047857':'#E2E8F0'}" stroke-width="${done?1.4:1}"/>
+      <rect x="16" y="${y+4}" width="66" height="20" rx="6" fill="${done?'#047857':'#F8FAFC'}" stroke="${done?'#047857':'#CBD5E0'}" stroke-width="1"/>
+      <text x="49" y="${y+18}" font-size="${done?7.4:8}" fill="${done?'#ffffff':'#94A3B8'}" text-anchor="middle" font-weight="800" data-name="${o}">${done?s:RM_SEA_M[o]}</text>
+      ${chipsvg}
+      ${rmBits(rim)===0?`<text x="240" y="${y+18}" font-size="6" fill="#CBD5E0" text-anchor="middle" font-weight="700" data-empty="${o}">아직 둘레가 비었어요</text>`:''}
+    </g>`;
+  }).join('');
+
+  const putn = rmBits(st.rmPut), fill = rmFilled(st);
+  return `<svg viewBox="0 0 320 280" data-put="${st.rmPut}" data-putn="${putn}" data-named="${named}" data-filled="${fill}" data-allput="${allput?1:0}" data-fin="${fin?1:0}">
+    <rect width="320" height="280" fill="#fff"/>
+    <rect x="12" y="8" width="296" height="16" rx="6" fill="#D1FAE5"/>
+    <text x="160" y="20" font-size="7.6" fill="#065F46" text-anchor="middle" font-weight="800">${head}</text>
+    ${lands}
+    ${seas}
+    <rect x="12" y="260" width="296" height="16" rx="6" fill="#F1F5F9"/>
+    <text x="160" y="271" font-size="6.4" fill="#334155" text-anchor="middle" font-weight="800" data-tally="1">놓은 대륙 ${putn} / ${RM_LAND_N} \u00b7 채워진 둘레 칸 ${fill} \u00b7 이름 붙인 바다 ${named} / ${RM_SEA_N}</text>
+  </svg>`;
+}
+
+function rmPanel(st){
+  const fin = st.rmFin!=null, allput = rmAllPut(st), allnamed = rmAllNamed(st);
+  const o = allnamed ? null : st.rmNamed;
+  const q = fin ? '대륙과 대양을 정리했어요.'
+    : allnamed ? '오늘 공부한 내용을 어떻게 정리하면 좋을까요?'
+    : allput ? `${RM_SEA_M[o]} 바다의 둘레를 보고, 어느 바다인지 골라 봐요.`
+    : '대륙을 하나씩 놓아 봐요. 어느 대륙부터 놓아도 좋아요.';
+  let right = `<div class="rm-q">${q}</div>`;
+
+  if(fin){
+    right += `<div class="dw-card"><div class="pt">\uD83C\uDF0A 둘레가 이름을 정해 줬어요</div>
+      대륙을 놓을 때마다 <b>그 대륙이 맞닿은 바다</b>의 둘레가 함께 채워졌어요.
+      아시아를 놓았을 때에는 <b>세 바다</b>가, 남극 대륙을 놓았을 때에는 <b>한 바다</b>가 찼어요.
+      한 걸음이 채우는 자리의 수가 <b>걸음마다 달랐어요.</b><br>
+      그리고 둘레가 다 찬 뒤에야 어느 바다인지 알 수 있었어요 \u2014 바다는 <b>둘레의 육지</b>가 정해 줘요.<br>
+      <span style="color:#64748B">판의 그림은 대륙과 대양이 <b>맞닿은 것</b>을 나타낸 도식이지 실제 세계지도나
+      지구본이 아니에요. 대륙과 대양의 실제 모양과 넓이는 교실에서 <b>지구본과 세계지도</b>를 펴고 살펴봐요.
+      교과서의 <b>붙임딱지를 붙이는 활동</b>도 교실에서 해요.</span></div>`;
+  } else if(allnamed){
+    right += `<div class="dw-step">\uD83D\uDCDA 오늘의 정리</div>`;
+    right += `<div class="rm-fin">${RM_FIN.map((t,k)=>`<button class="${st.rmWrongF===k?'no':''}" onclick="rmFinish(${k})">${t}</button>`).join('')}</div>`;
+  } else if(allput){
+    right += `<div class="dw-step">\uD83C\uDF0A ${RM_SEA_M[o]} 바다의 이름을 붙여요</div>`;
+    right += `<div class="rm-note">둘레에 어떤 대륙이 있는지 보고 골라요. 넓은 차례도 힌트가 돼요.</div>`;
+    right += `<div class="rm-pick">${RM_PICK[o].map((t,k)=>`<button class="${st.rmWrongN===k?'no':''}" onclick="rmName(${k})">${t}</button>`).join('')}</div>`;
+  } else {
+    right += `<div class="dw-step">\uD83C\uDF0D 대륙을 놓아요</div>`;
+    right += `<div class="rm-pad">${RM_LAND.map((t,c)=>`<button class="${((st.rmPut>>c)&1)?'on':''}" onclick="rmPlace(${c})">${t}</button>`).join('')}</div>`;
+    right += `<div class="rm-note">놓는 자리에는 <b>옳고 그름이 없어요.</b> 어느 대륙부터 놓아도 좋아요.
+      다만 대륙마다 맞닿은 바다의 수가 달라서 <b>한 번에 채워지는 칸의 수</b>가 달라져요.</div>`;
+  }
+  if(st.rmMsg) right += `<div class="dw-msg${st.rmWarn?' warn':''}">${st.rmMsg}</div>`;
+
+  return `<div class="dw-wrap">
+    <div style="text-align:center"><b style="color:var(--green)">\uD83C\uDF0A 둘레가 바다의 이름을 정해 줘요</b></div>
+    <div class="dw-body">
+      <div class="dw-canvas">${rmCanvas(st)}<div class="cvcap">판의 그림은 대륙과 대양이 <b>맞닿은 것</b>을 나타낸 도식이지 실제 세계지도나 지구본이 아니에요. 실제 모양과 넓이는 교실에서 찾아요.</div></div>
+      <div class="dw-right">${right}</div>
+    </div>
+  </div>`;
+}
+
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "3단원 지구, 대륙 그리고 국가들 · 주제② 세계 여러 국가의 위치와 영토 모습";
+
+// 확인 4 + 적용 4 — 정답 다양화 [1,3,0,2,2,0,3,1](각 자리 2회)
+// ⚠️ 문항 내 연도·쪽수·거리·시각·각도·비율 수치 0 · 나라 이름 0 · 영토 특징 0(9차시 이후 몫).
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"<b>바다로 둘러싸인 커다란 육지</b>를 무엇이라고 하나요?",
+   opts:["대양","대륙","반도","섬"],
+   correct:1, pts:POINTS_BASIC, scene:"land",
+   h1:"조작의 판에서 <b>둘레가 모두 바다</b>였던 것은 무엇이었나요?",
+   h2:"교과서 [꼭 기억해요] 1번에 나오는 낱말이에요.",
+   reason:"바다로 둘러싸인 커다란 육지를 <b>대륙</b>이라고 해요. 대륙에는 아시아, 오세아니아, 유럽, 아프리카, 북아메리카, 남아메리카, 남극 대륙이 있어요."},
+  {stem:"<b>세계의 바다 가운데 넓은 바다</b>를 무엇이라고 하나요?",
+   opts:["육지","대륙","반도","대양"],
+   correct:3, pts:POINTS_BASIC, scene:"sea",
+   h1:"바다 가운데에서도 <b>넓은</b> 바다를 가리키는 말이에요.",
+   h2:"태평양, 대서양, 인도양이 여기에 들어가요.",
+   reason:"세계의 바다 가운데 넓은 바다를 <b>대양</b>이라고 해요. 대양에는 태평양, 대서양, 인도양, 북극해, 남극해가 있어요."},
+  {stem:"<b>대양</b>을 바르게 묶은 것은 무엇인가요?",
+   opts:["태평양, 대서양, 인도양, 북극해, 남극해",
+         "태평양, 대서양, 인도양, 유럽, 남극해",
+         "아시아, 오세아니아, 유럽, 아프리카, 남극 대륙",
+         "태평양, 대서양, 아시아, 북극해, 남극해"],
+   correct:0, pts:POINTS_BASIC, scene:"sum",
+   h1:"대양은 <b>바다</b>의 이름이에요.",
+   h2:"묶음 안에 <b>육지</b>의 이름이 섞여 있지 않은지 살펴봐요.",
+   reason:"대양에는 <b>태평양, 대서양, 인도양, 북극해, 남극해</b>가 있어요. 아시아와 유럽은 바다가 아니라 대륙의 이름이에요."},
+  {stem:"세계에서 <b>가장 넓은 대륙</b>과 <b>가장 넓은 대양</b>은 각각 무엇인가요?",
+   opts:["유럽 / 대서양","아프리카 / 인도양","아시아 / 태평양","남극 대륙 / 북극해"],
+   correct:2, pts:POINTS_BASIC, scene:"wide",
+   h1:"조작의 판에서 <b>가장 많은 바다</b>와 맞닿았던 대륙을 떠올려 봐요.",
+   h2:"가장 넓은 대양은 네 대륙 사이에 있어요.",
+   reason:"가장 넓은 대륙은 <b>아시아</b>이고, 가장 넓은 대양은 <b>태평양</b>이에요. 모든 대륙을 합쳐도 태평양보다 면적이 작아요."},
+  // 4단계 적용 (+15)
+  {stem:"<b>태평양</b>의 특징으로 알맞은 것은 무엇인가요?",
+   opts:["남극 대륙을 둘러싸고 있는 바다예요",
+         "아시아, 유럽, 북아메리카 대륙에 둘러싸인 북극 주변의 바다예요",
+         "가장 넓은 대양으로 아시아, 오세아니아, 북아메리카, 남아메리카 대륙 사이에 있어요",
+         "세 번째로 넓은 대양으로 아시아, 아프리카, 오세아니아 대륙에 접해 있어요"],
+   correct:2, pts:POINTS_APPLY, scene:"wide",
+   h1:"조작의 판에서 <b>둘레에 네 대륙</b>이 있던 바다를 떠올려 봐요.",
+   h2:"그 둘레에는 유럽이 들어 있지 않았어요.",
+   reason:"태평양은 <b>가장 넓은 대양</b>으로, 아시아·오세아니아·북아메리카·남아메리카 대륙 사이에 있어요."},
+  {stem:"조작에서 <b>아시아를 놓았더니 세 바다의 둘레가 한꺼번에 채워졌어요.</b> 왜 그랬을까요?",
+   opts:["아시아가 세 대양과 맞닿아 있어서, 그 세 바다의 둘레가 함께 채워졌기 때문이에요",
+         "아시아가 가장 넓은 대륙이라 판이 점수를 더 주었기 때문이에요",
+         "판이 대륙을 놓는 차례를 미리 정해 두었기 때문이에요",
+         "아시아를 놓으면 다른 대륙도 저절로 함께 놓이기 때문이에요"],
+   correct:0, pts:POINTS_APPLY, scene:"sum",
+   h1:"대륙마다 <b>맞닿은 바다의 수</b>가 같았나요?",
+   h2:"남극 대륙을 놓았을 때에는 <b>한 바다</b>만 채워졌어요.",
+   reason:"대륙마다 맞닿은 바다의 수가 <b>다르기 때문</b>이에요. 그래서 한 걸음이 채우는 칸의 수도 걸음마다 달랐어요."},
+  {stem:"조작에서 <b>여섯 대륙을 놓았는데도 어느 한 바다의 둘레는 텅 비어 있었어요.</b> 어느 바다이고, 왜 그랬을까요?",
+   opts:["태평양 \u2014 둘레가 너무 넓어서 다 채울 수 없기 때문이에요",
+         "북극해 \u2014 얼음으로 덮여 있어 둘레를 셀 수 없기 때문이에요",
+         "인도양 \u2014 둘레의 대륙을 판이 감추어 두었기 때문이에요",
+         "남극해 \u2014 남극해를 둘러싸고 있는 대륙이 남극 대륙 하나뿐이기 때문이에요"],
+   correct:3, pts:POINTS_APPLY, scene:"sum",
+   h1:"둘레에 <b>대륙이 하나뿐</b>인 바다가 있었어요.",
+   h2:"그 대륙을 놓기 전에는 그 바다의 둘레가 채워질 수 없었어요.",
+   reason:"<b>남극해</b>는 남극 대륙을 둘러싸고 있는 바다예요. 둘레의 대륙이 하나뿐이라, 남극 대륙을 놓기 전에는 둘레가 비어 있었어요."},
+  {stem:"대륙과 대양에 대한 설명으로 <b>알맞지 않은</b> 것은 무엇인가요?",
+   opts:["바다로 둘러싸인 커다란 육지를 대륙이라고 해요",
+         "모든 대륙을 합치면 태평양보다 면적이 넓어요",
+         "대륙은 남반구보다 북반구에 더 많이 분포해요",
+         "남극 대륙은 얼음으로 덮여 있는 땅으로 매우 추워서 사람이 살기 어려워요"],
+   correct:1, pts:POINTS_APPLY, scene:"half",
+   h1:"태평양은 <b>가장 넓은 대양</b>이에요.",
+   h2:"교과서 말풍선은 모든 대륙을 합쳐도 태평양보다 <b>작다</b>고 했어요.",
+   reason:"<b>모든 대륙을 합쳐도 태평양보다 면적이 작아요.</b> 태평양이 그만큼 넓다는 뜻이에요."}
+];
+
+/* ===== 슬라이드 18매 ===== */
+const slides=[];
+// 1 들어가기 — [생각을 열어요]
+slides.push({stage:1,badge:"들어가기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s1">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">땅의 모양은 저마다 달라요</h2>
+  <div class="ka-grp">
+  <div class="paper"><div class="ph">\uD83C\uDF0D 새로운 주제를 시작해요</div>
+    세계에는 <b>영토의 모양이 독특한 나라들</b>이 있어요. 그러면 우리나라의 영토는 어떻게 생겼을까요?
+    <b>남북으로 길다</b>고 말할 수도 있고, <b>호랑이와 닮았다</b>고 말할 수도 있어요.</div>
+  <div class="scene-row">${sceneCard('open','영토의 모양이 독특한 나라들','wide')}</div>
+  <div class="tipbox">나라의 땅이 어디에 있는지 말하려면 먼저 <b>더 큰 덩어리</b>부터 알아야 해요.
+    지구의 표면은 <b>육지와 바다</b>로 이루어져 있어요. 오늘은 그 큰 덩어리인
+    <b>대륙</b>과 <b>대양</b>을 알아봐요.</div>
+  <div class="note">오늘은 세계의 <b>대륙과 대양</b>의 위치와 특징을 알아봐요.</div></div>`});
+// 2 살펴보기 — 대륙과 대양의 뜻
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">대륙과 대양은 무엇일까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('land','바다로 둘러싸인 커다란 육지','wide')}</div>
+    <div class="tipbox">지구의 표면은 <b>육지와 바다</b>로 이루어져 있어요.
+      바다로 둘러싸인 <b>커다란 육지</b>를 <b>대륙</b>이라고 해요.
+      바다는 지구 표면의 <b>약 70 %</b>를 차지해요. 그 가운데 <b>넓은 바다</b>를 <b>대양</b>이라고 해요.</div>
+    <div class="note">세계의 대륙은 주로 <b>대양을 기준으로</b> 나누고, 높은 산맥 등을 경계로 나누기도 해요.</div></div>`});
+// 3 살펴보기 — reveal: 대륙 일곱과 대양 다섯
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">대륙과 대양에는 무엇이 있을까요?</h2>
+  <div class="ka-grp">
+  <div class="paper"><div class="ph">\uD83E\uDDE9 먼저 생각해 봐요</div>
+    지구본이나 세계지도를 떠올려 봐요. <b>대륙</b>은 몇 개이고, <b>대양</b>은 몇 개일까요?
+    이름을 아는 만큼 먼저 떠올려 보고 눌러요.</div>
+  <div class="scene-row">${sceneCard('sea','넓은 바다를 대양이라고 해요','wide')}</div>
+  ${st.revealed?`<div class="answer-box">· <b>대륙 일곱</b> — 아시아, 오세아니아, 유럽, 아프리카, 북아메리카, 남아메리카, 남극 대륙<br>
+    · <b>대양 다섯</b> — 태평양, 대서양, 인도양, 북극해, 남극해<br>
+    <span style="color:#64748B">남극 대륙은 얼음으로 덮여 있는 땅으로 매우 추워서 사람이 살기 어려워요.</span></div>`
+    :`<div class="note">육지의 이름과 바다의 이름을 갈라서 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 4 살펴보기 — 직접조작(둘레가 이름을 정해 주는 판)
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">둘레가 바다의 이름을 정해 줘요</h2>
+  <div class="ka-grp">${rmPanel(st)}</div>`});
+// 5 살펴보기 — reveal: [스스로 활동] 넓은 대륙 · 북반구와 남반구
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">어느 쪽에 더 많이 있을까요?</h2>
+  <div class="ka-grp">
+  <div class="paper"><div class="ph">\uD83E\uDDE9 먼저 생각해 봐요</div>
+    <b>가장 넓은 대륙</b>은 무엇일까요? 그리고 <b>북반구</b>에 주로 속한 대륙과
+    <b>남반구</b>에 주로 속한 대륙은 각각 무엇일까요?</div>
+  <div class="scene-row">${sceneCard('half','적도에 선을 그어 보면','wide')}</div>
+  ${st.revealed?`<div class="answer-box">· <b>가장 넓은 대륙</b> — 아시아<br>
+    · <b>북반구에 주로 속한 대륙</b> — 아시아, 유럽, 아프리카, 북아메리카<br>
+    · <b>남반구에 주로 속한 대륙</b> — 오세아니아, 남아메리카, 남극 대륙<br>
+    <span style="color:#64748B">적도에 선을 그어 그 대륙이 주로 적도의 <b>북쪽</b>에 있는지 <b>남쪽</b>에 있는지
+    살펴보면 쉬워요. 실제 지도에서 찾는 활동은 교실에서 지구본과 세계지도를 펴고 해요.</span></div>`
+    :`<div class="note">적도를 가운데 두고 위쪽과 아래쪽을 갈라서 세어 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 6 살펴보기 — reveal: [스스로 활동] 넓은 차례 + 대양 다섯의 특징
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">대양은 저마다 어떤 특징이 있을까요?</h2>
+  <div class="ka-grp">
+  <div class="paper"><div class="ph">\uD83E\uDDE9 먼저 생각해 봐요</div>
+    <b>대서양, 인도양, 태평양</b>을 넓은 순서대로 늘어놓으면 어떻게 될까요?
+    그리고 저마다 어떤 대륙과 맞닿아 있을까요?</div>
+  <div class="scene-row">${sceneCard('wide','넓은 차례로 늘어놓으면','wide')}</div>
+  ${st.revealed?`<div class="answer-box">· <b>넓은 차례</b> — 태평양 \u2192 대서양 \u2192 인도양<br>
+    · <b>태평양</b> — ${RM_SEA_D[0]}<br>
+    · <b>대서양</b> — ${RM_SEA_D[1]}<br>
+    · <b>인도양</b> — ${RM_SEA_D[2]}<br>
+    · <b>북극해</b> — ${RM_SEA_D[3]}<br>
+    · <b>남극해</b> — ${RM_SEA_D[4]}</div>`
+    :`<div class="note">둘레에 어떤 대륙이 있는지를 함께 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 7 살펴보기 — 교실에서 할 일
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">지구본과 세계지도를 펴고 확인해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('sum','대륙과 대양','wide')}</div>
+    <div class="tipbox">화면이 다룬 자리는 <b>대륙과 대양이 서로 맞닿아 있다</b>는 것까지예요.
+      대륙과 대양의 <b>실제 모양과 넓이, 자리</b>는 교실에서 <b>지구본과 세계지도</b>를 펴고 살펴봐요.</div>
+    <div class="note">교과서의 <b>붙임딱지를 붙여 대륙의 이름과 대양의 범위를 확인하는 활동</b>은
+      손으로 하는 일이에요. 교과서를 펴서 직접 해 보면 더 잘 보여요.</div></div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리: 요약
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부한 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('sum','오늘의 정리','wide')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">①</span><div><b style="color:var(--green)">대륙</b> — 바다로 둘러싸인 커다란 육지를 말해요.</div></div>
+    <div class="sum-item"><span class="n">②</span><div><b style="color:var(--green)">대륙 일곱</b> — 아시아, 오세아니아, 유럽, 아프리카, 북아메리카, 남아메리카, 남극 대륙이 있어요.</div></div>
+    <div class="sum-item"><span class="n">③</span><div><b style="color:var(--green)">대양</b> — 세계의 바다 가운데 넓은 바다를 말해요.</div></div>
+    <div class="sum-item"><span class="n">④</span><div><b style="color:var(--green)">대양 다섯</b> — 태평양, 대서양, 인도양, 북극해, 남극해가 있어요.</div></div>
+    <div class="sum-item"><span class="n">★</span><div><b style="color:var(--green)">오늘의 조작</b> — 대륙을 놓을 때마다 <b>채워지는 둘레 칸의 수가 걸음마다 달랐어요.</b> 바다는 <b>둘레의 육지</b>가 정해 줬어요.</div></div>
+  </div>
+  <div class="note">대륙과 대양의 실제 모양과 넓이는 <b>교실에서</b> 지구본과 세계지도를 펴고 살펴봐요.</div></div>`});
+// 17 정리: 자기 평가
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부를 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"대륙이 무엇인지 설명할 수 있어요",st)}
+    ${selfCheck(1,"대양이 무엇인지 설명할 수 있어요",st)}
+    ${selfCheck(2,"세계의 대륙과 대양의 위치와 특징을 설명할 수 있어요",st)}
+  </div><div class="note">별이 적게 채워진 곳은 앞 슬라이드를 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">오늘 공부를 마쳤어요!</h2>
+  <div class="ka-grp">
+    <div class="scene-row">${sceneCard('done','','wide')}</div>
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">다음 시간에는 <b style="color:var(--amber)">아시아와 오세아니아</b>의 여러 나라를 살펴봐요!
+      준비물은 <b>지구본</b>이에요.</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">\u2B55 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g6_social_u3_l05";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  rmPut:0, rmNamed:0, rmFin:null,
+  rmWrongN:null, rmWrongF:null,
+  rmMsg:null, rmWarn:false, rmBusy:false,
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 \u2192';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+
+
+function rmRender(){ main.innerHTML = slides[state.idx].render(state); }
+function rmHold(msg){
+  state.rmWarn=true; state.rmBusy=true; state.rmMsg=msg;
+  playThud(); rmRender();
+  setTimeout(()=>{ state.rmBusy=false; state.rmWarn=false; state.rmMsg=null;
+    state.rmWrongN=null; state.rmWrongF=null; rmRender(); },1600);
+}
+
+/* ① 대륙 놓기 — ★★ 이 걸음이 이 패턴의 핵심이다.
+   손을 댄 자리는 대륙 칸이지만 **채워지는 것은 그 대륙이 맞닿은 바다의 둘레 칸**이고,
+   그 수는 대륙마다 다르다(3·2·2·2·3·2·1).
+   ★ 놓는 자리에는 옳고 그름이 없다(정답 상수 부재 · 감점 0). */
+function rmPlace(c){
+  if(state.rmFin!=null) return;                                        // 가드①
+  if(state.rmBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(c) || c<0 || c>=RM_LAND_N) return;              // 가드②
+  if(rmAllPut(state)){ rmHold(RM_DONE_PUT); return; }                  // 가드⑤ 판 불변
+  if((state.rmPut>>c)&1){ rmHold(RM_DUP); return; }                    // 가드③ 판 불변
+  const before = rmFilled(state);
+  state.rmPut |= (1<<c);                                               // ★ 대륙이 놓이는 자리는 여기 한 곳뿐
+  const gained = rmFilled(state) - before;
+  state.rmWarn=false; state.rmWrongN=null;
+  state.rmMsg = rmAllPut(state)
+    ? `<b>${RM_LAND[c]}</b>을(를) 놓았어요. 이 걸음으로 둘레 칸 <b>${gained}칸</b>이 채워졌어요. 일곱 대륙을 모두 놓았어요 \u2014 이제 <b>바다의 이름</b>을 붙여 봐요.`
+    : `<b>${RM_LAND[c]}</b>을(를) 놓았어요. 이 걸음으로 둘레 칸 <b>${gained}칸</b>이 채워졌어요.`;
+  playBlip(); rmRender();
+}
+
+/* ② 바다의 이름 붙이기 — 둘레가 다 차야 열린다(가드④). 판이 이름을 미리 알려 주지 않는다. */
+function rmName(k){
+  if(state.rmFin!=null) return;                                        // 가드①
+  if(state.rmBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(k) || k<0 || k>=RM_SEA_N) return;               // 가드②
+  if(!rmAllPut(state)){ rmHold(RM_ORDER_N); return; }                  // 가드④ ★핵심 순서 — 판 불변
+  if(rmAllNamed(state)){ rmHold(RM_NAMED_DONE); return; }              // 가드⑦ 판 불변
+  const o = state.rmNamed;
+  if(k!==RM_PICK_OK[o]){ state.rmWrongN=k; rmHold(RM_PICK_NO[o][k]); return; }  // 가드⑥ 판 불변
+  state.rmNamed += 1;                                                  // ★ 이름이 붙는 자리는 여기 한 곳뿐
+  state.rmWarn=false; state.rmWrongN=null;
+  state.rmMsg = rmAllNamed(state)
+    ? `<b>${RM_SEA[o]}</b>이(가) 맞아요. 다섯 바다에 이름을 모두 붙였어요 \u2014 이제 <b>오늘의 정리</b>를 해 봐요.`
+    : `<b>${RM_SEA[o]}</b>이(가) 맞아요. ${RM_SEA_D[o]}`;
+  playBlip(); rmRender();
+}
+
+/* ③ 마무리 — 지도서 「8차시 주요 내용 정리」 원문 */
+function rmFinish(k){
+  if(state.rmFin!=null) return;                                        // 가드①
+  if(state.rmBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(k) || k<0 || k>=RM_FIN.length) return;          // 가드②
+  if(!rmAllNamed(state)){ rmHold(RM_ORDER_F); return; }                // 가드⑧ 순서 — 판 불변
+  if(k===RM_FIN_OK){
+    state.rmFin=k; state.rmWrongF=null; state.rmMsg=null; state.rmWarn=false;
+    playChime(); rmRender(); return;
+  }
+  state.rmWrongF=k;
+  rmHold(RM_FIN_NO[k]);
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2;
+    if(qs.hint>=2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">\uD83D\uDCD8 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 \u2192</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // 3단원 6차시 미양산 — 양산 시 재배선
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+</body>
+</html>
