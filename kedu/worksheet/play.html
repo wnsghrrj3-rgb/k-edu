@@ -229,9 +229,16 @@ const KINDNAME = k => ({lesson_basic:'차시 학습지', lesson_challenge:'도�
 const FROM_T = !!(window.KEDU_BACK && window.KEDU_BACK.fromTeacher);
 /* 마친 뒤 갈 곳 — 선생님은 도구로, 학생은 자기 학습 공간으로.
    쪽지는 학급에서 열어준 것이라, 학생에게는 홈보다 「내 학습」이 제자리다. */
-const BACK = FROM_T ? {label:'선생님 도구', href:'/?role=teacher'}
+const PREVIEW = QUIZ && qs.get('preview') === '1';  // 선생님이 내 쪽지에서 미리보기로 연 화면 — 기록 없음, 돌아갈 곳은 내 쪽지
+const BACK = PREVIEW ? {label:'내 쪽지로', href:'/kedu/worksheet/build.html?tab=mine'}
+           : FROM_T ? {label:'선생님 도구', href:'/?role=teacher'}
            : QUIZ  ? {label:'내 학습', href:'/mylearning/'}
                    : {label:'케이에듀 홈', href:'/'};
+if (PREVIEW){
+  const pb = document.createElement('a'); pb.href = BACK.href; pb.textContent = '← ' + BACK.label;
+  pb.style.cssText = 'position:fixed;left:14px;top:12px;z-index:50;background:#fff;border:1px solid #d9d2c5;border-radius:999px;padding:8px 14px;font-size:14px;font-weight:700;color:#3a342c;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,.08)';
+  document.body.appendChild(pb);
+}
 
 /* 시드 난수 — 같은 시드면 같은 배치(자동 저장·복원 일관성) */
 function rng(seed){ let s = seed >>> 0 || 1; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
@@ -461,7 +468,7 @@ function grade(q, ok, detail){
   const t = Math.round((Date.now() - state.started) / 1000); state.answers[idx] = Object.assign({ok, t}, detail || {}); save();
   if (!detail?.pending){
     if (QUIZ && window.keduQuiz){
-      try { window.keduQuiz.record({ questionId: q.qcode || `q${q.seq}`, qid: q.qid || null,
+      if (!PREVIEW) try { window.keduQuiz.record({ questionId: q.qcode || `q${q.seq}`, qid: q.qid || null,
                                      ok, sec: t, concept: q.concept, mis: detail?.mis || null }); } catch(e){}
     } else if (window.kedu && window.kedu.recordAnswer){
       // 파일 학습지 — 문항 키는 차시와 같은 문법(q{seq}), 개념·오개념 코드 동봉
@@ -550,7 +557,7 @@ function renderFinish(){
    ${topMis ? `<div class="weak">이번에 연습할 것 하나 — <b>${MISNAME[topMis[0]] || '다시 차근차근 세기'}</b></div>` : ''}
    <div class="row">${wrong.length ? `<button class="big" data-nav="retry">다시 해볼까? (${wrong.length})</button>` : ''}<button class="big ghost" data-nav="again">처음부터</button></div>
    <div class="alt">${QUIZ ? '' : `<a href="play.html?set=${SET}&mode=paper">시험지(A4)로 풀기</a><span>·</span><a href="./">학습지 목록</a><span>·</span>`}<a href="${BACK.href}">${esc(BACK.label)}</a></div></div>`;
-  if (QUIZ && window.keduQuiz) try { window.keduQuiz.recordEnd(okN, Q.length, null); } catch(e){}
+  if (QUIZ && window.keduQuiz && !PREVIEW) try { window.keduQuiz.recordEnd(okN, Q.length, null); } catch(e){}
   TTS.speak(`${label}. ${Q.length}문제 중 ${okN}문제를 맞혔어요.` + (topMis ? ` 이번에 연습할 것은 ${MISNAME[topMis[0]] || ''}` : ''));
   // 세트 끝 기록 — 한 판(전체)만 회차로 센다. '다시 해볼까?'(부분 재출제)는 문항 기록만 남는다.
   if (!state.retry && window.kedu && window.kedu.recordLessonEnd) try { window.kedu.recordLessonEnd(okN, Q.length); } catch(e){}

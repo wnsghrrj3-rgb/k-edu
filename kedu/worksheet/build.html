@@ -85,6 +85,8 @@ const DIFFNAME = {1:'D1 기본', 2:'D2 적용', 3:'D3 도전', 4:'D4 심화'};
 const KINDNAME = {mc:'선택', sa:'단답', ox:'OX', error:'오류찾기', blank:'빈칸', data:'자료읽기', match:'연결', essay:'서술'};
 
 let ME = null, BANK = [], CONCEPTS = [], CLASSES = [], CART = [], TAB = 'build';
+// ?tab=mine — 미리보기에서 「내 쪽지로」 돌아올 때 그 탭으로 연다(2026-09-04)
+if (new URLSearchParams(location.search).get('tab') === 'mine'){ TAB = 'mine'; document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x.dataset.tab === 'mine')); }
 
 function toast(msg){ const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('on'); setTimeout(() => t.classList.remove('on'), 2200); }
 
@@ -310,7 +312,8 @@ async function renderMine(){
   }).join('')}</div>`;
 
   view.querySelectorAll('[data-open]').forEach(b => b.onclick = () => openForClass(b.dataset.open, sets));
-  view.querySelectorAll('[data-prev]').forEach(b => b.onclick = () => window.open('play.html?quiz=' + b.dataset.prev, '_blank'));
+  // 미리보기는 같은 탭에서 연다 — 새 탭이면 돌아올 길이 없었다(2026-09-04). play.html 이 &preview=1 을 보고 「내 쪽지로」 단추를 얹고 기록은 남기지 않는다.
+  view.querySelectorAll('[data-prev]').forEach(b => b.onclick = () => { location.href = 'play.html?quiz=' + b.dataset.prev + '&preview=1'; });
   view.querySelectorAll('[data-res]').forEach(b => b.onclick = () => showResult(b.dataset.res));
 }
 

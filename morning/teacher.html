@@ -171,7 +171,8 @@ td.name{font-weight:700}
       seen[s] = 1;
       var p = PREVIEW[s];
       var k = (p.key && sess && sess.subject === s && sess.lesson_key) ? sess.lesson_key : '';
-      var href  = p.href + (k ? '?key='+encodeURIComponent(k) : '?grade='+grade);
+      // &from=teacher — 활동 화면의 「← 아침활동」이 학생용 /morning/ 대신 목록→선생님 대시보드로 돌아온다(2026-09-04)
+      var href  = p.href + (k ? '?key='+encodeURIComponent(k) : '?grade='+grade) + '&from=teacher';
       var label = k ? ('오늘 나가는 '+(SUBJECT_KO[s]||s)+' 보기')
                     : ((SUBJECT_KO[s]||s)+' 미리 보기');
       out.push('<a class="btn ghost" style="text-decoration:none;display:inline-block;margin:0 6px 6px 0" '
@@ -382,8 +383,6 @@ td.name{font-weight:700}
       + '<span><b>'+(r.grade||c.grade||1)+'학년</b> 과정으로, '+esc(dayTxt)+'요일 아침마다 '
         + routineTxt(r)+'와 확인 문제 '
         + (r.question_count||10)+'개가 저절로 올라가요.</span>'
-      + '<div style="margin-top:10px"><span style="font-size:12.5px;color:var(--sub)">학생들은 이 코드로 우리 반에 들어와요</span><br>'
-      + '<span class="code-chip">'+esc(c.code||'')+'</span></div>'
       + '<div id="prev">'+previewLinks(r, c, todaySess())+'</div>'
       + '</div>'
       + (state.classes.length>1
@@ -482,7 +481,7 @@ td.name{font-weight:700}
       + '</div>'
       + ((sm.submitted||0)>0 ? '<div style="margin-bottom:12px"><button class="btn ghost sm" id="bulk">자동 점수 한꺼번에 확정</button></div>' : '')
       + ((sm.total||0)===0
-          ? '<div class="msg" style="padding:18px">아직 학생이 없어요. 위 학급코드로 초대해 보세요!</div>'
+          ? '<div class="msg" style="padding:18px">아직 학생이 없어요. 선생님 대시보드의 학급코드로 초대해 보세요!</div>'
           : '<table><thead><tr><th>이름</th><th>상태</th><th>점수</th><th>피드백</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>')
       + '</div>';
     var bulk = document.getElementById('bulk');
