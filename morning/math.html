@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>오늘 나가는 수학 — 아침활동</title>
+<title>아침수학 미리 보기 — 아침활동</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
 <style>
@@ -33,11 +33,12 @@ select,input{font-family:inherit;font-size:15px;padding:9px 12px;border:1px soli
 .spin{width:22px;height:22px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:sp .8s linear infinite;margin:0 auto 10px}
 @keyframes sp{to{transform:rotate(360deg)}}
 .foot{font-size:12.5px;color:var(--faint);text-align:center;margin-top:8px;line-height:1.7}
+.back{margin-top:10px;font-family:inherit;font-size:13.5px;padding:7px 12px;border:1px solid var(--primary);border-radius:999px;background:#fff;color:var(--primary);cursor:pointer}
 </style>
 </head>
 <body>
 <div class="top">
-  <span class="brand">케이에듀</span><span class="t">오늘 나가는 수학</span>
+  <span class="brand">케이에듀</span><span class="t" id="ttl">아침수학 미리 보기</span>
   <a href="/morning/teacher.html">← 아침활동으로</a>
 </div>
 <div class="page">
@@ -51,6 +52,7 @@ select,input{font-family:inherit;font-size:15px;padding:9px 12px;border:1px soli
       <div><label>차시</label><select id="d"></select></div>
     </div>
     <div class="meta" id="meta">불러오는 중…</div>
+    <button class="back" id="back" type="button" style="display:none">오늘 차시로 ↩</button>
   </div>
   <div class="card"><div id="mount"><div class="msg"><div class="spin"></div>문제를 준비하는 중…</div></div></div>
   <div class="foot">이 화면은 미리보기예요. 학생 기록에는 아무것도 남지 않아요.</div>
@@ -62,8 +64,25 @@ select,input{font-family:inherit;font-size:15px;padding:9px 12px;border:1px soli
 (function(){
   'use strict';
   var GRADES = [1,2,3,4,5,6];
-  var q = new URLSearchParams(location.search);
-  var st = { grade: Math.min(6, Math.max(1, +q.get('grade') || 1)), day: +q.get('day') || 1, loaded: {}, units: {} };
+  /* ★진도일(today)은 c키 통로로 들어왔을 때만 안다 (2026-09-07 §11-7 잔여 닫음).
+       교사 화면이 `ma_today` 에서 받은 그날 몫을 `?key=g3_math_c015` 로 넘겨 준다. `?grade&day` 는
+       아무 날이나 여는 통로라 이 차시가 오늘 몫인지 이 화면은 알 길이 없다 — 모르면 `today = null`.
+       key 와 day 를 **함께** 받는다(오늘로 들어와도 옆 차시를 둘러봐야 하고, 그때도 「오늘이 며칠째인지」를
+       잃지 않아야 「오늘 차시로 ↩」이 성립한다). 이름·뜻은 sents_preview.html·chars.html 과 같다 —
+       다르면 다음 사람이 한쪽만 고친다. */
+  function fromUrl(){
+    var q = new URLSearchParams(location.search);
+    var m = (q.get('key') || '').match(/^g([1-6])_math_c(\d{1,3})$/);
+    var d = +q.get('day') || 0;
+    if (m) return { grade:+m[1], day: d || +m[2], today:+m[2] };
+    var g = Math.min(6, Math.max(1, +q.get('grade') || 1));
+    return { grade:g, day: d || 1, today:null };
+  }
+  var st = fromUrl(); st.loaded = {}; st.units = {};
+  /* 지금 보고 있는 차시가 「오늘 몫」임을 이 화면이 근거를 갖고 말할 수 있는가 */
+  function onToday(){ return st.today != null && st.day === st.today; }
+  function dayW(){ return onToday() ? '오늘' : '이 날'; }
+  var backBtn = document.getElementById('back'), ttl = document.getElementById('ttl');
   var gSel = document.getElementById('g'), uSel = document.getElementById('u'), dSel = document.getElementById('d');
   var meta = document.getElementById('meta'), mount = document.getElementById('mount');
 
@@ -126,7 +145,8 @@ select,input{font-family:inherit;font-size:15px;padding:9px 12px;border:1px soli
     var units = unitsFor(grade);
     st.units[grade] = units;
     var total = units.reduce(function(a,u){ return a + u.lessons.length; }, 0);
-    if (st.day > total || st.day < 1) st.day = 1;
+    if (st.today != null && (st.today < 1 || st.today > total)) st.today = null;
+    if (st.day > total || st.day < 1) st.day = st.today != null ? st.today : 1;
 
     var cur = units.filter(function(u){
       return u.lessons.some(function(les){ return les.day === st.day; });
@@ -157,12 +177,20 @@ select,input{font-family:inherit;font-size:15px;padding:9px 12px;border:1px soli
     }
     var def = KQuiz.core.getDef ? KQuiz.core.getDef(key) : null;
     var total = ((KQuiz.core.mathMorningOrder && KQuiz.core.mathMorningOrder(st.grade)) || []).length;
-    meta.innerHTML = '<b>'+st.grade+'학년</b> — ' + (def ? '<b>'+esc(unitName(def))+'</b>' : '')
+    /* 「오늘 몫」 배지는 onToday() 일 때만 — `?grade=` 로 열린 화면은 아무 날이나 보는 통로다 */
+    meta.innerHTML = (onToday() ? '<b>오늘 몫</b> · ' : '') + '<b>'+st.grade+'학년</b> — '
+      + (def ? '<b>'+esc(unitName(def))+'</b>' : '')
       + '<br><span style="color:var(--sub)">아침수학 순서로는 <b>'+st.day+'일째</b>예요. '
       + '한 학기에 모두 '+total+'일치가 있고, 다 나가면 복습으로 다시 돌아요.</span>';
+    if (ttl) ttl.textContent = onToday() ? '오늘 나가는 수학' : '아침수학 미리 보기';
+    /* ★정직해지면서 정보가 줄면 안 된다 — 오늘 몫을 벗어나면 「오늘 차시로 ↩」이 뜬다 */
+    if (backBtn) backBtn.style.display = (st.today != null && st.day !== st.today) ? '' : 'none';
     KQuiz.mount(mount, { mode:'teacher', lesson:key, n:10 });
+    /* 주소가 진도일을 계속 물고 간다 — 새로고침으로 오늘을 잊으면 ↩ 통로가 조용히 사라진다 */
     var u = new URL(location.href);
-    u.searchParams.set('grade', st.grade); u.searchParams.set('day', st.day);
+    if (st.today != null){ u.searchParams.set('key', keyOf(st.grade, st.today)); u.searchParams['delete']('grade'); }
+    else { u.searchParams.set('grade', st.grade); }
+    u.searchParams.set('day', st.day);
     history.replaceState(null, '', u);
   }
 
@@ -185,7 +213,9 @@ select,input{font-family:inherit;font-size:15px;padding:9px 12px;border:1px soli
     });
   }
 
-  gSel.onchange = function(){ st.grade = +this.value; st.day = 1; loadGrade(st.grade); };
+  /* 학년을 바꾸면 진도일도 함께 버린다 — 다른 학년의 차시를 이 학년의 「오늘」이라 부르면 안 된다 */
+  gSel.onchange = function(){ st.grade = +this.value; st.day = 1; st.today = null; loadGrade(st.grade); };
+  if (backBtn) backBtn.onclick = function(){ if (st.today != null){ st.day = st.today; fillPickers(st.grade); draw(); } };
   uSel.onchange = function(){
     var units = st.units[st.grade] || [];
     var u = units.filter(function(x){ return x.unitNo === +uSel.value; })[0];

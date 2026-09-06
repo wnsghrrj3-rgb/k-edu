@@ -242,16 +242,18 @@ DATA.grades().forEach(function (g) {
   T(eH.indexOf('?grade=3') >= 0, '오늘이 영어 날인데 한자 통로가 c키를 물고 감');
   T(/오늘/.test(eH) === false, '오늘을 모르는 한자 통로가 라벨에서 「오늘」이라 말함: ' + eH);
   T(eE.indexOf('?key=g3_english_c007') >= 0, '오늘이 영어 날인데 영어 통로가 c키를 안 물고 감');
-  /* ★수학은 아직 c키를 못 받는다(`math.html` 미수용 = 설계 §11 미결정 7 의 잔여).
-       지금 라벨이 정직해서 거짓은 없지만, 표에 `key:true` 한 줄만 얹고 화면을 그대로 두면
-       **그날로 첫날이 열린다** — 한자가 넉 달 겪은 그 결함이 그대로 재현된다.
-       자격 없는 과목에 통로만 앞서 가지 않게 여기서 막아 둔다.
-       (`math.html` 이 c키를 받게 되면 위 한자처럼 이 두 줄을 뒤집을 것.) */
+  /* ★수학도 c키를 받는다(2026-09-07, §11-7 잔여 닫음 — `math.html` 이 c키에서 진도일을 읽는 것은
+       test_morning_math_screen ⑤ 가 실제로 굴려 본다). 세 과목이 같은 계약: 오늘 몫을 알면 c키 + 「오늘 나가는」,
+       모르면 `?grade=` + 「오늘」 없음. 두 방향을 다 본다(한 방향만 보면 「늘 c키를 무는 통로」가 통과한다). */
   var mM = lk(F.pl({ days: { mon: 'math' }, grade: 3 }, {},
                    { subject: 'math', lesson_key: 'g3_math_c015' }), 'math.html');
-  T(mM.indexOf('?grade=3') >= 0,
-    '수학 통로가 c키를 물고 감 — math.html 은 c키를 받지 않는다(받게 만들었다면 이 검사를 뒤집을 것)');
-  T(/오늘/.test(mM) === false, '오늘을 모르는 수학 통로가 라벨에서 「오늘」이라 말함: ' + mM);
+  T(mM.indexOf('math.html?key=g3_math_c015') >= 0,
+    '오늘이 수학 날인데 수학 통로가 c키를 안 물고 감 — 15일째 반이 눌러도 첫날 차시가 열린다');
+  T(/오늘 나가는 수학 보기/.test(mM), '수학 통로가 오늘을 여는데 라벨이 그 사실을 안 말함');
+  var mH = lk(F.pl({ days: { mon: 'math', tue: 'hanja' }, grade: 3 }, {},
+                   { subject: 'hanja', lesson_key: 'g3_hanja_c012' }), 'math.html');
+  T(mH.indexOf('?grade=3') >= 0, '오늘이 한자 날인데 수학 통로가 c키를 물고 감');
+  T(/오늘/.test(mH) === false, '오늘을 모르는 수학 통로가 라벨에서 「오늘」이라 말함: ' + mH);
   /* (4-c) todaySess — 오늘을 「모른다」고 말해야 하는 세 경우를 실제로 굴려 본다.
        여기서 빈 그릇을 세션처럼 내주면 위의 통로가 없는 진도를 물고 간다. */
   F.setBoard(null);
@@ -340,7 +342,7 @@ DATA.grades().forEach(function (g) {
 
 /* ⑥ 학생 진입 — 과목마다 제 활동 화면으로 가는가
    (예전엔 lesson_key 만 있으면 무조건 한자 화면으로 보냈다. 수학·영어 학생이
-    엉뚱한 1학년 한자 칸을 만나던 결함이라 여기서 못을 박는다) */
+    엉뚱한 1학년 한자 칸을 만나던 결함이라 여기서 고정한다) */
 (function () {
   T(fs.existsSync(path.join(PAGES, 'sents.html')), 'morning/sents.html 이 없음');
   T(/var ACTIVITY = \{/.test(html), 'morning/index.html 에 과목별 활동 통로 맵(ACTIVITY)이 없음');
@@ -464,7 +466,7 @@ function ownLeft(o, g, opt) {
 
 /* ⑥ 미리보기 → 학생 화면·인쇄물 통로 (D6)
       교사가 "무엇이 나가는지" 본 자리에서 "아이가 어떻게 만나는지"로 바로 건너갈 수 있어야 한다.
-      통로는 화면에 박힌 주소가 아니라 지금 고른 학년·일차를 따라가야 한다. */
+      통로는 화면에 적힌 고정 주소가 아니라 지금 고른 학년·일차를 따라가야 한다. */
 (function () {
   var o = boot('sents_preview.html', '?grade=4&day=3');
   if (!o) return;
