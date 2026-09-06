@@ -111,7 +111,7 @@
   var CONTENT_TIERS = [
     ['/classwork/', 'class_rec'], ['/morning/', 'class_rec'], ['/kbattle/', 'class_rec'], ['/live/', 'class_rec'],
     ['/kpark/', 'class'], ['/maker/', 'class'], ['/kmake/', 'class'], ['/maker-playground/', 'class'],
-    ['/draw/', 'class'], ['/kple/', 'class'], ['/kdetective/', 'class'],
+    ['/draw/', 'class'], ['/kple/', 'class'],
     ['/grade1/', 'open'], ['/grade2/', 'open'], ['/grade3/', 'open'], ['/grade4/', 'open'],
     ['/grade5/', 'open'], ['/grade6/', 'open'], ['/english/', 'open'], ['/gifted/', 'open'],
     ['/labs/', 'open'], ['/museum/', 'open'], ['/hub2/', 'open'], ['/kedu/hub/', 'open']

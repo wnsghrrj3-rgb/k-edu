@@ -32,7 +32,6 @@ UPDATE contents SET tier = CASE
   WHEN file_path LIKE '/maker-playground/%' THEN 'class'
   WHEN file_path LIKE '/draw/%'             THEN 'class'
   WHEN file_path LIKE '/kple/%'             THEN 'class'
-  WHEN file_path LIKE '/kdetective/%'       THEN 'class'
   ELSE 'open'
 END
 WHERE tier IS DISTINCT FROM CASE
@@ -46,7 +45,6 @@ WHERE tier IS DISTINCT FROM CASE
   WHEN file_path LIKE '/maker-playground/%' THEN 'class'
   WHEN file_path LIKE '/draw/%'             THEN 'class'
   WHEN file_path LIKE '/kple/%'             THEN 'class'
-  WHEN file_path LIKE '/kdetective/%'       THEN 'class'
   ELSE 'open'
 END;
 
