@@ -6,14 +6,14 @@
    어떻게 —
      · kedu_tracker.js 가 차시 화면에서 localStorage `kedu_last:{g}_{s}_{subject}` 에
        {file, title, at} 를 남긴다(이 기기 안, 서버 전송 없음).
-     · 이 파일은 단원 목록(grade*/semester*/*/index.html)에서 전역 `UNITS` 를 읽어
+     · 이 파일은 단원 목록(gradeN/semesterN/과목/index.html)에서 전역 `UNITS` 를 읽어
        마지막 차시의 위치를 찾고 바로 다음 차시를 가리킨다.
        단원 끝이면 다음 단원 첫 차시, 전체 끝이면 「모두 마쳤어요 — 처음부터」.
      · 목록의 그 카드에도 「다음」 표식을 붙인다. 주소에 #next 가 있으면 카드로 스크롤.
    정직 —
      · 마지막 차시가 목록에 없으면(파일 이름이 바뀐 경우) 카드를 띄우지 않는다.
      · 자동 점프는 하지 않는다 — 목록은 늘 목록으로 열린다.
-   사용: 단원 목록 </body> 직전에 <script src="/kedu_next.js"></script>
+   사용: 단원 목록 body 끝에 kedu_next.js 를 script 태그로 싣는다
    ===================================================================== */
 (function () {
   'use strict';
