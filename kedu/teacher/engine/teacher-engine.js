@@ -18,17 +18,18 @@
   // ===== 시스템 상수 =====
   const TYPE_LABELS = {
     video: "영상", fun_question: "발문", game: "게임", real_world: "실생활",
-    extension: "확장", book: "책", tip: "학습팁", misconception: "오개념", other_activity: "다른활동"
+    extension: "확장", book: "책", tip: "학습팁", misconception: "오개념", other_activity: "다른활동",
+    link: "자료", kedu: "케이에듀"
   };
   const EXTRA_TYPE_AUDIENCE = {
     video: 'student', fun_question: 'student', game: 'student', real_world: 'student',
     extension: 'student', book: 'student', other_activity: 'student',
-    tip: 'teacher', misconception: 'teacher'
+    tip: 'teacher', misconception: 'teacher', link: 'student', kedu: 'student'
   };
   const EXTRA_TYPE_FULL_LABEL = {
     video: '영상', fun_question: '재미있는 발문', game: '활동·게임', real_world: '실생활',
     extension: '심화 자료', book: '책 추천', tip: '학습 가이드', misconception: '오개념 주의',
-    other_activity: '다른 활동'
+    other_activity: '다른 활동', link: '자료 링크', kedu: '케이에듀 연결'
   };
   function getExtraTypeLabel(e) {
     if (!e) return '';
@@ -41,7 +42,37 @@
     if (!e) return '';
     if (e.icon) return e.icon;
     if (e.type === 'game') return e.game_kind ? '🎮' : '🙋';
+    if (e.type === 'link') return '🔗';
+    if (e.type === 'kedu') return '🏠';
     return '';
+  }
+  // 자료층(resources/ · 2026-09-07): 같은 id는 덮어쓰고(승격) 나머지는 뒤에 붙인다.
+  // fit_slides가 슬라이드 id 또는 block 이름과 맞으면 그 슬라이드 suggested_extras에 올린다.
+  function extraStatus(e) {
+    if (!e) return '';
+    if (e.status) return e.status;
+    if (e.type === 'video') return (e.video_id || extractYouTubeId(e.url)) ? '확보' : '미확보';
+    return '';
+  }
+  function mergeResources(baseExtras, baseSlides, key) {
+    const bag = global.KT_RESOURCES && global.KT_RESOURCES[SUBJECT_INFO.slug];
+    const res = bag && Array.isArray(bag[key]) ? bag[key] : [];
+    const extras = (baseExtras || []).map(e => ({...e}));
+    const slides = (baseSlides || []).map(s => ({...s, suggested_extras: [...(s.suggested_extras || [])]}));
+    if (!res.length) return { extras, slides };
+    const seen = new Set();
+    res.forEach(r => {
+      if (!r || !r.id || seen.has(r.id)) return;
+      seen.add(r.id);
+      const i = extras.findIndex(e => e.id === r.id);
+      if (i >= 0) extras[i] = {...extras[i], ...r}; else extras.push({...r});
+      const fits = Array.isArray(r.fit_slides) ? r.fit_slides : [];
+      if (!fits.length) return;
+      slides.forEach(s => {
+        if ((fits.includes(s.id) || fits.includes(s.block)) && !s.suggested_extras.includes(r.id)) s.suggested_extras.push(r.id);
+      });
+    });
+    return { extras, slides };
   }
   const BLOCK_TEMPLATES = {
     motivate: {stage:'도입', block:'motivate', data:{scene_title:'새 도입 상황',kids:[{face:'🙂',label:'(편집)'}],question:'(질문 편집)'}},
@@ -912,6 +943,13 @@
     });
   }
 
+  function extraBadge(e) {
+    const st = extraStatus(e);
+    const src = e.source && e.source !== '미확보' ? `<span class="extra-src">${e.source.split('(')[0].slice(0, 12)}</span>` : '';
+    const miss = st === '미확보' ? `<span class="extra-miss">미확보</span>` : '';
+    const aud = e.audience === 'teacher' ? `<span class="extra-aud">교사용</span>` : '';
+    return (src || miss || aud) ? `<span class="extra-badges">${aud}${src}${miss}</span>` : '';
+  }
   function renderExtrasPanel() {
     const filter = document.getElementById('extras-filter');
     const types = Object.keys(TYPE_LABELS);
@@ -935,9 +973,10 @@
         <div class="extra-head">
           <span class="extra-icon">${getExtraIconFallback(e)}</span>
           <span class="extra-title">${e.title}${isSuggested ? '  ·' : ''}</span>
+          ${extraBadge(e)}
           <button class="extra-attach">${isAttached ? '뺌' : '끼움'}</button>
         </div>
-        <div class="extra-desc">${e.description}</div>
+        <div class="extra-desc">${e.description || e.content || ''}</div>
       </div>`;
     }).join('');
     listEl.querySelectorAll('.extra-card').forEach(el => {
@@ -1005,11 +1044,16 @@
     if (e.type === 'video') {
       const videoId = e.video_id || extractYouTubeId(e.url);
       if (videoId) {
+        const _q = ['rel=0'];
+        if (Number.isFinite(e.start)) _q.push('start=' + Math.max(0, e.start | 0));
+        if (Number.isFinite(e.end)) _q.push('end=' + (e.end | 0));
         return `<div class="eo-video-frame">
-          <iframe src="https://www.youtube.com/embed/${videoId}?rel=0" allowfullscreen
+          <iframe src="https://www.youtube.com/embed/${videoId}?${_q.join('&')}" allowfullscreen
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
         </div>
-        ${e.description ? `<div class="eo-medium-text" style="margin-top:24px; color:var(--c-text-light); font-size:16px;">${md(e.description)}</div>` : ''}`;
+        ${e.description ? `<div class="eo-medium-text" style="margin-top:24px; color:var(--c-text-light); font-size:16px;">${md(e.description)}</div>` : ''}
+        ${e.note ? `<div class="eo-note">⚠ ${md(e.note)}</div>` : ''}
+        ${e.url ? `<a class="eo-open-link" href="${e.url}" target="_blank" rel="noopener">유튜브에서 열기 ↗</a>` : ''}`;
       }
       const searchHint = e.url && e.url.includes('search_query=') ?
         decodeURIComponent(e.url.split('search_query=')[1].replace(/\+/g, ' ')) : '';
@@ -1020,6 +1064,29 @@
           ${searchHint ? `유튜브 검색어: <strong>${searchHint}</strong>` : '유튜브에서 영상 찾기'}
         </div>
         ${e.url ? `<a class="vs-btn" href="${e.url}" target="_blank" rel="noopener">새 탭에서 유튜브 열기 →</a>` : ''}
+      </div>`;
+    }
+    if (e.type === 'link') {
+      let host = '';
+      try { host = new URL(e.url).hostname.replace(/^www\./, ''); } catch (err) {}
+      return `<div class="eo-linkcard">
+        <div class="lk-icon">🔗</div>
+        <div class="lk-body">
+          <div class="eo-medium-text">${md(e.description || e.content || '')}</div>
+          ${e.note ? `<div class="eo-note">⚠ ${md(e.note)}</div>` : ''}
+          <div class="lk-host">${host}</div>
+          <a class="vs-btn lk-btn" href="${e.url}" target="_blank" rel="noopener">새 탭에서 열기 →</a>
+        </div>
+      </div>`;
+    }
+    if (e.type === 'kedu') {
+      return `<div class="eo-kedu">
+        <div class="kedu-bar">
+          <span class="kedu-path">🏠 keduclass.com${e.url}</span>
+          <a class="vs-btn lk-btn" href="${e.url}" target="_blank" rel="noopener">새 탭에서 열기 →</a>
+        </div>
+        <div class="eo-kedu-frame"><iframe src="${e.url}" allowfullscreen></iframe></div>
+        ${e.description ? `<div class="eo-medium-text" style="margin-top:14px; color:var(--c-text-light); font-size:15px;">${md(e.description)}</div>` : ''}
       </div>`;
     }
     if (e.type === 'book') {
@@ -1062,7 +1129,7 @@
   function openExtraOverlay(extraId) {
     const e = getExtra(extraId);
     if (!e) return;
-    const audience = EXTRA_TYPE_AUDIENCE[e.type] || 'student';
+    const audience = e.audience || EXTRA_TYPE_AUDIENCE[e.type] || 'student';
     const typeLabel = getExtraTypeLabel(e);
     document.getElementById('eo-icon').textContent = getExtraIconFallback(e);
     document.getElementById('eo-type-tag').textContent = typeLabel;
@@ -1072,7 +1139,7 @@
     audEl.classList.toggle('teacher', audience === 'teacher');
     let body = renderExtraOverlayBody(e);
     if (e.source) {
-      body += `<div class="eo-source"><span class="src-label">출처</span>${e.source}</div>`;
+      body += `<div class="eo-source"><span class="src-label">출처</span>${e.source}${e.verified ? ` · 확인 ${e.verified}` : ''}</div>`;
     }
     document.getElementById('eo-canvas').innerHTML = body;
     document.getElementById('ext-overlay').classList.add('active');
@@ -1307,8 +1374,7 @@
 
     currentLessonKey = key;
     currentLessonMeta = lessonData.meta || {};
-    SLIDES_DATA = lessonData.slides || [];
-    EXTRAS_DATA = lessonData.extras || [];
+    { const _m = mergeResources(lessonData.extras, lessonData.slides, key); SLIDES_DATA = _m.slides; EXTRAS_DATA = _m.extras; }
     STORAGE_KEY = `kedu_teacher_state_${SUBJECT_INFO.slug || 'unknown'}_${key}`;
 
     updateSidebarHeader(currentLessonMeta);
