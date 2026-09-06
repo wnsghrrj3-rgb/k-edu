@@ -455,7 +455,10 @@ td.name{font-weight:700}
     var b = state.board;
     if (!b) { el.innerHTML=''; return; }
     if (b.status === 'off_day') {
-      el.innerHTML = '<div class="card"><div class="msg">오늘은 아침활동이 없는 요일이에요.<br>다음 요일 아침에 저절로 올라가요.</div></div>'; return;
+      /* ma_today 가 next_dow 를 주면 그 요일을 말하고, 없으면 뭉뚱그린다(§11-6 · 근거 있는 시각만) */
+      var nk = { mon:'월', tue:'화', wed:'수', thu:'목', fri:'금', sat:'토', sun:'일' }[b.next_dow];
+      el.innerHTML = '<div class="card"><div class="msg">오늘은 아침활동이 없는 요일이에요.<br>'
+        + (nk ? nk + '요일 아침에' : '다음 활동 요일 아침에') + ' 저절로 올라가요.</div></div>'; return;
     }
     if (b.status !== 'ok') { el.innerHTML=''; return; }
     var s = b.session, sm = b.summary || {};

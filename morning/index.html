@@ -155,13 +155,18 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--bg);min-height:100vh;
     })();
   }
 
-  /* ★D8-ⓕ: 「내일 다시 만나요」는 이 화면이 댈 근거가 없는 말이었다. ma_today 는 오늘이
-     활동일인지(off_day)와 요일(dow)만 알려 줄 뿐, **다음 활동일이 언제인지는 넘겨주지 않는다.**
-     주 2회(화·목) 반이 월요일에 열면 다음은 내일이 아니라 모레다 — 대부분의 반에서 그냥 거짓이다.
-     아침영어 D8-ⓔ 가 걷어낸 요일 주장과 같은 종류라 같이 막는다. 세 과목 공용 화면이라
-     문구만 바꾼다(다음 활동일을 진짜로 말하려면 ma_today 가 그 값을 내야 한다 — 별건). */
-  function renderOff(dow){
-    show(card('<div class="msg"><span class="big">🌤️</span>오늘은 아침활동이 없는 날이에요.<br>다음 아침활동 날에 만나요!</div>'));
+  /* ★D8-ⓕ: 「내일 다시 만나요」는 이 화면이 댈 근거가 없는 말이었다 — 주 2회(화·목) 반이 월요일에
+     열면 다음은 내일이 아니라 모레다. ★2026-09-07 (§11-6): 이제 ma_today 가 `next_dow`·`next_in` 을
+     낸다(시간표를 쥔 유일한 자리). **그 값이 있을 때만** 「내일」·「목요일에」라 말하고, 없으면(옛 SQL·
+     빈 시간표) 뭉뚱그린 인사로 내려앉는다 — 근거 없는 시각을 화면이 지어내지 않는다(§4 규약). */
+  var DOW_KO = { mon:'월', tue:'화', wed:'수', thu:'목', fri:'금', sat:'토', sun:'일' };
+  function offWhen(t){
+    if (!t || !t.next_dow || !DOW_KO[t.next_dow]) return '다음 아침활동 날에';
+    if (t.next_in === 1) return '내일';
+    return DOW_KO[t.next_dow] + '요일에';
+  }
+  function renderOff(t){
+    show(card('<div class="msg"><span class="big">🌤️</span>오늘은 아침활동이 없는 날이에요.<br>' + offWhen(t) + ' 만나요!</div>'));
   }
   function renderNoRoutine(){
     show(card('<div class="msg"><span class="big">📋</span>아직 아침활동이 준비되지 않았어요.<br>선생님께 여쭤보세요.</div>'));
@@ -268,7 +273,7 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--bg);min-height:100vh;
         return;
       }
       if (t.status === 'no_routine') return renderNoRoutine();
-      if (t.status === 'off_day')   return renderOff(t.dow);
+      if (t.status === 'off_day')   return renderOff(t);
       if (t.status !== 'ok')        return show(card('<div class="msg">잠시 뒤에 다시 열어 주세요.</div>'));
 
       if (t.my && t.my.submitted) { renderDoneState(t); }

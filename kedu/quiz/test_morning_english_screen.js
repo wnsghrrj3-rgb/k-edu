@@ -700,19 +700,34 @@ var TTS_SRC = '/english/v3/engine/k-tts.js';
 (function () {
   var GAP = /어제|엊그제|그제|내일|모레|지난주|이번\s*주|다음\s*주|\d+\s*주|[월화수목금토일]요일|하루\s*뒤|이틀\s*뒤/;
 
-  /* ── ⑪-1 허브: 활동 없는 날 문구 ──
-     ma_today 는 오늘이 활동일인지(off_day)와 요일만 넘긴다. **다음 활동일은 안 넘긴다.**
-     그런데 화면은 「내일 다시 만나요」라고 적고 있었다 — 주 2회 반이 월요일에 열면 다음은
-     모레이므로 대부분의 반에서 거짓이다. 세 과목 공용 화면이라 여기서 함께 지킨다.
+  /* ── ⑪-1 허브: 활동 없는 날 문구 (§11-6, 2026-09-07 개정) ──
+     ma_today 가 이제 `next_dow`·`next_in` 을 낸다(시간표를 쥔 유일한 자리). 화면은 **그 값이 있을 때만**
+     「내일」·「목요일에」라 말하고, 없으면(옛 SQL·빈 시간표) 「다음 아침활동 날에」로 내려앉아야 한다.
+     세 경우를 실제로 굴린다 — 값 없이도 요일을 말하면 지어내기고, 값이 있는데도 뭉뚱그리면 정보를 버린 것이다.
      ★짝으로 본다: 시간 주장이 없기만 하면 **아무 말도 안 하는 화면**도 통과한다. */
   var hub = fs.readFileSync(path.join(PAGES, 'index.html'), 'utf8');
-  var mOff = hub.match(/function renderOff\([\s\S]*?\n  \}/);
-  T(!!mOff, '허브에서 renderOff 를 못 찾음 — 활동 없는 날 분기가 사라졌나');
-  if (mOff) {
-    T(GAP.test(mOff[0]) === false,
-      '허브가 다음 활동일을 주장함(ma_today 는 그 값을 안 준다): ' + mOff[0].slice(0, 160));
-    T(/없는 날/.test(mOff[0]), '허브가 활동 없는 날이라는 사실 자체를 말하지 않음');
-    T(/만나요/.test(mOff[0]), '허브가 다시 만난다는 인사를 잃음 — 아이가 보는 화면이다');
+  var mOff = hub.match(/function renderOff\([\s\S]*?\n  \}/), mWhen = hub.match(/var DOW_KO = \{[^\n]*\n  function offWhen\([\s\S]*?\n  \}/);
+  T(!!mOff && !!mWhen, '허브에서 renderOff/offWhen 를 못 찾음 — 활동 없는 날 분기가 사라졌나');
+  T(/return renderOff\(t\);/.test(hub),   /* 정의 `function renderOff(t)` 가 아니라 호출부 — 정의는 살아도 호출이 dow 만 넘기면 끝이다 */
+     '허브가 renderOff 에 응답 전체(t)를 안 넘김 — next_dow 가 영영 도착하지 않는다');
+  if (mOff && mWhen) {
+    var od = new JSDOM('<body></body>', { runScripts: 'outside-only' });
+    od.window.eval('var __out=""; function show(h){ __out = h; } function card(h){ return h; }' + mWhen[0] + mOff[0] + '; this.__ro = function(t){ renderOff(t); return __out; };');
+    var ro = od.window.__ro;
+    var o0 = ro({ status: 'off_day', dow: 'mon' });
+    T(GAP.test(o0) === false, '값이 없는데 허브가 다음 활동일을 지어냄: ' + o0.slice(0, 160));
+    T(/없는 날/.test(o0) && /만나요/.test(o0), '허브가 「없는 날」 사실이나 인사를 잃음');
+    var o1 = ro({ status: 'off_day', dow: 'mon', next_dow: 'thu', next_in: 3 });
+    T(/목요일에 만나요/.test(o1), '다음 활동일을 받았는데 요일을 말하지 않음(정보를 버림): ' + o1.slice(0, 160));
+    T(/내일/.test(o1) === false, '사흘 뒤인데 「내일」이라 함');
+    var o2 = ro({ status: 'off_day', dow: 'mon', next_dow: 'tue', next_in: 1 });
+    T(/내일 만나요/.test(o2), '하루 뒤인데 「내일」이라 말하지 않음: ' + o2.slice(0, 160));
+    var o3 = ro({ status: 'off_day', dow: 'mon', next_dow: 'xyz', next_in: 2 });
+    T(GAP.test(o3) === false && /만나요/.test(o3), '모르는 요일 코드를 받고도 요일을 말함(깨진 값에 기대지 않는다)');
+    /* 교사 화면도 같은 값으로 같은 규약 */
+    var THTML = fs.readFileSync(path.join(PAGES, 'teacher.html'), 'utf8');
+    T(/next_dow/.test(THTML) && /요일 아침에/.test(THTML), '교사 현황판이 next_dow 를 안 쓰거나 요일을 말하지 않음');
+    T(/다음 활동 요일 아침에/.test(THTML), '교사 현황판이 값 없을 때의 뭉뚱그린 문구를 잃음(옛 SQL 에서 요일을 지어낸다)');
   }
 
   /* ── ⑪-2 미리보기·인쇄물: 화면이 스스로 지어 쓴 말에 일차 간격 주장 0 ──

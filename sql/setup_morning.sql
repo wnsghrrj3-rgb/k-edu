@@ -236,6 +236,7 @@ DECLARE
   v_r ma_routines%ROWTYPE; v_dow text; v_subject text;
   v_sess ma_sessions%ROWTYPE; v_step int; v_cycle int; v_max_step int;
   v_mode text; v_key text; v_today date; v_sub jsonb; v_seed bigint;
+  v_i int; v_nd date; v_ndow text; v_nsub text;
 BEGIN
   v_today := (now() AT TIME ZONE 'Asia/Seoul')::date;
 
@@ -263,6 +264,18 @@ BEGIN
     v_dow := lower(to_char(v_today, 'dy'));               -- mon, tue, ...
     v_subject := v_r.days ->> v_dow;
     IF v_subject IS NULL OR v_subject = '' THEN
+      -- ★2026-09-07 (설계 §11-6): 다음 활동일을 함께 낸다. 시간표는 이 함수만 쥐고 있으므로
+      --   화면이 「내일」·「목요일」이라 말할 근거는 여기서만 나온다(없으면 화면은 뭉뚱그려 말한다).
+      --   앞으로 7일 안에 활동 요일이 없으면(시간표가 비어 있으면) next_* 를 내지 않는다.
+      FOR v_i IN 1..7 LOOP
+        v_nd := v_today + v_i;
+        v_ndow := lower(to_char(v_nd, 'dy'));
+        v_nsub := v_r.days ->> v_ndow;
+        IF v_nsub IS NOT NULL AND v_nsub <> '' THEN
+          RETURN jsonb_build_object('status','off_day', 'dow', v_dow,
+            'next_dow', v_ndow, 'next_in', v_i, 'next_date', v_nd, 'next_subject', v_nsub);
+        END IF;
+      END LOOP;
       RETURN jsonb_build_object('status','off_day', 'dow', v_dow);
     END IF;
 
