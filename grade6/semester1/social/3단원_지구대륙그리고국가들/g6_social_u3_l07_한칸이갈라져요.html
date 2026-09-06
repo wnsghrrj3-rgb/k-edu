@@ -1,0 +1,1081 @@
+<!--
+K-edu 사회 6-1 · 3단원 지구, 대륙 그리고 국가들 · 주제② 세계 여러 국가의 위치와 영토 모습 · 7차시(l07)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [6사09-02] · 교과서 p.146~149 · 지도서(대단원3 **11차시**
+  「유럽과 아프리카의 여러 나라를 살펴볼까요 / [풍덩] 나라 안에 다른 나라가 있어요」, 지도서 p.328~331) 근거.
+학습 목표: 유럽과 아프리카 대륙에 속한 여러 나라의 위치와 영토 특징을 설명할 수 있다.
+수업 기법 및 전략: 대륙 지형도 읽기 · 지도 읽기
+META = "3단원 지구, 대륙 그리고 국가들 · 주제② 세계 여러 국가의 위치와 영토 모습"
+⚠️ 엔진은 대단원1·2와 3단원 l01~l06에서 100% 승계. **3단원 색 #047857** 승계(변수명 유지 · 엔진 무수정).
+
+⚠️ 차시 매핑 정정 — 종전 STATUS는 이 차시를 「11~12차시」로 적었으나 지도서는 **11차시**(교과서 p.146~149)
+   하나로 묶고, **12차시**는 「북아메리카와 남아메리카의 여러 나라」(차시 예고 원문)이다.
+
+⚠️ 파일명을 `한칸이갈라져요`로 지었다(배선 예외 대신). l06이 「위선」·「위도」·「경도」·「본초 자오선」·
+   「시차」·「디지털 영상 지도」·「둘레」·「북극해」·「남극해」·「남극 대륙」·「대서양」을 **개수 0**으로,
+   「유럽」·「아프리카」를 **≤5**, 「영국」을 **≤4**, 「세계지도」를 **≤12**로 재고 있어서 파일명에 그
+   낱말이 들어가면 재배선이 곧바로 그 가드를 건드린다. 겹치지 않는 이름을 골라 예외를 만들지 않았다
+   (u2 l05 `나랏일` ~ u3 l06 `손에남아요` 선례 승계).
+
+직접조작: 한 걸음이 이미 있던 칸을 둘로 쪼개는 판 · 쪼개져도 그 안의 것은 하나도 움직이지 않는
+         형(68번째 신규 패턴)
+  ⭐ 앞의 예순일곱 종에서 **판의 칸은 처음부터 끝까지 그대로였거나 새 자리가 하나 열렸을 뿐이다.**
+     67번째(손에 남는 판)에서 여섯째 자리가 열린 것도 **없던 자리가 새로 생긴 것**이었고,
+     66번째(둘레가 채워지는 판)에서 늘어난 것은 채워진 칸이지 칸의 수가 아니었으며,
+     57번째(한 걸음이 두 자리를 함께 올리는 판)에서도 자리의 수는 처음부터 정해져 있었다.
+     **이미 있던 칸 하나가 둘로 쪼개진 적은 한 번도 없다.**
+  ⭐ 이번만 **한 걸음이 이미 있던 칸을 쪼갠다** — 적도를 한 번 그으면 아프리카 칸이 위아래 둘로
+     갈라져 판의 칸이 둘에서 셋이 된다. 근거는 교과서 146쪽 본문 원문
+     「아프리카는 … **북반구와 남반구에 걸쳐 있으며**」와 148쪽 [스스로 활동](아프리카에 속한 나라를
+     북반구에 있는 나라와 남반구에 있는 나라로 구분해 쓰기), 그리고 지도서 지도 꿀 Tip 원문
+     「북반구에 있는 나라와 남반구에 있는 나라를 구분할 때는 **적도를 선으로 그어** 이를 기준으로
+     북쪽과 남쪽으로 구분해 보도록 지도한다」이다.
+  ⭐ **어느 칸이 쪼개질지는 판이 아니라 그 칸에 놓인 것이 정한다** — 유럽 칸에 놓인 셋은 모두
+     북반구에 있어서 **유럽 칸은 쪼개지지 않고**, 아프리카 칸에 놓인 다섯은 두 반구에 걸쳐 있어서
+     **아프리카 칸만 쪼개진다.** 쪼개짐을 따로 담는 상수도 상태도 코드에 아예 없고
+     `hsSplit(st,c)` **한 줄**이 그것을 다 정한다.
+  ⭐ **유럽 칸은 적도를 그은 뒤에도 글자 하나 달라지지 않는다**(판 갈래로 문자열 동일성 대조).
+     쪼개진 것은 판의 한쪽뿐이다.
+  ⭐ **쪼개져도 나라는 한 나라도 자리를 옮기지 않는다** — 갈라진 것은 칸이지 나라가 아니다.
+     적도 앞뒤로 판에 그려진 나라 칩이 여덟 그대로이고, 유럽 셋·아프리카 다섯도 그대로다.
+  ⭐ **적도를 긋기 전에는 어느 칸이 쪼개질지 판이 알려 주지 않는다**(「북반구」·「남반구」 판에 0).
+  ⭐ **긋는 자리에는 옳고 그름이 없다**(`HS_EQ_OK` 부재 · 무판정 · 감점 0 · `hsEquator()`는 인자 0).
+
+3단계 — ① **나라 여덟을 두 대륙에 나눠 놓기**(순서 자유 · 판정 있음 · 어긋나면 판 불변,
+  안내에 알맞은 대륙 이름 0) → ② **적도 긋기**(여덟을 다 놓아야 열린다 · 무판정 · ★ 판이 쪼개진다)
+  → ③ **판 읽기 3택**(왜 아프리카 칸만 둘로 갈라졌나요? · 정답 자리 1)
+  → ④ 마무리 3택 = 지도서 11차시 지도 꿀 Tip 원문(정답 자리 2).
+
+⚠️ 전량 고정 리터럴 — 난수 0.
+⚠️ 가드 9종:
+     ① 마무리 확정 후 전체 잠금
+     ② 무효 번호(`Number.isInteger`·범위)
+     ③ 이미 놓은 나라 다시 놓기 무시 — 판 불변
+     ④ 어긋난 대륙 — 판 불변(안내에 알맞은 대륙 이름 0)
+     ⑤ 여덟을 다 놓기 전 적도 긋기 무시(순서) — 판 불변
+     ⑥ 이미 그은 적도 다시 긋기 무시 — 판 불변
+     ⑦ **적도를 긋기 전 판 읽기 무시 — 판 불변**(핵심 가드)
+     ⑧ 판을 읽기 전 마무리 무시(순서) — 판 불변
+     ⑨ 안내 표시 중 재클릭 무시(`hsBusy`).
+   재시도 허용(감점 없음), 조작에 점수 0. 발문은 `.hs-q`로 떼어 전 단계 상시 노출.
+   상태 열쇠 11개(완주 뒤에도 불변).
+
+⚠️ 정직 원칙 네 곳
+  ㉠ **판의 그림은 나라가 어느 대륙에 속하는지와 적도를 기준으로 어느 쪽에 있는지를 나타낸 도식이지
+     실제 세계지도나 지구본이 아니다**(캡션).
+  ㉡ **판은 나라의 넓이를 재지 않는다** — 어느 나라가 더 넓은지 판이 말하지 않는다.
+  ㉢ **적도를 그어 북반구와 남반구로 구분해 보는 활동은 교실 몫**이다(완료 카드 명시).
+  ㉣ **판에는 이 차시 원문이 다룬 나라의 이름까지만 옮긴다** — 교과서 지도에 인쇄된 나머지 나라는 판에 0.
+
+⚠️ 설계 원칙
+  **12차시 침범 0** — 북아메리카·남아메리카의 여러 나라 0 · 「북아메리카」·「남아메리카」는 차시 예고
+    자리까지 **각 ≤2**. ⚠️ 접두 함정 — 「아메리카」는 그 둘의 부분 문자열이라 따로 세지 않는다.
+  **13~14차시 침범 0**(여행 경로·생각 그물·말판 놀이·「생각을 펼쳐요」·「단원 마무리」 0).
+  **주제① 재현 최소** — 위선 0 · 시차 0 · 디지털 영상 지도 0 ·
+    「위도」·「경도」는 국경선이 반듯한 까닭 원문 자리까지 **각 ≤2** ·
+    「본초 자오선」은 영국·프랑스 원문 자리까지 **≤4**.
+    ⚠️ 「경선」은 **「국경선」의 부분 문자열**이라 금지 목록에서 뺐다(l06 교훈 승계).
+  **l06 재현 최소** — 일본·중국·사우디아라비아·오스트레일리아·뉴질랜드·니우에 0 · 「본뜬」 0 ·
+    「투명 종이」 0 · 「오세아니아」는 되짚기 자리까지 ≤2.
+  **l05 재현 최소** — 「둘레」 0 · 「남극」 0.
+  **대단원1·2 재현 0.**
+  **정치적 중립** — 어느 나라도 어느 대륙도 더 좋거나 나쁘게 그리지 않는다 · 정부·기관·상표·
+    누리집·신문사 이름 0 · 실제 도시 이름 0(「이탈리아의 수도」는 교과서 원문 표현이라 도시 이름을
+    쓰지 않고 그대로 옮겼다). ⚠️ **「식민지」는 교과서 148쪽 여백 물음의 답 원문 한 자리에서만**
+    쓰고(개수 1) **판과 문항에는 0**이다 — 교과서가 적은 만큼까지만 옮긴다.
+  교사용 참고 자료 0(참고 도서 세 종·한·아프리카 재단·우랄산맥 영상·바티칸 시국 영상·활동 자료
+    번호·쪽수·평가 관점·평가 방법).
+  **파일 전체에 네 자리 연도 0 · 쪽수 0 · 금액 0 · 거리 수치 0 · 시각 수치 0 · 비율 0.**
+  정서 — **작은 나라를 안쓰럽거나 모자란 곳으로 그리지 않는다** · 사람 형상 대신 칸과 말풍선으로만
+    그린다 · 학생 이름 0 · 유명인 0.
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g6_social_u3_l07_v1">
+<title>유럽과 아프리카의 여러 나라를 살펴볼까요 · 지구, 대륙 그리고 국가들 · 사회 6-1</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#047857; --green-d:#065F46; --cyan:#0D9488;
+  --bg:#ECFDF5; --bub:#D1FAE5; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#B45309; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-shrink:0}
+.ka-lb{background:#F1F5F9;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;
+  font-weight:700;color:var(--muted);font-size:clamp(11px,1.9vw,13px);display:flex;align-items:center;gap:6px}
+.ka-lb svg{width:14px;height:14px}
+.ka-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.ka-bar>div{height:100%;background:var(--green);border-radius:99px;transition:width .35s ease;width:5%}
+.ka-pg{font-size:clamp(11px,1.9vw,13px);color:var(--muted);font-weight:700;min-width:46px;text-align:right}
+.ka-sc{display:flex;align-items:center;gap:3px;background:var(--amber-bg);border-radius:99px;padding:5px 11px}
+.ka-sc svg{width:15px;height:15px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;color:var(--amber);font-size:clamp(14px,2.4vw,17px)}
+.ka-sc-u{font-size:11px;color:var(--amber);font-weight:700}
+
+/* 메인 */
+.ka-m{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;padding:4px 2px}
+.ka-tags{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ka-bg{display:inline-flex;align-items:center;gap:5px;background:var(--bub);color:var(--green-d);
+  border-radius:99px;padding:5px 12px;font-size:clamp(11px,1.9vw,13px);font-weight:700}
+.ka-bg svg{width:13px;height:13px}
+.ka-bg.s2{background:#E0F2FE;color:#075985}
+.ka-bg.s3{background:#DCFCE7;color:#166534}
+.ka-bg.s4{background:#FEF3C7;color:#92400E}
+.ka-bg.s5{background:#F3E8FF;color:#6B21A8}
+.ka-meta{font-size:clamp(10px,1.7vw,12px);color:#94A3B8;font-weight:600}
+.ka-t{font-size:clamp(19px,3.4vw,27px);font-weight:700;line-height:1.4;margin-bottom:10px}
+.ka-bub{background:var(--bub);border-radius:14px;padding:13px 18px;font-size:clamp(14px,2.4vw,18px);
+  line-height:1.7;margin-bottom:12px}
+.ka-emph{color:var(--green-d);font-weight:700}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.scene.wide{width:clamp(240px,44vw,420px)}
+.scene.wide svg{height:clamp(120px,20vw,200px)}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(15px,2.6vw,20px);font-weight:700;line-height:1.6;margin-bottom:12px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+.opt{background:#fff;border:2px solid var(--line);border-radius:13px;padding:13px 15px;cursor:pointer;
+  font-family:inherit;font-size:clamp(13px,2.2vw,16.5px);font-weight:500;text-align:left;line-height:1.5;transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:#16A34A;background:#DCFCE7;font-weight:700}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:11px;border-radius:12px;padding:12px 16px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;animation:fadeUp .3s ease both}
+.fb.ok{background:#DCFCE7;color:#166534;font-weight:700}
+.hint{margin-top:9px;background:var(--amber-bg);border-radius:11px;padding:10px 14px;
+  font-size:clamp(12.5px,2.1vw,15px);color:var(--amber);line-height:1.55}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:9px;width:100%;max-width:660px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFC;border-radius:12px;padding:11px 15px;
+  font-size:clamp(13px,2.2vw,16.5px);line-height:1.6}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'\2713';color:#fff;font-weight:800;font-size:14px}
+
+/* 직접조작 — 두 잣대가 만나야 자리가 하나로 정해지는 판 */
+.dw-wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dw-body{display:grid;grid-template-columns:1.05fr 1fr;gap:10px;align-items:start}
+.dw-canvas{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.dw-canvas svg{width:100%;height:auto;display:block}
+.dw-canvas .cvcap{padding:5px 6px;text-align:center;font-size:clamp(9.5px,1.6vw,11.5px);
+  color:var(--muted);font-weight:700;background:#F8FAFC}
+.dw-right{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dw-step{font-size:clamp(10.5px,1.75vw,13px);font-weight:800;color:var(--green)}
+.dw-msg{background:#F8FAFC;border:2px solid var(--line);border-left:4px solid var(--green);border-radius:10px;
+  padding:8px 12px;font-size:clamp(11.4px,1.93vw,13.8px);line-height:1.55;color:#334155;animation:fadeUp .3s ease both}
+.dw-msg.warn{border-left-color:var(--amber)}
+.dw-msg b{color:var(--green)}
+.dw-card{background:#fff;border:2px solid var(--amber);border-radius:12px;padding:10px 12px;
+  font-size:clamp(12px,2.05vw,14.5px);line-height:1.55;animation:pop .35s ease both}
+.dw-card .pt{font-weight:800;color:var(--amber);margin-bottom:4px;font-size:clamp(12.5px,2.15vw,15px)}
+.hs-q{font-size:clamp(11.6px,1.97vw,14px);font-weight:800;color:var(--green);
+  background:#ECFDF5;border-left:4px solid var(--green);border-radius:0 8px 8px 0;padding:6px 9px;line-height:1.45}
+.hs-pad{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px}
+.hs-pad button.on{border-color:var(--green);background:#D1FAE5;color:var(--green-d)}
+.hs-go button.er{border-color:#CBD5E0;background:#F8FAFC;color:#64748B}
+.hs-go button.er:hover{background:#F1F5F9}
+.hs-pad button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;padding:9px 4px;
+  cursor:pointer;font-family:inherit;font-weight:800;font-size:clamp(10px,1.7vw,12.4px);line-height:1.35}
+.hs-pad button:hover{background:var(--bub)}
+.hs-pad button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.hs-pad .sp{visibility:hidden}
+.hs-go{display:flex;flex-direction:column;gap:5px}
+.hs-go button{border:2px solid var(--green);background:#D1FAE5;color:var(--green-d);border-radius:10px;padding:8px 10px;
+  cursor:pointer;font-family:inherit;font-weight:800;font-size:clamp(10.5px,1.8vw,13px);line-height:1.45}
+.hs-go button:hover{background:#A7F3D0}
+.hs-go button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.hs-read{display:flex;flex-direction:column;gap:5px}
+.hs-read button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;padding:7px 10px;
+  cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.hs-read button:hover{background:var(--bub)}
+.hs-read button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.hs-fin{display:flex;flex-direction:column;gap:5px}
+.hs-fin button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;padding:7px 10px;
+  cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.hs-fin button:hover{background:var(--bub)}
+.hs-fin button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.hs-note{background:#F8FAFC;border:2px dashed #CBD5E0;border-radius:10px;padding:7px 10px;
+  font-size:clamp(10.4px,1.76vw,12.4px);line-height:1.5;color:#64748B}
+.hs-seen{display:flex;flex-direction:column;gap:4px;max-height:150px;overflow:auto}
+.hs-seen .row{border:2px solid var(--line);border-radius:9px;padding:5px 8px;background:#F8FAFC;
+  font-size:clamp(9.8px,1.66vw,11.6px);font-weight:700;color:#94A3B8;line-height:1.4}
+.hs-seen .row.on{border-color:var(--green);background:#ECFDF5;color:var(--green-d)}
+.paper{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:12px;padding:12px 16px;
+  font-size:clamp(12.5px,2.1vw,15px);line-height:1.65;color:#3F3A2C;max-width:660px;
+  animation:fadeUp .4s ease both}
+.paper .ph{font-weight:800;color:#8A6D3B;margin-bottom:6px;font-size:clamp(13px,2.2vw,16px)}
+.tipbox{background:#D1FAE5;border-radius:12px;padding:11px 16px;font-size:clamp(12.5px,2.1vw,15px);
+  line-height:1.6;color:#7C2D12;max-width:660px}
+@media(max-width:620px){ .dw-body{grid-template-columns:1fr} }
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(4,120,87,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style>
+<script src="/kedu_gate.js"></script>
+</head>
+
+
+
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#B45309"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식 =====
+   ⚠️ 정직 원칙: 모든 그림은 내용을 나타낸 도식이며 실제 세계지도·지구본·사진이 아니다.
+   ⚠️ 나라 이름은 이 차시 원문이 다룬 나라까지만 쓴다.
+   ⚠️ 사람 형상 대신 칸과 말풍선으로만 그린다. */
+const SVG = {
+  // 1 들어가기 — 세계지도를 살펴보고 아는 나라 떠올리기
+  open:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#ECFDF5"/>
+    <text x="160" y="19" font-size="11" fill="#065F46" text-anchor="middle" font-weight="800">아는 나라의 이름을 떠올려 봐요</text>
+    <rect x="14" y="30" width="292" height="84" rx="10" fill="#fff" stroke="#047857" stroke-width="1.6"/>
+    <rect x="30" y="42" width="120" height="30" rx="7" fill="#D1FAE5" stroke="#047857" stroke-width="1.2"/>
+    <text x="90" y="61" font-size="9" fill="#065F46" text-anchor="middle" font-weight="800">위쪽의 큰 덩어리</text>
+    <rect x="30" y="78" width="120" height="26" rx="7" fill="#FEF3C7" stroke="#B45309" stroke-width="1.2"/>
+    <text x="90" y="95" font-size="9" fill="#92400E" text-anchor="middle" font-weight="800">그 아래의 큰 덩어리</text>
+    <rect x="168" y="42" width="122" height="62" rx="7" fill="#F8FAFC" stroke="#CBD5E0" stroke-width="1.1"/>
+    <text x="229" y="60" font-size="8" fill="#475569" text-anchor="middle" font-weight="800">어떤 나라를 알고 있나요?</text>
+    <text x="229" y="76" font-size="8" fill="#64748B" text-anchor="middle" font-weight="700">이름을 말해 봐요</text>
+    <text x="229" y="92" font-size="8" fill="#64748B" text-anchor="middle" font-weight="700">지도에서 찾아봐요</text>
+    <text x="160" y="132" font-size="9" fill="#334155" text-anchor="middle" font-weight="800">큰 덩어리마다 여러 나라가 있어요</text>
+    <text x="160" y="150" font-size="8" fill="#64748B" text-anchor="middle" font-weight="700">그림은 내용을 나타낸 도식이에요</text></svg>`,
+  // 2 살펴보기 — 두 대륙의 자리
+  cont:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <text x="160" y="18" font-size="10.5" fill="#065F46" text-anchor="middle" font-weight="800">두 대륙은 어디에 있을까요</text>
+    <rect x="18" y="28" width="130" height="52" rx="9" fill="#D1FAE5" stroke="#047857" stroke-width="1.6"/>
+    <text x="83" y="48" font-size="10" fill="#065F46" text-anchor="middle" font-weight="800">유럽</text>
+    <text x="83" y="64" font-size="7.4" fill="#065F46" text-anchor="middle" font-weight="700">아시아의 서쪽에 있어요</text>
+    <rect x="18" y="90" width="130" height="60" rx="9" fill="#FEF3C7" stroke="#B45309" stroke-width="1.6"/>
+    <text x="83" y="112" font-size="10" fill="#92400E" text-anchor="middle" font-weight="800">아프리카</text>
+    <text x="83" y="128" font-size="7.4" fill="#92400E" text-anchor="middle" font-weight="700">유럽의 남쪽에 있어요</text>
+    <line x1="83" y1="80" x2="83" y2="90" stroke="#94A3B8" stroke-width="1.4" stroke-dasharray="4 3"/>
+    <rect x="164" y="28" width="140" height="122" rx="9" fill="#F8FAFC" stroke="#CBD5E0" stroke-width="1.2"/>
+    <text x="234" y="46" font-size="8.4" fill="#334155" text-anchor="middle" font-weight="800">유럽은 작은 대륙이지만</text>
+    <text x="234" y="60" font-size="8.4" fill="#334155" text-anchor="middle" font-weight="800">많은 나라가 있어요</text>
+    <line x1="176" y1="72" x2="292" y2="72" stroke="#E2E8F0" stroke-width="1.2"/>
+    <text x="234" y="90" font-size="8.4" fill="#334155" text-anchor="middle" font-weight="800">아프리카에는</text>
+    <text x="234" y="104" font-size="8.4" fill="#334155" text-anchor="middle" font-weight="800">가장 많은 나라가 있어요</text>
+    <text x="234" y="128" font-size="7.6" fill="#64748B" text-anchor="middle" font-weight="700">경계는 우랄산맥이에요</text></svg>`,
+  // 4 살펴보기 — 유럽의 여러 나라
+  euro:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#ECFDF5"/>
+    <text x="160" y="19" font-size="10.5" fill="#065F46" text-anchor="middle" font-weight="800">유럽의 여러 나라</text>
+    <rect x="12" y="30" width="94" height="120" rx="9" fill="#fff" stroke="#047857" stroke-width="1.4"/>
+    <text x="59" y="50" font-size="9.4" fill="#065F46" text-anchor="middle" font-weight="800">노르웨이</text>
+    <path d="M40 62 L74 62 L64 96 L52 128 L44 128 L54 94 Z" fill="#D1FAE5" stroke="#047857" stroke-width="1.3"/>
+    <text x="59" y="144" font-size="7.2" fill="#065F46" text-anchor="middle" font-weight="700">길게 뻗은 모양</text>
+    <rect x="113" y="30" width="94" height="120" rx="9" fill="#fff" stroke="#047857" stroke-width="1.4"/>
+    <text x="160" y="50" font-size="9.4" fill="#065F46" text-anchor="middle" font-weight="800">영국</text>
+    <ellipse cx="160" cy="96" rx="26" ry="32" fill="#D1FAE5" stroke="#047857" stroke-width="1.3"/>
+    <line x1="160" y1="60" x2="160" y2="132" stroke="#0369A1" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <text x="160" y="144" font-size="7.2" fill="#065F46" text-anchor="middle" font-weight="700">바다에 둘러싸인 섬나라</text>
+    <rect x="214" y="30" width="94" height="120" rx="9" fill="#fff" stroke="#047857" stroke-width="1.4"/>
+    <text x="261" y="50" font-size="9.4" fill="#065F46" text-anchor="middle" font-weight="800">독일</text>
+    <rect x="234" y="64" width="54" height="60" rx="6" fill="#D1FAE5" stroke="#047857" stroke-width="1.3"/>
+    <line x1="261" y1="64" x2="261" y2="124" stroke="#0EA5E9" stroke-width="1.2"/>
+    <text x="261" y="144" font-size="7.2" fill="#065F46" text-anchor="middle" font-weight="700">여러 나라와 국경을 맞댐</text></svg>`,
+  // 5 살펴보기 — 지도를 읽고 설명을 잇기
+  link:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <text x="160" y="18" font-size="10.5" fill="#065F46" text-anchor="middle" font-weight="800">지도를 읽고 알맞은 설명을 이어요</text>
+    <rect x="14" y="30" width="112" height="26" rx="6" fill="#F1F5F9" stroke="#CBD5E0" stroke-width="1.1"/>
+    <text x="70" y="47" font-size="8" fill="#475569" text-anchor="middle" font-weight="800">바다로 둘러싸인 나라</text>
+    <rect x="14" y="62" width="112" height="26" rx="6" fill="#F1F5F9" stroke="#CBD5E0" stroke-width="1.1"/>
+    <text x="70" y="79" font-size="8" fill="#475569" text-anchor="middle" font-weight="800">바다에 접하지 않은 나라</text>
+    <rect x="14" y="94" width="112" height="26" rx="6" fill="#F1F5F9" stroke="#CBD5E0" stroke-width="1.1"/>
+    <text x="70" y="111" font-size="8" fill="#475569" text-anchor="middle" font-weight="800">본초 자오선이 지나는 나라</text>
+    <rect x="14" y="126" width="112" height="26" rx="6" fill="#F1F5F9" stroke="#CBD5E0" stroke-width="1.1"/>
+    <text x="70" y="143" font-size="8" fill="#475569" text-anchor="middle" font-weight="800">러시아와 국경을 마주한 나라</text>
+    <text x="160" y="95" font-size="12" fill="#94A3B8" text-anchor="middle" font-weight="800">?</text>
+    <rect x="194" y="30" width="112" height="26" rx="6" fill="#D1FAE5" stroke="#047857" stroke-width="1.1"/>
+    <text x="250" y="47" font-size="8.4" fill="#065F46" text-anchor="middle" font-weight="800">스위스</text>
+    <rect x="194" y="62" width="112" height="26" rx="6" fill="#D1FAE5" stroke="#047857" stroke-width="1.1"/>
+    <text x="250" y="79" font-size="8.4" fill="#065F46" text-anchor="middle" font-weight="800">프랑스</text>
+    <rect x="194" y="94" width="112" height="26" rx="6" fill="#D1FAE5" stroke="#047857" stroke-width="1.1"/>
+    <text x="250" y="111" font-size="8.4" fill="#065F46" text-anchor="middle" font-weight="800">핀란드</text>
+    <rect x="194" y="126" width="112" height="26" rx="6" fill="#D1FAE5" stroke="#047857" stroke-width="1.1"/>
+    <text x="250" y="143" font-size="8.4" fill="#065F46" text-anchor="middle" font-weight="800">아이슬란드</text></svg>`,
+  // 6 살펴보기 — 아프리카의 여러 나라
+  afri:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFFBEB"/>
+    <text x="160" y="19" font-size="10.5" fill="#92400E" text-anchor="middle" font-weight="800">아프리카의 여러 나라</text>
+    <rect x="12" y="30" width="94" height="120" rx="9" fill="#fff" stroke="#B45309" stroke-width="1.4"/>
+    <text x="59" y="50" font-size="9" fill="#92400E" text-anchor="middle" font-weight="800">남아프리카 공화국</text>
+    <path d="M30 66 L88 66 L80 112 L40 112 Z" fill="#FEF3C7" stroke="#B45309" stroke-width="1.3"/>
+    <text x="59" y="130" font-size="7.2" fill="#92400E" text-anchor="middle" font-weight="700">남쪽 끝에 있어요</text>
+    <text x="59" y="144" font-size="7.2" fill="#92400E" text-anchor="middle" font-weight="700">두 대양과 접해요</text>
+    <rect x="113" y="30" width="94" height="120" rx="9" fill="#fff" stroke="#B45309" stroke-width="1.4"/>
+    <text x="160" y="50" font-size="9.4" fill="#92400E" text-anchor="middle" font-weight="800">에티오피아</text>
+    <path d="M136 66 L188 72 L182 108 L142 106 Z" fill="#FEF3C7" stroke="#B45309" stroke-width="1.3"/>
+    <text x="160" y="130" font-size="7.2" fill="#92400E" text-anchor="middle" font-weight="700">여러 나라에 둘러싸여</text>
+    <text x="160" y="144" font-size="7.2" fill="#92400E" text-anchor="middle" font-weight="700">접해 있는 바다가 없어요</text>
+    <rect x="214" y="30" width="94" height="120" rx="9" fill="#fff" stroke="#B45309" stroke-width="1.4"/>
+    <text x="261" y="50" font-size="9.4" fill="#92400E" text-anchor="middle" font-weight="800">이집트</text>
+    <rect x="236" y="68" width="50" height="42" rx="2" fill="#FEF3C7" stroke="#B45309" stroke-width="1.5"/>
+    <text x="261" y="130" font-size="7.2" fill="#92400E" text-anchor="middle" font-weight="700">국경선 일부가 반듯해</text>
+    <text x="261" y="144" font-size="7.2" fill="#92400E" text-anchor="middle" font-weight="700">사각형과 비슷해요</text></svg>`,
+  // 7 살펴보기 — 적도를 그어 두 반구로 구분하기
+  hemi:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <text x="160" y="18" font-size="10.5" fill="#065F46" text-anchor="middle" font-weight="800">적도를 그어 나눠 봐요</text>
+    <rect x="16" y="28" width="288" height="52" rx="8" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.3"/>
+    <text x="160" y="48" font-size="9.4" fill="#075985" text-anchor="middle" font-weight="800">북반구에 있는 나라</text>
+    <text x="160" y="66" font-size="8" fill="#0369A1" text-anchor="middle" font-weight="700">알제리 · 수단 · 리비아 · 이집트 · 나이지리아</text>
+    <line x1="16" y1="86" x2="304" y2="86" stroke="#DC2626" stroke-width="2" stroke-dasharray="7 4"/>
+    <text x="160" y="99" font-size="8.6" fill="#B91C1C" text-anchor="middle" font-weight="800">적도</text>
+    <rect x="16" y="106" width="288" height="46" rx="8" fill="#FEF3C7" stroke="#B45309" stroke-width="1.3"/>
+    <text x="160" y="124" font-size="9.4" fill="#92400E" text-anchor="middle" font-weight="800">남반구에 있는 나라</text>
+    <text x="160" y="142" font-size="8" fill="#B45309" text-anchor="middle" font-weight="700">나미비아 · 앙골라 · 마다가스카르</text></svg>`,
+  // 7 살펴보기 — [풍덩] 나라 안에 다른 나라
+  inside:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F8FAFC"/>
+    <text x="160" y="18" font-size="10.5" fill="#334155" text-anchor="middle" font-weight="800">한 나라 안에 다른 나라가 있어요</text>
+    <rect x="16" y="30" width="136" height="118" rx="9" fill="#D1FAE5" stroke="#047857" stroke-width="1.5"/>
+    <text x="84" y="48" font-size="9" fill="#065F46" text-anchor="middle" font-weight="800">이탈리아</text>
+    <rect x="34" y="60" width="46" height="34" rx="6" fill="#fff" stroke="#0369A1" stroke-width="1.3"/>
+    <text x="57" y="80" font-size="7.4" fill="#075985" text-anchor="middle" font-weight="800">산마리노</text>
+    <rect x="90" y="60" width="46" height="34" rx="6" fill="#fff" stroke="#0369A1" stroke-width="1.3"/>
+    <text x="113" y="76" font-size="7" fill="#075985" text-anchor="middle" font-weight="800">바티칸</text>
+    <text x="113" y="88" font-size="7" fill="#075985" text-anchor="middle" font-weight="800">시국</text>
+    <text x="84" y="118" font-size="7.4" fill="#065F46" text-anchor="middle" font-weight="700">두 나라가 이탈리아의</text>
+    <text x="84" y="132" font-size="7.4" fill="#065F46" text-anchor="middle" font-weight="700">영토에 둘러싸여 있어요</text>
+    <rect x="168" y="30" width="136" height="118" rx="9" fill="#FEF3C7" stroke="#B45309" stroke-width="1.5"/>
+    <text x="236" y="48" font-size="8.6" fill="#92400E" text-anchor="middle" font-weight="800">남아프리카 공화국</text>
+    <rect x="212" y="62" width="48" height="32" rx="4" fill="#fff" stroke="#0369A1" stroke-width="1.3"/>
+    <text x="236" y="82" font-size="7.6" fill="#075985" text-anchor="middle" font-weight="800">레소토</text>
+    <text x="236" y="118" font-size="7.4" fill="#92400E" text-anchor="middle" font-weight="700">레소토가 그 영토에</text>
+    <text x="236" y="132" font-size="7.4" fill="#92400E" text-anchor="middle" font-weight="700">둘러싸여 있어요</text></svg>`,
+  // 16 정리
+  sum:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#ECFDF5"/>
+    <text x="160" y="20" font-size="11" fill="#065F46" text-anchor="middle" font-weight="800">오늘의 정리</text>
+    <rect x="16" y="32" width="288" height="30" rx="7" fill="#fff" stroke="#047857" stroke-width="1.3"/>
+    <text x="160" y="51" font-size="8.6" fill="#065F46" text-anchor="middle" font-weight="800">유럽 — 북쪽으로 북극해, 서쪽으로 대서양과 접해요</text>
+    <rect x="16" y="68" width="288" height="30" rx="7" fill="#fff" stroke="#047857" stroke-width="1.3"/>
+    <text x="160" y="87" font-size="8.6" fill="#065F46" text-anchor="middle" font-weight="800">아프리카 — 북반구와 남반구에 걸쳐 있어요</text>
+    <rect x="16" y="104" width="288" height="30" rx="7" fill="#FFFBEB" stroke="#B45309" stroke-width="1.3"/>
+    <text x="160" y="123" font-size="8.6" fill="#92400E" text-anchor="middle" font-weight="800">적도를 그으면 아프리카 칸만 둘로 갈라져요</text>
+    <text x="160" y="152" font-size="8" fill="#64748B" text-anchor="middle" font-weight="700">갈라진 것은 칸이지 나라가 아니에요</text></svg>`,
+  // 18 종료
+  done:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#ECFDF5"/>
+    <circle cx="160" cy="76" r="40" fill="#fff" stroke="#047857" stroke-width="2.4"/>
+    <path d="M142 76 L156 90 L180 62" fill="none" stroke="#047857" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="160" y="142" font-size="11" fill="#065F46" text-anchor="middle" font-weight="800">오늘 공부를 마쳤어요</text></svg>`
+};
+function sceneCard(key,cap,extra){ return `<div class="scene ${extra||''}">${SVG[key]||''}${cap?`<div class="cap">${cap}</div>`:''}</div>`; }
+
+/* ===== 직접조작 — 한 걸음이 이미 있던 칸을 둘로 쪼개는 판(68번째 신규 패턴) =====
+   ★ 앞의 예순일곱 종에서 판의 칸은 처음부터 끝까지 그대로였거나 없던 자리가 하나 열렸을 뿐이다.
+     이미 있던 칸 하나가 둘로 쪼개진 적은 한 번도 없다.
+   ★ 이번만 적도를 한 번 그으면 아프리카 칸이 위아래 둘로 갈라져 판의 칸이 둘에서 셋이 된다.
+   ★ 어느 칸이 쪼개질지는 판이 아니라 그 칸에 놓인 것이 정한다 — `hsSplit` 한 줄.
+   ★ 유럽 칸은 적도를 그은 뒤에도 글자 하나 달라지지 않는다.
+   ★ 쪼개져도 나라는 한 나라도 자리를 옮기지 않는다.
+   ⚠️ 전량 고정 리터럴 — 난수 0. 조작에 점수 0. */
+const HS_CONT_N = 2;    /* 대륙 둘 */
+const HS_LAND_N = 8;    /* 나라 여덟 */
+
+const HS_CONT = ['유럽','아프리카'];
+const HS_CONT_D = [
+  '우랄산맥을 경계로 아시아의 서쪽에 있어요',
+  '유럽의 남쪽에 있어요'
+];
+
+/* 나라 여덟 — 전부 이 차시 원문(교과서 본문 셋 + [스스로 활동]) */
+const HS_LAND = ['노르웨이','영국','독일','이집트','에티오피아','나이지리아','남아프리카 공화국','나미비아'];
+const HS_OWNER = [0,0,0,1,1,1,1,1];
+/* ★ 반구 — 0 북반구 · 1 남반구. 이 상수를 대괄호로 읽는 자리는 코드에 hsHemiOf 한 곳뿐이다. */
+const HS_HEMI  = [0,0,0,0,0,0,1,1];
+const HS_HALF = ['북반구','남반구'];
+const HS_LAND_D = [
+  '북동쪽에서 남서쪽으로 길게 뻗어 있고, 해안선이 복잡해요.',
+  '유럽의 서쪽에 있는 섬나라예요. 본초 자오선이 지나요.',
+  '아홉 나라와 국경을 맞대고 있고, 북쪽은 바다와도 맞닿아 있어요.',
+  '아프리카의 북동쪽 끝에 있어요. 아시아와 육지로 이어져 있어요.',
+  '아프리카 동부에 있어요. 여러 나라에 둘러싸여 있어 접해 있는 바다가 없어요.',
+  '아프리카에 속한 나라예요. 세계지도에서 자리를 찾아봐요.',
+  '아프리카의 남쪽 끝에 있어요. 동쪽으로 인도양, 서쪽으로 대서양과 접해 있어요.',
+  '아프리카에 속한 나라예요. 세계지도에서 자리를 찾아봐요.'
+];
+
+/* ③ 판 읽기 — 교과서 146쪽 본문 원문이 답이다 */
+const HS_READ = [
+  '아프리카에 놓인 나라가 유럽보다 많기 때문이에요',
+  '아프리카는 북반구와 남반구에 걸쳐 있기 때문이에요',
+  '아프리카가 유럽보다 넓은 대륙이기 때문이에요'
+];
+const HS_READ_OK = 1;
+const HS_READ_NO = [
+  '놓인 나라의 <b>수</b>는 칸이 갈라지는 것과 관계가 없어요. 판을 다시 읽어 봐요.',
+  null,
+  '대륙의 <b>넓이</b>는 칸이 갈라지는 것과 관계가 없어요. 판을 다시 읽어 봐요.'
+];
+
+/* ④ 마무리 — 지도서 11차시 지도 꿀 Tip 원문 */
+const HS_FIN = [
+  '나라의 넓이를 재어 큰 나라와 작은 나라로 구분해요',
+  '대륙의 이름을 보고 구분해요',
+  '적도를 선으로 그어 그것을 기준으로 북쪽과 남쪽으로 구분해요'
+];
+const HS_FIN_OK = 2;
+const HS_FIN_NO = [
+  '나라의 <b>넓이</b>로는 어느 쪽에 있는지 알 수 없어요. 판에 그은 선을 떠올려 봐요.',
+  '대륙의 <b>이름</b>만으로는 어느 쪽에 있는지 알 수 없어요. 판에 그은 선을 떠올려 봐요.',
+  null
+];
+
+/* 안내 — ★ 어긋난 대륙 안내에 알맞은 대륙 이름이 들어가지 않는다. */
+const HS_DUP = '이 나라는 <b>이미 놓았어요.</b> 아직 놓지 않은 나라를 놓아 봐요. 판은 그대로예요.';
+const HS_PICK_FIRST = '먼저 <b>나라를 하나 골라</b> 봐요. 판은 그대로예요.';
+const HS_CONT_NO = '그 나라는 <b>다른 대륙</b>에 있어요. 판은 그대로예요.';
+const HS_ORDER_E = '아직 <b>나라를 다 놓지 않았어요.</b> 여덟 나라를 모두 놓은 뒤에 그어 봐요. 판은 그대로예요.';
+const HS_ALREADY_E = '<b>이미 그었어요.</b> 선은 한 번만 그으면 돼요. 판은 그대로예요.';
+const HS_ORDER_R = '아직 <b>선을 긋지 않았어요.</b> 먼저 그어야 판을 읽을 수 있어요. 판은 그대로예요.';
+const HS_ORDER_F = '아직 <b>판을 읽지 않았어요.</b> 판을 먼저 읽어 봐요. 판은 그대로예요.';
+const HS_EQ_MSG = '선을 한 번 그었을 뿐인데 <b>판의 칸이 둘에서 셋</b>이 됐어요. 어느 칸이 갈라졌는지 살펴봐요.';
+
+/* ★★ 반구를 읽는 자리 — 코드에 이 한 곳뿐이다. */
+function hsHemiOf(i){ return HS_HEMI[i]; }
+/* ★★ 어느 칸이 쪼개지는지 — 이 한 줄이 다 정한다. 쪼개짐을 따로 담는 상수도 상태도 없다. */
+function hsSplit(st,c){ let n=0,s=0; for(let i=0;i<HS_LAND_N;i++){ if(HS_OWNER[i]===c && ((st.hsPut>>i)&1)){ if(hsHemiOf(i)) s++; else n++; } } return n>0 && s>0; }
+function hsBits(m){ let n=0; for(let i=0;i<HS_LAND_N;i++){ if((m>>i)&1) n++; } return n; }
+function hsAllPut(st){ return hsBits(st.hsPut)===HS_LAND_N; }
+/* 판의 칸 수 — 상수가 아니라 판에 놓인 것이 정한다. */
+function hsCells(st){ let n=0; for(let c=0;c<HS_CONT_N;c++){ n += (st.hsEq && hsSplit(st,c)) ? 2 : 1; } return n; }
+function hsMine(st,c,half){ const out=[]; for(let i=0;i<HS_LAND_N;i++){ if(HS_OWNER[i]!==c) continue; if(!((st.hsPut>>i)&1)) continue; if(half!=null && hsHemiOf(i)!==half) continue; out.push({s:HS_LAND[i],i:i}); } return out; }
+
+function hsChips(list,y0){
+  return list.map((o,j)=>{ const x = 18 + (j%3)*96, y = y0 + Math.floor(j/3)*30;
+    return `<rect x="${x}" y="${y}" width="90" height="24" rx="6" fill="#D1FAE5" stroke="#047857" stroke-width="1"/>
+      <text x="${x+45}" y="${y+16}" font-size="6.2" fill="#065F46" text-anchor="middle" font-weight="800" data-land="${o.i}">${o.s}</text>`;
+  }).join('');
+}
+
+function hsCanvas(st){
+  const fin = st.hsFin!=null, allput = hsAllPut(st);
+  const head = fin ? '유럽과 아프리카의 나라를 살펴봤어요'
+    : st.hsRead!=null ? '판을 읽었어요 \u2014 이제 정리해요'
+    : st.hsEq ? '어느 칸이 갈라졌는지 살펴봐요'
+    : allput ? '이제 적도를 그어 봐요'
+    : '나라를 골라 알맞은 대륙에 놓아 봐요';
+
+  /* 유럽 칸 — ★ 이 구간은 hsEq를 읽지 않는다. 적도를 그어도 글자 하나 달라지지 않는다. */
+  const e = hsMine(st,0,null);
+  const euro = `<g data-cont="0" data-split="0" data-contn="${e.length}">
+    <rect x="12" y="30" width="296" height="64" rx="8" fill="${e.length?'#ECFDF5':'#fff'}" stroke="${e.length?'#047857':'#E2E8F0'}" stroke-width="${e.length?1.4:1}"/>
+    <text x="160" y="45" font-size="8" fill="#065F46" text-anchor="middle" font-weight="800">${HS_CONT[0]}</text>
+    <text x="160" y="55" font-size="5.4" fill="#64748B" text-anchor="middle" font-weight="700">${HS_CONT_D[0]}</text>
+    ${hsChips(e,62)}
+    ${e.length===0?`<text x="160" y="78" font-size="6" fill="#CBD5E0" text-anchor="middle" font-weight="700" data-empty="0">아직 비어 있어요</text>`:''}
+  </g>`;
+
+  /* 아프리카 칸 — ★ 적도를 그으면 이 칸만 위아래 둘로 갈라진다. */
+  const split = st.hsEq && hsSplit(st,1);
+  let afri;
+  if(split){
+    const nn = hsMine(st,1,0), ss = hsMine(st,1,1);
+    afri = `<g data-cont="1" data-split="1" data-contn="${nn.length+ss.length}">
+      <g data-half="0" data-halfn="${nn.length}">
+        <rect x="12" y="100" width="296" height="62" rx="8" fill="#ECFDF5" stroke="#047857" stroke-width="1.4"/>
+        <text x="160" y="115" font-size="7.4" fill="#065F46" text-anchor="middle" font-weight="800">${HS_CONT[1]} \u00b7 ${HS_HALF[0]}</text>
+        ${hsChips(nn,120)}
+      </g>
+      <line x1="12" y1="167" x2="308" y2="167" stroke="#DC2626" stroke-width="1.8" stroke-dasharray="7 4"/>
+      <text x="286" y="164" font-size="6" fill="#B91C1C" text-anchor="middle" font-weight="800" data-eqline="1">적도</text>
+      <g data-half="1" data-halfn="${ss.length}">
+        <rect x="12" y="172" width="296" height="46" rx="8" fill="#FFFBEB" stroke="#B45309" stroke-width="1.4"/>
+        <text x="160" y="184" font-size="7.4" fill="#92400E" text-anchor="middle" font-weight="800">${HS_CONT[1]} \u00b7 ${HS_HALF[1]}</text>
+        ${hsChips(ss,188)}
+      </g>
+    </g>`;
+  } else {
+    const a = hsMine(st,1,null);
+    afri = `<g data-cont="1" data-split="0" data-contn="${a.length}">
+      <rect x="12" y="100" width="296" height="118" rx="8" fill="${a.length?'#ECFDF5':'#fff'}" stroke="${a.length?'#047857':'#E2E8F0'}" stroke-width="${a.length?1.4:1}"/>
+      <text x="160" y="115" font-size="8" fill="#065F46" text-anchor="middle" font-weight="800">${HS_CONT[1]}</text>
+      <text x="160" y="125" font-size="5.4" fill="#64748B" text-anchor="middle" font-weight="700">${HS_CONT_D[1]}</text>
+      ${hsChips(a,132)}
+      ${a.length===0?`<text x="160" y="165" font-size="6" fill="#CBD5E0" text-anchor="middle" font-weight="700" data-empty="1">아직 비어 있어요</text>`:''}
+    </g>`;
+  }
+
+  const cells = hsCells(st), putn = hsBits(st.hsPut);
+  const cellmsg = st.hsEq ? `판의 칸 ${cells}개 \u2014 아프리카 칸만 둘로 갈라졌어요` : `판의 칸 ${cells}개 \u2014 선을 그으면 달라질 수 있어요`;
+  return `<svg viewBox="0 0 320 280" data-put="${st.hsPut}" data-putn="${putn}" data-eq="${st.hsEq?1:0}" data-cells="${cells}" data-read="${st.hsRead==null?-1:st.hsRead}" data-fin="${fin?1:0}">
+    <rect width="320" height="280" fill="#fff"/>
+    <rect x="12" y="8" width="296" height="16" rx="6" fill="#D1FAE5"/>
+    <text x="160" y="20" font-size="7.6" fill="#065F46" text-anchor="middle" font-weight="800">${head}</text>
+    ${euro}
+    ${afri}
+    <rect x="12" y="226" width="296" height="20" rx="6" fill="#FEF3C7"/>
+    <text x="160" y="240" font-size="7" fill="#92400E" text-anchor="middle" font-weight="800" data-cellmsg="1">${cellmsg}</text>
+    <rect x="12" y="252" width="296" height="18" rx="6" fill="#F1F5F9"/>
+    <text x="160" y="264" font-size="6.4" fill="#334155" text-anchor="middle" font-weight="800" data-tally="1">놓은 나라 ${putn} / ${HS_LAND_N} \u00b7 판에 놓인 나라는 갈라져도 그대로예요</text>
+  </svg>`;
+}
+
+function hsPanel(st){
+  const fin = st.hsFin!=null, allput = hsAllPut(st);
+  const q = fin ? '유럽과 아프리카의 나라를 살펴봤어요.'
+    : st.hsRead!=null ? '오늘 공부한 내용을 어떻게 정리하면 좋을까요?'
+    : st.hsEq ? '판의 칸이 둘에서 셋이 됐어요. 어느 칸이 왜 갈라졌을까요?'
+    : allput ? '여덟 나라를 모두 놓았어요. 이제 선을 한 번 그어 봐요.'
+    : (st.hsSel!=null ? `<b>${HS_LAND[st.hsSel]}</b>은(는) 어느 대륙에 있을까요?` : '나라를 하나 골라 봐요. 어느 나라부터 골라도 좋아요.');
+  let right = `<div class="hs-q">${q}</div>`;
+
+  if(fin){
+    right += `<div class="dw-card"><div class="pt">\u2702\uFE0F 선 하나가 칸을 갈랐어요</div>
+      선을 <b>한 번</b> 그었을 뿐인데 판의 칸이 <b>둘에서 셋</b>이 됐어요. 갈라진 것은
+      <b>아프리카 칸 하나뿐</b>이고, <b>유럽 칸은 글자 하나 달라지지 않았어요.</b><br>
+      어느 칸이 갈라질지는 판이 미리 정해 둔 것이 아니라 <b>그 칸에 놓인 나라들</b>이 정했어요.
+      아프리카에 놓인 나라들은 두 쪽에 걸쳐 있었고, 유럽에 놓인 나라들은 한쪽에만 있었기 때문이에요.<br>
+      그리고 <b>나라는 한 나라도 자리를 옮기지 않았어요.</b> 갈라진 것은 <b>칸</b>이지 나라가 아니에요.<br>
+      <span style="color:#64748B">판의 그림은 나라가 어느 대륙에 속하는지와 <b>적도를 기준으로 어느 쪽에 있는지</b>를
+      나타낸 도식이지 실제 세계지도나 지구본이 아니에요. 판은 나라의 <b>넓이를 재지 않아요.</b>
+      <b>적도를 그어 구분해 보는 활동</b>은 교실에서 세계지도를 펴고 직접 해요.</span></div>`;
+  } else if(st.hsRead!=null){
+    right += `<div class="dw-step">\uD83D\uDCDA 오늘의 정리</div>`;
+    right += `<div class="hs-fin">${HS_FIN.map((t,k)=>`<button class="${st.hsWrongF===k?'no':''}" onclick="hsFinish(${k})">${t}</button>`).join('')}</div>`;
+  } else if(st.hsEq){
+    right += `<div class="dw-step">\uD83D\uDD0E 판을 읽어요</div>`;
+    right += `<div class="hs-read">${HS_READ.map((t,k)=>`<button class="${st.hsWrongR===k?'no':''}" onclick="hsReadPick(${k})">${t}</button>`).join('')}</div>`;
+  } else if(allput){
+    right += `<div class="dw-step">\u2702\uFE0F 선을 그어요</div>`;
+    right += `<div class="hs-go"><button onclick="hsEquator()">적도를 그어요</button></div>`;
+    right += `<div class="hs-note">선을 한 번 그으면 판이 달라질 수 있어요. <b>어느 칸이 달라질지</b> 먼저 짐작해 봐요.
+      긋는 자리에는 옳고 그름이 없어요.</div>`;
+  } else {
+    right += `<div class="dw-step">\uD83C\uDF0D 나라를 놓아요</div>`;
+    right += `<div class="hs-pad">${HS_LAND.map((t,i)=>`<button class="${((st.hsPut>>i)&1)?'on':(st.hsSel===i?'sel':'')}" onclick="hsPick(${i})">${t}</button>`).join('')}</div>`;
+    if(st.hsSel!=null){
+      right += `<div class="hs-go">${HS_CONT.map((t,k)=>`<button class="${st.hsWrongC===k?'no':''}" onclick="hsPlace(${k})">${t}에 놓기</button>`).join('')}</div>`;
+    } else {
+      right += `<div class="hs-note">나라를 고르면 <b>어느 대륙에 있는지</b> 물어봐요.</div>`;
+    }
+  }
+  if(st.hsMsg) right += `<div class="dw-msg${st.hsWarn?' warn':''}">${st.hsMsg}</div>`;
+
+  return `<div class="dw-wrap">
+    <div style="text-align:center"><b style="color:var(--green)">\u2702\uFE0F 선 하나로 칸이 갈라지는 판</b></div>
+    <div class="dw-body">
+      <div class="dw-canvas">${hsCanvas(st)}<div class="cvcap">판의 그림은 나라가 <b>어느 대륙에 속하는지</b>와 <b>적도를 기준으로 어느 쪽에 있는지</b>를 나타낸 도식이지 실제 세계지도나 지구본이 아니에요. 판은 넓이를 재지 않아요.</div></div>
+      <div class="dw-right">${right}</div>
+    </div>
+  </div>`;
+}
+
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "3단원 지구, 대륙 그리고 국가들 · 주제② 세계 여러 국가의 위치와 영토 모습";
+
+// 확인 4 + 적용 4 — 정답 다양화 [0,2,1,3,3,1,2,0](각 자리 2회)
+// ⚠️ 문항 내 연도·쪽수·거리·시각·비율 0 · 북아메리카와 남아메리카의 나라 0(12차시 몫) · 「식민지」 0.
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"<b>유럽</b> 대륙에 대한 설명으로 알맞은 것은 무엇인가요?",
+   opts:["우랄산맥을 경계로 아시아의 서쪽에 있으며, 북쪽으로 북극해, 서쪽으로 대서양과 접해 있다","우랄산맥을 경계로 아시아의 동쪽에 있으며, 남쪽으로 인도양과 접해 있다","아시아 다음으로 넓은 대륙으로, 북반구와 남반구에 걸쳐 있다","넓은 대륙이지만 나라의 수가 가장 적다"],
+   correct:0, pts:POINTS_BASIC, scene:"cont",
+   h1:"교과서 [꼭 기억해요] 1번의 빈칸에 들어가는 대양을 떠올려 봐요.",
+   h2:"유럽은 <b>작은 대륙</b>이지만 나라는 많아요.",
+   reason:"<b>유럽</b>은 우랄산맥을 경계로 아시아의 서쪽에 있으며, 북쪽으로 <b>북극해</b>, 서쪽으로 <b>대서양</b>과 접해 있어요. 작은 대륙이지만 많은 나라가 있어요."},
+  {stem:"<b>노르웨이</b>의 영토 특징으로 알맞은 것은 무엇인가요?",
+   opts:["국경선 일부가 직선으로 반듯하다","접해 있는 바다가 없다","북동쪽에서 남서쪽으로 길게 뻗어 있으며, 해안선이 복잡하다","섬 하나로만 이루어져 있다"],
+   correct:2, pts:POINTS_BASIC, scene:"euro",
+   h1:"조작의 판에서 노르웨이는 <b>어느 대륙 칸</b>에 놓였나요?",
+   h2:"바닷가의 선이 <b>구불구불한지 반듯한지</b> 떠올려 봐요.",
+   reason:"<b>노르웨이</b>는 북동쪽에서 남서쪽으로 <b>길게 뻗어</b> 있으며 <b>해안선이 복잡해요.</b> 스발바르 제도에는 우리나라의 다산 과학 기지가 있어요."},
+  {stem:"<b>에티오피아</b>의 위치와 영토 특징으로 알맞은 것은 무엇인가요?",
+   opts:["아프리카의 남쪽 끝에 있으며, 두 대양과 접해 있다","아프리카 동부에 있으며, 여러 나라에 둘러싸여 있어 접해 있는 바다가 없다","유럽의 서쪽에 있는 섬나라이다","아시아와 육지로 이어져 있다"],
+   correct:1, pts:POINTS_BASIC, scene:"afri",
+   h1:"에티오피아를 <b>둘러싼 것</b>은 바다였나요, 다른 나라였나요?",
+   h2:"수단, 케냐, 소말리아 등 <b>여러 나라</b>에 둘러싸여 있어요.",
+   reason:"<b>에티오피아</b>는 아프리카 <b>동부</b>에 있어요. 여러 나라에 둘러싸여 있어 <b>접해 있는 바다가 없어요.</b>"},
+  {stem:"<b>아프리카</b> 대륙에 대한 설명으로 알맞은 것은 무엇인가요?",
+   opts:["유럽의 북쪽에 있다","북반구에만 있다","세계에서 가장 작은 대륙이다","유럽의 남쪽에 있으며, 북반구와 남반구에 걸쳐 있다"],
+   correct:3, pts:POINTS_BASIC, scene:"hemi",
+   h1:"조작의 판에서 <b>둘로 갈라진 칸</b>은 어느 대륙이었나요?",
+   h2:"교과서 [꼭 기억해요] 2번이 고른 대륙이에요.",
+   reason:"<b>아프리카</b>는 유럽의 <b>남쪽</b>에 있으며, <b>북반구와 남반구에 걸쳐</b> 있어요. 아시아 다음으로 넓은 대륙이고, 가장 많은 나라가 있어요."},
+  // 4단계 적용 (+15)
+  {stem:"조작의 판에서 선을 한 번 그었더니 <b>아프리카 칸만</b> 둘로 갈라졌어요. 그 까닭으로 알맞은 것은 무엇인가요?",
+   opts:["아프리카에 놓인 나라가 더 많았기 때문이에요","아프리카가 더 넓은 대륙이기 때문이에요","판이 아프리카 칸을 갈라 놓기로 미리 정해 두었기 때문이에요","아프리카에 놓인 나라들이 적도의 위쪽과 아래쪽에 걸쳐 있었기 때문이에요"],
+   correct:3, pts:POINTS_APPLY,
+   h1:"유럽에 놓인 세 나라는 모두 <b>적도의 한쪽</b>에만 있었어요.",
+   h2:"칸이 갈라지는 것을 정한 것은 판이 아니라 <b>그 칸에 놓인 나라들</b>이었어요.",
+   reason:"아프리카에 놓인 나라들은 적도의 <b>위쪽과 아래쪽에 걸쳐</b> 있었어요. 그래서 그 칸만 둘로 갈라졌어요. 유럽에 놓인 나라들은 한쪽에만 있어서 유럽 칸은 갈라지지 않았어요."},
+  {stem:"조작의 판에서 칸이 갈라졌는데도 <b>나라는 한 나라도 자리를 옮기지 않았어요.</b> 그 까닭으로 알맞은 것은 무엇인가요?",
+   opts:["나라가 옮겨 갈 자리가 남아 있지 않았기 때문이에요","갈라진 것은 <b>칸</b>이지 나라가 아니기 때문이에요","판이 나라를 잠가 두었기 때문이에요","선을 한 번만 그었기 때문이에요"],
+   correct:1, pts:POINTS_APPLY,
+   h1:"선을 긋기 전과 뒤에 판에 놓인 나라는 <b>여덟</b> 그대로였어요.",
+   h2:"아프리카에 놓인 다섯 나라도 <b>여전히 아프리카</b>에 있었어요.",
+   reason:"선이 가른 것은 <b>칸</b>이에요. 나라는 놓인 대륙에 그대로 있고, 다만 <b>적도를 기준으로 어느 쪽인지</b>가 함께 보이게 된 것이에요."},
+  {stem:"<b>이집트</b>의 위치와 영토 특징으로 알맞은 것은 무엇인가요?",
+   opts:["아프리카의 남쪽 끝에 있다","해안선이 복잡해 구불구불하다","아프리카의 북동쪽 끝에 있으며, 국경선 일부가 직선으로 반듯해 영토의 모양이 사각형과 비슷하다","접해 있는 바다가 없다"],
+   correct:2, pts:POINTS_APPLY, scene:"afri",
+   h1:"이집트는 <b>아시아와 육지로 이어져</b> 있고 유럽과 가까워요.",
+   h2:"영토의 모양이 어떤 <b>도형</b>과 비슷하다고 했나요?",
+   reason:"<b>이집트</b>는 아프리카의 <b>북동쪽 끝</b>에 있어요. 아시아와 육지로 이어져 있고 유럽과 가까우며, <b>국경선 일부가 직선으로 반듯</b>해 영토의 모양이 <b>사각형</b>과 비슷해요."},
+  {stem:"유럽과 아프리카의 나라에 대한 설명으로 <b>알맞지 않은</b> 것은 무엇인가요?",
+   opts:["독일은 접해 있는 바다가 전혀 없다","영국은 유럽의 서쪽에 있는 섬나라이다","남아프리카 공화국은 아프리카의 남쪽 끝에 있다","독일은 아홉 나라와 국경을 맞대고 있다"],
+   correct:0, pts:POINTS_APPLY, scene:"euro",
+   h1:"독일의 <b>북쪽</b>은 무엇과 맞닿아 있었나요?",
+   h2:"접해 있는 바다가 없는 나라는 <b>다른 나라</b>였어요.",
+   reason:"<b>독일</b>은 아홉 나라와 국경을 맞대고 있고, <b>북쪽은 바다와도 맞닿아</b> 있어요. 접해 있는 바다가 없는 나라는 에티오피아예요."}
+];
+
+/* ===== 슬라이드 18매 ===== */
+const slides=[];
+// 1 들어가기 — [동기 유발] 세계지도에서 아는 나라 이름 말하기
+slides.push({stage:1,badge:"들어가기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s1">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">아는 나라의 이름을 떠올려 봐요</h2>
+  <div class="ka-grp">
+  <div class="paper"><div class="ph">\uD83C\uDF0F 지난 시간에는</div>
+    아시아와 <b>오세아니아</b>의 여러 나라를 살펴봤어요. 오늘은 <b>다른 두 대륙</b>의 나라를 살펴봐요.</div>
+  <div class="scene-row">${sceneCard('open','아는 나라를 떠올려 봐요','wide')}</div>
+  <div class="tipbox">세계지도를 살펴봐요. <b>유럽</b>과 <b>아프리카</b> 대륙에 있는 나라 가운데 아는 나라의 이름을
+    말해 볼까요? 유럽에는 <b>스위스</b>, <b>프랑스</b>, <b>영국</b> 같은 나라가 있고,
+    아프리카에는 <b>케냐</b>, <b>에티오피아</b> 같은 나라가 있어요.</div>
+  <div class="note">오늘은 <b>유럽</b>과 <b>아프리카</b>의 여러 나라를 살펴봐요.</div></div>`});
+// 2 살펴보기 — reveal: 두 대륙의 자리
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">유럽과 아프리카는 어디에 있을까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('cont','두 대륙의 자리','wide')}</div>
+    <div class="tipbox"><b>유럽</b>은 <b>우랄산맥</b>을 경계로 아시아의 서쪽에 있으며, 북쪽으로 <b>북극해</b>,
+      서쪽으로 <b>대서양</b>과 접해 있어요. 작은 대륙이지만 많은 나라가 있어요.<br>
+      <b>아프리카</b>는 유럽의 <b>남쪽</b>에 있으며, 아시아 다음으로 넓은 대륙이에요. 동쪽은 <b>인도양</b>,
+      서쪽은 <b>대서양</b>과 접해 있고, 가장 많은 나라가 있어요.</div>
+    <div class="paper"><div class="ph">\uD83E\uDDE9 먼저 생각해 봐요</div>
+      아프리카는 적도를 기준으로 <b>어느 쪽</b>에 있을까요? 한쪽에만 있을까요, 두 쪽에 걸쳐 있을까요?</div>
+    ${st.revealed?`<div class="answer-box">· 아프리카는 <b>북반구와 남반구에 걸쳐</b> 있어요.<br>
+      · 그래서 아프리카에 속한 나라 가운데에는 <b>적도의 위쪽</b>에 있는 나라도 있고 <b>아래쪽</b>에 있는 나라도 있어요.<br>
+      · 유럽과 아시아는 <b>우랄산맥</b>을 경계로 갈라요. 산맥의 서쪽은 유럽이에요.<br>
+      <span style="color:#64748B">대륙의 자리는 교실에서 세계지도와 지구본을 펴고 함께 찾아봐요.</span></div>`
+      :`<div class="note">적도가 어디를 지나는지 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 3 살펴보기 — 직접조작(선 하나로 칸이 갈라지는 판)
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">선 하나로 칸이 갈라져요</h2>
+  ${hsPanel(st)}`});
+// 4 살펴보기 — 유럽의 여러 나라
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">유럽에는 어떤 나라가 있을까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('euro','유럽의 여러 나라','wide')}</div>
+    <div class="sum-list">
+      <div class="sum-item"><span class="n">\u2460</span><div><b style="color:var(--green)">노르웨이</b> \u2014 북동쪽에서 남서쪽으로 길게 뻗어 있으며, 해안선이 복잡해요. 스발바르 제도에는 우리나라의 다산 과학 기지가 있어요.</div></div>
+      <div class="sum-item"><span class="n">\u2461</span><div><b style="color:var(--green)">영국</b> \u2014 유럽의 서쪽에 있는 섬나라예요. 본초 자오선이 지나며, 우리나라와 영토의 면적이 비슷해요.</div></div>
+      <div class="sum-item"><span class="n">\u2462</span><div><b style="color:var(--green)">독일</b> \u2014 아홉 나라와 국경을 맞대고 있으며, 북쪽은 바다와도 맞닿아 있어요. 북쪽에서 남쪽으로 갈수록 지형이 높아지고, 큰 강이 남북으로 흘러요.</div></div>
+    </div>
+    <div class="note">낱말 \u2014 <b>제도</b>는 모든 섬 또는 여러 섬을 뜻해요.</div></div>`});
+// 5 살펴보기 — reveal: [스스로 활동] 지도를 읽고 설명 잇기
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">지도를 읽고 알맞은 설명을 이어요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('link','설명과 나라를 이어요','wide')}</div>
+  <div class="paper"><div class="ph">\uD83D\uDDFA\uFE0F 지도를 읽어 봐요</div>
+    <b>스위스</b>, <b>프랑스</b>, <b>핀란드</b>, <b>아이슬란드</b>는 각각 어떤 설명에 해당할까요?
+    지도에서 네 나라의 자리를 먼저 찾아봐요.</div>
+  ${st.revealed?`<div class="answer-box">· <b>아이슬란드</b> \u2014 바다로 둘러싸인 나라예요.<br>
+    · <b>스위스</b> \u2014 바다에 접하지 않은 나라예요.<br>
+    · <b>프랑스</b> \u2014 본초 자오선이 지나는 나라예요.<br>
+    · <b>핀란드</b> \u2014 러시아와 국경을 마주한 나라예요.<br>
+    <span style="color:#64748B">러시아의 영토는 <b>우랄산맥</b>을 기준으로 서쪽은 유럽이고 동쪽은 아시아예요.</span></div>`
+    :`<div class="note">바다에 닿아 있는지, 다른 나라에 둘러싸여 있는지 먼저 살펴봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 6 살펴보기 — 아프리카의 여러 나라
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">아프리카에는 어떤 나라가 있을까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('afri','아프리카의 여러 나라','wide')}</div>
+    <div class="sum-list">
+      <div class="sum-item"><span class="n">\u2460</span><div><b style="color:var(--green)">남아프리카 공화국</b> \u2014 아프리카의 남쪽 끝에 있으며, 동쪽으로 인도양, 서쪽으로 대서양과 접해 있어요.</div></div>
+      <div class="sum-item"><span class="n">\u2461</span><div><b style="color:var(--green)">에티오피아</b> \u2014 아프리카 동부에 있어요. 수단, 케냐, 소말리아 등 여러 나라에 둘러싸여 있어 접해 있는 바다가 없어요.</div></div>
+      <div class="sum-item"><span class="n">\u2462</span><div><b style="color:var(--green)">이집트</b> \u2014 아프리카의 북동쪽 끝에 있어요. 아시아와 육지로 이어져 있고 유럽과 가까우며, 국경선 일부가 직선으로 반듯해 영토의 모양이 사각형과 비슷해요.</div></div>
+    </div>
+    <div class="note">나라마다 <b>자리</b>도 <b>영토의 모습</b>도 서로 달라요.</div></div>`});
+// 7 살펴보기 — reveal: [스스로 활동] 두 반구로 구분 + 국경선 + [풍덩]
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">적도를 그어 나눠 봐요</h2>
+  <div class="ka-grp">
+    <div class="paper"><div class="ph">\u2702\uFE0F 이렇게 해 봐요</div>
+      아프리카에 속한 나라들을 세계지도에서 찾아보고, <b>북반구에 있는 나라</b>와 <b>남반구에 있는 나라</b>로
+      구분해 써 봐요. 알제리, 수단, 나미비아, 리비아, 앙골라, 이집트, 나이지리아, 마다가스카르를 나눠 봐요.</div>
+    <div class="scene-row">${sceneCard('hemi','적도를 기준으로 나눠요','wide')}</div>
+    ${st.revealed?`<div class="answer-box">· <b>북반구에 있는 나라</b> \u2014 알제리, 수단, 리비아, 이집트, 나이지리아<br>
+      · <b>남반구에 있는 나라</b> \u2014 나미비아, 앙골라, 마다가스카르<br>
+      · 구분할 때는 <b>적도를 선으로 그어</b> 그것을 기준으로 북쪽과 남쪽으로 나눠요.<br>
+      · 노르웨이와 독일의 국경선은 <b>구불구불한</b> 모양이지만, 이집트의 국경선은 <b>일부가 반듯</b>해요.
+      아프리카 여러 나라의 국경선이 반듯한 까닭은 <b>과거 유럽의 여러 나라가 아프리카를 식민지로 삼으면서
+      원래 국경을 무시하고 위도나 경도에 따라 직선을 그어 이를 새로운 국경으로 삼았기 때문</b>이에요.</div>
+    <div class="scene-row">${sceneCard('inside','나라 안에 다른 나라','wide')}</div>
+    <div class="tipbox"><b>\uD83C\uDF0A 풍덩 사회 속으로 \u2014 나라 안에 다른 나라가 있어요</b><br>
+      세계 여러 나라 중에는 한 나라 안에 <b>섬처럼</b> 자리 잡은 나라들이 있어요.
+      유럽에 있는 <b>산마리노</b>와 <b>바티칸 시국</b>, 아프리카에 있는 <b>레소토</b>는 다른 나라의 영토에
+      둘러싸여 있어요.<br>
+      산마리노는 유럽 남부에 있으며 <b>이탈리아</b>의 영토에 둘러싸여 있어요. 유럽에서 바티칸 시국,
+      모나코 다음으로 작은 나라예요. 바티칸 시국은 이탈리아의 수도에 둘러싸여 있으며,
+      <b>세계에서 가장 작은 나라</b>예요. 레소토는 아프리카 남부에 있으며 <b>남아프리카 공화국</b>의 영토에
+      둘러싸여 있고, 영토의 모양이 직사각형과 비슷해요.<br>
+      낱말 \u2014 <b>시국</b>은 하나의 도시로 이루어진 국가를 뜻해요.</div>`
+      :`<div class="note">적도가 지나는 자리를 떠올리고 위아래로 갈라 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 8~15 문항
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리: 요약
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부한 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('sum','오늘의 정리','wide')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">①</span><div><b style="color:var(--green)">유럽</b> — 북쪽으로 북극해, 서쪽으로 대서양과 접해 있어요. 노르웨이, 영국, 독일 등이 있어요.</div></div>
+    <div class="sum-item"><span class="n">②</span><div><b style="color:var(--green)">아프리카</b> — 북반구와 남반구에 걸쳐 있어요. 남아프리카 공화국, 에티오피아, 이집트 등이 있어요.</div></div>
+    <div class="sum-item"><span class="n">③</span><div><b style="color:var(--green)">에티오피아</b> — 여러 나라에 둘러싸여 있어 접해 있는 바다가 없어요.</div></div>
+    <div class="sum-item"><span class="n">④</span><div><b style="color:var(--green)">이집트</b> — 국경선 일부가 직선으로 반듯해요.</div></div>
+    <div class="sum-item"><span class="n">★</span><div><b style="color:var(--green)">오늘의 조작</b> — 선을 <b>한 번</b> 그었더니 판의 칸이 <b>둘에서 셋</b>이 됐어요. 갈라진 것은 <b>칸</b>이지 나라가 아니었어요.</div></div>
+  </div>
+  <div class="note">나라의 실제 자리와 모양은 <b>교실에서</b> 세계지도와 지구본을 펴고 살펴봐요.</div></div>`});
+// 17 정리: 자기 평가
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부를 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"유럽과 아프리카 대륙의 위치와 특징을 설명할 수 있어요",st)}
+    ${selfCheck(1,"두 대륙에 속한 여러 나라의 위치와 영토 특징을 설명할 수 있어요",st)}
+    ${selfCheck(2,"적도를 기준으로 나라를 두 쪽으로 구분할 수 있어요",st)}
+  </div><div class="note">별이 적게 채워진 곳은 앞 슬라이드를 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">오늘 공부를 마쳤어요!</h2>
+  <div class="ka-grp">
+    <div class="scene-row">${sceneCard('done','','wide')}</div>
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">다음 시간에는 <b style="color:var(--amber)">북아메리카와 남아메리카</b>의 여러 나라를 살펴봐요!</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">\u2B55 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g6_social_u3_l07";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  hsPut:0, hsSel:null, hsEq:false, hsRead:null, hsFin:null,
+  hsWrongC:null, hsWrongR:null, hsWrongF:null,
+  hsMsg:null, hsWarn:false, hsBusy:false,
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 \u2192';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+
+
+
+
+function hsRender(){ main.innerHTML = slides[state.idx].render(state); }
+function hsHold(msg){
+  state.hsWarn=true; state.hsBusy=true; state.hsMsg=msg;
+  playThud(); hsRender();
+  setTimeout(()=>{ state.hsBusy=false; state.hsWarn=false; state.hsMsg=null;
+    state.hsWrongC=null; state.hsWrongR=null; state.hsWrongF=null; hsRender(); },1600);
+}
+
+/* ① 나라 고르기 — 고르는 자리에는 옳고 그름이 없다(정답 상수 부재). */
+function hsPick(i){
+  if(state.hsFin!=null) return;                                        // 가드①
+  if(state.hsBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(i) || i<0 || i>=HS_LAND_N) return;              // 가드②
+  if(hsAllPut(state)) return;                                          // 다 놓은 뒤에는 고르는 자리가 없다
+  if((state.hsPut>>i)&1){ hsHold(HS_DUP); return; }                    // 가드③ 판 불변
+  state.hsSel = i;
+  state.hsWarn=false; state.hsWrongC=null; state.hsMsg=null;
+  playBlip(); hsRender();
+}
+
+/* ② 대륙에 놓기 — 어긋나면 판 불변. ★ 안내에 알맞은 대륙 이름이 들어가지 않는다. */
+function hsPlace(k){
+  if(state.hsFin!=null) return;                                        // 가드①
+  if(state.hsBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(k) || k<0 || k>=HS_CONT_N) return;              // 가드②
+  if(state.hsSel==null){ hsHold(HS_PICK_FIRST); return; }              // 판 불변
+  const i = state.hsSel;
+  if(k!==HS_OWNER[i]){ state.hsWrongC=k; hsHold(HS_CONT_NO); return; } // 가드④ 판 불변
+  state.hsPut |= (1<<i);                                               // ★ 나라가 놓이는 자리는 여기 한 곳뿐
+  state.hsSel = null;
+  state.hsWarn=false; state.hsWrongC=null;
+  state.hsMsg = hsAllPut(state)
+    ? `<b>${HS_LAND[i]}</b>은(는) <b>${HS_CONT[k]}</b>에 있어요. ${HS_LAND_D[i]} 여덟 나라를 모두 놓았어요 \u2014 이제 <b>선을 그어</b> 봐요.`
+    : `<b>${HS_LAND[i]}</b>은(는) <b>${HS_CONT[k]}</b>에 있어요. ${HS_LAND_D[i]}`;
+  playBlip(); hsRender();
+}
+
+/* ③ 적도 긋기 — ★★ 이 걸음이 이 패턴의 핵심이다.
+   선을 한 번 그으면 이미 있던 칸 하나가 둘로 쪼개져 판의 칸이 둘에서 셋이 된다.
+   어느 칸이 쪼개질지는 판이 아니라 그 칸에 놓인 것이 정한다(`hsSplit`).
+   ★ 긋는 자리에는 옳고 그름이 없다 — 정답 상수가 코드에 없고 감점도 없다. */
+function hsEquator(){
+  if(state.hsFin!=null) return;                                        // 가드①
+  if(state.hsBusy) return;                                             // 가드⑨
+  if(!hsAllPut(state)){ hsHold(HS_ORDER_E); return; }                  // 가드⑤ 순서 — 판 불변
+  if(state.hsEq){ hsHold(HS_ALREADY_E); return; }                      // 가드⑥ 판 불변
+  state.hsEq = true;                                                   // ★ 판이 갈라지는 자리는 여기 한 곳뿐
+  state.hsWarn=false;
+  state.hsMsg = HS_EQ_MSG;
+  playBlip(); hsRender();
+}
+
+/* ④ 판 읽기 — 적도를 그어야 열린다(가드⑦). 어긋나면 판 불변. */
+function hsReadPick(k){
+  if(state.hsFin!=null) return;                                        // 가드①
+  if(state.hsBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(k) || k<0 || k>=HS_READ.length) return;         // 가드②
+  if(!state.hsEq){ hsHold(HS_ORDER_R); return; }                       // 가드⑦ ★핵심 — 판 불변
+  if(state.hsRead!=null){ hsHold(HS_ALREADY_E); return; }              // 판 불변
+  if(k===HS_READ_OK){
+    state.hsRead=k; state.hsWrongR=null; state.hsWarn=false;
+    state.hsMsg = '판을 잘 읽었어요. 갈라진 것은 <b>칸</b>이지 나라가 아니에요 \u2014 나라는 놓인 자리에 그대로 있어요.';
+    playChime(); hsRender(); return;
+  }
+  state.hsWrongR=k;
+  hsHold(HS_READ_NO[k]);
+}
+
+/* ⑤ 마무리 — 지도서 11차시 지도 꿀 Tip 원문 */
+function hsFinish(k){
+  if(state.hsFin!=null) return;                                        // 가드①
+  if(state.hsBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(k) || k<0 || k>=HS_FIN.length) return;          // 가드②
+  if(state.hsRead==null){ hsHold(HS_ORDER_F); return; }                // 가드⑧ 순서 — 판 불변
+  if(k===HS_FIN_OK){
+    state.hsFin=k; state.hsWrongF=null; state.hsMsg=null; state.hsWarn=false;
+    playChime(); hsRender(); return;
+  }
+  state.hsWrongF=k;
+  hsHold(HS_FIN_NO[k]);
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2;
+    if(qs.hint>=2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">\uD83D\uDCD8 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 \u2192</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // 3단원 7차시 미양산 — 양산 시 재배선
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+</body>

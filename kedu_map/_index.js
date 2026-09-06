@@ -130,7 +130,7 @@ window.KEDU_MAP_INDEX = [
   "key": "g6_1_social",
   "units": 3,
   "lessons": 36,
-  "ready": 32
+  "ready": 33
  },
  {
   "key": "g6_2_math",

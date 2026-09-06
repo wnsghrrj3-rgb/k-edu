@@ -348,14 +348,14 @@ window.KEDU_MAP["g6_1_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u3_l07",
+     "lessonId": "g6_social_u3_l07_v1",
      "n": "7",
      "title": "유럽과 아프리카의 여러 나라를 살펴볼까요 / [풍덩] 나라 안에 다른 나라가 있어요",
      "sub": "② 세계 여러 국가의 위치와 영토 모습",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/social/3단원_지구대륙그리고국가들/g6_social_u3_l07_한칸이갈라져요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
