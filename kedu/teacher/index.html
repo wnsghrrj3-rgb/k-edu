@@ -281,6 +281,8 @@ let curGrade = null;
 let onSubject = false;
 /* 학기 — 자기주도 홈과 같은 키를 쓴다. 저장값이 없으면 오늘 날짜로(3~7월 1학기, 8~2월 2학기). */
 let curSemester = (function(){ const v = +localStorage.getItem('kedu_semester'); if(v===1||v===2) return v; const m = new Date().getMonth()+1; return (m>=3&&m<=7)?1:2; })();
+const READY2 = {};   // 2학기 실물 표 — 생기면 여기에 "1_math": {...} 식으로 채운다
+function READY2_HAS(g){ return Object.keys(READY2).some(k => k.startsWith(g + "_")); }
 function setSemester(s){ curSemester = +s; localStorage.setItem('kedu_semester', s); if(curGrade) pickGrade(curGrade, true); }
 
 // ----- 학년 그리드 렌더 -----
@@ -312,7 +314,13 @@ function pickGrade(g, rerender){
   curGrade = g;
   document.getElementById("bc-grade").textContent = g + "학년";
   document.getElementById("badge-num").textContent = g;
-  document.querySelectorAll('#sem-toggle button').forEach(b => b.classList.toggle('on', +b.dataset.sem === curSemester));
+  // 2학기 실물이 아직 없으면 잠긴 카드만 보여 주는 대신 1학기를 펼친다(저장값은 건드리지 않음) — 연수·시연에서 빈 화면을 만나지 않게 (2026-09-07)
+  const semShown = (curSemester === 2 && !READY2_HAS(g)) ? 1 : curSemester;
+  document.querySelectorAll('#sem-toggle button').forEach(b => b.classList.toggle('on', +b.dataset.sem === semShown));
+  const psub = document.querySelector('#s-subject .psub');
+  if(psub) psub.textContent = (curSemester === 2 && semShown === 1)
+    ? '2학기 수업은 준비 중이라 1학기 차시를 보여드려요. 준비된 과목은 차시 목록으로 바로 들어갑니다.'
+    : '준비된 과목은 차시 목록으로 바로 들어갑니다. 준비 중인 과목은 곧 추가됩니다.';
 
   const subs = (g <= 2) ? SUB_LOW : SUB_HIGH;
   const grid = document.getElementById("subject-grid");
@@ -321,7 +329,7 @@ function pickGrade(g, rerender){
   subs.forEach(sub => {
     const key = g + "_" + sub.id;
     // 케이티처 실물은 지금 1학기뿐 — 2학기는 학년·과목을 가리지 않고 「준비 중」으로 잠근다.
-    const info = curSemester === 1 ? READY[key] : null;
+    const info = semShown === 1 ? READY[key] : null;
     const ready = !!info;
 
     const card = document.createElement("div");
@@ -329,7 +337,7 @@ function pickGrade(g, rerender){
 
     const meta = ready
       ? `${info.units}개 단원 · ${info.lessons}차시`
-      : (curSemester === 2 ? "2학기 수업은 준비 중이에요" : "준비 중인 과목이에요");
+      : (semShown === 2 ? "2학기 수업은 준비 중이에요" : "준비 중인 과목이에요");
 
     card.innerHTML = `
       <div class="sc-ic">${sub.i}</div>
