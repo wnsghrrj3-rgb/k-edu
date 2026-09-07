@@ -368,14 +368,14 @@ window.KEDU_MAP["g6_1_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u3_l09",
+     "lessonId": "g6_social_u3_l09_v1",
      "n": "9",
-     "title": "[생각을 펼쳐요]",
+     "title": "[생각을 펼쳐요] 가 보고 싶은 나라를 정해 여행 경로 나타내기",
      "sub": "② 세계 여러 국가의 위치와 영토 모습",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester1/social/3단원_지구대륙그리고국가들/g6_social_u3_l09_돌아와야닫혀요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
