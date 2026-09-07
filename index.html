@@ -393,16 +393,16 @@ footer{padding-top:8px;padding-bottom:10px}
         </div>
         <div class="nh-entry-row">
           <label for="entry-nickname">닉네임</label>
-          <input class="nh-input" id="entry-nickname" type="text" placeholder="동의 받은 반만 · 없으면 비워 두세요" maxlength="20" autocomplete="off">
+          <input class="nh-input" id="entry-nickname" type="text" placeholder="동의 받은 반만 · 없으면 비워 두세요" maxlength="20" autocomplete="nickname" readonly onfocus="this.removeAttribute('readonly')" onpointerdown="this.removeAttribute('readonly')">
         </div>
         <!-- 비밀번호(4자리) — 서버가 pin_setup / pin_required 로 말해 줄 때만 열린다 (sql/setup_seat_pin.sql #40) -->
         <div class="nh-entry-row nh-pin-row" id="entry-pin-row" style="display:none">
           <label for="entry-pin" id="entry-pin-label">비밀번호</label>
-          <input class="nh-input" id="entry-pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="숫자 4자리" autocomplete="off">
+          <input class="nh-input" id="entry-pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="숫자 4자리" autocomplete="new-password">
         </div>
         <div class="nh-entry-row nh-pin-row" id="entry-pin2-row" style="display:none">
           <label for="entry-pin2">한 번 더</label>
-          <input class="nh-input" id="entry-pin2" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="같은 숫자 4자리" autocomplete="off">
+          <input class="nh-input" id="entry-pin2" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="같은 숫자 4자리" autocomplete="new-password">
         </div>
         <div class="nh-pin-hint" id="entry-pin-hint" style="display:none"></div>
         <label class="nh-consent" id="entry-consent-wrap" style="display:none">
@@ -672,7 +672,7 @@ let currentProfile = null; // student_profiles row
     if(pre){
       const ci = document.getElementById('entry-class-code');
       if(ci){ ci.value = pre.toUpperCase().slice(0,12); }
-      setTimeout(()=>{ try { document.getElementById('entry-card')?.scrollIntoView({block:'center'}); document.getElementById('entry-nickname')?.focus(); updateEntryBtn(); } catch(e){} }, 300);
+      setTimeout(()=>{ try { document.getElementById('entry-card')?.scrollIntoView({block:'center'}); (function(n){ if(n){ n.removeAttribute('readonly'); n.focus(); } })(document.getElementById('entry-nickname')); updateEntryBtn(); } catch(e){} }, 300);
     }
   } catch(e){}
   try {
