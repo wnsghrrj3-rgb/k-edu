@@ -133,6 +133,12 @@ window.KEDU_MAP_INDEX = [
   "ready": 35
  },
  {
+  "key": "g6_2_korean",
+  "units": 1,
+  "lessons": 7,
+  "ready": 7
+ },
+ {
   "key": "g6_2_math",
   "units": 6,
   "lessons": 58,
