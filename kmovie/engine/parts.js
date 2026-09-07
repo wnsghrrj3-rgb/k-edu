@@ -43,6 +43,28 @@
     split:     { cat: 'bc', hold: [1.2, 4.2], thumbT: 2.2, font: 'pretendard' },
     reflect:   { cat: 'bc', hold: [1.5, 4.2], thumbT: 2.4, font: 'playfair' },
     outline:   { cat: 'bc', hold: [0.8, 4.3], thumbT: 1.6, font: 'jua' },
+    // 화면 효과 21종 (engine/vfx.js) — self: 화면 전체를 쓴다(축 변환·무대 없음), loop: 카드를 늘여도 시간 재매핑 없이 그대로 흐른다(봉투는 p._len)
+    vfxGrain:     { cat: 'fx', hold: null, thumbT: 1.0, self: true, loop: true },
+    vfxVignette:  { cat: 'fx', hold: null, thumbT: 1.0, self: true, loop: true },
+    vfxFlare:     { cat: 'fx', hold: null, thumbT: 1.2, self: true, loop: true },
+    vfxSweep:     { cat: 'fx', hold: null, thumbT: 0.6, self: true },
+    vfxRays:      { cat: 'fx', hold: null, thumbT: 1.5, self: true, loop: true },
+    vfxGlow:      { cat: 'fx', hold: null, thumbT: 1.0, self: true, loop: true },
+    vfxSoft:      { cat: 'fx', hold: null, thumbT: 1.0, self: true, loop: true },
+    vfxTilt:      { cat: 'fx', hold: null, thumbT: 1.0, self: true, loop: true },
+    vfxGlitch:    { cat: 'fx', hold: null, thumbT: 0.05, self: true, loop: true },
+    vfxRgb:       { cat: 'fx', hold: null, thumbT: 1.0, self: true, loop: true },
+    vfxPunch:     { cat: 'fx', hold: null, thumbT: 0.08, self: true },
+    vfxShake:     { cat: 'fx', hold: null, thumbT: 1.0, self: true, loop: true },
+    vfxFlash:     { cat: 'fx', hold: null, thumbT: 0.05, self: true },
+    vfxOldFilm:   { cat: 'fx', hold: null, thumbT: 1.0, self: true, loop: true },
+    vfxDuotone:   { cat: 'fx', hold: null, thumbT: 1.0, self: true, loop: true },
+    vfxLetterbox: { cat: 'fx', hold: null, thumbT: 1.0, self: true, loop: true },
+    vfxFrame:     { cat: 'fx', hold: null, thumbT: 1.0, self: true, loop: true },
+    vfxDust:      { cat: 'fx', hold: null, thumbT: 1.5, self: true, loop: true },
+    vfxParticles: { cat: 'fx', hold: null, thumbT: 2.0, self: true, loop: true },
+    vfxBokeh:     { cat: 'fx', hold: null, thumbT: 1.5, self: true, loop: true },
+    vfxSpot:      { cat: 'fx', hold: null, thumbT: 1.0, self: true, loop: true },
   };
   const CATS = [
     { id: 'title',  name: '타이틀' },
@@ -89,7 +111,8 @@
   function remap(card, lf, FPS) {
     const d = def(card.part); if (!d) return lf / FPS;
     const N = d.dur, D = card.dur / FPS, t = lf / FPS;
-    const hold = meta(card.part).hold;
+    const mt = meta(card.part), hold = mt.hold;
+    if (mt.loop) return t;                                        // 화면 효과: 늘여도 같은 속도로 흐른다
     if (Math.abs(D - N) < 1 / FPS) return t;
     if (!hold) return t * N / D;                                 // 비례
     const ha = hold[0], hb = hold[1], intro = ha, outro = N - hb, holdN = hb - ha;
@@ -140,7 +163,7 @@
     }
     if (fx && fx.alpha <= 0.003) return;
     const gm = gm0, ax = W * gm.ax, ay = BH * gm.ay;
-    if (gm.self) p = Object.assign({}, p, { _size: gm.sizeK, _ax: gm.set ? gm.ax : null, _ay: gm.set ? gm.ay : null, _dx: gm.dx, _dy: gm.dy });
+    if (gm.self) p = Object.assign({}, p, { _size: gm.sizeK, _ax: gm.set ? gm.ax : null, _ay: gm.set ? gm.ay : null, _dx: gm.dx, _dy: gm.dy, _len: card.dur / g.KMV_PROJECT.FPS });
     const outerK = gm.self ? 1 : gm.sizeK, odx = gm.self ? 0 : gm.dx * W, ody = gm.self ? 0 : gm.dy * BH;
     const paint = c2 => {
       c2.save();

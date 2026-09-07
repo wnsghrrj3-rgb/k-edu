@@ -23,7 +23,7 @@ await page.goto(`http://127.0.0.1:${PORT}/kmovie/`); await page.waitForFunction(
 
 // ---------- 부품 12종 · 전부 그려짐 ----------
 const parts = await page.evaluate(() => {
-  const ids = KM_PARTS.list().map(d => d.id).sort();
+  const ids = KM_PARTS.list().map(d => d.id).filter(id => !id.startsWith('vfx')).sort();   // 화면 효과 21종은 ui-vfx 에서
   const cv = new OffscreenCanvas(480, 270), c = cv.getContext('2d');
   const drawn = {};
   for (const id of ids) {
@@ -33,9 +33,9 @@ const parts = await page.evaluate(() => {
     for (let i = 3; i < d.length; i += 16) if (d[i] > 8) px++;
     drawn[id] = px;
   }
-  return { ids, drawn };
+  return { ids, drawn, total: KM_PARTS.list().length };
 });
-ok(parts.ids.length === 28, '부품 28종 등록 (기존 12 + 방송 자막 16)');
+ok(parts.ids.length === 28 && parts.total === 49, '부품 28종 + 화면 효과 21종 = 49 등록');
 for (const id of ['quote', 'chapter', 'list', 'credits']) ok(typeof parts.drawn[id] === 'number' && parts.drawn[id] > 150, '새 부품 ' + id + ' 그려짐 (픽셀 ' + parts.drawn[id] + ')');
 ok(Object.values(parts.drawn).every(v => typeof v === 'number' && v > 50), '28종 전부 그려짐 (throw 0)' + (Object.entries(parts.drawn).filter(([k, v]) => !(typeof v === 'number' && v > 50)).map(([k, v]) => ' ' + k + ':' + v).join('') || ''));
 /* 방송 자막 16종 — 카드로 그려도(글꼴 기본값·홀드) 픽셀·결정성 */
@@ -74,7 +74,7 @@ const grid = await page.evaluate(() => ({
   cats: Array.from(document.querySelectorAll('#partGrid .cat')).map(e => e.textContent),
   cells: document.querySelectorAll('#partGrid .pc').length,
 }));
-ok(grid.cells === 28 && grid.cats.join('/') === '타이틀/정보 표시/인물 뒤 글자/방송 자막/화면 효과', '꾸미기 패널: 분류 5그룹 · 28칸 (' + grid.cats.join('/') + ')');
+ok(grid.cells === 49 && grid.cats.join('/') === '타이틀/정보 표시/인물 뒤 글자/방송 자막/화면 효과', '꾸미기 패널: 분류 5그룹 · 49칸 (' + grid.cats.join('/') + ')');
 
 // ---------- 자막 9종 · 분류 UI ----------
 const subUI = await page.evaluate(() => ({
@@ -185,7 +185,7 @@ const mag = await page.evaluate(() => { const P2 = KMV_PROJECT; P2.clearP(); con
   ok(pinned.pinned && pinned.shown && pinned.n === n0 && pinned.mark, '클릭 = 미리보기 고정(떠나도 남음), 아직 안 넣음');
   await page.click('#pkPlace'); await page.waitForTimeout(150);
   const placed = await page.evaluate(() => ({ n: KMV_PROJECT.data.P.length, last: KMV_PROJECT.data.P.some(x => x.part === 'stamp'), hidden: document.getElementById('partPeek').classList.contains('hidden'), parts: KMV_PROJECT.data.P.map(x => x.part + '@' + x.at).join(','), ph: KMV_UI.ph, peekId: KMV_PEEK.id }));
-  ok(placed.n === n0 + 1 && placed.last && placed.hidden, '「넣기」 → 플레이헤드에 놓이고 창 닫힘');
+  ok(placed.n === n0 + 1 && placed.last && placed.hidden, '「넣기」 → 플레이헤드에 놓이고 창 닫힘 ');
   await page.locator('#partGrid .pc[data-id="ribbon"]').dblclick(); await page.waitForTimeout(150);
   const dbl = await page.evaluate(() => ({ n: KMV_PROJECT.data.P.length, last: KMV_PROJECT.data.P.map(x => x.part).includes('ribbon') }));
   ok(dbl.n === n0 + 2 && dbl.last, '더블클릭 = 바로 놓기');

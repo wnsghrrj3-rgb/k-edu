@@ -252,7 +252,7 @@
   function play() {
     if (stage === 'src') { playSrc(); return; }
     const tot = P.total(); if (!tot || playing) return;
-    stopShuttle(); stopSrc();
+    stopShuttle(); stopSrc(); if (window.KMV_LIB) KMV_LIB.stop();
     if (ph >= tot - 1) ph = 0;
     playStart = ph; playing = true; shuttle = 1; $('tPlay').textContent = '❚❚ 정지';
     liveMode(true); renderPreview();
@@ -1839,7 +1839,8 @@
       box.appendChild(row);
     });
   }
-  const OPT_KO = { none: '없음', bottom: '아래', left: '왼쪽', center: '가운데', right: '오른쪽', navy: '네이비', black: '검정', white: '흰색', zoom: '줌', fade: '페이드', solid: '채움', outline: '윤곽', accent: '금색', top: '위', middle: '중간', slow: '느리게', normal: '보통', warm: '따뜻', gold: '금', cool: '차가움', ltr: '→', rtl: '←', topleft: '왼쪽 위', topright: '오른쪽 위', bottomright: '오른쪽 아래' };
+  const OPT_KO = { none: '없음', bottom: '아래', left: '왼쪽', center: '가운데', right: '오른쪽', navy: '네이비', black: '검정', white: '흰색', zoom: '줌', fade: '페이드', solid: '채움', outline: '윤곽', accent: '금색', top: '위', middle: '중간', slow: '느리게', normal: '보통', warm: '따뜻', gold: '금', cool: '차가움', ltr: '→', rtl: '←', topleft: '왼쪽 위', topright: '오른쪽 위', bottomright: '오른쪽 아래',
+    soft: '약', mid: '중', strong: '강', fine: '가늘게', coarse: '굵게', tight: '좁게', wide: '넓게', clean: '맑게', dreamy: '몽환', rare: '드물게', busy: '자주', still: '고정', pulse: '맥동', in: '안으로', out: '밖으로', hand: '핸드헬드', impact: '충격', quake: '진동', sepia: '세피아', bw: '흑백', faded: '바랜', navygold: '네이비·금', tealorange: '청록·주황', purplepink: '보라·분홍', greencream: '초록·크림', mono: '흑백', r239: '2.39:1', r200: '2:1', r185: '1.85:1', polaroid: '폴라로이드', film: '필름', line: '얇은 선', card: '카드', petal: '벚꽃', snow: '눈', leaf: '낙엽', firefly: '반딧불', mix: '섞임', small: '작게', large: '크게' };
   let partPanelFor = null;
   function refreshPartPanel() {
     const pt = selPart();
@@ -1939,6 +1940,39 @@
     const cur = genSpec.key || M0.keys[0];
     Array.from(ks.children).forEach(b => b.classList.toggle('on', b.dataset.k === cur));
   }
+
+  /* ---------- 내장 음원 라이브러리 (assets/library.json — 설계 v1 §2·§3) ---------- */
+  const LIB = window.KMV_LIB;
+  let libMood = null;
+  function fmtDur(sec) { sec = Math.round(sec || 0); return sec ? Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0') : ''; }
+  function buildLib() {
+    if (!LIB) return;
+    const d = LIB.get(), seg = $('libMoodSeg'), list = $('libList'), note = $('libNote');
+    seg.innerHTML = ''; list.innerHTML = '';
+    if (!d || !d.music.length) {
+      note.textContent = '';
+      $('libMoodRow').classList.add('hidden');
+      list.innerHTML = '<div class="note">아직 넣은 음원이 없어요 — 곡을 받아 <b>kmovie/assets/music/&lt;무드&gt;/</b> 에 넣고 <b>node kmovie/assets/scan.mjs</b> 를 돌리면 여기에 떠요 (받는 곳은 assets/README.md)</div>';
+      return;
+    }
+    $('libMoodRow').classList.remove('hidden');
+    const rc = LIB.realCount();
+    note.textContent = d.music.length + '곡' + (rc ? ' · 효과음 실음원 ' + rc + '개' : '');
+    segBtn(seg, '', '전부', () => { libMood = null; buildLib(); });
+    d.moods.forEach(m => segBtn(seg, m, m, () => { libMood = m; buildLib(); }));
+    Array.from(seg.children).forEach(b => b.classList.toggle('on', (b.dataset.k || null) === libMood));
+    LIB.music(libMood).forEach(item => {
+      const row = document.createElement('div'); row.className = 'lr'; row.dataset.id = item.id;
+      const pb = document.createElement('button'); pb.className = 'play' + (LIB.playing() === item.id ? ' on' : ''); pb.textContent = LIB.playing() === item.id ? '■' : '▶'; pb.title = '미리듣기'; pb.onclick = () => { stop(); LIB.preview(item); };
+      const t = document.createElement('span'); t.className = 't'; t.textContent = item.title; t.title = item.title + (item.source ? ' · ' + item.source : '') + (item.license ? ' · ' + item.license : '');
+      if (item.source || item.license) { const sm = document.createElement('small'); sm.textContent = ' ' + [item.license, item.source].filter(Boolean).join(' · '); t.appendChild(sm); }
+      const dd = document.createElement('span'); dd.className = 'd'; dd.textContent = fmtDur(item.dur);
+      const ab = document.createElement('button'); ab.className = 'gold'; ab.textContent = '＋'; ab.title = '플레이헤드에 놓기 (첫 곡은 처음에)';
+      ab.onclick = async () => { ab.disabled = true; try { await LIB.place(item); } catch (e) { toast(e.message || String(e), 4000); } ab.disabled = false; };
+      row.append(pb, t, dd, ab); list.appendChild(row);
+    });
+  }
+  if (LIB) { LIB.onChange(() => buildLib()); LIB.load().then(buildLib); }
 
   /* ---------- 효과음 (설계 v1 §3) ---------- */
   const SFX_GAINS = [[0.6, '조용히'], [1, '그대로'], [1.6, '크게']];

@@ -97,8 +97,12 @@
     if (real) return Promise.resolve(real);
     return fetch((base || 'sfx/') + 'index.json').then(r => r.ok ? r.json() : null).then(j => { real = j || {}; return real; }).catch(() => { real = {}; return real; });
   }
-  function buffer(actx, id) {
+  let realMap = null;                      // 합성 id → [AudioBuffer] (KMV_LIB 가 assets/sfx 에서 받아 넣음) — 있으면 합성보다 우선
+  function setReal(map) { realMap = map; }
+  function realFor(id, at) { const list = realMap && realMap.get(id); if (!list || !list.length) return null; return list[list.length === 1 ? 0 : Math.abs((at | 0) * 2654435761 | 0) % list.length]; }
+  function buffer(actx, id, at) {
     const def = byId(id); if (!def) return null;
+    const rb = realFor(id, at || 0); if (rb) return rb;
     const key = id;
     if (bufCache.has(key)) return bufCache.get(key);
     const x = def.make(SR, def.dur);
@@ -115,6 +119,6 @@
     n.buffer = buf; gn.gain.value = 0.9; n.connect(gn); gn.connect(actx.destination); n.start();
   }
 
-  g.KMV_SFX = { LIST, CATS, SR, byId, events, buffer, preview, loadReal, TR_SFX, PART_SFX, SUB_SFX,
+  g.KMV_SFX = { LIST, CATS, SR, byId, events, buffer, preview, loadReal, setReal, realFor, TR_SFX, PART_SFX, SUB_SFX,
     _clearCache: () => bufCache.clear() };
 })(typeof window !== 'undefined' ? window : globalThis);

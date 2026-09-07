@@ -390,7 +390,7 @@
     for (const ev of S.events()) {
       if (ev.at < fromFrame) continue;
       if (untilFrame != null && ev.at >= untilFrame) continue;
-      const buf = S.buffer(actx, ev.id); if (!buf) continue;
+      const buf = S.buffer(actx, ev.id, ev.at); if (!buf) continue;
       const when = t0 + (ev.at - fromFrame) / FPS;
       let dur = buf.duration;
       if (capFrame != null) { const room = (capFrame - ev.at) / FPS; if (room <= 0.005) continue; dur = Math.min(dur, room); }
