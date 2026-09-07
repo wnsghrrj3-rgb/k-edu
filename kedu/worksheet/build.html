@@ -50,6 +50,12 @@ h1{font-family:'Gowun Batang',serif;font-size:26px;font-weight:700;margin:0 0 4p
 .task .lbl{color:var(--soft)}
 .task .tt{color:var(--muted);line-height:1.55}
 .task .row{margin-top:auto}
+.pgr td .lv{display:inline-flex;gap:2px}
+.pgr td .lv button{border:1px solid var(--rule);background:#fff;border-radius:6px;padding:2px 7px;font:inherit;font-size:12px;cursor:pointer;color:var(--muted)}
+.pgr td .lv button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.pgr td input.memo{width:160px;font-size:12px;padding:3px 6px}
+.pgr td .mis label{display:inline-flex;gap:3px;align-items:center;font-size:11.5px;margin-right:6px;white-space:nowrap}
+.pgr .thumb{max-height:56px;border-radius:6px;vertical-align:middle}
 .cols{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start}
 @media(max-width:860px){.cols{grid-template-columns:1fr}}
 .panel{background:var(--card);border:1px solid var(--rule);border-radius:12px;padding:18px 20px}
@@ -179,10 +185,8 @@ function render(){
 }
 /* ②③ 은 아직 없는 화면이다 — 없는 것을 있는 척하지 않고, 무엇이 올지와 지금 대신 쓸 길을 적는다. */
 function renderSoon(which){
-  const SOON = {
-    grade: `<b>채점 그리드</b>는 다음 단계(W5)예요.<br>학생 행 × 기준 3 열, 수준 버튼 한 번 · 관찰 메모 · 오개념 체크 → 공개 순서로 이어집니다. 지금은 「연 과제」에서 제출 현황과 제출물을 볼 수 있어요.`
-  };
-  view.innerHTML = `<div class="soon">${SOON[which]}</div>`;
+  const SOON = { teacher_task: `<b>내 과제 만들기</b>는 다음 단계(W6)예요.` };
+  view.innerHTML = `<div class="soon">${SOON[which] || '준비 중이에요.'}</div>`;
 }
 
 /* ---------- 조립 화면 ---------- */
@@ -554,10 +558,18 @@ async function renderPerfRuns(){
   view.innerHTML = `<div class="panel">${runs.map(r => { const t = (tasks || []).find(x => x.id === r.task_id) || {}; const cls = CLASSES.find(c => c.id === r.class_code_id) || {}; const n = (r.performance_submissions && r.performance_submissions[0] && r.performance_submissions[0].count) || 0;
     return `<div class="setrow"><h3>${esc(t.title || '과제')} <span class="badge">${esc(t.area || '')}</span></h3>
       <div class="meta">학생 라벨 「${esc(t.student_label || '')}」 · 반 ${esc(cls.code || '')} · ${new Date(r.opened_at).toLocaleDateString('ko-KR')} · 제출 <b>${n}</b>${r.closed_at ? ' · <b>마감됨</b>' : ''}${r.reveal_to_student ? ' · 학생 공개' : ''}</div>
-      <div class="row"><button class="btn ghost" data-psubs="${r.id}">제출 보기</button><button class="btn ghost" data-pgrade="${r.id}">채점</button><button class="btn ghost" data-pclose="${r.id}" data-closed="${r.closed_at ? 1 : 0}">${r.closed_at ? '다시 열기' : '마감'}</button><a class="btn ghost" style="text-decoration:none" href="perf.html?run=${r.id}&preview=1">학생 화면 미리보기</a></div>
+      <div class="row"><button class="btn ghost" data-psubs="${r.id}">제출 보기</button><button class="btn" data-pgrade="${r.id}">채점 그리드</button><button class="btn ghost" data-preveal="${r.id}" data-who="s" data-s="${r.reveal_to_student ? 1 : 0}" data-p="${r.reveal_to_parent ? 1 : 0}">학생 공개 ${r.reveal_to_student ? '켬' : '끔'}</button><button class="btn ghost" data-preveal="${r.id}" data-who="p" data-s="${r.reveal_to_student ? 1 : 0}" data-p="${r.reveal_to_parent ? 1 : 0}">학부모 공개 ${r.reveal_to_parent ? '켬' : '끔'}</button><button class="btn ghost" data-pclose="${r.id}" data-closed="${r.closed_at ? 1 : 0}">${r.closed_at ? '다시 열기' : '마감'}</button><a class="btn ghost" style="text-decoration:none" href="perf.html?run=${r.id}&preview=1">학생 화면 미리보기</a></div>
       <div id="psub-${r.id}"></div></div>`; }).join('')}</div>`;
   view.querySelectorAll('[data-psubs]').forEach(b => b.onclick = () => showPerfSubs(b.dataset.psubs));
-  view.querySelectorAll('[data-pgrade]').forEach(b => b.onclick = () => renderSoon('grade'));
+  view.querySelectorAll('[data-pgrade]').forEach(b => b.onclick = () => showPerfGrade(b.dataset.pgrade));
+  /* 공개 = 학생/학부모 각각 수동 토글(§4-2 ④). 기본은 둘 다 끔 — 채점을 다 한 뒤 연다. */
+  view.querySelectorAll('[data-preveal]').forEach(b => b.onclick = async () => {
+    const curS = b.dataset.s === '1', curP = b.dataset.p === '1';
+    const ns = b.dataset.who === 's' ? !curS : curS, np = b.dataset.who === 'p' ? !curP : curP;
+    const { data, error } = await db.rpc('perf_reveal', { p_run_id: b.dataset.preveal, p_to_student: ns, p_to_parent: np });
+    if (error || data === false) return toast('바꾸지 못했어요 — SQL v5 적용 여부를 확인해 주세요.');
+    toast('공개 설정을 바꿨어요.'); renderPerfRuns();
+  });
   view.querySelectorAll('[data-pclose]').forEach(b => b.onclick = async () => {
     const closing = b.dataset.closed !== '1';
     const { error } = await db.from('performance_runs').update({ closed_at: closing ? new Date().toISOString() : null }).eq('id', b.dataset.pclose);
@@ -585,6 +597,52 @@ async function showPerfSubs(runId){
     return `<tr><td>${sp.seat_no ?? ''}</td><td class="nm">${esc(sp.nickname)}</td><td>${body}</td><td>${(s.checks || []).filter(Boolean).length}/${(s.checks || []).length} · ${new Date(s.submitted_at).toLocaleDateString('ko-KR')}</td></tr>`;
   }));
   box.innerHTML = `<table class="grid" style="margin-top:8px"><tr><th>번호</th><th>이름</th><th>제출물</th><th>조건 · 날짜</th></tr>${rows.join('')}</table>`;
+}
+
+/* ── ③ 채점 그리드 (W5, §4-2 ③) — 학생 행 × 기준 3 열, 수준 버튼 한 번 · 메모 · 관찰 포인트 M코드 ── */
+const LV = ['잘함', '보통', '노력'];
+async function showPerfGrade(runId){
+  const box = document.getElementById('psub-' + runId);
+  box.dataset.on = '1'; box.innerHTML = `<p class="hint">불러오는 중…</p>`;
+  const tasks = await loadTasks();
+  const { data: run } = await db.from('performance_runs').select('class_code_id, task_id').eq('id', runId).single();
+  const t = (tasks || []).find(x => x.id === run.task_id) || {};
+  const crit = (t.rubric && t.rubric.criteria) || [];
+  const obs = (t.observe_points || []).filter(o => o.mis_code);
+  const [{ data: sps }, { data: subs }, { data: res, error }] = await Promise.all([
+    db.from('student_profiles').select('id, nickname, seat_no').eq('class_code_id', run.class_code_id).order('seat_no').order('nickname'),
+    db.from('performance_submissions').select('student_id, kind, payload').eq('run_id', runId),
+    db.from('performance_results').select('student_id, levels, memo, mis_codes').eq('run_id', runId)
+  ]);
+  if (error){ box.innerHTML = `<p class="hint">채점 표를 읽을 수 없어요 — SQL v4·v5 적용 여부를 확인해 주세요.</p>`; return; }
+  const byS = {}; (subs || []).forEach(s => byS[s.student_id] = s);
+  const byR = {}; (res || []).forEach(r => byR[r.student_id] = r);
+  const thumbs = {};
+  await Promise.all((subs || []).map(async s => {
+    if (s.kind === 'photo' && s.payload && s.payload.path){ const { data: sg } = await db.storage.from('perf').createSignedUrl(s.payload.path, 600); thumbs[s.student_id] = sg && sg.signedUrl; }
+  }));
+  box.innerHTML = `<h3 style="margin:12px 0 4px">채점 그리드 · ${esc(t.title || '')} <span class="hint" style="font-weight:400">— 수준 버튼 한 번, 메모 한 줄. 저장은 행마다.</span></h3>
+    <div style="overflow:auto"><table class="grid pgr"><tr><th>번호</th><th>이름</th><th>제출물</th>${crit.map(c => `<th title="${esc(c.levels.map(l => l.label + ': ' + l.desc).join(' / '))}">${esc(c.name)}</th>`).join('')}<th>관찰</th><th>한마디</th><th></th></tr>
+    ${(sps || []).map(sp => { const s = byS[sp.id], r = byR[sp.id] || { levels: {}, mis_codes: [] };
+      const sub = !s ? '<span class="na">아직</span>' : s.kind === 'photo' ? (thumbs[sp.id] ? `<a href="${thumbs[sp.id]}" target="_blank"><img class="thumb" src="${thumbs[sp.id]}"></a>` : '(사진)') : `<div style="white-space:pre-wrap;text-align:left;max-width:260px;font-size:12px">${esc((s.payload && s.payload.text) || '')}</div>`;
+      return `<tr data-gsid="${sp.id}"><td>${sp.seat_no ?? ''}</td><td class="nm">${esc(sp.nickname)}</td><td>${sub}</td>
+        ${crit.map((c, ci) => `<td><span class="lv">${LV.map((l, li) => `<button data-lv="${ci}:${li}" class="${String(r.levels[String(ci)]) === String(li) ? 'on' : ''}">${l}</button>`).join('')}</span></td>`).join('')}
+        <td><span class="mis">${obs.map(o => `<label title="${esc(o.text)}"><input type="checkbox" data-mis="${esc(o.mis_code)}" ${(r.mis_codes || []).includes(o.mis_code) ? 'checked' : ''}>${esc(o.mis_code)}</label>`).join('')}</span></td>
+        <td><input class="memo" data-memo placeholder="한마디" value="${esc(r.memo || '')}"></td>
+        <td><button class="sw" data-gsave="${sp.id}">저장</button></td></tr>`; }).join('')}
+    </table></div>
+    <p class="hint">관찰 포인트의 M코드를 체크하면 케이학습리포트 「반에서 자주 걸리는 곳」에 신호로 합류해요. 학생 화면엔 공개 뒤 수준 라벨과 한마디만 보이고 점수 숫자는 없어요.</p>`;
+  box.querySelectorAll('[data-lv]').forEach(b => b.onclick = () => { const [ci] = b.dataset.lv.split(':'); b.closest('td').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); b.closest('tr').dataset.dirty = '1'; });
+  box.querySelectorAll('[data-gsave]').forEach(b => b.onclick = async () => {
+    const tr = b.closest('tr'), levels = {};
+    tr.querySelectorAll('[data-lv].on').forEach(x => { const [ci, li] = x.dataset.lv.split(':'); levels[ci] = Number(li); });
+    if (!Object.keys(levels).length) return toast('수준을 하나라도 골라 주세요.');
+    const mis = [...tr.querySelectorAll('input[data-mis]:checked')].map(i => i.dataset.mis);
+    const memo = tr.querySelector('[data-memo]').value.trim();
+    const { data, error } = await db.rpc('perf_grade', { p_run_id: runId, p_student_id: tr.dataset.gsid, p_levels: levels, p_memo: memo, p_mis_codes: mis });
+    if (error || data === false) return toast('저장하지 못했어요 — SQL v5 적용 여부를 확인해 주세요.');
+    b.textContent = '저장됨'; setTimeout(() => b.textContent = '저장', 1500);
+  });
 }
 
 /* ---------- 저장 ---------- */

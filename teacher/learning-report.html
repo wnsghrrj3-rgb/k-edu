@@ -570,6 +570,8 @@ async function loadStudent(studentId, classCodeId){
     db.from('report_misconception').select('*').eq('student_id', studentId),
     db.from('report_worksheet_runs').select('*').eq('student_id', studentId)
   ]);
+  // 수행평가 「해낸 것」(케이학습지 W5) — 뷰가 아직 없으면(SQL v5 미적용) 조용히 빈 목록
+  const perfRows = await db.from('report_performance').select('task_code,title,student_label,area,rubric,levels,memo,mis_codes,graded_at,reveal_to_student').eq('student_id', studentId).order('graded_at', { ascending: false }).then(r => r.data || []).catch(() => []);
   const s = sumRows && sumRows[0];
   if(!s){ showError('🔒','조회 권한이 없거나 데이터가 없습니다','본인 학급 학생만 조회할 수 있습니다.'); return; }
   await KR.loadCatalog((mastery||[]).map(m=>m.lesson_id).concat((scores||[]).map(r=>r.lesson_id), (wrongs||[]).map(w=>w.lesson_id)));
@@ -697,6 +699,13 @@ async function loadStudent(studentId, classCodeId){
         const sc = (w.last_run_score!=null && w.last_run_max) ? `${w.last_run_score}/${w.last_run_max}점` : `${w.correct_total}/${w.attempts_total}문항`;
         return `<div class="ws-row"><span><a href="${esc(KR.wsUrl(sid))}" target="_blank">${esc(KR.wsLabel(sid))}</a></span><span class="r">${sc} · ${w.runs||0}판 · ${esc(new Date(w.last_attempt_at).toLocaleDateString('ko-KR'))}</span></div>`;
       }).join('')}</div>
+    </div>` : ''}
+    ${perfRows.length ? `<div class="sec">
+      <div class="sec-h">🏅 해낸 것</div>
+      <div class="sec-sub">수행 과제. 기준마다 잘함·보통·노력 세 수준으로 본 것이고, 점수 숫자는 없습니다. 학생 화면에는 선생님이 공개한 것만 보입니다.</div>
+      <div class="ws-list">${perfRows.map(pr => { const crit = (pr.rubric && pr.rubric.criteria) || []; const LVK = ['잘함','보통','노력'];
+        const lv = crit.map((c, i) => { const v = pr.levels && pr.levels[String(i)]; return v == null ? null : `${esc(c.name)} <b>${LVK[v]}</b>`; }).filter(Boolean).join(' · ');
+        return `<div class="ws-row"><span>${esc(pr.title)} <span class="mini">${esc(pr.area)}${pr.reveal_to_student ? ' · 공개됨' : ''}</span><br><span class="mini">${lv}${pr.memo ? ' · 「' + esc(pr.memo) + '」' : ''}</span></span><span class="r">${esc(new Date(pr.graded_at).toLocaleDateString('ko-KR'))}</span></div>`; }).join('')}</div>
     </div>` : ''}
     <div class="sec">
       <div class="sec-h">📚 단원 진도</div>

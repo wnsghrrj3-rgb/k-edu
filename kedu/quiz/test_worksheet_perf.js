@@ -26,7 +26,9 @@ T(/'photo'/.test(seed) && /'text'/.test(seed), '산출물 종류가 사진·글 
 });
 var v4 = fs.readFileSync(path.join(ROOT, 'sql', 'setup_worksheet_v4.sql'), 'utf8');
 ['performance_tasks', 'performance_runs', 'performance_submissions', 'performance_results'].forEach(function (t) { T(new RegExp('CREATE TABLE IF NOT EXISTS ' + t).test(v4), 'v4 에 ' + t + ' 표가 없음'); T(new RegExp('ALTER TABLE ' + t + '\\s+ENABLE ROW LEVEL SECURITY').test(v4), t + ' RLS 미설정'); });
-T(/INSERT INTO storage\.buckets[^;]*'perf'[^;]*false/.test(v4), 'perf 버킷이 없거나 public 임');
+var v4s = fs.readFileSync(path.join(ROOT, 'sql', 'setup_worksheet_v4_storage.sql'), 'utf8');
+T(/INSERT INTO storage\.buckets[^;]*'perf'[^;]*false/.test(v4s), 'perf 버킷이 없거나 public 임');
+T(!/storage\./.test(v4.replace(/^--.*$/mg, '')), 'v4 본문에 storage 문이 남아 있음 — 한 트랜잭션에서 표까지 되돌아간다(2026-09-07 실측)');
 T(/CREATE OR REPLACE FUNCTION get_perf_run/.test(v4) && /v_class <> v_run\.class_code_id/.test(v4), 'get_perf_run 이 없거나 남의 반 학생을 안 막음');
 T(/CHECK \(kind IN \('photo','text'\)\)/.test(v4), '제출 종류가 사진·글로 제한되지 않음(§8-③)');
 T(/r\.closed_at IS NULL/.test(v4), '마감된 run 에 제출이 가능함(RLS WITH CHECK)');
@@ -96,7 +98,19 @@ boot('?run=r1', base).then(function (o) {
   T(/from\('performance_runs'\)\.insert\(\{ task_id: taskId, class_code_id: classId, teacher_id: ME\.id \}\)/.test(b), '우리 반에 열기가 performance_runs 를 안 만듦');
   T(/p_content_key: 'perf:' \+ run\.id, p_title: t\.student_label, p_kind: 'perf', p_url: '\/kedu\/worksheet\/perf\.html\?run=' \+ run\.id/.test(b), '케이박스 카드 키·라벨·주소가 설계(§4-2)와 다름');
   T(/얼굴이 나오지 않게/.test(b) && /얼굴이 나오지 않게/.test(html), '얼굴 사진 금지 안내가 교사·학생 화면에 없음');
-  T(/renderSoon\('grade'\)/.test(b) && /W5/.test(b), '채점 그리드가 아직 없다는 것을 말하지 않음(있는 척 금지)');
-  console.log('\n케이학습지 수행평가 W4 — ' + pass + ' PASS / ' + fail + ' FAIL');
+  /* ── ④ W5 채점 그리드·공개·리포트 — 정적 배선 ── */
+  T(/function showPerfGrade\(/.test(b) && /data-pgrade=/.test(b) && !/renderSoon\('grade'\)/.test(b), '채점 그리드가 없거나 아직 「준비 중」으로 남아 있음');
+  T(/db\.rpc\('perf_grade', \{ p_run_id: runId, p_student_id: tr\.dataset\.gsid, p_levels: levels, p_memo: memo, p_mis_codes: mis \}\)/.test(b), '채점 저장이 perf_grade RPC(기준별 수준·메모·M코드)로 안 나감');
+  T(/if \(!Object\.keys\(levels\)\.length\) return toast/.test(b), '수준을 하나도 안 고른 행이 저장됨');
+  T(/data-who="s"/.test(b) && /data-who="p"/.test(b) && /db\.rpc\('perf_reveal', \{ p_run_id: b\.dataset\.preveal, p_to_student: ns, p_to_parent: np \}\)/.test(b), '학생/학부모 공개가 각각 토글되지 않음(§4-2 ④)');
+  T(/점수 숫자는 없어요/.test(b), '채점 화면이 「점수 숫자 없음」 규약을 말하지 않음');
+  var v5 = fs.readFileSync(path.join(ROOT, 'sql', 'setup_worksheet_v5.sql'), 'utf8');
+  T(/CREATE VIEW report_performance[\s\S]*security_invoker = true/.test(v5), 'report_performance 뷰가 없거나 security_invoker 가 아님');
+  T(/FUNCTION perf_grade\(/.test(v5) && /ON CONFLICT \(run_id, student_id\) DO UPDATE/.test(v5) && /run\.teacher_id = v_tid AND sp\.id = p_student_id/.test(v5), 'perf_grade 가 없거나 담임·학급 검사·UPSERT 가 아님');
+  T(/FUNCTION perf_reveal\(/.test(v5) && /teacher_id = cw_my_teacher_id\(\)/.test(v5), 'perf_reveal 이 없거나 담임 검사가 없음');
+  var rep = fs.readFileSync(path.join(ROOT, 'teacher', 'learning-report.html'), 'utf8');
+  T(/report_performance/.test(rep) && /해낸 것/.test(rep) && /점수 숫자는 없습니다/.test(rep), '리포트 학생 카드에 「해낸 것」 칸이 없거나 점수 없음 규약을 안 말함');
+  T(/\.catch\(\(\) => \[\]\)/.test(rep.slice(rep.indexOf('report_performance'), rep.indexOf('report_performance') + 400)), '리포트가 SQL v5 미적용(뷰 없음)에서 죽음 — 조용히 빈 목록이어야 한다');
+  console.log('\n케이학습지 수행평가 W4·W5 — ' + pass + ' PASS / ' + fail + ' FAIL');
   process.exit(fail ? 1 : 0);
 }).catch(function (e) { console.log('예외: ' + e.stack); process.exit(1); });

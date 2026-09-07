@@ -30,7 +30,7 @@ T(/평가 · /.test(html.replace(/<!--[\s\S]*?-->/g, '').match(/CARD_LABEL = [^\
 T(/\|\| \(c0 \? \(c0\.lesson_no \? c0\.lesson_no \+ '차시 · ' : ''\) \+ c0\.name : '쪽지'\)/.test(html), '빈 제목의 기본값이 「N차시 · 개념」이 아님');
 /* ②③ 준비 중 문구 — 있는 척 금지 */
 var soon = (html.match(/function renderSoon[\s\S]*?\n\}/) || [''])[0];
-T(/grade:/.test(soon) && /W5/.test(soon), '아직 없는 화면(채점 그리드)이 「다음 단계」임을 말하지 않음 — 있는 척 금지');
+T(/teacher_task:/.test(soon) && /W6/.test(soon) && !/grade:/.test(soon), '아직 없는 화면(교사 자작)만 「다음 단계」로 남아야 한다 — 있는 척 금지·구현된 것에 준비 중 문구 금지');
 T(/unit:/.test(soon) === false && /perf:/.test(soon) === false, '②③이 구현됐는데 준비 중 문구가 남아 있음');
 
 /* ── 동작: 가짜 DB 로 조립 화면까지 띄운다 (원장 2개념·문항 16개·학급 1) ── */
@@ -215,6 +215,6 @@ ran.then(function () {
   dom2.window.getKeduDb = w.getKeduDb;
   try { dom2.window.eval(inline); } catch (e) { T(false, '?tab=mine 실행 예외: ' + e.message); }
   T(dom2.window.document.querySelector('#subTabs [data-tab="mine"]').classList.contains('on'), '?tab=mine 진입이 「내 쪽지」 탭을 안 켬(미리보기 돌아오기가 깨짐)');
-  console.log('\n케이학습지 build W1~W4 — ' + pass + ' PASS / ' + fail + ' FAIL');
+  console.log('\n케이학습지 build W1~W5 — ' + pass + ' PASS / ' + fail + ' FAIL');
   process.exit(fail ? 1 : 0);
 });
