@@ -76,7 +76,11 @@ function fakeDb() {
 var dom = new JSDOM(html, { runScripts: 'outside-only', url: 'https://x.test/kedu/worksheet/build.html' });
 var w = dom.window;
 w.getKeduDb = fakeDb;
-var inline = (html.match(/<script>\s*([\s\S]*?)\s*<\/script>/) || ['', ''])[1];
+/* 앱 스크립트 = 인라인 중 가장 큰 것. 「첫 인라인」으로 잡으면 화면에 작은 인라인 한 줄만 늘어도
+   그것을 앱으로 착각해 게이트가 통째로 죽는다 (2026-09-08 실제로 겪음) */
+var inline = (html.match(/<script>\s*([\s\S]*?)\s*<\/script>/g) || [])
+  .map(function (b) { return b.replace(/^<script>\s*|\s*<\/script>$/g, ''); })
+  .sort(function (a, b) { return b.length - a.length; })[0] || '';
 try { w.eval(inline); } catch (e) { T(false, '인라인 스크립트 실행 예외: ' + e.message); }
 var ran = new Promise(function (r) { setTimeout(r, 60); });
 ran.then(function () {

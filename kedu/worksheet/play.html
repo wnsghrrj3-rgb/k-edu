@@ -340,6 +340,21 @@ function makeVariant(q, r){
   if (q.kind === 'ox' && rule.truth){ const n = rint(rule.n[0], rule.n[1], r); const item = pick(rule.item, r); const truth = pick(rule.truth, r); const said = truth === 'O' ? n : (n === RNG_[1] ? n - 1 : n + 1);
     v.stem = `${item.repeat(n)}의 수는 '${NUMWORD[said]}'입니다.`; v.answer = truth; v.reason_options = [{t: truth === 'O' ? `${NUMWORD.slice(1, n+1).join(', ')} — ${n}개라서` : `세어 보면 ${NUMWORD[n]}, ${n}개라서`, correct:true}, {t:'모양이 크니까', mis:'M10'}];
     v.explanation = [`세어 보면 ${n}개, '${NUMWORD[n]}'이에요.`, truth === 'O' ? '맞는 말이에요.' : `'${NUMWORD[said]}'은 틀렸어요.`, '수를 셀 때는 개수만 보세요.']; return v; }
+  /* 크기 ≠ 개수 (OX) — 2026-09-08 검사기가 찾은 빈 갈래: big/small 규칙에 맞는 가지가 없어 「다시 해볼까?」가 같은 문제를 다시 냈다 */
+  if (q.kind === 'ox' && rule.big && rule.small){
+    const big = pick(rule.big, r), small = pick(rule.small, r);
+    const n = rint((rule.n || [2,4])[0], (rule.n || [2,4])[1], r);
+    const askBig = r() < 0.5;   // 큰 것 1개가 더 많다(X) / 작은 것 n개가 더 많다(O)
+    v.stem = askBig ? `큰 ${big} 1개는 작은 ${small.repeat(n)} ${n}개보다 수가 많습니다.`
+                    : `작은 ${small.repeat(n)} ${n}개는 큰 ${big} 1개보다 수가 많습니다.`;
+    v.answer = askBig ? 'X' : 'O';
+    v.reason_options = [{t:'수는 크기가 아니라 개수로 세니까', correct:true},
+                        {t:`${big}가 더 크니까`, mis:'M10'}];
+    v.explanation = [`${big}는 1개, ${small}는 ${n}개예요.`,
+                     `개수로 보면 ${small}가 더 많아요 — 크다고 수가 많은 게 아니에요.`,
+                     '크기를 가리고 개수만 세어 보세요.'];
+    return v;
+  }
   if (q.kind === 'sa' && rule.start && /규칙/.test(q.stem)){ const s = rint(rule.start[0], rule.start[1], r); v.asset = {type:'rule', cells:[s, s+1, s+2]}; v.answer = [String(s + 3)];
     v.stem = '점이 규칙대로 늘어나요. 다음 칸의 점은 몇 개인가요? 숫자로 쓰세요.'; v.explanation = ['점이 1개씩 늘어나는 규칙이에요.', `${s}, ${s+1}, ${s+2} 다음이니까 ${s+3}이에요.`, '각 칸의 점을 세어 규칙을 먼저 찾아보세요.']; return v; }
 
