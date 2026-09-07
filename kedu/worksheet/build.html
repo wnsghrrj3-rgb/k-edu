@@ -56,6 +56,14 @@ h1{font-family:'Gowun Batang',serif;font-size:26px;font-weight:700;margin:0 0 4p
 .pgr td input.memo{width:160px;font-size:12px;padding:3px 6px}
 .pgr td .mis label{display:inline-flex;gap:3px;align-items:center;font-size:11.5px;margin-right:6px;white-space:nowrap}
 .pgr .thumb{max-height:56px;border-radius:6px;vertical-align:middle}
+.mk label{display:block;font-size:12.5px;color:var(--muted);margin:10px 0 4px}
+.mk input[type=text],.mk textarea,.mk select{width:100%;font:inherit;font-size:14px;padding:8px 10px;border:1px solid var(--rule);border-radius:10px}
+.mk textarea{min-height:70px;resize:vertical}
+.mk .opt{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.mk .opt input[type=text]{flex:1}
+.mk .opt input[type=radio]{transform:scale(1.2)}
+.mk .lvrow{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;gap:6px;margin-bottom:6px}
+.badge.mine{background:#EBF4FF;color:#3b6fc9;border-color:#c9dcf7}
 .cols{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start}
 @media(max-width:860px){.cols{grid-template-columns:1fr}}
 .panel{background:var(--card);border:1px solid var(--rule);border-radius:12px;padding:18px 20px}
@@ -152,7 +160,7 @@ function toast(msg){ const t = document.getElementById('toast'); t.textContent =
 
   const [{ data: qs }, { data: cs }, { data: cc }] = await Promise.all([
     db.from('question_bank')
-      .select('id, qcode, grade, subject, unit_code, lesson_code, concept_code, difficulty, qkind, stem, misconception_codes, source_kind, source_set')
+      .select('id, qcode, grade, subject, unit_code, lesson_code, concept_code, difficulty, qkind, stem, misconception_codes, source_kind, source_set, source, teacher_id')
       .eq('is_active', true).order('grade').order('unit_code').order('lesson_code').order('difficulty').limit(2000),
     db.from('concepts').select('code, name, lesson_no, unit_code, grade').eq('is_active', true).order('ord'),
     db.from('class_codes').select('id, code, is_active').eq('teacher_id', t.id).eq('is_active', true)
@@ -162,6 +170,7 @@ function toast(msg){ const t = document.getElementById('toast'); t.textContent =
   if (!qs){ view.innerHTML = `<div class="gate">문항 원장을 읽을 수 없어요.<br>승인된 선생님 계정만 원장을 볼 수 있어요.</div>`; return; }
 
   BANK = qs; CONCEPTS = cs || []; CLASSES = cc || [];
+  db.from('misconceptions').select('code, title').eq('is_active', true).order('code').then(r => { MIS_LIST = r.data || []; }).catch(() => {});
   render();
 })();
 
@@ -185,8 +194,7 @@ function render(){
 }
 /* ②③ 은 아직 없는 화면이다 — 없는 것을 있는 척하지 않고, 무엇이 올지와 지금 대신 쓸 길을 적는다. */
 function renderSoon(which){
-  const SOON = { teacher_task: `<b>내 과제 만들기</b>는 다음 단계(W6)예요.` };
-  view.innerHTML = `<div class="soon">${SOON[which] || '준비 중이에요.'}</div>`;
+  view.innerHTML = `<div class="soon">준비 중이에요.</div>`;
 }
 
 /* ---------- 조립 화면 ---------- */
@@ -243,6 +251,12 @@ function renderBuild(){
         <button class="btn ghost" id="qaGo">배합대로 담기</button>
         <p class="hint">차시를 고르면 그 차시 개념이 자동으로 잡혀요. 기본 = D1·D2 위주, 도전 = D3·D4 위주. 같은 개념 안에서 유형이 겹치지 않도록 골라 담습니다.</p>
       </div>
+      <div class="panel" style="margin-top:16px">
+        <h2>내 문항 만들기 <span id="mkCount" style="color:var(--muted);font-weight:400">${BANK.filter(q => q.source === 'teacher').length}개</span></h2>
+        <p class="hint">객관식·단답·서술 하나. <b>개념 태그는 필수</b>예요 — 태그 없는 문항은 리포트에서 빠져서 만든 값어치가 사라져요. 내 문항은 나에게만 보이고 쪽지·단원 평가 어디든 담을 수 있어요.</p>
+        <button class="btn ghost" id="mkOpen">문항 만들기</button>
+        <div id="mkBox"></div>
+      </div>
     </div>
   </div>`;
 
@@ -251,6 +265,7 @@ function renderBuild(){
   document.getElementById('clear').onclick = () => { CART = []; drawList(); drawCart(); };
   document.getElementById('save').onclick = saveSet;
   document.getElementById('qaGo').onclick = quickAssemble;
+  document.getElementById('mkOpen').onclick = () => renderMakeQ(document.getElementById('mkBox'));
   // 차시 선택 → 그 차시의 첫 개념이 자동 선택(§2 「차시 선택 → 그 차시의 개념이 자동 체크」)
   document.getElementById('qaLesson').onchange = e => {
     const l = e.target.value, sel = document.getElementById('qaConcept');
@@ -272,7 +287,7 @@ function drawList(){
             <div class="stem">${esc(q.stem)}</div>
             <div class="tagrow">
               <span class="tag d${q.difficulty}">${DIFFNAME[q.difficulty]}</span>
-              <span class="tag">${KINDNAME[q.qkind] || q.qkind}</span>
+              <span class="tag">${KINDNAME[q.qkind] || q.qkind}${q.source === 'teacher' ? ' <span class="badge mine">내 문항</span>' : ''}</span>
               ${q.lesson_code ? `<span class="tag">${esc(q.lesson_code)}</span>` : ''}
               <span class="tag">${esc(cname)}</span>
               ${(q.misconception_codes || []).map(m => `<span class="tag mis">${esc(m)}</span>`).join('')}
@@ -495,7 +510,7 @@ async function saveUnit(){
    카드 라벨 = student_label(평가 단어 없음). 제출은 perf.html?run= 에서 사진·글(§8-③).
    채점 그리드·공개는 W5.
 ============================================================================ */
-let PTASKS = null;
+let PTASKS = null, MIS_LIST = [];
 async function loadTasks(){
   if (PTASKS) return PTASKS;
   const { data, error } = await db.from('performance_tasks').select('*').eq('is_active', true).order('grade').order('unit_code').order('code');
@@ -514,12 +529,15 @@ async function renderPerf(){
       <select id="pfClass">${CLASSES.length ? CLASSES.map(c => `<option value="${c.id}">${esc(c.code)}</option>`).join('') : '<option value="">학급 없음</option>'}</select></div>
     <p class="hint">여섯 영역 중 어느 것이든 한 단원에서 두 건이면 성취기준을 덮어요(카드 07 운영 메모). 학생 화면엔 「학생 라벨」로만 뜨고 평가 낱말은 없어요. <b>사진에 아이 얼굴이 나오지 않게</b> 안내해 주세요.</p>
     <div class="tasks" id="tasks"></div>
+    <div class="row"><button class="btn ghost" id="mtOpen">내 과제 만들기</button></div>
+    <div id="mtBox"></div>
   </div>`;
+  document.getElementById('mtOpen').onclick = () => { const key = f('pfUnit').split(' · '); renderMakeTask(document.getElementById('mtBox'), Number(key[0]), key[1], key[2]); };
   const draw = () => {
     const key = f('pfUnit');
     const list = tasks.filter(t => t.grade + '학년 · ' + t.subject + ' · ' + t.unit_code === key);
     document.getElementById('tasks').innerHTML = list.map(t => `<div class="task">
-      <h3>${esc(t.title)} <span class="badge">${esc(t.area)}</span><span class="badge">${t.product_kind === 'photo' ? '사진' : '글'}</span></h3>
+      <h3>${esc(t.title)} <span class="badge">${esc(t.area)}</span><span class="badge">${t.product_kind === 'photo' ? '사진' : '글'}</span>${t.source === 'teacher' ? '<span class="badge mine">내 과제</span>' : ''}</h3>
       <div class="lbl">학생 라벨 · ${esc(t.student_label)}</div>
       <div class="tt">${esc(t.task_text)}</div>
       <div class="hint">${esc(t.std_code || '')}${t.lesson_link ? ' · ' + esc(t.lesson_link) : ''}</div>
@@ -643,6 +661,108 @@ async function showPerfGrade(runId){
     if (error || data === false) return toast('저장하지 못했어요 — SQL v5 적용 여부를 확인해 주세요.');
     b.textContent = '저장됨'; setTimeout(() => b.textContent = '저장', 1500);
   });
+}
+
+/* ===================== 교사 자작 (W6, §3-1 ④ · §4-2 ① · §8-⑤) =====================
+   문항: 객관식(3~4지, 정답 1, 오답엔 오개념 코드 선택) · 단답(정답 여러 표기) · 서술(채점 포인트 1~3줄).
+   payload 는 원장 문항과 같은 모양이라 play.html 이 출처를 몰라도 그린다. source='teacher', teacher_id=나.
+   qcode = 't_<교사id 앞8>_<epoch>'. 개념 태그 필수(SQL CHECK 와 화면 둘 다).
+============================================================================ */
+function renderMakeQ(box){
+  if (box.innerHTML){ box.innerHTML = ''; return; }
+  const concepts = CONCEPTS.map(c => `<option value="${c.code}" data-grade="${c.grade}" data-unit="${c.unit_code}">${c.lesson_no ? c.lesson_no + '차시 · ' : ''}${esc(c.name)}</option>`).join('');
+  const misOpts = (MIS_LIST || []).map(m => `<option value="${esc(m.code)}">${esc(m.code)} ${esc(m.title || '')}</option>`).join('');
+  box.innerHTML = `<div class="mk">
+    <label>개념 (필수)</label><select id="mkConcept"><option value="">— 개념을 고르세요 —</option>${concepts}</select>
+    <div class="filters" style="margin-top:8px">
+      <select id="mkKind"><option value="mc">객관식</option><option value="sa">단답</option><option value="essay">서술</option></select>
+      <select id="mkDiff">${[1,2,3,4].map(d => `<option value="${d}"${d === 2 ? ' selected' : ''}>${DIFFNAME[d]}</option>`).join('')}</select>
+    </div>
+    <label>발문</label><textarea id="mkStem" placeholder="아이에게 보이는 그대로 써요."></textarea>
+    <div id="mkBody"></div>
+    <label>해설 3줄 (한 줄씩)</label>
+    <input type="text" id="mkExp1" placeholder="① 어떻게 푸는지"><input type="text" id="mkExp2" placeholder="② 답과 그 이유" style="margin-top:6px"><input type="text" id="mkExp3" placeholder="③ 다음에 조심할 것" style="margin-top:6px">
+    <div class="row"><button class="btn" id="mkSave">문항 저장</button><span class="hint" id="mkMsg"></span></div>
+  </div>`;
+  const body = document.getElementById('mkBody');
+  const drawBody = () => {
+    const k = f('mkKind');
+    if (k === 'mc') body.innerHTML = `<label>보기 (정답 하나에 ● · 오답엔 오개념 코드)</label>${[0,1,2,3].map(i => `<div class="opt"><input type="radio" name="mkAns" value="${i}" ${i === 0 ? 'checked' : ''}><input type="text" data-mko="${i}" placeholder="보기 ${i + 1}${i === 3 ? ' (비워도 됨)' : ''}"><select data-mkm="${i}" style="width:150px"><option value="">오개념 —</option>${misOpts}</select></div>`).join('')}`;
+    else if (k === 'sa') body.innerHTML = `<label>정답 (여러 표기는 쉼표로: 3, 셋)</label><input type="text" id="mkAns" placeholder="3, 셋">`;
+    else body.innerHTML = `<label>채점 포인트 1~3줄 (쉼표로)</label><input type="text" id="mkPts" placeholder="개수를 맞게 셌는가, 이유를 말했는가"><p class="hint">서술은 자동 채점이 없어요 — 학생이 보내면 결과 화면의 「서술형 채점」에서 봅니다(기본 3점).</p>`;
+  };
+  document.getElementById('mkKind').onchange = drawBody; drawBody();
+  document.getElementById('mkSave').onclick = saveMakeQ;
+}
+async function saveMakeQ(){
+  const msg = document.getElementById('mkMsg'); msg.textContent = '';
+  const code = f('mkConcept'); if (!code) return (msg.textContent = '개념 태그가 필요해요.');
+  const c = CONCEPTS.find(x => x.code === code) || {};
+  const kind = f('mkKind'), diff = Number(f('mkDiff')) || 2, stem = (document.getElementById('mkStem').value || '').trim();
+  if (!stem) return (msg.textContent = '발문을 써 주세요.');
+  const exp = ['mkExp1', 'mkExp2', 'mkExp3'].map(id => (document.getElementById(id).value || '').trim()).filter(Boolean);
+  if (exp.length < 1) return (msg.textContent = '해설을 한 줄이라도 써 주세요.');
+  const payload = { concept: code, difficulty: diff, kind, stem, explanation: exp };
+  let grading = 'auto', misCodes = [];
+  if (kind === 'mc'){
+    const ans = Number((document.querySelector('input[name=mkAns]:checked') || {}).value);
+    const opts = [0,1,2,3].map(i => ({ t: (document.querySelector(`[data-mko="${i}"]`).value || '').trim(), mis: document.querySelector(`[data-mkm="${i}"]`).value || null, i })).filter(o => o.t);
+    if (opts.length < 3) return (msg.textContent = '보기를 셋 이상 써 주세요.');
+    if (!opts.some(o => o.i === ans)) return (msg.textContent = '정답 보기가 비어 있어요.');
+    payload.options = opts.map(o => o.i === ans ? { t: o.t, correct: true } : (o.mis ? { t: o.t, mis: o.mis } : { t: o.t }));
+    misCodes = opts.filter(o => o.i !== ans && o.mis).map(o => o.mis);
+  } else if (kind === 'sa'){
+    const ans = (document.getElementById('mkAns').value || '').split(',').map(x => x.trim()).filter(Boolean);
+    if (!ans.length) return (msg.textContent = '정답을 써 주세요.');
+    payload.answer = ans;
+  } else {
+    payload.points = (document.getElementById('mkPts').value || '').split(',').map(x => x.trim()).filter(Boolean).slice(0, 3);
+    grading = 'teacher';
+  }
+  const qcode = 't_' + String(ME.id).slice(0, 8) + '_' + Date.now();
+  const row = { qcode, subject: c.subject || (BANK[0] && BANK[0].subject) || 'math', grade: c.grade || (BANK[0] && BANK[0].grade) || 1, unit_code: c.unit_code || (BANK[0] && BANK[0].unit_code) || 'u1',
+    lesson_code: c.lesson_no ? 'L' + String(c.lesson_no).padStart(2, '0') : null, source_set: 'teacher', source_kind: 'teacher',
+    concept_code: code, difficulty: diff, qkind: kind, grading, stem, misconception_codes: misCodes, has_variant: false, payload, is_active: true,
+    source: 'teacher', teacher_id: ME.id };
+  const { data, error } = await db.from('question_bank').insert(row).select('id, qcode, grade, subject, unit_code, lesson_code, concept_code, difficulty, qkind, stem, misconception_codes, source_kind, source_set, source, teacher_id').single();
+  if (error) return (msg.textContent = '저장하지 못했어요 — SQL v6(setup_worksheet_v6.sql) 적용 여부를 확인해 주세요.');
+  BANK.unshift(data); toast('내 문항을 저장했어요. 원장 목록 맨 위에 있어요.');
+  document.getElementById('mkBox').innerHTML = ''; drawList();
+  const mc = document.getElementById('mkCount'); if (mc) mc.textContent = BANK.filter(q => q.source === 'teacher').length + '개';
+}
+
+/* 자작 과제 (§4-2 ①) — 카드 규격 폼: 과제문·조건 3·루브릭 3×3, anchor 는 선택 */
+function renderMakeTask(box, grade, subject, unit){
+  if (box.innerHTML){ box.innerHTML = ''; return; }
+  const AREAS = ['조사·탐구', '만들기·표현', '발표·말하기', '문제해결 과정', '글쓰기', '관찰·실험'];
+  box.innerHTML = `<div class="mk panel" style="margin-top:12px">
+    <h2>내 과제 만들기 <span style="color:var(--muted);font-weight:400">${grade}학년 · ${esc(subject)} · ${esc(unit)}</span></h2>
+    <div class="filters"><select id="mtArea">${AREAS.map(a => `<option>${a}</option>`).join('')}</select><select id="mtKind"><option value="photo">사진 제출</option><option value="text">글 제출</option></select></div>
+    <label>과제 이름 (교사용)</label><input type="text" id="mtTitle" placeholder="예: 우리 집 수 찾기">
+    <label>학생 라벨 (아이 화면에 뜨는 이름 — 평가 낱말 없이)</label><input type="text" id="mtLabel" placeholder="예: 집 탐험 — 수를 찾아라!">
+    <label>과제문 (학생용, 큰 글씨로 읽어 줌)</label><textarea id="mtText"></textarea>
+    <label>조건 3</label><input type="text" id="mtC1" placeholder="조건 ①"><input type="text" id="mtC2" placeholder="조건 ②" style="margin-top:6px"><input type="text" id="mtC3" placeholder="조건 ③" style="margin-top:6px">
+    <label>루브릭 (기준 3 × 잘함·보통·노력 요함)</label>
+    ${[0,1,2].map(i => `<div class="lvrow"><input type="text" data-rn="${i}" placeholder="기준 ${i + 1}"><input type="text" data-r0="${i}" placeholder="잘함"><input type="text" data-r1="${i}" placeholder="보통"><input type="text" data-r2="${i}" placeholder="노력 요함"></div>`).join('')}
+    <label>성취기준 (선택)</label><input type="text" id="mtStd" placeholder="[2수01-01]">
+    <div class="row"><button class="btn" id="mtSave">과제 저장</button><span class="hint" id="mtMsg"></span></div>
+  </div>`;
+  document.getElementById('mtSave').onclick = async () => {
+    const msg = document.getElementById('mtMsg'); msg.textContent = '';
+    const v = id => (document.getElementById(id).value || '').trim();
+    const title = v('mtTitle'), label = v('mtLabel'), text = v('mtText');
+    if (!title || !label || !text) return (msg.textContent = '이름·학생 라벨·과제문은 꼭 써 주세요.');
+    if (/평가|시험|채점|점수/.test(label)) return (msg.textContent = '학생 라벨에는 평가·시험·채점·점수 낱말을 쓰지 않아요.');
+    const conds = ['mtC1', 'mtC2', 'mtC3'].map(v).filter(Boolean);
+    if (conds.length < 3) return (msg.textContent = '조건을 셋 다 써 주세요.');
+    const crit = [0,1,2].map(i => ({ name: (document.querySelector(`[data-rn="${i}"]`).value || '').trim(), levels: ['잘함', '보통', '노력 요함'].map((l, k) => ({ label: l, desc: (document.querySelector(`[data-r${k}="${i}"]`).value || '').trim() })) })).filter(c => c.name);
+    if (crit.length < 3 || crit.some(c => c.levels.some(l => !l.desc))) return (msg.textContent = '루브릭 기준 3개와 수준 설명 9칸을 채워 주세요.');
+    const row = { code: 't_' + String(ME.id).slice(0, 8) + '_' + Date.now(), grade, subject, unit_code: unit, area: f('mtArea'), title, student_label: label, task_text: text,
+      conditions: conds, rubric: { criteria: crit }, anchors: {}, observe_points: [], std_code: v('mtStd') || null, product_kind: f('mtKind'), source: 'teacher', teacher_id: ME.id };
+    const { data, error } = await db.from('performance_tasks').insert(row).select('*').single();
+    if (error) return (msg.textContent = '저장하지 못했어요 — SQL v4 적용·승인 계정 여부를 확인해 주세요.');
+    PTASKS = null; toast('내 과제를 저장했어요.'); renderPerf();
+  };
 }
 
 /* ---------- 저장 ---------- */

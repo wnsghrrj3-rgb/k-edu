@@ -111,6 +111,14 @@ boot('?run=r1', base).then(function (o) {
   var rep = fs.readFileSync(path.join(ROOT, 'teacher', 'learning-report.html'), 'utf8');
   T(/report_performance/.test(rep) && /해낸 것/.test(rep) && /점수 숫자는 없습니다/.test(rep), '리포트 학생 카드에 「해낸 것」 칸이 없거나 점수 없음 규약을 안 말함');
   T(/\.catch\(\(\) => \[\]\)/.test(rep.slice(rep.indexOf('report_performance'), rep.indexOf('report_performance') + 400)), '리포트가 SQL v5 미적용(뷰 없음)에서 죽음 — 조용히 빈 목록이어야 한다');
-  console.log('\n케이학습지 수행평가 W4·W5 — ' + pass + ' PASS / ' + fail + ' FAIL');
+  /* ── ⑤ W6 자작 과제 — 정적 배선 + SQL v6 ── */
+  T(/function renderMakeTask\(/.test(b) && /id="mtOpen"/.test(b), '내 과제 만들기가 없음');
+  T(/if \(\/평가\|시험\|채점\|점수\/\.test\(label\)\) return/.test(b), '자작 과제의 학생 라벨에서 평가 낱말을 안 막음');
+  T(/if \(conds\.length < 3\) return/.test(b) && /crit\.length < 3 \|\| crit\.some\(c => c\.levels\.some\(l => !l\.desc\)\)/.test(b), '자작 과제가 카드 규격(조건 3·루브릭 3×3)을 강제하지 않음');
+  T(/source: 'teacher', teacher_id: ME\.id \};\s*\n\s*const \{ data, error \} = await db\.from\('performance_tasks'\)/.test(b), '자작 과제가 source=teacher 로 저장되지 않음');
+  var v6 = fs.readFileSync(path.join(ROOT, 'sql', 'setup_worksheet_v6.sql'), 'utf8');
+  T(/source = 'kedu' OR teacher_id = cw_my_teacher_id\(\)/.test(v6), 'v6 읽기 정책이 남의 자작을 막지 않음');
+  T(/qbank_teacher_concept_required/.test(v6) && /source <> 'teacher' OR concept_code IS NOT NULL/.test(v6), 'v6 에 자작 개념 태그 필수 CHECK 가 없음(§8-⑤)');
+  console.log('\n케이학습지 수행평가 W4·W5·W6 — ' + pass + ' PASS / ' + fail + ' FAIL');
   process.exit(fail ? 1 : 0);
 }).catch(function (e) { console.log('예외: ' + e.stack); process.exit(1); });

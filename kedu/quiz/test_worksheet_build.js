@@ -30,7 +30,7 @@ T(/평가 · /.test(html.replace(/<!--[\s\S]*?-->/g, '').match(/CARD_LABEL = [^\
 T(/\|\| \(c0 \? \(c0\.lesson_no \? c0\.lesson_no \+ '차시 · ' : ''\) \+ c0\.name : '쪽지'\)/.test(html), '빈 제목의 기본값이 「N차시 · 개념」이 아님');
 /* ②③ 준비 중 문구 — 있는 척 금지 */
 var soon = (html.match(/function renderSoon[\s\S]*?\n\}/) || [''])[0];
-T(/teacher_task:/.test(soon) && /W6/.test(soon) && !/grade:/.test(soon), '아직 없는 화면(교사 자작)만 「다음 단계」로 남아야 한다 — 있는 척 금지·구현된 것에 준비 중 문구 금지');
+T(!/grade:/.test(soon) && !/teacher_task:/.test(soon) && !/unit:/.test(soon) && !/perf:/.test(soon), 'W1~W6 이 구현됐는데 준비 중 항목이 남아 있음(구현된 것에 준비 중 문구 금지)');
 T(/unit:/.test(soon) === false && /perf:/.test(soon) === false, '②③이 구현됐는데 준비 중 문구가 남아 있음');
 
 /* ── 동작: 가짜 DB 로 조립 화면까지 띄운다 (원장 2개념·문항 16개·학급 1) ── */
@@ -60,9 +60,10 @@ var MATRIX = [
 function fakeDb() {
   function q(table, data) { var o = { then: function (r) { return Promise.resolve({ data: data, error: null }).then(r); } };
     ['select', 'eq', 'order', 'limit', 'in'].forEach(function (m) { o[m] = function () { return o; }; });
-    o.insert = function (row) { INSERTS.push({ table: table, row: row }); return o; };
+    var lastRow = null;
+    o.insert = function (row) { INSERTS.push({ table: table, row: row }); lastRow = row; return o; };
     o.maybeSingle = function () { return Promise.resolve({ data: { id: 't1', name: '준호' } }); };
-    o.single = function () { return Promise.resolve({ data: { id: 'newset' }, error: null }); };
+    o.single = function () { return Promise.resolve({ data: (table === 'question_bank' || table === 'performance_tasks') && lastRow ? Object.assign({ id: 'new_' + table }, lastRow) : { id: 'newset' }, error: null }); };
     return o; }
   var TABLES = { question_bank: BANK, concepts: CONCEPTS, class_codes: [{ id: 'c1', code: 'ABC', is_active: true }], quiz_sets: SETS,
     class_openings: [{ class_code_id: 'c1', content_key: 'quiz:set1' }], student_profiles: STUDENTS, quiz_set_items: ITEMS, quiz_set_matrix: MATRIX };
@@ -91,6 +92,29 @@ ran.then(function () {
     T(qc.value === 'C2', '차시 2 를 골랐는데 개념이 2차시 것으로 안 바뀜: ' + qc.value);
     ql.value = '1'; ql.dispatchEvent(new w.Event('change', { bubbles: true }));
     T(qc.value === 'C1', '차시 1 로 되돌렸는데 개념이 안 따라옴');
+    /* ── W6 자작 문항: 개념 태그 없이는 저장 불가 → 태그 넣으면 question_bank 에 source='teacher' 로 ── */
+    click('#mkOpen');
+    T(!!d.getElementById('mkConcept') && !!d.getElementById('mkStem'), '내 문항 만들기 폼이 안 열림');
+    d.getElementById('mkStem').value = '사과 세 개와 두 개를 더하면?';
+    d.getElementById('mkExp1').value = '하나씩 이어 세요';
+    d.querySelector('[data-mko="0"]').value = '5'; d.querySelector('[data-mko="1"]').value = '4'; d.querySelector('[data-mko="2"]').value = '6';
+    INSERTS.length = 0;
+    click('#mkSave');
+    T(INSERTS.length === 0 && /개념 태그/.test(d.getElementById('mkMsg').textContent), '개념 태그 없이 문항이 저장됨(§8-⑤)');
+    d.getElementById('mkConcept').value = 'C1';
+    click('#mkSave');
+    return new Promise(function (r) { setTimeout(r, 40); }).then(function () {
+      var qi = INSERTS.find(function (x) { return x.table === 'question_bank'; });
+      T(!!qi && qi.row.source === 'teacher' && qi.row.teacher_id === 't1' && qi.row.concept_code === 'C1' && qi.row.qkind === 'mc' && /^t_/.test(qi.row.qcode), '자작 문항 행이 설계와 다름: ' + JSON.stringify(qi && qi.row).slice(0, 200));
+      T(!!qi && qi.row.payload && qi.row.payload.options.length === 3 && qi.row.payload.options[0].correct === true && qi.row.payload.explanation[0] === '하나씩 이어 세요', '자작 문항 payload 가 원장 문항 모양이 아님(play.html 이 못 그린다)');
+      T(!!d.querySelector('#qlist .badge.mine') || /내 문항/.test(d.getElementById('qlist').textContent), '저장한 내 문항이 원장 목록에 안 뜨거나 배지가 없음');
+      T(d.getElementById('mkCount').textContent === '1개', '내 문항 수가 갱신되지 않음');
+    });
+  }
+}).then(function () {
+  var d = w.document;
+  function click(sel) { var el = d.querySelector(sel); if (!el) { T(false, '요소 없음: ' + sel); return; } el.dispatchEvent(new w.Event('click', { bubbles: true })); }
+  {
     /* 배합대로 담기 = 5문항 */
     click('#qaGo');
     var cartN = d.getElementById('cart') ? d.getElementById('cart').children.length : -1;
@@ -120,8 +144,9 @@ ran.then(function () {
   var before = stemOf(d.querySelectorAll('#ulist li')[0]);
   click('#ulist [data-sw="0"]');
   T(stemOf(d.querySelectorAll('#ulist li')[0]) !== before, '교체가 다른 문항으로 바꾸지 않음');
-  var pt = d.querySelector('#ulist [data-pt="0"]'); pt.value = '3'; pt.dispatchEvent(new w.Event('change', { bubbles: true }));
-  T(/9문항 · 11점/.test(d.getElementById('uMixtext').textContent), '배점 변경이 합계에 반영되지 않음: ' + d.getElementById('uMixtext').textContent);
+  var ptBefore = Number((d.getElementById('uMixtext').textContent.match(/(\d+)점/) || [0, 0])[1]);
+  var pt = d.querySelector('#ulist [data-pt="0"]'); var ptOld = Number(pt.value); pt.value = String(ptOld + 2); pt.dispatchEvent(new w.Event('change', { bubbles: true }));
+  T(new RegExp('9문항 · ' + (ptBefore + 2) + '점').test(d.getElementById('uMixtext').textContent), '배점 변경이 합계에 반영되지 않음: ' + d.getElementById('uMixtext').textContent);
   /* 동형 검사지 전환 = 그 형 문항 그대로, 서술은 3점 */
   T(d.getElementById('uForm').options.length === 2 && /A형/.test(d.getElementById('uForm').options[0].textContent), '동형 검사지 목록(A·B형)이 안 뜸');
   d.getElementById('uForm').value = 'g1_math_u1_review_b';
@@ -215,6 +240,6 @@ ran.then(function () {
   dom2.window.getKeduDb = w.getKeduDb;
   try { dom2.window.eval(inline); } catch (e) { T(false, '?tab=mine 실행 예외: ' + e.message); }
   T(dom2.window.document.querySelector('#subTabs [data-tab="mine"]').classList.contains('on'), '?tab=mine 진입이 「내 쪽지」 탭을 안 켬(미리보기 돌아오기가 깨짐)');
-  console.log('\n케이학습지 build W1~W5 — ' + pass + ' PASS / ' + fail + ' FAIL');
+  console.log('\n케이학습지 build W1~W6 — ' + pass + ' PASS / ' + fail + ' FAIL');
   process.exit(fail ? 1 : 0);
 });
