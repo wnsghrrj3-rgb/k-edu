@@ -57,7 +57,11 @@ const ASSETS = {
   number_line:    ['cells'],
   ordinal_row:    ['items'],
   compare_groups: ['rows'],
-  plate:          ['n', 'item']
+  plate:          ['n', 'item'],
+  /* v0.3 — 1학년 2학기 「100까지의 수」 */
+  bundle_ones:    ['tens', 'ones'],
+  hundred_chart:  ['cells'],
+  pair_row:       ['n']
 };
 const KINDS = ['mc', 'sa', 'ox', 'match', 'essay', 'error', 'blank', 'data'];
 
@@ -80,6 +84,20 @@ function checkAsset(where, a) {
   }
   if (a.type === 'number_line' && (!Array.isArray(a.cells) || a.cells.length < 3)) bad(where, 'number_line cells 3칸 미만');
   if (a.type === 'hidden_group' && a.total !== undefined && a.visible >= a.total) bad(where, 'hidden_group visible ≥ total');
+  if (a.type === 'bundle_ones') {
+    if (!(a.tens >= 0 && a.tens <= 10)) bad(where, 'bundle_ones tens 가 0~10 밖: ' + a.tens);
+    if (!(a.ones >= 0 && a.ones <= 9)) bad(where, 'bundle_ones ones 는 0~9 여야 한다(10이면 묶어야 함): ' + a.ones);
+  }
+  if (a.type === 'hundred_chart') {
+    if (!Array.isArray(a.cells) || a.cells.length < 3) bad(where, 'hundred_chart cells 3칸 미만');
+    else {
+      const nums = a.cells.filter(c => c !== null && c !== '?').map(Number);
+      if (nums.some(n => !(n >= 1 && n <= 100))) bad(where, 'hundred_chart 에 1~100 밖의 수');
+      if (!a.cells.some(c => c === null || c === '?')) bad(where, 'hundred_chart 에 빈칸이 없다 — 물을 것이 없음');
+    }
+    if (a.cols !== undefined && !(a.cols >= 2 && a.cols <= 10)) bad(where, 'hundred_chart cols 는 2~10');
+  }
+  if (a.type === 'pair_row' && !(a.n >= 1 && a.n <= 30)) bad(where, 'pair_row n 이 1~30 밖: ' + a.n);
 }
 
 /* 한 문항(원본이든 변형본이든) 공통 검사 */
@@ -182,6 +200,9 @@ function checkSet(file) {
 
     /* 변형 퍼즈 — 같은 문제 재탕 금지 규칙이 붙은 문항만 */
     if (!q.variant_rule) return;
+    /* cmp2 는 수만 바꾼다 — 그림이 붙어 있으면 변형 뒤 수와 그림이 어긋난다 */
+    if (q.variant_rule.cmp2 && q.asset && typeof q.asset === 'object')
+      bad(where, 'cmp2 변형은 그림 없는 문항 전용 — 그림이 붙었다면 bundle 갈래를 쓸 것');
     /* play.html 과 같은 순서·같은 난수 씀씀이: 틀린 문항들이 난수 하나를 이어 쓰고, prep 은 변형 뒤에 온다.
        (덧: 씨앗을 1씩 늘리면 LCG 특성상 첫 값이 거의 안 변해 「안 변한다」는 가짜 실패가 난다 — 씨앗을 넓게 흩는다) */
     const face = x => JSON.stringify([x.stem, x.asset || null, x.options || null, x.answer || null, x.pairs || null]);

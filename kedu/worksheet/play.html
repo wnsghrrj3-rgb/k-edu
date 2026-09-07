@@ -82,6 +82,21 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .plate .tray{min-width:180px;min-height:86px;border:1px solid var(--rule-strong);border-radius:14px;background:var(--tint);display:flex;align-items:center;justify-content:center;gap:10px;font-size:34px;padding:12px 18px}
 .plate .tray.empty::after{content:'비어 있어요';font-size:15px;color:var(--muted)}
 .plate em{font-style:normal;font-size:15px;color:var(--muted)}
+/* v0.3 — 1학년 2학기 「100까지의 수」 에셋 3종 */
+.bund{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center}
+.bund .ten{display:grid;grid-template-columns:repeat(2,1fr);gap:3px;padding:6px;border:1px solid var(--rule-strong);border-radius:8px;background:var(--tint)}
+.bund .ten span{width:13px;height:13px;border-radius:50%;background:var(--accent)}
+.bund .ones{display:flex;gap:6px;flex-wrap:wrap;max-width:132px;align-items:center;justify-content:center;padding:8px 10px;border:1px dashed var(--rule-strong);border-radius:8px;min-width:56px;min-height:44px}
+.bund .ones span{width:13px;height:13px;border-radius:50%;background:var(--ink-soft)}
+.bund .ones.none::after{content:'낱개 없음';font-size:13px;color:var(--muted)}
+.chart{display:grid;gap:4px;justify-content:center}
+.chart .c{min-width:38px;height:40px;display:flex;align-items:center;justify-content:center;background:var(--card);border:1px solid var(--rule-strong);border-radius:7px;font-size:19px;font-family:'Gowun Batang',serif}
+.chart .c.blank{border-style:dashed;color:var(--muted);background:var(--tint)}
+.chart .c.mark{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.pairrow{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:center}
+.pairrow .p{display:flex;gap:5px;padding:6px 9px;border:1px solid var(--rule-strong);border-radius:22px;background:var(--tint)}
+.pairrow .p span{width:15px;height:15px;border-radius:50%;background:var(--accent)}
+.pairrow .p.left{border-style:dashed;border-color:var(--accent)}
 
 /* 답 */
 .opts{display:grid;gap:9px;margin-top:8px}
@@ -176,6 +191,12 @@ body.paper{background:#fff}
 .pq .pcmp{margin:10px 0 8px 30px;font-size:13px;line-height:1.9}
 .pq .pcmp b{font-weight:400;display:inline-block;min-width:52px}
 .pq .pplate{margin:10px 0 8px 30px;border:1px solid #1A1A1A;border-radius:8px;display:inline-block;padding:8px 18px;font-size:20px;letter-spacing:8px;min-width:120px;text-align:center}
+.pq .pbund{margin:10px 0 8px 30px;font-size:19px;letter-spacing:3px}
+.pq .pbund em{font-style:normal;font-size:11px;letter-spacing:0;color:#666;margin-left:12px}
+.pq .pchart{margin:10px 0 8px 30px;display:inline-grid;gap:3px}
+.pq .pchart span{min-width:25px;height:27px;border:1px solid #1A1A1A;border-radius:3px;display:inline-flex;align-items:center;justify-content:center;font-size:13px}
+.pq .pchart span.blank{border-style:dashed}
+.pq .ppair{margin:10px 0 8px 30px;font-size:18px;letter-spacing:2px}
 .pq .picto-p{border-collapse:collapse;margin:12px 0 4px 30px;font-size:14px}.pq .picto-p td{border:1px solid #999;padding:6px 12px}.pq .picto-p td:last-child{font-size:20px;letter-spacing:6px}
 .pfoot{position:absolute;bottom:9mm;left:17mm;right:17mm;display:flex;justify-content:space-between;font-size:10px;color:#999}
 .key{width:100%;border-collapse:collapse;font-size:12px}.key th,.key td{border:1px solid #999;padding:6px 8px;text-align:left;vertical-align:top}.key th{background:#F2F0EC;font-weight:400}
@@ -225,6 +246,11 @@ const SET = qs.get('set') || 'g1_math_u1_L01_basic';
 const MODE = qs.get('mode') || 'screen';
 const SEED = Number(qs.get('seed')) || 1;
 const NUMWORD = ['영','하나','둘','셋','넷','다섯','여섯','일곱','여덟','아홉'];
+/* 수 뒤 조사 — 한자어 읽기 끝소리(이·사·오·구는 모음) */
+const VOWEL_END = n => [false,false,true,false,true,true,false,false,false,true][Math.abs(Number(n)) % 10];
+const GW = n => VOWEL_END(n) ? '와' : '과';
+const EUN = n => VOWEL_END(n) ? '는' : '은';
+const IEYO = n => VOWEL_END(n) ? '예요' : '이에요';
 const ORD = ['','첫째','둘째','셋째','넷째','다섯째','여섯째','일곱째','여덟째','아홉째'];
 const STORE = 'kws:' + (QUIZ ? 'quiz:' + QUIZ : SET);
 const KINDNAME = k => ({lesson_basic:'차시 학습지', lesson_challenge:'도전 학습지', unit_review:'단원 종합', unit_extra:'심화 학습지', wrong_variant:'오답 변형', quiz:'쪽지'}[k] || '학습지');
@@ -278,6 +304,13 @@ function drawAsset(a, r){
     case 'number_line': return `<div class="numline">${a.cells.map(c => c === null || c === '?' ? `<div class="c blank">?</div>` : `<div class="c${a.mark != null && Number(c) === a.mark ? ' mark' : ''}">${esc(c)}</div>`).join('')}</div>`;
     case 'ordinal_row': return `<div class="ordrow"><div class="items">${a.items.map((it, i) => `<span class="${a.mark === i + 1 ? 'mark' : ''}">${it}</span>`).join('')}</div><div class="arrow"><span>${a.dir === 'right' ? '' : '← 왼쪽'}</span><span>${a.dir === 'right' ? '오른쪽 →' : '오른쪽 →'}</span></div></div>`;
     case 'compare_groups': return `<div class="cmp">${a.rows.map(rw => `<div class="r"><em>${esc(rw.label)}</em><div class="g">${Array.from({length:rw.n}, () => `<span>${rw.item}</span>`).join('')}</div></div>`).join('')}</div>`;
+    case 'bundle_ones': { const t = Math.max(0, Number(a.tens) || 0), o = Math.max(0, Number(a.ones) || 0);
+      const ten = `<div class="ten">${'<span></span>'.repeat(10)}</div>`;
+      return `<div class="bund">${ten.repeat(t)}<div class="ones${o ? '' : ' none'}">${'<span></span>'.repeat(o)}</div></div>`; }
+    case 'hundred_chart': { const cols = a.cols || 10;
+      return `<div class="chart" style="grid-template-columns:repeat(${cols},1fr)">${a.cells.map(c => (c === null || c === '?') ? `<div class="c blank">?</div>` : `<div class="c${a.mark != null && Number(c) === Number(a.mark) ? ' mark' : ''}">${esc(c)}</div>`).join('')}</div>`; }
+    case 'pair_row': { const n = Math.max(0, Number(a.n) || 0); const pr = Math.floor(n / 2), rest = n % 2;
+      return `<div class="pairrow">${'<div class="p"><span></span><span></span></div>'.repeat(pr)}${rest ? '<div class="p left"><span></span></div>' : ''}</div>`; }
     case 'plate': return `<div class="plate"><div class="tray${a.n === 0 ? ' empty' : ''}">${Array.from({length:a.n}, () => `<span>${a.item}</span>`).join('')}</div>${a.label ? `<em>${esc(a.label)}</em>` : ''}</div>`;
   }
   return '';
@@ -423,6 +456,103 @@ function makeVariant(q, r){
     v.stem = `${pr[0].label}와 ${pr[1].label} 중에서 더 ${askMore ? '많은' : '적은'} 것은 무엇인가요?`;
     v.options = [{t:win.label, correct:true}, {t:lose.label, mis:'M11'}, {t:'수가 같아요', mis:'M10'}];
     v.explanation = [`${pr[0].label} ${x}개, ${pr[1].label} ${y}개예요.`, `${win.label}가 더 ${askMore ? '많' : '적'}아요.`, '하나씩 짝지어 보면 남는 쪽이 더 많아요.'];
+    return v;
+  }
+
+  /* --- v0.3: 1학년 2학기 「100까지의 수」 4갈래 --- */
+  /* 오개념 코드는 원본 문항이 달고 있는 것을 물려받는다 — 단원마다 사전이 다르므로 엔진이 코드를 지어내지 않는다 */
+  const misOf = (arr, i, d) => { const w = (arr || []).filter(o => !o.correct).map(o => o.mis || o.mis_target).filter(Boolean); return w[i] || w[0] || d; };
+  const takeOne = (used, cands) => { for (let i = 0; i < cands.length; i++){ const x = cands[i]; if (x === null || x === undefined) continue; if (used.indexOf(x) < 0){ used.push(x); return x; } } return null; };
+  const asOpts = (ans, ds, src, dflt) => [{t:String(ans), correct:true}].concat(ds.filter(x => x !== null && x !== undefined).map((x, i) => ({t:String(x), mis:misOf(src, i, dflt)})));
+  const nOptsOf = q2 => ((q2.options || []).length || 3);
+
+  // 묶음과 낱개 — C1·C2·C3
+  if (a && a.type === 'bundle_ones' && rule.bundle){
+    const B = rule.bundle; const tR = B.tens || [1, 9], oR = B.ones || [0, 9];
+    const t = rint(tR[0], tR[1], r), o = rint(oR[0], oR[1], r);
+    a.tens = t; a.ones = o; const num = t * 10 + o; const ask = B.ask || 'number';
+    const want = nOptsOf(q) - 1;
+    if (ask === 'tens' || ask === 'ones'){
+      const ans = ask === 'tens' ? t : o, other = ask === 'tens' ? o : t;
+      v.stem = ask === 'tens' ? '그림을 보세요. 10개씩 묶음은 몇 개인가요?' : '그림을 보세요. 낱개는 몇 개인가요?';
+      if (q.kind === 'sa') v.answer = [String(ans)];
+      else { const used = [ans]; const ds = [takeOne(used, [other, ans + 1, ans - 1, ans + 2]), takeOne(used, [num, ans + 1, ans - 1, ans + 2])].slice(0, Math.max(1, want));
+        v.options = asOpts(ans, ds, q.options, 'M01'); }
+      v.explanation = [`10개씩 묶음 ${t}개와 낱개 ${o}개예요.`, `${ask === 'tens' ? '묶음' : '낱개'}은 ${ans}개예요.`, '묶음은 10개짜리, 낱개는 하나씩이에요.'];
+    } else {
+      v.stem = `10개씩 묶음 ${t}개와 낱개 ${o}개는 얼마인가요?`;
+      if (q.kind === 'sa') v.answer = [String(num)];
+      else { const used = [num];
+        const ds = [takeOne(used, [o * 10 + t, num + 10 <= 99 ? num + 10 : null, num - 10 >= 10 ? num - 10 : null, num + 1]),
+                    takeOne(used, [t + o, num + 1, num - 1, num - 10 >= 10 ? num - 10 : null])].slice(0, Math.max(1, want));
+        v.options = asOpts(num, ds, q.options, 'M01'); }
+      v.explanation = [`묶음 ${t}개는 ${t * 10}${IEYO(t * 10)}.`, `거기에 낱개 ${o}개를 더하면 ${num}${IEYO(num)}.`, '묶음 수를 앞에, 낱개 수를 뒤에 써요.'];
+    }
+    return v;
+  }
+  // 수 배열판(이어 세기·거꾸로 세기) — C5
+  if (a && a.type === 'hundred_chart' && rule.chart){
+    const C = rule.chart; const len = a.cells.length;
+    const lo = C.from != null ? C.from : 1, hi = C.to != null ? C.to : 100;
+    const s0 = rint(lo, Math.max(lo, hi - len + 1), r);
+    let nums = []; for (let i = 0; i < len; i++) nums.push(s0 + i);
+    const back = C.dir === 'back'; if (back) nums = nums.slice().reverse();
+    const bi = len > 2 ? rint(1, len - 2, r) : rint(0, len - 1, r);
+    const ans = nums[bi];
+    a.cells = nums.map((n, i) => i === bi ? null : n);
+    if (a.mark != null) a.mark = nums[bi === 0 ? len - 1 : 0];
+    v.stem = back ? '수를 거꾸로 세었어요. 빈칸에 알맞은 수를 쓰세요.' : '수 배열판이에요. 빈칸에 알맞은 수를 쓰세요.';
+    if (q.kind === 'sa') v.answer = [String(ans)];
+    else { const shown = a.cells.filter(c => c !== null).map(Number);
+      const used = [ans]; const pool = [ans + 1, ans - 1, ans + 10, ans - 10, ans + 11, ans - 11].filter(x => x >= 1 && x <= 100 && shown.indexOf(x) < 0);
+      const ds = [takeOne(used, pool), takeOne(used, pool)].slice(0, Math.max(1, nOptsOf(q) - 1));
+      v.options = asOpts(ans, ds, q.options, 'M06'); }
+    v.explanation = [back ? '한 칸 갈 때마다 1씩 작아져요.' : '한 칸 갈 때마다 1씩 커져요.', `빈칸에 알맞은 수는 ${ans}${IEYO(ans)}.`, '앞뒤 칸의 수를 보고 이어 세어 보세요.'];
+    return v;
+  }
+  // 두 수의 크기 비교 — C6 (그림 없는 문항 전용: 그림이 붙으면 수와 그림이 어긋난다)
+  if (rule.cmp2 && (!a || typeof a === 'string')){
+    const R2 = rule.cmp2.range || [10, 99];
+    let x = rint(R2[0], R2[1], r), y = x, guard = 0;
+    if (rule.cmp2.same_tens){ const tn = Math.floor(x / 10); const o1 = x % 10; let o2 = o1;
+      while (o2 === o1 && guard++ < 30) o2 = rint(0, 9, r);
+      if (o2 === o1) o2 = (o1 === 9) ? 8 : o1 + 1;
+      y = tn * 10 + o2;
+    } else {
+      while ((y === x || Math.floor(y / 10) === Math.floor(x / 10)) && guard++ < 40) y = rint(R2[0], R2[1], r);
+      if (Math.floor(y / 10) === Math.floor(x / 10)) y = (x - 10 >= R2[0]) ? x - 10 : x + 10;
+    }
+    const big = Math.max(x, y), small = Math.min(x, y);
+    const askBig = rule.cmp2.ask !== 'small';
+    const ans = askBig ? big : small, other = askBig ? small : big;
+    const sameTens = Math.floor(x / 10) === Math.floor(y / 10);
+    if (q.kind === 'ox'){ const truth = pick(['O', 'X'], r); const said = truth === 'O' ? ans : other;
+      v.stem = `${x}${GW(x)} ${y} 중에서 더 ${askBig ? '큰' : '작은'} 수는 ${said}입니다.`; v.answer = truth;
+      v.reason_options = [{t:'묶음(십의 자리)을 먼저 보고 정했으니까', correct:true}, {t:'낱개가 더 큰 쪽이니까', mis:misOf(q.reason_options, 0, 'M07')}];
+    } else {
+      v.stem = `${x}${GW(x)} ${y} 중에서 더 ${askBig ? '큰' : '작은'} 수는 무엇인가요?`;
+      if (q.kind === 'sa') v.answer = [String(ans)];
+      else { const used = [ans]; const pool = [other, ans + 10, ans - 10, ans + 1, ans - 1].filter(z => z >= 10 && z <= 99);
+        const ds = [takeOne(used, pool), takeOne(used, pool)].slice(0, Math.max(1, nOptsOf(q) - 1));
+        v.options = asOpts(ans, ds, q.options, 'M07'); }
+    }
+    v.explanation = [sameTens ? `묶음이 같으니 낱개를 봐요 — ${x % 10}${GW(x % 10)} ${y % 10}${IEYO(y % 10)}.` : `묶음을 먼저 봐요 — ${Math.floor(x / 10)}개와 ${Math.floor(y / 10)}개예요.`,
+                     `그래서 더 ${askBig ? '큰' : '작은'} 수는 ${ans}${IEYO(ans)}.`, '낱개부터 보면 틀려요 — 묶음이 먼저예요.'];
+    return v;
+  }
+  // 짝수와 홀수 — C7
+  if (a && a.type === 'pair_row' && rule.parity){
+    const P = rule.parity.range || [1, 20];
+    const n = rint(P[0], P[1], r); a.n = n; const even = n % 2 === 0;
+    const misp = misOf((q.options && q.options.length) ? q.options : q.reason_options, 0, 'M09');
+    if (q.kind === 'sa'){ v.stem = `둘씩 짝을 지었어요. ${n}${EUN(n)} 짝수인가요, 홀수인가요?`; v.answer = [even ? '짝수' : '홀수']; }
+    else if (q.kind === 'ox'){ const said = r() < 0.5 ? '짝수' : '홀수';
+      v.stem = `둘씩 짝을 지어 보았어요. ${n}${EUN(n)} ${said}입니다.`;
+      v.answer = ((said === '짝수') === even) ? 'O' : 'X';
+      v.reason_options = [{t:'둘씩 짝지어 남는 것이 있는지로 보니까', correct:true}, {t:'수가 크니까', mis:misp}];
+    } else { v.stem = `둘씩 짝을 지었어요. ${n}${EUN(n)} 짝수인가요, 홀수인가요?`;
+      v.options = even ? [{t:'짝수', correct:true}, {t:'홀수', mis:misp}] : [{t:'홀수', correct:true}, {t:'짝수', mis:misp}]; }
+    v.explanation = [`${n}${VOWEL_END(n) ? '를' : '을'} 둘씩 짝지어 보세요.`, even ? '남는 것이 없으니 짝수예요.' : '하나가 남으니 홀수예요.', '짝수·홀수는 수의 크기와 관계없어요.'];
     return v;
   }
   return v;
@@ -641,6 +771,11 @@ function paperAsset(a){
     case 'number_line': return `<div class="pnum">${a.cells.map(c => c === null || c === '?' ? `<span class="blank">&nbsp;</span>` : `<span>${esc(c)}</span>`).join('')}</div>`;
     case 'ordinal_row': return `<div class="pord">${a.items.map((it, i) => `<span class="${a.mark === i + 1 ? 'mk' : ''}">${it}</span>`).join('')}<span style="font-size:12px;letter-spacing:0"> (왼쪽 → 오른쪽)</span></div>`;
     case 'compare_groups': return `<div class="pcmp">${a.rows.map(rw => `<div><b>${esc(rw.label)}</b> ${rw.item.repeat(rw.n)}</div>`).join('')}</div>`;
+    case 'bundle_ones': { const t = Math.max(0, Number(a.tens) || 0), o = Math.max(0, Number(a.ones) || 0);
+      return `<div class="pbund">${'▥'.repeat(t)}${o ? ' ' + '●'.repeat(o) : ''}<em>(▥ = 10개씩 묶음, ● = 낱개)</em></div>`; }
+    case 'hundred_chart': return `<div class="pchart" style="grid-template-columns:repeat(${a.cols || 10},1fr)">${a.cells.map(c => (c === null || c === '?') ? `<span class="blank">&nbsp;</span>` : `<span>${esc(c)}</span>`).join('')}</div>`;
+    case 'pair_row': { const n = Math.max(0, Number(a.n) || 0); const pr = Math.floor(n / 2), rest = n % 2;
+      return `<div class="ppair">${'(●●) '.repeat(pr)}${rest ? '●' : ''}<em style="font-style:normal;font-size:11px;color:#666"> (둘씩 짝짓기)</em></div>`; }
     case 'plate': return `<div class="pplate">${a.n === 0 ? '(비어 있음)' : a.item.repeat(a.n)}</div>`;
   } return '';
 }
