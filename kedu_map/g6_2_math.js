@@ -529,104 +529,104 @@ window.KEDU_MAP["g6_2_math"] = {
    "kind": "unit",
    "lessons": [
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u6_l01",
+     "lessonId": "g6_2_math_u6_l01_v1",
      "n": "1",
      "title": "원기둥, 원뿔, 구를 만나 보자",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/6단원_원기둥원뿔구/g6_math_u6_l01_원기둥원뿔구를만나보자.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u6_l02",
+     "lessonId": "g6_2_math_u6_l02_v1",
      "n": "2",
      "title": "원기둥을 알아봐요 ①",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/6단원_원기둥원뿔구/g6_math_u6_l02_원기둥을알아봐요1.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u6_l03",
+     "lessonId": "g6_2_math_u6_l03_v1",
      "n": "3",
      "title": "원기둥을 알아봐요 ②",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/6단원_원기둥원뿔구/g6_math_u6_l03_원기둥을알아봐요2.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u6_l04",
+     "lessonId": "g6_2_math_u6_l04_v1",
      "n": "4",
      "title": "원기둥의 전개도를 알아봐요 ①",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/6단원_원기둥원뿔구/g6_math_u6_l04_원기둥의전개도를알아봐요1.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u6_l05",
+     "lessonId": "g6_2_math_u6_l05_v1",
      "n": "5",
      "title": "원기둥의 전개도를 알아봐요 ②",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/6단원_원기둥원뿔구/g6_math_u6_l05_원기둥의전개도를알아봐요2.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u6_l06",
+     "lessonId": "g6_2_math_u6_l06_v1",
      "n": "6",
      "title": "원뿔을 알아봐요 ①",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/6단원_원기둥원뿔구/g6_math_u6_l06_원뿔을알아봐요1.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u6_l07",
+     "lessonId": "g6_2_math_u6_l07_v1",
      "n": "7",
      "title": "원뿔을 알아봐요 ②",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/6단원_원기둥원뿔구/g6_math_u6_l07_원뿔을알아봐요2.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u6_l08",
+     "lessonId": "g6_2_math_u6_l08_v1",
      "n": "8",
      "title": "구를 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/6단원_원기둥원뿔구/g6_math_u6_l08_구를알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u6_l09",
+     "lessonId": "g6_2_math_u6_l09_v1",
      "n": "9",
      "title": "찰칵! 앞에서 본 원뿔과 원기둥",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/6단원_원기둥원뿔구/g6_math_u6_l09_찰칵앞에서본원뿔과원기둥.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_math_u6_l10",
+     "lessonId": "g6_2_math_u6_l10_v1",
      "n": "10",
      "title": "스스로 마무리해요 (단원 평가)",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/math/6단원_원기둥원뿔구/g6_math_u6_l10_스스로마무리해요.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }
