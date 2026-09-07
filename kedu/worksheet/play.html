@@ -233,7 +233,10 @@ const PREVIEW = QUIZ && qs.get('preview') === '1';  // 선생님이 내 쪽지�
 /* W2 공개 정책(설계 §3-3): 단원 평가는 기본 「마감 후」 — 학생은 제출 뒤 정오·해설을 못 보고 「선생님이 확인 중」.
    무엇을 보여도 되는지는 서버(get_quiz_set.reveal)가 정한다. 파일 학습지·미리보기는 늘 공개. */
 function canReveal(){ return !QUIZ || PREVIEW || !DATA || DATA.reveal !== false; }
+/* 자기주도 차시 「오늘 확인」에서 온 경우(kedu_practice.js, &back=/grade1/…) — 같은 출처 경로만 받는다 */
+const BACK_LESSON = (() => { const b = qs.get('back') || ''; return (b.charAt(0) === '/' && b.charAt(1) !== '/') ? b : null; })();
 const BACK = PREVIEW ? {label:'내 쪽지로', href:'/kedu/worksheet/build.html?tab=mine'}
+           : BACK_LESSON ? {label:'차시로 돌아가기', href:BACK_LESSON}
            : FROM_T ? {label:'선생님 도구', href:'/?role=teacher'}
            : QUIZ  ? {label:'내 학습', href:'/mylearning/'}
                    : {label:'케이에듀 홈', href:'/'};

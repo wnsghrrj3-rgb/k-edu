@@ -273,6 +273,18 @@ function renderBuild(){
     if (opt) sel.value = opt.value;
   };
   drawList(); drawCart();
+  // 케이티처 「✍ 문제 → 쪽지로 만들기」 딥링크: ?lesson=<차시 번호>&mix=basic|challenge → 빠른 조립 칸에 미리 채우고 스크롤 (2026-09-07)
+  try {
+    const dq = new URLSearchParams(location.search);
+    const dl = dq.get('lesson'), dm = dq.get('mix');
+    const ls = document.getElementById('qaLesson');
+    if (dl && ls && Array.from(ls.options).some(o => o.value === dl)){
+      ls.value = dl; ls.dispatchEvent(new Event('change'));
+      if (dm === 'basic' || dm === 'challenge') document.getElementById('qaMix').value = dm;
+      ls.closest('.panel').scrollIntoView({ block: 'center' });
+      toast(`${dl}차시가 잡혔어요 — 「배합대로 담기」를 누르면 쪽지가 만들어져요.`);
+    }
+  } catch (e) {}
 }
 
 function drawList(){

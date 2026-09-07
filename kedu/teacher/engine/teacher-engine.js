@@ -1378,6 +1378,7 @@
     STORAGE_KEY = `kedu_teacher_state_${SUBJECT_INFO.slug || 'unknown'}_${key}`;
 
     updateSidebarHeader(currentLessonMeta);
+    setupPracticeBtn(key);
 
     if (window.KActivity) {
       const _m = (SUBJECT_INFO.slug || '').match(/^g(\d)_(\w+)$/);
@@ -1401,6 +1402,79 @@
       global.interactiveState = {};
     }
     rebuild();
+  }
+
+  // =================== 케이학습지 문 (2026-09-07) ===================
+  // 차시 화면 툴바에 「✍ 문제」 — 이 차시의 학습지 세트(자기주도와 같은 정본)를 교실 화면에서 바로 풀거나,
+  // 케이학습지 조립 화면으로 넘긴다. 연결표 /kedu/worksheet/data/_lesson_map.json (teacher: '<slug>/<차시 키>').
+  // 표에 없는 차시는 버튼을 숨긴다(있는 척 금지).
+  let _practiceMap = null, _practiceMapP = null;
+  function loadPracticeMap() {
+    if (_practiceMap) return Promise.resolve(_practiceMap);
+    if (!_practiceMapP) _practiceMapP = fetch('/kedu/worksheet/data/_lesson_map.json', { cache: 'force-cache' })
+      .then(r => r.ok ? r.json() : null).then(m => (_practiceMap = m)).catch(() => null);
+    return _practiceMapP;
+  }
+  function practiceEntry(map, key) {
+    if (!map || !map.lessons) return null;
+    const want = `${SUBJECT_INFO.slug || ''}/${key}`;
+    for (const k of Object.keys(map.lessons)) {
+      const e = map.lessons[k];
+      if (e && Array.isArray(e.teacher) && e.teacher.indexOf(want) >= 0) return e;
+    }
+    return null;
+  }
+  function setupPracticeBtn(key) {
+    const bar = document.querySelector('main .toolbar');
+    if (!bar) return;
+    let btn = document.getElementById('practice-btn');
+    if (!btn) {
+      btn = document.createElement('button');
+      btn.className = 'icon-btn'; btn.id = 'practice-btn'; btn.title = '이 차시의 문제 — 교실 화면에서 풀기 · 쪽지로 만들기';
+      btn.textContent = '✍ 문제';
+      const ew = document.getElementById('export-ws-btn');
+      if (ew && ew.parentNode) ew.parentNode.insertBefore(btn, ew.nextSibling); else bar.appendChild(btn);
+      btn.addEventListener('click', () => togglePracticeMenu(btn));
+    }
+    btn.style.display = 'none';
+    btn._entry = null;
+    loadPracticeMap().then(map => {
+      if (currentLessonKey !== key) return;
+      const e = practiceEntry(map, key);
+      if (!e) return;
+      btn._entry = e;
+      btn.style.display = '';
+    });
+  }
+  function togglePracticeMenu(btn) {
+    const old = document.getElementById('practice-menu');
+    if (old) { old.remove(); return; }
+    const e = btn._entry; if (!e) return;
+    const menu = document.createElement('div');
+    menu.id = 'practice-menu';
+    menu.style.cssText = 'position:absolute;z-index:120;background:#fff;border:1px solid #d9d2c5;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.14);padding:8px;min-width:230px;display:flex;flex-direction:column;gap:4px;font-size:14px;color:#1a202c';
+    const r = btn.getBoundingClientRect();
+    menu.style.left = `${r.left + window.scrollX}px`; menu.style.top = `${r.bottom + window.scrollY + 6}px`;
+    const item = (label, sub, href) => {
+      const a = document.createElement('a'); a.href = href; a.target = '_blank'; a.rel = 'noopener';
+      a.style.cssText = 'display:block;padding:9px 12px;border-radius:8px;text-decoration:none;color:inherit';
+      a.innerHTML = `<div style="font-weight:700">${label}</div>${sub ? `<div style="font-size:12px;color:#718096">${sub}</div>` : ''}`;
+      a.onmouseenter = () => a.style.background = '#f4f1ea'; a.onmouseleave = () => a.style.background = '';
+      a.onclick = () => menu.remove();
+      menu.appendChild(a);
+    };
+    const head = document.createElement('div');
+    head.style.cssText = 'padding:4px 12px 6px;font-size:12px;font-weight:700;color:#718096;letter-spacing:.04em';
+    head.textContent = e.title || '이 차시의 문제';
+    menu.appendChild(head);
+    if (e.basic) item('교실 화면에서 풀기 — 기본', '10문항 · 자기주도와 같은 문제', `/kedu/worksheet/play.html?set=${encodeURIComponent(e.basic)}`);
+    if (e.challenge) item('교실 화면에서 풀기 — 도전', '10문항 · 조금 더 어려움', `/kedu/worksheet/play.html?set=${encodeURIComponent(e.challenge)}`);
+    if (Array.isArray(e.review) && e.review.length) item('단원 종합 A형 풀기', `25문항 · 동형 ${e.review.length}종`, `/kedu/worksheet/play.html?set=${encodeURIComponent(e.review[0])}`);
+    if (e.basic) item('시험지(A4)로 인쇄', '기본 세트 · 정답·오개념표 포함', `/kedu/worksheet/play.html?set=${encodeURIComponent(e.basic)}&mode=paper`);
+    const ln = e.lesson_no ? `&lesson=${encodeURIComponent(e.lesson_no)}` : '';
+    item('쪽지로 만들어 우리 반에 열기', '케이학습지 조립 화면', `/kedu/worksheet/build.html?mix=basic${ln}`);
+    document.body.appendChild(menu);
+    setTimeout(() => document.addEventListener('click', function off(ev){ if (!menu.contains(ev.target) && ev.target !== btn) { menu.remove(); document.removeEventListener('click', off); } }), 0);
   }
 
   function updateSidebarHeader(meta) {
