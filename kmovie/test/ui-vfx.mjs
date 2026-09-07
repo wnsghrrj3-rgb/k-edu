@@ -118,6 +118,22 @@ const placed = await page.evaluate(async () => {
 ok(placed.base !== placed.after && placed.dur === 180, '듀오톤 카드를 놓으면 미리보기 프레임이 바뀜 · 기본 6초 (' + placed.dur + 'f)');
 ok(placed.btns.includes('약') && placed.btns.includes('강') && placed.btns.includes('네이비·금'), '설정 열: 세기 약/중/강 · 색 이름이 한글로 (' + placed.btns.slice(0, 6).join(',') + ')');
 
+// ---------- 글꼴 고르기: 목록이 그 글꼴로 보인다 (준호 2026-09-07) ----------
+const fp = await page.evaluate(async () => {
+  const P = KMV_PROJECT, s0 = P.addS({ text: '금성 어린이 여러분', at: 0, dur: 60 });
+  KMV_UI.selectS(s0.id); KMV_UI.selectP(null); await new Promise(r => setTimeout(r, 100));
+  const wrap = document.getElementById('subFont').closest('.fpick'), btn = wrap.querySelector('.fpBtn'), list = wrap.querySelector('.fpList');
+  const before = { btn: btn.textContent, hidden: list.classList.contains('hidden'), selVis: document.getElementById('subFont').getBoundingClientRect().height > 0 };
+  btn.click(); await new Promise(r => setTimeout(r, 50));
+  const items = Array.from(list.querySelectorAll('.fi')), fams = new Set(items.map(i => i.querySelector('.sm').style.fontFamily)), samples = new Set(items.map(i => i.querySelector('.sm').textContent));
+  const cats = Array.from(list.querySelectorAll('.cat')).map(c => c.textContent);
+  const pen = items.find(i => i.dataset.id === 'nanumpen'); pen.click(); await new Promise(r => setTimeout(r, 50));
+  const after = { hidden: list.classList.contains('hidden'), sel: document.getElementById('subFont').value, font: P.subtitle(s0.id).font, btn: btn.textContent, fam: btn.style.fontFamily, links: document.querySelectorAll('link[href*="fonts.googleapis"]').length };
+  return { before, n: items.length, fams: fams.size, sample: [...samples][0], cats, after };
+});
+ok(fp.before.btn === '기본 (프리텐다드)' && fp.before.hidden && fp.before.selVis && fp.n === 37 && fp.fams === 37 && fp.cats.length >= 5, '글꼴 목록 37칸 — 칸마다 제 글꼴로 보기 글 (' + fp.sample + ') · 분류 ' + fp.cats.join('/'));
+ok(fp.after.hidden && fp.after.sel === 'nanumpen' && fp.after.font === 'nanumpen' && /나눔 펜/.test(fp.after.btn) && /Nanum Pen/.test(fp.after.fam) && fp.after.links >= 30, '고르면 자막 글꼴이 바뀌고 버튼도 그 글꼴로 · 글꼴 CSS ' + fp.after.links + '개 요청');
+
 ok(errs.length === 0, '콘솔 오류 0' + (errs.length ? ' — ' + errs.slice(0, 3).join(' | ') : ''));
 console.log(`\nui-vfx: ${n - fail}/${n} 통과`);
 await close(); srv.kill(); process.exit(fail ? 1 : 0);

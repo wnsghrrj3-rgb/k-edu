@@ -1528,6 +1528,47 @@
     sel.onchange = () => { const cur = get(); set(sel.value ? { type: sel.value, dur: (cur && cur.dur) || 'normal' } : null); };
     return { refresh() { const cur = get(); sel.value = cur && cur.type ? cur.type : ''; seg.classList.toggle('hidden', !(cur && cur.type)); setOn(seg, cur && cur.dur || 'normal'); } };
   }
+  /* 글꼴 고르기 — select 는 값·change 의 정본으로 남기고(테스트·저장 경로 그대로), 눈에 보이는 건 글꼴 자체로 그린 목록.
+     준호(2026-09-07): "목록 자체에서 폰트를 나타내줘 — 이 폰트가 어떤 디자인인지 알 수가 없어." */
+  const fontPickers = [];
+  function fontPicker(sel, sampleFn) {
+    if (!FX) return;
+    sel.classList.add('fpSel');
+    const wrap = document.createElement('div'); wrap.className = 'fpick';
+    const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'fpBtn'; btn.title = '글꼴 고르기 — 목록이 그 글꼴로 보여요';
+    const list = document.createElement('div'); list.className = 'fpList hidden';
+    sel.parentNode.insertBefore(wrap, sel); wrap.append(btn, list); wrap.appendChild(sel);
+    const nameOf = id => { const f = FX.FONTS.find(x => x.id === id); return f ? f.ko : '기본 (프리텐다드)'; };
+    const famOf = id => { const f = FX.FONTS.find(x => x.id === id); return f ? '"' + f.fam + '", Pretendard, sans-serif' : 'Pretendard, sans-serif'; };
+    const sample = () => { const t = sampleFn && sampleFn(); return t && String(t).trim() ? String(t).trim().slice(0, 10) : '금성초 어린이 ABC 123'; };
+    function sync() { const id = sel.value || ''; btn.textContent = nameOf(id); btn.style.fontFamily = famOf(id); if (id) FX.loadFont(id); }
+    function build() {
+      list.innerHTML = ''; const smp = sample();
+      const add = (id, ko) => { const it = document.createElement('div'); it.className = 'fi' + ((sel.value || '') === id ? ' on' : ''); it.dataset.id = id;
+        const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = ko; const sm = document.createElement('span'); sm.className = 'sm'; sm.textContent = smp; sm.style.fontFamily = famOf(id);
+        it.append(nm, sm); it.onclick = () => { sel.value = id; sel.dispatchEvent(new Event('change')); close(); sync(); }; list.appendChild(it); };
+      add('', '기본 (프리텐다드)');
+      const cats = []; FX.FONTS.forEach(f => { if (!cats.includes(f.cat)) cats.push(f.cat); });
+      cats.forEach(c => { const h = document.createElement('div'); h.className = 'cat'; h.textContent = c; list.appendChild(h); FX.FONTS.filter(f => f.cat === c).forEach(f => add(f.id, f.ko)); });
+    }
+    function open() {
+      FX.FONTS.forEach(f => FX.loadFont(f.id));                       // 목록이 진짜 글꼴로 보이도록 전부 내려받는다(서브셋이라 가볍다)
+      build(); list.classList.remove('hidden');
+      const r = btn.getBoundingClientRect(), hMax = Math.min(380, window.innerHeight - 16);
+      list.style.maxHeight = hMax + 'px'; list.style.left = Math.max(4, Math.min(r.left, window.innerWidth - 300)) + 'px';
+      list.style.top = (r.bottom + hMax + 6 > window.innerHeight ? Math.max(4, r.top - hMax - 4) : r.bottom + 2) + 'px';
+      const on = list.querySelector('.fi.on'); if (on) on.scrollIntoView({ block: 'center' });
+      setTimeout(() => document.addEventListener('pointerdown', outside, true), 0);
+    }
+    function close() { list.classList.add('hidden'); document.removeEventListener('pointerdown', outside, true); }
+    function outside(e) { if (!wrap.contains(e.target)) close(); }
+    btn.onclick = () => list.classList.contains('hidden') ? open() : close();
+    sel.addEventListener('change', sync);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+    sync(); fontPickers.push({ sel, sync, close, list });
+  }
+  function syncFontPickers() { fontPickers.forEach(f => f.sync()); }
+
   /* 슬라이더: 끄는 동안 commit 없이 반영, 놓으면 한 커밋 */
   function slider(id, vId, fmt, getCard, apply) {
     let start = null;
@@ -1538,6 +1579,7 @@
     // 자막 카드
     fillSelect($('subFont'), FX.FONTS, '기본 (프리텐다드)', true);
     $('subFont').onchange = () => { const s2 = selS && P.subtitle(selS); if (!s2) return; const id = $('subFont').value || null; FX.loadFont(id).then(() => { if (!playing) renderPreview(); }); P.updateS(s2.id, { font: id }); };
+    fontPicker($('subFont'), () => { const s2 = selS && P.subtitle(selS); return s2 && s2.text; });
     slider('subSize', 'subSizeV', v => v + '%', () => selS && P.subtitle(selS), (v, done) => { const s2 = P.subtitle(selS); P.updateS(s2.id, { size: v }, { commit: done }); });
     slider('subY', 'subYV', v => String(v), () => selS && P.subtitle(selS), (v, done) => { const s2 = P.subtitle(selS); P.updateS(s2.id, { y: v }, { commit: done }); });
     [['', '자동'], ['top', '위'], ['mid', '가운데'], ['bottom', '아래']].forEach(([k, l]) => segBtn($('subPosSeg'), k, l, () => { const s2 = selS && P.subtitle(selS); if (s2) P.updateS(s2.id, { pos: k || null }); }));
@@ -1547,6 +1589,7 @@
     // 부품 카드
     fillSelect($('partFont'), FX.FONTS, '기본 (프리텐다드)', true);
     $('partFont').onchange = () => { const pt = selPart(); if (!pt) return; const id = $('partFont').value || null; FX.loadFont(id).then(() => { PT.invalidateThumbs && PT.invalidateThumbs(); if (!playing) renderPreview(); }); P.updateP(pt.id, { font: id }); };
+    fontPicker($('partFont'), () => { const pt = selPart(); if (!pt) return ''; const p = pt.p || {}; return p.title || p.text || p.name || ''; });
     slider('partSize', 'partSizeV', v => v + '%', selPart, (v, done) => { P.updateP(selPart().id, { size: v }, { commit: done }); });
     slider('partX', 'partXV', v => String(v), selPart, (v, done) => { P.updateP(selPart().id, { x: v }, { commit: done }); });
     slider('partY', 'partYV', v => String(v), selPart, (v, done) => { P.updateP(selPart().id, { y: v }, { commit: done }); });
@@ -1562,7 +1605,7 @@
   }
   function refreshSubFx(s2) {
     if (!FX || !s2) return;
-    if (document.activeElement !== $('subFont')) $('subFont').value = s2.font || '';
+    if (document.activeElement !== $('subFont')) $('subFont').value = s2.font || ''; syncFontPickers();
     if (document.activeElement !== $('subSize')) { $('subSize').value = s2.size == null ? 100 : s2.size; $('subSizeV').textContent = $('subSize').value + '%'; }
     if (document.activeElement !== $('subY')) { $('subY').value = s2.y || 0; $('subYV').textContent = String(s2.y || 0); }
     setOn($('subPosSeg'), s2.pos || ''); setOn($('subColorSeg'), s2.color || '');
@@ -1571,7 +1614,7 @@
   }
   function refreshPartFx(pt) {
     if (!FX || !pt) return;
-    if (document.activeElement !== $('partFont')) $('partFont').value = pt.font || (PT.meta(pt.part) && PT.meta(pt.part).font) || '';
+    if (document.activeElement !== $('partFont')) $('partFont').value = pt.font || (PT.meta(pt.part) && PT.meta(pt.part).font) || ''; syncFontPickers();
     if (document.activeElement !== $('partSize')) { $('partSize').value = pt.size == null ? 100 : pt.size; $('partSizeV').textContent = $('partSize').value + '%'; }
     if (document.activeElement !== $('partX')) { $('partX').value = pt.x || 0; $('partXV').textContent = String(pt.x || 0); }
     if (document.activeElement !== $('partY')) { $('partY').value = pt.y || 0; $('partYV').textContent = String(pt.y || 0); }
