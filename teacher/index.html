@@ -621,6 +621,17 @@ tr:hover td{background:#FAFBFC}
         <span id="schooltask-to-count" style="font-weight:700;color:var(--text)"></span>
       </div>
       <div id="schooltask-to-list" hidden style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;max-height:160px;overflow:auto;padding:8px;border:1px solid var(--border);border-radius:8px;background:#fff"></div>
+      <!-- v1.5 같이 쓰는 자리 — 링크(시트·드라이브·문서) · 파일. 시트 자체는 링크로 잇는다(준호 결정 09-08) -->
+      <div id="schooltask-att" style="margin-top:10px;padding:10px 12px;border:1px dashed #cbd5e0;border-radius:10px;background:#fff">
+        <div style="font-size:12.5px;color:var(--sub);margin-bottom:6px">📎 같이 볼 것 붙이기 — 구글 시트·드라이브 주소나 파일(hwp·pdf·xlsx·사진, 20MB)</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          <input type="url" id="schooltask-link-url" placeholder="https:// 주소 붙여넣기" style="flex:2;min-width:220px;padding:7px 10px;border:1px solid #d5dbe3;border-radius:8px;font-size:13px" onkeydown="if(event.key==='Enter'){event.preventDefault();stashSchoolTaskLink()}">
+          <input type="text" id="schooltask-link-label" maxlength="60" placeholder="이름 (선택, 예: 수요조사 시트)" style="flex:1;min-width:140px;padding:7px 10px;border:1px solid #d5dbe3;border-radius:8px;font-size:13px" onkeydown="if(event.key==='Enter'){event.preventDefault();stashSchoolTaskLink()}">
+          <button class="code-btn outline" style="margin:0;padding:6px 12px;font-size:12px" onclick="stashSchoolTaskLink()">＋ 링크</button>
+          <label class="code-btn outline" style="margin:0;padding:6px 12px;font-size:12px;cursor:pointer">＋ 파일<input type="file" id="schooltask-file" multiple hidden onchange="stashSchoolTaskFiles(this)"></label>
+        </div>
+        <div id="schooltask-att-list" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"></div>
+      </div>
       <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
         <button class="code-btn primary" style="margin:0;padding:8px 18px;font-size:13px" onclick="addSchoolTask()">올리기</button>
         <span id="schooltask-to-hint" style="font-size:12px;color:var(--sub)">우리 학교 선생님 모두에게 보여요. 확인하기 전까지는 사라지지 않아요.</span>
@@ -1603,6 +1614,7 @@ function staskRow(t){
   const detail = t.detail
     ? `<div style="margin-top:3px;font-size:12.5px;color:var(--sub);line-height:1.55;white-space:pre-wrap">${escHtml(t.detail)}</div>` : '';
   const who = t.created_by_name ? escHtml(t.created_by_name) + ' 선생님' : '누군가';
+  const att = staskAttHtml(t);   // v1.5
   return `<div data-stask="${t.id}" data-urgency="${t.urgency}" data-bucket="${t.bucket}"
       style="display:flex;gap:12px;padding:12px 20px;border-top:1px solid var(--border);border-left:4px solid ${tone.bar};${t.done?'opacity:.6;':''}">
     <div style="flex:1;min-width:0">
@@ -1611,7 +1623,7 @@ function staskRow(t){
         <b style="font-size:14px;${t.done?'text-decoration:line-through':''}">${escHtml(t.title)}</b>
         <span style="font-size:12px;color:${tone.ink};font-weight:600">${escHtml(staskDue(t))}</span>
       </div>
-      ${detail}
+      ${detail}${att}
       <div style="margin-top:4px;font-size:11.5px;color:var(--sub)">${who} 올림 · ${(t.mine || isSchoolAdmin)
           ? `<a href="#" style="color:var(--primary);font-weight:700" onclick="toggleSchoolTaskStatus('${t.id}');return false;">확인 ${t.done_count} / ${t.teacher_count}명 ▾</a>`
           : `확인 ${t.done_count} / ${t.teacher_count}명`}${t.targeted ? ' · <span title="' + escHtml(t.to_names||'') + '">👤 ' + ((t.mine || isSchoolAdmin) && t.to_names ? escHtml(t.to_names) + '에게' : '나에게') + '</span>' : ''}</div>
@@ -1692,11 +1704,110 @@ async function setMySchool(id){
   await loadMySchool();
   await loadSchoolTasks();
 }
+// ── v1.5 같이 쓰는 자리 — 첨부(링크·파일) ────────────────────────────
+// 시트 자체를 흉내 내지 않는다 — 링크로 잇는다(준호 결정 09-08). 파일은 school 버킷 {school_id}/{task_id}/{uuid}.{ext}.
+// 폴백: list_school_task_attachments 가 없으면(SQL #49 미적용) 첨부 UI 전부 숨김 — 올리기·확인은 종전대로.
+var staskAtt = {}, staskAttOn = false, staskPending = { links: [], files: [] };
+const STASK_MAX_FILE = 20 * 1024 * 1024;
+function staskSize(n){ return n >= 1048576 ? (n/1048576).toFixed(1)+'MB' : n >= 1024 ? Math.round(n/1024)+'KB' : n+'B'; }
+function staskIcon(a){
+  if(a.kind === 'link'){ const u = a.url || ''; return /docs\.google\.com\/spreadsheets|sheets\.google/.test(u) ? '📊' : /docs\.google\.com\/document/.test(u) ? '📝' : /drive\.google|dropbox|onedrive|naver\.me|mybox/.test(u) ? '📁' : /forms\.gle|docs\.google\.com\/forms/.test(u) ? '📋' : '🔗'; }
+  const n = (a.label || a.url || '').toLowerCase();
+  return /\.hwpx?$/.test(n) ? '📄' : /\.pdf$/.test(n) ? '📕' : /\.(xlsx?|csv)$/.test(n) ? '📊' : /\.(pptx?)$/.test(n) ? '📽' : /\.(docx?)$/.test(n) ? '📝' : /\.(jpe?g|png|webp)$/.test(n) ? '🖼' : /\.zip$/.test(n) ? '🗜' : '📎';
+}
+function stashSchoolTaskLink(){
+  const u = document.getElementById('schooltask-link-url'), l = document.getElementById('schooltask-link-label');
+  const url = (u.value || '').trim();
+  if(!/^https?:\/\//i.test(url)){ showToast('주소는 https:// 로 시작해야 해요.'); return; }
+  staskPending.links.push({ url, label: (l.value || '').trim() });
+  u.value = ''; l.value = ''; renderStaskPending();
+}
+function stashSchoolTaskFiles(input){
+  for(const f of input.files){
+    if(f.size > STASK_MAX_FILE){ showToast('⚠️ ' + f.name + ' — 20MB 를 넘어요.'); continue; }
+    staskPending.files.push(f);
+  }
+  input.value = ''; renderStaskPending();
+}
+function unstashSchoolTask(kind, i){ staskPending[kind].splice(i, 1); renderStaskPending(); }
+function renderStaskPending(){
+  const box = document.getElementById('schooltask-att-list'); if(!box) return;
+  const chip = (icon, text, onx) => `<span style="display:inline-flex;gap:5px;align-items:center;padding:4px 10px;border:1px solid var(--border);border-radius:999px;font-size:12px;background:#F8FAFC">${icon} ${escHtml(text)} <button onclick="${onx}" style="border:0;background:none;cursor:pointer;color:var(--sub);font-size:13px;line-height:1;padding:0">✕</button></span>`;
+  box.innerHTML = staskPending.links.map((a,i) => chip(staskIcon({kind:'link',url:a.url}), a.label || a.url.replace(/^https?:\/\//,'').slice(0,40), `unstashSchoolTask('links',${i})`)).join('')
+    + staskPending.files.map((f,i) => chip(staskIcon({kind:'file',label:f.name}), f.name + ' · ' + staskSize(f.size), `unstashSchoolTask('files',${i})`)).join('');
+}
+async function loadSchoolTaskAtt(){
+  staskAtt = {};
+  let data, error;
+  try { ({ data, error } = await db.rpc('list_school_task_attachments')); } catch(e){ error = e; }
+  staskAttOn = !error;
+  const attBox = document.getElementById('schooltask-att'); if(attBox) attBox.hidden = !staskAttOn;   // SQL 미적용이면 폼의 붙이기 칸도 숨김
+  if(error) return;
+  for(const a of (data || [])){ (staskAtt[a.task_id] = staskAtt[a.task_id] || []).push(a); }
+}
+function staskAttHtml(t){
+  if(!staskAttOn) return '';
+  const list = staskAtt[t.id] || [];
+  const chips = list.map(a => `<span style="display:inline-flex;gap:5px;align-items:center;padding:4px 10px;border:1px solid var(--border);border-radius:999px;font-size:12px;background:#fff;max-width:100%">
+      <a href="#" onclick="openSchoolTaskAtt('${a.id}');return false" title="${escHtml(a.added_by_name ? a.added_by_name + ' 선생님이 붙임' : '')}" style="text-decoration:none;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px">${staskIcon(a)} ${escHtml(a.label || a.url)}${a.kind==='file' && a.size ? ` <span style="color:var(--sub)">${staskSize(a.size)}</span>` : ''}</a>
+      ${a.can_remove ? `<button onclick="removeSchoolTaskAtt('${a.id}')" title="떼기" style="border:0;background:none;cursor:pointer;color:var(--sub);font-size:13px;line-height:1;padding:0">✕</button>` : ''}
+    </span>`).join('');
+  const add = t.bucket !== 'archive' ? `<label style="display:inline-flex;gap:4px;align-items:center;padding:4px 10px;border:1px dashed #cbd5e0;border-radius:999px;font-size:12px;color:var(--sub);cursor:pointer" title="시트·드라이브 링크나 파일을 이 할 일에 붙여요 (우리 학교 선생님 누구나)">📎 붙이기<input type="file" multiple hidden onchange="attachSchoolTaskFiles('${t.id}', this)"></label>
+    <button onclick="promptSchoolTaskLink('${t.id}')" style="padding:4px 10px;border:1px dashed #cbd5e0;border-radius:999px;font-size:12px;color:var(--sub);background:none;cursor:pointer">🔗 링크</button>` : '';
+  return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center">${chips}${add}</div>`;
+}
+async function openSchoolTaskAtt(id){
+  const a = Object.values(staskAtt).flat().find(x => x.id === id); if(!a) return;
+  if(a.kind === 'link'){ window.open(a.url, '_blank', 'noopener'); return; }
+  const { data, error } = await db.storage.from('school').createSignedUrl(a.url, 300, { download: a.label || undefined });
+  if(error || !data){ showToast('⚠️ 파일을 열 수 없어요 — ' + (error && error.message || '')); return; }
+  window.open(data.signedUrl, '_blank', 'noopener');
+}
+async function uploadSchoolTaskFile(taskId, f){
+  const sid = mySchoolRow && mySchoolRow.school_id; if(!sid) throw new Error('school required');
+  const ext = (f.name.match(/\.([A-Za-z0-9]{1,6})$/) || ['',''])[1].toLowerCase();
+  const path = sid + '/' + taskId + '/' + (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)) + (ext ? '.' + ext : '');
+  const contentType = f.type || 'application/octet-stream';
+  const up = await db.storage.from('school').upload(path, f, { contentType, upsert: false });
+  if(up.error) throw up.error;
+  const { error } = await db.rpc('add_school_task_attachment', { p_task_id: taskId, p_kind: 'file', p_url: path, p_label: f.name, p_mime: contentType, p_size: f.size });
+  if(error){ await db.storage.from('school').remove([path]); throw error; }
+}
+async function attachSchoolTaskFiles(taskId, input){
+  const files = [...input.files]; input.value = '';
+  let ok = 0;
+  for(const f of files){
+    if(f.size > STASK_MAX_FILE){ showToast('⚠️ ' + f.name + ' — 20MB 를 넘어요.'); continue; }
+    try { await uploadSchoolTaskFile(taskId, f); ok++; }
+    catch(e){ showToast('⚠️ ' + f.name + ' 올리기 실패 — ' + (e.message || '')); }
+  }
+  if(ok) showToast('📎 파일 ' + ok + '개 붙였어요.');
+  await loadSchoolTasks();
+}
+async function promptSchoolTaskLink(taskId){
+  const url = (prompt('붙일 주소 (구글 시트·드라이브·문서 등)\nhttps:// 로 시작') || '').trim();
+  if(!url) return;
+  if(!/^https?:\/\//i.test(url)){ showToast('주소는 https:// 로 시작해야 해요.'); return; }
+  const label = (prompt('이름 (비우면 주소의 사이트 이름)') || '').trim();
+  const { error } = await db.rpc('add_school_task_attachment', { p_task_id: taskId, p_kind: 'link', p_url: url, p_label: label, p_mime: '', p_size: 0 });
+  if(error){ showToast('⚠️ 링크 붙이기 실패 — ' + (error.message || '')); return; }
+  showToast('🔗 링크를 붙였어요.');
+  await loadSchoolTasks();
+}
+async function removeSchoolTaskAtt(id){
+  if(!confirm('이 첨부를 뗄까요?')) return;
+  const { data, error } = await db.rpc('remove_school_task_attachment', { p_id: id });
+  if(error){ showToast('⚠️ 떼기 실패 — ' + (error.message || '')); return; }
+  if(data){ try { await db.storage.from('school').remove([data]); } catch(e){} }   // 본인 파일만 실체까지 지워진다(정책)
+  showToast('첨부를 뗐어요.');
+  await loadSchoolTasks();
+}
 async function loadSchoolTasks(){
   const wrap = document.getElementById('schooltask-wrap');
   if(!wrap) return;
   const { data, error } = await db.rpc('list_school_tasks');
   if(error){ wrap.hidden = true; return; }          // 폴백 — SQL 미적용이면 카드 자체를 숨긴다
+  await loadSchoolTaskAtt();                        // v1.5 — 첨부는 별도 RPC, 없으면 조용히 숨김
   const rows = data || [];
   wrap.hidden = false;
   await loadMySchool();
@@ -1763,7 +1874,7 @@ async function addSchoolTask(){
   if(title.length < 2){ showToast('할 일을 두 글자 이상 적어 주세요.'); return; }
   const to = schoolTaskToMode === 'pick' ? pickedSchoolTaskTo() : [];
   if(schoolTaskToMode === 'pick' && !to.length){ showToast('받을 선생님을 한 명 이상 골라 주세요.'); return; }
-  const { error } = await db.rpc('add_school_task', {
+  const { data: newId, error } = await db.rpc('add_school_task', {
     p_title: title, p_detail: (de.value || '').trim(), p_due: du.value || null, p_to: to.length ? to : null
   });
   if(error){
@@ -1772,6 +1883,17 @@ async function addSchoolTask(){
       : '⚠️ 올리기 실패: ' + (error.message || ''));
     return;
   }
+  // v1.5 — 미리 담아 둔 링크·파일을 새 할 일에 붙인다(하나 실패해도 나머지는 붙인다)
+  if(newId && staskAttOn && (staskPending.links.length || staskPending.files.length)){
+    let bad = 0;
+    for(const a of staskPending.links){
+      const r = await db.rpc('add_school_task_attachment', { p_task_id: newId, p_kind: 'link', p_url: a.url, p_label: a.label, p_mime: '', p_size: 0 });
+      if(r.error) bad++;
+    }
+    for(const f of staskPending.files){ try { await uploadSchoolTaskFile(newId, f); } catch(e){ bad++; } }
+    if(bad) showToast('⚠️ 첨부 ' + bad + '개는 붙지 않았어요. 할 일 줄의 📎 로 다시 붙여 주세요.');
+  }
+  staskPending = { links: [], files: [] }; renderStaskPending();
   ti.value = ''; de.value = ''; du.value = '';
   document.querySelectorAll('.schooltask-to-cb').forEach(cb => { cb.checked = false; });
   document.getElementById('schooltask-form').hidden = true;

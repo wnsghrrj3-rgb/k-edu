@@ -385,6 +385,68 @@ ok(mailFiles.every(f => { try { return !/school_task/.test(rd(f)); } catch (e) {
   await w.loadSchoolTasks();
   ok(d.getElementById('schooltask-wrap').hidden === true, '★ jsdom — SQL 미적용이면 카드가 통째로 숨는다(규칙 5)');
 
+  // ── v1.5 같이 쓰는 자리 — 링크·파일 첨부 (준호 요구 09-08) ─────────────
+  const sql15 = rd('sql/setup_school_tasks_v15.sql'), st15 = rd('sql/setup_school_tasks_v15_storage.sql');
+  [ 'CREATE TABLE IF NOT EXISTS school_task_attachments', "kind IN ('link','file')", 'school_task_att_shape',
+    'FUNCTION add_school_task_attachment(', 'FUNCTION remove_school_task_attachment(', 'FUNCTION list_school_task_attachments()',
+    'p_stask_att_select', 'p_stask_att_insert', 'p_stask_att_delete', 'kedu_task_visible(', "'task closed'", '>= 20' ].forEach(k => ok(sql15.includes(k), 'v1.5 SQL 누락: ' + k));
+  ok(!/\$\$/.test(sql15) && !/\$\$/.test(st15), 'v1.5 SQL 에 $$ 없음');
+  [ "VALUES ('school', 'school', false, 20971520", 'school_same_school_read', 'school_same_school_insert', 'school_owner_delete', 'owner = auth.uid()' ]
+    .forEach(k => ok(st15.includes(k), 'v1.5 storage 누락: ' + k));
+  ok(!sql15.includes('storage.objects'), '★ v1.5 — storage 정책은 별도 파일(한 트랜잭션 교훈)');
+  [ 'id="schooltask-att"', 'id="schooltask-link-url"', 'id="schooltask-file"', 'function stashSchoolTaskLink(', 'function stashSchoolTaskFiles(',
+    'function loadSchoolTaskAtt(', "db.rpc('list_school_task_attachments')", 'function staskAttHtml(', 'function openSchoolTaskAtt(', 'createSignedUrl(',
+    'function uploadSchoolTaskFile(', "db.storage.from('school').upload(", "db.rpc('add_school_task_attachment'", "db.rpc('remove_school_task_attachment'",
+    'STASK_MAX_FILE = 20 * 1024 * 1024', 'const { data: newId, error } = await db.rpc(\'add_school_task\'' ].forEach(k => ok(html.includes(k), 'v1.5 UI 누락: ' + k));
+  // jsdom — 첨부가 오면 칩이 붙고(링크는 새 창, 파일은 서명 주소), 뗄 수 있는 것만 ✕, RPC 없으면 첨부 UI 통째로 숨김
+  {
+    const atts = [
+      { id:'a1', task_id:'t1', kind:'link', url:'https://docs.google.com/spreadsheets/d/abc', label:'수요조사 시트', mime:'', size:0, added_by_name:'준호', mine:true, can_remove:true },
+      { id:'a2', task_id:'t1', kind:'file', url:'B000012345/t1/x.hwp', label:'안내문.hwp', mime:'application/octet-stream', size:153600, added_by_name:'김', mine:false, can_remove:true },
+      { id:'a3', task_id:'t2', kind:'file', url:'B000012345/t2/y.pdf', label:'계획서.pdf', mime:'application/pdf', size:2097152, added_by_name:'이', mine:false, can_remove:false }
+    ];
+    w.db.rpc = async (fn) => fn === 'my_school' ? ({ data: [school], error: null })
+      : fn === 'list_school_task_attachments' ? ({ data: atts, error: null })
+      : fn === 'list_school_admins' ? ({ data: [], error: null })
+      : ({ data: rows, error: null });
+    let opened = [], signed = null;
+    w.open = (u) => { opened.push(u); };
+    w.db.storage = { from: () => ({ createSignedUrl: async (p) => { signed = p; return { data: { signedUrl: 'https://signed/' + p }, error: null }; } }) };
+    w.mySchoolRow = school;
+    await w.loadSchoolTasks();
+    const h1 = d.getElementById('schooltask-list').innerHTML;
+    ok(d.getElementById('schooltask-att').hidden === false, 'v1.5 jsdom — RPC 있으면 폼의 붙이기 칸이 보인다');
+    ok(h1.indexOf('📊 수요조사 시트') >= 0, '★ v1.5 jsdom — 구글 시트 링크는 📊 + 이름');
+    ok(h1.indexOf('📄 안내문.hwp') >= 0 && h1.indexOf('150KB') >= 0, 'v1.5 jsdom — hwp 파일 칩 + 크기');
+    ok(h1.indexOf('📕 계획서.pdf') >= 0 && h1.indexOf('2.0MB') >= 0, 'v1.5 jsdom — pdf 칩 + 크기');
+    ok((h1.match(/removeSchoolTaskAtt\('a1'\)/g)||[]).length === 1 && (h1.match(/removeSchoolTaskAtt\('a2'\)/g)||[]).length === 1 && !/removeSchoolTaskAtt\('a3'\)/.test(h1),
+       '★★ v1.5 jsdom — 뗄 수 있는 것(내 것·내 할 일)만 ✕, 남의 것엔 없음');
+    ok((h1.match(/attachSchoolTaskFiles\('t[125]'/g)||[]).length === 3 && (h1.match(/promptSchoolTaskLink\('t[125]'/g)||[]).length === 3,
+       '★ v1.5 jsdom — 할 일마다 📎 붙이기·🔗 링크 (누구나 — 공동 작업)');
+    await w.openSchoolTaskAtt('a1');
+    ok(opened[0] === 'https://docs.google.com/spreadsheets/d/abc' && signed === null, '★ v1.5 jsdom — 링크는 그대로 새 창');
+    await w.openSchoolTaskAtt('a2');
+    ok(signed === 'B000012345/t1/x.hwp' && opened[1] === 'https://signed/B000012345/t1/x.hwp', '★★ v1.5 jsdom — 파일은 서명 주소로만 연다(비공개 버킷)');
+    // 폴백 — 첨부 RPC 없음
+    w.db.rpc = async (fn) => fn === 'my_school' ? ({ data: [school], error: null })
+      : fn === 'list_school_task_attachments' ? ({ data: null, error: { message: 'function does not exist' } })
+      : fn === 'list_school_admins' ? ({ data: [], error: null })
+      : ({ data: rows, error: null });
+    await w.loadSchoolTasks();
+    const h2 = d.getElementById('schooltask-list').innerHTML;
+    ok(d.getElementById('schooltask-wrap').hidden === false && h2.indexOf('📎') < 0 && d.getElementById('schooltask-att').hidden === true,
+       '★★ v1.5 jsdom — 첨부 RPC 없으면 할 일판은 그대로, 첨부 UI 만 숨김(SQL 미적용 폴백)');
+    // 미리 담기 — 링크는 https 만, 파일 20MB 상한
+    d.getElementById('schooltask-link-url').value = 'docs.google.com/x'; w.stashSchoolTaskLink();
+    ok(w.staskPending.links.length === 0, 'v1.5 jsdom — https 없는 링크는 안 담긴다');
+    d.getElementById('schooltask-link-url').value = 'https://docs.google.com/spreadsheets/d/q'; d.getElementById('schooltask-link-label').value = '시트'; w.stashSchoolTaskLink();
+    ok(w.staskPending.links.length === 1 && d.getElementById('schooltask-att-list').innerHTML.indexOf('📊 시트') >= 0, 'v1.5 jsdom — 링크 미리 담기 칩');
+    w.stashSchoolTaskFiles({ files: [{ name: 'big.zip', size: 30 * 1024 * 1024 }, { name: 'ok.pdf', size: 1000 }], value: '' });
+    ok(w.staskPending.files.length === 1 && w.staskPending.files[0].name === 'ok.pdf', '★ v1.5 jsdom — 20MB 넘는 파일은 담기지 않는다');
+    w.unstashSchoolTask('links', 0);
+    ok(w.staskPending.links.length === 0, 'v1.5 jsdom — 담은 것 빼기');
+  }
+
   console.log((fail === 0 ? '\u2705' : '\u274c') + ' 우리 학교 할 일판 — ' + pass + ' / ' + (pass + fail) + ' 통과' + (REV ? ' [역검증 모드]' : ''));
   process.exit(fail ? 1 : 0);
 })();
