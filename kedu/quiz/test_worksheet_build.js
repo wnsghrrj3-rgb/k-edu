@@ -30,8 +30,8 @@ T(/평가 · /.test(html.replace(/<!--[\s\S]*?-->/g, '').match(/CARD_LABEL = [^\
 T(/\|\| \(c0 \? \(c0\.lesson_no \? c0\.lesson_no \+ '차시 · ' : ''\) \+ c0\.name : '쪽지'\)/.test(html), '빈 제목의 기본값이 「N차시 · 개념」이 아님');
 /* ②③ 준비 중 문구 — 있는 척 금지 */
 var soon = (html.match(/function renderSoon[\s\S]*?\n\}/) || [''])[0];
-T(/준비 중/.test(soon), '②③ 화면이 「준비 중」임을 말하지 않음');
-T(/perf:/.test(soon) && /unit:/.test(soon) === false, '단원 평가가 W2 로 구현됐는데 준비 중 문구가 남아 있음');
+T(/grade:/.test(soon) && /W5/.test(soon), '아직 없는 화면(채점 그리드)이 「다음 단계」임을 말하지 않음 — 있는 척 금지');
+T(/unit:/.test(soon) === false && /perf:/.test(soon) === false, '②③이 구현됐는데 준비 중 문구가 남아 있음');
 
 /* ── 동작: 가짜 DB 로 조립 화면까지 띄운다 (원장 2개념·문항 16개·학급 1) ── */
 var BANK = [];
@@ -206,7 +206,7 @@ ran.then(function () {
   T(/quiz_set_open_result/.test(html) && /quiz_set_close/.test(html), '결과 열기·마감 RPC 호출이 없음');
   T(/s\.show_result !== 'immediate' && !s\.result_opened_at \? `<button[^`]*data-reveal/.test(html), '「결과 열기」가 닫힌 세트에만 뜨도록 조건이 안 걸림');
   click('#topTabs [data-top="perf"]');
-  T(/수행평가/.test(d.getElementById('view').textContent) && /준비 중/.test(d.getElementById('view').textContent), '「수행평가」 탭이 준비 중 화면을 안 그림');
+  T(d.querySelector('#subTabs [data-tab="build"]').textContent === '과제 고르기' && d.querySelector('#subTabs [data-tab="mine"]').textContent === '연 과제', '③의 하위 탭 이름(과제 고르기·연 과제)이 아님');
   click('#topTabs [data-top="quiz"]');
   T(d.getElementById('subTabs').style.display === '', '①로 돌아왔는데 하위 탭이 안 돌아옴');
   T(d.querySelector('#topTabs [data-top="quiz"]').classList.contains('on'), '상위 탭 강조가 안 따라옴');
@@ -215,6 +215,6 @@ ran.then(function () {
   dom2.window.getKeduDb = w.getKeduDb;
   try { dom2.window.eval(inline); } catch (e) { T(false, '?tab=mine 실행 예외: ' + e.message); }
   T(dom2.window.document.querySelector('#subTabs [data-tab="mine"]').classList.contains('on'), '?tab=mine 진입이 「내 쪽지」 탭을 안 켬(미리보기 돌아오기가 깨짐)');
-  console.log('\n케이학습지 build W1·W2·W3 — ' + pass + ' PASS / ' + fail + ' FAIL');
+  console.log('\n케이학습지 build W1~W4 — ' + pass + ' PASS / ' + fail + ' FAIL');
   process.exit(fail ? 1 : 0);
 });

@@ -44,6 +44,12 @@ h1{font-family:'Gowun Batang',serif;font-size:26px;font-weight:700;margin:0 0 4p
 .essay-row .ans{background:#faf8f3;border-radius:8px;padding:8px 10px;margin:6px 0;white-space:pre-wrap}
 .essay-row .pts button{margin-right:4px}
 .essay-row .pts button.on{background:var(--ink);color:var(--paper)}
+.tasks{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:8px}
+.task{border:1px solid var(--rule);border-radius:12px;padding:14px 16px;background:var(--card);font-size:13.5px;display:flex;flex-direction:column;gap:6px}
+.task h3{margin:0;font-size:15px}
+.task .lbl{color:var(--soft)}
+.task .tt{color:var(--muted);line-height:1.55}
+.task .row{margin-top:auto}
 .cols{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start}
 @media(max-width:860px){.cols{grid-template-columns:1fr}}
 .panel{background:var(--card);border:1px solid var(--rule);border-radius:12px;padding:18px 20px}
@@ -161,20 +167,20 @@ document.querySelectorAll('#subTabs button').forEach(b => b.onclick = () => {
 document.querySelectorAll('#topTabs button').forEach(b => b.onclick = () => {
   TOP = b.dataset.top;
   document.querySelectorAll('#topTabs button').forEach(x => x.classList.toggle('on', x === b));
-  document.getElementById('subTabs').style.display = TOP === 'perf' ? 'none' : '';
-  document.querySelector('#subTabs [data-tab="mine"]').textContent = TOP === 'unit' ? '내 단원 평가' : '내 쪽지';
+  document.querySelector('#subTabs [data-tab="build"]').textContent = TOP === 'perf' ? '과제 고르기' : '조립';
+  document.querySelector('#subTabs [data-tab="mine"]').textContent = TOP === 'unit' ? '내 단원 평가' : TOP === 'perf' ? '연 과제' : '내 쪽지';
   render();
 });
 
 function render(){
   if (TOP === 'unit') return TAB === 'mine' ? renderMine('unit_test') : renderUnit();
-  if (TOP === 'perf') return renderSoon('perf');
+  if (TOP === 'perf') return TAB === 'mine' ? renderPerfRuns() : renderPerf();
   TAB === 'build' ? renderBuild() : renderMine('quiz');
 }
 /* ②③ 은 아직 없는 화면이다 — 없는 것을 있는 척하지 않고, 무엇이 올지와 지금 대신 쓸 길을 적는다. */
 function renderSoon(which){
   const SOON = {
-    perf: `<b>수행평가</b>는 준비 중이에요.<br>단원별 과제 카드(영역 · 성취기준 · 산출물 종류) → 우리 반에 열기 → 학생 제출(사진 · 글) → 채점 그리드 → 공개 순서로 이어질 예정입니다.<br><br>1학년 수학 1단원 과제 카드 7건은 핸드오프 <code>kedu/worksheet/g1_math_u1/</code> 에 정본이 있어요.`
+    grade: `<b>채점 그리드</b>는 다음 단계(W5)예요.<br>학생 행 × 기준 3 열, 수준 버튼 한 번 · 관찰 메모 · 오개념 체크 → 공개 순서로 이어집니다. 지금은 「연 과제」에서 제출 현황과 제출물을 볼 수 있어요.`
   };
   view.innerHTML = `<div class="soon">${SOON[which]}</div>`;
 }
@@ -478,6 +484,107 @@ async function saveUnit(){
   document.querySelectorAll('#subTabs button').forEach(x => x.classList.toggle('on', x.dataset.tab === 'mine'));
   render();
   toast('단원 평가를 저장했어요. 우리 반에 열거나 종이로 뽑으세요.');
+}
+
+/* ===================== ③ 수행평가 (W4, 3종 설계 v2 §4) =====================
+   과제 카드(performance_tasks) → 「우리 반에 열기」 = performance_runs 1건 + 케이박스 카드(perf:<run>).
+   카드 라벨 = student_label(평가 단어 없음). 제출은 perf.html?run= 에서 사진·글(§8-③).
+   채점 그리드·공개는 W5.
+============================================================================ */
+let PTASKS = null;
+async function loadTasks(){
+  if (PTASKS) return PTASKS;
+  const { data, error } = await db.from('performance_tasks').select('*').eq('is_active', true).order('grade').order('unit_code').order('code');
+  if (error) return null;
+  return (PTASKS = data || []);
+}
+async function renderPerf(){
+  view.innerHTML = `<div class="gate">불러오는 중…</div>`;
+  const tasks = await loadTasks();
+  if (!tasks){ view.innerHTML = `<div class="soon">과제 목록을 읽을 수 없어요 — SQL v4(setup_worksheet_v4.sql)와 시드(seed_perf_g1_math_u1.sql)가 적용됐는지 확인해 주세요.</div>`; return; }
+  if (!tasks.length){ view.innerHTML = `<div class="soon">아직 과제가 없어요 — seed_perf_g1_math_u1.sql 을 실행하면 1학년 수학 1단원 과제 7건이 들어와요.</div>`; return; }
+  const units = uniq(tasks.map(t => t.grade + '학년 · ' + t.subject + ' · ' + t.unit_code));
+  view.innerHTML = `<div class="panel">
+    <h2>과제 고르기 <span style="color:var(--muted);font-weight:400">${tasks.length}건</span></h2>
+    <div class="filters"><select id="pfUnit">${units.map(u => `<option>${esc(u)}</option>`).join('')}</select>
+      <select id="pfClass">${CLASSES.length ? CLASSES.map(c => `<option value="${c.id}">${esc(c.code)}</option>`).join('') : '<option value="">학급 없음</option>'}</select></div>
+    <p class="hint">여섯 영역 중 어느 것이든 한 단원에서 두 건이면 성취기준을 덮어요(카드 07 운영 메모). 학생 화면엔 「학생 라벨」로만 뜨고 평가 낱말은 없어요. <b>사진에 아이 얼굴이 나오지 않게</b> 안내해 주세요.</p>
+    <div class="tasks" id="tasks"></div>
+  </div>`;
+  const draw = () => {
+    const key = f('pfUnit');
+    const list = tasks.filter(t => t.grade + '학년 · ' + t.subject + ' · ' + t.unit_code === key);
+    document.getElementById('tasks').innerHTML = list.map(t => `<div class="task">
+      <h3>${esc(t.title)} <span class="badge">${esc(t.area)}</span><span class="badge">${t.product_kind === 'photo' ? '사진' : '글'}</span></h3>
+      <div class="lbl">학생 라벨 · ${esc(t.student_label)}</div>
+      <div class="tt">${esc(t.task_text)}</div>
+      <div class="hint">${esc(t.std_code || '')}${t.lesson_link ? ' · ' + esc(t.lesson_link) : ''}</div>
+      <div class="row"><button class="btn" data-popen="${t.id}" ${CLASSES.length ? '' : 'disabled'}>우리 반에 열기</button><button class="btn ghost" data-pprev="${t.id}">카드 보기</button></div>
+      <div id="tcard-${t.id}"></div>
+    </div>`).join('');
+    document.querySelectorAll('[data-popen]').forEach(b => b.onclick = () => openPerf(b.dataset.popen, tasks));
+    document.querySelectorAll('[data-pprev]').forEach(b => b.onclick = () => {
+      const t = tasks.find(x => x.id === b.dataset.pprev), box = document.getElementById('tcard-' + t.id);
+      if (box.innerHTML){ box.innerHTML = ''; return; }
+      const rb = (t.rubric && t.rubric.criteria) || [];
+      box.innerHTML = `<div class="hint" style="margin-top:8px"><b>조건</b><ol style="margin:4px 0 8px 18px">${(t.conditions || []).map(c => `<li>${esc(c)}</li>`).join('')}</ol>
+        <b>루브릭</b><table class="grid"><tr><th>기준</th>${['잘함', '보통', '노력 요함'].map(l => `<th>${l}</th>`).join('')}</tr>
+        ${rb.map(c => `<tr><td class="nm">${esc(c.name)}</td>${c.levels.map(l => `<td style="white-space:normal;text-align:left">${esc(l.desc)}</td>`).join('')}</tr>`).join('')}</table>
+        <b>관찰 포인트</b><ol style="margin:4px 0 0 18px">${(t.observe_points || []).map(o => `<li>${esc(o.text)}${o.mis_code ? ` <span class="badge">${esc(o.mis_code)}</span>` : ''}</li>`).join('')}</ol></div>`;
+    });
+  };
+  document.getElementById('pfUnit').onchange = draw; draw();
+}
+async function openPerf(taskId, tasks){
+  const classId = f('pfClass'); if (!classId) return toast('학급코드를 먼저 만들어 주세요.');
+  const t = tasks.find(x => x.id === taskId);
+  const { data: run, error } = await db.from('performance_runs').insert({ task_id: taskId, class_code_id: classId, teacher_id: ME.id }).select('id').single();
+  if (error) return toast('열지 못했어요 — SQL v4 적용 여부를 확인해 주세요.');
+  const { error: e2 } = await db.rpc('open_for_class', { p_class_code_id: classId, p_content_key: 'perf:' + run.id, p_title: t.student_label, p_kind: 'perf', p_url: '/kedu/worksheet/perf.html?run=' + run.id });
+  if (e2) return toast('케이박스 카드를 만들지 못했어요.');
+  toast(`「${t.student_label}」을 우리 반에 열었어요.`);
+  TAB = 'mine'; document.querySelectorAll('#subTabs button').forEach(x => x.classList.toggle('on', x.dataset.tab === 'mine')); render();
+}
+async function renderPerfRuns(){
+  view.innerHTML = `<div class="gate">불러오는 중…</div>`;
+  const tasks = await loadTasks();
+  const { data: runs, error } = await db.from('performance_runs').select('id, task_id, class_code_id, opened_at, closed_at, reveal_to_student, performance_submissions(count)').eq('teacher_id', ME.id).order('opened_at', { ascending: false });
+  if (error){ view.innerHTML = `<div class="soon">연 과제를 읽을 수 없어요 — SQL v4 적용 여부를 확인해 주세요.</div>`; return; }
+  if (!runs || !runs.length){ view.innerHTML = `<div class="panel"><p class="hint" style="margin:0">아직 연 과제가 없어요. 「과제 고르기」에서 열어 보세요.</p></div>`; return; }
+  view.innerHTML = `<div class="panel">${runs.map(r => { const t = (tasks || []).find(x => x.id === r.task_id) || {}; const cls = CLASSES.find(c => c.id === r.class_code_id) || {}; const n = (r.performance_submissions && r.performance_submissions[0] && r.performance_submissions[0].count) || 0;
+    return `<div class="setrow"><h3>${esc(t.title || '과제')} <span class="badge">${esc(t.area || '')}</span></h3>
+      <div class="meta">학생 라벨 「${esc(t.student_label || '')}」 · 반 ${esc(cls.code || '')} · ${new Date(r.opened_at).toLocaleDateString('ko-KR')} · 제출 <b>${n}</b>${r.closed_at ? ' · <b>마감됨</b>' : ''}${r.reveal_to_student ? ' · 학생 공개' : ''}</div>
+      <div class="row"><button class="btn ghost" data-psubs="${r.id}">제출 보기</button><button class="btn ghost" data-pgrade="${r.id}">채점</button><button class="btn ghost" data-pclose="${r.id}" data-closed="${r.closed_at ? 1 : 0}">${r.closed_at ? '다시 열기' : '마감'}</button><a class="btn ghost" style="text-decoration:none" href="perf.html?run=${r.id}&preview=1">학생 화면 미리보기</a></div>
+      <div id="psub-${r.id}"></div></div>`; }).join('')}</div>`;
+  view.querySelectorAll('[data-psubs]').forEach(b => b.onclick = () => showPerfSubs(b.dataset.psubs));
+  view.querySelectorAll('[data-pgrade]').forEach(b => b.onclick = () => renderSoon('grade'));
+  view.querySelectorAll('[data-pclose]').forEach(b => b.onclick = async () => {
+    const closing = b.dataset.closed !== '1';
+    const { error } = await db.from('performance_runs').update({ closed_at: closing ? new Date().toISOString() : null }).eq('id', b.dataset.pclose);
+    if (error) return toast('바꾸지 못했어요.');
+    toast(closing ? '제출을 마감했어요.' : '다시 열었어요.'); renderPerfRuns();
+  });
+}
+async function showPerfSubs(runId){
+  const box = document.getElementById('psub-' + runId);
+  if (box.dataset.on){ box.innerHTML = ''; box.dataset.on = ''; return; }
+  box.dataset.on = '1'; box.innerHTML = `<p class="hint">불러오는 중…</p>`;
+  const { data: run } = await db.from('performance_runs').select('class_code_id').eq('id', runId).single();
+  const [{ data: sps }, { data: subs }] = await Promise.all([
+    db.from('student_profiles').select('id, nickname, seat_no').eq('class_code_id', run.class_code_id).order('seat_no').order('nickname'),
+    db.from('performance_submissions').select('student_id, kind, payload, checks, submitted_at').eq('run_id', runId)
+  ]);
+  const byS = {}; (subs || []).forEach(s => byS[s.student_id] = s);
+  const rows = await Promise.all((sps || []).map(async sp => {
+    const s = byS[sp.id]; if (!s) return `<tr><td>${sp.seat_no ?? ''}</td><td class="nm">${esc(sp.nickname)}</td><td class="na" colspan="2">아직</td></tr>`;
+    let body = '';
+    if (s.kind === 'photo' && s.payload && s.payload.path){
+      const { data: signed } = await db.storage.from('perf').createSignedUrl(s.payload.path, 600);
+      body = signed && signed.signedUrl ? `<a href="${signed.signedUrl}" target="_blank"><img src="${signed.signedUrl}" style="max-height:80px;border-radius:6px"></a>` : '(사진을 열 수 없어요)';
+    } else body = `<div style="white-space:pre-wrap;text-align:left;max-width:420px">${esc((s.payload && s.payload.text) || '')}</div>`;
+    return `<tr><td>${sp.seat_no ?? ''}</td><td class="nm">${esc(sp.nickname)}</td><td>${body}</td><td>${(s.checks || []).filter(Boolean).length}/${(s.checks || []).length} · ${new Date(s.submitted_at).toLocaleDateString('ko-KR')}</td></tr>`;
+  }));
+  box.innerHTML = `<table class="grid" style="margin-top:8px"><tr><th>번호</th><th>이름</th><th>제출물</th><th>조건 · 날짜</th></tr>${rows.join('')}</table>`;
 }
 
 /* ---------- 저장 ---------- */
