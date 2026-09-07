@@ -142,7 +142,9 @@ textarea:focus{outline:2px solid var(--accent);outline-offset:0;background:var(-
 /* ===== 종이(A4) 모드 ===== */
 body.paper{background:#fff}
 .sheet{width:210mm;height:297mm;margin:0 auto;padding:16mm 17mm 16mm;background:#fff;color:#1A1A1A;font-family:'Gowun Dodum',sans-serif;position:relative;display:flex;flex-direction:column;overflow:hidden}
-.pbody{flex:1;display:flex;flex-direction:column;justify-content:space-between;padding:4mm 0 8mm}
+.pbody{flex:1;display:flex;flex-direction:column;justify-content:space-between;padding:4mm 0 8mm;min-height:0}
+.pbody.loose{justify-content:flex-start;gap:12mm}
+.sheet.measure{position:absolute;left:-9999px;top:0;visibility:hidden}.sheet.measure .pbody{display:block}.sheet.measure .pq{margin-bottom:0}
 .sheet.key-sheet{display:block;height:auto;min-height:297mm}
 .sheet+.sheet{page-break-before:always}
 .ph{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1.5px solid #1A1A1A;padding-bottom:10px;margin-bottom:0;flex:none}
@@ -632,7 +634,6 @@ function renderPaper(){
   document.body.classList.add('paper'); const Qp = DATA.questions.map(prep); const r = rng(SEED); const circ = ['①','②','③','④'];
   const shuffled = Qp.map((q, i) => ({q, opts: q.options ? shuffle(q.options.map((o, k) => Object.assign({k}, o)), rng(SEED * 97 + i)) : null}));
   const title = DATA.title.replace(/ — .*/, ''); const sub = KINDNAME(DATA.kind) + (DATA.form ? ' ' + DATA.form : '');
-  const PER = Qp.length <= 12 ? Math.ceil(Qp.length / 2) : 9;
   const qhtml = (x, i) => { const q = x.q; let body = '';
     const paren = (label, cls) => `<div class="pans"><em>${label}</em>(<span class="paren ${cls || ''}"></span>)</div>`;
     if (q.kind === 'sa') body = paren('답', 'wide');
@@ -641,7 +642,7 @@ function renderPaper(){
     else if (q.kind === 'ox') body = `<div class="popts"><span data-n="O">맞아요</span><span data-n="X">틀려요</span></div><div class="popts" style="margin-top:8px">${q.reason_options.map((o, k) => `<span data-n="${circ[k]}">${esc(o.t)}</span>`).join('')}</div><div class="pans"><em>답</em>(<span class="paren"></span>)<em style="margin-left:14px">까닭</em>(<span class="paren"></span>)</div>`;
     else body = `<div class="popts">${x.opts.map((o, k) => `<span data-n="${circ[k]}">${paperOptText(o.t)}</span>`).join('')}</div>` + paren('답');
     return `<div class="pq"><span class="pn">${i + 1}</span><span class="pstem">${esc(q.stem.replace(/\n/g, ' '))}</span>${paperAsset(q.asset)}${body}</div>`; };
-  const page = (items, off, n) => `<div class="sheet"><div class="ph"><div><h1>${esc(title)}</h1><div class="meta">${esc(DATA.header || '1학년 수학')} · ${sub}</div></div><div class="idbox"><span>반</span><span>번호</span></div></div><div class="pbody">${items.map((x, i) => qhtml(x, off + i)).join('')}</div><div class="pfoot"><span>케이학습지 · keduclass.com</span><span>${n}</span></div></div>`;
+  const page = (items, off, n, loose) => `<div class="sheet"><div class="ph"><div><h1>${esc(title)}</h1><div class="meta">${esc(DATA.header || '1학년 수학')} · ${sub}</div></div><div class="idbox"><span>반</span><span>번호</span></div></div><div class="pbody${loose ? ' loose' : ''}">${items.map((x, i) => qhtml(x, off + i)).join('')}</div><div class="pfoot"><span>케이학습지 · keduclass.com</span><span>${n}</span></div></div>`;
   // 교사용 정답표
   const key = `<div class="sheet key-sheet"><div class="ph"><div><h1>${esc(title)} — 교사용</h1><div class="meta">정답 · 개념 · 오답 선택지의 오개념</div></div></div>
    <table class="key"><tr><th>번호</th><th>난이도</th><th>유형</th><th>정답</th><th>개념</th><th>오답 → 오개념</th></tr>${shuffled.map((x, i) => { const q = x.q; let ans = '';
@@ -650,7 +651,33 @@ function renderPaper(){
      const mis = q.options ? x.opts.map((o, k) => o.mis ? `${circ[k]}→${o.mis}` : '').filter(Boolean).join(' ') : (q.reason_options ? q.reason_options.filter(o => o.mis).map(o => o.mis).join(' ') : '');
      return `<tr><td>${i + 1}</td><td>D${q.difficulty}</td><td>${q.kind}</td><td>${ans}</td><td>${q.concept}</td><td>${mis}</td></tr>`; }).join('')}</table>
    <p style="font-size:12px;color:#555;margin-top:14px">오개념 코드: M01 세기 누락·중복 · M02 수 읽기 혼동 · M03 기수성 · M04 몇째/몇 개 혼동 · M05 기준 방향 무시 · M06 순서 흐트러짐 · M07 크다/작다 방향 반대 · M08 0을 수로 인정 못함 · M09 0과 1 혼동 · M10 길이로 비교 · M11 많다/적다 반대 (정본: handoff/kedu/worksheet/g1_math_u1/개념트리_오개념.md)</p></div>`;
-  app.innerHTML = `<div class="toolbar"><button onclick="window.print()">인쇄 / PDF 저장</button><button onclick="location.href='play.html?set=${SET}'">화면으로 풀기</button><button onclick="location.href='./'">학습지 목록</button><button onclick="location.href='${BACK.href}'">${esc(BACK.label)}</button></div>` + (() => { let out = '', pg = 0; for (let i = 0; i < shuffled.length; i += PER){ pg++; out += page(shuffled.slice(i, i + PER), i, pg); } return out; })() + key;
+  const toolbar = `<div class="toolbar"><button onclick="window.print()">인쇄 / PDF 저장</button><button onclick="location.href='play.html?set=${SET}'">화면으로 풀기</button><button onclick="location.href='./'">학습지 목록</button><button onclick="location.href='${BACK.href}'">${esc(BACK.label)}</button></div>`;
+  // 문항 수를 고정으로 자르지 않고, 실제 높이를 재서 A4 한 장 안에 들어가는 만큼만 싣는다.
+  // (문항마다 그림·보기·답란 높이가 달라 고정 개수로는 아래로 넘친다)
+  const measure = () => {
+    const m = document.createElement('div'); m.className = 'sheet measure';
+    m.innerHTML = page(shuffled, 0, 0).replace(/^<div class="sheet">/, '').replace(/<\/div>$/, '');
+    document.body.appendChild(m);
+    const body = m.querySelector('.pbody'); const cs = getComputedStyle(body);
+    const avail = body.getBoundingClientRect().height - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - 4; // 4px 여유
+    const hs = [...m.querySelectorAll('.pq')].map(el => el.getBoundingClientRect().height);
+    document.body.removeChild(m); return {avail, hs};
+  };
+  const layout = () => {
+    const {avail, hs} = measure(); const GAP = 14; // 문항 사이 최소 간격(px)
+    const pages = []; let cur = [], used = 0;
+    hs.forEach((h, i) => {
+      const need = cur.length ? h + GAP : h;
+      if (cur.length && used + need > avail){ pages.push({items: cur, used}); cur = []; used = 0; }
+      cur.push(i); used += cur.length === 1 ? h : need;
+    });
+    if (cur.length) pages.push({items: cur, used});
+    return pages.map((pg, n) => page(pg.items.map(i => shuffled[i]), pg.items[0], n + 1, pg.used < avail * 0.6)).join('');
+  };
+  const draw = () => { app.innerHTML = toolbar + layout() + key; };
+  draw();
+  // 웹폰트가 늦게 오면 글자 높이가 바뀌므로, 폰트가 다 오면 한 번 더 잰다.
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
 }
 </script>
 </body>
