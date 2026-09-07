@@ -6,6 +6,16 @@
 --   ③ 자작 qcode 규약 't_<teacher_id 앞 8>_<epoch>' — UNIQUE 충돌 없이 화면이 만든다
 -- =============================================================================
 
+-- [0] 선행 열 보증 — 2026-09-07 실측: #44 가 부분 적용돼 question_bank.source 가 없었다(42703). 같은 문장이라 재실행 안전.
+ALTER TABLE question_bank ADD COLUMN IF NOT EXISTS source     text NOT NULL DEFAULT 'kedu';
+ALTER TABLE question_bank ADD COLUMN IF NOT EXISTS teacher_id uuid REFERENCES teachers(id) ON DELETE SET NULL;
+ALTER TABLE quiz_set_items ADD COLUMN IF NOT EXISTS points int NOT NULL DEFAULT 1;
+ALTER TABLE scores ADD COLUMN IF NOT EXISTS source text NOT NULL DEFAULT 'online';
+ALTER TABLE quiz_sets ADD COLUMN IF NOT EXISTS result_opened_at   timestamptz;
+ALTER TABLE quiz_sets ADD COLUMN IF NOT EXISTS closed_at          timestamptz;
+ALTER TABLE quiz_sets ADD COLUMN IF NOT EXISTS target_student_ids uuid[];
+ALTER TABLE quiz_sets ADD COLUMN IF NOT EXISTS time_min           int;
+
 DROP POLICY IF EXISTS p_qbank_teacher_read ON question_bank;
 CREATE POLICY p_qbank_teacher_read ON question_bank
   FOR SELECT TO authenticated
