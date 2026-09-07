@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>케이글쓰기 — 케이에듀</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--paper:#FBF8F2;--card:#fff;--ink:#2B2620;--soft:#5B534A;--muted:#8B8378;--rule:#E6DFD3;--accent:#5B8EF8;--accent-soft:#EBF4FF;--ok:#3d7a52;--ok-soft:#E4F0E5;--wait:#a08a3a;--wait-soft:#F7F0D9;--no:#b8493f;--no-soft:#F9E5E2;--radius:18px;--shadow:0 2px 18px rgba(43,38,32,.07);--fs:17px}
+body{font-family:'Gowun Dodum',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased;font-size:var(--fs)}
+body.band-low{--fs:20px}body.band-high{--fs:16px}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.bar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--card);border-bottom:1px solid var(--rule);position:sticky;top:0;z-index:5}
+.bar .brand{font-family:'Gowun Batang',serif;font-weight:700;color:var(--accent)}
+.bar .ttl{color:var(--soft);font-size:15px}
+.page{max-width:680px;margin:0 auto;padding:20px 16px 90px}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:14px}
+h1{font-family:'Gowun Batang',serif;font-size:1.45em;line-height:1.4;margin-bottom:10px}
+h2{font-family:'Gowun Batang',serif;font-size:1.1em;margin-bottom:10px;color:var(--soft)}
+.topic{font-size:1.15em;line-height:1.6;padding:12px 14px;background:var(--accent-soft);border-radius:12px;margin-bottom:12px}
+.topic small{display:block;color:var(--muted);font-size:.8em;margin-top:4px}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.pick{border:1.5px solid var(--rule);background:#fff;border-radius:999px;padding:7px 14px;font:inherit;font-size:.9em;cursor:pointer;color:var(--soft)}
+.pick[aria-pressed=true]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700}
+input[type=text],textarea{width:100%;padding:13px;border:1px solid var(--rule);border-radius:14px;font:inherit;font-size:1em;line-height:1.7;background:#fff}
+textarea{min-height:240px;resize:vertical}
+.note{font-size:.82em;color:var(--muted);line-height:1.6;margin-top:8px}
+.notice{font-size:.85em;color:var(--wait);background:var(--wait-soft);border-radius:12px;padding:10px 14px;margin-top:12px;line-height:1.6}
+.big{display:block;width:100%;padding:15px;border:0;border-radius:14px;background:var(--accent);color:#fff;font:inherit;font-size:1.1em;font-weight:700;cursor:pointer;margin-top:12px}
+.big.ghost{background:#fff;color:var(--accent);border:2px solid var(--accent)}
+.big:disabled{opacity:.4;cursor:default}
+.count{font-size:.82em;color:var(--muted);text-align:right;margin-top:6px}
+/* 색칠 */
+.palette{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;position:sticky;top:52px;background:var(--card);padding:8px 0;z-index:4}
+.chip{border:2px solid transparent;border-radius:999px;padding:7px 14px;font:inherit;font-size:.92em;font-weight:700;cursor:pointer;color:#fff}
+.chip[aria-pressed=true]{outline:3px solid var(--ink);outline-offset:2px}
+.chip.eraser{background:#fff;color:var(--muted);border-color:var(--rule)}
+.sent{display:block;width:100%;text-align:left;border:1.5px solid var(--rule);background:#fff;border-radius:12px;padding:11px 13px;margin-bottom:8px;font:inherit;font-size:1em;line-height:1.7;cursor:pointer;position:relative}
+.sent .lbl{position:absolute;right:10px;top:-9px;font-size:.72em;padding:1px 8px;border-radius:999px;color:#fff;font-weight:700}
+.sent .ask{display:block;font-size:.8em;color:var(--wait);margin-top:4px}
+.sent.newpara{margin-top:18px}
+/* 글 틀 그림 */
+.frame{border:2px dashed var(--rule);border-radius:16px;padding:14px;background:#FFFDF9}
+.slot{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;margin-bottom:8px;border:1.5px solid var(--rule);background:#fff}
+.slot .box{width:34px;height:34px;border-radius:9px;flex:0 0 auto;border:2px solid var(--rule);background:repeating-linear-gradient(45deg,#f2ede4 0 4px,#fff 4px 8px)}
+.slot.green .box{background:var(--c);border-color:var(--c)}
+.slot.yellow .box{background:linear-gradient(135deg,var(--c) 50%,#fff 50%);border-color:var(--c)}
+.slot .nm{font-weight:700;min-width:64px}
+.slot .st{font-size:.85em;color:var(--muted)}
+.slot.green .st{color:var(--ok)}
+.fb{border-radius:14px;padding:13px 15px;margin-bottom:10px;line-height:1.65;display:flex;gap:10px;align-items:flex-start}
+.fb .dot{width:14px;height:14px;border-radius:50%;flex:0 0 auto;margin-top:6px}
+.fb.red{background:var(--no-soft)}.fb.red .dot{background:var(--no)}
+.fb.yellow{background:var(--wait-soft)}.fb.yellow .dot{background:var(--wait)}
+.fb.tidy{background:#F3F1EC}.fb.tidy .dot{background:var(--muted)}
+.done{text-align:center;padding:22px 10px}
+.done .stamp{display:inline-block;background:var(--ok-soft);color:var(--ok);font-family:'Gowun Batang',serif;font-size:1.3em;font-weight:700;padding:12px 24px;border-radius:999px;margin-bottom:10px}
+.meta{display:flex;gap:14px;font-size:.82em;color:var(--muted);margin-top:8px;flex-wrap:wrap}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<div class="bar"><span class="brand">케이에듀</span><span class="ttl">케이글쓰기</span></div>
+<div class="page" id="app"></div>
+
+<script src="/kedu_back.js" data-mount=".bar"></script>
+<script src="/kedu/write/engine.js"></script>
+<script>
+/* ===================== 케이글쓰기 — 학생 화면 (설계 v1 §6, G3) =====================
+   /kedu/write/?type=argue&grade=3&topic=…&kw=급식,김치
+   연습 모드: 저장 0 · 네트워크 0(데이터 JSON 세 장만). 「선생님께 보내기」는 G5(케이박스 KEDU_COLLECT)에서.
+   흐름: ① 고르기·쓰기 → ② 내 글에 색칠하기 → ③ 글 틀 보기(신호등 + 카드 ≤3) → 다시 고치기
+   규칙: 점수·등급·판정 낱말 0. 시스템 추정과 학생 표시가 다르면 학생을 먼저 믿는다.
+=================================================================================== */
+(function(){
+  'use strict';
+  var $=function(s,r){return (r||document).querySelector(s);};
+  var app=$('#app'), q=new URLSearchParams(location.search);
+  var D=null, state={type:q.get('type')||'argue', grade:parseInt(q.get('grade'),10)||3, topic:q.get('topic')||'', kw:(q.get('kw')||'').split(',').map(function(s){return s.trim();}).filter(Boolean), text:'', marks:{}, step:1, result:null, brush:null};
+  var fixed=!!q.get('topic');
+
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function band(){return KWRITE.bandOf(state.grade);}
+  function setBand(){document.body.className='band-'+band();}
+
+  Promise.all(['templates','signals','feedback'].map(function(n){return fetch('/kedu/write/data/'+n+'.json').then(function(r){return r.json();});}))
+  .then(function(a){D={templates:a[0],signals:a[1],feedback:a[2]};KWRITE.init(D);render();})
+  .catch(function(){app.innerHTML='<div class="card note">불러오지 못했어요. 새로고침해 볼까요?</div>';});
+
+  function render(){setBand();app.innerHTML='';[step1,step2,step3][state.step-1]();window.scrollTo(0,0);}
+
+  /* ① 고르기·쓰기 */
+  function step1(){
+    var tp=D.templates.types, c=document.createElement('div'); c.className='card';
+    var h='<h1>'+(fixed?'오늘의 글쓰기':'무슨 글을 쓸까요?')+'</h1>';
+    if(fixed){h+='<div class="topic">'+esc(state.topic)+'<small>'+esc(tp[state.type].name)+' · '+state.grade+'학년 틀</small></div>';}
+    else{
+      h+='<div class="row" id="types">'+Object.keys(tp).map(function(k){return '<button class="pick" data-k="'+k+'" aria-pressed="'+(k===state.type)+'">'+tp[k].name+'</button>';}).join('')+'</div>';
+      h+='<div class="row" id="grades">'+[1,2,3,4,5,6].map(function(g){return '<button class="pick" data-g="'+g+'" aria-pressed="'+(g===state.grade)+'">'+g+'학년</button>';}).join('')+'</div>';
+      h+='<input type="text" id="topic" placeholder="무엇에 대해 쓰나요? (예: 급식에 김치가 매일 나와야 할까?)" value="'+esc(state.topic)+'">';
+      h+='<div class="note">'+esc(tp[state.type].hint)+'</div>';
+    }
+    c.innerHTML=h; app.appendChild(c);
+    var w=document.createElement('div'); w.className='card';
+    var spec=tp[state.type].bands[band()];
+    w.innerHTML='<h2>글 쓰기</h2><textarea id="text" placeholder="여기에 글을 써요. 생각이 바뀌는 곳에서 줄을 바꿔요.">'+esc(state.text)+'</textarea><div class="count" id="count"></div><div class="meta"><span>이 틀에 필요한 것: '+Object.keys(spec.need).map(function(k){return D.templates.colors[k].name;}).join(' · ')+'</span><span>글자 '+spec.length[0]+'~'+spec.length[1]+' 정도</span></div><button class="big" id="go">내 글에 색칠하기</button><div class="notice">'+esc(D.feedback.state.notice)+'</div>';
+    app.appendChild(w);
+    var ta=$('#text'); function cnt(){$('#count').textContent=ta.value.replace(/\s+/g,'').length+'자';$('#go').disabled=!ta.value.trim();} cnt();
+    ta.addEventListener('input',function(){state.text=ta.value;cnt();});
+    if(!fixed){
+      $('#types').addEventListener('click',function(e){var b=e.target.closest('[data-k]');if(!b)return;state.type=b.dataset.k;state.topic=$('#topic').value;state.text=ta.value;render();});
+      $('#grades').addEventListener('click',function(e){var b=e.target.closest('[data-g]');if(!b)return;state.grade=+b.dataset.g;state.topic=$('#topic').value;state.text=ta.value;render();});
+      $('#topic').addEventListener('input',function(e){state.topic=e.target.value;});
+    }
+    $('#go').addEventListener('click',function(){
+      state.text=ta.value; if(!fixed)state.topic=$('#topic').value;
+      var prev=state._sig, sig=state.text; if(prev!==sig)state.marks={}; state._sig=sig;
+      state.step=(band()==='high')?3:2; if(state.step===3)state.result=analyze(); render();
+    });
+  }
+
+  function analyze(){return KWRITE.analyze({text:state.text,type:state.type,band:state.grade,topic:state.topic,keywords:state.kw,marks:state.marks});}
+
+  /* ② 색칠 — 저·중학년 메인 */
+  function step2(){
+    var tp=D.templates, spec=tp.types[state.type].bands[band()], colors=tp.colors;
+    var sents=KWRITE.split(state.text), c=document.createElement('div'); c.className='card';
+    var h='<h1>내 글에 색칠하기</h1><div class="note" style="margin:0 0 10px">색을 고르고, 그 색에 맞는 문장을 눌러요. '+spec.marks.map(function(k){return '<b style="color:'+colors[k].hex+'">'+colors[k].name+'</b>';}).join(' · ')+'</div>';
+    h+='<div class="palette">'+spec.marks.map(function(k){return '<button class="chip" data-c="'+k+'" style="background:'+colors[k].hex+'" aria-pressed="'+(state.brush===k)+'">'+colors[k].name+'</button>';}).join('')+'<button class="chip eraser" data-c="" aria-pressed="'+(state.brush==='')+'">지우개</button></div>';
+    h+='<div id="sents">'+sents.map(function(s){var m=state.marks[s.i];var st=m?'border-color:'+colors[m].hex+';background:'+colors[m].soft:'';return '<button class="sent'+(s.para>0&&sents[s.i-1]&&sents[s.i-1].para!==s.para?' newpara':'')+'" data-i="'+s.i+'" style="'+st+'">'+esc(s.text)+(m?'<span class="lbl" style="background:'+colors[m].hex+'">'+colors[m].name+'</span>':'')+'</button>';}).join('')+'</div>';
+    h+='<button class="big" id="see">글 틀 보기</button><button class="big ghost" id="back">다시 쓰기</button>';
+    c.innerHTML=h; app.appendChild(c);
+    if(state.brush===null){state.brush=spec.marks[0];$('.chip[data-c="'+state.brush+'"]').setAttribute('aria-pressed','true');}
+    $('.palette').addEventListener('click',function(e){var b=e.target.closest('.chip');if(!b)return;state.brush=b.dataset.c;document.querySelectorAll('.chip').forEach(function(x){x.setAttribute('aria-pressed',x===b);});});
+    $('#sents').addEventListener('click',function(e){var b=e.target.closest('.sent');if(!b)return;var i=b.dataset.i;if(state.brush)state.marks[i]=state.brush;else delete state.marks[i];var keep=state.brush;render();state.brush=keep;document.querySelectorAll('.chip').forEach(function(x){x.setAttribute('aria-pressed',x.dataset.c===keep);});});
+    $('#see').addEventListener('click',function(){state.result=analyze();state.step=3;render();});
+    $('#back').addEventListener('click',function(){state.step=1;render();});
+  }
+
+  /* ③ 글 틀 보기 — 신호등 + 카드 */
+  function step3(){
+    var r=state.result, colors=D.templates.colors, tp=D.templates.types[state.type];
+    var c=document.createElement('div'); c.className='card';
+    var order=tp.order.concat(Object.keys(r.spec.need).filter(function(k){return tp.order.indexOf(k)<0;})).filter(function(k){return r.elements[k];});
+    var h='<h1>내 글의 틀</h1><div class="frame">'+order.map(function(k){var e=r.elements[k];var st=e.status==='green'?'있어요':e.status==='yellow'?'조금 더':'아직 없어요';return '<div class="slot '+e.status+'" style="--c:'+colors[k].hex+'"><span class="box"></span><span class="nm">'+colors[k].name+'</span><span class="st">'+st+(e.need>1?' ('+Math.min(e.have,e.need)+'/'+e.need+')':'')+'</span></div>';}).join('');
+    if(r.topic){h+='<div class="slot '+r.topic.status+'" style="--c:#8B8378"><span class="box"></span><span class="nm">논제</span><span class="st">'+esc(r.topic.keywords.join(', '))+'</span></div>';}
+    h+='</div><div class="meta"><span>글자 '+r.length.chars+'</span><span>문단 '+r.paras.count+'</span></div>';
+    c.innerHTML=h; app.appendChild(c);
+
+    var f=document.createElement('div'); f.className='card';
+    if(r.done){f.innerHTML='<div class="done"><div class="stamp">틀이 다 채워졌어요</div><p>'+esc(D.feedback.state.allGreen)+'</p></div>';}
+    else{
+      f.innerHTML='<h2>다음에 넣어 볼 것</h2>'+r.cards.map(function(k){return '<div class="fb '+k.status+'"><span class="dot"></span><span>'+esc(k.msg)+'</span></div>';}).join('');
+      var asks=r.sentences.filter(function(s){return s.agree==='markedNoSignal'||s.agree==='signalNotMarked';}).slice(0,2);
+      if(asks.length){f.innerHTML+='<h2 style="margin-top:14px">문장 하나씩</h2>'+asks.map(function(s){var code=s.agree==='markedNoSignal'?s.mark:s.suggest;var msg=KWRITE.fill(D.feedback.state[s.agree],{name:colors[code].name,hint:D.feedback.state.hints[code]});return '<div class="sent" style="cursor:default;border-color:'+colors[code].hex+'">'+esc(s.text)+'<span class="ask">'+esc(msg)+'</span></div>';}).join('');}
+    }
+    f.innerHTML+='<button class="big" id="fix">다시 고치기</button>'+(band()!=='high'?'<button class="big ghost" id="paint">색칠 다시 하기</button>':'')+'<div class="notice">'+esc(D.feedback.state.notice)+'</div>';
+    app.appendChild(f);
+    $('#fix').addEventListener('click',function(){state.step=1;render();});
+    var p=$('#paint'); if(p)p.addEventListener('click',function(){state.step=2;render();});
+  }
+})();
+</script>
+</body>
+</html>
