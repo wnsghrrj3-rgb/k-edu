@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>도안 인쇄 — 케이아트</title>
+<style>
+:root{--bg:#F3F6FB;--panel:#FFFFFF;--border:#DCE3EE;--ink:#22304A;--sub:#6B7A94;--primary:#3B6FE0;--primary-light:#E6EEFF;--good:#22A06B;
+--kedu-title:'Jua',system-ui,sans-serif}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;overflow:hidden}
+button,select{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+.screen{position:fixed;inset:0;display:flex;flex-direction:column}
+.topbar{height:60px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;padding:0 14px;flex-shrink:0}
+.tb-title{font-family:var(--kedu-title);font-size:20px}
+.tb-spacer{flex:1}
+.tb-btn{height:42px;min-width:42px;padding:0 14px;border:1.5px solid var(--border);background:var(--panel);border-radius:12px;color:var(--sub);font-size:15px;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;text-decoration:none}
+.tb-btn:active{transform:scale(.96)}
+.tb-btn.prim{background:var(--primary);border-color:var(--primary);color:#fff;font-weight:700}
+.body{flex:1;display:flex;min-height:0}
+.side{width:300px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--border);overflow-y:auto;padding:12px}
+.side h3{font-family:var(--kedu-title);font-size:15px;color:var(--sub);margin:10px 4px 6px;font-weight:400}
+.items{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.it{border:1.5px solid var(--border);border-radius:12px;padding:9px 8px;text-align:left;font-size:13px;line-height:1.25;display:flex;flex-direction:column;gap:2px}
+.it .e{font-size:18px}
+.it .g{font-size:11px;color:var(--sub)}
+.it.on{border-color:var(--primary);background:var(--primary-light);color:var(--primary);font-weight:700}
+.it.on .g{color:var(--primary)}
+.opts{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.opt{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px}
+.opt select{border:1.5px solid var(--border);border-radius:10px;padding:6px 8px;font-size:13px;background:#fff;max-width:160px}
+.seg{display:flex;border:1.5px solid var(--border);border-radius:10px;overflow:hidden}
+.seg button{padding:6px 10px;font-size:13px;color:var(--sub)}
+.seg button.on{background:var(--primary);color:#fff;font-weight:700}
+.desc{font-size:12.5px;color:var(--sub);line-height:1.5;margin:8px 4px 0;background:var(--bg);border-radius:10px;padding:8px 10px}
+.stage{flex:1;overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:18px}
+#page{background:#fff;box-shadow:0 8px 30px rgba(33,52,94,.14);border-radius:4px;max-width:100%;height:auto}
+#page.p{width:min(100%,calc((100vh - 96px) * 0.707))}
+#page.l{width:min(100%,calc((100vh - 96px) * 1.414))}
+@media (max-width:760px){.body{flex-direction:column}.side{width:100%;max-height:44%;border-right:none;border-bottom:1px solid var(--border)}.tb-title{font-size:17px}.tb-btn{padding:0 10px;font-size:13px}}
+@media print{
+  body{overflow:visible;background:#fff}
+  .screen{position:static;display:block}
+  .topbar,.side{display:none!important}
+  .body{display:block}
+  .stage{padding:0;overflow:visible;display:block}
+  #page{box-shadow:none;border-radius:0;width:100%!important;height:auto;page-break-after:always}
+}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<script src="/kedu_ga.js" defer></script>
+</head>
+<body>
+<div class="screen">
+  <div class="topbar">
+    <div class="tb-title">📐 도안 인쇄</div>
+    <div class="tb-spacer"></div>
+    <a class="tb-btn" href="/draw/">🎨 케이아트</a>
+    <button class="tb-btn" id="btnSeed" title="같은 도안, 다른 모양">🎲 다른 모양</button>
+    <button class="tb-btn prim" id="btnPrint">🖨️ 인쇄</button>
+  </div>
+  <div class="body">
+    <div class="side">
+      <h3>도안 고르기</h3>
+      <div class="items" id="items"></div>
+      <h3>설정</h3>
+      <div class="opts" id="opts"></div>
+      <div class="desc" id="desc"></div>
+    </div>
+    <div class="stage"><svg id="page" class="p" xmlns="http://www.w3.org/2000/svg"></svg></div>
+  </div>
+</div>
+<style id="pageCss"></style>
+
+<script id="kst-logic">
+window.KST=(function(){
+  /* ── 공통 ── */
+  function rng(seed){let a=(seed>>>0)||1;return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+  const F=n=>Math.round(n*100)/100;
+  const INK='#222',GUIDE='#9AA3AF',FAINT='#D9DEE5',LIGHT='#EEF1F5';
+  const ln=(x1,y1,x2,y2,c=INK,w=.35,d='')=>`<line x1="${F(x1)}" y1="${F(y1)}" x2="${F(x2)}" y2="${F(y2)}" stroke="${c}" stroke-width="${w}"${d?` stroke-dasharray="${d}"`:''} stroke-linecap="round"/>`;
+  const rect=(x,y,w,h,c=INK,sw=.4,fill='none',extra='')=>`<rect x="${F(x)}" y="${F(y)}" width="${F(w)}" height="${F(h)}" stroke="${c}" stroke-width="${sw}" fill="${fill}" ${extra}/>`;
+  const circ=(cx,cy,r,c=INK,sw=.4,fill='none',d='')=>`<circle cx="${F(cx)}" cy="${F(cy)}" r="${F(r)}" stroke="${c}" stroke-width="${sw}" fill="${fill}"${d?` stroke-dasharray="${d}"`:''}/>`;
+  const path=(d,c=INK,sw=.4,fill='none',dash='')=>`<path d="${d}" stroke="${c}" stroke-width="${sw}" fill="${fill}" stroke-linejoin="round" stroke-linecap="round"${dash?` stroke-dasharray="${dash}"`:''}/>`;
+  const txt=(x,y,s,sz=3.2,c=INK,anchor='start',fam='')=>`<text x="${F(x)}" y="${F(y)}" font-size="${sz}" fill="${c}" text-anchor="${anchor}" font-family="${fam||"'Noto Sans KR',system-ui,sans-serif"}">${s}</text>`;
+  const poly=(pts,c=INK,sw=.4,fill='none',dash='')=>path('M'+pts.map(p=>F(p[0])+' '+F(p[1])).join(' L')+' Z',c,sw,fill,dash);
+  const hsl=(h,s=85,l=55)=>`hsl(${Math.round(h)},${s}%,${l}%)`;
+  const GRAY=n=>Array.from({length:n},(_,i)=>{const v=Math.round(255-255*i/(n-1));return`rgb(${v},${v},${v})`});
+
+  /* ── 도안 정의 ── */
+  const ITEMS=[
+    {id:'wheel',emoji:'🎨',title:'색상환',grades:'3~6학년',desc:'빈 칸을 순서대로 칠해 색상환을 완성해요. 기준색 3개가 표시된 채로 시작하면 저학년도 할 수 있어요.',
+      opts:[{k:'n',label:'색 수',def:'12',values:[['6','6색'],['12','12색'],['24','24색']]},{k:'mode',label:'채움',def:'blank',values:[['blank','빈 칸'],['prim','기준색 3개'],['full','완성본']]}]},
+    {id:'value',emoji:'🌗',title:'명암 단계표',grades:'4~6학년',desc:'양 끝(흰색·검정)만 채워져 있어요. 사이 단계를 연필로 점점 진하게 칠하고, 아래 구와 원기둥에 빛 방향에 맞게 명암을 넣어요.',
+      opts:[{k:'n',label:'단계',def:'5',values:[['3','3단계'],['5','5단계'],['7','7단계']]},{k:'shape',label:'연습 도형',def:'both',values:[['both','구 + 원기둥'],['sphere','구'],['none','없음']]}]},
+    {id:'sym',emoji:'🦋',title:'대칭 그리기',grades:'1~4학년',desc:'반쪽만 그려져 있어요. 가운데 선을 기준으로 나머지 반쪽을 똑같이 그려 완성해요.',
+      opts:[{k:'shape',label:'모양',def:'butterfly',values:[['butterfly','나비'],['face','얼굴'],['vase','꽃병'],['free','자유 도형']]},{k:'grid',label:'격자 보조선',def:'on',values:[['on','있음'],['off','없음']]}]},
+    {id:'enlarge',emoji:'🔍',title:'격자 확대 그리기',grades:'3~6학년',desc:'작은 그림을 칸별로 보고 큰 격자에 옮겨 그려요. 칸 번호(A1, B2…)를 맞추면 비율이 저절로 맞아요.',
+      opts:[{k:'n',label:'칸 수',def:'4',values:[['3','3×3'],['4','4×4'],['6','6×6']]}]},
+    {id:'mandala',emoji:'🪷',title:'만다라',grades:'2~6학년',desc:'중심에서 뻗은 안내선과 원을 따라 같은 무늬를 반복해요. 한 칸 본보기가 있으면 그걸 보고 돌려 그려요.',
+      opts:[{k:'div',label:'분할',def:'8',values:[['6','6분할'],['8','8분할'],['12','12분할']]},{k:'rings',label:'원 수',def:'4',values:[['3','3개'],['4','4개'],['5','5개']]},{k:'sample',label:'본보기 칸',def:'on',values:[['on','있음'],['off','없음']]}]},
+    {id:'tess',emoji:'🔷',title:'테셀레이션',grades:'4~6학년',desc:'빈틈 없이 반복되는 무늬를 만들어요. 한 변을 잘라 반대편에 붙이면 새로운 조각이 되고, 그 조각도 빈틈 없이 맞춰져요.',
+      opts:[{k:'base',label:'기본 도형',def:'square',values:[['square','정사각형'],['tri','정삼각형'],['hex','정육각형']]},{k:'guide',label:'변형 안내',def:'on',values:[['on','있음'],['off','없음']]}]},
+    {id:'pixel',emoji:'🟩',title:'픽셀아트 격자',grades:'2~6학년',desc:'칸을 하나씩 칠해 그림을 만들어요. 좌표가 있으면 "C4 칠하기" 같은 놀이도 되고, 아래 색 계획칸에 쓸 색을 먼저 정해요.',
+      opts:[{k:'n',label:'크기',def:'16',values:[['8','8×8'],['16','16×16'],['32','32×32']]},{k:'coord',label:'좌표',def:'on',values:[['on','있음'],['off','없음']]}]},
+    {id:'band',emoji:'🎀',title:'무늬 띠',grades:'1~4학년',desc:'앞부분 무늬를 보고 규칙을 찾아 이어 그려요. 반복·회전·대칭 세 가지 규칙이 한 장에 있어요.',
+      opts:[{k:'rules',label:'규칙',def:'all',values:[['all','세 규칙 모두'],['repeat','반복만'],['mirror','대칭만'],['rotate','회전만']]}]},
+    {id:'net',emoji:'📦',title:'입체 전개도',grades:'4~6학년',desc:'실선은 자르고, 점선은 접고, 빗금은 풀칠해요. 오려 접으면 입체가 돼요. 접기 전에 각 면을 꾸며요.',
+      opts:[{k:'solid',label:'입체',def:'cube',values:[['cube','정육면체'],['prism','삼각기둥'],['tetra','정사면체'],['pyramid','사각뿔']]}]},
+    {id:'fold',emoji:'📄',title:'종이접기 안내선',grades:'1~3학년',desc:'정사각형 종이의 기본 접기 안내선이에요. 골 접기(- - -)는 안으로, 산 접기(-·-·-)는 밖으로 접어요.',
+      opts:[{k:'base',label:'기본 접기',def:'tri',values:[['tri','삼각 접기'],['door','문 접기'],['blintz','방석 접기'],['star','8등분 별 접기']]}]},
+    {id:'persp',emoji:'🛣️',title:'원근 연습',grades:'5~6학년',desc:'지평선과 소실점이 있어요. 앞면은 그려져 있으니, 모서리에서 소실점으로 선을 그어 상자를 완성해요.',
+      opts:[{k:'pts',label:'소실점',def:'1',values:[['1','1점 투시'],['2','2점 투시']]},{k:'guide',label:'안내선',def:'on',values:[['on','있음'],['off','없음']]}]},
+    {id:'frame',emoji:'🖼️',title:'자유 캔버스 틀',grades:'전 학년',desc:'액자 테두리와 제목·이름칸만 있는 빈 도안이에요. 어떤 주제든 여기에 그려요.',
+      opts:[{k:'style',label:'테두리',def:'plain',values:[['plain','기본'],['round','둥근'],['wave','물결'],['film','필름']]},{k:'title',label:'제목칸',def:'on',values:[['on','있음'],['off','없음']]}]}
+  ];
+  const BY={};ITEMS.forEach(i=>BY[i.id]=i);
+  function defaults(id){const o={};(BY[id].opts||[]).forEach(p=>o[p.k]=p.def);return o}
+
+  /* ── 생성기 ── */
+  const G={};
+  G.wheel=(g)=>{
+    const n=+g.o.n,cx=g.x+g.w/2,cy=g.y+g.h/2,R=Math.min(g.w,g.h)/2-4,r1=R*0.55,r2=R;let s='';
+    const prim=n===6?[0,2,4]:n===12?[0,4,8]:[0,8,16];
+    for(let i=0;i<n;i++){
+      const a0=(i/n)*Math.PI*2-Math.PI/2,a1=((i+1)/n)*Math.PI*2-Math.PI/2;
+      const p=(r,a)=>[cx+r*Math.cos(a),cy+r*Math.sin(a)];
+      const [x0,y0]=p(r2,a0),[x1,y1]=p(r2,a1),[x2,y2]=p(r1,a1),[x3,y3]=p(r1,a0);
+      let fill='none';
+      if(g.o.mode==='full'||(g.o.mode==='prim'&&prim.includes(i)))fill=hsl(i*360/n);
+      s+=path(`M${F(x0)} ${F(y0)} A${F(r2)} ${F(r2)} 0 0 1 ${F(x1)} ${F(y1)} L${F(x2)} ${F(y2)} A${F(r1)} ${F(r1)} 0 0 0 ${F(x3)} ${F(y3)} Z`,INK,.4,fill);
+      const am=(a0+a1)/2,[tx,ty]=p((r1+r2)/2,am);
+      if(fill==='none')s+=txt(tx,ty+1.1,String(i+1),3,GUIDE,'middle');
+    }
+    s+=circ(cx,cy,r1*0.55,FAINT,.3);
+    const names=n===6?['빨강','주황','노랑','초록','파랑','보라']:null;
+    if(names){names.forEach((nm,i)=>{const a=((i+.5)/n)*Math.PI*2-Math.PI/2;s+=txt(cx+(r2+4)*Math.cos(a),cy+(r2+4)*Math.sin(a)+1,nm,3,INK,'middle')})}
+    else{['빨강','노랑','파랑'].forEach((nm,k)=>{const i=prim[k],a=((i+.5)/n)*Math.PI*2-Math.PI/2;s+=txt(cx+(r2+4)*Math.cos(a),cy+(r2+4)*Math.sin(a)+1,nm,3,INK,'middle')})}
+    s+=txt(cx,cy+1,n+'색',4,GUIDE,'middle');
+    return s;
+  };
+  G.value=(g)=>{
+    const n=+g.o.n,pad=4,bw=Math.min((g.w-pad*(n-1))/n,32),bh=22,x0=g.x+(g.w-(bw*n+pad*(n-1)))/2,y0=g.y+6;let s='';
+    const gr=GRAY(n);
+    for(let i=0;i<n;i++){const x=x0+i*(bw+pad);const fill=(i===0||i===n-1)?gr[i]:'none';s+=rect(x,y0,bw,bh,INK,.5,fill);s+=txt(x+bw/2,y0+bh+5,String(i+1),3.2,INK,'middle');}
+    s+=txt(x0,y0+bh+11,'← 밝음',3,GUIDE);s+=txt(x0+bw*n+pad*(n-1),y0+bh+11,'어두움 →',3,GUIDE,'end');
+    if(g.o.shape==='none')return s;
+    const ty=y0+bh+22,th=g.h-(ty-g.y)-4;
+    const sx=g.o.shape==='both'?g.x+g.w*0.28:g.x+g.w/2,sy=ty+th*0.5,sr=Math.min(th*0.34,38);
+    s+=circ(sx,sy,sr,INK,.5);
+    const lx=sx-sr*1.4,ly=sy-sr*1.5;
+    s+=circ(lx,ly,3.2,INK,.4,'#FFE066');for(let k=0;k<8;k++){const a=k*Math.PI/4;s+=ln(lx+4.5*Math.cos(a),ly+4.5*Math.sin(a),lx+6.5*Math.cos(a),ly+6.5*Math.sin(a),INK,.4)}
+    s+=path(`M${F(lx+7)} ${F(ly+5)} L${F(sx-sr*0.75)} ${F(sy-sr*0.75)}`,GUIDE,.4,'none','2,1.5');
+    s+=path(`M${F(sx-sr*1.1)} ${F(sy+sr+1)} Q${F(sx+sr*0.3)} ${F(sy+sr+7)} ${F(sx+sr*1.8)} ${F(sy+sr+1.5)} Q${F(sx+sr*0.6)} ${F(sy+sr-1)} ${F(sx-sr*1.1)} ${F(sy+sr+1)} Z`,GUIDE,.35,'none','1.5,1');
+    s+=txt(sx,sy+sr+13,'구 — 빛 반대쪽이 가장 어두워요',3,GUIDE,'middle');
+    if(g.o.shape==='both'){
+      const cx2=g.x+g.w*0.72,cw=sr*1.6,ch=sr*2.1,cy2=sy-ch/2,ry=cw*0.22;
+      s+=path(`M${F(cx2-cw/2)} ${F(cy2)} L${F(cx2-cw/2)} ${F(cy2+ch)} A${F(cw/2)} ${F(ry)} 0 0 0 ${F(cx2+cw/2)} ${F(cy2+ch)} L${F(cx2+cw/2)} ${F(cy2)}`,INK,.5);
+      s+=`<ellipse cx="${F(cx2)}" cy="${F(cy2)}" rx="${F(cw/2)}" ry="${F(ry)}" stroke="${INK}" stroke-width=".5" fill="none"/>`;
+      s+=txt(cx2,sy+sr+13,'원기둥 — 세로 띠로 단계를 나눠요',3,GUIDE,'middle');
+    }
+    return s;
+  };
+  G.sym=(g)=>{
+    const cx=g.x+g.w/2,cy=g.y+g.h/2,S=Math.min(g.w,g.h)*0.42;let s='';
+    if(g.o.grid==='on'){const st=S/5;for(let i=-6;i<=6;i++){s+=ln(cx+i*st,g.y,cx+i*st,g.y+g.h,FAINT,.25);s+=ln(g.x,cy+i*st,g.x+g.w,cy+i*st,FAINT,.25)}}
+    s+=ln(cx,g.y,cx,g.y+g.h,GUIDE,.5,'3,2');
+    const X=(u)=>F(cx-u*S),Y=(v)=>F(cy+v*S); // 왼쪽 반 (u>0 = 왼쪽)
+    const P=(pts)=>pts.map(p=>X(p[0])+' '+Y(p[1]));
+    if(g.o.shape==='butterfly'){
+      s+=path(`M${X(0)} ${Y(-.85)} C${X(.5)} ${Y(-1.25)} ${X(1.15)} ${Y(-.9)} ${X(1)} ${Y(-.2)} C${X(.95)} ${Y(.1)} ${X(.5)} ${Y(.1)} ${X(.1)} ${Y(0)} C${X(.6)} ${Y(.2)} ${X(1)} ${Y(.5)} ${X(.75)} ${Y(.9)} C${X(.5)} ${Y(1.1)} ${X(.15)} ${Y(.8)} ${X(0)} ${Y(.45)}`,INK,.6);
+      s+=`<ellipse cx="${X(0)}" cy="${Y(0)}" rx="${F(S*.1)}" ry="${F(S*.9)}" stroke="${INK}" stroke-width=".6" fill="none"/>`;
+      s+=path(`M${X(.05)} ${Y(-.85)} C${X(.25)} ${Y(-1.05)} ${X(.35)} ${Y(-1.15)} ${X(.4)} ${Y(-1.25)}`,INK,.5);s+=circ(cx-S*.4,cy-S*1.27,1.2,INK,.4,INK);
+      s+=circ(cx-S*.65,cy-S*.55,S*.14,INK,.5);s+=circ(cx-S*.55,cy+S*.5,S*.09,INK,.5);
+    }else if(g.o.shape==='face'){
+      s+=path(`M${X(0)} ${Y(-1.05)} C${X(.85)} ${Y(-1.05)} ${X(1)} ${Y(-.3)} ${X(.95)} ${Y(.15)} C${X(.9)} ${Y(.65)} ${X(.5)} ${Y(1.05)} ${X(0)} ${Y(1.05)}`,INK,.6);
+      s+=path(`M${X(.95)} ${Y(-.1)} C${X(1.2)} ${Y(-.25)} ${X(1.2)} ${Y(.25)} ${X(.95)} ${Y(.2)}`,INK,.5);
+      s+=`<ellipse cx="${X(.42)}" cy="${Y(-.2)}" rx="${F(S*.18)}" ry="${F(S*.11)}" stroke="${INK}" stroke-width=".5" fill="none"/>`;s+=circ(cx-S*.42,cy-S*.2,S*.06,INK,.4,INK);
+      s+=path(`M${X(.65)} ${Y(-.45)} Q${X(.42)} ${Y(-.55)} ${X(.2)} ${Y(-.45)}`,INK,.6);
+      s+=path(`M${X(0)} ${Y(.05)} L${X(.12)} ${Y(.3)} L${X(0)} ${Y(.33)}`,INK,.5);
+      s+=path(`M${X(.35)} ${Y(.6)} Q${X(.18)} ${Y(.75)} ${X(0)} ${Y(.72)}`,INK,.6);
+      s+=path(`M${X(0)} ${Y(-1.05)} C${X(.5)} ${Y(-1.3)} ${X(1.05)} ${Y(-1.1)} ${X(1)} ${Y(-.5)} C${X(.8)} ${Y(-.8)} ${X(.4)} ${Y(-.85)} ${X(0)} ${Y(-.8)}`,INK,.6);
+    }else if(g.o.shape==='vase'){
+      s+=path(`M${X(0)} ${Y(-1.05)} L${X(.3)} ${Y(-1.05)} L${X(.3)} ${Y(-.95)} C${X(.25)} ${Y(-.6)} ${X(.7)} ${Y(-.4)} ${X(.7)} ${Y(.1)} C${X(.7)} ${Y(.6)} ${X(.4)} ${Y(.8)} ${X(.35)} ${Y(.95)} L${X(.45)} ${Y(1.05)} L${X(0)} ${Y(1.05)}`,INK,.6);
+      s+=path(`M${X(.15)} ${Y(-1.05)} C${X(.3)} ${Y(-1.4)} ${X(.5)} ${Y(-1.45)} ${X(.45)} ${Y(-1.55)}`,INK,.5);
+      for(let k=0;k<5;k++){const a=Math.PI*(.9+k*.28);s+=`<ellipse cx="${F(cx-S*.45+S*.1*Math.cos(a))}" cy="${F(cy-S*1.55+S*.1*Math.sin(a))}" rx="${F(S*.08)}" ry="${F(S*.05)}" transform="rotate(${Math.round(a*180/Math.PI)} ${F(cx-S*.45+S*.1*Math.cos(a))} ${F(cy-S*1.55+S*.1*Math.sin(a))})" stroke="${INK}" stroke-width=".4" fill="none"/>`}
+      s+=path(`M${X(.65)} ${Y(-.1)} Q${X(.5)} ${Y(.1)} ${X(.65)} ${Y(.3)}`,INK,.45);
+    }else{
+      const r=g.r,pts=[[0,-1]];let n=5+Math.floor(r()*4);
+      for(let i=1;i<n;i++){const v=-1+2*i/n;pts.push([.3+r()*.8,v+(r()-.5)*.15])}
+      pts.push([0,1]);
+      let d='M'+P([pts[0]])[0];for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i];d+=r()<.5?` L${P([b])[0]}`:` Q${X((a[0]+b[0])/2+(r()-.5)*.5)} ${Y((a[1]+b[1])/2)} ${P([b])[0]}`}
+      s+=path(d,INK,.6);
+      const k=2+Math.floor(r()*3);for(let i=0;i<k;i++){const cxx=cx-S*(.25+r()*.5),cyy=cy+S*(-.6+r()*1.2),rr=S*(.05+r()*.1);s+=r()<.5?circ(cxx,cyy,rr,INK,.5):rect(cxx-rr,cyy-rr,rr*2,rr*2,INK,.5)}
+    }
+    s+=txt(cx,g.y+g.h+5,'가운데 점선을 기준으로 오른쪽을 똑같이 그려요',3,GUIDE,'middle');
+    return s;
+  };
+  G.enlarge=(g)=>{
+    const n=+g.o.n,r=g.r;let s='';
+    const small=Math.min(g.w*0.28,50),sx=g.x,sy=g.y,cs=small/n;
+    const big=Math.min(g.w-small-14,g.h-8),bx=g.x+g.w-big,by=g.y+(g.h-big)/2,cb=big/n;
+    const lab=i=>String.fromCharCode(65+i);
+    const grid=(x,y,c,lw)=>{let t='';for(let i=0;i<=n;i++){t+=ln(x+i*c,y,x+i*c,y+n*c,i%n?FAINT:INK,i%n?lw:lw*1.6);t+=ln(x,y+i*c,x+n*c,y+i*c,i%n?FAINT:INK,i%n?lw:lw*1.6)}
+      for(let i=0;i<n;i++){t+=txt(x+i*c+c/2,y-1.2,lab(i),c*.28,GUIDE,'middle');t+=txt(x-1.2,y+i*c+c/2+c*.1,String(i+1),c*.28,GUIDE,'end')}return t};
+    s+=grid(sx+5,sy+5,cs,.3);s+=grid(bx,by,cb,.35);
+    // 원본 그림: 시드 기반 별·집·물고기 중 하나
+    const kind=Math.floor(r()*3),ox=sx+5,oy=sy+5,u=v=>ox+v*small,w=v=>oy+v*small;
+    let d='';
+    if(kind===0){const pts=[];for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rr=i%2?.2:.42;pts.push([.5+rr*Math.cos(a),.5+rr*Math.sin(a)])}d=poly(pts.map(p=>[u(p[0]),w(p[1])]),INK,.5)}
+    else if(kind===1){d=poly([[u(.15),w(.9)],[u(.15),w(.45)],[u(.5),w(.15)],[u(.85),w(.45)],[u(.85),w(.9)]],INK,.5)+rect(u(.42),w(.62),small*.16,small*.28,INK,.5)+rect(u(.62),w(.5),small*.14,small*.14,INK,.5)}
+    else{d=path(`M${F(u(.15))} ${F(w(.5))} Q${F(u(.45))} ${F(w(.12))} ${F(u(.75))} ${F(w(.5))} Q${F(u(.45))} ${F(w(.88))} ${F(u(.15))} ${F(w(.5))} Z M${F(u(.75))} ${F(w(.5))} L${F(u(.92))} ${F(w(.3))} L${F(u(.92))} ${F(w(.7))} Z`,INK,.5)+circ(u(.3),w(.42),small*.03,INK,.4,INK)}
+    s+=d;
+    s+=txt(sx+5+small/2,sy+small+10,'원본',3.2,INK,'middle');
+    s+=txt(sx+5,sy+small+18,'칸 번호를 맞춰',3,GUIDE);s+=txt(sx+5,sy+small+23,'큰 격자에 옮겨요',3,GUIDE);
+    s+=txt(sx+5,sy+small+30,`${n}×${n}칸`,3,GUIDE);
+    return s;
+  };
+  G.mandala=(g)=>{
+    const div=+g.o.div,rings=+g.o.rings,cx=g.x+g.w/2,cy=g.y+g.h/2,R=Math.min(g.w,g.h)/2-3,r=g.r;let s='';
+    for(let k=1;k<=rings;k++)s+=circ(cx,cy,R*k/rings,k===rings?INK:FAINT,k===rings?.5:.3);
+    for(let i=0;i<div;i++){const a=i*Math.PI*2/div-Math.PI/2;s+=ln(cx,cy,cx+R*Math.cos(a),cy+R*Math.sin(a),FAINT,.3)}
+    if(g.o.sample==='on'){
+      const a0=-Math.PI/2,a1=-Math.PI/2+Math.PI*2/div,am=(a0+a1)/2;
+      const pt=(rr,a)=>[cx+rr*Math.cos(a),cy+rr*Math.sin(a)];
+      for(let k=0;k<rings;k++){
+        const ri=R*k/rings,ro=R*(k+1)/rings,rm=(ri+ro)/2,t=Math.floor(r()*3);
+        const [mx,my]=pt(rm,am),[ax,ay]=pt(ri+(ro-ri)*.15,am),[bx,by]=pt(ro-(ro-ri)*.15,am);
+        const [lx,ly]=pt(rm,a0+(a1-a0)*.25),[rx,ry]=pt(rm,a0+(a1-a0)*.75);
+        if(t===0)s+=path(`M${F(ax)} ${F(ay)} Q${F(lx)} ${F(ly)} ${F(bx)} ${F(by)} Q${F(rx)} ${F(ry)} ${F(ax)} ${F(ay)} Z`,INK,.5);
+        else if(t===1)s+=circ(mx,my,(ro-ri)*.28,INK,.5)+circ(mx,my,(ro-ri)*.12,INK,.4,INK);
+        else s+=poly([[ax,ay],[lx,ly],[bx,by],[rx,ry]],INK,.5);
+      }
+      s+=txt(cx,g.y+g.h+5,'첫 칸의 무늬를 다른 칸에 똑같이 돌려 그려요',3,GUIDE,'middle');
+    }
+    return s;
+  };
+  G.tess=(g)=>{
+    const base=g.o.base,r=g.r;let s='';
+    const area=Math.min(g.w,g.h-(g.o.guide==='on'&&base==='square'?52:0)),ax=g.x+(g.w-area)/2,ay=g.y;
+    if(base==='square'){const n=8,c=area/n;for(let i=0;i<=n;i++){s+=ln(ax+i*c,ay,ax+i*c,ay+area,FAINT,.3);s+=ln(ax,ay+i*c,ax+area,ay+i*c,FAINT,.3)}
+      if(g.o.guide==='on'){const c2=18,x=ax,y=ay+area+10;
+        const bumpR=`q${F(c2*.1)} ${F(-c2*.3)} ${F(c2*.25)} ${F(-c2*.3)} q${F(c2*.15)} 0 ${F(c2*.25)} ${F(c2*.3)}`;
+        const bumpL=`q${F(-c2*.1)} ${F(-c2*.3)} ${F(-c2*.25)} ${F(-c2*.3)} q${F(-c2*.15)} 0 ${F(-c2*.25)} ${F(c2*.3)}`;
+        const tile=(x0,y0,sw)=>path(`M${F(x0)} ${F(y0)} l${F(c2*.25)} 0 ${bumpR} l${F(c2*.25)} 0 l0 ${F(c2)} l${F(-c2*.25)} 0 ${bumpL} l${F(-c2*.25)} 0 Z`,INK,sw);
+        s+=rect(x,y,c2,c2,INK,.5);s+=path(`M${F(x+c2*.75)} ${F(y+c2)} ${bumpL}`,'#E0452B',.6);s+=txt(x+c2/2,y+c2+5,'① 아래 변에서 잘라',2.8,GUIDE,'middle');
+        s+=txt(x+c2+7,y+c2/2+1,'→',5,GUIDE,'middle');
+        s+=tile(x+c2+14,y,.5);s+=path(`M${F(x+c2+14+c2*.25)} ${F(y)} ${bumpR}`,'#E0452B',.6);s+=txt(x+c2+14+c2/2,y+c2+5,'② 위 변에 붙이면',2.8,GUIDE,'middle');
+        s+=txt(x+c2*2+30,y+c2/2+1,'→',5,GUIDE,'middle');
+        const x3=x+c2*2+38;for(let i=0;i<4;i++)for(let j=0;j<2;j++)s+=tile(x3+i*c2,y+j*c2,.35);
+        s+=txt(x3+c2*2,y+c2*2+5,'③ 빈틈 없이 이어져요',2.8,GUIDE,'middle');
+      }
+    }else if(base==='tri'){const n=8,c=area/n,h=c*Math.sqrt(3)/2,rows=Math.floor(area/h);
+      for(let j=0;j<=rows;j++)s+=ln(ax,ay+j*h,ax+area,ay+j*h,FAINT,.3);
+      for(let i=-rows;i<=n+rows;i++){s+=ln(ax+i*c,ay,ax+i*c+rows*c/2,ay+rows*h,FAINT,.3);s+=ln(ax+i*c,ay,ax+i*c-rows*c/2,ay+rows*h,FAINT,.3)}
+      s=`<clipPath id="tclip"><rect x="${F(ax)}" y="${F(ay)}" width="${F(area)}" height="${F(rows*h)}"/></clipPath><g clip-path="url(#tclip)">`+s+`</g>`+rect(ax,ay,area,rows*h,INK,.5);
+      if(g.o.guide==='on'){const y=ay+rows*h+6;s+=txt(ax,y+4,'정삼각형 6개가 모이면 정육각형 — 삼각형 3개씩 색을 바꿔 칠하면 무늬가 돼요',3,GUIDE)}
+    }else{const R=area/9,hx=R*Math.sqrt(3),hy=R*1.5,cols=Math.floor(area/hx),rows=Math.floor((area-R)/hy);
+      for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){const cx=ax+hx*(i+.5)+(j%2?hx/2:0),cy=ay+R+j*hy;if(cx+hx/2>ax+area)continue;const pts=[];for(let k=0;k<6;k++){const a=Math.PI/6+k*Math.PI/3;pts.push([cx+R*Math.cos(a),cy+R*Math.sin(a)])}s+=poly(pts,FAINT,.3)}
+      if(g.o.guide==='on'){const y=ay+R+rows*hy+2;s+=txt(ax,y+4,'벌집 무늬 — 한 칸을 꾸미고 이웃 칸에 같은 방향으로 반복해요',3,GUIDE)}
+    }
+    return s;
+  };
+  G.pixel=(g)=>{
+    const n=+g.o.n,coord=g.o.coord==='on',pal=6;let s='';
+    const lab=coord?6:0,area=Math.min(g.w-lab,g.h-lab-16),c=area/n,ax=g.x+lab+(g.w-lab-area)/2,ay=g.y+lab;
+    for(let i=0;i<=n;i++){const strong=n>8&&i%(n/4)===0||i===0||i===n;s+=ln(ax+i*c,ay,ax+i*c,ay+area,strong?INK:FAINT,strong?.5:.25);s+=ln(ax,ay+i*c,ax+area,ay+i*c,strong?INK:FAINT,strong?.5:.25)}
+    if(coord){const step=n>16?2:1;for(let i=0;i<n;i+=step){s+=txt(ax+i*c+c/2,ay-1.5,n>16?String(i+1):String.fromCharCode(65+i),Math.min(c*.55,3),GUIDE,'middle');s+=txt(ax-1.5,ay+i*c+c/2+1,String(i+1),Math.min(c*.55,3),GUIDE,'end')}}
+    const py=ay+area+6,pw=12;s+=txt(ax,py+4,'색 계획',3,INK);
+    for(let i=0;i<pal;i++)s+=rect(ax+14+i*(pw+3),py,pw,8,INK,.4);
+    s+=txt(ax+14+pal*(pw+3)+2,py+5.5,'← 쓸 색을 먼저 칠해 두세요',2.8,GUIDE);
+    return s;
+  };
+  G.band=(g)=>{
+    const rules=g.o.rules==='all'?['repeat','mirror','rotate']:[g.o.rules],r=g.r;let s='';
+    const bh=Math.min(28,(g.h-10*(rules.length-1))/rules.length),n=10,cw=(g.w-22)/n,x0=g.x+22;
+    const motifs=[
+      (x,y,c,k)=>poly([[x+c*.5,y+c*.15],[x+c*.85,y+c*.85],[x+c*.15,y+c*.85]],INK,.5),
+      (x,y,c,k)=>path(`M${F(x+c*.5)} ${F(y+c*.85)} C${F(x+c*.05)} ${F(y+c*.5)} ${F(x+c*.35)} ${F(y+c*.1)} ${F(x+c*.5)} ${F(y+c*.15)} C${F(x+c*.65)} ${F(y+c*.1)} ${F(x+c*.95)} ${F(y+c*.5)} ${F(x+c*.5)} ${F(y+c*.85)} Z`,INK,.5),
+      (x,y,c,k)=>path(`M${F(x+c*.2)} ${F(y+c*.8)} L${F(x+c*.2)} ${F(y+c*.2)} L${F(x+c*.8)} ${F(y+c*.5)} Z`,INK,.5,'none')+circ(x+c*.2,y+c*.2,c*.06,INK,.4,INK),
+      (x,y,c,k)=>path(`M${F(x+c*.15)} ${F(y+c*.5)} L${F(x+c*.5)} ${F(y+c*.15)} L${F(x+c*.85)} ${F(y+c*.5)} L${F(x+c*.5)} ${F(y+c*.85)} Z M${F(x+c*.5)} ${F(y+c*.15)} L${F(x+c*.5)} ${F(y+c*.85)}`,INK,.5)
+    ];
+    const names={repeat:'반복',mirror:'대칭',rotate:'회전'};
+    rules.forEach((rule,ri)=>{
+      const y=g.y+ri*(bh+10),c=Math.min(cw,bh),m=motifs[Math.floor(r()*motifs.length)],m2=motifs[Math.floor(r()*motifs.length)];
+      s+=txt(g.x,y+bh/2+1.2,names[rule],3.6,INK,'start',"'Jua',sans-serif");
+      s+=rect(x0,y,cw*n,bh,INK,.5);
+      for(let i=1;i<n;i++)s+=ln(x0+i*cw,y,x0+i*cw,y+bh,FAINT,.3);
+      const shown=rule==='repeat'?4:3;
+      for(let i=0;i<shown;i++){
+        const x=x0+i*cw+(cw-c)/2,yy=y+(bh-c)/2,mm=(rule==='repeat'&&i%2)?m2:m;
+        let inner=mm(x,yy,c,i);
+        if(rule==='mirror'&&i%2)inner=`<g transform="translate(${F(2*x+c)} 0) scale(-1 1)">${inner}</g>`;
+        if(rule==='rotate')inner=`<g transform="rotate(${i*90} ${F(x+c/2)} ${F(yy+c/2)})">${inner}</g>`;
+        s+=inner;
+      }
+      s+=txt(x0+(shown+.5)*cw,y+bh/2+1.5,'?',5,GUIDE,'middle');
+    });
+    s+=txt(g.x,g.y+rules.length*(bh+10)+2,'앞 무늬의 규칙을 찾아 끝까지 이어 그려요',3,GUIDE);
+    return s;
+  };
+  G.net=(g)=>{
+    const solid=g.o.solid;let s='';
+    const cx=g.x+g.w/2,cy=g.y+g.h/2;
+    const cut=(pts)=>poly(pts,INK,.6);
+    const fold=(a,b)=>ln(a[0],a[1],b[0],b[1],INK,.4,'2,1.5');
+    const tab=(a,b,out)=>{ // a→b 변에 풀칠면
+      const dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy),nx=-dy/L*out,ny=dx/L*out,k=.18;
+      const p1=[a[0]+dx*k+nx,a[1]+dy*k+ny],p2=[b[0]-dx*k+nx,b[1]-dy*k+ny];
+      let t=poly([a,p1,p2,b],INK,.5,'url(#hatch)');return t;};
+    s+=`<defs><pattern id="hatch" width="1.6" height="1.6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="1.6" stroke="${GUIDE}" stroke-width=".35"/></pattern></defs>`;
+    if(solid==='cube'){const a=Math.min(g.w/4,g.h/3)*.95,x0=cx-a*2,y0=cy-a*1.5,sq=(i,j)=>[[x0+i*a,y0+j*a],[x0+(i+1)*a,y0+j*a],[x0+(i+1)*a,y0+(j+1)*a],[x0+i*a,y0+(j+1)*a]];
+      const cells=[[1,0],[0,1],[1,1],[2,1],[3,1],[1,2]];
+      s+=cut([[x0+a,y0],[x0+2*a,y0],[x0+2*a,y0+a],[x0+4*a,y0+a],[x0+4*a,y0+2*a],[x0+2*a,y0+2*a],[x0+2*a,y0+3*a],[x0+a,y0+3*a],[x0+a,y0+2*a],[x0,y0+2*a],[x0,y0+a],[x0+a,y0+a]]);
+      s+=fold([x0+a,y0+a],[x0+2*a,y0+a]);s+=fold([x0+a,y0+2*a],[x0+2*a,y0+2*a]);s+=fold([x0+a,y0+a],[x0+a,y0+2*a]);s+=fold([x0+2*a,y0+a],[x0+2*a,y0+2*a]);s+=fold([x0+3*a,y0+a],[x0+3*a,y0+2*a]);
+      s+=tab([x0+a,y0],[x0+a,y0+a],-a*.22);s+=tab([x0+2*a,y0+a],[x0+2*a,y0],-a*.22);s+=tab([x0+2*a,y0+3*a],[x0+2*a,y0+2*a],-a*.22);s+=tab([x0+a,y0+2*a],[x0+a,y0+3*a],-a*.22);s+=tab([x0+3*a,y0+a],[x0+4*a,y0+a],-a*.22);s+=tab([x0+4*a,y0+2*a],[x0+3*a,y0+2*a],-a*.22);s+=tab([x0+4*a,y0+a],[x0+4*a,y0+2*a],-a*.22);
+      cells.forEach((c,i)=>s+=txt(x0+c[0]*a+a/2,y0+c[1]*a+a/2+1.5,String(i+1),4,FAINT,'middle'));
+    }else if(solid==='prism'){const a=Math.min(g.w/3,g.h/3.3)*.9,h=a*Math.sqrt(3)/2,x0=cx-a*1.5,y0=cy-a*1.1;
+      s+=cut([[x0,y0],[x0+3*a,y0],[x0+3*a,y0+a*1.2],[x0+2*a,y0+a*1.2],[x0+1.5*a,y0+a*1.2+h],[x0+a,y0+a*1.2],[x0,y0+a*1.2]]);
+      s+=poly([[x0+a,y0],[x0+1.5*a,y0-h],[x0+2*a,y0]],INK,.6);
+      s+=fold([x0+a,y0],[x0+a,y0+a*1.2]);s+=fold([x0+2*a,y0],[x0+2*a,y0+a*1.2]);s+=fold([x0+a,y0],[x0+2*a,y0]);s+=fold([x0+a,y0+a*1.2],[x0+2*a,y0+a*1.2]);
+      s+=tab([x0,y0+a*1.2],[x0,y0],-a*.22);s+=tab([x0+3*a,y0],[x0+3*a,y0+a*1.2],-a*.22);s+=tab([x0+a,y0+a*1.2],[x0+1.5*a,y0+a*1.2+h],a*.22);s+=tab([x0+1.5*a,y0-h],[x0+a,y0],a*.22);s+=tab([x0+2*a,y0],[x0+1.5*a,y0-h],a*.22);
+    }else if(solid==='tetra'){const a=Math.min(g.w/2,g.h/1.8)*.9,h=a*Math.sqrt(3)/2,x0=cx-a,y0=cy+h*.75;
+      s+=cut([[x0,y0],[x0+2*a,y0],[x0+a,y0-2*h]]);
+      s+=fold([x0+a/2,y0-h],[x0+1.5*a,y0-h]);s+=fold([x0+a/2,y0-h],[x0+a,y0]);s+=fold([x0+1.5*a,y0-h],[x0+a,y0]);
+      s+=tab([x0+a/2,y0-h],[x0,y0],-a*.2);s+=tab([x0+2*a,y0],[x0+1.5*a,y0-h],-a*.2);s+=tab([x0+a,y0-2*h],[x0+a/2,y0-h],-a*.2);
+    }else{const a=Math.min(g.w/3,g.h/3)*.85,t=a*.95,x0=cx-a/2,y0=cy-a/2;
+      s+=rect(x0,y0,a,a,INK,.6);
+      s+=poly([[x0,y0],[x0+a,y0],[x0+a/2,y0-t]],INK,.6);s+=poly([[x0+a,y0],[x0+a,y0+a],[x0+a+t,y0+a/2]],INK,.6);s+=poly([[x0,y0+a],[x0+a,y0+a],[x0+a/2,y0+a+t]],INK,.6);s+=poly([[x0,y0],[x0,y0+a],[x0-t,y0+a/2]],INK,.6);
+      s+=fold([x0,y0],[x0+a,y0]);s+=fold([x0+a,y0],[x0+a,y0+a]);s+=fold([x0,y0+a],[x0+a,y0+a]);s+=fold([x0,y0],[x0,y0+a]);
+      s+=tab([x0+a/2,y0-t],[x0+a,y0],a*.18);s+=tab([x0+a+t,y0+a/2],[x0+a,y0+a],a*.18);s+=tab([x0+a/2,y0+a+t],[x0,y0+a],a*.18);s+=tab([x0-t,y0+a/2],[x0,y0],a*.18);
+    }
+    const ly=g.y+g.h-2;s+=ln(g.x,ly,g.x+8,ly,INK,.6)+txt(g.x+10,ly+1.2,'자르는 선',3,GUIDE)+ln(g.x+34,ly,g.x+42,ly,INK,.4,'2,1.5')+txt(g.x+44,ly+1.2,'접는 선',3,GUIDE)+rect(g.x+64,ly-2.5,8,5,INK,.4,'url(#hatch)')+txt(g.x+74,ly+1.2,'풀칠하는 곳',3,GUIDE);
+    return s;
+  };
+  G.fold=(g)=>{
+    const base=g.o.base,S=Math.min(g.w,g.h-14)*.92,x0=g.x+(g.w-S)/2,y0=g.y;let s='';
+    s+=rect(x0,y0,S,S,INK,.6,'#FAFBFD');
+    const V='3,2',M='4,2,1,2';
+    const l=(ax,ay,bx,by,k)=>{s+=ln(x0+ax*S,y0+ay*S,x0+bx*S,y0+by*S,INK,.5,k==='m'?M:V)};
+    const step=(n,t)=>{s+=txt(x0,y0+S+7+n*5,`${n+1}. ${t}`,3,GUIDE)};
+    if(base==='tri'){l(0,0,1,1,'v');l(1,0,0,1,'v');step(0,'대각선을 따라 반으로 접어 삼각형을 만들어요');step(1,'펴서 반대 대각선도 접어요 — 가운데에 ✕ 자국')}
+    else if(base==='door'){l(.5,0,.5,1,'v');l(.25,0,.25,1,'v');l(.75,0,.75,1,'v');step(0,'세로로 반 접어 자국을 내고 펴요');step(1,'양쪽 끝을 가운데 선에 맞춰 접어요 — 문처럼 열려요')}
+    else if(base==='blintz'){l(0,0,1,1,'m');l(1,0,0,1,'m');l(.5,0,1,.5,'v');l(1,.5,.5,1,'v');l(.5,1,0,.5,'v');l(0,.5,.5,0,'v');step(0,'대각선 두 번 접어 가운데 점을 찾아요');step(1,'네 모서리를 가운데 점으로 모아 접어요 — 방석 모양')}
+    else{l(0,0,1,1,'m');l(1,0,0,1,'m');l(.5,0,.5,1,'v');l(0,.5,1,.5,'v');step(0,'가로·세로로 반 접고 펴요(골)');step(1,'대각선 두 번 접고 펴요(산) — 8등분 별 자국이 나요')}
+    s+=txt(x0+S,y0+S+7,'골 접기 - - -   산 접기 -·-·-',3,INK,'end');
+    return s;
+  };
+  G.persp=(g)=>{
+    const two=g.o.pts==='2',r=g.r,guide=g.o.guide==='on';let s='';
+    const hy=g.y+g.h*(0.35+r()*0.2);
+    s+=ln(g.x,hy,g.x+g.w,hy,INK,.5);s+=txt(g.x+1,hy-1.5,'지평선',3,GUIDE);
+    const vps=two?[[g.x+g.w*0.06,hy],[g.x+g.w*0.94,hy]]:[[g.x+g.w*(0.35+r()*0.3),hy]];
+    vps.forEach(v=>{s+=circ(v[0],v[1],1.4,INK,.4,INK);s+=txt(v[0],v[1]-3,'소실점',3,INK,'middle')});
+    if(guide){vps.forEach(v=>{for(let k=0;k<24;k++){const a=k*Math.PI/12;const ex=v[0]+400*Math.cos(a),ey=v[1]+400*Math.sin(a);s+=ln(v[0],v[1],ex,ey,FAINT,.25)}})}
+    s=`<clipPath id="pclip"><rect x="${F(g.x)}" y="${F(g.y)}" width="${F(g.w)}" height="${F(g.h)}"/></clipPath><g clip-path="url(#pclip)">`+s+`</g>`+rect(g.x,g.y,g.w,g.h,INK,.5);
+    const boxes=2+Math.floor(r()*2);
+    for(let b=0;b<boxes;b++){
+      const w=g.w*(0.1+r()*0.12),h=g.h*(0.1+r()*0.15);
+      if(!two){const bx=g.x+g.w*(0.08+r()*0.75),by=r()<.5?hy-h-g.h*(0.05+r()*0.2):hy+g.h*(0.03+r()*0.15);
+        s+=rect(bx,by,w,h,INK,.6);const v=vps[0];
+        [[bx,by],[bx+w,by],[bx,by+h],[bx+w,by+h]].forEach(p=>{const dx=v[0]-p[0],dy=v[1]-p[1];s+=ln(p[0],p[1],p[0]+dx*.18,p[1]+dy*.18,INK,.4,'1.5,1')});
+      }else{const ex=g.x+g.w*(0.3+r()*0.4),top=r()<.5?hy-h-g.h*(0.02+r()*0.15):hy+g.h*(0.02+r()*0.12),bot=top+h;
+        s+=ln(ex,top,ex,bot,INK,.7);
+        vps.forEach(v=>[top,bot].forEach(yy=>{const dx=v[0]-ex,dy=v[1]-yy;s+=ln(ex,yy,ex+dx*.25,yy+dy*.25,INK,.4,'1.5,1')}));
+      }
+    }
+    s+=txt(g.x,g.y+g.h+5,two?'세로 모서리에서 양쪽 소실점으로 선을 그어 상자를 완성해요':'앞면 모서리에서 소실점으로 선을 그어 상자를 완성해요',3,GUIDE);
+    return s;
+  };
+  G.frame=(g)=>{
+    const st=g.o.style,hasT=g.o.title==='on';let s='';
+    const th=hasT?12:0,fx=g.x,fy=g.y+th+2,fw=g.w,fh=g.h-th-2;
+    if(hasT){s+=rect(g.x,g.y,g.w,10,INK,.4);s+=txt(g.x+3,g.y+7,'제목:',3.5,GUIDE)}
+    if(st==='plain'){s+=rect(fx,fy,fw,fh,INK,.8);s+=rect(fx+3,fy+3,fw-6,fh-6,GUIDE,.3)}
+    else if(st==='round'){s+=rect(fx,fy,fw,fh,INK,.8,'none','rx="8"');s+=rect(fx+3,fy+3,fw-6,fh-6,GUIDE,.3,'none','rx="6"')}
+    else if(st==='wave'){const n=Math.round(fw/8),m=Math.round(fh/8),dw=fw/n,dh=fh/m;let d=`M${F(fx)} ${F(fy)}`;
+      for(let i=0;i<n;i++)d+=` q${F(dw/2)} ${F(-3)} ${F(dw)} 0`;for(let i=0;i<m;i++)d+=` q${F(3)} ${F(dh/2)} 0 ${F(dh)}`;for(let i=0;i<n;i++)d+=` q${F(-dw/2)} ${F(3)} ${F(-dw)} 0`;for(let i=0;i<m;i++)d+=` q${F(-3)} ${F(-dh/2)} 0 ${F(-dh)}`;
+      s+=path(d+' Z',INK,.8)}
+    else{s+=rect(fx,fy,fw,fh,INK,1.2);const hs=4,gap=6,cnt=Math.floor((fw-gap)/(hs+gap));for(let i=0;i<cnt;i++){const x=fx+gap+i*(hs+gap);s+=rect(x,fy+2,hs,3,INK,.4,INK);s+=rect(x,fy+fh-5,hs,3,INK,.4,INK)}
+      s+=rect(fx+2,fy+8,fw-4,fh-16,INK,.5)}
+    return s;
+  };
+
+  /* ── 페이지 조립 ── */
+  function render(cfg){
+    const id=cfg.id,item=BY[id];if(!item)return null;
+    const o=Object.assign(defaults(id),cfg.opts||{}),seed=cfg.seed|0,orient=cfg.orient==='l'?'l':'p',nameBox=cfg.name!==false;
+    const W=orient==='p'?210:297,H=orient==='p'?297:210,M=12,hh=nameBox?14:0;
+    const g={x:M,y:M+hh+4,w:W-M*2,h:H-M*2-hh-12,r:rng(seed*7919+id.length),o};
+    let s=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}mm" height="${H}mm" font-family="'Noto Sans KR',system-ui,sans-serif">`;
+    s+=`<rect width="${W}" height="${H}" fill="#fff"/>`;
+    if(nameBox){s+=txt(M,M+7,item.emoji+' '+item.title,6,INK,'start',"'Jua',sans-serif");
+      s+=txt(W-M-92,M+7,'학년',3.5,GUIDE)+ln(W-M-84,M+8,W-M-72,M+8,INK,.4)+txt(W-M-70,M+7,'반',3.5,GUIDE)+ln(W-M-64,M+8,W-M-52,M+8,INK,.4)+txt(W-M-50,M+7,'이름',3.5,GUIDE)+ln(W-M-42,M+8,W-M,M+8,INK,.4);
+      s+=ln(M,M+hh-1,W-M,M+hh-1,FAINT,.4)}
+    s+=`<g id="content">${G[id](g)}</g>`;
+    s+=txt(W-M,H-5,'keduclass.com · 케이아트 도안',2.6,FAINT,'end');
+    s+='</svg>';
+    return {svg:s,w:W,h:H};
+  }
+  return {ITEMS,BY,defaults,render,rng};
+})();
+</script>
+
+<script>
+const K=window.KST;
+let cur={id:'wheel',opts:K.defaults('wheel'),seed:1,orient:'p',name:true};
+const $=s=>document.querySelector(s);
+function buildItems(){
+  $('#items').innerHTML=K.ITEMS.map(i=>`<button class="it${i.id===cur.id?' on':''}" data-id="${i.id}"><span class="e">${i.emoji}</span><span>${i.title}</span><span class="g">${i.grades}</span></button>`).join('');
+  $('#items').querySelectorAll('.it').forEach(b=>b.onclick=()=>{cur.id=b.dataset.id;cur.opts=K.defaults(cur.id);buildItems();buildOpts();draw();try{kedu_ga&&kedu_ga('stencil_pick',{id:cur.id})}catch(e){}});
+}
+function buildOpts(){
+  const it=K.BY[cur.id];let h='';
+  h+=`<div class="opt"><span>용지 방향</span><div class="seg"><button data-or="p" class="${cur.orient==='p'?'on':''}">세로</button><button data-or="l" class="${cur.orient==='l'?'on':''}">가로</button></div></div>`;
+  h+=`<div class="opt"><span>이름칸</span><div class="seg"><button data-nm="1" class="${cur.name?'on':''}">있음</button><button data-nm="0" class="${!cur.name?'on':''}">없음</button></div></div>`;
+  (it.opts||[]).forEach(p=>{h+=`<div class="opt"><span>${p.label}</span><select data-k="${p.k}">${p.values.map(v=>`<option value="${v[0]}"${cur.opts[p.k]===v[0]?' selected':''}>${v[1]}</option>`).join('')}</select></div>`});
+  $('#opts').innerHTML=h;$('#desc').textContent=it.desc;
+  $('#opts').querySelectorAll('[data-or]').forEach(b=>b.onclick=()=>{cur.orient=b.dataset.or;buildOpts();draw()});
+  $('#opts').querySelectorAll('[data-nm]').forEach(b=>b.onclick=()=>{cur.name=b.dataset.nm==='1';buildOpts();draw()});
+  $('#opts').querySelectorAll('select').forEach(s=>s.onchange=()=>{cur.opts[s.dataset.k]=s.value;draw()});
+}
+function draw(){
+  const out=K.render(cur);
+  const tmp=document.createElement('div');tmp.innerHTML=out.svg;const svg=tmp.firstChild;
+  const page=$('#page');page.setAttribute('viewBox',svg.getAttribute('viewBox'));page.className.baseVal=cur.orient;page.innerHTML=svg.innerHTML;
+  $('#pageCss').textContent=`@page{size:A4 ${cur.orient==='p'?'portrait':'landscape'};margin:0}`;
+  document.title=`${K.BY[cur.id].title} — 도안 인쇄 — 케이아트`;
+}
+$('#btnSeed').onclick=()=>{cur.seed=(cur.seed+1)%100000;draw()};
+$('#btnPrint').onclick=()=>{try{kedu_ga&&kedu_ga('stencil_print',{id:cur.id})}catch(e){}window.print()};
+const q=new URLSearchParams(location.search);if(q.get('id')&&K.BY[q.get('id')]){cur.id=q.get('id');cur.opts=K.defaults(cur.id)}
+buildItems();buildOpts();draw();
+</script>
+<script src="/kedu_back.js"></script>
+</body>
+</html>
