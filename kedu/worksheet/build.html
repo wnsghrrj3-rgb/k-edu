@@ -15,6 +15,13 @@ h1{font-family:'Gowun Batang',serif;font-size:26px;font-weight:700;margin:0 0 4p
 .tabs{display:flex;gap:6px;border-bottom:1px solid var(--rule);margin-bottom:22px}
 .tabs button{background:none;border:0;border-bottom:2px solid transparent;padding:10px 16px;font:inherit;font-size:15px;color:var(--muted);cursor:pointer}
 .tabs button.on{color:var(--ink);border-bottom-color:var(--ink)}
+.tabs.top{margin-bottom:14px}
+.tabs.top button{font-size:16px;font-weight:600}
+.tabs.sub{border-bottom:0;margin-bottom:12px}
+.tabs.sub button{font-size:13.5px;padding:6px 12px;border:1px solid var(--rule);border-radius:999px;margin-right:2px}
+.tabs.sub button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.soon{padding:26px 22px;border:1px dashed var(--rule);border-radius:12px;color:var(--muted);line-height:1.8;font-size:14.5px}
+.soon b{color:var(--ink)}
 .cols{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start}
 @media(max-width:860px){.cols{grid-template-columns:1fr}}
 .panel{background:var(--card);border:1px solid var(--rule);border-radius:12px;padding:18px 20px}
@@ -59,9 +66,15 @@ th{color:var(--muted);font-weight:400;font-size:12.5px}
 </head>
 <body>
 <div class="wrap">
-  <h1>쪽지 만들기</h1>
+  <h1>케이학습지</h1>
   <p class="sub">문항 원장에서 골라 담고, 우리 반에 엽니다. 학생은 링크 없이 자기 화면에서 만납니다.</p>
-  <div class="tabs">
+  <!-- 3종 설계 v2 §5: 차시 쪽지 · 단원 평가 · 수행평가. W1 = 골격 + ① 완성, ②③은 W2·W4 에서 채운다. -->
+  <div class="tabs top" id="topTabs">
+    <button data-top="quiz" class="on">차시 쪽지</button>
+    <button data-top="unit">단원 평가</button>
+    <button data-top="perf">수행평가</button>
+  </div>
+  <div class="tabs sub" id="subTabs">
     <button data-tab="build" class="on">조립</button>
     <button data-tab="mine">내 쪽지</button>
   </div>
@@ -84,9 +97,12 @@ const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;
 const DIFFNAME = {1:'D1 기본', 2:'D2 적용', 3:'D3 도전', 4:'D4 심화'};
 const KINDNAME = {mc:'선택', sa:'단답', ox:'OX', error:'오류찾기', blank:'빈칸', data:'자료읽기', match:'연결', essay:'서술'};
 
-let ME = null, BANK = [], CONCEPTS = [], CLASSES = [], CART = [], TAB = 'build';
+/* 학생 카드 라벨 — 3종 설계 v2 §2·§3-2. 평가 단어 없이, 종류마다 한 낱말.
+   ① 차시 쪽지 = 「오늘 확인 · {이름}」 / ② 단원 평가 = 「단원 정리 · {이름}」. */
+const CARD_LABEL = { quiz: '오늘 확인', unit_test: '단원 정리' };
+let ME = null, BANK = [], CONCEPTS = [], CLASSES = [], CART = [], TAB = 'build', TOP = 'quiz';
 // ?tab=mine — 미리보기에서 「내 쪽지로」 돌아올 때 그 탭으로 연다(2026-09-04)
-if (new URLSearchParams(location.search).get('tab') === 'mine'){ TAB = 'mine'; document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x.dataset.tab === 'mine')); }
+if (new URLSearchParams(location.search).get('tab') === 'mine'){ TAB = 'mine'; document.querySelectorAll('#subTabs button').forEach(x => x.classList.toggle('on', x.dataset.tab === 'mine')); }
 
 function toast(msg){ const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('on'); setTimeout(() => t.classList.remove('on'), 2200); }
 
@@ -115,13 +131,31 @@ function toast(msg){ const t = document.getElementById('toast'); t.textContent =
   render();
 })();
 
-document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+document.querySelectorAll('#subTabs button').forEach(b => b.onclick = () => {
   TAB = b.dataset.tab;
-  document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('#subTabs button').forEach(x => x.classList.toggle('on', x === b));
+  render();
+});
+document.querySelectorAll('#topTabs button').forEach(b => b.onclick = () => {
+  TOP = b.dataset.top;
+  document.querySelectorAll('#topTabs button').forEach(x => x.classList.toggle('on', x === b));
+  document.getElementById('subTabs').style.display = TOP === 'quiz' ? '' : 'none';
   render();
 });
 
-function render(){ TAB === 'build' ? renderBuild() : renderMine(); }
+function render(){
+  if (TOP === 'unit') return renderSoon('unit');
+  if (TOP === 'perf') return renderSoon('perf');
+  TAB === 'build' ? renderBuild() : renderMine();
+}
+/* ②③ 은 아직 없는 화면이다 — 없는 것을 있는 척하지 않고, 무엇이 올지와 지금 대신 쓸 길을 적는다. */
+function renderSoon(which){
+  const SOON = {
+    unit: `<b>단원 평가</b>는 준비 중이에요.<br>단원을 고르면 추천안(개념 균배 · 난이도 배합)이 먼저 나오고, 동형 검사지 A~D 전환 · 종이 문제지 · 마감 후 공개 · 개념 히트맵 · 보완 쪽지가 이어질 예정입니다.<br><br>지금은 <b>「차시 쪽지」 탭</b>에서 문항 원장의 <b>단원 종합</b> 차시(단원 종합 A~D)를 골라 담으면 같은 문항으로 단원 정리를 낼 수 있어요.`,
+    perf: `<b>수행평가</b>는 준비 중이에요.<br>단원별 과제 카드(영역 · 성취기준 · 산출물 종류) → 우리 반에 열기 → 학생 제출(사진 · 글) → 채점 그리드 → 공개 순서로 이어질 예정입니다.<br><br>1학년 수학 1단원 과제 카드 7건은 핸드오프 <code>kedu/worksheet/g1_math_u1/</code> 에 정본이 있어요.`
+  };
+  view.innerHTML = `<div class="soon">${SOON[which]}</div>`;
+}
 
 /* ---------- 조립 화면 ---------- */
 function filtered(){
@@ -169,12 +203,13 @@ function renderBuild(){
       <div class="panel" style="margin-top:16px">
         <h2>빠른 조립</h2>
         <div class="filters">
-          <select id="qaConcept">${CONCEPTS.map(c => `<option value="${c.code}">${c.lesson_no ? c.lesson_no + '차시 · ' : ''}${esc(c.name)}</option>`).join('')}</select>
-          <select id="qaN">${[5,8,10,15].map(n => `<option value="${n}"${n === 10 ? ' selected' : ''}>${n}문항</option>`).join('')}</select>
+          <select id="qaLesson"><option value="">차시 고르기</option>${uniq(CONCEPTS.map(c => c.lesson_no)).sort((a, b) => a - b).map(l => `<option value="${l}">${l}차시</option>`).join('')}</select>
+          <select id="qaConcept">${CONCEPTS.map(c => `<option value="${c.code}" data-lesson="${c.lesson_no || ''}">${c.lesson_no ? c.lesson_no + '차시 · ' : ''}${esc(c.name)}</option>`).join('')}</select>
+          <select id="qaN">${[5,8,10,15].map(n => `<option value="${n}"${n === 5 ? ' selected' : ''}>${n}문항</option>`).join('')}</select>
           <select id="qaMix"><option value="basic">기본 배합</option><option value="challenge">도전 배합</option></select>
         </div>
         <button class="btn ghost" id="qaGo">배합대로 담기</button>
-        <p class="hint">기본 = D1·D2 위주, 도전 = D3·D4 위주. 같은 개념 안에서 유형이 겹치지 않도록 골라 담습니다.</p>
+        <p class="hint">차시를 고르면 그 차시 개념이 자동으로 잡혀요. 기본 = D1·D2 위주, 도전 = D3·D4 위주. 같은 개념 안에서 유형이 겹치지 않도록 골라 담습니다.</p>
       </div>
     </div>
   </div>`;
@@ -184,6 +219,12 @@ function renderBuild(){
   document.getElementById('clear').onclick = () => { CART = []; drawList(); drawCart(); };
   document.getElementById('save').onclick = saveSet;
   document.getElementById('qaGo').onclick = quickAssemble;
+  // 차시 선택 → 그 차시의 첫 개념이 자동 선택(§2 「차시 선택 → 그 차시의 개념이 자동 체크」)
+  document.getElementById('qaLesson').onchange = e => {
+    const l = e.target.value, sel = document.getElementById('qaConcept');
+    const opt = Array.from(sel.options).find(o => o.dataset.lesson === l);
+    if (opt) sel.value = opt.value;
+  };
   drawList(); drawCart();
 }
 
@@ -256,8 +297,10 @@ function quickAssemble(){
 
 /* ---------- 저장 ---------- */
 async function saveSet(){
-  const title = (document.getElementById('title').value || '').trim() || '쪽지';
   const first = CART[0];
+  const c0 = CONCEPTS.find(c => c.code === first.concept_code);
+  const title = (document.getElementById('title').value || '').trim()
+    || (c0 ? (c0.lesson_no ? c0.lesson_no + '차시 · ' : '') + c0.name : '쪽지');
   const { data: set, error } = await db.from('quiz_sets').insert({
     teacher_id: ME.id, title, kind: 'quiz',
     subject: first.subject, grade: first.grade, unit_code: first.unit_code
@@ -325,7 +368,7 @@ async function openForClass(setId, sets){
   const { error } = await db.rpc('open_for_class', {
     p_class_code_id: classId,
     p_content_key: 'quiz:' + setId,
-    p_title: s.title,
+    p_title: (CARD_LABEL[s.kind] || CARD_LABEL.quiz) + ' · ' + s.title,
     p_kind: 'quiz',
     p_url: '/kedu/worksheet/play.html?quiz=' + setId
   });
