@@ -119,14 +119,22 @@
       question_id:   String(o.questionId || ''),
       is_correct:    !!o.ok,
       time_spent_sec: Number(o.sec) || 0,
-      score:         o.ok ? 1 : 0,
-      max_score:     1,
+      score:         o.ok ? (Number(o.points) || 1) : 0,
+      max_score:     Number(o.points) || 1,
       quiz_set_id:   state.setId,
       concept_code:  o.concept || null,
       misconception_code: o.ok ? null : (o.mis || null)
     };
     if (o.qid) row.question_bank_id = o.qid;
-    state.db.from('scores').insert(row).then(function(){}).catch(function(){});
+    // W3(2026-09-07): 서술형은 채점 전(pending) — is_correct 를 비워 두고 답 문장을 남긴다(교사가 quiz_grade_essay 로 채점).
+    if (o.pending){ row.is_correct = null; row.score = 0; row.answer_text = o.text || ''; }
+    state.db.from('scores').insert(row).then(function(res){
+      // answer_text 열은 SQL v3 — 아직 없으면 그 열만 빼고 한 번 더(답 문장은 잃지만 정오 행은 남긴다)
+      if (res && res.error && Object.prototype.hasOwnProperty.call(row, 'answer_text')){
+        delete row.answer_text;
+        return state.db.from('scores').insert(row);
+      }
+    }).catch(function(){});
   }
 
   // 쪽지 끝 — 누계 한 줄(리포트의 runs·마지막 점수 재료)

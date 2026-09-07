@@ -477,7 +477,9 @@ function grade(q, ok, detail){
   if (!detail?.pending){
     if (QUIZ && window.keduQuiz){
       if (!PREVIEW) try { window.keduQuiz.record({ questionId: q.qcode || `q${q.seq}`, qid: q.qid || null,
-                                     ok, sec: t, concept: q.concept, mis: detail?.mis || null }); } catch(e){}
+                                     ok, sec: t, concept: q.concept, mis: detail?.mis || null,
+                                     pending: !!(detail && detail.pending), text: (detail && detail.pending) ? String(detail.val || '') : null,
+                                     points: q.points || 1 }); } catch(e){}
     } else if (window.kedu && window.kedu.recordAnswer){
       // 파일 학습지 — 문항 키는 차시와 같은 문법(q{seq}), 개념·오개념 코드 동봉
       try { window.kedu.recordAnswer(`q${q.seq}`, ok, t, q.concept, {mis: (detail && detail.mis) || null}); } catch(e){}

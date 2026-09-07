@@ -28,6 +28,22 @@ h1{font-family:'Gowun Batang',serif;font-size:26px;font-weight:700;margin:0 0 4p
 .ulist li .mv button,.ulist li .sw{background:none;border:1px solid var(--rule);border-radius:6px;color:var(--muted);cursor:pointer;font:inherit;font-size:12px;padding:1px 6px}
 .badge{display:inline-block;font-size:11.5px;padding:2px 7px;border-radius:999px;border:1px solid var(--rule);color:var(--muted);margin-left:6px}
 .badge.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.grid{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
+.grid th,.grid td{border:1px solid var(--rule);padding:4px 6px;text-align:center;white-space:nowrap}
+.grid th{background:#f7f4ee;font-weight:600;color:var(--soft)}
+.grid td.nm{text-align:left;font-weight:600}
+.grid td.o{color:#3d7a52}.grid td.x{color:#b0503f}.grid td.p{color:#a08a3a}.grid td.na{color:var(--muted)}
+.heat td.h{min-width:34px}
+.heat td.h0{background:#fff}.heat td.h1{background:#f3d9d3}.heat td.h2{background:#f6e8c8}.heat td.h3{background:#d9ead9}
+.weakbox{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.weakbox .wk{flex:1 1 200px;border:1px solid var(--rule);border-radius:10px;padding:10px 12px;font-size:13px}
+.weakbox .wk b{display:block;margin-bottom:4px}
+.pgrid td label{cursor:pointer;display:block}
+.pgrid input{transform:scale(1.2)}
+.essay-row{border-top:1px solid var(--rule);padding:8px 0;font-size:13.5px}
+.essay-row .ans{background:#faf8f3;border-radius:8px;padding:8px 10px;margin:6px 0;white-space:pre-wrap}
+.essay-row .pts button{margin-right:4px}
+.essay-row .pts button.on{background:var(--ink);color:var(--paper)}
 .cols{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start}
 @media(max-width:860px){.cols{grid-template-columns:1fr}}
 .panel{background:var(--card);border:1px solid var(--rule);border-radius:12px;padding:18px 20px}
@@ -535,7 +551,7 @@ async function renderMine(kind){
   view.querySelectorAll('[data-open]').forEach(b => b.onclick = () => openForClass(b.dataset.open, sets));
   // 미리보기는 같은 탭에서 연다 — 새 탭이면 돌아올 길이 없었다(2026-09-04). play.html 이 &preview=1 을 보고 「내 쪽지로」 단추를 얹고 기록은 남기지 않는다.
   view.querySelectorAll('[data-prev]').forEach(b => b.onclick = () => { location.href = 'play.html?quiz=' + b.dataset.prev + '&preview=1'; });
-  view.querySelectorAll('[data-res]').forEach(b => b.onclick = () => showResult(b.dataset.res));
+  view.querySelectorAll('[data-res]').forEach(b => b.onclick = () => showResult(b.dataset.res, sets.find(s => s.id === b.dataset.res)));
   // 종이 문제지 = play.html 의 종이 모드에 원장 세트를 그대로(§3-2). 새 탭 — 인쇄 뒤 돌아올 곳은 이 화면.
   view.querySelectorAll('[data-paper]').forEach(b => b.onclick = () => window.open('play.html?quiz=' + b.dataset.paper + '&mode=paper&preview=1', '_blank'));
   view.querySelectorAll('[data-reveal]').forEach(b => b.onclick = async () => {
@@ -573,11 +589,132 @@ async function openForClass(setId, sets){
   renderMine();
 }
 
-/* 결과 = 점수가 아니라 '어디서 어떻게 틀렸나' */
-async function showResult(setId){
+/* ===================== ② 단원 평가 결과 (W3, 설계 v2 §3-4) =====================
+   첫 화면 = 학급 표(번호순·낙인 없음) · 개념 히트맵 · 막힌 개념 상위 3 + 보완 쪽지 · 종이 점수 넣기 · 서술 채점.
+   재료 = quiz_set_matrix(세트×학생×문항 마지막 답, SQL v3). §8-④ 준호 결정: 보완 쪽지는 미도달 학생에게만.
+============================================================================ */
+const REACH = { ok: 80, mid: 60 };                       // 리포트와 같은 80/60
+function reachOf(pct){ return pct == null ? 'na' : pct >= REACH.ok ? 'o' : pct >= REACH.mid ? 'p' : 'x'; }
+function reachLabel(k){ return { o: '도달', p: '거의', x: '미도달', na: '—' }[k]; }
+
+async function showUnitResult(setId, box, set){
+  box.innerHTML = `<p class="hint">불러오는 중…</p>`;
+  // 학급(들) 학생 — 열린 반의 학생 전원(안 푼 학생도 표에 있어야 「미제출」이 보인다)
+  const { data: opens } = await db.from('class_openings').select('class_code_id').eq('content_key', 'quiz:' + setId);
+  const classIds = (opens || []).map(o => o.class_code_id);
+  const [{ data: sps }, { data: items }, { data: mx, error: mxErr }] = await Promise.all([
+    classIds.length ? db.from('student_profiles').select('id, nickname, seat_no, class_code_id').in('class_code_id', classIds).order('seat_no').order('nickname') : Promise.resolve({ data: [] }),
+    db.from('quiz_set_items').select('ord, points, question_id').eq('set_id', setId).order('ord'),
+    db.from('quiz_set_matrix').select('*').eq('quiz_set_id', setId)
+  ]);
+  if (mxErr){ box.innerHTML = `<p class="hint">결과 표를 읽을 수 없어요 — SQL v3(setup_worksheet_v3.sql)가 적용됐는지 확인해 주세요.</p>`; return; }
+  const students = sps || [], its = items || [], rows = mx || [];
+  const qOf = id => BANK.find(q => q.id === id) || {};
+  const cell = {}; rows.forEach(r => cell[r.student_id + '|' + r.question_bank_id] = r);
+  const totalPts = its.reduce((a, i) => a + (i.points || 1), 0) || 1;
+
+  /* 학생별 총점·도달 */
+  const stat = students.map(sp => {
+    let got = 0, answered = 0, pend = 0;
+    its.forEach(i => { const c = cell[sp.id + '|' + i.question_id]; if (!c) return; answered++; if (c.is_correct === null) pend++; else got += (c.is_correct ? (i.points || 1) : 0); });
+    const pct = answered ? Math.round(got * 100 / totalPts) : null;
+    return { sp, got, answered, pend, pct, reach: reachOf(pct) };
+  });
+
+  /* 개념 × 학생 */
+  const concepts = uniq(its.map(i => qOf(i.question_id).concept_code));
+  const cname = c => (CONCEPTS.find(x => x.code === c) || {}).name || c;
+  const heat = {}; // concept -> student -> {ok, n}
+  concepts.forEach(c => { heat[c] = {}; });
+  students.forEach(sp => its.forEach(i => { const q = qOf(i.question_id); const c = cell[sp.id + '|' + i.question_id]; if (!q.concept_code || !c || c.is_correct === null) return;
+    const h = heat[q.concept_code][sp.id] = heat[q.concept_code][sp.id] || { ok: 0, n: 0 }; h.n++; if (c.is_correct) h.ok++; }));
+  const cpct = (c, sid) => { const h = heat[c][sid]; return h && h.n ? Math.round(h.ok * 100 / h.n) : null; };
+  /* 막힌 개념 상위 3 = 반 평균 정답률 낮은 순, 미도달 학생 명단 동봉 */
+  const weak = concepts.map(c => { const ps = students.map(sp => cpct(c, sp.id)).filter(p => p != null);
+      const avg = ps.length ? Math.round(ps.reduce((a, b) => a + b, 0) / ps.length) : null;
+      const miss = students.filter(sp => { const p = cpct(c, sp.id); return p != null && p < REACH.mid; });
+      return { c, avg, miss }; }).filter(w => w.avg != null).sort((a, b) => a.avg - b.avg).slice(0, 3);
+
+  const essayItems = its.filter(i => qOf(i.question_id).qkind === 'essay');
+  const essayRows = rows.filter(r => essayItems.some(i => i.question_id === r.question_bank_id));
+
+  box.innerHTML = `
+    <h3 style="margin:14px 0 4px">학급 표 <span class="hint" style="font-weight:400">· ${students.length}명 · ${its.length}문항 ${totalPts}점 · 도달 ${REACH.ok}% / 거의 ${REACH.mid}%</span></h3>
+    <div style="overflow:auto"><table class="grid"><tr><th>번호</th><th>이름</th>${its.map(i => `<th title="${esc(qOf(i.question_id).stem || '')}">${i.ord}</th>`).join('')}<th>점수</th><th>도달</th></tr>
+    ${stat.map(x => `<tr><td>${x.sp.seat_no ?? ''}</td><td class="nm">${esc(x.sp.nickname)}</td>
+      ${its.map(i => { const c = cell[x.sp.id + '|' + i.question_id]; if (!c) return '<td class="na">·</td>'; if (c.is_correct === null) return '<td class="p" title="채점 전">?</td>'; return c.is_correct ? '<td class="o">○</td>' : '<td class="x">×</td>'; }).join('')}
+      <td>${x.answered ? x.got + (x.pend ? '+?' : '') : '<span class="na">미제출</span>'}</td><td class="${x.reach}">${x.answered ? reachLabel(x.reach) : ''}</td></tr>`).join('')}
+    </table></div>
+
+    <h3 style="margin:18px 0 4px">개념 히트맵</h3>
+    <div style="overflow:auto"><table class="grid heat"><tr><th>개념</th>${students.map(sp => `<th title="${esc(sp.nickname)}">${sp.seat_no ?? esc(sp.nickname.slice(0, 2))}</th>`).join('')}<th>반</th></tr>
+    ${concepts.map(c => { const ps = students.map(sp => cpct(c, sp.id)); const vs = ps.filter(p => p != null); const avg = vs.length ? Math.round(vs.reduce((a, b) => a + b, 0) / vs.length) : null;
+      return `<tr><td class="nm">${esc(cname(c))}</td>${ps.map(p => `<td class="h h${p == null ? 0 : p >= REACH.ok ? 3 : p >= REACH.mid ? 2 : 1}">${p == null ? '' : p}</td>`).join('')}<td><b>${avg == null ? '' : avg}</b></td></tr>`; }).join('')}
+    </table></div>
+
+    ${weak.length ? `<h3 style="margin:18px 0 4px">막힌 개념</h3><div class="weakbox">${weak.map(w => `<div class="wk"><b>${esc(cname(w.c))} · 반 평균 ${w.avg}%</b>
+      미도달 ${w.miss.length}명${w.miss.length ? ' — ' + w.miss.map(sp => esc(sp.nickname)).join(', ') : ''}
+      <div class="row" style="margin-top:8px"><button class="btn ghost" data-remed="${esc(w.c)}" ${w.miss.length ? '' : 'disabled'}>보완 쪽지 만들기 (${w.miss.length}명에게만)</button></div></div>`).join('')}</div>` : ''}
+
+    <h3 style="margin:18px 0 4px">종이 점수 넣기 <span class="hint" style="font-weight:400">· 맞은 문항에 표시 → 저장 (온라인 답이 있는 학생은 종이 답이 마지막 답이 됩니다)</span></h3>
+    <div style="overflow:auto"><table class="grid pgrid"><tr><th>번호</th><th>이름</th>${its.map(i => `<th>${i.ord}</th>`).join('')}<th>전부</th></tr>
+    ${students.map(sp => `<tr data-psid="${sp.id}"><td>${sp.seat_no ?? ''}</td><td class="nm">${esc(sp.nickname)}</td>${its.map(i => `<td><label><input type="checkbox" data-pq="${i.question_id}"></label></td>`).join('')}<td><button class="sw" data-pall="${sp.id}">✓</button></td></tr>`).join('')}
+    </table></div>
+    <div class="row"><button class="btn" data-psave="${setId}">종이 점수 저장</button><span class="hint" id="pmsg-${setId}"></span></div>
+
+    ${essayItems.length ? `<h3 style="margin:18px 0 4px">서술형 채점 <span class="hint" style="font-weight:400">· ${essayRows.filter(r => r.is_correct === null).length}건 채점 전</span></h3>
+      ${essayRows.length ? essayRows.map(r => { const i = essayItems.find(x => x.question_id === r.question_bank_id); const sp = students.find(x => x.id === r.student_id) || {}; const q = qOf(r.question_bank_id);
+        return `<div class="essay-row"><b>${esc(sp.nickname || '?')}</b> · ${i.ord}번 ${esc(q.stem || '')}<div class="ans">${esc(r.answer_text || '(답 문장이 남지 않음 — SQL v3 이전 제출)')}</div>
+          <div class="pts">${Array.from({ length: (i.points || 1) + 1 }, (_, k) => `<button class="sw ${r.is_correct !== null && r.score === k ? 'on' : ''}" data-essay="${r.score_id}" data-pts="${k}">${k}점</button>`).join('')}</div></div>`; }).join('')
+      : '<p class="hint">아직 서술형 답이 없어요.</p>'}` : ''}
+  `;
+
+  /* 보완 쪽지 — 같은 개념 5문항(기본 배합) 쪽지를 미도달 학생에게만 열기(§8-④). 학급이 여럿이면 각 학급에 연다. */
+  box.querySelectorAll('[data-remed]').forEach(b => b.onclick = async () => {
+    const c = b.dataset.remed, w = weak.find(x => x.c === c); if (!w || !w.miss.length) return;
+    const pool = BANK.filter(q => q.concept_code === c && q.difficulty <= 2).slice(0, 5);
+    if (pool.length < 3) return toast('그 개념의 기본 문항이 부족해요.');
+    const { data: ns, error } = await db.from('quiz_sets').insert({
+      teacher_id: ME.id, title: '한 번 더 · ' + cname(c), kind: 'quiz', subject: pool[0].subject, grade: pool[0].grade, unit_code: pool[0].unit_code,
+      show_result: 'immediate', target_student_ids: w.miss.map(sp => sp.id)
+    }).select('id').single();
+    if (error) return toast('보완 쪽지를 만들지 못했어요(SQL v2 적용 여부 확인).');
+    await db.from('quiz_set_items').insert(pool.map((q, i) => ({ set_id: ns.id, ord: i + 1, question_id: q.id, points: 1 })));
+    for (const cid of classIds){
+      await db.rpc('open_for_class', { p_class_code_id: cid, p_content_key: 'quiz:' + ns.id, p_title: CARD_LABEL.quiz + ' · 한 번 더 · ' + cname(c), p_kind: 'quiz', p_url: '/kedu/worksheet/play.html?quiz=' + ns.id });
+    }
+    toast(`「한 번 더 · ${cname(c)}」 쪽지를 ${w.miss.length}명에게만 열었어요.`);
+    b.disabled = true;
+  });
+  /* 종이 점수 */
+  box.querySelectorAll('[data-pall]').forEach(b => b.onclick = () => { const tr = b.closest('tr'); const all = [...tr.querySelectorAll('input[data-pq]')]; const on = all.every(i => i.checked); all.forEach(i => i.checked = !on); });
+  box.querySelectorAll('[data-psave]').forEach(b => b.onclick = async () => {
+    const payload = [...box.querySelectorAll('tr[data-psid]')].map(tr => {
+      const answers = {}; let any = false;
+      tr.querySelectorAll('input[data-pq]').forEach(i => { answers[i.dataset.pq] = i.checked; if (i.checked) any = true; });
+      return any || tr.dataset.touched ? { student_id: tr.dataset.psid, answers } : null;
+    }).filter(Boolean);
+    if (!payload.length) return toast('표시한 학생이 없어요.');
+    const { data, error } = await db.rpc('quiz_paper_input', { p_set_id: setId, p_rows: payload });
+    if (error) return toast('저장하지 못했어요 — SQL v3 적용 여부를 확인해 주세요.');
+    toast(`종이 답 ${data}개를 저장했어요.`); showUnitResult(setId, box, set);
+  });
+  box.querySelectorAll('input[data-pq]').forEach(i => i.onchange = () => { i.closest('tr').dataset.touched = '1'; });
+  /* 서술 채점 */
+  box.querySelectorAll('[data-essay]').forEach(b => b.onclick = async () => {
+    const { data, error } = await db.rpc('quiz_grade_essay', { p_score_id: b.dataset.essay, p_points: Number(b.dataset.pts) });
+    if (error || data === false) return toast('채점을 저장하지 못했어요.');
+    b.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    toast('채점했어요.');
+  });
+}
+
+/* 결과 = 점수가 아니라 '어디서 어떻게 틀렸나' (쪽지) / 단원 평가는 W3 결과 화면 */
+async function showResult(setId, set){
   const box = document.getElementById('res-' + setId);
   if (box.dataset.on){ box.innerHTML = ''; box.dataset.on = ''; return; }
   box.dataset.on = '1';
+  if (set && set.kind === 'unit_test') return showUnitResult(setId, box, set);
   box.innerHTML = `<p class="hint">불러오는 중…</p>`;
 
   const [{ data: mis }, { data: items }] = await Promise.all([
