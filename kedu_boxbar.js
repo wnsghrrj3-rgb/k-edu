@@ -51,7 +51,7 @@
   var KIND_LABEL = { kteacher: '케이티처', selfstudy: '자기주도', klab: '케이랩', kple: '케이플', kmake: '케이메이커', english: '영어', quiz: '케이퀴즈', activity: '활동', link: '링크' };
   var KIND_HEX = { kteacher: '#FF85A1', selfstudy: '#7E57C2', klab: '#3BAB72', kple: '#FFB347', kmake: '#5B8EF8', english: '#B7791F', quiz: '#5B8EF8', activity: '#7E57C2', link: '#94A3B8' };
   // 결과봉투 훅이 실제 배선된 도구 = 제출·자동채점이 케이박스로 모임 (정직 표기 §7-2)
-  var HOOKED = { selfstudy: 1, quiz: 1, activity: 1, english: 1, klab: 1 };
+  var HOOKED = { selfstudy: 1, quiz: 1, activity: 1, english: 1, klab: 1, kmake: 1 };  /* kmake: 2026-09-07 kedu_artifact.js 「선생님께 보내기」 */
   function hookLabel(kind) {
     if (HOOKED[kind]) return { t: '✅ 제출·자동채점이 케이박스로 모여요', ok: true };
     if (kind === 'kteacher') return { t: '🎬 수업 진행용 화면이에요', ok: false };

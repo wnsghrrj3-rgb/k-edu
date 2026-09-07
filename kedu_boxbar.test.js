@@ -114,7 +114,7 @@ function fakeDb(log) {
     ok(B.detectKind('/kedu/activities/g1m_u1_seq9.html') === 'activity', '활동 경로 → activity 아님');
     ok(B.detectKind('/kpark/board/mafia/') === 'link', '케이파크 → link 아님');
     ok(B.hookLabel('quiz').ok === true, '퀴즈 수합 가능 표기 아님');
-    ok(B.hookLabel('kmake').ok === false, '케이메이커 열람용 표기 아님');
+    ok(B.hookLabel('kmake').ok === true, '케이메이커 수합 가능 표기 아님 (2026-09-07 kedu_artifact.js 배선 후)');
     ok(B.hookLabel('link').t.indexOf('제출은 모이지') >= 0, '링크 정직 문구 없음');
   })();
 

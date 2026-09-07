@@ -102,6 +102,8 @@ body{font-family:'Gowun Dodum',sans-serif;background:var(--bg);min-height:100vh;
 .bcard-mini{background:none;border:none;color:var(--faint);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;padding:0}
 .bcard-mini.bcard-del:hover{color:#E53E3E}
 .sub-comment.empty{color:var(--faint)}
+.arti-thumb{max-width:220px;max-height:160px;border-radius:8px;border:1px solid var(--line,#e5e7eb);margin:6px 0;cursor:zoom-in;display:block}
+.sub-arti a{margin-right:4px}
 .sub-auto{font-size:13px;color:#1F6F4A;background:#EAF7F0;border-radius:10px;padding:8px 12px;margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .sub-auto a{color:#1F6F4A;font-weight:700}
 .auto-fill{margin-left:auto;border:0;background:#22A06B;color:#fff;font-family:inherit;font-size:12px;font-weight:700;padding:5px 11px;border-radius:50px;cursor:pointer}
@@ -555,6 +557,7 @@ function pickKind(key){
   const box = document.getElementById('additem');
   if(key==='quiz'){ return pickQuiz(box, k); }
   if(key==='selfstudy'){ return pickSelfstudy(box, k); }
+  if(key==='kmake'){ return pickKmake(box, k); }
   box.innerHTML = `
     <div class="ai-head"><span class="tag" style="background:${k.hex}">${k.i} ${k.n}</span><span style="color:var(--sub);font-weight:500">무엇을 담을까요?</span></div>
     <input class="inp" id="ai-name" type="text" placeholder="콘텐츠 이름 (예: ${k.hint})" maxlength="50">
@@ -565,6 +568,42 @@ function pickKind(key){
     </div>`;
   box.classList.add('on');
   setTimeout(()=>{ const el=document.getElementById('ai-name'); el&&el.focus(); }, 50);
+}
+// 케이메이커 만들기 과제 (2026-09-07, 설계 v2 §4-5 2층) — 틀을 고르면 학생은 그 틀이 바로 열린 채로 시작하고,
+// 다 만들면 도구 안 「📤 선생님께 보내기」 한 번으로 그림이 이 박스에 꽂힌다(자동 채점 아님 · 작품 제출).
+const KMAKE_TASKS = [
+  { id:'',            n:'자유 — 학생이 틀을 고른다',   hint:'케이메이커 홈에서 시작' },
+  { id:'smp-post-01', n:'포스터 (A4 한 장)',          hint:'독서 주간·행사 포스터' },
+  { id:'smp-pres-01', n:'발표 자료 (4장)',            hint:'단원 발표·조사 발표' },
+  { id:'smp-card-01', n:'카드뉴스 (3장)',             hint:'알림·소식·조사 결과' },
+  { id:'smp-sns-01',  n:'정방형 공지 (2장)',          hint:'밴드·SNS 형' },
+  { id:'smp-act-01',  n:'이름표 세트 (2장)',          hint:'학급 이름표·자리표' },
+  { id:'smp-thumb-01',n:'영상 표지 한 장',            hint:'유튜브형 썸네일' },
+];
+function pickKmake(box, k){
+  box.innerHTML = `
+    <div class="ai-head"><span class="tag" style="background:${k.hex}">${k.i} ${k.n}</span><span style="color:var(--sub);font-weight:500">무엇을 만들게 할까요?</span></div>
+    <select class="inp" id="km-task" onchange="kmakeNameHint()">${KMAKE_TASKS.map(t=>`<option value="${t.id}">${esc(t.n)} — ${esc(t.hint)}</option>`).join('')}</select>
+    <input class="inp" id="ai-name" type="text" placeholder="케이박스에 보일 이름 (예: 우리 고장 소개 포스터)" maxlength="50">
+    <div style="font-size:12.5px;color:var(--sub);line-height:1.5">학생은 고른 틀이 열린 채로 시작해요. 다 만들면 화면 아래 <b>📤 선생님께 보내기</b> 한 번 — 그림이 이 박스로 와요.</div>
+    <div class="ai-btns">
+      <button class="ai-cancel" onclick="cancelAdd()">취소</button>
+      <button class="ai-add" onclick="confirmKmake()">담기</button>
+    </div>`;
+  box.classList.add('on');
+  setTimeout(()=>{ const el=document.getElementById('ai-name'); el&&el.focus(); }, 50);
+}
+function kmakeNameHint(){
+  const id = document.getElementById('km-task').value, t = KMAKE_TASKS.find(x=>x.id===id);
+  const el = document.getElementById('ai-name');
+  if(el && !el.value.trim() && t && t.id) el.placeholder = t.n.replace(/ \(.*\)$/,'') + ' 만들기';
+}
+function confirmKmake(){
+  const id = document.getElementById('km-task').value, t = KMAKE_TASKS.find(x=>x.id===id) || KMAKE_TASKS[0];
+  const name = (document.getElementById('ai-name').value||'').trim() || (t.id ? t.n.replace(/ \(.*\)$/,'') + ' 만들기' : '케이메이커로 만들기');
+  const url = '/maker/' + (t.id ? '?task=' + encodeURIComponent(t.id) : '');
+  draft.items.push({ id:null, kind:'kmake', name, url, config:{ task:t.id||null } });
+  cancelAdd(); renderItems();
 }
 // 케이퀴즈 전용 폼 — 단원·문제수·출제방식 선택 (URL·config 조립은 confirmQuiz)
 async function pickQuiz(box, k){
@@ -946,8 +985,13 @@ function renderGrading(){
     const autoLine = hasAuto && !isAct
       ? `<div class="sub-auto">🧮 자동 채점 <b>${aS}${aM!=null?' / '+aM:''}</b>${pct!=null?` · ${pct}%`:''}${spent!=null?` · ${Math.max(1,Math.round(spent/60))}분`:''}${pct!=null?`<button class="auto-fill" onclick="fillAuto(${idx},${pct})">점수로 넣기</button>`:''}</div>`
       : '';
-    const artiLine = (aK === 'artifact' && s.payload?.artifact_url)
-      ? `<div class="sub-auto">🎨 작품 제출 <a href="${esc(s.payload.artifact_url)}" target="_blank" rel="noopener">열어보기</a></div>` : '';
+    // 작품 제출(2층, kedu_artifact.js): 봉투 detail.thumb(작은 그림)은 저장소 없이도 바로 보이고, 원본 PNG 는 perf 버킷 서명 URL 로 연다
+    const dt = s.payload?.detail || {};
+    const artiLine = (aK === 'artifact' && (s.payload?.artifact_url || dt.thumb || (dt.artifact_paths||[]).length))
+      ? `<div class="sub-auto sub-arti">🎨 작품 제출${dt.pages? ` · ${dt.pages}장`:''}${dt.title? ` · ${esc(dt.title)}`:''}
+          ${dt.thumb ? `<div><img class="arti-thumb" src="${esc(dt.thumb)}" alt="" onclick="openArtifact(${idx},0)"></div>` : ''}
+          ${(dt.artifact_paths||[]).length ? `<span>${dt.artifact_paths.map((_,i)=>`<a href="#" onclick="openArtifact(${idx},${i});return false">원본 ${i+1}</a>`).join(' · ')}</span>` : (s.payload?.artifact_url ? `<a href="${esc(s.payload.artifact_url)}" target="_blank" rel="noopener">열어보기</a>` : (dt.thumb ? '<span style="color:var(--sub)">(원본 저장소 없음 — 작은 그림만)</span>' : ''))}
+        </div>` : '';
     const reLine = s.resubmitted ? `<span class="sub-re">🔁 재제출</span>` : '';
     return `<div class="sub ${isG?'graded':''}">
       <div class="sub-top">
@@ -965,6 +1009,16 @@ function renderGrading(){
     </div>`;
   }).join('');
   body.innerHTML = html;
+}
+async function openArtifact(idx, i){
+  const s = grSubs[idx], dt = s && s.payload && s.payload.detail || {};
+  const path = (dt.artifact_paths||[])[i];
+  if(!path){ if(dt.thumb) window.open(dt.thumb, '_blank'); return; }
+  try {
+    const { data, error } = await db.storage.from('perf').createSignedUrl(path, 600);
+    if(error || !data || !data.signedUrl) throw error || new Error('no url');
+    window.open(data.signedUrl, '_blank');
+  } catch(e){ if(dt.thumb) window.open(dt.thumb, '_blank'); else toast('원본을 열지 못했어요'); }
 }
 function fillAuto(idx, pct){
   const el = document.getElementById('gs-'+idx);
