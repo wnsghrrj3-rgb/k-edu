@@ -1,0 +1,30 @@
+name: 케이글쓰기 지문 후보 수집
+
+on:
+  schedule:
+    - cron: '0 21 * * 0'   # 매주 월요일 06:00 KST
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  candidates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: 지문 라이브러리 검사
+        run: node kedu/write/tools/prompts_check.js
+      - name: 논제 후보 수집(제목·링크만)
+        run: node kedu/write/tools/prompts_candidates.mjs
+      - name: 후보 파일 커밋
+        run: |
+          git config user.name "kedu-bot"
+          git config user.email "bot@keduclass.com"
+          git add kedu/write/data/_candidates.json
+          git diff --cached --quiet || git commit -m "케이글쓰기 논제 후보 수집 $(date -u +%F)"
+          git push
