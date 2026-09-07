@@ -473,6 +473,8 @@
     c.transIn = tr && tr.type && tr.type !== 'cut' ? Object.assign({ dur: 'normal' }, tr) : null; emit();
   }
   function setTheme(id) { commit(); P.theme = id; emit('look'); }
+  /* 로고 워터마크(프로젝트) — {media, pos:'tl'|'tr'|'bl'|'br', size:'sm'|'md'|'lg', opacity:0..1}; null 로 지움 */
+  function setLogo(patch) { commit(); if (patch === null) { P.logo = null; } else { P.logo = Object.assign({ media: null, pos: 'tr', size: 'sm', opacity: 0.85 }, P.logo || {}, patch); if (P.logo.media && !media(P.logo.media)) P.logo.media = null; } emit('look'); }
 
   /* ---------- 3단계: 자막 S ---------- */
   function sortS() { P.S.sort((a, b) => a.at - b.at); }
@@ -728,6 +730,7 @@
     if (!P.audio.ambience) P.audio.ambience = { on: false, src: null, gain: 1 }; if (P.audio.ambience.src && !media(P.audio.ambience.src.media)) P.audio.ambience.src = null; if (P.audio.ambience.gain == null) P.audio.ambience.gain = 1;
     if (!P.audio.loudness) P.audio.loudness = { on: false, target: -14 }; if (P.audio.loudness.target == null) P.audio.loudness.target = -14;
     P.styles = (P.styles || []).filter(x => x && x.id && x.name);
+    if (P.logo && P.logo.media && !media(P.logo.media)) P.logo = null;
     relayout(); undoStack.length = 0; redoStack.length = 0; emit('load');
   }
   function reset() { P = blank(); undoStack.length = 0; redoStack.length = 0; emit('load'); }
@@ -752,7 +755,7 @@
     on: fn => listeners.push(fn),
     media, clip, clipIndex, audioOf, clipAt, total, edges, srcFrame, clipDur, speedMap,
     addMedia, removeMedia, addClip, removeClip, move, split, trim, trimToPlayhead, freeze, setSpeed, setRamp, setDenoise, setStab, setVol, audioTrim, relink,
-    setLook, setProjectLook, setKenburns, setFade, setTransition, setTheme,
+    setLook, setProjectLook, setKenburns, setFade, setTransition, setTheme, setLogo,
     addS, setS, addManyS, subtitle, updateS, removeS, clearS, subtitleAt,
     part, addP, updateP, removeP, clearP, partsAt, partDefault,
     a2, addA2, updateA2, trimA2, removeA2, setDucking, setSfx, setLoudness, a2At,

@@ -141,6 +141,8 @@
     }
     // ---- 덧영상(V2) ----
     if (ov && ov.length) { resetCtx(ctx); for (const e of ov) { drawOverlay(ctx, W, H, e); resetCtx(ctx); } }
+    // ---- 로고 워터마크 (프로젝트) ----
+    if (g.KMV_EXTRAS) { resetCtx(ctx); g.KMV_EXTRAS.drawLogo(ctx, W, H); resetCtx(ctx); }
     // ---- 자막 ----
     if (g.KMV_SUBTITLE) g.KMV_SUBTITLE.draw(ctx, W, H, t, P.data.S, theme, safeBottom(W, H));
     // ---- 부품(앞) ----
@@ -152,6 +154,7 @@
   function emptyFrame(ctx, W, H, t) {
     const P = g.KMV_PROJECT, PT = g.KMV_PARTS;
     black(ctx, W, H);
+    if (g.KMV_EXTRAS) { resetCtx(ctx); g.KMV_EXTRAS.drawLogo(ctx, W, H); resetCtx(ctx); }
     if (g.KMV_SUBTITLE) g.KMV_SUBTITLE.draw(ctx, W, H, t, P.data.S, P.data.theme);
     if (PT) { const parts = partsAt(t); resetCtx(ctx); for (const pt of parts.back.concat(parts.front)) { PT.drawCard(ctx, W, H, pt, t, P.data.theme); resetCtx(ctx); } }
   }

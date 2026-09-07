@@ -154,6 +154,12 @@
   .fpList .fi.on { background:rgba(217,182,92,.14); outline:1px solid rgba(217,182,92,.4); }
   .fpList .fi .nm { color:var(--dim); font-size:11px; width:78px; flex:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .fpList .fi .sm { font-size:19px; line-height:1.15; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #tour .tstep { display:flex; gap:10px; align-items:flex-start; background:rgba(255,255,255,.04); border:1px solid var(--line2); border-radius:8px; padding:9px 11px; font-size:13px; line-height:1.5; }
+  #tour .tstep b { color:var(--gold); white-space:nowrap; }
+  #tour kbd { display:inline-block; background:#0f1524; border:1px solid var(--line2); border-radius:4px; padding:0 5px; font-size:11px; margin:0 1px; }
+  #tplRow button { flex:1 1 30%; text-align:left; padding:6px 8px; line-height:1.3; }
+  #tplRow button small { display:block; color:var(--dim); font-size:10px; font-weight:400; white-space:normal; }
+  #tplRow button.on { border-color:var(--gold); color:var(--gold); }
   .panel .sub2 { color:var(--dim); font-size:11px; margin:10px 0 2px; letter-spacing:1px; }
   #libList .lr { display:flex; align-items:center; gap:6px; padding:4px 2px; border-bottom:1px solid var(--line2); font-size:12px; }
   #libList .lr .t { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -279,7 +285,7 @@
     <div class="sep"></div>
     <span id="saveDot" data-st="ok" title="저장 상태"></span><span id="projName" title="누르면 이름을 바꿔요">새 작업</span>
     <button id="btnSave" class="gold" title="이 기기 + 케이에듀 계정에 저장 (Ctrl+S) — 다른 기기에서 「내 작업」으로 불러올 수 있어요">저장</button><button id="btnNew" title="내 작업 목록 — 불러오기·새 작업·파일">📁 내 작업</button>
-    <button id="btnExport" class="gold">MP4 내보내기</button>
+    <button id="btnExport" class="gold">MP4 내보내기</button><button id="btnHelp" title="처음이라면 — 3단계 안내와 단축키 (?)">?</button>
   </header>
 
   <main>
@@ -481,6 +487,9 @@
         <div class="sub2">표시만 하기</div>
         <div class="note" id="markNote">고칠지는 사람이 정해요 — 마커로 찍어만 둡니다.</div>
         <div class="row"><button id="btnShake" style="flex:1" title="움직임이 오래 큰 구간 — 흔들림·급한 팬 의심">흔들린 곳</button><button id="btnHigh" style="flex:1" title="움직임과 소리가 같이 큰 구간 — 쓸 만한 곳 후보">좋은 장면</button></div>
+        <div class="sub2">사진 묶어 넣기</div>
+        <div class="note" id="photoNote">타임라인의 사진 클립을 한 번에 — 길이를 맞추고(음악이 있으면 박자 배수) 켄 번즈 4종을 번갈아, 사이는 디졸브.</div>
+        <div class="row"><label>한 장</label><div class="seg c3" id="photoSecSeg"></div><button id="btnPhotoSlide" class="gold" style="flex:1">묶어 넣기</button></div>
         <div class="sub2">군소리 정리</div>
         <div class="note" id="fillNote">받아쓴 자막에서 “어·음·그·저기” 같은 말버릇을 찾아 지워요. 뜻이 있는 말도 걸릴 수 있어 먼저 찾아보세요.</div>
         <div class="row"><button id="btnFillFind" style="flex:1">찾기</button><button id="btnFillStrip" class="gold" style="flex:1">지우기</button></div>
@@ -505,6 +514,15 @@
         <div class="note" style="margin-top:8px"><span id="exFmt">1920×1080</span> · 30fps · H.264 8Mbps · AAC<br><span id="saveNote">작업은 이 기기에 자동 저장돼요 · 계정에는 「저장」(Ctrl+S)을 눌렀을 때만.</span></div>
         <div class="row" id="relinkRow" hidden style="gap:6px;margin-top:6px;align-items:center;flex-wrap:wrap"><span id="relinkNames" class="note" style="margin:0;flex:1 1 100%"></span><button id="btnRelink" class="gold" title="빠진 원본 영상 파일을 골라 넣으면 그 클립이 되살아나요 (이름 또는 크기가 같은 파일)">파일 다시 연결</button><input type="file" id="relinkIn" multiple accept="video/*,audio/*,image/*" hidden></div>
         <div class="row" id="saveConflict" hidden style="gap:6px;margin-top:6px"><button id="btnOpenRemote" class="gold" title="다른 기기에서 저장한 최신 사본으로 바꿔요 (이 탭의 편집은 버려요)">다른 기기 것 열기</button><button id="btnConflictCopy" title="이 탭의 편집을 새 이름의 작업으로 따로 저장해요">사본으로 저장</button></div>
+        <div class="sub2">뼈대 템플릿</div>
+        <div class="note" id="tplNote">클립을 다 넣은 뒤 하나 고르면 지금 길이에 맞춰 오프닝·챕터·엔딩 카드가 깔려요. 문구는 카드에서 바꾸고, 다시 고르면 템플릿 카드만 바뀌어요.</div>
+        <div class="row" id="tplRow" style="gap:6px;flex-wrap:wrap"></div>
+        <div class="sub2">로고 워터마크</div>
+        <div class="row"><label>로고</label><select id="logoSel"></select></div>
+        <div class="row" id="logoRows"><label>자리</label><div class="seg c4" id="logoPosSeg"></div></div>
+        <div class="row" id="logoRows2"><label>크기</label><div class="seg c3" id="logoSizeSeg"></div><input type="range" id="logoOp" min="10" max="100" value="85" title="투명도" style="width:70px"><span class="v" id="logoOpV" style="width:34px;text-align:right">85%</span></div>
+        <div class="sub2">내보내기 옆</div>
+        <div class="row" style="gap:6px;flex-wrap:wrap"><button id="btnSrt" title="자막 카드를 SRT 파일로 — 유튜브 「자막」에 올리면 검색·자동 번역이 돼요">자막 SRT</button><button id="btnThumb" title="플레이헤드 프레임을 원본 해상도 PNG 로 — 유튜브 썸네일">썸네일 PNG</button><button id="btnChapters" title="마커를 유튜브 챕터 텍스트로 복사 — 설명란에 붙여 넣으면 챕터가 생겨요">유튜브 챕터</button></div>
         <div class="row" style="margin-top:10px"><span style="color:var(--sub);font-size:12px">마커</span><div class="sp"></div><button id="btnMarker" style="padding:2px 8px;font-size:11px" title="플레이헤드에 마커 (M) · Shift+M 다음 · Ctrl+Shift+M 이전">＋ 마커 (M)</button></div>
         <div id="markerList"></div>
         <div class="row" id="shellRow" hidden style="gap:6px;align-items:center;font-size:12px;margin-top:8px"><span id="shellCache" style="color:var(--sub)">프록시</span><div class="sp"></div><button id="btnCacheDir" style="padding:2px 8px;font-size:11px" title="프록시 폴더 열기">폴더</button><button id="btnCacheClear" style="padding:2px 8px;font-size:11px">비우기</button></div>
@@ -534,6 +552,27 @@
 </div>
 
 <div id="overlay" class="hidden"><div class="box"><h4 id="ovTitle">내보내는 중</h4><div class="bar"><i id="ovBar"></i></div><div class="lbl"><span id="ovLabel"></span><span id="ovPct">0%</span></div><div style="text-align:right;margin-top:10px"><button id="ovCancel" hidden style="font-size:12px;padding:4px 12px" title="내보내기를 멈춰요 (Esc)">취소</button></div></div></div>
+<div id="tour" class="hidden" style="position:fixed;inset:0;background:rgba(6,10,20,.82);display:flex;align-items:center;justify-content:center;z-index:70;backdrop-filter:blur(2px)">
+  <div class="box" style="background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:20px 22px;width:min(560px,92vw);max-height:88vh;overflow:auto">
+    <div style="display:flex;align-items:center;gap:8px"><h4 style="margin:0;font-size:16px" id="tourTitle">케이무비 — 처음이라면</h4><div class="sp" style="flex:1"></div><button id="tourClose" style="font-size:12px">닫기</button></div>
+    <div id="tourSteps" style="margin-top:12px;display:grid;gap:10px">
+      <div class="tstep"><b>1. 넣기</b><span>영상·사진·음악 파일을 화면에 끌어다 놓거나 「＋」. 넣은 순서대로 아래 타임라인에 붙어요. 사진은 「자동」 탭 「사진 묶어 넣기」로 한 번에.</span></div>
+      <div class="tstep"><b>2. 자르기</b><span>플레이헤드를 옮기고 <kbd>S</kbd> 로 나누기, 클립 양 끝을 끌어 다듬기, <kbd>Del</kbd> 로 지우기(빈틈 없이 붙어요). 재생은 <kbd>Space</kbd>, 앞뒤는 <kbd>←</kbd><kbd>→</kbd>.</span></div>
+      <div class="tstep"><b>3. 꾸미고 내보내기</b><span>오른쪽 도구상자 — 「타이틀·꾸미기」는 끌어서 P 레인에, 「자막」은 붙여넣고 자동 배치, 「음악」에서 곡 고르기. 「프로젝트」의 뼈대 템플릿으로 한 번에 깔 수도 있어요. 끝나면 「MP4 내보내기」.</span></div>
+    </div>
+    <div class="sub2" style="margin-top:14px">단축키</div>
+    <div id="tourKeys" style="display:grid;grid-template-columns:1fr 1fr;gap:3px 14px;font-size:12px;margin-top:6px">
+      <div><kbd>Space</kbd> 재생·정지</div><div><kbd>J</kbd><kbd>K</kbd><kbd>L</kbd> 셔틀(뒤·정지·앞)</div>
+      <div><kbd>S</kbd> 플레이헤드에서 나누기</div><div><kbd>Q</kbd> / <kbd>W</kbd> 플레이헤드까지 앞·뒤 다듬기</div>
+      <div><kbd>Del</kbd> 지우기(리플)</div><div><kbd>;</kbd> 리프트(빈 자리) · <kbd>'</kbd> 익스트랙트</div>
+      <div><kbd>I</kbd> / <kbd>O</kbd> 소스 모니터 시작·끝</div><div><kbd>M</kbd> 마커 · <kbd>Shift+M</kbd> 다음 마커</div>
+      <div><kbd>Ctrl+Z</kbd> / <kbd>Ctrl+Y</kbd> 되돌리기·다시</div><div><kbd>Ctrl+C</kbd> <kbd>Ctrl+X</kbd> <kbd>Ctrl+V</kbd> 복사·잘라내기·붙이기</div>
+      <div><kbd>Ctrl+S</kbd> 저장(계정에도)</div><div><kbd>Shift+빈 곳 끌기</kbd> 여러 개 고르기</div>
+      <div><kbd>Ctrl+Alt+클립 끌기</kbd> 슬라이드 · <kbd>Alt+끌기</kbd> 슬립</div><div><kbd>Esc</kbd> 선택 해제·창 닫기</div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:14px"><button id="tourDone" class="gold">시작하기</button></div>
+  </div>
+</div>
 <div id="projModal" class="hidden" style="position:fixed;inset:0;background:rgba(6,10,20,.82);display:flex;align-items:center;justify-content:center;z-index:55;backdrop-filter:blur(2px)">
   <div class="box" style="background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:18px 20px">
     <div style="display:flex;align-items:center;gap:8px"><h4 style="margin:0;font-size:15px">내 작업</h4><div class="sp" style="flex:1"></div><button id="btnProjNew" class="gold" style="font-size:12px">＋ 새 작업</button><button id="btnProjImport" style="font-size:12px" title=".kmv 파일 열기">파일 가져오기</button><button id="btnProjCopy" style="font-size:12px" title="지금 작업을 새 이름의 사본으로 저장">사본으로 저장</button><button id="btnProjClose" class="ico" title="닫기">✕</button></div>
@@ -582,6 +621,7 @@
 <script src="engine/gen.js" defer></script>
 <script src="engine/sfx.js" defer></script>
 <script src="engine/lib.js" defer></script>
+<script src="engine/extras.js" defer></script>
 <script src="engine/store.js" defer></script>
 <script src="engine/fx.js" defer></script>
 <script src="engine/reframe.js" defer></script>

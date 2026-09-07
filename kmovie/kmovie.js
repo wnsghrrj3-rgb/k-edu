@@ -1436,7 +1436,7 @@
     setOn($('fitSeg'), c.fill || 'auto');
     $('fitNote').textContent = ax === 'x' ? '화면보다 넓은 원본이라 좌우를 잘라 채워요.' : '화면보다 높은 원본이라 위아래를 잘라 채워요.';
   }
-  function refreshProject() { refreshAspect(); $('pTot').textContent = secStr(P.total()); $('pCnt').textContent = P.data.V.length + (selSet.size > 1 ? ' (선택 ' + selSet.size + ')' : ''); if (stage !== 'src') $('tcTot').textContent = tc(P.total()); }
+  function refreshProject() { refreshAspect(); refreshTpl(); refreshLogo(); $('pTot').textContent = secStr(P.total()); $('pCnt').textContent = P.data.V.length + (selSet.size > 1 ? ' (선택 ' + selSet.size + ')' : ''); if (stage !== 'src') $('tcTot').textContent = tc(P.total()); }
 
   /* ---------- 3단계 패널: 룩·켄 번즈·전환·자막 ---------- */
   function segBtn(parent, k, label, fn, title) { const b = document.createElement('button'); b.textContent = label; b.dataset.k = k; if (title) b.title = title; b.onclick = fn; parent.appendChild(b); return b; }
@@ -2017,6 +2017,49 @@
   }
   if (LIB) { LIB.onChange(() => buildLib()); LIB.load().then(buildLib); }
 
+  /* ---------- 부가 도구 (engine/extras.js — 51단계): 템플릿·사진 묶어 넣기·로고·SRT/썸네일/챕터·첫 안내 ---------- */
+  const EX = window.KMV_EXTRAS;
+  let photoSec = '3.5';
+  if (EX) {
+    // 뼈대 템플릿
+    EX.TEMPLATES.forEach(tp => { const b = document.createElement('button'); b.dataset.k = tp.id; b.innerHTML = '<b></b><small></small>'; b.querySelector('b').textContent = tp.name; b.querySelector('small').textContent = tp.desc; b.title = tp.desc;
+      b.onclick = () => { stop(); if (!P.total()) return toast('클립을 먼저 넣어 주세요 — 템플릿은 지금 길이에 맞춰 깔려요', 3000); const r = EX.applyTemplate(tp.id); if (!r) return; refreshTpl(); dirty = true; draw(); renderPreview(); toast('「' + tp.name + '」 뼈대 ' + r.added.length + '장' + (r.removed ? ' (앞 템플릿 ' + r.removed + '장 걷음)' : '') + ' — 카드를 골라 문구를 바꾸세요 · Ctrl+Z 한 번', 3600); };
+      $('tplRow').appendChild(b); });
+    // 사진 묶어 넣기
+    [['2.5', '2.5초'], ['3.5', '3.5초'], ['5', '5초']].forEach(([k, l]) => segBtn($('photoSecSeg'), k, l, () => { photoSec = k; setOn($('photoSecSeg'), k); }));
+    setOn($('photoSecSeg'), photoSec);
+    $('btnPhotoSlide').onclick = () => { stop(); const sel = (selSet.size > 1 ? selectedIds() : []).filter(id => { const c = P.clip(id); return c && !c.gap && P.media(c.media).kind === 'image'; }); const r = EX.photoSlideshow({ clipIds: sel.length ? sel : null, seconds: +photoSec, beats: beatFrames() }); if (!r) return toast('타임라인에 사진 클립이 없어요 — 사진을 먼저 넣어 주세요', 2600); dirty = true; draw(); renderPreview(); zoomFit(); toast('사진 ' + r.count + '장 — 한 장 ' + (r.per / FPS).toFixed(1) + '초' + (beatFrames().length > 2 ? '(박자 배수)' : '') + ' · 켄 번즈 · 디졸브 (Ctrl+Z 한 번)', 3200); };
+    // 로고
+    const LOGO_POS = [['tl', '↖'], ['tr', '↗'], ['bl', '↙'], ['br', '↘']], LOGO_SIZE = [['sm', '작게'], ['md', '보통'], ['lg', '크게']];
+    LOGO_POS.forEach(([k, l]) => segBtn($('logoPosSeg'), k, l, () => P.setLogo({ pos: k })));
+    LOGO_SIZE.forEach(([k, l]) => segBtn($('logoSizeSeg'), k, l, () => P.setLogo({ size: k })));
+    $('logoSel').onchange = () => { const v = $('logoSel').value; if (!v) P.setLogo(null); else P.setLogo({ media: v }); renderPreview(); };
+    $('logoOp').oninput = e => { const L = P.data.logo; if (!L) return; L.opacity = +e.target.value / 100; $('logoOpV').textContent = e.target.value + '%'; renderPreview(); };
+    $('logoOp').onchange = e => { if (P.data.logo) P.setLogo({ opacity: +e.target.value / 100 }); };
+    // 내보내기 옆
+    $('btnSrt').onclick = () => { const txt = EX.srt(); if (!txt) return toast('자막 카드가 없어요', 2000); EX.download(new Blob([txt], { type: 'text/plain;charset=utf-8' }), (proj.name || '케이무비') + '.srt'); toast('SRT 저장 — 유튜브 「자막」에 올리면 검색·번역이 돼요', 3000); };
+    $('btnThumb').onclick = async () => { if (!P.total()) return toast('타임라인이 비어 있어요'); stop(); status('썸네일 만드는 중'); try { const b = await EX.thumbnail(ph); EX.download(b, (proj.name || '케이무비') + '_' + tc(ph).replace(/:/g, '-') + '.png'); toast('썸네일 PNG 저장 · ' + PW() + '×' + PH(), 2600); } catch (e) { toast('썸네일 실패: ' + (e.message || e), 4000); } status(''); };
+    $('btnChapters').onclick = async () => { const txt = EX.chapters(); try { await navigator.clipboard.writeText(txt); toast('유튜브 챕터 복사 — 설명란에 붙여 넣으세요 (' + txt.split('\n').length + '줄)', 3000); } catch (e) { EX.download(new Blob([txt], { type: 'text/plain;charset=utf-8' }), '챕터.txt'); toast('챕터 텍스트 저장', 2000); } };
+    // 첫 안내 — 처음 한 번, 그 뒤엔 「?」
+    const openTour = () => { $('tour').classList.remove('hidden'); };
+    const closeTour = () => { $('tour').classList.add('hidden'); try { localStorage.setItem('kmv.tour', '1'); } catch (e) {} };
+    $('btnHelp').onclick = openTour; $('tourClose').onclick = closeTour; $('tourDone').onclick = closeTour;
+    $('tour').addEventListener('click', e => { if (e.target === $('tour')) closeTour(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('tour').classList.contains('hidden')) closeTour(); });
+    let seen = '1'; try { seen = localStorage.getItem('kmv.tour') || ''; } catch (e) {}
+    if (!seen) setTimeout(() => { if (!P.total()) openTour(); }, 900);
+  }
+  function refreshTpl() { if (!window.KMV_EXTRAS) return; const cur = (P.data.P.find(x => x.tpl) || {}).tpl || null; Array.from($('tplRow').children).forEach(b => b.classList.toggle('on', b.dataset.k === cur)); }
+  function refreshLogo() {
+    if (!window.KMV_EXTRAS) return;
+    const sel = $('logoSel'), L = P.data.logo, imgs = P.data.media.filter(m => m.kind === 'image');
+    const want = ['|없음 — 사진(PNG·로고)을 미디어에 넣으면 여기 떠요'].concat(imgs.map(m => m.id + '|' + m.name)).join('\n');
+    if (sel.dataset.want !== want) { sel.dataset.want = want; sel.innerHTML = ''; const o0 = document.createElement('option'); o0.value = ''; o0.textContent = imgs.length ? '없음' : '없음 — 사진(PNG·로고)을 미디어에 넣으면 여기 떠요'; sel.appendChild(o0); imgs.forEach(m => { const o = document.createElement('option'); o.value = m.id; o.textContent = m.name; sel.appendChild(o); }); }
+    if (document.activeElement !== sel) sel.value = L && L.media ? L.media : '';
+    const on = !!(L && L.media); $('logoRows').classList.toggle('hidden', !on); $('logoRows2').classList.toggle('hidden', !on);
+    if (on) { setOn($('logoPosSeg'), L.pos || 'tr'); setOn($('logoSizeSeg'), L.size || 'sm'); if (document.activeElement !== $('logoOp')) { $('logoOp').value = Math.round((L.opacity == null ? 0.85 : L.opacity) * 100); $('logoOpV').textContent = $('logoOp').value + '%'; } }
+  }
+
   /* ---------- 효과음 (설계 v1 §3) ---------- */
   const SFX_GAINS = [[0.6, '조용히'], [1, '그대로'], [1.6, '크게']];
   if (SFX) {
@@ -2333,7 +2376,7 @@
     if (!files.length) return toast('mp4·mov 영상, jpg·png 사진, mp3·wav·m4a 음악만 넣을 수 있어요');
     if (importing) { importQueue.push(...files); toast('앞 파일 다음에 이어서 넣을게요 (' + importQueue.length + '개 대기)', 1500); return; }
     importing = true; stop();
-    const first = !P.total();
+    const first = !P.total(); let nImg = 0;
     while (files.length) {
       let f = files.shift();
       status('가져오는 중: ' + f.name);
@@ -2357,7 +2400,7 @@
           if (a) { selectA2(a.id); select(null); toast(f.name + ' → 음악 레인 ' + tc(a.at) + ' · 말하는 동안은 자동으로 낮아져요', 3000); }
           continue;
         }
-        const c = P.addClip(meta.id);
+        const c = P.addClip(meta.id); if (meta.kind === 'image') nImg++;
         refreshBin(); analyzeBg(meta.id); refreshStatus();
         if (!files.length && !importQueue.length) { select(c.id); selAuto = true; setPH(c.at); }   // 마지막 파일이면 그 클립을 골라(따라가기 표시) 플레이헤드도 — 예전 files.length===1 은 '남은' 개수라 파일 하나만 넣으면 안 골라져 설정 열이 비었다
       } catch (e) { console.error(e); toast(f.name + ' — ' + (e.message || e), 5000); }
@@ -2365,6 +2408,7 @@
     }
     status(''); refreshStatus(); importing = false;
     if (first) zoomFit(); else { dirty = true; draw(); }
+    if (nImg >= 3 && window.KMV_EXTRAS) toast('사진 ' + nImg + '장 — 「자동」 탭 「사진 묶어 넣기」로 길이·켄 번즈·디졸브를 한 번에', 4200);
     setPH(ph);
   }
   document.addEventListener('dragover', e => { e.preventDefault(); document.body.classList.add('dragover'); });
