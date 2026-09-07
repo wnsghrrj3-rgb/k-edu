@@ -60,5 +60,7 @@ scenario('㉙ 메이커 하위 화면', [['/', 1], ['/maker/index.html', 1], ['/
 scenario('㉚ 케이메이커 놀이터 리포트', [['/maker-playground/report/stage4-builder.html', 1]], '/maker-playground/report/index.html');
 scenario('㉛ 그림 그리기 하위 화면', [['/', 1], ['/draw/index.html', 1], ['/draw/coloring/index.html', 1]], '/draw/index.html');
 scenario('㉜ 뮤지엄에서 케이랩으로 건너뛴 뒤 나가기 — 뮤지엄이 아니라 케이랩 허브', [['/', 1], ['/museum/index.html', 1], ['/museum/math/ex01_gauss.html', 1], ['/labs/scilab_states.html', 1]], '/kedu/hub/klab.html');
+/* 2026-09-08 케이학습지 조립 화면 — 교사 자리로 인정 (그 뒤 도구로 넘어가도 교사 대시보드로 나간다) */
+scenario('㉝ 케이학습지 조립 화면을 새 탭으로 열고 케이파크로 — 교사 홈으로 나간다', [['/kedu/worksheet/build.html', 1], ['/kpark/index.html', 1]], '/teacher/index.html');
 console.log(`돌아가기 동선 시뮬 — ${pass} PASS / ${fail} FAIL`);
 process.exit(fail ? 1 : 0);

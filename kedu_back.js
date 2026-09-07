@@ -145,7 +145,7 @@
   /* 1.5-b) 자격(역할) — RPC 없이 지금 경로·referrer·이 탭 기록만으로 */
   var ROLEKEY = 'kedu_back_role_v1';
   var TEACHER_AREA = /^\/(teacher|classwork|admin)\//;
-  var TEACHER_TOOL = /^\/kedu\/(teacher|quiz|activities)\//;
+  var TEACHER_TOOL = /^\/kedu\/(teacher|quiz|activities)\/|^\/kedu\/worksheet\/build\.html$/;   /* 2026-09-08 케이학습지 조립 화면도 교사 자리 */
   var PARENT_AREA  = /^\/parent\//;
   function roleFromPath(p, q) {
     if (PARENT_AREA.test(p)) return 'parent';
