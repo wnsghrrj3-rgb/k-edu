@@ -22,6 +22,12 @@ h1{font-family:'Gowun Batang',serif;font-size:26px;font-weight:700;margin:0 0 4p
 .tabs.sub button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 .soon{padding:26px 22px;border:1px dashed var(--rule);border-radius:12px;color:var(--muted);line-height:1.8;font-size:14.5px}
 .soon b{color:var(--ink)}
+.ulist li .pt{flex:0 0 auto;display:flex;gap:4px;align-items:center;font-size:12px;color:var(--muted)}
+.ulist li .pt input{width:38px;padding:3px 4px;font-size:12px;text-align:center}
+.ulist li .mv{flex:0 0 auto;display:flex;gap:2px}
+.ulist li .mv button,.ulist li .sw{background:none;border:1px solid var(--rule);border-radius:6px;color:var(--muted);cursor:pointer;font:inherit;font-size:12px;padding:1px 6px}
+.badge{display:inline-block;font-size:11.5px;padding:2px 7px;border-radius:999px;border:1px solid var(--rule);color:var(--muted);margin-left:6px}
+.badge.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 .cols{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start}
 @media(max-width:860px){.cols{grid-template-columns:1fr}}
 .panel{background:var(--card);border:1px solid var(--rule);border-radius:12px;padding:18px 20px}
@@ -118,7 +124,7 @@ function toast(msg){ const t = document.getElementById('toast'); t.textContent =
 
   const [{ data: qs }, { data: cs }, { data: cc }] = await Promise.all([
     db.from('question_bank')
-      .select('id, qcode, grade, subject, unit_code, lesson_code, concept_code, difficulty, qkind, stem, misconception_codes, source_kind')
+      .select('id, qcode, grade, subject, unit_code, lesson_code, concept_code, difficulty, qkind, stem, misconception_codes, source_kind, source_set')
       .eq('is_active', true).order('grade').order('unit_code').order('lesson_code').order('difficulty').limit(2000),
     db.from('concepts').select('code, name, lesson_no, unit_code, grade').eq('is_active', true).order('ord'),
     db.from('class_codes').select('id, code, is_active').eq('teacher_id', t.id).eq('is_active', true)
@@ -139,19 +145,19 @@ document.querySelectorAll('#subTabs button').forEach(b => b.onclick = () => {
 document.querySelectorAll('#topTabs button').forEach(b => b.onclick = () => {
   TOP = b.dataset.top;
   document.querySelectorAll('#topTabs button').forEach(x => x.classList.toggle('on', x === b));
-  document.getElementById('subTabs').style.display = TOP === 'quiz' ? '' : 'none';
+  document.getElementById('subTabs').style.display = TOP === 'perf' ? 'none' : '';
+  document.querySelector('#subTabs [data-tab="mine"]').textContent = TOP === 'unit' ? '내 단원 평가' : '내 쪽지';
   render();
 });
 
 function render(){
-  if (TOP === 'unit') return renderSoon('unit');
+  if (TOP === 'unit') return TAB === 'mine' ? renderMine('unit_test') : renderUnit();
   if (TOP === 'perf') return renderSoon('perf');
-  TAB === 'build' ? renderBuild() : renderMine();
+  TAB === 'build' ? renderBuild() : renderMine('quiz');
 }
 /* ②③ 은 아직 없는 화면이다 — 없는 것을 있는 척하지 않고, 무엇이 올지와 지금 대신 쓸 길을 적는다. */
 function renderSoon(which){
   const SOON = {
-    unit: `<b>단원 평가</b>는 준비 중이에요.<br>단원을 고르면 추천안(개념 균배 · 난이도 배합)이 먼저 나오고, 동형 검사지 A~D 전환 · 종이 문제지 · 마감 후 공개 · 개념 히트맵 · 보완 쪽지가 이어질 예정입니다.<br><br>지금은 <b>「차시 쪽지」 탭</b>에서 문항 원장의 <b>단원 종합</b> 차시(단원 종합 A~D)를 골라 담으면 같은 문항으로 단원 정리를 낼 수 있어요.`,
     perf: `<b>수행평가</b>는 준비 중이에요.<br>단원별 과제 카드(영역 · 성취기준 · 산출물 종류) → 우리 반에 열기 → 학생 제출(사진 · 글) → 채점 그리드 → 공개 순서로 이어질 예정입니다.<br><br>1학년 수학 1단원 과제 카드 7건은 핸드오프 <code>kedu/worksheet/g1_math_u1/</code> 에 정본이 있어요.`
   };
   view.innerHTML = `<div class="soon">${SOON[which]}</div>`;
@@ -295,6 +301,169 @@ function quickAssemble(){
   toast(`${added.length}문항 담았어요.`);
 }
 
+/* ===================== ② 단원 평가 (W2, 3종 설계 v2 §3) =====================
+   추천안이 먼저: 단원 고르기 → 개념 균배 + 난이도 D1:D2:D3:D4 = 8:8:6:3 을 문항 수에 맞춰 배분.
+   §8-① 학년별 기본: 1~2학년 15문항·20분 / 3~6학년 25문항·30분.
+   「동형 검사지로」 = 원장의 단원 종합 A~D(source_kind='unit_review', source_set) 를 그대로.
+   편집 = 교체(같은 개념·난이도의 다른 문항)·삭제·순서·배점. 저장 = kind 'unit_test', show_result 기본 'after_close'(§8-②).
+============================================================================ */
+const UNIT_DEFAULT = g => (g <= 2 ? { n: 15, min: 20 } : { n: 25, min: 30 });
+const UNIT_RATIO = [8, 8, 6, 3];                 // 단원 종합 배합(문항수행 설계 §4)
+let UCART = [];                                  // [{q, points}]
+
+/* 문항 수를 난이도 4단에 배분 — 반올림 오차는 D2 → D1 순으로 흡수해 합이 정확히 n 이 되게 */
+function unitQuota(n){
+  const total = UNIT_RATIO.reduce((a, b) => a + b, 0);
+  const q = UNIT_RATIO.map(r => Math.floor(n * r / total));
+  let rest = n - q.reduce((a, b) => a + b, 0);
+  for (const i of [1, 0, 2, 3]) { while (rest > 0 && i < 4) { q[i]++; rest--; if (rest === 0) break; } if (rest === 0) break; }
+  return q;
+}
+/* 추천안 — 개념별 균배(가장 적게 뽑힌 개념부터), 난이도 할당량 안에서, 유형이 쏠리지 않게 */
+function recommend(unit, grade, n){
+  const pool = BANK.filter(q => q.unit_code === unit && String(q.grade) === String(grade));
+  const quota = unitQuota(n), picked = [], perConcept = {};
+  const concepts = uniq(pool.map(q => q.concept_code));
+  concepts.forEach(c => perConcept[c] = 0);
+  quota.forEach((need, di) => {
+    const cand = pool.filter(q => q.difficulty === di + 1);
+    const usedKind = {};
+    for (let k = 0; k < need; k++){
+      // 가장 덜 뽑힌 개념 → 그 개념 안에서 덜 쓴 유형
+      const order = concepts.slice().sort((a, b) => perConcept[a] - perConcept[b]);
+      let q = null;
+      for (const c of order){
+        const cs = cand.filter(x => x.concept_code === c && !picked.includes(x)).sort((a, b) => (usedKind[a.qkind] || 0) - (usedKind[b.qkind] || 0));
+        if (cs.length){ q = cs[0]; break; }
+      }
+      if (!q) break;
+      picked.push(q); perConcept[q.concept_code]++; usedKind[q.qkind] = (usedKind[q.qkind] || 0) + 1;
+    }
+  });
+  return picked;
+}
+function equivForms(unit, grade){
+  return uniq(BANK.filter(q => q.unit_code === unit && String(q.grade) === String(grade) && q.source_kind === 'unit_review').map(q => q.source_set));
+}
+function formLabel(ss){ const m = String(ss).match(/review_([a-z])$/i); return m ? m[1].toUpperCase() + '형' : ss; }
+
+function renderUnit(){
+  const units = uniq(BANK.map(q => q.unit_code)), grades = uniq(BANK.map(q => q.grade));
+  view.innerHTML = `<div class="cols">
+    <div class="panel">
+      <h2>추천안</h2>
+      <div class="filters">
+        <select id="uGrade">${grades.map(g => `<option value="${g}">${g}학년</option>`).join('')}</select>
+        <select id="uUnit">${units.map(u => `<option value="${u}">${esc(u)}</option>`).join('')}</select>
+        <select id="uN"></select>
+        <button class="btn ghost" id="uGo">추천안 만들기</button>
+      </div>
+      <div class="filters" style="margin-top:8px">
+        <select id="uForm"></select>
+        <button class="btn ghost" id="uFormGo">동형 검사지로</button>
+      </div>
+      <p class="hint">추천안 = 개념 골고루 + 난이도 D1·D2·D3·D4 = 8:8:6:3. 동형 검사지 = 같은 설계도로 수·사물만 다른 A~D형 — 짝 시험·재시험용.</p>
+      <div class="mixbar" id="uMixbar"></div>
+      <div class="hint" id="uMixtext"></div>
+      <ul class="cart ulist" id="ulist" style="max-height:520px"></ul>
+    </div>
+    <div>
+      <div class="panel">
+        <h2>단원 평가 저장</h2>
+        <input type="text" id="uTitle" placeholder="이름 (예: 1단원 9까지의 수 정리)" style="width:100%">
+        <div class="filters" style="margin-top:10px">
+          <select id="uShow">
+            <option value="after_close" selected>결과 공개 · 마감 후</option>
+            <option value="immediate">결과 공개 · 바로</option>
+            <option value="manual">결과 공개 · 내가 열 때</option>
+          </select>
+          <label style="display:inline-flex;align-items:center;gap:6px;margin:0;font-size:13px;color:var(--muted)">시간 <input type="number" id="uMin" min="5" max="90" style="width:58px;padding:5px 6px"> 분</label>
+        </div>
+        <p class="hint">「마감 후」면 학생은 제출 뒤 정답·해설을 보지 못하고, 「내 단원 평가」에서 <b>결과 열기</b>를 누른 뒤에 봅니다. 배점은 목록에서 문항마다 바꿀 수 있어요(기본 1점, 서술 3점).</p>
+        <div class="row">
+          <button class="btn" id="uSave" disabled>단원 평가 저장</button>
+          <button class="btn ghost" id="uClear">비우기</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+  const syncN = () => {
+    const g = Number(f('uGrade')), d = UNIT_DEFAULT(g);
+    document.getElementById('uN').innerHTML = [10, 15, 20, 25, 30].map(n => `<option value="${n}"${n === d.n ? ' selected' : ''}>${n}문항</option>`).join('');
+    document.getElementById('uMin').value = d.min;
+    const forms = equivForms(f('uUnit'), g);
+    document.getElementById('uForm').innerHTML = forms.length ? forms.map(ss => `<option value="${esc(ss)}">단원 종합 ${formLabel(ss)}</option>`).join('') : '<option value="">동형 검사지 없음</option>';
+    document.getElementById('uFormGo').disabled = !forms.length;
+  };
+  document.getElementById('uGrade').onchange = syncN;
+  document.getElementById('uUnit').onchange = syncN;
+  syncN();
+  document.getElementById('uGo').onclick = () => {
+    const picked = recommend(f('uUnit'), f('uGrade'), Number(f('uN')));
+    if (!picked.length) return toast('그 단원에 문항이 없어요.');
+    UCART = picked.map(q => ({ q, points: q.qkind === 'essay' ? 3 : 1 }));
+    drawUnit(); toast(`추천안 ${picked.length}문항을 담았어요. 바꾸고 싶은 문항은 「교체」로.`);
+  };
+  document.getElementById('uFormGo').onclick = () => {
+    const ss = f('uForm'); if (!ss) return;
+    const items = BANK.filter(q => q.source_set === ss).sort((a, b) => a.qcode.localeCompare(b.qcode, undefined, { numeric: true }));
+    UCART = items.map(q => ({ q, points: q.qkind === 'essay' ? 3 : 1 }));
+    drawUnit(); toast(`단원 종합 ${formLabel(ss)} ${items.length}문항을 그대로 담았어요.`);
+  };
+  document.getElementById('uClear').onclick = () => { UCART = []; drawUnit(); };
+  document.getElementById('uSave').onclick = saveUnit;
+  drawUnit();
+}
+function drawUnit(){
+  const ul = document.getElementById('ulist'); if (!ul) return;
+  const cnt = [0, 0, 0, 0]; UCART.forEach(x => cnt[x.q.difficulty - 1]++);
+  const total = UCART.length || 1, pts = UCART.reduce((a, x) => a + x.points, 0);
+  const colors = ['#8FB09A','#8FA6C0','#C7AE84','#C08F8F'];
+  document.getElementById('uMixbar').innerHTML = UCART.length ? cnt.map((c, i) => c ? `<div style="flex:${c};background:${colors[i]}" title="${DIFFNAME[i + 1]} ${c}"></div>` : '').join('') : '';
+  document.getElementById('uMixtext').textContent = UCART.length
+    ? `${UCART.length}문항 · ${pts}점 · ` + cnt.map((c, i) => `D${i + 1} ${c}`).join(' · ') + ` · 개념 ${uniq(UCART.map(x => x.q.concept_code)).length}개`
+    : '추천안을 만들거나 동형 검사지를 골라 담으세요.';
+  ul.innerHTML = UCART.map((x, i) => `<li>
+    <span class="n">${i + 1}</span>
+    <span style="flex:1">${esc(x.q.stem)} <span class="badge">${DIFFNAME[x.q.difficulty]}</span><span class="badge">${KINDNAME[x.q.qkind] || x.q.qkind}</span></span>
+    <span class="pt"><input type="number" min="1" max="10" value="${x.points}" data-pt="${i}"> 점</span>
+    <span class="mv"><button data-up="${i}" ${i === 0 ? 'disabled' : ''}>↑</button><button data-dn="${i}" ${i === UCART.length - 1 ? 'disabled' : ''}>↓</button></span>
+    <button class="sw" data-sw="${i}">교체</button>
+    <button class="x" data-rm="${i}">×</button>
+  </li>`).join('');
+  ul.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { UCART.splice(Number(b.dataset.rm), 1); drawUnit(); });
+  ul.querySelectorAll('[data-up]').forEach(b => b.onclick = () => { const i = Number(b.dataset.up); [UCART[i - 1], UCART[i]] = [UCART[i], UCART[i - 1]]; drawUnit(); });
+  ul.querySelectorAll('[data-dn]').forEach(b => b.onclick = () => { const i = Number(b.dataset.dn); [UCART[i + 1], UCART[i]] = [UCART[i], UCART[i + 1]]; drawUnit(); });
+  ul.querySelectorAll('[data-pt]').forEach(inp => inp.onchange = () => { UCART[Number(inp.dataset.pt)].points = Math.max(1, Number(inp.value) || 1); drawUnit(); });
+  // 교체 = 같은 개념·같은 난이도의 아직 안 담은 문항으로(없으면 같은 난이도 아무 개념)
+  ul.querySelectorAll('[data-sw]').forEach(b => b.onclick = () => {
+    const i = Number(b.dataset.sw), cur = UCART[i].q, inUse = UCART.map(x => x.q.id);
+    const same = q => q.unit_code === cur.unit_code && q.grade === cur.grade && q.difficulty === cur.difficulty && !inUse.includes(q.id);
+    const alt = BANK.find(q => same(q) && q.concept_code === cur.concept_code) || BANK.find(same);
+    if (!alt) return toast('바꿀 문항이 남아 있지 않아요.');
+    UCART[i] = { q: alt, points: alt.qkind === 'essay' ? 3 : UCART[i].points }; drawUnit();
+  });
+  const sv = document.getElementById('uSave'); if (sv) sv.disabled = !UCART.length;
+}
+async function saveUnit(){
+  if (!UCART.length) return;
+  const first = UCART[0].q;
+  const title = (document.getElementById('uTitle').value || '').trim() || (first.unit_code + ' 단원 정리');
+  const show = f('uShow') || 'after_close', min = Number(f('uMin')) || null;
+  const { data: set, error } = await db.from('quiz_sets').insert({
+    teacher_id: ME.id, title, kind: 'unit_test', subject: first.subject, grade: first.grade, unit_code: first.unit_code,
+    show_result: show, time_min: min
+  }).select('id').single();
+  if (error) return toast('저장하지 못했어요. SQL v2(setup_worksheet_v2.sql)가 적용됐는지, 승인된 계정인지 확인해 주세요.');
+  const items = UCART.map((x, i) => ({ set_id: set.id, ord: i + 1, question_id: x.q.id, points: x.points }));
+  const { error: e2 } = await db.from('quiz_set_items').insert(items);
+  if (e2) return toast('문항을 담지 못했어요.');
+  UCART = []; TAB = 'mine';
+  document.querySelectorAll('#subTabs button').forEach(x => x.classList.toggle('on', x.dataset.tab === 'mine'));
+  render();
+  toast('단원 평가를 저장했어요. 우리 반에 열거나 종이로 뽑으세요.');
+}
+
 /* ---------- 저장 ---------- */
 async function saveSet(){
   const first = CART[0];
@@ -318,14 +487,19 @@ async function saveSet(){
 }
 
 /* ---------- 내 쪽지 ---------- */
-async function renderMine(){
+async function renderMine(kind){
+  kind = kind || 'quiz';
   view.innerHTML = `<div class="gate">불러오는 중…</div>`;
-  const { data: sets } = await db.from('quiz_sets')
+  // show_result·result_opened_at·closed_at 은 SQL v2 열 — v1 원장이면 이 select 가 죽으므로 기본 열로 한 번 더 읽는다.
+  let { data: sets, error } = await db.from('quiz_sets')
+    .select('id, title, kind, grade, subject, unit_code, created_at, show_result, result_opened_at, closed_at, time_min, quiz_set_items(count)')
+    .eq('teacher_id', ME.id).eq('is_archived', false).eq('kind', kind).order('created_at', { ascending: false });
+  if (error){ ({ data: sets } = await db.from('quiz_sets')
     .select('id, title, kind, grade, subject, unit_code, created_at, quiz_set_items(count)')
-    .eq('teacher_id', ME.id).eq('is_archived', false).order('created_at', { ascending: false });
+    .eq('teacher_id', ME.id).eq('is_archived', false).eq('kind', kind).order('created_at', { ascending: false })); }
 
   if (!sets || !sets.length){
-    view.innerHTML = `<div class="panel"><p class="hint" style="margin:0">아직 만든 쪽지가 없어요. 「조립」 탭에서 문항을 담아 보세요.</p></div>`;
+    view.innerHTML = `<div class="panel"><p class="hint" style="margin:0">${kind === 'unit_test' ? '아직 만든 단원 평가가 없어요. 「조립」 탭에서 추천안을 만들어 보세요.' : '아직 만든 쪽지가 없어요. 「조립」 탭에서 문항을 담아 보세요.'}</p></div>`;
     return;
   }
 
@@ -343,11 +517,15 @@ async function renderMine(){
     return `<div class="setrow">
       <h3>${esc(s.title)}</h3>
       <div class="meta">${n}문항 · ${s.grade}학년 · ${new Date(s.created_at).toLocaleDateString('ko-KR')}
-        ${names.length ? ` · <b>열린 반: ${names.map(esc).join(', ')}</b>` : ' · 아직 열지 않음'}</div>
+        ${names.length ? ` · <b>열린 반: ${names.map(esc).join(', ')}</b>` : ' · 아직 열지 않음'}
+        ${s.kind === 'unit_test' ? ` · ${revealText(s)}${s.closed_at ? ' · <b>마감됨</b>' : ''}` : ''}</div>
       <div class="row">
         <select data-cls="${s.id}">${CLASSES.length ? CLASSES.map(c => `<option value="${c.id}">${esc(c.code)}</option>`).join('') : '<option value="">학급 없음</option>'}</select>
         <button class="btn" data-open="${s.id}" ${CLASSES.length ? '' : 'disabled'}>우리 반에 열기</button>
         <button class="btn ghost" data-prev="${s.id}">미리보기</button>
+        ${s.kind === 'unit_test' ? `<button class="btn ghost" data-paper="${s.id}">종이 문제지</button>` : ''}
+        ${s.kind === 'unit_test' && s.show_result && s.show_result !== 'immediate' && !s.result_opened_at ? `<button class="btn ghost" data-reveal="${s.id}">결과 열기</button>` : ''}
+        ${s.kind === 'unit_test' ? `<button class="btn ghost" data-close="${s.id}" data-closed="${s.closed_at ? 1 : 0}">${s.closed_at ? '다시 열기' : '마감'}</button>` : ''}
         <button class="btn ghost" data-res="${s.id}">결과 보기</button>
       </div>
       <div id="res-${s.id}"></div>
@@ -358,6 +536,24 @@ async function renderMine(){
   // 미리보기는 같은 탭에서 연다 — 새 탭이면 돌아올 길이 없었다(2026-09-04). play.html 이 &preview=1 을 보고 「내 쪽지로」 단추를 얹고 기록은 남기지 않는다.
   view.querySelectorAll('[data-prev]').forEach(b => b.onclick = () => { location.href = 'play.html?quiz=' + b.dataset.prev + '&preview=1'; });
   view.querySelectorAll('[data-res]').forEach(b => b.onclick = () => showResult(b.dataset.res));
+  // 종이 문제지 = play.html 의 종이 모드에 원장 세트를 그대로(§3-2). 새 탭 — 인쇄 뒤 돌아올 곳은 이 화면.
+  view.querySelectorAll('[data-paper]').forEach(b => b.onclick = () => window.open('play.html?quiz=' + b.dataset.paper + '&mode=paper&preview=1', '_blank'));
+  view.querySelectorAll('[data-reveal]').forEach(b => b.onclick = async () => {
+    const { data, error } = await db.rpc('quiz_set_open_result', { p_set_id: b.dataset.reveal });
+    if (error || data === false) return toast('결과를 열지 못했어요. SQL v2 가 적용됐는지 확인해 주세요.');
+    toast('학생 화면에 정답·해설이 열렸어요.'); renderMine(kind);
+  });
+  view.querySelectorAll('[data-close]').forEach(b => b.onclick = async () => {
+    const closing = b.dataset.closed !== '1';
+    const { data, error } = await db.rpc('quiz_set_close', { p_set_id: b.dataset.close, p_close: closing });
+    if (error || data === false) return toast('바꾸지 못했어요. SQL v2 가 적용됐는지 확인해 주세요.');
+    toast(closing ? '응시를 마감했어요. 학생은 더 풀 수 없어요.' : '다시 열었어요.'); renderMine(kind);
+  });
+}
+function revealText(s){
+  if (!s.show_result || s.show_result === 'immediate') return '결과 바로 공개';
+  if (s.result_opened_at) return '결과 열림';
+  return s.show_result === 'manual' ? '결과 아직 닫힘(내가 열 때)' : '결과 아직 닫힘(마감 후)';
 }
 
 async function openForClass(setId, sets){

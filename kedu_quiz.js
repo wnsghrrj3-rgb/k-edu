@@ -72,6 +72,10 @@
         subject:  d.subject,
         unit:     d.unit,
         show_result: d.show_result || 'immediate',
+        // W2(2026-09-07): 서버가 「정오·해설을 보여도 되는가」를 정한다. 옛 get_quiz_set(v1)은 이 키가 없다 → 즉시 공개로 해석.
+        reveal:   (d.reveal == null) ? true : !!d.reveal,
+        closed:   !!d.closed,
+        time_min: d.time_min || null,
         questions: (d.questions || []).map(function(q, i){
           q.seq = q.seq || (i + 1);
           return q;

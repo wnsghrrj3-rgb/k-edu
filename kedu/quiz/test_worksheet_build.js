@@ -31,7 +31,7 @@ T(/\|\| \(c0 \? \(c0\.lesson_no \? c0\.lesson_no \+ '차시 · ' : ''\) \+ c0\.n
 /* ②③ 준비 중 문구 — 있는 척 금지 */
 var soon = (html.match(/function renderSoon[\s\S]*?\n\}/) || [''])[0];
 T(/준비 중/.test(soon), '②③ 화면이 「준비 중」임을 말하지 않음');
-T(/차시 쪽지」 탭/.test(soon), '단원 평가 준비 중 화면이 지금 대신 쓸 길(단원 종합 문항)을 안내하지 않음');
+T(/perf:/.test(soon) && /unit:/.test(soon) === false, '단원 평가가 W2 로 구현됐는데 준비 중 문구가 남아 있음');
 
 /* ── 동작: 가짜 DB 로 조립 화면까지 띄운다 (원장 2개념·문항 16개·학급 1) ── */
 var BANK = [];
@@ -40,15 +40,22 @@ var BANK = [];
     concept_code: c[0], difficulty: ((i - 1) % 4) + 1, qkind: ['mc', 'sa', 'ox', 'blank', 'mc', 'sa', 'ox', 'blank'][i - 1], stem: '문항 ' + c[0] + i, misconception_codes: [], source_kind: 'kedu' });
 });
 var CONCEPTS = [{ code: 'C1', name: '수 세기', lesson_no: 1, unit_code: 'u1', grade: 1 }, { code: 'C2', name: '수 비교', lesson_no: 2, unit_code: 'u1', grade: 1 }];
+/* 단원 종합 A·B 형(unit_review) 각 6문항 — 동형 검사지 전환용. 개념 C1·C2 교대, 난이도 1..4 순환 */
+['a', 'b'].forEach(function (f) {
+  for (var i = 1; i <= 6; i++) BANK.push({ id: 'R' + f + i, qcode: 'g1_math_u1_review_' + f + '#' + i, grade: 1, subject: 'math', unit_code: 'u1', lesson_code: null,
+    concept_code: i % 2 ? 'C1' : 'C2', difficulty: ((i - 1) % 4) + 1, qkind: i === 6 ? 'essay' : 'mc', stem: '종합 ' + f + i, misconception_codes: [], source_kind: 'unit_review', source_set: 'g1_math_u1_review_' + f });
+});
+var INSERTS = [];                                        // 저장 때 원장에 무엇을 넣는지 본다
 function fakeDb() {
-  function q(data) { var o = { then: function (r) { return Promise.resolve({ data: data, error: null }).then(r); } };
-    ['select', 'eq', 'order', 'limit', 'in', 'insert'].forEach(function (m) { o[m] = function () { return o; }; });
+  function q(table, data) { var o = { then: function (r) { return Promise.resolve({ data: data, error: null }).then(r); } };
+    ['select', 'eq', 'order', 'limit', 'in'].forEach(function (m) { o[m] = function () { return o; }; });
+    o.insert = function (row) { INSERTS.push({ table: table, row: row }); return o; };
     o.maybeSingle = function () { return Promise.resolve({ data: { id: 't1', name: '준호' } }); };
     o.single = function () { return Promise.resolve({ data: { id: 'set1' }, error: null }); };
     return o; }
   return {
     auth: { getSession: function () { return Promise.resolve({ data: { session: { user: { id: 'u1' } } } }); } },
-    from: function (t) { return q(t === 'question_bank' ? BANK : t === 'concepts' ? CONCEPTS : t === 'class_codes' ? [{ id: 'c1', code: 'ABC', is_active: true }] : []); },
+    from: function (t) { return q(t, t === 'question_bank' ? BANK : t === 'concepts' ? CONCEPTS : t === 'class_codes' ? [{ id: 'c1', code: 'ABC', is_active: true }] : []); },
     rpc: function () { return Promise.resolve({ error: null }); }
   };
 }
@@ -76,9 +83,56 @@ ran.then(function () {
     var cartN = d.getElementById('cart') ? d.getElementById('cart').children.length : -1;
     T(cartN === 5, '빠른 조립 기본으로 담은 문항이 5개가 아님: ' + cartN);
   }
+  /* ── ② 단원 평가 (W2) ── */
   click('#topTabs [data-top="unit"]');
-  T(/준비 중/.test(d.getElementById('view').textContent), '「단원 평가」 탭이 준비 중 화면을 안 그림');
-  T(d.getElementById('subTabs').style.display === 'none', '②에서 ① 하위 탭이 그대로 보임');
+  T(!!d.getElementById('uGo') && !!d.getElementById('uFormGo'), '「단원 평가」 탭에 추천안·동형 검사지 버튼이 없음');
+  T(d.getElementById('subTabs').style.display === '' && d.querySelector('#subTabs [data-tab="mine"]').textContent === '내 단원 평가', '②의 하위 탭 이름이 「내 단원 평가」가 아님');
+  T(d.getElementById('uN').value === '15' && d.getElementById('uMin').value === '20', '1학년 기본이 15문항·20분이 아님(§8-①): ' + d.getElementById('uN').value + '/' + d.getElementById('uMin').value);
+  T(d.getElementById('uShow').value === 'after_close', '단원 평가 공개 기본이 「마감 후」가 아님(§8-②)');
+  /* 추천안 = 문항 수 정확 · 난이도 8:8:6:3 배분 · 개념 균배 */
+  d.getElementById('uN').value = '10';
+  click('#uGo');
+  var rows = d.querySelectorAll('#ulist li');
+  T(rows.length === 10, '추천안이 고른 문항 수가 요청과 다름: ' + rows.length);
+  var mixt = d.getElementById('uMixtext').textContent;
+  T(/D1 3 · D2 4 · D3 2 · D4 1/.test(mixt) || /D1 3 · D2 3 · D3 3 · D4 1/.test(mixt), '추천안 난이도 배분이 8:8:6:3 을 안 따름: ' + mixt);
+  T(/개념 2개/.test(mixt), '추천안이 개념을 균배하지 않음(한 개념만 뽑음): ' + mixt);
+  /* 편집: 삭제·순서·배점·교체 */
+  var stemOf = function (li) { return li.children[1].textContent; };
+  var firstStem = stemOf(rows[0]);
+  click('#ulist [data-dn="0"]');
+  T(stemOf(d.querySelectorAll('#ulist li')[1]) === firstStem, '순서 ↓ 가 동작하지 않음');
+  click('#ulist [data-rm="9"]');
+  T(d.querySelectorAll('#ulist li').length === 9, '삭제가 동작하지 않음');
+  var before = stemOf(d.querySelectorAll('#ulist li')[0]);
+  click('#ulist [data-sw="0"]');
+  T(stemOf(d.querySelectorAll('#ulist li')[0]) !== before, '교체가 다른 문항으로 바꾸지 않음');
+  var pt = d.querySelector('#ulist [data-pt="0"]'); pt.value = '3'; pt.dispatchEvent(new w.Event('change', { bubbles: true }));
+  T(/9문항 · 11점/.test(d.getElementById('uMixtext').textContent), '배점 변경이 합계에 반영되지 않음: ' + d.getElementById('uMixtext').textContent);
+  /* 동형 검사지 전환 = 그 형 문항 그대로, 서술은 3점 */
+  T(d.getElementById('uForm').options.length === 2 && /A형/.test(d.getElementById('uForm').options[0].textContent), '동형 검사지 목록(A·B형)이 안 뜸');
+  d.getElementById('uForm').value = 'g1_math_u1_review_b';
+  click('#uFormGo');
+  rows = d.querySelectorAll('#ulist li');
+  T(rows.length === 6 && /종합 b1/.test(rows[0].textContent) && /종합 b6/.test(rows[5].textContent), 'B형 전환이 그 형 문항을 순서대로 담지 않음');
+  T(d.querySelector('#ulist [data-pt="5"]').value === '3', '서술형 기본 배점이 3점이 아님');
+  /* 저장 = unit_test · after_close · 배점 동봉 */
+  d.getElementById('uTitle').value = '1단원 정리';
+  click('#uSave');
+  return new Promise(function (r) { setTimeout(r, 30); }).then(function () {
+    var setIns = INSERTS.find(function (x) { return x.table === 'quiz_sets'; }), itemIns = INSERTS.find(function (x) { return x.table === 'quiz_set_items'; });
+    T(!!setIns && setIns.row.kind === 'unit_test' && setIns.row.show_result === 'after_close' && setIns.row.time_min === 20 && setIns.row.title === '1단원 정리',
+      '단원 평가 저장 행이 설계와 다름: ' + JSON.stringify(setIns && setIns.row));
+    T(!!itemIns && itemIns.row.length === 6 && itemIns.row[5].points === 3 && itemIns.row[0].ord === 1, '문항 행에 배점·순서가 안 실림: ' + JSON.stringify(itemIns && itemIns.row.slice(0, 2)));
+    T(d.querySelector('#subTabs [data-tab="mine"]').classList.contains('on'), '저장 뒤 「내 단원 평가」 탭으로 안 넘어감');
+    return d;
+  });
+}).then(function (d) {
+  function click(sel) { var el = d.querySelector(sel); if (!el) { T(false, '요소 없음: ' + sel); return; } el.dispatchEvent(new w.Event('click', { bubbles: true })); }
+  /* 내 목록 코드에 단원 평가 전용 통로(종이·결과 열기·마감)가 있는가 — 정적 */
+  T(/data-paper=/.test(html) && /mode=paper&preview=1/.test(html), '내 단원 평가에 종이 문제지 통로가 없음(§3-2)');
+  T(/quiz_set_open_result/.test(html) && /quiz_set_close/.test(html), '결과 열기·마감 RPC 호출이 없음');
+  T(/s\.show_result !== 'immediate' && !s\.result_opened_at \? `<button[^`]*data-reveal/.test(html), '「결과 열기」가 닫힌 세트에만 뜨도록 조건이 안 걸림');
   click('#topTabs [data-top="perf"]');
   T(/수행평가/.test(d.getElementById('view').textContent) && /준비 중/.test(d.getElementById('view').textContent), '「수행평가」 탭이 준비 중 화면을 안 그림');
   click('#topTabs [data-top="quiz"]');
@@ -89,6 +143,6 @@ ran.then(function () {
   dom2.window.getKeduDb = w.getKeduDb;
   try { dom2.window.eval(inline); } catch (e) { T(false, '?tab=mine 실행 예외: ' + e.message); }
   T(dom2.window.document.querySelector('#subTabs [data-tab="mine"]').classList.contains('on'), '?tab=mine 진입이 「내 쪽지」 탭을 안 켬(미리보기 돌아오기가 깨짐)');
-  console.log('\n케이학습지 build W1 — ' + pass + ' PASS / ' + fail + ' FAIL');
+  console.log('\n케이학습지 build W1·W2 — ' + pass + ' PASS / ' + fail + ' FAIL');
   process.exit(fail ? 1 : 0);
 });
