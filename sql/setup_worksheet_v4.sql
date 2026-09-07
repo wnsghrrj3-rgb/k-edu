@@ -2,7 +2,8 @@
 -- setup_worksheet_v4.sql — 케이학습지 W4 수행평가 (설계 v2 §4-1 · §4-2 · §4-3) · 재실행 안전
 --   선행: setup_worksheet_v2.sql(#44) · setup_class_openings.sql · setup_classwork.sql(cw_my_teacher_id)
 --   §8 결정: ③ v0 제출 = 사진·글 (녹음은 뒤로)
---   표 4 + Storage 버킷 perf + RPC get_perf_run(학생이 과제를 받는 문) + 시드는 별도(seed_perf_g1_math_u1.sql)
+--   표 4 + RPC get_perf_run(학생이 과제를 받는 문). Storage 버킷·정책은 setup_worksheet_v4_storage.sql 로 분리
+--   (SQL Editor 는 파일 전체를 한 트랜잭션으로 돌려서, storage 정책이 권한으로 막히면 표까지 통째로 되돌아간다 — 2026-09-07 실측)
 -- =============================================================================
 
 -- [1] 과제 정본
@@ -107,24 +108,6 @@ CREATE POLICY p_pres_student_read ON performance_results FOR SELECT TO authentic
   USING (student_id IN (SELECT id FROM student_profiles WHERE user_id = auth.uid())
          AND run_id IN (SELECT id FROM performance_runs WHERE reveal_to_student));
 
--- [6] Storage 버킷 perf — 경로 규약: {class_code_id}/{run_id}/{student_id}.{ext}
---   학생: 자기 경로에만 쓰기·읽기 / 담임: 자기 학급 폴더 읽기. 얼굴 사진 금지는 화면 문구로.
-INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES ('perf', 'perf', false, 5242880, ARRAY['image/jpeg','image/png','image/webp'])
-ON CONFLICT (id) DO NOTHING;
-
-DROP POLICY IF EXISTS "perf_student_own" ON storage.objects;
-CREATE POLICY "perf_student_own" ON storage.objects FOR ALL TO authenticated
-  USING (bucket_id = 'perf'
-         AND (storage.foldername(name))[1] = (SELECT class_code_id::text FROM student_profiles WHERE user_id = auth.uid() LIMIT 1)
-         AND storage.filename(name) LIKE (SELECT id::text FROM student_profiles WHERE user_id = auth.uid() LIMIT 1) || '%')
-  WITH CHECK (bucket_id = 'perf'
-         AND (storage.foldername(name))[1] = (SELECT class_code_id::text FROM student_profiles WHERE user_id = auth.uid() LIMIT 1)
-         AND storage.filename(name) LIKE (SELECT id::text FROM student_profiles WHERE user_id = auth.uid() LIMIT 1) || '%');
-DROP POLICY IF EXISTS "perf_teacher_read" ON storage.objects;
-CREATE POLICY "perf_teacher_read" ON storage.objects FOR SELECT TO authenticated
-  USING (bucket_id = 'perf' AND (storage.foldername(name))[1] IN (SELECT id::text FROM class_codes WHERE teacher_id = cw_my_teacher_id()));
-
 -- [7] get_perf_run — 학생이 과제를 받는 유일한 문 (교사 본인은 미리보기)
 CREATE OR REPLACE FUNCTION get_perf_run(p_run_id uuid)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $fn$
@@ -158,6 +141,5 @@ END $fn$;
 GRANT EXECUTE ON FUNCTION get_perf_run(uuid) TO authenticated;
 
 -- 검산: SELECT count(*) FROM information_schema.tables WHERE table_name LIKE 'performance_%';  → 4
---       SELECT id FROM storage.buckets WHERE id='perf';  → 1행
 --       SELECT proname FROM pg_proc WHERE proname='get_perf_run';  → 1행
 --       그 다음 seed_perf_g1_math_u1.sql → SELECT count(*) FROM performance_tasks; → 7
