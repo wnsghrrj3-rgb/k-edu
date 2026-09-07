@@ -21,6 +21,8 @@ h1{font-family:'Gowun Batang',serif;font-size:1.45em;line-height:1.4;margin-bott
 h2{font-family:'Gowun Batang',serif;font-size:1.1em;margin-bottom:10px;color:var(--soft)}
 .topic{font-size:1.15em;line-height:1.6;padding:12px 14px;background:var(--accent-soft);border-radius:12px;margin-bottom:12px}
 .topic small{display:block;color:var(--muted);font-size:.8em;margin-top:4px}
+.passage{font-size:1em;line-height:1.85;padding:14px 16px;background:#FFFDF9;border:1px solid var(--rule);border-radius:12px;margin-bottom:12px;font-family:'Gowun Batang',serif}
+.passage small{display:block;color:var(--muted);font-size:.78em;margin-top:8px;font-family:'Gowun Dodum',sans-serif}
 .row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
 .pick{border:1.5px solid var(--rule);background:#fff;border-radius:999px;padding:7px 14px;font:inherit;font-size:.9em;cursor:pointer;color:var(--soft)}
 .pick[aria-pressed=true]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700}
@@ -79,28 +81,36 @@ textarea{min-height:240px;resize:vertical}
   var $=function(s,r){return (r||document).querySelector(s);};
   var app=$('#app'), q=new URLSearchParams(location.search);
   var D=null, state={type:q.get('type')||'argue', grade:parseInt(q.get('grade'),10)||3, topic:q.get('topic')||'', kw:(q.get('kw')||'').split(',').map(function(s){return s.trim();}).filter(Boolean), text:'', marks:{}, step:1, result:null, brush:null};
-  var fixed=!!q.get('topic');
+  var fixed=!!q.get('topic'); state.prompt=null;
 
   function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
   function band(){return KWRITE.bandOf(state.grade);}
   function setBand(){document.body.className='band-'+band();}
 
-  Promise.all(['templates','signals','feedback'].map(function(n){return fetch('/kedu/write/data/'+n+'.json').then(function(r){return r.json();});}))
-  .then(function(a){D={templates:a[0],signals:a[1],feedback:a[2]};KWRITE.init(D);render();})
+  Promise.all(['templates','signals','feedback','prompts'].map(function(n){return fetch('/kedu/write/data/'+n+'.json').then(function(r){return r.json();});}))
+  .then(function(a){D={templates:a[0],signals:a[1],feedback:a[2],prompts:a[3]};KWRITE.init(D);
+    var pid=q.get('prompt'); if(pid){var pr=D.prompts.prompts.filter(function(x){return x.id===pid;})[0]; if(pr)usePrompt(pr);}
+    render();})
   .catch(function(){app.innerHTML='<div class="card note">불러오지 못했어요. 새로고침해 볼까요?</div>';});
 
+  function usePrompt(pr){state.prompt=pr;state.type=pr.type;state.topic=pr.topic;state.kw=pr.keywords.slice();fixed=true;
+    if(pr.bands.indexOf(KWRITE.bandOf(state.grade))<0){state.grade={low:2,mid:3,high:5}[pr.bands[0]];}}
   function render(){setBand();app.innerHTML='';[step1,step2,step3][state.step-1]();window.scrollTo(0,0);}
 
   /* ① 고르기·쓰기 */
   function step1(){
     var tp=D.templates.types, c=document.createElement('div'); c.className='card';
     var h='<h1>'+(fixed?'오늘의 글쓰기':'무슨 글을 쓸까요?')+'</h1>';
-    if(fixed){h+='<div class="topic">'+esc(state.topic)+'<small>'+esc(tp[state.type].name)+' · '+state.grade+'학년 틀</small></div>';}
+    if(fixed){h+='<div class="topic">'+esc(state.topic)+'<small>'+esc(tp[state.type].name)+' · '+state.grade+'학년 틀</small></div>';
+      if(state.prompt){h+='<div class="passage">'+esc(state.prompt.passage)+'<small>'+esc(state.prompt.source.name)+'</small></div>';
+        if(!q.get('prompt'))h+='<button class="pick" id="unpick">다른 글감 고르기</button>';}}
     else{
       h+='<div class="row" id="types">'+Object.keys(tp).map(function(k){return '<button class="pick" data-k="'+k+'" aria-pressed="'+(k===state.type)+'">'+tp[k].name+'</button>';}).join('')+'</div>';
       h+='<div class="row" id="grades">'+[1,2,3,4,5,6].map(function(g){return '<button class="pick" data-g="'+g+'" aria-pressed="'+(g===state.grade)+'">'+g+'학년</button>';}).join('')+'</div>';
       h+='<input type="text" id="topic" placeholder="무엇에 대해 쓰나요? (예: 급식에 김치가 매일 나와야 할까?)" value="'+esc(state.topic)+'">';
       h+='<div class="note">'+esc(tp[state.type].hint)+'</div>';
+      var list=D.prompts.prompts.filter(function(x){return x.status==='live'&&x.type===state.type&&x.bands.indexOf(band())>=0;});
+      if(list.length)h+='<h2 style="margin-top:14px">글감 고르기</h2><div class="row" id="prompts">'+list.map(function(x){return '<button class="pick" data-p="'+x.id+'">'+esc(x.title)+'</button>';}).join('')+'</div><div class="note">글감을 고르면 논제와 읽을 글이 나와요. 안 골라도 돼요.</div>';
     }
     c.innerHTML=h; app.appendChild(c);
     var w=document.createElement('div'); w.className='card';
@@ -113,7 +123,9 @@ textarea{min-height:240px;resize:vertical}
       $('#types').addEventListener('click',function(e){var b=e.target.closest('[data-k]');if(!b)return;state.type=b.dataset.k;state.topic=$('#topic').value;state.text=ta.value;render();});
       $('#grades').addEventListener('click',function(e){var b=e.target.closest('[data-g]');if(!b)return;state.grade=+b.dataset.g;state.topic=$('#topic').value;state.text=ta.value;render();});
       $('#topic').addEventListener('input',function(e){state.topic=e.target.value;});
+      var pl=$('#prompts'); if(pl)pl.addEventListener('click',function(e){var b=e.target.closest('[data-p]');if(!b)return;state.text=ta.value;usePrompt(D.prompts.prompts.filter(function(x){return x.id===b.dataset.p;})[0]);render();});
     }
+    var un=$('#unpick'); if(un)un.addEventListener('click',function(){state.prompt=null;state.topic='';state.kw=[];fixed=false;state.text=ta.value;render();});
     $('#go').addEventListener('click',function(){
       state.text=ta.value; if(!fixed)state.topic=$('#topic').value;
       var prev=state._sig, sig=state.text; if(prev!==sig)state.marks={}; state._sig=sig;
