@@ -480,13 +480,15 @@ function makeVariant(q, r){
         v.options = asOpts(ans, ds, q.options, 'M01'); }
       v.explanation = [`10개씩 묶음 ${t}개와 낱개 ${o}개예요.`, `${ask === 'tens' ? '묶음' : '낱개'}은 ${ans}개예요.`, '묶음은 10개짜리, 낱개는 하나씩이에요.'];
     } else {
-      v.stem = `10개씩 묶음 ${t}개와 낱개 ${o}개는 얼마인가요?`;
+      v.stem = o === 0 ? `10개씩 묶음 ${t}개는 얼마인가요?` : `10개씩 묶음 ${t}개와 낱개 ${o}개는 얼마인가요?`;
       if (q.kind === 'sa') v.answer = [String(num)];
       else { const used = [num];
         const ds = [takeOne(used, [o * 10 + t, num + 10 <= 99 ? num + 10 : null, num - 10 >= 10 ? num - 10 : null, num + 1]),
                     takeOne(used, [t + o, num + 1, num - 1, num - 10 >= 10 ? num - 10 : null])].slice(0, Math.max(1, want));
         v.options = asOpts(num, ds, q.options, 'M01'); }
-      v.explanation = [`묶음 ${t}개는 ${t * 10}${IEYO(t * 10)}.`, `거기에 낱개 ${o}개를 더하면 ${num}${IEYO(num)}.`, '묶음 수를 앞에, 낱개 수를 뒤에 써요.'];
+      v.explanation = o === 0
+        ? [`묶음 하나는 10이에요.`, `묶음 ${t}개는 ${num}${IEYO(num)}.`, '낱개가 없어도 0을 써서 자리를 지켜요.']
+        : [`묶음 ${t}개는 ${t * 10}${IEYO(t * 10)}.`, `거기에 낱개 ${o}개를 더하면 ${num}${IEYO(num)}.`, '묶음 수를 앞에, 낱개 수를 뒤에 써요.'];
     }
     return v;
   }

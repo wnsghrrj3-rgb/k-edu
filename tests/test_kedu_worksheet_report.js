@@ -18,12 +18,15 @@ const ok = (c, m) => { if (c) pass++; else { fail++; console.log('  ✗', m); } 
 const dict = JSON.parse(rd('kedu/worksheet/data/_concepts.json'));
 const sets = fs.readdirSync(path.join(R, 'kedu/worksheet/data'))
   .filter(f => f.endsWith('.json') && !f.startsWith('_'));
-ok(sets.length === 18, `학습지 세트 18개 (실제 ${sets.length})`);
-
+/* 단원마다 세트 18 · 문항 240 — 단원이 늘어나도 그대로 걸리도록 단원별로 센다 */
+const byUnit = {};
 const usedC = new Set(), usedM = new Set();
 let qTotal = 0;
 sets.forEach(f => {
   const d = JSON.parse(rd('kedu/worksheet/data/' + f));
+  const uk = `${d.grade}-${d.semester || 1}학기-${d.subject}-${d.unit}`;
+  byUnit[uk] = byUnit[uk] || { sets: 0, qs: 0 };
+  byUnit[uk].sets++; byUnit[uk].qs += d.questions.length;
   d.questions.forEach(q => {
     qTotal++;
     if (q.concept) usedC.add(q.concept);
@@ -31,7 +34,11 @@ sets.forEach(f => {
     (q.reason_options || []).forEach(o => { if (o.mis) usedM.add(o.mis); });
   });
 });
-ok(qTotal === 240, `문항 240 (실제 ${qTotal})`);
+Object.keys(byUnit).sort().forEach(uk => {
+  ok(byUnit[uk].sets === 18, `${uk}: 학습지 세트 18개 (실제 ${byUnit[uk].sets})`);
+  ok(byUnit[uk].qs === 240, `${uk}: 문항 240 (실제 ${byUnit[uk].qs})`);
+});
+ok(qTotal === Object.values(byUnit).reduce((a, u) => a + u.qs, 0), `문항 합계 (실제 ${qTotal})`);
 const missC = [...usedC].filter(c => !dict.concepts[c]);
 const missM = [...usedM].filter(m => !dict.misconceptions[m]);
 ok(missC.length === 0, '사전에 없는 개념 코드: ' + missC.join(','));
