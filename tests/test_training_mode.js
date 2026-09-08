@@ -77,7 +77,7 @@ ok(/SQL #38/.test(ad), 'admin 미적용 안내 문구 없음');
 ok(/const TRAINING_CODE_UI = false;/.test(auth), 'auth 연수 코드 칸 스위치가 false 가 아님');
 ok(/\(isTeacher && TRAINING_CODE_UI\)/.test(auth), 'auth 코드 칸 토글이 스위치를 안 봄');
 ok(/id="approval-training" hidden/.test(te), 'teacher 배너 연수 코드 줄이 감춰지지 않음');
-ok(/id="training-row" hidden/.test(ad), 'admin 연수 모드 줄이 감춰지지 않음');
+ok(/id="training-row" hidden style="display:none"/.test(ad), 'admin 연수 모드 줄이 감춰지지 않음');
 // 승인 대기 표 = pending 만, 교사 표 = pending 제외 (중복 제거)
 ok(/teachers\.filter\(t => t\.approval === 'pending'\);/.test(ad), 'admin 대기 표가 pending 만 걸러내지 않음');
 ok(/teachers\.filter\(t => t\.approval !== 'pending'\)/.test(ad), 'admin 교사 표가 pending 을 빼지 않음');

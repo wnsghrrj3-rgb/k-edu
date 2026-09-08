@@ -307,7 +307,7 @@ details.fold .fold-body{padding-top:18px}
       </div>
     </div>
     <!-- 연수 모드 — 2026-09-09 준호 결정: 지금은 쓰지 않는다. 배선(#38)은 남기고 줄만 감춤 -->
-    <div class="policy-row" id="training-row" hidden>
+    <div class="policy-row" id="training-row" hidden style="display:none">
       <span>연수 모드</span>
       <span id="training-state">코드를 켜면 그 코드로 가입한 교사는 승인을 기다리지 않고 바로 열려요. 연수장에서만 쓰고 끄세요.</span>
       <span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
@@ -1205,6 +1205,7 @@ async function loadTeachers(){
   const listed = teachers.filter(t => t.approval !== 'pending');
   document.getElementById('teacher-count').textContent = listed.length + '명' + (nPending ? ` (+대기 ${nPending})` : '');
   if(!listed.length){ tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state">아직 승인된 교사가 없어요.</div></td></tr>'; return; }
+  _teacherRows = listed;   // 관리 단추가 id 로 찾아 쓴다 (이름·이메일을 onclick 속성에 넣으면 따옴표에 깨진다 — 2026-09-09)
   for(const t of listed){
     const { data: codes } = await db.from('class_codes')
       .select('code, id')
@@ -1241,9 +1242,9 @@ async function loadTeachers(){
       <td>${apvCell}</td>
       <td>${t.is_admin ? '<span class="admin-tag">ADMIN</span>' : '교사'}</td>
       <td style="white-space:nowrap">
-        <button class="apv-btn" onclick="editTeacher('${t.id}', ${JSON.stringify(t.name||'')}, ${JSON.stringify(t.school||'')})" title="이름·학교 수정">수정</button>
-        <button class="apv-btn" onclick="resetTeacherPassword('${t.id}', ${JSON.stringify(t.name||'')})" title="비밀번호 초기화">비번</button>
-        ${t.is_admin || codeStr !== '-' ? '' : `<button class="apv-btn no" onclick="deleteTeacher('${t.id}', ${JSON.stringify(t.name||'')}, ${JSON.stringify(t.email||'')}, this)" title="계정 삭제(학급코드 없는 교사만)">삭제</button>`}
+        <button class="apv-btn" onclick="editTeacher('${t.id}')" title="이름·학교 수정">수정</button>
+        <button class="apv-btn" onclick="resetTeacherPassword('${t.id}')" title="비밀번호 초기화">비번</button>
+        ${t.is_admin || codeStr !== '-' ? '' : `<button class="apv-btn no" onclick="deleteTeacher('${t.id}', this)" title="계정 삭제(학급코드 없는 교사만)">삭제</button>`}
       </td>
     </tr>`;
   }
@@ -1252,26 +1253,32 @@ async function loadTeachers(){
 }
 
 // 교사 계정 관리 — sql/setup_admin_teacher_manage.sql #53 (관리자만, 미적용이면 안내)
+let _teacherRows = [];
+function _teacherById(id){ return _teacherRows.find(t => t.id === id) || null; }
 function _manageErr(e){
   if(/does not exist|Could not find|schema cache/.test(e.message||'')) return 'SQL #53(setup_admin_teacher_manage.sql) 미적용';
   return e.message || '실패';
 }
-async function editTeacher(teacherId, name, school){
-  const nName = prompt('이름', name); if(nName === null) return;
-  const nSchool = prompt('학교(글자)', school); if(nSchool === null) return;
+async function editTeacher(teacherId){
+  const t = _teacherById(teacherId); if(!t) return;
+  const nName = prompt('이름', t.name || ''); if(nName === null) return;
+  const nSchool = prompt('학교(글자)', t.school || ''); if(nSchool === null) return;
   const { error } = await db.rpc('admin_update_teacher', { p_teacher_id: teacherId, p_name: nName.trim(), p_school: nSchool.trim() });
   if(error){ showToast('❌ ' + _manageErr(error)); return; }
   showToast('✅ 수정했어요'); loadTeachers();
 }
-async function resetTeacherPassword(teacherId, name){
-  const pw = prompt(`${name} 선생님의 새 비밀번호 (6자 이상)\n— 정한 뒤 선생님께 직접 알려 주세요`);
+async function resetTeacherPassword(teacherId){
+  const t = _teacherById(teacherId); if(!t) return;
+  const pw = prompt(`${t.name} 선생님의 새 비밀번호 (6자 이상)\n— 정한 뒤 선생님께 직접 알려 주세요`);
   if(pw === null) return;
   if(pw.length < 6){ showToast('❌ 6자 이상'); return; }
   const { error } = await db.rpc('admin_set_teacher_password', { p_teacher_id: teacherId, p_password: pw });
   if(error){ showToast('❌ ' + _manageErr(error)); return; }
   showToast('✅ 비밀번호를 바꿨어요');
 }
-async function deleteTeacher(teacherId, name, email, btn){
+async function deleteTeacher(teacherId, btn){
+  const t = _teacherById(teacherId); if(!t) return;
+  const name = t.name || '', email = t.email || '';
   const typed = prompt(`${name} (${email}) 계정을 지웁니다.\n로그인 계정과 교사 행이 함께 사라지고 되돌릴 수 없어요.\n\n확인하려면 이메일을 그대로 입력:`);
   if(typed === null) return;
   if((typed||'').trim().toLowerCase() !== (email||'').trim().toLowerCase()){ showToast('❌ 이메일이 달라 취소했어요'); return; }
