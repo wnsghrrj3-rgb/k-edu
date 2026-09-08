@@ -342,6 +342,26 @@ const W=0.5, D=0.28;          // 층 가로/세로
 const SEG_X=32;               // 습곡 버텍스 세그먼트(x)
 const COL={ sand:0xd9c08a, mud:0x8a6a48, gravel:0x98a0aa };
 const ROUGH={ sand:0.95, mud:0.85, gravel:0.7 };
+/* 2026-09-08 Blender 베이크 재질 타일(assets/strata/*.jpg — 모래 알갱이·마른 진흙 금·조약돌, 알베도+노멀).
+   MirroredRepeat로 이음새 없이 반복. 로드 실패 시 위 단색(COL) 유지 — jsdom 하니스는 fetch 없음 → 단색 경로. */
+const TILE={};
+(function(){
+  if (typeof fetch !== 'function') return;
+  const tl=new THREE.TextureLoader();
+  ['sand','mud','gravel'].forEach(t=>{
+    TILE[t]={};
+    tl.load(`./assets/strata/${t}_albedo.jpg`, tex=>{ tex.colorSpace=THREE.SRGBColorSpace; tex.wrapS=tex.wrapT=THREE.MirroredRepeatWrapping; tex.anisotropy=4; TILE[t].map=tex; applyTiles(); }, undefined, ()=>{});
+    tl.load(`./assets/strata/${t}_normal.jpg`, tex=>{ tex.wrapS=tex.wrapT=THREE.MirroredRepeatWrapping; TILE[t].normal=tex; applyTiles(); }, undefined, ()=>{});
+  });
+})();
+function applyTileTo(mat, type, thickness){
+  const T=TILE[type]; if(!T||!T.map) return;
+  const rep=1/0.12;                                   // 12cm당 1타일
+  if(mat.map!==T.map){ mat.map=T.map.clone(); mat.map.repeat.set(W*rep, Math.max(0.25,thickness*rep)); mat.map.needsUpdate=true; mat.color.set(0xffffff); }
+  if(T.normal && mat.normalMap!==T.normal){ mat.normalMap=T.normal.clone(); mat.normalMap.repeat.copy(mat.map.repeat); mat.normalMap.needsUpdate=true; mat.normalScale.set(0.8,0.8); }
+  mat.roughness=ROUGH[type]; mat.needsUpdate=true;
+}
+function applyTiles(){ for(const L of layerMeshes){ applyTileTo(L.mesh.material, L.type||L.mesh.userData.type, L.mesh.userData.baseThick); } }
 
 // 절벽 뒷벽(지층 단면을 보여주는 액자)
 { const back=new THREE.Mesh(new THREE.BoxGeometry(W+0.12,0.9,0.03),
@@ -375,7 +395,8 @@ function rebuildStrata(){
     const mat=new THREE.MeshStandardMaterial({color:COL[L.type],roughness:ROUGH[L.type],metalness:0.02});
     const mesh=new THREE.Mesh(geo,mat); mesh.castShadow=true; mesh.receiveShadow=true;
     mesh.position.set(0, bottoms[i]+L.thickness/2, 0);
-    mesh.userData.layerIndex=i; mesh.userData.baseThick=L.thickness;
+    mesh.userData.layerIndex=i; mesh.userData.baseThick=L.thickness; mesh.userData.type=L.type;
+    applyTileTo(mat, L.type, L.thickness);
     strataGroup.add(mesh);
     // 화석(짝수 층에 하나씩 심어 밀도 조절)
     let fm=null;
