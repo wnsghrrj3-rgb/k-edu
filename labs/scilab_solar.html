@@ -383,6 +383,18 @@ function earthTex(){
 const earth = new THREE.Mesh(new THREE.SphereGeometry(1.0, 40, 30),
   new THREE.MeshStandardMaterial({ map:earthTex(), roughness:0.85, metalness:0.02 }));
 earth.castShadow=true; earth.receiveShadow=true; spinGrp.add(earth);
+// 실사 지구(2026-09-08 준호 «얼룩덜룩 장난감 같다» → 교체): NASA 블루마블 계열(three.js examples/planets, 1024 축소).
+// 프로시저럴 텍스처는 로드 실패 시 폴백으로 유지. 우리나라(동경 127°)가 핀(+x 자오선)에 오도록 지구 메시만 회전(핀은 spinGrp 소속이라 무관).
+earth.rotation.y = -127 * D2R;
+(function(){
+  if (typeof fetch !== 'function') return;
+  try {
+    const tl=new THREE.TextureLoader();
+    tl.load('./assets/solar/earth_color_1024.jpg', (t)=>{ t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=4;
+      const old=earth.material.map; earth.material.map=t; earth.material.roughness=0.9; earth.material.needsUpdate=true; if(old) old.dispose(); }, undefined, ()=>{});
+    tl.load('./assets/solar/earth_normal_1024.jpg', (t)=>{ earth.material.normalMap=t; earth.material.normalScale.set(0.6,0.6); earth.material.needsUpdate=true; }, undefined, ()=>{});
+  } catch(e){}
+})();
 
 // 자전축(북극-남극) + 화살
 {
