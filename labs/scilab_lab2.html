@@ -932,20 +932,24 @@ const GLASS = new THREE.MeshPhysicalMaterial({
   clearcoat:1, clearcoatRoughness:0.06, side:THREE.DoubleSide, envMapIntensity:1.6
 });
 
-/* 2026-09-08 Blender 유리기구 GLB(assets/glass/ — 이중벽·주둥이(+x=입술 방향)·림 비드, 재질 NONE) — 기하만 교체, GLASS 재질·입술(lip) 상수·액체 실린더·클리핑 수면 불변.
-   같은 URL은 1회 로드 후 등록된 메시 전부에 공유. 로더 부재(jsdom)·fetch 없음·로드 실패 시 Lathe 유지. */
-const GLASS_GLB = {};
-function glassSwap(url, mesh, onSwap){
+/* 2026-09-08 Blender GLB 공유 로더 — 기하만 교체(코드 재질 유지). 같은 URL은 1회 로드 후 등록 메시 전부 공유.
+   opts.front = 유리처럼 닫힌 이중벽: 재질 clone→FrontSide(Lathe DoubleSide와 겹수 동일) / opts.onSwap(geo) = 교체 직후 훅(입술 좌표·형제 숨김 등).
+   로더 부재(jsdom)·fetch 없음·로드 실패 시 기존 지오메트리 유지. */
+const GLB_SHARE = {};
+function glbGeom(url, mesh, opts){
+  opts = opts || {};
   if (typeof GLTFLoader !== 'function' || typeof fetch !== 'function') return;
   const apply = (m, geo) => { const og = m.geometry; m.geometry = geo; if (og && og !== geo) og.dispose();
-    m.material = m.material.clone(); m.material.side = THREE.FrontSide; if (onSwap) try { onSwap(geo); } catch(err){} };   // 닫힌 이중벽 = FrontSide로도 2겹(Lathe DoubleSide와 동일 겹수)
-  let e = GLASS_GLB[url];
-  if (!e) { e = GLASS_GLB[url] = { geo:null, waiting:[] };
+    if (opts.front) { m.material = m.material.clone(); m.material.side = THREE.FrontSide; }
+    if (opts.onSwap) try { opts.onSwap(geo, m); } catch(err){} };
+  let e = GLB_SHARE[url];
+  if (!e) { e = GLB_SHARE[url] = { geo:null, waiting:[] };
     try { new GLTFLoader().load(url, g => { let src=null; g.scene.traverse(o=>{ if(!src && o.isMesh) src=o; }); if(!src) return;
-      e.geo = src.geometry; e.waiting.forEach(m => apply(m, e.geo)); e.waiting = []; }, undefined, ()=>{}); } catch(err){}
+      e.geo = src.geometry; e.waiting.forEach(w => w()); e.waiting = []; }, undefined, ()=>{}); } catch(err){}
   }
-  if (e.geo) apply(mesh, e.geo); else e.waiting.push(mesh);
+  if (e.geo) apply(mesh, e.geo); else e.waiting.push(() => apply(mesh, e.geo));
 }
+function glassSwap(url, mesh, onSwap){ glbGeom(url, mesh, { front:true, onSwap:onSwap }); }
 
 function waterMat(hex){
   return new THREE.MeshPhysicalMaterial({
@@ -1334,7 +1338,7 @@ let lampFlameO, lampFlameI, lampLight, dragProxy;
     new THREE.Vector2(0.092,0.05), new THREE.Vector2(0.066,0.104),
     new THREE.Vector2(0.032,0.114)
   ];
-  LAMP.add(new THREE.Mesh(new THREE.LatheGeometry(pts,40), GLASS));
+  { const lampGlass=new THREE.Mesh(new THREE.LatheGeometry(pts,40), GLASS); LAMP.add(lampGlass); glassSwap('./assets/lamp/lamp_body.glb', lampGlass); }  // Blender 램프 몸체(이중벽·둥근 어깨), 기하만
   const fpts=[
     new THREE.Vector2(0.003,0.006), new THREE.Vector2(0.058,0.008),
     new THREE.Vector2(0.078,0.05), new THREE.Vector2(0.058,0.072)
@@ -1343,6 +1347,7 @@ let lampFlameO, lampFlameI, lampLight, dragProxy;
   const collar=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.034,0.03,24),
     new THREE.MeshStandardMaterial({ color:0xb8bec6, metalness:0.92, roughness:0.32 }));
   collar.position.y=0.124; collar.castShadow=true; LAMP.add(collar);
+  glbGeom('./assets/lamp/lamp_cap.glb', collar);   // 널링 놋쇠 캡+심지 안내관(원점=칼라 중심), 기하만
   const wick=new THREE.Mesh(new THREE.CylinderGeometry(0.0085,0.0085,0.03,12),
     new THREE.MeshStandardMaterial({color:0xEFE6D2, roughness:0.95}));
   wick.position.y=0.15; LAMP.add(wick);
