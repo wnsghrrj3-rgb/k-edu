@@ -78,7 +78,10 @@ const ASSETS = {
   expr_grid:      ['rows'],
   /* v0.7 — 1학년 2학기 「규칙 찾기」 */
   pattern_row:    ['items'],
-  pattern_grid:   ['rows']
+  pattern_grid:   ['rows'],
+  /* v0.8 — 1학년 2학기 「덧셈과 뺄셈(3)」 */
+  vert:           ['top', 'bottom'],
+  bundle_pair:    ['left', 'right']
 };
 const KINDS = ['mc', 'sa', 'ox', 'match', 'essay', 'error', 'blank', 'data'];
 
@@ -197,6 +200,19 @@ function checkAsset(where, a) {
   if (a.type === 'expr_grid') {
     if (!Array.isArray(a.rows) || !a.rows.length) bad(where, 'expr_grid rows 비었음');
     else a.rows.forEach((rw, i) => { if (!Array.isArray(rw) || rw.length < 2) bad(where, `expr_grid rows[${i}] 는 2칸 이상`); });
+  }
+  if (a.type === 'vert') {
+    const T = Number(a.top), Bt = Number(a.bottom);
+    if (!(T >= 0 && T <= 99) || !(Bt >= 0 && Bt <= 99)) bad(where, 'vert top/bottom 은 0~99');
+    if (a.op !== undefined && a.op !== '+' && a.op !== '-') bad(where, "vert op 는 '+' 또는 '-'");
+    const op = a.op === '-' ? '-' : '+';
+    if (op === '+' && (T % 10 + Bt % 10 > 9 || Math.floor(T / 10) + Math.floor(Bt / 10) > 9)) bad(where, 'vert 덧셈에 받아올림이 있다 — 1학년 2학기 범위 밖');
+    if (op === '-' && (T % 10 < Bt % 10 || T < Bt)) bad(where, 'vert 뺄셈에 받아내림이 있거나 큰 수에서 작은 수를 빼지 않는다');
+    if (a.ans !== undefined && a.ans !== null && a.ans !== 'hide' && Number(a.ans) !== (op === '+' ? T + Bt : T - Bt)) bad(where, 'vert ans 가 계산과 다름');
+  }
+  if (a.type === 'bundle_pair') {
+    ['left', 'right'].forEach(k => { const b = a[k] || {}; if (!(b.tens >= 0 && b.tens <= 9)) bad(where, `bundle_pair ${k}.tens 는 0~9`); if (!(b.ones >= 0 && b.ones <= 9)) bad(where, `bundle_pair ${k}.ones 는 0~9`); });
+    if (a.op !== undefined && a.op !== '+' && a.op !== '-') bad(where, "bundle_pair op 는 '+' 또는 '-'");
   }
   if (a.type === 'pattern_row') {
     if (!Array.isArray(a.items) || a.items.length < 3) bad(where, 'pattern_row items 3개 미만');
@@ -341,6 +357,8 @@ function checkSet(file) {
     if (q.variant_rule.repeat && at !== 'pattern_row') bad(where, 'repeat 변형은 pattern_row 그림이 있어야 한다');
     if (q.variant_rule.numrule && at && at !== 'number_line') bad(where, 'numrule 변형은 그림 없음·number_line 만');
     if (q.variant_rule.chartrule && at !== 'hundred_chart') bad(where, 'chartrule 변형은 hundred_chart 그림이 있어야 한다');
+    if (q.variant_rule.twodigit && at && ['vert', 'bundle_pair', 'compare_groups'].indexOf(at) < 0) bad(where, 'twodigit 변형은 그림 없음·vert·bundle_pair·compare_groups 만');
+    if (q.variant_rule.twodigit && (q.variant_rule.twodigit.ask === 'story' || q.variant_rule.twodigit.ask === 'expr') && at && at !== 'compare_groups') bad(where, "twodigit ask:'story'|'expr' 는 그림 없음·compare_groups 만");
     /* play.html 과 같은 순서·같은 난수 씀씀이: 틀린 문항들이 난수 하나를 이어 쓰고, prep 은 변형 뒤에 온다.
        (덧: 씨앗을 1씩 늘리면 LCG 특성상 첫 값이 거의 안 변해 「안 변한다」는 가짜 실패가 난다 — 씨앗을 넓게 흩는다) */
     const face = x => JSON.stringify([x.stem, x.asset || null, x.options || null, x.answer || null, x.pairs || null]);
