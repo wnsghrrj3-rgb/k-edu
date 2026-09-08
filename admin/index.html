@@ -334,7 +334,7 @@ details.fold .fold-body{padding-top:18px}
       <div class="table-scroll">
         <table>
           <thead><tr>
-            <th>이름</th><th>이메일</th><th>학교</th><th>학급코드</th><th>학생</th><th>가입일</th><th>승인</th><th>권한</th>
+            <th>이름</th><th>이메일</th><th>학교</th><th>학급코드</th><th>학생</th><th>가입일</th><th>승인</th><th>권한</th><th>관리</th>
           </tr></thead>
           <tbody id="teacher-body">
             <tr><td colspan="8"><div class="empty-state">등록된 교사가 없어요.</div></td></tr>
@@ -1233,10 +1233,45 @@ async function loadTeachers(){
       <td>${created}</td>
       <td>${apvCell}</td>
       <td>${t.is_admin ? '<span class="admin-tag">ADMIN</span>' : '교사'}</td>
+      <td style="white-space:nowrap">
+        <button class="apv-btn" onclick="editTeacher('${t.id}', ${JSON.stringify(t.name||'')}, ${JSON.stringify(t.school||'')})" title="이름·학교 수정">수정</button>
+        <button class="apv-btn" onclick="resetTeacherPassword('${t.id}', ${JSON.stringify(t.name||'')})" title="비밀번호 초기화">비번</button>
+        ${t.is_admin || codeStr !== '-' ? '' : `<button class="apv-btn no" onclick="deleteTeacher('${t.id}', ${JSON.stringify(t.name||'')}, ${JSON.stringify(t.email||'')}, this)" title="계정 삭제(학급코드 없는 교사만)">삭제</button>`}
+      </td>
     </tr>`;
   }
 
   tbody.innerHTML = html;
+}
+
+// 교사 계정 관리 — sql/setup_admin_teacher_manage.sql #53 (관리자만, 미적용이면 안내)
+function _manageErr(e){
+  if(/does not exist|Could not find|schema cache/.test(e.message||'')) return 'SQL #53(setup_admin_teacher_manage.sql) 미적용';
+  return e.message || '실패';
+}
+async function editTeacher(teacherId, name, school){
+  const nName = prompt('이름', name); if(nName === null) return;
+  const nSchool = prompt('학교(글자)', school); if(nSchool === null) return;
+  const { error } = await db.rpc('admin_update_teacher', { p_teacher_id: teacherId, p_name: nName.trim(), p_school: nSchool.trim() });
+  if(error){ showToast('❌ ' + _manageErr(error)); return; }
+  showToast('✅ 수정했어요'); loadTeachers();
+}
+async function resetTeacherPassword(teacherId, name){
+  const pw = prompt(`${name} 선생님의 새 비밀번호 (6자 이상)\n— 정한 뒤 선생님께 직접 알려 주세요`);
+  if(pw === null) return;
+  if(pw.length < 6){ showToast('❌ 6자 이상'); return; }
+  const { error } = await db.rpc('admin_set_teacher_password', { p_teacher_id: teacherId, p_password: pw });
+  if(error){ showToast('❌ ' + _manageErr(error)); return; }
+  showToast('✅ 비밀번호를 바꿨어요');
+}
+async function deleteTeacher(teacherId, name, email, btn){
+  const typed = prompt(`${name} (${email}) 계정을 지웁니다.\n로그인 계정과 교사 행이 함께 사라지고 되돌릴 수 없어요.\n\n확인하려면 이메일을 그대로 입력:`);
+  if(typed === null) return;
+  if((typed||'').trim().toLowerCase() !== (email||'').trim().toLowerCase()){ showToast('❌ 이메일이 달라 취소했어요'); return; }
+  if(btn) btn.disabled = true;
+  const { error } = await db.rpc('admin_delete_teacher', { p_teacher_id: teacherId });
+  if(error){ showToast('❌ ' + _manageErr(error)); if(btn) btn.disabled = false; return; }
+  showToast('🗑️ 삭제했어요'); loadTeachers();
 }
 
 async function setApproval(teacherId, status, btn){

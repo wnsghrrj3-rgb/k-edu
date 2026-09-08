@@ -353,6 +353,7 @@ tr:hover td{background:#FAFBFC}
   <a class="nav-logo" href="../index.html"><span>K-edu</span> <span class="nav-badge">교사</span></a>
   <div class="nav-right" id="nav-right" style="display:none">
     <span class="nav-name" id="nav-name"></span>
+    <button class="nav-btn" onclick="openMyInfo()" title="이름·비밀번호 바꾸기">내 정보</button>
     <button class="nav-btn" onclick="doLogout()">로그아웃</button>
   </div>
 </nav>
@@ -836,6 +837,32 @@ tr:hover td{background:#FAFBFC}
   </div>
 </div>
 
+<!-- 내 정보 — 이름·비밀번호 바꾸기 (2026-09-09, 확인 메일을 껐으니 비밀번호는 여기서 본인이 바꾼다) -->
+<div class="modal-backdrop" id="myinfo-modal" onclick="if(event.target===this)closeMyInfo()">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="myinfo-title">
+    <div class="modal-header">
+      <div class="modal-title" id="myinfo-title">내 정보</div>
+      <button class="modal-close" onclick="closeMyInfo()" aria-label="닫기">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-info-row"><span class="label">이메일</span><span class="val" id="myinfo-email">-</span></div>
+      <label class="form-label" style="margin-top:12px">이름</label>
+      <input class="form-input" id="myinfo-name" maxlength="30" autocomplete="name">
+      <div style="text-align:right;margin-top:6px"><button class="pl-btn approve" onclick="saveMyName()">이름 저장</button></div>
+      <hr style="border:0;border-top:1px solid #e3e8ef;margin:14px 0">
+      <label class="form-label">비밀번호 바꾸기</label>
+      <input class="form-input" type="password" id="myinfo-pw-cur" placeholder="지금 비밀번호" autocomplete="current-password">
+      <input class="form-input" type="password" id="myinfo-pw-new" placeholder="새 비밀번호 (6자 이상)" autocomplete="new-password" style="margin-top:6px">
+      <input class="form-input" type="password" id="myinfo-pw-new2" placeholder="새 비밀번호 한 번 더" autocomplete="new-password" style="margin-top:6px">
+      <div class="form-note" style="font-size:12px;color:#6b7a90;margin-top:6px">잊었을 때는 관리자(준호 선생님)가 초기화해 드려요.</div>
+      <div class="modal-actions">
+        <button class="pl-btn" onclick="closeMyInfo()">닫기</button>
+        <button class="pl-btn approve" id="myinfo-pw-btn" onclick="saveMyPassword()">비밀번호 바꾸기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- 학부모 매핑 승인 모달 (사이클 ㊷) -->
 <div class="modal-backdrop" id="verify-modal" onclick="if(event.target===this)closeVerifyModal()">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="verify-modal-title">
@@ -1051,6 +1078,47 @@ async function doLogout(){
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('nav-right').style.display = 'none';
   document.getElementById('session-bar').classList.remove('active');
+}
+
+// =============================================
+// 내 정보 — 이름·비밀번호 (2026-09-09)
+// =============================================
+async function _myEmail(){
+  try{ const { data } = await db.auth.getUser(); if(data && data.user && data.user.email) return data.user.email; }catch(_){}
+  return (currentTeacher && currentTeacher.email) || '';
+}
+async function openMyInfo(){
+  if(!currentTeacher) return;
+  document.getElementById('myinfo-email').textContent = await _myEmail();
+  document.getElementById('myinfo-name').value = currentTeacher.name || '';
+  ['myinfo-pw-cur','myinfo-pw-new','myinfo-pw-new2'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('myinfo-modal').classList.add('show');
+}
+function closeMyInfo(){ document.getElementById('myinfo-modal').classList.remove('show'); }
+async function saveMyName(){
+  const name = document.getElementById('myinfo-name').value.trim();
+  if(!name){ showToast('❌ 이름을 입력해 주세요'); return; }
+  // teachers_update_own — 승인·관리자 열은 트리거가 지키므로(#23) 이름만 바뀐다
+  const { error } = await db.from('teachers').update({ name }).eq('id', currentTeacher.id);
+  if(error){ showToast('❌ ' + error.message); return; }
+  currentTeacher.name = name;
+  document.getElementById('nav-name').textContent = name + ' 선생님';
+  showToast('✅ 이름을 바꿨어요');
+}
+async function saveMyPassword(){
+  const cur = document.getElementById('myinfo-pw-cur').value;
+  const nw = document.getElementById('myinfo-pw-new').value;
+  const nw2 = document.getElementById('myinfo-pw-new2').value;
+  if(nw.length < 6){ showToast('❌ 새 비밀번호는 6자 이상'); return; }
+  if(nw !== nw2){ showToast('❌ 새 비밀번호 두 칸이 달라요'); return; }
+  const btn = document.getElementById('myinfo-pw-btn'); btn.disabled = true;
+  // 지금 비밀번호로 한 번 더 확인 — 자리 비운 사이 남이 바꾸지 못하게
+  const { error: reErr } = await db.auth.signInWithPassword({ email: await _myEmail(), password: cur });
+  if(reErr){ btn.disabled = false; showToast('❌ 지금 비밀번호가 맞지 않아요'); return; }
+  const { error } = await db.auth.updateUser({ password: nw });
+  btn.disabled = false;
+  if(error){ showToast('❌ ' + error.message); return; }
+  showToast('✅ 비밀번호를 바꿨어요'); closeMyInfo();
 }
 
 // =============================================
