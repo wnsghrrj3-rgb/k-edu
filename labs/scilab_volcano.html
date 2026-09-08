@@ -290,6 +290,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 /* ═════════ 렌더 기반 (데모 1호 확정 표준) ═════════ */
 const stage = document.getElementById('stage');
@@ -438,6 +439,18 @@ const LAVA_HOT = new THREE.Color(0xFF6B2B), LAVA_ROCK = new THREE.Color(0x3a3632
   const cone=new THREE.Mesh(new THREE.ConeGeometry(VOLC_R, VOLC_H, 40, 1, true),
     new THREE.MeshStandardMaterial({map:vTex, color:0x6b5d4f, roughness:0.9, side:THREE.DoubleSide}));
   cone.position.y=VOLC_H/2; cone.castShadow=cone.receiveShadow=true; gp.add(cone);
+  // 2026-09-08 Blender 화산 모형(assets/volcano/volcano.glb — 볼록 산체·방사형 골짜기·분화구 그릇, 바위 알베도+노멀 베이크, 밑반지름 0.18·높이 0.22 동일).
+  // 로더 부재(jsdom)·로드 실패 시 위 원뿔 유지. 용암띠 곡선은 모형 표면 바깥으로 지나도록 프로필을 맞춤.
+  (function(){
+    if (typeof GLTFLoader !== 'function' || typeof fetch !== 'function') return;
+    try { new GLTFLoader().load('./assets/volcano/volcano.glb', (g)=>{
+      let src=null; g.scene.traverse(o=>{ if(!src && o.isMesh) src=o; }); if(!src) return;
+      const og=cone.geometry, om=cone.material;
+      cone.geometry=src.geometry; cone.material=src.material; cone.material.side=THREE.FrontSide;
+      cone.position.y=0;                       // GLB는 밑면이 y=0
+      og.dispose(); om.dispose();
+    }, undefined, ()=>{}); } catch(e){}
+  })();
   // 분화구 구멍 (어두운 안쪽)
   const crater=new THREE.Mesh(new THREE.CylinderGeometry(CRATER_R, CRATER_R*0.7, 0.03, 20, 1, true),
     new THREE.MeshStandardMaterial({color:0x241f1a, roughness:1, side:THREE.DoubleSide}));
