@@ -325,11 +325,11 @@ const scene = new THREE.Scene();
 }
 
 const camera = new THREE.PerspectiveCamera(44, innerWidth/innerHeight, 0.05, 200);
-camera.position.set(0.2, 5.6, 8.4);
+camera.position.set(0.2, 8.2, 12.6);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(0, 0, 0);
 controls.enableDamping=true; controls.dampingFactor=0.08;
-controls.minDistance=4; controls.maxDistance=22; controls.maxPolarAngle=Math.PI*0.92;
+controls.minDistance=4; controls.maxDistance=30; controls.maxPolarAngle=Math.PI*0.92;
 
 const pmrem = new THREE.PMREMGenerator(renderer);
 scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.02).texture;
@@ -357,14 +357,20 @@ const sun = new THREE.Mesh(new THREE.SphereGeometry(0.62, 32, 24),
   new THREE.MeshBasicMaterial({ color:0xffd257 }));
 scene.add(sun);
 { // 코로나 글로우
-  const spr=new THREE.Sprite(new THREE.SpriteMaterial({ color:0xffcf5a, transparent:true, opacity:0.5, depthWrite:false }));
-  spr.scale.set(2.6,2.6,1); sun.add(spr);
+  // 2026-09-08: 텍스처 없는 스프라이트는 «네모»로 보임(준호 지적) → 방사형 그라데이션 캔버스 텍스처 + 가산 블렌딩
+  const gc=document.createElement('canvas'); gc.width=gc.height=128; const gx=gc.getContext('2d');
+  const grad=gx.createRadialGradient(64,64,0,64,64,64);
+  grad.addColorStop(0,'rgba(255,220,120,0.9)'); grad.addColorStop(0.35,'rgba(255,190,80,0.45)'); grad.addColorStop(1,'rgba(255,170,60,0)');
+  gx.fillStyle=grad; gx.fillRect(0,0,128,128);
+  const gt=new THREE.CanvasTexture(gc); gt.colorSpace=THREE.SRGBColorSpace;
+  const spr=new THREE.Sprite(new THREE.SpriteMaterial({ map:gt, color:0xffffff, transparent:true, opacity:0.85, depthWrite:false, blending:THREE.AdditiveBlending }));
+  spr.scale.set(3.2,3.2,1); sun.add(spr);
 }
-const sunLight = new THREE.PointLight(0xfff0d6, 2.6, 0, 1.6);
+const sunLight = new THREE.PointLight(0xfff0d6, 5.0, 0, 1.6);   // 거리 6.4에 맞춰 2.6→5.0
 scene.add(sunLight);
 
 /* ═════════ 지구 시스템 (earthsun 3그룹 승계 — 자전축 월드 고정) ═════════ */
-const ORBIT_R = 4.2;
+const ORBIT_R = 6.4;   // 2026-09-08 4.2→6.4 (준호: 태양-지구 거리 더 길게)
 const earthPos = new THREE.Group();   // 공전 위치(회전 없음 → 축 월드 고정)
 const tiltGrp  = new THREE.Group();   // 자전축 기울기
 const spinGrp  = new THREE.Group();   // 자전
