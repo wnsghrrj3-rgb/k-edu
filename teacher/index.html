@@ -309,6 +309,8 @@ tr:hover td{background:#FAFBFC}
 .seat-card .seat-consent input{width:15px;height:15px;cursor:pointer;margin:0}
 .seat-card .seat-consent.on{color:#1f7a4d;font-weight:600}
 .seat-card.no-consent{opacity:.72}
+.seat-card .seat-pcode{font-size:11px;color:#3b5bdb;white-space:nowrap}
+.seat-card .seat-pcode code{background:#eef2ff;padding:1px 6px;border-radius:4px;font-size:11.5px;letter-spacing:.5px}
 .seat-card.no-consent .seat-status{background:#fff7e6;color:#8a6d1f;border:1px solid #f0d9a8}
 .seat-delete{background:none;border:none;color:var(--sub);font-size:16px;cursor:pointer;padding:0 4px;line-height:1;transition:color .15s}
 .seat-delete:hover{color:var(--red)}
@@ -2513,6 +2515,7 @@ async function loadSeatsList(){
   }
 
   _seatsCache = seats || [];
+  await loadParentCodes();
   const total = _seatsCache.length;
   const claimed = _seatsCache.filter(s => s.claimed_by).length;
   const unclaimed = total - claimed;
@@ -2558,10 +2561,19 @@ async function loadSeatsList(){
             pinHtml = `<span class="seat-pin none" title="첫 접속 때 학생이 정해요">비밀번호 아직</span>`;
           }
         }
+        // 학부모 코드 — 동의한 학생만 (sql/setup_parent_code.sql #55). 학부모는 이 코드로 자녀와 바로 연결된다.
+        let pcHtml = '';
+        if(_parentCodeRpc && !noConsent){
+          const pc = _parentCodes[s.id];
+          pcHtml = pc
+            ? `<span class="seat-pcode" title="학부모 코드 — 학부모에게 알려 주면 케이에듀에서 자녀와 바로 연결돼요${pc.linked ? ` · 연결된 학부모 ${pc.linked}명` : ''}">👨‍👧 <code>${escapeHtml(pc.code)}</code>${pc.linked ? ' ✓' : ''}</span>`
+            : `<button class="seat-pin-reset" onclick="issueParentCodes(['${s.id}'], false)" title="이 학생의 학부모 코드 만들기">학부모 코드</button>`;
+        }
         return `
           <div class="seat-card ${cls}">
             <span class="seat-nick" title="${escapeHtml(s.nickname)}">${s.seat_no ? `<span style="color:var(--sub);font-variant-numeric:tabular-nums;margin-right:6px">${s.seat_no}</span>` : ''}${escapeHtml(s.nickname)}</span>
             ${consentHtml}
+            ${pcHtml}
             ${noConsent ? '' : pinHtml}
             <span class="seat-status">${statusText}</span>
             ${delBtn}
@@ -2574,6 +2586,7 @@ async function loadSeatsList(){
     <div class="seats-action-row">
       <button class="rights-export-btn ghost" onclick="closeSeatsModal()">닫기</button>
       ${_seatConsentCol && total > 0 ? `<button class="rights-export-btn ghost" onclick="setAllSeatsConsent(true)" title="명단 전원을 동의로 표시">전체 동의</button><button class="rights-export-btn ghost" onclick="setAllSeatsConsent(false)" title="명단 전원을 동의 전으로">전체 해제</button>` : ''}
+      ${_parentCodeRpc && consented ? `<button class="rights-export-btn ghost" onclick="issueParentCodes(null, false)" title="동의한 학생 전원에게 학부모 코드 발급(이미 있는 학생은 그대로)">👨‍👧 학부모 코드 발급</button><button class="rights-export-btn ghost" onclick="printParentCodes()" title="학부모 코드 안내문 인쇄">🖨 안내문</button>` : ''}
       <button class="rights-export-btn" onclick="openBulkModal()">➕ 일괄 추가</button>
     </div>
   `;
@@ -2598,6 +2611,42 @@ function openBulkModal(){
 
 function closeBulkModal(){
   document.getElementById('bulk-modal').classList.remove('show');
+}
+
+// 학부모 코드 — sql/setup_parent_code.sql #55 (동의한 학생만, RPC 전용 표)
+let _parentCodes = {};        // seat_id → {code, linked}
+let _parentCodeRpc = true;    // list_parent_codes 없음(#55 미적용)이면 false → 칸 통째로 숨김(폴백)
+async function loadParentCodes(){
+  _parentCodes = {};
+  if(!currentClassCode || !_seatConsentCol) return;
+  const { data, error } = await db.rpc('list_parent_codes', { p_class: currentClassCode.id });
+  if(error){ _parentCodeRpc = !/does not exist|Could not find|schema cache/.test(error.message || ''); return; }
+  _parentCodeRpc = true;
+  (data || []).forEach(r => { _parentCodes[r.seat_id] = { code: r.code, linked: r.linked || 0 }; });
+}
+async function issueParentCodes(seatIds, renew){
+  if(!currentClassCode) return;
+  const { error } = await db.rpc('issue_parent_codes', { p_class: currentClassCode.id, p_seat_ids: seatIds, p_renew: !!renew });
+  if(error){ showToast('❌ ' + error.message); return; }
+  showToast('👨‍👧 학부모 코드를 만들었어요. 학부모에게 알려 주세요.');
+  await loadSeatsList();
+}
+function printParentCodes(){
+  const rows = _seatsCache.filter(s => _parentCodes[s.id]).sort((a,b) => (a.seat_no||999) - (b.seat_no||999));
+  if(!rows.length){ showToast('먼저 학부모 코드를 발급해 주세요.'); return; }
+  const label = escapeHtml(currentClassCode.label || currentClassCode.code);
+  const cards = rows.map(s => `
+    <div class="c"><div class="n">${s.seat_no ? s.seat_no + '번 ' : ''}${escapeHtml(s.nickname)} 학부모님께</div>
+      <div class="k">학부모 코드 <b>${escapeHtml(_parentCodes[s.id].code)}</b></div>
+      <div class="h">① keduclass.com → 로그인/가입 → 「학부모」로 가입 &nbsp;② 「자녀 추가」에 위 코드 입력 → 바로 연결<br>자녀의 학습 기록을 볼 수 있어요. 코드는 다른 사람에게 알려 주지 마세요.</div></div>`).join('');
+  const w = window.open('', '_blank');
+  w.document.write(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>학부모 코드 안내 — ${label}</title>
+    <style>body{font-family:'Malgun Gothic',sans-serif;margin:14mm;color:#222}h1{font-size:16px;margin:0 0 10px}
+    .g{display:grid;grid-template-columns:1fr 1fr;gap:8mm}.c{border:1px dashed #999;padding:6mm;break-inside:avoid;font-size:12px}
+    .n{font-weight:700;font-size:14px}.k{margin:6px 0;font-size:15px}.k b{font-family:monospace;font-size:20px;letter-spacing:2px}
+    .h{color:#555;line-height:1.5}@media print{h1{margin-bottom:6px}}</style></head>
+    <body><h1>케이에듀 학부모 코드 안내 — ${label}</h1><div class="g">${cards}</div><scr`+`ipt>window.onload=()=>window.print()</scr`+`ipt></body></html>`);
+  w.document.close();
 }
 
 // 학생별 동의 표시 — sql/setup_seat_consent.sql #42 set_seats_consent(본인 학급·승인 교사만)
