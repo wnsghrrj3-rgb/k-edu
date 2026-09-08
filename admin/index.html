@@ -306,7 +306,8 @@ details.fold .fold-body{padding-top:18px}
         </table>
       </div>
     </div>
-    <div class="policy-row" id="training-row">
+    <!-- 연수 모드 — 2026-09-09 준호 결정: 지금은 쓰지 않는다. 배선(#38)은 남기고 줄만 감춤 -->
+    <div class="policy-row" id="training-row" hidden>
       <span>연수 모드</span>
       <span id="training-state">코드를 켜면 그 코드로 가입한 교사는 승인을 기다리지 않고 바로 열려요. 연수장에서만 쓰고 끄세요.</span>
       <span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
@@ -1172,9 +1173,10 @@ async function loadTeachers(){
 
   document.getElementById('teacher-count').textContent = teachers.length + '명';
 
-  // 승인 대기 표
-  const pending = teachers.filter(t => t.approval === 'pending' || t.approval === 'rejected');
-  const nPending = pending.filter(t=>t.approval==='pending').length;
+  // 승인 대기 표 = pending 만. 반려된 교사는 아래 교사 표에 「반려」 배지 + 「승인」 단추로 한 번만 보인다
+  // (2026-09-09 준호: 대기 표와 교사 표에 같은 사람이 두 번 나오던 중복 제거)
+  const pending = teachers.filter(t => t.approval === 'pending');
+  const nPending = pending.length;
   document.getElementById('pending-count').textContent = nPending + '명';
   const allBtn = document.getElementById('approve-all-btn');
   if(allBtn){ allBtn.hidden = nPending < 2; allBtn.textContent = `모두 승인 (${nPending}명)`; }
@@ -1198,9 +1200,12 @@ async function loadTeachers(){
     pbody.innerHTML = '<tr><td colspan="6"><div class="empty-state">대기 중인 교사가 없어요.</div></td></tr>';
   }
 
-  // 전체 교사 표 — 학급코드·학생 수는 종전대로 행마다 조회
+  // 교사 표 — 승인 대기 중인 사람은 위 대기 표에만(중복 방지). 학급코드·학생 수는 종전대로 행마다 조회
   let html = '';
-  for(const t of teachers){
+  const listed = teachers.filter(t => t.approval !== 'pending');
+  document.getElementById('teacher-count').textContent = listed.length + '명' + (nPending ? ` (+대기 ${nPending})` : '');
+  if(!listed.length){ tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state">아직 승인된 교사가 없어요.</div></td></tr>'; return; }
+  for(const t of listed){
     const { data: codes } = await db.from('class_codes')
       .select('code, id')
       .eq('teacher_id', t.id)
@@ -1222,7 +1227,9 @@ async function loadTeachers(){
     const apv = t.approval || 'approved';
     const apvCell = `<span class="table-badge ${APV_CLASS[apv]||'free'}">${APV_LABEL[apv]||apv}</span>` +
       (apv==='approved' || apv==='auto'
-        ? ` <button class="apv-btn no" style="margin-left:6px" onclick="setApproval('${t.id}','rejected',this)">반려</button>` : '');
+        ? (t.is_admin ? '' : ` <button class="apv-btn no" style="margin-left:6px" onclick="setApproval('${t.id}','rejected',this)">반려</button>`)
+        : apv==='rejected'
+        ? ` <button class="apv-btn ok" style="margin-left:6px" onclick="setApproval('${t.id}','approved',this)">승인</button>` : '');
 
     html += `<tr>
       <td><div class="teacher-row"><div class="teacher-avatar">${initial}</div><strong>${esc(t.name)}</strong></div></td>

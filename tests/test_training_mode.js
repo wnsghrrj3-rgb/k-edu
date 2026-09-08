@@ -73,6 +73,16 @@ const ad = rd('admin/index.html');
 ].forEach(k => ok(ad.includes(k), 'admin 배선 누락: ' + k));
 ok(/SQL #38/.test(ad), 'admin 미적용 안내 문구 없음');
 
+// ── ⑤ 2026-09-09 준호 결정: 연수 코드 화면은 감춘다(배선은 남김 — 수동 승인만 운영)
+ok(/const TRAINING_CODE_UI = false;/.test(auth), 'auth 연수 코드 칸 스위치가 false 가 아님');
+ok(/\(isTeacher && TRAINING_CODE_UI\)/.test(auth), 'auth 코드 칸 토글이 스위치를 안 봄');
+ok(/id="approval-training" hidden/.test(te), 'teacher 배너 연수 코드 줄이 감춰지지 않음');
+ok(/id="training-row" hidden/.test(ad), 'admin 연수 모드 줄이 감춰지지 않음');
+// 승인 대기 표 = pending 만, 교사 표 = pending 제외 (중복 제거)
+ok(/teachers\.filter\(t => t\.approval === 'pending'\);/.test(ad), 'admin 대기 표가 pending 만 걸러내지 않음');
+ok(/teachers\.filter\(t => t\.approval !== 'pending'\)/.test(ad), 'admin 교사 표가 pending 을 빼지 않음');
+ok(/apv==='rejected'[\s\S]{0,200}setApproval\('\$\{t\.id\}','approved'/.test(ad), 'admin 교사 표 반려 행에 승인 단추 없음');
+
 // ── 인라인 스크립트 문법
 [['auth/index.html', auth], ['teacher/index.html', te], ['admin/index.html', ad]].forEach(([f, s]) => {
   try {

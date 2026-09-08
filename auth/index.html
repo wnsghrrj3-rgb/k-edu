@@ -221,6 +221,7 @@ footer strong{color:#718096;font-weight:500}
         <input type="text" id="signup-teacher-school" placeholder="학교 이름과 주소를 적어 주세요 (확인 후 등록해 드려요)" maxlength="60" hidden>
         <input type="hidden" id="signup-teacher-school-id" value="">
       </div>
+      <!-- 연수 코드 — 2026-09-09 준호 결정: 지금은 쓰지 않는다(수동 승인만). 배선(#38)은 남기고 칸만 감춤. 다시 쓰려면 TRAINING_CODE_UI=true -->
       <div class="form-group" id="group-teacher-code" style="display:none">
         <label>연수 코드 <span style="font-weight:400;color:#888;font-size:12px">(선택)</span></label>
         <input type="text" id="signup-teacher-code" placeholder="연수에서 알려드린 코드가 있으면 적어 주세요" maxlength="20" autocomplete="off">
@@ -282,6 +283,7 @@ const redirectTo = params.get('redirect') || '/';
 
 // 회원가입 역할 — 'teacher' 또는 'parent' (학생은 처리방침 v2.1 제2조 3 정합으로 차단)
 let selectedRole = 'teacher';
+const TRAINING_CODE_UI = false;   // 2026-09-09 준호: 연수 코드 칸 숨김 (수동 승인만)
 
 // =============================================
 // 이미 로그인 상태면 바로 이동
@@ -350,7 +352,7 @@ function pickRole(role){
   document.getElementById('group-nickname').style.display = 'none';
   document.getElementById('group-teacher-name').style.display = isTeacher ? 'block' : 'none';
   document.getElementById('group-teacher-school').style.display = isTeacher ? 'block' : 'none';
-  document.getElementById('group-teacher-code').style.display = isTeacher ? 'block' : 'none';
+  document.getElementById('group-teacher-code').style.display = (isTeacher && TRAINING_CODE_UI) ? 'block' : 'none';
   const hint = document.getElementById('edu-mail-hint');
   if(hint) hint.style.display = isTeacher ? 'block' : 'none';
   const em = document.getElementById('signup-email');
