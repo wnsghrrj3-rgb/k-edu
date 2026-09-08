@@ -115,6 +115,15 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .grow .g{display:flex;gap:4px;flex-wrap:wrap;max-width:150px;justify-content:center;padding:6px 8px;border:1px solid var(--rule-strong);border-radius:10px;background:var(--tint)}
 .grow .g span{font-size:22px;line-height:1.1}
 .grow .op{font-size:24px;color:var(--accent);font-weight:700}
+/* v0.7 — 1학년 2학기 「규칙 찾기」 */
+.patrow{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center}
+.patrow .i{width:46px;height:46px;display:flex;align-items:center;justify-content:center;font-size:30px;line-height:1;border-radius:10px;background:var(--card);border:1px solid var(--rule-strong)}
+.patrow .i.blank{border:2px dashed var(--rule-strong);color:var(--muted);font-size:22px;background:var(--tint)}
+.patrow .i.mark{outline:2px solid var(--accent);background:var(--accent-soft)}
+.patgrid{display:grid;gap:6px;justify-content:center}
+.patgrid .i{width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:28px;line-height:1;border-radius:9px;background:var(--card);border:1px solid var(--rule-strong)}
+.patgrid .i.blank{border:2px dashed var(--rule-strong);color:var(--muted);font-size:20px;background:var(--tint)}
+.chart .c.hi{background:var(--accent-soft);border-color:var(--accent);font-weight:700}
 /* v0.6 — 1학년 2학기 「덧셈과 뺄셈(2)」 */
 .counton{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center}
 .counton .c{min-width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:2px solid var(--rule-strong);border-radius:10px;background:var(--card);font-size:20px;font-family:'Gowun Batang',serif}
@@ -268,6 +277,14 @@ body.paper{background:#fff}
 .pq .pchart{margin:10px 0 8px 30px;display:inline-grid;gap:3px}
 .pq .pchart span{min-width:25px;height:27px;border:1px solid #1A1A1A;border-radius:3px;display:inline-flex;align-items:center;justify-content:center;font-size:13px}
 .pq .pchart span.blank{border-style:dashed}
+.pq .pchart span.hi{background:#ddd;font-weight:700}
+.pq .ppat{margin:10px 0 8px 30px;display:flex;gap:5px}
+.pq .ppat span{min-width:28px;height:30px;border:1px solid #1A1A1A;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:18px}
+.pq .ppat span.blank{border-style:dashed;min-width:30px}
+.pq .ppat span.mk{outline:2px solid #1A1A1A}
+.pq .ppatg{margin:10px 0 8px 30px;display:inline-grid;gap:3px}
+.pq .ppatg span{min-width:26px;height:28px;border:1px solid #1A1A1A;border-radius:3px;display:inline-flex;align-items:center;justify-content:center;font-size:16px}
+.pq .ppatg span.blank{border-style:dashed}
 .pq .ppair{margin:10px 0 8px 30px;font-size:18px;letter-spacing:2px}
 .pq .ptenf{margin:10px 0 8px 30px;font-size:19px;letter-spacing:3px}
 .pq .ptenf em{font-style:normal;font-size:11px;letter-spacing:0;color:#666;margin-left:12px}
@@ -430,8 +447,13 @@ function drawAsset(a, r){
     case 'bundle_ones': { const t = Math.max(0, Number(a.tens) || 0), o = Math.max(0, Number(a.ones) || 0);
       const ten = `<div class="ten">${'<span></span>'.repeat(10)}</div>`;
       return `<div class="bund">${ten.repeat(t)}<div class="ones${o ? '' : ' none'}">${'<span></span>'.repeat(o)}</div></div>`; }
-    case 'hundred_chart': { const cols = a.cols || 10;
-      return `<div class="chart" style="grid-template-columns:repeat(${cols},1fr)">${a.cells.map(c => (c === null || c === '?') ? `<div class="c blank">?</div>` : `<div class="c${a.mark != null && Number(c) === Number(a.mark) ? ' mark' : ''}">${esc(c)}</div>`).join('')}</div>`; }
+    case 'hundred_chart': { const cols = a.cols || 10; const hi = (a.hi || []).map(Number);
+      return `<div class="chart" style="grid-template-columns:repeat(${cols},1fr)">${a.cells.map(c => (c === null || c === '?') ? `<div class="c blank">?</div>` : `<div class="c${a.mark != null && Number(c) === Number(a.mark) ? ' mark' : ''}${hi.indexOf(Number(c)) >= 0 ? ' hi' : ''}">${esc(c)}</div>`).join('')}</div>`; }
+    /* v0.7 — 1학년 2학기 「규칙 찾기」 */
+    case 'pattern_row': { const bl = x => x === null || x === undefined || x === '?';
+      return `<div class="patrow">${(a.items || []).map((it, i) => bl(it) ? '<div class="i blank">?</div>' : `<div class="i${a.mark === i + 1 ? ' mark' : ''}">${esc(it)}</div>`).join('')}</div>`; }
+    case 'pattern_grid': { const bl = x => x === null || x === undefined || x === '?'; const rows = a.rows || []; const cols = Math.max.apply(null, rows.map(r2 => r2.length));
+      return `<div class="patgrid" style="grid-template-columns:repeat(${cols},44px)">${rows.map(r2 => r2.map(it => bl(it) ? '<div class="i blank">?</div>' : `<div class="i">${esc(it)}</div>`).join('')).join('')}</div>`; }
     case 'pair_row': { const n = Math.max(0, Number(a.n) || 0); const pr = Math.floor(n / 2), rest = n % 2;
       return `<div class="pairrow">${'<div class="p"><span></span><span></span></div>'.repeat(pr)}${rest ? '<div class="p left"><span></span></div>' : ''}</div>`; }
     case 'ten_frame': { const f = Math.max(0, Math.min(10, Number(a.filled) || 0)), ad = Math.max(0, Math.min(10 - f, Number(a.add) || 0));
@@ -985,6 +1007,119 @@ function makeVariant(q, r){
     v.explanation = exp;
     return v;
   }
+  /* --- v0.7: 1학년 2학기 「규칙 찾기」 3갈래 --- */
+  // 되풀이 규칙 — 그림 줄(pattern_row) — C1·C2·C3·C6
+  if (a && a.type === 'pattern_row' && rule.repeat){
+    const R = rule.repeat; const ask = R.ask || 'next';
+    const pool = R.pool || ['🔶', '🔺', '🟦', '⭐', '🟢', '🍎'];
+    const ul = R.unit ? rint(R.unit[0], R.unit[1], r) : rint(2, 3, r);
+    const A = pick(pool, r); let B = pick(pool, r), g = 0; while (B === A && g++ < 20) B = pick(pool, r); if (B === A) B = pool[(pool.indexOf(A) + 1) % pool.length];
+    const shapes = ul === 2 ? [[A, B]] : [[A, A, B], [A, B, B]]; const unit = pick(shapes, r);
+    const len = R.len ? rint(R.len[0], R.len[1], r) : rint(6, 9, r);
+    const items = []; for (let i = 0; i < len; i++) items.push(unit[i % ul]);
+    const want = Math.max(1, nOptsOf(q) - 1);
+    const src = (q.options && q.options.length) ? q.options : q.reason_options;
+    const unitKo = unit.join(', ');
+    if (ask === 'count'){
+      const tgt = r() < 0.5 ? A : B; const cnt = items.filter(x => x === tgt).length; const inUnit = unit.filter(x => x === tgt).length;
+      a.items = items; delete a.mark;
+      const dflt = misOf(src, 0, 'M1-2-u5-X11');
+      v.stem = `${unitKo} 가 되풀이되는 규칙으로 ${len}개를 놓았어요. ${tgt} 는 모두 몇 개인가요?`;
+      if (q.kind === 'sa') v.answer = [String(cnt)];
+      else v.options = asOpts(cnt, distinct(cnt, [inUnit, len - cnt, cnt + 1, cnt - 1], want), q.options, dflt);
+      v.explanation = [`되풀이되는 부분 ${unitKo} 에 ${tgt} 가 ${inUnit}개 있어요.`, `${len}개를 놓았으니 ${tgt} 는 모두 ${cnt}개예요.`, `${inUnit}${EUN(inUnit)} 한 덩이 안의 수 — 전체에서 세어야 해요.`];
+      return v;
+    }
+    const ans = unit[len % ul]; const wrongPhase = unit[(len + 1) % ul] === ans ? unit[(len + 2) % ul] : unit[(len + 1) % ul];
+    const other = pool.filter(x => x !== A && x !== B)[0] || '🍇';
+    a.items = items.concat([null]); delete a.mark;
+    const dflt = misOf(src, 0, 'M1-2-u5-X01');
+    if (q.kind === 'ox'){ const truth = r() < 0.5; const said = truth ? ans : wrongPhase;
+      OXR(`${unitKo} 가 되풀이돼요. 빈칸에 올 그림은 ${said} 입니다.`, truth, '되풀이되는 부분을 처음부터 묶어 보면 그 차례니까', '앞 그림과 다른 것이면 되니까', dflt); }
+    else { v.stem = `${unitKo} 가 되풀이돼요. 빈칸에 올 그림은 무엇인가요?`;
+      if (q.kind === 'sa') v.answer = [ans];
+      else { const ds = [wrongPhase, other].filter(x => x !== ans).slice(0, want); v.options = [{t:ans, correct:true}].concat(ds.map((x, i) => ({t:x, mis:misOf(src, i, dflt)}))); } }
+    v.explanation = [`되풀이되는 부분은 ${unitKo} 예요.`, `${len}번째까지 놓았으니 다음은 ${ans} 예요.`, '되풀이되는 부분을 처음부터 묶어 표시하면 빈칸에 올 것이 보여요.'];
+    return v;
+  }
+  // 수 배열 규칙 — 되풀이 · 몇씩 커지기·작아지기 — C4
+  if (rule.numrule && (!a || typeof a === 'string' || a.type === 'number_line')){
+    const N = rule.numrule; const kind = N.kind === 'mix' ? pick(['repeat', 'skip'], r) : (N.kind || 'skip');
+    const len = N.len || 6; const want = Math.max(1, nOptsOf(q) - 1);
+    const src = (q.options && q.options.length) ? q.options : q.reason_options;
+    let cells, ans, wrongs, exp, dflt, ruleKo, bi;
+    if (kind === 'repeat'){
+      const ul = rint(2, 3, r); const x = rint(1, 9, r); let y = rint(1, 9, r), g = 0; while (y === x && g++ < 20) y = rint(1, 9, r); if (y === x) y = x === 9 ? 8 : x + 1;
+      const unit = ul === 2 ? [x, y] : pick([[x, x, y], [x, y, y]], r);
+      cells = []; for (let i = 0; i < len; i++) cells.push(unit[i % ul]);
+      bi = rint(Math.max(1, len - 3), len - 1, r); ans = cells[bi];
+      const other = unit.filter(n => n !== ans)[0];
+      ruleKo = unit.join(', ') + (VOWEL_END(unit[ul - 1]) ? '가' : '이') + ' 되풀이돼요';
+      wrongs = [other, ans + 1, ans - 1]; dflt = 'M1-2-u5-X01';
+      exp = [`${unit.join(', ')}${VOWEL_END(unit[ul - 1]) ? '가' : '이'} 되풀이되는 수 배열이에요.`, `처음부터 ${ul}개씩 묶어 보면 빈칸은 ${ans}${IEYO(ans)}.`, `${other}${EUN(other)} 차례를 잘못 짚은 답이에요 — 되풀이되는 부분은 처음부터 찾아요.`];
+    } else {
+      const st = N.step ? rint(N.step[0], N.step[1], r) : rint(1, 3, r);
+      const down = N.dir === 'down' ? true : (N.dir === 'up' ? false : r() < 0.5);
+      const s0 = down ? rint(st * (len - 1) + 1, 30, r) : rint(1, 30 - st * (len - 1), r);
+      cells = []; for (let i = 0; i < len; i++) cells.push(down ? s0 - st * i : s0 + st * i);
+      bi = rint(1, len - 1, r); ans = cells[bi];
+      ruleKo = `${s0}부터 시작하여 ${st}씩 ${down ? '작아져요' : '커져요'}`;
+      const one = down ? cells[bi - 1] - 1 : cells[bi - 1] + 1;
+      const rev = down ? cells[bi - 1] + st : cells[bi - 1] - st;
+      wrongs = [one, rev, ans + 1, ans - 1]; dflt = down ? 'M1-2-u5-X07' : 'M1-2-u5-X06';
+      exp = [`옆의 수와 얼마나 차이 나는지 보면 ${st}씩 ${down ? '작아져요' : '커져요'}.`, `그래서 빈칸은 ${cells[bi - 1]}보다 ${st} ${down ? '작은' : '큰'} ${ans}${IEYO(ans)}.`, st === 1 ? `${rev}${EUN(rev)} 방향을 거꾸로 본 답이에요 — ${down ? '작아지는' : '커지는'} 쪽으로 이어요.` : `${one}${EUN(one)} 1씩으로 본 답, ${rev}${EUN(rev)} 방향을 거꾸로 본 답이에요.`];
+    }
+    dflt = misOf(src, 0, dflt);
+    const hasLine = a && a.type === 'number_line';
+    if (hasLine){ a.cells = cells.map((n, i) => i === bi ? null : n); delete a.mark; }
+    const shown = cells.filter((n, i) => i !== bi);
+    const lead = hasLine ? '수 배열을 보세요. ' : cells.map((n, i) => i === bi ? '□' : n).join(', ') + ' — ';
+    if (q.kind === 'ox'){ const truth = r() < 0.5; const said = truth ? ans : wrongs[0];
+      OXR(`${lead}${ruleKo}. 빈칸에 올 수는 ${said} 입니다.`, truth, kind === 'repeat' ? '처음부터 묶어 차례를 짚으면 그 수니까' : '옆의 수와 차이가 모두 같으니까', kind === 'repeat' ? '앞의 수와 다르기만 하면 되니까' : '수는 늘 1씩 커지니까', dflt); }
+    else { v.stem = lead + '빈칸에 알맞은 수는 무엇인가요?';
+      if (q.kind === 'sa') v.answer = [String(ans)];
+      else { let ds = distinct(ans, wrongs.concat([ans + 2, ans - 2]).filter(x => x >= 0 && (kind === 'repeat' || shown.indexOf(x) < 0)), want);
+        if (ds.length < want) ds = distinct(ans, wrongs.concat([ans + 2, ans - 2, ans + 3]).filter(x => x >= 0), want);
+        v.options = asOpts(ans, ds, q.options, dflt); } }
+    v.explanation = exp;
+    return v;
+  }
+  // 수 배열표 규칙 — 색칠한 줄이 몇씩 커지나 · 빈칸 — C5
+  if (a && a.type === 'hundred_chart' && rule.chartrule){
+    const C = rule.chartrule; const cols = a.cols || 10; const rows = Math.max(1, Math.ceil(a.cells.length / cols));
+    const kinds = C.dirs || ['row', 'col', 'diag', 'skip'];
+    let kd = pick(kinds, r); if ((kd === 'col' || kd === 'diag') && rows < 3) kd = 'row';
+    const base = Number(C.from != null ? C.from : (a.cells.filter(c => c !== null && c !== '?').map(Number)[0] || 1));
+    const nums = []; for (let i = 0; i < rows * cols; i++) nums.push(base + i);
+    let hi = [], step;
+    if (kd === 'row'){ const rr = rint(0, rows - 1, r); const c0 = rint(0, Math.max(0, cols - 4), r); hi = [0, 1, 2, 3].map(i => nums[rr * cols + c0 + i]).filter(x => x !== undefined); step = 1; }
+    else if (kd === 'col'){ const cc = rint(0, cols - 1, r); for (let i = 0; i < rows; i++) hi.push(nums[i * cols + cc]); step = cols; }
+    else if (kd === 'diag'){ const right = r() < 0.5; const cc = right ? rint(0, cols - rows, r) : rint(rows - 1, cols - 1, r); for (let i = 0; i < rows; i++) hi.push(nums[i * cols + cc + (right ? i : -i)]); step = right ? cols + 1 : cols - 1; }
+    else { step = pick(C.steps || [2, 3, 4, 5], r); const s0 = rint(0, Math.min(cols - 1, step - 1), r); for (let n = base + s0; n <= nums[nums.length - 1] && hi.length < 6; n += step) hi.push(n); }
+    if (hi.length < 3){ hi = [nums[0], nums[1], nums[2], nums[3]]; step = 1; }
+    a.hi = hi; const startCell = hi[0];
+    const want = Math.max(1, nOptsOf(q) - 1);
+    const src = (q.options && q.options.length) ? q.options : q.reason_options;
+    const dflt = misOf(src, 0, step === cols ? 'M1-2-u5-X08' : 'M1-2-u5-X09');
+    if (C.ask === 'blank'){
+      const bi = rint(1, hi.length - 1, r); const ans = hi[bi];
+      a.cells = nums.map(n => n === ans ? null : n);
+      v.stem = '수 배열표에서 색칠한 수를 보세요. 색칠한 줄의 빈칸에 알맞은 수는 무엇인가요?';
+      if (q.kind === 'sa') v.answer = [String(ans)];
+      else v.options = asOpts(ans, distinct(ans, [hi[bi - 1] + 1, hi[bi - 1] + 10, ans + 1, ans - 1].filter(x => hi.indexOf(x) < 0), want), q.options, dflt);
+      v.explanation = [`색칠한 수는 ${startCell}부터 시작하여 ${step}씩 커져요.`, `${hi[bi - 1]}보다 ${step} 큰 수는 ${ans}${IEYO(ans)}.`, '색칠한 수만 따로 모아서 얼마씩 커지는지 보세요.'];
+      return v;
+    }
+    a.cells = nums.slice();
+    const w1 = step === 1 ? cols : 1, w2 = (step === cols + 1 || step === cols - 1) ? cols : (step === cols ? cols + 1 : step + 1);
+    if (q.kind === 'ox'){ const truth = r() < 0.5; const said = truth ? step : w1;
+      OXR(`수 배열표에서 색칠한 수는 ${startCell}부터 시작하여 ${said}씩 커집니다.`, truth, '색칠한 수끼리 차이를 재면 그만큼이니까', '표는 옆으로도 아래로도 1씩 커지니까', dflt); }
+    else { v.stem = `수 배열표에서 색칠한 수를 보세요. ${startCell}부터 시작하여 몇씩 커지나요?`;
+      if (q.kind === 'sa') v.answer = [String(step)];
+      else v.options = asOpts(step, distinct(step, [w1, w2, step + 1], want), q.options, dflt); }
+    v.explanation = [`색칠한 수는 ${hi.slice(0, 4).join(', ')}… 이에요.`, `옆의 색칠한 수와 ${step} 차이가 나니 ${step}씩 커져요.`, kd === 'col' ? '아래로 한 칸 내려가면 10씩 커져요.' : (kd === 'diag' ? '비스듬히 가면 11씩 또는 9씩 커져요.' : '색칠한 수만 따로 모아서 보세요.')];
+    return v;
+  }
   // 시각 읽기 — 몇 시 · 몇 시 30분
   if (a && a.type === 'clock' && rule.time){
     const T = rule.time; const H = T.hours || [1, 12];
@@ -1272,7 +1407,12 @@ function paperAsset(a){
     case 'compare_groups': return `<div class="pcmp">${a.rows.map(rw => `<div><b>${esc(rw.label)}</b> ${rw.item.repeat(rw.n)}</div>`).join('')}</div>`;
     case 'bundle_ones': { const t = Math.max(0, Number(a.tens) || 0), o = Math.max(0, Number(a.ones) || 0);
       return `<div class="pbund">${'▥'.repeat(t)}${o ? ' ' + '●'.repeat(o) : ''}<em>(▥ = 10개씩 묶음, ● = 낱개)</em></div>`; }
-    case 'hundred_chart': return `<div class="pchart" style="grid-template-columns:repeat(${a.cols || 10},1fr)">${a.cells.map(c => (c === null || c === '?') ? `<span class="blank">&nbsp;</span>` : `<span>${esc(c)}</span>`).join('')}</div>`;
+    case 'hundred_chart': { const hi = (a.hi || []).map(Number);
+      return `<div class="pchart" style="grid-template-columns:repeat(${a.cols || 10},1fr)">${a.cells.map(c => (c === null || c === '?') ? `<span class="blank">&nbsp;</span>` : `<span class="${hi.indexOf(Number(c)) >= 0 ? 'hi' : ''}">${esc(c)}</span>`).join('')}</div>`; }
+    case 'pattern_row': { const bl = x => x === null || x === undefined || x === '?';
+      return `<div class="ppat">${(a.items || []).map((it, i) => bl(it) ? '<span class="blank">&nbsp;</span>' : `<span class="${a.mark === i + 1 ? 'mk' : ''}">${esc(it)}</span>`).join('')}</div>`; }
+    case 'pattern_grid': { const bl = x => x === null || x === undefined || x === '?'; const rows = a.rows || []; const cols = Math.max.apply(null, rows.map(r2 => r2.length));
+      return `<div class="ppatg" style="grid-template-columns:repeat(${cols},1fr)">${rows.map(r2 => r2.map(it => bl(it) ? '<span class="blank">&nbsp;</span>' : `<span>${esc(it)}</span>`).join('')).join('')}</div>`; }
     case 'pair_row': { const n = Math.max(0, Number(a.n) || 0); const pr = Math.floor(n / 2), rest = n % 2;
       return `<div class="ppair">${'(●●) '.repeat(pr)}${rest ? '●' : ''}<em style="font-style:normal;font-size:11px;color:#666"> (둘씩 짝짓기)</em></div>`; }
     case 'ten_frame': { const f = Math.max(0, Math.min(10, Number(a.filled) || 0)), ad = Math.max(0, Math.min(10 - f, Number(a.add) || 0));

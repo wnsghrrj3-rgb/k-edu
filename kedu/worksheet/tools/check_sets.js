@@ -75,7 +75,10 @@ const ASSETS = {
   ten_frames2:    ['top', 'bottom'],
   split_tree:     ['left', 'right', 'parts'],
   beads:          ['moved'],
-  expr_grid:      ['rows']
+  expr_grid:      ['rows'],
+  /* v0.7 — 1학년 2학기 「규칙 찾기」 */
+  pattern_row:    ['items'],
+  pattern_grid:   ['rows']
 };
 const KINDS = ['mc', 'sa', 'ox', 'match', 'essay', 'error', 'blank', 'data'];
 
@@ -107,7 +110,7 @@ function checkAsset(where, a) {
     else {
       const nums = a.cells.filter(c => c !== null && c !== '?').map(Number);
       if (nums.some(n => !(n >= 1 && n <= 100))) bad(where, 'hundred_chart 에 1~100 밖의 수');
-      if (!a.cells.some(c => c === null || c === '?')) bad(where, 'hundred_chart 에 빈칸이 없다 — 물을 것이 없음');
+      if (!a.cells.some(c => c === null || c === '?') && !(Array.isArray(a.hi) && a.hi.length)) bad(where, 'hundred_chart 에 빈칸도 색칠한 수(hi)도 없다 — 물을 것이 없음');
     }
     if (a.cols !== undefined && !(a.cols >= 2 && a.cols <= 10)) bad(where, 'hundred_chart cols 는 2~10');
   }
@@ -194,6 +197,23 @@ function checkAsset(where, a) {
   if (a.type === 'expr_grid') {
     if (!Array.isArray(a.rows) || !a.rows.length) bad(where, 'expr_grid rows 비었음');
     else a.rows.forEach((rw, i) => { if (!Array.isArray(rw) || rw.length < 2) bad(where, `expr_grid rows[${i}] 는 2칸 이상`); });
+  }
+  if (a.type === 'pattern_row') {
+    if (!Array.isArray(a.items) || a.items.length < 3) bad(where, 'pattern_row items 3개 미만');
+    else {
+      if (a.items.length > 12) bad(where, 'pattern_row 는 12개까지');
+      const shown = a.items.filter(x => x !== null && x !== '?');
+      if (!shown.length) bad(where, 'pattern_row 가 전부 빈칸');
+      if (a.mark !== undefined && !(a.mark >= 1 && a.mark <= a.items.length)) bad(where, 'pattern_row mark 가 줄 밖: ' + a.mark);
+    }
+  }
+  if (a.type === 'pattern_grid') {
+    if (!Array.isArray(a.rows) || a.rows.length < 2) bad(where, 'pattern_grid 는 2줄 이상');
+    else a.rows.forEach((rw, i) => { if (!Array.isArray(rw) || rw.length < 2 || rw.length > 8) bad(where, `pattern_grid rows[${i}] 는 2~8칸`); });
+  }
+  if (a.type === 'hundred_chart' && a.hi !== undefined) {
+    if (!Array.isArray(a.hi) || a.hi.length < 2) bad(where, 'hundred_chart hi 는 2개 이상');
+    else { const cs = (a.cells || []).map(c => Number(c)); a.hi.forEach(h => { if (cs.indexOf(Number(h)) < 0 && !(a.cells || []).some(c => c === null || c === '?')) bad(where, 'hundred_chart hi 에 표에 없는 수 ' + h); }); }
   }
   if (a.type === 'group_row') {
     if (!Array.isArray(a.groups) || a.groups.length < 2) bad(where, 'group_row groups 가 2무리 미만');
@@ -317,6 +337,10 @@ function checkSet(file) {
     if (q.variant_rule.takeaway && at && ['split_tree', 'ten_frames2', 'compare_groups'].indexOf(at) < 0) bad(where, 'takeaway 변형은 그림 없음·split_tree·ten_frames2·compare_groups 만');
     if (q.variant_rule.takeaway && q.variant_rule.takeaway.ask === 'more' && at !== 'compare_groups') bad(where, "takeaway ask:'more' 는 compare_groups 그림이 있어야 한다");
     if (q.variant_rule.pattern && at && at !== 'expr_grid') bad(where, 'pattern 변형은 그림 없음·expr_grid 만');
+    /* v0.7 갈래 */
+    if (q.variant_rule.repeat && at !== 'pattern_row') bad(where, 'repeat 변형은 pattern_row 그림이 있어야 한다');
+    if (q.variant_rule.numrule && at && at !== 'number_line') bad(where, 'numrule 변형은 그림 없음·number_line 만');
+    if (q.variant_rule.chartrule && at !== 'hundred_chart') bad(where, 'chartrule 변형은 hundred_chart 그림이 있어야 한다');
     /* play.html 과 같은 순서·같은 난수 씀씀이: 틀린 문항들이 난수 하나를 이어 쓰고, prep 은 변형 뒤에 온다.
        (덧: 씨앗을 1씩 늘리면 LCG 특성상 첫 값이 거의 안 변해 「안 변한다」는 가짜 실패가 난다 — 씨앗을 넓게 흩는다) */
     const face = x => JSON.stringify([x.stem, x.asset || null, x.options || null, x.answer || null, x.pairs || null]);
