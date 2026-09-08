@@ -1077,9 +1077,14 @@ async function doLogout(){
   localStorage.removeItem('kedu_remember');
   sessionStorage.removeItem('kedu_session');
   document.getElementById('dashboard').classList.remove('active');
+  // 로그인 화면 보류 스타일(#login-screen display:none!important — 세션 흔적 있을 때 삽입)을 걷어낸다.
+  // 안 걷으면 로그아웃 뒤 빈 화면만 남았다(2026-09-09 준호 보고).
+  document.getElementById('kedu-login-hold')?.remove();
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('nav-right').style.display = 'none';
   document.getElementById('session-bar').classList.remove('active');
+  try{ sessionStorage.removeItem('kedu_tgate_v1'); }catch(_){}
+  location.replace('/');   // 로그아웃 = 케이에듀 메인으로
 }
 
 // =============================================
