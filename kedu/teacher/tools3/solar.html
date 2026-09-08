@@ -807,9 +807,16 @@ const TEXDEF = [
   { key:'ear',  src:'/kedu/teacher/engine/tools/assets/textures/earth/earth_day.png' },
   { key:'jup',  src:'/kedu/teacher/engine/tools/assets/textures/solar/jupiter.png' },
   { key:'sat',  src:'/kedu/teacher/engine/tools/assets/textures/solar/saturn.png' },
-  { key:'ring', src:'/kedu/teacher/engine/tools/assets/textures/solar/saturn_ring.png' }
+  { key:'ring', src:'/kedu/teacher/engine/tools/assets/textures/solar/saturn_ring.png' },
+  // 2026-09-08 2차 5종(수·금·화·천·해) — NASA 계열 실사(수·화·천·해, CC BY Solar System Scope 축소 2048) + 금성 구름 절차 생성
+  { key:'mer',  src:'/kedu/teacher/engine/tools/assets/textures/solar/mercury.jpg' },
+  { key:'ven',  src:'/kedu/teacher/engine/tools/assets/textures/solar/venus.jpg' },
+  { key:'mar',  src:'/kedu/teacher/engine/tools/assets/textures/solar/mars.jpg' },
+  { key:'ura',  src:'/kedu/teacher/engine/tools/assets/textures/solar/uranus.jpg' },
+  { key:'nep',  src:'/kedu/teacher/engine/tools/assets/textures/solar/neptune.jpg' }
 ];
 const texOK = {};
+const PL_IDX = { mer:0, ven:1, ear:2, mar:3, jup:4, sat:5, ura:6, nep:7 };
 
 /* 태양 */
 const sunMesh = new THREE.Mesh(
@@ -914,6 +921,7 @@ TEXDEF.forEach(d => loader.load(d.src, tex => {
   if (d.key === 'jup') { planets[4].material.map = tex; planets[4].material.color.setHex(0xffffff); planets[4].material.needsUpdate = true; }
   if (d.key === 'sat') { planets[5].material.map = tex; planets[5].material.color.setHex(0xffffff); planets[5].material.needsUpdate = true; }
   if (d.key === 'ring') { satRing.material.map = tex; satRing.material.color.setHex(0xffffff); satRing.material.needsUpdate = true; }
+  if (d.key in PL_IDX && d.key !== 'ear' && d.key !== 'jup' && d.key !== 'sat') { const pm = planets[PL_IDX[d.key]]; pm.material.map = tex; pm.material.color.setHex(0xffffff); pm.material.needsUpdate = true; }
   renderTexLabel(); earthTint();
 }, undefined, () => { renderTexLabel(); }));
 
@@ -933,7 +941,7 @@ const MODE_NM = { free: '🔭 자유탐구', mission: '🎯 미션', quiz: '❓ 
 const GRADE_NM = { low: '🌱 저학년', mid: '🌿 중학년', high: '🌳 고학년' };
 
 function renderTexLabel() {
-  const n = ['sun','ear','jup','sat'].filter(k => texOK[k]).length;
+  const n = ['sun','mer','ven','ear','mar','jup','sat','ura','nep'].filter(k => texOK[k]).length;
   texlabEl.textContent = n > 0 ? ('🖼️ 실사 텍스처 ' + n + '종') : '🎨 기본 그림';
 }
 renderTexLabel();

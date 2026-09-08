@@ -355,8 +355,14 @@
       {key:'ear', src:'/kedu/teacher/engine/tools/assets/textures/earth/earth_day.png'},
       {key:'jup', src:'/kedu/teacher/engine/tools/assets/textures/solar/jupiter.png'},
       {key:'sat', src:'/kedu/teacher/engine/tools/assets/textures/solar/saturn.png'},
-      {key:'ring',src:'/kedu/teacher/engine/tools/assets/textures/solar/saturn_ring.png'}
+      {key:'ring',src:'/kedu/teacher/engine/tools/assets/textures/solar/saturn_ring.png'},
+      {key:'mer', src:'/kedu/teacher/engine/tools/assets/textures/solar/mercury.jpg'},
+      {key:'ven', src:'/kedu/teacher/engine/tools/assets/textures/solar/venus.jpg'},
+      {key:'mar', src:'/kedu/teacher/engine/tools/assets/textures/solar/mars.jpg'},
+      {key:'ura', src:'/kedu/teacher/engine/tools/assets/textures/solar/uranus.jpg'},
+      {key:'nep', src:'/kedu/teacher/engine/tools/assets/textures/solar/neptune.jpg'}
     ];
+    var PL_IDX={mer:0,ven:1,mar:3,ura:6,nep:7};
     var texImg={}, texTried=false;
     function loadTex(){
       if(texTried)return; texTried=true;
@@ -383,12 +389,13 @@
         if(key==='ear'&&planetGrp[2]){ planetGrp[2].material.map=tx; planetGrp[2].material.color.setHex(0xffffff); planetGrp[2].material.needsUpdate=true; }
         if(key==='jup'&&planetGrp[4]){ planetGrp[4].material.map=tx; planetGrp[4].material.color.setHex(0xffffff); planetGrp[4].material.needsUpdate=true; }
         if(key==='sat'&&planetGrp[5]){ planetGrp[5].material.map=tx; planetGrp[5].material.color.setHex(0xffffff); planetGrp[5].material.needsUpdate=true; }
+        if(PL_IDX[key]!==undefined&&planetGrp[PL_IDX[key]]){ var pg=planetGrp[PL_IDX[key]]; pg.material.map=tx; pg.material.color.setHex(0xffffff); pg.material.needsUpdate=true; }
         if(key==='ring'&&satRing){ satRing.material.map=tx; satRing.material.color.setHex(0xffffff); satRing.material.needsUpdate=true; }
       }catch(e){}
     }
     function texLabel(){
       var lb=el.querySelector('.so-texlab'); if(!lb)return;
-      var n=['sun','ear','jup','sat'].filter(function(k){return !!texImg[k];}).length;
+      var n=['sun','mer','ven','ear','mar','jup','sat','ura','nep'].filter(function(k){return !!texImg[k];}).length;
       lb.textContent=n>0?('🖼️ 실사 텍스처 '+n+'종'):'🎨 기본 그림';
     }
     function ringFallbackTex(){   // 토성 고리 캔버스 폴백 — 옅은 금빛 동심 띠
