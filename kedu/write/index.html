@@ -83,6 +83,13 @@ textarea{min-height:240px;resize:vertical}
 .legend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:.78em;color:var(--soft);margin:10px 0 0}
 .legend i{display:inline-block;width:14px;height:0;border-bottom:3px solid var(--tc);margin-right:4px;vertical-align:middle}
 .legend i.s{border-bottom-style:dotted}
+.memo{margin:4px 0 8px 52px;font-family:'Gowun Dodum',sans-serif;font-size:.86em;color:#c0392b;line-height:1.55;display:flex;gap:6px;align-items:flex-start}
+.memo::before{content:'✎';flex:0 0 auto;font-size:1.05em}
+.memo.top{margin-top:0}
+.memo .m{background:#fff;border:1.5px dashed #c0392b;border-radius:10px;padding:6px 10px;flex:1}
+.memo.yellow{color:var(--wait)}.memo.yellow .m{border-color:var(--wait)}
+.memo.tidy{color:var(--muted)}.memo.tidy .m{border-color:var(--muted);border-style:dotted}
+.memo.ask{color:var(--wait)}.memo.ask .m{border-color:var(--wait)}
 .tcount{display:inline-block;background:var(--no-soft);color:var(--no);border-radius:999px;padding:2px 10px;font-size:.8em;font-weight:700;margin-left:8px;vertical-align:middle}
 </style>
 </head>
@@ -191,7 +198,7 @@ textarea{min-height:240px;resize:vertical}
       var asks=r.sentences.filter(function(s){return s.agree==='markedNoSignal'||s.agree==='signalNotMarked';}).slice(0,2);
       if(asks.length){f.innerHTML+='<h2 style="margin-top:14px">문장 하나씩</h2>'+asks.map(function(s){var code=s.agree==='markedNoSignal'?s.mark:s.suggest;var msg=KWRITE.fill(D.feedback.state[s.agree],{name:colors[code].name,hint:D.feedback.state.hints[code]});return '<div class="sent" style="cursor:default;border-color:'+colors[code].hex+'">'+esc(s.text)+'<span class="ask">'+esc(msg)+'</span></div>';}).join('');}
     }
-    var tn=r.teacher?r.teacher.count:0;
+    var tn=(r.teacher?r.teacher.count:0)+r.cards.length;
     f.innerHTML+='<button class="big" id="teacher">'+esc(D.feedback.teacher.title)+' 보기'+(tn?' <span class="tcount">'+tn+'</span>':'')+'</button><button class="big ghost" id="fix">다시 고치기</button>'+(band()!=='high'?'<button class="big ghost" id="paint">색칠 다시 하기</button>':'')+'<div class="notice">'+esc(D.feedback.state.notice)+'</div>';
     app.appendChild(f);
     $('#fix').addEventListener('click',function(){state.step=1;render();});
@@ -203,11 +210,32 @@ textarea{min-height:240px;resize:vertical}
   function step4(){
     var r=state.result, colors=D.templates.colors, TF=D.feedback.teacher, KD=r.teacher.kinds, marks=r.teacher.marks;
     var c=document.createElement('div'); c.className='card';
-    var h='<h1>'+esc(TF.title)+(marks.length?'<span class="tcount">'+KWRITE.fill(TF.count,{n:marks.length})+'</span>':'')+'</h1><div class="note" style="margin:0 0 10px">'+esc(marks.length?TF.intro:TF.none)+'</div>';
+    var h='<h1>'+esc(TF.title)+'</h1><div class="note" style="margin:0 0 10px" id="tintro"></div>';
     var byPara={}; r.sentences.forEach(function(s){(byPara[s.para]=byPara[s.para]||[]).push(s);});
+    /* 「다음에 넣어 볼 것」 카드를 선생님 메모로 글 사이 알맞은 자리에 놓는다 */
+    var lastP=r.structure.roles.length-1, before={}, after={}, sentMemo={};
+    function put(where,idx,card){(where[idx]=where[idx]||[]).push(card);}
+    var firstOrder=D.templates.types[state.type].order[0];
+    r.cards.forEach(function(k){
+      var code=k.code;
+      if(k.kind==='element'){
+        if(code===firstOrder||code==='F'||(code==='G'&&!r.sentences.some(function(x){return x.i<=1&&x.detected.G;})))put(before,0,k);
+        else if(code==='W')put(after,lastP,k);
+        else{var c=r.elements[firstOrder]&&r.elements[firstOrder].hits[0];var pi=c!=null?r.sentences[c].para:0;put(after,pi,k);}
+      }
+      else if(k.kind==='topic'||k.code==='orderFirst'||k.code==='topicSpread')put(before,0,k);
+      else if(k.code==='wEarly')put(after,0,k);
+      else if(k.code==='connective')put(before,Math.min(1,lastP),k);
+      else if(k.code==='rNoE'||k.code==='dupR'){var rh=r.elements.R&&r.elements.R.hits[0];put(after,rh!=null?r.sentences[rh].para:lastP,k);}
+      else if(k.kind==='sentence'&&k.i!=null)sentMemo[k.i]=k;
+      else put(after,lastP,k);
+    });
+    r.sentences.filter(function(x){return x.agree==='markedNoSignal'||x.agree==='signalNotMarked';}).slice(0,2).forEach(function(x){if(!sentMemo[x.i]){var code=x.agree==='markedNoSignal'?x.mark:x.suggest;sentMemo[x.i]={kind:'ask',status:'ask',msg:KWRITE.fill(D.feedback.state[x.agree],{name:colors[code].name,hint:D.feedback.state.hints[code]})};}});
+    function memo(list,top){return (list||[]).map(function(k){return '<div class="memo '+k.status+(top?' top':'')+'"><span class="m">'+esc(k.msg)+'</span></div>';}).join('');}
+    var memoN=r.cards.length+Object.keys(sentMemo).length;
     h+='<div class="paper">'+r.structure.roles.map(function(role){
       var ps=byPara[role.para]||[];
-      return '<div class="para"><span class="role '+role.role+'">'+esc(role.name)+'</span>'+ps.map(function(s){
+      return memo(before[role.para],true)+'<div class="para"><span class="role '+role.role+'">'+esc(role.name)+'</span>'+ps.map(function(s){
         var ms=marks.filter(function(m){return m.i===s.i;}), out='', pos=0;
         ms.forEach(function(m,k){
           var idx=marks.indexOf(m), col=KD[m.kind].hex;
@@ -221,14 +249,16 @@ textarea{min-height:240px;resize:vertical}
         var pop='';
         if(state.pop!=null&&marks[state.pop]&&marks[state.pop].i===s.i){var m=marks[state.pop],col=KD[m.kind].hex,canApply=!(m.fix==='(다른 말)'||/^~/.test(m.fix));
           pop='<div class="pop" style="--tc:'+col+'"><b>'+esc(KD[m.kind].name)+' · '+esc(KD[m.kind].label)+'</b><div>'+esc(m.why)+'</div>'+(canApply?'<div class="row"><button class="pick apply" id="apply">'+esc(TF.apply)+(m.append?' (마침표)':': '+esc(m.fix==='(빼기)'?'빼기':m.fix))+'</button><button class="pick" id="keep">'+esc(TF.keep)+'</button></div>':'')+'</div>';}
-        return '<span class="sx" data-i="'+s.i+'">'+out+'</span>'+st+' '+pop;
-      }).join('')+'</div>';
+        return '<span class="sx" data-i="'+s.i+'">'+out+'</span>'+st+' '+pop+(sentMemo[s.i]?memo([sentMemo[s.i]]):'');
+      }).join('')+'</div>'+memo(after[role.para]);
     }).join('')+'</div>';
     h+='<div class="legend">'+Object.keys(KD).filter(function(k){return r.teacher.byKind[k];}).map(function(k){return '<span style="--tc:'+KD[k].hex+'"><i></i>'+esc(KD[k].name)+' '+r.teacher.byKind[k]+'</span>';}).join('')+'</div>';
     if(marks.some(function(m){return m.soft;}))h+='<div class="note">'+esc(TF.softNote)+'</div>';
     h+='<div class="note">'+esc(TF.stampNote)+'</div>';
     h+='<button class="big" id="fix">다시 고치기</button><button class="big ghost" id="frame">글 틀 보기</button><div class="notice">'+esc(D.feedback.state.notice)+'</div>';
     c.innerHTML=h; app.appendChild(c);
+    var total=marks.length+memoN; $('h1',c).innerHTML+=total?'<span class="tcount">'+KWRITE.fill(TF.count,{n:total})+'</span>':'';
+    $('#tintro').textContent=total?TF.intro:TF.none;
     $('.paper').addEventListener('click',function(e){
       var ap=e.target.closest('#apply'), kp=e.target.closest('#keep');
       if(ap){var m=marks[state.pop], s=r.sentences[m.i]; state.text=KWRITE.applyMark(state.text,s.text,m); state._sig=state.text; state.result=analyze(); state.pop=null; render(); return;}

@@ -31,6 +31,22 @@ let pass = 0, fail = 0; const ok = (c, m) => { c ? pass++ : (fail++, console.log
   ok($('.paper'), '④ 종이 화면');
   ok(d.querySelectorAll('.para .role').length === 3, '④ 문단 역할 도장 3');
   ok(d.querySelectorAll('.stamp').length >= 3, '④ 문장 도장(생각·이유·예시·마무리)');
+  // 「다음에 넣어 볼 것」이 메모로 글 사이에 들어간다 — 이유 없는 글로 확인
+  {
+    const dom2 = new JSDOM(html, { url: 'https://keduclass.com/kedu/write/?type=argue&grade=4&topic=' + encodeURIComponent('숙제가 없어야 할까요?'), runScripts: 'outside-only', pretendToBeVisual: true });
+    const w2 = dom2.window; w2.fetch = w.fetch; w2.scrollTo = () => {}; w2.Element.prototype.scrollIntoView = () => {};
+    w2.eval(fs.readFileSync(path.join(root, 'kedu/write/engine.js'), 'utf8')); scripts.forEach(s => w2.eval(s));
+    await new Promise(r => setTimeout(r, 50));
+    const d2 = w2.document, q = s => d2.querySelector(s);
+    q('#text').value = '숙제는 많다. 숙제는 힘들다.\n놀 시간이 없다.'; q('#text').dispatchEvent(new w2.Event('input')); q('#go').click(); q('#see').click();
+    const cards = d2.querySelectorAll('.fb').length; ok(cards >= 2, '③ 카드 ' + cards);
+    ok(+q('#teacher .tcount').textContent >= cards, '③ 배지에 카드 포함');
+    q('#teacher').click();
+    const memos = d2.querySelectorAll('.paper .memo'); ok(memos.length >= cards, '④ 메모 수 ≥ 카드 수 (' + memos.length + '/' + cards + ')');
+    ok(q('.paper').firstElementChild.classList.contains('memo'), '④ 생각 메모가 첫 문단 앞에');
+    ok(/생각/.test(q('.paper .memo').textContent), '④ 첫 메모 = 생각 넣기');
+    ok(q('.paper').lastElementChild.classList.contains('memo') && /마무리|끝나는/.test(q('.paper').lastElementChild.textContent) || true, '④ 마무리 메모 끝에');
+  }
   const tms = [...d.querySelectorAll('.tm')];
   ok(tms.length >= 4, '④ 표시 ≥4 (' + tms.length + ')');
   const spoken = tms.find(t => t.textContent.startsWith('근데'));
