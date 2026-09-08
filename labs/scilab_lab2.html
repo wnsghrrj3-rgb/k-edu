@@ -877,6 +877,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 /* ═════════ 렌더 기반 (데모 1호 확정 표준 — scilab_filter.html 승계) ═════════ */
 const stage = document.getElementById('stage');
@@ -930,6 +931,22 @@ const GLASS = new THREE.MeshPhysicalMaterial({
   transparent:true, opacity:0.18, depthWrite:false,
   clearcoat:1, clearcoatRoughness:0.06, side:THREE.DoubleSide, envMapIntensity:1.6
 });
+
+/* 2026-09-08 Blender 유리기구 GLB(assets/glass/ — 이중벽·주둥이(+x=입술 방향)·림 비드, 재질 NONE) — 기하만 교체, GLASS 재질·입술(lip) 상수·액체 실린더·클리핑 수면 불변.
+   같은 URL은 1회 로드 후 등록된 메시 전부에 공유. 로더 부재(jsdom)·fetch 없음·로드 실패 시 Lathe 유지. */
+const GLASS_GLB = {};
+function glassSwap(url, mesh, onSwap){
+  if (typeof GLTFLoader !== 'function' || typeof fetch !== 'function') return;
+  const apply = (m, geo) => { const og = m.geometry; m.geometry = geo; if (og && og !== geo) og.dispose();
+    m.material = m.material.clone(); m.material.side = THREE.FrontSide; if (onSwap) try { onSwap(geo); } catch(err){} };   // 닫힌 이중벽 = FrontSide로도 2겹(Lathe DoubleSide와 동일 겹수)
+  let e = GLASS_GLB[url];
+  if (!e) { e = GLASS_GLB[url] = { geo:null, waiting:[] };
+    try { new GLTFLoader().load(url, g => { let src=null; g.scene.traverse(o=>{ if(!src && o.isMesh) src=o; }); if(!src) return;
+      e.geo = src.geometry; e.waiting.forEach(m => apply(m, e.geo)); e.waiting = []; }, undefined, ()=>{}); } catch(err){}
+  }
+  if (e.geo) apply(mesh, e.geo); else e.waiting.push(mesh);
+}
+
 function waterMat(hex){
   return new THREE.MeshPhysicalMaterial({
     color:0xffffff, metalness:0, roughness:0.05,
@@ -1050,6 +1067,12 @@ function makePrecip(count, per, colorHex, radius, spreadR, y0, layerN){
   return { mesh, update, reset };
 }
 
+/* GLB 림(y>H-12mm)의 +x 최대 반지름 = 주둥이 끝 (Lathe 폴백은 호출 안 됨) */
+function spoutTipX(geo, H){
+  const p=geo.attributes.position; let r=0;
+  for(let i=0;i<p.count;i++){ if(p.getY(i)>H-0.012 && p.getX(i)>0 && Math.abs(p.getZ(i))<0.01) r=Math.max(r, Math.hypot(p.getX(i),p.getZ(i))); }
+  return r;
+}
 /* ═════════ 용기 지오메트리 (검증 원본 3종) ═════════ */
 const BK_R=0.088, BK_H=0.16, WATER_H0=0.115;
 const DISH_R=0.062, DISH_H=0.02;
@@ -1063,7 +1086,8 @@ function buildBeaker(){   // filter beakerShell
     new THREE.Vector2(BK_R+0.005,BK_H-0.005), new THREE.Vector2(BK_R+0.008,BK_H)
   ];
   const glass=new THREE.Mesh(new THREE.LatheGeometry(pts,44), GLASS);
-  glass.renderOrder=0; gp.add(glass);
+  glass.renderOrder=0; gp.add(glass); gp.userData.glass=glass;
+  glassSwap('./assets/glass/beaker_lab2.glb', glass, geo=>{ VESSELS.beaker.lip.x = spoutTipX(geo, BK_H) || VESSELS.beaker.lip.x; });  // 물줄기 출발점 = 주둥이 끝(로드 후에만)
   return gp;
 }
 function buildFlask(){    // acid 삼각플라스크
@@ -1074,7 +1098,8 @@ function buildFlask(){    // acid 삼각플라스크
     new THREE.Vector2(0.014,0.185), new THREE.Vector2(0.017,0.19)
   ];
   const glass=new THREE.Mesh(new THREE.LatheGeometry(pts,44), GLASS.clone());
-  glass.renderOrder=0; gp.add(glass);
+  glass.renderOrder=0; gp.add(glass); gp.userData.glass=glass;
+  glassSwap('./assets/glass/flask_lab2.glb', glass);
   return gp;
 }
 function buildDish(){     // filter 증발접시
@@ -1645,6 +1670,7 @@ function applyPourWaterPose(dt){
   const L = S.liq[S.vesselType], V = VESSELS[S.vesselType];
   const vgrp = S.vg[S.vesselType];
   const dir = ST_X[pour.to] > ST_X[pour.from] ? 1 : -1;
+  if (vgrp.userData.glass) vgrp.userData.glass.rotation.y = dir < 0 ? Math.PI : 0;   // GLB 주둥이를 붓는 방향으로(유리 껍데기만 회전 — 액체·입술 좌표 무관)
   const vol = Math.min(Math.max(world.stations[pour.from].contents.vol, 0), 1.2);
 
   // 물 = 풀 볼륨으로 용기에 정렬(함께 기움) — 수위는 클리핑이 담당
