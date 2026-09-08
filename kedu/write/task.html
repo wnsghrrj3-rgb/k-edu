@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>글쓰기 과제 — 케이에듀</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--paper:#FBF8F2;--card:#fff;--ink:#2B2620;--soft:#5B534A;--muted:#8B8378;--rule:#E6DFD3;--accent:#5B8EF8;--accent-soft:#EBF4FF;--ok:#3d7a52;--ok-soft:#E4F0E5;--wait:#a08a3a;--wait-soft:#F7F0D9;--no:#b8493f;--no-soft:#F9E5E2;--blue:#1f5fbf;--radius:18px;--shadow:0 2px 18px rgba(43,38,32,.07);--fs:17px}
+body{font-family:'Gowun Dodum',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased;font-size:var(--fs)}
+body.band-low{--fs:20px}body.band-high{--fs:16px}
+.bar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--card);border-bottom:1px solid var(--rule);position:sticky;top:0;z-index:5}
+.bar .brand{font-family:'Gowun Batang',serif;font-weight:700;color:var(--accent)}
+.bar .ttl{color:var(--soft);font-size:15px}
+.page{max-width:680px;margin:0 auto;padding:20px 16px 90px}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:14px}
+h1{font-family:'Gowun Batang',serif;font-size:1.45em;line-height:1.4;margin-bottom:10px}
+h2{font-family:'Gowun Batang',serif;font-size:1.1em;margin-bottom:10px;color:var(--soft)}
+.topic{font-size:1.15em;line-height:1.6;padding:12px 14px;background:var(--accent-soft);border-radius:12px;margin-bottom:12px}
+.topic small{display:block;color:var(--muted);font-size:.8em;margin-top:4px}
+.passage{font-size:1em;line-height:1.85;padding:14px 16px;background:#FFFDF9;border:1px solid var(--rule);border-radius:12px;margin-bottom:12px;font-family:'Gowun Batang',serif;white-space:pre-wrap}
+.guide{font-size:.92em;color:var(--soft);background:#F3F1EC;border-radius:10px;padding:8px 12px;margin-bottom:12px;line-height:1.6}
+textarea{width:100%;padding:13px;border:1px solid var(--rule);border-radius:14px;font:inherit;font-size:1em;line-height:1.7;background:#fff;min-height:260px;resize:vertical}
+.note{font-size:.82em;color:var(--muted);line-height:1.6;margin-top:8px}
+.notice{font-size:.85em;color:var(--wait);background:var(--wait-soft);border-radius:12px;padding:10px 14px;margin-top:12px;line-height:1.6}
+.big{display:block;width:100%;padding:15px;border:0;border-radius:14px;background:var(--accent);color:#fff;font:inherit;font-size:1.1em;font-weight:700;cursor:pointer;margin-top:12px}
+.big.ghost{background:#fff;color:var(--accent);border:2px solid var(--accent)}
+.big:disabled{opacity:.4;cursor:default}
+.count{font-size:.82em;color:var(--muted);text-align:right;margin-top:6px}
+.meta{display:flex;gap:14px;font-size:.82em;color:var(--muted);margin-top:8px;flex-wrap:wrap}
+.done{text-align:center;padding:22px 10px}
+.done .stamp{display:inline-block;background:var(--ok-soft);color:var(--ok);font-family:'Gowun Batang',serif;font-size:1.3em;font-weight:700;padding:12px 24px;border-radius:999px;margin-bottom:10px}
+.wait{background:var(--wait-soft);color:var(--wait);border-radius:12px;padding:10px 14px;line-height:1.6;font-size:.95em}
+.plain{white-space:pre-wrap;line-height:1.9;font-family:'Gowun Batang',serif;background:#FFFDF9;border:1px solid var(--rule);border-radius:12px;padding:14px}
+.tabs{display:flex;gap:6px;margin-bottom:10px}
+.tabs button{border:1.5px solid var(--rule);background:#fff;border-radius:999px;padding:6px 14px;font:inherit;font-size:.88em;cursor:pointer;color:var(--soft)}
+.tabs button[aria-pressed=true]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700}
+.comment{border-left:4px solid var(--blue);background:#F3F7FF;padding:10px 14px;border-radius:0 12px 12px 0;line-height:1.7;margin-top:12px}
+.comment b{color:var(--blue);display:block;font-size:.85em;margin-bottom:2px}
+.lv{display:flex;justify-content:space-between;padding:8px 12px;border:1px solid var(--rule);border-radius:10px;margin-top:6px}
+.lv b{color:var(--ok)}
+.msg{color:var(--muted);text-align:center;padding:30px 0;line-height:1.7}
+.peeknote{background:var(--wait-soft);color:var(--wait);font-size:13.5px;padding:8px 14px;text-align:center}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<div class="bar"><span class="brand">케이에듀</span><span class="ttl" id="ttl">글쓰기 과제</span></div>
+<div id="peek" class="peeknote" style="display:none">선생님 미리보기예요. 보내도 기록에 남지 않아요.</div>
+<div class="page" id="app"><div class="msg">불러오는 중…</div></div>
+
+<script src="/kedu_back.js" data-mount=".bar"></script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu/write/engine.js"></script>
+<script src="/kedu/write/paper.js"></script>
+<script>
+/* ===================== 케이글쓰기 — 학생 과제 화면 (설계 v2 §11, G4·G5) =====================
+   task.html?run=<write_runs.id>[&preview=1]
+   준호 결정(2026-09-08): 학생은 제출 전에 자동 점검을 보지 않는다. 논제를 받고 → 쓰고 → 보내면 끝.
+   보내는 순간 자동 첨삭 스냅샷(엔진 v2)이 같이 저장되고, 선생님이 그 위에 파란 펜을 얹어 「돌려주기」 하면 여기서 본다.
+   돌아온 글: 종이(자동 빨강 + 선생님 파랑 + ✎ 메모) · 선생님 한마디 · 수준 라벨(점수 숫자 0) · 「고쳐서 다시 보내기」(허용 차수 안에서, 선생님이 요청했을 때).
+   재료는 get_write_run() 한 문으로만, 쓰기는 write_submit() 한 문으로만.
+====================================================================================== */
+(function(){
+  'use strict';
+  var qs=new URLSearchParams(location.search), RUN=qs.get('run')||'', PREVIEW=qs.get('preview')==='1';
+  var app=document.getElementById('app'), db=getKeduDb(), esc=KWPAPER.esc;
+  var D=null, R=null, view='latest', pop=null, draft='';
+  var st=document.createElement('style'); st.textContent=KWPAPER.css; document.head.appendChild(st);
+  if(PREVIEW)document.getElementById('peek').style.display='';
+  function fail(m){app.innerHTML='<div class="card"><div class="msg">'+m+'</div></div>';}
+  if(!RUN){fail('과제 주소가 없어요.');return;}
+
+  Promise.all(['templates','signals','feedback','prompts','corrections','rubric'].map(function(n){return fetch('/kedu/write/data/'+n+'.json').then(function(r){return r.json();});}))
+  .then(function(a){D={templates:a[0],signals:a[1],feedback:a[2],prompts:a[3],corrections:a[4],rubric:a[5]};KWRITE.init(D);
+    return db.rpc('get_write_run',{p_run_id:RUN});})
+  .then(function(res){
+    if(!res||res.error||!res.data){fail('과제를 열 수 없어요.<br>선생님이 아직 열지 않았거나, 우리 반 과제가 아니에요.');return;}
+    R=res.data; document.body.className='band-'+R.band; document.getElementById('ttl').textContent=R.title; render();
+  }).catch(function(){fail('불러오지 못했어요. 새로고침해 볼까요?');});
+
+  function analyzeText(text){return KWRITE.analyze({text:text,type:R.type,band:R.band,topic:R.topic,keywords:R.keywords||[]});}
+  function snapshot(r){return {engine:'v2',marks:r.teacher.marks,cards:r.cards,elements:Object.keys(r.elements).reduce(function(o,k){o[k]=r.elements[k].status;return o;},{}),structure:r.structure.issues.map(function(x){return x.code;}),length:r.length.chars,paras:r.paras.count};}
+  function header(){
+    var tp=D.templates.types[R.type], pr=R.prompt_id?D.prompts.prompts.filter(function(x){return x.id===R.prompt_id;})[0]:null;
+    var h='<div class="topic">'+esc(R.topic)+'<small>'+esc(tp.name)+' · '+({low:'1~2',mid:'3~4',high:'5~6'}[R.band])+'학년 틀'+(R.due_at?' · '+new Date(R.due_at).toLocaleDateString('ko-KR')+'까지':'')+'</small></div>';
+    var passage=R.passage||(pr&&pr.passage);
+    if(passage)h+='<div class="passage">'+esc(passage)+(pr&&!R.passage?'<div class="note">'+esc(pr.source.name)+'</div>':'')+'</div>';
+    if(R.guide)h+='<div class="guide">'+esc(R.guide)+'</div>';
+    return h;
+  }
+  function render(){
+    app.innerHTML=''; pop=null;
+    var subs=R.subs||[], last=subs[subs.length-1];
+    if(!last||PREVIEW&&!subs.length)return renderWrite(null);
+    if(!last.review)return renderWaiting(last);
+    return renderReturned(subs);
+  }
+  /* 쓰기 — 첫 제출 / 다시 쓰기 */
+  function renderWrite(prev){
+    app.innerHTML=''; var spec=D.templates.types[R.type].bands[R.band];
+    var c=document.createElement('div'); c.className='card';
+    c.innerHTML='<h1>'+(prev?'고쳐서 다시 쓰기':'오늘의 글쓰기')+'</h1>'+header();
+    app.appendChild(c);
+    var w=document.createElement('div'); w.className='card';
+    w.innerHTML='<h2>글 쓰기</h2><textarea id="text" placeholder="여기에 글을 써요. 생각이 바뀌는 곳에서 줄을 바꿔요.">'+esc(draft||(prev?prev.text:''))+'</textarea><div class="count" id="count"></div>'
+      +'<div class="meta"><span>이 틀에 필요한 것: '+Object.keys(spec.need).map(function(k){return D.templates.colors[k].name;}).join(' · ')+'</span><span>글자 '+spec.length[0]+'~'+spec.length[1]+' 정도</span></div>'
+      +(R.closed?'<div class="notice">이 과제는 마감됐어요. 선생님께 여쭤보세요.</div>':'<button class="big" id="send">선생님께 보내기</button>')
+      +(prev?'<button class="big ghost" id="backr">돌아온 글 다시 보기</button>':'')
+      +'<div class="notice">보내면 선생님이 읽고 표시해서 돌려줘요. 소리 내어 한 번 읽어 보고 보내요.</div>';
+    app.appendChild(w);
+    var ta=document.getElementById('text'); function cnt(){document.getElementById('count').textContent=ta.value.replace(/\s+/g,'').length+'자';var b=document.getElementById('send');if(b)b.disabled=ta.value.trim().length<10;} cnt();
+    ta.addEventListener('input',function(){draft=ta.value;cnt();});
+    var b=document.getElementById('send'); if(b)b.addEventListener('click',function(){submit(ta.value);});
+    var br=document.getElementById('backr'); if(br)br.addEventListener('click',function(){view='latest';render();});
+  }
+  function submit(text){
+    var b=document.getElementById('send'); b.disabled=true; b.textContent='보내는 중…';
+    var r=analyzeText(text), auto=snapshot(r);
+    if(PREVIEW||!R.student_id){R.subs=[{attempt:1,text:text,submitted_at:new Date().toISOString(),review:null,preview:true}];draft='';render();return;}
+    db.rpc('write_submit',{p_run_id:RUN,p_text:text,p_auto:auto}).then(function(res){
+      var d=res&&res.data; if(!d||res.error)throw new Error('rpc');
+      if(d.status==='ok'||d.status==='replaced'){
+        var subs=R.subs||[]; if(d.status==='replaced'){subs[subs.length-1].text=text;} else subs.push({id:d.id,attempt:d.attempt,text:text,submitted_at:new Date().toISOString(),review:null});
+        R.subs=subs; draft=''; render(); return;
+      }
+      var why={closed:'이 과제는 마감됐어요.',no_more:'다시 쓰기 횟수를 다 썼어요. 선생님께 여쭤보세요.',too_short:'조금 더 써 볼까요?',no_profile:'학급에 들어온 뒤에 보낼 수 있어요.',not_yours:'우리 반 과제가 아니에요.'}[d.status]||'보내지 못했어요.';
+      alert(why); b.disabled=false; b.textContent='선생님께 보내기';
+    }).catch(function(){b.disabled=false;b.textContent='선생님께 보내기';alert('보내지 못했어요. 한 번 더 눌러 보세요.');});
+  }
+  /* 보냈고 아직 안 돌아옴 */
+  function renderWaiting(sub){
+    var c=document.createElement('div'); c.className='card';
+    c.innerHTML='<div class="done"><div class="stamp">선생님께 보냈어요</div><p>'+(sub.preview?'미리보기라 기록에 남지 않았어요.':(sub.attempt>1?sub.attempt+'번째 글을 잘 받았어요. ':'잘 받았어요. ')+'선생님이 읽고 표시해서 돌려주면 여기서 볼 수 있어요.')+'</p></div>'
+      +'<h2>내가 보낸 글</h2><div class="plain">'+esc(sub.text)+'</div>'
+      +(R.closed||sub.preview?'':'<button class="big ghost" id="redo">아직 선생님이 안 봤어요 · 고쳐서 다시 보내기</button>');
+    app.appendChild(c);
+    var b=document.getElementById('redo'); if(b)b.addEventListener('click',function(){draft=sub.text;renderWrite(sub);});
+  }
+  /* 돌아온 글 */
+  function renderReturned(subs){
+    app.innerHTML=''; var last=subs[subs.length-1], cur=view==='latest'?last:subs.filter(function(s){return s.attempt===view;})[0]||last, rv=cur.review;
+    var c=document.createElement('div'); c.className='card';
+    var h='<h1>돌아온 글</h1>';
+    if(subs.length>1)h+='<div class="tabs">'+subs.map(function(s){return '<button data-v="'+s.attempt+'" aria-pressed="'+(s===cur)+'">'+s.attempt+'번째'+(s.review?'':' (보는 중)')+'</button>';}).join('')+'</div>';
+    if(!rv){h+='<div class="wait">이 글은 선생님이 아직 보고 있어요.</div><div class="plain">'+esc(cur.text)+'</div>';c.innerHTML=h;app.appendChild(c);wireTabs();return;}
+    var r=analyzeText(cur.text), memos=KWPAPER.placeMemos(r,D.templates,D.feedback);
+    h+='<div class="note" style="margin:0 0 10px">빨간 표시는 글자와 부호, ✒ 파란 표시는 선생님이 직접 적은 거예요. 표시를 누르면 왜 그런지 나와요.</div>';
+    h+=KWPAPER.render({result:r,templates:D.templates,corrections:D.corrections,feedback:D.feedback,memos:memos,teacher:rv.teacher_marks||[],removed:rv.removed||[],hideRemoved:true,pop:pop,popHtml:popHtml});
+    h+=KWPAPER.legend(r.teacher,D.corrections,(rv.teacher_marks||[]).length?'선생님 표시 '+(rv.teacher_marks||[]).length:'');
+    if(rv.comment)h+='<div class="comment"><b>선생님 한마디</b>'+esc(rv.comment)+'</div>';
+    var lv=rv.levels||{}, rb=D.rubric;
+    if(Object.keys(lv).length)h+='<h2 style="margin-top:14px">선생님이 본 것</h2>'+rb.criteria.map(function(cr,i){var li=lv[String(i)];return li==null?'':'<div class="lv"><span>'+esc(cr.name)+'</span><b>'+esc(rb.levels[li])+'</b></div>';}).join('');
+    var canRewrite=cur===last&&rv.ask_rewrite&&!R.closed&&last.attempt<=R.rewrite_max;
+    if(cur===last&&rv.ask_rewrite)h+='<div class="notice" style="margin-top:14px">'+(canRewrite?'선생님이 「고쳐서 다시 보내 주세요」라고 했어요.':'선생님이 다시 쓰기를 원했지만 이 과제는 더 보낼 수 없어요. 선생님께 여쭤보세요.')+'</div>';
+    if(canRewrite)h+='<button class="big" id="rewrite">고쳐서 다시 보내기</button>';
+    else if(cur===last)h+='<div class="done" style="padding-top:14px"><div class="stamp">잘 했어요</div></div>';
+    c.innerHTML=h; app.appendChild(c); wireTabs();
+    c.querySelector('.kwp').addEventListener('click',function(e){
+      var a=e.target.closest('.tm[data-a]'), b=e.target.closest('.tm[data-b]');
+      if(a){var idx=+a.dataset.a;pop=(pop&&pop.type==='auto'&&pop.idx===idx)?null:{type:'auto',idx:idx,i:r.teacher.marks[idx].i};render2();return;}
+      if(b){var j=+b.dataset.b;pop=(pop&&pop.type==='blue'&&pop.idx===j)?null:{type:'blue',idx:j,i:rv.teacher_marks[j].i};render2();return;}
+    });
+    var rw=document.getElementById('rewrite'); if(rw)rw.addEventListener('click',function(){draft=draft||last.text;renderWrite(last);});
+    function render2(){renderReturned(subs);}
+    function popHtml(p){
+      var KD=D.corrections.kinds;
+      if(p.type==='auto'){var m=r.teacher.marks[p.idx];return '<div class="pop" style="--tc:'+KD[m.kind].hex+'"><b>'+esc(KD[m.kind].name)+' · '+esc(KD[m.kind].label)+'</b><div>'+esc(m.why)+'</div></div>';}
+      var t=rv.teacher_marks[p.idx];return '<div class="pop" style="--tc:#1f5fbf"><b>선생님 표시</b><div>'+esc(t.why||'')+(t.fix?' → '+esc(t.fix):'')+'</div></div>';
+    }
+  }
+  function wireTabs(){var t=app.querySelector('.tabs');if(!t)return;t.addEventListener('click',function(e){var b=e.target.closest('[data-v]');if(!b)return;view=+b.dataset.v;pop=null;render();});}
+})();
+</script>
+</body>
+</html>
