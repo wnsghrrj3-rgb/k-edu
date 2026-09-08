@@ -252,6 +252,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const K = window.KBody;
 const P = new URLSearchParams(location.search);
@@ -318,6 +319,14 @@ const heartMat = new THREE.MeshStandardMaterial({ color:0xe8546b, roughness:0.42
 }
 heart.position.set(-0.05, 0.2, 0.14);
 scene.add(heart);
+// 2026-09-08 Blender 심장(assets/body/heart.glb: 사과형 심실·심방 홈·대동맥 궁·폐동맥 줄기, 기하만) — 구 2+원뿔을 숨기고 장착, heartMat·박동 scale·PointLight 불변. 로드 실패·jsdom은 기존 형태 유지
+if (typeof GLTFLoader === 'function' && typeof fetch === 'function') { try {
+  new GLTFLoader().load('./assets/body/heart.glb', r=>{
+    r.scene.traverse(o=>{ if(o.isMesh){ o.material=heartMat; o.castShadow=true; } });
+    heart.children.filter(c=>c.isMesh).forEach(c=>{ c.visible=false; });
+    heart.add(r.scene);
+  }, undefined, ()=>{});
+} catch(e){} }
 const heartLight = new THREE.PointLight(0xff5064, 0.5, 2.4); heart.add(heartLight);
 
 /* ═════════ 폐 (팽창/수축) ═════════ */
@@ -330,6 +339,11 @@ function makeLung(sx){
 }
 const lungL = makeLung(-0.33), lungR = makeLung(0.33);
 scene.add(lungL, lungR);
+// 2026-09-08 Blender 폐(assets/body/lung_{left,right}.glb: 폐첨·횡격막면·안쪽 평면·심장 자리 오목·엽 사이 홈, 기하만 r≈0.26) — 구 기하만 교체, lungMat·LUNG_BASE 호흡 scale 불변
+if (typeof GLTFLoader === 'function' && typeof fetch === 'function') { try {
+  const gl=new GLTFLoader();
+  [['left',lungL],['right',lungR]].forEach(([nm,m])=>gl.load('./assets/body/lung_'+nm+'.glb', r=>{ const g=r.scene.getObjectByProperty('isMesh',true); if(g){ m.geometry.dispose(); m.geometry=g.geometry; } }, undefined, ()=>{}));
+} catch(e){} }
 
 /* ═════════ 혈류 (circPath 순환 파티클) ═════════ */
 const curve = new THREE.CatmullRomCurve3([
