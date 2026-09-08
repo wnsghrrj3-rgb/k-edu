@@ -515,6 +515,15 @@ const DIR = { x:1, z:0 };      // +x 발사
       new THREE.MeshStandardMaterial({ color:0x4a5666, roughness:0.6 }));
     m.position.set(sx, BENCH_Y+0.014, 0); scene.add(m);
   });
+  // 2026-09-08 Blender 베이크 재질 — 상판 에폭시(assets/bench/) + 광학대 보드 브러시드 메탈(assets/light/rail_*, 광축 방향 결). 다크 스튜디오 톤 유지, 로드 실패·jsdom은 위 재질 유지
+  if (typeof fetch === 'function') { try {
+    const tl=new THREE.TextureLoader(), MR=THREE.MirroredRepeatWrapping;
+    const ld=(u,rx,ry,srgb,cb)=>tl.load(u,t=>{ if(srgb) t.colorSpace=THREE.SRGBColorSpace; t.wrapS=t.wrapT=MR; t.repeat.set(rx,ry); t.anisotropy=4; cb(t); },undefined,()=>{});
+    ld('./assets/bench/benchtop_albedo.jpg',0.6,0.45,true,t=>{ top.material.map=t; top.material.color.set(0xb9bec6); top.material.roughness=0.5; top.material.needsUpdate=true; });
+    ld('./assets/bench/benchtop_normal.jpg',0.6,0.45,false,t=>{ top.material.normalMap=t; top.material.normalScale.set(0.45,0.45); top.material.needsUpdate=true; });
+    ld('./assets/light/rail_albedo.jpg',2.4,0.8,true,t=>{ board.material.map=t; board.material.color.set(0xffffff); board.material.roughness=0.45; board.material.metalness=0.55; board.material.needsUpdate=true; });
+    ld('./assets/light/rail_normal.jpg',2.4,0.8,false,t=>{ board.material.normalMap=t; board.material.normalScale.set(0.35,0.35); board.material.needsUpdate=true; });
+  } catch(e){} }
 }
 
 /* ═════════ 소자 3D 빌더 ═════════ */

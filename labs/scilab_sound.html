@@ -322,6 +322,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const K = window.KSound;
 const VIS_FREQ = 12;   // 진동 대리 주파수(실 440Hz는 못 그림 — 12Hz + "빠르게 떨림")
@@ -390,6 +391,15 @@ const bench = new THREE.Mesh(
   new THREE.BoxGeometry(1.5, 0.04, 0.7),
   new THREE.MeshStandardMaterial({ color:0x1b2a25, roughness:0.55, metalness:0.1 }));
 bench.position.set(0,-0.02,0); bench.receiveShadow=true; scene.add(bench);
+// 2026-09-08 Blender 베이크 실험대 재질(assets/bench/ 에폭시 상판·타일 바닥, 알베도+노멀) — 로드 실패·jsdom은 위 재질 유지
+if (typeof fetch === 'function') { try {
+  const tl=new THREE.TextureLoader(), MR=THREE.MirroredRepeatWrapping;
+    const ld=(u,rx,ry,srgb,cb)=>tl.load(u,t=>{ if(srgb) t.colorSpace=THREE.SRGBColorSpace; t.wrapS=t.wrapT=MR; t.repeat.set(rx,ry); t.anisotropy=4; cb(t); },undefined,()=>{});
+  ld('./assets/bench/benchtop_albedo.jpg',0.7,0.33,true,t=>{ bench.material.map=t; bench.material.color.set(0xffffff); bench.material.roughness=0.42; bench.material.needsUpdate=true; });
+  ld('./assets/bench/benchtop_normal.jpg',0.7,0.33,false,t=>{ bench.material.normalMap=t; bench.material.normalScale.set(0.5,0.5); bench.material.needsUpdate=true; });
+  ld('./assets/bench/floortile_albedo.jpg',12,12,true,t=>{ floor.material.map=t; floor.material.color.set(0x9aa8a2); floor.material.needsUpdate=true; });
+  ld('./assets/bench/floortile_normal.jpg',12,12,false,t=>{ floor.material.normalMap=t; floor.material.normalScale.set(0.6,0.6); floor.material.needsUpdate=true; });
+} catch(e){} }
 
 /* ═════════ 음원 3D 팩토리 ═════════ */
 // 위치: 벤치 위 4칸
@@ -420,6 +430,10 @@ function makeDrum(){
     new THREE.MeshStandardMaterial({ color:0xf1e4cf, roughness:0.55, side:THREE.DoubleSide }));
   skin.rotation.x=-Math.PI/2; skin.position.y=0.111; g.add(skin);
   g.userData.skin=skin; g.userData.skinY=0.111;
+  // 2026-09-08 Blender 북 몸통(assets/sound/drum.glb, 나무결 베이크 알베도+노멀 + 금속 테 2) — 원통 몸통을 숨기고 GLB 장착(바닥 y=0), 가죽·진동 로직은 위 skin 유지
+  if (typeof GLTFLoader === 'function' && typeof fetch === 'function') { try {
+    new GLTFLoader().load('./assets/sound/drum.glb', r=>{ r.scene.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; } }); body.visible=false; g.add(r.scene); }, undefined, ()=>{});
+  } catch(e){} }
   g.position.set(SLOT_X.drum,0,0);
   return g;
 }

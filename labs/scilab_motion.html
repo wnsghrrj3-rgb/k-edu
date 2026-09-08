@@ -227,6 +227,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const K = window.KMotion;
 const P = new URLSearchParams(location.search);
@@ -280,7 +281,19 @@ const X0 = -TRACK_3D/2;                     // 출발선 x
   const lane=new THREE.Mesh(new THREE.BoxGeometry(TRACK_3D+0.1,0.02,0.24),
     new THREE.MeshStandardMaterial({color:i?0x1c2530:0x20272f,roughness:0.9}));
   lane.position.set(0,-0.01,z); lane.receiveShadow=true; scene.add(lane);
+  // 2026-09-08 Blender 베이크 아스팔트(assets/motion/track_*, 알베도+노멀) — 레인별 밝기 차는 color 틴트로 유지. 로드 실패·jsdom은 위 재질 유지
+  if (typeof fetch === 'function') { try {
+    const tl=new THREE.TextureLoader(), MR=THREE.MirroredRepeatWrapping;
+    const ld=(u,rx,ry,srgb,cb)=>tl.load(u,t=>{ if(srgb) t.colorSpace=THREE.SRGBColorSpace; t.wrapS=t.wrapT=MR; t.repeat.set(rx,ry); t.anisotropy=4; cb(t); },undefined,()=>{});
+    ld('./assets/motion/track_albedo.jpg',(TRACK_3D+0.1)/0.5,0.48,true,t=>{ lane.material.map=t; lane.material.color.set(i?0xc9ced6:0xe2e6ec); lane.material.roughness=0.9; lane.material.needsUpdate=true; });
+    ld('./assets/motion/track_normal.jpg',(TRACK_3D+0.1)/0.5,0.48,false,t=>{ lane.material.normalMap=t; lane.material.normalScale.set(0.7,0.7); lane.material.needsUpdate=true; });
+  } catch(e){} }
 });
+// 2026-09-08 Blender 자동차(assets/motion/car.glb: 둥근 차체·경사 캐빈·바퀴 4, 앞=+x, 바닥 y=0) — 로드되면 buildCars가 박스 대신 복제 장착, paint 재질만 COL[i]로 착색
+let CAR_GLB=null;
+if (typeof GLTFLoader === 'function' && typeof fetch === 'function') { try {
+  new GLTFLoader().load('./assets/motion/car.glb', r=>{ r.scene.traverse(o=>{ if(o.isMesh) o.castShadow=true; }); CAR_GLB=r.scene; if(!running) buildCars(); }, undefined, ()=>{});
+} catch(e){} }
 { // 출발선/결승선
   const mkLine=(x,c)=>{ const l=new THREE.Mesh(new THREE.BoxGeometry(0.015,0.02,0.5),
     new THREE.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:0.3})); l.position.set(x,0.001,0); scene.add(l); };
@@ -294,12 +307,18 @@ function buildCars(){
   [0,1].forEach(i=>{
     const car=K.createCar(readCar(i)); cars.push(car);
     const m=new THREE.Group();
+    if(CAR_GLB){
+      const c=CAR_GLB.clone(true);
+      c.traverse(o=>{ if(o.isMesh && o.material && o.material.name==='paint'){ o.material=o.material.clone(); o.material.color.set(COL[i]); } });
+      m.add(c);
+    } else {
     const body=new THREE.Mesh(new THREE.BoxGeometry(0.14,0.05,0.09),
       new THREE.MeshStandardMaterial({color:COL[i],roughness:0.4,metalness:0.2}));
     body.position.y=0.04; body.castShadow=true; m.add(body);
     const cab=new THREE.Mesh(new THREE.BoxGeometry(0.07,0.035,0.075),
       new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.3,transparent:true,opacity:0.5}));
     cab.position.set(-0.01,0.08,0); m.add(cab);
+    }
     m.position.set(X0, 0, i?0.16:-0.16);
     scene.add(m); carMeshes.push(m);
   });

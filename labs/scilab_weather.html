@@ -217,6 +217,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const K = window.KWeather;
 const P = new URLSearchParams(location.search);
@@ -258,7 +259,14 @@ sun.shadow.bias=-0.0004; sun.shadow.radius=5; scene.add(sun);
 scene.add(new THREE.HemisphereLight(0xa9c4e0,0x1a1f26,0.45));
 { const floor=new THREE.Mesh(new THREE.PlaneGeometry(9,9),
     new THREE.MeshStandardMaterial({color:0x0f141b,roughness:1}));
-  floor.rotation.x=-Math.PI/2; floor.position.y=-0.001; floor.receiveShadow=true; scene.add(floor); }
+  floor.rotation.x=-Math.PI/2; floor.position.y=-0.001; floor.receiveShadow=true; scene.add(floor);
+  // 2026-09-08 Blender 베이크 실험대 상판(assets/bench/ 에폭시, 알베도+노멀) — 컵이 놓인 면 전체 = 상판. 로드 실패·jsdom은 위 재질 유지
+  if (typeof fetch === 'function') { try {
+    const tl=new THREE.TextureLoader(), MR=THREE.MirroredRepeatWrapping;
+    const ld=(u,rx,ry,srgb,cb)=>tl.load(u,t=>{ if(srgb) t.colorSpace=THREE.SRGBColorSpace; t.wrapS=t.wrapT=MR; t.repeat.set(rx,ry); t.anisotropy=4; cb(t); },undefined,()=>{});
+    ld('./assets/bench/benchtop_albedo.jpg',4.2,4.2,true,t=>{ floor.material.map=t; floor.material.color.set(0xffffff); floor.material.roughness=0.42; floor.material.needsUpdate=true; });
+    ld('./assets/bench/benchtop_normal.jpg',4.2,4.2,false,t=>{ floor.material.normalMap=t; floor.material.normalScale.set(0.5,0.5); floor.material.needsUpdate=true; });
+  } catch(e){} } }
 
 /* ── 컵 + 물 ── */
 const CUP_Y=0.0, CUP_H=0.16, CUP_R=0.09;
@@ -282,7 +290,11 @@ const dish=new THREE.Group(); dish.position.y=CUP_H+0.28; dish.visible=false; sc
   dish.add(plate);
   const ice=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.04,0.06),
     new THREE.MeshPhysicalMaterial({color:0xdff2ff,roughness:0.05,transmission:0.6,transparent:true,opacity:0.8}));
-  ice.position.y=0.03; dish.add(ice); }
+  ice.position.y=0.03; dish.add(ice);
+  // 2026-09-08 Blender 얼음 조각(assets/weather/ice.glb, 모서리 둥근 얼음 + 표면 요철) — 기하만 교체, transmission 재질은 위 것 유지
+  if (typeof GLTFLoader === 'function' && typeof fetch === 'function') { try {
+    new GLTFLoader().load('./assets/weather/ice.glb', g=>{ const m=g.scene.getObjectByProperty('isMesh',true); if(m){ ice.geometry.dispose(); ice.geometry=m.geometry; } }, undefined, ()=>{});
+  } catch(e){} } }
 // 응결 물방울(접시 밑) — dropMass 비례 크기
 const cond=new THREE.Mesh(new THREE.SphereGeometry(1,12,12),
   new THREE.MeshPhysicalMaterial({color:0xafd6ee,roughness:0.1,transmission:0.4,transparent:true,opacity:0.9}));

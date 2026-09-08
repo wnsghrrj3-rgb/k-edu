@@ -206,6 +206,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const K = window.KGas;
 const P = new URLSearchParams(location.search);
@@ -247,7 +248,14 @@ sun.shadow.bias=-0.0004; sun.shadow.radius=5; scene.add(sun);
 scene.add(new THREE.HemisphereLight(0xa9c4e0,0x1a1f26,0.45));
 { const floor=new THREE.Mesh(new THREE.PlaneGeometry(9,9),
     new THREE.MeshStandardMaterial({color:0x0f141b,roughness:1}));
-  floor.rotation.x=-Math.PI/2; floor.position.y=-0.001; floor.receiveShadow=true; scene.add(floor); }
+  floor.rotation.x=-Math.PI/2; floor.position.y=-0.001; floor.receiveShadow=true; scene.add(floor);
+  // 2026-09-08 Blender 베이크 실험대 상판(assets/bench/ 에폭시, 알베도+노멀) — 기구가 놓인 면 전체 = 상판. 로드 실패·jsdom은 위 재질 유지
+  if (typeof fetch === 'function') { try {
+    const tl=new THREE.TextureLoader(), MR=THREE.MirroredRepeatWrapping;
+    const ld=(u,rx,ry,srgb,cb)=>tl.load(u,t=>{ if(srgb) t.colorSpace=THREE.SRGBColorSpace; t.wrapS=t.wrapT=MR; t.repeat.set(rx,ry); t.anisotropy=4; cb(t); },undefined,()=>{});
+    ld('./assets/bench/benchtop_albedo.jpg',4.2,4.2,true,t=>{ floor.material.map=t; floor.material.color.set(0xffffff); floor.material.roughness=0.42; floor.material.needsUpdate=true; });
+    ld('./assets/bench/benchtop_normal.jpg',4.2,4.2,false,t=>{ floor.material.normalMap=t; floor.material.normalScale.set(0.5,0.5); floor.material.needsUpdate=true; });
+  } catch(e){} } }
 
 const glassMat=()=>new THREE.MeshPhysicalMaterial({color:0xcfe3f0,roughness:0.1,transmission:0.9,transparent:true,opacity:0.3,side:THREE.DoubleSide});
 
@@ -281,7 +289,11 @@ function setJarWater(frac){ const h=Math.max(0.001,0.17*frac); jarWater.scale.y=
 /* ── 촛불(집기병에 넣을 수 있음) ── */
 const candle=new THREE.Group(); candle.position.set(0.32,0.05,0); scene.add(candle);
 { const stick=new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.012,0.06,12),
-    new THREE.MeshStandardMaterial({color:0xf0e0c0,roughness:0.7})); stick.position.y=0.03; candle.add(stick); }
+    new THREE.MeshStandardMaterial({color:0xf0e0c0,roughness:0.7})); stick.position.y=0.03; candle.add(stick);
+  // 2026-09-08 Blender 양초(assets/gas/candle.glb, 촛농 흘러내림 왁스 베이크 + 심지) — 원통을 숨기고 GLB 장착(바닥 y=0), 불꽃 위치 불변
+  if (typeof GLTFLoader === 'function' && typeof fetch === 'function') { try {
+    new GLTFLoader().load('./assets/gas/candle.glb', r=>{ r.scene.traverse(o=>{ if(o.isMesh) o.castShadow=true; }); stick.visible=false; candle.add(r.scene); }, undefined, ()=>{});
+  } catch(e){} } }
 const flame=new THREE.Mesh(new THREE.ConeGeometry(0.012,0.035,10),
   new THREE.MeshBasicMaterial({color:0xf5a742})); flame.position.y=0.078; candle.add(flame);
 const flameGlow=new THREE.PointLight(0xf5a742,0.4,0.4); flameGlow.position.y=0.08; candle.add(flameGlow);
