@@ -171,6 +171,83 @@ window.KEDU_MAP["g6_2_korean"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 3,
+   "name": "보거나 듣고 판단해요",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g6_korean_u3_l01",
+     "lessonId": "g6_2_kor_u3_l01_v1",
+     "n": "1",
+     "title": "단원 시작 — 배울 내용 살펴보기",
+     "sub": null,
+     "url": "/grade6/semester2/korean/3단원_보거나듣고판단해요/g6_kor_u3_l01.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g6_korean_u3_l02",
+     "lessonId": "g6_2_kor_u3_l02_03_v1",
+     "n": "2~3",
+     "title": "주장하는 말의 타당성을 평가하는 방법 알기",
+     "sub": null,
+     "url": "/grade6/semester2/korean/3단원_보거나듣고판단해요/g6_kor_u3_l02_03.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g6_korean_u3_l04",
+     "lessonId": "g6_2_kor_u3_l04_06_v1",
+     "n": "4~6",
+     "title": "주장하는 말의 내용을 평가하며 듣기",
+     "sub": null,
+     "url": "/grade6/semester2/korean/3단원_보거나듣고판단해요/g6_kor_u3_l04_06.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g6_korean_u3_l07",
+     "lessonId": "g6_2_kor_u3_l07_08_v1",
+     "n": "7~8",
+     "title": "영상을 보고 주장 파악하기",
+     "sub": null,
+     "url": "/grade6/semester2/korean/3단원_보거나듣고판단해요/g6_kor_u3_l07_08.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g6_korean_u3_l09",
+     "lessonId": "g6_2_kor_u3_l09_11_v1",
+     "n": "9~11",
+     "title": "카드 뉴스 내용을 평가하며 보기",
+     "sub": null,
+     "url": "/grade6/semester2/korean/3단원_보거나듣고판단해요/g6_kor_u3_l09_11.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g6_korean_u3_l12",
+     "lessonId": "g6_2_kor_u3_l12_13_v1",
+     "n": "12~13",
+     "title": "배운 내용 실천하기 — 우리가 정한 주제의 영상 설명하기",
+     "sub": null,
+     "url": "/grade6/semester2/korean/3단원_보거나듣고판단해요/g6_kor_u3_l12_13.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g6_korean_u3_l14",
+     "lessonId": "g6_2_kor_u3_l14_v1",
+     "n": "14",
+     "title": "단원 마무리하기 (정리 · 기초 다지기)",
+     "sub": null,
+     "url": "/grade6/semester2/korean/3단원_보거나듣고판단해요/g6_kor_u3_l14.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };
