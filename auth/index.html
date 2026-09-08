@@ -680,6 +680,10 @@ async function createTeacherProfile(userId, email, name, school, schoolId, signu
     delete row.school_id; delete row.school_request;
     ({ error } = await db.from('teachers').insert(row));
   }
+  if(error && /teachers_id_fkey/.test(error.message || '')){                // 라이브 DB 의 teachers.id→auth.users 외래키 (2026-09-09 발견)
+    row.id = userId;                                                        // sql/fix_teachers_id_fkey.sql 적용 전까지의 폴백
+    ({ error } = await db.from('teachers').insert(row));
+  }
   return error;
 }
 

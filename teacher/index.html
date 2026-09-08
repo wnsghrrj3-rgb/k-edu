@@ -1021,11 +1021,11 @@ async function doSignup(){
   }
 
   // teachers 테이블에 등록 (email 은 초기 스키마의 NOT NULL 유산 — 반드시 채운다, 2026-08-28)
-  const { error: tErr } = await db.from('teachers').insert({
-    user_id: data.user.id,
-    email: data.user.email || email,
-    name: name
-  });
+  const tRow = { user_id: data.user.id, email: data.user.email || email, name: name };
+  let { error: tErr } = await db.from('teachers').insert(tRow);
+  // 라이브 DB 에 teachers.id → auth.users 외래키(teachers_id_fkey)가 남아 있는 경우(2026-09-09 발견):
+  // id 를 auth uid 로 맞춰 다시 넣는다. sql/fix_teachers_id_fkey.sql 로 제약을 걷어내면 첫 시도에 통과한다.
+  if(tErr && /teachers_id_fkey/.test(tErr.message || '')){ tRow.id = data.user.id; ({ error: tErr } = await db.from('teachers').insert(tRow)); }
 
   if(tErr){
     setErr('signup', '교사 등록 중 오류: ' + tErr.message);
@@ -1074,6 +1074,7 @@ async function loadDashboard(user){
       let { error: healErr } = await db.from('teachers').insert(healRow);
       if(healErr && /signup_code/.test(healErr.message || '')){ delete healRow.signup_code; ({ error: healErr } = await db.from('teachers').insert(healRow)); }
       if(healErr && /school_id|school_request/.test(healErr.message || '')){ delete healRow.school_id; delete healRow.school_request; ({ error: healErr } = await db.from('teachers').insert(healRow)); }
+      if(healErr && /teachers_id_fkey/.test(healErr.message || '')){ healRow.id = user.id; ({ error: healErr } = await db.from('teachers').insert(healRow)); }   // 2026-09-09 라이브 FK 폴백
       if(!healErr){
         const r2 = await db.from('teachers').select('*').eq('user_id', user.id).single();
         teacher = r2.data;
