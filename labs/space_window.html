@@ -7,8 +7,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
 <style>
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{height:100%;overflow:hidden;background:#000;font-family:'Jua',sans-serif;color:#fff;user-select:none;-webkit-user-select:none}
-  #wrap{position:fixed;inset:0}
+  html,body{height:100%;overflow:hidden;background:#000;font-family:'Jua',sans-serif;color:#fff;user-select:none;-webkit-user-select:none;overscroll-behavior:none;touch-action:none}
+  #wrap{position:fixed;inset:0;touch-action:none}
+  #wrap canvas{touch-action:none}
   canvas{display:block}
 
   /* 시작 화면 */
@@ -396,9 +397,11 @@ function gyroToDrag(){
   var f = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
   dragLon = THREE.MathUtils.radToDeg(Math.atan2(-f.x, -f.z));
   dragLat = THREE.MathUtils.radToDeg(Math.asin(Math.max(-1,Math.min(1,f.y))));
-  gyroOn = false; gyroCalib = false; gyroFirst = null;
+  gyroOn = false; gyroCalib = false; gyroFirst = null; gyroLock = true;   /* 드래그로 수동 전환 = 이 세션은 수동 고정 */
 }
+var gyroLock = false;
 window.addEventListener('deviceorientation', function(e){
+  if (gyroLock) return;
   if (e.alpha === null && e.beta === null) return;
   var a=e.alpha||0, b=e.beta||0, g=e.gamma||0;
   if (!gyroOn){
@@ -444,13 +447,15 @@ renderer.domElement.addEventListener('touchstart', function(e){
   if(e.touches.length===2){ dragging=false;
     pinchStart=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY); pinchZoom0=topZoom; }
   else if(e.touches.length){ pDown(e.touches[0].clientX, e.touches[0].clientY); }
-}, {passive:true});
+  if(e.cancelable) e.preventDefault();      /* 2026-09-08 당겨서 새로고침·뒤로가기 스와이프 차단 */
+}, {passive:false});
 renderer.domElement.addEventListener('touchmove', function(e){
   if(e.touches.length===2 && topView){
     var d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
     if(pinchStart>0){ topZoom=clampZoom(pinchZoom0 * d/pinchStart); updateZoomBtns(); }
   } else if(e.touches.length){ pMove(e.touches[0].clientX, e.touches[0].clientY); }
-}, {passive:true});
+  if(e.cancelable) e.preventDefault();
+}, {passive:false});
 renderer.domElement.addEventListener('touchend', function(e){ dragging=false; if(e.touches.length<2) pinchStart=0; });
 /* 휠 줌(PC) — 위에서 보기에서만 */
 renderer.domElement.addEventListener('wheel', function(e){

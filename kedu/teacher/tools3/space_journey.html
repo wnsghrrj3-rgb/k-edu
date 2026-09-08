@@ -41,6 +41,7 @@
 -->
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/kedu/teacher/engine3/klab3-ui.css">
+<style>html,body{overscroll-behavior:none;touch-action:none}</style>  <!-- 2026-09-08 당겨서 새로고침·뒤로가기 스와이프 차단 -->
 <style>
   .sj-panel{position:fixed;z-index:20;background:var(--hud);backdrop-filter:blur(8px);
     border:1px solid var(--hudline);border-radius:15px;padding:9px 11px;color:#fff}
@@ -140,7 +141,7 @@
 <script src="/kedu_teacher_gate.js"></script>
 </head>
 <body class="k3">
-<div id="stage" style="position:fixed;inset:0;touch-action:none"></div>
+<div id="stage" style="position:fixed;inset:0;touch-action:none;overscroll-behavior:none"></div>
 <div id="anno" style="position:fixed;inset:0;pointer-events:none;z-index:19"></div>
 
 <div class="k3-topbar">
@@ -983,9 +984,11 @@ function gyroToDrag() {
   const f = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
   dragLon = THREE.MathUtils.radToDeg(Math.atan2(f.x, -f.z));
   dragLat = THREE.MathUtils.radToDeg(Math.asin(THREE.MathUtils.clamp(f.y, -1, 1)));
-  gyroOn = false; gyroCalib = false; gyroFirst = null;
+  gyroOn = false; gyroCalib = false; gyroFirst = null; gyroLock = true;
 }
+let gyroLock = false;
 addEventListener('deviceorientation', e => {
+  if (gyroLock) return;
   if (e.alpha === null && e.beta === null) return;
   const a = e.alpha || 0, b = e.beta || 0, g = e.gamma || 0;
   if (!gyroOn) {
