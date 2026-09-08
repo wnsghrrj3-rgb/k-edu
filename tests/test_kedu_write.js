@@ -3,7 +3,7 @@
 const fs = require('fs'), path = require('path');
 const K = require('../kedu/write/engine.js');
 const D = p => JSON.parse(fs.readFileSync(path.join(__dirname, '../kedu/write/data', p), 'utf8'));
-K.init({ templates: D('templates.json'), signals: D('signals.json'), feedback: D('feedback.json') });
+K.init({ templates: D('templates.json'), signals: D('signals.json'), feedback: D('feedback.json'), corrections: D('corrections.json') });
 
 let pass = 0, fail = 0;
 const ok = (c, m) => { c ? pass++ : (fail++, console.log('  ✗', m)); };
