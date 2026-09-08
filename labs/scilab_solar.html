@@ -99,6 +99,36 @@
   #spGo{margin-top:14px;padding:11px 24px;border:0;border-radius:12px;background:var(--earth);color:#04121f;
     font-family:'Jua';font-size:14px;cursor:pointer}
   #spGo.hide{display:none}
+  /* ── 🔎 계절 관찰 카드(A-0) — 장면을 가리지 않는 측면 카드 ── */
+  #obsCard{position:fixed;right:14px;top:86px;z-index:36;width:min(92vw,340px);background:rgba(12,19,34,.92);
+    border:1px solid var(--line);border-radius:18px;padding:14px 16px 12px;backdrop-filter:blur(10px);box-shadow:0 14px 40px rgba(0,0,0,.5)}
+  #obsCard.hide{display:none}
+  #obsHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  #obsHead b{font-family:'Jua';font-weight:400;font-size:15px;color:#fff}
+  #obsHead small{color:var(--sub);font-size:11px}
+  #obsStops{display:flex;gap:5px;margin-bottom:8px}
+  #obsStops span{flex:1;height:5px;border-radius:3px;background:rgba(255,255,255,.1)}
+  #obsStops span.done{background:var(--earth)} #obsStops span.now{background:var(--hi)}
+  #obsQ{font-size:13.5px;line-height:1.5;margin:6px 0 10px;color:var(--ink)}
+  .obsOpt{display:block;width:100%;margin-bottom:7px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;
+    background:rgba(255,255,255,.05);color:var(--ink);font-size:12.5px;cursor:pointer;text-align:left;transition:.15s;font-family:inherit}
+  .obsOpt:hover{background:rgba(255,255,255,.09)}
+  .obsOpt.ok{background:rgba(90,160,224,.85);border-color:var(--earth);color:#04121f;font-weight:700}
+  .obsOpt.no{animation:obsShake .35s;border-color:rgba(255,120,100,.7)}
+  .obsOpt.lock{pointer-events:none;opacity:.55} .obsOpt.lock.ok{opacity:1}
+  @keyframes obsShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+  #obsFb{font-size:12px;min-height:16px;color:var(--hi);margin:2px 0 6px;line-height:1.45}
+  #obsTbl{width:100%;border-collapse:collapse;font-size:11px;margin:6px 0 8px}
+  #obsTbl th,#obsTbl td{border:1px solid rgba(255,255,255,.1);padding:4px 5px;text-align:center}
+  #obsTbl th{color:var(--sub);font-weight:400;background:rgba(255,255,255,.03)}
+  #obsTbl tr.now td{background:rgba(255,209,102,.12)}
+  #obsTbl td.empty{color:rgba(255,255,255,.18)}
+  #obsNext{display:block;width:100%;margin-top:4px;padding:10px;border:0;border-radius:12px;background:var(--earth);color:#04121f;
+    font-family:'Jua';font-size:13.5px;cursor:pointer}
+  #obsNext.hide{display:none}
+  #obsSum{font-size:12.5px;line-height:1.65;background:rgba(255,255,255,.04);border-radius:12px;padding:11px 13px;margin-top:8px}
+  #obsSum.hide{display:none}
+  @media (max-width:640px){ #obsCard{left:10px;right:10px;width:auto;top:auto;bottom:126px;max-height:52vh;overflow:auto} }
   #tiltSld.pulse input{box-shadow:0 0 0 3px rgba(255,209,102,.5);border-radius:4px}
   button.hide{display:none}
 </style>
@@ -231,6 +261,9 @@
 
   /* ── 시나리오 3종(§4) ── */
   var SCENARIOS = [
+    { id: 'A-0', icon: '🔎', title: '계절의 비밀 관찰', grade: 'mid',
+      brief: '지구가 도는 걸 네 번 멈춰 세우고, 축과 햇빛을 관찰하며 계절이 생기는 까닭을 스스로 찾아보자.',
+      hint: '지구가 돌다가 멈추면 오른쪽 관찰 카드의 질문에 답해요.' },
     { id: 'A-1', icon: '🌗', title: '그림자 시계', grade: 'mid',
       brief: '계절을 바꾸며 정오 태양의 높이와 그림자를 관찰하자.',
       hint: '여름엔 태양이 높고 그림자가 짧아요. 겨울엔 낮고 길어요.' },
@@ -241,8 +274,55 @@
       brief: '달을 공전시켜 보름달(망)을 만들어 보자.',
       hint: '삭 → 상현 → 망(보름) → 하현 순서로 모양이 변해요.' },
   ];
-  var GRADE_SCENARIOS = { low: ['A-3'], mid: ['A-1', 'A-3'], high: ['A-1', 'A-2', 'A-3'] };
+  var GRADE_SCENARIOS = { low: ['A-3'], mid: ['A-0', 'A-1', 'A-3'], high: ['A-0', 'A-1', 'A-2', 'A-3'] };
   function scenarioById(id){ for (var i = 0; i < SCENARIOS.length; i++) if (SCENARIOS[i].id === id) return SCENARIOS[i]; return null; }
+
+
+  /* ── 🔎 계절 관찰(A-0, 2026-09-08 준호 요청): «정답 제시»가 아니라 관찰→판단→누적→종합 ──
+     렌더는 여기 결과만 조회. 학생 답은 정오 지구 상태에서 계산한 truth와 비교(정답 노출 0). */
+  var OBSERVE_STOPS = [
+    { id: 'winter', name: '동지', day: 0,   emoji: '❄️' },
+    { id: 'spring', name: '춘분', day: 91,  emoji: '🌱' },
+    { id: 'summer', name: '하지', day: 182, emoji: '☀️' },
+    { id: 'fall',   name: '추분', day: 274, emoji: '🍂' },
+  ];
+  function axisLean(day, tilt){                 // 북극(축 화살)이 태양 기준 어느 쪽으로 기울었나
+    var d = declination(day, tilt);
+    return d > 1.5 ? 'toward' : d < -1.5 ? 'away' : 'side';
+  }
+  function lightAngleWord(alt){ return alt >= 65 ? 'straight' : alt >= 45 ? 'slant' : 'slant2'; }   // 똑바로/조금/많이 비스듬
+  function dayLengthWord(h){ return h >= 13.5 ? 'long' : h <= 10.5 ? 'short' : 'even'; }
+  function sunDistance(day){ return 1.00; }     // 원 궤도 규약(SPEC) — 1년 내내 같음(AU)
+  var OBSERVE = {
+    belief: { q: '지구가 태양을 한 바퀴 도는 동안 여름과 겨울이 생기는 까닭은 뭘까요? 지금 생각을 골라요.',
+      opts: ['여름엔 태양과 가까워지고 겨울엔 멀어져서', '기울어진 채로 돌아서 햇빛을 받는 각도가 달라져서', '지구가 자전해서 낮과 밤이 바뀌니까'],
+      answer: 1 },
+    stopQ: {
+      mid: {
+        light: { q: '빨간 핀(우리나라) 위 노란 빛 기둥과 바닥의 빛 자국을 봐요. 햇빛이 어떻게 오나요?',
+          opts: { straight: '거의 똑바로 — 빛 자국이 작고 진해요', slant: '조금 비스듬히', slant2: '많이 비스듬히 — 빛 자국이 넓게 퍼져요' } },
+        axis:  { q: '노란 자전축 화살(북극 쪽)은 태양을 기준으로 어느 쪽을 보고 있나요?',
+          opts: { toward: '태양 쪽으로 기울었어요', away: '태양 반대쪽으로 기울었어요', side: '옆을 봐요 (태양 쪽도 반대쪽도 아님)' } },
+      },
+      high: {
+        light: { q: '핀 위 빛 기둥의 각도와 바닥 빛 자국을 보고, 지금 남중고도(정오 태양 높이)를 어림해 봐요.',
+          opts: { straight: '높다 (65° 이상)', slant: '중간 (45°~65°)', slant2: '낮다 (45° 미만)' } },
+        axis:  { q: '자전축(북극 쪽 화살)은 태양을 기준으로 어느 쪽으로 기울어 있나요?',
+          opts: { toward: '태양 쪽', away: '태양 반대쪽', side: '옆 — 기운 방향이 태양과 90°' } },
+      },
+    },
+    hints: { light: '빛 기둥이 지면과 이루는 각도·바닥 자국의 크기를 봐요.', axis: '노란 축 화살 끝이 태양(가운데)을 향하는지 등지는지 봐요.' },
+    synth: [
+      { id: 's1', q: '관찰표를 보고: 축(북극)이 태양 쪽으로 기울었을 때 햇빛은 어떻게 왔나요?',
+        opts: ['똑바로 와서 낮이 길었다', '비스듬히 와서 낮이 짧았다', '축 방향과 상관없이 늘 같았다'], answer: 0 },
+      { id: 's2', q: '하지와 동지, 지구에서 태양까지 거리는? (표의 «거리» 칸을 봐요)',
+        opts: ['같다', '하지에 더 가까웠다', '동지에 더 가까웠다'], answer: 0 },
+    ],
+    conclude: {
+      mid: '거리는 늘 같았어요. 축이 태양 쪽으로 기운 때(하지)엔 햇빛이 똑바로 와서 낮이 길고 따뜻하고, 반대쪽으로 기운 때(동지)엔 비스듬히 와서 낮이 짧고 추워요. 지구는 «기울어진 채로» 한 바퀴 돌기 때문에 계절이 생겨요.',
+      high: '거리는 1년 내내 같았고, 축 방향은 우주에서 늘 같은 쪽을 가리켰어요. 그런데 공전 위치가 바뀌니 «태양을 기준으로» 기운 쪽이 바뀌고, 그래서 남중고도(햇빛 각도)와 낮 길이가 달라졌어요. 계절의 원인 = 자전축이 기울어진 채로 공전하기 때문.',
+    },
+  };
 
   /* ── ★와우(A-2): 계절의 원인 = 자전축 기울기 ── */
   var WOW_SEASON = {
@@ -268,6 +348,8 @@
     moonLitSide: moonLitSide, moonPhaseName: moonPhaseName,
     SCENARIOS: SCENARIOS, GRADE_SCENARIOS: GRADE_SCENARIOS, scenarioById: scenarioById,
     WOW_SEASON: WOW_SEASON,
+    OBSERVE_STOPS: OBSERVE_STOPS, OBSERVE: OBSERVE, axisLean: axisLean,
+    lightAngleWord: lightAngleWord, dayLengthWord: dayLengthWord, sunDistance: sunDistance,
   };
 });
 </script>
@@ -450,13 +532,18 @@ let playDay=false, playYear=false, playBoth=false;   // playBoth: 자전+공전 
 
 /* ═════════ 위치 갱신 ═════════ */
 function placeEarth(){
+  /* 2026-09-08 기하 정합 수정(관찰 모드 전제): 예전엔 정오 핀이 동지 외엔 태양을 안 봤고 축이 반대로 기울어 있었음.
+     · 공전: 북쪽(+y)에서 봐서 반시계 — (cos a, -sin a)
+     · 축: 월드 고정. day=0(동지)에 북극이 태양 반대쪽(+x) → rotation.z = -tilt
+     · 자전: hour=12에 핀이 태양을 정면으로 보도록 공전각 보정 — θ = a + hour/24·2π
+     · 달: 삭(0)=태양 쪽, 반시계 공전 → 위상 원반(Canvas)과 3D 위치 일치 */
   const a = K.orbAngle(day);
-  earthPos.position.set(Math.cos(a)*ORBIT_R, 0, Math.sin(a)*ORBIT_R);
-  tiltGrp.rotation.z = tilt*D2R;                 // 자전축 기울기(월드 고정 — earthPos는 회전 0)
-  spinGrp.rotation.y = (hour/24)*Math.PI*2;      // 자전(시각)
-  // 달 궤도(위상각)
-  const ma = moonF*Math.PI*2;
-  moon.position.set(Math.cos(ma)*MOON_ORBIT, 0.25, Math.sin(ma)*MOON_ORBIT);
+  earthPos.position.set(Math.cos(a)*ORBIT_R, 0, -Math.sin(a)*ORBIT_R);
+  tiltGrp.rotation.z = -tilt*D2R;
+  spinGrp.rotation.y = a + (hour/24)*Math.PI*2;
+  const sx=-Math.cos(a), sz=Math.sin(a);                       // 지구→태양 방향
+  const ph=moonF*Math.PI*2, c=Math.cos(ph), sn=Math.sin(ph);   // rot90ccw(x,z)=(z,-x)
+  moon.position.set((c*sx + sn*sz)*MOON_ORBIT, 0.25, (c*sz - sn*sx)*MOON_ORBIT);
 }
 
 /* ═════════ 하늘 궤적 패널 (Canvas2D — sunAltitude 곡선) ═════════ */
@@ -568,7 +655,7 @@ function animate(){
   if(playBoth){ // 자전(하루 1초) + 공전(하루 4일/초) + 달 공전(같은 날짜 흐름) — 비율은 연출용 축소
     hour=(hour+dt*24)%24; day=(day+dt*4)%365; moonF=((moonF+dt*4/K.MOON_CYCLE)%1+1)%1;
     sHour.value=hour; sDay.value=day; sMoon.value=moonF; refresh(); }
-  // 별빛 살짝 자전(연출)
+  if(window.__obsReady) obsTick(dt);   // 관찰 블록이 animate() 첫 호출보다 뒤에 선언됨(TDZ 회피)
   controls.update();
   renderer.render(scene, camera);
 }
@@ -641,10 +728,12 @@ function startScenario(id){
   document.getElementById('sbTitle').textContent=s.title;
   document.getElementById('sbHint').textContent=s.hint;
   if(id==='A-2'){ tiltSld.classList.remove('hide'); showWow(); }
+  if(id==='A-0'){ startObserve(); } else { stopObserve(); }
   refresh();
 }
 function exitScenario(){
   activeScenario=null; scenarioCleared=false;
+  if(typeof stopObserve==='function') stopObserve();
   closeAll();
   document.getElementById('sBanner').classList.add('hide');
   tiltSld.classList.remove('pulse');
@@ -691,6 +780,177 @@ function checkScenario(){
   }
 }
 
+
+/* ═════════ 🔎 계절 관찰 모드 (A-0 · 2026-09-08) ═════════
+   흐름: 처음 생각(믿음 기록, 정오답 표시 없음) → 지구가 돌다 4번 멈춤(동지·춘분·하지·추분) → 멈출 때마다
+   «빛 각도»·«축 방향» 두 판단(틀리면 힌트만, 정답 노출 없이 재시도) → 관찰표 자동 누적(거리 포함) →
+   종합 2문 → 처음 생각 다시 묻기 → 처음/나중 비교 → 고학년은 A-2(축 세우기)로 확인, 중학년은 선택 탐색.
+   판단 truth는 KSolar(axisLean/lightAngleWord/dayLengthWord)만 조회. 빛 기둥은 지구 중심 기준 태양 방향(평행광 가정 = 엔진과 동일). */
+const OBS_STOPS = K.OBSERVE_STOPS, OBS = K.OBSERVE;
+const obsGrade = grade==='low' ? 'mid' : grade;           // 저학년 진입 시 중학년 문항
+let obs = null;                                            // 관찰 상태(활성 시 객체)
+const obsCam = { tgt:null, pos:null };                     // 카메라 트윈 목표
+
+// 3D 보조: 햇빛 기둥 + 바닥 빛 자국
+const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.07,2.2,14,1,true),
+  new THREE.MeshBasicMaterial({ color:0xffe27a, transparent:true, opacity:0.32, depthWrite:false, side:THREE.DoubleSide }));
+const foot = new THREE.Mesh(new THREE.CircleGeometry(0.17,36),
+  new THREE.MeshBasicMaterial({ color:0xffd166, transparent:true, opacity:0.6, depthWrite:false, side:THREE.DoubleSide }));
+beam.visible=foot.visible=false; scene.add(beam); scene.add(foot);
+const _p=new THREE.Vector3(), _c=new THREE.Vector3(), _n=new THREE.Vector3(), _s=new THREE.Vector3(), _t=new THREE.Vector3(), _b=new THREE.Vector3(), _q=new THREE.Quaternion(), _m=new THREE.Matrix4();
+function updateBeam(){
+  if(!obs){ beam.visible=foot.visible=false; return; }
+  earthPos.updateMatrixWorld(true);
+  pin.getWorldPosition(_p); _c.copy(earthPos.position);
+  _n.copy(_p).sub(_c).normalize();
+  _s.copy(_c).negate().normalize();                        // 지구 중심→태양 (평행광)
+  const sinAlt=_n.dot(_s);
+  beam.visible = foot.visible = sinAlt > 0.05;
+  if(!beam.visible) return;
+  beam.position.copy(_p).addScaledVector(_s, 1.1);
+  _q.setFromUnitVectors(new THREE.Vector3(0,1,0), _s); beam.quaternion.copy(_q);
+  _t.copy(_s).addScaledVector(_n, -sinAlt).normalize();    // 접평면 위 태양 방향
+  _b.crossVectors(_n,_t).normalize();
+  _m.makeBasis(_t,_b,_n); foot.quaternion.setFromRotationMatrix(_m);
+  foot.position.copy(_p).addScaledVector(_n, 0.004);
+  foot.scale.set(1/Math.max(sinAlt,0.28), 1, 1);           // 비스듬할수록 길게 퍼짐
+}
+
+function obsUI(){
+  const d=document.createElement('div');
+  d.innerHTML = `<div id="obsCard" class="hide">
+    <div id="obsHead"><b id="obsTitle">🔎 계절의 비밀 관찰</b><small id="obsStep"></small></div>
+    <div id="obsStops"></div>
+    <div id="obsQ"></div><div id="obsOpts"></div><div id="obsFb"></div>
+    <table id="obsTbl"></table>
+    <div id="obsSum" class="hide"></div>
+    <button id="obsNext" class="hide">다음 →</button></div>`;
+  document.body.appendChild(d);
+}
+function obsEl(id){ return document.getElementById(id); }
+function obsSetStops(){
+  const w=obsEl('obsStops'); w.innerHTML='';
+  OBS_STOPS.forEach((st,i)=>{ const sp=document.createElement('span'); if(obs.stop>i||(obs.stop===i&&obs.stopDone)) sp.className='done'; else if(obs.stop===i) sp.className='now'; w.appendChild(sp); });
+}
+function obsAsk(q, optList, onPick){   // optList: [{key,text}] · onPick(key)→ {ok, fb}
+  obsEl('obsQ').textContent=q; obsEl('obsFb').textContent='';
+  const o=obsEl('obsOpts'); o.innerHTML='';
+  optList.forEach(op=>{
+    const b=document.createElement('button'); b.className='obsOpt'; b.textContent=op.text; b.dataset.key=op.key;
+    b.onclick=()=>{
+      const r=onPick(op.key);
+      obsEl('obsFb').textContent=r.fb;
+      if(r.ok){ o.querySelectorAll('.obsOpt').forEach(x=>x.classList.add('lock')); b.classList.add('ok'); }
+      else { b.classList.remove('no'); void b.offsetWidth; b.classList.add('no'); }
+    };
+    o.appendChild(b);
+  });
+}
+function obsTable(){
+  const high=obsGrade==='high';
+  const head = high ? ['위치','축 방향','남중고도','낮 길이','거리'] : ['위치','축 방향','햇빛','낮','거리'];
+  const LEAN={toward:'태양 쪽',away:'반대쪽',side:'옆'}, LW={straight:'똑바로',slant:'조금 비스듬',slant2:'많이 비스듬'}, DW={long:'길다',short:'짧다',even:'비슷'};
+  let h='<tr>'+head.map(x=>`<th>${x}</th>`).join('')+'</tr>';
+  OBS_STOPS.forEach((st,i)=>{
+    const r=obs.rows[i], now=(obs.stop===i&&obs)?' class="now"':'';
+    if(!r){ h+=`<tr${now}><td>${st.emoji}${st.name}</td>`+'<td class="empty">·</td>'.repeat(4)+'</tr>'; return; }
+    h+=`<tr${now}><td>${st.emoji}${st.name}</td><td>${LEAN[r.lean]}</td><td>${high?r.alt.toFixed(1)+'°':LW[r.lw]}</td><td>${high?r.dl.toFixed(1)+'h':DW[r.dw]}</td><td>${r.dist.toFixed(2)}</td></tr>`;
+  });
+  obsEl('obsTbl').innerHTML=h;
+}
+function obsCameraTo(stopMode){
+  if(stopMode){
+    earthPos.updateMatrixWorld(true); const c=earthPos.position.clone();
+    const dir=c.clone().normalize(), side=new THREE.Vector3(-dir.z,0,dir.x);
+    obsCam.tgt=c.clone().addScaledVector(dir,-0.6);
+    obsCam.pos=c.clone().addScaledVector(side,3.6).addScaledVector(dir,1.4).add(new THREE.Vector3(0,2.1,0));
+  } else { obsCam.tgt=new THREE.Vector3(0,0,0); obsCam.pos=new THREE.Vector3(0.2,8.2,12.6); }
+}
+
+function startObserve(){
+  obs={ phase:'belief', stop:-1, stopDone:false, rows:[null,null,null,null], belief:null, later:null, running:false, sub:0, tries:0 };
+  playDay=playYear=playBoth=false; setPlayBtn();
+  tilt=K.TILT0; sTilt.value=tilt; hour=12; sHour.value=hour; day=OBS_STOPS[0].day; sDay.value=day; refresh();
+  obsEl('obsCard').classList.remove('hide'); obsSetStops(); obsTable(); obsEl('obsSum').classList.add('hide');
+  obsEl('obsStep').textContent='시작';
+  obsAsk(OBS.belief.q, OBS.belief.opts.map((t,i)=>({key:String(i),text:t})), (k)=>{
+    obs.belief=+k; return { ok:true, fb:'좋아요, 기록해 뒀어요. 이제 지구를 돌리며 직접 확인해 봐요.' };
+  });
+  obsNextBtn('🌍 지구 돌리기 →', ()=>{ obs.phase='orbit'; obsGo(0); });
+  obsCameraTo(false);
+}
+function obsNextBtn(label, fn){ const b=obsEl('obsNext'); b.textContent=label; b.classList.remove('hide'); b.onclick=()=>{ b.classList.add('hide'); fn(); }; }
+function obsGo(i){   // i번째 멈춤 지점까지 자전+공전
+  obs.stop=i; obs.stopDone=false; obs.running=true; obs.target=OBS_STOPS[i].day; obs.sub=0; obs.tries=0;
+  obsSetStops(); obsTable();
+  obsEl('obsStep').textContent=`${i+1} / ${OBS_STOPS.length}`;
+  obsEl('obsQ').textContent = i===0 ? '지구가 첫 번째 관찰 지점(동지)에 있어요. 잠깐 살펴보세요…' : '지구가 돌고 있어요. 다음 지점까지 자전축 화살이 어디를 가리키는지 계속 지켜봐요…';
+  obsEl('obsOpts').innerHTML=''; obsEl('obsFb').textContent='';
+  obsCameraTo(false);
+  if(i===0){ obs.running=false; obsArrive(); }
+}
+function obsArrive(){
+  const st=OBS_STOPS[obs.stop];
+  day=st.day; sDay.value=day; hour=12; sHour.value=hour; refresh();
+  obsCameraTo(true); obsSetStops(); obsTable();
+  obsAskStop();
+}
+function obsAskStop(){
+  const st=OBS_STOPS[obs.stop], Q=OBS.stopQ[obsGrade];
+  const alt=K.noonAltitude(day,null,tilt), truthL=K.lightAngleWord(alt), truthA=K.axisLean(day,tilt);
+  const which = obs.sub===0 ? 'light' : 'axis', truth = which==='light' ? truthL : truthA, q=Q[which];
+  obsEl('obsQ').textContent=`${st.emoji} ${st.name} · ${q.q}`;
+  obsAsk('', Object.keys(q.opts).map(k=>({key:k,text:q.opts[k]})), (k)=>{
+    if(k===truth){
+      obs.tries=0;
+      if(obs.sub===0){ obs.sub=1; setTimeout(obsAskStop, 650); return { ok:true, fb:'👀 잘 봤어요. 이번엔 축을 봐요.' }; }
+      obs.rows[obs.stop]={ lean:truthA, alt:alt, lw:truthL, dl:K.dayLength(day,null,tilt), dw:K.dayLengthWord(K.dayLength(day,null,tilt)), dist:K.sunDistance(day) };
+      obs.stopDone=true; obsSetStops(); obsTable();
+      const last = obs.stop===OBS_STOPS.length-1;
+      obsNextBtn(last?'📋 관찰표 정리하기 →':'▶ 다음 지점으로 돌리기', ()=> last ? obsSynth(0) : (obs.phase='orbit', obs.running=true, obsGo(obs.stop+1)));
+      return { ok:true, fb:'표에 기록했어요. ' + (last?'네 곳을 다 봤어요!':'') };
+    }
+    obs.tries++;
+    if(which==='axis'){ tiltSld.classList.add('pulse'); setTimeout(()=>tiltSld.classList.remove('pulse'),1200); }
+    return { ok:false, fb:(obs.tries>=2?'힌트: ':'다시 한 번 자세히 봐요. ')+OBS.hints[which] };
+  });
+  obsEl('obsQ').textContent=`${st.emoji} ${st.name} · ${q.q}`;
+}
+function obsSynth(k){
+  obs.phase='synth'; obsCameraTo(false); obsEl('obsStep').textContent='정리';
+  const sq=OBS.synth[k];
+  if(!sq){ return obsFinal(); }
+  obsAsk(sq.q, sq.opts.map((t,i)=>({key:String(i),text:t})), (key)=>{
+    if(+key===sq.answer){ obsNextBtn('다음 →', ()=>obsSynth(k+1)); return { ok:true, fb:'표가 그렇게 말하고 있죠.' }; }
+    return { ok:false, fb:'표를 다시 봐요 — 어느 줄이 근거가 될까요?' };
+  });
+}
+function obsFinal(){
+  obsEl('obsStep').textContent='마무리';
+  obsAsk('다시 물을게요. 여름과 겨울이 생기는 까닭은?', OBS.belief.opts.map((t,i)=>({key:String(i),text:t})), (key)=>{
+    obs.later=+key;
+    if(obs.later!==OBS.belief.answer) return { ok:false, fb:'표의 «거리» 칸과 «축 방향↔햇빛» 줄을 한 번 더 이어 봐요.' };
+    const first=OBS.belief.opts[obs.belief], changed = obs.belief!==obs.later;
+    const sum=obsEl('obsSum'); sum.classList.remove('hide');
+    sum.innerHTML = (changed ? `처음엔 <b>«${first}»</b>라고 생각했는데, 관찰한 뒤 생각이 바뀌었어요. ` : `처음 생각과 같아요 — 이번엔 <b>관찰로 확인</b>했어요. `) + OBS.conclude[obsGrade];
+    if(obsGrade==='high') obsNextBtn('🌍 확인: 축을 세우면 계절은? (A-2) →', ()=>{ obs=null; beam.visible=foot.visible=false; obsEl('obsCard').classList.add('hide'); startScenario('A-2'); });
+    else obsNextBtn('🔭 축을 세워 보며 놀기(선택)', ()=>{ tiltSld.classList.remove('hide'); tiltSld.classList.add('pulse'); bannerHint('자전축 기울기를 0으로 내려 보세요 — 계절은 어떻게 될까요?'); obsEl('obsCard').classList.add('hide'); obs=null; beam.visible=foot.visible=false; });
+    return { ok:true, fb:'' };
+  });
+}
+function stopObserve(){ obs=null; beam.visible=foot.visible=false; obsCam.tgt=obsCam.pos=null; const c=document.getElementById('obsCard'); if(c) c.classList.add('hide'); }
+function obsTick(dt){   // animate()에서 호출
+  if(obsCam.tgt){ controls.target.lerp(obsCam.tgt,0.06); camera.position.lerp(obsCam.pos,0.06); if(camera.position.distanceTo(obsCam.pos)<0.02){ obsCam.tgt=obsCam.pos=null; } }
+  if(obs&&obs.running){
+    const next=(day+dt*22)%365, tgt=obs.target;
+    const passed = (day<=tgt && next>=tgt) || (tgt<day && next<day && next>=tgt);
+    if(passed){ obs.running=false; obsArrive(); }
+    else { day=next; hour=(hour+dt*24)%24; moonF=((moonF+dt*22/K.MOON_CYCLE)%1+1)%1; sDay.value=day; sHour.value=hour; sMoon.value=moonF; refresh(); }
+  }
+  updateBeam();
+}
+obsUI(); window.__obsReady=true;
+
 buildScenarioUI();
 const qScenario = P.get('scenario');
 if(qScenario && K.scenarioById(qScenario)) startScenario(qScenario);
@@ -698,6 +958,8 @@ else if(grade==='low') openHome();
 
 // P3 검증 훅 확장 (getter는 defineProperty로 — Object.assign은 getter를 값으로 고정 복사)
 window.__SOLAR_P2__.openHome = openHome;
+Object.defineProperty(window.__SOLAR_P2__, 'obs', { get(){ return obs; }, configurable:true });
+window.__SOLAR_P2__.obsTick = obsTick;
 window.__SOLAR_P2__.startScenario = startScenario;
 window.__SOLAR_P2__.showWow = showWow;
 window.__SOLAR_P2__.exitScenario = exitScenario;
