@@ -139,6 +139,7 @@
   <div class="btns">
     <button id="playBtn">▶ 하루 재생</button>
     <button id="yearBtn">⏩ 1년 재생</button>
+    <button id="bothBtn" title="자전과 공전을 함께 — 빠르기 비율은 보기 쉽게 줄인 연출(실제는 1년에 365바퀴)">🔁 자전+공전</button>
     <button id="resetBtn">🔄 처음</button>
   </div>
 </div>
@@ -445,7 +446,7 @@ let day  = parseFloat(P.get('day'))  || 0;
 let hour = 12;
 let tilt = P.get('tilt')!=null ? parseFloat(P.get('tilt')) : K.TILT0;
 let moonF= P.get('moon')!=null ? parseFloat(P.get('moon')) : 0.5;
-let playDay=false, playYear=false;
+let playDay=false, playYear=false, playBoth=false;   // playBoth: 자전+공전 동시(2026-09-08 준호 요청)
 
 /* ═════════ 위치 갱신 ═════════ */
 function placeEarth(){
@@ -534,20 +535,22 @@ function syncLabels(){
   document.getElementById('lMoon').textContent = K.moonPhaseName(moonF);
 }
 sDay.value=day; sHour.value=hour; sTilt.value=tilt; sMoon.value=moonF;
-sDay.addEventListener('input', ()=>{ day=parseFloat(sDay.value); refresh(); });
-sHour.addEventListener('input', ()=>{ hour=parseFloat(sHour.value); playDay=false; setPlayBtn(); refresh(); });
+sDay.addEventListener('input', ()=>{ day=parseFloat(sDay.value); playBoth=false; setPlayBtn(); refresh(); });
+sHour.addEventListener('input', ()=>{ hour=parseFloat(sHour.value); playDay=false; playBoth=false; setPlayBtn(); refresh(); });
 sTilt.addEventListener('input', ()=>{ tilt=parseFloat(sTilt.value); refresh(); });
-sMoon.addEventListener('input', ()=>{ moonF=parseFloat(sMoon.value); refresh(); });
+sMoon.addEventListener('input', ()=>{ moonF=parseFloat(sMoon.value); playBoth=false; setPlayBtn(); refresh(); });
 
 function refresh(){ placeEarth(); syncLabels(); syncHud(); if(!lensEl.classList.contains('hide')) drawSky(); drawMoon(); checkScenario(); }
 
 /* ═════════ 재생 ═════════ */
-const playBtn=document.getElementById('playBtn'), yearBtn=document.getElementById('yearBtn'), resetBtn=document.getElementById('resetBtn');
+const playBtn=document.getElementById('playBtn'), yearBtn=document.getElementById('yearBtn'), bothBtn=document.getElementById('bothBtn'), resetBtn=document.getElementById('resetBtn');
 function setPlayBtn(){ playBtn.classList.toggle('on',playDay); playBtn.textContent=playDay?'⏸ 멈춤':'▶ 하루 재생';
-  yearBtn.classList.toggle('on',playYear); yearBtn.textContent=playYear?'⏸ 멈춤':'⏩ 1년 재생'; }
-playBtn.addEventListener('click', ()=>{ playDay=!playDay; if(playDay)playYear=false; setPlayBtn(); });
-yearBtn.addEventListener('click', ()=>{ playYear=!playYear; if(playYear)playDay=false; setPlayBtn(); });
-resetBtn.addEventListener('click', ()=>{ day=0; hour=12; tilt=K.TILT0; moonF=0.5; playDay=playYear=false;
+  yearBtn.classList.toggle('on',playYear); yearBtn.textContent=playYear?'⏸ 멈춤':'⏩ 1년 재생';
+  bothBtn.classList.toggle('on',playBoth); bothBtn.textContent=playBoth?'⏸ 멈춤':'🔁 자전+공전'; }
+playBtn.addEventListener('click', ()=>{ playDay=!playDay; if(playDay){playYear=false;playBoth=false;} setPlayBtn(); });
+yearBtn.addEventListener('click', ()=>{ playYear=!playYear; if(playYear){playDay=false;playBoth=false;} setPlayBtn(); });
+bothBtn.addEventListener('click', ()=>{ playBoth=!playBoth; if(playBoth){playDay=false;playYear=false;} setPlayBtn(); });
+resetBtn.addEventListener('click', ()=>{ day=0; hour=12; tilt=K.TILT0; moonF=0.5; playDay=playYear=playBoth=false;
   sDay.value=day; sHour.value=hour; sTilt.value=tilt; sMoon.value=moonF; setPlayBtn(); refresh(); });
 
 /* ═════════ 학년칸 (§4) ═════════ */
@@ -562,6 +565,9 @@ function animate(){
   const now=performance.now(), dt=Math.min(0.05,(now-t0)/1000); t0=now;
   if(playDay){ hour=(hour+dt*4)%24; sHour.value=hour; refresh(); }
   if(playYear){ day=(day+dt*30)%365; sDay.value=day; refresh(); }
+  if(playBoth){ // 자전(하루 1초) + 공전(하루 4일/초) + 달 공전(같은 날짜 흐름) — 비율은 연출용 축소
+    hour=(hour+dt*24)%24; day=(day+dt*4)%365; moonF=((moonF+dt*4/K.MOON_CYCLE)%1+1)%1;
+    sHour.value=hour; sDay.value=day; sMoon.value=moonF; refresh(); }
   // 별빛 살짝 자전(연출)
   controls.update();
   renderer.render(scene, camera);
