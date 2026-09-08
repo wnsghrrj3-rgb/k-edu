@@ -149,6 +149,16 @@ window.KEDU_MAP["g6_2_science"] = {
      "url": "/grade6/semester2/science/2단원_물질의연소/g6_sci_u2_l04_연소의조건.html",
      "track": "tb",
      "ready": true
+    },
+    {
+     "key": "g6_science_u2_l05",
+     "lessonId": "g6_s2_sci_u2_l05_v1",
+     "n": "6",
+     "title": "연소 후의 변화가 궁금해!",
+     "sub": null,
+     "url": "/grade6/semester2/science/2단원_물질의연소/g6_sci_u2_l05_연소후변화.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }
