@@ -946,6 +946,8 @@ let currentClassCode = null;
 // 탭 전환
 // =============================================
 function switchTab(tab){
+  // 가입은 /auth/ 한 문으로 (학교 선택·교육청 메일 검사·연수 코드가 거기 있다 — 2026-09-09 준호: "가입할 때 학교 선택이 왜 안 떠")
+  if(tab === 'signup'){ location.href = '/auth/?tab=signup&redirect=' + encodeURIComponent('/teacher/'); return; }
   document.querySelectorAll('.login-tab').forEach((el,i)=>{
     el.classList.toggle('active', (tab==='login' && i===0) || (tab==='signup' && i===1));
   });
@@ -1261,7 +1263,11 @@ function renderApprovalBanner(){
   if(!banner) return;
   const a = currentTeacher && currentTeacher.approval;
   if(a === 'pending') tryEduAutoApproval();
-  if(a === undefined || a === 'auto' || a === 'approved'){ banner.hidden = true; return; }
+  // 승인 전엔 도구·학급·명단·통계 전부 감춤 — 배너와 「내 정보」만 남는다 (2026-09-09 준호: 승인해야만 프로그램 사용)
+  const ok = (a === undefined || a === 'auto' || a === 'approved');
+  document.querySelectorAll('#dashboard .tools-grid, #dashboard .stats, #dashboard .code-box, #dashboard .table-wrap, #dashboard .pl-section, #dashboard .rights-section, #dashboard .st-card, #dashboard .wipe-banner:not(#approval-banner)')
+    .forEach(el => { el.style.display = ok ? '' : 'none'; });
+  if(ok){ banner.hidden = true; return; }
 
   const text = document.getElementById('approval-text');
   const icon = document.getElementById('approval-icon');
