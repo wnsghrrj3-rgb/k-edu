@@ -139,6 +139,16 @@ window.KEDU_MAP["g6_2_science"] = {
      "url": "/grade6/semester2/science/2단원_물질의연소/g6_sci_u2_l03_탈때의현상.html",
      "track": "tb",
      "ready": true
+    },
+    {
+     "key": "g6_science_u2_l04",
+     "lessonId": "g6_s2_sci_u2_l04_v1",
+     "n": "4~5",
+     "title": "물질이 타려면 무엇이 필요할까?",
+     "sub": null,
+     "url": "/grade6/semester2/science/2단원_물질의연소/g6_sci_u2_l04_연소의조건.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }
