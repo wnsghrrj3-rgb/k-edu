@@ -18,15 +18,19 @@ const ok = (c, m) => { if (c) pass++; else { fail++; console.log('  ✗', m); } 
 const dict = JSON.parse(rd('kedu/worksheet/data/_concepts.json'));
 const sets = fs.readdirSync(path.join(R, 'kedu/worksheet/data'))
   .filter(f => f.endsWith('.json') && !f.startsWith('_'));
-/* 단원마다 세트 18 · 문항 240 — 단원이 늘어나도 그대로 걸리도록 단원별로 센다 */
+/* 단원 규격 — 차시마다 기본·도전 2세트(각 10문항) + 단원 종합 4세트(각 25문항).
+   단원의 차시 수는 교과서마다 다르므로 18·240 을 박지 않고 이 규칙으로 센다. */
 const byUnit = {};
 const usedC = new Set(), usedM = new Set();
 let qTotal = 0;
 sets.forEach(f => {
   const d = JSON.parse(rd('kedu/worksheet/data/' + f));
   const uk = `${d.grade}-${d.semester || 1}학기-${d.subject}-${d.unit}`;
-  byUnit[uk] = byUnit[uk] || { sets: 0, qs: 0 };
+  byUnit[uk] = byUnit[uk] || { sets: 0, qs: 0, lesson: 0, review: 0, sizeBad: [] };
   byUnit[uk].sets++; byUnit[uk].qs += d.questions.length;
+  const isReview = d.kind === 'unit_review';
+  if (isReview) byUnit[uk].review++; else byUnit[uk].lesson++;
+  if (d.questions.length !== (isReview ? 25 : 10)) byUnit[uk].sizeBad.push(d.set + ':' + d.questions.length);
   d.questions.forEach(q => {
     qTotal++;
     if (q.concept) usedC.add(q.concept);
@@ -35,8 +39,11 @@ sets.forEach(f => {
   });
 });
 Object.keys(byUnit).sort().forEach(uk => {
-  ok(byUnit[uk].sets === 18, `${uk}: 학습지 세트 18개 (실제 ${byUnit[uk].sets})`);
-  ok(byUnit[uk].qs === 240, `${uk}: 문항 240 (실제 ${byUnit[uk].qs})`);
+  const u = byUnit[uk];
+  ok(u.review === 4, `${uk}: 단원 종합 A~D 4세트 (실제 ${u.review})`);
+  ok(u.lesson >= 2 && u.lesson % 2 === 0, `${uk}: 차시 세트가 기본·도전 짝수 (실제 ${u.lesson})`);
+  ok(u.sizeBad.length === 0, `${uk}: 세트 문항 수 규격(차시 10 · 종합 25) — ${u.sizeBad.join(', ')}`);
+  ok(u.qs === u.lesson * 10 + u.review * 25, `${uk}: 단원 문항 합계 (실제 ${u.qs})`);
 });
 ok(qTotal === Object.values(byUnit).reduce((a, u) => a + u.qs, 0), `문항 합계 (실제 ${qTotal})`);
 const missC = [...usedC].filter(c => !dict.concepts[c]);

@@ -61,7 +61,15 @@ const ASSETS = {
   /* v0.3 — 1학년 2학기 「100까지의 수」 */
   bundle_ones:    ['tens', 'ones'],
   hundred_chart:  ['cells'],
-  pair_row:       ['n']
+  pair_row:       ['n'],
+  /* v0.4 — 1학년 2학기 「덧셈과 뺄셈(1)」 */
+  ten_frame:      ['filled'],
+  number_bond:    ['parts'],
+  group_row:      ['groups'],
+  /* v0.5 — 1학년 2학기 「모양과 시각」 */
+  clock:          ['h', 'm'],
+  shape_row:      ['shapes'],
+  shape_art:      ['parts']
 };
 const KINDS = ['mc', 'sa', 'ox', 'match', 'essay', 'error', 'blank', 'data'];
 
@@ -98,6 +106,55 @@ function checkAsset(where, a) {
     if (a.cols !== undefined && !(a.cols >= 2 && a.cols <= 10)) bad(where, 'hundred_chart cols 는 2~10');
   }
   if (a.type === 'pair_row' && !(a.n >= 1 && a.n <= 30)) bad(where, 'pair_row n 이 1~30 밖: ' + a.n);
+  if (a.type === 'clock') {
+    const h = Number(a.h), m = Number(a.m);
+    if (!(h >= 1 && h <= 12)) bad(where, 'clock h 는 1~12: ' + a.h);
+    if (!(m === 0 || m === 30)) bad(where, 'clock m 은 0 또는 30만 (1학년 과정): ' + a.m);
+    if (a.hands !== undefined && a.hands !== 'none') bad(where, "clock hands 는 'none' 만 쓴다");
+  }
+  if (a.type === 'shape_row') {
+    if (!Array.isArray(a.shapes) || a.shapes.length < 2) bad(where, 'shape_row shapes 2개 미만');
+    else {
+      const okk = a.shapes.every(s => ['sq', 'tri', 'cir'].indexOf(s) >= 0);
+      if (!okk) bad(where, "shape_row shapes 는 sq·tri·cir 만");
+      if (a.shapes.length > 8) bad(where, 'shape_row 는 8개까지 (1학년 눈으로 셀 수 있는 만큼)');
+      if (a.mark !== undefined && !(a.mark >= 1 && a.mark <= a.shapes.length)) bad(where, 'shape_row mark 가 줄 밖: ' + a.mark);
+    }
+  }
+  if (a.type === 'shape_art') {
+    if (!Array.isArray(a.parts) || !a.parts.length) bad(where, 'shape_art parts 비었음');
+    else {
+      let tot = 0;
+      a.parts.forEach((pp, i) => {
+        if (['sq', 'tri', 'cir'].indexOf(pp.shape) < 0) bad(where, `shape_art parts[${i}] shape 는 sq·tri·cir 만`);
+        if (!(pp.n >= 0 && pp.n <= 12)) bad(where, `shape_art parts[${i}] n 은 0~12`);
+        tot += Number(pp.n) || 0;
+      });
+      const kinds = a.parts.map(pp => pp.shape);
+      if (new Set(kinds).size !== kinds.length) bad(where, 'shape_art 에 같은 모양이 두 줄');
+      if (tot < 3 || tot > 15) bad(where, 'shape_art 전체 모양 수는 3~15 (실제 ' + tot + ')');
+    }
+  }
+  if (a.type === 'ten_frame') {
+    const f = Number(a.filled), ad = Number(a.add || 0);
+    if (!(f >= 0 && f <= 10)) bad(where, 'ten_frame filled 가 0~10 밖: ' + a.filled);
+    if (!(ad >= 0 && f + ad <= 10)) bad(where, 'ten_frame filled+add 가 10을 넘음');
+  }
+  if (a.type === 'number_bond') {
+    if (!Array.isArray(a.parts) || a.parts.length !== 2) bad(where, 'number_bond parts 는 두 칸이어야 한다');
+    else {
+      const blank = x => x === null || x === undefined || x === '?';
+      const known = [a.whole, a.parts[0], a.parts[1]].filter(x => !blank(x)).map(Number);
+      if (known.length < 2) bad(where, 'number_bond 는 세 칸 중 둘 이상이 채워져야 물을 것이 생긴다');
+      if (!blank(a.whole) && !blank(a.parts[0]) && !blank(a.parts[1])
+          && Number(a.whole) !== Number(a.parts[0]) + Number(a.parts[1])) bad(where, 'number_bond 전체 ≠ 두 부분의 합');
+    }
+  }
+  if (a.type === 'group_row') {
+    if (!Array.isArray(a.groups) || a.groups.length < 2) bad(where, 'group_row groups 가 2무리 미만');
+    else a.groups.forEach((g, i) => { if (!g.item || !(Number(g.n) >= 0)) bad(where, `group_row groups[${i}] item/n 없음`); });
+    if (a.op !== undefined && a.op !== '+' && a.op !== '-') bad(where, "group_row op 는 '+' 또는 '-'");
+  }
 }
 
 /* 한 문항(원본이든 변형본이든) 공통 검사 */
@@ -203,6 +260,11 @@ function checkSet(file) {
     /* cmp2 는 수만 바꾼다 — 그림이 붙어 있으면 변형 뒤 수와 그림이 어긋난다 */
     if (q.variant_rule.cmp2 && q.asset && typeof q.asset === 'object')
       bad(where, 'cmp2 변형은 그림 없는 문항 전용 — 그림이 붙었다면 bundle 갈래를 쓸 것');
+    /* add3·maketen 도 수만 바꾼다 — 그림이 붙으면 변형 뒤 수와 그림이 어긋난다(대신 groups 갈래) */
+    ['add3', 'maketen'].forEach(k => {
+      if (q.variant_rule[k] && q.asset && typeof q.asset === 'object')
+        bad(where, k + ' 변형은 그림 없는 문항 전용 — 그림이 붙었다면 groups 갈래를 쓸 것');
+    });
     /* play.html 과 같은 순서·같은 난수 씀씀이: 틀린 문항들이 난수 하나를 이어 쓰고, prep 은 변형 뒤에 온다.
        (덧: 씨앗을 1씩 늘리면 LCG 특성상 첫 값이 거의 안 변해 「안 변한다」는 가짜 실패가 난다 — 씨앗을 넓게 흩는다) */
     const face = x => JSON.stringify([x.stem, x.asset || null, x.options || null, x.answer || null, x.pairs || null]);
@@ -245,6 +307,9 @@ function checkLessonMap(setNames) {
 }
 
 /* ── 실행 ────────────────────────────────────────────────────────────────────── */
+const allSets = fs.readdirSync(DATA)
+  .filter(f => f.endsWith('.json') && f.charAt(0) !== '_')
+  .map(f => f.replace(/\.json$/, '')).sort();
 const files = fs.readdirSync(DATA)
   .filter(f => f.endsWith('.json') && f.charAt(0) !== '_')
   .filter(f => !ONLY || f.indexOf(ONLY) === 0)
@@ -253,7 +318,7 @@ if (!files.length) { console.log('검사할 세트가 없다' + (ONLY ? ` (접�
 
 let nQ = 0, nF = 0;
 files.forEach(f => { const r = checkSet(path.join(DATA, f)); if (r) { nQ += r.n; nF += r.fuzzed; } });
-checkLessonMap(files.map(f => f.replace(/\.json$/, '')));
+checkLessonMap(allSets);   /* 접두사로 걸러도 연결표는 전체 목록과 대조 — 아니면 가짜 실패가 난다 */
 
 if (fails.length) {
   console.log('\n✗ 실패 ' + fails.length + '건');
