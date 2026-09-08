@@ -318,7 +318,14 @@ scene.add(new THREE.HemisphereLight(0xa9c4e0,0x1a1f26,0.45));
 // 작업대(밝은 흰 판 — 철가루가 잘 보이게)
 { const desk=new THREE.Mesh(new THREE.BoxGeometry(1.1,0.02,0.8),
     new THREE.MeshStandardMaterial({color:0xe8ecf0,roughness:0.9}));
-  desk.position.set(0.05,-0.011,0); desk.receiveShadow=true; scene.add(desk); }
+  desk.position.set(0.05,-0.011,0); desk.receiveShadow=true; scene.add(desk);
+  // 2026-09-08 Blender 베이크 책상 라미네이트(assets/bench/benchbody — 밝은 톤 유지, 철가루 대비) — 로드 실패·jsdom은 위 재질 유지
+  if (typeof fetch === 'function') { try {
+    const tl=new THREE.TextureLoader(), MR=THREE.MirroredRepeatWrapping;
+    const ld=(u,rx,ry,srgb,cb)=>tl.load(u,t=>{ if(srgb) t.colorSpace=THREE.SRGBColorSpace; t.wrapS=t.wrapT=MR; t.repeat.set(rx,ry); t.anisotropy=4; cb(t); },undefined,()=>{});
+    ld('./assets/bench/benchbody_albedo.jpg',1.8,1.3,true,t=>{ desk.material.map=t; desk.material.color.set(0xffffff); desk.material.needsUpdate=true; });
+    ld('./assets/bench/benchbody_normal.jpg',1.8,1.3,false,t=>{ desk.material.normalMap=t; desk.material.normalScale.set(0.35,0.35); desk.material.needsUpdate=true; });
+  } catch(e){} } }
 
 /* ── 좌표: 순수 (x,y) → 3D (x, HEIGHT, z=y) 수평면 ── */
 const HY=0.02;

@@ -386,6 +386,17 @@ sun.shadow.camera.near=0.3; sun.shadow.camera.far=7; sun.shadow.bias=-0.0004; su
 scene.add(sun);
 scene.add(new THREE.HemisphereLight(0x9fc4a0, 0x241f16, 0.4));
 
+/* 텍스처 로더 공용(무대·화분·흙) — fetch 없는 jsdom에서는 호출되지 않음 */
+const SEED_TL = new THREE.TextureLoader();
+function SEED_TEX(u,rx,ry,srgb,cb){ SEED_TL.load(u,t=>{ if(srgb) t.colorSpace=THREE.SRGBColorSpace; t.wrapS=t.wrapT=THREE.MirroredRepeatWrapping; t.repeat.set(rx,ry); t.anisotropy=4; cb(t); },undefined,()=>{}); }
+const SEED_MATS = { pot:[], soil:[] };
+if (typeof fetch === 'function') { try {
+  SEED_TEX('./assets/seed/terracotta_albedo.jpg',3,1,true,t=>{ SEED_MATS.pot.forEach(m=>{ m.map=t; m.color.set(0xd9a07a); m.needsUpdate=true; }); SEED_MATS.potTex=t; });
+  SEED_TEX('./assets/seed/terracotta_normal.jpg',3,1,false,t=>{ SEED_MATS.pot.forEach(m=>{ m.normalMap=t; m.normalScale.set(0.5,0.5); m.needsUpdate=true; }); SEED_MATS.potN=t; });
+  SEED_TEX('./assets/seed/soil_albedo.jpg',1.5,1.5,true,t=>{ SEED_MATS.soil.forEach(m=>{ m.map=t; m.color.set(0xffffff); m.needsUpdate=true; }); SEED_MATS.soilTex=t; });
+  SEED_TEX('./assets/seed/soil_normal.jpg',1.5,1.5,false,t=>{ SEED_MATS.soil.forEach(m=>{ m.normalMap=t; m.normalScale.set(0.8,0.8); m.needsUpdate=true; }); SEED_MATS.soilN=t; });
+} catch(e){} }
+
 /* ═════════ 무대: 선반(테이블) ═════════ */
 {
   const top = new THREE.Mesh(
@@ -395,6 +406,14 @@ scene.add(new THREE.HemisphereLight(0x9fc4a0, 0x241f16, 0.4));
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(8,8),
     new THREE.MeshStandardMaterial({ color:0x141a12, roughness:1 }));
   floor.rotation.x=-Math.PI/2; floor.position.y=-0.06; floor.receiveShadow=true; scene.add(floor);
+  // 2026-09-08 Blender 베이크 원목 탁자(assets/bench/wood) + 바닥 타일 — 로드 실패·jsdom은 위 재질 유지
+  if (typeof fetch === 'function') { try {
+    const ld=SEED_TEX;
+    ld('./assets/bench/wood_albedo.jpg',3.2,1.4,true,t=>{ top.material.map=t; top.material.color.set(0xffffff); top.material.roughness=0.55; top.material.needsUpdate=true; });
+    ld('./assets/bench/wood_normal.jpg',3.2,1.4,false,t=>{ top.material.normalMap=t; top.material.normalScale.set(0.45,0.45); top.material.needsUpdate=true; });
+    ld('./assets/bench/floortile_albedo.jpg',8,8,true,t=>{ floor.material.map=t; floor.material.color.set(0x8a9088); floor.material.needsUpdate=true; });
+    ld('./assets/bench/floortile_normal.jpg',8,8,false,t=>{ floor.material.normalMap=t; floor.material.normalScale.set(0.5,0.5); floor.material.needsUpdate=true; });
+  } catch(e){} }
 }
 
 /* ═════════ 프로시저럴 텍스처(꽃·흙) ═════════ */
@@ -432,10 +451,16 @@ function makeStation(x, idx){
   const pot = new THREE.Mesh(new THREE.LatheGeometry(pts, 20),
     new THREE.MeshStandardMaterial({ color:0xA0522D, roughness:0.9 }));
   pot.castShadow=true; pot.receiveShadow=true; group.add(pot);
+  SEED_MATS.pot.push(pot.material);
+  if (SEED_MATS.potTex){ pot.material.map=SEED_MATS.potTex; pot.material.color.set(0xd9a07a); }
+  if (SEED_MATS.potN){ pot.material.normalMap=SEED_MATS.potN; pot.material.normalScale.set(0.5,0.5); }
   // 흙
   const soil = new THREE.Mesh(new THREE.CylinderGeometry(0.045,0.045,0.02,20),
     new THREE.MeshStandardMaterial({ color:0x3E2B22, roughness:1 }));
   soil.position.y=0.072; soil.receiveShadow=true; group.add(soil);
+  SEED_MATS.soil.push(soil.material);
+  if (SEED_MATS.soilTex){ soil.material.map=SEED_MATS.soilTex; soil.material.color.set(0xffffff); }
+  if (SEED_MATS.soilN){ soil.material.normalMap=SEED_MATS.soilN; soil.material.normalScale.set(0.8,0.8); }
 
   // 식물 그룹(흙 위)
   const plant = new THREE.Group(); plant.position.y=0.082; group.add(plant);
