@@ -447,8 +447,7 @@ renderer.domElement.addEventListener('touchstart', function(e){
   if(e.touches.length===2){ dragging=false;
     pinchStart=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY); pinchZoom0=topZoom; }
   else if(e.touches.length){ pDown(e.touches[0].clientX, e.touches[0].clientY); }
-  if(e.cancelable) e.preventDefault();      /* 2026-09-08 당겨서 새로고침·뒤로가기 스와이프 차단 */
-}, {passive:false});
+}, {passive:true});
 renderer.domElement.addEventListener('touchmove', function(e){
   if(e.touches.length===2 && topView){
     var d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
@@ -456,7 +455,13 @@ renderer.domElement.addEventListener('touchmove', function(e){
   } else if(e.touches.length){ pMove(e.touches[0].clientX, e.touches[0].clientY); }
   if(e.cancelable) e.preventDefault();
 }, {passive:false});
-renderer.domElement.addEventListener('touchend', function(e){ dragging=false; if(e.touches.length<2) pinchStart=0; });
+var lastTouchTap=0;
+renderer.domElement.addEventListener('touchend', function(e){
+  dragging=false; if(e.touches.length<2) pinchStart=0;
+  /* 2026-09-08 touchmove preventDefault 때문에 브라우저 click이 안 나올 수 있어 탭을 직접 판정 */
+  var t=e.changedTouches && e.changedTouches[0];
+  if(t && moved<=12){ lastTouchTap=performance.now(); tapAt(t.clientX, t.clientY); }
+});
 /* 휠 줌(PC) — 위에서 보기에서만 */
 renderer.domElement.addEventListener('wheel', function(e){
   if(!topView) return; e.preventDefault();
@@ -488,7 +493,7 @@ function tapAt(x, y){
   if (best) goObserve(best);
   else if (mode==='observe') {/* 빈 곳 탭은 무시(돌아가기 버튼으로) */}
 }
-renderer.domElement.addEventListener('click', function(e){ tapAt(e.clientX, e.clientY); });
+renderer.domElement.addEventListener('click', function(e){ if(performance.now()-lastTouchTap<700) return; tapAt(e.clientX, e.clientY); });
 
 function fade(cb){
   var f=$('fade'); f.style.opacity=1;
