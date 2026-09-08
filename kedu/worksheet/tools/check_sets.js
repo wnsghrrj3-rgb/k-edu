@@ -69,7 +69,13 @@ const ASSETS = {
   /* v0.5 — 1학년 2학기 「모양과 시각」 */
   clock:          ['h', 'm'],
   shape_row:      ['shapes'],
-  shape_art:      ['parts']
+  shape_art:      ['parts'],
+  /* v0.6 — 1학년 2학기 「덧셈과 뺄셈(2)」 */
+  count_on:       ['start', 'steps'],
+  ten_frames2:    ['top', 'bottom'],
+  split_tree:     ['left', 'right', 'parts'],
+  beads:          ['moved'],
+  expr_grid:      ['rows']
 };
 const KINDS = ['mc', 'sa', 'ox', 'match', 'essay', 'error', 'blank', 'data'];
 
@@ -149,6 +155,45 @@ function checkAsset(where, a) {
       if (!blank(a.whole) && !blank(a.parts[0]) && !blank(a.parts[1])
           && Number(a.whole) !== Number(a.parts[0]) + Number(a.parts[1])) bad(where, 'number_bond 전체 ≠ 두 부분의 합');
     }
+  }
+  if (a.type === 'count_on') {
+    const st = Number(a.start), k = Number(a.steps);
+    if (!(st >= 0 && st <= 20)) bad(where, 'count_on start 는 0~20: ' + a.start);
+    if (!(k >= 1 && k <= 9)) bad(where, 'count_on steps 는 1~9: ' + a.steps);
+    if (a.dir !== undefined && a.dir !== 'up' && a.dir !== 'down') bad(where, "count_on dir 는 'up' 또는 'down'");
+    const end = a.dir === 'down' ? st - k : st + k;
+    if (end < 0 || end > 20) bad(where, 'count_on 끝 수가 0~20 을 벗어남: ' + end);
+  }
+  if (a.type === 'ten_frames2') {
+    const t = Number(a.top), ad = Number(a.add || 0), b = Number(a.bottom), cr = Number(a.cross || 0);
+    if (!(t >= 0 && t <= 10)) bad(where, 'ten_frames2 top 은 0~10: ' + a.top);
+    if (!(ad >= 0 && t + ad <= 10)) bad(where, 'ten_frames2 top+add 가 10을 넘음');
+    if (!(b >= 0 && b <= 10)) bad(where, 'ten_frames2 bottom 은 0~10: ' + a.bottom);
+    if (t + ad < 10 && b > 0) bad(where, 'ten_frames2 윗판이 안 찼는데 아랫판에 놓였다 — 10을 먼저 채워야 한다');
+    if (!(cr >= 0 && cr <= t + ad + b)) bad(where, 'ten_frames2 cross 가 놓인 수보다 많음');
+    if (a.cross_from !== undefined && a.cross_from !== 'top' && a.cross_from !== 'bottom') bad(where, "ten_frames2 cross_from 은 'top'|'bottom'");
+  }
+  if (a.type === 'split_tree') {
+    const blank = x => x === null || x === undefined || x === '?';
+    if (a.op !== undefined && a.op !== '+' && a.op !== '-') bad(where, "split_tree op 는 '+' 또는 '-'");
+    if (a.split !== undefined && a.split !== 'left' && a.split !== 'right') bad(where, "split_tree split 은 'left'|'right'");
+    if (!Array.isArray(a.parts) || a.parts.length !== 2) bad(where, 'split_tree parts 는 두 칸');
+    else {
+      const sp = Number(a.split === 'left' ? a.left : a.right);
+      if (!blank(a.parts[0]) && !blank(a.parts[1]) && Number(a.parts[0]) + Number(a.parts[1]) !== sp) bad(where, `split_tree 가른 두 수의 합 ≠ 가른 수 ${sp}`);
+      const known = a.parts.filter(x => !blank(x));
+      known.forEach(x => { if (!(Number(x) >= 0 && Number(x) <= sp)) bad(where, 'split_tree 부분이 가른 수보다 큼'); });
+    }
+    [a.left, a.right].forEach(x => { if (!(Number(x) >= 0 && Number(x) <= 20)) bad(where, 'split_tree left/right 는 0~20'); });
+  }
+  if (a.type === 'beads') {
+    const m = Number(a.moved), x = Number(a.cross || 0);
+    if (!(m >= 0 && m <= 20)) bad(where, 'beads moved 는 0~20: ' + a.moved);
+    if (!(x >= 0 && x <= m)) bad(where, 'beads cross 가 옮긴 수보다 많음');
+  }
+  if (a.type === 'expr_grid') {
+    if (!Array.isArray(a.rows) || !a.rows.length) bad(where, 'expr_grid rows 비었음');
+    else a.rows.forEach((rw, i) => { if (!Array.isArray(rw) || rw.length < 2) bad(where, `expr_grid rows[${i}] 는 2칸 이상`); });
   }
   if (a.type === 'group_row') {
     if (!Array.isArray(a.groups) || a.groups.length < 2) bad(where, 'group_row groups 가 2무리 미만');
@@ -265,6 +310,13 @@ function checkSet(file) {
       if (q.variant_rule[k] && q.asset && typeof q.asset === 'object')
         bad(where, k + ' 변형은 그림 없는 문항 전용 — 그림이 붙었다면 groups 갈래를 쓸 것');
     });
+    /* v0.6 갈래 — 그림은 갈래가 고쳐 주는 종류만 허용(그 밖의 그림은 변형 뒤 수와 어긋난다) */
+    const at = q.asset && typeof q.asset === 'object' ? q.asset.type : null;
+    if (q.variant_rule.counton && at !== 'count_on') bad(where, 'counton 변형은 count_on 그림이 있어야 한다');
+    if (q.variant_rule.maketen2 && at && ['split_tree', 'ten_frames2'].indexOf(at) < 0) bad(where, 'maketen2 변형은 그림 없음·split_tree·ten_frames2 만');
+    if (q.variant_rule.takeaway && at && ['split_tree', 'ten_frames2', 'compare_groups'].indexOf(at) < 0) bad(where, 'takeaway 변형은 그림 없음·split_tree·ten_frames2·compare_groups 만');
+    if (q.variant_rule.takeaway && q.variant_rule.takeaway.ask === 'more' && at !== 'compare_groups') bad(where, "takeaway ask:'more' 는 compare_groups 그림이 있어야 한다");
+    if (q.variant_rule.pattern && at && at !== 'expr_grid') bad(where, 'pattern 변형은 그림 없음·expr_grid 만');
     /* play.html 과 같은 순서·같은 난수 씀씀이: 틀린 문항들이 난수 하나를 이어 쓰고, prep 은 변형 뒤에 온다.
        (덧: 씨앗을 1씩 늘리면 LCG 특성상 첫 값이 거의 안 변해 「안 변한다」는 가짜 실패가 난다 — 씨앗을 넓게 흩는다) */
     const face = x => JSON.stringify([x.stem, x.asset || null, x.options || null, x.answer || null, x.pairs || null]);
