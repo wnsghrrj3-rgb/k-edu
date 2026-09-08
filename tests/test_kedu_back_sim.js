@@ -38,7 +38,9 @@ scenario('⑨ 교사→학급과제→케이박스 활동', [['/?role=teacher', 
 scenario('⑩ 학부모 열람 화면에서 나가기 — 자기 자신으로 돌지 않는다', [['/', 1], ['/parent/index.html', 1]], '/');
 scenario('⑪ 게이트 잠금 카드 — 직접 URL 로 연 차시', [['/grade5/semester1/science/1단원_지층과화석/g5_sci_u1_l01_열려라과학.html', 1]], '/grade5/semester1/science/index.html');
 scenario('⑫ 한 기기에서 교사 뒤 학생이 홈 거쳐 들어옴 — 교사 맥락이 남지 않는다', [['/?role=teacher', 1], ['/teacher/index.html', 1], ['/', 1], ['/kbattle/index.html', 1]], '/');
-scenario('⑬ 케이랩 도구를 새 탭으로 직접 열기', [['/labs/scilab_states.html', 1]], '/kedu/hub/klab.html');
+scenario('⑬ 케이랩 도구를 새 탭으로 직접 열기 — 구조상 부모 = 과학실 정문(2026-09-08)', [['/labs/scilab_states.html', 1]], '/labs/scilab_hub.html');
+scenario('⑬-b 과학실 정문을 새 탭으로 직접 열기 → 케이랩 허브', [['/labs/scilab_hub.html', 1]], '/kedu/hub/klab.html');
+scenario('⑬-c 케이랩 → 정문 → 실험 → 나가기 = 정문(트레일 조상 허브)', [['/', 1], ['/kedu/hub/klab.html', 1], ['/labs/scilab_hub.html', 1], ['/labs/scilab_light.html', 1]], '/labs/scilab_hub.html');
 scenario('⑭ 영어 차시 → 영어 허브', [['/', 1], ['/english/index.html', 1], ['/english/g3/reading/g3_english_adv_17_주제찾기.html', 1]], '/english/index.html');
 scenario('⑮ 교사 도구에서 바로 활동으로(대시보드 발자국 없음)', [['/teacher/index.html', 0], ['/kple/host.html', 1]], '/teacher/index.html');
 scenario('⑯ 보드게임 폴더 — 안내판이 아니라 케이파크 정문으로', [['/kpark/board/bolt/index.html', 1]], '/kpark/index.html');
@@ -59,7 +61,7 @@ scenario('㉘ 교사가 케이플 사회자 화면을 열었다 나가기', [['/
 scenario('㉙ 메이커 하위 화면', [['/', 1], ['/maker/index.html', 1], ['/maker/card/index.html', 1]], '/maker/index.html');
 scenario('㉚ 케이메이커 놀이터 리포트', [['/maker-playground/report/stage4-builder.html', 1]], '/maker-playground/report/index.html');
 scenario('㉛ 그림 그리기 하위 화면', [['/', 1], ['/draw/index.html', 1], ['/draw/coloring/index.html', 1]], '/draw/index.html');
-scenario('㉜ 뮤지엄에서 케이랩으로 건너뛴 뒤 나가기 — 뮤지엄이 아니라 케이랩 허브', [['/', 1], ['/museum/index.html', 1], ['/museum/math/ex01_gauss.html', 1], ['/labs/scilab_states.html', 1]], '/kedu/hub/klab.html');
+scenario('㉜ 뮤지엄에서 케이랩으로 건너뛴 뒤 나가기 — 뮤지엄이 아니라 케이랩 허브', [['/', 1], ['/museum/index.html', 1], ['/museum/math/ex01_gauss.html', 1], ['/labs/scilab_states.html', 1]], '/labs/scilab_hub.html');   /* 2026-09-08 구조상 부모 = 과학실 정문 */
 /* 2026-09-08 케이학습지 조립 화면 — 교사 자리로 인정 (그 뒤 도구로 넘어가도 교사 대시보드로 나간다) */
 scenario('㉝ 케이학습지 조립 화면을 새 탭으로 열고 케이파크로 — 교사 홈으로 나간다', [['/kedu/worksheet/build.html', 1], ['/kpark/index.html', 1]], '/teacher/index.html');
 console.log(`돌아가기 동선 시뮬 — ${pass} PASS / ${fail} FAIL`);

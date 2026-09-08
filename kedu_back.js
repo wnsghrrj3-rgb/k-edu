@@ -89,9 +89,13 @@
     '/museum/','/parent/','/pick/','/privacy/','/teacher/','/terms/'
   ];
   /* index.html 이 아니면서 허브 노릇을 하는 페이지 = 그 아래 화면들의 목록 */
-  var HUB_PAGES = { '/kedu/hub/klab.html': '/labs/', '/kedu/hub/science.html': null };
+  var HUB_PAGES = { '/kedu/hub/klab.html': '/labs/', '/kedu/hub/science.html': null,
+                    '/labs/scilab_hub.html': '/labs/' };   /* 2026-09-08 과학실 정문 = scilab_*.html 의 부모 허브 */
   /* 예외표 — 구조상 부모가 없거나(최상위 폴더) 실제 목록이 다른 곳인 화면 */
   var HUB_EXCEPT = [
+    /* 2026-09-08 과학실 실험 파일 → 정문(scilab_hub.html) — 실험 안에서 「← 나가기」가 정문으로 돌아간다(정문 자신은 케이랩으로) */
+    ['/labs/scilab_hub.html', '/kedu/hub/klab.html'],
+    ['/labs/scilab_', '/labs/scilab_hub.html'],
     ['/labs/', '/kedu/hub/klab.html'],
     /* 아래는 「안내판(즉시 리다이렉트) 껍데기」로 나가지 않게 최종 목적지를 직접 적은 것 —
        나가기를 눌렀는데 화면이 한 번 번쩍이고 다시 튕기는 일을 없앤다 (2026-08-27) */
@@ -113,7 +117,7 @@
     p = pathOnly(p);
     for (var e = 0; e < HUB_EXCEPT.length; e++) {
       var pre = HUB_EXCEPT[e][0];
-      if (pre.slice(-1) === '/' ? p.indexOf(pre) === 0 : p === pre) {
+      if (pre.slice(-1) === '/' || pre.slice(-1) === '_' ? p.indexOf(pre) === 0 : p === pre) {   /* '_' 로 끝나면 파일명 접두 매칭 */
         return HUB_EXCEPT[e][1] === p ? null : HUB_EXCEPT[e][1];
       }
     }
