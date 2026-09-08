@@ -383,6 +383,16 @@ const BENCH_Y = 0.0;
   const body=new THREE.Mesh(new THREE.BoxGeometry(3.15,0.76,1.5),
     new THREE.MeshStandardMaterial({color:0xE8E2D6, roughness:0.8}));
   body.position.y=BENCH_Y-0.09-0.38; body.receiveShadow=true; body.castShadow=true; scene.add(body);
+  // 2026-09-08 Blender 베이크 실험실 재질(assets/bench/ — 에폭시 상판·라미네이트 몸체·비닐 타일 바닥, 알베도+노멀). 로드 실패·jsdom(fetch 없음)은 위 재질 유지.
+  if (typeof fetch === 'function') { try {
+    const tl=new THREE.TextureLoader(), MR=THREE.MirroredRepeatWrapping;
+    const ld=(u,rx,ry,srgb,cb)=>tl.load(u,t=>{ if(srgb) t.colorSpace=THREE.SRGBColorSpace; t.wrapS=t.wrapT=MR; t.repeat.set(rx,ry); t.anisotropy=4; cb(t); },undefined,()=>{});
+    ld('./assets/bench/benchtop_albedo.jpg',6.8,3.4,true,t=>{ top.material.map=t; top.material.roughness=0.42; top.material.needsUpdate=true; });
+    ld('./assets/bench/benchtop_normal.jpg',6.8,3.4,false,t=>{ top.material.normalMap=t; top.material.normalScale.set(0.5,0.5); top.material.needsUpdate=true; });
+    ld('./assets/bench/benchbody_albedo.jpg',5.2,1.3,true,t=>{ body.material.map=t; body.material.color.set(0xffffff); body.material.needsUpdate=true; });
+    ld('./assets/bench/floortile_albedo.jpg',7,7,true,t=>{ floor.material.map=t; floor.material.color.set(0xffffff); floor.material.needsUpdate=true; });
+    ld('./assets/bench/floortile_normal.jpg',7,7,false,t=>{ floor.material.normalMap=t; floor.material.normalScale.set(0.6,0.6); floor.material.needsUpdate=true; });
+  } catch(e){} }
 }
 
 /* ═════════ 기구 빌더 (전부 스냅 좌표에 미리 생성 → 배치=등장 연출) ═════════ */
