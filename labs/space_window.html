@@ -93,7 +93,7 @@
 <div class="chip" id="stampChip">행성 도장 <b id="stampN">0</b>/8</div>
 <div class="chip" id="voiceChip" style="right:140px;cursor:pointer">🔊</div>
 <div class="chip" id="constChip" style="right:196px;cursor:pointer">✨ 별자리</div>
-<div id="hint">기기를 돌려 우주를 둘러보세요</div>
+<div id="hint">드래그해서 우주를 둘러보세요</div>
 <div id="arrow"></div>
 <div id="fade"></div>
 <div id="seasonBanner"></div>
@@ -388,10 +388,25 @@ function updateLook(){
 }
 var yawZero = new THREE.Quaternion();   /* 자이로 영점(yaw 보정) */
 var gyroCalib = false;
+/* 2026-09-08 자이로 함정 수리: 노트북·전자칠판·데스크톱도 deviceorientation을 «고정값»으로 쏜다 → 자이로 모드가 켜지며 시선이 한 방향에 굳고 드래그가 죽는다(별만 보이는 화면).
+   확정 규칙 ① 첫 표본 대비 실제로 3° 이상 움직인 뒤에만 자이로 켬 ② 자이로 중이라도 드래그하면 수동 모드로 복귀(현재 시선을 dragLon/Lat로 이어받아 튀지 않음) */
+var gyroFirst = null;
+function gyroDelta(a,b){ var d=Math.abs(a-b)%360; return Math.min(d, 360-d); }
+function gyroToDrag(){
+  var f = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
+  dragLon = THREE.MathUtils.radToDeg(Math.atan2(-f.x, -f.z));
+  dragLat = THREE.MathUtils.radToDeg(Math.asin(Math.max(-1,Math.min(1,f.y))));
+  gyroOn = false; gyroCalib = false; gyroFirst = null;
+}
 window.addEventListener('deviceorientation', function(e){
   if (e.alpha === null && e.beta === null) return;
-  gyroOn = true;
-  gyro.alpha = e.alpha||0; gyro.beta = e.beta||0; gyro.gamma = e.gamma||0;
+  var a=e.alpha||0, b=e.beta||0, g=e.gamma||0;
+  if (!gyroOn){
+    if (!gyroFirst){ gyroFirst={a:a,b:b,g:g}; return; }
+    if (gyroDelta(a,gyroFirst.a)+gyroDelta(b,gyroFirst.b)+gyroDelta(g,gyroFirst.g) < 3) return;   /* 고정값 센서 = 무시 */
+    gyroOn = true;
+  }
+  gyro.alpha = a; gyro.beta = b; gyro.gamma = g;
   if (!gyroCalib){
     gyroCalib = true;
     /* 현재 바라보는 방향의 yaw를 0으로 끌어오는 보정 쿼터니언 계산 */
@@ -417,7 +432,10 @@ function pMove(x,y){
     var scale=(415/topZoom)/innerHeight*2;
     topPan.x -= dx*scale; topPan.z -= dy*scale;
     var lim=260; topPan.x=Math.max(-lim,Math.min(lim,topPan.x)); topPan.z=Math.max(-lim,Math.min(lim,topPan.z));
-  } else if (!gyroOn){ dragLon += dx*0.18; dragLat = Math.max(-85, Math.min(85, dragLat + dy*0.18)); }
+  } else {
+    if (gyroOn && moved > 12) gyroToDrag();          /* 드래그 = 수동 모드로 복귀 */
+    if (!gyroOn){ dragLon += dx*0.18; dragLat = Math.max(-85, Math.min(85, dragLat + dy*0.18)); }
+  }
 }
 renderer.domElement.addEventListener('mousedown', function(e){ pDown(e.clientX,e.clientY); });
 window.addEventListener('mousemove', function(e){ pMove(e.clientX,e.clientY); });

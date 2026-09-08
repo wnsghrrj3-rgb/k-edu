@@ -976,10 +976,24 @@ let dragLon = 0, dragLat = 0, dragging = false, lastX = 0, lastY = 0;
 const _eul = new THREE.Euler(), _q = new THREE.Quaternion();
 const _qz = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
 
+/* 2026-09-08 자이로 함정 수리(space_window과 동일): 고정값 센서(노트북·전자칠판)는 3° 이상 실제로 움직여야 자이로 켬 · 드래그하면 수동 복귀 */
+let gyroFirst = null;
+const gyroDelta = (a, b) => { const d = Math.abs(a - b) % 360; return Math.min(d, 360 - d); };
+function gyroToDrag() {
+  const f = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+  dragLon = THREE.MathUtils.radToDeg(Math.atan2(f.x, -f.z));
+  dragLat = THREE.MathUtils.radToDeg(Math.asin(THREE.MathUtils.clamp(f.y, -1, 1)));
+  gyroOn = false; gyroCalib = false; gyroFirst = null;
+}
 addEventListener('deviceorientation', e => {
   if (e.alpha === null && e.beta === null) return;
-  gyroOn = true;
-  gyro.a = e.alpha || 0; gyro.b = e.beta || 0; gyro.g = e.gamma || 0;
+  const a = e.alpha || 0, b = e.beta || 0, g = e.gamma || 0;
+  if (!gyroOn) {
+    if (!gyroFirst) { gyroFirst = { a, b, g }; return; }
+    if (gyroDelta(a, gyroFirst.a) + gyroDelta(b, gyroFirst.b) + gyroDelta(g, gyroFirst.g) < 3) return;
+    gyroOn = true;
+  }
+  gyro.a = a; gyro.b = b; gyro.g = g;
   if (!gyroCalib) { gyroCalib = true; gyroZero = gyro.a; }
 });
 function applyLook() {
@@ -1012,6 +1026,7 @@ stageEl.addEventListener('pointermove', e => {
   const dx = e.clientX - lastX, dy = e.clientY - lastY;
   lastX = e.clientX; lastY = e.clientY;
   if (Math.abs(dx) + Math.abs(dy) > 2) moved = true;
+  if (gyroOn && moved && st.stop === null && !st.focus) gyroToDrag();
   if (st.stop === null && !st.focus && !gyroOn) {
     dragLon += dx * 0.18;
     dragLat = THREE.MathUtils.clamp(dragLat - dy * 0.18, -84, 84);
