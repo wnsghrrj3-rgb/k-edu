@@ -340,6 +340,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const K = window.KCircuit;
 const P = new URLSearchParams(location.search);
@@ -470,6 +471,14 @@ function buildBattery(E){
   const body=new THREE.Mesh(new THREE.CylinderGeometry(0.026,0.026,0.09,20),
     new THREE.MeshStandardMaterial({ color:0x2b3440, roughness:0.5, metalness:0.4 }));
   body.rotation.z=Math.PI/2; body.castShadow=true; grp.add(body);
+  // 2026-09-08 Blender 건전지 GLB(assets/parts/battery.glb — 라벨·금색 띠, x축 정렬). 로더 부재/실패 시 위 원통 유지.
+  (function(){
+    if (typeof GLTFLoader !== 'function' || typeof fetch !== 'function') return;
+    try { new GLTFLoader().load('./assets/parts/battery.glb', g=>{
+      let src=null; g.scene.traverse(o=>{ if(!src && o.isMesh) src=o; }); if(!src) return;
+      body.geometry.dispose(); body.material.dispose(); body.geometry=src.geometry; body.material=src.material; body.rotation.z=0;
+    }, undefined, ()=>{}); } catch(e){}
+  })();
   // +극(구리 캡, 돌기) / −극(평평)
   const capP=new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.012,0.012,16), COPPER);
   capP.rotation.z=Math.PI/2; capP.position.x=0.051; grp.add(capP);

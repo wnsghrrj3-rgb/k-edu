@@ -271,6 +271,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const K = window.KMagnet;
 const P = new URLSearchParams(location.search);
@@ -334,15 +335,33 @@ function makeBar(m){
   const nHalf=new THREE.Mesh(new THREE.BoxGeometry(L/2,h,w), nMat); nHalf.position.x= L/4; nHalf.castShadow=true;
   const sHalf=new THREE.Mesh(new THREE.BoxGeometry(L/2,h,w), sMat); sHalf.position.x=-L/4; sHalf.castShadow=true;
   grp.add(nHalf); grp.add(sHalf);
-  // N/S 라벨(작은 스프라이트 대신 색으로 구분 — 라벨 텍스트는 canvas 스프라이트)
-  grp.userData.nMat=nMat; grp.userData.sMat=sMat;
+  grp.userData.nMat=nMat; grp.userData.sMat=sMat; grp.userData.nHalf=nHalf; grp.userData.sHalf=sHalf;
+  MAG_BARS.push(grp); applyMagGlb(grp);
   return grp;
 }
+/* 2026-09-08 Blender 막대자석 GLB(assets/parts/magnet.glb — 베벨 + N/S 글자 텍스처). 로더 부재/실패 시 위 단색 상자 유지.
+   flip은 색 바꾸기 대신 «재질 맞바꾸기»로 통일(단색·텍스처 모두 동작). */
+const MAG_BARS=[]; let MAG_GLB=null;
+function applyMagGlb(grp){
+  if(!MAG_GLB) return;
+  const u=grp.userData; u.nHalf.geometry=MAG_GLB.geo; u.sHalf.geometry=MAG_GLB.geo;
+  u.nMat=MAG_GLB.matN; u.sMat=MAG_GLB.matS; u.nHalf.material=u.nMat; u.sHalf.material=u.sMat; u.glb=true;
+}
+(function(){
+  if (typeof GLTFLoader !== 'function' || typeof fetch !== 'function') return;
+  try { new GLTFLoader().load('./assets/parts/magnet.glb', g=>{
+    let mN=null,mS=null; g.scene.traverse(o=>{ if(o.isMesh){ if(o.name.indexOf('N')>=0) mN=o; else mS=o; } });
+    if(!mN||!mS) return;
+    MAG_GLB={ geo:mN.geometry, matN:mN.material, matS:mS.material };
+    MAG_BARS.forEach(applyMagGlb);
+  }, undefined, ()=>{}); } catch(e){}
+})();
 function syncBar(grp, m){
   grp.position.set(m.x, HY+h2(), m.y);
-  // flip이면 N/S 절반 색 교체
-  grp.userData.nMat.color.set(m.flip?SCOL:NCOL);
-  grp.userData.sMat.color.set(m.flip?NCOL:SCOL);
+  // flip이면 N/S 절반 재질 맞바꿈
+  const u=grp.userData;
+  u.nHalf.material = m.flip ? u.sMat : u.nMat;
+  u.sHalf.material = m.flip ? u.nMat : u.sMat;
   grp.rotation.y = -m.angle;  // 순수 x,y 평면의 angle → 3D y축 회전(z=y라 부호 반전)
 }
 function h2(){ return 0.025; }
