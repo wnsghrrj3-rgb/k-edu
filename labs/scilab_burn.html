@@ -336,6 +336,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 /* ═════════ 렌더 기반 (데모 1호 확정 표준) ═════════ */
 const stageEl = document.getElementById('stage');
@@ -400,6 +401,26 @@ const GLASS = new THREE.MeshPhysicalMaterial({
   transparent:true, opacity:0.18, depthWrite:false,
   clearcoat:1, clearcoatRoughness:0.06, side:THREE.DoubleSide, envMapIntensity:1.6
 });
+
+/* 2026-09-08 Blender GLB 공유 로더 — 기하만 교체(코드 재질 유지). 같은 URL은 1회 로드 후 등록 메시 전부 공유.
+   opts.front = 유리처럼 닫힌 이중벽: 재질 clone→FrontSide(Lathe DoubleSide와 겹수 동일) / opts.onSwap(geo) = 교체 직후 훅(입술 좌표·형제 숨김 등).
+   로더 부재(jsdom)·fetch 없음·로드 실패 시 기존 지오메트리 유지. */
+const GLB_SHARE = {};
+function glbGeom(url, mesh, opts){
+  opts = opts || {};
+  if (typeof GLTFLoader !== 'function' || typeof fetch !== 'function') return;
+  const apply = (m, geo) => { const og = m.geometry; m.geometry = geo; if (og && og !== geo) og.dispose();
+    if (opts.front) { m.material = m.material.clone(); m.material.side = THREE.FrontSide; }
+    if (opts.onSwap) try { opts.onSwap(geo, m); } catch(err){} };
+  let e = GLB_SHARE[url];
+  if (!e) { e = GLB_SHARE[url] = { geo:null, waiting:[] };
+    try { new GLTFLoader().load(url, g => { let src=null; g.scene.traverse(o=>{ if(!src && o.isMesh) src=o; }); if(!src) return;
+      e.geo = src.geometry; e.waiting.forEach(w => w()); e.waiting = []; }, undefined, ()=>{}); } catch(err){}
+  }
+  if (e.geo) apply(mesh, e.geo); else e.waiting.push(() => apply(mesh, e.geo));
+}
+function glassSwap(url, mesh, onSwap){ glbGeom(url, mesh, { front:true, onSwap:onSwap }); }
+
 const METAL = new THREE.MeshStandardMaterial({ color:0xb8bec6, metalness:0.92, roughness:0.32, envMapIntensity:1.1 });
 const DARKMETAL = new THREE.MeshStandardMaterial({ color:0x555b63, metalness:0.85, roughness:0.45 });
 const WOOD = new THREE.MeshStandardMaterial({ color:0xC49A6C, roughness:0.8 });
@@ -487,6 +508,11 @@ let candleFlame=[];   // [{outer, inner, light, baseY}]
     const wick=new THREE.Mesh(new THREE.CylinderGeometry(0.0013,0.0013,0.012,8),
       new THREE.MeshStandardMaterial({color:0x222222, roughness:1}));
     wick.position.set(x, CANDLE_H+0.005, 0); gp.add(wick);
+    // 2026-09-08 Blender 양초(기체 실험실 assets/gas/candle.glb 재사용 — 촛농 왁스 베이크+심지, 높이 0.06 → 0.09 로 y 1.5배) — 로드 시 원통·심지 숨김, 불꽃 위치 불변
+    if (typeof GLTFLoader === 'function' && typeof fetch === 'function') { try {
+      new GLTFLoader().load('./assets/gas/candle.glb', r=>{ r.scene.traverse(o=>{ if(o.isMesh) o.castShadow=true; });
+        r.scene.position.set(x,0,0); r.scene.scale.set(1,CANDLE_H/0.06,1); wax.visible=false; wick.visible=false; gp.add(r.scene); }, undefined, ()=>{});
+    } catch(e){} }
     // 불꽃
     const fy=CANDLE_H+0.022;
     const outer=new THREE.Sprite(new THREE.SpriteMaterial({map:FLAME_OUT_TEX,
@@ -512,6 +538,7 @@ let cupMesh=[];   // [group_s, group_l]
   wall.position.y=CUP_H[i]/2; gp.add(wall);
   const topCap=new THREE.Mesh(new THREE.CircleGeometry(CUP_R[i],40), GLASS.clone());
   topCap.rotation.x=-Math.PI/2; topCap.position.y=CUP_H[i]; gp.add(topCap);   // 뒤집힌 컵 = 위가 막힘
+  glassSwap('./assets/glass/'+id+'.glb', wall, ()=>{ wall.position.y=0; topCap.visible=false; });   // Blender 이중벽 유리컵(열린 끝 y=0·닫힌 바닥 y=H, 반경·높이 승계) — 로드 시 코드 뚜껑 숨김
   gp.position.set(CANDLE_X[i], BENCH_Y+0.30, -0.02);   // 초기엔 위(덮기 전)
   gp.userData.coverY=BENCH_Y;      // 덮었을 때 바닥 y
   gp.userData.upY=BENCH_Y+0.30;    // 안 덮었을 때
