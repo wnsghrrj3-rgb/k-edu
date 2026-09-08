@@ -325,6 +325,93 @@ window.KEDU_MAP["g6_2_korean"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 5,
+   "name": "언어와 소통",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g6_korean_u5_l01",
+     "lessonId": "g6_2_kor_u5_l01_v1",
+     "n": "1",
+     "title": "단원 시작 — 배울 내용 살펴보기",
+     "sub": null,
+     "url": "/grade6/semester2/korean/5단원_언어와소통/g6_kor_u5_l01.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g6_korean_u5_l02",
+     "lessonId": "g6_2_kor_u5_l02_03_v1",
+     "n": "2~3",
+     "title": "문자 언어와 음성 언어의 특성 이해하기",
+     "sub": null,
+     "url": "/grade6/semester2/korean/5단원_언어와소통/g6_kor_u5_l02_03.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g6_korean_u5_l04",
+     "lessonId": "g6_2_kor_u5_l04_v1",
+     "n": "4",
+     "title": "매체 자료에서 언어의 표현 효과 이해하기",
+     "sub": null,
+     "url": "/grade6/semester2/korean/5단원_언어와소통/g6_kor_u5_l04.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g6_korean_u5_l05",
+     "lessonId": "g6_2_kor_u5_l05_06_v1",
+     "n": "5~6",
+     "title": "언어의 표현 효과를 생각하며 영상 감상하기",
+     "sub": null,
+     "url": "/grade6/semester2/korean/5단원_언어와소통/g6_kor_u5_l05_06.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g6_korean_u5_l07",
+     "lessonId": "g6_2_kor_u5_l07_08_v1",
+     "n": "7~8",
+     "title": "독자를 고려해 글 쓰는 방법 알기",
+     "sub": null,
+     "url": "/grade6/semester2/korean/5단원_언어와소통/g6_kor_u5_l07_08.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g6_korean_u5_l09",
+     "lessonId": "g6_2_kor_u5_l09_11_v1",
+     "n": "9~11",
+     "title": "독자를 고려해 기사문 쓰기",
+     "sub": null,
+     "url": "/grade6/semester2/korean/5단원_언어와소통/g6_kor_u5_l09_11.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g6_korean_u5_l12",
+     "lessonId": "g6_2_kor_u5_l12_13_v1",
+     "n": "12~13",
+     "title": "배운 내용 실천하기 — 마음을 전하는 편지 쓰기",
+     "sub": null,
+     "url": "/grade6/semester2/korean/5단원_언어와소통/g6_kor_u5_l12_13.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g6_korean_u5_l14",
+     "lessonId": "g6_2_kor_u5_l14_v1",
+     "n": "14",
+     "title": "단원 마무리하기 (정리 · 기초 다지기)",
+     "sub": null,
+     "url": "/grade6/semester2/korean/5단원_언어와소통/g6_kor_u5_l14.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };
