@@ -287,6 +287,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const K = window.KSolar;
 const D2R = K.D2R;
@@ -401,6 +402,25 @@ const moon = new THREE.Mesh(new THREE.SphereGeometry(0.27, 24, 18),
   new THREE.MeshStandardMaterial({ color:0xcfd3da, roughness:1.0 }));
 moon.castShadow=true; earthPos.add(moon);
 const MOON_ORBIT=2.0;
+
+/* ═════════ Blender 모델 교체 (2026-09-08) — assets/solar/{sun,moon}.glb
+   bpy 스크립트로 제작·베이크(달=크레이터 알베도+노멀 / 태양=쌀알무늬 발광). 반지름은 위 구체와 동일(달 0.27·태양 0.62).
+   로더가 없거나(jsdom 하니스) 파일이 없으면 기존 구체 유지 — 기하·재질만 바꿔 치우고 mesh 객체·훅·castShadow는 그대로. */
+function swapFromGlb(target, url){
+  if (typeof GLTFLoader !== 'function' || typeof fetch !== 'function') return;
+  try {
+    new GLTFLoader().load(url, (g)=>{
+      let src=null; g.scene.traverse(o=>{ if(!src && o.isMesh) src=o; });
+      if(!src) return;
+      const oldGeo=target.geometry, oldMat=target.material;
+      target.geometry=src.geometry; target.material=src.material;
+      if(target===sun){ target.material.toneMapped=true; }
+      oldGeo.dispose(); if(oldMat.dispose) oldMat.dispose();
+    }, undefined, ()=>{});
+  } catch(e){}
+}
+swapFromGlb(moon, './assets/solar/moon.glb');
+swapFromGlb(sun,  './assets/solar/sun.glb');
 
 /* ═════════ 상태 ═════════ */
 let day  = parseFloat(P.get('day'))  || 0;
