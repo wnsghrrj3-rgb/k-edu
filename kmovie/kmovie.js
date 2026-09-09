@@ -78,7 +78,8 @@
      · cloudAt = 내가 마지막으로 본 계정 시각(낙관적 잠금 기준). 계정이 그보다 새면(다른 기기가 저장) 덮어쓰지 않고 conflict.
      · degraded = 다른 기기에서 열어 원본 없는 클립을 뺀 상태 → 계정 저장을 멈춘다(PC 작업을 폰이 덮어쓰지 않게).
      · otherTab = 같은 브라우저의 다른 탭이 먼저 열려 있음(navigator.locks) → 이 탭은 자동 저장을 쉰다(서로 덮어쓰지 않게).
-     · 탭을 숨기거나 닫을 때는 이 기기에만 한 번 더 저장한다(계정엔 안 올림 — 저장을 누른 것만 계정에). */
+     · 탭을 숨기거나 닫을 때는 이 기기에만 한 번 더 저장한다(계정엔 안 올림 — 저장을 누른 것만 계정에).
+     · 이 기기 레코드는 계정(owner)별로 갈라 둔다 — 같은 컴퓨터 다른 케이에듀 계정은 자기 것만 보고 자기 마지막 작업만 연다(KMV_STORE.owner, 2026-09-09). */
   const ST = window.KMV_STORE;
   const RETRY_MS = 30000;
   const proj = { id: null, name: '새 작업', degraded: false, cloudAt: 0, cloudErr: null, saving: false, dirty: false, conflict: null, otherTab: false, savedAt: 0, missing: [], fullRec: null };
@@ -2516,6 +2517,9 @@
   async function restore() {
     try { await DB.open(); } catch (e) { console.warn('idb', e); }
     ST.init(DB); await loadWorkDir();
+    // 같은 컴퓨터 다른 계정이면 그 계정의 작업만 — 주인 없는 옛 레코드는 로그인한 첫 시작 때 그 계정 것으로(2026-09-09)
+    try { await ST.claimLegacy(); } catch (e) { console.warn('claim', e); }
+    ST.onOwnerChange(() => { const go = () => (window.__kmvReload || (() => location.reload()))(); if (proj.id && !proj.otherTab) { clearTimeout(saveT); ST.save(rec(), { cloud: false }).catch(() => {}).then(go); } else go(); });   // 다른 탭에서 계정이 바뀌면 이 계정 작업만 다시 연다(__kmvReload 는 테스트 훅)
     let cur = null; try { cur = await ST.local.current(); } catch (e) {}
     let r = cur ? await ST.local.get(cur).catch(() => null) : null;
     if (r) r.where = 'local';

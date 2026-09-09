@@ -4,7 +4,9 @@
   const rows = new Map();                      // id → row {id,user_id,name,doc,dur_sec,clips,updated_at(iso)}
   for (const r of (window.__seedRows || [])) rows.set(r.id, r);   // 테스트가 새로고침 전에 심어 둔 "계정" 내용
   const log = [];
-  const session = { user: { id: 'u1' }, access_token: 'tok' };
+  const session = { user: { id: window.__uid || 'u1' }, access_token: 'tok' };   // 테스트가 __uid 로 다른 계정을 흉내낸다
+  const uid = () => (window.__fakeDb && window.__fakeDb.session && window.__fakeDb.session.user.id) || 'u1';
+  const rls = r => !r.user_id || r.user_id === uid();                              // RLS 흉내 — 남의 행은 안 보인다
   const cmp = (a, op, b) => { const x = typeof a === 'string' && /^\d{4}-/.test(a) ? Date.parse(a) : a, y = typeof b === 'string' && /^\d{4}-/.test(b) ? Date.parse(b) : b; return op === 'eq' ? x === y : op === 'lte' ? x <= y : op === 'gte' ? x >= y : false; };
   function table() {
     const q = { op: 'select', filters: [], order: null, single: false, payload: null, cols: '*' };
@@ -20,7 +22,7 @@
       maybeSingle() { q.single = true; return b; },
       then(res, rej) { return Promise.resolve(run()).then(res, rej); },
     };
-    function match(r) { return q.filters.every(([k, op, v]) => cmp(r[k], op, v)); }
+    function match(r) { return rls(r) && q.filters.every(([k, op, v]) => cmp(r[k], op, v)); }
     function run() {
       log.push(q.op + ' ' + JSON.stringify(q.filters));
       if (q.op === 'select') {
@@ -39,7 +41,9 @@
   window.__fakeDb = { rows, log, session };
   window.supabase = {
     createClient(url, key) {
-      return { supabaseUrl: url, supabaseKey: key, from: () => table(), auth: { getSession: async () => ({ data: { session: window.__fakeDb.session } }), onAuthStateChange() {} } };
+      // teachers 표 — 교사 게이트(kedu_teacher_gate.js)가 묻는다: 로그인한 uid 는 승인된 교사로 답한다
+      const teachers = () => { const t = { select: () => t, eq: () => t, maybeSingle: () => t, then: (res, rej) => Promise.resolve({ data: { approval: 'approved' }, error: null }).then(res, rej) }; return t; };
+      return { supabaseUrl: url, supabaseKey: key, from: name => name === 'teachers' ? teachers() : table(), auth: { getSession: async () => ({ data: { session: window.__fakeDb.session } }), onAuthStateChange(cb) { window.__fakeDb.authCb = cb; } } };
     },
   };
 })();

@@ -14,6 +14,11 @@
   const FILE_EXT = '.kmv', FILE_V = 1;
   let DB = null;                                              // kmovie.js 의 IndexedDB 래퍼(projects 스토어 필요)
   let dbc = null, sessionP = null, sessionNow = null, authHooked = false;   // sessionNow: keepalive 저장용 동기 사본(토큰 갱신을 따라간다)
+  /* 주인(owner) — 이 브라우저의 IndexedDB 는 계정과 무관하게 하나라, 같은 컴퓨터에서 다른 케이에듀 계정으로 들어오면 남의 작업이 그대로 떴다(2026-09-09 준호 보고).
+     그래서 로컬 레코드마다 owner(계정 uid, 로그인 없으면 'anon')를 붙이고 목록·시작 작업(current)·get 을 주인으로 가른다.
+     ownerNow = 이 페이지가 열릴 때 정한 주인. 다른 탭에서 로그인/로그아웃해 주인이 바뀌면 onOwnerChange 로 알린다(kmovie.js 가 저장 후 새로고침). */
+  let ownerNow = null, ownerP = null, ownerCbs = [];
+  const ANON = 'anon';
 
   const uuid = () => (g.crypto && crypto.randomUUID) ? crypto.randomUUID() : 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
   function summary(doc) {
@@ -21,15 +26,37 @@
     return { durSec: last ? (last.at + last.dur) / 30 : 0, clips: V.filter(c => !c.gap).length };
   }
 
-  /* ---------- ① 로컬 ---------- */
+  /* ---------- ① 로컬 (주인별) ---------- */
+  async function owner() {
+    if (ownerNow) return ownerNow;
+    if (!ownerP) ownerP = session().then(s => { ownerNow = (s && s.user && s.user.id) || ANON; return ownerNow; }).catch(() => (ownerNow = ANON));
+    return ownerP;
+  }
+  const mine = (r, o) => !!r && (r.owner ? r.owner === o : o === ANON);        // owner 없는 옛 레코드는 로그인 없는 자리에서만 보인다(로그인 뒤엔 claimLegacy 가 주인을 붙인다)
+  const curKey = o => o === ANON ? 'current' : 'current:' + o;                  // 로그인 없는 자리는 옛 키 그대로(호환)
   const local = {
-    list() { return DB ? DB.tx('projects', 'readonly', s => s.getAll()).then(r => (r || []).map(x => Object.assign({ where: 'local' }, x, { doc: undefined, hasDoc: true }))) : Promise.resolve([]); },
-    get(id) { return DB ? DB.tx('projects', 'readonly', s => s.get(id)) : Promise.resolve(null); },
-    put(rec) { return DB ? DB.tx('projects', 'readwrite', s => s.put(rec)) : Promise.resolve(null); },
+    async list() { if (!DB) return []; const o = await owner(); const r = await DB.tx('projects', 'readonly', s => s.getAll()); return (r || []).filter(x => mine(x, o)).map(x => Object.assign({ where: 'local' }, x, { doc: undefined, hasDoc: true })); },
+    async get(id) { if (!DB) return null; const o = await owner(); const r = await DB.tx('projects', 'readonly', s => s.get(id)); return mine(r, o) ? r : null; },
+    async put(rec) { if (!DB) return null; rec.owner = await owner(); return DB.tx('projects', 'readwrite', s => s.put(rec)); },
     del(id) { return DB ? DB.tx('projects', 'readwrite', s => s.delete(id)) : Promise.resolve(null); },
-    current() { return DB ? DB.getKV('current') : Promise.resolve(null); },
-    setCurrent(id) { return DB ? DB.putKV('current', id) : Promise.resolve(null); },
+    async current() { if (!DB) return null; return DB.getKV(curKey(await owner())); },
+    async setCurrent(id) { if (!DB) return null; return DB.putKV(curKey(await owner()), id); },
   };
+  /* 주인 없는 옛 레코드(2026-09-09 이전 저장)에 주인 붙이기 — 로그인한 첫 시작 때 한 번. 계정에 같은 id 가 있으면 확실히 그 사람 것, 나머지도 그 사람 것으로 본다
+     (같은 브라우저에서 먼저 로그인한 계정이 가져간다 — 이 컴퓨터를 그 사람 혼자 쓰던 시절의 작업이므로). 옛 kv 'current' 도 그 계정의 current 로 옮긴다. 돌려주는 값 = 붙인 개수. */
+  async function claimLegacy() {
+    if (!DB) return 0; const o = await owner(); if (o === ANON) return 0;
+    const all = (await DB.tx('projects', 'readonly', s => s.getAll())) || [], orphan = all.filter(r => r && !r.owner);
+    if (!orphan.length) return 0;
+    for (const r of orphan) { r.owner = o; await DB.tx('projects', 'readwrite', s => s.put(r)); }
+    try { const old = await DB.getKV('current'); if (old && orphan.some(r => r.id === old)) { const cur = await DB.getKV(curKey(o)); if (!cur) await DB.putKV(curKey(o), old); } await DB.putKV('current', null); } catch (e) {}
+    return orphan.length;
+  }
+  function onOwnerChange(cb) { ownerCbs.push(cb); }
+  function ownerChanged(s) {
+    const o = (s && s.user && s.user.id) || ANON;
+    if (ownerNow && o !== ownerNow) { const prev = ownerNow; ownerCbs.forEach(cb => { try { cb(o, prev); } catch (e) {} }); }
+  }
 
   /* ---------- ② 계정(클라우드) ---------- */
   function client() {
@@ -42,7 +69,7 @@
     const c = client();
     sessionP = c ? c.auth.getSession().then(r => (r && r.data && r.data.session) || null).catch(() => null) : Promise.resolve(null);
     sessionP.then(s => { sessionNow = s; if (!s) sessionP = null; });    // 로그인 없으면 다음에 다시 물어본다
-    if (c && !authHooked) { authHooked = true; try { c.auth.onAuthStateChange((ev, s) => { sessionNow = s || null; if (!s) sessionP = null; }); } catch (e) {} }
+    if (c && !authHooked) { authHooked = true; try { c.auth.onAuthStateChange((ev, s) => { sessionNow = s || null; if (!s) sessionP = null; ownerChanged(s); }); } catch (e) {} }
     return sessionP;
   }
   const iso = ms => new Date(ms || Date.now()).toISOString();
@@ -171,6 +198,7 @@
   g.KMV_STORE = {
     FILE_EXT, init: db => { DB = db; }, uuid, summary,
     local, cloud, list, get, make, save, remove, rename, download, writeToDir, fileBytes, parse, fromFile, iso,
-    _reset: () => { dbc = null; sessionP = null; sessionNow = null; authHooked = false; },
+    owner, claimLegacy, onOwnerChange, ANON,
+    _reset: () => { dbc = null; sessionP = null; sessionNow = null; authHooked = false; ownerNow = null; ownerP = null; },
   };
 })(typeof window !== 'undefined' ? window : globalThis);

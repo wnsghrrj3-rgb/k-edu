@@ -17,6 +17,8 @@ export async function launch(viewport) {
     const page = await app.firstWindow();
     await page.setViewportSize(viewport);
     if (!process.env.KMV_TOUR) await page.addInitScript(() => { try { localStorage.setItem('kmv.tour', '1'); } catch (e) {} });   // 첫 안내 창은 ui-extras 만 본다
+    // 교사 게이트(kedu_teacher_gate.js, 2026-09 부터 kmovie 에도) — 테스트 환경엔 진짜 로그인이 없어 잠금 카드가 화면을 덮고 클릭을 막는다 → 통과 캐시를 미리 심는다(게이트 자체는 여기서 안 본다)
+    await page.addInitScript(() => { try { sessionStorage.setItem('kedu_tgate_v1', JSON.stringify({ ok: true, at: Date.now() })); } catch (e) {} });
     await page.route('**/fonts.googleapis.com/**', r => r.fulfill({ body: '', contentType: 'text/css' }));   // 차단망 — 글꼴은 프리텐다드 폴백
     // Electron 렌더러엔 window.prompt 가 없다 → 테스트의 dialog 핸들러(d.accept(값))와
     // 같은 값을 돌려주는 폴리필(핸들러 없으면 null=취소). chromium 경로는 그대로 진짜 dialog.
@@ -33,6 +35,8 @@ export async function launch(viewport) {
   const browser = await chromium.launch({ headless: true, args: ['--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--use-angle=swiftshader', '--autoplay-policy=no-user-gesture-required', '--enable-features=WebCodecs'] });
   const page = await (await browser.newContext({ viewport })).newPage();
   if (!process.env.KMV_TOUR) await page.addInitScript(() => { try { localStorage.setItem('kmv.tour', '1'); } catch (e) {} });
+  // 교사 게이트(kedu_teacher_gate.js, 2026-09 부터 kmovie 에도) — 테스트 환경엔 진짜 로그인이 없어 잠금 카드가 화면을 덮고 클릭을 막는다 → 통과 캐시를 미리 심는다(게이트 자체는 여기서 안 본다)
+  await page.addInitScript(() => { try { sessionStorage.setItem('kedu_tgate_v1', JSON.stringify({ ok: true, at: Date.now() })); } catch (e) {} });
   await page.route('**/fonts.googleapis.com/**', r => r.fulfill({ body: '', contentType: 'text/css' }));
   return { page, close: () => browser.close() };
 }
