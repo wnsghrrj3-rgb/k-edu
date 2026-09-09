@@ -1,0 +1,183 @@
+<!--
+K-edu 「학부모 개인정보 동의서」 인쇄 양식 (teacher/consent-form.html) — 2026-09-09
+왜: 처리방침 v2.1 제7조가 "가정통신문(별지 제1호 양식)" 을 전제로 하는데 정작 양식이 없었다. 준호 요청(09-09):
+    "교사가 알아볼 수 있게 어딘가에 적어 줘 — 처음 한 번이 아니라 동의가 안 되어 있으면 계속 저장이 안 된다고. 동의서 양식도 같이."
+⚠️ 서버 0 — 화면에서 학교·학년반·담임·날짜만 채워 넣고 브라우저가 인쇄한다. 입력값은 어디에도 저장하지 않는다.
+⚠️ 양식의 항목·기간·위탁 내용은 /privacy/privacy-policy-v2.md(v2.1) 제2·3·4·6·7조를 그대로 옮긴 것 — 처리방침이 바뀌면 이 양식도 같이 고친다.
+⚠️ 정직: 이 양식은 케이에듀가 실제로 하는 처리를 적은 초안이다. 학교 개인정보 보호 담당자·교육청 표준 서식과 맞춰 본 뒤 배부한다(화면에만 표시, 인쇄엔 안 나감).
+-->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>학부모 개인정보 동의서 양식 · 케이에듀</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="/kedu_teacher_gate.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--primary:#5B8EF8;--primary-light:#EBF4FF;--orange:#DD6B20;--bg:#F5F7FA;--text:#1A202C;--sub:#718096;--border:#E2E8F0;--radius:14px}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--text)}
+.wrap{max-width:1000px;margin:0 auto;padding:18px 16px 60px}
+h1{font-size:22px;font-weight:700;margin-bottom:4px}
+.lead{font-size:13.5px;color:var(--sub);line-height:1.65;margin-bottom:14px}
+.lead b{color:var(--text)}
+.panel{background:#fff;border-radius:var(--radius);box-shadow:0 2px 14px rgba(0,0,0,.06);padding:16px 18px;margin-bottom:14px}
+.panel h2{font-size:15px;font-weight:700;margin-bottom:10px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row + .row{margin-top:9px}
+label.f{font-size:12.5px;color:var(--sub);font-weight:700;min-width:64px}
+input[type=text]{font-family:inherit;font-size:13.5px;padding:8px 11px;border:1px solid #d5dbe3;border-radius:9px;background:#fff;color:var(--text)}
+.btn{font-family:inherit;font-weight:700;font-size:13.5px;padding:9px 18px;border:none;border-radius:10px;cursor:pointer;background:#EDF2F7;color:var(--text)}
+.btn.p{background:var(--primary);color:#fff}
+.btn.o{background:#fff;border:1.5px solid var(--border);color:var(--sub)}
+.hintbox{background:#FFF7ED;border-left:4px solid var(--orange);border-radius:10px;padding:10px 14px;font-size:12.5px;line-height:1.65;color:#7C2D12;margin-top:10px}
+.hintbox b{color:#9A3412}
+.rule{background:#EEF6FF;border-left:4px solid var(--primary);border-radius:10px;padding:10px 14px;font-size:13px;line-height:1.7;color:#1e3a5f}
+.rule b{color:#1d4ed8}
+
+/* ── 인쇄 판 (A4) ── */
+.sheet{background:#fff;width:210mm;min-height:297mm;margin:0 auto;padding:16mm 18mm 14mm;box-shadow:0 1px 8px rgba(0,0,0,.18);font-size:10.5pt;line-height:1.55;color:#111;font-family:'Noto Sans KR','Malgun Gothic',sans-serif}
+.sheet + .sheet{margin-top:10mm}
+.sheet .head{text-align:center;margin-bottom:5mm}
+.sheet .head .no{font-size:9pt;color:#555;text-align:left}
+.sheet .head h3{font-size:16pt;font-weight:900;letter-spacing:.5px;margin:2mm 0 1mm}
+.sheet .head .sub{font-size:9.5pt;color:#333}
+.sheet p{margin:0 0 2.2mm}
+.sheet h4{font-size:11pt;font-weight:700;margin:4mm 0 1.5mm;padding-left:2mm;border-left:3px solid #111}
+.sheet table{width:100%;border-collapse:collapse;font-size:9.5pt;margin:1mm 0 2mm}
+.sheet th,.sheet td{border:1px solid #333;padding:1.6mm 2.2mm;vertical-align:top;text-align:left}
+.sheet th{background:#f0f0f0;font-weight:700;width:26mm;white-space:nowrap}
+.sheet ul{margin:0 0 2mm 5mm}
+.sheet li{margin-bottom:.6mm}
+.blank{display:inline-block;min-width:38mm;border-bottom:1px solid #111;padding:0 2mm;text-align:center}
+.blank.w{min-width:60mm}.blank.s{min-width:22mm}
+.cut{border-top:1px dashed #555;margin:5mm 0 3mm;position:relative;text-align:center;font-size:8.5pt;color:#555}
+.cut span{background:#fff;padding:0 3mm;position:relative;top:-2.2mm}
+.box{border:1.5px solid #111;padding:3mm 4mm;margin-top:2mm}
+.box .t{font-size:13pt;font-weight:900;text-align:center;margin-bottom:2.5mm}
+.chk{display:inline-block;width:4mm;height:4mm;border:1.2px solid #111;vertical-align:-0.8mm;margin:0 1mm 0 2mm}
+.sign{display:flex;justify-content:space-between;align-items:flex-end;gap:4mm;margin-top:3mm;font-size:10pt}
+.sign>span:first-child{white-space:nowrap}
+.warn{font-size:9pt;color:#333;background:#f7f7f7;border:1px solid #ccc;padding:2mm 3mm;margin-top:2mm}
+.warn b{color:#000}
+.hdr-school{font-weight:700}
+
+@media print{
+  body{background:#fff}
+  .wrap{max-width:none;padding:0}
+  .noprint{display:none !important}
+  .sheet{box-shadow:none;margin:0;width:auto;min-height:0;page-break-after:always;padding:0}
+  .sheet:last-child{page-break-after:auto}
+  @page{size:A4;margin:16mm 18mm 14mm}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="noprint">
+  <h1>학부모 개인정보 동의서 양식 <span style="font-size:13px;color:var(--sub);font-weight:500">(가정통신문 별지 제1호)</span></h1>
+  <p class="lead">아래 칸만 채우고 <b>인쇄</b>하면 됩니다. 1장은 학부모께 드리는 안내, 2장은 잘라서 돌려받는 회신용 동의서예요. 입력한 내용은 <b>어디에도 저장되지 않습니다</b>(서버·이 기기 모두).</p>
+
+  <div class="panel">
+    <h2>📌 먼저 알아 두실 것 — 동의는 「한 번 확인하고 끝」이 아닙니다</h2>
+    <div class="rule">
+      케이에듀는 <b>학부모 동의가 켜져 있는 학생의 것만</b> 저장합니다. 동의서를 받기 전, 또는 명단에서 「동의」가 꺼져 있는 <b>동안에는 계속</b> — 처음 한 번이 아니라 그 학생이 들어올 때마다 — 학습 기록·활동 결과·하던 작업이 <b>서버에도, 그 컴퓨터·태블릿 안에도</b> 남지 않습니다. 화면에서 풀고 만드는 건 그대로 되지만 새로고침하거나 다음에 다시 들어오면 처음부터예요. 동의서를 받으신 뒤 명단에서 「동의」를 켜는 순간부터 저장이 시작되고, 다시 끄면 그 순간부터 다시 멈춥니다(이미 쌓인 기록은 지우지 않고 멈춤 — 삭제는 권리 행사 채널).
+    </div>
+    <div class="hintbox" style="margin-top:10px">
+      <b>정직한 표기</b> — 이 양식은 케이에듀가 실제로 하는 처리(처리방침 v2.1 제2·3·4·6·7조)를 그대로 옮긴 초안입니다. 배부 전에 학교 개인정보 보호 담당자·교육청 표준 서식과 한 번 맞춰 보세요. 동의서 원본은 학교가 학칙에 따라 보관하며, 케이에듀는 원본을 받지 않습니다.
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>✏️ 채우기</h2>
+    <div class="row"><label class="f">학교</label><input type="text" id="f-school" placeholder="예: ○○초등학교" style="width:200px" oninput="fill()"></div>
+    <div class="row"><label class="f">학년·반</label><input type="text" id="f-class" placeholder="예: 1학년 2반" style="width:140px" oninput="fill()"><label class="f" style="min-width:auto">담임</label><input type="text" id="f-teacher" placeholder="예: 홍길동" style="width:120px" oninput="fill()"></div>
+    <div class="row"><label class="f">회신 기한</label><input type="text" id="f-due" placeholder="예: 2026년 9월 16일(수)" style="width:200px" oninput="fill()"><label class="f" style="min-width:auto">발송일</label><input type="text" id="f-date" placeholder="예: 2026년 9월 9일" style="width:160px" oninput="fill()"></div>
+    <div class="row" style="margin-top:12px"><button class="btn p" onclick="window.print()">🖨 인쇄 (2장)</button><a class="btn o" href="/privacy/" target="_blank" style="text-decoration:none">처리방침 v2.1 보기</a><a class="btn o" href="/teacher/" style="text-decoration:none">← 교사 대시보드</a></div>
+  </div>
+</div>
+
+<!-- ───────── 1장: 안내 ───────── -->
+<div class="sheet">
+  <div class="head">
+    <div class="no">가정통신문 별지 제1호 · 케이에듀 개인정보 처리 안내</div>
+    <h3>자기주도 학습 플랫폼 「케이에듀」 이용을 위한<br>학생 개인정보 수집·이용 동의 안내</h3>
+    <div class="sub"><span class="hdr-school" data-f="school">○○초등학교</span> · <span data-f="class">○학년 ○반</span> · 담임 <span data-f="teacher">○○○</span></div>
+  </div>
+
+  <p>학부모님, 안녕하십니까. 우리 반은 학생들의 자기주도 학습을 돕기 위해 교사가 직접 만들어 무료로 운영하는 학습 누리집 <b>케이에듀(keduclass.com)</b>를 사용하려 합니다. 학생의 학습 기록을 저장하려면 「개인정보 보호법」 제22조의2에 따라 <b>만 14세 미만 아동의 법정대리인 동의</b>가 필요하여 아래와 같이 안내드리고 동의를 여쭙습니다.</p>
+
+  <h4>1. 수집·이용하는 개인정보와 목적</h4>
+  <table>
+    <tr><th>수집 항목</th><td>학급에서 쓰는 학생 표시명(이름 또는 닉네임)·번호, 학년·반, 학급코드, 학습 기록(차시별 정답·오답, 풀이 시간, 개념별 성취도, 오답 누적, 활동·숙제 완료 이력, 만들기·글쓰기 등 활동 결과물)</td></tr>
+    <tr><th>이용 목적</th><td>① 학생 개인별 학습 진행 저장과 이어하기 ② 어려워하는 개념 진단과 보충 안내(오답노트) ③ 담임교사의 학급 학습 관리 ④ 학부모(법정대리인)의 자녀 학습 확인</td></tr>
+    <tr><th>수집 방법</th><td>표시명·번호·학년반은 담임교사가 등록 · 학습 기록은 학생이 학급코드로 들어와 학습할 때 자동 기록</td></tr>
+    <tr><th>수집하지 않는 것</th><td>주민등록번호·생년월일·연락처·주소·사진 등 학습과 무관한 정보는 수집하지 않습니다.</td></tr>
+  </table>
+
+  <h4>2. 보유·이용 기간</h4>
+  <p>학년이 끝나는 <b>매년 2월 28일</b>에 학생 정보와 학습 기록이 자동으로 삭제됩니다(3월 1일 새 학년 전 일괄 삭제). 그 전이라도 법정대리인이 삭제를 요구하면 즉시 삭제합니다. 삭제 1주일 전부터 교사·학부모 화면에 기록 내려받기 안내가 표시됩니다.</p>
+
+  <h4>3. 개인정보 처리 위탁과 국외 이전</h4>
+  <table>
+    <tr><th>수탁 업체</th><td>Supabase Inc.(미국) — 데이터베이스 보관 및 로그인 인프라</td></tr>
+    <tr><th>이전되는 항목·시점</th><td>위 1항의 항목이 저장될 때 인터넷을 통해 미국 소재 서버에 저장·보관됩니다. 보유 기간은 2항과 같습니다.</td></tr>
+  </table>
+  <p style="font-size:9.5pt">※ 수탁 업체는 위탁 목적 밖으로 정보를 쓰지 못하도록 계약·기술적으로 제한하며, 자세한 내용은 케이에듀 개인정보 처리방침(keduclass.com/privacy) 제6조에 있습니다.</p>
+
+  <h4>4. 동의하지 않으셔도 됩니다 — 동의하지 않을 때</h4>
+  <ul>
+    <li>학생은 같은 학급코드로 들어와 학습 내용을 <b>보고 풀어 볼 수는 있습니다</b>(체험).</li>
+    <li>다만 동의가 없는 동안에는 <b>어떤 학습 기록·활동 결과도 저장되지 않습니다</b> — 케이에듀 서버에도, 사용한 컴퓨터·태블릿 안에도 남지 않으며, 다음에 다시 들어오면 처음부터 시작합니다. 담임교사의 학급 학습 관리와 학부모 학습 확인 기능도 이용할 수 없습니다.</li>
+    <li>동의는 나중에 언제든 하실 수 있고, 동의한 뒤에도 언제든 철회·삭제를 요구하실 수 있습니다(담임교사 또는 keduclass.com/privacy 안내 채널).</li>
+  </ul>
+
+  <h4>5. 법정대리인의 권리</h4>
+  <p>열람·정정·삭제·처리정지를 언제든 요구하실 수 있습니다. 담임교사에게 말씀하시거나 케이에듀 처리방침에 적힌 채널로 요청하시면 지체 없이 처리합니다.</p>
+
+  <p style="margin-top:4mm">회신 기한: <b data-f="due">○월 ○일</b>까지 아랫장(회신용)을 잘라 자녀 편에 보내 주시기 바랍니다.</p>
+  <p style="text-align:right;margin-top:3mm"><span data-f="date">20○○년 ○월 ○일</span><br><span class="hdr-school" data-f="school">○○초등학교</span> <span data-f="class">○학년 ○반</span> 담임교사 <span data-f="teacher">○○○</span> (인)</p>
+</div>
+
+<!-- ───────── 2장: 회신용 동의서 ───────── -->
+<div class="sheet">
+  <div class="cut"><span>✂ ─ 자르는 선 ─ 아랫부분을 학교로 보내 주세요 ─</span></div>
+  <div class="box">
+    <div class="t">학생 개인정보 수집·이용 및 국외 이전 동의서 (회신용)</div>
+    <table>
+      <tr><th>학교·학급</th><td><span class="hdr-school" data-f="school">○○초등학교</span> <span data-f="class">○학년 ○반</span></td><th>번호</th><td><span class="blank s">&nbsp;</span></td></tr>
+      <tr><th>학생 이름</th><td><span class="blank">&nbsp;</span></td><th>학부모 성명</th><td><span class="blank">&nbsp;</span></td></tr>
+    </table>
+
+    <p>본인은 「케이에듀」 이용을 위한 학생 개인정보 처리 안내(앞장 1~5항)를 읽고 이해하였으며, 아래 각 항목에 대해 다음과 같이 표시합니다. <b>두 항목 모두 동의하셔야 학습 기록이 저장됩니다.</b></p>
+    <table>
+      <tr><th style="width:60mm">① 개인정보 수집·이용<br><span style="font-weight:400;font-size:8.5pt">(1항 항목·목적, 2항 기간)</span></th><td><span class="chk"></span> 동의함 &nbsp;&nbsp;&nbsp; <span class="chk"></span> 동의하지 않음</td></tr>
+      <tr><th>② 처리 위탁 및 국외 이전<br><span style="font-weight:400;font-size:8.5pt">(3항, Supabase Inc.·미국)</span></th><td><span class="chk"></span> 동의함 &nbsp;&nbsp;&nbsp; <span class="chk"></span> 동의하지 않음</td></tr>
+    </table>
+    <div class="warn">
+      <b>동의하지 않거나 이 동의서를 내지 않으면</b> 자녀는 학급코드로 들어와 체험만 할 수 있고, 동의가 없는 동안에는 계속해서 어떤 학습 기록·활동 결과도 서버와 기기 어디에도 저장되지 않습니다. 동의는 언제든 나중에 하실 수 있고, 하신 뒤에도 언제든 철회·삭제를 요구하실 수 있습니다. 동의 여부로 학교생활에 불이익은 없습니다.
+    </div>
+    <div class="sign">
+      <span><span data-f="date">20○○년 ○월 ○일</span></span>
+      <span>학부모(법정대리인) &nbsp; <span class="blank">&nbsp;</span> (서명 또는 인) &nbsp; 학생과의 관계 <span class="blank s">&nbsp;</span></span>
+    </div>
+  </div>
+  <p style="font-size:9pt;color:#444;margin-top:3mm">※ 이 동의서 원본은 학교가 학칙에 따라 보관하며, 케이에듀는 원본을 받지 않습니다. 담임교사는 동의서를 받은 학생만 케이에듀 명단에서 「동의」로 표시합니다.</p>
+</div>
+
+</div>
+<script>
+function fill(){
+  var v = { school: 'f-school', class: 'f-class', teacher: 'f-teacher', due: 'f-due', date: 'f-date' };
+  var def = { school: '○○초등학교', class: '○학년 ○반', teacher: '○○○', due: '○월 ○일', date: '20○○년 ○월 ○일' };
+  Object.keys(v).forEach(function (k) {
+    var val = (document.getElementById(v[k]).value || '').trim() || def[k];
+    document.querySelectorAll('[data-f="' + k + '"]').forEach(function (el) { el.textContent = val; });
+  });
+}
+(function(){ var d = new Date(); document.getElementById('f-date').value = d.getFullYear() + '년 ' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일'; fill(); })();
+</script>
+</body>
+</html>
