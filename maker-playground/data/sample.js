@@ -126,6 +126,7 @@ window.MK_SAMPLE = (() => {
     { key: 'thumbnail', name: '썸네일', ico: '🖼', desc: '영상 표지' },
     { key: 'sns', name: 'SNS 콘텐츠', ico: '💬', desc: '학급 SNS·밴드' },
     { key: 'activity', name: '활동자료', ico: '✂️', desc: '이름표·상장·쿠폰' },
+    { key: 'print', name: '인쇄물', ico: '🖨', desc: '상장·안내장·가정통신문 (A4)' },
     { key: 'ai', name: 'AI로 만들기', ico: '✨', desc: '설명하면 AI가 구성' },
   ];
 

@@ -55,6 +55,7 @@ window.MK_TPL = (() => {
   const CATEGORIES = [
     ['presentation', '발표자료'], ['video', '영상'], ['cardnews', '카드뉴스'], ['poster', '포스터'],
     ['worksheet', '학습지'], ['activity', '활동자료'], ['thumbnail', '썸네일'], ['sns', 'SNS'],
+    ['print', '인쇄물'],   /* R141 — 상장·안내장·가정통신문·주간학습안내 (A4) */
   ];
 
   /* ---------- 레지스트리 ---------- */

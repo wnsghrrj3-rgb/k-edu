@@ -17,7 +17,7 @@ window.MK_SCREENS.home = (() => {
   /* ---- 상수 (지시 순서 고정) ---- */
   const CHIPS = [
     ['presentation', '발표'], ['cardnews', '카드뉴스'], ['video', '영상'],
-    ['poster', '포스터'], ['worksheet', '학습지'], ['activity', '활동자료'],
+    ['poster', '포스터'], ['worksheet', '학습지'], ['activity', '활동자료'], ['print', '인쇄물'],
   ];
   const PLACEHOLDERS = [
     '예: 학교폭력 예방 발표자료 만들어줘',

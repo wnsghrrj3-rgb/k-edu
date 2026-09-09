@@ -10,7 +10,7 @@ window.MK_SCREENS = window.MK_SCREENS || {};
 window.MK_SCREENS.create = (() => {
   const M = () => window.MK, S = () => window.MK_SAMPLE;
 
-  const TYPE_ORDER = ['presentation', 'video', 'cardnews', 'poster', 'worksheet', 'activity', 'thumbnail', 'sns'];
+  const TYPE_ORDER = ['presentation', 'video', 'cardnews', 'poster', 'worksheet', 'activity', 'print', 'thumbnail', 'sns'];
   const STYLES = [
     ['Modern', '깔끔한 직선과 대비'], ['Minimal', '여백 중심, 요소 최소'], ['Premium', '딥톤·차분한 고급감'],
     ['Kids', '밝고 동글동글'], ['Magazine', '잡지식 편집 조판'], ['Science', '탐구·도식 중심'], ['Creative', '자유로운 발상'],

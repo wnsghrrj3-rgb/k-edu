@@ -166,6 +166,33 @@ window.MK_TPLSVG = (() => {
       contentType: 'poster', style: '볼드', styleId: 'st-bold', styleEn: 'Creator', ratio: '4:5', difficulty: '쉬움', rec: false,
       desc: '형광 연두 머리판에 강한 글자를 얹은 모집면', uses: '방과후 수업 모집·동아리 안내·특강 홍보', tags: ['수업', '모집', '볼드'], hints: ['차시 수와 대상을 아래 칸에', '제목 두 줄이 주인공'] },
 
+    /* ---- pack11: 교사 인쇄물 (A4 세로 1240×1754, contentType 'print') ----
+       R141. 열면 완성, 글자만 교체. 명단 대량 채우기는 이 팩의 몫이 아니다. */
+    { id: 'award-classic-01', name: 'Classic Award', ko: '상장 (정통 금테)', category: 'education', width: 1240, height: 1754, pack: 'pack11', file: '51_award_classic.svg',
+      contentType: 'print', style: '페이퍼', styleId: 'st-paper', styleEn: 'Classic', ratio: 'A4', difficulty: '쉬움', rec: true,
+      desc: '금색 이중 테두리에 상 이름·이름·문구를 세운 정통 상장', uses: '모범상·학기 말 시상·대회 시상', tags: ['상장', '인쇄물', 'A4'], hints: ['상 이름·이름·날짜 셋만 바꾸면 끝', '문구는 세 줄 안에서 끊을 것'] },
+    { id: 'award-modern-01', name: 'Modern Award', ko: '상장 (모던 네이비)', category: 'education', width: 1240, height: 1754, pack: 'pack11', file: '52_award_modern.svg',
+      contentType: 'print', style: '모던', styleId: 'st-modern', styleEn: 'Modern', ratio: 'A4', difficulty: '쉬움', rec: false,
+      desc: '네이비 머리판과 금선으로 정리한 현대적 상장', uses: '칭찬상·프로젝트 우수상·학교 대표 시상', tags: ['상장', '인쇄물', '네이비'], hints: ['머리판 색을 학교 색으로 바꾸면 우리 학교 상장', '영문 소제는 지워도 된다'] },
+    { id: 'award-kids-01', name: 'Kids Award', ko: '상장 (어린이 색동)', category: 'education', width: 1240, height: 1754, pack: 'pack11', file: '53_award_kids.svg',
+      contentType: 'print', style: '소프트', styleId: 'st-soft', styleEn: 'Kids', ratio: 'A4', difficulty: '쉬움', rec: true,
+      desc: '동글동글한 색 점과 둥근 테두리의 저학년용 칭찬 상장', uses: '책읽기왕·칭찬 스티커 상·저학년 학급 시상', tags: ['상장', '저학년', '칭찬'], hints: ['색 점은 옮기거나 지워도 된다', '문구는 아이 말투로'] },
+    { id: 'notice-event-01', name: 'Event Notice', ko: '행사 안내장', category: 'education', width: 1240, height: 1754, pack: 'pack11', file: '54_notice_event.svg',
+      contentType: 'print', style: '에듀', styleId: 'st-edu', styleEn: 'Clean', ratio: 'A4', difficulty: '쉬움', rec: true,
+      desc: '초록 머리판 아래 일시·장소·순서 칸을 갖춘 학부모 안내장', uses: '학예회·공개수업·학교 행사 초대', tags: ['안내장', '학부모', '행사'], hints: ['학교 이름·일시·장소만 바꾸면 바로 나간다', '순서 줄은 복제해 늘리세요'] },
+    { id: 'notice-counsel-01', name: 'Counseling Week', ko: '상담 주간 안내 (회신표)', category: 'education', width: 1240, height: 1754, pack: 'pack11', file: '55_notice_counsel.svg',
+      contentType: 'print', style: '에듀', styleId: 'st-edu', styleEn: 'Form', ratio: 'A4', difficulty: '보통', rec: false,
+      desc: '기간·방법·시간 안내와 잘라서 보내는 회신표가 한 장에', uses: '학부모 상담 주간·희망 시간 조사', tags: ['상담', '회신표', '학부모'], hints: ['절취선 아래가 회신표 — 칸 이름은 그대로 두는 편이 안전', '기간과 방법만 바꾸면 끝'] },
+    { id: 'home-letter-01', name: 'Home Letter', ko: '가정통신문 (기본)', category: 'education', width: 1240, height: 1754, pack: 'pack11', file: '56_home_letter.svg',
+      contentType: 'print', style: '페이퍼', styleId: 'st-paper', styleEn: 'Letter', ratio: 'A4', difficulty: '쉬움', rec: true,
+      desc: '제목·본문·요약 칸으로 짠 가장 기본이 되는 가정통신문', uses: '학급 알림·학교 공지·학기 초 안내', tags: ['가정통신문', '공지', 'A4'], hints: ['본문은 한 문단에 한 가지만', '요약 칸(무엇을·언제·어떻게)이 읽히는 자리'] },
+    { id: 'home-letter-reply-01', name: 'Consent Letter', ko: '가정통신문 (동의서 회신)', category: 'education', width: 1240, height: 1754, pack: 'pack11', file: '57_home_letter_reply.svg',
+      contentType: 'print', style: '에듀', styleId: 'st-edu', styleEn: 'Form', ratio: 'A4', difficulty: '보통', rec: true,
+      desc: '안내 본문 아래 참가 동의·서명 회신란이 붙은 통신문', uses: '현장체험학습 동의·행사 참가 동의·개인정보 동의', tags: ['동의서', '회신', '현장체험'], hints: ['절취선 아래 회신란은 칸 이름을 유지할 것', '일시·장소·비용만 바꾸면 끝'] },
+    { id: 'weekly-plan-01', name: 'Weekly Plan', ko: '주간 학습 안내', category: 'education', width: 1240, height: 1754, pack: 'pack11', file: '58_weekly_plan.svg',
+      contentType: 'print', style: '에듀', styleId: 'st-edu', styleEn: 'Table', ratio: 'A4', difficulty: '보통', rec: true,
+      desc: '요일별 배울 내용·준비물을 적는 표 형식의 주간 안내', uses: '주간 학습 안내·알림장 대체·준비물 공지', tags: ['주간학습', '표', '알림'], hints: ['줄마다 과목·준비물만 바꾸면 끝', '표 줄은 복제해 늘리세요'] },
+
     /* ---- 여러 장짜리 발표 세트 ----
        slides 를 가지면 멀티다. 파서도 등록 경로도 단일과 같은 것을 쓰되,
        템플릿 하나가 scenes 여덟 개로 선다. */

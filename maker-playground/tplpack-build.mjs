@@ -71,7 +71,7 @@ export function build(packKey) {
 
   /* Template Engine 의 category 는 좌측 갈래의 한글 이름이다 */
   const KO_CAT = { presentation: '발표자료', video: '영상', cardnews: '카드뉴스', poster: '포스터',
-    worksheet: '학습지', activity: '활동자료', thumbnail: '썸네일', sns: 'SNS' };
+    worksheet: '학습지', activity: '활동자료', thumbnail: '썸네일', sns: 'SNS', print: '인쇄물' };
   const J = (v) => JSON.stringify(v);
   const body = regs.map((t) => `  ${J(t.id)}: ${J(packs[t.id])},`).join('\n');
 
