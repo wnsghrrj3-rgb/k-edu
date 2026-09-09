@@ -1,7 +1,7 @@
 /* kedu_scope.js — 저장소 계정 분리 검산 (2026-09-09)
-   ① 세션 없음(방문자) → 옛 키 그대로  ② 교사 계정 u1 → 접두사 키로 읽고 씀, 옛 값은 첫 접속 때 u1 것으로 인계
+   ① 세션 없음(방문자) → 기기 저장 0(메모리만, 설정만 예외)  ② 교사 계정 u1 → 접두사 키로 읽고 씀, 옛 값은 첫 접속 때 u1 것으로 인계
    ③ 다른 계정 u2 → u1 값이 안 보이고 남의 것은 key(i) 에서 '' 로 숨음  ④ 익명(학생) 세션은 옛 값을 가져가지 않는다
-   ⑤ 게스트(kedu_guest_v1) 는 학급코드로 갈림  ⑥ 인증·기억하기 키(sb-*, kedu_remember…)는 그대로(PASS)
+   ⑤ 게스트(동의 전) 도 기기 저장 0, 설정만 학급코드별  ⑥ 인증·기억하기 키(sb-*, kedu_remember…)는 그대로(PASS)
    ⑦ 'kedu_progress_' 훑기(kedu_lesson_bridge 식)가 자기 것만 본다  ⑧ 게이트 두 파일에 같은 코드가 박혀 있고 두 번 실려도 한 번만 건다 */
 const fs = require('fs'), path = require('path'), vm = require('vm');
 let pass = 0, fail = 0;
@@ -33,15 +33,23 @@ const rawKeys = win => [...win.localStorage._m.keys()];
 // Storage.prototype 은 케이스마다 새로 쓴다(패치가 남지 않게)
 const fresh = () => { const P = Storage.prototype; Storage.prototype.getItem = function (k) { return this._m.has(String(k)) ? this._m.get(String(k)) : null; }; Storage.prototype.setItem = function (k, v) { this._m.set(String(k), String(v)); }; Storage.prototype.removeItem = function (k) { this._m.delete(String(k)); }; Storage.prototype.key = function (i) { return [...this._m.keys()][i] ?? null; }; return P; };
 
-/* ① 방문자 */
-fresh(); let w = makeWin({ kedu_progress_l1: '{"a":1}' });
-run(w); run(w, "localStorage.setItem('x','1')");
-t(w.__keduScope.owner === null && w.localStorage.getItem('x') === '1' && rawKeys(w).includes('x') && rawKeys(w).includes('kedu_progress_l1'), '① 세션 없음 — 옛 키 그대로, 접두사 없음');
+/* ① 방문자 — 기기에 안 남김(준호 결정 09-09: 동의 없으면 기기 안에도 저장 0) */
+fresh(); let w = makeWin({ kedu_progress_l1: '{"a":1}', kedu_grade: '3' });
+run(w); run(w, "localStorage.setItem('x','1'); localStorage.setItem('kedu_progress_l1','{\"new\":1}'); sessionStorage.setItem('quiz','{\"i\":2}')");
+t(w.__keduScope.owner === null && w.__keduScope.persist === false, '① 세션 없음 → 주인 없음, persist false');
+t(run(w, "localStorage.getItem('x')") === '1' && run(w, "localStorage.getItem('kedu_progress_l1')") === '{"new":1}' && run(w, "sessionStorage.getItem('quiz')") === '{"i":2}', '① 페이지 안에서는 쓰고 읽힌다(메모리)');
+t(!rawKeys(w).includes('x') && w.localStorage._m.get('kedu_progress_l1') === '{"a":1}' && !w.sessionStorage._m.has('quiz'), '① 기기(raw)엔 안 써졌다 — 옛 값도 안 덮임');
+fresh(); let w2 = makeWin(Object.fromEntries(w.localStorage._m)); run(w2);
+t(run(w2, "localStorage.getItem('kedu_progress_l1')") === null && run(w2, "localStorage.getItem('x')") === null, '① 다음 접속엔 없다 — 옛 기기 값(kedu_progress_l1)도 안 읽힌다');
+run(w2, "localStorage.setItem('kedu_grade','5')");
+t(run(w2, "localStorage.getItem('kedu_grade')") === '5' && w2.localStorage._m.get('kedu_grade') === '5', '① 화면 설정(kedu_grade)만 기기에 남는다');
+const vseen = run(w2, "(function(){var o=[];for(var i=0;i<localStorage.length;i++)o.push(localStorage.key(i));return o;})()");
+t(!vseen.includes('kedu_progress_l1') && vseen.includes('kedu_grade'), '① key(i) 훑어도 옛 기록은 안 보이고 설정만');
 
 /* ② 교사 u1 — 옛 값 인계 */
 fresh(); w = makeWin({ kedu_progress_l1: '{"a":1}', 'kmuseum.tickets': '[1]', kedu_remember: '1' }, { sub: 'u1' });
 run(w);
-t(w.__keduScope.owner === 'u:u1' && !w.__keduScope.anonymous, '② 교사 계정 → 주인 u:u1');
+t(w.__keduScope.owner === 'u:u1' && !w.__keduScope.anonymous && w.__keduScope.persist === true, '② 교사 계정 → 주인 u:u1, persist true');
 t(run(w, "localStorage.getItem('kedu_progress_l1')") === '{"a":1}' && rawKeys(w).includes('@u:u1|kedu_progress_l1') && !rawKeys(w).includes('kedu_progress_l1'), '② 옛 진행값이 u1 것으로 옮겨져 그대로 읽힌다');
 t(rawKeys(w).includes('kedu_remember') && run(w, "localStorage.getItem('kedu_remember')") === '1', '⑥ kedu_remember 는 옮기지 않고 그대로');
 run(w, "localStorage.setItem('kedu_progress_l2','{\"b\":2}'); sessionStorage.setItem('kedu_gate_t_v1','T')");
@@ -65,15 +73,18 @@ t(run(w, "localStorage.getItem('kedu_progress_l1')") === '{"a":1}' && run(w, "lo
 
 /* ④ 익명(학생) 세션 — 옛 값 안 가져감 */
 fresh(); w = makeWin({ kedu_progress_l9: '{"old":1}' }, { sub: 'anon-s1', anon: true }); run(w);
-t(w.__keduScope.owner === 'u:anon-s1' && w.__keduScope.anonymous === true, '④ 익명 세션 → 주인은 uid, anonymous 표시');
+t(w.__keduScope.owner === 'u:anon-s1' && w.__keduScope.anonymous === true && w.__keduScope.persist === true, '④ 동의 좌석(익명 세션) → 주인은 uid, 기기 저장 O');
 t(run(w, "localStorage.getItem('kedu_progress_l9')") === null && rawKeys(w).includes('kedu_progress_l9'), '④ 학생(익명)은 옛 값을 가져가지 않는다 — 옛 키는 남는다');
 run(w, "localStorage.setItem('kedu_progress_l9','{\"s1\":1}')");
 fresh(); const s2 = makeWin(Object.fromEntries(w.localStorage._m), { sub: 'anon-s2', anon: true }); run(s2);
 t(run(s2, "localStorage.getItem('kedu_progress_l9')") === null, '④ 다음 학생(익명 uid 다름)은 앞 학생 진행값을 못 본다');
 
-/* ⑤ 게스트 */
-fresh(); w = makeWin({}, null, 'abc1'); run(w); run(w, "localStorage.setItem('kedu_english_done_g3','[1]')");
-t(w.__keduScope.owner === 'g:ABC1' && rawKeys(w).includes('@g:ABC1|kedu_english_done_g3') && rawKeys(w).includes('kedu_guest_v1'), '⑤ 게스트는 학급코드로 갈리고 kedu_guest_v1 자체는 그대로');
+/* ⑤ 게스트(동의 전 학생, 학급코드만) — 기기에 안 남김 */
+fresh(); w = makeWin({ '@g:ABC1|kedu_english_done_g3': '[9]' }, null, 'abc1'); run(w); run(w, "localStorage.setItem('kedu_english_done_g3','[1]'); localStorage.setItem('klab_muted','1')");
+t(w.__keduScope.owner === 'g:ABC1' && w.__keduScope.persist === false, '⑤ 게스트 → 주인 g:학급코드, persist false');
+t(run(w, "localStorage.getItem('kedu_english_done_g3')") === '[1]' && w.localStorage._m.get('@g:ABC1|kedu_english_done_g3') === '[9]', '⑤ 게스트 기록은 메모리만 — 기기 값은 안 바뀜');
+fresh(); w2 = makeWin(Object.fromEntries(w.localStorage._m), null, 'abc1'); run(w2);
+t(run(w2, "localStorage.getItem('kedu_english_done_g3')") === null && run(w2, "localStorage.getItem('klab_muted')") === '1' && rawKeys(w2).includes('kedu_guest_v1'), '⑤ 다음 접속엔 기록 없음(설정 klab_muted 만 학급코드별로 남고 게스트 표는 그대로)');
 
 /* ⑦ 'kedu_progress_' 훑기 — kedu_lesson_bridge 식 */
 fresh(); w = makeWin({ '@u:u9|kedu_progress_g3_math_l1': '{"x":1}', '@u:u1|kedu_progress_g3_math_l1': '{"mine":1}', '@u:u1|kedu_progress_g3_math_l2': '{"mine":2}' }, { sub: 'u1' }); run(w);
