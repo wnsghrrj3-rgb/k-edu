@@ -34,14 +34,14 @@ window.KEDU_MAP["g4_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_social_u1_l03",
+     "lessonId": "g4_social_u1_l03_v1",
      "n": "3",
      "title": "학교생활에서 민주주의를 실천하는 사례를 찾아볼까요",
      "sub": "① 학교생활 속 민주주의",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/social/1단원_민주주의와자치/g4_social_u1_l03_학교실천사례.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
