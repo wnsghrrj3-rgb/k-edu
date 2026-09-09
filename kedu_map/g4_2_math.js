@@ -114,6 +114,181 @@ window.KEDU_MAP["g4_2_math"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 2,
+   "name": "사각형",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g4_math_u2_l01",
+     "lessonId": "g4_2_math_u2_l01_v1",
+     "n": "1",
+     "title": "사각형을 만나 볼까요",
+     "sub": null,
+     "url": "/grade4/semester2/math/2단원_사각형/g4_math_u2_l01_사각형을만나볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_math_u2_l02",
+     "lessonId": "g4_2_math_u2_l02_v1",
+     "n": "2",
+     "title": "수직과 수선을 알아볼까요",
+     "sub": null,
+     "url": "/grade4/semester2/math/2단원_사각형/g4_math_u2_l02_수직과수선을알아볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_math_u2_l03",
+     "lessonId": "g4_2_math_u2_l03_v1",
+     "n": "3",
+     "title": "평행과 평행선을 알아볼까요",
+     "sub": null,
+     "url": "/grade4/semester2/math/2단원_사각형/g4_math_u2_l03_평행과평행선을알아볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_math_u2_l04",
+     "lessonId": "g4_2_math_u2_l04_v1",
+     "n": "4",
+     "title": "평행선 사이의 거리를 알아볼까요",
+     "sub": null,
+     "url": "/grade4/semester2/math/2단원_사각형/g4_math_u2_l04_평행선사이의거리를알아볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_math_u2_l05",
+     "lessonId": "g4_2_math_u2_l05_v1",
+     "n": "5",
+     "title": "사다리꼴을 알아볼까요",
+     "sub": null,
+     "url": "/grade4/semester2/math/2단원_사각형/g4_math_u2_l05_사다리꼴을알아볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_math_u2_l06",
+     "lessonId": "g4_2_math_u2_l06_v1",
+     "n": "6",
+     "title": "평행사변형을 알아볼까요",
+     "sub": null,
+     "url": "/grade4/semester2/math/2단원_사각형/g4_math_u2_l06_평행사변형을알아볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_math_u2_l07",
+     "lessonId": "g4_2_math_u2_l07_v1",
+     "n": "7",
+     "title": "마름모를 알아볼까요",
+     "sub": null,
+     "url": "/grade4/semester2/math/2단원_사각형/g4_math_u2_l07_마름모를알아볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_math_u2_l08",
+     "lessonId": "g4_2_math_u2_l08_v1",
+     "n": "8",
+     "title": "여러 가지 사각형을 알아볼까요",
+     "sub": null,
+     "url": "/grade4/semester2/math/2단원_사각형/g4_math_u2_l08_여러가지사각형을알아볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_math_u2_l09",
+     "lessonId": "g4_2_math_u2_l09_v1",
+     "n": "9",
+     "title": "원으로 마름모를 그려 볼까요",
+     "sub": null,
+     "url": "/grade4/semester2/math/2단원_사각형/g4_math_u2_l09_원으로마름모를그려볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_math_u2_l10",
+     "lessonId": "g4_2_math_u2_l10_v1",
+     "n": "10",
+     "title": "스스로 마무리해요 (단원 평가)",
+     "sub": null,
+     "url": "/grade4/semester2/math/2단원_사각형/g4_math_u2_l10_스스로마무리해요.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
+  },
+  {
+   "num": 3,
+   "name": "소수의 덧셈과 뺄셈",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": null,
+     "lessonId": null,
+     "n": "",
+     "title": "준비 중이에요",
+     "sub": null,
+     "url": null,
+     "track": "soon",
+     "ready": false
+    }
+   ]
+  },
+  {
+   "num": 4,
+   "name": "다각형",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": null,
+     "lessonId": null,
+     "n": "",
+     "title": "준비 중이에요",
+     "sub": null,
+     "url": null,
+     "track": "soon",
+     "ready": false
+    }
+   ]
+  },
+  {
+   "num": 5,
+   "name": "꺾은선그래프",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": null,
+     "lessonId": null,
+     "n": "",
+     "title": "준비 중이에요",
+     "sub": null,
+     "url": null,
+     "track": "soon",
+     "ready": false
+    }
+   ]
+  },
+  {
+   "num": 6,
+   "name": "평면도형의 이동",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": null,
+     "lessonId": null,
+     "n": "",
+     "title": "준비 중이에요",
+     "sub": null,
+     "url": null,
+     "track": "soon",
+     "ready": false
+    }
+   ]
   }
  ]
 };
