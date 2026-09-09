@@ -412,6 +412,93 @@ window.KEDU_MAP["g6_2_korean"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 6,
+   "name": "시와 이야기로 표현해요",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g6_korean_u6_l01",
+     "lessonId": "g6_2_kor_u6_l01_v1",
+     "n": "1",
+     "title": "단원 시작 — 배울 내용 살펴보기",
+     "sub": null,
+     "url": "/grade6/semester2/korean/6단원_시와이야기로표현해요/g6_kor_u6_l01.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g6_korean_u6_l02",
+     "lessonId": "g6_2_kor_u6_l02_03_v1",
+     "n": "2~3",
+     "title": "시의 특성을 생각하며 시 감상하기",
+     "sub": null,
+     "url": "/grade6/semester2/korean/6단원_시와이야기로표현해요/g6_kor_u6_l02_03.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g6_korean_u6_l04",
+     "lessonId": "g6_2_kor_u6_l04_05_v1",
+     "n": "4~5",
+     "title": "시의 특성을 생각하며 시 창작하기",
+     "sub": null,
+     "url": "/grade6/semester2/korean/6단원_시와이야기로표현해요/g6_kor_u6_l04_05.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g6_korean_u6_l06",
+     "lessonId": "g6_2_kor_u6_l06_v1",
+     "n": "6",
+     "title": "시 낭송하기",
+     "sub": null,
+     "url": "/grade6/semester2/korean/6단원_시와이야기로표현해요/g6_kor_u6_l06.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g6_korean_u6_l07",
+     "lessonId": "g6_2_kor_u6_l07_08_v1",
+     "n": "7~8",
+     "title": "경험을 떠올리며 이야기를 바꾸어 쓰는 방법 알기",
+     "sub": null,
+     "url": "/grade6/semester2/korean/6단원_시와이야기로표현해요/g6_kor_u6_l07_08.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g6_korean_u6_l09",
+     "lessonId": "g6_2_kor_u6_l09_11_v1",
+     "n": "9~11",
+     "title": "이야기 바꾸어 쓰기",
+     "sub": null,
+     "url": "/grade6/semester2/korean/6단원_시와이야기로표현해요/g6_kor_u6_l09_11.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g6_korean_u6_l12",
+     "lessonId": "g6_2_kor_u6_l12_13_v1",
+     "n": "12~13",
+     "title": "배운 내용 실천하기 — 학급 이야기책 만들기",
+     "sub": null,
+     "url": "/grade6/semester2/korean/6단원_시와이야기로표현해요/g6_kor_u6_l12_13.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g6_korean_u6_l14",
+     "lessonId": "g6_2_kor_u6_l14_v1",
+     "n": "14",
+     "title": "단원 마무리하기 (정리 · 기초 다지기)",
+     "sub": null,
+     "url": "/grade6/semester2/korean/6단원_시와이야기로표현해요/g6_kor_u6_l14.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };

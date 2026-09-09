@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<meta name="kedu-lesson-id" content="g6_2_kor_u6_l09_11_v1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>이야기 바꾸어 쓰기</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@500;700;800&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+/* ===== 6학년 2학기 국어 6단원 「시와 이야기로 표현해요」 · 자기주도 통합 엔진 =====
+   엔진 로직은 g6_2_u5(=u4=u3=u2=u1=g6_u1=g5_u6) 그대로 계승. 로직 변경 0 · 신규 부품 0.
+   6학년 라인 공통 종이색 #FBF7F1 · 먹색 #243043 (6학년 수학·과학과 동일),
+   포인트색은 짙은 오디빛 자주 #5A1649(hue 315 · 명도 22% · 채도 60%).
+   ⚠ 5단원 경고대로 6-2 국어 허브에 hue 공백은 남아 있지 않다. 그래서 hue 재기를 건너뛰고
+     **명도 축**을 정면으로 열었다. 허브의 다섯 단원 색은 전부 명도 31~39%에 몰려 있고
+     과목 배지 #8E3B62(hue 332 · 명도 39%)까지 같은 띠에 있다 — 6단원만 명도 22%로 내려
+     가장 가까운 3단원 #7E2A85(295 · 34%)와 hue 20도 + 명도 12%,
+     과목 배지와 hue 17도 + 명도 17% 떨어진다.
+   ⚠ 밝은 쪽으로는 갈 수 없다 — --plum 은 .ka-tag 본문 글자색이자 흰 글씨를 얹는
+     「다음」 버튼(.navbtn.primary) 바탕이라 명도 50%를 넘으면 대비가 무너진다.
+   ⚠ CSS 변수 이름은 계승상 --plum* 그대로다(값만 교체). 이름을 바꾸면 tpl_tail·부품 CSS를 함께 갈아야 한다.
+   개념어(시·연·행·비유적 표현·감각적 표현·인물·배경·사건)=청록(.mc), 대비·경계 문구=진홍(.emph).
+   문체 = 고학년 `~합니다 / ~하세요`. 이모지는 보조 기호로만 소형 사용.
+   .story = 시·옛이야기·바꾸어 쓴 이야기 본문 공용(행은 <br>, 문단은 <p>). */
+:root{
+  --paper:#FBF7F1; --ink:#243043; --ink-soft:#62708A;
+  --plum:#5A1649; --plum-deep:#3A0E2F; --plum-soft:#F1DAEB;
+  --teal:#0E9488; --teal-deep:#0B7268; --teal-soft:#D6F0EC;
+  --gold:#E8A317; --emph:#C0392B; --line:#ECDFE9; --mark:#FFE9A8;
+  --ok:#2E9E5B; --ok-soft:#D8F0E0;
+  --f-title:'Noto Sans KR',sans-serif; --f-body:'Gowun Dodum',sans-serif;
+  --shadow:0 14px 34px -20px rgba(36,48,67,.38);
+}
+*{margin:0; padding:0; box-sizing:border-box;}
+html,body{height:100%;}
+body{font-family:var(--f-body); background:var(--paper); color:var(--ink); -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; min-height:100vh; overflow:hidden;}
+
+@keyframes fadeUp{from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;}}
+@keyframes pop{0%{opacity:0; transform:scale(.4);}60%{opacity:1; transform:scale(1.12);}100%{transform:scale(1);}}
+@keyframes popBig{0%{opacity:0; transform:scale(.3);}60%{opacity:1; transform:scale(1.25);}100%{transform:scale(1);}}
+@keyframes shake{0%,100%{transform:none;}25%{transform:translateX(-8px);}75%{transform:translateX(8px);}}
+@keyframes mark{from{background-size:0 100%;} to{background-size:100% 100%;}}
+
+/* ===== 상단바 ===== */
+.topbar{display:flex; align-items:center; gap:14px; padding:13px clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0;}
+.lb{font-family:var(--f-title); background:#F4F0E8; color:#6B5E4A; border:none; padding:7px 14px; border-radius:999px; font-size:clamp(13px,1.6vw,17px); cursor:pointer; flex-shrink:0;}
+.lb:hover{background:#ECE5D8;}
+.pill{font-family:var(--f-title); background:var(--teal); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(14px,1.8vw,19px); flex-shrink:0;}
+.where{font-size:clamp(13px,1.6vw,18px); color:var(--ink-soft);}
+.where b{color:var(--ink);}
+.dots{display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:42%;}
+.dot{width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s,background .2s;}
+.dot:hover{transform:scale(1.2);}
+.dot.active{background:var(--plum); transform:scale(1.3);}
+.dot.done{background:var(--teal);}
+.score{font-family:var(--f-title); background:#FFF8E1; color:#F57F17; padding:6px 15px; border-radius:999px; font-size:clamp(14px,1.8vw,19px); flex-shrink:0;}
+
+/* ===== 무대 ===== */
+.stage{flex:1; display:flex; flex-direction:column; overflow-y:auto; padding:0 clamp(18px,5vw,64px);}
+.stage-inner{margin:auto; width:100%; display:flex; flex-direction:column; align-items:center; text-align:center; padding:clamp(20px,4vh,48px) 0 clamp(96px,12vh,120px);}
+.ka-tag{font-family:var(--f-title); color:var(--plum); font-size:clamp(13px,1.6vw,17px); font-weight:800; letter-spacing:.4px; margin-bottom:9px; animation:fadeUp .4s ease both;}
+.ka-t{font-family:var(--f-title); font-size:clamp(24px,3.6vw,40px); letter-spacing:-.4px; line-height:1.2; color:var(--ink); margin-bottom:clamp(14px,2.6vh,28px); font-weight:700; animation:fadeUp .4s .1s ease both;}
+.mc{color:var(--teal-deep); font-weight:bold;}
+.emph{color:var(--emph); font-weight:bold;}
+.ka-t .emph,.ka-t b{color:var(--plum-deep);}
+
+/* 장면(이모지 그림 + 대사) */
+.scene{display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vh,16px); margin:clamp(4px,1.4vh,12px) 0; animation:fadeUp .45s .15s ease both;}
+.scene-pic{font-size:clamp(30px,5.4vw,54px); line-height:1.25; opacity:.92;}
+.scene-say{background:#fff; border:3px solid var(--teal-soft); border-radius:20px; padding:clamp(10px,1.8vw,16px) clamp(16px,2.6vw,26px); font-size:clamp(18px,2.4vw,28px); color:var(--ink); box-shadow:var(--shadow); max-width:760px; line-height:1.5;}
+
+/* 설명 말풍선 */
+.ka-bub{background:#fff; border:2px solid var(--line); border-radius:22px; padding:clamp(15px,2.4vw,26px) clamp(20px,3vw,34px); font-size:clamp(18px,2.4vw,29px); line-height:1.6; max-width:860px; box-shadow:var(--shadow); animation:fadeUp .4s .25s ease both;}
+.ka-bub b{font-family:var(--f-title); font-weight:700;}
+
+/* 정리 리스트 */
+.recap{display:flex; flex-direction:column; gap:clamp(9px,1.6vh,16px); width:100%; max-width:720px; margin-top:clamp(4px,1.2vh,10px);}
+.recap-item{display:flex; align-items:center; gap:14px; background:#fff; border:3px solid var(--teal-soft); border-radius:20px; padding:clamp(12px,1.8vw,18px) clamp(16px,2.4vw,26px); font-size:clamp(17px,2.3vw,28px); text-align:left; box-shadow:0 5px 0 var(--teal-soft); animation:fadeUp .45s ease both;}
+.recap-item b{font-family:var(--f-title); font-weight:700; color:var(--teal-deep);}
+.recap-ic{font-size:clamp(20px,2.6vw,30px); flex-shrink:0;}
+
+/* 소개 글 한 문단 */
+.sentence{display:inline-block; background:#fff; border:4px solid var(--teal-soft); border-radius:20px; padding:clamp(14px,2.4vw,24px) clamp(20px,3.2vw,34px); font-size:clamp(20px,2.9vw,34px); color:var(--teal-deep); box-shadow:0 5px 0 var(--teal-soft); max-width:760px; line-height:1.8; font-family:var(--f-title); font-weight:700; margin:clamp(4px,1.2vh,10px) auto; animation:fadeUp .4s .2s ease both;}
+
+/* 낱말·태도 고르기 (로깅) */
+.wordpick{display:flex; gap:clamp(12px,2.2vw,22px); flex-wrap:wrap; justify-content:center; width:100%; max-width:880px; margin-top:clamp(6px,1.4vh,12px);}
+.wcard{flex:1 1 200px; max-width:320px; min-height:clamp(96px,14vh,140px); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:clamp(6px,1.2vh,12px); background:#fff; border:4px solid var(--plum-soft); border-radius:22px; padding:clamp(14px,2.2vw,24px); box-shadow:0 6px 0 var(--plum-soft); cursor:pointer; transition:transform .12s,border-color .2s,box-shadow .2s; animation:pop .4s ease both;}
+.wcard:hover{transform:translateY(-3px);}
+.wc-pic{font-size:clamp(24px,3.4vw,38px); line-height:1;}
+.wc-word{font-size:clamp(17px,2.3vw,27px); color:var(--ink); line-height:1.4; font-family:var(--f-title); font-weight:700;}
+.wcard.correct{border-color:var(--teal); background:var(--teal-soft); box-shadow:0 6px 0 var(--teal); animation:popBig .5s ease;}
+.wcard.wrong{border-color:var(--emph); background:var(--plum-soft); animation:shake .35s;}
+
+/* 모으기 (로깅) */
+.collect{display:flex; gap:clamp(10px,1.8vw,18px); flex-wrap:wrap; justify-content:center; width:100%; max-width:820px; margin-top:clamp(6px,1.4vh,12px);}
+.chip{background:#fff; border:3px solid var(--plum-soft); border-radius:999px; padding:clamp(11px,1.7vw,17px) clamp(18px,2.6vw,30px); font-size:clamp(16px,2.2vw,26px); color:var(--ink); cursor:pointer; box-shadow:0 5px 0 var(--plum-soft); transition:transform .12s,border-color .2s,box-shadow .2s; font-family:var(--f-title); font-weight:700;}
+.chip:hover{transform:translateY(-2px);}
+.chip.painted{border-color:var(--teal); background:var(--teal-soft); color:var(--teal-deep); box-shadow:0 5px 0 var(--teal); animation:pop .4s ease;}
+.chip.miss{border-color:var(--emph); animation:shake .35s;}
+.chip.done-dim{opacity:.34; filter:grayscale(.3);}
+
+/* 짝짓기 (로깅) */
+.match{display:flex; gap:clamp(20px,5vw,56px); justify-content:center; width:100%; max-width:760px; margin-top:clamp(6px,1.4vh,12px);}
+.match-col{display:flex; flex-direction:column; gap:clamp(10px,1.6vh,16px); flex:1;}
+.match-col-h{font-family:var(--f-title); color:var(--ink-soft); font-size:clamp(15px,1.9vw,22px); margin-bottom:2px;}
+.match-card{display:flex; align-items:center; justify-content:center; gap:8px; background:#fff; border:3px solid var(--plum-soft); border-radius:18px; padding:clamp(12px,1.8vw,18px) clamp(10px,1.6vw,18px); font-size:clamp(17px,2.2vw,27px); color:var(--ink); cursor:pointer; box-shadow:0 5px 0 var(--plum-soft); transition:transform .12s,border-color .2s,box-shadow .2s; font-family:var(--f-title); font-weight:700;}
+.match-card:hover{transform:translateY(-2px);}
+.match-card.sel{border-color:var(--plum); box-shadow:0 5px 0 var(--plum);}
+.match-card.paired{border-color:var(--teal); background:var(--teal-soft); box-shadow:0 5px 0 var(--teal); cursor:default;}
+.match-card.miss{border-color:var(--emph); animation:shake .35s;}
+.mc-ic{font-size:1.15em;}
+
+/* 따라 쓰기 (완주) */
+.trace-wrap{display:flex; flex-direction:column; gap:clamp(10px,1.6vh,16px); width:100%; max-width:680px; margin-top:clamp(6px,1.4vh,12px);}
+.trace-row{display:flex; align-items:center; gap:14px;}
+.trace-pic{font-size:clamp(28px,3.8vw,44px); flex-shrink:0;}
+.trace-word{display:flex; gap:clamp(6px,1vw,10px); flex-wrap:wrap;}
+.trace-cell{width:clamp(48px,7vw,72px); height:clamp(48px,7vw,72px); display:grid; place-items:center; background:#fff; border:3px dashed var(--plum); border-radius:16px; font-family:var(--f-title); font-size:clamp(24px,3.6vw,40px); color:var(--plum-soft); cursor:pointer; transition:color .2s,background .2s,border-style .2s;}
+.trace-cell.done{color:var(--teal-deep); background:var(--teal-soft); border-style:solid; border-color:var(--teal); animation:pop .35s ease;}
+
+/* 자기 점검 (완주) */
+.selfcheck{display:flex; flex-direction:column; gap:clamp(9px,1.5vh,14px); width:100%; max-width:640px; margin-top:clamp(6px,1.4vh,12px);}
+.sc-row{display:flex; align-items:center; gap:14px; background:#fff; border:3px solid var(--line); border-radius:18px; padding:clamp(12px,1.8vw,18px) clamp(16px,2.4vw,24px); font-size:clamp(17px,2.2vw,27px); color:var(--ink); text-align:left; cursor:pointer; transition:border-color .2s,background .2s;}
+.sc-row b{font-family:var(--f-title); font-weight:700; color:var(--teal-deep);}
+.sc-box{width:clamp(30px,4vw,44px); height:clamp(30px,4vw,44px); flex-shrink:0; display:grid; place-items:center; border:3px solid var(--plum-soft); border-radius:11px; color:transparent; font-size:clamp(18px,2.4vw,28px); transition:all .2s;}
+.sc-row.checked{border-color:var(--teal); background:var(--teal-soft);}
+.sc-row.checked .sc-box{background:var(--teal); border-color:var(--teal); color:#fff;}
+
+/* 말하기·쓰기 무대 (발화 유도, 로깅X) */
+.stage-box{background:var(--plum-soft); border:4px dashed var(--plum); border-radius:22px; padding:clamp(16px,2.6vw,26px); max-width:640px; margin:clamp(4px,1.2vh,10px) auto; font-size:clamp(18px,2.4vw,28px); color:var(--plum-deep); line-height:1.6; animation:fadeUp .4s .2s ease both;}
+.stage-box small{display:block; margin-top:8px; font-size:.74em; color:var(--ink-soft); line-height:1.5;}
+.stage-do{margin-top:clamp(10px,1.8vh,16px); padding:clamp(10px,1.6vw,15px) clamp(20px,3vw,34px); background:var(--plum); color:#fff; border:none; border-radius:999px; font-family:var(--f-title); font-size:clamp(17px,2.2vw,26px); cursor:pointer; box-shadow:0 5px 0 var(--plum-deep);}
+.stage-do:active{transform:translateY(4px); box-shadow:0 1px 0 var(--plum-deep);}
+.stage-do.done{background:var(--teal); box-shadow:0 5px 0 var(--teal-deep);}
+
+/* 따라 읽기 (완주) */
+.read-lines{display:flex; flex-direction:column; gap:clamp(9px,1.5vh,14px); width:100%; max-width:680px; margin-top:clamp(6px,1.4vh,12px);}
+.read-line{display:flex; align-items:center; gap:14px; background:#fff; border:3px solid var(--teal-soft); border-radius:18px; padding:clamp(12px,1.8vw,18px) clamp(16px,2.4vw,24px); font-size:clamp(18px,2.4vw,28px); color:var(--ink); text-align:left; cursor:pointer; box-shadow:0 5px 0 var(--teal-soft); transition:transform .12s,background .2s; font-family:var(--f-title); font-weight:700;}
+.read-line:hover{transform:translateX(3px);}
+.rl-num{width:clamp(30px,4vw,42px); height:clamp(30px,4vw,42px); flex-shrink:0; display:grid; place-items:center; background:var(--teal-soft); color:var(--teal-deep); border-radius:50%; font-size:clamp(16px,2vw,24px);}
+.read-line.read{background:var(--teal-soft); border-color:var(--teal);}
+
+
+/* 대화 카드 (표시 전용) — 말차례가 오가는 대화를 좌우로 배치 */
+.talk{display:flex; flex-direction:column; gap:clamp(8px,1.4vh,14px); width:100%; max-width:780px; margin:clamp(4px,1.2vh,10px) auto; animation:fadeUp .4s .15s ease both;}
+.turn{display:flex; align-items:flex-start; gap:10px; max-width:88%;}
+.turn.r{align-self:flex-end; flex-direction:row-reverse; text-align:right;}
+.turn-name{font-family:var(--f-title); font-weight:700; font-size:clamp(13px,1.7vw,17px); color:var(--ink-soft); padding-top:9px; flex-shrink:0; min-width:44px;}
+.turn-say{background:#fff; border:2px solid var(--line); border-radius:18px; padding:clamp(10px,1.6vw,16px) clamp(14px,2.2vw,22px); font-size:clamp(16px,2vw,23px); line-height:1.6; color:var(--ink); box-shadow:var(--shadow); text-align:left;}
+.turn.r .turn-say{background:var(--plum-soft); border-color:var(--plum-soft);}
+.turn-say small{display:block; margin-top:5px; font-size:.76em; color:var(--ink-soft);}
+.turn-act{font-size:.82em; color:var(--ink-soft);}
+
+/* 지문 블록 — 이야기·글 읽기 */
+.story{background:#fff; border:2px solid var(--line); border-left:6px solid var(--plum); border-radius:16px; padding:clamp(14px,2.2vw,24px) clamp(16px,2.6vw,28px); font-size:clamp(16px,1.95vw,22px); line-height:1.85; color:var(--ink); text-align:left; max-width:820px; margin:clamp(4px,1.2vh,10px) auto; box-shadow:var(--shadow); animation:fadeUp .4s .2s ease both;}
+.story p+p{margin-top:.75em;}
+.story .q{color:var(--plum-deep); font-weight:700;}
+.story .mark{background:linear-gradient(transparent 58%, var(--mark) 58%);}
+
+/* 두 칸 비교판 */
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:clamp(12px,2vw,20px); width:100%; max-width:820px; margin:clamp(4px,1.2vh,10px) auto;}
+.g2-box{background:#fff; border:3px solid var(--line); border-radius:18px; padding:clamp(12px,1.9vw,20px); text-align:left; font-size:clamp(15px,1.9vw,21px); line-height:1.6; box-shadow:0 4px 0 var(--line);}
+.g2-box h4{font-family:var(--f-title); font-weight:800; font-size:clamp(15px,1.9vw,20px); color:var(--plum-deep); margin-bottom:8px;}
+.g2-box.good{border-color:var(--teal-soft); box-shadow:0 4px 0 var(--teal-soft);}
+.g2-box.good h4{color:var(--teal-deep);}
+@media (max-width:620px){ .grid2{grid-template-columns:1fr;} .turn{max-width:100%;} }
+
+/* 피드백 */
+.fb{margin-top:clamp(12px,2vh,22px); min-height:30px; font-family:var(--f-title); font-size:clamp(18px,2.4vw,30px); color:var(--teal-deep); animation:fadeUp .3s ease both;}
+.fb.bad{color:var(--emph);}
+
+/* ===== 하단 내비 ===== */
+.nav{position:fixed; bottom:0; left:0; right:0; display:flex; justify-content:flex-end; gap:11px; padding:13px clamp(16px,4vw,40px); background:linear-gradient(to top,var(--paper) 62%,transparent);}
+.navbtn{font-family:var(--f-title); font-size:clamp(15px,1.9vw,23px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(9px,1.3vw,14px) clamp(18px,2.6vw,38px); cursor:pointer; transition:transform .15s;}
+.navbtn:hover{transform:translateY(-2px);}
+.navbtn.sec{margin-right:auto;}
+.navbtn.primary{background:var(--plum); color:#fff; border-color:var(--plum);}
+.navbtn:disabled{opacity:.35; cursor:default; transform:none;}
+
+@media (max-width:560px){ .where{display:none;} .wcard{flex:1 1 140px;} .match{gap:clamp(14px,4vw,28px);} .dots{max-width:50%;} .nav{flex-wrap:wrap;} }
+@media (prefers-reduced-motion:reduce){ *{animation:none!important; transition:none!important;} }
+</style>
+
+</head>
+<body>
+
+<div class="topbar">
+  <button class="lb" onclick="location.href='../index.html'">📚 차시 목록</button>
+  <span class="pill">9~11차시</span>
+  <span class="where">국어 6-2 · <b>5. 언어와 소통</b></span>
+  <div class="dots" id="dots"></div>
+  <span class="score">⭐ <b id="score">0</b></span>
+</div>
+
+<div class="stage" id="stage"><div class="stage-inner" id="main"></div></div>
+
+<div class="nav">
+  <button class="navbtn sec" id="prev">◁ 이전</button>
+  <button class="navbtn" id="replay">🔊 다시</button>
+  <button class="navbtn" id="hint">💡 힌트</button>
+  <button class="navbtn primary" id="next">다음 ▷</button>
+</div>
+
+<script>
+/* ===== 9~11차시(소단원 2 통합 — 이야기 바꾸어 쓰기) 17슬 =====
+   학습 목표: 이야기를 바꾸어 쓸 수 있다.
+   정답 로깅 5슬(내용 확인 · 인물과 성격 잇기 · 바꾼 뒤 함께 손볼 것 ·
+   개연성 있는 계획 고르기(경계) · 좋은 칭찬 쪽지 고르기) = 50점.
+   ★ 저작권: 교과서 282~291쪽 전면 미인용 — 282~287쪽 「옹고집전」 전문과 삽화·뜻풀이 넷
+     (동냥 · 곤욕 · 첩첩산중 · 개과천선)·생각하며 읽기 물음 셋, 288쪽 낱말 알기 보기 넷
+     (탄식하다 · 아뢰다 · 괴이쩍다 · 극진하다)과 뜻풀이·내용 알기 (1)번 예시 답안,
+     289쪽 인물 관계도와 (3)번 발단·전개·절정·결말 예시 답안, 290쪽 계획하기 (1)(2)번
+     예시 답안과 말풍선 넷(옹배려 · 큰 회사 사장 등), 291쪽 제목 예시 「착한 옹고집의 분신술」과
+     칭찬 쪽지 예시 셋·점검하기 문장 셋, 318쪽 참고 자료 패러디 그림책 목록 여덟 권과 서지,
+     319쪽 제재 소개와 서지, 320쪽 낱말 뜻풀이 다섯, 325쪽 패러디 그림책 유형표와 서지.
+     자체 서술 옛이야기 「토끼와 자라」와 자체 바꾸기 계획으로 대체했다.
+     ⚠ 「토끼와 자라」는 작자 미상의 공공 유산이므로 **줄거리는 쓰고 서술은 전부 자체**로 썼다
+       (6-1 3단원 규약). 교과서·지도서 6단원에 등장하지 않는다.
+   ★★ 창의성 계발 학습 모형 변환(아홉 번째 모형 변환) — 지도서 319~323쪽의 네 단계를
+     그대로 따랐다. 문제 발견하기 1~2 · 아이디어 생성하기 3~8 · 아이디어 선택하기 9~12 ·
+     아이디어 적용하기 13~16. 지도서의 발문은 전부 고르기·잇기 문항으로 바꾸었다 —
+     자기주도는 물음만 던지고 답을 확정하지 않으면 오개념이 남는다(1-2 3단원 §5-5 규약).
+   ★ 이 차시의 경계(11·12번째)는 지도서 318쪽이 **직접** 막는 것이다 —
+     「학생들이 이야기를 기발하고 자극적으로 바꾸는 방법만이 이야기를 재미있게 변화시키는
+     방법이라고 생각하지 않도록 하고, 사건의 흐름이 자연스럽고 인물의 성격을 잘 살려
+     이야기를 바꾸어 쓰는 것이 중요함을 인식하도록 한다.」
+     화면이 「무엇을 바꾸었는가」를 채점하면 학생은 많이·놀랍게 바꿀수록 잘한 것으로 배운다.
+     그래서 채점의 축을 **「바뀐 것에 따라 뒤가 자연스럽게 이어지는가」**로 옮겼고,
+     12번째 오답 칸에 「성격을 바꾸어 놓고 행동은 그대로 둔 계획」을 넣었다.
+   ★ 열째 기준(생성은 무대로, 판별은 화면으로) — 실제 바꾸어 쓰기는 14번째 무대로 넘기고
+     채점하지 않는다. 화면은 쓰기 전에 필요한 기준만 확정한다.
+   ★ 성취기준 [6국03-06](쓴 글을 독자와 공유하는 태도)은 15·16번째 한 곳에서만 실현된다.
+     화면에는 글을 읽어 줄 친구가 없으므로 **좋은 칭찬 쪽지를 가려내는 판단**으로 세웠다. */
+const slides=[
+  {tag:'① 문제 발견하기', t:'오늘은 이야기를 직접 바꾸어 씁니다',
+   html:`<div class="ka-bub">지난 차시에 <b class="mc">인물 · 배경 · 사건</b>을 바꾸면 이야기가 달라진다는 것을 알아보았습니다.<br>오늘은 옛이야기 한 편을 골라 <b class="emph">직접 바꾸어</b> 써 봅니다.</div>
+    <div class="recap">
+      <div class="recap-item"><span class="recap-ic">📌</span>학습 문제 — <b>이야기를 바꾸어 써 봅시다.</b></div>
+    </div>`},
+
+  {tag:'① 문제 발견하기', t:'바꾸면 무엇이 생길까요?',
+   html:`<div class="grid2">
+      <div class="g2-box"><h4>바꾸기 전</h4>정직한 나무꾼이<br>세 도끼를 <b>모두 받는다</b><br><small>→ 정직하면 상을 받는다</small></div>
+      <div class="g2-box good"><h4>바꾼 뒤</h4>정직한 나무꾼이<br>상을 <b class="mc">거절하고</b><br>마을에 샘이 생긴다<br><small>→ 정직함은 나 혼자의 일이 아니다</small></div>
+    </div>
+    <div class="ka-bub">바꾸면 <b class="emph">새로운 뜻</b>이 생깁니다. 그것이 바꾸어 쓰는 까닭입니다.</div>`},
+
+  {tag:'② 아이디어 생성하기', t:'바꿀 이야기를 읽어 봅시다',
+   html:`<div class="story"><b class="q">토끼와 자라</b><p>
+      바닷속 용왕이 오래 앓아누웠다. 어떤 약도 듣지 않자, 뭍에 사는 토끼의 간을 먹어야 낫는다는 말이 돌았다. 신하 가운데 자라가 나서서 뭍으로 올라갔다.</p><p>
+      자라는 산에서 토끼를 만나 바닷속에는 먹을 것이 넘치고 사냥꾼도 없다고 일러 주었다. 솔깃해진 토끼는 자라의 등에 올라 용궁으로 갔다.</p><p>
+      용궁에 이르러서야 토끼는 제 간을 내놓아야 한다는 것을 알았다. 토끼는 조금도 놀라지 않은 척하며 말했다. &quot;간은 볕에 말리려고 산에 두고 왔습니다. 지금 가서 가져오겠습니다.&quot;</p><p>
+      용왕은 그 말을 믿고 토끼를 다시 뭍으로 보냈다. 자라의 등에서 내린 토끼는 뒤도 돌아보지 않고 풀숲으로 달아났다.</p></div>`},
+
+  {tag:'③ 고르기', t:'토끼가 살아서 돌아올 수 있었던 까닭은 무엇일까요?', log:true, okMsg:'맞습니다. 토끼는 힘이 아니라 말로 자기를 지켰습니다. 🎉', hint:'토끼가 용궁에서 한 말을 다시 읽어 보세요.',
+   html:`<div class="wordpick">
+      <div class="wcard" data-ok="1"><div class="wc-pic">🐰</div><div class="wc-word">간을 산에 두고 왔다고<br>둘러대어 용왕을 믿게 해서</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-pic">🏊</div><div class="wc-word">자라보다 헤엄을<br>잘 쳤기 때문에</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-pic">💊</div><div class="wc-word">용왕의 병을 고칠<br>다른 약을 찾아 주어서</div></div>
+    </div><div class="fb"></div>`},
+
+  {tag:'② 아이디어 생성하기', t:'인물의 성격을 정리해 봅시다',
+   html:`<div class="recap">
+      <div class="recap-item"><span class="recap-ic">🐰</span><b class="mc">토끼</b> — 겁이 많지만 급할수록 머리가 잘 돌아갑니다.</div>
+      <div class="recap-item"><span class="recap-ic">🐢</span><b class="mc">자라</b> — 맡은 일을 끝까지 해내려 합니다.</div>
+      <div class="recap-item"><span class="recap-ic">👑</span><b class="mc">용왕</b> — 낫고 싶은 마음이 앞서 남의 말을 쉽게 믿습니다.</div>
+    </div>
+    <div class="ka-bub">성격을 먼저 적어 두면 <b class="emph">무엇을 바꿀 수 있는지</b>가 보입니다.</div>`},
+
+  {tag:'③ 이어 보기', t:'인물과 그 성격이 드러난 곳을 이어 보세요', log:true, matchMsg:'모두 알맞게 이었습니다. 성격은 인물이 한 일에서 드러납니다. 🎉', hint:'그 인물이 이야기에서 실제로 한 말이나 행동을 떠올려 보세요.',
+   html:`<div class="match" id="match">
+      <div class="match-col"><div class="match-col-h">인물</div>
+        <div class="match-card" data-k="a" data-pair="A">토끼</div>
+        <div class="match-card" data-k="b" data-pair="B">자라</div>
+        <div class="match-card" data-k="c" data-pair="C">용왕</div>
+      </div>
+      <div class="match-col"><div class="match-col-h">성격이 드러난 곳</div>
+        <div class="match-card" data-k="A" data-pair="a">놀라지 않은 척하며 둘러댄다</div>
+        <div class="match-card" data-k="B" data-pair="b">혼자 나서서 뭍까지 올라간다</div>
+        <div class="match-card" data-k="C" data-pair="c">들은 말을 그대로 믿는다</div>
+      </div>
+    </div><div class="fb" id="matchFb"></div>`},
+
+  {tag:'② 아이디어 생성하기', t:'사건이 이어지는 차례를 짚어 보세요',
+   html:`<div class="ka-bub">이야기는 보통 <b class="mc">발단 · 전개 · 절정 · 결말</b>의 차례로 흘러갑니다.<br>한 줄씩 눌러 확인해 보세요.</div>
+    <div class="read-lines">
+      <div class="read-line"><span>1️⃣</span><b>발단</b> — 용왕이 병이 들고, 토끼의 간이 약이라는 말이 돈다</div>
+      <div class="read-line"><span>2️⃣</span><b>전개</b> — 자라가 뭍에 올라 토끼를 꾀어 용궁으로 데려간다</div>
+      <div class="read-line"><span>3️⃣</span><b>절정</b> — 사정을 알게 된 토끼가 간을 두고 왔다고 둘러댄다</div>
+      <div class="read-line"><span>4️⃣</span><b>결말</b> — 뭍에 내린 토끼가 달아난다</div>
+    </div>`},
+
+  {tag:'② 아이디어 생성하기', t:'바꿀 수 있는 곳은 세 갈래입니다',
+   html:`<div class="recap">
+      <div class="recap-item"><span class="recap-ic">🧍</span><b class="mc">인물</b>의 성격을 바꾼다 — 토끼가 겁이 없다면? 자라가 스스로 따져 본다면?</div>
+      <div class="recap-item"><span class="recap-ic">🗺️</span><b class="mc">배경</b>을 바꾼다 — 오늘날의 도시라면? 겨울이라면?</div>
+      <div class="recap-item"><span class="recap-ic">⚡</span><b class="mc">사건</b>을 바꾼다 — 토끼가 달아나지 않는다면?</div>
+    </div>
+    <div class="ka-bub">셋 가운데 <b class="emph">하나만 골라 바꾸어도 충분합니다</b>.<br>하나를 바꾸면 나머지가 따라 움직이기 때문입니다.</div>`},
+
+  {tag:'② 아이디어 선택하기', t:'바꿀 계획을 세워 보았습니다',
+   html:`<div class="story"><b class="q">바꾸기 계획</b><p>
+      <b>바꿀 것</b> — 자라의 성격<br>
+      맡은 일을 끝까지 해내려는 성격 → <b class="mc">시키는 대로만 하지 않고 스스로 따져 보는 성격</b></p><p>
+      <b>그러면 무엇이 달라지는가</b><br>
+      전개 — 자라가 토끼를 꾀어 데려가는 길에 <b class="mc">사정을 사실대로 말한다</b><br>
+      절정 — 토끼는 달아나는 대신 <b class="mc">함께 다른 약을 찾아보자고 한다</b><br>
+      결말 — 둘이 용궁의 서고를 뒤져 <b class="mc">바닷속에서 나는 약초를 찾아낸다</b></p><p>
+      <b>그대로 두는 것</b> — 배경(바닷속 용궁과 산), 용왕의 성격</p></div>`},
+
+  {tag:'③ 모으기', t:'자라의 성격을 바꾸면 함께 손봐야 할 것을 모두 고르세요', log:true, collectMsg:'모두 찾았습니다. 하나를 바꾸면 그것에 닿아 있던 것이 함께 움직입니다. 🎉', hint:'자라가 사실대로 말해 버리면 그 뒤에 무엇이 성립하지 않게 되는지 생각해 보세요.',
+   html:`<div class="collect" id="collect">
+      <div class="chip" data-hit="1">자라가 토끼에게 하는 말</div>
+      <div class="chip" data-hit="1">토끼가 용궁에서 하는 행동</div>
+      <div class="chip" data-hit="1">이야기의 결말</div>
+      <div class="chip" data-hit="0">바닷속이라는 공간</div>
+      <div class="chip" data-hit="0">이야기의 글자 수</div>
+    </div><div class="fb" id="collectFb"></div>`},
+
+  {tag:'⚠ 경계', t:'놀랍게 바꾸는 것과 잘 바꾸는 것은 다릅니다',
+   html:`<div class="grid2">
+      <div class="g2-box"><h4>놀랍지만 이어지지 않습니다</h4>자라가 사실대로 말하려는 순간<br><b class="emph">바닷속에 불이 나고</b><br><b class="emph">토끼가 갑자기 하늘을 날아</b><br>모두를 구했다.</div>
+      <div class="g2-box good"><h4>바뀌었고 이어집니다</h4>자라가 사실대로 말하자<br>토끼는 <b class="mc">달아나지 않고</b><br>함께 약을 찾자고 했고<br>그래서 둘은 서고로 갔다.</div>
+    </div>
+    <div class="ka-bub">이야기를 바꾸는 일은 <b class="emph">기발한 생각을 얼마나 넣었는가</b>로 가늠하지 않습니다.<br><b class="mc">바꾼 것에서 다음 일이 자연스럽게 나오는가</b>로 가늠합니다.</div>`},
+
+  {tag:'③ 고르기', t:'자라를 「스스로 따져 보는 성격」으로 바꾼 계획으로 알맞은 것은?', log:true, okMsg:'맞습니다. 성격을 바꾸었으면 행동도 함께 바뀌어야 합니다. 🎉', hint:'성격만 바꾸어 놓고 행동은 그대로 둔 것이 없는지 살펴보세요.',
+   html:`<div class="wordpick">
+      <div class="wcard" data-ok="1"><div class="wc-pic">✅</div><div class="wc-word">데려가는 길에 마음이 걸려<br>사정을 사실대로 말한다</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-pic">🔁</div><div class="wc-word">성격은 바뀌었지만<br>여전히 아무 말 없이<br>토끼를 속여 데려간다</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-pic">⚡</div><div class="wc-word">가는 길에 갑자기 벼락이 쳐<br>용왕의 병이 저절로 나았다</div></div>
+    </div><div class="fb"></div>`},
+
+  {tag:'② 아이디어 적용하기', t:'첫 문장과 제목을 정합니다',
+   html:`<div class="recap">
+      <div class="recap-item"><span class="recap-ic">✍️</span><b>첫 문장</b> — 바뀐 것이 드러나는 곳에서 시작하면 읽는 사람이 금방 알아챕니다.</div>
+      <div class="recap-item"><span class="recap-ic">🏷️</span><b>제목</b> — 새로 바꾼 인물의 성격 · 배경 · 사건이 드러나게 붙입니다.</div>
+      <div class="recap-item"><span class="recap-ic">🔄</span>제목은 <b>맨 처음에 붙여도 되고 다 쓴 뒤에 붙여도 됩니다</b>.</div>
+    </div>
+    <div class="ka-bub">보기 — <b class="mc">「등에 태우고 가는 길」</b> · <b class="mc">「자라가 입을 열었다」</b></div>`},
+
+  {tag:'④ 아이디어 적용하기', t:'이제 이야기를 바꾸어 써 봅시다',
+   html:`<div class="stage-box">공책이나 종이를 펴고 <b>이야기를 바꾸어</b> 써 보세요.<br>① 인물 · 배경 · 사건 가운데 <b>하나</b>를 골라 바꾸고<br>② 그것 때문에 <b>달라지는 곳</b>을 차례대로 적고<br>③ 발단부터 결말까지 <b>이어지도록</b> 써 보세요.<br><small>한 번에 다 쓰지 말고, 앞에 쓴 부분을 중간중간 다시 읽으며 다듬어 보세요.</small></div>
+    <button class="stage-do" id="stageDo" data-fb="좋습니다. 다 쓴 뒤에 소리 내어 읽어 보면 끊기는 곳이 들립니다. 👏">바꾸어 써 봤어요</button>
+    <div class="fb" id="stageFb"></div>`},
+
+  {tag:'② 공유하기', t:'다 쓴 이야기는 서로 읽고 이야기를 나눕니다',
+   html:`<div class="ka-bub">글은 <b class="mc">읽어 주는 사람</b>이 있을 때 완성됩니다.<br>친구의 이야기를 읽고 <b class="emph">칭찬 쪽지</b>를 써 붙여 보세요.</div>
+    <div class="recap">
+      <div class="recap-item"><span class="recap-ic">🔍</span><b>어느 부분</b>이 좋았는지 짚어 줍니다.</div>
+      <div class="recap-item"><span class="recap-ic">💡</span><b>왜</b> 좋았는지 까닭을 붙입니다.</div>
+      <div class="recap-item"><span class="recap-ic">🚫</span>「잘 썼어」 · 「재미있어」에서 <b class="emph">멈추지 않습니다</b>.</div>
+    </div>`},
+
+  {tag:'③ 고르기', t:'칭찬 쪽지로 가장 알맞은 것은 무엇일까요?', log:true, okMsg:'맞습니다. 어느 부분이 왜 좋았는지까지 적어야 도움이 됩니다. 🎉', hint:'읽은 뒤 그 친구가 무엇을 잘했는지 알 수 있는 쪽지를 고르세요.',
+   html:`<div class="wordpick">
+      <div class="wcard" data-ok="1"><div class="wc-pic">📝</div><div class="wc-word">자라가 사실대로 말하는 부분에서<br>마음이 바뀐 것이 잘 드러나<br>인상 깊었어</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-pic">📝</div><div class="wc-word">잘 썼어.<br>다음에도 이렇게 써</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-pic">📝</div><div class="wc-word">글씨를 또박또박 써서<br>읽기 편했어</div></div>
+    </div><div class="fb"></div>`},
+
+  {tag:'⑤ 마무리', t:'공부한 내용을 확인해 봅시다',
+   html:`<div class="selfcheck">
+      <div class="sc-row"><span class="sc-box">✓</span>이야기의 인물 · 배경 · 사건을 정리할 수 있습니다.</div>
+      <div class="sc-row"><span class="sc-box">✓</span>하나를 바꾸면 함께 손봐야 할 곳을 찾을 수 있습니다.</div>
+      <div class="sc-row"><span class="sc-box">✓</span>바꾼 뒤에도 앞과 뒤가 이어지도록 쓸 수 있습니다.</div>
+      <div class="sc-row"><span class="sc-box">✓</span>친구의 글에 구체적인 칭찬 쪽지를 쓸 수 있습니다.</div>
+    </div>
+    <div class="ka-bub">다음 차시에는 <b class="mc">학급 이야기책</b>을 만들어 봅니다.</div>`}
+];
+const tracker={
+  answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
+  done(i){}
+};
+const LESSON_ID='g6_2_kor_u6_l09_11_v1';
+const LESSON_MAX=50;
+let cur=0, score=0;
+const stage=document.getElementById('stage');
+const main=document.getElementById('main');
+const scoreEl=document.getElementById('score');
+const prevB=document.getElementById('prev');
+const nextB=document.getElementById('next');
+const dotsWrap=document.getElementById('dots');
+
+slides.forEach((s,i)=>{ const d=document.createElement('div'); d.className='dot'; d.onclick=()=>go(i); dotsWrap.appendChild(d); });
+const dots=[...dotsWrap.children];
+
+function render(){
+  const s=slides[cur];
+  main.innerHTML=`<span class="ka-tag">${s.tag}</span><h2 class="ka-t">${s.t}</h2>${s.html}`;
+  stage.scrollTop=0;
+  dots.forEach((d,i)=>{ d.classList.toggle('active',i===cur); d.classList.toggle('done',i<cur); });
+  prevB.disabled=cur===0;
+  nextB.textContent=cur===slides.length-1?'끝 ✓':'다음 ▷';
+  if(cur===slides.length-1){ if(window.kedu&&window.kedu.recordLessonEnd) window.kedu.recordLessonEnd(score, LESSON_MAX); }
+  tracker.done(cur);
+  if(main.querySelector('#match')) bindMatch(s);
+  if(main.querySelector('#collect')) bindCollect(s);
+  if(main.querySelector('.wcard')) bindWordPick(s);
+  if(main.querySelector('.trace-cell')) bindTrace();
+  if(main.querySelector('.read-line')) bindRead();
+  if(main.querySelector('.sc-row')) bindCheck();
+  if(main.querySelector('#stageDo')) bindStage();
+}
+function bindWordPick(s){
+  let done=false;
+  main.querySelectorAll('.wcard').forEach(card=>{
+    card.onclick=()=>{
+      if(done) return;
+      const ok=card.dataset.ok==='1';
+      const fb=main.querySelector('.fb');
+      if(ok){
+        done=true;
+        card.classList.add('correct');
+        if(fb){fb.textContent=s.okMsg||'정확합니다! 🎉'; fb.classList.remove('bad');}
+        if(s.log){score+=10; scoreEl.textContent=score; tracker.answer(cur,true);}
+        main.querySelectorAll('.wcard').forEach(c=>{if(c!==card)c.style.opacity=.4;});
+      }else{
+        card.classList.add('wrong');
+        if(fb){fb.textContent='다시 한 번 생각해 보세요.'; fb.classList.add('bad');}
+        if(s.log)tracker.answer(cur,false);
+        setTimeout(()=>card.classList.remove('wrong'),350);
+      }
+    };
+  });
+}
+function bindMatch(s){
+  const board=main.querySelector('#match');
+  const fb=main.querySelector('#matchFb');
+  const cards=board.querySelectorAll('.match-card');
+  const total=cards.length/2;
+  let sel=null, paired=0, logged=false;
+  cards.forEach(card=>{
+    card.onclick=()=>{
+      if(card.classList.contains('paired')) return;
+      if(!sel){ sel=card; card.classList.add('sel'); return; }
+      if(sel===card){ card.classList.remove('sel'); sel=null; return; }
+      if(sel.dataset.pair===card.dataset.k && card.dataset.pair===sel.dataset.k){
+        sel.classList.remove('sel'); sel.classList.add('paired'); card.classList.add('paired');
+        sel=null; paired++;
+        if(paired===total){
+          fb.textContent=s.matchMsg||'모두 알맞게 이었습니다! 🎉'; fb.classList.remove('bad');
+          if(s.log && !logged){logged=true; score+=10; scoreEl.textContent=score; tracker.answer(cur,true);}
+        }else{ fb.textContent='좋습니다. 다음 짝도 이어 보세요.'; fb.classList.remove('bad'); }
+      }else{
+        const w1=sel, w2=card;
+        w1.classList.add('miss'); w2.classList.add('miss');
+        fb.textContent='짝이 아닙니다. 다시 살펴보세요.'; fb.classList.add('bad');
+        if(s.log)tracker.answer(cur,false);
+        setTimeout(()=>{w1.classList.remove('miss','sel'); w2.classList.remove('miss');},350);
+        sel=null;
+      }
+    };
+  });
+}
+function bindCollect(s){
+  const board=main.querySelector('#collect');
+  const fb=main.querySelector('#collectFb');
+  const chips=board.querySelectorAll('.chip');
+  const targets=board.querySelectorAll('.chip[data-hit="1"]').length;
+  let painted=0, logged=false;
+  chips.forEach(chip=>{
+    chip.onclick=()=>{
+      if(chip.classList.contains('painted')) return;
+      if(chip.dataset.hit==='1'){
+        chip.classList.add('painted'); painted++;
+        if(painted===targets){
+          chips.forEach(c=>{if(c.dataset.hit!=='1')c.classList.add('done-dim');});
+          fb.textContent=s.collectMsg||'알맞은 것을 모두 찾았습니다! 🎉'; fb.classList.remove('bad');
+          if(s.log && !logged){logged=true; score+=10; scoreEl.textContent=score; tracker.answer(cur,true);}
+        }else{ fb.textContent=`좋습니다. ${painted}개 찾았어요. 남은 것도 찾아보세요.`; fb.classList.remove('bad'); }
+      }else{
+        chip.classList.add('miss');
+        fb.textContent='이것은 아닙니다. 다시 살펴보세요.'; fb.classList.add('bad');
+        if(s.log)tracker.answer(cur,false);
+        setTimeout(()=>chip.classList.remove('miss'),350);
+      }
+    };
+  });
+}
+function bindTrace(){
+  const cells=main.querySelectorAll('.trace-cell');
+  const fb=main.querySelector('#traceFb');
+  const total=cells.length;
+  let done=0;
+  cells.forEach(c=>{
+    c.onclick=()=>{
+      if(c.classList.contains('done')) return;
+      c.classList.add('done'); done++;
+      if(fb){ if(done===total) fb.innerHTML='모두 따라 썼어요! 또박또박 잘 썼어요. 🎉'; else fb.innerHTML=`잘하고 있어요! <b>${done}</b>글자 따라 썼어요.`; }
+    };
+  });
+}
+function bindRead(){
+  const lines=main.querySelectorAll('.read-line');
+  const fb=main.querySelector('#readFb');
+  const total=lines.length;
+  let done=0;
+  lines.forEach(l=>{
+    l.onclick=()=>{
+      if(l.classList.contains('read')) return;
+      l.classList.add('read'); done++;
+      if(fb){ if(done===total) fb.innerHTML='끝까지 읽었습니다! 🎉'; else fb.innerHTML=`<b>${done}</b>줄 읽었습니다.`; }
+    };
+  });
+}
+function bindCheck(){
+  main.querySelectorAll('.sc-row').forEach(r=>{ r.onclick=()=>{ r.classList.toggle('checked'); }; });
+}
+function bindStage(){
+  const btn=main.querySelector('#stageDo');
+  const fb=main.querySelector('#stageFb');
+  btn.onclick=()=>{ btn.classList.add('done'); btn.textContent='✅ 완료'; if(fb) fb.textContent=btn.dataset.fb||'잘했습니다! 👏'; };
+}
+function go(n){ if(n>=0&&n<slides.length){ cur=n; render(); } }
+prevB.onclick=()=>go(cur-1);
+nextB.onclick=()=>go(cur+1);
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')go(cur+1);if(e.key==='ArrowLeft')go(cur-1);});
+document.getElementById('hint').onclick=()=>{
+  const s=slides[cur];
+  if(s.hint){ alert('💡 '+s.hint); return; }
+  if(main.querySelector('#match')) alert('💡 왼쪽 항목을 먼저 누르고, 짝이 되는 것을 이어 누르세요.');
+  else if(main.querySelector('.wcard')) alert('💡 말과 행동, 그리고 상황을 함께 살펴보면 답이 보입니다.');
+  else if(main.querySelector('#collect')) alert('💡 조건에 맞는 것만 모두 고르세요. 하나가 아닐 수 있습니다.');
+  else if(main.querySelector('.trace-cell')) alert('💡 한 칸씩 또박또박 따라 쓰세요.');
+  else if(main.querySelector('.read-line')) alert('💡 한 줄씩 눈으로 읽으며 눌러 확인하세요.');
+  else if(main.querySelector('#stageDo')) alert('💡 실제로 말해 보거나 공책에 써 본 뒤 버튼을 누르세요.');
+  else alert('💡 천천히 다시 읽어 보면 실마리를 찾을 수 있습니다.');
+};
+document.getElementById('replay').onclick=()=>{ render(); };
+render();
+</script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+</body>
+</html>
