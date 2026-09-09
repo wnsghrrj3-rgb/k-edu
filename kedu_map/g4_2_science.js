@@ -64,34 +64,34 @@ window.KEDU_MAP["g4_2_science"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_science_u1_l06",
+     "lessonId": "g4_s2_sci_u1_l06_v1",
      "n": "8~9",
      "title": "창의가 반짝! — 태양계 여행 홍보 자료 만들기",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/science/1단원_밤하늘관찰/g4_sci_u1_l06_태양계여행홍보.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_science_u1_l07",
+     "lessonId": "g4_s2_sci_u1_l07_v1",
      "n": "10",
      "title": "톡톡! 과학 — 밤하늘의 신비를 밝히는 망원경",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/science/1단원_밤하늘관찰/g4_sci_u1_l07_망원경.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_science_u1_l08",
+     "lessonId": "g4_s2_sci_u1_l08_v1",
      "n": "11",
      "title": "단원 마무리",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/science/1단원_밤하늘관찰/g4_sci_u1_l08_단원마무리.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }
