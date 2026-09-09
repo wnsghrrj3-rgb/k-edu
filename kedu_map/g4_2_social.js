@@ -24,14 +24,14 @@ window.KEDU_MAP["g4_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_social_u1_l02",
+     "lessonId": "g4_social_u1_l02_v1",
      "n": "2",
      "title": "민주주의를 실천하기 위해 필요한 태도를 알아볼까요",
      "sub": "① 학교생활 속 민주주의",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/social/1단원_민주주의와자치/g4_social_u1_l02_실천태도.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
