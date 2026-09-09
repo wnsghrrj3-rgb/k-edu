@@ -334,11 +334,11 @@
   const frameOf = x => scrollF + (x - HEAD) / pxf;
   const MIN_PXF = 0.02, MAX_PXF = 40;
 
+  const LANES_H = RULER + LANES.reduce((a, l) => a + l.h, 0);   // 레인 전체 높이 — 창이 이보다 낮으면 캔버스는 이 높이로 두고 .tl-scroll 이 세로 스크롤
   function resize() {
     const r = tl.parentElement.getBoundingClientRect();
-    const barH = tl.previousElementSibling.getBoundingClientRect().height;
     DPR = window.devicePixelRatio || 1;
-    TW = Math.max(300, Math.floor(r.width)); TH = Math.max(120, Math.floor(r.height - barH));
+    TW = Math.max(300, Math.floor(r.width)); TH = Math.max(LANES_H, Math.floor(r.height));
     tl.style.height = TH + 'px'; tl.width = TW * DPR; tl.height = TH * DPR;
     sc.width = tl.width; sc.height = tl.height;
     dirty = true; draw();
@@ -971,6 +971,7 @@
   tl.addEventListener('wheel', e => {
     e.preventDefault(); const { x } = pos(e);
     if (e.ctrlKey || e.metaKey) setZoom(pxf * (e.deltaY < 0 ? 1.18 : 1 / 1.18), x);
+    else if (e.shiftKey && !e.deltaX) { tl.parentElement.scrollTop += e.deltaY; }   // Shift+휠 = 레인 위아래(창이 낮아 잘릴 때)
     else { scrollF += (e.deltaX || e.deltaY) / pxf * 0.8; clampScroll(); dirty = true; draw(); }
   }, { passive: false });
   tl.addEventListener('dblclick', e => { const { x, y } = pos(e); const h = hitTest(x, y); if (h.kind === 'marker') { renameMarker(h.mk.id); return; } if (h.kind === 'V' || h.kind === 'A1') { setPH(h.clip.at); } if (h.kind === 'S') { setPH(h.s.at); $('subEditText').focus(); } if (h.kind === 'P') { setPH(h.pt.at + Math.min(h.pt.dur - 1, Math.round(PT.meta(h.pt.part).thumbT * FPS))); const f = $('partFields').querySelector('input'); if (f) f.focus(); } if (h.kind === 'A2') setPH(h.a2.at); });

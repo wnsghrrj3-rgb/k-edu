@@ -214,7 +214,9 @@
   .tl-bar { display:flex; align-items:center; gap:8px; padding:6px 12px; font-size:12px; color:var(--sub); }
   .tl-bar input[type=range] { width:140px; }
   .tl-bar .zi { color:var(--sub); cursor:pointer; padding:0 4px; font-size:15px; }
-  #timeline { flex:1; width:100%; display:block; cursor:default; }
+  /* 레인 전체(308px)가 타임라인 창보다 크면 세로로 스크롤 — 창을 줄여도 A1·A2 가 잘리지 않는다(2026-09-09 준호: "위아래 스크롤이 안 되고 밑이 잘린다") */
+  .tl-scroll { flex:1; min-height:0; overflow-y:auto; overflow-x:hidden; scrollbar-width:thin; scrollbar-color:var(--line2) transparent; }
+  #timeline { width:100%; display:block; cursor:default; }
 
   #overlay { position:fixed; inset:0; background:rgba(6,10,20,.82); display:flex; align-items:center; justify-content:center; z-index:50; backdrop-filter:blur(2px); }
   #overlay.hidden, .hidden { display:none !important; }
@@ -539,7 +541,7 @@
         <div id="bin"></div>
       </div>
   </section>
-  <div class="split h" id="splitTl" title="끌어서 타임라인 높이 · 더블클릭 기본값"></div>
+  <div class="split h" id="splitTl" title="끌어서 타임라인 높이 · 더블클릭 기본값 · 레인이 안 보이면 Shift+휠로 위아래"></div>
   <section class="tl-wrap">
     <div class="tl-bar">
       <span class="zi" id="zoomOut">−</span><input type="range" id="zoom" min="0" max="1000" value="500"><span class="zi" id="zoomIn">＋</span>
@@ -548,7 +550,7 @@
       <div class="sp"></div>
       <span id="hover" style="font-variant-numeric:tabular-nums"></span>
     </div>
-    <canvas id="timeline"></canvas>
+    <div class="tl-scroll" id="tlScroll"><canvas id="timeline"></canvas></div>
   </section>
 </div>
 

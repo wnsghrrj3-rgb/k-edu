@@ -21,7 +21,8 @@
      'kedu_progress_' 로 시작하는 키를 훑는 코드(kedu_lesson_bridge)가 그대로 돈다.
    - **동의 없으면 기기 안에도 남기지 않는다(준호 결정 2026-09-09)** — 정식 세션(계정·동의 좌석의 익명 uid)이
      없는 게스트(동의 전, 학급코드만)·방문자는 작업 자료·기록을 localStorage·sessionStorage 에 쓰지 못한다:
-     쓰기는 페이지가 살아 있는 동안만 메모리에 두고(화면 안에서 쓰고 읽는 코드는 그대로 돈다), 새로고침·다음 접속엔 없다.
+     localStorage 쓰기는 페이지가 살아 있는 동안만 메모리에 두고(화면 안에서 쓰고 읽는 코드는 그대로 돈다), 새로고침·다음 접속엔 없다.
+     sessionStorage 는 탭이 닫히면 사라지는 자리라 접두사만 붙인다(게이트 캐시가 여기 산다).
      읽기도 메모리만 — 옛 기기 값(주인 없는 키)은 안 보인다. 화면 설정(학년·학기·홈 표시·소리 끔·안내 봤음)만 예외(PREF).
      서버 저장은 종전대로 KeduTier.canSave()(정식 좌석만) — 여기는 그 규칙의 기기 쪽 짝이다.
    - 케이무비(kmv.*)는 자체 IndexedDB 주인 분리를 쓰므로 여기서 손대지 않는다. 개방 목록 캐시(kedu_openings_v1)는 학급코드로 스스로 검사하므로 그대로.
@@ -65,15 +66,16 @@
     /* 게스트·방문자 — 작업 자료·기록은 메모리에만(이 페이지 동안), 기기엔 안 남긴다. 화면 설정(PREF)은 기기에(게스트면 학급코드별) */
     var mem = { local: {}, session: {} };
     var bag = function (st) { return st === g.sessionStorage ? mem.session : mem.local; };
-    var keep = function (k) { return pass(k) || pref(k); };
-    S.getItem = function (k) { k = String(k); if (keep(k)) return rawGet.call(this, map(k)); var b = bag(this); return Object.prototype.hasOwnProperty.call(b, k) ? b[k] : null; };
-    S.setItem = function (k, v) { k = String(k); if (keep(k)) return rawSet.call(this, map(k), v); bag(this)[k] = String(v); };
-    S.removeItem = function (k) { k = String(k); if (keep(k)) return rawRemove.call(this, map(k)); delete bag(this)[k]; };
+    var keep = function (k, st) { return pass(k) || pref(k) || st === g.sessionStorage; };   // sessionStorage 는 탭이 닫히면 사라지는 자리라 기기에 남는 게 아니다 — 접두사만(게이트 캐시 등)
+    S.getItem = function (k) { k = String(k); if (keep(k, this)) return rawGet.call(this, map(k)); var b = bag(this); return Object.prototype.hasOwnProperty.call(b, k) ? b[k] : null; };
+    S.setItem = function (k, v) { k = String(k); if (keep(k, this)) return rawSet.call(this, map(k), v); bag(this)[k] = String(v); };
+    S.removeItem = function (k) { k = String(k); if (keep(k, this)) return rawRemove.call(this, map(k)); delete bag(this)[k]; };
     S.key = function (i) {
       var k = rawKey.call(this, i); if (k == null) return k;
       if (pass(k)) return k;
-      if (prefix && k.indexOf(prefix) === 0) { var r = k.slice(prefix.length); return pref(r) ? r : ''; }
-      return (!prefix && pref(k)) ? k : '';               // 옛 기기 값·남의 것은 안 보이게
+      var ss = this === g.sessionStorage;
+      if (prefix && k.indexOf(prefix) === 0) { var r = k.slice(prefix.length); return (ss || pref(r)) ? r : ''; }
+      return (!prefix && (ss || pref(k))) ? k : '';       // 옛 기기 값·남의 것은 안 보이게
     };
   } else {
     S.getItem = function (k) { return rawGet.call(this, map(k)); };

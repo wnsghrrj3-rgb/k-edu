@@ -38,7 +38,7 @@ fresh(); let w = makeWin({ kedu_progress_l1: '{"a":1}', kedu_grade: '3' });
 run(w); run(w, "localStorage.setItem('x','1'); localStorage.setItem('kedu_progress_l1','{\"new\":1}'); sessionStorage.setItem('quiz','{\"i\":2}')");
 t(w.__keduScope.owner === null && w.__keduScope.persist === false, '① 세션 없음 → 주인 없음, persist false');
 t(run(w, "localStorage.getItem('x')") === '1' && run(w, "localStorage.getItem('kedu_progress_l1')") === '{"new":1}' && run(w, "sessionStorage.getItem('quiz')") === '{"i":2}', '① 페이지 안에서는 쓰고 읽힌다(메모리)');
-t(!rawKeys(w).includes('x') && w.localStorage._m.get('kedu_progress_l1') === '{"a":1}' && !w.sessionStorage._m.has('quiz'), '① 기기(raw)엔 안 써졌다 — 옛 값도 안 덮임');
+t(!rawKeys(w).includes('x') && w.localStorage._m.get('kedu_progress_l1') === '{"a":1}' && w.sessionStorage._m.has('quiz'), '① 기기(raw)엔 안 써졌다 — 옛 값도 안 덮임 (탭 한정 sessionStorage 는 그대로)');
 fresh(); let w2 = makeWin(Object.fromEntries(w.localStorage._m)); run(w2);
 t(run(w2, "localStorage.getItem('kedu_progress_l1')") === null && run(w2, "localStorage.getItem('x')") === null, '① 다음 접속엔 없다 — 옛 기기 값(kedu_progress_l1)도 안 읽힌다');
 run(w2, "localStorage.setItem('kedu_grade','5')");
