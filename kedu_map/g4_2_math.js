@@ -342,14 +342,94 @@ window.KEDU_MAP["g4_2_math"] = {
    "kind": "unit",
    "lessons": [
     {
-     "key": null,
-     "lessonId": null,
-     "n": "",
-     "title": "준비 중이에요",
+     "key": "g4_math_u5_l01",
+     "lessonId": "g4_2_math_u5_l01_v1",
+     "n": "1",
+     "title": "꺾은선그래프를 만나 볼까요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/math/5단원_꺾은선그래프/g4_math_u5_l01_꺾은선그래프를만나볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_math_u5_l02",
+     "lessonId": "g4_2_math_u5_l02_v1",
+     "n": "2",
+     "title": "꺾은선그래프를 알아볼까요",
+     "sub": null,
+     "url": "/grade4/semester2/math/5단원_꺾은선그래프/g4_math_u5_l02_꺾은선그래프를알아볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_math_u5_l03",
+     "lessonId": "g4_2_math_u5_l03_v1",
+     "n": "3",
+     "title": "꺾은선그래프로 나타내어 볼까요? (1)",
+     "sub": null,
+     "url": "/grade4/semester2/math/5단원_꺾은선그래프/g4_math_u5_l03_꺾은선그래프로나타내어볼까요1.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_math_u5_l04",
+     "lessonId": "g4_2_math_u5_l04_v1",
+     "n": "4",
+     "title": "꺾은선그래프로 나타내어 볼까요? (2)",
+     "sub": null,
+     "url": "/grade4/semester2/math/5단원_꺾은선그래프/g4_math_u5_l04_꺾은선그래프로나타내어볼까요2.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_math_u5_l05",
+     "lessonId": "g4_2_math_u5_l05_v1",
+     "n": "5",
+     "title": "꺾은선그래프를 해석해 볼까요",
+     "sub": null,
+     "url": "/grade4/semester2/math/5단원_꺾은선그래프/g4_math_u5_l05_꺾은선그래프를해석해볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_math_u5_l06",
+     "lessonId": "g4_2_math_u5_l06_v1",
+     "n": "6",
+     "title": "자료를 수집하여 꺾은선그래프로 나타내어 볼까요",
+     "sub": null,
+     "url": "/grade4/semester2/math/5단원_꺾은선그래프/g4_math_u5_l06_자료를수집하여나타내어볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_math_u5_l07",
+     "lessonId": "g4_2_math_u5_l07_v1",
+     "n": "7",
+     "title": "자료의 특성에 알맞은 그래프를 선택해 볼까요",
+     "sub": null,
+     "url": "/grade4/semester2/math/5단원_꺾은선그래프/g4_math_u5_l07_알맞은그래프를선택해볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_math_u5_l08",
+     "lessonId": "g4_2_math_u5_l08_v1",
+     "n": "8",
+     "title": "변화하고 있는 우리나라 인구수 (창의)",
+     "sub": null,
+     "url": "/grade4/semester2/math/5단원_꺾은선그래프/g4_math_u5_l08_변화하고있는우리나라인구수.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_math_u5_l09",
+     "lessonId": "g4_2_math_u5_l09_v1",
+     "n": "9",
+     "title": "스스로 마무리해요 (단원 평가)",
+     "sub": null,
+     "url": "/grade4/semester2/math/5단원_꺾은선그래프/g4_math_u5_l09_스스로마무리해요.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   },
