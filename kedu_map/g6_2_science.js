@@ -159,6 +159,16 @@ window.KEDU_MAP["g6_2_science"] = {
      "url": "/grade6/semester2/science/2단원_물질의연소/g6_sci_u2_l05_연소후변화.html",
      "track": "tb",
      "ready": true
+    },
+    {
+     "key": "g6_science_u2_l06",
+     "lessonId": "g6_s2_sci_u2_l06_v1",
+     "n": "7",
+     "title": "연소 생성물은 생태계에 어떤 피해를 줄까?",
+     "sub": null,
+     "url": "/grade6/semester2/science/2단원_물질의연소/g6_sci_u2_l06_연소생성물피해.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }
