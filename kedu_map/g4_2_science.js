@@ -54,14 +54,14 @@ window.KEDU_MAP["g4_2_science"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_science_u1_l05",
+     "lessonId": "g4_s2_sci_u1_l05_v1",
      "n": "6~7",
      "title": "별과 별자리",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/science/1단원_밤하늘관찰/g4_sci_u1_l05_별과별자리.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
