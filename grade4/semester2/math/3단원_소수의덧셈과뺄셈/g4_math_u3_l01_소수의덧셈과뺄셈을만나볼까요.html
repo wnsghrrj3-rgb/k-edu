@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<!--
+  g4_math_u3_l01 — 소수의 덧셈과 뺄셈을 만나 볼까요 [4학년 2학기 3단원 01차시, 단일 40분]
+  단원: 4학년 2학기 3단원 「소수의 덧셈과 뺄셈」 / 지도서 256~315 · 교과서 56~57쪽(수학익힘 35쪽)
+  base: g4_math_u6_l04(엔진·채점부·공통 CSS 계승) / 부품 decGrid · decLine · placePad · colCalc · relChain · cmpBoard · stepCards · dataTable
+  성격: 단원 도입 — 동물원에서 동물과 관련 있는 직업을 만나고, 3학년에서 배운 소수 한 자리 수를 되짚는다
+  ★ 오개념 훅: 소수는 소수 한 자리까지만 있다고 여기는 자리
+  ★ 왜 그럴까 슬롯 = 슬7 : 다람쥐의 몸무게 0.63 kg 은 소수 한 자리 수로는 나타낼 수 없다 — 더 작은 자리가 필요하다
+  🔑 회수 키: meta·JS 모두 g4_2_math_u3_l01 (파일명·KEDU_MAP.key 는 g4_math_ 그대로)
+  ⛔ 규약: 5학년 몫(소수의 곱셈·나눗셈·소수점 위치 변화) 미언급(지도서 256 「배울 내용」)
+        / 자리는 소수점 기준으로 맞춘다 — 오른쪽 끝 맞춤 금지(지도서 269 질문 2)
+        / 수의 길이로 크기를 견주지 않는다(지도서 268 오류 1)
+  점수: 기본 4×10 + 응용 4×15 = 100 / mcq 정답 위치 q8=2 · q10=2 · q12=1 · q14=3 / pad 정답 q9=7 · q11=24 · q13=9 · q15=8
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g4_2_math_u3_l01_v1">
+<title>소수의 덧셈과 뺄셈을 만나 볼까요 · K-edu 4학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#FBF7F1; --ink:#243043; --ink-soft:#62708A;
+  --coral:#7C3AED; --coral-deep:#5B21B6; --coral-soft:#EDE4FD;
+  --teal:#1FA8A0; --teal-deep:#147F79; --teal-soft:#D6F1EF;
+  --gold:#F6B526; --emph:#F0451F; --line:#ECE3D6; --mark:#FFE08A;
+  --f-title:'Jua',sans-serif; --f-body:'Gowun Dodum',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:0 14px 34px -18px rgba(36,48,67,.4);
+  --fs-title: clamp(28px, 4.6vw, 52px);
+  --fs-heading: clamp(24px, 3.7vw, 37px);
+  --fs-body: clamp(21px, 3.2vw, 31px);
+  --fs-caption: clamp(19px, 2.9vw, 27px);
+  --fs-label: clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --em-md: clamp(44px, 7vw, 80px);
+  --em-lg: clamp(66px, 10vw, 122px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(760px, 96vw);
+  --mw-lg: min(840px, 96vw);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+@keyframes ka-swap-r { 0%{transform:translateX(0); opacity:1;} 50%{transform:translateX(20px); opacity:.3;} 100%{transform:translateX(0); opacity:1;} }
+@keyframes ka-mark { from{background-size:0 100%;} to{background-size:100% 100%;} }
+
+/* ───── 컨테이너 ───── */
+.ka { background:var(--paper); width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; color:var(--ink); position:relative; overflow:hidden; }
+
+/* ───── 상단바 (topbar) ───── */
+.ka-h { display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); padding:clamp(11px,1.7vw,15px) clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:hover { transform:translateY(-1px); }
+.ka-pill { font-family:var(--f-title); background:var(--coral); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-where { font-size:clamp(14px,1.6vw,18px); color:var(--ink-soft); flex-shrink:1; }
+.ka-where b { color:var(--ink); }
+.ka-bar { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:46vw; }
+.ka-dot { width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s, background .2s; }
+.ka-dot:hover { transform:scale(1.2); }
+.ka-dot.active { background:var(--coral); transform:scale(1.3); }
+.ka-dot.done { background:var(--teal); }
+.ka-score { font-family:var(--f-title); background:#FFF8E1; color:#F57F17; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); padding:0; border-radius:50%; cursor:pointer; flex-shrink:0; color:var(--coral-deep); font-size:clamp(13px,2vw,16px); width:clamp(32px,4.5vw,38px); height:clamp(32px,4.5vw,38px); display:flex; align-items:center; justify-content:center; }
+
+/* ───── 본문 ───── */
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; gap:clamp(7px,1.3vw,12px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(8px,1.4vh,16px) clamp(16px,4vw,48px); overflow:hidden; }
+.slide.active { display:flex; }
+.slide-title { font-family:var(--f-title); font-size:var(--fs-title); margin:0; line-height:1.18; color:var(--ink); font-weight:400; text-align:center; flex-shrink:0; }
+.slide-sub { font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(10px,1.6vw,16px); left:clamp(16px,4vw,40px); font-family:var(--f-title); color:var(--coral); font-size:clamp(13px,1.9vw,18px); letter-spacing:.4px; z-index:5; }
+
+/* ───── 하단 내비 ───── */
+.ka-f { display:flex; justify-content:flex-end; gap:12px; padding:clamp(12px,1.7vw,16px) clamp(16px,4vw,40px); background:linear-gradient(to top, var(--paper) 62%, transparent); flex-shrink:0; }
+.ka-prev, .ka-hint, .ka-next { font-family:var(--f-title); font-size:clamp(15px,1.9vw,22px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(10px,1.4vw,15px) clamp(20px,2.8vw,38px); cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translateY(-2px); }
+.ka-prev { margin-right:auto; }
+.ka-hint { color:#F57F17; border-color:#FFE08A; }
+.ka-next { background:var(--coral); color:#fff; border-color:var(--coral); }
+.ka-prev:disabled, .ka-next:disabled { opacity:.35; cursor:default; transform:none; }
+.ka-hint:disabled { opacity:.4; cursor:default; }
+
+/* ───── 공통 콘텐츠 ───── */
+.concept-box { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,18px) clamp(18px,2.8vw,28px); border-radius:20px; font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); text-align:center; line-height:1.5; box-shadow:var(--shadow); }
+.concept-box strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.big-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-lg); line-height:1; }
+.intro-q { font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; }
+.intro-q strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.goal-list { display:flex; flex-direction:column; gap:clamp(7px,1.4vw,11px); font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); }
+.goal-list li { background:#fff; border:2px solid var(--line); padding:clamp(8px,1.5vw,12px) clamp(14px,2.6vw,20px); border-radius:16px; list-style:none; box-shadow:var(--shadow); }
+.goal-list li strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+.recall-box { background:var(--teal-soft); padding:clamp(14px,2.8vw,22px) clamp(20px,3.6vw,30px); border-radius:22px; font-size:var(--fs-body); color:var(--teal-deep); max-width:var(--mw-sm); text-align:center; line-height:1.6; }
+.recall-box strong { color:var(--teal-deep); font-family:var(--f-title); font-weight:400; }
+.scene { background:#fff; border:3px solid var(--coral-soft); border-radius:28px; padding:clamp(18px,3.4vw,30px) clamp(22px,4.2vw,38px); display:flex; flex-direction:column; gap:clamp(10px,2vw,16px); align-items:center; min-width:clamp(280px,50vw,460px); box-shadow:0 6px 0 var(--coral-soft); }
+.pencil-row { display:flex; gap:clamp(4px,0.8vw,8px); font-size:var(--em-sm); flex-wrap:wrap; justify-content:center; max-width:var(--mw-sm); color:var(--ink); }
+
+/* ───── place_value_block (모형) ───── */
+.pv-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.pv-row { display:flex; gap:clamp(10px,2.2vw,20px); align-items:flex-end; justify-content:center; flex-wrap:wrap; }
+.pv-group { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,0.8vw,7px); }
+.pv-label { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.pv-block svg { display:block; }
+.swap-arrow { font-size:var(--em-sm); color:var(--coral); animation:ka-swap-r 1.6s ease-in-out infinite; }
+.exchange-eq { font-size:var(--fs-heading); color:var(--ink); display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); flex-wrap:wrap; justify-content:center; }
+
+/* ───── number_line ───── */
+.nl-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(12px,2.4vw,20px); max-width:var(--mw-lg); width:100%; }
+.nl-svg { width:min(760px,94vw); height:auto; }
+.nl-svg .nl-tick text { font-family:var(--f-num); font-weight:800; fill:var(--ink-soft); }
+.nl-pick { cursor:pointer; }
+.nl-pick:hover circle { fill:var(--coral-soft); }
+.nl-pick.correct circle { fill:var(--teal); }
+.nl-pick.wrong circle { fill:var(--coral-soft); }
+
+/* ───── 100의 여러 의미 ───── */
+.mean-grid { display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-sm); width:100%; }
+.mean-item { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,17px) clamp(16px,3vw,24px); border-radius:18px; font-size:var(--fs-body); color:var(--ink); text-align:center; box-shadow:var(--shadow); }
+.mean-item strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+
+/* ───── 문제 공통 ───── */
+.q-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; font-weight:400; }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:20px; padding:clamp(8px,1.6vw,14px) clamp(24px,4.6vw,44px); min-width:clamp(120px,22vw,200px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.q-pad { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(6px,1.2vw,10px); max-width:clamp(280px,56vw,460px); }
+.q-key { background:#fff; border:2px solid var(--line); border-radius:14px; padding:clamp(7px,1.5vw,12px) 0; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, background .15s, border-color .15s; box-shadow:0 4px 0 var(--line); }
+.q-key:hover { background:var(--coral-soft); border-color:var(--coral); }
+.q-key:active { transform:translateY(3px); box-shadow:none; }
+.q-key.fn { background:#FFF8E1; color:#F57F17; font-family:var(--f-title); font-size:var(--fs-body); border-color:#FFE08A; box-shadow:0 4px 0 #FFE08A; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); color:var(--teal-deep); min-height:1.4em; text-align:center; }
+.q-fb.wrong { color:var(--emph); }
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-sm); }
+.mcq-opt { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,15px); font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .2s; box-shadow:0 6px 0 var(--coral-soft); font-weight:400; }
+.mcq-opt:hover { border-color:var(--coral); }
+.mcq-opt:active { transform:translateY(4px); box-shadow:none; }
+.mcq-opt.correct { border-color:var(--teal-deep); background:var(--teal); color:#fff; box-shadow:0 6px 0 var(--teal-deep); animation:ka-pop .5s ease; }
+.mcq-opt.wrong { border-color:var(--emph); background:#FFE0DA; color:var(--coral-deep); animation:ka-shake .35s; }
+.mcq-hint { font-family:var(--f-title); font-size:var(--fs-body); color:#F57F17; background:#FFF8E1; border-radius:16px; padding:clamp(8px,1.6vw,12px) clamp(14px,2.6vw,20px); max-width:var(--mw-sm); text-align:center; display:none; }
+.mcq-hint.show { display:block; }
+
+/* ───── trace ───── */
+.trace-row { display:flex; gap:clamp(12px,2.4vw,22px); justify-content:center; flex-wrap:wrap; }
+.trace-cell { width:clamp(64px,12vw,110px); height:clamp(84px,16vw,150px); border:5px dashed var(--coral-soft); border-radius:20px; display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:#D8C4B8; cursor:pointer; transition:all .2s; background:#fff; }
+.trace-cell.done { color:var(--coral-deep); border-style:solid; border-color:var(--coral); background:var(--coral-soft); }
+
+/* ───── match ───── */
+.match-stage { display:flex; flex-direction:column; gap:clamp(8px,1.5vw,13px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.match-cols { display:flex; gap:clamp(20px,4vw,48px); }
+.match-col { display:flex; flex-direction:column; gap:clamp(6px,1.1vw,9px); }
+.match-card { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(16px,3vw,26px); font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .15s; min-width:clamp(70px,13vw,108px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.match-card:hover { border-color:var(--coral); }
+.match-card.sel { border-color:var(--gold); background:var(--mark); }
+.match-card.matched { border-color:var(--teal-deep); background:var(--teal); color:#fff; cursor:default; box-shadow:0 5px 0 var(--teal-deep); }
+
+/* ───── multi judge ───── */
+.judge-grid { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); max-width:var(--mw-sm); width:100%; }
+.judge-item { display:flex; align-items:center; gap:clamp(10px,2vw,16px); background:#fff; border:3px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(14px,2.6vw,20px); box-shadow:0 5px 0 var(--coral-soft); }
+.judge-text { flex:1; font-size:var(--fs-body); color:var(--ink); text-align:left; }
+.judge-text strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.judge-btns { display:flex; gap:clamp(6px,1.2vw,10px); }
+.judge-btn { border:3px solid var(--line); border-radius:14px; padding:clamp(6px,1.2vw,10px) clamp(12px,2.4vw,18px); font-family:var(--f-title); font-size:var(--fs-heading); cursor:pointer; background:#fff; color:var(--ink-soft); transition:transform .1s; }
+.judge-btn:active { transform:translateY(3px); }
+.judge-btn.pick-o { background:var(--teal-soft); color:var(--teal-deep); border-color:var(--teal); }
+.judge-btn.pick-x { background:var(--coral-soft); color:var(--coral-deep); border-color:var(--coral); }
+.judge-item.right { border-color:var(--teal-deep); box-shadow:0 5px 0 var(--teal-deep); }
+.judge-item.miss { border-color:var(--emph); animation:ka-shake .35s; }
+
+/* ───── 정리/자기평가/다음 ───── */
+.summary-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.summary-card { background:#fff; border:2px solid var(--line); border-radius:22px; padding:clamp(18px,3.4vw,30px); font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; box-shadow:var(--shadow); }
+.summary-card strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.wrap-msg { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--coral-deep); }
+.self-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(14px,2.6vw,22px); }
+.self-row { display:flex; gap:clamp(12px,2.4vw,20px); flex-wrap:wrap; justify-content:center; }
+.self-btn { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,16px) clamp(14px,2.8vw,22px); cursor:pointer; display:flex; flex-direction:column; gap:clamp(3px,0.7vw,6px); align-items:center; transition:transform .12s, border-color .15s; box-shadow:0 6px 0 var(--coral-soft); }
+.self-btn:hover { border-color:var(--coral); }
+.self-btn:active { transform:translateY(4px); box-shadow:none; }
+.self-btn.selected { border-color:var(--gold); background:var(--mark); }
+.self-btn-stars { font-size:var(--em-sm); color:var(--gold); }
+.self-btn-name { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.next-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-md); }
+.next-card { background:var(--teal-soft); border-radius:22px; padding:clamp(20px,3.8vw,32px); display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); align-items:center; }
+.next-emojis { font-size:var(--em-md); }
+.next-label { font-size:var(--fs-body); color:var(--teal-deep); text-align:center; }
+.home-prompt { font-size:var(--fs-caption); color:var(--coral-deep); background:var(--coral-soft); border-radius:18px; padding:clamp(12px,2.4vw,18px) clamp(18px,3.4vw,28px); text-align:center; }
+
+
+  /* 세로셈 (3학년 덧셈·뺄셈) */
+  .vadd { display:inline-grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:clamp(2px,0.6vw,4px) clamp(8px,1.6vw,14px); font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--ink); justify-items:center; align-items:center; background:#fff; border:2px solid var(--line); border-radius:18px; padding:clamp(12px,2vw,20px) clamp(18px,3vw,30px); box-shadow:var(--shadow); }
+  .vadd .op { color:var(--coral-deep); }
+  .vadd .ln { grid-column:1/-1; width:100%; height:3px; background:var(--ink); border-radius:2px; }
+  .vadd .sum { color:var(--coral-deep); }
+  .pv-sum-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-md); }
+
+
+/* ───── 소수 단원 부품 (4-2 U3) ───── */
+.dc-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(7px,1.5vw,13px); width:100%; max-width:var(--mw-lg); }
+.dc-svg { width:100%; height:auto; display:block; max-width:min(620px,94vw); margin:0 auto; }
+.dc-svg text { font-family:'Nunito',sans-serif; font-weight:800; }
+.dc-svg text.kor { font-family:var(--f-title); font-weight:400; }
+.dc-note { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; }
+
+/* 모눈종이 여러 장을 늘어놓는 판 */
+.dg-row { display:flex; flex-wrap:wrap; justify-content:center; align-items:flex-end; gap:clamp(8px,1.8vw,18px); width:100%; }
+.dg-cell { display:flex; flex-direction:column; align-items:center; gap:5px; flex:0 0 auto; width:clamp(96px,20vw,168px); }
+.dg-cap { font-family:var(--f-title); font-size:var(--fs-label); color:var(--ink-soft); }
+.dg-cell.pick .dg-cap { color:var(--teal-deep); }
+.dg-cell svg { width:100%; height:auto; display:block; }
+.dg-op { font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-heading); color:var(--ink-soft); align-self:center; padding-bottom:1.1em; }
+
+/* 자릿값판 */
+.pp-tbl { border-collapse:separate; border-spacing:0; background:#fff; border:3px solid var(--line); border-radius:16px; overflow:hidden; box-shadow:0 4px 0 var(--line); font-family:'Nunito',sans-serif; }
+.pp-tbl th { font-family:var(--f-title); font-weight:400; font-size:var(--fs-label); color:var(--ink-soft); background:var(--teal-soft); padding:clamp(4px,1vw,9px) clamp(6px,1.4vw,14px); border-bottom:2px solid var(--line); white-space:nowrap; }
+.pp-tbl td { font-weight:800; font-size:var(--fs-heading); color:var(--ink); text-align:center; padding:clamp(4px,1vw,9px) clamp(6px,1.4vw,14px); border-top:2px solid #EFEAE4; }
+.pp-tbl td.dot { color:var(--emph); padding-left:0; padding-right:0; }
+.pp-tbl td.hi { background:var(--coral-soft); color:var(--coral-deep); }
+.pp-tbl td.ask { color:var(--emph); }
+.pp-tbl th.name, .pp-tbl td.name { font-family:var(--f-title); font-weight:400; font-size:var(--fs-label); color:var(--ink-soft); background:#FBF8F4; text-align:right; }
+
+/* 세로셈 */
+.cc-box { display:inline-block; background:#fff; border:3px solid var(--line); border-radius:18px; box-shadow:0 4px 0 var(--line); padding:clamp(9px,1.9vw,17px) clamp(13px,2.8vw,26px); }
+.cc-box.bad { border-color:#F3C4B7; background:#FFF6F3; box-shadow:0 4px 0 #F3C4B7; }
+.cc-tbl { border-collapse:collapse; font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-heading); color:var(--ink); }
+.cc-tbl td { text-align:center; padding:0; width:1.05em; line-height:1.35; }
+.cc-tbl td.dot { width:.42em; color:var(--emph); }
+.cc-tbl td.op { width:1.2em; color:var(--coral-deep); text-align:left; }
+.cc-tbl tr.sum td { border-top:3px solid var(--ink); padding-top:2px; }
+.cc-tbl tr.carry td { font-size:var(--fs-caption); color:var(--emph); line-height:1.1; height:1.1em; }
+.cc-tbl td.ask { color:var(--emph); }
+
+/* 10배 · 1/10 사슬 */
+.rc-row { display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:clamp(4px,1vw,10px); width:100%; }
+.rc-card { font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-body); color:var(--ink); background:#fff; border:3px solid var(--line); border-radius:14px; box-shadow:0 3px 0 var(--line); padding:clamp(5px,1.1vw,10px) clamp(8px,1.8vw,16px); }
+.rc-card.hi { border-color:var(--coral); box-shadow:0 3px 0 var(--coral-deep); background:var(--coral-soft); color:var(--coral-deep); }
+.rc-arrow { display:flex; flex-direction:column; align-items:center; gap:1px; font-family:var(--f-title); font-size:var(--fs-caption); color:var(--teal-deep); }
+.rc-arrow i { font-style:normal; font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-body); }
+
+/* 크기 비교판 */
+.cb-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.3vw,12px); }
+.cb-rel { font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-heading); color:var(--coral-deep); }
+.cb-rel.ask { color:var(--emph); }
+
+/* 순서 카드 (U2 승계) */
+.st-cards { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,11px); width:100%; max-width:min(560px,92vw); }
+.st-card { display:flex; align-items:center; gap:clamp(9px,1.8vw,16px); background:#fff; border:3px solid var(--line); border-radius:18px; padding:clamp(7px,1.4vw,12px) clamp(13px,2.6vw,22px); box-shadow:0 4px 0 var(--line); }
+.st-no { font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-heading); color:#fff; background:var(--coral); width:1.7em; height:1.7em; border-radius:999px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.st-body { font-family:var(--f-title); font-size:var(--fs-body); color:var(--ink); }
+.st-card.last { border-color:var(--teal); box-shadow:0 4px 0 var(--teal-deep); }
+.st-card.last .st-no { background:var(--teal); }
+.st-card.bad { border-color:#F3C4B7; background:#FFF6F3; }
+.st-card.bad .st-no { background:var(--emph); }
+
+/* 기록표 */
+.dt-tbl { border-collapse:separate; border-spacing:0; background:#fff; border:3px solid var(--line); border-radius:16px; overflow:hidden; box-shadow:0 4px 0 var(--line); font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-body); }
+.dt-tbl th { font-family:var(--f-title); font-weight:400; font-size:var(--fs-label); color:var(--ink-soft); background:var(--teal-soft); padding:clamp(4px,1vw,9px) clamp(7px,1.6vw,15px); white-space:nowrap; }
+.dt-tbl td { color:var(--ink); text-align:center; padding:clamp(4px,1vw,9px) clamp(7px,1.6vw,15px); border-top:2px solid #EFEAE4; }
+.dt-tbl td.name { font-family:var(--f-title); font-weight:400; color:var(--ink-soft); }
+.dt-tbl td.hi { background:var(--coral-soft); color:var(--coral-deep); }
+</style>
+<script src="/kedu_gate.js"></script>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 목록</button>
+    <span class="ka-pill">1차시</span>
+    <span class="ka-where">수학 4-2 · <b>3. 소수의 덧셈과 뺄셈</b></span>
+    <div class="ka-bar" id="dots"></div>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+  <div class="ka-m">
+    <div class="slide active" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">동물원에 왔어요</h2>
+      <div class="intro-q">동물원에는 <b>사육사</b>, <b>수의사</b>처럼 동물과 관련 있는 직업이 많아요.<br>사육사가 말합니다. “다람쥐의 몸무게가 지난달에는 <b>0.63 kg</b>이었어요.”<br>0.63은 어떤 수일까요?</div>
+    </div>
+
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">3학년에서 배운 소수</h2>
+      <div class="ef-stage">
+        <div id="m-i2"></div>
+        <div class="concept-box">전체를 똑같이 10으로 나눈 것 중의 하나를 <b>0.1</b> 이라 쓰고 <b>영 점 일</b>이라고 읽었어요. 그림에서 색칠한 부분은 <b>0.3</b> 입니다.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">그런데 0.63은요?</h2>
+      <div class="intro-q">0.63은 0.6도 아니고 0.7도 아닙니다.<br>소수 첫째 자리보다 더 작은 자리가 있어야 나타낼 수 있어요.<br>이 단원에서는 그런 수를 알아보고, 더하고 빼는 방법까지 배웁니다.</div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개</div>
+      <h2 class="slide-title">0.1은 어떤 수였나요</h2>
+      <div class="ef-stage">
+        <div id="m-e1"></div>
+        <div class="concept-box">전체를 똑같이 10으로 나눈 것 중의 하나가 <b>0.1</b> 입니다. 그래서 0.7은 0.1이 <b>7개</b>인 수예요.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개</div>
+      <h2 class="slide-title">소수를 읽는 방법</h2>
+      <div class="ef-stage">
+        <div id="m-e2"></div>
+        <div class="concept-box">소수점 왼쪽은 자연수처럼 읽고, 소수점 오른쪽은 숫자를 <b>하나씩</b> 읽습니다. 1.6은 <b>일 점 육</b>, 9.8은 <b>구 점 팔</b> 이라고 읽어요.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개</div>
+      <h2 class="slide-title">소수의 크기 비교 — 큰 자리부터</h2>
+      <div class="ef-stage">
+        <div id="m-e3"></div>
+        <div class="concept-box">먼저 자연수 부분을 견줍니다. 자연수 부분이 같으면 소수 첫째 자리 수를 견주어요. 0.9와 1.4는 자연수 부분이 0과 1이므로 <b>1.4가 더 큽니다</b>.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">★ 왜 그럴까</div>
+      <h2 class="slide-title">소수 한 자리 수로는 0.63을 나타낼 수 없어요</h2>
+      <div class="ef-stage">
+        <div id="m-e4"></div>
+        <div class="concept-box">0.6은 10칸 중 6칸입니다. 그런데 0.63은 그 6칸보다 조금 더 크고 7칸보다는 작아요.<br>10칸으로는 이 수를 정확히 짚을 수 없습니다. <b>한 칸을 다시 10으로 나누어야</b> 해요.<br>그래서 이 단원의 첫 시간부터 더 잘게 나눈 모눈종이를 씁니다.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q8" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">전체를 똑같이 10으로 나눈 것 중의 하나를 소수로 나타내면 얼마인가요?</div>
+        <div class="ef-stage"><div id="m-q8"></div></div>
+        <div class="mcq-opts" id="q8-opts">
+          <button class="mcq-opt" data-correct="0">0.01</button>
+          <button class="mcq-opt" data-correct="1">0.1</button>
+          <button class="mcq-opt" data-correct="0">1.0</button>
+          <button class="mcq-opt" data-correct="0">10</button>
+        </div>
+        <div class="mcq-hint" data-hints='["10으로 나눈 것 중 하나예요.","3학년에서 배운 가장 작은 소수입니다."]'></div>
+        <div class="q-fb" id="q8-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q9" data-q-points="10" data-answer="7">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">색칠한 부분은 0.7입니다. 0.7은 0.1이 몇 개인 수인가요?</div>
+        <div class="ef-stage"><div id="m-q9"></div></div>
+        <div class="q-display" id="q9-display">?</div>
+        <div class="q-pad" id="q9-pad"></div>
+        <div class="mcq-hint" data-hints='["한 칸의 크기가 0.1이에요.","색칠한 칸을 세어 보세요."]'></div>
+        <div class="q-fb" id="q9-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q10" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">1.6을 바르게 읽은 것은 어느 것인가요?</div>
+        <div class="ef-stage"><div id="m-q10"></div></div>
+        <div class="mcq-opts" id="q10-opts">
+          <button class="mcq-opt" data-correct="0">일 점 여섯</button>
+          <button class="mcq-opt" data-correct="1">일 점 육</button>
+          <button class="mcq-opt" data-correct="0">십육</button>
+          <button class="mcq-opt" data-correct="0">일과 육</button>
+        </div>
+        <div class="mcq-hint" data-hints='["소수점 오른쪽은 숫자를 하나씩 읽어요.","소수점 왼쪽은 자연수처럼 읽습니다."]'></div>
+        <div class="q-fb" id="q10-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q11" data-q-points="10" data-answer="24">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">1인 모눈종이 두 장과 0.1인 칸 네 개를 색칠했습니다. 이 수는 0.1이 모두 몇 개인 수인가요?</div>
+        <div class="ef-stage"><div id="m-q11"></div></div>
+        <div class="q-display" id="q11-display">?</div>
+        <div class="q-pad" id="q11-pad"></div>
+        <div class="mcq-hint" data-hints='["1인 모눈종이 한 장은 0.1이 10개예요.","10개씩 두 장이면 20개입니다."]'></div>
+        <div class="q-fb" id="q11-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q12" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">3.5와 3.2의 크기를 바르게 비교한 것은 어느 것인가요?</div>
+        <div class="ef-stage"><div id="m-q12"></div></div>
+        <div class="mcq-opts" id="q12-opts">
+          <button class="mcq-opt" data-correct="1">3.5 > 3.2</button>
+          <button class="mcq-opt" data-correct="0">3.5 < 3.2</button>
+          <button class="mcq-opt" data-correct="0">3.5 = 3.2</button>
+          <button class="mcq-opt" data-correct="0">견줄 수 없다</button>
+        </div>
+        <div class="mcq-hint" data-hints='["자연수 부분이 3으로 같아요.","소수 첫째 자리 수를 견주어 보세요."]'></div>
+        <div class="q-fb" id="q12-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q13" data-q-points="15" data-answer="9">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">수직선에서 가는 5.6, 나는 5.9입니다. 더 큰 수의 소수 첫째 자리 숫자는 몇인가요?</div>
+        <div class="ef-stage"><div id="m-q13"></div></div>
+        <div class="q-display" id="q13-display">?</div>
+        <div class="q-pad" id="q13-pad"></div>
+        <div class="mcq-hint" data-hints='["수직선에서 오른쪽에 있는 수가 더 큽니다.","더 큰 수의 소수점 바로 오른쪽 숫자를 보세요."]'></div>
+        <div class="q-fb" id="q13-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q14" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">다람쥐의 몸무게 0.63 kg 처럼 0.6과 0.7 사이의 수를 나타내려면 무엇이 있어야 할까요?</div>
+        <div class="ef-stage"><div id="m-q14"></div></div>
+        <div class="mcq-opts" id="q14-opts">
+          <button class="mcq-opt" data-correct="0">자연수만 있으면 된다</button>
+          <button class="mcq-opt" data-correct="0">소수 한 자리 수만 있으면 된다</button>
+          <button class="mcq-opt" data-correct="1">소수 첫째 자리보다 더 작은 자리가 있어야 한다</button>
+          <button class="mcq-opt" data-correct="0">나타낼 방법이 없다</button>
+        </div>
+        <div class="mcq-hint" data-hints='["0.63은 0.6보다 크고 0.7보다 작아요.","10칸으로는 짚을 수 없습니다."]'></div>
+        <div class="q-fb" id="q14-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q15" data-q-points="15" data-answer="8">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">수직선에서 가는 8.1, 나는 7.5입니다. 더 큰 수의 일의 자리 숫자는 몇인가요?</div>
+        <div class="ef-stage"><div id="m-q15"></div></div>
+        <div class="q-display" id="q15-display">?</div>
+        <div class="q-pad" id="q15-pad"></div>
+        <div class="mcq-hint" data-hints='["자연수 부분부터 견줍니다.","수직선에서 더 오른쪽에 있는 수를 보세요."]'></div>
+        <div class="q-fb" id="q15-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 배운 것</h2>
+      <div class="summary-stage">
+        <div class="summary-card">전체를 똑같이 10으로 나눈 것 중의 하나가 <strong>0.1</strong> 이에요.<br>소수는 소수점 왼쪽을 자연수처럼, 오른쪽은 숫자를 하나씩 읽습니다.<br>크기는 <strong>큰 자리부터</strong> 견주어요. 그런데 0.63 같은 수는 소수 한 자리 수로 나타낼 수 없어요.</div>
+        <div class="wrap-msg" id="wrap-msg"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 공부는 어땠나요?</h2>
+      <div class="self-stage">
+        <div class="self-row">
+          <button class="self-btn"><div class="self-btn-stars">★</div><div class="self-btn-name">조금 어려웠어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★</div><div class="self-btn-name">잘 했어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★★</div><div class="self-btn-name">아주 잘 했어요</div></button>
+        </div>
+        <div class="q-fb" id="self-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">다음 시간</h2>
+      <div class="next-stage">
+        <div class="next-card">
+          <div class="next-emojis">🐧</div>
+          <div class="next-label">다음 시간에는 <strong>0.1보다 작은 자리</strong>가 있는 소수를 알아봐요</div>
+        </div>
+        <div class="home-prompt">우유갑이나 과자 상자에서 소수가 쓰인 곳을 찾아보자.</div>
+      </div>
+    </div>
+
+  </div>
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+<script>
+const TOTAL = 18;
+const LESSON_ID = 'g4_2_math_u3_l01';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.querySelectorAll('#dots .ka-dot').forEach((d, i) => { d.classList.toggle('active', i === cur); d.classList.toggle('done', i < cur); });
+  document.getElementById('prev').disabled = cur === 0;
+
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.solved || st.hintLevel >= 2; }
+  else { hintBtn.disabled = true; }
+
+  if (cur === TOTAL - 1) { document.getElementById('next').textContent = '마치기 →'; saveProgress(true); }
+  else { document.getElementById('next').textContent = '다음 →'; }
+
+  if (cur === 15) { document.getElementById('wrap-msg').textContent = wrapMsg(score); }
+}
+
+function saveProgress(done) {
+  const data = { cur, score, done, startedAt, finishedAt: done ? Date.now() : null, qState };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function wrapMsg(s) {
+  if (s >= 100) return '완벽해요!';
+  if (s >= 80) return '정말 잘했어요!';
+  if (s >= 60) return '잘했어요!';
+  return '다시 해도 좋아요!';
+}
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } else { saveProgress(true); location.href='../index.html'; } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+function showHint() {
+  const qid = currentQId(); if (!qid) return;
+  const st = getQState(qid); if (st.solved || st.hintLevel >= 2) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint'); if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[st.hintLevel - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= 2;
+}
+function pointsForQ(qid) {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  const base = parseInt(slide.dataset.qPoints || '0', 10);
+  const st = getQState(qid);
+  if (st.hintLevel === 2) return Math.max(0, base - 5);
+  if (st.hintLevel === 1) return Math.max(0, base - 2);
+  return base;
+}
+
+// ══════════════════════════════════════════════════════════════
+// 4-2 U3 「소수의 덧셈과 뺄셈」 부품 라이브러리 v1
+//   decGrid · decLine · placePad · colCalc · relChain · cmpBoard · stepCards · dataTable
+//   ★ 모든 부품이 그린 것에서 직접 센 값을 data-* 에 싣는다 — 하니스가 다시 계산해 대조한다.
+// ══════════════════════════════════════════════════════════════
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const _r2 = v => Math.round(v * 100) / 100;
+
+// ── 소수를 정수로 바꿔 다룬다 (부동소수 금지) ───────────────────
+//    0.1 + 0.2 가 0.30000000000000004 이 되는 언어에서 자릿값 단원을 그리면
+//    그 꼬리가 화면에 그대로 나온다. 자리 수만큼 10을 곱해 정수로 셈한다.
+function _dp(s){ s = String(s); const i = s.indexOf('.'); return i < 0 ? 0 : s.length - i - 1; }
+function _sc(s, p){                       // 소수 s 를 10^p 배 한 정수
+  const t = String(s).split('.');
+  const a = t[0], b = (t[1] || '') + '0000000000';
+  return parseInt(a + b.slice(0, p), 10);
+}
+function _fmt(n, p){                      // 정수 n 을 10^p 로 나눈 소수 글자
+  if (p === 0) return String(n);
+  const s = String(n).padStart(p + 1, '0');
+  return s.slice(0, s.length - p) + '.' + s.slice(s.length - p);
+}
+function _calc(a, op, b){                 // 소수 두 개를 정확히 더하고 뺀다
+  const p = Math.max(_dp(a), _dp(b));
+  const v = op === '+' ? _sc(a, p) + _sc(b, p) : _sc(a, p) - _sc(b, p);
+  return _fmt(v, p);
+}
+// 두 소수의 대소 — 자리 수가 달라도 0을 채워 맞춘다(지도서 260 유의사항 ③)
+function _cmp(a, b){
+  const p = Math.max(_dp(a), _dp(b));
+  const x = _sc(a, p), y = _sc(b, p);
+  return x === y ? '=' : (x > y ? '>' : '<');
+}
+// 처음으로 갈리는 자리 — 0 이면 일의 자리, 1 이면 소수 첫째 자리 …
+function _diffAt(a, b){
+  const p = Math.max(_dp(a), _dp(b));
+  if (_sc(a, p) === _sc(b, p)) return -1;
+  const ia = String(a).split('.')[0], ib = String(b).split('.')[0];
+  if (ia !== ib) return 0;
+  const da = (String(a).split('.')[1] || '') + '0'.repeat(p);
+  const db = (String(b).split('.')[1] || '') + '0'.repeat(p);
+  for (let k = 0; k < p; k++) if (da[k] !== db[k]) return k + 1;
+  return -1;
+}
+// 소수를 자리 배열로 — [일의 자리(글자), 소수 첫째, 둘째, …]
+function _digits(s){
+  const t = String(s).split('.');
+  return [t[0]].concat((t[1] || '').split('').filter(Boolean));
+}
+
+// ══════════════════════════════════════════════════════════════
+// ① decGrid — 모눈종이 모델
+//    o.split  : 1 | 10 | 100 | 1000   (전체 크기 1 을 몇으로 나눌지)
+//    o.filled : 칠하는 칸 수
+//    o.seg    : [3,5] 처럼 두 몫으로 나눠 칠한다(덧셈 장면). filled 를 대신한다.
+//    o.x      : 칠한 칸 중 ×표 하는 칸 수(뺄셈 장면)
+//    o.label  : 그림 아래에 적을 글 (값을 적지 않아야 하는 문항 슬롯에서는 비운다)
+//    🔴 data-decgrid = 전체 칸 수 | 칠한 칸 수 | ×표 칸 수 | 그 결과 값
+//       하니스는 rect 를 **실제로 세어** 이 값과 맞춰 본다.
+// ══════════════════════════════════════════════════════════════
+function _gridSvg(split, filled, xcnt, seg){
+  const S = 132, PAD = 3;
+  let cols, rows;
+  if (split === 1){ cols = 1; rows = 1; }
+  else if (split === 10){ cols = 10; rows = 1; }
+  else { rows = 10; cols = split / 10; }
+  const cw = S / cols, ch = S / rows;
+  let s = '<rect x="' + PAD + '" y="' + PAD + '" width="' + S + '" height="' + S +
+          '" fill="#fff" stroke="var(--ink)" stroke-width="2.4"/>';
+  let n = 0;
+  for (let r = 0; r < rows; r++){
+    for (let c = 0; c < cols; c++){
+      if (n >= filled) break;
+      const which = seg && n >= seg[0] ? 1 : 0;
+      const col = seg ? (which ? 'var(--teal-soft)' : 'var(--coral-soft)') : 'var(--coral-soft)';
+      s += '<rect class="dg-on dg-s' + which + '" x="' + _r2(PAD + c * cw) + '" y="' + _r2(PAD + r * ch) +
+           '" width="' + _r2(cw) + '" height="' + _r2(ch) + '" fill="' + col + '"/>';
+      n++;
+    }
+  }
+  // ×표 — 칠한 칸의 뒤쪽부터 지운다
+  for (let k = 0; k < xcnt; k++){
+    const idx = filled - 1 - k;
+    const r = Math.floor(idx / cols), c = idx % cols;
+    const x0 = PAD + c * cw, y0 = PAD + r * ch;
+    s += '<path class="dg-x" d="M ' + _r2(x0 + cw * .18) + ' ' + _r2(y0 + ch * .18) +
+         ' L ' + _r2(x0 + cw * .82) + ' ' + _r2(y0 + ch * .82) +
+         ' M ' + _r2(x0 + cw * .82) + ' ' + _r2(y0 + ch * .18) +
+         ' L ' + _r2(x0 + cw * .18) + ' ' + _r2(y0 + ch * .82) +
+         '" stroke="var(--emph)" stroke-width="' + (cols > 20 ? 1.1 : 2) + '" stroke-linecap="round" fill="none"/>';
+  }
+  // 눈금선 — 1000 칸은 세로선을 10칸마다만 진하게 긋는다(선이 뭉개지지 않게)
+  if (split > 1){
+    for (let c = 1; c < cols; c++){
+      const thick = (cols > 20 && c % 10 === 0) ? 1.3 : (cols > 20 ? .45 : 1.1);
+      s += '<line x1="' + _r2(PAD + c * cw) + '" y1="' + PAD + '" x2="' + _r2(PAD + c * cw) + '" y2="' + (PAD + S) +
+           '" stroke="var(--line)" stroke-width="' + thick + '"/>';
+    }
+    for (let r = 1; r < rows; r++){
+      s += '<line x1="' + PAD + '" y1="' + _r2(PAD + r * ch) + '" x2="' + (PAD + S) + '" y2="' + _r2(PAD + r * ch) +
+           '" stroke="var(--line)" stroke-width="1.1"/>';
+    }
+  }
+  return '<svg viewBox="0 0 ' + (S + PAD * 2) + ' ' + (S + PAD * 2) + '" xmlns="http://www.w3.org/2000/svg">' + s + '</svg>';
+}
+
+function decGrid(o){
+  o = o || {};
+  const items = o.items || [o];
+  let cells = '';
+  items.forEach((it, i) => {
+    const split = it.split || 100;
+    const seg = it.seg || null;
+    const filled = seg ? seg[0] + seg[1] : (it.filled || 0);
+    const xc = it.x || 0;
+    const val = _fmt(filled - xc, String(split).length - 1);
+    if (i && o.ops && o.ops[i - 1]) cells += '<div class="dg-op">' + esc(o.ops[i - 1]) + '</div>';
+    cells += '<div class="dg-cell' + (it.pick ? ' pick' : '') + '" data-decgrid="' +
+             split + '|' + filled + '|' + xc + '|' + val + '"' +
+             (seg ? ' data-segs="' + seg.join(',') + '"' : '') + '>' +
+             _gridSvg(split, filled, xc, seg) +
+             (it.label ? '<div class="dg-cap">' + esc(it.label) + '</div>' : '') +
+             '</div>';
+  });
+  return '<div class="dc-wrap"><div class="dg-row">' + cells + '</div>' +
+         (o.cap ? '<div class="dc-note">' + esc(o.cap) + '</div>' : '') + '</div>';
+}
+
+// ══════════════════════════════════════════════════════════════
+// ② decLine — 수직선
+//    o.from · o.to · o.split (몇 칸으로 나눌지)
+//    o.marks : [{v:'0.3', label:'0.3'|'?'}]
+//    o.jump  : {from:'1.7', by:'0.6'}  오른쪽으로 뛴 자취
+//    🔴 data-decline = from,to,split | 값:실제x 좌표 …
+//       하니스가 값에서 x 를 다시 계산해 대조한다 — 「0.3 이라 적고 0.7 자리에 찍는」
+//       위조는 라벨만 읽는 검사로는 안 잡힌다.
+// ══════════════════════════════════════════════════════════════
+function decLine(o){
+  o = o || {};
+  const from = o.from || '0', to = o.to || '1', split = o.split || 10;
+  const W = 560, X0 = 26, Y = 62;
+  const p = Math.max(_dp(from), _dp(to), 3);
+  const f = _sc(from, p), t = _sc(to, p);
+  const X = v => _r2(X0 + (_sc(v, p) - f) / (t - f) * W);
+  let s = '<line x1="' + X0 + '" y1="' + Y + '" x2="' + (X0 + W) + '" y2="' + Y +
+          '" stroke="var(--ink)" stroke-width="2.6" stroke-linecap="round"/>';
+  for (let k = 0; k <= split; k++){
+    const x = _r2(X0 + W * k / split), big = (k === 0 || k === split);
+    s += '<line class="dl-tick" x1="' + x + '" y1="' + (Y - (big ? 13 : 8)) + '" x2="' + x + '" y2="' + (Y + (big ? 13 : 8)) +
+         '" stroke="var(--ink)" stroke-width="' + (big ? 2.6 : 1.8) + '"/>';
+  }
+  (o.ends === false ? [] : [from, to]).forEach(v => {
+    s += '<text class="kor" x="' + X(v) + '" y="' + (Y + 32) + '" font-size="15" fill="var(--ink-soft)" text-anchor="middle">' + esc(v) + '</text>';
+  });
+  let key = [];
+  (o.marks || []).forEach((m, i) => {
+    const x = X(m.v);
+    key.push(m.v + ':' + x);
+    s += '<circle class="dl-mark" data-mark="' + i + '" cx="' + x + '" cy="' + Y + '" r="6.5" fill="var(--coral)"/>';
+    s += '<text x="' + x + '" y="' + (Y - 22) + '" font-size="17" fill="var(--coral-deep)" text-anchor="middle">' +
+         esc(m.label === undefined ? m.v : m.label) + '</text>';
+  });
+  if (o.jump){
+    const a = X(o.jump.from), b = X(_calc(o.jump.from, '+', o.jump.by));
+    s += '<path class="dl-jump" d="M ' + a + ' ' + (Y - 12) + ' Q ' + _r2((a + b) / 2) + ' ' + (Y - 46) + ' ' + b + ' ' + (Y - 12) +
+         '" fill="none" stroke="var(--teal-deep)" stroke-width="2.6" stroke-dasharray="6 5"/>';
+    s += '<text class="kor" x="' + _r2((a + b) / 2) + '" y="' + (Y - 52) + '" font-size="14" fill="var(--teal-deep)" text-anchor="middle">' +
+         esc(o.jump.label || (o.jump.by + '만큼')) + '</text>';
+    key.push('J:' + o.jump.from + ',' + o.jump.by + ',' + a + ',' + b);
+    // 🔴 J: 항목 자체가 쉼표를 품는다 — 그래서 항목 구분자는 쉼표가 아니라 세미콜론이다.
+    //    쉼표로 이었더니 하니스가 「0.6」·「222」를 표시한 값으로 잘못 읽었다.
+  }
+  return '<div class="dc-wrap" data-decline="' + esc(from + ',' + to + ',' + split + '|' + key.join(';')) + '">' +
+         '<svg class="dc-svg" viewBox="0 -8 ' + (W + X0 * 2) + ' 118" xmlns="http://www.w3.org/2000/svg">' + s + '</svg>' +
+         (o.cap ? '<div class="dc-note">' + esc(o.cap) + '</div>' : '') + '</div>';
+}
+
+// ══════════════════════════════════════════════════════════════
+// ③ placePad — 자릿값판
+//    rows : [{name:'1.32', d:['1','3','2']}]  d[0]=일의 자리, 그 뒤가 소수 자리
+//           숫자 자리에 '?' 를 적으면 그 칸만 감춘다(값 검사는 건너뛴다)
+//    o.cols : 소수 자리 수 (기본 = 가장 긴 행)
+//    🔴 data-place = 이름:칸에 적힌 숫자 … / 하니스가 숫자에서 값을 다시 만들어 이름과 맞춘다
+// ══════════════════════════════════════════════════════════════
+function placePad(rows, o){
+  o = o || {};
+  const dec = o.cols || Math.max.apply(null, rows.map(r => r.d.length - 1));
+  const heads = ['일의 자리'].concat(['소수 첫째 자리', '소수 둘째 자리', '소수 셋째 자리'].slice(0, dec));
+  let th = (o.names ? '<th class="name"></th>' : '');
+  heads.forEach((h, i) => { th += (i ? '<th></th>' : '') + '<th>' + esc(h) + '</th>'; });
+  let tb = '', key = [];
+  rows.forEach(r => {
+    let td = (o.names ? '<td class="name">' + esc(r.name) + '</td>' : '');
+    const cells = [];
+    for (let i = 0; i <= dec; i++){
+      const v = r.d[i] === undefined ? '' : String(r.d[i]);
+      cells.push(v);
+      if (i) td += '<td class="dot">' + (i === 1 ? '.' : '') + '</td>';
+      const cls = v === '?' ? ' ask' : ((r.hi || []).indexOf(i) >= 0 ? ' hi' : '');
+      td += '<td class="pp-c' + cls + '" data-pv="' + i + '">' + esc(v) + '</td>';
+    }
+    tb += '<tr>' + td + '</tr>';
+    key.push(r.name + ':' + cells.join(','));
+  });
+  return '<div class="dc-wrap" data-place="' + esc(key.join('|')) + '">' +
+         '<table class="pp-tbl"><thead><tr>' + th + '</tr></thead><tbody>' + tb + '</tbody></table>' +
+         (o.cap ? '<div class="dc-note">' + esc(o.cap) + '</div>' : '') + '</div>';
+}
+
+// ══════════════════════════════════════════════════════════════
+// ④ colCalc — 세로셈
+//    o.a · o.op('+'|'-') · o.b · o.r (결과. '?' 면 감춘다)
+//    o.carry : {'1':'1'} 처럼 칸 번호 → 위에 적을 글 (받아올림·받아내림)
+//    o.bad   : 일부러 틀리게 그린 오류 재현 장면 (지도서 268 오류 2·3)
+//
+//    🔴 자리는 **칸 번호로** 맞춘다. 두 수의 소수 자리 수가 달라도
+//       같은 자릿값은 반드시 같은 칸에 놓인다 — 오른쪽 끝을 맞추지 않는다.
+//       각 숫자 칸이 data-pv(자릿값 지수)를 싣고, 하니스는
+//       「같은 칸이면 같은 자릿값인가」를 전 행에서 되짚는다.
+//       바로 이것이 지도서 268 오류 2·3 이 뚫고 들어오는 자리다.
+// ══════════════════════════════════════════════════════════════
+function colCalc(o){
+  o = o || {};
+  const a = String(o.a), b = String(o.b);
+  const rTrue = _calc(a, o.op, b);
+  const r = (o.r === undefined) ? rTrue : String(o.r);
+  const shown = [a, b].concat(r === '?' ? [] : [r]);
+  const ip = Math.max.apply(null, shown.map(s => String(s).split('.')[0].length));
+  const dp = Math.max.apply(null, shown.map(_dp));
+  // 칸 번호 : 0 … ip-1 이 정수 부분, ip 가 소수점, 그 뒤가 소수 자리
+  const cell = (s, cls) => {
+    const t = String(s).split('.');
+    const iv = t[0].padStart(ip, ' ');
+    const dv = ((t[1] || '') + '          ').slice(0, dp);
+    let td = '';
+    for (let k = 0; k < ip; k++)
+      td += '<td class="cc-c' + cls + '" data-col="' + k + '" data-pv="' + (ip - 1 - k) + '">' +
+            (iv[k] === ' ' ? '' : iv[k]) + '</td>';
+    td += '<td class="dot" data-col="' + ip + '">.</td>';
+    for (let k = 0; k < dp; k++)
+      td += '<td class="cc-c' + cls + '" data-col="' + (ip + 1 + k) + '" data-pv="' + (-1 - k) + '">' +
+            (dv[k] === ' ' ? '' : dv[k]) + '</td>';
+    return td;
+  };
+  let rowsHtml = '';
+  if (o.carry){
+    let td = '<td class="op"></td>';
+    for (let k = 0; k <= ip + dp; k++)
+      td += '<td' + (k === ip ? ' class="dot"' : '') + '>' + esc(o.carry[k] || '') + '</td>';
+    rowsHtml += '<tr class="carry">' + td + '</tr>';
+  }
+  rowsHtml += '<tr><td class="op"></td>' + cell(a, '') + '</tr>';
+  rowsHtml += '<tr><td class="op">' + o.op + '</td>' + cell(b, '') + '</tr>';
+  if (r === '?'){
+    let td = '<td class="op"></td>';
+    for (let k = 0; k < ip; k++) td += '<td class="ask" data-col="' + k + '" data-pv="' + (ip - 1 - k) + '"></td>';
+    td += '<td class="dot" data-col="' + ip + '">.</td>';
+    for (let k = 0; k < dp; k++) td += '<td class="ask" data-col="' + (ip + 1 + k) + '" data-pv="' + (-1 - k) + '">?</td>';
+    rowsHtml += '<tr class="sum">' + td + '</tr>';
+  } else {
+    rowsHtml += '<tr class="sum"><td class="op"></td>' + cell(r, '') + '</tr>';
+  }
+  // 🔴 오른쪽 끝 맞춤 — 지도서 268 오류 3 을 **말로만 적지 않고 그림으로 보여 주는** 자리.
+  //    같은 칸에 자릿값이 다른 숫자가 놓인다. 부품이 각 칸의 진짜 자릿값을 그대로 실으므로
+  //    하니스가 「같은 칸인데 자릿값이 다르다」를 잡아내고, 그런 판은 반드시 bad 로
+  //    선언되어 있어야 한다 — 틀린 그림이 옳은 척 실리는 길을 막는다.
+  if (o.right){
+    const W = Math.max.apply(null, shown.map(s => String(s).length));
+    const line = (s, cls) => {
+      const t = ' '.repeat(W - String(s).length) + String(s);
+      const dot = t.indexOf('.');
+      let td = '';
+      for (let k = 0; k < W; k++){
+        if (t[k] === '.'){ td += '<td class="dot" data-col="' + k + '">.</td>'; continue; }
+        if (t[k] === ' '){ td += '<td data-col="' + k + '"></td>'; continue; }
+        const pv = k < dot ? (dot - k - 1) : (dot - k);
+        td += '<td class="cc-c' + cls + '" data-col="' + k + '" data-pv="' + pv + '">' + t[k] + '</td>';
+      }
+      return td;
+    };
+    let rh = '<tr><td class="op"></td>' + line(a, '') + '</tr>';
+    rh += '<tr><td class="op">' + o.op + '</td>' + line(b, '') + '</tr>';
+    rh += '<tr class="sum"><td class="op"></td>' + line(r, '') + '</tr>';
+    return '<div class="dc-wrap" data-colcalc="' + esc(a + '|' + o.op + '|' + b + '|' + r + '|' + W + '|bad|right') + '">' +
+           '<div class="cc-box bad"><table class="cc-tbl"><tbody>' + rh + '</tbody></table></div>' +
+           (o.cap ? '<div class="dc-note">' + esc(o.cap) + '</div>' : '') + '</div>';
+  }
+  const key = a + '|' + o.op + '|' + b + '|' + r + '|' + ip + '|' + (o.bad ? 'bad' : 'ok') + '|left';
+  return '<div class="dc-wrap" data-colcalc="' + esc(key) + '">' +
+         '<div class="cc-box' + (o.bad ? ' bad' : '') + '"><table class="cc-tbl"><tbody>' + rowsHtml + '</tbody></table></div>' +
+         (o.cap ? '<div class="dc-note">' + esc(o.cap) + '</div>' : '') + '</div>';
+}
+
+// ══════════════════════════════════════════════════════════════
+// ⑤ relChain — 10배 · 1/10 사슬
+//    o.items : ['1','0.1','0.01','0.001']   왼쪽에서 오른쪽으로 갈수록 1/10
+//    o.dir   : 'down'(오른쪽으로 1/10) | 'up'(오른쪽으로 10배)
+//    🔴 data-rel 의 이웃한 두 값은 반드시 정확히 10배 관계여야 한다 — 하니스가 되짚는다.
+// ══════════════════════════════════════════════════════════════
+function relChain(o){
+  o = o || {};
+  const it = o.items, dir = o.dir || 'down';
+  const lab = dir === 'down' ? '10으로 나누기' : '10배';
+  let s = '';
+  it.forEach((v, i) => {
+    if (i) s += '<div class="rc-arrow"><i>→</i>' + esc(o.label || lab) + '</div>';
+    s += '<div class="rc-card' + ((o.hi || []).indexOf(i) >= 0 ? ' hi' : '') + '">' + esc(v) + '</div>';
+  });
+  return '<div class="dc-wrap" data-rel="' + esc(it.join(',') + '|' + dir) + '">' +
+         '<div class="rc-row">' + s + '</div>' +
+         (o.cap ? '<div class="dc-note">' + esc(o.cap) + '</div>' : '') + '</div>';
+}
+
+// ══════════════════════════════════════════════════════════════
+// ⑥ cmpBoard — 크기 비교판
+//    a · b 를 자리 맞춰 놓고, 처음으로 갈리는 자리를 짚는다.
+//    o.hideRel : 부등호를 ? 로 감춘다(문항 슬롯)
+//    🔴 data-cmp = a|b|관계|처음 갈린 자리
+//       ★오류 1(지도서 268) — 자리 수가 많다고 큰 수가 아니다. 하니스가 관계를
+//         **0을 채워 자리를 맞춘 뒤** 다시 계산해 대조한다.
+// ══════════════════════════════════════════════════════════════
+function cmpBoard(a, b, o){
+  o = o || {};
+  a = String(a); b = String(b);
+  const rel = _cmp(a, b), at = _diffAt(a, b);
+  const dec = Math.max(_dp(a), _dp(b));
+  const pad = s => { const t = String(s).split('.'); return [t[0]].concat(((t[1] || '') + '000').slice(0, dec).split('')); };
+  const rows = [{ name: o.names ? o.names[0] : a, d: pad(a), hi: at >= 0 ? [at] : [] },
+                { name: o.names ? o.names[1] : b, d: pad(b), hi: at >= 0 ? [at] : [] }];
+  const inner = placePad(rows, { names: true, cols: dec });
+  return '<div class="dc-wrap" data-cmp="' + esc(a + '|' + b + '|' + rel + '|' + at) + '">' +
+         '<div class="cb-wrap">' + inner +
+         '<div class="cb-rel' + (o.hideRel ? ' ask' : '') + '">' +
+         esc(a + ' ' + (o.hideRel ? '?' : rel) + ' ' + b) + '</div></div>' +
+         (o.cap ? '<div class="dc-note">' + esc(o.cap) + '</div>' : '') + '</div>';
+}
+
+// ══════════════════════════════════════════════════════════════
+// ⑦ stepCards — 순서 카드 (U2 승계)
+// ══════════════════════════════════════════════════════════════
+function stepCards(steps, o){
+  o = o || {};
+  let s = '';
+  steps.forEach((t, i) => {
+    const cls = (o.bad || []).indexOf(i) >= 0 ? ' bad' : ((o.last && i === steps.length - 1) ? ' last' : '');
+    s += '<div class="st-card' + cls + '" data-step="' + i + '">' +
+         (o.plain ? '' : '<div class="st-no">' + (i + 1) + '</div>') +
+         '<div class="st-body">' + t + '</div></div>';
+  });
+  return '<div class="dc-wrap" data-steps="' + steps.length + '"><div class="st-cards">' + s + '</div>' +
+         (o.cap ? '<div class="dc-note">' + esc(o.cap) + '</div>' : '') + '</div>';
+}
+
+// ══════════════════════════════════════════════════════════════
+// ⑧ dataTable — 기록표
+//    head : ['영법','배영',…] / rows : [{name:'서준', v:['39.32',…], hi:[0]}]
+//    🔴 data-table 에 실은 값과 화면 칸의 글자가 같은지 하니스가 대조한다.
+// ══════════════════════════════════════════════════════════════
+function dataTable(head, rows, o){
+  o = o || {};
+  let th = '';
+  head.forEach(h => { th += '<th>' + esc(h) + '</th>'; });
+  let tb = '', key = [];
+  rows.forEach(r => {
+    let td = '<td class="name">' + esc(r.name) + '</td>';
+    r.v.forEach((v, i) => { td += '<td class="dt-c' + ((r.hi || []).indexOf(i) >= 0 ? ' hi' : '') + '">' + esc(v) + '</td>'; });
+    tb += '<tr>' + td + '</tr>';
+    key.push(r.name + ':' + r.v.join(','));
+  });
+  return '<div class="dc-wrap" data-table="' + esc(key.join('|')) + '">' +
+         '<table class="dt-tbl"><thead><tr>' + th + '</tr></thead><tbody>' + tb + '</tbody></table>' +
+         (o.cap ? '<div class="dc-note">' + esc(o.cap) + '</div>' : '') + '</div>';
+}
+
+(function renderModels(){
+  document.getElementById('m-i2').innerHTML =
+    decGrid({items:[{split:10,filled:3,label:'0.3'}],cap:'전체 크기가 1인 모눈종이'});
+  document.getElementById('m-e1').innerHTML =
+    decGrid({items:[{split:10,filled:1,label:'0.1'},{split:10,filled:7,label:'0.7'}],cap:'0.7은 0.1이 일곱 개'});
+  document.getElementById('m-e2').innerHTML =
+    placePad([{name:'1.6',d:['1','6']}],{names:true,cap:'일 점 육'});
+  document.getElementById('m-e3').innerHTML =
+    cmpBoard('0.9','1.4',{cap:'자연수 부분부터 견준다'});
+  document.getElementById('m-e4').innerHTML =
+    decGrid({items:[{split:10,filled:6,label:'0.6'},{split:100,filled:63,label:'0.63'}],cap:'한 칸을 다시 10으로 나누면 짚을 수 있어요'});
+  document.getElementById('m-q8').innerHTML =
+    decGrid({items:[{split:10,filled:1,label:'?'}],cap:'전체 크기가 1인 모눈종이'});
+  document.getElementById('m-q9').innerHTML =
+    decGrid({items:[{split:10,filled:7}],cap:'전체 크기가 1인 모눈종이'});
+  document.getElementById('m-q10').innerHTML =
+    placePad([{name:'1.6',d:['1','6']}],{names:false,cap:'소수점 왼쪽과 오른쪽'});
+  document.getElementById('m-q11').innerHTML =
+    decGrid({items:[{split:1,filled:1},{split:1,filled:1},{split:10,filled:4}],cap:'1인 것 둘과 0.1인 칸 넷'});
+  document.getElementById('m-q12').innerHTML =
+    cmpBoard('3.5','3.2',{hideRel:true});
+  document.getElementById('m-q13').innerHTML =
+    decLine({from:'5',to:'6',split:10,marks:[{v:'5.6',label:'가'},{v:'5.9',label:'나'}]});
+  document.getElementById('m-q14').innerHTML =
+    decGrid({items:[{split:10,filled:6,label:'0.6'},{split:10,filled:7,label:'0.7'}],cap:'이 둘 사이를 어떻게 나타낼까요'});
+  document.getElementById('m-q15').innerHTML =
+    decLine({from:'7',to:'9',split:20,marks:[{v:'8.1',label:'가'},{v:'7.5',label:'나'}]});
+})();
+
+function setupPad(qid, correct, padId, displayId, fbId, doneMsg, maxLen) {
+  maxLen = maxLen || 6;
+  const pad = document.getElementById(padId);
+  const display = document.getElementById(displayId);
+  const fb = document.getElementById(fbId);
+  let buf = '';
+  const keys = ['1','2','3','4','5','6','7','8','9','0'];
+  keys.forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'q-key'; b.textContent = k;
+    b.addEventListener('click', () => {
+      const st = getQState(qid); if (st.solved) return;
+      if (buf.length < maxLen) { buf += k; display.textContent = buf; }
+    });
+    pad.appendChild(b);
+  });
+  const del = document.createElement('button');
+  del.className = 'q-key fn'; del.textContent = '지움';
+  del.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    buf = buf.slice(0, -1); display.textContent = buf || '?';
+  });
+  pad.appendChild(del);
+  const ok = document.createElement('button');
+  ok.className = 'q-key fn'; ok.textContent = '확인'; ok.style.gridColumn = 'span 4';
+  ok.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    st.attempts++;
+    if (parseInt(buf, 10) === correct) {
+      st.solved = true;
+      const earn = pointsForQ(qid); addScore(earn);
+      fb.classList.remove('wrong');
+      fb.textContent = (doneMsg || '정답이에요!') + ' +' + earn + '점';
+      updateUI();
+    } else {
+      st.wrongCount++;
+      fb.classList.add('wrong'); fb.textContent = '다시 한번 생각해 볼까요?';
+    }
+  });
+  pad.appendChild(ok);
+}
+
+function setupMcq(qid, doneMsg){
+  document.querySelectorAll('#'+qid+'-opts .mcq-opt').forEach(o=>{
+    o.addEventListener('click', ()=>{
+      const st=getQState(qid); if(st.solved) return;
+      st.attempts++;
+      const fb=document.getElementById(qid+'-fb');
+      if(o.dataset.correct==='1'){
+        st.solved=true; o.classList.add('correct');
+        const earn=pointsForQ(qid); addScore(earn);
+        fb.classList.remove('wrong'); fb.textContent=(doneMsg||'정답이에요!')+' +'+earn+'점';
+        updateUI();
+      } else {
+        st.wrongCount++; o.classList.add('wrong');
+        fb.classList.add('wrong'); fb.textContent='다시 골라 보세요';
+        setTimeout(()=>o.classList.remove('wrong'),500);
+      }
+    });
+  });
+}
+
+setupMcq('q8','전체를 똑같이 10으로 나눈 것 중의 하나는 0.1입니다.');
+setupPad('q9', 7, 'q9-pad','q9-display','q9-fb','0.7은 0.1이 7개인 수입니다.', 6);
+setupMcq('q10','1.6은 일 점 육이라고 읽습니다.');
+setupPad('q11', 24, 'q11-pad','q11-display','q11-fb','1인 모눈종이 두 장은 0.1이 20개, 거기에 4개를 더하면 24개입니다.', 6);
+setupMcq('q12','자연수 부분이 같으므로 소수 첫째 자리 수를 견주면 5 > 2 이므로 3.5 > 3.2 입니다.');
+setupPad('q13', 9, 'q13-pad','q13-display','q13-fb','나가 더 큰 수이고, 그 소수 첫째 자리 숫자는 9입니다.', 6);
+setupMcq('q14','0.6과 0.7 사이를 나타내려면 소수 첫째 자리보다 더 작은 자리가 있어야 합니다.');
+setupPad('q15', 8, 'q15-pad','q15-display','q15-fb','가가 더 큰 수이고, 그 일의 자리 숫자는 8입니다.', 6);
+
+
+// ───── 슬17 자기 평가 ─────
+document.querySelectorAll('.self-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.self-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('self-fb').textContent = '응답이 기록됐어요. 다음 차시에서 만나요!';
+  });
+});
+
+// ───── 진도 복원 ─────
+(function restore() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data.cur != null) cur = Math.min(data.cur, TOTAL - 1);
+    if (data.score != null) score = data.score;
+    document.getElementById('score').textContent = '⭐ ' + score;
+  } catch(e) {}
+})();
+
+(function buildDots(){ const w=document.getElementById('dots'); for(let i=0;i<TOTAL;i++){ const d=document.createElement('div'); d.className='ka-dot'; d.onclick=()=>{ cur=i; saveProgress(false); updateUI(); }; w.appendChild(d); } })();
+
+updateUI();
+</script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+<script src="/kedu_fit.js"></script>
+</body>
+</html>
