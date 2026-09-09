@@ -44,14 +44,14 @@ window.KEDU_MAP["g4_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_social_u1_l04",
+     "lessonId": "g4_social_u1_l04_v1",
      "n": "4",
      "title": "[할 수 있어요] 학교생활에서 민주주의를 실천해 볼까요",
      "sub": "① 학교생활 속 민주주의",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/social/1단원_민주주의와자치/g4_social_u1_l04_학교실천하기.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
