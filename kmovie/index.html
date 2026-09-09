@@ -152,8 +152,8 @@
   .fpList .fi { display:flex; align-items:baseline; gap:8px; padding:5px 8px; border-radius:6px; cursor:pointer; }
   .fpList .fi:hover { background:rgba(255,255,255,.06); }
   .fpList .fi.on { background:rgba(217,182,92,.14); outline:1px solid rgba(217,182,92,.4); }
-  .fpList .fi .nm { color:var(--dim); font-size:11px; width:78px; flex:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .fpList .fi .sm { font-size:19px; line-height:1.15; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .fpList .fi .nm { color:var(--txt); font-size:17px; line-height:1.15; width:92px; flex:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }   /* 이름도 그 글꼴로(2026-09-09) */
+  .fpList .fi .sm { color:var(--sub); font-size:15px; line-height:1.15; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   #tour .tstep { display:flex; gap:10px; align-items:flex-start; background:rgba(255,255,255,.04); border:1px solid var(--line2); border-radius:8px; padding:9px 11px; font-size:13px; line-height:1.5; }
   #tour .tstep b { color:var(--gold); white-space:nowrap; }
   #tour kbd { display:inline-block; background:#0f1524; border:1px solid var(--line2); border-radius:4px; padding:0 5px; font-size:11px; margin:0 1px; }
@@ -184,8 +184,15 @@
   .note { color:var(--dim); font-size:11.5px; line-height:1.6; }
   #partGrid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   #partGrid .cat { grid-column:1 / -1; }
-  #partGrid .cat, #subStyleSeg .cat { color:#c9b06a; font-size:11.5px; font-weight:700; letter-spacing:1.5px; margin:8px 0 -2px; padding-top:7px; border-top:1px solid var(--line); }
-  #partGrid .cat:first-child, #subStyleSeg .cat:first-child { border-top:0; margin-top:0; padding-top:0; }
+  /* 자막 스타일 갤러리 타일 */
+  .sgal { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:6px; margin-top:4px; }
+  .sgal .stile { padding:0; border:1px solid var(--line); border-radius:8px; background:#0f1524; overflow:hidden; display:flex; flex-direction:column; align-items:stretch; cursor:pointer; }
+  .sgal .stile canvas { width:100%; height:auto; display:block; }
+  .sgal .stile b { display:block; font-size:11px; font-weight:600; color:var(--sub); text-align:center; padding:3px 4px 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sgal .stile:hover { border-color:var(--gold); }
+  .sgal .stile.on { border-color:var(--gold); box-shadow:0 0 0 1px var(--gold) inset; } .sgal .stile.on b { color:var(--gold); }
+  #subDefGallery .cat, #partGrid .cat, #subStyleSeg .cat { color:#c9b06a; font-size:11.5px; font-weight:700; letter-spacing:1.5px; margin:8px 0 -2px; padding-top:7px; border-top:1px solid var(--line); }
+  #subDefGallery .cat:first-child, #partGrid .cat:first-child, #subStyleSeg .cat:first-child { border-top:0; margin-top:0; padding-top:0; }
   /* 부품 미리보기 창 — 타일에 올리면 뜨고(움직임 재생), 클릭하면 고정 + 넣기 */
   #partPeek { position:fixed; z-index:40; width:400px; background:var(--panel); border:1px solid var(--gold); border-radius:12px; box-shadow:0 18px 50px rgba(0,0,0,.55); overflow:hidden; }
   #partPeek canvas { display:block; width:100%; aspect-ratio:16/9; background:#000; }
@@ -437,7 +444,8 @@
         <h3>자막<div class="sp"></div><button id="btnSubClear" title="자막 전부 지우기">비우기</button></h3>
         <textarea id="subText" placeholder="한 줄에 한 문장씩 붙여넣고 [자동 배치] — 현장음의 말하는 구간에 나눠 놓아요"></textarea>
         <div class="row" style="margin-top:6px"><button id="btnSubStt" title="원본의 말소리를 whisper 가 받아써 자막 카드로 놓아요 — 데스크톱 케이무비 전용" style="flex:1">🎙 받아쓰기</button><button id="btnSubAuto" class="gold" style="flex:1">자동 배치</button><button id="btnSubAdd" title="플레이헤드에 자막 카드 하나">＋ 여기에</button></div>
-        <div class="row"><label>새 자막</label><select id="subDefStyle" style="flex:1;background:#0f1524;color:var(--txt);border:1px solid var(--line2);border-radius:6px;padding:3px 6px;font-size:12px"></select></div>
+        <div class="row"><label>새 자막</label><select id="subDefStyle" style="flex:1;min-width:0;background:#0f1524;color:var(--txt);border:1px solid var(--line2);border-radius:6px;padding:3px 6px;font-size:12px"></select></div>
+        <div id="subDefGallery" title="새로 놓는 자막의 디자인 — 카드를 고르면 카드 설정에서 바꿔요"></div>
         <div id="subList"></div>
       </div>
       <div class="panel" id="musicPanel" data-tab="music">

@@ -82,7 +82,7 @@ const subUI = await page.evaluate(() => ({
   cats: Array.from(document.querySelectorAll('#subStyleSeg .cat')).map(e => e.textContent),
   btns: document.querySelectorAll('#subStyleSeg button').length,
 }));
-ok(subUI.styles.length === 9 && subUI.btns === 9 && subUI.cats.join('/') === '기본/강조/장식', '자막 9종 · 분류 3그룹 (' + subUI.cats.join('/') + ')');
+ok(subUI.styles.length === 23 && subUI.btns === 23 && subUI.cats.join('/') === '기본/방송/강조/장식/감성/예능', '자막 23종 · 분류 6그룹 (' + subUI.cats.join('/') + ')');
 
 // ---------- 자막 새 스타일 렌더 — 위치·픽셀 ----------
 const subPix = await page.evaluate(async () => {

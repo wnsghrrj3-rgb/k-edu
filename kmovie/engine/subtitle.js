@@ -1,7 +1,7 @@
 /* ============================================================
    케이무비 자막 (KMV_SUBTITLE) — 설계서 v1 §2-4
    ------------------------------------------------------------
-   S 레인 카드 { text, at, dur, style }. 스타일 9종(분류 3), 편집은 문구·시간만.
+   S 레인 카드 { text, at, dur, style }. 스타일 9종(분류 3) + 신규 14종(2026-09-09, SPEC 표, 분류 6) = 23종.
    [기본]
    basic   방송 기본 — 하단 중앙, 흰 글자 + 진한 테두리 + 얕은 그림자, 55px
    box     박스     — 하단, 반투명 검정 바 위 흰 글자, 좌측 정렬
@@ -21,20 +21,69 @@
   'use strict';
   const CATS = [
     { id: 'base',  name: '기본' },
+    { id: 'bc',    name: '방송' },
     { id: 'em',    name: '강조' },
     { id: 'deco',  name: '장식' },
+    { id: 'mood',  name: '감성' },
+    { id: 'fun',   name: '예능' },
   ];
   const STYLES = [
     { id: 'basic',   name: '방송 기본', cat: 'base', hint: '인터뷰·내레이션' },
+    { id: 'clean',   name: '클린',      cat: 'base', hint: '테두리 없이 부드러운 그림자 — 유튜브 톤' },
     { id: 'box',     name: '박스',      cat: 'base', hint: '어두운 배경·정보 자막' },
+    { id: 'pill',    name: '알약',      cat: 'base', hint: '둥근 반투명 배경 — 밝은 화면 위' },
     { id: 'docu',    name: '다큐',      cat: 'base', hint: '차분한 학교 소개' },
     { id: 'caption', name: '설명',      cat: 'base', hint: '장면·자료 화면 라벨 (위 왼쪽 작게)' },
+    { id: 'news',    name: '뉴스',      cat: 'bc',   hint: '흰 바탕 하단 자막 — 인터뷰이 소개·보도 톤' },
+    { id: 'headline',name: '헤드라인',  cat: 'bc',   hint: '위쪽 띠 — 속보·안내' },
     { id: 'kicker',  name: '키커',      cat: 'em',   hint: '핵심 메시지 · {강조} 표기' },
     { id: 'pop',     name: '팝',        cat: 'em',   hint: '학생 활동·예능 톤' },
+    { id: 'shout',   name: '외침',      cat: 'em',   hint: '두꺼운 테두리 + 금빛 글자 — 예능 강조' },
+    { id: 'neon',    name: '네온',      cat: 'em',   hint: '빛나는 글자 — 야간·무대' },
     { id: 'type',    name: '타자기',    cat: 'em',   hint: '한 글자씩 — 도입·질문' },
     { id: 'gold',    name: '금선',      cat: 'deco', hint: '전환 문구·인용 (가운데)' },
     { id: 'bar',     name: '띠',        cat: 'deco', hint: '안내·행사 (하단 전체 띠)' },
+    { id: 'outline', name: '아웃라인',  cat: 'deco', hint: '속이 빈 금빛 테두리 글자' },
+    { id: 'extrude', name: '입체',      cat: 'deco', hint: '두께가 있는 입체 글자' },
+    { id: 'gradient',name: '금빛',      cat: 'deco', hint: '금색 그라데이션 — 시상·기념' },
+    { id: 'quote',   name: '인용',      cat: 'deco', hint: '「 」 명조 — 인용·시' },
+    { id: 'hand',    name: '손글씨',    cat: 'mood', hint: '펜 글씨 — 편지·일기 톤' },
+    { id: 'chalk',   name: '칠판',      cat: 'mood', hint: '분필 글씨 + 점선 밑줄 — 교실' },
+    { id: 'bubble',  name: '말풍선',    cat: 'fun',  hint: '흰 말풍선 — 아이 말·속마음' },
+    { id: 'stamp',   name: '스탬프',    cat: 'fun',  hint: '빨간 도장 — 합격·정답' },
   ];
+  /* 신규 스타일(2026-09-09, 준호: "자막 디자인도 여러 가지") — 표로 그린다. 옛 9종은 아래 분기 그대로(픽셀 불변).
+     size·weight·ls·wrap: 글자, y: 기준선(H,s,lines,lh,size), x: 'center'|'left', stroke: 테두리 배수(s), shadow: 'std'|'soft'|'glow'|'none',
+     color: 글자색(테마 T), font: 기본 글꼴 id(카드에 글꼴이 없을 때), bg/pre/post: 그리기 훅, safeTop: 시네마 바 보정을 위쪽으로 */
+  const rr = (ctx, x, y, w, h, r) => { r = Math.min(r, w / 2, h / 2); ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); };
+  const SPEC = {
+    clean:    { size: 48, weight: 600, ls: 0, wrap: 24, x: 'center', stroke: 0, shadow: 'soft2', y: (H, s, n, lh) => H - 96 * s - (n - 1) * lh },
+    pill:     { size: 44, weight: 700, ls: 0, wrap: 24, x: 'center', stroke: 0, shadow: 'none', y: (H, s, n, lh) => H - 92 * s - (n - 1) * lh,
+                bg: (ctx, o) => { const pw = 30 * o.s; o.lines.forEach((w, i) => { const y = o.y0 + i * o.lh; ctx.fillStyle = 'rgba(6,10,20,0.72)'; rr(ctx, (o.W - w) / 2 - pw, y - o.size * 0.98, w + pw * 2, o.lh + 2 * o.s, o.lh); ctx.fill(); }); } },
+    news:     { size: 46, weight: 800, ls: 0, wrap: 24, x: 'left', xLeft: (s, pad) => 120 * s + 26 * s, stroke: 0, shadow: 'none', color: T => T.primary, y: (H, s, n, lh) => H - 92 * s - (n - 1) * lh,
+                bg: (ctx, o) => { const bw = Math.max(...o.lines) + 52 * o.s, bh = o.n * o.lh + 22 * o.s, bx = 120 * o.s, by = o.y0 - o.size - 12 * o.s; ctx.fillStyle = 'rgba(255,255,255,0.94)'; ctx.fillRect(bx, by, bw, bh); ctx.fillStyle = o.T.accent; ctx.fillRect(bx, by, 12 * o.s, bh); ctx.fillStyle = o.T.primary; ctx.fillRect(bx, by + bh, bw, 4 * o.s); } },
+    headline: { size: 44, weight: 700, ls: 1, wrap: 30, x: 'center', stroke: 0, shadow: 'none', safeTop: true, y: (H, s, n, lh, size) => 98 * s + size,
+                bg: (ctx, o) => { const bh = o.n * o.lh + 40 * o.s, by = o.y0 - o.size - 20 * o.s; ctx.fillStyle = 'rgba(11,37,69,0.88)'; ctx.fillRect(0, by, o.W, bh); ctx.fillStyle = o.T.accent; ctx.fillRect(0, by + bh - 4 * o.s, o.W, 4 * o.s); } },
+    shout:    { size: 72, weight: 900, ls: 0, wrap: 18, x: 'center', stroke: 13, shadow: 'std', color: T => T.accent, hiOK: true, y: (H, s, n, lh) => H * 0.7 - (n - 1) * lh },
+    neon:     { size: 58, weight: 700, ls: 2, wrap: 22, x: 'center', stroke: 0, shadow: 'glow', y: (H, s, n, lh) => H - 100 * s - (n - 1) * lh },
+    outline:  { size: 64, weight: 800, ls: 2, wrap: 20, x: 'center', stroke: 0, shadow: 'none', color: () => 'rgba(0,0,0,0)', y: (H, s, n, lh) => H - 96 * s - (n - 1) * lh,
+                pre: (ctx, o) => { ctx.save(); ctx.lineJoin = 'round'; ctx.lineWidth = 5 * o.s; ctx.strokeStyle = o.T.accent; ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 10 * o.s; o.strokeLine(ctx); ctx.restore(); } },
+    extrude:  { size: 64, weight: 900, ls: 0, wrap: 20, x: 'center', stroke: 0, shadow: 'none', y: (H, s, n, lh) => H - 96 * s - (n - 1) * lh,
+                pre: (ctx, o) => { ctx.save(); for (let d = 7; d >= 1; d--) { ctx.translate(1.1 * o.s, 1.1 * o.s); o.fillLine(ctx, d > 6 ? 'rgba(0,0,0,0.55)' : o.T.primary); } ctx.restore(); } },
+    gradient: { size: 60, weight: 800, ls: 1, wrap: 20, x: 'center', stroke: 3, shadow: 'std', y: (H, s, n, lh) => H - 96 * s - (n - 1) * lh,
+                color: (T, ctx, o) => { const g = ctx.createLinearGradient(0, o.y - o.size, 0, o.y + o.size * 0.15); g.addColorStop(0, '#FFF0B8'); g.addColorStop(0.45, T.accent); g.addColorStop(0.55, '#B8902E'); g.addColorStop(1, '#F3D98A'); return g; } },
+    quote:    { size: 50, weight: 500, ls: 3, wrap: 24, x: 'center', stroke: 0, shadow: 'soft', font: 'notoserif', noSafe: true, y: (H, s, n, lh) => H * 0.47 - (n - 1) * lh / 2,
+                post: (ctx, o) => { const w = Math.max(...o.lines); ctx.font = '400 ' + Math.round(o.size * 1.35) + 'px "Noto Serif KR", "Pretendard", serif'; ctx.fillStyle = o.T.accent; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'right'; ctx.fillText('「', (o.W - w) / 2 - 14 * o.s, o.y0 - o.size * 0.1); ctx.textAlign = 'left'; ctx.fillText('」', (o.W + w) / 2 + 14 * o.s, o.y0 + (o.n - 1) * o.lh + o.size * 0.12); } },
+    hand:     { size: 58, weight: 400, ls: 1, wrap: 22, x: 'center', stroke: 0, shadow: 'soft', font: 'nanumpen', y: (H, s, n, lh) => H - 92 * s - (n - 1) * lh },
+    chalk:    { size: 54, weight: 700, ls: 1, wrap: 22, x: 'center', stroke: 0, shadow: 'soft', font: 'gaegu', color: () => '#F4F1E8', y: (H, s, n, lh) => H - 96 * s - (n - 1) * lh,
+                post: (ctx, o) => { const w = Math.max(...o.lines), y = o.y0 + (o.n - 1) * o.lh + 14 * o.s; ctx.save(); ctx.strokeStyle = 'rgba(244,241,232,0.85)'; ctx.lineWidth = 3 * o.s; ctx.setLineDash([10 * o.s, 7 * o.s]); ctx.beginPath(); ctx.moveTo((o.W - w) / 2, y); ctx.lineTo((o.W + w) / 2, y); ctx.stroke(); ctx.restore(); } },
+    bubble:   { size: 46, weight: 800, ls: 0, wrap: 20, x: 'center', stroke: 0, shadow: 'none', color: () => '#141a2a', y: (H, s, n, lh) => H * 0.62 - (n - 1) * lh,
+                bg: (ctx, o) => { const w = Math.max(...o.lines) + 60 * o.s, h = o.n * o.lh + 30 * o.s, x = (o.W - w) / 2, y = o.y0 - o.size - 16 * o.s; ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.35)'; ctx.shadowBlur = 16 * o.s; ctx.shadowOffsetY = 6 * o.s; ctx.fillStyle = '#fff'; rr(ctx, x, y, w, h, 24 * o.s); ctx.fill(); ctx.beginPath(); ctx.moveTo(x + w * 0.5 - 18 * o.s, y + h - 1); ctx.lineTo(x + w * 0.5 + 2 * o.s, y + h + 26 * o.s); ctx.lineTo(x + w * 0.5 + 22 * o.s, y + h - 1); ctx.closePath(); ctx.fill(); ctx.restore(); } },
+    stamp:    { size: 56, weight: 900, ls: 4, wrap: 16, x: 'center', stroke: 0, shadow: 'none', color: () => '#E0463F', rotate: -0.09, noSafe: true, y: (H, s, n, lh) => H * 0.5 + 20 * s - (n - 1) * lh / 2,
+                bg: (ctx, o) => { const w = Math.max(...o.lines) + 44 * o.s, h = o.n * o.lh + 24 * o.s, x = (o.W - w) / 2, y = o.y0 - o.size - 10 * o.s; ctx.save(); ctx.strokeStyle = '#E0463F'; ctx.lineWidth = 6 * o.s; rr(ctx, x, y, w, h, 10 * o.s); ctx.stroke(); ctx.lineWidth = 2 * o.s; rr(ctx, x + 9 * o.s, y + 9 * o.s, w - 18 * o.s, h - 18 * o.s, 6 * o.s); ctx.stroke(); ctx.restore(); } },
+  };
+  const wanted = new Set();
+  function wantFont(id) { if (!id || wanted.has(id)) return; wanted.add(id); if (g.KMV_FX && g.KMV_FX.loadFont) { try { g.KMV_FX.loadFont(id); } catch (e) {} } }
   const FADE = 5;                                       // 프레임 (150ms @30fps)
   const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
   const outBack = t => { const c = 1.70158, d = c + 1; return 1 + d * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
@@ -98,7 +147,8 @@
   }
   const FONT_STACK_TAIL = '"Noto Sans CJK KR", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif';
   function fontOf(card, weight, size) {
-    const fam = g.KMV_FX && card.font ? g.KMV_FX.family(card.font) : null;
+    const sp = SPEC[card.style], fid = card.font || (sp && sp.font) || null; if (!card.font && fid) wantFont(fid);
+    const fam = g.KMV_FX && fid ? g.KMV_FX.family(fid) : null;
     return fam ? weight + ' ' + size + 'px "' + fam + '", "Pretendard", ' + FONT_STACK_TAIL : font(weight, size);
   }
 
@@ -106,11 +156,11 @@
     const a0 = alphaOf(card, t); if (a0 <= 0.002) return;
     /* 크기 기준은 짧은 변 — 세로(1080×1920) 화면에서도 글씨가 화면 폭에 비해 알맞게 나온다.
        줄바꿈 글자 수는 화면 폭에 비례해 줄인다(가로 16:9 에서는 wk=1 이라 예전 그대로). */
-    const FX = g.KMV_FX, s = Math.min(W, H) / 1080, wk = W / (1920 * s), st = card.style || 'basic', hiOK = st === 'kicker' || st === 'pop';   // {강조} 색은 키커·팝에서만
+    const FX = g.KMV_FX, s = Math.min(W, H) / 1080, wk = W / (1920 * s), st = card.style || 'basic', SP = SPEC[st] || null, hiOK = st === 'kicker' || st === 'pop' || !!(SP && SP.hiOK);   // {강조} 색은 키커·팝(과 표에서 켠 것)에서만
     const sizeK = clamp((card.size == null ? 100 : card.size) / 100, 0.4, 2.5);
-    const size = (st === 'docu' ? 42 : st === 'kicker' ? 60 : st === 'pop' ? 64 : st === 'caption' ? 30 : st === 'gold' ? 52 : st === 'bar' ? 46 : 55) * s * sizeK;
-    const weight = st === 'docu' ? 400 : st === 'pop' ? 800 : st === 'caption' ? 600 : st === 'gold' ? 500 : 700;
-    let ls = (st === 'docu' ? 3 : st === 'gold' ? 4 : st === 'caption' ? 1 : 0) * s;
+    const size = (SP ? SP.size : st === 'docu' ? 42 : st === 'kicker' ? 60 : st === 'pop' ? 64 : st === 'caption' ? 30 : st === 'gold' ? 52 : st === 'bar' ? 46 : 55) * s * sizeK;
+    const weight = SP ? SP.weight : st === 'docu' ? 400 : st === 'pop' ? 800 : st === 'caption' ? 600 : st === 'gold' ? 500 : 700;
+    let ls = (SP ? SP.ls : st === 'docu' ? 3 : st === 'gold' ? 4 : st === 'caption' ? 1 : 0) * s;
     let text = card.text || '';
     // ---- 등장·퇴장 효과 (KMV_FX) — 타자기 스타일은 등장 'type' 이 기본 ----
     const k = t - card.at, dur = card.dur;
@@ -125,7 +175,7 @@
     let cursor = false;
     if (st === 'type' && fx && fx.reveal < 1) cursor = true;
     else if (st === 'type' && k < card.dur - FADE) cursor = Math.floor(k / 8) % 2 === 0;
-    const lines = wrap(text, Math.max(8, Math.round((st === 'docu' ? 26 : st === 'caption' ? 30 : st === 'gold' ? 24 : 22) * wk))).map(tokens);
+    const lines = wrap(text, Math.max(8, Math.round((SP ? SP.wrap : st === 'docu' ? 26 : st === 'caption' ? 30 : st === 'gold' ? 24 : 22) * wk))).map(tokens);
     ctx.save();
     ctx.font = fontOf(card, weight, size); ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
     if (fx && fx.ls) ls += fx.ls;
@@ -138,19 +188,23 @@
     else if (st === 'caption') y0 = 128 * s;
     else if (st === 'gold') y0 = H * 0.47 - (lines.length - 1) * lh / 2;
     else if (st === 'bar') y0 = H - 74 * s - (lines.length - 1) * lh;
+    else if (SP) y0 = SP.y(H, s, lines.length, lh, size);
     else y0 = H - 96 * s - (lines.length - 1) * lh;
     if (card.pos === 'top') y0 = 128 * s + size * 0.9; else if (card.pos === 'mid') y0 = H * 0.5 + size * 0.35 - (lines.length - 1) * lh / 2;
     else if (card.pos === 'bottom') y0 = H - 96 * s - (lines.length - 1) * lh;
     if (card.y) y0 += card.y / 100 * H;                   // 미세 위치(화면 높이 %)
-    if (st === 'caption' && card.pos !== 'bottom' && card.pos !== 'mid') y0 += safe || 0;   // 시네마 바 안쪽으로 (위)
-    else if (st !== 'gold' && card.pos !== 'top' && card.pos !== 'mid') y0 -= safe || 0;      // (아래)
+    if ((st === 'caption' || (SP && SP.safeTop)) && card.pos !== 'bottom' && card.pos !== 'mid') y0 += safe || 0;   // 시네마 바 안쪽으로 (위)
+    else if (st !== 'gold' && !(SP && SP.noSafe) && card.pos !== 'top' && card.pos !== 'mid') y0 -= safe || 0;      // (아래)
     let scale = 1, dy = 0;
     if (st === 'pop' && !fin) { const u = clamp((t - card.at + 0.5) / 12, 0, 1); scale = 0.85 + 0.15 * outBack(u); dy = (1 - outBack(u)) * 24 * s; }
     if (fx) { scale *= fx.scale || 1; dy += fx.dy || 0; if (fx.breathe) scale *= 1 + 0.015 * Math.sin(2 * Math.PI * (k / 30) / 6); }
     const alpha = a0 * (fx ? fx.alpha : 1);
     ctx.globalAlpha = alpha;
     if (fx && fx.blur > 0.2 && 'filter' in ctx) ctx.filter = 'blur(' + fx.blur.toFixed(1) + 'px)';
-    const textCol = card.color === 'white' ? '#FFFFFF' : card.color === 'gold' ? T.accent : card.color === 'navy' ? T.primary : card.color === 'black' ? '#111' : (st === 'caption' ? '#EAF0F8' : T.text);
+    const textCol = card.color === 'white' ? '#FFFFFF' : card.color === 'gold' ? T.accent : card.color === 'navy' ? T.primary : card.color === 'black' ? '#111' : (st === 'caption' ? '#EAF0F8' : (SP && SP.color && SP.color.length < 2) ? SP.color(T) : T.text);
+    if (SP && SP.rotate) { ctx.translate(W / 2, y0); ctx.rotate(SP.rotate); ctx.translate(-W / 2, -y0); }
+    const spO = SP ? { W, H, s, T, size, lh, n: lines.length, y0, lines: widths, pad } : null;
+    if (SP && SP.bg) { ctx.save(); ctx.globalAlpha = alpha; SP.bg(ctx, spO); ctx.restore(); }
     // 배경 — 박스·띠
     const barK = fx && fx.bar != null ? fx.bar : 1;
     if (st === 'box') {
@@ -176,7 +230,7 @@
     let base = 0;
     lines.forEach((toks, i) => {
       const w = widths[i], y = y0 + i * lh + dy, n = toks.reduce((acc, tk) => acc + tk.text.length, 0);
-      let x = st === 'box' ? 120 * s + pad + 6 * s : st === 'docu' ? 120 * s : st === 'caption' ? 116 * s : (W - w * scale) / 2;
+      let x = st === 'box' ? 120 * s + pad + 6 * s : st === 'docu' ? 120 * s : st === 'caption' ? 116 * s : (SP && SP.x === 'left') ? SP.xLeft(s, pad) : (W - w * scale) / 2;
       ctx.save();
       if (scale !== 1) { ctx.translate(x, y); ctx.scale(scale, scale); ctx.translate(-x, -y); }
       if (fx && fx.skew) { ctx.translate(x, y); ctx.transform(1, 0, fx.skew, 1, 0, 0); ctx.translate(-x, -y); }
@@ -194,9 +248,19 @@
         if ('filter' in ctx) ctx.filter = 'blur(' + ((1 - fx.ink) * 6 * s).toFixed(1) + 'px)';
       }
       if (fx && fx.shadowOff) { ctx.save(); ctx.globalAlpha = alpha * 0.55; drawLine(ctx, toks, x + fx.shadowOff, y + fx.shadowOff, { ls, size, color: 'rgba(0,0,0,0.9)', accent: 'rgba(0,0,0,0.9)', stroke: 0 }); ctx.restore(); }
-      if (st === 'docu' || st === 'gold' || st === 'caption') { ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 14 * s; ctx.shadowOffsetY = 2 * s; }
+      let lineCol = textCol;
+      if (SP) {
+        const lo = { W, H, s, T, size, lh, n: lines.length, y0, y, x, w, lines: widths, toks, ls, strokeLine: c2 => { let cx = x; for (const tk of toks) for (const ch of tk.text) { c2.strokeText(ch, cx, y); cx += c2.measureText(ch).width + ls; } }, fillLine: (c2, col) => { let cx = x; c2.fillStyle = col; for (const tk of toks) for (const ch of tk.text) { c2.fillText(ch, cx, y); cx += c2.measureText(ch).width + ls; } } };
+        if (SP.color && SP.color.length >= 2 && !card.color) lineCol = SP.color(T, ctx, lo);
+        if (SP.pre) SP.pre(ctx, lo);
+        if (SP.shadow === 'soft') { ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 14 * s; ctx.shadowOffsetY = 2 * s; }
+        else if (SP.shadow === 'soft2') { ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 22 * s; ctx.shadowOffsetY = 4 * s; }
+        else if (SP.shadow === 'std') { ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 8 * s; ctx.shadowOffsetY = 3 * s; }
+        else if (SP.shadow === 'glow') { ctx.save(); ctx.shadowColor = T.accent; ctx.shadowBlur = 34 * s; drawLine(ctx, toks, x, y, { ls, size, color: T.accent, accent: T.accent, stroke: 0, fx, total: nCh, base, words, line: i, lines: lines.length }); ctx.restore(); ctx.shadowColor = T.accent; ctx.shadowBlur = 12 * s; }
+      } else if (st === 'docu' || st === 'gold' || st === 'caption') { ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 14 * s; ctx.shadowOffsetY = 2 * s; }
       else if (st !== 'box' && st !== 'bar') { ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 8 * s; ctx.shadowOffsetY = 3 * s; }
-      drawLine(ctx, toks, x, y, { ls, size, color: textCol, accent: hiOK ? T.accent : textCol, stroke: (st === 'basic' || st === 'kicker' || st === 'pop' || st === 'type') ? 7 * s : 0, fx, total: nCh, base, words, line: i, lines: lines.length });
+      drawLine(ctx, toks, x, y, { ls, size, color: lineCol, accent: hiOK ? T.accent : lineCol, stroke: SP ? SP.stroke * s : (st === 'basic' || st === 'kicker' || st === 'pop' || st === 'type') ? 7 * s : 0, fx, total: nCh, base, words, line: i, lines: lines.length });
+      if (SP && SP.post && i === lines.length - 1) { ctx.shadowBlur = 0; ctx.shadowOffsetY = 0; ctx.save(); SP.post(ctx, { W, H, s, T, size, lh, n: lines.length, y0, lines: widths }); ctx.restore(); }
       ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
       if (st === 'pop' && i === lines.length - 1) { ctx.fillStyle = T.accent; ctx.globalAlpha = alpha * 0.95; ctx.fillRect(x, y + 14 * s, w, 6 * s); }
       if (fx && fx.under < 1 && i === lines.length - 1) { ctx.fillStyle = T.accent; ctx.globalAlpha = alpha; ctx.fillRect(x, y + 12 * s, w * fx.under, 3 * s); }
@@ -252,5 +316,22 @@
     return lines.map((text, i) => ({ text, at: i * d, dur: d, style: 'basic' }));
   }
 
-  g.KMV_SUBTITLE = { CATS, STYLES, FADE, draw, drawCard, wrap, tokens, plain, distribute, fontOf };
+  /* 스타일 미리보기 타일 — 1920×1080 에 그린 뒤 글자 둘레만 오려 담는다(작아도 읽히게). 반환: 그린 canvas(dst) */
+  const ANCHOR = { caption: 'topleft', headline: 'top', gold: 'mid', quote: 'mid', stamp: 'mid', bubble: 'b62', pop: 'b72', shout: 'b70', box: 'left', docu: 'left', news: 'left' };
+  let pvSrc = null;
+  function preview(dst, styleId, themeId, text) {
+    if (typeof document === 'undefined') return dst;
+    const W = 1920, H = 1080; if (!pvSrc) { pvSrc = document.createElement('canvas'); pvSrc.width = W; pvSrc.height = H; }
+    const c = pvSrc.getContext('2d'); c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1; c.filter = 'none';
+    const grd = c.createLinearGradient(0, 0, 0, H); grd.addColorStop(0, '#2a3652'); grd.addColorStop(1, '#0d1220'); c.fillStyle = grd; c.fillRect(0, 0, W, H);
+    const rg = c.createRadialGradient(W * 0.62, H * 0.38, 40, W * 0.62, H * 0.38, 700); rg.addColorStop(0, 'rgba(120,150,200,0.35)'); rg.addColorStop(1, 'rgba(120,150,200,0)'); c.fillStyle = rg; c.fillRect(0, 0, W, H);
+    const t = text || ((styleId === 'kicker' || styleId === 'pop' || styleId === 'shout') ? '우리 {학교} 이야기' : '우리 학교 이야기');
+    drawCard(c, W, H, 40, { text: t, at: 0, dur: 300, style: styleId }, theme(themeId), 0);
+    const a = ANCHOR[styleId] || 'bottom', dw = dst.width, dh = dst.height, cw = 660, ch = cw * dh / dw;   // 글자 둘레 660px 만 — 타일에서 글자가 읽힌다
+    let cx = 960, cy = 950; if (a === 'top') cy = 150; else if (a === 'topleft') { cx = 100 + cw / 2; cy = 130; } else if (a === 'mid') cy = 530; else if (a === 'b62') cy = 630; else if (a === 'b72') cy = 760; else if (a === 'b70') cy = 730; else if (a === 'left') { cx = 100 + cw / 2; cy = 940; }
+    const sx = Math.max(0, Math.min(W - cw, cx - cw / 2)), sy = Math.max(0, Math.min(H - ch, cy - ch / 2));
+    const d = dst.getContext('2d'); d.clearRect(0, 0, dw, dh); d.drawImage(pvSrc, sx, sy, cw, ch, 0, 0, dw, dh);
+    return dst;
+  }
+  g.KMV_SUBTITLE = { CATS, STYLES, SPEC, FADE, preview, draw, drawCard, wrap, tokens, plain, distribute, fontOf };
 })(typeof window !== 'undefined' ? window : globalThis);

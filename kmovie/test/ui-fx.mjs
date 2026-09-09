@@ -163,7 +163,7 @@ ok(U.after && U.after.type === 'chars' && U.afterDur.dur === 'long', '등장 sel
 ok(U.size === 150 && U.col === 'gold' && U.pos === 'top' && U.font === 'nanumpen', '크기·색·위치·글꼴 조절이 카드에 저장');
 ok(U.clipShown && U.clipOpts === 21 && U.fade && U.fade.type === 'goldLine', '클립 고르면 등장/퇴장 조절기 (20종) → setFade');
 ok(U.partShown && U.partFx && U.partFx.type === 'blur', '부품 고르면 카드 설정에 글꼴·크기·위치·등장/퇴장');
-ok(U.defOpts === 9, '도구상자 자막에 새 자막 기본 스타일 select');
+ok(U.defOpts === 23, '도구상자 자막에 새 자막 기본 스타일 select (23종)');
 
 /* 저장·복원 */
 await page.waitForTimeout(900);

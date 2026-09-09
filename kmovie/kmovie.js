@@ -1547,7 +1547,7 @@
     function build() {
       list.innerHTML = ''; const smp = sample();
       const add = (id, ko) => { const it = document.createElement('div'); it.className = 'fi' + ((sel.value || '') === id ? ' on' : ''); it.dataset.id = id;
-        const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = ko; const sm = document.createElement('span'); sm.className = 'sm'; sm.textContent = smp; sm.style.fontFamily = famOf(id);
+        const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = ko; nm.style.fontFamily = famOf(id); const sm = document.createElement('span'); sm.className = 'sm'; sm.textContent = smp; sm.style.fontFamily = famOf(id);
         it.append(nm, sm); it.onclick = () => { sel.value = id; sel.dispatchEvent(new Event('change')); close(); sync(); }; list.appendChild(it); };
       add('', '기본 (프리텐다드)');
       const cats = []; FX.FONTS.forEach(f => { if (!cats.includes(f.cat)) cats.push(f.cat); });
@@ -1627,13 +1627,25 @@
   function refreshClipFx() { if (FX && window.__kmvFxRows) { window.__kmvFxRows.clipIn.refresh(); window.__kmvFxRows.clipOut.refresh(); } }
 
   let subStyle = 'basic';
-  (SB.CATS || [{ id: null }]).forEach(cat => {
-    const items = SB.STYLES.filter(st => !cat.id || st.cat === cat.id); if (!items.length) return;
-    if (cat.id) { const h = document.createElement('div'); h.className = 'cat'; h.textContent = cat.name; $('subStyleSeg').appendChild(h); }
-    const row = document.createElement('div'); row.className = 'seg c3'; $('subStyleSeg').appendChild(row);
-    items.forEach(st => segBtn(row, st.id, st.name, () => { subStyle = st.id; const s2 = selS && P.subtitle(selS); if (s2) P.updateS(s2.id, { style: st.id }); else refreshSubPanel(); }, st.hint));
-  });
-  { const sel = $('subDefStyle'); SB.STYLES.forEach(st => { const o = document.createElement('option'); o.value = st.id; o.textContent = st.name + ' — ' + st.hint; sel.appendChild(o); }); sel.value = subStyle; sel.onchange = () => { subStyle = sel.value; }; }
+  /* 자막 스타일 갤러리 — 타일마다 그 스타일로 그린 미리보기(2026-09-09 준호: "자막 디자인도 여러 가지, 보이게"). 카드 설정(subStyleSeg)·새 자막 기본(subDefGallery) 두 곳에 같은 타일. */
+  const subTiles = [];
+  function styleGallery(host, onPick) {
+    (SB.CATS || [{ id: null }]).forEach(cat => {
+      const items = SB.STYLES.filter(st => !cat.id || st.cat === cat.id); if (!items.length) return;
+      if (cat.id) { const h = document.createElement('div'); h.className = 'cat'; h.textContent = cat.name; host.appendChild(h); }
+      const row = document.createElement('div'); row.className = 'sgal'; host.appendChild(row);
+      items.forEach(st => {
+        const b = document.createElement('button'); b.type = 'button'; b.dataset.k = st.id; b.title = st.name + ' — ' + st.hint; b.className = 'stile';
+        const cv = document.createElement('canvas'); cv.width = 352; cv.height = 144; const nm = document.createElement('b'); nm.textContent = st.name;
+        b.append(cv, nm); b.onclick = () => onPick(st.id); row.appendChild(b); subTiles.push({ id: st.id, cv });
+      });
+    });
+  }
+  function paintSubTiles() { if (!SB.preview) return; subTiles.forEach(t => { try { SB.preview(t.cv, t.id, P.data.theme); } catch (e) {} }); }
+  styleGallery($('subStyleSeg'), id => { subStyle = id; const s2 = selS && P.subtitle(selS); if (s2) P.updateS(s2.id, { style: id }); else refreshSubPanel(); const sel = $('subDefStyle'); if (sel && !s2) { sel.value = id; } });
+  { const sel = $('subDefStyle'); SB.STYLES.forEach(st => { const o = document.createElement('option'); o.value = st.id; o.textContent = st.name + ' — ' + st.hint; sel.appendChild(o); }); sel.value = subStyle; sel.onchange = () => { subStyle = sel.value; refreshSubPanel(); }; }
+  styleGallery($('subDefGallery'), id => { subStyle = id; const sel = $('subDefStyle'); sel.value = id; refreshSubPanel(); });
+  paintSubTiles(); if (FX) { const fids = new Set(); SB.STYLES.forEach(st => { const sp = SB.SPEC && SB.SPEC[st.id]; if (sp && sp.font) fids.add(sp.font); }); fids.forEach(f => FX.loadFont(f).then(paintSubTiles)); }
   $('btnSubAuto').onclick = () => {
     stop();
     const lines = $('subText').value.split(/\n/).map(x => x.trim()).filter(Boolean);
@@ -1729,7 +1741,9 @@
   function refreshSubPanel() {
     const s2 = selS && P.subtitle(selS);
     $('subEdit').classList.toggle('hidden', !s2); const scn = $('subCardNone'); if (scn) scn.classList.toggle('hidden', !!s2);
-    Array.from($('subStyleSeg').querySelectorAll('button')).forEach(b => b.classList.toggle('on', b.dataset.k === (s2 ? s2.style : (/^my:/.test(subStyle) ? ((P.styleOf(subStyle.slice(3)) || {}).style || 'basic') : subStyle))));
+    { const cur = s2 ? s2.style : (/^my:/.test(subStyle) ? ((P.styleOf(subStyle.slice(3)) || {}).style || 'basic') : subStyle);
+      Array.from($('subStyleSeg').querySelectorAll('button')).forEach(b => b.classList.toggle('on', b.dataset.k === cur));
+      const dg = $('subDefGallery'); if (dg) Array.from(dg.querySelectorAll('button')).forEach(b => b.classList.toggle('on', b.dataset.k === cur)); }
     if (s2) { if (document.activeElement !== $('subEditText')) $('subEditText').value = s2.text; $('subEditTime').textContent = tc(s2.at) + ' → ' + tc(s2.at + s2.dur) + ' · ' + secStr(s2.dur); refreshSubFx(s2); }
     refreshMyStyles();
     const list = $('subList'); list.innerHTML = '';
@@ -2437,7 +2451,7 @@
       if (selP && !P.part(selP)) { selP = null; refreshPartPanel(); }
       if (selA2 && !P.a2(selA2)) { selA2 = null; refreshMusicPanel(); }
       if (selV2 && !P.v2(selV2)) { selV2 = null; refreshV2Panel(); }
-      if (kind === 'look' || kind === 'load') paintPartThumbs();
+      if (kind === 'look' || kind === 'load') { paintPartThumbs(); paintSubTiles(); }
       if (!playing && (kind === 'look' || kind === 'S' || kind === 'P' || kind === 'V2' || kind === 'change' || kind === 'load' || kind === 'undo' || kind === 'redo')) renderPreview();
     }
     if (!drag) { const tot = P.total(); if (ph > Math.max(0, tot - 1)) ph = Math.max(0, tot - 1); }
@@ -2649,7 +2663,7 @@
   /* ---------- 시작 ---------- */
   resize();
   refreshBin(); refreshPanel(); refreshProject(); refreshLookPanel(); refreshSubPanel(); buildPartGrid(); refreshPartPanel(); refreshMusicPanel(); refreshAutoPanel(); refreshMarkerList();
-  document.fonts && document.fonts.ready.then(() => { paintPartThumbs(); if (!playing) renderPreview(); });
+  document.fonts && document.fonts.ready.then(() => { paintPartThumbs(); paintSubTiles(); if (!playing) renderPreview(); });
   LK.ready().then(() => { if (P.total()) renderPreview(); });
   $('zoom').value = Math.round(1000 * Math.log(pxf / MIN_PXF) / Math.log(MAX_PXF / MIN_PXF));
   /* ---------- 데스크톱 껍데기 ---------- */
