@@ -69,6 +69,8 @@ h3{font-size:15px;margin:0}
 .slots span{font-size:12px;border-radius:999px;padding:2px 10px;border:1px solid var(--rule);color:var(--muted)}
 .slots span.green{background:#E4F0E5;color:var(--ok);border-color:#E4F0E5}.slots span.yellow{background:#F7F0D9;color:#a08a3a;border-color:#F7F0D9}.slots span.red{background:#F9E5E2;color:#b8493f;border-color:#F9E5E2}
 .attempts{display:flex;gap:6px;margin:0 0 10px}
+.diff{font-size:13px;background:#F3F7FF;border-left:3px solid var(--blue);padding:7px 12px;border-radius:0 10px 10px 0;margin:0 0 10px;color:var(--ink)}
+.axis{font-size:12.5px;color:#7a6440;background:#FBF6EA;border-radius:8px;padding:6px 10px;margin-top:6px;line-height:1.5}.axis b{color:#a08a3a;margin-right:4px}
 .attempts button{border:1px solid var(--rule);background:#fff;border-radius:999px;padding:4px 12px;font:inherit;font-size:12.5px;cursor:pointer;color:var(--soft)}
 .attempts button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 #toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;transition:.2s;pointer-events:none;z-index:9}
@@ -125,6 +127,7 @@ function render(){ if (TAB === 'open') renderOpen(); else renderMine(); }
 let OPEN = { type: 'argue', band: 'mid', prompt: null };
 function renderOpen(){
   const tp = D.templates.types, list = D.prompts.prompts.filter(p => p.status === 'live' && p.type === OPEN.type && p.bands.includes(OPEN.band));
+  const picked = OPEN.prompt && D.prompts.prompts.find(x => x.id === OPEN.prompt), pickedAxis = picked && picked.axis;
   view.innerHTML = `<div class="panel">
     <h2>새 글쓰기 과제</h2>
     <div class="form">
@@ -133,8 +136,9 @@ function renderOpen(){
       <div class="hint">${esc(tp[OPEN.type].hint)}</div>
       <label>학년 틀</label><div class="chips" id="oBand">${Object.keys(BANDS).map(k => `<button data-k="${k}" class="${k === OPEN.band ? 'on' : ''}">${BANDS[k]}</button>`).join('')}</div>
       <div class="hint">필요한 것: ${Object.keys(tp[OPEN.type].bands[OPEN.band].need).map(k => D.templates.colors[k].name).join(' · ')} · 글자 ${tp[OPEN.type].bands[OPEN.band].length.join('~')}</div>
-      <label>글감 고르기</label><div class="chips" id="oPrompt"><button data-p="" class="${OPEN.prompt ? '' : 'on'}">직접 쓰기</button>${list.map(p => `<button data-p="${p.id}" class="${OPEN.prompt === p.id ? 'on' : ''}">${esc(p.title)}</button>`).join('')}</div>
-      <div class="hint">글감을 고르면 논제·핵심 낱말·읽을 글이 채워져요. 그대로 써도, 고쳐도 돼요.</div>
+      <label>글감 고르기</label><div class="chips" id="oPrompt"><button data-p="" class="${OPEN.prompt ? '' : 'on'}">직접 쓰기</button>${list.map(p => `<button data-p="${p.id}" class="${OPEN.prompt === p.id ? 'on' : ''}" title="${esc((p.subject || []).join(' · '))}">${esc(p.title)}${p.subject && p.subject.length ? ` <small style="opacity:.6">${esc(p.subject[0])}</small>` : ''}</button>`).join('')}</div>
+      <div class="hint">글감을 고르면 논제·핵심 낱말·읽을 글·안내 한 줄이 채워져요. 그대로 써도, 고쳐도 돼요.</div>
+      ${pickedAxis ? `<div class="hint axis"><b>선생님만 보는 기준</b> ${esc(pickedAxis)}</div>` : ''}
       <label>논제</label><div><input type="text" id="oTopic" placeholder="예: 급식에 김치가 매일 나와야 할까요?" value="${esc(OPEN.topic || '')}"></div>
       <label>핵심 낱말</label><div><input type="text" id="oKw" placeholder="쉼표로 1~3개 (비우면 논제에서 자동)" value="${esc(OPEN.kw || '')}"></div>
       <div class="hint">글에 이 낱말이 있는지로 논제 이탈을 짚어요.</div>
@@ -152,7 +156,7 @@ function renderOpen(){
   document.getElementById('oBand').onclick = e => { const b = e.target.closest('[data-k]'); if (!b) return; keep(); OPEN.band = b.dataset.k; renderOpen(); };
   document.getElementById('oPrompt').onclick = e => { const b = e.target.closest('[data-p]'); if (!b) return; keep(); OPEN.prompt = b.dataset.p || null;
     const p = OPEN.prompt && D.prompts.prompts.find(x => x.id === OPEN.prompt);
-    if (p){ OPEN.topic = p.topic; OPEN.kw = (p.keywords || []).join(', '); OPEN.passage = p.passage; OPEN.title = p.title; }
+    if (p){ OPEN.topic = p.topic; OPEN.kw = (p.keywords || []).join(', '); OPEN.passage = p.passage; OPEN.title = p.title; OPEN.guide = p.guide || ''; }
     renderOpen(); };
   document.getElementById('oGo').onclick = openRun;
 }
@@ -214,6 +218,25 @@ function draftFor(sub){
   REV.draft = { sid: sub.id, marks: JSON.parse(JSON.stringify(rv.teacher_marks || [])), removed: (rv.removed || []).slice(), comment: rv.comment || '', levels: Object.assign({}, rv.levels || {}), ask: !!rv.ask_rewrite, returned: !!rv.returned_at };
   return REV.draft;
 }
+function axisOf(run){ const p = run.prompt_id && D.prompts.prompts.find(x => x.id === run.prompt_id); return p && p.axis || ''; }
+/* 2번째 글부터 — 바로 앞 글과 견주어 「고친 자리」를 한 줄로. 요소 ×/△ → ○, 자동 표시가 몇 개 사라졌나(앞 글의 original 이 새 글에 없으면 고친 것), 글자·문단 변화 */
+function changesSince(me, sub, r){
+  const prev = me.subs.filter(x => x.attempt < sub.attempt).sort((a, b) => b.attempt - a.attempt)[0]; if (!prev) return null;
+  const run = REV.run, pr = KWRITE.analyze({ text: prev.text, type: run.type, band: run.band, topic: run.topic, keywords: run.keywords || [] });
+  const rank = { red: 0, yellow: 1, green: 2 }, lines = [];
+  const up = Object.keys(r.elements).filter(k => rank[r.elements[k].status] > rank[(pr.elements[k] || {}).status || 'red']).map(k => D.templates.colors[k].name);
+  const down = Object.keys(r.elements).filter(k => rank[r.elements[k].status] < rank[(pr.elements[k] || {}).status || 'red']).map(k => D.templates.colors[k].name);
+  if (up.length) lines.push('채워짐 ' + up.join('·'));
+  if (down.length) lines.push('빠짐 ' + down.join('·'));
+  if (pr.topic && r.topic && rank[r.topic.status] > rank[pr.topic.status]) lines.push('논제에 더 가까워짐');
+  const was = pr.teacher ? pr.teacher.marks.filter(m => !m.soft) : [], gone = was.filter(m => m.original && !sub.text.includes(m.original)).length;
+  const now = r.teacher ? r.teacher.hard : 0;
+  if (was.length) lines.push(`자동 표시 ${was.length} → ${now}` + (gone ? ` (고침 ${gone})` : ''));
+  const dc = r.length.chars - pr.length.chars, dp = r.paras.count - pr.paras.count;
+  if (dc) lines.push(`글자 ${dc > 0 ? '+' : ''}${dc}`); if (dp) lines.push(`문단 ${dp > 0 ? '+' : ''}${dp}`);
+  if (!lines.length) lines.push('달라진 곳이 거의 없어요');
+  return { prev: prev.attempt, lines };
+}
 function renderReview(){
   const run = REV.run, tp = D.templates.types[run.type];
   const listHtml = REV.students.map(s => { const last = s.subs[s.subs.length - 1]; const st = !last ? '' : returned(last) ? '<span class="st ret">돌려줌</span>' : '<span class="st sub">볼 것</span>';
@@ -226,10 +249,12 @@ function renderReview(){
     const memos = KWPAPER.placeMemos(r, D.templates, D.feedback);
     const slots = Object.keys(r.elements).map(k => `<span class="${r.elements[k].status}">${esc(D.templates.colors[k].name)} ${r.elements[k].status === 'green' ? '○' : r.elements[k].status === 'yellow' ? '△' : '×'}</span>`).join('') + (r.topic ? `<span class="${r.topic.status}">논제 ${r.topic.status === 'green' ? '○' : r.topic.status === 'yellow' ? '△' : '×'}</span>` : '');
     const attempts = me.subs.length > 1 ? `<div class="attempts">${me.subs.map(x => `<button data-at="${x.attempt}" class="${x.id === sub.id ? 'on' : ''}">${x.attempt}번째${returned(x) ? ' ✓' : ''}</button>`).join('')}</div>` : '';
+    const diff = changesSince(me, sub, r);
     paper = `<div class="paperbox">
       ${attempts}
       <div class="stats"><span>글자 <b>${r.length.chars}</b></span><span>문단 <b>${r.paras.count}</b></span><span>자동 표시 <b>${r.teacher.count}</b></span><span>보낸 때 ${new Date(sub.submitted_at).toLocaleString('ko-KR')}</span>${d.returned ? '<span class="badge ok">돌려줌</span>' : ''}</div>
       <div class="slots">${slots}</div>
+      ${diff ? `<div class="diff"><b>${diff.prev}번째 글보다</b> ${diff.lines.join(' · ')}</div>` : ''}
       <div class="tools"><span class="k"><i></i>자동(빨강) — 누르면 지우기</span><span class="k"><i class="b"></i>선생님(파랑)</span><span>문장을 누르면 메모·낱말 표시 · 글자를 드래그해도 돼요</span></div>
       ${KWPAPER.render({ result: r, templates: D.templates, corrections: D.corrections, feedback: D.feedback, memos, teacher: d.marks, removed: d.removed, pop: REV.pop, popHtml: (p, s) => popHtml(p, s, r, d) })}
       <div class="side">
@@ -242,7 +267,7 @@ function renderReview(){
     </div>`;
   }
   view.innerHTML = `<div class="panel"><div class="row" style="margin:0 0 12px"><button class="btn ghost" id="rvBack">← 연 과제</button><h2 style="margin:0">${esc(run.title)}</h2><span class="badge">${esc(tp.name)}</span><span class="badge">${BANDS[run.band]}</span></div>
-    <div class="meta" style="margin-bottom:12px">${esc(run.topic)}</div>
+    <div class="meta" style="margin-bottom:12px">${esc(run.topic)}${axisOf(run) ? `<div class="axis"><b>선생님만 보는 기준</b> ${esc(axisOf(run))}</div>` : ''}</div>
     <div class="review"><div class="students">${listHtml}</div><div>${paper}</div></div></div>`;
   document.getElementById('rvBack').onclick = () => { if (REV.dirty && !confirm('저장하지 않은 변경이 있어요. 나갈까요?')) return; REV = null; renderMine(); };
   view.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { if (REV.dirty && !confirm('저장하지 않은 변경이 있어요. 옮길까요?')) return; REV.cur = b.dataset.st; REV.attempt = null; REV.pop = null; REV.dirty = false; REV.draft = null; renderReview(); });

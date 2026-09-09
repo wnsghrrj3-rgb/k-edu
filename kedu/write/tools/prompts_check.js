@@ -1,5 +1,5 @@
 /* 지문 라이브러리 검사기 — node kedu/write/tools/prompts_check.js
-   ① 필수 칸 ② 밴드·유형이 templates 와 맞나 ③ public 은 license 필수 ④ 신문·방송 이름이 source 에 들어오면 실패 ⑤ 밴드별 글자 수 안내 ⑥ 평가 낱말 0 ⑦ id 중복 0 */
+   ① 필수 칸(v2: subject·guide·axis 포함) ② 밴드·유형이 templates 와 맞나 ③ public 은 license 필수 ④ 신문·방송 이름이 source 에 들어오면 실패 ⑤ 밴드별 글자 수 안내 ⑥ 평가 낱말 0 ⑦ id 중복 0 */
 const fs=require('fs'),path=require('path');
 const D=p=>JSON.parse(fs.readFileSync(path.join(__dirname,'../data',p),'utf8'));
 const P=D('prompts.json'),T=D('templates.json');
@@ -20,6 +20,11 @@ for(const p of P.prompts){
   if(n<r[0]||n>r[1]*1.4)bad(p.id+' 글자 '+n+' (밴드 '+p.bands[0]+' 안내 '+r+')');
   if(/틀렸|부족|미흡|점수|등급/.test(p.passage+p.topic))bad(p.id+' 평가 낱말');
   if(!p.keywords.some(k=>p.passage.includes(k)||p.topic.includes(k)))bad(p.id+' 핵심 낱말이 지문·논제에 없음');
+  // v2 — subject(교과 태그 1~3) · guide(안내 한 줄, 학생에게 감) · axis(교사에게만)
+  if(!Array.isArray(p.subject)||!p.subject.length||p.subject.length>3)bad(p.id+' subject 1~3개');
+  if(typeof p.guide!=='string'||!p.guide.trim()||p.guide.length>45)bad(p.id+' guide 없음 또는 45자 넘음');
+  if(typeof p.axis!=='string'||p.axis.length<20)bad(p.id+' axis 없음');
+  if(/틀렸|부족|미흡|점수|등급/.test(p.guide))bad(p.id+' guide 평가 낱말(학생이 본다)');
 }
 const live=P.prompts.filter(p=>p.status==='live').length;
 console.log(`prompts_check: ${P.prompts.length}편 (live ${live}) · ${fail} fail`);

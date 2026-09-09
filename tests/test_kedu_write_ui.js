@@ -95,6 +95,8 @@ function boot(file, url, dbFake){
     ok($('#oTopic'), '③ 과제 열기 폼'); ok(d.querySelectorAll('#oPrompt button').length > 1, '③ 글감 목록');
     ok($('#oRewrite').value === '1', '③ 다시 쓰기 기본 1회');
     $('#oPrompt button[data-p]:not([data-p=""])').click(); await tick(); ok($('#oTopic').value.length > 3 && $('#oPassage').value.length > 10, '③ 글감 고르면 논제·지문 채움');
+    ok($('#oGuide').value.length > 3, '③ 글감 고르면 안내 한 줄도 채움 (v2 guide)'); ok($('.hint.axis') && /선생님만 보는 기준/.test($('.hint.axis').textContent), '③ 선생님만 보는 기준(axis) 표시');
+    ok(d.querySelectorAll('#oPrompt button[data-p]:not([data-p=""]) small').length >= 1, '③ 글감 칩에 교과 태그');
     $('#oGo').click(); await tick(100);
     const ins = log.find(x => x[0] === 'write_runs' && x[1] === 'insert'); ok(ins && ins[2].rewrite_max === 1 && ins[2].band === 'mid', '③ write_runs insert');
     const op = log.find(x => x[0] === 'rpc' && x[1] === 'open_for_class'); ok(op && /^write:/.test(op[2].p_content_key) && /task\.html\?run=/.test(op[2].p_url), '③ 케이박스 카드 write:<run>');
@@ -132,6 +134,22 @@ function boot(file, url, dbFake){
     ok(d.querySelectorAll('.lv').length === 2 && /잘함/.test(d.querySelectorAll('.lv')[0].textContent), '②′ 수준 라벨(점수 0)');
     ok($('#rewrite'), '②′ 고쳐서 다시 보내기'); d.querySelector('.tm.blue').click(); await tick(); ok($('.pop') && /마무리에는/.test($('.pop').textContent), '②′ 파란 표시 누르면 왜');
     $('#rewrite').click(); await tick(); ok($('#text') && /숙제/.test($('#text').value), '②′ 다시 쓰기 화면에 글 미리 채움');
+  }
+
+  /* ---------- ③′ 교사: 2번째 글 — 「고친 자리」 한 줄 ---------- */
+  {
+    const t2 = '나는 숙제가 없어야 한다고 생각해요. 왜냐하면 숙제가 많으면 놀 시간이 없기 때문이에요.\n예를 들어 어제 숙제를 하느라 축구를 못 했어요.\n그래서 나는 숙제가 없어야 한다고 생각해요.';
+    rows.write_submissions.push({ id: 'sub2', run_id: 'run1', student_id: 'sp1', attempt: 2, text: t2, auto: null, submitted_at: T, write_reviews: [] });
+    rows.write_runs[0].write_submissions = rows.write_submissions.map(x => ({ id: x.id, student_id: x.student_id, attempt: x.attempt, submitted_at: x.submitted_at, write_reviews: x.write_reviews }));
+    const w = boot('kedu/write/teach.html', 'https://keduclass.com/kedu/write/teach.html?tab=mine', db);
+    await tick(100); const d = w.document, $ = s => d.querySelector(s);
+    $('[data-rev="run1"]').click(); await tick(100);
+    ok($('.attempts') && d.querySelectorAll('.attempts button').length === 2, '③′ 1번째·2번째 탭');
+    ok($('.attempts button.on') && /2번째/.test($('.attempts button.on').textContent), '③′ 최신(2번째)이 먼저');
+    const df = $('.diff'); ok(df && /1번째 글보다/.test(df.textContent), '③′ 「1번째 글보다」 한 줄');
+    ok(df && /자동 표시 \d+ → \d+/.test(df.textContent) && /고침 \d+/.test(df.textContent), '③′ 자동 표시 몇 개 고쳤나 (' + (df && df.textContent) + ')');
+    ok(df && /고침 3/.test(df.textContent) && !/빠짐/.test(df.textContent), '③′ 근데·엄청·기때문 세 자리 고침, 빠진 요소 없음');
+    d.querySelector('.attempts button[data-at="1"]').click(); await tick(); ok(!$('.diff'), '③′ 1번째 글에는 견줌 줄 없음');
   }
 
   /* ---------- 평가 낱말 0 ---------- */
