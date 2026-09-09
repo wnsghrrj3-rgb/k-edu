@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>3D 상장 — 케이메이커 틀 시험</title>
+<title>3D 상장 — 케이메이커</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700;900&display=swap" rel="stylesheet">
 <style>
@@ -29,7 +29,7 @@
 </style>
 </head>
 <body>
-<header><b>3D 상장</b><small>틀은 블렌더로 미리 구움 · 글자만 여기서 얹음 · 서버 0</small></header>
+<header><a href="/maker/" style="color:#aaa;text-decoration:none;font-size:13px">← 케이메이커</a><b>3D 상장</b><small>틀은 블렌더로 미리 구움 · 글자만 여기서 얹음 · 서버 0</small></header>
 <main>
   <section>
     <div class="stage"><canvas id="cv"></canvas></div>
@@ -37,7 +37,8 @@
       <button id="play" class="pri">▶ 재생</button>
       <input id="seek" type="range" min="0" max="100" value="100">
       <button id="png">PNG 저장</button>
-      <button id="webm">영상 저장 (WebM)</button>
+      <button id="mp4">🎬 영상 저장 (MP4)</button>
+      <button id="webm" hidden>영상 저장 (WebM)</button>
       <span class="msg" id="msg"></span>
     </div>
   </section>
@@ -56,18 +57,23 @@
     </div>
   </aside>
 </main>
+<script src="/maker-playground/data/video.js?v=20260910a"></script><!-- R143: MK_VIDEO.exportFramesMP4 — 케이메이커와 같은 MP4 파이프 -->
 <script>
 (async () => {
   const $ = (s) => document.querySelector(s);
   const cv = $('#cv'), ctx = cv.getContext('2d'), msg = $('#msg');
-  const meta = await (await fetch('../award-wood-warm.json')).json();
+  /* R143 — 주소로 들어온 글자·틀(케이메이커 문·케이박스 과제·명단 대량이 같은 문을 쓴다) */
+  const Q = new URLSearchParams(location.search);
+  const PLATE = /^[\w-]+$/.test(Q.get('plate') || '') ? Q.get('plate') : 'award-wood-warm';
+  for (const [k, id] of [['title', 'f-title'], ['cls', 'f-class'], ['name', 'f-name'], ['body', 'f-body'], ['date', 'f-date'], ['school', 'f-school']]) if (Q.has(k)) $('#' + id).value = Q.get(k);
+  const meta = await (await fetch(`../${PLATE}.json`)).json();
   const W = meta.width, H = meta.height, FPS = meta.fps, N = meta.frames;
   cv.width = W; cv.height = H;
   const holdSec = (meta.hold_from - 1) / FPS, totalSec = N / FPS;
 
   /* ---- 틀 영상 ---- */
   const vid = document.createElement('video');
-  vid.src = '../award-wood-warm.mp4'; vid.muted = true; vid.playsInline = true; vid.preload = 'auto';
+  vid.src = `../${PLATE}.mp4`; vid.muted = true; vid.playsInline = true; vid.preload = 'auto';
   await new Promise((r) => { vid.onloadeddata = r; });
 
   /* ---- 종이 공간(mm 기준 → 5px/mm) 글자층 ---- */
@@ -156,7 +162,13 @@
       ctx.restore();
     }
   }
-  const seekTo = (sec) => new Promise((r) => { const on = () => { vid.removeEventListener('seeked', on); r(); }; vid.addEventListener('seeked', on); vid.currentTime = Math.min(sec, totalSec - 0.001); });
+  const seekTo = (sec) => new Promise((r) => {
+    const t = Math.min(sec, totalSec - 0.001);
+    if (Math.abs(vid.currentTime - t) < 1e-4) return r();                 // 같은 자리 — seeked 가 안 올 수 있다
+    let done = false; const fin = () => { if (done) return; done = true; vid.removeEventListener('seeked', on); r(); };
+    const on = () => fin(); vid.addEventListener('seeked', on);
+    vid.currentTime = t; setTimeout(fin, 1500);                            // 가드 — 멈춰 서지 않는다
+  });
 
   /* ---- 재생·스크럽 ---- */
   const seek = $('#seek'); let raf = 0;
@@ -171,8 +183,22 @@
 
   /* ---- 저장 ---- */
   $('#png').onclick = async () => { await showAt(totalSec - 0.001); const a = document.createElement('a'); a.download = '3d상장.png'; a.href = cv.toDataURL('image/png'); a.click(); };
+  /* 제품 경로(R143): MK_VIDEO.exportFramesMP4 — 프레임마다 틀 영상을 정확히 시킹해 그린다(실시간 녹화가 아니라 프레임 드랍 0) */
+  $('#mp4').onclick = async () => {
+    if (!window.MK_VIDEO || typeof VideoEncoder === 'undefined') { $('#webm').click(); return; }
+    cancelAnimationFrame(raf);
+    const btn = $('#mp4'); btn.disabled = true; msg.textContent = '영상 만드는 중…';
+    const r = await window.MK_VIDEO.exportFramesMP4({
+      width: W, height: H, fps: FPS, frames: N, title: `3D상장_${$('#f-name').value || ''}`,
+      onProgress: (t) => { msg.textContent = t; },
+      drawFrame: async (i, octx) => { const sec = i / FPS; await seekTo(sec); draw(sec); octx.drawImage(cv, 0, 0); },
+    });
+    btn.disabled = false;
+    msg.textContent = r.ok ? `저장했어요 — ${r.w}×${r.h} · ${r.sec}초 · ${r.rung}` : (r.msg || '영상 저장에 실패했어요');
+    if (!r.ok && /지원하지 않아요|안 돼요/.test(r.msg || '')) $('#webm').hidden = false;
+  };
   $('#webm').onclick = async () => {
-    /* 시험 경로: 재생하면서 캔버스 녹화. 제품 경로(WebCodecs MP4, MK_VIDEO)는 케이메이커 접합 때. */
+    /* 예비 경로: WebCodecs 없는 브라우저 — 재생하면서 캔버스 녹화(MediaRecorder) */
     if (!('MediaRecorder' in window)) { msg.textContent = '이 브라우저는 영상 저장을 지원하지 않아요'; return; }
     const stream = cv.captureStream(30), chunks = [];
     const rec = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 6_000_000 });

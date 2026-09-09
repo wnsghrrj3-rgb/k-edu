@@ -109,6 +109,8 @@ window.MK_SCREENS = window.MK_SCREENS || {};
         : k === 'fav' ? S.favs.size : k === 'recent' ? S.recents.length
         : E().list().filter((t) => t.contentType === k).length;
       const styles = window.MK_SAMPLE.STYLES;
+      /* R143 — 「3D 상장」 문: 인쇄물 갈래(와 전체) 맨 앞 한 장. 문서 모델 밖이라 검색·스타일 걸러짐엔 안 잡히고 갈래로만 */
+      const door = (window.MK_AWARD3D && (S.cat === 'print' || S.cat === 'all') && !S.q && S.style === '전체') ? window.MK_AWARD3D.cardHTML('data-te-award3d') : '';
       return `<span class="pg-note">Template Engine v1 — 샘플 8종+α · 실API·실템플릿(kmake 46종) 연결은 후속</span>
         <div class="te-shell">
           <aside class="te-left">${cats.map(([k, n]) => `<button class="te-cat ${S.cat === k ? 'on' : ''}" data-te-cat="${k}"><span>${n}</span><span class="cnt">${counts(k)}</span></button>`).join('')}</aside>
@@ -122,8 +124,8 @@ window.MK_SCREENS = window.MK_SCREENS || {};
               </select>
             </div>
             <div class="as-tags">${styles.map((s) => m.Chip({ label: s, on: S.style === s, attrs: `data-te-style="${s}"` })).join('')}</div>
-            ${list.length
-              ? `<div class="br-grid">${list.map((t) => m.TemplateCard(t, `data-tpl="${t.templateId}"`, { fav: S.favs.has(t.templateId), aiRec: t.ai.recommended, target: t.targetUser === 'teacher' ? '교사용' : '학생용' })).join('')}</div>`
+            ${list.length || door
+              ? `<div class="br-grid">${door}${list.map((t) => m.TemplateCard(t, `data-tpl="${t.templateId}"`, { fav: S.favs.has(t.templateId), aiRec: t.ai.recommended, target: t.targetUser === 'teacher' ? '교사용' : '학생용' })).join('')}</div>`
               : `<div class="br-empty">${S.cat === 'fav' ? '카드의 ☆ 또는 미리보기에서 즐겨찾기를 모아 보세요' : S.cat === 'recent' ? '아직 사용한 템플릿이 없어요' : '이 조건의 템플릿이 없어요'}</div>`}
           </div>
         </div>`;
@@ -136,6 +138,7 @@ window.MK_SCREENS = window.MK_SCREENS || {};
       const so = root.querySelector('#teSort');
       if (so) so.onchange = () => { S.sort = so.value; PG.render(); };
       root.querySelectorAll('[data-tpl]').forEach((b) => b.onclick = () => openPreview(b.dataset.tpl));
+      const a3 = root.querySelector('[data-te-award3d]'); if (a3) a3.onclick = () => window.MK_AWARD3D.open();
     },
   };
 })();

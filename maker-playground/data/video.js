@@ -636,6 +636,65 @@ window.MK_VIDEO = (() => {
     }
   }
 
+  /* ---------- R143: 프레임 공급형 MP4 (문서 모델 밖 화면용) ----------
+     exportMP4 는 doc(장면×요소)을 스스로 그린다. 「3D 상장」(kmake/plates/award/)
+     처럼 **틀 영상 + 글자층을 자기 캔버스에 직접 그리는 화면**은 doc 이 없다.
+     같은 파이프(먹서 적재 → 사다리 협상 → VideoEncoder → Mp4Muxer → 내려받기)를
+     drawFrame(i) 콜백 하나로 쓰게 한다. 소리 없음(틀 영상은 무음), 전환 없음.
+     opts: { width, height, fps, frames, drawFrame(i, ctx, W, H) → void|Promise,
+             title, onProgress, targetMin(선택 — 없으면 사다리 1단 기본) } */
+  async function exportFramesMP4(opts) {
+    opts = opts || {};
+    const say = opts.onProgress || (() => {});
+    if (busy) return { ok: false, msg: '이미 만드는 중이에요' };
+    if (typeof VideoEncoder === 'undefined') return { ok: false, msg: '이 브라우저는 영상 저장을 지원하지 않아요 (크롬·엣지 최신 버전을 써주세요)' };
+    const fps = opts.fps || EXPORT_SPEC.fps, frames = Math.max(1, opts.frames | 0);
+    if (!opts.width || !opts.height || typeof opts.drawFrame !== 'function') return { ok: false, msg: '크기와 그리기 함수가 필요해요' };
+    if (frames / fps > MAX_SEC) return { ok: false, msg: `전체 길이가 ${MAX_SEC}초를 넘어요` };
+    busy = true;
+    let encoder = null, encError = null;
+    try {
+      await loadMuxer();
+      const pick = await pickVideoRung(window, opts.width, opts.height);
+      if (!pick.rung) return { ok: false, msg: '이 기기에서는 영상 저장이 안 돼요 — 다른 기기나 크롬 최신 버전을 써주세요', detail: pick.tried.join(' / ') };
+      /* 틀 영상은 자기 화질이 상한 — 위로 늘리지 않는다(시험 틀 640×360 을 1080 으로 부풀려도 좋아지지 않는다) */
+      const targetMin = Math.min(pick.rung.targetMin, opts.targetMin || Math.min(opts.width, opts.height));
+      const { W, H } = outSize(opts.width, opts.height, targetMin);
+      const out = document.createElement('canvas'); out.width = W; out.height = H;
+      const ctx = out.getContext('2d');
+      const muxer = new Mp4Muxer.Muxer({ target: new Mp4Muxer.ArrayBufferTarget(), video: { codec: EXPORT_SPEC.muxVideo, width: W, height: H }, fastStart: 'in-memory' });
+      encoder = new VideoEncoder({ output: (chunk, meta) => muxer.addVideoChunk(chunk, meta), error: (e) => { encError = e; } });
+      encoder.configure({ codec: pick.rung.codec, width: W, height: H, bitrate: pick.rung.bitrate, framerate: fps });
+      const usPerFrame = Math.round(1e6 / fps);
+      for (let i = 0; i < frames; i++) {
+        if (encError) throw encError;
+        ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, W, H);
+        await opts.drawFrame(i, ctx, W, H);
+        const vf = new VideoFrame(out, { timestamp: i * usPerFrame, duration: usPerFrame });
+        await waitQueue(encoder);
+        encoder.encode(vf, { keyFrame: i % KEY_EVERY === 0 });
+        vf.close();
+        if (i % 6 === 0) say(`영상 만드는 중… ${Math.round((i + 1) / frames * 100)}%`);
+      }
+      say('인코딩 마무리 중…');
+      await encoder.flush();
+      if (encError) throw encError;
+      muxer.finalize();
+      const blob = new Blob([muxer.target.buffer], { type: 'video/mp4' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `${(opts.title || '케이메이커').replace(/[^\w가-힣 _-]/g, '')}.mp4`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      return { ok: true, sec: Math.round(frames / fps), w: W, h: H, frames, fps, rung: pick.rung.label, rungIndex: pick.index, bytes: blob.size };
+    } catch (e) {
+      return { ok: false, msg: (e && e.message) || '영상 저장에 실패했어요' };
+    } finally {
+      try { if (encoder && encoder.state !== 'closed') encoder.close(); } catch (_) {}
+      busy = false;
+    }
+  }
+
   /* ---------- 판정 ---------- */
   function videoAudit() {
     const v = [];
@@ -745,6 +804,6 @@ window.MK_VIDEO = (() => {
   }
 
   return { FPS, TRANS_DUR, MAX_SEC, EXPORT_SPEC, VIDEO_LADDER, outSize, rungSize, pickVideoRung, pickAudio, loadMuxer, muxerSource, soundSources, buildMasterPCM, clipSpan,
-    easeAt, stateAt, framePlan, exportMP4, videoAudit, busy: () => busy,
+    easeAt, stateAt, framePlan, exportMP4, exportFramesMP4, videoAudit, busy: () => busy,
     isVideoEl, secondsInto, fitRect, musicTimeline, animPivot };
 })();

@@ -41,6 +41,7 @@ window.MK_SCREENS.create = (() => {
     return `<div class="cf-head"><h2>무엇을 만들까요?</h2><p>만들 것을 고르면 나머지는 K-MAKER가 도와요</p></div>
       <div class="hv-start cf-types">` + TYPE_ORDER.map((k) => { const t = of(k);
         return `<button class="hv-type" data-cf-type="${t.key}"><span class="ico">${t.ico}</span><b>${t.name}</b><small>${t.desc}</small></button>`; }).join('')
+      + (window.MK_AWARD3D ? `<button class="hv-type" data-cf-award3d><span class="ico">🏆</span><b>3D 상장</b><small>상장 영상 — 글자만 바꾸면 완성 (새 탭)</small></button>` : '')
       + `<button class="hv-type ai" data-cf-ai style="border:1.5px dashed var(--mk-teal);background:var(--mk-teal-soft)"><span class="ico">✨</span><b>AI로 시작하기</b><small>설명하면 AI가 구성</small></button></div>`;
   };
 
@@ -108,6 +109,7 @@ window.MK_SCREENS.create = (() => {
       root.querySelectorAll('[data-cf-step]').forEach((b) => b.onclick = () => { if (!b.disabled) { s.step = +b.dataset.cfStep; PG.render(); } });
       const rs = root.querySelector('[data-cf-reset]'); if (rs) rs.onclick = () => { PG.state.create = { step: 1, type: null, style: null, tpl: null }; PG.render(); };
       root.querySelectorAll('[data-cf-type]').forEach((b) => b.onclick = () => { s.type = b.dataset.cfType; s.step = 2; PG.render(); });
+      const a3 = root.querySelector('[data-cf-award3d]'); if (a3) a3.onclick = () => window.MK_AWARD3D.open();   /* R143 */
       const ai = root.querySelector('[data-cf-ai]'); if (ai) ai.onclick = () => M2.Modal.open(`<h2>AI로 시작하기</h2>
         <p style="font:var(--mk-t-body-sm);color:var(--mk-text-secondary)">요청 → Scene 구성 생성은 후속 단계에서 연결돼요. Home의 AI 입력창과 같은 흐름입니다.</p>
         <div style="text-align:right;margin-top:14px">${M2.Button({ label: '확인', attrs: 'onclick="MK.Modal.close()"' })}</div>`);
