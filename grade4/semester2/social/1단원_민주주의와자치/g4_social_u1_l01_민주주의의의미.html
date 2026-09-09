@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<!--
+K-edu 사회 4-2 · 1단원 민주주의와 자치 · 주제① 학교생활 속 민주주의 · 2차시(l01)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [4사08-01] · 교과서 p.12~14 · 지도서(대단원1 주제① 2차시, 지도서 p.24~32) 근거
+수업 기법 = 돌아가며 말하기 · 1단원 색 #4F46E5 (4-1 사회 중학년 엔진 승계 · 변수명 유지 · 엔진 무수정)
+
+직접조작: 의견함 판 — 두 번 다 결정이 나는데 반영된 의견의 수가 다른 형
+  ⭐ 첫 판은 여섯 자리 가운데 둘만 열려 있어 둘의 뜻으로 결정이 난다(반영 2 / 6).
+  ⭐ 둘째 판은 여섯 자리가 다 열려 여섯을 다 들어야 결정이 열린다(반영 6 / 6).
+  ⭐ 판은 어느 결정이 옳다고 말하지 않는다 — 정답 상수가 코드에 없고(OP_PICK_OK 부재) 조작에 점수 0.
+     판이 세는 것은 「결정이 났는가」가 아니라 「누구의 의견이 반영됐는가」뿐이다.
+  ⭐ 반영된 의견의 수를 따로 담는 상태가 없다 — opBits(mask) 한 줄이 두 판을 다 센다.
+  근거: 지도서 2차시 「한 사회에서 몇몇 사람의 뜻대로 의견을 결정하면 어떤 문제점이 생길까요?
+        → 여러 사람의 의견을 반영할 수 없습니다 / 결정을 내리는 일부 사람들에게만 유리한 선택을 할 수 있습니다」
+
+지도서 근거: 민주주의 = 구성원들의 다양한 의견을 반영하여 사회 공동의 문제에 관한 의사 결정을 하는 방식 /
+  민주주의 사회에서는 구성원 모두가 인간으로서 존중받고, 평등한 입장에서 자신의 의견을 제시하고 자유롭게 행동할 수 있음 /
+  [생각을 열어요] 학교에 건의함을 설치한 까닭 / [미디어 활동] ○○ 초등학교 학생 자치회 임원 선거 신문 기사 /
+  [스스로 활동] 가정·학교·지역·국가의 민주주의 실천 모습 / [꼭 기억해요] 1·2
+
+정직 원칙: ㉠ 판의 여섯 의견은 판이 놓은 예시일 뿐 어느 것도 정답이 아니다(캡션 명시).
+  ㉡ 실제 학급 회의는 교실 몫 — 화면이 다루는 자리는 「누구의 의견이 반영됐는가」까지다(완료 카드 명시).
+  ㉢ 신문 기사의 학교는 교과서 원문 표기 그대로 「○○ 초등학교」로 두고 실제 학교 이름 0.
+설계 원칙: 3차시 침범 0(실천 태도·관용·비판적 태도·양보와 타협 0 — 「필요한 태도」는 차시 예고 자리까지 ≤2) /
+  4차시 이후 침범 0(학급 회의 절차·다수결·문제 해결 과정 0) / 주제② 침범 0(주민 자치·주민 참여·지역 0) /
+  2·3단원 침범 0 / 교사용 참고 자료 0(아테네·직접 민주주의·시민 혁명·군주제·몽테스키외·삼권 분립·
+  국민 주권의 원리·대의제·입헌주의·권력 분립·지방 자치의 원리·헌법·독재·참고 도서 두 종) /
+  정치적 중립 — 실제 정당·정치인 0 · 실제 학교 이름 0 · 네 자리 연도 0 · 학생 이름 0.
+⚠️ 4-2 사회 첫 차시 — goNextLesson = 허브(l02 미양산).
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>민주주의의 의미 · 사회 4-2</title>
+<meta name="kedu-lesson-id" content="g4_social_u1_l01_v1">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#4F46E5; --green-d:#4338CA; --cyan:#0891B2;
+  --bg:#EEF2FF; --bub:#E0E7FF; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#F57F17; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes drawLine{to{transform:scaleX(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ka-lb{background:#F1F5F9;border:none;padding:7px 12px;border-radius:10px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;font-family:inherit;font-weight:700;color:#475569;flex-shrink:0;font-size:13px}
+.ka-lb svg{width:15px;height:15px}
+.ka-bar{flex:1;height:5px;background:var(--bg);border-radius:999px;overflow:hidden}
+.ka-bar>div{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:999px;transition:width .35s ease;width:6%}
+.ka-pg{color:var(--green);font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;flex-shrink:0}
+.ka-sc{background:var(--amber-bg);color:var(--amber);padding:4px 12px;border-radius:999px;display:flex;align-items:center;gap:5px;flex-shrink:0;font-weight:700}
+.ka-sc svg{width:14px;height:14px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px}
+.ka-sc-u{font-size:12px}
+
+/* 메인 */
+.ka-m{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow-y:auto}
+.ka-tags{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ka-bg{background:var(--amber-bg);color:var(--amber);padding:5px 14px;border-radius:30px;font-size:13px;
+  display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.ka-bg.s2{background:#E0F2FE;color:#0369A1}
+.ka-bg.s3{background:#EDE9FE;color:#6D28D9}
+.ka-bg.s4{background:#FCE7F3;color:#BE185D}
+.ka-bg.s5{background:#E0E7FF;color:var(--green)}
+.ka-bg svg{width:13px;height:13px}
+.ka-meta{font-size:13px;color:var(--muted)}
+.ka-t{font-size:clamp(20px,3.4vw,29px);margin-bottom:16px;line-height:1.4;color:var(--green);letter-spacing:-.3px;font-weight:700;animation:fadeUp .4s .15s ease both}
+.ka-bub{background:var(--bub);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);line-height:1.7;
+  margin-bottom:16px;border-left:4px solid var(--green);animation:fadeUp .4s .3s ease both}
+.ka-emph{position:relative;display:inline-block;font-weight:700;color:var(--green)}
+.ka-emph::after{content:'';position:absolute;bottom:2px;left:0;right:0;height:3px;background:var(--red);border-radius:2px;transform:scaleX(0);transform-origin:left;animation:drawLine .6s .6s ease forwards}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(16px,2.6vw,21px);font-weight:700;line-height:1.6;margin-bottom:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:640px}
+.opt{background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:13px 14px;font-size:clamp(14px,2.3vw,17px);
+  font-weight:500;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:var(--green);background:#E0E7FF;animation:pop .4s ease}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;font-size:clamp(14px,2.3vw,17px);line-height:1.6;text-align:center;animation:fadeUp .35s ease both;max-width:640px}
+.fb.ok{color:var(--green);font-weight:700}
+.hint{margin-top:12px;background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(13px,2.2vw,16px);
+  line-height:1.6;color:#0C4A6E;max-width:560px;animation:fadeUp .35s ease both}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:620px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFF;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:clamp(14px,2.3vw,17px);line-height:1.5}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(79,70,229,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+/* 조작 판 */
+.op-seats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:640px;width:100%;margin:0 auto}
+.op-seat{width:100%;cursor:pointer;font-family:inherit;border:2px solid var(--line);background:#fff;border-radius:12px;padding:9px 8px;text-align:center}
+.op-seat:hover{border-color:var(--green);background:var(--bub)}
+.op-seat.lock{border:2px dashed #CBD5E0;background:#F8FAFC;cursor:pointer}
+.op-seat.said{border:2px solid var(--green);background:#E0E7FF;cursor:default}
+.op-name{font-weight:800;font-size:.95em}
+.op-idea{font-size:.8em;color:var(--muted);font-weight:700;margin-top:2px;line-height:1.35}
+.op-bar{max-width:640px;width:100%;margin:0 auto}
+.op-go{margin:0 auto;display:block;background:var(--green);color:#fff;border:none;font-family:inherit;font-weight:800;
+  padding:11px 26px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);box-shadow:0 4px 14px rgba(79,70,229,.3)}
+.op-go:disabled{background:#94A3B8;box-shadow:none;cursor:not-allowed}
+.op-card{border:2px solid var(--line);border-radius:12px;padding:10px 14px;background:#F8FAFF;max-width:640px;width:100%;margin:0 auto;font-size:clamp(13px,2.2vw,16px);line-height:1.6}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+  .op-seats{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#F57F17"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식, 사람 형상 대신 칸과 말풍선 ===== */
+const SVG = {
+  // [생각을 열어요] 학교에 설치된 건의함
+  box:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EEF2FF"/>
+    <rect x="52" y="30" width="56" height="46" rx="5" fill="#E0E7FF" stroke="#4F46E5" stroke-width="2"/>
+    <rect x="66" y="36" width="28" height="5" rx="2.5" fill="#4F46E5"/>
+    <rect x="62" y="50" width="36" height="18" rx="3" fill="#fff" stroke="#A5B4FC" stroke-width="1.4"/>
+    <text x="80" y="62" font-size="7.5" fill="#4338CA" text-anchor="middle" font-weight="800">의견함</text>
+    <rect x="10" y="18" width="34" height="16" rx="4" fill="#FEF3C7" stroke="#B45309" stroke-width="1.4"/>
+    <text x="27" y="29" font-size="7" fill="#92400E" text-anchor="middle" font-weight="800">하고 싶은 말</text>
+    <path d="M44 28 L58 34" stroke="#B45309" stroke-width="1.6" stroke-dasharray="3 2"/>
+    <rect x="116" y="18" width="36" height="16" rx="4" fill="#DCFCE7" stroke="#15803D" stroke-width="1.4"/>
+    <text x="134" y="29" font-size="7" fill="#166534" text-anchor="middle" font-weight="800">학교에 전해요</text>
+    <path d="M116 28 L104 34" stroke="#15803D" stroke-width="1.6" stroke-dasharray="3 2"/>
+    <text x="80" y="90" font-size="8.5" fill="#4338CA" text-anchor="middle" font-weight="800">왜 학교에 이걸 두었을까?</text></svg>`,
+  // 생각이 달라 문제가 생김
+  differ:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFF7ED"/>
+    <rect x="8" y="22" width="42" height="24" rx="6" fill="#DBEAFE" stroke="#1D4ED8" stroke-width="1.5"/>
+    <text x="29" y="37" font-size="8" fill="#1E3A8A" text-anchor="middle" font-weight="800">이게 좋아</text>
+    <rect x="110" y="22" width="42" height="24" rx="6" fill="#FEE2E2" stroke="#DC2626" stroke-width="1.5"/>
+    <text x="131" y="37" font-size="8" fill="#991B1B" text-anchor="middle" font-weight="800">저게 좋아</text>
+    <rect x="58" y="24" width="44" height="20" rx="5" fill="#FEF3C7" stroke="#B45309" stroke-width="1.5"/>
+    <text x="80" y="38" font-size="8" fill="#92400E" text-anchor="middle" font-weight="800">난 또 달라</text>
+    <rect x="34" y="58" width="92" height="24" rx="6" fill="#E0E7FF" stroke="#4F46E5" stroke-width="1.8"/>
+    <text x="80" y="73" font-size="8.5" fill="#4338CA" text-anchor="middle" font-weight="800">함께 풀어야 할 문제</text>
+    <path d="M29 46 L70 58 M80 44 L80 58 M131 46 L90 58" stroke="#94A3B8" stroke-width="1.4" stroke-dasharray="3 2"/>
+    <text x="80" y="14" font-size="8" fill="#B45309" text-anchor="middle" font-weight="800">생각이 다르면 문제가 생겨요</text></svg>`,
+  // 의견함 판 안내
+  gather:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F5F3FF"/>
+    <rect x="12" y="16" width="60" height="64" rx="6" fill="#FEE2E2" stroke="#DC2626" stroke-width="1.6"/>
+    <text x="42" y="28" font-size="7.5" fill="#991B1B" text-anchor="middle" font-weight="800">몇몇만 말하면</text>
+    <rect x="20" y="34" width="20" height="12" rx="2" fill="#FCA5A5"/><rect x="44" y="34" width="20" height="12" rx="2" fill="#FCA5A5"/>
+    <rect x="20" y="50" width="20" height="12" rx="2" fill="#F1F5F9" stroke="#CBD5E0" stroke-width="1" stroke-dasharray="2 2"/>
+    <rect x="44" y="50" width="20" height="12" rx="2" fill="#F1F5F9" stroke="#CBD5E0" stroke-width="1" stroke-dasharray="2 2"/>
+    <rect x="20" y="64" width="20" height="12" rx="2" fill="#F1F5F9" stroke="#CBD5E0" stroke-width="1" stroke-dasharray="2 2"/>
+    <rect x="44" y="64" width="20" height="12" rx="2" fill="#F1F5F9" stroke="#CBD5E0" stroke-width="1" stroke-dasharray="2 2"/>
+    <rect x="88" y="16" width="60" height="64" rx="6" fill="#DCFCE7" stroke="#15803D" stroke-width="1.6"/>
+    <text x="118" y="28" font-size="7.5" fill="#166534" text-anchor="middle" font-weight="800">모두 말하면</text>
+    <rect x="96" y="34" width="20" height="12" rx="2" fill="#86EFAC"/><rect x="120" y="34" width="20" height="12" rx="2" fill="#86EFAC"/>
+    <rect x="96" y="50" width="20" height="12" rx="2" fill="#86EFAC"/><rect x="120" y="50" width="20" height="12" rx="2" fill="#86EFAC"/>
+    <rect x="96" y="64" width="20" height="12" rx="2" fill="#86EFAC"/><rect x="120" y="64" width="20" height="12" rx="2" fill="#86EFAC"/>
+    <text x="80" y="92" font-size="8" fill="#6D28D9" text-anchor="middle" font-weight="800">두 판을 견주어 봐요</text></svg>`,
+  // 민주주의의 뜻
+  mean:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EEF2FF"/>
+    <rect x="8" y="26" width="40" height="30" rx="6" fill="#E0E7FF" stroke="#4F46E5" stroke-width="1.6"/>
+    <text x="28" y="39" font-size="7" fill="#4338CA" text-anchor="middle" font-weight="800">다양한</text>
+    <text x="28" y="49" font-size="7.5" fill="#4338CA" text-anchor="middle" font-weight="800">의견</text>
+    <path d="M50 41 L60 41" stroke="#4F46E5" stroke-width="2" stroke-linecap="round"/>
+    <rect x="62" y="26" width="40" height="30" rx="6" fill="#FEF3C7" stroke="#B45309" stroke-width="1.6"/>
+    <text x="82" y="39" font-size="7" fill="#92400E" text-anchor="middle" font-weight="800">반영해서</text>
+    <text x="82" y="49" font-size="7.5" fill="#92400E" text-anchor="middle" font-weight="800">함께 결정</text>
+    <path d="M104 41 L114 41" stroke="#4F46E5" stroke-width="2" stroke-linecap="round"/>
+    <rect x="114" y="26" width="38" height="30" rx="6" fill="#DCFCE7" stroke="#15803D" stroke-width="1.6"/>
+    <text x="133" y="45" font-size="8.5" fill="#166534" text-anchor="middle" font-weight="800">민주주의</text>
+    <text x="80" y="76" font-size="8" fill="#475569" text-anchor="middle" font-weight="700">사회 공동의 문제에 관한</text>
+    <text x="80" y="88" font-size="8" fill="#475569" text-anchor="middle" font-weight="700">의사 결정을 하는 방식</text></svg>`,
+  // [미디어 활동] 신문 기사
+  news:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F8FAFC"/>
+    <rect x="16" y="10" width="128" height="76" rx="4" fill="#fff" stroke="#94A3B8" stroke-width="1.6"/>
+    <rect x="24" y="18" width="112" height="12" rx="2" fill="#E0E7FF"/>
+    <text x="80" y="27" font-size="7.5" fill="#4338CA" text-anchor="middle" font-weight="800">학생 자치회 임원 선거 실시</text>
+    <rect x="24" y="36" width="52" height="34" rx="3" fill="#F1F5F9" stroke="#CBD5E0" stroke-width="1"/>
+    <rect x="32" y="44" width="36" height="18" rx="2" fill="#E0E7FF"/>
+    <text x="50" y="56" font-size="6.5" fill="#4338CA" text-anchor="middle" font-weight="800">기표소</text>
+    <path d="M84 40 L136 40 M84 48 L136 48 M84 56 L128 56 M84 64 L136 64" stroke="#CBD5E0" stroke-width="2" stroke-linecap="round"/>
+    <text x="80" y="80" font-size="7" fill="#64748B" text-anchor="middle" font-weight="700">공약을 듣고 투표에 참여했다</text></svg>`,
+  // 일상생활 속 민주주의 네 자리
+  life:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F0FDF4"/>
+    <rect x="8" y="14" width="68" height="32" rx="6" fill="#FEF3C7" stroke="#B45309" stroke-width="1.4"/>
+    <text x="42" y="30" font-size="8.5" fill="#92400E" text-anchor="middle" font-weight="800">가정</text>
+    <text x="42" y="41" font-size="7" fill="#92400E" text-anchor="middle" font-weight="700">어떤 모습일까?</text>
+    <rect x="84" y="14" width="68" height="32" rx="6" fill="#E0E7FF" stroke="#4F46E5" stroke-width="1.4"/>
+    <text x="118" y="30" font-size="8.5" fill="#4338CA" text-anchor="middle" font-weight="800">학교</text>
+    <text x="118" y="41" font-size="7" fill="#4338CA" text-anchor="middle" font-weight="700">어떤 모습일까?</text>
+    <rect x="8" y="52" width="68" height="32" rx="6" fill="#DCFCE7" stroke="#15803D" stroke-width="1.4"/>
+    <text x="42" y="68" font-size="8.5" fill="#166534" text-anchor="middle" font-weight="800">지역</text>
+    <text x="42" y="79" font-size="7" fill="#166534" text-anchor="middle" font-weight="700">어떤 모습일까?</text>
+    <rect x="84" y="52" width="68" height="32" rx="6" fill="#FCE7F3" stroke="#BE185D" stroke-width="1.4"/>
+    <text x="118" y="68" font-size="8.5" fill="#9D174D" text-anchor="middle" font-weight="800">국가</text>
+    <text x="118" y="79" font-size="7" fill="#9D174D" text-anchor="middle" font-weight="700">어떤 모습일까?</text></svg>`,
+  // 정리
+  done:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EEF2FF"/>
+    <circle cx="80" cy="44" r="26" fill="#E0E7FF" stroke="#4F46E5" stroke-width="2.6"/>
+    <path d="M66 44 L76 54 L96 32" fill="none" stroke="#4F46E5" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="80" y="84" font-size="9" fill="#4338CA" text-anchor="middle" font-weight="800">모두의 의견을 모았어요</text></svg>`
+};
+function sceneCard(key,cap){return `<div class="scene">${SVG[key]}<div class="cap">${cap}</div></div>`;}
+
+/* ===== 직접 조작: 의견함 판 =====
+   ⚠️ 전량 고정 리터럴 — 난수 0. 조작에 점수 0 · 판정 0(어느 의견도 정답이 아니다). */
+const OP_N = 6;                                   // 우리 반 여섯 자리
+const OP_FEW = 0b000011;                          // 첫 판에서 열려 있는 자리 = 둘뿐(한 줄이 다 정한다)
+const OP_SEAT = ["㉮","㉯","㉰","㉱","㉲","㉳"];
+const OP_IDEA = [
+  "번호 순서대로 먹어요",
+  "요일마다 돌아가며 먹어요",
+  "줄을 선 대로 먹어요",
+  "모둠끼리 돌아가며 먹어요",
+  "지난주에 늦게 먹은 모둠부터 먹어요",
+  "제비뽑기로 정해요"
+];
+const OP_PROBLEM = "우리 반 공동의 문제 — 급식을 먹는 순서를 어떻게 정할까요?";
+const OP_LOCK_MSG = "이 자리는 아직 말할 수 없어요. 첫 판에서는 두 사람만 의견을 낼 수 있어요.";
+const OP_SAID_MSG = "이미 말한 자리예요. 판은 그대로예요.";
+const OP_WAIT_MSG = "아직 다 듣지 않았어요. 말할 수 있는 자리를 모두 들어야 정할 수 있어요.";
+
+// ⭐ 반영된 의견의 수를 따로 담는 상태가 없다 — 이 한 줄이 두 판을 다 센다.
+function opBits(m){ let n=0; for(let i=0;i<OP_N;i++) if(m & (1<<i)) n++; return n; }
+function opOpen(round){ return round===0 ? OP_FEW : 0b111111; }          // 라운드마다 열린 자리
+function opAllHeard(st){ const m=opOpen(st.opRound); return (st.opHeard & m)===m; }
+
+function opPanel(st){
+  const round = st.opRound;              // 0 = 몇몇이 정하는 판 · 1 = 모두 말하는 판 · 2 = 끝
+  const open = opOpen(Math.min(round,1));
+  const heard = st.opHeard;
+  const done1 = st.opRes1, done2 = st.opRes2;
+
+  const title = round===0
+    ? `<div class="ka-bub" style="margin-bottom:10px"><b style="color:#DC2626">첫 번째 판</b> — 이 판에서는 <b>두 사람만</b> 의견을 낼 수 있어요. 자리를 눌러 의견을 들어 봐요.</div>`
+    : round===1
+      ? `<div class="ka-bub" style="margin-bottom:10px"><b style="color:#15803D">두 번째 판</b> — 이번에는 <b>여섯 사람 모두</b> 의견을 낼 수 있어요. 순서는 마음대로예요.</div>`
+      : `<div class="ka-bub" style="margin-bottom:10px">두 판을 나란히 놓고 봐요. <b>두 번 다 결정이 났어요.</b> 그런데 달라진 것이 하나 있어요.</div>`;
+
+  const seats = OP_SEAT.map((s,i)=>{
+    const isOpen = !!(open & (1<<i));
+    const said = !!(heard & (1<<i));
+    if(round===2){
+      return `<div class="op-seat said" data-seat="${i}"><div class="op-name">${s}</div><div class="op-idea">${OP_IDEA[i]}</div></div>`;
+    }
+    if(said){
+      return `<div class="op-seat said" data-seat="${i}"><div class="op-name">${s}</div><div class="op-idea">${OP_IDEA[i]}</div></div>`;
+    }
+    if(!isOpen){
+      return `<button class="op-seat lock" data-seat="${i}" onclick="opSay(${i})"><div class="op-name" style="color:#94A3B8">${s}</div><div class="op-idea">🔒 말할 수 없어요</div></button>`;
+    }
+    return `<button class="op-seat" data-seat="${i}" onclick="opSay(${i})"><div class="op-name">${s}</div><div class="op-idea">눌러서 의견 듣기</div></button>`;
+  }).join('');
+
+  const heardNow = opBits(heard & open);
+  const openNow = opBits(open);
+  const bar = round<2 ? `<div class="op-bar">
+    <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+      <b style="color:#4338CA">들은 의견 <span data-heard="${heardNow}">${heardNow}</span> / ${openNow}</b>
+      <b style="color:#64748B">우리 반 ${OP_N}명</b>
+    </div>
+    <div style="height:12px;background:#E2E8F0;border-radius:999px;overflow:hidden">
+      <div style="height:100%;width:${Math.round(heardNow/openNow*100)}%;background:linear-gradient(90deg,#818CF8,#4F46E5);transition:width .3s ease"></div>
+    </div></div>` : '';
+
+  const goBtn = round<2 ? `<button class="op-go" ${opAllHeard(st)?'':'disabled'} onclick="opDecide()">📋 이 판에서 정해요</button>` : '';
+
+  const res1 = done1!=null ? `<div class="op-card" style="border-color:#FCA5A5;background:#FEF2F2">
+    <b style="color:#B91C1C">첫 번째 판의 결정</b> — 결정이 났어요.
+    <b style="color:#DC2626">반영된 의견 <span data-r1="${done1}">${done1}</span> / ${OP_N}</b>
+    <div class="note" style="text-align:left;margin-top:4px">말하지 못한 자리가 <b>${OP_N-done1}</b>곳 있었어요.</div></div>` : '';
+  const res2 = done2!=null ? `<div class="op-card" style="border-color:#86EFAC;background:#F0FDF4">
+    <b style="color:#166534">두 번째 판의 결정</b> — 결정이 났어요.
+    <b style="color:#15803D">반영된 의견 <span data-r2="${done2}">${done2}</span> / ${OP_N}</b>
+    <div class="note" style="text-align:left;margin-top:4px">여섯 자리의 의견이 모두 들어갔어요.</div></div>` : '';
+
+  const closing = round===2 ? `<div class="ka-bub" style="border-left-color:#F57F17;background:#FFF8E1;max-width:640px">
+    두 판 모두 <b>결정은 났어요.</b> 달라진 것은 <span class="ka-emph">반영된 의견의 수</span>였지요.
+    이처럼 구성원들의 <b>다양한 의견을 반영하여</b> 사회 공동의 문제에 관한 의사 결정을 하는 방식을 <b style="color:#4F46E5">민주주의</b>라고 해요.</div>` : '';
+
+  const warn = st.opMsg ? `<div class="fb" style="color:#DC2626;font-weight:700;max-width:640px">${st.opMsg}</div>` : '';
+
+  return `<div class="op-bar" style="margin-bottom:10px"><div class="op-card" style="background:#F1F5F9;border-style:dashed">
+      <b>${OP_PROBLEM}</b></div></div>
+    ${title}${bar}
+    <div class="op-seats">${seats}</div>
+    ${warn}
+    <div style="margin-top:12px;width:100%;display:flex;flex-direction:column;gap:10px;align-items:center">${goBtn}${res1}${res2}${closing}</div>
+    <div class="note" style="margin-top:8px">※ 여섯 의견은 이해를 돕기 위해 판이 놓은 <b>예시</b>예요. 어느 의견도 정답이 아니에요.</div>`;
+}
+
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "1단원 민주주의와 자치 · 주제① 학교생활 속 민주주의";
+
+// 문제 정의(확인 4 + 적용 4) — 정답 분산 [1,3,0,2,2,0,3,1]
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"구성원들의 <b>다양한 의견을 반영하여</b> 사회 공동의 문제에 관한 의사 결정을 하는 방식을 무엇이라 할까요?",
+   opts:["봉사활동","민주주의","경제활동","여가활동"], correct:1, pts:POINTS_BASIC,
+   reason:"구성원들의 다양한 의견을 반영하여 사회 공동의 문제에 관한 의사 결정을 하는 방식을 민주주의라고 해요.",
+   h1:"오늘 배운 낱말이에요.",
+   h2:"\\u2018모두의 의견을 모아 함께 정하는 방식\\u2019을 가리켜요."},
+  {stem:"신문 기사에서 <b>학생 자치회 임원</b>을 어떻게 뽑았나요?",
+   opts:["선생님이 정해 주었다","가장 키가 큰 학생으로 정했다","제비뽑기로만 정했다","후보들의 공약을 듣고 투표를 해서 뽑았다"], correct:3, pts:POINTS_BASIC,
+   reason:"학생들은 후보들의 공약을 듣고 투표를 해서 학생 자치회 임원을 뽑았어요.",
+   h1:"학생들이 기표소에서 무엇을 했나요?",
+   h2:"공약을 듣고 → 투표를 했어요."},
+  {stem:"<b>민주주의 사회</b>에서 구성원들은 어떤가요?",
+   opts:["모두가 존중받고, 평등한 입장에서 의견을 말할 수 있어요","일부 사람만 의견을 말할 수 있어요","의견을 말하려면 허락을 받아야 해요","한 사람이 모두 정해 주어요"], correct:0, pts:POINTS_BASIC,
+   reason:"민주주의 사회에서는 구성원 모두가 인간으로서 존중받고, 평등한 입장에서 자신의 의견을 제시하고 자유롭게 행동할 수 있어요.",
+   h1:"\\u2018모두\\u2019인가요, \\u2018일부\\u2019인가요?",
+   h2:"존중 · 평등 · 자유 — 세 낱말을 떠올려 봐요."},
+  {stem:"일상생활에서 민주주의를 실천하는 모습이 <u>아닌</u> 것은?",
+   opts:["가족회의로 주말에 갈 곳을 정해요","학급 회의로 급식 먹는 순서를 정해요","한 사람이 모두의 일을 혼자 정해요","주민 회의로 축제를 열 장소를 정해요"], correct:2, pts:POINTS_BASIC,
+   reason:"가정·학교·지역에서 함께 의논해 정하는 것은 민주주의를 실천하는 모습이에요. 한 사람이 혼자 정하는 것은 여러 사람의 의견을 반영할 수 없어요.",
+   h1:"\\u2018함께 의논해서\\u2019 정한 것을 찾아봐요.",
+   h2:"혼자 정하는 자리가 하나 섞여 있어요."},
+  // 4단계 적용 (+15)
+  {stem:"의견함 판에서 <b>두 번 다 결정이 났는데</b> 달라진 것은 무엇이었나요?",
+   opts:["결정이 난 횟수","문제의 내용","반영된 의견의 수","자리의 개수"], correct:2, pts:POINTS_APPLY,
+   reason:"두 판 모두 결정은 났어요. 달라진 것은 반영된 의견이 둘이었는가, 여섯이었는가였지요.",
+   h1:"두 판의 결과 카드에 적힌 수를 견주어 봐요.",
+   h2:"\\u2018반영된 의견 2 / 6\\u2019 과 \\u2018반영된 의견 6 / 6\\u2019 이었어요."},
+  {stem:"한 사회에서 <b>몇몇 사람의 뜻대로만</b> 의견을 결정하면 어떤 문제가 생길까요?",
+   opts:["여러 사람의 의견을 반영할 수 없어요","결정이 아예 나지 않아요","문제가 저절로 사라져요","모두가 더 만족해요"], correct:0, pts:POINTS_APPLY,
+   reason:"몇몇 사람의 뜻대로 정하면 여러 사람의 의견을 반영할 수 없고, 결정을 내리는 일부 사람들에게만 유리한 선택을 할 수 있어요.",
+   h1:"첫 번째 판에서 네 사람은 어떻게 됐나요?",
+   h2:"말하지 못한 사람의 의견은 결정에 들어가지 못했어요."},
+  {stem:"학생 자치회 임원 선거가 <b>민주주의를 실천하는 사례</b>인 까닭은?",
+   opts:["선거를 자주 하기 때문에","기표소가 있었기 때문에","공약이 많았기 때문에","학생들의 의견을 반영해서 학교의 대표를 정하는 일이기 때문에"], correct:3, pts:POINTS_APPLY,
+   reason:"학생들의 다양한 의견을 투표로 확인하고 이를 반영해서 학생 자치회 임원을 결정한다는 점에서 민주주의를 실천하는 사례라고 할 수 있어요.",
+   h1:"누구의 의견이 결정에 들어갔나요?",
+   h2:"학생들의 의견을 반영해 대표를 정했어요."},
+  {stem:"민주주의가 <b>중요한 까닭</b>으로 알맞은 것은?",
+   opts:["결정을 빨리 내릴 수 있어서","구성원 모두가 존중받고 평등하게 의견을 낼 수 있어서","말을 잘하는 사람이 이길 수 있어서","의논하지 않아도 되어서"], correct:1, pts:POINTS_APPLY,
+   reason:"민주주의 사회에서는 구성원 모두가 인간으로서 존중받고, 평등한 입장에서 자신의 의견을 제시하고 자유롭게 행동할 수 있기 때문이에요.",
+   h1:"누가 존중받는지 떠올려 봐요.",
+   h2:"\\u2018모두\\u2019가 존중받고 \\u2018평등하게\\u2019 의견을 낼 수 있어요."}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — [생각을 열어요] 건의함
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">학교에 왜 의견함을 두었을까요?</h2>
+  <div class="ka-bub">학교 중앙 현관이나 급식실 앞에서 <b>건의함</b>을 본 적이 있나요? 학교는 왜 이런 상자를 두었을까요? <b>학교의 일에 학생들의 의견을 반영하기 위해서</b>랍니다.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('box','학교에 놓인 건의함')}</div>
+    <div class="note">오늘은 <b style="color:#4F46E5">민주주의의 의미</b>를 알아봐요.</div>
+  </div>`});
+// 2 살펴보기 — 함께 살면 생각이 달라 문제가 생겨요
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">함께 살다 보면 문제가 생겨요</h2>
+  <div class="ka-bub">사회에는 <b>다양한 사람들</b>이 모여 살아가요. 함께 살아가다 보면 <b>생각이 달라 문제가 생기기도</b> 하지요. 사회 구성원들은 이러한 <b>공동의 문제</b>를 서로 <b>의논하고 협력하면서</b> 해결해 나가요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('differ','생각이 달라요')}</div>
+  <div class="note">그렇다면 <b>누구의 의견까지</b> 들어야 할까요?</div></div>`});
+// 3 살펴보기 — 조작 안내
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">두 판을 견주어 봐요</h2>
+  <div class="ka-bub">우리 반에 공동의 문제가 하나 있어요. 이 문제를 <b>두 번</b> 정해 볼 거예요. 한 번은 <b style="color:#DC2626">두 사람만</b> 말하는 판에서, 또 한 번은 <b style="color:#15803D">여섯 사람 모두</b>가 말하는 판에서요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('gather','몇몇만 ↔ 모두')}</div>
+  <div class="note">두 판 모두 <b>결정은 날 거예요.</b> 그런데 무엇이 달라질까요?</div></div>`});
+// 4 살펴보기 — 직접 조작
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">자리를 눌러 의견을 들어 봐요</h2>
+  <div class="ka-grp" style="align-items:stretch">${opPanel(st)}</div>`});
+// 5 살펴보기 — 민주주의의 뜻
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">민주주의란 무엇일까요?</h2>
+  <div class="ka-bub">구성원들의 <b>다양한 의견을 반영</b>하여 <b>사회 공동의 문제</b>에 관한 <b>의사 결정을 하는 방식</b>을 <span class="ka-emph">민주주의</span>라고 해요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('mean','다양한 의견 → 함께 결정')}</div>
+  <div class="note">누가 정했느냐가 아니라 <b>누구의 의견이 반영됐느냐</b>가 중요해요.</div></div>`});
+// 6 살펴보기 — [미디어 활동] 신문 기사 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">이 선거는 왜 민주주의일까요?</h2>
+  <div class="ka-bub" style="font-size:clamp(14px,2.2vw,17px)"><b>○○ 초등학교 학생 자치회 임원 선거 실시</b><br>
+  후보들은 \\u2018깨끗한 학교 환경을 만들겠다.\\u2019, \\u2018활기찬 학교가 되도록 하겠다.\\u2019 등 다양한 <b>공약</b>을 발표했다. 학생들은 후보들의 공약을 듣고, 학생 선거 관리 위원회가 설치한 <b>기표소</b>에서 질서 있고 공정하게 <b>투표</b>에 참여했다.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('news','학생 자치회 임원 선거')}</div>
+  ${st.revealed?`<div class="answer-box">학생들의 <b>다양한 의견을 투표로 확인</b>하고 이를 <b>반영해서</b> 학생 자치회 임원을 결정한다는 점에서 <span class="ka-emph">민주주의를 실천하는 사례</span>라고 할 수 있어요.</div>`
+    :`<div class="note">학생들의 의견은 어떻게 결정에 들어갔을까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 7 살펴보기 — 민주주의가 중요한 까닭 + [스스로 활동] (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">민주주의는 왜 중요할까요?</h2>
+  <div class="ka-bub">민주주의 사회에서는 구성원 <b>모두가 인간으로서 존중받고</b>, <b>평등한 입장</b>에서 자신의 의견을 제시하고 <b>자유롭게 행동</b>할 수 있어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('life','가정 · 학교 · 지역 · 국가')}</div>
+  ${st.revealed?`<div class="answer-box">일상생활에서도 민주주의를 볼 수 있어요. <b>가족회의</b>로 주말에 여행 갈 장소를 정하고, <b>학급 회의</b>로 급식 먹는 순서를 정하고, <b>주민 회의</b>로 지역 축제를 열 장소를 정하고, <b>투표</b>로 국가의 중요한 일을 정하지요.</div>`
+    :`<div class="note">가정 · 학교 · 지역 · 국가에서는 어떤 모습일까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 배운 것을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('done','모두의 의견을 모았어요')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div><b style="color:#4F46E5">민주주의</b> = 구성원들의 <b>다양한 의견을 반영</b>하여 사회 공동의 문제에 관한 <b>의사 결정을 하는 방식</b>이에요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div>민주주의 사회에서는 구성원 <b>모두가 인간으로서 존중받고</b>, <b>평등한 입장</b>에서 자신의 의견을 제시하고 <b>자유롭게 행동</b>할 수 있어요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>가정 · 학교 · 지역 · 국가 어디에서나 민주주의를 실천할 수 있어요. ※ 실제 학급 회의는 <b>교실에서 친구들과 함께</b> 해 봐요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b style="color:#4F46E5">민주주의를 실천하기 위해 필요한 태도</b>를 알아볼 거예요.</div></div>`});
+// 17 자기 평가
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"민주주의의 의미를 설명할 수 있어요",st)}
+    ${selfCheck(1,"민주주의가 중요한 까닭을 설명할 수 있어요",st)}
+    ${selfCheck(2,"일상생활에서 민주주의를 실천하는 모습을 찾을 수 있어요",st)}
+  </div><div class="note">잘 떠오르지 않는 곳은 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">민주주의의 의미를 모두 배웠어요</h2>
+  <div class="ka-grp">
+    <div class="end-score">\\u2B50 ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">다양한 의견을 <b style="color:#4F46E5">반영</b>해서 함께 정하는 것 — 그것이 민주주의예요.</div>
+  </div>`;
+}});
+
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">⭕ 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">💡 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">💡 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g4_2_social_u1_l01";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  opRound:0, opHeard:0, opRes1:null, opRes2:null, opMsg:"",
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 →';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음 (브라우저에서만 · jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+function opDraw(){ main.innerHTML = slides[state.idx].render(state); }
+
+/* 자리를 눌러 의견 듣기 — 조작에 판정 0 · 점수 0 */
+function opSay(i){
+  if(!Number.isInteger(i) || i<0 || i>=OP_N) return;        // 가드: 무효 번호
+  if(state.opRound>=2) return;                              // 가드: 두 판을 다 정한 뒤
+  const open = opOpen(state.opRound);
+  if(!(open & (1<<i))){ state.opMsg = OP_LOCK_MSG; playThud(); opDraw(); return; }   // 가드: 잠긴 자리 — 판 불변
+  if(state.opHeard & (1<<i)){ state.opMsg = OP_SAID_MSG; opDraw(); return; }          // 가드: 이미 말한 자리 — 판 불변
+  state.opHeard |= (1<<i); state.opMsg = ""; playBlip();
+  opDraw();
+}
+/* 이 판에서 정하기 */
+function opDecide(){
+  if(state.opRound>=2) return;
+  if(!opAllHeard(state)){ state.opMsg = OP_WAIT_MSG; playThud(); opDraw(); return; }  // 가드: 다 듣기 전 — 판 불변
+  const n = opBits(state.opHeard & opOpen(state.opRound));
+  if(state.opRound===0){ state.opRes1 = n; state.opRound = 1; state.opHeard = 0; playBlip(); }
+  else { state.opRes2 = n; state.opRound = 2; playChime(); }
+  state.opMsg = "";
+  opDraw();
+}
+
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true; qs.wrongPick=null;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2; if(qs.hint===2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">📘 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 →</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // l02 미양산 — 허브 복귀
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
+</html>

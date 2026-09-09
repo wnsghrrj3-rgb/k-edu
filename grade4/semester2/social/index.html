@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4학년 2학기 사회 | K-edu</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans KR',sans-serif;background:#F5F7FA;min-height:100vh;color:#1A202C}
+
+.top-bar{background:#fff;border-bottom:1px solid #E2E8F0;height:52px;display:flex;align-items:center;padding:0 24px;gap:12px}
+.back-link{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:#718096;text-decoration:none;font-weight:500;transition:color .15s}
+.back-link:hover{color:#1A202C}
+.top-title{font-family:'Jua',sans-serif;font-size:16px;color:#1A202C}
+
+main{max-width:800px;margin:0 auto;padding:28px 20px 60px}
+
+.page-header{display:flex;align-items:center;gap:14px;margin-bottom:32px}
+.subject-badge{display:inline-flex;align-items:center;gap:6px;padding:8px 20px;border-radius:50px;font-family:'Jua',sans-serif;font-size:18px;color:#fff;background:#4F46E5}
+.page-title{font-family:'Jua',sans-serif;font-size:26px}
+
+.unit-section{margin-bottom:30px}
+.unit-header{display:flex;align-items:center;gap:10px;margin-bottom:6px;padding-bottom:8px;border-bottom:2px solid #E2E8F0}
+.unit-num{width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Jua',sans-serif;font-size:16px;color:#fff}
+.unit-name{font-family:'Jua',sans-serif;font-size:18px;color:#1A202C}
+.unit-count{font-size:13px;color:#A0AEC0;margin-left:auto}
+
+.sub-header{font-size:13px;font-weight:700;color:#718096;margin:16px 0 8px;padding-left:2px}
+
+.lesson-list{display:flex;flex-direction:column;gap:8px}
+.lesson-card{display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:14px 18px;box-shadow:0 1px 8px rgba(0,0,0,.05);cursor:pointer;text-decoration:none;color:#1A202C;border:2px solid transparent;transition:transform .15s,border-color .15s,box-shadow .15s}
+.lesson-card:hover{transform:translateY(-2px);border-color:var(--uc);box-shadow:0 6px 20px rgba(0,0,0,.1)}
+.lesson-num{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Jua',sans-serif;font-size:14px;color:#fff;background:var(--uc);flex-shrink:0}
+.lesson-title{font-size:14px;font-weight:500;flex:1}
+.lesson-arrow{color:#CBD5E0;font-size:16px}
+.lesson-badge{font-size:11px;padding:2px 8px;border-radius:50px;font-weight:500;flex-shrink:0}
+.badge-tb{background:#EBF8FF;color:#2B6CB0}
+.badge-soon{background:#EDF2F7;color:#A0AEC0}
+
+.lesson-card-soon{background:#FAFAFA;box-shadow:none;border:1px dashed #E2E8F0;cursor:default;opacity:.7}
+.lesson-card-soon:hover{transform:none;border-color:#E2E8F0;box-shadow:none}
+.lesson-card-soon .lesson-num{background:#CBD5E0!important}
+.lesson-card-soon .lesson-title{color:#A0AEC0}
+
+footer{text-align:center;padding:18px 24px;border-top:1px solid #E2E8F0;background:#fff}
+.footer-text{font-size:12px;color:#A0AEC0}
+.footer-text strong{color:#718096;font-weight:500}
+.footer-text a{color:#5B8EF8;text-decoration:none;margin-left:10px}
+.footer-text a:hover{text-decoration:underline}
+
+@media(max-width:600px){
+  .page-header{flex-direction:column;align-items:flex-start;gap:8px}
+  .page-title{font-size:22px}
+  .lesson-card{padding:12px 14px}
+}
+</style>
+  <script src="/kedu_gate.js"></script>
+<script src="/kedu_boxbar.js"></script>
+</head>
+<body>
+
+<div class="top-bar">
+  <a class="back-link" href="/?view=subject">← 홈</a>
+  <span style="color:#E2E8F0">|</span>
+  <span class="top-title">🌏 4학년 2학기 사회</span>
+</div>
+
+<main>
+  <div class="page-header">
+    <div class="subject-badge">🔥 4학년 · 2학기</div>
+    <div class="page-title">🌏 사회</div>
+  </div>
+
+  <div id="content"></div>
+</main>
+
+<footer>
+  <p class="footer-text">Copyright © 2025 <strong>K-edu</strong> · Developed by Choe Jun-ho (Kumsung Elementary School) · All rights reserved.
+  <a href="/privacy/">개인정보 처리방침</a>
+  <a href="/terms/">서비스 이용약관</a></p>
+</footer>
+
+<script>
+const DIR1 = "1단원_민주주의와자치/";
+const DIR2 = "2단원_지역문제해결과지역알리기/";
+const DIR3 = "3단원_다양한환경과삶의모습/";
+
+const UNITS = [
+  {
+    num: 1, name: "민주주의와 자치", emoji: "🗳️", color: "#4F46E5",
+    subunits: [
+      { sub: "① 학교생활 속 민주주의", lessons: [
+        {n:1, file:DIR1+"g4_social_u1_l01_민주주의의의미.html", title:"민주주의의 의미를 알아볼까요", track:"tb"},
+        {n:2, file:DIR1+"g4_social_u1_l02_실천태도.html", title:"민주주의를 실천하기 위해 필요한 태도를 알아볼까요", track:"soon"},
+        {n:3, file:DIR1+"g4_social_u1_l03_학교실천사례.html", title:"학교생활에서 민주주의를 실천하는 사례를 찾아볼까요", track:"soon"},
+        {n:4, file:DIR1+"g4_social_u1_l04_학교실천하기.html", title:"[할 수 있어요] 학교생활에서 민주주의를 실천해 볼까요", track:"soon"},
+        {n:5, file:DIR1+"g4_social_u1_l05_주제①정리.html", title:"[생각을 펼쳐요] 학교생활 속 민주주의 정리", track:"soon"}
+      ]},
+      { sub: "② 주민 자치와 민주주의", lessons: [
+        {n:1, file:DIR1+"g4_social_u1_l06_주민자치.html", title:"주민 자치가 무엇인지 알아볼까요", track:"soon"},
+        {n:2, file:DIR1+"g4_social_u1_l07_주민참여까닭.html", title:"주민 참여가 중요한 까닭을 알아볼까요", track:"soon"},
+        {n:3, file:DIR1+"g4_social_u1_l08_주민참여방법.html", title:"주민 참여의 방법을 알아볼까요", track:"soon"},
+        {n:4, file:DIR1+"g4_social_u1_l09_주민자치사례조사.html", title:"우리 지역의 주민 자치 사례를 조사해 볼까요", track:"soon"},
+        {n:5, file:DIR1+"g4_social_u1_l10_주민자치참여.html", title:"[할 수 있어요] 주민 자치에 참여해 볼까요", track:"soon"},
+        {n:6, file:DIR1+"g4_social_u1_l11_단원정리.html", title:"1단원 민주주의와 자치 정리", track:"soon"}
+      ]}
+    ]
+  },
+  {
+    num: 2, name: "지역문제를 해결하고 지역을 알리는 노력", emoji: "🤝", color: "#B45309",
+    subunits: [
+      { sub: "① 지역문제의 해결", lessons: [
+        {n:1, file:DIR2+"g4_social_u2_l01_지역문제란.html", title:"지역문제가 무엇인지 알아볼까요", track:"soon"},
+        {n:2, file:DIR2+"g4_social_u2_l02_우리지역의문제.html", title:"우리 지역의 문제를 찾아볼까요", track:"soon"},
+        {n:3, file:DIR2+"g4_social_u2_l03_문제의원인.html", title:"지역문제가 일어나는 원인을 알아볼까요", track:"soon"},
+        {n:4, file:DIR2+"g4_social_u2_l04_해결방안찾기.html", title:"지역문제의 해결 방안을 찾아볼까요", track:"soon"},
+        {n:5, file:DIR2+"g4_social_u2_l05_해결방안실천.html", title:"[할 수 있어요] 해결 방안을 실천해 볼까요", track:"soon"},
+        {n:6, file:DIR2+"g4_social_u2_l06_주제①정리.html", title:"[생각을 펼쳐요] 지역문제의 해결 정리", track:"soon"}
+      ]},
+      { sub: "② 지역을 알리는 노력", lessons: [
+        {n:1, file:DIR2+"g4_social_u2_l07_자랑거리.html", title:"우리 지역의 자랑거리를 알아볼까요", track:"soon"},
+        {n:2, file:DIR2+"g4_social_u2_l08_알리는노력.html", title:"지역을 알리는 다양한 노력을 알아볼까요", track:"soon"},
+        {n:3, file:DIR2+"g4_social_u2_l09_알리는활동.html", title:"[할 수 있어요] 우리 지역을 알리는 활동을 해 볼까요", track:"soon"},
+        {n:4, file:DIR2+"g4_social_u2_l10_주제②정리.html", title:"[생각을 펼쳐요] 지역을 알리는 노력 정리", track:"soon"},
+        {n:5, file:DIR2+"g4_social_u2_l11_단원정리.html", title:"2단원 지역문제를 해결하고 지역을 알리는 노력 정리", track:"soon"}
+      ]}
+    ]
+  },
+  {
+    num: 3, name: "다양한 환경과 삶의 모습", emoji: "🏞️", color: "#0891B2",
+    subunits: [
+      { sub: "① 지역의 환경과 변화", lessons: [
+        {n:1, file:DIR3+"g4_social_u3_l01_자연환경과인문환경.html", title:"자연환경과 인문환경을 알아볼까요", track:"soon"},
+        {n:2, file:DIR3+"g4_social_u3_l02_산이많은지역.html", title:"산이 많은 지역의 생활 모습을 알아볼까요", track:"soon"},
+        {n:3, file:DIR3+"g4_social_u3_l03_들이펼쳐진지역.html", title:"들이 펼쳐진 지역의 생활 모습을 알아볼까요", track:"soon"},
+        {n:4, file:DIR3+"g4_social_u3_l04_바다가있는지역.html", title:"바다가 있는 지역의 생활 모습을 알아볼까요", track:"soon"},
+        {n:5, file:DIR3+"g4_social_u3_l05_환경의이용과개발.html", title:"환경의 이용과 개발을 알아볼까요", track:"soon"},
+        {n:6, file:DIR3+"g4_social_u3_l06_주제①정리.html", title:"[생각을 펼쳐요] 지역의 환경과 변화 정리", track:"soon"}
+      ]},
+      { sub: "② 도시의 특징과 생활 모습", lessons: [
+        {n:1, file:DIR3+"g4_social_u3_l07_도시란.html", title:"도시가 무엇인지 알아볼까요", track:"soon"},
+        {n:2, file:DIR3+"g4_social_u3_l08_도시의특징.html", title:"도시의 특징을 알아볼까요", track:"soon"},
+        {n:3, file:DIR3+"g4_social_u3_l09_도시사람들의생활.html", title:"도시 사람들의 생활 모습을 알아볼까요", track:"soon"},
+        {n:4, file:DIR3+"g4_social_u3_l10_도시생활의좋은점과문제점.html", title:"도시 생활의 좋은 점과 문제점을 알아볼까요", track:"soon"},
+        {n:5, file:DIR3+"g4_social_u3_l11_주제②정리.html", title:"[생각을 펼쳐요] 도시의 특징과 생활 모습 정리", track:"soon"},
+        {n:6, file:DIR3+"g4_social_u3_l12_단원정리.html", title:"3단원 다양한 환경과 삶의 모습 정리", track:"soon"}
+      ]}
+    ]
+  }
+];
+
+const content = document.getElementById('content');
+UNITS.forEach((unit) => {
+  const allLessons = unit.subunits.flatMap(s => s.lessons);
+  const tbCount = allLessons.filter(l => l.track === 'tb').length;
+  const soonCount = allLessons.filter(l => l.track === 'soon').length;
+
+  const section = document.createElement('div');
+  section.className = 'unit-section';
+
+  let html = `
+    <div class="unit-header">
+      <div class="unit-num" style="background:${unit.color}">${unit.num}</div>
+      <div class="unit-name">${unit.emoji} ${unit.num}단원: ${unit.name}</div>
+      <div class="unit-count">라이브 ${tbCount}차시${soonCount ? ' · 준비 중 ' + soonCount : ''}</div>
+    </div>
+  `;
+
+  unit.subunits.forEach(su => {
+    html += `<div class="sub-header">${su.sub}</div>`;
+    html += `<div class="lesson-list">`;
+    html += su.lessons.map(l => l.track === 'tb' ? `
+      <a class="lesson-card" href="${l.file}" style="--uc:${unit.color}">
+        <div class="lesson-num">${l.n}</div>
+        <div class="lesson-title">${l.title}</div>
+        <span class="lesson-badge badge-tb">교과서</span>
+        <div class="lesson-arrow">›</div>
+      </a>
+    ` : `
+      <div class="lesson-card lesson-card-soon">
+        <div class="lesson-num">${l.n}</div>
+        <div class="lesson-title">${l.title}</div>
+        <span class="lesson-badge badge-soon">준비 중</span>
+      </div>
+    `).join('');
+    html += `</div>`;
+  });
+
+  section.innerHTML = html;
+  content.appendChild(section);
+});
+</script>
+<script src="/kedu_accordion.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_next.js"></script><!-- 이어서 하기 — 다음 차시 카드 (2026-09-04) -->
+</body>
+</html>

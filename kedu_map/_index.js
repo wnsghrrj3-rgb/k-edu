@@ -97,6 +97,12 @@ window.KEDU_MAP_INDEX = [
   "ready": 5
  },
  {
+  "key": "g4_2_social",
+  "units": 3,
+  "lessons": 34,
+  "ready": 1
+ },
+ {
   "key": "g5_1_korean",
   "units": 6,
   "lessons": 47,
