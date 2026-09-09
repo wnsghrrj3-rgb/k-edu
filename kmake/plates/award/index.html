@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>3D 상장 — 케이메이커 틀 시험</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{ --navy:#0B2545; --gold:#D9B65C; --ink:#2b2b2b; }
+  *{box-sizing:border-box}
+  body{margin:0;background:#111;color:#eee;font-family:Pretendard,'Noto Sans KR',system-ui,sans-serif}
+  header{padding:14px 20px;border-bottom:1px solid #222;display:flex;align-items:center;gap:12px}
+  header b{color:var(--gold)} header small{color:#888}
+  main{display:grid;grid-template-columns:1fr 340px;gap:18px;padding:18px;max-width:1400px;margin:0 auto}
+  @media (max-width:900px){ main{grid-template-columns:1fr} }
+  .stage{background:#000;border-radius:12px;overflow:hidden;aspect-ratio:16/9;position:relative}
+  canvas{width:100%;height:100%;display:block}
+  .bar{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center}
+  button{background:#1d2b44;color:#fff;border:1px solid #2e4470;border-radius:8px;padding:9px 14px;cursor:pointer;font-size:14px}
+  button.pri{background:var(--gold);color:#221;border-color:#b99a45;font-weight:700}
+  button:disabled{opacity:.45;cursor:default}
+  input[type=range]{flex:1;min-width:140px}
+  .panel label{display:block;font-size:12px;color:#aaa;margin:10px 0 4px}
+  .panel input,.panel textarea{width:100%;background:#191919;color:#fff;border:1px solid #333;border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit}
+  .panel textarea{min-height:76px;resize:vertical}
+  .note{font-size:12px;color:#888;line-height:1.6;margin-top:14px;border-top:1px solid #222;padding-top:10px}
+  .msg{font-size:13px;color:#ccc;min-height:18px}
+</style>
+</head>
+<body>
+<header><b>3D 상장</b><small>틀은 블렌더로 미리 구움 · 글자만 여기서 얹음 · 서버 0</small></header>
+<main>
+  <section>
+    <div class="stage"><canvas id="cv"></canvas></div>
+    <div class="bar">
+      <button id="play" class="pri">▶ 재생</button>
+      <input id="seek" type="range" min="0" max="100" value="100">
+      <button id="png">PNG 저장</button>
+      <button id="webm">영상 저장 (WebM)</button>
+      <span class="msg" id="msg"></span>
+    </div>
+  </section>
+  <aside class="panel">
+    <label>상 이름</label><input id="f-title" value="모범상">
+    <label>학년 반</label><input id="f-class" value="1학년 2반">
+    <label>이름</label><input id="f-name" value="김하늘">
+    <label>본문</label><textarea id="f-body">위 어린이는 바른 마음과 성실한 태도로
+학급의 모범이 되었기에
+이 상장을 주어 칭찬합니다.</textarea>
+    <label>날짜</label><input id="f-date" value="2026년 12월 24일">
+    <label>학교명</label><input id="f-school" value="○○초등학교장">
+    <div class="note">
+      틀(책상·종이·금테·도장·리본·빛·카메라)은 <code>award-wood-warm.mp4</code> 한 파일. 카메라가 멈추는 순간부터 글자가 종이 위로 떠오릅니다.<br>
+      지금 틀은 시험 화질(640×360). 원화질은 같은 스크립트를 준호 PC 블렌더로.
+    </div>
+  </aside>
+</main>
+<script>
+(async () => {
+  const $ = (s) => document.querySelector(s);
+  const cv = $('#cv'), ctx = cv.getContext('2d'), msg = $('#msg');
+  const meta = await (await fetch('../award-wood-warm.json')).json();
+  const W = meta.width, H = meta.height, FPS = meta.fps, N = meta.frames;
+  cv.width = W; cv.height = H;
+  const holdSec = (meta.hold_from - 1) / FPS, totalSec = N / FPS;
+
+  /* ---- 틀 영상 ---- */
+  const vid = document.createElement('video');
+  vid.src = '../award-wood-warm.mp4'; vid.muted = true; vid.playsInline = true; vid.preload = 'auto';
+  await new Promise((r) => { vid.onloadeddata = r; });
+
+  /* ---- 종이 공간(mm 기준 → 5px/mm) 글자층 ---- */
+  const MM = 5, PW = meta.paper_mm[0] * MM, PH = meta.paper_mm[1] * MM;
+  const paper = document.createElement('canvas'); paper.width = PW; paper.height = PH;
+  const pc = paper.getContext('2d');
+  const F = (w, mm) => `${w} ${mm * MM}px 'Noto Serif KR','Nanum Myeongjo','바탕',serif`;
+  const fields = () => ({
+    title: $('#f-title').value, cls: $('#f-class').value, name: $('#f-name').value,
+    body: $('#f-body').value.split('\n').filter(Boolean), date: $('#f-date').value, school: $('#f-school').value,
+  });
+  /* 줄마다 등장 시각(초, hold 이후) — 순서대로 떠오름 */
+  const LINES = (f) => [
+    { t: 0.00, y: 56,  font: F(900, 13), text: f.title, color: '#7a1414', ls: 8 },
+    { t: 0.30, y: 96,  font: F(500, 5.2), text: f.cls, color: '#333' },
+    { t: 0.45, y: 112, font: F(700, 8.5), text: f.name, color: '#111' },
+    ...f.body.map((s, i) => ({ t: 0.75 + i * 0.18, y: 150 + i * 11, font: F(500, 5.0), text: s, color: '#222' })),
+    { t: 1.40, y: 214, font: F(500, 4.8), text: f.date, color: '#333' },
+    { t: 1.60, y: 248, font: F(700, 6.2), text: f.school, color: '#111', x: 92 },
+  ];
+  const ease = (u) => u * u * (3 - 2 * u);
+  function drawPaper(sec) {
+    pc.clearRect(0, 0, PW, PH);
+    const f = fields();
+    for (const L of LINES(f)) {
+      const u = Math.max(0, Math.min(1, (sec - holdSec - L.t) / 0.55));
+      if (u <= 0) continue;
+      const e = ease(u);
+      pc.save();
+      pc.globalAlpha = e;
+      pc.font = L.font; pc.fillStyle = L.color; pc.textAlign = 'center'; pc.textBaseline = 'middle';
+      if (L.ls) pc.letterSpacing = `${L.ls * MM}px`;
+      const x = (L.x ?? meta.paper_mm[0] / 2) * MM, y = L.y * MM + (1 - e) * 9 * MM;   // 아래서 살짝 떠오름
+      pc.fillText(L.text, x, y);
+      pc.restore();
+    }
+  }
+
+  /* ---- 원근 합성: 종이 사각형 → 화면 네 점 (삼각형 격자 아핀 근사) ---- */
+  const GRID = 22;
+  function homography(c) {   // 단위 사각형 → 네 점 [TL,TR,BR,BL] 사영 변환
+    const [[x0, y0], [x1, y1], [x2, y2], [x3, y3]] = c;
+    const dx1 = x1 - x2, dx2 = x3 - x2, dx3 = x0 - x1 + x2 - x3;
+    const dy1 = y1 - y2, dy2 = y3 - y2, dy3 = y0 - y1 + y2 - y3;
+    const det = dx1 * dy2 - dx2 * dy1;
+    const g = (dx3 * dy2 - dx2 * dy3) / det, h = (dx1 * dy3 - dx3 * dy1) / det;
+    const a = x1 - x0 + g * x1, b = x3 - x0 + h * x3, d = y1 - y0 + g * y1, e = y3 - y0 + h * y3;
+    return (u, v) => { const w = g * u + h * v + 1; return [(a * u + b * v + x0) / w, (d * u + e * v + y0) / w]; };
+  }
+  function drawWarped(src, corners) {
+    const P = homography(corners);
+    const sw = src.width / GRID, sh = src.height / GRID;
+    for (let i = 0; i < GRID; i++) for (let j = 0; j < GRID; j++) {
+      const u0 = i / GRID, v0 = j / GRID, u1 = (i + 1) / GRID, v1 = (j + 1) / GRID;
+      const p00 = P(u0, v0), p10 = P(u1, v0), p01 = P(u0, v1), p11 = P(u1, v1);
+      tri(src, [i * sw, j * sh], [(i + 1) * sw, j * sh], [i * sw, (j + 1) * sh], p00, p10, p01);
+      tri(src, [(i + 1) * sw, (j + 1) * sh], [i * sw, (j + 1) * sh], [(i + 1) * sw, j * sh], p11, p01, p10);
+    }
+  }
+  function tri(src, s0, s1, s2, d0, d1, d2) {
+    ctx.save();
+    ctx.beginPath(); ctx.moveTo(d0[0], d0[1]); ctx.lineTo(d1[0], d1[1]); ctx.lineTo(d2[0], d2[1]); ctx.closePath(); ctx.clip();
+    const [x0, y0] = s0, [x1, y1] = s1, [x2, y2] = s2;
+    const den = (x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0);
+    const a = ((d1[0] - d0[0]) * (y2 - y0) - (d2[0] - d0[0]) * (y1 - y0)) / den;
+    const b = ((d1[1] - d0[1]) * (y2 - y0) - (d2[1] - d0[1]) * (y1 - y0)) / den;
+    const c = ((d2[0] - d0[0]) * (x1 - x0) - (d1[0] - d0[0]) * (x2 - x0)) / den;
+    const d = ((d2[1] - d0[1]) * (x1 - x0) - (d1[1] - d0[1]) * (x2 - x0)) / den;
+    ctx.transform(a, b, c, d, d0[0] - a * x0 - c * y0, d0[1] - b * x0 - d * y0);
+    ctx.drawImage(src, 0, 0);
+    ctx.restore();
+  }
+
+  /* ---- 한 프레임 ---- */
+  function cornersAt(sec) {
+    const fr = Math.max(1, Math.min(N, Math.round(sec * FPS) + 1));
+    return meta.corners[fr];
+  }
+  function draw(sec) {
+    ctx.drawImage(vid, 0, 0, W, H);
+    drawPaper(sec);
+    if (sec >= holdSec - 0.001) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'multiply';       // 잉크가 종이에 스민 듯 (금테·빛은 그대로)
+      drawWarped(paper, cornersAt(sec));
+      ctx.restore();
+    }
+  }
+  const seekTo = (sec) => new Promise((r) => { const on = () => { vid.removeEventListener('seeked', on); r(); }; vid.addEventListener('seeked', on); vid.currentTime = Math.min(sec, totalSec - 0.001); });
+
+  /* ---- 재생·스크럽 ---- */
+  const seek = $('#seek'); let raf = 0;
+  async function showAt(sec) { await seekTo(sec); draw(sec); }
+  seek.oninput = () => showAt(seek.value / 100 * totalSec);
+  $('#play').onclick = async () => {
+    cancelAnimationFrame(raf); await seekTo(0); vid.play();
+    const loop = () => { const s = vid.currentTime; draw(s); seek.value = s / totalSec * 100; if (!vid.ended && !vid.paused) raf = requestAnimationFrame(loop); else draw(totalSec - 0.001); };
+    raf = requestAnimationFrame(loop);
+  };
+  for (const el of document.querySelectorAll('.panel input,.panel textarea')) el.oninput = () => draw(vid.currentTime);
+
+  /* ---- 저장 ---- */
+  $('#png').onclick = async () => { await showAt(totalSec - 0.001); const a = document.createElement('a'); a.download = '3d상장.png'; a.href = cv.toDataURL('image/png'); a.click(); };
+  $('#webm').onclick = async () => {
+    /* 시험 경로: 재생하면서 캔버스 녹화. 제품 경로(WebCodecs MP4, MK_VIDEO)는 케이메이커 접합 때. */
+    if (!('MediaRecorder' in window)) { msg.textContent = '이 브라우저는 영상 저장을 지원하지 않아요'; return; }
+    const stream = cv.captureStream(30), chunks = [];
+    const rec = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 6_000_000 });
+    rec.ondataavailable = (e) => chunks.push(e.data);
+    rec.onstop = () => { const a = document.createElement('a'); a.download = '3d상장.webm'; a.href = URL.createObjectURL(new Blob(chunks, { type: 'video/webm' })); a.click(); msg.textContent = '저장했어요'; };
+    msg.textContent = '녹화 중…'; rec.start(); $('#play').click();
+    vid.onended = () => { setTimeout(() => rec.stop(), 300); vid.onended = null; };
+  };
+
+  await showAt(totalSec - 0.001);
+})();
+</script>
+</body>
+</html>
