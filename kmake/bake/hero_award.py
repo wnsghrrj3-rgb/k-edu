@@ -15,6 +15,9 @@ R142 — 「3D 상장」 틀 굽기 (케이메이커 뒷공장)
   시험(여기·CPU):  python hero_award.py -- OUT_DIR --w 640 --h 360 --fps 12 --samples 8
   원화질(준호 PC): blender -b -P hero_award.py -- OUT_DIR --w 1920 --h 1080 --fps 24 --samples 128
   좌표만(렌더 0초): python hero_award.py -- OUT_DIR --json-only
+  판·분위기(R147):  --style wood-warm (기본, 원목·따뜻·금테·붉은 리본)
+                    --style marble-cool (흰 대리석·시원한 빛·은테·네이비 리본) → award-marble-cool.*
+  ※ 틀 하나 = 스크립트 하나. 판을 늘릴 땐 스크립트 복제 말고 STYLES 에 한 줄.
   → 이어서: ffmpeg -framerate 24 -i award-wood-warm_%04d.png -c:v libx264 -pix_fmt yuv420p -crf 18 award-wood-warm.mp4
 
 타임라인(초): 0.0~2.0 카메라 진입 · 1.6~2.4 도장 내려앉기 · 2.3~3.3 리본 풀림 · 2.0~ 카메라 고정(hold) → 글자층 시간
@@ -32,7 +35,21 @@ W, H, FPS, SAMPLES = arg('--w', 640), arg('--h', 360), arg('--fps', 12), arg('--
 SEC = 4.0
 JSON_ONLY = '--json-only' in argv
 FR_START = arg('--from', 1)     # 이어 굽기용
-NAME = 'award-wood-warm'
+STYLE = arg('--style', 'wood-warm')
+# R147 — 판·분위기 한 표. 색은 선형(scene-linear) RGB. palette 는 브라우저 글자층 잉크색(JSON 으로 나감)
+STYLES = {
+    'wood-warm': dict(
+        desk='wood', paper=(0.92, 0.88, 0.78), metal=(1.0, 0.72, 0.28), ribbon=(0.62, 0.05, 0.08),
+        key=(1.0, 0.92, 0.80), fill=(0.85, 0.90, 1.0), rim=(1.0, 0.85, 0.65), world=(0.02, 0.015, 0.012),
+        palette=dict(title='#7a1414', name='#111', body='#222', sub='#333'), label='원목 책상 · 따뜻한 빛'),
+    'marble-cool': dict(
+        desk='marble', paper=(0.93, 0.93, 0.91), metal=(0.93, 0.94, 0.96), ribbon=(0.015, 0.045, 0.18),
+        key=(0.90, 0.95, 1.0), fill=(0.95, 0.97, 1.0), rim=(0.80, 0.90, 1.0), world=(0.012, 0.016, 0.024),
+        palette=dict(title='#0B2545', name='#101820', body='#1e2733', sub='#33404f'), label='흰 대리석 · 시원한 빛'),
+}
+if STYLE not in STYLES: sys.exit(f'--style 는 {list(STYLES)} 중 하나')
+ST = STYLES[STYLE]
+NAME = 'award-' + STYLE
 os.makedirs(OUT, exist_ok=True)
 
 # ---------------------------------------------------------------- 씬 초기화
@@ -82,9 +99,32 @@ def mat_wood():
     b.inputs['Coat Weight'].default_value = 0.30                 # 니스 칠
     return m
 
+def mat_marble():
+    """흰 대리석 — 큰 노이즈로 회색 결(vein) 두 겹, 유리광(코트) 얹음"""
+    m, nt, b = new_mat('marble')
+    tc = nt.nodes.new('ShaderNodeTexCoord')
+    vein = nt.nodes.new('ShaderNodeTexNoise'); vein.inputs['Scale'].default_value = 2.2
+    vein.inputs['Detail'].default_value = 8.0; vein.inputs['Roughness'].default_value = 0.7; vein.inputs['Distortion'].default_value = 1.6
+    ramp = nt.nodes.new('ShaderNodeValToRGB')
+    ramp.color_ramp.elements[0].position = 0.36; ramp.color_ramp.elements[0].color = (0.30, 0.31, 0.33, 1)   # 결
+    ramp.color_ramp.elements[1].position = 0.50; ramp.color_ramp.elements[1].color = (0.86, 0.86, 0.85, 1)   # 바탕
+    fine = nt.nodes.new('ShaderNodeTexNoise'); fine.inputs['Scale'].default_value = 12.0; fine.inputs['Detail'].default_value = 6.0
+    ramp2 = nt.nodes.new('ShaderNodeValToRGB')
+    ramp2.color_ramp.elements[0].position = 0.40; ramp2.color_ramp.elements[0].color = (0.62, 0.63, 0.65, 1)
+    ramp2.color_ramp.elements[1].position = 0.48; ramp2.color_ramp.elements[1].color = (1.0, 1.0, 1.0, 1)
+    mixc = nt.nodes.new('ShaderNodeMix'); mixc.data_type = 'RGBA'; mixc.blend_type = 'MULTIPLY'; mixc.inputs['Factor'].default_value = 0.8
+    L = nt.links
+    L.new(tc.outputs['Object'], vein.inputs['Vector']); L.new(tc.outputs['Object'], fine.inputs['Vector'])
+    L.new(vein.outputs['Fac'], ramp.inputs['Fac']); L.new(fine.outputs['Fac'], ramp2.inputs['Fac'])
+    L.new(ramp.outputs['Color'], mixc.inputs[6]); L.new(ramp2.outputs['Color'], mixc.inputs[7])
+    L.new(mixc.outputs[2], b.inputs['Base Color'])
+    b.inputs['Roughness'].default_value = 0.18
+    b.inputs['Coat Weight'].default_value = 0.6; b.inputs['Coat Roughness'].default_value = 0.05   # 연마 광
+    return m
+
 def mat_paper():
     m, nt, b = new_mat('paper')
-    b.inputs['Base Color'].default_value = (0.92, 0.88, 0.78, 1)
+    b.inputs['Base Color'].default_value = (*ST['paper'], 1)
     b.inputs['Roughness'].default_value = 0.85
     noise = nt.nodes.new('ShaderNodeTexNoise'); noise.inputs['Scale'].default_value = 900.0
     bump = nt.nodes.new('ShaderNodeBump'); bump.inputs['Strength'].default_value = 0.05
@@ -92,8 +132,9 @@ def mat_paper():
     return m
 
 def mat_gold(rough=0.22):
+    """테·도장 금속 — 스타일에 따라 금 또는 은 (이름은 관성)"""
     m, nt, b = new_mat('gold')
-    b.inputs['Base Color'].default_value = (1.0, 0.72, 0.28, 1)
+    b.inputs['Base Color'].default_value = (*ST['metal'], 1)
     b.inputs['Metallic'].default_value = 1.0
     b.inputs['Roughness'].default_value = rough
     noise = nt.nodes.new('ShaderNodeTexNoise'); noise.inputs['Scale'].default_value = 300.0
@@ -103,12 +144,12 @@ def mat_gold(rough=0.22):
 
 def mat_ribbon():
     m, nt, b = new_mat('ribbon')
-    b.inputs['Base Color'].default_value = (0.62, 0.05, 0.08, 1)
+    b.inputs['Base Color'].default_value = (*ST['ribbon'], 1)
     b.inputs['Roughness'].default_value = 0.45
-    b.inputs['Sheen Weight'].default_value = 0.35; b.inputs['Sheen Tint'].default_value = (0.62, 0.05, 0.08, 1)  # 새틴 광
+    b.inputs['Sheen Weight'].default_value = 0.35; b.inputs['Sheen Tint'].default_value = (*ST['ribbon'], 1)  # 새틴 광
     return m
 
-M_WOOD, M_PAPER, M_GOLD, M_RIB = mat_wood(), mat_paper(), mat_gold(), mat_ribbon()
+M_WOOD, M_PAPER, M_GOLD, M_RIB = (mat_marble() if ST['desk'] == 'marble' else mat_wood()), mat_paper(), mat_gold(), mat_ribbon()
 
 # ---------------------------------------------------------------- 부품
 def box(name, size, loc, mat, rot=(0, 0, 0)):
@@ -230,11 +271,11 @@ def light(name, kind, loc, energy, color=(1, 1, 1), size=0.5, target=(0, 0, 0)):
     if kind == 'SPOT': o.data.spot_size = math.radians(40); o.data.spot_blend = 0.6; o.data.shadow_soft_size = 0.15
     d = Vector(target) - Vector(loc); o.rotation_euler = d.to_track_quat('-Z', 'Y').to_euler()
     return o
-light('key',  'AREA', (-0.55, -0.45, 0.75), 24, (1.0, 0.92, 0.80), size=0.8)
-light('fill', 'AREA', ( 0.95,  0.55, 0.85),  6, (0.85, 0.90, 1.0), size=1.6)   # 반사 하이라이트가 카메라로 안 오게 뒤쪽 위
-light('rim',  'SPOT', ( 0.10,  0.60, 0.55), 40, (1.0, 0.85, 0.65))
+light('key',  'AREA', (-0.55, -0.45, 0.75), 24, ST['key'], size=0.8)
+light('fill', 'AREA', ( 0.95,  0.55, 0.85),  6, ST['fill'], size=1.6)   # 반사 하이라이트가 카메라로 안 오게 뒤쪽 위
+light('rim',  'SPOT', ( 0.10,  0.60, 0.55), 40, ST['rim'])
 world = bpy.data.worlds.new('w'); sc.world = world; world.use_nodes = True
-world.node_tree.nodes['Background'].inputs['Color'].default_value = (0.02, 0.015, 0.012, 1)
+world.node_tree.nodes['Background'].inputs['Color'].default_value = (*ST['world'], 1)
 world.node_tree.nodes['Background'].inputs['Strength'].default_value = 1.0
 
 # ---------------------------------------------------------------- 카메라
@@ -296,7 +337,8 @@ def paper_corners_px(frame):
     return pts
 
 meta = {
-    'name': NAME, 'width': W, 'height': H, 'fps': FPS, 'frames': sc.frame_end,
+    'name': NAME, 'style': STYLE, 'label': ST['label'], 'palette': ST['palette'],   # R147 — 브라우저 글자층 잉크색
+    'width': W, 'height': H, 'fps': FPS, 'frames': sc.frame_end,
     'hold_from': HOLD_FROM,                                   # 이 프레임부터 카메라 고정 → 글자층 시작
     'paper_mm': [210, 297],
     'seal_px': None,
