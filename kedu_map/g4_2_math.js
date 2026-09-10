@@ -439,14 +439,74 @@ window.KEDU_MAP["g4_2_math"] = {
    "kind": "unit",
    "lessons": [
     {
-     "key": null,
-     "lessonId": null,
-     "n": "",
-     "title": "준비 중이에요",
+     "key": "g4_math_u6_l01",
+     "lessonId": "g4_2_math_u6_l01_v1",
+     "n": "1",
+     "title": "평면도형의 이동을 만나 볼까요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/math/6단원_평면도형의이동/g4_math_u6_l01_평면도형의이동을만나볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_math_u6_l02",
+     "lessonId": "g4_2_math_u6_l02_v1",
+     "n": "2",
+     "title": "점의 이동을 알아볼까요",
+     "sub": null,
+     "url": "/grade4/semester2/math/6단원_평면도형의이동/g4_math_u6_l02_점의이동을알아볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_math_u6_l03",
+     "lessonId": "g4_2_math_u6_l03_v1",
+     "n": "3",
+     "title": "평면도형을 밀어 볼까요",
+     "sub": null,
+     "url": "/grade4/semester2/math/6단원_평면도형의이동/g4_math_u6_l03_평면도형을밀어볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_math_u6_l04",
+     "lessonId": "g4_2_math_u6_l04_v1",
+     "n": "4",
+     "title": "평면도형을 뒤집어 볼까요",
+     "sub": null,
+     "url": "/grade4/semester2/math/6단원_평면도형의이동/g4_math_u6_l04_평면도형을뒤집어볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_math_u6_l05",
+     "lessonId": "g4_2_math_u6_l05_v1",
+     "n": "5",
+     "title": "평면도형을 돌려 볼까요",
+     "sub": null,
+     "url": "/grade4/semester2/math/6단원_평면도형의이동/g4_math_u6_l05_평면도형을돌려볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_math_u6_l06",
+     "lessonId": "g4_2_math_u6_l06_v1",
+     "n": "6",
+     "title": "나만의 무늬를 만들어 볼까요 (창의)",
+     "sub": null,
+     "url": "/grade4/semester2/math/6단원_평면도형의이동/g4_math_u6_l06_나만의무늬를만들어볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_math_u6_l07",
+     "lessonId": "g4_2_math_u6_l07_v1",
+     "n": "7",
+     "title": "스스로 마무리해요 (단원 평가)",
+     "sub": null,
+     "url": "/grade4/semester2/math/6단원_평면도형의이동/g4_math_u6_l07_스스로마무리해요.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }
