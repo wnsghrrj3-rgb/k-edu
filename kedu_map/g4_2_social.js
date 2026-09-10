@@ -64,14 +64,14 @@ window.KEDU_MAP["g4_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_social_u1_l06",
+     "lessonId": "g4_social_u1_l06_v1",
      "n": "1",
      "title": "주민 자치가 무엇인지 알아볼까요",
      "sub": "② 주민 자치와 민주주의",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/social/1단원_민주주의와자치/g4_social_u1_l06_주민자치.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
