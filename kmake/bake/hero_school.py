@@ -20,6 +20,8 @@ hold 이후는 브라우저가 실사 사진으로 녹여 넣는 자리(plates/s
   한 장만:         python hero_school.py -- OUT --still 5.0   (5.0초 시점 한 프레임)
   드론 인트로:     python hero_school.py -- OUT --shot orbit   (R148 「하늘에서 한 바퀴」 — 다 지어진 학교를 드론이 앞쪽 하늘에서
                    왼쪽 높이 → 정면 사진 자리로 반 바퀴 훑어 내려온다 · 조립 애니 없음 · 산출 school-orbit_####.png / .json)
+  불 켜지는 저녁:  python hero_school.py -- OUT --shot night   (R149 「불이 켜지는 저녁」 — 정면 사진 자리에서 시작해(브라우저가 실사→3D 로 녹임)
+                   해가 지며 하늘이 네이비로, 창마다 불이 켜지고 카메라가 천천히 물러나 떠오른다 · 조립 애니 없음 · 산출 school-night_####.png / .json)
   → 이어서: ffmpeg -framerate 24 -i school-build_%04d.png -c:v libx264 -pix_fmt yuv420p -crf 18 school-build.mp4
 """
 import bpy, math, json, sys, os
@@ -30,13 +32,17 @@ OUT = argv[0] if argv else '/tmp/school'
 def arg(k, d):
     return type(d)(argv[argv.index(k) + 1]) if k in argv else d
 W, H, FPS, SAMPLES = arg('--w', 640), arg('--h', 360), arg('--fps', 12), arg('--samples', 8)
-SHOT = arg('--shot', 'build')       # R148: build(지어진다) · orbit(하늘에서 한 바퀴)
-SEC = 7.0 if SHOT == 'build' else 8.0
-HOLD = 5.6 if SHOT == 'build' else 6.6
+SHOT = arg('--shot', 'build')       # R148: build(지어진다) · orbit(하늘에서 한 바퀴) · R149: night(불이 켜지는 저녁)
+SEC = {'build': 7.0, 'orbit': 8.0, 'night': 8.0}[SHOT]
+HOLD = {'build': 5.6, 'orbit': 6.6, 'night': 7.0}[SHOT]   # night: 카메라가 멈춰 자막이 뜨는 끝 자리(사진 자리는 시작 쪽 — PHOTO_AT)
+PHOTO_AT = 'start' if SHOT == 'night' else 'end'          # R149: 실사와 맞닿는 프레임이 앞인가 뒤인가 — 페이지가 디졸브 방향을 정한다
+PHOTO_HOLD = 1.6                                          # night: 이 초까지 카메라가 사진 자리에 고정(브라우저 실사→3D 디졸브 구간)
+T_DUSK = (1.0, 6.2)                                       # night: 해 지는 구간(하늘·해·사진 발광)
+T_CAM = (PHOTO_HOLD, 7.0)                                 # night: 카메라 물러나 떠오르는 구간
 STILL = arg('--still', -1.0)
 FR_START = arg('--from', 1)
 FEATHER = arg('--feather', 0.18)   # R146 운동장 사진 가장자리 페더 폭(UV, 0=끄기)
-NAME = 'school-build' if SHOT == 'build' else 'school-orbit'
+NAME = 'school-' + SHOT
 FONT = arg('--font', '/usr/share/fonts/opentype/noto/NotoSerifCJK-Bold.ttc')
 os.makedirs(OUT, exist_ok=True)
 
@@ -69,6 +75,29 @@ ramp.color_ramp.elements[0].position = 0.0; ramp.color_ramp.elements[0].color = 
 ramp.color_ramp.elements[1].position = 0.6; ramp.color_ramp.elements[1].color = (0.55, 0.62, 0.72, 1)   # 천정: 옅은 청회
 wn.links.new(tc.outputs['Generated'], sep.inputs['Vector']); wn.links.new(sep.outputs['Z'], ramp.inputs['Fac'])
 wn.links.new(ramp.outputs['Color'], bg.inputs['Color']); bg.inputs['Strength'].default_value = 1.0
+NIGHT = None   # R149: 밤 정도(0 낮 → 1 저녁) — 월드·해·사진 발광·창불이 전부 이 한 값의 키를 따른다
+if SHOT == 'night':
+    NIGHT = wn.nodes.new('ShaderNodeValue'); NIGHT.name = 'night'; NIGHT.outputs[0].default_value = 0.0
+    dusk = wn.nodes.new('ShaderNodeValToRGB')                                   # 저녁 하늘: 지평선 주황 → 보랏빛 → 천정 네이비(케이메이커 결)
+    dusk.color_ramp.elements[0].position = 0.0; dusk.color_ramp.elements[0].color = (0.95, 0.42, 0.16, 1)
+    dusk.color_ramp.elements[1].position = 0.55; dusk.color_ramp.elements[1].color = (0.020, 0.028, 0.10, 1)
+    e2 = dusk.color_ramp.elements.new(0.18); e2.color = (0.34, 0.16, 0.26, 1)
+    wn.links.new(sep.outputs['Z'], dusk.inputs['Fac'])
+    vor = wn.nodes.new('ShaderNodeTexVoronoi'); vor.inputs['Scale'].default_value = 300.0; vor.inputs['Randomness'].default_value = 1.0   # 별: 보로노이 셀 중심 근처만 흰 점
+    wn.links.new(tc.outputs['Generated'], vor.inputs['Vector'])
+    st = wn.nodes.new('ShaderNodeMapRange'); st.inputs['From Min'].default_value = 0.0; st.inputs['From Max'].default_value = 0.06
+    st.inputs['To Min'].default_value = 1.0; st.inputs['To Max'].default_value = 0.0; st.clamp = True
+    wn.links.new(vor.outputs['Distance'], st.inputs['Value'])
+    up = wn.nodes.new('ShaderNodeMapRange'); up.inputs['From Min'].default_value = 0.12; up.inputs['From Max'].default_value = 0.45; up.clamp = True   # 지평선 근처엔 별 없음(노을)
+    wn.links.new(sep.outputs['Z'], up.inputs['Value'])
+    m1 = wn.nodes.new('ShaderNodeMath'); m1.operation = 'MULTIPLY'; wn.links.new(st.outputs['Result'], m1.inputs[0]); wn.links.new(up.outputs['Result'], m1.inputs[1])
+    m2 = wn.nodes.new('ShaderNodeMath'); m2.operation = 'MULTIPLY'; wn.links.new(m1.outputs['Value'], m2.inputs[0]); wn.links.new(NIGHT.outputs[0], m2.inputs[1])
+    m3 = wn.nodes.new('ShaderNodeMath'); m3.operation = 'MULTIPLY'; wn.links.new(m2.outputs['Value'], m3.inputs[0]); wn.links.new(NIGHT.outputs[0], m3.inputs[1])   # night² — 어두워진 뒤에야 별
+    stars = wn.nodes.new('ShaderNodeMix'); stars.data_type = 'RGBA'; stars.blend_type = 'ADD'
+    wn.links.new(m3.outputs['Value'], stars.inputs['Factor']); wn.links.new(dusk.outputs['Color'], stars.inputs[6]); stars.inputs[7].default_value = (0.9, 0.92, 1.0, 1)
+    mixsky = wn.nodes.new('ShaderNodeMix'); mixsky.data_type = 'RGBA'
+    wn.links.new(NIGHT.outputs[0], mixsky.inputs['Factor']); wn.links.new(ramp.outputs['Color'], mixsky.inputs[6]); wn.links.new(stars.outputs[2], mixsky.inputs[7])
+    wn.links.new(mixsky.outputs[2], bg.inputs['Color'])
 
 PXM, PX0, HORIZ, EYE, CAMD = 26.4, 768.0, 790.0, 1.8, 64.7
 FPX = 40 / 36 * 1536                                  # 40mm·36mm 센서·1536px
@@ -191,7 +220,7 @@ def mat_photo(path, facing=True, name='photo', fallback=(0.30, 0.14, 0.10), feat
     nt.links.new(uv.outputs['UV'], tex.inputs['Vector']); nt.links.new(tex.outputs['Color'], b.inputs['Base Color'])
     b.inputs['Roughness'].default_value = 0.8
     # 사진 그대로가 정답 → 발광(무음영) 0.78 + 햇빛 음영 0.22 섞음: 끝 프레임은 사진, 짓는 동안은 입체감
-    em = nt.nodes.new('ShaderNodeEmission'); em.inputs['Strength'].default_value = 1.0
+    em = nt.nodes.new('ShaderNodeEmission'); em.inputs['Strength'].default_value = 1.0; em.name = 'dayem'   # R149: night 에선 이 강도가 낮의 사진빛 → 저녁으로 키를 탄다
     nt.links.new(tex.outputs['Color'], em.inputs['Color'])
     mix = nt.nodes.new('ShaderNodeMixShader'); mix.inputs['Fac'].default_value = 0.78
     out = nt.nodes['Material Output']
@@ -203,8 +232,8 @@ def mat_photo(path, facing=True, name='photo', fallback=(0.30, 0.14, 0.10), feat
     dot = nt.nodes.new('ShaderNodeVectorMath'); dot.operation = 'DOT_PRODUCT'
     ramp = nt.nodes.new('ShaderNodeMapRange'); ramp.inputs['From Min'].default_value = -0.35; ramp.inputs['From Max'].default_value = -0.12
     ramp.inputs['To Min'].default_value = 1.0; ramp.inputs['To Max'].default_value = 0.0
-    side = nt.nodes.new('ShaderNodeBsdfDiffuse'); side.inputs['Color'].default_value = (*fallback, 1)
-    if SHOT == 'orbit' and facing:       # R148 드론 시점: 영사기를 등진 옆벽이 큰 면으로 보임 → 민무늬 대신 벽돌 무늬(옆벽·앞벽 둘 다 서게 x+y, z 로 깔음)
+    side = nt.nodes.new('ShaderNodeBsdfDiffuse'); side.inputs['Color'].default_value = (*fallback, 1); side.name = 'side'   # R149 night: 사진 밖 땅은 이 색이 어두워진다
+    if SHOT in ('orbit', 'night') and facing:       # R148 드론 시점: 영사기를 등진 옆벽이 큰 면으로 보임 → 민무늬 대신 벽돌 무늬(옆벽·앞벽 둘 다 서게 x+y, z 로 깔음)
         gco = nt.nodes.new('ShaderNodeTexCoord'); gsep = nt.nodes.new('ShaderNodeSeparateXYZ'); nt.links.new(gco.outputs['Object'], gsep.inputs['Vector'])
         gadd = nt.nodes.new('ShaderNodeMath'); gadd.operation = 'ADD'; nt.links.new(gsep.outputs['X'], gadd.inputs[0]); nt.links.new(gsep.outputs['Y'], gadd.inputs[1])
         gcomb = nt.nodes.new('ShaderNodeCombineXYZ'); nt.links.new(gadd.outputs['Value'], gcomb.inputs['X']); nt.links.new(gsep.outputs['Z'], gcomb.inputs['Y'])
@@ -213,7 +242,7 @@ def mat_photo(path, facing=True, name='photo', fallback=(0.30, 0.14, 0.10), feat
     nt.links.new(geo.outputs['Position'], tocam.inputs[0]); nt.links.new(tocam.outputs['Vector'], nrm.inputs[0])
     nt.links.new(nrm.outputs['Vector'], dot.inputs[0]); nt.links.new(geo.outputs['Normal'], dot.inputs[1])
     nt.links.new(dot.outputs['Value'], ramp.inputs['Value'])
-    if not facing and SHOT == 'orbit' and name == 'photo_sky':   # R148: 드론 구간엔 배경판을 투명(세계 하늘 그라데이션)으로 두고 hold 1.2초 전부터 사진 하늘로 드러냄 — 비스듬한 시점에서 판이 벽처럼 보이던 것
+    if not facing and SHOT in ('orbit', 'night') and name == 'photo_sky':   # R149 night: 사진 하늘이 저녁 하늘(월드)로 걷힘 — reveal 1→0   # R148: 드론 구간엔 배경판을 투명(세계 하늘 그라데이션)으로 두고 hold 1.2초 전부터 사진 하늘로 드러냄 — 비스듬한 시점에서 판이 벽처럼 보이던 것
         REVEAL.append(nt)
     if not facing:                       # 운동장·배경판: 스침각이라도 사진, 사진 밖만 대체색
         if feather > 0:                  # R146 운동장 가장자리 페더: 사진을 밖으로 늘려(가장자리 흐림→대체색) 미리 만든 이미지를 씀 — 사진 안쪽 픽셀은 그대로(hold 프레임 무변화)
@@ -236,7 +265,7 @@ def mat_photo(path, facing=True, name='photo', fallback=(0.30, 0.14, 0.10), feat
     inpic = nt.nodes.new('ShaderNodeMath'); inpic.operation = 'MULTIPLY'
     nt.links.new(ramp.outputs['Result'], inpic.inputs[0]); nt.links.new(tex.outputs['Alpha'], inpic.inputs[1])
     nt.links.new(inpic.outputs['Value'], mix2.inputs['Fac']); nt.links.new(side.outputs['BSDF'], mix2.inputs[1]); nt.links.new(mix.outputs['Shader'], mix2.inputs[2])
-    if SHOT == 'orbit':                  # R148 드론 시점: 위를 보는 면(옥상)은 벽돌색 대신 콘크리트 — 하늘에서 내려다보면 옥상이 큰 면이라
+    if SHOT in ('orbit', 'night'):                  # R148 드론 시점: 위를 보는 면(옥상)은 벽돌색 대신 콘크리트 — 하늘에서 내려다보면 옥상이 큰 면이라
         sepn = nt.nodes.new('ShaderNodeSeparateXYZ'); nt.links.new(geo.outputs['Normal'], sepn.inputs['Vector'])
         upr = nt.nodes.new('ShaderNodeMapRange'); upr.inputs['From Min'].default_value = 0.35; upr.inputs['From Max'].default_value = 0.7
         nt.links.new(sepn.outputs['Z'], upr.inputs['Value'])
@@ -256,6 +285,27 @@ M = dict(brick=mat_brick(), concrete=mat_flat('concrete', (0.62, 0.62, 0.58), 0.
 _SKY = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'plates', 'school-photo-sky.png')   # 하늘만 남긴 RGBA(건물·땅 알파 0)
 _PHOTO0 = arg('--photo', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'plates', 'school-photo-clean.png'))
 if os.path.exists(_PHOTO0): M['photo'] = mat_photo(_PHOTO0); M['photo_ground'] = mat_photo(_PHOTO0, facing=False, name='photo_ground', fallback=(0.74, 0.69, 0.60) if SHOT == 'build' else (0.52, 0.50, 0.43), feather=FEATHER); M['photo_sky'] = mat_photo(_SKY if os.path.exists(_SKY) else _PHOTO0, facing=False, name='photo_sky', fallback=(0.80, 0.82, 0.85))   # R145: 배경판엔 하늘만(알파) — 비스듬한 카메라에서 건물 사진이 뒤판에 한 번 더 비치던 문제 · R148 orbit: 땅 대체색은 사진 밖 땅이 화면 대부분이라 덜 하얗게
+
+LIT = []   # R149: (obj, t_on) — 창·등·현관 불 켜지는 시각. 재질은 오브젝트 속성 'lit'(0→1) 을 읽어 발광을 섞는다(재질 하나·오브젝트마다 키)
+def _lit_attr(nt):
+    a = nt.nodes.new('ShaderNodeAttribute'); a.attribute_type = 'OBJECT'; a.attribute_name = 'lit'; return a
+def mat_photo_window():
+    """창: 사진 재질 그대로 + 오브젝트 'lit' 만큼 따뜻한 빛 (R149)"""
+    m = mat_photo(_PHOTO0, name='photo_win'); nt = m.node_tree; out = nt.nodes['Material Output']
+    prev = out.inputs['Surface'].links[0].from_socket
+    em = nt.nodes.new('ShaderNodeEmission'); em.inputs['Color'].default_value = (1.0, 0.52, 0.20, 1); em.inputs['Strength'].default_value = 1.4   # AgX 에서 하얗게 타지 않는 선(첫 시험 7.0 은 흰 판이 됨)
+    mx = nt.nodes.new('ShaderNodeMixShader'); nt.links.new(_lit_attr(nt).outputs['Fac'], mx.inputs['Fac'])
+    nt.links.new(prev, mx.inputs[1]); nt.links.new(em.outputs['Emission'], mx.inputs[2]); nt.links.new(mx.outputs['Shader'], out.inputs['Surface'])
+    return m
+def mat_lamp(rgb, strength):
+    m, nt, b = new_mat('lamp'); out = nt.nodes['Material Output']
+    b.inputs['Base Color'].default_value = (0.9, 0.9, 0.9, 1); b.inputs['Roughness'].default_value = 0.4
+    em = nt.nodes.new('ShaderNodeEmission'); em.inputs['Color'].default_value = (*rgb, 1); em.inputs['Strength'].default_value = strength
+    mx = nt.nodes.new('ShaderNodeMixShader'); nt.links.new(_lit_attr(nt).outputs['Fac'], mx.inputs['Fac'])
+    nt.links.new(b.outputs['BSDF'], mx.inputs[1]); nt.links.new(em.outputs['Emission'], mx.inputs[2]); nt.links.new(mx.outputs['Shader'], out.inputs['Surface'])
+    return m
+if SHOT == 'night' and 'photo' in M:
+    M['photo_win'] = mat_photo_window(); M['lamp'] = mat_lamp((1.0, 0.76, 0.48), 22.0)
 
 # ---------------------------------------------------------------- 도형 (원점 = 바닥 중심 → scale.z 로 "자라남")
 BUILD = []   # (obj, kind, t0, t1)  kind: rise(z 0→1) · pop(전체 0→1) · drop(위에서 내려옴) · slidex(x 0→1)
@@ -310,7 +360,7 @@ def ball(name, x, y, z, r, mat, t0, t1):
 # ---------------------------------------------------------------- 지형 (정적)
 bpy.ops.mesh.primitive_grid_add(size=400, x_subdivisions=120, y_subdivisions=120); g = bpy.context.object; g.name = 'ground'; g.data.materials.append(M['sand'])
 g.location = (15, 20, 0)
-if SHOT == 'orbit': g.scale = (5, 5, 1)   # R148 드론 높이에선 400m 땅 끝이 지평선 아래로 보임 → 2km 로(사진 밖은 어차피 대체색)
+if SHOT in ('orbit', 'night'): g.scale = (5, 5, 1)   # R148 드론 높이에선 400m 땅 끝이 지평선 아래로 보임 → 2km 로(사진 밖은 어차피 대체색)
 
 # ---------------------------------------------------------------- 사진 단위 (R144-2: 나무 없는 사진 school-photo-clean.png 1536×1024 에서 읽음)
 # 앞면(y=0) 기준 px/m=26.4, 화면 가로 원점 px 700 → x=0, 지평선 py 790(카메라 눈높이 1.8m).
@@ -411,13 +461,25 @@ box('canopy', -36, 46, -8.2, -5.8, CZ - 0.45, CZ, M['gglass'], 'drop', 3.7, 4.2)
 for i in range(24):
     x = -35 + i * 3.5
     cyl(f'cpost{i}', x, -6.0, Z(770, -6), CZ - 0.45, 0.07, M['steel'], 'rise', 3.4 + i * 0.015, 3.7 + i * 0.015)
+if SHOT == 'night':                                             # R149: 먼 산 능선 — 저녁 하늘에 검은 실루엣(낮엔 사진 하늘판 뒤라 안 보이고, 하늘판이 걷히며 드러남)
+    import random as _r; _m = _r.Random(149); hill = mat_flat('hill', (0.05, 0.06, 0.10), 0.95)
+    for i in range(38):
+        x = -1400 + i * 76 + _m.uniform(-25, 25); h = _m.uniform(45, 130) * (1.0 if abs(x) > 300 else 0.75); w = _m.uniform(120, 260)
+        bpy.ops.mesh.primitive_uv_sphere_add(radius=1.0, segments=16, ring_count=10); o = bpy.context.object; o.name = f'hill{i}'
+        o.scale = (w, w * 0.6, h); o.location = (x, 900 + _m.uniform(-60, 60), -h * 0.15); o.data.materials.append(hill); bpy.ops.object.shade_smooth()
+    # 캐노피 아래 등 12 (기둥 하나 걸러) · 정문 아치 · 현관·유리벽·창은 아래 LIT 표에서 (기둥 하나 걸러) · 정문 아치 · 현관·유리벽·창은 아래 LIT 표에서
+    for i in range(0, 24, 2):
+        bpy.ops.mesh.primitive_uv_sphere_add(radius=0.22, segments=12, ring_count=8); o = bpy.context.object; o.name = f'lamp{i}'
+        o.location = (-35 + i * 3.5, -6.0, CZ - 0.75); o.data.materials.append(M['lamp']); bpy.ops.object.shade_smooth()
+        LIT.append((o, 2.2 + i * 0.03))
 # 나무: 정리 사진엔 없음 — 끝에 실사(원본, 나무 있음)로 녹아들 때 나무가 생긴다
 # 뒤 배경판(하늘) — 사진 하늘을 그대로 (먼 평면, 카메라가 움직여도 시차 작음)
-box('backdrop', -400 if SHOT == 'build' else -1500, 400 if SHOT == 'build' else 1500, 120, 121, 0, 260, PH, 'rise', 0, 0.01)   # R148 orbit: 비스듬한 시점에서 판 끝이 안 보이게 넓힘
+box('backdrop', -400 if SHOT == 'build' else -1500, 400 if SHOT == 'build' else 1500, 120, 121, 0, 260 if SHOT != 'night' else 420, PH, 'rise', 0, 0.01)   # R149 night: 떠오르는 카메라가 판 위를 넘겨보지 않게 높임   # R148 orbit: 비스듬한 시점에서 판 끝이 안 보이게 넓힘
 # R148 드론 시점: 건물 뒤 땅은 정면 사진의 영사 그늘(관람석 픽셀이 늘어짐) → 건물 발자국 뒤에 무광 뒷마당 판을 깐다(정면 hold 카메라에선 건물에 가려 안 보임)
 BACKLOT = None
-if SHOT == 'orbit':
-    BACKLOT = box('backlot', -1000, 1000, 26, 1000, 0, 0.03, mat_flat('backlot', (0.60, 0.58, 0.50), 0.95), 'rise', 0, 0.01)   # 건물 뒷선(y 24·30) 뒤 전부 — 정면 hold 에선 관람석·건물에 가림
+if SHOT in ('orbit', 'night'):
+    BACKLOT = box('backlot', -1000, 1000, 26, 1000, 0, 0.03, mat_flat('backlot', (0.60, 0.58, 0.50), 0.95), 'rise', 0, 0.01)
+    if SHOT == 'night': BACKLOT.data.materials[0].node_tree.nodes['Principled BSDF'].name = 'lotbsdf'   # 건물 뒷선(y 24·30) 뒤 전부 — 정면 hold 에선 관람석·건물에 가림
 g.data.materials.clear(); g.data.materials.append(PH)   # 운동장도 사진
 
 # ---------------------------------------------------------------- 사진 영사 (고정 카메라 자리에서 사진을 모형 위로)
@@ -426,8 +488,9 @@ proj = bpy.data.objects.new('proj', pc); sc.collection.objects.link(proj)
 proj.location = (0, -CAMD, EYE); proj.rotation_euler = (math.radians(90) + PITCH, 0, 0)      # 정면(+Y), 사진과 같은 올려봄
 if 'photo' in M:
     for o in sc.objects:
-        if o.type != 'MESH' or o.name == 'backlot': continue
-        o.data.materials.clear(); o.data.materials.append(M['photo_ground'] if o.name == 'ground' else M['photo_sky'] if o.name == 'backdrop' else M['photo'])      # 모형 전체에 사진 (교명 3D 글자만 남색)
+        if o.type != 'MESH' or o.name == 'backlot' or o.name.startswith(('lamp', 'hill')): continue
+        iswin = SHOT == 'night' and (o.name.startswith(('gwin', 'rwin')) or o.name in ('glasswall', 'entry_glass'))
+        o.data.materials.clear(); o.data.materials.append(M['photo_ground'] if o.name == 'ground' else M['photo_sky'] if o.name == 'backdrop' else M['photo_win'] if iswin else M['photo'])      # 모형 전체에 사진 (교명 3D 글자만 남색)
         if 'proj' not in o.data.uv_layers: o.data.uv_layers.new(name='proj')
         if o.name != 'ground':
             dim = max(o.dimensions)
@@ -480,6 +543,9 @@ for o, kind, t0, t1 in (BUILD if SHOT == 'build' else []):   # orbit: 다 지어
 
 # 카메라: 왼쪽 위에서 돌아 들어와 정면 사진 자리로 (프레임마다 직접 계산)
 CAM_PATH = [(0.0, (-40, -55, 16), (-6, 6, 9)), (2.6, (-22, -66, 9), (-3, 2, 6)), (HOLD, (0, -CAMD, EYE), (0, 0, LOOKZ))]
+PHOTO_CAM = dict(loc=(0, -CAMD, EYE), look=(0, 0, LOOKZ))   # 세 틀이 공유하는 「사진 자리」(build·orbit 끝 · night 시작) — JSON 의 camera
+if SHOT == 'night':   # R149: 사진 자리에 PHOTO_HOLD 초 고정 → 한 번 ease 로 뒤·위로 물러나며 떠오름(드론이 멀어지듯) → HOLD 부터 고정
+    CAM_PATH = [(0.0, PHOTO_CAM['loc'], PHOTO_CAM['look']), (T_CAM[0], PHOTO_CAM['loc'], PHOTO_CAM['look']), (T_CAM[1], (-4, -104, 22), (1, 3, 9))]
 # R148 orbit: 앞쪽 하늘 반 바퀴 — 왼쪽 높이(운동장 너머) → 정면 앞 멀리 → 오른쪽 살짝 지나 → 사진 자리로 가라앉음. 경유점을 캣멀롬 곡선으로 잇고
 # 시간은 전체 한 번 ease(드론처럼 천천히 떠서 천천히 멈춤). 건물 뒤(y>24)로는 안 감 — 영사 사진의 뒷면은 없다.
 ORBIT = [((-84, -66, 46), (-6, 8, 9)), ((-72, -88, 32), (-3, 5, 9)), ((-30, -108, 21), (0, 3, 8)), ((14, -96, 10), (1, 1, 7)), ((0, -CAMD, EYE), (0, 0, LOOKZ))]
@@ -502,15 +568,42 @@ for fr in range(1, NF + 1):
     p, l = cam_at((fr - 1) / FPS)
     co.location = p; co.keyframe_insert('location', frame=fr)
     tgt.location = l; tgt.keyframe_insert('location', frame=fr)
-for nt in REVEAL:                      # R148 배경판 드러내기: HOLD-1.2s → HOLD 에 0→1 (hold 프레임은 build 틀과 같은 사진 하늘)
+for nt in REVEAL:                      # R148 배경판 드러내기: HOLD-1.2s → HOLD 에 0→1 (hold 프레임은 build 틀과 같은 사진 하늘) · R149 night: 사진 하늘 1→0 (해 지는 동안 월드 저녁 하늘로)
     rv = nt.nodes['reveal']
     for fr in range(1, NF + 1):
         sec = (fr - 1) / FPS
-        rv.outputs[0].default_value = ease(clamp01((sec - (HOLD - 1.2)) / 1.2)); rv.outputs[0].keyframe_insert('default_value', frame=fr)
+        v = ease(clamp01((sec - (HOLD - 1.2)) / 1.2)) if SHOT != 'night' else 1.0 - ease(clamp01((sec - T_DUSK[0]) / (T_DUSK[1] - T_DUSK[0])))
+        rv.outputs[0].default_value = v; rv.outputs[0].keyframe_insert('default_value', frame=fr)
+if SHOT == 'night':                    # R149: 해 지기 — 한 값(night 0→1)을 월드·해·사진 발광이 같이 탄다 / 불 켜기 — 창마다 제 시각에 0.5초 만에
+    def night_at(sec): return ease(clamp01((sec - T_DUSK[0]) / (T_DUSK[1] - T_DUSK[0])))
+    dayems = [m.node_tree.nodes['dayem'] for m in (M['photo'], M['photo_ground'], M['photo_sky'], M['photo_win'])]
+    for fr in range(1, NF + 1):
+        n = night_at((fr - 1) / FPS)
+        NIGHT.outputs[0].default_value = n; NIGHT.outputs[0].keyframe_insert('default_value', frame=fr)
+        sun.energy = 2.2 * (1 - n) ** 1.6 + 0.10 * n; sun.keyframe_insert('energy', frame=fr)
+        sun.color = (1.0, 0.98 - 0.36 * n, 0.95 - 0.60 * n); sun.keyframe_insert('color', frame=fr)
+        so.rotation_euler = (math.radians(50 + 34 * n), 0, math.radians(-35 - 30 * n)); so.keyframe_insert('rotation_euler', frame=fr)
+        for em in dayems:
+            em.inputs['Strength'].default_value = 1.0 * (1 - n) + 0.05 * n; em.inputs['Strength'].keyframe_insert('default_value', frame=fr)
+        for sock, day in ((M['photo_ground'].node_tree.nodes['side'].inputs['Color'], (0.52, 0.50, 0.43)), (BACKLOT.data.materials[0].node_tree.nodes['lotbsdf'].inputs['Base Color'], (0.60, 0.58, 0.50))):
+            sock.default_value = (*[d * (1 - n) + k * n for d, k in zip(day, (0.31, 0.27, 0.24))], 1); sock.keyframe_insert('default_value', frame=fr)   # 사진 밖 땅·뒷마당은 밤에 검게(밝은 모래가 보랏빛 판이 되던 것)
+    import random; rnd = random.Random(20260911)   # 결정적 — 같은 순서로 구워짐
+    wins = [o for o in sc.objects if o.type == 'MESH' and o.name.startswith(('gwin', 'rwin'))]
+    for o in wins:
+        if rnd.random() < 0.15: continue                       # 몇 창은 끝까지 어둡게(퇴근한 교실)
+        LIT.append((o, 2.6 + rnd.random() * 3.0, 0.55 + rnd.random() * 0.45))   # 교실마다 밝기가 다르다(형광등·커튼)
+    LIT += [(sc.objects['entry_glass'], 2.8, 0.9), (sc.objects['glasswall'], 3.3, 0.7)]
+    for o, t_on, *peak in LIT:
+        pk = peak[0] if peak else 1.0; o['lit'] = 0.0
+        for fr in range(1, NF + 1):
+            sec = (fr - 1) / FPS
+            o['lit'] = pk * ease(clamp01((sec - t_on) / 0.5)); o.keyframe_insert('["lit"]', frame=fr)
+            if sec > t_on + 1.0: break
 
 # ---------------------------------------------------------------- 출력
 meta = dict(name=NAME, width=W, height=H, fps=FPS, frames=int(SEC * FPS), hold_from=f(HOLD), sec=SEC, shot=SHOT,
-            camera=dict(loc=CAM_PATH[2][1], look=CAM_PATH[2][2], lens=cam.lens))
+            camera=dict(loc=PHOTO_CAM['loc'], look=PHOTO_CAM['look'], lens=cam.lens), photo_at=PHOTO_AT)
+if SHOT == 'night': meta['photo_until'] = f(PHOTO_HOLD)   # 이 프레임까지 사진 자리 — 페이지가 실사→3D 디졸브를 이 앞에서 끝낸다
 with open(os.path.join(OUT, NAME + '.json'), 'w', encoding='utf-8') as fh: json.dump(meta, fh, ensure_ascii=False, indent=1)
 
 if STILL >= 0:
