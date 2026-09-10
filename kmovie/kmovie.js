@@ -1260,20 +1260,52 @@
   $('btnSnap').onclick = toggleSnap;
   $('btnImport').onclick = $('btnImport2').onclick = () => { if (SH && SH.active) SH.pick().then(refs => { if (refs.length) importFiles(refs); }); else $('fileIn').click(); };
   $('fileIn').onchange = e => { importFiles(Array.from(e.target.files)); e.target.value = ''; };
-  /* ---------- 창 크기 조절 — 손잡이 끌기 (설정 너비·도구상자 너비·미디어 띠 높이·타임라인 높이). 이 브라우저에 기억 ---------- */
-  const LAYOUT_DEF = { tlH: 344, setW: 300, toolsW: 300, binH: 64 };
-  const LAYOUT_LIM = { tlH: [160, 0.7], setW: [220, 520], toolsW: [220, 560], binH: [48, 160] };
+  /* ---------- 창 크기 조절 — 손잡이 끌기 (설정 너비·도구상자 너비·미디어 띠 높이·타임라인 높이·재생 화면 비율). 이 브라우저에 기억 ---------- */
+  const LAYOUT_DEF = { tlH: 344, setW: 300, toolsW: 300, binH: 64, stageS: 1 };
+  const LAYOUT_LIM = { tlH: [160, 0.7], setW: [220, 520], toolsW: [220, 560], binH: [48, 160], stageS: [0.3, 1] };
+  const STAGE_MIN_W = 440;                       // 설정·도구상자가 아무리 넓어도 재생 화면 자리는 이만큼 남긴다
   let layout = Object.assign({}, LAYOUT_DEF);
   try { Object.assign(layout, JSON.parse(localStorage.getItem('kmv.layout') || '{}')); } catch (e) {}
   function applyLayout() {
     const maxTl = Math.round(window.innerHeight * LAYOUT_LIM.tlH[1]);
     layout.tlH = clamp(layout.tlH, LAYOUT_LIM.tlH[0], Math.max(LAYOUT_LIM.tlH[0], maxTl));
-    layout.setW = clamp(layout.setW, LAYOUT_LIM.setW[0], LAYOUT_LIM.setW[1]); layout.toolsW = clamp(layout.toolsW, LAYOUT_LIM.toolsW[0], LAYOUT_LIM.toolsW[1]); layout.binH = clamp(layout.binH, LAYOUT_LIM.binH[0], LAYOUT_LIM.binH[1]);
+    // 설정·도구상자는 언제나 나란히 — 창이 좁으면 두 열을 같이 줄인다 (합이 창 너비 − 화면 최소 자리를 넘지 않게)
+    const maxSide = Math.max(2 * LAYOUT_LIM.setW[0], window.innerWidth - STAGE_MIN_W);
+    layout.setW = clamp(layout.setW, LAYOUT_LIM.setW[0], Math.min(LAYOUT_LIM.setW[1], Math.max(LAYOUT_LIM.setW[0], maxSide - LAYOUT_LIM.toolsW[0])));
+    layout.toolsW = clamp(layout.toolsW, LAYOUT_LIM.toolsW[0], Math.min(LAYOUT_LIM.toolsW[1], Math.max(LAYOUT_LIM.toolsW[0], maxSide - layout.setW)));
+    layout.binH = clamp(layout.binH, LAYOUT_LIM.binH[0], LAYOUT_LIM.binH[1]);
+    layout.stageS = clamp(+layout.stageS || 1, LAYOUT_LIM.stageS[0], LAYOUT_LIM.stageS[1]);
     const st = document.documentElement.style;
     st.setProperty('--tlH', layout.tlH + 'px'); st.setProperty('--setW', layout.setW + 'px'); st.setProperty('--toolsW', layout.toolsW + 'px'); st.setProperty('--binH', layout.binH + 'px');
     try { localStorage.setItem('kmv.layout', JSON.stringify(layout)); } catch (e) {}
-    resize();
+    resize(); fitStage();
   }
+  /* 재생 화면 크기 — 자리(stage-row)에 프로젝트 화면비로 꽉 맞춘 크기 × stageS. 비율은 언제나 그대로(가로 16:9·세로 9:16·정사각). */
+  function stageFit() {
+    const row = $('stage').parentElement.getBoundingClientRect();
+    if (row.width < 10 || row.height < 10) return null;
+    const ar = PW() / PH();
+    let fw = row.width, fh = fw / ar;
+    if (fh > row.height) { fh = row.height; fw = fh * ar; }
+    return { fw, fh };
+  }
+  function fitStage() {
+    const st = $('stage'), f = stageFit(); if (!f) return;
+    st.style.width = Math.round(f.fw * layout.stageS) + 'px'; st.style.height = Math.round(f.fh * layout.stageS) + 'px';
+  }
+  new ResizeObserver(() => fitStage()).observe($('stage').parentElement);
+  (function () {
+    const g = $('stageGrip'); if (!g) return;
+    g.addEventListener('pointerdown', e => {
+      e.preventDefault(); e.stopPropagation(); g.setPointerCapture(e.pointerId); g.classList.add('on');
+      const f = stageFit(); if (!f) return;
+      const r = $('stage').getBoundingClientRect();
+      const move = ev => { const s = Math.max((ev.clientX - r.left) / f.fw, (ev.clientY - r.top) / f.fh); layout.stageS = clamp(s, LAYOUT_LIM.stageS[0], LAYOUT_LIM.stageS[1]); applyLayout(); };
+      const up = ev => { g.classList.remove('on'); g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); g.removeEventListener('pointercancel', up); try { g.releasePointerCapture(ev.pointerId); } catch (er) {} };
+      g.addEventListener('pointermove', move); g.addEventListener('pointerup', up); g.addEventListener('pointercancel', up);
+    });
+    g.addEventListener('dblclick', e => { e.stopPropagation(); layout.stageS = 1; applyLayout(); });
+  })();
   function splitter(id, key, axis, sign) {
     const el = $(id); if (!el) return;
     el.addEventListener('pointerdown', e => {
@@ -1304,11 +1336,9 @@
   }
   document.querySelectorAll('#toolTabs button').forEach(b => { b.onclick = () => setTab(b.dataset.tab); });
   setTab(toolTab);
-  /* 좁은 화면 — 오른쪽 창 「설정 | 도구상자」 탭 (1460px 이상에선 CSS 가 탭을 숨기고 두 열이 나란히라 무의미) */
+  /* 설정·도구상자는 언제나 나란히(2026-09-10) — 옛 「설정 | 도구상자」 탭은 없앴다. setSide 는 호환용: 카드를 고르면 설정 열을 맨 위(카드 설정)로 올려 글자 칸이 바로 보이게 한다. */
   var sideSelPending = false;
-  function setSide(id) { const a = document.querySelector('aside.side'); if (!a) return; a.dataset.side = id === 'tools' ? 'tools' : 'set'; document.querySelectorAll('#sideTabs button').forEach(b => b.classList.toggle('on', b.dataset.side === a.dataset.side)); }
-  document.querySelectorAll('#sideTabs button').forEach(b => { b.onclick = () => setSide(b.dataset.side); });
-  document.querySelectorAll('#toolTabs button').forEach(b => { b.addEventListener('click', () => setSide('tools')); });
+  function setSide(id) { if (id !== 'tools') { const c = $('colSet'); if (c && c.scrollTop > 0) c.scrollTop = 0; } }
   $('timeline').addEventListener('pointerdown', () => { sideSelPending = true; setTimeout(() => { sideSelPending = false; }, 0); }, true);
 
   /* 미디어 띠 보이기/숨기기 — 이 브라우저에 기억 */
@@ -1353,6 +1383,7 @@
     const ar = PW() + '/' + PH();
     $('exFmt').textContent = PW() + '×' + PH();
     document.querySelectorAll('#partPeek canvas, .pc canvas').forEach(cv => { cv.style.aspectRatio = ar; });
+    if (typeof fitStage === 'function') fitStage();
   }
   let volStart = null;
   $('vol').oninput = e => { const c = selClip(); if (!c) return; const a = P.audioOf(c.id); if (a) { if (volStart == null) volStart = a.vol == null ? 1 : a.vol; a.vol = +e.target.value / 100; $('volV').textContent = e.target.value + '%'; dirty = true; draw(); } };
@@ -1803,8 +1834,9 @@
     stop();
     const pt = P.addP({ part: partId, at: Math.max(0, Math.round(at)) });
     if (!pt) return;
-    noteRecent(partId);
+    noteRecent(partId); clearTimeout(peek.timer); peek.mute = performance.now() + 500;
     selectP(pt.id); select(null); selectS(null); selectA2(null); selectV2(null);
+    setSide('set');                              // 설정 열을 카드 설정(글자 칸)으로
     setPH(pt.at + Math.min(pt.dur - 1, Math.round(PT.meta(partId).thumbT * FPS)));
     if (PT.behind(pt) && SG) SG.load().then(ok => { if (!ok) toast('인물 컷아웃 모델을 못 불러와 부품이 그냥 앞에 그려져요', 4000); });
     toast(PT.def(partId).name + ' 을 놓았어요 — 오른쪽에서 문구를 바꾸세요', 1800);
@@ -1858,7 +1890,7 @@
     loop();
   }
   function paintThumbInto(ctx, w, h, id, tt, bg) { ctx.clearRect(0, 0, w, h); PT.paintThumb(ctx, w, h, id, null, P.data.theme, tt, bg); }
-  function peekHover(id, el) { if (peek.pinned) return; clearTimeout(peek.timer); peek.timer = setTimeout(() => peekStart(id, el), 180); }
+  function peekHover(id, el) { if (peek.pinned || performance.now() < (peek.mute || 0)) return; clearTimeout(peek.timer); peek.timer = setTimeout(() => peekStart(id, el), 180); }   // mute: 「넣기」 직후 손 아래 타일이 바로 다시 열리지 않게
   function peekLeave(id) { clearTimeout(peek.timer); if (peek.pinned) return; peekStop(); }
   function peekStop() {
     cancelAnimationFrame(peek.raf); const id = peek.id; peek.id = null; pk.classList.add('hidden');

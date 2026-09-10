@@ -14,6 +14,7 @@
 
   /* 홀드 [시작, 끝](초) — 등장이 끝나 자리잡은 뒤 ~ 퇴장이 시작되기 전 */
   const META = {
+    emblem:    { cat: 'title',  hold: [2.7, 4.2],  thumbT: 3.0 },   // 케이메이커 R14x 에서 온 엠블럼 부품 — 「기타」로 새지 않게 타이틀로(2026-09-10)
     opening:   { cat: 'title',  hold: [2.6, 5.2],  thumbT: 3.0 },
     section:   { cat: 'title',  hold: [1.6, 3.35], thumbT: 2.0 },
     knockout:  { cat: 'title',  hold: [1.7, 3.2],  thumbT: 2.2, layer: true, self: true },   // 덮개를 뚫는 부품 — 제 층에서 그려야 촬영본이 글자 안에 남는다; 크기·초점은 부품이 직접(덮개는 항상 꽉)
