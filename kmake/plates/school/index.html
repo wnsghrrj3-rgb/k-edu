@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>학교가 지어진다 — 케이메이커</title>
+<title>우리 학교 3D 영상 — 케이메이커</title>
 <style>
   :root{ --gold:#D9B65C; }
   *{box-sizing:border-box}
@@ -24,10 +24,13 @@
   .panel .row{display:flex;gap:8px;align-items:center;margin-top:10px;font-size:13px;color:#ccc}
   .note{font-size:12px;color:#888;line-height:1.6;margin-top:14px;border-top:1px solid #222;padding-top:10px}
   .msg{font-size:13px;color:#ccc;min-height:18px}
+  .plates{display:flex;gap:6px;margin-top:4px}
+  .plates button{flex:1;padding:8px 6px;font-size:13px}
+  .plates button.on{background:var(--gold);color:#221;border-color:#b99a45;font-weight:700}
 </style>
 </head>
 <body>
-<header><a href="/maker/">← 케이메이커</a><b>학교가 지어진다</b><small>3D 조립은 블렌더로 미리 구움 · 끝에 실사로 녹아듦 · 서버 0</small></header>
+<header><a href="/maker/">← 케이메이커</a><b id="h-title">학교가 지어진다</b><small id="h-sub">3D 조립은 블렌더로 미리 구움 · 끝에 실사로 녹아듦 · 서버 0</small></header>
 <main>
   <section>
     <div class="stage"><canvas id="cv"></canvas></div>
@@ -40,13 +43,12 @@
     </div>
   </section>
   <aside class="panel">
+    <label>장면</label><div class="plates" id="f-plate"><button data-plate="school-build">🏫 지어진다</button><button data-plate="school-orbit">🚁 하늘에서 한 바퀴</button></div>
     <label>학교 이름 (끝 자막)</label><input id="f-school" value="금성초등학교">
     <label>한 줄 (끝 자막)</label><input id="f-sub" value="아이의 첫 시작을 함께합니다">
     <div class="row"><input id="f-photo" type="checkbox" checked style="width:auto"> <label for="f-photo" style="margin:0">끝에 실사 사진으로 녹아들기</label></div>
     <div class="row"><span>여운</span><input id="f-tail" type="range" min="0" max="4" step="0.5" value="2.5"><span id="f-tail-v">2.5초</span></div>
-    <div class="note">
-      틀(<code>school-build.mp4</code>)은 사진 한 장을 보고 지은 금성초 3D 에 그 사진을 다시 입힌 것 — 관람석 → 벽돌 → 콘크리트 띠 → 창 → 지붕 → 정자·캐노피 순으로 올라오고, 나무는 실사로 녹아들 때 생깁니다.<br>
-      카메라가 멈춘 뒤 실사(<code>school-photo.jpg</code>)로 녹아들고 자막이 뜹니다. 지금 틀은 시험 화질(640×360).
+    <div class="note" id="note"></div>
     </div>
   </aside>
 </main>
@@ -56,20 +58,38 @@
   const $ = (s) => document.querySelector(s);
   const cv = $('#cv'), ctx = cv.getContext('2d'), msg = $('#msg');
   const Q = new URLSearchParams(location.search);
-  const PLATE = /^[\w-]+$/.test(Q.get('plate') || '') ? Q.get('plate') : 'school-build';
+  /* R148: 틀 두 장 — 같은 금성초 모형·같은 끝 자리(디졸브·자막 공용), 카메라만 다름 */
+  const PLATES = {
+    'school-build': { title: '학교가 지어진다', sub: '3D 조립은 블렌더로 미리 구움 · 끝에 실사로 녹아듦 · 서버 0', file: '학교가지어진다',
+      note: '틀(<code>school-build.mp4</code>)은 사진 한 장을 보고 지은 금성초 3D 에 그 사진을 다시 입힌 것 — 관람석 → 벽돌 → 콘크리트 띠 → 창 → 지붕 → 정자·캐노피 순으로 올라오고, 나무는 실사로 녹아들 때 생깁니다.' },
+    'school-orbit': { title: '하늘에서 한 바퀴', sub: '드론처럼 학교 앞 하늘을 돌아 정면에 내려앉음 · 끝에 실사로 녹아듦 · 서버 0', file: '하늘에서한바퀴',
+      note: '틀(<code>school-orbit.mp4</code>)은 같은 금성초 3D 를 다 지어진 채로 두고, 카메라가 왼쪽 높은 하늘 → 정면 앞 멀리 → 오른쪽을 지나 사진 자리로 천천히 내려앉는 드론 인트로입니다.' },
+  };
+  const pick = (v) => (/^[\w-]+$/.test(v || '') && PLATES[v]) ? v : 'school-build';
+  let PLATE = pick(Q.get('plate'));
   if (Q.has('school')) $('#f-school').value = Q.get('school');
   if (Q.has('sub')) $('#f-sub').value = Q.get('sub');
-  const meta = await (await fetch(`../${PLATE}.json`)).json();
-  const W = meta.width, H = meta.height, FPS = meta.fps, N = meta.frames;
-  cv.width = W; cv.height = H;
-  const holdSec = (meta.hold_from - 1) / FPS, plateSec = N / FPS;
+  let meta, W, H, FPS, N, holdSec, plateSec;
   const tail = () => +$('#f-tail').value;                 // 여운(사진+자막) 초
   const totalSec = () => plateSec + tail();
   $('#f-tail').oninput = () => { $('#f-tail-v').textContent = tail().toFixed(1) + '초'; draw(vid.currentTime); };
 
   const vid = document.createElement('video');
-  vid.src = `../${PLATE}.mp4`; vid.muted = true; vid.playsInline = true; vid.preload = 'auto';
-  await new Promise((r) => { vid.onloadeddata = r; });
+  vid.muted = true; vid.playsInline = true; vid.preload = 'auto';
+  async function loadPlate(name) {
+    PLATE = pick(name); const P = PLATES[PLATE];
+    meta = await (await fetch(`../${PLATE}.json`)).json();
+    W = meta.width; H = meta.height; FPS = meta.fps; N = meta.frames;
+    cv.width = W; cv.height = H;
+    holdSec = (meta.hold_from - 1) / FPS; plateSec = N / FPS;
+    const ready = new Promise((r) => { vid.onloadeddata = r; });
+    vid.src = `../${PLATE}.mp4`; vid.load(); await ready;
+    $('#h-title').textContent = P.title; $('#h-sub').textContent = P.sub;
+    $('#note').innerHTML = P.note + '<br>카메라가 멈춘 뒤 실사(<code>school-photo.jpg</code>)로 녹아들고 자막이 뜹니다. 지금 틀은 시험 화질(' + W + '×' + H + ').';
+    for (const b of document.querySelectorAll('#f-plate [data-plate]')) b.classList.toggle('on', b.dataset.plate === PLATE);
+    const u = new URL(location.href); u.searchParams.set('plate', PLATE); history.replaceState(null, '', u);
+  }
+  await loadPlate(PLATE);
   const photo = new Image(); photo.src = '../school-photo.jpg';
   await new Promise((r) => { photo.onload = r; photo.onerror = r; });
 
@@ -123,19 +143,26 @@
   };
   for (const el of document.querySelectorAll('.panel input')) el.addEventListener('input', () => { if (!playing) draw(vid.currentTime); });
 
-  $('#png').onclick = async () => { await showAt(totalSec()); const a = document.createElement('a'); a.download = '학교가지어진다.png'; a.href = cv.toDataURL('image/png'); a.click(); };
+  $('#png').onclick = async () => { await showAt(totalSec()); const a = document.createElement('a'); a.download = PLATES[PLATE].file + '.png'; a.href = cv.toDataURL('image/png'); a.click(); };
   $('#mp4').onclick = async () => {
     if (!window.MK_VIDEO || typeof VideoEncoder === 'undefined') { msg.textContent = '이 브라우저는 영상 저장을 지원하지 않아요 (크롬·엣지 최신 버전)'; return; }
     cancelAnimationFrame(raf); playing = false;
     const btn = $('#mp4'); btn.disabled = true; msg.textContent = '영상 만드는 중…';
     const frames = Math.round(totalSec() * FPS);
     const r = await window.MK_VIDEO.exportFramesMP4({
-      width: W, height: H, fps: FPS, frames, title: `학교가지어진다_${$('#f-school').value || ''}`,
+      width: W, height: H, fps: FPS, frames, title: `${PLATES[PLATE].file}_${$('#f-school').value || ''}`,
       onProgress: (t) => { msg.textContent = t; },
       drawFrame: async (i, octx) => { const sec = i / FPS; await seekTo(sec); draw(sec); octx.drawImage(cv, 0, 0); },
     });
     btn.disabled = false;
     msg.textContent = r.ok ? `저장했어요 — ${r.w}×${r.h} · ${r.sec}초 · ${r.rung}` : (r.msg || '영상 저장에 실패했어요');
+  };
+
+  let busy = false;
+  for (const b of document.querySelectorAll('#f-plate [data-plate]')) b.onclick = async () => {
+    if (busy || b.dataset.plate === PLATE || $('#mp4').disabled) return;
+    busy = true; cancelAnimationFrame(raf); playing = false; vid.pause();
+    try { await loadPlate(b.dataset.plate); await showAt(totalSec()); } finally { busy = false; }
   };
 
   await showAt(totalSec());

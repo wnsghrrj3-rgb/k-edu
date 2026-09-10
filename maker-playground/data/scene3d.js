@@ -4,7 +4,7 @@
    블렌더로 한 번 구운 3D 틀(/kmake/plates/) 위에 브라우저가 글자·실사만
    얹는 화면들의 **목록**. 3D 상장(MK_AWARD3D, R143) 과 같은 원리이되
    상장은 「인쇄물」 갈래, 여기는 「영상」 갈래 — 학교가 지어진다(R144~146)
-   가 첫 장면이고, 다음 장면(교실·강당·운동회…)은 SCENES 에 한 줄이면 문이
+   가 첫 장면, 하늘에서 한 바퀴(R148) 가 둘째 장면이고, 다음 장면(교실·강당·운동회…)은 SCENES 에 한 줄이면 문이
    같이 열린다(목록 카드·홈 칩·만들기 1단계). 문서 모델 밖 — 틀을 흉내내지
    않고 문만 연다. 외부 API 0 · 서버 0 · 새 탭.
    ============================================================ */
@@ -17,6 +17,12 @@ window.MK_SCENE3D = (() => {
       desc: '빈 운동장에 우리 학교가 순서대로 올라오고 끝에 실사로 녹아드는 학교 소개 영상 — 이름·한 줄만 바꾸면 완성',
       url: '/kmake/plates/school/', poster: '/kmake/plates/school-build.poster.png', fields: ['school', 'sub', 'plate'],
     },
+    /* R148: 같은 화면·같은 금성초 모형, 틀만 다름 — preset 이 주소에 plate 를 실어 준다(사용자가 준 칸이 우선) */
+    {
+      id: 'school-orbit', title: '하늘에서 한 바퀴 (영상)', ico: '🚁', category: '영상', contentType: 'video', ratio: '16:9',
+      desc: '드론처럼 학교 앞 하늘을 한 바퀴 돌아 정면에 내려앉고 실사로 녹아드는 인트로 — 이름·한 줄만 바꾸면 완성',
+      url: '/kmake/plates/school/', poster: '/kmake/plates/school-orbit.poster.png', fields: ['school', 'sub', 'plate'], preset: { plate: 'school-orbit' },
+    },
   ];
   const get = (id) => SCENES.find((s) => s.id === id) || SCENES[0];
 
@@ -24,7 +30,7 @@ window.MK_SCENE3D = (() => {
     const s = get(id);
     const q = new URLSearchParams();
     for (const k of s.fields) {
-      const v = fields && fields[k];
+      const v = (fields && fields[k] != null && String(fields[k]) !== '') ? fields[k] : (s.preset && s.preset[k]);
       if (v != null && String(v) !== '') q.set(k, String(v));
     }
     const qs = q.toString();

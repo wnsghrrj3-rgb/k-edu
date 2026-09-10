@@ -79,7 +79,9 @@ ok(page.includes('href="/maker/"') && page.includes('MK_VIDEO.exportFramesMP4'),
   w.PG.state.create = { step: 1, type: null, style: null, tpl: null };
   root = mount(w.MK_SCREENS.create);
   const cf = root.querySelector('.hv-type[data-scene3d="school"]');
-  ok(!!cf && cf.nextElementSibling && cf.nextElementSibling.hasAttribute('data-cf-award3d'), '만들기 1단계: 종류 카드 뒤 · 3D 상장 앞');
+  /* R148: 장면이 둘 이상이면 school 바로 뒤는 다음 장면 — 「3D 상장 앞」 은 마지막 장면 카드 기준 */
+  const cfs = [...root.querySelectorAll('.hv-type[data-scene3d]')], cfLast = cfs[cfs.length - 1];
+  ok(!!cf && cfs[0] === cf && cfLast.nextElementSibling && cfLast.nextElementSibling.hasAttribute('data-cf-award3d'), '만들기 1단계: 종류 카드 뒤 · (마지막 장면 카드) 3D 상장 앞');
   cf.click(); ok(opened.length === 3, '만들기 카드 클릭 → open()');
   ok(opened.every((u) => u === '/kmake/plates/school/'), '문 3곳 모두 같은 주소');
 }
