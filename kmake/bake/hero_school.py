@@ -179,8 +179,9 @@ M = dict(brick=mat_brick(), concrete=mat_flat('concrete', (0.62, 0.62, 0.58), 0.
          white=mat_flat('white', (0.85, 0.85, 0.85), 0.7), navy=mat_flat('navy', (0.05, 0.05, 0.25), 0.5),
          leaf=mat_leaf(), bark=mat_flat('bark', (0.22, 0.16, 0.10), 0.95), steel=mat_flat('steel', (0.6, 0.6, 0.62), 0.35, 0.8),
          gold=mat_flat('gold', (0.7, 0.55, 0.2), 0.4, 0.8), pool=mat_flat('pool', (0.70, 0.72, 0.74), 0.9))
+_SKY = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'plates', 'school-photo-sky.png')   # 하늘만 남긴 RGBA(건물·땅 알파 0)
 _PHOTO0 = arg('--photo', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'plates', 'school-photo-clean.png'))
-if os.path.exists(_PHOTO0): M['photo'] = mat_photo(_PHOTO0); M['photo_ground'] = mat_photo(_PHOTO0, facing=False, name='photo_ground', fallback=(0.74, 0.69, 0.60)); M['photo_sky'] = mat_photo(_PHOTO0, facing=False, name='photo_sky', fallback=(0.80, 0.82, 0.85))
+if os.path.exists(_PHOTO0): M['photo'] = mat_photo(_PHOTO0); M['photo_ground'] = mat_photo(_PHOTO0, facing=False, name='photo_ground', fallback=(0.74, 0.69, 0.60)); M['photo_sky'] = mat_photo(_SKY if os.path.exists(_SKY) else _PHOTO0, facing=False, name='photo_sky', fallback=(0.80, 0.82, 0.85))   # R145: 배경판엔 하늘만(알파) — 비스듬한 카메라에서 건물 사진이 뒤판에 한 번 더 비치던 문제
 
 # ---------------------------------------------------------------- 도형 (원점 = 바닥 중심 → scale.z 로 "자라남")
 BUILD = []   # (obj, kind, t0, t1)  kind: rise(z 0→1) · pop(전체 0→1) · drop(위에서 내려옴) · slidex(x 0→1)
@@ -278,7 +279,7 @@ box('entry_glass', X(425), X(620), -0.3, 0.05, Z(770, -6), Z(640), M['glass'], '
 bpy.ops.mesh.primitive_cylinder_add(radius=0.95, depth=0.25, vertices=32); em = bpy.context.object; em.name = 'emblem'
 em.rotation_euler = (math.radians(90), 0, 0); em.location = (X(405), -0.2, 0); em.data.materials.append(PH)
 BUILD.append((em, 'pop', 4.0, 4.5)); em.location.z = Z(320)
-if os.path.exists(FONT):
+if os.path.exists(FONT) and 'photo' not in M:   # 사진 모드에선 벽에 사진 글자가 이미 찍혀 있어 3D 글자를 겹치지 않는다(R145: 이중으로 보이던 문제)
     cu = bpy.data.curves.new('schoolname', 'FONT'); cu.body = '금성초등학교'; cu.font = bpy.data.fonts.load(FONT)
     cu.size = 1.55; cu.extrude = 0.12; cu.align_x = 'CENTER'
     tx = bpy.data.objects.new('schoolname', cu); sc.collection.objects.link(tx)
@@ -356,6 +357,9 @@ so.rotation_euler = (math.radians(50), 0, math.radians(-35))
 
 # ---------------------------------------------------------------- 카메라
 cam = bpy.data.cameras.new('cam'); cam.lens = 40; cam.sensor_width = 36; cam.sensor_fit = 'HORIZONTAL'
+# R145 카메라 역산: 디졸브 상대(school-photo.jpg 1920×1080)는 원본 3:2 를 위에서 66px(1536 기준) 잘라낸 16:9 라
+# 가운데 자름(80px)보다 14px 위 → SIFT 로 잰 값 17.6px/1920 = 0.0092 만큼 화면을 내린다(shift_y, 화면 너비 비율).
+cam.shift_y = arg('--shifty', 0.0092)
 co = bpy.data.objects.new('cam', cam); sc.collection.objects.link(co); sc.camera = co
 tgt = bpy.data.objects.new('tgt', None); sc.collection.objects.link(tgt)
 con = co.constraints.new('TRACK_TO'); con.target = tgt; con.track_axis = 'TRACK_NEGATIVE_Z'; con.up_axis = 'UP_Y'
