@@ -18,6 +18,8 @@ hold 이후는 브라우저가 실사 사진으로 녹여 넣는 자리(plates/s
   시험(여기·CPU):  python hero_school.py -- OUT --w 640 --h 360 --fps 12 --samples 8
   원화질(준호 PC): blender -b -P hero_school.py -- OUT --w 1920 --h 1080 --fps 24 --samples 128
   한 장만:         python hero_school.py -- OUT --still 5.0   (5.0초 시점 한 프레임)
+  드론 인트로:     python hero_school.py -- OUT --shot orbit   (R148 「하늘에서 한 바퀴」 — 다 지어진 학교를 드론이 앞쪽 하늘에서
+                   왼쪽 높이 → 정면 사진 자리로 반 바퀴 훑어 내려온다 · 조립 애니 없음 · 산출 school-orbit_####.png / .json)
   → 이어서: ffmpeg -framerate 24 -i school-build_%04d.png -c:v libx264 -pix_fmt yuv420p -crf 18 school-build.mp4
 """
 import bpy, math, json, sys, os
@@ -28,12 +30,13 @@ OUT = argv[0] if argv else '/tmp/school'
 def arg(k, d):
     return type(d)(argv[argv.index(k) + 1]) if k in argv else d
 W, H, FPS, SAMPLES = arg('--w', 640), arg('--h', 360), arg('--fps', 12), arg('--samples', 8)
-SEC = 7.0
-HOLD = 5.6
+SHOT = arg('--shot', 'build')       # R148: build(지어진다) · orbit(하늘에서 한 바퀴)
+SEC = 7.0 if SHOT == 'build' else 8.0
+HOLD = 5.6 if SHOT == 'build' else 6.6
 STILL = arg('--still', -1.0)
 FR_START = arg('--from', 1)
 FEATHER = arg('--feather', 0.18)   # R146 운동장 사진 가장자리 페더 폭(UV, 0=끄기)
-NAME = 'school-build'
+NAME = 'school-build' if SHOT == 'build' else 'school-orbit'
 FONT = arg('--font', '/usr/share/fonts/opentype/noto/NotoSerifCJK-Bold.ttc')
 os.makedirs(OUT, exist_ok=True)
 
@@ -77,6 +80,17 @@ PROJ_POS = (0.0, -CAMD, EYE)
 def new_mat(name):
     m = bpy.data.materials.new(name); m.use_nodes = True
     return m, m.node_tree, m.node_tree.nodes['Principled BSDF']
+
+def brick_color(nt, vec_xy=None):
+    """R148: 벽돌 색 노드 한 벌을 nt 안에 만들어 색 소켓을 돌려준다. vec_xy=None 이면 정면(x,z), 아니면 준 벡터 소켓을 씀."""
+    br = nt.nodes.new('ShaderNodeTexBrick')
+    br.inputs['Scale'].default_value = 1.0
+    br.inputs['Mortar Size'].default_value = 0.035; br.inputs['Mortar Smooth'].default_value = 0.4
+    br.inputs['Bias'].default_value = 0.0; br.inputs['Brick Width'].default_value = 0.42; br.inputs['Row Height'].default_value = 0.14
+    br.inputs['Color1'].default_value = (0.30, 0.09, 0.05, 1); br.inputs['Color2'].default_value = (0.21, 0.065, 0.04, 1)
+    br.inputs['Mortar'].default_value = (0.36, 0.33, 0.30, 1)
+    if vec_xy is not None: nt.links.new(vec_xy, br.inputs['Vector'])
+    return br
 
 def mat_brick():
     m, nt, b = new_mat('brick')
@@ -169,6 +183,7 @@ def make_ground_ext(path, feather, fallback):
     print('ground-ext', W2, 'x', H2, '->', img.filepath_raw, flush=True)
     return img.filepath_raw, fx, fy
 
+REVEAL = []   # R148: hold 직전에 드러낼 배경판 재질(노드트리)들
 def mat_photo(path, facing=True, name='photo', fallback=(0.30, 0.14, 0.10), feather=0.0):
     m, nt, b = new_mat(name)
     img = bpy.data.images.load(path); tex = nt.nodes.new('ShaderNodeTexImage'); tex.image = img; tex.extension = 'CLIP'
@@ -189,10 +204,17 @@ def mat_photo(path, facing=True, name='photo', fallback=(0.30, 0.14, 0.10), feat
     ramp = nt.nodes.new('ShaderNodeMapRange'); ramp.inputs['From Min'].default_value = -0.35; ramp.inputs['From Max'].default_value = -0.12
     ramp.inputs['To Min'].default_value = 1.0; ramp.inputs['To Max'].default_value = 0.0
     side = nt.nodes.new('ShaderNodeBsdfDiffuse'); side.inputs['Color'].default_value = (*fallback, 1)
+    if SHOT == 'orbit' and facing:       # R148 드론 시점: 영사기를 등진 옆벽이 큰 면으로 보임 → 민무늬 대신 벽돌 무늬(옆벽·앞벽 둘 다 서게 x+y, z 로 깔음)
+        gco = nt.nodes.new('ShaderNodeTexCoord'); gsep = nt.nodes.new('ShaderNodeSeparateXYZ'); nt.links.new(gco.outputs['Object'], gsep.inputs['Vector'])
+        gadd = nt.nodes.new('ShaderNodeMath'); gadd.operation = 'ADD'; nt.links.new(gsep.outputs['X'], gadd.inputs[0]); nt.links.new(gsep.outputs['Y'], gadd.inputs[1])
+        gcomb = nt.nodes.new('ShaderNodeCombineXYZ'); nt.links.new(gadd.outputs['Value'], gcomb.inputs['X']); nt.links.new(gsep.outputs['Z'], gcomb.inputs['Y'])
+        nt.links.new(brick_color(nt, gcomb.outputs['Vector']).outputs['Color'], side.inputs['Color'])
     mix2 = nt.nodes.new('ShaderNodeMixShader')
     nt.links.new(geo.outputs['Position'], tocam.inputs[0]); nt.links.new(tocam.outputs['Vector'], nrm.inputs[0])
     nt.links.new(nrm.outputs['Vector'], dot.inputs[0]); nt.links.new(geo.outputs['Normal'], dot.inputs[1])
     nt.links.new(dot.outputs['Value'], ramp.inputs['Value'])
+    if not facing and SHOT == 'orbit' and name == 'photo_sky':   # R148: 드론 구간엔 배경판을 투명(세계 하늘 그라데이션)으로 두고 hold 1.2초 전부터 사진 하늘로 드러냄 — 비스듬한 시점에서 판이 벽처럼 보이던 것
+        REVEAL.append(nt)
     if not facing:                       # 운동장·배경판: 스침각이라도 사진, 사진 밖만 대체색
         if feather > 0:                  # R146 운동장 가장자리 페더: 사진을 밖으로 늘려(가장자리 흐림→대체색) 미리 만든 이미지를 씀 — 사진 안쪽 픽셀은 그대로(hold 프레임 무변화)
             ext_path, fx, fy = make_ground_ext(path, feather, fallback)
@@ -204,11 +226,24 @@ def mat_photo(path, facing=True, name='photo', fallback=(0.30, 0.14, 0.10), feat
         else:
             nt.links.new(tex.outputs['Alpha'], mix2.inputs['Fac'])
         nt.links.new(side.outputs['BSDF'], mix2.inputs[1]); nt.links.new(mix.outputs['Shader'], mix2.inputs[2])
+        if nt in REVEAL:
+            tr = nt.nodes.new('ShaderNodeBsdfTransparent'); rv = nt.nodes.new('ShaderNodeValue'); rv.name = 'reveal'; rv.outputs[0].default_value = 0.0
+            mix3 = nt.nodes.new('ShaderNodeMixShader'); nt.links.new(rv.outputs[0], mix3.inputs['Fac'])
+            nt.links.new(tr.outputs['BSDF'], mix3.inputs[1]); nt.links.new(mix2.outputs['Shader'], mix3.inputs[2])
+            nt.links.new(mix3.outputs['Shader'], out.inputs['Surface']); return m
         nt.links.new(mix2.outputs['Shader'], out.inputs['Surface']); return m
     # 사진 밖(UV 0~1 바깥)도 벽돌색 — 사진 오른쪽 끝 너머가 늘어지지 않게
     inpic = nt.nodes.new('ShaderNodeMath'); inpic.operation = 'MULTIPLY'
     nt.links.new(ramp.outputs['Result'], inpic.inputs[0]); nt.links.new(tex.outputs['Alpha'], inpic.inputs[1])
     nt.links.new(inpic.outputs['Value'], mix2.inputs['Fac']); nt.links.new(side.outputs['BSDF'], mix2.inputs[1]); nt.links.new(mix.outputs['Shader'], mix2.inputs[2])
+    if SHOT == 'orbit':                  # R148 드론 시점: 위를 보는 면(옥상)은 벽돌색 대신 콘크리트 — 하늘에서 내려다보면 옥상이 큰 면이라
+        sepn = nt.nodes.new('ShaderNodeSeparateXYZ'); nt.links.new(geo.outputs['Normal'], sepn.inputs['Vector'])
+        upr = nt.nodes.new('ShaderNodeMapRange'); upr.inputs['From Min'].default_value = 0.35; upr.inputs['From Max'].default_value = 0.7
+        nt.links.new(sepn.outputs['Z'], upr.inputs['Value'])
+        roof = nt.nodes.new('ShaderNodeBsdfDiffuse'); roof.inputs['Color'].default_value = (0.50, 0.50, 0.48, 1); roof.inputs['Roughness'].default_value = 0.9
+        mix3 = nt.nodes.new('ShaderNodeMixShader'); nt.links.new(upr.outputs['Result'], mix3.inputs['Fac'])
+        nt.links.new(mix2.outputs['Shader'], mix3.inputs[1]); nt.links.new(roof.outputs['BSDF'], mix3.inputs[2])
+        nt.links.new(mix3.outputs['Shader'], out.inputs['Surface']); return m
     nt.links.new(mix2.outputs['Shader'], out.inputs['Surface'])
     return m
 
@@ -220,7 +255,7 @@ M = dict(brick=mat_brick(), concrete=mat_flat('concrete', (0.62, 0.62, 0.58), 0.
          gold=mat_flat('gold', (0.7, 0.55, 0.2), 0.4, 0.8), pool=mat_flat('pool', (0.70, 0.72, 0.74), 0.9))
 _SKY = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'plates', 'school-photo-sky.png')   # 하늘만 남긴 RGBA(건물·땅 알파 0)
 _PHOTO0 = arg('--photo', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'plates', 'school-photo-clean.png'))
-if os.path.exists(_PHOTO0): M['photo'] = mat_photo(_PHOTO0); M['photo_ground'] = mat_photo(_PHOTO0, facing=False, name='photo_ground', fallback=(0.74, 0.69, 0.60), feather=FEATHER); M['photo_sky'] = mat_photo(_SKY if os.path.exists(_SKY) else _PHOTO0, facing=False, name='photo_sky', fallback=(0.80, 0.82, 0.85))   # R145: 배경판엔 하늘만(알파) — 비스듬한 카메라에서 건물 사진이 뒤판에 한 번 더 비치던 문제
+if os.path.exists(_PHOTO0): M['photo'] = mat_photo(_PHOTO0); M['photo_ground'] = mat_photo(_PHOTO0, facing=False, name='photo_ground', fallback=(0.74, 0.69, 0.60) if SHOT == 'build' else (0.52, 0.50, 0.43), feather=FEATHER); M['photo_sky'] = mat_photo(_SKY if os.path.exists(_SKY) else _PHOTO0, facing=False, name='photo_sky', fallback=(0.80, 0.82, 0.85))   # R145: 배경판엔 하늘만(알파) — 비스듬한 카메라에서 건물 사진이 뒤판에 한 번 더 비치던 문제 · R148 orbit: 땅 대체색은 사진 밖 땅이 화면 대부분이라 덜 하얗게
 
 # ---------------------------------------------------------------- 도형 (원점 = 바닥 중심 → scale.z 로 "자라남")
 BUILD = []   # (obj, kind, t0, t1)  kind: rise(z 0→1) · pop(전체 0→1) · drop(위에서 내려옴) · slidex(x 0→1)
@@ -275,6 +310,7 @@ def ball(name, x, y, z, r, mat, t0, t1):
 # ---------------------------------------------------------------- 지형 (정적)
 bpy.ops.mesh.primitive_grid_add(size=400, x_subdivisions=120, y_subdivisions=120); g = bpy.context.object; g.name = 'ground'; g.data.materials.append(M['sand'])
 g.location = (15, 20, 0)
+if SHOT == 'orbit': g.scale = (5, 5, 1)   # R148 드론 높이에선 400m 땅 끝이 지평선 아래로 보임 → 2km 로(사진 밖은 어차피 대체색)
 
 # ---------------------------------------------------------------- 사진 단위 (R144-2: 나무 없는 사진 school-photo-clean.png 1536×1024 에서 읽음)
 # 앞면(y=0) 기준 px/m=26.4, 화면 가로 원점 px 700 → x=0, 지평선 py 790(카메라 눈높이 1.8m).
@@ -377,7 +413,11 @@ for i in range(24):
     cyl(f'cpost{i}', x, -6.0, Z(770, -6), CZ - 0.45, 0.07, M['steel'], 'rise', 3.4 + i * 0.015, 3.7 + i * 0.015)
 # 나무: 정리 사진엔 없음 — 끝에 실사(원본, 나무 있음)로 녹아들 때 나무가 생긴다
 # 뒤 배경판(하늘) — 사진 하늘을 그대로 (먼 평면, 카메라가 움직여도 시차 작음)
-box('backdrop', -400, 400, 120, 121, 0, 260, PH, 'rise', 0, 0.01)
+box('backdrop', -400 if SHOT == 'build' else -1500, 400 if SHOT == 'build' else 1500, 120, 121, 0, 260, PH, 'rise', 0, 0.01)   # R148 orbit: 비스듬한 시점에서 판 끝이 안 보이게 넓힘
+# R148 드론 시점: 건물 뒤 땅은 정면 사진의 영사 그늘(관람석 픽셀이 늘어짐) → 건물 발자국 뒤에 무광 뒷마당 판을 깐다(정면 hold 카메라에선 건물에 가려 안 보임)
+BACKLOT = None
+if SHOT == 'orbit':
+    BACKLOT = box('backlot', -1000, 1000, 26, 1000, 0, 0.03, mat_flat('backlot', (0.60, 0.58, 0.50), 0.95), 'rise', 0, 0.01)   # 건물 뒷선(y 24·30) 뒤 전부 — 정면 hold 에선 관람석·건물에 가림
 g.data.materials.clear(); g.data.materials.append(PH)   # 운동장도 사진
 
 # ---------------------------------------------------------------- 사진 영사 (고정 카메라 자리에서 사진을 모형 위로)
@@ -386,7 +426,7 @@ proj = bpy.data.objects.new('proj', pc); sc.collection.objects.link(proj)
 proj.location = (0, -CAMD, EYE); proj.rotation_euler = (math.radians(90) + PITCH, 0, 0)      # 정면(+Y), 사진과 같은 올려봄
 if 'photo' in M:
     for o in sc.objects:
-        if o.type != 'MESH': continue
+        if o.type != 'MESH' or o.name == 'backlot': continue
         o.data.materials.clear(); o.data.materials.append(M['photo_ground'] if o.name == 'ground' else M['photo_sky'] if o.name == 'backdrop' else M['photo'])      # 모형 전체에 사진 (교명 3D 글자만 남색)
         if 'proj' not in o.data.uv_layers: o.data.uv_layers.new(name='proj')
         if o.name != 'ground':
@@ -419,7 +459,7 @@ def clamp01(v): return max(0.0, min(1.0, v))
 def overshoot(u):                      # pop 용: 살짝 넘쳤다 제자리 (1.12 → 1.0)
     return 1.0 + 0.12 * math.sin(u * math.pi) if u < 1 else 1.0
 NF = sc.frame_end
-for o, kind, t0, t1 in BUILD:
+for o, kind, t0, t1 in (BUILD if SHOT == 'build' else []):   # orbit: 다 지어진 채(키 없음 = 최종 상태)
     z = o.location.z; x, y = o.location.x, o.location.y
     B = tuple(o.scale)                 # 기본 스케일(박공 처마 막대처럼 미리 늘려 둔 것) 보존
     span = max(1e-3, t1 - t0)
@@ -440,7 +480,18 @@ for o, kind, t0, t1 in BUILD:
 
 # 카메라: 왼쪽 위에서 돌아 들어와 정면 사진 자리로 (프레임마다 직접 계산)
 CAM_PATH = [(0.0, (-40, -55, 16), (-6, 6, 9)), (2.6, (-22, -66, 9), (-3, 2, 6)), (HOLD, (0, -CAMD, EYE), (0, 0, LOOKZ))]
+# R148 orbit: 앞쪽 하늘 반 바퀴 — 왼쪽 높이(운동장 너머) → 정면 앞 멀리 → 오른쪽 살짝 지나 → 사진 자리로 가라앉음. 경유점을 캣멀롬 곡선으로 잇고
+# 시간은 전체 한 번 ease(드론처럼 천천히 떠서 천천히 멈춤). 건물 뒤(y>24)로는 안 감 — 영사 사진의 뒷면은 없다.
+ORBIT = [((-84, -66, 46), (-6, 8, 9)), ((-72, -88, 32), (-3, 5, 9)), ((-30, -108, 21), (0, 3, 8)), ((14, -96, 10), (1, 1, 7)), ((0, -CAMD, EYE), (0, 0, LOOKZ))]
+def _catmull(pts, u):
+    n = len(pts) - 1; u = clamp01(u) * n; i = min(int(u), n - 1); t = u - i
+    p0, p1, p2, p3 = [Vector(pts[max(0, min(n, i + k))]) for k in (-1, 0, 1, 2)]
+    return 0.5 * ((2 * p1) + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t + (-p0 + 3 * p1 - 3 * p2 + p3) * t * t * t)
 def cam_at(sec):
+    if SHOT == 'orbit':
+        u = ease(clamp01(sec / HOLD))
+        if sec >= HOLD: return Vector(ORBIT[-1][0]), Vector(ORBIT[-1][1])
+        return _catmull([p for p, _ in ORBIT], u), _catmull([l for _, l in ORBIT], u)
     if sec >= HOLD: return Vector(CAM_PATH[-1][1]), Vector(CAM_PATH[-1][2])
     for (ta, pa, la), (tb, pb, lb) in zip(CAM_PATH, CAM_PATH[1:]):
         if ta <= sec <= tb:
@@ -451,9 +502,14 @@ for fr in range(1, NF + 1):
     p, l = cam_at((fr - 1) / FPS)
     co.location = p; co.keyframe_insert('location', frame=fr)
     tgt.location = l; tgt.keyframe_insert('location', frame=fr)
+for nt in REVEAL:                      # R148 배경판 드러내기: HOLD-1.2s → HOLD 에 0→1 (hold 프레임은 build 틀과 같은 사진 하늘)
+    rv = nt.nodes['reveal']
+    for fr in range(1, NF + 1):
+        sec = (fr - 1) / FPS
+        rv.outputs[0].default_value = ease(clamp01((sec - (HOLD - 1.2)) / 1.2)); rv.outputs[0].keyframe_insert('default_value', frame=fr)
 
 # ---------------------------------------------------------------- 출력
-meta = dict(name=NAME, width=W, height=H, fps=FPS, frames=int(SEC * FPS), hold_from=f(HOLD), sec=SEC,
+meta = dict(name=NAME, width=W, height=H, fps=FPS, frames=int(SEC * FPS), hold_from=f(HOLD), sec=SEC, shot=SHOT,
             camera=dict(loc=CAM_PATH[2][1], look=CAM_PATH[2][2], lens=cam.lens))
 with open(os.path.join(OUT, NAME + '.json'), 'w', encoding='utf-8') as fh: json.dump(meta, fh, ensure_ascii=False, indent=1)
 
