@@ -66,6 +66,12 @@ ramp.color_ramp.elements[1].position = 0.6; ramp.color_ramp.elements[1].color = 
 wn.links.new(tc.outputs['Generated'], sep.inputs['Vector']); wn.links.new(sep.outputs['Z'], ramp.inputs['Fac'])
 wn.links.new(ramp.outputs['Color'], bg.inputs['Color']); bg.inputs['Strength'].default_value = 1.0
 
+PXM, PX0, HORIZ, EYE, CAMD = 26.4, 768.0, 790.0, 1.8, 64.7
+FPX = 40 / 36 * 1536                                  # 40mm·36mm 센서·1536px
+PITCH = math.atan((HORIZ - 512) / FPX)               # 지평선이 화면 중심보다 아래 → 카메라가 위를 본다
+LOOKZ = EYE + CAMD * math.tan(PITCH)
+PROJ_POS = (0.0, -CAMD, EYE)
+
 # ---------------------------------------------------------------- 재질
 def new_mat(name):
     m = bpy.data.materials.new(name); m.use_nodes = True
@@ -133,12 +139,48 @@ def mat_leaf():
     b.inputs['Roughness'].default_value = 0.8
     return m
 
+def mat_photo(path, facing=True, name='photo', fallback=(0.30, 0.14, 0.10)):
+    m, nt, b = new_mat(name)
+    img = bpy.data.images.load(path); tex = nt.nodes.new('ShaderNodeTexImage'); tex.image = img; tex.extension = 'CLIP'
+    uv = nt.nodes.new('ShaderNodeUVMap'); uv.uv_map = 'proj'
+    nt.links.new(uv.outputs['UV'], tex.inputs['Vector']); nt.links.new(tex.outputs['Color'], b.inputs['Base Color'])
+    b.inputs['Roughness'].default_value = 0.8
+    # 사진 그대로가 정답 → 발광(무음영) 0.78 + 햇빛 음영 0.22 섞음: 끝 프레임은 사진, 짓는 동안은 입체감
+    em = nt.nodes.new('ShaderNodeEmission'); em.inputs['Strength'].default_value = 1.0
+    nt.links.new(tex.outputs['Color'], em.inputs['Color'])
+    mix = nt.nodes.new('ShaderNodeMixShader'); mix.inputs['Fac'].default_value = 0.78
+    out = nt.nodes['Material Output']
+    nt.links.new(b.outputs['BSDF'], mix.inputs[1]); nt.links.new(em.outputs['Emission'], mix.inputs[2])
+    # 영사기를 등진 면(옆면·지붕 위)은 사진이 늘어져 보인다 → 그런 면은 무광 벽돌색으로
+    geo = nt.nodes.new('ShaderNodeNewGeometry')
+    tocam = nt.nodes.new('ShaderNodeVectorMath'); tocam.operation = 'SUBTRACT'; tocam.inputs[1].default_value = (PROJ_POS[0], PROJ_POS[1], PROJ_POS[2])
+    nrm = nt.nodes.new('ShaderNodeVectorMath'); nrm.operation = 'NORMALIZE'
+    dot = nt.nodes.new('ShaderNodeVectorMath'); dot.operation = 'DOT_PRODUCT'
+    ramp = nt.nodes.new('ShaderNodeMapRange'); ramp.inputs['From Min'].default_value = -0.35; ramp.inputs['From Max'].default_value = -0.12
+    ramp.inputs['To Min'].default_value = 1.0; ramp.inputs['To Max'].default_value = 0.0
+    side = nt.nodes.new('ShaderNodeBsdfDiffuse'); side.inputs['Color'].default_value = (*fallback, 1)
+    mix2 = nt.nodes.new('ShaderNodeMixShader')
+    nt.links.new(geo.outputs['Position'], tocam.inputs[0]); nt.links.new(tocam.outputs['Vector'], nrm.inputs[0])
+    nt.links.new(nrm.outputs['Vector'], dot.inputs[0]); nt.links.new(geo.outputs['Normal'], dot.inputs[1])
+    nt.links.new(dot.outputs['Value'], ramp.inputs['Value'])
+    if not facing:                       # 운동장·배경판: 스침각이라도 사진, 사진 밖만 대체색
+        nt.links.new(tex.outputs['Alpha'], mix2.inputs['Fac']); nt.links.new(side.outputs['BSDF'], mix2.inputs[1]); nt.links.new(mix.outputs['Shader'], mix2.inputs[2])
+        nt.links.new(mix2.outputs['Shader'], out.inputs['Surface']); return m
+    # 사진 밖(UV 0~1 바깥)도 벽돌색 — 사진 오른쪽 끝 너머가 늘어지지 않게
+    inpic = nt.nodes.new('ShaderNodeMath'); inpic.operation = 'MULTIPLY'
+    nt.links.new(ramp.outputs['Result'], inpic.inputs[0]); nt.links.new(tex.outputs['Alpha'], inpic.inputs[1])
+    nt.links.new(inpic.outputs['Value'], mix2.inputs['Fac']); nt.links.new(side.outputs['BSDF'], mix2.inputs[1]); nt.links.new(mix.outputs['Shader'], mix2.inputs[2])
+    nt.links.new(mix2.outputs['Shader'], out.inputs['Surface'])
+    return m
+
 M = dict(brick=mat_brick(), concrete=mat_flat('concrete', (0.62, 0.62, 0.58), 0.9), concrete_dark=mat_flat('cdark', (0.42, 0.42, 0.40), 0.9),
          red=mat_flat('red', (0.55, 0.12, 0.08), 0.6), glass=mat_glass_dark(), green=mat_flat('green', (0.18, 0.42, 0.30), 0.45, 0.3),
          gglass=mat_green_glass(), sand=mat_sand(), grey=mat_flat('grey', (0.40, 0.42, 0.44), 0.8),
          white=mat_flat('white', (0.85, 0.85, 0.85), 0.7), navy=mat_flat('navy', (0.05, 0.05, 0.25), 0.5),
          leaf=mat_leaf(), bark=mat_flat('bark', (0.22, 0.16, 0.10), 0.95), steel=mat_flat('steel', (0.6, 0.6, 0.62), 0.35, 0.8),
          gold=mat_flat('gold', (0.7, 0.55, 0.2), 0.4, 0.8), pool=mat_flat('pool', (0.70, 0.72, 0.74), 0.9))
+_PHOTO0 = arg('--photo', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'plates', 'school-photo-clean.png'))
+if os.path.exists(_PHOTO0): M['photo'] = mat_photo(_PHOTO0); M['photo_ground'] = mat_photo(_PHOTO0, facing=False, name='photo_ground', fallback=(0.74, 0.69, 0.60)); M['photo_sky'] = mat_photo(_PHOTO0, facing=False, name='photo_sky', fallback=(0.80, 0.82, 0.85))
 
 # ---------------------------------------------------------------- 도형 (원점 = 바닥 중심 → scale.z 로 "자라남")
 BUILD = []   # (obj, kind, t0, t1)  kind: rise(z 0→1) · pop(전체 0→1) · drop(위에서 내려옴) · slidex(x 0→1)
@@ -191,109 +233,121 @@ def ball(name, x, y, z, r, mat, t0, t1):
     return _finish(o, mat, 'pop', t0, t1, z)
 
 # ---------------------------------------------------------------- 지형 (정적)
-bpy.ops.mesh.primitive_plane_add(size=400); g = bpy.context.object; g.name = 'ground'; g.data.materials.append(M['sand'])
+bpy.ops.mesh.primitive_grid_add(size=400, x_subdivisions=120, y_subdivisions=120); g = bpy.context.object; g.name = 'ground'; g.data.materials.append(M['sand'])
 g.location = (15, 20, 0)
 
-# ---------------------------------------------------------------- 학교 (X 오른쪽 · Y 안쪽 · Z 위)  단위 m
-# 앞면 y=0. 박공동 중심 x=0.  오른쪽 동 x 13~60. 왼쪽 동 x -34~-12.
-# 0) 관람석·옹벽 (회색 계단)
-for i, (y0, y1, z1) in enumerate([(-9.0, -7.5, 0.35), (-7.5, -6.0, 0.7), (-6.0, -4.5, 1.05)]):
-    box(f'bleach{i}', -34, 62, y0, y1, 0, z1, M['grey'], 'rise', 0.15 + i * 0.12, 0.65 + i * 0.12)
-box('platform', -34, 62, -4.5, -0.2, 0, 1.1, M['grey'], 'rise', 0.5, 0.9)
-box('rail', -34, 62, -4.6, -4.4, 1.1, 2.15, M['steel'], 'rise', 0.9, 1.2)
+# ---------------------------------------------------------------- 사진 단위 (R144-2: 나무 없는 사진 school-photo-clean.png 1536×1024 에서 읽음)
+# 앞면(y=0) 기준 px/m=26.4, 화면 가로 원점 px 700 → x=0, 지평선 py 790(카메라 눈높이 1.8m).
+# 깊이 d 만큼 안쪽 점은 px/m 이 26.4*D/(D+d) 로 줄어든다(D=카메라 거리).
+PHOTO = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'plates', 'school-photo-clean.png')
+PHOTO = arg('--photo', PHOTO)
 
-# 1) 왼쪽 동 (3층, 낮음)
-box('leftwing', -34, -12, 0, 24, 0, 10.8, M['brick'], 'rise', 0.6, 1.7)
-box('leftwing_cop', -34.1, -11.9, -0.1, 24.1, 10.8, 11.2, M['red'], 'drop', 2.9, 3.4)
+def X(px, d=0.0): return (px - PX0) / (PXM * CAMD / (CAMD + d))
+def Z(py, d=0.0): return EYE + (HORIZ - py) / (PXM * CAMD / (CAMD + d))
 
-# 2) 박공동 (본관 정면)
-box('gableblock', -12, 13, 0, 20, 0, 12.4, M['brick'], 'rise', 0.8, 2.2)
-gable('gable_front', -12.3, 13.3, -0.15, 20.15, 12.4, 16.2, M['brick'], 2.9, 3.5)
-box('gable_cop_l', -12.4, 0.6, -0.2, 0.15, 12.4, 12.7, M['red'], 'drop', 3.1, 3.5)   # 경사 코핑 대신 처마선 표시
-box('gable_band', -12.3, 13.3, -0.12, 20.1, 12.2, 12.5, M['red'], 'drop', 3.0, 3.5)
-# 처마 경사 빨간 선(박공 위 얇은 띠) — 두 경사면
-for side, (xa, xb) in enumerate([(-12.3, 0.5), (0.5, 13.3)]):
-    L_ = math.hypot(xb - xa, 3.8); ang = math.atan2(3.8, xb - xa) * (1 if side == 0 else -1)
+# ---------------------------------------------------------------- 학교 (X 오른쪽 · Y 안쪽 · Z 위)
+PH = M['photo'] if 'photo' in M else M['brick']
+# 0) 관람석·옹벽 (앞으로 9m 나와 있음)
+for i, (y0, y1, py) in enumerate([(-10.5, -9.0, 830), (-9.0, -7.5, 800), (-7.5, -6.0, 785)]):
+    box(f'bleach{i}', -36, 46, y0, y1, 0, Z(py, y1), PH, 'rise', 0.15 + i * 0.12, 0.65 + i * 0.12)
+box('platform', -36, 46, -6.0, -0.2, 0, Z(770, -6), PH, 'rise', 0.5, 0.9)
+box('rail', -36, 46, -6.1, -5.9, Z(770, -6), Z(770, -6) + 1.05, M['steel'], 'rise', 0.9, 1.2)
+
+# 1) 왼쪽 동
+box('leftwing', -36, X(140), 0, 24, 0, Z(440), PH, 'rise', 0.6, 1.7)
+box('leftwing_cop', -36.1, X(140) + 0.1, -0.1, 24.1, Z(440), Z(440) + 0.35, M['red'], 'drop', 2.9, 3.4)
+
+# 2) 박공동 (본관 정면)  px 140~640 · 처마 py 335 · 마루 py 275 @px 385
+GX0, GX1, GZE, GZP, GXP = X(140), X(640), Z(335), Z(275), X(385)
+box('gableblock', GX0, GX1, 0, 20, 0, GZE, PH, 'rise', 0.8, 2.2)
+gable('gable_front', GX0 - 0.3, GX1 + 0.3, -0.15, 20.15, GZE, GZP, PH, 2.9, 3.5)
+box('gable_band', GX0 - 0.3, GX1 + 0.3, -0.12, 20.1, GZE - 0.2, GZE + 0.1, M['red'], 'drop', 3.0, 3.5)
+for side, (xa, xb) in enumerate([(GX0 - 0.3, GXP), (GXP, GX1 + 0.3)]):
+    rise = GZP - GZE
+    L_ = math.hypot(xb - xa, rise); ang = math.atan2(rise, xb - xa) * (1 if side == 0 else -1)
     bpy.ops.mesh.primitive_cube_add(size=1); o = bpy.context.object; o.name = f'gable_edge{side}'
     o.scale = (L_, 0.35, 0.28); o.rotation_euler = (0, -ang, 0)
-    o.location = ((xa + xb) / 2, -0.15, 12.4 + 1.9); o.data.materials.append(M['red'])
+    o.location = ((xa + xb) / 2, -0.15, GZE + rise / 2); o.data.materials.append(M['red'])
     BUILD.append((o, 'drop', 3.0, 3.5))
-# 창: 위 줄 7개 (어두운 개구부), 아래 유리 벽
-for i in range(7):
-    x = -8.4 + i * 2.8
-    box(f'gwin{i}', x - 0.55, x + 0.55, -0.3, 0.05, 8.3, 10.2, M['glass'], 'pop', 2.4 + i * 0.07, 2.8 + i * 0.07, origin='center')
-    box(f'gwin{i}_sill', x - 0.7, x + 0.7, -0.35, 0.05, 8.1, 8.3, M['red'], 'pop', 2.5 + i * 0.07, 2.9 + i * 0.07, origin='center')
-box('glasswall', -11.0, 8.0, -0.3, 0.05, 1.2, 5.6, M['glass'], 'pop', 2.5, 3.0, origin='center')
-box('glasswall_mul', -11.0, 8.0, -0.32, 0.02, 3.3, 3.5, M['steel'], 'pop', 2.6, 3.0, origin='center')
-# 엠블럼(원판) · 교명
-bpy.ops.mesh.primitive_cylinder_add(radius=1.2, depth=0.2, vertices=32); em = bpy.context.object; em.name = 'emblem'
-em.rotation_euler = (math.radians(90), 0, 0); em.location = (1.4, -0.2, 0); em.data.materials.append(M['green'])
-BUILD.append((em, 'pop', 4.0, 4.5)); em.location.z = 13.9
-bpy.ops.mesh.primitive_cylinder_add(radius=0.9, depth=0.24, vertices=32); em2 = bpy.context.object; em2.name = 'emblem_in'
-em2.rotation_euler = (math.radians(90), 0, 0); em2.location = (1.4, -0.22, 0); em2.data.materials.append(M['gold'])
-BUILD.append((em2, 'pop', 4.05, 4.55)); em2.location.z = 13.9
+for i in range(7):                                             # 위 창 7 (px 210~555, py 375~440)
+    cx = X(210 + i * 57.5)
+    box(f'gwin{i}', cx - 0.55, cx + 0.55, -0.35, 0.05, Z(440), Z(375), M['glass'], 'pop', 2.4 + i * 0.07, 2.8 + i * 0.07, origin='center')
+box('glasswall', X(180), X(610), -0.3, 0.05, Z(600), Z(520), M['glass'], 'pop', 2.5, 3.0, origin='center')   # 2층 유리벽
+box('entry_glass', X(425), X(620), -0.3, 0.05, Z(770, -6), Z(640), M['glass'], 'pop', 2.6, 3.0, origin='center')   # 현관 유리
+# 엠블럼 · 교명 (사진에 이미 찍혀 있으므로 살짝 돌출만 — 질감은 사진이 입힘)
+bpy.ops.mesh.primitive_cylinder_add(radius=0.95, depth=0.25, vertices=32); em = bpy.context.object; em.name = 'emblem'
+em.rotation_euler = (math.radians(90), 0, 0); em.location = (X(405), -0.2, 0); em.data.materials.append(PH)
+BUILD.append((em, 'pop', 4.0, 4.5)); em.location.z = Z(320)
 if os.path.exists(FONT):
     cu = bpy.data.curves.new('schoolname', 'FONT'); cu.body = '금성초등학교'; cu.font = bpy.data.fonts.load(FONT)
-    cu.size = 1.75; cu.extrude = 0.12; cu.align_x = 'CENTER'
+    cu.size = 1.55; cu.extrude = 0.12; cu.align_x = 'CENTER'
     tx = bpy.data.objects.new('schoolname', cu); sc.collection.objects.link(tx)
-    tx.rotation_euler = (math.radians(90), 0, 0); tx.location = (0.3, -0.25, 0); tx.data.materials.append(M['navy'])
-    BUILD.append((tx, 'pop', 4.1, 4.7)); tx.location.z = 6.3
-# 입구 캐노피 (초록 유리 아치) + 기둥
-bpy.ops.mesh.primitive_cylinder_add(radius=3.6, depth=6.5, vertices=24); arch = bpy.context.object; arch.name = 'entry_arch'
-arch.rotation_euler = (0, math.radians(90), 0); arch.scale = (0.45, 1, 1)
-for v in arch.data.vertices: pass
-arch.location = (6.5, -3.0, 0); arch.data.materials.append(M['gglass']); BUILD.append((arch, 'pop', 3.6, 4.1)); arch.location.z = 3.4
-box('entry_cut', 2.5, 10.5, -6.6, 0.4, 0, 3.4, M['sand'], 'rise', 0, 0.01)   # 아치 아랫부분 가리개(바닥색) — 반원처럼 보이게
-for i, x in enumerate([3.6, 9.4]):
-    cyl(f'arch_post{i}', x, -5.9, 1.1, 3.6, 0.12, M['steel'], 'rise', 3.4, 3.7)
+    tx.rotation_euler = (math.radians(90), 0, 0); tx.location = (X(400), -0.28, 0); tx.data.materials.append(M['navy'])
+    BUILD.append((tx, 'pop', 4.1, 4.7)); tx.location.z = Z(470) - 0.7
+# 입구 캐노피 (초록 유리 아치, 앞으로 6m) + 기둥
+AX0, AX1, AZT = X(425, -6), X(760, -6), Z(590, -6)
+bpy.ops.mesh.primitive_cylinder_add(radius=(AX1 - AX0) / 2, depth=6.0, vertices=28); arch = bpy.context.object; arch.name = 'entry_arch'
+arch.rotation_euler = (0, math.radians(90), 0); arch.scale = (0.32, 1, 1)
+arch.location = ((AX0 + AX1) / 2, -3.0, 0); arch.data.materials.append(M['gglass']); BUILD.append((arch, 'pop', 3.6, 4.1))
+arch.location.z = AZT - (AX1 - AX0) / 2 * 0.32
+box('entry_cut', AX0 - 0.5, AX1 + 0.5, -6.6, 0.4, 0, AZT - (AX1 - AX0) / 2 * 0.32 - 0.05, PH, 'rise', 0, 0.01)   # 아치 아랫부분 가리개
+for i, px in enumerate([445, 740]):
+    cyl(f'arch_post{i}', X(px, -6), -5.9, Z(770, -6), AZT - 1.5, 0.12, M['steel'], 'rise', 3.4, 3.7)
 
-# 3) 탑 (박공동 뒤, 더 높음)
-box('tower', -6.5, 2.5, 8, 17, 0, 19.0, M['brick'], 'rise', 1.4, 2.7)
-gable('tower_gable', -6.8, 2.8, 7.8, 17.2, 19.0, 22.0, M['brick'], 3.2, 3.7)
-box('tower_band', -6.8, 2.8, 7.8, 17.2, 18.8, 19.1, M['red'], 'drop', 3.3, 3.7)
-for side, (xa, xb) in enumerate([(-6.8, -2.0), (-2.0, 2.8)]):
-    L_ = math.hypot(xb - xa, 3.0); ang = math.atan2(3.0, xb - xa) * (1 if side == 0 else -1)
-    bpy.ops.mesh.primitive_cube_add(size=1); o = bpy.context.object; o.name = f'tower_edge{side}'
-    o.scale = (L_, 0.35, 0.28); o.rotation_euler = (0, -ang, 0)
-    o.location = ((xa + xb) / 2, 7.85, 19.0 + 1.5); o.data.materials.append(M['red'])
-    BUILD.append((o, 'drop', 3.3, 3.7))
+# 3) 탑 (박공동 뒤 9m, 평지붕 — 정리 사진 기준)
+box('tower', X(242, 9), X(490, 9), 8, 17, 0, Z(200, 9), PH, 'rise', 1.4, 2.7)
+box('tower_cop', X(242, 9) - 0.2, X(490, 9) + 0.2, 7.8, 17.2, Z(200, 9), Z(200, 9) + 0.35, M['red'], 'drop', 3.3, 3.7)
 
-# 4) 오른쪽 동 (4층 · 벽돌 + 콘크리트 띠·기둥 + 창 띠)
-box('rightwing', 13, 60, 0, 22, 0, 15.2, M['brick'], 'rise', 1.0, 2.6)
-box('rightwing_cop', 12.9, 60.1, -0.1, 22.1, 15.2, 15.6, M['red'], 'drop', 3.0, 3.5)
-for fl, z in enumerate([3.5, 7.1, 10.7, 14.0]):
-    box(f'band{fl}', 13, 60, -0.25, 0.0, z, z + 0.5, M['concrete'], 'slidex', 2.0 + fl * 0.12, 2.5 + fl * 0.12, origin='left')
-for i in range(9):
-    x = 13.2 + i * 5.8
-    box(f'pil{i}', x, x + 0.55, -0.3, 0.0, 0, 15.2, M['concrete'], 'rise', 1.9 + i * 0.05, 2.35 + i * 0.05)
-for fl, z in enumerate([1.3, 4.6, 8.2, 11.8]):
+# 4) 오른쪽 동  px 640~1400 · 파라펫 py 355 · 창 띠 4줄 · 기둥 9
+RX0, RX1, RZT = X(640), X(1400), Z(355)
+box('rightwing', RX0, RX1, 0, 22, 0, RZT, PH, 'rise', 1.0, 2.6)
+box('rightwing_cop', RX0 - 0.1, RX1 + 0.1, -0.1, 22.1, RZT, RZT + 0.35, M['red'], 'drop', 3.0, 3.5)
+box('farblock', RX1, X(1560, 8), 8, 30, 0, Z(360, 8), PH, 'rise', 1.2, 2.6)          # 오른쪽 끝 뒤로 물러난 동
+BANDS = [(360, 380), (455, 475), (548, 565), (640, 660)]
+for fl, (pa, pb) in enumerate(BANDS):
+    box(f'band{fl}', RX0, RX1, -0.25, 0.0, Z(pb), Z(pa), M['concrete'], 'slidex', 2.0 + fl * 0.12, 2.5 + fl * 0.12, origin='left')
+PILS = [640, 740, 845, 950, 1050, 1150, 1250, 1350, 1440]
+for i, px in enumerate(PILS[:-1]):
+    box(f'pil{i}', X(px), X(px) + 0.6, -0.3, 0.0, 0, RZT, M['concrete'], 'rise', 1.9 + i * 0.05, 2.35 + i * 0.05)
+ROWS = [(390, 450), (490, 540), (575, 620), (670, 710)]
+for fl, (pa, pb) in enumerate(ROWS):
     for i in range(8):
-        x0 = 14.2 + i * 5.8
-        box(f'rwin{fl}_{i}', x0, x0 + 4.4, -0.2, 0.0, z, z + 1.9, M['glass'], 'pop', 2.5 + fl * 0.1 + i * 0.04, 2.85 + fl * 0.1 + i * 0.04, origin='center')
-        box(f'rsill{fl}_{i}', x0 - 0.1, x0 + 4.5, -0.28, 0.0, z - 0.18, z, M['white'], 'pop', 2.55 + fl * 0.1 + i * 0.04, 2.9 + fl * 0.1 + i * 0.04, origin='center')
-# 옥상 정자 2개 (콘크리트 기둥 + 초록 곡선 지붕)
-for k, x0 in enumerate([17.5, 36.5]):
-    for i, (dx, dy) in enumerate([(0, 3), (11, 3), (0, 12), (11, 12)]):
-        box(f'perg{k}_post{i}', x0 + dx, x0 + dx + 0.6, dy, dy + 0.6, 15.6, 19.6, M['concrete'], 'rise', 3.5 + k * 0.2, 3.9 + k * 0.2)
-    roof = box(f'perg{k}_roof', x0 - 1.2, x0 + 12.8, 1.8, 13.8, 19.6, 20.2, M['green'], 'drop', 3.9 + k * 0.2, 4.3 + k * 0.2)
-    box(f'perg{k}_rim', x0 - 1.3, x0 + 12.9, 1.7, 13.9, 20.2, 20.45, M['concrete'], 'drop', 3.9 + k * 0.2, 4.3 + k * 0.2)
-    ball(f'perg{k}_fin', x0 + 5.8, 7.8, 20.6, 0.45, M['green'], 4.3 + k * 0.2, 4.6 + k * 0.2)
-# 긴 초록 캐노피 (앞쪽 통로)
-box('canopy', -34, 62, -6.9, -4.7, 4.3, 4.75, M['gglass'], 'drop', 3.7, 4.2)
-for i in range(17):
-    x = -33 + i * 5.9
-    cyl(f'cpost{i}', x, -4.8, 1.1, 4.3, 0.08, M['steel'], 'rise', 3.4 + i * 0.02, 3.7 + i * 0.02)
-# 깃대 3
-for i, x in enumerate([-3.5, -0.5, 2.5]):
-    cyl(f'flag{i}', x, -3.2, 1.1, 12.5, 0.07, M['steel'], 'rise', 4.2 + i * 0.1, 4.6 + i * 0.1)
-    box(f'flagc{i}', x + 0.05, x + 1.5, -3.25, -3.15, 10.4, 12.0, M['white'], 'pop', 4.5 + i * 0.1, 4.8 + i * 0.1, origin='center')
-# 나무 (앞줄)
-for i, (x, y, hgt, r) in enumerate([(-27, -11, 6.8, 2.4), (-19, -10.5, 6.0, 2.2), (4, -10, 6.3, 2.3), (12.5, -10.5, 6.6, 2.5),
-                                     (24, -10, 6.8, 2.6), (37, -10.5, 6.4, 2.5), (49, -10, 6.6, 2.4), (60, -10.5, 6.0, 2.2)]):
-    t0 = 4.4 + i * 0.1
-    cyl(f'trunk{i}', x, y, 0, hgt, 0.22, M['bark'], 'rise', t0, t0 + 0.35, seg=8)
-    for j, (dx, dy, dz, rr) in enumerate([(0, 0, hgt + 0.8, r), (-r * 0.5, 0.3, hgt - 0.2, r * 0.72), (r * 0.5, -0.2, hgt - 0.4, r * 0.7), (0, r * 0.5, hgt + 0.2, r * 0.6)]):
-        ball(f'leaf{i}_{j}', x + dx, y + dy, dz, rr, M['leaf'], t0 + 0.25 + j * 0.05, t0 + 0.6 + j * 0.05)
+        x0, x1 = X(PILS[i] + 18), X(PILS[i + 1] - 18)
+        box(f'rwin{fl}_{i}', x0, x1, -0.2, 0.0, Z(pb), Z(pa), M['glass'], 'pop', 2.5 + fl * 0.1 + i * 0.04, 2.85 + fl * 0.1 + i * 0.04, origin='center')
+        box(f'rsill{fl}_{i}', x0 - 0.1, x1 + 0.1, -0.28, 0.0, Z(pb) - 0.18, Z(pb), M['white'], 'pop', 2.55 + fl * 0.1 + i * 0.04, 2.9 + fl * 0.1 + i * 0.04, origin='center')
+# 옥상 정자 2 (4m 안쪽) — 콘크리트 기둥 + 초록 곡면 지붕
+for k, (pa, pb, ptop) in enumerate([(605, 885, 235), (960, 1200, 270)]):
+    x0, x1, zt = X(pa, 4), X(pb, 4), Z(ptop, 4)
+    for i, (dx, dy) in enumerate([(0.6, 3), (x1 - x0 - 1.2, 3), (0.6, 10), (x1 - x0 - 1.2, 10)]):
+        box(f'perg{k}_post{i}', x0 + dx, x0 + dx + 0.6, dy, dy + 0.6, RZT, zt - 0.7, M['concrete'], 'rise', 3.5 + k * 0.2, 3.9 + k * 0.2)
+    box(f'perg{k}_roof', x0, x1, 1.6, 11.6, zt - 0.7, zt - 0.15, M['green'], 'drop', 3.9 + k * 0.2, 4.3 + k * 0.2)
+    box(f'perg{k}_rim', x0 - 0.1, x1 + 0.1, 1.5, 11.7, zt - 0.15, zt + 0.1, M['concrete'], 'drop', 3.9 + k * 0.2, 4.3 + k * 0.2)
+    ball(f'perg{k}_fin', (x0 + x1) / 2, 6.5, zt + 0.3, 0.4, M['green'], 4.3 + k * 0.2, 4.6 + k * 0.2)
+# 긴 초록 캐노피 (앞으로 7m)
+CZ = Z(660, -7)
+box('canopy', -36, 46, -8.2, -5.8, CZ - 0.45, CZ, M['gglass'], 'drop', 3.7, 4.2)
+for i in range(24):
+    x = -35 + i * 3.5
+    cyl(f'cpost{i}', x, -6.0, Z(770, -6), CZ - 0.45, 0.07, M['steel'], 'rise', 3.4 + i * 0.015, 3.7 + i * 0.015)
+# 나무: 정리 사진엔 없음 — 끝에 실사(원본, 나무 있음)로 녹아들 때 나무가 생긴다
+# 뒤 배경판(하늘) — 사진 하늘을 그대로 (먼 평면, 카메라가 움직여도 시차 작음)
+box('backdrop', -400, 400, 120, 121, 0, 260, PH, 'rise', 0, 0.01)
+g.data.materials.clear(); g.data.materials.append(PH)   # 운동장도 사진
+
+# ---------------------------------------------------------------- 사진 영사 (고정 카메라 자리에서 사진을 모형 위로)
+pc = bpy.data.cameras.new('proj'); pc.lens = 40; pc.sensor_width = 36; pc.sensor_fit = 'HORIZONTAL'
+proj = bpy.data.objects.new('proj', pc); sc.collection.objects.link(proj)
+proj.location = (0, -CAMD, EYE); proj.rotation_euler = (math.radians(90) + PITCH, 0, 0)      # 정면(+Y), 사진과 같은 올려봄
+if 'photo' in M:
+    for o in sc.objects:
+        if o.type != 'MESH': continue
+        o.data.materials.clear(); o.data.materials.append(M['photo_ground'] if o.name == 'ground' else M['photo_sky'] if o.name == 'backdrop' else M['photo'])      # 모형 전체에 사진 (교명 3D 글자만 남색)
+        if 'proj' not in o.data.uv_layers: o.data.uv_layers.new(name='proj')
+        if o.name != 'ground':
+            dim = max(o.dimensions)
+            sd = o.modifiers.new('sub', 'SUBSURF'); sd.subdivision_type = 'SIMPLE'; sd.levels = sd.render_levels = 5 if dim > 60 else 4 if dim > 15 else 2 if dim > 3 else 1
+        md = o.modifiers.new('proj', 'UV_PROJECT'); md.uv_layer = 'proj'; md.aspect_x = 1536; md.aspect_y = 1024
+        md.projectors[0].object = proj
 
 # ---------------------------------------------------------------- 빛
 sun = bpy.data.lights.new('sun', 'SUN'); sun.energy = 2.2; sun.angle = math.radians(25); sun.color = (1.0, 0.98, 0.95)
@@ -301,7 +355,7 @@ so = bpy.data.objects.new('sun', sun); sc.collection.objects.link(so)
 so.rotation_euler = (math.radians(50), 0, math.radians(-35))
 
 # ---------------------------------------------------------------- 카메라
-cam = bpy.data.cameras.new('cam'); cam.lens = 40; cam.sensor_width = 36
+cam = bpy.data.cameras.new('cam'); cam.lens = 40; cam.sensor_width = 36; cam.sensor_fit = 'HORIZONTAL'
 co = bpy.data.objects.new('cam', cam); sc.collection.objects.link(co); sc.camera = co
 tgt = bpy.data.objects.new('tgt', None); sc.collection.objects.link(tgt)
 con = co.constraints.new('TRACK_TO'); con.target = tgt; con.track_axis = 'TRACK_NEGATIVE_Z'; con.up_axis = 'UP_Y'
@@ -336,7 +390,7 @@ for o, kind, t0, t1 in BUILD:
         if sec > t1 + 0.5: break        # 완료 후엔 마지막 값 유지 — 더 키 안 박음
 
 # 카메라: 왼쪽 위에서 돌아 들어와 정면 사진 자리로 (프레임마다 직접 계산)
-CAM_PATH = [(0.0, (-75, -70, 30), (8, 8, 8)), (2.6, (-30, -85, 16), (14, 4, 8)), (HOLD, (15.5, -66, 1.8), (15.5, 0, 6.8))]
+CAM_PATH = [(0.0, (-40, -55, 16), (-6, 6, 9)), (2.6, (-22, -66, 9), (-3, 2, 6)), (HOLD, (0, -CAMD, EYE), (0, 0, LOOKZ))]
 def cam_at(sec):
     if sec >= HOLD: return Vector(CAM_PATH[-1][1]), Vector(CAM_PATH[-1][2])
     for (ta, pa, la), (tb, pb, lb) in zip(CAM_PATH, CAM_PATH[1:]):
