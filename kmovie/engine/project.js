@@ -536,15 +536,15 @@
      항목 { id, media, in, out(원본 프레임), at, dur(타임라인 프레임 — in/out 에서 파생), speed:'normal', pos, size }.
      클립과 같은 모양이라 srcFrame·drawClip 을 그대로 쓴다. 소리는 없다(현장음·음악과 안 섞음).
      pos: tl/tr/bl/br(모서리)·c(중앙)·full(꽉) · size: sm 28% / md 38% / lg 50% (full 은 무시). 겹침 허용 — 배열 뒤가 위. */
-  const V2_POS = ['tl', 'tr', 'bl', 'br', 'c', 'full'], V2_SIZE = { sm: 0.28, md: 0.38, lg: 0.5 };
+  const V2_POS = ['tl', 'tr', 'bl', 'br', 'c', 'full', 'free'], V2_SIZE = { sm: 0.28, md: 0.38, lg: 0.5 };
   function sortV2() { P.V2.sort((a, b) => a.at - b.at); }
   function v2(id) { return (P.V2 || []).find(x => x.id === id) || null; }
   function v2Dur(o, m) { return Math.max(1, Math.round((o.out - o.in) / m.fps * FPS)); }
-  function addV2(mediaId, at) {
+  function addV2(mediaId, at, opt) {
     const m = media(mediaId); if (!m || (m.kind !== 'video' && m.kind !== 'image')) return null;
     commit();
     const out = m.kind === 'image' ? IMAGE_DEFAULT : Math.min(m.dur, Math.round(10 * m.fps));   // 영상 기본 10초 (트림으로 늘림)
-    const x = { id: uid('o'), media: m.id, in: 0, out, at: Math.max(0, Math.round(at || 0)), speed: 'normal', freeze: false, pos: 'br', size: 'md' };
+    const x = Object.assign({ id: uid('o'), media: m.id, in: 0, out, at: Math.max(0, Math.round(at || 0)), speed: 'normal', freeze: false, pos: 'br', size: 'md' }, opt || {});
     x.dur = m.kind === 'image' ? out : v2Dur(x, m);
     P.V2.push(x); sortV2(); emit('V2'); return x;
   }

@@ -40,6 +40,8 @@
   let pxf = 2, scrollF = 0;
   let drag = null, hover = null, dirty = true, previewJob = 0, rafId = 0;
   let partDrag = null;                       // 부품 목록에서 끌어오는 중 {part, dur, x, y, moved, overTL, f}
+  let binDragUsed = false;                   // 끌어 놓은 직후 그 항목의 click(소스 열기) 한 번 무시
+  let binDrag = null;                        // 미디어 띠에서 끌어오는 중 {media, kind, dur, x, y, moved, overTL, overStage, lane, f} — 사진·영상은 영상 위(V2)로 겹치거나 V 에 끼워 넣기, 음악은 A2
   const binProg = {};
 
   /* ---------- 유틸 ---------- */
@@ -328,7 +330,7 @@
   const sc = document.createElement('canvas'), sctx = sc.getContext('2d');
   let TW = 0, TH = 0, DPR = 1;
   const HEAD = 56, RULER = 24;
-  const LANES = [{ k: 'P', h: 40, label: '꾸미기' }, { k: 'S', h: 40, label: '자막' }, { k: 'V2', h: 32, label: '덧영상' }, { k: 'V', h: 88, label: '영상' }, { k: 'A1', h: 48, label: '현장음' }, { k: 'A2', h: 36, label: '음악' }];
+  const LANES = [{ k: 'P', h: 40, label: '꾸미기' }, { k: 'S', h: 40, label: '자막' }, { k: 'V2', h: 32, label: '덧영상·사진' }, { k: 'V', h: 88, label: '영상' }, { k: 'A1', h: 48, label: '현장음' }, { k: 'A2', h: 36, label: '음악' }];
   const LY = {}; { let y = RULER; LANES.forEach(l => { LY[l.k] = { y, h: l.h }; y += l.h; }); }
   const xOf = f => HEAD + (f - scrollF) * pxf;
   const frameOf = x => scrollF + (x - HEAD) / pxf;
@@ -662,6 +664,7 @@
     }
     // 부품 목록에서 끌어오는 중: P 레인 삽입 위치
     if (partDrag && partDrag.overTL) { const x = Math.round(xOf(partDrag.f)) + .5; ctx.fillStyle = 'rgba(217,182,92,.35)'; rr(ctx, x, LY.P.y + 4, Math.max(8, partDrag.dur * pxf), LY.P.h - 8, 4); ctx.fill(); ctx.fillStyle = GOLD; ctx.fillRect(x - 1, LY.P.y, 3, LY.P.h); }
+    if (binDrag && binDrag.overTL) { const L = LY[binDrag.lane]; if (L) { const x = Math.round(xOf(binDrag.f)) + .5; ctx.fillStyle = 'rgba(217,182,92,.35)'; rr(ctx, x, L.y + 4, Math.max(8, binDrag.dur * pxf), L.h - 8, 4); ctx.fill(); ctx.fillStyle = GOLD; ctx.fillRect(x - 1, L.y, 3, L.h); } }
     // 스냅 표시
     if (drag && drag.snapX != null) { ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(Math.round(drag.snapX) + .5, RULER); ctx.lineTo(Math.round(drag.snapX) + .5, TH); ctx.stroke(); ctx.setLineDash([]); }
     // 플레이헤드
@@ -1528,9 +1531,60 @@
   }
   // 자막
   /* ---------- 14단계 패널: 덧영상 V2 ---------- */
-  const V2_POS_L = [['tl', '↖ 좌상'], ['tr', '↗ 우상'], ['c', '중앙'], ['bl', '↙ 좌하'], ['br', '↘ 우하'], ['full', '꽉 채움']];
+  const V2_POS_L = [['tl', '↖ 좌상'], ['tr', '↗ 우상'], ['c', '중앙'], ['bl', '↙ 좌하'], ['br', '↘ 우하'], ['full', '꽉 채움'], ['free', '✋ 자유']];
   V2_POS_L.forEach(([k, l]) => segBtn($('v2PosSeg'), k, l, () => { const o = selV2 && P.v2(selV2); if (o) { P.updateV2(o.id, { pos: k }); } }));
-  [['sm', '작게'], ['md', '중간'], ['lg', '절반']].forEach(([k, l]) => segBtn($('v2SizeSeg'), k, l, () => { const o = selV2 && P.v2(selV2); if (o) P.updateV2(o.id, { size: k }); }));
+  [['sm', '작게'], ['md', '중간'], ['lg', '절반']].forEach(([k, l]) => segBtn($('v2SizeSeg'), k, l, () => { const o = selV2 && P.v2(selV2); if (o) P.updateV2(o.id, { size: k, sc: P.V2_SIZE[k] }); }));
+  /* 크기 슬라이더(너비 %) — 끄는 동안 commit 없이, 놓으면 한 커밋 */
+  let v2ScStart = null;
+  $('v2Sc').oninput = e => { const o = selV2 && P.v2(selV2); if (!o) return; if (v2ScStart == null) v2ScStart = o.sc != null ? o.sc : (P.V2_SIZE[o.size] || 0.38); P.updateV2(o.id, { sc: +e.target.value / 100 }, { commit: false }); $('v2ScV').textContent = e.target.value + '%'; renderPreview(); };
+  $('v2Sc').onchange = e => { const o = selV2 && P.v2(selV2); if (!o) return; const v = +e.target.value / 100; if (v2ScStart != null) o.sc = v2ScStart; v2ScStart = null; P.updateV2(o.id, { sc: v }); renderPreview(); };
+  $('tgV2Frame').onclick = () => { const o = selV2 && P.v2(selV2); if (o) { P.updateV2(o.id, { frame: o.frame === false }); renderPreview(); } };
+  /* 재생 화면에서 덧영상 끌기 — 고른 덧영상이 지금 프레임에 보이면 몸통을 끌어 옮기고(자유 자리), 오른쪽 아래 모서리를 끌어 크기 */
+  (function () {
+    let sd = null;
+    const cv = () => { const r = pv.getBoundingClientRect(); const W = PW(), H = PH(); const sx = W / Math.max(1, r.width), sy = H / Math.max(1, r.height); const k = Math.max(sx, sy); const rw = W / k, rh = H / k, ox = r.left + (r.width - rw) / 2, oy = r.top + (r.height - rh) / 2; return { ox, oy, k, W, H }; };
+    function hitV2(e) {
+      if (stage !== 'tl' || !selV2) return null;
+      const o = P.v2(selV2); if (!o || ph < o.at || ph >= o.at + o.dur) return null;
+      const m = P.media(o.media); if (!m) return null;
+      const c = cv(), px = (e.clientX - c.ox) * c.k, py = (e.clientY - c.oy) * c.k;
+      const rc = R.overlayRect(o, m, c.W, c.H); if (rc.full) return null;
+      if (px < rc.x || px > rc.x + rc.w || py < rc.y || py > rc.y + rc.h) return null;
+      const grip = Math.max(24, c.W * 0.03);
+      return { o, m, c, R: rc, px, py, corner: px > rc.x + rc.w - grip && py > rc.y + rc.h - grip };
+    }
+    pv.addEventListener('pointermove', e => { if (sd) return; const h = hitV2(e); pv.style.cursor = h ? (h.corner ? 'nwse-resize' : 'move') : ''; });
+    pv.addEventListener('pointerdown', e => {
+      const h = hitV2(e); if (!h) return;
+      e.preventDefault(); pv.setPointerCapture(e.pointerId);
+      const o = h.o, start = { pos: o.pos, fx: o.fx, fy: o.fy, sc: o.sc, size: o.size };
+      const cx = (h.R.x + h.R.w / 2) / h.c.W, cy = (h.R.y + h.R.h / 2) / h.c.H, sc0 = h.R.w / h.c.W;
+      sd = { o, start, h, cx, cy, sc0, x0: e.clientX, y0: e.clientY, moved: false };
+      pv.style.cursor = h.corner ? 'nwse-resize' : 'grabbing';
+    });
+    pv.addEventListener('pointermove', e => {
+      if (!sd) return;
+      const dx = (e.clientX - sd.x0) * sd.h.c.k, dy = (e.clientY - sd.y0) * sd.h.c.k;
+      if (!sd.moved && Math.hypot(dx, dy) < 3) return; sd.moved = true;
+      if (sd.h.corner) {
+        const sc = clamp((sd.sc0 * sd.h.c.W + dx) / sd.h.c.W, 0.08, 1.5);
+        // 모서리 끌기는 왼쪽 위를 고정 — 가운데를 그만큼 옮긴다
+        const W = sd.h.c.W, H = sd.h.c.H, rw = W * sc, rh = rw * sd.h.m.h / Math.max(1, sd.h.m.w);
+        const lx = sd.cx * W - sd.sc0 * W / 2, ly = sd.cy * H - (sd.sc0 * W * sd.h.m.h / Math.max(1, sd.h.m.w)) / 2;
+        P.updateV2(sd.o.id, { pos: 'free', sc, fx: (lx + rw / 2) / W, fy: (ly + rh / 2) / H }, { commit: false });
+      } else P.updateV2(sd.o.id, { pos: 'free', fx: sd.cx + dx / sd.h.c.W, fy: sd.cy + dy / sd.h.c.H, sc: sd.sc0 }, { commit: false });
+      dirty = true; renderPreview(); draw(); refreshV2Panel();
+    });
+    const end = e => {
+      if (!sd) return; const d = sd; sd = null; pv.style.cursor = '';
+      try { pv.releasePointerCapture(e.pointerId); } catch (er) {}
+      if (!d.moved) return;
+      const o = d.o, now = { pos: o.pos, fx: o.fx, fy: o.fy, sc: o.sc, size: o.size };
+      Object.assign(o, d.start); P.updateV2(o.id, now);       // 원래 값으로 되돌린 뒤 한 커밋 (Ctrl+Z 한 번)
+      renderPreview();
+    };
+    pv.addEventListener('pointerup', end); pv.addEventListener('pointercancel', end);
+  })();
   $('btnV2Del').onclick = () => { if (selV2) { stop(); P.removeV2(selV2); selectV2(null); setPH(ph); } };
   function refreshV2Panel() {
     const o = selV2 && P.v2(selV2);
@@ -1540,7 +1594,11 @@
     $('v2Name').textContent = m ? m.name : '';
     $('v2Range').textContent = tc(o.at) + ' → ' + tc(o.at + o.dur) + ' · ' + secStr(o.dur);
     Array.from($('v2PosSeg').children).forEach(b => b.classList.toggle('on', b.dataset.k === (o.pos || 'br')));
-    Array.from($('v2SizeSeg').children).forEach(b => { b.classList.toggle('on', b.dataset.k === (o.size || 'md')); b.disabled = o.pos === 'full'; });
+    const scNow = o.sc != null ? o.sc : (P.V2_SIZE[o.size || 'md'] || 0.38);
+    Array.from($('v2SizeSeg').children).forEach(b => { b.classList.toggle('on', Math.abs((P.V2_SIZE[b.dataset.k] || 0) - scNow) < 0.005); b.disabled = o.pos === 'full'; });
+    if (document.activeElement !== $('v2Sc')) $('v2Sc').value = Math.round(scNow * 100); $('v2ScV').textContent = Math.round(scNow * 100) + '%'; $('v2Sc').disabled = o.pos === 'full';
+    $('tgV2Frame').classList.toggle('on', o.frame !== false);
+    $('v2Hint').textContent = o.pos === 'full' ? '' : m && m.kind === 'image' ? '화면에서 사진을 끌어 옮기고 오른쪽 아래 모서리로 크기를 바꿔요' : '화면에서 끌어 옮기고 오른쪽 아래 모서리로 크기를 바꿔요';
   }
   /* ---------- 설정 열 조절기 (KMV_FX) — 글꼴·크기·위치·색·등장/퇴장 ----------
      자막 카드 → P.updateS, 부품 카드 → P.updateP, 클립 → P.setFade. 슬라이더는 끄는 동안 commit 없이, 놓으면 한 커밋. */
@@ -1859,6 +1917,42 @@
     if (!d.moved) peekPin(d.part);
     else if (d.overTL) { peekHide(true); placePart(d.part, d.f); }
     else draw();
+  });
+  window.addEventListener('pointermove', e => {
+    if (!binDrag) return;
+    if (!binDrag.moved && Math.hypot(e.clientX - binDrag.x, e.clientY - binDrag.y) < 6) return;
+    binDrag.moved = true;
+    const gh = $('partGhost'); gh.classList.remove('hidden'); gh.style.left = e.clientX + 'px'; gh.style.top = e.clientY + 'px';
+    const r = tl.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+    const over = x >= HEAD && x <= r.width && y >= 0 && y <= r.height;
+    const sr = $('stage').getBoundingClientRect();
+    binDrag.overStage = !over && !binDrag.kind.startsWith('audio') && stage === 'tl' && e.clientX >= sr.left && e.clientX <= sr.right && e.clientY >= sr.top && e.clientY <= sr.bottom;
+    binDrag.overTL = over;
+    if (over) {
+      const yy = y + ($('timeline').parentElement.scrollTop || 0);
+      let lane;
+      if (binDrag.kind === 'audio') lane = 'A2';
+      else lane = (yy >= LY.V.y && yy < LY.V.y + LY.V.h) || (yy >= LY.A1.y) ? 'V' : 'V2';
+      binDrag.lane = lane;
+      if (lane === 'V') binDrag.f = Math.max(0, Math.round(frameOf(x)));
+      else { const sn = snapSpan(frameOf(x), binDrag.dur, laneEdges(lane)); binDrag.f = Math.max(0, sn.f); }
+    }
+    gh.textContent = (binDrag.kind === 'audio' ? '♪ ' : binDrag.kind === 'image' ? '🖼 ' : '🎞 ') + binDrag.name + (over ? (binDrag.lane === 'V' ? ' → 영상 레인에 끼워 넣기' : binDrag.lane === 'A2' ? ' → 음악' : ' → 영상 위에 겹치기') : binDrag.overStage ? ' → 화면 위에 겹치기' : '');
+    tl.style.cursor = over ? 'copy' : 'default';
+    draw();
+  });
+  window.addEventListener('pointerup', () => {
+    if (!binDrag) return;
+    const d = binDrag; binDrag = null; $('partGhost').classList.add('hidden'); tl.style.cursor = 'default';
+    if (!d.moved) return;
+    binDragUsed = true; setTimeout(() => { binDragUsed = false; }, 0);
+    if (!d.overTL && !d.overStage) { draw(); return; }
+    stop(); showStage('tl');
+    if (d.kind === 'audio') { const a = P.addA2(d.media, d.f); if (a) { selectA2(a.id); select(null); selectS(null); selectP(null); selectV2(null); setPH(a.at); toast(d.name + ' 을 ' + tc(a.at) + ' 에 놓았어요', 1500); } return; }
+    if (d.overTL && d.lane === 'V') { const c = P.insertRange(d.media, d.kind === 'image' ? { dur: P.IMAGE_DEFAULT } : null, d.f, 'insert'); if (c) { select(c.id); setPH(c.at); toast(d.name + ' 을 ' + tc(c.at) + ' 에 끼워 넣었어요 — 뒤 클립은 밀려요', 2000); } return; }
+    const at = d.overStage ? ph : d.f;
+    const o = P.addV2(d.media, at, d.kind === 'image' ? { pos: 'free', fx: 0.5, fy: 0.5, sc: 0.45 } : undefined);
+    if (o) { selectV2(o.id); setPH(Math.max(o.at, Math.min(ph, o.at + o.dur - 1))); toast(d.name + ' 을 영상 위에 겹쳤어요 — 화면에서 끌어 옮기고 모서리로 크기', 2600); }
   });
 
   /* ---------- 부품 미리보기 (peek) — 타일에 올리면 움직임을 재생해 보여 주고, 클릭하면 고정 + 「넣기」 ----------
@@ -2393,10 +2487,17 @@
       if (src && src.kind === 'video' && !src.analyzed) { const bar = document.createElement('div'); bar.className = 'bar'; bar.innerHTML = '<i></i>'; bar.querySelector('i').style.width = Math.round((binProg[m.id] || 0) * 100) + '%'; bar.dataset.id = m.id; nm.appendChild(bar); }
       el.appendChild(nm);
       if (!isAud) { const add = document.createElement('span'); add.className = 'add'; add.textContent = '＋'; add.title = '통째로 타임라인 끝에 붙이기'; add.onclick = ev => { ev.stopPropagation(); stop(); showStage('tl'); const c = P.addClip(m.id); select(c.id); setPH(c.at); toast(m.name + ' 을 끝에 붙였어요', 1500); }; el.appendChild(add);
-        const pip = document.createElement('span'); pip.className = 'add'; pip.textContent = '⧉'; pip.title = '덧영상으로 — 플레이헤드 자리, 영상 위 작은 화면'; pip.onclick = ev => { ev.stopPropagation(); stop(); showStage('tl'); const o = P.addV2(m.id, ph); if (o) { selectV2(o.id); setPH(o.at); toast(m.name + ' 을 덧영상으로 놓았어요 — 오른쪽에서 위치·크기', 2200); } }; el.appendChild(pip); }
+        const pip = document.createElement('span'); pip.className = 'add'; pip.textContent = '⧉'; pip.title = '영상 위에 겹치기(덧영상) — 플레이헤드 자리'; pip.onclick = ev => { ev.stopPropagation(); stop(); showStage('tl'); const o = P.addV2(m.id, ph); if (o) { selectV2(o.id); setPH(o.at); toast(m.name + ' 을 덧영상으로 놓았어요 — 오른쪽에서 위치·크기', 2200); } }; el.appendChild(pip); }
       const x = document.createElement('span'); x.className = 'x'; x.textContent = '✕'; x.title = '미디어 제거 (타임라인에서도 빠져요)';
       x.onclick = ev => { ev.stopPropagation(); if (!confirm('"' + m.name + '" 을 지울까요? 타임라인의 클립도 함께 빠져요.')) return; stop(); if (srcCur && srcCur.media === m.id) { srcCur = null; srcMemo.delete(m.id); showStage('tl'); $('stageTabs').classList.add('hidden'); } P.removeMedia(m.id); M.remove(m.id); DB.delMedia(m.id); if (window.KMV_STAB) KMV_STAB.forget(m.id); if (window.KMV_REFRAME) KMV_REFRAME.forget(m.id); if (sel && !P.clip(sel)) select(null); if (selA2 && !P.a2(selA2)) selectA2(null); setPH(ph); refreshBin(); };
       el.appendChild(x);
+      /* 미디어 띠에서 타임라인으로 끌어 놓기(마우스·펜) — 사진·영상: 영상(V) 레인이면 그 자리에 끼워 넣기, 그 밖(덧영상·자막·꾸미기 레인이나 재생 화면)이면 영상 위에 겹쳐(덧영상). 음악: A2. 손가락은 종전대로 탭. */
+      el.addEventListener('pointerdown', e => {
+        if (e.pointerType === 'touch' || (e.pointerType === 'mouse' && e.button !== 0) || e.target.closest('.add, .x')) return;
+        const dur = isAud ? Math.max(1, Math.round(m.dur / m.fps * FPS)) : m.kind === 'image' ? P.IMAGE_DEFAULT : Math.min(Math.round(m.dur / m.fps * FPS), 10 * FPS);
+        binDrag = { media: m.id, kind: m.kind, name: m.name, dur, x: e.clientX, y: e.clientY, moved: false, overTL: false, overStage: false, lane: null, f: 0 };
+      });
+      el.addEventListener('click', e => { if (binDragUsed) { e.stopImmediatePropagation(); e.preventDefault(); } }, true);
       if (isAud) el.onclick = () => { stop(); const a = P.addA2(m.id, ph); if (a) { selectA2(a.id); select(null); selectS(null); selectP(null); selectV2(null); setPH(a.at); toast(m.name + ' 을 ' + tc(a.at) + ' 에 놓았어요', 1500); } };
       else el.onclick = () => openSource(m.id);
       bin.appendChild(el);

@@ -88,23 +88,36 @@
 
   /* 덧영상(V2) 한 장 — 모서리/중앙 작은 화면(테두리·그림자) 또는 full(꽉) */
   function rrPath(ctx, x, y, w, h, r) { r = Math.min(r, w / 2, h / 2); ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+  /* 덧영상 한 장이 화면에서 차지하는 자리 — 미리보기 그리기와 스테이지 끌기(kmovie.js)가 같은 계산을 쓴다.
+     pos 'free' = 화면에서 끌어 놓은 자리(fx·fy 는 가운데의 W·H 비율), sc = 너비 비율(0.1~1). 옛 카드는 size 프리셋(sm/md/lg) 그대로. */
+  function overlayRect(o, m, W, H) {
+    if (o.pos === 'full') return { x: 0, y: 0, w: W, h: H, full: true };
+    const P = g.KMV_PROJECT;
+    const SF = o.sc != null ? o.sc : ((P.V2_SIZE && P.V2_SIZE[o.size]) || 0.38), mg = Math.round(W * 0.035);
+    let rw = Math.round(W * SF), rh = Math.round(rw * m.h / Math.max(1, m.w));
+    if (o.pos !== 'free' && rh > H * 0.86) { rh = Math.round(H * 0.86); rw = Math.round(rh * m.w / Math.max(1, m.h)); }
+    let x, y;
+    if (o.pos === 'free') { x = Math.round((o.fx != null ? o.fx : 0.5) * W - rw / 2); y = Math.round((o.fy != null ? o.fy : 0.5) * H - rh / 2); }
+    else {
+      x = o.pos === 'tl' || o.pos === 'bl' ? mg : o.pos === 'c' ? (W - rw) >> 1 : W - mg - rw;
+      y = o.pos === 'tl' || o.pos === 'tr' ? mg : o.pos === 'c' ? (H - rh) >> 1 : H - mg - rh;
+    }
+    return { x, y, w: rw, h: rh, full: false };
+  }
   function drawOverlay(ctx, W, H, e) {
     const P = g.KMV_PROJECT, m = P.media(e.o.media); if (!m || !e.img) return;
     const rot = e.src ? e.src.rot : 0;
     if (e.o.pos === 'full') { g.KMV_MEDIA.drawFit(ctx, e.img, W, H, rot); return; }
-    const SF = (P.V2_SIZE && P.V2_SIZE[e.o.size]) || 0.38, mg = Math.round(W * 0.035), rad = Math.max(3, W * 0.008);
-    let rw = Math.round(W * SF), rh = Math.round(rw * m.h / Math.max(1, m.w));
-    if (rh > H * 0.86) { rh = Math.round(H * 0.86); rw = Math.round(rh * m.w / Math.max(1, m.h)); }
-    const x = e.o.pos === 'tl' || e.o.pos === 'bl' ? mg : e.o.pos === 'c' ? (W - rw) >> 1 : W - mg - rw;
-    const y = e.o.pos === 'tl' || e.o.pos === 'tr' ? mg : e.o.pos === 'c' ? (H - rh) >> 1 : H - mg - rh;
+    const rad = Math.max(3, W * 0.008), R = overlayRect(e.o, m, W, H), x = R.x, y = R.y, rw = R.w, rh = R.h;
+    const frame = e.o.frame !== false;                     // 사진을 자유롭게 얹을 땐 테두리·그림자 없이도(frame:false)
     ctx.save();
-    ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = W * 0.014; ctx.shadowOffsetY = W * 0.003;
-    rrPath(ctx, x, y, rw, rh, rad); ctx.fillStyle = '#000'; ctx.fill();
+    if (frame) { ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = W * 0.014; ctx.shadowOffsetY = W * 0.003; }
+    rrPath(ctx, x, y, rw, rh, frame ? rad : 0); ctx.fillStyle = '#000'; ctx.fill();
     ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
     ctx.clip();
     ctx.translate(x, y); g.KMV_MEDIA.drawFit(ctx, e.img, rw, rh, rot);
     ctx.restore();
-    rrPath(ctx, x, y, rw, rh, rad); ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = Math.max(1.5, W * 0.0016); ctx.stroke();
+    if (frame) { rrPath(ctx, x, y, rw, rh, rad); ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = Math.max(1.5, W * 0.0016); ctx.stroke(); }
   }
 
   function compose(ctx, W, H, t, c, img, tr, prevImg, mask, ov) {
@@ -248,5 +261,5 @@
     g.KMV_MEDIA.drawFit(ctx, img, W, H, src.rot);
   }
 
-  g.KMV_RENDER = { draw, drawExact, drawSource, drawClip, transitionAt, needsMask, partsAt };
+  g.KMV_RENDER = { draw, drawExact, drawSource, drawClip, transitionAt, needsMask, partsAt, overlayRect };
 })(typeof window !== 'undefined' ? window : globalThis);
