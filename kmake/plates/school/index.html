@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>학교가 지어진다 — 케이메이커</title>
+<style>
+  :root{ --gold:#D9B65C; }
+  *{box-sizing:border-box}
+  body{margin:0;background:#111;color:#eee;font-family:Pretendard,'Noto Sans KR',system-ui,sans-serif}
+  header{padding:14px 20px;border-bottom:1px solid #222;display:flex;align-items:center;gap:12px}
+  header a{color:#aaa;text-decoration:none;font-size:13px} header b{color:var(--gold)} header small{color:#888}
+  main{display:grid;grid-template-columns:1fr 320px;gap:18px;padding:18px;max-width:1400px;margin:0 auto}
+  @media (max-width:900px){ main{grid-template-columns:1fr} }
+  .stage{background:#000;border-radius:12px;overflow:hidden;aspect-ratio:16/9}
+  canvas{width:100%;height:100%;display:block}
+  .bar{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center}
+  button{background:#1d2b44;color:#fff;border:1px solid #2e4470;border-radius:8px;padding:9px 14px;cursor:pointer;font-size:14px}
+  button.pri{background:var(--gold);color:#221;border-color:#b99a45;font-weight:700}
+  button:disabled{opacity:.45;cursor:default}
+  input[type=range]{flex:1;min-width:140px}
+  .panel label{display:block;font-size:12px;color:#aaa;margin:10px 0 4px}
+  .panel input{width:100%;background:#191919;color:#fff;border:1px solid #333;border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit}
+  .panel .row{display:flex;gap:8px;align-items:center;margin-top:10px;font-size:13px;color:#ccc}
+  .note{font-size:12px;color:#888;line-height:1.6;margin-top:14px;border-top:1px solid #222;padding-top:10px}
+  .msg{font-size:13px;color:#ccc;min-height:18px}
+</style>
+</head>
+<body>
+<header><a href="/maker/">← 케이메이커</a><b>학교가 지어진다</b><small>3D 조립은 블렌더로 미리 구움 · 끝에 실사로 녹아듦 · 서버 0</small></header>
+<main>
+  <section>
+    <div class="stage"><canvas id="cv"></canvas></div>
+    <div class="bar">
+      <button id="play" class="pri">▶ 재생</button>
+      <input id="seek" type="range" min="0" max="1000" value="1000">
+      <button id="png">PNG 저장</button>
+      <button id="mp4">🎬 영상 저장 (MP4)</button>
+      <span class="msg" id="msg"></span>
+    </div>
+  </section>
+  <aside class="panel">
+    <label>학교 이름 (끝 자막)</label><input id="f-school" value="금성초등학교">
+    <label>한 줄 (끝 자막)</label><input id="f-sub" value="아이의 첫 시작을 함께합니다">
+    <div class="row"><input id="f-photo" type="checkbox" checked style="width:auto"> <label for="f-photo" style="margin:0">끝에 실사 사진으로 녹아들기</label></div>
+    <div class="row"><span>여운</span><input id="f-tail" type="range" min="0" max="4" step="0.5" value="2.5"><span id="f-tail-v">2.5초</span></div>
+    <div class="note">
+      틀(<code>school-build.mp4</code>)은 사진 한 장을 보고 지은 금성초 3D — 관람석 → 벽돌 → 콘크리트 띠 → 창 → 지붕 → 정자·캐노피 → 교명 → 나무 순으로 올라옵니다.<br>
+      카메라가 멈춘 뒤 실사(<code>school-photo.jpg</code>)로 녹아들고 자막이 뜹니다. 지금 틀은 시험 화질(640×360).
+    </div>
+  </aside>
+</main>
+<script src="/maker-playground/data/video.js?v=20260910a"></script>
+<script>
+(async () => {
+  const $ = (s) => document.querySelector(s);
+  const cv = $('#cv'), ctx = cv.getContext('2d'), msg = $('#msg');
+  const Q = new URLSearchParams(location.search);
+  const PLATE = /^[\w-]+$/.test(Q.get('plate') || '') ? Q.get('plate') : 'school-build';
+  if (Q.has('school')) $('#f-school').value = Q.get('school');
+  if (Q.has('sub')) $('#f-sub').value = Q.get('sub');
+  const meta = await (await fetch(`../${PLATE}.json`)).json();
+  const W = meta.width, H = meta.height, FPS = meta.fps, N = meta.frames;
+  cv.width = W; cv.height = H;
+  const holdSec = (meta.hold_from - 1) / FPS, plateSec = N / FPS;
+  const tail = () => +$('#f-tail').value;                 // 여운(사진+자막) 초
+  const totalSec = () => plateSec + tail();
+  $('#f-tail').oninput = () => { $('#f-tail-v').textContent = tail().toFixed(1) + '초'; draw(vid.currentTime); };
+
+  const vid = document.createElement('video');
+  vid.src = `../${PLATE}.mp4`; vid.muted = true; vid.playsInline = true; vid.preload = 'auto';
+  await new Promise((r) => { vid.onloadeddata = r; });
+  const photo = new Image(); photo.src = '../school-photo.jpg';
+  await new Promise((r) => { photo.onload = r; photo.onerror = r; });
+
+  const ease = (u) => u * u * (3 - 2 * u);
+  const seekTo = (sec) => new Promise((r) => {
+    const t = Math.max(0, Math.min(sec, plateSec - 0.001));
+    if (Math.abs(vid.currentTime - t) < 1e-4) return r();
+    let done = false; const fin = () => { if (done) return; done = true; vid.removeEventListener('seeked', on); r(); };
+    const on = () => fin(); vid.addEventListener('seeked', on);
+    vid.currentTime = t; setTimeout(fin, 1500);
+  });
+
+  /* 한 프레임: 틀 영상 → (hold 이후) 실사 디졸브 → 자막 */
+  function draw(sec) {
+    ctx.drawImage(vid, 0, 0, W, H);
+    const usePhoto = $('#f-photo').checked && photo.naturalWidth;
+    const dis = usePhoto ? ease(Math.max(0, Math.min(1, (sec - holdSec - 0.2) / 1.2))) : 0;   // hold 0.2초 뒤부터 1.2초 디졸브
+    if (dis > 0) {
+      ctx.save(); ctx.globalAlpha = dis;
+      const s = Math.max(W / photo.naturalWidth, H / photo.naturalHeight);
+      const dw = photo.naturalWidth * s, dh = photo.naturalHeight * s;
+      ctx.drawImage(photo, (W - dw) / 2, (H - dh) / 2, dw, dh); ctx.restore();
+    }
+    const cap = ease(Math.max(0, Math.min(1, (sec - plateSec + 0.3) / 0.8)));   // 틀 끝나기 0.3초 전부터 자막
+    if (cap > 0) {
+      const name = $('#f-school').value, sub = $('#f-sub').value;
+      ctx.save(); ctx.globalAlpha = cap;
+      ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.fillRect(0, H * 0.70, W, H * 0.30);
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#fff'; ctx.font = `700 ${Math.round(H * 0.085)}px 'Noto Sans KR',Pretendard,sans-serif`;
+      ctx.fillText(name, W / 2, H * 0.80 + (1 - cap) * H * 0.02);
+      ctx.fillStyle = '#F2D98B'; ctx.font = `500 ${Math.round(H * 0.04)}px 'Noto Sans KR',Pretendard,sans-serif`;
+      ctx.fillText(sub, W / 2, H * 0.90 + (1 - cap) * H * 0.02);
+      ctx.restore();
+    }
+  }
+  async function showAt(sec) { await seekTo(sec); draw(sec); }
+
+  /* 재생·스크럽 (여운 구간은 틀 마지막 프레임 위에 시간만 흐름) */
+  const seek = $('#seek'); let raf = 0, playing = false;
+  seek.oninput = () => showAt(seek.value / 1000 * totalSec());
+  $('#play').onclick = async () => {
+    cancelAnimationFrame(raf); playing = true; await seekTo(0); vid.play();
+    const t0 = performance.now();
+    const loop = () => {
+      const s = (performance.now() - t0) / 1000;
+      draw(Math.min(s, totalSec())); seek.value = Math.min(1000, s / totalSec() * 1000);
+      if (s < totalSec() && playing) raf = requestAnimationFrame(loop); else playing = false;
+    };
+    raf = requestAnimationFrame(loop);
+  };
+  for (const el of document.querySelectorAll('.panel input')) el.addEventListener('input', () => { if (!playing) draw(vid.currentTime); });
+
+  $('#png').onclick = async () => { await showAt(totalSec()); const a = document.createElement('a'); a.download = '학교가지어진다.png'; a.href = cv.toDataURL('image/png'); a.click(); };
+  $('#mp4').onclick = async () => {
+    if (!window.MK_VIDEO || typeof VideoEncoder === 'undefined') { msg.textContent = '이 브라우저는 영상 저장을 지원하지 않아요 (크롬·엣지 최신 버전)'; return; }
+    cancelAnimationFrame(raf); playing = false;
+    const btn = $('#mp4'); btn.disabled = true; msg.textContent = '영상 만드는 중…';
+    const frames = Math.round(totalSec() * FPS);
+    const r = await window.MK_VIDEO.exportFramesMP4({
+      width: W, height: H, fps: FPS, frames, title: `학교가지어진다_${$('#f-school').value || ''}`,
+      onProgress: (t) => { msg.textContent = t; },
+      drawFrame: async (i, octx) => { const sec = i / FPS; await seekTo(sec); draw(sec); octx.drawImage(cv, 0, 0); },
+    });
+    btn.disabled = false;
+    msg.textContent = r.ok ? `저장했어요 — ${r.w}×${r.h} · ${r.sec}초 · ${r.rung}` : (r.msg || '영상 저장에 실패했어요');
+  };
+
+  await showAt(totalSec());
+})();
+</script>
+</body>
+</html>
