@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<!--
+K-edu 사회 4-2 · 1단원 민주주의와 자치 · 주제① 학교생활 속 민주주의 · 7차시(l05)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [4사08-01] · 교과서 p.27~29 · 지도서(대단원1 주제① 7차시, 지도서 p.58~59) 근거
+수업 기법 = 창의적으로 문제 해결하기 · 1단원 색 #4F46E5 (중학년 ka- 엔진 승계 · 변수명 유지 · 엔진 무수정)
+★ 주제① 마지막 차시 — 주제 마무리([생각을 펼쳐요]·[얼마나 잘했을까])가 붙는다.
+
+직접조작: 계획 판 — 둘이 모여야 그 자리의 이름이 서고, 자리마다 따로 완성되는 형
+  ⭐ 앞 네 차시에서 옳고 그름은 언제나 상수에 못박혀 있었다 — l03의 걸음 차례도, l04의 두 갈래도
+     판이 미리 정해 둔 자리가 있었고 첫 걸음부터 옳고 그름이 있었다.
+     이번만 판에 정답 자리가 아예 없다 — 첫 행사는 세 자리 어디에 실어도 받는다.
+     옳고 그름은 두 번째 행사부터, 그것도 그 자리에 이미 놓인 것과 견주어 비로소 생긴다.
+     moFit(st,s,e) 한 줄이 그것을 다 정하고, 자리를 못박는 상수(MO_SEAT_OK)는 코드에 아예 없다.
+  ⭐ 그래서 완주하는 길이 여럿이다 — 세 묶음을 세 자리에 어떻게 배정해도 완주하고,
+     묶임은 언제나 같으며 달라지는 것은 자리 이름표뿐이다(6가지 배정 전수).
+  ⭐ 둘이 차야 그 자리의 이름이 선다 — moAimOf(st,s) 한 줄이 정하고, 하나만 실린 자리에는
+     달도 목표도 서지 않는다. 근거는 지도서 7차시 지도 방법 원문 「행사의 내용도 중요하지만,
+     행사를 통해 얻을 수 있는 결과가 무엇인지를 생각해 보도록 한다」 — 함께 얻는 것이 무엇인지는
+     둘을 나란히 놓고 보아야 보인다.
+  ⭐ ★ 한 자리에 이름이 서도 다른 자리에는 아무것도 서지 않는다 — 자리마다 따로 완성된다.
+     l03(한 줄에서 드러난 이름이 손대지 않은 두 줄의 머리에도 함께 섰다)과 정면으로 반대이고,
+     l04(셋이 다 실려야 한 자리가 열렸다)와도 다르다 — 여기서는 세 자리가 따로따로 열린다.
+  ⭐ 어느 자리에 설지는 행사가 아니라 그 행사가 얻는 것이 정한다
+     (MO_GAIN 한 줄 · 대괄호로 읽는 자리 moGainOf 단 하나 · 판·자리 칸·처리기 전량이 직접 읽지 않음).
+  ⭐ 실은 행사를 덜어 내는 자리가 코드에 0 · state.moSeat[e] = s 가 코드에 단 하나.
+  ⭐ 행사 순서 자유(행사 칸은 어느 시점에도 여섯 그대로).
+
+지도서 근거: [학습 목표] '학교생활 속 민주주의'에서 공부한 내용을 다양한 방법으로 정리할 수 있다 /
+  [동기 유발] 민주주의의 의미를 알아봤습니다 · 일상생활에서 민주주의를 실천하는 모습을 찾아봤습니다 ·
+  민주주의를 실천하기 위해 필요한 태도를 알아봤습니다 · 학교생활에서 민주주의를 실천하는 사례를 찾아봤습니다 ·
+  학교에서 민주주의를 실천하는 과정을 알아봤습니다 · 학교생활에서 민주주의를 실천해 봤습니다 /
+  [생각을 펼쳐요 선택 활동 1] 내가 생각하는 민주주의의 의미와 중요성을 그림으로 표현해 봅시다 (준비물 색칠 도구) ·
+  교과서 예시 = 「민주주의는 우리의 자유와 평등을 지켜 줍니다」 · 「민주주의란 모두가 평등한 입장에서
+  함께 만들어 가는 것입니다」 · 지도 방법 = 의미와 중요성을 충분히 설명해 보고, 설명한 내용을 바탕으로
+  어울리는 이미지를 떠올려 보며, 그림을 그리고 그림이 의미하는 바를 설명하도록 한다 /
+  [생각을 펼쳐요 선택 활동 2] 학생 자치회 임원이 되어 학교의 월별 행사를 계획해 봅시다 ·
+  교과서 예시 = 「함께 만드는 ○○ 초등학교 학생 자치회 월별 행사 계획」 ·
+  3~4월 사이좋은 친구 사이 만들기(우정 표어 공모전 열기 · 바른 말 사용 캠페인 진행하기) ·
+  5~6월 깨끗한 학교 만들기(분리수거 도우미 활동하기 · 아름다운 학교 공간 꾸미기 공모전 열기) ·
+  7~8월 안전한 학교 만들기(등하교 시간 안전 도우미 활동하기 · 학교 시설 안전 이용 규칙 만들고 홍보하기) ·
+  학생 자치회 임원으로서 지켜야 할 태도 = 학생들과 민주적으로 의사소통하기 ·
+  학생 자치회 활동에 적극적으로 참여하기 · 학생들의 생각을 최대한 반영하도록 노력하기 ·
+  지도 방법 = 행사의 내용도 중요하지만 행사를 통해 얻을 수 있는 결과가 무엇인지를 생각해 보도록 하여
+  형식적인 행사가 아닌 학교 구성원으로서 의미 있는 행사를 기획해 볼 수 있도록 한다 /
+  [말풍선 원문] 민주주의는 구성원들의 다양한 의견을 반영하여 사회 공동의 문제에 관한 의사 결정을 하는 방식입니다 /
+  [얼마나 잘했을까] 지식·이해, 과정·기능, 가치·태도에 어떤 변화가 있었는지 자기 평가를 하도록 안내한다
+
+정직 원칙: ㉠ 판의 행사 여섯과 달·목표는 교과서 27쪽 예시를 옮긴 자리이고 우리 학교에서 실제로 계획한
+     일이 아니다(캡션 상시 노출).
+  ㉡ 「우리 학교의 월별 행사 계획하기」와 「민주주의의 의미와 중요성을 그림으로 표현하기」는 교실 몫
+     (완료 카드·정리 명시 · 준비물 색칠 도구).
+  ㉢ 판이 세 자리에 순위를 매기지 않는다 — 어느 목표가 더 낫다고 말하지 않는다.
+  ㉣ 학교 이름은 교과서 표기 그대로 「○○ 초등학교」로 두고 실제 학교 이름 0 · 실제 지역 이름 0.
+  ㉤ [재미있게 확인해요]는 재현하지 않았다 — 교과서 축쇄본의 말풍선과 가방이 있어야 풀 수 있는 활동이라
+     정리에서 교과서를 펴서 직접 풀어 보라고 안내하는 데까지만 했다(5-1 u3 l05 · 6-1 u1 l09 규약 승계).
+설계 원칙: 주제② 침범 0(주민 자치·주민 참여·지역사회·지역 0) /
+  2·3단원 침범 0(지역문제·자연환경·인문환경·「도시의 특징」 0) /
+  주제 마무리라 l01~l04 회수는 정당하되 새 사실 0 · 재현 최소
+  (놀이터·설문조사·건의함·의견함·기표소·제비뽑기·가위바위보·급식·1인 1역할·칭찬 스티커·다수결·관용·
+  비판적·양보·타협·학생 참여 예산제·학교 구성원 전체회의·임원 선거·공약 전부 0 ·
+  「필요한 태도」는 동기 유발 원문 자리까지 ≤2) /
+  교사용 참고 자료 0(참고 도서·저자·출판사·융합 교과 이름·핵심 역량·평가 관점·평가 방법·
+  브레인스토밍·비주얼 씽킹·디자인 싱킹·가지치기·과제 분담 학습 전수) /
+  정치적 중립 — 실제 정당·정치인 0 · 실제 학교 이름 0 · 실제 지역 이름 0 · 네 자리 연도 0 ·
+  비율 0 · 금액 0 · 우리 반 학생 이름 0 /
+  정서 — 겁주는 어휘 0 · 사람이 다치는 묘사 0.
+⚠️ 체인: l04 → l05 재배선 완료. l05의 goNextLesson = 허브(l06 미양산).
+-->
+<html lang="ko">
+<head>
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>학교생활 속 민주주의 정리 · 사회 4-2</title>
+<meta name="kedu-lesson-id" content="g4_social_u1_l05_v1">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#4F46E5; --green-d:#4338CA; --cyan:#0891B2;
+  --bg:#EEF2FF; --bub:#E0E7FF; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#F57F17; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes drawLine{to{transform:scaleX(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ka-lb{background:#F1F5F9;border:none;padding:7px 12px;border-radius:10px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;font-family:inherit;font-weight:700;color:#475569;flex-shrink:0;font-size:13px}
+.ka-lb svg{width:15px;height:15px}
+.ka-bar{flex:1;height:5px;background:var(--bg);border-radius:999px;overflow:hidden}
+.ka-bar>div{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:999px;transition:width .35s ease;width:6%}
+.ka-pg{color:var(--green);font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;flex-shrink:0}
+.ka-sc{background:var(--amber-bg);color:var(--amber);padding:4px 12px;border-radius:999px;display:flex;align-items:center;gap:5px;flex-shrink:0;font-weight:700}
+.ka-sc svg{width:14px;height:14px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px}
+.ka-sc-u{font-size:12px}
+
+/* 메인 */
+.ka-m{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow-y:auto}
+.ka-tags{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ka-bg{background:var(--amber-bg);color:var(--amber);padding:5px 14px;border-radius:30px;font-size:13px;
+  display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.ka-bg.s2{background:#E0F2FE;color:#0369A1}
+.ka-bg.s3{background:#EDE9FE;color:#6D28D9}
+.ka-bg.s4{background:#FCE7F3;color:#BE185D}
+.ka-bg.s5{background:#E0E7FF;color:var(--green)}
+.ka-bg svg{width:13px;height:13px}
+.ka-meta{font-size:13px;color:var(--muted)}
+.ka-t{font-size:clamp(20px,3.4vw,29px);margin-bottom:16px;line-height:1.4;color:var(--green);letter-spacing:-.3px;font-weight:700;animation:fadeUp .4s .15s ease both}
+.ka-bub{background:var(--bub);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);line-height:1.7;
+  margin-bottom:16px;border-left:4px solid var(--green);animation:fadeUp .4s .3s ease both}
+.ka-emph{position:relative;display:inline-block;font-weight:700;color:var(--green)}
+.ka-emph::after{content:'';position:absolute;bottom:2px;left:0;right:0;height:3px;background:var(--red);border-radius:2px;transform:scaleX(0);transform-origin:left;animation:drawLine .6s .6s ease forwards}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(16px,2.6vw,21px);font-weight:700;line-height:1.6;margin-bottom:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:640px}
+.opt{background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:13px 14px;font-size:clamp(14px,2.3vw,17px);
+  font-weight:500;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:var(--green);background:#E0E7FF;animation:pop .4s ease}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;font-size:clamp(14px,2.3vw,17px);line-height:1.6;text-align:center;animation:fadeUp .35s ease both;max-width:640px}
+.fb.ok{color:var(--green);font-weight:700}
+.hint{margin-top:12px;background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(13px,2.2vw,16px);
+  line-height:1.6;color:#0C4A6E;max-width:560px;animation:fadeUp .35s ease both}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:620px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFF;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:clamp(14px,2.3vw,17px);line-height:1.5}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(79,70,229,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+/* 조작 판 — 실천 판 */
+/* 조작 판 — 계획 판 */
+.mo-wrap{max-width:660px;width:100%;margin:0 auto}
+.mo-evs{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.mo-ev{width:100%;cursor:pointer;font-family:inherit;border:2px solid var(--line);background:#fff;border-radius:11px;
+  padding:8px 4px;text-align:center;font-weight:700;font-size:.82em;line-height:1.3}
+.mo-ev:hover{border-color:var(--green);background:var(--bub)}
+.mo-ev.now{border-color:#F57F17;background:#FFF8E1;color:#92400E}
+.mo-ev.full{border-color:var(--green);background:#E0E7FF;cursor:default;color:#4338CA}
+.mo-ev .en{display:block;font-size:.86em;color:var(--muted);font-weight:700}
+.mo-seats{margin-top:10px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.mo-seat{border:2px solid var(--line);border-radius:12px;padding:8px 7px;background:#F8FAFF;min-height:96px;
+  display:flex;flex-direction:column;gap:5px;cursor:pointer}
+.mo-seat:hover{border-color:var(--green)}
+.mo-seat .sn{font-size:.9em;font-weight:800;color:#4338CA;text-align:center}
+.mo-slot{background:#fff;border:1.6px solid var(--line);border-radius:9px;padding:6px 4px;
+  font-size:.78em;line-height:1.35;font-weight:700;text-align:center;color:#166534}
+.mo-slot.empty{color:#94A3B8}
+.mo-aim{margin-top:auto;border-radius:9px;padding:6px 4px;font-size:.8em;line-height:1.35;font-weight:800;
+  text-align:center;background:#F0FDF4;border:1.6px solid #86EFAC;color:#166534}
+.mo-aim.none{background:#F1F5F9;border-color:var(--line);color:#94A3B8;font-weight:700}
+.mo-band{margin-top:10px;border:2px solid #86EFAC;background:#F0FDF4;border-radius:12px;padding:10px 13px;
+  font-size:clamp(13px,2.2vw,16px);line-height:1.6;color:#166534}
+.mo-note{margin-top:9px;border-radius:12px;padding:10px 14px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;
+  background:#E0E7FF;border-left:4px solid var(--green)}
+.mo-note.big{background:#FFF8E1;border-left-color:#F57F17}
+.mo-card{border:2px solid var(--line);border-radius:12px;padding:10px 14px;background:#F8FAFF;margin-top:9px;
+  font-size:clamp(13px,2.2vw,16px);line-height:1.6}
+.mo-opts{display:grid;grid-template-columns:1fr;gap:8px;margin-top:9px}
+.mo-opt{background:#F8FAFC;border:2px solid var(--line);border-radius:11px;padding:10px 12px;font-family:inherit;
+  font-size:clamp(13px,2.2vw,16px);font-weight:600;cursor:pointer;text-align:left;color:var(--ink)}
+.mo-opt:hover{border-color:var(--green);background:var(--bub)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+  .mo-evs{grid-template-columns:1fr 1fr}
+  .mo-seats{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#F57F17"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식, 사람 형상 대신 칸과 말풍선 ===== */
+const SVG = {
+  // [동기 유발] 주제에서 공부한 내용 떠올리기
+  back:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EEF2FF"/>
+    <rect x="16" y="10" width="128" height="18" rx="5" fill="#E0E7FF" stroke="#4F46E5" stroke-width="1.6"/>
+    <text x="80" y="23" font-size="7.4" fill="#4338CA" text-anchor="middle" font-weight="800">학교생활 속 민주주의</text>
+    <rect x="12" y="34" width="68" height="16" rx="4" fill="#fff" stroke="#C7D2FE" stroke-width="1.2"/>
+    <text x="46" y="45" font-size="6" fill="#4338CA" text-anchor="middle" font-weight="800">민주주의의 의미</text>
+    <rect x="84" y="34" width="64" height="16" rx="4" fill="#fff" stroke="#C7D2FE" stroke-width="1.2"/>
+    <text x="116" y="45" font-size="6" fill="#4338CA" text-anchor="middle" font-weight="800">실천하는 모습</text>
+    <rect x="12" y="54" width="68" height="16" rx="4" fill="#fff" stroke="#C7D2FE" stroke-width="1.2"/>
+    <text x="46" y="65" font-size="6" fill="#4338CA" text-anchor="middle" font-weight="800">실천하는 사례</text>
+    <rect x="84" y="54" width="64" height="16" rx="4" fill="#fff" stroke="#C7D2FE" stroke-width="1.2"/>
+    <text x="116" y="65" font-size="6" fill="#4338CA" text-anchor="middle" font-weight="800">실천하는 과정</text>
+    <text x="80" y="86" font-size="7" fill="#475569" text-anchor="middle" font-weight="800">공부한 내용을 떠올려요</text></svg>`,
+  // 행사가 얻는 것
+  gain:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFFBEB"/>
+    <rect x="10" y="14" width="60" height="20" rx="5" fill="#fff" stroke="#FCD9A5" stroke-width="1.4"/>
+    <text x="40" y="27" font-size="6.4" fill="#92400E" text-anchor="middle" font-weight="800">어떤 행사를 할까</text>
+    <rect x="10" y="42" width="60" height="20" rx="5" fill="#fff" stroke="#FCD9A5" stroke-width="1.4"/>
+    <text x="40" y="55" font-size="6.4" fill="#92400E" text-anchor="middle" font-weight="800">언제 하면 좋을까</text>
+    <path d="M74 38 L92 38" stroke="#B45309" stroke-width="2" stroke-linecap="round"/>
+    <path d="M88 34 L92 38 L88 42" fill="none" stroke="#B45309" stroke-width="2" stroke-linecap="round"/>
+    <rect x="96" y="18" width="54" height="40" rx="6" fill="#FEF3C7" stroke="#B45309" stroke-width="1.8"/>
+    <text x="123" y="34" font-size="6.6" fill="#92400E" text-anchor="middle" font-weight="800">그 행사로</text>
+    <text x="123" y="46" font-size="6.6" fill="#92400E" text-anchor="middle" font-weight="800">얻는 것은?</text>
+    <text x="80" y="80" font-size="7" fill="#475569" text-anchor="middle" font-weight="800">내용만큼 얻는 것도 살펴요</text></svg>`,
+  // 둘이 모여야 이름이 선다
+  pair:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F0FDF4"/>
+    <rect x="10" y="12" width="66" height="34" rx="6" fill="#fff" stroke="#CBD5E0" stroke-width="1.6"/>
+    <rect x="16" y="18" width="54" height="11" rx="3" fill="#F8FAFC" stroke="#CBD5E0" stroke-width="1"/>
+    <text x="43" y="26" font-size="5.6" fill="#166534" text-anchor="middle" font-weight="800">행사 하나</text>
+    <rect x="16" y="32" width="54" height="10" rx="3" fill="#F1F5F9"/>
+    <text x="43" y="39" font-size="5.4" fill="#94A3B8" text-anchor="middle" font-weight="700">이름이 아직</text>
+    <rect x="84" y="12" width="66" height="34" rx="6" fill="#fff" stroke="#86EFAC" stroke-width="1.8"/>
+    <rect x="90" y="17" width="54" height="9" rx="3" fill="#F0FDF4" stroke="#86EFAC" stroke-width="1"/>
+    <text x="117" y="24" font-size="5.2" fill="#166534" text-anchor="middle" font-weight="800">행사 하나</text>
+    <rect x="90" y="27" width="54" height="9" rx="3" fill="#F0FDF4" stroke="#86EFAC" stroke-width="1"/>
+    <text x="117" y="34" font-size="5.2" fill="#166534" text-anchor="middle" font-weight="800">행사 하나 더</text>
+    <rect x="90" y="37" width="54" height="8" rx="3" fill="#DCFCE7"/>
+    <text x="117" y="43.5" font-size="5.2" fill="#166534" text-anchor="middle" font-weight="800">이름이 섰어요</text>
+    <text x="80" y="62" font-size="7" fill="#166534" text-anchor="middle" font-weight="800">둘을 나란히 놓아야 보여요</text>
+    <text x="80" y="80" font-size="6.6" fill="#475569" text-anchor="middle" font-weight="700">자리마다 따로 완성돼요</text></svg>`,
+  // 완성된 월별 행사 계획
+  plan:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EEF2FF"/>
+    <rect x="10" y="10" width="140" height="16" rx="5" fill="#E0E7FF" stroke="#4F46E5" stroke-width="1.6"/>
+    <text x="80" y="21.5" font-size="6.8" fill="#4338CA" text-anchor="middle" font-weight="800">함께 만드는 학생 자치회 계획</text>
+    <rect x="12" y="32" width="136" height="17" rx="4" fill="#fff" stroke="#C7D2FE" stroke-width="1.2"/>
+    <text x="80" y="43.5" font-size="6.2" fill="#4338CA" text-anchor="middle" font-weight="800">3~4월 · 사이좋은 친구 사이 만들기</text>
+    <rect x="12" y="52" width="136" height="17" rx="4" fill="#fff" stroke="#C7D2FE" stroke-width="1.2"/>
+    <text x="80" y="63.5" font-size="6.2" fill="#4338CA" text-anchor="middle" font-weight="800">5~6월 · 깨끗한 학교 만들기</text>
+    <rect x="12" y="72" width="136" height="17" rx="4" fill="#fff" stroke="#C7D2FE" stroke-width="1.2"/>
+    <text x="80" y="83.5" font-size="6.2" fill="#4338CA" text-anchor="middle" font-weight="800">7~8월 · 안전한 학교 만들기</text></svg>`,
+  // 임원의 태도
+  att:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F8FAFF"/>
+    <rect x="14" y="12" width="132" height="18" rx="5" fill="#E0E7FF" stroke="#4F46E5" stroke-width="1.5"/>
+    <text x="80" y="25" font-size="7" fill="#4338CA" text-anchor="middle" font-weight="800">임원은 어떤 태도를 지킬까요?</text>
+    <rect x="14" y="36" width="132" height="15" rx="4" fill="#fff" stroke="#C7D2FE" stroke-width="1.2"/>
+    <text x="80" y="46.5" font-size="6" fill="#4338CA" text-anchor="middle" font-weight="800">민주적으로 의사소통하기</text>
+    <rect x="14" y="54" width="132" height="15" rx="4" fill="#fff" stroke="#C7D2FE" stroke-width="1.2"/>
+    <text x="80" y="64.5" font-size="6" fill="#4338CA" text-anchor="middle" font-weight="800">적극적으로 참여하기</text>
+    <rect x="14" y="72" width="132" height="15" rx="4" fill="#fff" stroke="#C7D2FE" stroke-width="1.2"/>
+    <text x="80" y="82.5" font-size="6" fill="#4338CA" text-anchor="middle" font-weight="800">생각을 최대한 반영하기</text></svg>`,
+  // 민주주의를 그림으로
+  draw:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFFBEB"/>
+    <rect x="22" y="12" width="116" height="56" rx="6" fill="#fff" stroke="#B45309" stroke-width="1.8"/>
+    <circle cx="52" cy="34" r="9" fill="#FEF3C7" stroke="#B45309" stroke-width="1.4"/>
+    <circle cx="80" cy="34" r="9" fill="#DCFCE7" stroke="#15803D" stroke-width="1.4"/>
+    <circle cx="108" cy="34" r="9" fill="#E0E7FF" stroke="#4F46E5" stroke-width="1.4"/>
+    <path d="M52 45 L108 45" stroke="#94A3B8" stroke-width="1.6" stroke-linecap="round"/>
+    <text x="80" y="59" font-size="6.6" fill="#92400E" text-anchor="middle" font-weight="800">모두가 평등한 입장에서</text>
+    <text x="80" y="84" font-size="7" fill="#475569" text-anchor="middle" font-weight="800">그림으로 나타내 봐요</text></svg>`,
+  // 정리
+  done:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EEF2FF"/>
+    <circle cx="80" cy="44" r="26" fill="#E0E7FF" stroke="#4F46E5" stroke-width="2.6"/>
+    <path d="M66 44 L76 54 L96 32" fill="none" stroke="#4F46E5" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="80" y="84" font-size="9" fill="#4338CA" text-anchor="middle" font-weight="800">주제를 정리했어요</text></svg>`
+};
+function sceneCard(key,cap){return `<div class="scene">${SVG[key]}<div class="cap">${cap}</div></div>`;}
+
+/* ===== 직접 조작: 계획 판 =====
+   ⭐ 정답 자리 상수가 코드에 없다 — 첫 행사는 세 자리 어디에 실어도 받는다.
+      옳고 그름은 그 자리에 이미 놓인 것과 견주어 비로소 생긴다(moFit 한 줄).
+   ⭐ 둘이 차야 그 자리의 이름이 선다(moAimOf 한 줄) — 하나만으로는 달도 목표도 서지 않는다.
+   ⭐ 한 자리에 이름이 서도 다른 자리에는 아무것도 서지 않는다 — 자리마다 따로 완성된다.
+   ⭐ 어느 자리에 설지는 행사가 아니라 그 행사가 얻는 것이 정한다(moGainOf 단 하나).
+*/
+const MO_N = 6;                                   // 행사 여섯
+const MO_SEATN = 3;                               // 판의 자리 셋
+// 교과서 27쪽 [생각을 펼쳐요] 선택 활동 2 월별 행사 계획 원문
+const MO_EVENT = ["우정 표어 공모전 열기","바른 말 사용 캠페인 진행하기","분리수거 도우미 활동하기",
+  "아름다운 학교 공간 꾸미기 공모전 열기","등하교 시간 안전 도우미 활동하기","학교 시설 안전 이용 규칙 만들고 홍보하기"];
+const MO_EVENT_S = ["우정 표어 공모전","바른 말 캠페인","분리수거 도우미","학교 공간 꾸미기","등하교 안전 도우미","안전 이용 규칙"];
+// ⭐ 어느 자리에 설지를 정하는 한 줄 — 행사 자체가 아니라 그 행사가 얻는 것이다
+const MO_GAIN = [0,0,1,1,2,2];
+const MO_AIM = ["사이좋은 친구 사이 만들기","깨끗한 학교 만들기","안전한 학교 만들기"];
+const MO_MONTH = ["3~4월","5~6월","7~8월"];
+const MO_SEAT = ["㉮","㉯","㉰"];
+const MO_NOTE = [
+  "아직 어느 자리에도 이름이 서지 않았어요.",
+  "한 자리에 이름이 섰어요. <b>다른 자리는 그대로 비어 있어요.</b>",
+  "두 자리에 이름이 섰어요. 남은 한 자리는 <b>아직 그대로예요.</b>",
+  "세 자리에 <b>모두</b> 이름이 섰어요."];
+const MO_BAND = "세 자리에 이름이 모두 섰어요 — <b>학생 자치회 월별 행사 계획</b>이 완성됐어요. 자리마다 <b>따로</b> 채워졌지요.";
+const MO_ORDER_E = "먼저 위에서 행사를 하나 골라 봐요.";
+const MO_ORDER_R = "먼저 여섯 행사를 모두 실어 봐요.";
+const MO_ORDER_F = "먼저 판을 읽어 봐요.";
+const MO_FULL_MSG = "이 행사는 이미 실었어요. 판은 그대로예요.";
+const MO_SEATFULL = "이 자리에는 이미 행사 둘이 있어요. 판은 그대로예요.";
+const MO_DONE_MSG = "이미 정한 자리예요. 판은 그대로예요.";
+const MO_WRONG = "이 자리에 있는 행사와 <b>얻는 것이 달라요.</b> 그 행사로 무엇을 얻을 수 있는지 다시 생각해 봐요.";
+const MO_OKMSG = "판에 실렸어요.";
+// 판 읽기 3택 — 조작 직결
+const MO_READQ = [
+  "판이 자리에 실은 행사의 수를 세었기 때문이에요",
+  "행사 둘이 <b>함께 얻는 것</b>이 무엇인지는 둘을 나란히 놓고 보아야 보이기 때문이에요",
+  "판이 자리마다 이름을 미리 정해 두었기 때문이에요"];
+const MO_READ_OK = 1;
+const MO_READ_NO = "행사가 하나만 있었을 때와 둘이 모였을 때를 다시 견줘 봐요.";
+// 마무리 3택 — 지도서 7차시 지도 방법 원문
+const MO_FINQ = [
+  "행사의 내용뿐 아니라 <b>그 행사로 얻을 수 있는 결과</b>가 무엇인지 생각해요",
+  "해마다 하던 행사를 그대로 하면 돼요",
+  "행사 이름이 멋있는지만 살펴보면 돼요"];
+const MO_FIN_OK = 0;
+const MO_FIN_NO = "행사를 계획할 때 내용 말고 무엇을 함께 생각해야 할지 다시 떠올려 봐요.";
+
+function moGainOf(e){ return MO_GAIN[e]; }                                  // ⭐ MO_GAIN 을 읽는 자리는 코드에 여기 단 하나
+function moIn(st,s){ return [0,1,2,3,4,5].filter(e=>st.moSeat[e]===s); }
+function moFull(st,s){ return moIn(st,s).length === 2; }
+function moAimOf(st,s){ return moFull(st,s) ? moGainOf(moIn(st,s)[0]) : -1; }   // ⭐ 둘이 차야 이름이 선다 — 이 한 줄이 정한다
+function moFit(st,s,e){ const inn = moIn(st,s); return inn.length===0 || moGainOf(inn[0])===moGainOf(e); }  // ⭐ 정답 자리 상수 없음
+function moNamed(st){ return [0,1,2].filter(s=>moAimOf(st,s)>=0).length; }
+function moDone(st){ return [0,1,2,3,4,5].filter(e=>st.moSeat[e]>=0).length; }
+function moAll(st){ return moDone(st) === MO_N; }
+
+function moSeatBox(st,s){
+  const inn = moIn(st,s);
+  const slots = [0,1].map(j=> inn[j]!=null
+    ? `<div class="mo-slot" data-slot="${s}${j}">${MO_EVENT_S[inn[j]]}</div>`
+    : `<div class="mo-slot empty">아직 비었어요</div>`).join('');
+  const a = moAimOf(st,s);
+  // ⭐ 이름 자리를 그리는 자리는 코드에 여기 단 하나
+  const name = a>=0
+    ? `<div class="mo-aim" data-aim="${s}">${MO_MONTH[a]}<br>${MO_AIM[a]}</div>`
+    : `<div class="mo-aim none">이름이 아직 서지 않았어요</div>`;
+  return `<div class="mo-seat" data-seat="${s}" data-n="${inn.length}" onclick="moPut(${s})">
+    <div class="sn">${MO_SEAT[s]} 자리</div>${slots}${name}</div>`;
+}
+
+function moPanel(st){
+  // ⭐ 행사 칸은 어느 시점에도 여섯 그대로다 — 실려도 사라지지 않는다.
+  const evs = MO_EVENT_S.map((w,e)=>{
+    if(st.moSeat[e]>=0) return `<div class="mo-ev full" data-ev="${e}">${w}<span class="en">실었어요</span></div>`;
+    if(st.moNow===e) return `<button class="mo-ev now" data-ev="${e}" onclick="moPick(${e})">${w}<span class="en">고르는 중</span></button>`;
+    return `<button class="mo-ev" data-ev="${e}" onclick="moPick(${e})">${w}<span class="en">고르기</span></button>`;
+  }).join('');
+
+  const seats = `<div class="mo-seats" data-named="${moNamed(st)}">${[0,1,2].map(s=>moSeatBox(st,s)).join('')}</div>`;
+  // ⭐ 완성 띠를 그리는 자리는 코드에 여기 단 하나
+  const band = moAll(st) ? `<div class="mo-band" data-band="1">${MO_BAND}</div>` : '';
+
+  let ask = '';
+  if(!moAll(st)){
+    if(st.moNow==null){
+      ask = `<div class="mo-card"><b>위에서 <span style="color:#4F46E5">행사</span>를 하나 골라 봐요.</b>
+        <div class="note" style="text-align:left;margin-top:5px">고른 행사를 <b>얻는 것이 같은 행사</b>와 한 자리에 모아요.</div></div>`;
+    } else {
+      const e = st.moNow;
+      ask = `<div class="mo-card" data-ask="${e}"><b><span style="color:#4F46E5">${MO_EVENT[e]}</span> — 어느 자리에 실을까요?</b>
+        <div class="note" style="text-align:left;margin-top:5px">아래 <b>㉮ ㉯ ㉰ 자리</b> 가운데 하나를 눌러요. <b>빈 자리는 어디든 괜찮아요.</b></div></div>`;
+    }
+  } else if(st.moRead==null){
+    ask = `<div class="mo-card"><b>행사가 <span style="color:#4F46E5">하나만</span> 있을 때는 이름이 서지 않다가, <span style="color:#4F46E5">둘이 모이자</span> 선 까닭은 무엇일까요?</b>
+      <div class="mo-opts">${MO_READQ.map((s,i)=>`<button class="mo-opt" onclick="moRead(${i})">${s}</button>`).join('')}</div></div>`;
+  } else if(st.moFin==null){
+    ask = `<div class="mo-card"><b>학생 자치회 임원이 행사를 계획할 때 <span style="color:#4F46E5">함께 생각할 것</span>은 무엇일까요?</b>
+      <div class="mo-opts">${MO_FINQ.map((s,i)=>`<button class="mo-opt" onclick="moFin(${i})">${s}</button>`).join('')}</div></div>`;
+  } else {
+    ask = `<div class="mo-card" data-fin="1" style="border-color:#86EFAC;background:#F0FDF4">
+      <b style="color:#166534">계획이 완성됐어요.</b> 판에는 <b>정해진 자리가 없었어요.</b> 첫 행사는 어느 자리에 실어도 괜찮았고,
+      옳고 그름은 <b>그 자리에 이미 놓인 행사</b>와 견주어 생겼지요. 그리고 자리마다 <b>따로</b> 이름이 섰어요.
+      <div class="note" style="text-align:left;margin-top:5px">※ <b>우리 학교</b>의 월별 행사는 <b>교실에서 직접</b> 계획해 봐요.</div></div>`;
+  }
+
+  const note = `<div class="mo-note ${moNamed(st)===MO_SEATN?'big':''}">${MO_NOTE[moNamed(st)]}</div>`;
+  const warn = st.moMsg ? `<div class="fb" style="color:#DC2626;font-weight:700">${st.moMsg}</div>` : '';
+
+  return `<div class="mo-wrap">
+    <div class="mo-evs">${evs}</div>
+    ${seats}${band}${note}${ask}${warn}
+    <div class="note" style="margin-top:8px">※ 판의 행사와 달은 <b>교과서에 실린 예시</b>를 옮긴 자리예요. 우리 학교에서 실제로 계획한 일이 아니에요.</div>
+  </div>`;
+}
+
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "1단원 민주주의와 자치 · 주제① 학교생활 속 민주주의";
+
+// 문제 정의(확인 4 + 적용 4) — 정답 분산 [1,3,0,2,2,0,3,1]
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"<b>민주주의</b>는 어떤 방식을 뜻할까요?",
+   opts:["힘이 센 사람의 뜻대로 정하는 방식","구성원들의 다양한 의견을 반영하여 사회 공동의 문제에 관한 의사 결정을 하는 방식","가장 먼저 말한 사람의 뜻대로 정하는 방식","아무도 정하지 않고 그냥 두는 방식"], correct:1, pts:POINTS_BASIC,
+   reason:"민주주의는 구성원들의 다양한 의견을 반영하여 사회 공동의 문제에 관한 의사 결정을 하는 방식이에요.",
+   h1:"누구의 의견을 반영할까요?",
+   h2:"한 사람이 아니라 구성원들의 다양한 의견이에요."},
+  {stem:"<b>학생 자치회 임원</b>이 지켜야 할 태도로 알맞은 것은?",
+   opts:["자기 생각대로만 정한다","학생들의 의견은 듣지 않는다","활동에 참여하지 않는다","학생들의 생각을 최대한 반영하도록 노력한다"], correct:3, pts:POINTS_BASIC,
+   reason:"임원은 학생들과 민주적으로 의사소통하고, 활동에 적극적으로 참여하며, 학생들의 생각을 최대한 반영하도록 노력해요.",
+   h1:"누구의 생각을 담아야 할까요?",
+   h2:"학생들의 생각을 최대한 반영해요."},
+  {stem:"학교의 <b>월별 행사</b>를 계획할 때 함께 생각해야 할 것은 무엇일까요?",
+   opts:["그 행사로 얻을 수 있는 결과가 무엇인지","행사 이름이 얼마나 긴지","행사를 몇 번 했는지","행사에 드는 종이의 수"], correct:0, pts:POINTS_BASIC,
+   reason:"행사의 내용도 중요하지만, 그 행사를 통해 얻을 수 있는 결과가 무엇인지를 함께 생각해야 의미 있는 행사를 계획할 수 있어요.",
+   h1:"내용 말고 무엇을 더 볼까요?",
+   h2:"그 행사로 얻을 수 있는 결과예요."},
+  {stem:"학생 자치회 임원의 태도로 <b>알맞지 않은</b> 것은?",
+   opts:["학생들과 민주적으로 의사소통한다","학생 자치회 활동에 적극적으로 참여한다","학생들에게 묻지 않고 임원끼리만 정한다","학생들의 생각을 최대한 반영하려고 노력한다"], correct:2, pts:POINTS_BASIC,
+   reason:"임원은 학생들과 민주적으로 의사소통해야 해요. 묻지 않고 임원끼리만 정하는 것은 민주주의를 실천하는 태도가 아니에요.",
+   h1:"세 가지 태도를 떠올려 봐요.",
+   h2:"학생들에게 묻지 않는 것은 알맞지 않아요."},
+  // 4단계 적용 (+15)
+  {stem:"판에 행사를 <b>하나만</b> 실었을 때는 그 자리에 이름이 서지 않았어요. <b>왜 그랬을까요?</b>",
+   opts:["행사가 하나면 판이 셀 수 없어서","이름을 나중에 학생이 적어야 해서","행사 둘이 함께 얻는 것이 무엇인지는 둘을 나란히 놓고 보아야 보이기 때문에","이름이 미리 정해져 있었기 때문에"], correct:2, pts:POINTS_APPLY,
+   reason:"함께 얻는 것이 무엇인지는 행사 둘을 나란히 놓고 보아야 보여요. 그래서 둘이 다 실려야 그 자리의 달과 목표가 섰어요.",
+   h1:"하나일 때와 둘일 때를 견줘 봐요.",
+   h2:"둘을 나란히 놓아야 함께 얻는 것이 보여요."},
+  {stem:"한 자리에 이름이 섰는데도 <b>다른 자리에는 아무것도 서지 않았어요.</b> 왜 그랬을까요?",
+   opts:["자리마다 따로 채워지고, 그 자리에 둘이 차야 그 자리의 이름이 서기 때문에","판이 한 번에 한 자리만 그릴 수 있어서","다른 자리는 이름이 없는 자리여서","먼저 채운 자리에만 이름을 주기로 정해져 있어서"], correct:0, pts:POINTS_APPLY,
+   reason:"자리마다 따로 완성돼요. 한 자리에 둘이 차면 그 자리의 이름이 서고, 아직 둘이 차지 않은 자리는 그대로 비어 있어요.",
+   h1:"이름이 서는 조건을 떠올려 봐요.",
+   h2:"그 자리에 둘이 차야 그 자리의 이름이 서요."},
+  {stem:"<b>민주주의의 의미와 중요성</b>을 나타낸 말로 알맞은 것은?",
+   opts:["힘이 센 사람이 먼저 정하는 것","말을 잘하는 사람만 참여하는 것","한 사람이 모두를 대신 정해 주는 것","모두가 평등한 입장에서 함께 만들어 가는 것"], correct:3, pts:POINTS_APPLY,
+   reason:"민주주의란 모두가 평등한 입장에서 함께 만들어 가는 것이에요. 민주주의는 우리의 자유와 평등을 지켜 줘요.",
+   h1:"누가 함께 만들어 갈까요?",
+   h2:"모두가 평등한 입장에서 함께 만들어 가요."},
+  {stem:"학교의 행사를 계획하는 태도로 <b>알맞지 않은</b> 것은?",
+   opts:["행사로 얻을 수 있는 결과를 함께 생각한다","해마다 하던 행사를 그대로 하면 되므로 살펴보지 않는다","학교 구성원으로서 의미 있는 행사인지 생각한다","좋았던 행사를 떠올려 행사 주제를 잡아 본다"], correct:1, pts:POINTS_APPLY,
+   reason:"하던 대로만 하면 형식적인 행사가 돼요. 행사로 얻을 수 있는 결과를 생각하며 학교 구성원으로서 의미 있는 행사를 계획해야 해요.",
+   h1:"형식적인 행사가 되면 어떨까요?",
+   h2:"하던 대로만 하는 것은 알맞지 않아요."}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — [동기 유발] 주제에서 공부한 내용 떠올리기
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">'학교생활 속 민주주의'에서 무엇을 공부했나요?</h2>
+  <div class="ka-bub">민주주의의 <b>의미</b>를 알아봤고, 일상생활에서 민주주의를 <b>실천하는 모습</b>을 찾아봤어요. 민주주의를 실천하기 위해 <b>필요한 태도</b>도 알아봤지요. 학교생활에서 민주주의를 실천하는 <b>사례</b>를 찾아보고, 학교에서 민주주의를 실천하는 <b>과정</b>도 알아봤어요. 그리고 직접 <b>실천</b>해 봤어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('back','공부한 내용을 떠올려요')}</div>
+    <div class="note">오늘은 공부한 내용을 <b style="color:#4F46E5">다양한 방법으로 정리</b>해 봐요.</div>
+  </div>`});
+// 2 살펴보기 — 학생 자치회 임원이 되어 계획해요
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">임원이 되어 행사를 계획해요</h2>
+  <div class="ka-bub">이번에는 <b>학생 자치회 임원</b>이 되어 학교의 <b>월별 행사</b>를 계획해 봐요. 행사의 <b>내용</b>도 중요하지만, 그 행사를 통해 <b>얻을 수 있는 결과</b>가 무엇인지도 함께 생각해요. 그래야 하던 대로만 하는 행사가 아니라 <b>의미 있는 행사</b>가 돼요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('gain','내용만큼 얻는 것도 살펴요')}</div>
+  <div class="note">행사로 <b>무엇을 얻을 수 있을까요?</b></div></div>`});
+// 3 살펴보기 — 조작 안내
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">둘이 모여야 이름이 서요</h2>
+  <div class="ka-bub">판에는 <b>㉮ ㉯ ㉰ 세 자리</b>가 있는데 <b>이름이 없어요.</b> 행사 여섯을 <b>얻는 것이 같은 것끼리</b> 한 자리에 모아 봐요. 한 자리에 <b>둘이 차면</b> 그제야 그 자리의 <b>달과 목표</b>가 서요. <b>첫 행사는 어느 자리에 실어도 괜찮아요.</b></div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('pair','자리마다 따로 완성돼요')}</div>
+  <div class="note">어느 행사부터 실어도 <b>괜찮아요.</b></div></div>`});
+// 4 살펴보기 — 직접 조작
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">얻는 것이 같은 행사를 한 자리에 모아요</h2>
+  <div class="ka-grp" style="align-items:stretch">${moPanel(st)}</div>`});
+// 5 살펴보기 — 완성된 계획
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">함께 만드는 학생 자치회 계획</h2>
+  <div class="ka-bub">세 자리에 이름이 서면 <b>월별 행사 계획</b>이 완성돼요. <b>3~4월</b>에는 사이좋은 친구 사이 만들기, <b>5~6월</b>에는 깨끗한 학교 만들기, <b>7~8월</b>에는 안전한 학교 만들기가 목표예요. 목표가 정해지면 그에 맞는 행사를 <b>함께</b> 해 나가요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('plan','완성된 월별 행사 계획')}</div>
+  <div class="note">※ <b>우리 학교</b>의 계획은 <b>교실에서 직접</b> 세워 봐요.</div></div>`});
+// 6 살펴보기 — [생각을 펼쳐요] 민주주의를 그림으로 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">민주주의를 그림으로 나타내요</h2>
+  <div class="ka-bub">내가 생각하는 <b>민주주의의 의미와 중요성</b>을 그림으로 표현해 봐요. 먼저 의미와 중요성을 <b>말로 충분히 설명</b>해 보고, 그 설명에 <b>어울리는 모습</b>을 떠올린 뒤 그림을 그려요. 다 그리면 그 그림이 <b>무엇을 뜻하는지</b> 설명해 줘요. <b>준비물은 색칠 도구</b>예요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('draw','그림으로 나타내 봐요')}</div>
+  ${st.revealed?`<div class="answer-box">친구들은 이렇게 적었어요. <b>「민주주의는 우리의 자유와 평등을 지켜 줍니다.」</b> <b>「민주주의란 모두가 평등한 입장에서 함께 만들어 가는 것입니다.」</b> ※ 그림은 <b>교실에서 직접</b> 그려 봐요. 내 생각은 <b>내가 직접</b> 적어요.</div>`
+    :`<div class="note">민주주의를 어떤 그림으로 나타낼 수 있을까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 7 살펴보기 — 임원의 태도 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">임원은 어떤 태도를 지킬까요?</h2>
+  <div class="ka-bub">학생 자치회 임원은 학교의 일을 <b>맡아서</b> 해요. 그래서 지켜야 할 <b>태도</b>가 있어요. 임원이 혼자 정해 버리면 그것은 민주주의를 실천하는 모습이 아니지요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('att','임원이 지킬 태도')}</div>
+  ${st.revealed?`<div class="answer-box">임원은 ① 학생들과 <b>민주적으로 의사소통</b>하고, ② 학생 자치회 활동에 <b>적극적으로 참여</b>하며, ③ 학생들의 생각을 <b>최대한 반영</b>하도록 노력해요.</div>`
+    :`<div class="note">임원으로서 지켜야 할 태도는 무엇일까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 배운 것을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('done','주제를 정리했어요')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>민주주의는 <b style="color:#4F46E5">구성원들의 다양한 의견을 반영하여</b> 사회 공동의 문제에 관한 <b>의사 결정</b>을 하는 방식이에요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div>행사를 계획할 때는 <b>내용</b>뿐 아니라 그 행사로 <b style="color:#4F46E5">얻을 수 있는 결과</b>가 무엇인지 함께 생각해요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>임원은 <b>민주적으로 의사소통</b>하고, <b>적극적으로 참여</b>하며, 학생들의 생각을 <b>최대한 반영</b>하도록 노력해요.</div></div>
+    <div class="sum-item"><span class="n">4</span><div>※ 그림으로 나타내기와 <b>우리 학교의 월별 행사 계획</b>은 <b>교실에서 직접</b> 해 봐요. 교과서의 <b>[재미있게 확인해요]</b>도 펴서 직접 풀어 보면 더 재미있어요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b style="color:#4F46E5">주민 자치</b>가 무엇인지 알아볼 거예요.</div></div>`});
+// 17 얼마나 잘했을까
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">얼마나 잘했을까요?</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"민주주의의 의미와 중요성을 말할 수 있어요",st)}
+    ${selfCheck(1,"학교의 행사를 계획할 때 함께 생각할 것을 알아요",st)}
+    ${selfCheck(2,"학교의 일에 관심을 가지고 참여하려는 마음이 생겼어요",st)}
+  </div><div class="note">별이 잘 채워지지 않은 곳은 <b>다시 살펴봐도</b> 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">주제를 모두 정리했어요</h2>
+  <div class="ka-grp">
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">자리마다 <b style="color:#4F46E5">따로</b> 채워졌어요.</div>
+  </div>`;
+}});
+
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">⭕ 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">💡 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">💡 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g4_2_social_u1_l05";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  moSeat:[-1,-1,-1,-1,-1,-1], moNow:null, moRead:null, moFin:null, moMsg:"",
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 →';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음 (브라우저에서만 · jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+function moDraw(){ main.innerHTML = slides[state.idx].render(state); }
+
+/* 행사 고르기 — 행사 순서 자유 · 고르기에 점수 0 */
+function moPick(e){
+  if(state.moFin!=null) return;                                        // 가드①: 마무리 확정 후 전체 잠금
+  if(!Number.isInteger(e) || e<0 || e>=MO_N) return;                   // 가드②: 무효 번호 — 안내조차 띄우지 않음
+  if(state.moSeat[e]>=0){ state.moMsg = MO_FULL_MSG; playThud(); moDraw(); return; }        // 가드④: 이미 실은 행사 — 판 불변
+  state.moNow = e; state.moMsg = ""; playBlip(); moDraw();
+}
+/* 자리에 싣기 — 정답 자리 상수 없음 · 옳고 그름이 이미 놓인 것에서 나온다 */
+function moPut(s){
+  if(state.moFin!=null) return;                                        // 가드①
+  if(!Number.isInteger(s) || s<0 || s>=MO_SEATN) return;               // 가드②
+  if(state.moNow==null){ state.moMsg = MO_ORDER_E; playThud(); moDraw(); return; }          // 가드③: 행사를 고르기 전 — 판 불변
+  const e = state.moNow;
+  if(state.moSeat[e]>=0){ state.moMsg = MO_FULL_MSG; playThud(); moDraw(); return; }        // 가드④
+  if(moFull(state,s)){ state.moMsg = MO_SEATFULL; playThud(); moDraw(); return; }           // 가드⑥: 이미 둘 찬 자리 — 판 불변
+  if(!moFit(state,s,e)){ state.moMsg = MO_WRONG; playThud(); moDraw(); return; }            // 가드⑤: 얻는 것이 다른 자리 — 판 불변
+  state.moSeat[e] = s;                                                 // ⭐ 판에 싣는 자리는 여기 단 하나
+  state.moNow = null;
+  state.moMsg = MO_OKMSG; playBlip(); moDraw();
+}
+/* 판 읽기 */
+function moRead(i){
+  if(state.moFin!=null) return;                                        // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=MO_READQ.length) return;        // 가드②
+  if(!moAll(state)){ state.moMsg = MO_ORDER_R; playThud(); moDraw(); return; }              // 가드⑦: 여섯을 다 싣기 전 — 판 불변
+  if(state.moRead!=null){ state.moMsg = MO_DONE_MSG; moDraw(); return; }                    // 가드⑧: 이미 정한 자리 — 판 불변
+  if(i!==MO_READ_OK){ state.moMsg = MO_READ_NO; playThud(); moDraw(); return; }             // 가드⑤: 어긋난 답 — 판 불변
+  state.moRead = i; state.moMsg = ""; playBlip(); moDraw();
+}
+/* 마무리 */
+function moFin(i){
+  if(state.moFin!=null) return;                                        // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=MO_FINQ.length) return;         // 가드②
+  if(state.moRead==null){ state.moMsg = MO_ORDER_F; playThud(); moDraw(); return; }         // 가드⑦: 판을 읽기 전 — 판 불변
+  if(i!==MO_FIN_OK){ state.moMsg = MO_FIN_NO; playThud(); moDraw(); return; }               // 가드⑤: 어긋난 답 — 판 불변
+  state.moFin = i; state.moMsg = ""; playChime(); moDraw();
+}
+
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true; qs.wrongPick=null;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2; if(qs.hint===2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">📘 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 →</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // l06 미양산 — 허브 복귀
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
+</html>

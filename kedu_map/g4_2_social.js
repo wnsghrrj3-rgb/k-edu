@@ -54,14 +54,14 @@ window.KEDU_MAP["g4_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_social_u1_l05",
+     "lessonId": "g4_social_u1_l05_v1",
      "n": "5",
      "title": "[생각을 펼쳐요] 학교생활 속 민주주의 정리",
      "sub": "① 학교생활 속 민주주의",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/social/1단원_민주주의와자치/g4_social_u1_l05_주제①정리.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
