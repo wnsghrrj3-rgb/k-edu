@@ -32,6 +32,7 @@ SEC = 7.0
 HOLD = 5.6
 STILL = arg('--still', -1.0)
 FR_START = arg('--from', 1)
+FEATHER = arg('--feather', 0.18)   # R146 운동장 사진 가장자리 페더 폭(UV, 0=끄기)
 NAME = 'school-build'
 FONT = arg('--font', '/usr/share/fonts/opentype/noto/NotoSerifCJK-Bold.ttc')
 os.makedirs(OUT, exist_ok=True)
@@ -139,7 +140,36 @@ def mat_leaf():
     b.inputs['Roughness'].default_value = 0.8
     return m
 
-def mat_photo(path, facing=True, name='photo', fallback=(0.30, 0.14, 0.10)):
+def make_ground_ext(path, feather, fallback):
+    """사진을 사방으로 feather(UV 비율)만큼 늘린 PNG 를 OUT/ 에 만든다. 안쪽=원본 그대로, 바깥=가장자리 색을 흐려 대체색으로 smoothstep. (R146)"""
+    import numpy as np
+    src = bpy.data.images.load(path); w, h = src.size
+    px = np.array(src.pixels[:], dtype=np.float32).reshape(h, w, 4)[:, :, :3]     # 바이트 이미지 pixels = sRGB 값 그대로(0~1)
+    bpy.data.images.remove(src)
+    fx = feather; fy = feather * w / h                                             # 가로·세로 같은 픽셀 폭이 되게
+    padx, pady = int(round(w * fx)), int(round(h * fy))
+    ext = np.pad(px, ((pady, pady), (padx, padx), (0, 0)), mode='edge')
+    def box(a, r):                                                                 # 분리형 박스 흐림 3회 ≈ 가우시안
+        for _ in range(3):
+            for ax in (0, 1):
+                c = np.cumsum(np.pad(a, [(r, r) if i == ax else (0, 0) for i in range(3)], mode='edge'), axis=ax)
+                a = (np.take(c, np.arange(2 * r, c.shape[ax]), axis=ax) - np.take(c, np.arange(0, c.shape[ax] - 2 * r), axis=ax)) / (2 * r)
+        return a
+    blur = box(ext, max(4, min(padx, pady) // 6))
+    H2, W2 = ext.shape[:2]
+    yy, xx = np.mgrid[0:H2, 0:W2]
+    dx = np.maximum(np.maximum(padx - xx, xx - (padx + w - 1)), 0) / max(padx, 1)   # 원본 밖 거리(0~1)
+    dy = np.maximum(np.maximum(pady - yy, yy - (pady + h - 1)), 0) / max(pady, 1)
+    d = np.clip(np.sqrt(dx * dx + dy * dy), 0, 1); t = (d * d * (3 - 2 * d))[:, :, None]   # smoothstep
+    fb = np.array([c * 12.92 if c <= 0.0031308 else 1.055 * c ** (1 / 2.4) - 0.055 for c in fallback], dtype=np.float32)[None, None, :]   # 바이트 이미지 pixels 는 sRGB 값이라 대체색(선형)을 sRGB 로
+    out = np.where((dx == 0)[:, :, None] & (dy == 0)[:, :, None], ext, blur * (1 - t) + fb * t)
+    img = bpy.data.images.new('ground_ext', W2, H2, alpha=True, float_buffer=False)
+    rgba = np.concatenate([out, np.ones((H2, W2, 1), np.float32)], axis=2)
+    img.pixels = rgba.ravel().tolist(); img.filepath_raw = os.path.join(OUT, 'school-photo-ground-ext.png'); img.file_format = 'PNG'; img.save()
+    print('ground-ext', W2, 'x', H2, '->', img.filepath_raw, flush=True)
+    return img.filepath_raw, fx, fy
+
+def mat_photo(path, facing=True, name='photo', fallback=(0.30, 0.14, 0.10), feather=0.0):
     m, nt, b = new_mat(name)
     img = bpy.data.images.load(path); tex = nt.nodes.new('ShaderNodeTexImage'); tex.image = img; tex.extension = 'CLIP'
     uv = nt.nodes.new('ShaderNodeUVMap'); uv.uv_map = 'proj'
@@ -164,7 +194,16 @@ def mat_photo(path, facing=True, name='photo', fallback=(0.30, 0.14, 0.10)):
     nt.links.new(nrm.outputs['Vector'], dot.inputs[0]); nt.links.new(geo.outputs['Normal'], dot.inputs[1])
     nt.links.new(dot.outputs['Value'], ramp.inputs['Value'])
     if not facing:                       # 운동장·배경판: 스침각이라도 사진, 사진 밖만 대체색
-        nt.links.new(tex.outputs['Alpha'], mix2.inputs['Fac']); nt.links.new(side.outputs['BSDF'], mix2.inputs[1]); nt.links.new(mix.outputs['Shader'], mix2.inputs[2])
+        if feather > 0:                  # R146 운동장 가장자리 페더: 사진을 밖으로 늘려(가장자리 흐림→대체색) 미리 만든 이미지를 씀 — 사진 안쪽 픽셀은 그대로(hold 프레임 무변화)
+            ext_path, fx, fy = make_ground_ext(path, feather, fallback)
+            tex.image = bpy.data.images.load(ext_path); tex.extension = 'CLIP'
+            mp = nt.nodes.new('ShaderNodeMapping'); mp.vector_type = 'POINT'
+            mp.inputs['Scale'].default_value = (1 / (1 + 2 * fx), 1 / (1 + 2 * fy), 1); mp.inputs['Location'].default_value = (fx / (1 + 2 * fx), fy / (1 + 2 * fy), 0)
+            nt.links.new(uv.outputs['UV'], mp.inputs['Vector']); nt.links.new(mp.outputs['Vector'], tex.inputs['Vector'])
+            nt.links.new(tex.outputs['Alpha'], mix2.inputs['Fac'])
+        else:
+            nt.links.new(tex.outputs['Alpha'], mix2.inputs['Fac'])
+        nt.links.new(side.outputs['BSDF'], mix2.inputs[1]); nt.links.new(mix.outputs['Shader'], mix2.inputs[2])
         nt.links.new(mix2.outputs['Shader'], out.inputs['Surface']); return m
     # 사진 밖(UV 0~1 바깥)도 벽돌색 — 사진 오른쪽 끝 너머가 늘어지지 않게
     inpic = nt.nodes.new('ShaderNodeMath'); inpic.operation = 'MULTIPLY'
@@ -181,7 +220,7 @@ M = dict(brick=mat_brick(), concrete=mat_flat('concrete', (0.62, 0.62, 0.58), 0.
          gold=mat_flat('gold', (0.7, 0.55, 0.2), 0.4, 0.8), pool=mat_flat('pool', (0.70, 0.72, 0.74), 0.9))
 _SKY = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'plates', 'school-photo-sky.png')   # 하늘만 남긴 RGBA(건물·땅 알파 0)
 _PHOTO0 = arg('--photo', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'plates', 'school-photo-clean.png'))
-if os.path.exists(_PHOTO0): M['photo'] = mat_photo(_PHOTO0); M['photo_ground'] = mat_photo(_PHOTO0, facing=False, name='photo_ground', fallback=(0.74, 0.69, 0.60)); M['photo_sky'] = mat_photo(_SKY if os.path.exists(_SKY) else _PHOTO0, facing=False, name='photo_sky', fallback=(0.80, 0.82, 0.85))   # R145: 배경판엔 하늘만(알파) — 비스듬한 카메라에서 건물 사진이 뒤판에 한 번 더 비치던 문제
+if os.path.exists(_PHOTO0): M['photo'] = mat_photo(_PHOTO0); M['photo_ground'] = mat_photo(_PHOTO0, facing=False, name='photo_ground', fallback=(0.74, 0.69, 0.60), feather=FEATHER); M['photo_sky'] = mat_photo(_SKY if os.path.exists(_SKY) else _PHOTO0, facing=False, name='photo_sky', fallback=(0.80, 0.82, 0.85))   # R145: 배경판엔 하늘만(알파) — 비스듬한 카메라에서 건물 사진이 뒤판에 한 번 더 비치던 문제
 
 # ---------------------------------------------------------------- 도형 (원점 = 바닥 중심 → scale.z 로 "자라남")
 BUILD = []   # (obj, kind, t0, t1)  kind: rise(z 0→1) · pop(전체 0→1) · drop(위에서 내려옴) · slidex(x 0→1)
