@@ -135,12 +135,52 @@
     wine:      { id: 'wine',      name: '와인',           primary: '#5A1E2B', accent: '#E8C39E', text: '#FFFFFF', sub: '#EBD9D9' },
   };
 
+  /* ---------- 그림 자산 (assets/) — 부품이 쓰는 PNG. 브라우저는 처음 부를 때 알아서 읽고(읽히기 전엔 null → 그 프레임엔 안 그림),
+     node(render.mjs) 는 부품의 assets 목록을 미리 읽어 setAsset 으로 넣는다. draw 는 여전히 순수 — 같은 t·같은 자산이면 같은 그림. ---------- */
+  var ASSETS = {};
+  var ASSET_BASE = (function () {
+    try { var src = typeof document !== 'undefined' && document.currentScript && document.currentScript.src; return src ? src.replace(/[^\/]*$/, '') : ''; } catch (e) { return ''; }
+  })();
+  function asset(name) {
+    var a = ASSETS[name];
+    if (!a) {
+      a = ASSETS[name] = { name: name, src: ASSET_BASE + 'assets/' + name, img: null, ready: null };
+      if (typeof Image !== 'undefined') {
+        a.ready = new Promise(function (res) { var im = new Image(); im.onload = function () { a.img = im; res(im); }; im.onerror = function () { res(null); }; im.src = a.src; });
+      }
+    }
+    return a.img;
+  }
+  function setAsset(name, img) { (ASSETS[name] = ASSETS[name] || { name: name, src: name, img: null, ready: null }).img = img; }
+  /* 브라우저: 부품(들)이 쓰는 자산이 다 읽힐 때까지 기다림 — 내보내기 전에 한 번 */
+  function preload(ids) {
+    var names = [];
+    (ids || Object.keys(REG)).forEach(function (id) { (REG[id] && REG[id].assets || []).forEach(function (n) { if (names.indexOf(n) < 0) names.push(n); }); });
+    names.forEach(asset);
+    return Promise.all(names.map(function (n) { return ASSETS[n].ready || Promise.resolve(ASSETS[n].img); }));
+  }
+  /* 스프라이트 시트에서 idx 번째 칸을 (x,y) 중심·너비 w 로 그림 */
+  function sprite(ctx, img, cols, cell, idx, x, y, w, alpha) {
+    if (!img || alpha <= 0.002) return;
+    var sx = (idx % cols) * cell, sy = Math.floor(idx / cols) * cell;
+    ctx.save(); ctx.globalAlpha = alpha;
+    ctx.drawImage(img, sx, sy, cell, cell, x - w / 2, y - w / 2, w, w);
+    ctx.restore();
+  }
+  function image(ctx, img, x, y, w, alpha) {
+    if (!img || alpha <= 0.002) return;
+    ctx.save(); ctx.globalAlpha = alpha;
+    ctx.drawImage(img, x - w / 2, y - w / 2, w, w);
+    ctx.restore();
+  }
+
   /* ---------- 레지스트리 ---------- */
   var REG = {};
   function register(def) {
     if (!def || !def.id || typeof def.draw !== 'function') throw new Error('부품 정의 불량');
     def.dur = def.dur || 5;
     def.fields = def.fields || [];
+    def.assets = def.assets || [];
     REG[def.id] = def;
     return def;
   }
@@ -166,6 +206,7 @@
     E: E, seg: seg, life: life, mix: mix, clamp: clamp,
     rgba: rgba, hexToRgb: hexToRgb,
     font: font, drawText: drawText, textWidth: textWidth, rrect: rrect, backing: backing,
+    asset: asset, setAsset: setAsset, preload: preload, sprite: sprite, image: image,
     THEMES: THEMES, register: register, defaults: defaults, list: list, get: function (id) { return REG[id]; }, frame: frame,
   };
 })(typeof window !== 'undefined' ? window : globalThis);

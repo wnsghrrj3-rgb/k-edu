@@ -12,7 +12,9 @@
       { k: 'label', label: '작은 표기', def: 'PART' },
       { k: 'title', label: '장 제목', def: '교육과정' },
       { k: 'backing', label: '어두운 받침', def: 'left', opts: ['left', 'bottom', 'none'] },
+      { k: 'emblem',  label: '엠블럼 배지', def: 'off', opts: ['off', 'on'] },
     ],
+    assets: ['emblem.png'],
     draw: function (ctx, W, H, t, p, T) {
       var s = H / 1080;
       var OUT_A = 3.35, OUT_B = 4.0;
@@ -56,7 +58,8 @@
       if (eA > 0.002) {
         var ey = panelY - 26 * s;
         var r = K.drawText(ctx, p.label, x + 4 * s, ey, { size: 24 * s, weight: 700, ls: 6 * s, color: T.accent, alpha: eA });
-        K.drawText(ctx, p.num, x + 4 * s + r.w + 22 * s, ey, { size: 24 * s, weight: 700, ls: 6 * s, color: T.text, alpha: eA });
+        var r2 = K.drawText(ctx, p.num, x + 4 * s + r.w + 22 * s, ey, { size: 24 * s, weight: 700, ls: 6 * s, color: T.text, alpha: eA });
+        if (p.emblem === 'on' && K.drawEmblemBadge) K.drawEmblemBadge(ctx, x + 4 * s + r.w + 22 * s + r2.w + 42 * s, ey - 9 * s, 44 * s, eA);   // 크림 원판 배지
         // 작은 표기 밑 금 점선 — 제목 폭만큼
         var lu = life(t, 0.7, 1.5, OUT_A, OUT_B);
         ctx.fillStyle = K.rgba(T.accent, 0.9 * eA);

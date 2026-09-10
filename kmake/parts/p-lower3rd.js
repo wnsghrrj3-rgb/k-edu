@@ -11,7 +11,9 @@
       { k: 'name', label: '이름', def: '김금성' },
       { k: 'role', label: '직함', def: '금성초등학교 교장' },
       { k: 'backing', label: '어두운 받침', def: 'none', opts: ['none', 'bottom'] },
+      { k: 'emblem',  label: '엠블럼 배지', def: 'off', opts: ['off', 'on'] },
     ],
+    assets: ['emblem.png'],
     draw: function (ctx, W, H, t, p, T) {
       var s = H / 1080;
       var OUT_A = 4.3, OUT_B = 5.0;
@@ -26,7 +28,8 @@
       ctx.font = K.font(800, nameSize); var w1 = K.textWidth(ctx, p.name, 0);
       ctx.font = K.font(500, roleSize); var w2 = K.textWidth(ctx, p.role, 1 * s);
       ctx.restore();
-      var padX = 34 * s, panelW = Math.max(w1, w2) + padX * 2;
+      var badge = p.emblem === 'on' && K.drawEmblemBadge ? 112 * s : 0;                 // 이름 왼쪽 엠블럼 배지 자리
+      var padX = 34 * s, panelW = Math.max(w1, w2) + padX * 2 + badge;
 
       /* 금 세로 막대 — 위→아래 */
       var barU = life(t, 0, 0.4, OUT_A, OUT_B, E.outQuint, E.inCubic);
@@ -38,7 +41,8 @@
       ctx.beginPath(); ctx.rect(x + 6 * s, y, panelW * open, panelH); ctx.clip();
       ctx.fillStyle = K.rgba(T.primary, 0.92);
       ctx.fillRect(x + 6 * s, y, panelW, panelH);
-      var tx = x + 6 * s + padX, slide = (1 - seg(t, 0.3, 1.0, E.outExpo)) * -24 * s;
+      var tx = x + 6 * s + padX + badge, slide = (1 - seg(t, 0.3, 1.0, E.outExpo)) * -24 * s;
+      if (badge) K.drawEmblemBadge(ctx, x + 6 * s + padX + 40 * s + slide, y + panelH / 2, 96 * s, 1);
       K.drawText(ctx, p.name, tx + slide, y + 58 * s, { size: nameSize, weight: 800, color: T.text });
       K.drawText(ctx, p.role, tx + slide, y + 101 * s, { size: roleSize, weight: 500, ls: 1 * s, color: T.accent });
       ctx.restore();

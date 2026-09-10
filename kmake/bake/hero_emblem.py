@@ -15,6 +15,7 @@ R146 — 금성초 엠블럼 3D 굽기 (케이메이커 뒷공장)
   원화질(준호 PC): blender -b -P hero_emblem.py -- OUT --w 1080 --h 1080 --fps 24 --samples 128
   한 장만:         python hero_emblem.py -- OUT --still 3.0
   한 바퀴(루프):   python hero_emblem.py -- OUT --spin 1      (6초 360°, 반복 재생용)
+  등장까지만:      python hero_emblem.py -- OUT --sec 2.6     (영상 부품 스프라이트용 — parts/assets/make-sprite.py)
   → ffmpeg -framerate 24 -i emblem_%04d.png -c:v prores_ks -profile:v 4444 -pix_fmt yuva444p10le emblem.mov
 """
 import bpy, math, json, sys, os
@@ -27,7 +28,7 @@ def arg(k, d):
     return type(d)(argv[argv.index(k) + 1]) if k in argv else d
 W, H, FPS, SAMPLES = arg('--w', 640), arg('--h', 640), arg('--fps', 12), arg('--samples', 16)
 STILL, SPIN, TILT = arg('--still', -1.0), arg('--spin', 0), arg('--tilt', 1)   # tilt 0 = 완전 정면
-SEC, HOLD = (6.0, 6.0) if SPIN else (4.0, 2.6)
+SEC, HOLD = (6.0, 6.0) if SPIN else (arg('--sec', 4.0), 2.6)     # --sec 2.6 이면 등장까지만(스프라이트용)
 os.makedirs(OUT, exist_ok=True)
 
 # ---------------------------------------------------------------- 씬

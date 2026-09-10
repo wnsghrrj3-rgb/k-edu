@@ -1323,6 +1323,7 @@
   $('btnExport').onclick = async () => {
     stop();
     if (!P.total()) return toast('타임라인이 비어 있어요');
+    try { if (window.KM_PARTS && window.KM_PARTS.preload) await window.KM_PARTS.preload(); } catch (e) {}   // 부품 그림 자산(엠블럼 등)이 다 읽힌 뒤 렌더
     const analyzing = P.data.media.some(m => { const s = M.get(m.id); return s && s.kind === 'video' && !s.analyzed; });
     if (analyzing) toast('분석이 끝나기 전에도 내보낼 수 있어요 — 결과물은 같아요', 3000);
     OV.show('MP4 내보내는 중');

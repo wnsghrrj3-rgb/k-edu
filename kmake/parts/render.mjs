@@ -21,7 +21,7 @@ import { createRequire } from 'node:module';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
-const { createCanvas, registerFont } = require('canvas');
+const { createCanvas, registerFont, loadImage } = require('canvas');
 
 /* ---------- 인자 ---------- */
 const argv = process.argv.slice(2);
@@ -66,6 +66,15 @@ const ids = opt.all ? K.list().map(d => d.id) : opt.part ? [opt.part] : [];
 if (!ids.length) { console.error('--part <id> 또는 --all 필요. 부품:', K.list().map(d => d.id).join(', ')); process.exit(1); }
 
 fs.mkdirSync(opt.out, { recursive: true });
+
+/* ---------- 그림 자산 (parts/assets/) 미리 읽기 — 부품 def.assets ---------- */
+for (const id of ids) {
+  for (const name of (K.get(id)?.assets || [])) {
+    const f = path.join(__dirname, 'assets', name);
+    if (!fs.existsSync(f)) { console.warn('⚠ 자산 없음:', f); continue; }
+    K.setAsset(name, await loadImage(f));
+  }
+}
 
 function renderFrame(id, t, p) {
   const cv = createCanvas(opt.w, opt.h);
