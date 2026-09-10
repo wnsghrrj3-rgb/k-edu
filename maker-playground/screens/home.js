@@ -74,7 +74,7 @@ window.MK_SCREENS.home = (() => {
     </form>
     <div class="h2-flow" id="h2Flow" aria-live="polite"></div>
     <div class="h2-chips" role="list" aria-label="유형으로 시작">
-      ${CHIPS.map(([k, nm]) => `<button class="h2-chip" role="listitem" data-h2-chip="${k}">${nm}</button>`).join('')}${window.MK_AWARD3D ? `<button class="h2-chip" role="listitem" data-h2-award3d title="3D 상장 — 새 탭에서 열려요">🏆 3D 상장</button>` : ''}
+      ${CHIPS.map(([k, nm]) => `<button class="h2-chip" role="listitem" data-h2-chip="${k}">${nm}</button>`).join('')}${window.MK_AWARD3D ? `<button class="h2-chip" role="listitem" data-h2-award3d title="3D 상장 — 새 탭에서 열려요">🏆 3D 상장</button>` : ''}${window.MK_SCENE3D ? window.MK_SCENE3D.SCENES.map((s) => `<button class="h2-chip" role="listitem" data-scene3d="${s.id}" title="${s.title} — 새 탭에서 열려요">${s.ico} ${s.title.replace(/ \(.*\)$/, '')}</button>`).join('') : ''}
     </div>
   </section>`;
 
@@ -353,6 +353,7 @@ window.MK_SCREENS.home = (() => {
       /* Quick Create → 기존 깔때기 */
       root.querySelectorAll('[data-h2-chip]').forEach((b) => b.onclick = () => window.MK_SCREENS.create.enter(b.dataset.h2Chip));
       const a3 = root.querySelector('[data-h2-award3d]'); if (a3) a3.onclick = () => window.MK_AWARD3D.open();   /* R143 — 인쇄물 옆 3D 상장 문 */
+      if (window.MK_SCENE3D) window.MK_SCENE3D.wire(root);   /* R147 — 3D 장면 칩 */
 
       /* Continue · Recent → 열기 전용 */
       root.querySelectorAll('[data-h2-open]').forEach((b) => b.onclick = () => openProject(b.dataset.h2Open));
