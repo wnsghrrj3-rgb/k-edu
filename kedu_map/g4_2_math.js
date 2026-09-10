@@ -228,14 +228,114 @@ window.KEDU_MAP["g4_2_math"] = {
    "kind": "unit",
    "lessons": [
     {
-     "key": null,
-     "lessonId": null,
-     "n": "",
-     "title": "준비 중이에요",
+     "key": "g4_math_u3_l01",
+     "lessonId": "g4_2_math_u3_l01_v1",
+     "n": "1",
+     "title": "소수의 덧셈과 뺄셈을 만나 볼까요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/math/3단원_소수의덧셈과뺄셈/g4_math_u3_l01_소수의덧셈과뺄셈을만나볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_math_u3_l02",
+     "lessonId": "g4_2_math_u3_l02_v1",
+     "n": "2",
+     "title": "소수 두 자리 수를 알아볼까요",
+     "sub": null,
+     "url": "/grade4/semester2/math/3단원_소수의덧셈과뺄셈/g4_math_u3_l02_소수두자리수를알아볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_math_u3_l03",
+     "lessonId": "g4_2_math_u3_l03_v1",
+     "n": "3",
+     "title": "소수 세 자리 수를 알아볼까요",
+     "sub": null,
+     "url": "/grade4/semester2/math/3단원_소수의덧셈과뺄셈/g4_math_u3_l03_소수세자리수를알아볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_math_u3_l04",
+     "lessonId": "g4_2_math_u3_l04_v1",
+     "n": "4",
+     "title": "소수 사이의 관계를 알아볼까요",
+     "sub": null,
+     "url": "/grade4/semester2/math/3단원_소수의덧셈과뺄셈/g4_math_u3_l04_소수사이의관계를알아볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_math_u3_l05",
+     "lessonId": "g4_2_math_u3_l05_v1",
+     "n": "5",
+     "title": "소수의 크기를 비교해 볼까요",
+     "sub": null,
+     "url": "/grade4/semester2/math/3단원_소수의덧셈과뺄셈/g4_math_u3_l05_소수의크기를비교해볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_math_u3_l06",
+     "lessonId": "g4_2_math_u3_l06_v1",
+     "n": "6",
+     "title": "소수 한 자리 수의 덧셈을 해 볼까요",
+     "sub": null,
+     "url": "/grade4/semester2/math/3단원_소수의덧셈과뺄셈/g4_math_u3_l06_소수한자리수의덧셈을해볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_math_u3_l07",
+     "lessonId": "g4_2_math_u3_l07_v1",
+     "n": "7",
+     "title": "소수 두 자리 수의 덧셈을 해 볼까요",
+     "sub": null,
+     "url": "/grade4/semester2/math/3단원_소수의덧셈과뺄셈/g4_math_u3_l07_소수두자리수의덧셈을해볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_math_u3_l08",
+     "lessonId": "g4_2_math_u3_l08_v1",
+     "n": "8",
+     "title": "소수 한 자리 수의 뺄셈을 해 볼까요",
+     "sub": null,
+     "url": "/grade4/semester2/math/3단원_소수의덧셈과뺄셈/g4_math_u3_l08_소수한자리수의뺄셈을해볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_math_u3_l09",
+     "lessonId": "g4_2_math_u3_l09_v1",
+     "n": "9",
+     "title": "소수 두 자리 수의 뺄셈을 해 볼까요",
+     "sub": null,
+     "url": "/grade4/semester2/math/3단원_소수의덧셈과뺄셈/g4_math_u3_l09_소수두자리수의뺄셈을해볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_math_u3_l10",
+     "lessonId": "g4_2_math_u3_l10_v1",
+     "n": "10",
+     "title": "내가 수영 감독이라면! (창의)",
+     "sub": null,
+     "url": "/grade4/semester2/math/3단원_소수의덧셈과뺄셈/g4_math_u3_l10_내가수영감독이라면.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_math_u3_l11",
+     "lessonId": "g4_2_math_u3_l11_v1",
+     "n": "11",
+     "title": "스스로 마무리해요 (단원 평가)",
+     "sub": null,
+     "url": "/grade4/semester2/math/3단원_소수의덧셈과뺄셈/g4_math_u3_l11_스스로마무리해요.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   },

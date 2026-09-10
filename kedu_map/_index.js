@@ -87,8 +87,8 @@ window.KEDU_MAP_INDEX = [
  {
   "key": "g4_2_math",
   "units": 6,
-  "lessons": 46,
-  "ready": 45
+  "lessons": 56,
+  "ready": 56
  },
  {
   "key": "g4_2_science",
