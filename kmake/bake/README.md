@@ -6,6 +6,9 @@
 | 스크립트 | 산출 | 비고 |
 |---|---|---|
 | `hero_award.py` | `plates/award-wood-warm.mp4` · `.json`(프레임별 종이 모서리 px) · `.poster.png` | R142. 글자 없음 — 글자는 브라우저 몫 |
+| `hero_school.py` | `plates/school-build.mp4` · `.json` · `.poster.png` | R144~145. 「학교가 지어진다」 — 사진 모드(기본)/모형 모드(`--photo` 없는 경로) |
+| `emblem.py` | (부품 모듈, 산출 없음) | R146. 금성초 엠블럼 3D — `emblem.build()` 로 어느 틀에나 놓음(모형 모드 학교 박공에 자동) |
+| `hero_emblem.py` | `emblem_####.png`(투명) · `emblem.json` · `poster.png` | R146. 엠블럼이 돌아 들어와 정면에 멈춤 · `--spin 1` 한 바퀴 루프 · `--still` 한 장 |
 
 ## 굽는 법
 ```

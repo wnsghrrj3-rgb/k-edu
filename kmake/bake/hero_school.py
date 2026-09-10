@@ -275,10 +275,16 @@ for i in range(7):                                             # 위 창 7 (px 2
     box(f'gwin{i}', cx - 0.55, cx + 0.55, -0.35, 0.05, Z(440), Z(375), M['glass'], 'pop', 2.4 + i * 0.07, 2.8 + i * 0.07, origin='center')
 box('glasswall', X(180), X(610), -0.3, 0.05, Z(600), Z(520), M['glass'], 'pop', 2.5, 3.0, origin='center')   # 2층 유리벽
 box('entry_glass', X(425), X(620), -0.3, 0.05, Z(770, -6), Z(640), M['glass'], 'pop', 2.6, 3.0, origin='center')   # 현관 유리
-# 엠블럼 · 교명 (사진에 이미 찍혀 있으므로 살짝 돌출만 — 질감은 사진이 입힘)
-bpy.ops.mesh.primitive_cylinder_add(radius=0.95, depth=0.25, vertices=32); em = bpy.context.object; em.name = 'emblem'
-em.rotation_euler = (math.radians(90), 0, 0); em.location = (X(405), -0.2, 0); em.data.materials.append(PH)
-BUILD.append((em, 'pop', 4.0, 4.5)); em.location.z = Z(320)
+# 엠블럼 · 교명 (사진 모드: 사진에 이미 찍혀 있으므로 살짝 돌출만 — 질감은 사진이 입힘 / 모형 모드: 진짜 엠블럼 3D, R146 emblem.py)
+if 'photo' in M:
+    bpy.ops.mesh.primitive_cylinder_add(radius=0.95, depth=0.25, vertices=32); em = bpy.context.object; em.name = 'emblem'
+    em.rotation_euler = (math.radians(90), 0, 0); em.location = (X(405), -0.2, 0); em.data.materials.append(PH)
+    BUILD.append((em, 'pop', 4.0, 4.5)); em.location.z = Z(320)
+else:
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import emblem
+    em = emblem.build('emblem', size=0.62, depth=0.16, gold=True)          # 원 반지름 0.62m → 날개 폭 약 2m
+    em.rotation_euler = (math.radians(90), 0, 0); em.location = (X(405), -0.2, 0)
+    BUILD.append((em, 'pop', 4.0, 4.5)); em.location.z = Z(320)
 if os.path.exists(FONT) and 'photo' not in M:   # 사진 모드에선 벽에 사진 글자가 이미 찍혀 있어 3D 글자를 겹치지 않는다(R145: 이중으로 보이던 문제)
     cu = bpy.data.curves.new('schoolname', 'FONT'); cu.body = '금성초등학교'; cu.font = bpy.data.fonts.load(FONT)
     cu.size = 1.55; cu.extrude = 0.12; cu.align_x = 'CENTER'
