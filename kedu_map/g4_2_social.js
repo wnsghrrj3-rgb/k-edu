@@ -74,14 +74,14 @@ window.KEDU_MAP["g4_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_social_u1_l07",
+     "lessonId": "g4_social_u1_l07_v1",
      "n": "2",
      "title": "주민 참여가 중요한 까닭을 알아볼까요",
      "sub": "② 주민 자치와 민주주의",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/social/1단원_민주주의와자치/g4_social_u1_l07_주민참여까닭.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
