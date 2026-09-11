@@ -84,14 +84,14 @@ window.KEDU_MAP["g4_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_social_u1_l08",
+     "lessonId": "g4_social_u1_l08_v1",
      "n": "3",
      "title": "주민 참여의 방법을 알아볼까요",
      "sub": "② 주민 자치와 민주주의",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/social/1단원_민주주의와자치/g4_social_u1_l08_주민참여방법.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
