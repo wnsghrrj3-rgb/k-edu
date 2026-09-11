@@ -44,6 +44,12 @@
     split:     { cat: 'bc', hold: [1.2, 4.2], thumbT: 2.2, font: 'pretendard' },
     reflect:   { cat: 'bc', hold: [1.5, 4.2], thumbT: 2.4, font: 'playfair' },
     outline:   { cat: 'bc', hold: [0.8, 4.3], thumbT: 1.6, font: 'jua' },
+    // 사진 틀 5종 (kmake/parts/p-photo.js, 2026-09-11) — 사진 칸(type:'img')은 미디어 띠의 사진 id, 명조 글꼴 고정
+    photoOpen:  { cat: 'photo', hold: [5.0, 7.6],  thumbT: 5.5, font: 'notoserif' },
+    collage3:   { cat: 'photo', hold: [8.9, 11.0], thumbT: 9.5, font: 'notoserif' },
+    photoOne:   { cat: 'photo', hold: [2.6, 6.0],  thumbT: 3.0, font: 'notoserif' },
+    photoPair:  { cat: 'photo', hold: [2.6, 6.0],  thumbT: 3.2, font: 'notoserif' },
+    photoGrid4: { cat: 'photo', hold: [2.9, 7.0],  thumbT: 3.5, font: 'notoserif' },
     // 화면 효과 21종 (engine/vfx.js) — self: 화면 전체를 쓴다(축 변환·무대 없음), loop: 카드를 늘여도 시간 재매핑 없이 그대로 흐른다(봉투는 p._len)
     vfxGrain:     { cat: 'fx', hold: null, thumbT: 1.0, self: true, loop: true },
     vfxVignette:  { cat: 'fx', hold: null, thumbT: 1.0, self: true, loop: true },
@@ -69,6 +75,7 @@
   };
   const CATS = [
     { id: 'title',  name: '타이틀' },
+    { id: 'photo',  name: '사진 틀' },
     { id: 'info',   name: '정보 표시' },
     { id: 'behind', name: '인물 뒤 글자' },
     { id: 'bc',     name: '방송 자막' },
@@ -94,6 +101,13 @@
   }
 
   function K() { return g.KM_PARTS || null; }
+  /* 사진 칸 — 부품이 p.photo 같은 열쇠를 넘기면 미디어 띠의 사진(ImageBitmap)으로 푼다 */
+  let photoWired = false;
+  function wirePhotos() {
+    const k = K(); if (photoWired || !k || !k.setPhotoResolver) return;
+    photoWired = true;
+    k.setPhotoResolver(key => { const M = g.KMV_MEDIA, src = M && M.get(key); return src && src.kind === 'image' ? src.bmp : null; });
+  }
   function def(id) { const k = K(); return k ? k.get(id) : null; }
   function meta(id) { const d = def(id); return META[id] || { cat: 'etc', hold: null, thumbT: d ? d.dur / 2 : 1 }; }
   function ready() { return !!K(); }
@@ -146,6 +160,7 @@
   }
   function drawCard(ctx, W, H, card, t, theme) {
     const k = K(); if (!k || !def(card.part)) return;
+    wirePhotos();
     const lf = t - card.at; if (lf < 0 || lf >= card.dur) return;
     const gm0 = geom(card, W, H), st = stage(W, H, gm0.ay, gm0.self || gm0.layer);
     const BH = st.h, BY = st.y;
@@ -191,7 +206,7 @@
   function label(card) {
     const d = def(card.part); if (!d) return card.part;
     const p = card.p || {};
-    const key = ['title', 'text', 'name', 'num', 'tone'].find(k => p[k] != null && String(p[k]).trim());
+    const key = ['title', 'text', 'name', 'num', 'tone', 'main1', 'caption', 'label1'].find(k => p[k] != null && String(p[k]).trim());
     return d.name + (key ? ' · ' + (key === 'num' && p.label ? p.label + ' ' + p.num + (p.unit || '') : String(p[key])) : '');
   }
 

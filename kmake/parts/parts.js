@@ -1,5 +1,5 @@
 /* ============================================================
-   케이메이커 영상 부품 코어 (KM_PARTS) — 2026-08-27
+   케이메이커 영상 부품 코어 (KM_PARTS) — 2026-08-27 · 사진 칸 2026-09-11
    ------------------------------------------------------------
    부품 = 순수 함수 draw(ctx, W, H, t, p, theme).
    같은 t 면 같은 그림(결정적). DOM·타이머 접촉 0.
@@ -52,8 +52,9 @@
   /* ---------- 텍스트 (자간 수동 — node-canvas 는 letterSpacing 미지원) ---------- */
   var FONT_STACK = '"Pretendard", "Noto Sans CJK KR", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif';
 
+  var SERIF_STACK = '"Noto Serif KR", "Noto Serif CJK KR", "KoPubWorld Batang", "Apple Myungjo", "Batang", serif';   // 사진 틀 부품(명조)
   var FONT_OVERRIDE = null;                                   // 케이무비 카드 글꼴(p._font = 패밀리명) — frame() 동안만
-  function font(weight, size) { return weight + ' ' + size + 'px ' + (FONT_OVERRIDE ? '"' + FONT_OVERRIDE + '", ' : '') + FONT_STACK; }
+  function font(weight, size, serif) { return weight + ' ' + size + 'px ' + (FONT_OVERRIDE ? '"' + FONT_OVERRIDE + '", ' : '') + (serif ? SERIF_STACK : FONT_STACK); }
 
   function textWidth(ctx, text, ls) {
     ls = ls || 0;
@@ -68,7 +69,7 @@
     o = o || {};
     var ls = o.ls || 0;
     ctx.save();
-    ctx.font = font(o.weight || 700, o.size || 40);
+    ctx.font = font(o.weight || 700, o.size || 40, o.serif);
     ctx.textBaseline = o.baseline || 'alphabetic';
     ctx.textAlign = 'left';
     var w = textWidth(ctx, text, ls);
@@ -174,6 +175,48 @@
     ctx.restore();
   }
 
+  /* ---------- 사진 칸 (2026-09-11, 사진 틀 부품) ----------
+     필드 { k, label, type:'img', def:'' } — 값은 문자열 열쇠. 열쇠 → 그림 찾기 순서:
+       ① photoResolver(열쇠)  — 케이무비가 미디어 id 로 등록(ImageBitmap)
+       ② PHOTOS[열쇠]         — setPhoto 로 넣은 것(node 는 파일, 미리보기는 objectURL)
+       ③ 열쇠가 주소(http·data·blob)면 브라우저가 직접 읽음(읽히기 전엔 null → 그 프레임엔 자리표시)
+     draw 는 여전히 순수 — 같은 t·같은 그림이면 같은 바이트. */
+  var PHOTOS = {}, photoResolver = null;
+  function setPhoto(key, img) { PHOTOS[key] = img || null; }
+  function setPhotoResolver(fn) { photoResolver = fn; }
+  function photo(key) {
+    if (!key) return null;
+    if (photoResolver) { var r = photoResolver(key); if (r) return r; }
+    if (key in PHOTOS) return PHOTOS[key];
+    if (/^(https?:|data:|blob:|\/|\.)/.test(key) && typeof Image !== 'undefined') {
+      PHOTOS[key] = null;
+      var im = new Image(); im.onload = function () { PHOTOS[key] = im; }; im.onerror = function () { PHOTOS[key] = null; }; im.src = key;
+    }
+    return null;
+  }
+  /* 사진을 (x,y,w,h) 안에 꽉 채워(cover) 그림. zoom 은 1 이상(가운데 기준 확대), 그림이 없으면 조용한 자리표시 */
+  function drawCover(ctx, img, x, y, w, h, zoom, alpha) {
+    if (alpha != null && alpha <= 0.002) return;
+    zoom = zoom || 1;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+    if (alpha != null) ctx.globalAlpha *= alpha;
+    if (img && (img.width || img.naturalWidth)) {
+      var iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+      var k = Math.max(w / iw, h / ih) * zoom, dw = iw * k, dh = ih * k;
+      ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+    } else {
+      var g2 = ctx.createLinearGradient(x, y, x + w, y + h);
+      g2.addColorStop(0, '#E9E4DA'); g2.addColorStop(1, '#D3CCC0');
+      ctx.fillStyle = g2; ctx.fillRect(x, y, w, h);
+      var r = Math.min(w, h) * 0.11;
+      ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = Math.max(1.5, r * 0.09);
+      rrect(ctx, x + w / 2 - r * 1.3, y + h / 2 - r * 0.9, r * 2.6, r * 1.8, r * 0.25); ctx.stroke();
+      ctx.beginPath(); ctx.arc(x + w / 2, y + h / 2 + r * 0.05, r * 0.5, 0, Math.PI * 2); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   /* ---------- 레지스트리 ---------- */
   var REG = {};
   function register(def) {
@@ -207,6 +250,7 @@
     rgba: rgba, hexToRgb: hexToRgb,
     font: font, drawText: drawText, textWidth: textWidth, rrect: rrect, backing: backing,
     asset: asset, setAsset: setAsset, preload: preload, sprite: sprite, image: image,
+    photo: photo, setPhoto: setPhoto, setPhotoResolver: setPhotoResolver, drawCover: drawCover,
     THEMES: THEMES, register: register, defaults: defaults, list: list, get: function (id) { return REG[id]; }, frame: frame,
   };
 })(typeof window !== 'undefined' ? window : globalThis);

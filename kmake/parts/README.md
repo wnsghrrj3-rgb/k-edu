@@ -21,3 +21,12 @@
 - `opening` — 엠블럼 on/off (기본 on: 학교 이름 위에 먼저 들어옴)
 - `section` · `lower3rd` — 엠블럼 배지 on/off (크림 원판 위 정면 엠블럼)
 - 다른 부품에서 직접: `K.drawEmblem(ctx, tIn, x, y, size, alpha)` / `K.drawEmblemBadge(ctx, x, y, d, alpha)`
+
+## 사진 틀 부품 (p-photo.js, 2026-09-11) — 프레임은 코드, 사진만 교체
+기준 결 = 금성초 입학설명회 오프닝(나뭇잎 프레임 + 남색 명조 제목·붓 밑줄·로고 → 크림 종이 콜라주 3장이 문구 카드로 뒤집힘). 다섯 부품이 한 벌로 같은 종이·테이프·잎·명조·붓 밑줄을 쓴다.
+- `photoOpen` 사진 오프닝 9s — 배경 사진(선택, 없으면 촬영본 위 오버레이)·로고(선택)·작은 윗줄·제목
+- `collage3` 콜라주 3장 12s — 사진 3 + (작은 줄·큰 줄)×3, 3.0/5.0/7.0s 에 차례로 뒤집힘
+- `photoOne` 한 장 크게 7s · `photoPair` 두 장 나란히 7s · `photoGrid4` 네 장 격자 8s
+- 사진 칸 = 필드 `type:'img'`, 값은 **열쇠 문자열**: 미리보기 페이지는 파일 고르기(objectURL), `render.mjs` 는 프리셋의 파일 경로, 케이무비는 미디어 띠 사진 id(`K.setPhotoResolver`). 빈 값이면 조용한 자리표시.
+- 글꼴은 명조(`K.font(w, size, true)` = Noto Serif KR → 시스템 Noto Serif CJK KR). node 원화질은 `fonts/NotoSerifKR-*.otf` 를 두면 그걸 쓴다.
+- 「크림 종이」를 끄면 종이 없이 촬영본 위에 폴라로이드만 얹힌다.

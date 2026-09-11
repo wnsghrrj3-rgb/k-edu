@@ -2015,6 +2015,8 @@
         const seg = document.createElement('div'); seg.className = 'seg' + (f.opts.length >= 3 ? ' c' + Math.min(f.opts.length, 4) : '');
         f.opts.forEach(o => { const b = document.createElement('button'); b.textContent = OPT_KO[o] || o; b.dataset.k = o; b.classList.toggle('on', pt.p[f.k] === o); b.onclick = () => { const cur = selPart(); if (cur) P.updateP(cur.id, { p: { [f.k]: o } }); }; seg.appendChild(b); });
         row.appendChild(seg);
+      } else if (f.type === 'img') {                                   // 사진 칸 — 미디어 띠의 사진 중 고르기 (값 = 미디어 id)
+        row.appendChild(buildImgPick(f, pt));
       } else {
         const inp = document.createElement('input'); inp.type = 'text'; inp.value = pt.p[f.k] == null ? '' : pt.p[f.k]; inp.dataset.k = f.k;
         inp.oninput = e => { const cur = selPart(); if (!cur) return; if (partFieldStart == null) partFieldStart = cur.p[f.k]; cur.p[f.k] = e.target.value; dirty = true; renderPreview(); draw(); };
@@ -2024,6 +2026,22 @@
       }
       box.appendChild(row);
     });
+  }
+  /* 사진 칸 고르기 — 「없음」 + 미디어 띠의 사진 썸네일. 사진을 나중에 넣으면 refreshPartPanel 이 다시 그린다 */
+  function buildImgPick(f, pt) {
+    const box = document.createElement('div'); box.className = 'imgpick'; box.dataset.k = f.k;
+    const imgs = P.data.media.filter(m => m.kind === 'image'); box.dataset.n = String(imgs.length);
+    const mk = (id, label, th) => {
+      const b = document.createElement('button'); b.dataset.id = id || ''; b.title = label; b.classList.toggle('on', (pt.p[f.k] || '') === (id || ''));
+      if (th) { const cv = document.createElement('canvas'); cv.width = 64; cv.height = 40; try { cv.getContext('2d').drawImage(th, 0, 0, 64, 40); } catch (e) {} b.appendChild(cv); }
+      else b.textContent = label;
+      b.onclick = () => { const cur = selPart(); if (cur) P.updateP(cur.id, { p: { [f.k]: id || '' } }); };
+      box.appendChild(b);
+    };
+    mk('', '없음', null);
+    imgs.forEach(m => { const src = M.get(m.id); mk(m.id, m.name, src && src.thumbs && src.thumbs[0] || null); });
+    if (!imgs.length) { const n = document.createElement('span'); n.className = 'imgpick-note'; n.textContent = '미디어 띠에 사진을 먼저 넣어 주세요'; box.appendChild(n); }
+    return box;
   }
   const OPT_KO = { none: '없음', bottom: '아래', left: '왼쪽', center: '가운데', right: '오른쪽', navy: '네이비', black: '검정', white: '흰색', zoom: '줌', fade: '페이드', solid: '채움', outline: '윤곽', accent: '금색', top: '위', middle: '중간', slow: '느리게', normal: '보통', warm: '따뜻', gold: '금', cool: '차가움', ltr: '→', rtl: '←', topleft: '왼쪽 위', topright: '오른쪽 위', bottomright: '오른쪽 아래',
     soft: '약', mid: '중', strong: '강', fine: '가늘게', coarse: '굵게', tight: '좁게', wide: '넓게', clean: '맑게', dreamy: '몽환', rare: '드물게', busy: '자주', still: '고정', pulse: '맥동', in: '안으로', out: '밖으로', hand: '핸드헬드', impact: '충격', quake: '진동', sepia: '세피아', bw: '흑백', faded: '바랜', navygold: '네이비·금', tealorange: '청록·주황', purplepink: '보라·분홍', greencream: '초록·크림', mono: '흑백', r239: '2.39:1', r200: '2:1', r185: '1.85:1', polaroid: '폴라로이드', film: '필름', line: '얇은 선', card: '카드', petal: '벚꽃', snow: '눈', leaf: '낙엽', firefly: '반딧불', mix: '섞임', small: '작게', large: '크게' };
@@ -2038,6 +2056,12 @@
     else { // 값만 갱신 (입력 중인 칸은 건드리지 않음)
       $('partFields').querySelectorAll('input[type=text]').forEach(inp => { if (document.activeElement !== inp) inp.value = pt.p[inp.dataset.k] == null ? '' : pt.p[inp.dataset.k]; });
       $('partFields').querySelectorAll('.seg').forEach(seg => { const f = def.fields.find(x => x.opts && x.opts.includes(seg.firstChild.dataset.k)); Array.from(seg.children).forEach(b => b.classList.toggle('on', f && pt.p[f.k] === b.dataset.k)); });
+      $('partFields').querySelectorAll('.imgpick').forEach(box => {
+        const f = def.fields.find(x => x.k === box.dataset.k); if (!f) return;
+        const n = P.data.media.filter(m => m.kind === 'image').length;
+        if (String(n) !== box.dataset.n) box.replaceWith(buildImgPick(f, pt));                         // 사진이 늘거나 줄었다 — 다시 그림
+        else Array.from(box.querySelectorAll('button')).forEach(b => b.classList.toggle('on', (pt.p[f.k] || '') === b.dataset.id));
+      });
     }
     $('partEditName').textContent = def ? def.name : pt.part;
     if (document.activeElement !== $('partDur')) $('partDur').value = (pt.dur / FPS).toFixed(1);

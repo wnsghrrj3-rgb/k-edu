@@ -35,9 +35,9 @@ const parts = await page.evaluate(() => {
   }
   return { ids, drawn, total: KM_PARTS.list().length };
 });
-ok(parts.ids.length === 29 && parts.total === 50, '부품 29종 + 화면 효과 21종 = 50 등록');
+ok(parts.ids.length === 34 && parts.total === 55, '부품 34종(사진 틀 5 포함) + 화면 효과 21종 = 55 등록');
 for (const id of ['quote', 'chapter', 'list', 'credits']) ok(typeof parts.drawn[id] === 'number' && parts.drawn[id] > 150, '새 부품 ' + id + ' 그려짐 (픽셀 ' + parts.drawn[id] + ')');
-ok(Object.values(parts.drawn).every(v => typeof v === 'number' && v > 50), '28종 전부 그려짐 (throw 0)' + (Object.entries(parts.drawn).filter(([k, v]) => !(typeof v === 'number' && v > 50)).map(([k, v]) => ' ' + k + ':' + v).join('') || ''));
+ok(Object.values(parts.drawn).every(v => typeof v === 'number' && v > 50), '34종 전부 그려짐 (throw 0)' + (Object.entries(parts.drawn).filter(([k, v]) => !(typeof v === 'number' && v > 50)).map(([k, v]) => ' ' + k + ':' + v).join('') || ''));
 /* 방송 자막 16종 — 카드로 그려도(글꼴 기본값·홀드) 픽셀·결정성 */
 const bc = await page.evaluate(() => {
   const ids = ['extrude', 'glass', 'headline', 'ticker', 'nameplate', 'stamp', 'flip', 'vertical', 'marker', 'countdown', 'ribbon', 'bubble', 'live', 'split', 'reflect', 'outline'];
@@ -74,7 +74,7 @@ const grid = await page.evaluate(() => ({
   cats: Array.from(document.querySelectorAll('#partGrid .cat')).map(e => e.textContent),
   cells: document.querySelectorAll('#partGrid .pc').length,
 }));
-ok(grid.cells === 50 && grid.cats.join('/') === '타이틀/정보 표시/인물 뒤 글자/방송 자막/화면 효과', '꾸미기 패널: 분류 5그룹 · 50칸 (' + grid.cats.join('/') + ')');
+ok(grid.cells === 55 && grid.cats.join('/') === '타이틀/사진 틀/정보 표시/인물 뒤 글자/방송 자막/화면 효과', '꾸미기 패널: 분류 6그룹 · 55칸 (' + grid.cats.join('/') + ')');
 
 // ---------- 자막 9종 · 분류 UI ----------
 const subUI = await page.evaluate(() => ({

@@ -8,6 +8,7 @@
      node render.mjs --part opening --preset presets/geumseong.json --out dist
      node render.mjs --all --preset presets/geumseong.json --out dist
      옵션: --w 1920 --h 1080 --fps 30 --png (프레임 시퀀스 남김) --still 2.4 (정지 PNG 한 장)
+   사진 칸(type:'img'): 프리셋 값 = 사진 파일 경로(프리셋 파일 기준 상대). 빈 값이면 자리표시.
 
    요구: npm i canvas (이 폴더에서) + ffmpeg (prores_ks)
    폰트: 프리텐다드 otf 를 fonts/ 또는 node_modules/pretendard 에서 찾는다.
@@ -49,6 +50,13 @@ for (const [file, weight] of [['Pretendard-Black.otf', '900'], ['Pretendard-Extr
   if (f) { registerFont(f, { family: 'Pretendard', weight }); fontOK = true; }
 }
 if (!fontOK) console.warn('⚠ 프리텐다드 못 찾음 — 시스템 폰트로 대체 (npm i pretendard 권장)');
+/* 사진 틀 부품(명조): fonts/NotoSerifKR-*.otf 가 있으면 등록, 없으면 시스템의 Noto Serif CJK KR 에 맡긴다 */
+let serifOK = false;
+for (const [file, weight] of [['NotoSerifKR-Black.otf', '900'], ['NotoSerifKR-Bold.otf', '700'], ['NotoSerifKR-SemiBold.otf', '600'], ['NotoSerifKR-Regular.otf', '400']]) {
+  const f = path.join(__dirname, 'fonts', file);
+  if (fs.existsSync(f)) { registerFont(f, { family: 'Noto Serif KR', weight }); serifOK = true; }
+}
+if (!serifOK) console.warn('ℹ 본명조(fonts/NotoSerifKR-*.otf) 없음 — 시스템 Noto Serif CJK KR 로 그림 (사진 틀 부품)');
 
 /* ---------- 부품 로드 (브라우저 파일 그대로) ---------- */
 for (const f of ['parts.js', ...fs.readdirSync(__dirname).filter(n => /^p-.*\.js$/.test(n)).sort()]) {
@@ -73,6 +81,18 @@ for (const id of ids) {
     const f = path.join(__dirname, 'assets', name);
     if (!fs.existsSync(f)) { console.warn('⚠ 자산 없음:', f); continue; }
     K.setAsset(name, await loadImage(f));
+  }
+}
+
+/* 사진 칸 — 프리셋 값이 파일 경로면(프리셋 파일 기준 상대) 읽어서 그 경로를 열쇠로 등록 */
+const presetDir = opt.preset ? path.dirname(path.resolve(opt.preset)) : __dirname;
+for (const id of ids) {
+  const pv = preset.parts?.[id] || {};
+  for (const f of (K.get(id)?.fields || []).filter(f => f.type === 'img')) {
+    const v = pv[f.k]; if (!v) continue;
+    const file = path.isAbsolute(v) ? v : path.join(presetDir, v);
+    if (!fs.existsSync(file)) { console.warn('⚠ 사진 없음:', file, '→ 자리표시로 그림'); continue; }
+    K.setPhoto(v, await loadImage(file));
   }
 }
 
