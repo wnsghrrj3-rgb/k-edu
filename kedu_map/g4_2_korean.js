@@ -191,6 +191,93 @@ window.KEDU_MAP["g4_2_korean"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 3,
+   "name": "의견을 모아서",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g4_korean_u3_l01",
+     "lessonId": "g4_2_kor_u3_l01_v1",
+     "n": "1",
+     "title": "단원 시작 — 배울 내용 살펴보기",
+     "sub": null,
+     "url": "/grade4/semester2/korean/3단원_의견을모아서/g4_kor_u3_l01.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_korean_u3_l02",
+     "lessonId": "g4_2_kor_u3_l02_03_v1",
+     "n": "2·3",
+     "title": "토의하는 방법 알기",
+     "sub": null,
+     "url": "/grade4/semester2/korean/3단원_의견을모아서/g4_kor_u3_l02_03.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_korean_u3_l04",
+     "lessonId": "g4_2_kor_u3_l04_05_v1",
+     "n": "4·5",
+     "title": "일상생활의 문제 해결을 위한 토의 하기",
+     "sub": null,
+     "url": "/grade4/semester2/korean/3단원_의견을모아서/g4_kor_u3_l04_05.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_korean_u3_l06",
+     "lessonId": "g4_2_kor_u3_l06_v1",
+     "n": "6",
+     "title": "제안하는 글에 대해 알기",
+     "sub": null,
+     "url": "/grade4/semester2/korean/3단원_의견을모아서/g4_kor_u3_l06.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_korean_u3_l07",
+     "lessonId": "g4_2_kor_u3_l07_08_v1",
+     "n": "7·8",
+     "title": "제안하는 글을 쓰는 방법 알기",
+     "sub": null,
+     "url": "/grade4/semester2/korean/3단원_의견을모아서/g4_kor_u3_l07_08.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_korean_u3_l09",
+     "lessonId": "g4_2_kor_u3_l09_10_v1",
+     "n": "9·10",
+     "title": "의견과 이유가 드러나게 제안하는 글 쓰기 (문제 해결)",
+     "sub": null,
+     "url": "/grade4/semester2/korean/3단원_의견을모아서/g4_kor_u3_l09_10.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_korean_u3_l11",
+     "lessonId": "g4_2_kor_u3_l11_12_v1",
+     "n": "11·12",
+     "title": "배운 내용 실천하기 (붙임쪽지 토의 · 학생 자치회 안건 제안)",
+     "sub": null,
+     "url": "/grade4/semester2/korean/3단원_의견을모아서/g4_kor_u3_l11_12.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_korean_u3_l13",
+     "lessonId": "g4_2_kor_u3_l13_v1",
+     "n": "13",
+     "title": "단원 마무리하기 (붙여 쓰는 낱말 · 낱말 사이의 관계 · 글씨 쓰기)",
+     "sub": null,
+     "url": "/grade4/semester2/korean/3단원_의견을모아서/g4_kor_u3_l13.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };
