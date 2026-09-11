@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<!--
+K-edu 사회 4-2 · 1단원 민주주의와 자치 · 주제② 주민 자치와 민주주의 · 11~12차시(l09)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [4사08-02] · 교과서 p.39~43 · 지도서(대단원1 주제② 11~12차시, 지도서 p.83~87) 근거
+1단원 색 #4F46E5 (중학년 ka- 엔진 승계 · 변수명 유지 · 엔진 무수정)
+
+직접조작: 때가 칸을 여는 보고서 판 — 판의 칸 차례와 채우는 차례가 어긋나는 형
+  ⭐ 앞 여덟 차시의 판에서 「놓을 수 있는 자리」는 판에 보이는 모양 그대로였다 — l01의 잠긴 자리는 🔒로 보였고
+     둘째 판에서 한꺼번에 열렸으며, 나머지 판은 차례가 자유이거나 한 줄로 이어진 차례였다.
+     이번 판은 조사 보고서 여덟 칸이 보고서 차례대로 서 있지만, 칸마다 쓸 수 있는 「때」가 다르다
+     (조사하기 전 · 조사하는 날 · 조사를 마친 뒤). 그래서 판을 위에서 아래로 채울 수 없다 —
+     둘째 칸(조사 날짜)은 셋째·넷째 칸보다 늦게 채워진다.
+  ⭐ 판은 어느 칸이 언제 열리는지 미리 알려 주지 않는다 — 잠긴 칸이 보이지 않고, 때가 오지 않은 칸을 누르면
+     「아직 쓸 수 없는 칸」이라고만 말한다(안내에 칸 이름·때 이름 0).
+  ⭐ 쓴 칸에는 쓴 때가 함께 선다 — 다 채운 판에서 같은 때에 쓴 칸이 이어져 있지 않다.
+     쓴 때는 상태에 없다 — RP_WHEN 한 줄(rpWhenOf 단 하나)이 그린다. 채운 차례를 담는 상태 0.
+  ⭐ 때는 앞으로만 간다(state.rpNow += 1 단 하나 · 되돌리는 자리 0) · 쓴 칸은 지워지지 않는다(rpMark 단 하나 · 지우는 자리 0).
+  ⭐ 조사 방법 칸에는 정답이 없다 — 다섯 방법 어느 것을 골라도 받고, 조사하는 날 「조사 모습」 칸이
+     그 방법의 모습으로 선다(RP_LOOK 을 읽는 자리 rpLookOf 단 하나).
+  ⭐ 같은 때 안에서는 어느 칸부터 써도 판이 같다.
+
+지도서 근거: [학습 목표] 우리 지역의 주민 자치 사례를 조사할 수 있다 /
+  [동기 유발] 주민 자치회 회의 안내 현수막 · 지역 게시판 소식 · 소모임 안내 문자 /
+  [본문 39쪽] 주민 자치는 지역마다 다양한 모습 · 조사하면 살기 좋은 지역을 만들려는 노력을 알 수 있음 ·
+  인터넷으로 찾아보기 · 지역 신문 찾아보기 · 지역 주민 면담하기 · 지역 게시판 찾아보기 /
+  [40쪽] 공공 기관 방문 네 걸음 · 방문 전 할 일(미리 연락·허락) · 유의할 점(보호자·질서·공공질서) /
+  [계획서 발문 답] 조사 주제 · 목적 · 조사하는 사람과 역할 · 조사 방법 · 조사할 내용 · 주의할 점 /
+  [41쪽 친구와 활동] 조사 보고서 예시(목적·날짜·사람·방법·모습·내용·알게 된 점·더 알고 싶은 점) /
+  [42쪽] 발표 — 주민 자치로 더 나아진 점 · [꼭 기억해요] 공공 기관 방문 ○ · 조사 보고서 /
+  [43쪽 풍덩] 생활 실험실 · 메타버스 통학로 · 안전 지도 · 안전장치 / [정리] 조사 방법 · 보고서 / [차시 예고] 주민 자치에 참여
+
+정직 원칙: ㉠ 판의 보고서는 교과서의 조사 보고서 예시를 옮긴 자리이지 우리 지역에서 실제로 조사한 것이 아니다(캡션 상시).
+  ㉡ 조사한 날짜·사람 이름·동네 이름은 교과서처럼 ○로 가린다 — 학생 이름 0 · 실제 지역 이름 0.
+  ㉢ 실제 조사(누리집 검색·신문·면담·게시판·공공 기관 방문)와 보고서 쓰기·발표는 교실 몫(완료 카드·정리 명시).
+  ㉣ 조사 방법에는 옳고 그름이 없다 — 판이 방법에 순위를 매기지 않는다.
+설계 원칙: 뒤 차시 침범 0(「참여해 볼」은 차시 예고 한 자리뿐) / 2·3단원 침범 0 / l06~l08 재현 0 / 주제① 재현 0 /
+  교사용 참고 자료 0(수업 기법 이름·참고 도서·실제 지역·교수 학습 자료·평가) /
+  정치적 중립 — 실제 지역 이름 0 · 네 자리 연도 0 · 비율 0 · 금액 0 / 정서 — 겁주는 어휘 0.
+⚠️ 체인: l08 → l09 재배선 완료. l09의 goNextLesson = 허브(l10 미양산).
+-->
+<html lang="ko">
+<head>
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>우리 지역의 주민 자치 사례를 조사해 볼까요 · 사회 4-2</title>
+<meta name="kedu-lesson-id" content="g4_social_u1_l09_v1">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#4F46E5; --green-d:#4338CA; --cyan:#0891B2;
+  --bg:#EEF2FF; --bub:#E0E7FF; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#F57F17; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes drawLine{to{transform:scaleX(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ka-lb{background:#F1F5F9;border:none;padding:7px 12px;border-radius:10px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;font-family:inherit;font-weight:700;color:#475569;flex-shrink:0;font-size:13px}
+.ka-lb svg{width:15px;height:15px}
+.ka-bar{flex:1;height:5px;background:var(--bg);border-radius:999px;overflow:hidden}
+.ka-bar>div{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:999px;transition:width .35s ease;width:6%}
+.ka-pg{color:var(--green);font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;flex-shrink:0}
+.ka-sc{background:var(--amber-bg);color:var(--amber);padding:4px 12px;border-radius:999px;display:flex;align-items:center;gap:5px;flex-shrink:0;font-weight:700}
+.ka-sc svg{width:14px;height:14px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px}
+.ka-sc-u{font-size:12px}
+
+/* 메인 */
+.ka-m{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow-y:auto}
+.ka-tags{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ka-bg{background:var(--amber-bg);color:var(--amber);padding:5px 14px;border-radius:30px;font-size:13px;
+  display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.ka-bg.s2{background:#E0F2FE;color:#0369A1}
+.ka-bg.s3{background:#EDE9FE;color:#6D28D9}
+.ka-bg.s4{background:#FCE7F3;color:#BE185D}
+.ka-bg.s5{background:#E0E7FF;color:var(--green)}
+.ka-bg svg{width:13px;height:13px}
+.ka-meta{font-size:13px;color:var(--muted)}
+.ka-t{font-size:clamp(20px,3.4vw,29px);margin-bottom:16px;line-height:1.4;color:var(--green);letter-spacing:-.3px;font-weight:700;animation:fadeUp .4s .15s ease both}
+.ka-bub{background:var(--bub);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);line-height:1.7;
+  margin-bottom:16px;border-left:4px solid var(--green);animation:fadeUp .4s .3s ease both}
+.ka-emph{position:relative;display:inline-block;font-weight:700;color:var(--green)}
+.ka-emph::after{content:'';position:absolute;bottom:2px;left:0;right:0;height:3px;background:var(--red);border-radius:2px;transform:scaleX(0);transform-origin:left;animation:drawLine .6s .6s ease forwards}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(16px,2.6vw,21px);font-weight:700;line-height:1.6;margin-bottom:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:640px}
+.opt{background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:13px 14px;font-size:clamp(14px,2.3vw,17px);
+  font-weight:500;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:var(--green);background:#E0E7FF;animation:pop .4s ease}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;font-size:clamp(14px,2.3vw,17px);line-height:1.6;text-align:center;animation:fadeUp .35s ease both;max-width:640px}
+.fb.ok{color:var(--green);font-weight:700}
+.hint{margin-top:12px;background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(13px,2.2vw,16px);
+  line-height:1.6;color:#0C4A6E;max-width:560px;animation:fadeUp .35s ease both}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:620px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFF;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:clamp(14px,2.3vw,17px);line-height:1.5}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(79,70,229,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+/* 조작 판 — 때가 칸을 여는 보고서 판 */
+.rp-wrap{max-width:740px;width:100%;margin:0 auto}
+.rp-times{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px}
+.rp-t{border-radius:10px;padding:7px 6px;text-align:center;font-weight:800;font-size:clamp(12px,2vw,15px);
+  background:#F1F5F9;color:#94A3B8;border:2px solid transparent;line-height:1.3;word-break:keep-all}
+.rp-t[data-past="1"]{background:#E0E7FF;color:#4338CA}
+.rp-t[data-on="1"]{background:#4F46E5;color:#fff;border-color:#312E81}
+.rp-sheet{border:2px solid #C7D2FE;border-radius:14px;background:#fff;overflow:hidden}
+.rp-sh{background:#EEF2FF;color:#3730A3;font-weight:800;text-align:center;padding:7px;font-size:clamp(13px,2.1vw,16px)}
+.rp-row{display:grid;grid-template-columns:minmax(96px,9em) 1fr auto;align-items:center;gap:8px;width:100%;border:none;
+  border-top:1px solid #E2E8F0;background:#fff;padding:7px 10px;font-family:inherit;text-align:left;cursor:pointer;
+  line-height:1.4;word-break:keep-all;color:var(--ink)}
+.rp-row:hover{background:#F5F3FF}
+.rp-row[data-fill="1"]{background:#F8FAFF;cursor:default}
+.rp-k{font-weight:800;color:#475569;font-size:clamp(12px,2vw,15px)}
+.rp-v{font-size:clamp(12px,2vw,15px);color:#0F172A;font-weight:600}
+.rp-q{color:#CBD5E1;font-family:'Nunito',sans-serif;font-size:1.15em}
+.rp-when{font-size:clamp(10px,1.7vw,12px);font-weight:800;border-radius:6px;padding:2px 7px;white-space:nowrap}
+.rp-when[data-when="0"]{background:#DBEAFE;color:#1D4ED8}
+.rp-when[data-when="1"]{background:#DCFCE7;color:#15803D}
+.rp-when[data-when="2"]{background:#FEF3C7;color:#B45309}
+.rp-note{margin-top:9px;border-radius:12px;padding:10px 14px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;
+  background:#E0E7FF;border-left:4px solid var(--green)}
+.rp-note.big{background:#F0FDF4;border-left-color:#16A34A}
+.rp-ask{border:2px solid var(--line);border-radius:12px;padding:10px 14px;background:#F8FAFF;margin-top:9px;
+  font-size:clamp(13px,2.2vw,16px);line-height:1.6}
+.rp-go{margin-top:8px;background:#4F46E5;color:#fff;border:none;border-radius:11px;padding:9px 16px;font-family:inherit;
+  font-weight:800;font-size:clamp(13px,2.2vw,16px);cursor:pointer}
+.rp-ways{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-top:8px}
+.rp-way{background:#FFFBEB;border:2px solid #FCD34D;border-bottom:4px solid #F59E0B;border-radius:10px;padding:8px 6px;
+  font-family:inherit;font-size:clamp(12px,2vw,15px);font-weight:800;color:#92400E;cursor:pointer;line-height:1.35;word-break:keep-all}
+.rp-way:hover{background:#FEF3C7}
+.rp-opts{display:grid;grid-template-columns:1fr;gap:8px;margin-top:9px}
+.rp-opt{background:#F8FAFC;border:2px solid var(--line);border-radius:11px;padding:10px 12px;font-family:inherit;
+  font-size:clamp(13px,2.2vw,16px);font-weight:600;cursor:pointer;text-align:left;color:var(--ink)}
+.rp-opt:hover{border-color:var(--green);background:var(--bub)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+  .rp-row{grid-template-columns:1fr auto;padding:6px 8px}
+  .rp-row .rp-k{grid-column:1 / -1}
+  .rp-ways{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#F57F17"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식, 사람 형상 대신 칸과 말풍선 ===== */
+const SVG = {
+  // [들어가기] 현수막과 지역 게시판
+  banner:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EFF6FF"/>
+    <rect x="8" y="10" width="84" height="22" rx="4" fill="#fff" stroke="#4F46E5" stroke-width="1.3"/>
+    <rect x="8" y="32" width="2.4" height="30" fill="#94A3B8"/><rect x="89.6" y="32" width="2.4" height="30" fill="#94A3B8"/>
+    <text x="50" y="24.5" font-size="6.8" fill="#4338CA" text-anchor="middle" font-weight="800">주민 회의 안내</text>
+    <rect x="102" y="12" width="50" height="46" rx="4" fill="#FEF3C7" stroke="#B45309" stroke-width="1.3"/>
+    <rect x="108" y="18" width="18" height="14" rx="1.5" fill="#fff"/><rect x="129" y="18" width="18" height="14" rx="1.5" fill="#fff"/>
+    <rect x="108" y="36" width="39" height="16" rx="1.5" fill="#fff"/>
+    <rect x="125" y="58" width="4" height="12" fill="#92400E"/>
+    <rect x="0" y="70" width="160" height="26" fill="#BBF7D0"/>
+    <text x="80" y="87" font-size="7" fill="#166534" text-anchor="middle" font-weight="800">우리 지역의 주민 자치 모습</text></svg>`,
+  // 교과서 39쪽 — 조사하는 여러 방법
+  five:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F8FAFF"/>
+    <rect x="8" y="10" width="44" height="30" rx="5" fill="#fff" stroke="#0891B2" stroke-width="1.3"/>
+    <rect x="13" y="15" width="34" height="16" rx="2" fill="#CFFAFE"/><rect x="26" y="40" width="8" height="4" fill="#0891B2"/>
+    <rect x="58" y="10" width="44" height="30" rx="3" fill="#fff" stroke="#475569" stroke-width="1.3"/>
+    <rect x="63" y="15" width="16" height="10" fill="#E2E8F0"/><rect x="82" y="15" width="15" height="3" fill="#CBD5E1"/><rect x="82" y="21" width="15" height="3" fill="#CBD5E1"/><rect x="63" y="29" width="34" height="3" fill="#CBD5E1"/>
+    <rect x="108" y="10" width="44" height="30" rx="8" fill="#fff" stroke="#16A34A" stroke-width="1.3"/>
+    <path d="M118 40 L116 47 L124 40 Z" fill="#fff" stroke="#16A34A" stroke-width="1.3"/>
+    <text x="130" y="28" font-size="9" fill="#16A34A" text-anchor="middle" font-weight="800">?</text>
+    <rect x="30" y="52" width="44" height="30" rx="3" fill="#FEF3C7" stroke="#B45309" stroke-width="1.3"/>
+    <rect x="36" y="57" width="14" height="10" fill="#fff"/><rect x="54" y="57" width="14" height="10" fill="#fff"/>
+    <path d="M88 82 L88 62 L106 50 L124 62 L124 82 Z" fill="#E0E7FF" stroke="#4F46E5" stroke-width="1.3"/>
+    <rect x="100" y="68" width="12" height="14" fill="#4338CA"/></svg>`,
+  // 조작 안내 — 보고서와 세 때
+  sheet:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFFBEB"/>
+    <rect x="12" y="8" width="84" height="80" rx="5" fill="#fff" stroke="#A5B4FC" stroke-width="1.4"/>
+    <rect x="12" y="8" width="84" height="12" rx="5" fill="#EEF2FF"/>
+    <rect x="18" y="26" width="72" height="7" rx="2" fill="#F1F5F9"/><rect x="18" y="37" width="72" height="7" rx="2" fill="#F1F5F9"/>
+    <rect x="18" y="48" width="72" height="7" rx="2" fill="#F1F5F9"/><rect x="18" y="59" width="72" height="7" rx="2" fill="#F1F5F9"/>
+    <rect x="18" y="70" width="72" height="7" rx="2" fill="#F1F5F9"/>
+    <circle cx="128" cy="40" r="20" fill="#fff" stroke="#4F46E5" stroke-width="2"/>
+    <path d="M128 40 L128 28" stroke="#4F46E5" stroke-width="2.4" stroke-linecap="round"/><path d="M128 40 L137 44" stroke="#4F46E5" stroke-width="2.4" stroke-linecap="round"/>
+    <text x="128" y="78" font-size="7" fill="#92400E" text-anchor="middle" font-weight="800">세 때</text></svg>`,
+  // 발표해요
+  share:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EEF2FF"/>
+    <rect x="30" y="8" width="100" height="52" rx="5" fill="#fff" stroke="#4F46E5" stroke-width="1.4"/>
+    <rect x="38" y="16" width="36" height="24" rx="2" fill="#E0E7FF"/>
+    <rect x="80" y="18" width="42" height="4" rx="2" fill="#C7D2FE"/><rect x="80" y="27" width="42" height="4" rx="2" fill="#C7D2FE"/><rect x="80" y="36" width="30" height="4" rx="2" fill="#C7D2FE"/>
+    <rect x="38" y="46" width="84" height="6" rx="2" fill="#F1F5F9"/>
+    <rect x="16" y="70" width="28" height="14" rx="6" fill="#fff" stroke="#16A34A" stroke-width="1.2"/>
+    <rect x="66" y="70" width="28" height="14" rx="6" fill="#fff" stroke="#16A34A" stroke-width="1.2"/>
+    <rect x="116" y="70" width="28" height="14" rx="6" fill="#fff" stroke="#16A34A" stroke-width="1.2"/>
+    <text x="80" y="93" font-size="6.6" fill="#3730A3" text-anchor="middle" font-weight="800">친구들에게 소개해요</text></svg>`,
+  // 공공 기관 방문
+  visit:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F0F9FF"/>
+    <rect x="0" y="72" width="160" height="24" fill="#E2E8F0"/>
+    <rect x="18" y="30" width="70" height="42" fill="#fff" stroke="#0369A1" stroke-width="1.4"/>
+    <path d="M12 30 L53 12 L94 30 Z" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.4"/>
+    <rect x="46" y="50" width="14" height="22" fill="#0369A1"/>
+    <rect x="26" y="38" width="12" height="9" fill="#BAE6FD"/><rect x="68" y="38" width="12" height="9" fill="#BAE6FD"/>
+    <rect x="102" y="16" width="50" height="26" rx="8" fill="#fff" stroke="#4F46E5" stroke-width="1.3"/>
+    <path d="M112 42 L108 50 L120 42 Z" fill="#fff" stroke="#4F46E5" stroke-width="1.3"/>
+    <text x="127" y="32" font-size="6.6" fill="#4338CA" text-anchor="middle" font-weight="800">방문 신청</text>
+    <rect x="110" y="56" width="34" height="12" rx="2" fill="#fff" stroke="#94A3B8" stroke-width="1"/>
+    <path d="M114 62 L140 62" stroke="#94A3B8" stroke-width="1.2"/></svg>`,
+  // [풍덩] 생활 실험실 — 안전 지도
+  lab:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F0FDF4"/>
+    <rect x="10" y="10" width="92" height="76" rx="5" fill="#fff" stroke="#16A34A" stroke-width="1.4"/>
+    <path d="M18 70 L46 70 L46 36 L94 36" fill="none" stroke="#CBD5E1" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M18 70 L46 70 L46 36 L94 36" fill="none" stroke="#fff" stroke-width="1.2" stroke-dasharray="3 3"/>
+    <circle cx="46" cy="52" r="5" fill="#FDE68A" stroke="#B45309" stroke-width="1.2"/>
+    <circle cx="74" cy="36" r="5" fill="#FDE68A" stroke="#B45309" stroke-width="1.2"/>
+    <rect x="84" y="16" width="10" height="10" rx="2" fill="#DCFCE7" stroke="#16A34A" stroke-width="1"/>
+    <rect x="112" y="18" width="38" height="28" rx="5" fill="#fff" stroke="#4F46E5" stroke-width="1.3"/>
+    <rect x="117" y="23" width="28" height="15" rx="2" fill="#E0E7FF"/><rect x="127" y="46" width="8" height="4" fill="#4F46E5"/>
+    <text x="131" y="72" font-size="6.6" fill="#166534" text-anchor="middle" font-weight="800">안전 지도</text></svg>`,
+  // 정리
+  done:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EEF2FF"/>
+    <circle cx="80" cy="44" r="26" fill="#E0E7FF" stroke="#4F46E5" stroke-width="2.6"/>
+    <path d="M66 44 L76 54 L96 32" fill="none" stroke="#4F46E5" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="80" y="84" font-size="9" fill="#4338CA" text-anchor="middle" font-weight="800">주민 자치 사례 조사</text></svg>`
+};
+function sceneCard(key,cap){return `<div class="scene">${SVG[key]}<div class="cap">${cap}</div></div>`;}
+
+/* ===== 직접 조작: 때가 칸을 여는 보고서 판 =====
+   ⭐ 판에는 조사 보고서 여덟 칸이 보고서 차례대로 서 있다. 그런데 칸마다 쓸 수 있는 때가 달라서
+      (조사하기 전 · 조사하는 날 · 조사를 마친 뒤) 판을 위에서 아래로 채울 수 없다.
+   ⭐ 판은 어느 칸이 언제 열리는지 미리 알려 주지 않는다 — 때가 오지 않은 칸은 「아직 쓸 수 없는 칸」이라고만 말한다.
+   ⭐ 쓴 칸에는 쓴 때가 함께 선다 — 쓴 때는 상태에 없고 RP_WHEN 한 줄이 그린다(rpWhenOf 단 하나).
+   ⭐ 때는 앞으로만 간다 · 쓴 칸은 지워지지 않는다 · 채운 차례를 담는 상태 0.
+   ⭐ 조사 방법 칸에는 옳고 그름이 없다 — 고른 방법이 「조사 모습」 칸을 정한다(rpLookOf 단 하나).
+*/
+const RP_N = 8;                                   // 보고서 칸 여덟
+const RP_HOWROW = 3;                              // 조사 방법 칸의 번호
+const RP_SEEROW = 4;                              // 조사 모습 칸의 번호
+// 교과서 조사 보고서 예시의 칸 이름(지도서 11~12차시 주요 내용 정리 차례)
+const RP_ROW = ["조사 목적","조사 날짜","조사한 사람","조사 방법","조사 모습","조사 내용","알게 된 점이나 느낀 점","더 알고 싶은 점"];
+// 세 때 — 교과서 40쪽 네 걸음(계획 → 기록 → 조사가 끝난 후 보고서)
+const RP_TIME = ["조사하기 전","조사하는 날","조사를 마친 뒤"];
+// ⭐ 칸마다 쓸 수 있는 때를 정하는 한 줄
+const RP_WHEN = [0,1,0,0,1,1,2,2];
+// 칸에 적히는 말 — 교과서 예시(날짜·사람·동네는 ○로 가림) · 방법·모습 칸은 고른 방법이 정한다
+const RP_TEXT = [
+  "우리 지역의 주민 자치 사례 알아보기",
+  "○월 ○일",
+  "○○○ · ○○○ · ○○○ · ○○○",
+  "",
+  "",
+  "○○동 주민들은 지저분하고 위험한 공터를 주민들이 사용할 수 있는 쉼터로 만들었어요",
+  "많은 주민이 주민 자치에 참여해서 여러 사람에게 도움을 주고 있다는 것을 알게 됐어요",
+  "다른 지역에서는 어떤 모습으로 주민 자치가 이루어지고 있을까?"];
+// 교과서 39~40쪽 조사 방법 다섯
+const RP_WAY = ["인터넷으로 찾아보기","지역 신문 찾아보기","지역 주민 면담하기","지역 게시판 찾아보기","공공 기관 방문하기"];
+// 방법마다 서는 조사 모습 — 교과서 방법 설명 원문을 「~하는 모습」으로 옮김
+const RP_LOOK = [
+  "우리 지역 공공 기관 누리집에서 '주민 자치'를 검색하는 모습",
+  "우리 지역 신문에서 주민 자치와 관련 있는 기사를 찾는 모습",
+  "주민 자치에 활발하게 참여하는 지역 주민을 만나 물어보는 모습",
+  "지역 게시판에서 지역 행사, 주민 회의 소식이 담긴 게시물을 찾는 모습",
+  "담당자에게 궁금한 점을 물어보고, 보고 들은 내용을 기록하는 모습"];
+const RP_SAY_DONE = "이미 쓴 칸이에요. 판은 그대로예요.";
+const RP_SAY_WAIT = "아직 쓸 수 없는 칸이에요. 판은 그대로예요.";
+const RP_SAY_WAYFIRST = "먼저 방법을 적을 칸을 눌러 봐요.";
+const RP_SAY_EARLY = "이번 때에 쓸 칸이 아직 남았어요. 판은 그대로예요.";
+const RP_SAY_LAST = "더 넘어갈 때가 없어요. 판은 그대로예요.";
+const RP_SAY_ORDER_R = "먼저 보고서 칸을 모두 채워 봐요.";
+const RP_SAY_ORDER_F = "먼저 판을 읽어 봐요.";
+const RP_SAY_READDONE = "이미 정한 자리예요. 판은 그대로예요.";
+// 판 읽기 3택 — 조작 직결
+const RP_READQ = [
+  "위쪽 칸일수록 더 중요한 칸이라서 나중에 써야 하기 때문이에요",
+  "조사하기 전에 정할 수 있는 칸도 있고, <b>조사를 해야만 쓸 수 있는 칸</b>도 있기 때문이에요",
+  "보고서는 칸 차례와 상관없이 아무 칸이나 먼저 쓰는 것이기 때문이에요"];
+const RP_READ_OK = 1;
+const RP_READ_BAD = "칸마다 함께 선 「쓴 때」를 차례대로 다시 읽어 봐요.";
+// 마무리 3택 — 지도서 11~12차시 발문 답(조사 계획서에 들어갈 내용)
+const RP_FINQ = [
+  "<b>조사 계획서</b> — 조사 주제, 조사하는 목적, 조사하는 사람과 역할, 조사 방법 등을 미리 정해 적어요",
+  "지역 게시판 — 지역 행사와 주민 회의 소식을 알려요",
+  "안내 현수막 — 주민 자치회에서 회의를 연다는 것을 알려요"];
+const RP_FIN_OK = 0;
+const RP_FIN_BAD = "「조사하기 전」에 쓴 칸들을 다시 떠올려 봐요.";
+
+function rpWhenOf(r){ return RP_WHEN[r]; }                                    // ⭐ RP_WHEN 을 읽는 자리는 코드에 여기 단 하나
+function rpIsFill(st,r){ return ((st.rpFill >> r) & 1) === 1; }
+function rpOpen(st,r){ return rpWhenOf(r) <= st.rpNow; }                        // ⭐ 칸이 열렸는지 — 이 한 줄이 정한다
+function rpLeft(st){ let n = 0; for(let r=0;r<RP_N;r++){ if(rpWhenOf(r) === st.rpNow && !rpIsFill(st,r)) n++; } return n; }   // 이번 때에 남은 칸
+function rpCount(st){ let n = 0; for(let r=0;r<RP_N;r++){ if(rpIsFill(st,r)) n++; } return n; }
+function rpAt(k){ let n = 0; for(let r=0;r<RP_N;r++){ if(rpWhenOf(r) === k) n++; } return n; }
+function rpWayOf(w){ return RP_WAY[w]; }
+function rpLookOf(w){ return RP_LOOK[w]; }                                     // ⭐ RP_LOOK 을 읽는 자리는 코드에 여기 단 하나
+function rpTextOf(st,r){ return r === RP_HOWROW ? rpWayOf(st.rpWay) : r === RP_SEEROW ? rpLookOf(st.rpWay) : RP_TEXT[r]; }
+function rpMark(r){ state.rpFill |= (1 << r); }                                // ⭐ 칸을 채우는 자리는 코드에 여기 단 하나
+
+function rpTimes(st){
+  let h = '';
+  for(let k=0;k<RP_TIME.length;k++){
+    h += `<div class="rp-t" data-t="${k}" data-on="${st.rpNow===k?1:0}" data-past="${k<st.rpNow?1:0}">${k+1}. ${RP_TIME[k]}</div>`;
+  }
+  return `<div class="rp-times" data-now="${st.rpNow}">${h}</div>`;
+}
+
+function rpRow(st,r){
+  const on = rpIsFill(st,r);
+  // ⭐ 쓴 때는 쓴 칸에만 선다 — 아직 쓰지 않은 칸은 언제 열리는지 말하지 않는다
+  return `<button class="rp-row" data-row="${r}" data-fill="${on?1:0}" onclick="rpWrite(${r})"><span class="rp-k">${RP_ROW[r]}</span>${on?`<span class="rp-v">${rpTextOf(st,r)}</span><span class="rp-when" data-when="${rpWhenOf(r)}">${RP_TIME[rpWhenOf(r)]}에 씀</span>`:'<span class="rp-q">?</span><span></span>'}</button>`;
+}
+
+function rpPanel(st){
+  const n = rpCount(st);
+  let rows = '';
+  for(let r=0;r<RP_N;r++) rows += rpRow(st,r);
+  const sheet = `<div class="rp-sheet" data-filled="${n}"><div class="rp-sh">우리 지역의 주민 자치 사례 조사 보고서</div>${rows}</div>`;
+
+  let ask = '';
+  if(st.rpRead==null){
+    if(n<RP_N){
+      if(st.rpWayOpen){
+        ask = `<div class="rp-ask"><b>어떤 방법으로 조사할까요? 하나를 골라 봐요.</b>
+          <div class="note" style="text-align:left;margin-top:5px">어느 방법을 골라도 괜찮아요.</div>
+          <div class="rp-ways">${RP_WAY.map((s,w)=>`<button class="rp-way" data-way="${w}" onclick="rpPickWay(${w})">${s}</button>`).join('')}</div></div>`;
+      } else {
+        const go = st.rpNow < RP_TIME.length-1 ? `<button class="rp-go" data-go="1" onclick="rpGo()">다음 때로 넘어가기 →</button>` : '';
+        ask = `<div class="rp-ask"><b>지금 때: <span style="color:#4F46E5">${RP_TIME[st.rpNow]}</span></b> — 지금 쓸 수 있는 칸을 찾아 눌러 보고서를 채워 봐요.
+          <div class="note" style="text-align:left;margin-top:5px">이번 때에 쓸 칸을 다 쓰면 다음 때로 넘어갈 수 있어요.</div>${go}</div>`;
+      }
+    } else {
+      ask = `<div class="rp-ask"><b>칸마다 함께 선 「쓴 때」를 보면, 둘째 칸 「조사 날짜」가 셋째·넷째 칸보다 늦게 채워졌어요. 보고서를 위에서부터 차례대로 채우지 못한 까닭은 무엇일까요?</b>
+        <div class="rp-opts">${RP_READQ.map((s,i)=>`<button class="rp-opt" onclick="rpRead(${i})">${s}</button>`).join('')}</div></div>`;
+    }
+  } else if(st.rpFin==null){
+    ask = `<div class="rp-ask"><b>판에서 「조사하기 전」에 쓴 칸(조사 목적 · 조사한 사람 · 조사 방법)처럼, 조사하기 전에 미리 정해 적어 두는 것은 무엇일까요?</b>
+      <div class="rp-opts">${RP_FINQ.map((s,i)=>`<button class="rp-opt" onclick="rpFin(${i})">${s}</button>`).join('')}</div></div>`;
+  } else {
+    ask = `<div class="rp-ask" data-fin="1" style="border-color:#86EFAC;background:#F0FDF4">
+      <b style="color:#166534">보고서 여덟 칸을 다 채웠어요.</b> 조사하기 전에 쓴 칸 ${rpAt(0)} · 조사하는 날 쓴 칸 ${rpAt(1)} · 조사를 마친 뒤 쓴 칸 ${rpAt(2)} — 칸의 차례와 쓴 때의 차례가 달랐지요.
+      <div class="note" style="text-align:left;margin-top:5px">※ 실제 조사와 조사 보고서 쓰기, 발표는 교실에서 모둠 친구들과 <b>직접</b> 해요.</div></div>`;
+  }
+
+  const note = `<div class="rp-note ${n===RP_N?'big':''}">채운 칸 ${n} / ${RP_N}</div>`;
+  const warn = st.rpMsg ? `<div class="fb" style="color:#DC2626;font-weight:700">${st.rpMsg}</div>` : '';
+
+  return `<div class="rp-wrap">
+    ${rpTimes(st)}${sheet}${note}${ask}${warn}
+    <div class="note" style="margin-top:8px">※ 판의 보고서는 교과서의 조사 보고서 예시를 <b>옮긴 자리</b>이고 우리 지역에서 실제로 조사한 것이 아니에요. 조사한 날짜와 사람 이름, 동네 이름은 <b>○로 가려</b> 두었어요.</div>
+  </div>`;
+}
+
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "1단원 민주주의와 자치 · 주제② 주민 자치와 민주주의";
+
+// 문제 정의(확인 4 + 적용 4) — 정답 분산 [3,0,1,2,1,3,2,0]
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"주민 자치는 지역마다 <b>(  )</b> 모습으로 이루어져요. (  )에 알맞은 말은?",
+   opts:["똑같은","한 가지","정해진","다양한"], correct:3, pts:POINTS_BASIC,
+   reason:"주민 자치는 지역마다 다양한 모습으로 이루어져요. 우리 지역의 주민 자치 사례를 조사하면 주민들이 살기 좋은 지역을 만들려고 어떤 노력을 하는지 알 수 있어요.",
+   h1:"지역마다 주민 자치의 모습이 모두 같을까요?",
+   h2:"여러 가지 모습이에요."},
+  {stem:"우리 지역 신문에서 주민 자치와 관련 있는 <b>기사</b>를 찾아보는 조사 방법은?",
+   opts:["지역 신문 찾아보기","지역 주민 면담하기","지역 게시판 찾아보기","인터넷으로 찾아보기"], correct:0, pts:POINTS_BASIC,
+   reason:"지역 신문 찾아보기는 우리 지역 신문에서 주민 자치와 관련 있는 기사를 찾아보는 방법이에요.",
+   h1:"기사는 어디에 실릴까요?",
+   h2:"신문이에요."},
+  {stem:"우리 지역의 주민 자치 사례를 조사한 후에는 조사 내용을 정리하여 <b>무엇</b>을 작성하나요?",
+   opts:["안내 현수막","조사 보고서","조사 계획서","지역 신문"], correct:1, pts:POINTS_BASIC,
+   reason:"우리 지역의 주민 자치 사례를 조사한 후에는 조사 내용을 정리하여 조사 보고서를 작성해요.",
+   h1:"조사를 마친 뒤에 쓰는 것이에요.",
+   h2:"조사한 내용을 알리는 글이에요."},
+  {stem:"공공 기관을 방문하여 주민 자치 사례를 조사할 때 유의할 점으로 <b>알맞지 않은</b> 것은?",
+   opts:["보호자와 함께 가요","미리 연락하여 방문 허락을 받아요","허락 없이 찾아가 큰 소리로 이야기해요","다른 사람에게 피해를 주지 않도록 공공질서를 잘 지켜요"], correct:2, pts:POINTS_BASIC,
+   reason:"공공 기관에는 미리 연락하여 방문 허락을 받고, 보호자와 함께 가며, 다른 사람에게 피해를 주지 않도록 공공질서를 잘 지켜야 해요.",
+   h1:"공공 기관에는 다른 사람들도 있어요.",
+   h2:"허락과 질서를 떠올려 봐요."},
+  // 4단계 적용 (+15)
+  {stem:"판에서 둘째 칸 <b>「조사 날짜」</b>는 셋째·넷째 칸보다 <b>늦게</b> 채워졌어요. <b>왜 그랬을까요?</b>",
+   opts:["둘째 칸이 가장 쓰기 어려운 칸이라서","조사 날짜는 조사하는 날이 되어야 쓸 수 있는 칸이라서","셋째·넷째 칸이 더 중요한 칸이라서","판이 칸을 아무 차례로나 열어서"], correct:1, pts:POINTS_APPLY,
+   reason:"조사 목적, 조사한 사람, 조사 방법은 조사하기 전에 정할 수 있지만, 조사 날짜는 조사하는 날이 되어야 쓸 수 있어요. 그래서 판을 위에서부터 차례대로 채울 수 없었어요.",
+   h1:"조사 날짜는 언제 알 수 있을까요?",
+   h2:"조사하러 가는 그날이에요."},
+  {stem:"판에서 <b>「알게 된 점이나 느낀 점」</b> 칸은 조사를 마친 뒤에야 쓸 수 있었어요. 그 까닭으로 알맞은 것은?",
+   opts:["보고서의 마지막 칸이라서 아무렇게나 써도 되기 때문에","친구가 대신 써 주는 칸이기 때문에","조사 방법을 아직 고르지 않았기 때문에","조사를 해 봐야 무엇을 알게 됐는지 알 수 있기 때문에"], correct:3, pts:POINTS_APPLY,
+   reason:"알게 된 점이나 느낀 점은 조사를 해 봐야 생겨요. 그래서 조사가 끝난 후에 알게 된 점과 친구들과 나눈 내용을 바탕으로 조사 보고서를 작성해요.",
+   h1:"조사하기 전에도 무엇을 알게 될지 알 수 있을까요?",
+   h2:"조사를 한 뒤에 생기는 것이에요."},
+  {stem:"우리 지역의 주민 자치 사례를 발표할 때 <b>중점</b>을 두어 전달하면 좋은 것은?",
+   opts:["조사한 친구들의 이름","발표할 차례를 정한 방법","주민 자치로 우리 지역이 더 나아진 점","조사하러 간 날의 날씨"], correct:2, pts:POINTS_APPLY,
+   reason:"우리 지역의 주민 자치에 참여하는 다양한 방법을 소개하고, 주민 자치로 우리 지역이 더 나아진 점을 잘 전달할 수 있도록 발표하면 좋아요.",
+   h1:"발표를 듣는 친구가 알게 되면 좋은 것은 무엇일까요?",
+   h2:"우리 지역이 어떻게 달라졌는지예요."},
+  {stem:"[풍덩 사회 속으로] <b>생활 실험실</b>은 어떤 방식인가요?",
+   opts:["지역 주민들이 중심이 되어 공공 기관, 전문가들과 손잡고 생활 속에서 겪는 어려움이나 불편함을 직접 해결해 나가는 방식","학교 과학실에서 실험만 하는 방식","전문가들만 모여서 지역의 일을 대신 정하는 방식","가상 세계에서 놀이만 하는 방식"], correct:0, pts:POINTS_APPLY,
+   reason:"생활 실험실이란 지역 주민들이 중심이 되어 공공 기관, 전문가들과 손잡고 생활 속에서 겪는 어려움이나 불편함을 직접 해결해 나가는 방식이에요.",
+   h1:"생활 실험실의 중심은 누구였나요?",
+   h2:"지역 주민들이에요."}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — 우리 지역의 주민 자치 모습
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">우리 지역에서 주민 자치가 이루어지는 모습을 본 적이 있나요?</h2>
+  <div class="ka-bub">우리 지역 주민 자치회에서 회의를 연다는 <b>안내 현수막</b>을 본 적이 있어요. 우리 지역의 발전을 위해 주민 자치회를 운영한다는 소식을 <b>지역 게시판</b>에서 본 적이 있어요. 주민들이 소모임을 만든다는 <b>안내 문자</b>를 본 적이 있어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('banner','우리 지역의 주민 자치 모습')}</div>
+    <div class="note">오늘은 <b>우리 지역의 주민 자치 사례</b>를 어떻게 조사하는지 알아봐요.</div>
+  </div>`});
+// 2 살펴보기 — 교과서 39쪽 본문 · 조사 방법
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">주민 자치 사례는 어떻게 조사할까요?</h2>
+  <div class="ka-bub">주민 자치는 지역마다 <b>다양한 모습</b>으로 이루어져요. 우리 지역의 주민 자치 사례를 조사하면 주민들이 살기 좋은 지역을 만들려고 <b>어떤 노력</b>을 하는지 알 수 있어요.</div>
+  <div class="ka-grp"><div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div><b>인터넷으로 찾아보기</b> — 우리 지역 공공 기관 누리집에서 '주민 자치'를 검색해 봐요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b>지역 신문 찾아보기</b> — 우리 지역 신문에서 주민 자치와 관련 있는 기사를 찾아봐요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div><b>지역 주민 면담하기</b> — 주민 자치에 활발하게 참여하는 지역 주민을 만나 주민 자치 사례를 물어봐요.</div></div>
+    <div class="sum-item"><span class="n">4</span><div><b>지역 게시판 찾아보기</b> — 지역 게시판에서 지역 행사, 주민 회의 소식 등이 담긴 게시물을 찾아봐요.</div></div>
+    <div class="sum-item"><span class="n">5</span><div><b>공공 기관 방문하기</b> — 공공 기관에 방문해서 우리 지역의 주민 자치 사례를 조사해요.</div></div>
+  </div></div>`});
+// 3 살펴보기 — 조작 안내
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">조사 보고서를 채워 봐요</h2>
+  <div class="ka-bub">판에는 조사 보고서 칸이 <b>여덟</b> 있어요. 판 위에는 <b>조사하기 전 · 조사하는 날 · 조사를 마친 뒤</b>, 세 때가 있어요. 칸을 눌러 보고서를 채우고, 이번 때에 쓸 칸을 다 쓰면 <b>다음 때</b>로 넘어가요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('sheet','보고서와 세 때')}</div>
+  <div class="note">누를 수 없는 칸이 있으면 판이 알려 줘요. 같은 때에 쓸 칸은 어느 칸부터 써도 <b>괜찮아요.</b></div></div>`});
+// 4 살펴보기 — 직접 조작
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">때를 따라 조사 보고서를 채워요</h2>
+  <div class="ka-grp" style="align-items:stretch">${rpPanel(st)}</div>`});
+// 5 살펴보기 — 조사 보고서와 발표
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">조사 보고서를 쓰고 발표해요</h2>
+  <div class="ka-bub">우리 지역의 주민 자치 사례를 조사한 후에는 조사 내용을 정리하여 <b>조사 보고서</b>를 작성해요. 조사 보고서에는 조사 목적, 조사 날짜, 조사한 사람, 조사 방법, 조사 모습, 조사 내용, 알게 된 점이나 느낀 점, 더 알고 싶은 점 등을 넣어서 써요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('share','친구들에게 소개해요')}</div>
+  <div class="note">조사한 우리 지역의 주민 자치 사례를 <b>다양한 방법</b>으로 친구들에게 소개할 수 있어요. 조사하기 전에는 조사 주제, 조사하는 목적, 조사하는 사람과 역할, 조사 방법, 조사할 내용, 조사할 때 주의할 점을 담은 <b>조사 계획서</b>를 써요.</div></div>`});
+// 6 살펴보기 — 공공 기관 방문 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">공공 기관을 방문해서 조사할 수 있어요</h2>
+  <div class="ka-bub">① 방문하고 싶은 공공 기관을 정하고, 공공 기관에 <b>미리 연락</b>하여 방문을 신청해요. ② 방문 계획을 세워 역할을 정하고, 알고 싶은 점을 정리해요. ③ 담당자에게 궁금한 점을 물어보고, 보고 들은 내용을 <b>기록</b>해요. ④ 조사가 끝난 후에는 알게 된 점과 친구들과 나눈 내용을 바탕으로 <b>조사 보고서</b>를 작성해요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('visit','공공 기관 방문')}</div>
+  ${st.revealed?`<div class="answer-box">방문하기 전에는 공공 기관에 미리 연락하여 <b>방문 허락</b>을 받고, 어떤 내용으로 조사하고 싶은지 말씀드려야 해요. 방문할 때는 <b>보호자와 함께</b> 가고, 안전에 유의하며 질서를 잘 지켜야 해요. 다른 사람에게 피해를 주지 않도록 <b>공공질서</b>를 잘 지켜요.</div>`
+    :`<div class="note">공공 기관을 방문하기 전에 해야 할 일과, 방문하여 조사할 때 <b>유의할 점</b>은 무엇일까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 7 살펴보기 — [풍덩 사회 속으로] 생활 실험실 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">생활 실험실에서 문제를 함께 해결해요</h2>
+  <div class="ka-bub"><b>생활 실험실</b>이란 지역 주민들이 중심이 되어 공공 기관, 전문가들과 손잡고 생활 속에서 겪는 어려움이나 불편함을 직접 해결해 나가는 방식이에요. 안전, 교통, 쓰레기 등과 관련해 지역 주민이 겪는 어려움이 모두 생활 실험실의 연구 대상이에요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('lab','안전 지도 만들기')}</div>
+  ${st.revealed?`<div class="answer-box">구청과 전문가들이 실제 통학로를 <b>메타버스 통학로</b>로 만들었어요. 학생들은 메타버스 통학로를 체험하며 위험한 부분을 찾았고, 찾은 부분을 지도에 표시하여 <b>안전 지도</b>를 만들었어요. 구청에서는 학생들이 만든 안전 지도를 바탕으로 실제 통학로에 다양한 <b>안전장치</b>를 설치했어요.</div>`
+    :`<div class="note"><b>메타버스</b>: 컴퓨터 등을 활용해 실제처럼 활동할 수 있게 해 주는 가상 세계 — 생활 실험실에서는 어떤 일을 했을까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 배운 것을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('done','주민 자치 사례 조사')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>주민 자치 사례 조사 방법: 인터넷으로 찾아보기, 지역 신문 찾아보기, 지역 주민 면담하기, 지역 게시판 찾아보기, 공공 기관 방문하기 등</div></div>
+    <div class="sum-item"><span class="n">2</span><div>주민 자치 사례 조사 보고서: 조사 목적, 조사 날짜, 조사한 사람, 조사 방법, 조사 모습, 조사 내용, 알게 된 점이나 느낀 점, 더 알고 싶은 점 등을 넣어서 써요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>우리 지역의 발전을 위해 많은 주민이 주민 자치에 참여하면서 <b style="color:#4F46E5">노력</b>하고 있어요.</div></div>
+    <div class="sum-item"><span class="n">4</span><div>※ 실제 조사와 조사 보고서 쓰기, 발표는 교실에서 모둠 친구들과 <b>직접</b> 해 봐요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b style="color:#4F46E5">주민 자치</b>에 참여해 볼 거예요.</div></div>`});
+// 17 스스로 돌아보기
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"주민 자치 사례를 조사하는 방법을 말할 수 있어요",st)}
+    ${selfCheck(1,"조사 보고서에 들어갈 내용을 말할 수 있어요",st)}
+    ${selfCheck(2,"우리 지역의 주민 자치 사례를 조사하여 발표할 수 있어요",st)}
+  </div><div class="note">체크가 잘 안 되는 곳은 <b>다시 살펴봐도</b> 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">우리 지역의 주민 자치 사례를 조사하는 방법을 알아봤어요</h2>
+  <div class="ka-grp">
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">조사하기 전에 계획하고, 조사하며 기록하고, 조사를 마친 뒤 <b style="color:#4F46E5">조사 보고서</b>로 정리해요.</div>
+  </div>`;
+}});
+
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">⭕ 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">💡 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">💡 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g4_2_social_u1_l09";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  rpNow:0, rpFill:0, rpWay:-1, rpWayOpen:false, rpRead:null, rpFin:null, rpMsg:"",
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 →';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음 (브라우저에서만 · jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+function rpDraw(){ main.innerHTML = slides[state.idx].render(state); }
+
+/* 칸 쓰기 — 같은 때 안에서는 차례 자유 · 쓰기에 점수 0 */
+function rpWrite(r){
+  if(state.rpFin!=null) return;                                        // 가드①: 마무리 확정 후 전체 잠금
+  if(!Number.isInteger(r) || r<0 || r>=RP_N) return;                   // 가드②: 무효 번호 — 안내조차 띄우지 않음
+  if(rpIsFill(state,r)){ state.rpMsg = RP_SAY_DONE; playThud(); rpDraw(); return; }         // 가드③: 이미 쓴 칸 — 판 불변
+  if(!rpOpen(state,r)){ state.rpMsg = RP_SAY_WAIT; playThud(); rpDraw(); return; }          // 가드④: 때가 오지 않은 칸 — 판 불변
+  if(r === RP_HOWROW){ state.rpWayOpen = true; state.rpMsg = ""; playBlip(); rpDraw(); return; }   // 방법 칸 — 방법 고르기를 연다
+  state.rpWayOpen = false;
+  rpMark(r); state.rpMsg = ""; playBlip(); rpDraw();
+}
+/* 방법 고르기 — 다섯 중 무엇이든 받는다 · 고르기에 점수 0 */
+function rpPickWay(w){
+  if(state.rpFin!=null) return;                                        // 가드①
+  if(!Number.isInteger(w) || w<0 || w>=RP_WAY.length) return;          // 가드②
+  if(!state.rpWayOpen){ state.rpMsg = RP_SAY_WAYFIRST; playThud(); rpDraw(); return; }      // 가드⑤: 방법 칸을 누르기 전 — 판 불변
+  state.rpWay = w;                                                     // ⭐ 방법을 정하는 자리는 여기 단 하나
+  state.rpWayOpen = false;
+  rpMark(RP_HOWROW); state.rpMsg = ""; playBlip(); rpDraw();
+}
+/* 다음 때로 넘어가기 — 때는 앞으로만 간다 */
+function rpGo(){
+  if(state.rpFin!=null) return;                                        // 가드①
+  if(state.rpNow >= RP_TIME.length-1){ state.rpMsg = RP_SAY_LAST; playThud(); rpDraw(); return; }   // 가드⑥: 마지막 때 — 판 불변
+  if(rpLeft(state) > 0){ state.rpMsg = RP_SAY_EARLY; playThud(); rpDraw(); return; }       // 가드⑥: 이번 때의 칸이 남음 — 판 불변
+  state.rpNow += 1;                                                    // ⭐ 때가 앞으로 가는 자리는 여기 단 하나
+  state.rpWayOpen = false; state.rpMsg = ""; playBlip(); rpDraw();
+}
+/* 판 읽기 */
+function rpRead(i){
+  if(state.rpFin!=null) return;                                        // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=RP_READQ.length) return;        // 가드②
+  if(state.rpRead!=null){ state.rpMsg = RP_SAY_READDONE; rpDraw(); return; }                // 가드⑧: 이미 정한 자리 — 판 불변
+  if(rpCount(state)!==RP_N){ state.rpMsg = RP_SAY_ORDER_R; playThud(); rpDraw(); return; }  // 가드⑦: 다 채우기 전 — 판 불변
+  if(i!==RP_READ_OK){ state.rpMsg = RP_READ_BAD; playThud(); rpDraw(); return; }            // 가드⑧: 어긋난 답 — 판 불변
+  state.rpRead = i; state.rpMsg = ""; playBlip(); rpDraw();
+}
+/* 마무리 */
+function rpFin(i){
+  if(state.rpFin!=null) return;                                        // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=RP_FINQ.length) return;         // 가드②
+  if(state.rpRead==null){ state.rpMsg = RP_SAY_ORDER_F; playThud(); rpDraw(); return; }     // 가드⑦: 판을 읽기 전 — 판 불변
+  if(i!==RP_FIN_OK){ state.rpMsg = RP_FIN_BAD; playThud(); rpDraw(); return; }              // 가드⑧: 어긋난 답 — 판 불변
+  state.rpFin = i; state.rpMsg = ""; playChime(); rpDraw();
+}
+
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true; qs.wrongPick=null;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2; if(qs.hint===2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">📘 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 →</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // l10 미양산 — 허브 복귀
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
+</html>

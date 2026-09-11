@@ -94,14 +94,14 @@ window.KEDU_MAP["g4_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_social_u1_l09",
+     "lessonId": "g4_social_u1_l09_v1",
      "n": "4",
      "title": "우리 지역의 주민 자치 사례를 조사해 볼까요",
      "sub": "② 주민 자치와 민주주의",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/social/1단원_민주주의와자치/g4_social_u1_l09_우리지역자치사례.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
