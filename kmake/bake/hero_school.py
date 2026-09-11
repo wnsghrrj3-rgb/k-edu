@@ -33,8 +33,10 @@ def arg(k, d):
     return type(d)(argv[argv.index(k) + 1]) if k in argv else d
 W, H, FPS, SAMPLES = arg('--w', 640), arg('--h', 360), arg('--fps', 12), arg('--samples', 8)
 SHOT = arg('--shot', 'build')       # R148: build(지어진다) · orbit(하늘에서 한 바퀴) · R149: night(불이 켜지는 저녁)
-SEC = {'build': 7.0, 'orbit': 8.0, 'night': 8.0}[SHOT]
-HOLD = {'build': 5.6, 'orbit': 6.6, 'night': 7.0}[SHOT]   # night: 카메라가 멈춰 자막이 뜨는 끝 자리(사진 자리는 시작 쪽 — PHOTO_AT)
+V2 = SHOT == 'build'                                       # R150: 「지어진다」 v2 — 도면선·층별 차오름·창틀→유리·지붕 얹힘·금선·계단·깃대·창 보강·카메라 곡선 (orbit·night 무접촉)
+SEC = {'build': 10.0 if V2 else 7.0, 'orbit': 8.0, 'night': 8.0}[SHOT]
+HOLD = {'build': 8.4 if V2 else 5.6, 'orbit': 6.6, 'night': 7.0}[SHOT]
+T_V2 = (1.25, 1.30)                                       # R150: 옛 조립 시각(0~4.8s) → 1.25 + t×1.30 (도면선 1.25초 앞에, 마지막 조각 ≈7.5s, HOLD 8.4)   # night: 카메라가 멈춰 자막이 뜨는 끝 자리(사진 자리는 시작 쪽 — PHOTO_AT)
 PHOTO_AT = 'start' if SHOT == 'night' else 'end'          # R149: 실사와 맞닿는 프레임이 앞인가 뒤인가 — 페이지가 디졸브 방향을 정한다
 PHOTO_HOLD = 1.6                                          # night: 이 초까지 카메라가 사진 자리에 고정(브라우저 실사→3D 디졸브 구간)
 T_DUSK = (1.0, 6.2)                                       # night: 해 지는 구간(하늘·해·사진 발광)
@@ -198,12 +200,12 @@ def make_ground_ext(path, feather, fallback):
                 c = np.cumsum(np.pad(a, [(r, r) if i == ax else (0, 0) for i in range(3)], mode='edge'), axis=ax)
                 a = (np.take(c, np.arange(2 * r, c.shape[ax]), axis=ax) - np.take(c, np.arange(0, c.shape[ax] - 2 * r), axis=ax)) / (2 * r)
         return a
-    blur = box(ext, max(4, min(padx, pady) // 6))
+    blur = box(ext, max(4, min(padx, pady) // (2 if V2 else 6)))                 # R150 v2: 흐림 반경을 크게 — 옆에서 볼 때 늘린 가장자리 줄무늬가 부드러운 톤으로
     H2, W2 = ext.shape[:2]
     yy, xx = np.mgrid[0:H2, 0:W2]
     dx = np.maximum(np.maximum(padx - xx, xx - (padx + w - 1)), 0) / max(padx, 1)   # 원본 밖 거리(0~1)
     dy = np.maximum(np.maximum(pady - yy, yy - (pady + h - 1)), 0) / max(pady, 1)
-    d = np.clip(np.sqrt(dx * dx + dy * dy), 0, 1); t = (d * d * (3 - 2 * d))[:, :, None]   # smoothstep
+    d = np.clip(np.sqrt(dx * dx + dy * dy) * (1.6 if V2 else 1.0), 0, 1); t = (d * d * (3 - 2 * d))[:, :, None]   # smoothstep (R150 v2: 대체색으로 더 일찍)
     fb = np.array([c * 12.92 if c <= 0.0031308 else 1.055 * c ** (1 / 2.4) - 0.055 for c in fallback], dtype=np.float32)[None, None, :]   # 바이트 이미지 pixels 는 sRGB 값이라 대체색(선형)을 sRGB 로
     out = np.where((dx == 0)[:, :, None] & (dy == 0)[:, :, None], ext, blur * (1 - t) + fb * t)
     img = bpy.data.images.new('ground_ext', W2, H2, alpha=True, float_buffer=False)
@@ -222,7 +224,7 @@ def mat_photo(path, facing=True, name='photo', fallback=(0.30, 0.14, 0.10), feat
     # 사진 그대로가 정답 → 발광(무음영) 0.78 + 햇빛 음영 0.22 섞음: 끝 프레임은 사진, 짓는 동안은 입체감
     em = nt.nodes.new('ShaderNodeEmission'); em.inputs['Strength'].default_value = 1.0; em.name = 'dayem'   # R149: night 에선 이 강도가 낮의 사진빛 → 저녁으로 키를 탄다
     nt.links.new(tex.outputs['Color'], em.inputs['Color'])
-    mix = nt.nodes.new('ShaderNodeMixShader'); mix.inputs['Fac'].default_value = 0.78
+    mix = nt.nodes.new('ShaderNodeMixShader'); mix.inputs['Fac'].default_value = 0.78; mix.name = 'daymix'   # R150 v2: 짓는 동안 0.60(입체감) → HOLD-0.8 에 0.78(사진 그대로)
     out = nt.nodes['Material Output']
     nt.links.new(b.outputs['BSDF'], mix.inputs[1]); nt.links.new(em.outputs['Emission'], mix.inputs[2])
     # 영사기를 등진 면(옆면·지붕 위)은 사진이 늘어져 보인다 → 그런 면은 무광 벽돌색으로
@@ -282,6 +284,12 @@ M = dict(brick=mat_brick(), concrete=mat_flat('concrete', (0.62, 0.62, 0.58), 0.
          white=mat_flat('white', (0.85, 0.85, 0.85), 0.7), navy=mat_flat('navy', (0.05, 0.05, 0.25), 0.5),
          leaf=mat_leaf(), bark=mat_flat('bark', (0.22, 0.16, 0.10), 0.95), steel=mat_flat('steel', (0.6, 0.6, 0.62), 0.35, 0.8),
          gold=mat_flat('gold', (0.7, 0.55, 0.2), 0.4, 0.8), pool=mat_flat('pool', (0.70, 0.72, 0.74), 0.9))
+def mat_gold_glow():
+    m, nt, b = new_mat('goldglow'); em = nt.nodes.new('ShaderNodeEmission'); em.inputs['Color'].default_value = (0.95, 0.78, 0.36, 1); em.inputs['Strength'].default_value = 9.0
+    nt.links.new(em.outputs['Emission'], nt.nodes['Material Output'].inputs['Surface']); return m
+M['glow'] = mat_gold_glow()
+LINES = []   # R150: (obj, t_draw0, t_draw1, t_off0, t_off1) 도면선 — 새 시간축(초) 그대로
+EDGES = []   # R150: (edge_obj, wall_obj, z0, h) 벽이 차오르는 윗선을 따라가는 금선
 _SKY = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'plates', 'school-photo-sky.png')   # 하늘만 남긴 RGBA(건물·땅 알파 0)
 _PHOTO0 = arg('--photo', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'plates', 'school-photo-clean.png'))
 if os.path.exists(_PHOTO0): M['photo'] = mat_photo(_PHOTO0); M['photo_ground'] = mat_photo(_PHOTO0, facing=False, name='photo_ground', fallback=(0.74, 0.69, 0.60) if SHOT == 'build' else (0.52, 0.50, 0.43), feather=FEATHER); M['photo_sky'] = mat_photo(_SKY if os.path.exists(_SKY) else _PHOTO0, facing=False, name='photo_sky', fallback=(0.80, 0.82, 0.85))   # R145: 배경판엔 하늘만(알파) — 비스듬한 카메라에서 건물 사진이 뒤판에 한 번 더 비치던 문제 · R148 orbit: 땅 대체색은 사진 밖 땅이 화면 대부분이라 덜 하얗게
@@ -342,7 +350,7 @@ def gable(name, x0, x1, y0, y1, z_eave, z_peak, mat, t0, t1):
     bm.to_mesh(me); bm.free()
     for v in me.vertices: v.co.x -= cx; v.co.y -= (y0 + y1) / 2
     o.location = ((x0 + x1) / 2, (y0 + y1) / 2, 0)
-    return _finish(o, mat, 'drop', t0, t1, z_eave)
+    return _finish(o, mat, 'rise' if V2 else 'drop', t0, t1, z_eave)   # R150: v2 는 처마선에서 마루로 세워짐(위에서 떨어지지 않음)
 
 def cyl(name, x, y, z0, z1, r, mat, kind='rise', t0=0, t1=0, seg=16):
     bpy.ops.mesh.primitive_cylinder_add(radius=r, depth=z1 - z0, vertices=seg)
@@ -373,6 +381,28 @@ def Z(py, d=0.0): return EYE + (HORIZ - py) / (PXM * CAMD / (CAMD + d))
 
 # ---------------------------------------------------------------- 학교 (X 오른쪽 · Y 안쪽 · Z 위)
 PH = M['photo'] if 'photo' in M else M['brick']
+def win(name, x0, x1, y0, y1, zb, zt, t0, t1, frame=True):
+    """R150: 창 = 흰 틀(먼저) → 유리(0.15s 뒤). v1 은 유리만."""
+    if V2 and frame:
+        box(name + '_f', x0 - 0.08, x1 + 0.08, y0 - 0.04, y1, zb - 0.08, zt + 0.08, M['white'], 'pop', t0 - 0.18, t1 - 0.18, origin='center')
+    box(name, x0, x1, y0, y1, zb, zt, M['glass'], 'pop', t0, t1, origin='center')
+if V2:
+    # 왼쪽 동 창 2×2 (px 36~110 · py 467~660)
+    for r, (pa, pb) in enumerate([(467, 553), (573, 660)]):
+        for c, (qa, qb) in enumerate([(36, 67), (80, 110)]):
+            win(f'lwin{r}_{c}', X(qa), X(qb), -0.3, 0.05, Z(pb), Z(pa), 2.45 + r * 0.1 + c * 0.05, 2.8 + r * 0.1 + c * 0.05)
+    # 박공동 유리벽 양옆 작은 창 2×2 (px 148~175 · 553~587)
+    for r, (pa, pb) in enumerate([(493, 547), (600, 650)]):
+        for c, (qa, qb) in enumerate([(148, 175), (553, 587)]):
+            win(f'gsm{r}_{c}', X(qa), X(qb), -0.3, 0.05, Z(pb), Z(pa), 2.55 + r * 0.1 + c * 0.05, 2.9 + r * 0.1 + c * 0.05)
+    # 현관 양쪽 계단 5단 (관람석 앞 땅 → 승강장) + 깃대 3
+    for side, (qa, qb) in enumerate([(190, 300), (540, 620)]):
+        for k in range(5):
+            y0 = -10.5 + k * 0.9; zt = Z(770, -6) * (k + 1) / 5
+            box(f'step{side}_{k}', X(qa, -6), X(qb, -6), y0, -6.0, 0, zt, PH, 'rise', 0.95 + k * 0.08 + side * 0.05, 1.25 + k * 0.08 + side * 0.05)
+    for i, px in enumerate([320, 360, 400]):
+        cyl(f'flag{i}', X(px, -4), -4.0, Z(770, -6), Z(400, -4), 0.06, M['steel'], 'rise', 4.3 + i * 0.1, 4.7 + i * 0.1, seg=10)
+        box(f'flagcloth{i}', X(px, -4) + 0.06, X(px, -4) + 0.9, -4.02, -3.98, Z(400, -4) - 0.6, Z(400, -4) - 0.05, M['white'], 'slidex', 4.75 + i * 0.1, 4.95 + i * 0.1, origin='left')
 # 0) 관람석·옹벽 (앞으로 9m 나와 있음)
 for i, (y0, y1, py) in enumerate([(-10.5, -9.0, 830), (-9.0, -7.5, 800), (-7.5, -6.0, 785)]):
     box(f'bleach{i}', -36, 46, y0, y1, 0, Z(py, y1), PH, 'rise', 0.15 + i * 0.12, 0.65 + i * 0.12)
@@ -397,7 +427,7 @@ for side, (xa, xb) in enumerate([(GX0 - 0.3, GXP), (GXP, GX1 + 0.3)]):
     BUILD.append((o, 'drop', 3.0, 3.5))
 for i in range(7):                                             # 위 창 7 (px 210~555, py 375~440)
     cx = X(210 + i * 57.5)
-    box(f'gwin{i}', cx - 0.55, cx + 0.55, -0.35, 0.05, Z(440), Z(375), M['glass'], 'pop', 2.4 + i * 0.07, 2.8 + i * 0.07, origin='center')
+    win(f'gwin{i}', cx - 0.55, cx + 0.55, -0.35, 0.05, Z(440), Z(375), 2.4 + i * 0.07, 2.8 + i * 0.07)
 box('glasswall', X(180), X(610), -0.3, 0.05, Z(600), Z(520), M['glass'], 'pop', 2.5, 3.0, origin='center')   # 2층 유리벽
 box('entry_glass', X(425), X(620), -0.3, 0.05, Z(770, -6), Z(640), M['glass'], 'pop', 2.6, 3.0, origin='center')   # 현관 유리
 # 엠블럼 · 교명 (사진 모드: 사진에 이미 찍혀 있으므로 살짝 돌출만 — 질감은 사진이 입힘 / 모형 모드: 진짜 엠블럼 3D, R146 emblem.py)
@@ -422,7 +452,7 @@ bpy.ops.mesh.primitive_cylinder_add(radius=(AX1 - AX0) / 2, depth=6.0, vertices=
 arch.rotation_euler = (0, math.radians(90), 0); arch.scale = (0.32, 1, 1)
 arch.location = ((AX0 + AX1) / 2, -3.0, 0); arch.data.materials.append(M['gglass']); BUILD.append((arch, 'pop', 3.6, 4.1))
 arch.location.z = AZT - (AX1 - AX0) / 2 * 0.32
-box('entry_cut', AX0 - 0.5, AX1 + 0.5, -6.6, 0.4, 0, AZT - (AX1 - AX0) / 2 * 0.32 - 0.05, PH, 'rise', 0, 0.01)   # 아치 아랫부분 가리개
+box('entry_cut', AX0 - 0.5, AX1 + 0.5, -6.6, 0.4, 0, AZT - (AX1 - AX0) / 2 * 0.32 - 0.05, PH, 'rise', 0.8 if V2 else 0, 2.2 if V2 else 0.01)   # 아치 아랫부분 가리개 (R150 v2: 박공동과 같이 올라옴 — 0초부터 덩그러니 서 있던 것)
 for i, px in enumerate([445, 740]):
     cyl(f'arch_post{i}', X(px, -6), -5.9, Z(770, -6), AZT - 1.5, 0.12, M['steel'], 'rise', 3.4, 3.7)
 
@@ -435,6 +465,10 @@ RX0, RX1, RZT = X(640), X(1400), Z(355)
 box('rightwing', RX0, RX1, 0, 22, 0, RZT, PH, 'rise', 1.0, 2.6)
 box('rightwing_cop', RX0 - 0.1, RX1 + 0.1, -0.1, 22.1, RZT, RZT + 0.35, M['red'], 'drop', 3.0, 3.5)
 box('farblock', RX1, X(1560, 8), 8, 30, 0, Z(360, 8), PH, 'rise', 1.2, 2.6)          # 오른쪽 끝 뒤로 물러난 동
+if V2:   # R150: 물러난 동에도 창 띠(3줄 × 2) — 비어 있던 벽
+    for fl, (pa, pb) in enumerate([(390, 450), (490, 540), (575, 620)]):
+        for i, (qa, qb) in enumerate([(1418, 1470), (1490, 1545)]):
+            win(f'fwin{fl}_{i}', X(qa, 8), X(qb, 8), 7.8, 8.0, Z(pb, 8), Z(pa, 8), 2.7 + fl * 0.1 + i * 0.05, 3.05 + fl * 0.1 + i * 0.05)
 BANDS = [(360, 380), (455, 475), (548, 565), (640, 660)]
 for fl, (pa, pb) in enumerate(BANDS):
     box(f'band{fl}', RX0, RX1, -0.25, 0.0, Z(pb), Z(pa), M['concrete'], 'slidex', 2.0 + fl * 0.12, 2.5 + fl * 0.12, origin='left')
@@ -445,7 +479,7 @@ ROWS = [(390, 450), (490, 540), (575, 620), (670, 710)]
 for fl, (pa, pb) in enumerate(ROWS):
     for i in range(8):
         x0, x1 = X(PILS[i] + 18), X(PILS[i + 1] - 18)
-        box(f'rwin{fl}_{i}', x0, x1, -0.2, 0.0, Z(pb), Z(pa), M['glass'], 'pop', 2.5 + fl * 0.1 + i * 0.04, 2.85 + fl * 0.1 + i * 0.04, origin='center')
+        win(f'rwin{fl}_{i}', x0, x1, -0.2, 0.0, Z(pb), Z(pa), 2.5 + fl * 0.1 + i * 0.04, 2.85 + fl * 0.1 + i * 0.04, frame=False)   # 띠·기둥·창턱이 틀 노릇 — 틀 생략
         box(f'rsill{fl}_{i}', x0 - 0.1, x1 + 0.1, -0.28, 0.0, Z(pb) - 0.18, Z(pb), M['white'], 'pop', 2.55 + fl * 0.1 + i * 0.04, 2.9 + fl * 0.1 + i * 0.04, origin='center')
 # 옥상 정자 2 (4m 안쪽) — 콘크리트 기둥 + 초록 곡면 지붕
 for k, (pa, pb, ptop) in enumerate([(605, 885, 235), (960, 1200, 270)]):
@@ -473,6 +507,18 @@ if SHOT == 'night':                                             # R149: 먼 산 
         o.location = (-35 + i * 3.5, -6.0, CZ - 0.75); o.data.materials.append(M['lamp']); bpy.ops.object.shade_smooth()
         LIT.append((o, 2.2 + i * 0.03))
 # 나무: 정리 사진엔 없음 — 끝에 실사(원본, 나무 있음)로 녹아들 때 나무가 생긴다
+# R150 도면선: 큰 덩어리 발자국을 금선으로 먼저 그린 뒤(0.25~1.2s), 그 벽이 올라오면 걷힌다 — 새 시간축 그대로(T_V2 무관)
+if V2:
+    FOOT = [('bleach', -36, 46, -10.5, -6.0, 0.25), ('leftwing', -36, X(140), 0, 24, 0.40), ('gable', GX0, GX1, 0, 20, 0.50),
+            ('right', RX0, RX1, 0, 22, 0.60), ('far', RX1, X(1560, 8), 8, 30, 0.72), ('tower', X(242, 9), X(490, 9), 8, 17, 0.84)]
+    WALL_T0 = {'bleach': 0.15, 'leftwing': 0.6, 'gable': 0.8, 'right': 1.0, 'far': 1.2, 'tower': 1.4}
+    for nm, x0, x1, y0, y1, td in FOOT:
+        toff = T_V2[0] + WALL_T0[nm] * T_V2[1] + 0.25
+        for k, (ax, ay, L_, rot) in enumerate([(x0, y0, x1 - x0, 0), (x1, y0, y1 - y0, 90), (x1, y1, x1 - x0, 180), (x0, y1, y1 - y0, -90)]):
+            bpy.ops.mesh.primitive_cube_add(size=1); o = bpy.context.object; o.name = f'bp_{nm}_{k}'
+            for v in o.data.vertices: v.co.x = (v.co.x + 0.5) * L_; v.co.y *= 0.09; v.co.z = (v.co.z + 0.5) * 0.035
+            o.location = (ax, ay, 0.02); o.rotation_euler = (0, 0, math.radians(rot)); o.data.materials.append(M['glow'])
+            LINES.append((o, td + k * 0.13, td + 0.30 + k * 0.13, toff, toff + 0.35))
 # 뒤 배경판(하늘) — 사진 하늘을 그대로 (먼 평면, 카메라가 움직여도 시차 작음)
 box('backdrop', -400 if SHOT == 'build' else -1500, 400 if SHOT == 'build' else 1500, 120, 121, 0, 260 if SHOT != 'night' else 420, PH, 'rise', 0, 0.01)   # R149 night: 떠오르는 카메라가 판 위를 넘겨보지 않게 높임   # R148 orbit: 비스듬한 시점에서 판 끝이 안 보이게 넓힘
 # R148 드론 시점: 건물 뒤 땅은 정면 사진의 영사 그늘(관람석 픽셀이 늘어짐) → 건물 발자국 뒤에 무광 뒷마당 판을 깐다(정면 hold 카메라에선 건물에 가려 안 보임)
@@ -488,7 +534,7 @@ proj = bpy.data.objects.new('proj', pc); sc.collection.objects.link(proj)
 proj.location = (0, -CAMD, EYE); proj.rotation_euler = (math.radians(90) + PITCH, 0, 0)      # 정면(+Y), 사진과 같은 올려봄
 if 'photo' in M:
     for o in sc.objects:
-        if o.type != 'MESH' or o.name == 'backlot' or o.name.startswith(('lamp', 'hill')): continue
+        if o.type != 'MESH' or o.name == 'backlot' or o.name.startswith(('lamp', 'hill', 'bp_', 'edge_')): continue   # R150: 도면선·금선은 발광 그대로
         iswin = SHOT == 'night' and (o.name.startswith(('gwin', 'rwin')) or o.name in ('glasswall', 'entry_glass'))
         o.data.materials.clear(); o.data.materials.append(M['photo_ground'] if o.name == 'ground' else M['photo_sky'] if o.name == 'backdrop' else M['photo_win'] if iswin else M['photo'])      # 모형 전체에 사진 (교명 3D 글자만 남색)
         if 'proj' not in o.data.uv_layers: o.data.uv_layers.new(name='proj')
@@ -522,13 +568,23 @@ def clamp01(v): return max(0.0, min(1.0, v))
 def overshoot(u):                      # pop 용: 살짝 넘쳤다 제자리 (1.12 → 1.0)
     return 1.0 + 0.12 * math.sin(u * math.pi) if u < 1 else 1.0
 NF = sc.frame_end
+DROP_H = 2.2 if V2 else 9.0               # R150: 지붕·코핑은 2.2m 위에서 살짝 얹힘(9m 낙하 아님)
+def _edge_for(o, z0, h):                  # R150: 벽 윗선을 따라 올라가는 금선(첫 프레임엔 안 보임)
+    bpy.ops.mesh.primitive_cube_add(size=1); e = bpy.context.object; e.name = 'edge_' + o.name
+    d = o.dimensions
+    for v in e.data.vertices: v.co.x *= d.x + 0.16; v.co.y *= d.y + 0.16; v.co.z *= 0.12
+    e.location = (o.location.x, o.location.y, z0); e.data.materials.append(M['glow']); e.scale = (0.001, 0.001, 0.001)
+    return e
 for o, kind, t0, t1 in (BUILD if SHOT == 'build' else []):   # orbit: 다 지어진 채(키 없음 = 최종 상태)
+    if V2 and t1 > 0.02: t0, t1 = T_V2[0] + t0 * T_V2[1], T_V2[0] + t1 * T_V2[1]   # R150 시간축 재배치(즉시 조각은 그대로)
     z = o.location.z; x, y = o.location.x, o.location.y
     B = tuple(o.scale)                 # 기본 스케일(박공 처마 막대처럼 미리 늘려 둔 것) 보존
     span = max(1e-3, t1 - t0)
+    if V2 and kind == 'rise' and o.dimensions.z > 3.0 and not o.name.startswith(('backdrop', 'entry_cut')): EDGES.append((_edge_for(o, z, o.dimensions.z), o, z, o.dimensions.z, t0, t1))
     for fr in range(1, NF + 1):
         sec = (fr - 1) / FPS
         u = clamp01((sec - t0) / span); e = ease(u)
+        if V2: o.hide_render = sec < t0 - 1e-6; o.keyframe_insert('hide_render', frame=fr)   # R150: 시작 전엔 아예 안 그림(납작한 발자국 판이 보이던 것)
         if kind == 'rise':
             o.scale = (B[0], B[1], B[2] * max(0.001, e)); o.keyframe_insert('scale', frame=fr)
         elif kind == 'pop':
@@ -536,13 +592,35 @@ for o, kind, t0, t1 in (BUILD if SHOT == 'build' else []):   # orbit: 다 지어
         elif kind == 'drop':
             sv = 1.0 if sec >= t0 else 0.001
             o.scale = (B[0] * sv, B[1] * sv, B[2] * sv); o.keyframe_insert('scale', frame=fr)
-            o.location = (x, y, z + 9.0 * (1 - e) ** 2); o.keyframe_insert('location', frame=fr)
+            o.location = (x, y, z + DROP_H * (1 - e) ** 2); o.keyframe_insert('location', frame=fr)
         elif kind == 'slidex':
             o.scale = (B[0] * max(0.001, e), B[1], B[2]); o.keyframe_insert('scale', frame=fr)
         if sec > t1 + 0.5: break        # 완료 후엔 마지막 값 유지 — 더 키 안 박음
+# R150: 금선 — 벽 윗선 동행(rise 구간) → 끝나면 0.4s 사이 사라짐 · 도면선 — 그리기(길이 0→1) → 벽 올라온 뒤 걷힘(길이 1→0)
+for e, o, z0, h, t0, t1 in EDGES:
+    for fr in range(1, NF + 1):
+        sec = (fr - 1) / FPS; u = clamp01((sec - t0) / max(1e-3, t1 - t0)); ev = ease(u)
+        vis = 1.0 if t0 <= sec <= t1 + 0.05 else (1.0 - clamp01((sec - t1 - 0.05) / 0.4)) if sec > t1 else 0.0
+        e.scale = (max(0.001, vis), max(0.001, vis), max(0.001, vis)); e.keyframe_insert('scale', frame=fr)
+        e.location = (e.location.x, e.location.y, z0 + h * ev); e.keyframe_insert('location', frame=fr)
+        if sec > t1 + 0.6: break
+for o, d0, d1, f0, f1 in LINES:
+    for fr in range(1, NF + 1):
+        sec = (fr - 1) / FPS
+        L_ = ease(clamp01((sec - d0) / (d1 - d0))) * (1.0 - ease(clamp01((sec - f0) / (f1 - f0))))
+        o.scale = (max(0.001, L_), 1, 1); o.keyframe_insert('scale', frame=fr)
+        if sec > f1 + 0.2: break
+if V2:                                       # R150: 사진 재질의 발광 비율 — 짓는 동안 0.60 → HOLD-0.8 에 0.78(사진 그대로, hold 프레임 무변화)
+    for nm in ('photo', 'photo_ground'):
+        if nm in M:
+            fac = M[nm].node_tree.nodes['daymix'].inputs['Fac']
+            for fr in range(1, NF + 1):
+                sec = (fr - 1) / FPS
+                fac.default_value = 0.60 + 0.18 * ease(clamp01((sec - (HOLD - 2.0)) / 1.2)); fac.keyframe_insert('default_value', frame=fr)
 
 # 카메라: 왼쪽 위에서 돌아 들어와 정면 사진 자리로 (프레임마다 직접 계산)
 CAM_PATH = [(0.0, (-40, -55, 16), (-6, 6, 9)), (2.6, (-22, -66, 9), (-3, 2, 6)), (HOLD, (0, -CAMD, EYE), (0, 0, LOOKZ))]
+CAM_V2 = [((-36, -64, 13.5), (-4, 6, 9)), ((-26, -69, 9.5), (-2.5, 3, 9.5)), ((-13, -69, 4.8), (-1, 1.5, 10.5)), ((-5, -67, 2.6), (-0.5, 0.5, 11.5)), ((0, -CAMD, EYE), (0, 0, LOOKZ))]   # R150: 경유점 5, 캣멀롬 한 번 ease — 꺾임 없이 사진 자리로
 PHOTO_CAM = dict(loc=(0, -CAMD, EYE), look=(0, 0, LOOKZ))   # 세 틀이 공유하는 「사진 자리」(build·orbit 끝 · night 시작) — JSON 의 camera
 if SHOT == 'night':   # R149: 사진 자리에 PHOTO_HOLD 초 고정 → 한 번 ease 로 뒤·위로 물러나며 떠오름(드론이 멀어지듯) → HOLD 부터 고정
     CAM_PATH = [(0.0, PHOTO_CAM['loc'], PHOTO_CAM['look']), (T_CAM[0], PHOTO_CAM['loc'], PHOTO_CAM['look']), (T_CAM[1], (-4, -104, 22), (1, 3, 9))]
@@ -559,6 +637,9 @@ def cam_at(sec):
         if sec >= HOLD: return Vector(ORBIT[-1][0]), Vector(ORBIT[-1][1])
         return _catmull([p for p, _ in ORBIT], u), _catmull([l for _, l in ORBIT], u)
     if sec >= HOLD: return Vector(CAM_PATH[-1][1]), Vector(CAM_PATH[-1][2])
+    if V2:
+        u = ease(clamp01(sec / HOLD))
+        return _catmull([Vector(p[0]) for p in CAM_V2], u), _catmull([Vector(p[1]) for p in CAM_V2], u)
     for (ta, pa, la), (tb, pb, lb) in zip(CAM_PATH, CAM_PATH[1:]):
         if ta <= sec <= tb:
             e = ease((sec - ta) / (tb - ta))
