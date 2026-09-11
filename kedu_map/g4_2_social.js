@@ -114,14 +114,14 @@ window.KEDU_MAP["g4_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_social_u1_l11",
+     "lessonId": "g4_social_u1_l11_v1",
      "n": "6",
      "title": "1단원 민주주의와 자치 정리",
      "sub": "② 주민 자치와 민주주의",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/social/1단원_민주주의와자치/g4_social_u1_l11_단원정리.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   },
