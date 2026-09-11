@@ -104,14 +104,14 @@ window.KEDU_MAP["g4_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_social_u1_l10",
+     "lessonId": "g4_social_u1_l10_v1",
      "n": "5",
      "title": "[할 수 있어요] 주민 자치에 참여해 볼까요",
      "sub": "② 주민 자치와 민주주의",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/social/1단원_민주주의와자치/g4_social_u1_l10_주민자치참여.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
