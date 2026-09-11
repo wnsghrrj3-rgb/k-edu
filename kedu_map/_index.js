@@ -86,9 +86,9 @@ window.KEDU_MAP_INDEX = [
  },
  {
   "key": "g4_2_korean",
-  "units": 1,
-  "lessons": 8,
-  "ready": 8
+  "units": 2,
+  "lessons": 17,
+  "ready": 17
  },
  {
   "key": "g4_2_math",
