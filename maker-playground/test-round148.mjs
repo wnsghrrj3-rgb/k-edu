@@ -38,7 +38,7 @@ ok(JSON.stringify(jo.camera) === JSON.stringify(jb.camera), 'orbit·build 끝 �
 /* ---- 페이지 정적 계약 ---- */
 const plateKeys = [...pageSrc.matchAll(/'(school-[\w-]+)': \{ title:/g)].map((m) => m[1]);
 const btnKeys = [...pageSrc.matchAll(/data-plate="([\w-]+)"/g)].map((m) => m[1]);
-ok(plateKeys.join() === 'school-build,school-orbit', `PLATES 표 = build·orbit (${plateKeys.join('·')})`);
+ok(plateKeys.slice(0, 2).join() === 'school-build,school-orbit', `PLATES 표 앞 둘 = build·orbit (${plateKeys.join('·')})`);   /* R149: 셋째 장면부터는 뒤에 붙는다 */
 ok(btnKeys.join() === plateKeys.join(), '틀 고르기 버튼 ↔ PLATES 표 1:1 · 같은 순서');
 ok(plateKeys.every((k) => ['.mp4', '.json', '.poster.png'].every((x) => fs.existsSync(PL + k + x))), 'PLATES 마다 mp4·json·poster 실존');
 ok(pageSrc.includes('PLATES[PLATE].file') && !pageSrc.includes("title: `학교가지어진다_"), 'MP4·PNG 파일명이 틀 따라 바뀜');
@@ -96,7 +96,7 @@ for (const bad of ['?plate=..%2Fsecret', '?plate=award-wood-warm', '']) {
   require('./data/scene3d.js');
   const S = window.MK_SCENE3D;
   const o = S.get('school-orbit');
-  ok(S.SCENES.map((s) => s.id).join() === 'school,school-orbit', 'SCENES = school · school-orbit (순서)');
+  ok(S.SCENES.map((s) => s.id).slice(0, 2).join() === 'school,school-orbit', 'SCENES 앞 둘 = school · school-orbit (순서)');   /* R149 완화 */
   ok(o.id === 'school-orbit' && o.url === S.get('school').url && o.poster === '/kmake/plates/school-orbit.poster.png', '둘째 장면: 같은 화면 · 자기 포스터');
   ok(plateKeys.includes(o.preset.plate) && o.fields.includes('plate'), 'preset.plate 가 페이지 PLATES 에 있고 fields 에 plate');
   ok(S.url('school-orbit') === '/kmake/plates/school/?plate=school-orbit', 'url(orbit) 빈 인자 → ?plate=school-orbit');
@@ -136,12 +136,13 @@ for (const bad of ['?plate=..%2Fsecret', '?plate=award-wood-warm', '']) {
   w.PG.state.create = { step: 1, type: null, style: null, tpl: null };
   root = mount(w.MK_SCREENS.create);
   const k1 = root.querySelector('.hv-type[data-scene3d="school"]'), k2 = root.querySelector('.hv-type[data-scene3d="school-orbit"]');
-  ok(!!k2 && k1.nextElementSibling === k2 && k2.nextElementSibling.hasAttribute('data-cf-award3d'), '만들기 1단계: 지어진다 → 하늘에서 한 바퀴 → 3D 상장');
+  { const last = [...root.querySelectorAll('.hv-type[data-scene3d]')].pop();
+  ok(!!k2 && k1.nextElementSibling === k2 && last.nextElementSibling.hasAttribute('data-cf-award3d'), '만들기 1단계: 지어진다 → 하늘에서 한 바퀴 → … → 3D 상장'); }   /* R149: 마지막 장면 카드 기준 */
   k2.click(); ok(opened[opened.length - 1] === ORB, '만들기 카드 → ?plate=school-orbit');
   ok(opened.length === 3, '문 3곳 클릭 3번 = open 3번');
 }
 {
-  for (const f of ['./index.html', '../maker/index.html']) ok(/scene3d\.js\?v=20260910c/.test(fs.readFileSync(f, 'utf8')), `${f}: scene3d 버스터 20260910c`);
+  for (const f of ['./index.html', '../maker/index.html']) ok(/scene3d\.js\?v=\d{8}[a-z]/.test(fs.readFileSync(f, 'utf8')), `${f}: scene3d 버스터 있음`);
 }
 console.log(`\n${pass}/${pass + fail}`);
 process.exit(fail ? 1 : 0);

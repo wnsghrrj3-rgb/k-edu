@@ -43,10 +43,10 @@
     </div>
   </section>
   <aside class="panel">
-    <label>장면</label><div class="plates" id="f-plate"><button data-plate="school-build">🏫 지어진다</button><button data-plate="school-orbit">🚁 하늘에서 한 바퀴</button></div>
+    <label>장면</label><div class="plates" id="f-plate"><button data-plate="school-build">🏫 지어진다</button><button data-plate="school-orbit">🚁 하늘에서 한 바퀴</button><button data-plate="school-night">🌆 불이 켜지는 저녁</button></div>
     <label>학교 이름 (끝 자막)</label><input id="f-school" value="금성초등학교">
     <label>한 줄 (끝 자막)</label><input id="f-sub" value="아이의 첫 시작을 함께합니다">
-    <div class="row"><input id="f-photo" type="checkbox" checked style="width:auto"> <label for="f-photo" style="margin:0">끝에 실사 사진으로 녹아들기</label></div>
+    <div class="row"><input id="f-photo" type="checkbox" checked style="width:auto"> <label for="f-photo" id="f-photo-l" style="margin:0">끝에 실사 사진으로 녹아들기</label></div>
     <div class="row"><span>여운</span><input id="f-tail" type="range" min="0" max="4" step="0.5" value="2.5"><span id="f-tail-v">2.5초</span></div>
     <div class="note" id="note"></div>
     </div>
@@ -64,12 +64,18 @@
       note: '틀(<code>school-build.mp4</code>)은 사진 한 장을 보고 지은 금성초 3D 에 그 사진을 다시 입힌 것 — 관람석 → 벽돌 → 콘크리트 띠 → 창 → 지붕 → 정자·캐노피 순으로 올라오고, 나무는 실사로 녹아들 때 생깁니다.' },
     'school-orbit': { title: '하늘에서 한 바퀴', sub: '드론처럼 학교 앞 하늘을 돌아 정면에 내려앉음 · 끝에 실사로 녹아듦 · 서버 0', file: '하늘에서한바퀴',
       note: '틀(<code>school-orbit.mp4</code>)은 같은 금성초 3D 를 다 지어진 채로 두고, 카메라가 왼쪽 높은 하늘 → 정면 앞 멀리 → 오른쪽을 지나 사진 자리로 천천히 내려앉는 드론 인트로입니다.' },
+    /* R149: 엔딩 — 실사에서 시작해(앞쪽 역디졸브) 저녁이 되며 창에 불이 켜지고 카메라가 물러남. photo_at:'start' 는 틀 JSON 이 준다 */
+    'school-night': { title: '불이 켜지는 저녁', sub: '실사 사진에서 시작 · 저녁이 오며 창마다 불이 켜지고 카메라가 물러남 · 서버 0', file: '불이켜지는저녁', defSub: '내일 또 만나요',
+      note: '틀(<code>school-night.mp4</code>)은 실사 사진 자리에서 시작해 3D 로 바뀐 뒤 하늘이 노을 → 네이비로 저물고, 창·현관·캐노피 등이 하나씩 켜지며 카메라가 천천히 물러나는 엔딩입니다. 자막이 뜨는 자리라 「내일 또 만나요」 같은 한 줄이 어울립니다.' },
   };
+  const DEF_SUB = '아이의 첫 시작을 함께합니다';
   const pick = (v) => (/^[\w-]+$/.test(v || '') && PLATES[v]) ? v : 'school-build';
   let PLATE = pick(Q.get('plate'));
   if (Q.has('school')) $('#f-school').value = Q.get('school');
   if (Q.has('sub')) $('#f-sub').value = Q.get('sub');
-  let meta, W, H, FPS, N, holdSec, plateSec;
+  let subTouched = Q.has('sub');                        // 주소로 받았거나 손으로 고쳤으면 틀 기본 자막으로 안 덮음
+  $('#f-sub').addEventListener('input', () => { subTouched = true; });
+  let meta, W, H, FPS, N, holdSec, plateSec, photoAt, photoUntilSec;
   const tail = () => +$('#f-tail').value;                 // 여운(사진+자막) 초
   const totalSec = () => plateSec + tail();
   $('#f-tail').oninput = () => { $('#f-tail-v').textContent = tail().toFixed(1) + '초'; draw(vid.currentTime); };
@@ -82,10 +88,16 @@
     W = meta.width; H = meta.height; FPS = meta.fps; N = meta.frames;
     cv.width = W; cv.height = H;
     holdSec = (meta.hold_from - 1) / FPS; plateSec = N / FPS;
+    photoAt = meta.photo_at === 'start' ? 'start' : 'end';                       // 디졸브 방향은 틀 JSON 이 정한다
+    photoUntilSec = photoAt === 'start' ? ((meta.photo_until || 1) - 1) / FPS : 0;   // 이 프레임 전에 역디졸브가 끝나야 함
+    if (!subTouched) $('#f-sub').value = P.defSub || DEF_SUB;
     const ready = new Promise((r) => { vid.onloadeddata = r; });
     vid.src = `../${PLATE}.mp4`; vid.load(); await ready;
     $('#h-title').textContent = P.title; $('#h-sub').textContent = P.sub;
-    $('#note').innerHTML = P.note + '<br>카메라가 멈춘 뒤 실사(<code>school-photo.jpg</code>)로 녹아들고 자막이 뜹니다. 지금 틀은 시험 화질(' + W + '×' + H + ').';
+    $('#note').innerHTML = P.note + (photoAt === 'start'
+      ? '<br>실사(<code>school-photo.jpg</code>)에서 시작해 3D 로 녹아들고, 끝에 자막이 뜹니다. 지금 틀은 시험 화질(' + W + '×' + H + ').'
+      : '<br>카메라가 멈춘 뒤 실사(<code>school-photo.jpg</code>)로 녹아들고 자막이 뜹니다. 지금 틀은 시험 화질(' + W + '×' + H + ').');
+    $('#f-photo-l').textContent = photoAt === 'start' ? '처음에 실사 사진에서 시작하기' : '끝에 실사 사진으로 녹아들기';
     for (const b of document.querySelectorAll('#f-plate [data-plate]')) b.classList.toggle('on', b.dataset.plate === PLATE);
     const u = new URL(location.href); u.searchParams.set('plate', PLATE); history.replaceState(null, '', u);
   }
@@ -102,11 +114,17 @@
     vid.currentTime = t; setTimeout(fin, 1500);
   });
 
-  /* 한 프레임: 틀 영상 → (hold 이후) 실사 디졸브 → 자막 */
+  /* 한 프레임: 틀 영상 → 실사 디졸브(끝: hold 이후 3D→실사 / 시작: 0.4~1.6s 실사→3D, photo_until 전에 끝) → 자막 */
+  const startDissolve = (sec) => {                        // photo_at:'start' — 실사 알파 1 → 0
+    const end = Math.min(1.6, photoUntilSec - 0.05), beg = Math.max(0.1, end - 1.2);
+    return 1 - ease(Math.max(0, Math.min(1, (sec - beg) / (end - beg))));
+  };
   function draw(sec) {
     ctx.drawImage(vid, 0, 0, W, H);
     const usePhoto = $('#f-photo').checked && photo.naturalWidth;
-    const dis = usePhoto ? ease(Math.max(0, Math.min(1, (sec - holdSec - 0.2) / 1.2))) : 0;   // hold 0.2초 뒤부터 1.2초 디졸브
+    const dis = !usePhoto ? 0 : (photoAt === 'start'
+      ? startDissolve(sec)
+      : ease(Math.max(0, Math.min(1, (sec - holdSec - 0.2) / 1.2))));   // 끝: hold 0.2초 뒤부터 1.2초 디졸브
     if (dis > 0) {
       ctx.save(); ctx.globalAlpha = dis;
       const s = Math.max(W / photo.naturalWidth, H / photo.naturalHeight);

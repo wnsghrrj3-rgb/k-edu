@@ -4,7 +4,7 @@
    블렌더로 한 번 구운 3D 틀(/kmake/plates/) 위에 브라우저가 글자·실사만
    얹는 화면들의 **목록**. 3D 상장(MK_AWARD3D, R143) 과 같은 원리이되
    상장은 「인쇄물」 갈래, 여기는 「영상」 갈래 — 학교가 지어진다(R144~146)
-   가 첫 장면, 하늘에서 한 바퀴(R148) 가 둘째 장면이고, 다음 장면(교실·강당·운동회…)은 SCENES 에 한 줄이면 문이
+   가 첫 장면, 하늘에서 한 바퀴(R148) 가 둘째, 불이 켜지는 저녁(R149) 이 셋째 장면이고, 다음 장면(교실·강당·운동회…)은 SCENES 에 한 줄이면 문이
    같이 열린다(목록 카드·홈 칩·만들기 1단계). 문서 모델 밖 — 틀을 흉내내지
    않고 문만 연다. 외부 API 0 · 서버 0 · 새 탭.
    ============================================================ */
@@ -22,6 +22,12 @@ window.MK_SCENE3D = (() => {
       id: 'school-orbit', title: '하늘에서 한 바퀴 (영상)', ico: '🚁', category: '영상', contentType: 'video', ratio: '16:9',
       desc: '드론처럼 학교 앞 하늘을 한 바퀴 돌아 정면에 내려앉고 실사로 녹아드는 인트로 — 이름·한 줄만 바꾸면 완성',
       url: '/kmake/plates/school/', poster: '/kmake/plates/school-orbit.poster.png', fields: ['school', 'sub', 'plate'], preset: { plate: 'school-orbit' },
+    },
+    /* R149: 엔딩 — 실사에서 시작해 저녁이 되며 창에 불이 켜짐. 지어진다(오프닝)·한 바퀴(인트로)·저녁(엔딩) = 학교 영상 한 편의 앞·중·끝 */
+    {
+      id: 'school-night', title: '불이 켜지는 저녁 (영상)', ico: '🌆', category: '영상', contentType: 'video', ratio: '16:9',
+      desc: '실사 사진에서 시작해 저녁이 오며 창마다 불이 켜지고 카메라가 물러나는 엔딩 — 이름·한 줄만 바꾸면 완성',
+      url: '/kmake/plates/school/', poster: '/kmake/plates/school-night.poster.png', fields: ['school', 'sub', 'plate'], preset: { plate: 'school-night' },
     },
   ];
   const get = (id) => SCENES.find((s) => s.id === id) || SCENES[0];
