@@ -145,6 +145,14 @@ body{font-family:var(--f-body); background:var(--paper); color:var(--ink); -webk
 
 /* 4-2 라인: 한국어 낱말 단위 줄바꿈(낱말 가운데서 끊기지 않게) — 로직 무관 CSS */
 .wc-word,.chip,.match-card,.read-line,.ka-bub,.scene-say,.recap-item,.sc-row,.stage-box,.sentence,.ka-t{word-break:keep-all; overflow-wrap:break-word;}
+/* 4-2 라인: 줄 안 <b>가 flex 칸으로 따로 갈라지지 않게 — 아이콘만 왼쪽에 걸고 글은 한 흐름 (로직 무관 CSS · 2026-09-11 화면 점검) */
+.recap-item,.sc-row,.read-line{display:block; position:relative;}
+.recap-item{--ic:clamp(26px,3.6vw,42px); padding-left:calc(clamp(16px,2.4vw,26px) + var(--ic)*1.3 + 14px);}
+.recap-ic{position:absolute; left:clamp(16px,2.4vw,26px); top:50%; transform:translateY(-50%); width:calc(var(--ic)*1.3); text-align:center; line-height:1;}
+.sc-row{--ic:clamp(30px,4vw,44px); padding-left:calc(clamp(16px,2.4vw,24px) + var(--ic) + 14px);}
+.sc-box{position:absolute; left:clamp(16px,2.4vw,24px); top:50%; transform:translateY(-50%);}
+.read-line{--ic:clamp(30px,4vw,42px); padding-left:calc(clamp(16px,2.4vw,24px) + var(--ic) + 14px);}
+.rl-num{position:absolute; left:clamp(16px,2.4vw,24px); top:50%; transform:translateY(-50%);}
 
 @media (max-width:560px){ .where{display:none;} .wcard{flex:1 1 140px;} .match{gap:clamp(14px,4vw,28px);} .dots{max-width:50%;} .nav{flex-wrap:wrap;} }
 @media (prefers-reduced-motion:reduce){ *{animation:none!important; transition:none!important;} }
@@ -190,7 +198,7 @@ body{font-family:var(--f-body); background:var(--paper); color:var(--ink); -webk
    ★ 열넷째 기준(화면이 실을 수 없는 것) — 글을 쓰고 고쳐 쓰는 일은 종이 위에서 한다. 4번째에서 먼저 밝히고, 판단만 채점, 쓰기는 11·16번째 무대로.
    ★ 지도서 196쪽 경계 — 내용을 조직할 때 상세하게 쓰지 않기(쓰기 피로도) ⇒ 9~10번째 핵심 낱말 개요 · 오답 칸 「개요에 글 전체를 미리 다 쓴다」.
    ※ 지도서 196쪽 지도의 유의점 — 문제 해결 방법 찾기 = 계획, 문제 해결하기 = 쓰고 고쳐 써서 완성(단계 태그),
-     198쪽 — 학급 문제는 1학기에 많이 다뤘으니 학교 · 이웃 · 지역으로 넓히기(5번째 후보), 200쪽 — 구두 작문(11번째 small) · 다른 사람의 제안이 더 좋으면 받아들이거나 수정(16번째 small),
+     198쪽 — 학급 문제는 1학기에 많이 다뤘으니 학교 · 이웃 · 지역으로 넓히기(5번째 후보), 200쪽 — 구두 작문(11번째 small) · 다른 사람의 제안이 더 좋으면 받아들이거나 수정(16번째 힌트 — 2026-09-11 화면 넘침 점검에서 말풍선을 힌트로 옮김),
      201쪽 — 문장 짜임에서 「어떠하다 · 어찌하다 · 무엇이다」 찾기(13~14번째) · 계획부터 점검까지 과정 전체(16번째) · 전달 방법(17번째).
    ※ 성취기준 [4국03-03] 쓰기 · [4국04-03] 문법(기본적인 문장의 짜임) · 보조 [4국03-01] 고쳐쓰기. 평가 자료 2 연계(지도서 210~211쪽). */
 const slides=[
@@ -305,15 +313,14 @@ const slides=[
       <div class="wcard" data-ok="0"><div class="wc-pic">✂️</div><div class="wc-word">너무 짧아서<br>문장이 아니다</div></div>
     </div><div class="fb"></div>`},
 
-  {tag:'② 점검하고 고쳐쓰기', t:'내 글을 살펴보고 고쳐 써요',
+  {tag:'② 점검하고 고쳐쓰기', t:'내 글을 살펴보고 고쳐 써요', hint:'친구의 제안이 더 좋아 보이면 받아들여 내 제안을 다듬어도 좋아요.',
    html:`<div class="selfcheck">
       <div class="sc-row"><span class="sc-box">✓</span><b>누구에게</b> 제안하는지 밝혔다</div>
       <div class="sc-row"><span class="sc-box">✓</span><b>문제 상황</b>을 겪은 일로 구체적으로 썼다</div>
       <div class="sc-row"><span class="sc-box">✓</span><b>제안하는 내용과 이유</b>가 잘 드러난다</div>
       <div class="sc-row"><span class="sc-box">✓</span>소리 내어 읽어 <b>짜임이 어색한 문장</b>을 고쳤다</div>
       <div class="sc-row"><span class="sc-box">✓</span>제안하는 내용이 드러나는 <b>제목</b>을 붙였다</div>
-    </div>
-    <div class="ka-bub">친구의 제안이 더 좋아 보이면 <b class="mc">받아들여 내 제안을 다듬어도</b> 좋아요.</div>`},
+    </div>`},
 
   {tag:'② 일반화하기', t:'내 글을 누구에게 어떻게 전할까요',
    html:`<div class="stage-box">내가 쓴 글을 <b>누구에게</b>, <b>어떤 방법으로</b> 전할지 정해 말해 봐요.
