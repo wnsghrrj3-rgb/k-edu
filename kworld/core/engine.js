@@ -2,9 +2,10 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as BGU from 'three/addons/utils/BufferGeometryUtils.js';
+import { applyAtmosphere } from './atmosphere.js';
 
 export class Engine {
-  constructor(canvas) {
+  constructor(canvas, atmosphere) {
     this.canvas = canvas;
     const r = this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     r.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -20,6 +21,8 @@ export class Engine {
     sun.position.set(-34, 26, 30); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
     const sc = sun.shadow.camera; sc.left = -60; sc.right = 60; sc.top = 60; sc.bottom = -60; sc.near = 1; sc.far = 160; sun.shadow.bias = -0.0006;
     this.scene.add(sun); this.scene.add(sun.target);
+    this.atmosphere = atmosphere;
+    if (atmosphere === 'warm-daylight') applyAtmosphere(this);
     this.colliders = [];          // Box3 (col_*)
     this.interactables = new Map(); // id -> { type, id, obj, box, kind }
     this.areas = new Map();       // id -> Vector3
@@ -47,7 +50,9 @@ export class Engine {
     new THREE.TextureLoader().load(url, (t) => {
       t.mapping = THREE.EquirectangularReflectionMapping; t.colorSpace = THREE.SRGBColorSpace;
       this.scene.environment = pmrem.fromEquirectangular(t).texture; this.scene.environmentIntensity = 0.85;
-      this.scene.background = t; this.scene.backgroundBlurriness = 0.02;
+      if (!this.atmosphere) { this.scene.background = t; this.scene.backgroundBlurriness = 0.02; }
+      if (this.atmosphere) t.dispose();
+      pmrem.dispose();
     });
   }
   /** GLB를 읽어 정적 메시는 재질별로 합치고, ix_* 는 개별 오브젝트로 남긴다 */

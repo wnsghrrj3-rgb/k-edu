@@ -16,7 +16,7 @@ export class Game {
     [this.world, this.items, this.npcs, this.why, this.check, this.missions] = await Promise.all(['world', 'items', 'npcs', 'why', 'check', 'missions'].map((n) => J(this.base + n + '.json')));
     this.mi = 0; this.missionStart = performance.now(); this.hintShown = false;
     this.hunger = this.world.hunger.start;
-    this.e = new Engine(document.getElementById('c'));
+    this.e = new Engine(document.getElementById('c'), this.world.atmosphere);
     if (this.world.sky) this.e.loadSky(this.world.sky);
     if (this.world.height) await this.e.loadHeight(this.base + this.world.height);
     await this.e.loadWorld(this.base + this.world.glb, this.world.eye);
