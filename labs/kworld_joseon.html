@@ -27,7 +27,7 @@
 <body>
 <canvas id="c"></canvas>
 <div id="load">조선 거리를 불러오는 중…</div>
-<div id="hud"><span class="tag">케이월드 탐침 2</span><b>조선 시대 거리</b>길을 따라 걸어 보세요.<br><span id="pos">—</span></div>
+<div id="hud"><span class="tag">케이월드 탐침 3</span><b>조선 시대 거리</b>길을 따라 걸어 보세요.<br><span id="pos">—</span></div>
 <a id="back" href="javascript:history.back()">← 나가기</a>
 <div id="stick"><div id="knob"></div></div>
 <div id="hint">이동 W A S D / 방향키 · 둘러보기 마우스 드래그 · Shift 달리기</div>
@@ -35,13 +35,14 @@
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import * as BGU from 'three/addons/utils/BufferGeometryUtils.js';
 
 const canvas = document.getElementById('c');
 const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.05;
+renderer.toneMappingExposure = 1.0;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -53,9 +54,17 @@ const camera = new THREE.PerspectiveCamera(70, 1, 0.1, 300);
 const EYE = 1.55;
 
 // 빛: 하늘 반구 + 태양
-scene.add(new THREE.HemisphereLight(0xcfe6ff, 0x8a7a5a, 0.9));
-const sun = new THREE.DirectionalLight(0xfff1d6, 2.2);
-sun.position.set(-25, 40, 20);
+// 하늘 환경맵(HDRI 대용) — 반사·간접광
+const pmrem = new THREE.PMREMGenerator(renderer);
+new THREE.TextureLoader().load('./assets/kworld/sky.jpg', (t) => {
+  t.mapping = THREE.EquirectangularReflectionMapping; t.colorSpace = THREE.SRGBColorSpace;
+  scene.environment = pmrem.fromEquirectangular(t).texture;
+  scene.environmentIntensity = 0.85;
+  scene.background = t; scene.backgroundBlurriness = 0.02;
+});
+scene.add(new THREE.HemisphereLight(0xcfe6ff, 0x7a6a4a, 0.35));
+const sun = new THREE.DirectionalLight(0xfff1d6, 2.6);
+sun.position.set(-30, 40, 24);
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
 const sc = sun.shadow.camera; sc.left=-45; sc.right=45; sc.top=45; sc.bottom=-45; sc.near=1; sc.far=120;
@@ -66,21 +75,33 @@ scene.add(sun);
 const colliders = [];
 let spawn = new THREE.Vector3(-24, EYE, 0);
 
-new GLTFLoader().load('./assets/kworld/joseon_street.glb', (g) => {
+const V = new URLSearchParams(location.search).get('v') === '1' ? '' : '_v2';
+new GLTFLoader().load(`./assets/kworld/joseon_street${V}.glb`, (g) => {
+  // 재질별로 합쳐서 그리기 횟수 줄이기 (태블릿 프레임)
+  const groups = new Map();
+  g.scene.updateMatrixWorld(true);
   g.scene.traverse((o) => {
     if (o.isMesh) {
-      o.castShadow = true; o.receiveShadow = true;
-      if (o.material) { o.material.side = THREE.DoubleSide; }
       if (o.name.startsWith('col_')) {
-        o.updateWorldMatrix(true, false);
-        const b = new THREE.Box3().setFromObject(o);
-        b.expandByScalar(0.35);
-        colliders.push(b);
+        const b = new THREE.Box3().setFromObject(o); b.expandByScalar(0.3); colliders.push(b);
       }
+      let geo = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+      geo.applyMatrix4(o.matrixWorld);
+      for (const k of Object.keys(geo.attributes)) if (!['position','normal','uv'].includes(k)) geo.deleteAttribute(k);
+      if (!geo.attributes.uv) geo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(geo.attributes.position.count*2), 2));
+      const key = o.material.uuid;
+      if (!groups.has(key)) groups.set(key, {mat: o.material, geos: []});
+      groups.get(key).geos.push(geo);
     }
     if (o.name === 'spawn') { spawn = o.getWorldPosition(new THREE.Vector3()); spawn.y = EYE; }
   });
-  scene.add(g.scene);
+  for (const {mat, geos} of groups.values()) {
+    const merged = BGU.mergeGeometries(geos, false);
+    if (!merged) continue;
+    mat.side = THREE.DoubleSide; mat.envMapIntensity = 0.7;
+    const m = new THREE.Mesh(merged, mat); m.castShadow = true; m.receiveShadow = true;
+    scene.add(m);
+  }
   camera.position.copy(spawn);
   document.getElementById('load').remove();
 });
