@@ -181,14 +181,14 @@ window.KEDU_MAP["g4_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_social_u2_l06",
+     "lessonId": "g4_social_u2_l06_v1",
      "n": "6",
      "title": "[생각을 펼쳐요] 지역문제의 해결 정리",
      "sub": "① 지역문제의 해결",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/social/2단원_지역문제해결과지역알리기/g4_social_u2_l06_주제①정리.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
