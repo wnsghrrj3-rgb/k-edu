@@ -17,7 +17,7 @@
 | `sql/` | Supabase 수동 실행 SQL | **`sql/APPLIED.md`가 적용 이력 원장** — 새 SQL은 여기에 추가 |
 | `auth/ board/ classwork/ parent/ teacher/ admin/` | 계정·게시판·케이박스·학부모·교사·관리 | |
 | `live/` | 케이라이브 (실시간 모니터·스포트라이트) | `klive-core.js` 순수 로직 + 학생 `index.html` + 교사 `teacher.html` + `tests/` |
-| `terms/ privacy/ docs/` | 약관·개인정보·내부 문서 | |
+| `terms/ privacy/ docs/` | 약관·개인정보·내부 문서 | **케이히스토리(KEDU WORLD : HISTORY) 작업 시 `docs/kedu-world/KEDU_WORLD_HISTORY_MASTER.md`를 우선 참고** (상세: handoff `kworld/케이월드_설계_v1.md`) |
 | `archive/` | 폐기 콘텐츠 보관 | old-math-content |
 | `audit/` + `.github/workflows/audit*.yml` | **케이점검** — 전 영역 자동 점검(규칙 r01~r20)·`/admin` 보고·승인 뒤 자동 수정 | `audit/README.md` 가 정본. 새 영역은 `audit/config.json` areas 에 한 줄 |
 
