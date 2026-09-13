@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<!--
+K-edu 사회 4-2 · 2단원 지역문제를 해결하고 지역을 알리는 노력 · 주제① 지역문제의 해결 · 5~6차시(l04)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [4사09-01] · 교과서 p.69~73 · 지도서(대단원2 5~6차시 p.135~141) 근거
+2단원 색 #B45309 (중학년 ka- 엔진 승계 · 변수명 유지 · 엔진 무수정)
+
+직접조작: 더한 값이 아니라 가장 낮은 자리가 가르는 판
+  ⭐ l01의 판은 학생이 놓아 둔 것을 대신 옮겼고, l02의 판은 세어 주고도 그 자리를 비워 두었으며,
+     l03의 판은 접으면 원인 줄이 사라졌다. 세 판 모두 판을 가르는 값이 「몇 개인가」였다.
+     이번 판은 다르다 — 판을 가르는 것은 더한 값이 아니라 네 기준 가운데 가장 낮은 한 자리다.
+  ⭐ 방안 셋을 재면 셋 다 「멈춰」 칸에 선다. 더한 값이 10·9·8로 서로 다른데도 셋이 모두 멈춰 있다.
+     더한 값이 가장 큰 방안도 멈춰 있다 — 부족한 자리가 하나라도 있으면 서지 못하기 때문이다.
+  ⭐ 보완하면 그 방안이 「계속」 칸으로 옮겨 가는데, 올라가는 자리는 방안마다 다르다.
+     올라갈 자리를 못박은 상수가 코드에 아예 없다 — pcLow 한 줄이 그때그때 가장 낮은 자리를 고른다.
+  ⭐ ㉰는 낮은 자리가 둘이라 한 번 보완해도 여전히 멈춰 있다. 하나라도 낮으면 서지 못한다.
+  ⭐ 어떤 길에서는 더한 값이 같은 두 방안이 서로 다른 칸에 서고, 판이 그것을 직접 적는다.
+     서는지를 담는 상태가 코드에 없다 — pcStands 한 줄이 정하고, PC_BASE 를 읽는 자리는 pcVal 단 하나다.
+     근거 = 교과서 「각 해결 방안의 장단점을 비교하고 … 알맞은 방안을 정합니다」 + 「부족한 부분이 있다면 보완하여 수정」.
+
+지도서 근거: [학습 목표] 우리 지역에서 일어나는 문제의 해결 방안을 찾을 수 있다 /
+  [동기 유발] 자전거 도로가 부족한 지역문제 — 모든 도로를 좁히자는 의견 → 교통 혼잡 문제가 일어날 수 있어 보완이 필요 /
+  [평가 기준] 효과가 큰가요 · 비용이 적게 드나요 · 실천할 수 있나요 · 누군가에게 피해를 주지 않나요 /
+  [예시 답안] 방안 셋과 장단점·보완할 점 / [꼭 기억해요 1·2] / [풍덩] 공유로 지역문제를 해결해요 / [차시 예고]
+
+정직 원칙: ㉠ 해결 방안 셋과 점수는 판이 정해 둔 값이다 — 우리 모둠이 실제로 매긴 것이 아니다(캡션 상시).
+  ㉡ 방안과 보완 문면은 교과서 수업에서 다루는 예를 옮겼다 — 판이 지어낸 일이 없다.
+  ㉢ 붙임쪽지에 직접 쓰고 모둠에서 토의해 정하는 활동은 교실 몫이다(완료 카드 명시).
+  ㉣ 실제 지역 이름·누리집 주소·신문사·날짜는 옮기지 않는다. 평가 기준은 교과서가 든 넷까지만 둔다.
+설계 원칙: 7~8차시 침범 0(「실천해」는 차시 예고 한 자리 · 실천 결과 확인 0) / 주제②·3단원 침범 0 /
+  1단원 재현 0 / 교사용 참고 자료 0(의사 결정 그리드·명목 집단법·육색 사고 모자·따릉이·참고 도서 0) /
+  실제 지역 이름 0 · 네 자리 연도 0 · 비율 0 · 금액 0 / 정서 — 겁주는 어휘 0 · 「틀렸」 0.
+⚠️ 체인: l03 → l04 재배선 완료. l04의 goNextLesson = 허브(l05 미양산).
+-->
+<html lang="ko">
+<head>
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>[할 수 있어요] 우리 지역에서 일어나는 문제의 해결 방안을 찾아볼까요 · 사회 4-2</title>
+<meta name="kedu-lesson-id" content="g4_social_u2_l04_v1">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#B45309; --green-d:#92400E; --cyan:#0891B2;
+  --bg:#FFF7ED; --bub:#FFEDD5; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#F57F17; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes drawLine{to{transform:scaleX(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ka-lb{background:#F1F5F9;border:none;padding:7px 12px;border-radius:10px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;font-family:inherit;font-weight:700;color:#475569;flex-shrink:0;font-size:13px}
+.ka-lb svg{width:15px;height:15px}
+.ka-bar{flex:1;height:5px;background:var(--bg);border-radius:999px;overflow:hidden}
+.ka-bar>div{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:999px;transition:width .35s ease;width:6%}
+.ka-pg{color:var(--green);font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;flex-shrink:0}
+.ka-sc{background:var(--amber-bg);color:var(--amber);padding:4px 12px;border-radius:999px;display:flex;align-items:center;gap:5px;flex-shrink:0;font-weight:700}
+.ka-sc svg{width:14px;height:14px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px}
+.ka-sc-u{font-size:12px}
+
+/* 메인 */
+.ka-m{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow-y:auto}
+.ka-tags{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ka-bg{background:var(--amber-bg);color:var(--amber);padding:5px 14px;border-radius:30px;font-size:13px;
+  display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.ka-bg.s2{background:#E0F2FE;color:#0369A1}
+.ka-bg.s3{background:#EDE9FE;color:#6D28D9}
+.ka-bg.s4{background:#FCE7F3;color:#BE185D}
+.ka-bg.s5{background:#FFEDD5;color:var(--green)}
+.ka-bg svg{width:13px;height:13px}
+.ka-meta{font-size:13px;color:var(--muted)}
+.ka-t{font-size:clamp(20px,3.4vw,29px);margin-bottom:16px;line-height:1.4;color:var(--green);letter-spacing:-.3px;font-weight:700;animation:fadeUp .4s .15s ease both}
+.ka-bub{background:var(--bub);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);line-height:1.7;
+  margin-bottom:16px;border-left:4px solid var(--green);animation:fadeUp .4s .3s ease both}
+.ka-emph{position:relative;display:inline-block;font-weight:700;color:var(--green)}
+.ka-emph::after{content:'';position:absolute;bottom:2px;left:0;right:0;height:3px;background:var(--red);border-radius:2px;transform:scaleX(0);transform-origin:left;animation:drawLine .6s .6s ease forwards}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(16px,2.6vw,21px);font-weight:700;line-height:1.6;margin-bottom:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:640px}
+.opt{background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:13px 14px;font-size:clamp(14px,2.3vw,17px);
+  font-weight:500;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:var(--green);background:#FFEDD5;animation:pop .4s ease}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;font-size:clamp(14px,2.3vw,17px);line-height:1.6;text-align:center;animation:fadeUp .35s ease both;max-width:640px}
+.fb.ok{color:var(--green);font-weight:700}
+.hint{margin-top:12px;background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(13px,2.2vw,16px);
+  line-height:1.6;color:#0C4A6E;max-width:560px;animation:fadeUp .35s ease both}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:620px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFF;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:clamp(14px,2.3vw,17px);line-height:1.5}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(180,83,9,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+/* 조작 판 — 더한 값이 아니라 가장 낮은 자리가 가르는 판 */
+.pc-wrap{max-width:760px;width:100%;margin:0 auto}
+.pc-head{background:#FFEDD5;color:#9A3412;font-weight:800;text-align:center;border-radius:10px;padding:7px 10px;
+  font-size:clamp(13px,2.1vw,16px);margin-bottom:8px;word-break:keep-all}
+.pc-rows{display:flex;flex-direction:column;gap:7px}
+.pc-row{border:2px solid #CBD5E1;border-radius:12px;background:#F8FAFC;padding:7px 9px;display:flex;flex-direction:column;gap:5px}
+.pc-row[data-met="1"]{background:#fff}
+.pc-row[data-stands="1"]{border-color:#EA580C}
+.pc-name{font-weight:700;font-size:clamp(12px,2vw,15px);color:#334155;line-height:1.35;word-break:keep-all;display:flex;gap:6px;align-items:baseline}
+.pc-mark{font-weight:800;color:#9A3412;flex-shrink:0}
+.pc-cells{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.pc-cell{border:1.5px solid #E2E8F0;border-radius:8px;background:#fff;padding:4px 3px;text-align:center;line-height:1.3}
+.pc-cell[data-low="1"]{border-color:#F59E0B;background:#FFFBEB}
+.pc-cn{display:block;font-size:clamp(9px,1.6vw,11px);color:#64748B;font-weight:700;letter-spacing:-.2px}
+.pc-cell b{font-family:'Nunito',sans-serif;font-size:clamp(13px,2.2vw,17px);color:#334155}
+.pc-cell[data-low="1"] b{color:#B45309}
+.pc-lack{display:block;font-size:clamp(8px,1.4vw,10px);color:#B45309;font-weight:800}
+.pc-blank{background:#F1F5F9;border:1.5px dashed #CBD5E1;border-radius:7px;padding:6px 8px;
+  font-size:clamp(11px,1.9vw,14px);color:#94A3B8;font-weight:600;text-align:center}
+.pc-tail{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.pc-sum{font-size:clamp(11px,1.9vw,14px);color:#475569;font-weight:600}
+.pc-sum b{font-family:'Nunito',sans-serif;font-size:clamp(13px,2.1vw,16px);color:#334155}
+.pc-box{font-weight:800;font-size:clamp(11px,1.9vw,14px);border-radius:999px;padding:3px 12px;background:#F1F5F9;color:#94A3B8}
+.pc-box[data-box="stop"]{background:#F1F5F9;color:#64748B;border:1.5px solid #CBD5E1}
+.pc-box[data-box="go"]{background:#FFF7ED;color:#7C2D12;border:1.5px solid #FB923C}
+.pc-btn{background:#FFEDD5;border:2px solid #EA580C;color:#9A3412;font-weight:800;font-family:inherit;border-radius:9px;
+  padding:6px 8px;cursor:pointer;font-size:clamp(11px,1.9vw,14px);word-break:keep-all}
+.pc-btn.fix{background:#FFFBEB;border-color:#F59E0B;color:#92400E}
+.pc-fixnote{background:#FFF7ED;border-left:3px solid #FB923C;border-radius:7px;padding:6px 8px;
+  font-size:clamp(11px,1.9vw,14px);line-height:1.5;color:#7C2D12;font-weight:600;word-break:keep-all}
+.pc-lead{font-weight:800;color:#9A3412;font-size:clamp(11px,1.8vw,13px);display:block;margin-bottom:2px}
+.pc-twin{margin-top:8px;border-radius:11px;padding:9px 12px;font-size:clamp(12px,2.1vw,15px);line-height:1.5;font-weight:700;
+  border:2px solid #FB923C;background:#FFF7ED;color:#7C2D12;word-break:keep-all}
+.pc-tell{margin-top:8px;border-radius:12px;padding:9px 13px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;background:#F0F9FF;border-left:4px solid var(--cyan)}
+.pc-ask{border:2px solid var(--line);border-radius:12px;padding:10px 14px;background:#FFFBF5;margin-top:9px;font-size:clamp(13px,2.2vw,16px);line-height:1.6}
+.pc-opts{display:grid;grid-template-columns:1fr;gap:8px;margin-top:9px}
+.pc-opt{background:#F8FAFC;border:2px solid var(--line);border-radius:11px;padding:10px 12px;font-family:inherit;
+  font-size:clamp(13px,2.2vw,16px);font-weight:600;cursor:pointer;text-align:left;color:var(--ink)}
+.pc-opt:hover{border-color:var(--green);background:var(--bub)}
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+  .pc-cells{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#F57F17"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식, 사람 형상 대신 칸과 말풍선 ===== */
+const SVG = {
+  // [동기 유발] 의견과 보완
+  talk:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFF7ED"/>
+    <rect x="8" y="12" width="88" height="30" rx="8" fill="#FED7AA"/><path d="M28 42 L24 52 L38 42 Z" fill="#FED7AA"/>
+    <text x="52" y="25" font-size="6.6" fill="#7C2D12" text-anchor="middle" font-weight="800">모든 도로를 좁혀</text>
+    <text x="52" y="35" font-size="6.6" fill="#7C2D12" text-anchor="middle" font-weight="800">자전거 도로를 만들자</text>
+    <rect x="56" y="56" width="96" height="30" rx="8" fill="#E0F2FE"/><path d="M132 56 L136 46 L122 56 Z" fill="#E0F2FE"/>
+    <text x="104" y="69" font-size="6.6" fill="#0E7490" text-anchor="middle" font-weight="800">그러면 교통 혼잡 문제가</text>
+    <text x="104" y="79" font-size="6.6" fill="#0E7490" text-anchor="middle" font-weight="800">생길 수 있어요</text></svg>`,
+  // [차례] 네 걸음
+  steps:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F8FAFC"/>
+    <rect x="6" y="34" width="33" height="26" rx="6" fill="#fff" stroke="#B45309" stroke-width="1.3"/><text x="22" y="45" font-size="6.4" fill="#7C2D12" text-anchor="middle" font-weight="800">방안</text><text x="22" y="54" font-size="6.4" fill="#7C2D12" text-anchor="middle" font-weight="800">제시</text>
+    <path d="M41 47 L46 47" stroke="#EA580C" stroke-width="2" stroke-linecap="round"/>
+    <rect x="48" y="34" width="33" height="26" rx="6" fill="#fff" stroke="#0891B2" stroke-width="1.3"/><text x="64" y="45" font-size="6.4" fill="#0E7490" text-anchor="middle" font-weight="800">방안</text><text x="64" y="54" font-size="6.4" fill="#0E7490" text-anchor="middle" font-weight="800">평가</text>
+    <path d="M83 47 L88 47" stroke="#EA580C" stroke-width="2" stroke-linecap="round"/>
+    <rect x="90" y="34" width="33" height="26" rx="6" fill="#fff" stroke="#B45309" stroke-width="1.3"/><text x="106" y="45" font-size="6.4" fill="#7C2D12" text-anchor="middle" font-weight="800">의견</text><text x="106" y="54" font-size="6.4" fill="#7C2D12" text-anchor="middle" font-weight="800">조정</text>
+    <path d="M125 47 L130 47" stroke="#EA580C" stroke-width="2" stroke-linecap="round"/>
+    <rect x="128" y="34" width="26" height="26" rx="6" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.6"/><text x="141" y="50" font-size="6.6" fill="#7C2D12" text-anchor="middle" font-weight="800">선택</text>
+    <text x="80" y="18" font-size="7" fill="#334155" text-anchor="middle" font-weight="800">이 차례로 정해요</text>
+    <text x="80" y="82" font-size="6.8" fill="#64748B" text-anchor="middle" font-weight="700">대화와 타협으로 의견을 조정해요</text></svg>`,
+  // [평가 기준] 네 자리
+  bars:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFFBF5"/>
+    <rect x="14" y="52" width="24" height="26" rx="3" fill="#FDBA74"/><text x="26" y="88" font-size="6.4" fill="#7C2D12" text-anchor="middle" font-weight="800">효과</text>
+    <rect x="48" y="44" width="24" height="34" rx="3" fill="#FDBA74"/><text x="60" y="88" font-size="6.4" fill="#7C2D12" text-anchor="middle" font-weight="800">비용</text>
+    <rect x="82" y="64" width="24" height="14" rx="3" fill="#F59E0B"/><text x="94" y="88" font-size="6.4" fill="#B45309" text-anchor="middle" font-weight="800">실천</text>
+    <rect x="116" y="44" width="24" height="34" rx="3" fill="#FDBA74"/><text x="128" y="88" font-size="6.4" fill="#7C2D12" text-anchor="middle" font-weight="800">피해 없음</text>
+    <path d="M10 78 L150 78" stroke="#CBD5E1" stroke-width="1.2"/>
+    <rect x="70" y="10" width="80" height="16" rx="6" fill="#FEF3C7"/><text x="110" y="21" font-size="6.6" fill="#92400E" text-anchor="middle" font-weight="800">여기가 부족한 자리예요</text>
+    <path d="M94 28 L94 40" stroke="#F59E0B" stroke-width="1.6" stroke-linecap="round"/><path d="M90 36 L94 41 L98 36" stroke="#F59E0B" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>`,
+  // [보완] 한 자리가 오른다
+  fixup:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F8FAFC"/>
+    <rect x="18" y="58" width="28" height="16" rx="3" fill="#CBD5E1"/><text x="32" y="84" font-size="6.6" fill="#64748B" text-anchor="middle" font-weight="800">부족한 자리</text>
+    <path d="M54 66 L78 66" stroke="#EA580C" stroke-width="2.4" stroke-linecap="round"/><path d="M72 60 L78 66 L72 72" stroke="#EA580C" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <rect x="88" y="44" width="28" height="30" rx="3" fill="#FB923C"/><text x="102" y="84" font-size="6.6" fill="#7C2D12" text-anchor="middle" font-weight="800">한 칸 올라가요</text>
+    <path d="M14 74 L146 74" stroke="#CBD5E1" stroke-width="1.2"/>
+    <text x="80" y="20" font-size="7" fill="#334155" text-anchor="middle" font-weight="800">부족한 부분을 보완해 수정해요</text>
+    <text x="80" y="32" font-size="6.6" fill="#64748B" text-anchor="middle" font-weight="700">보완할 자리는 방안마다 달라요</text></svg>`,
+  // [두 칸] 멈춰와 계속
+  keep:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFF7ED"/>
+    <rect x="10" y="20" width="64" height="58" rx="8" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1.6"/>
+    <text x="42" y="36" font-size="8" fill="#64748B" text-anchor="middle" font-weight="800">멈춰</text>
+    <rect x="20" y="44" width="44" height="9" rx="2.5" fill="#CBD5E1"/><rect x="20" y="58" width="44" height="9" rx="2.5" fill="#CBD5E1"/>
+    <rect x="86" y="20" width="64" height="58" rx="8" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.6"/>
+    <text x="118" y="36" font-size="8" fill="#7C2D12" text-anchor="middle" font-weight="800">계속</text>
+    <rect x="96" y="44" width="44" height="9" rx="2.5" fill="#FDBA74"/>
+    <text x="80" y="90" font-size="6.8" fill="#334155" text-anchor="middle" font-weight="800">세 장이 모일 때까지 고쳐 봐요</text></svg>`,
+  // [풍덩] 공유
+  share:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F1F5F9"/>
+    <circle cx="46" cy="46" r="20" fill="#fff" stroke="#B45309" stroke-width="1.6"/><text x="46" y="50" font-size="7" fill="#7C2D12" text-anchor="middle" font-weight="800">나</text>
+    <circle cx="114" cy="46" r="20" fill="#fff" stroke="#0891B2" stroke-width="1.6"/><text x="114" y="50" font-size="7" fill="#0E7490" text-anchor="middle" font-weight="800">이웃</text>
+    <path d="M68 46 L92 46" stroke="#EA580C" stroke-width="2.4" stroke-linecap="round"/>
+    <rect x="46" y="8" width="68" height="16" rx="6" fill="#FFEDD5"/><text x="80" y="19" font-size="6.6" fill="#7C2D12" text-anchor="middle" font-weight="800">나누고 빌려 써요</text>
+    <text x="80" y="86" font-size="7" fill="#334155" text-anchor="middle" font-weight="800">공유는 지역문제 해결의 좋은 대안이에요</text></svg>`,
+  // [정리] 마침
+  done:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFF7ED"/>
+    <rect x="30" y="16" width="100" height="56" rx="8" fill="#fff" stroke="#B45309" stroke-width="1.4"/>
+    <path d="M62 44 L72 54 L98 30" stroke="#B45309" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+    <text x="80" y="88" font-size="7.4" fill="#7C2D12" text-anchor="middle" font-weight="800">알맞은 해결 방안을 정했어요</text></svg>`
+};
+function sceneCard(key,cap){return `<div class="scene">${SVG[key]}<div class="cap">${cap}</div></div>`;}
+
+/* ===== 직접 조작: 더한 값이 아니라 가장 낮은 자리가 가르는 판 =====
+   방안 셋을 평가 기준 넷으로 재면 셋 다 「멈춰」 칸에 선다 — 더한 값이 10·9·8로 달라도 셋이 모두 멈춰 있다.
+   ⭐ 판을 가르는 것은 더한 값이 아니라 가장 낮은 한 자리다(pcStands 한 줄 · PC_BAR).
+   ⭐ 보완하면 그 방안의 가장 낮은 자리가 한 칸 오른다. 올라갈 자리를 못박은 상수가 코드에 없다 —
+      pcLow 한 줄이 그때그때 고르고, PC_BASE 를 읽는 자리는 pcVal 단 하나다.
+   ⭐ ㉰는 낮은 자리가 둘이라 한 번 보완해도 여전히 멈춰 있다.
+   ⭐ 「계속/멈춰」를 담는 상태가 코드에 아예 없다 · 처리기 전량에 pcSum 을 읽는 자리 0.
+   난수 0 · 조작에 점수 0.
+*/
+const PC_PLANS = 3;
+const PC_CRITS = 4;
+const PC_MARK = ["㉮","㉯","㉰"];
+const PC_PLAN = [
+  "학교에서 분리배출의 중요성을 교육해요",
+  "쓰레기 문제의 심각성을 알리는 캠페인을 해요",
+  "쓰레기 종량제 봉투의 가격을 올려요"
+];
+const PC_CRIT = ["효과가 큰가요?","비용이 적게 드나요?","실천할 수 있나요?","누군가에게 피해를 주지 않나요?"];
+const PC_CRIT_S = ["효과","비용","실천","피해 없음"];
+const PC_BASE = [[1,3,3,3],[3,2,1,3],[3,3,1,1]];
+const PC_BAR = 2;
+const PC_FIXNOTE = [
+  ["가정에도 분리배출의 중요성을 알리는 자료를 만들어 안내해요","","",""],
+  ["","","사전에 캠페인의 구체적인 방법을 충분히 협의하고 캠페인을 홍보해요",""],
+  ["","","공공 기관의 협조를 구하는 제안서를 써요","분리배출을 잘하는 주민에게 지역 시장에서 쓸 수 있는 포인트를 쌓아 줘요"]
+];
+const PC_ALL = (1 << PC_PLANS) - 1;
+const PC_BLANK = "아직 재지 않았어요";
+const PC_SAY_MET = "이미 재어 본 방안이에요. 판은 그대로예요.";
+const PC_SAY_ORDER_F = "방안 셋을 모두 재어 본 뒤에 보완할 수 있어요.";
+const PC_SAY_STANDS = "이미 「계속」 칸에 서 있는 방안이에요. 판은 그대로예요.";
+const PC_SAY_ORDER_R = "먼저 방안 셋이 모두 「계속」 칸에 서게 해 봐요.";
+const PC_SAY_READDONE = "이미 정한 자리예요. 판은 그대로예요.";
+const PC_SAY_ORDER_FIN = "먼저 판을 읽어 봐요.";
+const PC_TELL_MET = "평가 기준 넷으로 재어 보았어요.";
+const PC_TELL_FIX = "부족한 자리 하나를 보완했어요.";
+const PC_READQ = [
+  "점수를 더한 값이 클수록 먼저 「계속」 칸에 서요",
+  "판이 「계속」 칸에 설 방안을 미리 정해 두었어요",
+  "「계속」 칸에 서는 것을 정하는 건 더한 값이 아니라 가장 낮은 자리예요"
+];
+const PC_READ_OK = 2;
+const PC_READ_BAD = "더한 값이 가장 큰 방안이 처음에 어느 칸에 있었는지 다시 살펴봐요.";
+const PC_FINQ = [
+  "다양한 해결 방안이 제시되면 각 해결 방안의 장단점을 비교하고, 대화와 타협으로 의견을 조정한 후 알맞은 방안을 정해요",
+  "해결 방안은 가장 먼저 떠오른 것으로 정하면 돼요",
+  "해결 방안은 점수가 높은 것 하나만 남기고 나머지는 버리면 돼요"
+];
+const PC_FIN_OK = 0;
+const PC_FIN_BAD = "방안을 재고 부족한 자리를 보완한 차례를 떠올려 봐요.";
+
+function pcMetHas(st,p){ return (st.pcMet & (1 << p)) !== 0; }
+function pcVal(st,p,c){ return PC_BASE[p][c] + ((st.pcUp[p] >> c) & 1); }   // ⭐ PC_BASE 를 읽는 자리는 코드에 여기 단 하나
+function pcMin(st,p){ let m = 9; for(let c=0;c<PC_CRITS;c++){ const v = pcVal(st,p,c); if(v < m) m = v; } return m; }
+function pcSum(st,p){ let s = 0; for(let c=0;c<PC_CRITS;c++){ s += pcVal(st,p,c); } return s; }
+function pcLow(st,p){ const m = pcMin(st,p); for(let c=0;c<PC_CRITS;c++){ if(pcVal(st,p,c) === m) return c; } return 0; }
+function pcStands(st,p){ return pcMin(st,p) >= PC_BAR; }   // ⭐ 「계속/멈춰」를 담는 상태가 코드에 0 · 이 한 줄이 그때그때 정한다
+function pcStandN(st){ let n = 0; for(let p=0;p<PC_PLANS;p++){ if(pcStands(st,p)) n++; } return n; }
+function pcTwin(st){
+  for(let a=0;a<PC_PLANS;a++){ for(let b=a+1;b<PC_PLANS;b++){
+    if(pcSum(st,a) === pcSum(st,b) && pcStands(st,a) !== pcStands(st,b)) return [a,b];
+  } }
+  return null;
+}
+function pcStage(st){
+  if(st.pcMet !== PC_ALL) return "measure";
+  if(pcStandN(st) < PC_PLANS) return "fix";
+  if(st.pcRead == null) return "read";
+  if(st.pcFin == null) return "fin";
+  return "end";
+}
+
+function pcRows(st){
+  const stage = pcStage(st);
+  let b = '';
+  for(let p=0;p<PC_PLANS;p++){
+    const met = pcMetHas(st,p);
+    const stands = met && pcStands(st,p);
+    let cells = '';
+    if(met){
+      const low = pcLow(st,p);
+      for(let c=0;c<PC_CRITS;c++){
+        const v = pcVal(st,p,c);
+        const mark = (!stands && c === low);
+        cells += `<div class="pc-cell" data-crit="${c}" data-val="${v}" data-low="${mark?1:0}"><span class="pc-cn">${PC_CRIT_S[c]}</span><b>${v}</b>${mark?`<span class="pc-lack">부족한 자리</span>`:''}</div>`;
+      }
+      cells = `<div class="pc-cells">${cells}</div>`;
+    } else {
+      cells = `<div class="pc-blank">${PC_BLANK}</div>`;
+    }
+    let notes = '';
+    for(let c=0;c<PC_CRITS;c++){
+      if(((st.pcUp[p] >> c) & 1) !== 0) notes += `<div class="pc-fixnote"><span class="pc-lead">보완한 점</span>${PC_FIXNOTE[p][c]}</div>`;
+    }
+    let btn = '';
+    if(!met) btn = `<button class="pc-btn" data-act="measure" data-plan="${p}" onclick="pcMeasure(${p})">재 보기</button>`;
+    else if(stage === "fix" && !stands) btn = `<button class="pc-btn fix" data-act="fix" data-plan="${p}" onclick="pcFix(${p})">보완하기</button>`;
+    const tail = `<div class="pc-tail"><span class="pc-sum">${met?`점수를 더한 값 <b>${pcSum(st,p)}</b>`:'&nbsp;'}</span><span class="pc-box" data-box="${met?(stands?'go':'stop'):'none'}">${met?(stands?'계속':'멈춰'):'아직'}</span></div>`;
+    b += `<div class="pc-row" data-plan="${p}" data-met="${met?1:0}" data-stands="${stands?1:0}" data-sum="${met?pcSum(st,p):-1}">
+      <div class="pc-name"><span class="pc-mark">${PC_MARK[p]}</span>${PC_PLAN[p]}</div>${cells}${notes}${tail}${btn}</div>`;
+  }
+  return `<div class="pc-rows">${b}</div>`;
+}
+
+function pcPanel(st){
+  const stage = pcStage(st);
+  const tw = (st.pcMet === PC_ALL) ? pcTwin(st) : null;
+  const twin = tw ? `<div class="pc-twin" data-twin="1">${PC_MARK[tw[0]]}와 ${PC_MARK[tw[1]]}는 <b>점수를 더한 값이 같은데</b>, 한쪽만 「계속」 칸에 섰어요.</div>` : '';
+  let ask = '';
+  if(stage === "measure"){
+    ask = `<div class="pc-ask" data-step="measure"><b>해결 방안을 눌러 평가 기준 넷으로 재어 봐요.</b>
+      <div class="note" style="text-align:left;margin-top:5px">어느 방안부터 재어도 괜찮아요. 점수를 더한 값과 서는 칸을 함께 살펴봐요.</div></div>`;
+  } else if(stage === "fix"){
+    ask = `<div class="pc-ask" data-step="fix"><b>세 방안이 모두 「멈춰」 칸에 있어요. 부족한 자리를 보완해 「계속」 칸으로 옮겨 봐요.</b>
+      <div class="note" style="text-align:left;margin-top:5px">어느 방안부터 보완해도 괜찮아요. 보완하면 그 방안에서 부족했던 자리가 한 칸 올라가요.</div></div>`;
+  } else if(stage === "read"){
+    ask = `<div class="pc-ask" data-step="read"><b>세 방안이 모두 「계속」 칸에 섰어요. 판이 알려 준 것은 무엇일까요?</b>
+      <div class="pc-opts">${PC_READQ.map((t,i)=>`<button class="pc-opt" onclick="pcRead(${i})">${t}</button>`).join('')}</div></div>`;
+  } else if(stage === "fin"){
+    ask = `<div class="pc-ask" data-step="fin"><b>그렇다면 지역문제의 해결 방안은 어떻게 정할까요?</b>
+      <div class="pc-opts">${PC_FINQ.map((t,i)=>`<button class="pc-opt" onclick="pcFin(${i})">${t}</button>`).join('')}</div></div>`;
+  } else {
+    ask = `<div class="pc-ask" data-fin="1" style="border-color:#86EFAC;background:#F0FDF4">
+      <b style="color:#166534">다양한 해결 방안이 제시되면 각 해결 방안의 장단점을 비교하고, 대화와 타협으로 의견을 조정한 후 알맞은 방안을 정해요.</b> 부족한 부분이 있으면 버리지 않고 보완하여 수정해요.
+      <div class="note" style="text-align:left;margin-top:5px">※ 붙임쪽지에 직접 쓰고 모둠 친구들과 토의해 해결 방안을 정하는 활동은 교실에서 친구들과 <b>직접</b> 해요.</div></div>`;
+  }
+  const tell = st.pcTell ? `<div class="pc-tell">${st.pcTell}</div>` : '';
+  const warn = st.pcMsg ? `<div class="fb" style="color:#DC2626;font-weight:700">${st.pcMsg}</div>` : '';
+  return `<div class="pc-wrap">
+    <div class="pc-head">우리 모둠이 낸 해결 방안 · 「계속」 칸에 선 방안 <b data-standn="${pcStandN(st)}">${pcStandN(st)}</b>개</div>${pcRows(st)}${twin}${tell}${ask}${warn}
+    <div class="note" style="margin-top:8px">※ 해결 방안 셋과 점수는 <b>판이 정해 둔 값</b>이에요. 우리 모둠이 실제로 매긴 것이 아니에요. 방안과 보완 문면은 교과서 수업에서 다루는 예를 옮긴 것이에요.</div>
+  </div>`;
+}
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "2단원 지역문제를 해결하고 지역을 알리는 노력 · 주제① 지역문제의 해결";
+
+// 문제 정의(확인 4 + 적용 4) — 정답 분산 [0,2,1,3,3,1,2,0]
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"지역문제의 <b>해결 방안</b>은 언제 찾을까요?",
+   opts:["문제가 일어난 원인을 알아본 후에 찾아요","문제를 찾기 전에 먼저 찾아요","해결 방안은 찾지 않아도 돼요","원인과 상관없이 아무 때나 찾아요"], correct:0, pts:POINTS_BASIC,
+   reason:"지역에서 문제가 일어난 원인을 알아본 후에 해결 방안을 찾아요.",
+   h1:"지난 시간에 무엇을 알아보았는지 떠올려 봐요.",
+   h2:"원인을 알아야 그에 맞는 방안이 나와요."},
+  {stem:"다양한 해결 방안이 제시되었을 때 해야 할 일로 알맞은 것은?",
+   opts:["가장 먼저 떠오른 방안으로 정해요","의견이 다르면 그만둬요","각 해결 방안의 장단점을 비교해요","방안을 모두 버려요"], correct:2, pts:POINTS_BASIC,
+   reason:"다양한 해결 방안이 제시되면 각 해결 방안의 장단점을 비교하고, 대화와 타협으로 의견을 조정한 후 알맞은 방안을 정해요.",
+   h1:"바로 하나를 고르지 않아요.",
+   h2:"방안마다 좋은 점과 아쉬운 점을 견주어 봐요."},
+  {stem:"해결 방안을 평가하는 기준으로 알맞지 <b>않은</b> 것은?",
+   opts:["효과가 큰가요?","누가 먼저 말했나요?","비용이 적게 드나요?","실천할 수 있나요?"], correct:1, pts:POINTS_BASIC,
+   reason:"효과성, 경제성, 실천 가능성 등이 평가 기준이에요. 누가 먼저 말했는지는 기준이 아니에요.",
+   h1:"방안 자체를 살펴보는 기준이어야 해요.",
+   h2:"말한 사람이 누구인지는 방안의 좋고 나쁨과 관계가 없어요."},
+  {stem:"해결 방안의 장단점을 비교하고 서로의 생각을 조정하는 까닭은?",
+   opts:["빨리 끝내려고","한 사람의 뜻대로 하려고","방안의 수를 줄이려고","더 합리적인 해결 방안을 찾으려고"], correct:3, pts:POINTS_BASIC,
+   reason:"더 합리적인 해결 방안을 찾기 위해서예요.",
+   h1:"견주어 보는 일이 무엇을 위한 것일지 떠올려 봐요.",
+   h2:"더 나은 방안에 다다르려는 거예요."},
+  // 4단계 적용 (+15)
+  {stem:"판에서 점수를 더한 값이 가장 큰 ㉮가 처음에 <b>「멈춰」 칸</b>에 있었던 까닭은?",
+   opts:["더한 값이 가장 작았기 때문이에요","판이 ㉮를 뒤로 미뤘기 때문이에요","아직 재어 보지 않았기 때문이에요","네 기준 가운데 한 자리가 부족했기 때문이에요"], correct:3, pts:POINTS_APPLY,
+   reason:"더한 값이 커도 부족한 자리가 하나라도 있으면 아직 「계속」 칸에 서지 못해요.",
+   h1:"㉮의 네 점수를 하나씩 떠올려 봐요.",
+   h2:"한 자리만 낮아도 판이 세워 주지 않았어요."},
+  {stem:"판에서 ㉰를 <b>한 번 보완</b>했는데도 여전히 「멈춰」 칸에 있었던 까닭은?",
+   opts:["보완이 판에 닿지 않았기 때문이에요","부족한 자리가 하나 더 남아 있었기 때문이에요","더한 값이 줄었기 때문이에요","보완하는 차례가 정해져 있었기 때문이에요"], correct:1, pts:POINTS_APPLY,
+   reason:"㉰는 부족한 자리가 둘이었어요. 하나를 보완해도 남은 한 자리가 낮으면 서지 못해요.",
+   h1:"㉰의 낮은 점수가 몇 자리였는지 떠올려 봐요.",
+   h2:"한 번 더 보완하자 비로소 섰어요."},
+  {stem:"평가 기준에서 부족한 점수를 받은 해결 방안은 어떻게 하는 것이 좋을까요?",
+   opts:["곧바로 버려요","점수를 마음대로 고쳐요","부족한 부분을 보완하여 수정해요","다른 모둠에 넘겨요"], correct:2, pts:POINTS_APPLY,
+   reason:"부족한 부분이 있다면 보완하여 수정해요. 낮은 점수를 받았다고 곧바로 버리지 않아요.",
+   h1:"판에서 낮은 자리를 어떻게 했는지 떠올려 봐요.",
+   h2:"고쳐서 다시 세울 수 있어요."},
+  {stem:"내가 제시한 해결 방안이 친구들과 다르다면 어떻게 해야 할까요?",
+   opts:["객관적인 자료와 사실에 근거하여 의견을 제시하고, 대화와 타협으로 의견을 조정해요","내 의견을 끝까지 고집해요","친구 의견을 무조건 따라요","의견을 내지 않고 가만히 있어요"], correct:0, pts:POINTS_APPLY,
+   reason:"객관적인 자료와 사실에 근거하여 자신의 의견을 제시하고, 대화와 타협으로 의견을 조정해야 해요.",
+   h1:"의견을 주장하려면 무엇이 뒷받침되어야 할까요?",
+   h2:"서로 이야기하며 맞추어 가요."}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — 동기 유발
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">우리 지역에서 일어나는 문제의 해결 방안을 찾아볼까요</h2>
+  <div class="ka-bub">자전거 도로가 부족한 지역에서 한 주민이 <b>지역의 모든 도로를 좁혀 자전거 도로를 만들자</b>고 했어요. 여러분의 생각은 어떤가요?</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('talk','의견과 보완')}</div>
+    <div class="note">차량이 많이 다니는 도로는 <b>교통 혼잡 문제</b>가 생길 수 있어요. 해결 방안은 여러 가지를 고려하고 함께 의견을 나누어야 해요.</div>
+  </div>`});
+// 2 살펴보기 — 해결 방안은 언제 찾을까 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">해결 방안은 언제 찾을까요?</h2>
+  <div class="ka-bub">지난 시간에 우리 모둠은 지역문제가 일어난 <span class="ka-emph">원인</span>을 알아보았어요. 이제 무엇을 할 차례일까요?</div>
+  <div class="ka-grp">
+  ${st.revealed?`<div class="answer-box">지역에서 문제가 일어난 <b>원인을 알아본 후에</b> 해결 방안을 찾아요. 원인과 관련한 방안이어야 문제가 풀려요.</div>`
+    :`<div class="note">원인을 알아본 다음에 무엇이 오는지 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 3 살펴보기 — 방안을 정하는 차례
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">해결 방안은 어떤 차례로 정할까요?</h2>
+  <div class="ka-bub">주차 공간이 부족한 문제를 놓고 시원이와 친구들이 토의했어요. 「주차 공간을 더 만들자」는 의견에 「만들 곳을 확보하기 어렵다」는 말이 나오자, 「공공 기관의 주차장을 주민들에게 개방하자」는 방안이 이어졌어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('steps','정하는 차례')}${sceneCard('keep','두 칸으로 나눠요')}</div>
+    <div class="note">다양한 해결 방안이 제시되면 각 방안의 <b>장단점을 비교</b>하고, <b>대화와 타협</b>으로 의견을 조정한 후 알맞은 방안을 정해요.</div>
+  </div>`});
+// 4 살펴보기 — 조작 안내
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">방안을 재고 부족한 자리를 보완해 봐요</h2>
+  <div class="ka-bub">판에 우리 모둠이 낸 <b>해결 방안 셋</b>이 있어요. 방안을 누르면 평가 기준 넷으로 점수를 매겨 줘요. 점수가 부족한 자리가 있으면 그 방안은 <b>「멈춰」 칸</b>에 있어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('bars','부족한 자리')}${sceneCard('fixup','보완하면 올라가요')}</div>
+    <div class="note">「보완하기」를 누르면 그 방안에서 <b>부족했던 자리</b>가 한 칸 올라가요. 보완할 자리는 방안마다 달라요.</div></div>`});
+// 5 살펴보기 — 직접 조작
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">방안을 재고 보완해 봐요</h2>
+  <div class="ka-grp" style="align-items:stretch">${pcPanel(st)}</div>`});
+// 6 살펴보기 — 평가 기준 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">해결 방안은 무엇으로 평가할까요?</h2>
+  <div class="ka-bub">해결 방안에 점수를 매길 때에는 <b>평가 기준</b>이 필요해요. 어떤 기준이 있을까요?</div>
+  <div class="ka-grp">
+  ${st.revealed?`<div class="answer-box">· <b>효과가 큰가요?</b><br>· <b>비용이 적게 드나요?</b><br>· <b>실천할 수 있나요?</b><br>· <b>누군가에게 피해를 주지 않나요?</b><br><span style="font-size:.85em;color:#92400E">매우 그렇다 3점 · 그렇다 2점 · 보통이다 1점으로 매겨 봐요. 기준은 모둠에서 더 추가할 수도 있어요.</span></div>`
+    :`<div class="note">무엇을 살펴보아야 좋은 방안인지 알 수 있을지 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 7 살펴보기 — [풍덩] 공유 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">[풍덩 사회 속으로] 공유로 지역문제를 해결해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('share','나누고 빌려 써요')}</div>
+  ${st.revealed?`<div class="answer-box">물건이나 공간을 서로 <b>나누고 빌려 쓰는 것</b>을 공유라고 해요. 공유하면 한 번 만든 물건을 다른 사람과 함께 쓰므로 <b>자원을 아낄 수 있고</b>, 사지 않고 빌려 쓰기 때문에 <b>비용도 줄일 수 있어요</b>.<br><span style="font-size:.9em">· 주차 공간이 부족한 문제를 해결하려고 만든 <b>공유 주차장</b><br>· 교통 혼잡 문제와 대기 오염 문제를 해결하려고 도입한 <b>공공 자전거</b></span></div>`
+    :`<div class="note">필요할 때 필요한 만큼만 나누어 쓰면 어떤 점이 좋을지 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  <div class="note">※ 공유는 지역문제 해결의 <b>좋은 대안</b>이 될 수 있어요.</div>
+  </div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부한 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('steps','정하는 차례')}${sceneCard('done','알맞은 방안을 정했어요')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div><b>해결 방안 찾기</b> — 지역에서 문제가 일어난 원인을 알아본 후에 해결 방안을 찾아요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b>선택 차례</b> — 다양한 해결 방안 제시하기 → 해결 방안 평가하기 → 대화와 타협으로 의견 조정하기 → 해결 방안 선택하기</div></div>
+    <div class="sum-item"><span class="n">3</span><div><b>평가 기준</b> — 효과성, 경제성, 실천 가능성 등을 살펴봐요. 부족한 부분이 있으면 버리지 않고 보완하여 수정해요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 우리 지역에서 일어나는 문제의 해결 방안을 <b style="color:#B45309">실천해</b> 봐요.</div></div>`});
+// 17 스스로 돌아보기
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"지역문제의 해결 방안을 여러 가지 제시할 수 있어요",st)}
+    ${selfCheck(1,"평가 기준에 따라 해결 방안을 비교할 수 있어요",st)}
+    ${selfCheck(2,"부족한 부분을 보완하여 알맞은 방안을 정할 수 있어요",st)}
+  </div><div class="note">체크가 잘 안 되는 곳은 <b>다시 살펴봐도</b> 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">「우리 지역에서 일어나는 문제의 해결 방안을 찾아볼까요」를 마쳤어요</h2>
+  <div class="ka-grp">
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">부족한 자리가 있다고 곧바로 버리지 않아요. <b style="color:#B45309">보완하면 다시 설 수</b> 있어요.</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const optHTML = q.opts.map((o,k)=>{
+    let cls='opt';
+    if(qs.done && k===q.correct) cls+=' correct';
+    if(qs.wrongPick===k) cls+=' wrong';
+    return `<button class="${cls}" onclick="pick(${i},${k})" ${qs.done?'disabled':''}>${o}</button>`;
+  }).join('');
+  const hint = qs.hint>0 ? `<div class="hint">💡 ${qs.hint===1?q.h1:q.h2}</div>` : '';
+  const fb = qs.done ? `<div class="fb ok">✓ ${q.reason}</div>` : '';
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용':'확인'} (+${q.pts})</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    <div class="opts" style="margin:0 auto">${optHTML}</div>
+    ${hint}${fb}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g4_2_social_u2_l04";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  pcMet:0, pcUp:[0,0,0], pcRead:null, pcFin:null, pcMsg:"", pcTell:"",
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 →';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음 (브라우저에서만 · jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+function pcDraw(){ main.innerHTML = slides[state.idx].render(state); }
+
+/* 재 보기 — 평가 기준 넷으로 잰다(무판정) */
+function pcMeasure(p){
+  if(state.pcFin!=null) return;                                        // 가드①: 마무리 확정 후 전체 잠금
+  if(!Number.isInteger(p) || p<0 || p>=PC_PLANS) return;               // 가드②: 무효 번호 — 안내조차 띄우지 않음
+  if(pcMetHas(state,p)){ state.pcMsg = PC_SAY_MET; playThud(); pcDraw(); return; }            // 가드③: 이미 잰 방안 — 판 불변
+  state.pcMet |= (1 << p);                                             // ⭐ 재는 자리는 코드에 여기 단 하나 · 되돌리는 자리 0
+  state.pcMsg = ""; state.pcTell = PC_TELL_MET; playBlip(); pcDraw();
+}
+/* 보완하기 — 가장 낮은 자리 하나가 한 칸 오른다(못박은 상수 0 · 내리는 자리 0) */
+function pcFix(p){
+  if(state.pcFin!=null) return;                                        // 가드①
+  if(!Number.isInteger(p) || p<0 || p>=PC_PLANS) return;               // 가드②
+  if(state.pcMet !== PC_ALL){ state.pcMsg = PC_SAY_ORDER_F; playThud(); pcDraw(); return; }   // 가드④: 셋을 다 재기 전 — 판 불변
+  if(pcStands(state,p)){ state.pcMsg = PC_SAY_STANDS; playThud(); pcDraw(); return; }         // 가드⑤: 이미 선 방안 — 판 불변
+  state.pcUp[p] |= (1 << pcLow(state,p));                              // ⭐ 올리는 자리는 코드에 여기 단 하나 · 내리는 자리 0
+  state.pcMsg = ""; state.pcTell = PC_TELL_FIX; playBlip(); pcDraw();
+}
+/* 판 읽기 */
+function pcRead(i){
+  if(state.pcFin!=null) return;                                        // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=PC_READQ.length) return;        // 가드②
+  if(pcStandN(state) < PC_PLANS){ state.pcMsg = PC_SAY_ORDER_R; playThud(); pcDraw(); return; } // 가드⑥: 셋이 다 서기 전 — 판 불변
+  if(state.pcRead!=null){ state.pcMsg = PC_SAY_READDONE; pcDraw(); return; }                  // 가드⑦: 이미 정한 자리 — 판 불변
+  if(i!==PC_READ_OK){ state.pcMsg = PC_READ_BAD; playThud(); pcDraw(); return; }              // 가드⑦: 어긋난 답 — 판 불변
+  state.pcRead = i; state.pcMsg = ""; playBlip(); pcDraw();
+}
+/* 마무리 */
+function pcFin(i){
+  if(state.pcFin!=null) return;                                        // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=PC_FINQ.length) return;         // 가드②
+  if(state.pcRead==null){ state.pcMsg = PC_SAY_ORDER_FIN; playThud(); pcDraw(); return; }     // 가드⑧: 판을 읽기 전 — 판 불변
+  if(i!==PC_FIN_OK){ state.pcMsg = PC_FIN_BAD; playThud(); pcDraw(); return; }                // 가드⑧: 어긋난 답 — 판 불변
+  state.pcFin = i; state.pcMsg = ""; playChime(); pcDraw();
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true; qs.wrongPick=null;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2; if(qs.hint===2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">📘 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 →</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // 뒤 차시 미양산 — 허브 복귀
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
+</html>

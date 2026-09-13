@@ -161,14 +161,14 @@ window.KEDU_MAP["g4_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_social_u2_l04",
+     "lessonId": "g4_social_u2_l04_v1",
      "n": "4",
      "title": "[할 수 있어요] 우리 지역에서 일어나는 문제의 해결 방안을 찾아볼까요",
      "sub": "① 지역문제의 해결",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/social/2단원_지역문제해결과지역알리기/g4_social_u2_l04_해결방안찾기.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
