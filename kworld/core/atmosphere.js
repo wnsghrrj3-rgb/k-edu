@@ -36,6 +36,6 @@ export function applyAtmosphere(engine) {
   const ambient = engine.scene.children.find((o) => o.isHemisphereLight);
   ambient.color.set(0xd9eafa); ambient.groundColor.set(0x857355); ambient.intensity = 0.65;
   engine.sun.color.set(0xffdfac); engine.sun.intensity = 2.1;
-  engine.sun.position.set(-34, 32, 24);
+  engine.sun.position.set(-34, 32, 24); engine.sunOffset = new THREE.Vector3(-34, 32, 24);
   engine.sun.shadow.normalBias = 0.035;
 }

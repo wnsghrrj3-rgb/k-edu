@@ -3,7 +3,8 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createAvatar } from '../../core/avatar.js';
 
 // Deterministic, native geometry. Shared instanced meshes keep the woodland inexpensive.
-export function buildLandscape(e) {
+export function buildLandscape(e, quality = 'high') {
+  const LOW = quality === 'low'; // 태블릿: 나무·잎·풀을 줄이고 캐노피 그림자 끔
   const group = new THREE.Group(); group.name = 'paleo-landscape'; e.scene.add(group);
   let seed = 1847;
   const rnd = () => { seed = (1664525 * seed + 1013904223) >>> 0; return seed / 4294967296; };
@@ -135,13 +136,13 @@ export function buildLandscape(e) {
     for(let k=0;k<9;k++){
       const a=k*2.399, yy=y+h*(.5+k*.047), len=between(1.3,2.4)*(h/8);
       const end=[x+Math.cos(a)*len,yy+.6,z+Math.sin(a)*len];pushPole([x,y+h*.42,z],end,.045);
-      for(let l=0;l<12;l++){
+      for(let l=0;l<(LOW?6:12);l++){
         dummy.position.set(end[0]+between(-.9,.9),end[1]+between(-.3,.7),end[2]+between(-.9,.9));
         dummy.rotation.set(rnd(),rnd()*6.28,rnd());dummy.scale.set(between(.7,1.05),between(.3,.55),between(.65,1));dummy.updateMatrix();foliage.push(dummy.matrix.clone());
       }
     }
   }
-  for(let i=0;i<95;i++){
+  for(let i=0;i<(LOW?48:95);i++){
     const a=rnd()*6.28,r=between(32,64),x=Math.cos(a)*r,z=Math.sin(a)*r;
     if(z>-35&&z<-18 || x<-20&&x>-40&&z>-5&&z<17)continue;
     tree(x,z,between(6,11));
@@ -153,7 +154,7 @@ export function buildLandscape(e) {
   // Avoid mission targets, paths, the cave and the water; scenery never hides collectables.
   const targets=[...e.interactables.values()].map(it=>it.center);
   const pathDistance=(x,z,ax,az,bx,bz)=>{const dx=bx-ax,dz=bz-az,t=THREE.MathUtils.clamp(((x-ax)*dx+(z-az)*dz)/(dx*dx+dz*dz),0,1);return Math.hypot(x-ax-t*dx,z-az-t*dz);};
-  for(let i=0;i<18000;i++){
+  for(let i=0;i<(LOW?6000:18000);i++){
     const x=between(-53,53),z=between(-16,53),y=e.groundY(x,z);
     if(y<-.3 || Math.hypot((x+5)/1.3,z-4)<7 || x<-20&&x>-39&&z>-5&&z<14)continue;
     if(pathDistance(x,z,-6,3,-20,-3)<1.8||pathDistance(x,z,-6,3,0,-17)<1.8||pathDistance(x,z,-6,3,32,10)<1.8)continue;
@@ -170,7 +171,7 @@ export function buildLandscape(e) {
     mesh.castShadow=shadows;mesh.receiveShadow=true;mesh.computeBoundingSphere();group.add(mesh);return mesh;
   }
   instances(branchGeo,bark,trunks,'woodland-trunks',true);
-  const canopy=instances(leafGeo,leaf,foliage,'woodland-leaves',true);
+  const canopy=instances(leafGeo,leaf,foliage,'woodland-leaves',!LOW);
   const meadow=instances(bladeGeo,grass,blades,'meadow',false);
   instances(rockGeo,rock,pebbles,'river-stones',false);
   const water=e.materials?.get('water');

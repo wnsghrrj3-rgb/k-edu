@@ -22,9 +22,10 @@ export class Game {
     if (this.world.sky) this.e.loadSky(this.world.sky);
     if (this.world.height) await this.e.loadHeight(this.base + this.world.height);
     await this.e.loadWorld(this.base + this.world.glb, this.world.eye);
-    if (this.world.id === 'paleo') { const { buildLandscape } = await import('../eras/paleo/landscape.js'); buildLandscape(this.e); }
+    // 시대별 장식 코드는 world.json 이 가리킬 때만(코어는 시대 이름을 모른다)
+    if (this.world.landscape) { const { buildLandscape } = await import(this.base + this.world.landscape); buildLandscape(this.e, this.quality()); }
     this.p = new Player(this.e, { eye: this.world.eye, bounds: this.world.bounds, yaw: 0 });
-    if (this.world.id === 'paleo') this.p.setView('tp');
+    const vq = new URLSearchParams(location.search).get('view'); this.p.setView(vq || this.world.view || 'fp');
     this.p.bindJoystick(document.getElementById('stick'), document.getElementById('knob'));
     // 시작 시선: 야영지 쪽(있으면) 을 바라봄
     const camp = this.e.areas.get('camp'); if (camp) { const d = camp.clone().sub(this.p.pos); this.p.yaw = Math.atan2(-d.x, -d.z); }
@@ -37,6 +38,12 @@ export class Game {
     document.getElementById('load').remove();
     this.e.start();
     setTimeout(() => this.ui.say(this.world.intro, 5000), 400);
+  }
+  /** 기기 등급: 'low'(태블릿·저사양) / 'high'. URL ?q=low|high 로 강제 */
+  quality() {
+    const q = new URLSearchParams(location.search).get('q'); if (q) return q;
+    const coarse = matchMedia('(pointer: coarse)').matches; const cores = navigator.hardwareConcurrency || 4; const mem = navigator.deviceMemory || 4;
+    return (coarse && (cores <= 6 || mem <= 4)) ? 'low' : 'high';
   }
   // ---------- 상태 ----------
   has(k) { return this.inventory.includes(k); }
