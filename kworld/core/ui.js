@@ -11,6 +11,9 @@ export class UI {
   }
   setTitle(t, q) { $('title').textContent = t; $('question').textContent = q; }
   setGoal(t) { this.goal.textContent = t; }
+  setMission(title, i, n) { $('mtitle').textContent = title; $('mcount').textContent = `${Math.min(i + 1, n)}/${n}`; $('mission').classList.add('flash'); setTimeout(() => $('mission').classList.remove('flash'), 900); }
+  setCompass(name, bearing, dist) { const el = $('compass'); el.style.display = 'flex'; $('cname').textContent = name; $('cdist').textContent = dist < 6 ? '여기' : Math.round(dist) + 'm'; $('carrow').style.transform = `rotate(${-bearing}rad)`; }
+  pulseHint() { $('hintbtn').classList.add('pulse'); setTimeout(() => $('hintbtn').classList.remove('pulse'), 6000); }
   setHunger(v, slow) { this.hungerBar.style.width = Math.max(0, Math.min(100, v)) + '%'; this.hungerBar.className = slow ? 'low' : ''; $('hungerlabel').textContent = slow ? '배가 너무 고파 느려진다' : '배부름'; }
   setPrompt(text) { if (!text) { this.prompt.style.display = 'none'; return; } this.prompt.style.display = 'block'; this.prompt.innerHTML = md(text); }
   say(text, ms = 3200) {

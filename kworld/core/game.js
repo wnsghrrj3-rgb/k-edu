@@ -13,17 +13,19 @@ export class Game {
     this.ui = new UI();
   }
   async start() {
-    [this.world, this.items, this.npcs, this.why, this.check] = await Promise.all(['world', 'items', 'npcs', 'why', 'check'].map((n) => J(this.base + n + '.json')));
+    [this.world, this.items, this.npcs, this.why, this.check, this.missions] = await Promise.all(['world', 'items', 'npcs', 'why', 'check', 'missions'].map((n) => J(this.base + n + '.json')));
+    this.mi = 0; this.missionStart = performance.now(); this.hintShown = false;
     this.hunger = this.world.hunger.start;
     this.e = new Engine(document.getElementById('c'));
     if (this.world.sky) this.e.loadSky(this.world.sky);
+    if (this.world.height) await this.e.loadHeight(this.base + this.world.height);
     await this.e.loadWorld(this.base + this.world.glb, this.world.eye);
     this.p = new Player(this.e, { eye: this.world.eye, bounds: this.world.bounds, yaw: 0 });
     this.p.bindJoystick(document.getElementById('stick'), document.getElementById('knob'));
     // 시작 시선: 야영지 쪽(있으면) 을 바라봄
     const camp = this.e.areas.get('camp'); if (camp) { const d = camp.clone().sub(this.p.pos); this.p.yaw = Math.atan2(-d.x, -d.z); }
     this.ui.setTitle(this.world.title, this.world.question); this.ui.setGoal(this.world.goal);
-    this.renderInv();
+    this.renderInv(); this.updateMission(true);
     this.addFire();
     this.bindButtons();
     this.e.onFrame.push((dt) => this.tick(dt));
@@ -55,10 +57,18 @@ export class Game {
     // 대상 안내
     if (!this.ui.isOpen()) {
       const t = this.target = this.e.pickTarget(this.e.camera);
-      this.ui.setPrompt(t ? this.promptFor(t) : null);
+      if (t) this.ui.setPrompt(this.promptFor(t));
+      else { const near = this.e.pickTarget(this.e.camera, 9); this.ui.setPrompt(near ? this.infoFor(near) : null); }
     } else { this.target = null; this.ui.setPrompt(null); }
+    // 미션 나침반 + 힌트 시간
+    this.updateMission(false);
     // 불꽃
     if (this.fire && this.fire.visible) { this.fire.rotation.y += dt * 2; this.fire.scale.y = 0.9 + Math.sin(performance.now() * 0.02) * 0.15; this.fireLight.intensity = 3 + Math.sin(performance.now() * 0.03); }
+  }
+  infoFor(t) {
+    const def = this.items.targets[t.type]; if (!def) return null;
+    const st = def.states && def.states[t.state || 'unlit']; const info = (st && st.info) || def.info;
+    return info ? `<span class="what">👀 <b>${def.name}</b> — ${info}</span><span class="near">가까이 가면 할 수 있는 일이 보여</span>` : null;
   }
   promptFor(t) {
     const def = this.items.targets[t.type]; if (!def) return null;
@@ -67,17 +77,19 @@ export class Game {
     return `<b>${def.name}</b> — ${verb} <kbd>E</kbd> / 탭`;
   }
   bindButtons() {
-    addEventListener('keydown', (ev) => { if (/^(TEXTAREA|INPUT)$/.test(ev.target.tagName)) return; if (ev.code === 'KeyE' || ev.code === 'Space') this.act(); if (ev.code === 'KeyC') this.openCraft(); if (ev.code === 'KeyV') this.p.setView(this.p.viewMode === 'fp' ? 'tp' : 'fp'); });
+    addEventListener('keydown', (ev) => { if (/^(TEXTAREA|INPUT)$/.test(ev.target.tagName)) return; if (ev.code === 'KeyE' || ev.code === 'Space') this.act(); if (ev.code === 'KeyC') this.openCraft(); if (ev.code === 'KeyV') this.p.setView(this.p.viewMode === 'fp' ? 'tp' : 'fp'); if (ev.code === 'KeyH') this.showHint(); if (ev.code === 'KeyM') this.missionList(); });
     document.getElementById('actbtn').onclick = () => this.act();
     document.getElementById('craftbtn').onclick = () => this.openCraft();
     document.getElementById('viewbtn').onclick = () => this.p.setView(this.p.viewMode === 'fp' ? 'tp' : 'fp');
+    document.getElementById('hintbtn').onclick = () => this.showHint();
+    document.getElementById('mission').onclick = () => this.missionList();
   }
   // ---------- 행동 ----------
   act() {
     if (this.ui.isOpen()) return;
     const t = this.target; if (!t) { this.ui.say('가까이 가서 바라보면 할 수 있는 일이 보여.'); return; }
     const def = this.items.targets[t.type]; if (!def) return;
-    if (t.type === 'npc') return this.talk(t);
+    if (t.type === 'npc') { this.flag(def.flag); return this.talk(t); }
     if (t.type === 'gate') return this.enterGate();
     const rule = def.states ? def.states[t.state || 'unlit'] : def;
     if (rule.once && this.flags.has(rule.flag)) { this.ui.say(rule.say); return; }
@@ -98,7 +110,7 @@ export class Game {
     if (rule.why) setTimeout(() => this.showWhy(rule.why), 900);
   }
   stripBerries(t) { // 덤불은 남기고 열매 색만 빼기 — 재질이 하나로 합쳐져 있으니 어둡게
-    t.type = 'bush_empty'; t.obj.material = t.obj.material.clone(); t.obj.material.color.multiplyScalar(0.6);
+    t.type = 'bush_empty'; t.obj.traverse((m) => { if (m.isMesh) { m.material = m.material.clone(); if (m.material.name === 'berry') m.visible = false; else m.material.color.multiplyScalar(0.75); } });
   }
   areaEvent(ev, t) {
     if (ev === 'bush_empty') {
@@ -132,6 +144,36 @@ export class Game {
     const card = this.why[key]; if (!card || this.flags.has('why:' + key)) return;
     this.p.enabled = false; this.ui.whyCard(card, () => { this.ui.close(); this.p.enabled = true; this.flag('why:' + key); });
   }
+  // ---------- 미션 ----------
+  missionDone(m) {
+    if (m.done) return this.flags.has(m.done);
+    if (m.count) return this.count(m.count[0]) >= m.count[1] || this.flags.has('made:handaxe');
+    return false;
+  }
+  updateMission(force) {
+    const ms = this.missions.missions;
+    let changed = force;
+    while (this.mi < ms.length && this.missionDone(ms[this.mi])) { this.mi++; changed = true; this.missionStart = performance.now(); this.hintShown = false; if (!force) this.ui.say(`✅ ${ms[this.mi - 1].title}`, 2200); }
+    const m = ms[this.mi];
+    if (changed) this.ui.setMission(m ? m.title : '구석기 완주!', this.mi, ms.length);
+    if (!m) return;
+    // 나침반: 구역 방향
+    const a = this.e.areas.get(m.area);
+    if (a) { const d = a.clone().sub(this.p.pos); const dist = Math.hypot(d.x, d.z); const bearing = Math.atan2(-d.x, -d.z) - this.p.yaw; this.ui.setCompass(this.world.areas[m.area]?.name || m.area, bearing, dist); }
+    // 오래 걸리면 힌트 버튼 반짝
+    if (!this.hintShown && (performance.now() - this.missionStart) / 1000 > (this.missions.hintDelay || 45)) { this.hintShown = true; this.ui.pulseHint(); }
+  }
+  showHint() {
+    const m = this.missions.missions[this.mi]; if (!m) { this.ui.say('할 일은 다 했어. 마음껏 둘러봐.'); return; }
+    this.ui.say(`💡 ${m.hint}`, 6000); this.hintShown = true;
+  }
+  missionList() {
+    if (this.ui.isOpen()) { this.ui.close(); this.p.enabled = true; return; }
+    this.p.enabled = false;
+    const ms = this.missions.missions;
+    const html = '<h3>할 일</h3><ol class="mlist">' + ms.map((m, i) => `<li class="${i < this.mi ? 'done' : (i === this.mi ? 'now' : '')}">${i < this.mi ? '✅' : (i === this.mi ? '👉' : '·')} ${m.title}${i === this.mi ? `<div class="mhint">💡 ${m.hint}</div>` : ''}</li>`).join('') + '</ol>';
+    this.ui.open(html, [{ label: '닫기', primary: true, onClick: () => { this.ui.close(); this.p.enabled = true; } }]);
+  }
   // ---------- 불 ----------
   addFire() {
     const it = [...this.e.interactables.values()].find((x) => x.type === 'fire'); if (!it) return;
@@ -145,7 +187,7 @@ export class Game {
   // ---------- 시간의 문 ----------
   checkGate() {
     const g = this.world.gate; const ok = g.requires.every((f) => this.flags.has(f));
-    if (ok && !this.gateOpen) { this.gateOpen = true; this.ui.setGoal(`시간의 문이 열렸다. 동굴 옆 문으로 가 보자.`); this.ui.say('어디선가 바람이… 시간의 문이 열렸다!', 4000); }
+    if (ok && !this.gateOpen) { this.gateOpen = true; this.ui.setGoal(`시간의 문이 열렸다. 동굴 옆 문으로 가 보자.`); this.updateMission(false); this.ui.say('어디선가 바람이… 시간의 문이 열렸다!', 4000); }
   }
   enterGate() {
     if (!this.gateOpen) { const g = this.world.gate; const left = g.requires.filter((f) => !this.flags.has(f)).length; this.ui.say(`아직 닫혀 있다. 해야 할 일이 ${left}가지 남았어.`); return; }
@@ -155,7 +197,7 @@ export class Game {
   runCheck() {
     this.ui.check(this.check, null,
       (results) => {
-        this.results = results;
+        this.results = results; this.flag('era:done'); this.updateMission(false);
         const okN = results.filter((r) => r.ok).length; const g = this.world.gate;
         const bag = this.inventory.filter((k) => this.items.items[k].why || k === 'handaxe');
         this.ui.open(`<div class="chk"><div class="tag">시대 완주</div><h3>${this.check.done}</h3><p>🎒 <b>역사 가방</b>에 담김: ${bag.length ? '🔪 주먹도끼' : '(없음)'}</p><p class="sub">기록: 확인 ${okN}/${results.filter((r) => 'ok' in r).length} · 「만약에」 1편 (선생님에게)</p></div>`,

@@ -10,27 +10,30 @@ const J = (n) => JSON.parse(fs.readFileSync(`${base}/${n}.json`, 'utf8'));
 let pass = 0, fail = 0; const ok = (c, m) => { if (c) pass++; else { fail++; console.log('FAIL', m); } };
 
 const g = new Game(base);
-[g.world, g.items, g.npcs, g.why, g.check] = ['world', 'items', 'npcs', 'why', 'check'].map(J);
+[g.world, g.items, g.npcs, g.why, g.check, g.missions] = ['world', 'items', 'npcs', 'why', 'check', 'missions'].map(J);
+g.mi = 0; g.missionStart = performance.now(); g.hintShown = false;
 g.hunger = g.world.hunger.start;
 const says = []; const whys = []; let panel = null;
-g.ui = { say: (t) => says.push(t), setPrompt() {}, setHunger() {}, setGoal(t) { g._goal = t; }, renderInventory() {}, isOpen: () => !!panel, close() { panel = null; },
+g.ui = { setMission: (t) => { g._mission = t; }, setCompass() {}, pulseHint() {}, say: (t) => says.push(t), setPrompt() {}, setHunger() {}, setGoal(t) { g._goal = t; }, renderInventory() {}, isOpen: () => !!panel, close() { panel = null; },
   whyCard: (c, cb) => { whys.push(c.concept); cb(); }, npcLine: (n, t, cb) => { says.push('NPC:' + t); cb(); }, open: (h, b) => { panel = { h, b }; }, craftPanel() {},
   check: (data, _a, onFinish) => onFinish([{ id: 'q1', ok: true }, { id: 'q2', ok: true }, { id: 'q3', open: '추웠을 것' }]) };
-g.p = { enabled: true, speedMul: 1, teleport() {} };
+g.p = { enabled: true, speedMul: 1, teleport() {}, pos: new THREE.Vector3(), yaw: 0 };
 const ix = new Map();
 const mk = (name) => { const [type, ...rest] = name.split('_'); ix.set(name, { type, id: rest.join('_') || type, name, uses: 0, state: null, center: new THREE.Vector3(), obj: { material: { clone() { return { color: { multiplyScalar() {} } }; } } } }); };
 ['stone_1', 'stone_2', 'stone_3', 'stick_1', 'stick_2', 'stick_3', 'grass_1', 'grass_2', 'bush_a1_1', 'bush_a1_2', 'bush_a1_3', 'track_1', 'deer_1', 'fire_1', 'npc_elder', 'gate_1'].forEach(mk);
-g.e = { interactables: ix, removeInteractable: (k) => ix.delete(k), areas: new Map() };
+g.e = { interactables: ix, removeInteractable: (k) => ix.delete(k), areas: new Map([['camp', new THREE.Vector3(1, 0, 1)]]), groundY: () => 0, pickTarget: () => null };
+g.updateMission(true); ok(g._mission.includes('말 걸기'), '첫 미션');
 g.setFire = () => { g._fire = true; };
 const use = (name) => { g.target = ix.get(name); g.act(); };
 
 // 1) 어른에게 말 걸기 → 돌 힌트
-use('npc_elder'); ok(says.at(-1).includes('돌끼리'), '첫 대사');
+use('npc_elder'); ok(says.at(-1).includes('돌끼리'), '첫 대사'); g.tick(0.01); ok(g._mission.includes('돌 2개'), '미션 2로');
 // 2) 맨손 사냥 실패
 use('deer_1'); ok(says.at(-1).includes('맨손'), '맨손 사냥 실패'); ok(ix.has('deer_1'), '사슴 그대로');
 // 3) 돌 줍기 3 → 만들기 판에서 주먹도끼
 use('stone_1'); use('stone_2'); use('stone_3'); ok(g.count('stone') === 3, '돌 3');
-g.craft('handaxe'); ok(g.has('handaxe') && g.count('stone') === 1, '주먹도끼 완성'); ok(g.flags.has('made:handaxe'), 'flag');
+g.tick(0.01); ok(g._mission.includes('날 세우기'), '미션 3로');
+g.craft('handaxe'); ok(g.has('handaxe') && g.count('stone') === 1, '주먹도끼 완성'); ok(g.flags.has('made:handaxe'), 'flag'); g.tick(0.01); ok(g._mission.includes('발자국'), '미션 4로');
 await new Promise((r) => setTimeout(r, 1000)); ok(whys.includes('도구와 생활 방식의 관계'), 'why: handaxe');
 // 4) 발자국 → NPC 대사 바뀜
 use('track_1'); ok(g.flags.has('seen:track'), '발자국'); use('npc_elder'); ok(says.at(-1).includes('나뭇가지에 붙이면'), '창 힌트');
@@ -51,7 +54,7 @@ for (const b of ['bush_a1_1', 'bush_a1_2', 'bush_a1_3']) for (let k = 0; k < 3; 
 ok(g.count('berry') === 9, '열매 9'); ok(g.flags.has('area1:empty'), '구역 비움');
 await new Promise((r) => setTimeout(r, 1000)); ok(whys.includes('자연 조건과 이동 생활'), 'why: move');
 // 9) 시간의 문 → 확인하기 → 완주
-use('gate_1'); ok(panel && panel.h.includes(g.check.intro), '문 안내'); g.runCheck(); ok(g.results && g.results.length === 3, '확인 결과 3'); ok(panel.h.includes('시대 완주'), '완주 화면');
+use('gate_1'); ok(panel && panel.h.includes(g.check.intro), '문 안내'); g.runCheck(); ok(g.results && g.results.length === 3, '확인 결과 3'); ok(g._mission.includes('완주'), '미션 끝'); ok(panel.h.includes('시대 완주'), '완주 화면');
 // 10) 배고픔: 느려짐
 g.hunger = 10; g.tick(0.1); ok(g.p.speedMul < 1, '배고프면 느려짐');
 console.log(`paleo loop: ${pass} pass / ${fail} fail`); process.exit(fail ? 1 : 0);

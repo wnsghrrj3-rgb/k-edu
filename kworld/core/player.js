@@ -4,7 +4,7 @@ import * as THREE from 'three';
 export class Player {
   constructor(engine, opts = {}) {
     this.e = engine; this.eye = opts.eye ?? 1.55; this.bounds = opts.bounds ?? 60;
-    this.pos = engine.spawn.clone(); this.yaw = opts.yaw ?? 0; this.pitch = 0;
+    this.pos = engine.spawn.clone(); this.pos.y = engine.groundY(this.pos.x, this.pos.z) + this.eye; this.yaw = opts.yaw ?? 0; this.pitch = 0;
     this.keys = {}; this.joy = { x: 0, y: 0 }; this.speedMul = 1; this.enabled = true;
     this.viewMode = 'fp';
     // 3인칭 자리: 몸 표시용 임시 메시(fp에선 숨김). 캐릭터 GLB가 오면 여기만 바꾼다.
@@ -42,7 +42,7 @@ export class Player {
     const end = (ev) => { if (ev.pointerId === id) { id = null; this.joy = { x: 0, y: 0 }; set(0, 0); } };
     stick.addEventListener('pointerup', end); stick.addEventListener('pointercancel', end);
   }
-  teleport(v) { this.pos.set(v.x, this.eye, v.z); }
+  teleport(v) { this.pos.set(v.x, this.e.groundY(v.x, v.z) + this.eye, v.z); }
   update(dt) {
     const cam = this.e.camera; const k = this.keys;
     let mx = 0, mz = 0;
@@ -55,25 +55,26 @@ export class Player {
     this.moving = L > 0.01;
     if (this.moving) {
       if (L > 1) { mx /= L; mz /= L; }
-      const speed = ((k.ShiftLeft || k.ShiftRight) ? 6.5 : 3.6) * this.speedMul;
+      const speed = ((k.ShiftLeft || k.ShiftRight) ? 6.5 : 3.6) * this.speedMul * (this.inWater ? 0.5 : 1);
       const fwd = new THREE.Vector3(-Math.sin(this.yaw), 0, -Math.cos(this.yaw)), right = new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw));
       const step = fwd.multiplyScalar(mz * speed * dt).addScaledVector(right, mx * speed * dt);
       const p = this.pos.clone();
       p.x += step.x; if (this.e.collides(p, this.eye)) p.x = this.pos.x;
       p.z += step.z; if (this.e.collides(p, this.eye)) p.z = this.pos.z;
       const B = this.bounds; p.x = THREE.MathUtils.clamp(p.x, -B, B); p.z = THREE.MathUtils.clamp(p.z, -B, B);
-      this.pos.set(p.x, this.eye, p.z);
+      const gy = this.e.groundY(p.x, p.z); this.inWater = gy < -0.5;
+      this.pos.set(p.x, gy + this.eye, p.z);
     }
     // 카메라
     cam.rotation.set(0, 0, 0); cam.rotateY(this.yaw); cam.rotateX(this.pitch);
     const bob = this.moving ? Math.sin(performance.now() * 0.012) * 0.03 : 0;
     if (this.viewMode === 'fp') {
-      cam.position.set(this.pos.x, this.eye + bob, this.pos.z);
+      cam.position.set(this.pos.x, this.pos.y + bob, this.pos.z);
     } else {
       // 3인칭 자리: 어깨 뒤 3.5m, 몸은 pos에
       const back = new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw)).multiplyScalar(3.5);
-      cam.position.set(this.pos.x + back.x, this.eye + 1.2 + bob, this.pos.z + back.z);
-      this.body.position.set(this.pos.x, 0, this.pos.z); this.body.rotation.y = this.yaw;
+      cam.position.set(this.pos.x + back.x, this.pos.y + 1.2 + bob, this.pos.z + back.z);
+      this.body.position.set(this.pos.x, this.pos.y - this.eye, this.pos.z); this.body.rotation.y = this.yaw;
     }
     // 태양 그림자 카메라를 플레이어 따라
     const s = this.e.sun; s.position.set(this.pos.x - 30, 40, this.pos.z + 24); s.target.position.set(this.pos.x, 0, this.pos.z); s.target.updateMatrixWorld();
