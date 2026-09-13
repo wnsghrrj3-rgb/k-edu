@@ -365,6 +365,93 @@ window.KEDU_MAP["g4_2_korean"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 5,
+   "name": "오가는 마음",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g4_korean_u5_l01",
+     "lessonId": "g4_2_kor_u5_l01_v1",
+     "n": "1",
+     "title": "단원 시작 — 배울 내용 살펴보기",
+     "sub": null,
+     "url": "/grade4/semester2/korean/5단원_오가는마음/g4_kor_u5_l01.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_korean_u5_l02",
+     "lessonId": "g4_2_kor_u5_l02_v1",
+     "n": "2",
+     "title": "온라인 대화의 특성 알기",
+     "sub": null,
+     "url": "/grade4/semester2/korean/5단원_오가는마음/g4_kor_u5_l02.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_korean_u5_l03",
+     "lessonId": "g4_2_kor_u5_l03_04_v1",
+     "n": "3·4",
+     "title": "온라인 대화의 예절 알기 (토의·토론)",
+     "sub": null,
+     "url": "/grade4/semester2/korean/5단원_오가는마음/g4_kor_u5_l03_04.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_korean_u5_l05",
+     "lessonId": "g4_2_kor_u5_l05_06_v1",
+     "n": "5·6",
+     "title": "예절을 지키며 온라인 대화 하기",
+     "sub": null,
+     "url": "/grade4/semester2/korean/5단원_오가는마음/g4_kor_u5_l05_06.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_korean_u5_l07",
+     "lessonId": "g4_2_kor_u5_l07_08_v1",
+     "n": "7·8",
+     "title": "읽는 이를 생각하며 편지 쓰는 방법 알기",
+     "sub": null,
+     "url": "/grade4/semester2/korean/5단원_오가는마음/g4_kor_u5_l07_08.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_korean_u5_l09",
+     "lessonId": "g4_2_kor_u5_l09_10_v1",
+     "n": "9·10",
+     "title": "읽는 이를 생각하며 마음을 전하는 편지 쓰기",
+     "sub": null,
+     "url": "/grade4/semester2/korean/5단원_오가는마음/g4_kor_u5_l09_10.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_korean_u5_l11",
+     "lessonId": "g4_2_kor_u5_l11_12_v1",
+     "n": "11·12",
+     "title": "배운 내용 실천하기 (예절 알리기 · 비밀 친구 편지)",
+     "sub": null,
+     "url": "/grade4/semester2/korean/5단원_오가는마음/g4_kor_u5_l11_12.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_korean_u5_l13",
+     "lessonId": "g4_2_kor_u5_l13_v1",
+     "n": "13",
+     "title": "단원 마무리하기 (ㄺ 발음 · 온라인 표현 고치기 · ㄼ 글씨)",
+     "sub": null,
+     "url": "/grade4/semester2/korean/5단원_오가는마음/g4_kor_u5_l13.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };
