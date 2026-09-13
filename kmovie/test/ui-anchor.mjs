@@ -84,6 +84,7 @@ ok(near(R.o[2][0], 0.5) && near(R.o[2][2], R.oExp.br[0]) && near(R.o[2][3], R.oE
 ok(R.anchors === 9 && R.sizeRange[0] === 0.25 && R.sizeRange[1] === 3, '초점 9곳 · 크기 25~300%');
 
 /* 설정 열 UI — 초점 seg 9칸·자동·가로/세로 슬라이더 → 카드 모델·복원 */
+await page.evaluate(() => { KMV_UI.fold('partAdv', true); });   // 57: 기준점·위치는 「더 보기」 접이식 뒤 — 펴고 본다
 const U = await page.evaluate(async () => {
   const P = KMV_PROJECT, $ = id => document.getElementById(id), vis = id => { const e = $(id); return !!e && e.getClientRects().length > 0; };
   const A = P.addP({ part: 'knockout', at: 0 }); KMV_UI.selectP(A.id);

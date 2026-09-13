@@ -43,6 +43,30 @@
     { id: 'lightleak', name: '광누출',      cat: 'light' },
     { id: 'blur',      name: '블러 디졸브', cat: 'light' },
   ];
+  /* 학생용 이름 + 한 줄 쓰임새 (도구상자 「화면 넘기기」 타일·설정 종류 목록) */
+  const KID = {
+    cut:      { n: '바로 바뀜',        u: '아무 효과 없이 딱' },
+    dissolve: { n: '스르르 겹치기',    u: '가장 자연스러워요' },
+    film:     { n: '필름처럼 겹치기',  u: '영화 느낌' },
+    smooth:   { n: '부드럽게 이어지기', u: '같은 장면 사이' },
+    dipBlack: { n: '까맣게 됐다가',    u: '시간이 지났을 때' },
+    dipWhite: { n: '하얗게 됐다가',    u: '꿈 · 추억' },
+    dipNavy:  { n: '남색으로 됐다가',  u: '학교 색' },
+    warmDip:  { n: '따뜻하게 됐다가',  u: '포근한 장면' },
+    exposure: { n: '빛에 타듯이',      u: '밝은 장면으로' },
+    luma:     { n: '밝은 곳부터',      u: '반짝이며 바뀜' },
+    glow:     { n: '빛나며 겹치기',    u: '예쁜 장면' },
+    dirblur:  { n: '흐르며 바뀜',      u: '빠른 느낌' },
+    push:     { n: '밀어내기',         u: '다음 장면이 밀고 들어와요' },
+    cover:    { n: '덮기',             u: '위에 덮이며' },
+    zoom:     { n: '확 커지기',        u: '가까이 · 멀리' },
+    whip:     { n: '휙 돌리기',        u: '신나는 장면' },
+    wipe:     { n: '닦아내기',         u: '한쪽부터 지워지며' },
+    sweep:    { n: '금색 선 지나가기', u: '고급스럽게' },
+    lightleak:{ n: '빛 새어 들기',     u: '햇살 · 추억' },
+    blur:     { n: '흐려졌다 또렷이',  u: '꿈에서 깨듯' },
+  };
+  function kid(id) { const t = TYPES.find(x => x.id === id), k = KID[id]; return { name: k ? k.n : (t ? t.name : id), use: k ? k.u : '' }; }
   const DURS = [{ id: 'short', name: '짧게', f: 9 }, { id: 'normal', name: '보통', f: 18 }, { id: 'long', name: '길게', f: 30 }];
   const inOutCubic = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
   const inCubic = t => t * t * t, outCubic = t => 1 - Math.pow(1 - t, 3);
@@ -228,5 +252,5 @@
     ctx.globalAlpha = 1;
   }
 
-  g.KMV_TRANSITION = { CATS, TYPES, DURS, durFrames, progress, apply };
+  g.KMV_TRANSITION = { CATS, TYPES, KID, kid, DURS, durFrames, progress, apply };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -65,7 +65,7 @@
 
   function blank() {
     return {
-      v: 1, fps: FPS, w: W, h: H, theme: 'geumseong',
+      v: 1, fps: FPS, w: W, h: H, theme: 'geumseong', school: null,
       media: [], V: [], V2: [], A1: [], A2: [], P: [], S: [], markers: [], styles: [],
       look: { lut: 'cinema-navy', strength: 0.6, autoExpose: false, target: { luma: 0.48, contrast: 1 }, cinemaBar: false, vignette: 0 },
       audio: { ducking: { on: true, depth: 12 }, ambience: { on: false, src: null, gain: 1 }, sfx: { on: false, gain: 1 }, loudness: { on: false, target: -14 } },
@@ -511,12 +511,29 @@
     const K = g.KM_PARTS, def = K && K.get(partId);
     return { dur: Math.round((def ? def.dur : 5) * FPS), p: def ? K.defaults(partId) : {} };
   }
+  /* 우리 학교 이름 — 부품 기본 문구의 「금성초」를 이 학교로 바꿔 넣는다(2026-09-13 준호: "금성초만 쓸 수 있으면 어떡하니").
+     null 이면 「우리 학교」. 짧은 이름은 「○○초등학교」→「○○초」. 원본 부품(kmake)은 손대지 않는다. */
+  function setSchool(name) { const v = (name == null ? '' : String(name)).trim(); if ((P.school || '') === v) return; commit(); P.school = v || null; emit('proj'); }
+  function schoolName() { return P.school || '우리 학교'; }
+  function schoolShort() { const n = schoolName(); return n.replace(/초등학교$/, '초').replace(/중학교$/, '중').replace(/고등학교$/, '고'); }
+  function schoolize(p) {
+    const long = schoolName(), short = schoolShort(), eng = P.school ? long : 'OUR SCHOOL';
+    const out = {};
+    for (const k in p) {
+      let v = p[k];
+      if (typeof v === 'string' && v) {
+        v = v.replace(/금성초등학교/g, long).replace(/금성초/g, short).replace(/GEUMSEONG ELEMENTARY SCHOOL/g, eng).replace(/김금성/g, '이름');
+      }
+      out[k] = v;
+    }
+    return out;
+  }
   function addP(card) {
     if (!card || !card.part) return null;
     commit();
     const d = partDefault(card.part);
     const x = Object.assign({ id: uid('p'), at: 0, dur: d.dur, p: d.p }, card);
-    x.p = Object.assign({}, d.p, card.p || {});
+    x.p = Object.assign({}, schoolize(d.p), card.p || {});
     x.at = Math.max(0, Math.round(x.at)); x.dur = Math.max(FPS / 3 | 0, Math.round(x.dur));
     P.P.push(x); sortP(); emit('P'); return x;
   }
@@ -757,7 +774,7 @@
     addMedia, removeMedia, addClip, removeClip, move, split, trim, trimToPlayhead, freeze, setSpeed, setRamp, setDenoise, setStab, setVol, audioTrim, relink,
     setLook, setProjectLook, setKenburns, setFade, setTransition, setTheme, setLogo,
     addS, setS, addManyS, subtitle, updateS, removeS, clearS, subtitleAt,
-    part, addP, updateP, removeP, clearP, partsAt, partDefault,
+    part, addP, updateP, removeP, clearP, partsAt, partDefault, setSchool, schoolName, schoolShort, schoolize,
     a2, addA2, updateA2, trimA2, removeA2, setDucking, setSfx, setLoudness, a2At,
     STYLE_KEYS, styleFields, styleOf, addStyle, removeStyle, applyStyle, matchLooks, clearMatch,
     v2, addV2, updateV2, trimV2, removeV2, v2At, V2_POS, V2_SIZE,

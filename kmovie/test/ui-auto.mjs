@@ -23,10 +23,10 @@ await page.goto(`http://127.0.0.1:${PORT}/kmovie/`); await page.waitForFunction(
 
 console.log('탭·모듈');
 const tabs = await page.evaluate(() => Array.from(document.querySelectorAll('#toolTabs button')).map(b => b.dataset.tab + ':' + b.textContent));
-ok(tabs.length === 6 && tabs.some(t => t.startsWith('auto:자동')), '도구상자 탭 6개 · 「자동」 있음 → ' + tabs.map(t => t.split(':')[1]).join('/'));
+ok(tabs.length === 6 && tabs.some(t => t.startsWith('more:더 보기')), '도구상자 탭 6개 · 「더 보기」(자동 찾기 포함) 있음 → ' + tabs.map(t => t.split(':')[1]).join('/'));
 ok(await page.evaluate(() => !!(window.KMV_AUTO && KMV_AUTO.silences)), 'engine/auto.js 가 화면에 올라와 있다 (index.html 로드)');
 await page.evaluate(() => KMV_UI.tab('auto'));
-ok(await page.evaluate(() => !document.getElementById('autoPanel').closest('.panel').matches('[data-tab]:not(.tabOn)') && getComputedStyle(document.getElementById('autoPanel')).display !== 'none'), '「자동」 탭을 고르면 자동 패널만 보인다');
+ok(await page.evaluate(() => !document.getElementById('autoPanel').closest('.panel').matches('[data-tab]:not(.tabOn)') && getComputedStyle(document.getElementById('autoPanel')).display !== 'none'), '「자동」(=더 보기) 탭을 고르면 자동 패널이 보인다');
 ok(await page.evaluate(() => getComputedStyle(document.getElementById('musicPanel')).display === 'none'), '다른 탭(음악)은 숨는다');
 
 console.log('빈 타임라인 안전장치');

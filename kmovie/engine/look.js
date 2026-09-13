@@ -14,9 +14,9 @@
 
   const LUT_BASE = '../kmake/parts/lut/';
   const LUTS = [
-    { id: 'cinema-navy',      name: '시네마 네이비', hint: '금성초 브랜드 · 인터뷰·소개 컷' },
-    { id: 'classroom-bright', name: '밝은 교실',     hint: '화사하고 깨끗 · 수업·활동 컷' },
-    { id: 'warm-memory',      name: '따뜻한 회상',   hint: '행사 기록·추억 컷' },
+    { id: 'cinema-navy',      name: '차분한 영화', hint: '학교 소개 · 인터뷰 (남색 톤)' },
+    { id: 'classroom-bright', name: '밝고 깨끗',   hint: '수업 · 활동 · 놀이' },
+    { id: 'warm-memory',      name: '따뜻한 추억', hint: '행사 · 소풍 · 졸업' },
   ];
   const KENBURNS = [
     { id: 'push', name: '푸시인' }, { id: 'pull', name: '풀아웃' }, { id: 'panL', name: '팬 좌→우' }, { id: 'panR', name: '팬 우→좌' },

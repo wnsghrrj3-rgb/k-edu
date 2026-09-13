@@ -26,7 +26,7 @@ const reg = await page.evaluate(() => {
     fields: V.IDS.every(id => KM_PARTS.get(id).fields.length >= 1), amt: V.IDS.filter(id => KM_PARTS.get(id).fields.some(f => f.k === 'amt')).length };
   return out;
 });
-ok(reg.ids === 21 && reg.cat && reg.total === 49, '화면 효과 21종 등록 · 분류 「화면 효과」·self · 부품 총 49 (' + reg.total + ')');
+ok(reg.ids === 21 && reg.cat && reg.total === 55, '화면 효과 21종 등록 · 분류 「화면 효과」·self · 부품 총 55 (' + reg.total + ')');
 ok(reg.loop === 18 && reg.fields && reg.amt === 19, '연속 효과 18(loop) · 한 방 3 · 세기 3단 필드 19 (' + reg.loop + '/' + reg.amt + ')');
 
 // ---------- 픽셀·결정성·화면 가공 ----------
@@ -98,7 +98,7 @@ const grid = await page.evaluate(() => {
   const thumbs = Array.from(document.querySelectorAll('#partGrid .pc')).filter(e => e.dataset.id.startsWith('vfx')).map(e => { const c = e.querySelector('canvas').getContext('2d').getImageData(0, 0, 240, 135).data; let n = 0; for (let i = 3; i < c.length; i += 64) if (c[i] > 8) n++; return n; });
   return { fx: byCat['화면 효과'], cells: document.querySelectorAll('#partGrid .pc').length, thumbMin: Math.min(...thumbs) };
 });
-ok(grid.fx === 22 && grid.cells === 49, '꾸미기 패널: 「화면 효과」 22칸(광누출+21) · 총 49칸 (' + grid.fx + '/' + grid.cells + ')');
+ok(grid.fx === 22 && grid.cells === 55, '꾸미기 패널: 「화면 효과」 22칸(광누출+21) · 총 55칸 (' + grid.fx + '/' + grid.cells + ')');
 ok(grid.thumbMin > 200, '효과 썸네일 21장 전부 그려짐 (최소 픽셀 ' + grid.thumbMin + ')');
 
 // ---------- 실제 클립 위에 카드 놓기 → 미리보기 프레임이 바뀜 · 설정 열에 세기 버튼 한글 ----------

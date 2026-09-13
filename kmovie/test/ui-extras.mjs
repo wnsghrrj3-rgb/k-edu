@@ -35,7 +35,7 @@ await page.setInputFiles('#fileIn', [path.join(FX, 'a.mp4')]);
 await page.waitForFunction(() => KMV_PROJECT.data.V.length === 1, null, { timeout: 90000 });
 await page.setInputFiles('#fileIn', [path.join(FX, 'big.mp4')]);
 await page.waitForFunction(() => KMV_PROJECT.data.V.length === 2, null, { timeout: 120000 });
-await page.click('#toolTabs button[data-tab=proj]');
+await page.click('#toolTabs button[data-tab=more]');
 await page.click('#tplRow button[data-k=school]');
 const tp1 = await page.evaluate(() => { const P = KMV_PROJECT, cards = P.data.P.filter(x => x.tpl); return { n: cards.length, parts: cards.map(x => x.part).sort().join(','), inRange: cards.every(x => x.at >= 0 && x.at < P.total()), on: document.querySelector('#tplRow button.on') && document.querySelector('#tplRow button.on').dataset.k, sfx: P.data.audio.sfx.on, lut: P.data.look.lut }; });
 ok(tp1.n === 6 && tp1.parts === 'chapter,chapter,credits,lower3rd,opening,vfxVignette' && tp1.inRange && tp1.on === 'school' && tp1.sfx && tp1.lut === 'cinema-navy', '「학교 소개」 6장 깔림 (길이 안·순서·효과음 켬·LUT) — ' + tp1.parts);
@@ -52,7 +52,7 @@ await page.setInputFiles('#fileIn', [path.join(FX, 'still.png'), path.join(FX, '
 await page.waitForFunction(() => KMV_PROJECT.data.V.length === 5, null, { timeout: 60000 });
 const hint = await page.evaluate(() => document.getElementById('toast').textContent);
 ok(/사진 3장/.test(hint), '사진 3장 넣으면 「묶어 넣기」 힌트 토스트 (' + hint.slice(0, 30) + '…)');
-await page.click('#toolTabs button[data-tab=auto]');
+await page.click('#toolTabs button[data-tab=more]');
 await page.click('#photoSecSeg button[data-k="2.5"]');
 await page.click('#btnPhotoSlide');
 const ps = await page.evaluate(() => { const P = KMV_PROJECT, imgs = P.data.V.filter(c => P.media(c.media).kind === 'image'); return { n: imgs.length, durs: imgs.map(c => c.out - c.in).join(','), kb: imgs.map(c => c.kenburns).join(','), tr: imgs.map(c => c.transIn && c.transIn.type).join(','), nogap: P.data.V.every((c, i) => !i || c.at === P.data.V[i - 1].at + P.data.V[i - 1].dur) }; });
@@ -62,7 +62,7 @@ await page.evaluate(() => { KMV_PROJECT.redo && KMV_PROJECT.redo(); });
 ok(undo === true, 'Ctrl+Z 한 번은 마지막 사진의 전환만(사진마다 커밋 — 되돌리기 여러 번)');
 
 // ---------- 로고 워터마크 ----------
-await page.click('#toolTabs button[data-tab=proj]');
+await page.click('#toolTabs button[data-tab=more]');
 const lg = await page.evaluate(async () => {
   const P = KMV_PROJECT, img = P.data.media.find(m => m.kind === 'image'), W = 640, H = 360, cv = new OffscreenCanvas(W, H), c = cv.getContext('2d');
   const px = async (t) => { await KMV_RENDER.drawExact(c, W, H, t); const d = c.getImageData(W - 20, 14, 1, 1).data; return [d[0], d[1], d[2]]; };

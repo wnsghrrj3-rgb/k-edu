@@ -74,7 +74,7 @@ const grid = await page.evaluate(() => ({
   cats: Array.from(document.querySelectorAll('#partGrid .cat')).map(e => e.textContent),
   cells: document.querySelectorAll('#partGrid .pc').length,
 }));
-ok(grid.cells === 55 && grid.cats.join('/') === '타이틀/사진 틀/정보 표시/인물 뒤 글자/방송 자막/화면 효과', '꾸미기 패널: 분류 6그룹 · 55칸 (' + grid.cats.join('/') + ')');
+ok(grid.cells === 55 && grid.cats.join('/') === '제목/사진 틀/이름·정보/사람 뒤 글자/방송 글자/화면 효과', '꾸미기 패널: 분류 6그룹 · 55칸 (' + grid.cats.join('/') + ')');
 
 // ---------- 자막 9종 · 분류 UI ----------
 const subUI = await page.evaluate(() => ({
@@ -137,7 +137,7 @@ await page.evaluate(() => { KMV_UI.setPH(30); });
 const bb = await page.evaluate(() => { const r = document.getElementById('timeline').getBoundingClientRect(); return { x: r.x, y: r.y, pxf: KMV_UI.xOf(1) - KMV_UI.xOf(0) }; });
 await page.mouse.click(bb.x + await page.evaluate(() => KMV_UI.xOf(30)), bb.y + 180);   // V 레인의 첫 클립 (레인: 눈금24+P40+S40+V2 32 → V 136~224)
 const trPanel2 = await page.evaluate(() => ({ bodyShown: !document.getElementById('trBody').classList.contains('hidden') }));
-ok(trPanel.h3.includes('화면 전환') && trPanel.inPanel && trPanel.autoShown && trPanel2.bodyShown, '화면 전환이 독립 패널로 — 플레이헤드 아래 클립을 따라 열림·클릭해도 유지 (' + trPanel.h3.trim() + ')');
+ok(trPanel.h3.includes('화면 넘기기') && trPanel.inPanel && trPanel.autoShown && trPanel2.bodyShown, '화면 전환이 독립 패널로 — 플레이헤드 아래 클립을 따라 열림·클릭해도 유지 (' + trPanel.h3.trim() + ')');
 
 // ---------- 자석 스냅 — 앞 카드 끝에 딱 붙기 ----------
 const mag = await page.evaluate(() => { const P2 = KMV_PROJECT; P2.clearP(); const A = P2.addP({ part: 'tag', at: 0 }); const B = P2.addP({ part: 'tag', at: 170 }); KMV_UI.setPH(0); return { aEnd: A.at + A.dur, b: B.id, bAt: B.at, pxf: KMV_UI.xOf(1) - KMV_UI.xOf(0) }; });
@@ -198,13 +198,13 @@ const mag = await page.evaluate(() => { const P2 = KMV_PROJECT; P2.clearP(); con
     const vis = id => document.getElementById(id).getBoundingClientRect().height > 0;
     const tabs = Array.from(document.querySelectorAll('#toolTabs button')).map(b => b.textContent);
     KMV_UI.tab('parts'); const a = { parts: vis('partPanel'), sub: vis('subPanel'), music: vis('musicPanel'), look: vis('lookPanel'), proj: vis('projPanel') };
-    document.querySelector('#toolTabs [data-tab="music"]').click(); const b = { parts: vis('partPanel'), music: vis('musicPanel'), on: document.querySelector('#toolTabs button.on').dataset.tab, saved: localStorage.getItem('kmv.tab') };
+    document.querySelector('#toolTabs [data-tab="sound"]').click(); const b = { parts: vis('partPanel'), music: vis('musicPanel'), on: document.querySelector('#toolTabs button.on').dataset.tab, saved: localStorage.getItem('kmv.tab') };
     KMV_UI.tab('parts');
     return { tabs, a, b };
   });
-  ok(tb.tabs.join('/') === '타이틀·꾸미기/자막/음악/자동/룩/프로젝트', '도구상자 탭 6개 (' + tb.tabs.join('/') + ')');
-  ok(tb.a.parts && !tb.a.sub && !tb.a.music && !tb.a.look && !tb.a.proj, '탭 하나만 보인다 (타이틀·꾸미기)');
-  ok(!tb.b.parts && tb.b.music && tb.b.on === 'music' && tb.b.saved === 'music', '음악 탭 클릭 → 음악만, 기억됨');
+  ok(tb.tabs.join('/') === '글자/사진/화면 넘기기/분위기/소리/더 보기', '도구상자 탭 6개 — 학생 말 (' + tb.tabs.join('/') + ')');
+  ok(tb.a.parts && tb.a.sub && !tb.a.music && !tb.a.look && !tb.a.proj, '「글자」 탭엔 멋진 글자·말소리 자막이 같이, 다른 탭은 숨음');
+  ok(!tb.b.parts && tb.b.music && tb.b.on === 'sound' && tb.b.saved === 'sound', '소리 탭 클릭 → 소리만, 기억됨');
 }
 
 ok(errs.length === 0, '콘솔 오류 0' + (errs.length ? ' — ' + errs.slice(0, 3).join(' | ') : ''));

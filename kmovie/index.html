@@ -94,6 +94,24 @@
   .tabs button:hover { color:var(--txt); background:rgba(255,255,255,.04); }
   .tabs button.on { color:var(--gold); border-bottom-color:var(--gold); font-weight:700; }
   #colTools .panel[data-tab]:not(.tabOn) { display:none; }
+  /* 학생 기준 도구상자(2026-09-13): 글자·사진·화면 넘기기·분위기·소리·더 보기 — 어른용은 「더 보기」 접이식 뒤로 */
+  .tabs button { font-size:12.5px; }
+  .fold { margin-top:8px; border-top:1px dashed var(--line); }
+  .fold .foldBtn { width:100%; text-align:left; background:transparent; border:0; color:var(--dim); font-size:11.5px; padding:8px 2px 6px; cursor:pointer; }
+  .fold .foldBtn::before { content:'▸ '; color:var(--gold); }
+  .fold.open .foldBtn::before { content:'▾ '; }
+  .fold .foldBtn:hover { color:var(--txt); }
+  .fold:not(.open) .foldBody { display:none; }
+  .bigbtn { width:100%; padding:10px 8px; font-size:14px; font-weight:700; border-radius:9px; }
+  .pgrid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .pgrid .cat { grid-column:1 / -1; }
+  #partGrid .pc[data-cat=fx], #partGrid .pc[data-cat=photo], #partGrid .cat[data-cat=fx], #partGrid .cat[data-cat=photo] { display:none; }   /* 화면 효과는 「분위기」, 사진 틀은 「사진」 탭에 */
+  .pc small { display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #transGrid .stile canvas, #lutGallery .stile canvas { aspect-ratio:16/9; }
+  #transGrid .stile small, #lutGallery .stile small, #transGrid .stile b, #lutGallery .stile b { display:block; text-align:center; }
+  #transGrid .stile small, #lutGallery .stile small { color:var(--dim); font-size:10px; padding:0 4px 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .kidHint { color:var(--sub); font-size:12px; line-height:1.55; margin:2px 0 8px; }
+  .kidHint b { color:var(--gold); }
   #colTools .panel[data-tab] { border-bottom:0; }
   #colSet .none { display:none; }
   #clipPanel:has(#clipBody.hidden), #trPanel:has(#trBody.hidden), #subCardPanel:has(#subEdit.hidden), #v2Panel:has(#v2Body.hidden), #musicCardPanel:has(#musicBody.hidden) { display:none; }
@@ -187,8 +205,8 @@
   .sgal .stile b { display:block; font-size:11px; font-weight:600; color:var(--sub); text-align:center; padding:3px 4px 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .sgal .stile:hover { border-color:var(--gold); }
   .sgal .stile.on { border-color:var(--gold); box-shadow:0 0 0 1px var(--gold) inset; } .sgal .stile.on b { color:var(--gold); }
-  #subDefGallery .cat, #partGrid .cat, #subStyleSeg .cat { color:#c9b06a; font-size:11.5px; font-weight:700; letter-spacing:1.5px; margin:8px 0 -2px; padding-top:7px; border-top:1px solid var(--line); }
-  #subDefGallery .cat:first-child, #partGrid .cat:first-child, #subStyleSeg .cat:first-child { border-top:0; margin-top:0; padding-top:0; }
+  #subDefGallery .cat, #partGrid .cat, #photoGrid .cat, #fxGrid .cat, #subStyleSeg .cat { color:#c9b06a; font-size:11.5px; font-weight:700; letter-spacing:1.5px; margin:8px 0 -2px; padding-top:7px; border-top:1px solid var(--line); }
+  #subDefGallery .cat:first-child, #partGrid .cat:first-child, #photoGrid .cat:first-child, #fxGrid .cat:first-child, #subStyleSeg .cat:first-child { border-top:0; margin-top:0; padding-top:0; }
   /* 부품 미리보기 창 — 타일에 올리면 뜨고(움직임 재생), 클릭하면 고정 + 넣기 */
   #partPeek { position:fixed; z-index:40; width:400px; background:var(--panel); border:1px solid var(--gold); border-radius:12px; box-shadow:0 18px 50px rgba(0,0,0,.55); overflow:hidden; }
   #partPeek canvas { display:block; width:100%; aspect-ratio:16/9; background:#000; }
@@ -340,19 +358,24 @@
       <div class="col" id="colSet">
         <div class="colTitle">설정</div>
       <div id="inspector" class="panel">
-        <h3>카드 설정</h3>
+        <h3>글자 설정</h3>
         <div id="partEdit" class="hidden">
           <div class="sub2" id="partEditName"></div>
           <div id="partFields"></div>
-          <div class="row"><label>글꼴</label><select id="partFont"></select></div>
+          <div class="row"><label>글씨체</label><select id="partFont"></select></div>
           <div class="row"><label>크기</label><input type="range" id="partSize" min="25" max="300" value="100"><span class="v" id="partSizeV" style="width:40px;text-align:right">100%</span></div>
-          <div class="row"><label>초점</label><div class="seg anch" id="partAnchorSeg" title="크기를 키우는 축 · 뚫린 글자·흐르는 글자는 글자가 놓이는 자리"></div><button id="btnPartAnchorAuto" title="부품이 정한 자리로" style="padding:4px 8px;font-size:11px">자동</button></div>
+          <div class="row"><label>나타나기</label><div class="fxrow"><select id="partFxIn"></select><div class="seg c3" id="partFxInDur"></div></div></div>
+          <div class="row"><label>사라지기</label><div class="fxrow"><select id="partFxOut"></select><div class="seg c3" id="partFxOutDur"></div></div></div>
+          <div class="row"><label>길이</label><input type="number" id="partDur" min="0.5" max="120" step="0.5"><span class="v">초</span><div class="sp"></div><span class="note" id="partHoldNote"></span></div>
+          <div class="fold" data-fold="partAdv">
+            <button class="foldBtn" type="button">더 보기 — 기준점 · 위치 · 사람 뒤</button>
+            <div class="foldBody">
+          <div class="row"><label>기준점</label><div class="seg anch" id="partAnchorSeg" title="크기를 키우는 축 · 뚫린 글자·흐르는 글자는 글자가 놓이는 자리"></div><button id="btnPartAnchorAuto" title="부품이 정한 자리로" style="padding:4px 8px;font-size:11px">자동</button></div>
           <div class="row"><label>가로</label><input type="range" id="partX" min="-40" max="40" value="0"><span class="v" id="partXV" style="width:40px;text-align:right">0</span></div>
           <div class="row"><label>세로</label><input type="range" id="partY" min="-40" max="40" value="0"><span class="v" id="partYV" style="width:40px;text-align:right">0</span></div>
-          <div class="row"><label>등장</label><div class="fxrow"><select id="partFxIn"></select><div class="seg c3" id="partFxInDur"></div></div></div>
-          <div class="row"><label>퇴장</label><div class="fxrow"><select id="partFxOut"></select><div class="seg c3" id="partFxOutDur"></div></div></div>
-          <div class="row"><label>길이</label><input type="number" id="partDur" min="0.5" max="120" step="0.5"><span class="v">초</span><div class="sp"></div><span class="note" id="partHoldNote"></span></div>
-          <div class="row" id="rowPartCut"><label>인물 뒤</label><button class="tog" id="tgPartCut"></button><span class="note">사람만 앞에 다시 얹어요 (AI 컷아웃)</span></div>
+          <div class="row" id="rowPartCut"><label>사람 뒤</label><button class="tog" id="tgPartCut"></button><span class="note">사람만 앞에 다시 얹어요 (AI 컷아웃)</span></div>
+            </div>
+          </div>
           <div class="row"><span class="v" id="partEditTime" style="font-size:12px;color:var(--sub)"></span><div class="sp"></div><button id="btnPartDup" title="같은 카드 하나 더 (바로 뒤에)">복제</button><button id="btnPartDel" class="danger">삭제</button></div>
         </div>
       </div>
@@ -388,8 +411,8 @@
         </div>
       </div>
       <div class="panel" id="trPanel">
-        <h3>화면 전환</h3>
-        <div id="trNone" class="none">전환을 줄 클립을 타임라인에서 고르면<br>그 클립의 시작에 전환이 붙어요.</div>
+        <h3>화면 넘기기</h3>
+        <div id="trNone" class="none">클립을 고르면<br>그 클립이 시작할 때 어떻게 넘어갈지 정해요.</div>
         <div id="trBody" class="hidden">
           <div class="row"><label>종류</label><select id="trType"></select></div>
           <div class="row" id="rowTrDur"><label>길이</label><div class="seg c3" id="trDurSeg"></div></div>
@@ -397,17 +420,23 @@
         </div>
       </div>
       <div class="panel" id="subCardPanel">
-        <h3>자막 카드</h3>
-        <div id="subCardNone" class="none">S 레인의 자막을 고르면<br>문구·구간을 여기서 고쳐요. 스타일은 도구상자 「자막」에서.</div>
-        <div id="subEdit" class="hidden"><div class="row"><label>문구</label><input type="text" id="subEditText" style="flex:1"></div>
-          <div class="row"><label>스타일</label><div id="subStyleSeg" style="display:flex;flex-direction:column;gap:5px;flex:1"></div></div>
-          <div class="row"><label>글꼴</label><select id="subFont"></select></div>
+        <h3>글자</h3>
+        <div id="subCardNone" class="none">글자를 고르면 여기서 고쳐요.</div>
+        <div id="subEdit" class="hidden"><div class="row"><label>글자</label><input type="text" id="subEditText" style="flex:1" placeholder="여기에 글자를 써요"></div>
+          <div class="row"><label>글씨체</label><select id="subFont"></select></div>
           <div class="row"><label>크기</label><input type="range" id="subSize" min="50" max="200" value="100"><span class="v" id="subSizeV" style="width:40px;text-align:right">100%</span></div>
-          <div class="row"><label>위치</label><div class="seg c4" id="subPosSeg"></div></div>
-          <div class="row"><label>미세</label><input type="range" id="subY" min="-30" max="30" value="0"><span class="v" id="subYV" style="width:40px;text-align:right">0</span></div>
           <div class="row"><label>색</label><div class="seg" id="subColorSeg"></div></div>
-          <div class="row"><label>등장</label><div class="fxrow"><select id="subFxIn"></select><div class="seg c3" id="subFxInDur"></div></div></div>
-          <div class="row"><label>퇴장</label><div class="fxrow"><select id="subFxOut"></select><div class="seg c3" id="subFxOutDur"></div></div></div><div class="row"><label>내 스타일</label><div id="myStyles" style="display:flex;flex-wrap:wrap;gap:4px;flex:1"></div><button id="btnStyleSave" title="이 카드의 스타일·글꼴·크기·위치·색·등장·퇴장을 이름 붙여 저장해요 — 작업 파일과 함께 남고, 「새 자막」 기본값으로도 고를 수 있어요">저장</button></div>
+          <div class="row"><label>모양</label><div id="subStyleSeg" style="display:flex;flex-direction:column;gap:5px;flex:1"></div></div>
+          <div class="row"><label>자리</label><div class="seg c4" id="subPosSeg"></div></div>
+          <div class="row"><label>나타나기</label><div class="fxrow"><select id="subFxIn"></select><div class="seg c3" id="subFxInDur"></div></div></div>
+          <div class="row"><label>사라지기</label><div class="fxrow"><select id="subFxOut"></select><div class="seg c3" id="subFxOutDur"></div></div></div>
+          <div class="fold" data-fold="subAdv">
+            <button class="foldBtn" type="button">더 보기 — 위아래 조금씩 · 내 모양 저장</button>
+            <div class="foldBody">
+          <div class="row"><label>위아래</label><input type="range" id="subY" min="-30" max="30" value="0"><span class="v" id="subYV" style="width:40px;text-align:right">0</span></div>
+          <div class="row"><label>내 모양</label><div id="myStyles" style="display:flex;flex-wrap:wrap;gap:4px;flex:1"></div><button id="btnStyleSave" title="이 글자의 모양·글씨체·크기·자리·색·나타나기·사라지기를 이름 붙여 저장해요 — 작업 파일과 함께 남고, 새 글자 기본값으로도 고를 수 있어요">저장</button></div>
+            </div>
+          </div>
           <div class="row"><label>구간</label><span class="v" id="subEditTime"></span><div class="sp"></div><button id="btnSubCut" title="이 자막 구간만큼 영상·소리를 잘라내요 (리플 · Ctrl+Z 한 번)">✂ 이 말 잘라내기</button><button id="btnSubDel" class="danger">삭제</button></div></div>
       </div>
       <div class="panel" id="v2Panel">
@@ -439,21 +468,49 @@
       </div>
       <div class="split v" id="splitTools" title="끌어서 도구상자 너비 · 더블클릭 기본값"></div>
       <div class="col" id="colTools">
-        <div class="tabs" id="toolTabs"><button data-tab="parts">타이틀·꾸미기</button><button data-tab="sub">자막</button><button data-tab="music">음악</button><button data-tab="auto">자동</button><button data-tab="look">룩</button><button data-tab="proj">프로젝트</button></div>
-      <div class="panel" id="partPanel" data-tab="parts">
-        <h3>타이틀·꾸미기<div class="sp"></div><span class="note" style="letter-spacing:0;text-transform:none;font-weight:400">끌어서 P 레인에 · 클릭은 플레이헤드에</span></h3>
+        <div class="tabs" id="toolTabs"><button data-tab="text">글자</button><button data-tab="photo">사진</button><button data-tab="trans">화면 넘기기</button><button data-tab="mood">분위기</button><button data-tab="sound">소리</button><button data-tab="more">더 보기</button></div>
+      <div class="panel" id="textPanel" data-tab="text">
+        <h3>글자</h3>
+        <div class="row"><button id="btnTextAdd" class="gold bigbtn" title="지금 자리(플레이헤드)에 글자 하나 — 왼쪽 설정에서 글자·글씨체·크기·색·모양을 바꿔요">＋ 글자 넣기</button></div>
+        <div class="kidHint">누르면 화면에 글자가 하나 생겨요. <b>왼쪽 설정</b>에서 글자를 쓰고, 글씨체·크기·색·모양을 골라요.</div>
+        <div class="sub2">모양 고르기 <span class="note" style="letter-spacing:0">— 새로 넣는 글자의 모양</span></div>
+        <div id="subDefGallery" title="새로 넣는 글자의 모양 — 이미 넣은 글자는 왼쪽 설정에서 바꿔요"></div>
+      </div>
+      <div class="panel" id="partPanel" data-tab="text">
+        <h3>멋진 글자<div class="sp"></div><span class="note" style="letter-spacing:0;text-transform:none;font-weight:400">클릭: 미리보기 · 더블클릭: 넣기 · 끌어서 놓기</span></h3>
+        <div class="kidHint">움직임이 들어 있는 글자예요. 글자 내용은 넣은 뒤 <b>왼쪽 설정</b>에서 바꿔요.</div>
         <div id="partGrid"></div>
       </div>
-      <div class="panel" id="subPanel" data-tab="sub">
-        <h3>자막<div class="sp"></div><button id="btnSubClear" title="자막 전부 지우기">비우기</button></h3>
+      <div class="panel" id="subPanel" data-tab="text">
+        <div class="fold" data-fold="stt">
+          <button class="foldBtn" type="button">더 보기 — 말소리를 글자로 (받아쓰기 · 여러 문장 한 번에 · 글자 목록)</button>
+          <div class="foldBody">
+        <div class="row" style="margin-top:4px"><span class="note" style="flex:1">여러 문장을 한 줄에 하나씩 쓰고 「자동 배치」 — 말하는 구간에 나눠 놓아요</span><button id="btnSubClear" title="자막 전부 지우기">비우기</button></div>
         <textarea id="subText" placeholder="한 줄에 한 문장씩 붙여넣고 [자동 배치] — 현장음의 말하는 구간에 나눠 놓아요"></textarea>
         <div class="row" style="margin-top:6px"><button id="btnSubStt" title="원본의 말소리를 whisper 가 받아써 자막 카드로 놓아요 — 데스크톱 케이무비 전용" style="flex:1">🎙 받아쓰기</button><button id="btnSubAuto" class="gold" style="flex:1">자동 배치</button><button id="btnSubAdd" title="플레이헤드에 자막 카드 하나">＋ 여기에</button></div>
-        <div class="row"><label>새 자막</label><select id="subDefStyle" style="flex:1;min-width:0;background:#0f1524;color:var(--txt);border:1px solid var(--line2);border-radius:6px;padding:3px 6px;font-size:12px"></select></div>
-        <div id="subDefGallery" title="새로 놓는 자막의 디자인 — 카드를 고르면 카드 설정에서 바꿔요"></div>
+        <div class="row"><label>새 글자 모양</label><select id="subDefStyle" style="flex:1;min-width:0;background:#0f1524;color:var(--txt);border:1px solid var(--line2);border-radius:6px;padding:3px 6px;font-size:12px"></select></div>
         <div id="subList"></div>
+          </div>
+        </div>
       </div>
-      <div class="panel" id="musicPanel" data-tab="music">
-        <h3>음악<div class="sp"></div><button id="btnMusicImport">＋ 음악 파일</button></h3>
+      <div class="panel" id="photoPanel" data-tab="photo">
+        <h3>사진</h3>
+        <div class="row"><button id="btnPhotoImport" class="gold bigbtn" title="사진·영상 파일을 가져와요 (아래 미디어 띠에 들어가요)">＋ 사진 가져오기</button></div>
+        <div class="kidHint">가져온 사진은 아래 <b>미디어 띠</b>에 들어가요. 사진을 <b>영상 위로 끌어다 놓으면</b> 영상 위에 겹치고, <b>영상 줄에 놓으면</b> 그 자리에 끼워져요. 겹친 사진은 화면에서 끌어 옮기고 모서리로 크기를 바꿔요.</div>
+        <div class="sub2">사진 틀 <span class="note" style="letter-spacing:0">— 틀을 넣고 왼쪽 설정에서 사진을 골라요</span></div>
+        <div id="photoGrid" class="pgrid"></div>
+        <div class="fold" data-fold="photoAuto">
+          <button class="foldBtn" type="button">더 보기 — 사진 여러 장을 한 번에 넘기기</button>
+          <div class="foldBody"><div class="note">영상 줄에 사진을 여러 장 넣은 뒤 「더 보기」 탭의 <b>사진 묶어 넣기</b>를 누르면 길이를 맞추고 움직임·넘김이 붙어요.</div><div class="row"><button id="btnGoPhotoSlide" style="flex:1">사진 묶어 넣기로 가기</button></div></div>
+        </div>
+      </div>
+      <div class="panel" id="transPanel" data-tab="trans">
+        <h3>화면 넘기기</h3>
+        <div class="kidHint" id="transHint">타임라인에서 <b>클립을 하나 고르고</b> 모양을 누르면, 그 클립이 <b>시작할 때</b> 이렇게 넘어가요. 길이·방향은 왼쪽 설정에서.</div>
+        <div id="transGrid" class="sgal"></div>
+      </div>
+      <div class="panel" id="musicPanel" data-tab="sound">
+        <h3>소리<div class="sp"></div><button id="btnMusicImport">＋ 음악 파일</button></h3>
         <div id="musicNone" class="note">mp3·wav·m4a 또는 아래에서 고르기·만들기</div>
         <div class="sub2">내장 음원 <span class="note" id="libNote" style="letter-spacing:0"></span></div>
         <div class="row" id="libMoodRow"><div class="seg" id="libMoodSeg" style="flex-wrap:wrap;gap:4px;flex:1"></div></div>
@@ -465,6 +522,9 @@
         <div class="row"><label>조성</label><div class="seg c3" id="genKeySeg"></div></div>
         <div class="row"><label>길이</label><div class="seg c3" id="genLenSeg"></div></div>
         <div class="row"><button id="btnGenPrev">▶ 미리듣기</button><button id="btnGenShuffle" title="같은 무드로 다르게 섞어요">다시 섞기</button><div class="sp"></div><button id="btnGenPlace" class="gold">놓기</button></div>
+        <div class="fold" data-fold="soundAdv">
+          <button class="foldBtn" type="button">더 보기 — 효과음 · 소리 크기 · 말할 때 음악 낮추기 · 현장음 · 박자 맞추기</button>
+          <div class="foldBody">
         <div class="sub2">효과음</div>
         <div class="row"><label>자동 효과음</label><button class="tog" id="tgSfx"></button><span class="note">전환·타이틀·자막에 어울리는 소리가 자동으로 붙어요</span></div>
         <div class="row" id="rowSfxGain"><label>세기</label><div class="seg c3" id="sfxGainSeg"></div></div>
@@ -486,9 +546,11 @@
         <div class="row"><label>컷 간격</label><div class="seg c3" id="montEverySeg"></div></div>
         <div class="row"><label>구간</label><div class="seg" id="montPickSeg"></div></div>
         <div class="row"><button id="btnMontage" class="gold" style="flex:1">몽타주 깔기</button></div>
+          </div>
+        </div>
       </div>
-      <div class="panel" id="autoPanel" data-tab="auto">
-        <h3>자동<div class="sp"></div><span class="note" style="letter-spacing:0;text-transform:none;font-weight:400">찾아서 보여만 줘요 — 넣는 건 눌러야</span></h3>
+      <div class="panel" id="autoPanel" data-tab="more">
+        <h3>자동으로 찾기<div class="sp"></div><span class="note" style="letter-spacing:0;text-transform:none;font-weight:400">찾아서 보여만 줘요 — 넣는 건 눌러야</span></h3>
         <div class="sub2">무음 잘라내기</div>
         <div class="note" id="silNote">말과 말 사이 조용한 곳을 찾아 한 번에 잘라내요. 자막·꾸미기·덧영상·마커는 따라옵니다.</div>
         <div class="row"><label>여유</label><div class="seg c3" id="silPadSeg"></div></div>
@@ -509,20 +571,31 @@
         <div class="note" id="fillNote">받아쓴 자막에서 “어·음·그·저기” 같은 말버릇을 찾아 지워요. 뜻이 있는 말도 걸릴 수 있어 먼저 찾아보세요.</div>
         <div class="row"><button id="btnFillFind" style="flex:1">찾기</button><button id="btnFillStrip" class="gold" style="flex:1">지우기</button></div>
       </div>
-      <div class="panel" id="lookPanel" data-tab="look">
-        <h3>룩 (프로젝트)</h3>
-        <div class="row"><label>테마</label><div class="seg c3" id="themeSeg"></div></div>
-        <div class="row"><label>LUT</label><div class="seg c4" id="lutSeg"></div></div>
-        <div class="row"><label>강도</label><input type="range" id="lutStr" min="0" max="100" value="60"><span class="v" id="lutStrV" style="width:34px;text-align:right">60%</span></div>
+      <div class="panel" id="lookPanel" data-tab="mood">
+        <h3>분위기</h3>
+        <div class="kidHint">영상 <b>전체의 색 느낌</b>이에요. 하나 고르면 모든 장면에 같이 입혀져요.</div>
+        <div id="lutGallery" class="sgal"></div>
+        <div class="row" style="margin-top:6px"><label>세기</label><input type="range" id="lutStr" min="0" max="100" value="60"><span class="v" id="lutStrV" style="width:34px;text-align:right">60%</span></div>
+        <div class="row"><label>색 느낌</label><div class="seg c4" id="lutSeg"></div></div>
+        <div class="row"><label>글자 색 세트</label><div class="seg c3" id="themeSeg"></div></div>
+        <div class="sub2">화면 효과 <span class="note" style="letter-spacing:0">— 더블클릭하거나 끌어서 놓기</span></div>
+        <div id="fxGrid" class="pgrid"></div>
+        <div class="fold" data-fold="moodAdv">
+          <button class="foldBtn" type="button">더 보기 — 밝기 맞추기 · 색 맞추기 · 영화 화면 · 가장자리 어둡게</button>
+          <div class="foldBody">
         <div class="row"><label>노출 맞춤</label><button class="tog" id="tgExpose"></button><span class="note">클립마다 밝기·대비를 한 작품처럼</span></div>
         <div class="row"><label>색 맞춤</label><button class="tog" id="tgMatch"></button><span class="note">색 온도가 다른 클립을 한 작품처럼 (자동 화이트밸런스)</span></div>
         <div class="row"><label>샷 색 맞춤</label><button id="btnShotMatch" title="타임라인에서 고른 클립을 기준으로 다른 클립들의 색 균형·밝기·대비를 맞춰요 (Ctrl+Z 한 번)">고른 클립 기준으로 맞추기</button><button id="btnShotMatchOff" title="샷 색 맞춤을 전부 풀어요">해제</button></div>
         <div class="note" id="shotMatchNote">클립 하나를 고르고 누르면 나머지가 그 클립 색을 따라가요.</div>
         <div class="row"><label>시네마 바</label><button class="tog" id="tgBar"></button><span class="note">2.39:1 레터박스</span></div>
         <div class="row"><label>비네트</label><input type="range" id="vig" min="0" max="100" value="0"><span class="v" id="vigV" style="width:34px;text-align:right">0%</span></div>
+          </div>
+        </div>
       </div>
-      <div class="panel" id="projPanel" data-tab="proj">
-        <h3>프로젝트</h3>
+      <div class="panel" id="projPanel" data-tab="more">
+        <h3>내 영상 정보</h3>
+        <div class="row"><label>우리 학교</label><input type="text" id="schoolName" placeholder="예: 한빛초등학교" style="flex:1" title="넣는 글자의 「학교 이름」 자리에 이 이름이 들어가요"></div>
+        <div class="note" style="margin-bottom:6px">「큰 제목」「뚫린 글자」 같은 글자를 넣을 때 학교 이름 자리에 이 이름이 들어가요.</div>
         <div class="row" style="display:flex;gap:8px;font-size:13px"><span style="color:var(--sub)">전체</span><span id="pTot" class="v">0초</span><span style="color:var(--sub);margin-left:8px">클립</span><span id="pCnt" class="v">0</span></div>
         <div class="row" style="margin-top:8px"><label>화면비</label><div class="seg c3" id="aspectSeg"></div></div>
         <div class="note" id="aspNote">가로는 유튜브·홈페이지, 세로는 쇼츠·릴스, 정사각은 게시글용이에요. 바꾸면 클립을 화면에 꽉 채우고 볼거리가 있는 쪽을 남겨요 (클립 「채우기」에서 바꿀 수 있어요).</div>

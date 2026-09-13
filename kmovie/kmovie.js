@@ -1327,16 +1327,34 @@
   applyLayout();
   window.addEventListener('resize', applyLayout);
 
-  /* 도구상자 탭 — 타이틀·꾸미기 / 자막 / 음악 / 룩 / 프로젝트 중 하나만 (이 브라우저에 기억) */
-  let toolTab = 'parts'; try { toolTab = localStorage.getItem('kmv.tab') || 'parts'; } catch (e) {}
+  /* 도구상자 탭 — 학생 기준 다섯 칸 + 더 보기(2026-09-13 준호: "가장 기본적이고 직관적으로, 구분이 쉽게 · 학생이 기본 대상"):
+     글자(text) · 사진(photo) · 화면 넘기기(trans) · 분위기(mood) · 소리(sound) · 더 보기(more).
+     한 탭에 패널 여러 개(같은 data-tab). 옛 탭 이름(parts·sub·music·look·auto·proj)은 별칭 — 그 탭으로 가고 접힌 「더 보기」도 편다(옛 코드·테스트 호환). */
+  const TAB_ALIAS = { parts: 'text', sub: 'text', music: 'sound', look: 'mood', auto: 'more', proj: 'more' };
+  let toolTab = 'text'; try { toolTab = localStorage.getItem('kmv.tab') || 'text'; } catch (e) {}
   function setTab(id) {
-    if (!document.querySelector('#toolTabs [data-tab="' + id + '"]')) id = 'parts';
+    let legacy = false;
+    if (TAB_ALIAS[id]) { id = TAB_ALIAS[id]; legacy = true; }
+    if (!document.querySelector('#toolTabs [data-tab="' + id + '"]')) id = 'text';
     toolTab = id; try { localStorage.setItem('kmv.tab', id); } catch (e) {}
     document.querySelectorAll('#toolTabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === id));
     document.querySelectorAll('#colTools .panel[data-tab]').forEach(pn => pn.classList.toggle('tabOn', pn.dataset.tab === id));
+    if (legacy) document.querySelectorAll('.fold').forEach(f => setFold(f, true, true));
     $('colTools').scrollTop = 0;
-    if (typeof setSide === 'function' && id === 'proj') setSide('tools');
+    if (typeof setSide === 'function' && id === 'more') setSide('tools');
+    if (id === 'trans') refreshTransGrid(); if (id === 'mood') { refreshLutGallery(); }
   }
+  /* 접이식 「더 보기」 — 어른용 조절기는 기본 접힘, 연 상태는 이 브라우저에 기억 */
+  function setFold(f, open, silent) {
+    f.classList.toggle('open', !!open);
+    if (!silent) try { localStorage.setItem('kmv.fold.' + f.dataset.fold, open ? '1' : '0'); } catch (e) {}
+  }
+  document.querySelectorAll('.fold').forEach(f => {
+    let open = false; try { open = localStorage.getItem('kmv.fold.' + f.dataset.fold) === '1'; } catch (e) {}
+    setFold(f, open, true);
+    const b = f.querySelector('.foldBtn'); if (b) b.onclick = () => setFold(f, !f.classList.contains('open'));
+  });
+  function fold(id, open) { const f = document.querySelector('.fold[data-fold="' + id + '"]'); if (f) setFold(f, open == null ? !f.classList.contains('open') : open); }
   document.querySelectorAll('#toolTabs button').forEach(b => { b.onclick = () => setTab(b.dataset.tab); });
   setTab(toolTab);
   /* 설정·도구상자는 언제나 나란히(2026-09-10) — 옛 「설정 | 도구상자」 탭은 없앴다. setSide 는 호환용: 카드를 고르면 설정 열을 맨 위(카드 설정)로 올려 글자 칸이 바로 보이게 한다. */
@@ -1473,7 +1491,21 @@
     setOn($('fitSeg'), c.fill || 'auto');
     $('fitNote').textContent = ax === 'x' ? '화면보다 넓은 원본이라 좌우를 잘라 채워요.' : '화면보다 높은 원본이라 위아래를 잘라 채워요.';
   }
-  function refreshProject() { refreshAspect(); refreshTpl(); refreshLogo(); $('pTot').textContent = secStr(P.total()); $('pCnt').textContent = P.data.V.length + (selSet.size > 1 ? ' (선택 ' + selSet.size + ')' : ''); if (stage !== 'src') $('tcTot').textContent = tc(P.total()); }
+  /* 우리 학교 — 「더 보기 · 내 영상 정보」 칸 ↔ P.data.school. 로그인한 교사의 학교(my_school RPC)가 있으면 비어 있을 때 한 번 채운다. */
+  let schoolAsked = false;
+  function refreshSchool(force) { const inp = $('schoolName'); if (inp && (force || document.activeElement !== inp)) inp.value = P.data.school || ''; }
+  $('schoolName').onchange = e => { P.setSchool(e.target.value); if (P.data.school) toast('학교 이름을 「' + P.data.school + '」 로 — 새로 넣는 글자에 들어가요', 2200); };
+  async function fillSchoolFromAccount() {
+    if (schoolAsked || P.data.school) return; schoolAsked = true;
+    try {
+      const c = ST && ST.client && ST.client(); if (!c || !c.rpc) return;
+      const s = ST.session ? await ST.session() : null; if (!s) return;
+      const r = await c.rpc('my_school'); const row = r && r.data && r.data[0];
+      if (row && row.school_name && !P.data.school) { P.data.school = String(row.school_name); refreshSchool(); }
+    } catch (e) {}
+  }
+  setTimeout(fillSchoolFromAccount, 1500);
+  function refreshProject() { refreshSchool(); refreshAspect(); refreshTpl(); refreshLogo(); $('pTot').textContent = secStr(P.total()); $('pCnt').textContent = P.data.V.length + (selSet.size > 1 ? ' (선택 ' + selSet.size + ')' : ''); if (stage !== 'src') $('tcTot').textContent = tc(P.total()); }
 
   /* ---------- 3단계 패널: 룩·켄 번즈·전환·자막 ---------- */
   function segBtn(parent, k, label, fn, title) { const b = document.createElement('button'); b.textContent = label; b.dataset.k = k; if (title) b.title = title; b.onclick = fn; parent.appendChild(b); return b; }
@@ -1494,8 +1526,79 @@
   (TR.CATS || [{ id: null }]).forEach(cat => {
     const items = TR.TYPES.filter(t => !cat.id || t.cat === cat.id); if (!items.length) return;
     const box = cat.id ? document.createElement('optgroup') : $('trType'); if (cat.id) { box.label = cat.name; $('trType').appendChild(box); }
-    items.forEach(t => { const o = document.createElement('option'); o.value = t.id; o.textContent = t.name; box.appendChild(o); });
+    items.forEach(t => { const o = document.createElement('option'); o.value = t.id; o.textContent = TR.kid ? TR.kid(t.id).name : t.name; box.appendChild(o); });
   });
+  /* 도구상자 「화면 넘기기」 — 모양 타일(지금 프레임 위에 반쯤 넘어간 모습)·클릭=고른 클립(없으면 플레이헤드의 클립)에 붙이기 */
+  var transTiles = [];
+  function frameSnap(w, h) {
+    const cv = document.createElement('canvas'); cv.width = w; cv.height = h; const c = cv.getContext('2d');
+    let drawn = false;
+    try { if (P.data.V.length && pv.width && pv.height) { c.drawImage(pv, 0, 0, w, h); drawn = true; } } catch (e) {}
+    if (!drawn) { const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#2b4b7a'); g.addColorStop(0.62, '#8fb3d9'); g.addColorStop(0.63, '#4c7a3a'); g.addColorStop(1, '#2e4a24'); c.fillStyle = g; c.fillRect(0, 0, w, h); c.fillStyle = '#f2d98a'; c.beginPath(); c.arc(w * 0.78, h * 0.28, h * 0.12, 0, Math.PI * 2); c.fill(); }
+    return cv;
+  }
+  function prevSnap(next) {
+    const w = next.width, h = next.height, cv = document.createElement('canvas'); cv.width = w; cv.height = h; const c = cv.getContext('2d');
+    c.save(); c.translate(w, 0); c.scale(-1, 1); c.filter = 'brightness(0.72) sepia(0.45)'; c.drawImage(next, 0, 0); c.restore();
+    return cv;
+  }
+  (function buildTransGrid() {
+    const host = $('transGrid'); if (!host) return;
+    TR.TYPES.forEach(t => {
+      const kid = TR.kid ? TR.kid(t.id) : { name: t.name, use: '' };
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'stile'; b.dataset.k = t.id; b.title = kid.name + ' (' + t.name + ')' + (kid.use ? ' — ' + kid.use : '');
+      const cv = document.createElement('canvas'); cv.width = 176; cv.height = 99;
+      const nm = document.createElement('b'); nm.textContent = kid.name; const sm = document.createElement('small'); sm.textContent = kid.use;
+      b.append(cv, nm, sm); host.appendChild(b); transTiles.push({ id: t.id, cv, def: t });
+      b.onclick = () => {
+        const c = selClip() || P.clipAt(ph); if (!c || c.gap) { toast('타임라인에서 클립을 먼저 골라요'); return; }
+        if (!sel) select(c.id);
+        stop();
+        const cur = c.transIn || {};
+        P.setTransition(c.id, t.id === 'cut' ? null : { type: t.id, dur: cur.dur || 'normal', dir: t.dirs ? (t.dirs.includes(cur.dir) ? cur.dir : t.dirs[0]) : undefined });
+        if (t.id !== 'cut') setPH(c.at + Math.round(TR.durFrames({ dur: cur.dur || 'normal' }) / 2));
+        refreshTransGrid(); toast(kid.name + ' — 이 클립이 시작할 때 이렇게 넘어가요', 1800);
+      };
+      let anim = null;
+      b.onpointerenter = e => { if (e.pointerType !== 'mouse') return; const nx = frameSnap(176, 99), pr = prevSnap(nx), t0 = performance.now(); const tick = () => { const u = ((performance.now() - t0) / 1400) % 1; paintTransTile(cv, t.def || t, u, nx, pr); anim = requestAnimationFrame(tick); }; anim = requestAnimationFrame(tick); };
+      b.onpointerleave = () => { if (anim) cancelAnimationFrame(anim); anim = null; refreshTransGrid(); };
+    });
+  })();
+  function paintTransTile(cv, def, u, next, prev) {
+    const c = cv.getContext('2d'); c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1; c.globalCompositeOperation = 'source-over'; c.filter = 'none';
+    c.clearRect(0, 0, cv.width, cv.height); c.drawImage(next, 0, 0);
+    if (def.id === 'cut') { if (u < 0.5) { c.drawImage(prev, 0, 0); } return; }
+    try { TR.apply(c, prev, cv.width, cv.height, u, { type: def.id, dur: 'normal', dir: def.dirs ? def.dirs[0] : undefined }, P.data.theme); } catch (e) {}
+    c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1; c.globalCompositeOperation = 'source-over'; c.filter = 'none';
+  }
+  function refreshTransGrid() {
+    if (!transTiles || !$('transGrid') || toolTab !== 'trans') return;
+    const nx = frameSnap(176, 99), pr = prevSnap(nx), c = selClip() || P.clipAt(ph), cur = (c && c.transIn && c.transIn.type) || (c ? 'cut' : null);
+    transTiles.forEach(t => { paintTransTile(t.cv, t.def, 0.5, nx, pr); t.cv.parentElement.classList.toggle('on', cur === t.id); });
+    const m = c && !c.gap && P.media(c.media);
+    $('transHint').innerHTML = c && !c.gap ? '고른 클립: <b>' + (m ? m.name : '') + '</b> — 모양을 누르면 이 클립이 <b>시작할 때</b> 이렇게 넘어가요. 길이·방향은 왼쪽 설정에서.' : '타임라인에서 <b>클립을 하나 고르고</b> 모양을 누르면, 그 클립이 <b>시작할 때</b> 이렇게 넘어가요. 길이·방향은 왼쪽 설정에서.';
+  }
+  /* 도구상자 「분위기」 — 색 느낌 타일: 지금 프레임에 그 LUT 를 입힌 모습(내 영상으로 미리보기) */
+  var lutTiles = [];
+  (function buildLutGallery() {
+    const host = $('lutGallery'); if (!host) return;
+    [{ id: 'none', name: '원래 그대로', hint: '찍은 색 그대로' }].concat(LK.LUTS).forEach(l => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'stile'; b.dataset.k = l.id; b.title = l.name + (l.hint ? ' — ' + l.hint : '');
+      const cv = document.createElement('canvas'); cv.width = 176; cv.height = 99;
+      const nm = document.createElement('b'); nm.textContent = l.name; const sm = document.createElement('small'); sm.textContent = l.hint || '';
+      b.append(cv, nm, sm); host.appendChild(b); lutTiles.push({ id: l.id, cv });
+      b.onclick = () => { P.setProjectLook({ lut: l.id === 'none' ? null : l.id }); toast(l.name + ' — 영상 전체에 입혔어요', 1500); };
+    });
+  })();
+  function refreshLutGallery() {
+    if (!lutTiles || !lutTiles.length || toolTab !== 'mood') return;
+    const nx = frameSnap(176, 99), L = P.data.look, cur = L.lut || 'none';
+    lutTiles.forEach(t => {
+      const c = t.cv.getContext('2d'); c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1; c.drawImage(nx, 0, 0);
+      if (t.id !== 'none' && LK.hasLut && LK.hasLut(t.id)) { try { LK.applyCPU(c, t.cv.width, t.cv.height, LK.resolve({ look: { lut: t.id, strength: L.strength == null ? 0.6 : L.strength } }, {})); } catch (e) {} }
+      t.cv.parentElement.classList.toggle('on', cur === t.id);
+    });
+  }
   $('trType').onchange = e => { const c = selClip(); if (!c) return; stop(); const type = e.target.value, def = TR.TYPES.find(t => t.id === type); const cur = c.transIn || {}; P.setTransition(c.id, type === 'cut' ? null : { type, dur: cur.dur || 'normal', dir: def.dirs ? (def.dirs.includes(cur.dir) ? cur.dir : def.dirs[0]) : undefined }); if (type !== 'cut') setPH(c.at + Math.round(TR.durFrames({ dur: cur.dur || 'normal' }) / 2)); };
   TR.DURS.forEach(d => segBtn($('trDurSeg'), d.id, d.name + ' ' + (d.f / FPS).toFixed(1) + 's', () => { const c = selClip(); if (c && c.transIn) P.setTransition(c.id, Object.assign({}, c.transIn, { dur: d.id })); }));
   [['ltr', '→'], ['rtl', '←'], ['ttb', '↓'], ['btt', '↑'], ['in', '확대'], ['out', '축소']].forEach(([k, l]) => segBtn($('trDirSeg'), k, l, () => { const c = selClip(); if (c && c.transIn) P.setTransition(c.id, Object.assign({}, c.transIn, { dir: k })); }));
@@ -1748,6 +1851,18 @@
     if (cards.length) { selectS(cards[0].id); setPH(cards[0].at); }
   };
   $('btnSubAdd').onclick = () => { stop(); const text = $('subText').value.split(/\n/).map(x => x.trim()).filter(Boolean)[0] || '자막'; const s2 = P.addS(Object.assign({ text, at: ph, dur: 2 * FPS }, newSubFields())); selectS(s2.id); setPH(ph); };
+  /* 「＋ 글자 넣기」 — 학생 기본 동선: 누르면 글자 하나가 지금 자리에 생기고, 왼쪽 설정의 글자 칸이 바로 열린다(필모라식 — 종류를 먼저 고르게 하지 않는다) */
+  function addTextHere() {
+    stop();
+    const s2 = P.addS(Object.assign({ text: '여기에 글자', at: ph, dur: 3 * FPS }, newSubFields()));
+    selectS(s2.id); select(null); selectP(null); selectA2(null); selectV2(null); setPH(ph); setSide('set');
+    const inp = $('subEditText'); if (inp) { try { inp.focus(); inp.select(); } catch (e) {} }
+    toast('글자를 넣었어요 — 왼쪽 설정에서 글자를 쓰고 모양을 골라요', 2200);
+    return s2;
+  }
+  $('btnTextAdd').onclick = addTextHere;
+  $('btnPhotoImport').onclick = () => $('btnImport2').click();
+  $('btnGoPhotoSlide').onclick = () => { setTab('more'); const n = $('photoNote'); if (n) n.scrollIntoView({ block: 'center' }); };
   /* 받아쓰기 — 실제로 들리는 소리(A1, 소리 켠 카드)의 원본 구간만 whisper 로 받아써 자막 카드로 */
   let sttBusy = false;
   $('btnSubStt').onclick = async () => {
@@ -1858,10 +1973,11 @@
   function noteRecent(id) { recentParts = [id, ...recentParts.filter(x => x !== id)].slice(0, RECENT_MAX); try { localStorage.setItem(RECENT_KEY, JSON.stringify(recentParts)); } catch (e) {} buildPartGrid(); }
   function refreshPeekFav() { const b = $('pkFav'); if (b && peek.id) { b.classList.toggle('on', favParts.has(peek.id)); b.textContent = favParts.has(peek.id) ? '★' : '☆'; } }
   function partTile(def, meta) {
-    const el = document.createElement('div'); el.className = 'pc' + (favParts.has(def.id) ? ' fav' : ''); el.dataset.id = def.id; el.title = def.name + ' · ' + def.dur + '초 — 클릭: 미리보기 / 더블클릭: 플레이헤드에 놓기 / 끌기: P 레인에 놓기';
+    const kid = PT.kid ? PT.kid(def.id) : { name: def.name, use: '' };
+    const el = document.createElement('div'); el.className = 'pc' + (favParts.has(def.id) ? ' fav' : ''); el.dataset.id = def.id; el.dataset.cat = meta.cat || 'etc'; el.title = kid.name + (kid.name !== def.name ? ' (' + def.name + ')' : '') + ' · ' + def.dur + '초 — 클릭: 미리보기 / 더블클릭: 여기에 넣기 / 끌기: 타임라인에 놓기';
     const cv = document.createElement('canvas'); cv.width = 240; cv.height = 135; el.appendChild(cv); if (!partThumbs.has(def.id)) partThumbs.set(def.id, []); partThumbs.get(def.id).push(cv);
-    const b = document.createElement('b'); b.textContent = def.name; el.appendChild(b);
-    const sm = document.createElement('small'); sm.textContent = def.dur + '초' + (meta.behind ? ' · 인물 뒤' : ''); el.appendChild(sm);
+    const b = document.createElement('b'); b.textContent = kid.name; el.appendChild(b);
+    const sm = document.createElement('small'); sm.textContent = kid.use || (def.dur + '초' + (meta.behind ? ' · 사람 뒤' : '')); sm.title = def.dur + '초' + (meta.behind ? ' · 사람 뒤' : ''); el.appendChild(sm);
     const st = document.createElement('i'); st.className = 'star'; st.textContent = favParts.has(def.id) ? '★' : '☆'; st.title = '즐겨찾기'; st.onpointerdown = e => { e.stopPropagation(); e.preventDefault(); }; st.onclick = e => { e.stopPropagation(); toggleFav(def.id); }; el.appendChild(st);
     el.onpointerdown = e => { if (e.pointerType === 'touch') return; /* 손가락은 스크롤·탭(미리보기) — 끌어 놓기는 마우스·펜만 (15단계 touch-action:none 이 목록 스크롤을 막던 것) */ if (e.pointerType === 'mouse' && e.button !== 0) return; e.preventDefault(); partDrag = { part: def.id, dur: P.partDefault(def.id).dur, x: e.clientX, y: e.clientY, moved: false, overTL: false, f: 0 }; };
     el.onpointerenter = e => { if (e.pointerType !== 'mouse') return; peekHover(def.id, el); };
@@ -1879,9 +1995,14 @@
     if (rec.length) { head('최근 쓴 것', 'quick'); rec.forEach(id => grid.appendChild(partTile(byId.get(id).def, byId.get(id).meta))); }
     let cat = null;
     all.forEach(({ def, meta }) => {
-      if (meta.cat !== cat) { cat = meta.cat; head((PT.CATS.find(c => c.id === cat) || {}).name || cat); }
+      if (meta.cat !== cat) { cat = meta.cat; const h = head((PT.CATS.find(c => c.id === cat) || {}).name || cat); }
       grid.appendChild(partTile(def, meta));
     });
+    Array.from(grid.querySelectorAll('.cat')).forEach(h => { if (!h.classList.contains('quick')) { const c = PT.CATS.find(x => x.name === h.textContent); if (c) h.dataset.cat = c.id; } });
+    /* 같은 타일을 「사진」 탭(사진 틀)·「분위기」 탭(화면 효과)에도 — partGrid 에선 CSS 로 숨긴다(총 개수는 그대로) */
+    const pg = $('photoGrid'), fg = $('fxGrid');
+    if (pg) { pg.innerHTML = ''; all.filter(x => x.meta.cat === 'photo').forEach(({ def, meta }) => pg.appendChild(partTile(def, meta))); }
+    if (fg) { fg.innerHTML = ''; all.filter(x => x.meta.cat === 'fx').forEach(({ def, meta }) => fg.appendChild(partTile(def, meta))); }
     paintPartThumbs();
   }
   function paintPartThumbs() {
@@ -1897,7 +2018,7 @@
     setSide('set');                              // 설정 열을 카드 설정(글자 칸)으로
     setPH(pt.at + Math.min(pt.dur - 1, Math.round(PT.meta(partId).thumbT * FPS)));
     if (PT.behind(pt) && SG) SG.load().then(ok => { if (!ok) toast('인물 컷아웃 모델을 못 불러와 부품이 그냥 앞에 그려져요', 4000); });
-    toast(PT.def(partId).name + ' 을 놓았어요 — 오른쪽에서 문구를 바꾸세요', 1800);
+    toast((PT.kid ? PT.kid(partId).name : PT.def(partId).name) + ' 을 넣었어요 — 왼쪽 설정에서 글자를 바꿔요', 1800);
   }
   window.addEventListener('pointermove', e => {
     if (!partDrag) return;
@@ -1991,12 +2112,12 @@
     if (id) { const th = PT.thumb(id, null, P.data.theme, 240, 135); if (th) (partThumbs.get(id) || []).forEach(tile => { const c = tile.getContext('2d'); c.clearRect(0, 0, 240, 135); c.drawImage(th, 0, 0); }); }
   }
   function peekPin(id) {
-    const el = $('partGrid').querySelector('.pc[data-id="' + id + '"]'); if (!el) return;
+    const el = (document.querySelector('#colTools .panel.tabOn .pc[data-id="' + id + '"]')) || $('partGrid').querySelector('.pc[data-id="' + id + '"]'); if (!el) return;
     if (peek.pinned && peek.id === id) { peekHide(true); return; }
     peek.pinned = true; peekStart(id, el);
-    $('partGrid').querySelectorAll('.pc.peek').forEach(x => x.classList.remove('peek')); el.classList.add('peek');
+    document.querySelectorAll('#colTools .pc.peek').forEach(x => x.classList.remove('peek')); el.classList.add('peek');
   }
-  function peekHide(all) { peek.pinned = false; peekStop(); $('partGrid').querySelectorAll('.pc.peek').forEach(x => x.classList.remove('peek')); }
+  function peekHide(all) { peek.pinned = false; peekStop(); document.querySelectorAll('#colTools .pc.peek').forEach(x => x.classList.remove('peek')); }
   $('pkPlace').onclick = () => { const id = peek.id; peekHide(true); if (id) placePart(id, ph); };
   $('pkClose').onclick = () => peekHide(true);
   pk.addEventListener('pointerenter', () => clearTimeout(peek.timer));
@@ -2049,7 +2170,7 @@
   function refreshPartPanel() {
     const pt = selPart();
     $('partEdit').classList.toggle('hidden', !pt);
-    Array.from($('partGrid').querySelectorAll('.pc')).forEach(el => el.classList.toggle('on', !!pt && el.dataset.id === pt.part));
+    Array.from(document.querySelectorAll('#partGrid .pc, #photoGrid .pc, #fxGrid .pc')).forEach(el => el.classList.toggle('on', !!pt && el.dataset.id === pt.part));
     if (!pt) { partPanelFor = null; return; }
     const def = PT.def(pt.part), m = PT.meta(pt.part);
     if (partPanelFor !== pt.id) { buildPartFields(pt); partPanelFor = pt.id; }
@@ -2610,6 +2731,9 @@
       if (selA2 && !P.a2(selA2)) { selA2 = null; refreshMusicPanel(); }
       if (selV2 && !P.v2(selV2)) { selV2 = null; refreshV2Panel(); }
       if (kind === 'look' || kind === 'load') { paintPartThumbs(); paintSubTiles(); }
+      if (kind !== 'M') { refreshTransGrid(); }
+      if (kind === 'look' || kind === 'load' || kind === 'undo' || kind === 'redo') refreshLutGallery();
+      refreshSchool(kind === 'load');
       if (!playing && (kind === 'look' || kind === 'S' || kind === 'P' || kind === 'V2' || kind === 'change' || kind === 'load' || kind === 'undo' || kind === 'redo')) renderPreview();
     }
     if (!drag) { const tot = P.total(); if (ph > Math.max(0, tot - 1)) ph = Math.max(0, tot - 1); }
@@ -2815,8 +2939,8 @@
     catch (err) { toast(err.message || '작업 파일을 읽지 못했어요', 3000); }
   };
 
-  window.KMV_UI = { importFiles, setPH: f => setPH(f), get ph() { return ph; }, select, selectP, selectA2, selectS, placePart, play, stop, zoomFit, get pxf() { return pxf; }, get scrollF() { return scrollF; }, get selP() { return selP; }, get selA2() { return selA2; }, beatFrames,
-    get sel() { return sel; }, selectedIds, openSource, showStage, get stage() { return stage; }, get src() { return srcCur; }, setSrcPH, srcMark, srcPlace, shuttleTo, get shuttle() { return shuttle; }, get playing() { return playing || srcPlaying; }, doMarker, doCopy, doCut, doPaste, get clipboard() { return clipboard; }, get selM() { return selM; }, layout: { HEAD, RULER, LY }, xOf, frameOf, laneRows, rowGeom, selectV2, get selV2() { return selV2; }, get delChip() { return delChip; }, get proj() { return proj; }, openRecord, newProject, loadDoc, saveCloud, saveNow, openRemote, saveState, openProjModal, relinkFiles, refreshRelink, db: DB, setSide, saveToWorkDir, pickWorkDir, get workDir() { return workDir; }, tab: setTab, get toolTab() { return toolTab; }, get autoPrev() { return autoPrev; } };
+  window.KMV_UI = { importFiles, setPH: f => setPH(f), get ph() { return ph; }, select, selectP, selectA2, selectS, placePart, play, stop, zoomFit, get pxf() { return pxf; }, get scrollF() { return scrollF; }, get selP() { return selP; }, get selS() { return selS; }, get selA2() { return selA2; }, beatFrames,
+    get sel() { return sel; }, selectedIds, openSource, showStage, get stage() { return stage; }, get src() { return srcCur; }, setSrcPH, srcMark, srcPlace, shuttleTo, get shuttle() { return shuttle; }, get playing() { return playing || srcPlaying; }, doMarker, doCopy, doCut, doPaste, get clipboard() { return clipboard; }, get selM() { return selM; }, layout: { HEAD, RULER, LY }, xOf, frameOf, laneRows, rowGeom, selectV2, get selV2() { return selV2; }, get delChip() { return delChip; }, get proj() { return proj; }, openRecord, newProject, loadDoc, saveCloud, saveNow, openRemote, saveState, openProjModal, relinkFiles, refreshRelink, db: DB, setSide, saveToWorkDir, pickWorkDir, get workDir() { return workDir; }, tab: setTab, get toolTab() { return toolTab; }, fold, refreshTransGrid, refreshLutGallery, get autoPrev() { return autoPrev; } };
 
   /* ---------- 시작 ---------- */
   resize();

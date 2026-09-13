@@ -198,7 +198,7 @@
   g.KMV_STORE = {
     FILE_EXT, init: db => { DB = db; }, uuid, summary,
     local, cloud, list, get, make, save, remove, rename, download, writeToDir, fileBytes, parse, fromFile, iso,
-    owner, claimLegacy, onOwnerChange, ANON,
+    owner, claimLegacy, onOwnerChange, ANON, client, session,
     _reset: () => { dbc = null; sessionP = null; sessionNow = null; authHooked = false; ownerNow = null; ownerP = null; },
   };
 })(typeof window !== 'undefined' ? window : globalThis);

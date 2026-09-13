@@ -73,15 +73,75 @@
     vfxBokeh:     { cat: 'fx', hold: null, thumbT: 1.5, self: true, loop: true },
     vfxSpot:      { cat: 'fx', hold: null, thumbT: 1.0, self: true, loop: true },
   };
+  /* 분류 이름은 학생 말로(2026-09-13 준호: "학생이 기본 대상 — 구분이 쉽고 뭔지 알기 쉽게") */
   const CATS = [
-    { id: 'title',  name: '타이틀' },
+    { id: 'title',  name: '제목' },
     { id: 'photo',  name: '사진 틀' },
-    { id: 'info',   name: '정보 표시' },
-    { id: 'behind', name: '인물 뒤 글자' },
-    { id: 'bc',     name: '방송 자막' },
+    { id: 'info',   name: '이름·정보' },
+    { id: 'behind', name: '사람 뒤 글자' },
+    { id: 'bc',     name: '방송 글자' },
     { id: 'fx',     name: '화면 효과' },
     { id: 'etc',    name: '기타' },
   ];
+  /* 학생용 이름 + 한 줄 쓰임새 (타일에 이 이름이 보이고, 원래 이름은 툴팁에) — 없는 부품은 원래 이름 그대로 */
+  const KID = {
+    emblem:    { n: '학교 마크',         u: '영상 맨 처음에' },
+    opening:   { n: '큰 제목',           u: '영상 제목 · 학교 이름' },
+    section:   { n: '장 제목',           u: '내용이 바뀔 때 (1장, 2장…)' },
+    knockout:  { n: '뚫린 글자',         u: '글자 안으로 영상이 보여요' },
+    lower3rd:  { n: '이름표',            u: '말하는 사람 이름' },
+    counter:   { n: '숫자 올라가기',     u: '몇 명 · 몇 년 · 몇 개' },
+    tag:       { n: '장소·시간 표시',    u: '어디서 · 언제' },
+    quote:     { n: '한마디',            u: '인상 깊은 말 한 줄' },
+    chapter:   { n: '순서 번호',         u: '1 · 2 · 3 으로 나눌 때' },
+    credits:   { n: '끝 인사',           u: '영상 맨 끝에 (만든 사람)' },
+    list:      { n: '내용 목록',         u: '핵심 3~4가지 정리' },
+    sweep:     { n: '사람 뒤로 흐르는 글자', u: '사람이 앞, 글자가 뒤로' },
+    lightleak: { n: '빛 새어 들기',      u: '장면이 바뀔 때 반짝' },
+    extrude:   { n: '두꺼운 제목',       u: '힘 있는 제목' },
+    glass:     { n: '유리판 글자',       u: '고급스러운 설명' },
+    headline:  { n: '뉴스 제목',         u: '뉴스처럼 알릴 때' },
+    ticker:    { n: '뉴스 띠',           u: '아래로 흐르는 소식' },
+    nameplate: { n: '인터뷰 이름표',     u: '인터뷰하는 사람' },
+    stamp:     { n: '도장',              u: '합격! 완료! 같은 강조' },
+    flip:      { n: '뒤집히는 카드',     u: '질문 → 답' },
+    vertical:  { n: '세로 글씨',         u: '옛날 느낌 · 시' },
+    marker:    { n: '형광펜',            u: '중요한 말에 밑줄' },
+    countdown: { n: '카운트다운',        u: '3 · 2 · 1' },
+    ribbon:    { n: '리본 글자',         u: '축하 · 행사' },
+    bubble:    { n: '말풍선',            u: '속마음 · 대사' },
+    live:      { n: '라이브 표시',       u: '생방송 느낌' },
+    split:     { n: '왼쪽 · 오른쪽 이름', u: '둘을 비교할 때' },
+    reflect:   { n: '비치는 제목',       u: '영화처럼' },
+    outline:   { n: '포스터 글자',       u: '포스터 · 광고처럼' },
+    photoOpen:  { n: '사진으로 시작',    u: '사진 한 장으로 여는 첫 장면' },
+    collage3:   { n: '사진 3장 모아',    u: '사진 여러 장 한눈에' },
+    photoOne:   { n: '사진 한 장 크게',  u: '사진 하나 보여 줄 때' },
+    photoPair:  { n: '사진 두 장 나란히', u: '전 · 후 비교' },
+    photoGrid4: { n: '사진 네 장',       u: '네 장을 한 화면에' },
+    vfxGrain:     { n: '까끌까끌 필름',  u: '옛날 영화 느낌' },
+    vfxVignette:  { n: '가장자리 어둡게', u: '가운데로 눈이 가게' },
+    vfxFlare:     { n: '햇빛 반짝',      u: '따뜻한 느낌' },
+    vfxSweep:     { n: '빛 한 번 지나가기', u: '제목이 나올 때' },
+    vfxRays:      { n: '빛줄기',         u: '하늘 · 창문' },
+    vfxGlow:      { n: '뽀얗게',         u: '부드럽고 예쁘게' },
+    vfxSoft:      { n: '살짝 흐리게',    u: '꿈 · 추억' },
+    vfxTilt:      { n: '장난감처럼',     u: '위에서 찍은 장면' },
+    vfxGlitch:    { n: '지지직',         u: '고장 난 TV 느낌' },
+    vfxRgb:       { n: '색 어긋나기',    u: '강한 인상' },
+    vfxPunch:     { n: '쿵! 확대',       u: '놀랄 때 · 강조' },
+    vfxShake:     { n: '화면 흔들기',    u: '쿵쾅 · 지진' },
+    vfxFlash:     { n: '번쩍',           u: '장면이 확 바뀔 때' },
+    vfxOldFilm:   { n: '옛날 영화',      u: '흑백 · 스크래치' },
+    vfxDuotone:   { n: '두 가지 색',     u: '포스터 느낌' },
+    vfxLetterbox: { n: '영화 화면',      u: '위아래 까만 띠' },
+    vfxFrame:     { n: '테두리',         u: '액자처럼' },
+    vfxDust:      { n: '먼지 반짝',      u: '햇살 속 먼지' },
+    vfxParticles: { n: '꽃잎 · 눈 · 낙엽', u: '계절 느낌' },
+    vfxBokeh:     { n: '빛 방울',        u: '밤 · 축제' },
+    vfxSpot:      { n: '조명 하나',      u: '주인공에게 빛' },
+  };
+  function kid(id) { const d = def(id), k = KID[id]; return { name: k ? k.n : (d ? d.name : id), use: k ? k.u : '' }; }
   /* 초점(기준점) 9곳 — 크기를 키울 때의 축이자, 스스로 자리를 정하는 부품(뚫린 글자·흐르는 글자)엔 글자가 놓이는 자리 */
   const ANCHORS = [
     { id: 'tl', name: '↖', ax: 0.12, ay: 0.16 }, { id: 't', name: '↑', ax: 0.5, ay: 0.16 }, { id: 'tr', name: '↗', ax: 0.88, ay: 0.16 },
@@ -248,5 +308,5 @@
     return cv;
   }
 
-  g.KMV_PARTS = { CATS, META, ANCHORS, SIZE_MIN, SIZE_MAX, ready, list, def, meta, behind, canBehind, remap, geom, stage, drawCard, label, thumb, paintThumb, clamp };
+  g.KMV_PARTS = { CATS, KID, kid, META, ANCHORS, SIZE_MIN, SIZE_MAX, ready, list, def, meta, behind, canBehind, remap, geom, stage, drawCard, label, thumb, paintThumb, clamp };
 })(typeof window !== 'undefined' ? window : globalThis);

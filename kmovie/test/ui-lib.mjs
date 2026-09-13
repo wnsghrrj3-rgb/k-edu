@@ -34,7 +34,7 @@ await page.route('**/kmovie/assets/**', route => {
 });
 await page.goto(`http://127.0.0.1:${PORT}/kmovie/`); await page.waitForFunction(() => window.KMV_UI && window.KMV_LIB && KMV_LIB.get());
 await page.waitForFunction(() => document.querySelectorAll('#libList .lr').length === 3, null, { timeout: 15000 });
-await page.click('#toolTabs button[data-tab=music]');
+await page.click('#toolTabs button[data-tab=sound]');
 
 // ---------- 목록·무드 ----------
 const l1 = await page.evaluate(() => ({
@@ -77,7 +77,7 @@ ok(await page.evaluate(() => KMV_PROJECT.media(KMV_PROJECT.data.A2[1].media).nam
 // ---------- 빈 목록 안내 ----------
 libEmpty = true;
 await page.reload(); await page.waitForFunction(() => window.KMV_UI && window.KMV_LIB && KMV_LIB.get());
-await page.click('#toolTabs button[data-tab=music]');
+await page.click('#toolTabs button[data-tab=sound]');
 await page.waitForFunction(() => document.querySelector('#libList .note'), null, { timeout: 15000 });
 const empty = await page.evaluate(() => ({ note: document.querySelector('#libList .note').textContent, moodHidden: document.getElementById('libMoodRow').classList.contains('hidden') }));
 ok(empty.note.includes('assets/music') && empty.note.includes('scan.mjs') && empty.moodHidden, '음원이 없으면 넣는 법 안내 · 무드 칩 숨김');
