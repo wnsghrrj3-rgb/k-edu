@@ -120,7 +120,14 @@
       fire('onStatus', status);
       if (status === 'SUBSCRIBED') {
         ch.track({ id: me.id, name: me.name });
-        if (!st.host) send({ kind: 'hello', id: me.id, name: me.name, em: me.em });
+        if (!st.host) {
+          send({ kind: 'hello', id: me.id, name: me.name, em: me.em });
+          /* 방장이 없는 코드(오타·닫힌 방)면 lobby 가 안 온다 → 잠시 뒤 알린다 */
+          clearTimeout(st.noRoomT);
+          st.noRoomT = setTimeout(function () {
+            if (!st.host && !st.seats.length && !st.started) fire('onStatus', 'NO_ROOM');
+          }, 4000);
+        }
       }
     });
   }
@@ -168,6 +175,7 @@
     }
     if (p.kind === 'lobby') {
       if (st.host) return;
+      clearTimeout(st.noRoomT);
       st.game = p.game; st.max = p.max || st.max; st.seats = p.seats || [];
       resolveMySeat();
       fire('onLobby', st.seats.slice());

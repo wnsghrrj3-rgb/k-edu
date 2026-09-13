@@ -133,6 +133,7 @@
       onStatus: function (s) {
         if (s === 'SUBSCRIBED') say('연결됐어! 친구를 기다리는 중…');
         else if (s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') say('⚠️ 연결이 안 돼. 학교 인터넷이 막고 있을 수 있어.');
+      else if (s === 'NO_ROOM') say('❓ 그 코드의 방을 못 찾았어. 방코드를 다시 확인해 줘.');
       },
       onLobby: function (seats) {
         document.getElementById('kbHome').style.display = 'none';

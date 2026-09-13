@@ -60,10 +60,25 @@
   }
 
   /* 캔 접촉점 — 위/아래 테두리 링 4점씩 */
-  const CAN_PTS = [];
-  for (const sy of [-1, 1]) for (let k = 0; k < 4; k++) {
-    const a = k * Math.PI / 2;
-    CAN_PTS.push([Math.cos(a) * CAN_R, sy * CAN_H / 2, Math.sin(a) * CAN_R]);
+  /* 캔 접촉점 — 원기둥 실제 테두리. 서 있으면 양 끝 테두리 4점씩,
+     기울면 각 끝에서 가장 낮은 테두리 점 하나(굴러갈 때 덜컹거리지 않는다) */
+  const RIM4 = [];
+  for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2; RIM4.push([Math.cos(a) * CAN_R, Math.sin(a) * CAN_R]); }
+  function canContactPts(q) {
+    const ax = qMulV(q, [0, 1, 0]);                 // 캔 축(월드)
+    const dn = [0, -1, 0];
+    const perp = sub(dn, scl(ax, dot(dn, ax)));     // 축에 수직한 아래 방향
+    const pl = len(perp), out = [];
+    for (const sy of [-1, 1]) {
+      const e = scl(ax, sy * CAN_H / 2);            // 끝면 중심
+      if (pl < 0.08) {                              // 거의 서 있음 → 테두리 4점
+        const u = qMulV(q, [1, 0, 0]), v = qMulV(q, [0, 0, 1]);
+        for (const r of RIM4) out.push(add(e, add(scl(u, r[0]), scl(v, r[1]))));
+      } else {
+        out.push(add(e, scl(perp, CAN_R / pl)));    // 가장 낮은 테두리 점
+      }
+    }
+    return out;
   }
 
   /* ---------- 스테이지 ----------
@@ -162,17 +177,19 @@
       cn.fell = true;
       ev.push({ t, kind: 'fall', id: cn.id, gold: cn.gold });
     }
-    let hit = 0;
-    for (const lp of CAN_PTS) {
-      const r = qMulV(cn.q, lp);
+    let hit = 0, touching = false;
+    for (const r of canContactPts(cn.q)) {
       const wp = add(cn.p, r);
+      if (wp[1] < floorY + 0.004) touching = true;
       if (wp[1] < floorY) {
         const n = [0, 1, 0];
         const u = add(cn.v, cross(cn.w, r));
         const un = dot(u, n);
         if (un < 0) {
           const rn = cross(r, n);
-          const jn = -(1 + REST) * un / (1 / MASS_CAN + INV_I_CAN * dot(rn, rn));
+          /* 느린 접촉은 튕기지 않는다(안정 접촉) — 빠를 때만 반발 */
+          const e = -un < 0.9 ? 0 : REST;
+          const jn = -(1 + e) * un / (1 / MASS_CAN + INV_I_CAN * dot(rn, rn));
           cn.v = add(cn.v, scl(n, jn / MASS_CAN));
           cn.w = add(cn.w, scl(cross(r, scl(n, jn)), INV_I_CAN));
           const u2 = add(cn.v, cross(cn.w, r));
@@ -188,8 +205,15 @@
         cn.p[1] += floorY - wp[1];
       }
     }
+    /* 바닥에 닿아 있는 동안은 흔들림이 빨리 죽는다(구름 저항·미끄럼 마찰) */
+    if (touching) { cn.w = scl(cn.w, 1 - 0.06); cn.v[0] *= 0.985; cn.v[2] *= 0.985; }
     if (hit > 0.7) ev.push({ t, kind: 'thud', speed: hit, pos: cn.p.slice() });
-    if (cn.p[1] < PIT_Y + 0.1 && cn.state === 'live') { cn.state = 'out'; }
+    if (cn.p[1] < SHELF.y - 0.6 && cn.state === 'live' && len(cn.v) < 0.3) { cn.state = 'out'; cn.v = [0, 0, 0]; cn.w = [0, 0, 0]; return; }
+    /* 잠들기 — 바닥에 닿은 채 잠깐 조용하면 완전히 멈춘다(미세 떨림 차단) */
+    if (touching && len(cn.v) < 0.15 && len(cn.w) < 0.8) {
+      cn.calm = (cn.calm || 0) + dt;
+      if (cn.calm > 0.15) { cn.v = [0, 0, 0]; cn.w = [0, 0, 0]; cn.state = 'rest'; cn.calm = 0; }
+    } else cn.calm = 0;
   }
 
   /* 캔끼리 — 구 근사 */
@@ -198,6 +222,7 @@
     const d = sub(B.p, A.p), L = len(d);
     if (L > 2 * R || L < 1e-9) return;
     const n = scl(d, 1 / L);
+    if (A.state !== 'live' && B.state !== 'live') return;
     wake(A); wake(B);
     const rel = dot(sub(B.v, A.v), n);
     if (rel < 0) {
@@ -213,7 +238,7 @@
     A.p = add(A.p, scl(n, -over / 2));
     B.p = add(B.p, scl(n, over / 2));
   }
-  function wake(cn) { if (cn.state === 'stand') cn.state = 'live'; }
+  function wake(cn) { if (cn.state === 'stand' || cn.state === 'rest') cn.state = 'live'; }
 
   /* 공 vs 캔 — 구-구 임펄스 (공이 훨씬 가볍고 빠름 → 캔에 운동량 전달) */
   function ballHitCan(ball, cn, ev, t) {
@@ -222,7 +247,7 @@
     if (L > R || L < 1e-9) return false;
     const n = scl(d, 1 / L);
     const rel = dot(sub(cn.v, ball.v), n);
-    if (rel < 0) {
+    if (rel < -0.35) {
       wake(cn);
       const j = -(1 + 0.25) * rel * 0.42;      // 공 질량 몫
       cn.v = add(cn.v, scl(n, j));
@@ -300,7 +325,9 @@
         }
         /* 캔 명중 */
         if (w.kind === 'cans') for (const cn of liveCans()) ballHitCan(ball, cn, ev, t);
-        if (ball.p[1] < PIT_Y + BALL_R + 0.02 || Math.abs(ball.p[0]) > 6 || ball.p[2] < -2 || ball.p[2] > 6) {
+        /* 선반 위에서 거의 멈춘 공은 굴러다니지 않고 끝난다 */
+        if (onShelf && ball.p[1] < fy + BALL_R + 0.01 && len(ball.v) < 0.35) ball.slow = (ball.slow || 0) + SUB; else ball.slow = 0;
+        if (ball.p[1] < PIT_Y + BALL_R + 0.02 || Math.abs(ball.p[0]) > 6 || ball.p[2] < -2 || ball.p[2] > 6 || ball.slow > 0.4) {
           if (ball.alive) { ball.alive = false; ballGone = t; }
         }
       }
@@ -313,7 +340,7 @@
       /* 서 있는 캔 지지 검사 — 아래 캔이 사라지면 깨어난다 */
       for (const cn of lc) {
         if (cn.state !== 'stand' || cn.p[1] < CAN_H * 0.9) continue;
-        const under = lc.find(o => o !== cn && o.state === 'stand'
+        const under = lc.find(o => o !== cn && (o.state === 'stand' || o.state === 'rest')
           && Math.abs(o.p[1] - (cn.p[1] - CAN_H)) < 0.05
           && Math.hypot(o.p[0] - cn.p[0], o.p[2] - cn.p[2]) < CAN_R * 1.6);
         if (!under) wake(cn);
