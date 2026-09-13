@@ -60,16 +60,32 @@ function clothTex(hex, folds = 0, size = 512) {
 }
 /* 아스팔트 바닥 */
 function asphaltTex() {
-  const color = canvasTex(512, 512, (ctx, w, h) => {
-    ctx.fillStyle = '#101118'; ctx.fillRect(0, 0, w, h);
-    for (let i = 0; i < 14000; i++) { ctx.fillStyle = rnd() < 0.5 ? 'rgba(255,255,255,.045)' : 'rgba(0,0,0,.3)'; ctx.fillRect(rnd() * w, rnd() * h, 1.2, 1.2); }
-    for (let i = 0; i < 30; i++) { const g = ctx.createRadialGradient(rnd() * w, rnd() * h, 0, rnd() * w, rnd() * h, 30 + rnd() * 90); g.addColorStop(0, 'rgba(0,0,0,.18)'); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, w, h); }
-  }, { repeat: [24, 24] });
-  const rough = canvasTex(256, 256, (ctx, w, h) => {
-    ctx.fillStyle = '#c0c0c0'; ctx.fillRect(0, 0, w, h);
-    for (let i = 0; i < 40; i++) { const g = ctx.createRadialGradient(rnd() * w, rnd() * h, 0, rnd() * w, rnd() * h, 20 + rnd() * 60); g.addColorStop(0, 'rgba(80,80,80,.8)'); g.addColorStop(1, 'rgba(80,80,80,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, w, h); }
-  }, { linear: true, repeat: [24, 24] });
-  return { color, rough };
+  /* 색만 쓴다 — roughnessMap 은 소프트웨어 GL 에서 삼각형 얼룩을 만들어 뺐다(2026-09-13 헤드리스 검증) */
+  const color = canvasTex(1024, 1024, (ctx, w, h) => {
+    ctx.fillStyle = '#1b1c26'; ctx.fillRect(0, 0, w, h);
+    /* 굵은 골재 */
+    for (let i = 0; i < 26000; i++) {
+      const v = rnd(); ctx.fillStyle = v < 0.45 ? 'rgba(255,255,255,.10)' : v < 0.7 ? 'rgba(120,130,170,.14)' : 'rgba(0,0,0,.42)';
+      const sz = 1 + rnd() * 2.4; ctx.fillRect(rnd() * w, rnd() * h, sz, sz);
+    }
+    /* 젖은 웅덩이 얼룩 — 살짝 밝고 푸르게 */
+    for (let i = 0; i < 22; i++) {
+      const x = rnd() * w, y = rnd() * h, r = 40 + rnd() * 140;
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, 'rgba(70,80,120,.22)'); g.addColorStop(0.7, 'rgba(70,80,120,.08)'); g.addColorStop(1, 'rgba(70,80,120,0)');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+    }
+    /* 그늘진 얼룩 */
+    for (let i = 0; i < 30; i++) { const x = rnd() * w, y = rnd() * h, r = 30 + rnd() * 90; const g = ctx.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, 'rgba(0,0,0,.22)'); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, w, h); }
+    /* 가는 균열 */
+    ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 1.2;
+    for (let i = 0; i < 14; i++) {
+      let x = rnd() * w, y = rnd() * h; ctx.beginPath(); ctx.moveTo(x, y);
+      for (let k = 0; k < 12; k++) { x += (rnd() - 0.5) * 60; y += (rnd() - 0.5) * 60; ctx.lineTo(x, y); }
+      ctx.stroke();
+    }
+  }, { repeat: [10, 10] });
+  return { color };
 }
 function glowSprite(hex, size, opacity = 0.9) {
   const tex = canvasTex(64, 64, (ctx, w, h) => {
@@ -134,8 +150,9 @@ export function createStage(canvas) {
 
   /* 바닥 — 젖은 아스팔트 */
   const at = asphaltTex();
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(60, 60, 1, 1),
-    new THREE.MeshStandardMaterial({ color: 0x14151d, roughness: 0.88, metalness: 0.03, envMapIntensity: 0 }));
+  /* 60m 평면을 삼각형 2개로 그리면 소프트웨어 GL 에서 삼각형마다 밉 단계가 달라져 얼룩이 생긴다 → 잘게 나눈다 */
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(60, 60, 48, 48),
+    new THREE.MeshStandardMaterial({ map: at.color, color: 0x565a6e, roughness: 0.66, metalness: 0.03, envMapIntensity: 0 }));
   ground.rotation.x = -Math.PI / 2; ground.position.y = -1.5; ground.receiveShadow = false; scene.add(ground);
   /* 부스 앞 따뜻한 빛 웅덩이 */
   const pool = new THREE.Mesh(new THREE.CircleGeometry(4.2, 40), new THREE.MeshBasicMaterial({
