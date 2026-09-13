@@ -23,6 +23,7 @@ export class Engine {
     this.scene.add(sun); this.scene.add(sun.target);
     this.atmosphere = atmosphere;
     if (atmosphere === 'warm-daylight') applyAtmosphere(this);
+    this.materials = new Map();
     this.colliders = [];          // Box3 (col_*)
     this.interactables = new Map(); // id -> { type, id, obj, box, kind }
     this.areas = new Map();       // id -> Vector3
@@ -75,6 +76,8 @@ export class Engine {
           return;
         }
         if (!o.isMesh) return;
+        this.materials.set(o.material.name, o.material);
+        if (this.atmosphere === 'warm-daylight' && /^(hill|col_cave_rock|moss|cave_mouth|hut_pole|col_trunk|root|branch|canopy|leaf|grassblade|grasscard|blades|flower)/.test(o.name)) return;
         if (o.name.startsWith('col_')) { const b = new THREE.Box3().setFromObject(o); b.expandByScalar(0.3); this.colliders.push(b); }
         let geo = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
         geo.applyMatrix4(o.matrixWorld);
@@ -100,8 +103,8 @@ export class Engine {
     this.scene.remove(it.obj); this.interactables.delete(key);
   }
   /** 시선 기준 가까운 대상: 카메라 앞 반경 안, 각도 안 */
-  pickTarget(camera, maxDist = 3.2) {
-    const dir = camera.getWorldDirection(new THREE.Vector3()); const pos = camera.position; let best = null, bestScore = 1e9;
+  pickTarget(camera, maxDist = 3.2, origin = camera.position) {
+    const dir = camera.getWorldDirection(new THREE.Vector3()); const pos = origin; let best = null, bestScore = 1e9;
     for (const it of this.interactables.values()) {
       const to = it.center.clone().sub(pos); const d = to.length(); if (d > maxDist + it.box.getSize(new THREE.Vector3()).length() * 0.5) continue;
       to.normalize(); const ang = Math.acos(THREE.MathUtils.clamp(to.dot(dir), -1, 1)); if (ang > 0.55) continue;

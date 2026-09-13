@@ -3,6 +3,8 @@ import * as THREE from 'three';
 import { Engine } from './engine.js';
 import { Player } from './player.js';
 import { UI } from './ui.js';
+import { createFire } from './fire.js';
+import { bindMinimap } from './minimap.js';
 
 const J = (u) => fetch(u).then((r) => r.json());
 
@@ -20,12 +22,15 @@ export class Game {
     if (this.world.sky) this.e.loadSky(this.world.sky);
     if (this.world.height) await this.e.loadHeight(this.base + this.world.height);
     await this.e.loadWorld(this.base + this.world.glb, this.world.eye);
+    if (this.world.id === 'paleo') { const { buildLandscape } = await import('../eras/paleo/landscape.js'); buildLandscape(this.e); }
     this.p = new Player(this.e, { eye: this.world.eye, bounds: this.world.bounds, yaw: 0 });
+    if (this.world.id === 'paleo') this.p.setView('tp');
     this.p.bindJoystick(document.getElementById('stick'), document.getElementById('knob'));
     // 시작 시선: 야영지 쪽(있으면) 을 바라봄
     const camp = this.e.areas.get('camp'); if (camp) { const d = camp.clone().sub(this.p.pos); this.p.yaw = Math.atan2(-d.x, -d.z); }
     this.ui.setTitle(this.world.title, this.world.question); this.ui.setGoal(this.world.goal);
     this.renderInv(); this.updateMission(true);
+    bindMinimap(this.e, this.p, document.getElementById('minimap'));
     this.addFire();
     this.bindButtons();
     this.e.onFrame.push((dt) => this.tick(dt));
@@ -56,9 +61,9 @@ export class Game {
     const slow = this.hunger < h.slowBelow; this.p.speedMul = slow ? 0.55 : 1; this.ui.setHunger(this.hunger, slow);
     // 대상 안내
     if (!this.ui.isOpen()) {
-      const t = this.target = this.e.pickTarget(this.e.camera);
+      const t = this.target = this.e.pickTarget(this.e.camera, 3.2, this.p.pos);
       if (t) this.ui.setPrompt(this.promptFor(t));
-      else { const near = this.e.pickTarget(this.e.camera, 9); this.ui.setPrompt(near ? this.infoFor(near) : null); }
+      else { const near = this.e.pickTarget(this.e.camera, 9, this.p.pos); this.ui.setPrompt(near ? this.infoFor(near) : null); }
     } else { this.target = null; this.ui.setPrompt(null); }
     // 미션 나침반 + 힌트 시간
     this.updateMission(false);
@@ -177,10 +182,7 @@ export class Game {
   // ---------- 불 ----------
   addFire() {
     const it = [...this.e.interactables.values()].find((x) => x.type === 'fire'); if (!it) return;
-    const g = new THREE.Group(); g.position.copy(it.center); g.position.y = 0.35;
-    const m = new THREE.MeshBasicMaterial({ color: 0xff8a2a, transparent: true, opacity: 0.9 });
-    for (let k = 0; k < 3; k++) { const c = new THREE.Mesh(new THREE.ConeGeometry(0.32 - k * 0.08, 0.9 + k * 0.25, 6), m.clone()); c.material.color.setHSL(0.07 + k * 0.03, 1, 0.55 + k * 0.1); c.position.y = 0.4 + k * 0.15; c.rotation.y = k; g.add(c); }
-    g.visible = false; this.e.scene.add(g); this.fire = g;
+    const g = createFire(this.e, it.center); this.fire = g;
     this.fireLight = new THREE.PointLight(0xff9a3a, 0, 14, 1.6); this.fireLight.position.copy(g.position).add(new THREE.Vector3(0, 0.8, 0)); this.e.scene.add(this.fireLight);
   }
   setFire(on) { if (this.fire) this.fire.visible = on; this.fireLight.intensity = on ? 3 : 0; }

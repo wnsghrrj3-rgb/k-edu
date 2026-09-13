@@ -1,5 +1,6 @@
-// 케이히스토리 엔진 · player.js — 걷기·둘러보기. viewMode 'fp'(기본) / 'tp'(자리만; 캐릭터 자산 들어오면 채움)
+// 케이히스토리 엔진 · player.js — 걷기·둘러보기. viewMode 'fp' / 'tp' · 관절 캐릭터와 카메라 충돌 회피
 import * as THREE from 'three';
+import { createAvatar } from './avatar.js';
 
 export class Player {
   constructor(engine, opts = {}) {
@@ -7,11 +8,8 @@ export class Player {
     this.pos = engine.spawn.clone(); this.pos.y = engine.groundY(this.pos.x, this.pos.z) + this.eye; this.yaw = opts.yaw ?? 0; this.pitch = 0;
     this.keys = {}; this.joy = { x: 0, y: 0 }; this.speedMul = 1; this.enabled = true;
     this.viewMode = 'fp';
-    // 3인칭 자리: 몸 표시용 임시 메시(fp에선 숨김). 캐릭터 GLB가 오면 여기만 바꾼다.
-    this.body = new THREE.Group(); this.body.visible = false; engine.scene.add(this.body);
-    const cap = new THREE.Mesh(new THREE.CapsuleGeometry ? new THREE.CylinderGeometry(0.3, 0.3, 1.2, 8) : new THREE.CylinderGeometry(0.3, 0.3, 1.2, 8), new THREE.MeshStandardMaterial({ color: 0x8a6a48 }));
-    cap.position.y = 0.6; cap.castShadow = true; this.body.add(cap);
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 8), new THREE.MeshStandardMaterial({ color: 0xcc9e7a })); head.position.y = 1.42; this.body.add(head);
+    this.body = createAvatar(); this.body.visible = false; engine.scene.add(this.body);
+    this.walkTime = 0;
     this.bindInput();
     engine.onFrame.push((dt) => this.update(dt));
   }
@@ -20,6 +18,7 @@ export class Player {
     const c = this.e.canvas;
     addEventListener('keydown', (ev) => { this.keys[ev.code] = true; });
     addEventListener('keyup', (ev) => { this.keys[ev.code] = false; });
+    addEventListener('blur', () => { this.keys = {}; this.joy = { x: 0, y: 0 }; });
     let lookId = null, lx = 0, ly = 0;
     c.addEventListener('pointerdown', (ev) => {
       if (!this.enabled) return;
@@ -65,6 +64,7 @@ export class Player {
       const gy = this.e.groundY(p.x, p.z); this.inWater = gy < -0.5;
       this.pos.set(p.x, gy + this.eye, p.z);
     }
+    this.walkTime += dt; this.body.userData.animate(this.walkTime, this.moving);
     // 카메라
     cam.rotation.set(0, 0, 0); cam.rotateY(this.yaw); cam.rotateX(this.pitch);
     const bob = this.moving ? Math.sin(performance.now() * 0.012) * 0.03 : 0;
@@ -73,10 +73,17 @@ export class Player {
     } else {
       // 3인칭 자리: 어깨 뒤 3.5m, 몸은 pos에
       const back = new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw)).multiplyScalar(3.5);
-      cam.position.set(this.pos.x + back.x, this.pos.y + 1.2 + bob, this.pos.z + back.z);
+      const eye = this.pos.clone().add(new THREE.Vector3(0, .35, 0));
+      const desired = new THREE.Vector3(this.pos.x + back.x, this.pos.y + 1.1 + bob, this.pos.z + back.z);
+      const delta = desired.clone().sub(eye), length = delta.length();
+      const ray = new THREE.Ray(eye, delta.clone().normalize()); let safe = length;
+      for (const box of this.e.colliders) { const hit = ray.intersectBox(box, new THREE.Vector3()); if (hit) safe = Math.min(safe, Math.max(.2, hit.distanceTo(eye) - .25)); }
+      cam.position.copy(eye).addScaledVector(delta, safe / length);
+      cam.position.y = Math.max(cam.position.y, this.e.groundY(cam.position.x,cam.position.z)+.35);
+      cam.lookAt(this.pos.x-Math.sin(this.yaw)*3,this.pos.y+this.pitch*3,this.pos.z-Math.cos(this.yaw)*3);
       this.body.position.set(this.pos.x, this.pos.y - this.eye, this.pos.z); this.body.rotation.y = this.yaw;
     }
     // 태양 그림자 카메라를 플레이어 따라
-    const s = this.e.sun; s.position.set(this.pos.x - 34, 26, this.pos.z + 30); s.target.position.set(this.pos.x, 0, this.pos.z); s.target.updateMatrixWorld();
+    const s = this.e.sun; s.position.set(this.pos.x - 34, 32, this.pos.z + 24); s.target.position.set(this.pos.x, 0, this.pos.z); s.target.updateMatrixWorld();
   }
 }
