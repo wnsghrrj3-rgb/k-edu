@@ -77,6 +77,6 @@ export class Player {
       this.body.position.set(this.pos.x, this.pos.y - this.eye, this.pos.z); this.body.rotation.y = this.yaw;
     }
     // 태양 그림자 카메라를 플레이어 따라
-    const s = this.e.sun; s.position.set(this.pos.x - 30, 40, this.pos.z + 24); s.target.position.set(this.pos.x, 0, this.pos.z); s.target.updateMatrixWorld();
+    const s = this.e.sun; s.position.set(this.pos.x - 34, 26, this.pos.z + 30); s.target.position.set(this.pos.x, 0, this.pos.z); s.target.updateMatrixWorld();
   }
 }

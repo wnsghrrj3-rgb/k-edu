@@ -13,11 +13,11 @@ export class Engine {
     r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x9ec8ef);
-    this.scene.fog = new THREE.Fog(0xb8d6ee, 45, 130);
+    this.scene.fog = new THREE.Fog(0xc9dcec, 55, 150);
     this.camera = new THREE.PerspectiveCamera(70, 1, 0.1, 400);
     this.scene.add(new THREE.HemisphereLight(0xcfe6ff, 0x7a6a4a, 0.35));
-    const sun = this.sun = new THREE.DirectionalLight(0xfff1d6, 2.6);
-    sun.position.set(-30, 40, 24); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+    const sun = this.sun = new THREE.DirectionalLight(0xffe9c8, 2.4);
+    sun.position.set(-34, 26, 30); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
     const sc = sun.shadow.camera; sc.left = -60; sc.right = 60; sc.top = 60; sc.bottom = -60; sc.near = 1; sc.far = 160; sun.shadow.bias = -0.0006;
     this.scene.add(sun); this.scene.add(sun.target);
     this.colliders = [];          // Box3 (col_*)
@@ -73,7 +73,8 @@ export class Engine {
         if (o.name.startsWith('col_')) { const b = new THREE.Box3().setFromObject(o); b.expandByScalar(0.3); this.colliders.push(b); }
         let geo = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
         geo.applyMatrix4(o.matrixWorld);
-        for (const k of Object.keys(geo.attributes)) if (!['position', 'normal', 'uv'].includes(k)) geo.deleteAttribute(k);
+        for (const k of Object.keys(geo.attributes)) if (!['position', 'normal', 'uv', 'color'].includes(k)) geo.deleteAttribute(k);
+        if (!geo.attributes.color) geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(geo.attributes.position.count * 4).fill(1), 4));
         if (!geo.attributes.uv) geo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(geo.attributes.position.count * 2), 2));
         const key = o.material.uuid;
         if (!groups.has(key)) groups.set(key, { mat: o.material, geos: [] });
@@ -81,7 +82,9 @@ export class Engine {
       });
       for (const { mat, geos } of groups.values()) {
         const merged = BGU.mergeGeometries(geos, false); if (!merged) continue;
-        mat.side = THREE.DoubleSide; mat.envMapIntensity = 0.7;
+        mat.side = THREE.DoubleSide; mat.envMapIntensity = 0.7; mat.vertexColors = true;
+        if (mat.name === 'water') { mat.roughness = 0.08; mat.metalness = 0.15; mat.transparent = true; mat.opacity = 0.86; mat.envMapIntensity = 1.2; }
+        if (mat.alphaTest > 0 || mat.name === 'grassblade' || mat.name === 'moss' || mat.name === 'grasscard') { mat.alphaTest = Math.max(mat.alphaTest, 0.45); mat.transparent = false; mat.depthWrite = true; }
         const m = new THREE.Mesh(merged, mat); m.castShadow = true; m.receiveShadow = true; this.scene.add(m);
       }
       res();
