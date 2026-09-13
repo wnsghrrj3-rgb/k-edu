@@ -131,14 +131,14 @@ window.KEDU_MAP["g4_2_social"] = {
    "kind": "unit",
    "lessons": [
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_social_u2_l01",
+     "lessonId": "g4_social_u2_l01_v1",
      "n": "1",
      "title": "지역문제가 무엇인지 알아볼까요",
      "sub": "① 지역문제의 해결",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/social/2단원_지역문제해결과지역알리기/g4_social_u2_l01_지역문제란.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,

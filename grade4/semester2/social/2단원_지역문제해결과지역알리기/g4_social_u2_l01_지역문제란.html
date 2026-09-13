@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<!--
+K-edu 사회 4-2 · 2단원 지역문제를 해결하고 지역을 알리는 노력 · 주제① 지역문제의 해결 · 2차시(l01)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [4사09-01] · 교과서 p.60~62 · 지도서(대단원2 2차시 p.116~120) 근거 · 1차시 단원 도입은 흡수
+2단원 색 #B45309 (중학년 ka- 엔진 승계 · 변수명 유지 · 엔진 무수정)
+
+직접조작: 선반에 놓아 둔 카드가 판에 의해 다른 선반으로 옮겨 가는 판 — 닿는 집이 늘면 갈래가 저절로 바뀌는 형
+  ⭐ 1단원 열한 차시의 판에서 학생이 놓아 둔 것은 학생이 손대지 않는 한 놓인 자리에 그대로 있었다.
+     이번 판에서는 「개인의 일」 선반에 놓아 둔 독감 카드가, 독감이 이웃 집으로 옮는 순간 학생이 옮기지 않았는데
+     「지역문제」 선반으로 옮겨 간다. 근거는 지도서 발문 원문 「내가 독감에 걸린 것은 지역문제인가요? → 아닙니다」 /
+     「만약 독감에 걸린 지역 주민이 예방 수칙을 지키지 않아 다른 주민들에게 전염된다면 이것은 지역문제인가요? → 지역문제입니다」와
+     지도 유의점 「개인의 문제가 지역의 문제로 확장될 수 있다는 사실을 제시」.
+  ⭐ 카드가 어느 선반에 서는지를 담는 상태가 코드에 아예 없다 — 닿는 집을 세는 lpKind 한 줄이 정한다.
+     그래서 옮는 순간 선반 자리를 고쳐 쓰는 자리도 0이고, state.lpSpread = true 한 자리가 판 전체를 다시 그리게 한다.
+  ⭐ 선반에 놓는 자리 state.lpDone |= 는 코드에 단 하나이고 덜어 내는 자리는 0이다. 옮는 자리도 단 하나이고 되돌리는 자리는 0이다.
+
+지도서 근거: [학습 목표] 지역문제가 무엇인지 설명할 수 있다 / [생각을 열어요] 시원이네 도서관 이야기 · 공통점 예시 답안 /
+  [핵심 질문] 명칭 · 특징 / [친구와 활동] 그림에서 지역문제 찾기 예시 답 / [지역문제 속성 분석하기] 쓰레기 불법 투기 · 독감 · 전염 /
+  [미디어 활동] 두 기사 예시 답안 / [지역문제 해결의 필요성] / [2차시 주요 내용 정리] / [차시 예고]
+
+정직 원칙: ㉠ 판의 집 여섯과 카드가 닿는 집은 판이 정해 둔 그림이다(실제 마을이 아니다 · 캡션 상시).
+  ㉡ 카드의 이야기는 교과서·지도서에 나오는 예를 옮겼다 — 판이 지어낸 일이 없다.
+  ㉢ 교과서 그림에서 지역문제를 찾아 ○표 하고 까닭을 이야기하는 활동은 교실 몫이다(완료 카드 명시).
+  ㉣ 신문 기사의 지역 이름·신문사·날짜는 옮기지 않는다.
+설계 원칙: 3차시 이후 침범 0(조사 방법·원인·해결 방안 0 · 차시 예고 한 자리) / 주제② 침범 0 / 3단원 침범 0 / 1단원 재현 0 /
+  교사용 참고 자료 0(미디어 자료 해설의 문제 갈래 이름 0) / 실제 지역 이름 0 · 네 자리 연도 0 · 비율 0 · 금액 0 / 정서 — 겁주는 어휘 0.
+⚠️ 체인: l11 → l01 재배선 완료. l01의 goNextLesson = 허브(l02 미양산).
+-->
+<html lang="ko">
+<head>
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>지역문제가 무엇인지 알아볼까요 · 사회 4-2</title>
+<meta name="kedu-lesson-id" content="g4_social_u2_l01_v1">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#B45309; --green-d:#92400E; --cyan:#0891B2;
+  --bg:#FFF7ED; --bub:#FFEDD5; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#F57F17; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes drawLine{to{transform:scaleX(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ka-lb{background:#F1F5F9;border:none;padding:7px 12px;border-radius:10px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;font-family:inherit;font-weight:700;color:#475569;flex-shrink:0;font-size:13px}
+.ka-lb svg{width:15px;height:15px}
+.ka-bar{flex:1;height:5px;background:var(--bg);border-radius:999px;overflow:hidden}
+.ka-bar>div{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:999px;transition:width .35s ease;width:6%}
+.ka-pg{color:var(--green);font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;flex-shrink:0}
+.ka-sc{background:var(--amber-bg);color:var(--amber);padding:4px 12px;border-radius:999px;display:flex;align-items:center;gap:5px;flex-shrink:0;font-weight:700}
+.ka-sc svg{width:14px;height:14px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px}
+.ka-sc-u{font-size:12px}
+
+/* 메인 */
+.ka-m{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow-y:auto}
+.ka-tags{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ka-bg{background:var(--amber-bg);color:var(--amber);padding:5px 14px;border-radius:30px;font-size:13px;
+  display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.ka-bg.s2{background:#E0F2FE;color:#0369A1}
+.ka-bg.s3{background:#EDE9FE;color:#6D28D9}
+.ka-bg.s4{background:#FCE7F3;color:#BE185D}
+.ka-bg.s5{background:#FFEDD5;color:var(--green)}
+.ka-bg svg{width:13px;height:13px}
+.ka-meta{font-size:13px;color:var(--muted)}
+.ka-t{font-size:clamp(20px,3.4vw,29px);margin-bottom:16px;line-height:1.4;color:var(--green);letter-spacing:-.3px;font-weight:700;animation:fadeUp .4s .15s ease both}
+.ka-bub{background:var(--bub);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);line-height:1.7;
+  margin-bottom:16px;border-left:4px solid var(--green);animation:fadeUp .4s .3s ease both}
+.ka-emph{position:relative;display:inline-block;font-weight:700;color:var(--green)}
+.ka-emph::after{content:'';position:absolute;bottom:2px;left:0;right:0;height:3px;background:var(--red);border-radius:2px;transform:scaleX(0);transform-origin:left;animation:drawLine .6s .6s ease forwards}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(16px,2.6vw,21px);font-weight:700;line-height:1.6;margin-bottom:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:640px}
+.opt{background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:13px 14px;font-size:clamp(14px,2.3vw,17px);
+  font-weight:500;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:var(--green);background:#FFEDD5;animation:pop .4s ease}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;font-size:clamp(14px,2.3vw,17px);line-height:1.6;text-align:center;animation:fadeUp .35s ease both;max-width:640px}
+.fb.ok{color:var(--green);font-weight:700}
+.hint{margin-top:12px;background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(13px,2.2vw,16px);
+  line-height:1.6;color:#0C4A6E;max-width:560px;animation:fadeUp .35s ease both}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:620px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFF;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:clamp(14px,2.3vw,17px);line-height:1.5}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(180,83,9,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+/* 조작 판 — 선반에 놓아 둔 카드가 판에 의해 옮겨 가는 판 */
+.lp-wrap{max-width:760px;width:100%;margin:0 auto}
+.lp-head{background:#FFEDD5;color:#9A3412;font-weight:800;text-align:center;border-radius:10px;padding:7px 10px;
+  font-size:clamp(13px,2.1vw,16px);margin-bottom:8px;word-break:keep-all}
+.lp-top{display:grid;grid-template-columns:1fr 1.3fr;gap:8px}
+.lp-town{border:2px solid var(--line);border-radius:12px;padding:8px;background:#fff}
+.lp-houses{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.lp-house{border:2px solid #E2E8F0;border-radius:9px;min-height:40px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-weight:800;font-size:clamp(12px,2vw,15px);color:#475569;background:#F8FAFC}
+.lp-house[data-hit="1"]{background:#FED7AA;border-color:#EA580C;color:#7C2D12}
+.lp-count{margin-top:6px;text-align:center;font-weight:700;font-size:clamp(12px,2vw,15px);color:#9A3412;word-break:keep-all}
+.lp-pool{display:grid;grid-template-columns:1fr;gap:6px}
+.lp-card{background:#fff;border:2px solid #FDBA74;border-bottom:4px solid #F97316;border-radius:11px;padding:8px 10px;font-family:inherit;
+  text-align:left;cursor:pointer;font-weight:600;font-size:clamp(13px,2.1vw,16px);color:var(--ink);line-height:1.4;word-break:keep-all}
+.lp-card[data-sel="1"]{outline:3px solid #F59E0B;outline-offset:1px;background:#FFF7ED}
+.lp-shelves{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.lp-shelf{border:2px dashed #CBD5E1;border-radius:12px;padding:8px;background:#F8FAFC;min-height:92px}
+.lp-shelf[data-shelf="1"]{border-color:#FB923C;background:#FFF7ED}
+.lp-sbtn{width:100%;font-family:inherit;font-weight:800;font-size:clamp(13px,2.1vw,16px);border:none;border-radius:9px;padding:7px 8px;cursor:pointer;
+  background:#E2E8F0;color:#334155;margin-bottom:6px}
+.lp-shelf[data-shelf="1"] .lp-sbtn{background:#FDBA74;color:#7C2D12}
+.lp-chip{display:flex;justify-content:space-between;gap:6px;align-items:center;background:#fff;border:1.5px solid #E2E8F0;border-radius:8px;
+  padding:5px 8px;margin-top:5px;font-size:clamp(12px,2vw,14px);line-height:1.35;word-break:keep-all}
+.lp-reach{flex-shrink:0;font-weight:800;color:#9A3412;font-size:clamp(11px,1.8vw,13px)}
+.lp-tell{margin-top:8px;border-radius:12px;padding:9px 13px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;background:#F0F9FF;border-left:4px solid var(--cyan)}
+.lp-ask{border:2px solid var(--line);border-radius:12px;padding:10px 14px;background:#FFFBF5;margin-top:9px;font-size:clamp(13px,2.2vw,16px);line-height:1.6}
+.lp-opts{display:grid;grid-template-columns:1fr;gap:8px;margin-top:9px}
+.lp-opt{background:#F8FAFC;border:2px solid var(--line);border-radius:11px;padding:10px 12px;font-family:inherit;
+  font-size:clamp(13px,2.2vw,16px);font-weight:600;cursor:pointer;text-align:left;color:var(--ink)}
+.lp-opt:hover{border-color:var(--green);background:var(--bub)}
+.lp-go{background:#FFEDD5;border:2px solid #EA580C;color:#9A3412;font-weight:800;font-family:inherit;border-radius:11px;padding:10px 12px;
+  cursor:pointer;font-size:clamp(13px,2.2vw,16px);margin-top:9px;width:100%;text-align:left;line-height:1.5}
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+  .lp-top{grid-template-columns:1fr}
+  .lp-shelves{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#F57F17"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식, 사람 형상 대신 칸과 말풍선 ===== */
+const SVG = {
+  // [생각을 열어요] 집에서 멀리 떨어진 도서관
+  open:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFF7ED"/>
+    <rect x="10" y="44" width="30" height="28" fill="#fff" stroke="#B45309" stroke-width="1.3"/><path d="M8 46 L25 32 L42 46 Z" fill="#FDBA74"/>
+    <text x="25" y="84" font-size="6.8" fill="#7C2D12" text-anchor="middle" font-weight="800">집</text>
+    <path d="M44 62 L112 62" stroke="#94A3B8" stroke-width="1.6" stroke-dasharray="4 3"/>
+    <rect x="60" y="50" width="30" height="14" rx="4" fill="#0891B2"/><text x="75" y="60" font-size="6.4" fill="#fff" text-anchor="middle" font-weight="800">버스</text>
+    <rect x="116" y="30" width="36" height="42" fill="#fff" stroke="#0891B2" stroke-width="1.3"/><rect x="122" y="38" width="24" height="5" rx="1" fill="#A5F3FC"/><rect x="122" y="48" width="24" height="5" rx="1" fill="#A5F3FC"/>
+    <text x="134" y="84" font-size="6.8" fill="#0E7490" text-anchor="middle" font-weight="800">도서관</text>
+    <text x="78" y="22" font-size="7" fill="#9A3412" text-anchor="middle" font-weight="800">멀리 떨어져 있어요</text></svg>`,
+  // [생각을 열어요] 생활 불편 신고 게시판 — 칸만
+  board:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F8FAFC"/>
+    <rect x="18" y="10" width="124" height="70" rx="5" fill="#fff" stroke="#475569" stroke-width="1.4"/>
+    <rect x="18" y="10" width="124" height="12" rx="5" fill="#B45309"/><text x="80" y="19" font-size="6.8" fill="#fff" text-anchor="middle" font-weight="800">생활 불편 신고 게시판</text>
+    <rect x="26" y="30" width="108" height="9" rx="2" fill="#FFEDD5"/><rect x="26" y="43" width="108" height="9" rx="2" fill="#FFEDD5"/>
+    <rect x="26" y="56" width="108" height="9" rx="2" fill="#FFEDD5"/><rect x="26" y="69" width="80" height="6" rx="2" fill="#FFF7ED"/>
+    <text x="80" y="91" font-size="6.8" fill="#334155" text-anchor="middle" font-weight="800">어떤 공통점이 있을까요?</text></svg>`,
+  // [지역문제의 뜻] 여러 집 — 불편과 갈등
+  mean:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFF7ED"/>
+    <rect x="10" y="26" width="26" height="22" fill="#fff" stroke="#B45309"/><rect x="44" y="26" width="26" height="22" fill="#fff" stroke="#B45309"/>
+    <rect x="90" y="26" width="26" height="22" fill="#fff" stroke="#B45309"/><rect x="124" y="26" width="26" height="22" fill="#fff" stroke="#B45309"/>
+    <path d="M23 26 L23 14 M57 26 L57 14" stroke="#EA580C" stroke-width="1.4"/>
+    <rect x="12" y="4" width="56" height="11" rx="4" fill="#FED7AA"/><text x="40" y="12" font-size="6.4" fill="#7C2D12" text-anchor="middle" font-weight="800">생활이 불편해요</text>
+    <path d="M116 37 L124 37" stroke="#DC2626" stroke-width="1.6"/>
+    <rect x="92" y="4" width="56" height="11" rx="4" fill="#FECACA"/><text x="120" y="12" font-size="6.4" fill="#7F1D1D" text-anchor="middle" font-weight="800">갈등이 생겨요</text>
+    <rect x="30" y="62" width="100" height="18" rx="6" fill="#B45309"/><text x="80" y="74" font-size="7.4" fill="#fff" text-anchor="middle" font-weight="800">지역문제</text></svg>`,
+  // [조작 안내] 카드와 두 선반
+  guide:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFFBF5"/>
+    <rect x="54" y="6" width="52" height="18" rx="4" fill="#fff" stroke="#F97316" stroke-width="1.3"/><text x="80" y="18" font-size="6.6" fill="#9A3412" text-anchor="middle" font-weight="800">카드</text>
+    <path d="M70 26 L40 42 M90 26 L120 42" stroke="#94A3B8" stroke-width="1.4"/>
+    <rect x="8" y="42" width="64" height="44" rx="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-dasharray="3 2"/>
+    <text x="40" y="56" font-size="6.8" fill="#334155" text-anchor="middle" font-weight="800">개인의 일</text>
+    <rect x="88" y="42" width="64" height="44" rx="6" fill="#FFF7ED" stroke="#FB923C" stroke-dasharray="3 2"/>
+    <text x="120" y="56" font-size="6.8" fill="#9A3412" text-anchor="middle" font-weight="800">지역문제</text></svg>`,
+  // [친구와 활동] 그림에서 찾아 ○표
+  find:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F1F5F9"/>
+    <rect x="8" y="10" width="144" height="76" rx="4" fill="#E2E8F0"/>
+    <rect x="16" y="18" width="40" height="26" fill="#fff"/><rect x="104" y="18" width="40" height="26" fill="#fff"/>
+    <rect x="20" y="58" width="22" height="12" rx="3" fill="#FB923C"/><rect x="66" y="52" width="26" height="12" rx="3" fill="#0891B2"/><rect x="110" y="60" width="22" height="12" rx="3" fill="#94A3B8"/>
+    <circle cx="36" cy="31" r="15" fill="none" stroke="#DC2626" stroke-width="1.8"/>
+    <circle cx="121" cy="66" r="12" fill="none" stroke="#DC2626" stroke-width="1.8"/>
+    <text x="80" y="92" font-size="6.6" fill="#334155" text-anchor="middle" font-weight="800">지역문제에 ○표</text></svg>`,
+  // [미디어 활동] 신문 기사 두 장
+  news:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F8FAFC"/>
+    <rect x="12" y="10" width="64" height="76" rx="4" fill="#fff" stroke="#475569" stroke-width="1.2"/>
+    <text x="44" y="22" font-size="7" fill="#0F172A" text-anchor="middle" font-weight="800">가</text>
+    <rect x="20" y="28" width="48" height="20" rx="2" fill="#BAE6FD"/><path d="M20 44 Q44 36 68 44" stroke="#0284C7" stroke-width="1.4" fill="none"/>
+    <rect x="20" y="54" width="48" height="4" rx="1" fill="#E2E8F0"/><rect x="20" y="62" width="48" height="4" rx="1" fill="#E2E8F0"/><rect x="20" y="70" width="34" height="4" rx="1" fill="#E2E8F0"/>
+    <rect x="84" y="10" width="64" height="76" rx="4" fill="#fff" stroke="#475569" stroke-width="1.2"/>
+    <text x="116" y="22" font-size="7" fill="#0F172A" text-anchor="middle" font-weight="800">나</text>
+    <rect x="92" y="28" width="48" height="20" rx="2" fill="#E7E5E4"/><path d="M94 46 L102 36 L110 44 L120 34 L138 46" stroke="#78716C" stroke-width="1.4" fill="none"/>
+    <rect x="92" y="54" width="48" height="4" rx="1" fill="#E2E8F0"/><rect x="92" y="62" width="48" height="4" rx="1" fill="#E2E8F0"/><rect x="92" y="70" width="34" height="4" rx="1" fill="#E2E8F0"/></svg>`,
+  // [정리] 지역문제
+  done:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFF7ED"/>
+    <rect x="30" y="16" width="100" height="56" rx="8" fill="#fff" stroke="#B45309" stroke-width="1.4"/>
+    <path d="M62 44 L72 54 L98 30" stroke="#B45309" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+    <text x="80" y="88" font-size="7.4" fill="#7C2D12" text-anchor="middle" font-weight="800">지역문제가 무엇인지 알았어요</text></svg>`
+};
+function sceneCard(key,cap){return `<div class="scene">${SVG[key]}<div class="cap">${cap}</div></div>`;}
+
+/* ===== 직접 조작: 선반에 놓아 둔 카드가 판에 의해 다른 선반으로 옮겨 가는 판 =====
+   집 여섯과 카드 넷(교과서 수업의 예). 카드마다 닿는 집이 정해져 있고,
+   카드가 서는 선반은 「닿는 집의 수」로 정해진다 — 그 자리를 담는 상태는 없다(lpKind 한 줄).
+   네 카드를 선반에 놓은 뒤 「독감이 옮는다면?」을 누르면 독감 카드가 닿는 집이 늘어
+   학생이 옮기지 않았는데 선반이 바뀐다. 난수 0 · 조작에 점수 0.
+*/
+const LP_HOUSES = 6;                               // 판의 집 여섯
+const LP_HMARK = ["㉮","㉯","㉰","㉱","㉲","㉳"];
+const LP_CARDS = 4;                                // 카드 넷
+const LP_CARD = [
+  "내가 독감에 걸렸어요",
+  "공사장에서 참기 힘든 소음이 나요",
+  "쓰레기를 아무 데나 버려요",
+  "층간 소음으로 위아래 집 사이에 갈등이 생겼어요"
+];
+const LP_REACH = [0b000001, 0b110110, 0b111100, 0b010010];   // 카드가 처음 닿는 집 — 판이 정해 둔 그림
+const LP_SPREAD = [0b011010, 0, 0, 0];                     // 옮았을 때 더해지는 집 — 판이 정해 둔 그림
+const LP_MANY = 2;                                         // 여러 집 = 둘 이상
+const LP_SHELF = ["개인의 일","지역문제"];
+const LP_ALL = (1 << LP_CARDS) - 1;
+const LP_SPREAD_Q = "만약 독감에 걸린 내가 예방 수칙을 지키지 않아 다른 주민들에게 옮는다면?";
+const LP_SAY_NOSEL = "먼저 카드를 골라 봐요.";
+const LP_SAY_DONE = "이미 선반에 놓은 카드예요. 판은 그대로예요.";
+const LP_SAY_WRONG = "이 카드가 닿는 집을 다시 세어 봐요. 판은 그대로예요.";
+const LP_SAY_ORDER_S = "먼저 네 카드를 모두 선반에 놓아 봐요.";
+const LP_SAY_SPREADDONE = "이미 옮은 뒤예요. 판은 그대로예요.";
+const LP_SAY_ORDER_R = "먼저 「옮는다면?」을 눌러 봐요.";
+const LP_SAY_ORDER_F = "먼저 판을 읽어 봐요.";
+const LP_SAY_READDONE = "이미 정한 자리예요. 판은 그대로예요.";
+const LP_TELL_PUT = "선반에 놓았어요.";
+const LP_TELL_SPREAD = "독감이 이웃 집으로 옮았어요. 닿는 집이 늘었어요 — 카드는 내가 옮기지 않았어요.";
+const LP_READQ = [
+  "내가 카드를 다시 옮겨 놓았기 때문이에요",
+  "독감이 다른 주민들에게 옮아 여러 집의 생활을 불편하게 하게 되었기 때문이에요",
+  "독감은 처음부터 지역문제이기 때문이에요"
+];
+const LP_READ_OK = 1;
+const LP_READ_BAD = "독감 카드가 닿는 집이 몇 곳으로 바뀌었는지 살펴봐요.";
+const LP_FINQ = [
+  "지역 주민의 생활을 불편하게 하거나 지역 주민들 사이에 갈등을 일으키는 문제예요",
+  "한 사람에게만 생긴 일이에요",
+  "어느 지역에서나 똑같이 나타나는 문제예요"
+];
+const LP_FIN_OK = 0;
+const LP_FIN_BAD = "여러 주민의 생활과 주민들 사이의 일을 떠올려 봐요.";
+
+function lpReach(st,c){ return LP_REACH[c] | (st.lpSpread ? LP_SPREAD[c] : 0); }     // ⭐ LP_REACH·LP_SPREAD 를 읽는 자리는 코드에 여기 단 하나
+function lpCount(m){ let n = 0; for(let h=0;h<LP_HOUSES;h++){ if(m & (1 << h)) n++; } return n; }
+function lpKind(st,c){ return lpCount(lpReach(st,c)) >= LP_MANY ? 1 : 0; }             // ⭐ 카드가 서는 선반 — 이 한 줄
+function lpHas(st,c){ return (st.lpDone & (1 << c)) !== 0; }
+
+function lpHouses(st){
+  const m = st.lpSel >= 0 ? lpReach(st, st.lpSel) : 0;
+  let hs = '';
+  for(let h=0;h<LP_HOUSES;h++) hs += `<div class="lp-house" data-house="${h}" data-hit="${(m & (1 << h)) ? 1 : 0}">${LP_HMARK[h]}<span style="font-size:.75em;font-weight:600">집</span></div>`;
+  const cnt = st.lpSel >= 0 ? `<div class="lp-count" data-count="${lpCount(m)}">「${LP_CARD[st.lpSel]}」 카드가 닿는 집 ${lpCount(m)}곳</div>`
+    : `<div class="lp-count" data-count="-1">카드를 고르면 그 일이 닿는 집이 칠해져요</div>`;
+  return `<div class="lp-town"><div class="lp-houses">${hs}</div>${cnt}</div>`;
+}
+function lpPool(st){
+  let b = '';
+  for(let c=0;c<LP_CARDS;c++){ if(!lpHas(st,c)) b += `<button class="lp-card" data-card="${c}" data-sel="${st.lpSel === c ? 1 : 0}" onclick="lpPick(${c})">${LP_CARD[c]}</button>`; }
+  if(!b) b = `<div class="note" style="text-align:left">네 카드를 모두 선반에 놓았어요.</div>`;
+  return `<div class="lp-pool">${b}</div>`;
+}
+function lpShelf(st,s){
+  let chips = '';
+  for(let c=0;c<LP_CARDS;c++){
+    if(lpHas(st,c) && lpKind(st,c) === s) chips += `<div class="lp-chip" data-chip="${c}" data-on="${s}"><span>${LP_CARD[c]}</span><span class="lp-reach" data-reach="${lpCount(lpReach(st,c))}">닿는 집 ${lpCount(lpReach(st,c))}곳</span></div>`;
+  }
+  return `<div class="lp-shelf" data-shelf="${s}"><button class="lp-sbtn" onclick="lpPut(${s})">${LP_SHELF[s]}</button>${chips}</div>`;
+}
+
+function lpPanel(st){
+  const top = `<div class="lp-top">${lpHouses(st)}${lpPool(st)}</div>`;
+  const shelves = `<div class="lp-shelves">${lpShelf(st,0)}${lpShelf(st,1)}</div>`;
+  let ask = '';
+  if(st.lpDone !== LP_ALL){
+    ask = `<div class="lp-ask" data-step="sort"><b>카드를 골라 닿는 집을 세어 보고, 알맞은 선반을 눌러 봐요.</b>
+      <div class="note" style="text-align:left;margin-top:5px">어느 카드부터 골라도 괜찮아요. 한 집에만 닿는 일일까요, 여러 집에 닿는 일일까요?</div></div>`;
+  } else if(!st.lpSpread){
+    ask = `<div class="lp-ask" data-step="spread"><b>네 카드를 모두 놓았어요. 이번에는 독감 카드를 다시 생각해 봐요.</b>
+      <button class="lp-go" onclick="lpSpreadGo()">🤧 ${LP_SPREAD_Q}</button></div>`;
+  } else if(st.lpRead == null){
+    ask = `<div class="lp-ask" data-step="read"><b>독감 카드가 내가 옮기지 않았는데 「지역문제」 선반으로 옮겨 갔어요. 왜 그랬을까요?</b>
+      <div class="lp-opts">${LP_READQ.map((t,i)=>`<button class="lp-opt" onclick="lpRead(${i})">${t}</button>`).join('')}</div></div>`;
+  } else if(st.lpFin == null){
+    ask = `<div class="lp-ask" data-step="fin"><b>그렇다면 지역문제란 무엇일까요?</b>
+      <div class="lp-opts">${LP_FINQ.map((t,i)=>`<button class="lp-opt" onclick="lpFin(${i})">${t}</button>`).join('')}</div></div>`;
+  } else {
+    ask = `<div class="lp-ask" data-fin="1" style="border-color:#86EFAC;background:#F0FDF4">
+      <b style="color:#166534">지역문제는 지역 주민의 생활을 불편하게 하거나 지역 주민들 사이에 갈등을 일으키는 문제예요.</b> 한 사람의 일도 여러 주민에게 닿으면 지역의 문제가 될 수 있어요.
+      <div class="note" style="text-align:left;margin-top:5px">※ 교과서 그림에서 지역문제라고 생각하는 모습을 찾아 ○표 하고 까닭을 이야기하는 활동은 교실에서 친구들과 <b>직접</b> 해요.</div></div>`;
+  }
+  const tell = st.lpTell ? `<div class="lp-tell">${st.lpTell}</div>` : '';
+  const warn = st.lpMsg ? `<div class="fb" style="color:#DC2626;font-weight:700">${st.lpMsg}</div>` : '';
+  return `<div class="lp-wrap">
+    <div class="lp-head">개인의 일일까요, 지역문제일까요? · 카드가 닿는 집을 세어 봐요</div>${top}${shelves}${tell}${ask}${warn}
+    <div class="note" style="margin-top:8px">※ 집 여섯과 카드가 닿는 집은 <b>판이 정해 둔 그림</b>이에요. 실제 마을이 아니에요. 카드의 이야기는 교과서 수업에서 다루는 예를 옮긴 것이에요.</div>
+  </div>`;
+}
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "2단원 지역문제를 해결하고 지역을 알리는 노력 · 주제① 지역문제의 해결";
+
+// 문제 정의(확인 4 + 적용 4) — 정답 분산 [3,1,2,0,0,2,1,3]
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"지역 주민의 생활을 불편하게 하거나 지역 주민들 사이에 갈등을 일으키는 문제를 <b>무엇</b>이라고 할까요?",
+   opts:["개인의 일","가족 여행","학급 규칙","지역문제"], correct:3, pts:POINTS_BASIC,
+   reason:"지역에는 많은 사람이 함께 살아가요. 지역 주민의 생활을 불편하게 하거나 지역 주민들 사이에 갈등을 일으키는 문제를 지역문제라고 해요.",
+   h1:"지역에서 여러 주민에게 생기는 문제예요.",
+   h2:"네 글자 낱말이에요."},
+  {stem:"지역문제의 <b>특징</b>으로 알맞은 것은?",
+   opts:["한 사람의 노력만으로 쉽게 해결할 수 있어요","지역 주민들이 함께 해결해야 해요","지역 주민과는 관계가 없어요","한곳에서만 일어나요"], correct:1, pts:POINTS_BASIC,
+   reason:"지역문제는 지역 곳곳에서 일어나고, 지역 주민들의 노력만으로 해결하기 어려운 경우도 있어서 지역 주민들이 함께 해결해야 해요.",
+   h1:"여러 주민과 관련된 문제라는 점을 떠올려 봐요.",
+   h2:"함께 해결하는 모습이에요."},
+  {stem:"지역문제는 지역마다 <b>(  )</b> 나타날 수 있어요. (  )에 알맞은 말은?",
+   opts:["똑같이","언제나 같게","다르게","한 번만"], correct:2, pts:POINTS_BASIC,
+   reason:"지역문제는 각 지역의 상황에 따라 다르게 나타날 수 있어요.",
+   h1:"지역마다 상황이 같을까요?",
+   h2:"지역의 상황에 따라 달라져요."},
+  {stem:"다음 가운데 지역문제로 보기 <b>어려운</b> 것은?",
+   opts:["내가 독감에 걸려 집에서 쉬고 있는 일","주차 공간 부족","교통 혼잡","쓰레기 무단 배출"], correct:0, pts:POINTS_BASIC,
+   reason:"내가 독감에 걸린 것은 지역 주민의 생활을 불편하게 하거나 지역 주민들 사이에 갈등을 일으킨다고 보기 어려워요. 주차 공간 부족, 교통 혼잡, 쓰레기 무단 배출은 지역문제예요.",
+   h1:"한 사람에게만 생긴 일을 찾아봐요.",
+   h2:"여러 주민에게 닿지 않는 일이에요."},
+  // 4단계 적용 (+15)
+  {stem:"판에서 <b>「개인의 일」</b> 선반에 있던 독감 카드가 <b>「지역문제」</b> 선반으로 옮겨 간 까닭은?",
+   opts:["독감이 다른 주민들에게 옮아 여러 집에 닿게 되었기 때문이에요","내가 카드를 다시 옮겨 놓았기 때문이에요","독감이 다 나았기 때문이에요","카드의 이름이 바뀌었기 때문이에요"], correct:0, pts:POINTS_APPLY,
+   reason:"독감에 걸린 주민이 예방 수칙을 지키지 않아 다른 주민들에게 옮으면 다른 주민들의 건강을 해치고 생활을 불편하게 해요. 개인의 문제가 지역의 문제로 커질 수 있어요.",
+   h1:"독감 카드가 닿는 집이 몇 곳으로 바뀌었나요?",
+   h2:"카드는 내가 옮기지 않았어요."},
+  {stem:"판에서 <b>층간 소음</b> 카드는 두 집에만 닿았는데도 「지역문제」 선반에 놓였어요. 알맞은 까닭은?",
+   opts:["한 사람에게만 생긴 일이기 때문이에요","두 집 모두 이사를 가야 하기 때문이에요","지역 주민들 사이에 갈등을 일으키는 문제이기 때문이에요","소리가 크지 않기 때문이에요"], correct:2, pts:POINTS_APPLY,
+   reason:"층간 소음은 지역 주민들 사이에 갈등을 일으키기 때문에 지역문제예요.",
+   h1:"위아래 집 사이에 무엇이 생겼나요?",
+   h2:"주민들 사이의 갈등이에요."},
+  {stem:"「가」 기사처럼 여름철 큰비에 도로가 물에 잠기는 문제를 <b>해결하지 않으면</b> 어떤 일이 일어날까요?",
+   opts:["마을에 새 도로가 저절로 생겨요","주민들이 마을 밖으로 나갈 수가 없어 불편해져요","강물이 저절로 줄어들어요","아무 일도 일어나지 않아요"], correct:1, pts:POINTS_APPLY,
+   reason:"도로가 물에 잠기면 주민들이 마을 밖으로 나갈 수가 없어 불편해져요. 지역문제를 해결하지 않으면 주민들의 불편이 계속돼요.",
+   h1:"기사에서 주민들이 겪는 불편을 떠올려 봐요.",
+   h2:"마을 밖으로 오고 가는 길이에요."},
+  {stem:"지역문제는 <b>누가</b> 해결해야 할까요?",
+   opts:["신문 기사를 쓴 사람만 해결해요","불편을 겪은 한 사람만 해결해요","다른 지역 사람들이 해결해요","지역에 살고 있는 주민 모두가 함께 노력해서 해결해요"], correct:3, pts:POINTS_APPLY,
+   reason:"지역문제는 지역에 살고 있는 주민 모두가 함께 노력해서 해결해야 해요. 지역문제에 관심을 가지고 해결하려고 노력해요.",
+   h1:"지역에 누가 함께 살고 있나요?",
+   h2:"주민 모두예요."}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — [생각을 열어요]
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">지역문제가 무엇인지 알아볼까요</h2>
+  <div class="ka-bub">시원이는 집에서 도서관까지 가려면 멀리 떨어진 지역으로 버스를 타고 가야 해요. 집 가까이에 도서관이 없어 <b>불편한 점</b>을 부모님께 말씀드렸어요. 부모님은 지역에 주민들이 이용할 수 있는 도서관이 부족한 문제를 시청 누리집의 <b>생활 불편 신고 게시판</b>에 올리자고 말씀하셨어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('open','멀리 있는 도서관')}${sceneCard('board','생활 불편 신고 게시판')}</div>
+    <div class="note">주민들이 생활 불편 신고 게시판에 올린 신고 내용에는 <b>어떤 공통점</b>이 있을까요?</div>
+  </div>`});
+// 2 살펴보기 — 공통점 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">신고 내용에는 어떤 공통점이 있을까요?</h2>
+  <div class="ka-bub">게시판에는 시원이네 가족처럼 생활하며 <b>불편을 겪은 주민들</b>이 올린 신고가 모여 있어요.</div>
+  <div class="ka-grp">
+  ${st.revealed?`<div class="answer-box">· 개인이 아닌 <b>여러 사람과 관련된 공동의 문제</b>예요.<br>· 개인이 <b>해결하기 어려운</b> 문제예요.<br>· 주민의 생활을 <b>불편하게</b> 하거나 주민들 사이에 <b>갈등</b>을 일으키는 문제예요.</div>`
+    :`<div class="note">공통점을 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 3 살펴보기 — 지역문제의 뜻
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">지역문제란 무엇일까요?</h2>
+  <div class="ka-bub">지역에는 많은 사람이 함께 살아가요. 사람들이 함께 살아가다 보면 지역 주민의 생활을 불편하게 하거나 지역 주민들 사이에 갈등을 일으키는 문제가 생겨요. 이러한 문제를 <span class="ka-emph">지역문제</span>라고 해요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('mean','불편과 갈등')}</div>
+    <div class="note">지역문제는 각 지역의 상황에 따라 <b>다르게</b> 나타날 수 있어요.</div>
+  </div>`});
+// 4 살펴보기 — 조작 안내
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">개인의 일일까요, 지역문제일까요?</h2>
+  <div class="ka-bub">판에 <b>집 여섯</b>과 <b>카드 넷</b>이 있어요. 카드를 고르면 그 일이 <b>닿는 집</b>이 칠해져요. 닿는 집을 세어 보고 「개인의 일」과 「지역문제」 가운데 알맞은 선반에 놓아 봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('guide','카드와 두 선반')}</div>
+    <div class="note">내가 독감에 걸린 것은 지역문제일까요? 카드를 모두 놓은 뒤 <b>독감 카드</b>를 다시 생각해 봐요.</div></div>`});
+// 5 살펴보기 — 직접 조작
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">카드를 선반에 놓아 봐요</h2>
+  <div class="ka-grp" style="align-items:stretch">${lpPanel(st)}</div>`});
+// 6 살펴보기 — [친구와 활동] 그림에서 지역문제 찾기 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">[친구와 활동] 그림에서 지역문제를 찾아봐요</h2>
+  <div class="ka-bub">교과서 그림에서 지역문제라고 생각하는 모습을 찾아 ○표 하고, 그렇게 생각한 까닭을 친구들과 이야기해 봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('find','찾아서 ○표')}</div>
+  ${st.revealed?`<div class="answer-box">· 공사장에서 참기 힘든 소음이 발생하는 것이 지역문제라고 생각해요. 공사장에서 발생하는 소음 때문에 지역 주민의 <b>생활이 불편</b>해지기 때문이에요.<br>· 층간 소음이 지역문제라고 생각해요. 지역 주민 사이에 <b>갈등</b>을 일으키기 때문이에요.<br>· 지역문제는 지역 곳곳에서 일어나고, 지역 주민들이 <b>함께</b> 해결해야 해요.</div>`
+    :`<div class="note">예시 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  <div class="note">※ 그림에서 찾아 ○표 하는 활동은 교과서를 펴서 <b>직접</b> 해요.</div>
+  </div>`});
+// 7 살펴보기 — [미디어 활동] 신문 기사 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">[미디어 활동] 지역문제가 주민들의 생활에 끼치는 영향</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('news','신문 기사 두 장')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">가</span><div><b>여름철 큰비만 오면 고립</b> — 여름철에 큰비가 내려 강이 불어나면 도로가 물에 잠겨 주민들은 며칠 동안 마을 밖으로 나갈 수가 없어요.</div></div>
+    <div class="sum-item"><span class="n">나</span><div><b>옛 장성, 훼손된 채 방치</b> — 지역의 문화유산인 장성이 훼손된 채 방치되어 원래 모습을 찾아보기 어려울 정도예요.</div></div>
+  </div>
+  ${st.revealed?`<div class="answer-box"><b>지역문제</b> — 가: 해마다 여름철에 비가 많이 오면 마을이 고립돼요. 나: 지역의 문화유산이 훼손되고 있어요.<br><b>해결하지 않으면</b> — 가: 도로가 물에 잠겨 안전사고가 나거나 주민들이 마을 밖으로 나갈 수가 없어 불편해져요. 나: 후대에 물려주어야 할 소중한 문화유산을 올바로 보존하지 못할 수 있어요.</div>`
+    :`<div class="note">두 기사에 나타난 지역문제와, 해결하지 않으면 어떤 일이 일어날지 생각해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부한 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('done','지역문제')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div><b>지역문제</b> — 지역 주민의 생활을 불편하게 하거나 지역 주민들 사이에 갈등을 일으키는 문제 · 지역마다 다르게 나타날 수 있어요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b>지역문제의 종류</b> — 주차 공간 부족, 불법 주차, 교통 혼잡, 낡은 시설물, 환경 오염, 쓰레기 무단 배출, 층간 소음 등</div></div>
+    <div class="sum-item"><span class="n">3</span><div>지역문제는 지역에 살고 있는 주민 모두가 <b>함께 노력해서</b> 해결해야 해요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b style="color:#B45309">우리 지역에는 어떤 문제가 있는지</b> 알아봐요.</div></div>`});
+// 17 스스로 돌아보기
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"지역문제가 무엇인지 설명할 수 있어요",st)}
+    ${selfCheck(1,"개인의 일과 지역문제를 구분할 수 있어요",st)}
+    ${selfCheck(2,"지역문제를 해결하지 않으면 어떤 일이 일어날지 말할 수 있어요",st)}
+  </div><div class="note">체크가 잘 안 되는 곳은 <b>다시 살펴봐도</b> 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">「지역문제가 무엇인지 알아볼까요」를 마쳤어요</h2>
+  <div class="ka-grp">
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">지역문제는 지역 주민 모두가 <b style="color:#B45309">함께</b> 관심을 가지고 해결해 나가요.</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">⭕ 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">💡 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">💡 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g4_2_social_u2_l01";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  lpSel:-1, lpDone:0, lpSpread:false, lpRead:null, lpFin:null, lpMsg:"", lpTell:"",
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 →';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음 (브라우저에서만 · jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+function lpDraw(){ main.innerHTML = slides[state.idx].render(state); }
+
+/* 카드 고르기 */
+function lpPick(c){
+  if(state.lpFin!=null) return;                                        // 가드①: 마무리 확정 후 전체 잠금
+  if(!Number.isInteger(c) || c<0 || c>=LP_CARDS) return;               // 가드②: 무효 번호 — 안내조차 띄우지 않음
+  if(lpHas(state,c)){ state.lpMsg = LP_SAY_DONE; playThud(); lpDraw(); return; }            // 가드④: 이미 놓은 카드 — 판 불변
+  state.lpSel = c;                                                     // ⭐ 카드를 고르는 자리는 코드에 여기 단 하나
+  state.lpMsg = ""; state.lpTell = ""; playBlip(); lpDraw();
+}
+/* 선반에 놓기 — 닿는 집의 수에 맞는 선반만 받는다 */
+function lpPut(s){
+  if(state.lpFin!=null) return;                                        // 가드①
+  if(!Number.isInteger(s) || s<0 || s>=LP_SHELF.length) return;        // 가드②
+  if(state.lpSel < 0){ state.lpMsg = LP_SAY_NOSEL; playThud(); lpDraw(); return; }          // 가드③: 카드를 고르기 전 — 판 불변
+  if(s !== lpKind(state, state.lpSel)){ state.lpMsg = LP_SAY_WRONG; playThud(); lpDraw(); return; }   // 가드⑤: 어긋난 선반 — 판 불변(알맞은 선반 이름 0)
+  state.lpDone |= (1 << state.lpSel);                                  // ⭐ 선반에 놓는 자리는 코드에 여기 단 하나 · 덜어 내는 자리 0
+  state.lpSel = -1; state.lpMsg = ""; state.lpTell = LP_TELL_PUT; playBlip(); lpDraw();
+}
+/* 옮는다면? — 닿는 집이 늘어 선반이 저절로 바뀐다 */
+function lpSpreadGo(){
+  if(state.lpFin!=null) return;                                        // 가드①
+  if(state.lpDone !== LP_ALL){ state.lpMsg = LP_SAY_ORDER_S; playThud(); lpDraw(); return; } // 가드⑥: 네 카드를 다 놓기 전 — 판 불변
+  if(state.lpSpread){ state.lpMsg = LP_SAY_SPREADDONE; playThud(); lpDraw(); return; }       // 가드⑦: 이미 옮은 뒤 — 판 불변
+  state.lpSpread = true;                                               // ⭐ 옮는 자리는 코드에 여기 단 하나 · 되돌리는 자리 0
+  state.lpMsg = ""; state.lpTell = LP_TELL_SPREAD; playBlip(); lpDraw();
+}
+/* 판 읽기 */
+function lpRead(i){
+  if(state.lpFin!=null) return;                                        // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=LP_READQ.length) return;        // 가드②
+  if(state.lpRead!=null){ state.lpMsg = LP_SAY_READDONE; lpDraw(); return; }                 // 가드⑧: 이미 정한 자리 — 판 불변
+  if(!state.lpSpread){ state.lpMsg = LP_SAY_ORDER_R; playThud(); lpDraw(); return; }         // 가드⑧: 옮기 전 — 판 불변
+  if(i!==LP_READ_OK){ state.lpMsg = LP_READ_BAD; playThud(); lpDraw(); return; }             // 가드⑧: 어긋난 답 — 판 불변
+  state.lpRead = i; state.lpMsg = ""; playBlip(); lpDraw();
+}
+/* 마무리 */
+function lpFin(i){
+  if(state.lpFin!=null) return;                                        // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=LP_FINQ.length) return;         // 가드②
+  if(state.lpRead==null){ state.lpMsg = LP_SAY_ORDER_F; playThud(); lpDraw(); return; }      // 가드⑧: 판을 읽기 전 — 판 불변
+  if(i!==LP_FIN_OK){ state.lpMsg = LP_FIN_BAD; playThud(); lpDraw(); return; }               // 가드⑧: 어긋난 답 — 판 불변
+  state.lpFin = i; state.lpMsg = ""; playChime(); lpDraw();
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true; qs.wrongPick=null;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2; if(qs.hint===2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">📘 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 →</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // l02 미양산 — 허브 복귀
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
+</html>
