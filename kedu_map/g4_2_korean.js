@@ -452,6 +452,83 @@ window.KEDU_MAP["g4_2_korean"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 6,
+   "name": "상상의 날개",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g4_korean_u6_l01",
+     "lessonId": "g4_2_kor_u6_l01_v1",
+     "n": "1",
+     "title": "단원 시작 — 배울 내용 살펴보기",
+     "sub": null,
+     "url": "/grade4/semester2/korean/6단원_상상의날개/g4_kor_u6_l01.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_korean_u6_l02",
+     "lessonId": "g4_2_kor_u6_l02_03_v1",
+     "n": "2·3",
+     "title": "원인과 결과를 생각하며 영상 보기",
+     "sub": null,
+     "url": "/grade4/semester2/korean/6단원_상상의날개/g4_kor_u6_l02_03.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_korean_u6_l04",
+     "lessonId": "g4_2_kor_u6_l04_05_v1",
+     "n": "4·5",
+     "title": "원인과 결과를 생각하며 이야기 듣기",
+     "sub": null,
+     "url": "/grade4/semester2/korean/6단원_상상의날개/g4_kor_u6_l04_05.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_korean_u6_l06",
+     "lessonId": "g4_2_kor_u6_l06_07_v1",
+     "n": "6·7",
+     "title": "이어질 내용을 상상해 쓰는 방법 알기",
+     "sub": null,
+     "url": "/grade4/semester2/korean/6단원_상상의날개/g4_kor_u6_l06_07.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_korean_u6_l08",
+     "lessonId": "g4_2_kor_u6_l08_10_v1",
+     "n": "8~10",
+     "title": "이야기를 읽고 이어질 내용을 상상해 쓰기 (창의성 계발)",
+     "sub": null,
+     "url": "/grade4/semester2/korean/6단원_상상의날개/g4_kor_u6_l08_10.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_korean_u6_l11",
+     "lessonId": "g4_2_kor_u6_l11_12_v1",
+     "n": "11·12",
+     "title": "배운 내용 실천하기 (이야기 이어 말하기 · 역할놀이)",
+     "sub": null,
+     "url": "/grade4/semester2/korean/6단원_상상의날개/g4_kor_u6_l11_12.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_korean_u6_l13",
+     "lessonId": "g4_2_kor_u6_l13_v1",
+     "n": "13",
+     "title": "단원 마무리하기 ((으)로서·(으)로써 · 낱말 · ㄵ·ㄶ 글씨)",
+     "sub": null,
+     "url": "/grade4/semester2/korean/6단원_상상의날개/g4_kor_u6_l13.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };
