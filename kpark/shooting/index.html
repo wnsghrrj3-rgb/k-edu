@@ -75,10 +75,12 @@ button{font-family:inherit;cursor:pointer;border:none}
 .hcard p{font-size:14px;line-height:1.7;margin-bottom:10px}
 .hcard p b{color:var(--gold)}
 .hok{width:100%;padding:14px;border-radius:14px;font-size:16px;font-weight:900;color:#1b1230;background:linear-gradient(135deg,#ffd35c,#ffb02e)}
+#vignette{position:fixed;inset:0;pointer-events:none;z-index:1;background:radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 55%, rgba(0,0,0,.45) 100%)}
 </style>
 </head>
 <body>
 <canvas id="stage"></canvas>
+<div id="vignette" aria-hidden="true"></div>
 
 <div id="hud" style="display:none">
   <button class="qbtn" id="btnBack">🎪</button>
@@ -134,7 +136,7 @@ button{font-family:inherit;cursor:pointer;border:none}
 <script type="module">
 'use strict';
 import * as THREE from 'three';
-import { createStage, buildBooth, buildSlingshot, makeCan, makeBalloon, makeDuck, makeTarget, createDirector } from './stage/scene3d.js';
+import { createStage, buildBooth, buildSlingshot, makeCan, makeBalloon, makeDuck, makeTarget, createDirector, ballMaterial } from './stage/scene3d.js';
 import { snd, createParticles } from './stage/fx.js';
 
 const $ = id => document.getElementById(id);
@@ -157,8 +159,7 @@ const sling = buildSlingshot(stage.scene, C.MUZZLE);
 addEventListener('resize', stage.resize);
 
 /* 발사체 (재생용) */
-const flyBall = new THREE.Mesh(new THREE.SphereGeometry(C.BALL_R, 16, 12),
-  new THREE.MeshStandardMaterial({ color: 0xffd35c, roughness: 0.3, metalness: 0.2, emissive: 0x5a4200, emissiveIntensity: 0.4 }));
+const flyBall = new THREE.Mesh(new THREE.SphereGeometry(C.BALL_R, 24, 18), ballMaterial());
 flyBall.castShadow = true; flyBall.visible = false;
 stage.scene.add(flyBall);
 
@@ -465,7 +466,7 @@ $('btnList').onclick = () => { snd.tick(); toTitle(); };
 let last = performance.now();
 function loop(now) {
   requestAnimationFrame(loop);
-  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  const dt = Math.max(0, Math.min(0.05, (now - last) / 1000)); last = now;
   if (world && !playback) uiT += dt;
   updatePlayback(dt);
   syncStageObjects(dt);
@@ -473,6 +474,7 @@ function loop(now) {
   parts.update(dt);
   const t = now / 1000;
   stage.starMat.opacity = 0.75 + Math.sin(t * 0.7) * 0.15;
+  if (stage.wheel) stage.wheel.rotation.z += dt * 0.12;
   stage.renderer.render(stage.scene, stage.camera);
 }
 requestAnimationFrame(loop);
