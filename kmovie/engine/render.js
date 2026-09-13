@@ -47,9 +47,24 @@
       if (kb) { ctx.save(); ctx.translate(W / 2 + kb.dx * W, H / 2 + kb.dy * H); ctx.scale(kb.s, kb.s); ctx.translate(-W / 2, -H / 2); }
       g.KMV_MEDIA.drawFit(ctx, img, W, H, src.rot, null, null, fillOf(c, W, H, src, t));
       if (kb) ctx.restore();
+      if (c.face && g.KMV_FACE) faceCover(ctx, W, H, t, c, src);          // 얼굴 가리기 — 룩(LUT) 전에, 프레임 위에 바로
     }
     if (g.KMV_LOOK) g.KMV_LOOK.apply(ctx, W, H, t, c, P.data.look);
   }
+
+  /* 얼굴 가리기(KMV_FACE): 자동 상자는 fit 좌표라 마스크를 켄 번즈·리프레임과 같은 변환으로 얹고, 직접 칸은 화면 좌표 그대로 */
+  function faceCover(ctx, W, H, t, c, src) {
+    const P = g.KMV_PROJECT, F = g.KMV_FACE, idx = P.srcFrame(c, t);
+    const boxes = c.face.auto === false ? [] : F.boxesAt(c.media, idx);
+    const rects = c.face.rects || [];
+    if (!boxes.length && !rects.length) return;
+    const fill = fillOf(c, W, H, src, t), kb = g.KMV_LOOK ? g.KMV_LOOK.kenburns(c, t) : null;
+    F.cover(ctx, W, H, c.face, boxes, rects, (tx, mc) => {
+      if (kb) { tx.translate(W / 2 + kb.dx * W, H / 2 + kb.dy * H); tx.scale(kb.s, kb.s); tx.translate(-W / 2, -H / 2); }
+      g.KMV_MEDIA.drawFit(tx, mc, W, H, 0, mc.width, mc.height, fill);
+    });
+  }
+  function needsFace(c) { return !!(c && c.face && c.face.auto !== false && g.KMV_FACE); }
 
   /* 홀드 컷 등장: 첫 6프레임은 첫 프레임에 머문다 (사진 같은 등장) */
   function holdIdx(c, t) { const P = g.KMV_PROJECT; if (c.fadeIn && c.fadeIn.type === 'hold' && t - c.at < 6) return P.srcFrame(c, c.at); return P.srcFrame(c, t); }
@@ -205,8 +220,9 @@
     }
     const eh = { exact: true, pend: [] };
     const ov = overlaysAt(t, eh);
+    const facePending = needsFace(c) && g.KMV_FACE.pending(c.media, P.srcFrame(c, t));
     compose(ctx, W, H, t, c, img, tr, prevImg, mask, ov);
-    return { exact: exact && !segPending && eh.exact, idx, src, clip: c, pidx: tr ? tr.pidx : -1, psrc, segPending, media: c.media, ovPend: eh.pend };
+    return { exact: exact && !segPending && !facePending && eh.exact, idx, src, clip: c, pidx: tr ? tr.pidx : -1, psrc, segPending, facePending, faceIdx: P.srcFrame(c, t), media: c.media, ovPend: eh.pend };
   }
 
   /* 내보내기: 정확 프레임·정확 마스크를 기다려 그림 */
@@ -237,6 +253,8 @@
     if (tr && tr.prev) { const psrc = g.KMV_MEDIA.get(tr.prev.media); if (psrc) { try { prevImg = (SH && await SH.exact(tr.prev.media, tr.pidx)) || await psrc.getFrame(tr.pidx, false); } catch (e) { prevImg = psrc.nearest(tr.pidx); } } }
     let mask = null;
     if (g.KMV_SEG && needsMask(t)) { try { mask = await g.KMV_SEG.mask(c.media, idx, img); } catch (e) { mask = null; } }
+    if (needsFace(c)) await faceAhead(c, src, P.srcFrame(c, t), img, SH);
+    if (tr && tr.prev && needsFace(tr.prev) && prevImg) { try { await g.KMV_FACE.detect(tr.prev.media, tr.pidx, prevImg); } catch (e) {} }
     const ov = [];
     for (const o of (P.v2At ? P.v2At(t) : [])) {
       const s2 = g.KMV_MEDIA.get(o.media); if (!s2) continue;
@@ -246,6 +264,23 @@
     }
     try { compose(ctx, W, H, t, c, img, tr, prevImg, mask, ov); }
     finally { for (const f of [img, prevImg].concat(ov.map(e => e.img))) if (f && f.kmvTemp) { try { f.close(); } catch (e) {} } }
+  }
+
+  /* 내보내기용 얼굴 탐지: 이 프레임 + HOLD 앞 프레임까지 — 순서대로 나가므로 창(idx±HOLD)이 늘 차 있다(결정적).
+     앞 프레임은 원본 캐시에 있으면 그것, 없으면 받아온다(순차 내보내기라 GOP 캐시 안에서 대부분 즉시). */
+  async function faceAhead(c, src, idx, img, SH) {
+    const F = g.KMV_FACE, m = g.KMV_PROJECT.media(c.media);
+    try { await F.detect(c.media, idx, img); } catch (e) {}
+    if (c.freeze) return;
+    const last = Math.min(m.dur - 1, c.out), ahead = Math.min(last, idx + F.HOLD);
+    for (let i = idx + 1; i <= ahead; i++) {
+      if (F.cached(c.media, i)) continue;
+      let f = null, temp = false;
+      try { f = src.cached(i) || (SH && await SH.exact(c.media, i)) || await src.getFrame(i, false); temp = !!(f && f.kmvTemp && !src.cached(i)); } catch (e) { f = null; }
+      if (!f) continue;
+      try { await F.detect(c.media, i, f); } catch (e) {}
+      if (temp) { try { f.close(); } catch (e) {} }
+    }
   }
 
   /* 원본 프레임 하나를 그대로 (트림 드래그 중 경계 프레임 보기) */
@@ -261,5 +296,5 @@
     g.KMV_MEDIA.drawFit(ctx, img, W, H, src.rot);
   }
 
-  g.KMV_RENDER = { draw, drawExact, drawSource, drawClip, transitionAt, needsMask, partsAt, overlayRect };
+  g.KMV_RENDER = { draw, drawExact, drawSource, drawClip, transitionAt, needsMask, needsFace, partsAt, overlayRect };
 })(typeof window !== 'undefined' ? window : globalThis);

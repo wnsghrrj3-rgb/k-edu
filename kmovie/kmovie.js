@@ -14,7 +14,7 @@
    ============================================================ */
 (function () {
   'use strict';
-  const P = window.KMV_PROJECT, M = window.KMV_MEDIA, A = window.KMV_AUDIO, R = window.KMV_RENDER, LK = window.KMV_LOOK, TR = window.KMV_TRANSITION, SB = window.KMV_SUBTITLE, PT = window.KMV_PARTS, SG = window.KMV_SEG, SH = window.KMV_SHELL, AU = window.KMV_AUTO;
+  const P = window.KMV_PROJECT, M = window.KMV_MEDIA, A = window.KMV_AUDIO, R = window.KMV_RENDER, LK = window.KMV_LOOK, TR = window.KMV_TRANSITION, SB = window.KMV_SUBTITLE, PT = window.KMV_PARTS, SG = window.KMV_SEG, FC = window.KMV_FACE, SH = window.KMV_SHELL, AU = window.KMV_AUTO;
   const FPS = P.FPS;
   const PW = () => P.w(), PH = () => P.h();          // 화면비는 프로젝트가 정한다 (가로 16:9 · 세로 9:16 · 정사각)
   const $ = id => document.getElementById(id);
@@ -182,7 +182,7 @@
      재생·셔틀 중엔 ① 미리보기를 1/2 해상도로(멈추면 원본 화질로 복귀) ② GOP 통 디코드(getFrame) 대신
      재생 스트림(streamTo)이 캐시를 앞서 채우고 ③ 분석은 쉰다. 프리미어의 "재생 해상도 1/2"와 같은 원리. */
   const pv = $('preview'), pctx = pv.getContext('2d');
-  let segToast = 0;
+  let segToast = 0, faceToast = 0;
   const live = () => playing || srcPlaying || shuttle !== 0;      // 어떤 형태로든 굴러가는 중
   function setRScale(sc) {
     const w = Math.round(PW() * sc), h = Math.round(PH() * sc);
@@ -195,6 +195,7 @@
     $('stageLbl').classList.add('hidden');
     const W = pv.width, H = pv.height;
     const r = R.draw(pctx, W, H, ph);
+    if (typeof drawFaceGuide === 'function') drawFaceGuide(pctx, W, H);
     if (r.exact) previewTries = 0;
     if (!r.exact && !live()) {
       /* 정확 프레임이 아니면 빠진 것을 받아온 뒤 한 번 더 그린다.
@@ -213,6 +214,11 @@
         if (r.segPending && r.src) {
           if (SG && SG.status() !== 'ready' && !segToast) { segToast = 1; toast('인물 컷아웃 모델을 처음 한 번 불러와요 (12MB)', 3500); }
           pend.push(r.src.getFrame(r.idx, true).then(f => f && SG.mask(r.media, r.idx, f)));
+        }
+        if (r.facePending && r.src && FC) {
+          if (FC.status() !== 'ready' && !faceToast) { faceToast = 1; toast('얼굴 찾기 모델을 처음 한 번 불러와요 (13MB)', 3500); }
+          const fi = r.faceIdx;
+          pend.push((r.src.cached(fi) ? Promise.resolve(r.src.cached(fi)) : r.src.getFrame(fi, true)).then(f => f && FC.detect(r.media, fi, f)).then(() => { if (typeof refreshPanel === 'function' && FC.status() === 'fail') refreshPanel(); }));
         }
         if (pend.length) { previewTries++; Promise.all(pend).then(() => { if (job === previewJob && ph === want && !live() && !drag) renderPreview(); }).catch(() => {}); }
       }
@@ -518,6 +524,7 @@
     if (sp.badge) label = sp.badge + (c.ramp && c.ramp !== 'none' ? '↗' : '') + ' · ' + label;
     if (c.denoise) label = '🔇 ' + label;
     if (c.stab) label = '◎ ' + label;
+    if (c.face) label = '🙈 ' + label;
     ctx.fillStyle = selected ? GOLD : '#dfe6f3'; ctx.font = (c.freeze || sp.badge ? '700 ' : '600 ') + '11px Pretendard, sans-serif'; ctx.textBaseline = 'middle';
     ctx.fillText(label, vx0 + 6, y + band / 2 + 0.5, Math.max(10, vx1 - vx0 - 10));
     ctx.restore();
@@ -1396,6 +1403,28 @@
   [['none', '없음'], ['light', '약하게'], ['strong', '강하게']].forEach(([k, l]) => segBtn($('denoiseSeg'), k, l, () => { const c = selClip(); if (c) { stop(); P.setDenoise(c.id, k); } }, '이 원본의 가장 조용한 구간을 잡음 지문으로 삼아 웅웅거림·히스를 줄여요'));
   // 클립 채우기 (스마트 리프레임) — 화면비가 원본과 다를 때만 보인다
   [['none', '없음'], ['a', '약하게'], ['b', '강하게']].forEach(([k, l]) => segBtn($('stabSeg'), k, l, () => { const c = selClip(); if (c) { stop(); P.setStab(c.id, k); renderPreview(); } }, '손으로 든 카메라의 잔떨림을 줄여요 — 화면을 조금 키워 그만큼 반대로 밀어요'));
+  /* 얼굴 가리기(초상권) — 모드·세기·자동 토글·직접 칸 */
+  let selFaceRect = -1;
+  [['none', '없음'], ['mosaic', '모자이크'], ['blur', '흐리게']].forEach(([k, l]) => segBtn($('faceSeg'), k, l, () => { const c = selClip(); if (c && !c.gap) { stop(); P.setFace(c.id, { mode: k }); renderPreview(); } }, k === 'none' ? '' : '이 클립에서 얼굴을 찾아 ' + (k === 'blur' ? '흐리게' : '모자이크로') + ' 덮어요 — 얼굴이 아닌 것은 「＋ 가리기 칸」'));
+  [['a', '조금'], ['b', '보통'], ['c', '많이']].forEach(([k, l]) => segBtn($('faceLvSeg'), k, l, () => { const c = selClip(); if (c && c.face) { P.setFace(c.id, { level: k }); renderPreview(); } }, '덮개 칸 크기 (흐리게는 흐린 정도)'));
+  $('tgFaceAuto').onclick = () => { const c = selClip(); if (c && c.face) { stop(); P.setFace(c.id, { auto: c.face.auto === false }); renderPreview(); } };
+  $('btnFaceRect').onclick = () => { const c = selClip(); if (!c || c.gap) return; stop(); const i = P.addFaceRect(c.id, { x: 0.4, y: 0.3, w: 0.2, h: 0.3 }); if (i != null) selFaceRect = i; renderPreview(); refreshPanel(); };
+  $('btnFaceRectDel').onclick = () => { const c = selClip(); if (c && c.face && selFaceRect >= 0) { P.removeFaceRect(c.id, selFaceRect); selFaceRect = -1; renderPreview(); refreshPanel(); } };
+  function refreshFaceRow(c, m) {
+    $('rowFace').classList.toggle('hidden', !!c.gap);
+    const f = c.face; setOn($('faceSeg'), f ? f.mode : 'none');
+    $('faceBody').classList.toggle('hidden', !f);
+    if (!f) return;
+    setOn($('faceLvSeg'), f.level || 'b');
+    $('tgFaceAuto').classList.toggle('on', f.auto !== false);
+    if (selFaceRect >= f.rects.length) selFaceRect = f.rects.length - 1;
+    $('faceRectV').textContent = f.rects.length ? '칸 ' + f.rects.length + '개' + (selFaceRect >= 0 ? ' · ' + (selFaceRect + 1) + '번 고름' : '') : '';
+    $('btnFaceRectDel').classList.toggle('hidden', !(selFaceRect >= 0 && f.rects.length));
+    const F = window.KMV_FACE, st = F ? F.status() : 'none';
+    $('faceNote').textContent = f.auto === false ? (f.rects.length ? '자동은 끔 — 직접 칸만 덮어요. 재생 화면에서 칸을 끌어 옮기고, 오른쪽 아래 모서리로 크기' : '자동은 끔 — 「＋ 가리기 칸」으로 덮을 자리를 놓아요')
+      : st === 'fail' ? '얼굴 찾기 모델을 못 불러왔어요 — 직접 칸으로 덮어 주세요'
+      : (st !== 'ready' ? '얼굴 찾기 모델을 처음 한 번 불러와요 (13MB). ' : '') + '내보내기는 모든 프레임에서 얼굴을 찾아 덮어요' + (f.rects.length ? ' · 직접 칸은 재생 화면에서 끌어 옮기기' : '');
+  }
   [['auto', '자동'], ['center', '가운데'], ['a', ''], ['b', ''], ['none', '안 채움']].forEach(([k, l]) => segBtn($('fitSeg'), k, l, () => { const c = selClip(); if (c) { P.setFill(c.id, k); renderPreview(); } }, k === 'auto' ? '원본에서 볼거리가 몰린 쪽을 남기고 잘라요' : k === 'none' ? '자르지 않고 위아래(또는 좌우)에 검은 띠를 둬요' : ''));
   // 프로젝트 화면비
   P.ASPECTS.forEach(a => segBtn($('aspectSeg'), a.id, a.short, () => { if (P.setAspect(a.id)) { stop(); setRScale(1); refreshAspect(); renderPreview(); toast(a.label + ' · ' + a.w + '×' + a.h + ' 로 바꿨어요', 2200); } }, a.label + ' · ' + a.w + '×' + a.h));
@@ -1434,7 +1463,7 @@
       $('cName').textContent = '빈 자리'; $('cName').title = '리프트로 생긴 검은 화면';
       $('cRange').textContent = '검은 화면 (내용 없음)';
       $('cDur').textContent = secStr(c.dur) + ' · ' + tc(c.at) + ' 부터';
-      $('rowSpeed').classList.add('hidden');
+      $('rowSpeed').classList.add('hidden'); $('rowFace').classList.add('hidden'); $('faceBody').classList.add('hidden');
       $('rowFreeze').classList.remove('hidden'); $('freezeSec').value = (c.dur / FPS).toFixed(1);
       $('rowVol').classList.add('hidden'); $('rowLink').classList.add('hidden'); $('rowJL').classList.add('hidden'); $('matchNote').classList.add('hidden');
       $('btnFreeze').disabled = true;
@@ -1454,7 +1483,7 @@
     $('rowStab').classList.toggle('hidden', !stabOK); setOn($('stabSeg'), c.stab || 'none');
     const ssrc = stabOK ? M.get(c.media) : null;
     $('stabNote').classList.toggle('hidden', !(stabOK && c.stab && (!ssrc || !ssrc.shake || !ssrc.analyzed)));
-    refreshFillRow(c);
+    refreshFillRow(c); refreshFaceRow(c, m);
     $('rowFreeze').classList.toggle('hidden', !c.freeze); if (c.freeze) $('freezeSec').value = (c.dur / FPS).toFixed(1);
     $('rowVol').classList.toggle('hidden', !a); if (a) { $('vol').value = Math.round((a.vol == null ? 1 : a.vol) * 100); $('volV').textContent = $('vol').value + '%'; }
     $('rowJL').classList.toggle('hidden', !a || c.freeze || c.speed !== 'normal' || m.kind !== 'video');
@@ -1688,6 +1717,57 @@
     };
     pv.addEventListener('pointerup', end); pv.addEventListener('pointercancel', end);
   })();
+  /* 재생 화면에서 「직접 가리기 칸」 끌기 — 고른 클립의 칸 몸통 = 옮기기, 오른쪽 아래 모서리 = 크기. 덧영상 끌기와 같은 방식(놓을 때 한 커밋). */
+  (function () {
+    let fd = null;
+    const cv = () => { const r = pv.getBoundingClientRect(); const W = PW(), H = PH(); const sx = W / Math.max(1, r.width), sy = H / Math.max(1, r.height); const k = Math.max(sx, sy); const rw = W / k, rh = H / k, ox = r.left + (r.width - rw) / 2, oy = r.top + (r.height - rh) / 2; return { ox, oy, k, W, H }; };
+    function hitFace(e) {
+      if (stage !== 'tl' || selV2) return null;
+      const c = selClip(); if (!c || c.gap || !c.face || !c.face.rects.length || ph < c.at || ph >= c.at + c.dur) return null;
+      const g = cv(), px = (e.clientX - g.ox) * g.k / g.W, py = (e.clientY - g.oy) * g.k / g.H;
+      const grip = Math.max(24, g.W * 0.03) / g.W;
+      for (let i = c.face.rects.length - 1; i >= 0; i--) {
+        const r = c.face.rects[i];
+        if (px < r.x || px > r.x + r.w || py < r.y || py > r.y + r.h) continue;
+        return { c, i, r, g, px, py, corner: px > r.x + r.w - grip && py > r.y + r.h - grip * g.W / g.H };
+      }
+      return null;
+    }
+    pv.addEventListener('pointermove', e => { if (fd) return; const h = hitFace(e); if (h) pv.style.cursor = h.corner ? 'nwse-resize' : 'move'; });
+    pv.addEventListener('pointerdown', e => {
+      const h = hitFace(e); if (!h) return;
+      e.preventDefault(); pv.setPointerCapture(e.pointerId);
+      selFaceRect = h.i; refreshPanel();
+      fd = { h, start: Object.assign({}, h.r), x0: e.clientX, y0: e.clientY, moved: false };
+      pv.style.cursor = h.corner ? 'nwse-resize' : 'grabbing';
+    });
+    pv.addEventListener('pointermove', e => {
+      if (!fd) return;
+      const g = fd.h.g, dx = (e.clientX - fd.x0) * g.k / g.W, dy = (e.clientY - fd.y0) * g.k / g.H;
+      if (!fd.moved && Math.hypot(dx * g.W, dy * g.H) < 3) return; fd.moved = true;
+      const s0 = fd.start;
+      if (fd.h.corner) P.updateFaceRect(fd.h.c.id, fd.h.i, { w: s0.w + dx, h: s0.h + dy }, { commit: false });
+      else P.updateFaceRect(fd.h.c.id, fd.h.i, { x: s0.x + dx, y: s0.y + dy }, { commit: false });
+      dirty = true; renderPreview();
+    });
+    const end = e => {
+      if (!fd) return; const d = fd; fd = null; pv.style.cursor = '';
+      try { pv.releasePointerCapture(e.pointerId); } catch (er) {}
+      if (!d.moved) return;
+      const c = d.h.c, now = Object.assign({}, c.face.rects[d.h.i]);
+      const rects = c.face.rects.slice(); rects[d.h.i] = d.start; c.face = Object.assign({}, c.face, { rects });   // 원래 값으로 되돌린 뒤 한 커밋 (Ctrl+Z 한 번)
+      P.updateFaceRect(c.id, d.h.i, now);
+      renderPreview();
+    };
+    pv.addEventListener('pointerup', end); pv.addEventListener('pointercancel', end);
+  })();
+  /* 고른 가리기 칸 테두리 — 미리보기 위에 금색 점선 (내보내기엔 없음) */
+  function drawFaceGuide(ctx, W, H) {
+    const c = selClip(); if (stage !== 'tl' || live() || !c || c.gap || !c.face || !c.face.rects.length || ph < c.at || ph >= c.at + c.dur) return;
+    ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.lineWidth = Math.max(1.5, W * 0.0015); ctx.setLineDash([W * 0.008, W * 0.005]);
+    c.face.rects.forEach((r, i) => { ctx.strokeStyle = i === selFaceRect ? GOLD : 'rgba(255,255,255,0.55)'; ctx.strokeRect(r.x * W, r.y * H, r.w * W, r.h * H); });
+    ctx.restore();
+  }
   $('btnV2Del').onclick = () => { if (selV2) { stop(); P.removeV2(selV2); selectV2(null); setPH(ph); } };
   function refreshV2Panel() {
     const o = selV2 && P.v2(selV2);

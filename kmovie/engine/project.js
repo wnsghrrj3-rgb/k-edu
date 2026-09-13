@@ -253,6 +253,39 @@
   /* 흔들림 잡기 — 없음 / 약하게(a) / 강하게(b). 보정 표는 분석이 남긴 흔들림 기록에서 KMV_STAB 이 만든다 */
   function setStab(id, level) { const c = clip(id); if (!c || c.freeze) return; const v = level === 'a' || level === 'b' ? level : undefined; if ((c.stab || undefined) === v) return; commit(); c.stab = v; emit(); }
   function setDenoise(id, level) { const c = clip(id); if (!c || c.freeze) return; const v = level === 'light' || level === 'strong' ? level : undefined; if ((c.denoise || undefined) === v) return; commit(); c.denoise = v; emit(); }
+  /* 얼굴 가리기(초상권): c.face = { mode:'mosaic'|'blur', level:'a'|'b'|'c', auto:true, rects:[{x,y,w,h}] } (화면 비율 0~1). mode 'none' 이면 지운다. */
+  function setFace(id, patch, opts) {
+    const c = clip(id); if (!c || c.gap) return;
+    if (patch && patch.mode === 'none') { if (!c.face) return; commit(); delete c.face; emit(); return; }
+    const cur = c.face || { mode: 'mosaic', level: 'b', auto: true, rects: [] };
+    const nx = Object.assign({}, cur, patch || {});
+    if (nx.mode !== 'blur') nx.mode = 'mosaic';
+    if (!/^[abc]$/.test(nx.level)) nx.level = 'b';
+    nx.auto = nx.auto !== false; nx.rects = Array.isArray(nx.rects) ? nx.rects : [];
+    if (c.face && JSON.stringify(c.face) === JSON.stringify(nx)) return;
+    if (!opts || opts.commit !== false) commit();
+    c.face = nx; emit();
+  }
+  function addFaceRect(id, r) {
+    const c = clip(id); if (!c || c.gap) return null;
+    const base = c.face || { mode: 'mosaic', level: 'b', auto: true, rects: [] };
+    const rect = Object.assign({ x: 0.4, y: 0.3, w: 0.2, h: 0.3 }, r || {});
+    const rects = base.rects.concat([rect]);
+    setFace(id, Object.assign({}, base, { rects }));
+    return c.face.rects.length - 1;
+  }
+  function updateFaceRect(id, i, patch, opts) {
+    const c = clip(id); if (!c || !c.face || !c.face.rects[i]) return;
+    const rects = c.face.rects.slice(); rects[i] = Object.assign({}, rects[i], patch);
+    rects[i].w = clamp(rects[i].w, 0.02, 1); rects[i].h = clamp(rects[i].h, 0.02, 1);
+    rects[i].x = clamp(rects[i].x, -rects[i].w * 0.9, 1 - rects[i].w * 0.1); rects[i].y = clamp(rects[i].y, -rects[i].h * 0.9, 1 - rects[i].h * 0.1);
+    setFace(id, { rects }, opts);
+  }
+  function removeFaceRect(id, i) {
+    const c = clip(id); if (!c || !c.face || !c.face.rects[i]) return;
+    const rects = c.face.rects.slice(); rects.splice(i, 1);
+    setFace(id, { rects });
+  }
   function setFill(id, v) { const c = clip(id); if (!c) return; const nv = FILLS.indexOf(v) > 0 ? v : undefined; if ((c.fill || undefined) === nv) return; commit(); c.fill = nv; emit(); }
   function setVol(clipId, vol) {
     const a = audioOf(clipId); if (!a) return;
@@ -771,7 +804,7 @@
     get data() { return P; },
     on: fn => listeners.push(fn),
     media, clip, clipIndex, audioOf, clipAt, total, edges, srcFrame, clipDur, speedMap,
-    addMedia, removeMedia, addClip, removeClip, move, split, trim, trimToPlayhead, freeze, setSpeed, setRamp, setDenoise, setStab, setVol, audioTrim, relink,
+    addMedia, removeMedia, addClip, removeClip, move, split, trim, trimToPlayhead, freeze, setSpeed, setRamp, setDenoise, setStab, setFace, addFaceRect, updateFaceRect, removeFaceRect, setVol, audioTrim, relink,
     setLook, setProjectLook, setKenburns, setFade, setTransition, setTheme, setLogo,
     addS, setS, addManyS, subtitle, updateS, removeS, clearS, subtitleAt,
     part, addP, updateP, removeP, clearP, partsAt, partDefault, setSchool, schoolName, schoolShort, schoolize,
