@@ -1132,7 +1132,7 @@
     else { if (sel === id && selSet.size === (id ? 1 : 0)) { selAuto = false; return; } selSet.clear(); if (id) selSet.add(id); sel = id; }
     selAuto = false;
     if (id && sideSelPending) setSide('set');
-    dirty = true; draw(); refreshPanel(); refreshMontPanel();
+    dirty = true; draw(); refreshPanel(); refreshMontPanel(); refreshFacePanel();
   }
   function selectMarker(id) { if (selM === id) return; selM = id; dirty = true; draw(); refreshMarkerList(); }
   function selectedIds() { return P.data.V.filter(c => selSet.has(c.id)).map(c => c.id); }
@@ -1407,6 +1407,27 @@
   let selFaceRect = -1;
   [['none', '없음'], ['mosaic', '모자이크'], ['blur', '흐리게']].forEach(([k, l]) => segBtn($('faceSeg'), k, l, () => { const c = selClip(); if (c && !c.gap) { stop(); P.setFace(c.id, { mode: k }); renderPreview(); } }, k === 'none' ? '' : '이 클립에서 얼굴을 찾아 ' + (k === 'blur' ? '흐리게' : '모자이크로') + ' 덮어요 — 얼굴이 아닌 것은 「＋ 가리기 칸」'));
   [['a', '조금'], ['b', '보통'], ['c', '많이']].forEach(([k, l]) => segBtn($('faceLvSeg'), k, l, () => { const c = selClip(); if (c && c.face) { P.setFace(c.id, { level: k }); renderPreview(); } }, '덮개 칸 크기 (흐리게는 흐린 정도)'));
+  /* 학생 도구상자 「얼굴 가리기」 — 영상 줄 전부(2개 이상 골라 두었으면 고른 것만), undo 1회 */
+  const faceAllIds = () => (selSet.size >= 2 ? selectedIds() : null);
+  const faceAll = mode => {
+    const ids = faceAllIds(); stop();
+    const n = P.setFaceAll({ mode }, ids);
+    if (!n) { toast(mode === 'none' ? '가려 둔 얼굴이 없어요' : (P.data.V.some(c => !c.gap) ? '이미 그렇게 돼 있어요' : '먼저 영상을 넣어요'), 2000); return; }
+    renderPreview(); refreshFacePanel();
+    toast(mode === 'none' ? '얼굴 가리기를 껐어요 (클립 ' + n + '개) — Ctrl+Z 로 되돌려요' : '클립 ' + n + '개에서 얼굴을 찾아 ' + (mode === 'blur' ? '흐리게' : '모자이크로') + ' 덮어요 — 처음엔 얼굴 찾기 모델(13MB)을 내려받아요', 3000);
+  };
+  $('btnFaceAllMosaic').onclick = () => faceAll('mosaic');
+  $('btnFaceAllBlur').onclick = () => faceAll('blur');
+  $('btnFaceAllOff').onclick = () => faceAll('none');
+  function refreshFacePanel() {
+    const el = $('faceAllNote'); if (!el) return;
+    const all = P.data.V.filter(c => !c.gap), on = all.filter(c => c.face), ids = faceAllIds();
+    const sc = ids ? ' · 지금은 고른 클립 ' + ids.length + '개에만' : '';
+    el.textContent = !all.length ? '영상을 넣으면 여기서 한 번에 가려요.'
+      : !on.length ? '클립 ' + all.length + '개 · 아직 가리는 게 없어요' + sc
+        : '클립 ' + all.length + '개 중 ' + on.length + '개 가리는 중 (' + (on.every(c => c.face.mode === 'blur') ? '흐리게' : on.every(c => c.face.mode === 'mosaic') ? '모자이크' : '섞임') + ')' + sc;
+    $('btnFaceAllOff').disabled = !on.length;
+  }
   $('tgFaceAuto').onclick = () => { const c = selClip(); if (c && c.face) { stop(); P.setFace(c.id, { auto: c.face.auto === false }); renderPreview(); } };
   $('btnFaceRect').onclick = () => { const c = selClip(); if (!c || c.gap) return; stop(); const i = P.addFaceRect(c.id, { x: 0.4, y: 0.3, w: 0.2, h: 0.3 }); if (i != null) selFaceRect = i; renderPreview(); refreshPanel(); };
   $('btnFaceRectDel').onclick = () => { const c = selClip(); if (c && c.face && selFaceRect >= 0) { P.removeFaceRect(c.id, selFaceRect); selFaceRect = -1; renderPreview(); refreshPanel(); } };
@@ -2805,7 +2826,7 @@
     if (!drag) {
       refreshLookPanel(); refreshSubPanel(); refreshPartPanel(); refreshMusicPanel();
       if (kind !== 'M') clearAutoPrev();                 // 시각이 밀리면 찾아 둔 자리는 못 믿는다 (마커만 놓은 건 그대로)
-      refreshAutoPanel();
+      refreshAutoPanel(); refreshFacePanel();
       if (selS && !P.subtitle(selS)) { selS = null; refreshSubPanel(); }
       if (selP && !P.part(selP)) { selP = null; refreshPartPanel(); }
       if (selA2 && !P.a2(selA2)) { selA2 = null; refreshMusicPanel(); }
@@ -3024,7 +3045,7 @@
 
   /* ---------- 시작 ---------- */
   resize();
-  refreshBin(); refreshPanel(); refreshProject(); refreshLookPanel(); refreshSubPanel(); buildPartGrid(); refreshPartPanel(); refreshMusicPanel(); refreshAutoPanel(); refreshMarkerList();
+  refreshBin(); refreshPanel(); refreshProject(); refreshLookPanel(); refreshSubPanel(); buildPartGrid(); refreshPartPanel(); refreshMusicPanel(); refreshAutoPanel(); refreshFacePanel(); refreshMarkerList();
   document.fonts && document.fonts.ready.then(() => { paintPartThumbs(); paintSubTiles(); if (!playing) renderPreview(); });
   LK.ready().then(() => { if (P.total()) renderPreview(); });
   $('zoom').value = Math.round(1000 * Math.log(pxf / MIN_PXF) / Math.log(MAX_PXF / MIN_PXF));

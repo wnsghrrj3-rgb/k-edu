@@ -286,6 +286,27 @@
     const rects = c.face.rects.slice(); rects.splice(i, 1);
     setFace(id, { rects });
   }
+  /* 여러 클립 한 번에 (학생 도구상자 「얼굴 가리기」) — ids 없으면 영상 줄 전부(빈 자리 제외). undo 1회. 되돌린 개수. */
+  function setFaceAll(patch, ids) {
+    const want = ids && ids.length ? new Set(ids) : null;
+    const list = P.V.filter(c => !c.gap && (!want || want.has(c.id)));
+    const jobs = [];
+    for (const c of list) {
+      if (patch && patch.mode === 'none') { if (c.face) jobs.push([c, null]); continue; }
+      const cur = c.face || { mode: 'mosaic', level: 'b', auto: true, rects: [] };
+      const nx = Object.assign({}, cur, patch || {});
+      if (nx.mode !== 'blur') nx.mode = 'mosaic';
+      if (!/^[abc]$/.test(nx.level)) nx.level = 'b';
+      nx.auto = nx.auto !== false; nx.rects = Array.isArray(nx.rects) ? nx.rects : [];
+      if (c.face && JSON.stringify(c.face) === JSON.stringify(nx)) continue;
+      jobs.push([c, nx]);
+    }
+    if (!jobs.length) return 0;
+    commit();
+    for (const [c, nx] of jobs) { if (nx) c.face = nx; else delete c.face; }
+    emit();
+    return jobs.length;
+  }
   function setFill(id, v) { const c = clip(id); if (!c) return; const nv = FILLS.indexOf(v) > 0 ? v : undefined; if ((c.fill || undefined) === nv) return; commit(); c.fill = nv; emit(); }
   function setVol(clipId, vol) {
     const a = audioOf(clipId); if (!a) return;
@@ -804,7 +825,7 @@
     get data() { return P; },
     on: fn => listeners.push(fn),
     media, clip, clipIndex, audioOf, clipAt, total, edges, srcFrame, clipDur, speedMap,
-    addMedia, removeMedia, addClip, removeClip, move, split, trim, trimToPlayhead, freeze, setSpeed, setRamp, setDenoise, setStab, setFace, addFaceRect, updateFaceRect, removeFaceRect, setVol, audioTrim, relink,
+    addMedia, removeMedia, addClip, removeClip, move, split, trim, trimToPlayhead, freeze, setSpeed, setRamp, setDenoise, setStab, setFace, setFaceAll, addFaceRect, updateFaceRect, removeFaceRect, setVol, audioTrim, relink,
     setLook, setProjectLook, setKenburns, setFade, setTransition, setTheme, setLogo,
     addS, setS, addManyS, subtitle, updateS, removeS, clearS, subtitleAt,
     part, addP, updateP, removeP, clearP, partsAt, partDefault, setSchool, schoolName, schoolShort, schoolize,

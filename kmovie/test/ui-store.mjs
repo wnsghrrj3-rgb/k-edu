@@ -127,7 +127,7 @@ const kmvPath = path.join(FX, 'test.kmv'); fs.writeFileSync(kmvPath, kmv);
 await page.click('#btnNew'); await page.waitForFunction(() => document.querySelectorAll('#projModal .prow').length >= 1);
 await page.setInputFiles('#kmvIn', [kmvPath]);
 await page.waitForFunction(() => KMV_UI.proj.id === 'fileProj1', null, { timeout: 30000 });
-await page.waitForTimeout(500);
+await page.waitForFunction(() => KMV_STORE.local.get('fileProj1').then(r => !!r, () => false), null, { timeout: 15000 });   // 열기(openRecord, 원본 되살리기 포함) 뒤에 레코드를 쓴다 — 고정 500ms 는 느린 환경에서 모자랐다(58 뒤 6회 중 4회)
 const s7b = await page.evaluate(async () => ({ name: KMV_UI.proj.name, S: KMV_PROJECT.data.S.length, inList: (await KMV_STORE.list()).some(x => x.id === 'fileProj1'), modal: document.getElementById('projModal').classList.contains('hidden') }));
 ok(s7b.name === '파일로 옮긴 것' && s7b.S === 1 && s7b.inList && s7b.modal, '「파일 가져오기」 → 열리고 목록에도 들어감');
 
