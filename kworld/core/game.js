@@ -68,13 +68,13 @@ export class Game {
   infoFor(t) {
     const def = this.items.targets[t.type]; if (!def) return null;
     const st = def.states && def.states[t.state || 'unlit']; const info = (st && st.info) || def.info;
-    return info ? `<span class="what">👀 <b>${def.name}</b> — ${info}</span><span class="near">가까이 가면 할 수 있는 일이 보여</span>` : null;
+    return info ? { name: def.name, info } : null;
   }
   promptFor(t) {
     const def = this.items.targets[t.type]; if (!def) return null;
     let verb = def.verb; if (def.states) verb = def.states[t.state || 'unlit'].verb;
-    if (t.type === 'gate' && !this.gateOpen) verb = '아직 닫혀 있다';
-    return `<b>${def.name}</b> — ${verb} <kbd>E</kbd> / 탭`;
+    if (t.type === 'gate' && !this.gateOpen) verb = '아직 닫혀 있다 (눌러서 무엇이 남았는지 보기)';
+    return { action: true, name: def.name, verb };
   }
   bindButtons() {
     addEventListener('keydown', (ev) => { if (/^(TEXTAREA|INPUT)$/.test(ev.target.tagName)) return; if (ev.code === 'KeyE' || ev.code === 'Space') this.act(); if (ev.code === 'KeyC') this.openCraft(); if (ev.code === 'KeyV') this.p.setView(this.p.viewMode === 'fp' ? 'tp' : 'fp'); if (ev.code === 'KeyH') this.showHint(); if (ev.code === 'KeyM') this.missionList(); });

@@ -15,7 +15,13 @@ export class UI {
   setCompass(name, bearing, dist) { const el = $('compass'); el.style.display = 'flex'; $('cname').textContent = name; $('cdist').textContent = dist < 6 ? '여기' : Math.round(dist) + 'm'; $('carrow').style.transform = `rotate(${-bearing}rad)`; }
   pulseHint() { $('hintbtn').classList.add('pulse'); setTimeout(() => $('hintbtn').classList.remove('pulse'), 6000); }
   setHunger(v, slow) { this.hungerBar.style.width = Math.max(0, Math.min(100, v)) + '%'; this.hungerBar.className = slow ? 'low' : ''; $('hungerlabel').textContent = slow ? '배가 너무 고파 느려진다' : '배부름'; }
-  setPrompt(text) { if (!text) { this.prompt.style.display = 'none'; return; } this.prompt.style.display = 'block'; this.prompt.innerHTML = md(text); }
+  /** 근접 안내. info = 멀리서 보는 설명(누를 것 없음), action = 지금 할 수 있는 일(누르기) */
+  setPrompt(p) {
+    if (!p) { this.prompt.style.display = 'none'; return; }
+    this.prompt.style.display = 'block';
+    if (p.action) this.prompt.innerHTML = `<div class="act"><b>${esc(p.name)}</b> · ${esc(p.verb)}</div><div class="how">키보드 <kbd>E</kbd> 또는 <kbd>행동</kbd> 버튼</div>`;
+    else this.prompt.innerHTML = `<div class="what">👀 <b>${esc(p.name)}</b> — ${esc(p.info)}</div><div class="near">아직 누를 건 없어 · 더 가까이 가면 할 수 있는 일이 떠</div>`;
+  }
   say(text, ms = 3200) {
     this.toast.innerHTML = md(text); this.toast.style.display = 'block';
     clearTimeout(this.toastTimer); this.toastTimer = setTimeout(() => { this.toast.style.display = 'none'; }, ms);
