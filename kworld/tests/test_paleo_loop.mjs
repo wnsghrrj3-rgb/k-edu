@@ -19,7 +19,7 @@ g.ui = { setMission: (t) => { g._mission = t; }, setCompass() {}, pulseHint() {}
   check: (data, _a, onFinish) => onFinish([{ id: 'q1', ok: true }, { id: 'q2', ok: true }, { id: 'q3', open: '추웠을 것' }]) };
 g.p = { enabled: true, speedMul: 1, teleport() {}, pos: new THREE.Vector3(), yaw: 0 };
 const ix = new Map();
-const mk = (name) => { const [type, ...rest] = name.split('_'); ix.set(name, { type, id: rest.join('_') || type, name, uses: 0, state: null, center: new THREE.Vector3(), obj: { material: { clone() { return { color: { multiplyScalar() {} } }; } } } }); };
+const mk = (name) => { const [type, ...rest] = name.split('_'); ix.set(name, { type, id: rest.join('_') || type, name, uses: 0, state: null, center: new THREE.Vector3(), obj: { traverse() {} } }); };
 ['stone_1', 'stone_2', 'stone_3', 'stick_1', 'stick_2', 'stick_3', 'grass_1', 'grass_2', 'bush_a1_1', 'bush_a1_2', 'bush_a1_3', 'track_1', 'deer_1', 'fire_1', 'npc_elder', 'gate_1'].forEach(mk);
 g.e = { interactables: ix, removeInteractable: (k) => ix.delete(k), areas: new Map([['camp', new THREE.Vector3(1, 0, 1)]]), groundY: () => 0, pickTarget: () => null };
 g.updateMission(true); ok(g._mission.includes('말 걸기'), '첫 미션');
