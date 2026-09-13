@@ -151,14 +151,14 @@ window.KEDU_MAP["g4_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_social_u2_l03",
+     "lessonId": "g4_social_u2_l03_v1",
      "n": "3",
      "title": "우리 지역에서 일어나는 문제의 원인을 알아볼까요",
      "sub": "① 지역문제의 해결",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/social/2단원_지역문제해결과지역알리기/g4_social_u2_l03_문제의원인.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
