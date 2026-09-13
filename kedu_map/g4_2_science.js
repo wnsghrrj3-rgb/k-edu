@@ -94,6 +94,93 @@ window.KEDU_MAP["g4_2_science"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 2,
+   "name": "생물과 환경",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g4_science_u2_l01",
+     "lessonId": "g4_s2_sci_u2_l01_v1",
+     "n": "1",
+     "title": "활짝! 과학 열기 — 나뭇잎으로 숲과 물속 모습 표현하기",
+     "sub": null,
+     "url": "/grade4/semester2/science/2단원_생물과환경/g4_sci_u2_l01_숲과물속표현.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": null,
+     "lessonId": null,
+     "n": "2",
+     "title": "생태계의 구성 요소",
+     "sub": null,
+     "url": null,
+     "track": "soon",
+     "ready": false
+    },
+    {
+     "key": null,
+     "lessonId": null,
+     "n": "3",
+     "title": "생태계의 생물요소 분류",
+     "sub": null,
+     "url": null,
+     "track": "soon",
+     "ready": false
+    },
+    {
+     "key": null,
+     "lessonId": null,
+     "n": "4~5",
+     "title": "생물 사이의 먹이 관계",
+     "sub": null,
+     "url": null,
+     "track": "soon",
+     "ready": false
+    },
+    {
+     "key": null,
+     "lessonId": null,
+     "n": "6",
+     "title": "인간 활동이 생태계에 미치는 영향",
+     "sub": null,
+     "url": null,
+     "track": "soon",
+     "ready": false
+    },
+    {
+     "key": null,
+     "lessonId": null,
+     "n": "7~8",
+     "title": "창의가 반짝! — 우리 동네 생태계 지킴이 되어 보기",
+     "sub": null,
+     "url": null,
+     "track": "soon",
+     "ready": false
+    },
+    {
+     "key": null,
+     "lessonId": null,
+     "n": "9",
+     "title": "톡톡! 과학 — 친환경 곤충 요리 전문가",
+     "sub": null,
+     "url": null,
+     "track": "soon",
+     "ready": false
+    },
+    {
+     "key": null,
+     "lessonId": null,
+     "n": "10",
+     "title": "단원 마무리",
+     "sub": null,
+     "url": null,
+     "track": "soon",
+     "ready": false
+    }
+   ]
   }
  ]
 };
