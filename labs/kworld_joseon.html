@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>케이월드 탐침 — 조선 거리 걸어보기</title>
+<script type="importmap">
+{ "imports": {
+    "three": "./vendor/three185/three.module.min.js",
+    "three/addons/": "./vendor/three185/addons/"
+} }
+</script>
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:#9ec8ef;font-family:-apple-system,"Malgun Gothic",sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
+  #c{position:fixed;inset:0;display:block}
+  #hud{position:fixed;top:12px;left:12px;background:rgba(20,28,40,.72);color:#fff;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.5;max-width:260px;backdrop-filter:blur(6px)}
+  #hud b{font-size:15px;display:block;margin-bottom:2px}
+  #hud .tag{display:inline-block;font-size:11px;background:#e8a53a;color:#1b1b1b;border-radius:6px;padding:1px 7px;margin-bottom:6px;font-weight:700}
+  #load{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;color:#243; font-size:16px;background:#cfe3f5}
+  #stick{position:fixed;left:28px;bottom:28px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.18);border:2px solid rgba(255,255,255,.5);display:none}
+  #knob{position:absolute;left:35px;top:35px;width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.75)}
+  #hint{position:fixed;right:12px;bottom:12px;color:#fff;font-size:12px;background:rgba(20,28,40,.6);padding:6px 10px;border-radius:8px}
+  #back{position:fixed;top:12px;right:12px;background:rgba(20,28,40,.72);color:#fff;text-decoration:none;padding:8px 12px;border-radius:10px;font-size:13px}
+  @media (pointer:coarse){#stick{display:block}#hint{display:none}}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="load">조선 거리를 불러오는 중…</div>
+<div id="hud"><span class="tag">케이월드 탐침 2</span><b>조선 시대 거리</b>길을 따라 걸어 보세요.<br><span id="pos">—</span></div>
+<a id="back" href="javascript:history.back()">← 나가기</a>
+<div id="stick"><div id="knob"></div></div>
+<div id="hint">이동 W A S D / 방향키 · 둘러보기 마우스 드래그 · Shift 달리기</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x9ec8ef);
+scene.fog = new THREE.Fog(0xb8d6ee, 40, 110);
+
+const camera = new THREE.PerspectiveCamera(70, 1, 0.1, 300);
+const EYE = 1.55;
+
+// 빛: 하늘 반구 + 태양
+scene.add(new THREE.HemisphereLight(0xcfe6ff, 0x8a7a5a, 0.9));
+const sun = new THREE.DirectionalLight(0xfff1d6, 2.2);
+sun.position.set(-25, 40, 20);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+const sc = sun.shadow.camera; sc.left=-45; sc.right=45; sc.top=45; sc.bottom=-45; sc.near=1; sc.far=120;
+sun.shadow.bias = -0.0006;
+scene.add(sun);
+
+// 충돌 상자 (이름이 col_ 로 시작하는 메시)
+const colliders = [];
+let spawn = new THREE.Vector3(-24, EYE, 0);
+
+new GLTFLoader().load('./assets/kworld/joseon_street.glb', (g) => {
+  g.scene.traverse((o) => {
+    if (o.isMesh) {
+      o.castShadow = true; o.receiveShadow = true;
+      if (o.material) { o.material.side = THREE.DoubleSide; }
+      if (o.name.startsWith('col_')) {
+        o.updateWorldMatrix(true, false);
+        const b = new THREE.Box3().setFromObject(o);
+        b.expandByScalar(0.35);
+        colliders.push(b);
+      }
+    }
+    if (o.name === 'spawn') { spawn = o.getWorldPosition(new THREE.Vector3()); spawn.y = EYE; }
+  });
+  scene.add(g.scene);
+  camera.position.copy(spawn);
+  document.getElementById('load').remove();
+});
+
+// ---------- 1인칭 조작 ----------
+let yaw = -Math.PI / 2; // 동쪽(+x, 길 방향)을 바라봄
+let pitch = 0;
+const keys = {};
+addEventListener('keydown', e => { keys[e.code] = true; });
+addEventListener('keyup',   e => { keys[e.code] = false; });
+
+// 마우스 드래그 / 우측 터치 = 둘러보기
+let lookId = null, lx = 0, ly = 0;
+canvas.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'touch' && e.clientX < innerWidth * 0.45) return; // 왼쪽은 조이스틱
+  lookId = e.pointerId; lx = e.clientX; ly = e.clientY; canvas.setPointerCapture(e.pointerId);
+});
+canvas.addEventListener('pointermove', e => {
+  if (e.pointerId !== lookId) return;
+  const dx = e.clientX - lx, dy = e.clientY - ly; lx = e.clientX; ly = e.clientY;
+  yaw   -= dx * 0.0035;
+  pitch -= dy * 0.0028;
+  pitch = Math.max(-1.2, Math.min(1.2, pitch));
+});
+canvas.addEventListener('pointerup', e => { if (e.pointerId === lookId) lookId = null; });
+canvas.addEventListener('pointercancel', e => { if (e.pointerId === lookId) lookId = null; });
+
+// 터치 조이스틱
+const stick = document.getElementById('stick'), knob = document.getElementById('knob');
+let joy = {x:0, y:0}, joyId = null;
+function setKnob(x, y){ knob.style.left = (35 + x*35) + 'px'; knob.style.top = (35 + y*35) + 'px'; }
+stick.addEventListener('pointerdown', e => { joyId = e.pointerId; stick.setPointerCapture(e.pointerId); moveJoy(e); });
+stick.addEventListener('pointermove', e => { if (e.pointerId === joyId) moveJoy(e); });
+function endJoy(e){ if (e.pointerId === joyId) { joyId = null; joy = {x:0,y:0}; setKnob(0,0); } }
+stick.addEventListener('pointerup', endJoy); stick.addEventListener('pointercancel', endJoy);
+function moveJoy(e){
+  const r = stick.getBoundingClientRect();
+  let x = (e.clientX - (r.left + r.width/2)) / (r.width/2);
+  let y = (e.clientY - (r.top + r.height/2)) / (r.height/2);
+  const L = Math.hypot(x, y); if (L > 1) { x /= L; y /= L; }
+  joy = {x, y}; setKnob(x, y);
+}
+
+// 이동 + 충돌
+const tmp = new THREE.Vector3(), fwd = new THREE.Vector3(), right = new THREE.Vector3();
+const bodyBox = new THREE.Box3();
+function collides(p){
+  bodyBox.min.set(p.x-0.3, 0.2, p.z-0.3); bodyBox.max.set(p.x+0.3, EYE, p.z+0.3);
+  for (const b of colliders) if (b.intersectsBox(bodyBox)) return true;
+  return false;
+}
+const posEl = document.getElementById('pos');
+const clock = new THREE.Clock();
+function frame(){
+  const dt = Math.min(clock.getDelta(), 0.05);
+  camera.rotation.set(0, 0, 0);
+  camera.rotateY(yaw); camera.rotateX(pitch);
+
+  let mx = 0, mz = 0;
+  if (keys.KeyW || keys.ArrowUp)    mz += 1;
+  if (keys.KeyS || keys.ArrowDown)  mz -= 1;
+  if (keys.KeyA || keys.ArrowLeft)  mx -= 1;
+  if (keys.KeyD || keys.ArrowRight) mx += 1;
+  mx += joy.x; mz -= joy.y;
+  const L = Math.hypot(mx, mz);
+  if (L > 0.01) {
+    if (L > 1) { mx /= L; mz /= L; }
+    const speed = (keys.ShiftLeft || keys.ShiftRight) ? 7 : 3.6;
+    fwd.set(-Math.sin(yaw), 0, -Math.cos(yaw));
+    right.set(Math.cos(yaw), 0, -Math.sin(yaw));
+    tmp.copy(fwd).multiplyScalar(mz*speed*dt).addScaledVector(right, mx*speed*dt);
+    // 축별로 나눠서 미끄러지듯 이동
+    const p = camera.position.clone();
+    p.x += tmp.x; if (collides(p)) p.x = camera.position.x;
+    p.z += tmp.z; if (collides(p)) p.z = camera.position.z;
+    p.x = Math.max(-36, Math.min(36, p.x)); p.z = Math.max(-36, Math.min(36, p.z));
+    // 걷는 느낌: 살짝 흔들림
+    camera.position.set(p.x, EYE + Math.sin(performance.now()*0.012)*0.03, p.z);
+  }
+  posEl.textContent = `위치 ${camera.position.x.toFixed(0)}, ${camera.position.z.toFixed(0)}`;
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+function resize(){
+  renderer.setSize(innerWidth, innerHeight);
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize); resize(); frame();
+</script>
+</body>
+</html>
