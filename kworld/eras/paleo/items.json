@@ -1,0 +1,35 @@
+{
+  "items": {
+    "stone":   { "name": "돌",       "icon": "🪨", "desc": "강가에서 주운 둥근 돌" },
+    "stick":   { "name": "나뭇가지", "icon": "🪵", "desc": "숲 바닥에서 주운 마른 가지" },
+    "grass":   { "name": "마른 풀",  "icon": "🌾", "desc": "강가의 마른 풀" },
+    "berry":   { "name": "열매",     "icon": "🫐", "desc": "덤불에서 딴 열매. 먹을 수 있다", "eat": 8 },
+    "handaxe": { "name": "날 세운 돌", "icon": "🔪", "desc": "돌끼리 부딪쳐 날을 세운 돌", "why": "handaxe" },
+    "spear":   { "name": "창",       "icon": "🗡️", "desc": "날 세운 돌을 나뭇가지에 붙였다" },
+    "ember":   { "name": "불씨",     "icon": "✨", "desc": "나무를 비벼 얻은 불씨. 빨리 써야 한다" },
+    "meat":    { "name": "고기",     "icon": "🥩", "desc": "사냥으로 얻은 고기. 날것", "eat": 12 },
+    "cooked":  { "name": "익힌 고기","icon": "🍖", "desc": "불에 익힌 고기", "eat": 45, "flag": "ate:cooked" },
+    "hide":    { "name": "가죽",     "icon": "🟫", "desc": "사냥에서 얻은 가죽" }
+  },
+  "recipes": [
+    { "in": ["stone", "stone"],          "out": "handaxe", "name": "돌 부딪치기", "flag": "made:handaxe" },
+    { "in": ["handaxe", "stick"],        "out": "spear",   "name": "창 만들기",   "flag": "made:spear" },
+    { "in": ["stick", "stick", "grass"], "out": "ember",   "name": "나무 비비기", "flag": "made:ember" }
+  ],
+  "targets": {
+    "stone": { "name": "돌",      "verb": "줍기",   "gives": "stone", "remove": true },
+    "stick": { "name": "나뭇가지","verb": "줍기",   "gives": "stick", "remove": true },
+    "grass": { "name": "마른 풀", "verb": "뜯기",   "gives": "grass", "remove": true },
+    "bush":  { "name": "열매 덤불","verb": "열매 따기", "gives": "berry", "uses": 3, "empty": "열매가 다 떨어졌어…", "areaEvent": "bush_empty" },
+    "track": { "name": "발자국",  "verb": "살펴보기", "say": "커다란 짐승의 발자국이야. 남쪽으로 이어진다.", "flag": "seen:track", "once": true },
+    "deer":  { "name": "사슴",    "verb": "사냥하기", "requires": "spear",
+               "fail": "맨손으로 달려들었지만 사슴이 훌쩍 달아났다.", "failNoTool": "맨손으로는 안 되겠어. 뭔가 찌를 게 필요해.",
+               "gives": ["meat", "meat", "hide"], "say": "잡았다! 고기와 가죽을 얻었다.", "flag": "hunt:done", "remove": true },
+    "fire":  { "name": "화덕", "states": {
+                 "unlit": { "verb": "불 피우기", "requires": "ember", "consumes": ["ember", "grass"], "set": "lit", "say": "불이 붙었다! 따뜻하다.", "flag": "fire:lit", "why": "fire",
+                            "failNoTool": "불씨가 없어. 나무를 비벼 봐야 하나?", "failNoGrass": "불씨는 있는데 마른 풀이 없어서 붙지 않는다." },
+                 "lit":   { "verb": "고기 굽기", "requires": "meat", "consumes": ["meat"], "gives": "cooked", "say": "고기를 익혔다. 냄새가 좋다.", "failNoTool": "불은 잘 타고 있다. 구울 게 없네." } } },
+    "npc":   { "name": "부족 어른", "verb": "말 걸기" },
+    "gate":  { "name": "시간의 문", "verb": "들어가기" }
+  }
+}
