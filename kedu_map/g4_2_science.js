@@ -111,14 +111,14 @@ window.KEDU_MAP["g4_2_science"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_science_u2_l02",
+     "lessonId": "g4_s2_sci_u2_l02_v1",
      "n": "2",
      "title": "생태계의 구성 요소",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/science/2단원_생물과환경/g4_sci_u2_l02_생태계구성요소.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
