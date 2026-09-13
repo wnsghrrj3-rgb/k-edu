@@ -141,14 +141,14 @@ window.KEDU_MAP["g4_2_science"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_science_u2_l05",
+     "lessonId": "g4_s2_sci_u2_l05_v1",
      "n": "6",
      "title": "인간 활동이 생태계에 미치는 영향",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/science/2단원_생물과환경/g4_sci_u2_l05_인간활동과생태계.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,

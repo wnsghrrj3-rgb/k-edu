@@ -100,7 +100,7 @@ window.KEDU_MAP_INDEX = [
   "key": "g4_2_science",
   "units": 2,
   "lessons": 16,
-  "ready": 12
+  "ready": 13
  },
  {
   "key": "g4_2_social",
