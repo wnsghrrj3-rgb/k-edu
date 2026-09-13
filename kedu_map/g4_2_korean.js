@@ -278,6 +278,93 @@ window.KEDU_MAP["g4_2_korean"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 4,
+   "name": "책 속의 길을 따라",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g4_korean_u4_l01",
+     "lessonId": "g4_2_kor_u4_l01_v1",
+     "n": "1",
+     "title": "단원 시작 — 배울 내용 살펴보기",
+     "sub": null,
+     "url": "/grade4/semester2/korean/4단원_책속의길을따라/g4_kor_u4_l01.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_korean_u4_l02",
+     "lessonId": "g4_2_kor_u4_l02_03_v1",
+     "n": "2·3",
+     "title": "시를 읽고 생각이나 느낌 나누기",
+     "sub": null,
+     "url": "/grade4/semester2/korean/4단원_책속의길을따라/g4_kor_u4_l02_03.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_korean_u4_l04",
+     "lessonId": "g4_2_kor_u4_l04_06_v1",
+     "n": "4~6",
+     "title": "이야기를 읽고 생각이나 느낌 나누기 (역할 수행)",
+     "sub": null,
+     "url": "/grade4/semester2/korean/4단원_책속의길을따라/g4_kor_u4_l04_06.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_korean_u4_l07",
+     "lessonId": "g4_2_kor_u4_l07_08_v1",
+     "n": "7·8",
+     "title": "읽기 과정을 되돌아볼 수 있는 질문 알기",
+     "sub": null,
+     "url": "/grade4/semester2/korean/4단원_책속의길을따라/g4_kor_u4_l07_08.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_korean_u4_l09",
+     "lessonId": "g4_2_kor_u4_l09_10_v1",
+     "n": "9·10",
+     "title": "설명하는 글을 읽고 읽기 과정 되돌아보기",
+     "sub": null,
+     "url": "/grade4/semester2/korean/4단원_책속의길을따라/g4_kor_u4_l09_10.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_korean_u4_l11",
+     "lessonId": "g4_2_kor_u4_l11_12_v1",
+     "n": "11·12",
+     "title": "의견을 제시하는 글을 읽고 읽기 과정 되돌아보기",
+     "sub": null,
+     "url": "/grade4/semester2/korean/4단원_책속의길을따라/g4_kor_u4_l11_12.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_korean_u4_l13",
+     "lessonId": "g4_2_kor_u4_l13_14_v1",
+     "n": "13·14",
+     "title": "배운 내용 실천하기 (여러 가지 방법으로 느낌 나누기 · 질문 사다리 타기)",
+     "sub": null,
+     "url": "/grade4/semester2/korean/4단원_책속의길을따라/g4_kor_u4_l13_14.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g4_korean_u4_l15",
+     "lessonId": "g4_2_kor_u4_l15_v1",
+     "n": "15",
+     "title": "단원 마무리하기 (높임 표현 · 우리말 · ㄻ 글씨)",
+     "sub": null,
+     "url": "/grade4/semester2/korean/4단원_책속의길을따라/g4_kor_u4_l15.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };
