@@ -25,10 +25,111 @@
     focal: null,            /* R106 — 세밀 초점 모드 {idx, sc, d:{x,y}, nar} (초안 — 확인 전 문서 무변형) */
     zoom: 100, baseW: null, nav: 'scenes', dock: false,
     undo: [], redo: [], savedAt: null, svarMsg: '', notice: '', smartMsg: '',
+    gsel: null,             /* R152 — 그룹 선택(grp id): 조각을 누르면 그 에셋이 통째로 잡힌다 */
+    inGrp: null,            /* R152 — 내부 편집 중인 그룹(grp id): 이 안에서는 조각을 하나씩 만진다 */
+    lcol: {},               /* R152 — 레이어 패널에서 접은 그룹 {grp:true} */
   };
   const proj = () => window.MK_PROJ.get(WS.projectId);
   const doc = () => proj()?.doc;
   const scene = () => doc()?.scenes[WS.sceneIdx];
+  /* ================= R152 — 그룹 선택·레이어·공통 연산 (MK_SVGASSET 위) ================= */
+  const SA = () => window.MK_SVGASSET;
+  const grpName = (grp) => { const sc = scene(); return (sc && sc.groups && sc.groups[grp] && sc.groups[grp].name) || '그룹'; };
+  const members = (grp) => (SA() ? SA().membersOf(scene(), grp) : (scene().elements || []).map((e, i) => (e && e.grp === grp ? i : -1)).filter((i) => i >= 0));
+  /* 그룹을 통째로 잡는다: msel = 멤버 전부, sel 은 첫 멤버(패널 분기는 gsel 이 먼저 본다) */
+  const selectGroup = (grp) => {
+    const ms = members(grp); if (!ms.length) { WS.gsel = null; return; }
+    WS.gsel = grp; WS.inGrp = null; WS.msel = ms.slice(); WS.sel = { type: 'group', idx: ms[0] };
+  };
+  const clearGroupSel = () => { WS.gsel = null; WS.msel = []; };
+  /* 현재 선택의 요소 인덱스 목록(그룹 → 멤버 전부 / 다중 / 단일) */
+  const selIdxs = () => {
+    if (WS.gsel) return members(WS.gsel);
+    if (WS.msel.length) return WS.msel.slice();
+    if (WS.sel && WS.sel.type !== 'scene' && WS.sel.idx != null) return [WS.sel.idx];
+    return [];
+  };
+  const groupBoxOf = (grp) => (SA() ? SA().groupBox(scene(), grp) : null);
+  /* 순서 — 선택 덩어리를 배열 안에서 옮긴다(배열 순서 = z). 선택은 요소 실체로 다시 잡는다 */
+  const reorderIdxs = (idxs0, mode) => {
+    const sc = scene(), idxs = idxs0.slice().sort((a, b) => a - b); if (!idxs.length) return false;
+    const items = idxs.map((i) => sc.elements[i]);
+    const rest = sc.elements.filter((_, i) => idxs.indexOf(i) < 0);
+    const p0 = idxs[0];
+    let at = mode === 'front' ? rest.length : mode === 'back' ? 0 : mode === 'fwd' ? Math.min(rest.length, p0 + 1) : Math.max(0, p0 - 1);
+    if (mode === 'fwd' && idxs[idxs.length - 1] >= sc.elements.length - 1) at = rest.length;
+    rest.splice(at, 0, ...items);
+    if (rest.every((e, i) => e === sc.elements[i])) return false;
+    sc.elements = rest;
+    return true;
+  };
+  /* 배열이 바뀌어도 선택은 요소 실체로 따라간다 */
+  const keepSel = () => {
+    const g = WS.gsel, ig = WS.inGrp, items = selIdxs().map((i) => scene().elements[i]);
+    return () => {
+      const sc = scene(); const ni = items.map((e) => sc.elements.indexOf(e)).filter((i) => i >= 0);
+      WS.inGrp = ig;
+      if (g && members(g).length) selectGroup(g);
+      else if (ni.length > 1) { WS.gsel = null; WS.msel = ni; WS.sel = { type: selTypeOf(sc.elements[ni[0]]), idx: ni[0] }; }
+      else if (ni.length === 1) { WS.gsel = null; WS.msel = []; WS.sel = { type: selTypeOf(sc.elements[ni[0]]), idx: ni[0] }; }
+      else { WS.gsel = null; WS.msel = []; WS.sel = { type: 'scene' }; }
+    };
+  };
+  const reorderSel = (mode) => { const back = keepSel(); const ok = reorderIdxs(selIdxs(), mode); back(); return ok; };
+  const reselect = (items) => {
+    const sc = scene(); const ni = items.map((e) => sc.elements.indexOf(e)).filter((i) => i >= 0);
+    if (WS.gsel) { WS.msel = members(WS.gsel); WS.sel = { type: 'group', idx: WS.msel[0] }; }
+    else if (ni.length > 1) { WS.msel = ni; WS.sel = { type: selTypeOf(sc.elements[ni[0]]), idx: ni[0] }; }
+    else if (ni.length === 1) { WS.msel = []; WS.sel = { type: selTypeOf(sc.elements[ni[0]]), idx: ni[0] }; }
+  };
+  const selTypeOf = (el) => !el ? 'image' : el.kind === 'text' ? 'text'
+    : el.kind === 'vector' ? 'vector'
+    : (el.video === true || el.kind === 'video' || (el.label || '').includes('영상')) ? 'video'
+    : (el.label || '').includes('도형') ? 'shape' : 'image';
+  /* 삭제 — 선택 전부. 그룹 항목은 멤버가 없어지면 정리 */
+  const deleteSel = () => {
+    const sc = scene(), idxs = selIdxs().slice().sort((a, b) => b - a); if (!idxs.length) return false;
+    idxs.forEach((i) => sc.elements.splice(i, 1));
+    if (SA()) SA().pruneGroups(sc);
+    const keepIn = WS.inGrp && sc.groups && sc.groups[WS.inGrp] ? WS.inGrp : null;   /* 내부 편집 중 조각 하나를 지웠으면 계속 그 안에 */
+    WS.gsel = null; WS.inGrp = keepIn; WS.msel = []; WS.sel = { type: 'scene' };
+    return true;
+  };
+  /* 복제 — 그룹은 dupGroup(새 grp·새 접두), 단일은 cloneEl(접두 재발급) */
+  const dupSel = () => {
+    const sc = scene(), S = SA();
+    if (WS.gsel) {
+      const r = S ? S.dupGroup(sc, WS.gsel, 3, 3) : null; if (!r) return false;
+      selectGroup(r.grp); return true;
+    }
+    const idxs = selIdxs(); if (!idxs.length) return false;
+    const copies = idxs.map((i) => { const e = sc.elements[i]; const c = S ? S.cloneEl(e) : JSON.parse(JSON.stringify(e)); c.x = Math.round((c.x + 3) * 100) / 100; c.y = Math.round((c.y + 3) * 100) / 100; if (!WS.inGrp) delete c.grp; return c; });
+    const at = Math.max(...idxs) + 1;
+    sc.elements.splice(at, 0, ...copies);
+    if (S) S.pruneGroups(sc);
+    WS.gsel = null;
+    reselect(copies);
+    return true;
+  };
+  const groupSel = () => {
+    const S = SA(); if (!S || WS.msel.length < 2) return false;
+    const grp = S.group(scene(), WS.msel, '그룹 ' + (Object.keys(scene().groups || {}).length));
+    selectGroup(grp); return true;
+  };
+  const ungroupSel = () => {
+    const S = SA(), grp = WS.gsel || WS.inGrp; if (!S || !grp) return false;
+    const ms = members(grp);
+    S.ungroup(scene(), grp);
+    WS.gsel = null; WS.inGrp = null;
+    if (ms.length > 1) { WS.msel = ms; WS.sel = { type: selTypeOf(scene().elements[ms[0]]), idx: ms[0] }; }
+    else if (ms.length === 1) { WS.msel = []; WS.sel = { type: selTypeOf(scene().elements[ms[0]]), idx: ms[0] }; }
+    return true;
+  };
+  const nudgeSel = (dx, dy) => {
+    const sc = scene(), idxs = selIdxs(); if (!idxs.length) return false;
+    idxs.forEach((i) => { const e = sc.elements[i]; if (!e) return; e.x = Math.round((e.x + dx) * 100) / 100; e.y = Math.round((e.y + dy) * 100) / 100; });
+    return true;
+  };
 
   const MODES = [['design', 'Design'], ['presentation', 'Presentation'], ['video', 'Video'], ['photo', 'Photo']];
   const modeOf = (ct) => ct === 'video' ? 'video' : ct === 'presentation' ? 'presentation' : 'design';
@@ -51,6 +152,7 @@
       WS.msel = [];                                    /* R103 — Shift 다중 선택 (씬 이동·재진입 시 초기화) */
       WS.crop = null;                                  /* R105 — 자르기 모드 재진입 시 종료 */
       WS.focal = null;                                 /* R106 — 세밀 초점 모드 재진입 시 종료 */
+      WS.gsel = null; WS.inGrp = null; WS.lcol = {};    /* R152 — 그룹 선택·내부 편집 재진입 시 초기화 */
       /* R93 — 빌드 정직 안내는 차단형 alert 가 아니라 이 자리 한 줄로.
          (준호 실기기: 「생략: ss-title」 OS 경고창이 에러처럼 읽히고 흐름을 끊음) */
       WS.notice = window.MK_WS && window.MK_WS.pendingNotice ? String(window.MK_WS.pendingNotice) : '';
@@ -81,10 +183,51 @@
   };
 
   /* ================= 좌: Nav Rail + Nav Panel ================= */
-  const NAVS = [['scenes', '▦', 'Scenes'], ['templates', '📐', 'Templates'], ['assets', '🖼', 'Assets'], ['ai', '✦', 'AI'], ['comments', '💬', 'Comments'], ['history', '⟲', 'History']];
+  const NAVS = [['scenes', '▦', 'Scenes'], ['templates', '📐', 'Templates'], ['assets', '🖼', 'Assets'], ['layers', '☰', '레이어'], ['ai', '✦', 'AI'], ['comments', '💬', 'Comments'], ['history', '⟲', 'History']];
   const NavRail = () => `<div class="ws-rail">${NAVS.map(([k, i, n]) =>
     `<button class="${WS.nav === k ? 'on' : ''}" data-ws-nav="${k}"><span class="ico">${i}</span><span class="nm">${n}</span></button>`).join('')}</div>`;
 
+  /* R152 — 레이어 패널: 위→아래 = 앞→뒤(배열 역순). 그룹은 한 줄로 접히고, 조각은 들여쓴다.
+     썸네일: 벡터 = thumbSrc · 사진 = src · 색칠 = fill · 글자 = T */
+  const layerThumb = (el) => {
+    const S = SA();
+    if (el.kind === 'vector' && S) return `<img src="${S.thumbSrc(el)}" alt="">`;
+    if (el.src && !(el.video === true || el.kind === 'video' || /^data:video\//.test(el.src))) return `<img src="${el.src}" alt="">`;
+    if (el.kind === 'text') return `<b>T</b>`;
+    if (el.fill) return `<i style="background:${el.fill}"></i>`;
+    return `<b>${el.kind === 'video' || el.video ? '▶' : '▢'}</b>`;
+  };
+  const layerName = (el, i) => el.label || (el.kind === 'text' ? String(el.text || '글자').replace(/\s+/g, ' ').slice(0, 14) : el.kind === 'vector' ? '조각' : el.kind === 'video' || el.video ? '영상' : el.fill && !el.src ? '색칠' : '이미지') || ('요소 ' + (i + 1));
+  const LayerPanel = () => {
+    const m = M(), sc = scene(); if (!sc) return '';
+    const rows = [];
+    const done = {};
+    const isSelEl = (i) => (WS.sel && WS.sel.type !== 'scene' && WS.sel.idx === i && !WS.gsel) || (!WS.gsel && WS.msel.indexOf(i) >= 0);
+    for (let i = sc.elements.length - 1; i >= 0; i--) {
+      const el = sc.elements[i]; if (!el) continue;
+      const g = el.grp;
+      if (g && sc.groups && sc.groups[g]) {
+        if (done[g]) continue; done[g] = true;
+        const ms = members(g), col = !!WS.lcol[g], allHid = ms.every((k) => sc.elements[k].visible === false);
+        const on = WS.gsel === g ? ' on' : WS.inGrp === g ? ' in' : '';
+        rows.push(`<div class="ws-lrow grp${on}" data-ws-lsel="g:${g}"><button class="tg" data-ws-lcol="${g}" title="${col ? '펼치기' : '접기'}">${col ? '▸' : '▾'}</button><span class="nm">${m.esc(grpName(g))} <small>${ms.length}</small></span>` +
+          `<button class="mv" data-ws-lmv="g:${g}:fwd" title="앞으로">▲</button><button class="mv" data-ws-lmv="g:${g}:bwd" title="뒤로">▼</button>` +
+          `<button class="eye${allHid ? ' off' : ''}" data-ws-leye="g:${g}" title="${allHid ? '보이기' : '숨기기'}">${allHid ? '◌' : '👁'}</button></div>`);
+        if (!col) ms.slice().reverse().forEach((k) => {
+          const e2 = sc.elements[k], hid = e2.visible === false;
+          rows.push(`<div class="ws-lrow sub${isSelEl(k) ? ' on' : ''}${hid ? ' hid' : ''}" data-ws-lsel="${k}"><span class="th">${layerThumb(e2)}</span><span class="nm">${m.esc(layerName(e2, k))}</span>` +
+            `<button class="mv" data-ws-lmv="${k}:fwd" title="앞으로">▲</button><button class="mv" data-ws-lmv="${k}:bwd" title="뒤로">▼</button>` +
+            `<button class="eye${hid ? ' off' : ''}" data-ws-leye="${k}" title="${hid ? '보이기' : '숨기기'}">${hid ? '◌' : '👁'}</button></div>`);
+        });
+        continue;
+      }
+      const hid = el.visible === false;
+      rows.push(`<div class="ws-lrow${isSelEl(i) ? ' on' : ''}${hid ? ' hid' : ''}" data-ws-lsel="${i}"><span class="th">${layerThumb(el)}</span><span class="nm">${m.esc(layerName(el, i))}</span>` +
+        `<button class="mv" data-ws-lmv="${i}:fwd" title="앞으로">▲</button><button class="mv" data-ws-lmv="${i}:bwd" title="뒤로">▼</button>` +
+        `<button class="eye${hid ? ' off' : ''}" data-ws-leye="${i}" title="${hid ? '보이기' : '숨기기'}">${hid ? '◌' : '👁'}</button></div>`);
+    }
+    return `<h3>레이어 <small>${sc.elements.length}개</small></h3><p class="mut">위가 앞이에요 · 누르면 선택</p><div class="ws-layers">${rows.join('') || '<p class="mut">요소가 없어요</p>'}</div>`;
+  };
   const NavPanel = () => {
     const m = M(), d = doc();
     if (WS.nav === 'scenes') {
@@ -100,10 +243,16 @@
     if (WS.nav === 'assets') {
       const cats = window.MK_ASSETS.CATEGORIES.filter((c) => !c.virtual).slice(0, 6);
       const list = window.MK_ASSETS.ASSETS.slice(0, 8);
-      return `<h3>Assets</h3><p class="mut">누르면 캔버스에 추가 (placeholder)</p>
+      /* R152 — 편집형 에셋 카탈로그: 넣으면 조각 단위 편집 객체가 된다(MK_SVGASSET) */
+      const S = SA();
+      const edit = S ? `<h4>🧩 편집형 에셋</h4><p class="mut">넣으면 조각마다 색·위치를 바꿀 수 있어요</p>
+        <div class="ws-svgassets">${S.CATALOG.map((c) => `<button class="ws-svgcard" data-ws-svgasset="${c.id}" title="${m.esc(c.name)}"><img src="${S.BASE}${c.thumb}" alt="" loading="lazy"><span>${m.esc(c.name)}</span></button>`).join('')}</div>
+        <p class="mut" style="margin:6px 0 10px">＋ Image 에 .svg 파일을 올려도 조각으로 들어와요</p>` : '';
+      return `<h3>Assets</h3>${edit}<p class="mut">누르면 캔버스에 추가 (placeholder)</p>
         <div class="ws-miniassets">${list.map((a) => `<button class="mini" data-ws-asset="${a.id}">${m.assetThumb(a)}</button>`).join('')}</div>
         <p class="mut" style="margin-top:8px">전체는 Asset Browser에서 — <button class="lnk" data-ws-go="assets">열기 →</button></p>`;
     }
+    if (WS.nav === 'layers') return LayerPanel();
     if (WS.nav === 'ai') {
       return `<h3>AI</h3><p class="mut">오른쪽 AI Dock에서 프로젝트를 함께 봐요</p>
         ${m.Button({ label: '✦ AI Dock 열기', size: 'sm', attrs: 'data-ws="dock" style="width:100%;justify-content:center"' })}
@@ -239,8 +388,15 @@
     if (WS.focal && (WS.focal.sc !== WS.sceneIdx || !sc.elements[WS.focal.idx] || !sc.elements[WS.focal.idx].src || sc.elements[WS.focal.idx].fit === 'contain')) WS.focal = null;
     const CW = Math.round(BASE_W() * WS.zoom / 100), CH = Math.round(CW * sc.height / sc.width);
     const els = sc.elements.map((el, i) => {
-      const on = (WS.sel && WS.sel.idx === i && WS.sel.type !== 'scene') || WS.msel.indexOf(i) >= 0 ? 'sel' : '';
-      const hd = on && WS.msel.indexOf(i) < 0 ? WSHD : '';   /* R103 — 다중 선택은 외곽만, 핸들 없음 */
+      if (el.visible === false) return '';               /* R152 — 숨긴 조각(레이어 👁) 은 화면·재생·출력 모두 빠진다 */
+      /* R152 — 그룹 선택 중엔 멤버를 gm(옅은 외곽)으로, 핸들은 그룹 상자에만 */
+      const inG = WS.gsel && el.grp === WS.gsel;
+      const on = inG ? 'gm' : ((WS.sel && WS.sel.idx === i && WS.sel.type !== 'scene') || WS.msel.indexOf(i) >= 0 ? 'sel' : '');
+      const hd = on === 'sel' && WS.msel.indexOf(i) < 0 ? WSHD : '';   /* R103 — 다중 선택은 외곽만, 핸들 없음 */
+      if (el.kind === 'vector' && el.vec && SA()) {      /* R152 — 편집형 벡터 조각 */
+        const op = el.opacity != null && el.opacity !== 1 ? `;opacity:${el.opacity}` : '';
+        return `<div class="ws-el vec ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%${op}${rotSty(el)}">${SA().svgTag(el)}${hd}</div>`;
+      }
       if (el.kind === 'text') {
         const fs = (el.size / 100 * CH).toFixed(1);
         const ts = window.MK_TEXTSTYLE ? window.MK_TEXTSTYLE.css(el) : ''; /* R56 — 글꼴·배경·외곽선·그림자 */
@@ -269,7 +425,15 @@
       }
       return `<div class="ws-el box ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%${rotSty(el)}"><span>${M().esc(el.label || '요소')}</span>${hd}</div>`;
     }).join('');
-    return `<div class="ws-canvaswrap"><div class="ws-canvas ${WS.mode === 'photo' ? 'photo' : ''}" data-ws-canvas style="width:${CW}px;height:${CH}px;background:${sc.background}">${els}</div></div>`;
+    /* R152 — 그룹 상자: 멤버 외접 합 + 손잡이 6 (통째 이동은 멤버를 끌고, 크기는 손잡이) */
+    let gbox = '';
+    if (WS.gsel && !WS.inGrp) {
+      const b = groupBoxOf(WS.gsel);
+      if (b) gbox = `<div class="ws-gbox" data-ws-gbox style="left:${b.x}%;top:${b.y}%;width:${b.w}%;height:${b.h}%"><span class="ws-gname">${M().esc(grpName(WS.gsel))}</span>` +
+        ['tl', 'tr', 'bl', 'br', 'ml', 'mr'].map((k) => `<i class="ws-gh ${k}" data-ws-gh="${k}"></i>`).join('') + `</div>`;
+      else WS.gsel = null;
+    }
+    return `<div class="ws-canvaswrap"><div class="ws-canvas ${WS.mode === 'photo' ? 'photo' : ''}${WS.inGrp ? ' ingrp' : ''}" data-ws-canvas style="width:${CW}px;height:${CH}px;background:${sc.background}">${els}${gbox}</div></div>`;
   };
 
   /* ================= 우: Context Panel — 선택 대상별 전환 ================= */
@@ -435,9 +599,54 @@
       </div>`;
   };
 
+  /* R152 — 모든 요소 공통: 순서·복제·삭제 (그룹·다중에도 같은 줄) */
+  const opsCtl = (grp) => {
+    const ob = (k, ic, tip) => `<button class="cx-shb" data-ws-ord="${k}" title="${tip}">${ic}</button>`;
+    return `<label class="cx-field"><span>순서</span></label><div class="cx-shrow">${ob('front', '⤒', '맨 앞으로')}${ob('fwd', '↑', '앞으로')}${ob('bwd', '↓', '뒤로')}${ob('back', '⤓', '맨 뒤로')}<i></i></div>` +
+      `<div class="cx-shrow" style="margin-top:4px"><button class="cx-shb wide" data-ws-dup title="Ctrl+D">⧉ 복제</button><button class="cx-shb wide danger" data-ws-del title="Delete">🗑 삭제</button></div>` +
+      (grp && !WS.inGrp ? '' : `<div class="cx-hint">Delete 삭제 · Ctrl+D 복제 · 화살표로 밀기 · Ctrl+Z 되돌리기</div>`);
+  };
+  const opacityCtl = (val) => {
+    const v = Math.round((val == null ? 1 : +val) * 100);
+    return `<label class="cx-prow"><span>투명도</span><input type="range" min="0" max="100" step="5" value="${v}" data-ws-opac data-stop><b data-ws-opacv>${v}%</b></label>`;
+  };
+  /* 벡터 조각: 이름 · 색 스와치(조각 안 색마다 하나) · 원래 색으로 · 투명도 */
+  const vectorCtl = (el) => {
+    const S = SA(); const m = M();
+    const paints = S ? S.paintsOf(el) : [];
+    const sw = paints.map((p2) => `<label class="cx-paint" title="${m.esc(p2.from)}"><input type="color" value="${/^#[0-9A-F]{6}$/i.test(p2.to) ? p2.to : '#000000'}" data-ws-paint="${m.esc(p2.from)}" data-stop><i style="background:${p2.to}"></i></label>`).join('');
+    const changed = el.paint && Object.keys(el.paint).length;
+    const g = el.grp && scene().groups && scene().groups[el.grp];
+    return `<label class="cx-field"><span>이름</span><input type="text" value="${m.esc(el.label || '조각')}" data-ws-label data-stop></label>` +
+      (g ? `<div class="cx-hint" style="margin:-4px 0 8px">「${m.esc(g.name || '그룹')}」의 조각 · <button class="lnk" data-ws-gback>그룹 통째로 잡기</button></div>` : '') +
+      (paints.length ? `<label class="cx-field"><span>색 <small>${paints.length}가지</small></span></label><div class="cx-paints">${sw}</div>` : `<div class="cx-hint">바꿀 수 있는 색이 없어요</div>`) +
+      (changed ? `<button class="cx-scenebtn" data-ws-paint0>↩ 원래 색으로</button>` : '') +
+      opacityCtl(el.opacity);
+  };
+  /* 그룹 패널: 이름 · 투명도(멤버 일괄) · 내부 편집 · 그룹 해제 · 순서·복제·삭제 */
+  const groupPanel = () => {
+    const m = M(), grp = WS.gsel, ms = members(grp), sc = scene();
+    const els = ms.map((i) => sc.elements[i]);
+    const ops = els[0] ? els[0].opacity : 1;
+    const kinds = { vector: 0, image: 0, text: 0 };
+    els.forEach((e) => { kinds[e.kind === 'vector' ? 'vector' : e.kind === 'text' ? 'text' : 'image'] = (kinds[e.kind === 'vector' ? 'vector' : e.kind === 'text' ? 'text' : 'image'] || 0) + 1; });
+    const photo = ms.filter((i) => sc.elements[i].role === 'photo-slot');
+    return `<div class="ws-context"><small class="cap">속성</small><h3>그룹</h3>` +
+      `<label class="cx-field"><span>이름</span><input type="text" value="${m.esc(grpName(grp))}" data-ws-gname data-stop></label>` +
+      `<div class="cx-hint" style="margin:-4px 0 8px">조각 ${ms.length}개${kinds.vector ? ' · 벡터 ' + kinds.vector : ''}${photo.length ? ' · 사진 자리 ' + photo.length : ''}</div>` +
+      `<button class="cx-scenebtn primary" data-ws-gin>✎ 내부 편집 — 조각 하나씩 <small>(두 번 누르기)</small></button>` +
+      (photo.length ? `<button class="cx-scenebtn" data-ws-gphoto="${photo[0]}">🖼 사진 자리에 사진 올리기</button>` : '') +
+      opacityCtl(ops) +
+      `<button class="cx-scenebtn" data-ws-ungroup>⛶ 그룹 해제 <small>(Ctrl+Shift+G)</small></button>` +
+      opsCtl(true) +
+      `<div class="cx-hint">조각을 끌면 그룹이 통째로 움직여요 · 모서리 손잡이로 크기</div>` +
+      `<button class="cx-scenebtn" data-ws-selscene>← Scene 속성 보기</button></div>`;
+  };
+
   const ContextPanel = () => {
     const m = M(), sc = scene(), p = proj();
     let title = '프로젝트', body = '';
+    if (WS.gsel && !WS.inGrp && members(WS.gsel).length) return groupPanel();   /* R152 — 그룹 통째 선택 */
     if (WS.msel.length >= 2 && window.MK_ARRANGE) {    /* R103 — 여러 요소 선택 → 정렬·간격 (§10·§19) */
       const n = WS.msel.length;
       const ab = (m2, ic, tip) => `<button class="cx-shb" data-ws-arr="${m2}" title="${tip}">${ic}</button>`;
@@ -449,6 +658,8 @@
         <div class="cx-shrow">${ab('left', '⯇', '왼쪽')}${ab('centerH', '⬌', '가운데')}${ab('right', '⯈', '오른쪽')}</div>
         <div class="cx-shrow">${ab('top', '⯅', '위')}${ab('centerV', '⬍', '세로 중앙')}${ab('bottom', '⯆', '아래')}</div>
         ${dist}
+        <button class="cx-scenebtn primary" data-ws-group>⧈ 그룹으로 묶기 <small>(Ctrl+G)</small></button>
+        ${opsCtl(false)}
         <p class="mut" style="font:var(--mk-t-caption)">Shift+클릭으로 빼거나 더할 수 있어요</p></div>`;
     }
     let sel = WS.sel;
@@ -470,7 +681,10 @@
         `<button class="cx-scenebtn" data-ws-anim>✨ 애니메이션 편집 →</button>`;
     } else {
       const el = sc.elements[sel.idx];
-      if (el.kind === 'text') {
+      if (el.kind === 'vector') {                      /* R152 — 편집형 벡터 조각 */
+        title = '조각';
+        body = vectorCtl(el) + geomCtl(el);
+      } else if (el.kind === 'text') {
         title = '텍스트';
         /* R56 — 텍스트 스타일 실컨트롤 (MK_TEXTSTYLE) */
         const TS = window.MK_TEXTSTYLE;
@@ -554,6 +768,8 @@
         body = field('이름', el.label || '이미지') + photoCtl + geomCtl(el) + fitCtl(el, sel.idx) + focalCtl(el, sel.idx);
       }
       body += rotCtl(el);                              /* R107 — 회전은 요소 종류를 가리지 않는다 */
+      body += opsCtl(false);                           /* R152 — 순서·복제·삭제도 종류를 가리지 않는다 */
+      if (el.kind !== 'vector' && el.grp && sc.groups && sc.groups[el.grp]) body += `<div class="cx-hint">「${m.esc(grpName(el.grp))}」의 조각 · <button class="lnk" data-ws-gback>그룹 통째로 잡기</button></div>`;
     }
     return `<div class="ws-context"><small class="cap">속성</small><h3>${title}</h3>${body}
       ${sel && sel.type !== 'scene' ? `<button class="cx-scenebtn" data-ws-selscene>← Scene 속성 보기</button>` : ''}
@@ -709,7 +925,15 @@
                 const r = await window.MK_VIDEO.exportMP4(doc(), { onProgress: exMsg });
                 exMsg(r.ok ? `MP4 저장 완료 — ${r.sec}초 · ${r.w}×${r.h}${r.audio ? ' · 🎵 소리 포함' : (r.audioMsg ? ' · ' + r.audioMsg : '')}` : r.msg);
               } else if (f === 'pptx') {
-                const pages = doc().scenes.map((sc2) => window.MK_RENDER.renderScene(sc2, {}));
+                /* R152 — 벡터 조각은 PPTX 에 못 실으므로 noCache 리스트를 래스터로 바꿔 싣는다(캐시 오염 0) */
+                const pages = [];
+                for (let i = 0; i < doc().scenes.length; i++) {
+                  const sc2 = doc().scenes[i];
+                  const hasVec = (sc2.elements || []).some((e) => e && e.kind === 'vector');
+                  let dl2 = window.MK_RENDER.renderScene(sc2, hasVec ? { noCache: true } : {});
+                  if (hasVec && SA()) { exMsg(`조각 굽는 중… ${i + 1}/${doc().scenes.length}`); dl2 = await SA().rasterizeOps(dl2, 2); }
+                  pages.push(dl2);
+                }
                 const r = window.MK_RENDER.toPPTX(pages, {});
                 const blob = new Blob([r.bytes], { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
                 const u = URL.createObjectURL(blob);
@@ -762,7 +986,7 @@
         else if ((k === 'image' || k === 'video') && window.MK_LIVE) {   /* R46 — 실파일 선택·실삽입 (#/editor R41과 동일 경로) */
           const inp = document.createElement('input');
           inp.type = 'file'; inp.accept = k === 'video' ? 'video/*' : 'image/*';
-          inp.onchange = () => window.MK_LIVE.fileToSrc(inp.files && inp.files[0], (src, err) => {
+          const asMedia = () => window.MK_LIVE.fileToSrc(inp.files && inp.files[0], (src, err) => {
             if (!src) { if (err && typeof alert === 'function') alert(err); return; }
             const f = inp.files[0];
             const r = window.MK_LIVE.insertWithSrc(doc(), WS.sceneIdx, { name: f.name.replace(/\.[^.]+$/, ''), kind: k === 'video' ? 'video' : 'image', src });
@@ -773,6 +997,21 @@
               if (k === 'video') window.MK_LIVE.fitSceneToClipSrc(doc(), WS.sceneIdx, src, (fr) => { if (fr && fr.changed) R(); });
             }
           });
+          /* R152 — .svg 파일은 「이미지 한 장」이 아니라 편집형 조각으로 들어온다(조각 ≥1). 못 풀면 종전 이미지 경로 */
+          inp.onchange = () => {
+            const f0 = inp.files && inp.files[0];
+            if (k === 'image' && f0 && SA() && (/\.svg$/i.test(f0.name) || f0.type === 'image/svg+xml') && typeof FileReader === 'function') {
+              const rd = new FileReader();
+              rd.onload = () => {
+                const pr = SA().parse(String(rd.result || ''), { name: f0.name.replace(/\.svg$/i, '') });
+                if (pr.ok && pr.children.length >= 1) { insertParsed(pr); return; }
+                asMedia();
+              };
+              rd.onerror = asMedia;
+              rd.readAsText(f0); return;
+            }
+            asMedia();
+          };
           inp.click();
           return;                                                       /* 파일 고르기 전엔 아무것도 안 넣는다 — 취소 = 변화 0 */
         }
@@ -912,20 +1151,21 @@
       /* 캔버스 선택 */
       root.querySelectorAll('[data-ws-el]').forEach((el) => el.onclick = (e) => {
         e.stopPropagation();
-        const i = +el.dataset.wsEl, k = scene().elements[i].kind;
-        const lb = scene().elements[i].label || '';
-        WS.sel = { type: k === 'text' ? 'text' : lb.includes('영상') ? 'video' : lb.includes('도형') ? 'shape' : 'image', idx: i };
+        const i = +el.dataset.wsEl, e0 = scene().elements[i]; if (!e0) return;
+        /* R152 — 그룹 조각은 pointerdown 이 이미 그룹/내부 편집을 정했다. 여기선 어긋난 것만 맞춘다 */
+        if (e0.grp && scene().groups && scene().groups[e0.grp] && WS.inGrp !== e0.grp) { if (WS.gsel !== e0.grp) { selectGroup(e0.grp); R(); } return; }
+        if (WS.msel.length > 1 && WS.msel.indexOf(i) >= 0) return;   /* 다중 선택 유지 (Shift 경로) */
+        WS.gsel = null; WS.msel = [];
+        WS.sel = { type: selTypeOf(e0), idx: i };
         R();
       });
       const cv = root.querySelector('[data-ws-canvas]');
-      if (cv) cv.onclick = () => { WS.sel = { type: 'scene' }; R(); };
+      if (cv) cv.onclick = () => { WS.sel = { type: 'scene' }; WS.gsel = null; WS.inGrp = null; WS.msel = []; R(); };
 
       /* R55 — 실편집: 드래그 이동 + 핸들 리사이즈 (MK_LIVE 재사용, #/editor R36 동일 규약) */
       const L = window.MK_LIVE;
       if (cv && L) {
-        const selType = (el) => el.kind === 'text' ? 'text'
-          : (el.video === true || el.kind === 'video' || (el.label || '').includes('영상')) ? 'video'
-          : (el.label || '').includes('도형') ? 'shape' : 'image';
+        const selType = selTypeOf;                    /* R152 — 'vector' 포함, 위 selTypeOf 하나로 */
         const GEO = ['x', 'y', 'w', 'h', 'size', 'rot'];   /* R107 — 회전도 제스처 시작 상태에 포함 */
         const pickGeo = (el) => { const o = {}; GEO.forEach((k) => { if (el[k] != null) o[k] = el[k]; }); return o; };
         const paint = (n, el) => {
@@ -995,10 +1235,37 @@
             ev.preventDefault(); return;
           }
           const hd = t.closest && t.closest('.ws-hd');
+          /* R152 — 그룹 상자 손잡이 = 그룹 통째 크기 */
+          const gh = t.closest && t.closest('[data-ws-gh]');
+          if (gh && WS.gsel && SA()) {
+            const b0 = groupBoxOf(WS.gsel); if (!b0) return;
+            const se = {}; members(WS.gsel).forEach((k) => { se[k] = pickGeo(scene().elements[k]); });
+            ges = { gres: true, grp: WS.gsel, handle: gh.dataset.wsGh, start: b0, startEls: se, sx: ev.clientX, sy: ev.clientY,
+              rect: cv.getBoundingClientRect(), moved: false, pre: JSON.stringify(doc().scenes) };
+            if (cv.setPointerCapture && ev.pointerId != null) { try { cv.setPointerCapture(ev.pointerId); } catch (_) {} }
+            ev.preventDefault(); return;
+          }
           const elDom = t.closest && t.closest('[data-ws-el]');
           if (!elDom) return;
           const i = +elDom.dataset.wsEl;
           const el = scene().elements[i]; if (!el) return;
+          /* R152 — 내부 편집 중에 다른 그룹·바깥 요소를 짚으면 내부 편집을 나온다 */
+          if (WS.inGrp && el.grp !== WS.inGrp) WS.inGrp = null;
+          const gOK = el.grp && scene().groups && scene().groups[el.grp];
+          if (gOK && WS.inGrp !== el.grp && !ev.shiftKey && !hd) {
+            /* 조각 클릭 = 그룹 통째. 같은 그룹을 350ms 안에 다시 = 내부 편집 후보(무이동 up 에서 확정) */
+            const now3 = Date.now();
+            const gtap = WS.gsel === el.grp && lastTap && lastTap.i === i && now3 - lastTap.t < 350;
+            lastTap = { i, t: now3 };
+            if (WS.gsel !== el.grp) selectGroup(el.grp);
+            const b0 = groupBoxOf(el.grp); if (!b0) return;
+            const se = {}; members(el.grp).forEach((k) => { se[k] = pickGeo(scene().elements[k]); });
+            ges = { gmove: true, grp: el.grp, i, gtap, start: b0, startEls: se, sx: ev.clientX, sy: ev.clientY,
+              rect: cv.getBoundingClientRect(), moved: false, pre: JSON.stringify(doc().scenes) };
+            if (cv.setPointerCapture && ev.pointerId != null) { try { cv.setPointerCapture(ev.pointerId); } catch (_) {} }
+            ev.preventDefault(); return;
+          }
+          if (!ev.shiftKey) WS.gsel = null;            /* 단일 선택으로 들어오면 그룹 선택은 풀린다 */
           /* R95 — 터치·펜: 이미 선택된 요소의 모서리 근처를 짚으면 핸들을 못
              맞혔어도 리사이즈로 판정(근접 22px, MK_LIVE.handleAt). 첫 탭 =
              선택, 그 다음 모서리 근처 = 크기 조절 — 손가락의 해상도에 맞춘다. */
@@ -1093,6 +1360,33 @@
             if (!WS.focal) { ges = null; return; }
             WS.focal.d = focalAt(ges.host, ev); paintFocal(ges.host, WS.focal.d); return;
           }
+          if (ges.gmove || ges.gres) {                 /* R152 — 그룹 통째 이동·크기 (transformGroup) */
+            const S = SA(); if (!S) { ges = null; return; }
+            const dx = (ev.clientX - ges.sx) / (ges.rect.width || 1) * 100;
+            const dy = (ev.clientY - ges.sy) / (ges.rect.height || 1) * 100;
+            if (Math.abs(dx) + Math.abs(dy) > 0.15) ges.moved = true;
+            const s0 = ges.start; let box;
+            if (ges.gmove) box = { x: s0.x + dx, y: s0.y + dy, w: s0.w, h: s0.h };
+            else {
+              const h = ges.handle; let x = s0.x, y = s0.y, w = s0.w, hh = s0.h;
+              if (h.indexOf('l') >= 0) { w = s0.w - dx; x = s0.x + dx; }
+              if (h.indexOf('r') >= 0) w = s0.w + dx;
+              if (h.indexOf('t') >= 0) { hh = s0.h - dy; y = s0.y + dy; }
+              if (h.indexOf('b') >= 0) hh = s0.h + dy;
+              w = Math.max(1, w); hh = Math.max(1, hh);
+              if (h.length === 2 && !ev.shiftKey) {     /* 모서리 = 비율 고정(폭 기준), Shift = 자유 */
+                hh = w * (s0.h / (s0.w || 1));
+                if (h.indexOf('t') >= 0) y = s0.y + s0.h - hh;
+              }
+              if (h.indexOf('l') >= 0) x = s0.x + s0.w - w;
+              box = { x, y, w, h: hh };
+            }
+            S.transformGroup(scene(), ges.grp, ges.startEls, s0, box);
+            members(ges.grp).forEach((k) => { const n = cv.querySelector(`[data-ws-el="${k}"]`); if (n) paint(n, scene().elements[k]); });
+            const gb = cv.querySelector('[data-ws-gbox]'); const nb = groupBoxOf(ges.grp);
+            if (gb && nb) { gb.style.left = nb.x + '%'; gb.style.top = nb.y + '%'; gb.style.width = nb.w + '%'; gb.style.height = nb.h + '%'; }
+            return;
+          }
           const el = scene().elements[ges.i]; if (!el) { ges = null; return; }
           const dx = (ev.clientX - ges.sx) / (ges.rect.width || 1) * 100;
           const dy = (ev.clientY - ges.sy) / (ges.rect.height || 1) * 100;
@@ -1135,6 +1429,13 @@
           if (ges.cropMode || ges.focalMode) { ges = null; return; } /* R105·R106 — 커밋은 ✓ 버튼에서만 */
           const g = ges; ges = null;
           if (g.moved) lastTap = null;                 /* R106 — 드래그였다면 탭 계보 리셋 */
+          if (g.gtap && !g.moved) {                    /* R152 — 무이동 두 번 탭 = 내부 편집 진입, 짚은 조각 선택 */
+            lastTap = null;
+            WS.inGrp = g.grp; WS.gsel = null; WS.msel = [];
+            const el3 = scene().elements[g.i];
+            WS.sel = { type: selTypeOf(el3), idx: g.i };
+            swallow = true; R(); return;
+          }
           if (g.dtap && !g.moved) {                    /* R106 — 무이동 더블탭 확정 → 세밀 초점 진입 */
             const el2 = scene().elements[g.i];
             if (el2 && el2.src && el2.fit !== 'contain' && window.MK_FOCAL) {
@@ -1443,6 +1744,133 @@
       }
       const sb = root.querySelector('[data-ws-selscene]'); if (sb) sb.onclick = () => { WS.sel = { type: 'scene' }; R(); };
       const pb = root.querySelector('[data-ws-selproj]'); if (pb) pb.onclick = () => { WS.sel = null; R(); };
+
+      /* ================= R152 — 편집형 에셋: 그룹·조각·레이어·키보드 ================= */
+      const commit = (fn) => { const pre = JSON.stringify(doc().scenes); const ok = fn(); if (ok) { WS.undo.push(pre); if (WS.undo.length > 30) WS.undo.shift(); WS.redo = []; } R(); };
+      const insertParsed = (pr) => {
+        const S = SA(); if (!S) return;
+        snap();
+        const r = S.insert(doc(), WS.sceneIdx, pr);
+        if (!r.ok) { if (typeof alert === 'function') alert(r.msg); R(); return; }
+        selectGroup(r.grp);
+        if (r.unsupported && r.unsupported.length) WS.notice = `「${pr.name}」 조각 ${r.count}개 넣음 · 못 담은 것 ${r.unsupported.length}건(${[...new Set(r.unsupported.map((u) => u.why))].join('·')})`;
+        R();
+      };
+      root.querySelectorAll('[data-ws-svgasset]').forEach((b) => b.onclick = () => {
+        const S = SA(); if (!S) return;
+        b.disabled = true;
+        S.load(b.dataset.wsSvgasset, (pr) => { b.disabled = false; if (!pr.ok) { if (typeof alert === 'function') alert(pr.msg); return; } insertParsed(pr); });
+      });
+      root.querySelectorAll('[data-ws-ord]').forEach((b) => b.onclick = () => commit(() => reorderSel(b.dataset.wsOrd)));
+      { const d1 = root.querySelector('[data-ws-dup]'); if (d1) d1.onclick = () => commit(dupSel);
+        const d2 = root.querySelector('[data-ws-del]'); if (d2) d2.onclick = () => commit(deleteSel);
+        const g1 = root.querySelector('[data-ws-group]'); if (g1) g1.onclick = () => commit(groupSel);
+        const g2 = root.querySelector('[data-ws-ungroup]'); if (g2) g2.onclick = () => commit(ungroupSel);
+        const gi = root.querySelector('[data-ws-gin]'); if (gi) gi.onclick = () => {
+          const g = WS.gsel, ms = members(g); if (!g || !ms.length) return;
+          WS.inGrp = g; WS.gsel = null; WS.msel = []; WS.sel = { type: selTypeOf(scene().elements[ms[0]]), idx: ms[0] }; R();
+        };
+        root.querySelectorAll('[data-ws-gback]').forEach((gb) => gb.onclick = () => { const el = selEl(); if (!el || !el.grp) return; selectGroup(el.grp); R(); });
+        const gn = root.querySelector('[data-ws-gname]');
+        if (gn) { gn.onchange = () => { const g = WS.gsel; if (!g || !scene().groups || !scene().groups[g]) return; snap(); scene().groups[g].name = gn.value.trim() || '그룹'; R(); };
+          gn.onkeydown = (ev) => { if (ev.key === 'Enter') gn.blur(); ev.stopPropagation(); }; }
+        const gp = root.querySelector('[data-ws-gphoto]');
+        if (gp) gp.onclick = () => {                   /* 그룹 안 사진 자리 = 기존 image 요소 → 사진 올리기 그대로 */
+          const el = scene().elements[+gp.dataset.wsGphoto]; if (!el || !window.MK_LIVE) return;
+          const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
+          inp.onchange = () => window.MK_LIVE.fileToSrc(inp.files && inp.files[0], (src, err) => {
+            if (!src) { if (err && typeof alert === 'function') alert(err); return; }
+            snap(); el.src = src; delete el.video; R();
+          });
+          inp.click();
+        };
+        const lb = root.querySelector('[data-ws-label]');
+        if (lb) { lb.onchange = () => { const el = selEl(); if (!el) return; snap(); el.label = lb.value.trim() || el.label; R(); };
+          lb.onkeydown = (ev) => { if (ev.key === 'Enter') lb.blur(); ev.stopPropagation(); }; }
+        /* 색 스와치: input = 캔버스 svg 직교체(재렌더 없음, 드래그당 snap 1회) · change = R() */
+        root.querySelectorAll('[data-ws-paint]').forEach((pi) => {
+          let armed = false;
+          const from = pi.dataset.wsPaint;
+          pi.oninput = () => {
+            const el = selEl(); const S = SA(); if (!el || !S || el.kind !== 'vector') return;
+            if (!armed) { snap(); armed = true; }
+            S.setPaint(el, from, pi.value);
+            const dom = root.querySelector(`[data-ws-el="${WS.sel.idx}"]`); const sv = dom && dom.querySelector('svg');
+            if (sv) sv.outerHTML = S.svgTag(el);
+            const sw = pi.parentNode && pi.parentNode.querySelector('i'); if (sw) sw.style.background = pi.value;
+          };
+          pi.onchange = () => { if (!armed) pi.oninput(); armed = false; R(); };
+        });
+        const p0 = root.querySelector('[data-ws-paint0]'); if (p0) p0.onclick = () => { const el = selEl(); if (!el) return; snap(); delete el.paint; R(); };
+        const op = root.querySelector('[data-ws-opac]');
+        if (op) {
+          let armed = false;
+          op.oninput = () => {
+            const idxs = selIdxs(); if (!idxs.length) return;
+            if (!armed) { snap(); armed = true; }
+            const v = Math.round(+op.value) / 100;
+            idxs.forEach((k) => { const e = scene().elements[k]; if (!e) return; if (v >= 1) delete e.opacity; else e.opacity = v;
+              const n = root.querySelector(`[data-ws-el="${k}"]`); if (n) n.style.opacity = v >= 1 ? '' : String(v); });
+            const lab = root.querySelector('[data-ws-opacv]'); if (lab) lab.textContent = Math.round(+op.value) + '%';
+          };
+          op.onchange = () => { armed = false; R(); };
+        }
+      }
+      /* 레이어 패널 */
+      root.querySelectorAll('[data-ws-lsel]').forEach((row) => row.onclick = () => {
+        const v = row.dataset.wsLsel;
+        if (v.startsWith('g:')) { selectGroup(v.slice(2)); R(); return; }
+        const i = +v, el = scene().elements[i]; if (!el) return;
+        WS.gsel = null; WS.msel = [];
+        WS.inGrp = (el.grp && scene().groups && scene().groups[el.grp]) ? el.grp : null;
+        WS.sel = { type: selTypeOf(el), idx: i }; R();
+      });
+      root.querySelectorAll('[data-ws-lcol]').forEach((b) => b.onclick = (ev) => { ev.stopPropagation(); const g = b.dataset.wsLcol; if (WS.lcol[g]) delete WS.lcol[g]; else WS.lcol[g] = true; R(); });
+      root.querySelectorAll('[data-ws-lmv]').forEach((b) => b.onclick = (ev) => {
+        ev.stopPropagation();
+        const parts = b.dataset.wsLmv.split(':');
+        const idxs = parts[0] === 'g' ? members(parts[1]) : [+parts[0]];
+        const mode = parts[parts.length - 1];
+        commit(() => { const back = keepSel(); const ok = reorderIdxs(idxs, mode); back(); return ok; });
+      });
+      root.querySelectorAll('[data-ws-leye]').forEach((b) => b.onclick = (ev) => {
+        ev.stopPropagation();
+        const v = b.dataset.wsLeye;
+        const idxs = v.startsWith('g:') ? members(v.slice(2)) : [+v];
+        const sc2 = scene(); if (!idxs.length) return;
+        const hideAll = !idxs.every((k) => sc2.elements[k] && sc2.elements[k].visible === false);
+        snap();
+        idxs.forEach((k) => { const e = sc2.elements[k]; if (!e) return; if (hideAll) e.visible = false; else delete e.visible; });
+        R();
+      });
+      /* 키보드 — document 에 한 번만. 화면·입력칸·모달·자르기 중엔 비켜선다 */
+      WS._kbd = (ev) => {
+        if (!document.querySelector('.ws-shell') || !scene()) return;
+        const t = ev.target; const tag = t && t.tagName ? t.tagName.toLowerCase() : '';
+        if (tag === 'input' || tag === 'textarea' || tag === 'select' || (t && t.isContentEditable)) return;
+        if (document.getElementById('mkModal') || WS.crop || WS.focal) return;
+        const mod = ev.ctrlKey || ev.metaKey, k = ev.key;
+        if (k === 'Escape') {
+          if (WS.inGrp) { const g = WS.inGrp; WS.inGrp = null; selectGroup(g); }
+          else if (WS.gsel || WS.msel.length) { WS.gsel = null; WS.msel = []; WS.sel = { type: 'scene' }; }
+          else if (WS.sel && WS.sel.type !== 'scene') WS.sel = { type: 'scene' };
+          else return;
+          ev.preventDefault(); R(); return;
+        }
+        if ((k === 'Delete' || k === 'Backspace') && selIdxs().length) { ev.preventDefault(); commit(deleteSel); return; }
+        if (mod && (k === 'z' || k === 'Z')) { ev.preventDefault(); if (ev.shiftKey) redo(); else undo(); WS.gsel = null; WS.inGrp = null; WS.msel = []; WS.sel = { type: 'scene' }; R(); return; }
+        if (mod && (k === 'y' || k === 'Y')) { ev.preventDefault(); redo(); WS.gsel = null; WS.inGrp = null; WS.msel = []; WS.sel = { type: 'scene' }; R(); return; }
+        if (mod && (k === 'd' || k === 'D') && selIdxs().length) { ev.preventDefault(); commit(dupSel); return; }
+        if (mod && (k === 'g' || k === 'G')) { ev.preventDefault(); commit(ev.shiftKey ? ungroupSel : groupSel); return; }
+        if (/^Arrow/.test(k) && selIdxs().length) {
+          ev.preventDefault();
+          const st = ev.shiftKey ? 2 : 0.5;
+          const dx = k === 'ArrowLeft' ? -st : k === 'ArrowRight' ? st : 0, dy = k === 'ArrowUp' ? -st : k === 'ArrowDown' ? st : 0;
+          if (!ev.repeat) snap();
+          nudgeSel(dx, dy); R();
+        }
+      };
+      if (!document._wsKbd) { document._wsKbd = true; document.addEventListener('keydown', (ev) => { if (WS._kbd) WS._kbd(ev); }); }
 
       /* 하단 모드 */
       root.querySelectorAll('[data-ws-mode]').forEach((b) => b.onclick = () => { WS.mode = b.dataset.wsMode; R(); });
