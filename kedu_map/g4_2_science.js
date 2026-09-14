@@ -161,14 +161,14 @@ window.KEDU_MAP["g4_2_science"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_science_u2_l07",
+     "lessonId": "g4_s2_sci_u2_l07_v1",
      "n": "9",
      "title": "톡톡! 과학 — 친환경 곤충 요리 전문가",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/science/2단원_생물과환경/g4_sci_u2_l07_곤충요리전문가.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
