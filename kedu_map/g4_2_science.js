@@ -151,14 +151,14 @@ window.KEDU_MAP["g4_2_science"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_science_u2_l06",
+     "lessonId": "g4_s2_sci_u2_l06_v1",
      "n": "7~8",
      "title": "창의가 반짝! — 우리 동네 생태계 지킴이 되어 보기",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/science/2단원_생물과환경/g4_sci_u2_l06_생태계지킴이.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
