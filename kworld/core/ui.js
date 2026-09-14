@@ -9,7 +9,7 @@ export class UI {
     this.hungerBar = $('hungerbar'); this.inv = $('inv'); this.panel = $('panel');
     this.toastTimer = null;
   }
-  setTitle(t, q) { $('title').textContent = t; $('question').textContent = q; }
+  setTitle(t, q, short) { $('title').textContent = t; $('question').textContent = q; if (short && $('eratag')) $('eratag').textContent = 'KEDU WORLD · ' + short; }
   setGoal(t) { this.goal.textContent = t; }
   setMission(title, i, n) { $('mtitle').textContent = title; $('mcount').textContent = `${Math.min(i + 1, n)}/${n}`; $('mission').classList.add('flash'); setTimeout(() => $('mission').classList.remove('flash'), 900); }
   setCompass(name, bearing, dist) { const el = $('compass'); el.style.display = 'flex'; $('cname').textContent = name; $('cdist').textContent = dist < 6 ? '여기' : Math.round(dist) + 'm'; $('carrow').style.transform = `rotate(${-bearing}rad)`; }

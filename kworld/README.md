@@ -4,7 +4,7 @@ Static Three.js history exploration game. Serve the repository root and open `/k
 
 ## Landscape update
 
-`eras/paleo/landscape.js` creates the rock shelter, hide shelters, forest, meadow and river details after the original GLB loads. The GLB and height map remain the sources of mission targets and walking height. `core/engine.js` excludes the old cave, hills, trees, grass and hut poles when the `warm-daylight` atmosphere is selected; it retains terrain, paths and all `ix_*` interaction objects. Replacement trees avoid mission objects. Static props are batched by material; foliage and grass use instanced geometry and GPU wind.
+`eras/paleo/landscape.js` creates the rock shelter, hide shelters, forest, meadow and river details after the original GLB loads. The GLB and height map remain the sources of mission targets and walking height. `core/engine.js` excludes the old cave, hills, trees, grass and hut poles when the era's `world.json` names a `landscape` module (`engine.skipDecor`); it retains terrain, paths and all `ix_*` interaction objects. Replacement trees avoid mission objects. Static props are batched by material; foliage and grass use instanced geometry and GPU wind.
 
 - `core/avatar.js`: articulated student and guide; procedural walking animation.
 - `core/player.js`: first/third-person switch (`V`), following-camera obstacle checks and input reset on blur.

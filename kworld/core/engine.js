@@ -101,7 +101,7 @@ export class Engine {
         }
         if (!o.isMesh) return;
         this.materials.set(o.material.name, o.material);
-        if (this.atmosphere === 'warm-daylight' && /^(hill|col_cave_rock|moss|cave_mouth|hut_pole|col_trunk|root|branch|canopy|leaf|grassblade|grasscard|blades|flower)/.test(o.name)) return;
+        if (this.skipDecor && /^(hill|col_cave_rock|moss|cave_mouth|hut_pole|col_trunk|root|branch|canopy|leaf|grassblade|grasscard|blades|flower)/.test(o.name)) return;
         if (o.name.startsWith('col_')) { const b = new THREE.Box3().setFromObject(o); b.expandByScalar(0.3); this.colliders.push(b); }
         let geo = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
         geo.applyMatrix4(o.matrixWorld);

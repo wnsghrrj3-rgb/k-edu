@@ -1,0 +1,298 @@
+{
+ "items": {
+  "stone": {
+   "name": "돌",
+   "icon": "🪨",
+   "desc": "강가에서 주운 돌"
+  },
+  "hoe": {
+   "name": "돌괭이",
+   "icon": "⛏️",
+   "desc": "갈판에 갈아 만든 간석기. 땅을 팔 수 있다",
+   "why": "polished",
+   "bag": true
+  },
+  "seed": {
+   "name": "조 씨앗",
+   "icon": "🌾",
+   "desc": "야생 조 이삭에서 받은 씨앗. 먹을 수도, 심을 수도 있다",
+   "eat": 4
+  },
+  "grain": {
+   "name": "조",
+   "icon": "🌾",
+   "desc": "밭에서 거둔 조. 날로 먹으면 조금 배가 찬다",
+   "eat": 10
+  },
+  "clay": {
+   "name": "진흙",
+   "icon": "🟤",
+   "desc": "강가 진흙터에서 판 찰진 흙"
+  },
+  "water": {
+   "name": "물",
+   "icon": "💧",
+   "desc": "강에서 떠 온 물"
+  },
+  "wetpot": {
+   "name": "빚은 그릇",
+   "icon": "🫙",
+   "desc": "진흙을 빚어 무늬를 새겼다. 아직 물렁하다"
+  },
+  "pottery": {
+   "name": "빗살무늬토기",
+   "icon": "🏺",
+   "desc": "불에 구워 단단해진 그릇. 무언가 담아 둘 수 있다",
+   "bag": true
+  },
+  "storedpot": {
+   "name": "조를 담은 토기",
+   "icon": "🏺",
+   "desc": "토기에 조를 담아 두었다. 다음 해까지 남는다",
+   "bag": true
+  },
+  "shell": {
+   "name": "조개",
+   "icon": "🐚",
+   "desc": "강가에서 캔 조개. 먹을 수 있다",
+   "eat": 6
+  },
+  "wood": {
+   "name": "통나무",
+   "icon": "🪵",
+   "desc": "숲에서 가져온 굵은 나무"
+  },
+  "reed": {
+   "name": "갈대",
+   "icon": "🎋",
+   "desc": "강가에서 벤 갈대. 지붕을 덮을 수 있다"
+  }
+ },
+ "recipes": [
+  {
+   "in": [
+    "clay",
+    "water"
+   ],
+   "out": "wetpot",
+   "name": "그릇 빚기",
+   "flag": "made:wetpot"
+  },
+  {
+   "in": [
+    "pottery",
+    "grain",
+    "grain"
+   ],
+   "out": "storedpot",
+   "name": "조 담아 두기",
+   "flag": "stored:grain"
+  }
+ ],
+ "targets": {
+  "stone": {
+   "name": "돌",
+   "verb": "줍기",
+   "gives": "stone",
+   "remove": true,
+   "info": "강물에 씻긴 돌. 갈판에 갈면 어떻게 될까?"
+  },
+  "slab": {
+   "name": "갈판",
+   "verb": "돌 갈기",
+   "requires": "stone",
+   "consumes": [
+    "stone"
+   ],
+   "gives": "hoe",
+   "say": "돌을 갈판에 문지르고 또 문질렀다. 매끈하고 단단한 날이 됐다.",
+   "flag": "made:hoe",
+   "why": "polished",
+   "failNoTool": "넓고 평평한 돌이다. 여기에 뭘 갈아야 하지? 돌이 필요해.",
+   "info": "마을 한가운데 놓인 넓고 평평한 돌. 표면이 반들반들하다."
+  },
+  "field": {
+   "name": "밭",
+   "hidden": [
+    "sprout",
+    "crop"
+   ],
+   "states": {
+    "bare": {
+     "verb": "땅 파기",
+     "requires": "hoe",
+     "set": "dug",
+     "say": "돌괭이로 땅을 뒤집었다. 흙이 부드럽다.",
+     "flag": "dug:field",
+     "failNoTool": "맨손으로 긁어 봤지만 땅이 너무 단단하다. 파는 도구가 있어야겠어.",
+     "info": "강가 옆 평평한 땅. 흙이 부드러워 보인다."
+    },
+    "dug": {
+     "verb": "씨 뿌리기",
+     "requires": "seed",
+     "consumes": [
+      "seed"
+     ],
+     "set": "planted",
+     "reveal": [
+      "sprout"
+     ],
+     "say": "씨앗을 뿌리고 흙을 덮었다. 이제… 기다려야 해.",
+     "flag": "planted:field",
+     "failNoTool": "땅은 파 놨는데 심을 씨앗이 없어. 야생 조 이삭을 찾아보자.",
+     "info": "뒤집어 놓은 흙. 무언가 심을 수 있겠다.",
+     "after": {
+      "sec": 50,
+      "set": "grown",
+      "hide": [
+       "sprout"
+      ],
+      "reveal": [
+       "crop"
+      ],
+      "say": "🌾 밭의 조가 다 자랐다!"
+     }
+    },
+    "planted": {
+     "verb": "들여다보기",
+     "say": "아직 싹이 작다. 다른 일을 하고 오자.",
+     "info": "씨앗을 뿌린 밭. 작은 싹이 올라온다."
+    },
+    "grown": {
+     "verb": "조 거두기",
+     "gives": [
+      "grain",
+      "grain",
+      "grain"
+     ],
+     "set": "harvested",
+     "hide": [
+      "crop"
+     ],
+     "say": "조 이삭을 잔뜩 거뒀다! 다 먹을 수 없을 만큼.",
+     "flag": "harvested:field",
+     "info": "조 이삭이 누렇게 익었다."
+    },
+    "harvested": {
+     "verb": "들여다보기",
+     "say": "거두고 난 밭. 내년에 또 심을 수 있다.",
+     "info": "거두고 난 빈 밭."
+    }
+   },
+   "start": "bare"
+  },
+  "millet": {
+   "name": "야생 조",
+   "verb": "씨앗 받기",
+   "gives": [
+    "seed",
+    "seed"
+   ],
+   "remove": true,
+   "info": "이삭이 달린 키 큰 풀. 씨앗이 알알이 붙어 있다."
+  },
+  "clay": {
+   "name": "진흙",
+   "verb": "파기",
+   "gives": "clay",
+   "remove": true,
+   "info": "강가의 찰진 흙. 손에 쥐면 모양이 남는다."
+  },
+  "water": {
+   "name": "강물",
+   "verb": "물 뜨기",
+   "gives": "water",
+   "info": "큰 강. 물이 늘 흐른다."
+  },
+  "fire": {
+   "name": "화덕",
+   "start": "lit",
+   "states": {
+    "unlit": {
+     "verb": "불 피우기",
+     "say": "불이 꺼져 있다."
+    },
+    "lit": {
+     "verb": "그릇 굽기",
+     "requires": "wetpot",
+     "consumes": [
+      "wetpot"
+     ],
+     "gives": "pottery",
+     "say": "그릇을 불 속에 넣고 오래 기다렸다. 돌처럼 단단해졌다!",
+     "flag": "made:pottery",
+     "failNoTool": "불은 잘 탄다. 구울 게 없네.",
+     "info": "마을 화덕. 불이 꺼지지 않게 누군가 늘 돌본다."
+    }
+   }
+  },
+  "shell": {
+   "name": "조개",
+   "verb": "캐기",
+   "gives": "shell",
+   "remove": true,
+   "info": "강가 진흙 속 조개. 껍데기가 쌓여 작은 언덕이 됐다."
+  },
+  "log": {
+   "name": "통나무",
+   "verb": "가져가기",
+   "gives": "wood",
+   "remove": true,
+   "info": "쓰러진 나무. 기둥으로 쓸 만하다."
+  },
+  "reed": {
+   "name": "갈대",
+   "verb": "베기",
+   "gives": "reed",
+   "remove": true,
+   "info": "강가에 무리 지어 자란 갈대."
+  },
+  "hutsite": {
+   "name": "움집 자리",
+   "hidden": [
+    "hut_built"
+   ],
+   "states": {
+    "built": {
+     "verb": "들어가 보기",
+     "say": "안이 아늑하다. 비바람이 와도 괜찮겠어.",
+     "info": "네가 지은 움집."
+    },
+    "empty": {
+     "verb": "움집 짓기",
+     "requires": "wood",
+     "consumes": [
+      "wood",
+      "wood",
+      "wood",
+      "reed",
+      "reed"
+     ],
+     "set": "built",
+     "reveal": [
+      "hut_built"
+     ],
+     "say": "구덩이 위에 기둥을 세우고 갈대로 덮었다. 우리 집이다!",
+     "flag": "built:hut",
+     "why": "hut",
+     "failNoTool": "땅이 둥글게 파여 있다. 기둥 세울 통나무가 있어야겠어.",
+     "failNoWood": "통나무가 세 개는 있어야 기둥이 선다.",
+     "failNoReed": "기둥은 섰는데 지붕을 덮을 갈대가 없다. 두 묶음은 필요해.",
+     "info": "둥글게 판 구덩이. 누가 집을 지으려다 만 자리일까?"
+    }
+   },
+   "start": "empty"
+  },
+  "npc": {
+   "name": "마을 어른",
+   "verb": "말 걸기",
+   "info": "마을 사람. 무언가 알려 줄 것 같다.",
+   "flag": "talk:elder"
+  },
+  "gate": {
+   "name": "시간의 문",
+   "verb": "들어가기",
+   "info": "언덕 위 돌문. 다음 시대로 가는 문."
+  }
+ }
+}

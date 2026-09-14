@@ -21,7 +21,9 @@ export class Game {
     this.e = new Engine(document.getElementById('c'), this.world.atmosphere);
     if (this.world.sky) this.e.loadSky(this.world.sky);
     if (this.world.height) await this.e.loadHeight(this.base + this.world.height);
+    this.e.skipDecor = !!this.world.landscape;   // 시대별 landscape.js 가 있을 때만 GLB 장식(나무·언덕)을 건너뜀
     await this.e.loadWorld(this.base + this.world.glb, this.world.eye);
+    this.initTargets();
     // 시대별 장식 코드는 world.json 이 가리킬 때만(코어는 시대 이름을 모른다)
     if (this.world.landscape) { const { buildLandscape } = await import(this.base + this.world.landscape); buildLandscape(this.e, this.quality()); }
     // 후처리(GTAO·블룸·SMAA): 브라우저 눈 검증 전까지 ?post=1 로만 켬
@@ -31,10 +33,11 @@ export class Game {
     this.p.bindJoystick(document.getElementById('stick'), document.getElementById('knob'));
     // 시작 시선: 야영지 쪽(있으면) 을 바라봄
     const camp = this.e.areas.get('camp'); if (camp) { const d = camp.clone().sub(this.p.pos); this.p.yaw = Math.atan2(-d.x, -d.z); }
-    this.ui.setTitle(this.world.title, this.world.question); this.ui.setGoal(this.world.goal);
+    this.ui.setTitle(this.world.title, this.world.question, this.world.short); this.ui.setGoal(this.world.goal);
     this.renderInv(); this.updateMission(true);
     bindMinimap(this.e, this.p, document.getElementById('minimap'));
     this.addFire();
+    for (const t of this.e.interactables.values()) if (t.type === 'fire' && t.state === 'lit') this.setFire(true);
     this.bindButtons();
     this.e.onFrame.push((dt) => this.tick(dt));
     document.getElementById('load').remove();
@@ -74,10 +77,34 @@ export class Game {
       if (t) this.ui.setPrompt(this.promptFor(t));
       else { const near = this.e.pickTarget(this.e.camera, 9, this.p.pos); this.ui.setPrompt(near ? this.infoFor(near) : null); }
     } else { this.target = null; this.ui.setPrompt(null); }
+    // 시간이 지나면 바뀌는 대상(밭이 자라는 것 등)
+    this.tickTimers();
     // 미션 나침반 + 힌트 시간
     this.updateMission(false);
     // 불꽃
     if (this.fire && this.fire.visible) { this.fire.rotation.y += dt * 2; this.fire.scale.y = 0.9 + Math.sin(performance.now() * 0.02) * 0.15; this.fireLight.intensity = 3 + Math.sin(performance.now() * 0.03); }
+  }
+  /** json 의 start(처음 상태)·hidden(처음엔 안 보이는 재질 이름) 적용 */
+  initTargets() {
+    for (const t of this.e.interactables.values()) {
+      const def = this.items.targets[t.type]; if (!def) continue;
+      if (def.start) t.state = def.start;
+      if (def.hidden) this.showMats(t, def.hidden, false);
+    }
+  }
+  showMats(t, names, on) { t.obj.traverse((m) => { if (m.isMesh && names.includes(m.material.name)) m.visible = on; }); }
+  applyState(t, rule) {
+    if (rule.set) { t.state = rule.set; if (t.type === 'fire') this.setFire(rule.set === 'lit'); }
+    if (rule.hide) this.showMats(t, rule.hide, false);
+    if (rule.reveal) this.showMats(t, rule.reveal, true);
+    if (rule.after) t.timer = { at: performance.now() + rule.after.sec * 1000, rule: rule.after }; else if (rule.set) t.timer = null;
+  }
+  tickTimers() {
+    const now = performance.now();
+    for (const t of this.e.interactables.values()) {
+      if (!t.timer || now < t.timer.at) continue;
+      const r = t.timer.rule; t.timer = null; this.applyState(t, r); if (r.say) this.ui.say(r.say, 4000); this.flag(r.flag);
+    }
   }
   infoFor(t) {
     const def = this.items.targets[t.type]; if (!def) return null;
@@ -108,9 +135,10 @@ export class Game {
     const rule = def.states ? def.states[t.state || 'unlit'] : def;
     if (rule.once && this.flags.has(rule.flag)) { this.ui.say(rule.say); return; }
     if (rule.requires && !this.has(rule.requires)) { this.ui.say(rule.failNoTool || rule.fail || '지금은 할 수 없어.'); return; }
-    if (rule.consumes) for (const c of rule.consumes) if (!this.has(c)) { this.ui.say(rule['failNo' + c[0].toUpperCase() + c.slice(1)] || `${this.items.items[c].name}이(가) 없어.`); return; }
+    if (rule.consumes) { const need = {}; for (const c of rule.consumes) need[c] = (need[c] || 0) + 1;
+      for (const [c, n] of Object.entries(need)) if (this.count(c) < n) { this.ui.say(rule['failNo' + c[0].toUpperCase() + c.slice(1)] || `${this.items.items[c].name}이(가) ${n > 1 ? n + '개 ' : ''}없어.`); return; } }
     if (rule.consumes) for (const c of rule.consumes) this.take(c);
-    if (rule.set) { t.state = rule.set; if (t.type === 'fire') this.setFire(true); }
+    this.applyState(t, rule);
     const gives = Array.isArray(rule.gives) ? rule.gives : (rule.gives ? [rule.gives] : []);
     for (const g of gives) this.inventory.push(g);
     if (rule.uses) { t.uses++; }
@@ -161,7 +189,7 @@ export class Game {
   // ---------- 미션 ----------
   missionDone(m) {
     if (m.done) return this.flags.has(m.done);
-    if (m.count) return this.count(m.count[0]) >= m.count[1] || this.flags.has('made:handaxe');
+    if (m.count) return this.count(m.count[0]) >= m.count[1] || (m.or && this.flags.has(m.or));
     return false;
   }
   updateMission(force) {
@@ -169,7 +197,7 @@ export class Game {
     let changed = force;
     while (this.mi < ms.length && this.missionDone(ms[this.mi])) { this.mi++; changed = true; this.missionStart = performance.now(); this.hintShown = false; if (!force) this.ui.say(`✅ ${ms[this.mi - 1].title}`, 2200); }
     const m = ms[this.mi];
-    if (changed) this.ui.setMission(m ? m.title : '구석기 완주!', this.mi, ms.length);
+    if (changed) this.ui.setMission(m ? m.title : `${this.world.short || ''} 완주!`, this.mi, ms.length);
     if (!m) return;
     // 나침반: 구역 방향
     const a = this.e.areas.get(m.area);
@@ -198,7 +226,7 @@ export class Game {
   // ---------- 시간의 문 ----------
   checkGate() {
     const g = this.world.gate; const ok = g.requires.every((f) => this.flags.has(f));
-    if (ok && !this.gateOpen) { this.gateOpen = true; this.ui.setGoal(`시간의 문이 열렸다. 동굴 옆 문으로 가 보자.`); this.updateMission(false); this.ui.say('어디선가 바람이… 시간의 문이 열렸다!', 4000); }
+    if (ok && !this.gateOpen) { this.gateOpen = true; this.ui.setGoal(`시간의 문이 열렸다. ${g.hint || '문으로 가 보자.'}`); this.updateMission(false); this.ui.say('어디선가 바람이… 시간의 문이 열렸다!', 4000); }
   }
   enterGate() {
     if (!this.gateOpen) { const g = this.world.gate; const left = g.requires.filter((f) => !this.flags.has(f)).length; this.ui.say(`아직 닫혀 있다. 해야 할 일이 ${left}가지 남았어.`); return; }
@@ -210,9 +238,9 @@ export class Game {
       (results) => {
         this.results = results; this.flag('era:done'); this.updateMission(false);
         const okN = results.filter((r) => r.ok).length; const g = this.world.gate;
-        const bag = this.inventory.filter((k) => this.items.items[k].why || k === 'handaxe');
-        this.ui.open(`<div class="chk"><div class="tag">시대 완주</div><h3>${this.check.done}</h3><p>🎒 <b>역사 가방</b>에 담김: ${bag.length ? '🔪 주먹도끼' : '(없음)'}</p><p class="sub">기록: 확인 ${okN}/${results.filter((r) => 'ok' in r).length} · 「만약에」 1편 (선생님에게)</p></div>`,
-          [{ label: `${g.nextName}로 (준비 중)`, primary: true, onClick: () => { this.ui.say(`${g.nextName}는 다음에 열려. 오늘은 여기까지가 구석기야.`, 4000); } }, { label: '더 둘러보기', onClick: () => { this.ui.close(); this.p.enabled = true; } }]);
+        const bag = [...new Set(this.inventory.filter((k) => this.items.items[k].bag))].map((k) => `${this.items.items[k].icon} ${this.items.items[k].name}`);
+        this.ui.open(`<div class="chk"><div class="tag">시대 완주</div><h3>${this.check.done}</h3><p>🎒 <b>역사 가방</b>에 담김: ${bag.length ? bag.join(' · ') : '(없음)'}</p><p class="sub">기록: 확인 ${okN}/${results.filter((r) => 'ok' in r).length} · 「만약에」 1편 (선생님에게)</p></div>`,
+          [{ label: g.ready ? `${g.nextName}로 가기` : `${g.nextName}로 (준비 중)`, primary: true, onClick: () => { if (g.ready) { const u = new URL(location.href); u.searchParams.set('era', g.next); location.href = u.toString(); } else this.ui.say(`${g.nextName}는 다음에 열려. 오늘은 여기까지가 ${this.world.short || '이 시대'}야.`, 4000); } }, { label: '더 둘러보기', onClick: () => { this.ui.close(); this.p.enabled = true; } }]);
         // 저장: 동의 학생 저장 표는 다음 시대에서(SQL). 지금은 화면 메모리에만.
       },
       (q) => { // 다시 가 보기: 그 장면으로 이동, 나중에 문에서 다시
