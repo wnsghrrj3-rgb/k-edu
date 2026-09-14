@@ -95,6 +95,11 @@ body.mkp-on #kedu-back { display:none !important }
       const an = opts.still ? '' : animCss(el, i, scene.anim);
       const rot = el.rot ? `;transform:rotate(${el.rot}deg)` : '';
       const pos = `left:${el.x}%;top:${el.y}%;width:${el.w}%;`;
+      if (el.visible === false) return '';                                   /* R150 — 숨긴 조각은 재생에서도 빠진다(export 규약 동일) */
+      if (el.kind === 'vector' && el.vec && window.MK_SVGASSET) {           /* R150 — 편집형 벡터 조각 */
+        const op = (el.opacity != null && el.opacity < 1) ? `;opacity:${el.opacity}` : '';
+        return `<div class="mkp-el mkp-vec" style="${pos}height:${el.h}%${op}${rot}${an}">${window.MK_SVGASSET.svgTag(el)}</div>`;
+      }
       if (el.kind === 'chart' || el.kind === 'table') {
         const inner = el.kind === 'chart'
           ? (parts.ChartSVG ? parts.ChartSVG(el, dark, false) : '')

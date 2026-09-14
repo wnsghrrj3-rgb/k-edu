@@ -602,6 +602,15 @@ window.MK_RENDER = (() => {
         ops.push({ op: 'image', frame: f, asset, src: el.src || (asset && asset.src) || null, fit: el.fit || 'cover', focal: el.focal || null, nar: (isFinite(+el.nar) && +el.nar > 0) ? +el.nar : null, /* R106 — 원본 종횡비(연속 초점 export) */ radius: el.radius, label: el.label != null ? el.label : (asset && asset.label) || '', clip: clipId, cssFilter: filter, style: { fill: (asset && asset.fill) || '#E6ECF2', ...base } });
         return;
       }
+      /* R150 — 편집형 벡터 조각(kind:'vector', MK_SVGASSET): 원본 마크업을 그대로
+         중첩 <svg viewBox=bbox preserveAspectRatio=none> 으로 싣는다. 색 바꿈(paint)·
+         id 접두는 markupOf 가 정리한다. 벡터를 못 싣는 어댑터(PPTX)는 rasterizeOps 로
+         image op 로 바꿔 받는다 — 여기서 굽지 않는다(캐시된 리스트는 벡터 그대로). */
+      if (el.kind === 'vector' && el.vec) {
+        const SA = window.MK_SVGASSET;
+        ops.push({ op: 'svg', frame: f, vb: el.vec.vb, markup: SA ? SA.markupOf(el) : ((el.vec.defs || '') + (el.vec.body || '')), el, label: el.label || '', style: { ...base } });
+        return;
+      }
       /* 순수 도형 */
       const d = shapePath(el, f);
       ops.push({ op: 'shape', frame: f, d, style: { fill: el.fill ? (typeof el.fill === 'object' ? gradientDef(el.fill, defs) : el.fill) : 'none', stroke: el.stroke, 'stroke-width': el.strokeWidth, ...base } });
@@ -644,6 +653,9 @@ window.MK_RENDER = (() => {
       const common = attr('opacity', st.opacity !== 1 ? st.opacity : null) + attr('transform', st.transform) + attr('filter', st.filter) + (st['mix-blend-mode'] ? ` style="mix-blend-mode:${st['mix-blend-mode']}"` : '');
       if (op.op === 'shape') {
         parts.push(`<path d="${op.d}"${attr('fill', st.fill)}${attr('stroke', st.stroke)}${attr('stroke-width', st['stroke-width'])}${common}/>`);
+      } else if (op.op === 'svg') {                   /* R150 — 벡터 조각: 중첩 svg (비균일 배율 = preserveAspectRatio none) */
+        const f = op.frame, vb = (op.vb || [0, 0, 100, 100]).map(R2);
+        parts.push(`<svg x="${R2(f.x)}" y="${R2(f.y)}" width="${R2(f.w)}" height="${R2(f.h)}" viewBox="${vb.join(' ')}" preserveAspectRatio="none" overflow="visible"${common}>${op.markup || ''}</svg>`);
       } else if (op.op === 'image') {
         const f = op.frame;
         if (op.src) {                                  /* R37 — 실이미지 출력 */
@@ -829,6 +841,7 @@ window.MK_RENDER = (() => {
       };
       dl.ops.forEach((op) => {
         const f = op.frame;
+        if (op.op === 'svg') { warnAll.push({ code: 'unsupported-effect', msg: `벡터 조각 "${op.label || ''}" — 벡터 PDF 미탑재(래스터 PDF 사용)` }); return; } /* R150 */
         if (op.op === 'shape' || op.op === 'image') {
           const fill = (op.style && op.style.fill) || '#E6ECF2';
           if (typeof fill === 'string' && fill.startsWith('url(')) { warnAll.push({ code: 'unsupported-effect', msg: 'PDF 그라디언트 → 첫 색상 근사' }); setFill('#DDE6EE'); }
@@ -997,6 +1010,7 @@ window.MK_RENDER = (() => {
       dl.ops.forEach((op) => {
         const f = op.frame; const id = ++shapeId;
         const xfrm = `<a:xfrm><a:off x="${emuX(f.x, dl)}" y="${emuY(f.y, dl)}"/><a:ext cx="${Math.max(1, emuX(f.w, dl))}" cy="${Math.max(1, emuY(f.h, dl))}"/></a:xfrm>`;
+        if (op.op === 'svg') { warnAll.push({ code: 'unsupported-effect', msg: `벡터 조각 "${op.label || ''}" — PPTX 는 래스터(rasterizeOps) 뒤에 실어야 해요` }); return; } /* R150 */
         if (op.op === 'image' && op.src) {        /* R38 — dataURL 이미지 = 진짜 그림으로 */
           const db = dataUrlBytes(op.src);
           if (db) {

@@ -278,6 +278,10 @@ window.MK_SCREENS.editor = (() => {
          구워 넣는 수밖에 없었다. 화면을 내보내기 쪽에 맞춘다.
          SVG 의 stroke 는 선 중앙 정렬, CSS border 는 안쪽이라 얇은 선에서
          반 픽셀 차가 나지만 템플릿 테두리 두께(1~3px)에서는 눈에 띄지 않는다. */
+      if (el.kind === 'vector' && el.vec && window.MK_SVGASSET) {   /* R150 — 편집형 벡터 조각 (세부 편집은 workspace 가 정본) */
+        const vOp = (el.opacity != null && el.opacity < 1) ? `;opacity:${el.opacity}` : '';
+        return `<div class="ed-el ${sel}" data-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%${vOp}${rotSty(el)}">${window.MK_SVGASSET.svgTag(el)}${hd2}</div>`;
+      }
       if (el.kind === 'shape') {
         const swPx = (el.strokeWidth || 0) / (scene.width || 1280) * CW;
         const isLine = el.shape === 'line';
