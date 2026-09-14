@@ -583,7 +583,7 @@ window.MK_RENDER = (() => {
         return;
       }
       if (el.kind === 'image') {
-        if (el.fill) { /* 컬러 박스(도형) — 기존 샘플 관례 */
+        if (el.fill && !el.src) { /* 컬러 박스(도형) — 기존 샘플 관례. R154 — 사진 자리(fill+src)는 사진이 우선: 미리보기·출력에서 자리색 상자로 굳던 것 */
           const d = shapePath(el, f);
           ops.push({ op: 'shape', frame: f, d, style: { fill: typeof el.fill === 'object' ? gradientDef(el.fill, defs) : el.fill, ...base } });
           return;
