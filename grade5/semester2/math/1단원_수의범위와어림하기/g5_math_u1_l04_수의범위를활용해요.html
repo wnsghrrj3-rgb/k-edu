@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<!--
+  g5_math_u1_l04 — 수의 범위를 활용해요 [5학년 2학기 1단원 04차시, 단일 40분]
+  단원: 5학년 2학기 1단원 「수의 범위와 어림하기」 / 지도서 113~162 · 교과서 14~15쪽
+  base: g4_math_u6_l04(엔진·채점부·공통 CSS 계승) / 부품 rangeLine · rangeRow · valueChips · roundDial · dialRow · numLineZoom · rangeTable · estRow
+  성격: 활용 — 두 조건을 겹친 범위 · 생활 속 자료(단계·요금·용량·등급) 읽기
+  ★ 오개념 훅: ★네 가지 범위를 한 수직선에서 견주며 경곗값 표시를 가른다(지도서 137)
+  ★ 왜 그럴까 슬롯 = 슬7 : 체감 온도 30.9 °C는 왜 관심 단계일까 — 29 이상 31 미만에 들어가기 때문
+  🔑 회수 키: meta·JS 모두 g5_2_math_u1_l04 (파일명·KEDU_MAP.key 는 g5_math_ 그대로 — 설계도 §2-2)
+  ⛔ 규약: 문자식 금지 / 권유형 종결 금지 / 이모지 슬라이드당 ≤2 / 경곗값 기호 표기 금지 / 어림값·어림수로만
+  점수: 기본 4×10 + 응용 4×15 = 100 / mcq 정답 위치 q8=2 · q9=2 · q11=3 · q13=2 · q15=2 / pad 정답 q10=6 · q12=10000 · q14=10
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g5_2_math_u1_l04">
+<title>수의 범위를 활용해요 · K-edu 5학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#FBF7F1; --ink:#243043; --ink-soft:#62708A;
+  --coral:#B45309; --coral-deep:#7C3A06; --coral-soft:#F6E6CE;
+  --teal:#0F766E; --teal-deep:#0B5A54; --teal-soft:#D3EDE9;
+  --gold:#F6B526; --emph:#F0451F; --line:#E4DACB; --mark:#FFE08A;
+  --f-title:'Do Hyeon',sans-serif; --f-body:'Gowun Dodum',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:0 14px 34px -18px rgba(36,48,67,.4);
+  --fs-title: clamp(26px, 4.2vw, 46px);
+  --fs-heading: clamp(24px, 3.7vw, 37px);
+  --fs-body: clamp(20px, 3.0vw, 29px);
+  --fs-caption: clamp(19px, 2.9vw, 27px);
+  --fs-label: clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --em-md: clamp(44px, 7vw, 80px);
+  --em-lg: clamp(66px, 10vw, 122px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(760px, 96vw);
+  --mw-lg: min(840px, 96vw);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+@keyframes ka-swap-r { 0%{transform:translateX(0); opacity:1;} 50%{transform:translateX(20px); opacity:.3;} 100%{transform:translateX(0); opacity:1;} }
+@keyframes ka-mark { from{background-size:0 100%;} to{background-size:100% 100%;} }
+
+/* ───── 컨테이너 ───── */
+.ka { background:var(--paper); width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; color:var(--ink); position:relative; overflow:hidden; }
+
+/* ───── 상단바 (topbar) ───── */
+.ka-h { display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); padding:clamp(11px,1.7vw,15px) clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:hover { transform:translateY(-1px); }
+.ka-pill { font-family:var(--f-title); background:var(--coral); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-where { font-size:clamp(14px,1.6vw,18px); color:var(--ink-soft); flex-shrink:1; }
+.ka-where b { color:var(--ink); }
+.ka-bar { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:46vw; }
+.ka-dot { width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s, background .2s; }
+.ka-dot:hover { transform:scale(1.2); }
+.ka-dot.active { background:var(--coral); transform:scale(1.3); }
+.ka-dot.done { background:var(--teal); }
+.ka-score { font-family:var(--f-title); background:#FFF8E1; color:#F57F17; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); padding:0; border-radius:50%; cursor:pointer; flex-shrink:0; color:var(--coral-deep); font-size:clamp(13px,2vw,16px); width:clamp(32px,4.5vw,38px); height:clamp(32px,4.5vw,38px); display:flex; align-items:center; justify-content:center; }
+
+/* ───── 본문 ───── */
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; gap:clamp(7px,1.3vw,12px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(8px,1.4vh,16px) clamp(16px,4vw,48px); overflow:hidden; }
+.slide.active { display:flex; }
+.slide-title { font-family:var(--f-title); font-size:var(--fs-title); margin:0; line-height:1.18; color:var(--ink); font-weight:400; text-align:center; flex-shrink:0; }
+.slide-sub { font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(10px,1.6vw,16px); left:clamp(16px,4vw,40px); font-family:var(--f-title); color:var(--coral); font-size:clamp(13px,1.9vw,18px); letter-spacing:.4px; z-index:5; }
+
+/* ───── 하단 내비 ───── */
+.ka-f { display:flex; justify-content:flex-end; gap:12px; padding:clamp(12px,1.7vw,16px) clamp(16px,4vw,40px); background:linear-gradient(to top, var(--paper) 62%, transparent); flex-shrink:0; }
+.ka-prev, .ka-hint, .ka-next { font-family:var(--f-title); font-size:clamp(15px,1.9vw,22px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(10px,1.4vw,15px) clamp(20px,2.8vw,38px); cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translateY(-2px); }
+.ka-prev { margin-right:auto; }
+.ka-hint { color:#F57F17; border-color:#FFE08A; }
+.ka-next { background:var(--coral); color:#fff; border-color:var(--coral); }
+.ka-prev:disabled, .ka-next:disabled { opacity:.35; cursor:default; transform:none; }
+.ka-hint:disabled { opacity:.4; cursor:default; }
+
+/* ───── 공통 콘텐츠 ───── */
+.concept-box { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,18px) clamp(18px,2.8vw,28px); border-radius:20px; font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); text-align:center; line-height:1.5; box-shadow:var(--shadow); }
+.concept-box strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.big-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-lg); line-height:1; }
+.intro-q { font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; }
+.intro-q strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.goal-list { display:flex; flex-direction:column; gap:clamp(7px,1.4vw,11px); font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); }
+.goal-list li { background:#fff; border:2px solid var(--line); padding:clamp(8px,1.5vw,12px) clamp(14px,2.6vw,20px); border-radius:16px; list-style:none; box-shadow:var(--shadow); }
+.goal-list li strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+.recall-box { background:var(--teal-soft); padding:clamp(14px,2.8vw,22px) clamp(20px,3.6vw,30px); border-radius:22px; font-size:var(--fs-body); color:var(--teal-deep); max-width:var(--mw-sm); text-align:center; line-height:1.6; }
+.recall-box strong { color:var(--teal-deep); font-family:var(--f-title); font-weight:400; }
+.scene { background:#fff; border:3px solid var(--coral-soft); border-radius:28px; padding:clamp(18px,3.4vw,30px) clamp(22px,4.2vw,38px); display:flex; flex-direction:column; gap:clamp(10px,2vw,16px); align-items:center; min-width:clamp(280px,50vw,460px); box-shadow:0 6px 0 var(--coral-soft); }
+.pencil-row { display:flex; gap:clamp(4px,0.8vw,8px); font-size:var(--em-sm); flex-wrap:wrap; justify-content:center; max-width:var(--mw-sm); color:var(--ink); }
+
+/* ───── place_value_block (모형) ───── */
+.pv-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.pv-row { display:flex; gap:clamp(10px,2.2vw,20px); align-items:flex-end; justify-content:center; flex-wrap:wrap; }
+.pv-group { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,0.8vw,7px); }
+.pv-label { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.pv-block svg { display:block; }
+.swap-arrow { font-size:var(--em-sm); color:var(--coral); animation:ka-swap-r 1.6s ease-in-out infinite; }
+.exchange-eq { font-size:var(--fs-heading); color:var(--ink); display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); flex-wrap:wrap; justify-content:center; }
+
+/* ───── number_line ───── */
+.nl-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(12px,2.4vw,20px); max-width:var(--mw-lg); width:100%; }
+.nl-svg { width:min(760px,94vw); height:auto; }
+.nl-svg .nl-tick text { font-family:var(--f-num); font-weight:800; fill:var(--ink-soft); }
+.nl-pick { cursor:pointer; }
+.nl-pick:hover circle { fill:var(--coral-soft); }
+.nl-pick.correct circle { fill:var(--teal); }
+.nl-pick.wrong circle { fill:var(--coral-soft); }
+
+/* ───── 100의 여러 의미 ───── */
+.mean-grid { display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-sm); width:100%; }
+.mean-item { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,17px) clamp(16px,3vw,24px); border-radius:18px; font-size:var(--fs-body); color:var(--ink); text-align:center; box-shadow:var(--shadow); }
+.mean-item strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+
+/* ───── 문제 공통 ───── */
+.q-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; font-weight:400; }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:20px; padding:clamp(8px,1.6vw,14px) clamp(24px,4.6vw,44px); min-width:clamp(120px,22vw,200px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.q-pad { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(6px,1.2vw,10px); max-width:clamp(280px,56vw,460px); }
+.q-key { background:#fff; border:2px solid var(--line); border-radius:14px; padding:clamp(7px,1.5vw,12px) 0; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, background .15s, border-color .15s; box-shadow:0 4px 0 var(--line); }
+.q-key:hover { background:var(--coral-soft); border-color:var(--coral); }
+.q-key:active { transform:translateY(3px); box-shadow:none; }
+.q-key.fn { background:#FFF8E1; color:#F57F17; font-family:var(--f-title); font-size:var(--fs-body); border-color:#FFE08A; box-shadow:0 4px 0 #FFE08A; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); color:var(--teal-deep); min-height:1.4em; text-align:center; }
+.q-fb.wrong { color:var(--emph); }
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-sm); }
+.mcq-opt { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,15px); font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .2s; box-shadow:0 6px 0 var(--coral-soft); font-weight:400; }
+.mcq-opt:hover { border-color:var(--coral); }
+.mcq-opt:active { transform:translateY(4px); box-shadow:none; }
+.mcq-opt.correct { border-color:var(--teal-deep); background:var(--teal); color:#fff; box-shadow:0 6px 0 var(--teal-deep); animation:ka-pop .5s ease; }
+.mcq-opt.wrong { border-color:var(--emph); background:#FFE0DA; color:var(--coral-deep); animation:ka-shake .35s; }
+.mcq-hint { font-family:var(--f-title); font-size:var(--fs-body); color:#F57F17; background:#FFF8E1; border-radius:16px; padding:clamp(8px,1.6vw,12px) clamp(14px,2.6vw,20px); max-width:var(--mw-sm); text-align:center; display:none; }
+.mcq-hint.show { display:block; }
+
+/* ───── trace ───── */
+.trace-row { display:flex; gap:clamp(12px,2.4vw,22px); justify-content:center; flex-wrap:wrap; }
+.trace-cell { width:clamp(64px,12vw,110px); height:clamp(84px,16vw,150px); border:5px dashed var(--coral-soft); border-radius:20px; display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:#D8C4B8; cursor:pointer; transition:all .2s; background:#fff; }
+.trace-cell.done { color:var(--coral-deep); border-style:solid; border-color:var(--coral); background:var(--coral-soft); }
+
+/* ───── match ───── */
+.match-stage { display:flex; flex-direction:column; gap:clamp(8px,1.5vw,13px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.match-cols { display:flex; gap:clamp(20px,4vw,48px); }
+.match-col { display:flex; flex-direction:column; gap:clamp(6px,1.1vw,9px); }
+.match-card { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(16px,3vw,26px); font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .15s; min-width:clamp(70px,13vw,108px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.match-card:hover { border-color:var(--coral); }
+.match-card.sel { border-color:var(--gold); background:var(--mark); }
+.match-card.matched { border-color:var(--teal-deep); background:var(--teal); color:#fff; cursor:default; box-shadow:0 5px 0 var(--teal-deep); }
+
+/* ───── multi judge ───── */
+.judge-grid { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); max-width:var(--mw-sm); width:100%; }
+.judge-item { display:flex; align-items:center; gap:clamp(10px,2vw,16px); background:#fff; border:3px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(14px,2.6vw,20px); box-shadow:0 5px 0 var(--coral-soft); }
+.judge-text { flex:1; font-size:var(--fs-body); color:var(--ink); text-align:left; }
+.judge-text strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.judge-btns { display:flex; gap:clamp(6px,1.2vw,10px); }
+.judge-btn { border:3px solid var(--line); border-radius:14px; padding:clamp(6px,1.2vw,10px) clamp(12px,2.4vw,18px); font-family:var(--f-title); font-size:var(--fs-heading); cursor:pointer; background:#fff; color:var(--ink-soft); transition:transform .1s; }
+.judge-btn:active { transform:translateY(3px); }
+.judge-btn.pick-o { background:var(--teal-soft); color:var(--teal-deep); border-color:var(--teal); }
+.judge-btn.pick-x { background:var(--coral-soft); color:var(--coral-deep); border-color:var(--coral); }
+.judge-item.right { border-color:var(--teal-deep); box-shadow:0 5px 0 var(--teal-deep); }
+.judge-item.miss { border-color:var(--emph); animation:ka-shake .35s; }
+
+/* ───── 정리/자기평가/다음 ───── */
+.summary-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.summary-card { background:#fff; border:2px solid var(--line); border-radius:22px; padding:clamp(18px,3.4vw,30px); font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; box-shadow:var(--shadow); }
+.summary-card strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.wrap-msg { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--coral-deep); }
+.self-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(14px,2.6vw,22px); }
+.self-row { display:flex; gap:clamp(12px,2.4vw,20px); flex-wrap:wrap; justify-content:center; }
+.self-btn { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,16px) clamp(14px,2.8vw,22px); cursor:pointer; display:flex; flex-direction:column; gap:clamp(3px,0.7vw,6px); align-items:center; transition:transform .12s, border-color .15s; box-shadow:0 6px 0 var(--coral-soft); }
+.self-btn:hover { border-color:var(--coral); }
+.self-btn:active { transform:translateY(4px); box-shadow:none; }
+.self-btn.selected { border-color:var(--gold); background:var(--mark); }
+.self-btn-stars { font-size:var(--em-sm); color:var(--gold); }
+.self-btn-name { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.next-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-md); }
+.next-card { background:var(--teal-soft); border-radius:22px; padding:clamp(20px,3.8vw,32px); display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); align-items:center; }
+.next-emojis { font-size:var(--em-md); }
+.next-label { font-size:var(--fs-body); color:var(--teal-deep); text-align:center; }
+.home-prompt { font-size:var(--fs-caption); color:var(--coral-deep); background:var(--coral-soft); border-radius:18px; padding:clamp(12px,2.4vw,18px) clamp(18px,3.4vw,28px); text-align:center; }
+
+
+  /* 세로셈 (3학년 덧셈·뺄셈) */
+  .vadd { display:inline-grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:clamp(2px,0.6vw,4px) clamp(8px,1.6vw,14px); font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--ink); justify-items:center; align-items:center; background:#fff; border:2px solid var(--line); border-radius:18px; padding:clamp(12px,2vw,20px) clamp(18px,3vw,30px); box-shadow:var(--shadow); }
+  .vadd .op { color:var(--coral-deep); }
+  .vadd .ln { grid-column:1/-1; width:100%; height:3px; background:var(--ink); border-radius:2px; }
+  .vadd .sum { color:var(--coral-deep); }
+  .pv-sum-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-md); }
+
+
+/* ───── 수의 범위와 어림하기(5-2 U1) 부품 ───── */
+.rl-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.2vw,11px); width:100%; max-width:var(--mw-lg); }
+.rl-svg { width:100%; height:auto; display:block; max-width:min(700px,94vw); margin:0 auto; }
+.rl-svg text { font-family:'Nunito',sans-serif; font-weight:800; }
+.rl-svg text.kor { font-family:'Do Hyeon',sans-serif; font-weight:400; }
+.rl-cap { font-family:var(--f-title); font-size:var(--fs-label); color:var(--ink-soft); text-align:center; }
+.rl-note { font-family:var(--f-body); font-size:var(--fs-label); color:var(--ink-soft); text-align:center; }
+.rl-rows { display:flex; flex-direction:column; gap:clamp(8px,1.6vw,15px); width:100%; }
+.rl-row { display:flex; flex-direction:column; align-items:center; gap:4px; background:#fff; border:3px solid var(--line); border-radius:18px; padding:clamp(6px,1.2vw,11px) clamp(8px,1.6vw,14px); box-shadow:0 4px 0 var(--line); }
+.rl-row .rl-cap { color:var(--ink); font-size:var(--fs-label); }
+
+.vc-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(7px,1.4vw,12px); width:100%; max-width:var(--mw-lg); }
+.vc-row { display:flex; flex-wrap:wrap; justify-content:center; gap:clamp(7px,1.4vw,13px); }
+.vc-chip { position:relative; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); background:#fff; border:3px solid var(--line); border-radius:16px; padding:clamp(6px,1.2vw,11px) clamp(12px,2.4vw,20px); box-shadow:0 4px 0 var(--line); }
+.vc-chip .vc-mk { position:absolute; top:-14px; right:-10px; font-size:clamp(20px,3vw,28px); line-height:1; }
+.vc-chip.o { border-color:var(--coral); box-shadow:0 4px 0 var(--coral-deep); background:var(--coral-soft); }
+.vc-chip.t { border-color:var(--teal); box-shadow:0 4px 0 var(--teal-deep); background:var(--teal-soft); }
+
+.rd-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(7px,1.4vw,12px); width:100%; max-width:var(--mw-lg); }
+.rd-card { display:flex; align-items:center; flex-wrap:wrap; justify-content:center; gap:clamp(8px,1.6vw,15px); background:#fff; border:3px solid var(--line); border-radius:18px; padding:clamp(8px,1.6vw,13px) clamp(12px,2.4vw,20px); box-shadow:0 4px 0 var(--line); }
+.rd-card.bad { border-color:#F3C4B7; background:#FFF6F3; }
+.rd-lead { font-family:var(--f-title); font-size:var(--fs-label); color:var(--ink-soft); min-width:6.6em; text-align:right; }
+.rd-card.bad .rd-lead { color:var(--emph); }
+.rd-num { display:inline-flex; align-items:flex-end; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); }
+.rd-d { display:inline-block; padding:0 1px; }
+.rd-d.low { color:#B9C0CC; }
+.rd-d.tgt { color:var(--coral-deep); border-bottom:4px solid var(--coral); }
+.rd-ar { font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink-soft); }
+.rd-res { font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--teal-deep); }
+.rd-card.bad .rd-res { color:var(--emph); }
+.rd-res.ask { color:var(--emph); }
+
+.nz-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.2vw,11px); width:100%; max-width:var(--mw-lg); }
+
+.rt-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(7px,1.4vw,12px); width:100%; max-width:var(--mw-lg); }
+.rt-tb { border-collapse:separate; border-spacing:0; background:#fff; border:3px solid var(--line); border-radius:16px; overflow:hidden; box-shadow:0 4px 0 var(--line); font-family:var(--f-body); font-size:var(--fs-label); color:var(--ink); }
+.rt-tb th { background:var(--coral-soft); color:var(--coral-deep); font-family:var(--f-title); font-weight:400; padding:clamp(6px,1.2vw,10px) clamp(8px,1.6vw,15px); border-bottom:3px solid var(--line); }
+.rt-tb td { padding:clamp(6px,1.2vw,10px) clamp(8px,1.6vw,15px); border-bottom:2px solid var(--line); text-align:center; }
+.rt-tb tr:last-child td { border-bottom:none; }
+.rt-tb tr.hi td { background:var(--teal-soft); color:var(--teal-deep); font-weight:700; }
+.rt-tb td.ask { color:var(--emph); font-family:var(--f-num); font-weight:800; }
+
+.es-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(7px,1.4vw,12px); width:100%; max-width:var(--mw-lg); }
+.es-tb { border-collapse:separate; border-spacing:0; background:#fff; border:3px solid var(--line); border-radius:16px; overflow:hidden; box-shadow:0 4px 0 var(--line); font-family:var(--f-body); font-size:var(--fs-label); color:var(--ink); }
+.es-tb th { background:var(--teal-soft); color:var(--teal-deep); font-family:var(--f-title); font-weight:400; padding:clamp(6px,1.2vw,10px) clamp(7px,1.4vw,13px); border-bottom:3px solid var(--line); }
+.es-tb td { padding:clamp(6px,1.2vw,10px) clamp(7px,1.4vw,13px); border-bottom:2px solid var(--line); text-align:center; font-family:var(--f-num); font-weight:800; }
+.es-tb td.kor { font-family:var(--f-body); font-weight:400; }
+.es-tb tr:last-child td { border-bottom:none; }
+.es-total { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--teal-deep); }
+</style>
+<script src="/kedu_gate.js"></script>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 목록</button>
+    <span class="ka-pill">4차시</span>
+    <span class="ka-where">수학 5-2 · <b>1. 수의 범위와 어림하기</b></span>
+    <div class="ka-bar" id="dots"></div>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+  <div class="ka-m">
+    <div class="slide active" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">일기 예보를 보고 나왔어요</h2>
+      <div class="intro-q">생물 자원관에 가려고 날씨를 확인했다.<br>예상 강수량이 <b>5 mm 이상 10 mm 이하</b>라고 한다.<br>두 가지 조건이 한꺼번에 나왔다. 어떻게 나타낼까?</div>
+    </div>
+
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">먼저 하나씩 나타내 보자</h2>
+      <div class="ef-stage">
+        <div id="m-i2"></div>
+        <div class="concept-box">5 이상인 수는 5를 포함하고 오른쪽으로,<br>10 이하인 수는 10을 포함하고 왼쪽으로 긋는다.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">두 범위를 겹치면?</h2>
+      <div class="intro-q">5와 10을 <b>포함한 사이의 수</b>를 선으로 이으면 된다.<br>이것이 <b>5 이상 10 이하인 수</b>다.</div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 ①</div>
+      <h2 class="slide-title">5 이상 10 이하인 수</h2>
+      <div class="ef-stage">
+        <div id="m-e1"></div>
+        <div class="concept-box">양쪽 경곗값을 모두 포함하므로 ●과 ●을 이어 그린다.<br>5, 7, 8.5, 10이 모두 들어간다.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 ②</div>
+      <h2 class="slide-title">네 가지를 나란히 놓아 보자</h2>
+      <div class="ef-stage">
+        <div id="m-e2"></div>
+        <div class="concept-box"><b>이상·이하는 ●</b>, <b>초과·미만은 ○</b>으로 나타낸다.<br>같은 5와 10 사이라도 경곗값을 넣는지에 따라 네 가지가 나온다.<br>5 이상 10 미만인 수에는 5는 들어가고 10은 들어가지 않는다.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 ③</div>
+      <h2 class="slide-title">생활 속 자료 — 어린이 체감 온도 단계</h2>
+      <div class="ef-stage">
+        <div id="m-e3"></div>
+        <div class="concept-box">체감 온도는 사람의 몸이 느끼는 더위나 추위의 정도다.<br>단계마다 범위가 정해져 있고, 그 범위에 따라 대응 요령이 다르다.<br>경고 단계는 34 °C 이상 37 °C 미만이다.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 ④</div>
+      <h2 class="slide-title">왜 그럴까 — 30.9 °C가 관심 단계인 까닭</h2>
+      <div class="ef-stage">
+        <div id="m-e4"></div>
+        <div class="concept-box">관심 단계는 29 °C 이상 31 °C 미만이다.<br>30.9는 29와 같거나 크고 31보다 작으니 <b>관심</b>에 들어간다.<br>단계가 서로 겹치지 않게 <b>한쪽 끝만 포함</b>하도록 짜여 있다.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q8" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt"><b>경고 단계</b>의 체감 온도 범위는?</div>
+        <div class="ef-stage"><div id="m-q8"></div></div>
+        <div class="mcq-opts" id="q8-opts">
+          <button class="mcq-opt" data-correct="0">31 °C 이상 34 °C 미만</button>
+          <button class="mcq-opt" data-correct="1">34 °C 이상 37 °C 미만</button>
+          <button class="mcq-opt" data-correct="0">37 °C 이상</button>
+          <button class="mcq-opt" data-correct="0">29 °C 이상 31 °C 미만</button>
+        </div>
+        <div class="mcq-hint" data-hints='["표에서 경고 줄을 찾아보자.","경고 바로 아래 줄은 위험 단계다."]'></div>
+        <div class="q-fb" id="q8-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q9" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <!-- q9 오답① = 경곗값 31을 관심 쪽에 넣은 값(지도서 138) -->
+      <div class="q-stage">
+        <div class="q-prompt">예상 체감 온도가 <b>31 °C</b>라면 어느 단계인가?</div>
+        <div class="ef-stage"><div id="m-q9"></div></div>
+        <div class="mcq-opts" id="q9-opts">
+          <button class="mcq-opt" data-correct="0">관심</button>
+          <button class="mcq-opt" data-correct="1">주의</button>
+          <button class="mcq-opt" data-correct="0">경고</button>
+          <button class="mcq-opt" data-correct="0">위험</button>
+        </div>
+        <div class="mcq-hint" data-hints='["관심은 31 °C 미만까지다.","31 °C는 31 °C 이상에 들어간다."]'></div>
+        <div class="q-fb" id="q9-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q10" data-q-points="10" data-answer="6">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt"><b>5 이상 10 이하</b>인 자연수는 모두 몇 개인가?</div>
+        <div class="ef-stage"><div id="m-q10"></div></div>
+        <div class="q-display" id="q10-display">?</div>
+        <div class="q-pad" id="q10-pad"></div>
+        <div class="mcq-hint" data-hints='["5와 10도 들어간다.","5, 6, 7, 8, 9, 10을 세어 보자."]'></div>
+        <div class="q-fb" id="q10-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q11" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">수직선이 나타내는 수의 범위는?</div>
+        <div class="ef-stage"><div id="m-q11"></div></div>
+        <div class="mcq-opts" id="q11-opts">
+          <button class="mcq-opt" data-correct="0">5 이상 10 이하인 수</button>
+          <button class="mcq-opt" data-correct="0">5 이상 10 미만인 수</button>
+          <button class="mcq-opt" data-correct="1">5 초과 10 이하인 수</button>
+          <button class="mcq-opt" data-correct="0">5 초과 10 미만인 수</button>
+        </div>
+        <div class="mcq-hint" data-hints='["왼쪽 끝은 ○, 오른쪽 끝은 ●이다.","○은 포함하지 않고 ●은 포함한다."]'></div>
+        <div class="q-fb" id="q11-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q12" data-q-points="15" data-answer="10000">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">우체국 방문 접수 요금표다. 무게가 <b>20 kg</b>인 소포의 요금은 얼마인가?</div>
+        <div class="ef-stage"><div id="m-q12"></div></div>
+        <div class="q-display" id="q12-display">?</div>
+        <div class="q-pad" id="q12-pad"></div>
+        <div class="mcq-hint" data-hints='["20 kg이 들어가는 줄을 찾자.","20 kg은 10 kg 초과 20 kg 이하에 들어간다."]'></div>
+        <div class="q-fb" id="q12-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q13" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">어린이 감기약 용량표다. <b>윤우(8세)</b>는 한 번에 몇 mL를 먹어야 하는가?</div>
+        <div class="ef-stage"><div id="m-q13"></div></div>
+        <div class="mcq-opts" id="q13-opts">
+          <button class="mcq-opt" data-correct="0">5 mL</button>
+          <button class="mcq-opt" data-correct="1">7.5 mL</button>
+          <button class="mcq-opt" data-correct="0">10 mL</button>
+          <button class="mcq-opt" data-correct="0">3.75 mL</button>
+        </div>
+        <div class="mcq-hint" data-hints='["8세가 들어가는 줄을 찾자.","7세 이상 11세 미만 줄이다."]'></div>
+        <div class="q-fb" id="q13-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q14" data-q-points="15" data-answer="10">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">같은 표에서 <b>서진(11세)</b>은 한 번에 몇 mL를 먹어야 하는가?</div>
+        <div class="ef-stage"><div id="m-q14"></div></div>
+        <div class="q-display" id="q14-display">?</div>
+        <div class="q-pad" id="q14-pad"></div>
+        <div class="mcq-hint" data-hints='["11세는 7세 이상 11세 <strong>미만</strong>에 들어갈까?","11세는 11세 이상 15세 미만이다."]'></div>
+        <div class="q-fb" id="q14-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q15" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <!-- q15 오답③ = 35회(지아)를 2등급에 넣은 값 — 35회 초과가 아니다(지도서 139) -->
+      <div class="q-stage">
+        <div class="q-prompt">윗몸 말아 올리기 평가 기준과 기록이다. <b>가희(37회)</b>와 등급이 같은 친구를 모두 고르면?</div>
+        <div class="ef-stage"><div id="m-q15"></div></div>
+        <div class="mcq-opts" id="q15-opts">
+          <button class="mcq-opt" data-correct="0">성윤, 나리</button>
+          <button class="mcq-opt" data-correct="1">나리, 유나</button>
+          <button class="mcq-opt" data-correct="0">지아, 유나</button>
+          <button class="mcq-opt" data-correct="0">지아, 나리, 유나</button>
+        </div>
+        <div class="mcq-hint" data-hints='["먼저 37회가 어느 등급인지 찾자.","2등급은 35회 초과 59회 이하다."]'></div>
+        <div class="q-fb" id="q15-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 배운 것</h2>
+      <div class="summary-stage">
+        <div class="summary-card">두 조건을 겹치면 <b>5 이상 10 이하</b>처럼 사이의 범위가 된다.<br>이상·이하는 ●, 초과·미만은 ○ — 생활 속 표도 이 규칙으로 읽는다.</div>
+        <div class="wrap-msg" id="wrap-msg"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 공부는 어땠나요?</h2>
+      <div class="self-stage">
+        <div class="self-row">
+          <button class="self-btn"><div class="self-btn-stars">★</div><div class="self-btn-name">조금 어려웠어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★</div><div class="self-btn-name">잘 했어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★★</div><div class="self-btn-name">아주 잘 했어요</div></button>
+        </div>
+        <div class="q-fb" id="self-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">다음 시간</h2>
+      <div class="next-stage">
+        <div class="next-card">
+          <div class="next-emojis">📏</div>
+          <div class="next-label">올림을 알아봐요</div>
+        </div>
+        <div class="home-prompt">오늘 배운 것을 집에서 한 번 더 떠올려 보자.</div>
+      </div>
+    </div>
+
+  </div>
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+<script>
+const TOTAL = 18;
+const LESSON_ID = 'g5_2_math_u1_l04';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.querySelectorAll('#dots .ka-dot').forEach((d, i) => { d.classList.toggle('active', i === cur); d.classList.toggle('done', i < cur); });
+  document.getElementById('prev').disabled = cur === 0;
+
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.solved || st.hintLevel >= 2; }
+  else { hintBtn.disabled = true; }
+
+  if (cur === TOTAL - 1) { document.getElementById('next').textContent = '마치기 →'; saveProgress(true); }
+  else { document.getElementById('next').textContent = '다음 →'; }
+
+  if (cur === 15) { document.getElementById('wrap-msg').textContent = wrapMsg(score); }
+}
+
+function saveProgress(done) {
+  const data = { cur, score, done, startedAt, finishedAt: done ? Date.now() : null, qState };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function wrapMsg(s) {
+  if (s >= 100) return '완벽해요!';
+  if (s >= 80) return '정말 잘했어요!';
+  if (s >= 60) return '잘했어요!';
+  return '다시 해도 좋아요!';
+}
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } else { saveProgress(true); location.href='../index.html'; } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+function showHint() {
+  const qid = currentQId(); if (!qid) return;
+  const st = getQState(qid); if (st.solved || st.hintLevel >= 2) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint'); if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[st.hintLevel - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= 2;
+}
+function pointsForQ(qid) {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  const base = parseInt(slide.dataset.qPoints || '0', 10);
+  const st = getQState(qid);
+  if (st.hintLevel === 2) return Math.max(0, base - 5);
+  if (st.hintLevel === 1) return Math.max(0, base - 2);
+  return base;
+}
+
+
+// ═════════════════════════════════════════════════════════════
+// 5-2 U1 부품 — 수의 범위와 어림하기
+// ═════════════════════════════════════════════════════════════
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+// 자릿값 이름 ↔ 지수 (일=0 · 십=1 … / 소수 첫째=-1 …)
+const RD_PLACE = {'일':0,'십':1,'백':2,'천':3,'만':4,'십만':5,'백만':6,
+                  '소수 첫째':-1,'소수 둘째':-2,'소수 셋째':-3};
+
+// 수 문자열을 [정수부, 소수부] 로 가른다.
+function _rdSplit(n){
+  const s = String(n);
+  const i = s.indexOf('.');
+  return i < 0 ? [s, ''] : [s.slice(0, i), s.slice(i + 1)];
+}
+
+// ─────────────────────────────────────────────────────────────
+// rangeLine — 수의 범위 수직선  [단원 시그니처]
+//   o.from, o.to : 눈금의 처음·끝 (정수) · o.step : 눈금 간격(기본 1)
+//   o.lo / o.loInc : 아래쪽 경곗값과 포함 여부(true=● 이상·이하 / false=○ 초과·미만)
+//   o.hi / o.hiInc : 위쪽 경곗값과 포함 여부
+//     lo 만 있으면 오른쪽 반직선, hi 만 있으면 왼쪽 반직선, 둘 다면 사이를 잇는다.
+//   o.picks : 경곗값 없이 고른 수만 굵게(도입 차시 되짚기 — ●/○ 규약을 쓰지 않는 자리)
+//   o.cap : 아래 이름표 · o.ask : 이름표를 감추고 ? 로 (문항 슬롯)
+//   data-range="from,to,step,lo,loInc,hi,hiInc"  (없는 경곗값은 빈칸)
+function rangeLine(o){
+  o = o || {};
+  const from = o.from, to = o.to, step = o.step || 1;
+  if (!(to > from)) throw new Error('rangeLine: from < to 여야 한다');
+  if ((to - from) % step !== 0) throw new Error('rangeLine: 눈금이 고르게 떨어지지 않는다');
+  const W = 700, X0 = 54, X1 = 646, Y = 62;
+  const px = v => X0 + (X1 - X0) * (v - from) / (to - from);
+  const has = v => (v !== undefined && v !== null && v !== '');
+  const lo = has(o.lo) ? +o.lo : null, hi = has(o.hi) ? +o.hi : null;
+  if (lo !== null && (lo < from || lo > to)) throw new Error('rangeLine: lo 가 눈금 밖이다');
+  if (hi !== null && (hi < from || hi > to)) throw new Error('rangeLine: hi 가 눈금 밖이다');
+  if (lo !== null && hi !== null && !(lo < hi)) throw new Error('rangeLine: lo < hi 여야 한다');
+  let g = '';
+  // 굵은 범위 선 — 먼저 깔아 축 위에 보이게 한다
+  if (lo !== null || hi !== null){
+    const a = (lo !== null) ? px(lo) : X0, b = (hi !== null) ? px(hi) : X1;
+    g += '<line class="rl-band" data-a="' + (lo === null ? '' : lo) + '" data-b="' + (hi === null ? '' : hi) + '" '
+       + 'x1="' + a + '" y1="' + Y + '" x2="' + b + '" y2="' + Y + '" stroke="var(--coral)" stroke-width="9" stroke-linecap="round"/>';
+  }
+  // 축
+  g += '<line x1="' + (X0 - 18) + '" y1="' + Y + '" x2="' + (X1 + 18) + '" y2="' + Y + '" stroke="var(--ink)" stroke-width="3"/>';
+  g += '<path d="M' + (X1 + 18) + ' ' + (Y - 7) + ' L' + (X1 + 32) + ' ' + Y + ' L' + (X1 + 18) + ' ' + (Y + 7) + ' Z" fill="var(--ink)"/>';
+  g += '<path d="M' + (X0 - 18) + ' ' + (Y - 7) + ' L' + (X0 - 32) + ' ' + Y + ' L' + (X0 - 18) + ' ' + (Y + 7) + ' Z" fill="var(--ink)"/>';
+  const picks = o.picks || [];
+  for (let v = from; v <= to; v += step){
+    const x = px(v), on = picks.indexOf(v) >= 0;
+    g += '<line x1="' + x + '" y1="' + (Y - 10) + '" x2="' + x + '" y2="' + (Y + 10) + '" stroke="var(--ink)" stroke-width="3"/>';
+    g += '<text class="rl-t" data-v="' + v + '" x="' + x + '" y="' + (Y + 38) + '" font-size="' + (on ? 25 : 22) + '" '
+       + 'fill="' + (on ? 'var(--coral-deep)' : 'var(--ink)') + '" text-anchor="middle">' + esc(v) + '</text>';
+  }
+  function pt(v, inc){
+    g += '<circle class="rl-pt" data-v="' + v + '" data-inc="' + (inc ? 1 : 0) + '" cx="' + px(v) + '" cy="' + Y + '" r="11" '
+       + 'fill="' + (inc ? 'var(--coral-deep)' : '#FBF7F1') + '" stroke="var(--coral-deep)" stroke-width="4"/>';
+  }
+  if (lo !== null) pt(lo, !!o.loInc);
+  if (hi !== null) pt(hi, !!o.hiInc);
+  const cap = o.ask ? '?' : (o.cap || '');
+  return '<div class="rl-wrap" data-range="' + from + ',' + to + ',' + step + ','
+       + (lo === null ? '' : lo) + ',' + (lo === null ? '' : (o.loInc ? 1 : 0)) + ','
+       + (hi === null ? '' : hi) + ',' + (hi === null ? '' : (o.hiInc ? 1 : 0)) + '">'
+       + '<svg class="rl-svg" viewBox="0 0 ' + W + ' ' + (Y + 54) + '" xmlns="http://www.w3.org/2000/svg">' + g + '</svg>'
+       + (cap ? '<div class="rl-cap">' + esc(cap) + '</div>' : '')
+       + (o.note ? '<div class="rl-note">' + esc(o.note) + '</div>' : '') + '</div>';
+}
+
+// rangeRow — 범위 수직선 여러 줄을 이름표를 달아 나란히
+function rangeRow(items, o){
+  o = o || {};
+  const body = items.map(it => '<div class="rl-row">' + rangeLine(it) + '</div>').join('');
+  return '<div class="rl-wrap"><div class="rl-rows">' + body + '</div>'
+       + (o.note ? '<div class="rl-note">' + esc(o.note) + '</div>' : '') + '</div>';
+}
+
+// ─────────────────────────────────────────────────────────────
+// valueChips — 값 카드 줄
+//   items = [{v:'2.8 L', mk:'o'|'t'|''}]   o=○표 · t=△표
+//   o.ask : 표시를 감춘다(문항 슬롯) — data-marks 는 빈칸이 되고 data-ask="1"
+function valueChips(items, o){
+  o = o || {};
+  const body = items.map(it => {
+    const mk = o.ask ? '' : (it.mk || '');
+    const sym = mk === 'o' ? '○' : (mk === 't' ? '△' : '');
+    return '<div class="vc-chip ' + mk + '">' + esc(it.v)
+         + (sym ? '<span class="vc-mk">' + sym + '</span>' : '') + '</div>';
+  }).join('');
+  return '<div class="vc-wrap" data-chips="' + esc(items.map(i => i.v).join('|')) + '" '
+       + 'data-marks="' + items.map(i => (o.ask ? '' : (i.mk || ''))).join('|') + '" '
+       + 'data-ask="' + (o.ask ? 1 : 0) + '">'
+       + '<div class="vc-row">' + body + '</div>'
+       + (o.note ? '<div class="rl-note">' + esc(o.note) + '</div>' : '') + '</div>';
+}
+
+// ─────────────────────────────────────────────────────────────
+// roundDial — 어림 카드
+//   o.n : 어림하기 전의 수(문자열로 준다 — 0.758 처럼 앞자리 0 을 살려야 한다)
+//   o.method : '올림'|'버림'|'반올림' · o.place : '십'·'백'·'소수 첫째' …
+//   o.result : 어림한 결과(문자열) · o.ask : 결과를 ? 로 감춘다
+//   o.bad : 잘못 어림한 장면(오개념 시연) — result 가 일부러 틀린 값이다
+//   구하려는 자리는 밑줄+진하게, 그 아래 자리는 회색으로 그린다.
+//   data-round="n|method|place|result|bad"
+function roundDial(o){
+  o = o || {};
+  const n = String(o.n), method = o.method, place = o.place;
+  if (!(place in RD_PLACE)) throw new Error('roundDial: 모르는 자리 ' + place);
+  if (['올림','버림','반올림'].indexOf(method) < 0) throw new Error('roundDial: 모르는 어림 방법');
+  const pe = RD_PLACE[place];
+  const parts = _rdSplit(n), ip = parts[0], dp = parts[1];
+  if (pe >= ip.length) throw new Error('roundDial: 구하려는 자리가 수보다 크다');
+  if (pe < 0 && -pe > dp.length) throw new Error('roundDial: 구하려는 소수 자리가 수보다 아래다');
+  let num = '';
+  for (let i = 0; i < ip.length; i++){
+    const e = ip.length - 1 - i;
+    const cls = (e === pe) ? 'tgt' : (e < pe ? 'low' : '');
+    num += '<span class="rd-d ' + cls + '" data-e="' + e + '">' + ip[i] + '</span>';
+  }
+  if (dp){
+    num += '<span class="rd-d ' + (pe < 0 ? 'low' : 'low') + '" data-e="dot">.</span>';
+    for (let i = 0; i < dp.length; i++){
+      const e = -(i + 1);
+      const cls = (e === pe) ? 'tgt' : (e < pe ? 'low' : '');
+      num += '<span class="rd-d ' + cls + '" data-e="' + e + '">' + dp[i] + '</span>';
+    }
+  }
+  const res = o.ask ? '?' : String(o.result);
+  return '<div class="rd-card' + (o.bad ? ' bad' : '') + '" '
+       + 'data-round="' + esc(n) + '|' + esc(method) + '|' + esc(place) + '|'
+       + esc(o.ask ? '' : String(o.result)) + '|' + (o.bad ? 1 : 0) + '">'
+       + '<span class="rd-lead">' + esc(method + '하여 ' + place + '의 자리까지') + '</span>'
+       + '<span class="rd-num">' + num + '</span>'
+       + '<span class="rd-ar">→</span>'
+       + '<span class="rd-res' + (o.ask ? ' ask' : '') + '">' + esc(res) + '</span></div>';
+}
+
+// dialRow — 어림 카드 여러 장
+function dialRow(items, o){
+  o = o || {};
+  return '<div class="rd-wrap">' + items.map(roundDial).join('')
+       + (o.note ? '<div class="rl-note">' + esc(o.note) + '</div>' : '') + '</div>';
+}
+
+// ─────────────────────────────────────────────────────────────
+// numLineZoom — 어림 전후를 수직선에서 견줌
+//   o.from, o.to, o.step : 큰 눈금 · o.at : 표시할 수 · o.mid : 한가운데 눈금(점선)
+//   o.pick : 골라야 하는 눈금 값 · o.ask : pick 을 감춘다
+//   🔴 o.mode : 이 판이 보이는 규칙 — 'up'(올림·모자라면 안 됨) · 'down'(버림·남는 것을 못 씀)
+//      · 'near'(반올림·가까운 쪽). 기본은 'near'.
+//      성격이 다른 세 장면을 한 부품이 그리므로 **부품이 스스로 갈래를 밝힌다**
+//      (6-2 U5 노하우 ⑧) — 하니스가 갈래마다 다른 잣대를 댄다.
+//   data-zoom="from,to,step,at,pick,mode"
+function numLineZoom(o){
+  o = o || {};
+  const from = o.from, to = o.to, step = o.step || (to - from);
+  if (!(to > from)) throw new Error('numLineZoom: from < to');
+  if ((to - from) % step !== 0) throw new Error('numLineZoom: 눈금이 고르게 떨어지지 않는다');
+  if (!(o.at > from && o.at < to)) throw new Error('numLineZoom: at 이 눈금 사이에 있어야 한다');
+  const W = 700, X0 = 66, X1 = 634, Y = 92;
+  const px = v => X0 + (X1 - X0) * (v - from) / (to - from);
+  let g = '';
+  g += '<line x1="' + X0 + '" y1="' + Y + '" x2="' + X1 + '" y2="' + Y + '" stroke="var(--ink)" stroke-width="3"/>';
+  if (o.mid !== undefined && o.mid !== null){
+    g += '<line x1="' + px(o.mid) + '" y1="' + (Y - 16) + '" x2="' + px(o.mid) + '" y2="' + (Y + 16) + '" '
+       + 'stroke="var(--ink-soft)" stroke-width="3" stroke-dasharray="6 5"/>';
+    g += '<text class="nz-mid" data-v="' + o.mid + '" x="' + px(o.mid) + '" y="' + (Y + 40) + '" font-size="19" fill="var(--ink-soft)" text-anchor="middle">' + esc(o.mid) + '</text>';
+  }
+  for (let v = from; v <= to; v += step){
+    const x = px(v), on = (!o.ask && o.pick === v);
+    g += '<line x1="' + x + '" y1="' + (Y - 14) + '" x2="' + x + '" y2="' + (Y + 14) + '" stroke="var(--ink)" stroke-width="3"/>';
+    g += '<text class="' + (on ? 'nz-pick' : 'nz-t') + '" data-v="' + v + '" x="' + x + '" y="' + (Y + 42) + '" '
+       + 'font-size="' + (on ? 25 : 22) + '" fill="' + (on ? 'var(--teal-deep)' : 'var(--ink)') + '" text-anchor="middle">' + esc(v) + '</text>';
+  }
+  const ax = px(o.at);
+  g += '<g class="nz-at" data-v="' + o.at + '">'
+     + '<path d="M' + ax + ' ' + (Y - 6) + ' L' + (ax - 11) + ' ' + (Y - 26) + ' L' + (ax + 11) + ' ' + (Y - 26) + ' Z" fill="var(--emph)"/>'
+     + '<text x="' + ax + '" y="' + (Y - 34) + '" font-size="24" fill="var(--emph)" text-anchor="middle">' + esc(o.at) + '</text></g>';
+  const mode = o.mode || 'near';
+  if (['up','down','near'].indexOf(mode) < 0) throw new Error('numLineZoom: 모르는 갈래 ' + mode);
+  return '<div class="nz-wrap" data-zoom="' + from + ',' + to + ',' + step + ',' + o.at + ','
+       + (o.ask ? '' : (o.pick === undefined || o.pick === null ? '' : o.pick)) + ',' + mode + '">'
+       + '<svg class="rl-svg" viewBox="0 0 ' + W + ' ' + (Y + 56) + '" xmlns="http://www.w3.org/2000/svg">' + g + '</svg>'
+       + (o.cap ? '<div class="rl-cap">' + esc(o.cap) + '</div>' : '')
+       + (o.note ? '<div class="rl-note">' + esc(o.note) + '</div>' : '') + '</div>';
+}
+
+// ─────────────────────────────────────────────────────────────
+// rangeTable — 범위 표 (체감 온도 단계·요금·감기약 용량·등급)
+//   o.head = ['단계','체감 온도 범위'] · rows = [[..],[..]]
+//   o.hi = 굵게 칠할 줄 번호(0부터) · o.ask = [행,열] 한 칸을 ? 로
+//   data-rtable = "a|b;c|d"  (ask 칸은 ? 로 신고)
+function rangeTable(rows, o){
+  o = o || {};
+  const ask = o.ask || null;
+  const cells = rows.map((r, ri) => r.map((c, ci) =>
+    (ask && ask[0] === ri && ask[1] === ci) ? '?' : String(c)));
+  const head = (o.head || []).map(h => '<th>' + esc(h) + '</th>').join('');
+  const body = cells.map((r, ri) =>
+    '<tr class="' + (o.hi === ri ? 'hi' : '') + '">' + r.map((c, ci) =>
+      '<td class="' + (c === '?' ? 'ask' : '') + '">' + esc(c) + '</td>').join('') + '</tr>').join('');
+  return '<div class="rt-wrap" data-rtable="' + esc(cells.map(r => r.join('|')).join(';')) + '">'
+       + '<table class="rt-tb">' + (head ? '<thead><tr>' + head + '</tr></thead>' : '')
+       + '<tbody>' + body + '</tbody></table>'
+       + (o.note ? '<div class="rl-note">' + esc(o.note) + '</div>' : '') + '</div>';
+}
+
+// ─────────────────────────────────────────────────────────────
+// estRow — 어림셈 표 (l09 해결하는 수학)
+//   rows = [{name, price, est, cnt, sum}]  price=실제 단위당 가격 · est=어림한 값
+//   o.total : 어림셈한 합 · o.ask : 합을 ? 로
+//   data-est="name|price|est|cnt|sum" (줄마다) · data-total
+function estRow(rows, o){
+  o = o || {};
+  const body = rows.map(r =>
+    '<tr data-est="' + esc(r.name) + '|' + r.price + '|' + r.est + '|' + r.cnt + '|' + r.sum + '">'
+    + '<td class="kor">' + esc(r.name) + '</td><td>' + r.price + '</td><td>' + r.est + '</td>'
+    + '<td>' + r.cnt + '</td><td>' + r.sum + '</td></tr>').join('');
+  const tot = o.ask ? '?' : String(o.total);
+  return '<div class="es-wrap" data-total="' + (o.ask ? '' : o.total) + '">'
+       + '<table class="es-tb"><thead><tr>'
+       + '<th>재료</th><th>단위당 가격</th><th>어림한 가격</th><th>구입 수량</th><th>어림셈</th>'
+       + '</tr></thead><tbody>' + body + '</tbody></table>'
+       + '<div class="es-total">어림셈한 구입 비용의 합 · 약 ' + esc(tot) + ' 원</div>'
+       + (o.note ? '<div class="rl-note">' + esc(o.note) + '</div>' : '') + '</div>';
+}
+
+(function renderModels(){
+  document.getElementById('m-i2').innerHTML =
+    rangeRow([{from:2,to:12,lo:5,loInc:true,cap:'5 이상인 수'},{from:2,to:12,hi:10,hiInc:true,cap:'10 이하인 수'}]);
+  document.getElementById('m-e1').innerHTML =
+    rangeLine({from:4,to:11,lo:5,loInc:true,hi:10,hiInc:true,cap:'5 이상 10 이하인 수'});
+  document.getElementById('m-e2').innerHTML =
+    rangeRow([{from:4,to:11,lo:5,loInc:true,hi:10,hiInc:false,cap:'5 이상 10 미만인 수'},{from:4,to:11,lo:5,loInc:false,hi:10,hiInc:true,cap:'5 초과 10 이하인 수'},{from:4,to:11,lo:5,loInc:false,hi:10,hiInc:false,cap:'5 초과 10 미만인 수'}]);
+  document.getElementById('m-e3').innerHTML =
+    rangeTable([['관심','29 °C 이상 31 °C 미만'],['주의','31 °C 이상 34 °C 미만'],['경고','34 °C 이상 37 °C 미만'],['위험','37 °C 이상']],{head:['단계','체감 온도 범위'],hi:2});
+  document.getElementById('m-e4').innerHTML =
+    rangeLine({from:28,to:38,lo:31,loInc:true,hi:34,hiInc:false,cap:'주의 단계 — 31 °C 이상 34 °C 미만'});
+  document.getElementById('m-q8').innerHTML =
+    rangeTable([['관심','29 °C 이상 31 °C 미만'],['주의','31 °C 이상 34 °C 미만'],['경고','?'],['위험','37 °C 이상']],{head:['단계','체감 온도 범위'],ask:[2,1]});
+  document.getElementById('m-q9').innerHTML =
+    rangeTable([['관심','29 °C 이상 31 °C 미만'],['주의','31 °C 이상 34 °C 미만'],['경고','34 °C 이상 37 °C 미만'],['위험','37 °C 이상']],{head:['단계','체감 온도 범위']});
+  document.getElementById('m-q10').innerHTML =
+    rangeLine({from:4,to:11,lo:5,loInc:true,hi:10,hiInc:true,ask:true});
+  document.getElementById('m-q11').innerHTML =
+    rangeLine({from:4,to:11,lo:5,loInc:false,hi:10,hiInc:true,ask:true});
+  document.getElementById('m-q12').innerHTML =
+    rangeTable([['5 kg 이하','5000원'],['5 kg 초과 10 kg 이하','8000원'],['10 kg 초과 20 kg 이하','10000원'],['20 kg 초과 30 kg 이하','14000원']],{head:['무게','요금']});
+  document.getElementById('m-q13').innerHTML =
+    rangeTable([['2세 이상 3세 미만','3.75 mL'],['3세 이상 7세 미만','5 mL'],['7세 이상 11세 미만','7.5 mL'],['11세 이상 15세 미만','10 mL'],['15세 이상','15 mL']],{head:['나이','용량']});
+  document.getElementById('m-q14').innerHTML =
+    rangeTable([['2세 이상 3세 미만','3.75 mL'],['3세 이상 7세 미만','5 mL'],['7세 이상 11세 미만','7.5 mL'],['11세 이상 15세 미만','10 mL'],['15세 이상','15 mL']],{head:['나이','용량']});
+  document.getElementById('m-q15').innerHTML =
+    rangeTable([['1등급','59회 초과'],['2등급','35회 초과 59회 이하'],['3등급','22회 초과 35회 이하'],['4등급','6회 초과 22회 이하'],['5등급','6회 이하']],{head:['등급','횟수'],note:'기록 — 가희 37회 · 성윤 61회 · 지아 35회 · 나리 59회 · 유나 41회'});
+})();
+function setupPad(qid, correct, padId, displayId, fbId, doneMsg, maxLen) {
+  maxLen = maxLen || 6;
+  const pad = document.getElementById(padId);
+  const display = document.getElementById(displayId);
+  const fb = document.getElementById(fbId);
+  let buf = '';
+  const keys = ['1','2','3','4','5','6','7','8','9','0'];
+  keys.forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'q-key'; b.textContent = k;
+    b.addEventListener('click', () => {
+      const st = getQState(qid); if (st.solved) return;
+      if (buf.length < maxLen) { buf += k; display.textContent = buf; }
+    });
+    pad.appendChild(b);
+  });
+  const del = document.createElement('button');
+  del.className = 'q-key fn'; del.textContent = '지움';
+  del.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    buf = buf.slice(0, -1); display.textContent = buf || '?';
+  });
+  pad.appendChild(del);
+  const ok = document.createElement('button');
+  ok.className = 'q-key fn'; ok.textContent = '확인'; ok.style.gridColumn = 'span 4';
+  ok.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    st.attempts++;
+    if (parseInt(buf, 10) === correct) {
+      st.solved = true;
+      const earn = pointsForQ(qid); addScore(earn);
+      fb.classList.remove('wrong');
+      fb.textContent = (doneMsg || '정답이에요!') + ' +' + earn + '점';
+      updateUI();
+    } else {
+      st.wrongCount++;
+      fb.classList.add('wrong'); fb.textContent = '다시 계산해 보자';
+    }
+  });
+  pad.appendChild(ok);
+}
+
+function setupMcq(qid, doneMsg){
+  document.querySelectorAll('#'+qid+'-opts .mcq-opt').forEach(o=>{
+    o.addEventListener('click', ()=>{
+      const st=getQState(qid); if(st.solved) return;
+      st.attempts++;
+      const fb=document.getElementById(qid+'-fb');
+      if(o.dataset.correct==='1'){
+        st.solved=true; o.classList.add('correct');
+        const earn=pointsForQ(qid); addScore(earn);
+        fb.classList.remove('wrong'); fb.textContent=(doneMsg||'정답이에요!')+' +'+earn+'점';
+        updateUI();
+      } else {
+        st.wrongCount++; o.classList.add('wrong');
+        fb.classList.add('wrong'); fb.textContent='다시 골라 보세요';
+        setTimeout(()=>o.classList.remove('wrong'),500);
+      }
+    });
+  });
+}
+
+setupMcq('q8','경고 단계는 34 °C 이상 37 °C 미만이다.');
+setupMcq('q9','31 °C는 31 °C 이상 34 °C 미만이므로 주의 단계다.');
+setupPad('q10', 6, 'q10-pad','q10-display','q10-fb','5부터 10까지 6개다.', 6);
+setupMcq('q11','5는 포함하지 않고 10은 포함하므로 5 초과 10 이하인 수다.');
+setupPad('q12', 10000, 'q12-pad','q12-display','q12-fb','20 kg은 10 kg 초과 20 kg 이하이므로 10000원이다.', 6);
+setupMcq('q13','8세는 7세 이상 11세 미만이므로 7.5 mL다.');
+setupPad('q14', 10, 'q14-pad','q14-display','q14-fb','11세는 11세 이상 15세 미만이므로 10 mL다.', 6);
+setupMcq('q15','가희는 2등급이다. 59회인 나리와 41회인 유나가 같은 2등급이다.');
+
+
+// ───── 슬17 자기 평가 ─────
+document.querySelectorAll('.self-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.self-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('self-fb').textContent = '응답이 기록됐어요. 다음 차시에서 만나요!';
+  });
+});
+
+// ───── 진도 복원 ─────
+(function restore() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data.cur != null) cur = Math.min(data.cur, TOTAL - 1);
+    if (data.score != null) score = data.score;
+    document.getElementById('score').textContent = '⭐ ' + score;
+  } catch(e) {}
+})();
+
+(function buildDots(){ const w=document.getElementById('dots'); for(let i=0;i<TOTAL;i++){ const d=document.createElement('div'); d.className='ka-dot'; d.onclick=()=>{ cur=i; saveProgress(false); updateUI(); }; w.appendChild(d); } })();
+
+updateUI();
+</script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+<script src="/kedu_fit.js"></script>
+</body>
+</html>
