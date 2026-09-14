@@ -1,5 +1,5 @@
 """케이히스토리 표면 텍스처 생성기 — 사진 없이 타일링 PBR(albedo·normal·roughness)을 만든다.
-python3 kworld/tools/gen_textures.py  → kworld/tex/<name>_{albedo.jpg,normal.png,rough.jpg}
+python3 kworld/tools/gen_textures.py  → kworld/tex/<name>_{albedo.jpg,normal.jpg,rough.jpg} (스캔 텍스처가 없을 때의 대체품; 현재 tex/ 는 Poly Haven CC0 스캔)
 """
 import numpy as np, os
 from PIL import Image
@@ -52,7 +52,7 @@ def save(name, albedo, height, rough, hstrength):
     os.makedirs(OUT, exist_ok=True)
     Image.fromarray((np.clip(albedo, 0, 1) * 255).astype(np.uint8)).save(f'{OUT}/{name}_albedo.jpg', quality=86, optimize=True)
     nm = normal_from_height(height, hstrength)
-    Image.fromarray((np.clip(nm, 0, 1) * 255).astype(np.uint8)).resize((N // 2, N // 2), Image.LANCZOS).save(f'{OUT}/{name}_normal.png', optimize=True)
+    Image.fromarray((np.clip(nm, 0, 1) * 255).astype(np.uint8)).resize((N // 2, N // 2), Image.LANCZOS).save(f'{OUT}/{name}_normal.jpg', quality=93)
     Image.fromarray((np.clip(rough, 0, 1) * 255).astype(np.uint8)).resize((N // 2, N // 2), Image.LANCZOS).save(f'{OUT}/{name}_rough.jpg', quality=80)
     print(name, 'ok')
 

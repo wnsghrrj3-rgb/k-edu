@@ -140,7 +140,7 @@ const _texCache = new Map();
 function loadSet(name, tile) {
   const key = name + ':' + tile; if (_texCache.has(key)) return _texCache.get(key);
   const L = new THREE.TextureLoader(); const mk = (f, srgb) => { const t = L.load(`/kworld/tex/${name}_${f}`); t.wrapS = t.wrapT = THREE.RepeatWrapping; if (srgb) t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; };
-  const set = { map: mk('albedo.jpg', true), normalMap: mk('normal.png'), roughnessMap: mk('rough.jpg'), tile };
+  const set = { map: mk('albedo.jpg', true), normalMap: mk('normal.jpg'), roughnessMap: mk('rough.jpg'), tile };
   _texCache.set(key, set); return set;
 }
 export function boxProjectUV(geo, tile) {
