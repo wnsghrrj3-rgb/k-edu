@@ -64,6 +64,6 @@ g.tick(0.01); ok(g._mission.includes('시간의 문'), '미션 14');
 // 6) 완주
 use('gate_1'); ok(panel && panel.h.includes(g.check.intro), '문 안내'); g.runCheck(); ok(g.results && g.results.length === 3, '확인 3');
 ok(g._mission.includes('청동기 완주'), '완주'); ok(panel.h.includes('반달돌칼') && panel.h.includes('비파형동검'), '역사 가방 2');
-ok(panel.b[0].label.includes('준비 중'), '고조선 준비 중');
+ok(panel.b[0].label === '고조선로 가기', '고조선 문 열림');
 g.hunger = 10; g.tick(0.1); ok(g.p.speedMul < 1, '배고픔');
 console.log(`bronze loop: ${pass} pass / ${fail} fail`); process.exit(fail ? 1 : 0);

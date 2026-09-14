@@ -184,7 +184,7 @@ export class Game {
     this.p.enabled = false;
     const done = () => { this.ui.close(); this.p.enabled = true; this.flag(line.flag); if (line.why) setTimeout(() => this.showWhy(line.why), 600); };
     if (line.choices) { // 선택형 대사(딜레마) — 정답 없음, 고른 것은 깃발로만 남는다
-      this.ui.open(`<div class="npc"><b>${npc.name}</b><p>${line.text}</p></div>`, line.choices.map((c) => ({ label: c.label, primary: true, onClick: () => { this.ui.close(); this.p.enabled = true; this.flag(line.flag); this.flag(c.flag); if (c.say) this.ui.say(c.say, 5000); } })), 'npcpanel');
+      this.ui.open(`<div class="npc"><b>${npc.name}</b><p>${line.text}</p></div>`, line.choices.map((c) => ({ label: c.label, primary: true, onClick: () => { this.ui.close(); this.p.enabled = true; this.flag(line.flag); this.flag(c.flag); if (c.say) this.ui.say(c.say, 5000); const w = c.why || line.why; if (w) setTimeout(() => this.showWhy(w), 1400); } })), 'npcpanel');
       return;
     }
     this.ui.npcLine(npc.name, line.text, done);
