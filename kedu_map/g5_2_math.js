@@ -14,104 +14,104 @@ window.KEDU_MAP["g5_2_math"] = {
    "kind": "unit",
    "lessons": [
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u1_l01",
+     "lessonId": "g5_2_math_u1_l01",
      "n": "1",
      "title": "수의 범위와 어림하기를 만나 보자",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/1단원_수의범위와어림하기/g5_math_u1_l01_수의범위와어림하기를만나보자.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u1_l02",
+     "lessonId": "g5_2_math_u1_l02",
      "n": "2",
      "title": "이상과 이하를 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/1단원_수의범위와어림하기/g5_math_u1_l02_이상과이하를알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u1_l03",
+     "lessonId": "g5_2_math_u1_l03",
      "n": "3",
      "title": "초과와 미만을 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/1단원_수의범위와어림하기/g5_math_u1_l03_초과와미만을알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u1_l04",
+     "lessonId": "g5_2_math_u1_l04",
      "n": "4",
      "title": "수의 범위를 활용해요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/1단원_수의범위와어림하기/g5_math_u1_l04_수의범위를활용해요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u1_l05",
+     "lessonId": "g5_2_math_u1_l05",
      "n": "5",
      "title": "올림을 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/1단원_수의범위와어림하기/g5_math_u1_l05_올림을알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u1_l06",
+     "lessonId": "g5_2_math_u1_l06",
      "n": "6",
      "title": "버림을 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/1단원_수의범위와어림하기/g5_math_u1_l06_버림을알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u1_l07",
+     "lessonId": "g5_2_math_u1_l07",
      "n": "7",
      "title": "반올림을 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/1단원_수의범위와어림하기/g5_math_u1_l07_반올림을알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u1_l08",
+     "lessonId": "g5_2_math_u1_l08",
      "n": "8",
      "title": "올림, 버림, 반올림을 활용해요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/1단원_수의범위와어림하기/g5_math_u1_l08_올림버림반올림을활용해요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u1_l09",
+     "lessonId": "g5_2_math_u1_l09",
      "n": "9",
      "title": "냠냠 재료 구입 비용 예상하기",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/1단원_수의범위와어림하기/g5_math_u1_l09_냠냠재료구입비용예상하기.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u1_l10",
+     "lessonId": "g5_2_math_u1_l10",
      "n": "10",
      "title": "스스로 마무리해요 (단원 평가)",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/1단원_수의범위와어림하기/g5_math_u1_l10_스스로마무리해요.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   },
