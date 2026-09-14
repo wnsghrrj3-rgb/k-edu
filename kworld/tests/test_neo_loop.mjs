@@ -59,6 +59,6 @@ g.tick(0.01); ok(g._mission.includes('시간의 문'), '미션 12');
 // 7) 완주
 use('gate_1'); ok(panel && panel.h.includes(g.check.intro), '문 안내'); g.runCheck(); ok(g.results && g.results.length === 3, '확인 3');
 ok(g._mission.includes('신석기 완주'), '완주'); ok(panel.h.includes('돌괭이') && panel.h.includes('빗살무늬토기') && panel.h.includes('조를 담은 토기'), '역사 가방 3');
-ok(panel.b[0].label.includes('준비 중'), '청동기 준비 중');
+ok(panel.b[0].label === '청동기로 가기', '청동기로 실제 이동');
 g.hunger = 10; g.tick(0.1); ok(g.p.speedMul < 1, '배고픔');
 console.log(`neolithic loop: ${pass} pass / ${fail} fail`); process.exit(fail ? 1 : 0);

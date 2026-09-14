@@ -1,0 +1,22 @@
+// 신석기 GLB 구조 검증 — 대상·구역·spawn·재질 이름(숨김용)이 json 과 맞는지 (WebGL 없이 GLB JSON 청크만)
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const base = new URL('../eras/bronze/', import.meta.url);
+const buffer = fs.readFileSync(new URL('bronze.glb', base));
+const data = JSON.parse(buffer.subarray(20, 20 + buffer.readUInt32LE(12)).toString());
+const items = JSON.parse(fs.readFileSync(new URL('items.json', base))); const world = JSON.parse(fs.readFileSync(new URL('world.json', base)));
+const names = data.nodes.map((n) => n.name || '');
+const ix = names.filter((n) => n.startsWith('ix_'));
+const types = new Set(ix.map((n) => n.split('_')[1]));
+for (const t of types) assert.ok(items.targets[t], `대상 ${t} 가 items.json 에 없음`);
+for (const t of Object.keys(items.targets)) assert.ok(types.has(t), `items.json 대상 ${t} 가 GLB 에 없음`);
+const areas = names.filter((n) => n.startsWith('area_')).map((n) => n.slice(5));
+for (const a of Object.keys(world.areas)) assert.ok(areas.includes(a), `구역 ${a} 없음`);
+assert.ok(names.includes('spawn'), 'spawn');
+const mats = new Set((data.materials || []).map((m) => m.name));
+for (const [t, def] of Object.entries(items.targets)) for (const m of def.hidden || []) assert.ok(mats.has(m), `숨김 재질 ${m} (${t}) 없음`);
+const gate = JSON.parse(fs.readFileSync(new URL('../eras/neolithic/world.json', import.meta.url))).gate; assert.equal(gate.next, world.id, '신석기 문 → 청동기');
+const count = (t) => ix.filter((n) => n.split('_')[1] === t).length;
+assert.ok(count('stone') >= 4 && count('paddy') >= 2 && count('copper') === 2 && count('tin') === 1 && count('rock') >= 3 && count('npc') === 5, '재료 수량(구리 2·주석 1 희귀)');
+const hideMats = new Set(); for (const def of Object.values(items.targets)) for (const st of Object.values(def.states || {})) for (const m of st.hide || st.reveal || []) hideMats.add(m); for (const m of hideMats) assert.ok(mats.has(m), `숨김/보임 재질 ${m} 없음`);
+console.log(`bronze.glb: ix ${ix.length} (${[...types].join(',')}) · areas ${areas.length} · ${(buffer.length / 1e6).toFixed(2)}MB`);

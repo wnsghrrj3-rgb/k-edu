@@ -130,10 +130,11 @@ export class Game {
     if (this.ui.isOpen()) return;
     const t = this.target; if (!t) { this.ui.say('가까이 가서 바라보면 할 수 있는 일이 보여.'); return; }
     const def = this.items.targets[t.type]; if (!def) return;
-    if (t.type === 'npc') { this.flag(def.flag); return this.talk(t); }
+    if (t.type === 'npc') { this.flag(def.flag); this.flag('talk:' + t.id); return this.talk(t); }
     if (t.type === 'gate') return this.enterGate();
     const rule = def.states ? def.states[t.state || 'unlit'] : def;
     if (rule.once && this.flags.has(rule.flag)) { this.ui.say(rule.say); return; }
+    if (rule.requiresFlags && !rule.requiresFlags.every((f) => this.flags.has(f))) { this.ui.say(rule.failNoFlag || rule.fail || '아직은 할 수 없어.'); return; }
     if (rule.requires && !this.has(rule.requires)) { this.ui.say(rule.failNoTool || rule.fail || '지금은 할 수 없어.'); return; }
     if (rule.consumes) { const need = {}; for (const c of rule.consumes) need[c] = (need[c] || 0) + 1;
       for (const [c, n] of Object.entries(need)) if (this.count(c) < n) { this.ui.say(rule['failNo' + c[0].toUpperCase() + c.slice(1)] || `${this.items.items[c].name}이(가) ${n > 1 ? n + '개 ' : ''}없어.`); return; } }
@@ -180,7 +181,13 @@ export class Game {
   talk(t) {
     const npc = this.npcs[t.id]; if (!npc) return;
     const line = npc.lines.find((l) => this.cond(l.if)) || npc.lines[npc.lines.length - 1];
-    this.p.enabled = false; this.ui.npcLine(npc.name, line.text, () => { this.ui.close(); this.p.enabled = true; });
+    this.p.enabled = false;
+    const done = () => { this.ui.close(); this.p.enabled = true; this.flag(line.flag); if (line.why) setTimeout(() => this.showWhy(line.why), 600); };
+    if (line.choices) { // 선택형 대사(딜레마) — 정답 없음, 고른 것은 깃발로만 남는다
+      this.ui.open(`<div class="npc"><b>${npc.name}</b><p>${line.text}</p></div>`, line.choices.map((c) => ({ label: c.label, primary: true, onClick: () => { this.ui.close(); this.p.enabled = true; this.flag(line.flag); this.flag(c.flag); if (c.say) this.ui.say(c.say, 5000); } })), 'npcpanel');
+      return;
+    }
+    this.ui.npcLine(npc.name, line.text, done);
   }
   showWhy(key) {
     const card = this.why[key]; if (!card || this.flags.has('why:' + key)) return;
@@ -189,6 +196,7 @@ export class Game {
   // ---------- 미션 ----------
   missionDone(m) {
     if (m.done) return this.flags.has(m.done);
+    if (m.all) return m.all.every((f) => this.flags.has(f));
     if (m.count) return this.count(m.count[0]) >= m.count[1] || (m.or && this.flags.has(m.or));
     return false;
   }
