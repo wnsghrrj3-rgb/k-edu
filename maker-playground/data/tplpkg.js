@@ -90,7 +90,8 @@ window.MK_TPLPKG = (() => {
     if (o.role === 'photo-slot' || o.type === 'image') {
       const el = { kind: 'image', ...base, role: 'photo-slot', fill: o.fill || '#EEEEEE', fit: o.fit || 'cover' };
       if (o.shape === 'ellipse') el.radius = 999;
-      if (o.src) el.src = o.src;
+      /* 기본 사진: 패키지 상대경로 → 패키지 폴더 절대 주소(/maker/ 와 /maker-playground/ 양쪽에서 같은 주소), data:·http 는 그대로 */
+      if (o.src) el.src = /^(data:|https?:|\/)/.test(o.src) ? o.src : (ctx.dir ? BASE + ctx.dir + '/' + o.src : o.src);
       return el;
     }
     if (o.type === 'vector') {
@@ -118,8 +119,10 @@ window.MK_TPLPKG = (() => {
     /* fallbackFor 가 같은 조각 = 그룹 하나 (슬롯 id 기준, 패키지 안에서 고정 이름) */
     const groups = {}, grpIds = {};
     const grpOf = (slot) => { if (!grpIds[slot]) { const g = 'g-' + slug(pkg.templateId || 'pkg') + '-' + slug(slot); grpIds[slot] = g; const so = objs.find((o) => o.id === slot); groups[g] = { name: '풍경 · ' + ((so && so.name) || slot).replace(/ ·.*$/, ''), aid: slot, kind: 'asset', fallbackFor: slot }; } return grpIds[slot]; };
-    const ctx = { grpOf, fontMap: opts.fontMap };
+    const ctx = { grpOf, fontMap: opts.fontMap, dir: opts.dir };
     const elements = objs.map((o) => toElement(o, W, H, ctx));
+    /* 계약: 슬롯에 사진(src)이 있으면 그 슬롯을 대신하던 풍경 조각은 보존한 채 숨긴다(레이어 👁 로 복구) */
+    elements.forEach((e) => { if (e.role === 'photo-slot' && e.src) hideFallbacks({ elements }, e); });
     /* 배경 = 캔버스 전체를 덮는 첫 단색 rect 가 있으면 그 색 (요소는 그대로 남긴다 — 편집 가능) */
     const bgObj = objs.find((o) => o.type === 'shape' && o.x <= 0 && o.y <= 0 && o.width >= W && o.height >= H && solid(o.fill));
     const scene = { id: opts.sceneId || 's1', name: opts.sceneName || pkg.name || '장면 1', width: W, height: H, duration: 5,
@@ -140,7 +143,7 @@ window.MK_TPLPKG = (() => {
       contentType: side.contentType || 'poster', category: side.category || '포스터', style: side.style || '모던', styleEn: side.styleEn || 'Premium',
       ratio, difficulty: side.difficulty || '보통', targetUser: side.targetUser || 'teacher', gradeRange: side.gradeRange || '전학년',
       uses: side.uses || '', tags, recent: false, pkg: { dir: opts.dir, schema: pkg.schema, version: pkg.version || meta.version || '', preview: opts.dir ? BASE + opts.dir + '/' + (meta.preview || 'preview.png') : null },
-      scenes: [toScene(pkg, { fontMap: side.fontMap })],
+      scenes: [toScene(pkg, { fontMap: side.fontMap, dir: opts.dir })],
     };
     const ov = { styleId: side.styleId || 'st-modern', animationId: 'an-none', assetIds: [],
       ai: { recommended: side.recommended !== false, tags, hints: side.hints || [] } };

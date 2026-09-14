@@ -28,7 +28,8 @@ await card.click(); await wait(600); await shot('preview');
 const useBtn = await pg.evaluateHandle(() => [...document.querySelectorAll('#mkModal button, .mk-modal button, button')].find((b) => /이 템플릿|사용|만들기 시작/.test(b.textContent) && b.closest('#mkModal, .mk-modal, [class*="modal"]')));
 if (useBtn && useBtn.asElement()) await useBtn.asElement().click(); else await pg.evaluate((id) => window.MK_TPL.load(id), ID);
 await wait(1200);
-let s = await st(); ok(s.screen === 'workspace' && s.n === 28, `② 캔버스 삽입 — workspace 도달, 요소 ${s.n}`); await shot('inserted');
+let s = await st(); ok(s.screen === 'workspace' && s.n === 28 && s.hidden === 15 && s.els.find((e) => e.a === 'photo-placeholder').src, `② 캔버스 삽입 — workspace 도달, 요소 ${s.n} · 기본 사진 있음 · 풍경 숨김 ${s.hidden}`); await shot('inserted');
+await pg.evaluate(() => { const S = window.MK_WS.state, P = window.MK_PROJ.get(S.projectId); const sc = P.doc.scenes[S.sceneIdx]; window.MK_TPLPKG.showFallbacks(sc, sc.elements.find((e) => e.aid === 'photo-placeholder')); window.PG.render(); }); await wait(300);
 /* 3. 위치·비율 — 실제 DOM 상자 vs 문서 % */
 const cv = await rectOf('.ws-canvas'); const t0 = await rectOf(`[data-ws-el="${await idxOf('title')}"]`), p0 = await rectOf(`[data-ws-el="${await idxOf('photo-placeholder')}"]`);
 const ar = cv.w / cv.h; ok(Math.abs(ar - 3) < 0.03 && Math.abs((t0.x - cv.x) / cv.w * 100 - 4.53) < 0.5 && Math.abs((p0.x - cv.x) / cv.w * 100 - 61.17) < 0.5 && Math.abs(p0.w / cv.w * 100 - 34) < 0.5, `③ 비율 3:1(${ar.toFixed(2)}) · 제목 x ${((t0.x - cv.x) / cv.w * 100).toFixed(2)}% · 사진 x ${((p0.x - cv.x) / cv.w * 100).toFixed(2)}% w ${(p0.w / cv.w * 100).toFixed(2)}%`);
