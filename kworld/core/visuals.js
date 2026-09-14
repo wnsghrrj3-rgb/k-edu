@@ -134,3 +134,36 @@ export function makeGradePass() {
   });
   return pass;
 }
+
+/** 표면 텍스처: GLB 재질 이름 → tex/<set> (albedo·normal·rough). UV 는 월드 좌표 상자 투영으로 새로 만든다(절차 GLB 는 UV 가 없다). */
+const _texCache = new Map();
+function loadSet(name, tile) {
+  const key = name + ':' + tile; if (_texCache.has(key)) return _texCache.get(key);
+  const L = new THREE.TextureLoader(); const mk = (f, srgb) => { const t = L.load(`/kworld/tex/${name}_${f}`); t.wrapS = t.wrapT = THREE.RepeatWrapping; if (srgb) t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; };
+  const set = { map: mk('albedo.jpg', true), normalMap: mk('normal.png'), roughnessMap: mk('rough.jpg'), tile };
+  _texCache.set(key, set); return set;
+}
+export function boxProjectUV(geo, tile) {
+  const p = geo.attributes.position, n = geo.attributes.normal; const uv = new Float32Array(p.count * 2);
+  for (let i = 0; i < p.count; i += 3) {
+    let ax = 0, ay = 0, az = 0; for (let k = 0; k < 3; k++) { ax += Math.abs(n.getX(i + k)); ay += Math.abs(n.getY(i + k)); az += Math.abs(n.getZ(i + k)); }
+    for (let k = 0; k < 3; k++) { const x = p.getX(i + k), y = p.getY(i + k), z = p.getZ(i + k); let u, v;
+      if (ay >= ax && ay >= az) { u = x; v = z; } else if (ax >= az) { u = z; v = y; } else { u = x; v = y; }
+      uv[(i + k) * 2] = u / tile; uv[(i + k) * 2 + 1] = v / tile; }
+  }
+  geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+}
+/** surfaces: { 재질이름: { set: 'rock', tile: 2.5, tint: 0.2 } } — tint 는 원래 색을 얼마나 남길지(0=텍스처 그대로) */
+export function applySurfaces(e, surfaces) {
+  e.scene.traverse((o) => {
+    if (!o.isMesh || !o.material?.name) return; const cfg = surfaces[o.material.name]; if (!cfg) return;
+    const m = o.material; if (m.userData.surfaced) return; m.userData.surfaced = true;
+    const s = loadSet(cfg.set, cfg.tile ?? 2.5);
+    m.map = s.map; m.normalMap = s.normalMap; m.roughnessMap = s.roughnessMap; m.roughness = 1; m.metalness = 0;
+    m.normalScale = new THREE.Vector2(cfg.normal ?? 0.9, cfg.normal ?? 0.9);
+    m.color.lerp(new THREE.Color(0xffffff), 1 - (cfg.tint ?? 0.25)); m.vertexColors = !!o.geometry.attributes.color; m.needsUpdate = true;
+    if (o.geometry.index) o.geometry = o.geometry.toNonIndexed();
+    if (!o.geometry.attributes.normal) o.geometry.computeVertexNormals();
+    boxProjectUV(o.geometry, cfg.tile ?? 2.5);
+  });
+}

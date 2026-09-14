@@ -7,6 +7,7 @@ Static Three.js history exploration game. Serve the repository root and open `/k
 `eras/paleo/landscape.js` creates the rock shelter, hide shelters, forest, meadow and river details after the original GLB loads. The GLB and height map remain the sources of mission targets and walking height. `core/engine.js` excludes the old cave, hills, trees, grass and hut poles when the era's `world.json` names a `landscape` module (`engine.skipDecor`); it retains terrain, paths and all `ix_*` interaction objects. Replacement trees avoid mission objects. Static props are batched by material; foliage and grass use instanced geometry and GPU wind.
 
 - `core/visuals.js`: procedural sky dome (sun, haze, drifting clouds), sunlit dust motes, water ripple, colour-grade pass. `?fx=0` disables; post-processing (bloom · grade · SMAA) is on by default for high-tier devices, `?post=0` off, `?ao=1` adds GTAO. `world.json` may set `skyLook: {zenith, horizon, haze, cloud}`.
+- Surface textures: `tools/gen_textures.py` writes tiling PBR sets to `tex/` (rock, dirt, grass, bark). `world.json` `surfaces` maps GLB material names to a set; `applySurfaces` box-projects world-space UVs so procedural GLBs need none. Paleo is the first era wired.
 - `core/avatar.js`: articulated student and guide; procedural walking animation.
 - `core/player.js`: first/third-person switch (`V`), following-camera obstacle checks and input reset on blur.
 - `core/fire.js`: flame planes and rising sparks, visible only after the existing fire mission succeeds.

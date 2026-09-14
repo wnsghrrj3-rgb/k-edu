@@ -5,7 +5,7 @@ import { Player } from './player.js';
 import { UI } from './ui.js';
 import { createFire } from './fire.js';
 import { bindMinimap } from './minimap.js';
-import { addSkyDome, addMotes, enhanceWater } from './visuals.js';
+import { addSkyDome, addMotes, enhanceWater, applySurfaces } from './visuals.js';
 
 const J = (u) => fetch(u).then((r) => r.json());
 
@@ -25,6 +25,7 @@ export class Game {
     this.e.skipDecor = !!this.world.landscape;   // 시대별 landscape.js 가 있을 때만 GLB 장식(나무·언덕)을 건너뜀
     await this.e.loadWorld(this.base + this.world.glb, this.world.eye);
     this.initTargets();
+    if (this.world.surfaces && new URLSearchParams(location.search).get('fx') !== '0') applySurfaces(this.e, this.world.surfaces);   // 표면 텍스처(landscape 보다 먼저 — 장식이 재질을 물려받는다)
     // 시대별 장식 코드는 world.json 이 가리킬 때만(코어는 시대 이름을 모른다)
     if (this.world.landscape) { const { buildLandscape } = await import(new URL(this.base + this.world.landscape, location.href).href); buildLandscape(this.e, this.quality()); }
     // 보이는 것: 절차 하늘·햇빛 먼지·물결. ?fx=0 이면 끔. 후처리(블룸·색보정·SMAA)는 고사양 기본, ?post=0 끔, ?ao=1 로 구석 어둠 추가
