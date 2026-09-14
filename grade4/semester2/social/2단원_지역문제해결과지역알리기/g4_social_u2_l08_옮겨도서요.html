@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<!--
+=========================================================================
+  사회 4-2 · 2단원 지역문제를 해결하고 지역을 알리는 노력
+  주제② 지역을 알리는 노력 · l08
+  「우리 지역의 자랑거리를 알리는 다양한 노력을 알아볼까요」
+  교과서 p.84~89 · 지도서 10~11차시(p.162~167) · [4사09-02]
+  수업 기법 = 모둠 토의 · 돌아가며 말하기
+=========================================================================
+
+  ■ 직접조작 = 놓은 것을 옮길 수 있고, 옮겨도 판이 무너지지 않는 판
+  ⭐ 2단원 앞 일곱 판에서 학생이 놓은 것은 놓은 그 자리에 굳었다.
+     l01은 판이 대신 옮겼고(학생이 옮긴 것이 아니다), l02는 세어 주고도 정해 주지 않았고,
+     l03은 접으면 원인이 사라졌고, l04는 가장 낮은 자리가 갈랐고, l05는 종이 한 장이 갈랐고,
+     l06은 판이 판정하지 않고 자리가 대신 말했고, l07은 놓은 것이 사라지고 줄만 남았다.
+     ★ 일곱 판 모두 「거두는 자리」와 「옮기는 자리」가 코드에 0이었다.
+  ⭐ 이번 판은 거기가 다르다 — 다 놓은 뒤에 한 방법을 골라 다른 갈래로 옮길 수 있다.
+     그리고 ★★ 옮겨도 네 갈래가 그대로 다 차 있다.
+     갈래마다 그 갈래에만 쓰이는 방법이 따로 있어서, 옮겨 간 자리도 옮겨 온 자리도 비지 않는다.
+  ⭐ 옮길 수 있는 방법은 둘뿐이다 — 「축제를 열어요」(네 갈래)와 「체험 프로그램을 운영해요」(두 갈래).
+     나머지 다섯은 설 수 있는 갈래가 하나뿐이라 옮길 곳이 없다.
+     ★ 옮길 수 있는지를 담는 상태도 상수도 코드에 없다 — alMoveCount 한 줄이 그때그때 센다.
+  ⭐ 그래서 ★ 완주 판이 하나가 아니다(축제 4 × 체험 프로그램 2 = 여덟 갈래)
+     — 여덟 모두 네 갈래가 다 차고, 어느 것도 틀리지 않았다.
+     근거 = 지도서 10~11차시 학습 내용 정리 원문 네 줄이 네 갈래 모두에서 「축제」를 든다.
+  ⭐ 「네 갈래가 다 찼는지」를 담는 상태가 코드에 아예 없다 — alFull 한 줄이 그때그때 센다.
+     AL_FIT 를 대괄호로 읽는 자리도 alFitOf 단 하나다.
+  ⭐ 어긋난 갈래에 놓으면 판이 그대로다. 안내는 「그 갈래에는 설 수 없어요」까지만이고
+     알맞은 갈래의 이름을 흘리지 않는다.
+
+  ■ 4단계
+   ① 알리는 방법 일곱을 네 갈래에 놓기(순서 자유 · 판정 있음 · 어긋나면 판 불변)
+   ② 옮겨 보기(일곱을 다 세워야 열린다 · 무판정 · 한 번 옮기면 다음 자리가 열린다 · ★ 옮겨도 네 갈래가 그대로 찬다)
+   ③ 판 읽기 3택(정답 자리 2)
+   ④ 마무리 3택(정답 자리 0 = 지도서 학습 내용 정리 원문)
+
+  ■ 가드 8종
+   ① 마무리 확정 후 네 처리기 전체 잠금  ② 무효 번호(Number.isInteger·범위)
+   ③ 이미 놓은 방법 다시 고르기 — 판 불변   ④ 고르기 전 놓기·옮기기 — 판 불변
+   ⑤ 설 수 없는 갈래 — 판 불변(알맞은 갈래 이름 0)
+   ⑥ 일곱을 다 놓기 전 옮기기·판 읽기 — 판 불변
+   ⑦ 옮길 곳이 하나뿐인 방법 고르기 · 이미 서 있는 갈래로 옮기기 — 판 불변
+   ⑧ 한 번도 옮겨 보기 전 판 읽기 · 판을 읽기 전 마무리 · 어긋난 답 — 판 불변
+
+  ■ 정직 4곳
+   ㉠ 판의 방법 일곱과 갈래별 사례는 교과서 84~87쪽·지도서 정리 원문에서 옮긴 자리다.
+   ㉡ 판은 어느 방법이 더 좋은지 가리지 않는다(순위 0).
+   ㉢ 우리 지역이 자랑거리를 알리려고 하는 노력을 실제로 조사해 정리하는 일은 교실 몫이다.
+   ㉣ 실제 누리집 주소·신문사·날짜·금액 0.
+
+  ■ 설계 원칙
+   · 12~13차시 침범 0(「알리는 활동」==1 차시 예고 · 홍보 포스터·안내 책자·가위·풀·색칠 도구 0)
+   · 14~16차시 침범 0(생각을 펼쳐요·생각 그물·교실 놀이·단원 평가 0)
+   · 주제① 재현 0(해결 방안·제안서·공익 광고·실천 결과 0 · 「지역문제」는 META 한 자리)
+   · 1단원 재현 0 · 3단원 침범 0(인문환경·「도시의 특징」 0 — 「자연환경」은 이 차시의 갈래 이름)
+   · 교사용 참고 자료 0(세병관·삼도 수군통제영·유네스코·한국민족문화대백과사전·합죽선 제작
+     공정·머드 성분·지도 꿀·학습 안내·활동지·평가 관점·평가 방법 전수)
+   · 네 자리 연도 0 · 비율 0 · 금액 0 · 실제 누리집 주소 0
+   · 정서 — 임진왜란·전쟁·일본군·무찌른·싸움·다쳤·사망·무서·죽었·목숨·위험 0
+     (통영의 자랑거리는 지도안 원문 「이순신 장군의 나라 사랑 정신」까지만 쓴다)
+   · 「틀렸」 0
+-->
+<html lang="ko">
+<head>
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>우리 지역의 자랑거리를 알리는 다양한 노력을 알아볼까요 · 사회 4-2</title>
+<meta name="kedu-lesson-id" content="g4_social_u2_l08_v1">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#B45309; --green-d:#92400E; --cyan:#0891B2;
+  --bg:#FFF7ED; --bub:#FFEDD5; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#F57F17; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes drawLine{to{transform:scaleX(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ka-lb{background:#F1F5F9;border:none;padding:7px 12px;border-radius:10px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;font-family:inherit;font-weight:700;color:#475569;flex-shrink:0;font-size:13px}
+.ka-lb svg{width:15px;height:15px}
+.ka-bar{flex:1;height:5px;background:var(--bg);border-radius:999px;overflow:hidden}
+.ka-bar>div{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:999px;transition:width .35s ease;width:6%}
+.ka-pg{color:var(--green);font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;flex-shrink:0}
+.ka-sc{background:var(--amber-bg);color:var(--amber);padding:4px 12px;border-radius:999px;display:flex;align-items:center;gap:5px;flex-shrink:0;font-weight:700}
+.ka-sc svg{width:14px;height:14px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px}
+.ka-sc-u{font-size:12px}
+
+/* 메인 */
+.ka-m{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow-y:auto}
+.ka-tags{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ka-bg{background:var(--amber-bg);color:var(--amber);padding:5px 14px;border-radius:30px;font-size:13px;
+  display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.ka-bg.s2{background:#E0F2FE;color:#0369A1}
+.ka-bg.s3{background:#EDE9FE;color:#6D28D9}
+.ka-bg.s4{background:#FCE7F3;color:#BE185D}
+.ka-bg.s5{background:#FFEDD5;color:var(--green)}
+.ka-bg svg{width:13px;height:13px}
+.ka-meta{font-size:13px;color:var(--muted)}
+.ka-t{font-size:clamp(20px,3.4vw,29px);margin-bottom:16px;line-height:1.4;color:var(--green);letter-spacing:-.3px;font-weight:700;animation:fadeUp .4s .15s ease both}
+.ka-bub{background:var(--bub);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);line-height:1.7;
+  margin-bottom:16px;border-left:4px solid var(--green);animation:fadeUp .4s .3s ease both}
+.ka-emph{position:relative;display:inline-block;font-weight:700;color:var(--green)}
+.ka-emph::after{content:'';position:absolute;bottom:2px;left:0;right:0;height:3px;background:var(--red);border-radius:2px;transform:scaleX(0);transform-origin:left;animation:drawLine .6s .6s ease forwards}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(16px,2.6vw,21px);font-weight:700;line-height:1.6;margin-bottom:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:640px}
+.opt{background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:13px 14px;font-size:clamp(14px,2.3vw,17px);
+  font-weight:500;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:var(--green);background:#FFEDD5;animation:pop .4s ease}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;font-size:clamp(14px,2.3vw,17px);line-height:1.6;text-align:center;animation:fadeUp .35s ease both;max-width:640px}
+.fb.ok{color:var(--green);font-weight:700}
+.hint{margin-top:12px;background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(13px,2.2vw,16px);
+  line-height:1.6;color:#0C4A6E;max-width:560px;animation:fadeUp .35s ease both}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:620px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFF;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:clamp(14px,2.3vw,17px);line-height:1.5}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(180,83,9,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+/* 조작 판 — 옮겨도 네 갈래가 그대로 차 있는 판 */
+.al-wrap{max-width:760px;width:100%;margin:0 auto}
+.al-head{background:#FFEDD5;color:#9A3412;font-weight:800;text-align:center;border-radius:10px;padding:7px 10px;
+  font-size:clamp(13px,2.1vw,16px);margin-bottom:8px;word-break:keep-all}
+.al-board{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.al-cell{border:2px solid #E2E8F0;border-radius:12px;background:#fff;padding:8px;display:flex;flex-direction:column;gap:6px;min-height:92px}
+.al-cell[data-open="1"]{border-color:#FDBA74;background:#FFFBF5}
+.al-kn{border:none;border-radius:9px;background:#F1F5F9;color:#475569;font-family:inherit;font-weight:800;
+  padding:6px 8px;cursor:pointer;font-size:clamp(12px,2vw,15px);word-break:keep-all}
+.al-cell[data-open="1"] .al-kn{background:#EA580C;color:#fff}
+.al-kn:hover{background:#FED7AA;color:#7C2D12}
+.al-ways{display:flex;flex-direction:column;gap:4px}
+.al-way{background:#FFF7ED;border-left:3px solid #EA580C;border-radius:7px;padding:5px 7px;
+  font-size:clamp(11px,1.95vw,14px);line-height:1.45;color:#7C2D12;font-weight:600;word-break:keep-all;animation:pop .3s ease both}
+.al-none{color:#94A3B8;font-size:clamp(11px,1.9vw,13px);padding:3px 2px;word-break:keep-all}
+.al-hold{margin-top:8px;border-radius:10px;padding:7px 11px;font-size:clamp(12px,2.05vw,15px);
+  background:#F1F5F9;color:#475569;font-weight:700;text-align:center;word-break:keep-all}
+.al-hold[data-hold="1"]{background:#E0F2FE;color:#0369A1}
+.al-pool{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.al-item{border:1.5px solid #CBD5E1;background:#F8FAFC;color:#334155;font-family:inherit;font-weight:600;
+  border-radius:10px;padding:8px 9px;cursor:pointer;text-align:left;line-height:1.45;
+  font-size:clamp(11px,1.95vw,14px);word-break:keep-all}
+.al-item:hover{border-color:#EA580C;background:#FFF7ED}
+.al-item[data-sel="1"]{border-color:#EA580C;background:#FFEDD5;color:#7C2D12}
+.al-item[data-put="1"]{background:#F1F5F9;color:#94A3B8;border-style:dashed}
+.al-tell{margin-top:8px;border-radius:12px;padding:9px 13px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;background:#F0F9FF;border-left:4px solid var(--cyan)}
+.al-ask{border:2px solid var(--line);border-radius:12px;padding:10px 14px;background:#FFFBF5;margin-top:9px;font-size:clamp(13px,2.2vw,16px);line-height:1.6}
+.al-opts{display:grid;grid-template-columns:1fr;gap:8px;margin-top:9px}
+.al-opt{background:#F8FAFC;border:2px solid var(--line);border-radius:11px;padding:10px 12px;font-family:inherit;
+  font-size:clamp(13px,2.2vw,16px);cursor:pointer;text-align:left;line-height:1.5;word-break:keep-all}
+.al-opt:hover{border-color:var(--green);background:var(--bub)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+  .al-board{grid-template-columns:1fr}
+  .al-pool{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#F57F17"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식, 사람 형상 대신 칸과 말풍선 ===== */
+const SVG = {
+  // [동기 유발] QR 코드를 찍으니 시청 누리집으로 연결된다
+  code:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFF7ED"/>
+    <rect x="20" y="24" width="44" height="44" rx="5" fill="#fff" stroke="#EA580C" stroke-width="2"/>
+    <rect x="26" y="30" width="12" height="12" rx="2" fill="#7C2D12"/><rect x="46" y="30" width="12" height="12" rx="2" fill="#7C2D12"/>
+    <rect x="26" y="50" width="12" height="12" rx="2" fill="#7C2D12"/><rect x="48" y="52" width="8" height="8" rx="2" fill="#FDBA74"/>
+    <path d="M 70 46 L 92 46" stroke="#EA580C" stroke-width="2.4" stroke-linecap="round"/>
+    <path d="M 92 46 L 86 42 M 92 46 L 86 50" stroke="#EA580C" stroke-width="2.4" stroke-linecap="round"/>
+    <rect x="98" y="30" width="48" height="32" rx="5" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.6"/>
+    <text x="122" y="44" font-size="6.2" fill="#7C2D12" text-anchor="middle" font-weight="800">시청 누리집</text>
+    <text x="122" y="55" font-size="6.2" fill="#7C2D12" text-anchor="middle" font-weight="800">으로 연결돼요</text>
+    <text x="80" y="88" font-size="7" fill="#9A3412" text-anchor="middle" font-weight="700">지역 소식을 알 수 있어요</text></svg>`,
+  // 네 갈래의 사례
+  four:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFF7ED"/>
+    <rect x="8" y="16" width="34" height="30" rx="5" fill="#FDBA74"/><text x="25" y="29" font-size="6" fill="#7C2D12" text-anchor="middle" font-weight="800">자연환경</text><text x="25" y="39" font-size="5.4" fill="#7C2D12" text-anchor="middle" font-weight="700">머드</text>
+    <rect x="46" y="16" width="34" height="30" rx="5" fill="#FDBA74"/><text x="63" y="29" font-size="6" fill="#7C2D12" text-anchor="middle" font-weight="800">역사</text><text x="63" y="39" font-size="5.4" fill="#7C2D12" text-anchor="middle" font-weight="700">나라 사랑</text>
+    <rect x="84" y="16" width="34" height="30" rx="5" fill="#FDBA74"/><text x="101" y="29" font-size="6" fill="#7C2D12" text-anchor="middle" font-weight="800">문화</text><text x="101" y="39" font-size="5.4" fill="#7C2D12" text-anchor="middle" font-weight="700">줄다리기</text>
+    <rect x="122" y="16" width="32" height="30" rx="5" fill="#FDBA74"/><text x="138" y="29" font-size="6" fill="#7C2D12" text-anchor="middle" font-weight="800">생산물</text><text x="138" y="39" font-size="5.4" fill="#7C2D12" text-anchor="middle" font-weight="700">쌀·인삼</text>
+    <rect x="20" y="58" width="120" height="20" rx="5" fill="#fff" stroke="#EA580C" stroke-width="1.6"/>
+    <text x="80" y="71" font-size="7" fill="#9A3412" text-anchor="middle" font-weight="800">알리는 노력을 해요</text></svg>`,
+  // 하나를 골라 갈래에 놓기
+  put:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFF7ED"/>
+    <rect x="12" y="58" width="62" height="20" rx="5" fill="#fff" stroke="#CBD5E1" stroke-width="1.5"/>
+    <text x="43" y="71" font-size="6.2" fill="#475569" text-anchor="middle" font-weight="700">알리는 방법</text>
+    <path d="M 78 66 L 104 42" stroke="#EA580C" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <path d="M 104 42 L 97 45 M 104 42 L 101 49" stroke="#EA580C" stroke-width="2.4" stroke-linecap="round"/>
+    <rect x="100" y="22" width="48" height="22" rx="5" fill="#FDBA74"/>
+    <text x="124" y="36" font-size="6.4" fill="#7C2D12" text-anchor="middle" font-weight="800">설 수 있는 갈래</text>
+    <text x="80" y="90" font-size="6.6" fill="#9A3412" text-anchor="middle" font-weight="700">일곱을 모두 세워 봐요</text></svg>`,
+  // 옮겨도 네 갈래가 그대로 찬다
+  move:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFF7ED"/>
+    <rect x="10" y="26" width="42" height="24" rx="5" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.6"/>
+    <text x="31" y="41" font-size="6" fill="#7C2D12" text-anchor="middle" font-weight="800">여기 있던 것</text>
+    <path d="M 58 38 L 96 38" stroke="#0891B2" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="4 3"/>
+    <path d="M 96 38 L 90 34 M 96 38 L 90 42" stroke="#0891B2" stroke-width="2.4" stroke-linecap="round"/>
+    <rect x="102" y="26" width="46" height="24" rx="5" fill="#E0F2FE" stroke="#0891B2" stroke-width="1.6"/>
+    <text x="125" y="41" font-size="6" fill="#0369A1" text-anchor="middle" font-weight="800">저기로 옮겨요</text>
+    <rect x="16" y="62" width="128" height="18" rx="5" fill="#fff" stroke="#EA580C" stroke-width="1.6"/>
+    <text x="80" y="74" font-size="6.6" fill="#9A3412" text-anchor="middle" font-weight="800">그래도 네 갈래가 그대로 차 있어요</text></svg>`,
+  // 알리는 까닭
+  why:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFF7ED"/>
+    <rect x="24" y="20" width="112" height="22" rx="6" fill="#fff" stroke="#EA580C" stroke-width="1.8"/>
+    <text x="80" y="34" font-size="6.6" fill="#9A3412" text-anchor="middle" font-weight="800">자랑거리를 널리 알려요</text>
+    <path d="M 80 44 L 80 54" stroke="#FDBA74" stroke-width="2.4" stroke-linecap="round"/>
+    <rect x="14" y="58" width="62" height="22" rx="5" fill="#FFEDD5"/>
+    <text x="45" y="72" font-size="6.2" fill="#7C2D12" text-anchor="middle" font-weight="800">지역을 알려요</text>
+    <rect x="84" y="58" width="62" height="22" rx="5" fill="#FFEDD5"/>
+    <text x="115" y="72" font-size="6.2" fill="#7C2D12" text-anchor="middle" font-weight="800">지역이 발전해요</text></svg>`,
+  // [풍덩] 다양한 지역 축제
+  fest:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFF7ED"/>
+    <path d="M 14 30 L 146 30" stroke="#FDBA74" stroke-width="2.4" stroke-linecap="round"/>
+    <path d="M 30 30 L 30 40 M 60 30 L 60 44 M 90 30 L 90 40 M 120 30 L 120 44" stroke="#FDBA74" stroke-width="1.8" stroke-linecap="round"/>
+    <rect x="20" y="40" width="20" height="14" rx="3" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.2"/>
+    <rect x="50" y="44" width="20" height="14" rx="3" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.2"/>
+    <rect x="80" y="40" width="20" height="14" rx="3" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.2"/>
+    <rect x="110" y="44" width="20" height="14" rx="3" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.2"/>
+    <text x="80" y="78" font-size="7.2" fill="#7C2D12" text-anchor="middle" font-weight="800">지역마다 축제를 열어요</text></svg>`,
+  done:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFF7ED"/>
+    <circle cx="80" cy="46" r="26" fill="#FFEDD5" stroke="#EA580C" stroke-width="2.4"/>
+    <path d="M 68 46 L 76 55 L 93 37" stroke="#EA580C" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="80" y="86" font-size="7.4" fill="#7C2D12" text-anchor="middle" font-weight="800">알리는 노력을 알아봤어요</text></svg>`
+};
+function sceneCard(key,cap){return `<div class="scene">${SVG[key]}<div class="cap">${cap}</div></div>`;}
+
+/* ===== 직접 조작: 놓은 것을 옮길 수 있고, 옮겨도 판이 무너지지 않는 판 =====
+   ⭐ 2단원 앞 일곱 판에서 학생이 놓은 것은 놓은 그 자리에 굳었다(거두는 자리·옮기는 자리 0).
+   ⭐ 이번 판은 거기가 다르다 — 일곱을 다 놓은 뒤 한 방법을 골라 다른 갈래로 옮길 수 있다.
+      그리고 ★ 옮겨도 네 갈래가 그대로 다 차 있다. 갈래마다 그 갈래에만 쓰이는 방법이 따로 있기 때문이다.
+   ⭐ 옮길 수 있는 방법은 둘뿐이다 — 설 수 있는 갈래가 둘 이상인 방법(축제 · 체험 프로그램).
+      옮길 수 있는지를 담는 상태도 상수도 없다. alFitCount 한 줄이 그때그때 센다.
+   ⭐ 「네 갈래가 다 찼는지」를 담는 상태도 없다. alFull 한 줄이 그때그때 센다.
+   ⭐ AL_FIT 를 대괄호로 읽는 자리는 alFitOf 단 하나다(판·패널·처리기가 직접 읽지 않는다).
+   ⭐ 완주 판은 하나가 아니다 — 축제 4 × 체험 프로그램 2 = 여덟 갈래이고 여덟 모두 네 갈래가 찬다. */
+const AL_N = 7;
+const AL_KINDS = ["자연환경", "역사", "문화", "생산물"];
+const AL_WAY = [
+  "축제를 열어요",
+  "자연환경을 이용한 관광 상품으로 개발해요",
+  "전시회를 열어요",
+  "체험 프로그램을 운영해요",
+  "민속놀이와 체육 행사를 함께 열어요",
+  "박람회를 열어요",
+  "직거래 장터를 열어요"
+];
+const AL_SHORT = ["축제", "관광 상품 개발", "전시회", "체험 프로그램", "민속놀이·체육 행사", "박람회", "직거래 장터"];
+/* 설 수 있는 갈래 — 자연환경 1 · 역사 2 · 문화 4 · 생산물 8 */
+const AL_FIT = [15, 1, 2, 10, 4, 8, 8];
+/* 갈래마다의 교과서 사례 한 줄 — AL_CASE[방법][갈래], 설 수 없는 자리는 빈 칸 */
+const AL_CASE = [
+  ["갯벌에서 얻은 머드로 머드 축제를 열어요", "전해 내려오는 역사를 알리려고 축제를 열어요", "기지시 줄다리기 민속 축제를 열어요", "생산물을 알리려고 축제를 열기도 해요"],
+  ["갯벌에서 얻은 머드로 다양한 상품을 만들어요", "", "", ""],
+  ["", "전해 내려오는 역사를 보존하고 알리려고 전시회를 열어요", "", ""],
+  ["", "유적지를 견학하고 퀴즈를 풀며 거북선을 그려 봐요", "", "부채를 알리려고 부채 만들기 체험 행사를 해요"],
+  ["", "", "줄다리기 대회에 민속놀이와 체육 행사를 함께 열어요", ""],
+  ["", "", "", "박람회를 열어 김제시의 쌀을 알려요"],
+  ["", "", "", "직거래 장터를 열어 진안군의 인삼을 알리거나 팔아요"]
+];
+const AL_EMPTY = "아직 아무것도 세우지 않았어요";
+const AL_SAY_PUTDONE = "이미 세운 방법이에요. 판은 그대로예요.";
+const AL_SAY_NOSEL = "먼저 아래에서 방법을 하나 골라요.";
+const AL_SAY_MISS = "이 방법은 그 갈래에는 설 수 없어요. 판은 그대로예요.";
+const AL_SAY_CLOSED = "일곱을 모두 세웠어요. 이제 옮겨 보는 자리예요. 판은 그대로예요.";
+const AL_SAY_ORDER_M = "먼저 방법 일곱을 모두 세워 봐요.";
+const AL_SAY_ONEFIT = "이 방법이 설 수 있는 갈래는 하나뿐이라 옮길 곳이 없어요. 판은 그대로예요.";
+const AL_SAY_SAME = "이미 그 갈래에 서 있어요. 판은 그대로예요.";
+const AL_SAY_ORDER_R = "먼저 한 방법을 다른 갈래로 옮겨 봐요.";
+const AL_SAY_READDONE = "이미 정한 자리예요. 판은 그대로예요.";
+const AL_SAY_ORDER_FIN = "먼저 판을 읽어 봐요.";
+const AL_TELL_PICK = "방법을 골랐어요. 어느 갈래에 세워 볼까요?";
+const AL_TELL_PUT = "그 갈래에 세웠어요.";
+const AL_TELL_MOVE = "옮겼어요. 네 갈래를 다시 살펴봐요.";
+const AL_READQ = [
+  "판이 빈 갈래를 몰래 채워 주었기 때문이에요",
+  "옮긴 방법이 원래 자리에도 그대로 남아 있기 때문이에요",
+  "갈래마다 그 갈래에만 쓰이는 방법이 따로 있기 때문이에요"
+];
+const AL_READ_OK = 2;
+const AL_READ_BAD = "옮겨 간 갈래와 옮겨 온 갈래에 무엇이 남아 있는지 다시 살펴봐요.";
+const AL_FINQ = [
+  "지역 사람들은 자연환경, 역사, 문화, 생산물 등의 자랑거리를 알리려고 다양한 노력을 해요",
+  "지역 사람들은 자랑거리를 한 가지 방법으로만 알려요",
+  "지역 사람들은 생산물과 관련 있는 자랑거리만 알려요"
+];
+const AL_FIN_OK = 0;
+const AL_FIN_BAD = "판의 네 갈래에 저마다 다른 방법이 서 있던 것을 떠올려 봐요.";
+
+function alCaseOf(i, k){ return AL_CASE[i][k]; }                            // ⭐ AL_CASE 를 대괄호로 읽는 자리도 코드에 여기 단 하나
+function alFitOf(i){ return AL_FIT[i]; }                                    // ⭐ AL_FIT 를 대괄호로 읽는 자리는 코드에 여기 단 하나
+function alFits(i, k){ return (alFitOf(i) & (1 << k)) !== 0; }
+function alFitCount(i){ let n = 0; for(let k=0;k<AL_KINDS.length;k++){ if(alFits(i,k)) n++; } return n; }  // ⭐ 옮길 수 있는지를 담는 상태 0
+function alWays(st, k){ const out = []; for(let i=0;i<AL_N;i++){ if(st.alAt[i] === k) out.push(AL_SHORT[i]); } return out; }
+function alPutN(st){ let n = 0; for(let i=0;i<AL_N;i++){ if(st.alAt[i] != null) n++; } return n; }
+function alAllPut(st){ return alPutN(st) === AL_N; }
+function alFull(st){ for(let k=0;k<AL_KINDS.length;k++){ if(alWays(st,k).length === 0) return false; } return true; }  // ⭐ 다 찼는지를 담는 상태 0
+function alFullN(st){ let n = 0; for(let k=0;k<AL_KINDS.length;k++){ if(alWays(st,k).length > 0) n++; } return n; }
+function alStage(st){
+  if(!alAllPut(st)) return "put";
+  if(st.alMoved < 1) return "move";
+  if(st.alRead == null) return "read";
+  if(st.alFin == null) return "fin";
+  return "end";
+}
+
+/* 갈래 칸 — 그 갈래에 선 방법이 쌓인다 */
+function alBoard(st){
+  let cells = '';
+  for(let k=0;k<AL_KINDS.length;k++){
+    const ws = alWays(st, k);
+    const body = ws.length
+      ? ws.map(t=>`<div class="al-way" data-way="1">${t}</div>`).join('')
+      : `<div class="al-none" data-way="0">${AL_EMPTY}</div>`;
+    const stage = alStage(st);
+    const on = ((stage === "put" || stage === "move") && st.alSel != null) ? 1 : 0;
+    const fn = (stage === "move") ? `alMove(${k})` : `alPlace(${k})`;
+    cells += `<div class="al-cell" data-kind="${k}" data-ways="${ws.length}" data-open="${on}">
+      <button class="al-kn" data-kn="${k}" onclick="${fn}">${AL_KINDS[k]}</button>
+      <div class="al-ways">${body}</div></div>`;
+  }
+  return `<div class="al-board" data-put="${alPutN(st)}" data-full="${alFullN(st)}">${cells}</div>`;
+}
+
+/* 고를 목록 — 세운 방법도 목록에 그대로 남아 어디에 세웠는지 보인다 */
+function alPool(st){
+  let rows = '';
+  for(let i=0;i<AL_N;i++){
+    const done = st.alAt[i] != null;
+    const sel = (st.alSel === i) ? 1 : 0;
+    const tail = done ? ` <span style="color:#94A3B8">— ${AL_KINDS[st.alAt[i]]}</span>` : '';
+    rows += `<button class="al-item" data-item="${i}" data-sel="${sel}" data-put="${done?1:0}" onclick="alPick(${i})">${AL_WAY[i]}${tail}</button>`;
+  }
+  return `<div class="al-pool" data-left="${AL_N - alPutN(st)}">${rows}</div>`;
+}
+
+function alPanel(st){
+  const stage = alStage(st);
+  let ask = '';
+  if(stage === "put"){
+    ask = `<div class="al-ask" data-step="put"><b>알리는 방법을 하나 골라 설 수 있는 갈래에 세워 봐요.</b>
+      <div class="note" style="text-align:left;margin-top:5px">어느 것부터 세워도 괜찮아요. 한 방법이 <b>여러 갈래</b>에 설 수도 있어요.</div></div>`;
+  } else if(stage === "move"){
+    ask = `<div class="al-ask" data-step="move"><b>세운 방법 가운데 하나를 골라 <b>다른 갈래</b>로 옮겨 봐요.</b>
+      <div class="note" style="text-align:left;margin-top:5px">옮긴 뒤에 네 갈래가 어떻게 되는지 살펴봐요.</div></div>`;
+  } else if(stage === "read"){
+    ask = `<div class="al-ask" data-step="read"><b>방법을 다른 갈래로 옮겼는데도 네 갈래가 그대로 다 차 있어요. 왜 그럴까요?</b>
+      <div class="al-opts">${AL_READQ.map((t,i)=>`<button class="al-opt" onclick="alRead(${i})">${t}</button>`).join('')}</div></div>`;
+  } else if(stage === "fin"){
+    ask = `<div class="al-ask" data-step="fin"><b>그렇다면 오늘 판에서 알게 된 것은 무엇일까요?</b>
+      <div class="al-opts">${AL_FINQ.map((t,i)=>`<button class="al-opt" onclick="alFin(${i})">${t}</button>`).join('')}</div></div>`;
+  } else {
+    ask = `<div class="al-ask" data-fin="1" style="border-color:#86EFAC;background:#F0FDF4">
+      <b style="color:#166534">지역 사람들은 지역의 자연환경, 역사, 문화, 생산물 등의 자랑거리를 알리려고 다양한 노력을 하고 있어요.</b>
+      같은 방법이 여러 갈래에 쓰이기도 하고, 갈래마다 그 갈래에만 쓰이는 방법도 있어요.
+      <div class="note" style="text-align:left;margin-top:5px">※ <b>우리 지역</b>이 자랑거리를 알리려고 어떤 노력을 하는지는 교실에서 <b>직접</b> 조사해 봐요. 판은 우리 지역을 대신 조사해 주지 않아요.</div></div>`;
+  }
+  const tell = st.alTell ? `<div class="al-tell">${st.alTell}</div>` : '';
+  const warn = st.alMsg ? `<div class="fb" style="color:#DC2626;font-weight:700">${st.alMsg}</div>` : '';
+  const pool = (stage === "put" || stage === "move") ? alPool(st) : '';
+  const hold = (stage === "put" || stage === "move")
+    ? `<div class="al-hold" data-hold="${st.alSel == null ? 0 : 1}">${st.alSel == null ? "고른 방법이 없어요" : "고른 방법 — <b>" + AL_SHORT[st.alSel] + "</b>"}</div>`
+    : '';
+  return `<div class="al-wrap">
+    <div class="al-head">우리 지역의 자랑거리를 알리는 노력 · 세운 방법 <b data-puts="${alPutN(st)}">${alPutN(st)}</b> / 7가지 · 찬 갈래 <b data-fulln="${alFullN(st)}">${alFullN(st)}</b> / 4갈래</div>
+    ${alBoard(st)}${hold}${pool}${tell}${ask}${warn}
+    <div class="note" style="margin-top:8px">※ 판의 방법 일곱과 갈래별 사례는 <b>교과서 84~87쪽</b>과 지도서 정리에서 옮긴 자리예요. 판은 <b>어느 방법이 더 좋은지 가리지 않아요.</b></div>
+  </div>`;
+}
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "2단원 지역문제를 해결하고 지역을 알리는 노력 · 주제② 지역을 알리는 노력";
+const Q = [
+  {stem:"지역 사람들이 지역의 자랑거리를 알리려고 노력하는 까닭으로 알맞은 것은 무엇인가요?",
+   opts:["지역에 사는 사람의 수를 줄일 수 있기 때문이에요","자랑거리를 다른 지역에 넘겨주기 위해서예요","지역을 알리고 지역을 발전시킬 수 있기 때문이에요","지역에 오는 사람을 막기 위해서예요"], correct:2, pts:POINTS_BASIC,
+   h1:"알리면 더 많은 사람이 그 지역을 알게 돼요.", h2:"관광객이 많이 찾아오면 지역 경제에도 도움이 돼요.",
+   reason:"지역을 알리고 지역을 발전시킬 수 있기 때문이에요."},
+  {stem:"자연환경과 관련 있는 자랑거리를 알리는 노력으로 알맞은 것은 무엇인가요?",
+   opts:["자연환경을 아무에게도 알리지 않아요","다른 지역의 자연환경을 가져와요","자연환경을 사진으로만 남겨 두어요","자연환경을 이용한 관광 상품으로 개발해 알려요"], correct:3, pts:POINTS_BASIC,
+   h1:"갯벌에서 얻은 머드로 무엇을 만들었는지 떠올려 봐요.", h2:"각 지역은 자연환경을 이용한 관광 상품을 자랑거리로 개발해요.",
+   reason:"각 지역에서는 자연환경을 이용한 관광 상품을 지역의 자랑거리로 개발하여 여러 가지 방법으로 알려요."},
+  {stem:"지역에 전해 내려오는 역사를 보존하고 알리려고 하는 일로 알맞은 것은 무엇인가요?",
+   opts:["역사를 아무에게도 말하지 않아요","축제나 전시회 등 다양한 행사를 해요","역사를 새로 만들어 내요","역사를 다른 지역에 맡겨요"], correct:1, pts:POINTS_BASIC,
+   h1:"행사를 열어 여러 사람이 함께 볼 수 있게 해요.", h2:"축제와 전시회, 체험 프로그램이 모두 그런 행사예요.",
+   reason:"각 지역에서는 지역에 전해 내려오는 역사를 보존하고 알리려고 축제나 전시회 등 다양한 행사를 해요."},
+  {stem:"생산물을 알리려고 지역에서 여는 것으로 알맞지 <b>않은</b> 것은 무엇인가요?",
+   opts:["생산물을 모두 없애는 행사","박람회","직거래 장터","생산물을 알리는 축제"], correct:0, pts:POINTS_BASIC,
+   h1:"알리려고 여는 것인지 생각해 봐요.", h2:"각 지역은 박람회, 직거래 장터, 축제 등을 열어요.",
+   reason:"각 지역에서는 생산물을 알리려고 박람회, 직거래 장터, 축제 등을 열기도 해요."},
+  {stem:"판에서 「축제를 열어요」가 네 갈래 어디에 세워도 선 까닭은 무엇인가요?",
+   opts:["네 갈래 모두 축제로 자랑거리를 알리기 때문이에요","축제가 가장 좋은 방법이기 때문이에요","판이 축제만 받아 주기 때문이에요","축제는 갈래와 관계가 없기 때문이에요"], correct:0, pts:POINTS_APPLY,
+   h1:"머드 축제, 줄다리기 민속 축제를 떠올려 봐요.", h2:"자연환경·역사·문화·생산물 모두 축제로 알리고 있어요.",
+   reason:"네 갈래 모두 축제를 열어 자랑거리를 알리고 있기 때문이에요."},
+  {stem:"판에서 한 방법을 다른 갈래로 옮겼는데도 네 갈래가 그대로 다 차 있던 까닭은 무엇인가요?",
+   opts:["판이 빈 갈래를 몰래 채워 주었기 때문이에요","갈래마다 그 갈래에만 쓰이는 방법이 따로 있기 때문이에요","옮긴 방법이 원래 자리에도 남아 있기 때문이에요","갈래가 네 개보다 많았기 때문이에요"], correct:1, pts:POINTS_APPLY,
+   h1:"옮겨 온 갈래에 무엇이 남아 있었는지 떠올려 봐요.", h2:"관광 상품 개발·전시회·민속놀이·박람회는 갈 수 있는 갈래가 하나뿐이었어요.",
+   reason:"갈래마다 그 갈래에만 쓰이는 방법이 따로 있어서 옮겨도 갈래가 비지 않았어요."},
+  {stem:"우리 지역이 자랑거리를 알리려고 어떤 노력을 하는지 조사하는 방법으로 알맞지 <b>않은</b> 것은 무엇인가요?",
+   opts:["시·군·구청 누리집을 방문해 조사해요","지역 소식지를 찾아봐요","관광 안내 자료를 활용해 조사해요","다른 지역의 노력을 그대로 옮겨 적어요"], correct:3, pts:POINTS_APPLY,
+   h1:"조사는 우리 지역을 직접 살펴보는 일이에요.", h2:"다른 지역의 것을 옮겨 적으면 우리 지역을 조사한 것이 아니에요.",
+   reason:"우리 지역의 노력은 우리 지역의 자료로 직접 조사해야 해요."},
+  {stem:"오늘 공부한 내용으로 알맞은 것은 무엇인가요?",
+   opts:["지역마다 알리는 방법은 반드시 한 가지예요","자랑거리는 알리지 않는 것이 좋아요","지역 사람들은 자연환경, 역사, 문화, 생산물 등의 자랑거리를 알리려고 다양한 노력을 해요","자랑거리는 생산물과만 관련이 있어요"], correct:2, pts:POINTS_APPLY,
+   h1:"판에서 네 갈래에 여러 방법이 섰던 것을 떠올려 봐요.", h2:"자랑거리의 갈래도 여럿이고 알리는 방법도 여럿이에요.",
+   reason:"지역 사람들은 지역의 자연환경, 역사, 문화, 생산물 등의 자랑거리를 알리려고 다양한 노력을 하고 있어요."}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — 동기 유발
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">우리 지역의 자랑거리를 알리는 다양한 노력을 알아볼까요</h2>
+  <div class="ka-bub">교과서에 있는 <b>QR 코드</b>를 찍어 보았더니 어느 <b>시청 누리집</b>으로 연결되었어요. 거기에는 무엇이 있었을까요?</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('code','QR 코드를 찍어 봐요')}</div>
+    <div class="note">지역과 관련 있는 <b>소식</b>과 지역의 <b>자랑거리</b>를 알 수 있어요.</div>
+  </div>`});
+// 2 살펴보기 — 알리는 까닭 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">지역은 왜 자랑거리를 알릴까요?</h2>
+  <div class="ka-bub">지역 사람들은 자연환경, 역사, 문화, 생산물 등의 자랑거리를 알리려고 <span class="ka-emph">다양한 노력</span>을 해요. 왜 그렇게까지 할까요?</div>
+  <div class="ka-grp">
+  ${st.revealed?`<div class="answer-box">· 우리 지역을 <b>널리 알릴 수 있어요.</b><br>· 지역을 <b>발전시킬 수 있어요.</b><br><span style="font-size:.85em;color:#92400E">관광객이 많이 찾아오면 지역 경제에도 도움이 돼요.</span></div>`
+    :`<div class="note">자랑거리를 알리면 지역에 무엇이 달라질지 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 3 살펴보기 — 네 갈래의 사례
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">네 갈래마다 알리는 노력이 있어요</h2>
+  <div class="ka-bub">보령시는 갯벌에서 얻은 <b>머드</b>로, 통영시는 전해 내려오는 <b>이순신 장군의 나라 사랑 정신</b>으로, 당진시는 <b>기지시 줄다리기</b>로, 전북특별자치도는 <b>쌀과 인삼</b> 같은 생산물로 지역을 알려요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('four','네 갈래의 자랑거리')}${sceneCard('why','알리는 까닭')}</div>
+    <div class="note">같은 <b>축제</b>라도 어느 갈래를 알리는지는 지역마다 달라요.</div>
+  </div>`});
+// 4 살펴보기 — 조작 안내
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">알리는 방법을 갈래에 세워 봐요</h2>
+  <div class="ka-bub">방법을 하나 골라 <b>설 수 있는 갈래</b>에 세워요. 일곱을 다 세운 뒤에는 한 방법을 <b>다른 갈래로 옮겨</b> 볼 수도 있어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('put','골라서 세워요')}${sceneCard('move','옮겨도 그대로 차 있어요')}</div>
+    <div class="note">옮긴 뒤에 <b>네 갈래</b>가 어떻게 되는지 꼭 살펴봐요.</div></div>`});
+// 5 살펴보기 — 직접 조작
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">세우고 옮기며 네 갈래를 살펴봐요</h2>
+  <div class="ka-grp" style="align-items:stretch">${alPanel(st)}</div>`});
+// 6 살펴보기 — 우리 지역의 노력 조사 방법 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">우리 지역의 노력은 어떻게 조사할까요?</h2>
+  <div class="ka-bub">판은 <b>우리 지역</b>을 대신 조사해 주지 않아요. 우리 지역이 자랑거리를 알리려고 하는 노력은 어떻게 찾을 수 있을까요?</div>
+  <div class="ka-grp">
+  ${st.revealed?`<div class="answer-box">· <b>시·군·구청 누리집</b>을 방문해 조사해요.<br>· <b>사회 관계망 서비스</b>를 활용해 조사해요.<br>· <b>지역 소식지</b>나 <b>관광 안내 자료</b>를 활용해 조사해요.<br><span style="font-size:.85em;color:#92400E">조사할 자랑거리를 먼저 정하고, 자랑거리로 정해진 까닭도 함께 써 봐요.</span></div>`
+    :`<div class="note">우리 지역의 소식을 가장 잘 전해 주는 곳을 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 7 살펴보기 — [풍덩 사회 속으로] 다양한 지역 축제 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">[풍덩 사회 속으로] 다양한 지역 축제에 초대합니다</h2>
+  <div class="ka-bub">지역마다 자랑거리를 알리려고 축제를 열어요. 어떤 축제가 있을까요?</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('fest','지역마다 여는 축제')}</div>
+  ${st.revealed?`<div class="answer-box">· 강원특별자치도 양양군은 <b>송이버섯과 연어</b>를 널리 알리려고 축제를 열어요.<br>· 제주특별자치도 제주시 삼양 검은 모래 해변에서는 <b>검은 모래의 효능</b>을 알리려고 축제를 열어요. 모래 조각 전시회, 모래찜질 체험 등 다양한 행사가 펼쳐져요.<br><span style="font-size:.85em;color:#92400E">교과서 89쪽에는 축제가 더 실려 있어요. 교실에서 함께 살펴봐요.</span></div>`
+    :`<div class="note">가 보았거나 들어 본 지역 축제가 있는지 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부한 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('move','옮겨도 그대로 차 있어요')}${sceneCard('done','알리는 노력을 알아봤어요')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div><b>자연환경</b> — 자연환경을 이용한 관광 상품을 지역의 자랑거리로 개발하여 여러 가지 방법으로 알려요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b>역사</b> — 전해 내려오는 역사를 보존하고 알리려고 축제나 전시회 등 다양한 행사를 해요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div><b>문화</b> — 지역의 문화를 알리려고 축제를 여는 등 다양한 노력을 해요.</div></div>
+    <div class="sum-item"><span class="n">4</span><div><b>생산물</b> — 생산물을 알리려고 박람회, 직거래 장터, 축제 등을 열기도 해요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 우리 지역의 자랑거리를 <b style="color:#B45309">알리는 활동</b>을 해 봐요.</div></div>`});
+// 17 스스로 돌아보기
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"네 갈래마다 자랑거리를 알리는 노력을 말할 수 있어요",st)}
+    ${selfCheck(1,"같은 방법이 여러 갈래에 쓰이기도 한다는 것을 설명할 수 있어요",st)}
+    ${selfCheck(2,"우리 지역의 노력을 조사하는 방법을 말할 수 있어요",st)}
+  </div><div class="note">체크가 잘 안 되는 곳은 <b>다시 살펴봐도</b> 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">알리는 다양한 노력을 알아봤어요</h2>
+  <div class="ka-grp">
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">우리 지역의 노력은 교실에서 <b style="color:#B45309">직접</b> 조사해 봐요.</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const optHTML = q.opts.map((o,k)=>{
+    let cls='opt';
+    if(qs.done && k===q.correct) cls+=' correct';
+    if(qs.wrongPick===k) cls+=' wrong';
+    return `<button class="${cls}" onclick="pick(${i},${k})" ${qs.done?'disabled':''}>${o}</button>`;
+  }).join('');
+  const hint = qs.hint>0 ? `<div class="hint">💡 ${qs.hint===1?q.h1:q.h2}</div>` : '';
+  const fb = qs.done ? `<div class="fb ok">✓ ${q.reason}</div>` : '';
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용':'확인'} (+${q.pts})</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    <div class="opts" style="margin:0 auto">${optHTML}</div>
+    ${hint}${fb}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g4_2_social_u2_l08";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  alAt:[null,null,null,null,null,null,null], alSel:null, alMoved:0, alRead:null, alFin:null, alMsg:"", alTell:"",
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 →';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음 (브라우저에서만 · jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+function alDraw(){ main.innerHTML = slides[state.idx].render(state); }
+
+/* 방법 고르기 — 세우는 단계에서는 이미 세운 것을 다시 고를 수 없고,
+   옮기는 단계에서는 설 수 있는 갈래가 하나뿐인 방법을 고를 수 없다 */
+function alPick(i){
+  if(state.alFin!=null) return;                                        // 가드①: 마무리 확정 후 전체 잠금
+  if(!Number.isInteger(i) || i<0 || i>=AL_N) return;                   // 가드②: 무효 번호 — 안내조차 띄우지 않음
+  const stage = alStage(state);
+  if(stage === "put" && state.alAt[i] != null){ state.alMsg = AL_SAY_PUTDONE; playThud(); alDraw(); return; }   // 가드③
+  if(stage === "move" && alFitCount(i) < 2){ state.alMsg = AL_SAY_ONEFIT; playThud(); alDraw(); return; }       // 가드⑦: 옮길 곳이 하나뿐 — 판 불변
+  state.alSel = i;
+  state.alMsg = ""; state.alTell = AL_TELL_PICK; playBlip(); alDraw();
+}
+/* 갈래에 세우기 — 설 수 있는 갈래에만 선다 */
+function alPlace(k){
+  if(state.alFin!=null) return;                                        // 가드①
+  if(!Number.isInteger(k) || k<0 || k>=AL_KINDS.length) return;         // 가드②
+  if(alAllPut(state)){ state.alMsg = AL_SAY_CLOSED; playThud(); alDraw(); return; }   // 가드⑥: 일곱을 다 세운 뒤엔 세우는 자리가 닫힌다 — 판 불변
+  if(state.alSel==null){ state.alMsg = AL_SAY_NOSEL; playThud(); alDraw(); return; }    // 가드④: 고르기 전 — 판 불변
+  if(!alFits(state.alSel, k)){ state.alMsg = AL_SAY_MISS; playThud(); alDraw(); return; } // 가드⑤: 설 수 없는 갈래 — 판 불변 · 알맞은 갈래 이름 0
+  const put = state.alSel;
+  state.alAt[state.alSel] = k;                                         // ⭐ 세우는 자리는 코드에 여기 단 하나
+  state.alSel = null;
+  state.alMsg = ""; state.alTell = AL_TELL_PUT + " " + alCaseOf(put, k); playBlip(); alDraw();
+}
+/* 다른 갈래로 옮기기 — 옮겨도 네 갈래가 그대로 차 있다 */
+function alMove(k){
+  if(state.alFin!=null) return;                                        // 가드①
+  if(!Number.isInteger(k) || k<0 || k>=AL_KINDS.length) return;         // 가드②
+  if(!alAllPut(state)){ state.alMsg = AL_SAY_ORDER_M; playThud(); alDraw(); return; }   // 가드⑥: 일곱을 다 세우기 전 — 판 불변
+  if(state.alSel==null){ state.alMsg = AL_SAY_NOSEL; playThud(); alDraw(); return; }    // 가드④
+  if(!alFits(state.alSel, k)){ state.alMsg = AL_SAY_MISS; playThud(); alDraw(); return; } // 가드⑤
+  if(state.alAt[state.alSel] === k){ state.alMsg = AL_SAY_SAME; playThud(); alDraw(); return; } // 가드⑦: 이미 서 있는 갈래 — 판 불변
+  const mv = state.alSel;
+  state.alAt[state.alSel] = k;                                         // ⭐ 옮기는 자리는 코드에 여기 단 하나
+  state.alMoved += 1;                                                  // ⭐ 옮긴 횟수는 늘기만 한다(덜어 내는 자리 0)
+  state.alSel = null;
+  state.alMsg = ""; state.alTell = AL_TELL_MOVE + " " + alCaseOf(mv, k); playBlip(); alDraw();
+}
+/* 판 읽기 */
+function alRead(i){
+  if(state.alFin!=null) return;                                        // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=AL_READQ.length) return;         // 가드②
+  if(!alAllPut(state)){ state.alMsg = AL_SAY_ORDER_M; playThud(); alDraw(); return; }   // 가드⑥
+  if(state.alMoved < 1){ state.alMsg = AL_SAY_ORDER_R; playThud(); alDraw(); return; }  // 가드⑧: 한 번도 옮겨 보기 전 — 판 불변
+  if(state.alRead!=null){ state.alMsg = AL_SAY_READDONE; alDraw(); return; }            // 가드⑧: 이미 정한 자리 — 판 불변
+  if(i!==AL_READ_OK){ state.alMsg = AL_READ_BAD; playThud(); alDraw(); return; }        // 가드⑧: 어긋난 답 — 판 불변
+  state.alRead = i; state.alMsg = ""; playBlip(); alDraw();
+}
+/* 마무리 */
+function alFin(i){
+  if(state.alFin!=null) return;                                        // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=AL_FINQ.length) return;          // 가드②
+  if(state.alRead==null){ state.alMsg = AL_SAY_ORDER_FIN; playThud(); alDraw(); return; } // 가드⑧: 판을 읽기 전 — 판 불변
+  if(i!==AL_FIN_OK){ state.alMsg = AL_FIN_BAD; playThud(); alDraw(); return; }          // 가드⑧: 어긋난 답 — 판 불변
+  state.alFin = i; state.alMsg = ""; playChime(); alDraw();
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true; qs.wrongPick=null;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2; if(qs.hint===2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">📘 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 →</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // 뒤 차시 미양산 — 허브 복귀
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
+</html>
