@@ -867,10 +867,11 @@
       const FR = window.MK_FONTREG;
       if (FR && FR.ensureScene && scene()) {
         const req = FR.requiredOf(scene());
-        const pending = req.filter((r) => (FR.STATUS[`${r.family}|${r.weight}|${r.style}`] || 'unloaded') !== 'loaded');
+        /* 아직 안 건드린 것만 — failed 는 다시 시도하지 않는다(패널 ⚠ 로 남긴다; 무한 재시도 방지) */
+        const pending = req.filter((r) => { const st = FR.STATUS[`${r.family}|${r.weight}|${r.style}`]; return !st || st === 'unloaded'; });
         if (pending.length && !WS._fontWait) {
           WS._fontWait = true;
-          FR.ensure(pending).then((res) => { WS._fontWait = false; WS.fontsFailed = res.failed; if (res.loaded.length && PG.state.screen === 'workspace') PG.render(); }).catch(() => { WS._fontWait = false; });
+          FR.ensure(pending).then((res) => { WS._fontWait = false; WS.fontsFailed = res.failed; /* 새로 로드됐거나 실패가 확정됐으면 다시 그린다(실패도 패널 ⚠ 로 보여야 한다) */ if ((res.loaded.length || res.failed.length) && PG.state.screen === 'workspace') PG.render(); }).catch(() => { WS._fontWait = false; });
         }
       }
       const R = () => {

@@ -179,7 +179,9 @@ window.MK_LIVE = (() => {
 
   function textH(el, ar) {
     const s = (el && +el.size) || 3;
-    return Math.max(s * 1.5, s * 1.4 * lineCount(el, ar));
+    /* R155 — 행간(el.lineHeight)이 있으면 그 값으로 줄 높이를 잰다(없으면 종전 1.4). 상자·손잡이·회전 중심이 실제 줄과 맞도록 */
+    const lh = (el && el.lineHeight != null && +el.lineHeight > 0) ? +el.lineHeight : 1.4;
+    return Math.max(s * 1.5, s * lh * lineCount(el, ar));
   }
 
   /* 회전 전 % 박스 — 텍스트만 textH 로 높이를 얻는다 (R111: ar 을 받으면 wrap 까지) */

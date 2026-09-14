@@ -150,6 +150,9 @@ window.MK_FONTREG = (() => {
   const emit = (ev) => listeners.forEach((f) => { try { f(ev); } catch (_) {} });
   const onChange = (f) => { listeners.push(f); return () => { const i = listeners.indexOf(f); if (i >= 0) listeners.splice(i, 1); }; };
   const hasFonts = () => typeof document !== 'undefined' && document.fonts && typeof document.fonts.load === 'function';
+  /* 그 family 로 선언된 face 가 페이지에 하나라도 있는가 — document.fonts.check 는 face 가 없는 family 에도 true 를
+     돌려주므로(스펙: 로드할 것이 없음 = true) 「없는 글꼴」을 loaded 로 오판하지 않으려면 이걸 먼저 본다 */
+  const hasFace = (fam) => { try { const f = norm(fam).toLowerCase(); for (const face of document.fonts) { if (norm(face.family).toLowerCase() === f) return true; } } catch (_) {} return false; };
 
   /* 등록부의 출처(구글 CSS 등)가 페이지에 아직 없으면 붙인다 — 런타임에 새 글꼴을 등록했을 때 */
   function ensureSource(entry) {
@@ -177,12 +180,21 @@ window.MK_FONTREG = (() => {
     STATUS[k] = 'loading'; emit({ type: 'loading', key: k });
     const spec = `${st === 'italic' ? 'italic ' : ''}${w || 400} 16px "${fam}"`;
     const txt = sample || '가나다 Abc 09';
-    const timer = new Promise((res) => setTimeout(() => res('timeout'), timeoutMs || 6000));
-    return Promise.race([document.fonts.load(spec, txt).then((faces) => (faces && faces.length ? 'loaded' : 'none')).catch(() => 'error'), timer])
+    const limit = timeoutMs || 6000; const t0 = Date.now();
+    const timer = new Promise((res) => setTimeout(() => res('timeout'), limit));
+    const load1 = () => document.fonts.load(spec, txt).then((faces) => (faces && faces.length ? 'loaded' : 'none')).catch(() => 'error');
+    /* face 가 아직 없으면(구글 CSS 가 늦게 오거나 막힘) 시간 안에서 face 가 생기길 기다렸다가 다시 load — 그래도 없으면 failed */
+    const attempt = () => load1().then((r) => {
+      if (r === 'loaded') return r;
+      if (hasFace(fam)) return r;
+      if (Date.now() - t0 >= limit) return 'no-face';
+      return new Promise((res) => setTimeout(res, 250)).then(attempt);
+    });
+    return Promise.race([attempt(), timer])
       .then((r) => {
-        /* load 가 빈 배열이어도 check 가 참이면(로컬 글꼴·이미 있는 face) 로드된 것 */
+        /* load 가 빈 배열이어도 face 가 있고 check 가 참이면(이미 있는 face) 로드된 것. face 자체가 없으면 실패 */
         let ok = r === 'loaded';
-        if (!ok) { try { ok = document.fonts.check(spec, txt); } catch (_) { ok = false; } }
+        if (!ok && r !== 'no-face' && hasFace(fam)) { try { ok = document.fonts.check(spec, txt); } catch (_) { ok = false; } }
         STATUS[k] = ok ? 'loaded' : 'failed';
         emit({ type: ok ? 'loaded' : 'failed', key: k, reason: r });
         if (ok) measureLive(fam, w, st);
@@ -263,7 +275,7 @@ window.MK_FONTREG = (() => {
       _cx.font = `${st === 'italic' ? 'italic ' : ''}${w || 400} ${S}px "${fam}"`;
       try { _cx.letterSpacing = '0px'; } catch (_) {}
       /* 실제로 그 글꼴로 그려졌는지(폴백이 아닌지) 확인 — check 가 거짓이면 재지 않는다 */
-      try { if (!document.fonts.check(`${w || 400} 16px "${fam}"`, '가A')) return null; } catch (_) {}
+      try { if (!hasFace(fam) || !document.fonts.check(`${w || 400} 16px "${fam}"`, '가A')) return null; } catch (_) {}
       const m = {};
       Object.keys(SAMPLE).forEach((g) => { const s = SAMPLE[g]; const chars = Array.from(s); let tot = 0, n = 0; chars.forEach((ch) => { const ww = _cx.measureText(ch).width; if (ww > 0) { tot += ww; n++; } }); m[g] = n ? Math.round(tot / n / S * 1000) / 1000 : null; });
       const tm = _cx.measureText('가Ag');
@@ -347,7 +359,7 @@ window.MK_FONTREG = (() => {
 
   return { FONTS, ALIASES, COMPAT, PRESETS, FALLBACK_ID, BASELINE_DEFAULT,
     get, list, resolve, resolveEl, nearestWeight, normalizeEl, transformText,
-    ensure, ensureOne, ensureScene, ensureDoc, requiredOf, statusOf, failed, STATUS, onChange, ensureSource,
+    ensure, ensureOne, ensureScene, ensureDoc, requiredOf, statusOf, failed, STATUS, onChange, ensureSource, hasFace,
     addPackageFonts, register,
     metricsOf, measureLive, LIVE, cssBaseline, baselineOf, domShiftPx,
     substitutions: () => SUBS.slice(), applyPreset, audit };
