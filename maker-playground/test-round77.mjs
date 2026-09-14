@@ -38,9 +38,14 @@ console.log('R77 ① 제품 모드 — 검수 화면 차단');
   for (const k of ['audit', 'ops', 'constitution', 'homex', 'dev', 'foundations', 'agent', 'dls', 'tbuilder', 'admin']) {
     t('내비에 ' + k + ' 없음', !navHtml.includes('data-nav="' + k + '"'));
   }
+  /* R153 — 제품 기본은 학생 시야(홈·만들기·내 작업·내 가방). 종전 10종은 전체 보기에서 */
+  for (const k of ['home', 'make', 'projects', 'assets']) t('학생 내비에 ' + k + ' 있음', navHtml.includes('data-nav="' + k + '"'));
+  w.PG.state.navMode = 'full'; w.PG.render();
+  const fullHtml = w.document.getElementById('pgNav').innerHTML;
   for (const k of PRODUCT_NAV) {
-    t('내비에 ' + k + ' 있음', navHtml.includes('data-nav="' + k + '"'));
+    t('전체 보기 내비에 ' + k + ' 있음', fullHtml.includes('data-nav="' + k + '"'));
   }
+  w.PG.state.navMode = 'student'; w.PG.render();
   w.PG.go('audit');
   t('go(audit) → home 강제', w.PG.state.screen === 'home', '실제: ' + w.PG.state.screen);
   w.PG.go('video');

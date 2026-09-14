@@ -26,6 +26,21 @@ window.PG = (() => {
      직통 주소(#/studio)로만 들어간다. 제품 가드는 통과시켜야 keduclass.com
      /maker/#/studio 가 산다. */
   const PRODUCT_ROUTES = PRODUCT_NAV.concat(['create', 'workspace', 'projects', 'animation', 'studio']);
+  /* R153 (2026-09-14, 준호) — 케이메이커의 주 사용자는 학생. Assets·Brand·Library·Video·
+     Photo·AI·Export 가 나란히 선 왼쪽 메뉴는 만든 사람도 뭔지 모르겠는 회사용 DAM 골격이라
+     제품 기본 시야를 학생 말 4개로 줄인다: 홈 · 만들기 · 내 작업 · 내 가방(= assets).
+     코드·라우트는 그대로(PRODUCT_ROUTES 무변) — 메뉴에서만 숨긴다. 교사(선생님 도구 경유)
+     에게만 「전체 보기」 토글이 보이고, `?nav=full` 로도 연다. */
+  const STUDENT_NAV = [['home', '🏠', '홈'], ['make', '✏️', '만들기'], ['projects', '📁', '내 작업'], ['assets', '🎒', '내 가방']];
+  const KO_LABEL = { home: '홈', library: '템플릿', templates: '템플릿(구)', assets: '재료', brand: '학교 색·글꼴', editor: '편집기', video: '영상', photo: '사진', ai: 'AI', export: '내보내기' };
+  const isTeacher = () => { const K = window.KEDU_BACK || {}; return K.role === 'teacher' || K.fromTeacher === true; };
+  /* 「만들기」 — 만들던 것이 있으면 그 작업으로, 없으면 종류 고르기(create 1단계) */
+  function makeEnter() {
+    const cur = window.MK_PROJ && window.MK_PROJ.current ? window.MK_PROJ.current() : null;
+    if (cur && !cur.trashed && window.MK_PROJ.open) { window.MK_PROJ.open(cur.projectId); return; }
+    if (window.MK_SCREENS.create && window.MK_SCREENS.create.enter) window.MK_SCREENS.create.enter(null);
+    else go('home');
+  }
   const guard = (k) => (PRODUCT() && !PRODUCT_ROUTES.includes(k)) ? 'home' : k;
 
   const state = {
@@ -35,6 +50,8 @@ window.PG = (() => {
     editor: { doc: null, sceneIdx: 0, selEl: null, menu: 'text', mode: 'design' },
     navMode: 'full',
   };
+  /* R153 — 제품은 학생 시야가 기본. ?nav=full 이면 전체 */
+  if (PRODUCT()) state.navMode = /[?&]nav=full/.test(location.search) ? 'full' : 'student';
 
   function loadEditorDoc(templateId) {
     const tpl = window.MK_SAMPLE.TEMPLATES.find((t) => t.templateId === templateId) || window.MK_SAMPLE.TEMPLATES[0];
@@ -67,9 +84,14 @@ window.PG = (() => {
 
   /* Round 27 — 🌱 단순 모드: MK_SIMPLE 판정으로 내비를 초보자 시야로 필터.
      검수 환경 기본값은 'full' — 기존 화면·테스트 무영향. */
-  function toggleNavMode() { state.navMode = state.navMode === 'simple' ? 'full' : 'simple'; render(); }
+  function toggleNavMode() {
+    if (PRODUCT()) { state.navMode = state.navMode === 'student' ? 'full' : 'student'; render(); return; }
+    state.navMode = state.navMode === 'simple' ? 'full' : 'simple'; render();
+  }
+  const studentView = () => PRODUCT() && state.navMode === 'student';
   function navList() {
-    const base = PRODUCT() ? NAV.filter(([k]) => PRODUCT_NAV.includes(k)) : NAV;
+    if (studentView()) return STUDENT_NAV;
+    const base = PRODUCT() ? NAV.filter(([k]) => PRODUCT_NAV.includes(k)).map(([k, i, n]) => [k, i, KO_LABEL[k] || n]) : NAV;
     if (state.navMode !== 'simple' || !window.MK_SIMPLE) return base;
     const vis = window.MK_SIMPLE.navFor({ edits: 0 });
     return base.filter(([k]) => k !== '--div' && (vis.includes(k) || (!PRODUCT() && k === 'simple')));
@@ -78,7 +100,10 @@ window.PG = (() => {
   function render() {
     const scr = window.MK_SCREENS[state.screen];
     /* 내비 */
-    const modeBtn = window.MK_SIMPLE ? `<div class="pg-nav-div"></div><button class="pg-nav-item" data-navmode><span class="ico">${state.navMode === 'simple' ? '🗂' : '🌱'}</span><span class="txt">${state.navMode === 'simple' ? '전체 보기' : '단순 모드'}</span></button>` : '';
+    /* R153 — 제품: 토글은 교사(또는 이미 전체 보기)에게만. 학생은 4개 메뉴가 전부다. */
+    const modeBtn = PRODUCT()
+      ? ((isTeacher() || state.navMode === 'full') ? `<div class="pg-nav-div"></div><button class="pg-nav-item" data-navmode><span class="ico">${state.navMode === 'student' ? '🗂' : '🌱'}</span><span class="txt">${state.navMode === 'student' ? '전체 보기' : '간단히'}</span></button>` : '')
+      : (window.MK_SIMPLE ? `<div class="pg-nav-div"></div><button class="pg-nav-item" data-navmode><span class="ico">${state.navMode === 'simple' ? '🗂' : '🌱'}</span><span class="txt">${state.navMode === 'simple' ? '전체 보기' : '단순 모드'}</span></button>` : '');
     /* 생태계 접점(2026-08-10) — 케이에듀로 돌아가는 문. R92가 「자체 내비 보유」로
        context 모드를 걸었지만 정작 자체 출구가 이주에서 누락돼, 탈출 수단이 해시
        히스토리 뒤로가기 연타뿐이었다(준호 내비 전수 감사에서 발견). */
@@ -95,8 +120,8 @@ window.PG = (() => {
     ) + `<div class="pg-nav-div"></div>`;
     document.getElementById('pgNav').innerHTML = exitBtn + navList().map(([k, ico, n]) =>
       k === '--div' ? `<div class="pg-nav-div"></div>` :
-      `<button class="pg-nav-item ${state.screen === k ? 'on' : ''}" data-nav="${k}"><span class="ico">${ico}</span><span class="txt">${n}</span></button>`).join('') + modeBtn;
-    document.querySelectorAll('[data-nav]').forEach((b) => b.onclick = () => go(b.dataset.nav));
+      `<button class="pg-nav-item ${state.screen === k || (k === 'make' && ['workspace', 'create', 'editor', 'animation'].includes(state.screen)) ? 'on' : ''}" data-nav="${k}"><span class="ico">${ico}</span><span class="txt">${n}</span></button>`).join('') + modeBtn;
+    document.querySelectorAll('[data-nav]').forEach((b) => b.onclick = () => b.dataset.nav === 'make' ? makeEnter() : go(b.dataset.nav));
     document.querySelectorAll('[data-navexit]').forEach((b) => b.onclick = () => {
       const to = b.dataset.navexit, K = window.KEDU_BACK;
       if (to && K && K.goTo) K.goTo(to);          /* 목적지 지정 — 발자국도 그 지점까지 정리 */
@@ -133,6 +158,6 @@ window.PG = (() => {
     render();
   }
 
-  return { state, go, render, boot, openEditor, openEditorDoc, loadEditorDoc, toggleNavMode };
+  return { state, go, render, boot, openEditor, openEditorDoc, loadEditorDoc, toggleNavMode, makeEnter, studentView, isTeacher };
 })();
 document.addEventListener('DOMContentLoaded', () => PG.boot());

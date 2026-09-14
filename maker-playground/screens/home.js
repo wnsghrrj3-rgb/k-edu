@@ -19,6 +19,18 @@ window.MK_SCREENS.home = (() => {
     ['presentation', '발표'], ['cardnews', '카드뉴스'], ['video', '영상'],
     ['poster', '포스터'], ['worksheet', '학습지'], ['activity', '활동자료'], ['print', '인쇄물'],
   ];
+  /* R153 — 학생 시야 칩 6개(준호 확정): 포스터 · 카드 · 발표 · 영상 · 상장 · 그냥 그리기.
+     앞 다섯은 기존 깔때기(create) 그대로, 「그냥 그리기」는 빈 장면을 바로 연다.
+     3D 상장·학교 3D 장면 칩은 교사 전체 보기에서만. */
+  const STUDENT_CHIPS = [['poster', '포스터'], ['cardnews', '카드'], ['presentation', '발표'], ['video', '영상'], ['print', '상장']];
+  const studentView = () => !!(window.PG && PG.studentView && PG.studentView());
+  const blankDoc = () => ({ title: '내 그림', contentType: 'poster', ratio: '16:9',
+    scenes: [{ id: 's1', name: '장면 1', width: 1280, height: 720, duration: 5, background: '#FFFFFF', transition: 'fade', order: 0, elements: [] }] });
+  function openBlank() {
+    if (!window.MK_PROJ) return;
+    const p = window.MK_PROJ.createFromDoc(blankDoc(), '내 그림');
+    if (p) window.MK_PROJ.open(p.projectId);
+  }
   const PLACEHOLDERS = [
     '예: 학교폭력 예방 발표자료 만들어줘',
     '예: 여름 방학 안전 안내 카드뉴스 만들어줘',
@@ -54,8 +66,8 @@ window.MK_SCREENS.home = (() => {
   const rHeader = () => `<header class="h2-header" id="h2Header">
     <button class="h2-logo" data-h2-logo aria-label="K-MAKER 홈">K-MAKER</button>
     <nav class="h2-nav" aria-label="주 메뉴">
-      <button class="h2-link" data-h2-go="projects">최근 작업</button>
-      <button class="h2-link" data-h2-go="projects">내 프로젝트</button>
+      ${studentView() ? `<button class="h2-link" data-h2-go="projects">내 작업</button>` : `<button class="h2-link" data-h2-go="projects">최근 작업</button>
+      <button class="h2-link" data-h2-go="projects">내 프로젝트</button>`}
       <button class="h2-icon mk-tooltip" data-h2-search data-tip="검색 ( / )" aria-label="프로젝트·템플릿 검색">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       </button>
@@ -74,7 +86,9 @@ window.MK_SCREENS.home = (() => {
     </form>
     <div class="h2-flow" id="h2Flow" aria-live="polite"></div>
     <div class="h2-chips" role="list" aria-label="유형으로 시작">
-      ${CHIPS.map(([k, nm]) => `<button class="h2-chip" role="listitem" data-h2-chip="${k}">${nm}</button>`).join('')}${window.MK_AWARD3D ? `<button class="h2-chip" role="listitem" data-h2-award3d title="3D 상장 — 새 탭에서 열려요">🏆 3D 상장</button>` : ''}${window.MK_SCENE3D ? window.MK_SCENE3D.SCENES.map((s) => `<button class="h2-chip" role="listitem" data-scene3d="${s.id}" title="${s.title} — 새 탭에서 열려요">${s.ico} ${s.title.replace(/ \(.*\)$/, '')}</button>`).join('') : ''}
+      ${studentView()
+        ? STUDENT_CHIPS.map(([k, nm]) => `<button class="h2-chip" role="listitem" data-h2-chip="${k}">${nm}</button>`).join('') + `<button class="h2-chip" role="listitem" data-h2-blank>그냥 그리기</button>`
+        : CHIPS.map(([k, nm]) => `<button class="h2-chip" role="listitem" data-h2-chip="${k}">${nm}</button>`).join('')}${!studentView() && window.MK_AWARD3D ? `<button class="h2-chip" role="listitem" data-h2-award3d title="3D 상장 — 새 탭에서 열려요">🏆 3D 상장</button>` : ''}${!studentView() && window.MK_SCENE3D ? window.MK_SCENE3D.SCENES.map((s) => `<button class="h2-chip" role="listitem" data-scene3d="${s.id}" title="${s.title} — 새 탭에서 열려요">${s.ico} ${s.title.replace(/ \(.*\)$/, '')}</button>`).join('') : ''}
     </div>
   </section>`;
 
@@ -352,6 +366,7 @@ window.MK_SCREENS.home = (() => {
 
       /* Quick Create → 기존 깔때기 */
       root.querySelectorAll('[data-h2-chip]').forEach((b) => b.onclick = () => window.MK_SCREENS.create.enter(b.dataset.h2Chip));
+      const bl = root.querySelector('[data-h2-blank]'); if (bl) bl.onclick = openBlank;   /* R153 — 그냥 그리기 */
       const a3 = root.querySelector('[data-h2-award3d]'); if (a3) a3.onclick = () => window.MK_AWARD3D.open();   /* R143 — 인쇄물 옆 3D 상장 문 */
       if (window.MK_SCENE3D) window.MK_SCENE3D.wire(root);   /* R147 — 3D 장면 칩 */
 

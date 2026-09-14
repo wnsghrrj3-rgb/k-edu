@@ -54,10 +54,10 @@ const P = boot(true);   /* 제품 세계 */
 const F = boot(false);  /* 검수 세계 */
 
 console.log('--- ① 실클릭 — 칩이 실제로 데려간다 ---');
-T('T1 홈이 그려지고 유형 칩 6개가 있다', () => {
+T('T1 홈이 그려지고 유형 칩 5개 + 그냥 그리기 1개가 있다 (R153 학생 시야)', () => {
   P.PG.go('home');
-  const n = P.document.querySelectorAll('[data-h2-chip]').length;
-  return n === 6 ? true : '칩 ' + n;
+  const n = P.document.querySelectorAll('[data-h2-chip]').length, b = P.document.querySelectorAll('[data-h2-blank]').length;
+  return n === 5 && b === 1 ? true : '칩 ' + n + ' / 빈 ' + b;
 });
 T('T2 칩 클릭 → create 화면 도달 (홈 되튕김 아님)', () => {
   P.PG.go('home');
@@ -132,13 +132,15 @@ for (const k of ['foundations', 'components', 'admin', 'market', 'flow', 'dls'])
 }
 
 console.log('--- ⑥ 내비 출력 무변 ---');
-T('T9 제품 내비 버튼은 종전 10종 그대로 — create 등 4종 미표시', () => {
+T('T9 제품 내비는 학생 4종(홈·만들기·내 작업·내 가방)이 기본 — 전체 보기면 종전 10종 (R153)', () => {
   P.PG.go('home');
   const keys = [...P.document.querySelectorAll('#pgNav [data-nav]')].map((b) => b.dataset.nav);
-  const extra = keys.filter((k) => ['create', 'workspace', 'projects', 'animation'].includes(k));
+  if (JSON.stringify(keys) !== JSON.stringify(['home', 'make', 'projects', 'assets'])) return JSON.stringify(keys);
+  P.PG.state.navMode = 'full'; P.PG.render();
+  const full = [...P.document.querySelectorAll('#pgNav [data-nav]')].map((b) => b.dataset.nav);
+  P.PG.state.navMode = 'student'; P.PG.render();
   const want = ['home', 'library', 'templates', 'assets', 'brand', 'editor', 'video', 'photo', 'ai', 'export'];
-  return extra.length === 0 && want.every((k) => keys.includes(k)) ? true
-    : JSON.stringify({ extra, keys });
+  return want.every((k) => full.includes(k)) && !full.includes('create') ? true : JSON.stringify(full);
 });
 
 console.log('--- ⑦ 무깃발(검수) 세계 무영향 ---');
