@@ -778,12 +778,15 @@ function frPair(a, b){
 //   o.times  : 뛴 횟수(= 곱하는 자연수)
 //   o.to     : 수직선의 끝(정수) · o.ask : 결과 이름표를 ? 로 감춘다
 //   data-mline="w,n,d,times,to"
+//   🔴 걸음의 신고(data-a·data-b)는 **분수 글자**다(`4/3`). 소수로 적으면 1/3 이 반올림돼
+//      하니스의 검산이 먼저 거짓말을 한다(U1 「어림 단원에서 부동소수 금지」의 이 단원 판).
 function mulLine(o){
   o = o || {};
   const w = o.w || 0, n = o.n, d = o.d, times = o.times, to = o.to;
   if (!(d > 0 && n >= 0 && times > 0 && to > 0)) throw new Error('mulLine: 인자가 모자란다');
-  const step = w + n / d;                       // 한 걸음의 크기
-  if (step * times > to + 1e-9) throw new Error('mulLine: 뛴 결과가 수직선 밖이다');
+  const sn = w * d + n;                         // 한 걸음 = sn/d  (🔴 분수 단원의 신고는 소수로 적지 않는다)
+  const step = sn / d;                          // 그리기에만 쓰는 근삿값
+  if (sn * times > to * d) throw new Error('mulLine: 뛴 결과가 수직선 밖이다');
   const W = 700, X0 = 56, X1 = 644, Y = 108;
   const px = v => X0 + (X1 - X0) * v / to;
   let g = '';
@@ -797,7 +800,7 @@ function mulLine(o){
   // 뛰어 세기 — 걸음마다 굽은 화살표 하나
   for (let k = 0; k < times; k++){
     const a = px(step * k), b = px(step * (k + 1)), mid = (a + b) / 2;
-    g += '<g class="ml-jump" data-k="' + k + '" data-a="' + (step * k).toFixed(4) + '" data-b="' + (step * (k + 1)).toFixed(4) + '">'
+    g += '<g class="ml-jump" data-k="' + k + '" data-a="' + (sn * k) + '/' + d + '" data-b="' + (sn * (k + 1)) + '/' + d + '">'
        + '<path d="M' + a.toFixed(2) + ' ' + (Y - 15) + ' Q' + mid.toFixed(2) + ' ' + (Y - 58) + ' ' + b.toFixed(2) + ' ' + (Y - 15) + '" '
        + 'fill="none" stroke="var(--coral-deep)" stroke-width="4"/>'
        + '<path d="M' + (b - 7).toFixed(2) + ' ' + (Y - 24) + ' L' + b.toFixed(2) + ' ' + (Y - 12) + ' L' + (b + 7).toFixed(2) + ' ' + (Y - 24) + ' Z" fill="var(--coral-deep)"/></g>';
@@ -912,7 +915,7 @@ function wayCards(items, o){
   const body = items.map(it =>
     '<div class="wc-card" data-way="' + esc(it.name) + '|' + esc(it.lines[it.lines.length - 1]) + '">'
     + '<div class="wc-name">' + esc(it.name) + '</div>'
-    + it.lines.map(l => '<div class="wc-line">' + fx(l) + '</div>').join('') + '</div>').join('');
+    + it.lines.map(l => '<div class="wc-line" data-calc="' + esc(l) + '">' + fx(l) + '</div>').join('') + '</div>').join('');
   return '<div class="ml-wrap"><div class="wc-row">' + body + '</div>'
        + (o.note ? '<div class="ml-cap">' + esc(o.note) + '</div>' : '') + '</div>';
 }
