@@ -3,6 +3,12 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as BGU from 'three/addons/utils/BufferGeometryUtils.js';
 import { applyAtmosphere } from './atmosphere.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
 
 export class Engine {
   constructor(canvas, atmosphere) {
@@ -36,6 +42,24 @@ export class Engine {
   resize() {
     this.renderer.setSize(innerWidth, innerHeight);
     this.camera.aspect = innerWidth / innerHeight; this.camera.updateProjectionMatrix();
+    if (this.composer) { this.composer.setSize(innerWidth, innerHeight); this.gtao?.setSize(innerWidth, innerHeight); }
+  }
+  /** 후처리(고사양만): 구석 어둠(GTAO) · 불빛 번짐(블룸) · 계단 제거(SMAA). 실패하면 조용히 기본 렌더로 */
+  enablePost(opts = {}) {
+    try {
+      const r = this.renderer; r.shadowMap.type = THREE.VSMShadowMap; this.sun.shadow.radius = 4; this.sun.shadow.blurSamples = 8;
+      const c = this.composer = new EffectComposer(r);
+      c.addPass(new RenderPass(this.scene, this.camera));
+      const g = this.gtao = new GTAOPass(this.scene, this.camera, innerWidth, innerHeight);
+      g.output = GTAOPass.OUTPUT.Default; g.blendIntensity = 0.85;
+      g.updateGtaoMaterial({ radius: 0.35, distanceExponent: 1.5, thickness: 1, scale: 1, samples: 12, distanceFallOff: 1, screenSpaceRadius: false });
+      g.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 4, rings: 2, samples: 8 });
+      c.addPass(g);
+      const b = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), opts.bloom ?? 0.22, 0.6, 0.92); c.addPass(b);
+      c.addPass(new OutputPass());
+      c.addPass(new SMAAPass());
+      this.post = true;
+    } catch (e) { console.warn('post off', e); this.composer = null; this.post = false; }
   }
   async loadHeight(url) { this.hm = await (await fetch(url)).json(); }
   /** 지형 높이(월드 y). Blender y = -three z */
@@ -122,7 +146,7 @@ export class Engine {
     const loop = () => {
       const dt = Math.min(this.clock.getDelta(), 0.05);
       for (const f of this.onFrame) f(dt);
-      this.renderer.render(this.scene, this.camera);
+      if (this.composer) this.composer.render(dt); else this.renderer.render(this.scene, this.camera);
       requestAnimationFrame(loop);
     };
     loop();

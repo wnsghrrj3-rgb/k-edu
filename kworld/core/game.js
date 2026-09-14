@@ -24,6 +24,8 @@ export class Game {
     await this.e.loadWorld(this.base + this.world.glb, this.world.eye);
     // 시대별 장식 코드는 world.json 이 가리킬 때만(코어는 시대 이름을 모른다)
     if (this.world.landscape) { const { buildLandscape } = await import(this.base + this.world.landscape); buildLandscape(this.e, this.quality()); }
+    // 후처리(GTAO·블룸·SMAA): 브라우저 눈 검증 전까지 ?post=1 로만 켬
+    if (this.quality() === 'high' && new URLSearchParams(location.search).get('post') === '1') this.e.enablePost();
     this.p = new Player(this.e, { eye: this.world.eye, bounds: this.world.bounds, yaw: 0 });
     const vq = new URLSearchParams(location.search).get('view'); this.p.setView(vq || this.world.view || 'fp');
     this.p.bindJoystick(document.getElementById('stick'), document.getElementById('knob'));
