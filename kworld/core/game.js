@@ -36,6 +36,12 @@ export class Game {
     }
     if (hi && qs.get('post') !== '0') this.e.enablePost({ ao: qs.get('ao') === '1' });
     this.p = new Player(this.e, { eye: this.world.eye, bounds: this.world.bounds, yaw: 0 });
+    if (this.world.id === 'paleo') {
+      try {
+        const { enhancePaleoActors } = await import('./paleo-actors.js');
+        await enhancePaleoActors(this.e, this.p);
+      } catch (error) { console.warn('Paleo actor assets unavailable; keeping original actors.', error); }
+    }
     const vq = new URLSearchParams(location.search).get('view'); this.p.setView(vq || this.world.view || 'fp');
     this.p.bindJoystick(document.getElementById('stick'), document.getElementById('knob'));
     // 시작 시선: 야영지 쪽(있으면) 을 바라봄
