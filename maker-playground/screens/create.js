@@ -120,7 +120,9 @@ window.MK_SCREENS.create = (() => {
       root.querySelectorAll('[data-cf-style]').forEach((b) => b.onclick = () => { s.style = b.dataset.cfStyle; s.step = 3; PG.render(); });
       root.querySelectorAll('[data-cf-tpl]').forEach((b) => b.onclick = () => { s.tpl = b.dataset.cfTpl; s.step = 4; PG.render(); });
       root.querySelectorAll('[data-cf-back]').forEach((b) => b.onclick = () => { s.step = +b.dataset.cfBack; PG.render(); });
-      const use = root.querySelector('[data-cf-use]'); if (use) use.onclick = () => PG.openEditor(use.dataset.cfUse);
+      /* R154 — 「이 템플릿 사용」 = Templates·홈과 같은 문(MK_TPL.load → 프로젝트 → workspace).
+         종전 PG.openEditor 는 검수용 Editor 화면(가짜 협업자·이름표 글자)이라 사진·글꼴이 안 살았다. */
+      const use = root.querySelector('[data-cf-use]'); if (use) use.onclick = () => (window.MK_TPL && window.MK_TPL.load && window.MK_PROJ) ? window.MK_TPL.load(use.dataset.cfUse) : PG.openEditor(use.dataset.cfUse);
     },
   };
 })();

@@ -34,7 +34,8 @@ T('MK_TPL 에 등록됨 (Forest Weekend — 캠핑장 현수막, 3:1, poster)', 
 T('MK_TPL.list() 에 있고 기존 템플릿 수는 줄지 않음', () => { const l = w.MK_TPL.list(); return l.some((t) => t.templateId === ID) && l.length >= 62 || l.length; });
 T('Templates 화면(browser) 「포스터」·「전체」 에 카드 노출', () => { w.PG.go('templates'); const b = w.document.getElementById('pgBody'); const all = !!b.querySelector(`[data-tpl="${ID}"]`); const cat = b.querySelector('[data-cat="poster"]'); if (cat) cat.click(); const po = !!b.querySelector(`[data-tpl="${ID}"]`); return all && po || JSON.stringify({ all, po }); });
 T('만들기 깔때기(포스터 → 스타일 → 목록) 에 노출 (R154: MK_TPL.list 로)', () => { w.MK_SCREENS.create.enter('poster'); w.PG.state.create.style = 'Premium'; w.PG.state.create.step = 3; w.PG.render(); const b = w.document.getElementById('pgBody'); return !!b.querySelector(`[data-cf-tpl="${ID}"]`) || '없음'; });
-T('깔때기 4단계 미리보기가 그 템플릿을 연다 (0번 샘플로 안 떨어짐)', () => { w.document.querySelector(`[data-cf-tpl="${ID}"]`).click(); const b = w.document.getElementById('pgBody').innerHTML; w.PG.loadEditorDoc(ID); return /Forest Weekend/.test(b) && w.PG.state.editor.doc.templateId === ID || w.PG.state.editor.doc.templateId; });
+T('깔때기 4단계 미리보기가 그 템플릿을 보여준다', () => { w.document.querySelector(`[data-cf-tpl="${ID}"]`).click(); const b = w.document.getElementById('pgBody').innerHTML; return /Forest Weekend/.test(b) || '미리보기 없음'; });
+T('「이 템플릿 사용」 → workspace(제품 편집기) 도달, 사진 src 유지', () => { w.document.querySelector('[data-cf-use]').click(); const p = w.MK_PROJ.current(); return w.PG.state.screen === 'workspace' && p && p.templateId === ID && !!p.doc.scenes[0].elements.find((e) => e.role === 'photo-slot').src || w.PG.state.screen; });
 
 console.log('--- ③ 열기 ---');
 let pid;
