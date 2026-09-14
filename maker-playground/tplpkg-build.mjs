@@ -16,6 +16,9 @@ const OUT = path.join(HERE, 'data', 'tplpkg-baked.js');
 
 export function build() {
   globalThis.window = globalThis.window || {};
+  /* R155 — Font Registry 를 먼저 올려 굳히는 시점에 fontId·대체 여부가 정해진다(런타임과 같은 해석) */
+  const fr = fs.readFileSync(path.join(HERE, 'data', 'fontreg.js'), 'utf8');
+  new Function('window', fr)(globalThis.window);
   const src = fs.readFileSync(path.join(HERE, 'data', 'tplpkg.js'), 'utf8');
   new Function('window', src)(globalThis.window);
   const T = globalThis.window.MK_TPLPKG;

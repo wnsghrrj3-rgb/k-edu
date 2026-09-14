@@ -39,6 +39,15 @@ window.MK_TPLPKG = (() => {
   /* 패키지 글꼴 → 케이메이커가 아는 글꼴. 사이드카 fontMap 이 우선, 없으면 기본표 */
   const FONT_MAP = { 'Noto Sans CJK KR': 'Noto Sans KR', 'Noto Sans CJK': 'Noto Sans KR', 'Noto Serif CJK KR': 'Gowun Batang', 'Pretendard Variable': 'Pretendard' };
   const mapFont = (fam, map) => (map && map[fam]) || FONT_MAP[fam] || fam;
+  /* R155 — Font Registry 가 있으면 그 해석이 정본: Exact → 별칭(사이드카 fontMap 포함) → Compatible → Fallback.
+     돌아온 값 {family, fontId, match, substituted}. 등록부가 없으면 종전 표(mapFont). */
+  function resolveFont(fam, map, where) {
+    const FR = window.MK_FONTREG;
+    if (FR && FR.resolve) { const r = FR.resolve(fam, { map, where }); return { family: r.family, fontId: r.fontId, match: r.match, substituted: r.substituted }; }
+    const f = mapFont(fam, map); return { family: f, fontId: null, match: f === fam ? 'exact' : 'alias', substituted: false };
+  }
+  /* 패키지 계약(kedu.editable-template/1.0)의 첫 줄 기준선 — pkg.typography.firstBaseline 이 있으면 그 값, 없으면 계약 기본 0.83 */
+  const baselineOf = (pkg) => { const t = pkg && pkg.typography; const v = t && (t.firstBaseline != null ? t.firstBaseline : t.baseline); return v != null && +v > 0 ? +v : 0.83; };
 
   /* ---------------- 검증 ---------------- */
   function validate(pkg) {
@@ -81,10 +90,23 @@ window.MK_TPLPKG = (() => {
 
     if (o.type === 'text') {
       const fs = +o.fontSize || 32;
+      const fr = resolveFont(o.fontFamily, ctx.fontMap, o.id);
       const el = { kind: 'text', ...base, text: String(o.text), size: r2(fs / H * 100), weight: +o.fontWeight || 400, color: o.fill || '#111111',
-        align: o.textAlign || 'left', font: mapFont(o.fontFamily, ctx.fontMap) };
-      if (o.letterSpacing) el.letterSpacing = r2(+o.letterSpacing / fs);
+        align: o.textAlign || 'left', font: fr.family };
+      /* R155 — 타이포 값 보존: 원본 글꼴 이름·fontId·기울임·변형·밑줄·세로정렬·줄바꿈 규약·기준선. 임의 정규화 없음 */
+      if (fr.fontId) el.fontId = fr.fontId;
+      if (o.fontFamily && o.fontFamily !== fr.family) el.srcFont = o.fontFamily;
+      if (fr.substituted) el.fontSub = { requested: o.fontFamily, family: fr.family, match: fr.match };
+      if (o.fontStyle === 'italic' || o.fontStyle === 'oblique') el.fontStyle = 'italic';
+      if (o.textTransform && o.textTransform !== 'none') el.textTransform = o.textTransform;
+      if (o.textDecoration && o.textDecoration !== 'none') el.textDecoration = o.textDecoration;
+      if (o.verticalAlign && o.verticalAlign !== 'top') el.vAlign = o.verticalAlign;
+      if (o.letterSpacing) el.letterSpacing = Math.round(+o.letterSpacing / fs * 1000) / 1000;   /* em, 소수 3자리 */
       if (o.lineHeight) el.lineHeight = +o.lineHeight;
+      if (o.paragraphSpacing) el.paragraphSpacing = r2(+o.paragraphSpacing / fs);
+      el.wrap = o.wrap === 'word' || o.wrap === 'char' ? o.wrap : 'none';     /* 계약: 명시적 \n 만, 자동 줄바꿈 없음 */
+      if (o.overflow === 'clip' || o.overflow === 'ellipsis' || o.overflow === 'autoresize') el.overflow = o.overflow;
+      el.baseline = ctx.baseline;
       return el;
     }
     if (o.role === 'photo-slot' || o.type === 'image') {
@@ -119,7 +141,7 @@ window.MK_TPLPKG = (() => {
     /* fallbackFor 가 같은 조각 = 그룹 하나 (슬롯 id 기준, 패키지 안에서 고정 이름) */
     const groups = {}, grpIds = {};
     const grpOf = (slot) => { if (!grpIds[slot]) { const g = 'g-' + slug(pkg.templateId || 'pkg') + '-' + slug(slot); grpIds[slot] = g; const so = objs.find((o) => o.id === slot); groups[g] = { name: '풍경 · ' + ((so && so.name) || slot).replace(/ ·.*$/, ''), aid: slot, kind: 'asset', fallbackFor: slot }; } return grpIds[slot]; };
-    const ctx = { grpOf, fontMap: opts.fontMap, dir: opts.dir };
+    const ctx = { grpOf, fontMap: opts.fontMap, dir: opts.dir, baseline: baselineOf(pkg) };
     const elements = objs.map((o) => toElement(o, W, H, ctx));
     /* 계약: 슬롯에 사진(src)이 있으면 그 슬롯을 대신하던 풍경 조각은 보존한 채 숨긴다(레이어 👁 로 복구) */
     elements.forEach((e) => { if (e.role === 'photo-slot' && e.src) hideFallbacks({ elements }, e); });
@@ -142,7 +164,8 @@ window.MK_TPLPKG = (() => {
       templateId: id, title, description: side.description || side.uses || meta.category || '',
       contentType: side.contentType || 'poster', category: side.category || '포스터', style: side.style || '모던', styleEn: side.styleEn || 'Premium',
       ratio, difficulty: side.difficulty || '보통', targetUser: side.targetUser || 'teacher', gradeRange: side.gradeRange || '전학년',
-      uses: side.uses || '', tags, recent: false, pkg: { dir: opts.dir, schema: pkg.schema, version: pkg.version || meta.version || '', preview: opts.dir ? BASE + opts.dir + '/' + (meta.preview || 'preview.png') : null },
+      uses: side.uses || '', tags, recent: false, pkg: { dir: opts.dir, schema: pkg.schema, version: pkg.version || meta.version || '', preview: opts.dir ? BASE + opts.dir + '/' + (meta.preview || 'preview.png') : null,
+        fonts: Array.isArray(pkg.fonts) ? pkg.fonts.map((f) => ({ family: f.family, src: f.src, weight: f.weight, style: f.style })) : [] },   /* R155 — 동봉 글꼴 선언(로더가 등록) */
       scenes: [toScene(pkg, { fontMap: side.fontMap, dir: opts.dir })],
     };
     const ov = { styleId: side.styleId || 'st-modern', animationId: 'an-none', assetIds: [],
@@ -179,10 +202,12 @@ window.MK_TPLPKG = (() => {
   /* 등록 목록(굳힌 파일이 채운다) */
   const REGISTERED = [];
   function register(src, ov) {
+    /* R155 — 패키지가 동봉한 글꼴을 등록부에 올린다(등록부에 이미 있는 글꼴은 그쪽 출처를 쓴다) */
+    try { if (window.MK_FONTREG && src && src.pkg && src.pkg.fonts && src.pkg.fonts.length) window.MK_FONTREG.addPackageFonts(src.pkg.fonts, BASE + src.pkg.dir + '/'); } catch (_) {}
     if (window.MK_TPL && window.MK_TPL.register) { try { window.MK_TPL.register(src, ov); } catch (_) { return false; } }
     REGISTERED.push(src.templateId);
     return true;
   }
 
-  return { SCHEMA, BASE, FONT_MAP, validate, toScene, toTemplate, toElement, vecBody, hideFallbacks, showFallbacks, applyTo, register, REGISTERED };
+  return { SCHEMA, BASE, FONT_MAP, resolveFont, validate, toScene, toTemplate, toElement, vecBody, hideFallbacks, showFallbacks, applyTo, register, REGISTERED };
 })();

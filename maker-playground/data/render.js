@@ -52,6 +52,17 @@ window.MK_RENDER = (() => {
   }
 
   function resolveFont(family, warn) {
+    /* R155 — Font Registry 가 있으면 그 해석이 정본. Exact/alias 면 그대로,
+       compatible/fallback 대체는 경고로 남긴다(등록부 SUBS 에도 남는다).
+       family 가 fontId 여도 통한다. */
+    const FR = window.MK_FONTREG;
+    if (FR && FR.resolve) {
+      const r = FR.resolve(family);
+      const src = r.entry && r.entry.source ? r.entry.source.type : 'registry';
+      if (r.substituted && warn) warn('font-substituted', `폰트 대체: ${r.requested} → ${r.family} (${r.match})`);
+      return { family: r.family, requested: r.requested || r.family, fontId: r.fontId, source: r.substituted ? 'fallback' : src, missing: r.substituted, match: r.match,
+        stack: [r.family].concat(FALLBACK_CHAIN.filter((f) => f !== r.family)).join(', ') };
+    }
     const fam = family || FALLBACK_CHAIN[0];
     let source = null;
     if (FONT_SOURCES.local.includes(fam)) source = 'local';
@@ -125,11 +136,15 @@ window.MK_RENDER = (() => {
     'Gowun Batang':     { han: .914, cjkp: .914, sp: .310, up: .632, lo: .485, di: .531, pu: .321, ot: .583 },
     'Nanum Pen Script': { han: .624, cjkp: .624, sp: .280, up: .436, lo: .385, di: .340, pu: .258, ot: .419 },
     'Gaegu':            { han: .820, cjkp: .820, sp: .420, up: .541, lo: .443, di: .509, pu: .372, ot: .609 },
+    'Cormorant Garamond': { han: .914, cjkp: .914, sp: .234, up: .638, lo: .441, di: .431, pu: .208, ot: .454 }, /* R155 — fontkit 실측(라틴 400) */
   };
 
   /* R115 — 폭 읽기 정본. 표에 없는 글꼴(브랜드 커스텀·OS 글꼴)은 폴백 표를 쓴다.
      읽는 자리가 여기 하나뿐이라야 다음에 또 갈리지 않는다. */
   function metricsOf(family) {
+    /* R155 — 등록부(실측 LIVE > 정적표)가 있으면 그것. 코모런트처럼 표에 없던 글꼴도 제 폭으로 잰다 */
+    const FR = window.MK_FONTREG;
+    if (FR && FR.metricsOf) { try { const m = FR.metricsOf(family); if (m) return m; } catch (_) {} }
     return FONT_METRICS[family || FALLBACK_CHAIN[0]] || FONT_METRICS[FALLBACK_CHAIN[0]];
   }
   const DEF_METRICS = FONT_METRICS[FALLBACK_CHAIN[0]];
@@ -217,12 +232,13 @@ window.MK_RENDER = (() => {
   function textLines(el, boxW, size) {
     /* R115 — 줄 수 정본도 글꼴을 본다. frameOf 가 이걸 부르므로, 여기서 표를
        안 넘기면 프레임만 옛 폭으로 남아 layoutText 와 다시 갈린다. */
-    return wrap(listPrefixed(el), boxW, size, lsOf(el) * size, metricsOf(el && el.font)).length;
+    if (el && el.wrap === 'none') return String(listPrefixed(el)).split('\n').length;   /* R155 */
+    return wrap(listPrefixed(el), boxW, size, lsOf(el) * size, metricsOf(el && (el.fontId || el.font))).length;
   }
 
   /* Paragraph 처리: bullet('· ')·number('1. ') 접두 + 오버플로 정책 */
   function layoutText(el, box, warn) {
-    const font = resolveFont(el.font, warn);
+    const font = resolveFont(el.fontId || el.font, warn);   /* R155 — fontId 우선 */
     /* R115 — 여기서 해석한 글꼴을 드디어 폭 계산이 쓴다. 종전엔 이 줄이
        그리기용 stack 만 만들고 폭은 전 글꼴 공통표로 쟀다.
        font.family 는 폴백이 이미 반영된 값이라, 없는 글꼴을 지정한 원소는
@@ -232,14 +248,19 @@ window.MK_RENDER = (() => {
     const lh = el.lineHeight || 1.35;
     const ls = lsOf(el) * size;
     let raw = listPrefixed(el);                    /* R111 — 접두 규약은 정본 하나로 */
+    /* R155 — 대소문자 변형은 배치 전에(폭이 달라진다). 문서의 el.text 는 그대로 */
+    if (el.textTransform && el.textTransform !== 'none') raw = window.MK_FONTREG ? window.MK_FONTREG.transformText(raw, el.textTransform) : raw;
+    /* R155 — 패키지 계약 wrap:'none' = 명시적 개행만, 자동 줄바꿈 없음(원본 타이포 보존) */
+    const noWrap = el.wrap === 'none';
+    const doWrap = (r, w, sz, lsp) => (noWrap ? r.split('\n') : wrap(r, w, sz, lsp, fm));
 
-    let lines = wrap(raw, box.w, size, ls, fm);
+    let lines = doWrap(raw, box.w, size, ls);
     const fits = () => lines.length * size * lh <= box.h + size * 0.4;
 
     const overflow = el.overflow || 'visible';
     if (overflow === 'autoresize') {
       let guard = 24;
-      while (!fits() && size > 6 && guard--) { size = R2(size * 0.92); lines = wrap(raw, box.w, size, lsOf(el) * size, fm); }
+      while (!fits() && size > 6 && guard--) { size = R2(size * 0.92); lines = doWrap(raw, box.w, size, lsOf(el) * size); }
     } else if (overflow === 'clip' || overflow === 'ellipsis') {
       const maxLines = Math.max(1, Math.floor(box.h / (size * lh)));
       if (lines.length > maxLines) {
@@ -572,12 +593,14 @@ window.MK_RENDER = (() => {
            자간 다른 텍스트가 남의 배치를 물려받았다 — probe113 실측: 자간 0.08 요소가
            자간 0 의 줄바꿈으로 출력됐다. 화면이 export 에게 묻기 시작한 이상,
            export 가 틀리면 화면도 같이 틀린다. 여기서 막는다. */
-        const tkey = fnv(JSON.stringify([el.text, sizePx, f.w, f.h, el.overflow, el.list, el.font, lsOf(el), el.lineHeight]));
+        const tkey = fnv(JSON.stringify([el.text, sizePx, f.w, f.h, el.overflow, el.list, el.fontId || el.font, lsOf(el), el.lineHeight, el.textTransform || '', el.wrap || '', el.fontStyle || '']));   /* R155 — 변형·줄바꿈·기울임도 배치 입력 */
         let T;
         if (CACHE.text.has(tkey)) { T = CACHE.text.get(tkey); CACHE.stats.hit++; }
         else { T = layoutText({ ...el, sizePx }, f, warn); CACHE.text.set(tkey, T); CACHE.stats.miss++; }
         const align = el.align || 'left';
         ops.push({ op: 'text', frame: f, lines: T.lines, size: R2(T.size), lineHeight: T.lineHeight, letterSpacing: R2(T.letterSpacing), align, weight: el.weight || 400, font: T.font, textW: R2(T.textW),
+          fontStyle: el.fontStyle === 'italic' ? 'italic' : 'normal', decoration: el.textDecoration || null,           /* R155 */
+          baseline: window.MK_FONTREG ? window.MK_FONTREG.baselineOf(el) : (el.baseline != null && +el.baseline > 0 ? +el.baseline : 0.9), /* R155 — 첫 줄 기준선(em) — 패키지 값 보존 */
           bg: el.bg || null, outline: el.outline || null, shadow: el.shadow || null, /* R56 — 텍스트 배경·외곽선·그림자 */
           style: { fill: el.color || (isDark(bg) ? '#FFFFFF' : '#1F2733'), ...base } });
         return;
@@ -697,8 +720,9 @@ window.MK_RENDER = (() => {
           fdef = ` filter="url(#${fid})"`;
         }
         const stroke = op.outline && op.outline.color ? ` stroke="${escX(op.outline.color)}" stroke-width="${R2((op.outline.w || 0.05) * op.size * 2)}" paint-order="stroke fill"` : '';
-        const spans = op.lines.map((l, i) => `<tspan x="${R2(tx)}" y="${R2(f.y + op.size * 0.9 + i * lineH)}">${escX(l)}</tspan>`).join('');
-        parts.push(`<text text-anchor="${anchor}" font-family="${escX(op.font.stack)}" font-size="${op.size}" font-weight="${op.weight}"${op.letterSpacing ? ` letter-spacing="${op.letterSpacing}"` : ''} fill="${escX(st.fill)}"${stroke}${fdef}${common}>${spans}</text>`);
+        const bl = op.baseline != null ? op.baseline : 0.9;   /* R155 */
+        const spans = op.lines.map((l, i) => `<tspan x="${R2(tx)}" y="${R2(f.y + op.size * bl + i * lineH)}">${escX(l)}</tspan>`).join('');
+        parts.push(`<text text-anchor="${anchor}" font-family="${escX(op.font.stack)}" font-size="${op.size}" font-weight="${op.weight}"${op.fontStyle === 'italic' ? ' font-style="italic"' : ''}${op.decoration ? ` text-decoration="${escX(op.decoration)}"` : ''}${op.letterSpacing ? ` letter-spacing="${op.letterSpacing}"` : ''} fill="${escX(st.fill)}"${stroke}${fdef}${common}>${spans}</text>`);
       }
     });
     parts.push('</svg>');
@@ -749,7 +773,7 @@ window.MK_RENDER = (() => {
         const f = op2.frame, size = op2.size * S, lineH = op2.size * op2.lineHeight * S;
         const tx0 = op2.align === 'center' ? (f.x + f.w / 2) * S : op2.align === 'right' ? (f.x + f.w) * S : f.x * S;
         cx.save();
-        cx.font = `${op2.weight || 400} ${size}px ${op2.font.stack}`;
+        cx.font = `${op2.fontStyle === 'italic' ? 'italic ' : ''}${op2.weight || 400} ${size}px ${op2.font.stack}`;   /* R155 */
         cx.textAlign = op2.align === 'center' ? 'center' : op2.align === 'right' ? 'right' : 'left';
         cx.textBaseline = 'alphabetic';
         try { cx.letterSpacing = (op2.letterSpacing || 0) * S + 'px'; } catch (_) {}
@@ -775,7 +799,7 @@ window.MK_RENDER = (() => {
           cx.shadowBlur = (op2.shadow.blur || 0) * size;
         }
         op2.lines.forEach((line, i) => {
-          const ty = (f.y + op2.size * 0.9) * S + i * lineH;
+          const ty = (f.y + op2.size * (op2.baseline != null ? op2.baseline : 0.9)) * S + i * lineH;   /* R155 — SVG 와 같은 기준선 */
           if (op2.outline && op2.outline.color) {
             cx.strokeStyle = op2.outline.color;
             cx.lineWidth = (op2.outline.w || 0.05) * size * 2;
@@ -857,7 +881,7 @@ window.MK_RENDER = (() => {
             const safe = latin ? line : line.replace(/[^\x20-\x7E]/g, '');
             if (!safe.trim()) return;
             const tx = op.align === 'center' ? px(f.x + f.w / 2) - size * safe.length * 0.27 : px(f.x);
-            cmds.push(`BT /${op.weight >= 600 ? 'FB' : 'F1'} ${size} Tf ${tx} ${py(f.y + op.size * 0.9 + i * op.size * op.lineHeight)} Td (${pdfEsc(safe)}) Tj ET`);
+            cmds.push(`BT /${op.weight >= 600 ? 'FB' : 'F1'} ${size} Tf ${tx} ${py(f.y + op.size * (op.baseline != null ? op.baseline : 0.9) + i * op.size * op.lineHeight)} Td (${pdfEsc(safe)}) Tj ET`);
           });
         }
       });

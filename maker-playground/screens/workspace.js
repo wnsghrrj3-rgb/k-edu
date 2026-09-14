@@ -401,7 +401,12 @@
         const fs = (el.size / 100 * CH).toFixed(1);
         const ts = window.MK_TEXTSTYLE ? window.MK_TEXTSTYLE.css(el) : ''; /* R56 — 글꼴·배경·외곽선·그림자 */
         const T = txtLay(el, sc), B = txtBody(el, T, CH, sc);            /* R113 — export 창구 */
-        return `<div class="ws-el text ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%${textBoxSty(el)};font-size:${fs}px;font-weight:${el.weight || 400}${el.color ? `;color:${el.color}` : ''}${el.align ? `;text-align:${el.align}` : ''}${ts}${B.sty}${rotStyText(el, CH)}">${B.html}${hd}</div>`;
+        /* R155 — 타이포 보존: 기울임·변형·밑줄 + 첫 줄 기준선(패키지 baseline) 을 export 와 같은 자리로 */
+        const FR = window.MK_FONTREG;
+        const fsPx = T ? T.size / (sc.height || 720) * CH : +fs;
+        const shift = FR && FR.domShiftPx ? FR.domShiftPx(el, fsPx) : 0;
+        const tx = (el.fontStyle === 'italic' ? ';font-style:italic' : '') + (el.textDecoration ? `;text-decoration:${el.textDecoration}` : '') + (shift ? `;margin-top:${shift.toFixed(2)}px` : '');
+        return `<div class="ws-el text ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%${textBoxSty(el)};font-size:${fs}px;font-weight:${el.weight || 400}${el.color ? `;color:${el.color}` : ''}${el.align ? `;text-align:${el.align}` : ''}${ts}${B.sty}${tx}${rotStyText(el, CH)}">${B.html}${hd}</div>`;
       }
       if (el.src) {                                    /* R45 — Workspace도 실이미지·실영상 표시 (R36 editor와 동일) */
         const fit = el.fit === 'contain' ? 'contain' : 'cover';
@@ -462,10 +467,22 @@
       `<div class="cx-nrow">${numIn('w', r1(el.w), 2, 200, 0.5, '%')}${isText ? '' : numIn('h', r1(el.h), 2, 200, 0.5, '%')}</div>`;
   };
   const WEIGHTS = [[300, '가늘게'], [400, '보통'], [500, '중간'], [700, '굵게'], [900, '아주 굵게']];
+  const WEIGHT_NAME = { 100: '아주 가늘게', 200: '아주 가늘게', 300: '가늘게', 400: '보통', 500: '중간', 600: '약간 굵게', 700: '굵게', 800: '아주 굵게', 900: '아주 굵게' };
   const textSizeCtl = (el) => {
     const sz = Math.round((+el.size || 3) * 10) / 10, wt = +el.weight || 400;
+    /* R155 — 굵기 목록은 그 글꼴이 실제로 가진 굵기(등록부). 문서 값이 목록에 없으면 그대로 두고 표시만 "(대체)" */
+    const FR = window.MK_FONTREG;
+    const entry = FR && FR.resolveEl ? FR.resolveEl(el).entry : null;
+    let ws = entry && entry.weights && entry.weights.length ? entry.weights.slice() : WEIGHTS.map(([v]) => v);
+    if (!ws.includes(wt)) ws = ws.concat([wt]).sort((a, b) => a - b);
+    const opts = ws.map((v) => `<option value="${v}"${wt === v ? ' selected' : ''}>${WEIGHT_NAME[v] || v} (${v})${entry && entry.weights && !entry.weights.includes(v) ? ' · 대체' : ''}</option>`).join('');
+    const ls = el.letterSpacing != null ? Math.round(+el.letterSpacing * 1000) / 1000 : 0, lh = el.lineHeight != null ? Math.round(+el.lineHeight * 100) / 100 : 1.35;
+    const st = FR && FR.statusOf ? FR.statusOf(el) : '';
+    const warn = st === 'failed' ? `<div class="cx-hint" style="color:#B45309">⚠ 글꼴 「${(entry && entry.displayName) || el.font}」 을 못 불러왔어요 — 임시 글꼴로 보입니다(문서의 글꼴은 그대로예요)</div>` : (el.fontSub ? `<div class="cx-hint">글꼴 대체: ${el.fontSub.requested} → ${el.fontSub.family}</div>` : '');
     return `<label class="cx-prow" style="margin-bottom:6px"><span>글자 크기</span><input type="range" min="1" max="20" step="0.5" value="${sz}" data-ws-tsize data-stop><b data-ws-tsizev>${sz}</b></label>` +
-      `<label class="cx-field"><span>굵기</span><select data-ws-tweight data-stop>${WEIGHTS.map(([v, n]) => `<option value="${v}"${wt === v ? ' selected' : ''}>${n} (${v})</option>`).join('')}</select></label>`;
+      `<label class="cx-field"><span>굵기</span><select data-ws-tweight data-stop>${opts}</select></label>` +
+      `<label class="cx-prow" style="margin-bottom:6px"><span>자간</span><input type="range" min="-0.1" max="0.6" step="0.005" value="${ls}" data-ws-tls data-stop><b data-ws-tlsv>${ls}</b></label>` +
+      `<label class="cx-prow" style="margin-bottom:6px"><span>행간</span><input type="range" min="0.8" max="2.5" step="0.01" value="${lh}" data-ws-tlh data-stop><b data-ws-tlhv>${lh}</b></label>` + warn;
   };
   /* R47 — 채우기 방식 컨트롤 (cover=꽉 채우기·잘림 / contain=원본 전체) */
   const fitCtl = (el, idx) => {
@@ -845,6 +862,17 @@
     },
     mount(root) {
       const m = M();
+      /* R155 — Font Ready 보장: 이 장면의 글꼴을 실제로 로드하고, 새로 로드된 게 있으면
+         (문자폭 실측표가 바뀌므로) 한 번 다시 그린다. 실패는 STATUS 에 남고 패널에 표시된다. */
+      const FR = window.MK_FONTREG;
+      if (FR && FR.ensureScene && scene()) {
+        const req = FR.requiredOf(scene());
+        const pending = req.filter((r) => (FR.STATUS[`${r.family}|${r.weight}|${r.style}`] || 'unloaded') !== 'loaded');
+        if (pending.length && !WS._fontWait) {
+          WS._fontWait = true;
+          FR.ensure(pending).then((res) => { WS._fontWait = false; WS.fontsFailed = res.failed; if (res.loaded.length && PG.state.screen === 'workspace') PG.render(); }).catch(() => { WS._fontWait = false; });
+        }
+      }
       const R = () => {
         /* R59 — 모든 편집 경로가 R()를 지나므로 여기서 디바운스 자동 저장 */
         if (window.MK_LIVE) window.MK_LIVE.autosave(doc(), {
@@ -1522,6 +1550,14 @@
         }
         const tw = root.querySelector('[data-ws-tweight]');
         if (tw) tw.onchange = () => { const el = selEl(); if (!el) return; snap(); el.weight = +tw.value || 400; R(); };
+        /* R155 — 자간(em)·행간(배수) 실컨트롤. 끄는 동안은 화면만, 놓으면 정본 배치로 */
+        const slide = (sel, key, lab, dec, apply) => {
+          const inp = root.querySelector(sel); if (!inp) return; let armed = false;
+          inp.oninput = () => { const el = selEl(); if (!el) return; if (!armed) { snap(); armed = true; } el[key] = Math.round(+inp.value * dec) / dec; const b = root.querySelector(lab); if (b) b.textContent = el[key]; const dom = selDom(); if (dom) apply(dom, el); };
+          inp.onchange = () => { armed = false; R(); };
+        };
+        slide('[data-ws-tls]', 'letterSpacing', '[data-ws-tlsv]', 1000, (dom, el) => { dom.style.letterSpacing = el.letterSpacing + 'em'; });
+        slide('[data-ws-tlh]', 'lineHeight', '[data-ws-tlhv]', 100, (dom, el) => { dom.style.lineHeight = el.lineHeight; });
       }
       const ab = root.querySelector('[data-ws-anim]'); if (ab) ab.onclick = () => PG.go('animation');
       /* R47 — 채우기 방식 */
@@ -1719,6 +1755,8 @@
             const el = selEl(); if (!el || el.kind !== 'text') return;
             snap();
             if (fam === 'Pretendard') delete el.font; else el.font = fam;
+            /* R155 — fontId 도 같이(등록부 참조). 옛 문서와 호환: font 이름은 계속 남긴다 */
+            if (window.MK_FONTREG) { const r = window.MK_FONTREG.resolve(fam); el.fontId = r.fontId; delete el.fontSub; delete el.srcFont; }
             R();
           };
         });
@@ -1727,6 +1765,7 @@
           const el = selEl(); if (!el || el.kind !== 'text') return;
           snap();
           if (fsel.value === 'Pretendard') delete el.font; else el.font = fsel.value;
+          if (window.MK_FONTREG) { const r = window.MK_FONTREG.resolve(fsel.value); el.fontId = r.fontId; delete el.fontSub; delete el.srcFont; }
           R();
         };
         root.querySelectorAll('[data-ws-tcol]').forEach((b) => b.onclick = () => {
