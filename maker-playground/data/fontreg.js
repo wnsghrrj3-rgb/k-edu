@@ -155,19 +155,23 @@ window.MK_FONTREG = (() => {
   const hasFace = (fam) => { try { const f = norm(fam).toLowerCase(); for (const face of document.fonts) { if (norm(face.family).toLowerCase() === f) return true; } } catch (_) {} return false; };
 
   /* 등록부의 출처(구글 CSS 등)가 페이지에 아직 없으면 붙인다 — 런타임에 새 글꼴을 등록했을 때 */
-  function ensureSource(entry) {
+  function ensureSource(entry, reload) {
     if (typeof document === 'undefined' || !entry || !entry.source) return false;
     const s = entry.source;
     if (s.type === 'google') {
-      const has = [...document.querySelectorAll('link[href*="fonts.googleapis.com"]')].some((l) => l.href.indexOf(encodeURIComponent(s.family).replace(/%20/g, '+')) >= 0 || l.href.indexOf(s.family.replace(/ /g, '+')) >= 0);
-      if (has) return false;
+      const mine = [...document.querySelectorAll('link[href*="fonts.googleapis.com"]')].filter((l) => l.href.indexOf(encodeURIComponent(s.family).replace(/%20/g, '+')) >= 0 || l.href.indexOf(s.family.replace(/ /g, '+')) >= 0);
+      /* R156 — 다시 시도: 이미 붙은 <link> 는 다시 받아오지 않으므로 떼고 새로 붙인다(주소에 표식) */
+      if (mine.length && !reload) return false;
+      if (reload) mine.forEach((l) => l.parentNode && l.parentNode.removeChild(l));
       const l = document.createElement('link'); l.rel = 'stylesheet';
-      l.href = `https://fonts.googleapis.com/css2?family=${s.family.replace(/ /g, '+')}${s.weights && s.weights.length > 1 ? ':wght@' + s.weights.join(';') : ''}&display=block`;
+      l.href = `https://fonts.googleapis.com/css2?family=${s.family.replace(/ /g, '+')}${s.weights && s.weights.length > 1 ? ':wght@' + s.weights.join(';') : ''}&display=block` + (reload ? '&kmretry=' + Date.now() : '');
       document.head.appendChild(l); return true;
     }
     if (s.type === 'local' && s.href) {
-      if ([...document.querySelectorAll('link[rel=stylesheet]')].some((l) => l.href === s.href)) return false;
-      const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = s.href; document.head.appendChild(l); return true;
+      const mine = [...document.querySelectorAll('link[rel=stylesheet]')].filter((l) => (l.href || '').split('?')[0] === s.href);
+      if (mine.length && !reload) return false;
+      if (reload) mine.forEach((l) => l.parentNode && l.parentNode.removeChild(l));
+      const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = s.href + (reload ? '?kmretry=' + Date.now() : ''); document.head.appendChild(l); return true;
     }
     return false;
   }
@@ -210,7 +214,7 @@ window.MK_FONTREG = (() => {
       const r = resolve(s.family || s.fontId || s.font, { where: s.where });
       const w = nearestWeight(r.entry, s.weight); const st = s.style === 'italic' && r.entry.styles.includes('italic') ? 'italic' : 'normal';
       const k = key(r.family, w, st); if (seen.has(k)) return; seen.add(k);
-      ensureSource(r.entry);
+      ensureSource(r.entry, opts.reload);
       jobs.push(ensureOne(r.family, w, st, s.text, opts.timeout));
     });
     return Promise.all(jobs).then((rs) => ({ ok: rs.every((x) => x.ok), loaded: rs.filter((x) => x.ok).map((x) => x.key), failed: rs.filter((x) => x.status === 'failed').map((x) => x.key), unknown: rs.filter((x) => x.status === 'unknown').map((x) => x.key) }));
@@ -230,6 +234,20 @@ window.MK_FONTREG = (() => {
   const ensureDoc = (doc, opts) => ensure(requiredOf(doc), opts);
   const statusOf = (el) => { const r = resolveEl(el); return STATUS[key(r.family, nearestWeight(r.entry, el && el.weight), el && el.fontStyle === 'italic' ? 'italic' : 'normal')] || 'unloaded'; };
   const failed = () => Object.keys(STATUS).filter((k) => STATUS[k] === 'failed');
+  /* R156 — 실패한 글꼴을 사람이 눌렀을 때만 다시 시도한다(자동 재시도는 여전히 없음 — 무한 반복 방지).
+     STATUS 를 지우고 출처 <link> 를 새로 붙인 뒤 ensure 를 다시 돈다. 문서의 글꼴 값은 건드리지 않는다. */
+  function retry(specs, opts) {
+    const list = Array.isArray(specs) ? specs : (specs ? [specs] : failed().map((k) => { const a = k.split('|'); return { family: a[0], weight: +a[1], style: a[2] }; }));
+    const jobs = list.map((s) => {
+      const r = resolve(s.family || s.fontId || s.font, {});
+      const w = nearestWeight(r.entry, s.weight);
+      const st = s.style === 'italic' && r.entry.styles.includes('italic') ? 'italic' : 'normal';
+      delete STATUS[key(r.family, w, st)];
+      return { family: r.family, weight: w, style: st, text: s.text };
+    });
+    return ensure(jobs, Object.assign({ reload: true }, opts || {}));
+  }
+  const retryEl = (el, opts) => { const r = resolveEl(el); return retry([{ family: r.family, weight: el && el.weight, style: el && el.fontStyle, text: String((el && el.text) || '').slice(0, 40) }], opts); };
 
   /* ---------------- 패키지 동봉 글꼴 ---------------- */
   /* pkgFonts: [{family, src, weight:'300 700'|400, style}] · base: 패키지 폴더 절대 주소.
@@ -317,7 +335,7 @@ window.MK_FONTREG = (() => {
     return s;
   }
 
-  /* ---------------- Typography Preset (데이터 구조 — UI 는 다음) ----------------
+  /* ---------------- Typography Preset (R156 부터 텍스트 패널 「타이포 프리셋」 6칩) ----------------
      fontSizeRatio = 장면 높이 대비 %(요소 size 와 같은 단위) */
   const PRESETS = [
     { id: 'tp-premium-serif-hero', name: 'Premium Serif Hero', ko: '프리미엄 세리프 제목', fontId: 'cormorant-garamond', fontWeight: 400, fontSizeRatio: 18, lineHeight: 1.04, letterSpacing: 0, textTransform: 'uppercase' },
@@ -359,7 +377,7 @@ window.MK_FONTREG = (() => {
 
   return { FONTS, ALIASES, COMPAT, PRESETS, FALLBACK_ID, BASELINE_DEFAULT,
     get, list, resolve, resolveEl, nearestWeight, normalizeEl, transformText,
-    ensure, ensureOne, ensureScene, ensureDoc, requiredOf, statusOf, failed, STATUS, onChange, ensureSource, hasFace,
+    ensure, ensureOne, ensureScene, ensureDoc, requiredOf, statusOf, failed, retry, retryEl, STATUS, onChange, ensureSource, hasFace,
     addPackageFonts, register,
     metricsOf, measureLive, LIVE, cssBaseline, baselineOf, domShiftPx,
     substitutions: () => SUBS.slice(), applyPreset, audit };

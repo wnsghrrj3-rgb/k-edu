@@ -468,6 +468,26 @@
   };
   const WEIGHTS = [[300, '가늘게'], [400, '보통'], [500, '중간'], [700, '굵게'], [900, '아주 굵게']];
   const WEIGHT_NAME = { 100: '아주 가늘게', 200: '아주 가늘게', 300: '가늘게', 400: '보통', 500: '중간', 600: '약간 굵게', 700: '굵게', 800: '아주 굵게', 900: '아주 굵게' };
+  /* R156 — 타이포 프리셋: 등록부(MK_FONTREG.PRESETS)의 6종을 한 번에 얹는다(글꼴·굵기·크기·행간·자간·대문자).
+     문서에 새 칸을 만들지 않으려고 「지금 켜짐」은 값으로 판정한다 */
+  const tpresetOn = (el, p) => {
+    const FR = window.MK_FONTREG; if (!FR || !FR.get) return false;
+    const e = FR.get(p.fontId); if (!e) return false;
+    if (FR.resolveEl(el).fontId !== p.fontId) return false;
+    if ((+el.weight || 400) !== FR.nearestWeight(e, p.fontWeight)) return false;
+    const near = (a, b, t) => a != null && Math.abs(+a - b) <= t;
+    if (!near(el.lineHeight, p.lineHeight, 0.011) || !near(el.letterSpacing, p.letterSpacing, 0.0011)) return false;
+    return (el.textTransform || 'none') === (p.textTransform || 'none');
+  };
+  const tpresetCtl = (el) => {
+    const FR = window.MK_FONTREG; if (!FR || !FR.PRESETS || !FR.PRESETS.length) return '';
+    const chips = FR.PRESETS.map((p) => {
+      const e = FR.get(p.fontId) || {};
+      const prev = `font-family:'${e.family || 'Pretendard'}',sans-serif;font-weight:${p.fontWeight};letter-spacing:${p.letterSpacing}em;`;
+      return `<button class="cx-tpre${tpresetOn(el, p) ? ' on' : ''}" data-ws-tpreset="${p.id}" title="${M().esc(p.name + ' — ' + (e.displayName || '') + ' ' + p.fontWeight)}"><span style="${prev}">가나 Ag</span><small>${M().esc(p.ko)}</small></button>`;
+    }).join('');
+    return `<label class="cx-field"><span>타이포 프리셋 — 글꼴·굵기·크기·행간·자간 한 번에</span></label><div class="cx-tpres">${chips}</div>`;
+  };
   const textSizeCtl = (el) => {
     const sz = Math.round((+el.size || 3) * 10) / 10, wt = +el.weight || 400;
     /* R155 — 굵기 목록은 그 글꼴이 실제로 가진 굵기(등록부). 문서 값이 목록에 없으면 그대로 두고 표시만 "(대체)" */
@@ -478,7 +498,8 @@
     const opts = ws.map((v) => `<option value="${v}"${wt === v ? ' selected' : ''}>${WEIGHT_NAME[v] || v} (${v})${entry && entry.weights && !entry.weights.includes(v) ? ' · 대체' : ''}</option>`).join('');
     const ls = el.letterSpacing != null ? Math.round(+el.letterSpacing * 1000) / 1000 : 0, lh = el.lineHeight != null ? Math.round(+el.lineHeight * 100) / 100 : 1.35;
     const st = FR && FR.statusOf ? FR.statusOf(el) : '';
-    const warn = st === 'failed' ? `<div class="cx-hint" style="color:#B45309">⚠ 글꼴 「${(entry && entry.displayName) || el.font}」 을 못 불러왔어요 — 임시 글꼴로 보입니다(문서의 글꼴은 그대로예요)</div>` : (el.fontSub ? `<div class="cx-hint">글꼴 대체: ${el.fontSub.requested} → ${el.fontSub.family}</div>` : '');
+    /* R156 — 실패는 「다시 시도」 로만 되돌린다(자동 재시도 없음) */
+    const warn = st === 'failed' ? `<div class="cx-hint" style="color:#B45309">⚠ 글꼴 「${(entry && entry.displayName) || el.font}」 을 못 불러왔어요 — 임시 글꼴로 보입니다(문서의 글꼴은 그대로예요)<br><button class="cx-retry" data-ws-fontretry>↻ 다시 시도</button></div>` : (el.fontSub ? `<div class="cx-hint">글꼴 대체: ${el.fontSub.requested} → ${el.fontSub.family}</div>` : '');
     return `<label class="cx-prow" style="margin-bottom:6px"><span>글자 크기</span><input type="range" min="1" max="20" step="0.5" value="${sz}" data-ws-tsize data-stop><b data-ws-tsizev>${sz}</b></label>` +
       `<label class="cx-field"><span>굵기</span><select data-ws-tweight data-stop>${opts}</select></label>` +
       `<label class="cx-prow" style="margin-bottom:6px"><span>자간</span><input type="range" min="-0.1" max="0.6" step="0.005" value="${ls}" data-ws-tls data-stop><b data-ws-tlsv>${ls}</b></label>` +
@@ -738,6 +759,7 @@
           const alignBtn = (a2, ic) => `<button class="cx-alb${(el.align || 'left') === a2 ? ' on' : ''}" data-ws-tal="${a2}">${ic}</button>`;
           styleCtl =
             `<label class="cx-field"><span>스타일</span></label><div class="cx-tsps">${presets}</div>` +
+            tpresetCtl(el) +
             `<label class="cx-field"><span>글꼴 — 올리면 미리보기</span></label><div class="cx-fonts">${fonts}</div>` +
             `<label class="cx-field"><span>글자색</span></label><div class="cx-sws">${cols}</div>` +
             `<label class="cx-field"><span>배경</span></label><div class="cx-sws">${bgs}</div>` +
@@ -1559,6 +1581,24 @@
         };
         slide('[data-ws-tls]', 'letterSpacing', '[data-ws-tlsv]', 1000, (dom, el) => { dom.style.letterSpacing = el.letterSpacing + 'em'; });
         slide('[data-ws-tlh]', 'lineHeight', '[data-ws-tlhv]', 100, (dom, el) => { dom.style.lineHeight = el.lineHeight; });
+        /* R156 — 타이포 프리셋 6칩: 얹고 그 글꼴을 실제로 로드한 뒤 다시 그린다 */
+        root.querySelectorAll('[data-ws-tpreset]').forEach((b) => b.onclick = () => {
+          const el = selEl(); if (!el || el.kind !== 'text') return;
+          const FR = window.MK_FONTREG; if (!FR || !FR.applyPreset) return;
+          snap();
+          if (!FR.applyPreset(el, b.dataset.wsTpreset)) return;
+          delete el.fontSub; delete el.srcFont;
+          R();
+          if (FR.retryEl && FR.statusOf(el) === 'failed') return;
+          if (FR.ensure) FR.ensure(FR.requiredOf([el])).then((res) => { if ((res.loaded.length || res.failed.length) && PG.state.screen === 'workspace') PG.render(); }).catch(() => {});
+        });
+        /* R156 — 로드 실패 「다시 시도」: STATUS 를 지우고 출처를 새로 붙여 한 번 더 */
+        const fr = root.querySelector('[data-ws-fontretry]');
+        if (fr) fr.onclick = () => {
+          const el = selEl(); const FR = window.MK_FONTREG; if (!el || !FR || !FR.retryEl) return;
+          fr.disabled = true; fr.textContent = '↻ 불러오는 중…';
+          FR.retryEl(el).then(() => { if (PG.state.screen === 'workspace') PG.render(); }).catch(() => { fr.disabled = false; fr.textContent = '↻ 다시 시도'; });
+        };
       }
       const ab = root.querySelector('[data-ws-anim]'); if (ab) ab.onclick = () => PG.go('animation');
       /* R47 — 채우기 방식 */

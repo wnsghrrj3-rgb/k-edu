@@ -284,7 +284,7 @@ T('W23 undo 로 처음(삽입 전)까지 되돌려도 groups 가 남지 않는�
   const a = read('index.html'), b = read('../maker/index.html');
   const ord = (h) => h.indexOf('tplsvg.js') < h.indexOf('svgasset.js') && h.indexOf('svgasset.js') < h.indexOf('screens/workspace.js');
   T('W24a index.html 순서', () => ord(a) ? true : '순서');
-  T('W24b maker/index.html 순서 + 버스터', () => ord(b) && /workspace\.js\?v=2026091[45][a-z]/.test(b) && /playground\.css\?v=20260914[a-z]/.test(b) ? true : '순서/버스터');
+  T('W24b maker/index.html 순서 + 버스터', () => ord(b) && /workspace\.js\?v=2026091[45][a-z]/.test(b) && /playground\.css\?v=2026091[45][a-z]/.test(b) ? true : '순서/버스터');
   const css = read('playground.css');
   T('W24c CSS: .ws-gbox·.ws-gh·.ws-lrow·.cx-paint', () => ['.ws-gbox', '.ws-gh', '.ws-lrow', '.cx-paint', '.ws-el.vec'].every((k) => css.includes(k)) ? true : 'CSS 누락');
 }
