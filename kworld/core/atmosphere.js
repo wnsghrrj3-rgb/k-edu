@@ -31,11 +31,12 @@ export function applyAtmosphere(engine) {
   texture.mapping = THREE.EquirectangularReflectionMapping;
   texture.colorSpace = THREE.SRGBColorSpace;
   engine.scene.background = texture;
-  engine.scene.fog = new THREE.Fog(0xd9e1de, 45, 145);
-  engine.renderer.toneMappingExposure = 0.95;
+  engine.scene.fog = new THREE.Fog(0xdfe3d6, 38, 150);
+  engine.renderer.toneMappingExposure = 1.02;
   const ambient = engine.scene.children.find((o) => o.isHemisphereLight);
-  ambient.color.set(0xd9eafa); ambient.groundColor.set(0x857355); ambient.intensity = 0.65;
-  engine.sun.color.set(0xffdfac); engine.sun.intensity = 2.1;
-  engine.sun.position.set(-34, 32, 24); engine.sunOffset = new THREE.Vector3(-34, 32, 24);
+  ambient.color.set(0xd6e6fa); ambient.groundColor.set(0x8a7451); ambient.intensity = 0.6;
+  // 늦은 오후: 낮게 길게 들어오는 노을빛
+  engine.sun.color.set(0xffd9a0); engine.sun.intensity = 2.35;
+  engine.sun.position.set(-34, 26, 24); engine.sunOffset = new THREE.Vector3(-34, 26, 24);
   engine.sun.shadow.normalBias = 0.035;
 }

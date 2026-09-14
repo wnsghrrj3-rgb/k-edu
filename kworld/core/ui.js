@@ -10,6 +10,12 @@ export class UI {
     this.toastTimer = null;
   }
   setTitle(t, q, short) { $('title').textContent = t; $('question').textContent = q; if (short && $('eratag')) $('eratag').textContent = 'KEDU WORLD · ' + short; }
+  /** 시대 진입 자막: 큰 제목·질문이 떠올랐다 사라진다(입력을 막지 않음) */
+  intro(title, question) {
+    const el = $('intro'); if (!el) return;
+    el.querySelector('.t').textContent = title; el.querySelector('.q').textContent = question || '';
+    el.classList.add('on'); el.addEventListener('animationend', () => el.classList.remove('on'), { once: true });
+  }
   setGoal(t) { this.goal.textContent = t; }
   setMission(title, i, n) { $('mtitle').textContent = title; $('mcount').textContent = `${Math.min(i + 1, n)}/${n}`; $('mission').classList.add('flash'); setTimeout(() => $('mission').classList.remove('flash'), 900); }
   setCompass(name, bearing, dist) { const el = $('compass'); el.style.display = 'flex'; $('cname').textContent = name; $('cdist').textContent = dist < 6 ? '여기' : Math.round(dist) + 'm'; $('carrow').style.transform = `rotate(${-bearing}rad)`; }

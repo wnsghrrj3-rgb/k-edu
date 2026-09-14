@@ -5,6 +5,7 @@ import { Player } from './player.js';
 import { UI } from './ui.js';
 import { createFire } from './fire.js';
 import { bindMinimap } from './minimap.js';
+import { addSkyDome, addMotes, enhanceWater } from './visuals.js';
 
 const J = (u) => fetch(u).then((r) => r.json());
 
@@ -26,8 +27,13 @@ export class Game {
     this.initTargets();
     // 시대별 장식 코드는 world.json 이 가리킬 때만(코어는 시대 이름을 모른다)
     if (this.world.landscape) { const { buildLandscape } = await import(new URL(this.base + this.world.landscape, location.href).href); buildLandscape(this.e, this.quality()); }
-    // 후처리(GTAO·블룸·SMAA): 브라우저 눈 검증 전까지 ?post=1 로만 켬
-    if (this.quality() === 'high' && new URLSearchParams(location.search).get('post') === '1') this.e.enablePost();
+    // 보이는 것: 절차 하늘·햇빛 먼지·물결. ?fx=0 이면 끔. 후처리(블룸·색보정·SMAA)는 고사양 기본, ?post=0 끔, ?ao=1 로 구석 어둠 추가
+    const qs = new URLSearchParams(location.search); const hi = this.quality() === 'high';
+    if (qs.get('fx') !== '0') {
+      addSkyDome(this.e, this.world.skyLook || {}); enhanceWater(this.e);
+      if (hi) { addMotes(this.e); this.e.sun.shadow.mapSize.set(4096, 4096); }
+    }
+    if (hi && qs.get('post') !== '0') this.e.enablePost({ ao: qs.get('ao') === '1' });
     this.p = new Player(this.e, { eye: this.world.eye, bounds: this.world.bounds, yaw: 0 });
     const vq = new URLSearchParams(location.search).get('view'); this.p.setView(vq || this.world.view || 'fp');
     this.p.bindJoystick(document.getElementById('stick'), document.getElementById('knob'));
@@ -41,7 +47,7 @@ export class Game {
     this.bindButtons();
     this.e.onFrame.push((dt) => this.tick(dt));
     document.getElementById('load').remove();
-    this.e.start();
+    this.e.start(); this.ui.intro(this.world.title, this.world.question);
     setTimeout(() => this.ui.say(this.world.intro, 5000), 400);
   }
   /** 기기 등급: 'low'(태블릿·저사양) / 'high'. URL ?q=low|high 로 강제 */

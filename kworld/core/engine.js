@@ -9,6 +9,7 @@ import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
+import { makeGradePass } from './visuals.js';
 
 export class Engine {
   constructor(canvas, atmosphere) {
@@ -27,6 +28,8 @@ export class Engine {
     sun.position.set(-34, 26, 30); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
     const sc = sun.shadow.camera; sc.left = -60; sc.right = 60; sc.top = 60; sc.bottom = -60; sc.near = 1; sc.far = 160; sun.shadow.bias = -0.0006;
     this.scene.add(sun); this.scene.add(sun.target);
+    // 하늘 반대편에서 오는 차가운 반사광: 그늘이 검게 죽지 않게
+    const fill = this.fill = new THREE.DirectionalLight(0xbcd4f0, 0.35); fill.position.set(30, 14, -26); this.scene.add(fill);
     this.atmosphere = atmosphere;
     if (atmosphere === 'warm-daylight') applyAtmosphere(this);
     this.materials = new Map();
@@ -44,20 +47,25 @@ export class Engine {
     this.camera.aspect = innerWidth / innerHeight; this.camera.updateProjectionMatrix();
     if (this.composer) { this.composer.setSize(innerWidth, innerHeight); this.gtao?.setSize(innerWidth, innerHeight); }
   }
-  /** 후처리(고사양만): 구석 어둠(GTAO) · 불빛 번짐(블룸) · 계단 제거(SMAA). 실패하면 조용히 기본 렌더로 */
+  /** 후처리: 블룸(불빛 번짐) · 색 보정 · SMAA(계단 제거). GTAO(구석 어둠)는 opts.ao 일 때만. 실패하면 조용히 기본 렌더로 */
   enablePost(opts = {}) {
     try {
-      const r = this.renderer; r.shadowMap.type = THREE.VSMShadowMap; this.sun.shadow.radius = 4; this.sun.shadow.blurSamples = 8;
+      const r = this.renderer;
+      if (opts.softShadow !== false) { r.shadowMap.type = THREE.VSMShadowMap; this.sun.shadow.radius = 3; this.sun.shadow.blurSamples = 8; }
       const c = this.composer = new EffectComposer(r);
       c.addPass(new RenderPass(this.scene, this.camera));
-      const g = this.gtao = new GTAOPass(this.scene, this.camera, innerWidth, innerHeight);
-      g.output = GTAOPass.OUTPUT.Default; g.blendIntensity = 0.85;
-      g.updateGtaoMaterial({ radius: 0.35, distanceExponent: 1.5, thickness: 1, scale: 1, samples: 12, distanceFallOff: 1, screenSpaceRadius: false });
-      g.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 4, rings: 2, samples: 8 });
-      c.addPass(g);
-      const b = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), opts.bloom ?? 0.22, 0.6, 0.92); c.addPass(b);
+      if (opts.ao) {
+        const g = this.gtao = new GTAOPass(this.scene, this.camera, innerWidth, innerHeight);
+        g.output = GTAOPass.OUTPUT.Default; g.blendIntensity = 0.85;
+        g.updateGtaoMaterial({ radius: 0.35, distanceExponent: 1.5, thickness: 1, scale: 1, samples: 12, distanceFallOff: 1, screenSpaceRadius: false });
+        g.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 4, rings: 2, samples: 8 });
+        c.addPass(g);
+      }
+      const b = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), opts.bloom ?? 0.18, 0.55, 0.9); c.addPass(b);
       c.addPass(new OutputPass());
+      const grade = this.grade = makeGradePass(); grade.uniforms.uStrength.value = opts.grade ?? 1; c.addPass(grade);
       c.addPass(new SMAAPass());
+      this.onFrame.push((dt) => { grade.uniforms.uTime.value += dt; });
       this.post = true;
     } catch (e) { console.warn('post off', e); this.composer = null; this.post = false; }
   }
