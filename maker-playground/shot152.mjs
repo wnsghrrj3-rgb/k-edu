@@ -47,7 +47,7 @@ const hitAt = (x, y) => pg.evaluate((x, y) => { const t = document.elementFromPo
 await pg.goto(base + '#/workspace', { waitUntil: 'networkidle0' }); await wait(1200);
 await pg.evaluate(() => window.PG && window.PG.go('workspace')); await wait(600);
 /* 깨끗한 장면에서 시작 — 기존 요소는 비운다(시나리오 판정용) */
-await pg.evaluate(() => { const S = window.MK_WS.state, P = window.MK_PROJ.get(S.projectId); const sc = P.doc.scenes[S.sceneIdx]; sc.elements = []; sc.background = '#F4F1EA'; window.PG.render(); });
+await pg.evaluate(() => { const S = window.MK_WS.state, P = window.MK_PROJ.get(S.projectId); const sc = P.doc.scenes[S.sceneIdx]; sc.elements = []; sc.background = '#F4F1EA'; sc.width = 1200; sc.height = 1440; window.MK_WS.state.zoom = 130; window.PG.render(); });   /* 사진 프레임 용도 = 세로 장면(5:6) + 확대 — 작은 조각(별·오너먼트)을 손으로 짚을 수 있는 크기로 */
 await wait(400);
 await pg.evaluate(() => document.querySelector('[data-ws-nav="assets"]').click()); await wait(400);
 await shot('assets-panel');
@@ -69,12 +69,13 @@ await drag(any.x, any.y, any.x + 60, any.y + 30);
 let s2 = await st();
 ok(Math.abs((s2.els[any.i].x - s.els[any.i].x) - 60 / cv.w * 100) < 0.6, `② 이동 — dx ${(s2.els[any.i].x - s.els[any.i].x).toFixed(1)}% (기대 ${(60 / cv.w * 100).toFixed(1)}%) · undo ${s2.undo}`);
 const gb1 = await rectOf('[data-ws-gbox]');
-const br1 = await rectOf('[data-ws-gh="br"]');
-await drag(br1.x + br1.w / 2, br1.y + br1.h / 2, br1.x + br1.w / 2 - 80, br1.y + br1.h / 2 - 60);
+/* 세로 장면·확대라 아래쪽 손잡이는 화면 밖 — 왼쪽 위(tl) 손잡이로 줄였다 되돌린다 */
+const tl1 = await rectOf('[data-ws-gh="tl"]');
+await drag(tl1.x + tl1.w / 2, tl1.y + tl1.h / 2, tl1.x + tl1.w / 2 + 80, tl1.y + tl1.h / 2 + 60);
 const gb2 = await rectOf('[data-ws-gbox]');
 ok(gb2 && gb2.w < gb1.w - 60 && Math.abs(gb2.h / gb2.w - gb1.h / gb1.w) < 0.03, `② 크기 — ${Math.round(gb1.w)}→${Math.round(gb2.w)}px, 비율 ${(gb1.h / gb1.w).toFixed(3)}→${(gb2.h / gb2.w).toFixed(3)}`);
 /* 원래 자리로 되돌려 다음 단계는 큰 화면에서 */
-await drag(await rectOf('[data-ws-gh="br"]').then((r) => r.x + r.w / 2), await rectOf('[data-ws-gh="br"]').then((r) => r.y + r.h / 2), br1.x + br1.w / 2, br1.y + br1.h / 2);
+await drag(await rectOf('[data-ws-gh="tl"]').then((r) => r.x + r.w / 2), await rectOf('[data-ws-gh="tl"]').then((r) => r.y + r.h / 2), tl1.x + tl1.w / 2, tl1.y + tl1.h / 2);
 await shot('moved-resized');
 
 /* ③ 솔잎(needle/pine/branch/leaf) 선택 — 두 번 탭 = 내부 편집 */
@@ -167,20 +168,24 @@ ok(vecDom === s11.vec, `   화면 svg ${vecDom}/${s11.vec}`);
 /* 부록: 레이어 패널 · bbox 실측 대조(svg 가 그린 실제 그림 vs 상자) */
 await pg.evaluate(() => document.querySelector('[data-ws-nav="layers"]').click()); await wait(400);
 await shot('layers');
-const bboxCheck = await pg.evaluate(() => {
-  const out = [];
-  document.querySelectorAll('.ws-el.vec').forEach((d) => {
-    const sv = d.querySelector('svg'); if (!sv) return;
-    try {
-      const g = sv.firstElementChild; const bb = g.getBBox ? g.getBBox() : null; if (!bb) return;
-      const vb = sv.viewBox.baseVal;
-      const dx = (bb.x - vb.x) / vb.width, dy = (bb.y - vb.y) / vb.height, dw = bb.width / vb.width, dh = bb.height / vb.height;
-      out.push({ i: d.dataset.wsEl, dx: +dx.toFixed(2), dy: +dy.toFixed(2), dw: +dw.toFixed(2), dh: +dh.toFixed(2) });
-    } catch (_) {}
-  });
+/* 상자 vs 실제 그림 — 조각을 자기 viewBox 로 그려 픽셀 경계를 잰다. (getBBox 는 회전한 <g> 를 회전 전 상자의 네 귀퉁이로 부풀려 답하므로 기준으로 못 쓴다 — 픽셀이 정답) */
+const bboxCheck = await pg.evaluate(async () => {
+  const S = window.MK_WS.state, P = window.MK_PROJ.get(S.projectId); const sc = P.doc.scenes[S.sceneIdx]; const SA = window.MK_SVGASSET;
+  const out = []; const W = 160, H = 160; const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const ctx = cv.getContext('2d');
+  for (let i = 0; i < sc.elements.length; i++) {
+    const e = sc.elements[i]; if (e.kind !== 'vector') continue;
+    const svg = SA.svgTag(e).replace('<svg ', `<svg width="${W}" height="${H}" `);
+    const img = new Image(); img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    await new Promise((r) => { img.onload = r; img.onerror = r; });
+    ctx.clearRect(0, 0, W, H); ctx.drawImage(img, 0, 0, W, H);
+    const d = ctx.getImageData(0, 0, W, H).data; let x0 = 1e9, y0 = 1e9, x1 = -1, y1 = -1;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (d[(y * W + x) * 4 + 3] > 8) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    if (x1 < 0) { out.push({ i, empty: true }); continue; }
+    out.push({ i, l: e.label, dx: +(x0 / W).toFixed(2), dy: +(y0 / H).toFixed(2), dw: +((x1 - x0 + 1) / W).toFixed(2), dh: +((y1 - y0 + 1) / H).toFixed(2) });
+  }
   return out;
 });
-const off = bboxCheck.filter((b) => Math.abs(b.dx) > 0.15 || Math.abs(b.dy) > 0.15 || Math.abs(b.dw - 1) > 0.3 || Math.abs(b.dh - 1) > 0.3);
-ok(off.length <= Math.ceil(bboxCheck.length * 0.1), `bbox 실측 대조 — 어긋난 조각 ${off.length}/${bboxCheck.length} ${off.slice(0, 3).map((b) => JSON.stringify(b)).join(' ')}`);
+const off = bboxCheck.filter((b) => b.empty || Math.abs(b.dx) > 0.08 || Math.abs(b.dy) > 0.08 || Math.abs(b.dw - 1) > 0.12 || Math.abs(b.dh - 1) > 0.12);
+ok(off.length === 0, `상자 vs 그림 픽셀 대조 — 어긋난 조각 ${off.length}/${bboxCheck.length} ${off.slice(0, 3).map((b) => JSON.stringify(b)).join(' ')}`);
 ok(errs.length === 0, `페이지 오류 ${errs.length}${errs.length ? ' — ' + errs.slice(0, 2).join(' | ') : ''}`);
 await br.close();
