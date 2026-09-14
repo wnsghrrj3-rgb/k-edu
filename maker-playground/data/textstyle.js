@@ -16,6 +16,7 @@ window.MK_TEXTSTYLE = (() => {
     { id: 'gowunbatang', name: '고운바탕 — 책같이', family: 'Gowun Batang' },
     { id: 'nanumpen', name: '나눔 손글씨 펜', family: 'Nanum Pen Script' },
     { id: 'gaegu', name: '개구쟁이 — 아이 글씨', family: 'Gaegu' },
+    { id: 'cormorant', name: '코모런트 — 영문 세리프', family: 'Cormorant Garamond' },   /* R154 */
   ];
 
   /* ---- 배경 패딩 규약 (em) — 모든 표시 계층이 이 수치를 쓴다 ---- */

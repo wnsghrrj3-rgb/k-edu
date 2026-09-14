@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "KEDU editable template exchange contract",
+  "type": "object",
+  "required": [
+    "schema",
+    "templateId",
+    "canvas",
+    "objects"
+  ],
+  "properties": {
+    "schema": {
+      "const": "kedu.editable-template/1.0"
+    },
+    "canvas": {
+      "type": "object",
+      "required": [
+        "width",
+        "height"
+      ],
+      "properties": {
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      }
+    },
+    "objects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "type",
+          "x",
+          "y",
+          "width",
+          "height",
+          "rotation",
+          "opacity",
+          "zIndex"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "text",
+              "shape",
+              "vector"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "width": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "height": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "opacity": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "text"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "text",
+                "fontFamily",
+                "fontSize",
+                "fill",
+                "textAlign",
+                "letterSpacing",
+                "lineHeight"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "vector"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "paths",
+                "viewBox"
+              ]
+            }
+          },
+          {
+            "if": {
+              "required": [
+                "role"
+              ],
+              "properties": {
+                "role": {
+                  "const": "photo-slot"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "src",
+                "crop",
+                "fit"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

@@ -58,7 +58,7 @@ const Q = boot({ search: '?nav=full' });
 T('?nav=full 로 누구나 전체 보기 + 「간단히」 토글', () => navKeys(Q).length === 10 && !!Q.document.querySelector('[data-navmode]'));
 
 const built = read('../maker/index.html');
-T('maker/index.html 재생성본이 새 버스터를 싣는다', () => built.includes('app.js?v=20260914b') && built.includes('screens/home.js?v=20260914b'));
+T('maker/index.html 재생성본이 새 버스터를 싣는다', () => /app\.js\?v=20260914[b-z]/.test(built) && built.includes('screens/home.js?v=20260914b'));
 
 console.log(`\ntest-round153: ${pass}/${pass + fail}`);
 process.exit(fail ? 1 : 0);

@@ -54,7 +54,8 @@ window.PG = (() => {
   if (PRODUCT()) state.navMode = /[?&]nav=full/.test(location.search) ? 'full' : 'student';
 
   function loadEditorDoc(templateId) {
-    const tpl = window.MK_SAMPLE.TEMPLATES.find((t) => t.templateId === templateId) || window.MK_SAMPLE.TEMPLATES[0];
+    /* R154 — 등록 확장분(MK_TPL.register)도 찾는다. 종전엔 샘플 밖 id 가 0번 샘플로 떨어졌다 */
+    const tpl = window.MK_SAMPLE.TEMPLATES.find((t) => t.templateId === templateId) || (window.MK_TPL && window.MK_TPL.get && window.MK_TPL.get(templateId)) || window.MK_SAMPLE.TEMPLATES[0];
     state.editor.doc = JSON.parse(JSON.stringify(tpl)); // 원본 보호 — 샘플 편집은 메모리에서만
     state.editor.sceneIdx = 0; state.editor.selEl = null;
     state.editor.mode = tpl.contentType === 'video' ? 'video' : 'design';

@@ -419,7 +419,17 @@
         /* R55 — overflow 클립을 내부 span으로 옮겨 음수 오프셋 핸들이 잘리지 않게 */
         return `<div class="ws-el media ${on}${cropping ? ' cropping' : ''}${focaling ? ' focaling' : ''}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%${rotSty(el)}"><span class="ws-clip" style="${(shp + crp).replace(/^;/, '')}">${media}</span>${cropping ? cropLayer(WS.crop.d) : focaling ? focalLayer(WS.focal.d) : hd}</div>`;
       }
-      if (el.fill) {                                   /* R45 — 색 채움 요소 (자막 바 등) 실표시 · R49 radius */
+      /* R154 — 선만 있는 도형(kind:'shape', fill none/투명 + stroke): 종전엔 fill 'none' 이 참으로
+         잡혀 보이지 않는 불투명 상자로 그려졌다 — 사진 테두리가 사진·풍경 위를 통째로 덮어 아래를
+         못 짚었고 선 자체도 안 보였다. 선을 그리고, 손에 잡히는 건 선(굵은 투명 패스)뿐. */
+      if (el.kind === 'shape' && (!el.fill || el.fill === 'none') && el.stroke) {
+        const sw = +el.strokeWidth || 1, hit = Math.max(sw, 12), rad = el.radius ? ` rx="${el.radius}"` : '';
+        const isEl = el.shape === 'ellipse';
+        const geo = isEl ? `<ellipse cx="50" cy="50" rx="50" ry="50" vector-effect="non-scaling-stroke"` : `<rect x="0" y="0" width="100" height="100"${rad} vector-effect="non-scaling-stroke"`;
+        const op = el.opacity != null && el.opacity !== 1 ? `;opacity:${el.opacity}` : '';
+        return `<div class="ws-el stk ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%${op}${rotSty(el)}"><svg viewBox="0 0 100 100" preserveAspectRatio="none" style="width:100%;height:100%;display:block;overflow:visible">${geo} fill="none" stroke="${M().esc(el.stroke)}" stroke-width="${(sw * CW / sc.width).toFixed(2)}"/>${geo} class="hit" fill="none" stroke="transparent" stroke-width="${(hit * CW / sc.width).toFixed(2)}"/></svg>${hd}</div>`;
+      }
+      if (el.fill && el.fill !== 'none') {             /* R45 — 색 채움 요소 (자막 바 등) 실표시 · R49 radius */
         const rad = el.radius ? `;border-radius:${el.radius > 100 ? '50%' : (el.radius * CW / sc.width).toFixed(1) + 'px'}` : ''; /* R98 — >100 = 원 (play.js 규약 정렬) */
         return `<div class="ws-el media ${on}" data-ws-el="${i}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;background:${el.fill}${rad}${rotSty(el)}">${hd}</div>`;
       }
@@ -1602,6 +1612,7 @@
             snap();
             el.src = src; el.label = inp.files[0].name.replace(/\.[^.]+$/, '');
             delete el.video;                           /* 사진으로 확정 — 영상 흔적 정리 */
+            if (window.MK_TPLPKG) window.MK_TPLPKG.hideFallbacks(scene(), el);   /* R154 — 패키지 사진 자리: 대신 그려 둔 풍경은 숨긴다 */
             R();
           });
           inp.click();
@@ -1780,7 +1791,9 @@
           const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
           inp.onchange = () => window.MK_LIVE.fileToSrc(inp.files && inp.files[0], (src, err) => {
             if (!src) { if (err && typeof alert === 'function') alert(err); return; }
-            snap(); el.src = src; delete el.video; R();
+            snap(); el.src = src; delete el.video;
+            if (window.MK_TPLPKG) window.MK_TPLPKG.hideFallbacks(scene(), el);   /* R154 */
+            R();
           });
           inp.click();
         };

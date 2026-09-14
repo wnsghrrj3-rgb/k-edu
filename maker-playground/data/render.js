@@ -38,7 +38,7 @@ window.MK_RENDER = (() => {
      ================================================================ */
   const FONT_SOURCES = {
     local: ['Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', 'sans-serif'],
-    google: ['Noto Sans KR', 'Nanum Gothic', 'Gowun Dodum', 'Jua', 'Black Han Sans', 'Gowun Batang', 'Nanum Pen Script', 'Gaegu', 'Do Hyeon'],
+    google: ['Noto Sans KR', 'Nanum Gothic', 'Gowun Dodum', 'Jua', 'Black Han Sans', 'Gowun Batang', 'Nanum Pen Script', 'Gaegu', 'Do Hyeon', 'Cormorant Garamond' /* R154 — 패키지 영문 세리프 */],
   };
   const FALLBACK_CHAIN = ['Pretendard', 'Noto Sans KR', 'sans-serif'];
 

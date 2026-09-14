@@ -57,7 +57,9 @@ window.MK_SCREENS.create = (() => {
   /* ---- Step 3: 템플릿 선택 ---- */
   const step3 = () => {
     const s = st();
-    let list = S().TEMPLATES.filter((t) => t.contentType === s.type);
+    /* R154 — 등록 확장분(MK_TPL.register: 팩·패키지)까지 본다. MK_TPL 없으면 종전 그대로 */
+    const src = window.MK_TPL && window.MK_TPL.list ? window.MK_TPL.list() : S().TEMPLATES;
+    let list = src.filter((t) => t.contentType === s.type);
     let note = '';
     let styled = list.filter((t) => t.styleEn === s.style);
     if (styled.length) list = styled;
@@ -71,7 +73,7 @@ window.MK_SCREENS.create = (() => {
 
   /* ---- Step 4: 미리보기 ---- */
   const step4 = () => {
-    const tpl = S().TEMPLATES.find((t) => t.templateId === st().tpl);
+    const tpl = (window.MK_TPL && window.MK_TPL.get && window.MK_TPL.get(st().tpl)) || S().TEMPLATES.find((t) => t.templateId === st().tpl);   /* R154 */
     const sc0 = tpl.scenes[0];
     const els = tpl.scenes.reduce((a, s) => { s.elements.forEach((e) => a[e.kind] = (a[e.kind] || 0) + 1); return a; }, {});
     const use = `텍스트 ${els.text || 0} · 이미지 슬롯 ${els.image || 0}`;
