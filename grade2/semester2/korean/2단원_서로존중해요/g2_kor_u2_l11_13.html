@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<meta name="kedu-lesson-id" content="g2_2_kor_u2_l11_13_v1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>서로 존중해요</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --c-main:#783626; --c-deep:#4C2015; --c-soft:#F4E9E6; --c-sub:#B78F85;
+  --c-ink:#51291F; --c-bg:#F8FAFC; --c-emph:#DC2626; --c-ok:#2E7D32;
+  --c-strong:#FB8C00; --c-strong-soft:#FFF3E0;
+  --fs-title:clamp(20px,5.2cqw,32px); --fs-heading:clamp(17px,4.2cqw,24px);
+  --fs-body:clamp(15px,3.6cqw,21px); --fs-caption:clamp(12px,2.7cqw,16px); --fs-label:clamp(11px,2.3cqw,14px);
+}
+*{margin:0; padding:0; box-sizing:border-box;}
+html,body{height:100%;}
+body{background:var(--c-bg); display:flex; align-items:center; justify-content:center; padding:12px; font-family:'Jua',sans-serif; overflow:hidden;}
+@keyframes ka-fadeUp{from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:none;}}
+@keyframes ka-pop{0%{opacity:0; transform:scale(.3);}60%{opacity:1; transform:scale(1.12);}100%{opacity:1; transform:scale(1);}}
+@keyframes ka-popBig{0%{opacity:0; transform:scale(.3);}60%{opacity:1; transform:scale(1.25);}100%{transform:scale(1);}}
+@keyframes ka-shake{0%,100%{transform:none;}25%{transform:translateX(-7px);}75%{transform:translateX(7px);}}
+.ka{container-type:inline-size; background:#fff; border-radius:clamp(16px,3cqw,24px); aspect-ratio:5/4; width:min(1024px, calc((100vh - 24px) * 5 / 4), calc(100vw - 24px)); padding:clamp(12px,2.6cqw,20px) clamp(16px,3.4cqw,28px); font-family:'Jua',sans-serif; color:#333; box-shadow:0 4px 16px rgba(0,0,0,.08); display:flex; flex-direction:column; margin:0 auto;}
+.ka-h{display:flex; align-items:center; gap:clamp(8px,2cqw,12px); margin-bottom:clamp(12px,3cqw,18px);}
+.ka-lb{background:#F4F4F8; border:none; padding:clamp(5px,1.4cqw,8px) clamp(8px,2cqw,14px); border-radius:clamp(8px,1.8cqw,12px); color:#555; font-family:inherit; font-size:var(--fs-label); display:flex; align-items:center; gap:5px; flex-shrink:0;}
+.ka-bar{flex:1; height:clamp(3px,.7cqw,5px); background:var(--c-bg); border-radius:999px; overflow:hidden;}
+.ka-bar>div{height:100%; background:var(--c-main); border-radius:999px; transition:width .3s;}
+.ka-pg{color:var(--c-deep); font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-label); flex-shrink:0;}
+.ka-sc{background:#FFF8E1; color:#F57F17; padding:clamp(3px,.9cqw,5px) clamp(8px,2cqw,12px); border-radius:999px; font-size:var(--fs-caption); flex-shrink:0; display:flex; align-items:center; gap:4px;}
+.ka-m{flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:0; text-align:center; width:100%; overflow-y:auto;}
+.ka-tag{background:#FFF8E1; color:#F57F17; padding:clamp(3px,1cqw,6px) clamp(10px,2.4cqw,14px); border-radius:30px; font-size:var(--fs-caption); margin-bottom:clamp(8px,2cqw,12px); display:inline-block;}
+.ka-t{font-size:var(--fs-title); line-height:1.3; color:var(--c-deep); margin-bottom:clamp(8px,2cqw,14px); font-weight:400; animation:ka-fadeUp .4s .15s ease both;}
+.ka-bub{background:var(--c-soft); border-radius:clamp(10px,2.4cqw,16px); padding:clamp(8px,2cqw,14px) clamp(12px,3cqw,20px); font-size:var(--fs-body); line-height:1.55; color:#333; max-width:620px; animation:ka-fadeUp .4s .4s ease both;}
+.emph{color:var(--c-emph);}
+.build{display:flex; align-items:center; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
+.syl{width:clamp(64px,15cqw,104px); height:clamp(64px,15cqw,104px); background:#fff; border:clamp(3px,.7cqw,4px) solid var(--c-soft); border-radius:clamp(14px,3cqw,22px); display:grid; place-items:center; font-size:clamp(36px,8cqw,58px); color:var(--c-deep); box-shadow:0 5px 0 var(--c-soft); animation:ka-pop .5s ease both;}
+.op{font-size:clamp(24px,5cqw,38px); color:#aaa;}
+.scene{display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.6cqw,10px); margin:clamp(4px,1cqw,8px) 0;}
+.scene-pic{font-size:clamp(54px,12cqw,92px);}
+.scene-say{background:#fff; border:clamp(3px,.7cqw,4px) solid var(--c-soft); border-radius:clamp(12px,2.6cqw,18px); padding:clamp(6px,1.6cqw,10px) clamp(12px,3cqw,18px); font-size:clamp(22px,5cqw,34px); color:var(--c-deep); box-shadow:0 4px 0 var(--c-soft);}
+.fb{margin-top:clamp(8px,2cqw,12px); min-height:26px; font-size:var(--fs-caption); color:var(--c-deep);}
+.fb.bad{color:var(--c-emph);}
+/* 알맞은 인사말/낱말 고르기 */
+.wordpick{display:flex; gap:clamp(12px,3cqw,22px); flex-wrap:wrap; justify-content:center; margin-top:clamp(8px,2cqw,12px);}
+.wcard{display:flex; flex-direction:column; align-items:center; gap:clamp(4px,1cqw,7px); min-width:clamp(96px,21cqw,150px); padding:clamp(12px,2.8cqw,18px) clamp(10px,2.4cqw,16px); border-radius:clamp(14px,3cqw,20px); border:clamp(3px,.7cqw,4px) solid var(--c-soft); background:#fff; cursor:pointer; box-shadow:0 5px 0 var(--c-soft);}
+.wcard:active{transform:translateY(3px); box-shadow:0 2px 0 var(--c-soft);}
+.wcard .wc-pic{font-size:clamp(32px,7cqw,48px);}
+.wcard .wc-word{font-size:clamp(20px,4.6cqw,32px); color:var(--c-deep);}
+.wcard.correct{background:var(--c-soft); border-color:var(--c-main); box-shadow:0 5px 0 var(--c-deep); animation:ka-popBig .5s ease;}
+.wcard.correct .wc-word{color:var(--c-ok);}
+.wcard.wrong{background:#FFE0E0; border-color:var(--c-emph); animation:ka-shake .35s;}
+/* 짝 잇기 */
+.match{display:flex; gap:clamp(16px,4cqw,44px); justify-content:center; margin:clamp(6px,1.6cqw,10px) 0;}
+.match-col{display:flex; flex-direction:column; gap:clamp(8px,2cqw,12px);}
+.match-col-h{font-size:var(--fs-caption); color:#888; margin-bottom:2px;}
+.match-card{min-width:clamp(96px,21cqw,150px); padding:clamp(9px,2.2cqw,14px) clamp(10px,2.4cqw,16px); border-radius:clamp(12px,2.6cqw,18px); border:clamp(3px,.7cqw,4px) solid var(--c-soft); background:#fff; font-family:'Jua'; font-size:clamp(17px,3.8cqw,26px); color:var(--c-deep); cursor:pointer; box-shadow:0 4px 0 var(--c-soft); text-align:center; display:flex; align-items:center; gap:clamp(4px,1cqw,8px); justify-content:center;}
+.match-card .mc-ic{font-size:clamp(24px,5.4cqw,38px);}
+.match-card:active{transform:translateY(2px);}
+.match-card.sel{border-color:var(--c-main); background:var(--c-soft); box-shadow:0 4px 0 var(--c-deep);}
+.match-card.paired{border-color:var(--c-ok); background:#E8F5E9; color:var(--c-ok); box-shadow:0 4px 0 #A5D6A7; pointer-events:none;}
+.match-card.miss{animation:ka-shake .35s;}
+/* 낱말 모으기 (색칠) */
+.collect{display:flex; flex-wrap:wrap; gap:clamp(7px,1.8cqw,12px); justify-content:center; margin:clamp(4px,1cqw,8px) auto; max-width:600px;}
+.chip{padding:clamp(8px,2cqw,13px) clamp(12px,2.8cqw,18px); border-radius:clamp(12px,2.6cqw,18px); border:clamp(3px,.7cqw,4px) solid var(--c-soft); background:#fff; font-family:'Jua'; font-size:clamp(20px,4.6cqw,32px); color:var(--c-deep); cursor:pointer; box-shadow:0 4px 0 var(--c-soft);}
+.chip:active{transform:translateY(2px);}
+.chip.painted{background:var(--c-soft); border-color:var(--c-main); color:var(--c-ok); box-shadow:0 4px 0 var(--c-deep); animation:ka-pop .35s ease;}
+.chip.miss{animation:ka-shake .35s;}
+.chip.done-dim{opacity:.45; pointer-events:none;}
+/* 따라 쓰기 */
+.trace-wrap{display:flex; flex-direction:column; gap:clamp(8px,2cqw,12px); margin:clamp(4px,1cqw,8px) 0; align-items:center;}
+.trace-row{display:flex; align-items:center; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center;}
+.trace-pic{font-size:clamp(32px,7cqw,48px); flex-shrink:0;}
+.trace-word{display:flex; gap:clamp(4px,1cqw,7px);}
+.trace-cell{width:clamp(44px,10cqw,68px); height:clamp(44px,10cqw,68px); border:clamp(3px,.7cqw,4px) dashed var(--c-sub); border-radius:clamp(10px,2.2cqw,14px); display:grid; place-items:center; font-size:clamp(28px,6cqw,44px); color:#BBDEFB; background:#fff; cursor:pointer;}
+.trace-cell.done{border-style:solid; border-color:var(--c-deep); color:var(--c-deep); background:var(--c-soft); animation:ka-pop .35s ease;}
+/* 따라 읽기 (동시 낭송 — 로깅X) */
+.read-lines{display:flex; flex-direction:column; gap:clamp(6px,1.6cqw,10px); margin:clamp(4px,1cqw,8px) auto; max-width:520px;}
+.read-line{padding:clamp(8px,2cqw,13px) clamp(14px,3.2cqw,22px); border-radius:clamp(12px,2.6cqw,18px); border:clamp(3px,.7cqw,4px) solid var(--c-soft); background:#fff; font-family:'Jua'; font-size:clamp(18px,4.2cqw,28px); color:var(--c-deep); cursor:pointer; box-shadow:0 4px 0 var(--c-soft); text-align:center;}
+.read-line:active{transform:translateY(2px);}
+.read-line.read{background:var(--c-soft); border-color:var(--c-main); color:var(--c-ok); box-shadow:0 4px 0 var(--c-deep);}
+.read-line .rl-num{display:inline-block; width:1.5em; color:var(--c-sub); font-family:'Nunito',sans-serif; font-weight:800;}
+/* 자기 평가 (로깅X·사회적 비교 차단) */
+.selfcheck{display:flex; flex-direction:column; gap:clamp(7px,1.8cqw,11px); max-width:540px; margin:clamp(4px,1cqw,8px) auto;}
+.sc-row{display:flex; align-items:center; gap:clamp(10px,2.4cqw,14px); padding:clamp(9px,2.2cqw,13px) clamp(14px,3cqw,20px); background:#fff; border:clamp(3px,.7cqw,4px) solid var(--c-soft); border-radius:clamp(14px,3cqw,20px); font-size:var(--fs-body); color:var(--c-deep); text-align:left; cursor:pointer;}
+.sc-row .sc-box{width:clamp(26px,6cqw,36px); height:clamp(26px,6cqw,36px); border-radius:50%; border:clamp(3px,.7cqw,4px) solid var(--c-sub); display:grid; place-items:center; flex-shrink:0; font-size:clamp(16px,3.6cqw,22px); color:transparent;}
+.sc-row.checked .sc-box{background:var(--c-ok); border-color:var(--c-ok); color:#fff;}
+.sc-row.checked{border-color:var(--c-ok); background:#F1F8E9;}
+/* 정리 recap */
+.recap{display:flex; flex-direction:column; gap:clamp(8px,2cqw,12px); max-width:540px; margin:clamp(6px,1.6cqw,10px) auto;}
+.recap-item{display:flex; align-items:center; gap:clamp(10px,2.4cqw,14px); padding:clamp(10px,2.6cqw,15px) clamp(14px,3cqw,20px); background:#fff; border:clamp(3px,.7cqw,4px) solid var(--c-soft); border-radius:clamp(14px,3cqw,20px); font-size:var(--fs-body); color:var(--c-deep); text-align:left; animation:ka-fadeUp .4s ease both;}
+.recap-ic{font-size:clamp(26px,6cqw,38px); flex-shrink:0;}
+/* 말하기 무대 (발화 유도, 로깅X) */
+.stage-box{background:var(--c-strong-soft); border:clamp(3px,.7cqw,4px) dashed var(--c-strong); border-radius:clamp(14px,3cqw,20px); padding:clamp(12px,3cqw,20px); max-width:560px; margin:clamp(4px,1cqw,8px) auto; font-size:var(--fs-body); color:#5D4037; line-height:1.55;}
+.stage-do{margin-top:clamp(8px,2cqw,12px); padding:clamp(8px,2cqw,12px) clamp(16px,4cqw,26px); background:var(--c-strong); color:#fff; border:none; border-radius:999px; font-family:'Jua'; font-size:var(--fs-body); cursor:pointer; box-shadow:0 4px 0 #E65100;}
+.stage-do:active{transform:translateY(3px); box-shadow:0 1px 0 #E65100;}
+.stage-do.done{background:var(--c-ok); box-shadow:0 4px 0 #1B5E20;}
+.ka-f{display:grid; grid-template-columns:1fr 1.3fr 1fr 1.3fr; gap:clamp(5px,1.4cqw,8px); margin-top:clamp(10px,2.6cqw,15px);}
+.ka-nav{background:#F4F4F8; color:#2A2A35; border:none; padding:clamp(8px,2.2cqw,12px) 6px; font-size:var(--fs-caption); border-radius:clamp(10px,2.5cqw,14px); cursor:pointer; font-family:inherit;}
+.ka-nav-next{background:var(--c-main); color:#fff;}
+.ka-nav:disabled{opacity:.4; cursor:default;}
+/* 문장 띠 + 빈칸 표시 (정적 시각 표현, JS 무관) */
+.sentence{display:inline-flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:clamp(2px,.6cqw,5px); background:#fff; border:clamp(3px,.7cqw,4px) solid var(--c-soft); border-radius:clamp(12px,2.6cqw,18px); padding:clamp(10px,2.6cqw,16px) clamp(14px,3.2cqw,22px); font-size:clamp(20px,4.6cqw,32px); color:var(--c-deep); box-shadow:0 4px 0 var(--c-soft); max-width:600px; line-height:1.7; margin:clamp(4px,1cqw,8px) auto;}
+.punct{color:var(--c-emph); font-weight:400;}
+.vmark{display:inline-block; color:var(--c-strong); font-family:'Nunito',sans-serif; font-weight:800; font-size:1.05em; transform:translateY(-.05em); margin:0 .05em;}
+.wmark{display:inline-block; color:var(--c-deep); font-family:'Nunito',sans-serif; font-weight:800; font-size:1.05em; margin:0 .05em;}
+/* 문장 부호 이름표 카드 (모양 + 이름) */
+.punct-card{display:inline-flex; flex-direction:column; align-items:center; gap:clamp(3px,.8cqw,6px); padding:clamp(10px,2.6cqw,16px) clamp(14px,3.2cqw,22px); border-radius:clamp(14px,3cqw,20px); border:clamp(3px,.7cqw,4px) solid var(--c-soft); background:#fff; box-shadow:0 4px 0 var(--c-soft); min-width:clamp(72px,16cqw,108px);}
+.punct-card .pc-mark{font-size:clamp(34px,7.5cqw,52px); color:var(--c-emph); line-height:1;}
+.punct-card .pc-name{font-size:clamp(15px,3.4cqw,21px); color:var(--c-deep);}
+.punct-row{display:flex; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
+@container (max-width:420px){ .ka-lb span{display:none;} .ka-f{grid-template-columns:1fr 1fr;} .match{gap:clamp(10px,3cqw,22px);} }
+</style>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="location.href='../index.html'">📚 <span>차시 목록</span></button>
+    <div class="ka-bar"><div id="bar" style="width:8%"></div></div>
+    <span class="ka-pg" id="pg">1 / 13</span>
+    <span class="ka-sc">⭐ <b id="score">0</b></span>
+  </div>
+  <div class="ka-m" id="main"></div>
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev">◁ 이전</button>
+    <button class="ka-nav" id="replay">🔊 다시</button>
+    <button class="ka-nav" id="hint">💡 힌트</button>
+    <button class="ka-nav ka-nav-next" id="next">다음 ▷</button>
+  </div>
+</div>
+
+<script>
+const LESSON_ID='g2_2_kor_u2_l11_13_v1';
+const LESSON_MAX=70;
+const tracker={
+  answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
+  done(i){}
+};
+/* ===== 11~13차시(실천 — 고운 말로 칭찬하거나 조언하기) 13슬 =====
+   학습 목표: 배운 내용을 실천할 수 있다.
+   ★ 정답 로깅 7슬. 무대·마무리 = 로깅 X.
+   ★★ 열넷째 기준(화면이 실을 수 없는 것)이 이 묶음 전체를 가른다.
+      쪽지 붙이기는 **종이에 손으로 쓰고 교실 알림판에 붙여 서로 읽는** 활동이다.
+      화면이 가짜 알림판과 가짜 쪽지를 만들면 아이는 쓰지 않고 끝낸다.
+      ⇒ 화면은 **무엇을 쓸지 고르고 문장을 가다듬는 데까지만** 한다(s4~s10).
+        쓰기·붙이기·읽기는 ④ 무대로 내보내 준비물과 걸음을 적었다.
+        가짜 알림판 0건 · 가짜 쪽지 0건.
+   ★ 지도서 121쪽 — 조언 쪽지에는 **쓴 사람의 이름을 밝히게** 한다(자기 글에 책임을 지고
+      상대를 도우려는 마음을 갖도록). ⇒ s8이 그 까닭 하나만 묻는다.
+   ★ 지도서 121쪽 — 붙이기 전에 스스로 다시 읽고 고치게 한다 ⇒ s9.
+   ★ 지도서 121쪽 — 장난스럽게 쓰거나 문제 행동을 비난하는 쪽지를 막는다 ⇒ s7.
+   ★ 지도서 120쪽 — 칭찬·조언은 일회성으로 끝내지 않고 꾸준히 이어 간다 ⇒ ④ 무대 마지막 줄.
+   ★ 저작권: 교과서 64~65쪽 쪽지 예시와 인물 이름, 지도서 122~123쪽 모범상·책갈피 서식,
+      121쪽 참고 자료(칭찬 일곱 가지) 전부 미차용. 쪽지 예시 문장은 전부 자체. */
+const slides=[
+  {tag:'① 실천 만나기', t:'우리 반 알림판을 만들어요',
+   html:`<div class="scene">
+      <div class="scene-pic">📋</div>
+      <div class="scene-say">칭찬합시다</div>
+    </div>
+    <div class="ka-bub">배운 것을 <b class="emph">우리 반에서 직접</b> 해 볼 거예요. 🙂</div>`},
+
+  {tag:'① 학습 문제', t:'오늘 할 일이에요',
+   html:`<div class="sentence">고운 말로 칭찬하거나 조언해 봐요.</div>
+    <div class="ka-bub">이 활동은 <b>화면 밖에서</b> 하는 일이에요.<br>종이와 연필이 필요해요. ✏️</div>`},
+
+  {tag:'② 세 걸음', t:'이렇게 세 걸음으로 해요',
+   html:`<div class="recap">
+      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">👏</span>칭찬하고 싶은 친구에게 <b>칭찬 쪽지</b>를 써요.</div>
+      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🙋</span>도움이 필요한 일을 <b>조언을 구하는 쪽지</b>로 써요.</div>
+      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">💡</span>그 쪽지를 읽고 <b>조언 쪽지</b>를 붙여 줘요.</div>
+    </div>`},
+
+  {tag:'② 쪽지에 넣을 것', t:'쪽지에는 이것이 들어가요',
+   html:`<div class="punct-row">
+      <div class="punct-card"><span class="pc-mark">🧒</span><span class="pc-name">누구를</span></div>
+      <div class="punct-card"><span class="pc-mark">✨</span><span class="pc-name">무엇을</span></div>
+      <div class="punct-card"><span class="pc-mark">❓</span><span class="pc-name">왜</span></div>
+    </div>
+    <div class="ka-bub">셋 가운데 <b class="emph">왜</b>가 빠지면 마음이 잘 닿지 않아요.</div>`},
+
+  {tag:'③ 칭찬 쪽지 고르기', t:'더 잘 쓴 칭찬 쪽지는 어느 쪽일까요?', log:true,
+   okMsg:'맞아요! 무엇을 잘했는지 까닭이 드러나요. 👍',
+   hint:'힌트: 읽은 친구가 “내가 뭘 잘했지?” 하고 되묻지 않을 쪽을 골라요.',
+   html:`<div class="wordpick">
+      <div class="wcard" data-ok="0"><div class="wc-word">너는 참 착해.</div></div>
+      <div class="wcard" data-ok="1"><div class="wc-word">무거운 책을 같이 들어 줘서<br>고마워. 힘들었을 텐데.</div></div>
+    </div><div class="fb"></div>`},
+
+  {tag:'③ 칭찬거리 모으기', t:'칭찬할 수 있는 것을 모두 골라요', log:true,
+   collectMsg:'모두 찾았어요! 날마다 보는 모습 속에 칭찬거리가 있어요. 🎉',
+   hint:'힌트: 잘하는 점과 애쓰는 점을 떠올려 봐요.',
+   html:`<div class="collect" id="collect">
+      <div class="chip" data-hit="1">먼저 인사해 주는 것</div>
+      <div class="chip" data-hit="0">우리 반에서 키가 큰 것</div>
+      <div class="chip" data-hit="1">날마다 화분에 물을 주는 것</div>
+      <div class="chip" data-hit="1">고운 말을 잘 쓰는 것</div>
+    </div><div class="fb" id="collectFb"></div>`},
+
+  {tag:'③ 조언 잇기', t:'이 고민에는 어떤 조언이 어울릴까요?', log:true,
+   matchMsg:'모두 잘 이었어요! 도움이 되는 방법을 알려 주었어요. 🎉',
+   html:`<div class="match" id="match">
+      <div class="match-col"><div class="match-col-h">조언을 구해요</div>
+        <div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">🎒</span>준비물을 자꾸 잊어요.</div>
+        <div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">🌙</span>밤에 자려면 무서워요.</div>
+        <div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">✏️</span>글씨가 자꾸 삐뚤어져요.</div>
+      </div>
+      <div class="match-col"><div class="match-col-h">조언해요</div>
+        <div class="match-card" data-k="C" data-pair="c">한 칸씩 천천히 써 보면 어떨까?</div>
+        <div class="match-card" data-k="A" data-pair="a">알림장을 책가방에 붙여 두면 어떨까?</div>
+        <div class="match-card" data-k="B" data-pair="b">즐거웠던 일을 떠올려 보면 어떨까?</div>
+      </div>
+    </div><div class="fb" id="matchFb"></div>`},
+
+  {tag:'③ 쪽지 가려내기', t:'알림판에 붙이면 안 되는 쪽지는 무엇일까요?', log:true,
+   okMsg:'맞아요! 놀리거나 몰아세우는 쪽지는 조언이 아니에요. 👍',
+   hint:'힌트: 그 쪽지를 받은 친구의 마음을 떠올려 봐요.',
+   html:`<div class="wordpick">
+      <div class="wcard" data-ok="1"><div class="wc-word">너는 왜 맨날 그러니?<br>정말 답답해.</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-word">잊기 쉬운 물건은<br>미리 챙겨 두면 좋겠어.</div></div>
+    </div><div class="fb"></div>`},
+
+  {tag:'③ 이름 쓰기', t:'조언 쪽지에 내 이름을 쓰는 까닭은 무엇일까요?', log:true,
+   okMsg:'맞아요! 내가 쓴 말에 책임을 지고 도우려는 마음을 보여 줘요. 👍',
+   html:`<div class="wordpick">
+      <div class="wcard" data-ok="0"><div class="wc-word">누가 더 많이 썼는지<br>세어 보려고요</div></div>
+      <div class="wcard" data-ok="1"><div class="wc-word">내가 쓴 말에 책임을 지고<br>도우려는 마음을 보여 주려고요</div></div>
+    </div><div class="fb"></div>`},
+
+  {tag:'③ 붙이기 전에', t:'쪽지를 붙이기 전에 무엇을 할까요?', log:true,
+   okMsg:'맞아요! 내가 쓴 쪽지를 한 번 더 읽고 고쳐요. 👍',
+   hint:'힌트: 내가 받는다면 어떤 마음이 들지 떠올리며 읽어 봐요.',
+   html:`<div class="wordpick">
+      <div class="wcard" data-ok="1"><div class="wc-word">내가 쓴 쪽지를 다시 읽고<br>고칠 곳을 고쳐요</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-word">다 썼으면 바로<br>붙이고 나가요</div></div>
+    </div><div class="fb"></div>`},
+
+  {tag:'③ 좋은 점', t:'칭찬이나 조언을 주고받으면 좋은 점을 모두 골라요', log:true,
+   collectMsg:'모두 찾았어요! 우리 반이 더 따뜻해져요. 🎉',
+   hint:'힌트: 주는 사람과 받는 사람 모두에게 무엇이 남는지 생각해 봐요.',
+   html:`<div class="collect" id="collect">
+      <div class="chip" data-hit="1">기분이 좋아져요</div>
+      <div class="chip" data-hit="0">누가 일 등인지 알 수 있어요</div>
+      <div class="chip" data-hit="1">내가 애쓸 점을 알 수 있어요</div>
+      <div class="chip" data-hit="1">서로 더 가까워져요</div>
+    </div><div class="fb" id="collectFb"></div>`},
+
+  {tag:'④ 직접 해 보기', t:'종이에 쪽지를 써서 붙여 봐요',
+   html:`<div class="stage-box">
+      ✏️ <b>준비물</b> — 붙임 쪽지(또는 작은 종이), 연필, 우리 반 알림판.<br>
+      ① 칭찬할 친구와 까닭을 정해요 → ② 쪽지에 써요 → ③ 다시 읽고 고쳐요 →
+      ④ 이름을 쓰고 알림판에 붙여요 → ⑤ 친구들 쪽지를 읽어 봐요.<br>
+      <small>(한 번으로 끝내지 말고 다음 주에도 이어서 해 봐요.)</small>
+      <br><button class="stage-do" id="stageDo" data-fb="직접 써서 붙여 보았어요! 👏">✏️ 붙여 봤어요!</button>
+    </div><div class="fb" id="stageFb"></div>`},
+
+  {tag:'④ 마무리', t:'잘했어요! 이만큼 해냈어요',
+   html:`<div class="recap">
+      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">👏</span>칭찬은 <b>무엇을 · 왜</b>가 드러나게 써요.</div>
+      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">💡</span>조언은 <b>도울 방법</b>을 알려 줘요.</div>
+      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">✍️</span>붙이기 전에 <b>다시 읽고</b> 고쳐요.</div>
+      <div class="recap-item" style="animation-delay:.5s"><span class="recap-ic">🌱</span>한 번으로 끝내지 않고 <b>꾸준히</b> 이어 가요.</div>
+    </div>`},
+];
+
+let cur=0, score=0, maxScore=0;
+const main=document.getElementById('main');
+const bar=document.getElementById('bar');
+const pg=document.getElementById('pg');
+const scoreEl=document.getElementById('score');
+const prevB=document.getElementById('prev');
+const nextB=document.getElementById('next');
+
+function render(){
+  const s=slides[cur];
+  main.innerHTML=`<span class="ka-tag">${s.tag}</span><h2 class="ka-t">${s.t}</h2>${s.html}`;
+  bar.style.width=((cur+1)/slides.length*100)+'%';
+  pg.textContent=`${cur+1} / ${slides.length}`;
+  prevB.disabled=cur===0; nextB.disabled=cur===slides.length-1;
+  if(cur===slides.length-1){ if(window.kedu&&window.kedu.recordLessonEnd) window.kedu.recordLessonEnd(score, LESSON_MAX); }
+  tracker.done(cur);
+  if(main.querySelector('#match')) bindMatch(s);
+  if(main.querySelector('#collect')) bindCollect(s);
+  if(main.querySelector('.wcard')) bindWordPick(s);
+  if(main.querySelector('.trace-cell')) bindTrace();
+  if(main.querySelector('.read-line')) bindRead();
+  if(main.querySelector('.sc-row')) bindCheck();
+  if(main.querySelector('#stageDo')) bindStage();
+}
+function bindWordPick(s){
+  let done=false;
+  main.querySelectorAll('.wcard').forEach(card=>{
+    card.onclick=()=>{
+      if(done) return;
+      const ok=card.dataset.ok==='1';
+      const fb=main.querySelector('.fb');
+      if(ok){
+        done=true;
+        card.classList.add('correct');
+        if(fb){fb.textContent=s.okMsg||'딱 맞는 답이에요! 🎉'; fb.classList.remove('bad');}
+        if(s.log){score+=10; maxScore+=10; scoreEl.textContent=score; tracker.answer(cur,true);}
+        main.querySelectorAll('.wcard').forEach(c=>{if(c!==card)c.style.opacity=.4;});
+      }else{
+        card.classList.add('wrong');
+        if(fb){fb.textContent='다시 한 번 생각해 봐요.'; fb.classList.add('bad');}
+        if(s.log)tracker.answer(cur,false);
+        setTimeout(()=>card.classList.remove('wrong'),350);
+      }
+    };
+  });
+}
+function bindMatch(s){
+  const board=main.querySelector('#match');
+  const fb=main.querySelector('#matchFb');
+  const cards=board.querySelectorAll('.match-card');
+  const total=cards.length/2;
+  let sel=null, paired=0, logged=false;
+  cards.forEach(card=>{
+    card.onclick=()=>{
+      if(card.classList.contains('paired')) return;
+      if(!sel){ sel=card; card.classList.add('sel'); return; }
+      if(sel===card){ card.classList.remove('sel'); sel=null; return; }
+      if(sel.dataset.pair===card.dataset.k && card.dataset.pair===sel.dataset.k){
+        sel.classList.remove('sel'); sel.classList.add('paired'); card.classList.add('paired');
+        sel=null; paired++;
+        if(paired===total){
+          fb.textContent=s.matchMsg||'모두 잘 이었어요! 🎉'; fb.classList.remove('bad');
+          if(s.log && !logged){logged=true; score+=10; maxScore+=10; scoreEl.textContent=score; tracker.answer(cur,true);}
+        }else{ fb.textContent='좋아요! 다음 짝도 이어 봐요.'; fb.classList.remove('bad'); }
+      }else{
+        const w1=sel, w2=card;
+        w1.classList.add('miss'); w2.classList.add('miss');
+        fb.textContent='짝이 아니에요. 다시 생각해 봐요.'; fb.classList.add('bad');
+        if(s.log)tracker.answer(cur,false);
+        setTimeout(()=>{w1.classList.remove('miss','sel'); w2.classList.remove('miss');},350);
+        sel=null;
+      }
+    };
+  });
+}
+function bindCollect(s){
+  const board=main.querySelector('#collect');
+  const fb=main.querySelector('#collectFb');
+  const chips=board.querySelectorAll('.chip');
+  const targets=board.querySelectorAll('.chip[data-hit="1"]').length;
+  let painted=0, logged=false;
+  chips.forEach(chip=>{
+    chip.onclick=()=>{
+      if(chip.classList.contains('painted')) return;
+      if(chip.dataset.hit==='1'){
+        chip.classList.add('painted'); painted++;
+        if(painted===targets){
+          chips.forEach(c=>{if(c.dataset.hit!=='1')c.classList.add('done-dim');});
+          fb.textContent=s.collectMsg||'알맞은 낱말을 모두 찾았어요! 🎉'; fb.classList.remove('bad');
+          if(s.log && !logged){logged=true; score+=10; maxScore+=10; scoreEl.textContent=score; tracker.answer(cur,true);}
+        }else{ fb.textContent=`좋아요! ${painted}개 찾았어요. 더 찾아봐요.`; fb.classList.remove('bad'); }
+      }else{
+        chip.classList.add('miss');
+        fb.textContent='이 낱말은 아니에요. 다시 살펴봐요.'; fb.classList.add('bad');
+        if(s.log)tracker.answer(cur,false);
+        setTimeout(()=>chip.classList.remove('miss'),350);
+      }
+    };
+  });
+}
+function bindTrace(){
+  const cells=main.querySelectorAll('.trace-cell');
+  const fb=main.querySelector('#traceFb');
+  const total=cells.length;
+  let done=0;
+  cells.forEach(c=>{
+    c.onclick=()=>{
+      if(c.classList.contains('done')) return;
+      c.classList.add('done'); done++;
+      if(done===total){ fb.innerHTML='모두 따라 썼어요! 또박또박 잘 썼어요. 🎉'; }
+      else { fb.innerHTML=`잘하고 있어요! <b>${done}</b>글자 따라 썼어요.`; }
+    };
+  });
+}
+function bindRead(){
+  const lines=main.querySelectorAll('.read-line');
+  const fb=main.querySelector('#readFb');
+  const total=lines.length;
+  let done=0;
+  lines.forEach(l=>{
+    l.onclick=()=>{
+      if(l.classList.contains('read')) return;
+      l.classList.add('read'); done++;
+      if(fb){
+        if(done===total) fb.innerHTML='끝까지 따라 읽었어요! 리듬을 살려 다시 읽어 볼까요? 🎵';
+        else fb.innerHTML=`잘 읽고 있어요! <b>${done}</b>줄 읽었어요.`;
+      }
+    };
+  });
+}
+function bindCheck(){
+  main.querySelectorAll('.sc-row').forEach(r=>{
+    r.onclick=()=>{ r.classList.toggle('checked'); };
+  });
+}
+function bindStage(){
+  const btn=main.querySelector('#stageDo');
+  const fb=main.querySelector('#stageFb');
+  btn.onclick=()=>{
+    btn.classList.add('done'); btn.textContent='✅ 잘했어요!';
+    if(fb) fb.textContent=btn.dataset.fb||'큰 소리로 잘 말했어요! 👏';
+  };
+}
+prevB.onclick=()=>{if(cur>0){cur--; render();}};
+nextB.onclick=()=>{if(cur<slides.length-1){cur++; render();}};
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')nextB.click();if(e.key==='ArrowLeft')prevB.click();});
+document.getElementById('hint').onclick=()=>{
+  const s=slides[cur];
+  if(s.hint){ alert(s.hint); return; }
+  if(main.querySelector('#match')) alert('힌트: 왼쪽 항목을 누른 뒤, 짝이 되는 것을 눌러요.');
+  else if(main.querySelector('.wcard')) alert('힌트: 그림과 상황을 천천히 살펴보면 알맞은 답을 찾을 수 있어요.');
+  else if(main.querySelector('#collect')) alert('힌트: 조건에 맞는 낱말만 모두 눌러요. 천천히 소리 내어 읽어 봐요.');
+  else if(main.querySelector('.read-line')) alert('힌트: 한 줄씩 또박또박 따라 읽으며 눌러요.');
+  else if(main.querySelector('#stageDo')) alert('힌트: 큰 소리로 말해 본 뒤 버튼을 눌러요.');
+  else alert('힌트: 천천히 읽어 보면 답을 찾을 수 있어요.');
+};
+document.getElementById('replay').onclick=()=>{/* 음성 보조층 — 추후 mp3 연결 */};
+render();
+</script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+</body>
+</html>
