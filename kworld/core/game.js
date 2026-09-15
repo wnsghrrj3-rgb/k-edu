@@ -68,7 +68,7 @@ export class Game {
   count(k) { return this.inventory.filter((x) => x === k).length; }
   take(k) { const i = this.inventory.indexOf(k); if (i >= 0) this.inventory.splice(i, 1); }
   give(k) { this.inventory.push(k); this.renderInv(); }
-  flag(f) { if (!f || this.flags.has(f)) return; this.flags.add(f); this.checkGate(); if (this.story) this.story.onFlag(); }
+  flag(f) { if (Array.isArray(f)) { for (const x of f) this.flag(x); return; } if (!f || this.flags.has(f)) return; this.flags.add(f); this.checkGate(); if (this.story) this.story.onFlag(); }
   /** 대상 정의: kinds(종류별 덮어쓰기) → rename(깃발에 따라 이름·동사·규칙이 바뀜, 첫 맞는 것) */
   defFor(t) {
     let d = this.items.targets[t.type]; if (!d) return null;
@@ -183,7 +183,7 @@ export class Game {
   }
   /** 대상 앞 선택(먹는다 / 그냥 둔다 / 가져간다 …) — 정답 없음, 고른 것은 깃발로 남는다 */
   choose(t, rule) {
-    this.p.enabled = false;
+    this.p.enabled = false; this.flag(rule.flag);   // 살펴본 것 자체가 깃발(선택 전에)
     this.ui.open(`<div class="npc"><b>${rule.name || ''}</b><p>${rule.text || ''}</p></div>`, rule.choices.map((c) => ({ label: c.label, primary: true, onClick: () => {
       this.ui.close(); this.p.enabled = true;
       if (c.requiresFlags && !c.requiresFlags.every((f) => this.flags.has(f))) { this.ui.say(c.failNoFlag || '아직은 할 수 없어.', 4200); this.flag(c.failFlag); return; }

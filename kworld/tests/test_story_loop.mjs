@@ -12,13 +12,13 @@ const g = new Game(base);
 g.mi = 0; g.missionStart = performance.now(); g.hintShown = false; g.hunger = g.world.hunger.start;
 const says = []; let panel = null;
 g.ui = { setMission: (t) => { g._mission = t; }, setCompass() {}, pulseHint() {}, say: (t) => says.push(t), setPrompt() {}, setHunger() {}, setGoal(t) { g._goal = t; }, renderInventory() {}, isOpen: () => !!panel, close() { panel = null; },
-  whyCard: (c, cb) => cb(), npcLine: (n, t, cb) => { says.push('NPC:' + t); cb(); }, open: (h, b) => { panel = { h, b }; }, craftPanel() {}, pickPanel: (r, c, onPick) => { g._pick = onPick; } };
+  whyCard: (c, cb) => cb(), npcLine: (n, t, cb) => { says.push('NPC:' + t); cb(); }, open: (h, b) => { panel = { h, b }; }, craftPanel() {}, check: (data, onA, onFinish) => { g._check = data; onFinish(data.questions.map((q) => ({ id: q.id, concept: q.concept, ok: true }))); }, pickPanel: (r, c, onPick) => { g._pick = onPick; } };
 g.p = { enabled: true, speedMul: 1, teleport() {}, pos: new THREE.Vector3(), yaw: 0 };
 const ix = new Map();
 const mk = (name) => { const [type, ...rest] = name.split('_'); ix.set(name, { type, id: rest.join('_') || type, name, uses: 0, state: null, center: new THREE.Vector3(), obj: { traverse() {} } }); };
 ['stone_1', 'stone_2', 'bush_a1_1', 'bush_a1_2', 'track_1', 'deer_1', 'fire_1', 'npc_elder', 'gate_1', 'stick_1', 'stick_2', 'stick_3', 'stick_4'].forEach(mk);
 g.e = { interactables: ix, removeInteractable: (k) => ix.delete(k), areas: new Map([['camp', new THREE.Vector3(1, 0, 1)]]), groundY: () => 0, pickTarget: () => null, scene: { add() {}, remove() {} }, onFrame: [], spawn: new THREE.Vector3() };
-g.story = new Story(g, J('scene')); g.story.apply();
+g.story = new Story(g, J('scene')); g.story.fast = true; g.story.apply();
 const use = (name) => { g.target = ix.get(name); g.act(); };
 const pick = (i) => { const b = panel.b[i]; panel = null; b.onClick(); };
 const vis = (name) => ix.get(name) && ix.get(name).obj.visible !== false && !ix.get(name).disabled;
@@ -108,7 +108,37 @@ ok(g.hungerMul === 1 && vis('npc_hana3') && vis('npc_old2') && !vis('npc_hana2')
 await new Promise((r) => setTimeout(r, 1400)); ok(g.flags.has('journal:fire'), '📔 불');
 use('fire_1'); ok(g.has('cooked') && g.count('meat') === 0, '고기 굽기');
 g.tapItem('cooked'); ok(g.flags.has('eat:cooked') && !g.has('cooked'), '익힌 고기 먹기');
+g.tick(0.01); ok(g._mission.includes('물이 들어온다'), '미션 18');
+// ACT 9 — 폭우 → 거처 후보 3
+const wait = (ms) => new Promise((r) => setTimeout(r, ms)); await wait(200);
+ok(g.flags.has('act9') && g.story.rainOn === false && g.hungerMul === 1, '비 왔다 그침 → act9');
+ok(vis('site_river') && vis('site_rock') && vis('site_high') && !vis('npc_hana3') && vis('npc_nuri5'), '후보 3 + 사람들 낮 자리');
+use('npc_nuri5'); ok(says.at(-1).includes('세 곳'), '누리: 세 곳');
+use('site_rock'); ok(panel && panel.b.length === 2, '후보 선택'); pick(0); ok(!g.flags.has('home:done') && says.at(-1).includes('다른 곳도'), '다 보기 전엔 못 정함');
+ok(g.flags.has('seen:site:rock'), '바위 그늘 봄'); use('site_river'); pick(1); use('site_high'); pick(1); ok(g.flags.has('seen:site:river') && g.flags.has('seen:site:high'), '세 곳 봄');
+g.tick(0.01); ok(g._mission.includes('어디로 옮길까'), '미션 20');
+use('site_high'); pick(0); ok(g.flags.has('home:high') && !g.has('hide') && vis('shelter_high') && !vis('shelter_river') && !vis('site_river'), '높은 평지로: 가죽 걸고 거처');
+// ACT 10 — 익숙해진 삶
+await wait(200); ok(g.flags.has('act10') && vis('herdc_1'), '며칠 지남 → act10, 사슴 제자리');
+use('stick_4'); ok(g.has('stick'), '가지'); use('fire_1'); ok(g.flags.has('routine:fire') && !g.has('stick'), '불 돌보기');
+use('bush_a1_1'); ok(g.flags.has('routine:berry'), '열매 따기 익숙');
+use('herdc_1'); ok(g.flags.has('routine:herd') && says.at(-1).includes('계속 살면'), '여기서 계속 살면 되겠네');
+// ACT 11 — 사라진 사슴
+await wait(200); ok(g.flags.has('act11') && !vis('herdc_1') && vis('track_9') && vis('npc_aru7'), '어느 날: 사슴 없음, 오래된 발자국');
+use('bush_a1_2'); ok(says.at(-1).includes('거의 없다'), '열매 줄음'); use('root_2'); ok(g.has('root') && says.at(-1).includes('작다'), '뿌리 작음');
+use('track_9'); ok(g.flags.has('seen:old2'), '오래된 것뿐'); use('npc_aru7'); use('npc_hana4'); ok(says.at(-1).includes('줄고 있어'), '하나: 먹을 것이 줄고 있어');
+// ACT 12 — 떠나야 한다
+await wait(200); ok(g.flags.has('act12') && vis('npc_nuri6') && vis('scout_up') && !vis('npc_bara'), '밤 회의 → act12');
+use('npc_nuri6'); ok(says.at(-1).includes('세 쪽'), '누리: 세 쪽'); use('fire_1'); ok(says.at(-1).includes('어디로'), '불: 회의');
+use('scout_up'); use('scout_mt'); use('scout_tr'); await wait(100); ok(g.flags.has('scout:all'), '정찰 3');
+use('npc_nuri6'); ok(panel && panel.b.length === 3, '방향 선택 3'); pick(2); ok(g.flags.has('go:decided') && !vis('scout_up'), '방향 정함');
+use('shelter_high'); ok(panel && panel.b.length === 1 && panel.h.includes('다 두고 가'), '우리가 만든 건 다 두고 가?'); pick(0);
+ok(g.flags.has('leave:ready'), '떠난다'); await wait(1400); ok(g.flags.has('journal:move'), '📔 이동생활');
+// ACT 13~14 — 컷신: 카드 → 확인 → 유적 → 이름
+await wait(100); let guard = 0; while (panel && guard++ < 10 && !g.flags.has('era1:done')) { const h = panel.h; pick(0); await wait(30); }
+ok(g._check && g._check.questions.length === 2 && g.results.length === 2, '발굴 확인 2문항(열린 1 + 증거 고르기 1)');
+ok(g.flags.has('era1:done'), '구석기 시대 이름 공개 → era1:done');
 g.tick(0.01); ok(g._mission.includes('완주'), '미션 끝');
-await new Promise((r) => setTimeout(r, 2000)); ok(panel && panel.h.includes('무섭지 않다'), '끝 화면');
+await wait(2000); ok(panel && panel.h.includes('구석기 시대'), '끝 화면: PART I');
 ok(g.story.journalHtml().includes('채집') && g.story.journalHtml().includes('긁개') && g.story.journalHtml().includes('불'), '탐험일지 5편');
 console.log(`story-p1 loop: ${pass} pass / ${fail} fail`); process.exit(fail ? 1 : 0);

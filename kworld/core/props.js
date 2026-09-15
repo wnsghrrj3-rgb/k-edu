@@ -91,4 +91,11 @@ export function stick(kind = 'dry', seed = 1) {
   if (kind === 'wet') mesh(g, new THREE.CircleGeometry(0.45, 10), M(0x4a5a4a, { rough: 0.3 }), 0, 0.015, 0).rotation.x = -Math.PI / 2;
   return g;
 }
-export const PROPS = { berryBush, rootPlant, stone, deer, track, person, spot, wind, stick };
+/** 임시 거처 — 기둥 셋에 가죽을 걸었다 */
+export function shelter(kind = 'hide', seed = 1) {
+  const g = new THREE.Group(); const wood = M(0x6b5238); const hide = M(0x8a6a48, { rough: 0.95, name: 'hide' }); hide.side = THREE.DoubleSide;
+  for (const [x, z, ry] of [[-0.9, 0.6, 0.4], [0.9, 0.6, -0.4], [0, -0.9, 0]]) { const p = mesh(g, new THREE.CylinderGeometry(0.05, 0.07, 2.4, 6), wood, x, 1.1, z); p.rotation.set(-z * 0.45, 0, x * 0.45); }
+  const cloth = mesh(g, new THREE.ConeGeometry(1.35, 2.0, 7, 1, true), hide, 0, 1.0, 0); cloth.rotation.y = seed;
+  return g;
+}
+export const PROPS = { shelter, berryBush, rootPlant, stone, deer, track, person, spot, wind, stick };
