@@ -2,7 +2,7 @@
 
 > 정본. 2026-09-15 준호 제시. 이 문서의 이야기 순서와 교육 철학은 임의로 바꾸지 않는다.
 > 위 기준: `KEDU_WORLD_HISTORY_MASTER.md`(케이히스토리 최상위) · 케이에듀 상위 원칙. 어긋나면 준호 결정 우선.
-> 구현: `kworld/eras/story-p1/`(ACT 1~4 프로토타입) · 설계서 `handoff/kworld/story/ACT01-04_설계.md`
+> 구현: `kworld/eras/story-p1/`(ACT 1~8) · 설계서 `handoff/kworld/story/ACT01-04_설계.md`, `ACT05-08_설계.md`
 
 ## 전체 챕터 제목
 - PART I 「살아남아라」

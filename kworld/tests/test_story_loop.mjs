@@ -16,7 +16,7 @@ g.ui = { setMission: (t) => { g._mission = t; }, setCompass() {}, pulseHint() {}
 g.p = { enabled: true, speedMul: 1, teleport() {}, pos: new THREE.Vector3(), yaw: 0 };
 const ix = new Map();
 const mk = (name) => { const [type, ...rest] = name.split('_'); ix.set(name, { type, id: rest.join('_') || type, name, uses: 0, state: null, center: new THREE.Vector3(), obj: { traverse() {} } }); };
-['stone_1', 'stone_2', 'bush_a1_1', 'bush_a1_2', 'track_1', 'deer_1', 'fire_1', 'npc_elder', 'gate_1', 'stick_1'].forEach(mk);
+['stone_1', 'stone_2', 'bush_a1_1', 'bush_a1_2', 'track_1', 'deer_1', 'fire_1', 'npc_elder', 'gate_1', 'stick_1', 'stick_2', 'stick_3', 'stick_4'].forEach(mk);
 g.e = { interactables: ix, removeInteractable: (k) => ix.delete(k), areas: new Map([['camp', new THREE.Vector3(1, 0, 1)]]), groundY: () => 0, pickTarget: () => null, scene: { add() {}, remove() {} }, onFrame: [], spawn: new THREE.Vector3() };
 g.story = new Story(g, J('scene')); g.story.apply();
 const use = (name) => { g.target = ix.get(name); g.act(); };
@@ -66,7 +66,49 @@ g.craft('flake'); g._pick(['stone_soft', 'stone_hard']); ok(!g.has('stone_soft')
 g.craft('flake'); g._pick(['stone_flint', 'stone_flint']); ok(g.count('stone_flint') === 1 && says.at(-1).includes('조각'), '각진+각진: 하나 깨짐');
 g.craft('flake'); g._pick(['stone_hard', 'stone_flint']); ok(g.has('flake') && !g.has('stone_hard') && !g.has('stone_flint') && g.flags.has('made:flake'), '검은+각진 = 날 선 돌');
 await new Promise((r) => setTimeout(r, 1600)); ok(g.flags.has('journal:flake'), '📔 뗀석기');
+g.tick(0.01); ok(g._mission.includes('풀밭 너머'), '미션 10');
+ok(!vis('npc_maru') && !vis('npc_aru2') && vis('npc_nuri') && vis('npc_aru3') && vis('npc_maru2'), '날 선 돌 뒤: 사람들이 풀밭 너머로');
+ok(!vis('spot_rockA') && !vis('wind_a'), '자리·바람은 누리 전엔 없음');
+// ACT 5 — 첫 번째 사냥: 자리 고르기, 냄새(바람)로 놓침 → 다시 추적 → 성공
+use('npc_nuri'); ok(g.flags.has('talk:nuri') && vis('spot_rockA') && vis('spot_reedA') && vis('wind_a'), '누리 뒤 자리 3 + 바람');
+use('npc_aru3'); ok(g.flags.has('seen:wind'), '아루: 바람');
+use('wind_a'); ok(says.at(-1).includes('강 쪽에서 언덕 쪽으로'), '잎이 날리는 방향');
+use('spot_reedA'); ok(panel && panel.b.length === 2, '자리 선택'); const h2 = g.hunger; pick(0);
+ok(g.flags.has('hunt:miss1') && g.hunger < h2 && g.story.movers.length === 3, '강 쪽(바람 위): 냄새 맡고 무리 달아남');
+ok(!vis('spot_rockA') && vis('track_7') && !vis('track_8') && !vis('herdb_1'), '자리 A 사라지고 새 발자국만');
+g.story.tick(3.5); ok(!ix.has('herd_1'), '무리 A 사라짐');
+use('track_7'); ok(vis('track_8'), '새 발자국→눌린 풀'); use('track_8'); ok(vis('herdb_1') && vis('spot_rockB') && vis('npc_nuri2') && vis('wind_b'), '무리 B·자리 B·누리');
+use('spot_openB'); const h3 = g.hunger; pick(0); ok(g.flags.has('hunt:miss2') && g.hunger < h3 && vis('herdb_1'), '탁 트인 곳: 배만 고파지고 무리는 그대로');
+use('spot_rockB'); pick(0); ok(g.flags.has('hunt:done'), '바위 뒤(바람 아래): 사냥');
+ok(!vis('herdb_1') && !vis('spot_rockB') && !vis('npc_nuri2') && vis('kill_b') && !vis('kill_a'), '무리·자리 사라지고 누운 사슴');
+use('kill_b'); ok(g.flags.has('kill:seen') && says.at(-1).includes('조용'), '…조용하다'); use('kill_b'); ok(g.flags.has('deer:carried') && !ix.has('kill_b'), '함께 옮기기');
+ok(vis('carcass_1') && vis('npc_hana2') && vis('npc_maru3') && vis('npc_nuri3') && vis('npc_old') && vis('npc_child') && !vis('npc_hana'), '야영지: 사슴 + 사람들');
+// ACT 6 — 한 마리의 사슴: 날 선 돌로는 안 됨 → 긁개
+use('carcass_1'); ok(g.flags.has('skin:fail') && !g.has('hide') && says.at(-1).includes('찢어'), '날 선 돌: 가죽 찢어짐');
+use('npc_maru3'); ok(says.at(-1).includes('다른 모양'), '마루: 이건 다른 모양이');
+const rec = g.items.recipes.filter((r) => g.cond(r.showIf)); ok(rec.some((r) => r.out === 'scraper'), '다듬기 조리법 이제 보임');
+use('stone_f3'); use('stone_r3'); g.craft('scraper'); ok(g.has('scraper') && g.flags.has('made:scraper') && !g.has('stone_flint'), '각진+둥근 = 긁개');
+await new Promise((r) => setTimeout(r, 1600)); ok(g.flags.has('journal:scraper'), '📔 긁개');
+use('carcass_1'); ok(g.flags.has('skin:done') && g.count('meat') === 3 && g.has('hide') && g.has('bone') && g.has('sinew'), '가죽 벗기기: 고기 3·가죽·뼈·힘줄');
+use('carcass_1'); ok(says.at(-1).includes('뼈만'), '뼈만 남음');
+// ACT 7 — 누구의 사슴인가: 나눔
+use('npc_old'); ok(says.at(-1).includes('말이 없다'), '노인'); use('npc_nuri3'); ok(panel && panel.b.length === 2, '나눔 선택'); pick(0);
+ok(g.flags.has('share:done') && g.count('meat') === 1 && says.at(-1).includes('혼자 잡은'), '내가 잡았는데? → 나눠지고 고기 1');
+// ACT 8 — 밤
+ok(g.story.nightOn && g.hungerMul > 1, '밤: 춥다'); ok(vis('npc_bara') && g.fireBase < 2, '바라 + 작은 불');
+ok(g.promptFor(ix.get('stick_1')).verb === '줍기' && g.promptFor(ix.get('wstick_1')).verb === '줍기', '가지 줍기 열림');
+use('npc_bara'); ok(says.at(-1).includes('가지'), '바라: 가지'); ok(g.flags.has('talk:bara'), 'talk:bara');
+use('wstick_1'); use('wstick_2'); ok(g.count('wetstick') === 2, '젖은 가지 2');
+use('fire_1'); ok(panel && panel.b.length === 3, '불 살리기 선택 3'); pick(1); ok(says.at(-1).includes('세 개'), '마른 가지 없음');
+use('fire_1'); pick(0); ok(g.flags.has('fire:smoke') && g.count('wetstick') === 1 && !g.flags.has('fire:alive'), '젖은 가지: 연기만');
+use('npc_bara'); ok(says.at(-1).includes('연기'), '바라: 연기만');
+use('stick_1'); use('stick_2'); use('stick_3'); ok(g.count('stick') === 3, '마른 가지 3');
+use('fire_1'); pick(1); ok(g.flags.has('fire:alive') && g.count('stick') === 0 && g.fireBase === 3, '마른 가지 셋: 불 살아남');
+ok(g.hungerMul === 1 && vis('npc_hana3') && vis('npc_old2') && !vis('npc_hana2'), '따뜻해짐 + 사람들이 불로');
+await new Promise((r) => setTimeout(r, 1400)); ok(g.flags.has('journal:fire'), '📔 불');
+use('fire_1'); ok(g.has('cooked') && g.count('meat') === 0, '고기 굽기');
+g.tapItem('cooked'); ok(g.flags.has('eat:cooked') && !g.has('cooked'), '익힌 고기 먹기');
 g.tick(0.01); ok(g._mission.includes('완주'), '미션 끝');
-await new Promise((r) => setTimeout(r, 2000)); ok(panel && panel.h.includes('프로토타입'), '끝 화면');
-ok(g.story.journalHtml().includes('채집') && g.story.journalHtml().includes('뗀석기'), '탐험일지 3편');
+await new Promise((r) => setTimeout(r, 2000)); ok(panel && panel.h.includes('무섭지 않다'), '끝 화면');
+ok(g.story.journalHtml().includes('채집') && g.story.journalHtml().includes('긁개') && g.story.journalHtml().includes('불'), '탐험일지 5편');
 console.log(`story-p1 loop: ${pass} pass / ${fail} fail`); process.exit(fail ? 1 : 0);

@@ -33,9 +33,17 @@ export function stone(kind = 'round', seed = 1) {
   return g;
 }
 /** 사슴. big=true 면 어른 사슴(뿔) */
-export function deer(big = true, seed = 1) {
+export function deer(kind = 'big', seed = 1) {
   const g = new THREE.Group(); const fur = M(0x9a6b3c, { name: 'fur' }); const dark = M(0x3a2a1a);
-  const s = big ? 1 : 0.7;
+  const big = kind !== 'small'; const s = big ? 1 : 0.7;
+  if (kind === 'down') { // 누운 사슴 — 사냥 뒤. 조용하다.
+    mesh(g, new THREE.CapsuleGeometry(0.28, 0.9, 4, 8), fur, 0, 0.3, 0, 1, 1, 1).rotation.z = Math.PI / 2;
+    const neck = mesh(g, new THREE.CylinderGeometry(0.12, 0.16, 0.6, 8), fur, 0.7, 0.22, 0.1); neck.rotation.z = Math.PI / 2 - 0.2;
+    mesh(g, new THREE.BoxGeometry(0.34, 0.2, 0.18), fur, 1.05, 0.14, 0.2);
+    for (const [x, z] of [[-.3, .3], [.3, .3], [-.35, -.1], [.35, -.1]]) { const l = mesh(g, new THREE.CylinderGeometry(0.05, 0.04, 0.85, 6), dark, x, 0.12, z + 0.35); l.rotation.x = Math.PI / 2 - 0.15; }
+    for (const z of [-.06, .06]) { const a = mesh(g, new THREE.CylinderGeometry(0.02, 0.03, 0.45, 5), dark, 1.1, 0.18, z * 4 + 0.5); a.rotation.x = -1.3; }
+    g.rotation.y = seed; return g;
+  }
   mesh(g, new THREE.CapsuleGeometry(0.28, 0.9, 4, 8), fur, 0, 0.95 * s, 0, s, s, s).rotation.z = Math.PI / 2;
   const neck = mesh(g, new THREE.CylinderGeometry(0.12, 0.16, 0.6, 8), fur, 0.55 * s, 1.25 * s, 0, s, s, s); neck.rotation.z = -0.7;
   mesh(g, new THREE.BoxGeometry(0.34, 0.2, 0.18), fur, 0.8 * s, 1.52 * s, 0, s, s, s);
@@ -60,4 +68,27 @@ export function person(look = {}) {
   a.traverse((m) => { if (!m.isMesh) return; const c = m.material.color.getHex(); if (c === 0x506a62 && look.cloth) m.material = M(look.cloth); if (c === 0x302d28 && look.hair) m.material = M(look.hair); });
   return a;
 }
-export const PROPS = { berryBush, rootPlant, stone, deer, track, person };
+/** 숨을 자리 — 눌린 풀 한 자리(어디가 좋은 자리인지는 바람이 말해 준다) */
+export function spot(kind = 'open', seed = 1) {
+  const g = new THREE.Group(); const r = R(seed);
+  const m = mesh(g, new THREE.CircleGeometry(0.9, 18), M(kind === 'rock' ? 0x6f6a5c : 0x8f9a55, { name: 'flat' }), 0, 0.03, 0, 1.3, 1, 1); m.rotation.x = -Math.PI / 2; m.receiveShadow = false;
+  if (kind === 'rock') for (let i = 0; i < 3; i++) mesh(g, new THREE.DodecahedronGeometry(0.5 + r() * 0.3, 0), M(0x5d5750, { flat: true }), (r() - .5) * 1.4, 0.35, -0.9 - r() * 0.4, 1.3, 0.9, 1);
+  else if (kind === 'reed') for (let i = 0; i < 10; i++) { const s = mesh(g, new THREE.BoxGeometry(0.05, 1.1, 0.02), M(0x9aa657), (r() - .5) * 2.0, 0.5, (r() - .5) * 1.6); s.rotation.y = r() * 3; s.rotation.z = (r() - .5) * 0.3; }
+  return g;
+}
+/** 바람 — 잎이 한쪽으로 날린다. 냄새도 그쪽으로 간다. kind = 'z' (+z 쪽으로) 만 지금은 */
+export function wind(kind = 'z', seed = 1) {
+  const g = new THREE.Group(); const r = R(seed); const leaf = M(0xb9a24a, { name: 'leaf' }); leaf.side = THREE.DoubleSide;
+  const leaves = [];
+  for (let i = 0; i < 14; i++) { const l = mesh(g, new THREE.PlaneGeometry(0.16, 0.1), leaf, (r() - .5) * 6, 0.6 + r() * 1.6, (r() - .5) * 6); l.castShadow = false; l.userData.o = r() * 6.28; leaves.push(l); }
+  g.userData.animate = (t) => { for (const l of leaves) { const k = ((t * 1.4 + l.userData.o) % 6.5); l.position.z = -3 + k; l.position.y = 0.6 + Math.sin(k * 2 + l.userData.o) * 0.5 + 0.8; l.rotation.set(Math.sin(t * 3 + l.userData.o), t * 2 + l.userData.o, 0); } };
+  return g;
+}
+/** 나뭇가지 — dry 마른 것 / wet 물가의 축축한 것 */
+export function stick(kind = 'dry', seed = 1) {
+  const g = new THREE.Group(); const r = R(seed);
+  const b = mesh(g, new THREE.CylinderGeometry(0.045, 0.06, 1.0 + r() * 0.4, 6), M(kind === 'wet' ? 0x3d3026 : 0x8a6a48, { rough: kind === 'wet' ? 0.5 : 1 }), 0, 0.06, 0); b.rotation.set(Math.PI / 2 * 0.98, 0, r() * 3);
+  if (kind === 'wet') mesh(g, new THREE.CircleGeometry(0.45, 10), M(0x4a5a4a, { rough: 0.3 }), 0, 0.015, 0).rotation.x = -Math.PI / 2;
+  return g;
+}
+export const PROPS = { berryBush, rootPlant, stone, deer, track, person, spot, wind, stick };
