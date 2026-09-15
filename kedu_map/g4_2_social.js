@@ -231,14 +231,14 @@ window.KEDU_MAP["g4_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_social_u2_l11",
+     "lessonId": "g4_social_u2_l11_v1",
      "n": "5",
      "title": "2단원 지역문제를 해결하고 지역을 알리는 노력 정리",
      "sub": "② 지역을 알리는 노력",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/social/2단원_지역문제해결과지역알리기/g4_social_u2_l11_칠한차례.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   },
