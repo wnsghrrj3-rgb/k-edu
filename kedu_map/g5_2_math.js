@@ -218,114 +218,114 @@ window.KEDU_MAP["g5_2_math"] = {
    "kind": "unit",
    "lessons": [
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u3_l01",
+     "lessonId": "g5_2_math_u3_l01",
      "n": "1",
      "title": "합동과 대칭을 만나 보자",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/3단원_합동과대칭/g5_math_u3_l01_합동과대칭을만나보자.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u3_l02",
+     "lessonId": "g5_2_math_u3_l02",
      "n": "2",
      "title": "도형의 합동을 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/3단원_합동과대칭/g5_math_u3_l02_도형의합동을알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u3_l03",
+     "lessonId": "g5_2_math_u3_l03",
      "n": "3",
      "title": "합동인 도형의 성질을 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/3단원_합동과대칭/g5_math_u3_l03_합동인도형의성질을알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u3_l04",
+     "lessonId": "g5_2_math_u3_l04",
      "n": "4",
      "title": "선대칭도형을 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/3단원_합동과대칭/g5_math_u3_l04_선대칭도형을알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u3_l05",
+     "lessonId": "g5_2_math_u3_l05",
      "n": "5",
      "title": "선대칭도형의 성질을 알고 그려요 ①",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/3단원_합동과대칭/g5_math_u3_l05_선대칭도형의성질을알고그려요1.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u3_l06",
+     "lessonId": "g5_2_math_u3_l06",
      "n": "6",
      "title": "선대칭도형의 성질을 알고 그려요 ②",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/3단원_합동과대칭/g5_math_u3_l06_선대칭도형의성질을알고그려요2.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u3_l07",
+     "lessonId": "g5_2_math_u3_l07",
      "n": "7",
      "title": "점대칭도형을 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/3단원_합동과대칭/g5_math_u3_l07_점대칭도형을알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u3_l08",
+     "lessonId": "g5_2_math_u3_l08",
      "n": "8",
      "title": "점대칭도형의 성질을 알고 그려요 ①",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/3단원_합동과대칭/g5_math_u3_l08_점대칭도형의성질을알고그려요1.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u3_l09",
+     "lessonId": "g5_2_math_u3_l09",
      "n": "9",
      "title": "점대칭도형의 성질을 알고 그려요 ②",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/3단원_합동과대칭/g5_math_u3_l09_점대칭도형의성질을알고그려요2.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u3_l10",
+     "lessonId": "g5_2_math_u3_l10",
      "n": "10",
      "title": "따뜻한 기부 천사의 나눔",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/3단원_합동과대칭/g5_math_u3_l10_따뜻한기부천사의나눔.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u3_l11",
+     "lessonId": "g5_2_math_u3_l11",
      "n": "11",
      "title": "스스로 마무리해요 (단원 평가)",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/3단원_합동과대칭/g5_math_u3_l11_스스로마무리해요.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   },
