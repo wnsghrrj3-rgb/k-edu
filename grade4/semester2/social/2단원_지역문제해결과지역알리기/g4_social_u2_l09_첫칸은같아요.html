@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<!--
+=========================================================================
+  사회 4-2 · 2단원 지역문제를 해결하고 지역을 알리는 노력
+  주제② 지역을 알리는 노력 · l09
+  「[할 수 있어요] 우리 지역의 자랑거리를 알리는 활동을 해 볼까요」
+  교과서 p.90~93 · 지도서 12~13차시(p.170~176) · [4사09-02]
+  수업 기법 = 협력 학습 · 전시회 관람하기 · 준비물 = 가위, 풀, 색칠 도구
+=========================================================================
+
+  ■ 직접조작 = 길마다 걸음 수가 다르고, 세 길의 첫 걸음이 같은 자리인 판
+  ⭐ 2단원 앞 여덟 판에서 판의 크기는 학생이 무엇을 하든 달라지지 않았다.
+     l01은 선반이 둘·카드가 넷이었고, l02는 줄이 여섯, l03은 자료가 넷,
+     l04는 방안이 셋·기준이 넷, l05는 방안이 여섯, l06은 물음이 다섯,
+     l07은 자랑거리가 여덟·갈래가 넷, l08은 방법이 일곱·갈래가 넷이었다.
+     ★ l08은 완주 판이 여덟 갈래였지만 완주에 드는 걸음은 어느 갈래든 언제나 일곱이었다.
+     여덟 판 어디에서도 「몇 걸음짜리 판인가」가 학생이 고른 것에 따라 달라진 적이 없다.
+  ⭐ 이번 판은 거기가 다르다 — 어느 길을 걷느냐가 걸음 수를 정한다.
+     만화 세 걸음 · 포스터 세 걸음 · 안내도 네 걸음이고, 세 길을 다 걸으면 열 걸음이다.
+     ★ 걸음 수를 못박은 상수가 코드에 아예 없다 — mkLen 한 줄이 그때그때 센다.
+     ★ 「열」도 못박지 않는다 — mkTotal 한 줄이 세 길의 길이를 더한다.
+  ⭐ ★★ 그런데 세 길의 첫 걸음은 방법 이름만 다르고 나머지가 글자까지 같다.
+     그 꼬리를 담은 상수는 MK_HEAD 단 하나이고, 첫 걸음 셋은 모두 그 한 줄에서 만들어진다.
+     그래서 「첫 걸음만 서로 다른 판」은 만들어질 수 없다.
+     근거 = 교과서 91~92쪽 만들기 차례 셋의 첫 줄이 모두
+     「○○로 꾸밀 지역의 자랑거리를 정리합니다」이고, 지도서 176쪽 학습 내용 정리도
+     「소개하고 싶은 자랑거리를 정함 → 소개 방법을 정함 → 알맞은 소개 자료를 만듦」이다.
+  ⭐ 길끼리는 순서가 자유롭지만 한 길 안에서는 차례가 있다.
+     차례가 아닌 걸음을 누르면 판이 그대로이고, 안내는 알맞은 걸음의 글자를 흘리지 않는다.
+  ⭐ 판은 밟은 걸음만 세운다 — 아직 밟지 않은 자리에는 걸음의 글자가 서지 않는다.
+  ⭐ 밟는 자리는 코드에 단 하나이고 덜어 내는 자리는 0이다. 난수 0 · 조작에 점수 0.
+
+  ■ 4단계
+   ① 열 걸음 밟기(길끼리 순서 자유 · 한 길 안에서는 차례 고정 · 어긋나면 판 불변)
+   ② 판 읽기 3택(정답 자리 0 = 「어떤 방법으로 만들든 꾸밀 자랑거리를 먼저 정리하기 때문이에요」)
+   ③ 마무리 3택(정답 자리 2 = 지도서 176쪽 학습 내용 정리 원문)
+   ④ 완료 — 우리 지역의 소개 자료를 실제로 만드는 일은 교실 몫
+
+  ■ 가드 8종
+   ① 마무리 확정 후 세 처리기 전체 잠금   ② 무효 번호(Number.isInteger·범위)
+   ③ 이미 밟은 걸음 다시 밟기 — 판 불변
+   ④ 차례가 아닌 걸음(앞서 밟기) — 판 불변 · 알맞은 걸음 문면 0
+   ⑤ 열 걸음을 다 밟기 전 판 읽기 — 판 불변
+   ⑥ 열 걸음을 다 밟은 뒤 더 밟기 — 판 불변
+   ⑦ 이미 읽은 자리 다시 읽기 — 판 불변
+   ⑧ 판을 읽기 전 마무리 · 어긋난 답 — 판 불변
+
+  ■ 정직 4곳
+   ㉠ 판의 만들기 차례 셋은 교과서 91~92쪽에서 옮긴 자리다(캡션 상시).
+   ㉡ 판은 어느 소개 방법이 더 좋은지 가리지 않는다(순위 어휘 0).
+   ㉢ 우리 지역의 자랑거리를 고르고 소개 자료를 실제로 만들어 소개하는 일은 교실 몫이다.
+   ㉣ 실제 지역 이름·누리집 주소·상표·신문사·날짜·금액 0.
+
+  ■ 설계 원칙
+   · 14~16차시 침범 0(생각을 펼쳐요·생각 그물·교실 놀이·단원 평가 0
+     · 「공부한 내용을 정리」==1 차시 예고)
+   · 주제① 재현 0(해결 방안·제안서·공익 광고·실천 결과·문제의 원인 0
+     · 「지역문제」는 META 한 자리)
+   · l07·l08 재현 최소(자랑거리의 네 갈래·알리는 노력 일곱 재현 0
+     · 자연환경·인문환경·「도시의 특징」 0 · 3단원 침범 0)
+   · 1단원 재현 0(민주주의·주민 자치·주민 참여·학생 자치회 0)
+   · 교사용 참고 자료 0(학습 안내·지도 방법·지도 꿀·활동 의도·평가 관점·평가 방법·
+     사진 해설·지역 탐구 수업 팁·교수 학습 자료·해시태그 전수)
+   · 실제 지역 이름 0 — 판이 다루는 자리는 「소개 자료를 만드는 차례」까지이고
+     무엇을 소개할지는 교실 몫이다(교과서 91~92쪽 예시는 교실에서 함께 본다)
+   · 네 자리 연도 0 · 비율 0 · 금액 0 · 실제 누리집 주소 0 · 상표 0
+   · 정서 — 전쟁·만세 운동·다쳤·사망·무서·위험 0 · 「틀렸」 0
+-->
+<html lang="ko">
+<head>
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>[할 수 있어요] 우리 지역의 자랑거리를 알리는 활동을 해 볼까요 · 사회 4-2</title>
+<meta name="kedu-lesson-id" content="g4_social_u2_l09_v1">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#B45309; --green-d:#92400E; --cyan:#0891B2;
+  --bg:#FFF7ED; --bub:#FFEDD5; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#F57F17; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes drawLine{to{transform:scaleX(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ka-lb{background:#F1F5F9;border:none;padding:7px 12px;border-radius:10px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;font-family:inherit;font-weight:700;color:#475569;flex-shrink:0;font-size:13px}
+.ka-lb svg{width:15px;height:15px}
+.ka-bar{flex:1;height:5px;background:var(--bg);border-radius:999px;overflow:hidden}
+.ka-bar>div{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:999px;transition:width .35s ease;width:6%}
+.ka-pg{color:var(--green);font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;flex-shrink:0}
+.ka-sc{background:var(--amber-bg);color:var(--amber);padding:4px 12px;border-radius:999px;display:flex;align-items:center;gap:5px;flex-shrink:0;font-weight:700}
+.ka-sc svg{width:14px;height:14px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px}
+.ka-sc-u{font-size:12px}
+
+/* 메인 */
+.ka-m{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow-y:auto}
+.ka-tags{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ka-bg{background:var(--amber-bg);color:var(--amber);padding:5px 14px;border-radius:30px;font-size:13px;
+  display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.ka-bg.s2{background:#E0F2FE;color:#0369A1}
+.ka-bg.s3{background:#EDE9FE;color:#6D28D9}
+.ka-bg.s4{background:#FCE7F3;color:#BE185D}
+.ka-bg.s5{background:#FFEDD5;color:var(--green)}
+.ka-bg svg{width:13px;height:13px}
+.ka-meta{font-size:13px;color:var(--muted)}
+.ka-t{font-size:clamp(20px,3.4vw,29px);margin-bottom:16px;line-height:1.4;color:var(--green);letter-spacing:-.3px;font-weight:700;animation:fadeUp .4s .15s ease both}
+.ka-bub{background:var(--bub);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);line-height:1.7;
+  margin-bottom:16px;border-left:4px solid var(--green);animation:fadeUp .4s .3s ease both}
+.ka-emph{position:relative;display:inline-block;font-weight:700;color:var(--green)}
+.ka-emph::after{content:'';position:absolute;bottom:2px;left:0;right:0;height:3px;background:var(--red);border-radius:2px;transform:scaleX(0);transform-origin:left;animation:drawLine .6s .6s ease forwards}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(16px,2.6vw,21px);font-weight:700;line-height:1.6;margin-bottom:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:640px}
+.opt{background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:13px 14px;font-size:clamp(14px,2.3vw,17px);
+  font-weight:500;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:var(--green);background:#FFEDD5;animation:pop .4s ease}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;font-size:clamp(14px,2.3vw,17px);line-height:1.6;text-align:center;animation:fadeUp .35s ease both;max-width:640px}
+.fb.ok{color:var(--green);font-weight:700}
+.hint{margin-top:12px;background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(13px,2.2vw,16px);
+  line-height:1.6;color:#0C4A6E;max-width:560px;animation:fadeUp .35s ease both}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:620px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFF;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:clamp(14px,2.3vw,17px);line-height:1.5}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(180,83,9,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+/* 조작 판 — 길마다 걸음 수가 다르고, 세 길의 첫 걸음이 같은 판 */
+.mk-wrap{max-width:760px;width:100%;margin:0 auto}
+.mk-head{background:#FFEDD5;color:#9A3412;font-weight:800;text-align:center;border-radius:10px;padding:7px 10px;
+  font-size:clamp(13px,2.1vw,16px);margin-bottom:8px;word-break:keep-all}
+.mk-board{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
+.mk-lane{border:2px solid #E2E8F0;border-radius:12px;background:#fff;padding:8px;display:flex;flex-direction:column;gap:6px;min-height:118px}
+.mk-lane[data-full="1"]{border-color:#FDBA74;background:#FFFBF5}
+.mk-ln{border-radius:9px;background:#F1F5F9;color:#475569;font-weight:800;text-align:center;
+  padding:5px 6px;font-size:clamp(11px,1.95vw,14px);word-break:keep-all}
+.mk-lane[data-full="1"] .mk-ln{background:#EA580C;color:#fff}
+.mk-steps{display:flex;flex-direction:column;gap:4px}
+.mk-step{background:#FFF7ED;border-left:3px solid #EA580C;border-radius:7px;padding:5px 7px;
+  font-size:clamp(10px,1.8vw,13px);line-height:1.45;color:#7C2D12;font-weight:600;word-break:keep-all;animation:pop .3s ease both}
+.mk-wait{color:#94A3B8;font-size:clamp(10px,1.75vw,12px);padding:4px 6px;border-radius:7px;background:#F8FAFC;word-break:keep-all}
+.mk-pool{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.mk-item{border:1.5px solid #CBD5E1;background:#F8FAFC;color:#334155;font-family:inherit;font-weight:600;
+  border-radius:10px;padding:8px 9px;cursor:pointer;text-align:left;line-height:1.45;
+  font-size:clamp(11px,1.95vw,14px);word-break:keep-all}
+.mk-item:hover{border-color:#EA580C;background:#FFF7ED}
+.mk-item[data-walked="1"]{background:#F1F5F9;color:#94A3B8;border-style:dashed}
+.mk-no{display:inline-block;background:#FED7AA;color:#7C2D12;border-radius:6px;padding:1px 6px;font-weight:800;margin-right:5px}
+.mk-tell{margin-top:8px;border-radius:12px;padding:9px 13px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;background:#F0F9FF;border-left:4px solid var(--cyan)}
+.mk-ask{border:2px solid var(--line);border-radius:12px;padding:10px 14px;background:#FFFBF5;margin-top:9px;font-size:clamp(13px,2.2vw,16px);line-height:1.6}
+.mk-opts{display:grid;grid-template-columns:1fr;gap:8px;margin-top:9px}
+.mk-opt{background:#F8FAFC;border:2px solid var(--line);border-radius:11px;padding:10px 12px;font-family:inherit;
+  font-size:clamp(13px,2.2vw,16px);cursor:pointer;text-align:left;line-height:1.5;word-break:keep-all}
+.mk-opt:hover{border-color:var(--green);background:var(--bub)}
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+  .mk-board{grid-template-columns:1fr}
+  .mk-pool{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#F57F17"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식, 사람 형상 대신 칸과 말풍선 ===== */
+const SVG = {
+  // [동기 유발] 기억에 남은 소개 자료
+  memo:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFF7ED"/>
+    <rect x="18" y="20" width="50" height="44" rx="5" fill="#fff" stroke="#EA580C" stroke-width="2"/>
+    <path d="M 26 32 L 60 32 M 26 42 L 60 42 M 26 52 L 48 52" stroke="#FDBA74" stroke-width="2.4" stroke-linecap="round"/>
+    <rect x="92" y="20" width="50" height="44" rx="5" fill="#FFEDD5" stroke="#EA580C" stroke-width="2"/>
+    <circle cx="117" cy="36" r="8" fill="#FDBA74"/><path d="M 100 56 L 112 46 L 122 54 L 134 44" stroke="#EA580C" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+    <text x="80" y="82" font-size="7" fill="#9A3412" text-anchor="middle" font-weight="700">기억에 남은 소개 자료</text></svg>`,
+  // 소개 자료를 만드는 세 걸음
+  order:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFF7ED"/>
+    <rect x="6" y="30" width="42" height="26" rx="5" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.6"/>
+    <text x="27" y="41" font-size="5.6" fill="#7C2D12" text-anchor="middle" font-weight="800">자랑거리를</text>
+    <text x="27" y="50" font-size="5.6" fill="#7C2D12" text-anchor="middle" font-weight="800">정해요</text>
+    <path d="M 50 43 L 58 43" stroke="#EA580C" stroke-width="2.2" stroke-linecap="round"/>
+    <rect x="60" y="30" width="42" height="26" rx="5" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.6"/>
+    <text x="81" y="41" font-size="5.6" fill="#7C2D12" text-anchor="middle" font-weight="800">소개 방법을</text>
+    <text x="81" y="50" font-size="5.6" fill="#7C2D12" text-anchor="middle" font-weight="800">정해요</text>
+    <path d="M 104 43 L 112 43" stroke="#EA580C" stroke-width="2.2" stroke-linecap="round"/>
+    <rect x="114" y="30" width="42" height="26" rx="5" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.6"/>
+    <text x="135" y="41" font-size="5.6" fill="#7C2D12" text-anchor="middle" font-weight="800">소개 자료를</text>
+    <text x="135" y="50" font-size="5.6" fill="#7C2D12" text-anchor="middle" font-weight="800">만들어요</text>
+    <text x="80" y="76" font-size="7" fill="#9A3412" text-anchor="middle" font-weight="700">이 차례로 만들어요</text></svg>`,
+  // 세 가지 소개 방법
+  ways:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFF7ED"/>
+    <rect x="8" y="20" width="44" height="34" rx="5" fill="#FDBA74"/><text x="30" y="41" font-size="6.6" fill="#7C2D12" text-anchor="middle" font-weight="800">만화 그리기</text>
+    <rect x="58" y="20" width="44" height="34" rx="5" fill="#FDBA74"/><text x="80" y="41" font-size="6.6" fill="#7C2D12" text-anchor="middle" font-weight="800">포스터 만들기</text>
+    <rect x="108" y="20" width="44" height="34" rx="5" fill="#FDBA74"/><text x="130" y="41" font-size="6.6" fill="#7C2D12" text-anchor="middle" font-weight="800">안내도 만들기</text>
+    <rect x="22" y="64" width="116" height="18" rx="5" fill="#fff" stroke="#EA580C" stroke-width="1.6"/>
+    <text x="80" y="76" font-size="6.6" fill="#9A3412" text-anchor="middle" font-weight="800">모둠 친구들과 함께 정해요</text></svg>`,
+  // 길마다 걸음 수가 다르다
+  lanes:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFF7ED"/>
+    <text x="16" y="24" font-size="6" fill="#7C2D12" font-weight="800">만화</text>
+    <rect x="46" y="17" width="20" height="10" rx="3" fill="#FDBA74"/><rect x="70" y="17" width="20" height="10" rx="3" fill="#FDBA74"/><rect x="94" y="17" width="20" height="10" rx="3" fill="#FDBA74"/>
+    <text x="16" y="50" font-size="6" fill="#7C2D12" font-weight="800">포스터</text>
+    <rect x="46" y="43" width="20" height="10" rx="3" fill="#FDBA74"/><rect x="70" y="43" width="20" height="10" rx="3" fill="#FDBA74"/><rect x="94" y="43" width="20" height="10" rx="3" fill="#FDBA74"/>
+    <text x="16" y="76" font-size="6" fill="#7C2D12" font-weight="800">안내도</text>
+    <rect x="46" y="69" width="20" height="10" rx="3" fill="#FDBA74"/><rect x="70" y="69" width="20" height="10" rx="3" fill="#FDBA74"/><rect x="94" y="69" width="20" height="10" rx="3" fill="#FDBA74"/><rect x="118" y="69" width="20" height="10" rx="3" fill="#0891B2"/>
+    <text x="80" y="92" font-size="6.4" fill="#9A3412" text-anchor="middle" font-weight="800">길마다 걸음 수가 달라요</text></svg>`,
+  // 첫 걸음이 같다
+  same:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFF7ED"/>
+    <rect x="12" y="16" width="136" height="16" rx="4" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.4"/>
+    <text x="80" y="27" font-size="6" fill="#7C2D12" text-anchor="middle" font-weight="800">만화로 꾸밀 자랑거리를 정리해요</text>
+    <rect x="12" y="36" width="136" height="16" rx="4" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.4"/>
+    <text x="80" y="47" font-size="6" fill="#7C2D12" text-anchor="middle" font-weight="800">포스터로 꾸밀 자랑거리를 정리해요</text>
+    <rect x="12" y="56" width="136" height="16" rx="4" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.4"/>
+    <text x="80" y="67" font-size="6" fill="#7C2D12" text-anchor="middle" font-weight="800">안내도로 꾸밀 자랑거리를 정리해요</text>
+    <text x="80" y="88" font-size="6.8" fill="#9A3412" text-anchor="middle" font-weight="800">첫 걸음은 셋이 닮았어요</text></svg>`,
+  // [디지털 활동] 사회 관계망 서비스로 소개하기
+  sns:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFF7ED"/>
+    <rect x="52" y="14" width="56" height="62" rx="7" fill="#fff" stroke="#EA580C" stroke-width="2"/>
+    <rect x="58" y="22" width="44" height="18" rx="3" fill="#FFEDD5"/>
+    <path d="M 62 52 L 98 52 M 62 60 L 90 60" stroke="#FDBA74" stroke-width="2.2" stroke-linecap="round"/>
+    <text x="80" y="35" font-size="6" fill="#7C2D12" text-anchor="middle" font-weight="800">소개 자료</text>
+    <path d="M 108 45 L 128 45" stroke="#0891B2" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="4 3"/>
+    <path d="M 128 45 L 122 41 M 128 45 L 122 49" stroke="#0891B2" stroke-width="2.2" stroke-linecap="round"/>
+    <text x="80" y="90" font-size="6.6" fill="#9A3412" text-anchor="middle" font-weight="800">많은 사람이 볼 수 있어요</text></svg>`,
+  // 소개하고 함께 살펴보기
+  show:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFF7ED"/>
+    <rect x="14" y="22" width="60" height="34" rx="5" fill="#fff" stroke="#EA580C" stroke-width="1.8"/>
+    <text x="44" y="42" font-size="6.4" fill="#9A3412" text-anchor="middle" font-weight="800">내가 만든 자료</text>
+    <path d="M 78 39 L 92 39" stroke="#FDBA74" stroke-width="2.4" stroke-linecap="round"/>
+    <rect x="94" y="22" width="52" height="34" rx="5" fill="#FFEDD5"/>
+    <text x="120" y="42" font-size="6.4" fill="#7C2D12" text-anchor="middle" font-weight="800">친구에게 소개</text>
+    <text x="80" y="76" font-size="6.8" fill="#9A3412" text-anchor="middle" font-weight="800">관심을 가지고 들어요</text></svg>`,
+  done:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFF7ED"/>
+    <circle cx="80" cy="46" r="26" fill="#FFEDD5" stroke="#EA580C" stroke-width="2.4"/>
+    <path d="M 68 46 L 76 55 L 93 37" stroke="#EA580C" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="80" y="86" font-size="7.4" fill="#7C2D12" text-anchor="middle" font-weight="800">소개 자료를 만들어 봤어요</text></svg>`
+};
+function sceneCard(key,cap){return `<div class="scene">${SVG[key]}<div class="cap">${cap}</div></div>`;}
+
+/* ===== 직접 조작: 길마다 걸음 수가 다르고, 세 길의 첫 걸음이 같은 판 =====
+   ⭐ 2단원 앞 여덟 판에서 판의 크기는 학생이 무엇을 하든 달라지지 않았다.
+      칸도 걸음도 처음부터 끝까지 그 수였다. l08은 완주 판이 여덟 갈래였지만
+      완주에 드는 걸음은 어느 갈래든 언제나 일곱이었다.
+   ⭐ 이번 판은 거기가 다르다 — 어느 길을 걷느냐가 걸음 수를 정한다.
+      만화와 포스터는 세 걸음, 안내도는 네 걸음이다.
+      ★ 걸음 수를 못박은 상수가 코드에 아예 없다 — mkLen 한 줄이 그때그때 센다.
+   ⭐ ★★ 그런데 세 길의 첫 걸음은 방법 이름만 다르고 나머지가 글자까지 같다.
+      그 꼬리를 담은 상수는 MK_HEAD 단 하나이고, 첫 걸음 셋은 그 한 줄에서 만들어진다.
+      근거 = 교과서 91~92쪽 만들기 차례 셋의 첫 줄이 모두
+      「○○로 꾸밀 지역의 자랑거리를 정리합니다」이다.
+   ⭐ 길끼리는 순서가 자유롭지만 한 길 안에서는 차례가 있다.
+      차례가 아닌 걸음을 누르면 판이 그대로이고, 안내는 알맞은 걸음의 글자를 흘리지 않는다.
+   ⭐ 판은 밟은 걸음만 세운다 — 아직 밟지 않은 자리에는 글자가 서지 않는다.
+   ⭐ 밟는 자리는 코드에 단 하나이고 덜어 내는 자리는 0이다. */
+const MK_N = 3;
+const MK_WAY = ["만화 그리기", "포스터 만들기", "안내도 만들기"];
+const MK_SHORT = ["만화", "포스터", "안내도"];
+/* ⭐ 세 길의 첫 걸음이 같은 자리 — 꼬리를 담은 상수는 코드에 여기 단 하나 */
+const MK_HEAD = "로 꾸밀 지역의 자랑거리를 정리해요";
+const MK_STEP = [
+  [MK_SHORT[0] + MK_HEAD,
+   "정리한 내용을 4~6개의 장면으로 나눠요",
+   "그림을 그리고 말풍선이나 설명을 넣어 만화를 완성해요"],
+  [MK_SHORT[1] + MK_HEAD,
+   "자랑거리의 특징이 잘 드러나게 그림을 그리거나 사진을 붙여요",
+   "자랑거리를 설명하는 문구를 써요"],
+  [MK_SHORT[2] + MK_HEAD,
+   "지역의 백지도에 소개할 자랑거리가 있는 곳을 색칠해요",
+   "자랑거리의 특징을 설명하는 자료를 만들고 백지도에 붙여요",
+   "백지도에 색칠한 곳과 자료를 선으로 이어 완성해요"]
+];
+const MK_GOOD = [
+  "우리 지역의 자랑거리를 쉽고 재미있게 표현할 수 있어요",
+  "우리 지역의 자랑거리를 더욱 잘 표현할 수 있어요",
+  "우리 지역의 자랑거리 위치와 특징 등을 한눈에 살펴볼 수 있어요"
+];
+const MK_WAIT = "아직 밟지 않았어요";
+const MK_SAY_WALKED = "이미 밟은 걸음이에요. 판은 그대로예요.";
+const MK_SAY_ORDER_S = "이 길에서는 아직 그 걸음의 차례가 아니에요. 판은 그대로예요.";
+const MK_SAY_CLOSED = "세 길을 모두 걸었어요. 이제 판을 읽는 자리예요. 판은 그대로예요.";
+const MK_SAY_ORDER_R = "먼저 세 길의 걸음을 모두 밟아 봐요.";
+const MK_SAY_READDONE = "이미 정한 자리예요. 판은 그대로예요.";
+const MK_SAY_ORDER_FIN = "먼저 판을 읽어 봐요.";
+const MK_TELL_WALK = "한 걸음 밟았어요.";
+const MK_READQ = [
+  "어떤 방법으로 만들든 꾸밀 자랑거리를 먼저 정리하기 때문이에요",
+  "판이 첫 걸음만 같게 적어 두었기 때문이에요",
+  "세 가지 방법이 사실은 모두 같은 방법이기 때문이에요"
+];
+const MK_READ_OK = 0;
+const MK_READ_BAD = "세 길의 첫 걸음에서 무엇을 하고 있는지 다시 살펴봐요.";
+const MK_FINQ = [
+  "소개 자료는 걸음 수가 많은 방법으로 만들어야 좋아요",
+  "소개 방법은 하나로 정해져 있어요",
+  "소개하고 싶은 자랑거리를 정하고, 모둠 친구들과 소개 방법을 정한 뒤, 소개 방법에 알맞은 소개 자료를 만들어요"
+];
+const MK_FIN_OK = 2;
+const MK_FIN_BAD = "판에서 걸음을 밟기 전에 무엇부터 정했는지 떠올려 봐요.";
+
+function mkStepsOf(m){ return MK_STEP[m]; }                    // ⭐ MK_STEP 를 대괄호로 읽는 자리는 코드에 여기 단 하나
+function mkLen(m){ return mkStepsOf(m).length; }               // ⭐ 걸음 수를 못박은 상수 0 — 그때그때 센다
+function mkStepOf(m,j){ return mkStepsOf(m)[j]; }
+function mkWalked(st,m){ return st.mkDone[m]; }
+function mkDoneN(st){ let n=0; for(let m=0;m<MK_N;m++){ n += mkWalked(st,m); } return n; }
+function mkTotal(){ let n=0; for(let m=0;m<MK_N;m++){ n += mkLen(m); } return n; }   // ⭐ 열을 못박지 않는다
+function mkLaneFull(st,m){ return mkWalked(st,m) === mkLen(m); }
+function mkAllDone(st){ for(let m=0;m<MK_N;m++){ if(!mkLaneFull(st,m)) return false; } return true; }
+function mkStage(st){
+  if(!mkAllDone(st)) return "step";
+  if(st.mkRead == null) return "read";
+  if(st.mkFin == null) return "fin";
+  return "end";
+}
+
+/* 길 칸 — 밟은 걸음만 글자가 선다 */
+function mkBoard(st){
+  let lanes = '';
+  for(let m=0;m<MK_N;m++){
+    let rows = '';
+    for(let j=0;j<mkLen(m);j++){
+      rows += (j < mkWalked(st,m))
+        ? `<div class="mk-step" data-step="1"><span class="mk-no">${j+1}</span>${mkStepOf(m,j)}</div>`
+        : `<div class="mk-wait" data-step="0"><span class="mk-no">${j+1}</span>${MK_WAIT}</div>`;
+    }
+    lanes += `<div class="mk-lane" data-lane="${m}" data-len="${mkLen(m)}" data-walked="${mkWalked(st,m)}" data-full="${mkLaneFull(st,m)?1:0}">
+      <div class="mk-ln">${MK_WAY[m]} · ${mkLen(m)}걸음</div>
+      <div class="mk-steps">${rows}</div></div>`;
+  }
+  return `<div class="mk-board" data-done="${mkDoneN(st)}" data-total="${mkTotal()}">${lanes}</div>`;
+}
+
+/* 고를 목록 — 열 걸음이 모두 보이고, 밟은 걸음은 흐려진다 */
+function mkPool(st){
+  let rows = '';
+  for(let m=0;m<MK_N;m++){
+    for(let j=0;j<mkLen(m);j++){
+      const done = j < mkWalked(st,m);
+      rows += `<button class="mk-item" data-item="${m}-${j}" data-walked="${done?1:0}" onclick="mkWalk(${m},${j})"><span class="mk-no">${MK_SHORT[m]} ${j+1}</span>${mkStepOf(m,j)}</button>`;
+    }
+  }
+  return `<div class="mk-pool" data-left="${mkTotal() - mkDoneN(st)}">${rows}</div>`;
+}
+
+function mkPanel(st){
+  const stage = mkStage(st);
+  let ask = '';
+  if(stage === "step"){
+    ask = `<div class="mk-ask" data-step="walk"><b>세 가지 소개 방법의 걸음을 차례대로 밟아 봐요.</b>
+      <div class="note" style="text-align:left;margin-top:5px">어느 길부터 걸어도 괜찮아요. 다만 <b>한 길 안에서는 차례</b>가 있어요.</div></div>`;
+  } else if(stage === "read"){
+    ask = `<div class="mk-ask" data-step="read"><b>세 길의 <b>첫 걸음</b>을 나란히 보니 방법 이름만 다르고 나머지는 글자까지 같아요. 왜 그럴까요?</b>
+      <div class="mk-opts">${MK_READQ.map((t,i)=>`<button class="mk-opt" onclick="mkRead(${i})">${t}</button>`).join('')}</div></div>`;
+  } else if(stage === "fin"){
+    ask = `<div class="mk-ask" data-step="fin"><b>그렇다면 오늘 판에서 알게 된 것은 무엇일까요?</b>
+      <div class="mk-opts">${MK_FINQ.map((t,i)=>`<button class="mk-opt" onclick="mkFin(${i})">${t}</button>`).join('')}</div></div>`;
+  } else {
+    ask = `<div class="mk-ask" data-fin="1" style="border-color:#86EFAC;background:#F0FDF4">
+      <b style="color:#166534">소개하고 싶은 자랑거리를 정하고, 모둠 친구들과 소개 방법을 정한 뒤, 소개 방법에 알맞은 소개 자료를 만들어요.</b>
+      길마다 걸음 수는 달랐지만 <b>첫 걸음</b>은 셋이 같았어요.
+      <div class="note" style="text-align:left;margin-top:5px">※ <b>우리 지역</b>의 자랑거리를 고르고 소개 자료를 실제로 만드는 일은 교실 몫이에요. 판은 대신 만들어 주지 않아요. 준비물은 <b>가위, 풀, 색칠 도구</b>예요.</div></div>`;
+  }
+  const tell = st.mkTell ? `<div class="mk-tell">${st.mkTell}</div>` : '';
+  const warn = st.mkMsg ? `<div class="fb" style="color:#DC2626;font-weight:700">${st.mkMsg}</div>` : '';
+  const pool = (stage === "step") ? mkPool(st) : '';
+  return `<div class="mk-wrap">
+    <div class="mk-head">소개 자료 만들기 · 밟은 걸음 <b data-done="${mkDoneN(st)}">${mkDoneN(st)}</b> / ${mkTotal()}걸음 · 만화 ${mkWalked(st,0)}/${mkLen(0)} · 포스터 ${mkWalked(st,1)}/${mkLen(1)} · 안내도 ${mkWalked(st,2)}/${mkLen(2)}</div>
+    ${mkBoard(st)}${pool}${tell}${ask}${warn}
+    <div class="note" style="margin-top:8px">※ 판의 만들기 차례 셋은 <b>교과서 91~92쪽</b>에서 옮긴 자리예요. 판은 <b>어느 방법이 더 좋은지 가리지 않아요.</b></div>
+  </div>`;
+}
+
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "2단원 지역문제를 해결하고 지역을 알리는 노력 · 주제② 지역을 알리는 노력";
+const Q = [
+  {stem:"우리 지역의 자랑거리 소개 자료를 만드는 차례로 알맞은 것은 무엇인가요?",
+   opts:["소개할 자랑거리를 정하고 → 소개 방법을 정하고 → 소개 자료를 만들어요","소개 자료를 먼저 만들고 → 소개할 자랑거리를 정해요","소개 방법을 정하고 → 소개 자료를 만들고 → 자랑거리를 정해요","소개 자료를 만든 뒤에 소개 방법을 정해요"], correct:0, pts:POINTS_BASIC,
+   h1:"무엇을 소개할지 먼저 정해야 해요.", h2:"무엇을 소개할지 정해야 어떤 방법이 알맞은지 고를 수 있어요.",
+   reason:"소개하고 싶은 자랑거리를 정하고, 모둠 친구들과 소개 방법을 정한 뒤, 소개 방법에 알맞은 소개 자료를 만들어요."},
+  {stem:"우리 지역의 자랑거리를 소개하는 방법으로 알맞지 <b>않은</b> 것은 무엇인가요?",
+   opts:["만화 그리기","포스터 만들기","다른 지역의 소개 자료를 그대로 옮겨 붙이기","안내도 만들기"], correct:2, pts:POINTS_BASIC,
+   h1:"우리 지역을 소개하는 자료인지 생각해 봐요.", h2:"다른 지역의 것을 옮겨 붙이면 우리 지역을 소개한 것이 아니에요.",
+   reason:"소개 방법에는 만화 그리기, 포스터 만들기, 안내도 만들기 등이 있어요."},
+  {stem:"안내도를 만들 때 지역의 백지도를 활용하면 좋은 점은 무엇인가요?",
+   opts:["자랑거리를 감출 수 있어요","자랑거리를 하나만 나타낼 수 있어요","자랑거리의 이름을 지울 수 있어요","자랑거리가 있는 곳과 특징 등을 한눈에 살펴볼 수 있어요"], correct:3, pts:POINTS_BASIC,
+   h1:"백지도에 색칠한 곳과 자료를 선으로 이어요.", h2:"어디에 있는 자랑거리인지가 지도 위에 그대로 보여요.",
+   reason:"안내도를 만들면 우리 지역의 자랑거리 위치와 특징 등을 한눈에 살펴볼 수 있어요."},
+  {stem:"소개 자료를 만화로 만들면 좋은 점은 무엇인가요?",
+   opts:["자랑거리를 아무도 모르게 할 수 있어요","우리 지역의 자랑거리를 쉽고 재미있게 표현할 수 있어요","그림을 하나도 그리지 않아도 돼요","자랑거리를 설명하지 않아도 돼요"], correct:1, pts:POINTS_BASIC,
+   h1:"장면을 나누고 말풍선을 넣어 만들어요.", h2:"이야기처럼 볼 수 있어서 읽는 사람이 쉽게 이해해요.",
+   reason:"소개 자료를 만화로 만들면 우리 지역의 자랑거리를 쉽고 재미있게 표현할 수 있어요."},
+  {stem:"판에서 세 길의 <b>첫 걸음</b>이 방법 이름만 다르고 나머지는 글자까지 같았던 까닭은 무엇인가요?",
+   opts:["판이 첫 걸음만 같게 적어 두었기 때문이에요","어떤 방법으로 만들든 꾸밀 자랑거리를 먼저 정리하기 때문이에요","세 가지 방법이 사실은 모두 같은 방법이기 때문이에요","첫 걸음은 밟지 않아도 되기 때문이에요"], correct:1, pts:POINTS_APPLY,
+   h1:"세 길의 첫 걸음에서 무엇을 하고 있었는지 떠올려 봐요.", h2:"만화든 포스터든 안내도든 꾸밀 자랑거리를 먼저 정리했어요.",
+   reason:"어떤 방법으로 만들든 꾸밀 자랑거리를 먼저 정리하기 때문에 첫 걸음이 같았어요."},
+  {stem:"판에서 안내도 길만 걸음이 하나 더 많았던 까닭은 무엇인가요?",
+   opts:["안내도가 가장 좋은 방법이기 때문이에요","판이 안내도만 어렵게 만들었기 때문이에요","안내도는 두 사람이 만들어야 하기 때문이에요","백지도에 색칠한 곳과 자료를 선으로 잇는 걸음이 더 있기 때문이에요"], correct:3, pts:POINTS_APPLY,
+   h1:"안내도 길의 마지막 걸음을 다시 읽어 봐요.", h2:"색칠한 곳과 붙인 자료를 선으로 이어야 안내도가 완성돼요.",
+   reason:"안내도는 백지도에 색칠한 곳과 자료를 선으로 이어 완성하는 걸음이 더 있어요."},
+  {stem:"사회 관계망 서비스로 우리 지역의 자랑거리를 소개할 때 지켜야 할 점으로 알맞지 <b>않은</b> 것은 무엇인가요?",
+   opts:["확인되지 않은 정보를 게시하지 않아요","저작권에 문제없는 자료를 게시해요","다른 사람의 개인적인 소식과 사진을 허락 없이 게시해요","자랑거리를 깊이 이해한 뒤 정확한 정보를 올려요"], correct:2, pts:POINTS_APPLY,
+   h1:"다른 사람의 것을 올릴 때는 무엇이 필요할까요?", h2:"다른 사람의 개인적인 소식과 사진은 허락 없이 게시하지 않아요.",
+   reason:"다른 사람의 개인적인 소식과 사진 등을 허락 없이 게시하지 않아요."},
+  {stem:"오늘 공부한 내용으로 알맞은 것은 무엇인가요?",
+   opts:["소개하고 싶은 자랑거리를 정하고, 모둠 친구들과 소개 방법을 정한 뒤, 소개 방법에 알맞은 소개 자료를 만들어요","소개 방법은 반드시 한 가지로 정해져 있어요","소개 자료는 혼자서만 만들어야 해요","소개 자료를 만들면 소개하는 활동은 하지 않아도 돼요"], correct:0, pts:POINTS_APPLY,
+   h1:"판에서 걸음을 밟기 전에 무엇부터 정했는지 떠올려 봐요.", h2:"자랑거리를 정하고, 방법을 정하고, 자료를 만들었어요.",
+   reason:"소개하고 싶은 자랑거리를 정하고, 모둠 친구들과 소개 방법을 정한 뒤, 소개 방법에 알맞은 소개 자료를 만들어요."}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — 동기 유발
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">우리 지역의 자랑거리를 알리는 활동을 해 볼까요</h2>
+  <div class="ka-bub">지금까지 본 소개 자료 가운데 <b>가장 인상적이었던 것</b>은 무엇이었나요? 포스터였을 수도 있고, 짧은 영상이었을 수도 있어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('memo','기억에 남은 소개 자료')}</div>
+    <div class="note">오늘은 <b>우리 지역</b>의 자랑거리를 알리는 <b>소개 자료</b>를 만들어 봐요.</div>
+  </div>`});
+// 2 살펴보기 — 만드는 차례 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">소개 자료는 어떤 차례로 만들까요?</h2>
+  <div class="ka-bub">소개 자료를 만들려면 먼저 정할 것이 있어요. <span class="ka-emph">무엇부터</span> 정해야 할까요?</div>
+  <div class="ka-grp">
+  ${st.revealed?`<div class="answer-box">· 소개하고 싶은 우리 지역의 <b>자랑거리를 정해요.</b><br>· 모둠 친구들과 <b>소개 방법을 정해요.</b><br>· 소개 방법에 알맞은 <b>소개 자료를 만들어요.</b><br><span style="font-size:.85em;color:#92400E">자랑거리를 정할 때는 그렇게 정한 까닭도 함께 써 봐요.</span></div>`
+    :`<div class="note">무엇을 소개할지 정하지 않으면 자료를 만들 수 없어요. 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 3 살펴보기 — 세 가지 소개 방법
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">소개 방법은 여러 가지예요</h2>
+  <div class="ka-bub">자랑거리와 관련 있는 내용을 <b>만화</b>로 그릴 수도 있고, 한눈에 잘 보이도록 <b>포스터</b>를 만들 수도 있고, <b>안내도</b>를 만들어 소개할 수도 있어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('order','만드는 차례')}${sceneCard('ways','세 가지 소개 방법')}</div>
+    <div class="note">그 밖에 <b>신문</b>이나 <b>안내 책자</b>를 만들어 소개할 수도 있어요. 모둠 친구들의 의견을 <b>존중하면서</b> 정해요.</div>
+  </div>`});
+// 4 살펴보기 — 조작 안내
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">세 길의 걸음을 차례대로 밟아 봐요</h2>
+  <div class="ka-bub">만화·포스터·안내도는 만드는 <b>걸음 수</b>가 서로 달라요. 어느 길부터 걸어도 괜찮지만 <b>한 길 안에서는 차례</b>가 있어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('lanes','길마다 걸음 수가 달라요')}${sceneCard('same','첫 걸음은 닮았어요')}</div>
+    <div class="note">세 길의 <b>첫 걸음</b>을 나란히 놓고 꼭 비교해 봐요.</div></div>`});
+// 5 살펴보기 — 직접 조작
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">걸음을 밟으며 세 길을 살펴봐요</h2>
+  <div class="ka-grp" style="align-items:stretch">${mkPanel(st)}</div>`});
+// 6 살펴보기 — [디지털 활동] 사회 관계망 서비스 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">사회 관계망 서비스로도 소개할 수 있어요</h2>
+  <div class="ka-bub">만든 자료를 <b>사회 관계망 서비스</b>에 올리면 더 많은 사람이 볼 수 있어요. 어떤 차례로 올릴까요?</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('sns','많은 사람이 볼 수 있어요')}</div>
+  ${st.revealed?`<div class="answer-box">· 소개할 자료를 만들 <b>애플리케이션을 선택</b>해요.<br>· 선택한 애플리케이션을 실행한 뒤 <b>글쓰기 단추</b>를 눌러요.<br>· 자랑거리를 소개하는 <b>내용을 쓰고</b> 관련 있는 사진이나 그림을 <b>추가</b>해요.<br>· 내용을 <b>저장하고</b> 많은 사람이 볼 수 있도록 <b>게시</b>해요.<br><span style="font-size:.85em;color:#92400E">확인되지 않은 정보를 게시하지 않고, 저작권에 문제없는 자료를 게시하며, 다른 사람의 개인적인 소식과 사진 등을 허락 없이 게시하지 않아요.</span></div>`
+    :`<div class="note">글을 올리기까지 어떤 차례를 거치는지 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 7 살펴보기 — 소개할 때의 태도와 좋은 점 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">만든 자료로 소개할 때는 어떤 태도가 필요할까요?</h2>
+  <div class="ka-bub">완성한 소개 자료를 친구들에게 소개해요. 소개하는 사람과 듣는 사람에게는 어떤 태도가 필요할까요?</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('show','관심을 가지고 들어요')}</div>
+  ${st.revealed?`<div class="answer-box">· 많은 사람이 <b>잘 이해할 수 있도록</b> 소개해요.<br>· 친구들이 소개하는 자랑거리에 <b>관심을 가지고</b> 바라보며 설명을 들어요.<br>· 소개하는 활동에 <b>적극적으로 참여</b>해요.<br><span style="font-size:.85em;color:#92400E">이런 활동을 하면 우리 지역을 더 깊이 이해할 수 있고, 우리 지역에 대한 자부심을 가질 수 있어요.</span></div>`
+    :`<div class="note">소개하는 사람과 듣는 사람 둘 다 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부한 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('same','첫 걸음은 닮았어요')}${sceneCard('done','소개 자료를 만들어 봤어요')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div><b>만드는 차례</b> — 소개하고 싶은 자랑거리를 정하고, 모둠 친구들과 소개 방법을 정한 뒤, 소개 방법에 알맞은 소개 자료를 만들어요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b>소개 방법</b> — 만화 그리기, 포스터 만들기, 안내도 만들기 등이 있어요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div><b>첫 걸음</b> — 어떤 방법이든 꾸밀 자랑거리를 먼저 정리하는 일부터 시작해요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 지역을 알리는 노력에서 <b style="color:#B45309">공부한 내용을 정리</b>해 봐요. 준비물은 <b>가위, 풀, 색칠 도구</b>예요.</div></div>`});
+// 17 스스로 돌아보기
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"소개 자료를 만드는 차례를 말할 수 있어요",st)}
+    ${selfCheck(1,"만화·포스터·안내도를 만드는 방법을 설명할 수 있어요",st)}
+    ${selfCheck(2,"소개하는 활동에 적극적으로 참여할 수 있어요",st)}
+  </div><div class="note">체크가 잘 안 되는 곳은 <b>다시 살펴봐도</b> 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">소개 자료 만들기를 살펴봤어요</h2>
+  <div class="ka-grp">
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">우리 지역의 소개 자료는 교실에서 <b style="color:#B45309">직접</b> 만들어 봐요.</div>
+  </div>`;
+}});
+
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const optHTML = q.opts.map((o,k)=>{
+    let cls='opt';
+    if(qs.done && k===q.correct) cls+=' correct';
+    if(qs.wrongPick===k) cls+=' wrong';
+    return `<button class="${cls}" onclick="pick(${i},${k})" ${qs.done?'disabled':''}>${o}</button>`;
+  }).join('');
+  const hint = qs.hint>0 ? `<div class="hint">💡 ${qs.hint===1?q.h1:q.h2}</div>` : '';
+  const fb = qs.done ? `<div class="fb ok">✓ ${q.reason}</div>` : '';
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용':'확인'} (+${q.pts})</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    <div class="opts" style="margin:0 auto">${optHTML}</div>
+    ${hint}${fb}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g4_2_social_u2_l09";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  mkDone:[0,0,0], mkRead:null, mkFin:null, mkMsg:"", mkTell:"",
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 →';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음 (브라우저에서만 · jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+function mkDraw(){ main.innerHTML = slides[state.idx].render(state); }
+
+/* 걸음 밟기 — 길끼리는 순서 자유, 한 길 안에서는 차례가 있다 */
+function mkWalk(m,j){
+  if(state.mkFin!=null) return;                                        // 가드①: 마무리 확정 후 전체 잠금
+  if(!Number.isInteger(m) || m<0 || m>=MK_N) return;                   // 가드②: 무효 번호 — 안내조차 띄우지 않음
+  if(!Number.isInteger(j) || j<0 || j>=mkLen(m)) return;               // 가드②
+  if(mkAllDone(state)){ state.mkMsg = MK_SAY_CLOSED; playThud(); mkDraw(); return; }        // 가드⑥: 다 밟은 뒤 더 밟기 — 판 불변
+  if(j < mkWalked(state,m)){ state.mkMsg = MK_SAY_WALKED; playThud(); mkDraw(); return; }   // 가드③: 이미 밟은 걸음 — 판 불변
+  if(j > mkWalked(state,m)){ state.mkMsg = MK_SAY_ORDER_S; playThud(); mkDraw(); return; }  // 가드④: 차례가 아닌 걸음 — 판 불변 · 알맞은 걸음 문면 0
+  state.mkDone[m] += 1;                                               // ⭐ 밟는 자리는 코드에 여기 단 하나 · 덜어 내는 자리 0
+  state.mkMsg = ""; state.mkTell = MK_TELL_WALK + " " + mkStepOf(m,j); playBlip(); mkDraw();
+}
+/* 판 읽기 */
+function mkRead(i){
+  if(state.mkFin!=null) return;                                        // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=MK_READQ.length) return;         // 가드②
+  if(!mkAllDone(state)){ state.mkMsg = MK_SAY_ORDER_R; playThud(); mkDraw(); return; }      // 가드⑤: 다 밟기 전 — 판 불변
+  if(state.mkRead!=null){ state.mkMsg = MK_SAY_READDONE; mkDraw(); return; }                // 가드⑦: 이미 정한 자리 — 판 불변
+  if(i!==MK_READ_OK){ state.mkMsg = MK_READ_BAD; playThud(); mkDraw(); return; }            // 가드⑧: 어긋난 답 — 판 불변
+  state.mkRead = i; state.mkMsg = ""; playBlip(); mkDraw();
+}
+/* 마무리 */
+function mkFin(i){
+  if(state.mkFin!=null) return;                                        // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=MK_FINQ.length) return;          // 가드②
+  if(state.mkRead==null){ state.mkMsg = MK_SAY_ORDER_FIN; playThud(); mkDraw(); return; }   // 가드⑧: 판을 읽기 전 — 판 불변
+  if(i!==MK_FIN_OK){ state.mkMsg = MK_FIN_BAD; playThud(); mkDraw(); return; }              // 가드⑧: 어긋난 답 — 판 불변
+  state.mkFin = i; state.mkMsg = ""; playChime(); mkDraw();
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true; qs.wrongPick=null;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2; if(qs.hint===2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">📘 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 →</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // 뒤 차시 미양산 — 허브 복귀
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
+</html>

@@ -211,14 +211,14 @@ window.KEDU_MAP["g4_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_social_u2_l09",
+     "lessonId": "g4_social_u2_l09_v1",
      "n": "3",
      "title": "[할 수 있어요] 우리 지역의 자랑거리를 알리는 활동을 해 볼까요",
      "sub": "② 지역을 알리는 노력",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/social/2단원_지역문제해결과지역알리기/g4_social_u2_l09_첫칸은같아요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
