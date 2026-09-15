@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<!--
+  g5_math_u3_l05 — 선대칭도형의 성질을 알고 그려요 ① [5학년 2학기 3단원 05차시, 단일 40분]
+  단원: 5학년 2학기 3단원 「합동과 대칭」 / 지도서 207~256 · 교과서 62~63쪽
+  base: g4_math_u6_l04(엔진·채점부·공통 CSS 계승) / 부품 congFig · symFig · symGrid · figPick · corrRow (+ u3 승계)
+  성격: 선대칭도형의 세 성질 — 대응변 같음 · 대응각 같음 · 대칭축이 수직이등분
+  ★ 오개념 훅: 대칭축은 대응점을 이은 선분을 <b>수직으로 이등분</b>한다
+  ★ 왜 그럴까 슬롯 = 슬7 : 왜 대칭축까지의 거리가 양쪽에서 같아야 하는가
+  🔑 회수 키: meta·JS 모두 g5_2_math_u3_l05 (파일명·KEDU_MAP.key 는 g5_math_ 그대로 — 설계도 §2-2)
+  ⛔ 규약: 문자식 금지 / 권유형 종결 금지 / 이모지 슬라이드당 ≤2 / 경곗값 기호 표기 금지 / 어림값·어림수로만
+  점수: 기본 4×10 + 응용 4×15 = 100 / mcq 정답 위치 q9=2 · q13=4 / pad 정답 q8=5 · q10=6 · q11=90 · q12=5 · q14=135 · q15=7
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g5_2_math_u3_l05">
+<title>선대칭도형의 성질을 알고 그려요 ① · K-edu 5학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#FBF7F1; --ink:#243043; --ink-soft:#62708A;
+  --coral:#7C3AED; --coral-deep:#5B21B6; --coral-soft:#EBE1FC;
+  --teal:#0F766E; --teal-deep:#0B5A54; --teal-soft:#D3EDE9;
+  --gold:#F6B526; --emph:#F0451F; --line:#E4DACB; --mark:#FFE08A;
+  --f-title:'Do Hyeon',sans-serif; --f-body:'Gowun Dodum',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:0 14px 34px -18px rgba(36,48,67,.4);
+  --fs-title: clamp(26px, 4.2vw, 46px);
+  --fs-heading: clamp(24px, 3.7vw, 37px);
+  --fs-body: clamp(20px, 3.0vw, 29px);
+  --fs-caption: clamp(19px, 2.9vw, 27px);
+  --fs-label: clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --em-md: clamp(44px, 7vw, 80px);
+  --em-lg: clamp(66px, 10vw, 122px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(760px, 96vw);
+  --mw-lg: min(840px, 96vw);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+@keyframes ka-swap-r { 0%{transform:translateX(0); opacity:1;} 50%{transform:translateX(20px); opacity:.3;} 100%{transform:translateX(0); opacity:1;} }
+@keyframes ka-mark { from{background-size:0 100%;} to{background-size:100% 100%;} }
+
+/* ───── 컨테이너 ───── */
+.ka { background:var(--paper); width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; color:var(--ink); position:relative; overflow:hidden; }
+
+/* ───── 상단바 (topbar) ───── */
+.ka-h { display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); padding:clamp(11px,1.7vw,15px) clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:hover { transform:translateY(-1px); }
+.ka-pill { font-family:var(--f-title); background:var(--coral); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-where { font-size:clamp(14px,1.6vw,18px); color:var(--ink-soft); flex-shrink:1; }
+.ka-where b { color:var(--ink); }
+.ka-bar { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:46vw; }
+.ka-dot { width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s, background .2s; }
+.ka-dot:hover { transform:scale(1.2); }
+.ka-dot.active { background:var(--coral); transform:scale(1.3); }
+.ka-dot.done { background:var(--teal); }
+.ka-score { font-family:var(--f-title); background:#FFF8E1; color:#F57F17; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); padding:0; border-radius:50%; cursor:pointer; flex-shrink:0; color:var(--coral-deep); font-size:clamp(13px,2vw,16px); width:clamp(32px,4.5vw,38px); height:clamp(32px,4.5vw,38px); display:flex; align-items:center; justify-content:center; }
+
+/* ───── 본문 ───── */
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; gap:clamp(7px,1.3vw,12px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(8px,1.4vh,16px) clamp(16px,4vw,48px); overflow:hidden; }
+.slide.active { display:flex; }
+.slide-title { font-family:var(--f-title); font-size:var(--fs-title); margin:0; line-height:1.18; color:var(--ink); font-weight:400; text-align:center; flex-shrink:0; }
+.slide-sub { font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(10px,1.6vw,16px); left:clamp(16px,4vw,40px); font-family:var(--f-title); color:var(--coral); font-size:clamp(13px,1.9vw,18px); letter-spacing:.4px; z-index:5; }
+
+/* ───── 하단 내비 ───── */
+.ka-f { display:flex; justify-content:flex-end; gap:12px; padding:clamp(12px,1.7vw,16px) clamp(16px,4vw,40px); background:linear-gradient(to top, var(--paper) 62%, transparent); flex-shrink:0; }
+.ka-prev, .ka-hint, .ka-next { font-family:var(--f-title); font-size:clamp(15px,1.9vw,22px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(10px,1.4vw,15px) clamp(20px,2.8vw,38px); cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translateY(-2px); }
+.ka-prev { margin-right:auto; }
+.ka-hint { color:#F57F17; border-color:#FFE08A; }
+.ka-next { background:var(--coral); color:#fff; border-color:var(--coral); }
+.ka-prev:disabled, .ka-next:disabled { opacity:.35; cursor:default; transform:none; }
+.ka-hint:disabled { opacity:.4; cursor:default; }
+
+/* ───── 공통 콘텐츠 ───── */
+.concept-box { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,18px) clamp(18px,2.8vw,28px); border-radius:20px; font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); text-align:center; line-height:1.5; box-shadow:var(--shadow); }
+.concept-box strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.big-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-lg); line-height:1; }
+.intro-q { font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; }
+.intro-q strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.goal-list { display:flex; flex-direction:column; gap:clamp(7px,1.4vw,11px); font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); }
+.goal-list li { background:#fff; border:2px solid var(--line); padding:clamp(8px,1.5vw,12px) clamp(14px,2.6vw,20px); border-radius:16px; list-style:none; box-shadow:var(--shadow); }
+.goal-list li strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+.recall-box { background:var(--teal-soft); padding:clamp(14px,2.8vw,22px) clamp(20px,3.6vw,30px); border-radius:22px; font-size:var(--fs-body); color:var(--teal-deep); max-width:var(--mw-sm); text-align:center; line-height:1.6; }
+.recall-box strong { color:var(--teal-deep); font-family:var(--f-title); font-weight:400; }
+.scene { background:#fff; border:3px solid var(--coral-soft); border-radius:28px; padding:clamp(18px,3.4vw,30px) clamp(22px,4.2vw,38px); display:flex; flex-direction:column; gap:clamp(10px,2vw,16px); align-items:center; min-width:clamp(280px,50vw,460px); box-shadow:0 6px 0 var(--coral-soft); }
+.pencil-row { display:flex; gap:clamp(4px,0.8vw,8px); font-size:var(--em-sm); flex-wrap:wrap; justify-content:center; max-width:var(--mw-sm); color:var(--ink); }
+
+/* ───── place_value_block (모형) ───── */
+.pv-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.pv-row { display:flex; gap:clamp(10px,2.2vw,20px); align-items:flex-end; justify-content:center; flex-wrap:wrap; }
+.pv-group { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,0.8vw,7px); }
+.pv-label { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.pv-block svg { display:block; }
+.swap-arrow { font-size:var(--em-sm); color:var(--coral); animation:ka-swap-r 1.6s ease-in-out infinite; }
+.exchange-eq { font-size:var(--fs-heading); color:var(--ink); display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); flex-wrap:wrap; justify-content:center; }
+
+/* ───── number_line ───── */
+.nl-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(12px,2.4vw,20px); max-width:var(--mw-lg); width:100%; }
+.nl-svg { width:min(760px,94vw); height:auto; }
+.nl-svg .nl-tick text { font-family:var(--f-num); font-weight:800; fill:var(--ink-soft); }
+.nl-pick { cursor:pointer; }
+.nl-pick:hover circle { fill:var(--coral-soft); }
+.nl-pick.correct circle { fill:var(--teal); }
+.nl-pick.wrong circle { fill:var(--coral-soft); }
+
+/* ───── 100의 여러 의미 ───── */
+.mean-grid { display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-sm); width:100%; }
+.mean-item { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,17px) clamp(16px,3vw,24px); border-radius:18px; font-size:var(--fs-body); color:var(--ink); text-align:center; box-shadow:var(--shadow); }
+.mean-item strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+
+/* ───── 문제 공통 ───── */
+.q-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; font-weight:400; }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:20px; padding:clamp(8px,1.6vw,14px) clamp(24px,4.6vw,44px); min-width:clamp(120px,22vw,200px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.q-pad { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(6px,1.2vw,10px); max-width:clamp(280px,56vw,460px); }
+.q-key { background:#fff; border:2px solid var(--line); border-radius:14px; padding:clamp(7px,1.5vw,12px) 0; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, background .15s, border-color .15s; box-shadow:0 4px 0 var(--line); }
+.q-key:hover { background:var(--coral-soft); border-color:var(--coral); }
+.q-key:active { transform:translateY(3px); box-shadow:none; }
+.q-key.fn { background:#FFF8E1; color:#F57F17; font-family:var(--f-title); font-size:var(--fs-body); border-color:#FFE08A; box-shadow:0 4px 0 #FFE08A; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); color:var(--teal-deep); min-height:1.4em; text-align:center; }
+.q-fb.wrong { color:var(--emph); }
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-sm); }
+.mcq-opt { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,15px); font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .2s; box-shadow:0 6px 0 var(--coral-soft); font-weight:400; }
+.mcq-opt:hover { border-color:var(--coral); }
+.mcq-opt:active { transform:translateY(4px); box-shadow:none; }
+.mcq-opt.correct { border-color:var(--teal-deep); background:var(--teal); color:#fff; box-shadow:0 6px 0 var(--teal-deep); animation:ka-pop .5s ease; }
+.mcq-opt.wrong { border-color:var(--emph); background:#FFE0DA; color:var(--coral-deep); animation:ka-shake .35s; }
+.mcq-hint { font-family:var(--f-title); font-size:var(--fs-body); color:#F57F17; background:#FFF8E1; border-radius:16px; padding:clamp(8px,1.6vw,12px) clamp(14px,2.6vw,20px); max-width:var(--mw-sm); text-align:center; display:none; }
+.mcq-hint.show { display:block; }
+
+/* ───── trace ───── */
+.trace-row { display:flex; gap:clamp(12px,2.4vw,22px); justify-content:center; flex-wrap:wrap; }
+.trace-cell { width:clamp(64px,12vw,110px); height:clamp(84px,16vw,150px); border:5px dashed var(--coral-soft); border-radius:20px; display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:#D8C4B8; cursor:pointer; transition:all .2s; background:#fff; }
+.trace-cell.done { color:var(--coral-deep); border-style:solid; border-color:var(--coral); background:var(--coral-soft); }
+
+/* ───── match ───── */
+.match-stage { display:flex; flex-direction:column; gap:clamp(8px,1.5vw,13px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.match-cols { display:flex; gap:clamp(20px,4vw,48px); }
+.match-col { display:flex; flex-direction:column; gap:clamp(6px,1.1vw,9px); }
+.match-card { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(16px,3vw,26px); font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .15s; min-width:clamp(70px,13vw,108px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.match-card:hover { border-color:var(--coral); }
+.match-card.sel { border-color:var(--gold); background:var(--mark); }
+.match-card.matched { border-color:var(--teal-deep); background:var(--teal); color:#fff; cursor:default; box-shadow:0 5px 0 var(--teal-deep); }
+
+/* ───── multi judge ───── */
+.judge-grid { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); max-width:var(--mw-sm); width:100%; }
+.judge-item { display:flex; align-items:center; gap:clamp(10px,2vw,16px); background:#fff; border:3px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(14px,2.6vw,20px); box-shadow:0 5px 0 var(--coral-soft); }
+.judge-text { flex:1; font-size:var(--fs-body); color:var(--ink); text-align:left; }
+.judge-text strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.judge-btns { display:flex; gap:clamp(6px,1.2vw,10px); }
+.judge-btn { border:3px solid var(--line); border-radius:14px; padding:clamp(6px,1.2vw,10px) clamp(12px,2.4vw,18px); font-family:var(--f-title); font-size:var(--fs-heading); cursor:pointer; background:#fff; color:var(--ink-soft); transition:transform .1s; }
+.judge-btn:active { transform:translateY(3px); }
+.judge-btn.pick-o { background:var(--teal-soft); color:var(--teal-deep); border-color:var(--teal); }
+.judge-btn.pick-x { background:var(--coral-soft); color:var(--coral-deep); border-color:var(--coral); }
+.judge-item.right { border-color:var(--teal-deep); box-shadow:0 5px 0 var(--teal-deep); }
+.judge-item.miss { border-color:var(--emph); animation:ka-shake .35s; }
+
+/* ───── 정리/자기평가/다음 ───── */
+.summary-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.summary-card { background:#fff; border:2px solid var(--line); border-radius:22px; padding:clamp(18px,3.4vw,30px); font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; box-shadow:var(--shadow); }
+.summary-card strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.wrap-msg { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--coral-deep); }
+.self-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(14px,2.6vw,22px); }
+.self-row { display:flex; gap:clamp(12px,2.4vw,20px); flex-wrap:wrap; justify-content:center; }
+.self-btn { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,16px) clamp(14px,2.8vw,22px); cursor:pointer; display:flex; flex-direction:column; gap:clamp(3px,0.7vw,6px); align-items:center; transition:transform .12s, border-color .15s; box-shadow:0 6px 0 var(--coral-soft); }
+.self-btn:hover { border-color:var(--coral); }
+.self-btn:active { transform:translateY(4px); box-shadow:none; }
+.self-btn.selected { border-color:var(--gold); background:var(--mark); }
+.self-btn-stars { font-size:var(--em-sm); color:var(--gold); }
+.self-btn-name { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.next-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-md); }
+.next-card { background:var(--teal-soft); border-radius:22px; padding:clamp(20px,3.8vw,32px); display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); align-items:center; }
+.next-emojis { font-size:var(--em-md); }
+.next-label { font-size:var(--fs-body); color:var(--teal-deep); text-align:center; }
+.home-prompt { font-size:var(--fs-caption); color:var(--coral-deep); background:var(--coral-soft); border-radius:18px; padding:clamp(12px,2.4vw,18px) clamp(18px,3.4vw,28px); text-align:center; }
+
+
+  /* 세로셈 (3학년 덧셈·뺄셈) */
+  .vadd { display:inline-grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:clamp(2px,0.6vw,4px) clamp(8px,1.6vw,14px); font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--ink); justify-items:center; align-items:center; background:#fff; border:2px solid var(--line); border-radius:18px; padding:clamp(12px,2vw,20px) clamp(18px,3vw,30px); box-shadow:var(--shadow); }
+  .vadd .op { color:var(--coral-deep); }
+  .vadd .ln { grid-column:1/-1; width:100%; height:3px; background:var(--ink); border-radius:2px; }
+  .vadd .sum { color:var(--coral-deep); }
+  .pv-sum-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-md); }
+
+/* ───── 약분과 통분 부품 ───── */
+.ef-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(9px,1.8vw,16px); width:100%; }
+.fr-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(9px,1.8vw,16px); width:100%; }
+.fr-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); width:100%; max-width:var(--mw-lg); }
+.fr-svg { width:100%; height:auto; display:block; max-width:min(700px,94vw); margin:0 auto; }
+.fr-svg text { font-family:'Nunito',sans-serif; font-weight:800; }
+.fr-svg text.kor { font-family:'Do Hyeon',sans-serif; font-weight:400; }
+.fr-note { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; }
+
+/* 세로 분수 표기 */
+.fr-f { display:inline-flex; flex-direction:column; align-items:center; vertical-align:middle; line-height:1.05; margin:0 0.14em; }
+.fr-f > .fr-n { font-family:var(--f-num); font-weight:800; padding:0 0.2em; }
+.fr-f > .fr-d { font-family:var(--f-num); font-weight:800; padding:0 0.2em; border-top:3px solid currentColor; margin-top:2px; }
+.fr-mix { display:inline-flex; align-items:center; gap:0.18em; vertical-align:middle; }
+.fr-mix > .fr-w { font-family:var(--f-num); font-weight:800; }
+
+/* 분수 칩 */
+.fr-chips { display:flex; flex-wrap:wrap; gap:clamp(6px,1.2vw,11px); justify-content:center; max-width:var(--mw-md); }
+.fr-chip { font-size:var(--fs-heading); color:var(--ink); background:#fff; border:3px solid var(--line); border-radius:16px; padding:clamp(5px,1vw,9px) clamp(11px,2.2vw,18px); box-shadow:0 4px 0 var(--line); }
+.fr-chip.hi { color:#fff; background:var(--coral); border-color:var(--coral-deep); box-shadow:0 4px 0 var(--coral-deep); }
+.fr-chip.hi2 { color:#fff; background:var(--teal); border-color:var(--teal-deep); box-shadow:0 4px 0 var(--teal-deep); }
+.fr-chip.both { color:var(--ink); background:var(--mark); border-color:var(--gold); box-shadow:0 4px 0 var(--gold); }
+.fr-chip.dim { color:#C7CEDA; }
+
+/* 식 줄 */
+.fr-lines { display:flex; flex-direction:column; gap:clamp(6px,1.1vw,10px); align-items:center; }
+.fr-line { display:flex; align-items:center; gap:clamp(8px,1.6vw,14px); font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); }
+.fr-line .fr-lead { font-family:var(--f-title); font-size:var(--fs-label); color:var(--ink-soft); min-width:3.6em; text-align:right; }
+.fr-line.final { color:var(--coral-deep); }
+.fr-line.bad { color:var(--emph); }
+.fr-line.bad .fr-lead { color:var(--emph); }
+
+/* 두 갈래 대조 */
+.fr-pair { display:flex; gap:clamp(14px,3vw,34px); flex-wrap:wrap; justify-content:center; align-items:flex-start; }
+.fr-col { display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.2vw,10px); background:#fff; border:2px solid var(--line); border-radius:20px; padding:clamp(10px,2vw,18px) clamp(12px,2.4vw,22px); box-shadow:var(--shadow); }
+.fr-col.bad { border-color:#F3C4B7; background:#FFF6F3; }
+.fr-col.good { border-color:var(--teal-soft); background:#F5FBFA; }
+.fr-caph { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); }
+.fr-col.bad .fr-caph { color:var(--emph); }
+.fr-col.good .fr-caph { color:var(--teal-deep); }
+
+/* ───── 합동과 대칭(5-2 U3) 부품 ───── */
+.gm-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.3vw,12px); width:100%; max-width:var(--mw-lg); }
+.gm-svg { width:100%; height:auto; display:block; max-width:min(660px,94vw); margin:0 auto; }
+.gm-svg text { font-family:var(--f-title); font-weight:400; }
+.gm-svg text.num { font-family:'Nunito',sans-serif; font-weight:800; }
+.gm-cap { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; }
+.gm-title { font-family:var(--f-title); font-size:var(--fs-label); color:var(--teal-deep); text-align:center; }
+
+/* 분류판 */
+.fp-grid { display:flex; flex-wrap:wrap; justify-content:center; align-items:flex-start; gap:clamp(7px,1.5vw,15px); width:100%; }
+.fp-cell { display:flex; flex-direction:column; align-items:center; gap:5px; background:#fff; border:3px solid var(--line); border-radius:16px; padding:clamp(5px,1.1vw,10px); box-shadow:0 4px 0 var(--line); flex:1 1 clamp(120px,17vw,178px); min-width:0; }
+.fp-cell.pick { border-color:var(--teal); box-shadow:0 4px 0 var(--teal-deep); background:var(--teal-soft); }
+.fp-cell.no { border-color:#F3C4B7; background:#FFF6F3; }
+.fp-name { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); }
+.fp-tag { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--coral-deep); }
+
+/* 대응 관계 표 */
+.cr-rows { display:flex; flex-direction:column; gap:clamp(5px,1vw,9px); align-items:center; }
+.cr-row { display:flex; align-items:center; gap:clamp(8px,1.7vw,16px); background:#fff; border:3px solid var(--line); border-radius:16px; padding:clamp(6px,1.2vw,11px) clamp(12px,2.4vw,20px); box-shadow:0 4px 0 var(--line); font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); }
+.cr-row .cr-lead { font-size:var(--fs-label); color:var(--ink-soft); min-width:4.2em; text-align:right; }
+.cr-row .cr-arrow { color:var(--teal-deep); }
+.cr-row.hi { border-color:var(--coral); box-shadow:0 4px 0 var(--coral-deep); background:var(--coral-soft); }
+.cr-row.bad { border-color:#F3C4B7; background:#FFF6F3; color:var(--emph); }
+.cr-row.bad .cr-lead { color:var(--emph); }
+.cr-val { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); }
+</style>
+<script src="/kedu_gate.js"></script>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 목록</button>
+    <span class="ka-pill">5차시</span>
+    <span class="ka-where">수학 5-2 · <b>3. 합동과 대칭</b></span>
+    <div class="ka-bar" id="dots"></div>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+  <div class="ka-m">
+    <div class="slide active" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">접었더니 짝이 보인다</h2>
+      <div class="intro-q">선대칭도형을 대칭축으로 접으면 완전히 겹친다.<br>겹치는 점끼리, 변끼리, 각끼리 <b>짝</b>이 생긴다.<br>합동인 두 도형에서 짝을 찾던 것과 똑같다.</div>
+    </div>
+
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">선대칭도형에서의 대응점·대응변·대응각</h2>
+      <div class="ef-stage">
+        <div id="m-i2"></div>
+        <div class="concept-box">접었을 때 겹치는 점을 <b>대응점</b>, 겹치는 변을 <b>대응변</b>,<br>겹치는 각을 <b>대응각</b>이라고 한다.<br><b>대응변의 길이는 같고 대응각의 크기도 같다</b>.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">대칭축과 대응점 사이의 관계</h2>
+      <div class="intro-q">대응점 두 개를 선분으로 이어 보자.<br>대칭축은 이 선분을 <b>수직으로 이등분</b>한다.<br>즉 대칭축에서 두 대응점까지의 거리가 <b>서로 같다</b>.</div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 ①</div>
+      <h2 class="slide-title">대응변과 대응각</h2>
+      <div class="ef-stage">
+        <div id="m-e1"></div>
+        <div class="concept-box">대칭축 왼쪽의 변이 5 cm 라면 대응변인 오른쪽 변도 <b>5 cm</b> 다.<br>왼쪽 각이 90도라면 대응각도 <b>90도</b> 다.<br>접어서 겹치므로 길이와 각이 그대로다.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 ②</div>
+      <h2 class="slide-title">대응점을 이은 선분</h2>
+      <div class="ef-stage">
+        <div id="m-e2"></div>
+        <div class="concept-box">대응점 두 개를 이으면 선분이 생긴다.<br>이 선분은 대칭축과 <b>수직으로 만난다</b>.<br>만나는 점은 선분을 <b>똑같이 둘로 나눈다</b>.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 ③</div>
+      <h2 class="slide-title">거리는 양쪽이 같다</h2>
+      <div class="ef-stage">
+        <div id="m-e3"></div>
+        <div class="concept-box">대칭축에서 한 대응점까지가 <b>3 cm</b> 라면,<br>다른 대응점까지도 <b>3 cm</b> 다.<br>그래서 두 대응점 사이의 거리는 <b>6 cm</b> 가 된다.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 ④</div>
+      <h2 class="slide-title">왜 그럴까 — 거리가 다르면 어떻게 될까</h2>
+      <div class="ef-stage">
+        <div id="m-e4"></div>
+        <div class="concept-box">한쪽이 3 cm, 다른 쪽이 4 cm 라면 접었을 때 점이 어긋난다.<br>점이 어긋나면 변도 어긋나 <b>완전히 겹칠 수 없다</b>.<br>그래서 대칭축까지의 거리는 <b>반드시</b> 양쪽이 같아야 한다.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q8" data-q-points="10" data-answer="5">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">선대칭도형에서 대칭축 왼쪽 변이 <b>5 cm</b> 다. 대응변은 몇 cm 인가?</div>
+        <div class="ef-stage"><div id="m-q8"></div></div>
+        <div class="q-display" id="q8-display">?</div>
+        <div class="q-pad" id="q8-pad"></div>
+        <div class="mcq-hint" data-hints='["대응변의 길이는 서로 같다.","접으면 겹치는 변이다."]'></div>
+        <div class="q-fb" id="q8-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q9" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">대칭축과 <b>대응점을 이은 선분</b>이 만나는 방법으로 알맞은 것은?</div>
+        <div class="ef-stage"><div id="m-q9"></div></div>
+        <div class="mcq-opts" id="q9-opts">
+          <button class="mcq-opt" data-correct="0">비스듬히 만난다</button>
+          <button class="mcq-opt" data-correct="1">수직으로 만난다</button>
+          <button class="mcq-opt" data-correct="0">만나지 않는다</button>
+          <button class="mcq-opt" data-correct="0">겹쳐진다</button>
+        </div>
+        <div class="mcq-hint" data-hints='["접었을 때 점이 딱 맞게 포개어진다.","직각으로 만난다는 말을 찾자."]'></div>
+        <div class="q-fb" id="q9-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q10" data-q-points="10" data-answer="6">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">대칭축에서 한 대응점까지의 거리가 <b>3 cm</b> 다. 두 대응점 사이의 거리는 몇 cm 인가?</div>
+        <div class="ef-stage"><div id="m-q10"></div></div>
+        <div class="q-display" id="q10-display">?</div>
+        <div class="q-pad" id="q10-pad"></div>
+        <div class="mcq-hint" data-hints='["대칭축까지의 거리는 양쪽이 같다.","3 + 3 을 계산해 보자."]'></div>
+        <div class="q-fb" id="q10-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q11" data-q-points="10" data-answer="90">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">선대칭도형에서 한 각이 <b>90도</b> 다. 그 대응각은 몇 도인가?</div>
+        <div class="ef-stage"><div id="m-q11"></div></div>
+        <div class="q-display" id="q11-display">?</div>
+        <div class="q-pad" id="q11-pad"></div>
+        <div class="mcq-hint" data-hints='["대응각의 크기는 서로 같다.","접으면 겹치는 각이다."]'></div>
+        <div class="q-fb" id="q11-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q12" data-q-points="15" data-answer="5">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">두 대응점 사이의 거리가 <b>10 cm</b> 다. 대칭축에서 한 대응점까지는 몇 cm 인가?</div>
+        <div class="ef-stage"><div id="m-q12"></div></div>
+        <div class="q-display" id="q12-display">?</div>
+        <div class="q-pad" id="q12-pad"></div>
+        <div class="mcq-hint" data-hints='["대칭축이 선분을 똑같이 둘로 나눈다.","10 을 2로 나누어 보자."]'></div>
+        <div class="q-fb" id="q12-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q13" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <!-- q13 오답④ = 거리가 달라도 접힌다고 본 값 — 접으면 점이 어긋난다 -->
+      <div class="q-stage">
+        <div class="q-prompt">선대칭도형의 성질로 <b>틀린</b> 것은?</div>
+        <div class="ef-stage"><div id="m-q13"></div></div>
+        <div class="mcq-opts" id="q13-opts">
+          <button class="mcq-opt" data-correct="0">대응변의 길이가 같다</button>
+          <button class="mcq-opt" data-correct="0">대응각의 크기가 같다</button>
+          <button class="mcq-opt" data-correct="0">대칭축이 대응점을 이은 선분을 이등분한다</button>
+          <button class="mcq-opt" data-correct="1">대칭축까지의 거리가 한쪽이 더 길다</button>
+        </div>
+        <div class="mcq-hint" data-hints='["접어서 겹치려면 거리가 어때야 하는가?","한쪽만 길면 점이 어긋난다."]'></div>
+        <div class="q-fb" id="q13-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q14" data-q-points="15" data-answer="135">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">선대칭도형에서 한 각이 <b>135도</b> 다. 그 대응각은 몇 도인가?</div>
+        <div class="ef-stage"><div id="m-q14"></div></div>
+        <div class="q-display" id="q14-display">?</div>
+        <div class="q-pad" id="q14-pad"></div>
+        <div class="mcq-hint" data-hints='["대응각의 크기는 서로 같다.","접으면 겹치는 각을 찾자."]'></div>
+        <div class="q-fb" id="q14-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q15" data-q-points="15" data-answer="7">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">대칭축 한쪽에 있는 변이 <b>4 cm</b>, <b>3 cm</b> 다. 반대쪽 대응변 두 개의 길이의 합은 몇 cm 인가?</div>
+        <div class="ef-stage"><div id="m-q15"></div></div>
+        <div class="q-display" id="q15-display">?</div>
+        <div class="q-pad" id="q15-pad"></div>
+        <div class="mcq-hint" data-hints='["대응변의 길이는 각각 같다.","4 + 3 을 계산해 보자."]'></div>
+        <div class="q-fb" id="q15-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 배운 것</h2>
+      <div class="summary-stage">
+        <div class="summary-card">선대칭도형에서 <b>대응변의 길이는 같고 대응각의 크기도 같다</b>.<br><b>대칭축은 대응점을 이은 선분을 수직으로 이등분</b>한다.</div>
+        <div class="wrap-msg" id="wrap-msg"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 공부는 어땠나요?</h2>
+      <div class="self-stage">
+        <div class="self-row">
+          <button class="self-btn"><div class="self-btn-stars">★</div><div class="self-btn-name">조금 어려웠어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★</div><div class="self-btn-name">잘 했어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★★</div><div class="self-btn-name">아주 잘 했어요</div></button>
+        </div>
+        <div class="q-fb" id="self-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">다음 시간</h2>
+      <div class="next-stage">
+        <div class="next-card">
+          <div class="next-emojis">✏️</div>
+          <div class="next-label">선대칭도형의 성질을 알고 그려요 ②</div>
+        </div>
+        <div class="home-prompt">오늘 배운 것을 집에서 한 번 더 떠올려 보자.</div>
+      </div>
+    </div>
+
+  </div>
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+<script>
+const TOTAL = 18;
+const LESSON_ID = 'g5_2_math_u3_l05';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.querySelectorAll('#dots .ka-dot').forEach((d, i) => { d.classList.toggle('active', i === cur); d.classList.toggle('done', i < cur); });
+  document.getElementById('prev').disabled = cur === 0;
+
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.solved || st.hintLevel >= 2; }
+  else { hintBtn.disabled = true; }
+
+  if (cur === TOTAL - 1) { document.getElementById('next').textContent = '마치기 →'; saveProgress(true); }
+  else { document.getElementById('next').textContent = '다음 →'; }
+
+  if (cur === 15) { document.getElementById('wrap-msg').textContent = wrapMsg(score); }
+}
+
+function saveProgress(done) {
+  const data = { cur, score, done, startedAt, finishedAt: done ? Date.now() : null, qState };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function wrapMsg(s) {
+  if (s >= 100) return '완벽해요!';
+  if (s >= 80) return '정말 잘했어요!';
+  if (s >= 60) return '잘했어요!';
+  return '다시 해도 좋아요!';
+}
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } else { saveProgress(true); location.href='../index.html'; } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+function showHint() {
+  const qid = currentQId(); if (!qid) return;
+  const st = getQState(qid); if (st.solved || st.hintLevel >= 2) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint'); if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[st.hintLevel - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= 2;
+}
+function pointsForQ(qid) {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  const base = parseInt(slide.dataset.qPoints || '0', 10);
+  const st = getQState(qid);
+  if (st.hintLevel === 2) return Math.max(0, base - 5);
+  if (st.hintLevel === 1) return Math.max(0, base - 2);
+  return base;
+}
+
+// ══════════════════════════════════════════════════════════════
+// 5-1 수학 3단원 「약분과 통분」 부품 라이브러리 v1
+//   - fr(n, d, w)             : 세로 분수 표기(대분수는 w)
+//   - fx(str)                 : "3/4 = 6/8" 문자열의 a/b 를 자동으로 세로 분수화
+//   - fracStrip(num,den,o)    : 분수 띠. o.split=k → 재귀 분할(각 칸을 k등분)
+//   - fracBars(rows,o)        : 띠 여러 줄 — 크기가 같은 분수는 색칠 폭이 같다
+//   - fracCompare(a,b,o)      : 두 띠 상하 배치. o.common=공통분모 → 통분 눈금 삽입
+//   - decLine(items,o)        : 0~1 수직선에 분수·소수를 함께 찍는다
+//   - fracChips(items,o)      : 분수 칩 나열. o.hi/o.hi2/o.both/o.dim (인덱스)
+//   - fracLines(rows,o)       : 식 줄 나열
+//   - frPair(a,b)             : 두 갈래 대조(잘못된 길 / 옳은 길)
+//   ★ 모든 띠 부품은 data-frac(="num/den") 을 심어 검증기가 역산한다.
+//   ★ 재귀적 분할: 1/3 을 2등분하면 2/6 — 자른 횟수가 늘어도 양은 그대로.
+// ══════════════════════════════════════════════════════════════
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+function gcd(a,b){ a=Math.abs(a); b=Math.abs(b); while(b){ const t=a%b; a=b; b=t; } return a; }
+function lcm(a,b){ return a/gcd(a,b)*b; }
+
+// ───── 분수 표기 ─────
+function fr(n, d, w){
+  const core = '<span class="fr-f"><span class="fr-n">'+esc(n)+'</span>'
+             + '<span class="fr-d">'+esc(d)+'</span></span>';
+  if (w === undefined || w === null || w === '') return core;
+  return '<span class="fr-mix"><span class="fr-w">'+esc(w)+'</span>'+core+'</span>';
+}
+
+// "3/4 = 6/8" · "1 2/3" 형태를 자동 변환. 그 밖의 글자는 그대로 둔다.
+function fx(str){
+  return String(str)
+    .replace(/(\d+)\s+(\d+)\/(\d+)/g, function(_,w,n,d){ return fr(n,d,w); })
+    .replace(/(\d+)\/(\d+)/g, function(_,n,d){ return fr(n,d); });
+}
+
+// ───── 띠 한 줄 SVG(내부 공용) ─────
+//   x,y,w,h · num/den · opt{ split, color, dashOnly, commonTicks }
+function _bar(x, y, w, h, num, den, opt){
+  opt = opt || {};
+  const fill = opt.color === 'b' ? 'var(--teal)' : 'var(--coral)';
+  const soft = opt.color === 'b' ? 'var(--teal-soft)' : 'var(--coral-soft)';
+  let g = '';
+  g += '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="8" fill="'+soft+'" stroke="var(--line)" stroke-width="3"/>';
+  // 색칠
+  const cw = w * num / den;
+  if (num > 0) g += '<rect x="'+x+'" y="'+y+'" width="'+cw.toFixed(2)+'" height="'+h+'" rx="8" fill="'+fill+'" opacity="0.85"/>';
+  // 기본 눈금
+  for (let i = 1; i < den; i++){
+    const gx = (x + w * i / den).toFixed(2);
+    g += '<line x1="'+gx+'" y1="'+y+'" x2="'+gx+'" y2="'+(y+h)+'" stroke="#fff" stroke-width="3"/>';
+  }
+  // 재귀 분할 눈금(점선) — 원래 칸은 그대로 두고 그 안을 더 자른다
+  const k = opt.split || 0;
+  if (k > 1){
+    const tot = den * k;
+    for (let i = 1; i < tot; i++){
+      if (i % k === 0) continue;
+      const gx = (x + w * i / tot).toFixed(2);
+      g += '<line x1="'+gx+'" y1="'+y+'" x2="'+gx+'" y2="'+(y+h)+'" stroke="#fff" stroke-width="2" stroke-dasharray="5 4"/>';
+    }
+  }
+  // 공통분모 눈금(통분) — 굵은 흰 점선
+  if (opt.commonTicks && opt.commonTicks > den){
+    const tot = opt.commonTicks;
+    for (let i = 1; i < tot; i++){
+      if (i % (tot/den) === 0) continue;
+      const gx = (x + w * i / tot).toFixed(2);
+      g += '<line x1="'+gx+'" y1="'+y+'" x2="'+gx+'" y2="'+(y+h)+'" stroke="#fff" stroke-width="2" stroke-dasharray="6 4"/>';
+    }
+  }
+  g += '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="8" fill="none" stroke="var(--line)" stroke-width="3"/>';
+  return g;
+}
+
+// SVG 안 세로 분수
+function _svgFrac(cx, cy, n, d, col, size){
+  const s = size || 26;
+  const c = col || 'var(--ink)';
+  return '<text x="'+cx+'" y="'+(cy-6)+'" font-size="'+s+'" fill="'+c+'" text-anchor="middle">'+esc(n)+'</text>'
+       + '<line x1="'+(cx-16)+'" y1="'+(cy+1)+'" x2="'+(cx+16)+'" y2="'+(cy+1)+'" stroke="'+c+'" stroke-width="3"/>'
+       + '<text x="'+cx+'" y="'+(cy+30)+'" font-size="'+s+'" fill="'+c+'" text-anchor="middle">'+esc(d)+'</text>';
+}
+
+// ───── fracStrip ─────
+function fracStrip(num, den, o){
+  o = o || {};
+  const W = 700, H = 132, x = 96, w = 560, y = 44, h = 56;
+  let g = '';
+  g += _svgFrac(46, y + h/2 - 8, num, den, o.color === 'b' ? 'var(--teal-deep)' : 'var(--coral-deep)');
+  g += _bar(x, y, w, h, num, den, o);
+  g += '<text class="kor" x="'+x+'" y="'+(y-14)+'" font-size="20" fill="var(--ink-soft)" text-anchor="middle">0</text>';
+  g += '<text class="kor" x="'+(x+w)+'" y="'+(y-14)+'" font-size="20" fill="var(--ink-soft)" text-anchor="middle">1</text>';
+  if (o.split > 1){
+    const rn = num * o.split, rd = den * o.split;
+    g += _svgFrac(x + w + 34, y + h/2 - 8, rn, rd, 'var(--emph)', 24);
+    g += '<text class="kor" x="'+(W/2)+'" y="'+(y+h+34)+'" font-size="19" fill="var(--ink-soft)" text-anchor="middle">'
+       + '한 칸을 ' + o.split + '등분해도 색칠한 양은 그대로</text>';
+  } else if (o.rightLabel){
+    g += '<text class="kor" x="'+(x+w+22)+'" y="'+(y+h/2+2)+'" font-size="19" fill="var(--ink-soft)" text-anchor="start">'+esc(o.rightLabel)+'</text>';
+  }
+  const note = o.note ? '<div class="fr-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="fr-wrap" data-frac="'+num+'/'+den+'">'
+       + '<svg class="fr-svg" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">'+g+'</svg>'
+       + note + '</div>';
+}
+
+// ───── fracBars : rows = [[num,den], ...] ─────
+function fracBars(rows, o){
+  o = o || {};
+  const W = 700, x = 96, w = 560, h = 46, gap = 22, top = 34;
+  const H = top + rows.length * (h + gap) + 6;
+  let g = '';
+  g += '<text class="kor" x="'+x+'" y="'+(top-10)+'" font-size="19" fill="var(--ink-soft)" text-anchor="middle">0</text>';
+  g += '<text class="kor" x="'+(x+w)+'" y="'+(top-10)+'" font-size="19" fill="var(--ink-soft)" text-anchor="middle">1</text>';
+  rows.forEach(function(r, i){
+    const y = top + i * (h + gap);
+    const hi = o.hi && o.hi.indexOf(i) !== -1;
+    g += _svgFrac(46, y + h/2 - 6, r[0], r[1], hi ? 'var(--emph)' : 'var(--coral-deep)', 23);
+    g += _bar(x, y, w, h, r[0], r[1], { color: o.color });
+  });
+  // 색칠 끝선이 모두 같음을 보여 주는 세로 안내선
+  if (o.guide){
+    const gx = (x + w * rows[0][0] / rows[0][1]).toFixed(2);
+    g += '<line x1="'+gx+'" y1="'+(top-4)+'" x2="'+gx+'" y2="'+(top + rows.length*(h+gap) - gap + 4)+'" stroke="var(--emph)" stroke-width="3" stroke-dasharray="7 5"/>';
+  }
+  const note = o.note ? '<div class="fr-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="fr-wrap" data-bars="'+rows.map(r=>r[0]+'/'+r[1]).join(',')+'">'
+       + '<svg class="fr-svg" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">'+g+'</svg>'
+       + note + '</div>';
+}
+
+// ───── fracCompare : a,b = [num,den] · o.common = 공통분모 ─────
+function fracCompare(a, b, o){
+  o = o || {};
+  const W = 700, x = 96, w = 560, h = 52, top = 36, gap = 30;
+  const H = top + h*2 + gap + (o.common ? 42 : 12);
+  const cm = o.common || 0;
+  let g = '';
+  g += '<text class="kor" x="'+x+'" y="'+(top-10)+'" font-size="19" fill="var(--ink-soft)" text-anchor="middle">0</text>';
+  g += '<text class="kor" x="'+(x+w)+'" y="'+(top-10)+'" font-size="19" fill="var(--ink-soft)" text-anchor="middle">1</text>';
+  g += _svgFrac(46, top + h/2 - 6, a[0], a[1], 'var(--coral-deep)', 24);
+  g += _bar(x, top, w, h, a[0], a[1], { color:'a', commonTicks: cm });
+  const y2 = top + h + gap;
+  g += _svgFrac(46, y2 + h/2 - 6, b[0], b[1], 'var(--teal-deep)', 24);
+  g += _bar(x, y2, w, h, b[0], b[1], { color:'b', commonTicks: cm });
+  if (cm){
+    const an = a[0] * cm / a[1], bn = b[0] * cm / b[1];
+    g += '<text class="kor" x="'+(x+w+18)+'" y="'+(top+h/2+2)+'" font-size="19" fill="var(--coral-deep)" text-anchor="start">'+an+'칸</text>';
+    g += '<text class="kor" x="'+(x+w+18)+'" y="'+(y2+h/2+2)+'" font-size="19" fill="var(--teal-deep)" text-anchor="start">'+bn+'칸</text>';
+    g += '<text class="kor" x="'+(W/2)+'" y="'+(H-10)+'" font-size="19" fill="var(--ink-soft)" text-anchor="middle">'
+       + '같은 ' + cm + '칸으로 맞추면 ' + an + '칸과 ' + bn + '칸 — ' + (an>bn?'위':'아래') + '가 더 크다</text>';
+  }
+  const note = o.note ? '<div class="fr-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="fr-wrap" data-cmp="'+a[0]+'/'+a[1]+'|'+b[0]+'/'+b[1]+'">'
+       + '<svg class="fr-svg" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">'+g+'</svg>'
+       + note + '</div>';
+}
+
+// ───── decLine : items = [{v, label, kind:'frac'|'dec', n, d}] ─────
+function decLine(items, o){
+  o = o || {};
+  const W = 700, H = 150, x = 60, w = 580, y = 96;
+  const max = o.max || 1;
+  let g = '';
+  g += '<line x1="'+x+'" y1="'+y+'" x2="'+(x+w)+'" y2="'+y+'" stroke="var(--ink-soft)" stroke-width="4"/>';
+  const steps = o.steps || 10;
+  for (let i = 0; i <= steps; i++){
+    const gx = (x + w * i / steps).toFixed(2);
+    const big = (i % 5 === 0);
+    g += '<line x1="'+gx+'" y1="'+(y-(big?12:7))+'" x2="'+gx+'" y2="'+(y+(big?12:7))+'" stroke="var(--ink-soft)" stroke-width="'+(big?4:2)+'"/>';
+    if (big) g += '<text x="'+gx+'" y="'+(y+36)+'" font-size="20" fill="var(--ink-soft)" text-anchor="middle">'+(max*i/steps)+'</text>';
+  }
+  items.forEach(function(it, i){
+    const gx = (x + w * it.v / max);
+    const col = i === 0 ? 'var(--coral)' : 'var(--teal)';
+    const deep = i === 0 ? 'var(--coral-deep)' : 'var(--teal-deep)';
+    const up = (i % 2 === 0);
+    const ty = up ? y - 30 : y + 62;
+    g += '<circle cx="'+gx.toFixed(2)+'" cy="'+y+'" r="9" fill="'+col+'" stroke="#fff" stroke-width="3"/>';
+    if (it.kind === 'frac') g += _svgFrac(gx, up ? ty - 16 : ty + 6, it.n, it.d, deep, 23);
+    else g += '<text x="'+gx.toFixed(2)+'" y="'+ty+'" font-size="24" fill="'+deep+'" text-anchor="middle">'+esc(it.label)+'</text>';
+  });
+  const note = o.note ? '<div class="fr-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="fr-wrap" data-line="'+items.map(i=>i.v).join(',')+'">'
+       + '<svg class="fr-svg" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">'+g+'</svg>'
+       + note + '</div>';
+}
+
+// ───── fracChips : items = ["3/4", "6/8", ...] · o.hi 등은 인덱스 배열 ─────
+function fracChips(items, o){
+  o = o || {};
+  const cls = (i) => 'fr-chip'
+    + (o.both && o.both.indexOf(i)!==-1 ? ' both'
+      : o.hi && o.hi.indexOf(i)!==-1 ? ' hi'
+      : o.hi2 && o.hi2.indexOf(i)!==-1 ? ' hi2' : '')
+    + (o.dim && o.dim.indexOf(i)!==-1 ? ' dim' : '');
+  const body = items.map((v, i) => '<div class="'+cls(i)+'">'+fx(v)+'</div>').join('');
+  const note = o.note ? '<div class="fr-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="fr-wrap" data-chips="'+esc(items.join(','))+'">'
+       + '<div class="fr-chips">'+body+'</div>'+note+'</div>';
+}
+
+// ───── fracLines : rows = [{lead, expr, cls}] ─────
+function fracLines(rows, o){
+  o = o || {};
+  const body = rows.map(r => '<div class="fr-line '+(r.cls||'')+'">'
+      + '<span class="fr-lead">'+esc(r.lead||'')+'</span><span>'+fx(r.expr)+'</span></div>').join('');
+  const note = o.note ? '<div class="fr-note">'+esc(o.note)+'</div>' : '';
+  return '<div class="fr-wrap"><div class="fr-lines">'+body+'</div>'+note+'</div>';
+}
+
+function frPair(a, b){
+  const col = (c) => '<div class="fr-col '+(c.kind||'')+'">'
+      + '<div class="fr-caph">'+esc(c.cap)+'</div>' + c.body + '</div>';
+  return '<div class="fr-pair">' + col(a) + col(b) + '</div>';
+}
+
+
+// ═════════════════════════════════════════════════════════════
+// 5-2 U3 「합동과 대칭」 — 기하 바탕
+//   모눈 좌표는 [칸가로, 칸세로] 이고 세로는 **아래로** 커진다(SVG 와 같은 방향).
+//   접기(반사)와 반 바퀴 돌리기를 여기서 한 번만 정의하고, 부품은 전부 이것만 쓴다.
+// ═════════════════════════════════════════════════════════════
+const _GF = { a:'var(--teal-soft)', b:'var(--coral-soft)', c:'#FFF3CC', g:'#D9F0D6', p:'#D7E5FA', v:'#EBDDF7' };
+const _GS = { a:'var(--teal-deep)', b:'var(--coral-deep)', c:'#B98900', g:'#2F7D32', p:'#2A5EA8', v:'#7A4FBF' };
+
+function _r6(v){ return Math.round(v * 1e6) / 1e6; }
+function _pk(q){ return _r6(q[0]) + ',' + _r6(q[1]); }
+
+// 접는 선 하나를 뜻대로 적는다.
+//   {t:'v', k:x}       세로 선  x = k
+//   {t:'h', k:y}       가로 선  y = k
+//   {t:'d', a:x, b:y}  (a,b)를 지나며 오른쪽 아래로 내려가는 비스듬한 선
+//   {t:'n', a:x, b:y}  (a,b)를 지나며 오른쪽 위로 올라가는 비스듬한 선
+function _flip(q, ax){
+  const x = q[0], y = q[1];
+  if (ax.t === 'v') return [2 * ax.k - x, y];
+  if (ax.t === 'h') return [x, 2 * ax.k - y];
+  if (ax.t === 'd') return [ax.a + (y - ax.b), ax.b + (x - ax.a)];
+  if (ax.t === 'n') return [ax.a - (y - ax.b), ax.b - (x - ax.a)];
+  throw new Error('_flip: 모르는 선 ' + ax.t);
+}
+function _turn(q, c){ return [2 * c[0] - q[0], 2 * c[1] - q[1]]; }
+
+// 변의 묶음을 글자로 — 꼭짓점 차례가 달라도 같은 도형이면 같은 글자가 된다.
+function _edgeKey(p){
+  const E = [];
+  for (let i = 0; i < p.length; i++){
+    const a = p[i], b = p[(i + 1) % p.length];
+    const k1 = _pk(a), k2 = _pk(b);
+    E.push(k1 < k2 ? (k1 + '|' + k2) : (k2 + '|' + k1));
+  }
+  return E.sort().join(';');
+}
+function _sameFig(p, q){ return _edgeKey(p) === _edgeKey(q); }
+
+function _cent(p){
+  let sx = 0, sy = 0;
+  p.forEach(q => { sx += q[0]; sy += q[1]; });
+  return [sx / p.length, sy / p.length];
+}
+
+// 접었을 때 자기 자신에 겹치는 선을 모두 찾는다.
+//   접는 선은 반드시 꼭짓점의 한가운데를 지난다 — 그 점을 지나는 네 갈래만 살피면 된다.
+function _axesOf(p){
+  const c = _cent(p), out = [];
+  const cand = [{ t:'v', k:c[0] }, { t:'h', k:c[1] },
+                { t:'d', a:c[0], b:c[1] }, { t:'n', a:c[0], b:c[1] }];
+  cand.forEach(ax => { if (_sameFig(p, p.map(q => _flip(q, ax)))) out.push(ax); });
+  return out;
+}
+// 반 바퀴 돌려 자기 자신에 겹치는가 — 겹치면 그 가운데 점을 돌려준다.
+function _ctrOf(p){
+  const c = _cent(p);
+  return _sameFig(p, p.map(q => _turn(q, c))) ? c : null;
+}
+function _kindOf(p){
+  const L = _axesOf(p).length > 0, P = !!_ctrOf(p);
+  return L && P ? 'both' : (L ? 'line' : (P ? 'point' : 'none'));
+}
+
+// 꼭짓점에서의 각(도) — 45°의 배수만 쓴다는 규약을 부품이 스스로 검사한다.
+function _angAt(p, i){
+  const n = p.length, o = p[i], a = p[(i + n - 1) % n], b = p[(i + 1) % n];
+  const v1 = [a[0] - o[0], a[1] - o[1]], v2 = [b[0] - o[0], b[1] - o[1]];
+  const d = v1[0] * v2[0] + v1[1] * v2[1];
+  const m = Math.sqrt((v1[0] * v1[0] + v1[1] * v1[1]) * (v2[0] * v2[0] + v2[1] * v2[1]));
+  if (!(m > 0)) throw new Error('_angAt: 같은 자리에 꼭짓점이 겹쳤다');
+  return Math.acos(Math.max(-1, Math.min(1, d / m))) * 180 / Math.PI;
+}
+function _checkAngles(p){
+  for (let i = 0; i < p.length; i++){
+    const a = _angAt(p, i);
+    if (Math.abs(a / 45 - Math.round(a / 45)) > 1e-6)
+      throw new Error('각이 45의 배수가 아니다: ' + a.toFixed(3));
+  }
+}
+function _lenOf(p, i){
+  const n = p.length, a = p[i], b = p[(i + 1) % n];
+  return Math.sqrt((a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1]));
+}
+function _ptsStrG(p){ return p.map(_pk).join(' '); }
+
+function _gridLines(px, py, cols, rows, C){
+  let s = '';
+  for (let r = 0; r <= rows; r++)
+    s += '<line x1="' + px + '" y1="' + (py + r * C) + '" x2="' + (px + cols * C) + '" y2="' + (py + r * C) +
+         '" stroke="#B8D9F0" stroke-width="1.2" stroke-dasharray="3 3"/>';
+  for (let c = 0; c <= cols; c++)
+    s += '<line x1="' + (px + c * C) + '" y1="' + py + '" x2="' + (px + c * C) + '" y2="' + (py + rows * C) +
+         '" stroke="#B8D9F0" stroke-width="1.2" stroke-dasharray="3 3"/>';
+  return s;
+}
+// 접는 선을 판 안에서 끝에서 끝까지 긋는다.
+function _axisSeg(ax, cols, rows){
+  if (ax.t === 'v') return [[ax.k, 0], [ax.k, rows]];
+  if (ax.t === 'h') return [[0, ax.k], [cols, ax.k]];
+  const big = cols + rows;
+  if (ax.t === 'd') return [[ax.a - big, ax.b - big], [ax.a + big, ax.b + big]];
+  return [[ax.a - big, ax.b + big], [ax.a + big, ax.b - big]];
+}
+function _axStr(ax){
+  return ax.t + ':' + (ax.t === 'v' || ax.t === 'h' ? _r6(ax.k) : (_r6(ax.a) + ',' + _r6(ax.b)));
+}
+
+// ═════════════════════════════════════════════════════════════
+// congFig — 포개어 완전히 겹치는 두 도형  [단원 시그니처 ①]
+//   지도서 212~214 : 두 도형을 나란히 놓고 **겹치는 점·변·각**을 짝짓는다.
+//   o.p      : 왼쪽 도형의 꼭짓점 [[x,y],…]  (모눈 칸 자리)
+//   o.op     : 오른쪽 도형을 만드는 방법 {flip:{…}} 또는 {turn:[cx,cy]} 또는 {slide:[dx,dy]}
+//   o.la/o.lb: 꼭짓점 이름 글자열 ('ㄱㄴㄷㄹ' · 'ㅁㅂㅅㅇ') — 차례가 곧 짝이다
+//   o.unit   : 칸 하나가 몇 cm 인가(변 길이 표시에 쓴다 · 없으면 길이를 적지 않는다)
+//   o.sides  : 길이를 적을 변의 번호 [i,…] (i 번 꼭짓점에서 i+1 번 꼭짓점까지)
+//   o.angles : 크기를 적을 각의 꼭짓점 번호 [i,…]
+//   o.hide   : 'b' 면 오른쪽 도형의 길이·각을 ? 로 감춘다(문항 자리)
+//   data-cong="la|lb|op|A좌표|B좌표|unit"
+//   🔴 두 도형은 **부품이 만든다**. 스펙이 오른쪽 도형을 따로 적으면 「합동이라 적어 두고
+//      실제로는 다른」 위조가 스펙 자리에서 태어난다.
+function congFig(o){
+  o = o || {};
+  const p = (o.p || []).map(q => [q[0], q[1]]);
+  if (p.length < 3) throw new Error('congFig: 도형이 없다');
+  _checkAngles(p);
+  const op = o.op || { slide:[0, 0] };
+  let q2;
+  if (op.flip) q2 = p.map(q => _flip(q, op.flip));
+  else if (op.turn) q2 = p.map(q => _turn(q, op.turn));
+  else if (op.slide) q2 = p.map(q => [q[0] + op.slide[0], q[1] + op.slide[1]]);
+  else throw new Error('congFig: op 를 모르겠다');
+  // 자기검사 — 짝지은 변의 길이와 각의 크기가 정말 같은가.
+  for (let i = 0; i < p.length; i++){
+    if (Math.abs(_lenOf(p, i) - _lenOf(q2, i)) > 1e-9) throw new Error('congFig: 변 길이가 다르다 ' + i);
+    if (Math.abs(_angAt(p, i) - _angAt(q2, i)) > 1e-6) throw new Error('congFig: 각 크기가 다르다 ' + i);
+  }
+  const la = (o.la || 'ㄱㄴㄷㄹㅁㅂ').slice(0, p.length);
+  const lb = (o.lb || 'ㅅㅇㅈㅊㅋㅌ').slice(0, p.length);
+  if (la.length !== p.length || lb.length !== p.length) throw new Error('congFig: 이름 글자가 모자란다');
+
+  const W = 660, MT = 34, GAP = 44;
+  const bx = ps => {
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    ps.forEach(q => { x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]); });
+    return [x0, y0, x1 - x0, y1 - y0];
+  };
+  const BA = bx(p), BB = bx(q2);
+  const cw = Math.max(BA[2], BB[2]), ch = Math.max(BA[3], BB[3]);
+  const C = Math.max(20, Math.min(52, Math.floor(Math.min((W - 90 - GAP) / 2 / Math.max(cw, 1), 210 / Math.max(ch, 1)))));
+  const PW = cw * C, PH = ch * C;
+  const left = Math.round((W - (PW * 2 + GAP)) / 2);
+  const H = MT + PH + 52;
+  let s = '<svg class="gm-svg" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">';
+
+  const panel = (ps, B, ox, side, lab) => {
+    let g = '<g class="cg-pan" data-side="' + side + '">';
+    const X = q => ox + (q[0] - B[0]) * C, Y = q => MT + (q[1] - B[1]) * C;
+    g += '<polygon class="cg-poly" data-side="' + side + '" points="' +
+         ps.map(q => X(q).toFixed(2) + ',' + Y(q).toFixed(2)).join(' ') + '" fill="' +
+         (side === 'a' ? _GF.a : _GF.b) + '" stroke="' + (side === 'a' ? _GS.a : _GS.b) +
+         '" stroke-width="2.8" stroke-linejoin="round"/>';
+    // 각 표시 — 꼭짓점 안쪽에 작은 부채꼴
+    (o.angles || []).forEach(i => {
+      const n = ps.length, oq = ps[i], a = ps[(i + n - 1) % n], b = ps[(i + 1) % n];
+      const u = (v, w) => { const L = Math.hypot(w[0] - v[0], w[1] - v[1]); return [(w[0] - v[0]) / L, (w[1] - v[1]) / L]; };
+      const d1 = u(oq, a), d2 = u(oq, b), R = Math.min(C * 0.52, 22);
+      const P1 = [X(oq) + d1[0] * R, Y(oq) + d1[1] * R], P2 = [X(oq) + d2[0] * R, Y(oq) + d2[1] * R];
+      const cr = d1[0] * d2[1] - d1[1] * d2[0];
+      g += '<path class="cg-arc" data-side="' + side + '" data-i="' + i + '" d="M' + P1[0].toFixed(2) + ' ' + P1[1].toFixed(2) +
+           ' A' + R + ' ' + R + ' 0 0 ' + (cr > 0 ? 1 : 0) + ' ' + P2[0].toFixed(2) + ' ' + P2[1].toFixed(2) +
+           '" fill="none" stroke="var(--emph)" stroke-width="3"/>';
+      const mid = [(d1[0] + d2[0]) / 2, (d1[1] + d2[1]) / 2];
+      const ml = Math.hypot(mid[0], mid[1]) || 1;
+      const tx = X(oq) + mid[0] / ml * (R + 17), ty = Y(oq) + mid[1] / ml * (R + 17);
+      const txt = (side === 'b' && o.hide === 'b') ? '?' : (Math.round(_angAt(ps, i)) + '°');
+      g += '<text class="cg-ang num" data-side="' + side + '" data-i="' + i + '" x="' + tx.toFixed(2) + '" y="' + (ty + 6).toFixed(2) +
+           '" font-size="19" text-anchor="middle" fill="var(--emph)">' + txt + '</text>';
+    });
+    // 변 길이 표시
+    if (o.unit) (o.sides || []).forEach(i => {
+      const n = ps.length, a = ps[i], b = ps[(i + 1) % n];
+      const mx = (X(a) + X(b)) / 2, my = (Y(a) + Y(b)) / 2;
+      const cc = _cent(ps), off = [ (a[0] + b[0]) / 2 - cc[0], (a[1] + b[1]) / 2 - cc[1] ];
+      const ol = Math.hypot(off[0], off[1]) || 1;
+      const len = _lenOf(ps, i) * o.unit;
+      if (Math.abs(len - Math.round(len)) > 1e-9) throw new Error('congFig: 변 길이가 정수가 아니다 ' + i);
+      const txt = (side === 'b' && o.hide === 'b') ? '?' : (Math.round(len) + ' cm');
+      g += '<text class="cg-len num" data-side="' + side + '" data-i="' + i + '" x="' + (mx + off[0] / ol * 19).toFixed(2) +
+           '" y="' + (my + off[1] / ol * 19 + 6).toFixed(2) + '" font-size="19" text-anchor="middle" fill="var(--ink)">' + txt + '</text>';
+    });
+    // 꼭짓점 이름
+    ps.forEach((q, i) => {
+      const cc = _cent(ps);
+      const dx = q[0] - cc[0], dy = q[1] - cc[1], dl = Math.hypot(dx, dy) || 1;
+      g += '<circle class="cg-dot" data-side="' + side + '" data-i="' + i + '" cx="' + X(q).toFixed(2) + '" cy="' + Y(q).toFixed(2) +
+           '" r="4.2" fill="' + (side === 'a' ? _GS.a : _GS.b) + '"/>';
+      g += '<text class="cg-lab" data-side="' + side + '" data-i="' + i + '" x="' + (X(q) + dx / dl * 19).toFixed(2) +
+           '" y="' + (Y(q) + dy / dl * 19 + 7).toFixed(2) + '" font-size="21" text-anchor="middle" fill="var(--ink)">' + esc(lab[i]) + '</text>';
+    });
+    return g + '</g>';
+  };
+  s += panel(p, BA, left, 'a', la);
+  s += panel(q2, BB, left + PW + GAP, 'b', lb);
+  s += '</svg>';
+  const key = 'la=' + la + '|lb=' + lb + '|A=' + _ptsStrG(p) + '|B=' + _ptsStrG(q2) +
+              '|unit=' + (o.unit || 0) + '|hide=' + (o.hide || '');
+  return '<div class="gm-wrap" data-cong="' + esc(key) + '">' +
+         (o.title ? '<div class="gm-title">《 ' + esc(o.title) + ' 》</div>' : '') + s +
+         (o.cap ? '<div class="gm-cap">' + esc(o.cap) + '</div>' : '') + '</div>';
+}
+
+// ═════════════════════════════════════════════════════════════
+// symFig — 접는 선 / 가운데 점을 가진 도형  [단원 시그니처 ②]
+//   o.p     : 꼭짓점 [[x,y],…]
+//   o.show  : 'line' 접는 선을 긋는다 · 'point' 가운데 점을 찍는다 · 'both' · '' 아무것도 안 그린다
+//   o.axis  : 그을 선을 손으로 고른다(없으면 부품이 찾은 것 중 첫째) · o.all 이면 찾은 선을 모두 긋는다
+//   o.fold  : 'fold' 접는 장면(반쪽을 점선으로 겹쳐 보인다) · 'turn' 반 바퀴 돌리는 장면
+//   o.grid  : 모눈을 깐다
+//   🔴 **판정은 부품이 기하로 한다.** o.want 를 적으면 판정과 다를 때 그 자리에서 선다 —
+//      「가운데 점이 있으니 점대칭도형」 같은 반례 판을 정답 자리에 잘못 놓는 사고를 막는다.
+//   data-sym="pts|kind|axes|ctr|show|fold"
+function symFig(o){
+  o = o || {};
+  const p = (o.p || []).map(q => [q[0], q[1]]);
+  if (p.length < 3) throw new Error('symFig: 도형이 없다');
+  _checkAngles(p);
+  const axes = _axesOf(p), ctr = _ctrOf(p), kind = _kindOf(p);
+  if (o.want && o.want !== kind) throw new Error('symFig: 신고 ' + o.want + ' 인데 기하로는 ' + kind);
+  const show = o.show === undefined ? '' : o.show;
+  if ((show === 'line' || show === 'both') && !o.axis && !axes.length)
+    throw new Error('symFig: 접어서 겹치는 선이 없는데 선을 그으라고 한다');
+  if ((show === 'point' || show === 'both') && !o.ctr && !ctr && !o.fake)
+    throw new Error('symFig: 반 바퀴 돌려 겹치지 않는데 가운데 점을 찍으라고 한다(반례라면 o.fake)');
+
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  p.forEach(q => { x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]); });
+  const cols = Math.ceil(x1 - x0) + 2, rows = Math.ceil(y1 - y0) + 2;
+  const W = 660, MT = 30;
+  const C = Math.max(20, Math.min(54, Math.floor(Math.min((W - 120) / cols, 230 / rows))));
+  const px = Math.round((W - cols * C) / 2), py = MT;
+  const OX = x0 - 1, OY = y0 - 1;
+  const X = q => px + (q[0] - OX) * C, Y = q => py + (q[1] - OY) * C;
+  const H = MT + rows * C + 44;
+  let s = '<svg class="gm-svg" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">';
+  if (o.grid) s += _gridLines(px, py, cols, rows, C);
+  s += '<polygon class="sy-poly" points="' + p.map(q => X(q).toFixed(2) + ',' + Y(q).toFixed(2)).join(' ') +
+       '" fill="' + (_GF[o.c] || _GF.a) + '" stroke="' + (_GS[o.c] || _GS.a) + '" stroke-width="2.8" stroke-linejoin="round"/>';
+  // 접는 장면 — 반쪽을 접어 포갠 자리를 점선으로 겹쳐 보인다.
+  if (o.fold === 'fold'){
+    const ax = o.axis || axes[0];
+    const half = p.map(q => _flip(q, ax));
+    s += '<polygon class="sy-fold" points="' + half.map(q => X(q).toFixed(2) + ',' + Y(q).toFixed(2)).join(' ') +
+         '" fill="none" stroke="var(--emph)" stroke-width="2.4" stroke-dasharray="6 4" stroke-linejoin="round"/>';
+  }
+  if (o.fold === 'turn'){
+    const c = o.ctr || ctr || _cent(p);
+    const turned = p.map(q => _turn(q, c));
+    s += '<polygon class="sy-turn" points="' + turned.map(q => X(q).toFixed(2) + ',' + Y(q).toFixed(2)).join(' ') +
+         '" fill="none" stroke="var(--emph)" stroke-width="2.4" stroke-dasharray="6 4" stroke-linejoin="round"/>';
+    s += '<path class="sy-arrow" d="M' + (X(c) + C * 0.9).toFixed(2) + ' ' + Y(c).toFixed(2) +
+         ' A' + (C * 0.9).toFixed(2) + ' ' + (C * 0.9).toFixed(2) + ' 0 1 1 ' + (X(c) - C * 0.9).toFixed(2) + ' ' + Y(c).toFixed(2) +
+         '" fill="none" stroke="var(--emph)" stroke-width="2.6" stroke-dasharray="4 3"/>';
+  }
+  const drawn = [];
+  if (show === 'line' || show === 'both'){
+    const list = o.all ? axes : [o.axis || axes[0]];
+    list.forEach((ax, i) => {
+      const sg = _axisSeg(ax, cols, rows);
+      const A = [Math.max(OX, Math.min(OX + cols, sg[0][0])), Math.max(OY, Math.min(OY + rows, sg[0][1]))];
+      const B = [Math.max(OX, Math.min(OX + cols, sg[1][0])), Math.max(OY, Math.min(OY + rows, sg[1][1]))];
+      drawn.push(_axStr(ax));
+      s += '<line class="sy-axis" data-ax="' + _axStr(ax) + '" data-i="' + i + '" x1="' + X(A).toFixed(2) + '" y1="' + Y(A).toFixed(2) +
+           '" x2="' + X(B).toFixed(2) + '" y2="' + Y(B).toFixed(2) +
+           '" stroke="var(--emph)" stroke-width="2.6" stroke-dasharray="9 5"/>';
+    });
+  }
+  let cs = '';
+  if (show === 'point' || show === 'both'){
+    const c = o.ctr || ctr || _cent(p);
+    cs = _pk(c);
+    s += '<circle class="sy-ctr" data-c="' + cs + '" cx="' + X(c).toFixed(2) + '" cy="' + Y(c).toFixed(2) +
+         '" r="6" fill="var(--emph)"/>';
+  }
+  if (o.labels) p.forEach((q, i) => {
+    const cc = _cent(p), dx = q[0] - cc[0], dy = q[1] - cc[1], dl = Math.hypot(dx, dy) || 1;
+    s += '<text class="sy-lab" data-i="' + i + '" x="' + (X(q) + dx / dl * 18).toFixed(2) + '" y="' + (Y(q) + dy / dl * 18 + 7).toFixed(2) +
+         '" font-size="20" text-anchor="middle" fill="var(--ink)">' + esc(o.labels[i]) + '</text>';
+  });
+  s += '</svg>';
+  const key = 'pts=' + _ptsStrG(p) + '|kind=' + kind + '|axes=' + axes.map(_axStr).join(';') +
+              '|ctr=' + (ctr ? _pk(ctr) : '') + '|show=' + show + '|drawn=' + drawn.join(';') +
+              '|dot=' + cs + '|fold=' + (o.fold || '') + '|fake=' + (o.fake ? 1 : 0);
+  return '<div class="gm-wrap" data-sym="' + esc(key) + '">' +
+         (o.title ? '<div class="gm-title">《 ' + esc(o.title) + ' 》</div>' : '') + s +
+         (o.cap ? '<div class="gm-cap">' + esc(o.cap) + '</div>' : '') + '</div>';
+}
+
+// ═════════════════════════════════════════════════════════════
+// symGrid — 모눈 위에 절반만 그린 판
+//   o.half : 절반의 꼭짓점 차례 [[x,y],…]
+//   o.axis : 접는 선(세로·가로·비스듬) — 이때 절반의 양 끝은 선 위에 있어야 한다
+//   o.ctr  : 가운데 점 — 이때 나머지 반은 반 바퀴 돌린 것이다
+//   o.only : 'half' 면 나머지 반을 그리지 않는다(그려 보라는 자리)
+//   o.ask  : 나머지 반 자리에 ? 만 놓는다
+//   🔴 나머지 반은 **부품이 만든다**. 칸 수만 세어 엉뚱한 자리에 그리는 위조를 스펙이 낼 수 없다.
+//   data-sg="half|full|axis|ctr|cols,rows|only"
+function symGrid(o){
+  o = o || {};
+  const half = (o.half || []).map(q => [q[0], q[1]]);
+  if (half.length < 2) throw new Error('symGrid: 절반이 없다');
+  let full;
+  if (o.axis){
+    const e0 = _flip(half[0], o.axis), e1 = _flip(half[half.length - 1], o.axis);
+    if (_pk(e0) !== _pk(half[0]) || _pk(e1) !== _pk(half[half.length - 1]))
+      throw new Error('symGrid: 절반의 양 끝이 접는 선 위에 있지 않다');
+    const R = half.map(q => _flip(q, o.axis));
+    full = half.concat(R.slice().reverse().slice(1, -1));
+  } else if (o.ctr){
+    full = half.concat(half.map(q => _turn(q, o.ctr)));
+  } else throw new Error('symGrid: 접는 선도 가운데 점도 없다');
+  _checkAngles(full);
+  // 자기검사 — 만들어 낸 도형이 정말 겹치는가.
+  if (o.axis && !_sameFig(full, full.map(q => _flip(q, o.axis)))) throw new Error('symGrid: 접어도 안 겹친다');
+  if (o.ctr && !_sameFig(full, full.map(q => _turn(q, o.ctr)))) throw new Error('symGrid: 돌려도 안 겹친다');
+
+  const cols = o.cols || 10, rows = o.rows || 8;
+  full.forEach(q => { if (q[0] < 0 || q[1] < 0 || q[0] > cols || q[1] > rows)
+    throw new Error('symGrid: 도형이 모눈 밖으로 나갔다 ' + q); });
+  const W = 660, MT = 26;
+  const C = Math.max(18, Math.min(44, Math.floor(Math.min((W - 80) / cols, 250 / rows))));
+  const px = Math.round((W - cols * C) / 2), py = MT;
+  const X = q => px + q[0] * C, Y = q => py + q[1] * C;
+  const H = MT + rows * C + 40;
+  let s = '<svg class="gm-svg" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">';
+  s += _gridLines(px, py, cols, rows, C);
+  if (o.axis){
+    const sg = _axisSeg(o.axis, cols, rows);
+    const A = [Math.max(0, Math.min(cols, sg[0][0])), Math.max(0, Math.min(rows, sg[0][1]))];
+    const B = [Math.max(0, Math.min(cols, sg[1][0])), Math.max(0, Math.min(rows, sg[1][1]))];
+    s += '<line class="sg-axis" data-ax="' + _axStr(o.axis) + '" x1="' + X(A).toFixed(2) + '" y1="' + Y(A).toFixed(2) +
+         '" x2="' + X(B).toFixed(2) + '" y2="' + Y(B).toFixed(2) + '" stroke="var(--emph)" stroke-width="2.6" stroke-dasharray="9 5"/>';
+  }
+  if (o.ctr) s += '<circle class="sg-ctr" data-c="' + _pk(o.ctr) + '" cx="' + X(o.ctr).toFixed(2) + '" cy="' + Y(o.ctr).toFixed(2) +
+                  '" r="6" fill="var(--emph)"/>';
+  if (o.only === 'half' || o.ask){
+    s += '<polyline class="sg-poly" data-part="half" points="' + half.map(q => X(q).toFixed(2) + ',' + Y(q).toFixed(2)).join(' ') +
+         '" fill="none" stroke="' + _GS.a + '" stroke-width="2.8" stroke-linejoin="round"/>';
+    if (o.ask){
+      const c = _cent(full);
+      s += '<text class="sg-ask" x="' + X(c).toFixed(2) + '" y="' + (Y(c) + 10).toFixed(2) +
+           '" font-size="30" text-anchor="middle" fill="var(--coral-deep)">?</text>';
+    }
+  } else {
+    s += '<polygon class="sg-poly" data-part="full" points="' + full.map(q => X(q).toFixed(2) + ',' + Y(q).toFixed(2)).join(' ') +
+         '" fill="' + _GF.a + '" stroke="' + _GS.a + '" stroke-width="2.8" stroke-linejoin="round"/>';
+  }
+  s += '</svg>';
+  const key = 'half=' + _ptsStrG(half) + '|full=' + _ptsStrG(full) +
+              '|axis=' + (o.axis ? _axStr(o.axis) : '') + '|ctr=' + (o.ctr ? _pk(o.ctr) : '') +
+              '|grid=' + cols + ',' + rows + '|only=' + (o.only || '') + '|ask=' + (o.ask ? 1 : 0);
+  return '<div class="gm-wrap" data-sg="' + esc(key) + '">' +
+         (o.title ? '<div class="gm-title">《 ' + esc(o.title) + ' 》</div>' : '') + s +
+         (o.cap ? '<div class="gm-cap">' + esc(o.cap) + '</div>' : '') + '</div>';
+}
+
+// ═════════════════════════════════════════════════════════════
+// figPick — 분류판
+//   items = [{p:[…], name:'가'}] · 각 칸의 갈래는 **부품이 기하로 판정한다**.
+//   o.want : 'line'|'point'|'both'|'none' — 그 갈래인 칸에 색을 준다
+//   o.tag  : true 면 칸마다 갈래 이름을 적는다(정답 공개 자리)
+//   o.ask  : 아무 표시도 하지 않는다(문항 자리)
+//   data-pick="name:kind;…"
+function figPick(items, o){
+  o = o || {};
+  items = items || [];
+  if (!items.length) throw new Error('figPick: 칸이 없다');
+  const NAME = { line:'접어서만', point:'돌려서만', both:'둘 다', none:'둘 다 아님' };
+  const cells = items.map((it, i) => {
+    const p = it.p.map(q => [q[0], q[1]]);
+    _checkAngles(p);
+    const kind = _kindOf(p);
+    if (it.want && it.want !== kind) throw new Error('figPick: ' + (it.name || i) + ' 신고 ' + it.want + ' 인데 기하로는 ' + kind);
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    p.forEach(q => { x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]); });
+    const w = Math.max(x1 - x0, 1), h = Math.max(y1 - y0, 1);
+    const C = Math.min(120 / w, 92 / h), VW = 150, VH = 116;
+    const ox = (VW - w * C) / 2 - x0 * C, oy = (VH - h * C) / 2 - y0 * C;
+    const hit = !o.ask && o.want && kind === o.want;
+    const miss = !o.ask && o.want && kind !== o.want;
+    const sv = '<svg class="gm-svg" viewBox="0 0 ' + VW + ' ' + VH + '" xmlns="http://www.w3.org/2000/svg" style="max-width:150px">' +
+      '<polygon class="fp-poly" data-i="' + i + '" points="' +
+      p.map(q => (ox + q[0] * C).toFixed(2) + ',' + (oy + q[1] * C).toFixed(2)).join(' ') +
+      '" fill="' + (_GF[it.c] || _GF.a) + '" stroke="' + (_GS[it.c] || _GS.a) + '" stroke-width="2.6" stroke-linejoin="round"/></svg>';
+    return '<div class="fp-cell ' + (hit ? 'pick' : (miss ? 'no' : '')) + '" data-kind="' + kind + '" data-i="' + i + '">' +
+      (it.name ? '<div class="fp-name">' + esc(it.name) + '</div>' : '') + sv +
+      (o.tag ? '<div class="fp-tag">' + NAME[kind] + '</div>' : '') + '</div>';
+  }).join('');
+  const key = items.map((it, i) => (it.name || ('#' + i)) + ':' + _kindOf(it.p)).join(';');
+  return '<div class="gm-wrap" data-pick="' + esc(key) + '" data-want="' + (o.want || '') + '" data-ask="' + (o.ask ? 1 : 0) + '">' +
+    (o.title ? '<div class="gm-title">《 ' + esc(o.title) + ' 》</div>' : '') +
+    '<div class="fp-grid">' + cells + '</div>' +
+    (o.cap ? '<div class="gm-cap">' + esc(o.cap) + '</div>' : '') + '</div>';
+}
+
+// ═════════════════════════════════════════════════════════════
+// corrRow — 대응 관계 표
+//   rows = [{lead:'대응점', a:'점 ㄱ', b:'점 ㅁ', v:'', cls:''}]
+//   data-corr="lead|a|b|v" — 짝을 통째로 신고한다.
+function corrRow(rows, o){
+  o = o || {};
+  const body = (rows || []).map(r => {
+    const v = r.v ? '<span class="cr-val">' + esc(r.v) + '</span>' : '';
+    return '<div class="cr-row ' + (r.cls || '') + '" data-corr="' + esc((r.lead || '') + '|' + (r.a || '') + '|' + (r.b || '') + '|' + (r.v || '')) + '">' +
+      '<span class="cr-lead">' + esc(r.lead || '') + '</span>' +
+      '<span>' + esc(r.a || '') + '</span><span class="cr-arrow">⟷</span><span>' + esc(r.b || '') + '</span>' + v + '</div>';
+  }).join('');
+  return '<div class="gm-wrap">' + (o.title ? '<div class="gm-title">《 ' + esc(o.title) + ' 》</div>' : '') +
+    '<div class="cr-rows">' + body + '</div>' +
+    (o.cap ? '<div class="gm-cap">' + esc(o.cap) + '</div>' : '') + '</div>';
+}
+
+(function renderModels(){
+  document.getElementById('m-i2').innerHTML =
+    symFig({p:[[3,0],[6,3],[0,3]],show:'line',fold:'fold',want:'line',labels:'ㄱㄴㄷ',title:'접으면 짝이 보인다',cap:'겹치는 점끼리가 대응점이다'});
+  document.getElementById('m-e1').innerHTML =
+    symFig({p:[[0,0],[6,0],[6,3],[0,3]],show:'line',all:true,want:'both',labels:'ㄱㄴㄷㄹ',cap:'대응변의 길이는 같고 대응각의 크기도 같다'});
+  document.getElementById('m-e2').innerHTML =
+    symGrid({half:[[5,0],[2,3],[2,5],[5,5]],axis:{t:'v',k:5},cols:10,rows:7,cap:'대응점을 이은 선분과 대칭축은 수직으로 만난다'});
+  document.getElementById('m-e3').innerHTML =
+    corrRow([{lead:'왼쪽',a:'대칭축',b:'대응점',v:'3 cm'},{lead:'오른쪽',a:'대칭축',b:'대응점',v:'3 cm'},{lead:'두 점 사이',a:'대응점',b:'대응점',v:'6 cm',cls:'hi'}]);
+  document.getElementById('m-e4').innerHTML =
+    corrRow([{lead:'옳은 판',a:'왼쪽 3 cm',b:'오른쪽 3 cm',v:'겹친다',cls:'hi'},{lead:'어긋난 판',a:'왼쪽 3 cm',b:'오른쪽 4 cm',v:'겹치지 않는다',cls:'bad'}],{cap:'거리가 다르면 점이 어긋나 완전히 겹칠 수 없다'});
+  document.getElementById('m-q8').innerHTML =
+    symFig({p:[[0,0],[4,0],[4,4],[0,4]],show:'line',all:true,want:'both',labels:'ㄱㄴㄷㄹ'});
+  document.getElementById('m-q9').innerHTML =
+    symGrid({half:[[5,0],[2,3],[2,5],[5,5]],axis:{t:'v',k:5},cols:10,rows:7});
+  document.getElementById('m-q10').innerHTML =
+    corrRow([{lead:'왼쪽',a:'대칭축',b:'대응점',v:'3 cm'},{lead:'오른쪽',a:'대칭축',b:'대응점',v:'?'}]);
+  document.getElementById('m-q11').innerHTML =
+    symFig({p:[[0,0],[6,0],[6,3],[0,3]],show:'line',all:true,want:'both',labels:'ㄱㄴㄷㄹ'});
+  document.getElementById('m-q12').innerHTML =
+    corrRow([{lead:'두 점 사이',a:'대응점',b:'대응점',v:'10 cm'},{lead:'대칭축까지',a:'대칭축',b:'대응점',v:'?'}]);
+  document.getElementById('m-q13').innerHTML =
+    symFig({p:[[3,0],[6,3],[0,3]],show:'line',want:'line',labels:'ㄱㄴㄷ'});
+  document.getElementById('m-q14').innerHTML =
+    symFig({p:[[2,0],[5,0],[7,2],[0,2]],show:'line',want:'line',labels:'ㄱㄴㄷㄹ'});
+  document.getElementById('m-q15').innerHTML =
+    symGrid({half:[[5,0],[1,0],[1,3],[5,3]],axis:{t:'v',k:5},cols:10,rows:5,cap:'왼쪽 변은 4 cm 와 3 cm 다'});
+})();
+
+function setupPad(qid, correct, padId, displayId, fbId, doneMsg, maxLen) {
+  maxLen = maxLen || 6;
+  const pad = document.getElementById(padId);
+  const display = document.getElementById(displayId);
+  const fb = document.getElementById(fbId);
+  let buf = '';
+  const keys = ['1','2','3','4','5','6','7','8','9','0'];
+  keys.forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'q-key'; b.textContent = k;
+    b.addEventListener('click', () => {
+      const st = getQState(qid); if (st.solved) return;
+      if (buf.length < maxLen) { buf += k; display.textContent = buf; }
+    });
+    pad.appendChild(b);
+  });
+  const del = document.createElement('button');
+  del.className = 'q-key fn'; del.textContent = '지움';
+  del.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    buf = buf.slice(0, -1); display.textContent = buf || '?';
+  });
+  pad.appendChild(del);
+  const ok = document.createElement('button');
+  ok.className = 'q-key fn'; ok.textContent = '확인'; ok.style.gridColumn = 'span 4';
+  ok.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    st.attempts++;
+    if (parseInt(buf, 10) === correct) {
+      st.solved = true;
+      const earn = pointsForQ(qid); addScore(earn);
+      fb.classList.remove('wrong');
+      fb.textContent = (doneMsg || '정답이에요!') + ' +' + earn + '점';
+      updateUI();
+    } else {
+      st.wrongCount++;
+      fb.classList.add('wrong'); fb.textContent = '다시 계산해 보자';
+    }
+  });
+  pad.appendChild(ok);
+}
+
+function setupMcq(qid, doneMsg){
+  document.querySelectorAll('#'+qid+'-opts .mcq-opt').forEach(o=>{
+    o.addEventListener('click', ()=>{
+      const st=getQState(qid); if(st.solved) return;
+      st.attempts++;
+      const fb=document.getElementById(qid+'-fb');
+      if(o.dataset.correct==='1'){
+        st.solved=true; o.classList.add('correct');
+        const earn=pointsForQ(qid); addScore(earn);
+        fb.classList.remove('wrong'); fb.textContent=(doneMsg||'정답이에요!')+' +'+earn+'점';
+        updateUI();
+      } else {
+        st.wrongCount++; o.classList.add('wrong');
+        fb.classList.add('wrong'); fb.textContent='다시 골라 보세요';
+        setTimeout(()=>o.classList.remove('wrong'),500);
+      }
+    });
+  });
+}
+
+setupPad('q8', 5, 'q8-pad','q8-display','q8-fb','대응변이므로 5 cm 다.', 6);
+setupMcq('q9','대칭축은 대응점을 이은 선분과 수직으로 만난다.');
+setupPad('q10', 6, 'q10-pad','q10-display','q10-fb','양쪽이 각각 3 cm 이므로 6 cm 다.', 6);
+setupPad('q11', 90, 'q11-pad','q11-display','q11-fb','대응각이므로 90도다.', 6);
+setupPad('q12', 5, 'q12-pad','q12-display','q12-fb','10 ÷ 2 = 5 이므로 5 cm 다.', 6);
+setupMcq('q13','대칭축까지의 거리는 양쪽이 같아야 한다.');
+setupPad('q14', 135, 'q14-pad','q14-display','q14-fb','대응각이므로 135도다.', 6);
+setupPad('q15', 7, 'q15-pad','q15-display','q15-fb','대응변이 각각 4 cm, 3 cm 이므로 합은 7 cm 다.', 6);
+
+
+// ───── 슬17 자기 평가 ─────
+document.querySelectorAll('.self-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.self-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('self-fb').textContent = '응답이 기록됐어요. 다음 차시에서 만나요!';
+  });
+});
+
+// ───── 진도 복원 ─────
+(function restore() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data.cur != null) cur = Math.min(data.cur, TOTAL - 1);
+    if (data.score != null) score = data.score;
+    document.getElementById('score').textContent = '⭐ ' + score;
+  } catch(e) {}
+})();
+
+(function buildDots(){ const w=document.getElementById('dots'); for(let i=0;i<TOTAL;i++){ const d=document.createElement('div'); d.className='ka-dot'; d.onclick=()=>{ cur=i; saveProgress(false); updateUI(); }; w.appendChild(d); } })();
+
+updateUI();
+</script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+<script src="/kedu_fit.js"></script>
+</body>
+</html>
