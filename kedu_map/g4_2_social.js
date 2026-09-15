@@ -221,14 +221,14 @@ window.KEDU_MAP["g4_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_social_u2_l10",
+     "lessonId": "g4_social_u2_l10_v1",
      "n": "4",
      "title": "[생각을 펼쳐요] 지역을 알리는 노력 정리",
      "sub": "② 지역을 알리는 노력",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/social/2단원_지역문제해결과지역알리기/g4_social_u2_l10_주제②정리.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
