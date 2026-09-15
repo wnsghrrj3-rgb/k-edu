@@ -15,6 +15,10 @@ Static Three.js history exploration game. Serve the repository root and open `/k
 
 Paleo starts in third person. Interaction distance is measured from the player in both views. The original mission progression is unchanged.
 
+## Story layer
+
+`core/story.js` + `core/props.js`: when `world.json` names a `scene` file, GLB interactables are removed/added by json coordinates (procedural props, recoloured avatars, `showIf` flag conditions), with prologue, journal, choices, flee and pick-recipes. First use: `eras/story-p1/` (`?era=story-p1`), ACT 1–4 of `docs/kedu-world/KEDU_HISTORY_STORY_MASTER_v1.md` on the paleo terrain.
+
 ## Verification
 
 Run `node kworld/tests/run.mjs`. No npm installation is needed: the resolver uses vendored Three.js. Tests cover the existing 32 mission assertions, retention of 50 interaction targets, finite scenery geometry, batching, clear spawn and adjacent target approach points, and third-person interaction reach. Approach checks are local clearance checks, not a complete pathfinding proof.

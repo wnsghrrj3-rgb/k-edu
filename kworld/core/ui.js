@@ -9,7 +9,7 @@ export class UI {
     this.hungerBar = $('hungerbar'); this.inv = $('inv'); this.panel = $('panel');
     this.toastTimer = null;
   }
-  setTitle(t, q, short) { $('title').textContent = t; $('question').textContent = q; if (short && $('eratag')) $('eratag').textContent = 'KEDU WORLD · ' + short; }
+  setTitle(t, q, short) { $('title').textContent = t; $('question').textContent = q; if ($('eratag')) { $('eratag').textContent = 'KEDU WORLD · ' + (short || ''); $('eratag').style.display = short ? '' : 'none'; } }
   /** 시대 진입 자막: 큰 제목·질문이 떠올랐다 사라진다(입력을 막지 않음) */
   intro(title, question) {
     const el = $('intro'); if (!el) return;
@@ -59,6 +59,7 @@ export class UI {
       const need = {}; for (const i of r.in) need[i] = (need[i] || 0) + 1;
       const ok = Object.entries(need).every(([k, n]) => (counts[k] || 0) >= n);
       const known = r.known;
+      if (r.pick) { const have = inventory.filter((k) => defs[k].cat === r.pick.cat).length; const okp = have >= r.pick.n; html += `<button class="recipe ${okp ? 'ok' : ''}" data-out="${r.out}">${r.pick.icon || '🪨'} + ${r.pick.icon || '🪨'} → ❓<small>${known ? esc(r.name) : (okp ? '해 볼 수 있다' : (r.pick.short || '재료가 모자라'))}</small></button>`; continue; }
       html += `<button class="recipe ${ok ? 'ok' : ''}" data-out="${r.out}">${r.in.map((i) => defs[i].icon).join(' + ')} → ${known ? defs[r.out].icon + ' ' + esc(defs[r.out].name) : '❓'}<small>${known ? esc(r.name) : (ok ? '해 볼 수 있다' : '재료가 모자라')}</small></button>`;
     }
     html += '</div>';
@@ -72,6 +73,19 @@ export class UI {
   }
   npcLine(name, text, onClose) { this.open(`<div class="npc"><b>${esc(name)}</b><p>${md(text)}</p></div>`, [{ label: '응', onClick: onClose, primary: true }], 'npcpanel'); }
   /** 확인하기: 문항 순서대로. onAnswer(q, value) → {ok, revisit?} */
+  /** 고르는 만들기 판: 갈래 안에서 n개 고르기 */
+  pickPanel(r, cands, onPick, onClose) {
+    const picked = [];
+    const html = `<h3>${esc(r.name)}</h3><p class="sub">${esc(r.pick.text || `${r.pick.n}개를 골라 봐. 어떤 짝이 맞을지는 해 봐야 알아.`)}</p><div class="recipes">` +
+      cands.map((c) => `<button class="recipe ok" data-k="${c.key}">${c.d.icon} ${esc(c.d.name)}${c.n > 1 ? ` ×${c.n}` : ''}<small>${esc(c.d.desc)}</small></button>`).join('') + '</div><p class="sub" id="pickstate">고른 것: 없음</p>';
+    const p = this.open(html, [{ label: '부딪친다', primary: true, onClick: () => { if (picked.length < r.pick.n) { this.say(`${r.pick.n}개를 골라야 해.`); return; } onPick(picked.slice()); } }, { label: '닫기', onClick: onClose }]);
+    p.querySelectorAll('.recipe').forEach((el) => { el.onclick = () => {
+      const k = el.dataset.k; const c = cands.find((x) => x.key === k); const already = picked.filter((x) => x === k).length;
+      if (already >= c.n) { this.say('그건 그것뿐이야.'); return; } if (picked.length >= r.pick.n) picked.shift(); picked.push(k);
+      $('pickstate').textContent = '고른 것: ' + picked.map((x) => cands.find((y) => y.key === x).d.name).join(' + ');
+      p.querySelectorAll('.recipe').forEach((b) => b.classList.toggle('picked', picked.includes(b.dataset.k)));
+    }; });
+  }
   check(data, onAnswer, onFinish, onRevisit) {
     let i = 0; const results = [];
     const show = () => {

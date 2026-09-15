@@ -138,6 +138,7 @@ export class Engine {
   pickTarget(camera, maxDist = 3.2, origin = camera.position) {
     const dir = camera.getWorldDirection(new THREE.Vector3()); const pos = origin; let best = null, bestScore = 1e9;
     for (const it of this.interactables.values()) {
+      if (it.disabled) continue;
       const to = it.center.clone().sub(pos); const d = to.length(); if (d > maxDist + it.box.getSize(new THREE.Vector3()).length() * 0.5) continue;
       to.normalize(); const ang = Math.acos(THREE.MathUtils.clamp(to.dot(dir), -1, 1)); if (ang > 0.55) continue;
       const score = d + ang * 2; if (score < bestScore) { bestScore = score; best = it; }
