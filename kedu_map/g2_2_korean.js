@@ -161,6 +161,83 @@ window.KEDU_MAP["g2_2_korean"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 3,
+   "name": "내용을 살펴요",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g2_korean_u3_l01",
+     "lessonId": "g2_2_kor_u3_l01_02_v1",
+     "n": "1·2",
+     "title": "단원 시작 — 배울 내용 살펴보기",
+     "sub": null,
+     "url": "/grade2/semester2/korean/3단원_내용을살펴요/g2_kor_u3_l01_02.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_korean_u3_l03",
+     "lessonId": "g2_2_kor_u3_l03_04_v1",
+     "n": "3·4",
+     "title": "글을 읽고 중심 내용을 파악하는 방법 알기",
+     "sub": null,
+     "url": "/grade2/semester2/korean/3단원_내용을살펴요/g2_kor_u3_l03_04.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_korean_u3_l05",
+     "lessonId": "g2_2_kor_u3_l05_06_v1",
+     "n": "5·6",
+     "title": "글을 읽고 내용 간추리기",
+     "sub": null,
+     "url": "/grade2/semester2/korean/3단원_내용을살펴요/g2_kor_u3_l05_06.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_korean_u3_l07",
+     "lessonId": "g2_2_kor_u3_l07_08_v1",
+     "n": "7·8",
+     "title": "사물을 설명하는 글을 쓰는 방법 알기",
+     "sub": null,
+     "url": "/grade2/semester2/korean/3단원_내용을살펴요/g2_kor_u3_l07_08.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_korean_u3_l09",
+     "lessonId": "g2_2_kor_u3_l09_10_v1",
+     "n": "9·10",
+     "title": "자신이 좋아하는 사물을 설명하는 글 쓰기",
+     "sub": null,
+     "url": "/grade2/semester2/korean/3단원_내용을살펴요/g2_kor_u3_l09_10.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_korean_u3_l11",
+     "lessonId": "g2_2_kor_u3_l11_13_v1",
+     "n": "11~13",
+     "title": "배운 내용 실천하기 (놀이 방법 설명하기)",
+     "sub": null,
+     "url": "/grade2/semester2/korean/3단원_내용을살펴요/g2_kor_u3_l11_13.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_korean_u3_l14",
+     "lessonId": "g2_2_kor_u3_l14_15_v1",
+     "n": "14·15",
+     "title": "단원 마무리하기",
+     "sub": null,
+     "url": "/grade2/semester2/korean/3단원_내용을살펴요/g2_kor_u3_l14_15.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };
