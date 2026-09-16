@@ -80,9 +80,10 @@ g.story.tick(3.5); ok(!ix.has('herd_1'), '무리 A 사라짐');
 use('track_7'); ok(vis('track_8'), '새 발자국→눌린 풀'); use('track_8'); ok(vis('herdb_1') && vis('spot_rockB') && vis('npc_nuri2') && vis('wind_b'), '무리 B·자리 B·누리');
 use('spot_openB'); const h3 = g.hunger; pick(0); ok(g.flags.has('hunt:miss2') && g.hunger < h3 && vis('herdb_1'), '탁 트인 곳: 배만 고파지고 무리는 그대로');
 use('spot_rockB'); pick(0); ok(g.flags.has('hunt:done'), '바위 뒤(바람 아래): 사냥');
-ok(!vis('herdb_1') && !vis('spot_rockB') && !vis('npc_nuri2') && vis('kill_b') && !vis('kill_a'), '무리·자리 사라지고 누운 사슴');
+ok(!vis('herdb_1') && !vis('spot_rockB') && vis('npc_nuri2') && vis('kill_b') && !vis('kill_a'), '무리·자리 사라지고 누운 사슴, 누리는 남음');
+await new Promise((r) => setTimeout(r, 30)); { const nu = g.story.actors.nuri2; ok(nu.state === 'run' && nu.path, '누리가 사슴 쪽으로 달린다'); for (let i = 0; i < 400 && nu.path; i++) g.story.tick(0.05); ok(!nu.path && nu.state === 'idle' && Math.abs(nu.obj.position.x + 6.5) < 0.2, '누리 도착 → 대기'); }
 use('kill_b'); ok(g.flags.has('kill:seen') && says.at(-1).includes('조용'), '…조용하다'); use('kill_b'); ok(g.flags.has('deer:carried') && !ix.has('kill_b'), '함께 옮기기');
-ok(vis('carcass_1') && vis('npc_hana2') && vis('npc_maru3') && vis('npc_nuri3') && vis('npc_old') && vis('npc_child') && !vis('npc_hana'), '야영지: 사슴 + 사람들');
+ok(vis('carcass_1') && vis('npc_hana2') && vis('npc_maru3') && vis('npc_nuri3') && vis('npc_old') && vis('npc_child') && !vis('npc_hana') && !vis('npc_nuri2'), '야영지: 사슴 + 사람들');
 // ACT 6 — 한 마리의 사슴: 날 선 돌로는 안 됨 → 긁개
 use('carcass_1'); ok(g.flags.has('skin:fail') && !g.has('hide') && says.at(-1).includes('찢어'), '날 선 돌: 가죽 찢어짐');
 use('npc_maru3'); ok(says.at(-1).includes('다른 모양'), '마루: 이건 다른 모양이');
@@ -104,7 +105,8 @@ use('fire_1'); pick(0); ok(g.flags.has('fire:smoke') && g.count('wetstick') === 
 use('npc_bara'); ok(says.at(-1).includes('연기'), '바라: 연기만');
 use('stick_1'); use('stick_2'); use('stick_3'); ok(g.count('stick') === 3, '마른 가지 3');
 use('fire_1'); pick(1); ok(g.flags.has('fire:alive') && g.count('stick') === 0 && g.fireBase === 3, '마른 가지 셋: 불 살아남');
-ok(g.hungerMul === 1 && vis('npc_hana3') && vis('npc_old2') && !vis('npc_hana2'), '따뜻해짐 + 사람들이 불로');
+ok(g.hungerMul === 1 && vis('npc_hana2') && vis('npc_old'), '따뜻해짐, 사람들 그대로 있음'); await new Promise((r) => setTimeout(r, 30)); { const h = g.story.actors.hana2; ok(h.path && h.state === 'walk', '하나가 불로 걸어간다'); for (let i = 0; i < 400; i++) g.story.tick(0.05); ok(!h.path && Math.hypot(h.obj.position.x + 6, h.obj.position.z - 3) < 2.6, '하나 불 곁 도착'); }
+use('npc_hana2'); ok(says.at(-1).includes('따뜻'), '하나: 불 곁 대사');
 await new Promise((r) => setTimeout(r, 1400)); ok(g.flags.has('journal:fire'), '📔 불');
 use('fire_1'); ok(g.has('cooked') && g.count('meat') === 0, '고기 굽기');
 g.tapItem('cooked'); ok(g.flags.has('eat:cooked') && !g.has('cooked'), '익힌 고기 먹기');
@@ -112,7 +114,7 @@ g.tick(0.01); ok(g._mission.includes('물이 들어온다'), '미션 18');
 // ACT 9 — 폭우 → 거처 후보 3
 const wait = (ms) => new Promise((r) => setTimeout(r, ms)); await wait(200);
 ok(g.flags.has('act9') && g.story.rainOn === false && g.hungerMul === 1, '비 왔다 그침 → act9');
-ok(vis('site_river') && vis('site_rock') && vis('site_high') && !vis('npc_hana3') && vis('npc_nuri5'), '후보 3 + 사람들 낮 자리');
+ok(vis('site_river') && vis('site_rock') && vis('site_high') && !vis('npc_hana2') && vis('npc_nuri5'), '후보 3 + 사람들 낮 자리');
 use('npc_nuri5'); ok(says.at(-1).includes('세 곳'), '누리: 세 곳');
 use('site_rock'); ok(panel && panel.b.length === 2, '후보 선택'); pick(0); ok(!g.flags.has('home:done') && says.at(-1).includes('다른 곳도'), '다 보기 전엔 못 정함');
 ok(g.flags.has('seen:site:rock'), '바위 그늘 봄'); use('site_river'); pick(1); use('site_high'); pick(1); ok(g.flags.has('seen:site:river') && g.flags.has('seen:site:high'), '세 곳 봄');

@@ -2,6 +2,7 @@
 // 이야기(프롤로그·탐험일지·끝 화면)도 여기. 코어는 시대 이름을 모른다.
 import * as THREE from 'three';
 import { PROPS } from './props.js';
+import { Actor, gather } from './actor.js';
 
 export class Story {
   constructor(game, scene) { this.g = game; this.s = scene; this.cond = []; this.movers = []; }
@@ -30,10 +31,8 @@ export class Story {
     inst.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; o.frustumCulled = false; if (o.material) { o.material.roughness = 0.9; o.material.metalness = 0; } } });
     for (const c of [...obj.children]) obj.remove(c);   // 관절 인형 자리를 GLB 로
     obj.add(inst);
-    const mixer = new THREE.AnimationMixer(inst); const clips = g.animations; const find = (k) => clips.find((c) => c.name.includes(k)); const idle = find('wait') || find('idle') || clips[0];
-    obj.userData.actions = { idle: idle && mixer.clipAction(idle), walk: find('walk') && mixer.clipAction(find('walk')), run: find('run') && mixer.clipAction(find('run')) };
-    if (obj.userData.actions.idle) { obj.userData.actions.idle.play(); obj.userData.actions.idle.time = Math.random() * 2; }
-    obj.userData.mixer = mixer; this.mixers.push(mixer); obj.userData.animate = null;
+    const mixer = new THREE.AnimationMixer(inst); obj.userData.animate = null;
+    const actor = this.actors?.[a.id || a.name.replace(/^npc_/, '')]; if (actor) actor.setModel(inst, mixer, g.animations);
     const it = this.g.e.interactables.get(a.name); if (it) { it.box.setFromObject(obj); it.center.copy(it.box.getCenter(new THREE.Vector3())); }
   }
   place(a) {
@@ -42,7 +41,8 @@ export class Story {
     const model = a.prop === 'person' ? this.personModel(a.id || a.name.replace(/^npc_/, '')) : null;
     const y = e.groundY(a.x, a.z) + (a.dy || 0); obj.position.set(a.x, y, a.z); if (a.yaw != null) obj.rotation.y = a.yaw; if (a.scale) obj.scale.setScalar(a.scale);
     e.scene.add(obj);
-    if (obj.userData.animate) { let t = 0; e.onFrame.push((dt) => { if (!obj.userData.animate) return; t += dt; obj.userData.animate(t, false); }); }
+    if (a.prop === 'person') { (this.actors ??= {})[a.id || a.name.replace(/^npc_/, '')] = new Actor(this.g, a.id || a.name, obj); }
+    else if (obj.userData.animate) { let t = 0; e.onFrame.push((dt) => { if (!obj.userData.animate) return; t += dt; obj.userData.animate(t, false); }); }
     const box = new THREE.Box3().setFromObject(obj); if (box.max.y - box.min.y < 0.6) box.expandByScalar(0.3);
     const [type, ...rest] = a.name.split('_');
     const it = { type, id: rest.join('_') || type, obj, box, center: box.getCenter(new THREE.Vector3()), uses: 0, state: null, name: a.name, kind: a.kind, showIf: a.showIf, fleeOn: a.fleeOn, fleeTo: a.fleeTo };
@@ -112,6 +112,8 @@ export class Story {
       if (a.cold != null) g.hungerMul = a.cold;
       if (a.lines) await this.overlay(a);
       if (a.cutscene) await this.cutscene(a.cutscene);
+      if (a.actor) { const ac = this.actors?.[a.actor]; if (ac) { if (a.go) { const pr = ac.goTo(a.go, { anim: a.anim || 'walk', then: a.then || 'idle' }); if (a.await) await pr; } if (a.face) ac.face(a.face); if (a.play) ac.play(a.play); } }
+      if (a.gather) { const acs = a.gather.map((id) => this.actors?.[id]).filter(Boolean); const c = acs[0]?.resolve(a.at) || (Array.isArray(a.at) && { x: a.at[0], z: a.at[1] }); if (acs.length && c) { const pr = gather(acs, c, { r: a.r, anim: a.anim, then: a.then }); if (a.await) await pr; } }
       if (a.flag) g.flag(a.flag);
     }
   }
@@ -152,7 +154,7 @@ export class Story {
       if (e.skyDome && f.sky && t.sky) { const u = e.skyDome.material.uniforms; u.uZenith.value.copy(f.sky.z).lerp(t.sky.z, k); u.uHorizon.value.copy(f.sky.h).lerp(t.sky.h, k); u.uHaze.value.copy(f.sky.a).lerp(t.sky.a, k); u.uSunColor.value.copy(f.sky.s).lerp(t.sky.s, k); u.uCloud.value = L(f.sky.c, t.sky.c); }
     }
     if (this.rainPts && this.rainPts.visible) { const p = this.rainPts.geometry.attributes.position; const a = p.array; const c = this.g.p.pos; for (let i = 0; i < a.length; i += 3) { a[i + 1] -= dt * 14; if (a[i + 1] < -1) { a[i + 1] = 18; a[i] = c.x + (Math.random() - .5) * 44; a[i + 2] = c.z + (Math.random() - .5) * 44; } } p.needsUpdate = true; }
-    for (const mx of this.mixers || []) mx.update(dt);
+    for (const k in this.actors || {}) { const ac = this.actors[k]; if (ac.obj.visible) ac.tick(dt); }
     for (const m of this.movers) {
       m.t += dt; const k = Math.min(1, m.t / m.sec); const x = m.from.x + (m.to.x - m.from.x) * k, z = m.from.z + (m.to.z - m.from.z) * k;
       m.it.obj.position.set(x, this.g.e.groundY(x, z) + Math.abs(Math.sin(m.t * 9)) * 0.35, z);
