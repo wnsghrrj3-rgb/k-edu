@@ -16,18 +16,36 @@ export class Story {
     e.onFrame.push((dt) => this.tick(dt));
     this.onFlag();
   }
+  /** 사람 GLB(Tripo 리깅+동작): world.people = { aru: "../../assets/people/aru.glb" } — id 의 글자 부분으로 찾는다(aru3 → aru). 없으면 관절 인형 */
+  personModel(id) { const map = this.g.world.people; if (!map || typeof document === 'undefined' || typeof document.createElement !== 'function') return null; const key = id.replace(/\d+$/, ''); return map[key] ? { key, url: new URL(this.g.base + map[key], location.href).href } : null; }
+  async loadPerson(obj, model, a) {
+    this.gltfCache ??= {}; this.mixers ??= [];
+    if (!this.gltfCache[model.key]) this.gltfCache[model.key] = (async () => { const [{ GLTFLoader }, { clone }] = await Promise.all([import('three/addons/loaders/GLTFLoader.js'), import('three/addons/utils/SkeletonUtils.js')]); const g = await new GLTFLoader().loadAsync(model.url); return { g, clone }; })();
+    const { g, clone } = await this.gltfCache[model.key];
+    const inst = clone(g.scene); const box = new THREE.Box3().setFromObject(inst); const h = box.max.y - box.min.y || 1; const s = (this.g.world.peopleHeight || 1.62) / h; inst.scale.setScalar(s); inst.position.y = -box.min.y * s; inst.rotation.y = this.g.world.peopleYaw || 0;   // 모델 정면이 다르면 world.peopleYaw 로 보정
+    inst.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; o.frustumCulled = false; if (o.material) { o.material.roughness = 0.9; o.material.metalness = 0; } } });
+    for (const c of [...obj.children]) obj.remove(c);   // 관절 인형 자리를 GLB 로
+    obj.add(inst);
+    const mixer = new THREE.AnimationMixer(inst); const clips = g.animations; const find = (k) => clips.find((c) => c.name.includes(k)); const idle = find('wait') || find('idle') || clips[0];
+    obj.userData.actions = { idle: idle && mixer.clipAction(idle), walk: find('walk') && mixer.clipAction(find('walk')), run: find('run') && mixer.clipAction(find('run')) };
+    if (obj.userData.actions.idle) { obj.userData.actions.idle.play(); obj.userData.actions.idle.time = Math.random() * 2; }
+    obj.userData.mixer = mixer; this.mixers.push(mixer); obj.userData.animate = null;
+    const it = this.g.e.interactables.get(a.name); if (it) { it.box.setFromObject(obj); it.center.copy(it.box.getCenter(new THREE.Vector3())); }
+  }
   place(a) {
     const e = this.g.e; const fn = PROPS[a.prop]; if (!fn) return;
     const obj = a.prop === 'person' ? fn(a.look || {}) : fn(a.pkind || a.kind, a.seed || 1);   // pkind: 소품 모양은 같고 규칙 종류만 다를 때
+    const model = a.prop === 'person' ? this.personModel(a.id || a.name.replace(/^npc_/, '')) : null;
     const y = e.groundY(a.x, a.z) + (a.dy || 0); obj.position.set(a.x, y, a.z); if (a.yaw != null) obj.rotation.y = a.yaw; if (a.scale) obj.scale.setScalar(a.scale);
     e.scene.add(obj);
-    if (obj.userData.animate) { let t = 0; e.onFrame.push((dt) => { t += dt; obj.userData.animate(t, false); }); }
+    if (obj.userData.animate) { let t = 0; e.onFrame.push((dt) => { if (!obj.userData.animate) return; t += dt; obj.userData.animate(t, false); }); }
     const box = new THREE.Box3().setFromObject(obj); if (box.max.y - box.min.y < 0.6) box.expandByScalar(0.3);
     const [type, ...rest] = a.name.split('_');
     const it = { type, id: rest.join('_') || type, obj, box, center: box.getCenter(new THREE.Vector3()), uses: 0, state: null, name: a.name, kind: a.kind, showIf: a.showIf, fleeOn: a.fleeOn, fleeTo: a.fleeTo };
     e.interactables.set(a.name, it);
     if (a.showIf) this.cond.push(it);
     if (a.fleeOn) (this.fleeers ??= []).push(it);
+    if (model) this.loadPerson(obj, model, a).catch((err) => console.warn('person GLB', a.name, err));
     return it;
   }
   /** 깃발이 바뀔 때: showIf 다시 보고, 끝 화면 */
@@ -130,6 +148,7 @@ export class Story {
       if (e.skyDome && f.sky && t.sky) { const u = e.skyDome.material.uniforms; u.uZenith.value.copy(f.sky.z).lerp(t.sky.z, k); u.uHorizon.value.copy(f.sky.h).lerp(t.sky.h, k); u.uHaze.value.copy(f.sky.a).lerp(t.sky.a, k); u.uSunColor.value.copy(f.sky.s).lerp(t.sky.s, k); u.uCloud.value = L(f.sky.c, t.sky.c); }
     }
     if (this.rainPts && this.rainPts.visible) { const p = this.rainPts.geometry.attributes.position; const a = p.array; const c = this.g.p.pos; for (let i = 0; i < a.length; i += 3) { a[i + 1] -= dt * 14; if (a[i + 1] < -1) { a[i + 1] = 18; a[i] = c.x + (Math.random() - .5) * 44; a[i + 2] = c.z + (Math.random() - .5) * 44; } } p.needsUpdate = true; }
+    for (const mx of this.mixers || []) mx.update(dt);
     for (const m of this.movers) {
       m.t += dt; const k = Math.min(1, m.t / m.sec); const x = m.from.x + (m.to.x - m.from.x) * k, z = m.from.z + (m.to.z - m.from.z) * k;
       m.it.obj.position.set(x, this.g.e.groundY(x, z) + Math.abs(Math.sin(m.t * 9)) * 0.35, z);
