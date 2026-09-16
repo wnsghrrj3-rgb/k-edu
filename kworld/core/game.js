@@ -318,7 +318,8 @@ export class Game {
     if (this.ui.isOpen()) { this.ui.close(); this.p.enabled = true; return; }
     this.p.enabled = false;
     const ms = this.missions.missions;
-    const html = '<h3>할 일</h3><ol class="mlist">' + ms.map((m, i) => `<li class="${i < this.mi ? 'done' : (i === this.mi ? 'now' : '')}">${i < this.mi ? '✅' : (i === this.mi ? '👉' : '·')} ${m.title}${i === this.mi ? `<div class="mhint">💡 ${m.hint}</div>` : ''}</li>`).join('') + '</ol>' + (this.story ? this.story.journalHtml() : '');
+    let lastAct = null;
+    const html = '<h3>할 일</h3><ol class="mlist">' + ms.map((m, i) => { const head = m.act && m.act !== lastAct ? `<li class="acthead">${m.act}</li>` : ''; lastAct = m.act || lastAct; const locked = i > this.mi; return head + `<li class="${i < this.mi ? 'done' : (i === this.mi ? 'now' : 'locked')}">${i < this.mi ? '✅' : (i === this.mi ? '👉' : '🔒')} ${locked ? '· · ·' : m.title}${i === this.mi ? `<div class="mhint">💡 ${m.hint}</div>` : ''}</li>`; }).join('') + '</ol>' + (this.story ? this.story.journalHtml() : '');
     this.ui.open(html, [{ label: '닫기', primary: true, onClick: () => { this.ui.close(); this.p.enabled = true; } }]);
   }
   // ---------- 불 ----------

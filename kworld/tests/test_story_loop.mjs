@@ -138,16 +138,17 @@ use('shelter_high'); ok(panel && panel.b.length === 1 && panel.h.includes('다 �
 ok(g.flags.has('leave:ready'), '떠난다'); await wait(1400); ok(g.flags.has('journal:move'), '📔 이동생활');
 // ACT 13~14 — 컷신: 카드 → 확인 → 유적 → 이름
 await wait(100); let guard = 0; while (panel && guard++ < 10 && !g.flags.has('era1:done')) { const h = panel.h; pick(0); await wait(30); }
-ok(g._check && g._check.questions.length === 2 && g.results.length === 2, '발굴 확인 2문항(열린 1 + 증거 고르기 1)');
+ok(g.results.filter((r) => r.id.startsWith('d')).length === 2, '발굴 확인 2문항(열린 1 + 증거 고르기 1)');
+ok(g.flags.has('era1:review') && g.results.filter((r) => r.id.startsWith('rv:')).length === 6, '시대 정리: 발견 5 되짚기 + 열린 1');
 ok(g.flags.has('era1:done'), '구석기 시대 이름 공개 → era1:done');
 g.tick(0.01); ok(g._mission.includes('완주'), '미션 끝');
 await wait(2000); ok(panel && panel.h.includes('구석기 시대'), '끝 화면: PART I');
 ok(g.story.journalHtml().includes('채집') && g.story.journalHtml().includes('긁개') && g.story.journalHtml().includes('불'), '탐험일지 5편');
 // 저장·재개 — 스냅샷 → 비우기 → 적용
 { const { Save } = await import('../core/save.js'); const store = {}; globalThis.localStorage = { getItem: (k) => store[k] ?? null, setItem: (k, v) => { store[k] = v; }, removeItem: (k) => { delete store[k]; } };
-  const sv = new Save(g, 'story-p1'); sv.write(); const snap = sv.load(); ok(snap && snap.flags.length === g.flags.size && snap.results.length === 2, '저장 스냅샷');
+  const sv = new Save(g, 'story-p1'); sv.write(); const snap = sv.load(); ok(snap && snap.flags.length === g.flags.size && snap.results.length === 8, '저장 스냅샷');
   const n0 = g.flags.size; g.flags.clear(); g.inventory.length = 0; for (const ev of g.world.events) ev.done = false;
-  sv.apply(snap); ok(g.flags.size === n0 && g.world.events.every((ev) => ev.done || !g.cond(ev.on)) && g.results.length === 2, '재개: 깃발·사건·결과 복원'); g.tick(0.01); ok(g._mission.includes('완주'), '재개 뒤 미션 상태 그대로');
+  sv.apply(snap); ok(g.flags.size === n0 && g.world.events.every((ev) => ev.done || !g.cond(ev.on)) && g.results.length === 8, '재개: 깃발·사건·결과 복원'); g.tick(0.01); ok(g._mission.includes('완주'), '재개 뒤 미션 상태 그대로');
   sv.clear(); ok(!sv.load(), '처음부터 = 저장 지움'); }
 
 console.log(`story-p1 loop: ${pass} pass / ${fail} fail`); process.exit(fail ? 1 : 0);

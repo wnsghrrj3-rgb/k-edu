@@ -134,6 +134,7 @@ export class Story {
       if (st.timelapse) { await this.timelapse(st.timelapse); continue; }
       if (st.dig) { await this.dig(st.dig); continue; }
       if (st.restore) { this.restoreScene(); continue; }
+      if (st.review) { await this.review(this.g.world.review); continue; }
       if (st.card) { await new Promise((res) => g.ui.open(`<div class="chk">${st.card.tag ? `<div class="tag">${st.card.tag}</div>` : ''}${st.card.icon ? `<div style="font-size:44px;text-align:center;margin:6px 0">${st.card.icon}</div>` : ''}<h3>${st.card.title || ''}</h3>${(st.card.body || []).map((b) => `<p>${b}</p>`).join('')}${st.card.items ? '<ul class="mlist">' + st.card.items.map((x) => `<li>${x}</li>`).join('') + '</ul>' : ''}${st.card.sub ? `<p class="sub">${st.card.sub}</p>` : ''}</div>`, [{ label: st.card.button || '…', primary: true, onClick: () => { g.ui.close(); res(); } }])); continue; }
       if (st.check) { await new Promise((res) => { const run = () => g.ui.check(st.check, null, (results) => { g.results = [...(g.results || []), ...results]; res(); }, () => { g.ui.say(st.check.revisitSay || '다시 보자.', 3000); run(); }); run(); }); continue; }
       if (st.reveal) { await new Promise((res) => g.ui.open(`<div class="chk"><div class="tag">${st.reveal.tag || '이 시대의 이름'}</div><h3 style="font-size:30px;letter-spacing:2px">${st.reveal.name}</h3>${(st.reveal.body || []).map((b) => `<p>${b}</p>`).join('')}</div>`, [{ label: st.reveal.button || '알겠어', primary: true, onClick: () => { g.ui.close(); res(); } }])); continue; }
@@ -175,6 +176,18 @@ export class Story {
       await cut(g, [{ pos: [c.x + 2, y + 9, c.z + 13], look: [c.x, y, c.z], sec: 0.01 }, { pos: [c.x + 1.5, y + 3.2, c.z + 4.6], look: [c.x - 0.3, y - 1.0, c.z], sec: this.fast ? 0.01 : 4.5, ease: 'inout' }], { release: false });
     }
     g.ui.say(a.say || '삽이 땅을 걷어낸다.', 3600); await sleep(1800);
+  }
+  /** 시대 정리 — 이번 시대에서 알게 된 것을 하나씩 되짚는다: 발견마다 「왜 필요했지?」(인과) + 열린 한 줄 → 시대 정리 카드. 결과는 g.results(개념 코드) */
+  async review(r) {
+    if (!r) return; const g = this.g; const J = g.world.journal || {};
+    const got = (r.items || []).filter((it) => g.flags.has('journal:' + it.journal));
+    await new Promise((res) => g.ui.open(`<div class="chk"><div class="tag">${r.tag || '정리'}</div><h3>${r.intro || '이번에 알게 된 것들'}</h3><ul class="mlist">${got.map((it) => `<li><b>${J[it.journal]?.title || it.journal}</b></li>`).join('')}</ul><p class="sub">${r.sub || '하나씩 되짚어 보자. 왜 그게 필요했는지.'}</p></div>`, [{ label: '되짚기', primary: true, onClick: () => { g.ui.close(); res(); } }]));
+    const questions = got.map((it) => ({ id: 'rv:' + it.journal, type: 'choice', concept: it.concept || ('hist.' + it.journal), q: it.q, options: it.options, answer: it.answer ?? 0, revisit: it.revisit || 'camp', revisitText: it.revisitText || (J[it.journal]?.note || '') }));
+    if (r.open) questions.push({ id: 'rv:open', type: 'open', concept: r.open.concept || 'hist.reflect', q: r.open.q });
+    await new Promise((res) => { const run = () => g.ui.check({ questions, intro: '', done: '' }, null, (results) => { g.results = [...(g.results || []), ...results]; res(); }, () => { g.ui.say(r.revisitSay || '탐험일지를 다시 떠올려 보자.', 3000); run(); }); run(); });
+    const okN = questions.filter((q) => q.type === 'choice').length; const gotOk = (g.results || []).filter((x) => String(x.id).startsWith('rv:') && x.ok).length;
+    g.flag(r.flag || 'era:review');
+    await new Promise((res) => g.ui.open(`<div class="chk"><div class="tag">${r.card?.tag || '시대 정리 카드'}</div><h3>${r.card?.title || ''}</h3>${(r.card?.body || []).map((b) => `<p>${b}</p>`).join('')}<ul class="mlist">${got.map((it) => `<li><b>${J[it.journal]?.title}</b><div class="mhint">${J[it.journal]?.note || ''}</div></li>`).join('')}</ul><p class="sub">되짚기 ${gotOk}/${okN} · ${r.card?.question || ''}</p></div>`, [{ label: r.card?.button || '알겠어', primary: true, onClick: () => { g.ui.close(); res(); } }]));
   }
   /** 컷신 뒤 세상 되돌리기(「더 둘러보기」) */
   restoreScene() {
@@ -233,6 +246,6 @@ export class Story {
   showEnd(end) {
     const g = this.g; g.p.enabled = false;
     g.ui.open(`<div class="chk"><div class="tag">${end.tag || 'TO BE CONTINUED'}</div><h3>${end.title}</h3>${(end.body || []).map((b) => `<p>${b}</p>`).join('')}${end.next ? `<p class="sub">${end.next}</p>` : ''}</div>`,
-      [{ label: end.button || '더 둘러보기', primary: true, onClick: () => { g.ui.close(); g.p.enabled = true; } }]);
+      [...(g.world.gate ? [{ label: g.world.gate.ready ? `${g.world.gate.nextName}로 가기` : `${g.world.gate.nextName}로 (준비 중)`, primary: true, onClick: () => { const gt = g.world.gate; if (gt.ready) { const u = new URL(location.href); u.searchParams.set('era', gt.next); location.href = u.toString(); } else g.ui.say(`${gt.nextName}는 다음에 열려. 오늘은 여기까지야.`, 4000); } }] : []), { label: end.button || '더 둘러보기', primary: !g.world.gate, onClick: () => { g.ui.close(); g.p.enabled = true; } }]);
   }
 }
