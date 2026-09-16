@@ -44,11 +44,13 @@ export class Player {
   teleport(v) { this.pos.set(v.x, this.e.groundY(v.x, v.z) + this.eye, v.z); }
   update(dt) {
     const cam = this.e.camera; const k = this.keys;
-    let mx = 0, mz = 0;
+    // 좌우 = 옆걸음이 아니라 **몸을 트는 것**(09-16 준호): A/←·조이스틱 왼쪽 → 왼쪽으로 돌고, D/→·오른쪽 → 오른쪽으로 돈다. 앞뒤만 걷는다.
+    let mx = 0, mz = 0, turn = 0;
     if (this.enabled) {
       if (k.KeyW || k.ArrowUp) mz += 1; if (k.KeyS || k.ArrowDown) mz -= 1;
-      if (k.KeyA || k.ArrowLeft) mx -= 1; if (k.KeyD || k.ArrowRight) mx += 1;
-      mx += this.joy.x; mz -= this.joy.y;
+      if (k.KeyA || k.ArrowLeft) turn += 1; if (k.KeyD || k.ArrowRight) turn -= 1;
+      turn -= this.joy.x; mz -= this.joy.y;
+      if (turn) this.yaw += turn * 2.2 * dt;
     }
     const L = Math.hypot(mx, mz);
     this.moving = L > 0.01;
