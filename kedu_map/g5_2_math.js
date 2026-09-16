@@ -335,104 +335,104 @@ window.KEDU_MAP["g5_2_math"] = {
    "kind": "unit",
    "lessons": [
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u4_l01",
+     "lessonId": "g5_2_math_u4_l01",
      "n": "1",
      "title": "소수의 곱셈을 만나 보자",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/4단원_소수의곱셈/g5_math_u4_l01_소수의곱셈을만나보자.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u4_l02",
+     "lessonId": "g5_2_math_u4_l02",
      "n": "2",
      "title": "(소수)×(자연수)를 계산해요 ①",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/4단원_소수의곱셈/g5_math_u4_l02_소수곱하기자연수를계산해요1.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u4_l03",
+     "lessonId": "g5_2_math_u4_l03",
      "n": "3",
      "title": "(소수)×(자연수)를 계산해요 ②",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/4단원_소수의곱셈/g5_math_u4_l03_소수곱하기자연수를계산해요2.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u4_l04",
+     "lessonId": "g5_2_math_u4_l04",
      "n": "4",
      "title": "(자연수)×(소수)를 계산해요 ①",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/4단원_소수의곱셈/g5_math_u4_l04_자연수곱하기소수를계산해요1.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u4_l05",
+     "lessonId": "g5_2_math_u4_l05",
      "n": "5",
      "title": "(자연수)×(소수)를 계산해요 ②",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/4단원_소수의곱셈/g5_math_u4_l05_자연수곱하기소수를계산해요2.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u4_l06",
+     "lessonId": "g5_2_math_u4_l06",
      "n": "6",
      "title": "(소수)×(소수)를 계산해요 ①",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/4단원_소수의곱셈/g5_math_u4_l06_소수곱하기소수를계산해요1.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u4_l07",
+     "lessonId": "g5_2_math_u4_l07",
      "n": "7",
      "title": "(소수)×(소수)를 계산해요 ②",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/4단원_소수의곱셈/g5_math_u4_l07_소수곱하기소수를계산해요2.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u4_l08",
+     "lessonId": "g5_2_math_u4_l08",
      "n": "8",
      "title": "곱의 소수점 위치를 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/4단원_소수의곱셈/g5_math_u4_l08_곱의소수점위치를알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u4_l09",
+     "lessonId": "g5_2_math_u4_l09",
      "n": "9",
      "title": "지구를 지켜! 탄소 중립 생활",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/4단원_소수의곱셈/g5_math_u4_l09_지구를지켜탄소중립생활.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u4_l10",
+     "lessonId": "g5_2_math_u4_l10",
      "n": "10",
      "title": "스스로 마무리해요 (단원 평가)",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/4단원_소수의곱셈/g5_math_u4_l10_스스로마무리해요.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   },
