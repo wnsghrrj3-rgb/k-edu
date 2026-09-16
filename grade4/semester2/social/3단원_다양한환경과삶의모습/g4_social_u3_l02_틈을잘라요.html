@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<!--
+=========================================================================
+  사회 4-2 · 3단원 다양한 환경과 삶의 모습
+  주제① 지역의 환경과 변화 · l02
+  「산이 많은 지역의 특징과 변화 모습을 살펴볼까요」
+  교과서 p.111~113 · 지도서 3차시(p.206~211) · [4사10-01]
+  수업 기법 = 그림 해석하기 · 돌아가며 말하기
+=========================================================================
+
+  ■ 직접조작 = 이야기 사이의 틈을 자르는 판 (옛날·오늘날 조각 나누기)
+  ⭐ 앞 스물네 판(1단원 l01~l11 · 2단원 l01~l11 · 3단원 l01)에서 학생은 판에 놓인 것
+     — 카드·칸·줄 — 을 눌렀다. 이번 판은 거기가 다르다 — 학생은 이야기와 이야기 사이의 「틈」을 누른다.
+  ⭐ 이어 붙인 이야기 여섯 조각(CF_ATOM)에서 어느 틈을 잘라야 하는지 적어 둔 상수가 코드에 없다(CF_NEED 부재).
+     조각은 자른 틈에서 그때그때 만들어지고(cfPieces), 조각을 칸에 놓을 수 있는지는 오직
+     「조각 안 이야기의 때가 하나인가」로 정해진다(cfMixed 한 줄).
+     ★ 옛날·오늘날이 바뀌는 첫째~셋째 틈은 꼭 잘라야 하고, 오늘날 이야기끼리 붙은 넷째·다섯째 틈은
+       잘라도 되고 안 잘라도 된다 — 다 놓는 자름은 네 갈래이고, 네 갈래 모두 두 칸의 이야기가 글자까지 같다.
+     근거 = 교과서 111~112쪽 산이 많은 지역의 특징과 변화 + 113쪽 일기(평창의 옛날과 오늘날).
+  ⭐ 칸 상태 0 — 칸은 놓은 조각(cfPut)과 cfWhenOf 로 그때그때 그린다. 자른 틈을 다시 붙이는 자리 0 ·
+     놓은 조각 안의 틈은 봉인 · 옛날과 오늘날이 바뀌는 틈 표시(cfTurn)는 판을 읽은 뒤에만 선다.
+
+  ■ 4단계
+   ① 틈 자르기 → 조각 고르기 → 칸에 놓기(섞인 조각·어긋난 칸이면 조각 그대로) → 여섯 조각을 다 놓으면 끝
+   ② 판 읽기 3택(정답 자리 2 = 「옛날 이야기와 오늘날 이야기가 바뀌는 틈이에요」)
+   ③ 마무리 3택(정답 자리 1 = 교과서 정리)
+   ④ 완료 — 산이 많은 지역에서 가 보고 싶은 장소를 친구들과 돌아가며 말하는 일은 교실 몫
+
+  ■ 가드 14종
+   ① 마무리 확정 후 다섯 처리기 전체 잠금   ② 무효 번호(Number.isInteger·범위)
+   ③ 이미 자른 틈 — 판 불변                   ④ 놓은 조각 안의 봉인된 틈 — 판 불변
+   ⑤ 이미 놓은 조각 고르기 — 판 불변          ⑥ 이미 고른 조각 다시 고르기 — 판 불변
+   ⑦ 고르기 전 놓기 — 판 불변                 ⑧ 때가 섞인 조각 놓기 — 조각 그대로
+   ⑨ 어긋난 칸 — 조각 그대로(안내에 칸 이름 0)
+   ⑩ 다 놓기 전 판 읽기 — 판 불변             ⑪ 이미 읽은 자리 다시 읽기 — 판 불변
+   ⑫ 판 읽기 어긋난 답 — 판 불변              ⑬ 판을 읽기 전 마무리 — 판 불변
+   ⑭ 마무리 어긋난 답 — 판 불변
+
+  ■ 정직 3곳
+   ㉠ 여섯 조각은 교과서 112~113쪽 내용을 옛날·오늘날이 번갈아 나오게 판이 이어 붙여 옮긴 이야기다(캡션 상시).
+   ㉡ 일기 원문은 교과서 몫 — 화면은 일기의 내용만 옮긴다.
+   ㉢ 산이 많은 지역에서 가 보고 싶은 장소와 그 까닭을 쓰고 돌아가며 말하는 일은 교실 몫.
+
+  ■ 설계 원칙
+   · 4~5차시 침범 0(들이 펼쳐진 지역은 차시 예고 한 자리 · 바다가 있는 지역 0)
+   · 6~7차시 침범 0(개발·간척 0) · 주제② 침범 0(도시 0) · 2단원·1단원 재현 0
+   · 교사용 참고 자료 0(우리나라의 산 해설·국립공원·지정 연도 전수) · 평창 외 실제 지역 이름 0 · 연도 0 · 「틀렸」 0
+-->
+<html lang="ko">
+<head>
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>산이 많은 지역의 특징과 변화 모습을 살펴볼까요 · 사회 4-2</title>
+<meta name="kedu-lesson-id" content="g4_social_u3_l02_v1">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#0891B2; --green-d:#0E7490; --cyan:#0D9488;
+  --bg:#ECFEFF; --bub:#CFFAFE; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#F57F17; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes drawLine{to{transform:scaleX(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ka-lb{background:#F1F5F9;border:none;padding:7px 12px;border-radius:10px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;font-family:inherit;font-weight:700;color:#475569;flex-shrink:0;font-size:13px}
+.ka-lb svg{width:15px;height:15px}
+.ka-bar{flex:1;height:5px;background:var(--bg);border-radius:999px;overflow:hidden}
+.ka-bar>div{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:999px;transition:width .35s ease;width:6%}
+.ka-pg{color:var(--green);font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;flex-shrink:0}
+.ka-sc{background:var(--amber-bg);color:var(--amber);padding:4px 12px;border-radius:999px;display:flex;align-items:center;gap:5px;flex-shrink:0;font-weight:700}
+.ka-sc svg{width:14px;height:14px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px}
+.ka-sc-u{font-size:12px}
+
+/* 메인 */
+.ka-m{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow-y:auto}
+.ka-tags{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ka-bg{background:var(--amber-bg);color:var(--amber);padding:5px 14px;border-radius:30px;font-size:13px;
+  display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.ka-bg.s2{background:#E0F2FE;color:#0369A1}
+.ka-bg.s3{background:#EDE9FE;color:#6D28D9}
+.ka-bg.s4{background:#FCE7F3;color:#BE185D}
+.ka-bg.s5{background:#CFFAFE;color:var(--green)}
+.ka-bg svg{width:13px;height:13px}
+.ka-meta{font-size:13px;color:var(--muted)}
+.ka-t{font-size:clamp(20px,3.4vw,29px);margin-bottom:16px;line-height:1.4;color:var(--green);letter-spacing:-.3px;font-weight:700;animation:fadeUp .4s .15s ease both}
+.ka-bub{background:var(--bub);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);line-height:1.7;
+  margin-bottom:16px;border-left:4px solid var(--green);animation:fadeUp .4s .3s ease both}
+.ka-emph{position:relative;display:inline-block;font-weight:700;color:var(--green)}
+.ka-emph::after{content:'';position:absolute;bottom:2px;left:0;right:0;height:3px;background:var(--red);border-radius:2px;transform:scaleX(0);transform-origin:left;animation:drawLine .6s .6s ease forwards}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(16px,2.6vw,21px);font-weight:700;line-height:1.6;margin-bottom:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:640px}
+.opt{background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:13px 14px;font-size:clamp(14px,2.3vw,17px);
+  font-weight:500;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:var(--green);background:#CFFAFE;animation:pop .4s ease}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;font-size:clamp(14px,2.3vw,17px);line-height:1.6;text-align:center;animation:fadeUp .35s ease both;max-width:640px}
+.fb.ok{color:var(--green);font-weight:700}
+.hint{margin-top:12px;background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(13px,2.2vw,16px);
+  line-height:1.6;color:#0C4A6E;max-width:560px;animation:fadeUp .35s ease both}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:620px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFF;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:clamp(14px,2.3vw,17px);line-height:1.5}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(8,145,178,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+/* 조작 판 — 이야기 사이의 틈을 자르는 판 (옛날·오늘날 조각 나누기) */
+.cf-wrap{max-width:780px;width:100%;margin:0 auto}
+.cf-head{background:#CFFAFE;color:#155E75;font-weight:800;text-align:center;border-radius:10px;padding:7px 10px;
+  font-size:clamp(13px,2.1vw,16px);margin-bottom:8px;word-break:keep-all}
+.cf-line{display:flex;flex-wrap:wrap;align-items:stretch;gap:0;row-gap:8px;padding:4px 0}
+.cf-atom{border:2px solid #67E8F9;background:#ECFEFF;color:#155E75;font-family:inherit;font-weight:700;cursor:pointer;
+  padding:7px 9px;font-size:clamp(13px,2.1vw,16px);line-height:1.45;text-align:left;word-break:keep-all;border-radius:0;margin:0}
+.cf-atom[data-first="1"]{border-top-left-radius:11px;border-bottom-left-radius:11px}
+.cf-atom[data-last="1"]{border-top-right-radius:11px;border-bottom-right-radius:11px}
+.cf-atom[data-picked="1"]{background:#FEF3C7;color:#78350F;border-color:#F59E0B}
+.cf-atom[data-placed="1"]{background:#F1F5F9;color:#94A3B8;border-color:#CBD5E1;cursor:default}
+.cf-gap{border:none;background:transparent;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  width:28px;font-size:15px;color:#0E7490;padding:0;margin:0 1px}
+.cf-gap[data-cut="1"]{width:22px;color:#CBD5E1;cursor:default}
+.cf-gap[data-seal="1"]{color:#CBD5E1;cursor:default}
+.cf-gap[data-turn="1"]{color:#DC2626;font-weight:800}
+.cf-shelf{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}
+.cf-box{border:2px dashed #A5F3FC;border-radius:12px;padding:9px 11px;background:#fff;min-height:64px;font-size:clamp(13px,2.1vw,16px);
+  line-height:1.6;font-family:inherit;text-align:left;cursor:pointer;color:var(--ink)}
+.cf-box:hover{background:#F0FDFA}
+.cf-box b{color:#0E7490;display:block;margin-bottom:2px}
+.cf-tell{margin-top:8px;border-radius:12px;padding:9px 13px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;background:#F0FDFA;border-left:4px solid var(--cyan)}
+.cf-ask{border:2px solid var(--line);border-radius:12px;padding:10px 14px;background:#F8FEFF;margin-top:9px;font-size:clamp(13px,2.2vw,16px);line-height:1.6}
+.cf-opts{display:grid;grid-template-columns:1fr;gap:8px;margin-top:9px}
+.cf-opt{background:#F8FAFC;border:2px solid var(--line);border-radius:11px;padding:10px 12px;font-family:inherit;
+  font-size:clamp(13px,2.2vw,16px);cursor:pointer;text-align:left;line-height:1.5;word-break:keep-all}
+.cf-opt:hover{border-color:var(--green);background:var(--bub)}
+.diary{background:#FFFBEB;border:2px solid #FCD34D;border-radius:12px;padding:12px 16px;font-size:clamp(14px,2.3vw,17px);line-height:1.8;max-width:640px}
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+  .cf-shelf{grid-template-columns:1fr}
+  .cf-gap{width:24px}
+}
+</style>
+
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#F57F17"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식, 사람 형상 대신 칸과 모양 ===== */
+const SVG = {
+  // [동기 유발] 산이 많은 지역
+  mount:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <path d="M 4 74 L 40 22 L 70 60 L 96 30 L 156 74 Z" fill="#16A34A"/>
+    <path d="M 32 34 L 40 22 L 48 34 Z M 88 42 L 96 30 L 104 42 Z" fill="#F8FAFC"/>
+    <path d="M 70 60 Q 74 68 70 74" stroke="#0284C7" stroke-width="2.4" fill="none"/>
+    <text x="80" y="90" font-size="7" fill="#0E7490" text-anchor="middle" font-weight="800">숲 · 산봉우리 · 계곡</text></svg>`,
+  // 산이 많은 지역에서 볼 수 있는 것
+  see:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <path d="M 0 70 L 50 30 L 100 70 Z" fill="#22C55E"/>
+    <rect x="104" y="52" width="40" height="18" fill="#FDE68A" stroke="#A16207"/><path d="M 104 58 L 144 58 M 118 52 L 118 70" stroke="#A16207"/>
+    <line x1="132" y1="16" x2="132" y2="46" stroke="#64748B" stroke-width="2"/>
+    <path d="M 132 18 L 122 12 M 132 18 L 142 12 M 132 18 L 132 30" stroke="#475569" stroke-width="2"/>
+    <text x="80" y="88" font-size="6.8" fill="#0E7490" text-anchor="middle" font-weight="800">목장 · 풍력 발전기</text></svg>`,
+  // 사람들이 하는 일
+  work:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <path d="M 10 70 L 70 24 L 70 70 Z" fill="#65A30D"/>
+    <path d="M 26 64 L 62 36 M 34 66 L 66 42 M 44 68 L 68 50" stroke="#FDE68A" stroke-width="2"/>
+    <ellipse cx="104" cy="60" rx="10" ry="6" fill="#A16207"/><rect x="101" y="60" width="6" height="10" fill="#FEF3C7"/>
+    <ellipse cx="130" cy="58" rx="12" ry="7" fill="#78350F"/><rect x="127" y="58" width="6" height="12" fill="#FEF3C7"/>
+    <text x="80" y="88" font-size="6.8" fill="#0E7490" text-anchor="middle" font-weight="800">산비탈 밭 · 약초와 버섯</text></svg>`,
+  // 변화 모습 — 스키장
+  ski:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <path d="M 6 74 L 70 18 L 134 74 Z" fill="#F8FAFC" stroke="#94A3B8"/>
+    <line x1="40" y1="66" x2="92" y2="26" stroke="#475569" stroke-width="1.4"/>
+    <rect x="120" y="54" width="30" height="20" fill="#FCA5A5" stroke="#B91C1C"/><path d="M 118 54 L 135 44 L 152 54 Z" fill="#B91C1C"/>
+    <text x="80" y="90" font-size="6.8" fill="#0E7490" text-anchor="middle" font-weight="800">스키장 · 숙박 시설</text></svg>`,
+  // 틈 자르기
+  snip:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <rect x="8" y="28" width="44" height="22" rx="4" fill="#FEF9C3" stroke="#A16207"/>
+    <rect x="58" y="28" width="44" height="22" rx="4" fill="#E0F2FE" stroke="#0369A1"/>
+    <rect x="108" y="28" width="44" height="22" rx="4" fill="#FEF9C3" stroke="#A16207"/>
+    <text x="55" y="22" font-size="9" fill="#DC2626" text-anchor="middle">✂</text><text x="105" y="22" font-size="9" fill="#DC2626" text-anchor="middle">✂</text>
+    <text x="80" y="72" font-size="6.8" fill="#155E75" text-anchor="middle" font-weight="800">이야기 사이의 틈을 잘라</text>
+    <text x="80" y="85" font-size="6.8" fill="#155E75" text-anchor="middle" font-weight="800">두 칸에 나누어 놓아요</text></svg>`,
+  // 일기
+  diary:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <rect x="42" y="10" width="76" height="66" rx="4" fill="#FFFBEB" stroke="#F59E0B" stroke-width="1.6"/>
+    <path d="M 52 26 L 108 26 M 52 36 L 108 36 M 52 46 L 108 46 M 52 56 L 96 56" stroke="#FCD34D" stroke-width="2"/>
+    <text x="80" y="90" font-size="7" fill="#0E7490" text-anchor="middle" font-weight="800">평창에 다녀온 일기</text></svg>`,
+  done:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <circle cx="80" cy="46" r="26" fill="#CFFAFE" stroke="#0891B2" stroke-width="2.4"/>
+    <path d="M 68 46 L 76 55 L 93 37" stroke="#0891B2" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="80" y="86" font-size="7.4" fill="#155E75" text-anchor="middle" font-weight="800">특징과 변화를 알았어요</text></svg>`
+};
+function sceneCard(key,cap){return `<div class="scene">${SVG[key]}<div class="cap">${cap}</div></div>`;}
+
+/* ===== 직접 조작: 이야기 사이의 틈을 자르는 판 (옛날·오늘날 조각 나누기) =====
+   ⭐ 잘라야 할 틈을 적어 둔 상수가 없다 — 조각은 자른 틈에서 그때그때 만들어지고(cfPieces),
+      칸에 놓을 수 있는지는 cfMixed 한 줄(조각 안 이야기의 때가 둘이면 어느 칸에도 못 놓음)이 가른다.
+   ⭐ ★ 넷째·다섯째 틈은 잘라도 되고 안 잘라도 된다 — 다 놓는 자름 네 갈래 모두 두 칸 이야기가 글자까지 같다.
+   ⭐ 칸은 놓은 조각과 cfWhenOf 로 그때그때 그린다(칸 상태 0) · 자른 틈을 붙이는 자리 0 · 놓은 조각 안 틈은 봉인. */
+const CF_ATOM = [
+  "옛날 평창에는 산비탈에 밭이 많았는데",
+  "요즘에는 스키장이 생겼어",
+  "옛날에는 사람들이 주로 옥수수와 감자 농사를 지었는데",
+  "요즘에는 관광객이 크게 늘었어",
+  "사람들이 하는 일도 달라졌지",
+  "스키장 주변에 식당이나 숙박 시설이 생겼거든"
+];
+const CF_WHEN = [0,1,0,1,1,1];                  // 0 = 옛날 · 1 = 오늘날
+const CF_SLOT = ["옛날","오늘날"];
+const CF_SAY_CUTDONE = "이미 자른 틈이에요. 판은 그대로예요.";
+const CF_SAY_SEAL = "칸에 놓은 조각 안의 틈이에요. 판은 그대로예요.";
+const CF_SAY_PUTDONE = "이미 칸에 놓은 조각이에요. 판은 그대로예요.";
+const CF_SAY_PICKDONE = "이미 고른 조각이에요. 놓을 칸을 눌러 봐요.";
+const CF_SAY_NOPICK = "먼저 칸에 놓을 조각을 골라 봐요.";
+const CF_SAY_MIXED = "이 조각 안에는 때가 다른 이야기가 함께 붙어 있어요. 조각은 그대로예요. 틈을 더 잘라 봐요.";
+const CF_SAY_MISS = "조각은 그대로예요. 이야기 속에서 때를 알려 주는 말을 다시 읽어 봐요.";
+const CF_SAY_ORDER_R = "먼저 조각을 모두 칸에 놓아 봐요.";
+const CF_SAY_READDONE = "이미 정한 자리예요. 판은 그대로예요.";
+const CF_SAY_ORDER_FIN = "먼저 판을 읽어 봐요.";
+const CF_TELL_PUT = "조각을 칸에 놓았어요. 칸의 이야기는 조각 차례대로 이어져요.";
+const CF_READQ = [
+  "이야기의 한가운데에 있는 틈이에요",
+  "맨 앞에서부터 차례대로 있는 모든 틈이에요",
+  "옛날 이야기와 오늘날 이야기가 바뀌는 틈이에요"
+];
+const CF_READ_OK = 2;
+const CF_READ_BAD = "어떻게 잘라도 늘 잘려 있어야 했던 틈이 어디였는지 떠올려 봐요.";
+const CF_FINQ = [
+  "산이 많은 지역은 옛날과 오늘날의 모습이 똑같아요",
+  "산이 많은 지역에는 울창한 숲과 산봉우리, 계곡 등이 있고, 사람들이 여가 활동을 즐길 수 있도록 만든 스키장이나 캠핑장 등을 볼 수 있어요",
+  "산이 많은 지역에는 사람들이 만든 시설이 하나도 없어요"
+];
+const CF_FIN_OK = 1;
+const CF_FIN_BAD = "오늘 살펴본 산이 많은 지역의 모습과 변화를 떠올려 봐요.";
+
+function cfN(){ return CF_ATOM.length; }
+function cfWhenOf(a){ return CF_WHEN[a]; }                                  // ⭐ CF_WHEN 을 읽는 자리는 여기 단 하나
+function cfCutAt(st,k){ return st.cfCut.indexOf(k) >= 0; }
+function cfPieces(st){ const ps=[]; let s=0; for(let a=0;a<cfN();a++){ if(a===cfN()-1 || cfCutAt(st,a)){ ps.push([s,a]); s=a+1; } } return ps; }
+function cfPieceOf(st,a){ return cfPieces(st).find(p=>p[0]<=a && a<=p[1]); }
+function cfAtomsOf(st,a){ const p=cfPieceOf(st,a); const r=[]; for(let x=p[0];x<=p[1];x++) r.push(x); return r; }
+function cfMixed(st,a){ return new Set(cfAtomsOf(st,a).map(cfWhenOf)).size > 1; }      // ⭐ 놓을 수 있는지는 이 한 줄이 정한다
+function cfPlaced(st,a){ return st.cfPut.indexOf(cfPieceOf(st,a)[0]) >= 0; }
+function cfPutN(st){ return st.cfPut.reduce((n,s)=>n + cfAtomsOf(st,s).length, 0); }
+function cfAllPut(st){ return cfPutN(st) === cfN(); }
+function cfTurn(k){ return cfWhenOf(k) !== cfWhenOf(k+1); }
+function cfSlotText(st,m){ const as=[]; st.cfPut.forEach(s=>cfAtomsOf(st,s).forEach(a=>{ if(cfWhenOf(a)===m) as.push(a); })); return as.sort((x,y)=>x-y).map(a=>CF_ATOM[a]).join(' · '); }
+function cfStage(st){
+  if(!cfAllPut(st)) return "cut";
+  if(st.cfRead == null) return "read";
+  if(st.cfFin == null) return "fin";
+  return "end";
+}
+
+/* 이야기 줄 — 조각과 틈 */
+function cfLine(st){
+  let cells = '';
+  for(let a=0;a<cfN();a++){
+    const p = cfPieceOf(st,a);
+    const placed = cfPlaced(st,a) ? 1 : 0, picked = (st.cfPick===p[0] && !placed) ? 1 : 0;
+    cells += `<button class="cf-atom" data-atom="${a}" data-piece="${p[0]}" data-first="${a===p[0]?1:0}" data-last="${a===p[1]?1:0}" data-placed="${placed}" data-picked="${picked}" onclick="cfPick(${a})">${CF_ATOM[a]}</button>`;
+    if(a < cfN()-1){
+      const cut = cfCutAt(st,a) ? 1 : 0, seal = (!cut && placed) ? 1 : 0, turn = (st.cfRead!=null && cfTurn(a)) ? 1 : 0;
+      cells += `<button class="cf-gap" data-gap="${a}" data-cut="${cut}" data-seal="${seal}" data-turn="${turn}" onclick="cfSnip(${a})" title="틈">${cut?'｜':'✂'}</button>`;
+    }
+  }
+  return `<div class="cf-line" data-cut="${st.cfCut.length}" data-put="${cfPutN(st)}">${cells}</div>`;
+}
+function cfShelf(st){
+  const box = (m)=>{ const t = cfSlotText(st,m);
+    return `<button class="cf-box" data-slot="${m}" onclick="cfPlace(${m})"><b>${CF_SLOT[m]}</b>${t || '<span class="note">아직 비어 있어요</span>'}</button>`; };
+  return `<div class="cf-shelf">${box(0)}${box(1)}</div>`;
+}
+
+function cfPanel(st){
+  const stage = cfStage(st);
+  let ask = '';
+  if(stage === "cut"){
+    ask = `<div class="cf-ask" data-step="cut"><b>✂ 틈을 눌러 자르고, 조각을 골라 알맞은 칸에 놓아 봐요.</b>
+      <div class="note" style="text-align:left;margin-top:5px">어느 틈부터 잘라도 괜찮아요. 한 조각 안에 때가 다른 이야기가 붙어 있으면 어느 칸에도 놓을 수 없어요.</div></div>`;
+  } else if(stage === "read"){
+    ask = `<div class="cf-ask" data-step="read"><b>조각을 다 놓았어요. 넷째·다섯째 틈은 잘라도, 자르지 않아도 두 칸의 이야기가 똑같아요. 그렇다면 꼭 잘라야 했던 틈은 어떤 틈일까요?</b>
+      <div class="cf-opts">${CF_READQ.map((t,i)=>`<button class="cf-opt" onclick="cfRead(${i})">${t}</button>`).join('')}</div></div>`;
+  } else if(stage === "fin"){
+    ask = `<div class="cf-ask" data-step="fin"><b>그렇다면 오늘 공부한 것은 무엇일까요?</b>
+      <div class="cf-opts">${CF_FINQ.map((t,i)=>`<button class="cf-opt" onclick="cfFin(${i})">${t}</button>`).join('')}</div></div>`;
+  } else {
+    ask = `<div class="cf-ask" data-fin="1" style="border-color:#86EFAC;background:#F0FDF4">
+      <b style="color:#166534">산이 많은 지역에는 울창한 숲과 산봉우리, 계곡 등이 있고, 스키장이 생기면서 관광객이 늘고 사람들이 하는 일도 달라졌어요.</b>
+      빨갛게 표시된 틈이 옛날과 오늘날이 바뀌는 자리예요.
+      <div class="note" style="text-align:left;margin-top:5px">※ 산이 많은 지역에서 가 보고 싶은 장소와 그 까닭을 친구들과 돌아가며 말해 보는 일은 <b>교실 몫</b>이에요. 판은 대신 정해 주지 않아요.</div></div>`;
+  }
+  const tell = st.cfTell ? `<div class="cf-tell">${st.cfTell}</div>` : '';
+  const warn = st.cfMsg ? `<div class="fb" style="color:#DC2626;font-weight:700">${st.cfMsg}</div>` : '';
+  return `<div class="cf-wrap">
+    <div class="cf-head">옛날·오늘날 조각 나누기 · 자른 틈 <b>${st.cfCut.length}</b> · 놓은 이야기 <b>${cfPutN(st)}</b> / ${cfN()} · ${cfAllPut(st)?"다 놓았어요":"나누는 중"}</div>
+    ${cfLine(st)}${cfShelf(st)}${tell}${ask}${warn}
+    <div class="note" style="margin-top:8px">※ 이 이야기는 교과서 112~113쪽 내용을 옛날·오늘날이 <b>번갈아 나오게</b> 판이 이어 붙여 옮긴 것이에요. 일기의 원래 글은 교과서에서 읽어 봐요.</div>
+  </div>`;
+}
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "3단원 다양한 환경과 삶의 모습 · 주제① 지역의 환경과 변화";
+const Q = [
+  {stem:"산이 많은 지역에서 볼 수 있는 자연환경의 모습으로 알맞은 것은 무엇인가요?",
+   opts:["넓은 갯벌","울창한 숲과 산봉우리, 계곡","높은 건물이 모인 거리","넓은 모래사장"], correct:1, pts:POINTS_BASIC,
+   h1:"자연 그대로 생겨난 것 가운데 산에서 볼 수 있는 것을 찾아봐요.", h2:"나무가 빽빽한 숲과 물이 흐르는 골짜기를 떠올려 봐요.",
+   reason:"산이 많은 지역에는 울창한 숲과 산봉우리, 계곡 등이 있어요."},
+  {stem:"산이 많은 지역에서 바람으로 전기를 만들어 내는 시설은 무엇인가요?",
+   opts:["목장","스키장","풍력 발전기","캠핑장"], correct:2, pts:POINTS_BASIC,
+   h1:"바람의 힘을 이용하는 시설이에요.", h2:"커다란 날개가 바람에 돌아가요.",
+   reason:"산이 많은 지역에서는 바람으로 전기를 만들어 내는 풍력 발전기를 볼 수 있어요."},
+  {stem:"산이 많은 지역의 사람들이 하는 일로 알맞은 것은 무엇인가요?",
+   opts:["배를 타고 나가 물고기를 잡아요","갯벌에서 조개를 캐요","큰 배를 만드는 공장에서 일해요","산비탈에 밭을 만들어 농사를 짓거나 약초와 버섯을 재배해요"], correct:3, pts:POINTS_BASIC,
+   h1:"산의 기울어진 땅을 어떻게 이용할지 떠올려 봐요.", h2:"산에서 잘 자라는 것을 기르는 일이에요.",
+   reason:"산이 많은 지역의 사람들은 산비탈에 밭을 만들어 농사를 짓거나 약초와 버섯을 재배해요."},
+  {stem:"사람들이 여가 활동을 즐길 수 있도록 산이 많은 지역에 만든 곳은 무엇인가요?",
+   opts:["스키장이나 캠핑장, 삼림욕장","등대와 방파제","소금을 만드는 곳","비행기가 뜨고 내리는 곳"], correct:0, pts:POINTS_BASIC,
+   h1:"쉬는 날 놀러 가서 즐기는 곳이에요.", h2:"눈 위에서 타거나, 텐트를 치거나, 숲에서 맑은 공기를 마시는 곳이에요.",
+   reason:"산이 많은 지역에서는 사람들이 여가 활동을 즐길 수 있도록 만든 스키장이나 캠핑장, 삼림욕장 등을 볼 수 있어요."},
+  {stem:"스키장 주변에 식당이나 숙박 시설이 생긴 까닭으로 알맞은 것은 무엇인가요?",
+   opts:["산봉우리가 더 높아졌기 때문이에요","계곡의 물이 많아졌기 때문이에요","농사지을 밭이 늘었기 때문이에요","찾아오는 관광객에게 음식을 팔거나 숙소를 빌려주려고요"], correct:3, pts:POINTS_APPLY,
+   h1:"스키장이 생기면 누가 많이 찾아올까요?", h2:"찾아온 사람들은 밥을 먹고 잠잘 곳이 필요해요.",
+   reason:"사람들은 스키장 주변에 식당이나 숙박 시설을 지어 관광객에게 음식을 팔거나 숙소를 빌려줘요."},
+  {stem:"일기에 나타난 평창의 옛날 모습으로 알맞은 것은 무엇인가요?",
+   opts:["산비탈에 밭이 많았고, 사람들은 주로 옥수수와 감자 농사를 지었어요","스키장이 생겨 관광객이 크게 늘었어요","스키장 주변에 숙박 시설이 생겼어요","사람들이 하는 일이 달라졌어요"], correct:0, pts:POINTS_APPLY,
+   h1:"「옛날」이라는 말이 붙은 이야기를 찾아봐요.", h2:"스키장이 생기기 전의 모습이에요.",
+   reason:"평창의 옛날에는 산비탈에 밭이 많았고, 사람들은 주로 옥수수와 감자 농사를 지었어요."},
+  {stem:"이야기를 옛날 칸과 오늘날 칸에 나눌 때 꼭 잘라야 했던 틈은 어떤 틈인가요?",
+   opts:["이야기의 한가운데에 있는 틈이에요","옛날 이야기와 오늘날 이야기가 바뀌는 틈이에요","맨 앞에서부터 차례대로 있는 모든 틈이에요","조각이 가장 짧아지는 틈이에요"], correct:1, pts:POINTS_APPLY,
+   h1:"넷째·다섯째 틈은 자르지 않아도 됐어요. 그 틈 양쪽은 어떤 이야기였나요?", h2:"한 조각 안에 때가 둘이면 어느 칸에도 놓을 수 없었어요.",
+   reason:"옛날 이야기와 오늘날 이야기가 바뀌는 틈은 꼭 잘라야 해요. 오늘날 이야기끼리 붙은 틈은 잘라도, 자르지 않아도 돼요."},
+  {stem:"오늘 공부한 내용으로 알맞은 것은 무엇인가요?",
+   opts:["산이 많은 지역은 옛날과 오늘날의 모습이 똑같아요","산이 많은 지역에는 사람들이 만든 시설이 하나도 없어요","산이 많은 지역에는 울창한 숲과 산봉우리, 계곡 등이 있고, 사람들이 여가 활동을 즐길 수 있도록 만든 스키장이나 캠핑장 등을 볼 수 있어요","산이 많은 지역에는 바다와 갯벌이 넓게 있어요"], correct:2, pts:POINTS_APPLY,
+   h1:"오늘 살펴본 자연환경과 변화 모습을 함께 떠올려 봐요.", h2:"일기 속 평창에는 무엇이 생겼나요?",
+   reason:"산이 많은 지역에는 울창한 숲과 산봉우리, 계곡 등이 있고, 사람들이 여가 활동을 즐길 수 있도록 만든 스키장이나 캠핑장 등을 볼 수 있어요."}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — 동기 유발
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">산이 많은 지역을 본 적이 있나요?</h2>
+  <div class="ka-bub">가족과 여행을 가거나 체험 학습을 갔을 때 <b>산이 많은 지역</b>을 본 적이 있나요? 그때 어떤 느낌이 들었는지 떠올려 봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('mount','산이 많은 지역')}</div>
+    <div class="note">오늘은 <b>산이 많은 지역의 특징과 변화 모습</b>을 살펴봐요.</div>
+  </div>`});
+// 2 살펴보기 — 특징 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">산이 많은 지역에는 어떤 특징이 있나요?</h2>
+  <div class="ka-bub">교과서 111쪽 그림에서 산이 많은 지역의 <span class="ka-emph">자연환경</span>과 <b>인문환경</b>을 찾아봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('mount','자연환경')}${sceneCard('see','인문환경')}</div>
+  ${st.revealed?`<div class="answer-box">· 산이 많은 지역에는 <b>울창한 숲과 산봉우리, 계곡</b> 등이 있어요.<br>· 소나 양 등을 기르는 <b>목장</b>, 바람으로 전기를 만들어 내는 <b>풍력 발전기</b> 등을 볼 수 있어요.</div>`
+    :`<div class="note">교과서 그림을 <b>직접</b> 살펴본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 3 살펴보기 — 하는 일
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">산이 많은 지역의 사람들은 어떤 일을 하나요?</h2>
+  <div class="ka-bub">사람들은 <span class="ka-emph">산비탈에 밭</span>을 만들어 농사를 짓거나 <b>약초와 버섯</b>을 재배해요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('work','산비탈 밭 · 약초와 버섯')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>목장에서 소나 양을 길러요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div>산비탈에 밭을 만들어 농사를 지어요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>약초와 버섯을 재배해요.</div></div>
+  </div>
+  <div class="note">※ <b>산비탈</b>은 산에 가파르게 기울어져 있는 곳이에요.</div></div>`});
+// 4 살펴보기 — 변화 모습·스스로 활동 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">산이 많은 지역의 모습은 어떻게 변화하고 있나요?</h2>
+  <div class="ka-bub">산이 많은 지역에서는 물을 저장하거나 전기를 만들어 내는 댐을 볼 수 있어요. 또 사람들이 <span class="ka-emph">여가 활동</span>을 즐길 수 있도록 만든 <b>스키장이나 캠핑장, 삼림욕장</b> 등을 볼 수 있어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('ski','스키장 · 숙박 시설')}</div>
+  <div class="note"><b>스스로 활동</b> — 산이 많은 지역에서 가 보고 싶은 장소와 그 까닭은 무엇인가요?</div>
+  ${st.revealed?`<div class="answer-box">· 사람들은 스키장 주변에 <b>식당이나 숙박 시설</b>을 지어 관광객에게 음식을 팔거나 숙소를 빌려줘요.<br>· 예) <b>삼림욕장</b> — 숲속에서 상쾌한 공기를 마실 수 있기 때문이에요.</div>`
+    :`<div class="note">가 보고 싶은 장소를 먼저 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 5 살펴보기 — 조작 안내
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">옛날·오늘날 조각 나누기를 해 봐요</h2>
+  <div class="ka-bub">평창의 옛날 이야기와 오늘날 이야기가 <b>한 줄로 이어 붙어</b> 있어요. 이야기 사이의 <b>틈(✂)</b>을 잘라 조각을 만들고, 조각을 <b>옛날 칸</b>과 <b>오늘날 칸</b>에 나누어 놓아요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('snip','틈을 잘라 나누어요')}</div>
+  <div class="note">어느 틈을 자를지는 <b>내가</b> 정해요. 틈을 <b>모두</b> 잘라야만 할까요? 나누며 살펴봐요.</div></div>`});
+// 6 살펴보기 — 직접 조작
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">이야기의 틈을 잘라 두 칸에 나누어요</h2>
+  <div class="ka-grp" style="align-items:stretch">${cfPanel(st)}</div>`});
+// 7 살펴보기 — 일기 활동 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">일기를 읽고, 산이 많은 지역의 변화 모습을 알아봐요</h2>
+  <div class="ka-bub">교과서 113쪽에는 가족과 함께 <span class="ka-emph">아버지의 고향인 평창</span>에 다녀와서 쓴 일기가 있어요. 아버지께서는 평창의 모습이 많이 달라졌다고 하셨어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('diary','평창에 다녀온 일기')}</div>
+  <div class="note">① 평창의 옛날과 오늘날 모습은 어떤가요? ② 스키장이 생기면서 평창에 어떤 변화가 나타났을까요?</div>
+  ${st.revealed?`<div class="answer-box">· <b>옛날</b> — 산비탈에 밭이 많았고, 사람들은 주로 옥수수와 감자 농사를 지었어요.<br>· <b>오늘날</b> — 스키장이 생겨서 관광객이 크게 늘었고, 사람들이 하는 일도 달라졌어요.<br>· <b>변화</b> — 예) 스키장 주변에 식당이나 숙박 시설이 생겨났을 거예요.</div>`
+    :`<div class="note">교과서의 일기를 <b>직접</b> 읽어 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부한 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('done','특징과 변화를 알았어요')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div><b>특징</b> — 울창한 숲과 산봉우리, 계곡 등이 있어요. 목장이나 풍력 발전기 등을 볼 수 있고, 사람들은 산비탈에 밭을 만들어 농사를 짓기도 해요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b>변화 모습</b> — 사람들이 여가 활동을 즐길 수 있도록 만든 스키장을 볼 수 있어요. 사람들은 스키장 주변에 식당이나 숙박 시설을 짓기도 해요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b style="color:#0891B2">들이 펼쳐진 지역의 특징과 변화 모습</b>을 살펴봐요.</div></div>`});
+// 17 스스로 돌아보기
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"산이 많은 지역의 자연환경과 인문환경을 말할 수 있어요",st)}
+    ${selfCheck(1,"산이 많은 지역의 사람들이 하는 일을 말할 수 있어요",st)}
+    ${selfCheck(2,"스키장이 생기면서 나타난 변화를 설명할 수 있어요",st)}
+  </div><div class="note">체크가 잘 안 되는 곳은 <b>다시 살펴봐도</b> 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">산이 많은 지역을 살펴봤어요</h2>
+  <div class="ka-grp">
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">산이 많은 지역에서 가 보고 싶은 장소를 교실에서 친구들과 <b style="color:#0891B2">돌아가며</b> 말해 봐요.</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const optHTML = q.opts.map((o,k)=>{
+    let cls='opt';
+    if(qs.done && k===q.correct) cls+=' correct';
+    if(qs.wrongPick===k) cls+=' wrong';
+    return `<button class="${cls}" onclick="pick(${i},${k})" ${qs.done?'disabled':''}>${o}</button>`;
+  }).join('');
+  const hint = qs.hint>0 ? `<div class="hint">💡 ${qs.hint===1?q.h1:q.h2}</div>` : '';
+  const fb = qs.done ? `<div class="fb ok">✓ ${q.reason}</div>` : '';
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용':'확인'} (+${q.pts})</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    <div class="opts" style="margin:0 auto">${optHTML}</div>
+    ${hint}${fb}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g4_2_social_u3_l02";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  cfCut:[], cfPick:null, cfPut:[], cfRead:null, cfFin:null, cfMsg:"", cfTell:"",
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 →';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음 (브라우저에서만 · jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+function cfDraw(){ main.innerHTML = slides[state.idx].render(state); }
+
+/* 틈 자르기 — 어느 틈부터 잘라도 된다 · 자른 틈을 다시 붙이는 자리는 없다 */
+function cfSnip(k){
+  if(state.cfFin!=null) return;                                        // 가드①: 마무리 확정 후 전체 잠금
+  if(!Number.isInteger(k) || k<0 || k>=cfN()-1) return;                // 가드②: 무효 번호 — 안내조차 띄우지 않음
+  if(cfCutAt(state,k)){ state.cfMsg = CF_SAY_CUTDONE; playThud(); cfDraw(); return; }         // 가드③: 이미 자른 틈 — 판 불변
+  if(cfPlaced(state,k)){ state.cfMsg = CF_SAY_SEAL; playThud(); cfDraw(); return; }           // 가드④: 놓은 조각 안의 틈 — 봉인
+  state.cfCut.push(k);                                                 // ⭐ 자르는 자리는 코드에 여기 단 하나
+  state.cfPick = null; state.cfMsg = ""; state.cfTell = ""; playBlip(); cfDraw();
+}
+/* 조각 고르기 — 이야기를 누르면 그 이야기가 든 조각을 고른다 */
+function cfPick(a){
+  if(state.cfFin!=null) return;                                        // 가드①
+  if(!Number.isInteger(a) || a<0 || a>=cfN()) return;                  // 가드②
+  if(cfPlaced(state,a)){ state.cfMsg = CF_SAY_PUTDONE; playThud(); cfDraw(); return; }        // 가드⑤: 이미 놓은 조각 — 판 불변
+  if(state.cfPick === cfPieceOf(state,a)[0]){ state.cfMsg = CF_SAY_PICKDONE; cfDraw(); return; }   // 가드⑥: 이미 고른 조각 — 판 불변
+  state.cfPick = cfPieceOf(state,a)[0];
+  state.cfMsg = ""; state.cfTell = ""; playBlip(); cfDraw();
+}
+/* 칸에 놓기 — 0 = 옛날 칸 · 1 = 오늘날 칸 */
+function cfPlace(m){
+  if(state.cfFin!=null) return;                                        // 가드①
+  if(!Number.isInteger(m) || m<0 || m>1) return;                       // 가드②
+  if(state.cfPick==null){ state.cfMsg = CF_SAY_NOPICK; playThud(); cfDraw(); return; }        // 가드⑦: 고르기 전 놓기 — 판 불변
+  if(cfMixed(state,state.cfPick)){ state.cfMsg = CF_SAY_MIXED; state.cfTell = ""; playThud(); cfDraw(); return; }   // 가드⑧: 때가 섞인 조각 — 조각 그대로
+  if(cfWhenOf(state.cfPick)!==m){ state.cfMsg = CF_SAY_MISS; state.cfTell = ""; playThud(); cfDraw(); return; }     // 가드⑨: 어긋난 칸 — 조각 그대로
+  state.cfPut.push(state.cfPick);                                      // ⭐ 놓는 자리는 코드에 여기 단 하나 · 거두는 자리 0
+  state.cfPick = null; state.cfMsg = ""; state.cfTell = CF_TELL_PUT; playBlip(); cfDraw();
+}
+/* 판 읽기 */
+function cfRead(i){
+  if(state.cfFin!=null) return;                                        // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=CF_READQ.length) return;         // 가드②
+  if(!cfAllPut(state)){ state.cfMsg = CF_SAY_ORDER_R; playThud(); cfDraw(); return; }         // 가드⑩: 다 놓기 전 — 판 불변
+  if(state.cfRead!=null){ state.cfMsg = CF_SAY_READDONE; cfDraw(); return; }                  // 가드⑪: 이미 정한 자리 — 판 불변
+  if(i!==CF_READ_OK){ state.cfMsg = CF_READ_BAD; playThud(); cfDraw(); return; }              // 가드⑫: 어긋난 답 — 판 불변
+  state.cfRead = i; state.cfMsg = ""; state.cfTell = ""; playBlip(); cfDraw();
+}
+/* 마무리 */
+function cfFin(i){
+  if(state.cfFin!=null) return;                                        // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=CF_FINQ.length) return;          // 가드②
+  if(state.cfRead==null){ state.cfMsg = CF_SAY_ORDER_FIN; playThud(); cfDraw(); return; }     // 가드⑬: 판을 읽기 전 — 판 불변
+  if(i!==CF_FIN_OK){ state.cfMsg = CF_FIN_BAD; playThud(); cfDraw(); return; }                // 가드⑭: 어긋난 답 — 판 불변
+  state.cfFin = i; state.cfMsg = ""; playChime(); cfDraw();
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true; qs.wrongPick=null;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2; if(qs.hint===2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">📘 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 →</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // l03 미양산 — 허브 복귀
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
+</html>
