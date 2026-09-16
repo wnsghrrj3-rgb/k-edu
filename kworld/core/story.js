@@ -14,7 +14,7 @@ export class Story {
     for (const n of this.s.people || []) this.place({ ...n, prop: 'person', name: 'npc_' + n.id });
     // ?peek=1 — 자산 확인용: world.people 에 있는 사람들을 시작 지점 앞에 한 명씩 세워 둔다(이야기 깃발 무시)
     if (typeof location !== 'undefined' && new URLSearchParams(location.search).get('peek') === '1' && this.s.spawn && this.g.world.people) {
-      let i = 0; for (const key of Object.keys(this.g.world.people)) { this.place({ id: key + '0', kind: key, x: this.s.spawn[0] + (i++ - 1) * 1.6, z: this.s.spawn[1] + 4, yaw: Math.PI,   // 플레이어는 야영지(+z) 쪽을 보고 시작한다 prop: 'person', name: 'npc_' + key + '0' }); }
+      let i = 0; for (const key of Object.keys(this.g.world.people)) { this.place({ id: key + '0', kind: key, x: this.s.spawn[0] + (i++ - 1) * 1.6, z: this.s.spawn[1] + 4, yaw: Math.PI, prop: 'person', name: 'npc_' + key + '0' }); }   // 플레이어는 야영지(+z) 쪽을 보고 시작한다
     }
     for (const [k, v] of Object.entries(this.s.areas || {})) e.areas.set(k, new THREE.Vector3(v[0], e.groundY(v[0], v[1]), v[1]));
     e.onFrame.push((dt) => this.tick(dt));
