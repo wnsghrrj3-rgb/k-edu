@@ -278,14 +278,14 @@ window.KEDU_MAP["g4_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_social_u3_l04",
+     "lessonId": "g4_social_u3_l04_v1",
      "n": "4",
      "title": "바다가 있는 지역의 특징과 변화 모습을 살펴볼까요",
      "sub": "① 지역의 환경과 변화",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/social/3단원_다양한환경과삶의모습/g4_social_u3_l04_들어온만큼.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,

@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<!--
+=========================================================================
+  사회 4-2 · 3단원 다양한 환경과 삶의 모습
+  주제① 지역의 환경과 변화 · l04
+  「바다가 있는 지역의 특징과 변화 모습을 살펴볼까요」
+  교과서 p.117~119 · 지도서 5차시(p.219~225) · [4사10-01]
+  수업 기법 = 그림 해석하기 · 돌아가며 말하기
+=========================================================================
+
+  ■ 직접조작 = 들어온 만큼만 나가는 판 (배로 원료를 실어 오고 제품을 실어 나가기)
+  ⭐ 앞 스물여섯 판은 판에 무엇을 놓거나(놓기) 자르거나(l02) 덮었다(l03). 이번 판에는 놓을 자리가 없다 —
+     학생은 「일」 셋(배가 원료를 싣고 들어와요 · 공장이 원료로 제품을 만들어요 · 배가 제품을 싣고 나가요)을 누를 뿐이다.
+  ⭐ 짐의 수를 담는 상태가 코드에 없다 — 배 기록 shLog 한 줄만 있고, 배에 실린 원료 · 항구에 내린 원료 ·
+     공장에서 만든 제품 · 실어 나간 제품의 수는 shN 한 줄이 기록을 그때그때 세어 정한다.
+     그래서 「들어오지 않은 원료로 만든 제품」이나 「만들지 않은 제품을 실어 보내기」는 만들어질 수 없다.
+  ⭐ 누를 수 있는지는 shCan 한 줄이 정한다 — 차례를 정해 둔 상수는 없다(판이 정한 차례 0).
+     어떤 차례로 눌러도 되고(끝까지 가는 차례 42갈래), 끝나면 언제나 배에 실린 원료 0 · 항구 0 · 공장 0 · 나간 제품 3.
+     근거 = 교과서 118쪽 울산의 변화와 그 까닭(바다와 가까워 배를 이용해 원료와 제품을 실어 나를 수 있음).
+  ⭐ 기록을 적는 자리 state.shLog.push 단 하나 · 지우는 자리 0 · 판 읽기는 제품이 모두 나간 뒤에만.
+
+  ■ 4단계
+   ① 일 누르기(실어 오기 · 만들기 · 실어 나가기, 차례 자유 · 판정 0) → 제품 셋이 모두 나갈 때까지
+   ② 판 읽기 3택(정답 자리 1 = 「원료가 배로 들어온 만큼만 제품을 만들어 실어 보낼 수 있으니…」)
+   ③ 마무리 3택(정답 자리 0 = 교과서 정리) → 완료 — 사진 두 장의 차이점을 직접 찾아 쓰는 일은 교실 몫
+
+  ■ 가드 10종
+   ① 마무리 확정 후 세 처리기 전체 잠금      ② 무효 번호(Number.isInteger·범위)
+   ③ 실어 올 원료가 없는데 실어 오기 — 판 불변 ④ 항구에 원료가 없는데 만들기 — 판 불변
+   ⑤ 만든 제품이 없는데 실어 나가기 — 판 불변 ⑥ 제품이 다 나가기 전 판 읽기 — 판 불변
+   ⑦ 이미 읽은 자리 다시 읽기 — 판 불변       ⑧ 판 읽기 어긋난 답 — 판 불변
+   ⑨ 판을 읽기 전 마무리 — 판 불변             ⑩ 마무리 어긋난 답 — 판 불변
+
+  ■ 정직 3곳
+   ㉠ 판은 교과서 118쪽 울산의 변화 모습과 그 까닭을 짐 세 개로 줄여 옮긴 것 — 실제 원료·제품의 이름과 양은 다르다(캡션 상시).
+   ㉡ 교과서 사진에 적힌 만든 해·마을 이름은 옮기지 않는다(옛날 사진 · 요즘 사진).
+   ㉢ 사진 두 장의 차이점을 직접 찾아 써 보는 일은 교실 몫.
+
+  ■ 설계 원칙
+   · 6~7차시 침범 0(개발은 차시 예고 한 자리 · 간척 0) · 주제② 침범 0(도시·교통·산업 0)
+   · l02·l03 재현 0(산이 많은·들이 펼쳐진 0) · 2단원·1단원 재현 0
+   · 교사용 참고 자료 0(해안선·조차·검은 모래·갯벌 기능·람사르·누리집 해설 전수) · 울산 외 실제 지역 이름 0 · 연도 0 · 「틀렸」 0
+-->
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>바다가 있는 지역의 특징과 변화 모습을 살펴볼까요 · 사회 4-2</title>
+<meta name="kedu-lesson-id" content="g4_social_u3_l04_v1">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#0891B2; --green-d:#0E7490; --cyan:#0D9488;
+  --bg:#ECFEFF; --bub:#CFFAFE; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#F57F17; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes drawLine{to{transform:scaleX(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ka-lb{background:#F1F5F9;border:none;padding:7px 12px;border-radius:10px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;font-family:inherit;font-weight:700;color:#475569;flex-shrink:0;font-size:13px}
+.ka-lb svg{width:15px;height:15px}
+.ka-bar{flex:1;height:5px;background:var(--bg);border-radius:999px;overflow:hidden}
+.ka-bar>div{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:999px;transition:width .35s ease;width:6%}
+.ka-pg{color:var(--green);font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;flex-shrink:0}
+.ka-sc{background:var(--amber-bg);color:var(--amber);padding:4px 12px;border-radius:999px;display:flex;align-items:center;gap:5px;flex-shrink:0;font-weight:700}
+.ka-sc svg{width:14px;height:14px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px}
+.ka-sc-u{font-size:12px}
+
+/* 메인 */
+.ka-m{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow-y:auto}
+.ka-tags{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ka-bg{background:var(--amber-bg);color:var(--amber);padding:5px 14px;border-radius:30px;font-size:13px;
+  display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.ka-bg.s2{background:#E0F2FE;color:#0369A1}
+.ka-bg.s3{background:#EDE9FE;color:#6D28D9}
+.ka-bg.s4{background:#FCE7F3;color:#BE185D}
+.ka-bg.s5{background:#CFFAFE;color:var(--green)}
+.ka-bg svg{width:13px;height:13px}
+.ka-meta{font-size:13px;color:var(--muted)}
+.ka-t{font-size:clamp(20px,3.4vw,29px);margin-bottom:16px;line-height:1.4;color:var(--green);letter-spacing:-.3px;font-weight:700;animation:fadeUp .4s .15s ease both}
+.ka-bub{background:var(--bub);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);line-height:1.7;
+  margin-bottom:16px;border-left:4px solid var(--green);animation:fadeUp .4s .3s ease both}
+.ka-emph{position:relative;display:inline-block;font-weight:700;color:var(--green)}
+.ka-emph::after{content:'';position:absolute;bottom:2px;left:0;right:0;height:3px;background:var(--red);border-radius:2px;transform:scaleX(0);transform-origin:left;animation:drawLine .6s .6s ease forwards}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(16px,2.6vw,21px);font-weight:700;line-height:1.6;margin-bottom:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:640px}
+.opt{background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:13px 14px;font-size:clamp(14px,2.3vw,17px);
+  font-weight:500;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:var(--green);background:#CFFAFE;animation:pop .4s ease}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;font-size:clamp(14px,2.3vw,17px);line-height:1.6;text-align:center;animation:fadeUp .35s ease both;max-width:640px}
+.fb.ok{color:var(--green);font-weight:700}
+.hint{margin-top:12px;background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(13px,2.2vw,16px);
+  line-height:1.6;color:#0C4A6E;max-width:560px;animation:fadeUp .35s ease both}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:620px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFF;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:clamp(14px,2.3vw,17px);line-height:1.5}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(8,145,178,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+/* 조작 판 — 들어온 만큼만 나가는 판 (배로 실어 오고 실어 나가기) */
+.sh-wrap{max-width:780px;width:100%;margin:0 auto}
+.sh-head{background:#CFFAFE;color:#155E75;font-weight:800;text-align:center;border-radius:10px;padding:7px 10px;
+  font-size:clamp(13px,2.1vw,16px);margin-bottom:8px;word-break:keep-all}
+.sh-board{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:8px;border-radius:14px;background:#F0FDFA;border:2px solid #A5F3FC}
+.sh-zone{border:2px solid #CBD5E1;border-radius:10px;min-height:86px;background:#fff;display:flex;flex-direction:column;align-items:center;
+  justify-content:space-between;gap:4px;padding:6px 4px;text-align:center;word-break:keep-all}
+.sh-zone[data-zone="wait"],.sh-zone[data-zone="gone"]{background:#E0F2FE;border-color:#7DD3FC}
+.sh-zone[data-zone="dock"]{background:#FEF9C3;border-color:#FDE047}
+.sh-zone[data-zone="made"]{background:#FCE7F3;border-color:#F9A8D4}
+.sh-zone b{font-size:clamp(12px,1.9vw,15px);line-height:1.3;color:var(--ink)}
+.sh-zone i{font-style:normal;font-size:clamp(11px,1.7vw,13px);color:#475569;font-weight:700}
+.sh-dots{display:flex;gap:4px;justify-content:center;min-height:16px;flex-wrap:wrap}
+.sh-dot{width:14px;height:14px;border-radius:3px;background:#A16207;display:inline-block}
+.sh-dot[data-kind="good"]{background:#BE185D;border-radius:50%}
+.sh-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:9px}
+.sh-btn{border:2px solid #0891B2;background:#ECFEFF;color:#155E75;border-radius:11px;padding:9px 6px;font-family:inherit;font-weight:800;
+  font-size:clamp(12px,2vw,15px);cursor:pointer;word-break:keep-all;line-height:1.35}
+.sh-btn[data-can="0"]{border-color:#CBD5E1;background:#F8FAFC;color:#94A3B8}
+.sh-trail{margin-top:9px;border:2px solid var(--line);border-radius:11px;padding:7px 9px;background:#fff;display:flex;align-items:center;gap:8px}
+.sh-trail b{flex-shrink:0;color:#0E7490;font-size:clamp(12px,2vw,15px)}
+.sh-steps{display:grid;grid-template-columns:repeat(9,1fr);gap:4px;flex:1}
+.sh-step{border:1.5px dashed #CBD5E1;border-radius:7px;min-height:26px;display:flex;align-items:center;justify-content:center;
+  font-size:clamp(10px,1.6vw,13px);font-weight:700;color:#334155;word-break:keep-all}
+.sh-step[data-step="0"]{border-style:solid;border-color:#7DD3FC;background:#E0F2FE}
+.sh-step[data-step="1"]{border-style:solid;border-color:#F9A8D4;background:#FCE7F3}
+.sh-step[data-step="2"]{border-style:solid;border-color:#0891B2;background:#CFFAFE}
+.sh-tell{margin-top:8px;border-radius:12px;padding:9px 13px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;background:#F0FDFA;border-left:4px solid var(--cyan)}
+.sh-ask{border:2px solid var(--line);border-radius:12px;padding:10px 14px;background:#F8FEFF;margin-top:9px;font-size:clamp(13px,2.2vw,16px);line-height:1.6}
+.sh-opts{display:grid;grid-template-columns:1fr;gap:8px;margin-top:9px}
+.sh-opt{background:#F8FAFC;border:2px solid var(--line);border-radius:11px;padding:10px 12px;font-family:inherit;
+  font-size:clamp(13px,2.2vw,16px);cursor:pointer;text-align:left;line-height:1.5;word-break:keep-all}
+.sh-opt:hover{border-color:var(--green);background:var(--bub)}
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+  .sh-board{grid-template-columns:repeat(2,1fr)}
+  .sh-btns{grid-template-columns:1fr}
+  .sh-steps{grid-template-columns:repeat(5,1fr)}
+}
+</style>
+
+</head>
+
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#F57F17"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식, 사람 형상 대신 칸과 모양 ===== */
+const SVG = {
+  // [동기 유발] 바다가 있는 지역
+  sea:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <rect x="0" y="22" width="160" height="34" fill="#7DD3FC"/>
+    <path d="M 0 30 Q 20 26 40 30 T 80 30 T 120 30 T 160 30 M 0 42 Q 20 38 40 42 T 80 42 T 120 42 T 160 42" stroke="#E0F2FE" stroke-width="1.6" fill="none"/>
+    <path d="M 0 56 Q 40 50 80 58 T 160 54 L 160 80 L 0 80 Z" fill="#FDE68A"/>
+    <text x="80" y="92" font-size="7" fill="#0E7490" text-anchor="middle" font-weight="800">바다와 모래사장</text></svg>`,
+  // 특징 — 항구와 양식장
+  port:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <rect x="0" y="14" width="160" height="50" fill="#BAE6FD"/>
+    <rect x="10" y="44" width="54" height="10" fill="#94A3B8"/><path d="M 22 40 L 50 40 L 44 46 L 28 46 Z" fill="#0369A1"/>
+    <g stroke="#0E7490" stroke-width="1.2" fill="none"><rect x="92" y="22" width="18" height="14"/><rect x="114" y="22" width="18" height="14"/><rect x="92" y="40" width="18" height="14"/><rect x="114" y="40" width="18" height="14"/></g>
+    <rect x="0" y="64" width="160" height="16" fill="#FDE68A"/>
+    <text x="80" y="92" font-size="6.8" fill="#0E7490" text-anchor="middle" font-weight="800">항구 · 양식장</text></svg>`,
+  // 하는 일
+  work:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <rect x="14" y="16" width="62" height="28" rx="4" fill="#BAE6FD" stroke="#0369A1"/><path d="M 30 34 L 58 34 L 52 40 L 36 40 Z" fill="#0369A1"/>
+    <rect x="84" y="16" width="62" height="28" rx="4" fill="#E0F2FE" stroke="#0E7490"/><g stroke="#0E7490"><path d="M 92 30 L 138 30"/><path d="M 100 22 L 100 38 M 115 22 L 115 38 M 130 22 L 130 38"/></g>
+    <rect x="14" y="50" width="62" height="28" rx="4" fill="#FDE68A" stroke="#A16207"/><circle cx="45" cy="64" r="6" fill="#F97316"/>
+    <rect x="84" y="50" width="62" height="28" rx="4" fill="#FCE7F3" stroke="#BE185D"/><path d="M 98 64 Q 108 56 122 64 Q 108 72 98 64 Z M 122 64 L 130 58 L 130 70 Z" fill="#BE185D"/>
+    <text x="80" y="92" font-size="6.8" fill="#0E7490" text-anchor="middle" font-weight="800">그림 속 사람들이 하는 일</text></svg>`,
+  // 변화 — 바닷가 공장과 배
+  change:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <rect x="0" y="54" width="160" height="26" fill="#7DD3FC"/>
+    <rect x="16" y="30" width="30" height="24" fill="#CBD5E1" stroke="#475569"/><rect x="50" y="22" width="30" height="32" fill="#CBD5E1" stroke="#475569"/>
+    <rect x="58" y="10" width="6" height="12" fill="#64748B"/><rect x="88" y="34" width="40" height="20" fill="#E2E8F0" stroke="#475569"/>
+    <path d="M 104 62 L 146 62 L 138 72 L 112 72 Z" fill="#0369A1"/><rect x="116" y="56" width="10" height="6" fill="#A16207"/>
+    <text x="80" y="90" font-size="6.8" fill="#0E7490" text-anchor="middle" font-weight="800">바닷가에 생겨난 공장과 배</text></svg>`,
+  // 판 안내
+  ship:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <rect x="0" y="40" width="46" height="40" fill="#7DD3FC"/><path d="M 6 56 L 40 56 L 34 64 L 12 64 Z" fill="#0369A1"/>
+    <rect x="50" y="40" width="40" height="40" fill="#FEF9C3" stroke="#CA8A04"/><rect x="62" y="54" width="14" height="14" rx="2" fill="#A16207"/>
+    <rect x="96" y="30" width="44" height="50" fill="#FCE7F3" stroke="#BE185D"/><circle cx="118" cy="60" r="7" fill="#BE185D"/>
+    <path d="M 24 34 Q 50 18 70 36" stroke="#0891B2" stroke-width="1.6" fill="none"/>
+    <text x="80" y="92" font-size="6.8" fill="#155E75" text-anchor="middle" font-weight="800">실어 오고 · 만들고 · 실어 나가요</text></svg>`,
+  // 별별 직업
+  job:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <rect x="0" y="10" width="160" height="70" fill="#38BDF8"/>
+    <circle cx="40" cy="34" r="4" fill="#E0F2FE"/><circle cx="48" cy="24" r="3" fill="#E0F2FE"/><circle cx="120" cy="30" r="5" fill="#E0F2FE"/>
+    <path d="M 60 50 Q 72 42 86 50 Q 72 58 60 50 Z M 86 50 L 94 44 L 94 56 Z" fill="#FDE68A"/>
+    <path d="M 20 80 Q 26 60 32 80 M 128 80 Q 134 56 140 80" stroke="#15803D" stroke-width="3" fill="none"/>
+    <circle cx="110" cy="72" r="6" fill="#7C2D12"/>
+    <text x="80" y="92" font-size="6.8" fill="#0E7490" text-anchor="middle" font-weight="800">바닷속 생물을 조사해요</text></svg>`,
+  done:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <circle cx="80" cy="46" r="26" fill="#CFFAFE" stroke="#0891B2" stroke-width="2.4"/>
+    <path d="M 68 46 L 76 55 L 93 37" stroke="#0891B2" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="80" y="86" font-size="7.4" fill="#155E75" text-anchor="middle" font-weight="800">특징과 변화를 알았어요</text></svg>`
+};
+function sceneCard(key,cap){return `<div class="scene">${SVG[key]}<div class="cap">${cap}</div></div>`;}
+
+/* ===== 직접 조작: 들어온 만큼만 나가는 판 (배로 실어 오고 실어 나가기) =====
+   ⭐ 짐의 수를 담는 상태가 없다 — 배 기록 shLog 한 줄만 있고, 바다·항구·공장·나간 짐의 수는
+      shN 한 줄이 기록을 그때그때 세어 정한다. 그래서 「들어오지 않은 원료로 만든 제품」은 만들어질 수 없다.
+   ⭐ 누를 수 있는지도 셈 한 줄이 정한다 — 항구에 원료가 있어야 만들고, 공장에 제품이 있어야 실어 나간다.
+   ⭐ 기록을 적는 자리 state.shLog.push 단 하나 · 지우는 자리 0 · 판 읽기는 제품이 모두 나간 뒤에만. */
+const SH_LOAD = 3;                                   // 배로 실어 올 원료의 수
+const SH_STEP = ["in","make","out"];                 // 누를 수 있는 일 셋
+const SH_BTN = ["배가 원료를 싣고 들어와요","공장이 원료로 제품을 만들어요","배가 제품을 싣고 나가요"];
+const SH_MARK = ["들어옴","만듦","나감"];
+const SH_SAY_NOWAIT = "배에 실어 올 원료가 더 없어요. 판은 그대로예요.";
+const SH_SAY_NODOCK = "항구에 내린 원료가 없어요. 판은 그대로예요.";
+const SH_SAY_NOMADE = "배에 실어 보낼 제품이 없어요. 판은 그대로예요.";
+const SH_SAY_ORDER_R = "먼저 제품을 모두 배로 실어 보내 봐요.";
+const SH_SAY_READDONE = "이미 정한 자리예요. 판은 그대로예요.";
+const SH_SAY_ORDER_FIN = "먼저 판을 읽어 봐요.";
+const SH_TELL = ["배가 원료를 싣고 들어와 항구에 내렸어요.","공장이 원료 하나로 제품 하나를 만들었어요.","배가 제품을 싣고 바다로 나갔어요."];
+const SH_READQ = [
+  "배가 드나들지 않아도 공장에는 원료가 저절로 쌓여요",
+  "원료가 배로 들어온 만큼만 제품을 만들어 실어 보낼 수 있으니, 배가 드나드는 바닷가는 공장을 세우기 좋은 곳이에요",
+  "제품은 원료가 들어오기 전에도 얼마든지 배로 실어 보낼 수 있어요"
+];
+const SH_READ_OK = 1;
+const SH_READ_BAD = "판에서 공장이 제품을 만들 수 있었던 때를 떠올려 봐요.";
+const SH_FINQ = [
+  "바다가 있는 지역에는 갯벌이나 모래사장, 항구, 양식장 등이 있고, 배를 이용해 원료와 제품을 실어 나를 수 있어 공업이 발달하기도 해요",
+  "바다가 있는 지역 사람들은 옛날부터 요즘까지 고기잡이만 해요",
+  "바다가 있는 지역에서는 배가 드나드는 항구를 볼 수 없어요"
+];
+const SH_FIN_OK = 0;
+const SH_FIN_BAD = "오늘 살펴본 바다가 있는 지역의 특징과 변화 모습을 떠올려 봐요.";
+
+function shN(st,k){ return st.shLog.filter(x=>x===k).length; }                // ⭐ 배 기록을 세는 자리는 여기 단 하나
+function shWait(st){ return SH_LOAD - shN(st,"in"); }                          // 배에 실린 원료
+function shDock(st){ return shN(st,"in") - shN(st,"make"); }                   // 항구에 내린 원료
+function shMade(st){ return shN(st,"make") - shN(st,"out"); }                  // 공장에서 만든 제품
+function shGone(st){ return shN(st,"out"); }                                   // 실어 나간 제품
+function shAllGone(st){ return shGone(st) === SH_LOAD; }
+function shCan(st,i){ return i===0 ? shWait(st)>0 : (i===1 ? shDock(st)>0 : shMade(st)>0); }   // ⭐ 누를 수 있는지는 이 한 줄
+function shStage(st){
+  if(!shAllGone(st)) return "run";
+  if(st.shRead == null) return "read";
+  if(st.shFin == null) return "fin";
+  return "end";
+}
+
+/* 판 — 네 자리 */
+function shDots(n,kind){ let s=''; for(let j=0;j<n;j++) s += `<span class="sh-dot" data-kind="${kind}"></span>`; return s; }
+function shBoard(st){
+  const zone = (z,name,n,kind)=>`<div class="sh-zone" data-zone="${z}" data-n="${n}"><b>${name}</b><div class="sh-dots">${shDots(n,kind)}</div><i>${n}개</i></div>`;
+  return `<div class="sh-board">${zone('wait','배에 실린 원료',shWait(st),'raw')}${zone('dock','항구에 내린 원료',shDock(st),'raw')}${zone('made','공장에서 만든 제품',shMade(st),'good')}${zone('gone','실어 나간 제품',shGone(st),'good')}</div>`;
+}
+function shBtns(st){
+  return `<div class="sh-btns">${SH_BTN.map((t,i)=>`<button class="sh-btn" data-act="${i}" data-can="${shCan(st,i)?1:0}" onclick="shAct(${i})">${t}</button>`).join('')}</div>`;
+}
+function shTrail(st){
+  let s = '';
+  for(let j=0;j<SH_LOAD*SH_STEP.length;j++){
+    const k = j < st.shLog.length ? SH_STEP.indexOf(st.shLog[j]) : -1;
+    s += `<span class="sh-step" data-step="${k}">${k<0 ? '' : SH_MARK[k]}</span>`;
+  }
+  return `<div class="sh-trail"><b>배 기록</b><div class="sh-steps">${s}</div></div>`;
+}
+
+function shPanel(st){
+  const stage = shStage(st);
+  let ask = '';
+  if(stage === "run"){
+    ask = `<div class="sh-ask" data-step="run"><b>단추를 눌러 원료를 배로 실어 오고, 제품을 만들어 배로 실어 보내 봐요.</b>
+      <div class="note" style="text-align:left;margin-top:5px">어떤 차례로 눌러도 괜찮아요. 제품 세 개가 모두 바다로 나가면 판을 읽을 수 있어요.</div></div>`;
+  } else if(stage === "read"){
+    ask = `<div class="sh-ask" data-step="read"><b>배 기록을 살펴보니, 무엇을 알 수 있을까요?</b>
+      <div class="sh-opts">${SH_READQ.map((t,i)=>`<button class="sh-opt" onclick="shRead(${i})">${t}</button>`).join('')}</div></div>`;
+  } else if(stage === "fin"){
+    ask = `<div class="sh-ask" data-step="fin"><b>그렇다면 오늘 공부한 것은 무엇일까요?</b>
+      <div class="sh-opts">${SH_FINQ.map((t,i)=>`<button class="sh-opt" onclick="shFin(${i})">${t}</button>`).join('')}</div></div>`;
+  } else {
+    ask = `<div class="sh-ask" data-fin="1" style="border-color:#86EFAC;background:#F0FDF4">
+      <b style="color:#166534">바다가 있는 지역은 배를 이용해 원료와 제품을 실어 나를 수 있어 공업이 발달하기도 해요.</b>
+      판에서도 원료가 배로 들어온 만큼만 제품을 만들어 실어 보낼 수 있었지요.
+      <div class="note" style="text-align:left;margin-top:5px">※ 교과서 118쪽 사진 두 장을 펴서 옛날과 요즘의 차이점을 직접 찾아 써 보는 일은 <b>교실 몫</b>이에요. 판은 대신 찾아 주지 않아요.</div></div>`;
+  }
+  const trail = shTrail(st);
+  const tell = st.shTell ? `<div class="sh-tell">${st.shTell}</div>` : '';
+  const warn = st.shMsg ? `<div class="fb" style="color:#DC2626;font-weight:700">${st.shMsg}</div>` : '';
+  return `<div class="sh-wrap">
+    <div class="sh-head">배로 실어 오고 실어 나가기 · 실어 나간 제품 <b>${shGone(st)}</b> / ${SH_LOAD}</div>
+    ${shBoard(st)}${shBtns(st)}${trail}${tell}${ask}${warn}
+    <div class="note" style="margin-top:8px">※ 이 판은 교과서 118쪽 울산의 변화 모습과 그 까닭을 <b>판이 짐 세 개로 줄여 옮긴 것</b>이에요. 실제 원료와 제품의 이름과 양은 판과 달라요.</div>
+  </div>`;
+}
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "3단원 다양한 환경과 삶의 모습 · 주제① 지역의 환경과 변화";
+const Q = [
+  {stem:"바다가 있는 지역에서 볼 수 있는 자연환경으로 알맞은 것은 무엇인가요?",
+   opts:["높은 산봉우리","울창한 숲과 계곡","넓은 들판","갯벌이나 모래사장"], correct:3, pts:POINTS_BASIC,
+   h1:"바닷물과 맞닿은 땅을 떠올려 봐요.", h2:"모래로 된 곳과 펄로 된 곳이 있어요.",
+   reason:"바다가 있는 지역에는 갯벌이나 모래사장 등이 있어요."},
+  {stem:"사람의 힘을 이용해 물고기나 김 등을 기르는 곳을 무엇이라고 하나요?",
+   opts:["항구","양식장","모래사장","숙박 시설"], correct:1, pts:POINTS_BASIC,
+   h1:"「기르는 곳」이라는 뜻을 가진 낱말이에요.", h2:"「양식」이라는 말이 들어가요.",
+   reason:"양식장은 사람의 힘을 이용해 물고기나 김 등을 기르는 곳이에요."},
+  {stem:"바다가 있는 지역에서 배가 안전하게 드나들 수 있는 곳은 어디인가요?",
+   opts:["항구","갯벌","양식장","수산물 직판장"], correct:0, pts:POINTS_BASIC,
+   h1:"배가 머물렀다가 떠나는 곳이에요.", h2:"「항」으로 시작하는 낱말이에요.",
+   reason:"바다가 있는 지역에서는 배가 안전하게 드나들 수 있는 항구를 볼 수 있어요."},
+  {stem:"수산물 직판장에서 볼 수 있는 모습은 무엇인가요?",
+   opts:["물고기나 김을 기르는 모습","모래사장에서 공놀이하는 모습","생선을 사고파는 모습","바다에서 물고기를 잡는 모습"], correct:2, pts:POINTS_BASIC,
+   h1:"「직판장」은 물건을 파는 곳이에요.", h2:"바다에서 난 것을 사고팔아요.",
+   reason:"수산물 직판장에서는 생선 등을 사고파는 모습을 볼 수 있어요."},
+  {stem:"판에서 공장이 제품을 만들 수 있었던 때는 언제인가요?",
+   opts:["배가 들어오기 전 언제든지","제품을 먼저 실어 보낸 뒤","항구에 내린 원료가 있을 때","배가 한 번도 오지 않았을 때"], correct:2, pts:POINTS_APPLY,
+   h1:"만들기 단추를 눌렀는데 판이 그대로였던 때를 떠올려 봐요.", h2:"제품을 만들려면 무엇이 먼저 있어야 할까요?",
+   reason:"항구에 내린 원료가 있을 때에만 공장이 제품을 만들 수 있었어요. 원료는 배로 들어왔지요."},
+  {stem:"울산에 공업이 발달한 까닭으로 알맞은 것은 무엇인가요?",
+   opts:["바다와 가까워 배를 이용해 원료와 제품을 실어 나를 수 있기 때문이에요","높은 산이 많아 물건을 옮기기 어렵기 때문이에요","바다에서 물고기를 잡는 사람이 없기 때문이에요","바닷가에 놀러 오는 사람이 없기 때문이에요"], correct:0, pts:POINTS_APPLY,
+   h1:"판에서 원료와 제품은 무엇을 타고 오갔나요?", h2:"울산은 바다가 있는 지역이에요.",
+   reason:"울산은 바다와 가까워 배를 이용해 원료와 제품을 실어 나를 수 있어 공업이 발달했어요."},
+  {stem:"울산에 공업이 발달하면서 나타났을 변화로 알맞은 것은 무엇인가요?",
+   opts:["건물이 모두 사라졌어요","도로가 더 좁아졌어요","사람들이 모두 고기잡이만 하게 되었어요","공장에서 일하는 사람들이 생겨나고, 사는 사람도 늘어났을 거예요"], correct:3, pts:POINTS_APPLY,
+   h1:"요즘 사진에서 새로 보이는 것을 떠올려 봐요.", h2:"공장이 생기면 그곳에서 일할 사람이 필요해요.",
+   reason:"공업이 발달하면서 공장에서 일하는 사람들이 생겨났고, 사는 사람도 늘어났을 거예요."},
+  {stem:"오늘 공부한 내용으로 알맞은 것은 무엇인가요?",
+   opts:["바다가 있는 지역 사람들은 옛날부터 요즘까지 고기잡이만 해요","바다가 있는 지역에는 갯벌이나 모래사장, 항구, 양식장 등이 있고, 배를 이용해 원료와 제품을 실어 나를 수 있어 공업이 발달하기도 해요","바다가 있는 지역에서는 배가 드나드는 항구를 볼 수 없어요","바다가 있는 지역에는 공장이 생길 수 없어요"], correct:1, pts:POINTS_APPLY,
+   h1:"오늘 살펴본 특징과 변화 모습을 함께 떠올려 봐요.", h2:"바닷가에 무엇이 생겨났나요?",
+   reason:"바다가 있는 지역에는 갯벌이나 모래사장, 항구, 양식장 등이 있고, 배를 이용해 원료와 제품을 실어 나를 수 있어 공업이 발달하기도 해요."}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — 동기 유발
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">바다가 있는 지역을 본 적이 있나요?</h2>
+  <div class="ka-bub">텔레비전에서 보거나, 바닷가로 가족 여행을 가거나, 체험 학습을 갔을 때 본 적이 있을 거예요. <b>모래사장에서 모래성을 쌓거나 물놀이를 했던</b> 느낌을 떠올려 봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('sea','바다가 있는 지역')}</div>
+    <div class="note">오늘은 <b>바다가 있는 지역의 특징과 변화 모습</b>을 살펴봐요.</div>
+  </div>`});
+// 2 살펴보기 — 특징 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">바다가 있는 지역에서는 무엇을 볼 수 있나요?</h2>
+  <div class="ka-bub">교과서 117쪽 그림에서 바다가 있는 지역의 <span class="ka-emph">자연환경</span>과 <b>사람들이 만든 곳</b>을 찾아봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('sea','모래사장')}${sceneCard('port','항구와 양식장')}</div>
+  ${st.revealed?`<div class="answer-box">· 바다가 있는 지역에는 <b>갯벌이나 모래사장</b> 등이 있어요.<br>· 배가 안전하게 드나들 수 있는 <b>항구</b>, 물고기나 김 등을 기를 수 있는 <b>양식장</b>을 볼 수 있어요.<br>· 사람들은 바닷가에 놀러 오는 사람들이 이용할 수 있는 <b>식당이나 숙박 시설</b>을 짓기도 해요.</div>`
+    :`<div class="note">교과서 그림을 <b>직접</b> 살펴본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 3 살펴보기 — 사람들이 하는 일
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">바다가 있는 지역 사람들은 어떤 일을 하나요?</h2>
+  <div class="ka-bub"><span class="ka-emph">양식장</span>은 사람의 힘을 이용해 물고기나 김 등을 기르는 곳이에요. 교과서 117쪽 그림에서 아래 모습을 찾아 친구들과 이야기해 봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('work','그림 속 모습')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div><b>바다</b> — 물고기를 잡는 모습을 볼 수 있어요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b>양식장</b> — 물고기나 김 등을 기르며 일하는 모습을 볼 수 있어요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div><b>수산물 직판장</b> — 생선을 사고파는 모습을 볼 수 있어요.</div></div>
+    <div class="sum-item"><span class="n">4</span><div><b>모래사장</b> — 공놀이하는 모습을 볼 수 있어요.</div></div>
+  </div>
+  <div class="note">바닷가에 있는 <b>식당이나 숙박 시설</b>에서 일하는 사람들도 있어요.</div></div>`});
+// 4 살펴보기 — 변화 모습 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">바다가 있는 지역의 모습은 어떻게 변화하고 있나요?</h2>
+  <div class="ka-bub">교과서 118쪽에는 바다가 있는 지역인 <b>울산</b>의 옛날 사진과 요즘 사진이 있어요. 옛날에 울산 사람들은 <b>주로 고기잡이하거나 농사를 지으며</b> 살았어요. 이후 사람들이 여러 공장을 세우면서 <span class="ka-emph">공업이 발달</span>하기 시작했어요. 울산에 공업이 발달한 까닭은 무엇일까요?</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('change','바닷가의 공장')}</div>
+  ${st.revealed?`<div class="answer-box">· 바다와 가까워 <b>배를 이용해 원료와 제품을 실어 나를 수 있기</b> 때문이에요.<br>· 옛날 사진에서는 건물이 거의 없고 좁은 도로가 보여요. 요즘 사진에서는 <b>항구와 넓은 도로, 바닷가에 생겨난 공장</b>을 볼 수 있어요.</div>
+    <div class="note">공업이 발달하면서 공장에서 일하는 사람들이 생겨나고, 사는 사람도 늘어났을 거예요.</div>`
+    :`<div class="note">까닭을 먼저 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 5 살펴보기 — 조작 안내
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">배로 원료를 실어 오고, 제품을 실어 보내 봐요</h2>
+  <div class="ka-bub"><b>원료</b>는 물건을 만드는 데 쓰는 재료이고, <b>제품</b>은 공장에서 만든 물건이에요. 판에서 배가 원료를 싣고 들어오고, 공장이 제품을 만들고, 배가 제품을 싣고 나가요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('ship','실어 오고 실어 나가요')}</div>
+  <div class="note">단추는 어떤 차례로 눌러도 괜찮아요. 그런데 <b>아무 때나</b> 누를 수 있을까요? 눌러 보며 살펴봐요.</div></div>`});
+// 6 살펴보기 — 직접 조작
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">원료가 들어오고 제품이 나가는 판</h2>
+  <div class="ka-grp" style="align-items:stretch">${shPanel(st)}</div>`});
+// 7 살펴보기 — 별별 직업 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">별별 직업 속으로 — 해양 생태 연구원</h2>
+  <div class="ka-bub">바다와 관련 있는 직업에는 어부, 수산물 직판장에서 일하는 사람, 바닷가 식당에서 일하는 사람 등이 있어요. <span class="ka-emph">해양 생태 연구원</span>은 어떤 일을 할까요?</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('job','해양 생태 연구원')}</div>
+  ${st.revealed?`<div class="answer-box">· 깊은 바닷속에 들어가 <b>바다에 사는 생물의 종류와 수, 먹이</b> 등을 조사해요.<br>· 해양 환경의 변화에 따라 바닷속 생물이 살아가는 모습이 <b>어떻게 변하는지</b> 연구하기도 해요.<br>· 해양 생물과 해양 환경에 관해 <b>호기심</b>을 갖고 끊임없이 탐구하는 자세가 중요해요.</div>`
+    :`<div class="note">하는 일을 먼저 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부한 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('done','특징과 변화를 알았어요')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div><b>특징</b> — 갯벌이나 모래사장 등이 있고, 항구나 양식장 등을 볼 수 있어요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b>변화 모습</b> — 배를 이용해 원료와 제품을 실어 나를 수 있어 공업이 발달하기도 해요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b style="color:#0891B2">환경의 이용과 개발에 따른 영향</b>을 알아봐요.</div></div>`});
+// 17 스스로 돌아보기
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"바다가 있는 지역의 특징을 말할 수 있어요",st)}
+    ${selfCheck(1,"바다가 있는 지역 사람들이 하는 일을 말할 수 있어요",st)}
+    ${selfCheck(2,"울산에 공업이 발달한 까닭을 설명할 수 있어요",st)}
+  </div><div class="note">체크가 잘 안 되는 곳은 <b>다시 살펴봐도</b> 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">바다가 있는 지역을 살펴봤어요</h2>
+  <div class="ka-grp">
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">교과서 118쪽 사진 두 장을 펴서 옛날과 요즘의 차이점을 <b style="color:#0891B2">직접</b> 찾아봐요.</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const optHTML = q.opts.map((o,k)=>{
+    let cls='opt';
+    if(qs.done && k===q.correct) cls+=' correct';
+    if(qs.wrongPick===k) cls+=' wrong';
+    return `<button class="${cls}" onclick="pick(${i},${k})" ${qs.done?'disabled':''}>${o}</button>`;
+  }).join('');
+  const hint = qs.hint>0 ? `<div class="hint">💡 ${qs.hint===1?q.h1:q.h2}</div>` : '';
+  const fb = qs.done ? `<div class="fb ok">✓ ${q.reason}</div>` : '';
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용':'확인'} (+${q.pts})</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    <div class="opts" style="margin:0 auto">${optHTML}</div>
+    ${hint}${fb}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g4_2_social_u3_l04";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  shLog:[], shRead:null, shFin:null, shMsg:"", shTell:"",
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 →';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음 (브라우저에서만 · jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+function shDraw(){ main.innerHTML = slides[state.idx].render(state); }
+
+/* 일 누르기 — 실어 오기 · 만들기 · 실어 나가기 */
+function shAct(i){
+  if(state.shFin!=null) return;                                        // 가드①: 마무리 확정 후 전체 잠금
+  if(!Number.isInteger(i) || i<0 || i>=SH_STEP.length) return;          // 가드②: 무효 번호 — 안내조차 띄우지 않음
+  if(i===0 && !shCan(state,0)){ state.shMsg = SH_SAY_NOWAIT; playThud(); shDraw(); return; }   // 가드③: 실어 올 원료 0 — 판 불변
+  if(i===1 && !shCan(state,1)){ state.shMsg = SH_SAY_NODOCK; playThud(); shDraw(); return; }   // 가드④: 항구 원료 0 — 판 불변
+  if(i===2 && !shCan(state,2)){ state.shMsg = SH_SAY_NOMADE; playThud(); shDraw(); return; }   // 가드⑤: 만든 제품 0 — 판 불변
+  state.shLog.push(SH_STEP[i]);                                        // ⭐ 기록을 적는 자리는 코드에 여기 단 하나 · 지우는 자리 0
+  state.shMsg = ""; state.shTell = SH_TELL[i]; playBlip(); shDraw();
+}
+/* 판 읽기 */
+function shRead(i){
+  if(state.shFin!=null) return;                                        // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=SH_READQ.length) return;         // 가드②
+  if(!shAllGone(state)){ state.shMsg = SH_SAY_ORDER_R; playThud(); shDraw(); return; }         // 가드⑥: 다 나가기 전 — 판 불변
+  if(state.shRead!=null){ state.shMsg = SH_SAY_READDONE; shDraw(); return; }                   // 가드⑦: 이미 정한 자리 — 판 불변
+  if(i!==SH_READ_OK){ state.shMsg = SH_READ_BAD; playThud(); shDraw(); return; }               // 가드⑧: 어긋난 답 — 판 불변
+  state.shRead = i; state.shMsg = ""; state.shTell = ""; playBlip(); shDraw();
+}
+/* 마무리 */
+function shFin(i){
+  if(state.shFin!=null) return;                                        // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=SH_FINQ.length) return;          // 가드②
+  if(state.shRead==null){ state.shMsg = SH_SAY_ORDER_FIN; playThud(); shDraw(); return; }      // 가드⑨: 판을 읽기 전 — 판 불변
+  if(i!==SH_FIN_OK){ state.shMsg = SH_FIN_BAD; playThud(); shDraw(); return; }                 // 가드⑩: 어긋난 답 — 판 불변
+  state.shFin = i; state.shMsg = ""; playChime(); shDraw();
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true; qs.wrongPick=null;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2; if(qs.hint===2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">📘 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 →</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // l05 미양산 — 허브 복귀
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
+</html>
