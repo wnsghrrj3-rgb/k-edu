@@ -7,6 +7,7 @@ import { createFire } from './fire.js';
 import { bindMinimap } from './minimap.js';
 import { addSkyDome, addMotes, enhanceWater, applySurfaces } from './visuals.js';
 import { applySplat } from './terrain.js';
+import { Sound } from './sound.js';
 import { Story } from './story.js';
 
 const J = (u) => fetch(u).then((r) => r.json());
@@ -42,6 +43,7 @@ export class Game {
     if (post) this.e.enablePost({ ao: qs.get('ao') === '1' });
     if (qs.get('fps') === '1') this.fpsMeter();
     this.p = new Player(this.e, { eye: this.world.eye, bounds: this.world.bounds, yaw: 0 });
+    try { this.sound = new Sound(this); } catch (err) { console.warn('sound', err); }
     const vq = new URLSearchParams(location.search).get('view'); this.p.setView(vq || this.world.view || 'fp');
     this.p.bindJoystick(document.getElementById('stick'), document.getElementById('knob'));
     // 시작 시선: 야영지 쪽(있으면) 을 바라봄
@@ -299,7 +301,7 @@ export class Game {
     const g = createFire(this.e, it.center); this.fire = g;
     this.fireLight = new THREE.PointLight(0xff9a3a, 0, 14, 1.6); this.fireLight.position.copy(g.position).add(new THREE.Vector3(0, 0.8, 0)); this.e.scene.add(this.fireLight);
   }
-  setFire(on, small = false) { this.fireBase = on ? (small ? 0.8 : 3) : 0; if (this.fire) { this.fire.visible = on; this.fire.scale.setScalar(small ? 0.4 : 1); } if (this.fireLight) this.fireLight.intensity = this.fireBase; }
+  setFire(on, small = false) { this.fireBase = on ? (small ? 0.8 : 3) : 0; this.sound?.set('fire', on ? (small ? 0.12 : 0.34) : 0); if (this.fire) { this.fire.visible = on; this.fire.scale.setScalar(small ? 0.4 : 1); } if (this.fireLight) this.fireLight.intensity = this.fireBase; }
   // ---------- 시간의 문 ----------
   checkGate() {
     const g = this.world.gate; if (!g) return; const ok = g.requires.every((f) => this.flags.has(f));

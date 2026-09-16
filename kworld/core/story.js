@@ -86,6 +86,7 @@ export class Story {
   transition(name, sec = 9) {
     this.captureDay(); if (!this.day) return;
     this.from = this.snapshot(); this.to = this.pal(name); this.trT = 0; this.trSec = sec; this.skyName = name;
+    this.g.sound?.set('wind', { night: 0.42, dull: 0.5, rainy: 0.55 }[name] ?? 0.35);
   }
   snapshot() { const e = this.g.e; const hemi = e.scene.children.find((o) => o.isHemisphereLight); const u = e.skyDome && e.skyDome.material.uniforms;
     return { sun: e.sun.intensity, sunC: e.sun.color.clone(), hemi: hemi ? hemi.intensity : 0.3, fogC: e.scene.fog ? e.scene.fog.color.clone() : null, fogN: e.scene.fog?.near, fogF: e.scene.fog?.far, exp: e.renderer.toneMappingExposure, sky: u && { z: u.uZenith.value.clone(), h: u.uHorizon.value.clone(), a: u.uHaze.value.clone(), s: u.uSunColor.value.clone(), c: u.uCloud.value } }; }
@@ -94,7 +95,7 @@ export class Story {
     const e = this.g.e; if (!e.scene.add || !this.g.p?.pos) { this.rainOn = on; return; }
     if (on && !this.rainPts) { const n = 1600; const arr = new Float32Array(n * 3); for (let i = 0; i < n; i++) { arr[i * 3] = (Math.random() - .5) * 44; arr[i * 3 + 1] = Math.random() * 18; arr[i * 3 + 2] = (Math.random() - .5) * 44; }
       const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(arr, 3)); this.rainPts = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xbfd0e6, size: 0.06, transparent: true, opacity: 0.7, depthWrite: false })); this.rainPts.frustumCulled = false; e.scene.add(this.rainPts); }
-    if (this.rainPts) this.rainPts.visible = on; this.rainOn = on;
+    if (this.rainPts) this.rainPts.visible = on; this.rainOn = on; this.g.sound?.set('rain', on ? 0.4 : 0);
   }
   /** 사건: world.events — on(조건) 이 참이 되는 순간 한 번, do 를 순서대로 */
   runEvents() {
@@ -104,6 +105,7 @@ export class Story {
     const g = this.g; const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     for (const a of list) {
       if (a.wait) await sleep(this.fast ? 5 : a.wait * 1000);
+      if (a.sound) g.sound?.play(a.sound, a.gain);
       if (a.say) g.ui.say(a.say, a.ms || 4800);
       if (a.goal != null) g.ui.setGoal(a.goal);
       if (a.sky) this.transition(a.sky, a.sec);
@@ -141,7 +143,7 @@ export class Story {
     if (n.ember) this.g.setFire(true, true);   // 바라가 지키는 작은 불
     this.transition('night', n.sec || 9);
     this.g.ui.say(n.intro || '해가 진다.', 5200); if (n.goal) setTimeout(() => this.g.ui.setGoal(n.goal), 3000);
-    if (n.sounds) { let i = 0; this.soundTimer = setInterval(() => { if (this.warm || this.ended) { clearInterval(this.soundTimer); return; } this.g.ui.say(n.sounds[i++ % n.sounds.length], 3600); }, n.soundGap || 26000); }
+    if (n.sounds) { let i = 0; this.soundTimer = setInterval(() => { if (this.warm || this.ended) { clearInterval(this.soundTimer); return; } this.g.ui.say(n.sounds[i++ % n.sounds.length], 3600); this.g.sound?.play('night_' + (i % 2 ? 'wolf' : 'rustle'), 0.4); }, n.soundGap || 26000); }
     this.g.hungerMul = n.coldMul || 2.4; this.g.updateMission(false);
   }
   tick(dt) {
