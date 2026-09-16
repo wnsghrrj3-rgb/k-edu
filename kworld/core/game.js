@@ -42,6 +42,7 @@ export class Game {
     }
     if (post) this.e.enablePost({ ao: qs.get('ao') === '1' });
     if (qs.get('fps') === '1') this.fpsMeter();
+    this.autoTune();
     this.p = new Player(this.e, { eye: this.world.eye, bounds: this.world.bounds, yaw: 0 });
     try { this.sound = new Sound(this); } catch (err) { console.warn('sound', err); }
     const vq = new URLSearchParams(location.search).get('view'); this.p.setView(vq || this.world.view || 'fp');
@@ -62,10 +63,28 @@ export class Game {
     setTimeout(() => this.ui.say(this.world.intro, 5000), 400);
     if (this.world.intro2) setTimeout(() => { this.ui.say(this.world.intro2, 5000); if (this.world.goal2) this.ui.setGoal(this.world.goal2); }, 5800);
   }
+  /** 성능층 — 처음 몇 초 프레임을 재서 느리면 한 단계씩 내린다(해상도 → 나무·풀 수 → 그림자). 기기별로 기억(localStorage). ?tune=0 끔 (구조 설계 v1 §10) */
+  autoTune() {
+    const qs = new URLSearchParams(location.search); if (qs.get('tune') === '0') return;
+    const key = 'kworld_tune'; this.tuneLevel = Number(localStorage.getItem(key) || 0); this.applyTune(this.tuneLevel);
+    let n = 0, t0 = performance.now(), settled = 0; const target = 27;
+    this.e.onFrame.push(() => {
+      n++; const now = performance.now(); if (now - t0 < 2500) return; const fps = n / ((now - t0) / 1000); n = 0; t0 = now;
+      if (settled++ < 1) return;   // 첫 구간(로딩 직후)은 버린다
+      if (fps < target && this.tuneLevel < 3) { this.tuneLevel++; localStorage.setItem(key, String(this.tuneLevel)); this.applyTune(this.tuneLevel); }
+      else if (fps > 55 && this.tuneLevel > 0 && settled > 8) { this.tuneLevel--; localStorage.setItem(key, String(this.tuneLevel)); this.applyTune(this.tuneLevel); }
+    });
+  }
+  applyTune(level) {
+    const r = this.e.renderer; r.setPixelRatio(Math.min(devicePixelRatio, level >= 1 ? 1.25 : 2));
+    this.e.scene.traverse((o) => { if (!o.isInstancedMesh) return; if (o.userData.fullCount == null) o.userData.fullCount = o.count; if (/^woodland|meadow|river-stones/.test(o.name)) o.count = Math.floor(o.userData.fullCount * (level >= 2 ? 0.6 : 1)); });
+    if (r.shadowMap.enabled !== (level < 3)) { r.shadowMap.enabled = level < 3; this.e.scene.traverse((o) => { if (o.material) o.material.needsUpdate = true; }); }
+    this.tuneLabel = ['', '해상도↓', '나무·풀 60%', '그림자 끔'][level];
+  }
   /** ?fps=1 — 왼쪽 위에 프레임·그리기 수(무거운 층을 찾을 때) */
   fpsMeter() {
     const el = document.createElement('div'); el.style.cssText = 'position:fixed;left:8px;top:8px;z-index:50;background:rgba(0,0,0,.55);color:#9f9;font:12px monospace;padding:4px 8px;border-radius:6px'; document.body.appendChild(el);
-    let n = 0, t0 = performance.now(); this.e.onFrame.push(() => { n++; const now = performance.now(); if (now - t0 >= 1000) { const info = this.e.renderer.info.render; el.textContent = `${n} fps · draw ${info.calls} · tri ${(info.triangles / 1000) | 0}k · ${this.quality()}`; n = 0; t0 = now; } });
+    let n = 0, t0 = performance.now(); this.e.onFrame.push(() => { n++; const now = performance.now(); if (now - t0 >= 1000) { const info = this.e.renderer.info.render; el.textContent = `${n} fps · draw ${info.calls} · tri ${(info.triangles / 1000) | 0}k · ${this.quality()}${this.tuneLabel ? ' · ' + this.tuneLabel : ''}`; n = 0; t0 = now; } });
   }
   /** 기기 등급: 'low'(태블릿·저사양) / 'high'. URL ?q=low|high 로 강제 */
   quality() {
