@@ -288,14 +288,14 @@ window.KEDU_MAP["g4_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_social_u3_l05",
+     "lessonId": "g4_social_u3_l05_v1",
      "n": "5",
      "title": "환경의 이용과 개발에 따른 영향을 알아볼까요",
      "sub": "① 지역의 환경과 변화",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/social/3단원_다양한환경과삶의모습/g4_social_u3_l05_함께사라져요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
