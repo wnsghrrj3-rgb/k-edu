@@ -181,6 +181,103 @@ window.KEDU_MAP["g4_2_science"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 3,
+   "name": "여러 가지 기체",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g4_science_u3_l01",
+     "lessonId": "g4_s2_sci_u3_l01_v1",
+     "n": "1",
+     "title": "활짝! 과학 열기 — 숨어 있는 기체 찾기",
+     "sub": null,
+     "url": "/grade4/semester2/science/3단원_여러가지기체/g4_sci_u3_l01_숨어있는기체찾기.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": null,
+     "lessonId": null,
+     "n": "2",
+     "title": "기체의 무게",
+     "sub": null,
+     "url": null,
+     "track": "soon",
+     "ready": false
+    },
+    {
+     "key": null,
+     "lessonId": null,
+     "n": "3",
+     "title": "온도에 따른 기체의 부피 변화",
+     "sub": null,
+     "url": null,
+     "track": "soon",
+     "ready": false
+    },
+    {
+     "key": null,
+     "lessonId": null,
+     "n": "4",
+     "title": "압력에 따른 기체의 부피 변화",
+     "sub": null,
+     "url": null,
+     "track": "soon",
+     "ready": false
+    },
+    {
+     "key": null,
+     "lessonId": null,
+     "n": "5",
+     "title": "생활 속 기체의 부피 변화",
+     "sub": null,
+     "url": null,
+     "track": "soon",
+     "ready": false
+    },
+    {
+     "key": null,
+     "lessonId": null,
+     "n": "6~7",
+     "title": "여러 가지 기체의 종류와 성질",
+     "sub": null,
+     "url": null,
+     "track": "soon",
+     "ready": false
+    },
+    {
+     "key": null,
+     "lessonId": null,
+     "n": "8~9",
+     "title": "창의가 반짝! — 기체의 성질을 이용한 장치 설계하고 만들기",
+     "sub": null,
+     "url": null,
+     "track": "soon",
+     "ready": false
+    },
+    {
+     "key": null,
+     "lessonId": null,
+     "n": "10",
+     "title": "톡톡! 과학 — 헬륨 기체로 두둥실 하늘을 여행하는 비행선",
+     "sub": null,
+     "url": null,
+     "track": "soon",
+     "ready": false
+    },
+    {
+     "key": null,
+     "lessonId": null,
+     "n": "11",
+     "title": "단원 마무리",
+     "sub": null,
+     "url": null,
+     "track": "soon",
+     "ready": false
+    }
+   ]
   }
  ]
 };
