@@ -238,6 +238,83 @@ window.KEDU_MAP["g2_2_korean"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 4,
+   "name": "마음을 전해요",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g2_korean_u4_l01",
+     "lessonId": "g2_2_kor_u4_l01_02_v1",
+     "n": "1·2",
+     "title": "단원 시작 — 배울 내용 살펴보기",
+     "sub": null,
+     "url": "/grade2/semester2/korean/4단원_마음을전해요/g2_kor_u4_l01_02.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_korean_u4_l03",
+     "lessonId": "g2_2_kor_u4_l03_04_v1",
+     "n": "3·4",
+     "title": "여러 가지 문장의 종류 알기",
+     "sub": null,
+     "url": "/grade2/semester2/korean/4단원_마음을전해요/g2_kor_u4_l03_04.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_korean_u4_l05",
+     "lessonId": "g2_2_kor_u4_l05_06_v1",
+     "n": "5·6",
+     "title": "글쓴이의 마음을 파악하며 글 읽기",
+     "sub": null,
+     "url": "/grade2/semester2/korean/4단원_마음을전해요/g2_kor_u4_l05_06.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_korean_u4_l07",
+     "lessonId": "g2_2_kor_u4_l07_08_v1",
+     "n": "7·8",
+     "title": "인물의 마음을 생각하며 실감 나게 읽기",
+     "sub": null,
+     "url": "/grade2/semester2/korean/4단원_마음을전해요/g2_kor_u4_l07_08.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_korean_u4_l09",
+     "lessonId": "g2_2_kor_u4_l09_10_v1",
+     "n": "9·10",
+     "title": "이야기를 읽고 인물에게 자신의 생각 전하기",
+     "sub": null,
+     "url": "/grade2/semester2/korean/4단원_마음을전해요/g2_kor_u4_l09_10.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_korean_u4_l11",
+     "lessonId": "g2_2_kor_u4_l11_12_v1",
+     "n": "11·12",
+     "title": "배운 내용 실천하기 (목소리 연극 하기)",
+     "sub": null,
+     "url": "/grade2/semester2/korean/4단원_마음을전해요/g2_kor_u4_l11_12.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_korean_u4_l13",
+     "lessonId": "g2_2_kor_u4_l13_v1",
+     "n": "13",
+     "title": "단원 마무리하기",
+     "sub": null,
+     "url": "/grade2/semester2/korean/4단원_마음을전해요/g2_kor_u4_l13.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };
