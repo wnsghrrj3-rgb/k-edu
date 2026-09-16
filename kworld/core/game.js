@@ -125,7 +125,7 @@ export class Game {
   // ---------- 매 프레임 ----------
   tick(dt) {
     // 배고픔
-    const h = this.world.hunger; this.hunger = Math.max(0, this.hunger - h.perSecond * (this.hungerMul || 1) * dt);
+    const h = this.world.hunger; const before = this.hunger; this.hunger = Math.max(0, this.hunger - h.perSecond * (this.hungerMul || 1) * dt); if (before > 0 && this.hunger === 0) (this.telemetry ??= { missions: [], hints: 0, starved: 0 }).starved++;
     const slow = this.hunger < h.slowBelow; this.p.speedMul = slow ? 0.55 : 1; this.ui.setHunger(this.hunger, slow);
     // 대상 안내
     if (!this.ui.isOpen()) {
@@ -300,7 +300,7 @@ export class Game {
   updateMission(force) {
     const ms = this.missions.missions;
     let changed = force;
-    while (this.mi < ms.length && this.missionDone(ms[this.mi])) { this.mi++; changed = true; this.missionStart = performance.now(); this.hintShown = false; if (!force) this.ui.say(`✅ ${ms[this.mi - 1].title}`, 2200); }
+    while (this.mi < ms.length && this.missionDone(ms[this.mi])) { const sec = Math.round((performance.now() - this.missionStart) / 1000); (this.telemetry ??= { missions: [], hints: 0, starved: 0 }).missions.push({ id: ms[this.mi].id, sec, hints: this.hintsThis || 0 }); this.hintsThis = 0; this.mi++; changed = true; this.missionStart = performance.now(); this.hintShown = false; if (!force) this.ui.say(`✅ ${ms[this.mi - 1].title}`, 2200); }
     const m = ms[this.mi];
     if (changed) this.ui.setMission(m ? m.title : `${this.world.short || ''} 완주!`, this.mi, ms.length);
     if (!m) return;
@@ -310,7 +310,7 @@ export class Game {
     // 오래 걸리면 힌트 버튼 반짝
     if (!this.hintShown && (performance.now() - this.missionStart) / 1000 > (this.missions.hintDelay || 45)) { this.hintShown = true; this.ui.pulseHint(); }
   }
-  showHint() {
+  showHint() { (this.telemetry ??= { missions: [], hints: 0, starved: 0 }).hints++; this.hintsThis = (this.hintsThis || 0) + 1;
     const m = this.missions.missions[this.mi]; if (!m) { this.ui.say('할 일은 다 했어. 마음껏 둘러봐.'); return; }
     this.ui.say(`💡 ${m.hint}`, 6000); this.hintShown = true;
   }

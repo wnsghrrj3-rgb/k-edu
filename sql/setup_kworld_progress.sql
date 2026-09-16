@@ -6,11 +6,13 @@ create table if not exists kworld_progress (
   flags      jsonb not null default '[]',
   inventory  jsonb not null default '[]',
   results    jsonb not null default '[]',
+  telemetry  jsonb,
   hunger     real,
   pos        jsonb,
   updated_at timestamptz not null default now(),
   primary key (student_id, era)
 );
+alter table kworld_progress add column if not exists telemetry jsonb;
 alter table kworld_progress enable row level security;
 drop policy if exists p_kworld_progress_student on kworld_progress;
 create policy p_kworld_progress_student on kworld_progress
@@ -28,6 +30,8 @@ create view report_kworld as
          jsonb_array_length(p.flags) as flag_n,
          (select count(*) from jsonb_array_elements_text(p.flags) f where f like 'journal:%') as discovery_n,
          jsonb_array_length(p.results) as check_n,
+         (p.telemetry->>'hints')::int as hint_n, (p.telemetry->>'starved')::int as starved_n,
+         (select coalesce(sum((m->>'sec')::int),0) from jsonb_array_elements(coalesce(p.telemetry->'missions','[]')) m) as play_sec,
          (select count(*) from jsonb_array_elements(p.results) r where (r->>'ok')::boolean) as check_ok_n,
          p.updated_at
   from kworld_progress p;

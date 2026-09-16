@@ -4,7 +4,7 @@
 export class Save {
   constructor(g, era) { this.g = g; this.era = era; this.key = 'kworld_progress:' + era; this.timer = null; this.enabled = true; }
   snapshot() {
-    const g = this.g; return { v: 1, era: this.era, flags: [...g.flags], inventory: [...g.inventory], hunger: Math.round(g.hunger), pos: g.p ? [Math.round(g.p.pos.x * 10) / 10, Math.round(g.p.pos.z * 10) / 10, Math.round((g.p.yaw || 0) * 100) / 100] : null, results: g.results || [], mi: g.mi, t: Date.now() };
+    const g = this.g; return { v: 1, era: this.era, flags: [...g.flags], inventory: [...g.inventory], hunger: Math.round(g.hunger), pos: g.p ? [Math.round(g.p.pos.x * 10) / 10, Math.round(g.p.pos.z * 10) / 10, Math.round((g.p.yaw || 0) * 100) / 100] : null, results: g.results || [], telemetry: g.telemetry || null, mi: g.mi, t: Date.now() };
   }
   /** 깃발이 설 때마다 부른다 — 3초 뒤 한 번만 쓴다 */
   touch() { if (!this.enabled || this.g.story?.cutsceneOn) return; clearTimeout(this.timer); this.timer = setTimeout(() => this.write(), 3000); }
@@ -15,7 +15,7 @@ export class Save {
   remote(snap) {
     try {
       const sid = window.kedu?.debug?.().studentId; const db = typeof getKeduDb === 'function' ? getKeduDb() : null; if (!sid || !db) return;
-      db.from('kworld_progress').upsert({ student_id: sid, era: this.era, flags: snap.flags, inventory: snap.inventory, results: snap.results, hunger: snap.hunger, pos: snap.pos, updated_at: new Date().toISOString() }, { onConflict: 'student_id,era' }).then(() => { }).catch(() => { });
+      db.from('kworld_progress').upsert({ student_id: sid, era: this.era, flags: snap.flags, inventory: snap.inventory, results: snap.results, telemetry: snap.telemetry, hunger: snap.hunger, pos: snap.pos, updated_at: new Date().toISOString() }, { onConflict: 'student_id,era' }).then(() => { }).catch(() => { });
     } catch { }
   }
   load() { try { const s = JSON.parse(localStorage.getItem(this.key) || 'null'); return s && s.v === 1 && s.flags?.length ? s : null; } catch { return null; } }
@@ -25,7 +25,7 @@ export class Save {
     const g = this.g; g.restoring = true;
     for (const f of snap.flags) g.flags.add(f);
     g.inventory.length = 0; for (const it of snap.inventory) g.inventory.push(it);
-    g.hunger = snap.hunger ?? g.hunger; g.results = snap.results || []; g.renderInv?.();
+    g.hunger = snap.hunger ?? g.hunger; g.results = snap.results || []; g.telemetry = snap.telemetry || g.telemetry; g.renderInv?.();
     const st = g.story;
     if (st) {
       for (const ev of g.world.events || []) if (g.cond(ev.on)) ev.done = true;   // 지나간 사건은 다시 일으키지 않는다
