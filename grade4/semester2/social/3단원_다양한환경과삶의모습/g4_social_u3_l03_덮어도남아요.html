@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<!--
+=========================================================================
+  사회 4-2 · 3단원 다양한 환경과 삶의 모습
+  주제① 지역의 환경과 변화 · l03
+  「들이 펼쳐진 지역의 특징과 변화 모습을 살펴볼까요」
+  교과서 p.114~116 · 지도서 4차시(p.212~218) · [4사10-01]
+  수업 기법 = 그림 해석하기 · 지도 읽기
+=========================================================================
+
+  ■ 직접조작 = 덮어도 지워지지 않는 판 (옛 모습 위에 요즘 모습 덮기)
+  ⭐ 앞 스물다섯 판에서 판에 무엇을 놓으면 그 자리는 새것으로 바뀌거나(놓기) 사라지거나(l07) 옮겨 갔다(l08).
+     이번 판은 거기가 다르다 — 카드를 칸에 놓으면 칸이 「덮일」 뿐, 그 아래의 옛 모습은 지워지지 않는다.
+     판을 들추면 덮기 전의 옛 모습이 글자까지 그대로 나온다. 한 칸에 옛 모습과 요즘 모습이 두 겹으로 있다.
+  ⭐ 옛 모습을 담는 상태가 코드에 없다 — 아래층은 상수 LY_BASE 그대로이고(읽는 자리 lyBaseOf 하나),
+     위층은 lyAt 한 줄(lyTopOf)이 그때그때 고른다. 그래서 「덮으면 옛 모습이 지워지는 판」은 만들어질 수 없다.
+  ⭐ 덮을 수 있는 칸은 논이나 밭이었던 칸뿐이다(lyOpen 한 줄) — 하천 칸은 옛 지도에도 요즘 지도에도 있고,
+     원래 있던 학교 칸도 그대로다. 카드 일곱을 어느 논·밭 칸에 놓아도 되고(판이 정한 자리 0),
+     어떻게 놓아도 요즘 모습의 수(학교 3 · 논과 밭 0 · 하천 4)와 옛 모습(학교 1 · 논과 밭 7 · 하천 4)은 같다.
+     근거 = 교과서 116쪽 대전광역시의 옛 지도·요즘 지도 견주기(학교 수는 많고, 도로는 복잡해짐 → 인구가 많을 것).
+  ⭐ 놓는 자리 state.lyAt[state.lySel] = c 단 하나 · 걷어 내는 자리 0 · 셈 띠는 판을 들춘 뒤에만 선다.
+
+  ■ 4단계
+   ① 카드 고르기 → 논·밭 칸에 덮기(일곱 장, 자리·차례 자유 · 판정 0)
+   ② 판 들추기(옛 모습 보기) ↔ 다시 덮기
+   ③ 판 읽기 3택(정답 자리 0 = 「학교가 더 많아졌으니, 이 지역에 사는 사람이 더 많아졌다고 볼 수 있어요」)
+   ④ 마무리 3택(정답 자리 2 = 교과서 정리) → 완료 — 교과서 지도를 펴서 직접 찾아 쓰는 일은 교실 몫
+
+  ■ 가드 13종
+   ① 마무리 확정 후 다섯 처리기 전체 잠금   ② 무효 번호(Number.isInteger·범위)
+   ③ 이미 놓은 카드 고르기 — 판 불변         ④ 이미 고른 카드 다시 고르기 — 판 불변
+   ⑤ 고르기 전 놓기 — 판 불변                 ⑥ 덮지 않는 칸(하천·원래 학교) — 판 불변
+   ⑦ 이미 덮은 칸 — 판 불변                   ⑧ 들춰 보는 동안 고르기·놓기 — 판 불변
+   ⑨ 다 놓기 전 들추기 — 판 불변              ⑩ 들춰 보기 전 판 읽기 — 판 불변
+   ⑪ 이미 읽은 자리 다시 읽기 — 판 불변       ⑫ 판 읽기 어긋난 답 — 판 불변
+   ⑬ 판을 읽기 전 마무리 — 판 불변 · ⑭ 마무리 어긋난 답 — 판 불변
+
+  ■ 정직 3곳
+   ㉠ 판의 칸은 교과서 116쪽 옛 지도와 요즘 지도를 견주기 쉽게 판이 칸으로 줄여 그린 것 — 칸의 자리와 수는 실제 지도와 다르다(캡션 상시).
+   ㉡ 교과서 지도에 적힌 만든 해·역 이름은 옮기지 않는다(교과서를 펴서 직접 확인).
+   ㉢ 옛 지도에는 없지만 요즘 지도에는 있는 시설을 직접 찾아 써 보는 일은 교실 몫.
+
+  ■ 설계 원칙
+   · 5차시 침범 0(바다가 있는 지역은 차시 예고 한 자리) · 6~7차시 침범 0(개발·간척 0)
+   · 주제② 침범 0(도시·교통·산업 0) · l02 재현 최소 · 2단원·1단원 재현 0
+   · 교사용 참고 자료 0(평야·4대강·철도·누리집 해설 전수) · 대전광역시·갑천 외 실제 지역 이름 0 · 연도 0 · 「틀렸」 0
+-->
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>들이 펼쳐진 지역의 특징과 변화 모습을 살펴볼까요 · 사회 4-2</title>
+<meta name="kedu-lesson-id" content="g4_social_u3_l03_v1">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#0891B2; --green-d:#0E7490; --cyan:#0D9488;
+  --bg:#ECFEFF; --bub:#CFFAFE; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#F57F17; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes drawLine{to{transform:scaleX(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ka-lb{background:#F1F5F9;border:none;padding:7px 12px;border-radius:10px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;font-family:inherit;font-weight:700;color:#475569;flex-shrink:0;font-size:13px}
+.ka-lb svg{width:15px;height:15px}
+.ka-bar{flex:1;height:5px;background:var(--bg);border-radius:999px;overflow:hidden}
+.ka-bar>div{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:999px;transition:width .35s ease;width:6%}
+.ka-pg{color:var(--green);font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;flex-shrink:0}
+.ka-sc{background:var(--amber-bg);color:var(--amber);padding:4px 12px;border-radius:999px;display:flex;align-items:center;gap:5px;flex-shrink:0;font-weight:700}
+.ka-sc svg{width:14px;height:14px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px}
+.ka-sc-u{font-size:12px}
+
+/* 메인 */
+.ka-m{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow-y:auto}
+.ka-tags{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ka-bg{background:var(--amber-bg);color:var(--amber);padding:5px 14px;border-radius:30px;font-size:13px;
+  display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.ka-bg.s2{background:#E0F2FE;color:#0369A1}
+.ka-bg.s3{background:#EDE9FE;color:#6D28D9}
+.ka-bg.s4{background:#FCE7F3;color:#BE185D}
+.ka-bg.s5{background:#CFFAFE;color:var(--green)}
+.ka-bg svg{width:13px;height:13px}
+.ka-meta{font-size:13px;color:var(--muted)}
+.ka-t{font-size:clamp(20px,3.4vw,29px);margin-bottom:16px;line-height:1.4;color:var(--green);letter-spacing:-.3px;font-weight:700;animation:fadeUp .4s .15s ease both}
+.ka-bub{background:var(--bub);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);line-height:1.7;
+  margin-bottom:16px;border-left:4px solid var(--green);animation:fadeUp .4s .3s ease both}
+.ka-emph{position:relative;display:inline-block;font-weight:700;color:var(--green)}
+.ka-emph::after{content:'';position:absolute;bottom:2px;left:0;right:0;height:3px;background:var(--red);border-radius:2px;transform:scaleX(0);transform-origin:left;animation:drawLine .6s .6s ease forwards}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(16px,2.6vw,21px);font-weight:700;line-height:1.6;margin-bottom:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:640px}
+.opt{background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:13px 14px;font-size:clamp(14px,2.3vw,17px);
+  font-weight:500;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:var(--green);background:#CFFAFE;animation:pop .4s ease}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;font-size:clamp(14px,2.3vw,17px);line-height:1.6;text-align:center;animation:fadeUp .35s ease both;max-width:640px}
+.fb.ok{color:var(--green);font-weight:700}
+.hint{margin-top:12px;background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(13px,2.2vw,16px);
+  line-height:1.6;color:#0C4A6E;max-width:560px;animation:fadeUp .35s ease both}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:620px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFF;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:clamp(14px,2.3vw,17px);line-height:1.5}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(8,145,178,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+/* 조작 판 — 덮어도 지워지지 않는 판 (옛 모습 위에 요즘 모습 덮기) */
+.ly-wrap{max-width:780px;width:100%;margin:0 auto}
+.ly-head{background:#CFFAFE;color:#155E75;font-weight:800;text-align:center;border-radius:10px;padding:7px 10px;
+  font-size:clamp(13px,2.1vw,16px);margin-bottom:8px;word-break:keep-all}
+.ly-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:8px;border-radius:14px;background:#F0FDFA;border:2px solid #A5F3FC}
+.ly-grid[data-look="1"]{background:#FFFBEB;border-color:#FCD34D}
+.ly-cell{border:2px solid #CBD5E1;border-radius:10px;min-height:56px;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:2px;padding:5px 3px;color:var(--ink);word-break:keep-all;text-align:center}
+.ly-cell b{font-size:clamp(13px,2.1vw,16px);line-height:1.3}
+.ly-cell i{font-style:normal;font-size:clamp(10px,1.6vw,12px);color:#64748B;min-height:1em}
+.ly-cell[data-cover="1"]{border-color:#0891B2;box-shadow:inset 0 0 0 2px #CFFAFE}
+.ly-cell[data-look="1"][data-cover="1"]{border-style:dashed;border-color:#D97706;box-shadow:none}
+.ly-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:9px}
+.ly-card{border:2px solid #67E8F9;background:#ECFEFF;color:#155E75;border-radius:10px;padding:8px 4px;font-family:inherit;font-weight:700;
+  font-size:clamp(12px,2vw,15px);cursor:pointer;word-break:keep-all;line-height:1.3}
+.ly-card[data-picked="1"]{background:#FEF3C7;color:#78350F;border-color:#F59E0B}
+.ly-card[data-put="1"]{background:#F1F5F9;color:#94A3B8;border-color:#CBD5E1;cursor:default}
+.ly-look{margin-top:9px;width:100%;border:2px solid #D97706;background:#FFFBEB;color:#92400E;border-radius:11px;padding:9px 10px;
+  font-family:inherit;font-weight:800;font-size:clamp(13px,2.2vw,16px);cursor:pointer}
+.ly-look[data-look="1"]{background:#D97706;color:#fff}
+.ly-count{margin-top:9px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.ly-row{border:2px solid var(--line);border-radius:10px;padding:7px 8px;background:#fff;font-size:clamp(12px,2vw,15px);line-height:1.5;text-align:center}
+.ly-row b{display:block;color:#0E7490}
+.ly-tell{margin-top:8px;border-radius:12px;padding:9px 13px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;background:#F0FDFA;border-left:4px solid var(--cyan)}
+.ly-ask{border:2px solid var(--line);border-radius:12px;padding:10px 14px;background:#F8FEFF;margin-top:9px;font-size:clamp(13px,2.2vw,16px);line-height:1.6}
+.ly-opts{display:grid;grid-template-columns:1fr;gap:8px;margin-top:9px}
+.ly-opt{background:#F8FAFC;border:2px solid var(--line);border-radius:11px;padding:10px 12px;font-family:inherit;
+  font-size:clamp(13px,2.2vw,16px);cursor:pointer;text-align:left;line-height:1.5;word-break:keep-all}
+.ly-opt:hover{border-color:var(--green);background:var(--bub)}
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+  .ly-cards{grid-template-columns:repeat(3,1fr)}
+  .ly-count{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#F57F17"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식, 사람 형상 대신 칸과 모양 ===== */
+/* ===== 시각 자료(SVG 씬) — 도식, 사람 형상 대신 칸과 모양 ===== */
+const SVG = {
+  // [동기 유발] 들이 펼쳐진 지역
+  field:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <rect x="0" y="40" width="160" height="40" fill="#BEF264"/>
+    <path d="M 0 52 L 160 52 M 0 64 L 160 64 M 40 40 L 40 80 M 80 40 L 80 80 M 120 40 L 120 80" stroke="#65A30D" stroke-width="1.2"/>
+    <path d="M 0 36 Q 40 30 80 38 T 160 34" stroke="#0284C7" stroke-width="4" fill="none"/>
+    <text x="80" y="92" font-size="7" fill="#0E7490" text-anchor="middle" font-weight="800">넓고 평평한 들 · 논과 밭</text></svg>`,
+  // 그림 속 장소
+  place:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <path d="M 10 62 Q 30 34 50 62 Z" fill="#E0F2FE" stroke="#0369A1"/>
+    <rect x="62" y="40" width="34" height="22" fill="#FDE68A" stroke="#A16207"/><path d="M 58 40 L 79 28 L 100 40 Z" fill="#92400E"/>
+    <rect x="108" y="44" width="44" height="18" fill="#E2E8F0" stroke="#475569"/><path d="M 104 66 L 156 66" stroke="#475569" stroke-width="2"/>
+    <text x="80" y="84" font-size="6.8" fill="#0E7490" text-anchor="middle" font-weight="800">비닐하우스 · 축사 · 기차역</text></svg>`,
+  // 변화 모습
+  grow:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <rect x="14" y="22" width="22" height="46" fill="#CBD5E1" stroke="#475569"/><rect x="40" y="30" width="22" height="38" fill="#CBD5E1" stroke="#475569"/>
+    <rect x="70" y="42" width="30" height="26" fill="#FECACA" stroke="#B91C1C"/>
+    <rect x="108" y="36" width="40" height="32" fill="#DDD6FE" stroke="#6D28D9"/>
+    <path d="M 0 74 L 160 74" stroke="#334155" stroke-width="4"/>
+    <text x="80" y="90" font-size="6.8" fill="#0E7490" text-anchor="middle" font-weight="800">아파트 · 공장 · 도로 · 문화 시설</text></svg>`,
+  // 덮기 안내
+  cover:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <rect x="30" y="30" width="44" height="30" rx="4" fill="#D9F99D" stroke="#65A30D"/>
+    <rect x="86" y="24" width="44" height="30" rx="4" fill="#E2E8F0" stroke="#0891B2" stroke-width="2"/>
+    <path d="M 86 60 L 92 66 L 124 66 L 130 60" stroke="#D97706" stroke-width="1.6" fill="none" stroke-dasharray="3 2"/>
+    <text x="52" y="49" font-size="8" fill="#3F6212" text-anchor="middle" font-weight="800">논</text>
+    <text x="108" y="43" font-size="7.4" fill="#155E75" text-anchor="middle" font-weight="800">아파트</text>
+    <text x="80" y="84" font-size="6.8" fill="#155E75" text-anchor="middle" font-weight="800">덮어도 아래에 옛 모습이 남아요</text></svg>`,
+  // 생활 모습
+  life:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <rect x="22" y="14" width="116" height="62" rx="5" fill="#fff" stroke="#0891B2" stroke-width="1.6"/>
+    <path d="M 22 30 L 138 30 M 22 46 L 138 46 M 22 62 L 138 62 M 64 14 L 64 76" stroke="#A5F3FC" stroke-width="1.4"/>
+    <text x="80" y="90" font-size="7" fill="#0E7490" text-anchor="middle" font-weight="800">장소와 사람들의 생활 모습</text></svg>`,
+  done:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <circle cx="80" cy="46" r="26" fill="#CFFAFE" stroke="#0891B2" stroke-width="2.4"/>
+    <path d="M 68 46 L 76 55 L 93 37" stroke="#0891B2" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="80" y="86" font-size="7.4" fill="#155E75" text-anchor="middle" font-weight="800">특징과 변화를 알았어요</text></svg>`
+};
+function sceneCard(key,cap){return `<div class="scene">${SVG[key]}<div class="cap">${cap}</div></div>`;}
+
+/* ===== 직접 조작: 덮어도 지워지지 않는 판 (옛 모습 위에 요즘 모습 덮기) =====
+   ⭐ 옛 모습을 담는 상태가 없다 — 아래층은 LY_BASE 상수 그대로(읽는 자리 lyBaseOf 하나),
+      위층은 lyAt 한 줄(lyTopOf)이 그때그때 고른다. 덮어도 아래층은 지워지지 않고, 들추면 글자까지 그대로 나온다.
+   ⭐ 덮을 수 있는지는 lyOpen 한 줄(옛 모습이 논이나 밭인가)이 정한다 — 판이 정해 둔 카드 자리는 없다.
+   ⭐ 놓는 자리 state.lyAt[state.lySel] = c 단 하나 · 걷어 내는 자리 0 · 셈 띠는 판을 들춘 뒤에만. */
+const LY_BASE = ["논","밭","논","논","하천","하천","하천","하천","밭","학교","논","밭"];   // 옛 모습 · 4칸씩 세 줄
+const LY_FARM = ["논","밭"];                                                             // 덮을 수 있는 옛 모습
+const LY_NEW = ["아파트","아파트","학교","학교","도로","지하철역","행정복지센터"];          // 요즘 모습 카드 일곱
+const LY_SAY_PUTDONE = "이미 판에 놓은 카드예요. 판은 그대로예요.";
+const LY_SAY_PICKDONE = "이미 고른 카드예요. 덮을 칸을 눌러 봐요.";
+const LY_SAY_NOPICK = "먼저 판에 놓을 카드를 골라 봐요.";
+const LY_SAY_KEEP = "이 칸은 덮지 않고 그대로 두는 칸이에요. 판은 그대로예요.";
+const LY_SAY_COVERED = "이미 덮은 칸이에요. 판은 그대로예요.";
+const LY_SAY_LOOKING = "지금은 옛 모습을 들춰 보는 중이에요. 다시 덮은 뒤에 눌러 봐요.";
+const LY_SAY_ORDER_L = "먼저 카드를 모두 판에 놓아 봐요.";
+const LY_SAY_ORDER_R = "먼저 판을 들춰 옛 모습을 살펴봐요.";
+const LY_SAY_READDONE = "이미 정한 자리예요. 판은 그대로예요.";
+const LY_SAY_ORDER_FIN = "먼저 판을 읽어 봐요.";
+const LY_TELL_PUT = "카드로 칸을 덮었어요. 덮인 칸 아래의 옛 모습은 지워지지 않았어요.";
+const LY_TELL_LOOK = "판을 들췄어요. 덮기 전의 옛 모습이 그대로 남아 있어요.";
+const LY_TELL_SHUT = "판을 다시 덮었어요.";
+const LY_READQ = [
+  "학교가 더 많아졌으니, 이 지역에 사는 사람이 더 많아졌다고 볼 수 있어요",
+  "하천이 그대로 있으니, 이 지역에 사는 사람도 그대로라고 볼 수 있어요",
+  "논과 밭이 덮였으니, 이 지역에 사는 사람이 줄었다고 볼 수 있어요"
+];
+const LY_READ_OK = 0;
+const LY_READ_BAD = "옛 모습과 요즘 모습에서 학교가 몇 칸이었는지 견주어 봐요.";
+const LY_FINQ = [
+  "들이 펼쳐진 지역은 옛날과 요즘의 모습이 똑같아요",
+  "들이 펼쳐진 지역에는 사람들이 만든 시설이 하나도 없어요",
+  "들이 펼쳐진 지역에서는 논과 밭을 볼 수 있고, 많은 사람이 모여 살면서 회사와 공장, 아파트, 도로 등이 생겨났어요"
+];
+const LY_FIN_OK = 2;
+const LY_FIN_BAD = "오늘 살펴본 들이 펼쳐진 지역의 특징과 변화 모습을 떠올려 봐요.";
+
+function lyN(){ return LY_BASE.length; }
+function lyBaseOf(c){ return LY_BASE[c]; }                                   // ⭐ LY_BASE 를 읽는 자리는 여기 단 하나
+function lyOpen(c){ return LY_FARM.indexOf(lyBaseOf(c)) >= 0; }              // ⭐ 덮을 수 있는지는 이 한 줄
+function lyCardAt(st,c){ return st.lyAt.indexOf(c); }
+function lyTopOf(st,c){ const k = lyCardAt(st,c); return k < 0 ? lyBaseOf(c) : LY_NEW[k]; }   // ⭐ 위층은 이 한 줄
+function lyPutN(st){ return st.lyAt.filter(c=>c >= 0).length; }
+function lyAllPut(st){ return lyPutN(st) === LY_NEW.length; }
+function lyCountTop(st,t){ let n=0; for(let c=0;c<lyN();c++) if(lyTopOf(st,c)===t) n++; return n; }
+function lyCountBase(t){ let n=0; for(let c=0;c<lyN();c++) if(lyBaseOf(c)===t) n++; return n; }
+function lyTone(t){ return t==="하천" ? "#BAE6FD" : (LY_FARM.indexOf(t)>=0 ? "#D9F99D" : (t==="학교" ? "#FDE68A" : "#E2E8F0")); }
+function lyStage(st){
+  if(!lyAllPut(st)) return "put";
+  if(!st.lySaw) return "look";
+  if(st.lyRead == null) return "read";
+  if(st.lyFin == null) return "fin";
+  return "end";
+}
+
+/* 판 — 칸 열둘 */
+function lyGrid(st){
+  const look = st.lyLook ? 1 : 0;
+  let cells = '';
+  for(let c=0;c<lyN();c++){
+    const k = lyCardAt(st,c), cover = k >= 0 ? 1 : 0;
+    const shown = look ? lyBaseOf(c) : lyTopOf(st,c);
+    const sub = cover ? (look ? '덮었던 칸' : '덮은 칸') : '';
+    cells += `<button class="ly-cell" data-cell="${c}" data-cover="${cover}" data-look="${look}" style="background:${lyTone(shown)}" onclick="lyPut(${c})"><b>${shown}</b><i>${sub}</i></button>`;
+  }
+  return `<div class="ly-grid" data-look="${look}" data-put="${lyPutN(st)}">${cells}</div>`;
+}
+function lyCards(st){
+  return `<div class="ly-cards">${LY_NEW.map((t,k)=>`<button class="ly-card" data-card="${k}" data-put="${st.lyAt[k]>=0?1:0}" data-picked="${st.lySel===k?1:0}" onclick="lyPick(${k})">${t}</button>`).join('')}</div>`;
+}
+function lyCount(st){
+  const row = (name,top,base)=>`<div class="ly-row" data-row="${name}"><b>${name}</b>요즘 모습 ${top}칸 · 옛 모습 ${base}칸</div>`;
+  return `<div class="ly-count">${row('학교',lyCountTop(st,'학교'),lyCountBase('학교'))}${row('논과 밭',lyCountTop(st,'논')+lyCountTop(st,'밭'),lyCountBase('논')+lyCountBase('밭'))}${row('하천',lyCountTop(st,'하천'),lyCountBase('하천'))}</div>`;
+}
+
+function lyPanel(st){
+  const stage = lyStage(st);
+  let ask = '';
+  if(stage === "put"){
+    ask = `<div class="ly-ask" data-step="put"><b>카드를 골라 논이나 밭이었던 칸 위에 덮어 봐요.</b>
+      <div class="note" style="text-align:left;margin-top:5px">어느 칸에, 어떤 차례로 놓아도 괜찮아요. 카드 일곱 장을 모두 놓으면 판을 들춰 볼 수 있어요.</div></div>`;
+  } else if(stage === "look"){
+    ask = `<div class="ly-ask" data-step="look"><b>카드를 다 놓았어요. 판을 들춰 덮기 전의 옛 모습을 살펴봐요.</b></div>`;
+  } else if(stage === "read"){
+    ask = `<div class="ly-ask" data-step="read"><b>옛 모습과 요즘 모습을 견주어 보니, 이 지역에 사는 사람은 어떻게 되었다고 볼 수 있을까요?</b>
+      <div class="ly-opts">${LY_READQ.map((t,i)=>`<button class="ly-opt" onclick="lyRead(${i})">${t}</button>`).join('')}</div></div>`;
+  } else if(stage === "fin"){
+    ask = `<div class="ly-ask" data-step="fin"><b>그렇다면 오늘 공부한 것은 무엇일까요?</b>
+      <div class="ly-opts">${LY_FINQ.map((t,i)=>`<button class="ly-opt" onclick="lyFin(${i})">${t}</button>`).join('')}</div></div>`;
+  } else {
+    ask = `<div class="ly-ask" data-fin="1" style="border-color:#86EFAC;background:#F0FDF4">
+      <b style="color:#166534">들이 펼쳐진 지역에서는 논과 밭을 볼 수 있고, 많은 사람이 모여 살면서 아파트와 학교, 도로 등이 생겨났어요.</b>
+      덮인 칸 아래에는 옛 모습이 그대로 남아 있었지요. 학교가 늘어난 것을 보고 사는 사람이 많아졌다고 짐작할 수 있어요.
+      <div class="note" style="text-align:left;margin-top:5px">※ 교과서 116쪽 지도를 펴서 옛 지도에는 없지만 요즘 지도에는 있는 시설을 직접 찾아 써 보는 일은 <b>교실 몫</b>이에요. 판은 대신 찾아 주지 않아요.</div></div>`;
+  }
+  const count = st.lySaw ? lyCount(st) : '';
+  const tell = st.lyTell ? `<div class="ly-tell">${st.lyTell}</div>` : '';
+  const warn = st.lyMsg ? `<div class="fb" style="color:#DC2626;font-weight:700">${st.lyMsg}</div>` : '';
+  return `<div class="ly-wrap">
+    <div class="ly-head">옛 모습 위에 요즘 모습 덮기 · 놓은 카드 <b>${lyPutN(st)}</b> / ${LY_NEW.length} · ${st.lyLook?"옛 모습을 들춰 보는 중":"요즘 모습"}</div>
+    ${lyGrid(st)}${lyCards(st)}
+    <button class="ly-look" data-look="${st.lyLook?1:0}" onclick="lyLook()">${st.lyLook?"다시 덮기":"판 들추기 — 옛 모습 보기"}</button>
+    ${count}${tell}${ask}${warn}
+    <div class="note" style="margin-top:8px">※ 이 판은 교과서 116쪽 대전광역시의 옛 지도와 요즘 지도를 견주기 쉽게 <b>판이 칸으로 줄여 그린 것</b>이에요. 칸의 자리와 수는 실제 지도와 달라요.</div>
+  </div>`;
+}
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "3단원 다양한 환경과 삶의 모습 · 주제① 지역의 환경과 변화";
+const Q = [
+  {stem:"들이 펼쳐진 지역에서 하천이나 저수지 가까이에 만든 것으로 알맞은 것은 무엇인가요?",
+   opts:["울창한 숲과 계곡","스키장과 캠핑장","논과 밭","높은 산봉우리"], correct:2, pts:POINTS_BASIC,
+   h1:"물을 많이 쓰는 농사를 떠올려 봐요.", h2:"벼를 기르는 곳과 채소를 기르는 곳이에요.",
+   reason:"들이 펼쳐진 지역에서는 하천이나 저수지 가까이에 만든 논과 밭을 볼 수 있어요."},
+  {stem:"들이 펼쳐진 지역의 비닐하우스에서 볼 수 있는 모습은 무엇인가요?",
+   opts:["여러 가지 채소와 과일을 재배하는 모습","소나 돼지 등을 키우는 모습","운동 경기를 하는 모습","기차를 타려는 모습"], correct:0, pts:POINTS_BASIC,
+   h1:"비닐로 바깥을 가린 시설이에요.", h2:"그 안에서 무엇이 자랄지 떠올려 봐요.",
+   reason:"비닐하우스에서는 여러 가지 채소와 과일을 재배하는 모습을 볼 수 있어요."},
+  {stem:"들이 펼쳐진 지역에 많은 사람이 모여 살면서 생겨난 것으로 알맞은 것은 무엇인가요?",
+   opts:["산봉우리","계곡","하천","회사와 공장, 아파트, 도로"], correct:3, pts:POINTS_BASIC,
+   h1:"사람들이 만든 것을 찾아봐요.", h2:"사람이 많이 모이면 살 곳과 일할 곳, 다닐 길이 필요해요.",
+   reason:"들이 펼쳐진 지역에 많은 사람이 모여 살면서 회사와 공장, 아파트, 도로 등이 생겨났어요."},
+  {stem:"박물관이나 미술관 같은 곳을 무엇이라고 하나요?",
+   opts:["상점","문화 시설","축사","저수지"], correct:1, pts:POINTS_BASIC,
+   h1:"작품이나 옛 물건을 보며 즐기는 곳이에요.", h2:"「문화」라는 낱말이 들어가요.",
+   reason:"박물관이나 미술관 등은 문화 시설이에요. 들이 펼쳐진 지역에서는 문화 시설도 볼 수 있어요."},
+  {stem:"판에서 카드로 덮은 칸을 들췄을 때 알 수 있는 것은 무엇인가요?",
+   opts:["덮기 전에 그 칸이 논이나 밭이었다는 것","그 칸에 사는 사람의 수","하천이 모두 사라졌다는 것","그 칸의 실제 넓이"], correct:0, pts:POINTS_APPLY,
+   h1:"들추면 무엇이 나왔는지 떠올려 봐요.", h2:"덮어도 아래의 옛 모습은 지워지지 않았어요.",
+   reason:"덮은 칸을 들추면 덮기 전의 옛 모습이 그대로 나와요. 요즘 모습이 선 자리는 옛날에 논이나 밭이었어요."},
+  {stem:"옛 지도와 요즘 지도를 견주었을 때 요즘 지도에서 달라진 모습으로 알맞은 것은 무엇인가요?",
+   opts:["학교가 줄고 도로가 단순해졌어요","논과 밭이 더 넓어졌어요","하천이 모두 사라졌어요","학교가 많아지고 도로가 복잡해졌어요"], correct:3, pts:POINTS_APPLY,
+   h1:"판에서 학교는 옛 모습과 요즘 모습에 몇 칸씩 있었나요?", h2:"요즘 지도에는 새로 생긴 길도 많아요.",
+   reason:"옛 지도보다 요즘 지도에는 학교가 많고, 도로가 복잡해졌어요."},
+  {stem:"옛 모습과 요즘 모습을 견주어 보니, 이 지역에 사는 사람은 어떻게 되었다고 볼 수 있나요?",
+   opts:["하천이 그대로 있으니, 이 지역에 사는 사람도 그대로라고 볼 수 있어요","학교가 더 많아졌으니, 이 지역에 사는 사람이 더 많아졌다고 볼 수 있어요","논과 밭이 덮였으니, 이 지역에 사는 사람이 줄었다고 볼 수 있어요","지도로는 사는 사람에 대해 아무것도 짐작할 수 없어요"], correct:1, pts:POINTS_APPLY,
+   h1:"학교에 다니는 사람이 많아지면 무엇이 필요할까요?", h2:"판의 셈 띠에서 학교 칸의 수를 견주어 봐요.",
+   reason:"학교가 더 많아졌으니, 이 지역에 사는 사람이 더 많아졌다고 볼 수 있어요."},
+  {stem:"오늘 공부한 내용으로 알맞은 것은 무엇인가요?",
+   opts:["들이 펼쳐진 지역은 옛날과 요즘의 모습이 똑같아요","들이 펼쳐진 지역에는 사람들이 만든 시설이 하나도 없어요","들이 펼쳐진 지역에서는 논과 밭을 볼 수 있고, 많은 사람이 모여 살면서 회사와 공장, 아파트, 도로 등이 생겨났어요","들이 펼쳐진 지역에는 산비탈에 만든 밭이 가장 많아요"], correct:2, pts:POINTS_APPLY,
+   h1:"오늘 살펴본 특징과 변화 모습을 함께 떠올려 봐요.", h2:"논과 밭 위에 무엇이 생겼나요?",
+   reason:"들이 펼쳐진 지역에서는 논과 밭을 볼 수 있고, 많은 사람이 모여 살면서 회사와 공장, 아파트, 도로 등이 생겨났어요."}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — 동기 유발
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">들이 펼쳐진 지역은 어떤 곳일까요?</h2>
+  <div class="ka-bub">들이 펼쳐진 지역은 <b>들판이 있는 지역</b>, <b>논과 밭이 있는 지역</b>, <b>땅이 넓고 평평한 지역</b>이라고 떠올릴 수 있어요. 친척 집에 가거나 체험 학습을 갔을 때 본 적이 있나요?</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('field','들이 펼쳐진 지역')}</div>
+    <div class="note">오늘은 <b>들이 펼쳐진 지역의 특징과 변화 모습</b>을 살펴봐요.</div>
+  </div>`});
+// 2 살펴보기 — 특징 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">들이 펼쳐진 지역에는 어떤 특징이 있나요?</h2>
+  <div class="ka-bub">교과서 114쪽 그림에서 들이 펼쳐진 지역의 <span class="ka-emph">자연환경</span>과 <b>사람들이 하는 일</b>을 찾아봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('field','논과 밭')}${sceneCard('place','비닐하우스')}</div>
+  ${st.revealed?`<div class="answer-box">· 들이 펼쳐진 지역에서는 <b>하천이나 저수지 가까이에 만든 논과 밭</b>을 볼 수 있어요.<br>· 사람들은 논에서 <b>벼농사</b>를 짓거나, 밭이나 <b>비닐하우스</b>에서 여러 가지 채소와 과일을 재배하기도 해요.</div>`
+    :`<div class="note">교과서 그림을 <b>직접</b> 살펴본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 3 살펴보기 — 그림 속 장소
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">그림 속 장소에서는 어떤 모습을 볼 수 있나요?</h2>
+  <div class="ka-bub">교과서 114~115쪽 그림에는 <span class="ka-emph">축사, 비닐하우스, 공장, 경기장, 백화점, 기차역</span>이 있어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('place','그림 속 장소')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div><b>축사</b> — 소나 돼지 등을 키우는 모습을 볼 수 있어요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b>비닐하우스</b> — 여러 가지 채소와 과일을 재배하는 모습을 볼 수 있어요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div><b>공장</b> — 생활에 필요한 물건을 만드는 모습을 볼 수 있어요.</div></div>
+    <div class="sum-item"><span class="n">4</span><div><b>경기장</b> — 운동 경기를 하는 사람과 관중을 볼 수 있어요.</div></div>
+    <div class="sum-item"><span class="n">5</span><div><b>백화점</b> — 여러 가지 물건을 사고파는 모습을 볼 수 있어요.</div></div>
+    <div class="sum-item"><span class="n">6</span><div><b>기차역</b> — 기차를 타려는 사람들을 볼 수 있어요.</div></div>
+  </div></div>`});
+// 4 살펴보기 — 변화 모습 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">들이 펼쳐진 지역의 모습은 어떻게 변화하고 있나요?</h2>
+  <div class="ka-bub">들이 펼쳐진 지역에는 <span class="ka-emph">많은 사람이 모여 살아요</span>. 사람이 많이 모이면 어떤 것들이 새로 생길까요?</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('grow','새로 생긴 것들')}</div>
+  ${st.revealed?`<div class="answer-box">· 많은 사람이 모여 살면서 <b>회사와 공장, 아파트, 도로</b> 등이 생겨났어요.<br>· 백화점이나 대형 할인점 등의 <b>상점</b>, 박물관이나 미술관 등의 <b>문화 시설</b>도 볼 수 있어요.</div>
+    <div class="note">많은 사람이 모여 사는 곳의 모습은 뒤에서 더 자세히 알아봐요.</div>`
+    :`<div class="note">새로 생길 것을 먼저 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 5 살펴보기 — 조작 안내
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">옛 모습 위에 요즘 모습을 덮어 봐요</h2>
+  <div class="ka-bub">교과서 116쪽에는 한 지역의 <b>옛 지도</b>와 <b>요즘 지도</b>가 있어요. 판에서 옛 모습의 논과 밭 위에 요즘 생긴 것을 <b>카드로 덮고</b>, 판을 <b>들춰</b> 옛 모습과 견주어 봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('cover','덮고 들춰 봐요')}</div>
+  <div class="note">덮은 칸 아래의 옛 모습은 <b>사라질까요</b>, 남아 있을까요? 덮어 보며 살펴봐요.</div></div>`});
+// 6 살펴보기 — 직접 조작
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">논과 밭 위에 요즘 모습을 덮고 들춰 봐요</h2>
+  <div class="ka-grp" style="align-items:stretch">${lyPanel(st)}</div>`});
+// 7 살펴보기 — 생활 모습 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">장소에서 볼 수 있는 사람들의 생활 모습을 알아봐요</h2>
+  <div class="ka-bub"><b>스스로 활동</b> — 들이 펼쳐진 지역의 장소에서 사람들은 어떻게 생활하고 있을까요? <span class="ka-emph">장소 이름</span>과 <b>생활 모습</b>을 짝지어 말해 봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('life','장소와 생활 모습')}</div>
+  ${st.revealed?`<div class="answer-box">· <b>공장</b> — 생활에 필요한 물건을 만들어요.<br>· <b>논</b> — 벼농사를 지어요.<br>· <b>비닐하우스</b> — 채소나 과일을 재배해요.<br>· <b>기차역</b> — 기차를 타고 다른 지역으로 여행을 가요.<br>· <b>백화점</b> — 필요한 물건을 사요.<br>· <b>경기장</b> — 운동 경기를 관람해요.</div>`
+    :`<div class="note">장소마다 생활 모습을 먼저 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부한 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('done','특징과 변화를 알았어요')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div><b>특징</b> — 하천이나 저수지 가까이에 만든 논과 밭을 볼 수 있어요. 사람들은 벼농사를 짓거나, 채소와 과일을 재배해요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b>변화 모습</b> — 많은 사람이 모여 살면서 회사와 공장, 아파트 등이 생겨났어요. 상점이나 문화 시설도 볼 수 있어요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b style="color:#0891B2">바다가 있는 지역의 특징과 변화 모습</b>을 살펴봐요.</div></div>`});
+// 17 스스로 돌아보기
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"들이 펼쳐진 지역의 특징을 말할 수 있어요",st)}
+    ${selfCheck(1,"들이 펼쳐진 지역에 새로 생긴 것들을 말할 수 있어요",st)}
+    ${selfCheck(2,"옛 지도와 요즘 지도를 견주어 달라진 모습을 설명할 수 있어요",st)}
+  </div><div class="note">체크가 잘 안 되는 곳은 <b>다시 살펴봐도</b> 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">들이 펼쳐진 지역을 살펴봤어요</h2>
+  <div class="ka-grp">
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">교과서 지도를 펴서 옛 지도에는 없지만 요즘 지도에는 있는 시설을 <b style="color:#0891B2">직접</b> 찾아봐요.</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const optHTML = q.opts.map((o,k)=>{
+    let cls='opt';
+    if(qs.done && k===q.correct) cls+=' correct';
+    if(qs.wrongPick===k) cls+=' wrong';
+    return `<button class="${cls}" onclick="pick(${i},${k})" ${qs.done?'disabled':''}>${o}</button>`;
+  }).join('');
+  const hint = qs.hint>0 ? `<div class="hint">💡 ${qs.hint===1?q.h1:q.h2}</div>` : '';
+  const fb = qs.done ? `<div class="fb ok">✓ ${q.reason}</div>` : '';
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용':'확인'} (+${q.pts})</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    <div class="opts" style="margin:0 auto">${optHTML}</div>
+    ${hint}${fb}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g4_2_social_u3_l03";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  lyAt:[-1,-1,-1,-1,-1,-1,-1], lySel:null, lyLook:false, lySaw:false, lyRead:null, lyFin:null, lyMsg:"", lyTell:"",
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 →';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음 (브라우저에서만 · jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+function lyDraw(){ main.innerHTML = slides[state.idx].render(state); }
+
+/* 카드 고르기 */
+function lyPick(k){
+  if(state.lyFin!=null) return;                                        // 가드①: 마무리 확정 후 전체 잠금
+  if(!Number.isInteger(k) || k<0 || k>=LY_NEW.length) return;          // 가드②: 무효 번호 — 안내조차 띄우지 않음
+  if(state.lyLook){ state.lyMsg = LY_SAY_LOOKING; playThud(); lyDraw(); return; }             // 가드⑧: 들춰 보는 동안 — 판 불변
+  if(state.lyAt[k] >= 0){ state.lyMsg = LY_SAY_PUTDONE; playThud(); lyDraw(); return; }       // 가드③: 이미 놓은 카드 — 판 불변
+  if(state.lySel === k){ state.lyMsg = LY_SAY_PICKDONE; lyDraw(); return; }                   // 가드④: 이미 고른 카드 — 판 불변
+  state.lySel = k;
+  state.lyMsg = ""; state.lyTell = ""; playBlip(); lyDraw();
+}
+/* 칸 덮기 — 어느 논·밭 칸이든 · 덮어도 옛 모습은 지워지지 않는다 */
+function lyPut(c){
+  if(state.lyFin!=null) return;                                        // 가드①
+  if(!Number.isInteger(c) || c<0 || c>=lyN()) return;                  // 가드②
+  if(state.lyLook){ state.lyMsg = LY_SAY_LOOKING; playThud(); lyDraw(); return; }             // 가드⑧
+  if(state.lySel==null){ state.lyMsg = LY_SAY_NOPICK; playThud(); lyDraw(); return; }         // 가드⑤: 고르기 전 놓기 — 판 불변
+  if(!lyOpen(c)){ state.lyMsg = LY_SAY_KEEP; playThud(); lyDraw(); return; }                  // 가드⑥: 덮지 않는 칸 — 판 불변
+  if(lyCardAt(state,c) >= 0){ state.lyMsg = LY_SAY_COVERED; playThud(); lyDraw(); return; }   // 가드⑦: 이미 덮은 칸 — 판 불변
+  state.lyAt[state.lySel] = c;                                         // ⭐ 놓는 자리는 코드에 여기 단 하나 · 걷어 내는 자리 0
+  state.lySel = null; state.lyMsg = ""; state.lyTell = LY_TELL_PUT; playBlip(); lyDraw();
+}
+/* 판 들추기 ↔ 다시 덮기 */
+function lyLook(){
+  if(state.lyFin!=null) return;                                        // 가드①
+  if(!lyAllPut(state)){ state.lyMsg = LY_SAY_ORDER_L; playThud(); lyDraw(); return; }         // 가드⑨: 다 놓기 전 — 판 불변
+  state.lyLook = !state.lyLook;                                        // ⭐ 들추고 덮는 자리는 여기 단 하나
+  if(state.lyLook) state.lySaw = true;
+  state.lyMsg = ""; state.lyTell = state.lyLook ? LY_TELL_LOOK : LY_TELL_SHUT; playBlip(); lyDraw();
+}
+/* 판 읽기 */
+function lyRead(i){
+  if(state.lyFin!=null) return;                                        // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=LY_READQ.length) return;         // 가드②
+  if(!state.lySaw){ state.lyMsg = LY_SAY_ORDER_R; playThud(); lyDraw(); return; }             // 가드⑩: 들춰 보기 전 — 판 불변
+  if(state.lyRead!=null){ state.lyMsg = LY_SAY_READDONE; lyDraw(); return; }                  // 가드⑪: 이미 정한 자리 — 판 불변
+  if(i!==LY_READ_OK){ state.lyMsg = LY_READ_BAD; playThud(); lyDraw(); return; }              // 가드⑫: 어긋난 답 — 판 불변
+  state.lyRead = i; state.lyMsg = ""; state.lyTell = ""; playBlip(); lyDraw();
+}
+/* 마무리 */
+function lyFin(i){
+  if(state.lyFin!=null) return;                                        // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=LY_FINQ.length) return;          // 가드②
+  if(state.lyRead==null){ state.lyMsg = LY_SAY_ORDER_FIN; playThud(); lyDraw(); return; }     // 가드⑬: 판을 읽기 전 — 판 불변
+  if(i!==LY_FIN_OK){ state.lyMsg = LY_FIN_BAD; playThud(); lyDraw(); return; }                // 가드⑭: 어긋난 답 — 판 불변
+  state.lyFin = i; state.lyMsg = ""; playChime(); lyDraw();
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true; qs.wrongPick=null;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2; if(qs.hint===2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">📘 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 →</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // l04 미양산 — 허브 복귀
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
+</html>
