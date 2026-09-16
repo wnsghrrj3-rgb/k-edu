@@ -442,94 +442,94 @@ window.KEDU_MAP["g5_2_math"] = {
    "kind": "unit",
    "lessons": [
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u5_l01",
+     "lessonId": "g5_2_math_u5_l01",
      "n": "1",
      "title": "직육면체를 만나 보자",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/5단원_직육면체/g5_math_u5_l01_직육면체를만나보자.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u5_l02",
+     "lessonId": "g5_2_math_u5_l02",
      "n": "2",
      "title": "직육면체를 알아봐요 ①",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/5단원_직육면체/g5_math_u5_l02_직육면체를알아봐요1.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u5_l03",
+     "lessonId": "g5_2_math_u5_l03",
      "n": "3",
      "title": "정육면체를 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/5단원_직육면체/g5_math_u5_l03_정육면체를알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u5_l04",
+     "lessonId": "g5_2_math_u5_l04",
      "n": "4",
      "title": "직육면체의 겨냥도를 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/5단원_직육면체/g5_math_u5_l04_직육면체의겨냥도를알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u5_l05",
+     "lessonId": "g5_2_math_u5_l05",
      "n": "5",
      "title": "직육면체를 알아봐요 ②",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/5단원_직육면체/g5_math_u5_l05_직육면체를알아봐요2.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u5_l06",
+     "lessonId": "g5_2_math_u5_l06",
      "n": "6",
      "title": "직육면체의 전개도를 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/5단원_직육면체/g5_math_u5_l06_직육면체의전개도를알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u5_l07",
+     "lessonId": "g5_2_math_u5_l07",
      "n": "7",
      "title": "직육면체의 전개도를 그려요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/5단원_직육면체/g5_math_u5_l07_직육면체의전개도를그려요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u5_l08",
+     "lessonId": "g5_2_math_u5_l08",
      "n": "8",
      "title": "알쏭달쏭 프로그램 실행 결과",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/5단원_직육면체/g5_math_u5_l08_알쏭달쏭프로그램실행결과.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u5_l09",
+     "lessonId": "g5_2_math_u5_l09",
      "n": "9",
      "title": "스스로 마무리해요 (단원 평가)",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/5단원_직육면체/g5_math_u5_l09_스스로마무리해요.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   },
