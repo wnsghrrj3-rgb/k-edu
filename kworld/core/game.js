@@ -31,13 +31,14 @@ export class Game {
     if (this.world.scene) { this.story = new Story(this, await J(this.base + this.world.scene)); this.story.apply(); }
     // 시대별 장식 코드는 world.json 이 가리킬 때만(코어는 시대 이름을 모른다)
     if (this.world.landscape) { const { buildLandscape } = await import(new URL(this.base + this.world.landscape, location.href).href); buildLandscape(this.e, this.quality()); }
-    // 보이는 것: 절차 하늘·햇빛 먼지·물결. ?fx=0 이면 끔. 후처리(블룸·색보정·SMAA)는 고사양 기본, ?post=0 끔, ?ao=1 로 구석 어둠 추가
-    const qs = new URLSearchParams(location.search); const hi = this.quality() === 'high';
+    // 보이는 것: 절차 하늘·햇빛 먼지·물결. ?fx=0 이면 끔. 후처리(블룸·색보정·SMAA)·그림자 4096·햇빛 먼지는 **?post=1 일 때만**(09-16 준호: 기본이 굼떴음 → 무거운 층은 켜서 보는 것으로), ?ao=1 로 구석 어둠 추가
+    const qs = new URLSearchParams(location.search); const hi = this.quality() === 'high'; const post = hi && qs.get('post') === '1';
     if (qs.get('fx') !== '0') {
       addSkyDome(this.e, this.world.skyLook || {}); enhanceWater(this.e);
-      if (hi) { addMotes(this.e); this.e.sun.shadow.mapSize.set(4096, 4096); }
+      if (post) { addMotes(this.e); this.e.sun.shadow.mapSize.set(4096, 4096); }
     }
-    if (hi && qs.get('post') !== '0') this.e.enablePost({ ao: qs.get('ao') === '1' });
+    if (post) this.e.enablePost({ ao: qs.get('ao') === '1' });
+    if (qs.get('fps') === '1') this.fpsMeter();
     this.p = new Player(this.e, { eye: this.world.eye, bounds: this.world.bounds, yaw: 0 });
     const vq = new URLSearchParams(location.search).get('view'); this.p.setView(vq || this.world.view || 'fp');
     this.p.bindJoystick(document.getElementById('stick'), document.getElementById('knob'));
@@ -56,6 +57,11 @@ export class Game {
     this.ui.intro(this.world.title, this.world.question);
     setTimeout(() => this.ui.say(this.world.intro, 5000), 400);
     if (this.world.intro2) setTimeout(() => { this.ui.say(this.world.intro2, 5000); if (this.world.goal2) this.ui.setGoal(this.world.goal2); }, 5800);
+  }
+  /** ?fps=1 — 왼쪽 위에 프레임·그리기 수(무거운 층을 찾을 때) */
+  fpsMeter() {
+    const el = document.createElement('div'); el.style.cssText = 'position:fixed;left:8px;top:8px;z-index:50;background:rgba(0,0,0,.55);color:#9f9;font:12px monospace;padding:4px 8px;border-radius:6px'; document.body.appendChild(el);
+    let n = 0, t0 = performance.now(); this.e.onFrame.push(() => { n++; const now = performance.now(); if (now - t0 >= 1000) { const info = this.e.renderer.info.render; el.textContent = `${n} fps · draw ${info.calls} · tri ${(info.triangles / 1000) | 0}k · ${this.quality()}`; n = 0; t0 = now; } });
   }
   /** 기기 등급: 'low'(태블릿·저사양) / 'high'. URL ?q=low|high 로 강제 */
   quality() {
