@@ -180,7 +180,10 @@ export function buildLandscape(e, quality = 'high', opts = {}) {
     // GLB 나무: 첫 메시의 지오메트리·재질을 그대로 인스턴스(89그루 = 그리기 1번). 모델 높이를 h(m)에 맞춰 키운다.
     new GLTFLoader().load(treeModel,(gltf)=>{
       let src=null;gltf.scene.traverse((o)=>{if(o.isMesh&&!src)src=o;});if(!src)return;
-      gltf.scene.updateMatrixWorld(true);const geo=src.geometry.clone().applyMatrix4(src.matrixWorld);geo.computeBoundingBox();   // 양자화(KHR_mesh_quantization) 노드 변환까지 굽는다const bb=geo.boundingBox;const modelH=bb.max.y-bb.min.y||1;
+      gltf.scene.updateMatrixWorld(true);const geo=src.geometry.clone();
+      // 양자화(KHR_mesh_quantization) 된 int16 속성은 float 로 풀어야 행렬을 구울 수 있다(int 배열에 float 를 쓰면 0 이 된다)
+      for(const k of ['position','normal']){const a=geo.attributes[k];if(!a||a.array instanceof Float32Array)continue;const f=new Float32Array(a.count*3);for(let i=0;i<a.count;i++){f[i*3]=a.getX(i);f[i*3+1]=a.getY(i);f[i*3+2]=a.getZ(i);}geo.setAttribute(k,new THREE.BufferAttribute(f,3));}
+      geo.applyMatrix4(src.matrixWorld);geo.computeBoundingBox();const bb=geo.boundingBox;const modelH=bb.max.y-bb.min.y||1;
       const m=src.material;m.side=THREE.DoubleSide;m.roughness=Math.max(m.roughness??.9,.85);m.metalness=0;
       const matrices=placed.map(([x,y,z,h])=>{const s=h/modelH;dummy.position.set(x,y-bb.min.y*s,z);dummy.rotation.set(0,rnd()*6.28,0);dummy.scale.set(s*between(.85,1.15),s,s*between(.85,1.15));dummy.updateMatrix();return dummy.matrix.clone();});
       const mesh=instances(geo,m,matrices,'woodland-glb',true);mesh.frustumCulled=true;
