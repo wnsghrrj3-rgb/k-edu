@@ -539,94 +539,94 @@ window.KEDU_MAP["g5_2_math"] = {
    "kind": "unit",
    "lessons": [
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u6_l01",
+     "lessonId": "g5_2_math_u6_l01",
      "n": "1",
      "title": "평균과 가능성을 만나 보자",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/6단원_평균과가능성/g5_math_u6_l01_평균과가능성을만나보자.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u6_l02",
+     "lessonId": "g5_2_math_u6_l02",
      "n": "2",
      "title": "평균을 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/6단원_평균과가능성/g5_math_u6_l02_평균을알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u6_l03",
+     "lessonId": "g5_2_math_u6_l03",
      "n": "3",
      "title": "평균을 구해요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/6단원_평균과가능성/g5_math_u6_l03_평균을구해요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u6_l04",
+     "lessonId": "g5_2_math_u6_l04",
      "n": "4",
      "title": "자료를 모아서 평균을 구하고 해석해요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/6단원_평균과가능성/g5_math_u6_l04_자료를모아서평균을구하고해석해요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u6_l05",
+     "lessonId": "g5_2_math_u6_l05",
      "n": "5",
      "title": "일이 일어날 가능성을 알아봐요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/6단원_평균과가능성/g5_math_u6_l05_일이일어날가능성을알아봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u6_l06",
+     "lessonId": "g5_2_math_u6_l06",
      "n": "6",
      "title": "일이 일어날 가능성을 수로 나타내요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/6단원_평균과가능성/g5_math_u6_l06_일이일어날가능성을수로나타내요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u6_l07",
+     "lessonId": "g5_2_math_u6_l07",
      "n": "7",
      "title": "일이 일어날 가능성을 예상하고 판단해요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/6단원_평균과가능성/g5_math_u6_l07_일이일어날가능성을예상하고판단해요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u6_l08",
+     "lessonId": "g5_2_math_u6_l08",
      "n": "8",
      "title": "알아보자! 산불 횟수의 평균",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/6단원_평균과가능성/g5_math_u6_l08_알아보자산불횟수의평균.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g5_math_u6_l09",
+     "lessonId": "g5_2_math_u6_l09",
      "n": "9",
      "title": "스스로 마무리해요 (단원 평가)",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade5/semester2/math/6단원_평균과가능성/g5_math_u6_l09_스스로마무리해요.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }
