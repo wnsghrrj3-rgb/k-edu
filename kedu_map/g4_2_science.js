@@ -218,64 +218,64 @@ window.KEDU_MAP["g4_2_science"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_science_u3_l04",
+     "lessonId": "g4_s2_sci_u3_l04_v1",
      "n": "4",
      "title": "압력에 따른 기체의 부피 변화",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/science/3단원_여러가지기체/g4_sci_u3_l04_압력과부피.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_science_u3_l05",
+     "lessonId": "g4_s2_sci_u3_l05_v1",
      "n": "5",
      "title": "생활 속 기체의 부피 변화",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/science/3단원_여러가지기체/g4_sci_u3_l05_생활속부피변화.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_science_u3_l06",
+     "lessonId": "g4_s2_sci_u3_l06_v1",
      "n": "6~7",
      "title": "여러 가지 기체의 종류와 성질",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/science/3단원_여러가지기체/g4_sci_u3_l06_기체의종류와성질.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_science_u3_l07",
+     "lessonId": "g4_s2_sci_u3_l07_v1",
      "n": "8~9",
      "title": "창의가 반짝! — 기체의 성질을 이용한 장치 설계하고 만들기",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/science/3단원_여러가지기체/g4_sci_u3_l07_기체장치설계.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_science_u3_l08",
+     "lessonId": "g4_s2_sci_u3_l08_v1",
      "n": "10",
      "title": "톡톡! 과학 — 헬륨 기체로 두둥실 하늘을 여행하는 비행선",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/science/3단원_여러가지기체/g4_sci_u3_l08_헬륨비행선.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_science_u3_l09",
+     "lessonId": "g4_s2_sci_u3_l09_v1",
      "n": "11",
      "title": "단원 마무리",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/science/3단원_여러가지기체/g4_sci_u3_l09_단원마무리.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }
