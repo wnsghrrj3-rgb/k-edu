@@ -6,6 +6,7 @@ import { UI } from './ui.js';
 import { createFire } from './fire.js';
 import { bindMinimap } from './minimap.js';
 import { addSkyDome, addMotes, enhanceWater, applySurfaces } from './visuals.js';
+import { applySplat } from './terrain.js';
 import { Story } from './story.js';
 
 const J = (u) => fetch(u).then((r) => r.json());
@@ -27,6 +28,7 @@ export class Game {
     await this.e.loadWorld(this.base + this.world.glb, this.world.eye);
     this.initTargets();
     if (this.world.surfaces && new URLSearchParams(location.search).get('fx') !== '0') applySurfaces(this.e, this.world.surfaces);   // 표면 텍스처(landscape 보다 먼저 — 장식이 재질을 물려받는다)
+    if (this.world.splat && new URLSearchParams(location.search).get('fx') !== '0') applySplat(this.e, this.world.splat);   // 바닥 스플랫(흙·풀·자갈 섞기) — 표면 텍스처 위에
     // 장면 층: GLB 위에 json 좌표로 대상·사람을 더 놓는다(이야기형 시대) — landscape 보다 먼저, 나무가 이 대상들을 피하도록
     if (this.world.scene) { this.story = new Story(this, await J(this.base + this.world.scene)); this.story.apply(); }
     // 시대별 장식 코드는 world.json 이 가리킬 때만(코어는 시대 이름을 모른다)
