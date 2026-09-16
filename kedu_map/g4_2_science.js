@@ -171,14 +171,14 @@ window.KEDU_MAP["g4_2_science"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_science_u2_l08",
+     "lessonId": "g4_s2_sci_u2_l08_v1",
      "n": "10",
      "title": "단원 마무리",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/science/2단원_생물과환경/g4_sci_u2_l08_단원마무리.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }
