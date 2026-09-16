@@ -67,7 +67,8 @@ export class Player {
       this.pos.set(p.x, gy + this.eye, p.z);
     }
     this.walkTime += dt; this.body.userData.animate(this.walkTime, this.moving);
-    // 카메라
+    // 카메라 — 컷신(camera.js)이 잡고 있으면 건드리지 않는다
+    if (this.e.cameraOverride) { const s0 = this.e.sun; const o0 = this.e.sunOffset || { x: -34, y: 32, z: 24 }; s0.position.set(this.pos.x + o0.x, o0.y, this.pos.z + o0.z); s0.target.position.set(this.pos.x, 0, this.pos.z); s0.target.updateMatrixWorld(); return; }
     cam.rotation.set(0, 0, 0); cam.rotateY(this.yaw); cam.rotateX(this.pitch);
     const bob = this.moving ? Math.sin(performance.now() * 0.012) * 0.03 : 0;
     if (this.viewMode === 'fp') {

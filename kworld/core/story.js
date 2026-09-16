@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { PROPS } from './props.js';
 import { Actor, gather } from './actor.js';
+import { hold, releaseCam } from './camera.js';
 
 export class Story {
   constructor(game, scene) { this.g = game; this.s = scene; this.cond = []; this.movers = []; }
@@ -130,12 +131,55 @@ export class Story {
     const g = this.g; g.p.enabled = false;
     for (const st of seq) {
       if (st.lines) { await this.overlay(st); continue; }
+      if (st.timelapse) { await this.timelapse(st.timelapse); continue; }
+      if (st.dig) { await this.dig(st.dig); continue; }
+      if (st.restore) { this.restoreScene(); continue; }
       if (st.card) { await new Promise((res) => g.ui.open(`<div class="chk">${st.card.tag ? `<div class="tag">${st.card.tag}</div>` : ''}${st.card.icon ? `<div style="font-size:44px;text-align:center;margin:6px 0">${st.card.icon}</div>` : ''}<h3>${st.card.title || ''}</h3>${(st.card.body || []).map((b) => `<p>${b}</p>`).join('')}${st.card.items ? '<ul class="mlist">' + st.card.items.map((x) => `<li>${x}</li>`).join('') + '</ul>' : ''}${st.card.sub ? `<p class="sub">${st.card.sub}</p>` : ''}</div>`, [{ label: st.card.button || '…', primary: true, onClick: () => { g.ui.close(); res(); } }])); continue; }
       if (st.check) { await new Promise((res) => { const run = () => g.ui.check(st.check, null, (results) => { g.results = [...(g.results || []), ...results]; res(); }, () => { g.ui.say(st.check.revisitSay || '다시 보자.', 3000); run(); }); run(); }); continue; }
       if (st.reveal) { await new Promise((res) => g.ui.open(`<div class="chk"><div class="tag">${st.reveal.tag || '이 시대의 이름'}</div><h3 style="font-size:30px;letter-spacing:2px">${st.reveal.name}</h3>${(st.reveal.body || []).map((b) => `<p>${b}</p>`).join('')}</div>`, [{ label: st.reveal.button || '알겠어', primary: true, onClick: () => { g.ui.close(); res(); } }])); continue; }
       if (st.flag) g.flag(st.flag);
     }
     g.p.enabled = true;
+  }
+  /** ACT 13 「우리가 떠난 자리」 — 카메라가 야영지 위에 멈춘 채 시간이 흐른다: 불 꺼짐 → 비 → 낙엽 → 눈 → 흙이 덮음 (자산 0) */
+  async timelapse(a) {
+    const g = this.g; const e = g.e; const sleep = (ms) => new Promise((r) => setTimeout(r, this.fast ? 5 : ms));
+    const c = this.resolveArea(a.at || 'camp'); if (!c) return; const y = e.groundY ? e.groundY(c.x, c.z) : 0;
+    const vis = !!(e.camera && e.scene?.add); this.tl = { objs: [] };
+    if (vis) hold(g, [c.x + 2, y + 9, c.z + 13], [c.x, y + 0.5, c.z]);
+    const step = async (text, sec, fn) => { if (text) g.ui.say(text, sec * 1000 + 400); fn && fn(); await sleep(sec * 1000); };
+    await step(a.lines?.[0] || '떠난다.', 2.2);
+    await step('불이 꺼진다.', 2.4, () => g.setFire(false));
+    await step('비.', 3.2, () => { this.rain(true); this.transition('rainy', 2.5); });
+    await step('낙엽.', 3.2, () => { this.rain(false); this.transition('dull', 2.5); if (vis) e.scene.traverse((o) => { if (o.isInstancedMesh && /^woodland/.test(o.name) && o.material?.color) { o.userData.tlColor ??= o.material.color.clone(); o.material.color.set(0xb8783a); } }); });
+    await step('눈.', 3.2, () => { if (vis && this.rainPts) { this.rainPts.material.color.set(0xffffff); this.rainPts.material.size = 0.14; this.tl.snow = true; } this.rain(true); if (vis) e.scene.traverse((o) => { if (o.isInstancedMesh && /^woodland/.test(o.name) && o.material?.color) o.material.color.set(0x8a7a66); }); });
+    await step('흙.', 3.6, () => { this.rain(false); if (!vis) return; const disc = new THREE.Mesh(new THREE.CylinderGeometry(16, 17, 2.4, 40), new THREE.MeshStandardMaterial({ color: 0x5b4a36, roughness: 1 })); disc.position.set(c.x, y - 2.0, c.z); disc.receiveShadow = true; e.scene.add(disc); this.tl.objs.push(disc); this.tl.disc = disc; this.tl.discTo = y + 0.2; });
+    await step('…', 1.4);
+  }
+  resolveArea(t) { if (Array.isArray(t)) return { x: t[0], z: t[1] }; const a = this.g.e.areas?.get(t); if (a) return { x: a.x, z: a.z }; const s = this.s.areas?.[t]; return s ? { x: s[0], z: s[1] } : null; }
+  /** ACT 14 발굴 — 같은 자리에 구덩이·줄·유물(학생이 남긴 것: 재·뼈·날 선 돌·기둥 구멍), 카메라가 내려간다 */
+  async dig(a) {
+    const g = this.g; const e = g.e; const sleep = (ms) => new Promise((r) => setTimeout(r, this.fast ? 5 : ms));
+    const c = this.resolveArea(a.at || 'camp'); if (!c) return; const y = (this.tl?.discTo ?? (e.groundY ? e.groundY(c.x, c.z) : 0));
+    const vis = !!(e.camera && e.scene?.add); this.tl ??= { objs: [] };
+    if (vis) {
+      this.transition('day', 3);
+      const M = (col, r = 1) => new THREE.MeshStandardMaterial({ color: col, roughness: r });
+      const pit = new THREE.Mesh(new THREE.BoxGeometry(5, 1.3, 5), M(0x3a2e22)); pit.position.set(c.x, y - 0.55, c.z); e.scene.add(pit); this.tl.objs.push(pit);
+      for (const [dx, dz] of [[-2.7, -2.7], [2.7, -2.7], [2.7, 2.7], [-2.7, 2.7]]) { const post = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.8, 6), M(0xe0d8c0)); post.position.set(c.x + dx, y + 0.4, c.z + dz); e.scene.add(post); this.tl.objs.push(post); }
+      const rope = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints([[-2.7, -2.7], [2.7, -2.7], [2.7, 2.7], [-2.7, 2.7]].map(([dx, dz]) => new THREE.Vector3(c.x + dx, y + 0.75, c.z + dz))), new THREE.LineBasicMaterial({ color: 0xffe08a })); e.scene.add(rope); this.tl.objs.push(rope);
+      const ash = new THREE.Mesh(new THREE.CircleGeometry(0.9, 20), M(0x1a1512)); ash.rotation.x = -Math.PI / 2; ash.position.set(c.x - 0.6, y - 1.18, c.z + 0.4); e.scene.add(ash); this.tl.objs.push(ash);
+      for (const [dx, dz, col, sz] of [[0.9, -0.8, 0x6d6560, 0.16], [1.3, 0.3, 0x9a8f80, 0.22], [-1.4, -1.1, 0xd9cfb8, 0.12]]) { const o = new THREE.Mesh(new THREE.DodecahedronGeometry(sz, 0), M(col, 0.8)); o.position.set(c.x + dx, y - 1.1, c.z + dz); e.scene.add(o); this.tl.objs.push(o); }
+      for (const [dx, dz] of [[-1.8, 1.6], [1.9, 1.7], [0.1, -1.9]]) { const h = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.3, 10), M(0x241c14)); h.position.set(c.x + dx, y - 1.2, c.z + dz); e.scene.add(h); this.tl.objs.push(h); }
+      const { cut } = await import('./camera.js');
+      await cut(g, [{ pos: [c.x + 2, y + 9, c.z + 13], look: [c.x, y, c.z], sec: 0.01 }, { pos: [c.x + 1.5, y + 3.2, c.z + 4.6], look: [c.x - 0.3, y - 1.0, c.z], sec: this.fast ? 0.01 : 4.5, ease: 'inout' }], { release: false });
+    }
+    g.ui.say(a.say || '삽이 땅을 걷어낸다.', 3600); await sleep(1800);
+  }
+  /** 컷신 뒤 세상 되돌리기(「더 둘러보기」) */
+  restoreScene() {
+    const e = this.g.e; if (this.tl) { for (const o of this.tl.objs) e.scene.remove?.(o); if (this.rainPts) { this.rainPts.material.color.set(0xbfd0e6); this.rainPts.material.size = 0.06; } e.scene.traverse?.((o) => { if (o.userData?.tlColor && o.material) o.material.color.copy(o.userData.tlColor); }); this.tl = null; }
+    this.rain(false); this.transition('day', 2); if (e.camera) releaseCam(this.g);
   }
   /** 밤: 해가 지고, 안개가 가까워지고, 춥다(배고픔이 빨라진다) — 불이 살아나면 추위는 멎는다 */
   startNight(n) {
@@ -155,6 +199,7 @@ export class Story {
       e.renderer.toneMappingExposure = L(f.exp, t.exp);
       if (e.skyDome && f.sky && t.sky) { const u = e.skyDome.material.uniforms; u.uZenith.value.copy(f.sky.z).lerp(t.sky.z, k); u.uHorizon.value.copy(f.sky.h).lerp(t.sky.h, k); u.uHaze.value.copy(f.sky.a).lerp(t.sky.a, k); u.uSunColor.value.copy(f.sky.s).lerp(t.sky.s, k); u.uCloud.value = L(f.sky.c, t.sky.c); }
     }
+    if (this.tl?.disc && this.tl.disc.position.y < this.tl.discTo) this.tl.disc.position.y = Math.min(this.tl.discTo, this.tl.disc.position.y + dt * 0.7);
     if (this.rainPts && this.rainPts.visible) { const p = this.rainPts.geometry.attributes.position; const a = p.array; const c = this.g.p.pos; for (let i = 0; i < a.length; i += 3) { a[i + 1] -= dt * 14; if (a[i + 1] < -1) { a[i + 1] = 18; a[i] = c.x + (Math.random() - .5) * 44; a[i + 2] = c.z + (Math.random() - .5) * 44; } } p.needsUpdate = true; }
     for (const k in this.actors || {}) { const ac = this.actors[k]; if (ac.obj.visible) ac.tick(dt); }
     for (const m of this.movers) {
