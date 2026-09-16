@@ -8,6 +8,7 @@ import { bindMinimap } from './minimap.js';
 import { addSkyDome, addMotes, enhanceWater, applySurfaces } from './visuals.js';
 import { applySplat } from './terrain.js';
 import { Sound } from './sound.js';
+import { Save } from './save.js';
 import { Story } from './story.js';
 
 const J = (u) => fetch(u).then((r) => r.json());
@@ -58,7 +59,13 @@ export class Game {
     this.e.onFrame.push((dt) => this.tick(dt));
     document.getElementById('load').remove();
     this.e.start();
-    if (this.world.prologue && this.story) { this.p.enabled = false; await this.story.prologue(this.world.prologue); this.p.enabled = true; }
+    // 저장·재개 — 저장이 있으면 프롤로그 대신 「이어서 / 처음부터」
+    this.save = new Save(this, this.era || new URLSearchParams(location.search).get('era') || 'world'); const saved = new URLSearchParams(location.search).get('resume') === '0' ? null : this.save.load();
+    if (saved && this.story) {
+      const pick = await new Promise((res) => this.ui.open(`<div class="chk"><div class="tag">저장된 이야기</div><h3>이어서 할까?</h3><p>깃발 ${saved.flags.length}개 · ${new Date(saved.t).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</p></div>`, [{ label: '이어서 하기', primary: true, onClick: () => { this.ui.close(); res(true); } }, { label: '처음부터', onClick: () => { this.ui.close(); res(false); } }]));
+      if (pick) this.save.apply(saved); else this.save.clear();
+      if (!pick && this.world.prologue) { this.p.enabled = false; await this.story.prologue(this.world.prologue); this.p.enabled = true; }
+    } else if (this.world.prologue && this.story) { this.p.enabled = false; await this.story.prologue(this.world.prologue); this.p.enabled = true; }
     this.ui.intro(this.world.title, this.world.question);
     setTimeout(() => this.ui.say(this.world.intro, 5000), 400);
     if (this.world.intro2) setTimeout(() => { this.ui.say(this.world.intro2, 5000); if (this.world.goal2) this.ui.setGoal(this.world.goal2); }, 5800);
@@ -97,7 +104,7 @@ export class Game {
   count(k) { return this.inventory.filter((x) => x === k).length; }
   take(k) { const i = this.inventory.indexOf(k); if (i >= 0) this.inventory.splice(i, 1); }
   give(k) { this.inventory.push(k); this.renderInv(); }
-  flag(f) { if (Array.isArray(f)) { for (const x of f) this.flag(x); return; } if (!f || this.flags.has(f)) return; this.flags.add(f); this.checkGate(); if (this.story) this.story.onFlag(); }
+  flag(f) { if (Array.isArray(f)) { for (const x of f) this.flag(x); return; } if (!f || this.flags.has(f)) return; this.save?.touch(); this.flags.add(f); this.checkGate(); if (this.story) this.story.onFlag(); }
   /** 대상 정의: kinds(종류별 덮어쓰기) → rename(깃발에 따라 이름·동사·규칙이 바뀜, 첫 맞는 것) */
   defFor(t) {
     let d = this.items.targets[t.type]; if (!d) return null;

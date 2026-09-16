@@ -128,7 +128,7 @@ export class Story {
   }
   /** 컷신: 카드(card) · 확인(check) · 이름 공개(reveal) 를 순서대로. 플레이어는 멈춘다 */
   async cutscene(seq) {
-    const g = this.g; g.p.enabled = false;
+    const g = this.g; g.p.enabled = false; this.cutsceneOn = true;
     for (const st of seq) {
       if (st.lines) { await this.overlay(st); continue; }
       if (st.timelapse) { await this.timelapse(st.timelapse); continue; }
@@ -139,7 +139,7 @@ export class Story {
       if (st.reveal) { await new Promise((res) => g.ui.open(`<div class="chk"><div class="tag">${st.reveal.tag || '이 시대의 이름'}</div><h3 style="font-size:30px;letter-spacing:2px">${st.reveal.name}</h3>${(st.reveal.body || []).map((b) => `<p>${b}</p>`).join('')}</div>`, [{ label: st.reveal.button || '알겠어', primary: true, onClick: () => { g.ui.close(); res(); } }])); continue; }
       if (st.flag) g.flag(st.flag);
     }
-    g.p.enabled = true;
+    g.p.enabled = true; this.cutsceneOn = false; g.save?.touch();
   }
   /** ACT 13 「우리가 떠난 자리」 — 카메라가 야영지 위에 멈춘 채 시간이 흐른다: 불 꺼짐 → 비 → 낙엽 → 눈 → 흙이 덮음 (자산 0) */
   async timelapse(a) {
