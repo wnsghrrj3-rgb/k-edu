@@ -30,7 +30,7 @@ export class Game {
     // 장면 층: GLB 위에 json 좌표로 대상·사람을 더 놓는다(이야기형 시대) — landscape 보다 먼저, 나무가 이 대상들을 피하도록
     if (this.world.scene) { this.story = new Story(this, await J(this.base + this.world.scene)); this.story.apply(); }
     // 시대별 장식 코드는 world.json 이 가리킬 때만(코어는 시대 이름을 모른다)
-    if (this.world.landscape) { const { buildLandscape } = await import(new URL(this.base + this.world.landscape, location.href).href); buildLandscape(this.e, this.quality()); }
+    if (this.world.landscape) { const { buildLandscape } = await import(new URL(this.base + this.world.landscape, location.href).href); buildLandscape(this.e, this.quality(), { treeModel: this.world.treeModel ? new URL(this.base + this.world.treeModel, location.href).href : null }); }
     // 보이는 것: 절차 하늘·햇빛 먼지·물결. ?fx=0 이면 끔. 후처리(블룸·색보정·SMAA)·그림자 4096·햇빛 먼지는 **?post=1 일 때만**(09-16 준호: 기본이 굼떴음 → 무거운 층은 켜서 보는 것으로), ?ao=1 로 구석 어둠 추가
     const qs = new URLSearchParams(location.search); const hi = this.quality() === 'high'; const post = hi && qs.get('post') === '1';
     if (qs.get('fx') !== '0') {

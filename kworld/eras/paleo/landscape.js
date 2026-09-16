@@ -1,10 +1,12 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createAvatar } from '../../core/avatar.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 // Deterministic, native geometry. Shared instanced meshes keep the woodland inexpensive.
-export function buildLandscape(e, quality = 'high') {
+export function buildLandscape(e, quality = 'high', opts = {}) {
   const LOW = quality === 'low'; // 태블릿: 나무·잎·풀을 줄이고 캐노피 그림자 끔
+  const treeModel = opts.treeModel || null; const placed = [];   // 나무 GLB(Tripo 등)가 있으면 절차 생성 나무 대신 그걸 인스턴스로 심는다
   const group = new THREE.Group(); group.name = 'paleo-landscape'; e.scene.add(group);
   let seed = 1847;
   const rnd = () => { seed = (1664525 * seed + 1013904223) >>> 0; return seed / 4294967296; };
@@ -132,7 +134,9 @@ export function buildLandscape(e, quality = 'high') {
   const leafGeo=new THREE.BufferGeometry();leafGeo.setAttribute('position',new THREE.Float32BufferAttribute(leafVertices,3));leafGeo.computeVertexNormals();
   function tree(x,z,h){
     if([...e.interactables.values()].some(it=>Math.hypot(x-it.center.x,z-it.center.z)<2))return;
-    const y=e.groundY(x,z);pushPole([x,y,z],[x+.12,y+h,z],.16+h*.013);collider(x,z,.32,h);
+    const y=e.groundY(x,z);collider(x,z,.32,h);
+    if(treeModel){placed.push([x,y,z,h]);return;}
+    pushPole([x,y,z],[x+.12,y+h,z],.16+h*.013);
     for(let k=0;k<9;k++){
       const a=k*2.399, yy=y+h*(.5+k*.047), len=between(1.3,2.4)*(h/8);
       const end=[x+Math.cos(a)*len,yy+.6,z+Math.sin(a)*len];pushPole([x,y+h*.42,z],end,.045);
@@ -170,8 +174,25 @@ export function buildLandscape(e, quality = 'high') {
     matrices.forEach((m,i)=>{mesh.setMatrixAt(i,m);color.setRGB(1,1,1).multiplyScalar(between(.72,1.18));mesh.setColorAt(i,color);});
     mesh.castShadow=shadows;mesh.receiveShadow=true;mesh.computeBoundingSphere();group.add(mesh);return mesh;
   }
-  instances(branchGeo,bark,trunks,'woodland-trunks',true);
-  const canopy=instances(leafGeo,leaf,foliage,'woodland-leaves',!LOW);
+  if(trunks.length)instances(branchGeo,bark,trunks,'woodland-trunks',true);
+  const canopy=foliage.length?instances(leafGeo,leaf,foliage,'woodland-leaves',!LOW):null;
+  if(treeModel&&placed.length){
+    // GLB 나무: 첫 메시의 지오메트리·재질을 그대로 인스턴스(89그루 = 그리기 1번). 모델 높이를 h(m)에 맞춰 키운다.
+    new GLTFLoader().load(treeModel,(gltf)=>{
+      let src=null;gltf.scene.traverse((o)=>{if(o.isMesh&&!src)src=o;});if(!src)return;
+      gltf.scene.updateMatrixWorld(true);const geo=src.geometry.clone().applyMatrix4(src.matrixWorld);geo.computeBoundingBox();   // 양자화(KHR_mesh_quantization) 노드 변환까지 굽는다const bb=geo.boundingBox;const modelH=bb.max.y-bb.min.y||1;
+      const m=src.material;m.side=THREE.DoubleSide;m.roughness=Math.max(m.roughness??.9,.85);m.metalness=0;
+      const matrices=placed.map(([x,y,z,h])=>{const s=h/modelH;dummy.position.set(x,y-bb.min.y*s,z);dummy.rotation.set(0,rnd()*6.28,0);dummy.scale.set(s*between(.85,1.15),s,s*between(.85,1.15));dummy.updateMatrix();return dummy.matrix.clone();});
+      const mesh=instances(geo,m,matrices,'woodland-glb',true);mesh.frustumCulled=true;
+      m.onBeforeCompile=(shader)=>{shader.uniforms.uWind=wind;shader.vertexShader='uniform float uWind;\n'+shader.vertexShader;shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
+      #ifdef USE_INSTANCING
+        float phase = instanceMatrix[3].x * .7 + instanceMatrix[3].z * .4;
+        transformed.x += sin(uWind * 1.1 + phase) * max(position.y - ${(modelH*0.35).toFixed(3)}, 0.0) * .06;
+      #endif`);};
+      m.customProgramCacheKey=()=>'paleo-wind-glb-v1';m.needsUpdate=true;
+      e.landscapeStats.glbTrees=placed.length;
+    },undefined,(err)=>console.warn('tree GLB load failed',err));
+  }
   const meadow=instances(bladeGeo,grass,blades,'meadow',false);
   instances(rockGeo,rock,pebbles,'river-stones',false);
   const water=e.materials?.get('water');
@@ -209,6 +230,6 @@ export function buildLandscape(e, quality = 'high') {
     if(geometry){const mesh=new THREE.Mesh(geometry,material);mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);}
     geometries.forEach(g=>g.dispose());
   }
-  e.landscapeStats={trees:trunks.length/10,leafClusters:foliage.length,grassClumps:blades.length};
+  e.landscapeStats={trees:treeModel?placed.length:trunks.length/10,leafClusters:foliage.length,grassClumps:blades.length};
   return group;
 }
