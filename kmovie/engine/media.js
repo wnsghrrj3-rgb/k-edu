@@ -591,6 +591,7 @@
       let fps = pres.length / Math.max(span, 1e-6);
       this.fps = Math.abs(fps - Math.round(fps)) < 0.06 ? Math.round(fps) : Math.round(fps * 100) / 100;
       this.durSec = span;
+      { let by = 0; for (let i = 0; i < dec.length; i++) by += dec[i].size || 0; this.bps = span > 0.2 ? Math.round(by * 8 / span) : 0; }   // 원본 영상 비트레이트 — 내보내기 「원본에 맞게」
       this.cache = new Map();
       // 캐시는 ImageBitmap(RGBA) — 바이트 예산으로 상한 (1080p ≈57장 · 4K ≈20장)
       this.cacheMax = Math.max(20, Math.min(CACHE_MAX, Math.floor(CACHE_BYTES / (this.w * this.h * 4))));

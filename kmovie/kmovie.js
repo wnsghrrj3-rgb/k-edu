@@ -1378,17 +1378,39 @@
   $('projName').onclick = () => renameCurrent();
   let exportAbort = null;
   $('ovCancel').onclick = () => { if (exportAbort) { exportAbort.abort(); $('ovLabel').textContent = '취소하는 중…'; } };
+  /* 내보내기 화질 고르기 — 원본에 맞게 / 고화질 / 보통 / 가볍게 (기억: kmv.expq) */
+  let expQ = 'normal'; try { const q = localStorage.getItem('kmv.expq'); if (q && window.KMV_EXPORT.QUALITIES.some(x => x.id === q)) expQ = q; } catch (e) {}
+  let expResolve = null;
+  const fmtMB = mb => mb >= 1024 ? (mb / 1024).toFixed(1) + 'GB' : Math.max(1, Math.round(mb)) + 'MB';
+  function renderExpModal() {
+    const EX = window.KMV_EXPORT, box = $('expList'); box.innerHTML = '';
+    EX.QUALITIES.forEach(q => {
+      const pl = EX.plan(q.id), b = document.createElement('button'); b.dataset.q = q.id; b.className = q.id === expQ ? 'on' : '';
+      b.innerHTML = '<b></b><i></i><span></span>';
+      b.children[0].textContent = pl.name; b.children[1].textContent = pl.w + '×' + pl.h + ' · ' + (pl.bitrate / 1e6).toFixed(pl.bitrate < 1e7 ? 1 : 0) + 'Mbps · 약 ' + fmtMB(EX.estimateMB(pl)); b.children[2].textContent = pl.note;
+      b.onclick = () => { expQ = q.id; renderExpModal(); }; b.ondblclick = () => closeExpModal(true);
+      box.appendChild(b);
+    });
+    const ms = EX.mainSource(), cur = EX.plan(expQ);
+    $('expInfo').textContent = (ms ? '넣은 영상: ' + ms.w + '×' + ms.h + (ms.bps ? ' · ' + (ms.bps / 1e6).toFixed(1) + 'Mbps' : '') + ' — ' : '') + '길이 ' + tc(P.total()) + (ms && cur.w * cur.h > ms.w * ms.h * 1.2 ? ' · 원본보다 크게 뽑아도 더 선명해지진 않아요' : '');
+  }
+  function openExpModal() { renderExpModal(); $('expModal').classList.remove('hidden'); $('expGo').focus(); return new Promise(r => { expResolve = r; }); }
+  function closeExpModal(go) { $('expModal').classList.add('hidden'); if (go) { try { localStorage.setItem('kmv.expq', expQ); } catch (e) {} } const r = expResolve; expResolve = null; if (r) r(go ? expQ : null); }
+  $('expGo').onclick = () => closeExpModal(true); $('expCancel').onclick = $('expClose').onclick = () => closeExpModal(false);
+  $('expModal').addEventListener('mousedown', e => { if (e.target === $('expModal')) closeExpModal(false); });
+  document.addEventListener('keydown', e => { if ($('expModal').classList.contains('hidden')) return; if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeExpModal(false); } else if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); closeExpModal(true); } else e.stopPropagation(); }, true);
   $('btnExport').onclick = async () => {
     stop();
     if (!P.total()) return toast('타임라인이 비어 있어요');
+    const quality = await openExpModal(); if (!quality) return;
     try { if (window.KM_PARTS && window.KM_PARTS.preload) await window.KM_PARTS.preload(); } catch (e) {}   // 부품 그림 자산(엠블럼 등)이 다 읽힌 뒤 렌더
     const analyzing = P.data.media.some(m => { const s = M.get(m.id); return s && s.kind === 'video' && !s.analyzed; });
     if (analyzing) toast('분석이 끝나기 전에도 내보낼 수 있어요 — 결과물은 같아요', 3000);
     OV.show('MP4 내보내는 중');
     const ac = new AbortController(); exportAbort = ac; $('ovCancel').hidden = false;
     try {
-      const r = await window.KMV_EXPORT.exportMP4({ onProgress: (p, l) => OV.set(p, l), signal: ac.signal });
-      if (r) toast('저장 완료 · ' + Math.round(r.seconds) + '초 · ' + PW() + '×' + PH() + (r.toDisk ? ' · ' + r.name : '') + (/^avc/.test(r.codec) ? '' : ' · 이 브라우저엔 H.264 인코더가 없어 VP9 로 저장했어요'), 6000);
+      const r = await window.KMV_EXPORT.exportMP4({ onProgress: (p, l) => OV.set(p, l), signal: ac.signal, quality });
+      if (r) toast('저장 완료 · ' + Math.round(r.seconds) + '초 · ' + (r.w || PW()) + '×' + (r.h || PH()) + (r.toDisk ? ' · ' + r.name : '') + (/^avc/.test(r.codec) ? '' : ' · 이 브라우저엔 H.264 인코더가 없어 VP9 로 저장했어요'), 6000);
     } catch (e) { if (e && e.name === 'AbortError') toast('내보내기를 취소했어요 — 작업은 그대로예요', 2500); else { console.error(e); toast('내보내기 실패: ' + (e.message || e), 5000); } }
     exportAbort = null; $('ovCancel').hidden = true;
     OV.hide();

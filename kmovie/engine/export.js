@@ -1,7 +1,7 @@
 /* ============================================================
    케이무비 내보내기 (KMV_EXPORT) — 설계서 v1 §5
    ------------------------------------------------------------
-   kmake/video.js 파이프 확장. 1080p30 H.264 8Mbps + AAC 48k 스테레오.
+   kmake/video.js 파이프 확장. H.264 + AAC 48k 스테레오. 화질은 plan(): 원본에 맞게 / 고화질 / 보통(1080p 8Mbps) / 가볍게(720p).
    · 영상: KMV_RENDER.drawExact(t) 전 프레임 → VideoEncoder (배압 관리)
    · 소리: KMV_AUDIO.renderMix 창 단위 스트리밍 — 15초 믹스가 나올 때마다
      AudioEncoder 에 바로 흘린다 (전체 PCM 미보유, 긴 타임라인 안전).
@@ -29,19 +29,71 @@
     return new Promise(res => { if (enc.encodeQueueSize <= QUEUE_MAX) return res(); const iv = setInterval(() => { if (enc.encodeQueueSize <= QUEUE_MAX) { clearInterval(iv); res(); } }, 4); });
   }
   /* H.264(필모라·프리미어 호환) 우선, 없으면 VP9 (H.264 인코더가 없는 리눅스 크로미움 등) */
-  async function pickVideoCodec(W, H) {
-    for (const codec of ['avc1.640028', 'avc1.4d0028', 'avc1.420028', 'vp09.00.40.08']) {
-      try { const r = await VideoEncoder.isConfigSupported({ codec, width: W, height: H, bitrate: BITRATE, framerate: 30 }); if (r.supported) return codec; } catch (e) {}
+  async function pickVideoCodec(W, H, bitrate) {
+    // 1080p 까지는 레벨 4.0(호환 최우선) · 고화질(20Mbps 넘음)·1440p 는 5.0 · 4K 는 5.1
+    const big = W * H > 1920 * 1088, huge = W * H > 2560 * 1440, fat = (bitrate || BITRATE) > 20_000_000;
+    const lv = huge ? '33' : (big || fat) ? '32' : '28';
+    const list = ['avc1.6400' + lv, 'avc1.4d00' + lv, 'avc1.4200' + lv];
+    if (lv !== '33') list.push('avc1.640033');
+    list.push(big ? 'vp09.00.51.08' : 'vp09.00.40.08');
+    for (const codec of list) {
+      try { const r = await VideoEncoder.isConfigSupported({ codec, width: W, height: H, bitrate: bitrate || BITRATE, framerate: 30 }); if (r.supported) return codec; } catch (e) {}
     }
     return null;
   }
+  const even = v => Math.max(2, Math.round(v / 2) * 2);
+  const clampN = (v, a, b) => Math.max(a, Math.min(b, v));
+  /* 타임라인에서 가장 오래 쓰인 영상 원본 — 「원본에 맞게」 의 기준 */
+  function mainSource() {
+    const P = g.KMV_PROJECT, use = new Map();
+    (P.data.V || []).forEach(c => { if (c.gap || !c.media) return; use.set(c.media, (use.get(c.media) || 0) + c.dur); });
+    let best = null, bestDur = 0;
+    use.forEach((d, id) => { const m = P.media(id); if (m && m.kind === 'video' && m.w && m.h && d > bestDur) { best = m; bestDur = d; } });
+    if (!best) return null;
+    const src = g.KMV_MEDIA && g.KMV_MEDIA.get(best.id);
+    return { id: best.id, name: best.name, w: best.w, h: best.h, bps: (src && src.bps) || 0 };
+  }
+  /* 화질 고르기 → { id, name, w, h, bitrate, note }.  id: 'source' | 'high' | 'normal' | 'light' */
+  const QUALITIES = [
+    { id: 'source', name: '원본에 맞게' }, { id: 'high', name: '고화질' }, { id: 'normal', name: '보통' }, { id: 'light', name: '가볍게' },
+  ];
+  function plan(id) {
+    const P = g.KMV_PROJECT, PW = P.w ? P.w() : P.W, PH = P.h ? P.h() : P.H;
+    const shell = !!(g.KMV_SHELL && g.KMV_SHELL.active);
+    const ms = mainSource();
+    const size = k => ({ w: even(PW * k), h: even(PH * k) });
+    const perPx = (w, h, mbps1080) => Math.round(mbps1080 * 1e6 * clampN((w * h) / (1920 * 1080), 0.3, 4.5));
+    if (id === 'light') { const z = size(2 / 3); return { id, name: '가볍게', w: z.w, h: z.h, bitrate: perPx(z.w, z.h, 9), note: '파일이 작아요 — 메신저·밴드로 보낼 때' }; }
+    if (id === 'high') {
+      // 원본이 프로젝트 화면보다 크면(4K 등) 그 크기까지, 아니면 프로젝트 크기 그대로 — 비트레이트를 넉넉히
+      let k = 1; if (ms && !shell) { const same = (ms.w >= ms.h) === (PW >= PH); if (same) k = clampN(Math.min(ms.w / PW, ms.h / PH), 1, 2); }
+      const z = size(k); return { id, name: '고화질', w: z.w, h: z.h, bitrate: perPx(z.w, z.h, 20), note: '가장 선명해요 — 큰 화면·학교 누리집·보관용. 파일이 커요' };
+    }
+    if (id === 'source') {
+      let k = 1, bitrate = perPx(PW, PH, 12), note = '영상 원본이 없어 화면 크기 그대로예요';
+      if (ms) {
+        const same = (ms.w >= ms.h) === (PW >= PH);
+        if (same && !shell) k = clampN(Math.min(ms.w / PW, ms.h / PH), 1 / 3, 2);
+        const z0 = size(k);
+        // 다시 압축하면 조금씩 잃는다 → 원본 비트레이트보다 조금 넉넉히(1.15배), 너무 낮거나 높지 않게
+        bitrate = ms.bps ? clampN(Math.round(ms.bps * 1.15), perPx(z0.w, z0.h, 3), perPx(z0.w, z0.h, 40)) : perPx(z0.w, z0.h, 12);
+        note = '넣은 영상과 같은 크기·같은 선명도 (' + ms.w + '×' + ms.h + (ms.bps ? ' · ' + (ms.bps / 1e6).toFixed(1) + 'Mbps' : '') + ')';
+      }
+      const z = size(k); return { id, name: '원본에 맞게', w: z.w, h: z.h, bitrate, note };
+    }
+    return { id: 'normal', name: '보통', w: PW, h: PH, bitrate: perPx(PW, PH, 8), note: '지금까지 쓰던 기본 — 대부분 이걸로 충분해요' };
+  }
+  /* 예상 파일 크기(MB) — 영상 비트레이트 + 소리 192kbps */
+  function estimateMB(pl) { const P = g.KMV_PROJECT, sec = P.total() / P.FPS; return (pl.bitrate + 192000) * sec / 8 / 1048576; }
 
   /* opt: { onProgress(p, label), fileName } */
   async function exportMP4(opt) {
     opt = opt || {};
     if (busy) return;
     if (typeof VideoEncoder === 'undefined') throw new Error('이 브라우저는 영상 저장을 지원하지 않아요 (크롬·엣지 최신 버전)');
-    const P = g.KMV_PROJECT, FPS = P.FPS, W = P.w ? P.w() : P.W, H = P.h ? P.h() : P.H;
+    const P = g.KMV_PROJECT, FPS = P.FPS;
+    const PL = opt.width && opt.height ? { w: even(opt.width), h: even(opt.height), bitrate: opt.bitrate || BITRATE } : plan(opt.quality || 'normal');
+    const W = PL.w, H = PL.h, VBR = PL.bitrate;
     const total = P.total();
     if (!total) throw new Error('타임라인이 비어 있어요');
     const prog = opt.onProgress || (() => {});
@@ -68,7 +120,7 @@
     }
     try {
       await loadMuxer();
-      const vcodec = await pickVideoCodec(W, H);
+      const vcodec = await pickVideoCodec(W, H, VBR);
       if (!vcodec) throw new Error('영상 인코더를 쓸 수 없어요 (크롬·엣지 데스크톱 최신 버전)');
       const isAvc = /^avc/.test(vcodec);
       target = shellSave ? shellSave.target : toDisk ? new g.Mp4Muxer.FileSystemWritableFileStreamTarget(stream) : new g.Mp4Muxer.ArrayBufferTarget();
@@ -90,7 +142,7 @@
         fastStart: toDisk ? false : 'in-memory',
       });
       encoder = new VideoEncoder({ output: (c, m) => muxer.addVideoChunk(c, m), error: e => { encErr = e; } });
-      encoder.configure({ codec: vcodec, width: W, height: H, bitrate: BITRATE, framerate: FPS, latencyMode: 'quality' });
+      encoder.configure({ codec: vcodec, width: W, height: H, bitrate: VBR, framerate: FPS, latencyMode: 'quality' });
 
       if (wantAudio) {
         // -14 LUFS 맞춤: 1패스로 믹스를 재고(영상 없이 소리만이라 빠르다) 게인 하나를 정한다 — 전 구간 같은 게인(압축 아님)
@@ -149,12 +201,12 @@
       if (encErr) throw encErr;
       muxer.finalize();
       if (exactSrc) await SH.exactEnd();
-      if (shellSave) { await shellSave.close(); shellSave = null; return { toDisk: true, name, seconds: total / FPS, codec: vcodec, exact: true }; }
-      if (toDisk) { await stream.close(); stream = null; return { toDisk: true, name, seconds: total / FPS, codec: vcodec }; }
+      if (shellSave) { await shellSave.close(); shellSave = null; return { toDisk: true, name, seconds: total / FPS, codec: vcodec, w: W, h: H, bitrate: VBR, exact: true }; }
+      if (toDisk) { await stream.close(); stream = null; return { toDisk: true, name, seconds: total / FPS, codec: vcodec, w: W, h: H, bitrate: VBR }; }
       const blob = new Blob([target.buffer], { type: 'video/mp4' });
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-      return { toDisk: false, name, seconds: total / FPS, codec: vcodec };
+      return { toDisk: false, name, seconds: total / FPS, codec: vcodec, w: W, h: H, bitrate: VBR };
     } finally {
       try { if (encoder && encoder.state !== 'closed') encoder.close(); } catch (e) {}
       try { if (aenc && aenc.state !== 'closed') aenc.close(); } catch (e) {}
@@ -165,5 +217,5 @@
     }
   }
 
-  g.KMV_EXPORT = { exportMP4, isBusy: () => busy, lastLoud: () => lastLoud };
+  g.KMV_EXPORT = { exportMP4, isBusy: () => busy, lastLoud: () => lastLoud, plan, estimateMB, mainSource, QUALITIES, _pickVideoCodec: pickVideoCodec };
 })(typeof window !== 'undefined' ? window : globalThis);
