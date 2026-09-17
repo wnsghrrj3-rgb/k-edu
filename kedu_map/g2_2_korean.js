@@ -469,6 +469,83 @@ window.KEDU_MAP["g2_2_korean"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 7,
+   "name": "내 생각은 이래요",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g2_korean_u7_l01",
+     "lessonId": "g2_2_kor_u7_l01_02_v1",
+     "n": "1·2",
+     "title": "단원 시작 — 배울 내용 살펴보기",
+     "sub": null,
+     "url": "/grade2/semester2/korean/7단원_내생각은이래요/g2_kor_u7_l01_02.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_korean_u7_l03",
+     "lessonId": "g2_2_kor_u7_l03_04_v1",
+     "n": "3·4",
+     "title": "글을 읽고 글쓴이의 생각 파악하기",
+     "sub": null,
+     "url": "/grade2/semester2/korean/7단원_내생각은이래요/g2_kor_u7_l03_04.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_korean_u7_l05",
+     "lessonId": "g2_2_kor_u7_l05_06_v1",
+     "n": "5·6",
+     "title": "글쓴이의 생각에 대한 자신의 생각 발표하기",
+     "sub": null,
+     "url": "/grade2/semester2/korean/7단원_내생각은이래요/g2_kor_u7_l05_06.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_korean_u7_l07",
+     "lessonId": "g2_2_kor_u7_l07_09_v1",
+     "n": "7~9",
+     "title": "자신의 생각을 글로 표현하기",
+     "sub": null,
+     "url": "/grade2/semester2/korean/7단원_내생각은이래요/g2_kor_u7_l07_09.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_korean_u7_l10",
+     "lessonId": "g2_2_kor_u7_l10_v1",
+     "n": "10",
+     "title": "친구들이 쓴 글에 대한 자신의 생각 쓰기",
+     "sub": null,
+     "url": "/grade2/semester2/korean/7단원_내생각은이래요/g2_kor_u7_l10.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_korean_u7_l11",
+     "lessonId": "g2_2_kor_u7_l11_13_v1",
+     "n": "11~13",
+     "title": "배운 내용 실천하기 (이야기 속 인물 되어 보기)",
+     "sub": null,
+     "url": "/grade2/semester2/korean/7단원_내생각은이래요/g2_kor_u7_l11_13.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_korean_u7_l14",
+     "lessonId": "g2_2_kor_u7_l14_15_v1",
+     "n": "14·15",
+     "title": "단원 마무리하기",
+     "sub": null,
+     "url": "/grade2/semester2/korean/7단원_내생각은이래요/g2_kor_u7_l14_15.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };
