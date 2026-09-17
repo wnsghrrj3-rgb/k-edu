@@ -278,6 +278,103 @@ window.KEDU_MAP["g4_2_science"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 4,
+   "name": "기후 변화와 우리 생활",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g4_science_u4_l01",
+     "lessonId": "g4_s2_sci_u4_l01_v1",
+     "n": "1",
+     "title": "활짝! 과학 열기 — 줄어드는 빙하 경험하기",
+     "sub": null,
+     "url": "/grade4/semester2/science/4단원_기후변화와우리생활/g4_sci_u4_l01_줄어드는빙하.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": null,
+     "lessonId": null,
+     "n": "2",
+     "title": "기후 변화 현상의 예",
+     "sub": null,
+     "url": null,
+     "track": "soon",
+     "ready": false
+    },
+    {
+     "key": null,
+     "lessonId": null,
+     "n": "3",
+     "title": "기후 변화와 인간의 활동",
+     "sub": null,
+     "url": null,
+     "track": "soon",
+     "ready": false
+    },
+    {
+     "key": null,
+     "lessonId": null,
+     "n": "4",
+     "title": "기후 변화의 심각성",
+     "sub": null,
+     "url": null,
+     "track": "soon",
+     "ready": false
+    },
+    {
+     "key": null,
+     "lessonId": null,
+     "n": "5",
+     "title": "기후 변화가 우리 생활과 환경에 미치는 영향",
+     "sub": null,
+     "url": null,
+     "track": "soon",
+     "ready": false
+    },
+    {
+     "key": null,
+     "lessonId": null,
+     "n": "6",
+     "title": "기후 변화 대응 방법",
+     "sub": null,
+     "url": null,
+     "track": "soon",
+     "ready": false
+    },
+    {
+     "key": null,
+     "lessonId": null,
+     "n": "7~8",
+     "title": "창의가 반짝! — 기후 변화 대응 방법 실천하기",
+     "sub": null,
+     "url": null,
+     "track": "soon",
+     "ready": false
+    },
+    {
+     "key": null,
+     "lessonId": null,
+     "n": "9",
+     "title": "톡톡! 과학 — 빙하 속에 있던 세균이 깨어나요",
+     "sub": null,
+     "url": null,
+     "track": "soon",
+     "ready": false
+    },
+    {
+     "key": null,
+     "lessonId": null,
+     "n": "10",
+     "title": "단원 마무리",
+     "sub": null,
+     "url": null,
+     "track": "soon",
+     "ready": false
+    }
+   ]
   }
  ]
 };
