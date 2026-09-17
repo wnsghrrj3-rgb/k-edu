@@ -1471,6 +1471,10 @@
   }
   $('btnJcut').onclick = () => jlCut('in'); $('btnLcut').onclick = () => jlCut('out');
   $('btnFreeze').onclick = doFreeze; $('btnSplit').onclick = doSplit; $('btnDel').onclick = doDelete;
+  /* 타임라인 머리 컷 도구 — 가장 기본인 자르기를 늘 보이는 자리에 (2026-09-17) */
+  $('cutSplit').onclick = doSplit; $('cutDel').onclick = doDelete;
+  $('cutHead').onclick = () => { stop(); P.trimToPlayhead(ph, 'in'); setPH(ph); };
+  $('cutTail').onclick = () => { stop(); P.trimToPlayhead(ph, 'out'); setPH(ph); };
 
   function refreshPanel() {
     const c = selClip();
