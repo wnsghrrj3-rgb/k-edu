@@ -325,14 +325,14 @@ window.KEDU_MAP["g4_2_science"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_science_u4_l05",
+     "lessonId": "g4_s2_sci_u4_l05_v1",
      "n": "5",
      "title": "기후 변화가 우리 생활과 환경에 미치는 영향",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/science/4단원_기후변화와우리생활/g4_sci_u4_l05_생활과환경영향.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
