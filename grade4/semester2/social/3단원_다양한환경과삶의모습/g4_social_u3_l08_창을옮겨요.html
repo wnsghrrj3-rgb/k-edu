@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<!--
+=========================================================================
+  사회 4-2 · 3단원 다양한 환경과 삶의 모습
+  주제② 도시의 특징과 생활 모습 · l08
+  「도시의 특징을 알아볼까요」
+  교과서 p.131~135 · 지도서 10~11차시(p.249~257) · [4사10-02]
+  수업 기법 = 사례를 통해 특징 파악하기 · 지도 애플리케이션 활용하기
+=========================================================================
+
+  ■ 직접조작 = 창을 옮겨야 보이는 판 (지도 애플리케이션처럼 한 도시를 창으로 살펴보기)
+  ⭐ 앞 서른 판은 판 전체를 한눈에 보여 주었다. 이번 판은 판의 한 부분(가로 둘 × 세로 둘)만 창으로 보여 준다 —
+     학생은 창을 위·아래·왼쪽·오른쪽으로 옮기고, 창 안에 든 곳을 골라 그곳이 인구·산업·교통 가운데 어떤 특징을 보여 주는지 고른다.
+  ⭐ 창의 자리를 담는 상태가 없다 — 옮긴 방향 기록 mvLog 한 줄만 있고, mvPath 한 줄이 기록을 걸어 창이 지나간 자리를 정한다.
+     「살펴본 곳」도 상태가 없다 — mvSeen 한 줄이 지나간 자리에서 센다. 그래서 한 번 본 곳이 다시 물음표로 가려지는 일은 만들어질 수 없다.
+  ⭐ 처음 창(왼쪽 위)에는 산업의 모습이 하나도 없다 — 창을 옮기지 않고는 도시의 특징을 모두 찾을 수 없다.
+  ⭐ 방향을 적는 자리 state.mvLog.push 하나 · 특징을 적는 자리 state.mvTag.push 하나 · 지우는 자리 0 · 정답 칸 차례 상수 0.
+     근거 = 교과서 131쪽(인구) · 132쪽(전주시 산업) · 133쪽(부산광역시 교통) · 134쪽(지도 애플리케이션: 확대·이동하며 여러 곳 살펴보기).
+
+  ■ 4단계
+   ① 창 옮기기 + 곳 고르기 → 특징 고르기(열두 곳 · 차례 자유) → 모든 곳의 특징을 찾을 때까지
+   ② 판 읽기 3택(정답 자리 0 = 「창을 옮겨 여러 곳을 살펴봐야…」)
+   ③ 마무리 3택(정답 자리 2 = 교과서 정리: 인구·산업·교통) → 완료 — 실제 지도 애플리케이션 활동은 교실 몫
+
+  ■ 가드 13종
+   ① 마무리 확정 후 다섯 처리기 전체 잠금      ② 무효 번호(Number.isInteger·범위)
+   ③ 모든 곳을 찾은 뒤 옮기기·고르기 — 판 불변 ④ 판 끝으로 옮기기 — 판 불변
+   ⑤ 창 밖의 곳 고르기 — 판 불변              ⑥ 이미 찾은 곳 고르기 — 판 불변
+   ⑦ 고른 곳을 다시 누르면 고르기만 풀림       ⑧ 곳을 고르기 전 특징 고르기 — 판 불변
+   ⑨ 어긋난 특징 — 고르기 유지 · 판 불변      ⑩ 다 찾기 전 판 읽기 — 판 불변
+   ⑪ 이미 읽은 자리 다시 읽기 — 판 불변       ⑫ 판 읽기 어긋난 답 — 판 불변
+   ⑬ 판을 읽기 전 마무리 — 판 불변            ⑭ 마무리 어긋난 답 — 판 불변
+
+  ■ 정직 3곳
+   ㉠ 판의 도시는 판이 새로 그린 도시 — 교과서의 전주시·부산광역시를 옮긴 것이 아니다(캡션 상시).
+   ㉡ 실제 지도 애플리케이션은 판보다 훨씬 넓게 확대·이동할 수 있다 — 실제 도시 살펴보기는 교실 몫.
+   ㉢ 사진 그림은 판이 새로 그린 도식이다(교과서 사진이 아님).
+
+  ■ 설계 원칙
+   · 12차시 침범 0(생활 모습은 차시 예고 한 자리) · 13차시 좋은 점·문제점 0 · 촌락 0
+   · 교사용 참고 자료 0(사진 해설 장소 이름 · 인구 분포 표 · 산업 단지 유형 · 도시가 발달하기 좋은 조건)
+   · 실제 지역 이름은 교과서 원문 사례(전주시·부산광역시) 안 · 지도서 예시 답의 도시(강릉·대전·군산) 0 · 연도 0 · 인구 수치는 「10명 중 9명 정도」만
+-->
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>도시의 특징을 알아볼까요 · 사회 4-2</title>
+<meta name="kedu-lesson-id" content="g4_social_u3_l08_v1">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#0891B2; --green-d:#0E7490; --cyan:#0D9488;
+  --bg:#ECFEFF; --bub:#CFFAFE; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#F57F17; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes drawLine{to{transform:scaleX(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ka-lb{background:#F1F5F9;border:none;padding:7px 12px;border-radius:10px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;font-family:inherit;font-weight:700;color:#475569;flex-shrink:0;font-size:13px}
+.ka-lb svg{width:15px;height:15px}
+.ka-bar{flex:1;height:5px;background:var(--bg);border-radius:999px;overflow:hidden}
+.ka-bar>div{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:999px;transition:width .35s ease;width:6%}
+.ka-pg{color:var(--green);font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;flex-shrink:0}
+.ka-sc{background:var(--amber-bg);color:var(--amber);padding:4px 12px;border-radius:999px;display:flex;align-items:center;gap:5px;flex-shrink:0;font-weight:700}
+.ka-sc svg{width:14px;height:14px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px}
+.ka-sc-u{font-size:12px}
+
+/* 메인 */
+.ka-m{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow-y:auto}
+.ka-tags{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ka-bg{background:var(--amber-bg);color:var(--amber);padding:5px 14px;border-radius:30px;font-size:13px;
+  display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.ka-bg.s2{background:#E0F2FE;color:#0369A1}
+.ka-bg.s3{background:#EDE9FE;color:#6D28D9}
+.ka-bg.s4{background:#FCE7F3;color:#BE185D}
+.ka-bg.s5{background:#CFFAFE;color:var(--green)}
+.ka-bg svg{width:13px;height:13px}
+.ka-meta{font-size:13px;color:var(--muted)}
+.ka-t{font-size:clamp(20px,3.4vw,29px);margin-bottom:16px;line-height:1.4;color:var(--green);letter-spacing:-.3px;font-weight:700;animation:fadeUp .4s .15s ease both}
+.ka-bub{background:var(--bub);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);line-height:1.7;
+  margin-bottom:16px;border-left:4px solid var(--green);animation:fadeUp .4s .3s ease both}
+.ka-emph{position:relative;display:inline-block;font-weight:700;color:var(--green)}
+.ka-emph::after{content:'';position:absolute;bottom:2px;left:0;right:0;height:3px;background:var(--red);border-radius:2px;transform:scaleX(0);transform-origin:left;animation:drawLine .6s .6s ease forwards}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(16px,2.6vw,21px);font-weight:700;line-height:1.6;margin-bottom:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:640px}
+.opt{background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:13px 14px;font-size:clamp(14px,2.3vw,17px);
+  font-weight:500;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:var(--green);background:#CFFAFE;animation:pop .4s ease}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;font-size:clamp(14px,2.3vw,17px);line-height:1.6;text-align:center;animation:fadeUp .35s ease both;max-width:640px}
+.fb.ok{color:var(--green);font-weight:700}
+.hint{margin-top:12px;background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(13px,2.2vw,16px);
+  line-height:1.6;color:#0C4A6E;max-width:560px;animation:fadeUp .35s ease both}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:620px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFF;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:clamp(14px,2.3vw,17px);line-height:1.5}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(8,145,178,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+
+/* 조작 판 — 창을 옮겨야 보이는 판 (지도 애플리케이션처럼 한 도시를 창으로 살펴보기) */
+.mv-wrap{max-width:800px;width:100%;margin:0 auto}
+.mv-head{background:#CFFAFE;color:#155E75;font-weight:800;text-align:center;border-radius:10px;padding:7px 10px;
+  font-size:clamp(13px,2.1vw,16px);margin-bottom:8px;word-break:keep-all}
+.mv-play{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:10px;align-items:start}
+.mv-board{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:7px;border-radius:14px;background:#DCFCE7;border:2px solid #86EFAC}
+.mv-cell{border:2px solid #CBD5E1;border-radius:10px;min-height:66px;background:#94A3B8;color:#F8FAFC;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:3px;padding:4px 3px;font-family:inherit;cursor:pointer;text-align:center;word-break:keep-all;line-height:1.25}
+.mv-cell b{font-size:clamp(11px,1.8vw,14px)}
+.mv-cell[data-look="1"]{background:#F1F5F9;color:#94A3B8;border-color:#E2E8F0}
+.mv-cell[data-look="2"]{background:#fff;color:#0F172A;border-color:#0891B2;box-shadow:0 0 0 2px #67E8F9}
+.mv-cell[data-sel="1"]{outline:3px solid #F59E0B;border-color:#F59E0B}
+.mv-kind{font-size:clamp(10px,1.5vw,12px);font-weight:800;border-radius:6px;padding:1px 5px;white-space:nowrap;color:#fff}
+.mv-kind[data-f="0"],.mv-kbtn[data-f="0"]{background:#0891B2}
+.mv-kind[data-f="1"],.mv-kbtn[data-f="1"]{background:#B45309}
+.mv-kind[data-f="2"],.mv-kbtn[data-f="2"]{background:#6D28D9}
+.mv-side{display:flex;flex-direction:column;gap:8px}
+.mv-pad{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.mv-go{background:#fff;border:2px solid #0891B2;color:#0E7490;border-radius:10px;padding:8px 4px;font-family:inherit;font-weight:800;
+  font-size:clamp(12px,2vw,15px);cursor:pointer}
+.mv-go[data-can="0"]{border-color:#E2E8F0;color:#CBD5E1}
+.mv-tally{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;border:2px solid var(--line);border-radius:11px;padding:7px 8px;background:#fff;
+  font-size:clamp(12px,2vw,15px)}
+.mv-tally span{white-space:nowrap}
+.mv-tell{border-radius:12px;padding:9px 13px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;background:#F0FDFA;border-left:4px solid var(--cyan);word-break:keep-all}
+.mv-ask{border:2px solid var(--line);border-radius:12px;padding:10px 14px;background:#F8FEFF;margin-top:9px;font-size:clamp(13px,2.2vw,16px);line-height:1.6}
+.mv-kinds{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:9px}
+.mv-kbtn{border:none;border-radius:11px;padding:10px 6px;font-family:inherit;font-weight:800;font-size:clamp(14px,2.3vw,17px);color:#fff;cursor:pointer}
+.mv-opts{display:grid;grid-template-columns:1fr;gap:8px;margin-top:9px}
+.mv-opt{background:#F8FAFC;border:2px solid var(--line);border-radius:11px;padding:10px 12px;font-family:inherit;
+  font-size:clamp(13px,2.2vw,16px);cursor:pointer;text-align:left;line-height:1.5;word-break:keep-all}
+.mv-opt:hover{border-color:var(--green);background:var(--bub)}
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+  .mv-play{grid-template-columns:1fr}
+  .mv-cell{min-height:58px}
+}
+</style>
+
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#F57F17"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식, 사람 형상 대신 칸과 모양 ===== */
+const SVG = {
+  // [동기 유발] 사람이 많은 거리
+  street:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <rect x="8" y="20" width="44" height="46" fill="#FEF9C3" stroke="#CA8A04"/><path d="M 4 22 L 56 22 L 50 12 L 10 12 Z" fill="#F59E0B"/>
+    <rect x="58" y="20" width="44" height="46" fill="#FCE7F3" stroke="#BE185D"/><path d="M 54 22 L 106 22 L 100 12 L 64 12 Z" fill="#EC4899"/>
+    <rect x="108" y="20" width="44" height="46" fill="#E0F2FE" stroke="#0369A1"/><path d="M 104 22 L 156 22 L 150 12 L 114 12 Z" fill="#0EA5E9"/>
+    <rect x="0" y="66" width="160" height="14" fill="#CBD5E1"/>
+    <g fill="#0E7490"><circle cx="16" cy="72" r="3"/><circle cx="30" cy="74" r="3"/><circle cx="46" cy="71" r="3"/><circle cx="62" cy="74" r="3"/><circle cx="80" cy="72" r="3"/><circle cx="96" cy="74" r="3"/><circle cx="112" cy="71" r="3"/><circle cx="128" cy="74" r="3"/><circle cx="144" cy="72" r="3"/></g>
+    <text x="80" y="92" font-size="6.8" fill="#0E7490" text-anchor="middle" font-weight="800">상점과 오가는 사람</text></svg>`,
+  // 높은 건물
+  tower:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <rect x="22" y="26" width="24" height="54" fill="#94A3B8"/><rect x="52" y="8" width="28" height="72" fill="#475569"/>
+    <rect x="86" y="18" width="26" height="62" fill="#64748B"/><rect x="118" y="32" width="22" height="48" fill="#94A3B8"/>
+    <g fill="#E0F2FE"><rect x="58" y="16" width="5" height="5"/><rect x="69" y="16" width="5" height="5"/><rect x="58" y="28" width="5" height="5"/><rect x="69" y="28" width="5" height="5"/><rect x="92" y="26" width="5" height="5"/><rect x="102" y="26" width="5" height="5"/></g>
+    <rect x="0" y="80" width="160" height="4" fill="#334155"/>
+    <text x="80" y="92" font-size="6.8" fill="#0E7490" text-anchor="middle" font-weight="800">회사가 모인 높은 건물</text></svg>`,
+  // 아파트와 연립 주택
+  apt:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <rect x="12" y="14" width="30" height="66" fill="#E2E8F0" stroke="#64748B"/><rect x="48" y="14" width="30" height="66" fill="#E2E8F0" stroke="#64748B"/>
+    <g fill="#94A3B8"><rect x="17" y="20" width="8" height="5"/><rect x="29" y="20" width="8" height="5"/><rect x="17" y="32" width="8" height="5"/><rect x="29" y="32" width="8" height="5"/><rect x="17" y="44" width="8" height="5"/><rect x="29" y="44" width="8" height="5"/><rect x="53" y="20" width="8" height="5"/><rect x="65" y="20" width="8" height="5"/><rect x="53" y="32" width="8" height="5"/><rect x="65" y="32" width="8" height="5"/></g>
+    <rect x="90" y="46" width="58" height="34" fill="#FEF3C7" stroke="#B45309"/><path d="M 86 48 L 119 30 L 152 48 Z" fill="#B45309"/>
+    <g fill="#fff" stroke="#B45309"><rect x="96" y="54" width="9" height="8"/><rect x="114" y="54" width="9" height="8"/><rect x="132" y="54" width="9" height="8"/></g>
+    <text x="80" y="92" font-size="6.8" fill="#0E7490" text-anchor="middle" font-weight="800">아파트와 연립 주택</text></svg>`,
+  // 도시에 사는 사람 — 열 사람 그림
+  ten:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <g fill="#0891B2"><circle cx="14" cy="34" r="5"/><circle cx="29" cy="34" r="5"/><circle cx="44" cy="34" r="5"/><circle cx="59" cy="34" r="5"/><circle cx="74" cy="34" r="5"/><circle cx="89" cy="34" r="5"/><circle cx="104" cy="34" r="5"/><circle cx="119" cy="34" r="5"/><circle cx="134" cy="34" r="5"/></g>
+    <g fill="#0891B2"><rect x="10" y="41" width="8" height="12" rx="3"/><rect x="25" y="41" width="8" height="12" rx="3"/><rect x="40" y="41" width="8" height="12" rx="3"/><rect x="55" y="41" width="8" height="12" rx="3"/><rect x="70" y="41" width="8" height="12" rx="3"/><rect x="85" y="41" width="8" height="12" rx="3"/><rect x="100" y="41" width="8" height="12" rx="3"/><rect x="115" y="41" width="8" height="12" rx="3"/><rect x="130" y="41" width="8" height="12" rx="3"/></g>
+    <circle cx="149" cy="34" r="5" fill="#CBD5E1"/><rect x="145" y="41" width="8" height="12" rx="3" fill="#CBD5E1"/>
+    <text x="80" y="76" font-size="7.4" fill="#155E75" text-anchor="middle" font-weight="800">색칠한 사람 = 도시에 사는 사람</text>
+    <text x="80" y="88" font-size="6.8" fill="#64748B" text-anchor="middle">열 사람을 그린 그림</text></svg>`,
+  // 여러 가지 산업
+  industry:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <path d="M 10 70 L 10 44 L 22 36 L 22 44 L 34 36 L 34 44 L 46 36 L 46 70 Z" fill="#94A3B8" stroke="#475569"/><rect x="36" y="18" width="6" height="22" fill="#475569"/>
+    <rect x="56" y="40" width="34" height="30" fill="#FEF9C3" stroke="#CA8A04"/><path d="M 52 42 L 94 42 L 90 34 L 56 34 Z" fill="#F59E0B"/>
+    <rect x="100" y="38" width="30" height="32" fill="#E0F2FE" stroke="#0369A1"/><path d="M 96 40 L 115 28 L 134 40 Z" fill="#0369A1"/><circle cx="115" cy="54" r="7" fill="#FACC15" stroke="#CA8A04"/>
+    <path d="M 138 70 L 146 40 L 154 70 Z" fill="#FCE7F3" stroke="#BE185D"/><circle cx="146" cy="36" r="3" fill="#EC4899"/>
+    <text x="80" y="88" font-size="6.8" fill="#0E7490" text-anchor="middle" font-weight="800">만들고 · 사고팔고 · 맡기고 · 즐기고</text></svg>`,
+  // 여러 가지 교통
+  transit:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <rect x="0" y="62" width="160" height="4" fill="#475569"/><g fill="#475569"><rect x="8" y="66" width="3" height="4"/><rect x="28" y="66" width="3" height="4"/><rect x="48" y="66" width="3" height="4"/><rect x="68" y="66" width="3" height="4"/></g>
+    <rect x="10" y="44" width="58" height="16" rx="5" fill="#0891B2"/><g fill="#CFFAFE"><rect x="16" y="48" width="8" height="6"/><rect x="30" y="48" width="8" height="6"/><rect x="44" y="48" width="8" height="6"/></g>
+    <path d="M 88 30 L 136 22 L 146 26 L 136 30 L 118 34 L 128 46 L 120 46 L 104 36 L 92 38 Z" fill="#64748B"/>
+    <path d="M 96 72 L 146 72 L 138 82 L 104 82 Z" fill="#0369A1"/><rect x="110" y="62" width="22" height="10" fill="#F59E0B"/>
+    <text x="80" y="93" font-size="6.8" fill="#0E7490" text-anchor="middle" font-weight="800">기차 · 비행기 · 배</text></svg>`,
+  // 지도 애플리케이션
+  app:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <rect x="56" y="6" width="48" height="80" rx="7" fill="#0F172A"/><rect x="60" y="14" width="40" height="64" fill="#DCFCE7"/>
+    <path d="M 60 40 L 100 30 M 72 14 L 80 78 M 60 60 L 100 66" stroke="#fff" stroke-width="3"/>
+    <rect x="63" y="17" width="34" height="7" rx="3" fill="#fff" stroke="#94A3B8"/>
+    <circle cx="84" cy="48" r="8" fill="none" stroke="#0891B2" stroke-width="2.4"/><path d="M 90 54 L 96 60" stroke="#0891B2" stroke-width="2.4" stroke-linecap="round"/>
+    <text x="130" y="50" font-size="6.8" fill="#0E7490" text-anchor="middle" font-weight="800">확대 · 이동</text></svg>`,
+  // 판 안내 — 창 옮기기
+  win:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <g fill="#E2E8F0" stroke="#94A3B8"><rect x="20" y="12" width="28" height="20"/><rect x="50" y="12" width="28" height="20"/><rect x="80" y="12" width="28" height="20"/><rect x="110" y="12" width="28" height="20"/>
+    <rect x="20" y="34" width="28" height="20"/><rect x="50" y="34" width="28" height="20"/><rect x="80" y="34" width="28" height="20"/><rect x="110" y="34" width="28" height="20"/>
+    <rect x="20" y="56" width="28" height="20"/><rect x="50" y="56" width="28" height="20"/><rect x="80" y="56" width="28" height="20"/><rect x="110" y="56" width="28" height="20"/></g>
+    <rect x="17" y="9" width="64" height="48" rx="4" fill="none" stroke="#0891B2" stroke-width="3"/>
+    <path d="M 88 34 L 104 34 M 98 28 L 105 34 L 98 40" stroke="#0891B2" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <text x="80" y="90" font-size="6.8" fill="#0E7490" text-anchor="middle" font-weight="800">창을 옮기며 살펴봐요</text></svg>`,
+  // 세계의 도시
+  world:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <circle cx="80" cy="44" r="32" fill="#BAE6FD" stroke="#0369A1"/>
+    <path d="M 58 30 Q 70 22 80 30 Q 86 40 76 46 Q 64 50 58 30 Z M 88 52 Q 100 46 106 56 Q 100 70 90 66 Z" fill="#86EFAC"/>
+    <circle cx="72" cy="36" r="3" fill="#DC2626"/><circle cx="98" cy="58" r="3" fill="#DC2626"/><circle cx="92" cy="30" r="3" fill="#DC2626"/>
+    <text x="80" y="90" font-size="6.8" fill="#0E7490" text-anchor="middle" font-weight="800">개성 있는 세계의 도시</text></svg>`,
+  done:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <circle cx="80" cy="46" r="26" fill="#CFFAFE" stroke="#0891B2" stroke-width="2.4"/>
+    <path d="M 68 46 L 76 55 L 93 37" stroke="#0891B2" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="80" y="86" font-size="7.4" fill="#155E75" text-anchor="middle" font-weight="800">도시의 특징을 알았어요</text></svg>`
+};
+function sceneCard(key,cap){return `<div class="scene">${SVG[key]}<div class="cap">${cap}</div></div>`;}
+
+/* ===== 직접 조작: 창을 옮겨야 보이는 판 (지도 애플리케이션처럼 한 도시를 창으로 살펴보기) =====
+   ⭐ 창의 자리를 담는 상태가 없다 — 옮긴 방향 기록 mvLog 한 줄만 있고, 창이 지나간 자리는 mvPath 한 줄이 기록을 걸어 정한다.
+   ⭐ 「살펴본 곳」을 담는 상태도 없다 — mvSeen 한 줄이 지나간 자리에서 곧바로 센다. 그래서 한 번 본 곳이 다시 가려지는 일은 만들어질 수 없다.
+   ⭐ 처음 창에는 산업의 모습이 하나도 없다 — 창을 옮기지 않으면 도시의 특징을 모두 찾을 수 없다.
+   ⭐ 방향을 적는 자리 state.mvLog.push 단 하나 · 특징을 적는 자리 state.mvTag.push 단 하나 · 지우는 자리 0. */
+const MV_COLS = 4;                                     // 판의 가로 칸
+const MV_ROWS = 3;                                     // 판의 세로 칸
+const MV_WIN = 2;                                      // 창이 한 번에 보여 주는 가로·세로 칸
+const MV_START = [0,0];                                // 처음 창의 자리(왼쪽 위)
+const MV_DIR = [{name:"위로",dr:-1,dc:0},{name:"아래로",dr:1,dc:0},{name:"왼쪽으로",dr:0,dc:-1},{name:"오른쪽으로",dr:0,dc:1}];
+const MV_KIND = ["인구","산업","교통"];
+const MV_PLACE = [
+  {name:"아파트",kind:0},{name:"연립 주택",kind:0},{name:"공장",kind:1},{name:"은행",kind:1},
+  {name:"사람이 많은 거리",kind:0},{name:"지하철역",kind:2},{name:"대형 할인점",kind:1},{name:"기차역",kind:2},
+  {name:"버스 터미널",kind:2},{name:"축제가 열리는 곳",kind:1},{name:"공항",kind:2},{name:"항구",kind:2}
+];
+const MV_SAY_LOCK = "이미 모든 곳의 특징을 찾았어요. 판은 그대로예요. 판을 읽어 봐요.";
+const MV_SAY_EDGE = "그쪽으로는 더 옮길 수 없어요. 판은 그대로예요.";
+const MV_SAY_OUT = "창 밖에 있는 곳이에요. 창을 옮겨 가까이 살펴봐요. 판은 그대로예요.";
+const MV_SAY_TAGGED = "이미 특징을 찾은 곳이에요. 판은 그대로예요.";
+const MV_SAY_UNSEL = "고르기를 풀었어요. 판은 그대로예요.";
+const MV_SAY_ORDER_K = "먼저 창 안에서 살펴볼 곳을 골라 봐요.";
+const MV_SAY_WRONG = "그곳에서 사람들이 무엇을 하는지 떠올려 봐요. 판은 그대로예요.";
+const MV_SAY_ORDER_R = "먼저 모든 곳의 특징을 찾아봐요.";
+const MV_SAY_READDONE = "이미 정한 자리예요. 판은 그대로예요.";
+const MV_SAY_ORDER_FIN = "먼저 판을 읽어 봐요.";
+const MV_READQ = [
+  "창을 옮겨 여러 곳을 살펴봐야 인구, 산업, 교통의 모습을 함께 알 수 있어요",
+  "처음 창에 보인 곳만 살펴봐도 도시에 어떤 산업이 발달했는지 알 수 있어요",
+  "도시의 특징은 한곳에 모두 모여 있어서 창을 옮길 필요가 없어요"
+];
+const MV_READ_OK = 0;
+const MV_READ_BAD = "처음 창에 보였던 네 곳을 떠올려 봐요.";
+const MV_FINQ = [
+  "도시에는 사람이 적게 살고, 사람과 물건이 오가기 어려워요",
+  "도시에는 물건을 만드는 한 가지 일만 발달했어요",
+  "도시에는 많은 사람이 모여 살고, 다양한 산업과 교통이 발달했어요"
+];
+const MV_FIN_OK = 2;
+const MV_FIN_BAD = "판에서 찾은 세 가지 특징을 모두 떠올려 봐요.";
+
+function mvPath(st){ const p=[MV_START]; st.mvLog.forEach(d=>{ const q=p[p.length-1]; p.push([q[0]+MV_DIR[d].dr, q[1]+MV_DIR[d].dc]); }); return p; }   // ⭐ 창의 자리는 방향 기록에서만
+function mvAt(st){ const p=mvPath(st); return p[p.length-1]; }
+function mvIn(pos,k){ const r=Math.floor(k/MV_COLS), c=k%MV_COLS; return r>=pos[0] && r<pos[0]+MV_WIN && c>=pos[1] && c<pos[1]+MV_WIN; }
+function mvSeen(st,k){ return mvPath(st).some(pos=>mvIn(pos,k)); }                  // ⭐ 살펴본 곳은 지나간 자리에서만
+function mvCanGo(st,d){ const q=mvAt(st), r=q[0]+MV_DIR[d].dr, c=q[1]+MV_DIR[d].dc; return r>=0 && c>=0 && r<=MV_ROWS-MV_WIN && c<=MV_COLS-MV_WIN; }
+function mvNameOf(k){ return MV_PLACE[k].name; }
+function mvKindOf(k){ return MV_PLACE[k].kind; }
+function mvFound(st,f){ return st.mvTag.filter(k=>mvKindOf(k)===f).length; }
+function mvAll(f){ return MV_PLACE.filter(p=>p.kind===f).length; }
+function mvDone(st){ return st.mvTag.length===MV_PLACE.length; }
+function mvJosa(w){ return (w.charCodeAt(w.length-1)-0xAC00)%28 ? "은" : "는"; }
+function mvStage(st){
+  if(!mvDone(st)) return "run";
+  if(st.mvRead == null) return "read";
+  if(st.mvFin == null) return "fin";
+  return "end";
+}
+
+/* 판 — 열두 곳 */
+function mvCell(st,k){
+  const on = mvIn(mvAt(st),k), seen = mvSeen(st,k), tag = st.mvTag.includes(k);
+  const look = on ? 2 : (seen ? 1 : 0);
+  const inner = seen
+    ? `<b>${mvNameOf(k)}</b>${tag ? `<span class="mv-kind" data-f="${mvKindOf(k)}">${MV_KIND[mvKindOf(k)]}</span>` : ''}`
+    : `<b>?</b>`;
+  return `<button class="mv-cell" data-k="${k}" data-look="${look}" data-tag="${tag?1:0}" data-sel="${st.mvSel===k?1:0}" onclick="mvPick(${k})">${inner}</button>`;
+}
+function mvBoard(st){
+  let s=''; for(let k=0;k<MV_PLACE.length;k++) s += mvCell(st,k);
+  return `<div class="mv-board">${s}</div>`;
+}
+function mvPad(st){
+  const b = MV_DIR.map((d,i)=>`<button class="mv-go" data-d="${i}" data-can="${mvCanGo(st,i)?1:0}" onclick="mvGo(${i})">${d.name}</button>`).join('');
+  return `<div class="mv-pad">${b}</div>`;
+}
+function mvTally(st){
+  return `<div class="mv-tally">${MV_KIND.map((t,f)=>`<span data-f="${f}">${t} <b>${mvFound(st,f)}</b>/${mvAll(f)}</span>`).join('')}</div>`;
+}
+
+function mvPanel(st){
+  const stage = mvStage(st);
+  let ask = '';
+  if(stage === "run"){
+    ask = `<div class="mv-ask" data-step="run"><b>창 안의 곳을 하나 고르고, 어떤 특징을 보여 주는 곳인지 골라 봐요.</b>
+      <div class="mv-kinds">${MV_KIND.map((t,f)=>`<button class="mv-kbtn" data-f="${f}" onclick="mvKind(${f})">${t}</button>`).join('')}</div>
+      <div class="note" style="text-align:left;margin-top:5px">창 밖의 곳은 창을 옮겨야 살펴볼 수 있어요. 어느 쪽으로 먼저 옮겨도 괜찮아요.</div></div>`;
+  } else if(stage === "read"){
+    ask = `<div class="mv-ask" data-step="read"><b>창을 옮기며 판을 살펴보니, 무엇을 알 수 있을까요?</b>
+      <div class="mv-opts">${MV_READQ.map((t,i)=>`<button class="mv-opt" onclick="mvRead(${i})">${t}</button>`).join('')}</div></div>`;
+  } else if(stage === "fin"){
+    ask = `<div class="mv-ask" data-step="fin"><b>그렇다면 도시의 특징은 무엇일까요?</b>
+      <div class="mv-opts">${MV_FINQ.map((t,i)=>`<button class="mv-opt" onclick="mvFin(${i})">${t}</button>`).join('')}</div></div>`;
+  } else {
+    ask = `<div class="mv-ask" data-fin="1" style="border-color:#86EFAC;background:#F0FDF4">
+      <b style="color:#166534">도시에는 많은 사람이 모여 살고, 다양한 산업이 발달했으며, 많은 사람과 물건이 빠르고 편리하게 이동할 수 있는 교통이 발달했어요.</b>
+      판에서도 창을 여러 번 옮겨 살펴본 뒤에야 세 가지 모습을 모두 찾았지요.
+      <div class="note" style="text-align:left;margin-top:5px">※ 지도 애플리케이션으로 실제 도시를 확대하고 이동하며 살펴보는 일은 <b>교실 몫</b>이에요. 판은 실제 도시를 대신 보여 주지 않아요.</div></div>`;
+  }
+  const seenN = MV_PLACE.filter((_,k)=>mvSeen(st,k)).length;
+  const tell = st.mvTell ? `<div class="mv-tell">${st.mvTell}</div>` : '';
+  const warn = st.mvMsg ? `<div class="fb" style="color:#DC2626;font-weight:700">${st.mvMsg}</div>` : '';
+  return `<div class="mv-wrap">
+    <div class="mv-head">살펴본 곳 <b>${seenN}</b>/${MV_PLACE.length} · 창을 옮긴 횟수 <b>${st.mvLog.length}</b></div>
+    <div class="mv-play">${mvBoard(st)}<div class="mv-side">${mvPad(st)}${mvTally(st)}${tell}</div></div>${ask}${warn}
+    <div class="note" style="margin-top:8px">※ 이 판의 도시는 <b>판이 새로 그린 도시</b>예요. 교과서의 전주시나 부산광역시를 옮긴 것이 아니에요. 실제 지도 애플리케이션은 판보다 훨씬 넓게 확대하고 이동할 수 있어요.</div>
+  </div>`;
+}
+function mvMoveTell(st,d,before){                                              // 알림도 지나간 자리에서만
+  const now = MV_PLACE.filter((_,k)=>mvSeen(st,k)).length;
+  return `창을 ${MV_DIR[d].name} 옮겼어요.` + (now>before ? ` 새로 보인 곳이 ${now-before}곳 있어요.` : ` 새로 보인 곳은 없어요.`);
+}
+function mvTagTell(k){
+  return `${mvNameOf(k)}${mvJosa(mvNameOf(k))} 도시의 ${MV_KIND[mvKindOf(k)]} 모습을 보여 주는 곳이에요.`;
+}
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "3단원 다양한 환경과 삶의 모습 · 주제② 도시의 특징과 생활 모습";
+const Q = [
+  {stem:"오늘날 우리나라 인구 10명 가운데 몇 명 정도가 도시에 살고 있나요?",
+   opts:["9명 정도","1명 정도","3명 정도","5명 정도"], correct:0, pts:POINTS_BASIC,
+   h1:"교과서 131쪽 그림에서 색칠한 사람을 세어 봐요.", h2:"거의 모든 사람이 도시에 살아요.",
+   reason:"우리나라 인구 10명 중 9명 정도가 도시에 살고 있어요."},
+  {stem:"도시에서 볼 수 있는 모습으로 알맞은 것은 무엇인가요?",
+   opts:["사람이 거의 오가지 않는 조용한 거리","집이 몇 채뿐인 작은 마을","많은 사람이 살 수 있는 아파트나 연립 주택","사람이 살지 않는 넓은 들"], correct:2, pts:POINTS_BASIC,
+   h1:"도시에는 사람이 많이 모여 살아요.", h2:"많은 사람이 한꺼번에 살 수 있는 집을 떠올려 봐요.",
+   reason:"도시에는 많은 사람이 살 수 있는 아파트나 연립 주택이 많아요."},
+  {stem:"전주시에서 개인이나 회사의 돈을 맡아 주거나 빌려주는 산업은 무엇인가요?",
+   opts:["제조업","상업","관광 산업","금융업"], correct:3, pts:POINTS_BASIC,
+   h1:"은행에서 하는 일을 떠올려 봐요.", h2:"돈과 관련 있는 산업이에요.",
+   reason:"개인이나 회사의 돈을 맡아 주거나 빌려주는 산업은 금융업이에요."},
+  {stem:"도시에 교통이 발달하면 어떤 점이 좋은가요?",
+   opts:["사람과 물건이 오가기 어려워져요","많은 사람과 물건이 빠르고 편리하게 이동할 수 있어요","다른 지역으로 갈 수 없게 돼요","버스 정류장이 모두 사라져요"], correct:1, pts:POINTS_BASIC,
+   h1:"기차역, 지하철역, 공항이 많으면 어떨까요?", h2:"「빠르고 편리하게」가 들어가요.",
+   reason:"도시에는 교통이 발달하여 많은 사람과 물건이 빠르고 편리하게 이동할 수 있어요."},
+  {stem:"판에서 처음 창에 보인 네 곳 가운데 하나도 없었던 특징은 무엇인가요?",
+   opts:["교통","인구","세 특징이 모두 있었어요","산업"], correct:3, pts:POINTS_APPLY,
+   h1:"처음 창에 보인 곳을 떠올려 봐요.", h2:"공장이나 은행은 처음 창 밖에 있었어요.",
+   reason:"처음 창에는 아파트, 연립 주택, 사람이 많은 거리, 지하철역만 보여서 산업의 모습은 창을 옮긴 뒤에야 찾을 수 있었어요."},
+  {stem:"판에서 한 번 살펴본 곳은 창을 다른 곳으로 옮긴 뒤 어떻게 되었나요?",
+   opts:["다시 물음표로 가려졌어요","흐리게 보여도 이름은 그대로 남았어요","다른 곳으로 바뀌었어요","판에서 사라졌어요"], correct:1, pts:POINTS_APPLY,
+   h1:"창을 옮긴 뒤 창 밖으로 나간 곳을 떠올려 봐요.", h2:"물음표로 남은 곳은 아직 한 번도 보지 않은 곳이었어요.",
+   reason:"한 번 살펴본 곳은 창 밖으로 나가도 흐리게 이름이 남았어요. 물음표는 아직 창이 지나가지 않은 곳에만 있었지요."},
+  {stem:"부산광역시에서 다른 지역이나 다른 나라와 교류할 수 있게 해 주는 교통 시설로 알맞은 것은 무엇인가요?",
+   opts:["항구","지하철역","버스 정류장","아파트"], correct:0, pts:POINTS_APPLY,
+   h1:"배가 드나드는 곳이에요.", h2:"바다가 가까운 도시에 발달하기도 해요.",
+   reason:"항구는 배로 다른 지역이나 다른 나라와 교류할 수 있게 해 주는 교통 시설이에요."},
+  {stem:"지도 애플리케이션으로 도시의 특징을 살펴보는 방법으로 알맞은 것은 무엇인가요?",
+   opts:["한 장소만 크게 보고 끝내요","도시 이름만 검색하고 끝내요","확대하고 이동하면서 기차역, 산업 단지 등 여러 곳을 살펴봐요","사진은 보지 않고 짐작으로 써요"], correct:2, pts:POINTS_APPLY,
+   h1:"판에서 창을 어떻게 했는지 떠올려 봐요.", h2:"「확대」와 「이동」이 들어가요.",
+   reason:"살펴보고 싶은 도시를 검색한 뒤 확대하고 이동하면서 여러 곳을 살펴봐야 도시의 특징을 함께 알 수 있어요."}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — 동기 유발
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">세 장면에서 같은 점을 찾아볼까요?</h2>
+  <div class="ka-bub">교과서 131쪽에는 <b>세 장의 사진</b>이 있어요. 거리, 건물, 집의 모습을 살펴보고 세 장면에 공통으로 나타나는 점을 찾아봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('street','거리')}${sceneCard('tower','건물')}${sceneCard('apt','집')}</div>
+    <div class="note">※ 그림은 판이 새로 그린 도식이에요. 오늘은 <b>세 장면이 어떤 곳의 모습인지</b> 생각하며 공부해요.</div>
+  </div>`});
+// 2 살펴보기 — 인구 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">도시에는 얼마나 많은 사람이 살까요?</h2>
+  <div class="ka-bub">교과서 131쪽 그림에서 <span class="ka-emph">우리나라 인구와 도시에 사는 인구</span>를 견주어 보고, 사진 속 도시의 모습도 함께 살펴봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('ten','도시에 사는 사람')}</div>
+  ${st.revealed?`<div class="answer-box">· 우리나라 인구 <b>10명 중 9명 정도</b>가 도시에 살고 있어요.<br>· 거리에는 <b>상점과 이동하는 사람</b>이 많아요.<br>· 사람들이 일하는 <b>회사</b>가 많이 모여 있고, 많은 사람이 살 수 있는 <b>아파트나 연립 주택</b>이 많아요.</div>
+    <div class="note">왜 이렇게 많은 사람이 도시에 살까요? 내 생각을 친구와 이야기해 봐요.</div>`
+    :`<div class="note">그림을 먼저 살펴본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 3 살펴보기 — 산업 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">전주시에는 어떤 산업이 발달했을까요?</h2>
+  <div class="ka-bub">교과서 132쪽에서 <b>전주시의 사진</b>과 설명을 알맞게 짝지어 보고, <span class="ka-emph">전주시에 발달한 산업</span>을 찾아봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('industry','여러 가지 산업')}</div>
+  ${st.revealed?`<div class="answer-box">· 사람들이 필요로 하는 물건을 한 번에 많이 만드는 <b>제조업</b><br>· 시장이나 대형 할인점 등에서 물건을 사고파는 <b>상업</b><br>· 개인이나 회사의 돈을 맡아 주거나 빌려주는 <b>금융업</b><br>· 다양한 행사가 열리는 <b>관광 산업</b><br>→ 전주시에는 <span class="ka-emph">다양한 산업</span>이 발달했어요.</div>`
+    :`<div class="note">사진과 설명을 <b>직접</b> 짝지어 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 4 살펴보기 — 교통 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">부산광역시에는 어떤 교통이 발달했을까요?</h2>
+  <div class="ka-bub">교과서 133쪽 지도와 사진에서 <b>교통과 관련 있는 곳</b>을 찾아 ○표 하고, 친구와 이야기해 봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('transit','여러 가지 교통')}</div>
+  ${st.revealed?`<div class="answer-box">· 곳곳을 이어 주는 <b>지하철</b>과 <b>버스</b>가 있어요.<br>· 다른 지역으로 갈 수 있는 <b>버스 터미널, 기차역, 공항</b>이 있어요.<br>· 다른 지역이나 나라와 교류할 수 있는 <b>항구</b>가 있어요.<br>→ 도시에는 교통이 발달하여 <span class="ka-emph">많은 사람과 물건이 빠르고 편리하게 이동</span>할 수 있어요.</div>`
+    :`<div class="note">지도에서 먼저 ○표 해 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 5 살펴보기 — 지도 애플리케이션 · 판 안내
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">지도 애플리케이션으로 도시를 살펴봐요</h2>
+  <div class="ka-bub">교과서 134쪽처럼 지도 애플리케이션을 쓰면 도시의 모습을 <b>확대하고 이동하면서</b> 살펴볼 수 있어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('app','지도 애플리케이션')}${sceneCard('win','창을 옮겨요')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>살펴보고 싶은 <b>도시를 검색</b>해요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b>확대하고 이동하면서</b> 도시의 전체적인 모습을 확인해요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>시청, 기차역, 산업 단지, 특색 있는 장소 등 <b>여러 곳</b>을 살펴봐요.</div></div>
+  </div>
+  <div class="note">다음 판에서는 <b>창을 옮기며</b> 한 도시를 살펴봐요.</div></div>`});
+// 6 살펴보기 — 직접 조작
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">창을 옮겨야 보이는 판</h2>
+  <div class="ka-grp" style="align-items:stretch">${mvPanel(st)}</div>`});
+// 7 살펴보기 — 풍덩 사회 속으로
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">세계의 개성 있는 도시로 떠나요</h2>
+  <div class="ka-bub">교과서 135쪽 <b>[풍덩 사회 속으로]</b>에서 세계의 여러 도시를 만나 봐요. 도시마다 <span class="ka-emph">어떤 점이 특별한지</span> 찾아봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('world','세계의 도시')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div><b>볼리비아의 라파스</b> — 아주 높은 곳에 있는 도시예요. 도로가 좁아 케이블카를 교통수단으로 널리 이용해요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b>일본의 도쿄</b> — 세계에서 인구가 많은 도시 가운데 하나예요. 교통과 산업도 발달했어요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div><b>에스파냐의 바르셀로나</b> — 네모 블록처럼 보이는 건물이 규칙적으로 펼쳐진 계획도시예요.</div></div>
+  </div>
+  <div class="note">세 도시 가운데 가 보고 싶은 도시를 까닭과 함께 말해 봐요.</div></div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부한 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('done','도시의 특징을 알았어요')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div><b>인구</b> — 도시에는 많은 사람이 모여 살아요. 우리나라 인구 10명 중 9명 정도가 도시에 살고 있어요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b>산업</b> — 도시에는 제조업, 상업, 금융업, 관광 산업 등 다양한 산업이 발달했어요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div><b>교통</b> — 도시에는 많은 사람과 물건이 빠르고 편리하게 이동할 수 있는 교통이 발달했어요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b style="color:#0891B2">도시에 사는 사람들의 생활 모습</b>을 알아봐요.</div></div>`});
+// 17 스스로 돌아보기
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"도시에 사람이 많이 모여 산다는 것을 설명할 수 있어요",st)}
+    ${selfCheck(1,"도시에 발달한 산업을 말할 수 있어요",st)}
+    ${selfCheck(2,"도시에 발달한 교통을 말할 수 있어요",st)}
+  </div><div class="note">체크가 잘 안 되는 곳은 <b>다시 살펴봐도</b> 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">도시의 특징을 알아봤어요</h2>
+  <div class="ka-grp">
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">교실에서 지도 애플리케이션으로 도시를 <b style="color:#0891B2">직접</b> 살펴봐요.</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const optHTML = q.opts.map((o,k)=>{
+    let cls='opt';
+    if(qs.done && k===q.correct) cls+=' correct';
+    if(qs.wrongPick===k) cls+=' wrong';
+    return `<button class="${cls}" onclick="pick(${i},${k})" ${qs.done?'disabled':''}>${o}</button>`;
+  }).join('');
+  const hint = qs.hint>0 ? `<div class="hint">💡 ${qs.hint===1?q.h1:q.h2}</div>` : '';
+  const fb = qs.done ? `<div class="fb ok">✓ ${q.reason}</div>` : '';
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용':'확인'} (+${q.pts})</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    <div class="opts" style="margin:0 auto">${optHTML}</div>
+    ${hint}${fb}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g4_2_social_u3_l08";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  mvLog:[], mvSel:null, mvTag:[], mvRead:null, mvFin:null, mvMsg:"", mvTell:"",
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 →';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음 (브라우저에서만 · jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+function mvDraw(){ main.innerHTML = slides[state.idx].render(state); }
+
+/* 창 옮기기 */
+function mvGo(d){
+  if(state.mvFin!=null) return;                                        // 가드①: 마무리 확정 후 전체 잠금
+  if(!Number.isInteger(d) || d<0 || d>=MV_DIR.length) return;           // 가드②: 무효 번호 — 안내조차 띄우지 않음
+  if(mvDone(state)){ state.mvMsg = MV_SAY_LOCK; playThud(); mvDraw(); return; }               // 가드③: 다 찾은 뒤 — 판 불변
+  if(!mvCanGo(state,d)){ state.mvMsg = MV_SAY_EDGE; playThud(); mvDraw(); return; }           // 가드④: 판 끝 — 판 불변
+  const before = MV_PLACE.filter((_,k)=>mvSeen(state,k)).length;
+  state.mvLog.push(d);                                                 // ⭐ 방향을 적는 자리는 코드에 여기 단 하나 · 지우는 자리 0
+  state.mvSel = null; state.mvMsg = ""; state.mvTell = mvMoveTell(state,d,before); playBlip(); mvDraw();
+}
+/* 곳 고르기 */
+function mvPick(k){
+  if(state.mvFin!=null) return;                                        // 가드①
+  if(!Number.isInteger(k) || k<0 || k>=MV_PLACE.length) return;         // 가드②
+  if(mvDone(state)){ state.mvMsg = MV_SAY_LOCK; playThud(); mvDraw(); return; }               // 가드③
+  if(!mvIn(mvAt(state),k)){ state.mvMsg = MV_SAY_OUT; playThud(); mvDraw(); return; }         // 가드⑤: 창 밖 — 판 불변
+  if(state.mvTag.includes(k)){ state.mvMsg = MV_SAY_TAGGED; mvDraw(); return; }               // 가드⑥: 이미 찾은 곳 — 판 불변
+  if(state.mvSel===k){ state.mvSel = null; state.mvMsg = MV_SAY_UNSEL; mvDraw(); return; }    // 가드⑦: 같은 곳 — 고르기만 풀림
+  state.mvSel = k; state.mvMsg = ""; state.mvTell = ""; playBlip(); mvDraw();
+}
+/* 특징 고르기 */
+function mvKind(f){
+  if(state.mvFin!=null) return;                                        // 가드①
+  if(!Number.isInteger(f) || f<0 || f>=MV_KIND.length) return;         // 가드②
+  if(mvDone(state)){ state.mvMsg = MV_SAY_LOCK; playThud(); mvDraw(); return; }               // 가드③
+  if(state.mvSel==null){ state.mvMsg = MV_SAY_ORDER_K; playThud(); mvDraw(); return; }        // 가드⑧: 곳을 고르기 전 — 판 불변
+  if(f!==mvKindOf(state.mvSel)){ state.mvMsg = MV_SAY_WRONG; playThud(); mvDraw(); return; }  // 가드⑨: 어긋난 특징 — 고르기 유지 · 판 불변 · 감점 0
+  const k = state.mvSel;
+  state.mvTag.push(k);                                                 // ⭐ 특징을 적는 자리는 코드에 여기 단 하나 · 지우는 자리 0
+  state.mvSel = null; state.mvMsg = ""; state.mvTell = mvTagTell(k); playBlip(); mvDraw();
+}
+/* 판 읽기 */
+function mvRead(i){
+  if(state.mvFin!=null) return;                                        // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=MV_READQ.length) return;         // 가드②
+  if(!mvDone(state)){ state.mvMsg = MV_SAY_ORDER_R; playThud(); mvDraw(); return; }           // 가드⑩: 다 찾기 전 — 판 불변
+  if(state.mvRead!=null){ state.mvMsg = MV_SAY_READDONE; mvDraw(); return; }                   // 가드⑪: 이미 정한 자리 — 판 불변
+  if(i!==MV_READ_OK){ state.mvMsg = MV_READ_BAD; playThud(); mvDraw(); return; }               // 가드⑫: 어긋난 답 — 판 불변
+  state.mvRead = i; state.mvMsg = ""; state.mvTell = ""; playBlip(); mvDraw();
+}
+/* 마무리 */
+function mvFin(i){
+  if(state.mvFin!=null) return;                                        // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=MV_FINQ.length) return;          // 가드②
+  if(state.mvRead==null){ state.mvMsg = MV_SAY_ORDER_FIN; playThud(); mvDraw(); return; }      // 가드⑬: 판을 읽기 전 — 판 불변
+  if(i!==MV_FIN_OK){ state.mvMsg = MV_FIN_BAD; playThud(); mvDraw(); return; }                 // 가드⑭: 어긋난 답 — 판 불변
+  state.mvFin = i; state.mvMsg = ""; playChime(); mvDraw();
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true; qs.wrongPick=null;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2; if(qs.hint===2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">📘 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 →</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; }
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
+</html>
