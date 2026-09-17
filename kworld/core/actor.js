@@ -3,7 +3,7 @@
 // 시대 이름은 여기 없다. 구조 설계 v1 §3.
 import * as THREE from 'three';
 
-const CLIP_ALIAS = { idle: ['wait', 'idle', 'stand'], walk: ['walk'], run: ['run', 'jog'], sit: ['sit', 'squat', 'crouch'], point: ['point', 'wave'], look: ['look'] };
+const CLIP_ALIAS = { idle: ['wait', 'idle', 'stand'], walk: ['walk'], run: ['run', 'jog'], sit: ['sit', 'squat', 'crouch'], point: ['point', 'wave'], look: ['look'], work: ['chop', 'hammer', 'hit'], throw: ['throw'] };
 
 export class Actor {
   constructor(g, id, obj, opts = {}) {
