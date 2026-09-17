@@ -179,6 +179,16 @@ window.KEDU_MAP["g6_2_science"] = {
      "url": "/grade6/semester2/science/2단원_물질의연소/g6_sci_u2_l07_창의가팡팡.html",
      "track": "tb",
      "ready": true
+    },
+    {
+     "key": "g6_science_u2_l08",
+     "lessonId": "g6_s2_sci_u2_l08_v1",
+     "n": "10~11",
+     "title": "과학이 톡톡 — 이산화 탄소를 재활용한다고?",
+     "sub": null,
+     "url": "/grade6/semester2/science/2단원_물질의연소/g6_sci_u2_l08_과학이톡톡.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }
