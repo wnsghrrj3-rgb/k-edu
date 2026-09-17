@@ -165,4 +165,10 @@ ok(g.story.journalHtml().includes('채집') && g.story.journalHtml().includes('�
   for (let i = 0; i < 80; i++) g.danger.tick(0.1); ok(!g.danger.enc && g.flags.has('beast:met'), '가만히 있으면 물러난다');
 }
 
+// 인물층 — 능력은 편함/힘듦만: 손이 미끄러져도 같은 것은 한 번만
+{ g.character = g.world.characters.find((c) => c.id === 'foot'); const R = Math.random; Math.random = () => 0; ok(g.fumble('x') === true && g.fumble('x') === false, '성급한 손: 첫 시도만 미끄러짐'); Math.random = R;
+  g.character = g.world.characters.find((c) => c.id === 'hand'); ok(g.fumble('y') === false, '좋은 손: 안 미끄러짐');
+  g.character = g.world.characters.find((c) => c.id === 'belly'); g.hunger = 50; g.hungerMul = 1; g.tick(1); const hb = g.hunger; g.character = g.world.characters.find((c) => c.id === 'eye'); g.hunger = 50; g.tick(1); ok(g.hunger < hb, '눈 밝은 사람이 배가 더 빨리 고프다');
+  ok(g.world.characters.every((c) => c.plus && c.minus && Object.keys(c.stats).length === 5), '넷 다 장점·단점·능력 5'); }
+
 console.log(`story-p1 loop: ${pass} pass / ${fail} fail`); process.exit(fail ? 1 : 0);

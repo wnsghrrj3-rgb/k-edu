@@ -201,7 +201,7 @@ export class Story {
     this.transition('night', n.sec || 9);
     this.g.ui.say(n.intro || '해가 진다.', 5200); if (n.goal) setTimeout(() => this.g.ui.setGoal(n.goal), 3000);
     if (n.sounds) { let i = 0; this.soundTimer = setInterval(() => { if (this.warm || this.ended) { clearInterval(this.soundTimer); return; } this.g.ui.say(n.sounds[i++ % n.sounds.length], 3600); this.g.sound?.play('night_' + (i % 2 ? 'wolf' : 'rustle'), 0.4); }, n.soundGap || 26000); }
-    this.g.hungerMul = n.coldMul || 2.4; this.g.updateMission(false);
+    this.g.hungerMul = (n.coldMul || 2.4) * (this.g.stats?.cold || 1); this.g.updateMission(false);
   }
   tick(dt) {
     if (this.to && this.trT < this.trSec) {

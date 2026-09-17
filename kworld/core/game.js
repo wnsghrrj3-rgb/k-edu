@@ -66,8 +66,9 @@ export class Game {
     if (saved && this.story) {
       const pick = await new Promise((res) => this.ui.open(`<div class="chk"><div class="tag">저장된 이야기</div><h3>이어서 할까?</h3><p>깃발 ${saved.flags.length}개 · ${new Date(saved.t).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</p></div>`, [{ label: '이어서 하기', primary: true, onClick: () => { this.ui.close(); res(true); } }, { label: '처음부터', onClick: () => { this.ui.close(); res(false); } }]));
       if (pick) this.save.apply(saved); else this.save.clear();
+      if (this.world.characters) await this.chooseCharacter(this.world.characters, pick ? saved.char : null);
       if (!pick && this.world.prologue) { this.p.enabled = false; await this.story.prologue(this.world.prologue); this.p.enabled = true; }
-    } else if (this.world.prologue && this.story) { this.p.enabled = false; await this.story.prologue(this.world.prologue); this.p.enabled = true; }
+    } else { if (this.world.characters) await this.chooseCharacter(this.world.characters, null); if (this.world.prologue && this.story) { this.p.enabled = false; await this.story.prologue(this.world.prologue); this.p.enabled = true; } }
     this.ui.intro(this.world.title, this.world.question);
     setTimeout(() => this.ui.say(this.world.intro, 5000), 400);
     if (this.world.intro2) setTimeout(() => { this.ui.say(this.world.intro2, 5000); if (this.world.goal2) this.ui.setGoal(this.world.goal2); }, 5800);
@@ -90,6 +91,17 @@ export class Game {
     if (r.shadowMap.enabled !== (level < 3)) { r.shadowMap.enabled = level < 3; this.e.scene.traverse((o) => { if (o.material) o.material.needsUpdate = true; }); }
     this.tuneLabel = ['', '해상도↓', '나무·풀 60%', '그림자 끔'][level];
   }
+  /** 인물층 — 그 시대 사람 넷 중 하나로 산다. 능력은 「할 수 있다/없다」가 아니라 「편하다/힘들다」만 바꾼다(09-17 준호). 장점마다 단점 하나. */
+  get stats() { return this.character?.stats || {}; }
+  /** 손재주: craft 가 1보다 크면 첫 성공이 그만큼 어렵다(같은 것은 한 번만 미끄러진다 — 막지 않고 늦출 뿐) */
+  fumble(key) { const c = this.stats.craft || 1; if (c <= 1 || !key) return false; this.fumbled ??= new Set(); if (this.fumbled.has(key)) return false; if (Math.random() < 1 - 1 / c) { this.fumbled.add(key); return true; } this.fumbled.add(key); return false; }
+  async chooseCharacter(chars, saved) {
+    if (saved) { const c = chars.find((x) => x.id === saved); if (c) { this.setCharacter(c); return; } }
+    let remembered = null; try { remembered = localStorage.getItem('kworld_char:' + this.era); } catch { }
+    const c = await new Promise((res) => this.ui.open(`<div class="chk"><div class="tag">누구로 살까</div><h3>강가의 사람 넷</h3><p class="sub">누구를 골라도 같은 것을 겪는다. 편한 것과 힘든 것이 다를 뿐.</p><ul class="mlist">${chars.map((x) => `<li><b>${x.name}</b><div class="mhint">👍 ${x.plus}<br>👎 ${x.minus}</div></li>`).join('')}</ul></div>`, chars.map((x) => ({ label: x.name, primary: x.id === remembered, onClick: () => { this.ui.close(); res(x); } }))));
+    this.setCharacter(c);
+  }
+  setCharacter(c) { this.character = c; try { localStorage.setItem('kworld_char:' + this.era, c.id); } catch { } (this.telemetry ??= { missions: [], hints: 0, starved: 0 }).character = c.id; if (this.p?.body && c.look) this.p.body.traverse?.((m) => { if (!m.isMesh) return; const hex = m.material.color?.getHex?.(); if (hex === 0x506a62 && c.look.cloth) m.material = m.material.clone(), m.material.color.set(c.look.cloth); if (hex === 0x302d28 && c.look.hair) m.material = m.material.clone(), m.material.color.set(c.look.hair); }); }
   /** ?fps=1 — 왼쪽 위에 프레임·그리기 수(무거운 층을 찾을 때) */
   fpsMeter() {
     const el = document.createElement('div'); el.style.cssText = 'position:fixed;left:8px;top:8px;z-index:50;background:rgba(0,0,0,.55);color:#9f9;font:12px monospace;padding:4px 8px;border-radius:6px'; document.body.appendChild(el);
@@ -128,13 +140,13 @@ export class Game {
   // ---------- 매 프레임 ----------
   tick(dt) {
     // 배고픔
-    const h = this.world.hunger; const before = this.hunger; this.hunger = Math.max(0, this.hunger - h.perSecond * (this.hungerMul || 1) * dt); if (before > 0 && this.hunger === 0) (this.telemetry ??= { missions: [], hints: 0, starved: 0 }).starved++;
-    const slow = this.hunger < h.slowBelow; this.p.speedMul = slow ? 0.55 : 1; this.ui.setHunger(this.hunger, slow);
+    const h = this.world.hunger; const before = this.hunger; this.hunger = Math.max(0, this.hunger - h.perSecond * (this.hungerMul || 1) * (this.stats.hunger || 1) * dt); if (before > 0 && this.hunger === 0) (this.telemetry ??= { missions: [], hints: 0, starved: 0 }).starved++;
+    const slow = this.hunger < h.slowBelow; this.p.speedMul = (slow ? 0.55 : 1) * (this.stats.speed || 1); this.ui.setHunger(this.hunger, slow);
     // 대상 안내
     if (!this.ui.isOpen()) {
       const t = this.target = this.e.pickTarget(this.e.camera, 3.2, this.p.pos);
       if (t) this.ui.setPrompt(this.promptFor(t));
-      else { const near = this.e.pickTarget(this.e.camera, 9, this.p.pos); this.ui.setPrompt(near ? this.infoFor(near) : null); }
+      else { const near = this.e.pickTarget(this.e.camera, 9 * (this.stats.sense || 1), this.p.pos); this.ui.setPrompt(near ? this.infoFor(near) : null); }
     } else { this.target = null; this.ui.setPrompt(null); }
     // 시간이 지나면 바뀌는 대상(밭이 자라는 것 등)
     this.tickTimers();
@@ -258,6 +270,7 @@ export class Game {
     if (r && r.pick) return this.craftPick(r);
     const need = {}; for (const i of r.in) need[i] = (need[i] || 0) + 1;
     for (const [k, n] of Object.entries(need)) if (this.count(k) < n) { this.ui.say('아무것도 안 됐어. 재료가 모자라.'); return; }
+    if (this.fumble(r.out)) { this.ui.close(); this.p.enabled = true; this.ui.say(r.almost || '…거의 됐다. 손이 미끄러졌다. 다시.', 3600); return; }
     for (const i of r.in) if (!(r.keep || []).includes(i)) this.take(i);
     this.inventory.push(out); this.renderInv(); this.ui.close(); this.p.enabled = true;
     const d = this.items.items[out]; this.ui.say(r.say || `${d.icon} ${d.name}이(가) 됐다!`, r.say ? 4800 : 3200);
@@ -273,6 +286,7 @@ export class Game {
     const key = picked.slice().sort().join('+');
     const res = r.results.find((x) => x.in && x.in.slice().sort().join('+') === key) || r.results.find((x) => x.in && x.in.includes('*') && picked.includes(x.in.find((i) => i !== '*'))) || r.results.find((x) => !x.in);
     this.ui.close(); this.p.enabled = true; if (!res) return;
+    if (res.out && this.fumble(r.id || r.out)) { this.ui.say(res.almost || '…거의 됐다. 손이 미끄러졌다. 다시.', 3600); return; }
     const consume = res.consume || (res.out ? picked : []); for (const c of consume) this.take(c);
     if (res.out) this.inventory.push(res.out); this.renderInv();
     this.ui.say(res.say || '…아무 일도 없었다.', 4200); this.flag(res.flag); if (res.out) this.flag(r.flag);

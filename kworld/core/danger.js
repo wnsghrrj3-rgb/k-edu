@@ -33,13 +33,13 @@ export class Danger {
       this.t += dt;
       if (this.t > this.cfg.eyesAt && !this.eyesOn) { this.showEyes(true); g.ui.say('…어둠 속에 눈.', 2600); g.sound?.thump?.(0.3); g.sound?.play('growl', 0.5); }
       if (this.t > this.cfg.eyesAt) g.sound?.set?.('wind', 0.6);
-      if (this.t > this.cfg.graceSec) return this.collapse('night', '…뒤에서 소리. 너무 늦었다.');
+      if (this.t > this.cfg.graceSec * (g.stats?.speed || 1)) return this.collapse('night', '…뒤에서 소리. 너무 늦었다.');
     } else if (this.t > 0) { this.t = Math.max(0, this.t - dt * 2); if (this.t < this.cfg.eyesAt && this.eyesOn) { this.showEyes(false); g.ui.say('…물러갔다.', 2000); } }
     // 2) 큰 짐승 자리(낮·밤 무관): 오래 머물면 만난다 — 움직이면 온다, 가만히 있으면 간다
     const lair = this.cfg.lair; if (lair && !g.flags.has('beast:met')) {
       const d = Math.hypot(p.pos.x - lair[0], p.pos.z - lair[1]);
       if (!this.enc) { if (d < this.cfg.lairRadius) { this.lairT += dt; if (this.lairT > this.cfg.lairSec) { this.enc = { t: 0, moved: 0 }; this.showEyes(true); g.ui.say('…낮은 소리. 풀이 흔들린다. 움직이지 마.', 4200); g.ui.setGoal?.('가만히. 뒤로.'); g.sound?.play('growl', 0.7); } } else this.lairT = Math.max(0, this.lairT - dt); }
-      else { this.enc.t += dt; if (p.moving) this.enc.moved += dt; if (this.enc.moved > 2.2) return this.collapse('beast', '…달렸다. 그게 더 빨랐다.'); if (this.enc.t > 7) { this.enc = null; this.showEyes(false); g.flag('beast:met'); g.ui.say('…물러난다. 사라졌다. 숨을 쉰다.', 4200); g.ui.setGoal?.(''); } }
+      else { this.enc.t += dt; if (p.moving) this.enc.moved += dt; if (this.enc.moved > 2.2 * (g.stats?.speed || 1)) return this.collapse('beast', '…달렸다. 그게 더 빨랐다.'); if (this.enc.t > 7) { this.enc = null; this.showEyes(false); g.flag('beast:met'); g.ui.say('…물러난다. 사라졌다. 숨을 쉰다.', 4200); g.ui.setGoal?.(''); } }
     }
     // 3) 배고픔 0
     if (g.hunger <= 0) { this.starveT += dt; if (this.starveT > this.cfg.starveSec) return this.collapse('hunger', '…다리에 힘이 빠진다.'); } else this.starveT = 0;
