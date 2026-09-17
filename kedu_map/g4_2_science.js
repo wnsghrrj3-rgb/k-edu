@@ -305,14 +305,14 @@ window.KEDU_MAP["g4_2_science"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_science_u4_l03",
+     "lessonId": "g4_s2_sci_u4_l03_v1",
      "n": "3",
      "title": "기후 변화와 인간의 활동",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/science/4단원_기후변화와우리생활/g4_sci_u4_l03_인간의활동.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
