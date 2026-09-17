@@ -17,7 +17,7 @@ export class Danger {
   lightTorch() { this.torchUntil = performance.now() + this.cfg.torchSec * 1000; if (!this.torch && this.g.e.scene?.add) { this.torch = new THREE.PointLight(0xff9a3a, 1.6, 9, 1.5); this.g.e.scene.add(this.torch); } this.g.flag('torch:lit'); this.g.ui.say('가지 끝에 불이 붙는다. 오래 못 간다.', 3200); }
   /** 늑대 GLB(있으면) — 걷기 하나뿐이라 나머지는 코드로: 느리게 다가옴(걷기 0.45배), 덤빔(달리기 2배), 물러남(걷기 뒤로), 고개 숙임(목 뼈) */
   async loadWolf() {
-    const url = this.cfg.wolfModel; const e = this.g.e; if (!url || !e.scene?.add || this.wolfLoading) return; this.wolfLoading = true;
+    const url = this.cfg.wolfModel; const e = this.g.e; if (!url || !e.scene?.add || this.wolfLoading || typeof location === 'undefined' || typeof document?.createElement !== 'function') return; this.wolfLoading = true;
     try { const [{ GLTFLoader }, { clone }] = await Promise.all([import('three/addons/loaders/GLTFLoader.js'), import('three/addons/utils/SkeletonUtils.js')]); const gl = await new GLTFLoader().loadAsync(new URL(this.g.base + url, location.href).href);
       const inst = clone(gl.scene); inst.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } }); const box = new THREE.Box3().setFromObject(inst); const s = (this.cfg.wolfHeight || 0.85) / (box.max.y - box.min.y || 1); inst.scale.setScalar(s); inst.position.y = -box.min.y * s;
       const g = new THREE.Group(); g.add(inst); g.visible = false; e.scene.add(g); const mixer = new THREE.AnimationMixer(inst); const walk = gl.animations.find((c) => /walk/i.test(c.name)); const act = walk && mixer.clipAction(walk); if (act) { act.play(); act.timeScale = 0.45; }
