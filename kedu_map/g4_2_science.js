@@ -295,14 +295,14 @@ window.KEDU_MAP["g4_2_science"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_science_u4_l02",
+     "lessonId": "g4_s2_sci_u4_l02_v1",
      "n": "2",
      "title": "기후 변화 현상의 예",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/science/4단원_기후변화와우리생활/g4_sci_u4_l02_기후변화현상.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
