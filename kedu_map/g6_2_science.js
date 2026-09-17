@@ -201,6 +201,23 @@ window.KEDU_MAP["g6_2_science"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 3,
+   "name": "전기의 이용",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g6_science_u3_l01",
+     "lessonId": "g6_s2_sci_u3_l01_v1",
+     "n": "1",
+     "title": "열려라 과학 — 반짝반짝 빛나는 작품을 만들어 볼까?",
+     "sub": null,
+     "url": "/grade6/semester2/science/3단원_전기의이용/g6_sci_u3_l01_열려라과학.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };
