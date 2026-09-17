@@ -189,6 +189,16 @@ window.KEDU_MAP["g6_2_science"] = {
      "url": "/grade6/semester2/science/2단원_물질의연소/g6_sci_u2_l08_과학이톡톡.html",
      "track": "tb",
      "ready": true
+    },
+    {
+     "key": "g6_science_u2_l09",
+     "lessonId": "g6_s2_sci_u2_l09_v1",
+     "n": "마무리",
+     "title": "물질의 연소 마무리하기",
+     "sub": null,
+     "url": "/grade6/semester2/science/2단원_물질의연소/g6_sci_u2_l09_단원마무리.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }
