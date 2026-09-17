@@ -335,14 +335,14 @@ window.KEDU_MAP["g4_2_science"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_science_u4_l06",
+     "lessonId": "g4_s2_sci_u4_l06_v1",
      "n": "6",
      "title": "기후 변화 대응 방법",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/science/4단원_기후변화와우리생활/g4_sci_u4_l06_대응방법.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
