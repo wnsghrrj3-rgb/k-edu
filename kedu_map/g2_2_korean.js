@@ -315,6 +315,83 @@ window.KEDU_MAP["g2_2_korean"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 5,
+   "name": "바른 말로 이야기 나누어요",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g2_korean_u5_l01",
+     "lessonId": "g2_2_kor_u5_l01_02_v1",
+     "n": "1·2",
+     "title": "단원 시작 — 배울 내용 살펴보기",
+     "sub": null,
+     "url": "/grade2/semester2/korean/5단원_바른말로이야기나누어요/g2_kor_u5_l01_02.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_korean_u5_l03",
+     "lessonId": "g2_2_kor_u5_l03_04_v1",
+     "n": "3·4",
+     "title": "바른 말 알기",
+     "sub": null,
+     "url": "/grade2/semester2/korean/5단원_바른말로이야기나누어요/g2_kor_u5_l03_04.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_korean_u5_l05",
+     "lessonId": "g2_2_kor_u5_l05_06_v1",
+     "n": "5·6",
+     "title": "자신의 생각을 바른 말로 표현하기",
+     "sub": null,
+     "url": "/grade2/semester2/korean/5단원_바른말로이야기나누어요/g2_kor_u5_l05_06.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_korean_u5_l07",
+     "lessonId": "g2_2_kor_u5_l07_08_v1",
+     "n": "7·8",
+     "title": "이야기를 듣고 일이 일어난 차례 말하기",
+     "sub": null,
+     "url": "/grade2/semester2/korean/5단원_바른말로이야기나누어요/g2_kor_u5_l07_08.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_korean_u5_l09",
+     "lessonId": "g2_2_kor_u5_l09_10_v1",
+     "n": "9·10",
+     "title": "글을 읽고 일이 일어난 차례 말하기",
+     "sub": null,
+     "url": "/grade2/semester2/korean/5단원_바른말로이야기나누어요/g2_kor_u5_l09_10.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_korean_u5_l11",
+     "lessonId": "g2_2_kor_u5_l11_13_v1",
+     "n": "11~13",
+     "title": "배운 내용 실천하기 (바른 말 사용 알리기)",
+     "sub": null,
+     "url": "/grade2/semester2/korean/5단원_바른말로이야기나누어요/g2_kor_u5_l11_13.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_korean_u5_l14",
+     "lessonId": "g2_2_kor_u5_l14_15_v1",
+     "n": "14·15",
+     "title": "단원 마무리하기",
+     "sub": null,
+     "url": "/grade2/semester2/korean/5단원_바른말로이야기나누어요/g2_kor_u5_l14_15.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };
