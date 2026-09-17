@@ -308,14 +308,14 @@ window.KEDU_MAP["g4_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_social_u3_l07",
+     "lessonId": "g4_social_u3_l07_v1",
      "n": "1",
      "title": "도시가 무엇인지 알아볼까요",
      "sub": "② 도시의 특징과 생활 모습",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/social/3단원_다양한환경과삶의모습/g4_social_u3_l07_모이면밝아요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,

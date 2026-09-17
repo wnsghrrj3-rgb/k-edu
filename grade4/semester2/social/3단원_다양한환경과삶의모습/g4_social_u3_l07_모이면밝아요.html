@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<!--
+=========================================================================
+  사회 4-2 · 3단원 다양한 환경과 삶의 모습
+  주제② 도시의 특징과 생활 모습 · l07
+  「도시가 무엇인지 알아볼까요」
+  교과서 p.128~130 · 지도서 9차시(p.242~248) · [4사10-02]
+  수업 기법 = 돌아가며 말하기
+=========================================================================
+
+  ■ 직접조작 = 모이면 밝아지는 판 (밤에 본 땅 아홉 칸에 사람 옮기기)
+  ⭐ 앞 스물아홉 판은 놓고·자르고·덮고·누르고·끼웠다. 이번 판에서 학생이 바꾸는 것은 「사람이 어느 칸에 사는가」 하나뿐이다 —
+     칸을 하나 고르고(떠날 칸) 다른 칸을 누르면(갈 칸) 한 사람이 옮겨 간다.
+  ⭐ 칸의 사람 수·불빛·시설을 담는 상태가 코드에 없다 — 옮김 기록 ctLog 한 줄만 있고,
+     칸의 사람 수는 ctN 한 줄이 기록을 세어 정하고, 불빛(ctLight)과 시설(ctFacOf)은 그 수에서 곧바로 나온다.
+     그래서 「사람이 떠난 칸에 병원이 남는 일」이나 「사람이 적은 칸이 가장 밝은 일」은 만들어질 수 없다.
+  ⭐ 사람은 늘지도 줄지도 않는다(모두 아홉) — 한 칸에서 빠진 만큼 다른 칸에 더해진다.
+  ⭐ 기록을 적는 자리 state.ctLog.push 단 하나 · 지우는 자리 0 · 한 칸에 다섯이 모이면(공공 기관이 서면) 판은 멈추고 판 읽기로 간다.
+     근거 = 교과서 129쪽 도시의 뜻(많은 인구 · 공공 기관 · 병원·상점 등 편의 시설) + 128쪽 밤하늘 사진(밝게 빛나는 곳).
+
+  ■ 4단계
+   ① 사람 옮기기(떠날 칸 → 갈 칸, 차례 자유 · 판정 0) → 한 칸에 다섯이 모일 때까지
+   ② 판 읽기 3택(정답 자리 2 = 「사람이 많이 모인 칸일수록…」)
+   ③ 마무리 3택(정답 자리 1 = 교과서 도시의 뜻) → 완료 — 방문했던 도시 이야기 나누기는 교실 몫
+
+  ■ 가드 10종
+   ① 마무리 확정 후 세 처리기 전체 잠금      ② 무효 번호(Number.isInteger·범위)
+   ③ 도시가 선 뒤 옮기기 — 판 불변           ④ 사람이 없는 칸을 떠날 칸으로 — 판 불변
+   ⑤ 고른 칸을 다시 누르면 고르기만 풀림 — 판 불변
+   ⑥ 도시가 서기 전 판 읽기 — 판 불변        ⑦ 이미 읽은 자리 다시 읽기 — 판 불변
+   ⑧ 판 읽기 어긋난 답 — 판 불변             ⑨ 판을 읽기 전 마무리 — 판 불변
+   ⑩ 마무리 어긋난 답 — 판 불변
+
+  ■ 정직 3곳
+   ㉠ 판은 사람 수로 불빛과 시설을 정했지만, 실제로는 편의 시설과 일자리가 사람을 도시로 모으기도 한다 — 칸·사람 수는 판이 줄여 옮김(캡션 상시).
+   ㉡ 밤하늘 그림은 판이 새로 그린 도식이다(교과서 사진이 아님).
+   ㉢ 방문했던 도시의 경험을 친구와 이야기하는 일은 교실 몫.
+
+  ■ 설계 원칙
+   · 10~11차시 침범 0(인구 그래프·교통·산업은 차시 예고 한 자리 · 촌락 0 · 5만 명 기준 0)
+   · 주제① 재현 0(산이 많은·들이 펼쳐진·바다가 있는 지역 0) · 교사용 참고 자료 0(도읍·시장 어원 · 도시화 단계)
+   · 실제 지역 이름은 교과서 130쪽 지도·경험 예시 안 · 연도 0 · 「틀렸」 0
+-->
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>도시가 무엇인지 알아볼까요 · 사회 4-2</title>
+<meta name="kedu-lesson-id" content="g4_social_u3_l07_v1">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#0891B2; --green-d:#0E7490; --cyan:#0D9488;
+  --bg:#ECFEFF; --bub:#CFFAFE; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#F57F17; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes drawLine{to{transform:scaleX(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ka-lb{background:#F1F5F9;border:none;padding:7px 12px;border-radius:10px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;font-family:inherit;font-weight:700;color:#475569;flex-shrink:0;font-size:13px}
+.ka-lb svg{width:15px;height:15px}
+.ka-bar{flex:1;height:5px;background:var(--bg);border-radius:999px;overflow:hidden}
+.ka-bar>div{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:999px;transition:width .35s ease;width:6%}
+.ka-pg{color:var(--green);font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;flex-shrink:0}
+.ka-sc{background:var(--amber-bg);color:var(--amber);padding:4px 12px;border-radius:999px;display:flex;align-items:center;gap:5px;flex-shrink:0;font-weight:700}
+.ka-sc svg{width:14px;height:14px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px}
+.ka-sc-u{font-size:12px}
+
+/* 메인 */
+.ka-m{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow-y:auto}
+.ka-tags{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ka-bg{background:var(--amber-bg);color:var(--amber);padding:5px 14px;border-radius:30px;font-size:13px;
+  display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.ka-bg.s2{background:#E0F2FE;color:#0369A1}
+.ka-bg.s3{background:#EDE9FE;color:#6D28D9}
+.ka-bg.s4{background:#FCE7F3;color:#BE185D}
+.ka-bg.s5{background:#CFFAFE;color:var(--green)}
+.ka-bg svg{width:13px;height:13px}
+.ka-meta{font-size:13px;color:var(--muted)}
+.ka-t{font-size:clamp(20px,3.4vw,29px);margin-bottom:16px;line-height:1.4;color:var(--green);letter-spacing:-.3px;font-weight:700;animation:fadeUp .4s .15s ease both}
+.ka-bub{background:var(--bub);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);line-height:1.7;
+  margin-bottom:16px;border-left:4px solid var(--green);animation:fadeUp .4s .3s ease both}
+.ka-emph{position:relative;display:inline-block;font-weight:700;color:var(--green)}
+.ka-emph::after{content:'';position:absolute;bottom:2px;left:0;right:0;height:3px;background:var(--red);border-radius:2px;transform:scaleX(0);transform-origin:left;animation:drawLine .6s .6s ease forwards}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(16px,2.6vw,21px);font-weight:700;line-height:1.6;margin-bottom:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:640px}
+.opt{background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:13px 14px;font-size:clamp(14px,2.3vw,17px);
+  font-weight:500;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:var(--green);background:#CFFAFE;animation:pop .4s ease}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;font-size:clamp(14px,2.3vw,17px);line-height:1.6;text-align:center;animation:fadeUp .35s ease both;max-width:640px}
+.fb.ok{color:var(--green);font-weight:700}
+.hint{margin-top:12px;background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(13px,2.2vw,16px);
+  line-height:1.6;color:#0C4A6E;max-width:560px;animation:fadeUp .35s ease both}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:620px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFF;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:clamp(14px,2.3vw,17px);line-height:1.5}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(8,145,178,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+
+/* 조작 판 — 모이면 밝아지는 판 (밤에 본 땅 아홉 칸에 사람 옮기기) */
+.ct-wrap{max-width:780px;width:100%;margin:0 auto}
+.ct-head{background:#CFFAFE;color:#155E75;font-weight:800;text-align:center;border-radius:10px;padding:7px 10px;
+  font-size:clamp(13px,2.1vw,16px);margin-bottom:8px;word-break:keep-all}
+.ct-play{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:10px;align-items:start}
+.ct-board{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:8px;border-radius:14px;background:#0F172A;border:2px solid #334155}
+.ct-cell{border:2px solid #334155;border-radius:10px;min-height:82px;background:#1E293B;color:#CBD5E1;display:flex;flex-direction:column;
+  align-items:center;justify-content:space-between;gap:3px;padding:5px 3px;font-family:inherit;cursor:pointer;text-align:center;word-break:keep-all}
+.ct-cell[data-light="1"]{background:#334155}
+.ct-cell[data-light="2"]{background:#A16207;color:#FEF9C3}
+.ct-cell[data-light="3"]{background:#FACC15;color:#422006;box-shadow:0 0 16px rgba(250,204,21,.65)}
+.ct-cell[data-sel="1"]{border-color:#22D3EE;outline:3px solid #22D3EE}
+.ct-cell b{font-size:clamp(12px,1.9vw,15px)}
+.ct-folk{display:flex;gap:3px;justify-content:center;flex-wrap:wrap;min-height:12px}
+.ct-man{width:10px;height:10px;border-radius:50%;background:currentColor;display:inline-block}
+.ct-fac{display:flex;gap:3px;justify-content:center;flex-wrap:wrap;min-height:18px}
+.ct-tag{font-size:clamp(10px,1.5vw,12px);font-weight:800;border-radius:6px;padding:1px 4px;background:#fff;color:#0E7490;white-space:nowrap}
+.ct-side{display:flex;flex-direction:column;gap:8px}
+.ct-key{border:2px solid var(--line);border-radius:11px;padding:8px 10px;background:#fff;font-size:clamp(12px,2vw,15px);line-height:1.6}
+.ct-key b{color:#0E7490}
+.ct-tell{border-radius:12px;padding:9px 13px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;background:#F0FDFA;border-left:4px solid var(--cyan)}
+.ct-ask{border:2px solid var(--line);border-radius:12px;padding:10px 14px;background:#F8FEFF;margin-top:9px;font-size:clamp(13px,2.2vw,16px);line-height:1.6}
+.ct-opts{display:grid;grid-template-columns:1fr;gap:8px;margin-top:9px}
+.ct-opt{background:#F8FAFC;border:2px solid var(--line);border-radius:11px;padding:10px 12px;font-family:inherit;
+  font-size:clamp(13px,2.2vw,16px);cursor:pointer;text-align:left;line-height:1.5;word-break:keep-all}
+.ct-opt:hover{border-color:var(--green);background:var(--bub)}
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+  .ct-play{grid-template-columns:1fr}
+  .ct-cell{min-height:70px}
+}
+</style>
+
+</head>
+
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#F57F17"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식, 사람 형상 대신 칸과 모양 ===== */
+const SVG = {
+  // [동기 유발] 밤하늘에서 본 땅
+  night:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#0F172A"/>
+    <path d="M 30 8 Q 60 14 70 34 Q 76 52 62 70 Q 50 86 70 92 L 110 92 Q 124 70 118 50 Q 112 26 96 8 Z" fill="#1E293B"/>
+    <circle cx="84" cy="30" r="7" fill="#FACC15" opacity=".9"/><circle cx="84" cy="30" r="13" fill="#FACC15" opacity=".25"/>
+    <circle cx="104" cy="74" r="5" fill="#FACC15" opacity=".85"/><circle cx="104" cy="74" r="10" fill="#FACC15" opacity=".2"/>
+    <circle cx="72" cy="58" r="2" fill="#FDE68A"/><circle cx="96" cy="50" r="2.4" fill="#FDE68A"/><circle cx="66" cy="80" r="1.6" fill="#FDE68A"/>
+    <text x="30" y="88" font-size="7" fill="#E2E8F0" text-anchor="middle" font-weight="800">밤에 본 땅</text></svg>`,
+  // 도시의 모습
+  town:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <rect x="10" y="30" width="18" height="50" fill="#94A3B8"/><rect x="32" y="16" width="22" height="64" fill="#64748B"/>
+    <rect x="58" y="36" width="16" height="44" fill="#CBD5E1"/><rect x="78" y="22" width="24" height="58" fill="#475569"/>
+    <rect x="106" y="40" width="18" height="40" fill="#94A3B8"/><rect x="128" y="28" width="22" height="52" fill="#64748B"/>
+    <g fill="#FDE68A"><rect x="36" y="22" width="4" height="4"/><rect x="46" y="22" width="4" height="4"/><rect x="36" y="32" width="4" height="4"/><rect x="84" y="28" width="4" height="4"/><rect x="92" y="38" width="4" height="4"/><rect x="132" y="34" width="4" height="4"/></g>
+    <rect x="0" y="80" width="160" height="6" fill="#334155"/>
+    <text x="80" y="94" font-size="6.8" fill="#0E7490" text-anchor="middle" font-weight="800">높은 건물이 모인 곳</text></svg>`,
+  // 떠오르는 낱말
+  words:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <rect x="12" y="14" width="62" height="24" rx="12" fill="#CFFAFE" stroke="#0891B2"/><rect x="86" y="14" width="62" height="24" rx="12" fill="#FEF9C3" stroke="#CA8A04"/>
+    <rect x="12" y="48" width="62" height="24" rx="12" fill="#FCE7F3" stroke="#BE185D"/><rect x="86" y="48" width="62" height="24" rx="12" fill="#DCFCE7" stroke="#15803D"/>
+    <g font-size="8" font-weight="800" text-anchor="middle"><text x="43" y="29" fill="#155E75">복잡하다</text><text x="117" y="29" fill="#854D0E">빠르다</text><text x="43" y="63" fill="#9D174D">바쁘다</text><text x="117" y="63" fill="#166534">발전</text></g>
+    <text x="80" y="88" font-size="6.8" fill="#0E7490" text-anchor="middle" font-weight="800">떠오르는 낱말</text></svg>`,
+  // 도시에 있는 곳
+  place:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <rect x="10" y="30" width="40" height="40" fill="#E0F2FE" stroke="#0369A1"/><path d="M 6 32 L 30 16 L 54 32 Z" fill="#0369A1"/><rect x="26" y="52" width="8" height="18" fill="#0369A1"/>
+    <rect x="60" y="30" width="40" height="40" fill="#fff" stroke="#DC2626"/><path d="M 76 42 L 84 42 L 84 46 L 88 46 L 88 54 L 84 54 L 84 58 L 76 58 L 76 54 L 72 54 L 72 46 L 76 46 Z" fill="#DC2626"/>
+    <rect x="110" y="34" width="40" height="36" fill="#FEF9C3" stroke="#CA8A04"/><path d="M 106 36 L 154 36 L 150 28 L 110 28 Z" fill="#F59E0B"/><rect x="118" y="46" width="24" height="12" fill="#fff" stroke="#CA8A04"/>
+    <text x="80" y="88" font-size="6.8" fill="#0E7490" text-anchor="middle" font-weight="800">공공 기관 · 병원 · 상점</text></svg>`,
+  // 판 안내
+  move:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#0F172A"/>
+    <rect x="14" y="20" width="44" height="44" rx="6" fill="#334155" stroke="#475569"/><circle cx="36" cy="42" r="4" fill="#CBD5E1"/>
+    <rect x="102" y="20" width="44" height="44" rx="6" fill="#FACC15" stroke="#CA8A04"/><circle cx="116" cy="36" r="4" fill="#422006"/><circle cx="130" cy="36" r="4" fill="#422006"/><circle cx="116" cy="50" r="4" fill="#422006"/><circle cx="130" cy="50" r="4" fill="#422006"/>
+    <path d="M 62 42 L 96 42 M 88 35 L 97 42 L 88 49" stroke="#22D3EE" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <text x="80" y="84" font-size="6.8" fill="#E2E8F0" text-anchor="middle" font-weight="800">한 사람씩 옮겨 가요</text></svg>`,
+  // 우리나라의 도시
+  map:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <path d="M 58 6 Q 84 4 96 16 Q 104 30 100 46 Q 106 62 98 78 Q 88 90 70 88 Q 56 80 60 64 Q 50 52 56 38 Q 48 22 58 6 Z" fill="#BBF7D0" stroke="#15803D"/>
+    <g fill="#0891B2"><circle cx="70" cy="26" r="3.2"/><circle cx="80" cy="46" r="2.6"/><circle cx="90" cy="60" r="2.6"/><circle cx="94" cy="76" r="3"/><circle cx="68" cy="76" r="2.4"/><circle cx="62" cy="28" r="2.2"/></g>
+    <text x="130" y="50" font-size="6.8" fill="#0E7490" text-anchor="middle" font-weight="800">도시를 찾아요</text></svg>`,
+  done:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <circle cx="80" cy="46" r="26" fill="#CFFAFE" stroke="#0891B2" stroke-width="2.4"/>
+    <path d="M 68 46 L 76 55 L 93 37" stroke="#0891B2" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="80" y="86" font-size="7.4" fill="#155E75" text-anchor="middle" font-weight="800">도시의 뜻을 알았어요</text></svg>`
+};
+function sceneCard(key,cap){return `<div class="scene">${SVG[key]}<div class="cap">${cap}</div></div>`;}
+
+/* ===== 직접 조작: 모이면 밝아지는 판 (밤에 본 땅 아홉 칸에 사람 옮기기) =====
+   ⭐ 칸의 사람 수·불빛·시설을 담는 상태가 없다 — 옮김 기록 ctLog 한 줄만 있고,
+      사람 수는 ctN 한 줄이 기록을 세어 정하고, 불빛과 시설은 그 수에서 곧바로 나온다.
+   ⭐ 사람은 늘지도 줄지도 않는다 — 한 번 옮기면 떠난 칸에서 하나 빠지고 간 칸에 하나 더해진다.
+   ⭐ 기록을 적는 자리 state.ctLog.push 단 하나 · 지우는 자리 0 · 한 칸에 다섯이 모이면 판은 멈춘다. */
+const CT_N = 9;                                        // 칸의 수
+const CT_START = [1,1,1,1,1,1,1,1,1];                  // 처음 칸마다 사는 사람
+const CT_CITY = 5;                                     // 공공 기관이 서는 사람 수
+const CT_NAME = ["가","나","다","라","마","바","사","아","자"];
+const CT_FAC = [{name:"상점",need:3},{name:"병원",need:4},{name:"공공 기관",need:5}];
+const CT_SAY_LOCK = "이미 공공 기관까지 선 칸이 생겼어요. 판은 그대로예요. 판을 읽어 봐요.";
+const CT_SAY_EMPTY = "그 칸에는 떠날 사람이 없어요. 판은 그대로예요.";
+const CT_SAY_UNSEL = "고르기를 풀었어요. 판은 그대로예요.";
+const CT_SAY_ORDER_R = "먼저 한 칸에 다섯 사람을 모아 봐요.";
+const CT_SAY_READDONE = "이미 정한 자리예요. 판은 그대로예요.";
+const CT_SAY_ORDER_FIN = "먼저 판을 읽어 봐요.";
+const CT_READQ = [
+  "불빛과 시설은 사람 수와 상관없이 아무 칸에나 생겨요",
+  "사람이 적게 사는 칸일수록 밤에 더 밝게 빛나요",
+  "사람이 많이 모인 칸일수록 밤에도 밝고, 상점·병원·공공 기관이 모여 있어요"
+];
+const CT_READ_OK = 2;
+const CT_READ_BAD = "판에서 가장 밝게 빛난 칸에 몇 사람이 살았는지 떠올려 봐요.";
+const CT_FINQ = [
+  "도시는 사람이 거의 살지 않아 밤이면 불빛이 모두 꺼지는 곳이에요",
+  "도시는 많은 인구가 모여 살면서 정치, 경제, 사회 활동의 중심이 되는 곳이에요",
+  "도시에는 공공 기관이나 병원, 상점 같은 편의 시설이 없어요"
+];
+const CT_FIN_OK = 1;
+const CT_FIN_BAD = "교과서 129쪽에서 도시가 어떤 곳인지 다시 떠올려 봐요.";
+
+function ctN(st,k){ return CT_START[k] - st.ctLog.filter(m=>m[0]===k).length + st.ctLog.filter(m=>m[1]===k).length; }   // ⭐ 사람 수를 세는 자리는 여기 단 하나
+function ctLight(n){ return n===0 ? 0 : (n<=2 ? 1 : (n<CT_CITY ? 2 : 3)); }       // 불빛은 사람 수에서만
+function ctFacOf(n){ return CT_FAC.filter(f=>n>=f.need); }                       // 시설도 사람 수에서만
+function ctCity(st){ for(let k=0;k<CT_N;k++){ if(ctN(st,k)>=CT_CITY) return k; } return -1; }
+function ctStage(st){
+  if(ctCity(st) < 0) return "run";
+  if(st.ctRead == null) return "read";
+  if(st.ctFin == null) return "fin";
+  return "end";
+}
+
+/* 판 — 아홉 칸 */
+function ctCell(st,k){
+  const n = ctN(st,k);
+  let folk=''; for(let j=0;j<n;j++) folk += '<span class="ct-man"></span>';
+  const fac = ctFacOf(n).map(f=>`<span class="ct-tag">${f.name}</span>`).join('');
+  return `<button class="ct-cell" data-k="${k}" data-n="${n}" data-light="${ctLight(n)}" data-sel="${st.ctSel===k?1:0}" onclick="ctPick(${k})"><b>${CT_NAME[k]} 칸</b><span class="ct-folk">${folk}</span><span class="ct-fac">${fac}</span></button>`;
+}
+function ctBoard(st){
+  let s=''; for(let k=0;k<CT_N;k++) s += ctCell(st,k);
+  return `<div class="ct-board">${s}</div>`;
+}
+function ctKey(st){
+  const c = ctCity(st);
+  const top = Math.max(...CT_START.map((_,k)=>ctN(st,k)));
+  return `<div class="ct-key"><b>사람이 모이면</b><br>세 사람 — 상점이 생겨요<br>네 사람 — 병원이 생겨요<br>다섯 사람 — 공공 기관이 서요<br>
+    가장 많이 모인 칸: <b>${top}</b>사람${c>=0 ? ` · <b>${CT_NAME[c]} 칸</b>이 가장 밝아요` : ''}</div>`;
+}
+
+function ctPanel(st){
+  const stage = ctStage(st);
+  let ask = '';
+  if(stage === "run"){
+    ask = `<div class="ct-ask" data-step="run"><b>떠날 칸을 누르고, 갈 칸을 눌러 한 사람씩 옮겨 봐요.</b>
+      <div class="note" style="text-align:left;margin-top:5px">어느 칸으로 모아도 괜찮아요. 한 칸에 다섯 사람이 모이면 판을 읽을 수 있어요.</div></div>`;
+  } else if(stage === "read"){
+    ask = `<div class="ct-ask" data-step="read"><b>밤에 본 판을 살펴보니, 무엇을 알 수 있을까요?</b>
+      <div class="ct-opts">${CT_READQ.map((t,i)=>`<button class="ct-opt" onclick="ctRead(${i})">${t}</button>`).join('')}</div></div>`;
+  } else if(stage === "fin"){
+    ask = `<div class="ct-ask" data-step="fin"><b>그렇다면 도시는 어떤 곳일까요?</b>
+      <div class="ct-opts">${CT_FINQ.map((t,i)=>`<button class="ct-opt" onclick="ctFin(${i})">${t}</button>`).join('')}</div></div>`;
+  } else {
+    ask = `<div class="ct-ask" data-fin="1" style="border-color:#86EFAC;background:#F0FDF4">
+      <b style="color:#166534">많은 인구가 모여 살면서 정치, 경제, 사회 활동의 중심이 되는 곳을 도시라고 해요.</b>
+      판에서도 사람이 많이 모인 칸이 가장 밝았고, 공공 기관과 편의 시설이 그곳에 모였지요.
+      <div class="note" style="text-align:left;margin-top:5px">※ 내가 가 본 도시가 어떤 모습이었는지 친구와 이야기 나누는 일은 <b>교실 몫</b>이에요. 판은 대신 떠올려 주지 않아요.</div></div>`;
+  }
+  const tell = st.ctTell ? `<div class="ct-tell">${st.ctTell}</div>` : '';
+  const warn = st.ctMsg ? `<div class="fb" style="color:#DC2626;font-weight:700">${st.ctMsg}</div>` : '';
+  return `<div class="ct-wrap">
+    <div class="ct-head">밤에 본 땅 아홉 칸 · 옮긴 횟수 <b>${st.ctLog.length}</b> · 모두 ${CT_N}사람</div>
+    <div class="ct-play">${ctBoard(st)}<div class="ct-side">${ctKey(st)}${tell}</div></div>${ask}${warn}
+    <div class="note" style="margin-top:8px">※ 이 판은 도시의 뜻을 <b>판이 칸 아홉과 사람 아홉으로 줄여 옮긴 것</b>이에요. 판에서는 사람 수로 불빛과 시설을 정했지만, 실제로는 편의 시설과 일자리가 사람을 도시로 모으기도 해요.</div>
+  </div>`;
+}
+function ctTellOf(st,f,t){                                                       // 알림도 사람 수에서만
+  const got = CT_FAC.find(x=>x.need===ctN(st,t));
+  const lost = CT_FAC.find(x=>x.need===ctN(st,f)+1);
+  return `${CT_NAME[f]} 칸에서 ${CT_NAME[t]} 칸으로 한 사람이 옮겨 갔어요.`
+    + (got ? ` ${CT_NAME[t]} 칸에 ${got.name}이 생겼어요.` : '')
+    + (lost ? ` ${CT_NAME[f]} 칸의 ${lost.name}은 문을 닫았어요.` : '');
+}
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "3단원 다양한 환경과 삶의 모습 · 주제② 도시의 특징과 생활 모습";
+const Q = [
+  {stem:"밤하늘에서 찍은 우리나라의 모습에서 밝게 빛나는 곳은 어떤 곳일까요?",
+   opts:["사람이 살지 않는 높은 산","넓은 바다 한가운데","밤에도 불이 켜져 있는 곳이 많은 도시","깊은 계곡"], correct:2, pts:POINTS_BASIC,
+   h1:"밤에 불을 켜는 것은 누구일까요?", h2:"사람이 많이 사는 곳을 떠올려 봐요.",
+   reason:"밝게 빛나는 곳은 밤에도 불이 켜져 있는 곳이 많은 도시일 거예요."},
+  {stem:"많은 인구가 모여 살면서 정치, 경제, 사회 활동의 중심이 되는 곳을 무엇이라고 하나요?",
+   opts:["도시","갯벌","양식장","계곡"], correct:0, pts:POINTS_BASIC,
+   h1:"오늘 공부하는 낱말이에요.", h2:"「도」로 시작해요.",
+   reason:"많은 인구가 모여 살면서 정치, 경제, 사회 활동의 중심이 되는 곳을 도시라고 해요."},
+  {stem:"도시에 잘 갖춰져 있는 것으로 알맞은 것은 무엇인가요?",
+   opts:["넓은 갯벌","울창한 숲","물고기를 기르는 양식장","병원, 상점 등 편의 시설"], correct:3, pts:POINTS_BASIC,
+   h1:"사람들의 생활을 편리하게 돕는 곳이에요.", h2:"아플 때 가는 곳, 물건을 사는 곳이에요.",
+   reason:"도시에는 각종 공공 기관이 자리 잡고 있고, 병원, 상점 등 편의 시설이 잘 갖춰져 있어요."},
+  {stem:"「도시」 하면 떠오르는 낱말과 그 까닭이 알맞게 이어진 것은 무엇인가요?",
+   opts:["조용하다 — 거리에 사람이 거의 없어서","복잡하다 — 거리에 사람과 상점이 많아서","어둡다 — 밤이면 불이 모두 꺼져서","한가하다 — 오가는 자동차가 한 대도 없어서"], correct:1, pts:POINTS_BASIC,
+   h1:"도시의 거리 모습을 떠올려 봐요.", h2:"사람과 건물이 많은 곳이에요.",
+   reason:"도시의 거리에는 사람과 상점이 많아 「복잡하다」라는 낱말이 떠오를 수 있어요."},
+  {stem:"판에서 한 칸에 공공 기관이 선 때는 언제였나요?",
+   opts:["그 칸에 다섯 사람이 모였을 때","그 칸의 사람이 모두 떠났을 때","옆 칸이 비었을 때","판을 처음 열었을 때"], correct:0, pts:POINTS_APPLY,
+   h1:"판 옆 안내를 떠올려 봐요.", h2:"사람이 가장 많이 모였을 때예요.",
+   reason:"판에서는 한 칸에 다섯 사람이 모였을 때 공공 기관이 섰어요."},
+  {stem:"판에서 사람이 모두 떠난 칸은 어떤 모습이었나요?",
+   opts:["상점과 병원이 더 늘어났어요","가장 밝게 빛났어요","불빛이 꺼지고 시설이 하나도 없었어요","공공 기관이 새로 섰어요"], correct:2, pts:POINTS_APPLY,
+   h1:"떠날 칸을 누르고 옮겼을 때 그 칸이 어떻게 변했나요?", h2:"불빛과 시설은 사람 수를 따라가요.",
+   reason:"사람이 모두 떠난 칸은 불빛이 꺼지고 시설도 남지 않았어요. 불빛과 시설은 사람 수를 따라갔지요."},
+  {stem:"도시를 방문했던 경험 가운데 도시가 어떤 곳인지 잘 드러난 것은 무엇인가요?",
+   opts:["바닷가에서 혼자 조개를 주운 일","공공 기관과 상점이 많고, 거리에 많은 사람이 오가던 모습","사람이 없는 숲길을 걸은 일","밤하늘에 별만 가득하던 모습"], correct:1, pts:POINTS_APPLY,
+   h1:"도시의 뜻에 들어 있는 낱말을 떠올려 봐요.", h2:"많은 사람, 공공 기관, 편의 시설이에요.",
+   reason:"공공 기관과 상점이 많고 많은 사람이 오가던 모습에서 도시가 어떤 곳인지 잘 드러나요."},
+  {stem:"오늘 공부한 내용으로 알맞은 것은 무엇인가요?",
+   opts:["도시는 사람이 거의 살지 않는 곳이에요","도시에는 공공 기관이 하나도 없어요","도시는 밤이면 불빛이 모두 꺼지는 곳이에요","도시는 많은 인구가 모여 살면서 정치, 경제, 사회 활동의 중심이 되는 곳이에요"], correct:3, pts:POINTS_APPLY,
+   h1:"교과서 129쪽의 도시의 뜻을 떠올려 봐요.", h2:"「많은 인구」와 「중심」이 들어가요.",
+   reason:"도시는 많은 인구가 모여 살면서 정치, 경제, 사회 활동의 중심이 되는 곳이에요."}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — 동기 유발
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">밤하늘에서 우리나라를 내려다보면 어떻게 보일까요?</h2>
+  <div class="ka-bub">교과서 128쪽에는 <b>밤하늘에서 찍은 우리나라의 모습</b>이 있어요. 밝게 빛나는 곳도 있고, 어두운 곳도 있어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('night','밤에 본 땅')}</div>
+    <div class="note">※ 그림은 판이 새로 그린 도식이에요. 오늘은 <b>밝게 빛나는 곳이 어떤 곳인지</b> 알아봐요.</div>
+  </div>`});
+// 2 살펴보기 — 밝게 빛나는 곳 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">밝게 빛나는 곳은 어떤 곳일까요?</h2>
+  <div class="ka-bub">교과서 128쪽 사진에서 <span class="ka-emph">유난히 밝게 빛나는 곳</span>을 찾아보고, 왜 그렇게 빛나는지 생각해 봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('night','밝게 빛나는 곳')}</div>
+  ${st.revealed?`<div class="answer-box">· 밝게 빛나는 곳은 <b>도시</b>일 것 같아요.<br>· 도시에는 <b>밤에도 불이 켜져 있는 곳</b>이 많기 때문이에요.<br>· 도시에 사는 사람들이 <b>밤늦게까지 활동</b>하기 때문이에요.</div>`
+    :`<div class="note">내 생각을 먼저 말해 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 3 살펴보기 — 떠오르는 낱말
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">「도시」 하면 어떤 낱말이 떠오르나요?</h2>
+  <div class="ka-bub">교과서 129쪽 사진을 보며, 떠오르는 낱말을 <span class="ka-emph">까닭과 함께</span> 친구들과 돌아가며 말해 봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('town','도시의 모습')}${sceneCard('words','떠오르는 낱말')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div><b>복잡하다</b> — 거리에 사람이 많고 상점도 많아서요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b>빠르다</b> — 도로를 달리는 자동차와 철로 위의 기차가 빠르게 다녀서요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div><b>바쁘다</b> — 사람들이 이곳저곳을 오가며 바쁘게 움직여서요.</div></div>
+  </div>
+  <div class="note">예시와 다른 낱말이 떠올라도 좋아요. <b>까닭</b>을 꼭 함께 말해 봐요.</div></div>`});
+// 4 살펴보기 — 도시의 뜻 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">도시는 어떤 곳인가요?</h2>
+  <div class="ka-bub">교과서 129쪽 글을 읽고, 도시에는 <b>무엇이 있고</b> 사람들이 <b>어떻게 모여 사는지</b> 찾아봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('place','도시에 있는 곳')}</div>
+  ${st.revealed?`<div class="answer-box">· 도시는 사람들이 살아가는 <b>삶의 터전</b>이에요.<br>· 각종 <b>공공 기관</b>이 자리 잡고 있고, <b>병원, 상점 등 편의 시설</b>이 잘 갖춰져 있어요.<br>· <span class="ka-emph">많은 인구가 모여 살면서 정치, 경제, 사회 활동의 중심이 되는 곳</span>을 도시라고 해요.</div>`
+    :`<div class="note">교과서 글을 <b>직접</b> 읽은 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 5 살펴보기 — 조작 안내
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">밤에 본 땅에 사람을 모아 봐요</h2>
+  <div class="ka-bub">판에는 칸이 아홉 개 있고, 처음에는 칸마다 <b>한 사람씩</b> 살아요. 떠날 칸을 누르고 갈 칸을 누르면 한 사람이 옮겨 가요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('move','한 사람씩 옮겨요')}</div>
+  <div class="note">사람이 모인 칸의 <b>불빛</b>과 <b>시설</b>이 어떻게 변하는지 살펴봐요.</div></div>`});
+// 6 살펴보기 — 직접 조작
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">모이면 밝아지는 판</h2>
+  <div class="ka-grp" style="align-items:stretch">${ctPanel(st)}</div>`});
+// 7 살펴보기 — 방문했던 도시 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">우리나라의 도시를 방문했던 경험을 나눠 봐요</h2>
+  <div class="ka-bub">교과서 130쪽 지도에서 <b>서울, 인천, 부산, 대전, 대구</b> 등 우리나라의 도시를 찾아보고, 내가 가 본 도시가 있는지 떠올려 봐요. 가 본 도시는 <span class="ka-emph">어떤 모습</span>이었나요?</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('map','우리나라의 도시')}</div>
+  ${st.revealed?`<div class="answer-box">· 아파트와 상점, 공장 등 <b>건물이 많았고</b> 높은 빌딩이 늘어선 거리도 있었어요.<br>· 도로를 달리는 자동차가 많았고, 버스 정류장이나 기차역, 지하철역도 많았어요.<br>· 시장에서 물건을 사고파는 사람들이 많았고, 거리에도 <b>많은 사람</b>이 오가고 있었어요.</div>
+    <div class="note">가 본 도시에서 <b>공공 기관</b>이나 <b>편의 시설</b>을 본 적이 있는지도 함께 이야기해 봐요.</div>`
+    :`<div class="note">내 경험을 먼저 떠올려 본 뒤 예시를 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부한 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('done','도시의 뜻을 알았어요')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div><b>도시의 뜻</b> — 많은 인구가 모여 살면서 정치, 경제, 사회 활동의 중심이 되는 곳이에요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b>도시의 모습</b> — 공공 기관이 자리 잡고 있고, 병원, 상점 등 편의 시설이 잘 갖춰져 있어요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b style="color:#0891B2">도시의 인구, 교통, 산업 등 도시의 특징</b>을 알아봐요.</div></div>`});
+// 17 스스로 돌아보기
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"도시가 무엇인지 설명할 수 있어요",st)}
+    ${selfCheck(1,"도시에 무엇이 갖춰져 있는지 말할 수 있어요",st)}
+    ${selfCheck(2,"「도시」 하면 떠오르는 낱말을 까닭과 함께 말할 수 있어요",st)}
+  </div><div class="note">체크가 잘 안 되는 곳은 <b>다시 살펴봐도</b> 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">도시가 무엇인지 알아봤어요</h2>
+  <div class="ka-grp">
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">내가 가 본 도시의 모습을 친구와 <b style="color:#0891B2">직접</b> 이야기 나눠 봐요.</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const optHTML = q.opts.map((o,k)=>{
+    let cls='opt';
+    if(qs.done && k===q.correct) cls+=' correct';
+    if(qs.wrongPick===k) cls+=' wrong';
+    return `<button class="${cls}" onclick="pick(${i},${k})" ${qs.done?'disabled':''}>${o}</button>`;
+  }).join('');
+  const hint = qs.hint>0 ? `<div class="hint">💡 ${qs.hint===1?q.h1:q.h2}</div>` : '';
+  const fb = qs.done ? `<div class="fb ok">✓ ${q.reason}</div>` : '';
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용':'확인'} (+${q.pts})</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    <div class="opts" style="margin:0 auto">${optHTML}</div>
+    ${hint}${fb}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g4_2_social_u3_l07";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  ctLog:[], ctSel:null, ctRead:null, ctFin:null, ctMsg:"", ctTell:"",
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 →';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음 (브라우저에서만 · jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+function ctDraw(){ main.innerHTML = slides[state.idx].render(state); }
+
+/* 칸 누르기 — 떠날 칸 고르기 · 갈 칸으로 옮기기 */
+function ctPick(k){
+  if(state.ctFin!=null) return;                                        // 가드①: 마무리 확정 후 전체 잠금
+  if(!Number.isInteger(k) || k<0 || k>=CT_N) return;                    // 가드②: 무효 번호 — 안내조차 띄우지 않음
+  if(ctCity(state)>=0){ state.ctMsg = CT_SAY_LOCK; playThud(); ctDraw(); return; }             // 가드③: 도시가 선 뒤 — 판 불변
+  if(state.ctSel==null){
+    if(ctN(state,k)===0){ state.ctMsg = CT_SAY_EMPTY; playThud(); ctDraw(); return; }          // 가드④: 떠날 사람 0 — 판 불변
+    state.ctSel = k; state.ctMsg = ""; state.ctTell = ""; playBlip(); ctDraw(); return;
+  }
+  if(state.ctSel===k){ state.ctSel = null; state.ctMsg = CT_SAY_UNSEL; ctDraw(); return; }       // 가드⑤: 같은 칸 — 고르기만 풀림 · 판 불변
+  const f = state.ctSel;
+  state.ctLog.push([f,k]);                                             // ⭐ 기록을 적는 자리는 코드에 여기 단 하나 · 지우는 자리 0
+  state.ctSel = null; state.ctMsg = ""; state.ctTell = ctTellOf(state,f,k); playBlip(); ctDraw();
+}
+/* 판 읽기 */
+function ctRead(i){
+  if(state.ctFin!=null) return;                                        // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=CT_READQ.length) return;         // 가드②
+  if(ctCity(state)<0){ state.ctMsg = CT_SAY_ORDER_R; playThud(); ctDraw(); return; }            // 가드⑥: 도시가 서기 전 — 판 불변
+  if(state.ctRead!=null){ state.ctMsg = CT_SAY_READDONE; ctDraw(); return; }                   // 가드⑦: 이미 정한 자리 — 판 불변
+  if(i!==CT_READ_OK){ state.ctMsg = CT_READ_BAD; playThud(); ctDraw(); return; }               // 가드⑧: 어긋난 답 — 판 불변
+  state.ctRead = i; state.ctMsg = ""; state.ctTell = ""; playBlip(); ctDraw();
+}
+/* 마무리 */
+function ctFin(i){
+  if(state.ctFin!=null) return;                                        // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=CT_FINQ.length) return;          // 가드②
+  if(state.ctRead==null){ state.ctMsg = CT_SAY_ORDER_FIN; playThud(); ctDraw(); return; }      // 가드⑨: 판을 읽기 전 — 판 불변
+  if(i!==CT_FIN_OK){ state.ctMsg = CT_FIN_BAD; playThud(); ctDraw(); return; }                 // 가드⑩: 어긋난 답 — 판 불변
+  state.ctFin = i; state.ctMsg = ""; playChime(); ctDraw();
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true; qs.wrongPick=null;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2; if(qs.hint===2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">📘 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 →</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; }
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
+</html>
