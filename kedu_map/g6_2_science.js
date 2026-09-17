@@ -169,6 +169,16 @@ window.KEDU_MAP["g6_2_science"] = {
      "url": "/grade6/semester2/science/2단원_물질의연소/g6_sci_u2_l06_연소생성물피해.html",
      "track": "tb",
      "ready": true
+    },
+    {
+     "key": "g6_science_u2_l07",
+     "lessonId": "g6_s2_sci_u2_l07_v1",
+     "n": "8~9",
+     "title": "창의가 팡팡 — 이산화 탄소를 줄이는 실천 방법 홍보 자료 만들기",
+     "sub": null,
+     "url": "/grade6/semester2/science/2단원_물질의연소/g6_sci_u2_l07_창의가팡팡.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   }
