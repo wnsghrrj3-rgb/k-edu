@@ -298,14 +298,14 @@ window.KEDU_MAP["g4_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_social_u3_l06",
+     "lessonId": "g4_social_u3_l06_v1",
      "n": "6",
      "title": "[생각을 펼쳐요] 지역의 환경과 변화 정리",
      "sub": "① 지역의 환경과 변화",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/social/3단원_다양한환경과삶의모습/g4_social_u3_l06_한칸을함께.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
