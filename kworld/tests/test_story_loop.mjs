@@ -108,7 +108,7 @@ use('fire_1'); pick(1); ok(g.flags.has('fire:alive') && g.count('stick') === 0 &
 ok(g.hungerMul === 1 && vis('npc_hana2') && vis('npc_old'), '따뜻해짐, 사람들 그대로 있음'); await new Promise((r) => setTimeout(r, 30)); { const h = g.story.actors.hana2; ok(h.path && h.state === 'walk', '하나가 불로 걸어간다'); for (let i = 0; i < 400; i++) g.story.tick(0.05); ok(!h.path && Math.hypot(h.obj.position.x + 6, h.obj.position.z - 3) < 2.6, '하나 불 곁 도착'); }
 use('npc_hana2'); ok(says.at(-1).includes('따뜻'), '하나: 불 곁 대사');
 await new Promise((r) => setTimeout(r, 1400)); ok(g.flags.has('journal:fire'), '📔 불');
-use('fire_1'); ok(g.has('cooked') && g.count('meat') === 0, '고기 굽기');
+use('fire_1'); ok(panel && panel.b.length === 3, '불: 굽기·횃불·쬐기'); pick(0); ok(g.has('cooked') && g.count('meat') === 0, '고기 굽기');
 g.tapItem('cooked'); ok(g.flags.has('eat:cooked') && !g.has('cooked'), '익힌 고기 먹기');
 g.tick(0.01); ok(g._mission.includes('물이 들어온다'), '미션 18');
 // ACT 9 — 폭우 → 거처 후보 3
@@ -150,5 +150,19 @@ ok(g.story.journalHtml().includes('채집') && g.story.journalHtml().includes('�
   const n0 = g.flags.size; g.flags.clear(); g.inventory.length = 0; for (const ev of g.world.events) ev.done = false;
   sv.apply(snap); ok(g.flags.size === n0 && g.world.events.every((ev) => ev.done || !g.cond(ev.on)) && g.results.length === 8, '재개: 깃발·사건·결과 복원'); g.tick(0.01); ok(g._mission.includes('완주'), '재개 뒤 미션 상태 그대로');
   sv.clear(); ok(!sv.load(), '처음부터 = 저장 지움'); }
+
+// 위험층 — 밤·불 밖·횃불 없음 → 눈 → 쓰러짐(체크포인트) / 횃불 / 큰 짐승(가만히 있으면 간다)
+{ const { Danger } = await import('../core/danger.js'); g.danger = new Danger(g, g.world.danger); g.fire = { visible: true, position: { x: -6, z: 3 }, scale: new THREE.Vector3(1, 1, 1) }; g.fireBase = 3; g.story.nightOn = true; g.story.skyName = 'night';
+  g.checkpoint = { act: 'act12', flags: [...g.flags].filter((f) => !f.startsWith('era1')), inventory: [...g.inventory] };
+  g.checkpoint.inventory.push('berry', 'berry', 'root', 'meat'); const cpFood = g.checkpoint.inventory.filter((k) => ['berry','root','meat','cooked'].includes(k)).length; g.p.pos.set(20, 0, 30); const n0 = g.flags.size;
+  for (let i = 0; i < 60; i++) g.danger.tick(0.1); ok(g.danger.eyesOn === true && !g.danger.collapsing, '밤 불 밖 6초: 눈이 보인다');
+  g.p.pos.set(-5, 0, 4); for (let i = 0; i < 40; i++) g.danger.tick(0.1); ok(!g.danger.eyesOn, '불 곁으로 오면 물러간다');
+  g.p.pos.set(20, 0, 30); for (let i = 0; i < 150; i++) g.danger.tick(0.1); await new Promise((r) => setTimeout(r, 50));
+  ok(!g.flags.has('era1:done') && g.flags.size < n0 && g.hunger >= 22 && Math.abs(g.p.pos.x + 4.5) < 0.1, '쓰러짐 → 체크포인트로, 불 곁에서 눈 뜸'); ok(g.inventory.filter((k) => ['berry','root','meat','cooked'].includes(k)).length === cpFood - Math.floor(cpFood / 2), '먹을 것 절반');
+  ok(g.telemetry.collapsed?.[0]?.reason === 'night', '계측: 쓰러짐 원인');
+  g.danger.lightTorch(); g.p.pos.set(20, 0, 30); g.danger.t = 0; for (let i = 0; i < 100; i++) g.danger.tick(0.1); ok(!g.danger.eyesOn && !g.danger.collapsing, '횃불이 있으면 안 온다');
+  g.danger.torchUntil = 0; g.story.nightOn = false; g.p.pos.set(36, 0, 10); g.p.moving = false; for (let i = 0; i < 200; i++) g.danger.tick(0.1); ok(g.danger.enc && g.danger.eyesOn, '큰 짐승 자리에 오래 있으면 만난다');
+  for (let i = 0; i < 80; i++) g.danger.tick(0.1); ok(!g.danger.enc && g.flags.has('beast:met'), '가만히 있으면 물러난다');
+}
 
 console.log(`story-p1 loop: ${pass} pass / ${fail} fail`); process.exit(fail ? 1 : 0);
