@@ -15,16 +15,28 @@ export class Danger {
   firePos() { const f = this.g.fire; return f && f.visible && (this.g.fireBase || 0) > 0 ? f.position : null; }
   hasTorch() { return performance.now() < this.torchUntil; }
   lightTorch() { this.torchUntil = performance.now() + this.cfg.torchSec * 1000; if (!this.torch && this.g.e.scene?.add) { this.torch = new THREE.PointLight(0xff9a3a, 1.6, 9, 1.5); this.g.e.scene.add(this.torch); } this.g.flag('torch:lit'); this.g.ui.say('가지 끝에 불이 붙는다. 오래 못 간다.', 3200); }
+  /** 늑대 GLB(있으면) — 걷기 하나뿐이라 나머지는 코드로: 느리게 다가옴(걷기 0.45배), 덤빔(달리기 2배), 물러남(걷기 뒤로), 고개 숙임(목 뼈) */
+  async loadWolf() {
+    const url = this.cfg.wolfModel; const e = this.g.e; if (!url || !e.scene?.add || this.wolfLoading) return; this.wolfLoading = true;
+    try { const [{ GLTFLoader }, { clone }] = await Promise.all([import('three/addons/loaders/GLTFLoader.js'), import('three/addons/utils/SkeletonUtils.js')]); const gl = await new GLTFLoader().loadAsync(new URL(this.g.base + url, location.href).href);
+      const inst = clone(gl.scene); inst.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } }); const box = new THREE.Box3().setFromObject(inst); const s = (this.cfg.wolfHeight || 0.85) / (box.max.y - box.min.y || 1); inst.scale.setScalar(s); inst.position.y = -box.min.y * s;
+      const g = new THREE.Group(); g.add(inst); g.visible = false; e.scene.add(g); const mixer = new THREE.AnimationMixer(inst); const walk = gl.animations.find((c) => /walk/i.test(c.name)); const act = walk && mixer.clipAction(walk); if (act) { act.play(); act.timeScale = 0.45; }
+      let neck = null; inst.traverse((o) => { if (o.isBone && /Head_0/.test(o.name)) neck = o; });
+      this.wolf = { g, mixer, act, neck, mode: 'creep' }; } catch (err) { console.warn('wolf', err); }
+  }
   /** 눈 두 쌍 — 플레이어 앞 8m, 어둠 속 */
   showEyes(on) {
     const e = this.g.e; if (!e.scene?.add || !this.g.p?.pos) { this.eyesOn = on; return; }
     if (!this.eyes) { this.eyes = new THREE.Group(); const m = new THREE.MeshBasicMaterial({ color: 0xffd37a }); for (const [x, z] of [[-0.12, 0], [0.12, 0], [1.6, 0.6], [1.84, 0.6]]) { const s = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), m); s.position.set(x, 0.55, z); this.eyes.add(s); } e.scene.add(this.eyes); }
-    this.eyes.visible = on; this.eyesOn = on;
+    this.eyes.visible = on && !this.wolf; this.eyesOn = on;
+    if (on && !this.wolf) this.loadWolf();
+    if (this.wolf) { this.wolf.g.visible = on; if (on) { const p = this.g.p; const dir = new THREE.Vector3(-Math.sin(p.yaw), 0, -Math.cos(p.yaw)); const at = p.pos.clone().add(dir.multiplyScalar(9)); this.wolf.g.position.set(at.x, e.groundY ? e.groundY(at.x, at.z) : 0, at.z); this.wolf.mode = 'creep'; } }
     if (on) { const p = this.g.p; const dir = new THREE.Vector3(-Math.sin(p.yaw), 0, -Math.cos(p.yaw)); const at = p.pos.clone().add(dir.multiplyScalar(8)); this.eyes.position.set(at.x, e.groundY ? e.groundY(at.x, at.z) : 0, at.z); this.eyes.lookAt(p.pos.x, this.eyes.position.y + 0.55, p.pos.z); }
   }
   tick(dt) {
     const g = this.g; const p = g.p; if (!p?.pos || g.restoring || g.story?.cutsceneOn || this.collapsing) return;
     if (this.torch) { this.torch.position.set(p.pos.x, (p.pos.y || 0) + 0.3, p.pos.z); this.torch.visible = this.hasTorch(); }
+    if (this.wolf?.g.visible) this.tickWolf(dt);
     if (this.torchUntil && !this.hasTorch() && g.has?.('torch')) { g.take('torch'); g.renderInv?.(); this.torchUntil = 0; g.ui.say('횃불이 꺼졌다.', 2600); }
     // 1) 밤, 불 밖, 횃불 없음
     let danger = false;
@@ -34,7 +46,7 @@ export class Danger {
       if (this.t > this.cfg.eyesAt && !this.eyesOn) { this.showEyes(true); g.ui.say('…어둠 속에 눈.', 2600); g.sound?.thump?.(0.3); g.sound?.play('growl', 0.5); }
       if (this.t > this.cfg.eyesAt) g.sound?.set?.('wind', 0.6);
       if (this.t > this.cfg.graceSec * (g.stats?.speed || 1)) return this.collapse('night', '…뒤에서 소리. 너무 늦었다.');
-    } else if (this.t > 0) { this.t = Math.max(0, this.t - dt * 2); if (this.t < this.cfg.eyesAt && this.eyesOn) { this.showEyes(false); g.ui.say('…물러갔다.', 2000); } }
+    } else if (this.t > 0) { this.t = Math.max(0, this.t - dt * 2); if (this.t < this.cfg.eyesAt && this.eyesOn) { if (this.wolf) { this.wolf.mode = 'retreat'; this.eyesOn = false; this.eyes && (this.eyes.visible = false); } else this.showEyes(false); g.ui.say('…물러갔다.', 2000); } }
     // 2) 큰 짐승 자리(낮·밤 무관): 오래 머물면 만난다 — 움직이면 온다, 가만히 있으면 간다
     const lair = this.cfg.lair; if (lair && !g.flags.has('beast:met')) {
       const d = Math.hypot(p.pos.x - lair[0], p.pos.z - lair[1]);
@@ -44,9 +56,20 @@ export class Danger {
     // 3) 배고픔 0
     if (g.hunger <= 0) { this.starveT += dt; if (this.starveT > this.cfg.starveSec) return this.collapse('hunger', '…다리에 힘이 빠진다.'); } else this.starveT = 0;
   }
+  tickWolf(dt) {
+    const w = this.wolf; const p = this.g.p; const g = w.g; const dx = p.pos.x - g.position.x, dz = p.pos.z - g.position.z; const d = Math.hypot(dx, dz);
+    const speed = w.mode === 'lunge' ? 6 : w.mode === 'retreat' ? -1.4 : (d > 5 ? 0.35 : 0.12);   // 살금살금 → 5m 안에선 거의 멈춤(노려봄)
+    if (w.act) w.act.timeScale = w.mode === 'lunge' ? 2.2 : w.mode === 'retreat' ? 0.9 : (d > 5 ? 0.45 : 0.15);
+    const yaw = Math.atan2(dx, dz); g.rotation.y = yaw + (this.cfg.wolfYaw || 0);
+    if (d > 1.2 || w.mode === 'retreat') { g.position.x += dx / d * speed * dt; g.position.z += dz / d * speed * dt; }
+    if (this.g.e.groundY) g.position.y = this.g.e.groundY(g.position.x, g.position.z);
+    if (w.neck) w.neck.rotation.x = THREE.MathUtils.lerp(w.neck.rotation.x, w.mode === 'lunge' ? 0.1 : 0.45, dt * 3);   // 고개 숙임
+    if (w.mode === 'retreat' && d > 16) { g.visible = false; w.mode = 'creep'; }
+    w.mixer.update(dt);
+  }
   /** 쓰러진다 — 체크포인트(ACT 시작)로, 먹을 것 절반 잃고 불 곁에서 눈을 뜬다 */
   async collapse(reason, line) {
-    const g = this.g; this.collapsing = true; this.showEyes(false); this.t = 0; this.starveT = 0; this.enc = null;
+    const g = this.g; this.collapsing = true; if (this.wolf?.g.visible && reason === 'night') { this.wolf.mode = 'lunge'; g.sound?.play('growl', 0.8); await new Promise((r) => setTimeout(r, 900)); } this.showEyes(false); this.t = 0; this.starveT = 0; this.enc = null;
     (g.telemetry ??= { missions: [], hints: 0, starved: 0 }).collapsed = [...(g.telemetry.collapsed || []), { reason, act: g.checkpoint?.act || null }];
     g.p.enabled = false;
     if (g.story?.overlay) await g.story.overlay({ lines: [line, '…', '쓰러진다.'], gap: 1400, hold: 1600 });
