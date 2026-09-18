@@ -482,16 +482,18 @@ body { background:#F0F7FF; display:flex; align-items:center; justify-content:cen
 
 /* ───── 줄자 (ruler) ───── */
 .rl-wrap { gap:clamp(3px,.6vw,5px); align-items:flex-start; max-width:100%; }
-.rl-obj { height:clamp(15px,2.3vw,21px); border-radius:5px; background:#A1887F; box-shadow:inset 0 -3px 0 rgba(0,0,0,.12); max-width:100%; }
-.rl-obj.shift { background:#BCAAA4; }
-.rl-tape { display:flex; align-items:flex-start; gap:clamp(4px,.8vw,7px); background:#FFF8E1; border:clamp(2.5px,.45vw,3.5px) solid var(--amber); border-radius:clamp(7px,1.3vw,11px); padding:clamp(3px,.6vw,5px) clamp(6px,1.2vw,10px); }
-.rl-z { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(13px,2vw,18px); color:var(--amber-d); }
-.rl-ticks { display:flex; gap:clamp(6px,1.2vw,11px); }
-.rl-t { display:flex; flex-direction:column; align-items:center; }
-.rl-t i { display:block; width:3px; height:clamp(9px,1.5vw,13px); background:#8D6E63; }
-.rl-t u { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(12px,1.85vw,17px); color:#5D4037; text-decoration:none; line-height:1.1; }
-.rl-t.on i { background:var(--lr); height:clamp(12px,1.9vw,17px); }
+.rl-view { position:relative; max-width:100%; }
+.rl-obj { position:absolute; left:0; top:0; height:18px; }
+.rl-p { position:absolute; top:0; height:18px; background:#A1887F; border-radius:5px; box-shadow:inset 0 -3px 0 rgba(0,0,0,.12); }
+.rl-obj.shift .rl-p { background:#BCAAA4; }
+.rl-p.cutL { border-radius:0 5px 5px 0; }
+.rl-tape { position:absolute; left:0; top:24px; right:0; height:40px; background:#FFF8E1; box-shadow:inset 0 0 0 3px var(--amber); border-radius:9px; overflow:hidden; }
+.rl-t { position:absolute; top:2px; display:flex; flex-direction:column; align-items:center; transform:translateX(-50%); }
+.rl-t i { display:block; width:3px; height:12px; background:#8D6E63; }
+.rl-t u { font-family:'Nunito',sans-serif; font-weight:800; font-size:15px; color:#5D4037; text-decoration:none; line-height:1.15; }
+.rl-t.on i { background:var(--lr); height:16px; }
 .rl-t.on u { color:var(--lr); }
+.rl-brk { position:absolute; top:0; bottom:0; background:repeating-linear-gradient(115deg,#FFF8E1 0 4px,#FFE0B2 4px 8px); }
 
 /* ───── 부분-전체 모델 (pw) ───── */
 .pw { display:flex; flex-direction:column; align-items:center; gap:clamp(2px,.4vw,4px); }
@@ -799,7 +801,8 @@ function setupPad(part){
 // ═══════════ 부품 2 — 묶음·낱개 두 칸 입력 (two) ═══════════
 function setupTwo(part){
   const slide=part.closest('.slide'), qid=slide.dataset.qId;
-  const a=parseInt(part.dataset.answerA,10), b=parseInt(part.dataset.answerB,10);
+  const sa=String(part.dataset.answerA), sb=String(part.dataset.answerB);
+  const a=parseInt(sa,10), b=parseInt(sb,10), la=sa.length, lb=sb.length;   // 칸마다 자릿수만큼 받는다
   const dA=part.querySelector('[data-cell="a"]'), dB=part.querySelector('[data-cell="b"]');
   const fb=slide.querySelector('.q-fb');
   const okMsg=part.dataset.ok||'', missMsg=part.dataset.miss||'';
@@ -823,17 +826,18 @@ function setupTwo(part){
       setTimeout(()=>{ dA.classList.remove('wrong'); dB.classList.remove('wrong'); vA=''; vB=''; active='a'; render(); }, 800);
     }
   }
-  dA.addEventListener('click',()=>{ if(!getQState(qid).solved){ active='a'; render(); } });
-  dB.addEventListener('click',()=>{ if(!getQState(qid).solved){ active='b'; render(); } });
+  dA.addEventListener('click',()=>{ if(!getQState(qid).solved){ active='a'; vA=''; render(); } });
+  dB.addEventListener('click',()=>{ if(!getQState(qid).solved){ active='b'; vB=''; render(); } });
   part.querySelectorAll('.q-pad-btn').forEach(btn=>{
     btn.addEventListener('click',()=>{
       if(getQState(qid).solved) return;
       const v=btn.dataset.v;
       if(v==='c'){ vA=''; vB=''; active='a'; render(); return; }
       if(v==='ok'){ check(); return; }
-      if(active==='a'){ vA=v; active='b'; } else { vB=v; }
+      if(active==='a'){ if(vA.length<la){ vA+=v; if(vA.length>=la) active='b'; } }
+      else { if(vB.length<lb) vB+=v; }
       render();
-      if(vA!==''&&vB!=='') setTimeout(check,240);
+      if(vA.length===la&&vB.length===lb) setTimeout(check,240);
     });
   });
   render();
