@@ -181,6 +181,103 @@ window.KEDU_MAP["g3_2_korean"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 3,
+   "name": "정확하게 글을 써요",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g3_korean_u3_l01",
+     "lessonId": "g3_2_kor_u3_l01_v1",
+     "n": "1",
+     "title": "단원 시작 — 배울 내용 살펴보기",
+     "sub": null,
+     "url": "/grade3/semester2/korean/3단원_정확하게글을써요/g3_kor_u3_l01.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u3_l02",
+     "lessonId": "g3_2_kor_u3_l02_v1",
+     "n": "2",
+     "title": "글에 제시된 자료의 출처 확인하기",
+     "sub": null,
+     "url": "/grade3/semester2/korean/3단원_정확하게글을써요/g3_kor_u3_l02.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u3_l03",
+     "lessonId": "g3_2_kor_u3_l03_04_v1",
+     "n": "3·4",
+     "title": "출처를 확인하며 읽으면 좋은 점 알기",
+     "sub": null,
+     "url": "/grade3/semester2/korean/3단원_정확하게글을써요/g3_kor_u3_l03_04.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u3_l05",
+     "lessonId": "g3_2_kor_u3_l05_06_v1",
+     "n": "5·6",
+     "title": "자료의 출처를 확인하며 글 읽기",
+     "sub": null,
+     "url": "/grade3/semester2/korean/3단원_정확하게글을써요/g3_kor_u3_l05_06.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u3_l07",
+     "lessonId": "g3_2_kor_u3_l07_08_v1",
+     "n": "7·8",
+     "title": "이어 주는 말의 쓰임 알기 (지식 탐구)",
+     "sub": null,
+     "url": "/grade3/semester2/korean/3단원_정확하게글을써요/g3_kor_u3_l07_08.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u3_l09",
+     "lessonId": "g3_2_kor_u3_l09_v1",
+     "n": "9",
+     "title": "순서나 방법을 설명하는 글을 쓰는 방법 알기",
+     "sub": null,
+     "url": "/grade3/semester2/korean/3단원_정확하게글을써요/g3_kor_u3_l09.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u3_l10",
+     "lessonId": "g3_2_kor_u3_l10_11_v1",
+     "n": "10·11",
+     "title": "일상생활에서 순서나 방법을 설명하는 글 쓰기",
+     "sub": null,
+     "url": "/grade3/semester2/korean/3단원_정확하게글을써요/g3_kor_u3_l10_11.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u3_l12",
+     "lessonId": "g3_2_kor_u3_l12_13_v1",
+     "n": "12·13",
+     "title": "배운 내용 실천하기 (이어 주는 말 놀이 · 이용 설명서)",
+     "sub": null,
+     "url": "/grade3/semester2/korean/3단원_정확하게글을써요/g3_kor_u3_l12_13.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u3_l14",
+     "lessonId": "g3_2_kor_u3_l14_v1",
+     "n": "14",
+     "title": "단원 마무리하기 (-데·-대 · 낱말 그물 · 글씨)",
+     "sub": null,
+     "url": "/grade3/semester2/korean/3단원_정확하게글을써요/g3_kor_u3_l14.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };
