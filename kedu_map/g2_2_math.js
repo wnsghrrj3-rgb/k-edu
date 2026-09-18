@@ -328,6 +328,93 @@ window.KEDU_MAP["g2_2_math"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 4,
+   "name": "표와 그래프",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g2_math_u5_l01",
+     "lessonId": "g2_2_math_u5_l01_v1",
+     "n": "1",
+     "title": "단원 도입 — 자료를 어떻게 나타낼까요",
+     "sub": null,
+     "url": "/grade2/semester2/math/5단원_표와그래프/g2_math_u5_l01_단원도입.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_math_u5_l02",
+     "lessonId": "g2_2_math_u5_l02_v1",
+     "n": "2",
+     "title": "자료를 분류하여 표로 나타내 볼까요",
+     "sub": null,
+     "url": "/grade2/semester2/math/5단원_표와그래프/g2_math_u5_l02_자료를분류하여표로나타내볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_math_u5_l03",
+     "lessonId": "g2_2_math_u5_l03_v1",
+     "n": "3",
+     "title": "자료를 조사하여 표로 나타내 볼까요",
+     "sub": null,
+     "url": "/grade2/semester2/math/5단원_표와그래프/g2_math_u5_l03_자료를조사하여표로나타내볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_math_u5_l04",
+     "lessonId": "g2_2_math_u5_l04_v1",
+     "n": "4",
+     "title": "자료를 분류하여 그래프로 나타내 볼까요",
+     "sub": null,
+     "url": "/grade2/semester2/math/5단원_표와그래프/g2_math_u5_l04_자료를분류하여그래프로나타내볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_math_u5_l05",
+     "lessonId": "g2_2_math_u5_l05_v1",
+     "n": "5",
+     "title": "표와 그래프를 보고 무엇을 알 수 있을까요",
+     "sub": null,
+     "url": "/grade2/semester2/math/5단원_표와그래프/g2_math_u5_l05_표와그래프를보고무엇을알수있을까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_math_u5_l06",
+     "lessonId": "g2_2_math_u5_l06_v1",
+     "n": "6",
+     "title": "표와 그래프로 나타내 볼까요",
+     "sub": null,
+     "url": "/grade2/semester2/math/5단원_표와그래프/g2_math_u5_l06_표와그래프로나타내볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_math_u5_l07",
+     "lessonId": "g2_2_math_u5_l07_v1",
+     "n": "7",
+     "title": "수학이랑 확인해요 — 표와 그래프 문제를 해결해 볼까요",
+     "sub": null,
+     "url": "/grade2/semester2/math/5단원_표와그래프/g2_math_u5_l07_수학이랑확인해요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_math_u5_l08",
+     "lessonId": "g2_2_math_u5_l08_v1",
+     "n": "8",
+     "title": "수학이랑 만들어요 — 우리 반 학생들은 무엇을 좋아할까요",
+     "sub": null,
+     "url": "/grade2/semester2/math/5단원_표와그래프/g2_math_u5_l08_수학이랑만들어요.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };
