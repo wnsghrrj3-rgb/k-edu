@@ -94,6 +94,93 @@ window.KEDU_MAP["g3_2_korean"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 2,
+   "name": "유창하게 읽고 발표해요",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g3_korean_u2_l01",
+     "lessonId": "g3_2_kor_u2_l01_v1",
+     "n": "1",
+     "title": "단원 시작 — 배울 내용 살펴보기",
+     "sub": null,
+     "url": "/grade3/semester2/korean/2단원_유창하게읽고발표해요/g3_kor_u2_l01.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u2_l02",
+     "lessonId": "g3_2_kor_u2_l02_v1",
+     "n": "2",
+     "title": "글을 유창하게 읽을 수 있는지 점검하기",
+     "sub": null,
+     "url": "/grade3/semester2/korean/2단원_유창하게읽고발표해요/g3_kor_u2_l02.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u2_l03",
+     "lessonId": "g3_2_kor_u2_l03_04_v1",
+     "n": "3·4",
+     "title": "분위기를 살려 유창하게 읽는 방법 알기",
+     "sub": null,
+     "url": "/grade3/semester2/korean/2단원_유창하게읽고발표해요/g3_kor_u2_l03_04.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u2_l05",
+     "lessonId": "g3_2_kor_u2_l05_06_v1",
+     "n": "5·6",
+     "title": "장면을 떠올리며 유창하게 글 읽기",
+     "sub": null,
+     "url": "/grade3/semester2/korean/2단원_유창하게읽고발표해요/g3_kor_u2_l05_06.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u2_l07",
+     "lessonId": "g3_2_kor_u2_l07_v1",
+     "n": "7",
+     "title": "글과 그림을 활용하여 설명하는 방법 알기",
+     "sub": null,
+     "url": "/grade3/semester2/korean/2단원_유창하게읽고발표해요/g3_kor_u2_l07.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u2_l08",
+     "lessonId": "g3_2_kor_u2_l08_10_v1",
+     "n": "8·9·10",
+     "title": "글과 그림을 활용하여 발표하기 (창의성 계발)",
+     "sub": null,
+     "url": "/grade3/semester2/korean/2단원_유창하게읽고발표해요/g3_kor_u2_l08_10.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u2_l11",
+     "lessonId": "g3_2_kor_u2_l11_12_v1",
+     "n": "11·12",
+     "title": "배운 내용 실천하기 (소개하기 · 발표하기)",
+     "sub": null,
+     "url": "/grade3/semester2/korean/2단원_유창하게읽고발표해요/g3_kor_u2_l11_12.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u2_l13",
+     "lessonId": "g3_2_kor_u2_l13_v1",
+     "n": "13",
+     "title": "단원 마무리하기 (것·수·줄 띄어쓰기 · 이름 짓기 · 글씨)",
+     "sub": null,
+     "url": "/grade3/semester2/korean/2단원_유창하게읽고발표해요/g3_kor_u2_l13.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };

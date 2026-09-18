@@ -4,15 +4,15 @@
 <script src="/kedu_config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/kedu_tracker.js"></script>
-<meta name="kedu-lesson-id" content="g4_2_kor_u6_l11_12_v1">
+<meta name="kedu-lesson-id" content="g3_2_kor_u2_l05_06_v1">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>배운 내용 실천하기 (이야기 이어 말하기 · 역할놀이)</title>
+<title>장면을 떠올리며 유창하게 글 읽기</title>
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
 <style>
-/* ===== 4학년 2학기 국어 6단원 「상상의 날개」 · 자기주도 통합 엔진 (디자인 v14 · 4-1 라인 승계) =====
+/* ===== 3학년 2학기 국어 2단원 「유창하게 읽고 발표해요」 · 자기주도 통합 엔진 (디자인 v14 · 4-2 라인 승계) =====
    풀스크린 · 따뜻한 톤(크림+산호/청록) · 다색 형광 강조 · dots 진행 · 실DB 배선.
-   "읽기 전·중·후/질문/생각이나 느낌" 개념어=청록(.mc), 상황·행동 강조=산호빨강(.emph). 정답=청록, 오답=흔들림. */
+   "유창하게/분위기/글과 그림/발표" 개념어=청록(.mc), 상황·행동 강조=산호빨강(.emph). 정답=청록, 오답=흔들림. */
 :root{
   --paper:#FBF7F1; --ink:#243043; --ink-soft:#62708A;
   --coral:#FF6B4A; --coral-deep:#E0512E; --coral-soft:#FFE3DA;
@@ -143,9 +143,9 @@ body{font-family:var(--f-body); background:var(--paper); color:var(--ink); -webk
 .navbtn.primary{background:var(--coral); color:#fff; border-color:var(--coral);}
 .navbtn:disabled{opacity:.35; cursor:default; transform:none;}
 
-/* 4-2 라인: 한국어 낱말 단위 줄바꿈(낱말 가운데서 끊기지 않게) — 로직 무관 CSS */
+/* 3-2 라인(4-2 승계): 한국어 낱말 단위 줄바꿈(낱말 가운데서 끊기지 않게) — 로직 무관 CSS */
 .wc-word,.chip,.match-card,.read-line,.ka-bub,.scene-say,.recap-item,.sc-row,.stage-box,.sentence,.ka-t{word-break:keep-all; overflow-wrap:break-word;}
-/* 4-2 라인: 줄 안 <b>가 flex 칸으로 따로 갈라지지 않게 — 아이콘만 왼쪽에 걸고 글은 한 흐름 (로직 무관 CSS · 2026-09-11 화면 점검) */
+/* 3-2 라인(4-2 승계): 줄 안 <b>가 flex 칸으로 따로 갈라지지 않게 — 아이콘만 왼쪽에 걸고 글은 한 흐름 (로직 무관 CSS · 2026-09-11 화면 점검) */
 .recap-item,.sc-row,.read-line{display:block; position:relative;}
 .recap-item{--ic:clamp(26px,3.6vw,42px); padding-left:calc(clamp(16px,2.4vw,26px) + var(--ic)*1.3 + 14px);}
 .recap-ic{position:absolute; left:clamp(16px,2.4vw,26px); top:50%; transform:translateY(-50%); width:calc(var(--ic)*1.3); text-align:center; line-height:1;}
@@ -169,8 +169,8 @@ body{font-family:var(--f-body); background:var(--paper); color:var(--ink); -webk
 
 <div class="topbar">
   <button class="lb" onclick="location.href='../index.html'">📚 차시 목록</button>
-  <span class="pill">11~12차시</span>
-  <span class="where">국어 4-2 · <b>6. 상상의 날개</b></span>
+  <span class="pill">5~6차시</span>
+  <span class="where">국어 3-2 · <b>2. 유창하게 읽고 발표해요</b></span>
   <div class="dots" id="dots"></div>
   <span class="score">⭐ <b id="score">0</b></span>
 </div>
@@ -185,114 +185,158 @@ body{font-family:var(--f-body); background:var(--paper); color:var(--ink); -webk
 </div>
 
 <script>
-/* ===== 11~12차시(실천 — 배운 내용 실천하기) 13슬 =====
-   학습 목표: 배운 내용을 실천할 수 있다.
-   흐름 = 지도서 354~359쪽 — 활동 정하기 → 이야기 이어 말하기 → 이어질 내용을 상상해 역할놀이하기 → 정리.
-   정답 로깅 4슬(이어 말하기로 알맞은 것 · 이어지는 문장 모으기 · 성격에 맞는 대사 · 역할놀이에서 살펴볼 것) = 40점.
-   ★ 저작권 — 미인용: 282쪽 이야기 이어 말하기 놀이 규칙 넷과 말풍선 예시(「오늘 아침에 일어나 창밖을 내다보니⋯⋯」),
-     283쪽 「당나귀, 황소 그리고 농부」와 356쪽 듣기 자료 전문·대본 예시 전체(황소·당나귀·농부·하인의 대사와 몸짓 지시문 전부),
-     358쪽 원인과 결과로 놀이 하기의 규칙 여섯과 말풍선, 359쪽 계단책 만들기 방법 — **전면 미인용.**
-     ⚠ 「당나귀, 황소 그리고 농부」는 **공공 유산인 우화이지만 교과서가 고른 제재**다. 6-2 6단원 규약대로 쓰지 않고 자체 이야기 조각으로 갈았다.
-     ⚠ **놀이의 규칙은 교과서의 선택이고, 놀이의 원리는 학습 내용이다**(1-2 3단원 「갈래의 형식」 판정의 확장).
-        ⇒ 「원인과 결과로 이어 말한다」는 원리는 그대로 쓰고, 물건을 책상에 올려놓는 절차·카드 두 장 뒤집기 따위 **구체 규칙은 싣지 않았다.**
-   ★★ **열째 기준(생성은 무대로, 판별은 화면으로)이 이 차시의 전부다.** 실천 활동 셋이 모두 **만들어 내고 함께 하는 일**이다
-     (이어 말하기 놀이 · 역할놀이 · 이야기책). 화면에는 이어 말할 다음 사람도, 역할을 맡을 친구도 없다.
-     ⇒ 만들기와 말하기는 전부 무대로 보내고, 화면에는 **가려내는 문항 넷만** 남겼다 —
-     무엇이 이어 말하기가 되고(5) · 무엇이 끊기지 않고(7) · 어느 대사가 인물과 맞고(9) · 역할놀이에서 무엇을 보는가(11).
-     ⚠ **가짜 모둠을 세우지 않았다.** 클릭으로 「친구가 이어 말했어요」를 띄우면 배우는 것은 「이어 말하기는 화면을 누르는 일」이다.
-   ★ 11번째는 지도서 353쪽(「이야기를 재미있게 쓰는 것도 좋지만 너무 장난스럽지 않아야 해요」)의 자리다.
-     오답 칸을 **양쪽 극단**으로 두었다 — 「가장 웃긴가」 / 「대사가 가장 긴가」.
+/* ===== 5~6차시(소단원 1 통합 — 장면을 떠올리며 유창하게 글 읽기) 17슬 =====
+   학습 목표: 장면을 떠올리며 유창하게 글을 읽을 수 있다.
+   흐름 = 지도서 142~146쪽 — 동기 유발 → 작품 읽기 → 내용 알기 → 낱말 알기 → 장면을 떠올리며 글 읽기 → 글과 연결하기 → 자신과 관련짓기 → 세상과 연결하기 → 정리.
+   정답 로깅 6슬 = 60점.
+   ★ 저작권 — 미인용: 82~85쪽 「박에스더」 전문과 낱말 뜻풀이(보구녀관·왕진·미신), 86쪽 내용 알기 말풍선과
+     낱말 알기 세 낱말(다짐하다·되새기다·치료하다)과 보기 아홉, 87쪽 장면 표와 예시 답안,
+     88쪽 글과 연결하기 말풍선 셋, 89쪽 인물 모으기 예시(실존 인물 셋과 직업 둘) — 전면 미인용.
+   ⚠⚠ **이 단원에서 가장 조심한 곳 = 위인전 자리.** 교과서 제재는 **실존 인물의 실제 생애**다.
+     그 자리에 지어낸 위인을 놓으면 학생이 **사실 아닌 것을 사실로 배운다**(6-2 3단원 · 4-2 6단원 · 3-2 1단원 규약).
+     ⇒ 지도서 **146쪽**이 직접 길을 낸다 — 「위인에게만 배울 점이 있는 것이 아님을 지도한다.
+       친구나 이웃 가운데에서 자신의 목표를 이루려고 노력하는 사람이 있다면 말해 보도록 한다.」
+     ⇒ **새 규약 한 줄: 실존 위인이 제재인 자리는 「둘레의 사람」으로 옮긴다.**
+     자체 글 **「노란 조끼」** — 학교 앞 건널목을 지키는 이웃. 어느 학교에나 있는 자리이고 특정한 사람이 아니다.
+     지명·연대·기관·실존 인물 0건. 「꾸준히 하는 사람의 삶」이라는 위인전의 결은 그대로 남는다.
+   ⚠ 위인전의 갈래 특성(지도서 144쪽)은 이 차시 **성취기준이 아니다**([4국02-01] 유창하게 읽기).
+     1단원에서 「비유 파악은 이 단원 성취기준이 아니다」로 같은 판정을 한 선례를 따랐다.
+   ⚠ 낱말을 제재 집필 단계에 미리 심었다 — **다독이다 · 서두르다 · 살피다**. 교과서 세 낱말과 보기 아홉은 전부 회피.
+   ★★ 서른한째 기준 — 12번째가 이 차시의 자리. 오답 양쪽 극단이 **너무 빠름**과 **한 낱말씩 다 끊어 읽음**이다.
+     뒤쪽 극단은 지도서 135쪽 참고 자료가 직접 막는 것이다(정확히 띄어 읽기에만 매몰되면 글 이해가 사라진다).
+     **띄어 읽기를 잘하려다 뜻을 잃는 아이**가 이 단원에서 가장 생기기 쉬운 아이다.
+   ★ 여덟째 기준 — 13번째 「글을 읽고 든 생각이나 느낌」은 채점하지 않는다. 채점한 것은 근거가 글에 있는가(7·11번째)뿐이다.
+   ★ 열째 기준 — 인물에게 편지 쓰기·조사하기는 무대로(15·16번째).
 */
 slides=[
-  {tag:'① 만나기', t:'이제 함께 해 봐요',
-   html:`<div class="scene"><div class="scene-pic">🗣️🎭🔗</div></div>
-    <div class="ka-bub">지금까지 배운 것을 <b class="mc">친구들과 함께</b> 써 볼 시간이에요.<br>혼자 쓰던 상상을 <b class="emph">여럿이 이어</b> 봐요.</div>`},
+  {tag:'① 만나기', t:'장면을 떠올리며 읽어요',
+   html:`<div class="scene"><div class="scene-pic">🌅🦺</div></div>
+    <div class="ka-bub">글을 읽으며 <b class="mc">장면이 눈앞에 그려지면</b><br>목소리도 저절로 달라져요.<br><br>오늘은 장면을 떠올리며 <b class="mc">유창하게</b> 읽어 봐요.</div>`},
 
   {tag:'① 학습 문제', t:'오늘 해 볼 것',
-   html:`<div class="sentence">배운 내용을 실천해 봅시다.</div>`},
+   html:`<div class="sentence">장면을 떠올리며 유창하게 글을 읽어 봅시다.</div>`},
 
-  {tag:'② 미리 알아 두기', t:'이 화면이 대신하는 것',
-   html:`<div class="ka-bub">이어 말하기도 역할놀이도 <b class="emph">여럿이 함께</b> 하는 일이에요.<br>이 화면에는 <b class="emph">이어 말할 다음 사람이 없어요.</b><br><br>그래서 화면에서는 <b class="mc">무엇이 알맞은지 가려내는 일</b>까지 하고,<br>실제로 말하고 연기하는 일은 <b class="mc">교실에서</b> 해요.<br>그 활동에는 <b class="emph">🎤 표시</b>를 붙일게요.</div>`},
+  {tag:'② 동기 유발', t:'날마다 같은 일을 하는 사람',
+   html:`<div class="ka-bub">하루쯤은 누구나 할 수 있어요.<br>그런데 <b class="emph">날마다</b> 하는 일은 쉽지 않아요.<br><br>여러분이 <b class="mc">하고 싶은 일</b>을 이루려고<br>며칠씩 이어서 해 본 적이 있나요?<br>그때 기분이 어땠는지 떠올려 봐요.</div>`},
 
-  {tag:'② 활동 ①', t:'이야기 이어 말하기',
-   html:`<div class="recap dense">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">1️⃣</span>첫 사람이 <b>한 문장</b>으로 시작해요</div>
-      <div class="recap-item" style="animation-delay:.16s"><span class="recap-ic">2️⃣</span>다음 사람은 <b>앞 문장이 까닭이 되는</b> 문장을 이어요</div>
-      <div class="recap-item" style="animation-delay:.27s"><span class="recap-ic">3️⃣</span>「그래서」와 「왜냐하면」이 <b>속으로 들어가야</b> 해요</div>
-    </div>
-    <div class="ka-bub">길게 말하는 사람이 이기는 놀이가 <b class="emph">아니에요.</b><br><b class="mc">끊기지 않게</b> 잇는 놀이예요.</div>`},
+  {tag:'② 글 ①', t:'「노란 조끼」 앞부분을 따라 읽어요',
+   html:`<div class="read-lines dense">
+      <div class="read-line"><span class="rl-num">1</span>해가 뜨기 전, 길 건너에 노란 조끼가 서 있다.</div>
+      <div class="read-line"><span class="rl-num">2</span>우리 학교 건널목을 지키는 분이다.</div>
+      <div class="read-line"><span class="rl-num">3</span>비가 오는 날에도, 눈이 쌓인 날에도<br>그 자리를 비운 적이 없다.</div>
+      <div class="read-line"><span class="rl-num">4</span>아이들이 뛰어오면 손을 들어 차를 세우고<br>어깨를 다독여 준다.</div>
+      <div class="read-line"><span class="rl-num">5</span>“천천히 와도 돼. 서두르지 않아도 돼.”</div>
+    </div><div class="fb" id="readFb"></div>`},
 
-  {tag:'③ 이어 말하기 고르기', t:'"창밖에 눈이 소복하게 쌓여 있었습니다." 다음에 이어 말하기로 알맞은 것은?', log:true, okMsg:'맞아요! 앞 문장이 까닭이 되어 다음 일이 생겼어요. 🎉', hint:'앞 문장 뒤에 「그래서」를 붙여 읽어 봐요.',
+  {tag:'③ 내용 알기', t:'노란 조끼를 입은 분이 하는 일은 무엇인가요?', log:true, okMsg:'맞아요! 학교 건널목에서 아이들이 길을 건너도록 지켜 주어요. 🎉', hint:'두 번째 줄과 네 번째 줄을 다시 읽어 봐요.',
    html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-pic">🍚</div><div class="wc-word">"어제 저녁에는<br>미역국을 먹었습니다."</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-pic">🧤</div><div class="wc-word">"그래서 나는 장갑을 챙겨<br>밖으로 나갔습니다."</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">🐘</div><div class="wc-word">"갑자기 코끼리가 교실<br>천장에서 떨어졌습니다."</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-pic">🚌</div><div class="wc-word">아이들을 태우고<br>학교까지 데려다준다</div></div>
+      <div class="wcard" data-ok="1"><div class="wc-pic">🛑</div><div class="wc-word">건널목에서 차를 세우고<br>아이들을 건너게 한다</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-pic">🧹</div><div class="wc-word">학교 앞 길을<br>쓸어 준다</div></div>
     </div><div class="fb"></div>`},
 
-  {tag:'② 끊기는 대목', t:'이럴 때 이야기가 끊겨요',
-   html:`<div class="recap dense">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🚪</span>앞과 <b>아무 상관 없는 일</b>을 새로 꺼낼 때</div>
-      <div class="recap-item" style="animation-delay:.16s"><span class="recap-ic">💥</span>까닭 없이 <b>갑자기</b> 큰일이 벌어질 때</div>
-      <div class="recap-item" style="animation-delay:.27s"><span class="recap-ic">↩️</span>앞에서 이미 끝난 일을 <b>없던 일로</b> 돌릴 때</div>
-    </div>`},
+  {tag:'② 글 ②', t:'뒷부분을 따라 읽어요',
+   html:`<div class="read-lines dense">
+      <div class="read-line"><span class="rl-num">6</span>처음에는 이른 아침에 일어나는 일이<br>가장 힘들었다고 한다.</div>
+      <div class="read-line"><span class="rl-num">7</span>그래도 하루도 빠지지 않은 까닭을<br>이렇게 말했다.</div>
+      <div class="read-line"><span class="rl-num">8</span>“내가 없는 날, 누가 여기를 살피지?”</div>
+      <div class="read-line"><span class="rl-num">9</span>봄에는 꽃가루가 날리고<br>겨울에는 손이 얼었다.</div>
+      <div class="read-line"><span class="rl-num">10</span>그래도 노란 조끼는 늘 같은 곳에 서 있었다.</div>
+      <div class="read-line"><span class="rl-num">11</span>아이들은 이제 멀리서도 그 조끼를 알아본다.</div>
+    </div><div class="fb" id="readFb"></div>`},
 
-  {tag:'③ 이어지는 문장 모으기', t:'"교실 문이 잠겨 있었습니다." 다음에 이어질 수 있는 문장을 모두 골라요', log:true, collectMsg:'잘 골랐어요! 앞의 일이 까닭이 되는 문장만 이어져요. 🎉', hint:'문이 잠겨 있어서 무엇을 하게 될지 생각해 봐요.',
+  {tag:'③ 글에서 알 수 있는 것', t:'이 글에서 알 수 있는 것을 모두 골라요', log:true, collectMsg:'모두 찾았어요! 남은 둘은 글에 나오지 않은 내용이에요. 🎉', hint:'글에 쓰여 있는 것만 골라요. 짐작한 것은 넣지 않아요.',
    html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">그래서 우리는 교무실로 열쇠를 가지러 갔습니다</div>
-      <div class="chip" data-hit="1">복도에 서서 기다리는 동안 아침 바람이 몹시 찼습니다</div>
-      <div class="chip" data-hit="0">지난봄에 우리 반은 소풍을 갔습니다</div>
-      <div class="chip" data-hit="1">먼저 온 친구가 창문 쪽이 열려 있는지 살펴보았습니다</div>
-      <div class="chip" data-hit="0">그때 교실 문이 처음부터 열려 있었습니다</div>
+      <div class="chip" data-hit="1">이른 아침에 일어나는 일이 힘들었다</div>
+      <div class="chip" data-hit="1">하루도 빠지지 않았다</div>
+      <div class="chip" data-hit="1">비 오는 날에도 그 자리에 있었다</div>
+      <div class="chip" data-hit="1">아이들이 멀리서도 알아본다</div>
+      <div class="chip" data-hit="0">몇 해 동안 이 일을 했는지</div>
+      <div class="chip" data-hit="0">어느 동네에 사는지</div>
     </div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'② 활동 ②', t:'이어질 내용을 상상해 역할놀이하기',
-   html:`<div class="read-lines dense">
-      <div class="read-line"><b>찬욱</b> — (가방을 뒤지며) 어? 내 색연필 어디 갔지?</div>
-      <div class="read-line"><b>효주</b> — 아까 미술실에 두고 온 거 아니야?</div>
-      <div class="read-line"><b>찬욱</b> — 아니야, 분명히 넣었는데⋯⋯.</div>
-      <div class="read-line"><b>효주</b> — 그럼 ⋯⋯</div>
-    </div>
-    <div class="ka-bub">찬욱이는 <b class="mc">한번 아니라고 하면 잘 굽히지 않는</b> 아이예요.<br>효주는 <b class="mc">일이 생기면 먼저 방법을 찾는</b> 아이예요.</div>`},
+  {tag:'② 낱말 알기', t:'뜻이 비슷한 말을 찾아봐요',
+   html:`<div class="ka-bub">글에 나온 낱말을 <b class="mc">비슷한 말</b>로 바꾸어 보면<br>뜻이 더 또렷해져요.<br><br><b class="emph">다독여</b> 준다 · <b class="emph">서두르지</b> 않아도 돼 · 여기를 <b class="emph">살피지</b><br><br><span style="font-size:.86em">세 낱말의 뜻을 글에서 다시 찾아봐요.</span></div>`},
 
-  {tag:'③ 성격에 맞는 대사', t:'효주의 다음 대사로 알맞은 것은?', log:true, okMsg:'맞아요! 효주라면 따지기보다 먼저 방법을 내놓겠지요. 🎉', hint:'효주가 어떤 아이라고 했는지 다시 읽어 봐요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-pic">😤</div><div class="wc-word">"거봐, 내 말이 맞잖아.<br>네가 잘못한 거야."</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-pic">🔦</div><div class="wc-word">"그럼 같이 찾아보자.<br>가방 먼저, 그다음 미술실."</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">🤷</div><div class="wc-word">"난 몰라. 나 먼저<br>집에 갈래."</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 비슷한 말 잇기', t:'낱말과 뜻이 비슷한 말을 이어요', log:true, matchMsg:'모두 이었어요! 비슷한 말로 바꾸어 읽어도 뜻이 통해요. 🎉', hint:'그 낱말이 들어간 줄을 다시 읽고, 바꾸어 넣어 봐요.',
+   html:`<div class="match" id="match">
+      <div class="match-col">
+        <div class="match-col-h">낱말</div>
+        <div class="match-card" data-k="a" data-pair="x">다독이다</div>
+        <div class="match-card" data-k="b" data-pair="y">서두르다</div>
+        <div class="match-card" data-k="c" data-pair="z">살피다</div>
+      </div>
+      <div class="match-col">
+        <div class="match-col-h">비슷한 말</div>
+        <div class="match-card" data-k="z" data-pair="c">둘러보다</div>
+        <div class="match-card" data-k="x" data-pair="a">달래다</div>
+        <div class="match-card" data-k="y" data-pair="b">급히 하다</div>
+      </div>
+    </div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'② 역할놀이 준비', t:'연습하기 전에 정할 것',
+  {tag:'② 장면 정리', t:'여덟째 줄 장면을 정리해 봐요',
    html:`<div class="recap dense">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">👥</span>인물마다 <b>성격을 한 줄</b>로 정해 두기</div>
-      <div class="recap-item" style="animation-delay:.16s"><span class="recap-ic">🔗</span>뒤에 벌어질 일에 <b>까닭 붙이기</b></div>
-      <div class="recap-item" style="animation-delay:.27s"><span class="recap-ic">🎭</span>대사와 함께 <b>몸짓</b>도 정하기</div>
+      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">📍</span><b>상황</b> — 이른 아침, 추운 길가에 혼자 서 있다</div>
+      <div class="recap-item" style="animation-delay:.16s"><span class="recap-ic">💬</span><b>말</b> — “내가 없는 날, 누가 여기를 살피지?”</div>
+      <div class="recap-item" style="animation-delay:.27s"><span class="recap-ic">💗</span><b>마음</b> — 힘들어도 그만둘 수 없는 마음</div>
     </div>`},
 
-  {tag:'③ 역할놀이에서 볼 것', t:'상상해 만든 역할놀이에서 가장 먼저 살펴볼 것은?', log:true, okMsg:'맞아요! 재미도 좋지만 앞 이야기와 이어지는 것이 먼저예요. 🎉', hint:'웃음의 크기나 대사의 길이는 기준이 아니에요.',
+  {tag:'③ 장면의 분위기', t:'이 장면에서 느껴지는 분위기는 어떤가요?', log:true, okMsg:'맞아요! 힘들지만 그만두지 않는 모습에서 묵직하고 든든한 분위기가 느껴져요. 🎉', hint:'추운 길가에 혼자 서 있는데도 그만두지 않았어요. 그 모습이 어떻게 느껴지나요?',
    html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-pic">🤣</div><div class="wc-word">어느 모둠이<br>가장 웃긴가</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-pic">🔗</div><div class="wc-word">인물의 성격과 앞 이야기에<br>자연스럽게 이어지는가</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">📜</div><div class="wc-word">어느 모둠의 대사가<br>가장 긴가</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-pic">🎉</div><div class="wc-word">들뜨고<br>시끌시끌하다</div></div>
+      <div class="wcard" data-ok="1"><div class="wc-pic">🪨</div><div class="wc-word">묵직하고<br>든든하다</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-pic">😱</div><div class="wc-word">무섭고<br>아슬아슬하다</div></div>
     </div><div class="fb"></div>`},
 
-  {tag:'② 스스로 확인하기', t:'함께한 뒤에 돌아봐요',
-   html:`<div class="selfcheck dense">
-      <div class="sc-row"><span class="sc-box">✓</span>앞 문장이 <b>까닭이 되게</b> 이어 말할 수 있다</div>
-      <div class="sc-row"><span class="sc-box">✓</span>인물의 <b>성격에 맞는 말</b>을 지어낼 수 있다</div>
-      <div class="sc-row"><span class="sc-box">✓</span>친구의 상상에서 <b>이어지는 부분을 찾아</b> 말해 줄 수 있다</div>
-    </div>
-    <div class="ka-bub">이 표는 <b class="emph">점수가 없어요.</b></div>`},
+  {tag:'③ 어떻게 읽을까', t:'이 장면을 유창하게 읽는 방법으로 알맞은 것은?', log:true, okMsg:'맞아요! 뜻 덩어리로 묶어 읽으면 장면이 떠올라요. 너무 빨라도, 낱말마다 끊어도 뜻이 흩어져요. 🎉', hint:'읽고 나서 듣는 사람 머릿속에 장면이 그려져야 해요.',
+   html:`<div class="wordpick">
+      <div class="wcard" data-ok="0"><div class="wc-pic">🏃</div><div class="wc-word">한 글자도 안 틀리게<br><b>아주 빠르게</b> 읽는다</div></div>
+      <div class="wcard" data-ok="1"><div class="wc-pic">🖼️</div><div class="wc-word">장면이 떠오르게<br><b>뜻 덩어리로 묶어</b> 읽는다</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-pic">✂️</div><div class="wc-word"><b>한 낱말씩 모두 끊어</b><br>아주 천천히 읽는다</div></div>
+    </div><div class="fb"></div>`},
 
-  {tag:'④ 정리', t:'오늘 붙잡은 것',
-   html:`<div class="ka-bub">여럿이 이으면 이야기는 <b class="mc">혼자 쓸 때보다 멀리</b> 가요.<br>다만 <b class="emph">끊기지 않게</b> 가야 멀리 간 것이 돼요.</div>
-    <div class="stage-box">🎤 <b>교실에서</b> — ① 모둠끼리 한 문장씩 원인과 결과로 이어 말해 이야기 하나를 완성해 보세요.<br>② 위 장면의 이어질 내용을 모둠에서 상상해 역할을 나누고, 친구들 앞에서 역할놀이를 해 보세요.</div>`}
+  {tag:'② 글과 연결하기', t:'읽고 나서 든 생각을 나누어요',
+   html:`<div class="scene"><div class="scene-pic">💭</div>
+      <div class="scene-say"><b class="mc">윤성</b> — 추운 날에도 서 있었다는 곳에서 마음이 뭉클했어.<br><b class="mc">다올</b> — 나는 “내가 없는 날”이라는 말이 오래 남았어.<br><b class="mc">예하</b> — 나는 내일 아침에 인사해 봐야겠다고 생각했어.</div>
+    </div>
+    <div class="ka-bub">셋 다 <b class="emph">서로 다른 곳</b>에서 마음이 움직였어요.<br>생각이나 느낌은 <b class="mc">달라도 괜찮아요.</b></div>`},
+
+  {tag:'③ 배울 점은 어디에', t:'배울 점이 있는 사람은 누구인가요?', log:true, okMsg:'맞아요! 아주 유명해야만 배울 점이 있는 것은 아니에요. 둘레의 사람에게도 있어요. 🎉', hint:'「노란 조끼」는 이름난 사람이 아니에요. 그런데도 배울 점이 있었지요?',
+   html:`<div class="wordpick">
+      <div class="wcard" data-ok="0"><div class="wc-pic">🏆</div><div class="wc-word">아주 <b>유명한 사람</b>에게만<br>배울 점이 있다</div></div>
+      <div class="wcard" data-ok="1"><div class="wc-pic">🏘️</div><div class="wc-word"><b>둘레의 사람</b>에게도<br>배울 점이 있다</div></div>
+      <div class="wcard" data-ok="0"><div class="wc-pic">📅</div><div class="wc-word">나보다 <b>나이가 많아야</b><br>배울 점이 있다</div></div>
+    </div><div class="fb"></div>`},
+
+  {tag:'② 자신과 관련짓기', t:'교실에서 해 봐요',
+   html:`<div class="stage-box">🎤 <b>교실에서</b> — 하고 싶은 일을 이루려고 며칠 이어서 해 본 일을 짝에게 말해 보세요.
+      <small>그때 어떤 마음이 들었는지도 함께 말해 보기.</small>
+      <button class="stage-do" id="stageDo" data-fb="마음까지 말했다면, 그것이 바로 경험을 나누는 일이에요. 👏">말해 봤어요</button>
+      <div class="fb" id="stageFb"></div>
+    </div>`},
+
+  {tag:'② 세상과 연결하기', t:'둘레에서 찾아봐요',
+   html:`<div class="recap dense">
+      <div class="recap-item" style="animation-delay:.06s"><span class="recap-ic">💻</span>인터넷에서 <b>찾아보기</b></div>
+      <div class="recap-item" style="animation-delay:.18s"><span class="recap-ic">📚</span>책이나 자료에서 <b>찾아보기</b></div>
+      <div class="recap-item" style="animation-delay:.3s"><span class="recap-ic">🙋</span>둘레 사람에게 <b>물어보기</b></div>
+    </div>
+    <div class="ka-bub">셋 가운데 <b class="mc">물어보기</b>가 가장 가까워요.<br>우리 반에도, 우리 집에도 그런 사람이 있어요.</div>`},
+
+  {tag:'④ 정리', t:'오늘 배운 것을 살펴봐요',
+   html:`<div class="selfcheck dense">
+      <div class="sc-row"><span class="sc-box">✓</span>장면을 떠올리며 <b>유창하게</b> 읽을 수 있다</div>
+      <div class="sc-row"><span class="sc-box">✓</span>뜻이 <b>비슷한 낱말</b>을 찾을 수 있다</div>
+      <div class="sc-row"><span class="sc-box">✓</span>글을 읽고 <b>생각이나 느낌</b>을 나눌 수 있다</div>
+    </div>
+    <div class="ka-bub">이 표는 <b class="emph">점수가 없어요.</b> 표시가 안 된 줄은 다시 읽어 보면 돼요.</div>`}
 ];
 const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-const LESSON_ID='g4_2_kor_u6_l11_12_v1';
-const LESSON_MAX=40;
+const LESSON_ID='g3_2_kor_u2_l05_06_v1';
+const LESSON_MAX=60;
 let cur=0, score=0;
 const stage=document.getElementById('stage');
 const main=document.getElementById('main');
