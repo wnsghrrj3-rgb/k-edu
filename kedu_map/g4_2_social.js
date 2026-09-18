@@ -323,7 +323,7 @@ window.KEDU_MAP["g4_2_social"] = {
      "n": "2",
      "title": "도시의 특징을 알아볼까요",
      "sub": "② 도시의 특징과 생활 모습",
-     "url": "/grade4/semester2/social/3단원_다양한환경과삶의모습/g4_social_u3_l08_창을옮겨요.html",
+     "url": "/grade4/semester2/social/3단원_다양한환경과삶의모습/g4_social_u3_l08_이으면가까워요.html",
      "track": "tb",
      "ready": true
     },
