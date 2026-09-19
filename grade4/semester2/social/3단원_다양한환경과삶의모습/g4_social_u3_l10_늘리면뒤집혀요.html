@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<!--
+=========================================================================
+  사회 4-2 · 3단원 다양한 환경과 삶의 모습
+  주제② 도시의 특징과 생활 모습 · l10
+  「도시 생활의 좋은 점과 문제점을 알아볼까요」
+  교과서 p.139~141 · 지도서 13차시(p.270~272) · [4사10-02]
+  수업 기법 = 돌아가며 말하기 · 미디어 분석하기
+=========================================================================
+
+  ■ 직접조작 = 늘리면 뒤집혀요 판
+  ⭐ 씨앗은 지도서 한 줄 — 「도시 생활의 좋은 점은 상황이 달라지면 문제점이 되기도 함」.
+  ⭐ 뒤집기 상수가 코드에 아예 없다(PT_FLIP·PT_TURN·PT_LIMIT·PT_THRESHOLD 부재).
+     ptFlip 한 줄이 「내가 놓은 칸 수」와 「그 갈래에 남은 자리」를 견주기만 한다.
+       function ptFlip(st,g){ return ptN(st,g) > ptRoom(st,g); }
+     갈래마다 따로 적어 둔 기준값이 없고, 네 갈래가 모두 같은 한 줄로 판정된다.
+     그래서 뒤집힘은 판이 미리 정해 둔 것이 아니라 내가 놓은 칸에서 그대로 나온다.
+  ⭐ 좁은 자리에 많이 모이면 뒤집힌다 — 교과서 정리 원문
+     「좁은 지역에 많은 사람이 모여 살기 때문에 문제점이 발생하기도 합니다」를 판의 셈으로 옮긴 것.
+  ⭐ 칸을 놓는 자리 state.ptCell[g] = ptN(state,g) + 1 단 하나 · 덜어내는 자리 0 · 난수 0.
+  ⭐ PT_GOOD[ · PT_BAD[ · PT_GNAME[ · PT_HELP[ · PT_HELP_G[ 를 읽는 자리는 각각 단 하나
+     (ptGoodOf · ptBadOf · ptGName · ptHelpOf · ptHelpG).
+
+  ■ 5단계
+   ① 네 갈래(교통·주택·산업·편의 시설)에 한 칸씩 놓아 좋은 점 넷 세우기
+   ② 한 칸씩 더 놓아 넷을 다 뒤집기 (★ 놓은 칸이 남은 자리보다 많아지는 순간 뒤집힌다)
+   ③ 뒤집힌 문제점에 해결 노력 둘 붙이기 (바람길 숲 · 생활 쓰레기 줄이기)
+   ④ 판 읽기 3택(정답 자리 2) → ⑤ 마무리 3택(정답 자리 1) → 완료
+      — 우리 지역의 도시 문제를 찾아 캠페인을 여는 일은 교실 몫
+
+  ■ 가드 10종
+   ① 마무리 확정 후 네 처리기 전체 잠금      ② 무효 번호(안내조차 0)
+   ③ 자리가 다 찬 갈래에 더 놓기 — 판 불변    ④ 빈 갈래를 두고 다른 갈래에 더 놓기 — 판 불변
+   ⑤ 넷을 다 뒤집기 전 해결 노력 — 판 불변    ⑥ 이미 붙인 해결 노력 다시 붙이기 — 판 불변
+   ⑦ 해결 노력을 어긋난 갈래에 붙이기 — 판 불변(안내에 갈래 이름·문제점 문면 0)
+   ⑧ 해결 노력을 다 붙이기 전 판 읽기 · 이미 읽은 자리 — 판 불변
+   ⑨ 판 읽기 어긋난 답 — 판 불변            ⑩ 판을 읽기 전 마무리 · 마무리 어긋난 답 — 판 불변
+
+  ■ 정직 4곳
+   ㉠ 판의 여덟 줄은 교과서 140~141쪽에 나온 좋은 점과 문제점을 판이 줄여 옮긴 자리이고,
+      도시 생활의 좋은 점과 문제점은 이보다 훨씬 다양하다(캡션 상시).
+   ㉡ 판의 칸은 좁은 자리에 모이는 것을 나타낸 표시일 뿐이다.
+   ㉢ 우리 지역의 도시 문제를 찾아 캠페인을 여는 일은 교실 몫(완료 카드 명시).
+   ㉣ 판은 어느 도시가 더 좋은지 가리지 않는다.
+
+  ■ 설계 원칙
+   · 14차시 이후 침범 0(생각을 펼쳐요·생각 그물·단원 평가 0 — 차시 예고 한 자리까지)
+   · 주제① 재현 0(자연환경·인문환경·산이 많은·들이 펼쳐진·바다가 있는·간척·개발 0)
+   · l07~l09 재현 0(인구·촌락·무언극·여가 생활 0 · 실제 지역 이름 0)
+   · 교사용 참고 자료 0(학습 안내·지도 꿀·활동 의도·평가 관점·미디어 자료 해설·도시화·젠트리피케이션·4차 산업·플로깅·빛 공해·범죄 0)
+   · 네 자리 연도 0 · 비율 0 · 금액 0 · 「틀렸」 0 · 사람 형상 0 · 학생 이름 0
+-->
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>도시 생활의 좋은 점과 문제점을 알아볼까요 · 사회 4-2</title>
+<meta name="kedu-lesson-id" content="g4_social_u3_l10_v1">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#0891B2; --green-d:#0E7490; --cyan:#0D9488;
+  --bg:#ECFEFF; --bub:#CFFAFE; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#F57F17; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes drawLine{to{transform:scaleX(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ka-lb{background:#F1F5F9;border:none;padding:7px 12px;border-radius:10px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;font-family:inherit;font-weight:700;color:#475569;flex-shrink:0;font-size:13px}
+.ka-lb svg{width:15px;height:15px}
+.ka-bar{flex:1;height:5px;background:var(--bg);border-radius:999px;overflow:hidden}
+.ka-bar>div{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:999px;transition:width .35s ease;width:6%}
+.ka-pg{color:var(--green);font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;flex-shrink:0}
+.ka-sc{background:var(--amber-bg);color:var(--amber);padding:4px 12px;border-radius:999px;display:flex;align-items:center;gap:5px;flex-shrink:0;font-weight:700}
+.ka-sc svg{width:14px;height:14px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px}
+.ka-sc-u{font-size:12px}
+
+/* 메인 */
+.ka-m{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow-y:auto}
+.ka-tags{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ka-bg{background:var(--amber-bg);color:var(--amber);padding:5px 14px;border-radius:30px;font-size:13px;
+  display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.ka-bg.s2{background:#E0F2FE;color:#0369A1}
+.ka-bg.s3{background:#EDE9FE;color:#6D28D9}
+.ka-bg.s4{background:#FCE7F3;color:#BE185D}
+.ka-bg.s5{background:#CFFAFE;color:var(--green)}
+.ka-bg svg{width:13px;height:13px}
+.ka-meta{font-size:13px;color:var(--muted)}
+.ka-t{font-size:clamp(20px,3.4vw,29px);margin-bottom:16px;line-height:1.4;color:var(--green);letter-spacing:-.3px;font-weight:700;animation:fadeUp .4s .15s ease both}
+.ka-bub{background:var(--bub);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);line-height:1.7;
+  margin-bottom:16px;border-left:4px solid var(--green);animation:fadeUp .4s .3s ease both}
+.ka-emph{position:relative;display:inline-block;font-weight:700;color:var(--green)}
+.ka-emph::after{content:'';position:absolute;bottom:2px;left:0;right:0;height:3px;background:var(--red);border-radius:2px;transform:scaleX(0);transform-origin:left;animation:drawLine .6s .6s ease forwards}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(16px,2.6vw,21px);font-weight:700;line-height:1.6;margin-bottom:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:640px}
+.opt{background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:13px 14px;font-size:clamp(14px,2.3vw,17px);
+  font-weight:500;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:var(--green);background:#CFFAFE;animation:pop .4s ease}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;font-size:clamp(14px,2.3vw,17px);line-height:1.6;text-align:center;animation:fadeUp .35s ease both;max-width:640px}
+.fb.ok{color:var(--green);font-weight:700}
+.hint{margin-top:12px;background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(13px,2.2vw,16px);
+  line-height:1.6;color:#0C4A6E;max-width:560px;animation:fadeUp .35s ease both}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:620px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFF;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:clamp(14px,2.3vw,17px);line-height:1.5}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(8,145,178,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+/* 조작 판 — 늘리면 뒤집혀요 판 */
+.pt-wrap{max-width:780px;width:100%;margin:0 auto}
+.pt-head{background:#CFFAFE;color:#155E75;font-weight:800;text-align:center;border-radius:10px;padding:7px 10px;
+  font-size:clamp(13px,2.1vw,16px);margin-bottom:8px;word-break:keep-all}
+.pt-board{padding:9px;border-radius:14px;background:#F0F9FF;border:2px solid #BAE6FD;display:flex;flex-direction:column;gap:7px}
+.pt-row{display:grid;grid-template-columns:auto auto minmax(0,1fr);align-items:center;gap:9px;
+  border:2px solid #7DD3FC;border-radius:12px;background:#fff;padding:7px 9px}
+.pt-row[data-n="0"]{border-style:dashed;background:#F8FAFC}
+.pt-row[data-flip="1"]{border-color:#FCD34D;background:#FFF8E1}
+.pt-row[data-help="1"]{border-color:#86EFAC;background:#F0FDF4}
+.pt-gn{font-size:clamp(11px,1.7vw,13px);font-weight:800;color:#0E7490;background:#CFFAFE;border-radius:999px;padding:2px 10px;white-space:nowrap}
+.pt-row[data-flip="1"] .pt-gn{color:#92400E;background:#FDE68A}
+.pt-cells{display:flex;gap:3px;flex:0 0 auto}
+.pt-cell{width:13px;height:20px;border-radius:4px;border:2px solid #BAE6FD;background:#fff;display:block}
+.pt-cell[data-on="1"]{background:#38BDF8;border-color:#0284C7}
+.pt-row[data-flip="1"] .pt-cell[data-on="1"]{background:#F59E0B;border-color:#92400E}
+.pt-line{font-size:clamp(11px,1.8vw,14px);font-weight:700;color:#0C4A6E;line-height:1.45;word-break:keep-all}
+.pt-row[data-flip="1"] .pt-line{color:#92400E}
+.pt-row[data-n="0"] .pt-line{color:#94A3B8;font-weight:500}
+.pt-help{grid-column:1/-1;font-size:clamp(11px,1.8vw,14px);font-weight:700;color:#166534;background:#DCFCE7;
+  border-radius:9px;padding:4px 9px;word-break:keep-all}
+.pt-side{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.pt-key{border:2px solid var(--line);border-radius:11px;padding:8px 10px;background:#fff;font-size:clamp(11px,1.9vw,14px);line-height:1.6}
+.pt-key b{color:#0E7490}
+.pt-tell{border-radius:11px;padding:8px 12px;font-size:clamp(12px,2vw,15px);line-height:1.6;background:#F0FDFA;border-left:4px solid var(--cyan)}
+.pt-ask{border:2px solid var(--line);border-radius:12px;padding:10px 14px;background:#F8FEFF;margin-top:9px;
+  font-size:clamp(13px,2.2vw,16px);line-height:1.6}
+.pt-puts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}
+.pt-opts{display:grid;grid-template-columns:1fr;gap:8px;margin-top:9px}
+.pt-opt{background:#F8FAFC;border:2px solid var(--line);border-radius:11px;padding:9px 11px;font-family:inherit;
+  font-size:clamp(12px,2.1vw,15px);cursor:pointer;text-align:left;line-height:1.5;word-break:keep-all;color:var(--ink)}
+.pt-opt:hover{border-color:var(--green);background:var(--bub)}
+.pt-put{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.pt-rg{font-size:clamp(11px,1.7vw,13px);color:#0E7490;white-space:nowrap}
+.pt-row2{border:2px solid var(--line);border-radius:11px;padding:7px 9px;background:#fff;margin-top:8px}
+.pt-row2[data-fixed="1"]{border-color:#86EFAC;background:#F0FDF4}
+.pt-fixq{font-size:clamp(12px,2vw,15px);font-weight:700;color:#0C4A6E;line-height:1.45;word-break:keep-all}
+.pt-fix{font-size:clamp(12px,2vw,15px);font-weight:700;color:#166534;padding:3px 2px}
+.pt-seats{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+.pt-seat{text-align:center}
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+  .pt-row{grid-template-columns:auto minmax(0,1fr);row-gap:5px}
+  .pt-gn{grid-column:1}
+  .pt-cells{grid-column:2}
+  .pt-line{grid-column:1/-1}
+  .pt-side{grid-template-columns:1fr}
+  .pt-puts{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#F57F17"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식, 사람 형상 대신 모양과 기호 ===== */
+const SVG = {
+  // [동기 유발] 도시에서 나는 소리
+  noise:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <rect x="10" y="44" width="26" height="34" rx="4" fill="#7DD3FC"/><rect x="42" y="34" width="26" height="44" rx="4" fill="#38BDF8"/><rect x="74" y="50" width="26" height="28" rx="4" fill="#A5F3FC"/>
+    <g stroke="#F59E0B" stroke-width="2.5" fill="none" stroke-linecap="round">
+      <path d="M 112 62 Q 122 56 122 48 Q 122 40 112 34"/><path d="M 122 70 Q 138 60 138 48 Q 138 36 122 26"/></g>
+    <rect x="102" y="52" width="8" height="14" rx="2" fill="#0E7490"/>
+    <text x="80" y="18" font-size="8" fill="#155E75" text-anchor="middle" font-weight="800">도시에서 나는 소리</text>
+    <text x="80" y="90" font-size="7.5" fill="#64748B" text-anchor="middle">좋은 점도 있고 불편한 점도 있어요</text></svg>`,
+  // 도시 생활의 좋은 점
+  good:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <g fill="#CFFAFE" stroke="#0891B2" stroke-width="2"><rect x="8" y="26" width="32" height="26" rx="5"/><rect x="48" y="26" width="32" height="26" rx="5"/><rect x="88" y="26" width="32" height="26" rx="5"/><rect x="128" y="26" width="24" height="26" rx="5"/></g>
+    <g font-size="7" font-weight="800" text-anchor="middle" fill="#0E7490"><text x="24" y="42">교통</text><text x="64" y="42">주택</text><text x="104" y="42">산업</text><text x="140" y="42">편의</text></g>
+    <path d="M 16 68 L 24 76 L 40 60" stroke="#0891B2" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="90" y="72" font-size="8.5" fill="#155E75" text-anchor="middle" font-weight="800">네 갈래에서 좋은 점을 찾아요</text>
+    <text x="80" y="16" font-size="8" fill="#155E75" text-anchor="middle" font-weight="800">도시 생활의 좋은 점</text></svg>`,
+  // 도시 생활의 문제점
+  bad:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFF8E1"/>
+    <g fill="#FDE68A" stroke="#F59E0B" stroke-width="2"><rect x="8" y="26" width="32" height="26" rx="5"/><rect x="48" y="26" width="32" height="26" rx="5"/><rect x="88" y="26" width="32" height="26" rx="5"/><rect x="128" y="26" width="24" height="26" rx="5"/></g>
+    <g font-size="7" font-weight="800" text-anchor="middle" fill="#92400E"><text x="24" y="42">교통</text><text x="64" y="42">주택</text><text x="104" y="42">산업</text><text x="140" y="42">편의</text></g>
+    <g stroke="#92400E" stroke-width="3" stroke-linecap="round"><path d="M 18 64 L 30 76"/><path d="M 30 64 L 18 76"/></g>
+    <text x="92" y="72" font-size="8.5" fill="#92400E" text-anchor="middle" font-weight="800">같은 갈래에서 문제도 생겨요</text>
+    <text x="80" y="16" font-size="8" fill="#92400E" text-anchor="middle" font-weight="800">도시 생활의 문제점</text></svg>`,
+  // 같은 것이 뒤집히기도 해요
+  turn:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <rect x="10" y="34" width="46" height="34" rx="7" fill="#CFFAFE" stroke="#0891B2" stroke-width="2"/>
+    <rect x="104" y="34" width="46" height="34" rx="7" fill="#FDE68A" stroke="#F59E0B" stroke-width="2"/>
+    <g font-size="8.5" font-weight="800" text-anchor="middle"><text x="33" y="55" fill="#0E7490">좋은 점</text><text x="127" y="55" fill="#92400E">문제점</text></g>
+    <path d="M 62 46 L 96 46" stroke="#64748B" stroke-width="3" marker-end=""/>
+    <path d="M 96 46 L 88 41 L 88 51 Z" fill="#64748B"/>
+    <text x="80" y="64" font-size="7.5" fill="#64748B" text-anchor="middle">한 칸 더</text>
+    <text x="80" y="18" font-size="8" fill="#155E75" text-anchor="middle" font-weight="800">좁은 자리에 많이 모이면</text>
+    <text x="80" y="88" font-size="7.5" fill="#64748B" text-anchor="middle">판에서 직접 늘려 볼까요?</text></svg>`,
+  // 도시 문제의 해결 노력
+  fixup:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F0FDF4"/>
+    <g fill="#16A34A"><path d="M 30 62 L 22 48 L 38 48 Z"/><path d="M 30 52 L 20 36 L 40 36 Z"/></g>
+    <rect x="27" y="62" width="6" height="10" fill="#92400E"/>
+    <g stroke="#0891B2" stroke-width="2" fill="none" stroke-linecap="round"><path d="M 48 44 Q 60 38 72 44"/><path d="M 48 54 Q 60 48 72 54"/></g>
+    <g fill="none" stroke="#16A34A" stroke-width="2.5"><rect x="96" y="44" width="26" height="28" rx="4"/><path d="M 92 44 L 126 44"/><path d="M 104 40 L 114 40"/></g>
+    <path d="M 132 60 Q 140 52 148 60" stroke="#16A34A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <g font-size="7" font-weight="800" text-anchor="middle" fill="#166534"><text x="46" y="84">바람길 숲</text><text x="116" y="84">쓰레기 줄이기</text></g>
+    <text x="80" y="18" font-size="8" fill="#166534" text-anchor="middle" font-weight="800">도시 문제의 해결 노력</text></svg>`,
+  // 캠페인 문구
+  camp:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <rect x="22" y="26" width="116" height="38" rx="7" fill="#fff" stroke="#0891B2" stroke-width="2.5"/>
+    <g stroke="#7DD3FC" stroke-width="3" stroke-linecap="round"><path d="M 34 40 L 112 40"/><path d="M 34 52 L 88 52"/></g>
+    <rect x="76" y="64" width="8" height="16" fill="#64748B"/>
+    <text x="80" y="18" font-size="8" fill="#155E75" text-anchor="middle" font-weight="800">캠페인 문구</text>
+    <text x="80" y="92" font-size="7.5" fill="#64748B" text-anchor="middle">한 줄로 마음을 전해요</text></svg>`,
+  // 정리
+  done:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <circle cx="42" cy="48" r="26" fill="#CFFAFE"/><circle cx="82" cy="48" r="26" fill="#FEF3C7"/><circle cx="122" cy="48" r="26" fill="#DCFCE7"/>
+    <g font-size="8.5" font-weight="800" text-anchor="middle"><text x="36" y="52" fill="#0E7490">좋은 점</text><text x="82" y="52" fill="#92400E">문제점</text><text x="128" y="52" fill="#166534">해결 노력</text></g></svg>`
+};
+function sceneCard(key,cap){return `<div class="scene">${SVG[key]}<div class="cap">${cap}</div></div>`;}
+
+/* ===== 직접 조작: 늘리면 뒤집혀요 판 =====
+   ★ 뒤집기 상수가 코드에 없다 — ptFlip 한 줄이 「놓은 칸 수」와 「남은 자리」를 견주기만 한다.
+   ★ 갈래마다 따로 적어 둔 기준값이 없고, 네 갈래가 모두 같은 한 줄로 판정된다.
+   칸을 놓는 자리 단 하나 · 덜어내는 자리 0 · 난수 0. */
+const PT_G = 4;                                            // 갈래 넷
+const PT_CAP = 4;                                          // 갈래마다 놓을 수 있는 칸 넷 (판의 너비)
+const PT_GNAME = ["교통","주택","산업","편의 시설"];
+const PT_GOOD = [
+  "도로나 철도 등 교통이 발달해 이동이 빠르고 편리합니다",
+  "새 주택이나 아파트가 지어져 쾌적한 주거 공간이 생겨납니다",
+  "산업이 발달하여 다양한 일자리가 있습니다",
+  "공공 기관, 영화관, 병원 등 편의 시설이 많습니다"
+];
+const PT_BAD = [
+  "특정 시간에 자동차가 몰려 교통이 혼잡할 때가 많고, 주차할 공간이 부족합니다",
+  "집값이 비싸며 오래되고 낡은 주택이 많습니다",
+  "대기 오염, 수질 오염, 토양 오염 등 환경 문제가 발생하기도 합니다",
+  "사람들이 버린 쓰레기의 양이 늘어나고 있습니다"
+];
+const PT_HELP_N = 2;                                       // 신문 기사 두 편에서 온 해결 노력 둘
+const PT_HELP = [
+  "바람길 숲을 만들어 미세 먼지와 대기의 오염 물질을 줄였어요",
+  "생활 쓰레기를 최소한으로 줄이는 캠페인을 하고 재사용을 실천해요"
+];
+const PT_HELP_G = [2,3];                                   // 그 노력이 풀어 주는 갈래
+const PT_SAY_FULL = "그 갈래에는 더 놓을 자리가 없어요. 판은 그대로예요.";
+const PT_SAY_ORDER_STAND = "먼저 네 갈래에 한 칸씩 놓아 봐요.";
+const PT_SAY_ORDER_FIX = "먼저 네 갈래를 모두 뒤집어 봐요.";
+const PT_SAY_FIXDONE = "그 노력은 이미 붙였어요. 판은 그대로예요.";
+const PT_SAY_FIXMISS = "그 자리가 아니에요. 어떤 문제를 풀어 주는 노력인지 다시 살펴봐요.";
+const PT_SAY_ORDER_R = "먼저 해결 노력을 모두 붙여 봐요.";
+const PT_SAY_READDONE = "이미 정한 자리예요. 판은 그대로예요.";
+const PT_SAY_ORDER_FIN = "먼저 판을 읽어 봐요.";
+const PT_READQ = [
+  "판이 처음부터 문제점으로 정해 두었기 때문이에요",
+  "좋은 점과 문제점은 서로 아무 상관이 없기 때문이에요",
+  "도시 생활의 좋은 점은 상황이 달라지면 문제점이 되기도 하기 때문이에요"
+];
+const PT_READ_OK = 2;
+const PT_READ_BAD = "칸을 놓기 전과 놓은 뒤에 같은 갈래의 글이 어떻게 바뀌었는지 떠올려 봐요.";
+const PT_FINQ = [
+  "도시 생활에는 좋은 점만 있어요",
+  "도시 생활에는 좋은 점도 있지만, 좁은 지역에 많은 사람이 모여 살기 때문에 문제점이 발생하기도 해요",
+  "도시 생활의 문제점은 시간이 지나면 저절로 사라져요"
+];
+const PT_FIN_OK = 1;
+const PT_FIN_BAD = "교과서 140쪽과 141쪽을 다시 살펴봐요.";
+
+function ptGName(g){ return PT_GNAME[g]; }                                        // PT_GNAME 을 읽는 자리는 여기 단 하나
+function ptGoodOf(g){ return PT_GOOD[g]; }                                        // PT_GOOD 를 읽는 자리는 여기 단 하나
+function ptBadOf(g){ return PT_BAD[g]; }                                          // PT_BAD 를 읽는 자리는 여기 단 하나
+function ptHelpOf(k){ return PT_HELP[k]; }                                        // PT_HELP 를 읽는 자리는 여기 단 하나
+function ptHelpG(k){ return PT_HELP_G[k]; }                                       // PT_HELP_G 를 읽는 자리는 여기 단 하나
+function ptN(st,g){ return st.ptCell[g]; }                                        // 내가 놓은 칸 수
+function ptRoom(st,g){ return PT_CAP - ptN(st,g); }                               // 그 갈래에 남은 자리
+function ptFlip(st,g){ return ptN(st,g) > ptRoom(st,g); }                         // ★ 뒤집기 상수 0 — 놓은 칸과 남은 자리를 견주는 한 줄
+function ptLineOf(st,g){ return ptFlip(st,g) ? ptBadOf(g) : ptGoodOf(g); }
+function ptStoodN(st){ let n=0; for(let g=0;g<PT_G;g++) if(ptN(st,g)>0) n++; return n; }
+function ptAllStood(st){ return ptStoodN(st) === PT_G; }
+function ptFlipN(st){ let n=0; for(let g=0;g<PT_G;g++) if(ptFlip(st,g)) n++; return n; }
+function ptAllFlip(st){ return ptFlipN(st) === PT_G; }
+function ptHelpAt(st,g){ for(let k=0;k<PT_HELP_N;k++) if(st.ptHelp[k]===g) return k; return -1; }
+function ptHelpN(st){ let n=0; for(let k=0;k<PT_HELP_N;k++) if(st.ptHelp[k]!=null) n++; return n; }
+function ptAllHelp(st){ return ptHelpN(st) === PT_HELP_N; }
+function ptStage(st){
+  if(!ptAllStood(st)) return "stand";
+  if(!ptAllFlip(st)) return "flip";
+  if(!ptAllHelp(st)) return "fix";
+  if(st.ptRead == null) return "read";
+  if(st.ptFin == null) return "fin";
+  return "end";
+}
+
+/* 판 — 네 줄. 칸이 늘어 남은 자리보다 많아지면 같은 줄의 글이 뒤집힌다 */
+function ptCells(st,g){
+  let s=''; for(let c=0;c<PT_CAP;c++) s += `<span class="pt-cell" data-on="${c<ptN(st,g)?1:0}"></span>`;
+  return `<span class="pt-cells">${s}</span>`;
+}
+function ptRow(st,g){
+  const k = ptHelpAt(st,g);
+  const help = k<0 ? '' : `<span class="pt-help">🌱 ${ptHelpOf(k)}</span>`;
+  const line = ptN(st,g)===0 ? '아직 놓지 않았어요' : ptLineOf(st,g);
+  return `<div class="pt-row" data-g="${g}" data-n="${ptN(st,g)}" data-room="${ptRoom(st,g)}"`
+    + ` data-flip="${ptFlip(st,g)?1:0}" data-help="${k<0?0:1}">`
+    + `<span class="pt-gn">${ptGName(g)}</span>${ptCells(st,g)}<span class="pt-line">${line}</span>${help}</div>`;
+}
+function ptBoard(st){
+  let s=''; for(let g=0;g<PT_G;g++) s += ptRow(st,g);
+  return `<div class="pt-board" data-flipn="${ptFlipN(st)}">${s}</div>`;
+}
+/* 칸을 놓는 줄 — 갈래 넷 */
+function ptPuts(st){
+  let s='';
+  for(let g=0;g<PT_G;g++) s += `<button class="pt-opt pt-put" data-put="${g}" onclick="ptPut(${g})">`
+    + `<b>${ptGName(g)}</b><span class="pt-rg">남은 자리 ${ptRoom(st,g)}</span></button>`;
+  return `<div class="pt-puts">${s}</div>`;
+}
+/* 해결 노력을 붙이는 줄 — 신문 기사 두 편 */
+function ptHelpRows(st){
+  let s='';
+  for(let k=0;k<PT_HELP_N;k++){
+    if(st.ptHelp[k]!=null){ s += `<div class="pt-row2" data-helprow="${k}" data-fixed="1">`
+      + `<div class="pt-fix">✓ ${ptHelpOf(k)}</div></div>`; continue; }
+    let b='';
+    for(let g=0;g<PT_G;g++) b += `<button class="pt-opt pt-seat" data-k="${k}" data-seat="${g}" onclick="ptHelp(${k},${g})">${ptGName(g)}</button>`;
+    s += `<div class="pt-row2" data-helprow="${k}" data-fixed="0"><div class="pt-fixq">${ptHelpOf(k)}</div>`
+      + `<div class="pt-seats">${b}</div></div>`;
+  }
+  return s;
+}
+function ptKey(st){
+  return `<div class="pt-key"><b>판을 보는 법</b><br>
+    칸을 놓을수록 그 갈래에 <b>남은 자리</b>가 줄어들어요.<br>
+    놓은 칸이 남은 자리보다 많아지면 그 줄의 글이 바뀌어요.</div>`;
+}
+function ptPanel(st){
+  const stage = ptStage(st);
+  let ask = '';
+  if(stage === "stand"){
+    ask = `<div class="pt-ask" data-step="stand"><b>네 갈래에 한 칸씩 놓아 도시의 좋은 점을 세워 봐요.</b>
+      <div class="note" style="text-align:left;margin-top:5px">어느 갈래부터 놓아도 괜찮아요. 아직 비어 있는 갈래부터 채워요.</div>
+      ${ptPuts(st)}</div>`;
+  } else if(stage === "flip"){
+    ask = `<div class="pt-ask" data-step="flip"><b>좁은 자리에 한 칸씩 더 놓아 볼까요?</b>
+      <div class="note" style="text-align:left;margin-top:5px">어느 갈래부터 놓아도 괜찮아요. 네 줄이 모두 바뀔 때까지 놓아 봐요.</div>
+      ${ptPuts(st)}</div>`;
+  } else if(stage === "fix"){
+    ask = `<div class="pt-ask" data-step="fix"><b>신문 기사에서 읽은 해결 노력을 알맞은 줄에 붙여 봐요.</b>
+      <div class="note" style="text-align:left;margin-top:5px">그 노력이 어떤 문제를 풀어 주는지 판의 네 줄과 견주어 봐요.</div>
+      ${ptHelpRows(st)}</div>`;
+  } else if(stage === "read"){
+    ask = `<div class="pt-ask" data-step="read"><b>한 칸씩 더 놓았을 뿐인데 좋은 점이 문제점으로 바뀌었어요. 왜 그럴까요?</b>
+      <div class="pt-opts">${PT_READQ.map((t,i)=>`<button class="pt-opt" onclick="ptRead(${i})">${t}</button>`).join('')}</div></div>`;
+  } else if(stage === "fin"){
+    ask = `<div class="pt-ask" data-step="fin"><b>그렇다면 도시 생활은 어떻다고 정리할 수 있을까요?</b>
+      <div class="pt-opts">${PT_FINQ.map((t,i)=>`<button class="pt-opt" onclick="ptFin(${i})">${t}</button>`).join('')}</div></div>`;
+  } else {
+    ask = `<div class="pt-ask" data-fin="1" style="border-color:#86EFAC;background:#F0FDF4">
+      <b style="color:#166534">도시 생활에는 좋은 점도 있지만, 좁은 지역에 많은 사람이 모여 살기 때문에 문제점이 발생하기도 해요.</b>
+      판에서도 같은 갈래가 칸을 늘릴수록 좋은 점에서 문제점으로 바뀌었지요.
+      <div class="note" style="text-align:left;margin-top:5px">※ 우리 지역의 도시 문제를 찾아 캠페인을 여는 일은 <b>교실 몫</b>이에요. 판은 대신 해 주지 않아요.</div></div>`;
+  }
+  const tell = st.ptTell ? `<div class="pt-tell">${st.ptTell}</div>` : '';
+  const warn = st.ptMsg ? `<div class="fb" style="color:#DC2626;font-weight:700">${st.ptMsg}</div>` : '';
+  return `<div class="pt-wrap">
+    <div class="pt-head">선 갈래 <b>${ptStoodN(st)}</b> / 4 · 뒤집힌 갈래 <b>${ptFlipN(st)}</b> / 4 · 붙인 해결 노력 <b>${ptHelpN(st)}</b> / 2</div>
+    ${ptBoard(st)}<div class="pt-side">${ptKey(st)}${tell}</div>${ask}${warn}
+    <div class="note" style="margin-top:8px">※ 판의 여덟 줄은 교과서 140~141쪽에 나온 좋은 점과 문제점을 <b>판이 줄여 옮긴 것</b>이에요. 도시 생활의 좋은 점과 문제점은 이보다 훨씬 다양하고, 판은 어느 도시가 더 좋은지 가리지 않아요.</div>
+  </div>`;
+}
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "3단원 다양한 환경과 삶의 모습 · 주제② 도시의 특징과 생활 모습";
+const Q = [
+  {stem:"도시에 도로나 철도 등 교통이 발달하면 어떤 점이 좋은가요?",
+   opts:["이동하는 데 시간이 더 오래 걸려요","다른 지역으로는 갈 수 없어요","이동이 빠르고 편리해요","자동차를 탈 수 없어요"], correct:2, pts:POINTS_BASIC,
+   h1:"교과서 140쪽 그림을 떠올려 봐요.", h2:"도로와 철도가 잘 놓이면 오가기가 어떨까요?",
+   reason:"도로나 철도 등 교통이 발달해 이동이 빠르고 편리합니다. 기차를 타고 다른 지역으로 손쉽게 오갈 수도 있어요."},
+  {stem:"도시에 새 주택이나 아파트가 지어지면 어떤 점이 좋은가요?",
+   opts:["쾌적한 주거 공간이 생겨나요","살 곳이 줄어들어요","집을 고칠 수 없게 돼요","사람들이 모두 떠나요"], correct:0, pts:POINTS_BASIC,
+   h1:"교과서 140쪽 그림을 떠올려 봐요.", h2:"새로 지은 집은 살기에 어떨까요?",
+   reason:"새 주택이나 아파트가 지어져 쾌적한 주거 공간이 생겨납니다."},
+  {stem:"도시에 산업이 발달하면 어떤 점이 좋은가요?",
+   opts:["일자리가 하나만 남아요","물건을 만들 수 없어요","공공 기관이 모두 사라져요","다양한 일자리가 있어요"], correct:3, pts:POINTS_BASIC,
+   h1:"교과서 140쪽 그림을 떠올려 봐요.", h2:"여러 가지 산업이 자리 잡으면 할 일이 어떻게 될까요?",
+   reason:"산업이 발달하여 다양한 일자리가 있습니다."},
+  {stem:"도시 생활의 문제점으로 알맞은 것은 무엇인가요?",
+   opts:["병원이 한 곳도 없어요","특정 시간에 자동차가 몰려 교통이 혼잡할 때가 많아요","영화관이 적어 볼 것이 없어요","집이 한 채도 지어지지 않아요"], correct:1, pts:POINTS_BASIC,
+   h1:"교과서 141쪽 그림을 떠올려 봐요.", h2:"아침저녁으로 자동차가 한꺼번에 몰리면 어떻게 될까요?",
+   reason:"특정 시간에 자동차가 몰려 교통이 혼잡할 때가 많고, 자동차를 주차할 공간이 부족합니다."},
+  {stem:"판에서 같은 갈래에 칸을 더 놓았더니 좋은 점이 문제점으로 바뀌었어요. 그 까닭은 무엇인가요?",
+   opts:["판이 처음부터 문제점으로 정해 두었기 때문이에요","좋은 점과 문제점은 서로 아무 상관이 없기 때문이에요","칸을 놓을 때마다 판이 아무렇게나 골랐기 때문이에요","좋은 점은 상황이 달라지면 문제점이 되기도 하기 때문이에요"], correct:3, pts:POINTS_APPLY,
+   h1:"판의 글이 바뀐 때가 언제였는지 떠올려 봐요.", h2:"놓은 칸이 남은 자리보다 많아진 순간을 떠올려 봐요.",
+   reason:"도시 생활의 좋은 점은 상황이 달라지면 문제점이 되기도 해요. 판에서도 같은 갈래가 칸을 늘릴수록 좋은 점에서 문제점으로 바뀌었지요."},
+  {stem:"대기 오염 문제를 해결하려고 어떤 노력을 했나요?",
+   opts:["자동차를 더 많이 만들었어요","바람길 숲을 만들어 미세 먼지와 대기의 오염 물질을 줄였어요","도시의 나무를 모두 베어 냈어요","도로를 모두 없앴어요"], correct:1, pts:POINTS_APPLY,
+   h1:"신문 기사에서 읽은 내용을 떠올려 봐요.", h2:"도시 바깥 울창한 숲의 맑고 시원한 공기를 끌어들였어요.",
+   reason:"바람길 숲을 만들어 도시 외곽의 울창한 숲에서 만들어진 맑고 시원한 공기를 끌어들여 미세 먼지와 대기의 오염 물질을 줄이려고 노력했어요."},
+  {stem:"생활 쓰레기를 줄이려고 어떤 노력을 하고 있나요?",
+   opts:["생활 쓰레기를 최소한으로 줄이는 캠페인을 하고 재사용을 실천해요","쓰레기를 아무 데나 버려요","쓰레기를 모두 태워서 없애요","쓰레기통을 전부 치워요"], correct:0, pts:POINTS_APPLY,
+   h1:"신문 기사에서 읽은 내용을 떠올려 봐요.", h2:"한 달 동안 이어 가는 활동이었어요.",
+   reason:"생활 쓰레기를 최소한으로 줄이는 캠페인을 진행해 생활 쓰레기를 줄이고 재사용을 실천하고 있어요."},
+  {stem:"도시 생활을 바르게 정리한 것은 무엇인가요?",
+   opts:["도시 생활에는 좋은 점만 있어요","도시 생활에는 문제점만 있어요","도시 생활에는 좋은 점도 있지만, 좁은 지역에 많은 사람이 모여 살기 때문에 문제점이 발생하기도 해요","도시 생활의 문제점은 아무도 해결할 수 없어요"], correct:2, pts:POINTS_APPLY,
+   h1:"오늘 판에서 본 두 가지를 함께 떠올려 봐요.", h2:"좁은 지역에 많은 사람이 모여 살면 어떤 일이 생길까요?",
+   reason:"도시 생활에는 좋은 점도 있지만, 좁은 지역에 많은 사람이 모여 살기 때문에 문제점이 발생하기도 합니다."}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — 동기 유발
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">도시에서 나는 소리를 떠올려 볼까요?</h2>
+  <div class="ka-bub">도시에서 나는 소음을 다룬 영상이 있어요. 어떤 이야기가 담겨 있을까요? 도시에는 편리한 점도 있고 불편한 점도 있어요. 오늘은 <b>도시 생활의 좋은 점과 문제점</b>을 알아봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('noise','도시에서 나는 소리')}</div>
+    <div class="note">※ 그림은 판이 새로 그린 도식이에요.</div>
+  </div>`});
+// 2 살펴보기 — 좋은 점 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">도시 생활에는 어떤 좋은 점이 있을까요?</h2>
+  <div class="ka-bub">교과서 140쪽 그림에서 <span class="ka-emph">도시 생활의 좋은 점</span>을 찾아봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('good','도시 생활의 좋은 점')}</div>
+  ${st.revealed?`<div class="answer-box">· <b>교통</b> — 도로나 철도 등 교통이 발달해 이동이 빠르고 편리합니다.<br>· <b>주택</b> — 새 주택이나 아파트가 지어져 쾌적한 주거 공간이 생겨납니다.<br>· <b>산업</b> — 산업이 발달하여 다양한 일자리가 있습니다.<br>· <b>편의 시설</b> — 공공 기관, 영화관, 병원 등 편의 시설이 많습니다.</div>`
+    :`<div class="note">내 생각을 먼저 말해 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 3 살펴보기 — 문제점 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">도시 생활에는 어떤 문제점이 있을까요?</h2>
+  <div class="ka-bub">교과서 141쪽 그림에서 <span class="ka-emph">도시 생활의 문제점</span>을 찾아봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('bad','도시 생활의 문제점')}</div>
+  ${st.revealed?`<div class="answer-box">· <b>교통</b> — 특정 시간에 자동차가 몰려 교통이 혼잡할 때가 많고, 주차할 공간이 부족합니다.<br>· <b>주택</b> — 집값이 비싸며 오래되고 낡은 주택이 많습니다.<br>· <b>산업</b> — 대기 오염, 수질 오염, 토양 오염 등 환경 문제가 발생하기도 합니다.<br>· <b>편의 시설</b> — 사람들이 버린 쓰레기의 양이 늘어나고 있습니다.</div>`
+    :`<div class="note">뉴스나 신문 기사에서 본 것을 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 4 살펴보기 — 같은 갈래에서 둘이 나온다 · 조작 안내
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">같은 것이 좋은 점이면서 문제점일 수 있을까요?</h2>
+  <div class="ka-bub">앞의 두 쪽을 견주어 보면 <span class="ka-emph">네 갈래가 똑같아요</span>. 교통도, 주택도, 산업도, 편의 시설도 좋은 점 쪽과 문제점 쪽에 나란히 나왔지요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('turn','좁은 자리에 많이 모이면')}</div>
+  <div class="note">도로가 놓이면 오가기가 편리해요. 그런데 좁은 자리에 자동차가 한꺼번에 몰리면 어떻게 될까요? 다음 판에서 네 갈래에 칸을 <b>한 칸씩 늘려 놓으면서</b> 직접 확인해 봐요.</div></div>`});
+// 5 살펴보기 — 해결 노력 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">도시 문제를 해결하려고 어떤 노력을 할까요?</h2>
+  <div class="ka-bub">신문 기사 두 편에는 도시 문제를 해결하려는 <span class="ka-emph">노력</span>이 담겨 있어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('fixup','도시 문제의 해결 노력')}</div>
+  ${st.revealed?`<div class="answer-box">· <b>바람길 숲</b> — 바람이 다니는 통로를 만들어, 도시 외곽의 울창한 숲에서 만들어진 맑고 시원한 공기를 끌어들여 미세 먼지와 대기의 오염 물질을 줄였어요.<br>· <b>생활 쓰레기 줄이기</b> — 한 달 동안 생활 쓰레기를 최소한으로 줄이는 캠페인을 하고 재사용을 실천해요.</div>`
+    :`<div class="note">어떤 노력을 할지 먼저 짐작해 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 6 살펴보기 — 직접 조작
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">늘리면 뒤집혀요</h2>
+  <div class="ka-grp" style="align-items:stretch">${ptPanel(st)}</div>`});
+// 7 살펴보기 — 캠페인 문구
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">캠페인 문구를 만들어 볼까요?</h2>
+  <div class="ka-bub">도시 문제 하나를 골라 <span class="ka-emph">캠페인 문구</span>를 만들 수 있어요. 짧은 한 줄이 마음을 움직이기도 해요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('camp','캠페인 문구')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>풀고 싶은 <b>도시 문제</b>를 하나 골라요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div>그 문제를 줄이려면 <b>무엇을 하면 좋을지</b> 적어요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>짧고 기억에 남는 <b>한 줄</b>로 다듬어요.</div></div>
+  </div>
+  <div class="note">보기 — 「급식을 다 먹으면 도시도 나도 튼튼해져요!」<br>※ 우리 지역의 도시 문제를 찾아 캠페인을 여는 일은 <b>교실 몫</b>이에요.</div></div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부한 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('done','좋은 점과 문제점')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div><b>좋은 점</b> — 교통이 발달해 이동이 빠르고 편리하고, 쾌적한 주거 공간이 생겨나며, 다양한 일자리가 있고, 편의 시설이 많아요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b>문제점</b> — 교통이 혼잡하고 주차 공간이 부족하며, 집값이 비싸고 낡은 주택이 많고, 쓰레기의 양이 늘어나며, 환경 문제가 발생해요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div><b>좋은 점은 상황이 달라지면 문제점이 되기도</b> 해요. 좁은 지역에 많은 사람이 모여 살기 때문이에요.</div></div>
+    <div class="sum-item"><span class="n">4</span><div><b>해결 노력</b> — 바람길 숲을 만들고, 생활 쓰레기를 줄이는 캠페인을 해요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b style="color:#0891B2">도시의 특징과 생활 모습</b>에서 공부한 내용을 정리해 봐요. 준비물은 색칠 도구, 도화지, 가위예요.</div></div>`});
+// 17 스스로 돌아보기
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"도시 생활의 좋은 점을 말할 수 있어요",st)}
+    ${selfCheck(1,"도시 생활의 문제점을 말할 수 있어요",st)}
+    ${selfCheck(2,"도시 문제를 해결하려는 노력을 말할 수 있어요",st)}
+  </div><div class="note">체크가 잘 안 되는 곳은 <b>다시 살펴봐도</b> 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">도시 생활의 좋은 점과 문제점을 알아봤어요</h2>
+  <div class="ka-grp">
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">우리 지역의 도시 문제를 찾아 캠페인을 여는 일은 <b style="color:#0891B2">교실 몫</b>이에요. 선생님과 함께 해 봐요.</div>
+  </div>`;
+}});
+
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const optHTML = q.opts.map((o,k)=>{
+    let cls='opt';
+    if(qs.done && k===q.correct) cls+=' correct';
+    if(qs.wrongPick===k) cls+=' wrong';
+    return `<button class="${cls}" onclick="pick(${i},${k})" ${qs.done?'disabled':''}>${o}</button>`;
+  }).join('');
+  const hint = qs.hint>0 ? `<div class="hint">💡 ${qs.hint===1?q.h1:q.h2}</div>` : '';
+  const fb = qs.done ? `<div class="fb ok">✓ ${q.reason}</div>` : '';
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용':'확인'} (+${q.pts})</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    <div class="opts" style="margin:0 auto">${optHTML}</div>
+    ${hint}${fb}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g4_2_social_u3_l10";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  ptCell:[0,0,0,0], ptHelp:[null,null], ptRead:null, ptFin:null, ptMsg:"", ptTell:"",
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 →';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음 (브라우저에서만 · jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+function ptDraw(){ main.innerHTML = slides[state.idx].render(state); }
+
+/* 칸 놓기 — 늘리면 뒤집힌다 */
+function ptPut(g){
+  if(state.ptFin!=null) return;                                                        // 가드①: 마무리 확정 후 전체 잠금
+  if(!Number.isInteger(g) || g<0 || g>=PT_G) return;                                    // 가드②: 무효 번호 — 안내조차 띄우지 않음
+  if(ptRoom(state,g)===0){ state.ptMsg = PT_SAY_FULL; playThud(); ptDraw(); return; }   // 가드③: 자리가 다 참 — 판 불변
+  if(!ptAllStood(state) && ptN(state,g)>0){ state.ptMsg = PT_SAY_ORDER_STAND; playThud(); ptDraw(); return; } // 가드④: 빈 갈래를 두고 다른 갈래에 — 판 불변
+  state.ptCell[g] = ptN(state,g) + 1;                                                   // ⭐ 칸을 놓는 자리는 코드에 여기 단 하나 · 덜어내는 자리 0
+  state.ptMsg = ""; state.ptTell = ptGName(g) + " 자리에 한 칸을 놓았어요."; playBlip(); ptDraw();
+}
+/* 해결 노력 붙이기 */
+function ptHelp(k,g){
+  if(state.ptFin!=null) return;                                                        // 가드①
+  if(!Number.isInteger(k) || k<0 || k>=PT_HELP_N) return;                               // 가드②
+  if(!Number.isInteger(g) || g<0 || g>=PT_G) return;                                    // 가드②
+  if(!ptAllFlip(state)){ state.ptMsg = PT_SAY_ORDER_FIX; playThud(); ptDraw(); return; } // 가드⑤: 넷을 다 뒤집기 전 — 판 불변
+  if(state.ptHelp[k]!=null){ state.ptMsg = PT_SAY_FIXDONE; playThud(); ptDraw(); return; } // 가드⑥: 이미 붙임 — 판 불변
+  if(g!==ptHelpG(k)){ state.ptMsg = PT_SAY_FIXMISS; playThud(); ptDraw(); return; }     // 가드⑦: 어긋난 갈래 — 판 불변
+  state.ptHelp[k] = g;                                                                  // ⭐ 붙이는 자리는 코드에 여기 단 하나 · 떼는 자리 0
+  state.ptMsg = ""; state.ptTell = "해결 노력을 붙였어요."; playBlip(); ptDraw();
+}
+/* 판 읽기 */
+function ptRead(i){
+  if(state.ptFin!=null) return;                                                        // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=PT_READQ.length) return;                          // 가드②
+  if(!ptAllHelp(state)){ state.ptMsg = PT_SAY_ORDER_R; playThud(); ptDraw(); return; }  // 가드⑧: 다 붙이기 전 — 판 불변
+  if(state.ptRead!=null){ state.ptMsg = PT_SAY_READDONE; ptDraw(); return; }            // 가드⑧: 이미 정한 자리 — 판 불변
+  if(i!==PT_READ_OK){ state.ptMsg = PT_READ_BAD; playThud(); ptDraw(); return; }        // 가드⑨: 어긋난 답 — 판 불변
+  state.ptRead = i; state.ptMsg = ""; state.ptTell = ""; playBlip(); ptDraw();
+}
+/* 마무리 */
+function ptFin(i){
+  if(state.ptFin!=null) return;                                                        // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=PT_FINQ.length) return;                           // 가드②
+  if(state.ptRead==null){ state.ptMsg = PT_SAY_ORDER_FIN; playThud(); ptDraw(); return; } // 가드⑩: 판을 읽기 전 — 판 불변
+  if(i!==PT_FIN_OK){ state.ptMsg = PT_FIN_BAD; playThud(); ptDraw(); return; }          // 가드⑩: 어긋난 답 — 판 불변
+  state.ptFin = i; state.ptMsg = ""; playChime(); ptDraw();
+}
+
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true; qs.wrongPick=null;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2; if(qs.hint===2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">📘 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 →</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; }
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
+</html>

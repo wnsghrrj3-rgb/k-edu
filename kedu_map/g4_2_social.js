@@ -338,14 +338,14 @@ window.KEDU_MAP["g4_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g4_social_u3_l10",
+     "lessonId": "g4_social_u3_l10_v1",
      "n": "4",
      "title": "도시 생활의 좋은 점과 문제점을 알아볼까요",
      "sub": "② 도시의 특징과 생활 모습",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade4/semester2/social/3단원_다양한환경과삶의모습/g4_social_u3_l10_늘리면뒤집혀요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
