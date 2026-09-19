@@ -12,7 +12,7 @@
   #hint{position:fixed;right:14px;top:14px;font-size:11px;color:rgba(242,237,228,.35);z-index:5}
 </style></head><body>
 <div id="say">…</div><div id="hint">드래그로 둘러보기</div>
-<div id="ui"><button id="b_call">부르기</button><button id="b_come" disabled>이리 와</button><button id="b_sit" disabled>앉아</button><button id="b_again">다시</button></div>
+<div id="ui"><button id="b_call">부르기</button><button id="b_sit" disabled>앉아</button><button id="b_again">다시</button></div>
 <script type="importmap">{"imports":{"three":"/labs/vendor/three185/three.module.js","three/addons/":"/labs/vendor/three185/addons/"}}</script>
 <script type="module">
 import * as THREE from 'three';
@@ -77,7 +77,7 @@ function animate(dt, t) {
   // 모임
   if (phase === 'gather') { gather = Math.min(1, gather + dt / 4.5); const k = gather < .5 ? 2 * gather * gather : 1 - Math.pow(-2 * gather + 2, 2) / 2; const p = pts.geometry.attributes.position.array; for (let i = 0; i < p.length; i++) p[i] = ptStart[i] + (ptTarget[i] - ptStart[i]) * k + (1 - k) * Math.sin(t * 2 + i) * 0.02; pts.geometry.attributes.position.needsUpdate = true;
     if (gather > 0.75) { const f = (gather - 0.75) / 0.25; for (const m of mats) m.opacity = f; pts.material.opacity = 0.95 * (1 - f); }
-    if (gather >= 1) { phase = 'here'; pts.visible = false; for (const m of mats) { m.opacity = 1; m.transparent = false; } say('…여기 있다.', 3500); document.getElementById('b_come').disabled = false; } }
+    if (gather >= 1) { phase = 'here'; pts.visible = false; for (const m of mats) { m.opacity = 1; m.transparent = false; } say('…여기 있다.', 3500); } }
   if (phase === 'leave') { gather = Math.max(0, gather - dt / 3); const k = gather; const p = pts.geometry.attributes.position.array; for (let i = 0; i < p.length; i++) p[i] = ptStart[i] + (ptTarget[i] - ptStart[i]) * k; pts.geometry.attributes.position.needsUpdate = true; for (const m of mats) { m.transparent = true; m.opacity = Math.max(0, (k - 0.6) / 0.4); } pts.material.opacity = 0.95 * (1 - Math.max(0, (k - 0.6) / 0.4)); if (gather <= 0) { phase = 'scatter'; } }
   // 숨
   breathe = Math.sin(t * 1.6) * 0.5 + 0.5; const sp = B('Spine_2') || B('Spine_1'); if (sp) { sp.scale.set(1 + breathe * 0.015, 1 + breathe * 0.02, 1); }
@@ -91,8 +91,7 @@ function animate(dt, t) {
   // 앉기 — 뒷다리를 접고 몸을 낮춘다
   { const s = sit; const set = (L, a0, a1) => { if (L[0]) L[0].rotation.x = THREE.MathUtils.lerp(L[0].rotation.x, L[0].userData.rest.x + a0 * s, dt * 3); if (L[1]) L[1].rotation.x = THREE.MathUtils.lerp(L[1].rotation.x, L[1].userData.rest.x + a1 * s, dt * 3); }; if (!walk.on) { set(legs.LR, -1.15, 1.35); set(legs.RR, -1.15, 1.35); const sp0 = B('Spine_0'); if (sp0) sp0.rotation.x = THREE.MathUtils.lerp(sp0.rotation.x, sp0.userData.rest.x + 0.35 * s, dt * 3); dog.children[0] && (dog.children[0].position.y = THREE.MathUtils.lerp(dog.children[0].position.y, (dog.children[0].userData.baseY ??= dog.children[0].position.y) - 0.13 * s, dt * 3)); } }
 }
-document.getElementById('b_call').onclick = () => { if (phase !== 'here') { if (phase === 'scatter') { gather = 0; phase = 'gather'; pts.visible = true; say('빛이 모인다.', 4000); } return; } head.look = 1; tailBoost = 1; say('…고개를 든다.', 2500); setTimeout(() => { if (!walk.on) head.look = 0.35; }, 6000); };
-document.getElementById('b_come').onclick = () => { if (phase !== 'here') return; sit = 0; walk.on = true; walk.t = 0; head.look = 0.6; tailBoost = 0.7; say('천천히 온다.', 2500); };
+document.getElementById('b_call').onclick = () => { if (phase !== 'here') { if (phase === 'scatter') { gather = 0; phase = 'gather'; pts.visible = true; say('빛이 모인다.', 4000); } return; } head.look = 1; tailBoost = 1; say('…고개를 든다.', 2000); setTimeout(() => { if (phase === 'here' && !walk.on) { sit = 0; walk.on = true; walk.t = 0; head.look = 0.6; say('천천히 온다.', 2500); } }, 1200); };
 document.getElementById('b_sit').onclick = () => { if (walk.on) return; sit = sit ? 0 : 1; if (sit) say('…앉는다.', 2500); tailBoost = 0.6; };
 document.getElementById('b_again').onclick = () => { if (phase === 'here') { phase = 'leave'; pts.visible = true; say('…다음에 또.', 3000); sit = 0; head.look = 0; setTimeout(() => { dog.position.set(0, 0, 0); dog.rotation.y = 0; }, 3200); } };
 
