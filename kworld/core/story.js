@@ -238,7 +238,7 @@ export class Story {
       const down = moving ? 0 : (Math.sin(an.graze * 0.35 + an.phase) > 0.2 ? 0.75 : 0);   // 풀 뜯기: 한동안 고개 숙였다가 든다
       an.heads.forEach((b, i) => { b.rotation.x = THREE.MathUtils.lerp(b.rotation.x, b.userData.rx + down * (i === 0 ? 0.45 : 0.25), dt * 2.5); });
       const body = o.children[0]; if (!body) continue;
-      if (moving) body.rotation.x = Math.sin(an.graze * 14) * 0.08; else body.rotation.x = THREE.MathUtils.lerp(body.rotation.x, an.heads.length ? 0 : down * 0.12, dt * 3);   // 뼈가 없으면 몸을 살짝 기울여 풀 뜯는 느낌 }
+      if (moving) body.rotation.x = Math.sin(an.graze * 14) * 0.08; else body.rotation.x = THREE.MathUtils.lerp(body.rotation.x, an.heads.length ? 0 : down * 0.12, dt * 3); }   /* 뼈가 없으면 몸을 살짝 기울여 풀 뜯는 느낌 */
     for (const m of this.movers) {
       m.t += dt; const k = Math.min(1, m.t / m.sec); const x = m.from.x + (m.to.x - m.from.x) * k, z = m.from.z + (m.to.z - m.from.z) * k;
       m.it.obj.position.set(x, this.g.e.groundY(x, z) + Math.abs(Math.sin(m.t * 9)) * 0.35, z);
