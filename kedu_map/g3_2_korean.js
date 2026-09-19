@@ -462,6 +462,103 @@ window.KEDU_MAP["g3_2_korean"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 6,
+   "name": "감상과 표현의 즐거움",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g3_korean_u6_l01",
+     "lessonId": "g3_2_kor_u6_l01_v1",
+     "n": "1",
+     "title": "단원 시작 — 배울 내용 살펴보기",
+     "sub": null,
+     "url": "/grade3/semester2/korean/6단원_감상과표현의즐거움/g3_kor_u6_l01.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u6_l02",
+     "lessonId": "g3_2_kor_u6_l02_v1",
+     "n": "2",
+     "title": "작품을 감상하고 재미나 감동을 느낀 경험 말하기",
+     "sub": null,
+     "url": "/grade3/semester2/korean/6단원_감상과표현의즐거움/g3_kor_u6_l02.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u6_l03",
+     "lessonId": "g3_2_kor_u6_l03_04_v1",
+     "n": "3·4",
+     "title": "재미나 감동을 느끼며 이야기 감상하기",
+     "sub": null,
+     "url": "/grade3/semester2/korean/6단원_감상과표현의즐거움/g3_kor_u6_l03_04.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u6_l05",
+     "lessonId": "g3_2_kor_u6_l05_06_v1",
+     "n": "5·6",
+     "title": "인물이 소중히 여기는 것을 살피며 감상하기 (가치 탐구)",
+     "sub": null,
+     "url": "/grade3/semester2/korean/6단원_감상과표현의즐거움/g3_kor_u6_l05_06.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u6_l07",
+     "lessonId": "g3_2_kor_u6_l07_08_v1",
+     "n": "7·8",
+     "title": "의견을 제시하는 글을 쓰는 방법 알기",
+     "sub": null,
+     "url": "/grade3/semester2/korean/6단원_감상과표현의즐거움/g3_kor_u6_l07_08.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u6_l09",
+     "lessonId": "g3_2_kor_u6_l09_v1",
+     "n": "9",
+     "title": "의견을 제시하는 글을 고쳐 쓰는 방법 알기",
+     "sub": null,
+     "url": "/grade3/semester2/korean/6단원_감상과표현의즐거움/g3_kor_u6_l09.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u6_l10",
+     "lessonId": "g3_2_kor_u6_l10_11_v1",
+     "n": "10·11",
+     "title": "의견을 제시하는 글을 쓰고 고쳐 쓰기",
+     "sub": null,
+     "url": "/grade3/semester2/korean/6단원_감상과표현의즐거움/g3_kor_u6_l10_11.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u6_l12",
+     "lessonId": "g3_2_kor_u6_l12_13_v1",
+     "n": "12·13",
+     "title": "배운 내용 실천하기 (손 팻말 · 만약 이랬더라면)",
+     "sub": null,
+     "url": "/grade3/semester2/korean/6단원_감상과표현의즐거움/g3_kor_u6_l12_13.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u6_l14",
+     "lessonId": "g3_2_kor_u6_l14_v1",
+     "n": "14",
+     "title": "단원 마무리하기 (-ㄹ게·-ㄹ까 · 낱말 잇기 · 글씨)",
+     "sub": null,
+     "url": "/grade3/semester2/korean/6단원_감상과표현의즐거움/g3_kor_u6_l14.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };
