@@ -14,15 +14,18 @@ export class Story {
     if (this.s.spawn) { e.spawn = new THREE.Vector3(this.s.spawn[0], 0, this.s.spawn[1]); }
     for (const a of this.s.add || []) this.place(a);
     for (const n of this.s.people || []) this.place({ ...n, prop: 'person', name: 'npc_' + n.id });
-    // ?peek=1 — 자산 확인용: world.people 에 있는 사람들을 시작 지점 앞에 한 명씩 세워 둔다(이야기 깃발 무시)
-    if (typeof location !== 'undefined' && new URLSearchParams(location.search).get('peek') === '1' && this.s.spawn && this.g.world.people) {
-      let i = 0; for (const key of Object.keys(this.g.world.people)) { this.place({ id: key + '0', kind: key, x: this.s.spawn[0] + (i++ - 1) * 1.6, z: this.s.spawn[1] + 4, yaw: Math.PI, prop: 'person', name: 'npc_' + key + '0' }); }   // 플레이어는 야영지(+z) 쪽을 보고 시작한다
-      // 동물 전부(사슴·늑대…)도 한 마리씩 — 소품 사슴을 자리 잡이로 쓰고 GLB 로 갈아 끼운다
-      let k = 0; for (const key of Object.keys(this.g.world.animals || {})) { const it = this.place({ name: 'peek_' + key, prop: 'deer', kind: 'big', x: this.s.spawn[0] + 4 + k * 2.2, z: this.s.spawn[1] + 5 + k, yaw: 2.2, noAuto: true }); if (it) this.loadAnimal(it.obj, key, { name: 'peek_' + key, kind: 'big' }).catch(() => { }); k++; }
-    }
     for (const [k, v] of Object.entries(this.s.areas || {})) e.areas.set(k, new THREE.Vector3(v[0], e.groundY(v[0], v[1]), v[1]));
     e.onFrame.push((dt) => this.tick(dt));
     this.onFlag();
+  }
+  /** ?peek=1 — 자산 확인용: 플레이어 바로 앞에 사람·동물 GLB 를 한 줄로 세운다(저장·시작 지점과 무관) */
+  peek() {
+    const p = this.g.p; if (!p?.pos) return; const fwd = new THREE.Vector3(-Math.sin(p.yaw), 0, -Math.cos(p.yaw)); const right = new THREE.Vector3(fwd.z, 0, -fwd.x);
+    const at = (i) => { const c = p.pos.clone().addScaledVector(fwd, 4).addScaledVector(right, (i - 1.5) * 1.8); return { x: c.x, z: c.z }; }; const face = Math.atan2(-fwd.x, -fwd.z);
+    let i = 0;
+    for (const key of Object.keys(this.g.world.people || {})) { const q = at(i++); this.place({ id: key + '0', kind: key, x: q.x, z: q.z, yaw: face, prop: 'person', name: 'npc_' + key + '0' }); }
+    for (const key of Object.keys(this.g.world.animals || {})) { const q = at(i++); const it = this.place({ name: 'peek_' + key, prop: 'deer', kind: 'big', x: q.x, z: q.z, yaw: face + 1.2, noAuto: true }); if (it) this.loadAnimal(it.obj, key, { name: 'peek_' + key, kind: 'big' }).catch(() => { }); }
+    this.g.ui.say('확인용: 사람·동물이 앞에 서 있다.', 3500);
   }
   /** 사람 GLB(Tripo 리깅+동작): world.people = { aru: "../../assets/people/aru.glb" } — id 의 글자 부분으로 찾는다(aru3 → aru). 없으면 관절 인형 */
   personModel(id) { const map = this.g.world.people; if (!map || typeof document === 'undefined' || typeof document.createElement !== 'function') return null; const key = id.replace(/\d+$/, ''); return map[key] ? { key, url: new URL(this.g.base + map[key], location.href).href } : null; }

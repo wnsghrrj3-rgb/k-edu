@@ -69,6 +69,7 @@ export class Game {
       if (this.world.characters) await this.chooseCharacter(this.world.characters, pick ? saved.char : null);
       if (!pick && this.world.prologue) { this.p.enabled = false; await this.story.prologue(this.world.prologue); this.p.enabled = true; }
     } else { if (this.world.characters) await this.chooseCharacter(this.world.characters, null); if (this.world.prologue && this.story) { this.p.enabled = false; await this.story.prologue(this.world.prologue); this.p.enabled = true; } }
+    if (new URLSearchParams(location.search).get('peek') === '1' && this.story) this.story.peek();
     this.ui.intro(this.world.title, this.world.question);
     setTimeout(() => this.ui.say(this.world.intro, 5000), 400);
     if (this.world.intro2) setTimeout(() => { this.ui.say(this.world.intro2, 5000); if (this.world.goal2) this.ui.setGoal(this.world.goal2); }, 5800);
