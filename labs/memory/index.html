@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>기억의 자리 — 첫 장면</title>
+<style>
+  :root{--ink:#f2ede4;--dim:rgba(242,237,228,.6)}
+  html,body{margin:0;height:100%;background:#0b0e12;color:var(--ink);font-family:-apple-system,"Pretendard","Noto Sans KR",sans-serif;overflow:hidden}
+  canvas{display:block}
+  #ui{position:fixed;left:0;right:0;bottom:calc(18px + env(safe-area-inset-bottom));display:flex;gap:10px;justify-content:center;z-index:5}
+  #ui button{background:rgba(10,12,16,.55);color:var(--ink);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:12px 20px;font-size:15px;backdrop-filter:blur(8px);cursor:pointer}
+  #ui button:disabled{opacity:.35}
+  #say{position:fixed;left:0;right:0;top:calc(22px + env(safe-area-inset-top));text-align:center;font-size:15px;color:var(--dim);letter-spacing:.5px;z-index:5;pointer-events:none;transition:opacity .8s}
+  #hint{position:fixed;right:14px;top:14px;font-size:11px;color:rgba(242,237,228,.35);z-index:5}
+</style></head><body>
+<div id="say">…</div><div id="hint">드래그로 둘러보기</div>
+<div id="ui"><button id="b_call">부르기</button><button id="b_come" disabled>이리 와</button><button id="b_sit" disabled>앉아</button><button id="b_again">다시</button></div>
+<script type="importmap">{"imports":{"three":"/labs/vendor/three185/three.module.js","three/addons/":"/labs/vendor/three185/addons/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ── 기억의 자리 v0.1 — 한 장면: 빛 알갱이가 모여 그 아이가 되고, 부르면 고개를 돌리고, 오라면 천천히 와서 앉는다. 말은 없다.
+const MODEL = new URLSearchParams(location.search).get('m') || 'assets/dog.glb';
+const HEIGHT = 0.68;              // 머리까지 높이(m)
+const say = (t, ms = 3000) => { const el = document.getElementById('say'); el.textContent = t; el.style.opacity = 1; clearTimeout(say.t); say.t = setTimeout(() => (el.style.opacity = 0), ms); };
+
+const renderer = new THREE.WebGLRenderer({ antialias: true }); renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05; renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene(); scene.fog = new THREE.Fog(0xc9d3c2, 12, 60);
+const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.05, 200); camera.position.set(0, 1.0, 3.2);
+const controls = new OrbitControls(camera, renderer.domElement); controls.target.set(0, 0.35, 0); controls.enableDamping = true; controls.maxPolarAngle = Math.PI * 0.49; controls.minDistance = 0.8; controls.maxDistance = 8; controls.enablePan = false;
+
+// 하늘 — 저녁, 부드럽게(360 영상이 오면 여기가 교체된다)
+const sky = new THREE.Mesh(new THREE.SphereGeometry(80, 32, 16), new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, uniforms: { top: { value: new THREE.Color(0x6f8fbf) }, hz: { value: new THREE.Color(0xf1d9b8) } },
+  vertexShader: 'varying vec3 vP; void main(){ vP = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+  fragmentShader: 'uniform vec3 top, hz; varying vec3 vP; void main(){ float h = normalize(vP).y; gl_FragColor = vec4(mix(hz, top, smoothstep(-0.05, 0.6, h)), 1.0); }' })); scene.add(sky);
+const sun = new THREE.DirectionalLight(0xfff0d8, 2.6); sun.position.set(-6, 8, 4); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.camera.left = sun.shadow.camera.bottom = -6; sun.shadow.camera.right = sun.shadow.camera.top = 6; sun.shadow.bias = -0.0005; scene.add(sun);
+scene.add(new THREE.HemisphereLight(0xbfd4ff, 0x6b7a4a, 0.9));
+// 바닥 — 잔디(케이월드 질감 재사용)
+const tl = new THREE.TextureLoader(); const T = (n) => { const t = tl.load('/kworld/tex/' + n); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(30, 30); return t; };
+const gmap = T('grass_albedo.jpg'); gmap.colorSpace = THREE.SRGBColorSpace;
+const ground = new THREE.Mesh(new THREE.CircleGeometry(60, 64), new THREE.MeshStandardMaterial({ map: gmap, normalMap: T('grass_normal.jpg'), roughnessMap: T('grass_rough.jpg'), roughness: 1 })); ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+
+// ── 아이
+const dog = new THREE.Group(); scene.add(dog);
+let mesh = null, bones = {}, mats = [], pts = null, ptTarget = null, ptStart = null, gather = 0, phase = 'scatter';
+let walk = { on: false, t: 0 }, head = { look: 0 }, sit = 0, tailBoost = 0, breathe = 0;
+const B = (n) => bones[n];
+new GLTFLoader().load(MODEL, (g) => {
+  const inst = g.scene; inst.traverse((o) => { if (o.isMesh) { mesh = o; o.castShadow = true; o.receiveShadow = false; o.frustumCulled = false; const ms = Array.isArray(o.material) ? o.material : [o.material]; for (const m of ms) { m.transparent = true; m.opacity = 0; m.roughness = Math.max(m.roughness ?? 0.9, 0.85); mats.push(m); } } if (o.isBone) bones[o.name.replace('tripo::', '')] = o; });
+  const box = new THREE.Box3().setFromObject(inst); const h = box.max.y - box.min.y || 1; const s = HEIGHT / h; inst.scale.setScalar(s); inst.position.y = -box.min.y * s; dog.add(inst);
+  for (const b of Object.values(bones)) b.userData.rest = { x: b.rotation.x, y: b.rotation.y, z: b.rotation.z, px: b.position.x, py: b.position.y, pz: b.position.z };
+  makeParticles(inst, s);
+  say('…', 1000); setTimeout(() => { phase = 'gather'; say('빛이 모인다.', 4000); }, 900);
+}, undefined, (e) => say('모델을 불러오지 못했다.', 5000));
+
+// 빛 알갱이: 몸 표면의 점(정점)에서 시작 자리를 흩어 놓고, 제자리로 모인다
+function makeParticles(inst, s) {
+  inst.updateMatrixWorld(true); const pos = mesh.geometry.attributes.position; const n = Math.min(pos.count, 20000); const N = n * 2;
+  ptTarget = new Float32Array(N * 3); ptStart = new Float32Array(N * 3); const col = new Float32Array(N * 3); const v = new THREE.Vector3(); const c = new THREE.Color(0xffe6b0), c2 = new THREE.Color(0xfff6e8);
+  const step = Math.max(1, Math.floor(pos.count / n));
+  for (let i = 0; i < N; i++) { const k = ((i % n) * step) % pos.count; v.fromBufferAttribute(pos, k).applyMatrix4(mesh.matrixWorld); const j = 0.012; ptTarget.set([v.x + (Math.random() - .5) * j, v.y + (Math.random() - .5) * j, v.z + (Math.random() - .5) * j], i * 3);
+    const r = 2.5 + Math.random() * 2.5, th = Math.random() * 6.283, ph = Math.acos(Math.random() * 2 - 1); ptStart.set([r * Math.sin(ph) * Math.cos(th), 0.2 + Math.abs(r * Math.cos(ph)) * 0.6, r * Math.sin(ph) * Math.sin(th)], i * 3);
+    const cc = Math.random() < .5 ? c : c2; col.set([cc.r, cc.g, cc.b], i * 3); }
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(ptStart.slice(), 3)); geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  pts = new THREE.Points(geo, new THREE.PointsMaterial({ size: 0.012, vertexColors: true, transparent: true, opacity: 0.95, depthWrite: false, blending: THREE.AdditiveBlending })); scene.add(pts);
+}
+
+// ── 동작(코드): 숨·꼬리·고개·걸음·앉기 — 자동 동작은 안 쓴다
+const wagBones = () => ['Tail_0', 'Tail_1'].map(B).filter(Boolean);
+const headBones = () => ['Head_0', 'Head_1', 'Head_2'].map(B).filter(Boolean);
+const limb = (p) => [0, 1, 2].map((i) => B(`${p}_Limb_${i}`)).filter(Boolean);
+const legs = { LF: limb('0_Left'), RF: limb('0_Right'), LR: limb('1_Left'), RR: limb('1_Right') };
+const camDir = new THREE.Vector3();
+function animate(dt, t) {
+  if (!mesh) return;
+  // 모임
+  if (phase === 'gather') { gather = Math.min(1, gather + dt / 4.5); const k = gather < .5 ? 2 * gather * gather : 1 - Math.pow(-2 * gather + 2, 2) / 2; const p = pts.geometry.attributes.position.array; for (let i = 0; i < p.length; i++) p[i] = ptStart[i] + (ptTarget[i] - ptStart[i]) * k + (1 - k) * Math.sin(t * 2 + i) * 0.02; pts.geometry.attributes.position.needsUpdate = true;
+    if (gather > 0.75) { const f = (gather - 0.75) / 0.25; for (const m of mats) m.opacity = f; pts.material.opacity = 0.95 * (1 - f); }
+    if (gather >= 1) { phase = 'here'; pts.visible = false; for (const m of mats) { m.opacity = 1; m.transparent = false; } say('…여기 있다.', 3500); document.getElementById('b_come').disabled = false; } }
+  if (phase === 'leave') { gather = Math.max(0, gather - dt / 3); const k = gather; const p = pts.geometry.attributes.position.array; for (let i = 0; i < p.length; i++) p[i] = ptStart[i] + (ptTarget[i] - ptStart[i]) * k; pts.geometry.attributes.position.needsUpdate = true; for (const m of mats) { m.transparent = true; m.opacity = Math.max(0, (k - 0.6) / 0.4); } pts.material.opacity = 0.95 * (1 - Math.max(0, (k - 0.6) / 0.4)); if (gather <= 0) { phase = 'scatter'; } }
+  // 숨
+  breathe = Math.sin(t * 1.6) * 0.5 + 0.5; const sp = B('Spine_2') || B('Spine_1'); if (sp) { sp.scale.set(1 + breathe * 0.015, 1 + breathe * 0.02, 1); }
+  // 꼬리
+  tailBoost = Math.max(0, tailBoost - dt * 0.35); const wag = 0.25 + tailBoost * 0.9; wagBones().forEach((b, i) => { b.rotation.y = b.userData.rest.y + Math.sin(t * (4 + tailBoost * 6) + i * 0.8) * wag * (i ? 0.6 : 1); });
+  // 고개 — 부르면 카메라 쪽을 본다
+  const hb = headBones(); if (hb.length) { camDir.copy(camera.position).sub(dog.position); const yawTo = Math.atan2(camDir.x, camDir.z) - dog.rotation.y; const ny = Math.atan2(Math.sin(yawTo), Math.cos(yawTo)); const target = head.look * THREE.MathUtils.clamp(ny, -0.9, 0.9); hb.forEach((b, i) => { b.rotation.y = THREE.MathUtils.lerp(b.rotation.y, b.userData.rest.y + target * (i === 0 ? 0.45 : 0.3), dt * 4); b.rotation.x = THREE.MathUtils.lerp(b.rotation.x, b.userData.rest.x + (walk.on ? 0 : -0.12 * head.look) + sit * -0.25, dt * 3); }); }
+  // 걸음 — 대각선 다리가 함께(LF+RR / RF+LR)
+  if (walk.on) { walk.t += dt * 5.5; const A = 0.38; const sw = (ph) => Math.sin(walk.t + ph); const set = (L, ph) => { if (L[0]) L[0].rotation.x = L[0].userData.rest.x + sw(ph) * A; if (L[1]) L[1].rotation.x = L[1].userData.rest.x + Math.max(0, -sw(ph + 0.9)) * A * 1.3; }; set(legs.LF, 0); set(legs.RR, 0); set(legs.RF, Math.PI); set(legs.LR, Math.PI); dog.position.y = Math.abs(Math.sin(walk.t)) * 0.012;
+    const to = new THREE.Vector3(camera.position.x, 0, camera.position.z); const d = to.clone().sub(dog.position); const dist = d.length(); if (dist > 1.5) { d.normalize(); dog.position.addScaledVector(d, dt * 0.55); const yaw = Math.atan2(d.x, d.z); let diff = yaw - dog.rotation.y; diff = Math.atan2(Math.sin(diff), Math.cos(diff)); dog.rotation.y += diff * dt * 3; } else { walk.on = false; dog.position.y = 0; Object.values(legs).forEach((L) => L.forEach((b) => { b.rotation.x = b.userData.rest.x; })); head.look = 1; tailBoost = 1; say('…왔다.', 3000); document.getElementById('b_sit').disabled = false; } }
+  // 앉기 — 뒷다리를 접고 몸을 낮춘다
+  { const s = sit; const set = (L, a0, a1) => { if (L[0]) L[0].rotation.x = THREE.MathUtils.lerp(L[0].rotation.x, L[0].userData.rest.x + a0 * s, dt * 3); if (L[1]) L[1].rotation.x = THREE.MathUtils.lerp(L[1].rotation.x, L[1].userData.rest.x + a1 * s, dt * 3); }; if (!walk.on) { set(legs.LR, -1.15, 1.35); set(legs.RR, -1.15, 1.35); const sp0 = B('Spine_0'); if (sp0) sp0.rotation.x = THREE.MathUtils.lerp(sp0.rotation.x, sp0.userData.rest.x + 0.35 * s, dt * 3); dog.children[0] && (dog.children[0].position.y = THREE.MathUtils.lerp(dog.children[0].position.y, (dog.children[0].userData.baseY ??= dog.children[0].position.y) - 0.13 * s, dt * 3)); } }
+}
+document.getElementById('b_call').onclick = () => { if (phase !== 'here') { if (phase === 'scatter') { gather = 0; phase = 'gather'; pts.visible = true; say('빛이 모인다.', 4000); } return; } head.look = 1; tailBoost = 1; say('…고개를 든다.', 2500); setTimeout(() => { if (!walk.on) head.look = 0.35; }, 6000); };
+document.getElementById('b_come').onclick = () => { if (phase !== 'here') return; sit = 0; walk.on = true; walk.t = 0; head.look = 0.6; tailBoost = 0.7; say('천천히 온다.', 2500); };
+document.getElementById('b_sit').onclick = () => { if (walk.on) return; sit = sit ? 0 : 1; if (sit) say('…앉는다.', 2500); tailBoost = 0.6; };
+document.getElementById('b_again').onclick = () => { if (phase === 'here') { phase = 'leave'; pts.visible = true; say('…다음에 또.', 3000); sit = 0; head.look = 0; setTimeout(() => { dog.position.set(0, 0, 0); dog.rotation.y = 0; }, 3200); } };
+
+let last = performance.now(); function loop() { const now = performance.now(); const dt = Math.min(0.05, (now - last) / 1000); last = now; controls.update(); animate(dt, now / 1000); renderer.render(scene, camera); requestAnimationFrame(loop); } loop();
+addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+</script></body></html>
