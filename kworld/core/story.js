@@ -36,6 +36,19 @@ export class Story {
     const actor = this.actors?.[a.id || a.name.replace(/^npc_/, '')]; if (actor) actor.setModel(inst, mixer, g.animations);
     const it = this.g.e.interactables.get(a.name); if (it) { it.box.setFromObject(obj); it.center.copy(it.box.getCenter(new THREE.Vector3())); }
   }
+  /** 동물 GLB(Tripo, 뼈는 있으나 동작 없음): world.animals = { deer: url } — 소품 사슴(big/small) 자리에 얹고, 고개 뼈로 풀 뜯기, 달아날 땐 몸 흔들림 */
+  async loadAnimal(obj, kind, a) {
+    const map = this.g.world.animals; if (!map || !map[kind] || typeof document === 'undefined' || typeof document.createElement !== 'function') return;
+    this.gltfCache ??= {}; const key = 'animal:' + kind;
+    if (!this.gltfCache[key]) this.gltfCache[key] = (async () => { const [{ GLTFLoader }, { clone }] = await Promise.all([import('three/addons/loaders/GLTFLoader.js'), import('three/addons/utils/SkeletonUtils.js')]); const g = await new GLTFLoader().loadAsync(new URL(this.g.base + map[kind], location.href).href); return { g, clone }; })();
+    const { g, clone } = await this.gltfCache[key];
+    const inst = clone(g.scene); const box = new THREE.Box3().setFromObject(inst); const h = box.max.y - box.min.y || 1; const s = ((a.kind === 'small' ? 0.72 : 1.0) * (this.g.world.animalHeight?.[kind] || 1.0)) / h; inst.scale.setScalar(s); inst.position.y = -box.min.y * s; inst.rotation.y = this.g.world.animalYaw?.[kind] || 0;
+    inst.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; if (o.material) { o.material.roughness = 0.95; o.material.metalness = 0; } } });
+    for (const c of [...obj.children]) obj.remove(c); obj.add(inst);
+    const heads = []; inst.traverse((o) => { if (o.isBone && /Head_[0-3]/.test(o.name)) heads.push(o); }); heads.forEach((b) => { b.userData.rx = b.rotation.x; });
+    obj.userData.animal = { heads, graze: Math.random() * 6, phase: Math.random() * 6 };
+    const it = this.g.e.interactables.get(a.name); if (it) { it.box.setFromObject(obj); it.center.copy(it.box.getCenter(new THREE.Vector3())); }
+  }
   place(a) {
     const e = this.g.e; const fn = PROPS[a.prop]; if (!fn) return;
     const obj = a.prop === 'person' ? fn(a.look || {}) : fn(a.pkind || a.kind, a.seed || 1);   // pkind: 소품 모양은 같고 규칙 종류만 다를 때
@@ -51,6 +64,7 @@ export class Story {
     if (a.showIf) this.cond.push(it);
     if (a.fleeOn) (this.fleeers ??= []).push(it);
     if (model) this.loadPerson(obj, model, a).catch((err) => console.warn('person GLB', a.name, err));
+    if (a.prop === 'deer' && a.kind !== 'down') { (this.animals ??= []).push(obj); this.loadAnimal(obj, 'deer', a).catch((err) => console.warn('animal GLB', a.name, err)); }
     return it;
   }
   /** 깃발이 바뀔 때: showIf 다시 보고, 끝 화면 */
@@ -215,6 +229,10 @@ export class Story {
     if (this.tl?.disc && this.tl.disc.position.y < this.tl.discTo) this.tl.disc.position.y = Math.min(this.tl.discTo, this.tl.disc.position.y + dt * 0.7);
     if (this.rainPts && this.rainPts.visible) { const p = this.rainPts.geometry.attributes.position; const a = p.array; const c = this.g.p.pos; for (let i = 0; i < a.length; i += 3) { a[i + 1] -= dt * 14; if (a[i + 1] < -1) { a[i + 1] = 18; a[i] = c.x + (Math.random() - .5) * 44; a[i + 2] = c.z + (Math.random() - .5) * 44; } } p.needsUpdate = true; }
     for (const k in this.actors || {}) { const ac = this.actors[k]; if (ac.obj.visible) ac.tick(dt); }
+    for (const o of this.animals || []) { const an = o.userData.animal; if (!an || !o.visible) continue; an.graze += dt; const moving = this.movers.some((m) => m.it.obj === o);
+      const down = moving ? 0 : (Math.sin(an.graze * 0.35 + an.phase) > 0.2 ? 0.75 : 0);   // 풀 뜯기: 한동안 고개 숙였다가 든다
+      an.heads.forEach((b, i) => { b.rotation.x = THREE.MathUtils.lerp(b.rotation.x, b.userData.rx + down * (i === 0 ? 0.45 : 0.25), dt * 2.5); });
+      if (moving) o.children[0] && (o.children[0].rotation.x = Math.sin(an.graze * 14) * 0.08); else if (o.children[0]) o.children[0].rotation.x = THREE.MathUtils.lerp(o.children[0].rotation.x, 0, dt * 4); }
     for (const m of this.movers) {
       m.t += dt; const k = Math.min(1, m.t / m.sec); const x = m.from.x + (m.to.x - m.from.x) * k, z = m.from.z + (m.to.z - m.from.z) * k;
       m.it.obj.position.set(x, this.g.e.groundY(x, z) + Math.abs(Math.sin(m.t * 9)) * 0.35, z);
