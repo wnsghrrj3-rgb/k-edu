@@ -62,7 +62,7 @@ export class Game {
     this.e.start();
     // 저장·재개 — 저장이 있으면 프롤로그 대신 「이어서 / 처음부터」
     if (this.world.danger) this.danger = new Danger(this, this.world.danger);
-    this.save = new Save(this, this.era || new URLSearchParams(location.search).get('era') || 'world'); const saved = new URLSearchParams(location.search).get('resume') === '0' ? null : this.save.load();
+    this.save = new Save(this, this.era || new URLSearchParams(location.search).get('era') || 'world'); const qs2 = new URLSearchParams(location.search); const saved = qs2.get('resume') === '0' || qs2.get('peek') === '1' ? null : this.save.load();   // peek 은 항상 시작 지점
     if (saved && this.story) {
       const pick = await new Promise((res) => this.ui.open(`<div class="chk"><div class="tag">저장된 이야기</div><h3>이어서 할까?</h3><p>깃발 ${saved.flags.length}개 · ${new Date(saved.t).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</p></div>`, [{ label: '이어서 하기', primary: true, onClick: () => { this.ui.close(); res(true); } }, { label: '처음부터', onClick: () => { this.ui.close(); res(false); } }]));
       if (pick) this.save.apply(saved); else this.save.clear();
