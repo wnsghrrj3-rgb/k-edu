@@ -375,6 +375,93 @@ window.KEDU_MAP["g3_2_korean"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 5,
+   "name": "사전으로 여는 세상",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g3_korean_u5_l01",
+     "lessonId": "g3_2_kor_u5_l01_v1",
+     "n": "1",
+     "title": "단원 시작 — 배울 내용 살펴보기",
+     "sub": null,
+     "url": "/grade3/semester2/korean/5단원_사전으로여는세상/g3_kor_u5_l01.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u5_l02",
+     "lessonId": "g3_2_kor_u5_l02_03_v1",
+     "n": "2·3",
+     "title": "낱말의 종류 알기 (직접 교수)",
+     "sub": null,
+     "url": "/grade3/semester2/korean/5단원_사전으로여는세상/g3_kor_u5_l02_03.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u5_l04",
+     "lessonId": "g3_2_kor_u5_l04_05_v1",
+     "n": "4·5",
+     "title": "형태가 바뀌는 낱말 알기 · 기본형 만들기",
+     "sub": null,
+     "url": "/grade3/semester2/korean/5단원_사전으로여는세상/g3_kor_u5_l04_05.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u5_l06",
+     "lessonId": "g3_2_kor_u5_l06_07_v1",
+     "n": "6·7",
+     "title": "기준에 따라 낱말 분류하기",
+     "sub": null,
+     "url": "/grade3/semester2/korean/5단원_사전으로여는세상/g3_kor_u5_l06_07.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u5_l08",
+     "lessonId": "g3_2_kor_u5_l08_09_v1",
+     "n": "8·9",
+     "title": "국어사전에서 낱말을 찾는 방법 알기",
+     "sub": null,
+     "url": "/grade3/semester2/korean/5단원_사전으로여는세상/g3_kor_u5_l08_09.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u5_l10",
+     "lessonId": "g3_2_kor_u5_l10_11_v1",
+     "n": "10·11",
+     "title": "국어사전을 활용하며 글 읽기",
+     "sub": null,
+     "url": "/grade3/semester2/korean/5단원_사전으로여는세상/g3_kor_u5_l10_11.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u5_l12",
+     "lessonId": "g3_2_kor_u5_l12_13_v1",
+     "n": "12·13",
+     "title": "배운 내용 실천하기 (단서 세 장 · 내 낱말 공책)",
+     "sub": null,
+     "url": "/grade3/semester2/korean/5단원_사전으로여는세상/g3_kor_u5_l12_13.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u5_l14",
+     "lessonId": "g3_2_kor_u5_l14_v1",
+     "n": "14",
+     "title": "단원 마무리하기 (ㄴ 소리 첨가 · 우리말 · 글씨)",
+     "sub": null,
+     "url": "/grade3/semester2/korean/5단원_사전으로여는세상/g3_kor_u5_l14.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };
