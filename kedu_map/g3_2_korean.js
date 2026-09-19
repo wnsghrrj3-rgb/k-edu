@@ -278,6 +278,103 @@ window.KEDU_MAP["g3_2_korean"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 4,
+   "name": "서로 존중하며 대화해요",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g3_korean_u4_l01",
+     "lessonId": "g3_2_kor_u4_l01_v1",
+     "n": "1",
+     "title": "단원 시작 — 배울 내용 살펴보기",
+     "sub": null,
+     "url": "/grade3/semester2/korean/4단원_서로존중하며대화해요/g3_kor_u4_l01.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u4_l02",
+     "lessonId": "g3_2_kor_u4_l02_v1",
+     "n": "2",
+     "title": "높임 표현을 사용하는 상황 알기",
+     "sub": null,
+     "url": "/grade3/semester2/korean/4단원_서로존중하며대화해요/g3_kor_u4_l02.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u4_l03",
+     "lessonId": "g3_2_kor_u4_l03_04_v1",
+     "n": "3·4",
+     "title": "높임 표현을 바르게 사용하는 방법 알기",
+     "sub": null,
+     "url": "/grade3/semester2/korean/4단원_서로존중하며대화해요/g3_kor_u4_l03_04.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u4_l05",
+     "lessonId": "g3_2_kor_u4_l05_06_v1",
+     "n": "5·6",
+     "title": "높임 표현을 바르게 사용하여 대화하기",
+     "sub": null,
+     "url": "/grade3/semester2/korean/4단원_서로존중하며대화해요/g3_kor_u4_l05_06.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u4_l07",
+     "lessonId": "g3_2_kor_u4_l07_v1",
+     "n": "7",
+     "title": "대화 예절의 중요성 알기",
+     "sub": null,
+     "url": "/grade3/semester2/korean/4단원_서로존중하며대화해요/g3_kor_u4_l07.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u4_l08",
+     "lessonId": "g3_2_kor_u4_l08_09_v1",
+     "n": "8·9",
+     "title": "상황에 알맞은 대화 예절 알기 (토의·토론)",
+     "sub": null,
+     "url": "/grade3/semester2/korean/4단원_서로존중하며대화해요/g3_kor_u4_l08_09.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u4_l10",
+     "lessonId": "g3_2_kor_u4_l10_11_v1",
+     "n": "10·11",
+     "title": "상황에 알맞은 대화 예절을 지키며 대화하기",
+     "sub": null,
+     "url": "/grade3/semester2/korean/4단원_서로존중하며대화해요/g3_kor_u4_l10_11.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u4_l12",
+     "lessonId": "g3_2_kor_u4_l12_13_v1",
+     "n": "12·13",
+     "title": "배운 내용 실천하기 (낱말 기억 놀이 · 다짐 카드)",
+     "sub": null,
+     "url": "/grade3/semester2/korean/4단원_서로존중하며대화해요/g3_kor_u4_l12_13.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_korean_u4_l14",
+     "lessonId": "g3_2_kor_u4_l14_v1",
+     "n": "14",
+     "title": "단원 마무리하기 (전화 예절 · 방언 · 글씨)",
+     "sub": null,
+     "url": "/grade3/semester2/korean/4단원_서로존중하며대화해요/g3_kor_u4_l14.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };
