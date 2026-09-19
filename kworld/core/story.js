@@ -17,7 +17,8 @@ export class Story {
     // ?peek=1 — 자산 확인용: world.people 에 있는 사람들을 시작 지점 앞에 한 명씩 세워 둔다(이야기 깃발 무시)
     if (typeof location !== 'undefined' && new URLSearchParams(location.search).get('peek') === '1' && this.s.spawn && this.g.world.people) {
       let i = 0; for (const key of Object.keys(this.g.world.people)) { this.place({ id: key + '0', kind: key, x: this.s.spawn[0] + (i++ - 1) * 1.6, z: this.s.spawn[1] + 4, yaw: Math.PI, prop: 'person', name: 'npc_' + key + '0' }); }   // 플레이어는 야영지(+z) 쪽을 보고 시작한다
-      if (this.g.world.animals?.deer) this.place({ name: 'peek_deer', prop: 'deer', kind: 'big', x: this.s.spawn[0] + 4, z: this.s.spawn[1] + 5, yaw: 2.2 });
+      // 동물 전부(사슴·늑대…)도 한 마리씩 — 소품 사슴을 자리 잡이로 쓰고 GLB 로 갈아 끼운다
+      let k = 0; for (const key of Object.keys(this.g.world.animals || {})) { const it = this.place({ name: 'peek_' + key, prop: 'deer', kind: 'big', x: this.s.spawn[0] + 4 + k * 2.2, z: this.s.spawn[1] + 5 + k, yaw: 2.2, noAuto: true }); if (it) this.loadAnimal(it.obj, key, { name: 'peek_' + key, kind: 'big' }).catch(() => { }); k++; }
     }
     for (const [k, v] of Object.entries(this.s.areas || {})) e.areas.set(k, new THREE.Vector3(v[0], e.groundY(v[0], v[1]), v[1]));
     e.onFrame.push((dt) => this.tick(dt));
@@ -65,7 +66,7 @@ export class Story {
     if (a.showIf) this.cond.push(it);
     if (a.fleeOn) (this.fleeers ??= []).push(it);
     if (model) this.loadPerson(obj, model, a).catch((err) => console.warn('person GLB', a.name, err));
-    if (a.prop === 'deer' && a.kind !== 'down') { (this.animals ??= []).push(obj); this.loadAnimal(obj, 'deer', a).catch((err) => console.warn('animal GLB', a.name, err)); }
+    if (a.prop === 'deer' && a.kind !== 'down' && !a.noAuto) { (this.animals ??= []).push(obj); this.loadAnimal(obj, 'deer', a).catch((err) => console.warn('animal GLB', a.name, err)); } else if (a.noAuto) (this.animals ??= []).push(obj);
     return it;
   }
   /** 깃발이 바뀔 때: showIf 다시 보고, 끝 화면 */
