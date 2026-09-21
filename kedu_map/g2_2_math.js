@@ -619,6 +619,53 @@ window.KEDU_MAP["g2_2_math"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 7,
+   "name": "수학이랑 함께해요",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g2_math_u7_l01",
+     "lessonId": "g2_2_math_u7_l01_v1",
+     "n": "1",
+     "title": "준비해요 — 바른 식습관을 알아보아요",
+     "sub": null,
+     "url": "/grade2/semester2/math/7단원_수학이랑함께해요/g2_math_u7_l01_준비해요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_math_u7_l02",
+     "lessonId": "g2_2_math_u7_l02_v1",
+     "n": "2",
+     "title": "계획해요 — 바른 식습관 실천을 계획해요",
+     "sub": null,
+     "url": "/grade2/semester2/math/7단원_수학이랑함께해요/g2_math_u7_l02_계획해요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_math_u7_l03",
+     "lessonId": "g2_2_math_u7_l03_v1",
+     "n": "3",
+     "title": "해 봐요 — 바른 식습관을 실천해요",
+     "sub": null,
+     "url": "/grade2/semester2/math/7단원_수학이랑함께해요/g2_math_u7_l03_해봐요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_math_u7_l04",
+     "lessonId": "g2_2_math_u7_l04_v1",
+     "n": "4",
+     "title": "마무리해요 — 바른 식습관을 다짐해요",
+     "sub": null,
+     "url": "/grade2/semester2/math/7단원_수학이랑함께해요/g2_math_u7_l04_마무리해요.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };
