@@ -63,7 +63,10 @@ export class Player {
       p.x += step.x; if (this.e.collides(p, this.eye)) p.x = this.pos.x;
       p.z += step.z; if (this.e.collides(p, this.eye)) p.z = this.pos.z;
       const B = this.bounds; p.x = THREE.MathUtils.clamp(p.x, -B, B); p.z = THREE.MathUtils.clamp(p.z, -B, B);
-      const gy = this.e.groundY(p.x, p.z); this.inWater = gy < -0.5;
+      let gy = this.e.groundY(p.x, p.z);
+      // 깊은 물은 못 건넌다(world.deepWater 보다 낮은 바닥으로는 못 들어감 — 얕은 개울은 그대로)
+      if (this.deepWater != null && gy < this.deepWater && gy < this.e.groundY(this.pos.x, this.pos.z)) { p.copy(this.pos); gy = this.e.groundY(p.x, p.z); this.onDeepWater?.(); }
+      this.inWater = gy < -0.5;
       this.pos.set(p.x, gy + this.eye, p.z);
     }
     this.walkTime += dt; this.body.userData.animate(this.walkTime, this.moving);

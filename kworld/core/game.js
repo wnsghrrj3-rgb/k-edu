@@ -52,6 +52,7 @@ export class Game {
     // 시작 시선: 야영지 쪽(있으면) 을 바라봄
     const camp = this.e.areas.get(this.world.face || 'camp'); if (camp) { const d = camp.clone().sub(this.p.pos); this.p.yaw = Math.atan2(-d.x, -d.z); }
     if (this.world.look) this.applyLook(this.world.look);
+    if (this.world.deepWater != null) { this.p.deepWater = this.world.deepWater; let last = 0; this.p.onDeepWater = () => { const t = performance.now(); if (t - last > 6000) { last = t; this.ui.say(this.world.deepWaterSay || '물이 깊다. 걸어서는 못 건넌다.', 3200); } }; }
     if (this.world.hideHunger) { const h = document.getElementById('hunger'); if (h) h.style.display = 'none'; }
     this.ui.setTitle(this.world.title, this.world.question, this.world.short); this.ui.setGoal(this.world.goal);
     this.renderInv(); this.updateMission(true);
