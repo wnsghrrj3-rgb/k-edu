@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<!--
+  g2_math_u4_l08 — 달력을 알아볼까요 [2학년 2학기 4단원 08차시]
+  회수 키(lesson-id·STORAGE_KEY) = g2_2_math_u4_l08 — 2학년 1학기 g2_math_u4_l08 와 부딪히지 않도록 학기를 넣었다
+  ════════════════════════════════════════════════════════════
+  원본: kedu/curriculum/math/g2_2/unit4/_build_assets (spec_a·spec_b)
+  지도서: 수학 2-2 교사용 지도서 p.260-263 / 교과서 98-101
+  표준: kedu/curriculum/standards/표준.md (통합 표준 v1) + 차시운영_표준.md
+  섀시: g1 2학기 공용 섀시 승계 (CSS + 데이터 구동 5부품 pad·two·mcq·match·judge)
+  신설 부품: clock(1분 단위)·dclock·timeband·plan·day24·kcal·monthdays·growline·unitpair (2-2 4단원 「시각과 시간」)
+  계승 부품: eq·steps·objs·dotrow·numline (g1 2학기 공통)
+  디자인 계승: g1 2학기 → g1 1학기 5단원 재수정_v1 (저학년 v1 토큰 · 학교안심 모험가)
+
+  학습 본질: 달력에서 1주일은 7일, 1년은 12개월임을 알고, 각 월의 날수를 알아본다. 슬기의 운동 계획을 달력에 표시하며 「며칠」(날)과 「모두 며칠」(기간)을 가려 문제를 해결한다.
+  오개념 직격: 12월과 12개월을 가리지 못함 · 1년을 반드시 1월부터라고 여김 · 요일 순서대로만 1주일로 여김(지도서 261-262)
+  지도서 금지: 「며칠인가요」(날)와 「모두 며칠인가요」(기간)를 섞지 않는다(261 유의)
+  점수: 기본 4슬 × 10점(q8~q11) + 응용 4슬 × 15점(q12~q15) = 100점 · 18슬 5단계
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g2_2_math_u4_l08_v1">
+<title>달력을 알아볼까요 · K-edu 2학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style id="kedu-title-font">/* 케이에듀 제목 폰트 토큰 (2026-07-04, 학교안심 모험가) */
+@font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
+:root{--kedu-title:'Hakgyoansim Moheomga','Jua',sans-serif;--kedu-round:'Jua',sans-serif}
+</style>
+<style>
+
+:root {
+  --fs-title:   clamp(27px, 4.4vw, 50px);
+  --fs-heading: clamp(24px, 3.7vw, 37px);
+  --fs-body:    clamp(21px, 3.2vw, 31px);
+  --fs-caption: clamp(19px, 2.9vw, 27px);
+  --fs-label:   clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --em-md: clamp(44px, 7vw, 80px);
+  --em-lg: clamp(66px, 10.5vw, 124px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(780px, 96vw);
+  --mw-lg: min(860px, 96vw);
+  --blue:#1976D2; --blue-d:#1565C0; --blue-l:#42A5F5; --blue-p:#E3F2FD; --blue-bg:#F0F7FF;
+  --amber:#F57F17; --amber-l:#FFB300; --amber-p:#FFF8E1; --amber-d:#BF360C;
+  --green:#2E7D32; --green-l:#66BB6A; --green-p:#E8F5E9;
+  --red:#C62828; --red-p:#FFCDD2;
+  --gray:#607D8B; --gray-l:#B0BEC5;
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:#F0F7FF; display:flex; align-items:center; justify-content:center; font-family:var(--kedu-round,'Jua',sans-serif); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+
+@keyframes ka-fadeUp { from{opacity:0;transform:translateY(14px);} to{opacity:1;transform:none;} }
+@keyframes ka-pop { 0%{opacity:0;transform:scale(.3);} 60%{opacity:1;transform:scale(1.15);} 100%{opacity:1;transform:scale(1);} }
+@keyframes ka-popBig { 0%{opacity:0;transform:scale(.3);} 60%{opacity:1;transform:scale(1.25);} 100%{opacity:1;transform:scale(1);} }
+@keyframes ka-pulse { 0%,100%{transform:scale(1);box-shadow:0 4px 14px rgba(66,165,245,.32);} 50%{transform:scale(1.04);box-shadow:0 6px 20px rgba(66,165,245,.5);} }
+@keyframes ka-shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-6px);} 75%{transform:translateX(6px);} }
+@keyframes ka-bar-grow { from{transform:scaleY(.3);opacity:0;} to{transform:scaleY(1);opacity:1;} }
+@keyframes ka-cube-pop { 0%{opacity:0;transform:scale(.5);} 60%{opacity:1;transform:scale(1.15);} 100%{opacity:1;transform:scale(1);} }
+
+/* ───── 골격 ───── */
+.ka { background:#fff; width:100vw; height:100vh; height:100dvh; padding:clamp(8px,1.5vw,14px) clamp(12px,2.2vw,22px); color:#333; display:flex; flex-direction:column; position:relative; overflow:hidden; }
+.ka-h { display:flex; align-items:center; gap:clamp(6px,1.2vw,10px); margin-bottom:clamp(6px,1.2vw,10px); flex-shrink:0; }
+.ka-lb { background:#F4F4F8; border:none; padding:clamp(4px,.9vw,7px) clamp(8px,1.5vw,12px); border-radius:clamp(8px,1.5vw,12px); cursor:pointer; font-family:inherit; color:#555; flex-shrink:0; font-size:var(--fs-label); }
+.ka-bar { flex:1; height:clamp(3px,.5vw,5px); background:var(--blue-bg); border-radius:999px; overflow:hidden; min-width:clamp(40px,6vw,80px); }
+.ka-bar > div { height:100%; background:var(--blue-l); border-radius:999px; transition:width .45s ease; }
+.ka-pg { color:var(--blue); font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-label); flex-shrink:0; }
+.ka-score { color:var(--amber); font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-label); flex-shrink:0; background:var(--amber-p); padding:clamp(3px,.7vw,5px) clamp(8px,1.5vw,12px); border-radius:clamp(8px,1.5vw,12px); }
+.ka-mute { background:#F4F4F8; border:none; padding:clamp(4px,.9vw,7px); border-radius:clamp(8px,1.5vw,12px); cursor:pointer; flex-shrink:0; color:var(--blue); font-size:clamp(12px,2vw,16px); width:clamp(28px,4.5vw,36px); height:clamp(28px,4.5vw,36px); display:flex; align-items:center; justify-content:center; }
+
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; gap:clamp(8px,1.5vw,14px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(10px,2vw,20px) 0; overflow:hidden; }
+.slide.active { display:flex; }
+.slide-title { font-size:var(--fs-title); margin:0; line-height:1.3; color:var(--blue); font-weight:400; text-align:center; flex-shrink:0; font-family:var(--kedu-title); }
+.slide-sub { font-size:var(--fs-caption); color:var(--gray); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(8px,1.5vw,14px); left:clamp(12px,2.2vw,22px); background:var(--blue-p); color:var(--blue); padding:clamp(3px,.6vw,5px) clamp(8px,1.5vw,12px); border-radius:999px; font-size:clamp(10px,1.6vw,13px); font-family:'Nunito',sans-serif; font-weight:800; z-index:5; }
+
+.ka-f { display:grid; grid-template-columns:1fr 1fr 1.3fr; gap:clamp(6px,1.2vw,10px); padding-top:clamp(6px,1.2vw,10px); flex-shrink:0; }
+.ka-prev,.ka-hint,.ka-next { border:none; padding:clamp(8px,1.6vw,12px) clamp(10px,2vw,16px); border-radius:clamp(10px,1.7vw,14px); font-family:inherit; font-size:clamp(13px,2.2vw,17px); cursor:pointer; transition:all .2s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev { background:#F4F4F8; color:#6E6E78; }
+.ka-hint { background:var(--amber-p); color:var(--amber); }
+.ka-hint:hover { background:#FFECB3; }
+.ka-next { background:var(--blue-l); color:#fff; box-shadow:0 4px 14px rgba(66,165,245,.32); font-size:clamp(14px,2.4vw,18px); }
+.ka-next:hover { background:var(--blue); }
+.ka-next.hl { animation:ka-pulse 1.8s ease-in-out infinite; }
+.ka-prev:disabled,.ka-next:disabled { opacity:.4; cursor:not-allowed; animation:none; }
+.ka-hint:disabled { opacity:.5; cursor:not-allowed; }
+
+/* ───── 공용 무대 ───── */
+.stage { display:flex; flex-direction:column; align-items:center; gap:clamp(11px,2.2vw,19px); max-width:var(--mw-lg); width:100%; }
+.stage.narrow { max-width:var(--mw-md); }
+.cap { font-size:var(--fs-body); color:#6D4C41; text-align:center; line-height:1.5; max-width:var(--mw-md); }
+.cap strong { color:var(--amber-d); }
+.cap.sm { font-size:var(--fs-caption); }
+.prompt { font-size:var(--fs-heading); color:#333; text-align:center; line-height:1.35; }
+.prompt strong { color:var(--amber-d); }
+.row { display:flex; gap:clamp(10px,2vw,18px); align-items:center; justify-content:center; flex-wrap:wrap; }
+.row.tight { gap:clamp(6px,1.2vw,10px); }
+.col { display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.2vw,10px); }
+
+/* ───── 목표 카드 ───── */
+.goal-card { background:#fff; border:clamp(3px,.5vw,4px) solid var(--blue-l); border-radius:clamp(18px,3vw,28px); padding:clamp(19px,3.4vw,34px) clamp(23px,4.2vw,42px); display:flex; flex-direction:column; align-items:center; gap:clamp(13px,2.4vw,20px); max-width:var(--mw-md); }
+.goal-title { font-size:var(--fs-heading); color:var(--blue-d); text-align:center; font-family:var(--kedu-title); }
+.goal-emojis { font-size:var(--em-md); display:flex; gap:clamp(10px,2vw,16px); }
+.goal-list { font-size:var(--fs-body); color:var(--blue); text-align:left; line-height:1.6; }
+.goal-list li { list-style:none; padding:clamp(4px,.8vw,7px) 0; }
+.goal-list li::before { content:'✓ '; color:var(--green-l); font-family:'Nunito',sans-serif; font-weight:800; }
+
+/* ───── 묶음·낱개 (tens & ones) ───── */
+.tao-row { display:flex; gap:clamp(10px,2vw,18px); align-items:flex-end; justify-content:center; background:#FAFAFA; padding:clamp(9px,1.8vw,15px) clamp(13px,2.6vw,21px); border-radius:clamp(14px,2.6vw,22px); border:clamp(3px,.5vw,4px) solid var(--gray-l); }
+.tao-row.compact { min-height:auto; padding:clamp(7px,1.4vw,11px) clamp(9px,1.8vw,15px); }
+.tao-g { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,.8vw,7px); }
+.tao-lb { font-size:var(--fs-label); color:var(--gray); }
+.tao-tens { display:flex; gap:clamp(3px,.7vw,6px); align-items:flex-end; flex-wrap:wrap; max-width:clamp(200px,34vw,340px); justify-content:center; }
+.tao-ones { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(3px,.5vw,4px); align-items:flex-end; max-width:clamp(120px,18vw,160px); min-height:clamp(20px,3vw,26px); }
+.tao-ones.empty { border:clamp(2px,.4vw,3px) dashed var(--gray-l); border-radius:clamp(8px,1.5vw,12px); padding:clamp(5px,1vw,9px) clamp(13px,2.6vw,21px); display:flex; align-items:center; justify-content:center; color:var(--gray-l); min-width:clamp(76px,11vw,110px); }
+.tao-ones.empty::before { content:'0'; font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(32px,5vw,52px); }
+.bar10 { display:flex; flex-direction:column-reverse; gap:clamp(1px,.2vw,2px); padding:clamp(3px,.5vw,4px); background:linear-gradient(135deg,var(--amber-l) 0%,var(--amber) 100%); border:clamp(2px,.4vw,3px) solid var(--amber-d); border-radius:clamp(4px,.7vw,6px); animation:ka-bar-grow .5s ease both; }
+.bar10 i { display:block; width:clamp(16px,2.5vw,23px); height:clamp(8px,1.3vw,12px); background:rgba(255,255,255,.4); border:1px solid rgba(191,54,12,.3); border-radius:2px; }
+.cube { width:clamp(18px,2.7vw,24px); height:clamp(18px,2.7vw,24px); background:linear-gradient(135deg,var(--blue-l) 0%,var(--blue) 100%); border:clamp(2px,.4vw,3px) solid #0D47A1; border-radius:clamp(4px,.7vw,6px); animation:ka-cube-pop .4s ease both; }
+.tao-eq { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(26px,4.2vw,42px); color:var(--blue-d); align-self:center; }
+.bignum { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(48px,7.4vw,84px); color:var(--blue-d); background:var(--blue-p); padding:clamp(9px,1.8vw,15px) clamp(17px,3.2vw,27px); border-radius:clamp(14px,2.6vw,22px); border:clamp(3px,.5vw,4px) solid var(--blue-d); line-height:1; }
+.bignum.sm { font-size:clamp(36px,5.6vw,58px); padding:clamp(7px,1.4vw,11px) clamp(13px,2.4vw,20px); }
+.bignum.lg { font-size:clamp(64px,10vw,110px); }
+.bignum.amber { color:var(--amber-d); background:var(--amber-p); border-color:var(--amber); }
+.bignum.green { color:var(--green); background:var(--green-p); border-color:var(--green-l); }
+
+/* ───── 읽기 카드 ───── */
+.rw { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,.8vw,8px); }
+.rw-han, .rw-kor { font-size:clamp(28px,4.6vw,44px); color:var(--blue-d); padding:clamp(7px,1.4vw,12px) clamp(14px,2.6vw,24px); border-radius:clamp(14px,2.6vw,22px); border:clamp(3px,.5vw,4px) solid; font-family:var(--kedu-title); }
+.rw-han { background:var(--amber-p); border-color:var(--amber); }
+.rw-kor { background:var(--green-p); border-color:var(--green-l); }
+.rw-tag { font-size:var(--fs-label); color:var(--gray); }
+
+/* ───── 물건 묶음 그림 ───── */
+.goods { display:flex; gap:clamp(6px,1.3vw,11px); align-items:flex-end; justify-content:center; flex-wrap:wrap; padding:clamp(9px,1.8vw,15px); background:var(--blue-bg); border-radius:clamp(14px,2.6vw,22px); max-width:var(--mw-md); }
+.gbundle { display:flex; flex-direction:column; align-items:center; gap:clamp(3px,.6vw,5px); }
+.gbundle-e { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(1px,.3vw,3px); padding:clamp(3px,.6vw,5px); background:#fff; border:clamp(2px,.4vw,3px) solid var(--blue-l); border-radius:clamp(7px,1.3vw,11px); }
+.gbundle-e span { font-size:clamp(15px,2.4vw,22px); line-height:1.05; animation:ka-pop .3s ease both; }
+.gloose { display:flex; gap:clamp(2px,.4vw,4px); flex-wrap:wrap; max-width:clamp(90px,14vw,130px); padding:clamp(3px,.6vw,5px); border:clamp(2px,.4vw,3px) dashed var(--gray-l); border-radius:clamp(7px,1.3vw,11px); align-content:flex-end; }
+.gloose span { font-size:clamp(15px,2.4vw,22px); line-height:1.05; animation:ka-pop .3s ease both; }
+.glabel { font-size:var(--fs-label); color:var(--blue); }
+
+/* ───── 숫자 입력 (pad) ───── */
+.q-display { background:var(--blue-p); border-radius:clamp(14px,2.6vw,22px); padding:clamp(11px,2.2vw,19px) clamp(24px,4.4vw,40px); font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(38px,6vw,64px); color:var(--blue); min-width:clamp(130px,20vw,186px); text-align:center; line-height:1; border:clamp(3px,.5vw,4px) solid var(--blue-d); }
+.q-display.empty { color:#B5D8F0; }
+.q-display.correct { background:#C8E6C9; color:var(--green); border-color:var(--green); }
+.q-display.wrong { background:var(--red-p); color:var(--red); border-color:var(--red); animation:ka-shake .4s ease; }
+.q-display.active { border-color:var(--amber); background:var(--amber-p); color:var(--amber); }
+.q-pad { display:grid; grid-template-columns:repeat(6,1fr); gap:clamp(4px,.9vw,7px); max-width:clamp(320px,56vw,470px); }
+.q-pad-btn { background:#fff; border:clamp(2px,.4vw,3px) solid var(--blue-d); border-radius:clamp(9px,1.7vw,14px); padding:clamp(6px,1.3vw,11px); font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(18px,2.9vw,26px); color:var(--blue); cursor:pointer; transition:all .15s; }
+.q-pad-btn:hover { background:var(--blue-p); }
+.q-pad-btn:disabled { opacity:.4; cursor:not-allowed; }
+.q-pad-btn.clear { background:var(--amber-p); color:var(--amber); border-color:var(--amber); }
+.q-unit { font-size:var(--fs-heading); color:#333; }
+.two-cell { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,.8vw,7px); }
+.two-cell .q-display { font-size:clamp(32px,5vw,52px); min-width:clamp(96px,15vw,140px); padding:clamp(9px,1.8vw,15px) clamp(16px,3vw,26px); }
+
+/* ───── 4지선다 (mcq) ───── */
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.6vw,14px); max-width:var(--mw-md); width:100%; }
+.mcq-opts.one { grid-template-columns:1fr; }
+.mcq-opts.four { grid-template-columns:repeat(4,1fr); }
+.mcq-opt { background:#fff; border:clamp(3px,.5vw,4px) solid var(--blue-l); border-radius:clamp(13px,2.4vw,20px); padding:clamp(11px,2.2vw,18px) clamp(9px,1.8vw,15px); font-family:inherit; font-size:clamp(20px,3.2vw,30px); color:var(--blue-d); cursor:pointer; transition:all .18s; line-height:1.3; }
+.mcq-opt:hover:not(:disabled) { background:var(--blue-p); transform:translateY(-2px); }
+.mcq-opt:disabled { cursor:not-allowed; }
+.mcq-opt.correct { background:#C8E6C9; border-color:var(--green); color:var(--green); }
+.mcq-opt.wrong { background:var(--red-p); border-color:var(--red); color:var(--red); animation:ka-shake .4s ease; }
+.mcq-opt.dim { opacity:.4; }
+.mcq-opt .big { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(38px,6vw,64px); display:block; line-height:1.05; }
+.mcq-opt .sign { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(52px,8.4vw,92px); display:block; line-height:1; }
+
+/* ───── 매칭 (match) ───── */
+.match-slots { display:flex; gap:clamp(10px,2vw,19px); flex-wrap:wrap; justify-content:center; }
+.match-slot { min-width:clamp(128px,20vw,186px); height:clamp(56px,8.4vw,78px); border:clamp(3px,.5vw,4px) dashed var(--blue-l); border-radius:clamp(12px,2.2vw,18px); display:flex; align-items:center; justify-content:center; font-size:clamp(23px,3.7vw,33px); color:#B5D8F0; background:var(--blue-bg); transition:all .3s; padding:0 clamp(8px,1.5vw,13px); font-family:var(--kedu-title); }
+.match-slot .slot-tag { position:absolute; }
+.match-slot.filled { border-style:solid; color:var(--blue-d); }
+.match-slot.han { border-color:var(--amber); background:var(--amber-p); }
+.match-slot.kor { border-color:var(--green-l); background:var(--green-p); }
+.match-slot.correct { background:#C8E6C9; border-color:var(--green); color:var(--green); }
+.match-cards { display:flex; gap:clamp(7px,1.4vw,12px); flex-wrap:wrap; justify-content:center; }
+.match-card { font-size:clamp(22px,3.5vw,32px); padding:clamp(9px,1.8vw,15px) clamp(14px,2.6vw,22px); border-radius:clamp(12px,2.2vw,18px); border:clamp(3px,.5vw,4px) solid var(--blue-l); background:#fff; color:var(--blue-d); cursor:pointer; transition:all .2s; font-family:var(--kedu-title); }
+.match-card:hover:not(.used) { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,.1); }
+.match-card.used { opacity:.32; cursor:not-allowed; pointer-events:none; }
+.match-card.wrong { animation:ka-shake .4s ease; }
+.match-slot-label { font-size:var(--fs-label); color:var(--gray); text-align:center; }
+
+/* ───── ○✕ 판정 (judge) ───── */
+.jd-list { display:flex; flex-direction:column; gap:clamp(7px,1.4vw,12px); max-width:var(--mw-md); width:100%; }
+.jd-row { display:flex; gap:clamp(9px,1.8vw,15px); align-items:center; justify-content:space-between; background:#fff; border:clamp(2.5px,.45vw,3.5px) solid var(--gray-l); border-radius:clamp(13px,2.4vw,20px); padding:clamp(9px,1.8vw,15px) clamp(13px,2.4vw,20px); transition:all .2s; }
+.jd-row.correct { border-color:var(--green); background:var(--green-p); }
+.jd-row.wrong { border-color:var(--red); background:var(--red-p); animation:ka-shake .4s ease; }
+.jd-text { font-size:clamp(19px,3vw,28px); color:var(--blue-d); text-align:left; flex:1; line-height:1.35; }
+.jd-text b { font-family:'Nunito',sans-serif; font-weight:800; color:var(--amber-d); }
+.jd-btns { display:flex; gap:clamp(5px,1vw,9px); flex-shrink:0; }
+.jd-btn { background:#F4F4F8; border:clamp(2.5px,.45vw,3.5px) solid transparent; border-radius:clamp(10px,1.9vw,15px); padding:clamp(5px,1.1vw,9px) clamp(10px,1.9vw,16px); font-size:clamp(20px,3.2vw,30px); cursor:pointer; transition:all .15s; color:var(--gray); font-family:'Nunito',sans-serif; font-weight:800; }
+.jd-btn:hover:not(:disabled) { background:var(--blue-p); }
+.jd-btn.picked { background:var(--amber-p); border-color:var(--amber); color:var(--amber); }
+.jd-btn:disabled { cursor:not-allowed; }
+
+/* ───── 수 배열표 ───── */
+.numgrid { display:grid; grid-template-columns:repeat(10,1fr); gap:clamp(2px,.45vw,4px); max-width:var(--mw-lg); width:100%; }
+.numgrid b { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(12px,1.9vw,19px); color:var(--blue-d); background:#fff; border:clamp(1.5px,.28vw,2.5px) solid var(--blue-l); border-radius:clamp(5px,.9vw,8px); padding:clamp(4px,.85vw,8px) 0; text-align:center; line-height:1; }
+.numgrid b.hole { background:var(--amber-p); border-color:var(--amber); border-style:dashed; color:var(--amber); }
+.numgrid b.mark { background:var(--blue-p); }
+.numgrid b.hundred { background:var(--green-p); border-color:var(--green); color:var(--green); }
+.numgrid b.even { background:#FFE0E6; border-color:#F06292; color:#AD1457; }
+.numgrid b.odd { background:#DFF2FE; border-color:#4FC3F7; color:#01579B; }
+.numline { display:flex; gap:clamp(3px,.6vw,6px); align-items:center; justify-content:center; flex-wrap:wrap; }
+.numline b { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(20px,3.2vw,30px); color:var(--blue-d); background:#fff; border:clamp(2.5px,.45vw,3.5px) solid var(--blue-l); border-radius:clamp(8px,1.5vw,13px); padding:clamp(7px,1.4vw,12px) clamp(9px,1.8vw,15px); line-height:1; }
+.numline b.hole { background:var(--amber-p); border-color:var(--amber); border-style:dashed; color:var(--amber); }
+.numline b.on { background:var(--blue-p); }
+
+/* ───── 비교 무대 ───── */
+.cmp-wrap { display:flex; gap:clamp(11px,2.2vw,20px); align-items:center; justify-content:center; flex-wrap:wrap; }
+.cmp-side { display:flex; flex-direction:column; align-items:center; gap:clamp(5px,1vw,9px); background:#FAFAFA; border:clamp(3px,.5vw,4px) solid var(--gray-l); border-radius:clamp(14px,2.6vw,22px); padding:clamp(9px,1.8vw,15px) clamp(11px,2.2vw,18px); }
+.cmp-name { font-size:var(--fs-label); color:var(--gray); }
+.cmp-sign { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(50px,8vw,88px); color:var(--amber-d); line-height:1; }
+.cmp-sign.slot { color:#B5D8F0; }
+
+/* ───── 정리 ───── */
+.sum-card { background:#fff; border:clamp(3px,.5vw,4px) solid var(--green-l); border-radius:clamp(18px,3vw,28px); padding:clamp(15px,2.8vw,26px) clamp(19px,3.4vw,34px); display:flex; flex-direction:column; align-items:center; gap:clamp(9px,1.8vw,15px); max-width:var(--mw-md); }
+.sum-msg { font-size:var(--fs-body); color:var(--green); text-align:center; line-height:1.5; }
+.sum-msg strong { color:var(--amber-d); }
+.sum-cells { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(5px,1.1vw,9px); width:100%; }
+.sum-cell { background:var(--blue-bg); border-radius:clamp(8px,1.5vw,12px); padding:clamp(5px,1.1vw,9px) clamp(3px,.7vw,7px); display:flex; flex-direction:column; align-items:center; gap:clamp(2px,.4vw,4px); border:clamp(2px,.4vw,3px) solid var(--blue-l); }
+.sum-cell u { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(20px,3.3vw,30px); color:var(--blue-d); line-height:1; text-decoration:none; }
+.sum-cell i { font-size:clamp(9px,1.5vw,13px); color:var(--gray); font-family:'Nunito',sans-serif; font-weight:800; font-style:normal; }
+.wrap-msg { font-size:var(--fs-heading); color:var(--amber); font-family:var(--kedu-title); }
+.self-row { display:flex; gap:clamp(9px,1.8vw,15px); align-items:center; justify-content:space-between; width:100%; background:#fff; border:clamp(2.5px,.45vw,3.5px) solid var(--gray-l); border-radius:clamp(14px,2.6vw,22px); padding:clamp(9px,1.8vw,15px) clamp(13px,2.6vw,21px); }
+.self-label { font-size:var(--fs-body); color:var(--blue); text-align:left; }
+.self-btns { display:flex; gap:clamp(5px,1.1vw,9px); }
+.self-btn { background:#F4F4F8; border:clamp(2.5px,.45vw,3.5px) solid transparent; border-radius:clamp(10px,1.9vw,15px); padding:clamp(5px,1.1vw,9px); font-size:clamp(19px,3vw,27px); cursor:pointer; transition:all .15s; min-width:clamp(38px,6vw,54px); }
+.self-btn:hover { background:var(--blue-p); }
+.self-btn.picked { background:var(--amber-p); border-color:var(--amber); }
+.next-card { background:linear-gradient(135deg,var(--amber-p) 0%,#FFE082 100%); border:clamp(4px,.6vw,5px) solid var(--amber); border-radius:clamp(22px,3.6vw,32px); padding:clamp(22px,4vw,40px) clamp(26px,4.6vw,44px); display:flex; flex-direction:column; align-items:center; gap:clamp(13px,2.4vw,22px); max-width:var(--mw-md); }
+.next-emoji { font-size:var(--em-lg); animation:ka-popBig .7s ease both; }
+.next-msg { font-size:var(--fs-heading); color:var(--amber-d); text-align:center; line-height:1.4; font-family:var(--kedu-title); }
+.next-msg strong { color:var(--blue-d); }
+
+/* ───── 피드백 ───── */
+.q-fb { font-size:var(--fs-caption); min-height:1.5em; color:var(--green); text-align:center; line-height:1.4; }
+.q-fb.wrong { color:var(--red); }
+.mcq-hint { font-size:var(--fs-caption); color:var(--amber); min-height:1.3em; text-align:center; }
+.warncard { background:var(--red-p); border:clamp(3px,.5vw,4px) solid var(--red); border-radius:clamp(14px,2.6vw,22px); padding:clamp(11px,2.2vw,18px) clamp(15px,2.8vw,25px); font-size:var(--fs-caption); color:var(--red); text-align:center; line-height:1.45; max-width:var(--mw-md); }
+.warncard b { font-family:'Nunito',sans-serif; font-weight:800; }
+.okcard { background:var(--green-p); border:clamp(3px,.5vw,4px) solid var(--green); border-radius:clamp(14px,2.6vw,22px); padding:clamp(11px,2.2vw,18px) clamp(15px,2.8vw,25px); font-size:var(--fs-caption); color:var(--green); text-align:center; line-height:1.45; max-width:var(--mw-md); }
+.okcard b { font-family:'Nunito',sans-serif; font-weight:800; }
+.speech { background:#fff; border:clamp(2.5px,.45vw,3.5px) solid var(--blue-l); border-radius:clamp(14px,2.6vw,22px); padding:clamp(9px,1.8vw,15px) clamp(14px,2.6vw,22px); font-size:var(--fs-caption); color:var(--blue-d); text-align:center; line-height:1.4; max-width:var(--mw-md); }
+.speech strong { color:var(--amber-d); }
+
+/* ───── 십 배열판 (tenframe) ───── */
+.tenframe { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(3px,.6vw,5px); padding:clamp(6px,1.2vw,10px); background:#fff; border:clamp(3px,.5vw,4px) solid var(--blue-d); border-radius:clamp(10px,1.9vw,16px); }
+.tenframe.wide { grid-template-columns:repeat(10,1fr); }
+.tf-cell { width:clamp(24px,3.8vw,40px); height:clamp(24px,3.8vw,40px); border-radius:50%; border:clamp(2px,.35vw,3px) dashed var(--gray-l); background:#FAFAFA; }
+.tf-cell.a { background:radial-gradient(circle at 34% 30%,#FF8A9B,#E53950); border:clamp(2px,.35vw,3px) solid #AD1457; border-style:solid; animation:ka-cube-pop .35s ease both; }
+.tf-cell.b { background:radial-gradient(circle at 34% 30%,#7EC8F5,#1976D2); border:clamp(2px,.35vw,3px) solid #0D47A1; border-style:solid; animation:ka-cube-pop .35s ease both; }
+.tf-cell.g { background:radial-gradient(circle at 34% 30%,#A5D6A7,#2E7D32); border:clamp(2px,.35vw,3px) solid #1B5E20; border-style:solid; animation:ka-cube-pop .35s ease both; }
+.tf-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,.8vw,7px); }
+.tf-lb { font-size:var(--fs-label); color:var(--gray); }
+
+/* ───── 물건 줄 (dotrow) ───── */
+.dotrow { display:flex; gap:clamp(4px,.9vw,8px); flex-wrap:wrap; justify-content:center; align-items:center; padding:clamp(8px,1.6vw,14px); background:var(--blue-bg); border-radius:clamp(12px,2.2vw,18px); max-width:var(--mw-md); }
+.dotrow span { font-size:clamp(24px,3.9vw,40px); line-height:1.05; position:relative; animation:ka-pop .3s ease both; }
+.dotrow span.gone { opacity:.3; }
+.dotrow span.gone::after { content:'✕'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--red); font-family:'Nunito',sans-serif; font-weight:800; font-size:.8em; }
+
+/* ───── 연결 모형 사슬 (chain) ───── */
+.chain { display:flex; gap:clamp(2px,.4vw,3px); flex-wrap:wrap; justify-content:center; align-items:center; padding:clamp(7px,1.4vw,12px); background:#FAFAFA; border:clamp(3px,.5vw,4px) solid var(--gray-l); border-radius:clamp(12px,2.2vw,18px); max-width:var(--mw-md); }
+.chain i { display:block; width:clamp(20px,3.1vw,30px); height:clamp(20px,3.1vw,30px); border-radius:clamp(4px,.7vw,6px); border:clamp(2px,.35vw,3px) solid; animation:ka-cube-pop .35s ease both; }
+.chain i.a { background:linear-gradient(135deg,#FF8A9B,#E53950); border-color:#AD1457; }
+.chain i.b { background:linear-gradient(135deg,#7EC8F5,#1976D2); border-color:#0D47A1; }
+.chain i.c { background:linear-gradient(135deg,#A5D6A7,#2E7D32); border-color:#1B5E20; }
+.chain .gap { width:clamp(9px,1.7vw,15px); height:1px; background:none; border:none; animation:none; }
+
+/* ───── 물건 카드 (objcard) ───── */
+.objs { display:flex; gap:clamp(8px,1.6vw,14px); justify-content:center; flex-wrap:wrap; max-width:var(--mw-lg); }
+.obj { display:flex; flex-direction:column; align-items:center; gap:clamp(3px,.6vw,5px); background:#fff; border:clamp(3px,.5vw,4px) solid var(--blue-l); border-radius:clamp(12px,2.2vw,18px); padding:clamp(7px,1.4vw,12px) clamp(10px,2vw,17px); animation:ka-pop .35s ease both; }
+.obj em { font-size:clamp(30px,4.8vw,50px); font-style:normal; line-height:1.05; }
+.obj b { font-size:var(--fs-label); color:var(--gray); font-weight:400; }
+.obj.on { border-color:var(--amber); background:var(--amber-p); }
+.obj u { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(24px,3.8vw,38px); color:var(--blue-d); text-decoration:none; line-height:1; }
+
+
+/* ───── 식 스트립 (eqstrip) — 4·2단원 계승 ───── */
+.eqstrip { display:flex; gap:clamp(5px,1vw,9px); align-items:center; justify-content:center; flex-wrap:wrap; }
+.eq-tok { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(30px,4.9vw,52px); color:var(--blue-d); background:var(--blue-p); border:clamp(3px,.5vw,4px) solid var(--blue-d); border-radius:clamp(10px,1.9vw,16px); padding:clamp(5px,1vw,9px) clamp(11px,2.1vw,18px); line-height:1; min-width:clamp(48px,7.4vw,78px); text-align:center; }
+.eq-tok.op { background:none; border:none; color:var(--amber-d); min-width:0; padding:0 clamp(2px,.4vw,4px); font-size:clamp(28px,4.5vw,48px); }
+.eq-tok.hole { background:var(--amber-p); border-color:var(--amber); border-style:dashed; color:var(--amber); }
+.eq-tok.res { background:var(--green-p); border-color:var(--green); color:var(--green); }
+.eq-tok.mark { background:#FFE0E6; border-color:#F06292; color:#AD1457; }
+.eq-tok.sm { font-size:clamp(23px,3.7vw,38px); min-width:clamp(38px,5.8vw,60px); padding:clamp(4px,.8vw,7px) clamp(8px,1.5vw,13px); }
+
+/* ───── 단계 계산 (steps) ───── */
+.steps { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); align-items:center; background:#fff; border:clamp(3px,.5vw,4px) solid var(--amber); border-radius:clamp(14px,2.6vw,22px); padding:clamp(11px,2.1vw,18px) clamp(15px,2.8vw,25px); }
+.step-row { display:flex; gap:clamp(6px,1.2vw,10px); align-items:center; }
+.step-no { font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-label); color:#fff; background:var(--amber); border-radius:999px; width:clamp(20px,3vw,26px); height:clamp(20px,3vw,26px); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+
+/* ───── 수 모형 (numblock) — 6단원 시그니처 ───── */
+/* 지도서 291 — 십 모형은 일 모형의 10배 크기라야 「낱개 10개 = 10개씩 묶음 1개」가 눈에 보인다.
+   그래서 십 모형 높이 = 일 모형 한 칸 × 10 으로 못박는다(--nbu 하나로 둘이 묶여 있다). */
+.numblock { --nbu:clamp(9px,1.45vw,14px); display:flex; gap:clamp(9px,1.8vw,15px); align-items:flex-end; justify-content:center; background:#FAFAFA; border:clamp(3px,.5vw,4px) solid var(--gray-l); border-radius:clamp(14px,2.6vw,22px); padding:clamp(9px,1.8vw,15px) clamp(11px,2.2vw,18px); }
+.numblock.sm { --nbu:clamp(6px,1vw,10px); padding:clamp(6px,1.2vw,10px) clamp(8px,1.5vw,13px); }
+.nb-g { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,.8vw,7px); }
+.nb-lb { font-size:var(--fs-label); color:var(--gray); }
+.nb-tens { display:flex; gap:clamp(3px,.6vw,5px); align-items:flex-end; min-height:calc(var(--nbu)*10); }
+.nb-ten { width:var(--nbu); height:calc(var(--nbu)*10); background:linear-gradient(135deg,var(--amber-l) 0%,var(--amber) 100%); border:clamp(1.5px,.28vw,2.5px) solid var(--amber-d); border-radius:clamp(2px,.4vw,3px); background-image:repeating-linear-gradient(to bottom,rgba(255,255,255,.55) 0,rgba(255,255,255,.55) 1px,transparent 1px,transparent var(--nbu)); animation:ka-bar-grow .45s ease both; }
+.nb-ones { display:grid; grid-template-columns:repeat(5,var(--nbu)); gap:clamp(2px,.4vw,4px); align-content:flex-end; min-height:var(--nbu); }
+.nb-one { width:var(--nbu); height:var(--nbu); background:linear-gradient(135deg,var(--blue-l) 0%,var(--blue) 100%); border:clamp(1.5px,.28vw,2.5px) solid #0D47A1; border-radius:clamp(2px,.4vw,3px); animation:ka-cube-pop .35s ease both; }
+.nb-ten.gone, .nb-one.gone { opacity:.28; filter:grayscale(.7); position:relative; }
+.nb-ten.gone::after, .nb-one.gone::after { content:''; position:absolute; inset:-2px; background:linear-gradient(to bottom right,transparent 45%,var(--red) 45%,var(--red) 55%,transparent 55%); }
+.nb-num { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(26px,4.2vw,42px); color:var(--blue-d); align-self:center; }
+.nbrow { display:flex; gap:clamp(7px,1.4vw,12px); align-items:center; justify-content:center; flex-wrap:wrap; max-width:var(--mw-lg); }
+.nbrow .nb-op { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(30px,4.8vw,50px); color:var(--amber-d); }
+
+/* ───── 세로 셈 (vcalc) — 형식화 자리 ───── */
+/* 10개씩 묶음 자리와 낱개 자리를 열로 못박는다. 자리를 안 맞춰 쓰면 열이 어긋난 것이 보인다(익힘 84). */
+.vcalc { display:inline-flex; flex-direction:column; gap:clamp(4px,.8vw,7px); background:#fff; border:clamp(3px,.5vw,4px) solid var(--blue-l); border-radius:clamp(14px,2.6vw,22px); padding:clamp(11px,2.1vw,18px) clamp(15px,2.8vw,24px); }
+.vc-head { display:grid; grid-template-columns:clamp(28px,4.4vw,44px) repeat(2,clamp(46px,7.2vw,74px)); gap:clamp(3px,.6vw,5px); }
+.vc-head span { font-size:var(--fs-label); color:var(--gray); text-align:center; line-height:1.15; }
+.vc-grid { display:grid; grid-template-columns:clamp(28px,4.4vw,44px) repeat(2,clamp(46px,7.2vw,74px)); gap:clamp(3px,.6vw,5px); }
+.vc-c { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(30px,4.9vw,52px); color:var(--blue-d); text-align:center; line-height:1.15; }
+.vc-c.hole { color:var(--amber); }
+.vc-op { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(28px,4.5vw,46px); color:var(--amber-d); text-align:center; line-height:1.15; }
+.vc-line { grid-column:1 / -1; height:clamp(3px,.5vw,4px); background:var(--blue-d); border-radius:2px; margin:clamp(2px,.4vw,4px) 0; }
+.vc-res { display:contents; }
+.vcalc.res .vc-res .vc-c { color:var(--green); }
+.vcalc.bad { border-color:var(--red); background:#FFF6F6; }
+.vc-tag { font-size:var(--fs-label); color:var(--gray); text-align:center; }
+
+/* ───── 짝 짓기 (pairup) — 일대일대응 ───── */
+.pairup { display:flex; flex-direction:column; gap:clamp(5px,1vw,9px); background:#FAFAFA; border:clamp(3px,.5vw,4px) solid var(--gray-l); border-radius:clamp(14px,2.6vw,22px); padding:clamp(9px,1.8vw,15px); max-width:var(--mw-lg); }
+.pu-line { display:flex; gap:clamp(2px,.45vw,4px); flex-wrap:wrap; justify-content:center; }
+.pu-col { display:flex; flex-direction:column; align-items:center; gap:clamp(1px,.25vw,2px); }
+.pu-col i { font-style:normal; font-size:clamp(17px,2.7vw,26px); line-height:1.05; animation:ka-pop .3s ease both; }
+.pu-col.solo { background:var(--amber-p); border:clamp(1.5px,.28vw,2.5px) dashed var(--amber); border-radius:clamp(4px,.8vw,7px); }
+.pu-col.solo i.blank { visibility:hidden; }
+.pu-lb { font-size:var(--fs-label); color:var(--gray); text-align:center; }
+
+/* ───── 놀이판 (board) — 사방치기 · 말판 ───── */
+.board { display:flex; flex-direction:column; gap:clamp(3px,.6vw,5px); align-items:center; background:#fff; border:clamp(3px,.5vw,4px) solid var(--green-l); border-radius:clamp(14px,2.6vw,22px); padding:clamp(9px,1.8vw,15px); max-width:var(--mw-lg); }
+.bd-row { display:flex; gap:clamp(3px,.6vw,5px); justify-content:center; }
+.bd-c { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(15px,2.4vw,24px); color:var(--green); background:var(--green-p); border:clamp(2px,.4vw,3px) solid var(--green-l); border-radius:clamp(6px,1.2vw,10px); padding:clamp(6px,1.2vw,11px) clamp(7px,1.4vw,13px); text-align:center; line-height:1.1; min-width:clamp(52px,8vw,86px); }
+.bd-c.word { font-family:var(--kedu-round),'Jua',sans-serif; font-weight:400; font-size:clamp(12px,1.9vw,18px); color:var(--gray); background:#FAFAFA; border-color:var(--gray-l); }
+.bd-c.on { background:var(--amber-p); border-color:var(--amber); color:var(--amber-d); }
+.bd-c.big { font-size:clamp(22px,3.5vw,34px); min-width:clamp(58px,9vw,96px); }
+
+/* ───── 빙고판 (bingo) — 4단원 계승 ───── */
+.bingo { display:grid; grid-template-columns:repeat(3,1fr); gap:clamp(4px,.9vw,8px); padding:clamp(8px,1.6vw,14px); background:#fff; border:clamp(3px,.5vw,4px) solid var(--blue-d); border-radius:clamp(12px,2.2vw,18px); }
+.bingo b { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(22px,3.5vw,34px); color:var(--blue-d); background:var(--blue-bg); border:clamp(2.5px,.45vw,3.5px) solid var(--blue-l); border-radius:clamp(8px,1.5vw,13px); padding:clamp(8px,1.6vw,15px) clamp(11px,2.1vw,19px); text-align:center; line-height:1; }
+.bingo b.hit { background:var(--amber-p); border-color:var(--amber); color:var(--amber-d); animation:ka-pop .35s ease both; }
+
+/* ───── 팽이 카드 (topcard) — 색칠 놀이, 교과서 140 ───── */
+.tops { display:flex; gap:clamp(6px,1.2vw,11px); flex-wrap:wrap; justify-content:center; max-width:var(--mw-lg); }
+.topcard { display:flex; flex-direction:column; align-items:center; gap:clamp(2px,.4vw,4px); background:#fff; border:clamp(3px,.5vw,4px) solid var(--gray-l); border-radius:50% 50% 45% 45%; padding:clamp(8px,1.6vw,14px) clamp(10px,2vw,17px) clamp(12px,2.2vw,19px); animation:ka-pop .35s ease both; }
+.topcard em { font-style:normal; font-size:clamp(17px,2.7vw,26px); line-height:1; }
+.topcard span { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(15px,2.4vw,23px); color:var(--blue-d); line-height:1; white-space:nowrap; }
+.topcard.paint { background:var(--amber-p); border-color:var(--amber); }
+.topcard.paint span { color:var(--amber-d); }
+
+/* ───── 명령어 카드 (cmdcard) — 09차 언플러그드 ───── */
+.cmds { display:flex; flex-direction:column; gap:clamp(2px,.4vw,5px); align-items:stretch; justify-content:center; max-width:var(--mw-md); }
+.cmd { display:flex; align-items:center; gap:clamp(4px,.8vw,7px); background:#fff; border:clamp(3px,.5vw,4px) solid var(--blue-l); border-radius:clamp(10px,1.9vw,16px); padding:clamp(5px,1vw,9px) clamp(9px,1.7vw,15px); font-size:clamp(15px,2.2vw,21px); color:var(--blue-d); line-height:1.2; animation:ka-pop .3s ease both; }
+.cmd:nth-of-type(even) { border-color:var(--amber); color:var(--amber-d); background:var(--amber-p); }
+.cmd:nth-of-type(even) u { background:var(--amber); }
+.cmd u { font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-label); color:#fff; background:var(--blue-l); border-radius:999px; width:clamp(20px,3vw,26px); height:clamp(20px,3vw,26px); display:flex; align-items:center; justify-content:center; flex-shrink:0; text-decoration:none; }
+.cmd.hole { border-style:dashed; border-color:var(--amber); background:var(--amber-p); color:var(--amber); }
+.cmd-arrow { font-family:'Nunito',sans-serif; font-weight:800; color:var(--gray); font-size:clamp(13px,2vw,19px); align-self:center; line-height:1; }
+
+/* ═════════ 2학년 2학기 1단원 「네 자리 수」 부품 ═════════ */
+/* 자리 색 — 수 모형·자릿값판·자릿값 카드·비교판이 한 색 규약을 쓴다 (천 보라 · 백 주황 · 십 초록 · 일 파랑) */
+:root { --pth:#7B1FA2; --pth-l:#BA68C8; --pth-p:#F3E5F5; --ph:#E65100; --ph-l:#FFB74D; --ph-p:#FFF3E0;
+        --pt:#2E7D32; --pt-l:#81C784; --pt-p:#E8F5E9; --po:#1565C0; --po-l:#64B5F6; --po-p:#E3F2FD; }
+
+/* ───── 수 모형 (pvblock) — 단원 시그니처 ───── */
+.pvb { --pu:clamp(4px,.62vw,6px); display:flex; gap:clamp(10px,2vw,18px); align-items:flex-end; justify-content:center; flex-wrap:wrap; background:#FAFAFA; border:clamp(3px,.5vw,4px) solid var(--gray-l); border-radius:clamp(14px,2.6vw,22px); padding:clamp(9px,1.8vw,15px) clamp(11px,2.2vw,18px); max-width:var(--mw-lg); }
+.pvb.sm { --pu:clamp(3px,.48vw,5px); padding:clamp(6px,1.2vw,10px) clamp(8px,1.5vw,13px); gap:clamp(7px,1.4vw,12px); }
+.pvb-g { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,.8vw,7px); }
+.pvb-lb { font-size:var(--fs-label); line-height:1; }
+.pvb-g.th .pvb-lb{color:var(--pth)} .pvb-g.h .pvb-lb{color:var(--ph)} .pvb-g.t .pvb-lb{color:var(--pt)} .pvb-g.o .pvb-lb{color:var(--po)}
+.pvb-set { display:flex; flex-wrap:wrap; gap:calc(var(--pu)*1.4); align-items:flex-end; justify-content:center; }
+.pvb-g.th .pvb-set { max-width:calc(var(--pu)*52); padding-top:calc(var(--pu)*1.6); }
+.pvb-g.h .pvb-set { max-width:calc(var(--pu)*62); }
+.pvb-g.t .pvb-set { max-width:calc(var(--pu)*30); }
+.pvb-g.o .pvb-set { display:grid; grid-template-columns:repeat(5,var(--pu)); gap:calc(var(--pu)*.5); }
+.pv-th { width:calc(var(--pu)*10); height:calc(var(--pu)*10); background:var(--pth-l); background-image:repeating-linear-gradient(to right,rgba(255,255,255,.5) 0 1px,transparent 1px var(--pu)),repeating-linear-gradient(to bottom,rgba(255,255,255,.5) 0 1px,transparent 1px var(--pu)); border:clamp(1.5px,.28vw,2px) solid var(--pth); box-shadow:calc(var(--pu)*.8) calc(var(--pu)*-.8) 0 var(--pth), calc(var(--pu)*1.6) calc(var(--pu)*-1.6) 0 #4A148C; margin-right:calc(var(--pu)*1.6); animation:ka-cube-pop .35s ease both; }
+.pv-h { width:calc(var(--pu)*10); height:calc(var(--pu)*10); background:var(--ph-l); background-image:repeating-linear-gradient(to right,rgba(255,255,255,.55) 0 1px,transparent 1px var(--pu)),repeating-linear-gradient(to bottom,rgba(255,255,255,.55) 0 1px,transparent 1px var(--pu)); border:clamp(1.5px,.28vw,2px) solid var(--ph); animation:ka-cube-pop .35s ease both; }
+.pv-t { width:var(--pu); height:calc(var(--pu)*10); background:var(--pt-l); background-image:repeating-linear-gradient(to bottom,rgba(255,255,255,.6) 0 1px,transparent 1px var(--pu)); border:clamp(1px,.2vw,1.5px) solid var(--pt); animation:ka-bar-grow .4s ease both; }
+.pv-o { width:var(--pu); height:var(--pu); background:var(--po-l); border:clamp(1px,.2vw,1.5px) solid var(--po); animation:ka-cube-pop .3s ease both; }
+.pv-th.gone,.pv-h.gone,.pv-t.gone,.pv-o.gone { opacity:.25; filter:grayscale(.8); }
+.pvb-none { font-size:var(--fs-label); color:var(--gray-l); padding:calc(var(--pu)*2) 0; }
+.pvb-num { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(26px,4.2vw,42px); color:var(--blue-d); align-self:center; }
+
+/* ───── 자릿값 모형·돈 (pvtiles) ───── */
+.pvt { display:flex; flex-wrap:wrap; gap:clamp(5px,1vw,9px); justify-content:center; align-items:center; max-width:var(--mw-lg); }
+.pvt i { font-style:normal; font-family:'Nunito',sans-serif; font-weight:800; line-height:1; display:flex; align-items:center; justify-content:center; animation:ka-pop .3s ease both; }
+.pvt .c-th { background:var(--pth-p); border:clamp(2.5px,.45vw,3.5px) solid var(--pth); color:var(--pth); border-radius:clamp(7px,1.3vw,11px); font-size:clamp(15px,2.3vw,22px); padding:clamp(8px,1.5vw,13px) clamp(8px,1.5vw,12px); }
+.pvt .c-h { background:var(--ph-p); border:clamp(2.5px,.45vw,3.5px) solid var(--ph); color:var(--ph); border-radius:clamp(7px,1.3vw,11px); font-size:clamp(14px,2.1vw,20px); padding:clamp(6px,1.2vw,10px) clamp(7px,1.3vw,11px); }
+.pvt .c-t { background:var(--pt-p); border:clamp(2.5px,.45vw,3.5px) solid var(--pt); color:var(--pt); border-radius:clamp(7px,1.3vw,11px); font-size:clamp(13px,2vw,19px); padding:clamp(5px,1vw,9px) clamp(6px,1.1vw,10px); }
+.pvt .c-o { background:var(--po-p); border:clamp(2.5px,.45vw,3.5px) solid var(--po); color:var(--po); border-radius:clamp(7px,1.3vw,11px); font-size:clamp(13px,2vw,19px); padding:clamp(5px,1vw,9px) clamp(8px,1.5vw,12px); }
+.pvt.money .c-th { background:#C8E6C9; border-color:#388E3C; color:#1B5E20; border-radius:clamp(4px,.7vw,6px); padding:clamp(9px,1.7vw,14px) clamp(12px,2.2vw,19px); }
+.pvt.money .c-h { background:#ECEFF1; border-color:#90A4AE; color:#455A64; border-radius:50%; width:clamp(38px,5.6vw,52px); height:clamp(38px,5.6vw,52px); padding:0; }
+.pvt.money .c-t { background:#FFE0B2; border-color:#EF6C00; color:#E65100; border-radius:50%; width:clamp(32px,4.8vw,44px); height:clamp(32px,4.8vw,44px); padding:0; }
+.pvt i.gone { opacity:.28; text-decoration:line-through; }
+.pvt i.grp { outline:clamp(2px,.4vw,3px) dashed var(--red); outline-offset:clamp(2px,.4vw,3px); }
+
+/* ───── 자릿값판 (placetable) ───── */
+.plt { display:grid; gap:clamp(3px,.6vw,5px); background:#fff; border:clamp(3px,.5vw,4px) solid var(--gray-l); border-radius:clamp(12px,2.2vw,18px); padding:clamp(6px,1.2vw,10px); }
+.plt span { display:flex; align-items:center; justify-content:center; text-align:center; border-radius:clamp(6px,1.1vw,9px); line-height:1.1; }
+.plt .hd { font-size:var(--fs-label); padding:clamp(4px,.8vw,7px) clamp(6px,1.2vw,11px); color:#fff; }
+.plt .hd.th{background:var(--pth)} .plt .hd.h{background:var(--ph)} .plt .hd.t{background:var(--pt)} .plt .hd.o{background:var(--po)}
+.plt .dg { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(24px,3.8vw,38px); padding:clamp(5px,1vw,9px) clamp(8px,1.6vw,14px); min-width:clamp(46px,7vw,70px); }
+.plt .dg.th{background:var(--pth-p);color:var(--pth)} .plt .dg.h{background:var(--ph-p);color:var(--ph)} .plt .dg.t{background:var(--pt-p);color:var(--pt)} .plt .dg.o{background:var(--po-p);color:var(--po)}
+.plt .vl { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(15px,2.3vw,22px); padding:clamp(4px,.8vw,7px) clamp(4px,.8vw,8px); background:#FAFAFA; color:#455A64; }
+.plt .hole { background:var(--amber-p) !important; color:var(--amber) !important; outline:clamp(2px,.35vw,3px) dashed var(--amber); outline-offset:-3px; }
+.plt .hi { box-shadow:0 0 0 clamp(3px,.5vw,4px) var(--red) inset; }
+.plt .rl { font-size:var(--fs-label); color:var(--gray); padding:0 clamp(4px,.8vw,7px); }
+
+/* ───── 자릿값 카드 (valcards) ───── */
+.vcards { display:flex; gap:clamp(6px,1.2vw,10px); align-items:center; justify-content:center; flex-wrap:wrap; }
+.vcard { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(22px,3.4vw,34px); padding:clamp(6px,1.2vw,10px) clamp(9px,1.7vw,15px); border-radius:clamp(8px,1.5vw,12px); border:clamp(2.5px,.45vw,3.5px) solid; line-height:1; text-align:right; animation:ka-pop .3s ease both; }
+.vcard.th{background:var(--pth-p);border-color:var(--pth);color:var(--pth)} .vcard.h{background:var(--ph-p);border-color:var(--ph);color:var(--ph)} .vcard.t{background:var(--pt-p);border-color:var(--pt);color:var(--pt)} .vcard.o{background:var(--po-p);border-color:var(--po);color:var(--po)}
+.vcard.hole { background:var(--amber-p); border-color:var(--amber); border-style:dashed; color:var(--amber); }
+.vplus { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(20px,3vw,30px); color:var(--gray); }
+.vstack { display:flex; border:clamp(3px,.5vw,4px) solid #455A64; border-radius:clamp(8px,1.5vw,12px); overflow:hidden; animation:ka-popBig .45s ease both; }
+.vstack b { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(30px,4.8vw,48px); padding:clamp(5px,1vw,9px) clamp(8px,1.5vw,13px); line-height:1; }
+.vstack b.th{background:var(--pth-p);color:var(--pth)} .vstack b.h{background:var(--ph-p);color:var(--ph)} .vstack b.t{background:var(--pt-p);color:var(--pt)} .vstack b.o{background:var(--po-p);color:var(--po)}
+
+/* ───── 뛰어 세기 줄 (jumpline) ───── */
+.jl { display:flex; align-items:flex-end; justify-content:center; flex-wrap:wrap; gap:0; max-width:var(--mw-lg); }
+.jl-cell { display:flex; flex-direction:column; align-items:center; }
+.jl-cell b { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(15px,2.35vw,23px); color:var(--blue-d); background:#fff; border:clamp(2px,.4vw,3px) solid var(--blue-l); border-radius:clamp(7px,1.3vw,11px); padding:clamp(6px,1.1vw,10px) clamp(6px,1.1vw,10px); line-height:1; animation:ka-pop .3s ease both; }
+.jl-cell b.hole { background:var(--amber-p); border-color:var(--amber); border-style:dashed; color:var(--amber); }
+.jl-cell b.on { background:var(--blue-p); }
+.jl.line .jl-cell b { border:none; background:transparent; padding:clamp(3px,.6vw,5px) 0 0; font-size:clamp(12px,1.9vw,18px); }
+.jl.line .jl-cell b.hole { background:var(--amber-p); border:clamp(2px,.35vw,3px) dashed var(--amber); padding:clamp(3px,.6vw,5px) clamp(3px,.6vw,5px); border-radius:6px; }
+.jl.line .jl-cell i { display:block; width:clamp(2px,.35vw,3px); height:clamp(10px,1.8vw,16px); background:var(--gray); }
+.jl.line .jl-cell { border-top:clamp(2px,.4vw,3px) solid var(--gray); min-width:clamp(44px,7.2vw,70px); }
+.jl-arr { display:flex; flex-direction:column; align-items:center; font-family:'Nunito',sans-serif; font-weight:800; color:var(--amber-d); font-size:clamp(11px,1.7vw,15px); padding:0 clamp(2px,.4vw,4px) clamp(8px,1.5vw,13px); line-height:1.1; }
+.jl.line .jl-arr { display:none; }
+
+/* ───── 수 배열표 (grid4) ───── */
+.g4 { display:grid; gap:clamp(2px,.4vw,4px); max-width:var(--mw-lg); }
+.g4 b { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(11px,1.7vw,17px); color:var(--blue-d); background:#fff; border:clamp(1.5px,.28vw,2.5px) solid var(--blue-l); border-radius:clamp(5px,.9vw,8px); padding:clamp(4px,.8vw,7px) clamp(2px,.4vw,4px); text-align:center; line-height:1; }
+.g4 b.hole { background:var(--amber-p); border-color:var(--amber); border-style:dashed; color:var(--amber); }
+.g4 b.mark { background:var(--pt-p); border-color:var(--pt); color:var(--pt); }
+
+/* ───── 비교판 (cmpboard) ───── */
+.cmpb .dg.dim { opacity:.45; }
+.cmp-sign { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(30px,4.8vw,48px); color:var(--red); }
+
+/* ───── 이야기책 (storybook) ───── */
+.story { display:flex; gap:clamp(6px,1.2vw,11px); justify-content:center; flex-wrap:wrap; max-width:var(--mw-lg); }
+.story-pg { background:#FFFDF5; border:clamp(3px,.5vw,4px) solid #A1887F; border-radius:clamp(6px,1.1vw,9px) clamp(12px,2.2vw,18px) clamp(12px,2.2vw,18px) clamp(6px,1.1vw,9px); padding:clamp(7px,1.4vw,12px) clamp(8px,1.5vw,13px); width:clamp(120px,19vw,190px); display:flex; flex-direction:column; gap:clamp(4px,.8vw,7px); animation:ka-pop .35s ease both; }
+.story-pg u { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(20px,3vw,30px); color:#5D4037; text-decoration:none; }
+.story-pg u.hole { color:var(--amber); background:var(--amber-p); border:clamp(2px,.35vw,3px) dashed var(--amber); border-radius:8px; text-align:center; }
+.story-pg span { font-size:clamp(13px,1.9vw,17px); color:#6D4C41; line-height:1.35; }
+.story-pg em { font-style:normal; font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-label); color:#fff; background:#A1887F; border-radius:999px; align-self:flex-start; padding:1px 8px; }
+.story.sm .story-pg { width:clamp(104px,15vw,150px); padding:clamp(5px,1vw,9px) clamp(6px,1.1vw,10px); }
+.story.sm .story-pg u { font-size:clamp(17px,2.5vw,24px); }
+.story.sm .story-pg span { font-size:clamp(11px,1.6vw,14px); }
+.ul { text-decoration:underline; text-decoration-thickness:3px; text-underline-offset:4px; color:var(--red); }
+
+/* ═══ 2-2 4단원 「시각과 시간」 부품 ═══ */
+.clock { display:block; width:clamp(128px,20vw,210px); height:clamp(128px,20vw,210px); animation:ka-pop .4s ease both; }
+.clock.sm { width:clamp(96px,14vw,150px); height:clamp(96px,14vw,150px); }
+.clock.lg { width:clamp(170px,26vw,270px); height:clamp(170px,26vw,270px); }
+.cl-face { fill:#fff; stroke:#1565C0; stroke-width:6; }
+.cl-tick { stroke:#B0BEC5; stroke-width:2.6; stroke-linecap:round; }
+.cl-tick.big { stroke:#546E7A; stroke-width:4.5; }
+.cl-num { font-family:'Nunito',sans-serif; font-weight:800; font-size:19px; fill:#1565C0; text-anchor:middle; dominant-baseline:central; }
+.cl-ring { font-family:'Nunito',sans-serif; font-weight:800; font-size:15px; fill:#E65100; text-anchor:middle; dominant-baseline:central; }
+.cl-hand-h { stroke:#BF360C; stroke-width:10; stroke-linecap:round; }
+.cl-hand-m { stroke:#1976D2; stroke-width:6; stroke-linecap:round; }
+.cl-pin { fill:#1565C0; }
+.cl-hl { fill:none; stroke:#FFB300; stroke-width:5; opacity:.95; }
+.clock-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,.9vw,8px); }
+.cl-tag { font-size:var(--fs-caption); color:var(--blue-d); background:var(--blue-p); border:clamp(2px,.4vw,3px) solid var(--blue-l); border-radius:clamp(10px,1.8vw,15px); padding:clamp(3px,.6vw,5px) clamp(10px,2vw,16px); }
+.cl-tag.amber { color:var(--amber-d); background:var(--amber-p); border-color:var(--amber); }
+.cl-legend { display:flex; gap:clamp(10px,2vw,18px); flex-wrap:wrap; justify-content:center; }
+.cl-lg { display:flex; align-items:center; gap:clamp(4px,.8vw,7px); font-size:var(--fs-label); color:var(--gray); }
+.cl-lg i { display:block; border-radius:999px; }
+.cl-lg i.h { width:clamp(20px,3vw,28px); height:clamp(6px,.9vw,8px); background:#BF360C; }
+.cl-lg i.m { width:clamp(32px,4.8vw,44px); height:clamp(4px,.6vw,6px); background:#1976D2; }
+.dclock { display:inline-flex; align-items:center; gap:clamp(2px,.4vw,4px); background:#263238; color:#B9F6CA; border-radius:clamp(8px,1.4vw,12px); padding:clamp(5px,1vw,9px) clamp(12px,2.4vw,20px); font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(22px,4vw,36px); letter-spacing:.04em; box-shadow:inset 0 0 0 3px #455A64; }
+.dclock.sm { font-size:clamp(17px,3vw,26px); }
+.dclock i { font-style:normal; }
+.dc-pre { font-family:'Jua',sans-serif; font-size:.55em; color:#FFE082; margin-right:.3em; }
+.tband { width:100%; max-width:760px; }
+.tb-title { font-size:var(--fs-label); color:var(--gray); text-align:center; margin-bottom:3px; }
+.tb-labs { display:grid; margin:0 calc(-50% / 13); }
+.tb-l { font-size:clamp(9px,1.4vw,12px); color:#607D8B; text-align:center; white-space:nowrap; }
+.tb-l.hr { font-family:'Jua',sans-serif; color:#1565C0; font-size:clamp(11px,1.7vw,15px); }
+.tb-row { display:grid; border:2.5px solid #37474F; border-radius:4px; height:clamp(22px,3.6vw,32px); overflow:hidden; }
+.tb-c { display:block; border-right:1.5px dashed #90A4AE; background:#fff; }
+.tb-c:last-child { border-right:none; }
+.tb-c.on { background:#81D4FA; }
+.plan table, .mdays table { border-collapse:collapse; background:#fff; font-size:clamp(11px,1.8vw,15px); }
+.plan th, .plan td, .mdays th, .mdays td { border:2px solid #B0BEC5; padding:clamp(3px,.7vw,6px) clamp(4px,.9vw,8px); text-align:center; }
+.plan th, .mdays th { background:#ECEFF1; color:#37474F; font-weight:normal; }
+.plan td.num, .mdays td.num { font-family:'Nunito',sans-serif; font-weight:800; color:#1565C0; }
+.plan td.ask, .mdays td.ask { color:#E65100; }
+.day24 { width:100%; max-width:780px; }
+.dy-half { display:grid; grid-template-columns:1fr 1fr; font-family:'Jua',sans-serif; text-align:center; color:#fff; }
+.dy-half span:first-child { background:#FFB300; border-radius:6px 0 0 0; }
+.dy-half span:last-child { background:#1E88E5; border-radius:0 6px 0 0; }
+.dy-labs { display:grid; grid-template-columns:repeat(25,1fr); margin:0 calc(-50% / 24); font-size:clamp(8px,1.3vw,11px); color:#607D8B; text-align:center; }
+.dy-row { display:grid; grid-template-columns:repeat(24,1fr); border:2.5px solid #37474F; height:clamp(22px,3.6vw,30px); }
+.dy-c { display:block; border-right:1px solid rgba(0,0,0,.18); background:#fff; }
+.dy-c:nth-child(12) { border-right:3px solid #37474F; }
+.dy-leg { display:flex; flex-wrap:wrap; gap:clamp(4px,1vw,10px); justify-content:center; margin-top:4px; font-size:clamp(10px,1.6vw,13px); }
+.dy-lg { display:flex; align-items:center; gap:3px; }
+.dy-lg i { width:12px; height:12px; border-radius:3px; display:block; }
+.kcal { background:#fff; border:3px solid #CFD8DC; border-radius:clamp(10px,1.8vw,16px); padding:clamp(5px,1vw,9px); }
+.kc-title { font-family:'Jua',sans-serif; text-align:center; color:#37474F; font-size:clamp(14px,2.4vw,20px); }
+.kc-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:clamp(2px,.4vw,4px); }
+.kc-h { font-size:clamp(10px,1.6vw,14px); color:#546E7A; text-align:center; }
+.kc-h.sun, .kc-d.sun b { color:#E53935; }
+.kc-h.sat, .kc-d.sat b { color:#1E88E5; }
+.kc-d { position:relative; border:2px solid #ECEFF1; border-radius:6px; min-height:clamp(22px,3.8vw,34px); display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.kc-d b { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(10px,1.6vw,14px); color:#455A64; }
+.kc-d em { font-style:normal; font-size:clamp(11px,1.8vw,16px); line-height:1; }
+.kc-d.ring { border-color:#FB8C00; border-width:3px; background:#FFF3E0; border-radius:999px; }
+.kcal.sm .kc-d { min-height:clamp(18px,3vw,26px); }
+.grow { display:flex; align-items:center; flex-wrap:wrap; justify-content:center; gap:clamp(4px,1vw,8px); }
+.gr-n { background:#fff; border:3px solid #80CBC4; border-radius:clamp(10px,1.8vw,14px); padding:clamp(4px,.9vw,8px) clamp(6px,1.2vw,10px); display:flex; flex-direction:column; align-items:center; font-size:clamp(10px,1.6vw,13px); }
+.gr-n b { font-family:'Jua',sans-serif; color:#00695C; font-size:clamp(11px,1.8vw,15px); }
+.gr-a { color:#E65100; font-size:clamp(11px,1.8vw,15px); white-space:nowrap; }
+.gr-a em { font-style:normal; font-family:'Nunito',sans-serif; font-weight:800; background:#FFF3E0; border:2px solid #FFB74D; border-radius:6px; padding:0 .3em; margin-right:.15em; }
+.upair { display:flex; flex-wrap:wrap; gap:clamp(6px,1.4vw,12px); justify-content:center; }
+.up-c { background:#fff; border:3px solid #9FA8DA; border-radius:clamp(10px,1.8vw,14px); padding:clamp(5px,1vw,9px) clamp(10px,2vw,16px); font-size:clamp(14px,2.4vw,20px); display:flex; gap:.35em; align-items:center; }
+.up-c b { font-family:'Jua',sans-serif; color:#283593; }
+
+</style>
+<script src="/kedu_gate.js"></script>
+<script src="/kedu_boxbar.js"></script>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="kedu-cl-dial" viewBox="0 0 200 200"><circle class="cl-face" cx="100" cy="100" r="92"></circle><line class="cl-tick big" x1="100.00" y1="24.00" x2="100.00" y2="14.00"></line><line class="cl-tick" x1="108.47" y1="19.44" x2="108.99" y2="14.47"></line><line class="cl-tick" x1="116.84" y1="20.77" x2="117.88" y2="15.88"></line><line class="cl-tick" x1="125.03" y1="22.96" x2="126.58" y2="18.21"></line><line class="cl-tick" x1="132.95" y1="26.00" x2="134.98" y2="21.44"></line><line class="cl-tick big" x1="138.00" y1="34.18" x2="143.00" y2="25.52"></line><line class="cl-tick" x1="147.61" y1="34.47" x2="150.55" y2="30.42"></line><line class="cl-tick" x1="154.20" y1="39.81" x2="157.55" y2="36.09"></line><line class="cl-tick" x1="160.19" y1="45.80" x2="163.91" y2="42.45"></line><line class="cl-tick" x1="165.53" y1="52.39" x2="169.58" y2="49.45"></line><line class="cl-tick big" x1="165.82" y1="62.00" x2="174.48" y2="57.00"></line><line class="cl-tick" x1="174.00" y1="67.05" x2="178.56" y2="65.02"></line><line class="cl-tick" x1="177.04" y1="74.97" x2="181.79" y2="73.42"></line><line class="cl-tick" x1="179.23" y1="83.16" x2="184.12" y2="82.12"></line><line class="cl-tick" x1="180.56" y1="91.53" x2="185.53" y2="91.01"></line><line class="cl-tick big" x1="176.00" y1="100.00" x2="186.00" y2="100.00"></line><line class="cl-tick" x1="180.56" y1="108.47" x2="185.53" y2="108.99"></line><line class="cl-tick" x1="179.23" y1="116.84" x2="184.12" y2="117.88"></line><line class="cl-tick" x1="177.04" y1="125.03" x2="181.79" y2="126.58"></line><line class="cl-tick" x1="174.00" y1="132.95" x2="178.56" y2="134.98"></line><line class="cl-tick big" x1="165.82" y1="138.00" x2="174.48" y2="143.00"></line><line class="cl-tick" x1="165.53" y1="147.61" x2="169.58" y2="150.55"></line><line class="cl-tick" x1="160.19" y1="154.20" x2="163.91" y2="157.55"></line><line class="cl-tick" x1="154.20" y1="160.19" x2="157.55" y2="163.91"></line><line class="cl-tick" x1="147.61" y1="165.53" x2="150.55" y2="169.58"></line><line class="cl-tick big" x1="138.00" y1="165.82" x2="143.00" y2="174.48"></line><line class="cl-tick" x1="132.95" y1="174.00" x2="134.98" y2="178.56"></line><line class="cl-tick" x1="125.03" y1="177.04" x2="126.58" y2="181.79"></line><line class="cl-tick" x1="116.84" y1="179.23" x2="117.88" y2="184.12"></line><line class="cl-tick" x1="108.47" y1="180.56" x2="108.99" y2="185.53"></line><line class="cl-tick big" x1="100.00" y1="176.00" x2="100.00" y2="186.00"></line><line class="cl-tick" x1="91.53" y1="180.56" x2="91.01" y2="185.53"></line><line class="cl-tick" x1="83.16" y1="179.23" x2="82.12" y2="184.12"></line><line class="cl-tick" x1="74.97" y1="177.04" x2="73.42" y2="181.79"></line><line class="cl-tick" x1="67.05" y1="174.00" x2="65.02" y2="178.56"></line><line class="cl-tick big" x1="62.00" y1="165.82" x2="57.00" y2="174.48"></line><line class="cl-tick" x1="52.39" y1="165.53" x2="49.45" y2="169.58"></line><line class="cl-tick" x1="45.80" y1="160.19" x2="42.45" y2="163.91"></line><line class="cl-tick" x1="39.81" y1="154.20" x2="36.09" y2="157.55"></line><line class="cl-tick" x1="34.47" y1="147.61" x2="30.42" y2="150.55"></line><line class="cl-tick big" x1="34.18" y1="138.00" x2="25.52" y2="143.00"></line><line class="cl-tick" x1="26.00" y1="132.95" x2="21.44" y2="134.98"></line><line class="cl-tick" x1="22.96" y1="125.03" x2="18.21" y2="126.58"></line><line class="cl-tick" x1="20.77" y1="116.84" x2="15.88" y2="117.88"></line><line class="cl-tick" x1="19.44" y1="108.47" x2="14.47" y2="108.99"></line><line class="cl-tick big" x1="24.00" y1="100.00" x2="14.00" y2="100.00"></line><line class="cl-tick" x1="19.44" y1="91.53" x2="14.47" y2="91.01"></line><line class="cl-tick" x1="20.77" y1="83.16" x2="15.88" y2="82.12"></line><line class="cl-tick" x1="22.96" y1="74.97" x2="18.21" y2="73.42"></line><line class="cl-tick" x1="26.00" y1="67.05" x2="21.44" y2="65.02"></line><line class="cl-tick big" x1="34.18" y1="62.00" x2="25.52" y2="57.00"></line><line class="cl-tick" x1="34.47" y1="52.39" x2="30.42" y2="49.45"></line><line class="cl-tick" x1="39.81" y1="45.80" x2="36.09" y2="42.45"></line><line class="cl-tick" x1="45.80" y1="39.81" x2="42.45" y2="36.09"></line><line class="cl-tick" x1="52.39" y1="34.47" x2="49.45" y2="30.42"></line><line class="cl-tick big" x1="62.00" y1="34.18" x2="57.00" y2="25.52"></line><line class="cl-tick" x1="67.05" y1="26.00" x2="65.02" y2="21.44"></line><line class="cl-tick" x1="74.97" y1="22.96" x2="73.42" y2="18.21"></line><line class="cl-tick" x1="83.16" y1="20.77" x2="82.12" y2="15.88"></line><line class="cl-tick" x1="91.53" y1="19.44" x2="91.01" y2="14.47"></line><text class="cl-num" x="132.00" y="44.57">1</text><text class="cl-num" x="155.43" y="68.00">2</text><text class="cl-num" x="164.00" y="100.00">3</text><text class="cl-num" x="155.43" y="132.00">4</text><text class="cl-num" x="132.00" y="155.43">5</text><text class="cl-num" x="100.00" y="164.00">6</text><text class="cl-num" x="68.00" y="155.43">7</text><text class="cl-num" x="44.57" y="132.00">8</text><text class="cl-num" x="36.00" y="100.00">9</text><text class="cl-num" x="44.57" y="68.00">10</text><text class="cl-num" x="68.00" y="44.57">11</text><text class="cl-num" x="100.00" y="36.00">12</text></symbol></svg>
+<div class="ka">
+  <header class="ka-h">
+    <button class="ka-lb" onclick="goHub()">차시 목록</button>
+    <div class="ka-bar"><div id="bar" style="width:0%"></div></div>
+    <span class="ka-pg" id="pg">1 / 18</span>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </header>
+
+  <main class="ka-m">
+    <div class="slide active" data-stage="도입">
+      <div class="stage-badge">도입 · 흥미</div>
+      <h2 class="slide-title">달력에서 무엇을 볼 수 있을까요?</h2>
+<div class="stage"><div class="kcal sm" data-kcal="{&quot;y&quot;:2026,&quot;m&quot;:10,&quot;first&quot;:4,&quot;days&quot;:31,&quot;upto&quot;:31,&quot;ring&quot;:[]}"><div class="kc-title">10월</div><div class="kc-grid"><div class="kc-h sun">일</div><div class="kc-h">월</div><div class="kc-h">화</div><div class="kc-h">수</div><div class="kc-h">목</div><div class="kc-h">금</div><div class="kc-h sat">토</div><div class="kc-e"></div><div class="kc-e"></div><div class="kc-e"></div><div class="kc-e"></div><div class="kc-d" data-day="1" data-wd="4"><b>1</b></div><div class="kc-d" data-day="2" data-wd="5"><b>2</b></div><div class="kc-d sat" data-day="3" data-wd="6"><b>3</b></div><div class="kc-d sun" data-day="4" data-wd="0"><b>4</b></div><div class="kc-d" data-day="5" data-wd="1"><b>5</b></div><div class="kc-d" data-day="6" data-wd="2"><b>6</b></div><div class="kc-d" data-day="7" data-wd="3"><b>7</b></div><div class="kc-d" data-day="8" data-wd="4"><b>8</b></div><div class="kc-d" data-day="9" data-wd="5"><b>9</b></div><div class="kc-d sat" data-day="10" data-wd="6"><b>10</b></div><div class="kc-d sun" data-day="11" data-wd="0"><b>11</b><em>⛰️</em></div><div class="kc-d" data-day="12" data-wd="1"><b>12</b><em>🎵</em></div><div class="kc-d" data-day="13" data-wd="2"><b>13</b><em>🏃</em></div><div class="kc-d" data-day="14" data-wd="3"><b>14</b><em>🏊</em></div><div class="kc-d" data-day="15" data-wd="4"><b>15</b><em>⛰️</em></div><div class="kc-d" data-day="16" data-wd="5"><b>16</b><em>🎵</em></div><div class="kc-d sat" data-day="17" data-wd="6"><b>17</b><em>🏊</em></div><div class="kc-d sun" data-day="18" data-wd="0"><b>18</b></div><div class="kc-d" data-day="19" data-wd="1"><b>19</b></div><div class="kc-d" data-day="20" data-wd="2"><b>20</b></div><div class="kc-d" data-day="21" data-wd="3"><b>21</b></div><div class="kc-d" data-day="22" data-wd="4"><b>22</b></div><div class="kc-d" data-day="23" data-wd="5"><b>23</b></div><div class="kc-d sat" data-day="24" data-wd="6"><b>24</b></div><div class="kc-d sun" data-day="25" data-wd="0"><b>25</b></div><div class="kc-d" data-day="26" data-wd="1"><b>26</b></div><div class="kc-d" data-day="27" data-wd="2"><b>27</b></div><div class="kc-d" data-day="28" data-wd="3"><b>28</b></div><div class="kc-d" data-day="29" data-wd="4"><b>29</b></div><div class="kc-d" data-day="30" data-wd="5"><b>30</b></div><div class="kc-d sat" data-day="31" data-wd="6"><b>31</b></div></div></div><p class="cap">지아가 운동한 날을 표시했어요. 달력에는 날짜와 <strong>요일</strong>이 있어요.</p></div>
+
+    </div>
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입 · 목표</div>
+      <h2 class="slide-title">오늘의 목표</h2>
+<div class="stage narrow"><div class="goal-card"><div class="goal-emojis">📅 🗓️</div><p class="goal-title">달력을 알아봐요!</p><ul class="goal-list"><li>1주일은 며칠인지 알아봐요</li><li>달력으로 계획을 세워요</li><li>1년은 몇 개월인지 알아봐요</li></ul></div></div>
+
+    </div>
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입 · 1주일</div>
+      <h2 class="slide-title">일요일부터 토요일까지</h2>
+<div class="stage"><p class="cap sm">지아는 11일 <strong>일요일</strong>부터 17일 <strong>토요일</strong>까지 날마다 운동했어요.<br>달력의 한 줄은 7칸 — <strong>1주일은 7일</strong>이에요.</p></div>
+
+    </div>
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 운동 계획</div>
+      <h2 class="slide-title">슬기의 운동 목표</h2>
+<div class="stage"><div class="kcal sm" data-kcal="{&quot;y&quot;:2026,&quot;m&quot;:11,&quot;first&quot;:0,&quot;days&quot;:30,&quot;upto&quot;:30,&quot;ring&quot;:[]}"><div class="kc-title">11월</div><div class="kc-grid"><div class="kc-h sun">일</div><div class="kc-h">월</div><div class="kc-h">화</div><div class="kc-h">수</div><div class="kc-h">목</div><div class="kc-h">금</div><div class="kc-h sat">토</div><div class="kc-d sun" data-day="1" data-wd="0"><b>1</b></div><div class="kc-d" data-day="2" data-wd="1"><b>2</b><em>🎵</em></div><div class="kc-d" data-day="3" data-wd="2"><b>3</b></div><div class="kc-d" data-day="4" data-wd="3"><b>4</b><em>🎵</em></div><div class="kc-d" data-day="5" data-wd="4"><b>5</b></div><div class="kc-d" data-day="6" data-wd="5"><b>6</b></div><div class="kc-d sat" data-day="7" data-wd="6"><b>7</b></div><div class="kc-d sun" data-day="8" data-wd="0"><b>8</b></div><div class="kc-d" data-day="9" data-wd="1"><b>9</b><em>🎵</em></div><div class="kc-d" data-day="10" data-wd="2"><b>10</b></div><div class="kc-d" data-day="11" data-wd="3"><b>11</b><em>🎵</em></div><div class="kc-d" data-day="12" data-wd="4"><b>12</b></div><div class="kc-d" data-day="13" data-wd="5"><b>13</b></div><div class="kc-d sat" data-day="14" data-wd="6"><b>14</b><em>⛰️</em></div><div class="kc-d sun" data-day="15" data-wd="0"><b>15</b></div><div class="kc-d" data-day="16" data-wd="1"><b>16</b><em>🎵</em></div><div class="kc-d" data-day="17" data-wd="2"><b>17</b></div><div class="kc-d" data-day="18" data-wd="3"><b>18</b><em>🎵</em></div><div class="kc-d" data-day="19" data-wd="4"><b>19</b></div><div class="kc-d" data-day="20" data-wd="5"><b>20</b></div><div class="kc-d sat" data-day="21" data-wd="6"><b>21</b></div><div class="kc-d sun" data-day="22" data-wd="0"><b>22</b></div><div class="kc-d" data-day="23" data-wd="1"><b>23</b><em>🎵</em></div><div class="kc-d" data-day="24" data-wd="2"><b>24</b></div><div class="kc-d" data-day="25" data-wd="3"><b>25</b><em>🎵</em></div><div class="kc-d" data-day="26" data-wd="4"><b>26</b></div><div class="kc-d" data-day="27" data-wd="5"><b>27</b></div><div class="kc-d sat" data-day="28" data-wd="6"><b>28</b><em>⛰️</em></div><div class="kc-d sun" data-day="29" data-wd="0"><b>29</b></div><div class="kc-d" data-day="30" data-wd="1"><b>30</b><em>🎵</em></div></div></div><p class="cap sm">① 매주 <strong>월요일과 수요일</strong>에 음악 줄넘기 ② 11월 <strong>둘째 토요일부터 2주일마다</strong> 등산</p></div>
+
+    </div>
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 다음 달로</div>
+      <h2 class="slide-title">12월의 첫 등산</h2>
+<div class="stage"><div class="kcal sm" data-kcal="{&quot;y&quot;:2026,&quot;m&quot;:12,&quot;first&quot;:2,&quot;days&quot;:31,&quot;upto&quot;:14,&quot;ring&quot;:[]}"><div class="kc-title">12월</div><div class="kc-grid"><div class="kc-h sun">일</div><div class="kc-h">월</div><div class="kc-h">화</div><div class="kc-h">수</div><div class="kc-h">목</div><div class="kc-h">금</div><div class="kc-h sat">토</div><div class="kc-e"></div><div class="kc-e"></div><div class="kc-d" data-day="1" data-wd="2"><b>1</b></div><div class="kc-d" data-day="2" data-wd="3"><b>2</b></div><div class="kc-d" data-day="3" data-wd="4"><b>3</b></div><div class="kc-d" data-day="4" data-wd="5"><b>4</b></div><div class="kc-d sat" data-day="5" data-wd="6"><b>5</b></div><div class="kc-d sun" data-day="6" data-wd="0"><b>6</b></div><div class="kc-d" data-day="7" data-wd="1"><b>7</b></div><div class="kc-d" data-day="8" data-wd="2"><b>8</b></div><div class="kc-d" data-day="9" data-wd="3"><b>9</b></div><div class="kc-d" data-day="10" data-wd="4"><b>10</b></div><div class="kc-d" data-day="11" data-wd="5"><b>11</b></div><div class="kc-d sat" data-day="12" data-wd="6"><b>12</b><em>⛰️</em></div><div class="kc-d sun" data-day="13" data-wd="0"><b>13</b></div><div class="kc-d" data-day="14" data-wd="1"><b>14</b></div></div></div><p class="cap sm">11월 28일 토요일에서 <strong>2주일</strong> 뒤는 12월 12일 토요일이에요.</p></div>
+
+    </div>
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 1년</div>
+      <h2 class="slide-title">1년은 12개월</h2>
+<div class="stage"><div class="mdays" data-mdays="{&quot;hide&quot;:[]}"><table><tr><th>월</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>10</th><th>11</th><th>12</th></tr><tr><th>날수(일)</th><td class="num" data-v="31">31</td><td class="num" data-v="28">28</td><td class="num" data-v="31">31</td><td class="num" data-v="30">30</td><td class="num" data-v="31">31</td><td class="num" data-v="30">30</td><td class="num" data-v="31">31</td><td class="num" data-v="31">31</td><td class="num" data-v="30">30</td><td class="num" data-v="31">31</td><td class="num" data-v="30">30</td><td class="num" data-v="31">31</td></tr></table></div><p class="cap sm">1월부터 12월까지 — <strong>1년은 12개월</strong>이에요. 달마다 날수가 달라요(2월은 28일 또는 29일).</p></div>
+
+    </div>
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 말 가리기</div>
+      <h2 class="slide-title">「12월」과 「12개월」</h2>
+<div class="stage"><p class="cap sm"><strong>12월</strong>은 달의 이름이고, <strong>12개월</strong>은 열두 달 동안의 <strong>길이</strong>예요.<br>「11월 둘째 토요일은 <strong>며칠</strong>인가요?」는 날을, 「음악 줄넘기를 하는 날은 <strong>모두 며칠</strong>인가요?」는 개수를 물어요.<br>한 달·두 달 / 일 개월·이 개월이라고 읽어요.</p></div>
+
+    </div>
+    <div class="slide" data-stage="기본문제" data-q-id="q8" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <h2 class="slide-title">1주일은 며칠일까요?</h2>
+<div class="stage"><p class="cap sm">일 · 월 · 화 · 수 · 목 · 금 · 토</p><div class="q-part" data-part="pad" data-answer="7" data-ok="1주일은 7일이에요!" data-miss="요일을 하나씩 세어 보세요."><div class="row"><div class="q-display empty">?</div><span class="q-unit">일</span></div><div class="q-pad"><button class="q-pad-btn" data-v="1">1</button><button class="q-pad-btn" data-v="2">2</button><button class="q-pad-btn" data-v="3">3</button><button class="q-pad-btn" data-v="4">4</button><button class="q-pad-btn" data-v="5">5</button><button class="q-pad-btn" data-v="6">6</button><button class="q-pad-btn" data-v="7">7</button><button class="q-pad-btn" data-v="8">8</button><button class="q-pad-btn" data-v="9">9</button><button class="q-pad-btn" data-v="0">0</button><button class="q-pad-btn clear" data-v="c">지움</button><button class="q-pad-btn clear" data-v="ok">확인</button></div></div></div>
+<p class="mcq-hint" data-hints='["달력의 한 줄에 몇 칸이 있나요?", "일요일부터 토요일까지 세어요."]'></p><div class="q-fb"></div>
+    </div>
+    <div class="slide" data-stage="기본문제" data-q-id="q9" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <h2 class="slide-title">11월에 음악 줄넘기를 하는 날은 모두 며칠?</h2>
+<div class="stage"><div class="kcal sm" data-kcal="{&quot;y&quot;:2026,&quot;m&quot;:11,&quot;first&quot;:0,&quot;days&quot;:30,&quot;upto&quot;:30,&quot;ring&quot;:[]}"><div class="kc-title">11월</div><div class="kc-grid"><div class="kc-h sun">일</div><div class="kc-h">월</div><div class="kc-h">화</div><div class="kc-h">수</div><div class="kc-h">목</div><div class="kc-h">금</div><div class="kc-h sat">토</div><div class="kc-d sun" data-day="1" data-wd="0"><b>1</b></div><div class="kc-d" data-day="2" data-wd="1"><b>2</b><em>🎵</em></div><div class="kc-d" data-day="3" data-wd="2"><b>3</b></div><div class="kc-d" data-day="4" data-wd="3"><b>4</b><em>🎵</em></div><div class="kc-d" data-day="5" data-wd="4"><b>5</b></div><div class="kc-d" data-day="6" data-wd="5"><b>6</b></div><div class="kc-d sat" data-day="7" data-wd="6"><b>7</b></div><div class="kc-d sun" data-day="8" data-wd="0"><b>8</b></div><div class="kc-d" data-day="9" data-wd="1"><b>9</b><em>🎵</em></div><div class="kc-d" data-day="10" data-wd="2"><b>10</b></div><div class="kc-d" data-day="11" data-wd="3"><b>11</b><em>🎵</em></div><div class="kc-d" data-day="12" data-wd="4"><b>12</b></div><div class="kc-d" data-day="13" data-wd="5"><b>13</b></div><div class="kc-d sat" data-day="14" data-wd="6"><b>14</b></div><div class="kc-d sun" data-day="15" data-wd="0"><b>15</b></div><div class="kc-d" data-day="16" data-wd="1"><b>16</b><em>🎵</em></div><div class="kc-d" data-day="17" data-wd="2"><b>17</b></div><div class="kc-d" data-day="18" data-wd="3"><b>18</b><em>🎵</em></div><div class="kc-d" data-day="19" data-wd="4"><b>19</b></div><div class="kc-d" data-day="20" data-wd="5"><b>20</b></div><div class="kc-d sat" data-day="21" data-wd="6"><b>21</b></div><div class="kc-d sun" data-day="22" data-wd="0"><b>22</b></div><div class="kc-d" data-day="23" data-wd="1"><b>23</b><em>🎵</em></div><div class="kc-d" data-day="24" data-wd="2"><b>24</b></div><div class="kc-d" data-day="25" data-wd="3"><b>25</b><em>🎵</em></div><div class="kc-d" data-day="26" data-wd="4"><b>26</b></div><div class="kc-d" data-day="27" data-wd="5"><b>27</b></div><div class="kc-d sat" data-day="28" data-wd="6"><b>28</b></div><div class="kc-d sun" data-day="29" data-wd="0"><b>29</b></div><div class="kc-d" data-day="30" data-wd="1"><b>30</b><em>🎵</em></div></div></div><div class="q-part" data-part="pad" data-answer="9" data-shown="1" data-ok="월요일과 수요일을 모두 세면 9일이에요!" data-miss="🎵 표시를 하나씩 세어 보세요."><div class="row"><div class="q-display empty">?</div><span class="q-unit">일</span></div><div class="q-pad"><button class="q-pad-btn" data-v="1">1</button><button class="q-pad-btn" data-v="2">2</button><button class="q-pad-btn" data-v="3">3</button><button class="q-pad-btn" data-v="4">4</button><button class="q-pad-btn" data-v="5">5</button><button class="q-pad-btn" data-v="6">6</button><button class="q-pad-btn" data-v="7">7</button><button class="q-pad-btn" data-v="8">8</button><button class="q-pad-btn" data-v="9">9</button><button class="q-pad-btn" data-v="0">0</button><button class="q-pad-btn clear" data-v="c">지움</button><button class="q-pad-btn clear" data-v="ok">확인</button></div></div></div>
+<p class="mcq-hint" data-hints='["월요일과 수요일에 표시했어요.", "🎵 를 빠짐없이 세어요."]'></p><div class="q-fb"></div>
+    </div>
+    <div class="slide" data-stage="기본문제" data-q-id="q10" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <h2 class="slide-title">11월 둘째 토요일은 며칠?</h2>
+<div class="stage"><div class="kcal sm" data-kcal="{&quot;y&quot;:2026,&quot;m&quot;:11,&quot;first&quot;:0,&quot;days&quot;:30,&quot;upto&quot;:30,&quot;ring&quot;:[]}"><div class="kc-title">11월</div><div class="kc-grid"><div class="kc-h sun">일</div><div class="kc-h">월</div><div class="kc-h">화</div><div class="kc-h">수</div><div class="kc-h">목</div><div class="kc-h">금</div><div class="kc-h sat">토</div><div class="kc-d sun" data-day="1" data-wd="0"><b>1</b></div><div class="kc-d" data-day="2" data-wd="1"><b>2</b></div><div class="kc-d" data-day="3" data-wd="2"><b>3</b></div><div class="kc-d" data-day="4" data-wd="3"><b>4</b></div><div class="kc-d" data-day="5" data-wd="4"><b>5</b></div><div class="kc-d" data-day="6" data-wd="5"><b>6</b></div><div class="kc-d sat" data-day="7" data-wd="6"><b>7</b></div><div class="kc-d sun" data-day="8" data-wd="0"><b>8</b></div><div class="kc-d" data-day="9" data-wd="1"><b>9</b></div><div class="kc-d" data-day="10" data-wd="2"><b>10</b></div><div class="kc-d" data-day="11" data-wd="3"><b>11</b></div><div class="kc-d" data-day="12" data-wd="4"><b>12</b></div><div class="kc-d" data-day="13" data-wd="5"><b>13</b></div><div class="kc-d sat" data-day="14" data-wd="6"><b>14</b></div><div class="kc-d sun" data-day="15" data-wd="0"><b>15</b></div><div class="kc-d" data-day="16" data-wd="1"><b>16</b></div><div class="kc-d" data-day="17" data-wd="2"><b>17</b></div><div class="kc-d" data-day="18" data-wd="3"><b>18</b></div><div class="kc-d" data-day="19" data-wd="4"><b>19</b></div><div class="kc-d" data-day="20" data-wd="5"><b>20</b></div><div class="kc-d sat" data-day="21" data-wd="6"><b>21</b></div><div class="kc-d sun" data-day="22" data-wd="0"><b>22</b></div><div class="kc-d" data-day="23" data-wd="1"><b>23</b></div><div class="kc-d" data-day="24" data-wd="2"><b>24</b></div><div class="kc-d" data-day="25" data-wd="3"><b>25</b></div><div class="kc-d" data-day="26" data-wd="4"><b>26</b></div><div class="kc-d" data-day="27" data-wd="5"><b>27</b></div><div class="kc-d sat" data-day="28" data-wd="6"><b>28</b></div><div class="kc-d sun" data-day="29" data-wd="0"><b>29</b></div><div class="kc-d" data-day="30" data-wd="1"><b>30</b></div></div></div><div class="q-part" data-part="pad" data-answer="14" data-shown="1" data-ok="둘째 토요일은 11월 14일이에요!" data-miss="토요일 줄을 위에서부터 세어요."><div class="row"><div class="q-display empty">?</div><span class="q-unit">일</span></div><div class="q-pad"><button class="q-pad-btn" data-v="1">1</button><button class="q-pad-btn" data-v="2">2</button><button class="q-pad-btn" data-v="3">3</button><button class="q-pad-btn" data-v="4">4</button><button class="q-pad-btn" data-v="5">5</button><button class="q-pad-btn" data-v="6">6</button><button class="q-pad-btn" data-v="7">7</button><button class="q-pad-btn" data-v="8">8</button><button class="q-pad-btn" data-v="9">9</button><button class="q-pad-btn" data-v="0">0</button><button class="q-pad-btn clear" data-v="c">지움</button><button class="q-pad-btn clear" data-v="ok">확인</button></div></div></div>
+<p class="mcq-hint" data-hints='["첫째 토요일은 7일이에요.", "7일에서 1주일 뒤예요."]'></p><div class="q-fb"></div>
+    </div>
+    <div class="slide" data-stage="기본문제" data-q-id="q11" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <h2 class="slide-title">1년은 몇 개월일까요?</h2>
+<div class="stage"><p class="cap sm">1월, 2월, 3월 … 12월</p><div class="q-part" data-part="mcq" data-ok="1년은 12개월이에요!"><div class="mcq-opts"><button class="mcq-opt" data-ok="0" data-miss="12월까지 있어요.">10개월</button><button class="mcq-opt" data-ok="1" data-miss="">12개월</button><button class="mcq-opt" data-ok="0" data-miss="7은 1주일의 날수예요.">7개월</button><button class="mcq-opt" data-ok="0" data-miss="24는 하루의 시간이에요.">24개월</button></div></div></div>
+<p class="mcq-hint" data-hints='["1월부터 차례로 세어 보세요.", "마지막 달은 12월이에요."]'></p><div class="q-fb"></div>
+    </div>
+    <div class="slide" data-stage="응용문제" data-q-id="q12" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <h2 class="slide-title">12월에 처음 등산하는 날</h2>
+<div class="stage"><div class="kcal sm" data-kcal="{&quot;y&quot;:2026,&quot;m&quot;:11,&quot;first&quot;:0,&quot;days&quot;:30,&quot;upto&quot;:30,&quot;ring&quot;:[]}"><div class="kc-title">11월</div><div class="kc-grid"><div class="kc-h sun">일</div><div class="kc-h">월</div><div class="kc-h">화</div><div class="kc-h">수</div><div class="kc-h">목</div><div class="kc-h">금</div><div class="kc-h sat">토</div><div class="kc-d sun" data-day="1" data-wd="0"><b>1</b></div><div class="kc-d" data-day="2" data-wd="1"><b>2</b></div><div class="kc-d" data-day="3" data-wd="2"><b>3</b></div><div class="kc-d" data-day="4" data-wd="3"><b>4</b></div><div class="kc-d" data-day="5" data-wd="4"><b>5</b></div><div class="kc-d" data-day="6" data-wd="5"><b>6</b></div><div class="kc-d sat" data-day="7" data-wd="6"><b>7</b></div><div class="kc-d sun" data-day="8" data-wd="0"><b>8</b></div><div class="kc-d" data-day="9" data-wd="1"><b>9</b></div><div class="kc-d" data-day="10" data-wd="2"><b>10</b></div><div class="kc-d" data-day="11" data-wd="3"><b>11</b></div><div class="kc-d" data-day="12" data-wd="4"><b>12</b></div><div class="kc-d" data-day="13" data-wd="5"><b>13</b></div><div class="kc-d sat" data-day="14" data-wd="6"><b>14</b><em>⛰️</em></div><div class="kc-d sun" data-day="15" data-wd="0"><b>15</b></div><div class="kc-d" data-day="16" data-wd="1"><b>16</b></div><div class="kc-d" data-day="17" data-wd="2"><b>17</b></div><div class="kc-d" data-day="18" data-wd="3"><b>18</b></div><div class="kc-d" data-day="19" data-wd="4"><b>19</b></div><div class="kc-d" data-day="20" data-wd="5"><b>20</b></div><div class="kc-d sat" data-day="21" data-wd="6"><b>21</b></div><div class="kc-d sun" data-day="22" data-wd="0"><b>22</b></div><div class="kc-d" data-day="23" data-wd="1"><b>23</b></div><div class="kc-d" data-day="24" data-wd="2"><b>24</b></div><div class="kc-d" data-day="25" data-wd="3"><b>25</b></div><div class="kc-d" data-day="26" data-wd="4"><b>26</b></div><div class="kc-d" data-day="27" data-wd="5"><b>27</b></div><div class="kc-d sat" data-day="28" data-wd="6"><b>28</b><em>⛰️</em></div><div class="kc-d sun" data-day="29" data-wd="0"><b>29</b></div><div class="kc-d" data-day="30" data-wd="1"><b>30</b></div></div></div><div class="q-part" data-part="mcq" data-ok="11월 28일에서 2주일 뒤예요!"><div class="mcq-opts one"><button class="mcq-opt" data-ok="0" data-miss="2주일마다라서 1주일 뒤가 아니에요.">12월 5일 토요일</button><button class="mcq-opt" data-ok="1" data-miss="">12월 12일 토요일</button><button class="mcq-opt" data-ok="0" data-miss="등산은 토요일에 해요.">12월 14일 월요일</button><button class="mcq-opt" data-ok="0" data-miss="28일에서 2주일 뒤를 찾아요.">12월 1일 화요일</button></div></div></div>
+<p class="mcq-hint" data-hints='["마지막 등산은 11월 28일 토요일이에요.", "28일의 1주일 뒤, 또 1주일 뒤를 찾아요."]'></p><div class="q-fb"></div>
+    </div>
+    <div class="slide" data-stage="응용문제" data-q-id="q13" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <h2 class="slide-title">날수가 30일인 달은?</h2>
+<div class="stage"><div class="mdays" data-mdays="{&quot;hide&quot;:[4,5,7,8]}"><table><tr><th>월</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>10</th><th>11</th><th>12</th></tr><tr><th>날수(일)</th><td class="num" data-v="31">31</td><td class="num" data-v="28">28</td><td class="num" data-v="31">31</td><td class="num ask" data-v="30">?</td><td class="num ask" data-v="31">?</td><td class="num" data-v="30">30</td><td class="num ask" data-v="31">?</td><td class="num ask" data-v="31">?</td><td class="num" data-v="30">30</td><td class="num" data-v="31">31</td><td class="num" data-v="30">30</td><td class="num" data-v="31">31</td></tr></table></div><div class="q-part" data-part="mcq" data-ok="4월은 30일이에요!"><div class="mcq-opts"><button class="mcq-opt" data-ok="0" data-miss="5월은 31일이에요.">5월</button><button class="mcq-opt" data-ok="0" data-miss="7월은 31일이에요.">7월</button><button class="mcq-opt" data-ok="1" data-miss="">4월</button><button class="mcq-opt" data-ok="0" data-miss="8월은 31일이에요.">8월</button></div></div></div>
+<p class="mcq-hint" data-hints='["주먹을 쥐고 세어 보세요.", "내려간 곳이 30일이에요."]'></p><div class="q-fb"></div>
+    </div>
+    <div class="slide" data-stage="응용문제" data-q-id="q14" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <h2 class="slide-title">전시회를 하는 기간은 모두 며칠?</h2>
+<div class="stage"><div class="kcal sm" data-kcal="{&quot;y&quot;:2023,&quot;m&quot;:11,&quot;first&quot;:3,&quot;days&quot;:30,&quot;upto&quot;:30,&quot;ring&quot;:[20,21,22,23,24,25,26,27,28,29,30]}"><div class="kc-title">11월</div><div class="kc-grid"><div class="kc-h sun">일</div><div class="kc-h">월</div><div class="kc-h">화</div><div class="kc-h">수</div><div class="kc-h">목</div><div class="kc-h">금</div><div class="kc-h sat">토</div><div class="kc-e"></div><div class="kc-e"></div><div class="kc-e"></div><div class="kc-d" data-day="1" data-wd="3"><b>1</b></div><div class="kc-d" data-day="2" data-wd="4"><b>2</b></div><div class="kc-d" data-day="3" data-wd="5"><b>3</b></div><div class="kc-d sat" data-day="4" data-wd="6"><b>4</b></div><div class="kc-d sun" data-day="5" data-wd="0"><b>5</b></div><div class="kc-d" data-day="6" data-wd="1"><b>6</b></div><div class="kc-d" data-day="7" data-wd="2"><b>7</b></div><div class="kc-d" data-day="8" data-wd="3"><b>8</b></div><div class="kc-d" data-day="9" data-wd="4"><b>9</b></div><div class="kc-d" data-day="10" data-wd="5"><b>10</b></div><div class="kc-d sat" data-day="11" data-wd="6"><b>11</b></div><div class="kc-d sun" data-day="12" data-wd="0"><b>12</b></div><div class="kc-d" data-day="13" data-wd="1"><b>13</b></div><div class="kc-d" data-day="14" data-wd="2"><b>14</b></div><div class="kc-d" data-day="15" data-wd="3"><b>15</b></div><div class="kc-d" data-day="16" data-wd="4"><b>16</b></div><div class="kc-d" data-day="17" data-wd="5"><b>17</b></div><div class="kc-d sat" data-day="18" data-wd="6"><b>18</b></div><div class="kc-d sun" data-day="19" data-wd="0"><b>19</b></div><div class="kc-d ring" data-day="20" data-wd="1"><b>20</b></div><div class="kc-d ring" data-day="21" data-wd="2"><b>21</b></div><div class="kc-d ring" data-day="22" data-wd="3"><b>22</b></div><div class="kc-d ring" data-day="23" data-wd="4"><b>23</b></div><div class="kc-d ring" data-day="24" data-wd="5"><b>24</b></div><div class="kc-d sat ring" data-day="25" data-wd="6"><b>25</b></div><div class="kc-d sun ring" data-day="26" data-wd="0"><b>26</b></div><div class="kc-d ring" data-day="27" data-wd="1"><b>27</b></div><div class="kc-d ring" data-day="28" data-wd="2"><b>28</b></div><div class="kc-d ring" data-day="29" data-wd="3"><b>29</b></div><div class="kc-d ring" data-day="30" data-wd="4"><b>30</b></div></div></div><p class="cap sm">11월 <strong>20일</strong>부터 12월 <strong>2일</strong>까지 전시회를 해요.</p><div class="q-part" data-part="pad" data-answer="13" data-shown="1" data-ok="11일 + 2일 = 13일이에요!" data-miss="11월 30일까지 세고 12월 1일·2일을 더해요."><div class="row"><div class="q-display empty">?</div><span class="q-unit">일</span></div><div class="q-pad"><button class="q-pad-btn" data-v="1">1</button><button class="q-pad-btn" data-v="2">2</button><button class="q-pad-btn" data-v="3">3</button><button class="q-pad-btn" data-v="4">4</button><button class="q-pad-btn" data-v="5">5</button><button class="q-pad-btn" data-v="6">6</button><button class="q-pad-btn" data-v="7">7</button><button class="q-pad-btn" data-v="8">8</button><button class="q-pad-btn" data-v="9">9</button><button class="q-pad-btn" data-v="0">0</button><button class="q-pad-btn clear" data-v="c">지움</button><button class="q-pad-btn clear" data-v="ok">확인</button></div></div></div>
+<p class="mcq-hint" data-hints='["11월 20일부터 30일까지 세어요.", "12월 1일과 2일도 넣어요."]'></p><div class="q-fb"></div>
+    </div>
+    <div class="slide" data-stage="응용문제" data-q-id="q15" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <h2 class="slide-title">달과 개월을 판단해요</h2>
+<div class="stage"><div class="q-part" data-part="judge" data-ok="달과 개월을 잘 가렸어요!"><div class="jd-list"><div class="jd-row" data-ok="o" data-miss="12월은 이름, 12개월은 길이예요."><span class="jd-text">「12월」은 달의 이름이고 「12개월」은 기간이다.</span><span class="jd-btns"><button class="jd-btn" data-p="o">○</button><button class="jd-btn" data-p="x">✕</button></span></div><div class="jd-row" data-ok="o" data-miss="달은 하나·둘·셋, 개월은 일·이·삼과 써요."><span class="jd-text">「세 달」과 「삼 개월」은 같은 기간이다.</span><span class="jd-btns"><button class="jd-btn" data-p="o">○</button><button class="jd-btn" data-p="x">✕</button></span></div><div class="jd-row" data-ok="x" data-miss="어느 달부터든 열두 달이 지나면 1년이에요."><span class="jd-text">1년은 반드시 1월부터 시작해야 한다.</span><span class="jd-btns"><button class="jd-btn" data-p="o">○</button><button class="jd-btn" data-p="x">✕</button></span></div></div></div></div>
+<p class="mcq-hint" data-hints='["이름과 길이를 나누어 생각해요.", "3월부터 시작해도 열두 달이면 1년이에요."]'></p><div class="q-fb"></div>
+    </div>
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리 · 한눈에</div>
+      <h2 class="slide-title">오늘 배운 것</h2>
+<div class="stage narrow"><div class="sum-card"><div class="sum-cells"><div class="sum-cell"><u>7️⃣</u><i>1주일</i></div><div class="sum-cell"><u>🗓️</u><i>12개월</i></div><div class="sum-cell"><u>✊</u><i>날수</i></div></div><p class="sum-msg"><strong>1주일 = 7일 · 1년 = 12개월</strong> — 달마다 날수가 달라요</p></div></div>
+
+    </div>
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리 · 스스로 점검</div>
+      <h2 class="slide-title">스스로 점검해요</h2>
+<div class="stage narrow"><p class="wrap-msg" id="wrap-msg">잘했어요!</p><div class="self-row"><span class="self-label">1주일이 7일임을 말할 수 있어요</span><span class="self-btns"><button class="self-btn">😀</button><button class="self-btn">🙂</button><button class="self-btn">🤔</button></span></div><div class="self-row"><span class="self-label">달력으로 날짜와 요일을 찾을 수 있어요</span><span class="self-btns"><button class="self-btn">😀</button><button class="self-btn">🙂</button><button class="self-btn">🤔</button></span></div><div class="self-row"><span class="self-label">「며칠」과 「모두 며칠」을 가릴 수 있어요</span><span class="self-btns"><button class="self-btn">😀</button><button class="self-btn">🙂</button><button class="self-btn">🤔</button></span></div></div>
+
+    </div>
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리 · 다음 차시</div>
+      <h2 class="slide-title">다음 시간에는</h2>
+<div class="stage narrow"><div class="next-card"><div class="next-emoji">✅</div><p class="next-msg">다음 시간에는 <strong>시각과 시간</strong>을 모두 되짚어 봐요!</p></div></div>
+
+    </div>
+  </main>
+
+  <footer class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next" id="next" onclick="goNext()">다음 →</button>
+  </footer>
+</div>
+
+<script>
+const STORAGE_KEY = 'kedu_progress_g2_2_math_u4_l08';
+
+// ═══════════ 상태 ═══════════
+const TOTAL = 18;
+let cur = 0, score = 0, muted = false, qState = {};
+const startedAt = Date.now();
+const QIDS = ['q8','q9','q10','q11','q12','q13','q14','q15'];
+
+function getQState(qid){ if(!qState[qid]) qState[qid]={solved:false,attempts:0,wrongCount:0,hintLevel:0}; return qState[qid]; }
+function currentSlide(){ return document.querySelectorAll('.slide')[cur]; }
+function currentQId(){ const s=currentSlide(); return s?s.dataset.qId:null; }
+
+function updateUI(){
+  document.querySelectorAll('.slide').forEach((s,i)=>s.classList.toggle('active', i===cur));
+  document.getElementById('pg').textContent = (cur+1)+' / '+TOTAL;
+  document.getElementById('bar').style.width = ((cur+1)/TOTAL*100)+'%';
+  document.getElementById('prev').disabled = cur===0;
+  const qid = currentQId(), hintBtn = document.getElementById('hint');
+  if(qid){ const st=getQState(qid); hintBtn.disabled = st.solved || st.hintLevel>=2; }
+  else hintBtn.disabled = true;
+  const nb = document.getElementById('next');
+  if(cur===TOTAL-1){ nb.textContent='마치기 →'; saveProgress(true); } else nb.textContent='다음 →';
+  const wm = document.getElementById('wrap-msg');
+  if(wm && cur===15) wm.textContent = wrapMsg(score);
+}
+function wrapMsg(s){ if(s>=100) return '완벽해요!'; if(s>=80) return '정말 잘했어요!'; if(s>=60) return '잘했어요!'; return '다시 해도 좋아요!'; }
+function goNext(){ if(cur<TOTAL-1){ cur++; saveProgress(false); updateUI(); } }
+function goPrev(){ if(cur>0){ cur--; updateUI(); } }
+function goHub(){ saveProgress(false); location.href='../index.html'; }
+function toggleMute(){ muted=!muted; document.getElementById('mute').textContent = muted?'🔇':'🔊'; }
+function addScore(n){ score+=n; document.getElementById('score').textContent='⭐ '+score; }
+function showHint(){
+  const qid=currentQId(); if(!qid) return;
+  const st=getQState(qid); if(st.solved||st.hintLevel>=2) return;
+  const el=currentSlide().querySelector('.mcq-hint'); if(!el) return;
+  const hints=JSON.parse(el.dataset.hints||'[]');
+  st.hintLevel++; el.textContent='💡 '+hints[st.hintLevel-1];
+  document.getElementById('hint').disabled = st.hintLevel>=2;
+}
+function pointsForQ(qid){
+  const s=document.querySelector('[data-q-id="'+qid+'"]');
+  const base=parseInt(s.dataset.qPoints||'0',10), st=getQState(qid);
+  if(st.hintLevel===2) return Math.max(0,base-5);
+  if(st.hintLevel===1) return Math.max(0,base-2);
+  return base;
+}
+function solveQ(slide, qid, fbEl, okMsg){
+  const st=getQState(qid);
+  if(st.solved) return;
+  st.solved=true;
+  addScore(pointsForQ(qid));
+  if(fbEl){ fbEl.classList.remove('wrong'); fbEl.innerHTML='⭕ '+(okMsg||'맞았어요!'); }
+  document.getElementById('hint').disabled=true;
+  document.getElementById('next').classList.add('hl');
+  saveProgress(false);
+}
+function missQ(qid, fbEl, msg){
+  const st=getQState(qid); st.attempts++; st.wrongCount++;
+  if(fbEl){ fbEl.classList.add('wrong'); fbEl.innerHTML='❌ '+(msg||'다시 한번 볼까요?'); }
+}
+
+// ═══════════ 부품 1 — 숫자 입력 (pad) ═══════════
+function setupPad(part){
+  const slide=part.closest('.slide'), qid=slide.dataset.qId;
+  const ans=parseInt(part.dataset.answer,10);
+  const maxLen=(part.dataset.maxlen? parseInt(part.dataset.maxlen,10):String(ans).length);
+  const disp=part.querySelector('.q-display'), fb=slide.querySelector('.q-fb');
+  const okMsg=part.dataset.ok||'', missMsg=part.dataset.miss||'';
+  let buf='';
+  function render(){ disp.textContent = buf===''?'?':buf; disp.classList.toggle('empty', buf===''); }
+  function check(){
+    if(buf==='') return;
+    if(parseInt(buf,10)===ans){
+      disp.classList.remove('wrong'); disp.classList.add('correct');
+      part.querySelectorAll('.q-pad-btn').forEach(b=>b.disabled=true);
+      solveQ(slide,qid,fb,okMsg);
+    } else {
+      disp.classList.add('wrong');
+      missQ(qid,fb,missMsg);
+      setTimeout(()=>{ disp.classList.remove('wrong'); buf=''; render(); }, 700);
+    }
+  }
+  part.querySelectorAll('.q-pad-btn').forEach(b=>{
+    b.addEventListener('click',()=>{
+      if(getQState(qid).solved) return;
+      const v=b.dataset.v;
+      if(v==='c'){ buf=''; render(); return; }
+      if(v==='ok'){ check(); return; }
+      if(buf.length<maxLen){ buf+=v; render(); }
+      if(buf.length===maxLen) setTimeout(check,220);
+    });
+  });
+  render();
+}
+
+// ═══════════ 부품 2 — 묶음·낱개 두 칸 입력 (two) ═══════════
+function setupTwo(part){
+  const slide=part.closest('.slide'), qid=slide.dataset.qId;
+  const sa=String(part.dataset.answerA), sb=String(part.dataset.answerB);
+  const a=parseInt(sa,10), b=parseInt(sb,10), la=sa.length, lb=sb.length;   // 칸마다 자릿수만큼 받는다
+  const dA=part.querySelector('[data-cell="a"]'), dB=part.querySelector('[data-cell="b"]');
+  const fb=slide.querySelector('.q-fb');
+  const okMsg=part.dataset.ok||'', missMsg=part.dataset.miss||'';
+  let vA='', vB='', active='a';
+  function render(){
+    dA.textContent = vA===''?'?':vA; dA.classList.toggle('empty', vA==='');
+    dB.textContent = vB===''?'?':vB; dB.classList.toggle('empty', vB==='');
+    dA.classList.toggle('active', active==='a' && !getQState(qid).solved);
+    dB.classList.toggle('active', active==='b' && !getQState(qid).solved);
+  }
+  function check(){
+    if(vA===''||vB==='') return;
+    if(parseInt(vA,10)===a && parseInt(vB,10)===b){
+      dA.classList.remove('active','wrong'); dB.classList.remove('active','wrong');
+      dA.classList.add('correct'); dB.classList.add('correct');
+      part.querySelectorAll('.q-pad-btn').forEach(x=>x.disabled=true);
+      solveQ(slide,qid,fb,okMsg);
+    } else {
+      dA.classList.add('wrong'); dB.classList.add('wrong');
+      missQ(qid,fb,missMsg);
+      setTimeout(()=>{ dA.classList.remove('wrong'); dB.classList.remove('wrong'); vA=''; vB=''; active='a'; render(); }, 800);
+    }
+  }
+  dA.addEventListener('click',()=>{ if(!getQState(qid).solved){ active='a'; vA=''; render(); } });
+  dB.addEventListener('click',()=>{ if(!getQState(qid).solved){ active='b'; vB=''; render(); } });
+  part.querySelectorAll('.q-pad-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      if(getQState(qid).solved) return;
+      const v=btn.dataset.v;
+      if(v==='c'){ vA=''; vB=''; active='a'; render(); return; }
+      if(v==='ok'){ check(); return; }
+      if(active==='a'){ if(vA.length<la){ vA+=v; if(vA.length>=la) active='b'; } }
+      else { if(vB.length<lb) vB+=v; }
+      render();
+      if(vA.length===la&&vB.length===lb) setTimeout(check,240);
+    });
+  });
+  render();
+}
+
+// ═══════════ 부품 3 — 4지선다 (mcq) ═══════════
+function setupMcq(part){
+  const slide=part.closest('.slide'), qid=slide.dataset.qId;
+  const fb=slide.querySelector('.q-fb');
+  const okMsg=part.dataset.ok||'';
+  part.querySelectorAll('.mcq-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      if(getQState(qid).solved) return;
+      if(btn.dataset.ok==='1'){
+        btn.classList.add('correct');
+        part.querySelectorAll('.mcq-opt').forEach(o=>{ o.disabled=true; if(o!==btn) o.classList.add('dim'); });
+        solveQ(slide,qid,fb,okMsg);
+      } else {
+        btn.classList.add('wrong');
+        missQ(qid,fb,btn.dataset.miss||'');
+        setTimeout(()=>btn.classList.remove('wrong'),600);
+      }
+    });
+  });
+}
+
+// ═══════════ 부품 4 — 매칭 (match) ═══════════
+function setupMatch(part){
+  const slide=part.closest('.slide'), qid=slide.dataset.qId;
+  const fb=slide.querySelector('.q-fb');
+  const okMsg=part.dataset.ok||'';
+  const need=part.querySelectorAll('.match-slot').length;
+  let done=0;
+  part.querySelectorAll('.match-card').forEach(card=>{
+    card.addEventListener('click',()=>{
+      if(getQState(qid).solved) return;
+      const k=card.dataset.k;
+      const slot=part.querySelector('.match-slot[data-k="'+k+'"]:not(.filled)');
+      if(slot && card.dataset.ok==='1'){
+        slot.textContent=card.textContent;
+        slot.classList.add('filled','correct');
+        card.classList.add('used');
+        done++;
+        if(done>=need) solveQ(slide,qid,fb,okMsg);
+      } else {
+        card.classList.add('wrong');
+        missQ(qid,fb,card.dataset.miss||'');
+        setTimeout(()=>card.classList.remove('wrong'),600);
+      }
+    });
+  });
+}
+
+// ═══════════ 부품 5 — ○✕ 판정 (judge) ═══════════
+function setupJudge(part){
+  const slide=part.closest('.slide'), qid=slide.dataset.qId;
+  const fb=slide.querySelector('.q-fb');
+  const okMsg=part.dataset.ok||'';
+  const rows=[...part.querySelectorAll('.jd-row')];
+  let done=0;
+  rows.forEach(row=>{
+    row.querySelectorAll('.jd-btn').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        if(getQState(qid).solved || row.dataset.done==='1') return;
+        const pick=btn.dataset.p, want=row.dataset.ok;
+        if(pick===want){
+          row.dataset.done='1';
+          row.classList.add('correct');
+          btn.classList.add('picked');
+          row.querySelectorAll('.jd-btn').forEach(b=>b.disabled=true);
+          done++;
+          if(done>=rows.length) solveQ(slide,qid,fb,okMsg);
+        } else {
+          row.classList.add('wrong');
+          missQ(qid,fb,row.dataset.miss||'');
+          setTimeout(()=>row.classList.remove('wrong'),600);
+        }
+      });
+    });
+  });
+}
+
+// ═══════════ 자기 평가 ═══════════
+function setupSelf(){
+  document.querySelectorAll('.self-row').forEach(row=>{
+    row.querySelectorAll('.self-btn').forEach(b=>{
+      b.addEventListener('click',()=>{
+        row.querySelectorAll('.self-btn').forEach(x=>x.classList.remove('picked'));
+        b.classList.add('picked');
+      });
+    });
+  });
+}
+
+// ═══════════ 진도 저장 (차시운영 §4) ═══════════
+function saveProgress(completed){
+  const wrongArr=[], hintArr=[];
+  QIDS.forEach(qid=>{ const st=getQState(qid); wrongArr.push(st.wrongCount); hintArr.push(st.hintLevel); });
+  const prev=loadProgress();
+  const data={
+    score:score, max_score:100, completed:completed,
+    completed_at: completed? new Date().toISOString() : (prev?prev.completed_at:null),
+    first_attempt_score: prev && prev.first_attempt_score!=null ? prev.first_attempt_score : (completed?score:null),
+    attempt_count: prev ? (prev.attempt_count||1) : 1,
+    hint_used:hintArr, wrong_count:wrongArr,
+    duration_sec: Math.floor((Date.now()-startedAt)/1000) + (prev?(prev.duration_sec||0):0),
+    last_slide: cur+1
+  };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e){}
+}
+function loadProgress(){ try { const r=localStorage.getItem(STORAGE_KEY); return r?JSON.parse(r):null; } catch(e){ return null; } }
+
+// ═══════════ 기동 ═══════════
+document.querySelectorAll('.q-part').forEach(p=>{
+  const k=p.dataset.part;
+  if(k==='pad') setupPad(p);
+  else if(k==='two') setupTwo(p);
+  else if(k==='mcq') setupMcq(p);
+  else if(k==='match') setupMatch(p);
+  else if(k==='judge') setupJudge(p);
+});
+setupSelf();
+document.querySelectorAll('.slide').forEach(s=>{
+  s.addEventListener('click',()=>{ document.getElementById('next').classList.remove('hl'); });
+});
+updateUI();
+
+</script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit.js"></script>
+</body>
+</html>

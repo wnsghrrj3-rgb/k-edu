@@ -331,6 +331,113 @@ window.KEDU_MAP["g2_2_math"] = {
   },
   {
    "num": 4,
+   "name": "시각과 시간",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g2_math_u4_l01",
+     "lessonId": "g2_2_math_u4_l01_v1",
+     "n": "1",
+     "title": "단원 도입 — 시각과 시간을 만나요",
+     "sub": null,
+     "url": "/grade2/semester2/math/4단원_시각과시간/g2_math_u4_l01_단원도입.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_math_u4_l02",
+     "lessonId": "g2_2_math_u4_l02_v1",
+     "n": "2",
+     "title": "몇 시 몇 분을 읽어 볼까요 ⑴",
+     "sub": null,
+     "url": "/grade2/semester2/math/4단원_시각과시간/g2_math_u4_l02_몇시몇분을읽어볼까요_1.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_math_u4_l03",
+     "lessonId": "g2_2_math_u4_l03_v1",
+     "n": "3",
+     "title": "몇 시 몇 분을 읽어 볼까요 ⑵",
+     "sub": null,
+     "url": "/grade2/semester2/math/4단원_시각과시간/g2_math_u4_l03_몇시몇분을읽어볼까요_2.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_math_u4_l04",
+     "lessonId": "g2_2_math_u4_l04_v1",
+     "n": "4",
+     "title": "여러 가지 방법으로 시각을 읽어 볼까요",
+     "sub": null,
+     "url": "/grade2/semester2/math/4단원_시각과시간/g2_math_u4_l04_여러가지방법으로시각을읽어볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_math_u4_l05",
+     "lessonId": "g2_2_math_u4_l05_v1",
+     "n": "5",
+     "title": "1시간을 알아볼까요",
+     "sub": null,
+     "url": "/grade2/semester2/math/4단원_시각과시간/g2_math_u4_l05_1시간을알아볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_math_u4_l06",
+     "lessonId": "g2_2_math_u4_l06_v1",
+     "n": "6",
+     "title": "걸린 시간을 알아볼까요",
+     "sub": null,
+     "url": "/grade2/semester2/math/4단원_시각과시간/g2_math_u4_l06_걸린시간을알아볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_math_u4_l07",
+     "lessonId": "g2_2_math_u4_l07_v1",
+     "n": "7",
+     "title": "하루의 시간을 알아볼까요",
+     "sub": null,
+     "url": "/grade2/semester2/math/4단원_시각과시간/g2_math_u4_l07_하루의시간을알아볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_math_u4_l08",
+     "lessonId": "g2_2_math_u4_l08_v1",
+     "n": "8",
+     "title": "달력을 알아볼까요",
+     "sub": null,
+     "url": "/grade2/semester2/math/4단원_시각과시간/g2_math_u4_l08_달력을알아볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_math_u4_l09",
+     "lessonId": "g2_2_math_u4_l09_v1",
+     "n": "9",
+     "title": "수학이랑 확인해요 (단원 평가)",
+     "sub": null,
+     "url": "/grade2/semester2/math/4단원_시각과시간/g2_math_u4_l09_수학이랑확인해요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_math_u4_l10",
+     "lessonId": "g2_2_math_u4_l10_v1",
+     "n": "10",
+     "title": "수학이랑 만들어요 — 나의 성장 이야기",
+     "sub": null,
+     "url": "/grade2/semester2/math/4단원_시각과시간/g2_math_u4_l10_수학이랑만들어요.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
+  },
+  {
+   "num": 5,
    "name": "표와 그래프",
    "kind": "unit",
    "lessons": [
