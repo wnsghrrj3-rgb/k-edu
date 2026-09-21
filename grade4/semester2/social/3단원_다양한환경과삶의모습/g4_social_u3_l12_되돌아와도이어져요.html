@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<!--
+=========================================================================
+  사회 4-2 · 3단원 다양한 환경과 삶의 모습
+  단원 마무리 · l12
+  「다양한 환경과 삶의 모습에서 공부한 내용을 정리해요」
+  교과서 p.146~147 · 지도서 15~16차시(p.278~279) · [4사10-01][4사10-02]
+  수업 기법 = 생각 그물 완성 · 말판 놀이(돌아가며 말하기 · 협력 학습)
+=========================================================================
+
+  ■ 직접조작 = 되돌아와도 이어져요 판 (35번째 신규 패턴)
+  ⭐ 씨앗은 교과서 147쪽 놀이 규칙 한 줄 —
+     「도착한 칸에 있는 문제의 정답을 말하면 그 자리에 머물고, 맞히지 못하면 이전 칸으로 돌아갑니다」.
+  ⭐ 앞 서른네 판에서 학생의 손길은 언제나 판을 앞으로만 밀었다.
+     이 판은 처음으로 **뒤로 물러난다**. 그런데 물러나도 지나온 자리는 지워지지 않는다.
+  ⭐ 잎 상태가 코드에 아예 없다(RB_ON·RB_PUT·RB_LEAFSTATE 부재).
+     그물에 붙은 잎은 지나온 칸 수 하나에서 그때그때 나온다.
+       function rbPassed(st,k){ return k < st.rbDone; }
+  ⭐ 줄기표도 없다(RB_STEM 배열 부재). 잎이 어느 줄기에 붙는지는 한 줄에서만 나온다.
+       function rbStemOf(k){ return k < RB_MID ? 0 : 1; }
+  ⭐ 걸음 수를 판이 세어 두지 않는다. 지나온 칸과 되돌아온 걸음에서 셈으로 나온다.
+       function rbSteps(st){ return st.rbDone + 2 * st.rbBack; }
+  ⭐ 앞으로 나아가는 자리 state.rbDone = state.rbPos + 1 단 하나,
+     물러나는 자리 state.rbPos = state.rbPos - 1 단 하나 · 난수 0 · 주사위 0.
+  ⭐ RB_LEAF 를 읽는 자리는 rbLeafOf 단 하나 · RB_QUIZ 를 읽는 자리는 rbAskOf 단 하나.
+
+  ■ 이 차시의 뼈대 — 두 수
+   ㉠ 도착까지 **맞혀야 하는 횟수는 언제나 12**다. 몇 번 틀렸든 달라지지 않는다.
+      (틀리면 물러나지만, 물러난 칸은 이미 푼 칸이라 판이 다시 묻지 않는다.)
+   ㉡ **걸음 수는 사람마다 다르다** — 12 + 되돌아온 걸음 × 2.
+      끝 판의 그물은 누구나 똑같이 열두 잎인데, 거기까지 간 걸음은 저마다 다르다.
+
+  ■ 5단계
+   ① 열두 칸을 차례로 통과하기 (칸마다 3택 · 맞히면 앞으로, 틀리면 이전 칸으로)
+   ② 되돌아온 칸은 다시 묻지 않는다 — 「앞으로」 한 번으로 지나간다
+   ③ 열두 잎이 다 붙어 생각 그물이 선다
+   ④ 판 읽기 3택(정답 자리 1) → ⑤ 마무리 3택(정답 자리 2) → 완료
+      — 주사위와 말을 손에 쥐고 친구들과 놀이하는 일은 교실 몫
+
+  ■ 가드 10종
+   ① 마무리 확정 후 네 처리기 전체 잠금      ② 무효 번호(안내조차 0)
+   ③ 되돌아온 칸에서 문제 풀기 — 판 불변       ④ 도착한 뒤 또 풀기 — 판 불변
+   ⑤ 아직 풀지 않은 칸에서 앞으로 — 판 불변    ⑥ 도착한 뒤 앞으로 — 판 불변
+   ⑦ 열두 칸을 다 지나기 전 판 읽기 — 판 불변   ⑧ 이미 읽은 자리 — 판 불변
+   ⑨ 판 읽기 어긋난 답 — 판 불변             ⑩ 판을 읽기 전 마무리 · 마무리 어긋난 답 — 판 불변
+   ※ 출발 칸에서 틀리면 물러날 자리가 없다 — 제자리에 머문다(뼈대, 판 불변).
+
+  ■ 정직 4곳
+   ㉠ 판의 열두 칸은 단원에서 공부한 내용을 판이 열둘로 줄여 묶은 자리이고,
+      공부한 내용은 이보다 훨씬 많다(캡션 상시).
+   ㉡ 되돌아온 걸음은 점수에 한 점도 붙지 않는다(캡션 상시).
+   ㉢ 주사위를 던져 말을 옮기며 친구들과 겨루는 일은 교실 몫(완료 카드 명시).
+   ㉣ 끝 판의 그물은 누구나 열두 잎으로 같지만, 거기까지 간 걸음은 저마다 다르다(캡션 상시).
+
+  ■ 설계 원칙
+   · 단원 평가(지도서 280~281쪽) 침범 0 — 교사용 자리는 옮기지 않는다
+   · 새 사실 0 — 회수는 l01~l11 에서 이미 배운 자리만
+   · 교사용 참고 자료 0(학습 안내·지도 꿀·활동 의도·평가 관점·융합 교과·핵심 역량 0)
+   · 실제 지역 이름 0 · 네 자리 연도 0 · 비율 0 · 금액 0 · 「틀렸」 0 · 사람 형상 0 · 학생 이름 0
+-->
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>다양한 환경과 삶의 모습을 정리해요 · 사회 4-2</title>
+<meta name="kedu-lesson-id" content="g4_social_u3_l12_v1"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#0891B2; --green-d:#0E7490; --cyan:#0D9488;
+  --bg:#ECFEFF; --bub:#CFFAFE; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#F57F17; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes drawLine{to{transform:scaleX(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ka-lb{background:#F1F5F9;border:none;padding:7px 12px;border-radius:10px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;font-family:inherit;font-weight:700;color:#475569;flex-shrink:0;font-size:13px}
+.ka-lb svg{width:15px;height:15px}
+.ka-bar{flex:1;height:5px;background:var(--bg);border-radius:999px;overflow:hidden}
+.ka-bar>div{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:999px;transition:width .35s ease;width:6%}
+.ka-pg{color:var(--green);font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;flex-shrink:0}
+.ka-sc{background:var(--amber-bg);color:var(--amber);padding:4px 12px;border-radius:999px;display:flex;align-items:center;gap:5px;flex-shrink:0;font-weight:700}
+.ka-sc svg{width:14px;height:14px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px}
+.ka-sc-u{font-size:12px}
+
+/* 메인 */
+.ka-m{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow-y:auto}
+.ka-tags{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ka-bg{background:var(--amber-bg);color:var(--amber);padding:5px 14px;border-radius:30px;font-size:13px;
+  display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.ka-bg.s2{background:#E0F2FE;color:#0369A1}
+.ka-bg.s3{background:#EDE9FE;color:#6D28D9}
+.ka-bg.s4{background:#FCE7F3;color:#BE185D}
+.ka-bg.s5{background:#CFFAFE;color:var(--green)}
+.ka-bg svg{width:13px;height:13px}
+.ka-meta{font-size:13px;color:var(--muted)}
+.ka-t{font-size:clamp(20px,3.4vw,29px);margin-bottom:16px;line-height:1.4;color:var(--green);letter-spacing:-.3px;font-weight:700;animation:fadeUp .4s .15s ease both}
+.ka-bub{background:var(--bub);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);line-height:1.7;
+  margin-bottom:16px;border-left:4px solid var(--green);animation:fadeUp .4s .3s ease both}
+.ka-emph{position:relative;display:inline-block;font-weight:700;color:var(--green)}
+.ka-emph::after{content:'';position:absolute;bottom:2px;left:0;right:0;height:3px;background:var(--red);border-radius:2px;transform:scaleX(0);transform-origin:left;animation:drawLine .6s .6s ease forwards}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(16px,2.6vw,21px);font-weight:700;line-height:1.6;margin-bottom:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:640px}
+.opt{background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:13px 14px;font-size:clamp(14px,2.3vw,17px);
+  font-weight:500;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:var(--green);background:#CFFAFE;animation:pop .4s ease}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;font-size:clamp(14px,2.3vw,17px);line-height:1.6;text-align:center;animation:fadeUp .35s ease both;max-width:640px}
+.fb.ok{color:var(--green);font-weight:700}
+.hint{margin-top:12px;background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(13px,2.2vw,16px);
+  line-height:1.6;color:#0C4A6E;max-width:560px;animation:fadeUp .35s ease both}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:620px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFF;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:clamp(14px,2.3vw,17px);line-height:1.5}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(8,145,178,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+/* 조작 판 — 되돌아와도 이어져요 판 */
+.rb-wrap{max-width:780px;width:100%;margin:0 auto}
+.rb-head{background:#CFFAFE;color:#155E75;font-weight:800;text-align:center;border-radius:10px;padding:7px 10px;
+  font-size:clamp(13px,2.1vw,16px);margin-bottom:8px;word-break:keep-all}
+.rb-board{padding:9px;border-radius:14px;background:#F0F9FF;border:2px solid #BAE6FD}
+.rb-track{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.rb-cell{border:2px dashed #BAE6FD;border-radius:9px;background:#fff;min-height:52px;padding:4px 3px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.rb-cell[data-passed="1"]{border-style:solid;border-color:#16A34A;background:#DCFCE7}
+.rb-cell[data-here="1"]{box-shadow:0 0 0 3px #FCD34D}
+.rb-cell[data-goal="1"]{border-color:#0284C7;background:#E0F2FE;border-style:solid}
+.rb-cno{font-size:10px;font-weight:800;color:#64748B}
+.rb-mark{width:15px;height:15px;border-radius:5px;background:#CBD5E1}
+.rb-cell[data-passed="1"] .rb-mark{background:#16A34A}
+.rb-pawn{font-size:13px;font-weight:800;color:#B45309;line-height:1}
+.rb-net{margin-top:9px;border:2px solid #BAE6FD;border-radius:12px;background:#fff;padding:8px 9px}
+.rb-core{text-align:center;font-weight:800;color:#0E7490;font-size:clamp(12px,2vw,15px);
+  background:#CFFAFE;border-radius:999px;padding:5px 10px;margin-bottom:7px;word-break:keep-all}
+.rb-stem{margin-top:6px}
+.rb-sname{font-size:clamp(10px,1.7vw,12px);font-weight:800;color:#155E75;margin-bottom:4px}
+.rb-leaves{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+.rb-leaf{border:2px dashed #E2E8F0;border-radius:9px;background:#F8FAFC;min-height:34px;padding:4px 5px;
+  font-size:clamp(10px,1.65vw,12px);font-weight:700;color:#94A3B8;line-height:1.35;word-break:keep-all;
+  display:flex;align-items:center;justify-content:center;text-align:center}
+.rb-leaf[data-on="1"]{border-style:solid;border-color:#16A34A;background:#DCFCE7;color:#166534}
+.rb-side{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.rb-key{border:2px solid var(--line);border-radius:11px;padding:8px 10px;background:#fff;font-size:clamp(11px,1.9vw,14px);line-height:1.6}
+.rb-key b{color:#0E7490}
+.rb-tell{border-radius:11px;padding:8px 12px;font-size:clamp(12px,2vw,15px);line-height:1.6;background:#F0FDFA;border-left:4px solid var(--cyan)}
+.rb-ask{border:2px solid var(--line);border-radius:12px;padding:10px 14px;background:#F8FEFF;margin-top:9px;
+  font-size:clamp(12px,2vw,15px);line-height:1.6;word-break:keep-all}
+.rb-opts{display:grid;grid-template-columns:1fr;gap:8px;margin-top:9px}
+.rb-opt{background:#F8FAFC;border:2px solid var(--line);border-radius:11px;padding:9px 11px;font-family:inherit;
+  font-size:clamp(12px,2vw,15px);font-weight:700;color:#0F172A;text-align:left;line-height:1.45;word-break:keep-all;cursor:pointer}
+.rb-opt:hover{border-color:var(--green);background:var(--bub)}
+.rb-stepbtn{width:100%;margin-top:9px;background:var(--cyan);color:#fff;border:none;border-radius:11px;padding:10px 12px;
+  font-family:inherit;font-size:clamp(13px,2.1vw,16px);font-weight:800;cursor:pointer}
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+  .rb-track{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .rb-leaves{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .rb-side{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#F57F17"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식, 사람 형상 대신 모양과 기호 ===== */
+const SVG = {
+  // [동기 유발] 단원에서 공부한 내용 떠올리기
+  back:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <g fill="#CFFAFE" stroke="#0891B2" stroke-width="2"><rect x="10" y="36" width="30" height="26" rx="5"/><rect x="46" y="36" width="30" height="26" rx="5"/><rect x="82" y="36" width="30" height="26" rx="5"/><rect x="118" y="36" width="30" height="26" rx="5"/></g>
+    <g font-size="7" font-weight="800" text-anchor="middle" fill="#0E7490"><text x="25" y="52">환경</text><text x="61" y="52">지역</text><text x="97" y="52">이용</text><text x="133" y="52">도시</text></g>
+    <text x="80" y="20" font-size="8" fill="#155E75" text-anchor="middle" font-weight="800">단원에서 공부한 내용</text>
+    <text x="80" y="80" font-size="7.5" fill="#64748B" text-anchor="middle">하나씩 떠올려 볼까요?</text></svg>`,
+  // 정리하는 두 가지 방법 — 묶어 보기와 놀이로 풀어 보기
+  ways:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <circle cx="42" cy="48" r="9" fill="#CFFAFE" stroke="#0891B2" stroke-width="2"/>
+    <g fill="#DCFCE7" stroke="#16A34A" stroke-width="1.8"><circle cx="22" cy="32" r="6"/><circle cx="22" cy="64" r="6"/><circle cx="62" cy="32" r="6"/><circle cx="62" cy="64" r="6"/></g>
+    <g stroke="#94A3B8" stroke-width="1.6"><path d="M 35 42 L 27 36"/><path d="M 35 54 L 27 60"/><path d="M 49 42 L 57 36"/><path d="M 49 54 L 57 60"/></g>
+    <g fill="#fff" stroke="#0284C7" stroke-width="2"><rect x="92" y="36" width="15" height="15" rx="3"/><rect x="110" y="36" width="15" height="15" rx="3"/><rect x="128" y="36" width="15" height="15" rx="3"/><rect x="128" y="54" width="15" height="15" rx="3"/><rect x="110" y="54" width="15" height="15" rx="3"/></g>
+    <circle cx="99" cy="43" r="4" fill="#F59E0B"/>
+    <g font-size="7.5" font-weight="800" text-anchor="middle"><text x="42" y="86" fill="#0E7490">묶어 보기</text><text x="118" y="86" fill="#0369A1">놀이로 풀어 보기</text></g>
+    <text x="80" y="18" font-size="8" fill="#155E75" text-anchor="middle" font-weight="800">정리하는 두 가지 방법</text></svg>`,
+  // 물러나도 지나온 자리는 남아요
+  path:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <g fill="#DCFCE7" stroke="#16A34A" stroke-width="2"><rect x="12" y="44" width="20" height="20" rx="4"/><rect x="36" y="44" width="20" height="20" rx="4"/><rect x="60" y="44" width="20" height="20" rx="4"/></g>
+    <g fill="#fff" stroke="#BAE6FD" stroke-width="2" stroke-dasharray="3 3"><rect x="84" y="44" width="20" height="20" rx="4"/><rect x="108" y="44" width="20" height="20" rx="4"/><rect x="132" y="44" width="16" height="20" rx="4"/></g>
+    <path d="M 92 36 Q 82 24 70 36" stroke="#DC2626" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+    <path d="M 70 36 L 78 32 L 74 41 Z" fill="#DC2626"/>
+    <path d="M 70 74 Q 82 86 92 74" stroke="#0891B2" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+    <path d="M 92 74 L 84 78 L 88 69 Z" fill="#0891B2"/>
+    <text x="80" y="18" font-size="8" fill="#155E75" text-anchor="middle" font-weight="800">물러나도 지나온 자리는 남아요</text>
+    <text x="80" y="30" font-size="7" fill="#B91C1C" text-anchor="middle" font-weight="700">틀리면 이전 칸으로</text>
+    <text x="80" y="92" font-size="7" fill="#0E7490" text-anchor="middle" font-weight="700">다시 앞으로</text></svg>`,
+  // 생각 그물
+  net:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F0FDF4"/>
+    <ellipse cx="80" cy="48" rx="26" ry="12" fill="#CFFAFE" stroke="#0891B2" stroke-width="2.5"/>
+    <g fill="#DCFCE7" stroke="#16A34A" stroke-width="1.8"><rect x="10" y="16" width="30" height="13" rx="6"/><rect x="10" y="40" width="30" height="13" rx="6"/><rect x="10" y="64" width="30" height="13" rx="6"/><rect x="120" y="16" width="30" height="13" rx="6"/><rect x="120" y="40" width="30" height="13" rx="6"/><rect x="120" y="64" width="30" height="13" rx="6"/></g>
+    <g stroke="#94A3B8" stroke-width="1.5"><path d="M 56 44 L 40 23"/><path d="M 54 48 L 40 47"/><path d="M 56 53 L 40 70"/><path d="M 104 44 L 120 23"/><path d="M 106 48 L 120 47"/><path d="M 104 53 L 120 70"/></g>
+    <text x="80" y="51" font-size="7.5" fill="#0E7490" text-anchor="middle" font-weight="800">다양한 환경과 삶의 모습</text>
+    <text x="80" y="90" font-size="7" fill="#64748B" text-anchor="middle">빈칸을 채우면 그물이 서요</text></svg>`,
+  // 교실에서 함께하는 놀이
+  play:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <rect x="46" y="30" width="30" height="30" rx="6" fill="#fff" stroke="#0891B2" stroke-width="2.5" transform="rotate(-12 61 45)"/>
+    <g fill="#0E7490"><circle cx="55" cy="40" r="2.6"/><circle cx="67" cy="38" r="2.6"/><circle cx="56" cy="52" r="2.6"/><circle cx="68" cy="50" r="2.6"/></g>
+    <path d="M 100 62 L 100 44" stroke="#B45309" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="100" cy="38" r="7" fill="#FDE68A" stroke="#B45309" stroke-width="2.5"/>
+    <ellipse cx="100" cy="66" rx="11" ry="4" fill="#FEF3C7" stroke="#B45309" stroke-width="2"/>
+    <text x="80" y="18" font-size="8" fill="#155E75" text-anchor="middle" font-weight="800">주사위와 말</text>
+    <text x="80" y="86" font-size="7.5" fill="#64748B" text-anchor="middle">친구들과 함께하는 일은 교실 몫이에요</text></svg>`,
+  // 정리
+  done:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFEFF"/>
+    <circle cx="46" cy="48" r="26" fill="#CFFAFE"/><circle cx="86" cy="48" r="26" fill="#DCFCE7"/><circle cx="122" cy="48" r="24" fill="#FEF3C7"/>
+    <g font-size="8" font-weight="800" text-anchor="middle"><text x="40" y="52" fill="#0E7490">환경과 지역</text><text x="88" y="52" fill="#166534">도시</text><text x="126" y="52" fill="#92400E">정리</text></g></svg>`
+};
+function sceneCard(key,cap){return `<div class="scene">${SVG[key]}<div class="cap">${cap}</div></div>`;}
+
+/* ===== 직접 조작: 되돌아와도 이어져요 판 =====
+   열두 칸을 차례로 지나며 칸마다 문제를 푼다. 맞히면 앞으로, 틀리면 이전 칸으로 물러난다.
+   ⭐ 잎 상태 0 — 그물에 붙은 잎은 지나온 칸 수 하나에서 나온다(rbPassed 한 줄).
+   ⭐ 줄기표 0 — 잎이 어느 줄기에 붙는지는 rbStemOf 한 줄에서만 나온다.
+   ⭐ 걸음 수를 저장하지 않는다 — rbSteps 가 지나온 칸과 되돌아온 걸음에서 셈으로 만든다.
+   ⭐ 물러나도 지나온 칸은 지워지지 않는다. 그래서 맞혀야 하는 횟수는 언제나 열둘이다.
+   ================================================================= */
+const RB_N = 12;                                           // 길 열두 칸
+const RB_MID = 8;                                          // 앞의 여덟은 주제①, 뒤의 넷은 주제②
+const RB_STEMNAME = ["주제① 지역의 환경과 변화", "주제② 도시의 특징과 생활 모습"];
+const RB_CORE = "다양한 환경과 삶의 모습";
+const RB_LEAF = [
+  "자연환경",
+  "인문환경",
+  "산이 많은 지역",
+  "들이 펼쳐진 지역",
+  "바다가 있는 지역",
+  "이용과 개발의 좋은 점",
+  "이용과 개발의 문제점",
+  "환경과 조화를 이루는 방법",
+  "도시",
+  "도시의 특징",
+  "도시의 생활 모습",
+  "좋은 점과 문제점"
+];
+const RB_QUIZ = [
+  {ask:"산, 들, 바다, 날씨처럼 사람이 만들지 않은 것을 무엇이라고 하나요?",
+   opts:["인문환경이에요","자연환경이에요","도시예요"], ok:1},
+  {ask:"논과 밭, 도로, 건물처럼 사람이 만든 것을 무엇이라고 하나요?",
+   opts:["자연환경이에요","날씨예요","인문환경이에요"], ok:2},
+  {ask:"목장과 스키장, 풍력 발전기를 볼 수 있는 곳은 어떤 지역인가요?",
+   opts:["산이 많은 지역","바다가 있는 지역","들이 펼쳐진 지역"], ok:0},
+  {ask:"논과 밭, 비닐하우스가 넓게 있는 곳은 어떤 지역인가요?",
+   opts:["바다가 있는 지역","들이 펼쳐진 지역","산이 많은 지역"], ok:1},
+  {ask:"항구와 양식장, 모래사장을 볼 수 있는 곳은 어떤 지역인가요?",
+   opts:["들이 펼쳐진 지역","산이 많은 지역","바다가 있는 지역"], ok:2},
+  {ask:"환경을 이용하고 개발하면 좋아지는 점은 무엇인가요?",
+   opts:["살기 더 편해지고 일자리가 늘어나요","숲이 저절로 넓어져요","비가 더 자주 내려요"], ok:0},
+  {ask:"환경을 이용하고 개발할 때 생기는 문제점은 무엇인가요?",
+   opts:["물이 저절로 맑아져요","산사태가 날 위험이 커지고 환경이 오염돼요","길이 저절로 사라져요"], ok:1},
+  {ask:"동물이 길을 건널 수 있도록 만든 생태 통로는 무엇을 위한 것인가요?",
+   opts:["환경을 더 많이 파헤치려고","사람만 빠르게 다니려고","환경과 조화를 이루며 살아가려고"], ok:2},
+  {ask:"많은 사람이 모여 살면서 정치, 경제, 사회 활동의 중심이 되는 곳을 무엇이라고 하나요?",
+   opts:["도시라고 해요","목장이라고 해요","항구라고 해요"], ok:0},
+  {ask:"도시의 특징으로 알맞은 것은 무엇인가요?",
+   opts:["인구가 적고 산업이 발달하지 않았어요","인구가 많고 교통과 산업이 발달했어요","높은 건물을 찾기 어려워요"], ok:1},
+  {ask:"도시에 사는 사람들의 생활 모습으로 알맞은 것은 무엇인가요?",
+   opts:["주로 자연에서 생산물을 얻는 일을 해요","집이 한 채뿐이에요","아파트에 살고 버스나 지하철로 다녀요"], ok:2},
+  {ask:"도시 생활을 바르게 말한 것은 무엇인가요?",
+   opts:["좋은 점만 있어요","좋은 점도 있고 문제점도 있어요","문제점만 있어요"], ok:1}
+];
+const RB_SAY_PASS = "이 칸은 이미 지나온 자리예요. 다시 묻지 않아요.";
+const RB_SAY_ARRIVED = "열두 칸을 모두 지났어요. 판은 그대로예요.";
+const RB_SAY_SOLVE = "이 칸의 문제를 먼저 풀어 봐요.";
+const RB_SAY_START = "여기가 출발 칸이라 물러날 자리가 없어요. 제자리에 머물러요.";
+const RB_SAY_ORDER_R = "먼저 열두 칸을 모두 지나 봐요.";
+const RB_SAY_READDONE = "이미 정한 자리예요. 판은 그대로예요.";
+const RB_SAY_ORDER_FIN = "먼저 판을 읽어 봐요.";
+const RB_READQ = [
+  "판이 잎을 붙이지 않았기 때문이에요",
+  "이미 지나온 칸은 다시 묻지 않으니, 물러나도 지나온 자리는 그대로 남기 때문이에요",
+  "물러나면 잎이 떨어지는데 판이 숨겼기 때문이에요"
+];
+const RB_READ_OK = 1;
+const RB_READ_BAD = "물러났을 때 그물의 잎이 어떻게 됐는지 다시 살펴봐요.";
+const RB_FINQ = [
+  "한 가지 방법으로만 정리할 수 있어요",
+  "정리하지 않아도 괜찮아요",
+  "그물로 묶어 보거나 놀이로 풀어 보는 등 여러 방법으로 정리할 수 있어요"
+];
+const RB_FIN_OK = 2;
+const RB_FIN_BAD = "교과서 146쪽과 147쪽의 두 가지 활동을 다시 떠올려 봐요.";
+
+function rbLeafOf(k){ return RB_LEAF[k]; }                               // RB_LEAF 를 읽는 자리는 여기 단 하나
+function rbAskOf(k){ return RB_QUIZ[k]; }                                // RB_QUIZ 를 읽는 자리는 여기 단 하나
+function rbStemOf(k){ return k < RB_MID ? 0 : 1; }                       // ★ 줄기표 0 — 앞의 여덟과 뒤의 넷
+function rbPassed(st,k){ return k < st.rbDone; }                         // ★ 잎 상태 0 — 지나온 칸 수 하나에서 나온다
+function rbHere(st,k){ return st.rbPos === k; }
+function rbArrived(st){ return st.rbDone === RB_N; }
+function rbSteps(st){ return st.rbDone + 2 * st.rbBack; }                // ★ 걸음 수는 저장하지 않고 셈으로 나온다
+function rbLeafN(st){ let n=0; for(let k=0;k<RB_N;k++) if(rbPassed(st,k)) n++; return n; }
+function rbStemLeafN(st,t){ let n=0; for(let k=0;k<RB_N;k++) if(rbStemOf(k)===t && rbPassed(st,k)) n++; return n; }
+function rbStage(st){
+  if(!rbArrived(st) && st.rbPos < st.rbDone) return "pass";              // 되돌아온 칸 — 다시 묻지 않는다
+  if(!rbArrived(st)) return "walk";
+  if(st.rbRead == null) return "read";
+  if(st.rbFin == null) return "fin";
+  return "end";
+}
+
+/* 판 — 열두 칸 길과 도착 칸 */
+function rbCell(st,k){
+  const p = rbPassed(st,k);
+  return `<div class="rb-cell" data-k="${k}" data-passed="${p?1:0}" data-here="${rbHere(st,k)?1:0}">`
+    + `<span class="rb-cno">${k+1}</span><span class="rb-mark"></span>`
+    + `<span class="rb-pawn">${rbHere(st,k)?'♟':''}</span></div>`;
+}
+function rbGoal(st){
+  return `<div class="rb-cell" data-goal="1" data-here="${rbHere(st,RB_N)?1:0}">`
+    + `<span class="rb-cno">도착</span><span class="rb-mark"></span>`
+    + `<span class="rb-pawn">${rbHere(st,RB_N)?'♟':''}</span></div>`;
+}
+function rbTrack(st){
+  let s=''; for(let k=0;k<RB_N;k++) s += rbCell(st,k);
+  return `<div class="rb-track" data-pos="${st.rbPos}" data-done="${st.rbDone}" data-back="${st.rbBack}">${s}${rbGoal(st)}</div>`;
+}
+/* 생각 그물 — 잎은 지나온 칸에서 저절로 붙는다 */
+function rbLeafBox(st,k){
+  const p = rbPassed(st,k);
+  return `<div class="rb-leaf" data-k="${k}" data-on="${p?1:0}">${p?rbLeafOf(k):'―'}</div>`;
+}
+function rbStem(st,t){
+  let s='';
+  for(let k=0;k<RB_N;k++) if(rbStemOf(k)===t) s += rbLeafBox(st,k);
+  return `<div class="rb-stem" data-t="${t}" data-on="${rbStemLeafN(st,t)}">`
+    + `<div class="rb-sname">${RB_STEMNAME[t]}</div><div class="rb-leaves">${s}</div></div>`;
+}
+function rbNet(st){
+  return `<div class="rb-net" data-leaf="${rbLeafN(st)}">`
+    + `<div class="rb-core">${RB_CORE}</div>${rbStem(st,0)}${rbStem(st,1)}</div>`;
+}
+function rbBoard(st){
+  return `<div class="rb-board" data-arrived="${rbArrived(st)?1:0}">${rbTrack(st)}${rbNet(st)}</div>`;
+}
+function rbKey(st){
+  return `<div class="rb-key"><b>판을 보는 법</b><br>
+    칸의 문제를 맞히면 <b>앞으로</b> 한 칸 가요.<br>
+    맞히지 못하면 <b>이전 칸</b>으로 물러나요.<br>
+    지나온 칸은 <b>다시 묻지 않아요</b>.</div>`;
+}
+function rbPanel(st){
+  const stage = rbStage(st);
+  let ask = '';
+  if(stage === "walk"){
+    const q = rbAskOf(st.rbPos);
+    ask = `<div class="rb-ask" data-step="walk"><b>${st.rbPos+1}번 칸 · ${q.ask}</b>
+      <div class="rb-opts">${q.opts.map((t,i)=>`<button class="rb-opt" onclick="rbAnswer(${i})">${t}</button>`).join('')}</div></div>`;
+  } else if(stage === "pass"){
+    ask = `<div class="rb-ask" data-step="pass"><b>여기는 이미 지나온 칸이에요.</b>
+      <div class="note" style="text-align:left;margin-top:5px">다시 묻지 않아요. 한 걸음 앞으로 가면 아까 그 칸이에요.</div>
+      <button class="rb-stepbtn" onclick="rbStep()">▶ 앞으로</button></div>`;
+  } else if(stage === "read"){
+    ask = `<div class="rb-ask" data-step="read"><b>도착했어요. 물러났을 때도 그물의 잎이 하나도 떨어지지 않은 까닭은 무엇일까요?</b>
+      <div class="rb-opts">${RB_READQ.map((t,i)=>`<button class="rb-opt" onclick="rbRead(${i})">${t}</button>`).join('')}</div></div>`;
+  } else if(stage === "fin"){
+    ask = `<div class="rb-ask" data-step="fin"><b>그렇다면 단원에서 공부한 내용은 어떻게 정리할 수 있을까요?</b>
+      <div class="rb-opts">${RB_FINQ.map((t,i)=>`<button class="rb-opt" onclick="rbFin(${i})">${t}</button>`).join('')}</div></div>`;
+  } else {
+    ask = `<div class="rb-ask" data-fin="1" style="border-color:#86EFAC;background:#F0FDF4">
+      <b style="color:#166534">공부한 내용은 그물로 묶어 보거나 놀이로 풀어 보는 등 여러 방법으로 정리할 수 있어요.</b>
+      판에서도 물러난 걸음이 있었지만 지나온 자리는 그대로 남아 열두 잎이 다 붙었지요.
+      <div class="note" style="text-align:left;margin-top:5px">※ 주사위를 던지고 말을 옮기며 친구들과 겨루는 일은 <b>교실 몫</b>이에요. 판은 대신 해 주지 않아요.</div></div>`;
+  }
+  const tell = st.rbTell ? `<div class="rb-tell">${st.rbTell}</div>` : '';
+  const warn = st.rbMsg ? `<div class="fb" style="color:#DC2626;font-weight:700">${st.rbMsg}</div>` : '';
+  return `<div class="rb-wrap">
+    <div class="rb-head">지나온 칸 <b>${st.rbDone}</b> / 12 · 되돌아온 걸음 <b>${st.rbBack}</b> · 모두 걸음 <b>${rbSteps(st)}</b></div>
+    ${rbBoard(st)}<div class="rb-side">${rbKey(st)}${tell}</div>${ask}${warn}
+    <div class="note" style="margin-top:8px">※ 판의 열두 칸은 단원에서 공부한 내용을 <b>판이 열둘로 줄여 묶은 것</b>이에요. 공부한 내용은 이보다 훨씬 많아요. <b>되돌아온 걸음은 점수에 한 점도 붙지 않아요</b> — 끝 판의 그물은 누구나 열두 잎으로 같지만, <b>거기까지 간 걸음은 저마다 달라요</b>.</div>
+  </div>`;
+}
+
+
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "3단원 다양한 환경과 삶의 모습 · 단원 마무리";
+const Q = [
+  {stem:"자연환경과 인문환경을 바르게 나눈 것은 무엇인가요?",
+   opts:["논과 밭은 자연환경이에요","도로는 자연환경이에요","산과 바다, 날씨는 자연환경이고 논과 밭, 도로는 인문환경이에요","건물은 자연환경이에요"], correct:2, pts:POINTS_BASIC,
+   h1:"사람이 만든 것인지 아닌지로 나누어 봐요.", h2:"사람이 만들지 않은 것이 자연환경이에요.",
+   reason:"산, 들, 바다, 날씨처럼 사람이 만들지 않은 것은 자연환경이고, 논과 밭, 도로, 건물처럼 사람이 만든 것은 인문환경이에요."},
+  {stem:"산이 많은 지역에서 볼 수 있는 모습으로 알맞은 것은 무엇인가요?",
+   opts:["소나 양을 기르는 목장과 스키장을 볼 수 있어요","넓은 모래사장을 볼 수 있어요","항구에 배가 드나드는 모습을 볼 수 있어요","물고기를 기르는 양식장을 볼 수 있어요"], correct:0, pts:POINTS_BASIC,
+   h1:"비탈진 땅을 어떻게 이용했는지 떠올려 봐요.", h2:"기르는 일과 겨울에 즐기는 일이 있었어요.",
+   reason:"산이 많은 지역에서는 소나 양을 기르는 목장, 겨울에 즐기는 스키장, 바람으로 전기를 만드는 풍력 발전기 등을 볼 수 있어요."},
+  {stem:"환경을 이용하고 개발할 때 생길 수 있는 문제점으로 알맞은 것은 무엇인가요?",
+   opts:["일자리가 늘어나요","생활이 더 편리해져요","여러 시설이 많아져요","산사태가 날 위험이 커지고 환경이 오염돼요"], correct:3, pts:POINTS_BASIC,
+   h1:"좋아지는 점 말고 걱정되는 점을 찾아봐요.", h2:"땅과 물, 공기에 생기는 일이에요.",
+   reason:"환경을 이용하고 개발하면 생활이 편리해지지만, 산사태가 날 위험이 커지거나 환경이 오염되는 문제점도 생겨요."},
+  {stem:"도시는 어떤 곳인가요?",
+   opts:["사람이 거의 살지 않는 곳이에요","많은 사람이 모여 살면서 정치, 경제, 사회 활동의 중심이 되는 곳이에요","건물을 지을 수 없는 곳이에요","길이 하나도 없는 곳이에요"], correct:1, pts:POINTS_BASIC,
+   h1:"주제② 첫 시간에 배운 것을 떠올려 봐요.", h2:"사람이 많이 모이면 무엇의 중심이 될까요?",
+   reason:"도시는 많은 사람이 모여 살면서 정치, 경제, 사회 활동의 중심이 되는 곳이에요."},
+  {stem:"판에서 이전 칸으로 물러났는데도 그물의 잎이 그대로 남아 있던 까닭은 무엇인가요?",
+   opts:["잎이 처음부터 모두 붙어 있었기 때문이에요","판이 잎을 몰래 다시 붙였기 때문이에요","물러난 칸이 도착 칸이었기 때문이에요","이미 지나온 칸은 다시 묻지 않으니 지나온 자리가 그대로 남기 때문이에요"], correct:3, pts:POINTS_APPLY,
+   h1:"물러난 뒤 그 칸에서 판이 무엇을 물었는지 떠올려 봐요.", h2:"판은 지나온 칸을 다시 묻지 않았어요.",
+   reason:"지나온 칸은 다시 묻지 않아요. 그래서 뒤로 물러나도 지나온 자리와 그물의 잎은 그대로 남아요."},
+  {stem:"판에서 물러난 횟수가 사람마다 달라도 똑같아지는 것은 무엇인가요?",
+   opts:["모두 걸음 수","맞혀야 하는 칸의 수","되돌아온 걸음 수","물러난 칸의 번호"], correct:1, pts:POINTS_APPLY,
+   h1:"물러나도 달라지지 않는 것을 찾아봐요.", h2:"도착하려면 열두 칸을 모두 지나야 했어요.",
+   reason:"몇 번 물러났든 도착하려면 열두 칸을 모두 지나야 하므로 맞혀야 하는 칸의 수는 같아요. 대신 모두 걸음 수는 사람마다 달라져요."},
+  {stem:"환경과 조화를 이루며 살아가려는 노력으로 알맞은 것은 무엇인가요?",
+   opts:["동물이 길을 건널 수 있도록 생태 통로를 만들어요","숲을 모두 베어 내요","강을 덮어 길로 만들어요","공원을 없애요"], correct:0, pts:POINTS_APPLY,
+   h1:"사람과 자연이 함께 살아가는 방법을 떠올려 봐요.", h2:"동물이 지나다닐 길을 내주었어요.",
+   reason:"동물이 길을 건널 수 있도록 생태 통로를 만드는 것처럼, 환경과 조화를 이루며 살아가려는 노력을 할 수 있어요."},
+  {stem:"단원에서 공부한 내용을 정리하는 방법으로 알맞은 것은 무엇인가요?",
+   opts:["교과서를 덮어 두어요","이름만 적어요","생각 그물로 묶어 보거나 놀이로 풀어 보아요","아무것도 하지 않아요"], correct:2, pts:POINTS_APPLY,
+   h1:"교과서 146쪽과 147쪽의 두 활동을 떠올려 봐요.", h2:"하나는 묶는 활동, 하나는 함께하는 활동이었어요.",
+   reason:"빈칸을 채워 생각 그물을 완성하거나, 친구들과 놀이로 풀어 보며 단원에서 공부한 내용을 정리할 수 있어요."}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — 동기 유발
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">단원에서 공부한 내용을 떠올려 볼까요?</h2>
+  <div class="ka-bub"><b>다양한 환경과 삶의 모습</b>에서 참 많은 것을 공부했어요. 오늘은 그 내용을 <b>여러 방법으로 정리</b>해 봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('back','단원에서 공부한 내용')}</div>
+    <div class="note">※ 그림은 판이 새로 그린 도식이에요.</div>
+  </div>`});
+// 2 살펴보기 — 공부한 내용 되돌아보기 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">무엇을 공부했는지 말해 볼까요?</h2>
+  <div class="ka-bub">단원에서 공부한 내용을 <span class="ka-emph">차례차례</span> 떠올려 봐요.</div>
+  <div class="ka-grp">
+  ${st.revealed?`<div class="answer-box">· 우리를 둘러싼 <b>자연환경과 인문환경</b>이 무엇인지 알아봤어요.<br>· 산이 많은 지역, 들이 펼쳐진 지역, 바다가 있는 지역의 <b>특징과 변화 모습</b>을 살펴봤어요.<br>· 환경을 <b>이용하고 개발</b>하는 모습과, 환경과 <b>조화를 이루는 방법</b>을 알아봤어요.<br>· <b>도시</b>가 무엇인지, 도시의 <b>인구·교통·산업</b>의 특징을 배웠어요.<br>· 도시에 사는 사람들의 <b>생활 모습</b>과 도시 생활의 <b>좋은 점과 문제점</b>을 알게 되었어요.</div>`
+    :`<div class="note">내가 기억하는 것을 먼저 말해 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 3 살펴보기 — 정리하는 두 가지 방법 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">공부한 내용을 어떻게 정리할까요?</h2>
+  <div class="ka-bub">정리하는 방법은 하나가 아니에요. <span class="ka-emph">두 가지 방법</span>을 살펴봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('ways','정리하는 두 가지 방법')}</div>
+  ${st.revealed?`<div class="answer-box">· <b>묶어 보기</b> — 가운데에 단원 이름을 놓고, 공부한 내용을 갈래마다 이어 붙여 한눈에 보이게 해요.<br>· <b>놀이로 풀어 보기</b> — 칸마다 문제를 놓고 친구들과 차례로 풀며 공부한 내용을 다시 떠올려요.</div>`
+    :`<div class="note">어떤 방법이 있을지 먼저 짐작해 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 4 살펴보기 — 물러나도 지나온 자리는 남아요 · 조작 안내
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">칸을 지나며 풀어 볼까요?</h2>
+  <div class="ka-bub">칸의 문제를 맞히면 <span class="ka-emph">앞으로</span>, 맞히지 못하면 <span class="ka-emph">이전 칸</span>으로 물러나요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('path','물러나도 지나온 자리는 남아요')}</div>
+  <div class="note">물러나도 <b>지나온 칸은 지워지지 않아요</b>. 판은 이미 지나온 칸을 다시 묻지 않아요. 다음 판에서 <b>직접 지나</b> 볼까요?</div></div>`});
+// 5 살펴보기 — 생각 그물은 어떻게 설까요 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">공부한 내용을 어떻게 묶을까요?</h2>
+  <div class="ka-bub">가운데에 <span class="ka-emph">단원 이름</span>을 놓고, 갈래를 둘로 나누어 이어 붙여요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('net','공부한 내용 묶어 보기')}</div>
+  ${st.revealed?`<div class="answer-box">· 한 갈래는 <b>지역의 환경과 변화</b> — 자연환경과 인문환경, 세 지역의 특징, 이용과 개발의 좋은 점과 문제점, 조화를 이루는 방법이 붙어요.<br>· 다른 갈래는 <b>도시의 특징과 생활 모습</b> — 도시가 무엇인지, 도시의 특징, 생활 모습, 좋은 점과 문제점이 붙어요.</div>`
+    :`<div class="note">어떤 갈래로 나눌 수 있을지 먼저 생각해 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 6 살펴보기 — 직접 조작
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">되돌아와도 이어져요</h2>
+  <div class="ka-grp" style="align-items:stretch">${rbPanel(st)}</div>`});
+// 7 살펴보기 — 교실에서 함께하는 방법
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">교실에서는 어떻게 할까요?</h2>
+  <div class="ka-bub">준비물은 <span class="ka-emph">주사위</span>와 <span class="ka-emph">말</span>이에요. 친구들과 차례를 정해 함께해요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('play','주사위와 말')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>친구들과 함께 문제를 만들어 <b>빈칸에 적어요</b>.</div></div>
+    <div class="sum-item"><span class="n">2</span><div>가위바위보로 <b>차례</b>를 정해요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>차례대로 주사위를 던져 나온 수만큼 말을 옮겨요.</div></div>
+    <div class="sum-item"><span class="n">4</span><div>도착한 칸의 문제를 맞히면 그 자리에 머물고, 맞히지 못하면 <b>이전 칸</b>으로 돌아가요.</div></div>
+  </div>
+  <div class="note">※ 규칙을 잘 지키며 함께하고, 이기고 지는 것에 너무 마음 쓰지 않아도 괜찮아요. 주사위와 말을 손에 쥐고 하는 일은 <b>교실 몫</b>이에요.</div></div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부한 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('done','공부한 내용 정리')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>이 단원에서는 <b>자연환경과 인문환경</b>, 세 지역의 <b>특징과 변화</b>, 환경의 <b>이용과 개발</b>, <b>도시</b>의 특징과 생활 모습을 공부했어요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div>공부한 내용은 <b>묶어 보거나 놀이로 풀어 보는</b> 등 여러 방법으로 정리할 수 있어요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>가운데에 단원 이름을 놓고 갈래마다 이어 붙이면 <b>한눈에</b> 보여요.</div></div>
+    <div class="sum-item"><span class="n">4</span><div>판에서 본 것처럼 <b>물러나도 지나온 자리는 지워지지 않아요</b>. 끝까지 가면 그물은 똑같이 완성돼요.</div></div>
+  </div>
+  <div class="note">이 단원을 공부하며 <b style="color:#0891B2">새로 알게 된 점이나 느낀 점</b>을 친구들과 이야기해 봐요.</div></div>`});
+// 17 스스로 돌아보기
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"여러 지역의 자연환경과 인문환경의 특징을 설명할 수 있어요",st)}
+    ${selfCheck(1,"환경의 이용과 개발에 따른 변화를 설명할 수 있어요",st)}
+    ${selfCheck(2,"도시의 특징과 도시에서의 삶의 모습을 이해할 수 있어요",st)}
+  </div><div class="note">체크가 잘 안 되는 곳은 <b>다시 살펴봐도</b> 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">단원에서 공부한 내용을 정리했어요</h2>
+  <div class="ka-grp">
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">주사위를 던지고 말을 옮기며 친구들과 <b style="color:#0891B2">함께 겨루는 놀이</b>는 교실 몫이에요. 선생님과 함께 해 봐요.</div>
+  </div>`;
+}});
+
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const optHTML = q.opts.map((o,k)=>{
+    let cls='opt';
+    if(qs.done && k===q.correct) cls+=' correct';
+    if(qs.wrongPick===k) cls+=' wrong';
+    return `<button class="${cls}" onclick="pick(${i},${k})" ${qs.done?'disabled':''}>${o}</button>`;
+  }).join('');
+  const hint = qs.hint>0 ? `<div class="hint">💡 ${qs.hint===1?q.h1:q.h2}</div>` : '';
+  const fb = qs.done ? `<div class="fb ok">✓ ${q.reason}</div>` : '';
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용':'확인'} (+${q.pts})</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    <div class="opts" style="margin:0 auto">${optHTML}</div>
+    ${hint}${fb}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g4_2_social_u3_l12";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  rbPos:0, rbDone:0, rbBack:0, rbRead:null, rbFin:null, rbMsg:"", rbTell:"",
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 →';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음 (브라우저에서만 · jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+function rbDraw(){ main.innerHTML = slides[state.idx].render(state); }
+
+/* 칸의 문제에 답하기 — 맞히면 앞으로, 틀리면 이전 칸으로 */
+function rbAnswer(i){
+  if(state.rbFin!=null) return;                                                        // 가드①: 마무리 확정 후 전체 잠금
+  if(!Number.isInteger(i) || i<0 || i>=3) return;                                       // 가드②: 무효 번호 — 안내조차 띄우지 않음
+  if(rbArrived(state)){ state.rbMsg = RB_SAY_ARRIVED; playThud(); rbDraw(); return; }   // 가드④: 도착한 뒤 또 풀기 — 판 불변
+  if(state.rbPos < state.rbDone){ state.rbMsg = RB_SAY_PASS; playThud(); rbDraw(); return; } // 가드③: 되돌아온 칸 — 판 불변
+  if(i === rbAskOf(state.rbPos).ok){
+    state.rbDone = state.rbPos + 1;                                                     // ⭐ 지나온 칸이 늘어나는 자리는 코드에 여기 단 하나 · 줄어드는 자리 0
+    state.rbPos = state.rbPos + 1;                                                      // ⭐ 앞으로 나아가는 자리 하나
+    state.rbMsg = ""; state.rbTell = state.rbDone + "번 칸을 지났어요. 그물에 잎이 하나 붙었어요."; playBlip(); rbDraw(); return;
+  }
+  if(state.rbPos === 0){ state.rbMsg = RB_SAY_START; playThud(); rbDraw(); return; }     // 뼈대: 출발 칸은 물러날 자리가 없다 — 판 불변
+  state.rbPos = state.rbPos - 1;                                                        // ⭐ 물러나는 자리는 코드에 여기 단 하나
+  state.rbBack = state.rbBack + 1;
+  state.rbMsg = ""; state.rbTell = "이전 칸으로 물러났어요. 그래도 지나온 자리는 그대로예요."; playThud(); rbDraw();
+}
+/* 되돌아온 칸에서 앞으로 — 다시 묻지 않는다 */
+function rbStep(){
+  if(state.rbFin!=null) return;                                                        // 가드①
+  if(rbArrived(state)){ state.rbMsg = RB_SAY_ARRIVED; playThud(); rbDraw(); return; }   // 가드⑥: 도착한 뒤 앞으로 — 판 불변
+  if(state.rbPos === state.rbDone){ state.rbMsg = RB_SAY_SOLVE; playThud(); rbDraw(); return; } // 가드⑤: 아직 풀지 않은 칸 — 판 불변
+  state.rbPos = state.rbPos + 1;                                                        // ⭐ 지나가는 자리 하나
+  state.rbMsg = ""; state.rbTell = (state.rbPos+1) + "번 칸으로 돌아왔어요."; playBlip(); rbDraw();
+}
+/* 판 읽기 */
+function rbRead(i){
+  if(state.rbFin!=null) return;                                                        // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=RB_READQ.length) return;                          // 가드②
+  if(!rbArrived(state)){ state.rbMsg = RB_SAY_ORDER_R; playThud(); rbDraw(); return; }   // 가드⑦: 열두 칸을 다 지나기 전 — 판 불변
+  if(state.rbRead!=null){ state.rbMsg = RB_SAY_READDONE; rbDraw(); return; }             // 가드⑧: 이미 정한 자리 — 판 불변
+  if(i!==RB_READ_OK){ state.rbMsg = RB_READ_BAD; playThud(); rbDraw(); return; }         // 가드⑨: 어긋난 답 — 판 불변
+  state.rbRead = i; state.rbMsg = ""; state.rbTell = ""; playBlip(); rbDraw();
+}
+/* 마무리 */
+function rbFin(i){
+  if(state.rbFin!=null) return;                                                        // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=RB_FINQ.length) return;                           // 가드②
+  if(state.rbRead==null){ state.rbMsg = RB_SAY_ORDER_FIN; playThud(); rbDraw(); return; }// 가드⑩: 판을 읽기 전 — 판 불변
+  if(i!==RB_FIN_OK){ state.rbMsg = RB_FIN_BAD; playThud(); rbDraw(); return; }           // 가드⑩: 어긋난 답 — 판 불변
+  state.rbFin = i; state.rbMsg = ""; playChime(); rbDraw();
+}
+
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true; qs.wrongPick=null;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2; if(qs.hint===2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">📘 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 →</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; }
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
+</html>
