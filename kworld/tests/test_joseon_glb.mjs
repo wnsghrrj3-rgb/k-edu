@@ -1,0 +1,27 @@
+// 조선 마을 GLB 구조 검증 — NPC 7·구역 13·spawn·미션 대상이 json 과 맞는지 (WebGL 없이 GLB JSON 청크만)
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const base = new URL('../eras/joseon/', import.meta.url);
+const buffer = fs.readFileSync(new URL('joseon.glb', base));
+const data = JSON.parse(buffer.subarray(20, 20 + buffer.readUInt32LE(12)).toString());
+const read = (f) => JSON.parse(fs.readFileSync(new URL(f, base)));
+const world = read('world.json'), items = read('items.json'), npcDefs = read('npcs.json'), missions = read('missions.json');
+const names = data.nodes.map((n) => n.name || '');
+const ix = names.filter((n) => n.startsWith('ix_'));
+const types = new Set(ix.map((n) => n.split('_')[1]));
+for (const t of types) assert.ok(items.targets[t], `대상 ${t} 가 items.json 에 없음`);
+for (const t of Object.keys(items.targets)) assert.ok(types.has(t), `items.json 대상 ${t} 가 GLB 에 없음`);
+const areas = names.filter((n) => n.startsWith('area_')).map((n) => n.slice(5));
+for (const a of Object.keys(world.areas)) assert.ok(areas.includes(a), `구역 ${a} 없음`);
+assert.equal(Object.keys(world.areas).length, 13, '구역 13');
+assert.ok(areas.includes(world.face), `시작 시선 구역 ${world.face}`);
+assert.ok(names.includes('spawn'), 'spawn');
+const npcs = ix.filter((n) => n.startsWith('ix_npc_')).map((n) => n.slice(7));
+for (const id of Object.keys(npcDefs)) assert.ok(npcs.includes(id), `NPC ${id} 가 GLB 에 없음`);
+for (const id of npcs) assert.ok(npcDefs[id], `GLB NPC ${id} 가 npcs.json 에 없음`);
+assert.equal(npcs.length, 7, 'NPC 7');
+const list = Array.isArray(missions) ? missions : missions.missions || Object.values(missions);
+assert.equal(list.length, 7, '미션 7');
+assert.ok(world.hideHunger && world.hunger.perSecond === 0, '배고픔 없음');
+const h = read('height.json'); assert.ok(h && typeof h === 'object', 'height.json');
+console.log(`joseon.glb: ix ${ix.length} (${[...types].join(',')}) · areas ${areas.length} · npc ${npcs.length} · ${(buffer.length / 1e6).toFixed(2)}MB`);

@@ -50,7 +50,9 @@ export class Game {
     const vq = new URLSearchParams(location.search).get('view'); this.p.setView(vq || this.world.view || 'fp');
     this.p.bindJoystick(document.getElementById('stick'), document.getElementById('knob'));
     // 시작 시선: 야영지 쪽(있으면) 을 바라봄
-    const camp = this.e.areas.get('camp'); if (camp) { const d = camp.clone().sub(this.p.pos); this.p.yaw = Math.atan2(-d.x, -d.z); }
+    const camp = this.e.areas.get(this.world.face || 'camp'); if (camp) { const d = camp.clone().sub(this.p.pos); this.p.yaw = Math.atan2(-d.x, -d.z); }
+    if (this.world.look) this.applyLook(this.world.look);
+    if (this.world.hideHunger) { const h = document.getElementById('hunger'); if (h) h.style.display = 'none'; }
     this.ui.setTitle(this.world.title, this.world.question, this.world.short); this.ui.setGoal(this.world.goal);
     this.renderInv(); this.updateMission(true);
     bindMinimap(this.e, this.p, document.getElementById('minimap'));
@@ -102,7 +104,9 @@ export class Game {
     const c = await new Promise((res) => this.ui.open(`<div class="chk"><div class="tag">누구로 살까</div><h3>강가의 사람 넷</h3><p class="sub">누구를 골라도 같은 것을 겪는다. 편한 것과 힘든 것이 다를 뿐.</p><ul class="mlist">${chars.map((x) => `<li><b>${x.name}</b><div class="mhint">👍 ${x.plus}<br>👎 ${x.minus}</div></li>`).join('')}</ul></div>`, chars.map((x) => ({ label: x.name, primary: x.id === remembered, onClick: () => { this.ui.close(); res(x); } }))));
     this.setCharacter(c);
   }
-  setCharacter(c) { this.character = c; try { localStorage.setItem('kworld_char:' + this.era, c.id); } catch { } (this.telemetry ??= { missions: [], hints: 0, starved: 0 }).character = c.id; if (this.p?.body && c.look) this.p.body.traverse?.((m) => { if (!m.isMesh) return; const hex = m.material.color?.getHex?.(); if (hex === 0x506a62 && c.look.cloth) m.material = m.material.clone(), m.material.color.set(c.look.cloth); if (hex === 0x302d28 && c.look.hair) m.material = m.material.clone(), m.material.color.set(c.look.hair); }); }
+  setCharacter(c) { this.character = c; try { localStorage.setItem('kworld_char:' + this.era, c.id); } catch { } (this.telemetry ??= { missions: [], hints: 0, starved: 0 }).character = c.id; if (c.look) this.applyLook(c.look); }
+  /** 몸 색 바꾸기 — 처음 색(옷 0x506a62·머리 0x302d28)을 기억해 두고 여러 번 바꿔도 되게 */
+  applyLook(look) { this.p?.body?.traverse?.((m) => { if (!m.isMesh || !m.material?.color) return; const part = m.userData.lookPart ??= ({ 0x506a62: 'cloth', 0x302d28: 'hair' })[m.material.color.getHex()] || 'none'; if (part === 'none' || look[part] == null) return; if (!m.userData.lookOwn) { m.material = m.material.clone(); m.userData.lookOwn = true; } m.material.color.set(look[part]); }); }
   /** ?fps=1 — 왼쪽 위에 프레임·그리기 수(무거운 층을 찾을 때) */
   fpsMeter() {
     const el = document.createElement('div'); el.style.cssText = 'position:fixed;left:8px;top:8px;z-index:50;background:rgba(0,0,0,.55);color:#9f9;font:12px monospace;padding:4px 8px;border-radius:6px'; document.body.appendChild(el);
