@@ -315,114 +315,114 @@ window.KEDU_MAP["g3_2_math"] = {
    "kind": "unit",
    "lessons": [
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u4_l01",
+     "lessonId": "g3_2_math_u4_l01_v1",
      "n": "1",
      "title": "분수와 소수를 만나 볼까요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/4단원_분수와소수/g3_math_u4_l01_분수와소수를만나볼까요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u4_l02",
+     "lessonId": "g3_2_math_u4_l02_v1",
      "n": "2",
      "title": "분수로 나타내어 볼까요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/4단원_분수와소수/g3_math_u4_l02_분수로나타내어볼까요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u4_l03",
+     "lessonId": "g3_2_math_u4_l03_v1",
      "n": "3",
      "title": "분수만큼은 얼마일까요 ⑴",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/4단원_분수와소수/g3_math_u4_l03_분수만큼은얼마일까요1.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u4_l04",
+     "lessonId": "g3_2_math_u4_l04_v1",
      "n": "4",
      "title": "분수만큼은 얼마일까요 ⑵",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/4단원_분수와소수/g3_math_u4_l04_분수만큼은얼마일까요2.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u4_l05",
+     "lessonId": "g3_2_math_u4_l05_v1",
      "n": "5",
      "title": "진분수와 가분수를 알아볼까요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/4단원_분수와소수/g3_math_u4_l05_진분수와가분수를알아볼까요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u4_l06",
+     "lessonId": "g3_2_math_u4_l06_v1",
      "n": "6",
      "title": "대분수를 알아볼까요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/4단원_분수와소수/g3_math_u4_l06_대분수를알아볼까요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u4_l07",
+     "lessonId": "g3_2_math_u4_l07_v1",
      "n": "7",
      "title": "분모가 같은 분수의 크기를 비교해 볼까요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/4단원_분수와소수/g3_math_u4_l07_분모가같은분수의크기를비교해볼까요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u4_l08",
+     "lessonId": "g3_2_math_u4_l08_v1",
      "n": "8",
      "title": "소수를 알아볼까요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/4단원_분수와소수/g3_math_u4_l08_소수를알아볼까요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u4_l09",
+     "lessonId": "g3_2_math_u4_l09_v1",
      "n": "9",
      "title": "소수의 크기를 비교해 볼까요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/4단원_분수와소수/g3_math_u4_l09_소수의크기를비교해볼까요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u4_l10",
+     "lessonId": "g3_2_math_u4_l10_v1",
      "n": "10",
      "title": "누가 누가 더 클까요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/4단원_분수와소수/g3_math_u4_l10_누가누가더클까요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u4_l11",
+     "lessonId": "g3_2_math_u4_l11_v1",
      "n": "11",
      "title": "스스로 마무리해요 (단원 평가)",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/4단원_분수와소수/g3_math_u4_l11_스스로마무리해요.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   },

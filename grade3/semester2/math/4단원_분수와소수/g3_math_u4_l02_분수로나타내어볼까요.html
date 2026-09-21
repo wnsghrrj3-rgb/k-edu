@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<!--
+  g3_math_u4_l02 — 분수로 나타내어 볼까요 [3학년 2학기 4단원 02차시, 단일 40분]
+  단원: 3학년 2학기 4단원 「분수와 소수」 / 지도서 304~365 · 교과서 80~81쪽(수학익힘 50~51쪽)
+  base: g4_math_u6_l04(엔진·채점부·공통 CSS 계승 · 중학년 톤) / 부품 setmodel · areamodel · lenmodel · unitstrip · numline · mixedbar · fraccard · cmppair · ruler · deccard · tenthgrid · numcard
+  성격: 여러 개의 물건을 똑같이 묶어 전체 묶음의 수를 분모, 부분 묶음의 수를 분자로 삼아 분수로 나타낸다 — 같은 8개라도 묶는 방법에 따라 분수가 달라진다
+  ★ 오개념 훅: 검은 돌 3개와 흰 돌 4개를 3/4 이라 하는 자리 — 부분끼리 견주고 전체를 놓친다
+  ★ 왜 그럴까 슬롯 = 슬7 : 같은 8개인데 왜 2/4 가 되기도 하고 6/8 이 되기도 할까
+  🔑 회수 키: meta·JS 모두 g3_2_math_u4_l02 (파일명·KEDU_MAP.key 는 g3_math_u4_l** 그대로)
+  ⛔ 규약: 크기가 같은 분수를 명시하지 않는다(지도서 304·308 ③)
+        / 전체가 분모로 나누어떨어지는 수만 쓴다 · 분모가 다른 분수는 단위분수끼리만 견준다
+        / 소수는 한 자리까지 · 분모가 10 인 분수로만 잇는다(지도서 308 ⑥)
+        / 구체물·그림 없이 수만 주고 분수만큼을 묻지 않는다(지도서 326)
+        / 분수·소수는 pad 답이 될 수 없다 — 분자·개수로만 묻는다
+        / 한 화면의 모든 띠는 같은 전체로 그린다(전체 하나 = 150 px)
+  점수: 기본 4×10 + 응용 4×15 = 100 / mcq 정답 위치 q8=2 · q10=4 · q12=1 · q13=3 · q15=2 / pad 정답 q9=6 · q11=4 · q14=3
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g3_2_math_u4_l02_v1">
+<title>분수로 나타내어 볼까요 · K-edu 3학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#FBF7F1; --ink:#243043; --ink-soft:#62708A;
+  --coral:#B45309; --coral-deep:#7C2D12; --coral-soft:#FEF3C7;
+  --teal:#0F766E; --teal-deep:#0B4F4A; --teal-soft:#CCFBF1;
+  --gold:#F6B526; --emph:#F0451F; --line:#ECE3D6; --mark:#FFE08A;
+  --f-title:'Jua',sans-serif; --f-body:'Gowun Dodum',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:0 14px 34px -18px rgba(36,48,67,.4);
+  --fs-title: clamp(28px, 4.6vw, 52px);
+  --fs-heading: clamp(24px, 3.7vw, 37px);
+  --fs-body: clamp(21px, 3.2vw, 31px);
+  --fs-caption: clamp(19px, 2.9vw, 27px);
+  --fs-label: clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --em-md: clamp(44px, 7vw, 80px);
+  --em-lg: clamp(66px, 10vw, 122px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(760px, 96vw);
+  --mw-lg: min(840px, 96vw);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+@keyframes ka-swap-r { 0%{transform:translateX(0); opacity:1;} 50%{transform:translateX(20px); opacity:.3;} 100%{transform:translateX(0); opacity:1;} }
+@keyframes ka-mark { from{background-size:0 100%;} to{background-size:100% 100%;} }
+
+/* ───── 컨테이너 ───── */
+.ka { background:var(--paper); width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; color:var(--ink); position:relative; overflow:hidden; }
+
+/* ───── 상단바 (topbar) ───── */
+.ka-h { display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); padding:clamp(11px,1.7vw,15px) clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:hover { transform:translateY(-1px); }
+.ka-pill { font-family:var(--f-title); background:var(--coral); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-where { font-size:clamp(14px,1.6vw,18px); color:var(--ink-soft); flex-shrink:1; }
+.ka-where b { color:var(--ink); }
+.ka-bar { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:46vw; }
+.ka-dot { width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s, background .2s; }
+.ka-dot:hover { transform:scale(1.2); }
+.ka-dot.active { background:var(--coral); transform:scale(1.3); }
+.ka-dot.done { background:var(--teal); }
+.ka-score { font-family:var(--f-title); background:#FFF8E1; color:#F57F17; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); padding:0; border-radius:50%; cursor:pointer; flex-shrink:0; color:var(--coral-deep); font-size:clamp(13px,2vw,16px); width:clamp(32px,4.5vw,38px); height:clamp(32px,4.5vw,38px); display:flex; align-items:center; justify-content:center; }
+
+/* ───── 본문 ───── */
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; gap:clamp(7px,1.3vw,12px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(8px,1.4vh,16px) clamp(16px,4vw,48px); overflow:hidden; }
+.slide.active { display:flex; }
+.slide-title { font-family:var(--f-title); font-size:var(--fs-title); margin:0; line-height:1.18; color:var(--ink); font-weight:400; text-align:center; flex-shrink:0; }
+.slide-sub { font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(10px,1.6vw,16px); left:clamp(16px,4vw,40px); font-family:var(--f-title); color:var(--coral); font-size:clamp(13px,1.9vw,18px); letter-spacing:.4px; z-index:5; }
+
+/* ───── 하단 내비 ───── */
+.ka-f { display:flex; justify-content:flex-end; gap:12px; padding:clamp(12px,1.7vw,16px) clamp(16px,4vw,40px); background:linear-gradient(to top, var(--paper) 62%, transparent); flex-shrink:0; }
+.ka-prev, .ka-hint, .ka-next { font-family:var(--f-title); font-size:clamp(15px,1.9vw,22px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(10px,1.4vw,15px) clamp(20px,2.8vw,38px); cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translateY(-2px); }
+.ka-prev { margin-right:auto; }
+.ka-hint { color:#F57F17; border-color:#FFE08A; }
+.ka-next { background:var(--coral); color:#fff; border-color:var(--coral); }
+.ka-prev:disabled, .ka-next:disabled { opacity:.35; cursor:default; transform:none; }
+.ka-hint:disabled { opacity:.4; cursor:default; }
+
+/* ───── 공통 콘텐츠 ───── */
+.concept-box { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,18px) clamp(18px,2.8vw,28px); border-radius:20px; font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); text-align:center; line-height:1.5; box-shadow:var(--shadow); }
+.concept-box strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.big-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-lg); line-height:1; }
+.intro-q { font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; }
+.intro-q strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.goal-list { display:flex; flex-direction:column; gap:clamp(7px,1.4vw,11px); font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); }
+.goal-list li { background:#fff; border:2px solid var(--line); padding:clamp(8px,1.5vw,12px) clamp(14px,2.6vw,20px); border-radius:16px; list-style:none; box-shadow:var(--shadow); }
+.goal-list li strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+.recall-box { background:var(--teal-soft); padding:clamp(14px,2.8vw,22px) clamp(20px,3.6vw,30px); border-radius:22px; font-size:var(--fs-body); color:var(--teal-deep); max-width:var(--mw-sm); text-align:center; line-height:1.6; }
+.recall-box strong { color:var(--teal-deep); font-family:var(--f-title); font-weight:400; }
+.scene { background:#fff; border:3px solid var(--coral-soft); border-radius:28px; padding:clamp(18px,3.4vw,30px) clamp(22px,4.2vw,38px); display:flex; flex-direction:column; gap:clamp(10px,2vw,16px); align-items:center; min-width:clamp(280px,50vw,460px); box-shadow:0 6px 0 var(--coral-soft); }
+.pencil-row { display:flex; gap:clamp(4px,0.8vw,8px); font-size:var(--em-sm); flex-wrap:wrap; justify-content:center; max-width:var(--mw-sm); color:var(--ink); }
+
+/* ───── place_value_block (모형) ───── */
+.pv-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.pv-row { display:flex; gap:clamp(10px,2.2vw,20px); align-items:flex-end; justify-content:center; flex-wrap:wrap; }
+.pv-group { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,0.8vw,7px); }
+.pv-label { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.pv-block svg { display:block; }
+.swap-arrow { font-size:var(--em-sm); color:var(--coral); animation:ka-swap-r 1.6s ease-in-out infinite; }
+.exchange-eq { font-size:var(--fs-heading); color:var(--ink); display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); flex-wrap:wrap; justify-content:center; }
+
+/* ───── number_line ───── */
+.nl-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(12px,2.4vw,20px); max-width:var(--mw-lg); width:100%; }
+.nl-svg { width:min(760px,94vw); height:auto; }
+.nl-svg .nl-tick text { font-family:var(--f-num); font-weight:800; fill:var(--ink-soft); }
+.nl-pick { cursor:pointer; }
+.nl-pick:hover circle { fill:var(--coral-soft); }
+.nl-pick.correct circle { fill:var(--teal); }
+.nl-pick.wrong circle { fill:var(--coral-soft); }
+
+/* ───── 100의 여러 의미 ───── */
+.mean-grid { display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-sm); width:100%; }
+.mean-item { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,17px) clamp(16px,3vw,24px); border-radius:18px; font-size:var(--fs-body); color:var(--ink); text-align:center; box-shadow:var(--shadow); }
+.mean-item strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+
+/* ───── 문제 공통 ───── */
+.q-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; font-weight:400; }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:20px; padding:clamp(8px,1.6vw,14px) clamp(24px,4.6vw,44px); min-width:clamp(120px,22vw,200px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.q-pad { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(6px,1.2vw,10px); max-width:clamp(280px,56vw,460px); }
+.q-key { background:#fff; border:2px solid var(--line); border-radius:14px; padding:clamp(7px,1.5vw,12px) 0; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, background .15s, border-color .15s; box-shadow:0 4px 0 var(--line); }
+.q-key:hover { background:var(--coral-soft); border-color:var(--coral); }
+.q-key:active { transform:translateY(3px); box-shadow:none; }
+.q-key.fn { background:#FFF8E1; color:#F57F17; font-family:var(--f-title); font-size:var(--fs-body); border-color:#FFE08A; box-shadow:0 4px 0 #FFE08A; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); color:var(--teal-deep); min-height:1.4em; text-align:center; }
+.q-fb.wrong { color:var(--emph); }
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-sm); }
+.mcq-opt { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,15px); font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .2s; box-shadow:0 6px 0 var(--coral-soft); font-weight:400; }
+.mcq-opt:hover { border-color:var(--coral); }
+.mcq-opt:active { transform:translateY(4px); box-shadow:none; }
+.mcq-opt.correct { border-color:var(--teal-deep); background:var(--teal); color:#fff; box-shadow:0 6px 0 var(--teal-deep); animation:ka-pop .5s ease; }
+.mcq-opt.wrong { border-color:var(--emph); background:#FFE0DA; color:var(--coral-deep); animation:ka-shake .35s; }
+.mcq-hint { font-family:var(--f-title); font-size:var(--fs-body); color:#F57F17; background:#FFF8E1; border-radius:16px; padding:clamp(8px,1.6vw,12px) clamp(14px,2.6vw,20px); max-width:var(--mw-sm); text-align:center; display:none; }
+.mcq-hint.show { display:block; }
+
+/* ───── trace ───── */
+.trace-row { display:flex; gap:clamp(12px,2.4vw,22px); justify-content:center; flex-wrap:wrap; }
+.trace-cell { width:clamp(64px,12vw,110px); height:clamp(84px,16vw,150px); border:5px dashed var(--coral-soft); border-radius:20px; display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:#D8C4B8; cursor:pointer; transition:all .2s; background:#fff; }
+.trace-cell.done { color:var(--coral-deep); border-style:solid; border-color:var(--coral); background:var(--coral-soft); }
+
+/* ───── match ───── */
+.match-stage { display:flex; flex-direction:column; gap:clamp(8px,1.5vw,13px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.match-cols { display:flex; gap:clamp(20px,4vw,48px); }
+.match-col { display:flex; flex-direction:column; gap:clamp(6px,1.1vw,9px); }
+.match-card { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(16px,3vw,26px); font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .15s; min-width:clamp(70px,13vw,108px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.match-card:hover { border-color:var(--coral); }
+.match-card.sel { border-color:var(--gold); background:var(--mark); }
+.match-card.matched { border-color:var(--teal-deep); background:var(--teal); color:#fff; cursor:default; box-shadow:0 5px 0 var(--teal-deep); }
+
+/* ───── multi judge ───── */
+.judge-grid { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); max-width:var(--mw-sm); width:100%; }
+.judge-item { display:flex; align-items:center; gap:clamp(10px,2vw,16px); background:#fff; border:3px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(14px,2.6vw,20px); box-shadow:0 5px 0 var(--coral-soft); }
+.judge-text { flex:1; font-size:var(--fs-body); color:var(--ink); text-align:left; }
+.judge-text strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.judge-btns { display:flex; gap:clamp(6px,1.2vw,10px); }
+.judge-btn { border:3px solid var(--line); border-radius:14px; padding:clamp(6px,1.2vw,10px) clamp(12px,2.4vw,18px); font-family:var(--f-title); font-size:var(--fs-heading); cursor:pointer; background:#fff; color:var(--ink-soft); transition:transform .1s; }
+.judge-btn:active { transform:translateY(3px); }
+.judge-btn.pick-o { background:var(--teal-soft); color:var(--teal-deep); border-color:var(--teal); }
+.judge-btn.pick-x { background:var(--coral-soft); color:var(--coral-deep); border-color:var(--coral); }
+.judge-item.right { border-color:var(--teal-deep); box-shadow:0 5px 0 var(--teal-deep); }
+.judge-item.miss { border-color:var(--emph); animation:ka-shake .35s; }
+
+/* ───── 정리/자기평가/다음 ───── */
+.summary-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.summary-card { background:#fff; border:2px solid var(--line); border-radius:22px; padding:clamp(18px,3.4vw,30px); font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; box-shadow:var(--shadow); }
+.summary-card strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.wrap-msg { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--coral-deep); }
+.self-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(14px,2.6vw,22px); }
+.self-row { display:flex; gap:clamp(12px,2.4vw,20px); flex-wrap:wrap; justify-content:center; }
+.self-btn { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,16px) clamp(14px,2.8vw,22px); cursor:pointer; display:flex; flex-direction:column; gap:clamp(3px,0.7vw,6px); align-items:center; transition:transform .12s, border-color .15s; box-shadow:0 6px 0 var(--coral-soft); }
+.self-btn:hover { border-color:var(--coral); }
+.self-btn:active { transform:translateY(4px); box-shadow:none; }
+.self-btn.selected { border-color:var(--gold); background:var(--mark); }
+.self-btn-stars { font-size:var(--em-sm); color:var(--gold); }
+.self-btn-name { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.next-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-md); }
+.next-card { background:var(--teal-soft); border-radius:22px; padding:clamp(20px,3.8vw,32px); display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); align-items:center; }
+.next-emojis { font-size:var(--em-md); }
+.next-label { font-size:var(--fs-body); color:var(--teal-deep); text-align:center; }
+.home-prompt { font-size:var(--fs-caption); color:var(--coral-deep); background:var(--coral-soft); border-radius:18px; padding:clamp(12px,2.4vw,18px) clamp(18px,3.4vw,28px); text-align:center; }
+
+
+  /* 세로셈 (3학년 덧셈·뺄셈) */
+  .vadd { display:inline-grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:clamp(2px,0.6vw,4px) clamp(8px,1.6vw,14px); font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--ink); justify-items:center; align-items:center; background:#fff; border:2px solid var(--line); border-radius:18px; padding:clamp(12px,2vw,20px) clamp(18px,3vw,30px); box-shadow:var(--shadow); }
+  .vadd .op { color:var(--coral-deep); }
+  .vadd .ln { grid-column:1/-1; width:100%; height:3px; background:var(--ink); border-radius:2px; }
+  .vadd .sum { color:var(--coral-deep); }
+  .pv-sum-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-md); }
+
+
+/* ───── 분수와 소수 단원 부품 (3-2 U4) ───── */
+.fr { display:inline-flex; flex-direction:column; align-items:center; vertical-align:middle; line-height:1.05; margin:0 .12em; font-family:'Nunito','Jua',sans-serif; font-weight:800; }
+.fr i { font-style:normal; display:block; padding:0 .12em; }
+.fr i:first-child { border-bottom:2px solid currentColor; }
+.fr-s { display:none; }
+.fr-w { font-family:'Nunito','Jua',sans-serif; font-weight:800; margin-right:.05em; }
+.dn { font-family:'Nunito','Jua',sans-serif; font-weight:800; }
+.fq-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.4vw,12px); width:100%; max-width:var(--mw-lg); }
+.fq-title { font-family:var(--f-title); font-size:var(--fs-label); color:var(--teal-deep); text-align:center; font-weight:400; }
+.fq-note { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; line-height:1.6; }
+.fq-svg { width:100%; height:auto; display:block; max-width:min(520px,90vw); margin:0 auto; }
+.fq-svg.sm { max-width:min(300px,70vw); }
+.fq-row { display:flex; flex-wrap:wrap; gap:clamp(8px,2vw,16px); justify-content:center; align-items:center; }
+.fq-lab { font-family:'Nunito',sans-serif; font-weight:800; font-size:15px; fill:#37474F; }
+.fq-name { font-family:'Jua',sans-serif; font-size:15px; fill:#92400E; text-anchor:middle; }
+.fq-card { background:#fff; border:3px solid #F59E0B; border-radius:14px; min-width:clamp(56px,11vw,84px); padding:clamp(6px,1.2vw,10px) clamp(8px,1.6vw,12px); text-align:center; font-size:clamp(20px,3.6vw,30px); color:#37474F; position:relative; }
+.fq-card.hi { background:#FEF3C7; border-color:#B45309; }
+.fq-card .fq-tag { display:block; font-family:'Jua',sans-serif; font-size:var(--fs-caption); color:#92400E; margin-bottom:2px; }
+.fq-cmp { font-family:'Jua',sans-serif; font-size:clamp(22px,4vw,32px); color:#37474F; display:flex; align-items:center; gap:clamp(8px,2vw,16px); }
+.fq-sign { display:inline-flex; width:1.6em; height:1.6em; border-radius:50%; border:3px solid #B45309; align-items:center; justify-content:center; color:#B45309; background:#FFFBEB; }
+.dc-box { display:inline-flex; min-width:1.4em; justify-content:center; padding:.1em .25em; border:3px solid #F59E0B; border-radius:10px; background:#fff; font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(26px,5vw,40px); color:#37474F; }
+.dc-dot { font-family:'Nunito',sans-serif; font-weight:900; font-size:clamp(30px,6vw,46px); color:#B45309; padding:0 .08em; }
+.dc-read { font-family:'Jua',sans-serif; font-size:var(--fs-caption); color:#92400E; }
+.nc-card { display:inline-flex; width:clamp(40px,8vw,56px); height:clamp(52px,10vw,72px); border:3px solid #37474F; border-radius:10px; background:#FFFDF5; align-items:center; justify-content:center; font-family:'Nunito',sans-serif; font-weight:900; font-size:clamp(24px,4.6vw,34px); color:#37474F; }
+</style>
+<script src="/kedu_gate.js"></script>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 목록</button>
+    <span class="ka-pill">2차시</span>
+    <span class="ka-where">수학 3-2 · <b>4. 분수와 소수</b></span>
+    <div class="ka-bar" id="dots"></div>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+  <div class="ka-m">
+    <div class="slide active" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">와플을 나누어요</h2>
+      <div class="intro-q">은비가 와플 <b>4개</b>를 친구와 <b>똑같이 2묶음</b>으로 나누었어요.<br>한 묶음은 전체 2묶음 중의 1묶음이에요.<br>그래서 한 묶음은 전체의 <span class="fr"><i>1</i><span class="fr-s">/</span><i>2</i></span> 이에요.</div>
+    </div>
+
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">낱개가 아니라 묶음을 세요</h2>
+      <div class="ef-stage">
+        <div id="m-i2"></div>
+        <div class="concept-box">여러 개를 분수로 나타낼 때는 <b>하나하나를 쪼개지 않아요.</b><br>전체를 <b>똑같이 묶고</b>, 묶음이 몇 개인지 세어요.<br>먼저 <b>전체가 무엇인지</b> 정해요.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">오늘 할 일</h2>
+      <div class="intro-q">똑같이 묶어서 분수로 나타내요.<br>묶는 방법이 달라지면 분수가 어떻게 되는지 봐요.<br>부분과 전체를 헷갈리지 않아요.</div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개</div>
+      <h2 class="slide-title">2씩 묶어요</h2>
+      <div class="ef-stage">
+        <div id="m-e1"></div>
+        <div class="concept-box">8을 <b>2씩</b> 묶으면 4묶음이에요. 색칠한 2묶음은 4묶음 중의 2묶음이라 <span class="fr"><i>2</i><span class="fr-s">/</span><i>4</i></span> 이에요. 그래서 <b>4는 8의 <span class="fr"><i>2</i><span class="fr-s">/</span><i>4</i></span></b> 이에요.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개</div>
+      <h2 class="slide-title">1씩 묶어요</h2>
+      <div class="ef-stage">
+        <div id="m-e2"></div>
+        <div class="concept-box">같은 8을 <b>1씩</b> 묶으면 8묶음이에요. 색칠한 6묶음은 <span class="fr"><i>6</i><span class="fr-s">/</span><i>8</i></span> 이라 <b>6은 8의 <span class="fr"><i>6</i><span class="fr-s">/</span><i>8</i></span></b> 이에요. 묶는 방법이 달라지면 분수도 달라져요.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개</div>
+      <h2 class="slide-title">분모와 분자</h2>
+      <div class="ef-stage">
+        <div id="m-e3"></div>
+        <div class="concept-box">전체를 똑같이 나누어 묶은 <b>전체 묶음의 수는 분모</b>, 색칠한 <b>부분 묶음의 수는 분자</b>예요. 15를 3씩 묶으면 5묶음, 9는 그중 3묶음이라 <b>9는 15의 <span class="fr"><i>3</i><span class="fr-s">/</span><i>5</i></span></b> 이에요.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개</div>
+      <h2 class="slide-title">전체를 먼저 세요</h2>
+      <div class="ef-stage">
+        <div id="m-e4"></div>
+        <div class="concept-box">검은 돌 3개와 흰 돌 4개가 있어요. 검은 돌은 흰 돌과 견주는 것이 아니라 <b>전체 7개</b>와 견주어요. 그래서 검은 돌은 전체의 <span class="fr"><i>3</i><span class="fr-s">/</span><i>7</i></span> 이에요.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q8" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">와플 6개를 똑같이 3묶음으로 나누었어요. 한 묶음은 전체의 얼마인가요?</div>
+        <div class="ef-stage"><div id="m-q8"></div></div>
+        <div class="mcq-opts" id="q8-opts">
+          <button class="mcq-opt" data-correct="0"><span class="fr"><i>1</i><span class="fr-s">/</span><i>6</i></span></button>
+          <button class="mcq-opt" data-correct="1"><span class="fr"><i>1</i><span class="fr-s">/</span><i>3</i></span></button>
+          <button class="mcq-opt" data-correct="0"><span class="fr"><i>1</i><span class="fr-s">/</span><i>2</i></span></button>
+          <button class="mcq-opt" data-correct="0"><span class="fr"><i>2</i><span class="fr-s">/</span><i>3</i></span></button>
+        </div>
+        <div class="mcq-hint" data-hints='["전체 묶음은 몇 개인가요?","그중 한 묶음이에요."]'></div>
+        <div class="q-fb" id="q8-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q9" data-q-points="10" data-answer="6">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">18을 3씩 묶으면 모두 몇 묶음이 되나요?</div>
+        <div class="ef-stage"><div id="m-q9"></div></div>
+        <div class="q-display" id="q9-display">?</div>
+        <div class="q-pad" id="q9-pad"></div>
+        <div class="mcq-hint" data-hints='["3개씩 한 묶음이에요.","묶음을 세어 보세요."]'></div>
+        <div class="q-fb" id="q9-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q10" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">12를 2씩 묶었어요. 2는 12의 얼마인가요?</div>
+        <div class="ef-stage"><div id="m-q10"></div></div>
+        <div class="mcq-opts" id="q10-opts">
+          <button class="mcq-opt" data-correct="0"><span class="fr"><i>2</i><span class="fr-s">/</span><i>6</i></span></button>
+          <button class="mcq-opt" data-correct="0"><span class="fr"><i>1</i><span class="fr-s">/</span><i>2</i></span></button>
+          <button class="mcq-opt" data-correct="0"><span class="fr"><i>5</i><span class="fr-s">/</span><i>6</i></span></button>
+          <button class="mcq-opt" data-correct="1"><span class="fr"><i>1</i><span class="fr-s">/</span><i>6</i></span></button>
+        </div>
+        <div class="mcq-hint" data-hints='["12를 2씩 묶으면 몇 묶음인가요?","2는 그중 몇 묶음인가요?"]'></div>
+        <div class="q-fb" id="q10-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q11" data-q-points="10" data-answer="4">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">12를 2씩 묶었어요. 8은 몇 묶음인가요?</div>
+        <div class="ef-stage"><div id="m-q11"></div></div>
+        <div class="q-display" id="q11-display">?</div>
+        <div class="q-pad" id="q11-pad"></div>
+        <div class="mcq-hint" data-hints='["색칠한 묶음을 세어 보세요.","2개씩 한 묶음이에요."]'></div>
+        <div class="q-fb" id="q11-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q12" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">검은 돌은 전체의 얼마인가요?</div>
+        <div class="ef-stage"><div id="m-q12"></div></div>
+        <div class="mcq-opts" id="q12-opts">
+          <button class="mcq-opt" data-correct="1"><span class="fr"><i>3</i><span class="fr-s">/</span><i>7</i></span></button>
+          <button class="mcq-opt" data-correct="0"><span class="fr"><i>3</i><span class="fr-s">/</span><i>4</i></span></button>
+          <button class="mcq-opt" data-correct="0"><span class="fr"><i>4</i><span class="fr-s">/</span><i>7</i></span></button>
+          <button class="mcq-opt" data-correct="0"><span class="fr"><i>1</i><span class="fr-s">/</span><i>3</i></span></button>
+        </div>
+        <div class="mcq-hint" data-hints='["전체 돌은 모두 몇 개인가요?","검은 돌을 흰 돌과 견주지 말고 전체와 견주어요."]'></div>
+        <div class="q-fb" id="q12-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q13" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">공 6개를 <span class="fr"><i>2</i><span class="fr-s">/</span><i>3</i></span> 만큼 색칠하려고 해요. 바르게 말한 것은 무엇인가요?</div>
+        <div class="ef-stage"><div id="m-q13"></div></div>
+        <div class="mcq-opts" id="q13-opts">
+          <button class="mcq-opt" data-correct="0">공 2개를 색칠한다</button>
+          <button class="mcq-opt" data-correct="0">공 3개를 색칠한다</button>
+          <button class="mcq-opt" data-correct="1">3묶음으로 나눈 것 중 2묶음을 색칠한다</button>
+          <button class="mcq-opt" data-correct="0">6묶음으로 나눈 것 중 2묶음을 색칠한다</button>
+        </div>
+        <div class="mcq-hint" data-hints='["분모 3은 전체를 몇 묶음으로 나누라는 뜻인가요?","분자 2는 공 2개가 아니라 2묶음이에요."]'></div>
+        <div class="q-fb" id="q13-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q14" data-q-points="15" data-answer="3">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">16을 4씩 묶었어요. 12는 몇 묶음인가요?</div>
+        <div class="ef-stage"><div id="m-q14"></div></div>
+        <div class="q-display" id="q14-display">?</div>
+        <div class="q-pad" id="q14-pad"></div>
+        <div class="mcq-hint" data-hints='["4개씩 한 묶음이에요.","12개가 몇 묶음을 채우는지 세어 보세요."]'></div>
+        <div class="q-fb" id="q14-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q15" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">같은 8개인데 분수가 <span class="fr"><i>2</i><span class="fr-s">/</span><i>4</i></span> 과 <span class="fr"><i>6</i><span class="fr-s">/</span><i>8</i></span> 로 다르게 나온 까닭은 무엇인가요?</div>
+        <div class="ef-stage"><div id="m-q15"></div></div>
+        <div class="mcq-opts" id="q15-opts">
+          <button class="mcq-opt" data-correct="0">전체 개수가 달라서</button>
+          <button class="mcq-opt" data-correct="1">묶는 방법이 달라서</button>
+          <button class="mcq-opt" data-correct="0">색이 달라서</button>
+          <button class="mcq-opt" data-correct="0">분수를 잘못 써서</button>
+        </div>
+        <div class="mcq-hint" data-hints='["두 그림에서 한 묶음은 몇 개씩인가요?","전체는 둘 다 8개예요."]'></div>
+        <div class="q-fb" id="q15-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 배운 것</h2>
+      <div class="summary-stage">
+        <div class="summary-card">전체를 똑같이 묶어 <strong>전체 묶음의 수는 분모, 부분 묶음의 수는 분자</strong>로 나타내요.<br>① 먼저 전체를 정해요 ② 부분끼리 견주지 않아요 ③ 묶는 방법이 달라지면 분수도 달라져요<br>다음 시간에는 전체의 분수만큼이 몇 개인지 알아봐요.</div>
+        <div class="wrap-msg" id="wrap-msg"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 공부는 어땠나요?</h2>
+      <div class="self-stage">
+        <div class="self-row">
+          <button class="self-btn"><div class="self-btn-stars">★</div><div class="self-btn-name">조금 어려웠어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★</div><div class="self-btn-name">잘 했어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★★</div><div class="self-btn-name">아주 잘 했어요</div></button>
+        </div>
+        <div class="q-fb" id="self-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">다음 시간</h2>
+      <div class="next-stage">
+        <div class="next-card">
+          <div class="next-emojis">🎈</div>
+          <div class="next-label">다음 시간에는 <strong>분수만큼은 얼마</strong>인지 알아봐요</div>
+        </div>
+        <div class="home-prompt">풍선 8개의 1/2 은 몇 개일까?</div>
+      </div>
+    </div>
+
+  </div>
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+<script>
+const TOTAL = 18;
+const LESSON_ID = 'g3_2_math_u4_l02';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.querySelectorAll('#dots .ka-dot').forEach((d, i) => { d.classList.toggle('active', i === cur); d.classList.toggle('done', i < cur); });
+  document.getElementById('prev').disabled = cur === 0;
+
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.solved || st.hintLevel >= 2; }
+  else { hintBtn.disabled = true; }
+
+  if (cur === TOTAL - 1) { document.getElementById('next').textContent = '마치기 →'; saveProgress(true); }
+  else { document.getElementById('next').textContent = '다음 →'; }
+
+  if (cur === 15) { document.getElementById('wrap-msg').textContent = wrapMsg(score); }
+}
+
+function saveProgress(done) {
+  const data = { cur, score, done, startedAt, finishedAt: done ? Date.now() : null, qState };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function wrapMsg(s) {
+  if (s >= 100) return '완벽해요!';
+  if (s >= 80) return '정말 잘했어요!';
+  if (s >= 60) return '잘했어요!';
+  return '다시 해도 좋아요!';
+}
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } else { saveProgress(true); location.href='../index.html'; } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+function showHint() {
+  const qid = currentQId(); if (!qid) return;
+  const st = getQState(qid); if (st.solved || st.hintLevel >= 2) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint'); if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[st.hintLevel - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= 2;
+}
+function pointsForQ(qid) {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  const base = parseInt(slide.dataset.qPoints || '0', 10);
+  const st = getQState(qid);
+  if (st.hintLevel === 2) return Math.max(0, base - 5);
+  if (st.hintLevel === 1) return Math.max(0, base - 2);
+  return base;
+}
+
+// ══════════════════════════════════════════════════════════════
+// 3-2 U4 「분수와 소수」 부품 라이브러리 v1
+//   setmodel · areamodel · lenmodel · unitstrip · numline · mixedbar · fraccard · cmppair · ruler · deccard · tenthgrid · numcard
+//   ★ 부품이 값을 스스로 계산하고 신고한다. 하니스는 그 신고를 믿지 않고 **그린 칸·점·좌표**로 다시 센다.
+// ══════════════════════════════════════════════════════════════
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const UW = 150;                                      // 전체 하나 = 150 px — 한 화면의 모든 띠가 같은 전체
+const _f = v => Math.round(v * 100) / 100;
+const frac = (n, d) => ({ w: 0, n: n, d: d });
+const mixed = (w, n, d) => ({ w: w, n: n, d: d });
+function _isF(v){ return v !== null && typeof v === 'object'; }
+function _val(v){ return _isF(v) ? v.w + v.n / v.d : Number(v); }
+function _txt(v){ return _isF(v) ? (v.w ? v.w + ' ' : '') + v.n + '/' + v.d : String(v); }
+function _tenths(v){                                    // 소수 한 자리 문자열 → 0.1 의 개수 (float 를 쓰지 않는다)
+  const s = String(v); const m = s.match(/^(\d+)(?:\.(\d))?$/);
+  if (!m) throw new Error('소수 한 자리가 아니다 — ' + s);
+  return Number(m[1]) * 10 + Number(m[2] || 0);
+}
+function _chkF(v, who){
+  if (!_isF(v)) return;
+  if (!Number.isInteger(v.n) || !Number.isInteger(v.d) || v.d < 2 || v.n < 0) throw new Error(who + ': 분수 모양 — ' + _txt(v));
+  if (v.w && v.n >= v.d) throw new Error(who + ': 대분수의 분수 부분은 진분수 — ' + _txt(v));
+}
+function fh(v){                                          // 분수·소수를 화면 글자로 — 분모·분자를 위아래로
+  if (!_isF(v)) return '<span class="dn">' + esc(v) + '</span>';
+  return (v.w ? '<span class="fr-w">' + v.w + '</span><span class="fr-s">·</span>' : '') +
+    '<span class="fr"><i>' + v.n + '</i><span class="fr-s">/</span><i>' + v.d + '</i></span>';
+}
+function _kind(v){                                       // p 진분수 · i 가분수 · m 대분수 · n 자연수 · d 소수
+  if (!_isF(v)) return String(v).indexOf('.') >= 0 ? 'd' : 'n';
+  if (v.w) return 'm';
+  return v.n < v.d ? 'p' : 'i';
+}
+const _wrap = (attr, body, o) => '<div class="fq-wrap"' + attr + '>' +
+  (o.title ? '<div class="fq-title">《 ' + esc(o.title) + ' 》</div>' : '') + body +
+  (o.cap ? '<div class="fq-note">' + o.cap + '</div>' : '') + '</div>';
+const _lab = (x, y, t, cls) => '<text class="' + (cls || 'fq-lab') + '" x="' + _f(x) + '" y="' + _f(y) + '" text-anchor="middle">' + esc(t) + '</text>';
+const COL = { on: '#F59E0B', onS: '#B45309', off: '#FFFFFF', offS: '#90A4AE', dot: '#CFD8DC' };
+
+// ① setmodel — o = { total, groups, picked, colors:[a,b], title, cap }
+//   groups 가 있으면 total 을 groups 묶음으로 **똑같이** 나눈다(나누어떨어지지 않으면 부품이 선다).
+//   colors 는 묶지 않고 두 색으로만 칠하는 판(부분과 전체를 헷갈리는 자리의 반례).
+function setmodel(o){
+  const T = o.total, G = o.groups || 0, K = o.picked || 0;
+  if (!Number.isInteger(T) || T < 1 || T > 40) throw new Error('setmodel: 낱개 1~40 — ' + T);
+  if (G && T % G) throw new Error('setmodel: ' + T + ' 개를 ' + G + ' 묶음으로 똑같이 나눌 수 없다');
+  if (K > G) throw new Error('setmodel: 칠한 묶음이 전체 묶음보다 많다');
+  const per = G ? T / G : 0;
+  let s = '', x = 6, H = 0;
+  if (G){
+    const cols = Math.min(per, per > 6 ? 4 : 3), rows = Math.ceil(per / cols);
+    const gw = cols * 24 + 14, gh = rows * 24 + 14;
+    for (let g = 0; g < G; g++){
+      const on = g < K;
+      s += '<g data-grp="' + g + '" data-pick="' + (on ? 1 : 0) + '">';
+      s += '<rect x="' + x + '" y="6" width="' + gw + '" height="' + gh + '" rx="10" fill="' + (on ? '#FEF3C7' : '#FFFFFF') +
+           '" stroke="' + (on ? COL.onS : COL.offS) + '" stroke-width="' + (on ? 3 : 2) + '"></rect>';
+      for (let k = 0; k < per; k++){
+        const cx = x + 19 + (k % cols) * 24, cy = 25 + Math.floor(k / cols) * 24;
+        s += '<circle data-dot="1" cx="' + cx + '" cy="' + cy + '" r="9" fill="' + (on ? COL.on : COL.dot) + '" stroke="#37474F" stroke-width="1.2"></circle>';
+      }
+      s += '</g>';
+      x += gw + 10;
+    }
+    H = gh + 12;
+  } else {
+    const cs = o.colors || [T], cols = Math.min(T, 10);
+    let k = 0;
+    cs.forEach((c, ci) => { for (let j = 0; j < c; j++, k++){
+      const cx = 20 + (k % cols) * 26, cy = 20 + Math.floor(k / cols) * 26;
+      s += '<circle data-dot="1" data-col="' + ci + '" cx="' + cx + '" cy="' + cy + '" r="10" fill="' + (ci === 0 ? '#37474F' : '#FFFFFF') + '" stroke="#37474F" stroke-width="1.6"></circle>'; } });
+    if (k !== T) throw new Error('setmodel: 색 개수의 합이 낱개 수와 다르다');
+    x = cols * 26 + 16; H = Math.ceil(T / cols) * 26 + 16;
+  }
+  return _wrap(' data-set="' + T + '|' + G + '|' + per + '|' + K + '"' + (o.colors ? ' data-colors="' + o.colors.join(',') + '"' : ''),
+    '<svg class="fq-svg" viewBox="0 0 ' + x + ' ' + H + '">' + s + '</svg>', o);
+}
+
+// ② areamodel — o = { shape:'rect'|'circle', parts, shaded } — 도형 하나를 똑같이 나눈다
+function areamodel(o){
+  const P = o.parts, K = o.shaded || 0;
+  if (!Number.isInteger(P) || P < 2 || P > 12 || K > P) throw new Error('areamodel: 나눈 칸 — ' + P + '/' + K);
+  let s = '';
+  if (o.shape === 'circle'){
+    const cx = 70, cy = 70, R = 60;
+    for (let i = 0; i < P; i++){
+      const a0 = (i / P) * 2 * Math.PI - Math.PI / 2, a1 = ((i + 1) / P) * 2 * Math.PI - Math.PI / 2;
+      const p0 = [_f(cx + R * Math.cos(a0)), _f(cy + R * Math.sin(a0))], p1 = [_f(cx + R * Math.cos(a1)), _f(cy + R * Math.sin(a1))];
+      s += '<path data-piece="' + i + '" data-on="' + (i < K ? 1 : 0) + '" d="M' + cx + ' ' + cy + ' L' + p0[0] + ' ' + p0[1] +
+           ' A' + R + ' ' + R + ' 0 0 1 ' + p1[0] + ' ' + p1[1] + ' Z" fill="' + (i < K ? COL.on : COL.off) + '" stroke="#37474F" stroke-width="2"></path>';
+    }
+    return _wrap(' data-area="' + P + '|' + K + '|circle"', '<svg class="fq-svg sm" viewBox="0 0 140 140">' + s + '</svg>', o);
+  }
+  const W = 240, H = 80, pw = W / P;
+  for (let i = 0; i < P; i++)
+    s += '<rect data-piece="' + i + '" data-on="' + (i < K ? 1 : 0) + '" x="' + _f(10 + i * pw) + '" y="10" width="' + _f(pw) + '" height="' + H +
+         '" fill="' + (i < K ? COL.on : COL.off) + '" stroke="#37474F" stroke-width="2"></rect>';
+  return _wrap(' data-area="' + P + '|' + K + '|rect"', '<svg class="fq-svg sm" viewBox="0 0 260 100">' + s + '</svg>', o);
+}
+
+// ③ lenmodel — o = { whole, unit, parts, picked, ask } — 0 부터 whole 까지 띠를 parts 부분으로 똑같이 나눈다
+//   ask 면 칠한 부분의 길이 이름표를 「?」로 둔다(값을 적지 않는다).
+function lenmodel(o){
+  const Wv = o.whole, P = o.parts, K = o.picked || 0, u = o.unit || '';
+  if (!Number.isInteger(P) || P < 2 || P > 24 || K > P) throw new Error('lenmodel: 나눈 부분 — ' + P + '/' + K);
+  const W = 300, X0 = 20, pw = W / P;
+  let s = '';
+  for (let i = 0; i < P; i++)
+    s += '<rect data-part="' + i + '" data-on="' + (i < K ? 1 : 0) + '" x="' + _f(X0 + i * pw) + '" y="16" width="' + _f(pw) + '" height="34" fill="' +
+         (i < K ? COL.on : '#FFFDF5') + '" stroke="#37474F" stroke-width="1.6"></rect>';
+  s += _lab(X0, 70, '0') + _lab(X0 + W, 70, Wv + (u ? ' ' + u : ''));
+  if (K && o.show !== false) s += '<line x1="' + X0 + '" y1="8" x2="' + _f(X0 + K * pw) + '" y2="8" stroke="' + COL.onS + '" stroke-width="3"></line>' +
+    _lab(X0 + K * pw / 2, 4 + 0, o.ask ? '?' : '');
+  return _wrap(' data-len="' + Wv + '|' + u + '|' + P + '|' + K + '"',
+    '<svg class="fq-svg" viewBox="0 -12 340 90">' + s + '</svg>', o);
+}
+
+// ④ unitstrip — o = { den, count } — 1/den 조각 count 개. 전체(1)마다 테두리를 두르고 조각 폭은 UW/den.
+function unitstrip(o){
+  const D = o.den, C = o.count;
+  if (!Number.isInteger(D) || D < 2 || D > 12 || !Number.isInteger(C) || C < 1 || C > 4 * D) throw new Error('unitstrip: ' + C + '/' + D);
+  const nW = Math.max(1, Math.ceil(C / D)), pw = UW / D, X0 = 10;
+  let s = '';
+  for (let w = 0; w < nW; w++){
+    s += '<rect data-whole="' + w + '" x="' + (X0 + w * (UW + 12)) + '" y="8" width="' + UW + '" height="34" fill="#FFFDF5" stroke="#37474F" stroke-width="2.4"></rect>';
+    for (let k = 0; k < D; k++){
+      const i = w * D + k, on = i < C;
+      s += '<rect data-pc="' + (on ? 1 : 0) + '" x="' + _f(X0 + w * (UW + 12) + k * pw) + '" y="8" width="' + _f(pw) + '" height="34" fill="' +
+           (on ? COL.on : 'none') + '" stroke="#78909C" stroke-width="1"></rect>';
+    }
+  }
+  const W = X0 * 2 + nW * UW + (nW - 1) * 12;
+  return _wrap(' data-us="' + D + '|' + C + '"', '<svg class="fq-svg" viewBox="0 0 ' + W + ' 50">' + s + '</svg>', o);
+}
+
+// ⑤ numline — o = { max, den, marks:[[값, 이름표]] , nolab:true } — 0 부터 max 까지. 눈금은 1/den 마다.
+//   값은 frac()/mixed() 또는 소수 문자열. 이름표가 '?' 면 그 자리의 값을 적지 않는다.
+function numline(o){
+  const M = o.max || 1, D = o.den || 10, X0 = 22;
+  let s = '<line x1="' + X0 + '" y1="40" x2="' + (X0 + M * UW) + '" y2="40" stroke="#37474F" stroke-width="2.4"></line>';
+  for (let k = 0; k <= M * D; k++){
+    const x = _f(X0 + k * UW / D), big = k % D === 0;
+    s += '<line data-tick="' + k + '" x1="' + x + '" y1="' + (big ? 30 : 34) + '" x2="' + x + '" y2="' + (big ? 50 : 46) + '" stroke="#37474F" stroke-width="' + (big ? 2.4 : 1.4) + '"></line>';
+    if (big && !o.nolab) s += _lab(x, 68, String(k / D));
+  }
+  (o.marks || []).forEach(m => {
+    const v = m[0]; _chkF(v, 'numline');
+    const val = _val(v);
+    if (val < 0 || val > M) throw new Error('numline: 값이 수직선 밖 — ' + _txt(v));
+    if (_isF(v) && (D % v.d)) throw new Error('numline: 눈금 1/' + D + ' 로 ' + _txt(v) + ' 자리를 못 짚는다');
+    if (!_isF(v) && D !== 10) throw new Error('numline: 소수는 0.1 눈금에만');
+    const x = _f(X0 + val * UW);
+    s += '<circle data-mk="1" data-v="' + esc(_txt(v)) + '" cx="' + x + '" cy="40" r="6" fill="#DC2626"></circle>';
+    s += '<g transform="translate(' + x + ',0)">' + (m[1] === '?' ? _lab(0, 22, '?') : (m[1] ? _lab(0, 22, m[1], 'fq-name') : '')) + '</g>';
+  });
+  return _wrap(' data-nl="' + M + '|' + D + '"', '<svg class="fq-svg" viewBox="0 0 ' + (X0 * 2 + M * UW) + ' 76">' + s + '</svg>', o);
+}
+
+// ⑥ mixedbar — o = { w, n, d } — 전체 w 개를 통째로 칠하고, 하나 더 그려 n 조각만 칠한다
+function mixedbar(o){
+  const w = o.w, n = o.n, d = o.d;
+  _chkF(mixed(w, n, d), 'mixedbar');
+  if (!w) throw new Error('mixedbar: 자연수 부분이 없다');
+  const pw = UW / d, X0 = 10;
+  let s = '';
+  for (let b = 0; b <= w; b++){
+    const x = X0 + b * (UW + 12);
+    s += '<rect data-whole="' + b + '" x="' + x + '" y="8" width="' + UW + '" height="34" fill="#FFFDF5" stroke="#37474F" stroke-width="2.4"></rect>';
+    for (let k = 0; k < d; k++){
+      const on = b < w || k < n;
+      s += '<rect data-pc="' + (on ? 1 : 0) + '" x="' + _f(x + k * pw) + '" y="8" width="' + _f(pw) + '" height="34" fill="' + (on ? COL.on : 'none') + '" stroke="#78909C" stroke-width="1"></rect>';
+    }
+  }
+  const W = X0 * 2 + (w + 1) * UW + w * 12;
+  return _wrap(' data-mixed="' + w + '|' + n + '|' + d + '"', '<svg class="fq-svg" viewBox="0 0 ' + W + ' 50">' + s + '</svg>', o);
+}
+
+// ⑦ fraccard — o = { items:[값...], labs:['가',...], hi:[i], ask:[i] } — 카드마다 갈래를 신고한다
+function fraccard(o){
+  const it = o.items || [];
+  it.forEach(v => _chkF(v, 'fraccard'));
+  return _wrap(' data-fc="' + it.map(v => _kind(v) + ':' + esc(_txt(v))).join(',') + '"', '<div class="fq-row">' +
+    it.map((v, i) => '<div class="fq-card' + ((o.hi || []).indexOf(i) >= 0 ? ' hi' : '') + '" data-kind="' + _kind(v) + '">' +
+      (o.labs ? '<span class="fq-tag">' + esc(o.labs[i]) + '</span>' : '') +
+      ((o.ask || []).indexOf(i) >= 0 ? '<span class="dn">?</span>' : fh(v)) + '</div>').join('') + '</div>', o);
+}
+
+// ⑧ cmppair — o = { a, b, unit:true, ask:true } — 두 수를 **같은 전체**의 띠로 나란히 그린다.
+//   분수는 1/d 조각을 센 만큼, 소수는 0.1 조각을 센 만큼 칠한다. 분모가 다른 분수 짝은 단위분수끼리만(unit).
+function cmppair(o){
+  const a = o.a, b = o.b;
+  _chkF(a, 'cmppair'); _chkF(b, 'cmppair');
+  const pieces = v => _isF(v) ? [v.d, v.w * v.d + v.n] : [10, _tenths(v)];
+  const pa = pieces(a), pb = pieces(b);
+  const same = pa[0] === pb[0] ? 1 : 0;
+  if (!same){
+    const unit = _isF(a) && _isF(b) && !a.w && !b.w && a.n === 1 && b.n === 1;
+    if (!(o.unit && unit)) throw new Error('cmppair: 분모가 다른 짝은 단위분수끼리만 — ' + _txt(a) + ', ' + _txt(b));
+  }
+  const va = pa[1] / pa[0], vb = pb[1] / pb[0];
+  const sign = Math.abs(va - vb) < 1e-9 ? '=' : (va > vb ? '>' : '<');
+  const nW = Math.max(1, Math.ceil(Math.max(va, vb) - 1e-9)), X0 = 10;
+  const row = (p, y, tag) => {
+    let s = '';
+    for (let w = 0; w < nW; w++){
+      const x = X0 + w * (UW + 12);
+      s += '<rect x="' + x + '" y="' + y + '" width="' + UW + '" height="28" fill="#FFFDF5" stroke="#37474F" stroke-width="2.2"></rect>';
+      for (let k = 0; k < p[0]; k++){
+        const on = w * p[0] + k < p[1];
+        s += '<rect data-row="' + tag + '" data-pc="' + (on ? 1 : 0) + '" x="' + _f(x + k * UW / p[0]) + '" y="' + y + '" width="' + _f(UW / p[0]) + '" height="28" fill="' +
+             (on ? (tag === 'a' ? COL.on : '#60A5FA') : 'none') + '" stroke="#90A4AE" stroke-width="1"></rect>';
+      }
+    }
+    return s;
+  };
+  const W = X0 * 2 + nW * UW + (nW - 1) * 12;
+  // bars:false — 자연수 부분이 큰 짝(8.3 · 10.7 …)은 띠를 그리면 전체가 너무 잘게 줄어든다. 수와 기호만 둔다.
+  const svg = o.bars === false ? '' : '<svg class="fq-svg" viewBox="0 0 ' + W + ' 80">' + row(pa, 6, 'a') + row(pb, 44, 'b') + '</svg>';
+  const line = '<div class="fq-cmp">' + fh(a) + '<span class="fq-sign">' + (o.ask ? '?' : esc(sign)) + '</span>' + fh(b) + '</div>';
+  return _wrap(' data-cmp="' + esc(_txt(a)) + '|' + esc(_txt(b)) + '|' + same + '|' + esc(sign) + '"', svg + line, o);
+}
+
+// ⑨ ruler — o = { mm, max } — 1 mm = 6 px. 물건 막대의 오른쪽 끝이 그 눈금 자리에 정확히 놓인다.
+function ruler(o){
+  const mm = o.mm, M = o.max || Math.ceil(mm / 10) + 1, P = 6, X0 = 16;
+  if (!Number.isInteger(mm) || mm < 1 || mm > M * 10) throw new Error('ruler: 길이 ' + mm + ' mm');
+  let s = '<rect data-obj="1" x="' + X0 + '" y="6" width="' + (mm * P) + '" height="16" rx="6" fill="#F9A8D4" stroke="#9D174D" stroke-width="1.6"></rect>';
+  s += '<rect x="' + (X0 - 8) + '" y="28" width="' + (M * 10 * P + 16) + '" height="46" rx="6" fill="#FEF9C3" stroke="#A16207" stroke-width="1.6"></rect>';
+  for (let k = 0; k <= M * 10; k++){
+    const x = X0 + k * P, h = k % 10 === 0 ? 18 : (k % 5 === 0 ? 13 : 8);
+    s += '<line data-mm="' + k + '" x1="' + x + '" y1="28" x2="' + x + '" y2="' + (28 + h) + '" stroke="#37474F" stroke-width="' + (k % 10 ? 1 : 1.8) + '"></line>';
+    if (k % 10 === 0) s += _lab(x, 68, String(k / 10));
+  }
+  return _wrap(' data-ruler="' + mm + '|' + P + '|' + X0 + '"', '<svg class="fq-svg" viewBox="0 0 ' + (M * 10 * P + 32) + ' 80">' + s + '</svg>', o);
+}
+
+// ⑩ deccard — o = { v:'4.7', ask:'i'|'t'|'all', read:true } — 자연수 자리 · 소수점 · 소수 첫째 자리
+const _KN = ['영', '일', '이', '삼', '사', '오', '육', '칠', '팔', '구'];
+function _readInt(n){ if (n < 10) return _KN[n]; const t = Math.floor(n / 10), u = n % 10; return (t > 1 ? _KN[t] : '') + '십' + (u ? _KN[u] : ''); }
+function deccard(o){
+  const t = _tenths(o.v), I = Math.floor(t / 10), T = t % 10;
+  const a = o.ask || '';
+  const box = (v, hide) => '<span class="dc-box">' + (hide ? '?' : v) + '</span>';
+  let body = '<div class="fq-row">' + box(I, a === 'i' || a === 'all') + '<span class="dc-dot">.</span>' + box(T, a === 't' || a === 'all') + '</div>';
+  if (o.read && !a) body += '<div class="dc-read">' + _readInt(I) + ' 점 ' + _KN[T] + '</div>';
+  return _wrap(' data-dec="' + I + '|' + T + '"', body, o);
+}
+
+// ⑪ tenthgrid — o = { v:'1.4' } — 전체(1)마다 칸 10개. 칠한 칸 수 = 0.1 의 개수.
+function tenthgrid(o){
+  const t = _tenths(o.v), nW = Math.max(1, Math.ceil(t / 10)), pw = UW / 10, X0 = 10;
+  let s = '';
+  for (let w = 0; w < nW; w++){
+    const x = X0 + w * (UW + 12);
+    s += '<rect x="' + x + '" y="6" width="' + UW + '" height="30" fill="#FFFDF5" stroke="#37474F" stroke-width="2.4"></rect>';
+    for (let k = 0; k < 10; k++){
+      const on = w * 10 + k < t;
+      s += '<rect data-tc="' + (on ? 1 : 0) + '" x="' + _f(x + k * pw) + '" y="6" width="' + _f(pw) + '" height="30" fill="' + (on ? COL.on : 'none') + '" stroke="#78909C" stroke-width="1"></rect>';
+    }
+  }
+  return _wrap(' data-tg="' + t + '"', '<svg class="fq-svg" viewBox="0 0 ' + (X0 * 2 + nW * UW + (nW - 1) * 12) + ' 42">' + s + '</svg>', o);
+}
+
+// ⑫ numcard — o = { nums:[4,4,5,9] }
+function numcard(o){
+  const ns = o.nums || [];
+  return _wrap(' data-numcard="' + ns.join(',') + '"', '<div class="fq-row">' +
+    ns.map(n => '<span class="nc-card" data-n="' + n + '">' + n + '</span>').join('') + '</div>', o);
+}
+
+(function renderModels(){
+  document.getElementById('m-i2').innerHTML =
+    setmodel({total:4,groups:2,picked:1,title:'와플 4개를 2묶음으로'});
+  document.getElementById('m-e1').innerHTML =
+    setmodel({total:8,groups:4,picked:2,title:'2씩 묶기'});
+  document.getElementById('m-e2').innerHTML =
+    setmodel({total:8,groups:8,picked:6,title:'1씩 묶기'});
+  document.getElementById('m-e3').innerHTML =
+    setmodel({total:15,groups:5,picked:3});
+  document.getElementById('m-e4').innerHTML =
+    setmodel({total:7,colors:[3,4],cap:'검은 돌 3개 · 흰 돌 4개'});
+  document.getElementById('m-q8').innerHTML =
+    setmodel({total:6,groups:3,picked:1});
+  document.getElementById('m-q9').innerHTML =
+    setmodel({total:18});
+  document.getElementById('m-q10').innerHTML =
+    setmodel({total:12,groups:6,picked:1});
+  document.getElementById('m-q11').innerHTML =
+    setmodel({total:12,groups:6,picked:4});
+  document.getElementById('m-q12').innerHTML =
+    setmodel({total:7,colors:[3,4]});
+  document.getElementById('m-q13').innerHTML =
+    setmodel({total:6,groups:3,picked:0});
+  document.getElementById('m-q14').innerHTML =
+    setmodel({total:16,groups:4,picked:0});
+  document.getElementById('m-q15').innerHTML =
+    setmodel({total:8,groups:4,picked:2}) + setmodel({total:8,groups:8,picked:6});
+})();
+
+function setupPad(qid, correct, padId, displayId, fbId, doneMsg, maxLen) {
+  maxLen = maxLen || 6;
+  const pad = document.getElementById(padId);
+  const display = document.getElementById(displayId);
+  const fb = document.getElementById(fbId);
+  let buf = '';
+  const keys = ['1','2','3','4','5','6','7','8','9','0'];
+  keys.forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'q-key'; b.textContent = k;
+    b.addEventListener('click', () => {
+      const st = getQState(qid); if (st.solved) return;
+      if (buf.length < maxLen) { buf += k; display.textContent = buf; }
+    });
+    pad.appendChild(b);
+  });
+  const del = document.createElement('button');
+  del.className = 'q-key fn'; del.textContent = '지움';
+  del.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    buf = buf.slice(0, -1); display.textContent = buf || '?';
+  });
+  pad.appendChild(del);
+  const ok = document.createElement('button');
+  ok.className = 'q-key fn'; ok.textContent = '확인'; ok.style.gridColumn = 'span 4';
+  ok.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    st.attempts++;
+    if (parseInt(buf, 10) === correct) {
+      st.solved = true;
+      const earn = pointsForQ(qid); addScore(earn);
+      fb.classList.remove('wrong');
+      fb.textContent = (doneMsg || '정답이에요!') + ' +' + earn + '점';
+      updateUI();
+    } else {
+      st.wrongCount++;
+      fb.classList.add('wrong'); fb.textContent = '다시 한번 생각해 볼까요?';
+    }
+  });
+  pad.appendChild(ok);
+}
+
+function setupMcq(qid, doneMsg){
+  document.querySelectorAll('#'+qid+'-opts .mcq-opt').forEach(o=>{
+    o.addEventListener('click', ()=>{
+      const st=getQState(qid); if(st.solved) return;
+      st.attempts++;
+      const fb=document.getElementById(qid+'-fb');
+      if(o.dataset.correct==='1'){
+        st.solved=true; o.classList.add('correct');
+        const earn=pointsForQ(qid); addScore(earn);
+        fb.classList.remove('wrong'); fb.textContent=(doneMsg||'정답이에요!')+' +'+earn+'점';
+        updateUI();
+      } else {
+        st.wrongCount++; o.classList.add('wrong');
+        fb.classList.add('wrong'); fb.textContent='다시 골라 보세요';
+        setTimeout(()=>o.classList.remove('wrong'),500);
+      }
+    });
+  });
+}
+
+setupMcq('q8','3묶음 중의 1묶음이라 1/3이에요.');
+setupPad('q9', 6, 'q9-pad','q9-display','q9-fb','18을 3씩 묶으면 6묶음이에요. 그래서 분모는 6이 돼요.', 6);
+setupMcq('q10','12를 2씩 묶으면 6묶음이고 2는 1묶음이라 1/6이에요.');
+setupPad('q11', 4, 'q11-pad','q11-display','q11-fb','8은 4묶음이에요. 그래서 8은 12의 4/6이에요.', 6);
+setupMcq('q12','전체 7개 중 검은 돌 3개라 3/7이에요.');
+setupMcq('q13','6개를 3묶음으로 나누고 그중 2묶음, 공 4개를 색칠해야 2/3이에요.');
+setupPad('q14', 3, 'q14-pad','q14-display','q14-fb','12는 3묶음이라 12는 16의 3/4이에요.', 6);
+setupMcq('q15','전체는 같고 묶는 방법이 달라서 분수가 달라졌어요.');
+
+
+// ───── 슬17 자기 평가 ─────
+document.querySelectorAll('.self-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.self-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('self-fb').textContent = '응답이 기록됐어요. 다음 차시에서 만나요!';
+  });
+});
+
+// ───── 진도 복원 ─────
+(function restore() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data.cur != null) cur = Math.min(data.cur, TOTAL - 1);
+    if (data.score != null) score = data.score;
+    document.getElementById('score').textContent = '⭐ ' + score;
+  } catch(e) {}
+})();
+
+(function buildDots(){ const w=document.getElementById('dots'); for(let i=0;i<TOTAL;i++){ const d=document.createElement('div'); d.className='ka-dot'; d.onclick=()=>{ cur=i; saveProgress(false); updateUI(); }; w.appendChild(d); } })();
+
+updateUI();
+</script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+<script src="/kedu_fit.js"></script>
+</body>
+</html>
