@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<!--
+  g3_math_u5_l09 — 남김없이 나누어 담아요 [3학년 2학기 5단원 09차시, 단일 40분]
+  단원: 3학년 2학기 5단원 「들이와 무게」 / 지도서 366~417 · 교과서 126~127쪽(수학익힘 82쪽)
+  base: g4_math_u6_l04(엔진·채점부·공통 CSS 계승 · 중학년 톤) / 부품 beaker · beakerrow · scale · balance · unitpile · mcalc · mrow · unitpick · estcard · esttable · packtab · convcard · pic
+  성격: 창의가 반짝 역량이 쑥쑥 — 우유 90 L 를 10 L·6 L·5 L 통에 남김없이 나누어 담는 방법을 예상하고 확인하며 여러 가지로 찾는다(합의 일의 자리로 범위를 좁히는 전략)
+  ★ 오개념 훅: 아무 통이나 채워 보다가 합이 90 이 안 되는 자리 — 일의 자리를 먼저 보지 않는다
+  ★ 왜 그럴까 슬롯 = 슬7 : 6 L 통은 왜 쓰지 않거나 5개만 써야 할까
+  🔑 회수 키: meta·JS 모두 g3_2_math_u5_l09 (파일명·KEDU_MAP.key 는 g3_math_u5_l** 그대로)
+  ⛔ 규약: 받아올림·받아내림이 없는 범위에서만 계산한다(지도서 390·406)
+        / 잇는 단위 짝은 L↔mL · kg↔g · t↔kg 셋뿐 — 지나친 단위 환산은 다루지 않는다(지도서 367)
+        / 표준 단위를 주기 전에 그 필요성을 먼저 보인다(l02·l05·l06 은 낱개로 재기에서 출발)
+        / 어림한 값은 채점하지 않는다 — 「약」·알맞은 단위·잘못 어림한 까닭만 묻는다(지도서 386·402)
+        / 「몇 L 몇 mL」·「몇 kg 몇 g」는 pad 한 칸에 못 담는다 — 두 칸으로 갈라 묻는다
+        / 한 화면의 모든 비커는 같은 자로 그린다 · 저울 바늘과 양팔저울 기울기는 값에서 나온다
+  점수: 기본 4×10 + 응용 4×15 = 100 / mcq 정답 위치 q10=2 · q12=4 · q14=1 / pad 정답 q8=70 · q9=4 · q11=2 · q13=6 · q15=30
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g3_2_math_u5_l09_v1">
+<title>남김없이 나누어 담아요 · K-edu 3학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#FBF7F1; --ink:#243043; --ink-soft:#62708A;
+  --coral:#1D4ED8; --coral-deep:#1E3A8A; --coral-soft:#DBEAFE;
+  --teal:#0F766E; --teal-deep:#0B4F4A; --teal-soft:#CCFBF1;
+  --gold:#F6B526; --emph:#F0451F; --line:#ECE3D6; --mark:#FFE08A;
+  --f-title:'Jua',sans-serif; --f-body:'Gowun Dodum',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:0 14px 34px -18px rgba(36,48,67,.4);
+  --fs-title: clamp(28px, 4.6vw, 52px);
+  --fs-heading: clamp(24px, 3.7vw, 37px);
+  --fs-body: clamp(21px, 3.2vw, 31px);
+  --fs-caption: clamp(19px, 2.9vw, 27px);
+  --fs-label: clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --em-md: clamp(44px, 7vw, 80px);
+  --em-lg: clamp(66px, 10vw, 122px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(760px, 96vw);
+  --mw-lg: min(840px, 96vw);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+@keyframes ka-swap-r { 0%{transform:translateX(0); opacity:1;} 50%{transform:translateX(20px); opacity:.3;} 100%{transform:translateX(0); opacity:1;} }
+@keyframes ka-mark { from{background-size:0 100%;} to{background-size:100% 100%;} }
+
+/* ───── 컨테이너 ───── */
+.ka { background:var(--paper); width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; color:var(--ink); position:relative; overflow:hidden; }
+
+/* ───── 상단바 (topbar) ───── */
+.ka-h { display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); padding:clamp(11px,1.7vw,15px) clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:hover { transform:translateY(-1px); }
+.ka-pill { font-family:var(--f-title); background:var(--coral); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-where { font-size:clamp(14px,1.6vw,18px); color:var(--ink-soft); flex-shrink:1; }
+.ka-where b { color:var(--ink); }
+.ka-bar { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:46vw; }
+.ka-dot { width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s, background .2s; }
+.ka-dot:hover { transform:scale(1.2); }
+.ka-dot.active { background:var(--coral); transform:scale(1.3); }
+.ka-dot.done { background:var(--teal); }
+.ka-score { font-family:var(--f-title); background:#FFF8E1; color:#F57F17; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); padding:0; border-radius:50%; cursor:pointer; flex-shrink:0; color:var(--coral-deep); font-size:clamp(13px,2vw,16px); width:clamp(32px,4.5vw,38px); height:clamp(32px,4.5vw,38px); display:flex; align-items:center; justify-content:center; }
+
+/* ───── 본문 ───── */
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; gap:clamp(7px,1.3vw,12px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(8px,1.4vh,16px) clamp(16px,4vw,48px); overflow:hidden; }
+.slide.active { display:flex; }
+.slide-title { font-family:var(--f-title); font-size:var(--fs-title); margin:0; line-height:1.18; color:var(--ink); font-weight:400; text-align:center; flex-shrink:0; }
+.slide-sub { font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(10px,1.6vw,16px); left:clamp(16px,4vw,40px); font-family:var(--f-title); color:var(--coral); font-size:clamp(13px,1.9vw,18px); letter-spacing:.4px; z-index:5; }
+
+/* ───── 하단 내비 ───── */
+.ka-f { display:flex; justify-content:flex-end; gap:12px; padding:clamp(12px,1.7vw,16px) clamp(16px,4vw,40px); background:linear-gradient(to top, var(--paper) 62%, transparent); flex-shrink:0; }
+.ka-prev, .ka-hint, .ka-next { font-family:var(--f-title); font-size:clamp(15px,1.9vw,22px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(10px,1.4vw,15px) clamp(20px,2.8vw,38px); cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translateY(-2px); }
+.ka-prev { margin-right:auto; }
+.ka-hint { color:#F57F17; border-color:#FFE08A; }
+.ka-next { background:var(--coral); color:#fff; border-color:var(--coral); }
+.ka-prev:disabled, .ka-next:disabled { opacity:.35; cursor:default; transform:none; }
+.ka-hint:disabled { opacity:.4; cursor:default; }
+
+/* ───── 공통 콘텐츠 ───── */
+.concept-box { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,18px) clamp(18px,2.8vw,28px); border-radius:20px; font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); text-align:center; line-height:1.5; box-shadow:var(--shadow); }
+.concept-box strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.big-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-lg); line-height:1; }
+.intro-q { font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; }
+.intro-q strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.goal-list { display:flex; flex-direction:column; gap:clamp(7px,1.4vw,11px); font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); }
+.goal-list li { background:#fff; border:2px solid var(--line); padding:clamp(8px,1.5vw,12px) clamp(14px,2.6vw,20px); border-radius:16px; list-style:none; box-shadow:var(--shadow); }
+.goal-list li strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+.recall-box { background:var(--teal-soft); padding:clamp(14px,2.8vw,22px) clamp(20px,3.6vw,30px); border-radius:22px; font-size:var(--fs-body); color:var(--teal-deep); max-width:var(--mw-sm); text-align:center; line-height:1.6; }
+.recall-box strong { color:var(--teal-deep); font-family:var(--f-title); font-weight:400; }
+.scene { background:#fff; border:3px solid var(--coral-soft); border-radius:28px; padding:clamp(18px,3.4vw,30px) clamp(22px,4.2vw,38px); display:flex; flex-direction:column; gap:clamp(10px,2vw,16px); align-items:center; min-width:clamp(280px,50vw,460px); box-shadow:0 6px 0 var(--coral-soft); }
+.pencil-row { display:flex; gap:clamp(4px,0.8vw,8px); font-size:var(--em-sm); flex-wrap:wrap; justify-content:center; max-width:var(--mw-sm); color:var(--ink); }
+
+/* ───── place_value_block (모형) ───── */
+.pv-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.pv-row { display:flex; gap:clamp(10px,2.2vw,20px); align-items:flex-end; justify-content:center; flex-wrap:wrap; }
+.pv-group { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,0.8vw,7px); }
+.pv-label { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.pv-block svg { display:block; }
+.swap-arrow { font-size:var(--em-sm); color:var(--coral); animation:ka-swap-r 1.6s ease-in-out infinite; }
+.exchange-eq { font-size:var(--fs-heading); color:var(--ink); display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); flex-wrap:wrap; justify-content:center; }
+
+/* ───── number_line ───── */
+.nl-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(12px,2.4vw,20px); max-width:var(--mw-lg); width:100%; }
+.nl-svg { width:min(760px,94vw); height:auto; }
+.nl-svg .nl-tick text { font-family:var(--f-num); font-weight:800; fill:var(--ink-soft); }
+.nl-pick { cursor:pointer; }
+.nl-pick:hover circle { fill:var(--coral-soft); }
+.nl-pick.correct circle { fill:var(--teal); }
+.nl-pick.wrong circle { fill:var(--coral-soft); }
+
+/* ───── 100의 여러 의미 ───── */
+.mean-grid { display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-sm); width:100%; }
+.mean-item { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,17px) clamp(16px,3vw,24px); border-radius:18px; font-size:var(--fs-body); color:var(--ink); text-align:center; box-shadow:var(--shadow); }
+.mean-item strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+
+/* ───── 문제 공통 ───── */
+.q-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; font-weight:400; }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:20px; padding:clamp(8px,1.6vw,14px) clamp(24px,4.6vw,44px); min-width:clamp(120px,22vw,200px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.q-pad { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(6px,1.2vw,10px); max-width:clamp(280px,56vw,460px); }
+.q-key { background:#fff; border:2px solid var(--line); border-radius:14px; padding:clamp(7px,1.5vw,12px) 0; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, background .15s, border-color .15s; box-shadow:0 4px 0 var(--line); }
+.q-key:hover { background:var(--coral-soft); border-color:var(--coral); }
+.q-key:active { transform:translateY(3px); box-shadow:none; }
+.q-key.fn { background:#FFF8E1; color:#F57F17; font-family:var(--f-title); font-size:var(--fs-body); border-color:#FFE08A; box-shadow:0 4px 0 #FFE08A; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); color:var(--teal-deep); min-height:1.4em; text-align:center; }
+.q-fb.wrong { color:var(--emph); }
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-sm); }
+.mcq-opt { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,15px); font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .2s; box-shadow:0 6px 0 var(--coral-soft); font-weight:400; }
+.mcq-opt:hover { border-color:var(--coral); }
+.mcq-opt:active { transform:translateY(4px); box-shadow:none; }
+.mcq-opt.correct { border-color:var(--teal-deep); background:var(--teal); color:#fff; box-shadow:0 6px 0 var(--teal-deep); animation:ka-pop .5s ease; }
+.mcq-opt.wrong { border-color:var(--emph); background:#FFE0DA; color:var(--coral-deep); animation:ka-shake .35s; }
+.mcq-hint { font-family:var(--f-title); font-size:var(--fs-body); color:#F57F17; background:#FFF8E1; border-radius:16px; padding:clamp(8px,1.6vw,12px) clamp(14px,2.6vw,20px); max-width:var(--mw-sm); text-align:center; display:none; }
+.mcq-hint.show { display:block; }
+
+/* ───── trace ───── */
+.trace-row { display:flex; gap:clamp(12px,2.4vw,22px); justify-content:center; flex-wrap:wrap; }
+.trace-cell { width:clamp(64px,12vw,110px); height:clamp(84px,16vw,150px); border:5px dashed var(--coral-soft); border-radius:20px; display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:#D8C4B8; cursor:pointer; transition:all .2s; background:#fff; }
+.trace-cell.done { color:var(--coral-deep); border-style:solid; border-color:var(--coral); background:var(--coral-soft); }
+
+/* ───── match ───── */
+.match-stage { display:flex; flex-direction:column; gap:clamp(8px,1.5vw,13px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.match-cols { display:flex; gap:clamp(20px,4vw,48px); }
+.match-col { display:flex; flex-direction:column; gap:clamp(6px,1.1vw,9px); }
+.match-card { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(16px,3vw,26px); font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .15s; min-width:clamp(70px,13vw,108px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.match-card:hover { border-color:var(--coral); }
+.match-card.sel { border-color:var(--gold); background:var(--mark); }
+.match-card.matched { border-color:var(--teal-deep); background:var(--teal); color:#fff; cursor:default; box-shadow:0 5px 0 var(--teal-deep); }
+
+/* ───── multi judge ───── */
+.judge-grid { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); max-width:var(--mw-sm); width:100%; }
+.judge-item { display:flex; align-items:center; gap:clamp(10px,2vw,16px); background:#fff; border:3px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(14px,2.6vw,20px); box-shadow:0 5px 0 var(--coral-soft); }
+.judge-text { flex:1; font-size:var(--fs-body); color:var(--ink); text-align:left; }
+.judge-text strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.judge-btns { display:flex; gap:clamp(6px,1.2vw,10px); }
+.judge-btn { border:3px solid var(--line); border-radius:14px; padding:clamp(6px,1.2vw,10px) clamp(12px,2.4vw,18px); font-family:var(--f-title); font-size:var(--fs-heading); cursor:pointer; background:#fff; color:var(--ink-soft); transition:transform .1s; }
+.judge-btn:active { transform:translateY(3px); }
+.judge-btn.pick-o { background:var(--teal-soft); color:var(--teal-deep); border-color:var(--teal); }
+.judge-btn.pick-x { background:var(--coral-soft); color:var(--coral-deep); border-color:var(--coral); }
+.judge-item.right { border-color:var(--teal-deep); box-shadow:0 5px 0 var(--teal-deep); }
+.judge-item.miss { border-color:var(--emph); animation:ka-shake .35s; }
+
+/* ───── 정리/자기평가/다음 ───── */
+.summary-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.summary-card { background:#fff; border:2px solid var(--line); border-radius:22px; padding:clamp(18px,3.4vw,30px); font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; box-shadow:var(--shadow); }
+.summary-card strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.wrap-msg { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--coral-deep); }
+.self-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(14px,2.6vw,22px); }
+.self-row { display:flex; gap:clamp(12px,2.4vw,20px); flex-wrap:wrap; justify-content:center; }
+.self-btn { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,16px) clamp(14px,2.8vw,22px); cursor:pointer; display:flex; flex-direction:column; gap:clamp(3px,0.7vw,6px); align-items:center; transition:transform .12s, border-color .15s; box-shadow:0 6px 0 var(--coral-soft); }
+.self-btn:hover { border-color:var(--coral); }
+.self-btn:active { transform:translateY(4px); box-shadow:none; }
+.self-btn.selected { border-color:var(--gold); background:var(--mark); }
+.self-btn-stars { font-size:var(--em-sm); color:var(--gold); }
+.self-btn-name { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.next-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-md); }
+.next-card { background:var(--teal-soft); border-radius:22px; padding:clamp(20px,3.8vw,32px); display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); align-items:center; }
+.next-emojis { font-size:var(--em-md); }
+.next-label { font-size:var(--fs-body); color:var(--teal-deep); text-align:center; }
+.home-prompt { font-size:var(--fs-caption); color:var(--coral-deep); background:var(--coral-soft); border-radius:18px; padding:clamp(12px,2.4vw,18px) clamp(18px,3.4vw,28px); text-align:center; }
+
+
+  /* 세로셈 (3학년 덧셈·뺄셈) */
+  .vadd { display:inline-grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:clamp(2px,0.6vw,4px) clamp(8px,1.6vw,14px); font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--ink); justify-items:center; align-items:center; background:#fff; border:2px solid var(--line); border-radius:18px; padding:clamp(12px,2vw,20px) clamp(18px,3vw,30px); box-shadow:var(--shadow); }
+  .vadd .op { color:var(--coral-deep); }
+  .vadd .ln { grid-column:1/-1; width:100%; height:3px; background:var(--ink); border-radius:2px; }
+  .vadd .sum { color:var(--coral-deep); }
+  .pv-sum-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-md); }
+
+
+/* ───── 들이와 무게 단원 부품 (3-2 U5) ───── */
+.mz-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.4vw,12px); width:100%; max-width:var(--mw-lg); }
+.mz-title { font-family:var(--f-title); font-size:var(--fs-label); color:var(--teal-deep); text-align:center; font-weight:400; }
+.mz-note { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; line-height:1.6; }
+.mz-svg { width:100%; height:auto; display:block; max-width:min(520px,90vw); margin:0 auto; }
+.mz-svg.sm { max-width:min(260px,64vw); }
+.mz-svg.sc { max-width:min(190px,50vw); }
+.mz-svg.bl { max-width:min(300px,74vw); }
+.mz-svg.bk { max-width:min(130px,36vw); }
+.mz-row { display:flex; flex-wrap:wrap; gap:clamp(8px,2vw,16px); justify-content:center; align-items:flex-start; }
+.mz-lab { font-family:'Nunito','Jua',sans-serif; font-weight:800; font-size:15px; fill:#37474F; }
+.mz-name { font-family:'Jua',sans-serif; font-size:17px; fill:#1E3A8A; text-anchor:middle; }
+.mz-val { font-family:'Nunito','Jua',sans-serif; font-weight:800; font-size:16px; fill:#B45309; text-anchor:middle; }
+.mz-card { background:#fff; border:3px solid #60A5FA; border-radius:14px; padding:clamp(6px,1.2vw,10px) clamp(10px,2vw,14px); text-align:center; font-family:'Jua',sans-serif; font-size:var(--fs-caption); color:#37474F; max-width:clamp(130px,26vw,220px); }
+.mz-card .mz-ic { display:block; font-size:clamp(22px,4vw,30px); margin-bottom:2px; }
+.mz-card b { color:#1E3A8A; }
+.mz-calc { display:grid; grid-template-columns:auto auto auto auto auto; gap:2px clamp(6px,1.4vw,10px); align-items:center; font-family:'Nunito','Jua',sans-serif; font-weight:800; font-size:clamp(22px,4.2vw,32px); color:#37474F; background:#fff; border:3px solid #93C5FD; border-radius:14px; padding:clamp(8px,1.6vw,12px) clamp(12px,2.4vw,20px); }
+.mz-calc .mz-n { text-align:right; min-width:1.8em; }
+.mz-calc .mz-u { font-size:.62em; color:#1E3A8A; text-align:left; }
+.mz-calc .mz-op { color:#B45309; }
+.mz-calc .mz-bar { grid-column:1 / -1; border-top:3px solid #37474F; height:0; margin:2px 0; }
+.mz-calc .mz-res { display:contents; }
+.mz-calc .mz-res .mz-n { color:#B45309; }
+.mz-line { font-family:'Nunito','Jua',sans-serif; font-weight:800; font-size:clamp(20px,3.8vw,28px); color:#37474F; background:#fff; border:3px solid #93C5FD; border-radius:14px; padding:clamp(6px,1.2vw,10px) clamp(12px,2.4vw,18px); text-align:center; }
+.mz-line .mz-u { font-size:.7em; color:#1E3A8A; }
+.mz-line .mz-q { color:#B45309; }
+.mz-tab { border-collapse:collapse; font-family:'Jua',sans-serif; font-size:var(--fs-caption); color:#37474F; background:#fff; }
+.mz-tab th, .mz-tab td { border:2px solid #93C5FD; padding:clamp(2px,.6vw,5px) clamp(8px,1.6vw,12px); text-align:center; line-height:1.35; }
+.mz-tab th { background:#DBEAFE; color:#1E3A8A; font-weight:400; }
+.mz-tab td.mz-sum { background:#FEF3C7; color:#92400E; }
+.mz-tab tr.mz-bad td { background:#FEE2E2; }
+.mz-scroll { max-width:100%; overflow-x:auto; }
+.mz-unit { display:inline-flex; min-width:2.2em; justify-content:center; padding:.1em .4em; border:3px solid #F59E0B; border-radius:10px; background:#FFFBEB; font-family:'Nunito',sans-serif; font-weight:900; color:#B45309; }
+</style>
+<script src="/kedu_gate.js"></script>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 목록</button>
+    <span class="ka-pill">9차시</span>
+    <span class="ka-where">수학 3-2 · <b>5. 들이와 무게</b></span>
+    <div class="ka-bar" id="dots"></div>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+  <div class="ka-m">
+    <div class="slide active" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">초록 목장의 우유</h2>
+      <div class="intro-q">초록 목장에서 우유 <b>90 L</b>를 짰어요.<br>10 L, 6 L, 5 L 통이 <b>각각 7개씩</b> 있어요.<br>우유를 <b>남김없이</b> 나누어 담으려면 통을 몇 개씩 써야 할까요?</div>
+    </div>
+
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">한 가지 방법</h2>
+      <div class="ef-stage">
+        <div id="m-i2"></div>
+        <div class="concept-box">10 L 통 7개에 70 L, 5 L 통 4개에 20 L를 담아요.<br>70 L와 20 L를 더하면 <b>90 L</b>예요.<br>다른 방법도 있을까요?</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">오늘 할 일</h2>
+      <div class="intro-q">먼저 예상하고, 더해서 확인해요.<br>남김없이 담는 방법을 여러 가지 찾아요.<br>더 빨리 찾는 방법을 생각해요.</div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개</div>
+      <h2 class="slide-title">6 L 통을 쓰면</h2>
+      <div class="ef-stage">
+        <div id="m-e1"></div>
+        <div class="concept-box">6 L 통을 5개 쓰면 30 L예요. 남은 60 L는 10 L 통 <b>6개</b>에 담을 수 있어요. 30 L와 60 L를 더하면 90 L예요.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개</div>
+      <h2 class="slide-title">일의 자리를 먼저 봐요</h2>
+      <div class="ef-stage">
+        <div id="m-e2"></div>
+        <div class="concept-box">10 L 통과 5 L 통은 모아 담으면 끝자리가 0 이나 5 예요. 6 L 통을 1개, 2개, 3개, 4개 쓰면 6, 12, 18, 24 L라 끝자리가 맞지 않아요. <b>더했을 때 일의 자리 숫자가 0 이 되어야 하므로</b> 6 L 통은 쓰지 않거나 5개 써요.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개</div>
+      <h2 class="slide-title">여러 가지 방법</h2>
+      <div class="ef-stage">
+        <div id="m-e3"></div>
+        <div class="concept-box">10 L 통 5개, 6 L 통 5개, 5 L 통 2개도 50 L + 30 L + 10 L = 90 L예요. 표로 정리하면 빠뜨리지 않고 찾을 수 있어요.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개</div>
+      <h2 class="slide-title">사료를 나누어 담아요</h2>
+      <div class="ef-stage">
+        <div id="m-e4"></div>
+        <div class="concept-box">강아지 사료 50 kg을 5 kg, 4 kg, 2 kg 봉지(각각 6개)에 나누어 담아요. 5 kg 봉지 4개, 4 kg 봉지 5개, 2 kg 봉지 5개면 20 kg + 20 kg + 10 kg = 50 kg이에요.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q8" data-q-points="10" data-answer="70">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">10 L 통 7개에 담은 우유는 모두 몇 L인가요?</div>
+        <div class="ef-stage"><div id="m-q8"></div></div>
+        <div class="q-display" id="q8-display">?</div>
+        <div class="q-pad" id="q8-pad"></div>
+        <div class="mcq-hint" data-hints='["10 L가 7번이에요.","10을 7번 더해 보세요."]'></div>
+        <div class="q-fb" id="q8-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q9" data-q-points="10" data-answer="4">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">10 L 통 7개를 쓰고 6 L 통은 쓰지 않았어요. 5 L 통은 몇 개 써야 하나요?</div>
+        <div class="ef-stage"><div id="m-q9"></div></div>
+        <div class="q-display" id="q9-display">?</div>
+        <div class="q-pad" id="q9-pad"></div>
+        <div class="mcq-hint" data-hints='["10 L 통 7개에 담긴 우유는 몇 L인가요?","90 L에서 70 L를 뺀 나머지를 5 L씩 담아요."]'></div>
+        <div class="q-fb" id="q9-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q10" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">우유 90 L를 남김없이 담으려면 6 L 통은 몇 개 써야 하나요?</div>
+        <div class="ef-stage"><div id="m-q10"></div></div>
+        <div class="mcq-opts" id="q10-opts">
+          <button class="mcq-opt" data-correct="0">1개나 2개</button>
+          <button class="mcq-opt" data-correct="1">쓰지 않거나 5개</button>
+          <button class="mcq-opt" data-correct="0">3개나 4개</button>
+          <button class="mcq-opt" data-correct="0">7개 모두</button>
+        </div>
+        <div class="mcq-hint" data-hints='["10 L 통과 5 L 통으로 담은 양의 끝자리는 0 이나 5 예요.","합의 일의 자리 숫자가 0 이 되어야 해요."]'></div>
+        <div class="q-fb" id="q10-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q11" data-q-points="10" data-answer="2">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">10 L 통 5개, 6 L 통 5개를 썼어요. 5 L 통은 몇 개 써야 하나요?</div>
+        <div class="ef-stage"><div id="m-q11"></div></div>
+        <div class="q-display" id="q11-display">?</div>
+        <div class="q-pad" id="q11-pad"></div>
+        <div class="mcq-hint" data-hints='["10 L 통 5개와 6 L 통 5개에 담긴 양을 더해요.","90 L에서 그 양을 빼고 5 L씩 담아요."]'></div>
+        <div class="q-fb" id="q11-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q12" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">우유 90 L를 남김없이 담는 방법은 무엇인가요?</div>
+        <div class="ef-stage"><div id="m-q12"></div></div>
+        <div class="mcq-opts" id="q12-opts">
+          <button class="mcq-opt" data-correct="0">10 L 통 5개, 6 L 통 3개, 5 L 통 2개</button>
+          <button class="mcq-opt" data-correct="0">10 L 통 6개, 5 L 통 5개</button>
+          <button class="mcq-opt" data-correct="0">10 L 통 7개, 6 L 통 2개</button>
+          <button class="mcq-opt" data-correct="1">10 L 통 4개, 6 L 통 5개, 5 L 통 4개</button>
+        </div>
+        <div class="mcq-hint" data-hints='["통마다 담은 양을 더해 보세요.","합이 90 L인 것을 찾아요."]'></div>
+        <div class="q-fb" id="q12-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q13" data-q-points="15" data-answer="6">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">사료 50 kg을 담는 데 4 kg 봉지 3개, 2 kg 봉지 4개를 썼어요. 5 kg 봉지는 몇 개 써야 하나요?</div>
+        <div class="ef-stage"><div id="m-q13"></div></div>
+        <div class="q-display" id="q13-display">?</div>
+        <div class="q-pad" id="q13-pad"></div>
+        <div class="mcq-hint" data-hints='["4 kg 봉지 3개와 2 kg 봉지 4개에 담긴 양을 더해요.","50 kg에서 그 양을 빼고 5 kg씩 담아요."]'></div>
+        <div class="q-fb" id="q13-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q14" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">영양제 40 L를 10 L 통과 5 L 통(각각 4개)에 남김없이 담는 방법은 무엇인가요?</div>
+        <div class="ef-stage"><div id="m-q14"></div></div>
+        <div class="mcq-opts" id="q14-opts">
+          <button class="mcq-opt" data-correct="1">10 L 통 3개, 5 L 통 2개</button>
+          <button class="mcq-opt" data-correct="0">10 L 통 3개, 5 L 통 1개</button>
+          <button class="mcq-opt" data-correct="0">10 L 통 2개, 5 L 통 3개</button>
+          <button class="mcq-opt" data-correct="0">10 L 통 1개, 5 L 통 4개</button>
+        </div>
+        <div class="mcq-hint" data-hints='["통마다 담은 양을 더해 보세요.","합이 40 L가 되어야 해요."]'></div>
+        <div class="q-fb" id="q14-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q15" data-q-points="15" data-answer="30">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">쌀을 5 kg 봉지 2개, 4 kg 봉지 4개, 2 kg 봉지 2개에 남김없이 나누어 담았어요. 쌀은 모두 몇 kg인가요?</div>
+        <div class="ef-stage"><div id="m-q15"></div></div>
+        <div class="q-display" id="q15-display">?</div>
+        <div class="q-pad" id="q15-pad"></div>
+        <div class="mcq-hint" data-hints='["봉지마다 담은 양을 먼저 구해요.","10 kg, 16 kg, 4 kg을 더해요."]'></div>
+        <div class="q-fb" id="q15-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 배운 것</h2>
+      <div class="summary-stage">
+        <div class="summary-card">예상하고 확인하며 <strong>남김없이 나누어 담는</strong> 방법을 찾았어요.<br>① 담은 양을 모두 더해 목표와 같은지 확인해요 ② 합의 일의 자리를 먼저 보면 빨리 찾아요 ③ 표로 정리하면 빠뜨리지 않아요<br>다음 시간에는 단원을 스스로 마무리해요.</div>
+        <div class="wrap-msg" id="wrap-msg"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 공부는 어땠나요?</h2>
+      <div class="self-stage">
+        <div class="self-row">
+          <button class="self-btn"><div class="self-btn-stars">★</div><div class="self-btn-name">조금 어려웠어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★</div><div class="self-btn-name">잘 했어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★★</div><div class="self-btn-name">아주 잘 했어요</div></button>
+        </div>
+        <div class="q-fb" id="self-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">다음 시간</h2>
+      <div class="next-stage">
+        <div class="next-card">
+          <div class="next-emojis">🎫</div>
+          <div class="next-label">다음 시간에는 <strong>단원을 스스로 마무리</strong>해요</div>
+        </div>
+        <div class="home-prompt">재활용품 1 kg마다 교환권 1장 — 1 L 한 병과 500 mL 두 병 중 무엇이 더 많을까?</div>
+      </div>
+    </div>
+
+  </div>
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+<script>
+const TOTAL = 18;
+const LESSON_ID = 'g3_2_math_u5_l09';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.querySelectorAll('#dots .ka-dot').forEach((d, i) => { d.classList.toggle('active', i === cur); d.classList.toggle('done', i < cur); });
+  document.getElementById('prev').disabled = cur === 0;
+
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.solved || st.hintLevel >= 2; }
+  else { hintBtn.disabled = true; }
+
+  if (cur === TOTAL - 1) { document.getElementById('next').textContent = '마치기 →'; saveProgress(true); }
+  else { document.getElementById('next').textContent = '다음 →'; }
+
+  if (cur === 15) { document.getElementById('wrap-msg').textContent = wrapMsg(score); }
+}
+
+function saveProgress(done) {
+  const data = { cur, score, done, startedAt, finishedAt: done ? Date.now() : null, qState };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function wrapMsg(s) {
+  if (s >= 100) return '완벽해요!';
+  if (s >= 80) return '정말 잘했어요!';
+  if (s >= 60) return '잘했어요!';
+  return '다시 해도 좋아요!';
+}
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } else { saveProgress(true); location.href='../index.html'; } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+function showHint() {
+  const qid = currentQId(); if (!qid) return;
+  const st = getQState(qid); if (st.solved || st.hintLevel >= 2) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint'); if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[st.hintLevel - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= 2;
+}
+function pointsForQ(qid) {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  const base = parseInt(slide.dataset.qPoints || '0', 10);
+  const st = getQState(qid);
+  if (st.hintLevel === 2) return Math.max(0, base - 5);
+  if (st.hintLevel === 1) return Math.max(0, base - 2);
+  return base;
+}
+
+// ══════════════════════════════════════════════════════════════
+// 3-2 U5 「들이와 무게」 부품 라이브러리 v1
+//   beaker · beakerrow · scale · balance · unitpile · mcalc · mrow · unitpick · estcard · esttable · packtab · convcard · pic
+//   ★ 부품이 값을 스스로 계산하고 신고한다. 하니스는 그 신고를 믿지 않고 **그린 높이·각도·개수**로 다시 센다.
+//   ★ 값은 전부 밑단위(들이 = 밀리리터 수 · 무게 = 그램 수 · 톤은 킬로그램 수)로 받는다.
+// ══════════════════════════════════════════════════════════════
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const _f = v => Math.round(v * 100) / 100;
+function _vt(v){ const a = Math.floor(v / 1000), b = v % 1000;       // 들이 → 「3 L 800 mL」
+  return a ? a + ' L' + (b ? ' ' + b + ' mL' : '') : b + ' mL'; }
+function _gt(v){ const a = Math.floor(v / 1000), b = v % 1000;       // 무게 → 「3 kg 800 g」
+  return a ? a + ' kg' + (b ? ' ' + b + ' g' : '') : b + ' g'; }
+function _mt(k, v){ return k === 'w' ? _gt(v) : (k === 't' ? v + ' kg' : _vt(v)); }
+function _int(v, who){ if (!Number.isInteger(v) || v < 0) throw new Error(who + ': 정수 값이 아니다 — ' + v); }
+const _wrap = (attr, body, o) => '<div class="mz-wrap"' + attr + '>' +
+  (o.title ? '<div class="mz-title">《 ' + esc(o.title) + ' 》</div>' : '') + body +
+  (o.cap ? '<div class="mz-note">' + o.cap + '</div>' : '') + '</div>';
+const _lab = (x, y, t, cls, anc) => '<text class="' + (cls || 'mz-lab') + '" x="' + _f(x) + '" y="' + _f(y) + '" text-anchor="' + (anc || 'middle') + '">' + esc(t) + '</text>';
+const WATER = '#60A5FA', WATER_S = '#1D4ED8', USED = '#FCA5A5';
+
+// ── 비커 한 개를 그린다 (beaker · beakerrow 가 함께 쓴다) ──────────────────
+//   k = 1 밀리리터(또는 낱개 한 칸)당 px — 한 화면의 모든 비커가 같은 k 를 쓴다.
+function _beakerSvg(b, x0, k, H0, plain){
+  const cap = b.cap, st = b.step || 100, v = b.val || 0, used = b.x || 0;
+  _int(cap, 'beaker'); _int(v, 'beaker'); _int(used, 'beaker');
+  if (v > cap) throw new Error('beaker: 물이 비커보다 많다 — ' + v + ' > ' + cap);
+  if (used > v) throw new Error('beaker: 덜어 낸 양이 들어 있는 양보다 많다');
+  if (!plain && cap % st) throw new Error('beaker: 들이가 한 칸으로 나누어떨어지지 않는다 — ' + cap + ' / ' + st);
+  const W = 64, hc = cap * k, y0 = H0 - hc, hw = v * k, tick = st * k;
+  let s = '<g data-bk="' + cap + '|' + st + '|' + v + '|' + _f(hw) + '|' + _f(tick) + '|' + used + '" data-bx="' + _f(x0) + '">';
+  s += '<rect data-water="1" x="' + _f(x0 + 3) + '" y="' + _f(H0 - hw) + '" width="' + (W - 6) + '" height="' + _f(hw) + '" fill="' + WATER + '" opacity=".75"></rect>';
+  if (used) s += '<rect data-used="1" x="' + _f(x0 + 3) + '" y="' + _f(H0 - hw) + '" width="' + (W - 6) + '" height="' + _f(used * k) + '" fill="' + USED + '" opacity=".85"></rect>' +
+    '<text class="mz-val" x="' + _f(x0 + W / 2) + '" y="' + _f(H0 - hw + used * k / 2 + 6) + '">✕</text>';
+  s += '<path d="M' + x0 + ' ' + _f(y0 - 8) + ' V' + H0 + ' H' + (x0 + W) + ' V' + _f(y0 - 8) + '" fill="none" stroke="#37474F" stroke-width="2.6"></path>';
+  if (!plain){
+    const maj = b.major || st * 5;
+    for (let q = st; q <= cap; q += st){
+      const y = _f(H0 - q * k), big = q % maj === 0;
+      s += '<line data-tk="' + q + '" x1="' + (x0 + W) + '" y1="' + y + '" x2="' + (x0 + W - (big ? 16 : 9)) + '" y2="' + y + '" stroke="#37474F" stroke-width="' + (big ? 2 : 1.2) + '"></line>';
+      if (big && !b.nolab) s += _lab(x0 + W + 4, Number(y) + 4, String(q), 'mz-lab', 'start');
+    }
+    if (!b.nolab) s += _lab(x0 + W + 4, _f(y0 - 12), '(mL)', 'mz-lab', 'start');
+  }
+  if (b.name) s += '<text class="mz-name" x="' + _f(x0 + W / 2) + '" y="' + (H0 + 20) + '">' + esc(b.name) + '</text>';
+  if (b.show) s += '<text class="mz-val" x="' + _f(x0 + W / 2) + '" y="' + (H0 + 40) + '">' + (b.ask ? '?' : esc(b.show === true ? _vt(v) : b.show)) + '</text>';
+  return s + '</g>';
+}
+
+// ① beaker — o = { cap, step, major, val, name, show, ask, nolab, note }  (cap = 들이 · 캡션은 note)
+function beaker(o){
+  const H = 170, k = H / o.cap, H0 = H + 24;
+  const svg = '<svg class="mz-svg bk" viewBox="0 0 150 ' + (H0 + 46) + '">' + _beakerSvg(o, 20, k, H0, false) + '</svg>';
+  // 🔴 o.cap 은 여기서 **들이**다 — _wrap 의 캡션 자리(o.cap)로 흘리면 들이 수가 그림 밑에 글자로 선다
+  //    (첫 빌드에서 「1900」이 그대로 떴다). 캡션은 note 로만 받는다.
+  return _wrap(' data-beaker="' + o.cap + '|' + (o.step || 100) + '|' + (o.val || 0) + '"', svg, { title: o.title, cap: o.note });
+}
+
+// ② beakerrow — o = { items:[{cap,step,val,x,name,show,ask}], plain } — 가장 큰 들이에 맞춘 **한 자**
+//   plain:true = 눈금 없는 그릇(단위를 배우기 전의 견주기 · 낱개 수로 적은 값)
+function beakerrow(o){
+  const it = o.items || [];
+  if (!it.length) throw new Error('beakerrow: 비커가 없다');
+  const top = Math.max.apply(null, it.map(b => b.cap)), H = 150, k = H / top, H0 = H + 24, gap = o.plain ? 92 : 112;
+  let s = '';
+  it.forEach((b, i) => { s += _beakerSvg(b, 14 + i * gap, k, H0, !!o.plain); });
+  const W = 14 + it.length * gap + 10;
+  return _wrap(' data-bkrow="' + it.length + '|' + _f(k) + '"', '<div class="mz-scroll"><svg class="mz-svg" style="max-width:min(' + Math.round(W * 0.9) + 'px,90vw)" viewBox="0 0 ' + W + ' ' + (H0 + 46) + '">' + s + '</svg></div>', o);
+}
+
+// ③ scale — o = { max, step, major, val, name, ask, unit:'g' }  — 원형 저울 · 0 이 맨 위 · 한 바퀴 = max
+//   바늘 각도 = 360 × val / max (시계 방향). 눈금 한 칸 = step.
+function scale(o){
+  const M = o.max, st = o.step, v = o.val, maj = o.major || st * 5;
+  _int(M, 'scale'); _int(st, 'scale'); _int(v, 'scale');
+  if (M % st) throw new Error('scale: 한 바퀴가 한 칸으로 나누어떨어지지 않는다');
+  if (v > M) throw new Error('scale: 값이 저울을 넘는다');
+  const cx = 110, cy = 110, R = 88;
+  let s = '<circle cx="' + cx + '" cy="' + cy + '" r="' + (R + 12) + '" fill="#F8FAFC" stroke="#37474F" stroke-width="3"></circle>';
+  for (let q = 0; q < M; q += st){
+    const a = q / M * 2 * Math.PI, big = q % maj === 0, r1 = big ? R - 14 : R - 7;
+    s += '<line data-tk="' + q + '" x1="' + _f(cx + R * Math.sin(a)) + '" y1="' + _f(cy - R * Math.cos(a)) + '" x2="' + _f(cx + r1 * Math.sin(a)) + '" y2="' + _f(cy - r1 * Math.cos(a)) +
+         '" stroke="#37474F" stroke-width="' + (big ? 2.2 : 1.1) + '"></line>';
+    if (big && !o.nolab) s += _lab(cx + (R - 34) * Math.sin(a), cy - (R - 34) * Math.cos(a) + 5, q === 0 ? '0' : _gt(q));
+  }
+  const ang = _f(360 * v / M), ar = ang * Math.PI / 180;
+  s += '<line data-needle="1" x1="' + cx + '" y1="' + cy + '" x2="' + _f(cx + (R - 4) * Math.sin(ar)) + '" y2="' + _f(cy - (R - 4) * Math.cos(ar)) + '" stroke="#DC2626" stroke-width="3.4" stroke-linecap="round"></line>';
+  s += '<circle cx="' + cx + '" cy="' + cy + '" r="6" fill="#DC2626"></circle>';
+  if (o.name) s += '<text class="mz-name" x="' + cx + '" y="' + (cy + 128) + '">' + esc(o.name) + (o.show ? ' · ' + (o.ask ? '?' : _gt(v)) : '') + '</text>';
+  return _wrap(' data-scale="' + M + '|' + st + '|' + v + '|' + ang + '"', '<svg class="mz-svg sc" viewBox="0 0 220 ' + (o.name ? 250 : 224) + '">' + s + '</svg>', o);
+}
+
+// ④ balance — o = { left:{name,v,tag}, right:{name,v,tag}, ask } — 무거운 쪽이 내려간다
+//   v 는 견줄 수 있는 같은 자(g · 낱개 수)라야 한다. 값은 화면에 적지 않는다(tag 만 적는다).
+function balance(o){
+  const l = o.left, r = o.right;
+  _int(l.v, 'balance'); _int(r.v, 'balance');
+  const side = l.v === r.v ? '=' : (l.v > r.v ? 'L' : 'R');
+  const ang = side === '=' ? 0 : (side === 'L' ? -10 : 10);
+  const cx = 160, cy = 60, A = 110;
+  let s = '<path d="M' + (cx - 26) + ' 190 H' + (cx + 26) + ' L' + cx + ' ' + (cy + 6) + ' Z" fill="#CBD5E1" stroke="#37474F" stroke-width="2"></path>';
+  const end = (sg) => { const a = ang * Math.PI / 180; return [_f(cx + sg * A * Math.cos(a)), _f(cy + sg * A * Math.sin(a))]; };
+  const pL = end(-1), pR = end(1);
+  s += '<line data-beam="1" x1="' + pL[0] + '" y1="' + pL[1] + '" x2="' + pR[0] + '" y2="' + pR[1] + '" stroke="#37474F" stroke-width="5" stroke-linecap="round"></line>';
+  const pan = (p, it, tag) => {
+    const px = p[0], py = p[1] + 44;
+    return '<g data-pan="' + tag + '" data-py="' + _f(py) + '">' +
+      '<line x1="' + px + '" y1="' + p[1] + '" x2="' + _f(px - 34) + '" y2="' + _f(py) + '" stroke="#90A4AE" stroke-width="1.6"></line>' +
+      '<line x1="' + px + '" y1="' + p[1] + '" x2="' + _f(px + 34) + '" y2="' + _f(py) + '" stroke="#90A4AE" stroke-width="1.6"></line>' +
+      '<path d="M' + _f(px - 42) + ' ' + _f(py) + ' Q' + px + ' ' + _f(py + 22) + ' ' + _f(px + 42) + ' ' + _f(py) + ' Z" fill="#E2E8F0" stroke="#37474F" stroke-width="2"></path>' +
+      '<text class="mz-name" x="' + px + '" y="' + _f(py - 8) + '">' + esc(it.name) + '</text>' +
+      (it.tag ? '<text class="mz-val" x="' + px + '" y="' + _f(py + 40) + '">' + esc(it.tag) + '</text>' : '') + '</g>';
+  };
+  s += pan(pL, l, 'L') + pan(pR, r, 'R');
+  s += '<circle cx="' + cx + '" cy="' + cy + '" r="6" fill="#37474F"></circle>';
+  return _wrap(' data-bal="' + l.v + '|' + r.v + '|' + side + '|' + ang + '"', '<svg class="mz-svg bl" viewBox="0 0 320 214">' + s + '</svg>', o);
+}
+
+// ⑤ unitpile — o = { items:[{name, kind, n, ask}] } — 낱개를 실제로 n 개 그린다(10개마다 줄을 바꾼다)
+const _PILE = { '바둑돌': ['c', '#263238'], '공깃돌': ['c', '#F472B6'], '쌓기나무': ['s', '#FBBF24'],
+  '동전': ['c', '#CBD5E1'], '컵': ['u', '#93C5FD'], '그릇': ['u', '#A7F3D0'], '찻잔': ['u', '#FDE68A'], '국자': ['u', '#C4B5FD'] };
+function unitpile(o){
+  const it = o.items || [];
+  let s = '', y = 8;
+  it.forEach((r, ri) => {
+    const sh = _PILE[r.kind];
+    if (!sh) throw new Error('unitpile: 모르는 낱개 — ' + r.kind);
+    _int(r.n, 'unitpile');
+    if (r.n > 40) throw new Error('unitpile: 낱개가 너무 많다');
+    const rows = Math.max(1, Math.ceil(r.n / 10));
+    s += '<g data-pile="' + esc(r.kind) + '|' + r.n + '" data-row="' + ri + '">';
+    s += '<text class="mz-name" x="56" y="' + (y + 18) + '">' + esc(r.name) + '</text>';
+    for (let k = 0; k < r.n; k++){
+      const x = 118 + (k % 10) * 22, yy = y + 6 + Math.floor(k / 10) * 22;
+      if (sh[0] === 'c') s += '<circle data-u="1" cx="' + (x + 9) + '" cy="' + (yy + 9) + '" r="8" fill="' + sh[1] + '" stroke="#37474F" stroke-width="1"></circle>';
+      else if (sh[0] === 's') s += '<rect data-u="1" x="' + x + '" y="' + yy + '" width="18" height="18" fill="' + sh[1] + '" stroke="#37474F" stroke-width="1.2"></rect>';
+      else s += '<path data-u="1" d="M' + x + ' ' + yy + ' H' + (x + 18) + ' L' + (x + 15) + ' ' + (yy + 18) + ' H' + (x + 3) + ' Z" fill="' + sh[1] + '" stroke="#37474F" stroke-width="1.2"></path>';
+    }
+    s += '<text class="mz-val" x="' + 350 + '" y="' + (y + 18) + '">' + (r.ask ? '?' : r.n) + '개</text>';
+    s += '</g>';
+    y += rows * 22 + 14;
+  });
+  return _wrap(' data-piles="' + it.map(r => esc(r.kind) + ':' + r.n).join(',') + '"', '<div class="mz-scroll"><svg class="mz-svg" viewBox="0 0 380 ' + (y + 4) + '">' + s + '</svg></div>', o);
+}
+
+// ⑥ mcalc — o = { k:'v'|'w', a:[큰, 작은], b:[큰, 작은], op:'+'|'-', ask:'all'|'big'|'small' }
+//   🔴 받아올림·받아내림이 있으면 선다(지도서 390·406). 같은 단위끼리 칸을 맞춘다.
+function mcalc(o){
+  const U = o.k === 'w' ? ['kg', 'g'] : ['L', 'mL'], a = o.a, b = o.b, op = o.op;
+  [a[0], a[1], b[0], b[1]].forEach(v => _int(v, 'mcalc'));
+  if (a[1] >= 1000 || b[1] >= 1000) throw new Error('mcalc: 작은 단위 자리는 1000 보다 작다');
+  let r;
+  if (op === '+'){ if (a[1] + b[1] >= 1000) throw new Error('mcalc: 받아올림이 있는 계산'); r = [a[0] + b[0], a[1] + b[1]]; }
+  else { if (a[1] < b[1] || a[0] < b[0]) throw new Error('mcalc: 받아내림이 있는 계산'); r = [a[0] - b[0], a[1] - b[1]]; }
+  const hb = o.ask === 'all' || o.ask === 'big', hs = o.ask === 'all' || o.ask === 'small';
+  const cell = (v, col, cls) => '<span class="mz-n' + (cls || '') + '" data-col="' + col + '">' + v + '</span>';
+  const row = (op_, x) => '<span class="mz-op">' + op_ + '</span>' + cell(x[0], 'big') + '<span class="mz-u">' + U[0] + '</span>' + cell(x[1], 'small') + '<span class="mz-u">' + U[1] + '</span>';
+  const body = '<div class="mz-calc">' + row('', a) + row(op === '+' ? '+' : '−', b) + '<span class="mz-bar"></span>' +
+    '<span class="mz-res" data-r="1"><span class="mz-op"></span>' + cell(hb ? '?' : r[0], 'big') + '<span class="mz-u">' + U[0] + '</span>' +
+    cell(hs ? '?' : r[1], 'small') + '<span class="mz-u">' + U[1] + '</span></span></div>';
+  return _wrap(' data-mc="' + o.k + '|' + a.join(',') + '|' + op + '|' + b.join(',') + '|' + r.join(',') + '"', body, o);
+}
+
+// ⑦ mrow — o = { k:'v'|'w', a, b, op, ask } — 값은 밑단위 수(1300 = 1 L 300 mL)
+function mrow(o){
+  const a = o.a, b = o.b, op = o.op;
+  _int(a, 'mrow'); _int(b, 'mrow');
+  const A = [Math.floor(a / 1000), a % 1000], B = [Math.floor(b / 1000), b % 1000];
+  let r;
+  if (op === '+'){ if (A[1] + B[1] >= 1000) throw new Error('mrow: 받아올림이 있는 계산'); r = a + b; }
+  else { if (A[1] < B[1] || A[0] < B[0]) throw new Error('mrow: 받아내림이 있는 계산'); r = a - b; }
+  const t = v => _mt(o.k, v).replace(/ (mL|L|kg|g)/g, ' <span class="mz-u">$1</span>');
+  const body = '<div class="mz-line">' + t(a) + ' ' + (op === '+' ? '+' : '−') + ' ' + t(b) + ' = <span class="mz-q">' + (o.ask ? '?' : t(r)) + '</span></div>';
+  return _wrap(' data-mr="' + o.k + '|' + a + '|' + op + '|' + b + '|' + r + '"', body, o);
+}
+
+// ⑧ unitpick — o = { items:[{name, ic, v, u}], units:['mL','L'], ask:true }
+function unitpick(o){
+  const it = o.items || [], us = o.units || [];
+  it.forEach(x => { if (us.indexOf(x.u) < 0) throw new Error('unitpick: 정답 단위가 후보에 없다 — ' + x.u); });
+  const body = '<div class="mz-row">' + it.map(x => '<div class="mz-card" data-ans="' + esc(x.u) + '"><span class="mz-ic">' + (x.ic || '📦') + '</span>' +
+    esc(x.name) + '<br><b>약 ' + x.v + '</b> <span class="mz-unit">' + (o.ask ? '?' : esc(x.u)) + '</span></div>').join('') + '</div>' +
+    '<div class="mz-row">' + us.map(u => '<span class="mz-unit">' + esc(u) + '</span>').join('') + '</div>';
+  return _wrap(' data-up="' + us.join(',') + '|' + it.map(x => esc(x.u)).join(',') + '"', body, o);
+}
+
+// ⑨ estcard — o = { items:[{way:'ref'|'count'|'group', text}] } — 어림의 근거 세 갈래(이름은 주지 않는다)
+const _WAY = { ref: '🔍', count: '🔁', group: '➕' };
+function estcard(o){
+  const it = o.items || [];
+  it.forEach(x => { if (!_WAY[x.way]) throw new Error('estcard: 모르는 갈래 — ' + x.way); });
+  const body = '<div class="mz-row">' + it.map(x => '<div class="mz-card" data-way="' + x.way + '"><span class="mz-ic">' + _WAY[x.way] + '</span>' + x.text + '</div>').join('') + '</div>';
+  return _wrap(' data-est="' + it.map(x => x.way).join(',') + '"', body, o);
+}
+
+// ⑩ esttable — o = { head:['물건','어림한 들이','직접 잰 들이'], rows:[[이름, '약 200 mL', '180 mL']], ask:[[r,c]], bad:[r] }
+//   🔴 어림 칸은 「약」으로 시작해야 한다 — bad 로 밝힌 줄(잘못 어림한 판)만 면제
+function esttable(o){
+  const H = o.head, R = o.rows || [], A = o.ask || [], B = o.bad || [];
+  const hid = (r, c) => A.some(p => p[0] === r && p[1] === c);
+  const ok = R.map((row, i) => /^약 /.test(row[1]) ? 1 : 0);
+  ok.forEach((v, i) => { if (!v && B.indexOf(i) < 0) throw new Error('esttable: 어림 칸에 「약」이 없다 — ' + R[i][1]); });
+  const body = '<div class="mz-scroll"><table class="mz-tab"><tr>' + H.map(h => '<th>' + esc(h) + '</th>').join('') + '</tr>' +
+    R.map((row, i) => '<tr data-er="' + ok[i] + '"' + (B.indexOf(i) >= 0 ? ' class="mz-bad"' : '') + '>' + row.map((c, j) => '<td>' + (hid(i, j) ? '?' : esc(c)) + '</td>').join('') + '</tr>').join('') +
+    '</table></div>';
+  return _wrap(' data-et="' + R.length + '|' + ok.join(',') + '"', body, o);
+}
+
+// ⑪ packtab — o = { target, u:'L'|'kg', sizes:[10,6,5], rows:[[7,0,4],...], avail, box:'통'|'봉지', ask:[[r,c]], bad:[r] }
+//   줄마다 합 = Σ 크기×개수. 🔴 목표와 다르거나 가진 개수를 넘으면 선다(bad 로 밝힌 줄만 면제).
+function packtab(o){
+  const S = o.sizes, R = o.rows || [], A = o.ask || [], B = o.bad || [], av = o.avail || 99;
+  const hid = (r, c) => A.some(p => p[0] === r && p[1] === c);
+  const sums = R.map((row, i) => {
+    if (row.length !== S.length) throw new Error('packtab: 칸 수가 통 종류와 다르다');
+    row.forEach(n => { _int(n, 'packtab'); if (n > av) throw new Error('packtab: 가진 통보다 많이 쓴다 — ' + n); });
+    const t = row.reduce((p, n, j) => p + n * S[j], 0);
+    if (t !== o.target && B.indexOf(i) < 0) throw new Error('packtab: 합이 ' + t + ' — 목표 ' + o.target + ' 와 다르다');
+    return t;
+  });
+  const body = '<div class="mz-scroll"><table class="mz-tab"><tr>' + S.map(s => '<th>' + s + ' ' + esc(o.u) + ' ' + esc(o.box || '통') + '의 수</th>').join('') + '<th>모두</th></tr>' +
+    R.map((row, i) => '<tr data-pk="' + row.join(',') + '|' + sums[i] + '"' + (B.indexOf(i) >= 0 ? ' class="mz-bad"' : '') + '>' +
+      row.map((n, j) => '<td>' + (hid(i, j) ? '?' : n + '개') + '</td>').join('') +
+      '<td class="mz-sum">' + (hid(i, S.length) ? '?' : sums[i] + ' ' + esc(o.u)) + '</td></tr>').join('') + '</table></div>';
+  return _wrap(' data-pack="' + o.target + '|' + S.join(',') + '|' + av + '"', body, o);
+}
+
+// ⑫ convcard — o = { k:'v'|'w'|'t', v, from:'mix'|'base', ask:'l'|'r' }
+//   v = 밑단위 수. 들이·무게는 「몇 L 몇 mL ↔ 몇 mL」, 톤은 「몇 t ↔ 몇 kg」(t 는 1000 kg 으로 나누어떨어져야 한다).
+function convcard(o){
+  const v = o.v; _int(v, 'convcard');
+  let big, base;
+  if (o.k === 't'){ if (v % 1000) throw new Error('convcard: 톤으로 딱 떨어지지 않는다'); big = (v / 1000) + ' t'; base = v + ' kg'; }
+  else { big = _mt(o.k, v); base = v + (o.k === 'w' ? ' g' : ' mL'); }
+  const L = o.from === 'base' ? base : big, R = o.from === 'base' ? big : base;
+  const body = '<div class="mz-line">' + (o.ask === 'l' ? '<span class="mz-q">?</span>' : esc(L)) + ' = ' +
+    (o.ask === 'r' ? '<span class="mz-q">?</span>' : esc(R)) + '</div>';
+  return _wrap(' data-conv="' + o.k + '|' + v + '|' + (o.from || 'mix') + '"', body, o);
+}
+
+// ⑬ pic — o = { items:[{ic, name, tag}], hi:[i] } — 물건 카드(그림 + 이름 + 덧붙임 글)
+function pic(o){
+  const it = o.items || [], H = o.hi || [];
+  const body = '<div class="mz-row">' + it.map((x, i) => '<div class="mz-card"' + (H.indexOf(i) >= 0 ? ' style="border-color:#B45309;background:#FFFBEB"' : '') + '>' +
+    '<span class="mz-ic">' + (x.ic || '📦') + '</span>' + esc(x.name) + (x.tag ? '<br><b>' + x.tag + '</b>' : '') + '</div>').join('') + '</div>';
+  return _wrap(' data-pic="' + it.length + '"', body, o);
+}
+
+(function renderModels(){
+  document.getElementById('m-i2').innerHTML =
+    packtab({target:90,u:'L',sizes:[10,6,5],rows:[[7,0,4]],avail:7});
+  document.getElementById('m-e1').innerHTML =
+    packtab({target:90,u:'L',sizes:[10,6,5],rows:[[6,5,0]],avail:7});
+  document.getElementById('m-e2').innerHTML =
+    pic({items:[{ic:'1️⃣',name:'6 L 통 1개',tag:'6 L'},{ic:'2️⃣',name:'6 L 통 2개',tag:'12 L'},{ic:'5️⃣',name:'6 L 통 5개',tag:'30 L'}]});
+  document.getElementById('m-e3').innerHTML =
+    packtab({target:90,u:'L',sizes:[10,6,5],rows:[[7,0,4],[6,5,0],[6,0,6],[5,5,2],[4,5,4],[3,5,6]],avail:7});
+  document.getElementById('m-e4').innerHTML =
+    packtab({target:50,u:'kg',sizes:[5,4,2],rows:[[4,5,5],[6,5,0],[6,4,2]],avail:6,box:'봉지'});
+  document.getElementById('m-q8').innerHTML =
+    pic({items:[{ic:'🥛',name:'10 L 통',tag:'7개'}]});
+  document.getElementById('m-q9').innerHTML =
+    packtab({target:90,u:'L',sizes:[10,6,5],rows:[[7,0,4]],avail:7,ask:[[0,2]]});
+  document.getElementById('m-q10').innerHTML =
+    pic({items:[{ic:'🥛',name:'10 L 통과 5 L 통',tag:'끝자리 0 또는 5'},{ic:'🍶',name:'6 L 통',tag:'끝자리 6, 2, 8, 4, 0'}]});
+  document.getElementById('m-q11').innerHTML =
+    packtab({target:90,u:'L',sizes:[10,6,5],rows:[[5,5,2]],avail:7,ask:[[0,2]]});
+  document.getElementById('m-q12').innerHTML =
+    pic({items:[{ic:'🥛',name:'우유',tag:'90 L'},{ic:'🧮',name:'10 L · 6 L · 5 L 통',tag:'각각 7개'}]});
+  document.getElementById('m-q13').innerHTML =
+    packtab({target:50,u:'kg',sizes:[5,4,2],rows:[[6,3,4]],avail:6,box:'봉지',ask:[[0,0]]});
+  document.getElementById('m-q14').innerHTML =
+    pic({items:[{ic:'🧪',name:'영양제',tag:'40 L'},{ic:'🫙',name:'10 L 통 · 5 L 통',tag:'각각 4개'}]});
+  document.getElementById('m-q15').innerHTML =
+    packtab({target:30,u:'kg',sizes:[5,4,2],rows:[[2,4,2]],avail:5,box:'봉지',ask:[[0,3]]});
+})();
+
+function setupPad(qid, correct, padId, displayId, fbId, doneMsg, maxLen) {
+  maxLen = maxLen || 6;
+  const pad = document.getElementById(padId);
+  const display = document.getElementById(displayId);
+  const fb = document.getElementById(fbId);
+  let buf = '';
+  const keys = ['1','2','3','4','5','6','7','8','9','0'];
+  keys.forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'q-key'; b.textContent = k;
+    b.addEventListener('click', () => {
+      const st = getQState(qid); if (st.solved) return;
+      if (buf.length < maxLen) { buf += k; display.textContent = buf; }
+    });
+    pad.appendChild(b);
+  });
+  const del = document.createElement('button');
+  del.className = 'q-key fn'; del.textContent = '지움';
+  del.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    buf = buf.slice(0, -1); display.textContent = buf || '?';
+  });
+  pad.appendChild(del);
+  const ok = document.createElement('button');
+  ok.className = 'q-key fn'; ok.textContent = '확인'; ok.style.gridColumn = 'span 4';
+  ok.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    st.attempts++;
+    if (parseInt(buf, 10) === correct) {
+      st.solved = true;
+      const earn = pointsForQ(qid); addScore(earn);
+      fb.classList.remove('wrong');
+      fb.textContent = (doneMsg || '정답이에요!') + ' +' + earn + '점';
+      updateUI();
+    } else {
+      st.wrongCount++;
+      fb.classList.add('wrong'); fb.textContent = '다시 한번 생각해 볼까요?';
+    }
+  });
+  pad.appendChild(ok);
+}
+
+function setupMcq(qid, doneMsg){
+  document.querySelectorAll('#'+qid+'-opts .mcq-opt').forEach(o=>{
+    o.addEventListener('click', ()=>{
+      const st=getQState(qid); if(st.solved) return;
+      st.attempts++;
+      const fb=document.getElementById(qid+'-fb');
+      if(o.dataset.correct==='1'){
+        st.solved=true; o.classList.add('correct');
+        const earn=pointsForQ(qid); addScore(earn);
+        fb.classList.remove('wrong'); fb.textContent=(doneMsg||'정답이에요!')+' +'+earn+'점';
+        updateUI();
+      } else {
+        st.wrongCount++; o.classList.add('wrong');
+        fb.classList.add('wrong'); fb.textContent='다시 골라 보세요';
+        setTimeout(()=>o.classList.remove('wrong'),500);
+      }
+    });
+  });
+}
+
+setupPad('q8', 70, 'q8-pad','q8-display','q8-fb','10 L 통 7개에 70 L를 담아요.', 6);
+setupPad('q9', 4, 'q9-pad','q9-display','q9-fb','90 L − 70 L = 20 L이고 5 L 통 4개에 담아요.', 6);
+setupMcq('q10','6 L 통을 5개 쓰면 30 L라 일의 자리가 0 이 되어요. 그래서 쓰지 않거나 5개 써요.');
+setupPad('q11', 2, 'q11-pad','q11-display','q11-fb','50 L + 30 L = 80 L, 남은 10 L를 5 L 통 2개에 담아요.', 6);
+setupMcq('q12','40 L + 30 L + 20 L = 90 L라서 남김없이 담을 수 있어요.');
+setupPad('q13', 6, 'q13-pad','q13-display','q13-fb','12 kg + 8 kg = 20 kg, 남은 30 kg을 5 kg 봉지 6개에 담아요.', 6);
+setupMcq('q14','30 L + 10 L = 40 L라서 남김없이 담을 수 있어요.');
+setupPad('q15', 30, 'q15-pad','q15-display','q15-fb','10 kg + 16 kg + 4 kg = 30 kg이에요.', 6);
+
+
+// ───── 슬17 자기 평가 ─────
+document.querySelectorAll('.self-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.self-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('self-fb').textContent = '응답이 기록됐어요. 다음 차시에서 만나요!';
+  });
+});
+
+// ───── 진도 복원 ─────
+(function restore() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data.cur != null) cur = Math.min(data.cur, TOTAL - 1);
+    if (data.score != null) score = data.score;
+    document.getElementById('score').textContent = '⭐ ' + score;
+  } catch(e) {}
+})();
+
+(function buildDots(){ const w=document.getElementById('dots'); for(let i=0;i<TOTAL;i++){ const d=document.createElement('div'); d.className='ka-dot'; d.onclick=()=>{ cur=i; saveProgress(false); updateUI(); }; w.appendChild(d); } })();
+
+updateUI();
+</script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+<script src="/kedu_fit.js"></script>
+</body>
+</html>

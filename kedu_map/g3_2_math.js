@@ -432,104 +432,104 @@ window.KEDU_MAP["g3_2_math"] = {
    "kind": "unit",
    "lessons": [
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u5_l01",
+     "lessonId": "g3_2_math_u5_l01_v1",
      "n": "1",
      "title": "들이와 무게를 만나 볼까요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/5단원_들이와무게/g3_math_u5_l01_들이와무게를만나볼까요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u5_l02",
+     "lessonId": "g3_2_math_u5_l02_v1",
      "n": "2",
      "title": "들이를 비교하고 들이의 단위를 알아볼까요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/5단원_들이와무게/g3_math_u5_l02_들이를비교하고들이의단위를알아볼까요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u5_l03",
+     "lessonId": "g3_2_math_u5_l03_v1",
      "n": "3",
      "title": "들이를 어림하고 재어 볼까요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/5단원_들이와무게/g3_math_u5_l03_들이를어림하고재어볼까요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u5_l04",
+     "lessonId": "g3_2_math_u5_l04_v1",
      "n": "4",
      "title": "들이의 덧셈과 뺄셈을 해 볼까요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/5단원_들이와무게/g3_math_u5_l04_들이의덧셈과뺄셈을해볼까요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u5_l05",
+     "lessonId": "g3_2_math_u5_l05_v1",
      "n": "5",
      "title": "무게를 비교해 볼까요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/5단원_들이와무게/g3_math_u5_l05_무게를비교해볼까요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u5_l06",
+     "lessonId": "g3_2_math_u5_l06_v1",
      "n": "6",
      "title": "무게의 단위를 알아볼까요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/5단원_들이와무게/g3_math_u5_l06_무게의단위를알아볼까요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u5_l07",
+     "lessonId": "g3_2_math_u5_l07_v1",
      "n": "7",
      "title": "무게를 어림하고 재어 볼까요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/5단원_들이와무게/g3_math_u5_l07_무게를어림하고재어볼까요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u5_l08",
+     "lessonId": "g3_2_math_u5_l08_v1",
      "n": "8",
      "title": "무게의 덧셈과 뺄셈을 해 볼까요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/5단원_들이와무게/g3_math_u5_l08_무게의덧셈과뺄셈을해볼까요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u5_l09",
+     "lessonId": "g3_2_math_u5_l09_v1",
      "n": "9",
      "title": "남김없이 나누어 담아요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/5단원_들이와무게/g3_math_u5_l09_남김없이나누어담아요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u5_l10",
+     "lessonId": "g3_2_math_u5_l10_v1",
      "n": "10",
      "title": "스스로 마무리해요 (단원 평가)",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/5단원_들이와무게/g3_math_u5_l10_스스로마무리해요.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   },
