@@ -238,74 +238,74 @@ window.KEDU_MAP["g3_2_math"] = {
    "kind": "unit",
    "lessons": [
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u3_l01",
+     "lessonId": "g3_2_math_u3_l01_v1",
      "n": "1",
      "title": "원을 만나 볼까요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/3단원_원/g3_math_u3_l01_원을만나볼까요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u3_l02",
+     "lessonId": "g3_2_math_u3_l02_v1",
      "n": "2",
      "title": "원의 중심, 반지름, 지름을 알아볼까요 ⑴",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/3단원_원/g3_math_u3_l02_원의중심반지름지름을알아볼까요1.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u3_l03",
+     "lessonId": "g3_2_math_u3_l03_v1",
      "n": "3",
      "title": "원의 중심, 반지름, 지름을 알아볼까요 ⑵",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/3단원_원/g3_math_u3_l03_원의중심반지름지름을알아볼까요2.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u3_l04",
+     "lessonId": "g3_2_math_u3_l04_v1",
      "n": "4",
      "title": "원의 성질을 알아볼까요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/3단원_원/g3_math_u3_l04_원의성질을알아볼까요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u3_l05",
+     "lessonId": "g3_2_math_u3_l05_v1",
      "n": "5",
      "title": "컴퍼스를 이용하여 원을 그려 볼까요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/3단원_원/g3_math_u3_l05_컴퍼스를이용하여원을그려볼까요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u3_l06",
+     "lessonId": "g3_2_math_u3_l06_v1",
      "n": "6",
      "title": "다양한 크기의 원을 그려요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/3단원_원/g3_math_u3_l06_다양한크기의원을그려요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u3_l07",
+     "lessonId": "g3_2_math_u3_l07_v1",
      "n": "7",
      "title": "스스로 마무리해요 (단원 평가)",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/3단원_원/g3_math_u3_l07_스스로마무리해요.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   },
