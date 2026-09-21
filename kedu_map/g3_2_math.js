@@ -121,114 +121,114 @@ window.KEDU_MAP["g3_2_math"] = {
    "kind": "unit",
    "lessons": [
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u2_l01",
+     "lessonId": "g3_2_math_u2_l01_v1",
      "n": "1",
      "title": "나눗셈을 만나 볼까요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/2단원_나눗셈/g3_math_u2_l01_나눗셈을만나볼까요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u2_l02",
+     "lessonId": "g3_2_math_u2_l02_v1",
      "n": "2",
      "title": "(몇십) ÷ (몇)을 구해 볼까요 ⑴",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/2단원_나눗셈/g3_math_u2_l02_몇십을몇으로나누어볼까요1.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u2_l03",
+     "lessonId": "g3_2_math_u2_l03_v1",
      "n": "3",
      "title": "(몇십) ÷ (몇)을 구해 볼까요 ⑵",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/2단원_나눗셈/g3_math_u2_l03_몇십을몇으로나누어볼까요2.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u2_l04",
+     "lessonId": "g3_2_math_u2_l04_v1",
      "n": "4",
      "title": "(몇십몇) ÷ (몇)을 구해 볼까요 ⑴",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/2단원_나눗셈/g3_math_u2_l04_몇십몇을몇으로나누어볼까요1.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u2_l05",
+     "lessonId": "g3_2_math_u2_l05_v1",
      "n": "5",
      "title": "(몇십몇) ÷ (몇)을 구해 볼까요 ⑵",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/2단원_나눗셈/g3_math_u2_l05_몇십몇을몇으로나누어볼까요2.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u2_l06",
+     "lessonId": "g3_2_math_u2_l06_v1",
      "n": "6",
      "title": "나머지가 있는 (몇십몇) ÷ (몇)을 구해 볼까요 ⑴",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/2단원_나눗셈/g3_math_u2_l06_나머지가있는나눗셈을알아볼까요1.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u2_l07",
+     "lessonId": "g3_2_math_u2_l07_v1",
      "n": "7",
      "title": "나머지가 있는 (몇십몇) ÷ (몇)을 구해 볼까요 ⑵",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/2단원_나눗셈/g3_math_u2_l07_나머지가있는나눗셈을알아볼까요2.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u2_l08",
+     "lessonId": "g3_2_math_u2_l08_v1",
      "n": "8",
      "title": "(세 자리 수) ÷ (한 자리 수)를 구해 볼까요 ⑴",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/2단원_나눗셈/g3_math_u2_l08_세자리수를몇으로나누어볼까요1.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u2_l09",
+     "lessonId": "g3_2_math_u2_l09_v1",
      "n": "9",
      "title": "(세 자리 수) ÷ (한 자리 수)를 구해 볼까요 ⑵",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/2단원_나눗셈/g3_math_u2_l09_세자리수를몇으로나누어볼까요2.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u2_l10",
+     "lessonId": "g3_2_math_u2_l10_v1",
      "n": "10",
      "title": "블록으로 열쇠고리를 만들어요",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/2단원_나눗셈/g3_math_u2_l10_블록으로열쇠고리를만들어요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_math_u2_l11",
+     "lessonId": "g3_2_math_u2_l11_v1",
      "n": "11",
      "title": "스스로 마무리해요 (단원 평가)",
      "sub": null,
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/math/2단원_나눗셈/g3_math_u2_l11_스스로마무리해요.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   },

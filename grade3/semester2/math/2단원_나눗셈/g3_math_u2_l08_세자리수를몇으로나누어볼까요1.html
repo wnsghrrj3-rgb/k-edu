@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<!--
+  g3_math_u2_l08 — (세 자리 수) ÷ (한 자리 수)를 알아볼까요 ⑴ [3학년 2학기 2단원 08차시, 단일 40분]
+  단원: 3학년 2학기 2단원 「나눗셈」 / 지도서 202~263 · 교과서 48~49쪽(수학익힘 34~35쪽)
+  base: g4_math_u6_l04(엔진·채점부·공통 CSS 계승 · 중학년 톤) / 부품 divcard · vdiv · checkrow · remtable · bundlerow · estline · divboard · blocktab · relcard
+  성격: 내림이 없는 (세 자리 수)÷(한 자리 수) — 백의 자리부터 차례로 나누고, 나눌 수 없는 자리에는 몫에 0 을 적는다
+  ★ 오개념 훅: 십의 자리에서 나눌 수 없을 때 0 을 적지 않고 그냥 이어 쓰는 자리
+  ★ 왜 그럴까 슬롯 = 슬7 : 307을 3으로 나누면 몫의 십의 자리에는 무엇을 써야 할까
+  🔑 회수 키: meta·JS 모두 g3_2_math_u2_l08 (파일명·KEDU_MAP.key 는 g3_math_u2_l** 그대로)
+  ⛔ 규약: 나누는 수는 한 자리 수까지만 다룬다(지도서 202 단원 계열)
+        / 몫은 자리에 맞추어 앞에서부터 쓴다(지도서 210)
+        / 학생의 어림에 옳다·그르다로 피드백하지 않는다(지도서 206)
+        / 잘못을 시연할 때는 그 잘못이 실제로 저지른 결과를 그린다(지도서 215~216)
+        / 「나머지가 없다」 대신 「나머지가 0이다」·「나누어떨어진다」로 쓴다(지도서 216)
+        / 확인은 교과서 원문대로 「계산 결과가 맞는지 확인」으로만 부른다(교과서 47)
+  점수: 기본 4×10 + 응용 4×15 = 100 / mcq 정답 위치 q11=2 · q15=1 / pad 정답 q8=200 · q9=102 · q10=1 · q12=212 · q13=122 · q14=420
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g3_2_math_u2_l08_v1">
+<title>(세 자리 수) ÷ (한 자리 수)를 알아볼까요 ⑴ · K-edu 3학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#FBF7F1; --ink:#243043; --ink-soft:#62708A;
+  --coral:#C05621; --coral-deep:#8C3C13; --coral-soft:#FBE4D3;
+  --teal:#147F79; --teal-deep:#0D5B57; --teal-soft:#D6F1EF;
+  --gold:#F6B526; --emph:#F0451F; --line:#ECE3D6; --mark:#FFE08A;
+  --f-title:'Jua',sans-serif; --f-body:'Gowun Dodum',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:0 14px 34px -18px rgba(36,48,67,.4);
+  --fs-title: clamp(28px, 4.6vw, 52px);
+  --fs-heading: clamp(24px, 3.7vw, 37px);
+  --fs-body: clamp(21px, 3.2vw, 31px);
+  --fs-caption: clamp(19px, 2.9vw, 27px);
+  --fs-label: clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --em-md: clamp(44px, 7vw, 80px);
+  --em-lg: clamp(66px, 10vw, 122px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(760px, 96vw);
+  --mw-lg: min(840px, 96vw);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+@keyframes ka-swap-r { 0%{transform:translateX(0); opacity:1;} 50%{transform:translateX(20px); opacity:.3;} 100%{transform:translateX(0); opacity:1;} }
+@keyframes ka-mark { from{background-size:0 100%;} to{background-size:100% 100%;} }
+
+/* ───── 컨테이너 ───── */
+.ka { background:var(--paper); width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; color:var(--ink); position:relative; overflow:hidden; }
+
+/* ───── 상단바 (topbar) ───── */
+.ka-h { display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); padding:clamp(11px,1.7vw,15px) clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:hover { transform:translateY(-1px); }
+.ka-pill { font-family:var(--f-title); background:var(--coral); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-where { font-size:clamp(14px,1.6vw,18px); color:var(--ink-soft); flex-shrink:1; }
+.ka-where b { color:var(--ink); }
+.ka-bar { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:46vw; }
+.ka-dot { width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s, background .2s; }
+.ka-dot:hover { transform:scale(1.2); }
+.ka-dot.active { background:var(--coral); transform:scale(1.3); }
+.ka-dot.done { background:var(--teal); }
+.ka-score { font-family:var(--f-title); background:#FFF8E1; color:#F57F17; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); padding:0; border-radius:50%; cursor:pointer; flex-shrink:0; color:var(--coral-deep); font-size:clamp(13px,2vw,16px); width:clamp(32px,4.5vw,38px); height:clamp(32px,4.5vw,38px); display:flex; align-items:center; justify-content:center; }
+
+/* ───── 본문 ───── */
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; gap:clamp(7px,1.3vw,12px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(8px,1.4vh,16px) clamp(16px,4vw,48px); overflow:hidden; }
+.slide.active { display:flex; }
+.slide-title { font-family:var(--f-title); font-size:var(--fs-title); margin:0; line-height:1.18; color:var(--ink); font-weight:400; text-align:center; flex-shrink:0; }
+.slide-sub { font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(10px,1.6vw,16px); left:clamp(16px,4vw,40px); font-family:var(--f-title); color:var(--coral); font-size:clamp(13px,1.9vw,18px); letter-spacing:.4px; z-index:5; }
+
+/* ───── 하단 내비 ───── */
+.ka-f { display:flex; justify-content:flex-end; gap:12px; padding:clamp(12px,1.7vw,16px) clamp(16px,4vw,40px); background:linear-gradient(to top, var(--paper) 62%, transparent); flex-shrink:0; }
+.ka-prev, .ka-hint, .ka-next { font-family:var(--f-title); font-size:clamp(15px,1.9vw,22px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(10px,1.4vw,15px) clamp(20px,2.8vw,38px); cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translateY(-2px); }
+.ka-prev { margin-right:auto; }
+.ka-hint { color:#F57F17; border-color:#FFE08A; }
+.ka-next { background:var(--coral); color:#fff; border-color:var(--coral); }
+.ka-prev:disabled, .ka-next:disabled { opacity:.35; cursor:default; transform:none; }
+.ka-hint:disabled { opacity:.4; cursor:default; }
+
+/* ───── 공통 콘텐츠 ───── */
+.concept-box { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,18px) clamp(18px,2.8vw,28px); border-radius:20px; font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); text-align:center; line-height:1.5; box-shadow:var(--shadow); }
+.concept-box strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.big-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-lg); line-height:1; }
+.intro-q { font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; }
+.intro-q strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.goal-list { display:flex; flex-direction:column; gap:clamp(7px,1.4vw,11px); font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); }
+.goal-list li { background:#fff; border:2px solid var(--line); padding:clamp(8px,1.5vw,12px) clamp(14px,2.6vw,20px); border-radius:16px; list-style:none; box-shadow:var(--shadow); }
+.goal-list li strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+.recall-box { background:var(--teal-soft); padding:clamp(14px,2.8vw,22px) clamp(20px,3.6vw,30px); border-radius:22px; font-size:var(--fs-body); color:var(--teal-deep); max-width:var(--mw-sm); text-align:center; line-height:1.6; }
+.recall-box strong { color:var(--teal-deep); font-family:var(--f-title); font-weight:400; }
+.scene { background:#fff; border:3px solid var(--coral-soft); border-radius:28px; padding:clamp(18px,3.4vw,30px) clamp(22px,4.2vw,38px); display:flex; flex-direction:column; gap:clamp(10px,2vw,16px); align-items:center; min-width:clamp(280px,50vw,460px); box-shadow:0 6px 0 var(--coral-soft); }
+.pencil-row { display:flex; gap:clamp(4px,0.8vw,8px); font-size:var(--em-sm); flex-wrap:wrap; justify-content:center; max-width:var(--mw-sm); color:var(--ink); }
+
+/* ───── place_value_block (모형) ───── */
+.pv-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.pv-row { display:flex; gap:clamp(10px,2.2vw,20px); align-items:flex-end; justify-content:center; flex-wrap:wrap; }
+.pv-group { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,0.8vw,7px); }
+.pv-label { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.pv-block svg { display:block; }
+.swap-arrow { font-size:var(--em-sm); color:var(--coral); animation:ka-swap-r 1.6s ease-in-out infinite; }
+.exchange-eq { font-size:var(--fs-heading); color:var(--ink); display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); flex-wrap:wrap; justify-content:center; }
+
+/* ───── number_line ───── */
+.nl-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(12px,2.4vw,20px); max-width:var(--mw-lg); width:100%; }
+.nl-svg { width:min(760px,94vw); height:auto; }
+.nl-svg .nl-tick text { font-family:var(--f-num); font-weight:800; fill:var(--ink-soft); }
+.nl-pick { cursor:pointer; }
+.nl-pick:hover circle { fill:var(--coral-soft); }
+.nl-pick.correct circle { fill:var(--teal); }
+.nl-pick.wrong circle { fill:var(--coral-soft); }
+
+/* ───── 100의 여러 의미 ───── */
+.mean-grid { display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-sm); width:100%; }
+.mean-item { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,17px) clamp(16px,3vw,24px); border-radius:18px; font-size:var(--fs-body); color:var(--ink); text-align:center; box-shadow:var(--shadow); }
+.mean-item strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+
+/* ───── 문제 공통 ───── */
+.q-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; font-weight:400; }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:20px; padding:clamp(8px,1.6vw,14px) clamp(24px,4.6vw,44px); min-width:clamp(120px,22vw,200px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.q-pad { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(6px,1.2vw,10px); max-width:clamp(280px,56vw,460px); }
+.q-key { background:#fff; border:2px solid var(--line); border-radius:14px; padding:clamp(7px,1.5vw,12px) 0; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, background .15s, border-color .15s; box-shadow:0 4px 0 var(--line); }
+.q-key:hover { background:var(--coral-soft); border-color:var(--coral); }
+.q-key:active { transform:translateY(3px); box-shadow:none; }
+.q-key.fn { background:#FFF8E1; color:#F57F17; font-family:var(--f-title); font-size:var(--fs-body); border-color:#FFE08A; box-shadow:0 4px 0 #FFE08A; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); color:var(--teal-deep); min-height:1.4em; text-align:center; }
+.q-fb.wrong { color:var(--emph); }
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-sm); }
+.mcq-opt { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,15px); font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .2s; box-shadow:0 6px 0 var(--coral-soft); font-weight:400; }
+.mcq-opt:hover { border-color:var(--coral); }
+.mcq-opt:active { transform:translateY(4px); box-shadow:none; }
+.mcq-opt.correct { border-color:var(--teal-deep); background:var(--teal); color:#fff; box-shadow:0 6px 0 var(--teal-deep); animation:ka-pop .5s ease; }
+.mcq-opt.wrong { border-color:var(--emph); background:#FFE0DA; color:var(--coral-deep); animation:ka-shake .35s; }
+.mcq-hint { font-family:var(--f-title); font-size:var(--fs-body); color:#F57F17; background:#FFF8E1; border-radius:16px; padding:clamp(8px,1.6vw,12px) clamp(14px,2.6vw,20px); max-width:var(--mw-sm); text-align:center; display:none; }
+.mcq-hint.show { display:block; }
+
+/* ───── trace ───── */
+.trace-row { display:flex; gap:clamp(12px,2.4vw,22px); justify-content:center; flex-wrap:wrap; }
+.trace-cell { width:clamp(64px,12vw,110px); height:clamp(84px,16vw,150px); border:5px dashed var(--coral-soft); border-radius:20px; display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:#D8C4B8; cursor:pointer; transition:all .2s; background:#fff; }
+.trace-cell.done { color:var(--coral-deep); border-style:solid; border-color:var(--coral); background:var(--coral-soft); }
+
+/* ───── match ───── */
+.match-stage { display:flex; flex-direction:column; gap:clamp(8px,1.5vw,13px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.match-cols { display:flex; gap:clamp(20px,4vw,48px); }
+.match-col { display:flex; flex-direction:column; gap:clamp(6px,1.1vw,9px); }
+.match-card { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(16px,3vw,26px); font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .15s; min-width:clamp(70px,13vw,108px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.match-card:hover { border-color:var(--coral); }
+.match-card.sel { border-color:var(--gold); background:var(--mark); }
+.match-card.matched { border-color:var(--teal-deep); background:var(--teal); color:#fff; cursor:default; box-shadow:0 5px 0 var(--teal-deep); }
+
+/* ───── multi judge ───── */
+.judge-grid { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); max-width:var(--mw-sm); width:100%; }
+.judge-item { display:flex; align-items:center; gap:clamp(10px,2vw,16px); background:#fff; border:3px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(14px,2.6vw,20px); box-shadow:0 5px 0 var(--coral-soft); }
+.judge-text { flex:1; font-size:var(--fs-body); color:var(--ink); text-align:left; }
+.judge-text strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.judge-btns { display:flex; gap:clamp(6px,1.2vw,10px); }
+.judge-btn { border:3px solid var(--line); border-radius:14px; padding:clamp(6px,1.2vw,10px) clamp(12px,2.4vw,18px); font-family:var(--f-title); font-size:var(--fs-heading); cursor:pointer; background:#fff; color:var(--ink-soft); transition:transform .1s; }
+.judge-btn:active { transform:translateY(3px); }
+.judge-btn.pick-o { background:var(--teal-soft); color:var(--teal-deep); border-color:var(--teal); }
+.judge-btn.pick-x { background:var(--coral-soft); color:var(--coral-deep); border-color:var(--coral); }
+.judge-item.right { border-color:var(--teal-deep); box-shadow:0 5px 0 var(--teal-deep); }
+.judge-item.miss { border-color:var(--emph); animation:ka-shake .35s; }
+
+/* ───── 정리/자기평가/다음 ───── */
+.summary-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.summary-card { background:#fff; border:2px solid var(--line); border-radius:22px; padding:clamp(18px,3.4vw,30px); font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; box-shadow:var(--shadow); }
+.summary-card strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.wrap-msg { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--coral-deep); }
+.self-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(14px,2.6vw,22px); }
+.self-row { display:flex; gap:clamp(12px,2.4vw,20px); flex-wrap:wrap; justify-content:center; }
+.self-btn { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,16px) clamp(14px,2.8vw,22px); cursor:pointer; display:flex; flex-direction:column; gap:clamp(3px,0.7vw,6px); align-items:center; transition:transform .12s, border-color .15s; box-shadow:0 6px 0 var(--coral-soft); }
+.self-btn:hover { border-color:var(--coral); }
+.self-btn:active { transform:translateY(4px); box-shadow:none; }
+.self-btn.selected { border-color:var(--gold); background:var(--mark); }
+.self-btn-stars { font-size:var(--em-sm); color:var(--gold); }
+.self-btn-name { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.next-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-md); }
+.next-card { background:var(--teal-soft); border-radius:22px; padding:clamp(20px,3.8vw,32px); display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); align-items:center; }
+.next-emojis { font-size:var(--em-md); }
+.next-label { font-size:var(--fs-body); color:var(--teal-deep); text-align:center; }
+.home-prompt { font-size:var(--fs-caption); color:var(--coral-deep); background:var(--coral-soft); border-radius:18px; padding:clamp(12px,2.4vw,18px) clamp(18px,3.4vw,28px); text-align:center; }
+
+
+  /* 세로셈 (3학년 덧셈·뺄셈) */
+  .vadd { display:inline-grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:clamp(2px,0.6vw,4px) clamp(8px,1.6vw,14px); font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--ink); justify-items:center; align-items:center; background:#fff; border:2px solid var(--line); border-radius:18px; padding:clamp(12px,2vw,20px) clamp(18px,3vw,30px); box-shadow:var(--shadow); }
+  .vadd .op { color:var(--coral-deep); }
+  .vadd .ln { grid-column:1/-1; width:100%; height:3px; background:var(--ink); border-radius:2px; }
+  .vadd .sum { color:var(--coral-deep); }
+  .pv-sum-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-md); }
+
+
+/* ───── 나눗셈 단원 부품 (3-2 U2) ───── */
+.ml-wrap { display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.4vw,12px); width:100%; max-width:var(--mw-lg); }
+.ml-title { font-family:var(--f-title); font-size:var(--fs-label); color:var(--teal-deep); text-align:center; font-weight:400; }
+.ml-note { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; line-height:1.6; }
+.ml-svg { width:100%; height:auto; display:block; max-width:min(620px,94vw); margin:0 auto; }
+.ml-num { font-family:'Nunito',sans-serif; font-weight:800; }
+
+/* ① 수 카드 조작 */
+.dv-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(5px,1.2vw,10px); width:100%; }
+.dv-line { display:flex; flex-wrap:wrap; justify-content:center; gap:3px; padding:clamp(4px,1vw,8px); border:3px dashed var(--line); border-radius:14px; background:#fff; max-width:min(560px,94vw); }
+.dv-chip { font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-caption); color:#fff; border-radius:8px; padding:2px 7px; }
+.dv-chip.t { background:var(--teal); }
+.dv-chip.o { background:var(--coral); }
+.dv-row { display:flex; flex-wrap:wrap; justify-content:center; align-items:flex-start; gap:clamp(5px,1.2vw,12px); width:100%; }
+.dv-place, .dv-group { display:flex; flex-direction:column; align-items:center; gap:4px; border:3px solid var(--line); border-radius:14px; background:var(--teal-soft); padding:clamp(4px,1vw,9px); box-shadow:0 3px 0 var(--line); }
+.dv-group { background:#fff; }
+.dv-chips { display:flex; flex-wrap:wrap; justify-content:center; gap:3px; max-width:clamp(110px,19vw,180px); }
+.dv-left { display:flex; flex-direction:column; align-items:center; gap:4px; border:3px dashed var(--coral); border-radius:14px; background:var(--coral-soft); padding:clamp(4px,1vw,9px); }
+.dv-cap { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); }
+.dv-swap { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--coral-deep); text-align:center; }
+
+/* ② 세로셈 */
+.vd-grid { display:inline-grid; gap:2px 2px; background:#fff; border:3px solid var(--line); border-radius:16px; box-shadow:0 4px 0 var(--line); padding:clamp(8px,1.8vw,16px) clamp(12px,2.6vw,22px); justify-items:center; align-items:center; }
+.vd-c { font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-body); color:var(--ink); min-width:1.15em; text-align:center; }
+.vd-q { color:var(--coral-deep); }
+.vd-q.ask { color:var(--coral); }
+.vd-div { color:var(--teal-deep); }
+.vd-brk { color:var(--ink-soft); }
+.vd-sub { color:var(--ink-soft); }
+.vd-r { color:var(--coral-deep); }
+.vd-top { border-bottom:3px solid var(--ink); width:100%; height:4px; }
+.vd-bar { border-top:2px solid var(--ink-soft); width:100%; height:2px; }
+.vd-tag { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); }
+
+/* ③ 계산 결과 확인 */
+.ck-box { display:flex; flex-direction:column; gap:6px; background:#fff; border:3px solid var(--line); border-radius:16px; box-shadow:0 4px 0 var(--line); padding:clamp(8px,1.8vw,16px) clamp(12px,2.6vw,22px); }
+.ck-row { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:center; gap:6px; }
+.ck-n { font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-body); color:var(--ink); }
+.ck-n.ask { color:var(--coral-deep); }
+.ck-op { font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-body); color:var(--ink-soft); }
+.ck-tag { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--teal-deep); }
+
+/* ④ 관계 표 */
+.rt-tab, .bt-tab { border-collapse:separate; border-spacing:0; width:100%; max-width:min(580px,94vw); background:#fff; border:3px solid var(--line); border-radius:16px; overflow:hidden; box-shadow:0 4px 0 var(--line); }
+.rt-tab th, .rt-tab td, .bt-tab th, .bt-tab td { padding:clamp(4px,1.1vw,10px) clamp(3px,0.9vw,9px); text-align:center; border-bottom:2px solid var(--line); font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink); }
+.rt-tab th, .bt-tab th { background:var(--teal-soft); color:var(--teal-deep); }
+.rt-tab tr:last-child td, .bt-tab tr:last-child td { border-bottom:none; }
+.rt-tab td.num, .bt-tab td.num { font-family:'Nunito',sans-serif; font-weight:800; }
+.rt-tab td.ask, .bt-tab td.ask { color:var(--coral-deep); }
+
+/* ⑤ 묶음 그림 */
+.br-cap { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; }
+
+/* ⑥ 어림 띠 */
+.el-bar { position:relative; width:100%; max-width:min(560px,92vw); height:clamp(46px,9vw,66px); }
+.el-line { position:absolute; left:0; right:0; top:50%; height:5px; background:var(--line); border-radius:4px; }
+.el-mark { position:absolute; top:0; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; gap:2px; }
+.el-mark .pin { width:5px; height:clamp(20px,4vw,28px); border-radius:3px; background:var(--teal-deep); }
+.el-mark.real .pin { background:var(--coral-deep); }
+.el-mark .lab { font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-caption); color:var(--teal-deep); white-space:nowrap; }
+.el-mark.real .lab { color:var(--coral-deep); }
+.el-band { position:absolute; top:calc(50% - 9px); height:18px; border-radius:9px; background:var(--gold-soft,#FDF0D0); border:2px solid var(--gold,#E0A11B); }
+
+/* ⑦ 나눗셈판 */
+.db-grid { display:grid; gap:clamp(4px,1vw,9px); justify-content:center; }
+.db-cell { border:3px solid var(--line); border-radius:12px; background:#fff; box-shadow:0 3px 0 var(--line); padding:clamp(4px,1vw,9px) clamp(5px,1.2vw,11px); font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-caption); color:var(--ink); text-align:center; }
+.db-cell.hit { background:var(--coral-soft); border-color:var(--coral); color:var(--coral-deep); }
+.db-goal { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--teal-deep); text-align:center; }
+
+/* ⑨ 관계 카드 */
+.rc-row { display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:clamp(6px,1.4vw,14px); }
+.rc-card { border:3px solid var(--line); border-radius:14px; background:#fff; box-shadow:0 3px 0 var(--line); padding:clamp(6px,1.4vw,12px) clamp(9px,2vw,18px); font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-body); color:var(--ink); }
+.rc-card.d { background:var(--teal-soft); color:var(--teal-deep); }
+.rc-arrow { font-family:var(--f-title); font-size:var(--fs-label); color:var(--ink-soft); }
+</style>
+<script src="/kedu_gate.js"></script>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 목록</button>
+    <span class="ka-pill">8차시</span>
+    <span class="ka-where">수학 3-2 · <b>2. 나눗셈</b></span>
+    <div class="ka-bar" id="dots"></div>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+  <div class="ka-m">
+    <div class="slide active" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">공공 도서관에 책을 꽂아요</h2>
+      <div class="intro-q">공공 도서관 봉사 활동에서 책 <b>800권</b>을 정리합니다.<br>책장 <b>4칸</b>에 똑같이 나누어 꽂으려고 해요.<br>한 칸에는 몇 권씩 꽂아야 할까요?</div>
+    </div>
+
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">8 ÷ 4 의 몫을 100배 해요</h2>
+      <div class="ef-stage">
+        <div id="m-i2"></div>
+        <div class="concept-box">800 은 100이 8개인 수예요.<br>8 ÷ 4 = 2 이고 800 은 8 의 100배이므로 몫도 <b>100배</b>가 됩니다.<br>그래서 800 ÷ 4 = <b>200</b> 이에요.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">나눌 수 없는 자리에는 0 을 적어요</h2>
+      <div class="intro-q">307 ÷ 3 에서 백의 자리 3 을 3 으로 나누면 몫 1 이 섭니다.<br>십의 자리 0 은 3 으로 나눌 수 없어요. 이때 몫의 십의 자리에 <b>0</b> 을 적습니다.<br>일의 자리 7 을 나누면 2 가 되고 1 이 남아 307 ÷ 3 = <b>102 … 1</b> 이에요.</div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개</div>
+      <h2 class="slide-title">백의 자리부터 차례로 나누어요</h2>
+      <div class="ef-stage">
+        <div id="m-e1"></div>
+        <div class="concept-box">800 ÷ 4 를 세로로 적으면 백의 자리 8 을 4 로 나누어 몫 2 를 백의 자리에 적어요. 십의 자리와 일의 자리는 0 이므로 몫에도 0 을 적습니다. 그래서 몫은 200 이 됩니다.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개</div>
+      <h2 class="slide-title">몫의 0 을 빠뜨리지 않아요</h2>
+      <div class="ef-stage">
+        <div id="m-e2"></div>
+        <div class="concept-box">307 ÷ 3 은 백의 자리에서 몫 1 이 서고, 십의 자리 0 은 나눌 수 없어 몫에 0 을 적어요. 일의 자리 7 을 나누면 2 가 되고 1 이 남습니다. 몫의 0 을 빠뜨리면 102 가 12 가 되어 아주 달라져요.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개</div>
+      <h2 class="slide-title">638 ÷ 3 을 계산하고 확인해요</h2>
+      <div class="ef-stage">
+        <div id="m-e3"></div>
+        <div class="concept-box">백의 자리 6 을 3 으로 나누면 2, 십의 자리 3 을 나누면 1, 일의 자리 8 을 나누면 2 가 되고 2 가 남아 638 ÷ 3 = 212 … 2 입니다. 3 × 212 = 636 이고 636 + 2 = 638 이므로 바르게 계산했어요.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개</div>
+      <h2 class="slide-title">607 ÷ 6 도 몫에 0 이 있어요</h2>
+      <div class="ef-stage">
+        <div id="m-e4"></div>
+        <div class="concept-box">백의 자리 6 을 6 으로 나누면 1 이 서고, 십의 자리 0 은 나눌 수 없어 몫에 0 을 적어요. 일의 자리 7 을 나누면 1 이 되고 1 이 남습니다. 607 ÷ 6 = 101 … 1 이에요.</div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q8" data-q-points="10" data-answer="200">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">800 ÷ 4 는 얼마인가요?</div>
+        <div class="ef-stage"><div id="m-q8"></div></div>
+        <div class="q-display" id="q8-display">?</div>
+        <div class="q-pad" id="q8-pad"></div>
+        <div class="mcq-hint" data-hints='["8 ÷ 4 = 2 를 먼저 구해 보세요.","800 은 8 의 100배예요."]'></div>
+        <div class="q-fb" id="q8-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q9" data-q-points="10" data-answer="102">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">307 ÷ 3 의 몫은 얼마인가요?</div>
+        <div class="ef-stage"><div id="m-q9"></div></div>
+        <div class="q-display" id="q9-display">?</div>
+        <div class="q-pad" id="q9-pad"></div>
+        <div class="mcq-hint" data-hints='["백의 자리부터 차례로 나누어 보세요.","십의 자리는 나눌 수 없으니 몫에 0 을 적어요."]'></div>
+        <div class="q-fb" id="q9-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q10" data-q-points="10" data-answer="1">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">307 ÷ 3 의 나머지는 얼마인가요?</div>
+        <div class="ef-stage"><div id="m-q10"></div></div>
+        <div class="q-display" id="q10-display">?</div>
+        <div class="q-pad" id="q10-pad"></div>
+        <div class="mcq-hint" data-hints='["일의 자리 7 을 3 으로 나누어 보세요.","3 × 2 = 6 이고 7 에서 6 을 덜어냅니다."]'></div>
+        <div class="q-fb" id="q10-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="기본문제" data-q-id="q11" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">409 ÷ 4 를 계산하고 몫을 12 라고 썼습니다. 바르게 계산한 몫은 얼마인가요?</div>
+        <div class="ef-stage"><div id="m-q11"></div></div>
+        <div class="mcq-opts" id="q11-opts">
+          <button class="mcq-opt" data-correct="0">12</button>
+          <button class="mcq-opt" data-correct="1">102</button>
+          <button class="mcq-opt" data-correct="0">120</button>
+          <button class="mcq-opt" data-correct="0">112</button>
+        </div>
+        <div class="mcq-hint" data-hints='["십의 자리 0 은 4 로 나눌 수 없어요.","나눌 수 없는 자리에는 몫에 0 을 적습니다."]'></div>
+        <div class="q-fb" id="q11-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q12" data-q-points="15" data-answer="212">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">638 ÷ 3 의 몫은 얼마인가요?</div>
+        <div class="ef-stage"><div id="m-q12"></div></div>
+        <div class="q-display" id="q12-display">?</div>
+        <div class="q-pad" id="q12-pad"></div>
+        <div class="mcq-hint" data-hints='["백의 자리 6 을 3 으로 나누어 보세요.","자리마다 차례로 나누어 몫을 적습니다."]'></div>
+        <div class="q-fb" id="q12-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q13" data-q-points="15" data-answer="122">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">빵 367개를 3개씩 봉지에 담으면 몇 봉지가 되나요?</div>
+        <div class="ef-stage"><div id="m-q13"></div></div>
+        <div class="q-display" id="q13-display">?</div>
+        <div class="q-pad" id="q13-pad"></div>
+        <div class="mcq-hint" data-hints='["백의 자리 3 을 3 으로 나누어 보세요.","자리마다 차례로 나누어 몫을 적습니다."]'></div>
+        <div class="q-fb" id="q13-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q14" data-q-points="15" data-answer="420">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">연필 840자루를 2상자에 똑같이 나누어 담으면 한 상자에 몇 자루인가요?</div>
+        <div class="ef-stage"><div id="m-q14"></div></div>
+        <div class="q-display" id="q14-display">?</div>
+        <div class="q-pad" id="q14-pad"></div>
+        <div class="mcq-hint" data-hints='["백의 자리 8 을 2 로 나누어 보세요.","자리마다 차례로 나누어 몫을 적습니다."]'></div>
+        <div class="q-fb" id="q14-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="응용문제" data-q-id="q15" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">605 ÷ 2 의 몫을 세로로 쓸 때 십의 자리에 써야 하는 숫자는 무엇인가요?</div>
+        <div class="ef-stage"><div id="m-q15"></div></div>
+        <div class="mcq-opts" id="q15-opts">
+          <button class="mcq-opt" data-correct="1">0</button>
+          <button class="mcq-opt" data-correct="0">1</button>
+          <button class="mcq-opt" data-correct="0">2</button>
+          <button class="mcq-opt" data-correct="0">3</button>
+        </div>
+        <div class="mcq-hint" data-hints='["십의 자리 0 은 2 로 나눌 수 없어요.","나눌 수 없는 자리에는 0 을 적습니다."]'></div>
+        <div class="q-fb" id="q15-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 배운 것</h2>
+      <div class="summary-stage">
+        <div class="summary-card"><strong>(세 자리 수) ÷ (한 자리 수)</strong>는 백의 자리부터 차례로 나누어요.<br>① 나눌 수 없는 자리에는 <strong>몫에 0 을 적습니다</strong> ② 계산한 다음에는 나누는 수 × 몫 + 나머지 로 확인하기<br>이번 시간에는 자리마다 남는 수 없이 나누어졌어요.</div>
+        <div class="wrap-msg" id="wrap-msg"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 공부는 어땠나요?</h2>
+      <div class="self-stage">
+        <div class="self-row">
+          <button class="self-btn"><div class="self-btn-stars">★</div><div class="self-btn-name">조금 어려웠어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★</div><div class="self-btn-name">잘 했어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★★</div><div class="self-btn-name">아주 잘 했어요</div></button>
+        </div>
+        <div class="q-fb" id="self-fb"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">다음 시간</h2>
+      <div class="next-stage">
+        <div class="next-card">
+          <div class="next-emojis">📍</div>
+          <div class="next-label">다음 시간에는 <strong>내림이 있는 (세 자리 수) ÷ (한 자리 수)</strong>를 알아봐요</div>
+        </div>
+        <div class="home-prompt">봉투에 붙일 종이 526장을 5모둠에 나누면 몇 장씩일까?</div>
+      </div>
+    </div>
+
+  </div>
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+<script>
+const TOTAL = 18;
+const LESSON_ID = 'g3_2_math_u2_l08';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.querySelectorAll('#dots .ka-dot').forEach((d, i) => { d.classList.toggle('active', i === cur); d.classList.toggle('done', i < cur); });
+  document.getElementById('prev').disabled = cur === 0;
+
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.solved || st.hintLevel >= 2; }
+  else { hintBtn.disabled = true; }
+
+  if (cur === TOTAL - 1) { document.getElementById('next').textContent = '마치기 →'; saveProgress(true); }
+  else { document.getElementById('next').textContent = '다음 →'; }
+
+  if (cur === 15) { document.getElementById('wrap-msg').textContent = wrapMsg(score); }
+}
+
+function saveProgress(done) {
+  const data = { cur, score, done, startedAt, finishedAt: done ? Date.now() : null, qState };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function wrapMsg(s) {
+  if (s >= 100) return '완벽해요!';
+  if (s >= 80) return '정말 잘했어요!';
+  if (s >= 60) return '잘했어요!';
+  return '다시 해도 좋아요!';
+}
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } else { saveProgress(true); location.href='../index.html'; } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+function showHint() {
+  const qid = currentQId(); if (!qid) return;
+  const st = getQState(qid); if (st.solved || st.hintLevel >= 2) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint'); if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[st.hintLevel - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= 2;
+}
+function pointsForQ(qid) {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  const base = parseInt(slide.dataset.qPoints || '0', 10);
+  const st = getQState(qid);
+  if (st.hintLevel === 2) return Math.max(0, base - 5);
+  if (st.hintLevel === 1) return Math.max(0, base - 2);
+  return base;
+}
+
+// ══════════════════════════════════════════════════════════════
+// 3-2 U2 「나눗셈」 부품 라이브러리 v1
+//   divcard · vdiv · checkrow · remtable · bundlerow · estline · divboard · blocktab · relcard
+//   ★ 부품이 값을 스스로 계산하고 신고한다. 하니스는 그 신고를 믿지 않고
+//     **그려진 글자·칸**을 세어 되읽는다.
+//   ⚠️ 이 주석에는 나누기 기호를 쓰지 않는다 — 빌더의 식 모양 검사가 HTML 전체를 보므로
+//      주석에 적은 식이 그 차시의 한계로 재어진다. 세로셈 표기 `4)25` 로만 적는다.
+// ══════════════════════════════════════════════════════════════
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const _d = (n, i) => Math.floor(n / Math.pow(10, i)) % 10;
+const _nd = n => String(Math.abs(n)).length;
+const _digs = n => String(n).split('').map(Number);
+
+// 🔴 이 단원이 다루는 식의 모양 — 나누어지는 수는 세 자리까지, 나누는 수는 한 자리.
+//    두 자리로 나누는 것은 4학년 자리다(지도서 202). 부품이 먼저 선다.
+function _shapeOK(a, b){ return _nd(a) <= 3 && _nd(b) === 1 && b > 0; }
+function _need(a, b, who){
+  if (!Number.isInteger(a) || !Number.isInteger(b) || a <= 0 || b <= 0)
+    throw new Error(who + ': 자연수만 쓴다 — ' + a + ', ' + b);
+  if (!_shapeOK(a, b))
+    throw new Error(who + ': ' + b + ')' + a + ' 는 이 단원의 모양이 아니다');
+}
+
+// 자리별로 밟아 (자리 몫, 그 자리에서 뺀 수, 남은 수) 를 돌려준다.
+//   몫이 아직 서지 않은 앞자리는 적지 않는다 — 4)25 는 십의 자리에 몫이 서지 않는다.
+function _divQ(a, b){
+  const ds = _digs(a);
+  let cur = 0, started = false, rows = [];
+  for (let i = 0; i < ds.length; i++){
+    cur = cur * 10 + ds[i];
+    const qd = Math.floor(cur / b);
+    if (qd) started = true;
+    rows.push({ i: i, cur: cur, qd: qd, sub: qd * b, rest: cur % b, show: started });
+    cur = cur % b;
+  }
+  return { rows: rows, q: Math.floor(a / b), r: a % b };
+}
+
+// ══════════════════════════════════════════════════════════════
+// ① divcard — 수 카드 조작
+//    o = { n:60, b:3, mode:'share'|'group', swap:false, title:'', cap:'' }
+//    🔴 mode 는 지도서 213~214 [그림1]·[그림2] 가 갈라 놓은 자리다 — 없으면 부품이 선다.
+//       'share' : k곳에 똑같이 나누어 놓는다            (l02·l03·l05)
+//       'group' : n장씩 묶어 덜어낸다                   (l04·l06·l07)
+//    🔴 swap 은 10 카드 1장을 1 카드 10장으로 바꾸는 장면이다(l03 의 분기점 · 지도서 224).
+//    카드 개수는 **부품이 세어** data-cards 로 신고한다(스펙이 손으로 적지 않는다).
+// ══════════════════════════════════════════════════════════════
+function divcard(o){
+  const n = o.n, b = o.b, m = o.mode;
+  _need(n, b, 'divcard');
+  if (!m) throw new Error('divcard: mode 가 없다 — 두 조작은 그림이 다르다(지도서 213~214)');
+  if (m !== 'share' && m !== 'group') throw new Error('divcard: mode ' + m);
+  const q = Math.floor(n / b), r = n % b;
+  if (b * q + r !== n) throw new Error('divcard: 값이 어긋난다');
+  if (m === 'group' && q > 15) throw new Error('divcard group: 묶음이 너무 많다 — ' + q);
+  if (m === 'group' && n > 60) throw new Error('divcard group: 60 까지다 — ' + n);
+  if (m === 'share' && n > 99) throw new Error('divcard share: 두 자리까지다 — ' + n);
+  let cards = 0;
+  const chips = v => {
+    let s = '', t = Math.floor(v / 10), u = v % 10;
+    for (let i = 0; i < t; i++){ s += '<span class="dv-chip t" data-v="10">10</span>'; cards++; }
+    for (let i = 0; i < u; i++){ s += '<span class="dv-chip o" data-v="1">1</span>'; cards++; }
+    return s;
+  };
+  const ones = v => {
+    let s = '';
+    for (let i = 0; i < v; i++){ s += '<span class="dv-chip o" data-v="1">1</span>'; cards++; }
+    return s;
+  };
+  let head = '<div class="dv-line" data-role="whole" data-n="' + n + '">' + chips(n) + '</div>';
+  let swapNote = o.swap
+    ? '<div class="dv-swap" data-swap="1">남은 10 카드 1장을 1 카드 10장으로 바꾸어 놓았어요</div>' : '';
+  let body = '';
+  if (m === 'share'){
+    for (let i = 0; i < b; i++)
+      body += '<div class="dv-place" data-k="' + q + '"><div class="dv-chips">' +
+              chips(q) + '</div>' +
+              '<div class="dv-cap">' + (i + 1) + '</div></div>';
+  } else {
+    for (let i = 0; i < q; i++)
+      body += '<div class="dv-group" data-k="' + b + '"><div class="dv-chips">' +
+              ones(b) + '</div></div>';
+  }
+  const left = r ? '<div class="dv-left" data-k="' + r + '"><div class="dv-chips">' +
+                   ones(r) + '</div><div class="dv-cap">남는 것</div></div>' : '';
+  return '<div class="ml-wrap" data-divcard="' + n + '|' + b + '|' + m + '" data-q="' + q +
+         '" data-r="' + r + '" data-cards="' + cards + '">' +
+         (o.title ? '<div class="ml-title">《 ' + esc(o.title) + ' 》</div>' : '') +
+         '<div class="dv-stage">' + head + swapNote +
+         '<div class="dv-row">' + body + left + '</div></div>' +
+         (o.cap ? '<div class="ml-note">' + esc(o.cap) + '</div>' : '') + '</div>';
+}
+
+// ══════════════════════════════════════════════════════════════
+// ② vdiv — 세로셈
+//    o = { a:67, b:5, step:0|1|2, ask:false, wrong:'...', title:'', cap:'' }
+//    🔴 **몫은 자리에 맞추어 앞에서부터 쓴다**(지도서 210). 몫 글자마다 칸 번호를
+//       data-qx 로 신고하고, 나누어지는 수의 같은 칸 번호와 맞댄다.
+//       「값은 맞는데 자리가 밀린」 위조는 이 신고에서만 걸린다.
+//    🔴 **wrong 은 잘못을 「부품이 직접 굴려」 만든다.** 표지만 붙이고 바른 값을 그리면
+//       시연이 아무것도 보여 주지 못한다(2-2 U5 교훈 ②).
+//       갈래(전부 지도서 215~216 의 원문 판) —
+//         'algo'     : 자리마다 큰 수를 작은 수로 나눈 것처럼 적는다   4)418 →  142
+//         'radix'    : 몫의 자리 배열을 거꾸로 적는다                  4)64  →   61
+//         'lowfirst' : 몫을 일의 자리부터 적는다                      5)487 →   79
+//         'zero'     : 몫의 0 을 아예 빼고 이어 적는다                7)721 →   13
+//         'zerotail' : 몫의 0 을 가운데가 아니라 끝에 붙인다          6)615 →  120
+//         'norem'    : 남는 수를 적지 않고 계산을 끝낸다              4)25  →    6
+//         'remtoo'   : 남는 수가 나누는 수보다 크다                   4)257 → 63⋯5
+//         'qplace'   : 몫의 끝자리 0 을 적지 않는다                   9)91  →    1
+// ══════════════════════════════════════════════════════════════
+function _wrongDiv(a, b, k){
+  const q = Math.floor(a / b), r = a % b, ds = _digs(a), qstr = String(q);
+  if (k === 'algo'){
+    let s = '';
+    for (let i = 0; i < ds.length; i++){
+      const d = ds[i];
+      if (d === 0) throw new Error('algo: 0 이 든 자리에는 이 갈래를 쓸 수 없다');
+      s += String(d >= b ? Math.floor(d / b) : Math.floor(b / d));
+    }
+    if (s === qstr) throw new Error('algo: 바른 몫과 같다');
+    return { qs: s, r: 0, hideR: true };
+  }
+  if (k === 'radix' || k === 'lowfirst'){
+    const s = qstr.split('').reverse().join('');
+    if (s === qstr) throw new Error(k + ': 자리를 거꾸로 써도 값이 같다');
+    if (s.charAt(0) === '0') throw new Error(k + ': 거꾸로 쓰면 앞자리가 0 이 된다');
+    return { qs: s, r: r, hideR: k === 'lowfirst' };
+  }
+  if (k === 'zero'){
+    if (qstr.indexOf('0') < 0) throw new Error('zero: 몫에 0 이 없다');
+    const t = qstr.replace(/0/g, '');
+    if (!t) throw new Error('zero: 몫이 통째로 사라진다');
+    return { qs: t, r: r, hideR: r === 0 };
+  }
+  if (k === 'zerotail'){
+    if (qstr.indexOf('0') < 0) throw new Error('zerotail: 몫에 0 이 없다');
+    const t = qstr.replace(/0/g, '') + '0';
+    if (t === qstr) throw new Error('zerotail: 바른 몫과 같다');
+    return { qs: t, r: r };
+  }
+  if (k === 'norem'){
+    if (!r) throw new Error('norem: 남는 수가 0 이라 이 갈래가 성립하지 않는다');
+    return { qs: qstr, r: 0, hideR: true };
+  }
+  if (k === 'remtoo'){
+    if (q < 1) throw new Error('remtoo: 몫이 1 보다 작다');
+    return { qs: String(q - 1), r: r + b };
+  }
+  if (k === 'qplace'){
+    const t = qstr.replace(/0+$/, '');
+    if (t === qstr) throw new Error('qplace: 몫의 끝자리가 0 이 아니다');
+    if (!t) throw new Error('qplace: 몫이 통째로 사라진다');
+    return { qs: t, r: r };
+  }
+  throw new Error('vdiv: 모르는 갈래 ' + k);
+}
+
+function vdiv(o){
+  const a = o.a, b = o.b;
+  _need(a, b, 'vdiv');
+  const R = _divQ(a, b), nd = _nd(a);
+  let qcol = new Array(nd).fill(''), rr = R.r, hideR = R.r === 0, wk = o.wrong || '';
+  if (wk){
+    const W = _wrongDiv(a, b, wk);
+    rr = W.r; hideR = !!W.hideR || W.r === 0;
+    const ws = W.qs;
+    if (ws.length > nd) throw new Error('vdiv: 잘못 쓴 몫이 자리보다 길다 — ' + ws);
+    for (let i = 0; i < ws.length; i++) qcol[nd - ws.length + i] = ws.charAt(i);
+  } else {
+    R.rows.forEach((row, i) => { if (row.show) qcol[i] = String(row.qd); });
+  }
+  const steps = wk ? 0 : (o.step === undefined ? 0 : o.step);
+  const shown = R.rows.filter(x => x.show);
+  if (steps > shown.length) throw new Error('vdiv: step 이 자리 수보다 많다');
+  const cols = nd + 2;                                   // 나누는 수 · 괄호 · 나누어지는 수
+  const cell = (t, cls, attr) =>
+    '<span class="vd-c ' + (cls || '') + '"' + (attr || '') + '>' + t + '</span>';
+  let g = '';
+  // 몫 줄
+  g += cell('', '') + cell('', '');
+  for (let c = 0; c < nd; c++)
+    g += qcol[c] === ''
+      ? cell('', 'vd-q', ' data-c="' + c + '"')
+      : cell(o.ask ? '?' : qcol[c], 'vd-q' + (o.ask ? ' ask' : ''),
+             ' data-c="' + c + '" data-qx="' + c + '" data-v="' + qcol[c] + '"');
+  // 가로줄
+  g += '<span class="vd-c"></span><span class="vd-c"></span>';
+  for (let c = 0; c < nd; c++) g += '<span class="vd-top"></span>';
+  // 나누는 수 · 괄호 · 나누어지는 수
+  g += cell(b, 'vd-div', ' data-role="divisor"') + cell(')', 'vd-brk');
+  _digs(a).forEach((d, c) => { g += cell(d, 'vd-a', ' data-c="' + c + '"'); });
+  // 자리마다 빼는 줄
+  for (let s = 0; s < steps; s++){
+    const row = shown[s], end = row.i, sub = String(row.sub), nxt = R.rows[end + 1];
+    g += cell('', '') + cell('−', 'vd-sub');
+    for (let c = 0; c < nd; c++){
+      const k = c - (end - sub.length + 1);
+      g += (k >= 0 && k < sub.length)
+        ? cell(sub.charAt(k), 'vd-sub', ' data-c="' + c + '"') : cell('', '');
+    }
+    g += '<span class="vd-c"></span><span class="vd-c"></span>';
+    for (let c = 0; c < nd; c++)
+      g += (c >= end - sub.length + 1 && c <= end) ? '<span class="vd-bar"></span>' : '<span></span>';
+    const down = nxt ? String(nxt.cur) : String(row.rest);
+    const dend = nxt ? end + 1 : end;
+    g += cell('', '') + cell('', '');
+    for (let c = 0; c < nd; c++){
+      const k = c - (dend - down.length + 1);
+      g += (k >= 0 && k < down.length)
+        ? cell(down.charAt(k), 'vd-r', ' data-c="' + c + '"') : cell('', '');
+    }
+  }
+  const tail = hideR ? ''
+    : '<div class="vd-tag">남는 수 <span class="vd-r ml-num" data-v="' + rr + '">' +
+      (o.ask ? '?' : rr) + '</span></div>';
+  return '<div class="ml-wrap" data-vdiv="' + a + '|' + b + '|' + qcol.join('') + '|' + rr +
+         '|' + (wk || 'ok') + '">' +
+         (o.title ? '<div class="ml-title">《 ' + esc(o.title) + ' 》</div>' : '') +
+         '<div class="vd-grid" style="grid-template-columns:repeat(' + cols + ',auto)">' + g +
+         '</div>' + tail +
+         (o.cap ? '<div class="ml-note">' + esc(o.cap) + '</div>' : '') + '</div>';
+}
+
+// ══════════════════════════════════════════════════════════════
+// ③ checkrow — 계산 결과가 맞는지 확인하는 두 줄
+//    o = { a:44, b:3, hide:'p'|'a'|'', wrong:'swap', title:'', cap:'' }
+//    나누는 수 × 몫 = ?  →  ? + 남는 수 = 나누어지는 수
+//    🔴 세 수에 **이름표**를 달고 data-role 로 신고한다 — 3×12 와 8×12 는 둘 다 정당한
+//       곱이라 값 검사로는 영영 안 걸린다(5-2 U2 「값은 맞고 이름이 뒤바뀐다」 계보).
+//       'swap' 은 곱하는 두 수를 뒤바꾼 판이다(지도서 215 원문).
+// ══════════════════════════════════════════════════════════════
+function checkrow(o){
+  const a = o.a, b = o.b;
+  _need(a, b, 'checkrow');
+  const q = Math.floor(a / b), r = a % b, hide = o.hide || '';
+  const wk = o.wrong || '';
+  if (wk && wk !== 'swap') throw new Error('checkrow: 모르는 갈래 ' + wk);
+  if (wk === 'swap' && !r) throw new Error('swap: 남는 수가 0 이면 뒤바뀐 것이 안 보인다');
+  const m1 = wk === 'swap' ? r : b, m2 = wk === 'swap' ? b : r;
+  const p = m1 * q, tot = p + m2;
+  if (!wk && tot !== a) throw new Error('checkrow: 확인 값이 어긋난다 — ' + tot);
+  const N = (v, role, ask) =>
+    '<span class="ck-n' + (ask ? ' ask' : '') + '" data-role="' + role + '" data-v="' + v + '">' +
+    (ask ? '?' : v) + '</span>';
+  const tag = t => '<span class="ck-tag">' + esc(t) + '</span>';
+  let s = '<div class="ck-row">' +
+          N(m1, wk === 'swap' ? 'rem' : 'divisor') + tag(wk === 'swap' ? '남는 수' : '나누는 수') +
+          '<span class="ck-op">×</span>' + N(q, 'quo') + tag('몫') +
+          '<span class="ck-op">=</span>' + N(p, 'prod', hide === 'p') + '</div>';
+  s += '<div class="ck-row">' + N(p, 'prod', hide === 'p') +
+       '<span class="ck-op">+</span>' +
+       N(m2, wk === 'swap' ? 'divisor' : 'rem') + tag(wk === 'swap' ? '나누는 수' : '남는 수') +
+       '<span class="ck-op">=</span>' + N(tot, 'total', hide === 'a') + tag('나누어지는 수') + '</div>';
+  return '<div class="ml-wrap" data-checkrow="' + a + '|' + b + '|' + q + '|' + r + '|' +
+         (wk || 'ok') + '" data-total="' + tot + '">' +
+         (o.title ? '<div class="ml-title">《 ' + esc(o.title) + ' 》</div>' : '') +
+         '<div class="ck-box">' + s + '</div>' +
+         (o.cap ? '<div class="ml-note">' + esc(o.cap) + '</div>' : '') + '</div>';
+}
+
+// ══════════════════════════════════════════════════════════════
+// ④ remtable — 나누는 수와 남는 수의 관계 표
+//    o = { b:3, from:10, to:15, hide:[i], maxrow:true, title:'', cap:'' }
+//    ★ 「남는 수는 나누는 수보다 작다」가 표에서 서야 한다 — 부품이 줄마다 다시 계산한다.
+// ══════════════════════════════════════════════════════════════
+function remtable(o){
+  const b = o.b, f = o.from, t = o.to, hide = o.hide || [];
+  if (!Number.isInteger(b) || b < 2 || b > 9) throw new Error('remtable: 나누는 수는 2~9');
+  if (!(t > f) || t - f > 9) throw new Error('remtable: 줄은 2~10개');
+  let s = '<tr><th>나누어지는 수</th><th>나누는 수</th><th>몫</th><th>남는 수</th></tr>';
+  let seen = [];
+  for (let n = f; n <= t; n++){
+    _need(n, b, 'remtable');
+    const q = Math.floor(n / b), r = n % b, i = n - f, ask = hide.indexOf(i) >= 0;
+    if (r >= b) throw new Error('remtable: 남는 수가 나누는 수보다 크다');
+    seen.push(r);
+    s += '<tr class="rt-row" data-n="' + n + '" data-q="' + q + '" data-r="' + r + '">' +
+         '<td class="num">' + n + '</td><td class="num">' + b + '</td>' +
+         '<td class="num' + (ask ? ' ask' : '') + '">' + (ask ? '?' : q) + '</td>' +
+         '<td class="num' + (ask ? ' ask' : '') + '">' + (ask ? '?' : r) + '</td></tr>';
+  }
+  let foot = '';
+  if (o.maxrow){
+    let can = [];
+    for (let i = 0; i < b; i++) can.push(i);
+    foot = '<div class="ml-note" data-canrem="' + can.join(',') + '">' +
+           b + '으로 나눌 때 남을 수 있는 수는 ' + can.join(', ') + ' 뿐이에요.</div>';
+  }
+  return '<div class="ml-wrap" data-remtable="' + b + '|' + f + '|' + t +
+         '" data-rems="' + seen.join(',') + '">' +
+         (o.title ? '<div class="ml-title">《 ' + esc(o.title) + ' 》</div>' : '') +
+         '<table class="rt-tab">' + s + '</table>' + foot +
+         (o.cap ? '<div class="ml-note">' + esc(o.cap) + '</div>' : '') + '</div>';
+}
+
+// ══════════════════════════════════════════════════════════════
+// ⑤ bundlerow — 묶음 그림
+//    o = { n:25, per:4, title:'', cap:'' }
+//    🔴 **남는 것은 묶음 밖에 둔다** — 남는 수가 눈에 보이는 자리다(l06).
+//       10묶음마다 테두리를 쳐서 10배가 그림에서 서게 한다(l02·l03).
+// ══════════════════════════════════════════════════════════════
+function bundlerow(o){
+  const n = o.n, per = o.per;
+  _need(n, per, 'bundlerow');
+  const g = Math.floor(n / per), left = n % per;
+  if (g * per + left !== n) throw new Error('bundlerow: 값이 어긋난다');
+  if (g > 20) throw new Error('bundlerow: 묶음이 너무 많다 — ' + g);
+  const cw = 15, ch = 15, pad = 7;
+  const cols = Math.min(per, 6), rowsPer = Math.ceil(per / cols);
+  const gw = cols * cw + pad * 2, gh = rowsPer * ch + pad * 2;
+  const perRow = Math.min(g, 5), gRows = Math.ceil(g / perRow || 1);
+  const W = Math.max(perRow, 1) * (gw + 10) + 40 + (left ? 60 : 0);
+  const H = gRows * (gh + 12) + 26;
+  let s = '';
+  for (let i = 0; i < g; i++){
+    const gx = (i % perRow) * (gw + 10) + 8, gy = Math.floor(i / perRow) * (gh + 12) + 8;
+    const ten = (i % 10 === 9);
+    s += '<g class="br-group" data-k="' + per + '" data-i="' + i + '">' +
+         '<rect x="' + gx + '" y="' + gy + '" width="' + gw + '" height="' + gh +
+         '" rx="9" fill="#fff" stroke="' + (ten ? '#C05621' : '#147F79') +
+         '" stroke-width="' + (ten ? 3.4 : 2.2) + '"></rect>';
+    for (let j = 0; j < per; j++)
+      s += '<circle cx="' + (gx + pad + (j % cols) * cw + cw / 2) +
+           '" cy="' + (gy + pad + Math.floor(j / cols) * ch + ch / 2) +
+           '" r="5.4" fill="#1FA8A0"></circle>';
+    s += '</g>';
+  }
+  let leftBox = '';
+  if (left){
+    const lx = perRow * (gw + 10) + 14, ly = 8;
+    leftBox = '<g class="br-left" data-k="' + left + '">' +
+              '<rect x="' + lx + '" y="' + ly + '" width="' + (left * cw + pad * 2) +
+              '" height="' + (ch + pad * 2) + '" rx="9" fill="#FBE4D3" stroke="#C05621" ' +
+              'stroke-width="2.6" stroke-dasharray="6 4"></rect>';
+    for (let j = 0; j < left; j++)
+      leftBox += '<circle cx="' + (lx + pad + j * cw + cw / 2) + '" cy="' + (ly + pad + ch / 2) +
+                 '" r="5.4" fill="#C05621"></circle>';
+    leftBox += '</g>';
+  }
+  return '<div class="ml-wrap" data-bundlerow="' + n + '|' + per + '|' + g + '|' + left + '">' +
+         (o.title ? '<div class="ml-title">《 ' + esc(o.title) + ' 》</div>' : '') +
+         '<svg class="ml-svg" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">' +
+         s + leftBox + '</svg>' +
+         '<div class="br-cap">' + esc(o.cap || (per + '개씩 ' + g + '묶음' +
+           (left ? ', 남는 것 ' + left + '개' : ''))) + '</div></div>';
+}
+
+// ══════════════════════════════════════════════════════════════
+// ⑥ estline — 어림 띠
+//    o = { marks:[{v:10,lab:'20을 2로',kind:'est'},{v:13,lab:'실제',kind:'real'}],
+//          band:[10,15], title:'', cap:'' }
+//    🔴 어림한 값과 실제 몫이 **같은 자 위에** 놓여야 어림이 무엇을 가두는지 보인다.
+//       둘이 같은 값이면 부품이 선다 — 어림이 아무것도 가두지 못한다.
+// ══════════════════════════════════════════════════════════════
+function estline(o){
+  const ms = o.marks || [];
+  if (ms.length < 2) throw new Error('estline: 표시가 둘은 있어야 한다');
+  const vs = ms.map(m => m.v).concat(o.band || []);
+  const lo = Math.min.apply(null, vs), hi = Math.max.apply(null, vs);
+  if (hi === lo) throw new Error('estline: 어림한 값과 결과가 같다 — 가두는 것이 없다');
+  const pad = (hi - lo) * 0.16;
+  const L = lo - pad, R = hi + pad;
+  const px = v => ((v - L) / (R - L)) * 100;
+  let s = '<div class="el-line"></div>';
+  if (o.band){
+    s += '<div class="el-band" data-b0="' + o.band[0] + '" data-b1="' + o.band[1] +
+         '" style="left:' + px(o.band[0]) + '%; width:' + (px(o.band[1]) - px(o.band[0])) + '%"></div>';
+  }
+  ms.forEach(m => {
+    s += '<div class="el-mark ' + (m.kind === 'real' ? 'real' : 'est') + '" data-v="' + m.v +
+         '" data-kind="' + (m.kind || 'est') + '" style="left:' + px(m.v) + '%">' +
+         '<span class="lab">' + esc(m.lab || m.v) + '</span><span class="pin"></span></div>';
+  });
+  return '<div class="ml-wrap" data-estline="' + ms.map(m => m.v).join(',') + '">' +
+         (o.title ? '<div class="ml-title">《 ' + esc(o.title) + ' 》</div>' : '') +
+         '<div class="el-bar">' + s + '</div>' +
+         (o.cap ? '<div class="ml-note">' + esc(o.cap) + '</div>' : '') + '</div>';
+}
+
+// ══════════════════════════════════════════════════════════════
+// ⑦ divboard — 나눗셈판 놀이 (l06 [재미있는 수학])
+//    o = { b:4, nums:[25,16,42,...], goal:1, title:'', cap:'' }
+//    판의 각 칸이 남는 수를 스스로 신고한다 — 주사위 눈과 같은 칸을 고르는 놀이다.
+// ══════════════════════════════════════════════════════════════
+function divboard(o){
+  const b = o.b, ns = o.nums || [];
+  if (ns.length < 4 || ns.length > 12) throw new Error('divboard: 칸은 4~12개');
+  if (o.goal === undefined) throw new Error('divboard: goal 이 없다');
+  if (o.goal >= b) throw new Error('divboard: 남을 수 없는 수를 목표로 두었다 — ' + o.goal);
+  let hit = 0, s = '';
+  ns.forEach(n => {
+    _need(n, b, 'divboard');
+    const r = n % b, on = (r === o.goal);
+    if (on) hit++;
+    s += '<div class="db-cell' + (on ? ' hit' : '') + '" data-n="' + n + '" data-rem="' + r + '">' +
+         n + '</div>';
+  });
+  if (!hit) throw new Error('divboard: 목표에 맞는 칸이 하나도 없다');
+  const cols = Math.min(ns.length, 4);
+  return '<div class="ml-wrap" data-divboard="' + b + '|' + o.goal + '|' + hit + '">' +
+         (o.title ? '<div class="ml-title">《 ' + esc(o.title) + ' 》</div>' : '') +
+         '<div class="db-goal">' + b + '으로 나누어 ' + o.goal + '이 남는 칸을 찾아요</div>' +
+         '<div class="db-grid" style="grid-template-columns:repeat(' + cols + ',auto)">' + s +
+         '</div>' + (o.cap ? '<div class="ml-note">' + esc(o.cap) + '</div>' : '') + '</div>';
+}
+
+// ══════════════════════════════════════════════════════════════
+// ⑧ blocktab — 블록 열쇠고리 표 (l10)
+//    rows = [{ what:'빨간색', n:480, per:4, ask:false }, ...]
+//    ★ **쓸 수 있는 개수 = 몫 · 남는 개수 = 남는 수** 가 표에서 갈려야 한다.
+// ══════════════════════════════════════════════════════════════
+function blocktab(rows, o){
+  o = o || {};
+  let s = '<tr><th>색깔</th><th>식</th><th>쓸 수 있는 개수</th><th>남는 개수</th></tr>';
+  rows.forEach(r => {
+    _need(r.n, r.per, 'blocktab');
+    const q = Math.floor(r.n / r.per), rr = r.n % r.per;
+    s += '<tr><td>' + esc(r.what) + '</td>' +
+         '<td class="num">' + r.n + ' ÷ ' + r.per + '</td>' +
+         '<td class="num bt-q' + (r.ask ? ' ask' : '') + '" data-v="' + q + '">' +
+         (r.ask ? '?' : q) + '</td>' +
+         '<td class="num bt-r' + (r.ask ? ' ask' : '') + '" data-v="' + rr + '">' +
+         (r.ask ? '?' : rr) + '</td></tr>';
+  });
+  return '<div class="ml-wrap" data-blocktab="' + rows.length + '">' +
+         (o.title ? '<div class="ml-title">《 ' + esc(o.title) + ' 》</div>' : '') +
+         '<table class="bt-tab">' + s + '</table>' +
+         (o.cap ? '<div class="ml-note">' + esc(o.cap) + '</div>' : '') + '</div>';
+}
+
+// ══════════════════════════════════════════════════════════════
+// ⑨ relcard — 곱셈과 나눗셈의 관계 카드 (l01 준비하기 · l11 마무리)
+//    o = { x:3, y:3, ask:false, title:'', cap:'' }  →  x × y = p  ↔  p ÷ x = y
+//    🔴 ask 는 **두 카드의 y 를 함께** 감춘다 — 한쪽만 감추면 곱셈 카드가 몫을 먼저 적는다.
+// ══════════════════════════════════════════════════════════════
+function relcard(o){
+  const x = o.x, y = o.y;
+  if (!Number.isInteger(x) || !Number.isInteger(y) || x < 1 || y < 1 || x > 9)
+    throw new Error('relcard: 곱셈구구 자리다 — ' + x + ', ' + y);
+  const p = x * y;
+  _need(p, x, 'relcard');
+  const c = (t, cls, v) => '<div class="rc-card' + (cls || '') + '"' +
+        (v === undefined ? '' : ' data-v="' + v + '"') + '>' + t + '</div>';
+  return '<div class="ml-wrap" data-relcard="' + x + '|' + y + '|' + p + '">' +
+         (o.title ? '<div class="ml-title">《 ' + esc(o.title) + ' 》</div>' : '') +
+         '<div class="rc-row">' +
+         c(x + ' × ' + (o.ask ? '?' : y) + ' = ' + p, '', p) +
+         '<span class="rc-arrow">↔</span>' +
+         c(p + ' ÷ ' + x + ' = ' + (o.ask ? '?' : y), ' d', y) +
+         '</div>' +
+         (o.cap ? '<div class="ml-note">' + esc(o.cap) + '</div>' : '') + '</div>';
+}
+
+(function renderModels(){
+  document.getElementById('m-i2').innerHTML =
+    vdiv({a:800,b:4,step:3,title:'800 을 4 로',cap:'백의 자리부터 차례로 나누어요.'});
+  document.getElementById('m-e1').innerHTML =
+    vdiv({a:307,b:3,step:3,title:'307 을 3 으로',cap:'십의 자리에 0 을 꼭 적어요.'});
+  document.getElementById('m-e2').innerHTML =
+    vdiv({a:638,b:3,step:3,title:'638 을 3 으로'});
+  document.getElementById('m-e3').innerHTML =
+    checkrow({a:638,b:3,title:'계산 결과가 맞는지 확인',cap:'3 에 몫을 곱하고 나머지를 더했어요.'});
+  document.getElementById('m-e4').innerHTML =
+    vdiv({a:607,b:6,step:3,title:'607 을 6 으로'});
+  document.getElementById('m-q8').innerHTML =
+    vdiv({a:800,b:4,ask:true});
+  document.getElementById('m-q9').innerHTML =
+    vdiv({a:307,b:3,ask:true});
+  document.getElementById('m-q10').innerHTML =
+    vdiv({a:307,b:3,ask:true,cap:'남는 수를 구해 보세요.'});
+  document.getElementById('m-q11').innerHTML =
+    vdiv({a:409,b:4,wrong:'zero',cap:'이 세로셈은 어디가 잘못되었을까요?'});
+  document.getElementById('m-q12').innerHTML =
+    vdiv({a:638,b:3,ask:true});
+  document.getElementById('m-q13').innerHTML =
+    vdiv({a:367,b:3,ask:true});
+  document.getElementById('m-q14').innerHTML =
+    vdiv({a:840,b:2,ask:true});
+  document.getElementById('m-q15').innerHTML =
+    vdiv({a:605,b:2,ask:true});
+})();
+
+function setupPad(qid, correct, padId, displayId, fbId, doneMsg, maxLen) {
+  maxLen = maxLen || 6;
+  const pad = document.getElementById(padId);
+  const display = document.getElementById(displayId);
+  const fb = document.getElementById(fbId);
+  let buf = '';
+  const keys = ['1','2','3','4','5','6','7','8','9','0'];
+  keys.forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'q-key'; b.textContent = k;
+    b.addEventListener('click', () => {
+      const st = getQState(qid); if (st.solved) return;
+      if (buf.length < maxLen) { buf += k; display.textContent = buf; }
+    });
+    pad.appendChild(b);
+  });
+  const del = document.createElement('button');
+  del.className = 'q-key fn'; del.textContent = '지움';
+  del.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    buf = buf.slice(0, -1); display.textContent = buf || '?';
+  });
+  pad.appendChild(del);
+  const ok = document.createElement('button');
+  ok.className = 'q-key fn'; ok.textContent = '확인'; ok.style.gridColumn = 'span 4';
+  ok.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    st.attempts++;
+    if (parseInt(buf, 10) === correct) {
+      st.solved = true;
+      const earn = pointsForQ(qid); addScore(earn);
+      fb.classList.remove('wrong');
+      fb.textContent = (doneMsg || '정답이에요!') + ' +' + earn + '점';
+      updateUI();
+    } else {
+      st.wrongCount++;
+      fb.classList.add('wrong'); fb.textContent = '다시 한번 생각해 볼까요?';
+    }
+  });
+  pad.appendChild(ok);
+}
+
+function setupMcq(qid, doneMsg){
+  document.querySelectorAll('#'+qid+'-opts .mcq-opt').forEach(o=>{
+    o.addEventListener('click', ()=>{
+      const st=getQState(qid); if(st.solved) return;
+      st.attempts++;
+      const fb=document.getElementById(qid+'-fb');
+      if(o.dataset.correct==='1'){
+        st.solved=true; o.classList.add('correct');
+        const earn=pointsForQ(qid); addScore(earn);
+        fb.classList.remove('wrong'); fb.textContent=(doneMsg||'정답이에요!')+' +'+earn+'점';
+        updateUI();
+      } else {
+        st.wrongCount++; o.classList.add('wrong');
+        fb.classList.add('wrong'); fb.textContent='다시 골라 보세요';
+        setTimeout(()=>o.classList.remove('wrong'),500);
+      }
+    });
+  });
+}
+
+setupPad('q8', 200, 'q8-pad','q8-display','q8-fb','8 ÷ 4 = 2 이므로 800 ÷ 4 = 200 입니다.', 6);
+setupPad('q9', 102, 'q9-pad','q9-display','q9-fb','307 ÷ 3 = 102 … 1 이므로 몫은 102 입니다.', 6);
+setupPad('q10', 1, 'q10-pad','q10-display','q10-fb','307 ÷ 3 = 102 … 1 이므로 나머지는 1 입니다.', 6);
+setupMcq('q11','409 ÷ 4 = 102 … 1 입니다. 몫의 십의 자리 0 을 빠뜨리면 안 돼요.');
+setupPad('q12', 212, 'q12-pad','q12-display','q12-fb','638 ÷ 3 = 212 … 2 이므로 몫은 212 입니다.', 6);
+setupPad('q13', 122, 'q13-pad','q13-display','q13-fb','367 ÷ 3 = 122 … 1 이므로 122봉지가 됩니다.', 6);
+setupPad('q14', 420, 'q14-pad','q14-display','q14-fb','840 ÷ 2 = 420 이므로 한 상자에 420자루씩 담습니다.', 6);
+setupMcq('q15','605 ÷ 2 = 302 … 1 이므로 몫의 십의 자리에는 0 을 씁니다.');
+
+
+// ───── 슬17 자기 평가 ─────
+document.querySelectorAll('.self-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.self-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('self-fb').textContent = '응답이 기록됐어요. 다음 차시에서 만나요!';
+  });
+});
+
+// ───── 진도 복원 ─────
+(function restore() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data.cur != null) cur = Math.min(data.cur, TOTAL - 1);
+    if (data.score != null) score = data.score;
+    document.getElementById('score').textContent = '⭐ ' + score;
+  } catch(e) {}
+})();
+
+(function buildDots(){ const w=document.getElementById('dots'); for(let i=0;i<TOTAL;i++){ const d=document.createElement('div'); d.className='ka-dot'; d.onclick=()=>{ cur=i; saveProgress(false); updateUI(); }; w.appendChild(d); } })();
+
+updateUI();
+</script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+<script src="/kedu_fit.js"></script>
+</body>
+</html>
