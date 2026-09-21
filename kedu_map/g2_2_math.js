@@ -522,6 +522,103 @@ window.KEDU_MAP["g2_2_math"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 6,
+   "name": "규칙 찾기",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g2_math_u6_l01",
+     "lessonId": "g2_2_math_u6_l01_v1",
+     "n": "1",
+     "title": "단원 도입 — 우리 주변의 다양한 규칙을 찾아볼까요",
+     "sub": null,
+     "url": "/grade2/semester2/math/6단원_규칙찾기/g2_math_u6_l01_단원도입.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_math_u6_l02",
+     "lessonId": "g2_2_math_u6_l02_v1",
+     "n": "2",
+     "title": "무늬에서 규칙을 찾아볼까요 ⑴",
+     "sub": null,
+     "url": "/grade2/semester2/math/6단원_규칙찾기/g2_math_u6_l02_무늬에서규칙을찾아볼까요⑴.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_math_u6_l03",
+     "lessonId": "g2_2_math_u6_l03_v1",
+     "n": "3",
+     "title": "무늬에서 규칙을 찾아볼까요 ⑵",
+     "sub": null,
+     "url": "/grade2/semester2/math/6단원_규칙찾기/g2_math_u6_l03_무늬에서규칙을찾아볼까요⑵.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_math_u6_l04",
+     "lessonId": "g2_2_math_u6_l04_v1",
+     "n": "4",
+     "title": "쌓은 모양에서 규칙을 찾아볼까요",
+     "sub": null,
+     "url": "/grade2/semester2/math/6단원_규칙찾기/g2_math_u6_l04_쌓은모양에서규칙을찾아볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_math_u6_l05",
+     "lessonId": "g2_2_math_u6_l05_v1",
+     "n": "5",
+     "title": "덧셈표에서 규칙을 찾아볼까요",
+     "sub": null,
+     "url": "/grade2/semester2/math/6단원_규칙찾기/g2_math_u6_l05_덧셈표에서규칙을찾아볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_math_u6_l06",
+     "lessonId": "g2_2_math_u6_l06_v1",
+     "n": "6",
+     "title": "곱셈표에서 규칙을 찾아볼까요",
+     "sub": null,
+     "url": "/grade2/semester2/math/6단원_규칙찾기/g2_math_u6_l06_곱셈표에서규칙을찾아볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_math_u6_l07",
+     "lessonId": "g2_2_math_u6_l07_v1",
+     "n": "7",
+     "title": "생활에서 규칙을 찾아볼까요",
+     "sub": null,
+     "url": "/grade2/semester2/math/6단원_규칙찾기/g2_math_u6_l07_생활에서규칙을찾아볼까요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_math_u6_l08",
+     "lessonId": "g2_2_math_u6_l08_v1",
+     "n": "8",
+     "title": "수학이랑 확인해요 (단원 평가)",
+     "sub": null,
+     "url": "/grade2/semester2/math/6단원_규칙찾기/g2_math_u6_l08_수학이랑확인해요.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g2_math_u6_l09",
+     "lessonId": "g2_2_math_u6_l09_v1",
+     "n": "9",
+     "title": "수학이랑 만들어요",
+     "sub": null,
+     "url": "/grade2/semester2/math/6단원_규칙찾기/g2_math_u6_l09_수학이랑만들어요.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };
