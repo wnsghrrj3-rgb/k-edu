@@ -1,0 +1,971 @@
+<!--
+K-edu 사회 6-2 · 1단원 세계의 자연환경 · 주제① 세계 여러 지역의 지형 경관과 다양한 생활 모습 · 1차시(l01)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [6사10-01] · 교과서 p.12~14 · 지도서(대단원1 **2차시** 「세계 여러 지역의 지형 경관을 알아볼까요」,
+  지도서 p.28~33) 근거. 단원 도입(1차시)은 6-1 선례대로 따로 파일을 두지 않는다.
+학습 목표: 세계의 다양한 지형을 살펴보고 지형 경관의 특징을 설명할 수 있다.
+수업 기법 및 전략: 디지털 영상 지도 조사하기 · 의견 말하기
+META = "1단원 세계의 자연환경 · ① 지형 경관과 다양한 생활 모습"
+⚠️ 엔진은 6-1 사회(대단원1~3)에서 100% 승계(변수명 `--green` 등 유지 · 엔진 무수정). **6-2 1단원 색 #0369A1**
+   (6-1 #1D4ED8·#C2410C·#047857 과 겹치지 않음).
+
+⚠️ 회수 키 `g6_s2_social_u1_l01_v1` — 6-1 사회 u1 l01 이 `g6_social_u1_l01_v1` 을 이미 쓰고 있어 **학기 표지 `s2`** 를 넣었다
+   (6-2 과학 `g6_s2_sci_…` 선례). 맵 키는 최상위 `g6_2_social` 이 가르므로 `g6_social_u1_l01` 그대로.
+⚠️ 파일명 `같아도갈려요` — 허브 스캐폴딩 이름 대신 조작 이름(6-1·4-2 선례 승계).
+
+직접조작: 같은 갈래 안에서 특징이 갈리는 판
+  ⭐ 일곱 곳(교과서 13~14쪽 ★ 지형)을 먼저 네 갈래(산지·하천·해안·사막)로 나눈다. 다 나누면 판의 칸은 **넷**이다.
+     일곱 곳이 네 칸에 들었으니 한 칸에 여럿이 모인 자리가 있다(산지 셋 · 해안 둘).
+  ⭐ 그다음 **특징 잣대**(용암이 흐르는 화산인가요? · 위쪽이 평평한가요? · …)를 하나씩 대면,
+     같은 갈래 안의 곳들이 특징에 따라 **갈라진다.** 일곱 곳이 모두 제 칸을 가지면(칸 7) 판이 선다.
+     근거 = 지도서 주제 일반화 원문 「같은 지형이라도 서로 다른 특징이 나타난다」(p.26)와
+     지도서 2차시 발문 예시 답 「산 정상이 뾰족한 곳도 있고 평평한 곳도 있습니다」(p.29).
+  ⭐ **칸 수는 저장되지 않는다** — `plCells(st)` 한 줄이 「갈래 + 댄 잣대의 답」 서명의 서로 다른 수를 센다.
+     칸 배열·무리 배열·칸 수 상태가 코드에 없다.
+  ⭐ **어떤 잣대는 아무것도 가르지 못한다** — 「바닷가에 있나요?」는 해안 둘에게 똑같이 「예」라서
+     새 칸이 0이다. 판정도 감점도 없고 판이 「새로 갈린 칸이 없어요」라고만 말한다.
+     「위쪽이 평평한가요?」도 울루루와 호라이마산을 함께 「예」로 두어 그 둘은 한 칸에 남는다.
+  ⭐ 잣대의 답은 `plHas(f,i)` 한 줄에서만 나온다(`PL_FEAT_ON[` 읽는 자리 단 하나).
+     정답 잣대 상수·정답 차례 상수 0(`PL_ASK_OK`·`PL_ORDER` 부재) — 어느 잣대를 어느 차례로 대도 되고,
+     일곱 칸에 이르는 잣대 묶음은 여럿이다.
+  ⭐ 잣대는 대기만 하고 떼지 않는다(`state.plAsk |=` 단 하나 · 떼는 자리 0) → 칸 수는 줄지 않는다(단조).
+
+단계 — ① 일곱 곳을 네 갈래로 나누기(곳 고르고 갈래 누르기 · 순서 자유 · 어긋나면 판 불변)
+  → ② 특징 잣대 대기(다 나눠야 열린다 · 칸 7이 되면 닫힌다)
+  → ③ 판 읽기 3택(같은 산지인데 왜 한 칸에 남지 않았을까요? · 정답 자리 2)
+  → ④ 마무리 3택 = 지도서 2차시 주요 내용 정리 ①② 원문(정답 자리 1).
+
+⚠️ 전량 고정 리터럴 — 난수 0.
+⚠️ 가드 10종:
+     ① 마무리 확정 후 전체 잠금
+     ② 무효 번호(`Number.isInteger`·범위) — 안내조차 띄우지 않음
+     ③ 이미 나눈 곳 다시 고르기 무시 — 판 불변
+     ④ 곳을 고르기 전 갈래 누르기 무시 — 판 불변
+     ⑤ 어긋난 갈래 무시 — 판 불변 · 안내에 알맞은 갈래 이름 0
+     ⑥ **다 나누기 전 잣대 대기 무시 — 판 불변**(순서)
+     ⑦ 이미 댄 잣대 · 이미 일곱 칸이 된 뒤의 잣대 무시 — 판 불변
+     ⑧ 일곱 칸 전 판 읽기 무시(순서) — 판 불변
+     ⑨ 판을 읽기 전 마무리 무시(순서) — 판 불변
+     ⑩ 안내 표시 중 재클릭 무시(`plBusy`).
+   재시도 허용(감점 없음), 조작에 점수 0. 발문은 `.pl-q`로 떼어 전 단계 상시 노출.
+
+⚠️ 정직 원칙 네 곳
+  ㉠ **판의 그림은 도식이지 사진이 아니다** — 지형의 실제 모습은 교과서 사진과 디지털 영상 지도로 본다(캡션 상시).
+  ㉡ **갈래(산지·하천·해안·사막)는 교과서 본문의 네 낱말로 판이 나눈 것**이다 — 교과서는 일곱 곳에 갈래 이름표를
+     붙이지 않았다. 울루루(바위산)·호라이마산을 산지로, 송네 피오르(해안선)·엘 아르코(바다 위 바위)를 해안으로
+     둔 것은 교과서 설명 글의 낱말을 따른 것이다(캡션).
+  ㉢ **잣대의 답은 교과서 설명 글과 지도서 예시 답 문면까지만**이다 — 「위쪽이 평평」은 호라이마산(교과서)과
+     울루루(지도서 예시 답 「위쪽이 평평해 보입니다」)에만 둔다.
+  ㉣ **디지털 영상 지도로 지형을 살펴보고 기념 배지를 그리는 일은 교실 몫**이다(완료 카드 명시).
+
+⚠️ 설계 원칙
+  **뒤 차시 침범 0** — 산지·하천·해안 사람들의 생활 모습 사례(3~5차시) 0 · 관광 산업 0 · 기후 0.
+    「생활 모습」은 꼭 기억해요 ② 원문과 차시 예고 자리까지만.
+  **지명은 이 차시 원문이 든 것까지만** — 일곱 곳 + 로키산맥·베나길 동굴(생각을 열어요) + 그 나라 이름.
+  교사용 참고 자료의 수치(길이·깊이·높이·넓이·연도) 0 · 네 자리 연도 0 · 쪽수 0 · 비율 0.
+  정서 — 어느 지형도 더 좋거나 나쁘게 그리지 않는다 · 사람 형상 0 · 유명인 0.
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g6_s2_social_u1_l01_v1">
+<title>세계 여러 지역의 지형 경관을 알아볼까요 · 세계의 자연환경 · 사회 6-2</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#0369A1; --green-d:#075985; --cyan:#0284C7;
+  --bg:#F0F9FF; --bub:#E0F2FE; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#B45309; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-shrink:0}
+.ka-lb{background:#F1F5F9;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;
+  font-weight:700;color:var(--muted);font-size:clamp(11px,1.9vw,13px);display:flex;align-items:center;gap:6px}
+.ka-lb svg{width:14px;height:14px}
+.ka-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.ka-bar>div{height:100%;background:var(--green);border-radius:99px;transition:width .35s ease;width:5%}
+.ka-pg{font-size:clamp(11px,1.9vw,13px);color:var(--muted);font-weight:700;min-width:46px;text-align:right}
+.ka-sc{display:flex;align-items:center;gap:3px;background:var(--amber-bg);border-radius:99px;padding:5px 11px}
+.ka-sc svg{width:15px;height:15px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;color:var(--amber);font-size:clamp(14px,2.4vw,17px)}
+.ka-sc-u{font-size:11px;color:var(--amber);font-weight:700}
+
+/* 메인 */
+.ka-m{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;padding:4px 2px}
+.ka-tags{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ka-bg{display:inline-flex;align-items:center;gap:5px;background:var(--bub);color:var(--green-d);
+  border-radius:99px;padding:5px 12px;font-size:clamp(11px,1.9vw,13px);font-weight:700}
+.ka-bg svg{width:13px;height:13px}
+.ka-bg.s2{background:#E0F2FE;color:#075985}
+.ka-bg.s3{background:#DCFCE7;color:#166534}
+.ka-bg.s4{background:#FEF3C7;color:#92400E}
+.ka-bg.s5{background:#F3E8FF;color:#6B21A8}
+.ka-meta{font-size:clamp(10px,1.7vw,12px);color:#94A3B8;font-weight:600}
+.ka-t{font-size:clamp(19px,3.4vw,27px);font-weight:700;line-height:1.4;margin-bottom:10px}
+.ka-bub{background:var(--bub);border-radius:14px;padding:13px 18px;font-size:clamp(14px,2.4vw,18px);
+  line-height:1.7;margin-bottom:12px}
+.ka-emph{color:var(--green-d);font-weight:700}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.scene.wide{width:clamp(240px,44vw,420px)}
+.scene.wide svg{height:clamp(120px,20vw,200px)}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(15px,2.6vw,20px);font-weight:700;line-height:1.6;margin-bottom:12px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+.opt{background:#fff;border:2px solid var(--line);border-radius:13px;padding:13px 15px;cursor:pointer;
+  font-family:inherit;font-size:clamp(13px,2.2vw,16.5px);font-weight:500;text-align:left;line-height:1.5;transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:#16A34A;background:#DCFCE7;font-weight:700}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:11px;border-radius:12px;padding:12px 16px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;animation:fadeUp .3s ease both}
+.fb.ok{background:#DCFCE7;color:#166534;font-weight:700}
+.hint{margin-top:9px;background:var(--amber-bg);border-radius:11px;padding:10px 14px;
+  font-size:clamp(12.5px,2.1vw,15px);color:var(--amber);line-height:1.55}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:9px;width:100%;max-width:660px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFC;border-radius:12px;padding:11px 15px;
+  font-size:clamp(13px,2.2vw,16.5px);line-height:1.6}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'\2713';color:#fff;font-weight:800;font-size:14px}
+
+/* 직접조작 — 같은 갈래 안에서 특징이 갈리는 판 */
+.dw-wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dw-body{display:grid;grid-template-columns:1.05fr 1fr;gap:10px;align-items:start}
+.dw-canvas{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.dw-canvas svg{width:100%;height:auto;display:block}
+.dw-canvas .cvcap{padding:5px 6px;text-align:center;font-size:clamp(9.5px,1.6vw,11.5px);
+  color:var(--muted);font-weight:700;background:#F8FAFC}
+.dw-right{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dw-step{font-size:clamp(10.5px,1.75vw,13px);font-weight:800;color:var(--green)}
+.dw-msg{background:#F8FAFC;border:2px solid var(--line);border-left:4px solid var(--green);border-radius:10px;
+  padding:8px 12px;font-size:clamp(11.4px,1.93vw,13.8px);line-height:1.55;color:#334155;animation:fadeUp .3s ease both}
+.dw-msg.warn{border-left-color:var(--amber)}
+.dw-msg b{color:var(--green)}
+.dw-card{background:#fff;border:2px solid var(--amber);border-radius:12px;padding:10px 12px;
+  font-size:clamp(12px,2.05vw,14.5px);line-height:1.55;animation:pop .35s ease both}
+.dw-card .pt{font-weight:800;color:var(--amber);margin-bottom:4px;font-size:clamp(12.5px,2.15vw,15px)}
+.paper{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:12px;padding:12px 16px;
+  font-size:clamp(12.5px,2.1vw,15px);line-height:1.65;color:#3F3A2C;max-width:660px;
+  animation:fadeUp .4s ease both}
+.paper .ph{font-weight:800;color:#8A6D3B;margin-bottom:6px;font-size:clamp(13px,2.2vw,16px)}
+.tipbox{background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(12.5px,2.1vw,15px);
+  line-height:1.6;color:#075985;max-width:660px}
+.pl-q{font-size:clamp(11.6px,1.97vw,14px);font-weight:800;color:var(--green);
+  background:#F0F9FF;border-left:4px solid var(--green);border-radius:0 8px 8px 0;padding:6px 9px;line-height:1.45}
+.pl-pad{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.pl-pad button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;padding:6px 4px;
+  cursor:pointer;font-family:inherit;font-weight:800;font-size:clamp(10px,1.7vw,12.4px);line-height:1.3;
+  display:flex;flex-direction:column;align-items:center;gap:1px}
+.pl-pad button .ct{font-size:clamp(8.4px,1.4vw,10px);font-weight:700;color:#64748B}
+.pl-pad button:hover{background:var(--bub)}
+.pl-pad button.sel{border-color:var(--amber);background:#FFF8E1;color:var(--amber)}
+.pl-pad button.put{border-color:#CBD5E0;background:#F8FAFC;color:#94A3B8}
+.pl-kind{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px}
+.pl-kind button{border:2px solid var(--green);background:#fff;color:var(--green);border-radius:10px;padding:7px 2px;
+  cursor:pointer;font-family:inherit;font-weight:800;font-size:clamp(10.5px,1.8vw,13px)}
+.pl-kind button:hover{background:var(--bub)}
+.pl-ask{display:flex;flex-direction:column;gap:4px}
+.pl-ask button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;padding:6px 10px;
+  cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.4}
+.pl-ask button:hover{background:var(--bub)}
+.pl-ask button.used{border-color:#CBD5E0;background:#F1F5F9;color:#94A3B8}
+.pl-read{display:flex;flex-direction:column;gap:5px}
+.pl-read button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;padding:7px 10px;
+  cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.pl-read button:hover{background:var(--bub)}
+.pl-read button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.pl-fin{display:flex;flex-direction:column;gap:5px}
+.pl-fin button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;padding:7px 10px;
+  cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.pl-fin button:hover{background:var(--bub)}
+.pl-fin button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.pl-note{background:#F8FAFC;border:2px dashed #CBD5E0;border-radius:10px;padding:7px 10px;
+  font-size:clamp(10.4px,1.76vw,12.4px);line-height:1.5;color:#64748B}
+@media(max-width:620px){ .dw-body{grid-template-columns:1fr} }
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(3,105,161,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style><script src="/kedu_gate.js"></script>
+</head>
+
+
+
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#B45309"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식 =====
+   ⚠️ 정직 원칙 ㉠: 모든 그림은 내용을 나타낸 도식이며 실제 사진이 아니다.
+   ⚠️ 지명은 이 차시 원문이 든 곳까지만 쓴다. 사람 형상 대신 도형으로만 그린다. */
+const SVG = {
+  // 1 들어가기 — [생각을 열어요] 두 친구의 초대(교과서 12쪽 말풍선 원문)
+  open:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F0F9FF"/>
+    <text x="160" y="18" font-size="10.5" fill="#075985" text-anchor="middle" font-weight="800">우리 나라로 초대할게!</text>
+    <rect x="14" y="28" width="140" height="112" rx="10" fill="#fff" stroke="#0369A1" stroke-width="1.4"/>
+    <path d="M30 104 L62 50 L80 78 L96 58 L138 104 Z" fill="#CBD5E1"/>
+    <path d="M56 60 L62 50 L68 60 Z" fill="#fff" stroke="#94A3B8" stroke-width=".8"/>
+    <path d="M91 64 L96 58 L101 64 Z" fill="#fff" stroke="#94A3B8" stroke-width=".8"/>
+    <text x="84" y="118" font-size="7.6" fill="#075985" text-anchor="middle" font-weight="800">로키산맥(캐나다)</text>
+    <text x="84" y="131" font-size="6.2" fill="#334155" text-anchor="middle" font-weight="700">일 년 내내 높은 산에서 눈을 볼 수 있어요</text>
+    <rect x="166" y="28" width="140" height="112" rx="10" fill="#fff" stroke="#0369A1" stroke-width="1.4"/>
+    <path d="M182 104 Q182 48 236 48 Q290 48 290 104 Z" fill="#E7D9A8"/>
+    <path d="M204 104 Q204 66 236 66 Q268 66 268 104 Z" fill="#fff"/>
+    <circle cx="236" cy="60" r="7" fill="#BAE6FD"/>
+    <path d="M204 98 Q220 92 236 98 Q252 104 268 98" fill="none" stroke="#0284C7" stroke-width="1.6"/>
+    <text x="236" y="118" font-size="7.6" fill="#075985" text-anchor="middle" font-weight="800">베나길 동굴(포르투갈)</text>
+    <text x="236" y="131" font-size="6.2" fill="#334155" text-anchor="middle" font-weight="700">하늘이 보이는 동굴에서 바닷소리를 들어요</text>
+    <text x="160" y="160" font-size="7.4" fill="#64748B" text-anchor="middle" font-weight="700">그림은 도식이에요 · 실제 모습은 교과서 사진으로 봐요</text></svg>`,
+  // 2 살펴보기 — 세계에는 산지·하천·해안·사막 등 다양한 지형
+  kinds:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <text x="160" y="18" font-size="10.5" fill="#075985" text-anchor="middle" font-weight="800">세계의 다양한 지형</text>
+    <rect x="12" y="30" width="68" height="96" rx="9" fill="#F0F9FF" stroke="#0369A1" stroke-width="1.3"/>
+    <path d="M20 100 L38 62 L50 82 L60 70 L74 100 Z" fill="#94A3B8"/>
+    <text x="46" y="116" font-size="8" fill="#075985" text-anchor="middle" font-weight="800">산지</text>
+    <rect x="88" y="30" width="68" height="96" rx="9" fill="#F0F9FF" stroke="#0369A1" stroke-width="1.3"/>
+    <path d="M96 60 Q112 70 104 82 Q96 94 116 100 Q136 106 150 98" fill="none" stroke="#0284C7" stroke-width="4"/>
+    <text x="122" y="116" font-size="8" fill="#075985" text-anchor="middle" font-weight="800">하천</text>
+    <rect x="164" y="30" width="68" height="96" rx="9" fill="#F0F9FF" stroke="#0369A1" stroke-width="1.3"/>
+    <path d="M172 100 L172 56 Q196 60 204 76 Q210 90 224 100 Z" fill="#CBD5E1"/>
+    <path d="M204 100 Q212 92 224 100 L224 100 L204 100" fill="#7DD3FC"/>
+    <rect x="200" y="92" width="24" height="8" fill="#7DD3FC"/>
+    <text x="198" y="116" font-size="8" fill="#075985" text-anchor="middle" font-weight="800">해안</text>
+    <rect x="240" y="30" width="68" height="96" rx="9" fill="#F0F9FF" stroke="#0369A1" stroke-width="1.3"/>
+    <path d="M246 100 Q260 74 274 100 Q288 80 302 100 Z" fill="#FCD34D"/>
+    <text x="274" y="116" font-size="8" fill="#075985" text-anchor="middle" font-weight="800">사막</text>
+    <text x="160" y="146" font-size="7.8" fill="#334155" text-anchor="middle" font-weight="800">지형마다 경관의 특징이 달라요</text>
+    <text x="160" y="160" font-size="6.8" fill="#64748B" text-anchor="middle" font-weight="700">그림은 도식이에요</text></svg>`,
+  // 4 살펴보기 — 교과서 13~14쪽 ★ 일곱 곳
+  seven:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F0F9FF"/>
+    <text x="160" y="18" font-size="10.5" fill="#075985" text-anchor="middle" font-weight="800">세계지도의 ★ 일곱 곳</text>
+    ${['송네 피오르','엘 아르코','마우나로아','사하라 사막','황허강','울루루','호라이마산'].map((t,i)=>{const x=14+(i%4)*76, y=32+Math.floor(i/4)*56;
+      return `<rect x="${x}" y="${y}" width="68" height="44" rx="8" fill="#fff" stroke="#0369A1" stroke-width="1.2"/><text x="${x+34}" y="${y+18}" font-size="12" fill="#B45309" text-anchor="middle">\u2605</text><text x="${x+34}" y="${y+34}" font-size="7.2" fill="#075985" text-anchor="middle" font-weight="800">${t}</text>`;}).join('')}
+    <text x="160" y="160" font-size="6.8" fill="#64748B" text-anchor="middle" font-weight="700">자리는 도식이에요 · 실제 위치는 교과서 지도와 디지털 영상 지도로 봐요</text></svg>`,
+  // 5 살펴보기 — 피오르(용어)
+  fjord:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <text x="160" y="18" font-size="10.5" fill="#075985" text-anchor="middle" font-weight="800">피오르</text>
+    <path d="M40 40 L40 120 Q40 140 60 140 L100 140 Q120 140 120 120 L120 40" fill="none" stroke="#64748B" stroke-width="3"/>
+    <path d="M44 100 L44 120 Q44 136 60 136 L100 136 Q116 136 116 120 L116 100 Z" fill="#7DD3FC"/>
+    <text x="80" y="160" font-size="7" fill="#334155" text-anchor="middle" font-weight="700">유(U) 자 모양 계곡 + 바닷물</text>
+    <path d="M178 40 L178 140 L196 140 L196 40" fill="#CBD5E1"/>
+    <path d="M232 40 L232 140 L250 140 L250 40" fill="#CBD5E1"/>
+    <rect x="196" y="40" width="36" height="100" fill="#7DD3FC"/>
+    <text x="214" y="160" font-size="7" fill="#334155" text-anchor="middle" font-weight="700">가파른 산 사이 좁고 긴 바다</text>
+    <text x="288" y="94" font-size="6.6" fill="#64748B" text-anchor="middle" font-weight="700">도식</text></svg>`,
+  // 6 살펴보기 — 위쪽이 평평한 두 곳(호라이마산 · 울루루)
+  flat:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F0F9FF"/>
+    <text x="160" y="18" font-size="10.5" fill="#075985" text-anchor="middle" font-weight="800">위쪽이 평평해요</text>
+    <path d="M26 132 L46 52 L116 52 L136 132 Z" fill="#94A3B8"/>
+    <rect x="40" y="40" width="82" height="10" rx="4" fill="#E2E8F0"/>
+    <text x="81" y="150" font-size="7.6" fill="#075985" text-anchor="middle" font-weight="800">호라이마산</text>
+    <rect x="180" y="126" width="126" height="8" fill="#FCD34D"/>
+    <path d="M204 126 Q206 84 232 82 L262 82 Q286 84 286 126 Z" fill="#C2410C" opacity=".75"/>
+    <text x="243" y="150" font-size="7.6" fill="#075985" text-anchor="middle" font-weight="800">울루루</text>
+    <text x="160" y="164" font-size="6.8" fill="#64748B" text-anchor="middle" font-weight="700">그림은 도식이에요 · 실제 모습은 디지털 영상 지도로 살펴봐요</text></svg>`,
+  // 7 살펴보기 — 지형 경관은 생활 모습에 영향을 줘요(꼭 기억해요 ②)
+  life:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <text x="160" y="18" font-size="10.5" fill="#075985" text-anchor="middle" font-weight="800">지형 경관과 생활 모습</text>
+    <rect x="20" y="52" width="110" height="56" rx="10" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.4"/>
+    <text x="75" y="84" font-size="9" fill="#075985" text-anchor="middle" font-weight="800">지형 경관</text>
+    <path d="M136 80 L180 80" stroke="#B45309" stroke-width="2.4"/><path d="M180 80 L172 75 L172 85 Z" fill="#B45309"/>
+    <text x="158" y="70" font-size="6.8" fill="#92400E" text-anchor="middle" font-weight="800">영향</text>
+    <rect x="190" y="52" width="110" height="56" rx="10" fill="#FFF8E1" stroke="#B45309" stroke-width="1.4"/>
+    <text x="245" y="84" font-size="9" fill="#92400E" text-anchor="middle" font-weight="800">생활 모습</text>
+    <text x="160" y="140" font-size="7.4" fill="#64748B" text-anchor="middle" font-weight="700">어떤 영향을 주는지는 다음 차시부터 알아봐요</text></svg>`,
+  // 16 정리
+  sum:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F0F9FF"/>
+    <text x="160" y="20" font-size="11" fill="#075985" text-anchor="middle" font-weight="800">오늘의 정리</text>
+    <rect x="16" y="32" width="288" height="30" rx="7" fill="#fff" stroke="#0369A1" stroke-width="1.3"/>
+    <text x="160" y="51" font-size="8.6" fill="#075985" text-anchor="middle" font-weight="800">세계에는 산지, 하천, 해안, 사막 등 다양한 지형이 있어요</text>
+    <rect x="16" y="68" width="288" height="30" rx="7" fill="#fff" stroke="#0369A1" stroke-width="1.3"/>
+    <text x="160" y="87" font-size="8.6" fill="#075985" text-anchor="middle" font-weight="800">지형마다 독특한 경관 특징이 있어요</text>
+    <rect x="16" y="104" width="288" height="30" rx="7" fill="#FFFBEB" stroke="#B45309" stroke-width="1.3"/>
+    <text x="160" y="123" font-size="8.6" fill="#92400E" text-anchor="middle" font-weight="800">지형 경관은 생활 모습에 영향을 줘요</text>
+    <text x="160" y="152" font-size="8" fill="#64748B" text-anchor="middle" font-weight="700">같은 갈래 안에서도 특징이 갈렸어요</text></svg>`,
+  // 18 종료
+  done:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F0F9FF"/>
+    <circle cx="160" cy="76" r="40" fill="#fff" stroke="#0369A1" stroke-width="2.4"/>
+    <path d="M142 76 L156 90 L180 62" fill="none" stroke="#0369A1" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="160" y="142" font-size="11" fill="#075985" text-anchor="middle" font-weight="800">오늘 공부를 마쳤어요</text></svg>`
+};
+function sceneCard(key,cap,extra){ return `<div class="scene ${extra||''}">${SVG[key]||''}${cap?`<div class="cap">${cap}</div>`:''}</div>`; }
+
+/* ===== 직접조작 — 같은 갈래 안에서 특징이 갈리는 판 =====
+   ★ 일곱 곳을 네 갈래로 나누면 칸은 넷이다. 한 칸에 여럿이 모인 자리가 생긴다(산지 셋 · 해안 둘).
+   ★ 특징 잣대를 대면 같은 갈래 안의 곳들이 갈라진다. 일곱 칸이 되면 판이 선다.
+   ★ 칸 수는 저장되지 않는다 — plCells 한 줄이 서명의 서로 다른 수를 센다.
+   ★ 잣대의 답은 plHas 한 줄에서만 나온다. 정답 잣대·정답 차례 상수 0.
+   ★ 어떤 잣대는 아무것도 가르지 못한다(바닷가에 있나요?) — 판정 0 · 감점 0.
+   ⚠️ 전량 고정 리터럴 — 난수 0. 조작에 점수 0. */
+const PL_N = 7;    /* 교과서 13~14쪽 ★ 일곱 곳 */
+const PL_F = 5;    /* 특징 잣대 다섯 */
+
+const PL_NAME = ['송네 피오르','엘 아르코','마우나로아','사하라 사막','황허강','울루루','호라이마산'];
+const PL_LAND = ['노르웨이','멕시코','미국','리비아','중국','오스트레일리아','베네수엘라 볼리바르'];
+/* 교과서 13~14쪽 설명 글(호라이마산은 스스로 활동 예시 답) */
+const PL_DESC = [
+  '가파른 산으로 둘러싸인 매우 좁고 긴 해안선을 볼 수 있어요.',
+  '바다 위에 우뚝 솟은 아치 모양의 바위가 있어요.',
+  '용암이 흐르는 모습을 볼 수 있는 화산이에요.',
+  '광활하게 펼쳐진 모래 언덕을 볼 수 있어요.',
+  '황토가 섞여 색이 누런 강물이 굽이쳐 길게 흐르는 모습을 볼 수 있어요.',
+  '하나의 거대한 암석으로 이루어진 바위산이 드넓은 평지에 솟아 있는 모습을 볼 수 있어요.',
+  '우뚝 솟아 있지만 위쪽이 평평해요.'
+];
+/* 갈래 = 교과서 본문 「산지, 하천, 해안, 사막 등」의 네 낱말(정직 원칙 ㉡) */
+const PL_KD = ['산지','하천','해안','사막'];
+const PL_KIND = [2,2,0,3,1,0,0];
+/* 특징 잣대 — 답은 교과서 설명 글과 지도서 예시 답 문면까지만(정직 원칙 ㉢) */
+const PL_FEAT = [
+  '용암이 흐르는 화산인가요?',
+  '위쪽이 평평한가요?',
+  '드넓은 평지에 솟은 하나의 거대한 암석인가요?',
+  '아치 모양의 바위가 있나요?',
+  '바닷가에 있나요?'
+];
+/* 잣대별로 「예」인 곳(비트 i = 곳 i) */
+const PL_FEAT_ON = [0b0000100, 0b1100000, 0b0100000, 0b0000010, 0b0000011];
+
+/* ③ 판 읽기 — 지도서 주제 일반화 원문(p.26)이 답이다 */
+const PL_READ = [
+  '산지는 한 가지 모습만 있는 지형이기 때문이에요',
+  '판이 산지를 일부러 여러 칸으로 나누어 두었기 때문이에요',
+  '같은 지형이라도 서로 다른 특징이 나타나기 때문이에요'
+];
+const PL_READ_OK = 2;
+const PL_READ_NO = [
+  '산지 세 곳의 설명 글을 다시 봐요. <b>화산</b>도 있고 <b>위쪽이 평평한 곳</b>도 있었어요. 판을 다시 읽어 봐요.',
+  '판은 칸을 미리 나누어 두지 않았어요. 칸은 <b>내가 댄 잣대의 답</b>으로만 갈렸어요. 판을 다시 읽어 봐요.',
+  null
+];
+
+/* ④ 마무리 — 지도서 2차시 주요 내용 정리 ①② 원문 */
+const PL_FIN = [
+  '세계의 지형은 모두 비슷한 모습이라 경관 특징을 살펴보지 않아도 돼요',
+  '세계에는 산지, 하천, 해안, 사막 등 다양한 지형이 있고, 지형마다 독특한 경관 특징이 있어요',
+  '지형 경관은 그곳에서 살아가는 사람들의 생활 모습과 관계가 없어요'
+];
+const PL_FIN_OK = 1;
+const PL_FIN_NO = [
+  '일곱 곳의 설명 글이 모두 <b>달랐어요.</b> 오늘의 정리를 다시 골라 봐요.',
+  null,
+  '「꼭 기억해요」를 떠올려 봐요. 지형 경관은 생활 모습에 <b>영향을 줘요.</b> 오늘의 정리를 다시 골라 봐요.'
+];
+
+/* 안내 — ★ 어긋난 갈래 안내(PL_NOTK)에 갈래 이름이 들어가지 않는다. */
+const PL_DUP = '이 곳은 <b>이미 나눴어요.</b> 아직 나누지 않은 곳을 골라 봐요. 판은 그대로예요.';
+const PL_NOSEL = '먼저 <b>곳</b>을 하나 골라 봐요. 그다음 갈래를 눌러요. 판은 그대로예요.';
+const PL_NOTK = '그 갈래는 이 곳의 <b>설명 글</b>과 맞지 않아요. 설명 글을 다시 읽고 다른 갈래를 눌러 봐요. 판은 그대로예요.';
+const PL_ORDER_ASK = '아직 <b>나누지 않은 곳</b>이 있어요. 일곱 곳을 모두 갈래에 넣은 뒤에 잣대를 대요. 판은 그대로예요.';
+const PL_ASKED = '이 잣대는 <b>이미 댔어요.</b> 다른 잣대를 대 봐요. 판은 그대로예요.';
+const PL_ALLSPLIT = '일곱 곳이 <b>이미 모두 제 칸</b>을 가졌어요. 판은 그대로예요.';
+const PL_ORDER_R = '아직 <b>한 칸에 여럿이 모인 자리</b>가 있어요. 일곱 칸이 된 뒤에 판을 읽을 수 있어요. 판은 그대로예요.';
+const PL_READ_AGAIN = '<b>이미 판을 읽었어요.</b> 판은 그대로예요.';
+const PL_ORDER_F = '아직 <b>판을 읽지 않았어요.</b> 판을 먼저 읽어 봐요. 판은 그대로예요.';
+const PL_NOSPLIT = '이 잣대로는 <b>새로 갈린 칸이 없어요.</b> 한 칸에 모인 곳들의 답이 서로 같았어요. 판은 그대로예요 \u2014 다른 잣대를 대 봐요.';
+const PL_PUTALL_MSG = '일곱 곳을 모두 나눴어요 \u2014 칸은 <b>넷</b>이에요. 한 칸에 <b>여럿이 모인 자리</b>가 있어요. 이제 특징 잣대를 대 봐요.';
+const PL_SPLITALL_MSG = '일곱 곳이 <b>모두 제 칸</b>을 가졌어요. 한 칸에 모여 있던 곳들도 <b>특징 잣대로 갈라졌어요.</b>';
+
+function plKindOf(i){ return PL_KIND[i]; }
+/* ★★ 잣대의 답 — 이 한 줄에서만 나온다. */
+function plHas(f,i){ return (PL_FEAT_ON[f]>>i)&1; }
+function plPutN(st){ let n=0; for(let i=0;i<PL_N;i++) if(st.plPut[i]>=0) n++; return n; }
+function plAllPut(st){ return plPutN(st)===PL_N; }
+function plAsked(st,f){ return ((st.plAsk>>f)&1)===1; }
+/* ★★ 서명 — 갈래 + 댄 잣대의 답. 칸은 서로 다른 서명의 수다. */
+function plSig(st,i){ let s=String(st.plPut[i]); for(let f=0;f<PL_F;f++) s += plAsked(st,f) ? plHas(f,i) : '-'; return s; }
+function plCells(st){ const s=new Set(); for(let i=0;i<PL_N;i++) s.add(plSig(st,i)); return s.size; }
+function plDone(st){ return plAllPut(st) && plCells(st)===PL_N; }
+function plAskN(st){ let n=0; for(let f=0;f<PL_F;f++) if(plAsked(st,f)) n++; return n; }
+
+function plCanvas(st){
+  const fin = st.plFin!=null, all = plAllPut(st), done = plDone(st), cells = all ? plCells(st) : 0;
+  const head = fin ? '일곱 곳의 지형 경관을 살펴보았어요'
+    : st.plRead!=null ? '판을 읽었어요 \u2014 이제 정리해요'
+    : done ? '일곱 곳이 모두 제 칸을 가졌어요'
+    : all ? '다 나눴어요 \u2014 그런데 한 칸에 여럿이 모인 자리가 있어요'
+    : '일곱 곳을 네 갈래로 나눠 봐요';
+
+  /* 나누기 전 자리 — 나눈 곳은 빈 자리로 남는다 */
+  let tray='';
+  for(let i=0;i<PL_N;i++){
+    const x = 7+i*44, put = st.plPut[i]>=0, sel = st.plSel===i;
+    tray += `<g data-chip="${i}" data-put="${put?1:0}" data-sel="${sel?1:0}">
+      <rect x="${x}" y="32" width="42" height="24" rx="6" fill="${put?'#F8FAFC':sel?'#FFF8E1':'#fff'}" stroke="${put?'#CBD5E0':sel?'#B45309':'#0284C7'}" stroke-width="1.2" ${put?'stroke-dasharray="3 2"':''}/>
+      ${put?'':`<text x="${x+21}" y="47" font-size="5.4" fill="${sel?'#92400E':'#075985'}" text-anchor="middle" font-weight="800">${PL_NAME[i]}</text>`}
+    </g>`;
+  }
+
+  /* 네 갈래 칸 — 같은 서명끼리 한 상자에 모인다(상자 배열·칸 상태 0) */
+  let cols='';
+  for(let c=0;c<PL_KD.length;c++){
+    const x = 8+c*77;
+    const groups = [];
+    for(let i=0;i<PL_N;i++){
+      if(st.plPut[i]!==c) continue;
+      const sg = plSig(st,i), g = groups.find(q=>q.sig===sg);
+      if(g) g.m.push(i); else groups.push({sig:sg,m:[i]});
+    }
+    let y = 90, boxes='';
+    groups.forEach(g=>{
+      const h = 10 + g.m.length*13, many = g.m.length>1;
+      boxes += `<g data-group="${g.m.join('-')}" data-kind="${c}" data-n="${g.m.length}">
+        <rect x="${x+3}" y="${y}" width="67" height="${h}" rx="6" fill="${many?'#FFF8E1':'#E0F2FE'}" stroke="${many?'#B45309':'#0369A1'}" stroke-width="1.2"/>
+        ${g.m.map((i,k)=>`<text x="${x+36.5}" y="${y+14+k*13}" font-size="5.8" fill="${many?'#92400E':'#075985'}" text-anchor="middle" font-weight="800" data-in="${i}">${PL_NAME[i]}</text>`).join('')}
+      </g>`;
+      y += h + 5;
+    });
+    cols += `<g data-col="${c}" data-groups="${groups.length}">
+      <rect x="${x}" y="66" width="73" height="160" rx="8" fill="#F8FAFC" stroke="#CBD5E0" stroke-width="1"/>
+      <text x="${x+36.5}" y="80" font-size="7.4" fill="#075985" text-anchor="middle" font-weight="800">${PL_KD[c]}</text>
+      ${boxes}
+    </g>`;
+  }
+
+  const askline = all ? `댄 잣대 ${plAskN(st)}개` : '잣대는 다 나눈 뒤에 대요';
+  const tally = all ? `칸 ${cells} / ${PL_N} \u00b7 ${done?'모두 제 칸이에요':'한 칸에 여럿이 모인 자리가 있어요'}` : `나눈 곳 ${plPutN(st)} / ${PL_N}`;
+  return `<svg viewBox="0 0 320 280" data-put="${plPutN(st)}" data-cells="${cells}" data-ask="${st.plAsk}" data-done="${done?1:0}" data-read="${st.plRead==null?-1:st.plRead}" data-fin="${fin?1:0}">
+    <rect width="320" height="280" fill="#fff"/>
+    <rect x="8" y="8" width="304" height="18" rx="6" fill="#E0F2FE"/>
+    <text x="160" y="20.5" font-size="7.6" fill="#075985" text-anchor="middle" font-weight="800">${head}</text>
+    ${tray}
+    ${cols}
+    <rect x="8" y="234" width="304" height="18" rx="6" fill="#F1F5F9"/>
+    <text x="160" y="246" font-size="6.6" fill="#334155" text-anchor="middle" font-weight="800" data-askline="1">${askline}</text>
+    <rect x="8" y="256" width="304" height="20" rx="6" fill="#FEF3C7"/>
+    <text x="160" y="269.5" font-size="7" fill="#92400E" text-anchor="middle" font-weight="800" data-tally="1">${tally}</text>
+  </svg>`;
+}
+
+function plPanel(st){
+  const fin = st.plFin!=null, all = plAllPut(st), done = plDone(st);
+  const q = fin ? '세계 여러 지역의 지형 경관을 살펴보았어요.'
+    : st.plRead!=null ? '오늘 공부한 내용을 어떻게 정리하면 좋을까요?'
+    : done ? '같은 산지였던 세 곳이 왜 한 칸에 남지 않았을까요?'
+    : all ? '한 칸에 여럿이 모인 자리가 있어요. 특징 잣대를 대면 어떻게 될까요?'
+    : '일곱 곳의 설명 글을 읽고, 어느 갈래에 드는지 나눠 봐요.';
+  let right = `<div class="pl-q">${q}</div>`;
+
+  if(fin){
+    right += `<div class="dw-card"><div class="pt">\uD83C\uDF0F 같아도 갈려요</div>
+      일곱 곳을 네 갈래로 나누니 칸은 <b>넷</b>이었어요. 같은 갈래에 모인 곳들도 <b>특징 잣대</b>를 대니
+      <b>갈라졌어요.</b> 어떤 잣대(바닷가에 있나요?)는 아무것도 가르지 못했어요.<br>
+      잣대를 대는 <b>차례</b>는 판이 정해 두지 않았어요.<br>
+      <span style="color:#64748B">판의 그림은 <b>도식</b>이고, 갈래 이름은 교과서 본문의 네 낱말로 <b>판이 나눈 것</b>이에요.
+      지형의 실제 모습은 <b>디지털 영상 지도</b>로 살펴보고, 경관 특징을 담은 <b>기념 배지</b>는 교실에서 직접 그려요.</span></div>`;
+  } else if(st.plRead!=null){
+    right += `<div class="dw-step">\uD83D\uDCDA 오늘의 정리</div>`;
+    right += `<div class="pl-fin">${PL_FIN.map((t,k)=>`<button class="${st.plWrongF===k?'no':''}" onclick="plFinish(${k})">${t}</button>`).join('')}</div>`;
+  } else if(done){
+    right += `<div class="dw-step">\uD83D\uDD0E 판을 읽어요</div>`;
+    right += `<div class="pl-read">${PL_READ.map((t,k)=>`<button class="${st.plWrongR===k?'no':''}" onclick="plReadPick(${k})">${t}</button>`).join('')}</div>`;
+  } else if(all){
+    right += `<div class="dw-step">\uD83D\uDCCF 특징 잣대를 대요</div>`;
+    right += `<div class="pl-ask">${PL_FEAT.map((t,f)=>`<button class="${plAsked(st,f)?'used':''}" onclick="plQuery(${f})">${t}</button>`).join('')}</div>`;
+    right += `<div class="pl-note">잣대는 <b>어느 것부터</b> 대도 좋아요. 대기만 하고 떼지는 않아요. 감점은 없어요.</div>`;
+  } else {
+    right += `<div class="dw-step">\uD83D\uDDC2\uFE0F 갈래로 나눠요</div>`;
+    right += `<div class="pl-pad">${PL_NAME.map((t,i)=>`<button class="${st.plPut[i]>=0?'put':st.plSel===i?'sel':''}" onclick="plPick(${i})"><span class="ct">${PL_LAND[i]}</span>${t}</button>`).join('')}</div>`;
+    right += `<div class="pl-kind">${PL_KD.map((t,k)=>`<button onclick="plSort(${k})">${t}</button>`).join('')}</div>`;
+    right += `<div class="pl-note">곳을 하나 고르고 갈래를 눌러요. <b>어느 곳부터</b> 나눠도 좋아요.</div>`;
+  }
+  if(st.plMsg) right += `<div class="dw-msg${st.plWarn?' warn':''}">${st.plMsg}</div>`;
+
+  return `<div class="dw-wrap">
+    <div style="text-align:center"><b style="color:var(--green)">\uD83C\uDF0F 같아도 갈리는 판</b></div>
+    <div class="dw-body">
+      <div class="dw-canvas">${plCanvas(st)}<div class="cvcap">판의 그림은 <b>도식</b>이에요. 갈래 이름(산지·하천·해안·사막)은 교과서 본문의 네 낱말로 <b>판이 나눈 것</b>이고, 잣대의 답은 교과서 설명 글과 지도서 예시 답까지만 담았어요.</div></div>
+      <div class="dw-right">${right}</div>
+    </div>
+  </div>`;
+}
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "1단원 세계의 자연환경 · ① 지형 경관과 다양한 생활 모습";
+
+// 확인 4 + 적용 4 — 정답 다양화 [1,3,0,2,2,0,3,1](각 자리 2회)
+// ⚠️ 문항 내 연도·쪽수·길이·높이·비율 0 · 새 사실 0(교과서 12~14쪽 문면과 지도서 2차시 예시 답까지만).
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"세계의 <b>지형</b>에 관해 말한 것으로 알맞은 것은 무엇인가요?",
+   opts:["세계에는 산지만 있어요","세계에는 산지, 하천, 해안, 사막 등 다양한 지형이 있어요","세계의 지형은 모두 같은 모습이에요","세계에는 하천과 바다만 있어요"],
+   correct:1, pts:POINTS_BASIC, scene:"kinds",
+   reason:"세계에는 산지, 하천, 해안, 사막 등 다양한 지형이 있어요. 이러한 지형들은 각각의 경관 특징을 가지고 있어요.",
+   h1:"교과서 본문이 든 지형의 낱말을 떠올려 봐요.", h2:"지형은 한두 가지가 아니었어요."},
+  {stem:"노르웨이의 <b>송네 피오르</b>에서 볼 수 있는 경관 특징으로 알맞은 것은 무엇인가요?",
+   opts:["광활하게 펼쳐진 모래 언덕","용암이 흐르는 화산","누런 강물이 굽이쳐 흐르는 모습","가파른 산으로 둘러싸인 매우 좁고 긴 해안선"],
+   correct:3, pts:POINTS_BASIC, scene:"fjord",
+   reason:"송네 피오르에서는 가파른 산으로 둘러싸인 매우 좁고 긴 해안선을 볼 수 있어요. 거대한 절벽 사이로 바닷물이 강처럼 들어와 있어요.",
+   h1:"피오르는 바닷물이 들어와 만들어진 해안선이에요.", h2:"「좁고 긴」이라는 낱말을 찾아봐요."},
+  {stem:"<b>피오르</b>의 뜻으로 알맞은 것은 무엇인가요?",
+   opts:["빙하에 의해 침식된 유(U) 자 모양의 계곡에 바닷물이 들어와 만들어진 해안선","바다 위에 우뚝 솟은 아치 모양의 바위","하나의 거대한 암석으로 이루어진 바위산","모래 언덕이 끝없이 펼쳐진 곳"],
+   correct:0, pts:POINTS_BASIC, scene:"fjord",
+   reason:"피오르는 빙하에 의해 침식된 유(U) 자 모양의 계곡에 바닷물이 들어와 만들어진 해안선이에요.",
+   h1:"교과서의 낱말 풀이를 떠올려 봐요.", h2:"유(U) 자 모양과 바닷물이 함께 나와요."},
+  {stem:"중국의 <b>황허강</b>에서 볼 수 있는 경관 특징으로 알맞은 것은 무엇인가요?",
+   opts:["바다 위에 아치 모양의 바위가 솟아 있어요","위쪽이 탁자처럼 평평해요","황토가 섞여 색이 누런 강물이 굽이쳐 길게 흘러요","용암이 흐르는 모습을 볼 수 있어요"],
+   correct:2, pts:POINTS_BASIC, scene:"kinds",
+   reason:"황허강에서는 황토가 섞여 색이 누런 강물이 굽이쳐 길게 흐르는 모습을 볼 수 있어요.",
+   h1:"「황허」라는 이름에 강물의 빛깔이 들어 있어요.", h2:"하천 지형이에요."},
+  // 4단계 적용 (+15)
+  {stem:"직접조작에서 <b>산지</b> 칸에 모였던 마우나로아, 울루루, 호라이마산이 특징 잣대를 대자 <b>서로 다른 칸</b>으로 갈라졌어요. 그 까닭은 무엇일까요?",
+   opts:["판이 산지를 일부러 여러 칸으로 나누어 두었기 때문이에요","산지는 한 가지 모습만 있는 지형이기 때문이에요","같은 지형이라도 서로 다른 특징이 나타나기 때문이에요","잣대를 대는 차례가 정해져 있었기 때문이에요"],
+   correct:2, pts:POINTS_APPLY, scene:"flat",
+   reason:"같은 산지라도 마우나로아는 용암이 흐르는 화산이고, 울루루는 드넓은 평지에 솟은 거대한 바위산이고, 호라이마산은 우뚝 솟아 있지만 위쪽이 평평해요. 같은 지형이라도 서로 다른 특징이 나타나요.",
+   h1:"세 곳의 설명 글이 같았는지 떠올려 봐요.", h2:"판은 칸을 미리 나누어 두지 않았어요."},
+  {stem:"직접조작에서 「<b>바닷가에 있나요?</b>」 잣대를 대었을 때 새로 갈린 칸이 없었어요. 그 까닭으로 알맞은 것은 무엇인가요?",
+   opts:["송네 피오르와 엘 아르코가 모두 바닷가에 있어 그 답이 같았기 때문이에요","그 잣대는 대면 안 되는 잣대였기 때문이에요","바닷가에 있는 곳이 하나도 없었기 때문이에요","잣대를 너무 늦게 대었기 때문이에요"],
+   correct:0, pts:POINTS_APPLY, scene:"kinds",
+   reason:"해안 칸에 모인 송네 피오르와 엘 아르코는 둘 다 바닷가에 있어요. 한 칸에 모인 곳들의 답이 같으면 그 잣대로는 갈라지지 않아요. 감점은 없어요.",
+   h1:"해안 칸의 두 곳을 떠올려 봐요.", h2:"두 곳 모두 「예」였어요."},
+  {stem:"디지털 영상 지도로 베네수엘라 볼리바르의 <b>호라이마산</b>을 살펴보았어요. 알맞은 설명은 무엇인가요?",
+   opts:["모래 언덕이 끝없이 펼쳐져 있어요","누런 강물이 굽이쳐 흘러요","바다 위에 아치 모양의 바위가 있어요","우뚝 솟아 있지만 위쪽이 탁자처럼 평평해요"],
+   correct:3, pts:POINTS_APPLY, scene:"flat",
+   reason:"호라이마산은 우뚝 솟아 있지만 위쪽이 탁자처럼 평평해요. 절벽이 깎아지른 듯 만들어져 있어요.",
+   h1:"스스로 활동의 예시 답을 떠올려 봐요.", h2:"산 정상이 뾰족한 곳도 있고 평평한 곳도 있어요."},
+  {stem:"「꼭! 기억해요」 — 지형 경관은 그곳에서 살아가는 사람들의 생활 모습에 어떤 관계가 있나요?",
+   opts:["아무 관계가 없어요","영향을 줘요","생활 모습이 지형 경관을 모두 정해요","관광객에게만 관계가 있어요"],
+   correct:1, pts:POINTS_APPLY, scene:"life",
+   reason:"지형 경관은 그곳에서 살아가는 사람들의 생활 모습에 영향을 줘요. 어떤 영향을 주는지는 다음 차시부터 산지, 하천, 해안 지형을 하나씩 살펴보며 알아봐요.",
+   h1:"꼭 기억해요 ②의 빈칸은 네 글자 낱말이에요(ㅈㅎ ㄱㄱ).", h2:"「주다」라는 말과 함께 써요."}
+];
+
+/* ===== 슬라이드 18매 ===== */
+const slides=[];
+// 1 들어가기 — [생각을 열어요] 교과서 12쪽
+slides.push({stage:1,badge:"들어가기",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s1">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">두 친구가 자기 나라로 초대해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('open','로키산맥 · 베나길 동굴','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCAC 생각을 열어요</div>
+      사진을 보고, <b>가고 싶은 나라</b>를 정하고 그곳에서 <b>경험해 보고 싶은 일</b>을 두 가지 떠올려 봐요.</div>
+    ${st.revealed?`<div class="answer-box">· <b>로키산맥(캐나다)</b> \u2014 스키를 타고 싶어요. 호수를 따라 산책하고 싶어요.<br>
+      · <b>베나길 동굴(포르투갈)</b> \u2014 동굴 밖으로 보이는 하늘을 보며 바닷물에 발을 담그고 싶어요. 동굴의 모래사장에 앉아 파도 소리를 듣고 싶어요.<br>
+      <span style="color:#64748B">이것은 예시예요. 내가 해 보고 싶은 일은 <b>내가 직접</b> 적어요.</span></div>`
+      :`<button class="reveal-btn" onclick="reveal()">예시 보기</button>`}
+    <div class="tipbox">오늘은 세계의 다양한 지형 경관과 그 특징을 살펴봐요.</div></div>`});
+// 2 살펴보기 — reveal: 세계의 다양한 지형
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">세계에는 어떤 지형이 있을까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('kinds','산지 · 하천 · 해안 · 사막','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCD6 교과서 본문</div>
+      우리는 세계의 다양한 지역에서 독특하고 아름다운 <b>지형 경관</b>을 볼 수 있어요.
+      세계에는 <b>산지, 하천, 해안, 사막</b> 등 다양한 지형이 있어요. 이러한 지형들은 각각의 <b>경관 특징</b>을 가지고 있어요.</div>
+    ${st.revealed?`<div class="answer-box">세계 지형의 생김새는 어떻게 다를까요?<br>
+      · 하천이 흐르는 곳도 있고 없는 곳도 있어요.<br>
+      · 바닷가 근처에 있는 지형도 있어요.<br>
+      · 모래나 화산으로 이루어진 곳도 있어요.<br>
+      · 산 정상이 뾰족한 곳도 있고 <b>평평한 곳</b>도 있어요.</div>`
+      :`<div class="note">세계 지형의 생김새는 어떻게 다를까요?</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 3 살펴보기 — 직접조작(같아도 갈리는 판)
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">같아도 갈려요</h2>
+  ${plPanel(st)}`});
+// 4 살펴보기 — reveal: 일곱 곳의 경관 특징(교과서 13~14쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">세계에서 유명한 지형의 경관 특징</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('seven','세계지도의 ★ 일곱 곳','wide')}</div>
+    ${st.revealed?`<div class="answer-box">· <b>사하라 사막(리비아)</b> \u2014 모래 언덕이 끝없이 펼쳐져 있어요.<br>
+      · <b>황허강(중국)</b> \u2014 하천이 구불구불 흐르고, 강물이 누렇게 보여요.<br>
+      · <b>울루루(오스트레일리아)</b> \u2014 거대하고, 위쪽이 평평해 보여요.<br>
+      · <b>마우나로아(미국)</b> \u2014 용암이 흐르고, 산꼭대기가 움푹 파여 있어요.<br>
+      · <b>엘 아르코(멕시코)</b> \u2014 암석이 아치 모양을 이루고, 바닷가 주변에 있어요.</div>`
+      :`<div class="note">사진 속 지형은 어떤 경관 특징을 가지고 있을까요?</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 5 살펴보기 — 피오르(용어 · 핵심 질문)
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">송네 피오르를 살펴봐요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('fjord','유(U) 자 계곡에 들어온 바닷물','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCD6 낱말 풀이</div>
+      <b>피오르</b> \u2014 빙하에 의해 침식된 유(U) 자 모양의 계곡에 바닷물이 들어와 만들어진 해안선.</div>
+    <div class="sum-list">
+      <div class="sum-item"><span class="n">\u2460</span><div>가파른 산으로 둘러싸인 <b>매우 좁고 긴</b> 지형 경관이에요.</div></div>
+      <div class="sum-item"><span class="n">\u2461</span><div>거대한 <b>절벽</b>이 보이고, 절벽 사이로 바닷물이 강처럼 흐르는 것 같아요.</div></div>
+    </div></div>`});
+// 6 살펴보기 — reveal: 디지털 영상 지도로 호라이마산(스스로 활동)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">디지털 영상 지도로 살펴봐요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('flat','호라이마산 · 울루루','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDDFA\uFE0F 스스로 활동</div>
+      디지털 영상 지도를 활용해 ★ 표시한 지형을 살펴보고, 가장 인상적인 경관을 그림으로 그려 봐요.
+      <b>호라이마산(베네수엘라 볼리바르)</b>의 경관 특징은 무엇일까요?</div>
+    ${st.revealed?`<div class="answer-box">· 우뚝 솟아 있지만 <b>위쪽이 평평</b>해요. 지형의 위쪽이 탁자처럼 굉장히 평평해 보여요.<br>
+      · 절벽이 깎아지른 듯 만들어져 있어요.<br>
+      <span style="color:#64748B">디지털 영상 지도로 살펴보고 그림을 그리는 일은 <b>교실에서 직접</b> 해요.</span></div>`
+      :`<button class="reveal-btn" onclick="reveal()">예시 보기</button>`}
+  </div>`});
+// 7 살펴보기 — 꼭 기억해요 · 핵심 질문
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">지형 경관은 생활 모습에 영향을 줘요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('life','지형 경관 \u2192 생활 모습','wide')}</div>
+    <div class="paper"><div class="ph">\u2B50 꼭! 기억해요</div>
+      \u2460 세계에는 산지, 하천, 해안, 사막 등 다양한 지형이 있어요.<br>
+      \u2461 <b>지형 경관</b>은 그곳에서 살아가는 사람들의 생활 모습에 <b>영향</b>을 줘요.</div>
+    <div class="note">지형 경관이 아름다운 곳은 여행지가 되어 여행객이 많이 찾아올 것 같아요 \u2014 어떤 영향인지는 다음 차시부터 알아봐요.</div></div>`});
+// 8~15 문항
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리: 요약 — 지도서 2차시 주요 내용 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부한 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('sum','오늘의 정리','wide')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">\u2460</span><div>세계에는 <b>산지, 하천, 해안, 사막</b> 등 다양한 지형이 있어요.</div></div>
+    <div class="sum-item"><span class="n">\u2461</span><div>세계에는 독특하고 아름다운 <b>지형 경관</b>이 있어요.</div></div>
+    <div class="sum-item"><span class="n">\u2462</span><div>지형 경관은 그곳에서 살아가는 사람들의 <b>생활 모습에 영향</b>을 줘요.</div></div>
+    <div class="sum-item"><span class="n">\u2605</span><div><b>오늘의 조작</b> \u2014 같은 갈래에 모인 곳들도 특징 잣대를 대니 <b>갈라졌어요.</b> 답이 같은 잣대로는 갈라지지 않았어요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b>세계의 유명한 산지 지형</b>과 생활 모습을 알아봐요.</div></div>`});
+// 17 정리: 자기 평가
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 활동을 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"세계에 있는 다양한 지형을 말할 수 있어요",st)}
+    ${selfCheck(1,"세계 여러 지역의 지형 경관을 살펴보고 그 특징을 설명할 수 있어요",st)}
+    ${selfCheck(2,"우리와 다른 지역의 지형 경관에 관심을 가졌어요",st)}
+  </div><div class="note">별이 적게 채워진 곳은 앞 슬라이드를 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">오늘 공부를 마쳤어요!</h2>
+  <div class="ka-grp">
+    <div class="scene-row">${sceneCard('done','','wide')}</div>
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">다음 시간에는 <b style="color:var(--amber)">세계의 유명한 산지 지형</b>과 생활 모습을 알아봐요!</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">\u2B55 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g6_2_social_u1_l01";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  plPut:[-1,-1,-1,-1,-1,-1,-1], plSel:-1, plAsk:0, plRead:null, plFin:null,
+  plWrongR:null, plWrongF:null,
+  plMsg:null, plWarn:false, plBusy:false,
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 \u2192';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+
+
+function plRender(){ main.innerHTML = slides[state.idx].render(state); }
+function plHold(msg){
+  state.plWarn=true; state.plBusy=true; state.plMsg=msg;
+  playThud(); plRender();
+  setTimeout(()=>{ state.plBusy=false; state.plWarn=false; state.plMsg=null;
+    state.plWrongR=null; state.plWrongF=null; plRender(); },1600);
+}
+
+/* ① 곳 고르기 — 어느 곳부터 골라도 된다(순서 자유). */
+function plPick(i){
+  if(state.plFin!=null) return;                                        // 가드①
+  if(state.plBusy) return;                                             // 가드⑩
+  if(!Number.isInteger(i) || i<0 || i>=PL_N) return;                   // 가드②
+  if(state.plPut[i]>=0){ plHold(PL_DUP); return; }                     // 가드③ 판 불변
+  state.plSel = i;
+  state.plWarn=false;
+  state.plMsg = `<b>${PL_NAME[i]}</b>(${PL_LAND[i]}) \u2014 ${PL_DESC[i]} 어느 갈래에 들까요?`;
+  playBlip(); plRender();
+}
+
+/* ② 갈래에 넣기 — 어긋나면 판 불변 · 안내에 갈래 이름 0 */
+function plSort(k){
+  if(state.plFin!=null) return;                                        // 가드①
+  if(state.plBusy) return;                                             // 가드⑩
+  if(!Number.isInteger(k) || k<0 || k>=PL_KD.length) return;           // 가드②
+  if(state.plSel<0){ plHold(PL_NOSEL); return; }                       // 가드④ 판 불변
+  if(plKindOf(state.plSel)!==k){ plHold(PL_NOTK); return; }            // 가드⑤ 판 불변
+  const i = state.plSel;
+  state.plPut[i] = k;                                                  // ★ 곳이 갈래에 드는 자리는 여기 한 곳뿐
+  state.plSel = -1;
+  state.plWarn=false;
+  state.plMsg = plAllPut(state) ? PL_PUTALL_MSG : `<b>${PL_NAME[i]}</b>을(를) <b>${PL_KD[k]}</b> 갈래에 넣었어요.`;
+  playBlip(); plRender();
+}
+
+/* ③ 특징 잣대 대기 — ★★ 이 판의 핵심. 정답 잣대·차례 상수 0. 대기만 하고 떼지 않는다. */
+function plQuery(f){
+  if(state.plFin!=null) return;                                        // 가드①
+  if(state.plBusy) return;                                             // 가드⑩
+  if(!Number.isInteger(f) || f<0 || f>=PL_F) return;                   // 가드②
+  if(!plAllPut(state)){ plHold(PL_ORDER_ASK); return; }                // 가드⑥ 순서 — 판 불변
+  if(plDone(state)){ plHold(PL_ALLSPLIT); return; }                    // 가드⑦ 판 불변
+  if(plAsked(state,f)){ plHold(PL_ASKED); return; }                    // 가드⑦ 판 불변
+  const before = plCells(state);
+  state.plAsk |= (1<<f);                                               // ★ 잣대가 대지는 자리는 여기 한 곳뿐
+  const after = plCells(state);
+  state.plWarn=false;
+  state.plMsg = plDone(state) ? PL_SPLITALL_MSG
+    : after===before ? PL_NOSPLIT
+    : `「${PL_FEAT[f]}」 \u2014 칸이 <b>${before}개에서 ${after}개</b>로 늘었어요. 아직 한 칸에 여럿이 모인 자리가 있어요.`;
+  playBlip(); plRender();
+}
+
+/* ④ 판 읽기 — 일곱 칸이 되어야 열린다(가드⑧). */
+function plReadPick(k){
+  if(state.plFin!=null) return;                                        // 가드①
+  if(state.plBusy) return;                                             // 가드⑩
+  if(!Number.isInteger(k) || k<0 || k>=PL_READ.length) return;         // 가드②
+  if(!plDone(state)){ plHold(PL_ORDER_R); return; }                    // 가드⑧ 순서 — 판 불변
+  if(state.plRead!=null){ plHold(PL_READ_AGAIN); return; }             // 판 불변
+  if(k===PL_READ_OK){
+    state.plRead=k; state.plWrongR=null; state.plWarn=false;
+    state.plMsg = '판을 잘 읽었어요. 같은 갈래에 모였던 곳들도 <b>특징</b>을 살펴보면 서로 달랐어요.';
+    playChime(); plRender(); return;
+  }
+  state.plWrongR=k;
+  plHold(PL_READ_NO[k]);
+}
+
+/* ⑤ 마무리 — 지도서 2차시 주요 내용 정리 ①② 원문 */
+function plFinish(k){
+  if(state.plFin!=null) return;                                        // 가드①
+  if(state.plBusy) return;                                             // 가드⑩
+  if(!Number.isInteger(k) || k<0 || k>=PL_FIN.length) return;          // 가드②
+  if(state.plRead==null){ plHold(PL_ORDER_F); return; }                // 가드⑨ 순서 — 판 불변
+  if(k===PL_FIN_OK){
+    state.plFin=k; state.plWrongF=null; state.plMsg=null; state.plWarn=false;
+    playChime(); plRender(); return;
+  }
+  state.plWrongF=k;
+  plHold(PL_FIN_NO[k]);
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2;
+    if(qs.hint>=2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">\uD83D\uDCD8 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 \u2192</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // 1단원 2차시(l02) 미양산 — 양산 시 재배선
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
